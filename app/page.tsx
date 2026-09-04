@@ -1,10 +1,10 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import {
   Activity, ArrowDownRight, ArrowRight, ArrowUpRight, CalendarDays,
   CheckCircle2, CircleAlert, Database, Fuel, Gauge, Info,
-  LineChart as LineChartIcon, Map,
+  LineChart as LineChartIcon, LogIn, LogOut, Map, Settings2, Star, UserRound,
 } from "lucide-react";
 import {
   Area, AreaChart, CartesianGrid, Line, LineChart, ReferenceLine,
@@ -17,6 +17,12 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Accordion, AccordionContent, AccordionItem, AccordionTrigger,
 } from "@/components/ui/accordion";
+import {
+  Sheet, SheetContent, SheetDescription, SheetFooter, SheetHeader,
+  SheetTitle, SheetTrigger,
+} from "@/components/ui/sheet";
+import { Toaster } from "@/components/ui/sonner";
+import { toast } from "sonner";
 
 type Direction = "up" | "down" | "flat";
 type Signal = "positive" | "negative" | "neutral";
@@ -50,6 +56,10 @@ type SentimentItem = {
   score: number;
   data: ChartPoint[];
 };
+
+type SentimentKind = "global" | "sector" | "theme";
+type SessionUser = { displayName: string; email: string };
+type FavoriteRecord = { itemKey: string; itemType: SentimentKind; itemName: string };
 
 const indicators: Indicator[] = [
   {
@@ -174,21 +184,47 @@ const themeSentiment: SentimentItem[] = [
 ];
 
 const summaryItems = [
-  {label:"종합",value:"중립",score:54,note:"물가 부담 ↔ 경기 회복",icon:Gauge,tone:"amber"},
-  {label:"물가",value:"주의",score:38,note:"근원 PCE 재상승",icon:CircleAlert,tone:"red"},
-  {label:"고용",value:"둔화",score:46,note:"급격한 침체 신호는 아님",icon:Activity,tone:"slate"},
-  {label:"금리",value:"개선",score:68,note:"10년물 금리 하락",icon:CheckCircle2,tone:"green"},
-  {label:"유가",value:"주의",score:42,note:"WTI 변동성 확대",icon:Fuel,tone:"orange"},
+  {label:"종합",value:"중립",score:54,note:"물가 부담 ↔ 경기 회복",icon:Gauge,tone:"amber",data:makeSeries([49,51,50,53,55,52,54,56,53,55,54,54])},
+  {label:"물가",value:"주의",score:38,note:"근원 PCE 재상승",icon:CircleAlert,tone:"red",data:makeSeries([55,52,49,46,43,41,39,42,40,37,39,38])},
+  {label:"고용",value:"둔화",score:46,note:"급격한 침체 신호는 아님",icon:Activity,tone:"slate",data:makeSeries([57,55,53,51,49,47,45,48,46,44,45,46])},
+  {label:"금리",value:"개선",score:68,note:"10년물 금리 하락",icon:CheckCircle2,tone:"green",data:makeSeries([42,45,49,52,55,58,61,63,65,64,67,68])},
+  {label:"유가",value:"주의",score:42,note:"WTI 변동성 확대",icon:Fuel,tone:"orange",data:makeSeries([59,56,52,48,45,41,44,47,43,40,45,42])},
 ];
+
+const volatilityByKind: Record<SentimentKind, Record<string, string>> = {
+  global: {
+    "미국":"VIX 18.6","한국":"VKOSPI 21.4","중국":"iVX 24.7","일본":"Nikkei VI 20.9","유럽":"VSTOXX 19.8",
+  },
+  sector: {
+    "정보기술":"베타 1.28","커뮤니케이션":"베타 1.16","임의소비재":"베타 1.14","산업재":"베타 1.05","금융":"베타 1.02","유틸리티":"베타 0.63","헬스케어":"베타 0.78","소재":"베타 1.03","에너지":"베타 1.12","필수소비재":"베타 0.58","부동산":"베타 0.91",
+  },
+  theme: {
+    "AI 반도체":"베타 1.62","데이터센터 전력":"베타 1.41","양자컴퓨팅":"베타 2.18","로봇·자동화":"베타 1.37","우주·위성":"베타 1.74","사이버보안":"베타 1.19","원전·SMR":"베타 1.46","자율주행":"베타 1.71","전고체 배터리":"베타 1.58","바이오테크":"베타 1.32","수소":"베타 1.69","태양광":"베타 1.54",
+  },
+};
 
 const categories = ["전체", "물가", "고용", "경기", "금리"] as const;
 const periods: Period[] = ["1주일", "1개월", "3개월", "6개월", "1년"];
 const periodPoints: Record<Period, number> = {"1주일":2,"1개월":3,"3개월":4,"6개월":6,"1년":12};
 
 function getSentimentStage(score: number) {
+  if (score < 20) return "극단 공포";
   if (score < 40) return "공포";
   if (score < 60) return "중립";
-  return "탐욕";
+  if (score < 80) return "탐욕";
+  return "극단 탐욕";
+}
+
+function getSentimentColor(score: number) {
+  if (score < 20) return "#991b1b";
+  if (score < 40) return "#f87171";
+  if (score < 60) return "#737373";
+  if (score < 80) return "#84cc16";
+  return "#166534";
+}
+
+function sentimentKey(kind: SentimentKind, name: string) {
+  return `${kind}:${name}`;
 }
 
 function expandIndicatorHistory(data: ChartPoint[], seed: number) {
@@ -220,8 +256,9 @@ function SignalBadge({ signal }: { signal: Signal }) {
 }
 
 function ScoreRail({ score, sentiment = false, label }: { score: number; sentiment?: boolean; label: string }) {
+  const style = sentiment ? ({ "--score-color": getSentimentColor(score) } as CSSProperties) : undefined;
   return (
-    <div className={`score-rail ${sentiment ? "score-rail-sentiment" : ""}`}>
+    <div className={`score-rail ${sentiment ? "score-rail-sentiment" : ""}`} style={style}>
       <div className="relative pt-5">
         <span className="score-bubble" style={{left:`${score}%`}}>{score}</span>
         <Progress value={score} aria-label={`${label} ${score}점`} className="score-progress" />
@@ -238,10 +275,10 @@ function ScoreRail({ score, sentiment = false, label }: { score: number; sentime
 
 function PeriodSelector({ period, onChange }: { period: Period; onChange: (period: Period) => void }) {
   return (
-    <div className="flex rounded-xl bg-slate-100 p-1" aria-label="조회 기간">
+    <div className="flex rounded-none bg-[#202020] p-1" aria-label="조회 기간">
       {periods.map((item) => (
         <Button key={item} size="sm" variant="ghost" onClick={() => onChange(item)}
-          className={`h-8 rounded-lg px-3 text-xs sm:text-sm ${period === item ? "bg-white text-blue-700 shadow-sm hover:bg-white" : "text-slate-500"}`}>
+          className={`h-8 rounded-none px-3 text-xs sm:text-sm ${period === item ? "bg-white text-blue-700 shadow-sm hover:bg-white" : "text-slate-300 hover:bg-white/10 hover:text-white"}`}>
           {item}
         </Button>
       ))}
@@ -263,14 +300,18 @@ function MiniIndicatorChart({ item }: { item: Indicator }) {
   );
 }
 
-function SentimentCard({ item, period, kind }: { item: SentimentItem; period: Period; kind: string }) {
+function SentimentCard({ item, period, kind, favorite, onToggle }: { item: SentimentItem; period: Period; kind: SentimentKind; favorite: boolean; onToggle: (kind: SentimentKind, item: SentimentItem) => void }) {
   const visible = item.data.slice(-periodPoints[period]);
   const change = visible.length > 1 ? visible[visible.length - 1].value - visible[0].value : 0;
   const trend: Direction = change > 1 ? "up" : change < -1 ? "down" : "flat";
-  const color = item.score >= 60 ? "#7c3aed" : item.score < 40 ? "#ef4444" : "#0f9f78";
+  const color = getSentimentColor(item.score);
   const stage = getSentimentStage(item.score);
+  const volatility = volatilityByKind[kind][item.name];
   return (
-    <article className="sentiment-card">
+    <article className="sentiment-card group relative">
+      <button type="button" className={`favorite-action ${favorite ? "is-favorite" : ""}`} onClick={() => onToggle(kind, item)} aria-label={`${item.name} ${favorite ? "즐겨찾기 해제" : "즐겨찾기 추가"}`}>
+        <Star className={`size-5 ${favorite ? "fill-current" : ""}`}/><span>{favorite ? "즐겨찾기 해제" : "+ 즐겨찾기"}</span>
+      </button>
       <div className="flex items-start justify-between gap-3">
         <div><h3 className="text-lg font-extrabold text-slate-950">{item.name}</h3>{item.subtitle && <p className="mt-0.5 text-sm text-slate-500">{item.subtitle}</p>}</div>
         <Badge variant="outline" className="stage-badge" style={{color,borderColor:`${color}55`,backgroundColor:`${color}10`}}>{stage}</Badge>
@@ -287,20 +328,21 @@ function SentimentCard({ item, period, kind }: { item: SentimentItem; period: Pe
         </div>
       </div>
       <ScoreRail score={item.score} sentiment label={`${item.name} 공포 탐욕 지수`} />
+      <div className="mt-3 flex items-center justify-between text-sm"><span className="text-slate-500">변동성</span><strong style={{color}}>{volatility}</strong></div>
       <div className="mt-3 flex items-center justify-between border-t border-slate-100 pt-3 text-sm"><span className="text-slate-400">{period} 추세</span><span className={`flex items-center gap-1 font-bold trend-${trend}`}><DirectionIcon direction={trend}/>{change > 0 ? "+" : ""}{change}점</span></div>
     </article>
   );
 }
 
-function SentimentSection({ title, description, items, period, kind }: { title: string; description: string; items: SentimentItem[]; period: Period; kind: string }) {
+function SentimentSection({ title, description, items, period, kind, favorites, onToggle }: { title: string; description: string; items: SentimentItem[]; period: Period; kind: SentimentKind; favorites: Set<string>; onToggle: (kind: SentimentKind, item: SentimentItem) => void }) {
   return (
     <section className="mt-6" aria-labelledby={`${kind}-title`}>
       <div className="mb-3 flex items-end justify-between gap-4">
-        <div><div className="flex items-center gap-2"><Map className="size-5 text-violet-700"/><h2 id={`${kind}-title`} className="text-xl font-extrabold tracking-[-0.03em] text-slate-950">{title}</h2></div><p className="mt-1 text-sm text-slate-600">{description} · {period}</p></div>
-        <span className="hidden text-xs text-slate-500 sm:block">0 극단 공포 · 50 중립 · 100 극단 탐욕</span>
+        <div><div className="flex items-center gap-2"><Map className="size-5 text-violet-300"/><h2 id={`${kind}-title`} className="text-xl font-extrabold tracking-[-0.03em] text-white">{title}</h2></div><p className="mt-1 text-sm text-slate-300">{description} · {period}</p></div>
+        <span className="hidden text-xs text-slate-300 sm:block">0 극단 공포 · 50 중립 · 100 극단 탐욕</span>
       </div>
       <div className={`sentiment-grid sentiment-grid-${kind}`}>
-        {items.map((item) => <SentimentCard key={item.name} item={item} period={period} kind={kind}/>)}
+        {items.map((item) => <SentimentCard key={item.name} item={item} period={period} kind={kind} favorite={favorites.has(sentimentKey(kind,item.name))} onToggle={onToggle}/>)}
       </div>
     </section>
   );
@@ -343,14 +385,105 @@ function IndicatorDetail({ item, period }: { item: Indicator; period: Period }) 
   );
 }
 
+function SummaryMiniChart({ data, period, tone, label }: { data: ChartPoint[]; period: Period; tone: string; label: string }) {
+  const color = {amber:"#d97706",red:"#dc2626",slate:"#475569",green:"#059669",orange:"#ea580c"}[tone] ?? "#475569";
+  const visible = data.slice(-periodPoints[period]);
+  return (
+    <div className="mt-3 h-12 w-full" aria-label={`${label} ${period} 미니 차트`}>
+      <ResponsiveContainer width="100%" height="100%">
+        <AreaChart data={visible} margin={{top:4,right:1,left:1,bottom:2}}>
+          <Area type="monotone" dataKey="value" stroke={color} strokeWidth={2.4} fill={color} fillOpacity={0.1} dot={false} isAnimationActive={false}/>
+        </AreaChart>
+      </ResponsiveContainer>
+    </div>
+  );
+}
+
 export default function Home() {
   const [category, setCategory] = useState<(typeof categories)[number]>("전체");
   const [openIndicator, setOpenIndicator] = useState("");
   const [period, setPeriod] = useState<Period>("3개월");
+  const [summaryCharts, setSummaryCharts] = useState<Set<string>>(new Set());
+  const [user, setUser] = useState<SessionUser | null>(null);
+  const [sessionLoading, setSessionLoading] = useState(true);
+  const [favorites, setFavorites] = useState<Set<string>>(new Set());
   const filtered = useMemo(() => category === "전체" ? indicators : indicators.filter((item) => item.category === category), [category]);
+  const catalog = useMemo(() => [
+    ...countrySentiment.map((item) => ({kind:"global" as const,item})),
+    ...sectorSentiment.map((item) => ({kind:"sector" as const,item})),
+    ...themeSentiment.map((item) => ({kind:"theme" as const,item})),
+  ], []);
+  const favoriteItems = catalog.filter(({kind,item}) => favorites.has(sentimentKey(kind,item.name)));
+
+  useEffect(() => {
+    let active = true;
+    async function loadAccount() {
+      try {
+        const sessionResponse = await fetch("/api/session", {cache:"no-store"});
+        const sessionPayload = await sessionResponse.json() as { user: SessionUser | null };
+        if (!active) return;
+        setUser(sessionPayload.user);
+        if (sessionPayload.user) {
+          const favoriteResponse = await fetch("/api/favorites", {cache:"no-store"});
+          if (favoriteResponse.ok) {
+            const favoritePayload = await favoriteResponse.json() as { favorites: FavoriteRecord[] };
+            if (active) setFavorites(new Set(favoritePayload.favorites.map((favorite) => favorite.itemKey)));
+          }
+        }
+      } catch {
+        if (active) toast.error("사용자 설정을 불러오지 못했습니다.");
+      } finally {
+        if (active) setSessionLoading(false);
+      }
+    }
+    loadAccount();
+    return () => { active = false; };
+  }, []);
+
+  function toggleSummaryChart(label: string) {
+    setSummaryCharts((current) => {
+      const next = new Set(current);
+      if (next.has(label)) next.delete(label);
+      else next.add(label);
+      return next;
+    });
+  }
+
+  async function toggleFavorite(kind: SentimentKind, item: SentimentItem) {
+    if (!user) {
+      window.location.assign("/signin-with-chatgpt?return_to=%2F");
+      return;
+    }
+    const itemKey = sentimentKey(kind,item.name);
+    const removing = favorites.has(itemKey);
+    setFavorites((current) => {
+      const next = new Set(current);
+      if (removing) next.delete(itemKey);
+      else next.add(itemKey);
+      return next;
+    });
+    try {
+      const response = removing
+        ? await fetch(`/api/favorites?itemKey=${encodeURIComponent(itemKey)}`, {method:"DELETE"})
+        : await fetch("/api/favorites", {method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({itemKey,itemType:kind,itemName:item.name})});
+      if (!response.ok) {
+        const payload = await response.json() as {error?:string};
+        throw new Error(payload.error ?? "즐겨찾기를 저장하지 못했습니다.");
+      }
+      toast.success(removing ? "즐겨찾기에서 삭제했습니다." : "즐겨찾기에 추가했습니다.");
+    } catch (error) {
+      setFavorites((current) => {
+        const next = new Set(current);
+        if (removing) next.add(itemKey);
+        else next.delete(itemKey);
+        return next;
+      });
+      toast.error(error instanceof Error ? error.message : "즐겨찾기를 처리하지 못했습니다.");
+    }
+  }
 
   return (
-    <main className="min-h-screen bg-[#d7d9dd] text-[#12213a]">
+    <main className="min-h-screen bg-[#363636] text-[#12213a]">
       <header className="border-b border-white/10 bg-[#07162d] text-white">
         <div className="mx-auto flex max-w-[1480px] items-center justify-between gap-6 px-4 py-4 sm:px-6 lg:px-8">
           <div className="flex min-w-0 items-center gap-3">
@@ -360,7 +493,48 @@ export default function Home() {
           <nav className="hidden items-center gap-1 text-sm font-semibold text-slate-300 lg:flex" aria-label="주요 메뉴">
             {["종합 시황", "물가", "고용", "경기", "금리·유동성", "경제 캘린더"].map((item, index) => <button key={item} className={`rounded-lg px-3 py-2 transition hover:bg-white/10 hover:text-white ${index === 0 ? "bg-white/10 text-white" : ""}`}>{item}</button>)}
           </nav>
-          <Badge className="border border-[#f5b942]/30 bg-[#f5b942]/10 px-3 py-1 text-[#ffd474]">3차 시제품</Badge>
+          <div className="flex items-center gap-2">
+            {sessionLoading ? (
+              <span className="hidden text-xs text-slate-400 sm:inline">계정 확인 중</span>
+            ) : user ? (
+              <Sheet>
+                <SheetTrigger asChild>
+                  <Button className="rounded-none border border-white/20 bg-white/10 text-white hover:bg-white/20">
+                    <Settings2 className="size-4"/><span className="hidden sm:inline">사용자 설정</span>
+                  </Button>
+                </SheetTrigger>
+                <SheetContent className="border-l-0 bg-white sm:max-w-md">
+                  <SheetHeader>
+                    <SheetTitle className="flex items-center gap-2"><UserRound className="size-5"/>사용자 설정</SheetTitle>
+                    <SheetDescription>{user.displayName} · {user.email}</SheetDescription>
+                  </SheetHeader>
+                  <div className="px-4">
+                    <h3 className="text-sm font-extrabold text-slate-950">내 즐겨찾기 {favoriteItems.length}개</h3>
+                    <div className="mt-3 space-y-2">
+                      {favoriteItems.length === 0 ? (
+                        <p className="bg-slate-100 p-4 text-sm leading-6 text-slate-600">글로벌·섹터·테마 박스에 마우스를 올려 즐겨찾기를 추가할 수 있습니다.</p>
+                      ) : favoriteItems.map(({kind,item}) => (
+                        <div key={sentimentKey(kind,item.name)} className="flex items-center justify-between gap-3 bg-slate-100 px-3 py-2.5">
+                          <div><p className="font-bold text-slate-900">{item.name}</p><p className="text-xs text-slate-500">{kind === "global" ? "글로벌" : kind === "sector" ? "섹터" : "테마"} · {getSentimentStage(item.score)} {item.score}점</p></div>
+                          <Button size="sm" variant="ghost" onClick={() => toggleFavorite(kind,item)} className="rounded-none text-rose-600 hover:bg-rose-50 hover:text-rose-700">삭제</Button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  <SheetFooter>
+                    <Button asChild variant="outline" className="w-full rounded-none">
+                      <a href="/signout-with-chatgpt?return_to=%2F" target="_top"><LogOut className="size-4"/>로그아웃</a>
+                    </Button>
+                  </SheetFooter>
+                </SheetContent>
+              </Sheet>
+            ) : (
+              <Button asChild className="rounded-none bg-[#f5b942] text-[#07162d] hover:bg-[#ffd474]">
+                <a href="/signin-with-chatgpt?return_to=%2F" target="_top"><LogIn className="size-4"/>회원가입 / 로그인</a>
+              </Button>
+            )}
+            <Badge className="hidden border border-[#f5b942]/30 bg-[#f5b942]/10 px-3 py-1 text-[#ffd474] sm:inline-flex">4차 시제품</Badge>
+          </div>
         </div>
       </header>
 
@@ -369,24 +543,29 @@ export default function Home() {
       </div>
 
       <div className="mx-auto max-w-[1480px] px-4 py-5 sm:px-6 lg:px-8 lg:py-7">
-        <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div><p className="text-sm font-bold text-slate-950">전체 조회 기간</p><p className="mt-0.5 text-xs text-slate-600">글로벌·섹터·테마 지도와 펼쳐진 지표 차트에 함께 적용됩니다.</p></div>
-          <div className="overflow-x-auto pb-1"><PeriodSelector period={period} onChange={setPeriod}/></div>
-        </div>
-
         <div className="sticky-summary">
+          <div className="sticky-period overflow-x-auto pb-2"><PeriodSelector period={period} onChange={setPeriod}/></div>
           <section className="summary-grid" aria-label="시장 상태 요약">
-            {summaryItems.map(({label,value,score,note,icon:Icon,tone}) => (
-              <article key={label} className={`summary-card summary-${tone}`}>
+            {summaryItems.map(({label,value,score,note,icon:Icon,tone,data}) => (
+              <button type="button" key={label} aria-pressed={summaryCharts.has(label)} onClick={() => toggleSummaryChart(label)} className={`summary-card summary-${tone} text-left`}>
                 <div className="flex items-center justify-between"><span className="text-sm font-bold text-slate-600">{label}</span><Icon className="size-4" /></div>
                 <div className="mt-2 flex items-end justify-between gap-3"><div className="flex items-baseline gap-2"><strong className="text-2xl font-extrabold tracking-tight">{value}</strong><span className="text-lg font-black text-slate-900">{score}점</span></div><span className="max-w-32 text-right text-xs leading-5 text-slate-600">{note}</span></div>
-                <ScoreRail score={score} label={label}/>
-              </article>
+                {summaryCharts.has(label) ? <SummaryMiniChart data={data} period={period} tone={tone} label={label}/> : <ScoreRail score={score} label={label}/>}
+              </button>
             ))}
           </section>
         </div>
 
-        <SentimentSection title="글로벌 공포 탐욕" description="국가별 대표지수의 심리 점수" items={countrySentiment} period={period} kind="global"/>
+        {favoriteItems.length > 0 && (
+          <section className="mt-6" aria-labelledby="favorite-title">
+            <div className="mb-3 flex items-center gap-2"><Star className="size-5 fill-amber-300 text-amber-300"/><h2 id="favorite-title" className="text-xl font-extrabold tracking-[-0.03em] text-white">내 즐겨찾기</h2></div>
+            <div className="sentiment-grid sentiment-grid-favorite">
+              {favoriteItems.map(({kind,item}) => <SentimentCard key={sentimentKey(kind,item.name)} item={item} period={period} kind={kind} favorite onToggle={toggleFavorite}/>) }
+            </div>
+          </section>
+        )}
+
+        <SentimentSection title="글로벌 공포 탐욕" description="국가별 대표지수의 심리 점수와 지역 변동성 지수" items={countrySentiment} period={period} kind="global" favorites={favorites} onToggle={toggleFavorite}/>
 
         <section className="indicator-panel mt-6">
           <div className="border-b border-slate-300 px-4 py-5 sm:px-5">
@@ -420,9 +599,10 @@ export default function Home() {
           </div>
         </section>
 
-        <SentimentSection title="섹터별 공포 탐욕" description="GICS 11개 섹터의 심리 점수" items={sectorSentiment} period={period} kind="sector"/>
-        <SentimentSection title="테마별 공포 탐욕" description="주요 성장 테마의 심리 점수" items={themeSentiment} period={period} kind="theme"/>
+        <SentimentSection title="섹터별 공포 탐욕" description="GICS 11개 섹터의 심리 점수와 시장 대비 베타" items={sectorSentiment} period={period} kind="sector" favorites={favorites} onToggle={toggleFavorite}/>
+        <SentimentSection title="테마별 공포 탐욕" description="주요 성장 테마의 심리 점수와 시장 대비 베타" items={themeSentiment} period={period} kind="theme" favorites={favorites} onToggle={toggleFavorite}/>
       </div>
+      <Toaster richColors position="bottom-right"/>
     </main>
   );
 }
