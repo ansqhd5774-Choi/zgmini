@@ -97,7 +97,7 @@
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: Pretendard, "Noto Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", Arial, sans-serif;
 }
 
 button,
@@ -110,7 +110,8 @@ button,
   border-left-width: 4px;
   border-radius: 1rem;
   background: #ffffff;
-  padding: 1rem;
+  min-height: 10.5rem;
+  padding: 1rem 1.1rem;
   box-shadow: 0 8px 24px rgba(15, 35, 65, 0.045);
 }
 
@@ -118,6 +119,98 @@ button,
 .summary-red { border-left-color: #f05252; color: #c81e1e; }
 .summary-slate { border-left-color: #64748b; color: #475569; }
 .summary-green { border-left-color: #10b981; color: #047857; }
+
+.overview-card {
+  overflow: hidden;
+  border: 1px solid #dce3ed;
+  border-radius: 1rem;
+  background: #ffffff;
+  box-shadow: 0 10px 30px rgba(15, 35, 65, 0.06);
+}
+
+.score-rail {
+  margin-top: 0.75rem;
+}
+
+.score-progress {
+  height: 0.5rem;
+  overflow: hidden;
+  background: linear-gradient(90deg, #fee2e2 0%, #fef3c7 50%, #d1fae5 100%);
+}
+
+.score-progress [data-slot="progress-indicator"] {
+  background: linear-gradient(90deg, #ef4444 0%, #f59e0b 50%, #10b981 100%);
+}
+
+.score-rail-sentiment .score-progress {
+  background: #e2e8f0;
+}
+
+.score-rail-sentiment .score-progress [data-slot="progress-indicator"] {
+  background: linear-gradient(90deg, #14b8a6 0%, #2563eb 52%, #7e22ce 100%);
+}
+
+.score-bubble {
+  position: absolute;
+  top: 0;
+  min-width: 1.55rem;
+  transform: translateX(-50%);
+  border-radius: 0.3rem;
+  background: #172554;
+  padding: 0.08rem 0.25rem;
+  color: white;
+  font-size: 0.65rem;
+  font-weight: 800;
+  line-height: 1rem;
+  text-align: center;
+}
+
+.score-bubble::after {
+  position: absolute;
+  bottom: -0.2rem;
+  left: 50%;
+  width: 0.4rem;
+  height: 0.4rem;
+  transform: translateX(-50%) rotate(45deg);
+  background: #172554;
+  content: "";
+}
+
+.score-dot {
+  position: absolute;
+  top: 1.1rem;
+  width: 0.8rem;
+  height: 0.8rem;
+  transform: translateX(-50%);
+  border: 3px solid #ffffff;
+  border-radius: 9999px;
+  background: #172554;
+  box-shadow: 0 0 0 2px #172554;
+}
+
+.score-steps {
+  margin-top: 0.4rem;
+  display: flex;
+  justify-content: space-between;
+  color: #94a3b8;
+  font-size: 0.65rem;
+  font-weight: 600;
+}
+
+.country-card {
+  min-height: 15rem;
+  border: 1px solid #dce3ed;
+  border-radius: 1rem;
+  background: #ffffff;
+  padding: 1rem;
+  box-shadow: 0 8px 24px rgba(15, 35, 65, 0.045);
+}
+
+.indicator-row > td {
+  height: 6rem;
+  padding-top: 0.9rem;
+  padding-bottom: 0.9rem;
+}
 
 .signal-positive { border: 1px solid #a7f3d0; background: #ecfdf5; color: #047857; }
 .signal-negative { border: 1px solid #fecdd3; background: #fff1f2; color: #be123c; }
@@ -139,12 +232,12 @@ button,
 .analysis-neutral { border-color: #cbd5e1; background: #f8fafc; color: #475569; }
 
 @media (max-width: 760px) {
-  [data-slot="table-head"]:nth-child(4),
-  [data-slot="table-cell"]:nth-child(4),
   [data-slot="table-head"]:nth-child(5),
   [data-slot="table-cell"]:nth-child(5),
   [data-slot="table-head"]:nth-child(6),
-  [data-slot="table-cell"]:nth-child(6) {
+  [data-slot="table-cell"]:nth-child(6),
+  [data-slot="table-head"]:nth-child(7),
+  [data-slot="table-cell"]:nth-child(7) {
     display: none;
   }
 }
