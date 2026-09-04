@@ -122,7 +122,7 @@ const indicators: Indicator[] = [
 ];
 
 const categories = ["전체", "물가", "고용", "경기", "금리"] as const;
-const periods = ["1개월", "3개월", "6개월", "1년"] as const;
+const periods = ["1주일", "1개월", "3개월", "6개월", "1년"] as const;
 
 function DirectionIcon({ direction }: { direction: Direction }) {
   if (direction === "up") return <ArrowUpRight className="size-4" />;
@@ -142,11 +142,11 @@ function SignalBadge({ signal }: { signal: Signal }) {
 export default function Home() {
   const [category, setCategory] = useState<(typeof categories)[number]>("전체");
   const [selectedId, setSelectedId] = useState("core-pce");
-  const [period, setPeriod] = useState<(typeof periods)[number]>("6개월");
+  const [period, setPeriod] = useState<(typeof periods)[number]>("3개월");
   const filtered = useMemo(() => category === "전체" ? indicators : indicators.filter((item) => item.category === category), [category]);
   const selected = indicators.find((item) => item.id === selectedId) ?? indicators[0];
   const visibleChart = useMemo(() => {
-    const pointCount = { "1개월": 2, "3개월": 3, "6개월": 6, "1년": 12 }[period];
+    const pointCount = { "1주일": 1, "1개월": 2, "3개월": 3, "6개월": 6, "1년": 12 }[period];
     return selected.chart.slice(-pointCount);
   }, [period, selected]);
 
