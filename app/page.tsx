@@ -3,8 +3,9 @@
 import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import {
   Activity, ArrowDownRight, ArrowRight, ArrowUpRight, CalendarDays,
-  CheckCircle2, CircleAlert, Database, Fuel, Gauge, Info,
-  LineChart as LineChartIcon, LogIn, LogOut, Map, Settings2, Star, UserRound,
+  CheckCircle2, CircleAlert, Clock3, Database, Fuel, Gauge, Info,
+  LineChart as LineChartIcon, LogIn, LogOut, Map, Settings2, ShieldCheck,
+  Sparkles, Star, TrendingDown, TrendingUp, UserRound, Zap,
 } from "lucide-react";
 import {
   Area, AreaChart, CartesianGrid, Line, LineChart, ReferenceLine,
@@ -26,7 +27,8 @@ import { toast } from "sonner";
 
 type Direction = "up" | "down" | "flat";
 type Signal = "positive" | "negative" | "neutral";
-type Period = "1주일" | "1개월" | "3개월" | "6개월" | "1년";
+type Period = "1일" | "1주일" | "1개월" | "6개월" | "1년";
+type CountryCode = "US" | "KR" | "CN" | "JP" | "EU";
 type ChartPoint = { label: string; value: number };
 type Indicator = {
   id: string;
@@ -60,6 +62,13 @@ type SentimentItem = {
 type SentimentKind = "global" | "sector" | "theme";
 type SessionUser = { displayName: string; email: string };
 type FavoriteRecord = { itemKey: string; itemType: SentimentKind; itemName: string };
+type IndicatorMeta = {
+  country: CountryCode;
+  currentDate: string;
+  previousDate: string;
+  releaseCycle: string;
+  nextRelease: string;
+};
 
 const indicators: Indicator[] = [
   {
@@ -146,6 +155,72 @@ const indicators: Indicator[] = [
 
 const makeSeries = (values: number[]): ChartPoint[] => values.map((value, index) => ({label:`${index + 1}월`,value}));
 
+function makeRegionalIndicator(input: Omit<Indicator, "chart"> & { values: number[] }): Indicator {
+  const { values, ...indicator } = input;
+  return { ...indicator, chart: makeSeries(values) };
+}
+
+const regionalIndicators: Indicator[] = [
+  makeRegionalIndicator({id:"kr-cpi",name:"한국 소비자물가",short:"Korea CPI",category:"물가",importance:5,current:"2.1%",forecast:"2.2%",previous:"2.3%",surprise:"-0.1%p",direction:"down",signal:"positive",trend:"3개월 둔화",release:"10월 2일",source:"통계청",unit:"% YoY",benchmark:2,benchmarkLabel:"물가안정 목표 2%",summary:"물가 상승률이 예상보다 낮아 통화정책 부담이 완화되는 흐름입니다.",values:[2.7,2.6,2.5,2.4,2.3,2.1]}),
+  makeRegionalIndicator({id:"kr-unemployment",name:"한국 실업률",short:"Korea Unemployment",category:"고용",importance:4,current:"2.8%",forecast:"2.9%",previous:"2.9%",surprise:"-0.1%p",direction:"down",signal:"positive",trend:"고용 안정",release:"9월 16일",source:"통계청",unit:"%",benchmark:3.5,benchmarkLabel:"주의 기준 3.5%",summary:"실업률이 예상과 이전치보다 낮아 고용시장에는 긍정적인 신호입니다.",values:[3.1,3.0,3.0,2.9,2.9,2.8]}),
+  makeRegionalIndicator({id:"kr-exports",name:"한국 수출 증가율",short:"Korea Exports",category:"경기",importance:5,current:"+5.8%",forecast:"+5.0%",previous:"+5.4%",surprise:"+0.8%p",direction:"up",signal:"positive",trend:"반도체 중심 회복",release:"10월 1일",source:"산업통상자원부",unit:"% YoY",benchmark:0,benchmarkLabel:"증가·감소 기준 0%",summary:"수출이 예상보다 강해 제조업과 경기 모멘텀에 긍정적입니다.",values:[-1.2,0.8,2.7,4.1,5.4,5.8]}),
+  makeRegionalIndicator({id:"kr-bok-rate",name:"한국 기준금리",short:"BOK Base Rate",category:"금리",importance:5,current:"2.50%",forecast:"2.50%",previous:"2.50%",surprise:"동결",direction:"flat",signal:"neutral",trend:"동결 유지",release:"10월 12일",source:"한국은행",unit:"%",benchmark:3,benchmarkLabel:"부담 기준 3.0%",summary:"기준금리 동결로 금융 여건의 급격한 변화는 제한적입니다.",values:[3.25,3.0,2.75,2.5,2.5,2.5]}),
+  makeRegionalIndicator({id:"kr-pmi",name:"한국 제조업 PMI",short:"Korea Manufacturing PMI",category:"경기",importance:4,current:"50.6",forecast:"50.2",previous:"49.8",surprise:"+0.4",direction:"up",signal:"positive",trend:"확장 전환",release:"10월 1일",source:"S&P Global",unit:"지수",benchmark:50,benchmarkLabel:"확장·위축 기준 50",summary:"제조업 지수가 기준선 50을 넘어 완만한 확장 신호를 보입니다.",values:[48.1,48.7,49.2,49.5,49.8,50.6]}),
+
+  makeRegionalIndicator({id:"cn-cpi",name:"중국 소비자물가",short:"China CPI",category:"물가",importance:5,current:"0.5%",forecast:"0.4%",previous:"0.2%",surprise:"+0.1%p",direction:"up",signal:"neutral",trend:"저물가 완화",release:"9월 9일",source:"중국 국가통계국",unit:"% YoY",benchmark:2,benchmarkLabel:"정상화 기준 2%",summary:"물가가 개선됐지만 여전히 낮아 내수 회복 여부를 추가 확인해야 합니다.",values:[-0.2,0,0.1,0.1,0.2,0.5]}),
+  makeRegionalIndicator({id:"cn-ppi",name:"중국 생산자물가",short:"China PPI",category:"물가",importance:4,current:"-1.8%",forecast:"-1.9%",previous:"-2.3%",surprise:"+0.1%p",direction:"up",signal:"positive",trend:"디플레 압력 완화",release:"9월 9일",source:"중국 국가통계국",unit:"% YoY",benchmark:0,benchmarkLabel:"물가 회복 기준 0%",summary:"생산자물가 하락폭이 줄어 기업 가격 압력이 개선되는 흐름입니다.",values:[-3.1,-2.9,-2.7,-2.5,-2.3,-1.8]}),
+  makeRegionalIndicator({id:"cn-pmi",name:"중국 제조업 PMI",short:"China Manufacturing PMI",category:"경기",importance:5,current:"49.7",forecast:"49.5",previous:"49.3",surprise:"+0.2",direction:"up",signal:"neutral",trend:"위축폭 축소",release:"9월 30일",source:"중국 국가통계국",unit:"지수",benchmark:50,benchmarkLabel:"확장·위축 기준 50",summary:"예상은 웃돌았지만 기준선 50 아래여서 회복 확인이 더 필요합니다.",values:[48.6,48.8,49.0,49.1,49.3,49.7]}),
+  makeRegionalIndicator({id:"cn-retail",name:"중국 소매판매",short:"China Retail Sales",category:"경기",importance:4,current:"+4.2%",forecast:"+4.0%",previous:"+3.7%",surprise:"+0.2%p",direction:"up",signal:"positive",trend:"내수 회복",release:"9월 15일",source:"중국 국가통계국",unit:"% YoY",benchmark:0,benchmarkLabel:"증가·감소 기준 0%",summary:"소매판매가 예상보다 강해 내수 회복 신호로 해석합니다.",values:[2.1,2.6,3.0,3.3,3.7,4.2]}),
+  makeRegionalIndicator({id:"cn-production",name:"중국 산업생산",short:"China Industrial Production",category:"경기",importance:4,current:"+5.5%",forecast:"+5.4%",previous:"+5.2%",surprise:"+0.1%p",direction:"up",signal:"positive",trend:"생산 개선",release:"9월 15일",source:"중국 국가통계국",unit:"% YoY",benchmark:0,benchmarkLabel:"증가·감소 기준 0%",summary:"산업생산이 예상치를 웃돌아 제조업 활동에 긍정적인 신호입니다.",values:[4.3,4.6,4.8,5.0,5.2,5.5]}),
+
+  makeRegionalIndicator({id:"jp-tokyo-cpi",name:"일본 도쿄 소비자물가",short:"Tokyo CPI",category:"물가",importance:5,current:"2.6%",forecast:"2.7%",previous:"2.9%",surprise:"-0.1%p",direction:"down",signal:"positive",trend:"물가 둔화",release:"9월 25일",source:"일본 총무성",unit:"% YoY",benchmark:2,benchmarkLabel:"물가 목표 2%",summary:"도쿄 물가가 예상보다 낮아 추가 긴축 부담이 완화됐습니다.",values:[3.2,3.1,3.0,2.9,2.9,2.6]}),
+  makeRegionalIndicator({id:"jp-unemployment",name:"일본 실업률",short:"Japan Unemployment",category:"고용",importance:4,current:"2.5%",forecast:"2.5%",previous:"2.6%",surprise:"예상 부합",direction:"down",signal:"positive",trend:"고용 안정",release:"10월 1일",source:"일본 총무성",unit:"%",benchmark:3,benchmarkLabel:"주의 기준 3%",summary:"낮은 실업률이 유지돼 고용시장은 안정적인 상태입니다.",values:[2.8,2.7,2.7,2.6,2.6,2.5]}),
+  makeRegionalIndicator({id:"jp-production",name:"일본 산업생산",short:"Japan Industrial Production",category:"경기",importance:4,current:"+1.2%",forecast:"+0.8%",previous:"-0.6%",surprise:"+0.4%p",direction:"up",signal:"positive",trend:"생산 반등",release:"9월 30일",source:"일본 경제산업성",unit:"% MoM",benchmark:0,benchmarkLabel:"증가·감소 기준 0%",summary:"산업생산이 감소에서 증가로 전환해 경기에는 긍정적입니다.",values:[-1.1,-0.8,-0.4,0.2,-0.6,1.2]}),
+  makeRegionalIndicator({id:"jp-boj-rate",name:"일본 정책금리",short:"BOJ Policy Rate",category:"금리",importance:5,current:"0.50%",forecast:"0.50%",previous:"0.50%",surprise:"동결",direction:"flat",signal:"neutral",trend:"정책 정상화 관찰",release:"9월 18일",source:"일본은행",unit:"%",benchmark:1,benchmarkLabel:"긴축 부담 기준 1%",summary:"정책금리 동결로 단기 금융 여건 변화는 제한적입니다.",values:[0.1,0.25,0.25,0.5,0.5,0.5]}),
+  makeRegionalIndicator({id:"jp-tankan",name:"일본 단칸 대기업지수",short:"BOJ Tankan",category:"경기",importance:4,current:"13",forecast:"12",previous:"12",surprise:"+1",direction:"up",signal:"positive",trend:"기업심리 개선",release:"10월 1일",source:"일본은행",unit:"지수",benchmark:0,benchmarkLabel:"낙관·비관 기준 0",summary:"대기업 심리가 예상보다 양호해 설비투자 환경에 긍정적입니다.",values:[8,9,10,11,12,13]}),
+
+  makeRegionalIndicator({id:"eu-cpi",name:"유로존 소비자물가",short:"Eurozone CPI",category:"물가",importance:5,current:"2.1%",forecast:"2.1%",previous:"2.0%",surprise:"예상 부합",direction:"up",signal:"neutral",trend:"목표 부근",release:"9월 17일",source:"Eurostat",unit:"% YoY",benchmark:2,benchmarkLabel:"물가 목표 2%",summary:"물가가 목표 부근에서 움직여 통화정책에는 중립적인 환경입니다.",values:[2.4,2.3,2.2,2.1,2.0,2.1]}),
+  makeRegionalIndicator({id:"eu-unemployment",name:"유로존 실업률",short:"Eurozone Unemployment",category:"고용",importance:4,current:"6.2%",forecast:"6.2%",previous:"6.3%",surprise:"예상 부합",direction:"down",signal:"positive",trend:"고용 안정",release:"10월 1일",source:"Eurostat",unit:"%",benchmark:7,benchmarkLabel:"주의 기준 7%",summary:"실업률이 낮아져 유로존 고용시장은 안정적인 흐름입니다.",values:[6.6,6.5,6.4,6.4,6.3,6.2]}),
+  makeRegionalIndicator({id:"eu-gdp",name:"유로존 GDP 성장률",short:"Eurozone GDP",category:"경기",importance:5,current:"0.2%",forecast:"0.2%",previous:"0.1%",surprise:"예상 부합",direction:"up",signal:"positive",trend:"저성장 회복",release:"10월 30일",source:"Eurostat",unit:"% QoQ",benchmark:0,benchmarkLabel:"성장·침체 기준 0%",summary:"성장률이 플러스를 유지해 침체 위험이 완만하게 낮아졌습니다.",values:[-0.1,0,0.1,0.1,0.1,0.2]}),
+  makeRegionalIndicator({id:"eu-ecb-rate",name:"ECB 예금금리",short:"ECB Deposit Rate",category:"금리",importance:5,current:"2.00%",forecast:"2.00%",previous:"2.00%",surprise:"동결",direction:"flat",signal:"neutral",trend:"완화 이후 동결",release:"9월 10일",source:"ECB",unit:"%",benchmark:3,benchmarkLabel:"긴축 부담 기준 3%",summary:"예금금리 동결로 금융 여건은 이전 회의와 비슷합니다.",values:[3.5,3.25,3.0,2.5,2.0,2.0]}),
+  makeRegionalIndicator({id:"eu-pmi",name:"유로존 종합 PMI",short:"Eurozone Composite PMI",category:"경기",importance:4,current:"51.2",forecast:"50.9",previous:"50.7",surprise:"+0.3",direction:"up",signal:"positive",trend:"확장 강화",release:"9월 23일",source:"S&P Global",unit:"지수",benchmark:50,benchmarkLabel:"확장·위축 기준 50",summary:"종합 PMI가 기준선 위에서 개선돼 서비스와 제조업의 완만한 회복을 나타냅니다.",values:[49.4,49.8,50.1,50.4,50.7,51.2]}),
+];
+
+const allIndicators = [...indicators, ...regionalIndicators];
+
+const indicatorMeta: Record<string, IndicatorMeta> = {
+  "core-pce":{country:"US",currentDate:"2026.07.31",previousDate:"2026.06.30",releaseCycle:"월간",nextRelease:"2026-09-25"},
+  cpi:{country:"US",currentDate:"2026.08.31",previousDate:"2026.07.31",releaseCycle:"월간",nextRelease:"2026-09-11"},
+  ppi:{country:"US",currentDate:"2026.08.31",previousDate:"2026.07.31",releaseCycle:"월간",nextRelease:"2026-09-10"},
+  unemployment:{country:"US",currentDate:"2026.08.31",previousDate:"2026.07.31",releaseCycle:"월간",nextRelease:"2026-10-02"},
+  payrolls:{country:"US",currentDate:"2026.08.31",previousDate:"2026.07.31",releaseCycle:"월간",nextRelease:"2026-10-02"},
+  claims:{country:"US",currentDate:"2026.09.03",previousDate:"2026.08.27",releaseCycle:"주간",nextRelease:"2026-09-10"},
+  gdp:{country:"US",currentDate:"2026.06.30",previousDate:"2026.03.31",releaseCycle:"분기",nextRelease:"2026-09-24"},
+  ism:{country:"US",currentDate:"2026.08.31",previousDate:"2026.07.31",releaseCycle:"월간",nextRelease:"2026-10-01"},
+  retail:{country:"US",currentDate:"2026.07.31",previousDate:"2026.06.30",releaseCycle:"월간",nextRelease:"2026-09-16"},
+  "ten-year":{country:"US",currentDate:"2026.09.04",previousDate:"2026.09.03",releaseCycle:"매 거래일",nextRelease:"실시간"},
+  "kr-cpi":{country:"KR",currentDate:"2026.08.31",previousDate:"2026.07.31",releaseCycle:"월간",nextRelease:"2026-10-02"},
+  "kr-unemployment":{country:"KR",currentDate:"2026.08.31",previousDate:"2026.07.31",releaseCycle:"월간",nextRelease:"2026-09-16"},
+  "kr-exports":{country:"KR",currentDate:"2026.08.31",previousDate:"2026.07.31",releaseCycle:"월간",nextRelease:"2026-10-01"},
+  "kr-bok-rate":{country:"KR",currentDate:"2026.08.28",previousDate:"2026.07.10",releaseCycle:"연 8회",nextRelease:"2026-10-12"},
+  "kr-pmi":{country:"KR",currentDate:"2026.08.31",previousDate:"2026.07.31",releaseCycle:"월간",nextRelease:"2026-10-01"},
+  "cn-cpi":{country:"CN",currentDate:"2026.08.31",previousDate:"2026.07.31",releaseCycle:"월간",nextRelease:"2026-09-09"},
+  "cn-ppi":{country:"CN",currentDate:"2026.08.31",previousDate:"2026.07.31",releaseCycle:"월간",nextRelease:"2026-09-09"},
+  "cn-pmi":{country:"CN",currentDate:"2026.08.31",previousDate:"2026.07.31",releaseCycle:"월간",nextRelease:"2026-09-30"},
+  "cn-retail":{country:"CN",currentDate:"2026.07.31",previousDate:"2026.06.30",releaseCycle:"월간",nextRelease:"2026-09-15"},
+  "cn-production":{country:"CN",currentDate:"2026.07.31",previousDate:"2026.06.30",releaseCycle:"월간",nextRelease:"2026-09-15"},
+  "jp-tokyo-cpi":{country:"JP",currentDate:"2026.08.31",previousDate:"2026.07.31",releaseCycle:"월간",nextRelease:"2026-09-25"},
+  "jp-unemployment":{country:"JP",currentDate:"2026.08.31",previousDate:"2026.07.31",releaseCycle:"월간",nextRelease:"2026-10-01"},
+  "jp-production":{country:"JP",currentDate:"2026.07.31",previousDate:"2026.06.30",releaseCycle:"월간",nextRelease:"2026-09-30"},
+  "jp-boj-rate":{country:"JP",currentDate:"2026.07.31",previousDate:"2026.06.17",releaseCycle:"연 8회",nextRelease:"2026-09-18"},
+  "jp-tankan":{country:"JP",currentDate:"2026.06.30",previousDate:"2026.03.31",releaseCycle:"분기",nextRelease:"2026-10-01"},
+  "eu-cpi":{country:"EU",currentDate:"2026.08.31",previousDate:"2026.07.31",releaseCycle:"월간",nextRelease:"2026-09-17"},
+  "eu-unemployment":{country:"EU",currentDate:"2026.07.31",previousDate:"2026.06.30",releaseCycle:"월간",nextRelease:"2026-10-01"},
+  "eu-gdp":{country:"EU",currentDate:"2026.06.30",previousDate:"2026.03.31",releaseCycle:"분기",nextRelease:"2026-10-30"},
+  "eu-ecb-rate":{country:"EU",currentDate:"2026.07.23",previousDate:"2026.06.11",releaseCycle:"연 8회",nextRelease:"2026-09-10"},
+  "eu-pmi":{country:"EU",currentDate:"2026.08.31",previousDate:"2026.07.31",releaseCycle:"월간",nextRelease:"2026-09-23"},
+};
+
 const countrySentiment: SentimentItem[] = [
   { name: "미국", subtitle: "S&P 500", score: 71, data: makeSeries([44,47,49,53,57,55,59,63,61,66,69,71]) },
   { name: "한국", subtitle: "KOSPI", score: 46, data: makeSeries([58,54,51,48,43,40,42,39,44,47,45,46]) },
@@ -181,6 +256,24 @@ const themeSentiment: SentimentItem[] = [
   {name:"바이오테크",score:43,data:makeSeries([49,47,45,42,40,43,46,44,41,42,45,43])},
   {name:"수소",score:34,data:makeSeries([52,48,44,41,38,35,32,36,39,35,33,34])},
   {name:"태양광",score:31,data:makeSeries([47,44,41,38,35,32,29,33,36,32,30,31])},
+  {name:"드론·UAM",score:65,data:makeSeries([38,41,45,48,52,55,58,61,59,62,64,65])},
+  {name:"의료기기",score:56,data:makeSeries([48,49,51,50,53,52,54,55,53,54,55,56])},
+  {name:"디지털헬스",score:52,data:makeSeries([43,46,49,47,50,53,51,54,52,50,51,52])},
+  {name:"K-콘텐츠·드라마",score:47,data:makeSeries([55,53,50,48,45,43,46,49,51,48,46,47])},
+  {name:"게임·e스포츠",score:58,data:makeSeries([44,47,49,52,50,54,56,53,55,57,56,58])},
+  {name:"방산",score:72,data:makeSeries([39,44,48,52,57,60,63,67,65,69,71,72])},
+  {name:"클라우드·SaaS",score:62,data:makeSeries([48,50,53,55,57,59,58,60,61,59,60,62])},
+  {name:"핀테크",score:45,data:makeSeries([52,50,47,44,42,45,48,46,43,44,46,45])},
+  {name:"블록체인·디지털자산",score:69,data:makeSeries([34,41,38,47,52,49,58,61,57,65,67,69])},
+  {name:"AR·VR",score:39,data:makeSeries([54,50,47,43,41,38,36,40,42,38,37,39])},
+  {name:"휴머노이드",score:76,data:makeSeries([36,42,48,53,58,62,66,70,68,72,74,76])},
+  {name:"핵융합",score:61,data:makeSeries([31,35,39,44,47,51,55,58,56,59,60,61])},
+  {name:"탄소포집",score:41,data:makeSeries([52,49,46,44,40,38,42,45,43,40,42,41])},
+  {name:"희토류·핵심광물",score:67,data:makeSeries([46,49,52,55,53,58,60,63,61,64,66,67])},
+  {name:"데이터센터 액체냉각",score:70,data:makeSeries([41,45,50,54,58,61,64,66,65,68,69,70])},
+  {name:"실리콘 포토닉스",score:64,data:makeSeries([37,41,45,49,52,56,59,61,58,62,63,64])},
+  {name:"AI 신약개발",score:55,data:makeSeries([46,49,51,48,52,54,50,53,56,54,53,55])},
+  {name:"자원 재활용",score:36,data:makeSeries([51,48,45,42,39,36,34,37,40,38,35,36])},
 ];
 
 const summaryItems = [
@@ -200,12 +293,21 @@ const volatilityByKind: Record<SentimentKind, Record<string, string>> = {
   },
   theme: {
     "AI 반도체":"베타 1.62","데이터센터 전력":"베타 1.41","양자컴퓨팅":"베타 2.18","로봇·자동화":"베타 1.37","우주·위성":"베타 1.74","사이버보안":"베타 1.19","원전·SMR":"베타 1.46","자율주행":"베타 1.71","전고체 배터리":"베타 1.58","바이오테크":"베타 1.32","수소":"베타 1.69","태양광":"베타 1.54",
+    "드론·UAM":"베타 1.83","의료기기":"베타 0.86","디지털헬스":"베타 1.24","K-콘텐츠·드라마":"베타 1.07","게임·e스포츠":"베타 1.31","방산":"베타 0.92","클라우드·SaaS":"베타 1.29","핀테크":"베타 1.43","블록체인·디지털자산":"베타 2.04","AR·VR":"베타 1.66","휴머노이드":"베타 1.89","핵융합":"베타 1.77","탄소포집":"베타 1.38","희토류·핵심광물":"베타 1.21","데이터센터 액체냉각":"베타 1.35","실리콘 포토닉스":"베타 1.52","AI 신약개발":"베타 1.47","자원 재활용":"베타 1.09",
   },
 };
 
 const categories = ["전체", "물가", "고용", "경기", "금리"] as const;
-const periods: Period[] = ["1주일", "1개월", "3개월", "6개월", "1년"];
-const periodPoints: Record<Period, number> = {"1주일":2,"1개월":3,"3개월":4,"6개월":6,"1년":12};
+const periods: Period[] = ["1일", "1주일", "1개월", "6개월", "1년"];
+const periodPoints: Record<Period, number> = {"1일":2,"1주일":3,"1개월":4,"6개월":7,"1년":12};
+const countryFilters: {code:"ALL" | CountryCode; label:string; flag:string}[] = [
+  {code:"ALL",label:"전체",flag:"🌐"},{code:"US",label:"미국",flag:"🇺🇸"},{code:"KR",label:"한국",flag:"🇰🇷"},
+  {code:"CN",label:"중국",flag:"🇨🇳"},{code:"JP",label:"일본",flag:"🇯🇵"},{code:"EU",label:"유럽",flag:"🇪🇺"},
+];
+const countryMap: Record<CountryCode, {label:string;flag:string}> = {
+  US:{label:"미국",flag:"🇺🇸"},KR:{label:"한국",flag:"🇰🇷"},CN:{label:"중국",flag:"🇨🇳"},JP:{label:"일본",flag:"🇯🇵"},EU:{label:"유럽",flag:"🇪🇺"},
+};
+const DATA_UPDATED_AT = "2026-09-05T04:05:00Z";
 
 function getSentimentStage(score: number) {
   if (score < 20) return "극단 공포";
@@ -225,6 +327,38 @@ function getSentimentColor(score: number) {
 
 function sentimentKey(kind: SentimentKind, name: string) {
   return `${kind}:${name}`;
+}
+
+function getVisibleSeries(data: ChartPoint[], period: Period) {
+  const available = data.filter((point) => Number.isFinite(point.value));
+  return available.slice(-periodPoints[period]);
+}
+
+function formatUpdatedAt() {
+  return new Intl.DateTimeFormat("ko-KR", {
+    timeZone: "Asia/Seoul", year: "numeric", month: "2-digit", day: "2-digit",
+    hour: "2-digit", minute: "2-digit", hour12: false,
+  }).format(new Date(DATA_UPDATED_AT));
+}
+
+function getDDay(value: string) {
+  if (value === "실시간") return "실시간";
+  const updateDate = new Date(DATA_UPDATED_AT);
+  const targetDate = new Date(`${value}T00:00:00+09:00`);
+  const todayKst = new Date(`${new Intl.DateTimeFormat("en-CA", {timeZone:"Asia/Seoul",year:"numeric",month:"2-digit",day:"2-digit"}).format(updateDate)}T00:00:00+09:00`);
+  const days = Math.ceil((targetDate.getTime() - todayKst.getTime()) / 86_400_000);
+  if (days === 0) return "D-DAY";
+  return days > 0 ? `D-${days}` : `D+${Math.abs(days)}`;
+}
+
+function displayDate(value: string) {
+  if (value === "실시간") return value;
+  const [,month,day] = value.split("-");
+  return `${Number(month)}월 ${Number(day)}일`;
+}
+
+function betaOf(item: SentimentItem) {
+  return Number(volatilityByKind.theme[item.name]?.replace("베타 ", "")) || 0;
 }
 
 function expandIndicatorHistory(data: ChartPoint[], seed: number) {
@@ -301,7 +435,7 @@ function MiniIndicatorChart({ item }: { item: Indicator }) {
 }
 
 function SentimentCard({ item, period, kind, favorite, onToggle }: { item: SentimentItem; period: Period; kind: SentimentKind; favorite: boolean; onToggle: (kind: SentimentKind, item: SentimentItem) => void }) {
-  const visible = item.data.slice(-periodPoints[period]);
+  const visible = getVisibleSeries(item.data, period);
   const change = visible.length > 1 ? visible[visible.length - 1].value - visible[0].value : 0;
   const trend: Direction = change > 1 ? "up" : change < -1 ? "down" : "flat";
   const color = getSentimentColor(item.score);
@@ -316,7 +450,7 @@ function SentimentCard({ item, period, kind, favorite, onToggle }: { item: Senti
         <div><h3 className="text-lg font-extrabold text-slate-950">{item.name}</h3>{item.subtitle && <p className="mt-0.5 text-sm text-slate-500">{item.subtitle}</p>}</div>
         <Badge variant="outline" className="stage-badge" style={{color,borderColor:`${color}55`,backgroundColor:`${color}10`}}>{stage}</Badge>
       </div>
-      <div className="mt-4 grid grid-cols-[1fr_112px] items-end gap-4">
+      <div className="mt-4 grid grid-cols-[72px_minmax(0,1fr)] items-end gap-3">
         <div><p className="text-xs text-slate-400">공포·탐욕 점수</p><strong className="mt-1 block text-3xl font-black text-slate-950">{item.score}</strong></div>
         <div className="h-14" aria-label={`${item.name} ${period} 공포 탐욕 추세`}>
           <ResponsiveContainer width="100%" height="100%">
@@ -348,13 +482,79 @@ function SentimentSection({ title, description, items, period, kind, favorites, 
   );
 }
 
+function CompactGauge({ item }: { item: SentimentItem }) {
+  const color = getSentimentColor(item.score);
+  return (
+    <div className="compact-gauge" title={`${item.name} ${item.score}점`}>
+      <div className="relative size-14 shrink-0">
+        <svg viewBox="0 0 44 44" className="size-14 -rotate-90" aria-hidden="true">
+          <circle cx="22" cy="22" r="18" pathLength="100" fill="none" stroke="rgba(148,163,184,.22)" strokeWidth="5"/>
+          <circle cx="22" cy="22" r="18" pathLength="100" fill="none" stroke={color} strokeWidth="5" strokeLinecap="butt" strokeDasharray={`${item.score} ${100-item.score}`}/>
+        </svg>
+        <strong className="absolute inset-0 grid place-items-center text-sm font-black text-slate-100">{item.score}</strong>
+      </div>
+      <span className="line-clamp-2 text-center text-xs font-bold leading-4 text-slate-200">{item.name}</span>
+    </div>
+  );
+}
+
+function SentimentSnapshot() {
+  return (
+    <section className="snapshot-panel" aria-labelledby="snapshot-title">
+      <div className="snapshot-heading"><Gauge className="size-5 text-amber-300"/><h2 id="snapshot-title">섹터·테마 모아보기</h2><span>이름 / 점수</span></div>
+      <div className="snapshot-line">
+        <strong className="snapshot-label">섹터</strong>
+        <div className="snapshot-scroll">{sectorSentiment.map((item) => <CompactGauge key={item.name} item={item}/>)}</div>
+      </div>
+      <div className="snapshot-line">
+        <strong className="snapshot-label">테마</strong>
+        <div className="snapshot-scroll">{themeSentiment.map((item) => <CompactGauge key={item.name} item={item}/>)}</div>
+      </div>
+    </section>
+  );
+}
+
+function ThemeAnalysis({ period }: { period: Period }) {
+  const ranked = themeSentiment.map((item) => {
+    const visible = getVisibleSeries(item.data, period);
+    const change = visible.length > 1 ? visible.at(-1)!.value - visible[0].value : 0;
+    return {...item,change,beta:betaOf(item)};
+  });
+  const buy = [...ranked].filter((item) => item.score >= 45 && item.score < 70 && item.change > 0).sort((a,b) => b.change - a.change)[0] ?? ranked[0];
+  const sell = [...ranked].sort((a,b) => b.score - a.score)[0];
+  const hold = [...ranked].filter((item) => item.score >= 45 && item.score <= 60).sort((a,b) => Math.abs(a.change) - Math.abs(b.change))[0] ?? ranked[0];
+  const volatile = [...ranked].sort((a,b) => b.beta - a.beta)[0];
+  const surge = [...ranked].filter((item) => item.score < 80).sort((a,b) => (b.change * b.beta) - (a.change * a.beta))[0];
+  const safe = [...ranked].filter((item) => item.score >= 40).sort((a,b) => a.beta - b.beta)[0];
+  const insights = [
+    {title:"매수하기 좋은 테마는?",answer:buy.name,detail:`${period} +${buy.change}점 · ${volatilityByKind.theme[buy.name]}`,icon:TrendingUp,tone:"positive"},
+    {title:"매도해야 하는 테마는?",answer:sell.name,detail:`과열 점검 · 탐욕 ${sell.score}점`,icon:TrendingDown,tone:"negative"},
+    {title:"일단 보유해야 하는 테마는?",answer:hold.name,detail:`중립권 ${hold.score}점 · 변동 안정`,icon:ShieldCheck,tone:"neutral"},
+    {title:"변동성이 가장 심한 테마는?",answer:volatile.name,detail:volatilityByKind.theme[volatile.name],icon:Zap,tone:"warning"},
+    {title:"1년 안 급등할 것 같은 테마는?",answer:`관찰 후보 · ${surge.name}`,detail:`모멘텀·베타 결합 샘플, 상승 보장 아님`,icon:Sparkles,tone:"violet"},
+    {title:"가장 안전한 테마는?",answer:safe.name,detail:`표본 내 최저 ${volatilityByKind.theme[safe.name]}`,icon:ShieldCheck,tone:"safe"},
+  ];
+  return (
+    <section className="theme-analysis" aria-labelledby="theme-analysis-title">
+      <div className="theme-analysis-heading"><div><p className="eyebrow">샘플 모델 분석</p><h2 id="theme-analysis-title">지금 어떤 테마를 봐야 할까?</h2></div><span>공포탐욕·추세·베타를 함께 비교</span></div>
+      <div className="theme-analysis-grid">
+        {insights.map(({title,answer,detail,icon:Icon,tone}) => (
+          <article key={title} className={`insight-card insight-${tone}`}><Icon className="size-5"/><div><p>{title}</p><strong>{answer}</strong><span>{detail}</span></div></article>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 function IndicatorDetail({ item, period }: { item: Indicator; period: Period }) {
   const history = expandIndicatorHistory(item.chart, item.id.length);
-  const visible = history.slice(-periodPoints[period]);
+  const visible = getVisibleSeries(history, period);
+  const meta = indicatorMeta[item.id];
+  const country = countryMap[meta.country];
   return (
     <div className="indicator-detail">
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-300 px-5 py-4">
-        <div className="flex items-center gap-2"><LineChartIcon className="size-5 text-blue-700"/><h3 className="text-lg font-extrabold text-slate-950">과거 흐름</h3><Badge variant="outline" className="rounded-none border-blue-300 bg-blue-50 text-blue-700">{period}</Badge></div>
+        <div className="flex items-center gap-2"><LineChartIcon className="size-5 text-blue-700"/><span className="text-xl" aria-hidden="true">{country.flag}</span><h3 className="text-lg font-extrabold text-slate-950">{item.name} 과거 흐름</h3><Badge variant="outline" className="rounded-none border-blue-300 bg-blue-50 text-blue-700">{period}</Badge></div>
         <div className="flex items-center gap-2 text-sm text-slate-600"><span className="inline-block w-7 border-t border-dashed border-rose-500"/><span>{item.benchmarkLabel}</span></div>
       </div>
       <div className="grid gap-5 p-5 xl:grid-cols-[minmax(0,1.7fr)_minmax(320px,0.75fr)]">
@@ -378,7 +578,7 @@ function IndicatorDetail({ item, period }: { item: Indicator; period: Period }) 
             <div className="bg-slate-100 p-4"><p className="text-xs text-slate-500">예상 차이</p><p className={`mt-1 text-lg font-bold ${item.signal === "negative" ? "text-rose-600" : item.signal === "positive" ? "text-emerald-700" : "text-slate-600"}`}>{item.surprise}</p></div>
           </div>
           <div className={`analysis-box analysis-${item.signal}`}><div className="flex items-center gap-2"><Gauge className="size-4"/><p className="text-sm font-extrabold">자동 해석</p></div><p className="mt-2 text-sm leading-6">{item.summary}</p></div>
-          <dl className="mt-4 grid grid-cols-2 gap-3 border-t border-slate-300 pt-4 text-sm"><div><dt className="flex items-center gap-1.5 text-xs text-slate-500"><CalendarDays className="size-3.5"/>다음 발표</dt><dd className="mt-1 font-bold text-slate-700">{item.release}</dd></div><div><dt className="text-xs text-slate-500">데이터 출처</dt><dd className="mt-1 font-bold text-slate-700">{item.source}</dd></div></dl>
+          <dl className="mt-4 grid grid-cols-2 gap-3 border-t border-slate-300 pt-4 text-sm"><div><dt className="flex items-center gap-1.5 text-xs text-slate-500"><CalendarDays className="size-3.5"/>다음 발표</dt><dd className="mt-1 font-bold text-slate-700">{displayDate(meta.nextRelease)} · {getDDay(meta.nextRelease)}</dd></div><div><dt className="text-xs text-slate-500">데이터 출처</dt><dd className="mt-1 font-bold text-slate-700">{item.source}</dd></div></dl>
         </div>
       </div>
     </div>
@@ -387,7 +587,7 @@ function IndicatorDetail({ item, period }: { item: Indicator; period: Period }) 
 
 function SummaryMiniChart({ data, period, tone, label }: { data: ChartPoint[]; period: Period; tone: string; label: string }) {
   const color = {amber:"#d97706",red:"#dc2626",slate:"#475569",green:"#059669",orange:"#ea580c"}[tone] ?? "#475569";
-  const visible = data.slice(-periodPoints[period]);
+  const visible = getVisibleSeries(data, period);
   return (
     <div className="mt-3 h-12 w-full" aria-label={`${label} ${period} 미니 차트`}>
       <ResponsiveContainer width="100%" height="100%">
@@ -401,13 +601,21 @@ function SummaryMiniChart({ data, period, tone, label }: { data: ChartPoint[]; p
 
 export default function Home() {
   const [category, setCategory] = useState<(typeof categories)[number]>("전체");
+  const [countryFilter, setCountryFilter] = useState<"ALL" | CountryCode>("ALL");
+  const [minimumImportance, setMinimumImportance] = useState<number | null>(null);
   const [openIndicator, setOpenIndicator] = useState("");
-  const [period, setPeriod] = useState<Period>("3개월");
+  const [period, setPeriod] = useState<Period>("1개월");
   const [summaryCharts, setSummaryCharts] = useState<Set<string>>(new Set());
   const [user, setUser] = useState<SessionUser | null>(null);
   const [sessionLoading, setSessionLoading] = useState(true);
   const [favorites, setFavorites] = useState<Set<string>>(new Set());
-  const filtered = useMemo(() => category === "전체" ? indicators : indicators.filter((item) => item.category === category), [category]);
+  const filtered = useMemo(() => allIndicators.filter((item) => {
+    const meta = indicatorMeta[item.id];
+    const categoryMatch = category === "전체" || item.category === category;
+    const countryMatch = countryFilter === "ALL" || meta.country === countryFilter;
+    const importanceMatch = minimumImportance === null || item.importance >= minimumImportance;
+    return categoryMatch && countryMatch && importanceMatch;
+  }), [category,countryFilter,minimumImportance]);
   const catalog = useMemo(() => [
     ...countrySentiment.map((item) => ({kind:"global" as const,item})),
     ...sectorSentiment.map((item) => ({kind:"sector" as const,item})),
@@ -485,15 +693,13 @@ export default function Home() {
   return (
     <main className="min-h-screen bg-[#363636] text-[#12213a]">
       <header className="border-b border-white/10 bg-[#07162d] text-white">
-        <div className="mx-auto flex max-w-[1480px] items-center justify-between gap-6 px-4 py-4 sm:px-6 lg:px-8">
+        <div className="site-header-grid mx-auto max-w-[1480px] px-4 py-4 sm:px-6 lg:px-8">
           <div className="flex min-w-0 items-center gap-3">
             <div className="grid size-10 shrink-0 place-items-center rounded-xl bg-[#f5b942] text-[#07162d] shadow-[0_6px_20px_rgba(245,185,66,0.22)]"><Activity className="size-5" strokeWidth={2.4} /></div>
-            <div className="min-w-0"><p className="truncate text-lg font-extrabold tracking-[-0.03em]">매크로보드</p><p className="truncate text-xs text-slate-400">경제지표로 시장을 읽다</p></div>
+            <div className="min-w-0"><p className="truncate text-lg font-extrabold tracking-[-0.03em]">즤그미니!</p><p className="hidden truncate text-xs text-slate-400 sm:block">경제지표로 시장을 읽다</p></div>
           </div>
-          <nav className="hidden items-center gap-1 text-sm font-semibold text-slate-300 lg:flex" aria-label="주요 메뉴">
-            {["종합 시황", "물가", "고용", "경기", "금리·유동성", "경제 캘린더"].map((item, index) => <button key={item} className={`rounded-lg px-3 py-2 transition hover:bg-white/10 hover:text-white ${index === 0 ? "bg-white/10 text-white" : ""}`}>{item}</button>)}
-          </nav>
-          <div className="flex items-center gap-2">
+          <div className="header-update"><Clock3 className="size-4"/><span>최종 업데이트</span><strong>{formatUpdatedAt()}</strong></div>
+          <div className="flex items-center justify-end gap-2">
             {sessionLoading ? (
               <span className="hidden text-xs text-slate-400 sm:inline">계정 확인 중</span>
             ) : user ? (
@@ -533,7 +739,7 @@ export default function Home() {
                 <a href="/signin-with-chatgpt?return_to=%2F" target="_top"><LogIn className="size-4"/>회원가입 / 로그인</a>
               </Button>
             )}
-            <Badge className="hidden border border-[#f5b942]/30 bg-[#f5b942]/10 px-3 py-1 text-[#ffd474] sm:inline-flex">4차 시제품</Badge>
+            <Badge className="hidden border border-[#f5b942]/30 bg-[#f5b942]/10 px-3 py-1 text-[#ffd474] xl:inline-flex">5차 시제품</Badge>
           </div>
         </div>
       </header>
@@ -544,7 +750,7 @@ export default function Home() {
 
       <div className="mx-auto max-w-[1480px] px-4 py-5 sm:px-6 lg:px-8 lg:py-7">
         <div className="sticky-summary">
-          <div className="sticky-period overflow-x-auto pb-2"><PeriodSelector period={period} onChange={setPeriod}/></div>
+          <div className="sticky-period overflow-x-auto pb-2"><PeriodSelector period={period} onChange={setPeriod}/><span>1일은 가장 최근 거래일 대비 · 주말·휴장일은 자동 건너뜀</span></div>
           <section className="summary-grid" aria-label="시장 상태 요약">
             {summaryItems.map(({label,value,score,note,icon:Icon,tone,data}) => (
               <button type="button" key={label} aria-pressed={summaryCharts.has(label)} onClick={() => toggleSummaryChart(label)} className={`summary-card summary-${tone} text-left`}>
@@ -556,6 +762,8 @@ export default function Home() {
           </section>
         </div>
 
+        <SentimentSnapshot/>
+
         {favoriteItems.length > 0 && (
           <section className="mt-6" aria-labelledby="favorite-title">
             <div className="mb-3 flex items-center gap-2"><Star className="size-5 fill-amber-300 text-amber-300"/><h2 id="favorite-title" className="text-xl font-extrabold tracking-[-0.03em] text-white">내 즐겨찾기</h2></div>
@@ -565,35 +773,61 @@ export default function Home() {
           </section>
         )}
 
+        <ThemeAnalysis period={period}/>
+
         <SentimentSection title="글로벌 공포 탐욕" description="국가별 대표지수의 심리 점수와 지역 변동성 지수" items={countrySentiment} period={period} kind="global" favorites={favorites} onToggle={toggleFavorite}/>
 
         <section className="indicator-panel mt-6">
-          <div className="border-b border-slate-300 px-4 py-5 sm:px-5">
-            <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-              <div><div className="flex items-center gap-2"><Database className="size-5 text-[#2463eb]"/><h2 className="text-xl font-extrabold tracking-[-0.03em]">핵심 경제지표</h2></div><p className="mt-1 text-sm text-slate-600">지표를 누르면 바로 아래에 {period} 과거 흐름과 자동 해석이 열립니다.</p></div>
-              <Tabs value={category} onValueChange={(value) => { setCategory(value as (typeof categories)[number]); setOpenIndicator(""); }}><TabsList className="h-auto w-full justify-start overflow-x-auto rounded-none bg-slate-200 p-1 sm:w-fit">{categories.map((item) => <TabsTrigger key={item} value={item} className="min-w-14 rounded-none px-3 py-1.5 data-[state=active]:text-[#1749b5]">{item}</TabsTrigger>)}</TabsList></Tabs>
+          <div className="border-b border-slate-300 px-4 py-4 sm:px-5">
+            <div className="text-center">
+              <div className="flex flex-wrap items-center justify-center gap-3">
+                <div className="flex items-center gap-2"><Database className="size-5 text-[#2463eb]"/><h2 className="text-xl font-extrabold tracking-[-0.03em]">핵심 경제지표</h2></div>
+                <div className="importance-filter" aria-label="최소 중요도 필터">
+                  {[1,2,3,4,5].map((star) => (
+                    <button type="button" key={star} aria-pressed={minimumImportance === star} onClick={() => { setMinimumImportance((current) => current === star ? null : star); setOpenIndicator(""); }} title={`${star}점 이상 표시`}>
+                      <Star className={`size-5 ${minimumImportance !== null && star <= minimumImportance ? "fill-amber-400 text-amber-400" : "text-slate-400"}`}/>
+                    </button>
+                  ))}
+                  <span>{minimumImportance ? `${minimumImportance}점 이상` : "전체 중요도"}</span>
+                </div>
+              </div>
+              <p className="mt-1 text-sm text-slate-600">국기와 별을 눌러 지표를 걸러보고, 지표를 누르면 {period} 상세 흐름이 열립니다.</p>
+            </div>
+            <div className="indicator-toolbar">
+              <div className="country-filter" aria-label="국가 필터">
+                {countryFilters.map((country) => <button type="button" key={country.code} aria-pressed={countryFilter === country.code} onClick={() => { setCountryFilter(country.code); setOpenIndicator(""); }}><span aria-hidden="true">{country.flag}</span>{country.label}</button>)}
+              </div>
+              <Tabs value={category} onValueChange={(value) => { setCategory(value as (typeof categories)[number]); setOpenIndicator(""); }}><TabsList className="h-auto w-full justify-center overflow-x-auto rounded-none bg-slate-200 p-1 sm:w-fit">{categories.map((item) => <TabsTrigger key={item} value={item} className="min-w-14 rounded-none px-3 py-1.5 data-[state=active]:text-[#1749b5]">{item}</TabsTrigger>)}</TabsList></Tabs>
             </div>
           </div>
           <div className="overflow-x-auto">
-            <div className="min-w-[1080px]">
-              <div className="indicator-grid indicator-header px-5">
-                <span>지표</span><span className="text-center">미니 흐름 / 기준선</span><span>중요도</span><span className="text-right">현재</span><span className="text-right">예상</span><span className="text-right">이전</span><span>추세</span><span className="text-center">시장 판정</span>
+            <div className="min-w-[1320px]">
+              <div className="indicator-grid indicator-header px-4">
+                <span>국가</span><span>중요도</span><span>지표</span><span>차트</span><span>현재 / 발표일</span><span>예상 / 이전</span><span>추세</span><span>시장 판단</span><span>발표 주기</span><span>다음 발표 (D-day)</span>
               </div>
               <Accordion type="single" collapsible value={openIndicator} onValueChange={setOpenIndicator}>
-                {filtered.map((item) => (
+                {filtered.map((item) => {
+                  const meta = indicatorMeta[item.id];
+                  const country = countryMap[meta.country];
+                  return (
                   <AccordionItem key={item.id} value={item.id} className="indicator-item">
-                    <AccordionTrigger className="indicator-trigger px-5 hover:no-underline">
+                    <AccordionTrigger className="indicator-trigger px-4 hover:no-underline">
                       <div className="indicator-grid min-w-0 flex-1">
-                        <div><p className="text-base font-bold text-slate-950">{item.name}</p><p className="mt-1 text-xs font-normal text-slate-500">{item.short}</p></div>
-                        <div className="flex flex-col items-center"><MiniIndicatorChart item={item}/><span className="mt-0.5 text-[11px] font-normal text-slate-500">{item.benchmarkLabel}</span></div>
-                        <div className="flex gap-1" aria-label={`중요도 ${item.importance}점`}>{[1,2,3,4,5].map((star) => <span key={star} className={`size-2.5 rounded-full ${star <= item.importance ? "bg-amber-400" : "bg-slate-300"}`}/>)}</div>
-                        <strong className="text-right text-base text-slate-950">{item.current}</strong><span className="text-right font-medium text-slate-700">{item.forecast}</span><span className="text-right font-medium text-slate-700">{item.previous}</span>
-                        <span className={`flex items-center gap-1 font-semibold trend-${item.direction}`}><DirectionIcon direction={item.direction}/>{item.trend}</span><span className="text-center"><SignalBadge signal={item.signal}/></span>
+                        <div className="indicator-country"><span aria-hidden="true">{country.flag}</span><small>{country.label}</small></div>
+                        <div className="indicator-stars" aria-label={`중요도 ${item.importance}점`}>{[1,2,3,4,5].map((star) => <Star key={star} className={`size-3 ${star <= item.importance ? "fill-amber-400 text-amber-400" : "fill-slate-200 text-slate-300"}`}/>)}</div>
+                        <div><p className="text-sm font-bold text-slate-950">{item.name}</p><p className="text-xs font-normal text-slate-500">{item.short}</p></div>
+                        <div className="flex flex-col items-center"><MiniIndicatorChart item={item}/><span className="text-[11px] font-normal text-slate-500">{item.benchmarkLabel}</span></div>
+                        <div><strong className="text-sm text-slate-950">{item.current}</strong><small>{meta.currentDate}</small></div>
+                        <div><strong className="text-sm text-slate-800">{item.forecast}</strong><small>이전 {item.previous} · {meta.previousDate}</small></div>
+                        <span className={`flex items-center justify-center gap-1 text-xs font-semibold trend-${item.direction}`}><DirectionIcon direction={item.direction}/>{item.trend}</span><span><SignalBadge signal={item.signal}/></span>
+                        <span className="text-xs font-bold text-slate-600">{meta.releaseCycle}</span>
+                        <div><strong className="text-xs text-slate-800">{displayDate(meta.nextRelease)}</strong><small className="d-day">{getDDay(meta.nextRelease)}</small></div>
                       </div>
                     </AccordionTrigger>
                     <AccordionContent className="p-0"><IndicatorDetail item={item} period={period}/></AccordionContent>
                   </AccordionItem>
-                ))}
+                )})}
+                {filtered.length === 0 && <div className="p-8 text-center text-sm text-slate-500">선택한 국가와 중요도에 해당하는 지표가 없습니다.</div>}
               </Accordion>
             </div>
           </div>
