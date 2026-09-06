@@ -399,14 +399,11 @@ function ScoreRail({ score, sentiment = false, label }: { score: number; sentime
   const style = sentiment ? ({ "--score-color": getSentimentColor(score) } as CSSProperties) : undefined;
   return (
     <div className={`score-rail ${sentiment ? "score-rail-sentiment" : ""}`} style={style}>
-      <div className="relative pt-5">
-        <span className="score-bubble" style={{left:`${score}%`}}>{score}</span>
+      <div className="relative">
         <Progress value={score} aria-label={`${label} ${score}점`} className="score-progress" />
         <span className="score-dot" style={{left:`${score}%`}} aria-hidden="true" />
       </div>
-      {sentiment ? (
-        <div className="score-steps"><span>극단 공포</span><span>중립</span><span>극단 탐욕</span></div>
-      ) : (
+      {!sentiment && (
         <div className="score-steps"><span>위험</span><span>중립</span><span>긍정</span></div>
       )}
     </div>
@@ -456,8 +453,8 @@ function SentimentCard({ item, period, kind, favorite, onToggle }: { item: Senti
         <div><h3 className="text-lg font-extrabold text-slate-950">{item.name}</h3>{item.subtitle && <p className="mt-0.5 text-sm text-slate-500">{item.subtitle}</p>}</div>
         <Badge variant="outline" className="stage-badge" style={{color,borderColor:`${color}55`,backgroundColor:`${color}10`}}>{stage}</Badge>
       </div>
-      <div className="mt-4 grid grid-cols-[72px_minmax(0,1fr)] items-end gap-3">
-        <div><p className="text-sm text-slate-500">공포·탐욕 점수</p><strong className="mt-1 block text-3xl font-black text-slate-950">{item.score}</strong></div>
+      <div className="mt-3 grid grid-cols-[54px_minmax(0,1fr)] items-end gap-3">
+        <div className="sentiment-score" aria-label={`${item.name} ${stage} ${item.score}점`}><strong className="block text-3xl font-black text-slate-950">{item.score}</strong></div>
         <div className="h-14" aria-label={`${item.name} ${period} 공포 탐욕 추세`}>
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart data={visible} margin={{top:5,right:2,left:2,bottom:3}}>
@@ -498,7 +495,6 @@ function SentimentSection({ title, description, items, period, kind, favorites, 
     <section className="mt-6" aria-labelledby={`${kind}-title`}>
       <div className="mb-3 flex flex-wrap items-end justify-between gap-4">
         <div><div className="flex items-center gap-2"><Map className="size-5 text-violet-300"/><h2 id={`${kind}-title`} className="text-xl font-extrabold tracking-[-0.03em] text-white">{title}</h2></div><p className="mt-1 text-sm text-slate-300">{description} · {period}</p></div>
-        <span className="hidden text-xs text-slate-300 sm:block">0 극단 공포 · 50 중립 · 100 극단 탐욕</span>
       </div>
       {showControls && (
         <div className="sentiment-controls">

@@ -208,7 +208,7 @@ button,
 }
 
 .score-rail {
-  margin-top: 0.75rem;
+  margin-top: 0.55rem;
 }
 
 .score-progress {
@@ -229,40 +229,12 @@ button,
   background: var(--score-color);
 }
 
-.score-rail-sentiment .score-bubble,
-.score-rail-sentiment .score-bubble::after,
 .score-rail-sentiment .score-dot {
   background: var(--score-color);
 }
 
 .score-rail-sentiment .score-dot {
   box-shadow: 0 0 0 2px var(--score-color);
-}
-
-.score-bubble {
-  position: absolute;
-  top: 0;
-  min-width: 1.55rem;
-  transform: translateX(-50%);
-  border-radius: 0;
-  background: #172554;
-  padding: 0.08rem 0.25rem;
-  color: white;
-  font-size: 0.65rem;
-  font-weight: 800;
-  line-height: 1rem;
-  text-align: center;
-}
-
-.score-bubble::after {
-  position: absolute;
-  bottom: -0.2rem;
-  left: 50%;
-  width: 0.4rem;
-  height: 0.4rem;
-  transform: translateX(-50%) rotate(45deg);
-  background: #172554;
-  content: "";
 }
 
 .score-dot {
@@ -363,12 +335,18 @@ button,
 }
 
 .sentiment-card {
-  min-height: 16rem;
+  min-height: 13rem;
   border: 0;
   border-radius: 0;
   background: rgba(248, 250, 252, 0.94);
-  padding: 1rem;
+  padding: 0.85rem;
   box-shadow: none;
+}
+
+.sentiment-score {
+  display: flex;
+  align-items: center;
+  min-height: 2.25rem;
 }
 
 .favorite-action {
@@ -976,12 +954,11 @@ button,
   }
 
   .sentiment-card {
-    min-height: 15rem;
-    padding: 0.9rem;
+    min-height: 12.5rem;
+    padding: 0.8rem;
   }
 
   .score-steps,
-  .score-bubble,
   .header-update,
   .sticky-period > span,
   .snapshot-heading span,
