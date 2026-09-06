@@ -143,11 +143,7 @@ button,
 .summary-card[aria-pressed="true"] { background: #f8fafc; }
 .summary-card:active { transform: translateY(1px); }
 
-.summary-amber { color: #a16207; }
-.summary-red { color: #c81e1e; }
-.summary-slate { color: #475569; }
-.summary-green { color: #047857; }
-.summary-orange { color: #c2410c; }
+.summary-accent { color: var(--summary-color); }
 
 .sticky-summary {
   position: sticky;
@@ -177,7 +173,11 @@ button,
   grid-template-columns: repeat(5, minmax(230px, 1fr));
   gap: 0.35rem;
   overflow-x: auto;
-  scrollbar-width: thin;
+  scrollbar-width: none;
+}
+
+.summary-grid::-webkit-scrollbar {
+  display: none;
 }
 
 .overview-card {
@@ -270,8 +270,77 @@ button,
 .sentiment-grid {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 0;
+  gap: 0.45rem;
   border: 0;
+}
+
+.sentiment-controls {
+  margin-bottom: 0.45rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.55rem;
+  background: rgba(15, 23, 42, 0.66);
+}
+
+.sentiment-control-group {
+  display: flex;
+  gap: 0.15rem;
+  padding: 0.15rem;
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.sentiment-control-group button {
+  min-width: 3.2rem;
+  border-radius: 0;
+  color: #cbd5e1;
+  font-size: 0.875rem;
+}
+
+.sentiment-control-group button:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+}
+
+.sentiment-control-group button[aria-pressed="true"] {
+  background: #f8fafc;
+  color: #0f172a;
+}
+
+.sentiment-sort {
+  min-width: 8.6rem;
+  border: 0;
+  border-radius: 0;
+  background: #f8fafc;
+  color: #0f172a;
+  font-size: 0.875rem;
+}
+
+.sentiment-count {
+  margin-left: auto;
+  color: #cbd5e1;
+  font-size: 0.875rem;
+  font-weight: 800;
+}
+
+.sentiment-grid.is-strip {
+  display: flex;
+  gap: 0.35rem;
+  overflow-x: auto;
+  padding-bottom: 0.35rem;
+  scroll-snap-type: x proximity;
+  scrollbar-width: none;
+}
+
+.sentiment-grid.is-strip::-webkit-scrollbar {
+  display: none;
+}
+
+.sentiment-grid.is-strip .sentiment-card {
+  width: 17rem;
+  min-width: 17rem;
+  scroll-snap-align: start;
 }
 
 .sentiment-card {
@@ -500,8 +569,57 @@ button,
   display: flex;
   gap: 0.35rem;
   overflow-x: auto;
-  padding-bottom: 0.25rem;
-  scrollbar-width: thin;
+  padding: 0 2.25rem;
+  scroll-behavior: smooth;
+  scroll-snap-type: x proximity;
+  scrollbar-width: none;
+  cursor: grab;
+  touch-action: pan-x;
+  user-select: none;
+}
+
+.snapshot-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.snapshot-scroll.is-dragging {
+  cursor: grabbing;
+  scroll-behavior: auto;
+}
+
+.snapshot-track {
+  position: relative;
+  min-width: 0;
+}
+
+.snapshot-arrow {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  z-index: 5;
+  display: grid;
+  width: 2.15rem;
+  place-items: center;
+  border: 0;
+  color: #ffffff;
+  transition: background-color 150ms ease, color 150ms ease;
+}
+
+.snapshot-arrow:hover,
+.snapshot-arrow:focus-visible {
+  background: rgba(15, 23, 42, 0.96);
+  color: #fbbf24;
+  outline: none;
+}
+
+.snapshot-arrow-left {
+  left: 0;
+  background: linear-gradient(90deg, rgba(15,23,42,1) 35%, rgba(15,23,42,0));
+}
+
+.snapshot-arrow-right {
+  right: 0;
+  background: linear-gradient(270deg, rgba(15,23,42,1) 35%, rgba(15,23,42,0));
 }
 
 .compact-gauge {
@@ -513,6 +631,7 @@ button,
   gap: 0.25rem;
   padding: 0.4rem 0.25rem;
   background: rgba(255, 255, 255, 0.045);
+  scroll-snap-align: start;
 }
 
 .theme-analysis {
@@ -644,6 +763,26 @@ button,
   .sentiment-grid-favorite {
     grid-template-columns: repeat(6, minmax(0, 1fr));
   }
+
+  .sentiment-grid-sector:not(.is-strip) .sentiment-card,
+  .sentiment-grid-theme:not(.is-strip) .sentiment-card,
+  .sentiment-grid-favorite:not(.is-strip) .sentiment-card {
+    min-height: 14.5rem;
+    padding: 0.85rem;
+  }
+
+  .sentiment-grid-sector:not(.is-strip) .sentiment-card h3,
+  .sentiment-grid-theme:not(.is-strip) .sentiment-card h3,
+  .sentiment-grid-favorite:not(.is-strip) .sentiment-card h3 {
+    font-size: 1rem;
+  }
+
+  .sentiment-grid-sector:not(.is-strip) .stage-badge,
+  .sentiment-grid-theme:not(.is-strip) .stage-badge,
+  .sentiment-grid-favorite:not(.is-strip) .stage-badge {
+    padding: 0.25rem 0.42rem;
+    font-size: 0.8rem;
+  }
 }
 
 @media (max-width: 760px) {
@@ -667,6 +806,67 @@ button,
     align-items: flex-start;
     flex-direction: column;
     gap: 0.3rem;
+  }
+
+  .sentiment-controls {
+    align-items: stretch;
+    padding: 0.45rem;
+  }
+
+  .sentiment-control-group {
+    max-width: 100%;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .sentiment-control-group::-webkit-scrollbar {
+    display: none;
+  }
+
+  .sentiment-sort {
+    flex: 1 1 8.6rem;
+  }
+
+  .sentiment-count {
+    display: grid;
+    margin-left: 0;
+    place-items: center;
+    padding: 0 0.35rem;
+  }
+
+  .sentiment-card {
+    min-height: 15rem;
+    padding: 0.9rem;
+  }
+
+  .score-steps,
+  .score-bubble,
+  .header-update,
+  .sticky-period > span,
+  .snapshot-heading span,
+  .snapshot-label,
+  .importance-filter span,
+  .country-filter button,
+  .insight-card p,
+  .insight-card span {
+    font-size: 0.8125rem;
+  }
+
+  .snapshot-line {
+    grid-template-columns: 2.75rem minmax(0, 1fr);
+    gap: 0.35rem;
+  }
+
+  .snapshot-panel {
+    margin-right: -1rem;
+    margin-left: -1rem;
+    padding-right: 0.75rem;
+    padding-left: 0.75rem;
+  }
+
+  .snapshot-scroll {
+    padding-right: 2rem;
+    padding-left: 2rem;
   }
 
   .theme-analysis-heading {

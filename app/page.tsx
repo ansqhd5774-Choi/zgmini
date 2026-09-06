@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useMemo, useState, type CSSProperties } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from "react";
 import {
   Activity, ArrowDownRight, ArrowRight, ArrowUpRight, CalendarDays,
-  CheckCircle2, CircleAlert, Clock3, Database, Fuel, Gauge, Info,
+  CheckCircle2, ChevronLeft, ChevronRight, CircleAlert, Clock3, Database, Fuel, Gauge, Info,
   LineChart as LineChartIcon, LogIn, LogOut, Map, Settings2, ShieldCheck,
   Sparkles, Star, TrendingDown, TrendingUp, UserRound, Zap,
 } from "lucide-react";
@@ -15,6 +15,9 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
 import {
   Accordion, AccordionContent, AccordionItem, AccordionTrigger,
 } from "@/components/ui/accordion";
@@ -60,6 +63,9 @@ type SentimentItem = {
 };
 
 type SentimentKind = "global" | "sector" | "theme";
+type SentimentSort = "default" | "high" | "low" | "name";
+type SentimentStrength = "all" | "greed" | "neutral" | "fear";
+type SentimentView = "strip" | "grid";
 type SessionUser = { displayName: string; email: string };
 type FavoriteRecord = { itemKey: string; itemType: SentimentKind; itemName: string };
 type IndicatorMeta = {
@@ -277,11 +283,11 @@ const themeSentiment: SentimentItem[] = [
 ];
 
 const summaryItems = [
-  {label:"종합",value:"중립",score:54,note:"물가 부담 ↔ 경기 회복",icon:Gauge,tone:"amber",data:makeSeries([49,51,50,53,55,52,54,56,53,55,54,54])},
-  {label:"물가",value:"주의",score:38,note:"근원 PCE 재상승",icon:CircleAlert,tone:"red",data:makeSeries([55,52,49,46,43,41,39,42,40,37,39,38])},
-  {label:"고용",value:"둔화",score:46,note:"급격한 침체 신호는 아님",icon:Activity,tone:"slate",data:makeSeries([57,55,53,51,49,47,45,48,46,44,45,46])},
-  {label:"금리",value:"개선",score:68,note:"10년물 금리 하락",icon:CheckCircle2,tone:"green",data:makeSeries([42,45,49,52,55,58,61,63,65,64,67,68])},
-  {label:"유가",value:"주의",score:42,note:"WTI 변동성 확대",icon:Fuel,tone:"orange",data:makeSeries([59,56,52,48,45,41,44,47,43,40,45,42])},
+  {label:"종합",value:"중립",score:54,note:"물가 부담 ↔ 경기 회복",icon:Gauge,data:makeSeries([49,51,50,53,55,52,54,56,53,55,54,54])},
+  {label:"물가",value:"주의",score:38,note:"근원 PCE 재상승",icon:CircleAlert,data:makeSeries([55,52,49,46,43,41,39,42,40,37,39,38])},
+  {label:"고용",value:"둔화",score:46,note:"급격한 침체 신호는 아님",icon:Activity,data:makeSeries([57,55,53,51,49,47,45,48,46,44,45,46])},
+  {label:"금리",value:"개선",score:68,note:"10년물 금리 하락",icon:CheckCircle2,data:makeSeries([42,45,49,52,55,58,61,63,65,64,67,68])},
+  {label:"유가",value:"주의",score:42,note:"WTI 변동성 확대",icon:Fuel,data:makeSeries([59,56,52,48,45,41,44,47,43,40,45,42])},
 ];
 
 const volatilityByKind: Record<SentimentKind, Record<string, string>> = {
@@ -318,10 +324,10 @@ function getSentimentStage(score: number) {
 }
 
 function getSentimentColor(score: number) {
-  if (score < 20) return "#991b1b";
-  if (score < 40) return "#f87171";
-  if (score < 60) return "#737373";
-  if (score < 80) return "#84cc16";
+  if (score < 20) return "#b91c1c";
+  if (score < 40) return "#ef4444";
+  if (score < 60) return "#64748b";
+  if (score < 80) return "#16a34a";
   return "#166534";
 }
 
@@ -451,7 +457,7 @@ function SentimentCard({ item, period, kind, favorite, onToggle }: { item: Senti
         <Badge variant="outline" className="stage-badge" style={{color,borderColor:`${color}55`,backgroundColor:`${color}10`}}>{stage}</Badge>
       </div>
       <div className="mt-4 grid grid-cols-[72px_minmax(0,1fr)] items-end gap-3">
-        <div><p className="text-xs text-slate-400">공포·탐욕 점수</p><strong className="mt-1 block text-3xl font-black text-slate-950">{item.score}</strong></div>
+        <div><p className="text-sm text-slate-500">공포·탐욕 점수</p><strong className="mt-1 block text-3xl font-black text-slate-950">{item.score}</strong></div>
         <div className="h-14" aria-label={`${item.name} ${period} 공포 탐욕 추세`}>
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart data={visible} margin={{top:5,right:2,left:2,bottom:3}}>
@@ -469,14 +475,54 @@ function SentimentCard({ item, period, kind, favorite, onToggle }: { item: Senti
 }
 
 function SentimentSection({ title, description, items, period, kind, favorites, onToggle }: { title: string; description: string; items: SentimentItem[]; period: Period; kind: SentimentKind; favorites: Set<string>; onToggle: (kind: SentimentKind, item: SentimentItem) => void }) {
+  const [sort, setSort] = useState<SentimentSort>("default");
+  const [strength, setStrength] = useState<SentimentStrength>("all");
+  const [view, setView] = useState<SentimentView>("grid");
+  const showControls = kind !== "global";
+  const filterOptions: readonly (readonly [SentimentStrength,string])[] = [
+    ["all","전체"],["greed","탐욕"],["neutral","중립"],["fear","공포"],
+  ];
+  const visibleItems = useMemo(() => {
+    const filteredItems = items.filter((item) => {
+      if (strength === "greed") return item.score >= 60;
+      if (strength === "neutral") return item.score >= 40 && item.score < 60;
+      if (strength === "fear") return item.score < 40;
+      return true;
+    });
+    if (sort === "high") return [...filteredItems].sort((a,b) => b.score - a.score);
+    if (sort === "low") return [...filteredItems].sort((a,b) => a.score - b.score);
+    if (sort === "name") return [...filteredItems].sort((a,b) => a.name.localeCompare(b.name, "ko"));
+    return filteredItems;
+  }, [items,sort,strength]);
   return (
     <section className="mt-6" aria-labelledby={`${kind}-title`}>
-      <div className="mb-3 flex items-end justify-between gap-4">
+      <div className="mb-3 flex flex-wrap items-end justify-between gap-4">
         <div><div className="flex items-center gap-2"><Map className="size-5 text-violet-300"/><h2 id={`${kind}-title`} className="text-xl font-extrabold tracking-[-0.03em] text-white">{title}</h2></div><p className="mt-1 text-sm text-slate-300">{description} · {period}</p></div>
         <span className="hidden text-xs text-slate-300 sm:block">0 극단 공포 · 50 중립 · 100 극단 탐욕</span>
       </div>
-      <div className={`sentiment-grid sentiment-grid-${kind}`}>
-        {items.map((item) => <SentimentCard key={item.name} item={item} period={period} kind={kind} favorite={favorites.has(sentimentKey(kind,item.name))} onToggle={onToggle}/>)}
+      {showControls && (
+        <div className="sentiment-controls">
+          <div className="sentiment-control-group" role="group" aria-label={`${title} 보기 방식`}>
+            <Button size="sm" variant="ghost" aria-pressed={view === "strip"} onClick={() => setView("strip")}>한 줄</Button>
+            <Button size="sm" variant="ghost" aria-pressed={view === "grid"} onClick={() => setView("grid")}>전체</Button>
+          </div>
+          <div className="sentiment-control-group" role="group" aria-label={`${title} 강도 필터`}>
+            {filterOptions.map(([value,label]) => <Button key={value} size="sm" variant="ghost" aria-pressed={strength === value} onClick={() => setStrength(value)}>{label}</Button>)}
+          </div>
+          <Select value={sort} onValueChange={(value) => setSort(value as SentimentSort)}>
+            <SelectTrigger size="sm" className="sentiment-sort" aria-label={`${title} 정렬`}><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="default">기본순</SelectItem>
+              <SelectItem value="high">높은 점수순</SelectItem>
+              <SelectItem value="low">낮은 점수순</SelectItem>
+              <SelectItem value="name">이름순</SelectItem>
+            </SelectContent>
+          </Select>
+          <span className="sentiment-count">{visibleItems.length}개</span>
+        </div>
+      )}
+      <div className={`sentiment-grid sentiment-grid-${kind} ${view === "strip" && showControls ? "is-strip" : ""}`}>
+        {visibleItems.map((item) => <SentimentCard key={item.name} item={item} period={period} kind={kind} favorite={favorites.has(sentimentKey(kind,item.name))} onToggle={onToggle}/>)}
       </div>
     </section>
   );
@@ -493,7 +539,44 @@ function CompactGauge({ item }: { item: SentimentItem }) {
         </svg>
         <strong className="absolute inset-0 grid place-items-center text-sm font-black text-slate-100">{item.score}</strong>
       </div>
-      <span className="line-clamp-2 text-center text-xs font-bold leading-4 text-slate-200">{item.name}</span>
+      <span className="line-clamp-2 text-center text-sm font-bold leading-5 text-slate-200">{item.name}</span>
+    </div>
+  );
+}
+
+function SnapshotRow({ label, items }: { label: string; items: SentimentItem[] }) {
+  const scroller = useRef<HTMLDivElement>(null);
+  const drag = useRef({active:false,startX:0,scrollLeft:0});
+  function scroll(direction: -1 | 1) {
+    const element = scroller.current;
+    if (!element) return;
+    element.scrollBy({left: direction * Math.max(element.clientWidth * 0.72, 320), behavior:"smooth"});
+  }
+  function startDrag(event: ReactPointerEvent<HTMLDivElement>) {
+    if (event.pointerType !== "mouse") return;
+    drag.current = {active:true,startX:event.clientX,scrollLeft:event.currentTarget.scrollLeft};
+    event.currentTarget.setPointerCapture(event.pointerId);
+    event.currentTarget.classList.add("is-dragging");
+  }
+  function moveDrag(event: ReactPointerEvent<HTMLDivElement>) {
+    if (!drag.current.active) return;
+    event.currentTarget.scrollLeft = drag.current.scrollLeft - (event.clientX - drag.current.startX);
+  }
+  function stopDrag(event: ReactPointerEvent<HTMLDivElement>) {
+    drag.current.active = false;
+    event.currentTarget.classList.remove("is-dragging");
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId);
+  }
+  return (
+    <div className="snapshot-line">
+      <strong className="snapshot-label">{label}</strong>
+      <div className="snapshot-track">
+        <button type="button" className="snapshot-arrow snapshot-arrow-left" onClick={() => scroll(-1)} aria-label={`${label} 이전 항목`}><ChevronLeft className="size-5"/></button>
+        <div ref={scroller} className="snapshot-scroll" onPointerDown={startDrag} onPointerMove={moveDrag} onPointerUp={stopDrag} onPointerCancel={stopDrag} onPointerLeave={(event) => { if (drag.current.active) stopDrag(event); }}>
+          {items.map((item) => <CompactGauge key={item.name} item={item}/>)}
+        </div>
+        <button type="button" className="snapshot-arrow snapshot-arrow-right" onClick={() => scroll(1)} aria-label={`${label} 다음 항목`}><ChevronRight className="size-5"/></button>
+      </div>
     </div>
   );
 }
@@ -502,14 +585,8 @@ function SentimentSnapshot() {
   return (
     <section className="snapshot-panel" aria-labelledby="snapshot-title">
       <div className="snapshot-heading"><Gauge className="size-5 text-amber-300"/><h2 id="snapshot-title">섹터·테마 모아보기</h2><span>이름 / 점수</span></div>
-      <div className="snapshot-line">
-        <strong className="snapshot-label">섹터</strong>
-        <div className="snapshot-scroll">{sectorSentiment.map((item) => <CompactGauge key={item.name} item={item}/>)}</div>
-      </div>
-      <div className="snapshot-line">
-        <strong className="snapshot-label">테마</strong>
-        <div className="snapshot-scroll">{themeSentiment.map((item) => <CompactGauge key={item.name} item={item}/>)}</div>
-      </div>
+      <SnapshotRow label="섹터" items={sectorSentiment}/>
+      <SnapshotRow label="테마" items={themeSentiment}/>
     </section>
   );
 }
@@ -585,8 +662,8 @@ function IndicatorDetail({ item, period }: { item: Indicator; period: Period }) 
   );
 }
 
-function SummaryMiniChart({ data, period, tone, label }: { data: ChartPoint[]; period: Period; tone: string; label: string }) {
-  const color = {amber:"#d97706",red:"#dc2626",slate:"#475569",green:"#059669",orange:"#ea580c"}[tone] ?? "#475569";
+function SummaryMiniChart({ data, period, score, label }: { data: ChartPoint[]; period: Period; score: number; label: string }) {
+  const color = getSentimentColor(score);
   const visible = getVisibleSeries(data, period);
   return (
     <div className="mt-3 h-12 w-full" aria-label={`${label} ${period} 미니 차트`}>
@@ -752,13 +829,16 @@ export default function Home() {
         <div className="sticky-summary">
           <div className="sticky-period overflow-x-auto pb-2"><PeriodSelector period={period} onChange={setPeriod}/><span>1일은 가장 최근 거래일 대비 · 주말·휴장일은 자동 건너뜀</span></div>
           <section className="summary-grid" aria-label="시장 상태 요약">
-            {summaryItems.map(({label,value,score,note,icon:Icon,tone,data}) => (
-              <button type="button" key={label} aria-pressed={summaryCharts.has(label)} onClick={() => toggleSummaryChart(label)} className={`summary-card summary-${tone} text-left`}>
-                <div className="flex items-center justify-between"><span className="text-sm font-bold text-slate-600">{label}</span><Icon className="size-4" /></div>
-                <div className="mt-2 flex items-end justify-between gap-3"><div className="flex items-baseline gap-2"><strong className="text-2xl font-extrabold tracking-tight">{value}</strong><span className="text-lg font-black text-slate-900">{score}점</span></div><span className="max-w-32 text-right text-xs leading-5 text-slate-600">{note}</span></div>
-                {summaryCharts.has(label) ? <SummaryMiniChart data={data} period={period} tone={tone} label={label}/> : <ScoreRail score={score} label={label}/>}
-              </button>
-            ))}
+            {summaryItems.map(({label,value,score,note,icon:Icon,data}) => {
+              const color = getSentimentColor(score);
+              return (
+                <button type="button" key={label} aria-pressed={summaryCharts.has(label)} onClick={() => toggleSummaryChart(label)} className="summary-card text-left" style={{"--summary-color":color} as CSSProperties}>
+                  <div className="flex items-center justify-between"><span className="text-sm font-bold text-slate-600">{label}</span><Icon className="summary-accent size-4" /></div>
+                  <div className="mt-2 flex items-end justify-between gap-3"><div className="flex items-baseline gap-2"><strong className="summary-accent text-2xl font-extrabold tracking-tight">{value}</strong><span className="summary-accent text-lg font-black">{score}점</span></div><span className="max-w-32 text-right text-sm leading-5 text-slate-600">{note}</span></div>
+                  {summaryCharts.has(label) ? <SummaryMiniChart data={data} period={period} score={score} label={label}/> : <ScoreRail score={score} sentiment label={label}/>}
+                </button>
+              );
+            })}
           </section>
         </div>
 
