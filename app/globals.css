@@ -145,6 +145,25 @@ button,
 
 .summary-accent { color: var(--summary-color); }
 
+.summary-card-head {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.55rem;
+}
+
+.summary-note {
+  min-width: 0;
+  overflow: hidden;
+  color: #475569;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  line-height: 1.25rem;
+  text-align: right;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .sticky-summary {
   position: sticky;
   top: 0;
@@ -170,7 +189,7 @@ button,
 
 .summary-grid {
   display: grid;
-  grid-template-columns: repeat(5, minmax(230px, 1fr));
+  grid-template-columns: repeat(5, minmax(270px, 1fr));
   gap: 0.35rem;
   overflow-x: auto;
   scrollbar-width: none;

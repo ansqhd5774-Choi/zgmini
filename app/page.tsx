@@ -833,8 +833,8 @@ export default function Home() {
               const color = getSentimentColor(score);
               return (
                 <button type="button" key={label} aria-pressed={summaryCharts.has(label)} onClick={() => toggleSummaryChart(label)} className="summary-card text-left" style={{"--summary-color":color} as CSSProperties}>
-                  <div className="flex items-center justify-between"><span className="text-sm font-bold text-slate-600">{label}</span><Icon className="summary-accent size-4" /></div>
-                  <div className="mt-2 flex items-end justify-between gap-3"><div className="flex items-baseline gap-2"><strong className="summary-accent text-2xl font-extrabold tracking-tight">{value}</strong><span className="summary-accent text-lg font-black">{score}점</span></div><span className="max-w-32 text-right text-sm leading-5 text-slate-600">{note}</span></div>
+                  <div className="summary-card-head"><span className="text-sm font-bold text-slate-600">{label}</span><span className="summary-note">{note}</span><Icon className="summary-accent size-4" /></div>
+                  <div className="mt-3 flex items-baseline gap-2"><strong className="summary-accent text-2xl font-extrabold tracking-tight">{value}</strong><span className="summary-accent text-lg font-black">{score}점</span></div>
                   {summaryCharts.has(label) ? <SummaryMiniChart data={data} period={period} score={score} label={label}/> : <ScoreRail score={score} sentiment label={label}/>}
                 </button>
               );
