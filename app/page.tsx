@@ -75,6 +75,19 @@ type IndicatorMeta = {
   releaseCycle: string;
   nextRelease: string;
 };
+type LiveIndicatorPatch = Pick<Indicator, "current" | "previous" | "direction" | "signal" | "trend" | "chart" | "source"> & {
+  currentDate: string;
+  previousDate: string;
+  sourceUrl: string;
+};
+type LiveSummaryPatch = { label: string; value: string; score: number; note: string; data: ChartPoint[] };
+type MarketDataPayload = {
+  status: "live" | "partial" | "fallback";
+  updatedAt: string;
+  indicators: Record<string, LiveIndicatorPatch>;
+  summary: LiveSummaryPatch[];
+  warnings?: string[];
+};
 
 const indicators: Indicator[] = [
   {
@@ -282,7 +295,7 @@ const themeSentiment: SentimentItem[] = [
   {name:"자원 재활용",score:36,data:makeSeries([51,48,45,42,39,36,34,37,40,38,35,36])},
 ];
 
-const summaryItems = [
+const staticSummaryItems = [
   {label:"종합",value:"중립",score:54,note:"물가 부담 ↔ 경기 회복",icon:Gauge,data:makeSeries([49,51,50,53,55,52,54,56,53,55,54,54])},
   {label:"물가",value:"주의",score:38,note:"근원 PCE 재상승",icon:CircleAlert,data:makeSeries([55,52,49,46,43,41,39,42,40,37,39,38])},
   {label:"고용",value:"둔화",score:46,note:"급격한 침체 신호는 아님",icon:Activity,data:makeSeries([57,55,53,51,49,47,45,48,46,44,45,46])},
@@ -340,16 +353,16 @@ function getVisibleSeries(data: ChartPoint[], period: Period) {
   return available.slice(-periodPoints[period]);
 }
 
-function formatUpdatedAt() {
+function formatUpdatedAt(value = DATA_UPDATED_AT) {
   return new Intl.DateTimeFormat("ko-KR", {
     timeZone: "Asia/Seoul", year: "numeric", month: "2-digit", day: "2-digit",
     hour: "2-digit", minute: "2-digit", hour12: false,
-  }).format(new Date(DATA_UPDATED_AT));
+  }).format(new Date(value));
 }
 
-function getDDay(value: string) {
+function getDDay(value: string, updatedAt = DATA_UPDATED_AT) {
   if (value === "실시간") return "실시간";
-  const updateDate = new Date(DATA_UPDATED_AT);
+  const updateDate = new Date(updatedAt);
   const targetDate = new Date(`${value}T00:00:00+09:00`);
   const todayKst = new Date(`${new Intl.DateTimeFormat("en-CA", {timeZone:"Asia/Seoul",year:"numeric",month:"2-digit",day:"2-digit"}).format(updateDate)}T00:00:00+09:00`);
   const days = Math.ceil((targetDate.getTime() - todayKst.getTime()) / 86_400_000);
@@ -767,19 +780,65 @@ export default function Home() {
   const [user, setUser] = useState<SessionUser | null>(null);
   const [sessionLoading, setSessionLoading] = useState(true);
   const [favorites, setFavorites] = useState<Set<string>>(new Set());
-  const filtered = useMemo(() => allIndicators.filter((item) => {
+  const [marketData, setMarketData] = useState<MarketDataPayload | null>(null);
+  const [marketDataLoading, setMarketDataLoading] = useState(true);
+  const [marketDataError, setMarketDataError] = useState(false);
+  const updatedAt = marketData?.updatedAt ?? DATA_UPDATED_AT;
+  const displayIndicators = useMemo(() => allIndicators.map((item) => {
+    const patch = marketData?.indicators[item.id];
+    if (!patch) return item;
+    return {
+      ...item,
+      ...patch,
+      forecast: "미제공",
+      surprise: "—",
+      currentDate: patch.currentDate,
+      previousDate: patch.previousDate,
+    };
+  }), [marketData]);
+  const displaySummaryItems = useMemo(() => {
+    const liveSummary = new Map((marketData?.summary ?? []).map((item) => [item.label, item]));
+    return staticSummaryItems.map((item) => ({ ...item, ...(liveSummary.get(item.label) ?? {}) }));
+  }, [marketData]);
+  const filtered = useMemo(() => displayIndicators.filter((item) => {
     const meta = indicatorMeta[item.id];
     const categoryMatch = category === "전체" || item.category === category;
     const countryMatch = countryFilter === "ALL" || meta.country === countryFilter;
     const importanceMatch = minimumImportance === null || item.importance >= minimumImportance;
     return categoryMatch && countryMatch && importanceMatch;
-  }), [category,countryFilter,minimumImportance]);
+  }), [displayIndicators,category,countryFilter,minimumImportance]);
   const catalog = useMemo(() => [
     ...countrySentiment.map((item) => ({kind:"global" as const,item})),
     ...sectorSentiment.map((item) => ({kind:"sector" as const,item})),
     ...themeSentiment.map((item) => ({kind:"theme" as const,item})),
   ], []);
   const favoriteItems = catalog.filter(({kind,item}) => favorites.has(sentimentKey(kind,item.name)));
+
+  useEffect(() => {
+    let active = true;
+    let timer: number | undefined;
+    async function loadMarketData() {
+      try {
+        const response = await fetch("/api/market-data", { cache: "no-store" });
+        if (!response.ok) throw new Error("market data request failed");
+        const payload = await response.json() as MarketDataPayload;
+        if (active) {
+          setMarketData(payload);
+          setMarketDataError(payload.status === "fallback");
+        }
+      } catch {
+        if (active) setMarketDataError(true);
+      } finally {
+        if (active) setMarketDataLoading(false);
+      }
+    }
+    void loadMarketData();
+    timer = window.setInterval(() => { void loadMarketData(); }, 15 * 60 * 1000);
+    return () => {
+      active = false;
+      if (timer !== undefined) window.clearInterval(timer);
+    };
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -856,7 +915,7 @@ export default function Home() {
             <div className="grid size-10 shrink-0 place-items-center rounded-xl bg-[#f5b942] text-[#07162d] shadow-[0_6px_20px_rgba(245,185,66,0.22)]"><Activity className="size-5" strokeWidth={2.4} /></div>
             <div className="min-w-0"><p className="truncate text-lg font-extrabold tracking-[-0.03em]">즤그미니!</p><p className="hidden truncate text-xs text-slate-400 sm:block">경제지표로 시장을 읽다</p></div>
           </div>
-          <div className="header-update"><Clock3 className="size-4"/><span>최종 업데이트</span><strong>{formatUpdatedAt()}</strong></div>
+          <div className="header-update"><Clock3 className="size-4"/><span>최종 업데이트</span><strong>{formatUpdatedAt(updatedAt)}</strong><span className={`api-status api-status-${marketDataLoading ? "loading" : marketData?.status ?? "fallback"}`} aria-label={marketDataLoading ? "API 연결 중" : marketData?.status === "live" ? "실시간 API 연결됨" : "API 부분 연결 또는 예시 데이터"}>{marketDataLoading ? "API 연결 중" : marketData?.status === "live" ? "API 연결됨" : "API 부분 연결"}</span></div>
           <div className="flex items-center justify-end gap-2">
             {sessionLoading ? (
               <span className="hidden text-xs text-slate-400 sm:inline">계정 확인 중</span>
@@ -902,15 +961,15 @@ export default function Home() {
         </div>
       </header>
 
-      <div className="border-b border-amber-200 bg-amber-50 text-amber-950">
-        <div className="mx-auto flex max-w-[1480px] items-start gap-2 px-4 py-2.5 text-sm sm:px-6 lg:px-8"><Info className="mt-0.5 size-4 shrink-0" /><p>현재 수치·점수·공포탐욕 지수는 화면과 판정 방식 확인을 위한 예시 데이터입니다. 실시간 API는 다음 단계에서 연결합니다.</p></div>
+      <div className={`border-b text-amber-950 ${marketData?.status === "live" ? "border-emerald-200 bg-emerald-50" : "border-amber-200 bg-amber-50"}`}>
+        <div className="mx-auto flex max-w-[1480px] items-start gap-2 px-4 py-2.5 text-sm sm:px-6 lg:px-8"><Info className="mt-0.5 size-4 shrink-0" /><p>{marketDataLoading ? "공식 BLS·FRED API에서 핵심 지표를 불러오는 중입니다." : marketData?.status === "live" ? "상단 핵심 지표와 점수는 BLS·FRED 공식 공개 데이터에서 불러옵니다. 15분마다 자동 갱신합니다." : marketDataError ? "API 응답을 받지 못해 예시 데이터가 표시되고 있습니다. 잠시 후 자동으로 다시 시도합니다." : "일부 API만 연결되어 연결된 지표는 실데이터, 나머지는 예시 데이터로 표시됩니다."}</p></div>
       </div>
 
       <div className="mx-auto max-w-[1480px] px-4 py-5 sm:px-6 lg:px-8 lg:py-7">
         <div className="sticky-summary">
           <div className="sticky-period overflow-x-auto pb-2"><PeriodSelector period={period} onChange={setPeriod}/><span>1일은 가장 최근 거래일 대비 · 주말·휴장일은 자동 건너뜀</span></div>
           <section className="summary-grid" aria-label="시장 상태 요약">
-            {summaryItems.map(({label,value,score,note,icon:Icon,data}) => {
+            {displaySummaryItems.map(({label,value,score,note,icon:Icon,data}) => {
               const color = getSentimentColor(score);
               return (
                 <button type="button" key={label} aria-pressed={summaryCharts.has(label)} onClick={() => toggleSummaryChart(label)} className="summary-card text-left" style={{"--summary-color":color} as CSSProperties}>
@@ -969,6 +1028,7 @@ export default function Home() {
               <Accordion type="single" collapsible value={openIndicator} onValueChange={setOpenIndicator}>
                 {filtered.map((item) => {
                   const meta = indicatorMeta[item.id];
+                  const live = marketData?.indicators[item.id];
                   const country = countryMap[meta.country];
                   return (
                   <AccordionItem key={item.id} value={item.id} className="indicator-item">
@@ -978,11 +1038,11 @@ export default function Home() {
                         <div className="indicator-stars" aria-label={`중요도 ${item.importance}점`}>{[1,2,3,4,5].map((star) => <Star key={star} className={`size-3 ${star <= item.importance ? "fill-amber-400 text-amber-400" : "fill-slate-200 text-slate-300"}`}/>)}</div>
                         <div><p className="text-sm font-bold text-slate-950">{item.name}</p><p className="text-xs font-normal text-slate-500">{item.short}</p></div>
                         <div className="flex flex-col items-center"><MiniIndicatorChart item={item}/><span className="text-[11px] font-normal text-slate-500">{item.benchmarkLabel}</span></div>
-                        <div><strong className="text-sm text-slate-950">{item.current}</strong><small>{meta.currentDate}</small></div>
-                        <div><strong className="text-sm text-slate-800">{item.forecast}</strong><small>이전 {item.previous} · {meta.previousDate}</small></div>
+                        <div><strong className="text-sm text-slate-950">{item.current}</strong><small>{live?.currentDate ?? meta.currentDate}</small></div>
+                        <div><strong className="text-sm text-slate-800">{item.forecast}</strong><small>이전 {item.previous} · {live?.previousDate ?? meta.previousDate}</small></div>
                         <span className={`flex items-center justify-center gap-1 text-xs font-semibold trend-${item.direction}`}><DirectionIcon direction={item.direction}/>{item.trend}</span><span><SignalBadge signal={item.signal}/></span>
                         <span className="text-xs font-bold text-slate-600">{meta.releaseCycle}</span>
-                        <div><strong className="text-xs text-slate-800">{displayDate(meta.nextRelease)}</strong><small className="d-day">{getDDay(meta.nextRelease)}</small></div>
+                        <div><strong className="text-xs text-slate-800">{displayDate(meta.nextRelease)}</strong><small className="d-day">{getDDay(meta.nextRelease, updatedAt)}</small></div>
                       </div>
                     </AccordionTrigger>
                     <AccordionContent className="p-0"><IndicatorDetail item={item} period={period}/></AccordionContent>

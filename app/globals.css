@@ -127,6 +127,33 @@ button,
   font-size: 0.8rem;
 }
 
+.api-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.6875rem;
+  font-weight: 800;
+}
+
+.api-status::before {
+  width: 0.42rem;
+  height: 0.42rem;
+  border-radius: 999px;
+  background: #94a3b8;
+  content: "";
+}
+
+.api-status-live { color: #86efac; }
+.api-status-live::before { background: #22c55e; }
+.api-status-partial { color: #fcd34d; }
+.api-status-partial::before { background: #f59e0b; }
+.api-status-loading { color: #cbd5e1; }
+.api-status-loading::before { background: #cbd5e1; animation: api-pulse 1.2s ease-in-out infinite; }
+
+@keyframes api-pulse {
+  50% { opacity: 0.35; }
+}
+
 .summary-card {
   display: block;
   width: 100%;
