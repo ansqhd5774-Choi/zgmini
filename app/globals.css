@@ -550,8 +550,8 @@ button,
 
 .snapshot-panel {
   margin-top: 1.5rem;
-  background: rgba(22, 30, 43, 0.82);
-  padding: 1rem;
+  background: transparent;
+  padding: 0.25rem 0 0;
 }
 
 .snapshot-heading {
@@ -566,35 +566,74 @@ button,
   font-weight: 900;
 }
 
-.snapshot-heading span {
-  color: #94a3b8;
-  font-size: 0.75rem;
+.snapshot-line {
+  margin-top: 0.75rem;
 }
 
-.snapshot-line {
-  margin-top: 0.7rem;
-  display: grid;
-  grid-template-columns: 3.25rem minmax(0, 1fr);
+.snapshot-row-head {
+  display: flex;
+  min-height: 2rem;
   align-items: center;
-  gap: 0.55rem;
+  gap: 0.6rem;
+  margin-bottom: 0.3rem;
 }
 
 .snapshot-label {
   color: #f8fafc;
-  font-size: 0.85rem;
+  font-size: 0.875rem;
+  font-weight: 900;
+}
+
+.snapshot-label::before {
+  display: inline-block;
+  width: 0.3rem;
+  height: 0.3rem;
+  margin-right: 0.4rem;
+  border-radius: 9999px;
+  background: #f5b942;
+  vertical-align: 0.12rem;
+  content: "";
+}
+
+.snapshot-selection {
+  margin-left: auto;
+  color: #aeb8c6;
+  font-size: 0.8125rem;
+  font-weight: 700;
+}
+
+.snapshot-view-toggle {
+  display: flex;
+  padding: 0.12rem;
+  background: rgba(255, 255, 255, 0.055);
+}
+
+.snapshot-view-toggle button {
+  min-width: 3.15rem;
+  padding: 0.3rem 0.6rem;
+  color: #aeb8c6;
+  font-size: 0.8125rem;
+  font-weight: 800;
+}
+
+.snapshot-view-toggle button[aria-pressed="true"] {
+  background: rgba(248, 250, 252, 0.94);
+  color: #172033;
 }
 
 .snapshot-scroll {
   display: flex;
-  gap: 0.35rem;
+  gap: 0.2rem;
   overflow-x: auto;
-  padding: 0 2.25rem;
+  padding: 0 0.1rem;
+  overscroll-behavior-inline: contain;
   scroll-behavior: smooth;
-  scroll-snap-type: x proximity;
+  scroll-snap-type: x mandatory;
   scrollbar-width: none;
   cursor: grab;
-  touch-action: pan-x;
+  touch-action: pan-x pan-y;
   user-select: none;
+  -webkit-overflow-scrolling: touch;
 }
 
 .snapshot-scroll::-webkit-scrollbar {
@@ -604,6 +643,17 @@ button,
 .snapshot-scroll.is-dragging {
   cursor: grabbing;
   scroll-behavior: auto;
+  scroll-snap-type: none;
+}
+
+.snapshot-scroll.is-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(5.5rem, 1fr));
+  overflow: visible;
+  gap: 0.25rem;
+  padding: 0;
+  cursor: default;
+  scroll-snap-type: none;
 }
 
 .snapshot-track {
@@ -617,40 +667,112 @@ button,
   bottom: 0;
   z-index: 5;
   display: grid;
-  width: 2.15rem;
+  width: 3.25rem;
   place-items: center;
   border: 0;
   color: #ffffff;
-  transition: background-color 150ms ease, color 150ms ease;
+  transition: color 150ms ease, opacity 150ms ease;
 }
 
 .snapshot-arrow:hover,
 .snapshot-arrow:focus-visible {
-  background: rgba(15, 23, 42, 0.96);
   color: #fbbf24;
   outline: none;
 }
 
 .snapshot-arrow-left {
   left: 0;
-  background: linear-gradient(90deg, rgba(15,23,42,1) 35%, rgba(15,23,42,0));
+  justify-items: start;
+  padding-left: 0.35rem;
+  background: linear-gradient(90deg, rgba(54,54,54,1) 28%, rgba(54,54,54,0));
 }
 
 .snapshot-arrow-right {
   right: 0;
-  background: linear-gradient(270deg, rgba(15,23,42,1) 35%, rgba(15,23,42,0));
+  justify-items: end;
+  padding-right: 0.35rem;
+  background: linear-gradient(270deg, rgba(54,54,54,1) 28%, rgba(54,54,54,0));
 }
 
 .compact-gauge {
   display: flex;
-  width: 5.75rem;
-  min-width: 5.75rem;
+  width: 5.6rem;
+  min-width: 5.6rem;
+  min-height: 5.65rem;
   flex-direction: column;
   align-items: center;
-  gap: 0.25rem;
-  padding: 0.4rem 0.25rem;
-  background: rgba(255, 255, 255, 0.045);
+  justify-content: flex-start;
+  gap: 0.18rem;
+  border: 0;
+  padding: 0.3rem 0.2rem 0.2rem;
+  background: rgba(255, 255, 255, 0.022);
+  color: inherit;
   scroll-snap-align: start;
+  scroll-snap-stop: always;
+  transition: background-color 150ms ease, box-shadow 150ms ease, transform 150ms ease;
+}
+
+.compact-gauge:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.compact-gauge:focus-visible {
+  outline: 2px solid #f5b942;
+  outline-offset: -2px;
+}
+
+.compact-gauge[aria-pressed="true"] {
+  background: rgba(245, 185, 66, 0.075);
+  box-shadow: inset 0 0 0 2px #f5b942;
+}
+
+.compact-gauge:active {
+  transform: scale(0.98);
+}
+
+.compact-gauge-name {
+  display: grid;
+  min-height: 2.3rem;
+  place-items: center;
+  color: #e2e8f0;
+  font-size: 0.8125rem;
+  font-weight: 800;
+  line-height: 1.1rem;
+  text-align: center;
+}
+
+@media (min-width: 1200px) {
+  .snapshot-line-sector .snapshot-scroll {
+    display: grid;
+    grid-template-columns: repeat(11, minmax(0, 1fr));
+    overflow: visible;
+    gap: 0.2rem;
+    padding: 0;
+    cursor: default;
+    scroll-snap-type: none;
+  }
+
+  .snapshot-line-sector .compact-gauge {
+    width: 100%;
+    min-width: 0;
+  }
+}
+
+@media (min-width: 768px) and (max-width: 1199px) {
+  .snapshot-line-sector .snapshot-scroll {
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    overflow: visible;
+    gap: 0.25rem;
+    padding: 0;
+    cursor: default;
+    scroll-snap-type: none;
+  }
+
+  .snapshot-line-sector .compact-gauge {
+    width: 100%;
+    min-width: 0;
+  }
 }
 
 .theme-analysis {
@@ -871,11 +993,6 @@ button,
     font-size: 0.8125rem;
   }
 
-  .snapshot-line {
-    grid-template-columns: 2.75rem minmax(0, 1fr);
-    gap: 0.35rem;
-  }
-
   .snapshot-panel {
     margin-right: -1rem;
     margin-left: -1rem;
@@ -883,9 +1000,18 @@ button,
     padding-left: 0.75rem;
   }
 
-  .snapshot-scroll {
-    padding-right: 2rem;
-    padding-left: 2rem;
+  .snapshot-row-head {
+    flex-wrap: wrap;
+  }
+
+  .snapshot-selection {
+    width: 100%;
+    margin-left: 0;
+    padding-left: 0.7rem;
+  }
+
+  .snapshot-scroll:not(.is-grid) {
+    scroll-padding-inline: 3.25rem;
   }
 
   .theme-analysis-heading {

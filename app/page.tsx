@@ -528,65 +528,150 @@ function SentimentSection({ title, description, items, period, kind, favorites, 
   );
 }
 
-function CompactGauge({ item }: { item: SentimentItem }) {
+function CompactGauge({ item, selected, onSelect }: { item: SentimentItem; selected: boolean; onSelect: () => void }) {
   const color = getSentimentColor(item.score);
   return (
-    <div className="compact-gauge" title={`${item.name} ${item.score}점`}>
-      <div className="relative size-14 shrink-0">
-        <svg viewBox="0 0 44 44" className="size-14 -rotate-90" aria-hidden="true">
-          <circle cx="22" cy="22" r="18" pathLength="100" fill="none" stroke="rgba(148,163,184,.22)" strokeWidth="5"/>
-          <circle cx="22" cy="22" r="18" pathLength="100" fill="none" stroke={color} strokeWidth="5" strokeLinecap="butt" strokeDasharray={`${item.score} ${100-item.score}`}/>
+    <button type="button" className="compact-gauge" data-snapshot-item aria-pressed={selected} onClick={onSelect} title={`${item.name} ${item.score}점${selected ? ", 선택됨" : ""}`}>
+      <div className="relative size-12 shrink-0">
+        <svg viewBox="0 0 44 44" className="size-12 -rotate-90" aria-hidden="true">
+          <circle cx="22" cy="22" r="18" pathLength="100" fill="none" stroke="rgba(100,116,139,.24)" strokeWidth="3.5"/>
+          <circle cx="22" cy="22" r="18" pathLength="100" fill="none" stroke={color} strokeWidth="3.5" strokeLinecap="butt" strokeDasharray={`${item.score} ${100-item.score}`}/>
         </svg>
         <strong className="absolute inset-0 grid place-items-center text-sm font-black text-slate-100">{item.score}</strong>
       </div>
-      <span className="line-clamp-2 text-center text-sm font-bold leading-5 text-slate-200">{item.name}</span>
-    </div>
+      <span className="compact-gauge-name">{item.name}</span>
+    </button>
   );
 }
 
-function SnapshotRow({ label, items }: { label: string; items: SentimentItem[] }) {
+function SnapshotRow({ label, items, kind, selectedName, onSelect, view = "carousel", onViewChange }: { label: string; items: SentimentItem[]; kind: "sector" | "theme"; selectedName: string | null; onSelect: (item: SentimentItem) => void; view?: "carousel" | "grid"; onViewChange?: (view: "carousel" | "grid") => void }) {
   const scroller = useRef<HTMLDivElement>(null);
-  const drag = useRef({active:false,startX:0,scrollLeft:0});
+  const drag = useRef({active:false,startX:0,lastX:0,lastTime:0,scrollLeft:0,velocity:0,moved:false,frame:0});
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(false);
+  const selectedItem = items.find((item) => item.name === selectedName);
+
+  function updateOverflow() {
+    const element = scroller.current;
+    if (!element || view === "grid") {
+      setCanScrollLeft(false);
+      setCanScrollRight(false);
+      return;
+    }
+    setCanScrollLeft(element.scrollLeft > 3);
+    setCanScrollRight(element.scrollLeft + element.clientWidth < element.scrollWidth - 3);
+  }
+
+  useEffect(() => {
+    const element = scroller.current;
+    if (!element) return;
+    const update = () => updateOverflow();
+    update();
+    element.addEventListener("scroll", update, {passive:true});
+    const observer = new ResizeObserver(update);
+    observer.observe(element);
+    return () => {
+      element.removeEventListener("scroll", update);
+      observer.disconnect();
+      cancelAnimationFrame(drag.current.frame);
+    };
+  }, [items.length,view]);
+
+  function itemStep(element: HTMLDivElement) {
+    const firstItem = element.querySelector<HTMLElement>("[data-snapshot-item]");
+    if (!firstItem) return 96;
+    const styles = window.getComputedStyle(element);
+    return firstItem.offsetWidth + (Number.parseFloat(styles.columnGap || styles.gap) || 0);
+  }
+
+  function snapToItem(element: HTMLDivElement) {
+    const step = itemStep(element);
+    const target = Math.round(element.scrollLeft / step) * step;
+    element.classList.remove("is-dragging");
+    element.scrollTo({left:target,behavior:"smooth"});
+  }
+
   function scroll(direction: -1 | 1) {
     const element = scroller.current;
     if (!element) return;
-    element.scrollBy({left: direction * Math.max(element.clientWidth * 0.72, 320), behavior:"smooth"});
+    const step = itemStep(element);
+    const distance = Math.min(element.clientWidth * 0.78, step * 5);
+    const target = Math.round((element.scrollLeft + direction * distance) / step) * step;
+    element.scrollTo({left:target,behavior:"smooth"});
   }
   function startDrag(event: ReactPointerEvent<HTMLDivElement>) {
-    if (event.pointerType !== "mouse") return;
-    drag.current = {active:true,startX:event.clientX,scrollLeft:event.currentTarget.scrollLeft};
+    if (event.pointerType !== "mouse" || view === "grid") return;
+    cancelAnimationFrame(drag.current.frame);
+    drag.current = {active:true,startX:event.clientX,lastX:event.clientX,lastTime:performance.now(),scrollLeft:event.currentTarget.scrollLeft,velocity:0,moved:false,frame:0};
     event.currentTarget.setPointerCapture(event.pointerId);
     event.currentTarget.classList.add("is-dragging");
   }
   function moveDrag(event: ReactPointerEvent<HTMLDivElement>) {
     if (!drag.current.active) return;
+    const now = performance.now();
+    const elapsed = Math.max(1, now - drag.current.lastTime);
+    const delta = event.clientX - drag.current.lastX;
     event.currentTarget.scrollLeft = drag.current.scrollLeft - (event.clientX - drag.current.startX);
+    drag.current.velocity = (-delta / elapsed) * 0.78 + drag.current.velocity * 0.22;
+    drag.current.lastX = event.clientX;
+    drag.current.lastTime = now;
+    if (Math.abs(event.clientX - drag.current.startX) > 5) drag.current.moved = true;
+    event.preventDefault();
   }
   function stopDrag(event: ReactPointerEvent<HTMLDivElement>) {
+    if (!drag.current.active) return;
     drag.current.active = false;
-    event.currentTarget.classList.remove("is-dragging");
     if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId);
+    const element = event.currentTarget;
+    let velocity = drag.current.velocity;
+    let previous = performance.now();
+    const coast = (time: number) => {
+      const elapsed = Math.min(32, time - previous);
+      previous = time;
+      element.scrollLeft += velocity * elapsed;
+      velocity *= Math.pow(0.91, elapsed / 16);
+      const reachedEdge = element.scrollLeft <= 0 || element.scrollLeft + element.clientWidth >= element.scrollWidth - 1;
+      if (Math.abs(velocity) > 0.025 && !reachedEdge) {
+        drag.current.frame = requestAnimationFrame(coast);
+      } else {
+        snapToItem(element);
+      }
+    };
+    if (Math.abs(velocity) > 0.04) drag.current.frame = requestAnimationFrame(coast);
+    else snapToItem(element);
   }
   return (
-    <div className="snapshot-line">
-      <strong className="snapshot-label">{label}</strong>
+    <div className={`snapshot-line snapshot-line-${kind}`}>
+      <div className="snapshot-row-head">
+        <strong className="snapshot-label">{label}</strong>
+        {kind === "theme" && onViewChange && (
+          <div className="snapshot-view-toggle" role="group" aria-label="테마 보기 방식">
+            <button type="button" aria-pressed={view === "carousel"} onClick={() => onViewChange("carousel")}>한 줄</button>
+            <button type="button" aria-pressed={view === "grid"} onClick={() => onViewChange("grid")}>전체</button>
+          </div>
+        )}
+        <span className="snapshot-selection" aria-live="polite">{selectedItem ? `선택 · ${selectedItem.name} ${selectedItem.score}점` : "항목을 선택하세요"}</span>
+      </div>
       <div className="snapshot-track">
-        <button type="button" className="snapshot-arrow snapshot-arrow-left" onClick={() => scroll(-1)} aria-label={`${label} 이전 항목`}><ChevronLeft className="size-5"/></button>
-        <div ref={scroller} className="snapshot-scroll" onPointerDown={startDrag} onPointerMove={moveDrag} onPointerUp={stopDrag} onPointerCancel={stopDrag} onPointerLeave={(event) => { if (drag.current.active) stopDrag(event); }}>
-          {items.map((item) => <CompactGauge key={item.name} item={item}/>)}
+        {canScrollLeft && <button type="button" className="snapshot-arrow snapshot-arrow-left" onClick={() => scroll(-1)} aria-label={`${label} 이전 항목`}><ChevronLeft className="size-5"/></button>}
+        <div ref={scroller} className={`snapshot-scroll ${view === "grid" ? "is-grid" : ""}`} onPointerDown={startDrag} onPointerMove={moveDrag} onPointerUp={stopDrag} onPointerCancel={stopDrag} onClickCapture={(event) => { if (drag.current.moved) { event.preventDefault(); event.stopPropagation(); drag.current.moved = false; } }}>
+          {items.map((item) => <CompactGauge key={item.name} item={item} selected={selectedName === item.name} onSelect={() => onSelect(item)}/>)}
         </div>
-        <button type="button" className="snapshot-arrow snapshot-arrow-right" onClick={() => scroll(1)} aria-label={`${label} 다음 항목`}><ChevronRight className="size-5"/></button>
+        {canScrollRight && <button type="button" className="snapshot-arrow snapshot-arrow-right" onClick={() => scroll(1)} aria-label={`${label} 다음 항목`}><ChevronRight className="size-5"/></button>}
       </div>
     </div>
   );
 }
 
 function SentimentSnapshot() {
+  const [selectedSector, setSelectedSector] = useState<string | null>(null);
+  const [selectedTheme, setSelectedTheme] = useState<string | null>(null);
+  const [themeView, setThemeView] = useState<"carousel" | "grid">("carousel");
   return (
     <section className="snapshot-panel" aria-labelledby="snapshot-title">
-      <div className="snapshot-heading"><Gauge className="size-5 text-amber-300"/><h2 id="snapshot-title">섹터·테마 모아보기</h2><span>이름 / 점수</span></div>
-      <SnapshotRow label="섹터" items={sectorSentiment}/>
-      <SnapshotRow label="테마" items={themeSentiment}/>
+      <div className="snapshot-heading"><Gauge className="size-5 text-amber-300"/><h2 id="snapshot-title">섹터·테마 모아보기</h2></div>
+      <SnapshotRow label="섹터" kind="sector" items={sectorSentiment} selectedName={selectedSector} onSelect={(item) => setSelectedSector((current) => current === item.name ? null : item.name)}/>
+      <SnapshotRow label="테마" kind="theme" items={themeSentiment} selectedName={selectedTheme} onSelect={(item) => setSelectedTheme((current) => current === item.name ? null : item.name)} view={themeView} onViewChange={setThemeView}/>
     </section>
   );
 }
