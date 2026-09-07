@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 
 type Index = { status: "verified"; score: number; rating: string; observedAt?: string; updatedAt?: string; kospi?: { level?: number; change_pct?: number } | null };
-const countries = [{name:"미국",code:"us"},{name:"한국",code:"kr"},{name:"중국",code:"cn"},{name:"일본",code:"jp"},{name:"유럽",code:"eu"}];
+const countries = [{name:"미국",code:"us"},{name:"한국",code:"kr"},{name:"일본",code:"jp"},{name:"유럽",code:"eu"}];
 
 export default function CountryFearGreed() {
   const [index, setIndex] = useState<Index | null>(null);
