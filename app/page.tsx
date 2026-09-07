@@ -770,7 +770,6 @@ export default function Home() {
   const [category, setCategory] = useState<(typeof categories)[number]>("전체");
   const [countryFilter, setCountryFilter] = useState<"ALL" | CountryCode>("ALL");
   const [minimumImportance, setMinimumImportance] = useState<number | null>(null);
-  const [importanceOpen, setImportanceOpen] = useState(false);
   const [openIndicator, setOpenIndicator] = useState("");
   const [period, setPeriod] = useState<Period>("1개월");
   const [summaryCharts, setSummaryCharts] = useState<Set<string>>(new Set());
@@ -999,16 +998,6 @@ export default function Home() {
             <div className="text-center">
               <div className="flex flex-col items-center justify-center gap-3">
                 <div className="flex items-center gap-2"><Database className="size-5 text-[#2463eb]"/><h2 className="text-xl font-extrabold tracking-[-0.03em]">핵심 경제지표</h2></div>
-                <div className="importance-filter" aria-label="최소 중요도 필터">
-                  <button type="button" className="importance-toggle" aria-expanded={importanceOpen} onClick={() => setImportanceOpen((open) => !open)}>중요도 <span aria-hidden="true">▼</span></button>
-                  {importanceOpen && <div className="importance-options">
-                  {[1,2,3,4,5].map((star) => (
-                    <button type="button" key={star} aria-pressed={minimumImportance === star} onClick={() => { setMinimumImportance((current) => current === star ? null : star); setOpenIndicator(""); }} title={`${star}점 이상 표시`}>
-                      <Star className={`size-5 ${minimumImportance !== null && star <= minimumImportance ? "fill-amber-400 text-amber-400" : "text-slate-400"}`}/>
-                    </button>
-                  ))}
-                  <span>{minimumImportance ? `${minimumImportance}점 이상` : "전체 중요도"}</span></div>}
-                </div>
               </div>
               <p className="mt-1 text-sm text-slate-600">국기와 별을 눌러 지표를 걸러보고, 지표를 누르면 {period} 상세 흐름이 열립니다.</p>
             </div>
@@ -1022,7 +1011,7 @@ export default function Home() {
           <div className="overflow-x-auto">
             <div className="min-w-[1320px]">
               <div className="indicator-grid indicator-header px-4">
-                <span>국가</span><span>중요도</span><span>지표</span><span>차트</span><span>현재 / 발표일</span><span>예상 / 이전</span><span>추세</span><span>시장 판단</span><span>발표 주기</span><span>다음 발표 (D-day)</span>
+                <span>국가</span><button type="button" className="importance-header" onClick={() => { setMinimumImportance((current) => current === null ? 5 : current === 1 ? null : current - 1); setOpenIndicator(""); }} title="중요도별 지표 필터">중요도 <span aria-hidden="true">▼</span></button><span>지표</span><span>차트</span><span>현재 / 발표일</span><span>예상 / 이전</span><span>추세</span><span>시장 판단</span><span>발표 주기</span><span>다음 발표 (D-day)</span>
               </div>
               <Accordion type="single" collapsible value={openIndicator} onValueChange={setOpenIndicator}>
                 {filtered.map((item) => {
