@@ -1034,6 +1034,11 @@ button,
  .importance-toggle { gap: .25rem; color:#334155; font-size:.75rem; font-weight:800; }
  .importance-options { display:flex; align-items:center; gap:.1rem; }
 
+/* Keep the accordion chevron out of the data grid's width calculation. */
+.indicator-trigger { position: relative; }
+.indicator-trigger > .indicator-grid { width: 100%; }
+.indicator-trigger > svg { position: absolute; right: 1rem; }
+
 @media (hover: none) {
   .favorite-action {
     inset: auto 0.5rem 0.5rem auto;
