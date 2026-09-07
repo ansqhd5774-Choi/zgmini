@@ -381,7 +381,7 @@ function expandIndicatorHistory(data: ChartPoint[], seed: number) {
   const amplitude = Math.max(Math.abs(first) * 0.06, range * 0.45, 0.08);
   const missing = 12 - data.length;
   const prefix = Array.from({length:missing}, (_, index) => ({
-    label: `${12 - index}기 전`,
+    label: `${12 - index}개월 전`,
     value: Number((first + Math.sin((index + seed) * 1.17) * amplitude - (missing - index) * amplitude * 0.08).toFixed(2)),
   }));
   return [...prefix, ...data];
@@ -731,7 +731,7 @@ function IndicatorDetail({ item, period }: { item: Indicator; period: Period }) 
               <defs><linearGradient id={`macro-${item.id}`} x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#2463eb" stopOpacity={0.28}/><stop offset="100%" stopColor="#2463eb" stopOpacity={0.02}/></linearGradient></defs>
               <CartesianGrid stroke="#cbd5e1" strokeDasharray="3 3" vertical={false}/>
               <XAxis dataKey="label" axisLine={false} tickLine={false} tick={{fill:"#64748b",fontSize:12}}/>
-              <YAxis axisLine={false} tickLine={false} tick={{fill:"#64748b",fontSize:12}} domain={["auto","auto"]}/>
+              <YAxis axisLine={false} tickLine={false} tick={{fill:"#64748b",fontSize:12}} domain={([min,max]) => [Math.min(Number(min), item.benchmark - Math.max(1, Math.abs(item.benchmark)*0.15)), Math.max(Number(max), item.benchmark + Math.max(1, Math.abs(item.benchmark)*0.15))]}/>
               <ReferenceLine y={item.benchmark} stroke="#e11d48" strokeWidth={1.5} strokeDasharray="5 4" ifOverflow="extendDomain" label={{value:`기준 ${item.benchmark}`,position:"insideTopRight",fill:"#be123c",fontSize:12}}/>
               <Tooltip formatter={(value) => [`${value} ${item.unit}`, item.name]} contentStyle={{borderRadius:0,border:"1px solid #94a3b8",boxShadow:"0 8px 24px rgba(15,35,65,.12)"}}/>
               <Area type="monotone" dataKey="value" stroke="#2463eb" strokeWidth={2.8} fill={`url(#macro-${item.id})`} activeDot={{r:5}}/>
@@ -771,6 +771,7 @@ export default function Home() {
   const [countryFilter, setCountryFilter] = useState<Set<"ALL" | CountryCode>>(new Set(["ALL"]));
   const [importanceLevels, setImportanceLevels] = useState<Set<number>>(new Set());
   const [importanceFilterOpen, setImportanceFilterOpen] = useState(false);
+  const [countryFilterOpen, setCountryFilterOpen] = useState(false);
   const [openIndicator, setOpenIndicator] = useState("");
   const [period, setPeriod] = useState<Period>("1개월");
   const [summaryCharts, setSummaryCharts] = useState<Set<string>>(new Set());
@@ -1009,7 +1010,7 @@ export default function Home() {
           <div className="overflow-x-auto">
             <div className="min-w-[1320px]">
               <div className="indicator-grid indicator-header px-4">
-                <div className="importance-header-wrap"><button type="button" className="importance-header" onClick={() => setImportanceFilterOpen((open) => !open)} title="국가 필터 열기">국가 <span aria-hidden="true">▼</span></button>{importanceFilterOpen && <div className="importance-popover country-popover" role="group" aria-label="국가 선택">{countryFilters.map((country) => <label key={country.code}><input type="checkbox" checked={countryFilter.has(country.code)} onChange={() => setCountryFilter((current) => { if (country.code === "ALL") return new Set(["ALL"]); const next = new Set(current); next.delete("ALL"); next.has(country.code) ? next.delete(country.code) : next.add(country.code); return next.size ? next : new Set(["ALL"]); })}/><span className="country-option"><img src={country.code === "ALL" ? "/flags/us.svg" : `/flags/${country.code === "US" ? "us" : country.code === "KR" ? "kr" : country.code === "CN" ? "cn" : country.code === "JP" ? "jp" : "eu"}.svg`} alt=""/>{country.label}</span></label>)}</div>}</div><div className="importance-header-wrap"><button type="button" className="importance-header" onClick={() => setImportanceFilterOpen((open) => !open)} title="중요도 필터 열기">중요도 <span aria-hidden="true">▼</span></button>{importanceFilterOpen && <div className="importance-popover" role="group" aria-label="중요도 선택">{[5,4,3,2,1].map((level) => <label key={level}><input type="checkbox" checked={importanceLevels.has(level)} onChange={() => setImportanceLevels((current) => { const next = new Set(current); next.has(level) ? next.delete(level) : next.add(level); return next; })}/><span>{"★".repeat(level)}{"☆".repeat(5-level)}</span></label>)}</div>}</div><span>지표</span><span>차트</span><span>현재 / 발표일</span><span>예상 / 이전</span><span>추세</span><span>시장 판단</span><span>발표 주기</span><span>다음 발표 (D-day)</span>
+                <div className="importance-header-wrap"><button type="button" className="importance-header" onClick={() => {setCountryFilterOpen((open) => !open);setImportanceFilterOpen(false)}} title="국가 필터 열기">국가 <span aria-hidden="true">▼</span></button>{countryFilterOpen && <div className="importance-popover country-popover" role="group" aria-label="국가 선택">{countryFilters.map((country) => <label key={country.code}><input type="checkbox" checked={countryFilter.has(country.code)} onChange={() => setCountryFilter((current) => { if (country.code === "ALL") return new Set(["ALL"]); const next = new Set(current); next.delete("ALL"); next.has(country.code) ? next.delete(country.code) : next.add(country.code); return next.size ? next : new Set(["ALL"]); })}/><span className="country-option"><img src={country.code === "ALL" ? "/flags/us.svg" : `/flags/${country.code === "US" ? "us" : country.code === "KR" ? "kr" : country.code === "CN" ? "cn" : country.code === "JP" ? "jp" : "eu"}.svg`} alt=""/>{country.label}</span></label>)}</div>}</div><div className="importance-header-wrap"><button type="button" className="importance-header" onClick={() => {setImportanceFilterOpen((open) => !open);setCountryFilterOpen(false)}} title="중요도 필터 열기">중요도 <span aria-hidden="true">▼</span></button>{importanceFilterOpen && <div className="importance-popover" role="group" aria-label="중요도 선택">{[5,4,3,2,1].map((level) => <label key={level}><input type="checkbox" checked={importanceLevels.has(level)} onChange={() => setImportanceLevels((current) => { const next = new Set(current); next.has(level) ? next.delete(level) : next.add(level); return next; })}/><span>{"★".repeat(level)}{"☆".repeat(5-level)}</span></label>)}</div>}</div><span>지표</span><span>차트</span><span>현재 / 발표일</span><span>예상 / 이전</span><span>추세</span><span>시장 판단</span><span>발표 주기</span><span>다음 발표 (D-day)</span>
               </div>
               <Accordion type="single" collapsible value={openIndicator} onValueChange={setOpenIndicator}>
                 {filtered.map((item) => {
