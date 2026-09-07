@@ -768,7 +768,7 @@ function SummaryMiniChart({ data, period, score, label }: { data: ChartPoint[]; 
 
 export default function Home() {
   const [category, setCategory] = useState<(typeof categories)[number]>("전체");
-  const [countryFilter, setCountryFilter] = useState<"ALL" | CountryCode>("ALL");
+  const [countryFilter, setCountryFilter] = useState<Set<"ALL" | CountryCode>>(new Set(["ALL"]));
   const [minimumImportance, setMinimumImportance] = useState<number | null>(null);
   const [openIndicator, setOpenIndicator] = useState("");
   const [period, setPeriod] = useState<Period>("1개월");
@@ -799,7 +799,7 @@ export default function Home() {
   const filtered = useMemo(() => displayIndicators.filter((item) => {
     const meta = indicatorMeta[item.id];
     const categoryMatch = category === "전체" || item.category === category;
-    const countryMatch = countryFilter === "ALL" || meta.country === countryFilter;
+    const countryMatch = countryFilter.has("ALL") || countryFilter.has(meta.country);
     const importanceMatch = minimumImportance === null || item.importance >= minimumImportance;
     return categoryMatch && countryMatch && importanceMatch;
   }), [displayIndicators,category,countryFilter,minimumImportance]);
@@ -1003,7 +1003,7 @@ export default function Home() {
             </div>
             <div className="indicator-toolbar">
               <div className="country-filter" aria-label="국가 필터">
-                {countryFilters.map((country) => <button type="button" key={country.code} aria-pressed={countryFilter === country.code} onClick={() => { setCountryFilter(country.code); setOpenIndicator(""); }}><span aria-hidden="true">{country.code === "ALL" ? "🌐" : <img className="country-filter-flag" src={`/flags/${country.code === "US" ? "us" : country.code === "KR" ? "kr" : country.code === "CN" ? "cn" : country.code === "JP" ? "jp" : "eu"}.svg`} alt=""/>}</span>{country.label}</button>)}
+                {countryFilters.map((country) => <button type="button" key={country.code} aria-pressed={countryFilter.has(country.code)} onClick={() => { setCountryFilter((current) => { if (country.code === "ALL") return new Set(["ALL"]); const next = new Set(current); next.delete("ALL"); next.has(country.code) ? next.delete(country.code) : next.add(country.code); return next.size ? next : new Set(["ALL"]); }); setOpenIndicator(""); }}><span aria-hidden="true">{country.code === "ALL" ? "🌐" : <img className="country-filter-flag" src={`/flags/${country.code === "US" ? "us" : country.code === "KR" ? "kr" : country.code === "CN" ? "cn" : country.code === "JP" ? "jp" : "eu"}.svg`} alt=""/>}</span>{country.label}</button>)}
               </div>
               <Tabs value={category} onValueChange={(value) => { setCategory(value as (typeof categories)[number]); setOpenIndicator(""); }}><TabsList className="h-auto w-full justify-center overflow-x-auto rounded-none bg-slate-200 p-1 sm:w-fit">{categories.map((item) => <TabsTrigger key={item} value={item} className="min-w-14 rounded-none px-3 py-1.5 data-[state=active]:text-[#1749b5]">{item}</TabsTrigger>)}</TabsList></Tabs>
             </div>
