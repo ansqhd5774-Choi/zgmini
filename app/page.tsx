@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState, type CSSProperties, type PointerE
 import {
   Activity, ArrowDownRight, ArrowRight, ArrowUpRight, CalendarDays,
   CheckCircle2, ChevronLeft, ChevronRight, CircleAlert, Clock3, Database, Fuel, Gauge, Info,
-  LineChart as LineChartIcon, LogIn, LogOut, Map, Settings2, ShieldCheck,
+  LineChart as LineChartIcon, LogIn, LogOut, Map as MapIcon, Settings2, ShieldCheck,
   Sparkles, Star, TrendingDown, TrendingUp, UserRound, Zap,
 } from "lucide-react";
 import {
@@ -507,7 +507,7 @@ function SentimentSection({ title, description, items, period, kind, favorites, 
   return (
     <section className="mt-6" aria-labelledby={`${kind}-title`}>
       <div className="mb-3 flex flex-wrap items-end justify-between gap-4">
-        <div><div className="flex items-center gap-2"><Map className="size-5 text-violet-300"/><h2 id={`${kind}-title`} className="text-xl font-extrabold tracking-[-0.03em] text-white">{title}</h2></div><p className="mt-1 text-sm text-slate-300">{description} · {period}</p></div>
+        <div><div className="flex items-center gap-2"><MapIcon className="size-5 text-violet-300"/><h2 id={`${kind}-title`} className="text-xl font-extrabold tracking-[-0.03em] text-white">{title}</h2></div><p className="mt-1 text-sm text-slate-300">{description} · {period}</p></div>
       </div>
       {showControls && (
         <div className="sentiment-controls">
