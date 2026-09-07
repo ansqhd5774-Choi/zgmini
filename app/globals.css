@@ -1037,3 +1037,43 @@ button,
     pointer-events: auto;
   }
 }
+
+/* Country flags sit behind a quiet, legible data surface. */
+.country-sentiment-card {
+  isolation: isolate;
+  overflow: hidden;
+  padding: 1.15rem;
+  border: 1px solid rgba(255,255,255,.7);
+  border-top: 3px solid var(--sentiment-accent);
+  border-radius: 14px;
+  background: #f8fafc;
+  box-shadow: 0 8px 24px rgba(7,22,45,.12);
+}
+.country-flag-backdrop {
+  position: absolute;
+  z-index: -2;
+  top: 0;
+  right: 0;
+  width: 100%;
+  height: 78%;
+  object-fit: cover;
+  opacity: .23;
+  filter: saturate(.8) blur(.5px);
+  pointer-events: none;
+}
+.country-sentiment-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: linear-gradient(110deg,rgba(248,250,252,.82),rgba(248,250,252,.1) 80%), linear-gradient(0deg,#f8fafc 10%,rgba(248,250,252,.72) 45%,transparent 100%);
+  pointer-events: none;
+}
+.country-sentiment-card .sentiment-score strong {
+  font-size: 2.7rem;
+  line-height: 1.15;
+  letter-spacing: -.06em;
+  font-variant-numeric: tabular-nums;
+}
+.country-sentiment-card .stage-badge { border-radius: 999px; font-size: .875rem; }
+.country-sentiment-card .favorite-action { border-radius: 12px; }

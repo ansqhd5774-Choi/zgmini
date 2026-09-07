@@ -458,7 +458,8 @@ function SentimentCard({ item, period, kind, favorite, onToggle }: { item: Senti
   const stage = getSentimentStage(item.score);
   const volatility = volatilityByKind[kind][item.name];
   return (
-    <article className="sentiment-card group relative">
+    <article className={`sentiment-card group relative ${kind === "global" ? "country-sentiment-card" : ""}`} style={kind === "global" ? {"--sentiment-accent":color} as CSSProperties : undefined}>
+      {kind === "global" && <img className="country-flag-backdrop" src={`/flags/${({"미국":"us","한국":"kr","중국":"cn","일본":"jp","유럽":"eu"} as Record<string,string>)[item.name]}.svg`} alt="" aria-hidden="true"/>}
       <button type="button" className={`favorite-action ${favorite ? "is-favorite" : ""}`} onClick={() => onToggle(kind, item)} aria-label={`${item.name} ${favorite ? "즐겨찾기 해제" : "즐겨찾기 추가"}`}>
         <Star className={`size-5 ${favorite ? "fill-current" : ""}`}/><span>{favorite ? "즐겨찾기 해제" : "+ 즐겨찾기"}</span>
       </button>
@@ -982,6 +983,8 @@ export default function Home() {
           </section>
         </div>
 
+        <SentimentSection title="글로벌 공포 탐욕" description="국가별 대표지수의 심리 점수와 지역 변동성 지수" items={countrySentiment} period={period} kind="global" favorites={favorites} onToggle={toggleFavorite}/>
+
         <SentimentSnapshot/>
 
         {favoriteItems.length > 0 && (
@@ -994,8 +997,6 @@ export default function Home() {
         )}
 
         <ThemeAnalysis period={period}/>
-
-        <SentimentSection title="글로벌 공포 탐욕" description="국가별 대표지수의 심리 점수와 지역 변동성 지수" items={countrySentiment} period={period} kind="global" favorites={favorites} onToggle={toggleFavorite}/>
 
         <section className="indicator-panel mt-6">
           <div className="border-b border-slate-300 px-4 py-4 sm:px-5">
