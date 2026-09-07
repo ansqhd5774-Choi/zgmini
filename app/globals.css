@@ -1028,7 +1028,9 @@ button,
   }
 }
 
- .indicator-country > img { width: 2rem; height: 1.35rem; object-fit: cover; border: 1px solid #cbd5e1; }
+ .indicator-grid > * { text-align: center; justify-self: stretch; }
+ .indicator-grid > * > * { text-align: center; }
+ .indicator-country > img { width: 2rem; height: 1.35rem; object-fit: cover; border: 1px solid #cbd5e1; align-self: center; }
  .importance-toggle { gap: .25rem; color:#334155; font-size:.75rem; font-weight:800; }
  .importance-options { display:flex; align-items:center; gap:.1rem; }
 
