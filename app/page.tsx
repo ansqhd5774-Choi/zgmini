@@ -769,7 +769,8 @@ function SummaryMiniChart({ data, period, score, label }: { data: ChartPoint[]; 
 export default function Home() {
   const [category, setCategory] = useState<(typeof categories)[number]>("전체");
   const [countryFilter, setCountryFilter] = useState<Set<"ALL" | CountryCode>>(new Set(["ALL"]));
-  const [minimumImportance, setMinimumImportance] = useState<number | null>(null);
+  const [importanceLevels, setImportanceLevels] = useState<Set<number>>(new Set());
+  const [importanceFilterOpen, setImportanceFilterOpen] = useState(false);
   const [openIndicator, setOpenIndicator] = useState("");
   const [period, setPeriod] = useState<Period>("1개월");
   const [summaryCharts, setSummaryCharts] = useState<Set<string>>(new Set());
@@ -800,9 +801,9 @@ export default function Home() {
     const meta = indicatorMeta[item.id];
     const categoryMatch = category === "전체" || item.category === category;
     const countryMatch = countryFilter.has("ALL") || countryFilter.has(meta.country);
-    const importanceMatch = minimumImportance === null || item.importance >= minimumImportance;
+    const importanceMatch = importanceLevels.size === 0 || importanceLevels.has(item.importance);
     return categoryMatch && countryMatch && importanceMatch;
-  }), [displayIndicators,category,countryFilter,minimumImportance]);
+  }), [displayIndicators,category,countryFilter,importanceLevels]);
   const catalog = useMemo(() => [
     ...sectorSentiment.map((item) => ({kind:"sector" as const,item})),
     ...themeSentiment.map((item) => ({kind:"theme" as const,item})),
@@ -1011,7 +1012,7 @@ export default function Home() {
           <div className="overflow-x-auto">
             <div className="min-w-[1320px]">
               <div className="indicator-grid indicator-header px-4">
-                <span>국가</span><button type="button" className="importance-header" onClick={() => { setMinimumImportance((current) => current === null ? 5 : current === 1 ? null : current - 1); setOpenIndicator(""); }} title="중요도별 지표 필터">중요도 <span aria-hidden="true">▼</span></button><span>지표</span><span>차트</span><span>현재 / 발표일</span><span>예상 / 이전</span><span>추세</span><span>시장 판단</span><span>발표 주기</span><span>다음 발표 (D-day)</span>
+                <span>국가</span><div className="importance-header-wrap"><button type="button" className="importance-header" onClick={() => setImportanceFilterOpen((open) => !open)} title="중요도 필터 열기">중요도 <span aria-hidden="true">▼</span></button>{importanceFilterOpen && <div className="importance-popover" role="group" aria-label="중요도 선택">{[5,4,3,2,1].map((level) => <label key={level}><input type="checkbox" checked={importanceLevels.has(level)} onChange={() => setImportanceLevels((current) => { const next = new Set(current); next.has(level) ? next.delete(level) : next.add(level); return next; })}/><span>{"★".repeat(level)}{"☆".repeat(5-level)}</span></label>)}</div>}</div><span>지표</span><span>차트</span><span>현재 / 발표일</span><span>예상 / 이전</span><span>추세</span><span>시장 판단</span><span>발표 주기</span><span>다음 발표 (D-day)</span>
               </div>
               <Accordion type="single" collapsible value={openIndicator} onValueChange={setOpenIndicator}>
                 {filtered.map((item) => {
