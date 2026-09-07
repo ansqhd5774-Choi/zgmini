@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /signin-with-chatgpt
+Disallow: /signout-with-chatgpt
+
+Sitemap: https://zgmini.kr/sitemap.xml
