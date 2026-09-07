@@ -20,6 +20,9 @@ export const metadata: Metadata = {
     description: "한국·미국·중국·일본·유럽 공포탐욕지수와 주요 시장·경제지표를 한눈에 확인하세요.",
   },
   icons: { icon: "/favicon.svg", shortcut: "/favicon.svg" },
+  other: {
+    "naver-site-verification": "10e32247f072c5f7363357583fee172ef5259f83",
+  },
 };
 
 const structuredData = {
