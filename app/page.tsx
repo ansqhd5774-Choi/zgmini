@@ -1003,7 +1003,7 @@ export default function Home() {
             </div>
             <div className="indicator-toolbar">
               <div className="country-filter" aria-label="국가 필터">
-                {countryFilters.map((country) => <button type="button" key={country.code} aria-pressed={countryFilter === country.code} onClick={() => { setCountryFilter(country.code); setOpenIndicator(""); }}><span aria-hidden="true">{country.flag}</span>{country.label}</button>)}
+                {countryFilters.map((country) => <button type="button" key={country.code} aria-pressed={countryFilter === country.code} onClick={() => { setCountryFilter(country.code); setOpenIndicator(""); }}><span aria-hidden="true">{country.code === "ALL" ? "🌐" : <img className="country-filter-flag" src={`/flags/${country.code === "US" ? "us" : country.code === "KR" ? "kr" : country.code === "CN" ? "cn" : country.code === "JP" ? "jp" : "eu"}.svg`} alt=""/>}</span>{country.label}</button>)}
               </div>
               <Tabs value={category} onValueChange={(value) => { setCategory(value as (typeof categories)[number]); setOpenIndicator(""); }}><TabsList className="h-auto w-full justify-center overflow-x-auto rounded-none bg-slate-200 p-1 sm:w-fit">{categories.map((item) => <TabsTrigger key={item} value={item} className="min-w-14 rounded-none px-3 py-1.5 data-[state=active]:text-[#1749b5]">{item}</TabsTrigger>)}</TabsList></Tabs>
             </div>
