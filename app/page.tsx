@@ -970,6 +970,7 @@ export default function Home() {
                 <button type="button" key={label} aria-pressed={summaryCharts.has(label)} onClick={() => toggleSummaryChart(label)} className="summary-card text-left" style={{"--summary-color":color} as CSSProperties}>
                   <div className="summary-card-head"><span className="text-sm font-bold text-slate-600">{label}</span><span className="summary-note">{note}</span><Icon className="summary-accent size-4" /></div>
                   <div className="mt-3 flex items-baseline gap-2"><strong className="summary-accent text-2xl font-extrabold tracking-tight">{value}</strong><span className="summary-accent text-lg font-black">{score}점</span></div>
+                  <div className="summary-breakdown"><span>산출 근거 보기</span><small>{label === "종합" ? "물가 30% · 고용 30% · 금리 25% · 유가 15%" : label === "물가" ? "Core PCE · CPI · PPI 평균" : label === "고용" ? "실업률 · 비농업 고용" : label === "금리" ? "미국 10년물 금리" : "WTI 가격 · 변동폭"}</small></div>
                   {summaryCharts.has(label) ? <SummaryMiniChart data={data} period={period} score={score} label={label}/> : <ScoreRail score={score} sentiment label={label}/>}
                 </button>
               );

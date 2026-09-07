@@ -1077,3 +1077,7 @@ button,
 }
 .country-sentiment-card .stage-badge { border-radius: 999px; font-size: .875rem; }
 .country-sentiment-card .favorite-action { border-radius: 12px; }
+.country-sentiment-card > a { font-size: .68rem; opacity: .42; text-decoration: none; transition: opacity 150ms ease; }
+.country-sentiment-card > a:hover, .country-sentiment-card > a:focus-visible { opacity: .9; text-decoration: underline; }
+.summary-breakdown { margin-top: .65rem; border-top: 1px solid rgba(100,116,139,.18); padding-top: .5rem; color: #64748b; font-size: .7rem; }
+.summary-breakdown small { display:block; margin-top:.2rem; color:#475569; font-size:.68rem; line-height:1.35; }
