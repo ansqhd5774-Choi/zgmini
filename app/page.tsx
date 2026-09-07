@@ -997,7 +997,7 @@ export default function Home() {
         <section className="indicator-panel mt-6">
           <div className="border-b border-slate-300 px-4 py-4 sm:px-5">
             <div className="text-center">
-              <div className="flex flex-wrap items-center justify-center gap-3">
+              <div className="flex flex-col items-center justify-center gap-3">
                 <div className="flex items-center gap-2"><Database className="size-5 text-[#2463eb]"/><h2 className="text-xl font-extrabold tracking-[-0.03em]">핵심 경제지표</h2></div>
                 <div className="importance-filter" aria-label="최소 중요도 필터">
                   <button type="button" className="importance-toggle" aria-expanded={importanceOpen} onClick={() => setImportanceOpen((open) => !open)}>중요도 <span aria-hidden="true">▼</span></button>
