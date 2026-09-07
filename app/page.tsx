@@ -387,6 +387,15 @@ function expandIndicatorHistory(data: ChartPoint[], seed: number) {
   return [...prefix, ...data];
 }
 
+function calendarizeSeries(data: ChartPoint[]) {
+  const end = new Date(2026, 7, 1);
+  return data.map((point, index) => {
+    const date = new Date(end.getFullYear(), end.getMonth() - (data.length - 1 - index), 1);
+    const month = date.getMonth() + 1;
+    return { ...point, label: month === 1 ? `${date.getFullYear()}년 1월` : `${month}월` };
+  });
+}
+
 function DirectionIcon({ direction }: { direction: Direction }) {
   if (direction === "up") return <ArrowUpRight className="size-4" />;
   if (direction === "down") return <ArrowDownRight className="size-4" />;
@@ -714,7 +723,7 @@ function ThemeAnalysis({ period }: { period: Period }) {
 }
 
 function IndicatorDetail({ item, period }: { item: Indicator; period: Period }) {
-  const history = expandIndicatorHistory(item.chart, item.id.length);
+  const history = calendarizeSeries(expandIndicatorHistory(item.chart, item.id.length));
   const visible = getVisibleSeries(history, period);
   const meta = indicatorMeta[item.id];
   const country = countryMap[meta.country];
