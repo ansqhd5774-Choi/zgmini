@@ -173,7 +173,7 @@ const indicators: Indicator[] = [
   },
 ];
 
-const makeSeries = (values: number[]): ChartPoint[] => values.map((value, index) => ({label:`${index + 1}월`,value}));
+const makeSeries = (values: number[]): ChartPoint[] => values.map((value, index) => { const date = new Date(2026, 7 - (values.length - 1 - index), 1); return {label:`${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,"0")}`,value}; });
 
 function makeRegionalIndicator(input: Omit<Indicator, "chart"> & { values: number[] }): Indicator {
   const { values, ...indicator } = input;
@@ -381,7 +381,7 @@ function expandIndicatorHistory(data: ChartPoint[], seed: number) {
   const amplitude = Math.max(Math.abs(first) * 0.06, range * 0.45, 0.08);
   const missing = 12 - data.length;
   const prefix = Array.from({length:missing}, (_, index) => ({
-    label: `${12 - index}개월 전`,
+    label: (() => { const end = data[data.length - 1]?.label ?? "2026-08"; const m = end.match(/(\d{4})[-년 ](\d{1,2})/); const date = m ? new Date(Number(m[1]), Number(m[2]) - 1 - (missing - index), 1) : new Date(2026, 7 - (missing - index), 1); return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,"0")}`; })(),
     value: Number((first + Math.sin((index + seed) * 1.17) * amplitude - (missing - index) * amplitude * 0.08).toFixed(2)),
   }));
   return [...prefix, ...data];
