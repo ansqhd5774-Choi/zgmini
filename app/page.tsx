@@ -27,6 +27,7 @@ import {
 } from "@/components/ui/sheet";
 import { Toaster } from "@/components/ui/sonner";
 import { toast } from "sonner";
+import CountryFearGreed from "./country-fear-greed";
 
 type Direction = "up" | "down" | "flat";
 type Signal = "positive" | "negative" | "neutral";
@@ -240,13 +241,6 @@ const indicatorMeta: Record<string, IndicatorMeta> = {
   "eu-pmi":{country:"EU",currentDate:"2026.08.31",previousDate:"2026.07.31",releaseCycle:"월간",nextRelease:"2026-09-23"},
 };
 
-const countrySentiment: SentimentItem[] = [
-  { name: "미국", subtitle: "S&P 500", score: 71, data: makeSeries([44,47,49,53,57,55,59,63,61,66,69,71]) },
-  { name: "한국", subtitle: "KOSPI", score: 46, data: makeSeries([58,54,51,48,43,40,42,39,44,47,45,46]) },
-  { name: "중국", subtitle: "CSI 300", score: 38, data: makeSeries([51,49,45,42,39,35,32,36,40,37,36,38]) },
-  { name: "일본", subtitle: "Nikkei 225", score: 64, data: makeSeries([48,52,55,51,54,58,61,59,62,65,63,64]) },
-  { name: "유럽", subtitle: "STOXX Europe 600", score: 55, data: makeSeries([43,46,50,52,49,51,54,56,53,52,54,55]) },
-];
 
 const sectorSentiment: SentimentItem[] = [
   {name:"정보기술",score:74,data:makeSeries([45,48,52,56,59,61,64,67,66,70,72,74])},
@@ -680,6 +674,7 @@ function SentimentSnapshot() {
   return (
     <section className="snapshot-panel" aria-labelledby="snapshot-title">
       <div className="snapshot-heading"><Gauge className="size-5 text-amber-300"/><h2 id="snapshot-title">섹터·테마 모아보기</h2></div>
+      <p className="mb-3 text-sm text-amber-200">예시 데이터 · 아래 점수와 추세는 실제 공포·탐욕 지수가 아니며 CNN과 무관합니다.</p>
       <SnapshotRow label="섹터" kind="sector" items={sectorSentiment} selectedName={selectedSector} onSelect={(item) => setSelectedSector((current) => current === item.name ? null : item.name)}/>
       <SnapshotRow label="테마" kind="theme" items={themeSentiment} selectedName={selectedTheme} onSelect={(item) => setSelectedTheme((current) => current === item.name ? null : item.name)} view={themeView} onViewChange={setThemeView}/>
     </section>
@@ -809,7 +804,6 @@ export default function Home() {
     return categoryMatch && countryMatch && importanceMatch;
   }), [displayIndicators,category,countryFilter,minimumImportance]);
   const catalog = useMemo(() => [
-    ...countrySentiment.map((item) => ({kind:"global" as const,item})),
     ...sectorSentiment.map((item) => ({kind:"sector" as const,item})),
     ...themeSentiment.map((item) => ({kind:"theme" as const,item})),
   ], []);
@@ -916,7 +910,7 @@ export default function Home() {
             <div className="grid size-10 shrink-0 place-items-center rounded-xl bg-[#f5b942] text-[#07162d] shadow-[0_6px_20px_rgba(245,185,66,0.22)]"><Activity className="size-5" strokeWidth={2.4} /></div>
             <div className="min-w-0"><p className="truncate text-lg font-extrabold tracking-[-0.03em]">즤그미니!</p><p className="hidden truncate text-xs text-slate-400 sm:block">경제지표로 시장을 읽다</p></div>
           </div>
-          <div className="header-update"><Clock3 className="size-4"/><span>최종 업데이트</span><strong>{formatUpdatedAt(updatedAt)}</strong><span className={`api-status api-status-${marketDataLoading ? "loading" : marketData?.status ?? "fallback"}`} aria-label={marketDataLoading ? "API 연결 중" : marketData?.status === "live" ? "실시간 API 연결됨" : "API 부분 연결 또는 예시 데이터"}>{marketDataLoading ? "API 연결 중" : marketData?.status === "live" ? "API 연결됨" : "API 부분 연결"}</span></div>
+          <div className="header-update"><Clock3 className="size-4"/><span>최종 업데이트</span><strong>{formatUpdatedAt(updatedAt)}</strong><span className={`api-status api-status-${marketDataLoading ? "loading" : marketData?.status ?? "fallback"}`} aria-label={marketDataLoading ? "API 연결 중" : marketData?.status === "live" ? "실시간 경제지표 API 연결됨" : "경제지표 API 부분 연결 또는 예시 데이터"}>{marketDataLoading ? "API 연결 중" : marketData?.status === "live" ? "경제지표 API 연결됨" : "경제지표 API 부분 연결"}</span></div>
           <div className="flex items-center justify-end gap-2">
             {sessionLoading ? (
               <span className="hidden text-xs text-slate-400 sm:inline">계정 확인 중</span>
@@ -963,7 +957,7 @@ export default function Home() {
       </header>
 
       <div className={`border-b text-amber-950 ${marketData?.status === "live" ? "border-emerald-200 bg-emerald-50" : "border-amber-200 bg-amber-50"}`}>
-        <div className="mx-auto flex max-w-[1480px] items-start gap-2 px-4 py-2.5 text-sm sm:px-6 lg:px-8"><Info className="mt-0.5 size-4 shrink-0" /><p>{marketDataLoading ? "공식 BLS·FRED API에서 핵심 지표를 불러오는 중입니다." : marketData?.status === "live" ? "상단 핵심 지표와 점수는 BLS·FRED 공식 공개 데이터에서 불러옵니다. 15분마다 자동 갱신합니다." : marketDataError ? "API 응답을 받지 못해 예시 데이터가 표시되고 있습니다. 잠시 후 자동으로 다시 시도합니다." : "일부 API만 연결되어 연결된 지표는 실데이터, 나머지는 예시 데이터로 표시됩니다."}</p></div>
+        <div className="mx-auto flex max-w-[1480px] items-start gap-2 px-4 py-2.5 text-sm sm:px-6 lg:px-8"><Info className="mt-0.5 size-4 shrink-0" /><p>{marketDataLoading ? "공식 BLS·FRED API에서 핵심 지표를 불러오는 중입니다." : marketData?.status === "live" ? "경제지표는 BLS·FRED에서 불러오며 상단 점수는 자체 계산값입니다. CNN 공포·탐욕 지수와는 별개입니다." : marketDataError ? "API 응답을 받지 못해 예시 데이터가 표시되고 있습니다. 잠시 후 자동으로 다시 시도합니다." : "일부 API만 연결되어 연결된 지표는 실데이터, 나머지는 예시 데이터로 표시됩니다."}</p></div>
       </div>
 
       <div className="mx-auto max-w-[1480px] px-4 py-5 sm:px-6 lg:px-8 lg:py-7">
@@ -983,7 +977,7 @@ export default function Home() {
           </section>
         </div>
 
-        <SentimentSection title="글로벌 공포 탐욕" description="국가별 대표지수의 심리 점수와 지역 변동성 지수" items={countrySentiment} period={period} kind="global" favorites={favorites} onToggle={toggleFavorite}/>
+        <CountryFearGreed/>
 
         <SentimentSnapshot/>
 
@@ -996,7 +990,7 @@ export default function Home() {
           </section>
         )}
 
-        <ThemeAnalysis period={period}/>
+        <p className="mt-6 text-sm text-amber-200">검증된 테마 데이터가 연결될 때까지 예시 점수를 이용한 매수·매도 분석은 표시하지 않습니다.</p>
 
         <section className="indicator-panel mt-6">
           <div className="border-b border-slate-300 px-4 py-4 sm:px-5">
@@ -1055,8 +1049,8 @@ export default function Home() {
           </div>
         </section>
 
-        <SentimentSection title="섹터별 공포 탐욕" description="GICS 11개 섹터의 심리 점수와 시장 대비 베타" items={sectorSentiment} period={period} kind="sector" favorites={favorites} onToggle={toggleFavorite}/>
-        <SentimentSection title="테마별 공포 탐욕" description="주요 성장 테마의 심리 점수와 시장 대비 베타" items={themeSentiment} period={period} kind="theme" favorites={favorites} onToggle={toggleFavorite}/>
+        <SentimentSection title="섹터별 심리 점수 · 예시" description="실제 지수가 아닌 예시 점수·추세·베타 · CNN 지수와 무관" items={sectorSentiment} period={period} kind="sector" favorites={favorites} onToggle={toggleFavorite}/>
+        <SentimentSection title="테마별 심리 점수 · 예시" description="실제 지수가 아닌 예시 점수·추세·베타 · CNN 지수와 무관" items={themeSentiment} period={period} kind="theme" favorites={favorites} onToggle={toggleFavorite}/>
       </div>
       <Toaster richColors position="bottom-right"/>
     </main>
