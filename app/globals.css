@@ -1028,6 +1028,10 @@ button,
   }
 }
 
+ .indicator-country > img { width: 2rem; height: 1.35rem; object-fit: cover; border: 1px solid #cbd5e1; }
+ .importance-toggle { gap: .25rem; color:#334155; font-size:.75rem; font-weight:800; }
+ .importance-options { display:flex; align-items:center; gap:.1rem; }
+
 @media (hover: none) {
   .favorite-action {
     inset: auto 0.5rem 0.5rem auto;
