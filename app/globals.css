@@ -1103,3 +1103,8 @@ button,
 .country-sentiment-card > a:hover, .country-sentiment-card > a:focus-visible { opacity: .9; text-decoration: underline; }
 .summary-breakdown { margin-top: .65rem; border-top: 1px solid rgba(100,116,139,.18); padding-top: .5rem; color: #64748b; font-size: .7rem; }
 .summary-breakdown small { display:block; margin-top:.2rem; color:#475569; font-size:.68rem; line-height:1.35; }
+.summary-detail-list { margin-top:.65rem; display:grid; gap:.35rem; text-align:left; }
+.summary-detail-row { display:grid; grid-template-columns:5rem 1fr 2rem; align-items:center; gap:.4rem; color:#475569; font-size:.66rem; }
+.summary-detail-row b { text-align:right; color:#0f172a; font-variant-numeric:tabular-nums; }
+.summary-detail-track { height:.28rem; overflow:hidden; background:#e2e8f0; }
+.summary-detail-track i { display:block; height:100%; background:var(--summary-color,#2463eb); }

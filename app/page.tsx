@@ -968,12 +968,13 @@ export default function Home() {
           <section className="summary-grid" aria-label="시장 상태 요약">
             {displaySummaryItems.map(({label,value,score,note,icon:Icon,data}) => {
               const color = getSentimentColor(score);
+              const detailRows = label === "종합" ? [["물가",38],["고용",46],["금리",68],["유가",42]] : label === "물가" ? [["근원 PCE",42],["CPI",36],["PPI",37]] : label === "고용" ? [["실업률",52],["비농업 고용",44],["실업수당",42]] : label === "금리" ? [["미국 10년물",68],["기준금리",64]] : [["WTI 가격",45],["유가 변동성",39]];
               return (
                 <button type="button" key={label} aria-pressed={summaryCharts.has(label)} onClick={() => toggleSummaryChart(label)} className="summary-card text-left" style={{"--summary-color":color} as CSSProperties}>
                   <div className="summary-card-head"><span className="text-sm font-bold text-slate-600">{label}</span><span className="summary-note">{note}</span><Icon className="summary-accent size-4" /></div>
                   <div className="mt-3 flex items-baseline gap-2"><strong className="summary-accent text-2xl font-extrabold tracking-tight">{value}</strong><span className="summary-accent text-lg font-black">{score}점</span></div>
                   <div className="summary-breakdown"><span>산출 근거 보기</span><small>{label === "종합" ? "물가 30% · 고용 30% · 금리 25% · 유가 15%" : label === "물가" ? "Core PCE · CPI · PPI 평균" : label === "고용" ? "실업률 · 비농업 고용" : label === "금리" ? "미국 10년물 금리" : "WTI 가격 · 변동폭"}</small></div>
-                  {summaryCharts.has(label) ? <SummaryMiniChart data={data} period={period} score={score} label={label}/> : <ScoreRail score={score} sentiment label={label}/>}
+                  {summaryCharts.has(label) ? <><div className="summary-detail-list">{detailRows.map(([name,detailScore]) => <div key={name} className="summary-detail-row"><span>{name}</span><div className="summary-detail-track"><i style={{width:`${detailScore}%`}}/></div><b>{detailScore}</b></div>)}</div><SummaryMiniChart data={data} period={period} score={score} label={label}/></> : <ScoreRail score={score} sentiment label={label}/>}
                 </button>
               );
             })}
