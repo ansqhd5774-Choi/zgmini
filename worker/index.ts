@@ -29,12 +29,6 @@ interface ExecutionContext {
 const worker = {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const url = new URL(request.url);
-    // Keep this SEO page at its declared canonical URL without changing other routes.
-    if (url.pathname === "/fear-greed/korea/") {
-      const internalUrl = new URL(request.url);
-      internalUrl.pathname = "/fear-greed/korea";
-      return handler.fetch(new Request(internalUrl, request), env, ctx);
-    }
     // Serve the static sitemap without rendering pages or calling APIs.
     if (url.pathname === "/sitemap.xml" && (request.method === "GET" || request.method === "HEAD")) {
       return new Response(request.method === "HEAD" ? null : sitemapXml, {
