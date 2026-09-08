@@ -30,10 +30,6 @@ const worker = {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const url = new URL(request.url);
     // Keep this SEO page at its declared canonical URL without changing other routes.
-    if (url.pathname === "/fear-greed/korea") {
-      url.pathname = "/fear-greed/korea/";
-      return Response.redirect(url.toString(), 308);
-    }
     if (url.pathname === "/fear-greed/korea/") {
       const internalUrl = new URL(request.url);
       internalUrl.pathname = "/fear-greed/korea";
