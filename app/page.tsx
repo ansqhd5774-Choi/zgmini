@@ -1012,7 +1012,6 @@ export default function Home() {
               <div className="flex flex-col items-center justify-center gap-3">
                 <div className="flex items-center gap-2"><Database className="size-5 text-[#2463eb]"/><h2 className="text-xl font-extrabold tracking-[-0.03em]">핵심 경제지표</h2></div>
               </div>
-              <p className="mt-1 text-sm text-slate-600">국기와 별을 눌러 지표를 걸러보고, 지표를 누르면 {period} 상세 흐름이 열립니다.</p>
             </div>
             <div className="indicator-toolbar">
               <Tabs value={category} onValueChange={(value) => { setCategory(value as (typeof categories)[number]); setOpenIndicator(""); }}><TabsList className="h-auto w-full justify-center overflow-x-auto rounded-none bg-slate-200 p-1 sm:w-fit">{categories.map((item) => <TabsTrigger key={item} value={item} className="min-w-14 rounded-none px-3 py-1.5 data-[state=active]:text-[#1749b5]">{item}</TabsTrigger>)}</TabsList></Tabs>
