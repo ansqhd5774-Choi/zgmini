@@ -30,7 +30,7 @@ export default function CorePceRow({period}:{period:string}){
    <span className="text-xs font-semibold" style={{color}}>{trend}</span><span className="text-xs text-slate-600">{latest&&previous?(unchanged?'중립':latest.value<previous.value?'긍정':'부정'):'확인 불가'}</span>
    <span className="text-xs font-bold text-slate-600">월간</span><div><strong className="text-xs text-slate-800">{next?new Intl.DateTimeFormat('ko-KR',{timeZone:'Asia/Seoul',month:'long',day:'numeric'}).format(new Date(next.utc)):'일정 확인 불가'}</strong><small className="d-day">{next?releaseDDay(next.utc,now):'—'}</small></div>
   </div></AccordionTrigger>
-  <AccordionContent className="p-0"><div className="indicator-detail" data-testid="core-pce-detail">
+  <AccordionContent className="p-0"><div className="indicator-detail" style={{maxWidth:"calc(100vw - 48px)"}} data-testid="core-pce-detail">
    <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-300 px-5 py-4"><h3 className="text-lg font-extrabold text-slate-950">근원 PCE 물가 과거 흐름</h3><div className="flex flex-wrap gap-1" role="group" aria-label="근원 PCE 조회 기간">{[[1,'1개월'],[3,'3개월'],[6,'6개월'],[12,'1년']].map(([n,label])=><button key={n} type="button" aria-pressed={months===n} onClick={()=>setMonths(Number(n))} className={`min-h-10 px-3 text-sm ${months===n?'bg-blue-700 text-white':'bg-slate-200 text-slate-700'}`}>{label}</button>)}</div></div>
    <div className="grid gap-5 p-5 xl:grid-cols-[minmax(0,1.7fr)_minmax(280px,0.75fr)]"><div className="min-w-0"><p className="mb-2 text-xs text-slate-500">최신 발표 기준 {months===12?'1년':`${months}개월`} · {visible.length?`${visible[0].date} ~ ${visible.at(-1)!.date}`:'데이터 없음'}</p>
     <div className="h-72 w-full" aria-label="근원 PCE 실제 발표 데이터 차트">{visible.length>0?<ResponsiveContainer width="100%" height="100%"><AreaChart data={visible} margin={{top:18,right:25,left:-12,bottom:0}}>
@@ -48,4 +48,5 @@ export default function CorePceRow({period}:{period:string}){
    </div></div></div></AccordionContent>
  </AccordionItem>;
 }
+
 
