@@ -1,109 +1,287 @@
-// PHASE 1 diagnostics only. Never expose secrets or upstream payloads.
-const result = (provider, base) => ({provider, requestAttempted:false, secretPresent:false, authSuccess:false, httpStatus:null, responseReceived:false, observationDate:null, unit:null, recordCount:0, historyAvailable:false, nullOrMissing:null, errorType:null, endpointConfigured:Boolean(base), responseFormat:null, parserSuccess:false, apiErrorCode:null, rowContainerFound:false});
-let lastRunAt = 0;
+// Temporary server-only diagnostics. Never return upstream bodies, URLs or keys.
+// FSC metric: official supplied guide, section 4, crdTrFingWhl. Unit unspecified.
+// KOSIS docs: devGuide_0701List, devGuide_060104List (ITM),
+// devGuide_060103List (PRD), devGuide_0201List (observations).
+const FSC_BASE = 'https://apis.data.go.kr/1160100/service/GetKofiaStatisticsInfoService/';
+const KOSIS_BASE = 'https://kosis.kr/openapi/';
+const BOK_BASE = 'https://ecos.bok.or.kr/api/';
+const id = value => typeof value === 'string' && /^[A-Za-z0-9_.-]{1,80}$/.test(value) ? value : null;
+const text = value => typeof value === 'string' && value.trim() ? value.trim() : null;
 
-async function check(provider, key, url, parse) {
-  const out = result(provider, url);
-  out.secretPresent = typeof key === 'string' && key.trim().length > 0;
-  if (!out.secretPresent || !url) { out.errorType = out.secretPresent ? 'ENDPOINT_NOT_CONFIGURED' : 'SECRET_MISSING'; return out; }
-  out.requestAttempted = true;
+export function numeric(value) {
+  if (typeof value === 'number') return Number.isFinite(value) ? value : null;
+  if (typeof value !== 'string') return null;
+  const s = value.trim();
+  if (!/^[+-]?(?:\d+|\d{1,3}(?:,\d{3})+)(?:\.\d+)?$/.test(s)) return null;
+  const n = Number(s.replaceAll(',', ''));
+  return Number.isFinite(n) ? n : null;
+}
+
+export function period(value, cycle) {
+  if (typeof value !== 'string') return null;
+  const s = value.trim();
+  if (['A','Y'].includes(cycle)) return /^\d{4}$/.test(s) && Number(s)>0 ? s : null;
+  if (cycle === 'Q') { const m=s.match(/^(\d{4})(?:Q|0)([1-4])$/); return m ? `${m[1]}Q${m[2]}` : null; }
+  if (cycle === 'M') return /^\d{4}(0[1-9]|1[0-2])$/.test(s) ? s : null;
+  if (cycle === 'D' && /^\d{8}$/.test(s)) {
+    const d = new Date(`${s.slice(0,4)}-${s.slice(4,6)}-${s.slice(6)}T00:00:00Z`);
+    return Number.isFinite(d.getTime()) && d.toISOString().slice(0,10).replaceAll('-','')===s ? s : null;
+  }
+  return null; // Unsupported cycles are explicit errors, never guessed.
+}
+
+export function summarize(rows, dateKey, valueKey, cycle, unitKey = null) {
+  const unique = new Map(); const conflicts = new Set(); let invalid=0;
+  for (const row of rows) {
+    const date=period(row?.[dateKey],cycle), value=numeric(row?.[valueKey]);
+    const unit=unitKey ? text(row?.[unitKey]) : null;
+    if (!date || value===null || (unitKey && !unit)) { invalid++; continue; }
+    if (conflicts.has(date)) continue;
+    const old=unique.get(date);
+    if (old && (old.value!==value || old.unit!==unit)) { unique.delete(date); conflicts.add(date); continue; }
+    unique.set(date,{date,value,unit});
+  }
+  const observations=[...unique.values()].sort((a,b)=>a.date.localeCompare(b.date));
+  const latest=observations.at(-1);
+  return {observationCount:observations.length, recordCount:observations.length,
+    observationDate:latest?.date??null, unit:latest?.unit??null,
+    unitSource:latest?.unit?'api-response':null, parserSuccess:observations.length>0,
+    historyAvailable:observations.length>=2, nullOrMissing:invalid>0||conflicts.size>0,
+    conflictingDateCount:conflicts.size};
+}
+
+export function wrapperRows(json, name) {
+  return Array.isArray(json?.[name]?.row) ? json[name].row : null;
+}
+export function parseFsc(json) {
+  const items=json?.response?.body?.items?.item;
+  const rows=Array.isArray(items)?items:(items && typeof items==='object'?[items]:null);
+  if (!rows) return null;
+  return summarize(rows,'basDt','crdTrFingWhl','D');
+}
+export function parseBok(json, cycle) {
+  const rows=wrapperRows(json,'StatisticSearch');
+  return rows ? summarize(rows,'TIME','DATA_VALUE',cycle,'UNIT_NAME') : null;
+}
+export function success(o) {
+  return o.requestAttempted===true && o.secretPresent===true && o.authSuccess===true
+    && o.httpStatus>=200 && o.httpStatus<300 && o.parserSuccess===true
+    && o.observationCount>=2 && o.historyAvailable===true && !o.errorType;
+}
+function initial(provider) {
+  return {provider,requestAttempted:false,secretPresent:false,authSuccess:false,httpStatus:null,
+    responseReceived:false,metadataCount:0,observationCount:0,recordCount:0,parserSuccess:false,
+    observationDate:null,unit:null,unitSource:null,historyAvailable:false,nullOrMissing:null,
+    stage:null,elapsedMs:0,apiErrorCode:null,errorType:null,stages:[],technicalValidationSuccess:false};
+}
+class DiagnosticError extends Error {
+  constructor(code) { super(code); this.code=code; }
+}
+function fail(out, code) {
+  out.errorType=code;
+  const stage=out.stages.at(-1);
+  if(stage) { stage.errorType=code; if(code.endsWith('PARSE_ERROR')) stage.parserSuccess=false; }
+  throw new DiagnosticError(code);
+}
+
+// Only allowlisted codes are exposed: arbitrary upstream messages may echo keys.
+const FSC_CODES = new Set(['00','01','03','04','05','10','12','20','22','23','29','30','31',
+  'SERVICE_ACCESS_DENIED_ERROR','SERVICE_KEY_IS_NOT_REGISTERED_ERROR','PERMISSION_DENIED',
+  'SERVICE_KEY_IS_NULL','DEADLINE_HAS_EXPIRED_ERROR','LIMITED_NUMBER_OF_SERVICE_REQUESTS_EXCEEDS_ERROR']);
+function apiCode(json, body, provider) {
+  if (provider==='FSC') {
+    const c=String(json?.response?.header?.resultCode??json?.header?.resultCode??'');
+    if (FSC_CODES.has(c)) return c==='00'?null:c;
+    for (const c of FSC_CODES) if (c.length>2 && body.includes(c)) return c;
+    const m=body.match(/<returnReasonCode>\s*(\d{2})\s*<\/returnReasonCode>/);
+    return m && FSC_CODES.has(m[1]) ? m[1] : (c?'UNRECOGNIZED_API_ERROR':null);
+  }
+  const raw=provider==='BOK'?json?.RESULT?.CODE:json?.err;
+  if (raw===undefined || raw===null || raw==='' || raw==='INFO-000') return null;
+  const c=String(raw);
+  return /^(?:INFO-\d{3}|ERROR-\d{3}|\d{1,4})$/.test(c)?c:'UNRECOGNIZED_API_ERROR';
+}
+
+export async function requestStage(out, name, url, context) {
+  const s={stage:name,attempted:true,httpStatus:null,elapsedMs:0,responseFormat:null,parserSuccess:false,errorType:null};
+  out.stages.push(s); out.stage=name; out.requestAttempted=true;
+  out.httpStatus=null; out.responseReceived=false; out.apiErrorCode=null; out.authSuccess=false;
+  const start=Date.now(); const controller=new AbortController();
+  const timer=setTimeout(()=>controller.abort(),context.timeoutMs??12000);
   try {
-    const response = await fetch(url, {redirect:'manual', signal:AbortSignal.timeout(12000), headers:{accept:'application/json, application/xml'}});
-    out.httpStatus = response.status; out.responseReceived = response.status >= 200 && response.status < 300;
-    const body = await response.text();
-    if (!out.responseReceived) { const parsedError = parse(body, response.headers.get('content-type') ?? ''); out.apiErrorCode = parsedError.apiErrorCode ?? null; out.responseFormat = parsedError.responseFormat; out.rowContainerFound = parsedError.rowContainerFound; out.errorType = response.status === 401 || response.status === 403 ? (parsedError.apiErrorCode ?? 'AUTHENTICATION_REJECTED') : response.status === 429 ? 'RATE_LIMITED' : 'HTTP_ERROR'; return out; }
-    const parsed = parse(body, response.headers.get('content-type') ?? '');
-    out.authSuccess = parsed.authSuccess; out.observationDate = parsed.observationDate; out.unit = parsed.unit; out.recordCount = parsed.recordCount; out.historyAvailable = parsed.historyAvailable; out.nullOrMissing = parsed.nullOrMissing; out.errorType = parsed.errorType ?? null; out.responseFormat = parsed.responseFormat; out.parserSuccess = parsed.parserSuccess; out.apiErrorCode = parsed.apiErrorCode; out.rowContainerFound = parsed.rowContainerFound;
-  } catch { out.errorType = 'NETWORK_OR_TIMEOUT'; }
-  return out;
+    const r=await context.fetch(url,{method:'GET',redirect:'manual',signal:controller.signal,headers:{accept:'application/json'}});
+    s.httpStatus=r.status; out.httpStatus=r.status; out.responseReceived=true;
+    const body=(await r.text()).replace(/^\uFEFF/,'').trim();
+    s.responseFormat=body.startsWith('<')?'xml-or-html':/^[\[{]/.test(body)?'json':'unknown';
+    let json=null;
+    try { json=JSON.parse(body); s.parserSuccess=json!==null && typeof json==='object'; } catch {}
+    out.apiErrorCode=apiCode(json,body,out.provider);
+    if (!r.ok) fail(out,`${name}_HTTP_ERROR`);
+    if (!s.parserSuccess) fail(out,`${name}_PARSE_ERROR`);
+    if (out.apiErrorCode) fail(out,`${name}_API_ERROR`);
+    out.authSuccess=true;
+    return json;
+  } catch(e) {
+    s.errorType=e instanceof DiagnosticError?e.code:controller.signal.aborted?`${name}_TIMEOUT`:`${name}_NETWORK_ERROR`;
+    out.errorType=s.errorType; throw new DiagnosticError(s.errorType);
+  } finally { clearTimeout(timer); s.elapsedMs=Date.now()-start; }
+}
+function accept(out, summary, stage) {
+  if (!summary) fail(out,`${stage}_PARSE_ERROR`);
+  Object.assign(out,summary);
+  if (!summary.observationCount) fail(out,`${stage}_EMPTY`);
+  if (!summary.historyAvailable) fail(out,`${stage}_HISTORY_INSUFFICIENT`);
+  out.errorType=null;
+}
+function url(base,path,params) { const u=new URL(path,base); for(const [k,v] of Object.entries(params)) u.searchParams.set(k,String(v)); return u; }
+function decodeKey(value) { try {return /%[0-9a-f]{2}/i.test(value)?decodeURIComponent(value):value;} catch {throw new DiagnosticError('FSC_KEY_ENCODING_ERROR');} }
+function compactDate(d) { return d.toISOString().slice(0,10).replaceAll('-',''); }
+function monthsAgo(now,n) { const d=new Date(Date.UTC(now.getUTCFullYear(),now.getUTCMonth()-n,1)); d.setUTCDate(Math.min(now.getUTCDate(),new Date(Date.UTC(d.getUTCFullYear(),d.getUTCMonth()+1,0)).getUTCDate())); return d; }
+
+async function fsc(out,key,ctx) {
+  const now=ctx.now(); const rows=[]; let total=Infinity;
+  // Bounded pagination covers 18 months; summarize all pages as one series.
+  for(let page=1;page<=10 && rows.length<total;page++) {
+    const json=await requestStage(out,'FSC_DATA',url(FSC_BASE,'getGrantingOfCreditBalanceInfo',{
+      serviceKey:decodeKey(key),resultType:'json',pageNo:page,numOfRows:100,
+      beginBasDt:compactDate(monthsAgo(now,18)),endBasDt:compactDate(now)}),ctx);
+    if (String(json?.response?.header?.resultCode)!=='00') fail(out,'FSC_DATA_API_STATUS_MISSING');
+    const raw=json?.response?.body?.items?.item;
+    const batch=Array.isArray(raw)?raw:raw&&typeof raw==='object'?[raw]:null;
+    if(!batch) fail(out,'FSC_DATA_PARSE_ERROR');
+    rows.push(...batch); total=numeric(json.response.body.totalCount)??Infinity;
+    if(batch.length<100) break;
+  }
+  accept(out,summarize(rows,'basDt','crdTrFingWhl','D'),'FSC_DATA');
+  if(rows.length<total && rows.length>=1000) fail(out,'FSC_DATA_PAGE_LIMIT');
 }
 
-async function fetchJson(url) {
-  const response = await fetch(url, {redirect:'manual', signal:AbortSignal.timeout(12000), headers:{accept:'application/json'}});
-  const body = await response.text();
-  const parsed = JSON.parse(body.trim());
-  return {response, parsed};
+// Only metadata validated by DATA is cached. No values/keys are cached here.
+// Isolate-local cache is temporary; persist reviewed identifiers in future config.
+const verifiedKosis = {series:null,expires:0};
+export function clearDiagnosticCache() { verifiedKosis.series=null; verifiedKosis.expires=0; }
+function kosisArray(out,json,stage) { if(!Array.isArray(json)) fail(out,`${stage}_PARSE_ERROR`); return json; }
+function selectedKosis(out,s) { Object.assign(out,{selectedOrgId:s.orgId,selectedTableId:s.tblId,selectedItemId:s.itmId,selectedObjectId:s.objL1,prdSe:s.prdSe}); }
+async function kosisData(out,key,s,ctx) {
+  selectedKosis(out,s);
+  const json=await requestStage(out,'KOSIS_DATA',url(KOSIS_BASE,'Param/statisticsParameterData.do',{
+    method:'getList',apiKey:key,format:'json',jsonVD:'Y',...s,newEstPrdCnt:13}),ctx);
+  const rows=kosisArray(out,json,'KOSIS_DATA');
+  // Keep a single verified dimension tuple, never merge different series by date.
+  const matched=rows.filter(r=>r.ORG_ID===s.orgId && r.TBL_ID===s.tblId && r.ITM_ID===s.itmId && r.C1===s.objL1 && r.PRD_SE===s.prdSe && !r.C2);
+  accept(out,summarize(matched,'PRD_DE','DT',s.prdSe,'UNIT_NM'),'KOSIS_DATA');
+}
+async function kosis(out,key,ctx) {
+  if(verifiedKosis.series && verifiedKosis.expires>Date.now()) {
+    try { await kosisData(out,key,verifiedKosis.series,ctx); return; }
+    catch(e) {clearDiagnosticCache();throw e;}
+  }
+  const found=await requestStage(out,'KOSIS_SEARCH',url(KOSIS_BASE,'statisticsSearch.do',{
+    method:'getList',apiKey:key,format:'json',jsonVD:'Y',searchNm:'소비자동향',sort:'DATE',startCount:1,resultCount:3}),ctx);
+  const tables=kosisArray(out,found,'KOSIS_SEARCH'); out.metadataCount+=tables.length;
+  const table=tables.find(r=>id(r.ORG_ID)&&id(r.TBL_ID)&&!/국제|북한/.test(r.TBL_NM??''));
+  if(!table) fail(out,'KOSIS_SEARCH_EMPTY');
+  const base={orgId:table.ORG_ID,tblId:table.TBL_ID};
+  Object.assign(out,{selectedOrgId:base.orgId,selectedTableId:base.tblId});
+  // Official ITM metadata combines classifications and items. OBJ is a diagnostic
+  // stage, not an invented type=OBJ operation. ALL is a discovery selector only.
+  const meta=(extra)=>url(KOSIS_BASE,'statisticsData.do',{method:'getMeta',apiKey:key,format:'json',jsonVD:'Y',...base,...extra});
+  const all=kosisArray(out,await requestStage(out,'KOSIS_ITM',meta({type:'ITM',objId:'ALL',itmId:'ALL'}),ctx),'KOSIS_ITM');
+  out.metadataCount+=all.length;
+  const metric=all.find(r=>r.OBJ_ID==='ITEM' && id(r.ITM_ID));
+  if(!metric) fail(out,'KOSIS_ITM_NOT_FOUND');
+  out.selectedItemId=metric.ITM_ID;
+  const objects=kosisArray(out,await requestStage(out,'KOSIS_OBJ',meta({type:'ITM',objId:'ALL',itmId:'ALL'}),ctx),'KOSIS_OBJ');
+  out.metadataCount+=objects.length;
+  const groups=[...new Set(objects.filter(r=>r.OBJ_ID!=='ITEM'&&id(r.OBJ_ID)).map(r=>r.OBJ_ID))];
+  if(groups.length!==1) fail(out,'KOSIS_OBJ_DIMENSIONS_UNSUPPORTED');
+  const object=objects.find(r=>r.OBJ_ID===groups[0]&&id(r.ITM_ID)&&!objects.some(c=>c.OBJ_ID===r.OBJ_ID&&c.UP_ITM_ID===r.ITM_ID));
+  if(!object) fail(out,'KOSIS_OBJ_NOT_FOUND');
+  out.selectedObjectId=object.ITM_ID;
+  const periods=kosisArray(out,await requestStage(out,'KOSIS_PRD',meta({type:'PRD'}),ctx),'KOSIS_PRD');
+  if(!periods.some(r=>r.PRD_SE==='M')) fail(out,'KOSIS_PRD_MONTHLY_NOT_FOUND');
+  const s={...base,itmId:metric.ITM_ID,objL1:object.ITM_ID,prdSe:'M'};
+  await kosisData(out,key,s,ctx);
+  verifiedKosis.series=s; verifiedKosis.expires=Date.now()+3600000;
 }
 
-function jsonParse(body) { try { return JSON.parse(body); } catch { return null; } }
-function genericParse(body, contentType) {
-  const trimmed = body.trim();
-  const json = (contentType.includes('json') || trimmed.startsWith('{') || trimmed.startsWith('[')) ? jsonParse(trimmed) : null;
-  const text = body.toLowerCase();
-  const wrapper = json?.StatisticTableList ?? json?.StatisticSearch ?? json?.StatisticItemList ?? json?.response?.body ?? json?.body ?? json;
-  const rows = wrapper?.row ?? wrapper?.items?.item ?? json?.row ?? json?.data ?? json?.RESULT?.result ?? [];
-  const list = Array.isArray(rows) ? rows : rows && typeof rows === 'object' ? [rows] : [];
-  const apiErrorCode = wrapper?.RESULT?.CODE ?? wrapper?.resultCode ?? json?.RESULT?.CODE ?? json?.resultCode ?? null;
-  const authSuccess = Boolean(json) && !/(error|invalid|denied|unauthorized|fail)/.test(text) && !apiErrorCode;
-  return {authSuccess, observationDate:list.at(-1)?.TIME ?? list.at(-1)?.PRD_DE ?? list.at(-1)?.date ?? list.at(-1)?.basDt ?? null, unit:list.at(-1)?.UNIT_NAME ?? list.at(-1)?.unit ?? null, recordCount:list.length, historyAvailable:list.length>1, nullOrMissing:list.some(x=>Object.values(x??{}).some(v=>v===null||v===''||v==='.' )), errorType:json?null: 'NON_JSON_RESPONSE', responseFormat:json?'json':contentType.includes('xml')?'xml':'unknown', parserSuccess:Boolean(json), apiErrorCode, rowContainerFound:Boolean(wrapper?.row || wrapper?.items?.item)};
+export function searchableTables(json) {
+  const rows=wrapperRows(json,'StatisticTableList');
+  return rows===null?null:rows.filter(r=>id(r.STAT_CODE)&&r.SRCH_YN==='Y'&&text(r.CYCLE));
+}
+export function usableItems(json) {
+  const rows=wrapperRows(json,'StatisticItemList');
+  return rows===null?null:rows.filter(r=>id(r.ITEM_CODE)&&text(r.CYCLE)&&text(r.START_TIME)&&text(r.END_TIME)
+    && numeric(r.DATA_CNT)!==null && numeric(r.DATA_CNT)>0
+    && !rows.some(c=>c.P_ITEM_CODE===r.ITEM_CODE && c.ITEM_CODE!==r.ITEM_CODE));
+}
+export function recentRange(item,now) {
+  const cycle=item.CYCLE; const start=period(item.START_TIME,cycle), end=period(item.END_TIME,cycle);
+  if(!start||!end||start>end) return null;
+  const today=compactDate(now); let cap,lower;
+  if(cycle==='D') {cap=today;lower=compactDate(monthsAgo(now,18));}
+  else if(cycle==='M') {cap=today.slice(0,6);lower=compactDate(monthsAgo(now,18)).slice(0,6);}
+  else if(cycle==='Q') {cap=`${today.slice(0,4)}Q${Math.floor(now.getUTCMonth()/3)+1}`;lower=`${now.getUTCFullYear()-3}Q1`;}
+  else if(['A','Y'].includes(cycle)) {cap=today.slice(0,4);lower=String(now.getUTCFullYear()-12);}
+  else return null;
+  const high=end<cap?end:cap;
+  // Anchor old series' recent range to their observed END_TIME, not wall clock.
+  if(high<lower) lower=cycle==='D'?`${Number(high.slice(0,4))-2}0101`:cycle==='M'?`${Number(high.slice(0,4))-2}01`:cycle==='Q'?`${Number(high.slice(0,4))-3}Q1`:String(Number(high)-12);
+  const low=start>lower?start:lower;
+  return low<=high?{start:low,end:high,cycle}:null;
+}
+async function bok(out,key,ctx) {
+  const endpoint=(name,args)=>new URL(`${name}/${[key,'json','kr',...args].map(encodeURIComponent).join('/')}/`,BOK_BASE);
+  const tablesJson=await requestStage(out,'BOK_TABLE',endpoint('StatisticTableList',[1,1000]),ctx);
+  const tableRows=wrapperRows(tablesJson,'StatisticTableList');
+  if(!tableRows) fail(out,'BOK_TABLE_PARSE_ERROR');
+  out.metadataCount=tableRows.length;
+  const candidates=searchableTables(tablesJson).sort((a,b)=>Number(/환율|금리|심리/.test(b.STAT_NAME??''))-Number(/환율|금리|심리/.test(a.STAT_NAME??''))).slice(0,10);
+  if(!candidates.length) fail(out,'BOK_TABLE_EMPTY');
+  out.candidateFailures=[];
+  for(let index=0;index<candidates.length;index++) {
+    const table=candidates[index]; out.selectedStatCode=table.STAT_CODE;
+    try {
+      const itemJson=await requestStage(out,'BOK_ITEM',endpoint('StatisticItemList',[1,1000,table.STAT_CODE]),ctx);
+      const items=usableItems(itemJson);
+      if(!items) fail(out,'BOK_ITEM_PARSE_ERROR');
+      out.metadataCount+=wrapperRows(itemJson,'StatisticItemList').length;
+      const item=items.find(r=>recentRange(r,ctx.now()));
+      if(!item) fail(out,items.length && items.every(r=>!['A','Y','Q','M','D'].includes(r.CYCLE))?'BOK_ITEM_CYCLE_UNSUPPORTED':'BOK_ITEM_NOT_FOUND');
+      out.selectedItemCode=item.ITEM_CODE; out.cycle=item.CYCLE;
+      const range=recentRange(item,ctx.now());
+      const json=await requestStage(out,'BOK_DATA',endpoint('StatisticSearch',[1,1000,table.STAT_CODE,range.cycle,range.start,range.end,item.ITEM_CODE]),ctx);
+      accept(out,parseBok(json,item.CYCLE),'BOK_DATA'); return;
+    } catch(e) {
+      if(!(e instanceof DiagnosticError)) throw e;
+      out.candidateFailures.push({statCode:table.STAT_CODE,candidateIndex:index,stage:out.stage,errorType:e.code});
+    }
+  }
+  fail(out,out.errorType??'BOK_CANDIDATES_EXHAUSTED');
 }
 
-function serviceKey(key) {
-  const value = String(key ?? '');
-  // Data.go.kr accepts the decoded key; decode a percent-encoded Secret once.
-  if (/%[0-9A-Fa-f]{2}/.test(value)) { try { return decodeURIComponent(value); } catch {} }
-  return value;
+export async function runProvider(provider,key,context={}) {
+  const out=initial(provider),started=Date.now();
+  const ctx={fetch:globalThis.fetch,now:()=>new Date(),...context};
+  out.secretPresent=typeof key==='string'&&key.trim().length>0;
+  if(!out.secretPresent) {out.errorType='SECRET_MISSING';return out;}
+  try {await ({FSC:fsc,KOSIS:kosis,BOK:bok})[provider](out,key,ctx);}
+  catch(e) {out.errorType=e instanceof DiagnosticError?e.code:'INTERNAL_DIAGNOSTIC_ERROR';}
+  out.elapsedMs=Date.now()-started;out.technicalValidationSuccess=success(out);
+  // Final defense: only serialized summaries are emitted, never upstream data.
+  const secrets=[key];try{secrets.push(decodeURIComponent(key));}catch{}
+  const safe=JSON.parse(JSON.stringify(out,(_k,v)=>typeof v==='string'&&secrets.some(s=>s&&v.includes(s))?'[REDACTED]':v));
+  return safe;
 }
-
-function rowsFrom(value) {
-  const w=value?.StatisticSearch ?? value?.StatisticTableList ?? value?.StatisticItemList ?? value?.response?.body ?? value?.body ?? value;
-  const rows=w?.row ?? w?.items?.item ?? w?.data ?? [];
-  return Array.isArray(rows) ? rows : rows && typeof rows==='object' ? [rows] : [];
-}
-
-function observationSummary(rows) {
-  const list=rowsFrom({row:rows});
-  const dated=list.filter(x=>x && (x.PRD_DE||x.TIME||x.basDt||x.DATE));
-  const numeric=dated.filter(x=>Object.values(x).some(v=>v!==null && v!=='' && v!=='.' && Number.isFinite(Number(v))));
-  const last=dated.at(-1) ?? list.at(-1) ?? {};
-  return {observationDate:last.PRD_DE??last.TIME??last.basDt??last.DATE??null, unit:last.UNIT_NM??last.UNIT_NAME??last.unit??null, recordCount:list.length, historyAvailable:numeric.length>1, nullOrMissing:list.some(x=>Object.values(x??{}).some(v=>v===null||v===''||v==='.' )), parserSuccess:numeric.length>0, rowContainerFound:list.length>0};
-}
-
-async function kosisObservation(key) {
-  const search=`https://kosis.kr/openapi/statisticsSearch.do?method=getList&apiKey=${encodeURIComponent(key)}&searchNm=${encodeURIComponent('투자심리')}&sort=DATE&startCount=1&resultCount=10&format=json`;
-  const found=await fetchJson(search); const tables=rowsFrom(found.parsed); const table=tables.find(x=>x.ORG_ID&&x.TBL_ID);
-  if(!table) return {response:found.response, parsed:found.parsed, errorType:'TABLE_NOT_FOUND'};
-  const meta=`https://kosis.kr/openapi/statisticsData.do?method=getMeta&type=ITM&apiKey=${encodeURIComponent(key)}&format=json&orgId=${encodeURIComponent(table.ORG_ID)}&tblId=${encodeURIComponent(table.TBL_ID)}`;
-  const m=await fetchJson(meta); const items=rowsFrom(m.parsed); const item=items.find(x=>x.ITM_ID||x.ITEM_ID);
-  if(!item) return {response:m.response, parsed:m.parsed, errorType:'ITEM_NOT_FOUND',table};
-  const objMeta=`https://kosis.kr/openapi/statisticsData.do?method=getMeta&type=OBJ&apiKey=${encodeURIComponent(key)}&format=json&orgId=${encodeURIComponent(table.ORG_ID)}&tblId=${encodeURIComponent(table.TBL_ID)}`;
-  const om=await fetchJson(objMeta); const objs=rowsFrom(om.parsed); const obj=objs.find(x=>x.OBJ_ID||x.OBJL_ID||x.OBJ_CODE); const objL1=obj?.OBJ_ID??obj?.OBJL_ID??obj?.OBJ_CODE;
-  if(!objL1) return {response:om.response,parsed:om.parsed,errorType:'OBJECT_NOT_FOUND',table,item};
-  const data=`https://kosis.kr/openapi/Param/statisticsParameterData.do?method=getList&apiKey=${encodeURIComponent(key)}&format=json&jsonVD=Y&orgId=${encodeURIComponent(table.ORG_ID)}&tblId=${encodeURIComponent(table.TBL_ID)}&objL1=${encodeURIComponent(objL1)}&itmId=${encodeURIComponent(item.ITM_ID??item.ITEM_ID)}&prdSe=M&newEstPrdCnt=13`;
-  const d=await fetchJson(data); return {response:d.response, parsed:d.parsed, table, item, dataUrl:data};
-}
-
-async function bokObservation(key) {
-  const base='https://ecos.bok.or.kr/api';
-  const t=await fetchJson(`${base}/StatisticTableList/${encodeURIComponent(key)}/json/kr/1/100/`); const tables=rowsFrom(t.parsed); const table=tables.find(x=>(x.STAT_CODE||x.stat_code||x.STAT_CODE_ID) && String(x.SRCH_YN??x.srch_yn??'Y').toUpperCase()==='Y' && (x.CYCLE||x.cycle) && !/그룹|합계|total/i.test(String(x.STAT_NAME??x.stat_name??'')));
-  if(!table) return {response:t.response,parsed:t.parsed,errorType:'TABLE_NOT_FOUND'};
-  const code=table.STAT_CODE??table.stat_code??table.STAT_CODE_ID;
-  const i=await fetchJson(`${base}/StatisticItemList/${encodeURIComponent(key)}/json/kr/1/100/${encodeURIComponent(code)}/`); const items=rowsFrom(i.parsed); const item=items.find(x=>x.ITEM_CODE||x.item_code);
-  if(!item) return {response:i.response,parsed:i.parsed,errorType:'ITEM_NOT_FOUND',table};
-  const itemCode=item.ITEM_CODE??item.item_code; const cycle=item.CYCLE??item.cycle??'M';
-  const end=String(item.END_TIME??item.end_time??'202612'); const start=String(item.START_TIME??item.start_time??(Number(end.slice(0,4))-2)+end.slice(4));
-  const s=await fetchJson(`${base}/StatisticSearch/${encodeURIComponent(key)}/json/kr/1/13/${encodeURIComponent(code)}/${encodeURIComponent(cycle)}/${encodeURIComponent(start)}/${encodeURIComponent(end)}/${encodeURIComponent(itemCode)}/`);
-  return {response:s.response,parsed:s.parsed,table,item,dataUrl:'configured'};
-}
-
-export async function phase1KoreaDataCheck(request, env) {
-  const headers={'Cache-Control':'private, max-age=15','X-Robots-Tag':'noindex, nofollow','Content-Type':'application/json; charset=utf-8'};
-  if (request.method !== 'GET') return new Response(null,{status:405,headers:{...headers,Allow:'GET'}});
-  if (Date.now() - lastRunAt < 10000) return Response.json({schemaVersion:1,diagnosticOnly:true,errorType:'RATE_LIMITED'},{status:429,headers:{...headers,'Retry-After':'10'}});
-  lastRunAt = Date.now();
-  // Official discovery endpoints are fixed server configuration. Only API keys
-  // come from Hosted Secrets; endpoint URLs never come from user input/env.
-  const kosisUrl = `https://kosis.kr/openapi/statisticsSearch.do?method=getList&apiKey=${encodeURIComponent(env.KOSIS_API_KEY??'')}&searchNm=${encodeURIComponent('투자심리')}&sort=DATE&startCount=1&resultCount=1&format=json`;
-  const bokUrl = `https://ecos.bok.or.kr/api/StatisticTableList/${encodeURIComponent(env.BOK_API_KEY??'')}/json/kr/1/1/`;
-  // The FSC catalog confirms the dataset and its eight operations, but the
-  // operation URL is not exposed without the portal's generated guide. Do not
-  // guess a path or issue a misleading request.
-  const rawFscKey = String(env.FSC_API_KEY ?? '');
-  const now=new Date(); const endDt=now.toISOString().slice(0,10).replaceAll('-',''); const past=new Date(now); past.setUTCMonth(past.getUTCMonth()-18); const beginDt=past.toISOString().slice(0,10).replaceAll('-','');
-  const fscUrl = `https://apis.data.go.kr/1160100/service/GetKofiaStatisticsInfoService/getGrantingOfCreditBalanceInfo?serviceKey=${encodeURIComponent(serviceKey(rawFscKey))}&numOfRows=100&pageNo=1&resultType=json&beginBasDt=${beginDt}&endBasDt=${endDt}`;
-  const [fsc,kosis,bok] = await Promise.all([check('FSC',env.FSC_API_KEY,fscUrl,genericParse), (async()=>{const o=result('KOSIS',kosisUrl);o.secretPresent=Boolean(env.KOSIS_API_KEY); if(!o.secretPresent){o.errorType='SECRET_MISSING';return o;} o.requestAttempted=true; try{const q=await kosisObservation(env.KOSIS_API_KEY); o.httpStatus=q.response.status;o.responseReceived=q.response.ok;const s=observationSummary(q.parsed);Object.assign(o,s,{authSuccess:q.response.ok&&s.parserSuccess,responseFormat:'json',apiErrorCode:null,errorType:q.errorType??null});}catch{ o.errorType='NETWORK_OR_TIMEOUT'; } return o;})(), (async()=>{const o=result('BOK',bokUrl);o.secretPresent=Boolean(env.BOK_API_KEY); if(!o.secretPresent){o.errorType='SECRET_MISSING';return o;} o.requestAttempted=true; try{const q=await bokObservation(env.BOK_API_KEY); o.httpStatus=q.response.status;o.responseReceived=q.response.ok;const s=observationSummary(q.parsed);Object.assign(o,s,{authSuccess:q.response.ok&&s.parserSuccess,responseFormat:'json',apiErrorCode:null,errorType:q.errorType??null});}catch{ o.errorType='NETWORK_OR_TIMEOUT'; } return o;})()]);
-  fsc.appearsPercentEncoded = /%[0-9A-Fa-f]{2}/.test(rawFscKey);
-  fsc.requestEncodingMode = fsc.appearsPercentEncoded ? 'decoded_then_encoded' : 'encoded';
-  fsc.doubleEncodingDetected = false;
-  return Response.json({schemaVersion:1,diagnosticOnly:true,fsc,kosis,bok},{headers});
+let lastRunAt=0;
+export async function phase1KoreaDataCheck(request,env) {
+  const headers={'Cache-Control':'no-store','X-Robots-Tag':'noindex, nofollow'};
+  if(request.method!=='GET') return new Response(null,{status:405,headers:{...headers,Allow:'GET'}});
+  if(Date.now()-lastRunAt<10000) return Response.json({errorType:'RATE_LIMITED'},{status:429,headers:{...headers,'Retry-After':'10'}});
+  lastRunAt=Date.now();
+  const providers=['FSC','KOSIS','BOK'];
+  const settled=await Promise.allSettled(providers.map(p=>runProvider(p,env[`${p}_API_KEY`])));
+  const response={schemaVersion:2,diagnosticOnly:true};
+  for(let i=0;i<providers.length;i++) response[providers[i].toLowerCase()]=settled[i].status==='fulfilled'?settled[i].value:{...initial(providers[i]),errorType:'INTERNAL_DIAGNOSTIC_ERROR'};
+  return Response.json(response,{headers});
 }
