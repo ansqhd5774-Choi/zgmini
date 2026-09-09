@@ -10,8 +10,10 @@ export function numeric(v) {
 }
 const fail = (reason,http=null) => ({status:'FAIL',reason,http});
 async function request(url, init={}) {
+  const started=Date.now();
   try {
-    const r=await fetch(url,{...init,redirect:'error',signal:AbortSignal.timeout(18000)});
+    const r=await fetch(url,{...init,redirect:'manual',signal:AbortSignal.timeout(18000)});
+    if(r.status>=300&&r.status<400)return fail('UNEXPECTED_UPSTREAM_REDIRECT',r.status);
     let body; try {body=await r.json();} catch {return {...fail('NON_JSON_RESPONSE',r.status)};}
     if (!r.ok || body.error || body.error_code || body.BEAAPI?.Results?.Error || body.BEAAPI?.Error) {
       // Inspect internally, emit only a fixed classification; upstream errors may echo credentials.
@@ -20,7 +22,7 @@ async function request(url, init={}) {
       return fail(reason,r.status);
     }
     return {status:'PASS',http:r.status,body};
-  } catch {return fail('NETWORK_OR_TIMEOUT');}
+  } catch (error) {const message=String(error?.message??'').toLowerCase();return {...fail('NETWORK_OR_TIMEOUT'),elapsedMs:Date.now()-started,errorType:['TypeError','Error','AbortError','TimeoutError','ReferenceError'].includes(error?.name)?error.name:'Other',diagnosticTokens:['abortsignal','timeout','not a function','not defined','fetch','network','outbound','outgoing','blocked','forbidden','proxy','subrequest','limit','disallowed','unsupported','redirect','illegal','invocation','asynchronous','global','scope','i/o','context','invalid'].filter(token=>message.includes(token))};}
 }
 function fredUrl(path,key,params) { const u=new URL('https://api.stlouisfed.org/fred/'+path);u.search=new URLSearchParams({api_key:key,file_type:'json',...params});return u; }
 async function fredSeries(id,key,asOf) {
@@ -94,3 +96,4 @@ export async function dataHealth(requestObject,env) {
   })().catch(()=>({status:'FAILED',reason:'DIAGNOSTIC_FAILED',secrets,v3Active:false}));
   memo.set(mode,{until:Date.now()+600000,promise});return Response.json(await promise,{headers});
 }
+
