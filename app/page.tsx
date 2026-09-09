@@ -761,6 +761,18 @@ function IndicatorDetail({ item, period }: { item: Indicator; period: Period }) 
   );
 }
 
+function periodTrend(item: Indicator, period: Period): { direction: Direction; label: string } {
+  const series = getVisibleSeries(calendarizeSeries(expandIndicatorHistory(item.chart, item.id.length)), period);
+  if (series.length < 2) return { direction: "flat", label: `${period} 확인 불가` };
+  const first = Number(series[0].value);
+  const last = Number(series[series.length - 1].value);
+  const delta = last - first;
+  if (!Number.isFinite(delta) || Math.abs(delta) < 0.005) return { direction: "flat", label: `${period} 보합` };
+  return delta > 0
+    ? { direction: "up", label: `${period} 상승` }
+    : { direction: "down", label: `${period} 하락` };
+}
+
 function SummaryMiniChart({ data, period, score, label }: { data: ChartPoint[]; period: Period; score: number; label: string }) {
   const color = getSentimentColor(score);
   const visible = getVisibleSeries(data, period);
@@ -1028,6 +1040,7 @@ export default function Home() {
                   const meta = indicatorMeta[item.id];
                   const live = marketData?.indicators[item.id];
                   const country = countryMap[meta.country];
+                  const selectedTrend = periodTrend(item, period);
                   return (
                   <AccordionItem key={item.id} value={item.id} className="indicator-item">
                     <AccordionTrigger className="indicator-trigger px-4 hover:no-underline">
@@ -1038,7 +1051,7 @@ export default function Home() {
                         <div className="flex flex-col items-center"><MiniIndicatorChart item={item}/><span className="text-[11px] font-normal text-slate-500">{item.benchmarkLabel}</span></div>
                         <div><strong className="text-sm text-slate-950">{item.current}</strong><small>{live?.currentDate ?? meta.currentDate}</small></div>
                         <div><strong className="text-sm text-slate-800">{item.forecast}</strong><small>이전 {item.previous} · {live?.previousDate ?? meta.previousDate}</small></div>
-                        <span className={`flex items-center justify-center gap-1 text-xs font-semibold trend-${item.direction}`}><DirectionIcon direction={item.direction}/>{item.trend}</span><span><SignalBadge signal={item.signal}/></span>
+                        <span className={`flex items-center justify-center gap-1 text-xs font-semibold trend-${selectedTrend.direction}`}><DirectionIcon direction={selectedTrend.direction}/>{selectedTrend.label}</span><span><SignalBadge signal={item.signal}/></span>
                         <span className="text-xs font-bold text-slate-600">{meta.releaseCycle}</span>
                         <div><strong className="text-xs text-slate-800">{displayDate(meta.nextRelease)}</strong><small className="d-day">{getDDay(meta.nextRelease, updatedAt)}</small></div>
                       </div>
