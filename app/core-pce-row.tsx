@@ -17,8 +17,10 @@ export default function CorePceRow({period}:{period:string}){
  const unavailable=failed?'최신 데이터 확인 불가':'데이터 확인 중';
  const current=latest?`${latest.value.toFixed(1)}%`:unavailable;
  const next=data?.nextRelease;const unchanged=latest&&previous&&latest.value===previous.value;
- const trend=latest&&previous?(unchanged?'전월 대비 동일':latest.value>previous.value?'전월 대비 상승':'전월 대비 하락'):'확인 불가';
- const color=unchanged?'#64748b':latest&&previous&&latest.value<previous.value?'#059669':'#e11d48';
+ const trendStart=visible[0], trendEnd=visible.at(-1), trendDelta=trendStart&&trendEnd?trendEnd.value-trendStart.value:NaN;
+ const periodLabel=period==='1년'?'1년':period==='6개월'?'6개월':period==='1주일'?'1주일':'1개월';
+ const trend=Number.isFinite(trendDelta)?(Math.abs(trendDelta)<0.005?`${periodLabel} 보합`:trendDelta>0?`${periodLabel} 상승`:`${periodLabel} 하락`):'확인 불가';
+ const color=!Number.isFinite(trendDelta)||Math.abs(trendDelta)<0.005?'#64748b':trendDelta<0?'#059669':'#e11d48';
  return <AccordionItem value="core-pce" className="indicator-item" data-testid="core-pce-row">
   <AccordionTrigger className="indicator-trigger px-4 hover:no-underline"><div className="indicator-grid min-w-0 flex-1">
    <div className="indicator-country"><img src="/flags/us.svg" alt=""/><small>미국</small></div>
