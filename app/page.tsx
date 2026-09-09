@@ -28,6 +28,7 @@ import {
 import { Toaster } from "@/components/ui/sonner";
 import { toast } from "sonner";
 import CountryFearGreed from "./country-fear-greed";
+import CorePceRow from "./core-pce-row";
 
 type Direction = "up" | "down" | "flat";
 type Signal = "positive" | "negative" | "neutral";
@@ -93,11 +94,10 @@ type MarketDataPayload = {
 const indicators: Indicator[] = [
   {
     id: "core-pce", name: "근원 PCE 물가", short: "Core PCE", category: "물가", importance: 5,
-    current: "2.9%", forecast: "2.8%", previous: "2.8%", surprise: "+0.1%p",
-    direction: "up", signal: "negative", trend: "3개월 완만한 상승", release: "9월 25일",
-    source: "BEA / FRED", unit: "% YoY", benchmark: 2.0, benchmarkLabel: "물가 목표 2.0%",
-    summary: "시장 예상보다 높은 물가 흐름입니다. 금리 인하 기대를 낮출 수 있어 성장주에는 부담으로 해석합니다.",
-    chart: [{label:"2월",value:2.7},{label:"3월",value:2.7},{label:"4월",value:2.8},{label:"5월",value:2.7},{label:"6월",value:2.8},{label:"7월",value:2.9}],
+    current: "최신 데이터 확인 불가", forecast: "데이터 없음", previous: "—", surprise: "—",
+    direction: "flat", signal: "neutral", trend: "확인 불가", release: "공식 일정 확인 중",
+    source: "FRED (BEA)", unit: "% YoY", benchmark: 2, benchmarkLabel: "물가 목표 2.0%",
+    summary: "최신 데이터 확인 불가", chart: [],
   },
   {
     id: "cpi", name: "소비자물가지수", short: "CPI", category: "물가", importance: 5,
@@ -209,7 +209,7 @@ const regionalIndicators: Indicator[] = [
 const allIndicators = [...indicators, ...regionalIndicators];
 
 const indicatorMeta: Record<string, IndicatorMeta> = {
-  "core-pce":{country:"US",currentDate:"2026.07.31",previousDate:"2026.06.30",releaseCycle:"월간",nextRelease:"2026-09-25"},
+  "core-pce":{country:"US",currentDate:"",previousDate:"",releaseCycle:"월간",nextRelease:""},
   cpi:{country:"US",currentDate:"2026.08.31",previousDate:"2026.07.31",releaseCycle:"월간",nextRelease:"2026-09-11"},
   ppi:{country:"US",currentDate:"2026.08.31",previousDate:"2026.07.31",releaseCycle:"월간",nextRelease:"2026-09-10"},
   unemployment:{country:"US",currentDate:"2026.08.31",previousDate:"2026.07.31",releaseCycle:"월간",nextRelease:"2026-10-02"},
@@ -945,7 +945,7 @@ export default function Home() {
                         <p className="bg-slate-100 p-4 text-sm leading-6 text-slate-600">글로벌·섹터·테마 박스에 마우스를 올려 즐겨찾기를 추가할 수 있습니다.</p>
                       ) : favoriteItems.map(({kind,item}) => (
                         <div key={sentimentKey(kind,item.name)} className="flex items-center justify-between gap-3 bg-slate-100 px-3 py-2.5">
-                          <div><p className="font-bold text-slate-900">{item.name}</p><p className="text-xs text-slate-500">{kind === "global" ? "글로벌" : kind === "sector" ? "섹터" : "테마"} · {getSentimentStage(item.score)} {item.score}점</p></div>
+                          <div><p className="font-bold text-slate-900">{item.name}</p><p className="text-xs text-slate-500">{kind === "sector" ? "섹터" : "테마"} · {getSentimentStage(item.score)} {item.score}점</p></div>
                           <Button size="sm" variant="ghost" onClick={() => toggleFavorite(kind,item)} className="rounded-none text-rose-600 hover:bg-rose-50 hover:text-rose-700">삭제</Button>
                         </div>
                       ))}
@@ -1024,6 +1024,7 @@ export default function Home() {
               </div>
               <Accordion type="single" collapsible value={openIndicator} onValueChange={setOpenIndicator}>
                 {filtered.map((item) => {
+                  if (item.id === "core-pce") return <CorePceRow key={item.id} period={period}/>;
                   const meta = indicatorMeta[item.id];
                   const live = marketData?.indicators[item.id];
                   const country = countryMap[meta.country];
@@ -1058,3 +1059,5 @@ export default function Home() {
     </main>
   );
 }
+
+

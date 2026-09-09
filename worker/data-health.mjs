@@ -1,3 +1,4 @@
+import { normalizeCorePce, parseBeaCalendar, pceInterpretation } from "../lib/pce/data.mjs";
 // Server-only diagnostics. Never return provider payloads, request URLs, or exception text.
 export const SERIES = 'PCEPILFE CPILFESL PPIFIS T10YIE UNRATE PAYEMS IC4WSA CCSA JTSJOL LNS12300060 CFNAI INDPRO RRSFS W875RX1 GDPC1 DFII10 NFCI DFF DGS10 T10Y2Y DCOILWTICO'.split(' ');
 const KEYS = ['FRED_API_KEY','EIA_API_KEY','BLS_API_KEY','BEA_API_KEY'];
@@ -22,7 +23,8 @@ async function request(url, init={}) {
       // Inspect internally, emit only a fixed classification; upstream errors may echo credentials.
       const msg=JSON.stringify(body).toLowerCase();
       const reason= /api.key|api_key|userid|registrationkey|invalid.key|not.registered|not.activated/.test(msg) ? 'AUTHENTICATION_REJECTED' : 'UPSTREAM_ERROR';
-      return fail(reason,r.status);
+      const detail=typeof body.error_message==='string'?body.error_message:null;
+      const safeDetail=detail?detail.replace(/https?:\/\/\S+/g,'[URL]').replace(/[a-zA-Z0-9_-]{20,}/g,'[REDACTED]'):null;return {...fail(reason,r.status),detail:safeDetail};
     }
     return {status:'PASS',http:r.status,body};
   } catch (error) {const message=String(error?.message??'').toLowerCase();return {...fail('NETWORK_OR_TIMEOUT'),elapsedMs:Date.now()-started,errorType:['TypeError','Error','AbortError','TimeoutError','ReferenceError'].includes(error?.name)?error.name:'Other',diagnosticTokens:['abortsignal','timeout','not a function','not defined','fetch','network','outbound','outgoing','blocked','forbidden','proxy','subrequest','limit','disallowed','unsupported','redirect','illegal','invocation','asynchronous','global','scope','i/o','context','invalid'].filter(token=>message.includes(token))};}
@@ -56,9 +58,9 @@ async function bls(key,year) {
   const series=Object.entries(BLS_MAP).map(([fredId,id])=>{const s=r.body.Results?.series?.find(s=>s.seriesID===id);const rows=(s?.data??[]).flatMap(p=>{const v=numeric(p.value);return v===null||!/^M(0[1-9]|1[012])$/.test(p.period)?[]:[{date:`${p.year}-${p.period.slice(1)}-01`,value:v,preliminary:(p.footnotes??[]).some(f=>f.code==='P')}];}).sort((a,b)=>a.date.localeCompare(b.date));return {id,fredId,status:rows.length?'PASS':'FAIL',latest:rows.at(-1)??null,catalog:s?.catalog?{series_title:s.catalog.series_title,seasonality:s.catalog.seasonality}:null,rows};});
   return {status:series.every(s=>s.status==='PASS')?'PASS':'FAIL',http:r.http,series};
 }
-async function bea(key,year) {
+async function bea(key,year,onlyPce=false) {
   const series=[];
-  for(const [id,table,freq]of[['PCEPILFE','T20804','M'],['GDPC1','T10106','Q']]) {
+  for(const [id,table,freq]of(onlyPce?[['PCEPILFE','T20804','M']]:[['PCEPILFE','T20804','M'],['GDPC1','T10106','Q']])) {
     const u=new URL('https://apps.bea.gov/api/data');u.search=new URLSearchParams({UserID:key,method:'GetData',datasetname:'NIPA',TableName:table,Frequency:freq,Year:[year-2,year-1,year].join(','),ResultFormat:'JSON'});
     const r=await request(u);if(r.status!=='PASS'){series.push({id,...r});continue;}
     const rows=(r.body.BEAAPI?.Results?.Data??[]).filter(p=>id==='GDPC1'?p.LineNumber==='1':/excluding food and energy/i.test(p.LineDescription)&&!/market.based/i.test(p.LineDescription)).flatMap(p=>{const value=numeric(typeof p.DataValue==='string'?p.DataValue.replaceAll(',',''):p.DataValue);const period=p.TimePeriod;const date=/^\d{4}M\d{2}$/.test(period)?period.slice(0,4)+'-'+period.slice(5)+'-01':/^\d{4}Q[1-4]$/.test(period)?period.slice(0,4)+'-'+String((Number(period.slice(5))-1)*3+1).padStart(2,'0')+'-01':null;return value===null||!date?[]:[{date,value,period,unit:p.CL_UNIT,unitMultiplier:p.UNIT_MULT,description:p.LineDescription,line:p.LineNumber,seriesCode:p.SeriesCode}];}).sort((a,b)=>a.date.localeCompare(b.date));
@@ -87,7 +89,7 @@ export async function dataHealth(requestObject,env) {
   if(!['all','fred','bls','bea','eia','vintage','source'].includes(mode))return Response.json({status:'FAILED',reason:'INVALID_PROVIDER'},{status:400,headers});
   if(mode==='vintage'&&!['1M','3M','6M','1Y','revision'].includes(window))return Response.json({status:'FAILED',reason:'INVALID_WINDOW'},{status:400,headers});
   if(mode==='source'&&!SERIES.includes(sourceId))return Response.json({status:'FAILED',reason:'INVALID_SERIES'},{status:400,headers});
-  const cacheKey=mode==='vintage'?mode+window:mode;const cached=mode==='source'?null:memo.get(cacheKey);if(cached&&cached.until>Date.now())return Response.json(await cached.promise,{headers});
+  const cacheKey=mode==='vintage'?mode+window:mode;const cached=mode==='source'?null:memo.get(cacheKey);if(cached&&cached.until>Date.now()){let text=JSON.stringify(await cached.promise);for(const k of KEYS)text=text.split(env[k]).join('[REDACTED]').split(encodeURIComponent(env[k])).join('[REDACTED]');return new Response(text,{headers});}
   const promise=(async()=>{
     const now=new Date(),asOf=now.toISOString().slice(0,10),year=now.getUTCFullYear();
     const out={schemaVersion:2,checkedAt:now.toISOString(),secrets,v3Active:false,scoreCalculation:'NOT_RUN',status:'PARTIAL'};
@@ -101,7 +103,7 @@ export async function dataHealth(requestObject,env) {
     // Final defensive redaction over allowlisted output. Never return raw upstream errors/payloads.
     let serialized=JSON.stringify(out);for(const k of KEYS)serialized=serialized.split(env[k]).join('[REDACTED]');return JSON.parse(serialized);
   })().catch(()=>({status:'FAILED',reason:'DIAGNOSTIC_FAILED',secrets,v3Active:false}));
-  const entry={until:Date.now()+600000,promise};if(mode!=='source')memo.set(cacheKey,entry);const result=await promise;if(!['OK','PASS'].includes(result.status))entry.until=Date.now()+60000;return Response.json(result,{headers});
+  const entry={until:Date.now()+600000,promise};if(mode!=='source')memo.set(cacheKey,entry);const rawResult=await promise;let serialized=JSON.stringify(rawResult);for(const k of KEYS){serialized=serialized.split(env[k]).join('[REDACTED]').split(encodeURIComponent(env[k])).join('[REDACTED]');}const result=JSON.parse(serialized);if(!['OK','PASS'].includes(result.status))entry.until=Date.now()+60000;return Response.json(result,{headers});
 }
 
 
@@ -121,7 +123,7 @@ async function vintage(key,today,window) {
 }
 async function asOfRows(id,key,date) {
  const r=await request(fredUrl('series/observations',key,{series_id:id,realtime_start:date,realtime_end:date,observation_end:date,sort_order:'desc',limit:'36'}));
- if(r.status!=='PASS')return {id,...r};
+ if(r.status!=='PASS')return {id,stage:'observations',...r};
  const raw=r.body.observations??[];
  const future=raw.filter(p=>p.date>date||p.realtime_start>date).length;
  const rows=raw.flatMap(p=>{const value=numeric(p.value);return value===null||p.date>date||p.realtime_start>date?[]:[{date:p.date,value,realtime_start:p.realtime_start,realtime_end:p.realtime_end}];}).sort((a,b)=>a.date.localeCompare(b.date));
@@ -131,17 +133,17 @@ async function asOfRows(id,key,date) {
 
 
 async function provenance(id,key,asOf) {
- const meta=await request(fredUrl('series',key,{series_id:id}));if(meta.status!=='PASS')return {id,...meta};
- const release=await request(fredUrl('series/release',key,{series_id:id}));if(release.status!=='PASS')return {id,...release};
+ const meta=await request(fredUrl('series',key,{series_id:id}));if(meta.status!=='PASS')return {id,stage:'metadata',...meta};
+ const release=await request(fredUrl('series/release',key,{series_id:id}));if(release.status!=='PASS')return {id,stage:'release',...release};
  const rel=release.body.releases?.[0];if(!rel)return {id,...fail('RELEASE_METADATA_MISSING')};
  const calendar=await request(fredUrl('release/dates',key,{release_id:String(rel.id),include_release_dates_with_no_data:'true',sort_order:'desc',limit:'1000'}));
- if(calendar.status!=='PASS')return {id,...calendar};
+ if(calendar.status!=='PASS')return {id,stage:'release-calendar',...calendar};
  const next=calendar.body.release_dates?.map(p=>p.date).filter(d=>d>asOf).sort()[0]??null;
  const start=new Date(asOf+'T00:00:00Z');start.setUTCFullYear(start.getUTCFullYear()-21);
  const rows=[];let total=null;
  for(let offset=0;offset<60000;offset+=10000){
   const r=await request(fredUrl('series/observations',key,{series_id:id,observation_start:start.toISOString().slice(0,10),observation_end:asOf,realtime_start:'1776-07-04',realtime_end:asOf,output_type:'1',limit:'10000',offset:String(offset)}));
-  if(r.status!=='PASS')return {id,...r};
+  if(r.status!=='PASS')return {id,stage:'observations',...r};
   total=r.body.count;
   if(!Array.isArray(r.body.observations))return {id,...fail('OBSERVATIONS_MISSING')};
   for(const p of r.body.observations)rows.push({observation_date:p.date,raw_value:numeric(p.value),vintage_date:p.realtime_start,vintage_end:p.realtime_end,release_date:p.realtime_start});
@@ -150,3 +152,27 @@ async function provenance(id,key,asOf) {
  const m=meta.body.seriess?.[0];
  return {id,status:rows.length===total?'PASS':'PARTIAL',asOf,count:rows.length,total,unit:m?.units,frequency:m?.frequency,seasonal_adjustment:m?.seasonal_adjustment,last_updated:m?.last_updated,next_release_date:next,release_id:rel.id,release_name:rel.name,release_date_basis:'ALFRED revision availability, not observation date',license_status:'UNVERIFIED',rows};
 }
+
+
+let pceCache=null;
+export async function corePceResponse(req,env) {
+ const headers={'Cache-Control':'no-store','Content-Type':'application/json; charset=utf-8'};
+ if(req.method!=='GET')return new Response(null,{status:405,headers:{...headers,Allow:'GET'}});
+ if(pceCache&&pceCache.until>Date.now()){const value=await pceCache.promise;return Response.json(value,{status:value.status==='OK'?200:503,headers});}
+ const promise=(async()=>{
+  try {
+   if(!env.FRED_API_KEY||!env.BEA_API_KEY)throw Error('MISSING_SECRET');
+   const now=new Date().toISOString();
+   const [f,b]=await Promise.all([fredSeries('PCEPILFE',env.FRED_API_KEY,now.slice(0,10)),bea(env.BEA_API_KEY,new Date(now).getUTCFullYear(),true)]);
+   if(f.status!=='PASS'||b.status!=='PASS')throw Error('OFFICIAL_API_FAILED');
+   const actual=normalizeCorePce(f.rows,b.series[0].rows,now.slice(0,10));
+   let schedule=null,scheduleStatus='FAILED';
+   try {const r=await fetch('https://www.bea.gov/news/schedule/ics/online-calendar-subscription.ics',{redirect:'manual',signal:AbortSignal.timeout(18000)});if(!r.ok)throw Error('CALENDAR_FAILED');schedule=parseBeaCalendar(await r.text(),now);scheduleStatus=schedule.next?'OK':'FAILED';}catch{}
+   const latest=actual.at(-1);const monthTitle=new Intl.DateTimeFormat('en-US',{month:'long',year:'numeric',timeZone:'UTC'}).format(new Date(latest.date+'-01T00:00:00Z'));
+   const release=schedule?.events.find(e=>e.title===`Personal Income and Outlays, ${monthTitle}`)??null;
+   return {status:'OK',checkedAt:now,actual,forecast:null,forecastSource:null,surprise:null,interpretation:pceInterpretation(actual),source:'FRED (BEA)',sourceUrl:'https://fred.stlouisfed.org/series/PCEPILFE',crossValidation:'PASS',referenceMonth:latest.date,lastUpdated:f.last_updated,release,nextRelease:schedule?.next??null,scheduleStatus,scheduleSource:'https://www.bea.gov/news/schedule/ics/online-calendar-subscription.ics'};
+  }catch{return {status:'FAILED',actual:[],forecast:null,surprise:null,nextRelease:null,message:'최신 데이터 확인 불가'};}
+ })();
+ const entry={until:Date.now()+300000,promise};pceCache=entry;const result=await promise;if(result.status!=='OK')entry.until=Date.now()+60000;return Response.json(result,{status:result.status==='OK'?200:503,headers});
+}
+

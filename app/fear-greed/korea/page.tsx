@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { GET } from "../../api/kospi-fear-greed/route";
-import DataPanel from "./data-panel";
+import DataPanel, {type Snapshot} from "./data-panel";
 const title = "한국 공포탐욕지수 오늘 | 국내 증시 투자심리 - ZGmini";
 const description = "오늘 한국 공포탐욕지수와 국내 증시 투자심리 상태를 확인하세요. 현재 점수와 공포·중립·탐욕 단계, 기간별 변화와 주요 시장 심리를 ZGmini에서 한눈에 확인할 수 있습니다.";
 const url = "https://zgmini.kr/fear-greed/korea/";
@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 };
 export default async function KoreaPage() {
   const response = await GET();
-  const initial = await response.json();
+  const initial = await response.json() as Snapshot;
   const schema = {"@context":"https://schema.org","@type":"WebPage","@id":`${url}#webpage`,url,name:title,description,isPartOf:{"@id":"https://zgmini.kr/#website"},inLanguage:"ko-KR"};
   return <div className="min-h-screen bg-[#07162d]"><main className="mx-auto max-w-5xl px-4 py-8 text-slate-100 sm:px-6 sm:py-12">
     <script type="application/ld+json" dangerouslySetInnerHTML={{__html:JSON.stringify(schema).replace(/</g,"\\u003c")}}/>

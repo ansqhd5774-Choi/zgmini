@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { Area, AreaChart, CartesianGrid, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-type Snapshot = { status: string; score: number | null; rating?: string; updatedAt?: string };
+export type Snapshot = { status: string; score: number | null; rating?: string; updatedAt?: string };
 type Point = { date: string; score: number };
 const stages: Record<string,string> = { "Extreme Fear":"극단적 공포", Fear:"공포", Neutral:"중립", Greed:"탐욕", "Extreme Greed":"극단적 탐욕" };
 export default function DataPanel({ initial }: { initial: Snapshot }) {
@@ -12,9 +12,9 @@ export default function DataPanel({ initial }: { initial: Snapshot }) {
   useEffect(() => {
     const controller = new AbortController();
     const refresh = async () => {
-      try { const r = await fetch("/api/kospi-fear-greed", { cache:"no-store", signal:controller.signal }); setSnapshot(r.ok ? await r.json() : { status:"unavailable",score:null }); } catch { if (!controller.signal.aborted) setSnapshot({status:"unavailable",score:null}); }
+      try { const r = await fetch("/api/kospi-fear-greed", { cache:"no-store", signal:controller.signal }); setSnapshot(r.ok ? await r.json() as Snapshot : { status:"unavailable",score:null }); } catch { if (!controller.signal.aborted) setSnapshot({status:"unavailable",score:null}); }
     };
-    fetch("/api/kospi-history", { signal:controller.signal }).then(async r => { if(r.ok) setRows((await r.json()).rows); }).catch(() => {}).finally(() => setLoading(false));
+    fetch("/api/kospi-history", { signal:controller.signal }).then(async r => { if(r.ok) setRows((await r.json() as {rows:Point[]}).rows); }).catch(() => {}).finally(() => setLoading(false));
     const timer = setInterval(refresh,300000);
     if(initial.status !== "verified") void refresh();
     return () => { controller.abort(); clearInterval(timer); };
