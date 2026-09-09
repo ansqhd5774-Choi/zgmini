@@ -3,6 +3,7 @@ import { handleImageOptimization, DEFAULT_DEVICE_SIZES, DEFAULT_IMAGE_SIZES } fr
 import handler from "vinext/server/app-router-entry";
 import { dataHealth, corePceResponse } from "./data-health.mjs";
 import sitemapXml from "../public/sitemap.xml?raw";
+import { phase1KoreaDataCheck } from "./phase1-korea.mjs";
 
 interface Env {
   ASSETS: Fetcher;
@@ -32,6 +33,7 @@ const worker = {
     const url = new URL(request.url);
     if (url.pathname === "/api/core-pce") return corePceResponse(request, env);
     if (url.pathname === "/api/data-health") return dataHealth(request, env);
+    if (url.pathname === "/api/internal/phase1-korea-data-check") return phase1KoreaDataCheck(request, env);
     // Serve the static sitemap without rendering pages or calling APIs.
     if (url.pathname === "/sitemap.xml" && (request.method === "GET" || request.method === "HEAD")) {
       return new Response(request.method === "HEAD" ? null : sitemapXml, {
