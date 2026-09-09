@@ -35,18 +35,19 @@ export default function CorePceRow({period}:{period:string}){
    <div className="grid gap-5 p-5 xl:grid-cols-[minmax(0,1.7fr)_minmax(280px,0.75fr)]"><div className="min-w-0"><p className="mb-2 text-xs text-slate-500">최신 발표 기준 {months===12?'1년':`${months}개월`} · {visible.length?`${visible[0].date} ~ ${visible.at(-1)!.date}`:'데이터 없음'}</p>
     <div className="h-72 w-full" aria-label="근원 PCE 실제 발표 데이터 차트">{visible.length>0?<ResponsiveContainer width="100%" height="100%"><AreaChart data={visible} margin={{top:18,right:25,left:-12,bottom:0}}>
      <defs><linearGradient id="pce-actual" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#2463eb" stopOpacity={0.28}/><stop offset="100%" stopColor="#2463eb" stopOpacity={0.02}/></linearGradient></defs><CartesianGrid stroke="#cbd5e1" strokeDasharray="3 3" vertical={false}/>
-     <XAxis dataKey="date" tickFormatter={(date:string)=>Number(date.slice(5))===1?`${date.slice(0,4)}년 1월`:`${Number(date.slice(5))}월`} axisLine={false} tickLine={false} tick={{fill:'#64748b',fontSize:12}}/>
+     <XAxis dataKey="date" ticks={visible.length>6?visible.filter((p,i)=>i===0||i===visible.length-1||p.date.endsWith("-01")).map(p=>p.date):undefined} interval={visible.length>6?0:"preserveStartEnd"} tickFormatter={(date:string)=>Number(date.slice(5))===1?`${date.slice(0,4)}년 1월`:`${Number(date.slice(5))}월`} axisLine={false} tickLine={false} tick={{fill:'#64748b',fontSize:12}}/>
      <YAxis domain={([min,max]:readonly [number,number])=>[Math.min(1,min),Math.max(3,max+0.2)]} axisLine={false} tickLine={false} tick={{fill:'#64748b',fontSize:12}}/>
      <ReferenceLine y={2} stroke="#e11d48" strokeDasharray="5 4" label={{value:'기준 2%',position:'insideTopRight',fill:'#be123c',fontSize:12}}/>
      <Tooltip labelFormatter={label=>monthText(String(label))} formatter={value=>[`${Number(value).toFixed(1)}%`,'근원 PCE · 실제']} contentStyle={{borderRadius:0,border:'1px solid #94a3b8'}}/>
      <Area type="linear" dataKey="value" stroke="#2463eb" strokeWidth={2.8} fill="url(#pce-actual)" dot={{r:4}} activeDot={{r:5}} isAnimationActive={false}/>
     </AreaChart></ResponsiveContainer>:<div className="grid h-full place-items-center text-sm text-slate-500">{unavailable}</div>}</div>
     <p className="mt-2 text-xs text-slate-500">{latest?`마지막 실제 데이터: ${monthText(latest.date)} ${latest.value.toFixed(1)}%`:'실제 데이터 없음'}</p>
-   </div><div className="min-w-0"><div className="grid grid-cols-3 gap-px border border-slate-300 bg-slate-300">{[['현재',current],['예상','데이터 없음'],['예상 차이','—']].map(([label,value])=><div key={label} className="bg-slate-100 p-3"><p className="text-xs text-slate-500">{label}</p><p className="mt-1 break-words text-base font-bold text-slate-800">{value}</p></div>)}</div>
+   </div><div className="min-w-0"><div className="grid grid-cols-3 gap-px border border-slate-300 bg-slate-300">{[['현재',current],['예상','데이터 없음'],['예상 차이','—']].map(([label,value])=><div key={label} className="bg-slate-100 p-3"><p className="text-xs text-slate-500">{label}</p><p className="mt-1 break-words text-sm font-bold text-slate-800 sm:text-base">{value}</p></div>)}</div>
     <div className="analysis-box analysis-neutral"><p className="text-sm font-extrabold">자동 해석</p><p className="mt-2 text-sm leading-6">{data?.interpretation??unavailable}</p></div>
     <dl className="mt-4 space-y-3 border-t border-slate-300 pt-4 text-sm"><div><dt className="text-xs text-slate-500">다음 발표</dt><dd className="mt-1 font-bold text-slate-700">{next?<>{releaseText(next.utc,'America/New_York')} ET<br/>{releaseText(next.utc,'Asia/Seoul')} KST · {releaseDDay(next.utc,now)}<br/><span className="text-xs font-normal">{next.title}</span></>:'공식 일정 확인 불가'}</dd></div><div><dt className="text-xs text-slate-500">Actual 출처</dt><dd><a href={data?.sourceUrl??'https://fred.stlouisfed.org/series/PCEPILFE'} target="_blank" rel="noreferrer" className="text-blue-700">FRED (BEA)</a>{data?.release&&<small className="block text-slate-500">발표: {releaseText(data.release.utc,'America/New_York')} ET</small>}</dd></div><div><dt className="text-xs text-slate-500">Forecast 출처</dt><dd className="text-slate-600">연결된 예상치 데이터 없음</dd></div></dl>
    </div></div></div></AccordionContent>
  </AccordionItem>;
 }
+
 
 
