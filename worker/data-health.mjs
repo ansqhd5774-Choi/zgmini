@@ -14,7 +14,7 @@ async function request(url, init={}) {
   try {
     const r=await fetch(url,{...init,redirect:'manual',signal:AbortSignal.timeout(18000)});
     if(r.status>=300&&r.status<400)return fail('UNEXPECTED_UPSTREAM_REDIRECT',r.status);
-    let body; try {body=await r.json();} catch {return {...fail('NON_JSON_RESPONSE',r.status)};}
+    let body; try {body=await r.json();} catch {return {...fail(r.status===429?'RATE_LIMITED':'NON_JSON_RESPONSE',r.status)};}
     if (!r.ok || body.error || body.error_code || body.BEAAPI?.Results?.Error || body.BEAAPI?.Error) {
       // Inspect internally, emit only a fixed classification; upstream errors may echo credentials.
       const msg=JSON.stringify(body).toLowerCase();
@@ -58,7 +58,7 @@ async function bea(key,year) {
   for(const [id,table,freq]of[['PCEPILFE','T20804','M'],['GDPC1','T10106','Q']]) {
     const u=new URL('https://apps.bea.gov/api/data');u.search=new URLSearchParams({UserID:key,method:'GetData',datasetname:'NIPA',TableName:table,Frequency:freq,Year:[year-2,year-1,year].join(','),ResultFormat:'JSON'});
     const r=await request(u);if(r.status!=='PASS'){series.push({id,...r});continue;}
-    const rows=(r.body.BEAAPI?.Results?.Data??[]).filter(p=>id==='GDPC1'?p.LineNumber==='1':/personal consumption expenditures.*excluding food and energy/i.test(p.LineDescription)&&!/market.based/i.test(p.LineDescription)).flatMap(p=>{const value=numeric(typeof p.DataValue==='string'?p.DataValue.replaceAll(',',''):p.DataValue);const period=p.TimePeriod;const date=/^\d{4}M\d{2}$/.test(period)?period.slice(0,4)+'-'+period.slice(5)+'-01':/^\d{4}Q[1-4]$/.test(period)?period.slice(0,4)+'-'+String((Number(period.slice(5))-1)*3+1).padStart(2,'0')+'-01':null;return value===null||!date?[]:[{date,value,period,unit:p.CL_UNIT,unitMultiplier:p.UNIT_MULT,description:p.LineDescription,line:p.LineNumber,seriesCode:p.SeriesCode}];}).sort((a,b)=>a.date.localeCompare(b.date));
+    const rows=(r.body.BEAAPI?.Results?.Data??[]).filter(p=>id==='GDPC1'?p.LineNumber==='1':/excluding food and energy/i.test(p.LineDescription)&&!/market.based/i.test(p.LineDescription)).flatMap(p=>{const value=numeric(typeof p.DataValue==='string'?p.DataValue.replaceAll(',',''):p.DataValue);const period=p.TimePeriod;const date=/^\d{4}M\d{2}$/.test(period)?period.slice(0,4)+'-'+period.slice(5)+'-01':/^\d{4}Q[1-4]$/.test(period)?period.slice(0,4)+'-'+String((Number(period.slice(5))-1)*3+1).padStart(2,'0')+'-01':null;return value===null||!date?[]:[{date,value,period,unit:p.CL_UNIT,unitMultiplier:p.UNIT_MULT,description:p.LineDescription,line:p.LineNumber,seriesCode:p.SeriesCode}];}).sort((a,b)=>a.date.localeCompare(b.date));
     series.push({id,status:rows.length?'PASS':'FAIL',reason:rows.length?null:'MATCHING_DATA_NOT_FOUND',http:r.http,table,latest:rows.at(-1)??null,rows});
   }
   return {status:series.every(s=>s.status==='PASS')?'PASS':'FAIL',series};
@@ -80,12 +80,14 @@ export async function dataHealth(requestObject,env) {
   if(requestObject.method!=='GET')return new Response(null,{status:405,headers:{...headers,Allow:'GET'}});
   const secrets=Object.fromEntries(KEYS.map(k=>[k,typeof env[k]==='string'&&env[k].trim()?'PRESENT':'MISSING']));
   if(Object.values(secrets).includes('MISSING'))return Response.json({status:'FAILED',secrets,reason:'MISSING_SECRET',v3Active:false},{status:503,headers});
-  const mode=new URL(requestObject.url).searchParams.get('provider')??'all';
-  if(!['all','fred','bls','bea','eia'].includes(mode))return Response.json({status:'FAILED',reason:'INVALID_PROVIDER'},{status:400,headers});
-  const cached=memo.get(mode);if(cached&&cached.until>Date.now())return Response.json(await cached.promise,{headers});
+  const params=new URL(requestObject.url).searchParams;const mode=params.get('provider')??'all';const window=params.get('window')??'1M';
+  if(!['all','fred','bls','bea','eia','vintage'].includes(mode))return Response.json({status:'FAILED',reason:'INVALID_PROVIDER'},{status:400,headers});
+  if(mode==='vintage'&&!['1M','3M','6M','1Y','revision'].includes(window))return Response.json({status:'FAILED',reason:'INVALID_WINDOW'},{status:400,headers});
+  const cacheKey=mode==='vintage'?mode+window:mode;const cached=memo.get(cacheKey);if(cached&&cached.until>Date.now())return Response.json(await cached.promise,{headers});
   const promise=(async()=>{
     const now=new Date(),asOf=now.toISOString().slice(0,10),year=now.getUTCFullYear();
-    const out={schemaVersion:1,checkedAt:now.toISOString(),secrets,v3Active:false,scoreCalculation:'NOT_RUN',status:'PARTIAL'};
+    const out={schemaVersion:2,checkedAt:now.toISOString(),secrets,v3Active:false,scoreCalculation:'NOT_RUN',status:'PARTIAL'};
+    if(mode==='vintage'){out.vintage=await vintage(env.FRED_API_KEY,asOf,window);out.status=out.vintage.status;return out;}
     if(mode==='all'||mode==='fred'){const series=await mapLimit(SERIES,id=>fredSeries(id,env.FRED_API_KEY,asOf));out.fred={status:series.every(s=>s.status==='PASS')?'PASS':'FAIL',series};out.transforms=Object.fromEntries(series.filter(s=>['PCEPILFE','CPILFESL','PPIFIS','PAYEMS','DCOILWTICO'].includes(s.id)).map(s=>[s.id,transform(s)]));}
     if(mode==='all'||mode==='bls')out.bls=await bls(env.BLS_API_KEY,year);
     if(mode==='all'||mode==='bea')out.bea=await bea(env.BEA_API_KEY,year);
@@ -94,6 +96,29 @@ export async function dataHealth(requestObject,env) {
     // Final defensive redaction over allowlisted output. Never return raw upstream errors/payloads.
     let serialized=JSON.stringify(out);for(const k of KEYS)serialized=serialized.split(env[k]).join('[REDACTED]');return JSON.parse(serialized);
   })().catch(()=>({status:'FAILED',reason:'DIAGNOSTIC_FAILED',secrets,v3Active:false}));
-  memo.set(mode,{until:Date.now()+600000,promise});return Response.json(await promise,{headers});
+  memo.set(cacheKey,{until:Date.now()+600000,promise});return Response.json(await promise,{headers});
 }
 
+
+async function vintage(key,today,window) {
+  let date;let event=null;
+  if(window==='revision') {
+    const v=await request(fredUrl('series/vintagedates',key,{series_id:'PAYEMS',sort_order:'desc',limit:'20'}));
+    if(v.status!=='PASS')return v;
+    date=v.body.vintage_dates?.find(d=>d<today);if(!date)return fail('REVISION_DATE_UNAVAILABLE');
+    const previous=new Date(date+'T00:00:00Z');previous.setUTCDate(previous.getUTCDate()-1);const previousDate=previous.toISOString().slice(0,10);
+    const [a,b]=await Promise.all([asOfRows('PAYEMS',key,previousDate),asOfRows('PAYEMS',key,date)]);
+    const revisions=a.status==='PASS'&&b.status==='PASS'?b.rows.flatMap(p=>{const old=a.rows.find(q=>q.date===p.date);return old&&old.value!==p.value?[{observation_date:p.date,before:old.value,after:p.value}]:[]}):[];
+    event={series:'PAYEMS',date,previousDate,status:revisions.length?'PASS':'REVISION_NOT_DEMONSTRATED',revisions};
+  } else {const d=new Date(today+'T00:00:00Z');d.setUTCMonth(d.getUTCMonth()-({'1M':1,'3M':3,'6M':6,'1Y':12}[window]));date=d.toISOString().slice(0,10);}
+  const series=await mapLimit(SERIES,id=>asOfRows(id,key,date));
+  return {status:series.every(s=>s.status==='PASS')?'PASS':'FAIL',asOf:date,event,scoreCalculation:'BLOCKED_UNTIL_ALL_API_AND_PROVENANCE_GATES_PASS',series};
+}
+async function asOfRows(id,key,date) {
+ const r=await request(fredUrl('series/observations',key,{series_id:id,realtime_start:date,realtime_end:date,observation_end:date,sort_order:'desc',limit:'36'}));
+ if(r.status!=='PASS')return {id,...r};
+ const raw=r.body.observations??[];
+ const future=raw.filter(p=>p.date>date||p.realtime_start>date).length;
+ const rows=raw.flatMap(p=>{const value=numeric(p.value);return value===null||p.date>date||p.realtime_start>date?[]:[{date:p.date,value,realtime_start:p.realtime_start,realtime_end:p.realtime_end}];}).sort((a,b)=>a.date.localeCompare(b.date));
+ return {id,status:rows.length&&future===0?'PASS':'FAIL',http:r.http,asOf:date,latest:rows.at(-1)??null,futureDataLeak:future,releasePolicy:'ALFRED as-of availability; realtime window is not original publication date',rows};
+}
