@@ -1,6 +1,7 @@
 /** Cloudflare Worker entry point for the vinext-starter template. */
 import { handleImageOptimization, DEFAULT_DEVICE_SIZES, DEFAULT_IMAGE_SIZES } from "vinext/server/image-optimization";
 import handler from "vinext/server/app-router-entry";
+import { dataHealth } from "./data-health.mjs";
 import sitemapXml from "../public/sitemap.xml?raw";
 
 interface Env {
@@ -29,6 +30,7 @@ interface ExecutionContext {
 const worker = {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const url = new URL(request.url);
+    if (url.pathname === "/api/data-health") return dataHealth(request, env);
     // Serve the static sitemap without rendering pages or calling APIs.
     if (url.pathname === "/sitemap.xml" && (request.method === "GET" || request.method === "HEAD")) {
       return new Response(request.method === "HEAD" ? null : sitemapXml, {
@@ -57,3 +59,4 @@ const worker = {
 };
 
 export default worker;
+
