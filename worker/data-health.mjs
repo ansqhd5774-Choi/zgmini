@@ -9,10 +9,13 @@ export function numeric(v) {
   const n = Number(s); return Number.isFinite(n) ? n : null;
 }
 const fail = (reason,http=null) => ({status:'FAIL',reason,http});
+let fredNextRequest=0;
 async function request(url, init={}) {
+  if(new URL(url).hostname==='api.stlouisfed.org'){const slot=Math.max(Date.now(),fredNextRequest);fredNextRequest=slot+700;const delay=slot-Date.now();if(delay>0)await new Promise(resolve=>setTimeout(resolve,delay));}
   const started=Date.now();
   try {
     const r=await fetch(url,{...init,redirect:'manual',signal:AbortSignal.timeout(18000)});
+    if(r.status===429)return fail('RATE_LIMITED',429);
     if(r.status>=300&&r.status<400)return fail('UNEXPECTED_UPSTREAM_REDIRECT',r.status);
     let body; try {body=await r.json();} catch {return {...fail(r.status===429?'RATE_LIMITED':'NON_JSON_RESPONSE',r.status)};}
     if (!r.ok || body.error || body.error_code || body.BEAAPI?.Results?.Error || body.BEAAPI?.Error) {
@@ -80,13 +83,15 @@ export async function dataHealth(requestObject,env) {
   if(requestObject.method!=='GET')return new Response(null,{status:405,headers:{...headers,Allow:'GET'}});
   const secrets=Object.fromEntries(KEYS.map(k=>[k,typeof env[k]==='string'&&env[k].trim()?'PRESENT':'MISSING']));
   if(Object.values(secrets).includes('MISSING'))return Response.json({status:'FAILED',secrets,reason:'MISSING_SECRET',v3Active:false},{status:503,headers});
-  const params=new URL(requestObject.url).searchParams;const mode=params.get('provider')??'all';const window=params.get('window')??'1M';
-  if(!['all','fred','bls','bea','eia','vintage'].includes(mode))return Response.json({status:'FAILED',reason:'INVALID_PROVIDER'},{status:400,headers});
+  const params=new URL(requestObject.url).searchParams;const mode=params.get('provider')??'all';const window=params.get('window')??'1M';const sourceId=params.get('series')??'UNRATE';
+  if(!['all','fred','bls','bea','eia','vintage','source'].includes(mode))return Response.json({status:'FAILED',reason:'INVALID_PROVIDER'},{status:400,headers});
   if(mode==='vintage'&&!['1M','3M','6M','1Y','revision'].includes(window))return Response.json({status:'FAILED',reason:'INVALID_WINDOW'},{status:400,headers});
-  const cacheKey=mode==='vintage'?mode+window:mode;const cached=memo.get(cacheKey);if(cached&&cached.until>Date.now())return Response.json(await cached.promise,{headers});
+  if(mode==='source'&&!SERIES.includes(sourceId))return Response.json({status:'FAILED',reason:'INVALID_SERIES'},{status:400,headers});
+  const cacheKey=mode==='vintage'?mode+window:mode;const cached=mode==='source'?null:memo.get(cacheKey);if(cached&&cached.until>Date.now())return Response.json(await cached.promise,{headers});
   const promise=(async()=>{
     const now=new Date(),asOf=now.toISOString().slice(0,10),year=now.getUTCFullYear();
     const out={schemaVersion:2,checkedAt:now.toISOString(),secrets,v3Active:false,scoreCalculation:'NOT_RUN',status:'PARTIAL'};
+    if(mode==='source'){out.source=await provenance(sourceId,env.FRED_API_KEY,asOf);out.status=out.source.status;return out;}
     if(mode==='vintage'){out.vintage=await vintage(env.FRED_API_KEY,asOf,window);out.status=out.vintage.status;return out;}
     if(mode==='all'||mode==='fred'){const series=await mapLimit(SERIES,id=>fredSeries(id,env.FRED_API_KEY,asOf));out.fred={status:series.every(s=>s.status==='PASS')?'PASS':'FAIL',series};out.transforms=Object.fromEntries(series.filter(s=>['PCEPILFE','CPILFESL','PPIFIS','PAYEMS','DCOILWTICO'].includes(s.id)).map(s=>[s.id,transform(s)]));}
     if(mode==='all'||mode==='bls')out.bls=await bls(env.BLS_API_KEY,year);
@@ -96,7 +101,7 @@ export async function dataHealth(requestObject,env) {
     // Final defensive redaction over allowlisted output. Never return raw upstream errors/payloads.
     let serialized=JSON.stringify(out);for(const k of KEYS)serialized=serialized.split(env[k]).join('[REDACTED]');return JSON.parse(serialized);
   })().catch(()=>({status:'FAILED',reason:'DIAGNOSTIC_FAILED',secrets,v3Active:false}));
-  memo.set(cacheKey,{until:Date.now()+600000,promise});return Response.json(await promise,{headers});
+  const entry={until:Date.now()+600000,promise};if(mode!=='source')memo.set(cacheKey,entry);const result=await promise;if(!['OK','PASS'].includes(result.status))entry.until=Date.now()+60000;return Response.json(result,{headers});
 }
 
 
@@ -121,4 +126,27 @@ async function asOfRows(id,key,date) {
  const future=raw.filter(p=>p.date>date||p.realtime_start>date).length;
  const rows=raw.flatMap(p=>{const value=numeric(p.value);return value===null||p.date>date||p.realtime_start>date?[]:[{date:p.date,value,realtime_start:p.realtime_start,realtime_end:p.realtime_end}];}).sort((a,b)=>a.date.localeCompare(b.date));
  return {id,status:rows.length&&future===0?'PASS':'FAIL',http:r.http,asOf:date,latest:rows.at(-1)??null,futureDataLeak:future,releasePolicy:'ALFRED as-of availability; realtime window is not original publication date',rows};
+}
+
+
+
+async function provenance(id,key,asOf) {
+ const meta=await request(fredUrl('series',key,{series_id:id}));if(meta.status!=='PASS')return {id,...meta};
+ const release=await request(fredUrl('series/release',key,{series_id:id}));if(release.status!=='PASS')return {id,...release};
+ const rel=release.body.releases?.[0];if(!rel)return {id,...fail('RELEASE_METADATA_MISSING')};
+ const calendar=await request(fredUrl('release/dates',key,{release_id:String(rel.id),include_release_dates_with_no_data:'true',sort_order:'desc',limit:'1000'}));
+ if(calendar.status!=='PASS')return {id,...calendar};
+ const next=calendar.body.release_dates?.map(p=>p.date).filter(d=>d>asOf).sort()[0]??null;
+ const start=new Date(asOf+'T00:00:00Z');start.setUTCFullYear(start.getUTCFullYear()-21);
+ const rows=[];let total=null;
+ for(let offset=0;offset<60000;offset+=10000){
+  const r=await request(fredUrl('series/observations',key,{series_id:id,observation_start:start.toISOString().slice(0,10),observation_end:asOf,realtime_start:'1776-07-04',realtime_end:asOf,output_type:'1',limit:'10000',offset:String(offset)}));
+  if(r.status!=='PASS')return {id,...r};
+  total=r.body.count;
+  if(!Array.isArray(r.body.observations))return {id,...fail('OBSERVATIONS_MISSING')};
+  for(const p of r.body.observations)rows.push({observation_date:p.date,raw_value:numeric(p.value),vintage_date:p.realtime_start,vintage_end:p.realtime_end,release_date:p.realtime_start});
+  if(offset+r.body.observations.length>=total)break;
+ }
+ const m=meta.body.seriess?.[0];
+ return {id,status:rows.length===total?'PASS':'PARTIAL',asOf,count:rows.length,total,unit:m?.units,frequency:m?.frequency,seasonal_adjustment:m?.seasonal_adjustment,last_updated:m?.last_updated,next_release_date:next,release_id:rel.id,release_name:rel.name,release_date_basis:'ALFRED revision availability, not observation date',license_status:'UNVERIFIED',rows};
 }
