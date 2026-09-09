@@ -66,19 +66,23 @@ async function kosisObservation(key) {
   const meta=`https://kosis.kr/openapi/statisticsData.do?method=getMeta&type=ITM&apiKey=${encodeURIComponent(key)}&format=json&orgId=${encodeURIComponent(table.ORG_ID)}&tblId=${encodeURIComponent(table.TBL_ID)}`;
   const m=await fetchJson(meta); const items=rowsFrom(m.parsed); const item=items.find(x=>x.ITM_ID||x.ITEM_ID);
   if(!item) return {response:m.response, parsed:m.parsed, errorType:'ITEM_NOT_FOUND',table};
-  const data=`https://kosis.kr/openapi/Param/statisticsParameterData.do?method=getList&apiKey=${encodeURIComponent(key)}&format=json&jsonVD=Y&orgId=${encodeURIComponent(table.ORG_ID)}&tblId=${encodeURIComponent(table.TBL_ID)}&objL1=ALL&itmId=${encodeURIComponent(item.ITM_ID??item.ITEM_ID)}&prdSe=M&newEstPrdCnt=13`;
+  const objMeta=`https://kosis.kr/openapi/statisticsData.do?method=getMeta&type=OBJ&apiKey=${encodeURIComponent(key)}&format=json&orgId=${encodeURIComponent(table.ORG_ID)}&tblId=${encodeURIComponent(table.TBL_ID)}`;
+  const om=await fetchJson(objMeta); const objs=rowsFrom(om.parsed); const obj=objs.find(x=>x.OBJ_ID||x.OBJL_ID||x.OBJ_CODE); const objL1=obj?.OBJ_ID??obj?.OBJL_ID??obj?.OBJ_CODE;
+  if(!objL1) return {response:om.response,parsed:om.parsed,errorType:'OBJECT_NOT_FOUND',table,item};
+  const data=`https://kosis.kr/openapi/Param/statisticsParameterData.do?method=getList&apiKey=${encodeURIComponent(key)}&format=json&jsonVD=Y&orgId=${encodeURIComponent(table.ORG_ID)}&tblId=${encodeURIComponent(table.TBL_ID)}&objL1=${encodeURIComponent(objL1)}&itmId=${encodeURIComponent(item.ITM_ID??item.ITEM_ID)}&prdSe=M&newEstPrdCnt=13`;
   const d=await fetchJson(data); return {response:d.response, parsed:d.parsed, table, item, dataUrl:data};
 }
 
 async function bokObservation(key) {
   const base='https://ecos.bok.or.kr/api';
-  const t=await fetchJson(`${base}/StatisticTableList/${encodeURIComponent(key)}/json/kr/1/100/`); const tables=rowsFrom(t.parsed); const table=tables.find(x=>x.STAT_CODE||x.stat_code||x.STAT_CODE_ID);
+  const t=await fetchJson(`${base}/StatisticTableList/${encodeURIComponent(key)}/json/kr/1/100/`); const tables=rowsFrom(t.parsed); const table=tables.find(x=>(x.STAT_CODE||x.stat_code||x.STAT_CODE_ID) && String(x.SRCH_YN??x.srch_yn??'Y').toUpperCase()==='Y' && (x.CYCLE||x.cycle) && !/그룹|합계|total/i.test(String(x.STAT_NAME??x.stat_name??'')));
   if(!table) return {response:t.response,parsed:t.parsed,errorType:'TABLE_NOT_FOUND'};
   const code=table.STAT_CODE??table.stat_code??table.STAT_CODE_ID;
   const i=await fetchJson(`${base}/StatisticItemList/${encodeURIComponent(key)}/json/kr/1/100/${encodeURIComponent(code)}/`); const items=rowsFrom(i.parsed); const item=items.find(x=>x.ITEM_CODE||x.item_code);
   if(!item) return {response:i.response,parsed:i.parsed,errorType:'ITEM_NOT_FOUND',table};
   const itemCode=item.ITEM_CODE??item.item_code; const cycle=item.CYCLE??item.cycle??'M';
-  const s=await fetchJson(`${base}/StatisticSearch/${encodeURIComponent(key)}/json/kr/1/13/${encodeURIComponent(code)}/${cycle}/202001/202612/${encodeURIComponent(itemCode)}/`);
+  const end=String(item.END_TIME??item.end_time??'202612'); const start=String(item.START_TIME??item.start_time??(Number(end.slice(0,4))-2)+end.slice(4));
+  const s=await fetchJson(`${base}/StatisticSearch/${encodeURIComponent(key)}/json/kr/1/13/${encodeURIComponent(code)}/${encodeURIComponent(cycle)}/${encodeURIComponent(start)}/${encodeURIComponent(end)}/${encodeURIComponent(itemCode)}/`);
   return {response:s.response,parsed:s.parsed,table,item,dataUrl:'configured'};
 }
 
@@ -95,7 +99,8 @@ export async function phase1KoreaDataCheck(request, env) {
   // operation URL is not exposed without the portal's generated guide. Do not
   // guess a path or issue a misleading request.
   const rawFscKey = String(env.FSC_API_KEY ?? '');
-  const fscUrl = `https://apis.data.go.kr/1160100/service/GetKofiaStatisticsInfoService/getGrantingOfCreditBalanceInfo?serviceKey=${encodeURIComponent(serviceKey(rawFscKey))}&numOfRows=1&pageNo=1&resultType=json`;
+  const now=new Date(); const endDt=now.toISOString().slice(0,10).replaceAll('-',''); const past=new Date(now); past.setUTCMonth(past.getUTCMonth()-18); const beginDt=past.toISOString().slice(0,10).replaceAll('-','');
+  const fscUrl = `https://apis.data.go.kr/1160100/service/GetKofiaStatisticsInfoService/getGrantingOfCreditBalanceInfo?serviceKey=${encodeURIComponent(serviceKey(rawFscKey))}&numOfRows=100&pageNo=1&resultType=json&beginBasDt=${beginDt}&endBasDt=${endDt}`;
   const [fsc,kosis,bok] = await Promise.all([check('FSC',env.FSC_API_KEY,fscUrl,genericParse), (async()=>{const o=result('KOSIS',kosisUrl);o.secretPresent=Boolean(env.KOSIS_API_KEY); if(!o.secretPresent){o.errorType='SECRET_MISSING';return o;} o.requestAttempted=true; try{const q=await kosisObservation(env.KOSIS_API_KEY); o.httpStatus=q.response.status;o.responseReceived=q.response.ok;const s=observationSummary(q.parsed);Object.assign(o,s,{authSuccess:q.response.ok&&s.parserSuccess,responseFormat:'json',apiErrorCode:null,errorType:q.errorType??null});}catch{ o.errorType='NETWORK_OR_TIMEOUT'; } return o;})(), (async()=>{const o=result('BOK',bokUrl);o.secretPresent=Boolean(env.BOK_API_KEY); if(!o.secretPresent){o.errorType='SECRET_MISSING';return o;} o.requestAttempted=true; try{const q=await bokObservation(env.BOK_API_KEY); o.httpStatus=q.response.status;o.responseReceived=q.response.ok;const s=observationSummary(q.parsed);Object.assign(o,s,{authSuccess:q.response.ok&&s.parserSuccess,responseFormat:'json',apiErrorCode:null,errorType:q.errorType??null});}catch{ o.errorType='NETWORK_OR_TIMEOUT'; } return o;})()]);
   fsc.appearsPercentEncoded = /%[0-9A-Fa-f]{2}/.test(rawFscKey);
   fsc.requestEncodingMode = fsc.appearsPercentEncoded ? 'decoded_then_encoded' : 'encoded';
