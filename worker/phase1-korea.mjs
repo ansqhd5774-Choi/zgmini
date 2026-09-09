@@ -18,6 +18,13 @@ async function check(provider, key, url, parse) {
   return out;
 }
 
+async function fetchJson(url) {
+  const response = await fetch(url, {redirect:'manual', signal:AbortSignal.timeout(12000), headers:{accept:'application/json'}});
+  const body = await response.text();
+  const parsed = JSON.parse(body.trim());
+  return {response, parsed};
+}
+
 function jsonParse(body) { try { return JSON.parse(body); } catch { return null; } }
 function genericParse(body, contentType) {
   const trimmed = body.trim();
@@ -38,6 +45,43 @@ function serviceKey(key) {
   return value;
 }
 
+function rowsFrom(value) {
+  const w=value?.StatisticSearch ?? value?.StatisticTableList ?? value?.StatisticItemList ?? value?.response?.body ?? value?.body ?? value;
+  const rows=w?.row ?? w?.items?.item ?? w?.data ?? [];
+  return Array.isArray(rows) ? rows : rows && typeof rows==='object' ? [rows] : [];
+}
+
+function observationSummary(rows) {
+  const list=rowsFrom({row:rows});
+  const dated=list.filter(x=>x && (x.PRD_DE||x.TIME||x.basDt||x.DATE));
+  const numeric=dated.filter(x=>Object.values(x).some(v=>v!==null && v!=='' && v!=='.' && Number.isFinite(Number(v))));
+  const last=dated.at(-1) ?? list.at(-1) ?? {};
+  return {observationDate:last.PRD_DE??last.TIME??last.basDt??last.DATE??null, unit:last.UNIT_NM??last.UNIT_NAME??last.unit??null, recordCount:list.length, historyAvailable:numeric.length>1, nullOrMissing:list.some(x=>Object.values(x??{}).some(v=>v===null||v===''||v==='.' )), parserSuccess:numeric.length>0, rowContainerFound:list.length>0};
+}
+
+async function kosisObservation(key) {
+  const search=`https://kosis.kr/openapi/statisticsSearch.do?method=getList&apiKey=${encodeURIComponent(key)}&searchNm=${encodeURIComponent('투자심리')}&sort=DATE&startCount=1&resultCount=10&format=json`;
+  const found=await fetchJson(search); const tables=rowsFrom(found.parsed); const table=tables.find(x=>x.ORG_ID&&x.TBL_ID);
+  if(!table) return {response:found.response, parsed:found.parsed, errorType:'TABLE_NOT_FOUND'};
+  const meta=`https://kosis.kr/openapi/statisticsData.do?method=getMeta&type=ITM&apiKey=${encodeURIComponent(key)}&format=json&orgId=${encodeURIComponent(table.ORG_ID)}&tblId=${encodeURIComponent(table.TBL_ID)}`;
+  const m=await fetchJson(meta); const items=rowsFrom(m.parsed); const item=items.find(x=>x.ITM_ID||x.ITEM_ID);
+  if(!item) return {response:m.response, parsed:m.parsed, errorType:'ITEM_NOT_FOUND',table};
+  const data=`https://kosis.kr/openapi/Param/statisticsParameterData.do?method=getList&apiKey=${encodeURIComponent(key)}&format=json&jsonVD=Y&orgId=${encodeURIComponent(table.ORG_ID)}&tblId=${encodeURIComponent(table.TBL_ID)}&objL1=ALL&itmId=${encodeURIComponent(item.ITM_ID??item.ITEM_ID)}&prdSe=M&newEstPrdCnt=13`;
+  const d=await fetchJson(data); return {response:d.response, parsed:d.parsed, table, item, dataUrl:data};
+}
+
+async function bokObservation(key) {
+  const base='https://ecos.bok.or.kr/api';
+  const t=await fetchJson(`${base}/StatisticTableList/${encodeURIComponent(key)}/json/kr/1/100/`); const tables=rowsFrom(t.parsed); const table=tables.find(x=>x.STAT_CODE||x.stat_code||x.STAT_CODE_ID);
+  if(!table) return {response:t.response,parsed:t.parsed,errorType:'TABLE_NOT_FOUND'};
+  const code=table.STAT_CODE??table.stat_code??table.STAT_CODE_ID;
+  const i=await fetchJson(`${base}/StatisticItemList/${encodeURIComponent(key)}/json/kr/1/100/${encodeURIComponent(code)}/`); const items=rowsFrom(i.parsed); const item=items.find(x=>x.ITEM_CODE||x.item_code);
+  if(!item) return {response:i.response,parsed:i.parsed,errorType:'ITEM_NOT_FOUND',table};
+  const itemCode=item.ITEM_CODE??item.item_code; const cycle=item.CYCLE??item.cycle??'M';
+  const s=await fetchJson(`${base}/StatisticSearch/${encodeURIComponent(key)}/json/kr/1/13/${encodeURIComponent(code)}/${cycle}/202001/202612/${encodeURIComponent(itemCode)}/`);
+  return {response:s.response,parsed:s.parsed,table,item,dataUrl:'configured'};
+}
+
 export async function phase1KoreaDataCheck(request, env) {
   const headers={'Cache-Control':'private, max-age=15','X-Robots-Tag':'noindex, nofollow','Content-Type':'application/json; charset=utf-8'};
   if (request.method !== 'GET') return new Response(null,{status:405,headers:{...headers,Allow:'GET'}});
@@ -52,7 +96,7 @@ export async function phase1KoreaDataCheck(request, env) {
   // guess a path or issue a misleading request.
   const rawFscKey = String(env.FSC_API_KEY ?? '');
   const fscUrl = `https://apis.data.go.kr/1160100/service/GetKofiaStatisticsInfoService/getGrantingOfCreditBalanceInfo?serviceKey=${encodeURIComponent(serviceKey(rawFscKey))}&numOfRows=1&pageNo=1&resultType=json`;
-  const [fsc,kosis,bok] = await Promise.all([check('FSC',env.FSC_API_KEY,fscUrl,genericParse),check('KOSIS',env.KOSIS_API_KEY,kosisUrl,genericParse),check('BOK',env.BOK_API_KEY,bokUrl,genericParse)]);
+  const [fsc,kosis,bok] = await Promise.all([check('FSC',env.FSC_API_KEY,fscUrl,genericParse), (async()=>{const o=result('KOSIS',kosisUrl);o.secretPresent=Boolean(env.KOSIS_API_KEY); if(!o.secretPresent){o.errorType='SECRET_MISSING';return o;} o.requestAttempted=true; try{const q=await kosisObservation(env.KOSIS_API_KEY); o.httpStatus=q.response.status;o.responseReceived=q.response.ok;const s=observationSummary(q.parsed);Object.assign(o,s,{authSuccess:q.response.ok&&s.parserSuccess,responseFormat:'json',apiErrorCode:null,errorType:q.errorType??null});}catch{ o.errorType='NETWORK_OR_TIMEOUT'; } return o;})(), (async()=>{const o=result('BOK',bokUrl);o.secretPresent=Boolean(env.BOK_API_KEY); if(!o.secretPresent){o.errorType='SECRET_MISSING';return o;} o.requestAttempted=true; try{const q=await bokObservation(env.BOK_API_KEY); o.httpStatus=q.response.status;o.responseReceived=q.response.ok;const s=observationSummary(q.parsed);Object.assign(o,s,{authSuccess:q.response.ok&&s.parserSuccess,responseFormat:'json',apiErrorCode:null,errorType:q.errorType??null});}catch{ o.errorType='NETWORK_OR_TIMEOUT'; } return o;})()]);
   fsc.appearsPercentEncoded = /%[0-9A-Fa-f]{2}/.test(rawFscKey);
   fsc.requestEncodingMode = fsc.appearsPercentEncoded ? 'decoded_then_encoded' : 'encoded';
   fsc.doubleEncodingDetected = false;
