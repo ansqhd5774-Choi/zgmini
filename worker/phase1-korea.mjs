@@ -11,7 +11,7 @@ async function check(provider, key, url, parse) {
     const response = await fetch(url, {redirect:'manual', signal:AbortSignal.timeout(12000), headers:{accept:'application/json, application/xml'}});
     out.httpStatus = response.status; out.responseReceived = response.status >= 200 && response.status < 300;
     const body = await response.text();
-    if (!out.responseReceived) { out.errorType = response.status === 401 || response.status === 403 ? 'AUTHENTICATION_REJECTED' : response.status === 429 ? 'RATE_LIMITED' : 'HTTP_ERROR'; return out; }
+    if (!out.responseReceived) { const parsedError = parse(body, response.headers.get('content-type') ?? ''); out.apiErrorCode = parsedError.apiErrorCode ?? null; out.responseFormat = parsedError.responseFormat; out.rowContainerFound = parsedError.rowContainerFound; out.errorType = response.status === 401 || response.status === 403 ? (parsedError.apiErrorCode ?? 'AUTHENTICATION_REJECTED') : response.status === 429 ? 'RATE_LIMITED' : 'HTTP_ERROR'; return out; }
     const parsed = parse(body, response.headers.get('content-type') ?? '');
     out.authSuccess = parsed.authSuccess; out.observationDate = parsed.observationDate; out.unit = parsed.unit; out.recordCount = parsed.recordCount; out.historyAvailable = parsed.historyAvailable; out.nullOrMissing = parsed.nullOrMissing; out.errorType = parsed.errorType ?? null; out.responseFormat = parsed.responseFormat; out.parserSuccess = parsed.parserSuccess; out.apiErrorCode = parsed.apiErrorCode; out.rowContainerFound = parsed.rowContainerFound;
   } catch { out.errorType = 'NETWORK_OR_TIMEOUT'; }
