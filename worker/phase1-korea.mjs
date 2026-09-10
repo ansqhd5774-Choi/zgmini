@@ -72,7 +72,9 @@ function initial(provider) {
   return {provider,requestAttempted:false,secretPresent:false,authSuccess:false,httpStatus:null,
     responseReceived:false,metadataCount:0,observationCount:0,recordCount:0,parserSuccess:false,
     observationDate:null,unit:null,unitSource:null,historyAvailable:false,nullOrMissing:null,
-    stage:null,elapsedMs:0,apiErrorCode:null,errorType:null,stages:[],technicalValidationSuccess:false};
+    stage:null,elapsedMs:0,apiErrorCode:null,errorType:null,stages:[],technicalValidationSuccess:false,
+    requestPrepared:false,fetchFunctionAvailable:false,fetchInvoked:false,urlConstructed:false,
+    abortControllerAvailable:typeof globalThis.AbortController==='function',exceptionName:null};
 }
 class DiagnosticError extends Error {
   constructor(code) { super(code); this.code=code; }
@@ -102,15 +104,29 @@ function apiCode(json, body, provider) {
   return /^(?:INFO-\d{3}|ERROR-\d{3}|\d{1,4})$/.test(c)?c:'UNRECOGNIZED_API_ERROR';
 }
 
-export async function requestStage(out, name, url, context) {
-  const s={stage:name,attempted:true,httpStatus:null,elapsedMs:0,responseFormat:null,parserSuccess:false,errorType:null};
+export async function requestStage(out, name, prepareUrl, context) {
+  const start=Date.now();
+  const s={stage:name,attempted:true,httpStatus:null,elapsedMs:0,responseFormat:null,parserSuccess:false,errorType:null,
+    requestPrepared:false,fetchFunctionAvailable:false,fetchInvoked:false,responseReceived:false,
+    urlConstructed:false,abortControllerAvailable:typeof globalThis.AbortController==='function',exceptionName:null};
   out.stages.push(s); out.stage=name; out.requestAttempted=true;
   out.httpStatus=null; out.responseReceived=false; out.apiErrorCode=null; out.authSuccess=false;
-  const start=Date.now(); const controller=new AbortController();
-  const timer=setTimeout(()=>controller.abort(),context.timeoutMs??12000);
+  let controller,timer; let phase='PREPARE';
   try {
-    const r=await context.fetch(url,{method:'GET',redirect:'manual',signal:controller.signal,headers:{accept:'application/json'}});
-    s.httpStatus=r.status; out.httpStatus=r.status; out.responseReceived=true;
+    const resolvedFetch=typeof context.fetch==='function'?context.fetch:globalThis.fetch;
+    s.fetchFunctionAvailable=typeof resolvedFetch==='function';
+    const url=typeof prepareUrl==='function'?prepareUrl():prepareUrl;
+    const target=new URL(url); s.urlConstructed=true;
+    controller=new AbortController();
+    timer=setTimeout(()=>controller.abort(),context.timeoutMs??12000);
+    const options={method:'GET',redirect:'manual',signal:controller.signal,headers:{accept:'application/json'}};
+    s.requestPrepared=true; phase='FETCH_INVOCATION';
+    if(!s.fetchFunctionAvailable) fail(out,`${name}_FETCH_INVOCATION_ERROR`);
+    // Native Worker fetch requires the global receiver, not the DI context object.
+    const pending=Reflect.apply(resolvedFetch,globalThis,[target,options]);
+    s.fetchInvoked=true; phase='NETWORK';
+    const r=await pending;
+    s.httpStatus=r.status; out.httpStatus=r.status; s.responseReceived=true; out.responseReceived=true;
     const body=(await r.text()).replace(/^\uFEFF/,'').trim();
     s.responseFormat=body.startsWith('<')?'xml-or-html':/^[\[{]/.test(body)?'json':'unknown';
     let json=null;
@@ -122,9 +138,13 @@ export async function requestStage(out, name, url, context) {
     out.authSuccess=true;
     return json;
   } catch(e) {
-    s.errorType=e instanceof DiagnosticError?e.code:controller.signal.aborted?`${name}_TIMEOUT`:`${name}_NETWORK_ERROR`;
+    s.exceptionName=['TypeError','ReferenceError','RangeError','SyntaxError','AbortError','TimeoutError','Error'].includes(e?.name)?e.name:'Other';
+    s.errorType=phase==='PREPARE'?`${name}_PREPARE_ERROR`:e instanceof DiagnosticError?e.code:controller?.signal.aborted?`${name}_TIMEOUT`:`${name}_${phase}_ERROR`;
     out.errorType=s.errorType; throw new DiagnosticError(s.errorType);
-  } finally { clearTimeout(timer); s.elapsedMs=Date.now()-start; }
+  } finally {
+    if(timer!==undefined) clearTimeout(timer); s.elapsedMs=Date.now()-start;
+    for(const k of ['requestPrepared','fetchFunctionAvailable','fetchInvoked','urlConstructed','abortControllerAvailable','exceptionName']) out[k]=s[k];
+  }
 }
 function accept(out, summary, stage) {
   if (!summary) fail(out,`${stage}_PARSE_ERROR`);
@@ -139,12 +159,12 @@ function compactDate(d) { return d.toISOString().slice(0,10).replaceAll('-','');
 function monthsAgo(now,n) { const d=new Date(Date.UTC(now.getUTCFullYear(),now.getUTCMonth()-n,1)); d.setUTCDate(Math.min(now.getUTCDate(),new Date(Date.UTC(d.getUTCFullYear(),d.getUTCMonth()+1,0)).getUTCDate())); return d; }
 
 async function fsc(out,key,ctx) {
-  const now=ctx.now(); const rows=[]; let total=Infinity;
+  const rows=[]; let total=Infinity;
   // Bounded pagination covers 18 months; summarize all pages as one series.
   for(let page=1;page<=10 && rows.length<total;page++) {
-    const json=await requestStage(out,'FSC_DATA',url(FSC_BASE,'getGrantingOfCreditBalanceInfo',{
+    const json=await requestStage(out,'FSC_DATA',()=>{const now=ctx.now();return url(FSC_BASE,'getGrantingOfCreditBalanceInfo',{
       serviceKey:decodeKey(key),resultType:'json',pageNo:page,numOfRows:100,
-      beginBasDt:compactDate(monthsAgo(now,18)),endBasDt:compactDate(now)}),ctx);
+      beginBasDt:compactDate(monthsAgo(now,18)),endBasDt:compactDate(now)});},ctx);
     if (String(json?.response?.header?.resultCode)!=='00') fail(out,'FSC_DATA_API_STATUS_MISSING');
     const raw=json?.response?.body?.items?.item;
     const batch=Array.isArray(raw)?raw:raw&&typeof raw==='object'?[raw]:null;
@@ -164,7 +184,7 @@ function kosisArray(out,json,stage) { if(!Array.isArray(json)) fail(out,`${stage
 function selectedKosis(out,s) { Object.assign(out,{selectedOrgId:s.orgId,selectedTableId:s.tblId,selectedItemId:s.itmId,selectedObjectId:s.objL1,prdSe:s.prdSe}); }
 async function kosisData(out,key,s,ctx) {
   selectedKosis(out,s);
-  const json=await requestStage(out,'KOSIS_DATA',url(KOSIS_BASE,'Param/statisticsParameterData.do',{
+  const json=await requestStage(out,'KOSIS_DATA',()=>url(KOSIS_BASE,'Param/statisticsParameterData.do',{
     method:'getList',apiKey:key,format:'json',jsonVD:'Y',...s,newEstPrdCnt:13}),ctx);
   const rows=kosisArray(out,json,'KOSIS_DATA');
   // Keep a single verified dimension tuple, never merge different series by date.
@@ -176,7 +196,7 @@ async function kosis(out,key,ctx) {
     try { await kosisData(out,key,verifiedKosis.series,ctx); return; }
     catch(e) {clearDiagnosticCache();throw e;}
   }
-  const found=await requestStage(out,'KOSIS_SEARCH',url(KOSIS_BASE,'statisticsSearch.do',{
+  const found=await requestStage(out,'KOSIS_SEARCH',()=>url(KOSIS_BASE,'statisticsSearch.do',{
     method:'getList',apiKey:key,format:'json',jsonVD:'Y',searchNm:'소비자동향',sort:'DATE',startCount:1,resultCount:3}),ctx);
   const tables=kosisArray(out,found,'KOSIS_SEARCH'); out.metadataCount+=tables.length;
   const table=tables.find(r=>id(r.ORG_ID)&&id(r.TBL_ID)&&!/국제|북한/.test(r.TBL_NM??''));
@@ -186,19 +206,19 @@ async function kosis(out,key,ctx) {
   // Official ITM metadata combines classifications and items. OBJ is a diagnostic
   // stage, not an invented type=OBJ operation. ALL is a discovery selector only.
   const meta=(extra)=>url(KOSIS_BASE,'statisticsData.do',{method:'getMeta',apiKey:key,format:'json',jsonVD:'Y',...base,...extra});
-  const all=kosisArray(out,await requestStage(out,'KOSIS_ITM',meta({type:'ITM',objId:'ALL',itmId:'ALL'}),ctx),'KOSIS_ITM');
+  const all=kosisArray(out,await requestStage(out,'KOSIS_ITM',()=>meta({type:'ITM',objId:'ALL',itmId:'ALL'}),ctx),'KOSIS_ITM');
   out.metadataCount+=all.length;
   const metric=all.find(r=>r.OBJ_ID==='ITEM' && id(r.ITM_ID));
   if(!metric) fail(out,'KOSIS_ITM_NOT_FOUND');
   out.selectedItemId=metric.ITM_ID;
-  const objects=kosisArray(out,await requestStage(out,'KOSIS_OBJ',meta({type:'ITM',objId:'ALL',itmId:'ALL'}),ctx),'KOSIS_OBJ');
+  const objects=kosisArray(out,await requestStage(out,'KOSIS_OBJ',()=>meta({type:'ITM',objId:'ALL',itmId:'ALL'}),ctx),'KOSIS_OBJ');
   out.metadataCount+=objects.length;
   const groups=[...new Set(objects.filter(r=>r.OBJ_ID!=='ITEM'&&id(r.OBJ_ID)).map(r=>r.OBJ_ID))];
   if(groups.length!==1) fail(out,'KOSIS_OBJ_DIMENSIONS_UNSUPPORTED');
   const object=objects.find(r=>r.OBJ_ID===groups[0]&&id(r.ITM_ID)&&!objects.some(c=>c.OBJ_ID===r.OBJ_ID&&c.UP_ITM_ID===r.ITM_ID));
   if(!object) fail(out,'KOSIS_OBJ_NOT_FOUND');
   out.selectedObjectId=object.ITM_ID;
-  const periods=kosisArray(out,await requestStage(out,'KOSIS_PRD',meta({type:'PRD'}),ctx),'KOSIS_PRD');
+  const periods=kosisArray(out,await requestStage(out,'KOSIS_PRD',()=>meta({type:'PRD'}),ctx),'KOSIS_PRD');
   if(!periods.some(r=>r.PRD_SE==='M')) fail(out,'KOSIS_PRD_MONTHLY_NOT_FOUND');
   const s={...base,itmId:metric.ITM_ID,objL1:object.ITM_ID,prdSe:'M'};
   await kosisData(out,key,s,ctx);
@@ -232,7 +252,7 @@ export function recentRange(item,now) {
 }
 async function bok(out,key,ctx) {
   const endpoint=(name,args)=>new URL(`${name}/${[key,'json','kr',...args].map(encodeURIComponent).join('/')}/`,BOK_BASE);
-  const tablesJson=await requestStage(out,'BOK_TABLE',endpoint('StatisticTableList',[1,1000]),ctx);
+  const tablesJson=await requestStage(out,'BOK_TABLE',()=>endpoint('StatisticTableList',[1,1000]),ctx);
   const tableRows=wrapperRows(tablesJson,'StatisticTableList');
   if(!tableRows) fail(out,'BOK_TABLE_PARSE_ERROR');
   out.metadataCount=tableRows.length;
@@ -242,7 +262,7 @@ async function bok(out,key,ctx) {
   for(let index=0;index<candidates.length;index++) {
     const table=candidates[index]; out.selectedStatCode=table.STAT_CODE;
     try {
-      const itemJson=await requestStage(out,'BOK_ITEM',endpoint('StatisticItemList',[1,1000,table.STAT_CODE]),ctx);
+      const itemJson=await requestStage(out,'BOK_ITEM',()=>endpoint('StatisticItemList',[1,1000,table.STAT_CODE]),ctx);
       const items=usableItems(itemJson);
       if(!items) fail(out,'BOK_ITEM_PARSE_ERROR');
       out.metadataCount+=wrapperRows(itemJson,'StatisticItemList').length;
@@ -250,7 +270,7 @@ async function bok(out,key,ctx) {
       if(!item) fail(out,items.length && items.every(r=>!['A','Y','Q','M','D'].includes(r.CYCLE))?'BOK_ITEM_CYCLE_UNSUPPORTED':'BOK_ITEM_NOT_FOUND');
       out.selectedItemCode=item.ITEM_CODE; out.cycle=item.CYCLE;
       const range=recentRange(item,ctx.now());
-      const json=await requestStage(out,'BOK_DATA',endpoint('StatisticSearch',[1,1000,table.STAT_CODE,range.cycle,range.start,range.end,item.ITEM_CODE]),ctx);
+      const json=await requestStage(out,'BOK_DATA',()=>endpoint('StatisticSearch',[1,1000,table.STAT_CODE,range.cycle,range.start,range.end,item.ITEM_CODE]),ctx);
       accept(out,parseBok(json,item.CYCLE),'BOK_DATA'); return;
     } catch(e) {
       if(!(e instanceof DiagnosticError)) throw e;
