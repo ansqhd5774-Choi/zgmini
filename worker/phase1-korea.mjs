@@ -182,14 +182,21 @@ const verifiedKosis = {series:null,expires:0};
 export function clearDiagnosticCache() { verifiedKosis.series=null; verifiedKosis.expires=0; }
 function kosisArray(out,json,stage) { if(!Array.isArray(json)) fail(out,`${stage}_PARSE_ERROR`); return json; }
 function selectedKosis(out,s) { Object.assign(out,{selectedOrgId:s.orgId,selectedTableId:s.tblId,selectedItemId:s.itmId,selectedObjectId:s.objL1,prdSe:s.prdSe}); }
+async function kosisRequest(out,stage,prepare,ctx) {
+  try { return await requestStage(out,stage,prepare,ctx); }
+  catch(e) {
+    if(e instanceof DiagnosticError && out.apiErrorCode==='30' && e.code===`${stage}_API_ERROR`) fail(out,`${stage}_NO_DATA`);
+    throw e;
+  }
+}
 async function kosisData(out,key,s,ctx) {
-  selectedKosis(out,s);
-  const json=await requestStage(out,'KOSIS_DATA',()=>url(KOSIS_BASE,'Param/statisticsParameterData.do',{
+  const json=await kosisRequest(out,'KOSIS_DATA',()=>url(KOSIS_BASE,'Param/statisticsParameterData.do',{
     method:'getList',apiKey:key,format:'json',jsonVD:'Y',...s,newEstPrdCnt:13}),ctx);
   const rows=kosisArray(out,json,'KOSIS_DATA');
   // Keep a single verified dimension tuple, never merge different series by date.
   const matched=rows.filter(r=>r.ORG_ID===s.orgId && r.TBL_ID===s.tblId && r.ITM_ID===s.itmId && r.C1===s.objL1 && r.PRD_SE===s.prdSe && !r.C2);
   accept(out,summarize(matched,'PRD_DE','DT',s.prdSe,'UNIT_NM'),'KOSIS_DATA');
+  selectedKosis(out,s);
 }
 async function kosis(out,key,ctx) {
   if(verifiedKosis.series && verifiedKosis.expires>Date.now()) {
@@ -199,30 +206,50 @@ async function kosis(out,key,ctx) {
   const found=await requestStage(out,'KOSIS_SEARCH',()=>url(KOSIS_BASE,'statisticsSearch.do',{
     method:'getList',apiKey:key,format:'json',jsonVD:'Y',searchNm:'소비자동향',sort:'DATE',startCount:1,resultCount:3}),ctx);
   const tables=kosisArray(out,found,'KOSIS_SEARCH'); out.metadataCount+=tables.length;
-  const table=tables.find(r=>id(r.ORG_ID)&&id(r.TBL_ID)&&!/국제|북한/.test(r.TBL_NM??''));
-  if(!table) fail(out,'KOSIS_SEARCH_EMPTY');
+  // Keep only public metadata in memory; do not store keys or observation values.
+  const candidates=tables.slice(0,3).map((r,candidateIndex)=>({candidateIndex,...Object.fromEntries(
+    ['ORG_ID','TBL_ID','TBL_NM','STAT_ID','STRT_PRD_DE','END_PRD_DE','REC_TBL_SE'].map(k=>[k,r[k]??null]))}))
+    .filter(r=>id(r.ORG_ID)&&id(r.TBL_ID)&&!/국제|북한/.test(r.TBL_NM??''));
+  out.candidateCount=candidates.length;out.candidatesTried=0;out.candidateDiagnostics=[];
+  if(!candidates.length) fail(out,'KOSIS_SEARCH_EMPTY');
+  for(const table of candidates) {
+  out.candidatesTried++;
+  const stageStart=out.stages.length;
+  const diagnostic={candidateIndex:table.candidateIndex,orgId:table.ORG_ID,tableId:table.TBL_ID,stages:[],apiErrorCode:null,errorType:null};
+  out.candidateDiagnostics.push(diagnostic);
+  Object.assign(out,{observationCount:0,recordCount:0,parserSuccess:false,observationDate:null,unit:null,unitSource:null,historyAvailable:false,nullOrMissing:null,errorType:null,apiErrorCode:null});
+  try {
   const base={orgId:table.ORG_ID,tblId:table.TBL_ID};
-  Object.assign(out,{selectedOrgId:base.orgId,selectedTableId:base.tblId});
   // Official ITM metadata combines classifications and items. OBJ is a diagnostic
-  // stage, not an invented type=OBJ operation. ALL is a discovery selector only.
+  // stage, not a type=OBJ operation. Discover IDs from returned metadata.
   const meta=(extra)=>url(KOSIS_BASE,'statisticsData.do',{method:'getMeta',apiKey:key,format:'json',jsonVD:'Y',...base,...extra});
-  const all=kosisArray(out,await requestStage(out,'KOSIS_ITM',()=>meta({type:'ITM',objId:'ALL',itmId:'ALL'}),ctx),'KOSIS_ITM');
+  const all=kosisArray(out,await kosisRequest(out,'KOSIS_ITM',()=>meta({type:'ITM'}),ctx),'KOSIS_ITM');
   out.metadataCount+=all.length;
   const metric=all.find(r=>r.OBJ_ID==='ITEM' && id(r.ITM_ID));
   if(!metric) fail(out,'KOSIS_ITM_NOT_FOUND');
-  out.selectedItemId=metric.ITM_ID;
-  const objects=kosisArray(out,await requestStage(out,'KOSIS_OBJ',()=>meta({type:'ITM',objId:'ALL',itmId:'ALL'}),ctx),'KOSIS_OBJ');
+  const objects=kosisArray(out,await kosisRequest(out,'KOSIS_OBJ',()=>meta({type:'ITM'}),ctx),'KOSIS_OBJ');
   out.metadataCount+=objects.length;
   const groups=[...new Set(objects.filter(r=>r.OBJ_ID!=='ITEM'&&id(r.OBJ_ID)).map(r=>r.OBJ_ID))];
   if(groups.length!==1) fail(out,'KOSIS_OBJ_DIMENSIONS_UNSUPPORTED');
   const object=objects.find(r=>r.OBJ_ID===groups[0]&&id(r.ITM_ID)&&!objects.some(c=>c.OBJ_ID===r.OBJ_ID&&c.UP_ITM_ID===r.ITM_ID));
   if(!object) fail(out,'KOSIS_OBJ_NOT_FOUND');
-  out.selectedObjectId=object.ITM_ID;
-  const periods=kosisArray(out,await requestStage(out,'KOSIS_PRD',()=>meta({type:'PRD'}),ctx),'KOSIS_PRD');
+  const periods=kosisArray(out,await kosisRequest(out,'KOSIS_PRD',()=>meta({type:'PRD'}),ctx),'KOSIS_PRD');
   if(!periods.some(r=>r.PRD_SE==='M')) fail(out,'KOSIS_PRD_MONTHLY_NOT_FOUND');
   const s={...base,itmId:metric.ITM_ID,objL1:object.ITM_ID,prdSe:'M'};
   await kosisData(out,key,s,ctx);
   verifiedKosis.series=s; verifiedKosis.expires=Date.now()+3600000;
+  out.selectedCandidateIndex=table.candidateIndex;
+  return;
+  } catch(e) {
+    diagnostic.apiErrorCode=out.apiErrorCode;diagnostic.errorType=out.errorType;
+    // Auth, transport and malformed payload failures are not absent datasets.
+    if(!(e instanceof DiagnosticError) || !/_(NO_DATA|NOT_FOUND|EMPTY|HISTORY_INSUFFICIENT|DIMENSIONS_UNSUPPORTED|MONTHLY_NOT_FOUND)$/.test(e.code)) throw e;
+  } finally {
+    diagnostic.stages=out.stages.slice(stageStart).map(s=>({stage:s.stage,httpStatus:s.httpStatus,parserSuccess:s.parserSuccess,errorType:s.errorType}));
+  }
+  }
+  Object.assign(out,{observationCount:0,recordCount:0,parserSuccess:false,observationDate:null,unit:null,unitSource:null,historyAvailable:false});
+  fail(out,'KOSIS_NO_USABLE_CANDIDATE');
 }
 
 export function searchableTables(json) {

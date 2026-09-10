@@ -60,7 +60,7 @@ for(const [stage,index] of [['SEARCH',0],['ITM',1],['OBJ',2],['DATA',4]])for(con
 });
 test('KOSIS empty observations not successful or cached',async()=>{
  clearDiagnosticCache();let i=0;const r=await runProvider('KOSIS',key,{fetch:async()=>response(i++===4?[]:kosisResponses[i-1])});
- assert.equal(r.errorType,'KOSIS_DATA_EMPTY');assert.equal(r.stages.at(-1).errorType,r.errorType);
+ assert.equal(r.errorType,'KOSIS_NO_USABLE_CANDIDATE');assert.equal(r.candidateDiagnostics[0].errorType,'KOSIS_DATA_EMPTY');
  const again=await runProvider('KOSIS',key,{fetch:async()=>new Response('{}')});assert.equal(again.stage,'KOSIS_SEARCH');
 });
 test('BOK advances invalid candidate then searches real wrapper',async()=>{
