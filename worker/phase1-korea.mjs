@@ -189,18 +189,63 @@ async function kosisRequest(out,stage,prepare,ctx) {
     throw e;
   }
 }
+// KOSIS official devGuide_0201List: objL1 required; objL2..objL8 optional.
+// ITM rows with OBJ_ID=ITEM are metrics, not classification dimensions.
+export function kosisDimensions(rows) {
+  const groups=new Map();
+  for(const r of rows) {
+    if(r.OBJ_ID==='ITEM'||!id(r.OBJ_ID)) continue;
+    if(!groups.has(r.OBJ_ID)) groups.set(r.OBJ_ID,[]);
+    groups.get(r.OBJ_ID).push(r);
+  }
+  if(!groups.size) throw new DiagnosticError('KOSIS_OBJ_NO_DIMENSIONS');
+  if(groups.size>8) throw new DiagnosticError('KOSIS_OBJ_TOO_MANY_DIMENSIONS');
+  // OBJ_ID_SN orders classification values, not dimensions. Preserve the
+  // metadata's classification-group order rather than treating value ranks as levels.
+  return [...groups].map(([objId,group],index)=>{
+    const values=group.filter(r=>id(r.ITM_ID)).sort((a,b)=>{
+      const rank=r=>numeric(r.OBJ_ID_SN)??Number.MAX_SAFE_INTEGER;
+      return rank(a)-rank(b)||a.ITM_ID.localeCompare(b.ITM_ID);
+    });
+    if(!values.length) throw new DiagnosticError('KOSIS_OBJ_NO_VALID_VALUE');
+    const byId=new Map(values.map(r=>[r.ITM_ID,r]));
+    const depth=r=>{
+      const seen=new Set();let n=0,current=r;
+      while(current && id(current.UP_ITM_ID) && byId.has(current.UP_ITM_ID)) {
+        if(seen.has(current.ITM_ID)) throw new DiagnosticError('KOSIS_OBJ_HIERARCHY_UNRESOLVED');
+        seen.add(current.ITM_ID);current=byId.get(current.UP_ITM_ID);n++;
+      }
+      return n;
+    };
+    for(const r of values) depth(r);
+    const hasChildren=r=>values.some(c=>c.UP_ITM_ID===r.ITM_ID);
+    const total=values.find(r=>/^(전체|계|총계|합계|전국)$/.test(text(r.ITM_NM)??''));
+    const leaves=values.filter(r=>!hasChildren(r)).sort((a,b)=>depth(a)-depth(b));
+    const chosen=total??leaves[0]??values[0];
+    const hierarchyKnown=values.every(r=>Object.hasOwn(r,'UP_ITM_ID'));
+    return {order:index+1,objId,objName:text(group[0].OBJ_NM),
+      selectedValueId:chosen.ITM_ID,selectedValueName:text(chosen.ITM_NM),
+      selectionReason:total?'EXPLICIT_TOTAL':leaves.length?'TOP_LEVEL_VALUE':'FIRST_VALID_VALUE',
+      hierarchyStatus:hasChildren(chosen)?'HAS_CHILDREN':hierarchyKnown?'LEAF_IN_METADATA':'UNKNOWN',
+      queryability:'UNVERIFIED_UNTIL_DATA',orderSource:'METADATA_GROUP_ORDER'};
+  });
+}
+function kosisDimensionDiagnostics(out,dimensions) {
+  Object.assign(out,{dimensionCount:dimensions.length,dimensions,
+    generatedObjLevels:dimensions.map(d=>`objL${d.order}`)});
+}
 async function kosisData(out,key,s,ctx) {
   const json=await kosisRequest(out,'KOSIS_DATA',()=>url(KOSIS_BASE,'Param/statisticsParameterData.do',{
     method:'getList',apiKey:key,format:'json',jsonVD:'Y',...s,newEstPrdCnt:13}),ctx);
   const rows=kosisArray(out,json,'KOSIS_DATA');
   // Keep a single verified dimension tuple, never merge different series by date.
-  const matched=rows.filter(r=>r.ORG_ID===s.orgId && r.TBL_ID===s.tblId && r.ITM_ID===s.itmId && r.C1===s.objL1 && r.PRD_SE===s.prdSe && !r.C2);
+  const matched=rows.filter(r=>r.ORG_ID===s.orgId && r.TBL_ID===s.tblId && r.ITM_ID===s.itmId && r.PRD_SE===s.prdSe && Array.from({length:8},(_,i)=>i+1).every(i=>s[`objL${i}`] ? r[`C${i}`]===s[`objL${i}`] : !r[`C${i}`]));
   accept(out,summarize(matched,'PRD_DE','DT',s.prdSe,'UNIT_NM'),'KOSIS_DATA');
   selectedKosis(out,s);
 }
 async function kosis(out,key,ctx) {
   if(verifiedKosis.series && verifiedKosis.expires>Date.now()) {
-    try { await kosisData(out,key,verifiedKosis.series,ctx); return; }
+    try { await kosisData(out,key,verifiedKosis.series,ctx); kosisDimensionDiagnostics(out,verifiedKosis.dimensions); return; }
     catch(e) {clearDiagnosticCache();throw e;}
   }
   const found=await requestStage(out,'KOSIS_SEARCH',()=>url(KOSIS_BASE,'statisticsSearch.do',{
@@ -214,6 +259,7 @@ async function kosis(out,key,ctx) {
   if(!candidates.length) fail(out,'KOSIS_SEARCH_EMPTY');
   for(const table of candidates) {
   out.candidatesTried++;
+  Object.assign(out,{dimensionCount:0,dimensions:[],generatedObjLevels:[]});
   const stageStart=out.stages.length;
   const diagnostic={candidateIndex:table.candidateIndex,orgId:table.ORG_ID,tableId:table.TBL_ID,stages:[],apiErrorCode:null,errorType:null};
   out.candidateDiagnostics.push(diagnostic);
@@ -229,21 +275,22 @@ async function kosis(out,key,ctx) {
   if(!metric) fail(out,'KOSIS_ITM_NOT_FOUND');
   const objects=kosisArray(out,await kosisRequest(out,'KOSIS_OBJ',()=>meta({type:'ITM'}),ctx),'KOSIS_OBJ');
   out.metadataCount+=objects.length;
-  const groups=[...new Set(objects.filter(r=>r.OBJ_ID!=='ITEM'&&id(r.OBJ_ID)).map(r=>r.OBJ_ID))];
-  if(groups.length!==1) fail(out,'KOSIS_OBJ_DIMENSIONS_UNSUPPORTED');
-  const object=objects.find(r=>r.OBJ_ID===groups[0]&&id(r.ITM_ID)&&!objects.some(c=>c.OBJ_ID===r.OBJ_ID&&c.UP_ITM_ID===r.ITM_ID));
-  if(!object) fail(out,'KOSIS_OBJ_NOT_FOUND');
+  let dimensions;
+  try { dimensions=kosisDimensions(objects); }
+  catch(e) { if(e instanceof DiagnosticError) fail(out,e.code); throw e; }
+  kosisDimensionDiagnostics(out,dimensions);
+  diagnostic.dimensions=dimensions;diagnostic.dimensionCount=dimensions.length;
   const periods=kosisArray(out,await kosisRequest(out,'KOSIS_PRD',()=>meta({type:'PRD'}),ctx),'KOSIS_PRD');
   if(!periods.some(r=>r.PRD_SE==='M')) fail(out,'KOSIS_PRD_MONTHLY_NOT_FOUND');
-  const s={...base,itmId:metric.ITM_ID,objL1:object.ITM_ID,prdSe:'M'};
+  const s={...base,itmId:metric.ITM_ID,...Object.fromEntries(dimensions.map(d=>[`objL${d.order}`,d.selectedValueId])),prdSe:'M'};
   await kosisData(out,key,s,ctx);
-  verifiedKosis.series=s; verifiedKosis.expires=Date.now()+3600000;
+  verifiedKosis.series=s; verifiedKosis.dimensions=dimensions; verifiedKosis.expires=Date.now()+3600000;
   out.selectedCandidateIndex=table.candidateIndex;
   return;
   } catch(e) {
     diagnostic.apiErrorCode=out.apiErrorCode;diagnostic.errorType=out.errorType;
     // Auth, transport and malformed payload failures are not absent datasets.
-    if(!(e instanceof DiagnosticError) || !/_(NO_DATA|NOT_FOUND|EMPTY|HISTORY_INSUFFICIENT|DIMENSIONS_UNSUPPORTED|MONTHLY_NOT_FOUND)$/.test(e.code)) throw e;
+    if(!(e instanceof DiagnosticError) || !/_(NO_DATA|NOT_FOUND|EMPTY|HISTORY_INSUFFICIENT|NO_DIMENSIONS|TOO_MANY_DIMENSIONS|NO_VALID_VALUE|HIERARCHY_UNRESOLVED|MONTHLY_NOT_FOUND)$/.test(e.code)) throw e;
   } finally {
     diagnostic.stages=out.stages.slice(stageStart).map(s=>({stage:s.stage,httpStatus:s.httpStatus,parserSuccess:s.parserSuccess,errorType:s.errorType}));
   }
