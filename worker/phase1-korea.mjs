@@ -30,16 +30,16 @@ export function period(value, cycle) {
   return null; // Unsupported cycles are explicit errors, never guessed.
 }
 
-export function summarize(rows, dateKey, valueKey, cycle, unitKey = null) {
+export function summarize(rows, dateKey, valueKey, cycle, unitKey = null, unitRequired = true) {
   const unique = new Map(); const conflicts = new Set(); let invalid=0;
   for (const row of rows) {
     const date=period(row?.[dateKey],cycle), value=numeric(row?.[valueKey]);
     const unit=unitKey ? text(row?.[unitKey]) : null;
-    if (!date || value===null || (unitKey && !unit)) { invalid++; continue; }
+    if (!date || value===null || (unitRequired && unitKey && !unit)) { invalid++; continue; }
     if (conflicts.has(date)) continue;
     const old=unique.get(date);
-    if (old && (old.value!==value || old.unit!==unit)) { unique.delete(date); conflicts.add(date); continue; }
-    unique.set(date,{date,value,unit});
+    if (old && (old.value!==value || (unitRequired ? old.unit!==unit : old.unit!==null && unit!==null && old.unit!==unit))) { unique.delete(date); conflicts.add(date); continue; }
+    unique.set(date,{date,value,unit:unitRequired?unit:unit??old?.unit??null});
   }
   const observations=[...unique.values()].sort((a,b)=>a.date.localeCompare(b.date));
   const latest=observations.at(-1);
@@ -309,12 +309,12 @@ function periodDiagnostics(out,p) {
   Object.assign(out,diagnostics);
 }
 function summarizeKosis(rows,cycle,metadataDates) {
-  if(['M','D','Q','Y','A'].includes(cycle)) return summarize(rows,'PRD_DE','DT',cycle,'UNIT_NM');
+  if(['M','D','Q','Y','A'].includes(cycle)) return summarize(rows,'PRD_DE','DT',cycle,'UNIT_NM',false);
   // Unknown calendar encodings must match official PRD metadata exactly.
   // Map the ordered metadata periods to neutral ranks for the shared validator.
   const dates=[...new Set(metadataDates.filter(d=>/^\d{4,12}$/.test(d)))].sort();
   const mapped=rows.filter(r=>dates.includes(r.PRD_DE)).map(r=>({...r,_rank:String(dates.indexOf(r.PRD_DE)+1).padStart(4,'0')}));
-  const result=summarize(mapped,'_rank','DT','Y','UNIT_NM');
+  const result=summarize(mapped,'_rank','DT','Y','UNIT_NM',false);
   result.observationDate=result.observationDate?dates[Number(result.observationDate)-1]:null;
   return result;
 }
@@ -339,7 +339,7 @@ export function kosisRowDiagnostics(rows,s,metadataDates=[],secrets=[]) {
     const unitPresent=!!text(r.UNIT_NM);if(!unitPresent)counters.rowsMissingUnit++;
     const tuple=Object.entries(c).filter(([k])=>k.endsWith('Matches')).every(([,v])=>v);
     if(tuple)matched.push({...r,PRD_SE:canonicalKosisPeriod(r.PRD_SE)});
-    if(tuple&&c.dateValid&&c.dtNumeric&&unitPresent)counters.rowsAccepted++;else counters.rowsRejected++;
+    if(tuple&&c.dateValid&&c.dtNumeric)counters.rowsAccepted++;else counters.rowsRejected++;
     if(rowMetadataPreview.length<3){
       rowMetadataPreview.push({orgId:safe(r.ORG_ID),tblId:safe(r.TBL_ID),itmId:safe(r.ITM_ID),rawPrdSe:safePeriod(r.PRD_SE),normalizedPrdSe:canonicalKosisPeriod(r.PRD_SE),prdDe:safe(r.PRD_DE),...Object.fromEntries(Array.from({length:8},(_,i)=>[`c${i+1}`,safe(r[`C${i+1}`])])),unitPresent});
       const t=typeof r.DT==='string'?r.DT.trim():null;
