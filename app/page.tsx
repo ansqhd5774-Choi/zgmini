@@ -1,4 +1,6 @@
 "use client";
+import {CompositeMarketSection,ScenarioSection,StrengthPanel} from "./dashboard-ui";
+
 import KoreaFunds from "./korea-funds";
 
 import { useEffect, useMemo, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from "react";
@@ -33,7 +35,7 @@ import CorePceRow from "./core-pce-row";
 
 type Direction = "up" | "down" | "flat";
 type Signal = "positive" | "negative" | "neutral";
-type Period = "1일" | "1주일" | "1개월" | "6개월" | "1년";
+type Period = "1일" | "1주일" | "1개월" | "3개월" | "6개월" | "1년";
 type CountryCode = "US" | "KR" | "CN" | "JP" | "EU";
 type ChartPoint = { label: string; value: number };
 type Indicator = {
@@ -312,8 +314,8 @@ const volatilityByKind: Record<SentimentKind, Record<string, string>> = {
 };
 
 const categories = ["전체", "물가", "고용", "경기", "금리"] as const;
-const periods: Period[] = ["1일", "1주일", "1개월", "6개월", "1년"];
-const periodPoints: Record<Period, number> = {"1일":2,"1주일":3,"1개월":4,"6개월":7,"1년":12};
+const periods: Period[] = ["1일", "1주일", "1개월", "3개월", "6개월", "1년"];
+const periodPoints: Record<Period, number> = {"1일":2,"1주일":3,"1개월":4,"3개월":5,"6개월":7,"1년":12};
 const countryFilters: {code:"ALL" | CountryCode; label:string; flag:string}[] = [
   {code:"ALL",label:"전체",flag:"🌐"},{code:"US",label:"미국",flag:"🇺🇸"},{code:"KR",label:"한국",flag:"🇰🇷"},
   {code:"CN",label:"중국",flag:"🇨🇳"},{code:"JP",label:"일본",flag:"🇯🇵"},{code:"EU",label:"유럽",flag:"🇪🇺"},
@@ -789,6 +791,7 @@ function SummaryMiniChart({ data, period, score, label }: { data: ChartPoint[]; 
 }
 
 export default function Home() {
+  const [view,setView]=useState("dashboard");
   const [category, setCategory] = useState<(typeof categories)[number]>("전체");
   const [countryFilter, setCountryFilter] = useState<Set<"ALL" | CountryCode>>(new Set(["ALL"]));
   const [importanceLevels, setImportanceLevels] = useState<Set<number>>(new Set());
@@ -835,7 +838,6 @@ export default function Home() {
 
   useEffect(() => {
     let active = true;
-    let timer: number | undefined;
     async function loadMarketData() {
       try {
         const response = await fetch("/api/market-data", { cache: "no-store" });
@@ -852,7 +854,7 @@ export default function Home() {
       }
     }
     void loadMarketData();
-    timer = window.setInterval(() => { void loadMarketData(); }, 15 * 60 * 1000);
+    const timer = window.setInterval(() => { void loadMarketData(); }, 15 * 60 * 1000);
     return () => {
       active = false;
       if (timer !== undefined) window.clearInterval(timer);
@@ -926,15 +928,17 @@ export default function Home() {
   }
 
   return (
-    <main className="min-h-screen bg-[#363636] text-[#12213a]">
+    <main className="zg-dashboard min-h-screen bg-[#363636] text-[#12213a]">
       <script type="application/ld+json" dangerouslySetInnerHTML={{__html: JSON.stringify({ "@context": "https://schema.org",        "@type": "WebPage",       "@id": "https://zgmini.kr/#webpage",       url: "https://zgmini.kr/",       name: "ZGmini | 공포탐욕지수·글로벌 증시·경제지표 한눈에",       description: "한국·미국·중국·일본·유럽 공포탐욕지수와 물가, 고용, 금리, 유가 등 주요 시장·경제지표를 한눈에 확인하는 글로벌 시황 대시보드 ZGmini.",       isPartOf: { "@id": "https://zgmini.kr/#website" },       about: { "@id": "https://zgmini.kr/#organization" },       inLanguage: "ko-KR",      }).replace(/</g, "\\u003c")}}/>
-      <header className="border-b border-white/10 bg-[#111418] text-white">
-        <div className="site-header-grid mx-auto max-w-[1480px] px-4 py-4 sm:px-6 lg:px-8">
+      <header className="zg-header text-white">
+        <div className="zg-header-inner">
+          {/* Full document navigation resets the dashboard view. */}
+          {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
           <a href="/" aria-label="ZGmini 대시보드로 이동" className="flex min-w-0 items-center gap-3 rounded-xl focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white">
             <img src="/zgmini-logo.png" alt="" width={40} height={40} className="size-10 shrink-0 rounded-xl object-contain mix-blend-lighten" />
             <div className="min-w-0"><img src="/zgmini-name.png" alt="ZGmini" width={1920} height={540} className="h-auto w-36 max-w-full rounded mix-blend-lighten sm:w-44" /></div>
           </a>
-          <div className="header-update"><Clock3 className="size-4"/><span>최종 업데이트</span><strong>{formatUpdatedAt(updatedAt)}</strong><span className={`api-status api-status-${marketDataLoading ? "loading" : marketData?.status ?? "fallback"}`} aria-label={marketDataLoading ? "API 연결 중" : marketData?.status === "live" ? "실시간 경제지표 API 연결됨" : "경제지표 API 부분 연결 또는 예시 데이터"}>{marketDataLoading ? "API 연결 중" : marketData?.status === "live" ? "경제지표 API 연결됨" : "경제지표 API 부분 연결"}</span></div>
+          <nav aria-label="주 메뉴"><button aria-current={view==='dashboard'?'page':undefined} onClick={()=>setView('dashboard')}>대시보드</button><button aria-current={view==='countries'?'page':undefined} onClick={()=>setView('countries')}>국가비교</button><button aria-current={view==='strength'?'page':undefined} onClick={()=>setView('strength')}>섹터·테마</button><button aria-current={view==='scenarios'?'page':undefined} onClick={()=>setView('scenarios')}>시나리오</button><button aria-current={view==='data'?'page':undefined} onClick={()=>setView('data')}>데이터센터</button></nav>
           <div className="flex items-center justify-end gap-2">
             {sessionLoading ? (
               <span className="hidden text-xs text-slate-400 sm:inline">계정 확인 중</span>
@@ -971,39 +975,24 @@ export default function Home() {
                 </SheetContent>
               </Sheet>
             ) : null}
-            <Badge className="hidden border border-[#f5b942]/30 bg-[#f5b942]/10 px-3 py-1 text-[#ffd474] xl:inline-flex">5차 시제품</Badge>
+
           </div>
         </div>
       </header>
 
-      <div className={`border-b text-amber-950 ${marketData?.status === "live" ? "border-emerald-200 bg-emerald-50" : "border-amber-200 bg-amber-50"}`}>
-        <div className="mx-auto flex max-w-[1480px] items-start gap-2 px-4 py-2.5 text-sm sm:px-6 lg:px-8"><Info className="mt-0.5 size-4 shrink-0" /><p>{marketDataLoading ? "공식 BLS·FRED API에서 핵심 지표를 불러오는 중입니다." : marketData?.status === "live" ? "경제지표는 BLS·FRED에서 불러오며 상단 점수는 자체 계산값입니다. CNN 공포·탐욕 지수와는 별개입니다." : marketDataError ? "API 응답을 받지 못해 예시 데이터가 표시되고 있습니다. 잠시 후 자동으로 다시 시도합니다." : "일부 API만 연결되어 연결된 지표는 실데이터, 나머지는 예시 데이터로 표시됩니다."}</p></div>
-      </div>
-
-      <div className="mx-auto max-w-[1480px] px-4 py-5 sm:px-6 lg:px-8 lg:py-7">
-        <div className="sticky-summary">
-          <div className="sticky-period overflow-x-auto pb-2"><PeriodSelector period={period} onChange={setPeriod}/><span>1일은 가장 최근 거래일 대비 · 주말·휴장일은 자동 건너뜀</span></div>
-          <section className="summary-grid" aria-label="시장 상태 요약">
-            {displaySummaryItems.map(({label,value,score,note,icon:Icon,data}) => {
-              const color = getSentimentColor(score);
-              const detailRows = label === "종합" ? [["물가",38],["고용",46],["금리",68],["유가",42]] : label === "물가" ? [["근원 PCE",42],["CPI",36],["PPI",37]] : label === "고용" ? [["실업률",52],["비농업 고용",44],["실업수당",42]] : label === "금리" ? [["미국 10년물",68],["기준금리",64]] : [["WTI 가격",45],["유가 변동성",39]];
-              return (
-                <button type="button" key={label} aria-pressed={summaryCharts.has(label)} onClick={() => toggleSummaryChart(label)} className="summary-card text-left" style={{"--summary-color":color} as CSSProperties}>
-                  <div className="summary-card-head"><span className="text-sm font-bold text-slate-600">{label}</span><span className="summary-note">{note}</span><Icon className="summary-accent size-4" /></div>
-                  <div className="mt-3 flex items-baseline gap-2"><strong className="summary-accent text-2xl font-extrabold tracking-tight">{value}</strong><span className="summary-accent text-lg font-black">{score}점</span></div>
-                  <div className="summary-breakdown"><span>산출 근거 보기</span><small>{label === "종합" ? "물가 30% · 고용 30% · 금리 25% · 유가 15%" : label === "물가" ? "Core PCE · CPI · PPI 평균" : label === "고용" ? "실업률 · 비농업 고용" : label === "금리" ? "미국 10년물 금리" : "WTI 가격 · 변동폭"}</small></div>
-                  {summaryCharts.has(label) ? <><div className="summary-detail-list">{detailRows.map(([name,detailScore]) => <div key={name} className="summary-detail-row"><span>{name}</span><div className="summary-detail-track"><i style={{width:`${detailScore}%`}}/></div><b>{detailScore}</b></div>)}</div><SummaryMiniChart data={data} period={period} score={score} label={label}/></> : <ScoreRail score={score} sentiment label={label}/>}
-                </button>
-              );
-            })}
-          </section>
+      <div className="zg-container">
+        <div className="zg-toolbar"><PeriodSelector period={period} onChange={setPeriod}/>
+          <div className="header-update"><Clock3 className="size-4"/><span>최종 업데이트</span><strong>{formatUpdatedAt(updatedAt)}</strong><span className={`api-status api-status-${marketDataLoading ? "loading" : marketData?.status ?? "fallback"}`} aria-label={marketDataLoading ? "API 연결 중" : marketData?.status === "live" ? "실시간 경제지표 API 연결됨" : "경제지표 API 부분 연결 또는 예시 데이터"}>{marketDataLoading ? "API 연결 중" : marketData?.status === "live" ? "경제지표 API 연결됨" : "경제지표 API 부분 연결"}</span></div>
         </div>
-
-        <CountryFearGreed/>
-        <KoreaFunds/>
-
-        <SentimentSnapshot/>
-
+        <div className="zg-data-notice" role="status"><Info size={16}/><span>{marketDataLoading?'경제지표를 불러오고 있습니다.':marketData?.status==='live'?'공식 자료와 ZGmini 자체 계산값을 표시합니다.':marketDataError?'경제지표 연결 지연 · 예시 자료 포함. 실제 투자 판단에 사용하지 마세요.':'일부 경제점수에 예시 자료가 포함됩니다.'}</span></div>
+        {(view==='dashboard'||view==='countries')&&<CountryFearGreed/>}
+        {view==='dashboard'&&<>
+          <CompositeMarketSection items={displaySummaryItems} points={periodPoints[period]} demo={marketData?.status!=='live'} loading={marketDataLoading} onDetail={label=>{setCategory(label==='유가'?'전체':label as typeof category);setView('data');}}/>
+          <ScenarioSection/>
+          <div id="strength" className="zg-strength-grid">{(['sector','theme'] as const).map(kind=><StrengthPanel key={kind} title={kind==='sector'?'섹터 강도':'테마 강도'} items={kind==='sector'?sectorSentiment:themeSentiment} points={periodPoints[period]} onAll={()=>setView('strength')} onFavorite={user?name=>{const item=(kind==='sector'?sectorSentiment:themeSentiment).find(x=>x.name===name);if(item)void toggleFavorite(kind,item);}:undefined} isFavorite={name=>favorites.has(sentimentKey(kind,name))}/>)}</div>
+        </>}
+        {view==='scenarios'&&<ScenarioSection/>}
+        {(view==='dashboard'||view==='data')&&<KoreaFunds/>}
         {favoriteItems.length > 0 && (
           <section className="mt-6" aria-labelledby="favorite-title">
             <div className="mb-3 flex items-center gap-2"><Star className="size-5 fill-amber-300 text-amber-300"/><h2 id="favorite-title" className="text-xl font-extrabold tracking-[-0.03em] text-white">내 즐겨찾기</h2></div>
@@ -1013,9 +1002,9 @@ export default function Home() {
           </section>
         )}
 
-        <p className="mt-6 text-sm text-amber-200">검증된 테마 데이터가 연결될 때까지 예시 점수를 이용한 매수·매도 분석은 표시하지 않습니다.</p>
 
-        <section className="indicator-panel mt-6">
+
+        {view==='data'&&<section className="indicator-panel mt-6">
           <div className="border-b border-slate-300 px-4 py-4 sm:px-5">
             <div className="text-center">
               <div className="flex flex-col items-center justify-center gap-3">
@@ -1060,14 +1049,12 @@ export default function Home() {
               </Accordion>
             </div>
           </div>
-        </section>
-
-        <SentimentSection title="섹터별 심리 점수 · 예시" description="실제 지수가 아닌 예시 점수·추세·베타 · CNN 지수와 무관" items={sectorSentiment} period={period} kind="sector" favorites={favorites} onToggle={user ? toggleFavorite : undefined}/>
-        <SentimentSection title="테마별 심리 점수 · 예시" description="실제 지수가 아닌 예시 점수·추세·베타 · CNN 지수와 무관" items={themeSentiment} period={period} kind="theme" favorites={favorites} onToggle={user ? toggleFavorite : undefined}/>
+        </section>}
+        {view==='strength'&&<><SentimentSection title="섹터별 심리 점수 · 예시" description="실제 지수가 아닌 예시 점수·추세·베타 · CNN 지수와 무관" items={sectorSentiment} period={period} kind="sector" favorites={favorites} onToggle={user ? toggleFavorite : undefined}/>
+        <SentimentSection title="테마별 심리 점수 · 예시" description="실제 지수가 아닌 예시 점수·추세·베타 · CNN 지수와 무관" items={themeSentiment} period={period} kind="theme" favorites={favorites} onToggle={user ? toggleFavorite : undefined}/></>}
       </div>
+      <footer className="zg-footer">ZGmini · 공식 자료와 독자 모델을 연결합니다. 투자 권유가 아니며, 예시 데이터는 별도로 표시합니다.</footer>
       <Toaster richColors position="bottom-right"/>
     </main>
   );
 }
-
-
