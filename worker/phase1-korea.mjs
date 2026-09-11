@@ -234,18 +234,42 @@ function kosisDimensionDiagnostics(out,dimensions) {
   Object.assign(out,{dimensionCount:dimensions.length,dimensions,
     generatedObjLevels:dimensions.map(d=>`objL${d.order}`)});
 }
-async function kosisData(out,key,s,ctx) {
+// PRD_SE/PRD_DE come exclusively from getMeta&type=PRD.
+export function kosisPeriods(rows) {
+  const supportedPrdSe=[...new Set(rows.map(r=>id(r.PRD_SE)).filter(Boolean))];
+  if(!supportedPrdSe.length) throw new DiagnosticError('KOSIS_PRD_NO_DATA');
+  const priority=['M','D','W','Q','Y'];
+  const selectedPrdSe=priority.find(p=>supportedPrdSe.includes(p))??supportedPrdSe[0];
+  return {supportedPrdSe,selectedPrdSe,monthlyAvailable:supportedPrdSe.includes('M'),
+    metadataDates:rows.filter(r=>r.PRD_SE===selectedPrdSe&&text(r.PRD_DE)).map(r=>r.PRD_DE)};
+}
+function periodDiagnostics(out,p) {
+  Object.assign(out,{supportedPrdSe:p.supportedPrdSe,selectedPrdSe:p.selectedPrdSe,monthlyAvailable:p.monthlyAvailable});
+}
+function summarizeKosis(rows,cycle,metadataDates) {
+  if(['M','D','Q','Y','A'].includes(cycle)) return summarize(rows,'PRD_DE','DT',cycle,'UNIT_NM');
+  // Unknown calendar encodings must match official PRD metadata exactly.
+  // Map the ordered metadata periods to neutral ranks for the shared validator.
+  const dates=[...new Set(metadataDates.filter(d=>/^\d{4,12}$/.test(d)))].sort();
+  const mapped=rows.filter(r=>dates.includes(r.PRD_DE)).map(r=>({...r,_rank:String(dates.indexOf(r.PRD_DE)+1).padStart(4,'0')}));
+  const result=summarize(mapped,'_rank','DT','Y','UNIT_NM');
+  result.observationDate=result.observationDate?dates[Number(result.observationDate)-1]:null;
+  return result;
+}
+async function kosisData(out,key,s,ctx,periodInfo) {
   const json=await kosisRequest(out,'KOSIS_DATA',()=>url(KOSIS_BASE,'Param/statisticsParameterData.do',{
     method:'getList',apiKey:key,format:'json',jsonVD:'Y',...s,newEstPrdCnt:13}),ctx);
   const rows=kosisArray(out,json,'KOSIS_DATA');
   // Keep a single verified dimension tuple, never merge different series by date.
   const matched=rows.filter(r=>r.ORG_ID===s.orgId && r.TBL_ID===s.tblId && r.ITM_ID===s.itmId && r.PRD_SE===s.prdSe && Array.from({length:8},(_,i)=>i+1).every(i=>s[`objL${i}`] ? r[`C${i}`]===s[`objL${i}`] : !r[`C${i}`]));
-  accept(out,summarize(matched,'PRD_DE','DT',s.prdSe,'UNIT_NM'),'KOSIS_DATA');
+  accept(out,summarizeKosis(matched,s.prdSe,periodInfo.metadataDates),'KOSIS_DATA');
   selectedKosis(out,s);
+  out.latestObservationDate=out.observationDate;
+  periodDiagnostics(out,periodInfo);
 }
 async function kosis(out,key,ctx) {
   if(verifiedKosis.series && verifiedKosis.expires>Date.now()) {
-    try { await kosisData(out,key,verifiedKosis.series,ctx); kosisDimensionDiagnostics(out,verifiedKosis.dimensions); return; }
+    try { await kosisData(out,key,verifiedKosis.series,ctx,verifiedKosis.periodInfo); kosisDimensionDiagnostics(out,verifiedKosis.dimensions); return; }
     catch(e) {clearDiagnosticCache();throw e;}
   }
   const found=await requestStage(out,'KOSIS_SEARCH',()=>url(KOSIS_BASE,'statisticsSearch.do',{
@@ -259,7 +283,7 @@ async function kosis(out,key,ctx) {
   if(!candidates.length) fail(out,'KOSIS_SEARCH_EMPTY');
   for(const table of candidates) {
   out.candidatesTried++;
-  Object.assign(out,{dimensionCount:0,dimensions:[],generatedObjLevels:[]});
+  Object.assign(out,{dimensionCount:0,dimensions:[],generatedObjLevels:[],supportedPrdSe:[],selectedPrdSe:null,monthlyAvailable:false,latestObservationDate:null});
   const stageStart=out.stages.length;
   const diagnostic={candidateIndex:table.candidateIndex,orgId:table.ORG_ID,tableId:table.TBL_ID,stages:[],apiErrorCode:null,errorType:null};
   out.candidateDiagnostics.push(diagnostic);
@@ -281,16 +305,19 @@ async function kosis(out,key,ctx) {
   kosisDimensionDiagnostics(out,dimensions);
   diagnostic.dimensions=dimensions;diagnostic.dimensionCount=dimensions.length;
   const periods=kosisArray(out,await kosisRequest(out,'KOSIS_PRD',()=>meta({type:'PRD'}),ctx),'KOSIS_PRD');
-  if(!periods.some(r=>r.PRD_SE==='M')) fail(out,'KOSIS_PRD_MONTHLY_NOT_FOUND');
-  const s={...base,itmId:metric.ITM_ID,...Object.fromEntries(dimensions.map(d=>[`objL${d.order}`,d.selectedValueId])),prdSe:'M'};
-  await kosisData(out,key,s,ctx);
-  verifiedKosis.series=s; verifiedKosis.dimensions=dimensions; verifiedKosis.expires=Date.now()+3600000;
+  let periodInfo;
+  try {periodInfo=kosisPeriods(periods);} catch(e) {if(e instanceof DiagnosticError) fail(out,e.code);throw e;}
+  periodDiagnostics(out,periodInfo);
+  Object.assign(diagnostic,{supportedPrdSe:periodInfo.supportedPrdSe,selectedPrdSe:periodInfo.selectedPrdSe,monthlyAvailable:periodInfo.monthlyAvailable});
+  const s={...base,itmId:metric.ITM_ID,...Object.fromEntries(dimensions.map(d=>[`objL${d.order}`,d.selectedValueId])),prdSe:periodInfo.selectedPrdSe};
+  await kosisData(out,key,s,ctx,periodInfo);
+  verifiedKosis.periodInfo=periodInfo; verifiedKosis.series=s; verifiedKosis.dimensions=dimensions; verifiedKosis.expires=Date.now()+3600000;
   out.selectedCandidateIndex=table.candidateIndex;
   return;
   } catch(e) {
     diagnostic.apiErrorCode=out.apiErrorCode;diagnostic.errorType=out.errorType;
     // Auth, transport and malformed payload failures are not absent datasets.
-    if(!(e instanceof DiagnosticError) || !/_(NO_DATA|NOT_FOUND|EMPTY|HISTORY_INSUFFICIENT|NO_DIMENSIONS|TOO_MANY_DIMENSIONS|NO_VALID_VALUE|HIERARCHY_UNRESOLVED|MONTHLY_NOT_FOUND)$/.test(e.code)) throw e;
+    if(!(e instanceof DiagnosticError) || !/_(NO_DATA|NOT_FOUND|EMPTY|HISTORY_INSUFFICIENT|NO_DIMENSIONS|TOO_MANY_DIMENSIONS|NO_VALID_VALUE|HIERARCHY_UNRESOLVED)$/.test(e.code)) throw e;
   } finally {
     diagnostic.stages=out.stages.slice(stageStart).map(s=>({stage:s.stage,httpStatus:s.httpStatus,parserSuccess:s.parserSuccess,errorType:s.errorType}));
   }
