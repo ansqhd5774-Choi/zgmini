@@ -75,7 +75,7 @@ export default function CountryFearGreed() {
         <p>각 시장의 별도 모델 · 국가 간 동일 척도로 해석하지 마세요.</p>
       </div>
       <div className="zg-country-grid">
-        {countries.map((country) => {
+        {countries.filter((country) => country.code === "us" || country.code === "kr" || Boolean(values[country.code]) || (loading && Boolean(country.api))).map((country) => {
           if (country.code === "kr") return <KoreanCountryCard key="kr" />;
           const value = values[country.code];
           const rating = value
