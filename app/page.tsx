@@ -928,11 +928,11 @@ export default function Home() {
   return (
     <main className="min-h-screen bg-[#363636] text-[#12213a]">
       <script type="application/ld+json" dangerouslySetInnerHTML={{__html: JSON.stringify({ "@context": "https://schema.org",        "@type": "WebPage",       "@id": "https://zgmini.kr/#webpage",       url: "https://zgmini.kr/",       name: "ZGmini | 공포탐욕지수·글로벌 증시·경제지표 한눈에",       description: "한국·미국·중국·일본·유럽 공포탐욕지수와 물가, 고용, 금리, 유가 등 주요 시장·경제지표를 한눈에 확인하는 글로벌 시황 대시보드 ZGmini.",       isPartOf: { "@id": "https://zgmini.kr/#website" },       about: { "@id": "https://zgmini.kr/#organization" },       inLanguage: "ko-KR",      }).replace(/</g, "\\u003c")}}/>
-      <header className="border-b border-white/10 bg-[#07162d] text-white">
+      <header className="border-b border-white/10 bg-[#111418] text-white">
         <div className="site-header-grid mx-auto max-w-[1480px] px-4 py-4 sm:px-6 lg:px-8">
           <a href="/" aria-label="ZGmini 대시보드로 이동" className="flex min-w-0 items-center gap-3 rounded-xl focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white">
-            <img src="/zgmini-logo.png" alt="" width={40} height={40} className="size-10 shrink-0 rounded-xl object-contain" />
-            <div className="min-w-0"><img src="/zgmini-name.png" alt="ZGmini" width={1920} height={540} className="h-auto w-36 max-w-full rounded sm:w-44" /><p className="mt-1 hidden truncate text-xs text-slate-400 sm:block">경제지표로 시장을 읽다</p></div>
+            <img src="/zgmini-logo.png" alt="" width={40} height={40} className="size-10 shrink-0 rounded-xl object-contain mix-blend-lighten" />
+            <div className="min-w-0"><img src="/zgmini-name.png" alt="ZGmini" width={1920} height={540} className="h-auto w-36 max-w-full rounded mix-blend-lighten sm:w-44" /></div>
           </a>
           <div className="header-update"><Clock3 className="size-4"/><span>최종 업데이트</span><strong>{formatUpdatedAt(updatedAt)}</strong><span className={`api-status api-status-${marketDataLoading ? "loading" : marketData?.status ?? "fallback"}`} aria-label={marketDataLoading ? "API 연결 중" : marketData?.status === "live" ? "실시간 경제지표 API 연결됨" : "경제지표 API 부분 연결 또는 예시 데이터"}>{marketDataLoading ? "API 연결 중" : marketData?.status === "live" ? "경제지표 API 연결됨" : "경제지표 API 부분 연결"}</span></div>
           <div className="flex items-center justify-end gap-2">
