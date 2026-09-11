@@ -1,7 +1,8 @@
 "use client";
-import {useEffect,useState} from "react";
+import {useState} from "react";
 import {LineChart,Line,ResponsiveContainer,CartesianGrid,XAxis,YAxis,Tooltip} from "recharts";
 
+import {useKoreaFunds} from './korea-funds-store';
 type Point={date:string;score:number|null};
 type Indicator={id:string;name:string;status:"READY"|"WARMUP"|"UNAVAILABLE"|"STALE";score:number|null;observationDate:string|null;previousObservationDate:string|null;changePoints:number|null;history:Point[];briefExplanation:string};
 const names=[{id:"LEV_BLEND20_60",name:"신용융자 확대 정도",description:"최근 신용융자 변화의 과거 대비 상대 수준"},{id:"L3_PRESSURE_P252",name:"반대매매 상대강도",description:"최근 3관측 평균 반대매매 금액의 과거 대비 상대 수준"}];
@@ -33,18 +34,14 @@ function FundsCard({item,loading,index}:{item:Indicator;loading:boolean;index:nu
    <p className="mt-2 min-h-8 text-xs text-slate-500">{history.length?`제공 구간 ${date(history[0].date)} ~ ${date(history.at(-1)!.date)} · 실제 제공 자료만 표시`:"제공 구간 없음"}</p>
    <details className="mt-2 border-t border-slate-200 pt-2 text-sm"><summary className="min-h-11 cursor-pointer py-3 focus-visible:outline-2 focus-visible:outline-blue-700">계산 방식</summary><div className="space-y-2 pb-2 leading-6 text-slate-600">
      <p>{index===0?"20·60관측 신용융자 변화의 252관측 상대 순위를 기존 0.6/0.4 비중으로 혼합합니다. 높은 점수가 좋은 투자나 수익 가능성을 뜻하지 않습니다.":"최근 3관측 평균 금액의 252관측 상대 순위입니다. 높을수록 반대매매 상대강도가 높습니다. 집계 변경 보도를 고려해 2023-10-25 이전 입력을 제외하고 최소 254관측 준비기간 이후 계산합니다."}</p>
-     <p>과거 이력은 현재 확보한 자료로 재계산한 결과입니다. 당시 공개된 신호를 재현한 기록은 아닙니다. 실시간 시세가 아니라 관측 기준일이 있는 통계입니다.</p>
+     <p>{index===0?"종합 반영: 50% · 신용융자 점수 사용":"종합 반영: 50% · 공탐 계산에는 100−압력점수 사용"}</p><p>과거 이력은 현재 확보한 자료로 재계산한 결과입니다. 당시 공개된 신호를 재현한 기록은 아닙니다. 실시간 시세가 아니라 관측 기준일이 있는 통계입니다.</p>
    </div></details>
  </article>;
 }
 export default function KoreaFunds(){
- const [data,setData]=useState<Indicator[]>([]),[loading,setLoading]=useState(true);
- useEffect(()=>{let active=true;const controller=new AbortController();const timer=setTimeout(()=>controller.abort(),95000);
-   fetch("/api/indicators/korea-funds",{signal:controller.signal}).then(async r=>{if(!r.ok)throw Error();return r.json() as Promise<{indicators?:Indicator[]}>;}).then(d=>{if(active&&Array.isArray(d.indicators))setData(d.indicators);}).catch(()=>{}).finally(()=>{clearTimeout(timer);if(active)setLoading(false);});
-   return()=>{active=false;clearTimeout(timer);controller.abort();};
- },[]);
+ const {indicators:data,loading}=useKoreaFunds();
  return <section className="mt-6 min-w-0" aria-labelledby="korea-funds-title" data-testid="korea-funds">
-   <div className="mb-3 flex items-center gap-2"><h2 id="korea-funds-title" className="text-xl font-extrabold text-white">국내 투자자금 지표</h2><span className="border border-slate-500 px-2 py-1 text-xs text-slate-200">베타</span></div>
+   <div className="mb-3 flex items-center gap-2"><h2 id="korea-funds-title" className="text-xl font-extrabold text-white">한국 공탐 구성지표</h2><span className="border border-slate-500 px-2 py-1 text-xs text-slate-200">베타</span></div>
    <div className="grid min-w-0 grid-cols-1 gap-4 md:grid-cols-2">{names.map((n,index)=><FundsCard key={n.id} index={index} loading={loading} item={data.find(i=>i.id===n.id)??{id:n.id,name:n.name,briefExplanation:n.description,status:"UNAVAILABLE",score:null,observationDate:null,previousObservationDate:null,changePoints:null,history:[]}}/>)}</div>
    <p className="mt-3 text-xs leading-6 text-slate-300"><a className="underline focus-visible:outline-2" href="https://www.data.go.kr/data/15094809/openapi.do" target="_blank" rel="noreferrer">금융위원회 공공데이터포털의 금융투자협회 통계</a>를 ZGmini가 자체 가공한 보조지표입니다. 공식 공포·탐욕지수나 매매 추천이 아닙니다.</p>
  </section>;
