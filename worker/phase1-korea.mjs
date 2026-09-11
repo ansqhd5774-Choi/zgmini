@@ -357,11 +357,33 @@ async function kosis(out,key,ctx) {
   periodDiagnostics(out,periodInfo);
   periodDiagnostics(diagnostic,periodInfo);
   if(!periodInfo.requestPrdSe) fail(out,'KOSIS_PRD_NO_DATA');
-  const s={...base,itmId:metric.ITM_ID,...Object.fromEntries(dimensions.map(d=>[`objL${d.order}`,d.selectedValueId])),prdSe:periodInfo.requestPrdSe};
-  await kosisData(out,key,s,ctx,periodInfo);
-  verifiedKosis.periodInfo=periodInfo; verifiedKosis.series=s; verifiedKosis.dimensions=dimensions; verifiedKosis.expires=Date.now()+3600000;
-  out.selectedCandidateIndex=table.candidateIndex;
-  return;
+  diagnostic.periodAttempts=[];
+  let lastPeriodError;
+  for(const requestPrdSe of KOSIS_REQUEST_PERIODS.filter(p=>periodInfo.supportedPrdSe.includes(p))) {
+    const selectedInfo=kosisPeriods(periods.filter(r=>canonicalKosisPeriod(r.PRD_SE)===requestPrdSe));
+    const attemptInfo={...periodInfo,selectedRawPrdSe:selectedInfo.selectedRawPrdSe,
+      selectedPrdSe:requestPrdSe,requestPrdSe,metadataDates:selectedInfo.metadataDates};
+    periodDiagnostics(out,attemptInfo);periodDiagnostics(diagnostic,attemptInfo);
+    Object.assign(out,{observationCount:0,recordCount:0,parserSuccess:false,observationDate:null,
+      latestObservationDate:null,unit:null,unitSource:null,historyAvailable:false,errorType:null,apiErrorCode:null});
+    const attempt={prdSe:requestPrdSe,requestPrdSe,httpStatus:null,parserSuccess:false,observationCount:0,errorType:null};
+    diagnostic.periodAttempts.push(attempt);
+    const s={...base,itmId:metric.ITM_ID,...Object.fromEntries(dimensions.map(d=>[`objL${d.order}`,d.selectedValueId])),prdSe:requestPrdSe};
+    try {
+      await kosisData(out,key,s,ctx,attemptInfo);
+      verifiedKosis.periodInfo=attemptInfo; verifiedKosis.series=s; verifiedKosis.dimensions=dimensions; verifiedKosis.expires=Date.now()+3600000;
+      out.selectedCandidateIndex=table.candidateIndex;
+      return;
+    } catch(e) {
+      lastPeriodError=e;
+      if(!(e instanceof DiagnosticError)||!/^KOSIS_DATA_(EMPTY|NO_DATA|HISTORY_INSUFFICIENT)$/.test(e.code)) throw e;
+    } finally {
+      const stage=out.stages.at(-1);
+      Object.assign(attempt,{httpStatus:stage?.httpStatus??null,parserSuccess:stage?.parserSuccess??false,
+        observationCount:out.observationCount,errorType:out.errorType});
+    }
+  }
+  throw lastPeriodError;
   } catch(e) {
     diagnostic.apiErrorCode=out.apiErrorCode;diagnostic.errorType=out.errorType;
     // Auth, transport and malformed payload failures are not absent datasets.
