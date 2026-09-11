@@ -234,6 +234,23 @@ function kosisDimensionDiagnostics(out,dimensions) {
   Object.assign(out,{dimensionCount:dimensions.length,dimensions,
     generatedObjLevels:dimensions.map(d=>`objL${d.order}`)});
 }
+// Inspect shape only: never expose payload values or arbitrary key text.
+export function parseKosisPrd(payload) {
+  const object=v=>v!==null && typeof v==='object' && !Array.isArray(v);
+  const has=(v,k)=>object(v)&&Object.hasOwn(v,k);
+  const record=v=>has(v,'PRD_SE')||has(v,'PRD_DE');
+  const keys=v=>object(v)?Object.keys(v).slice(0,20).map(k=>
+    /^(?:PRD_SE|PRD_DE|prdSe|prdDe|err|errMsg|row|items|result)$/.test(k)?k:'[UNRECOGNIZED_KEY]'):[];
+  const first=Array.isArray(payload)?payload[0]:payload;
+  const records=Array.isArray(payload)?payload.filter(record):record(payload)?[payload]:[];
+  const diagnostics={prdPayloadType:Array.isArray(payload)?'ARRAY':object(payload)?'OBJECT':'OTHER',
+    prdTopLevelKeys:keys(payload),prdRecordCount:records.length,prdFirstRecordKeys:keys(records[0]??first),
+    prdHasUppercasePrdSe:has(records[0]??first,'PRD_SE'),prdHasUppercasePrdDe:has(records[0]??first,'PRD_DE'),
+    prdHasLowercasePrdSe:has(records[0]??first,'prdSe'),prdHasLowercasePrdDe:has(records[0]??first,'prdDe')};
+  const errorType=Array.isArray(payload)&&!payload.length?'KOSIS_PRD_NO_DATA':
+    !records.length || (Array.isArray(payload)&&records.length!==payload.length)?'KOSIS_PRD_SCHEMA_UNRECOGNIZED':null;
+  return {records,diagnostics,errorType};
+}
 // PRD_SE/PRD_DE come exclusively from getMeta&type=PRD.
 export function kosisPeriods(rows) {
   const supportedPrdSe=[...new Set(rows.map(r=>id(r.PRD_SE)).filter(Boolean))];
@@ -304,7 +321,11 @@ async function kosis(out,key,ctx) {
   catch(e) { if(e instanceof DiagnosticError) fail(out,e.code); throw e; }
   kosisDimensionDiagnostics(out,dimensions);
   diagnostic.dimensions=dimensions;diagnostic.dimensionCount=dimensions.length;
-  const periods=kosisArray(out,await kosisRequest(out,'KOSIS_PRD',()=>meta({type:'PRD'}),ctx),'KOSIS_PRD');
+  const prdPayload=await requestStage(out,'KOSIS_PRD',()=>meta({type:'PRD'}),ctx);
+  const parsedPrd=parseKosisPrd(prdPayload);
+  Object.assign(out,parsedPrd.diagnostics);Object.assign(diagnostic,parsedPrd.diagnostics);
+  if(parsedPrd.errorType) fail(out,parsedPrd.errorType);
+  const periods=parsedPrd.records;
   let periodInfo;
   try {periodInfo=kosisPeriods(periods);} catch(e) {if(e instanceof DiagnosticError) fail(out,e.code);throw e;}
   periodDiagnostics(out,periodInfo);
