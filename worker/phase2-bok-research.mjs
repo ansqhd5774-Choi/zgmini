@@ -158,6 +158,8 @@ export async function runBokResearch(env,context={},fsc={}){
   }
  }
  const spread=creditSpread(analyses.corporate,analyses.government,today);
+ // Internal-only consumer; raw points are never attached to the response.
+ if(typeof context.onResearchAnalyses==='function')context.onResearchAnalyses({creditSpread:spread.summary?spread:null,usdkrw:analyses.usdkrw??null});
  const overlap={usdkrw:fscOverlap(analyses.usdkrw,fsc),creditSpread:fscOverlap(spread,fsc)};
  const output={provider:'BOK ECOS',status:analyses.usdkrw?.summary.fetchComplete&&spread.summary?.fetchComplete&&spread.summary.uniqueObservationCount>=2?'SUCCESS':Object.keys(analyses).length?'PARTIAL':'FAILED',requestCount:ctx.requests,
   discovery:{tableCount:tables.length,tableListComplete:tableData.complete,errorType:tableData.errorType,tablesTried:chosen.length,metadataFailures,boundedSearch:true,exhaustive:false},attempts,
