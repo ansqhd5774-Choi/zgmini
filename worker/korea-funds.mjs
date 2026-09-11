@@ -1,6 +1,7 @@
+import {buildComposite,COMPOSITE_VERSION} from './korea-composite.mjs';
 import {runFscScoped,SCOPED_PROFILE,SCOPED_VERSION,SCOPED_COPY} from './phase2-fsc-scoped.mjs';
 export const PUBLIC_VERSION=`${SCOPED_VERSION}-public-1`;
-export const PUBLIC_CACHE_KEY=`${SCOPED_PROFILE}:${PUBLIC_VERSION}`;
+export const PUBLIC_CACHE_KEY=`${SCOPED_PROFILE}:${PUBLIC_VERSION}:${COMPOSITE_VERSION}`;
 export const CACHE_MS=15*60*1000;
 const valid=x=>typeof x==='number'&&Number.isFinite(x)&&x>=0&&x<=100;
 const iso=d=>`${d.slice(0,4)}-${d.slice(4,6)}-${d.slice(6,8)}`;
@@ -27,14 +28,15 @@ export function publicIndicator(source,scores,now){
 export async function publicSnapshot(env,context={}){
  const histories={},clock=context.clock??(()=>new Date(Date.now()));
  const result=await runFscScoped(env,{...context,onIndicatorScores:(name,scores)=>{histories[name]=scores;}});
- return {profileId:SCOPED_PROFILE,methodologyVersion:PUBLIC_VERSION,snapshotGeneratedAt:clock().toISOString(),
+ const snapshot={profileId:SCOPED_PROFILE,methodologyVersion:PUBLIC_VERSION,snapshotGeneratedAt:clock().toISOString(),
    indicators:['credit','capital'].map(name=>publicIndicator(result.indicators[name],histories[name]??[],clock())),
    sourceAttribution:{label:SCOPED_COPY.source,url:'https://www.data.go.kr/data/15094809/openapi.do'},
    disclaimer:SCOPED_COPY.introduction,historyExplanation:SCOPED_COPY.history,liquidationExplanation:SCOPED_COPY.liquidation};
+ return {...snapshot,composite:buildComposite(snapshot.indicators,clock())};
 }
 const response=(data,status=200)=>{
  const body=JSON.stringify(data);
- if(new TextEncoder().encode(body).length>65536)return Response.json({error:'RESPONSE_LIMIT'},{status:503});
+ if(new TextEncoder().encode(body).length>131072)return Response.json({error:'RESPONSE_LIMIT'},{status:503});
  return new Response(body,{status,headers:{'Content-Type':'application/json','Cache-Control':'no-store','X-Content-Type-Options':'nosniff'}});
 };
 export function createKoreaFundsHandler(context={}){
@@ -58,6 +60,7 @@ export function createKoreaFundsHandler(context={}){
          }
        }
      }
+     data.composite=buildComposite(data.indicators,(context.clock??(()=>new Date()))());
      cache={key:PUBLIC_CACHE_KEY,at:Date.now(),data};return data;
    })().finally(()=>{inFlight=null;});
    return response(await inFlight);
