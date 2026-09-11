@@ -318,6 +318,43 @@ function summarizeKosis(rows,cycle,metadataDates) {
   result.observationDate=result.observationDate?dates[Number(result.observationDate)-1]:null;
   return result;
 }
+// Diagnostic-only mirror: counters overlap across rules; accepted rows are pre-dedup.
+// Observation count remains the unchanged shared validator's post-dedup result.
+export function kosisRowDiagnostics(rows,s,metadataDates=[],secrets=[]) {
+  const counters=Object.fromEntries(['rowsReceived','rowsAccepted','rowsRejected','rowsMissingDt','rowsBlankDt','rowsNonNumericDt','rowsOrgMismatch','rowsTableMismatch','rowsItemMismatch','rowsPeriodMismatch',...Array.from({length:8},(_,i)=>`rowsC${i+1}Mismatch`),'rowsInvalidDate','rowsMissingDate','rowsMissingUnit'].map(k=>[k,0]));
+  const sensitive=v=>typeof v==='string'&&secrets.some(secret=>secret&&v.includes(secret));
+  const safe=v=>sensitive(v)?'[REDACTED]':publicMeta(v);
+  const safePeriod=v=>sensitive(v)?'[REDACTED]':sanitizePeriodDiagnostic(v);
+  const dates=[...new Set(metadataDates.filter(d=>/^\d{4,12}$/.test(d)))].sort();
+  const dateValid=r=>['M','D','Q','Y','A'].includes(s.prdSe)?!!period(r.PRD_DE,s.prdSe):dates.includes(r.PRD_DE);
+  const comparisons=r=>({orgMatches:r.ORG_ID===s.orgId,tableMatches:r.TBL_ID===s.tblId,itemMatches:r.ITM_ID===s.itmId,periodMatches:canonicalKosisPeriod(r.PRD_SE)===s.prdSe,
+    ...Object.fromEntries(Array.from({length:8},(_,i)=>{const n=i+1;return [`c${n}Matches`,s[`objL${n}`]?r[`C${n}`]===s[`objL${n}`]:!r[`C${n}`]];})),dateValid:dateValid(r),dtNumeric:numeric(r.DT)!==null});
+  const matched=[];const rowMetadataPreview=[];const dtDiagnostics=[];
+  for(const r of rows) {
+    counters.rowsReceived++;const c=comparisons(r);
+    for(const [flag,name] of [['orgMatches','Org'],['tableMatches','Table'],['itemMatches','Item'],['periodMatches','Period'],...Array.from({length:8},(_,i)=>[`c${i+1}Matches`,`C${i+1}`])])if(!c[flag])counters[`rows${name}Mismatch`]++;
+    const missing=r.DT===null||r.DT===undefined,blank=typeof r.DT==='string'&&!r.DT.trim();
+    if(missing)counters.rowsMissingDt++;else if(blank)counters.rowsBlankDt++;else if(!c.dtNumeric)counters.rowsNonNumericDt++;
+    if(!c.dateValid){if(r.PRD_DE===null||r.PRD_DE===undefined||(typeof r.PRD_DE==='string'&&!r.PRD_DE.trim()))counters.rowsMissingDate++;else counters.rowsInvalidDate++;}
+    const unitPresent=!!text(r.UNIT_NM);if(!unitPresent)counters.rowsMissingUnit++;
+    const tuple=Object.entries(c).filter(([k])=>k.endsWith('Matches')).every(([,v])=>v);
+    if(tuple)matched.push({...r,PRD_SE:canonicalKosisPeriod(r.PRD_SE)});
+    if(tuple&&c.dateValid&&c.dtNumeric&&unitPresent)counters.rowsAccepted++;else counters.rowsRejected++;
+    if(rowMetadataPreview.length<3){
+      rowMetadataPreview.push({orgId:safe(r.ORG_ID),tblId:safe(r.TBL_ID),itmId:safe(r.ITM_ID),rawPrdSe:safePeriod(r.PRD_SE),normalizedPrdSe:canonicalKosisPeriod(r.PRD_SE),prdDe:safe(r.PRD_DE),...Object.fromEntries(Array.from({length:8},(_,i)=>[`c${i+1}`,safe(r[`C${i+1}`])])),unitPresent});
+      const t=typeof r.DT==='string'?r.DT.trim():null;
+      dtDiagnostics.push({dtPresent:!missing,dtType:r.DT===null?'null':typeof r.DT,dtTrimmedLength:t===null?null:t.length,dtBlank:blank,dtNumericRegexMatch:t===null?false:/^[+-]?(?:\d+|\d{1,3}(?:,\d{3})+)(?:\.\d+)?$/.test(t),dtNumberFinite:typeof r.DT==='number'?Number.isFinite(r.DT):t!==null&&t!==''&&Number.isFinite(Number(t.replaceAll(',',''))),dtPlaceholderLike:t!==null&&/^(?:-|--|\.\.|NA|N\/A|null)$/i.test(t)});
+    }
+  }
+  const summary=summarizeKosis(matched,s.prdSe,metadataDates);
+  return {...counters,observationCount:summary.observationCount,rowsCollapsedOrConflicting:counters.rowsAccepted-summary.observationCount,
+    counterSemantics:'overlapping rule failures; rowsAccepted before date deduplication',
+    classification:!rows.length?'UPSTREAM_EMPTY_ARRAY':summary.observationCount?'VALID_OBSERVATIONS_FOUND':'NONEMPTY_PAYLOAD_ZERO_VALID_OBSERVATIONS',
+    expected:Object.fromEntries(['orgId','tblId','itmId',...Array.from({length:8},(_,i)=>`objL${i+1}`)].filter(k=>s[k]!==undefined).map(k=>[k,safe(s[k])]).concat([['requestPrdSe',safe(s.prdSe)]])),
+    firstRowMatches:rows.length?comparisons(rows[0]):null,rowMetadataPreview,dtDiagnostics,
+    dataRawPeriodCodes:[...new Set(rows.map(r=>safePeriod(r.PRD_SE)))].slice(0,16),dataNormalizedPeriodCodes:[...new Set(rows.map(r=>canonicalKosisPeriod(r.PRD_SE)).filter(Boolean))].slice(0,16)};
+}
+
 async function kosisData(out,key,s,ctx,periodInfo) {
   const json=await kosisRequest(out,'KOSIS_DATA',()=>url(KOSIS_BASE,'Param/statisticsParameterData.do',{
     method:'getList',apiKey:key,format:'json',jsonVD:'Y',...s,newEstPrdCnt:13}),ctx);
@@ -326,6 +363,7 @@ async function kosisData(out,key,s,ctx,periodInfo) {
   const matched=rows.filter(r=>r.ORG_ID===s.orgId && r.TBL_ID===s.tblId && r.ITM_ID===s.itmId && r.PRD_SE===s.prdSe && Array.from({length:8},(_,i)=>i+1).every(i=>s[`objL${i}`] ? r[`C${i}`]===s[`objL${i}`] : !r[`C${i}`]));
   const summary=summarizeKosis(matched,s.prdSe,periodInfo.metadataDates);
   out.stages.at(-1).dataEmptyReason=!summary?.observationCount ? !rows.length?'EMPTY_ARRAY':!matched.length?'NO_MATCHING_ROWS':matched.every(r=>numeric(r.DT)===null)?'NO_NUMERIC_DT':'UNKNOWN_EMPTY_REASON':null;
+  out.stages.at(-1).rowValidation=kosisRowDiagnostics(json,s,periodInfo.metadataDates,[key]);
   accept(out,summary,'KOSIS_DATA');
   selectedKosis(out,s);
   out.latestObservationDate=out.observationDate;
@@ -406,7 +444,7 @@ async function kosis(out,key,ctx) {
       if(!(e instanceof DiagnosticError)||!/^KOSIS_DATA_(EMPTY|NO_DATA|HISTORY_INSUFFICIENT)$/.test(e.code)) throw e;
     } finally {
       const stage=out.stages.at(-1);
-      for(const k of ['dataRequestSummary','dataPayloadType','dataTopLevelKeys','dataRecordCount','dataFirstRecordKeys','dataApiErrorCode','dataApiErrorType','dataEmptyReason']) attempt[k]=stage?.[k]??null;
+      for(const k of ['rowValidation','dataRequestSummary','dataPayloadType','dataTopLevelKeys','dataRecordCount','dataFirstRecordKeys','dataApiErrorCode','dataApiErrorType','dataEmptyReason']) attempt[k]=stage?.[k]??null;
       Object.assign(attempt,{httpStatus:stage?.httpStatus??null,parserSuccess:stage?.parserSuccess??false,
         observationCount:out.observationCount,errorType:out.errorType});
     }
