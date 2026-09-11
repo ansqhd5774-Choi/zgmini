@@ -20,7 +20,7 @@ test('repeated PRD_SE remains one supported period',()=>{
 test('PRD_DE-only record is recognized but contains no usable period',()=>{
  const p=parseKosisPrd({PRD_DE:'2025'});assert.equal(p.errorType,null);
  assert.equal(p.diagnostics.prdRecordCount,1);
- assert.throws(()=>kosisPeriods(p.records),{message:'KOSIS_PRD_NO_DATA'});
+ assert.equal(kosisPeriods(p.records).requestPrdSe,null);
 });
 test('empty array differs from unknown schema and unverified wrappers',()=>{
  assert.equal(parseKosisPrd([]).errorType,'KOSIS_PRD_NO_DATA');

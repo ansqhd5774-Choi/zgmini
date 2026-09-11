@@ -26,7 +26,7 @@ test('quarterly empty DATA advances to next candidate',async()=>{
 });
 test('period priorities only select codes present in metadata',()=>{
  assert.equal(kosisPeriods([{PRD_SE:'Y'},{PRD_SE:'D'}]).selectedPrdSe,'D');
- assert.equal(kosisPeriods([{PRD_SE:'Q'},{PRD_SE:'W'}]).selectedPrdSe,'W');
- assert.equal(kosisPeriods([{PRD_SE:'CUSTOM',PRD_DE:'202601'}]).selectedPrdSe,'CUSTOM');
- assert.throws(()=>kosisPeriods([{other:'M'}]),{message:'KOSIS_PRD_NO_DATA'});
+ assert.equal(kosisPeriods([{PRD_SE:'Q'},{PRD_SE:'W'}]).selectedPrdSe,'Q');
+ assert.equal(kosisPeriods([{PRD_SE:'CUSTOM',PRD_DE:'202601'}]).selectedPrdSe,null);
+ assert.equal(kosisPeriods([{other:'M'}]).requestPrdSe,null);
 });

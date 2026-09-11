@@ -252,16 +252,28 @@ export function parseKosisPrd(payload) {
   return {records,diagnostics,errorType};
 }
 // PRD_SE/PRD_DE come exclusively from getMeta&type=PRD.
+// Current KOSIS request codes: devGuide_0201List.do (period information).
+const KOSIS_REQUEST_PERIODS=['M','D','Q','S','Y','F','IR'];
+export function canonicalKosisPeriod(value) {
+  const code=typeof value==='string'?value.trim().toUpperCase():null;
+  if(code==='A') return 'Y'; // Annual output alias; request code is Y.
+  return KOSIS_REQUEST_PERIODS.includes(code)?code:null;
+}
 export function kosisPeriods(rows) {
-  const supportedPrdSe=[...new Set(rows.map(r=>id(r.PRD_SE)).filter(Boolean))];
-  if(!supportedPrdSe.length) throw new DiagnosticError('KOSIS_PRD_NO_DATA');
-  const priority=['M','D','W','Q','Y'];
-  const selectedPrdSe=priority.find(p=>supportedPrdSe.includes(p))??supportedPrdSe[0];
-  return {supportedPrdSe,selectedPrdSe,monthlyAvailable:supportedPrdSe.includes('M'),
-    metadataDates:rows.filter(r=>r.PRD_SE===selectedPrdSe&&text(r.PRD_DE)).map(r=>r.PRD_DE)};
+  const rawPeriodCodes=[...new Set(rows.map(r=>typeof r.PRD_SE==='string' && /^[A-Za-z \t]{1,16}$/.test(r.PRD_SE)?r.PRD_SE:r.PRD_SE==null?'[MISSING]':'[UNRECOGNIZED_VALUE]'))];
+  const normalizedPeriodCodes=[...new Set(rows.map(r=>canonicalKosisPeriod(r.PRD_SE)).filter(Boolean))];
+  const unrecognizedPeriodCodes=rawPeriodCodes.filter(c=>!canonicalKosisPeriod(c));
+  const selectedPrdSe=KOSIS_REQUEST_PERIODS.find(p=>normalizedPeriodCodes.includes(p))??null;
+  const selectedRawPrdSe=rows.find(r=>selectedPrdSe && canonicalKosisPeriod(r.PRD_SE)===selectedPrdSe)?.PRD_SE??null;
+  return {rawPeriodCodes,normalizedPeriodCodes,unrecognizedPeriodCodes,
+    supportedPrdSe:normalizedPeriodCodes,selectedRawPrdSe,selectedPrdSe,requestPrdSe:selectedPrdSe,
+    periodNormalizationApplied:rows.some(r=>canonicalKosisPeriod(r.PRD_SE)&&r.PRD_SE!==canonicalKosisPeriod(r.PRD_SE)),
+    monthlyAvailable:normalizedPeriodCodes.includes('M'),
+    metadataDates:rows.filter(r=>selectedPrdSe && canonicalKosisPeriod(r.PRD_SE)===selectedPrdSe&&text(r.PRD_DE)).map(r=>r.PRD_DE)};
 }
 function periodDiagnostics(out,p) {
-  Object.assign(out,{supportedPrdSe:p.supportedPrdSe,selectedPrdSe:p.selectedPrdSe,monthlyAvailable:p.monthlyAvailable});
+  const {metadataDates,...diagnostics}=p;
+  Object.assign(out,diagnostics);
 }
 function summarizeKosis(rows,cycle,metadataDates) {
   if(['M','D','Q','Y','A'].includes(cycle)) return summarize(rows,'PRD_DE','DT',cycle,'UNIT_NM');
@@ -276,7 +288,7 @@ function summarizeKosis(rows,cycle,metadataDates) {
 async function kosisData(out,key,s,ctx,periodInfo) {
   const json=await kosisRequest(out,'KOSIS_DATA',()=>url(KOSIS_BASE,'Param/statisticsParameterData.do',{
     method:'getList',apiKey:key,format:'json',jsonVD:'Y',...s,newEstPrdCnt:13}),ctx);
-  const rows=kosisArray(out,json,'KOSIS_DATA');
+  const rows=kosisArray(out,json,'KOSIS_DATA').map(r=>({...r,PRD_SE:canonicalKosisPeriod(r.PRD_SE)}));
   // Keep a single verified dimension tuple, never merge different series by date.
   const matched=rows.filter(r=>r.ORG_ID===s.orgId && r.TBL_ID===s.tblId && r.ITM_ID===s.itmId && r.PRD_SE===s.prdSe && Array.from({length:8},(_,i)=>i+1).every(i=>s[`objL${i}`] ? r[`C${i}`]===s[`objL${i}`] : !r[`C${i}`]));
   accept(out,summarizeKosis(matched,s.prdSe,periodInfo.metadataDates),'KOSIS_DATA');
@@ -329,8 +341,9 @@ async function kosis(out,key,ctx) {
   let periodInfo;
   try {periodInfo=kosisPeriods(periods);} catch(e) {if(e instanceof DiagnosticError) fail(out,e.code);throw e;}
   periodDiagnostics(out,periodInfo);
-  Object.assign(diagnostic,{supportedPrdSe:periodInfo.supportedPrdSe,selectedPrdSe:periodInfo.selectedPrdSe,monthlyAvailable:periodInfo.monthlyAvailable});
-  const s={...base,itmId:metric.ITM_ID,...Object.fromEntries(dimensions.map(d=>[`objL${d.order}`,d.selectedValueId])),prdSe:periodInfo.selectedPrdSe};
+  periodDiagnostics(diagnostic,periodInfo);
+  if(!periodInfo.requestPrdSe) fail(out,'KOSIS_PRD_NO_DATA');
+  const s={...base,itmId:metric.ITM_ID,...Object.fromEntries(dimensions.map(d=>[`objL${d.order}`,d.selectedValueId])),prdSe:periodInfo.requestPrdSe};
   await kosisData(out,key,s,ctx,periodInfo);
   verifiedKosis.periodInfo=periodInfo; verifiedKosis.series=s; verifiedKosis.dimensions=dimensions; verifiedKosis.expires=Date.now()+3600000;
   out.selectedCandidateIndex=table.candidateIndex;
