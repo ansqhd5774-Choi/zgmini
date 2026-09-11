@@ -5,7 +5,7 @@ import { useEffect, useMemo, useRef, useState, type CSSProperties, type PointerE
 import {
   Activity, ArrowDownRight, ArrowRight, ArrowUpRight, CalendarDays,
   CheckCircle2, ChevronLeft, ChevronRight, CircleAlert, Clock3, Database, Fuel, Gauge, Info,
-  LineChart as LineChartIcon, LogIn, LogOut, Map as MapIcon, Settings2, ShieldCheck,
+  LineChart as LineChartIcon, LogOut, Map as MapIcon, Settings2, ShieldCheck,
   Sparkles, Star, TrendingDown, TrendingUp, UserRound, Zap,
 } from "lucide-react";
 import {
@@ -454,7 +454,7 @@ function MiniIndicatorChart({ item }: { item: Indicator }) {
   );
 }
 
-function SentimentCard({ item, period, kind, favorite, onToggle }: { item: SentimentItem; period: Period; kind: SentimentKind; favorite: boolean; onToggle: (kind: SentimentKind, item: SentimentItem) => void }) {
+function SentimentCard({ item, period, kind, favorite, onToggle }: { item: SentimentItem; period: Period; kind: SentimentKind; favorite: boolean; onToggle?: (kind: SentimentKind, item: SentimentItem) => void }) {
   const visible = getVisibleSeries(item.data, period);
   const change = visible.length > 1 ? visible[visible.length - 1].value - visible[0].value : 0;
   const trend: Direction = change > 1 ? "up" : change < -1 ? "down" : "flat";
@@ -464,9 +464,9 @@ function SentimentCard({ item, period, kind, favorite, onToggle }: { item: Senti
   return (
     <article className={`sentiment-card group relative ${kind === "global" ? "country-sentiment-card" : ""}`} style={kind === "global" ? {"--sentiment-accent":color} as CSSProperties : undefined}>
       {kind === "global" && <img className="country-flag-backdrop" src={`/flags/${({"미국":"us","한국":"kr","중국":"cn","일본":"jp","유럽":"eu"} as Record<string,string>)[item.name]}.svg`} alt="" aria-hidden="true"/>}
-      <button type="button" className={`favorite-action ${favorite ? "is-favorite" : ""}`} onClick={() => onToggle(kind, item)} aria-label={`${item.name} ${favorite ? "즐겨찾기 해제" : "즐겨찾기 추가"}`}>
+      {onToggle && <button type="button" className={`favorite-action ${favorite ? "is-favorite" : ""}`} onClick={() => onToggle(kind, item)} aria-label={`${item.name} ${favorite ? "즐겨찾기 해제" : "즐겨찾기 추가"}`}>
         <Star className={`size-5 ${favorite ? "fill-current" : ""}`}/><span>{favorite ? "즐겨찾기 해제" : "+ 즐겨찾기"}</span>
-      </button>
+      </button>}
       <div className="flex items-start justify-between gap-3">
         <div><h3 className="text-lg font-extrabold text-slate-950">{item.name}</h3>{item.subtitle && <p className="mt-0.5 text-sm text-slate-500">{item.subtitle}</p>}</div>
         <Badge variant="outline" className="stage-badge" style={{color,borderColor:`${color}55`,backgroundColor:`${color}10`}}>{stage}</Badge>
@@ -489,7 +489,7 @@ function SentimentCard({ item, period, kind, favorite, onToggle }: { item: Senti
   );
 }
 
-function SentimentSection({ title, description, items, period, kind, favorites, onToggle }: { title: string; description: string; items: SentimentItem[]; period: Period; kind: SentimentKind; favorites: Set<string>; onToggle: (kind: SentimentKind, item: SentimentItem) => void }) {
+function SentimentSection({ title, description, items, period, kind, favorites, onToggle }: { title: string; description: string; items: SentimentItem[]; period: Period; kind: SentimentKind; favorites: Set<string>; onToggle?: (kind: SentimentKind, item: SentimentItem) => void }) {
   const [sort, setSort] = useState<SentimentSort>("default");
   const [strength, setStrength] = useState<SentimentStrength>("all");
   const [view, setView] = useState<SentimentView>("grid");
@@ -895,7 +895,6 @@ export default function Home() {
 
   async function toggleFavorite(kind: SentimentKind, item: SentimentItem) {
     if (!user) {
-      window.location.assign("/signin-with-chatgpt?return_to=%2F");
       return;
     }
     const itemKey = sentimentKey(kind,item.name);
@@ -931,10 +930,10 @@ export default function Home() {
       <script type="application/ld+json" dangerouslySetInnerHTML={{__html: JSON.stringify({ "@context": "https://schema.org",        "@type": "WebPage",       "@id": "https://zgmini.kr/#webpage",       url: "https://zgmini.kr/",       name: "ZGmini | 공포탐욕지수·글로벌 증시·경제지표 한눈에",       description: "한국·미국·중국·일본·유럽 공포탐욕지수와 물가, 고용, 금리, 유가 등 주요 시장·경제지표를 한눈에 확인하는 글로벌 시황 대시보드 ZGmini.",       isPartOf: { "@id": "https://zgmini.kr/#website" },       about: { "@id": "https://zgmini.kr/#organization" },       inLanguage: "ko-KR",      }).replace(/</g, "\\u003c")}}/>
       <header className="border-b border-white/10 bg-[#07162d] text-white">
         <div className="site-header-grid mx-auto max-w-[1480px] px-4 py-4 sm:px-6 lg:px-8">
-          <div className="flex min-w-0 items-center gap-3">
-            <div className="grid size-10 shrink-0 place-items-center rounded-xl bg-[#f5b942] text-[#07162d] shadow-[0_6px_20px_rgba(245,185,66,0.22)]"><Activity className="size-5" strokeWidth={2.4} /></div>
-            <div className="min-w-0"><p className="truncate text-lg font-extrabold tracking-[-0.03em]">즤그미니!</p><p className="hidden truncate text-xs text-slate-400 sm:block">경제지표로 시장을 읽다</p></div>
-          </div>
+          <a href="/" aria-label="ZGmini 대시보드로 이동" className="flex min-w-0 items-center gap-3 rounded-xl focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white">
+            <img src="/zgmini-logo.png" alt="" width={40} height={40} className="size-10 shrink-0 rounded-xl object-contain" />
+            <div className="min-w-0"><img src="/zgmini-name.png" alt="ZGmini" width={1920} height={540} className="h-auto w-36 max-w-full rounded sm:w-44" /><p className="mt-1 hidden truncate text-xs text-slate-400 sm:block">경제지표로 시장을 읽다</p></div>
+          </a>
           <div className="header-update"><Clock3 className="size-4"/><span>최종 업데이트</span><strong>{formatUpdatedAt(updatedAt)}</strong><span className={`api-status api-status-${marketDataLoading ? "loading" : marketData?.status ?? "fallback"}`} aria-label={marketDataLoading ? "API 연결 중" : marketData?.status === "live" ? "실시간 경제지표 API 연결됨" : "경제지표 API 부분 연결 또는 예시 데이터"}>{marketDataLoading ? "API 연결 중" : marketData?.status === "live" ? "경제지표 API 연결됨" : "경제지표 API 부분 연결"}</span></div>
           <div className="flex items-center justify-end gap-2">
             {sessionLoading ? (
@@ -971,11 +970,7 @@ export default function Home() {
                   </SheetFooter>
                 </SheetContent>
               </Sheet>
-            ) : (
-              <Button asChild className="rounded-none bg-[#f5b942] text-[#07162d] hover:bg-[#ffd474]">
-                <a href="/signin-with-chatgpt?return_to=%2F" target="_top"><LogIn className="size-4"/>회원가입 / 로그인</a>
-              </Button>
-            )}
+            ) : null}
             <Badge className="hidden border border-[#f5b942]/30 bg-[#f5b942]/10 px-3 py-1 text-[#ffd474] xl:inline-flex">5차 시제품</Badge>
           </div>
         </div>
@@ -1013,7 +1008,7 @@ export default function Home() {
           <section className="mt-6" aria-labelledby="favorite-title">
             <div className="mb-3 flex items-center gap-2"><Star className="size-5 fill-amber-300 text-amber-300"/><h2 id="favorite-title" className="text-xl font-extrabold tracking-[-0.03em] text-white">내 즐겨찾기</h2></div>
             <div className="sentiment-grid sentiment-grid-favorite">
-              {favoriteItems.map(({kind,item}) => <SentimentCard key={sentimentKey(kind,item.name)} item={item} period={period} kind={kind} favorite onToggle={toggleFavorite}/>) }
+              {favoriteItems.map(({kind,item}) => <SentimentCard key={sentimentKey(kind,item.name)} item={item} period={period} kind={kind} favorite onToggle={user ? toggleFavorite : undefined}/>) }
             </div>
           </section>
         )}
@@ -1067,8 +1062,8 @@ export default function Home() {
           </div>
         </section>
 
-        <SentimentSection title="섹터별 심리 점수 · 예시" description="실제 지수가 아닌 예시 점수·추세·베타 · CNN 지수와 무관" items={sectorSentiment} period={period} kind="sector" favorites={favorites} onToggle={toggleFavorite}/>
-        <SentimentSection title="테마별 심리 점수 · 예시" description="실제 지수가 아닌 예시 점수·추세·베타 · CNN 지수와 무관" items={themeSentiment} period={period} kind="theme" favorites={favorites} onToggle={toggleFavorite}/>
+        <SentimentSection title="섹터별 심리 점수 · 예시" description="실제 지수가 아닌 예시 점수·추세·베타 · CNN 지수와 무관" items={sectorSentiment} period={period} kind="sector" favorites={favorites} onToggle={user ? toggleFavorite : undefined}/>
+        <SentimentSection title="테마별 심리 점수 · 예시" description="실제 지수가 아닌 예시 점수·추세·베타 · CNN 지수와 무관" items={themeSentiment} period={period} kind="theme" favorites={favorites} onToggle={user ? toggleFavorite : undefined}/>
       </div>
       <Toaster richColors position="bottom-right"/>
     </main>
