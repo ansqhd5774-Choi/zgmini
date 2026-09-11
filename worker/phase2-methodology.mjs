@@ -1,6 +1,7 @@
 // PHASE 2C research only: never a production index or a weight recommendation.
 import {distribution,quantile,correlation,changePoints} from './phase2-korea-analysis.mjs';
 import {period} from './phase1-korea.mjs';
+import {runSensitivity} from './phase2-sensitivity.mjs';
 
 export const METHODOLOGY_POLICY=Object.freeze({maxObservations:6000,window:252,longWindow:504,winsorLower:.01,winsorUpper:.99,zClip:3,overlapWarning:.80,extremeDates:10});
 const valid=x=>typeof x==='number'&&Number.isFinite(x);
@@ -99,7 +100,7 @@ export function researchWeights(){
  return [{id:'MODEL_A_EQUAL',weights:[1,1,1]},{id:'MODEL_B_MARKET_DIRECT',weights:[40,35,25]},{id:'MODEL_C_STRESS_BALANCED',weights:[35,35,30]},...grid];
 }
 function coverage(points){const a=points.filter(p=>valid(p.value));return {dateCount:points.length,usableCount:a.length,usableFraction:fraction(a.length,points.length),firstUsableDate:a[0]?.date??null,latestUsableDate:a.at(-1)?.date??null};}
-export function runMethodologyResearch(input={}){
+export function runMethodologyResearch(input={},context={}){
  const sources=Object.fromEntries(Object.keys(RIGHTS).map(k=>[k,preparePoints(input[k]?.points??[])]));
  // Negative forced-sale amounts are invalid, not passed through log1p.
  sources.liquidation=sources.liquidation.map(p=>({...p,value:p.value!==null&&p.value<0?null:p.value}));
@@ -110,7 +111,11 @@ export function runMethodologyResearch(input={}){
  add('LEV_BLEND20_60','leverage',blendScores(l20,l60),{blend:[.6,.4],inputs:['LEV_CHANGE20_P252','LEV_CHANGE60_P252']});
  add('LEV_CHANGE20_Z252','leverage',rollingChanges(sources.leverage,20,{method:'z-score',winsor:true}),{change:20,window:252,method:'z-score',winsor:[.01,.99],clip:[-3,3]});
  add('LIQ_LEVEL_P252','liquidation',rollingScores(sources.liquidation,{inverse:true}),{window:252,method:'percentile',inverse:true});
- add('LIQ_LOG1P_P252','liquidation',rollingScores(sources.liquidation,{log:true,inverse:true}),{window:252,method:'log1p then percentile',inverse:true});
+ // Mathematical monotonicity is insufficient if floating-point log1p collapses
+ // distinct values. Check strict ordering once; fall back to the legacy path.
+ const uniqueLiquidation=[...new Set(sources.liquidation.map(p=>p.value).filter(valid))].sort((a,b)=>a-b);
+ const logOrderPreserved=uniqueLiquidation.every((v,i)=>i===0||Math.log1p(uniqueLiquidation[i-1])<Math.log1p(v));
+ add('LIQ_LOG1P_P252','liquidation',logOrderPreserved?candidates.LIQ_LEVEL_P252.points:rollingScores(sources.liquidation,{log:true,inverse:true}),{window:252,method:'log1p then percentile',inverse:true,independentCandidate:false,reusedFrom:logOrderPreserved?'LIQ_LEVEL_P252':null});
  add('LIQ_WINSOR_P252','liquidation',rollingScores(sources.liquidation,{winsor:true,inverse:true}),{window:252,method:'winsor percentile',winsor:[.01,.99],inverse:true});
  const spread252=add('SPREAD_LEVEL_P252','creditSpread',rollingScores(sources.creditSpread,{inverse:true}),{window:252,method:'percentile',inverse:true});
  add('SPREAD_LEVEL_P504','creditSpread',rollingScores(sources.creditSpread,{window:504,inverse:true}),{window:504,method:'percentile',inverse:true});
@@ -120,10 +125,11 @@ export function runMethodologyResearch(input={}){
  add('FX_CHANGE20_P252','usdkrw',rollingChanges(sources.usdkrw,20,{inverse:true}),{window:252,change:20,method:'percentile',inverse:true,role:'AUXILIARY_ONLY'});
  const list=Object.values(candidates);
  const componentCorrelations=list.flatMap((a,i)=>list.slice(i+1).filter(b=>a.axis!==b.axis).map(b=>{const r=correlation(a.points,b.points);return {left:a.id,right:b.id,...r,overlapWarning:r.pearson!==null&&(Math.abs(r.pearson)>=.8||Math.abs(r.spearman)>=.8),automaticRejection:false};}));
- const baseline=['LEV_BLEND20_60','LIQ_LEVEL_P252','SPREAD_LEVEL_P252'],componentPoints=baseline.map(id=>candidates[id].points),cache=new Map();
+ const baseline=['LEV_BLEND20_60','LIQ_LEVEL_P252','SPREAD_LEVEL_P252'],componentPoints=baseline.map(id=>candidates[id].points),cache=new Map(),modelSeries=new Map();
  const models=researchWeights().map(model=>{
-  const weights=normalizeWeights(model.weights),key=weights.join(',');let computed=cache.get(key);
+  const weights=normalizeWeights(model.weights),key=JSON.stringify([baseline,weights,'all-required','one-missing-renormalize']);let computed=cache.get(key);
   if(!computed){const strict=compositeScores(componentPoints,weights),remaining=compositeScores(componentPoints,weights,'one-missing-renormalize');computed={strict,quality:scoreQuality(strict),coverage:{allRequired:coverage(strict),oneMissingRenormalized:coverage(remaining),policy:'exact-date availability; no forward fill; stale flags treated as missing; at most one missing'}};cache.set(key,computed);}
+  modelSeries.set(model.id,computed.strict);
   return {id:model.id,weights,componentCandidates:baseline,quality:computed.quality,coverage:computed.coverage,...(!model.id.startsWith('GRID_')?{extremes:extremeDates(computed.strict)}:{}),productionEligible:false};
  });
  const base=compositeScores(componentPoints,[1,1,1]);
@@ -136,7 +142,8 @@ export function runMethodologyResearch(input={}){
  const logDifference=distribution(candidates.LIQ_LEVEL_P252.points.map((p,i)=>valid(p.value)&&valid(candidates.LIQ_LOG1P_P252.points[i]?.value)?Math.abs(p.value-candidates.LIQ_LOG1P_P252.points[i].value):null));
  return {researchOnly:true,productionEligible:false,rights:RIGHTS,policy:{...METHODOLOGY_POLICY,lookAhead:'current observation and past only; no future values',vintageCaveat:'historical releases/revisions are not point-in-time vintages',warmUp:'full window only; change horizon adds its own warm-up',ties:'average tied rank scaled to 0..100; constant percentile=50; zero-variance z-score=null',daily:'observation-to-observation, not calendar-day interpolation',winsor:'rolling window only, including current observation',zTransform:'clip z to [-3,3], then 50+50*z/3',componentOrder:['leverage','liquidation','creditSpread'],baseline:'illustrative normalization bundle, not selected as optimal',weightSelection:'NO_BEST_WEIGHT_NO_VALIDATION_TARGET',gridExtremeOutput:'top/bottom dates emitted for A/B/C only; grid emits quality and coverage'},
   normalizationCandidates:list.map(c=>({id:c.id,axis:c.axis,spec:c.spec,rights:RIGHTS[c.axis],quality:scoreQuality(c.points)})),
-  componentCorrelations,models,auxiliary,logPercentileComparison:{maxAbsoluteScoreDifference:logDifference.max,note:'log1p is monotonic: percentile ranks should match except numerical ties; it does not add independent information'},
+  componentCorrelations,models,auxiliary,logPercentileComparison:{maxAbsoluteScoreDifference:logDifference.max,strictOrderVerified:logOrderPreserved,calculationReused:logOrderPreserved,note:'log1p is monotonic: percentile ranks should match except numerical ties; it does not add independent information'},
+  sensitivity:runSensitivity({candidates,sources,models,modelSeries,requestWindow:context.requestWindow},{rollingScores,scoreQuality,compositeScores,correlation}),
   status:['leverage','liquidation','creditSpread'].some(k=>sources[k].length<2)?'PARTIAL_MISSING_INPUT':base.some(p=>valid(p.value))?'RESEARCH_COMPUTED':'INSUFFICIENT_USABLE_HISTORY',
   exclusions:['CCSI','CMA','KOSIS_PHASE1_SERIES','LIQUIDATION_RATIO'],finalWeights:null};
 }
