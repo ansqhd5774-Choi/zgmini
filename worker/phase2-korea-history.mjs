@@ -2,6 +2,7 @@
 // in worker/index.ts after research. It automatically closes on 2026-10-11 UTC.
 import {analyzeSeries,correlationMatrix,creditComposition,QUALITY_POLICY} from './phase2-korea-analysis.mjs';
 import {period} from './phase1-korea.mjs';
+import {runBokResearch} from './phase2-bok-research.mjs';
 const BASE='https://apis.data.go.kr/1160100/service/GetKofiaStatisticsInfoService/';
 export const RESEARCH_POLICY=Object.freeze({startDate:'20210101',pageSize:1000,maxPagesPerOperation:6,maxRowsPerOperation:6000,maxBodyBytes:2097152,requestTimeoutMs:12000,operationTimeoutMs:90000,cacheMs:900000,expiresAt:'2026-10-11T00:00:00Z'});
 export const OPERATIONS=Object.freeze({
@@ -97,7 +98,8 @@ export async function runHistoryResearch(env,context={}){
  const cmaSeries=cma.groups.map(g=>analyzeSeries(g.rows,{operation:OPERATIONS.cma.operation,field:'actBal',category:g.category,nowDate,complete:data.cma.status.complete}).summary);
  const fields=['crdTrFingWhl','brkTrdUcolMny','brkTrdUcolMnyVsOppsTrdAmt','ucolMnyVsOppsTrdRlImpt','invrDpsgAmt'];
  const output={researchOnly:true,generatedAt:now.toISOString(),window:{begin:'2021-01-01',end:nowDate,extendedTo2018:false},policy:{...RESEARCH_POLICY,quality:QUALITY_POLICY,holidays:'No missing-date imputation. Calendar lag/gap screening only; no exchange holiday calendar.',standardDeviation:'population',percentiles:'linear interpolation, (n-1)*p',change1D:'1-observation percentage change, not a calendar-day return',correlationMinimumPairs:3,correlationCaution:'raw level correlation can be spurious; no automatic elimination',normalization:'feasibility only; no scores or weights'},operations,series:[...Object.values(series).map(s=>s.summary),...cmaSeries],creditComposition:creditComposition(data.credit.rows),correlations:{fields,raw:correlationMatrix(series,fields),change20:correlationMatrix(series,fields,true)},status:['credit','capital'].every(k=>operations[k].status==='SUCCESS')?'SUCCESS':['credit','capital'].some(k=>operations[k].status!=='FAILED')?'PARTIAL':'FAILED'};
- const secrets=[key];try{secrets.push(decodeKey(key??''));}catch{}
+ try{output.bok=await runBokResearch(env,{...context,now},series);}catch{output.bok={status:'FAILED',errorType:'BOK_RESEARCH_INTERNAL_ERROR'};}
+ const secrets=[key,env?.BOK_API_KEY];try{secrets.push(decodeKey(key??''),decodeKey(env?.BOK_API_KEY??''));}catch{}
  return JSON.parse(JSON.stringify(output,(_k,v)=>typeof v==='string'&&secrets.some(s=>s&&v.includes(s))?'[REDACTED]':v));
 }
 export function createResearchHandler(){
