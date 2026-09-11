@@ -22,7 +22,7 @@ const specs = Object.freeze({
   capital:{field:'brkTrdUcolMnyVsOppsTrdAmt',start:LIQUIDATION_START,warmup:254,label:'반대매매 상대강도',direction:'HIGHER_LIQUIDATION_PRESSURE',method:'L3_PRESSURE_P252'}
 });
 
-export function scopedIndicator(name, rows, {nowDate, complete=true, fetchedAt=null, calculatedAt=null}={}) {
+export function scopedIndicator(name, rows, {nowDate, complete=true, fetchedAt=null, calculatedAt=null,onScores}={}) {
   const spec=specs[name];
   if(!spec || !period(nowDate,'D') || rows.length>6000)throw Error('SCOPED_INPUT_INVALID');
   // Cut before validation/statistics/rolling state. No pre-boundary value survives.
@@ -44,6 +44,8 @@ export function scopedIndicator(name, rows, {nowDate, complete=true, fetchedAt=n
   const ready=complete&&valid(latest?.value);
   const status=!complete?'SOURCE_INCOMPLETE':points.length<spec.warmup?'WARMUP':ready?'CALCULATION_READY':'MISSING_WINDOW';
   const summary=analysis.summary;
+  // Internal-only handoff for the bounded public projection; never raw amounts.
+  onScores?.(scores);
   // Explicit output allowlist. No raw rows, complete score history, or correlations.
   return {
     id:spec.method,label:spec.label,field:spec.field,operation:OPERATIONS[name].operation,
@@ -74,7 +76,7 @@ export async function runFscScoped(env,context={}) {
   const calculatedAt=clock().toISOString(),operations={},indicators={};
   for(const [name,result,fetchedAt] of pairs){
     operations[name]={status:result.status.status,requestCount:result.status.requestCount,complete:result.status.complete,errorType:result.status.errorType};
-    indicators[name]=scopedIndicator(name,result.rows,{nowDate,complete:result.status.complete,fetchedAt,calculatedAt});
+    indicators[name]=scopedIndicator(name,result.rows,{nowDate,complete:result.status.complete,fetchedAt,calculatedAt,onScores:scores=>context.onIndicatorScores?.(name,scores)});
   }
   return {profile:SCOPED_PROFILE,analysisVersion:SCOPED_VERSION,calculatedAt,copy:{...SCOPED_COPY},
     operations,indicators,compositeScore:null,compositeStatus:'NOT_IN_CURRENT_SCOPE',finalWeights:null,

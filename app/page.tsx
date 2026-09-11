@@ -1,4 +1,5 @@
 "use client";
+import KoreaFunds from "./korea-funds";
 
 import { useEffect, useMemo, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from "react";
 import {
@@ -1004,6 +1005,7 @@ export default function Home() {
         </div>
 
         <CountryFearGreed/>
+        <KoreaFunds/>
 
         <SentimentSnapshot/>
 
