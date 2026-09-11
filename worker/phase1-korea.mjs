@@ -256,6 +256,8 @@ export function parseKosisPrd(payload) {
 const KOSIS_REQUEST_PERIODS=['M','D','Q','S','Y','F','IR'];
 export function canonicalKosisPeriod(value) {
   const code=typeof value==='string'?value.trim().toUpperCase():null;
+  if(code==='분기') return 'Q'; // Confirmed Version 61 PRD metadata label.
+  if(code==='년') return 'Y'; // Confirmed Version 61 PRD metadata label.
   if(code==='A') return 'Y'; // Annual output alias; request code is Y.
   return KOSIS_REQUEST_PERIODS.includes(code)?code:null;
 }
