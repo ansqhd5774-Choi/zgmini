@@ -104,6 +104,23 @@ function apiCode(json, body, provider) {
   return /^(?:INFO-\d{3}|ERROR-\d{3}|\d{1,4})$/.test(c)?c:'UNRECOGNIZED_API_ERROR';
 }
 
+// Diagnostics only: explicit public metadata fields, bounded names and key lists.
+function publicMeta(value) {
+  const v=text(value);
+  return v && !/https?:|apiKey|serviceKey|authorization|bearer/i.test(v)?v.replace(/[\u0000-\u001f\u007f]/g,'').slice(0,100):null;
+}
+export function kosisDataShape(payload) {
+  const object=v=>v!==null&&typeof v==='object'&&!Array.isArray(v);
+  const keys=v=>object(v)?Object.keys(v).slice(0,20).map(k=>/^(?:ORG_ID|TBL_ID|ITM_ID|PRD_SE|PRD_DE|UNIT_NM|DT|C[1-8]|err|errMsg|row|items|result)$/.test(k)?k:'[UNRECOGNIZED_KEY]'):[];
+  return {dataPayloadType:Array.isArray(payload)?'ARRAY':object(payload)?'OBJECT':'OTHER',
+    dataTopLevelKeys:keys(payload),dataRecordCount:Array.isArray(payload)?payload.length:null,
+    dataFirstRecordKeys:keys(Array.isArray(payload)?payload[0]:null)};
+}
+export function kosisRequestSummary(target) {
+  const p=target.searchParams;
+  return {...Object.fromEntries(['orgId','tblId','itmId','prdSe',...Array.from({length:8},(_,i)=>`objL${i+1}`),'newEstPrdCnt','format','jsonVD'].filter(k=>p.has(k)).map(k=>[k,p.get(k)])),
+    startPrdDePresent:p.has('startPrdDe'),endPrdDePresent:p.has('endPrdDe'),prdIntervalPresent:p.has('prdInterval')};
+}
 export async function requestStage(out, name, prepareUrl, context) {
   const start=Date.now();
   const s={stage:name,attempted:true,httpStatus:null,elapsedMs:0,responseFormat:null,parserSuccess:false,errorType:null,
@@ -117,6 +134,7 @@ export async function requestStage(out, name, prepareUrl, context) {
     s.fetchFunctionAvailable=typeof resolvedFetch==='function';
     const url=typeof prepareUrl==='function'?prepareUrl():prepareUrl;
     const target=new URL(url); s.urlConstructed=true;
+    if(out.provider==='KOSIS'&&name==='KOSIS_DATA') s.dataRequestSummary=kosisRequestSummary(target);
     controller=new AbortController();
     timer=setTimeout(()=>controller.abort(),context.timeoutMs??12000);
     const options={method:'GET',redirect:'manual',signal:controller.signal,headers:{accept:'application/json'}};
@@ -132,6 +150,7 @@ export async function requestStage(out, name, prepareUrl, context) {
     let json=null;
     try { json=JSON.parse(body); s.parserSuccess=json!==null && typeof json==='object'; } catch {}
     out.apiErrorCode=apiCode(json,body,out.provider);
+    if(out.provider==='KOSIS'&&name==='KOSIS_DATA') Object.assign(s,kosisDataShape(json),{dataApiErrorCode:out.apiErrorCode,dataApiErrorType:out.apiErrorCode?'KOSIS_DATA_API_ERROR':null});
     if (!r.ok) fail(out,`${name}_HTTP_ERROR`);
     if (!s.parserSuccess) fail(out,`${name}_PARSE_ERROR`);
     if (out.apiErrorCode) fail(out,`${name}_API_ERROR`);
@@ -305,7 +324,9 @@ async function kosisData(out,key,s,ctx,periodInfo) {
   const rows=kosisArray(out,json,'KOSIS_DATA').map(r=>({...r,PRD_SE:canonicalKosisPeriod(r.PRD_SE)}));
   // Keep a single verified dimension tuple, never merge different series by date.
   const matched=rows.filter(r=>r.ORG_ID===s.orgId && r.TBL_ID===s.tblId && r.ITM_ID===s.itmId && r.PRD_SE===s.prdSe && Array.from({length:8},(_,i)=>i+1).every(i=>s[`objL${i}`] ? r[`C${i}`]===s[`objL${i}`] : !r[`C${i}`]));
-  accept(out,summarizeKosis(matched,s.prdSe,periodInfo.metadataDates),'KOSIS_DATA');
+  const summary=summarizeKosis(matched,s.prdSe,periodInfo.metadataDates);
+  out.stages.at(-1).dataEmptyReason=!summary?.observationCount ? !rows.length?'EMPTY_ARRAY':!matched.length?'NO_MATCHING_ROWS':matched.every(r=>numeric(r.DT)===null)?'NO_NUMERIC_DT':'UNKNOWN_EMPTY_REASON':null;
+  accept(out,summary,'KOSIS_DATA');
   selectedKosis(out,s);
   out.latestObservationDate=out.observationDate;
   periodDiagnostics(out,periodInfo);
@@ -340,13 +361,19 @@ async function kosis(out,key,ctx) {
   out.metadataCount+=all.length;
   const metric=all.find(r=>r.OBJ_ID==='ITEM' && id(r.ITM_ID));
   if(!metric) fail(out,'KOSIS_ITM_NOT_FOUND');
+  const itemCandidates=all.filter(r=>r.OBJ_ID==='ITEM'&&id(r.ITM_ID));
+  Object.assign(diagnostic,{selectedItemId:metric.ITM_ID,selectedItemName:publicMeta(metric.ITM_NM),selectedItemUnit:publicMeta(metric.UNIT_NM),itemCandidateCount:itemCandidates.length,itemCandidateIds:itemCandidates.slice(0,10).map(r=>r.ITM_ID),itemSelectionReason:'FIRST_VALID_ITEM'});
   const objects=kosisArray(out,await kosisRequest(out,'KOSIS_OBJ',()=>meta({type:'ITM'}),ctx),'KOSIS_OBJ');
   out.metadataCount+=objects.length;
   let dimensions;
   try { dimensions=kosisDimensions(objects); }
   catch(e) { if(e instanceof DiagnosticError) fail(out,e.code); throw e; }
   kosisDimensionDiagnostics(out,dimensions);
-  diagnostic.dimensions=dimensions;diagnostic.dimensionCount=dimensions.length;
+  diagnostic.dimensions=dimensions.map(d=>{
+    const values=objects.filter(r=>r.OBJ_ID===d.objId&&id(r.ITM_ID));
+    return {...d,objName:publicMeta(d.objName),selectedValueName:publicMeta(d.selectedValueName),dimensionValueCount:values.length,
+      dimensionValuesPreview:values.slice(0,10).map(r=>({valueId:r.ITM_ID,valueName:publicMeta(r.ITM_NM)}))};
+  });diagnostic.dimensionCount=dimensions.length;
   const prdPayload=await requestStage(out,'KOSIS_PRD',()=>meta({type:'PRD'}),ctx);
   const parsedPrd=parseKosisPrd(prdPayload);
   Object.assign(out,parsedPrd.diagnostics);Object.assign(diagnostic,parsedPrd.diagnostics);
@@ -379,6 +406,7 @@ async function kosis(out,key,ctx) {
       if(!(e instanceof DiagnosticError)||!/^KOSIS_DATA_(EMPTY|NO_DATA|HISTORY_INSUFFICIENT)$/.test(e.code)) throw e;
     } finally {
       const stage=out.stages.at(-1);
+      for(const k of ['dataRequestSummary','dataPayloadType','dataTopLevelKeys','dataRecordCount','dataFirstRecordKeys','dataApiErrorCode','dataApiErrorType','dataEmptyReason']) attempt[k]=stage?.[k]??null;
       Object.assign(attempt,{httpStatus:stage?.httpStatus??null,parserSuccess:stage?.parserSuccess??false,
         observationCount:out.observationCount,errorType:out.errorType});
     }

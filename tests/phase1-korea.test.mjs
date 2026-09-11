@@ -46,7 +46,7 @@ test('KOSIS chain reports IDs and caches only metadata after valid history',asyn
  assert.deepEqual(a.stages.map(s=>s.stage),['KOSIS_SEARCH','KOSIS_ITM','KOSIS_OBJ','KOSIS_PRD','KOSIS_DATA']);
  assert.equal(urls[2].searchParams.get('type'),'ITM');assert.equal(urls[4].searchParams.get('objL1'),'C');
  const b=await runProvider('KOSIS',key,{now,fetch:async()=>response(kosisResponses[4])});assert.deepEqual(b.stages.map(s=>s.stage),['KOSIS_DATA']);
- assert.ok(!JSON.stringify(b).includes(key));assert.ok(!JSON.stringify(b).includes('"DT"'));clearDiagnosticCache();
+ assert.ok(!JSON.stringify(b).includes(key));assert.ok(!JSON.stringify(b).includes('"DT":'));clearDiagnosticCache();
 });
 for(const [stage,index] of [['SEARCH',0],['ITM',1],['OBJ',2],['DATA',4]])for(const kind of ['HTTP_ERROR','PARSE_ERROR','TIMEOUT'])test(`KOSIS ${stage} distinguishes ${kind}`,async()=>{
  clearDiagnosticCache();let i=0;
