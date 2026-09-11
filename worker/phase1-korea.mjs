@@ -259,13 +259,25 @@ export function canonicalKosisPeriod(value) {
   if(code==='A') return 'Y'; // Annual output alias; request code is Y.
   return KOSIS_REQUEST_PERIODS.includes(code)?code:null;
 }
+// Exception limited to the public PRD_SE field; never pass other row values here.
+export function sanitizePeriodDiagnostic(value) {
+  if(typeof value!=='string') return value==null?'[MISSING]':'[UNRECOGNIZED_VALUE]';
+  if(/https?:|[?&](?:apiKey|serviceKey)=|authorization|bearer/i.test(value)) return '[UNRECOGNIZED_VALUE]';
+  return Array.from(value.replace(/[\u0000-\u001f\u007f-\u009f]/g,'').trim()).slice(0,16).join('');
+}
 export function kosisPeriods(rows) {
-  const rawPeriodCodes=[...new Set(rows.map(r=>typeof r.PRD_SE==='string' && /^[A-Za-z \t]{1,16}$/.test(r.PRD_SE)?r.PRD_SE:r.PRD_SE==null?'[MISSING]':'[UNRECOGNIZED_VALUE]'))];
+  const rawPeriodCodes=[...new Set(rows.map(r=>sanitizePeriodDiagnostic(r.PRD_SE)))];
+  const unknownRows=rows.filter(r=>!canonicalKosisPeriod(r.PRD_SE));
+  const rawPeriodCodeDiagnostics=unknownRows.map(r=>{
+    const code=sanitizePeriodDiagnostic(r.PRD_SE);
+    const chars=code==='[MISSING]'||code==='[UNRECOGNIZED_VALUE]'?[]:Array.from(code);
+    return {rawPeriodCode:code,rawPeriodCodeLength:chars.length,rawPeriodCodeCharCodes:chars.map(c=>c.codePointAt(0))};
+  });
   const normalizedPeriodCodes=[...new Set(rows.map(r=>canonicalKosisPeriod(r.PRD_SE)).filter(Boolean))];
-  const unrecognizedPeriodCodes=rawPeriodCodes.filter(c=>!canonicalKosisPeriod(c));
+  const unrecognizedPeriodCodes=[...new Set(unknownRows.map(r=>sanitizePeriodDiagnostic(r.PRD_SE)))];
   const selectedPrdSe=KOSIS_REQUEST_PERIODS.find(p=>normalizedPeriodCodes.includes(p))??null;
   const selectedRawPrdSe=rows.find(r=>selectedPrdSe && canonicalKosisPeriod(r.PRD_SE)===selectedPrdSe)?.PRD_SE??null;
-  return {rawPeriodCodes,normalizedPeriodCodes,unrecognizedPeriodCodes,
+  return {rawPeriodCodes,normalizedPeriodCodes,unrecognizedPeriodCodes,rawPeriodCodeDiagnostics,
     supportedPrdSe:normalizedPeriodCodes,selectedRawPrdSe,selectedPrdSe,requestPrdSe:selectedPrdSe,
     periodNormalizationApplied:rows.some(r=>canonicalKosisPeriod(r.PRD_SE)&&r.PRD_SE!==canonicalKosisPeriod(r.PRD_SE)),
     monthlyAvailable:normalizedPeriodCodes.includes('M'),
