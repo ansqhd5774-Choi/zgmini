@@ -6,6 +6,7 @@ import sitemapXml from "../public/sitemap.xml?raw";
 import { phase1KoreaDataCheck } from "./phase1-korea.mjs";
 import { phase2KoreaHistoryCheck } from "./phase2-korea-history.mjs";
 import { koreaFunds } from "./korea-funds.mjs";
+import { phase3KoreaStockPriceCheck } from "./phase3-korea-stock-price.mjs";
 
 interface Env {
   ASSETS: Fetcher;
@@ -38,6 +39,7 @@ const worker = {
     if (url.pathname === "/api/data-health") return dataHealth(request, env);
     if (url.pathname === "/api/internal/phase1-korea-data-check") return phase1KoreaDataCheck(request, env);
     if (url.pathname === "/api/internal/phase2-korea-history-check") return phase2KoreaHistoryCheck(request, env);
+    if (url.pathname === "/api/internal/phase3-korea-stock-price-check") return phase3KoreaStockPriceCheck(request, env);
     // Serve the static sitemap without rendering pages or calling APIs.
     if (url.pathname === "/sitemap.xml" && (request.method === "GET" || request.method === "HEAD")) {
       return new Response(request.method === "HEAD" ? null : sitemapXml, {
