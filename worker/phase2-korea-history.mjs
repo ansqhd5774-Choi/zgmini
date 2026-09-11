@@ -105,16 +105,17 @@ export async function runHistoryResearch(env,context={}){
  const secrets=[key,env?.BOK_API_KEY];try{secrets.push(decodeKey(key??''),decodeKey(env?.BOK_API_KEY??''));}catch{}
  return JSON.parse(JSON.stringify(output,(_k,v)=>typeof v==='string'&&secrets.some(s=>s&&v.includes(s))?'[REDACTED]':v));
 }
-export function createResearchHandler(){
+export function createResearchHandler(context={}){
  let cache=null,inFlight=false,lastAttempt=-Infinity;
  return async function(request,env){
   if(request.method!=='GET')return jsonResponse({errorType:'METHOD_NOT_ALLOWED'},405,{Allow:'GET'});
   if(new URL(request.url).search)return jsonResponse({errorType:'QUERY_NOT_ALLOWED'},400);
   const now=Date.now();if(now>=Date.parse(RESEARCH_POLICY.expiresAt))return jsonResponse({errorType:'RESEARCH_EXPIRED'},410);
-  if(cache&&now-cache.at<RESEARCH_POLICY.cacheMs)return jsonResponse({...cache.data,fromCache:true});
+  if(cache&&cache.profile==='FSC_SCOPED_INDICATORS_V1'&&cache.version==='fsc-scoped-1'&&now-cache.at<RESEARCH_POLICY.cacheMs)return jsonResponse({...cache.data,fromCache:true});
   if(inFlight||now-lastAttempt<RESEARCH_POLICY.cacheMs)return jsonResponse({errorType:'RESEARCH_RATE_LIMIT'},429,{'Retry-After':String(Math.max(1,Math.ceil((RESEARCH_POLICY.cacheMs-(now-lastAttempt))/1000)))});
   inFlight=true;lastAttempt=now;
-  try{const data=await runHistoryResearch(env);cache={at:Date.now(),data};return jsonResponse({...data,fromCache:false});}
+  try{const {runFscScoped,SCOPED_PROFILE,SCOPED_VERSION}=await import('./phase2-fsc-scoped.mjs');
+   const data=await runFscScoped(env,context);cache={at:Date.now(),profile:SCOPED_PROFILE,version:SCOPED_VERSION,data};return jsonResponse({...data,fromCache:false});}
   catch{return jsonResponse({errorType:'RESEARCH_INTERNAL_ERROR'},500);}
   finally{inFlight=false;}
  };

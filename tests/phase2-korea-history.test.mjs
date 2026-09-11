@@ -27,9 +27,9 @@ test('real Worker module uses outbound stubs only, caches summary and rejects ar
  const bundled=await build({stdin:{contents:"import {phase2KoreaHistoryCheck} from './worker/phase2-korea-history.mjs'; Date.now=()=>Date.parse('2026-09-11T00:00:00Z'); export default {fetch:phase2KoreaHistoryCheck};",resolveDir:process.cwd()},bundle:true,write:false,format:'esm',platform:'browser'});
  let calls=0;const mf=new Miniflare({modules:true,script:bundled.outputFiles[0].text,compatibilityDate:'2026-05-15',bindings:{FSC_API_KEY:key},outboundService:async()=>{calls++;return new Response(JSON.stringify(page([row(),row(1),row(2)])),{headers:{'content-type':'application/json'}});}});
  try{
-  const first=await mf.dispatchFetch('http://localhost/api/internal/phase2-korea-history-check');assert.equal(first.status,200);const data=await first.json();assert.equal(data.operations.credit.status,'SUCCESS');assert.equal(calls,3);assert.equal(data.fromCache,false);
-  const second=await(await mf.dispatchFetch('http://localhost/api/internal/phase2-korea-history-check')).json();assert.equal(second.fromCache,true);assert.equal(calls,3);
+  const first=await mf.dispatchFetch('http://localhost/api/internal/phase2-korea-history-check');assert.equal(first.status,200);const data=await first.json();assert.equal(data.operations.credit.status,'SUCCESS');assert.equal(calls,2);assert.equal(data.fromCache,false);
+  const second=await(await mf.dispatchFetch('http://localhost/api/internal/phase2-korea-history-check')).json();assert.equal(second.fromCache,true);assert.equal(calls,2);
   assert.equal((await mf.dispatchFetch('http://localhost/api/internal/phase2-korea-history-check?url=x')).status,400);
-  assert.equal((await mf.dispatchFetch('http://localhost/api/internal/phase2-korea-history-check',{method:'POST'})).status,405);assert.equal(calls,3);
+  assert.equal((await mf.dispatchFetch('http://localhost/api/internal/phase2-korea-history-check',{method:'POST'})).status,405);assert.equal(calls,2);
  }finally{await mf.dispose();}
 });
