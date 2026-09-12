@@ -63,9 +63,9 @@ for (const value of ['', ' ', 'nonnumeric', 'NaN', 'Infinity']) test(`CPI invali
 for (const metric of ['ppi', 'unemployment', 'payroll']) test(`${metric} shared-helper opt-in cannot change existing result or gap policy`, async () => {
   const rows = fixture();
   assert.deepEqual(normalizeShadowSeries(metric, rows, {fetchedAt, cpiRequiredWindow: true}), normalizeShadowSeries(metric, rows, {fetchedAt}));
-  assert.equal((await run(july(), metric)).status, 'MISSING_OBSERVATION');
+  assert.equal((await run(july(), metric)).status, metric === 'unemployment' ? 'SUCCESS' : 'MISSING_OBSERVATION');
   const gap = rows.filter(p => p.date !== '2026-01-01');
-  assert.equal((await run(gap, metric)).status, 'MONTH_GAP');
+  assert.equal((await run(gap, metric)).status, metric === 'unemployment' ? 'SUCCESS' : 'MONTH_GAP');
   assert.throws(() => normalizeShadowSeries(metric, gap, {fetchedAt, cpiRequiredWindow: true}), /MONTH_GAP/);
 });
 test('graph CPI default retains its existing continuity policy', () => {

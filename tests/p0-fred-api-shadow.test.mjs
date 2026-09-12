@@ -66,7 +66,7 @@ test('payroll same-date revisions are separate from missing latest month', async
 });
 for (const id of ['cpi', 'ppi', 'unemployment', 'payroll']) test(`${id}: month gap remains failure`, async () => {
   const f = fixture(); f.observations.splice(-2, 1); f.count--;
-  assert.equal((await fetchApiShadowSeries(id, key, {now, fetchImpl: async () => Response.json(f)})).status, id === 'cpi' ? 'MISSING_OBSERVATION' : 'MONTH_GAP');
+  assert.equal((await fetchApiShadowSeries(id, key, {now, fetchImpl: async () => Response.json(f)})).status, ['cpi', 'unemployment'].includes(id) ? 'MISSING_OBSERVATION' : 'MONTH_GAP');
 });
 for (const [label, fetchImpl, expected] of [
   ['HTTP', async () => new Response(key, {status: 403}), 'HTTP_ERROR'],
