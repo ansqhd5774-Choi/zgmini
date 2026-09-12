@@ -1,3 +1,6 @@
+import { env } from "cloudflare:workers";
+import { payrollChanges } from "../../../lib/market-data/semantics.mjs";
+import { fetchBls, fetchFred } from "../../../lib/market-data/providers.mjs";
 type Point = { date: string; value: number };
 type ChartPoint = { label: string; value: number };
 type Direction = "up" | "down" | "flat";
@@ -14,12 +17,6 @@ type LiveIndicator = {
   sourceUrl: string;
   currentDate: string;
   previousDate: string;
-};
-
-type BLSResponse = {
-  status?: string;
-  message?: string[];
-  Results?: { series?: Array<{ seriesID: string; data?: Array<{ year: string; period: string; value: string }> }> };
 };
 
 const BLS_URL = "https://api.bls.gov/publicAPI/v2/timeseries/data/";
@@ -73,61 +70,6 @@ function sortPoints(points: Point[]) {
   return points
     .filter((point) => point.date && Number.isFinite(point.value))
     .sort((a, b) => a.date.localeCompare(b.date));
-}
-
-function periodToDate(year: string, period: string) {
-  const month = period.slice(1);
-  return `${year}-${month}-01`;
-}
-
-function parseBLSSeries(payload: BLSResponse) {
-  if (payload.status !== "REQUEST_SUCCEEDED") {
-    throw new Error(payload.message?.join(" ") || "BLS 응답이 올바르지 않습니다.");
-  }
-
-  const series = payload.Results?.series ?? [];
-  return new Map(
-    series.map((item) => [
-      item.seriesID,
-      sortPoints(
-        (item.data ?? [])
-          .filter((row) => /^M(?:0[1-9]|1[0-2])$/.test(row.period))
-          .map((row) => ({ date: periodToDate(row.year, row.period), value: Number(row.value) })),
-      ),
-    ]),
-  );
-}
-
-async function fetchBLS() {
-  const year = new Date().getUTCFullYear();
-  const response = await fetch(BLS_URL, {
-    method: "POST",
-    headers: { accept: "application/json", "content-type": "application/json" },
-    body: JSON.stringify({
-      seriesid: Object.values(BLS_SERIES),
-      startyear: String(year - 3),
-      endyear: String(year),
-    }),
-  });
-  if (!response.ok) throw new Error(`BLS HTTP ${response.status}`);
-  return parseBLSSeries(await response.json() as BLSResponse);
-}
-
-function parseFredCsv(csv: string) {
-  const rows = csv.trim().split(/\r?\n/).slice(1);
-  return sortPoints(rows.map((row) => {
-    const [date, rawValue] = row.split(",");
-    return { date, value: Number(rawValue) };
-  }));
-}
-
-async function fetchFredSeries(seriesId: string) {
-  const url = new URL(FRED_CSV_URL);
-  url.searchParams.set("id", seriesId);
-  url.searchParams.set("cosd", `${new Date().getUTCFullYear() - 3}-01-01`);
-  const response = await fetch(url, { headers: { accept: "text/csv" } });
-  if (!response.ok) throw new Error(`FRED HTTP ${response.status}`);
-  return parseFredCsv(await response.text());
 }
 
 function findYearAgo(points: Point[], point: Point) {
@@ -240,22 +182,22 @@ export async function GET() {
   const warnings: string[] = [];
   const indicators: Record<string, LiveIndicator & { currentValue: number; previousValue: number }> = {};
 
-  let bls: Map<string, Point[]> | null = null;
-  try {
-    bls = await fetchBLS();
-  } catch {
-    warnings.push("BLS");
-  }
-
-  const fredEntries = await Promise.all(Object.entries(FRED_SERIES).map(async ([name, seriesId]) => {
-    try {
-      return [name, await fetchFredSeries(seriesId)] as const;
-    } catch {
-      warnings.push("FRED");
-      return null;
-    }
+  const started = Date.now();
+  const bindings = env as { BLS_API_KEY?: string; BLS_REGISTRATION_KEY?: string };
+  const key = bindings.BLS_API_KEY?.trim() || bindings.BLS_REGISTRATION_KEY?.trim();
+  const [blsResult, fredResults] = await Promise.all([
+    fetchBls({ key }),
+    Promise.all(Object.entries(FRED_SERIES).map(async ([name, id]) => ({ name, id, ...await fetchFred(id) }))),
+  ]);
+  const bls = blsResult.data;
+  if (blsResult.status !== "SUCCESS") warnings.push("BLS");
+  const fred = new Map<string, Point[]>(fredResults.filter(r => r.status === "SUCCESS").map(r => [r.name, r.data]));
+  if (fredResults.some(r => r.status !== "SUCCESS")) warnings.push("FRED");
+  console.info("MARKET_DATA_PROVIDERS", JSON.stringify({
+    durationMs: Date.now()-started,
+    bls: { status: blsResult.status, series: blsResult.statuses, durationMs: blsResult.durationMs, requestCount: blsResult.requestCount, keyPresent: blsResult.registered },
+    fred: fredResults.map(r => ({ series:r.id, status:r.status, durationMs:r.durationMs, timings:r.timings })),
   }));
-  const fred = new Map(fredEntries.filter((entry): entry is NonNullable<typeof entry> => entry !== null));
 
   const create = (id: string, value: LiveIndicator & { currentValue: number; previousValue: number } | null) => {
     if (value) indicators[id] = value;
@@ -265,7 +207,7 @@ export async function GET() {
     try { create("cpi", makeYoyIndicator(bls.get(BLS_SERIES.cpi) ?? [], { source: "BLS Public Data API", sourceUrl: BLS_SOURCE_URL, lowerIsBetter: true })); } catch { warnings.push("CPI"); }
     try { create("ppi", makeYoyIndicator(bls.get(BLS_SERIES.ppi) ?? [], { source: "BLS Public Data API", sourceUrl: BLS_SOURCE_URL, lowerIsBetter: true })); } catch { warnings.push("PPI"); }
     try { create("unemployment", makeDirectIndicator(bls.get(BLS_SERIES.unemployment) ?? [], { source: "BLS Public Data API", sourceUrl: BLS_SOURCE_URL, suffix: "%", digits: 1, lowerIsBetter: true })); } catch { warnings.push("실업률"); }
-    try { create("payrolls", makeDirectIndicator(bls.get(BLS_SERIES.payrolls) ?? [], { source: "BLS Public Data API", sourceUrl: BLS_SOURCE_URL, suffix: "천 명", digits: 1, lowerIsBetter: false, signed: true })); } catch { warnings.push("비농업 고용"); }
+    try { create("payrolls", makeDirectIndicator(payrollChanges(bls.get(BLS_SERIES.payrolls) ?? []), { source: "BLS Public Data API", sourceUrl: BLS_SOURCE_URL, suffix: "천 명", digits: 1, lowerIsBetter: false, signed: true })); } catch { warnings.push("비농업 고용"); }
   }
 
   try { create("corePce", makeYoyIndicator(fred.get("corePce") ?? [], { source: "FRED 공개 데이터 피드", sourceUrl: FRED_SOURCE_URL, lowerIsBetter: true })); } catch { warnings.push("Core PCE"); }
