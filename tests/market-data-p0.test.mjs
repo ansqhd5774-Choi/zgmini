@@ -14,7 +14,31 @@ const funcs=compile(route);const points=[{date:'2025-01-01',value:100},{date:'20
 for(const label of ['Core PCE','CPI','PPI'])test(label+' raw price index becomes YoY input',()=>{const i=funcs.makeYoyIndicator(points,{});assert.ok(Math.abs(i.currentValue-4)<1e-10);assert.ok(Math.abs(i.previousValue-3)<1e-10);assert.equal(i.currentDate,'2026-02-01');});
 for(const [label,v] of [['Unemployment',4.3],['10Y',4.95],['WTI',97.26]])test(label+' direct level remains formula input',()=>{const i=funcs.makeDirectIndicator([{date:'2026-01-01',value:v-1},{date:'2026-02-01',value:v}],{suffix:''});assert.equal(i.currentValue,v);assert.equal(i.previousValue,v-1);});
 test('Payroll uses two consecutive monthly changes and preserves formula',()=>{const changes=payrollChanges([{date:'2026-01-01',value:159000},{date:'2026-02-01',value:159150},{date:'2026-03-01',value:159120}]);const i=funcs.makeDirectIndicator(changes,{suffix:'천 명'});assert.equal(i.currentValue,-30);assert.equal(i.previousValue,150);assert.equal(i.currentDate,'2026-03-01');assert.ok(route.includes('(payrolls.currentValue - 150) * 0.08'));});
-test('buildSummary byte-exact and all-seven gate unchanged',()=>{const part=s=>s.slice(s.indexOf('function buildSummary('),s.indexOf('export async function GET'));assert.equal(createHash('sha256').update(part(route)).digest('hex'),'083382fbf26f326d49e476f85c8affd8e3509a98e479336bc469a7491b3dc181');assert.ok(route.includes('liveCount === required.length ? buildSummary(indicators) : []'));});
+// Canonical hash derived from 68a1ff352b02b1c1d96e604bd9bbcac09fb21eab.
+// Only checkout CRLF is normalized; every other protected character is retained.
+const protectedSummary = s => s.slice(s.indexOf('function buildSummary('), s.indexOf('export async function GET'));
+const summaryHash = text => createHash('sha256').update(text.replaceAll('\r\n', '\n')).digest('hex');
+const expectedSummaryHash = 'ac75496c6bed1cc531c1720b3ab995dac3272e0183f2c1aa76eb73e5f24bed0e';
+test('buildSummary byte-exact apart from EOL and all-seven gate unchanged', () => {
+  assert.equal(summaryHash(protectedSummary(route)), expectedSummaryHash);
+  assert.ok(route.includes('liveCount === required.length ? buildSummary(indicators) : []'));
+});
+test('buildSummary hash accepts LF and Windows CRLF fixtures', () => {
+  const lf = protectedSummary(route).replaceAll('\r\n', '\n');
+  assert.equal(summaryHash(lf), expectedSummaryHash);
+  assert.equal(summaryHash(lf.replaceAll('\n', '\r\n')), expectedSummaryHash);
+});
+test('buildSummary hash rejects meaningful character changes', () => {
+  const text = protectedSummary(route);
+  assert.ok(text.includes('function buildSummary('));
+  assert.notEqual(summaryHash(text.replace('function buildSummary(', 'function buildSummarz(')), expectedSummaryHash);
+});
+test('buildSummary hash preserves whitespace, BOM, blank lines and lone CR', () => {
+  const text = protectedSummary(route);
+  for (const prefix of [' ', '\t', '\n', '\uFEFF', '\r']) {
+    assert.notEqual(summaryHash(prefix + text), expectedSummaryHash);
+  }
+});
 test('liveCount and public contract regressions with all seven and missing BLS',async()=>{const b=async()=>({...parseBls(data()),durationMs:1,requestCount:1,registered:false});const f=async()=>({data:points,status:'SUCCESS',durationMs:1});const full=await (await compile(route,b,f).GET()).json();assert.equal(full.status,'live');assert.equal(full.summary.length,5);assert.deepEqual(full.summary.map(i=>i.score),[15,37,0,0,28]);const partial=await (await compile(route,async()=>({data:new Map(),statuses:{},status:'TIMEOUT',durationMs:1,requestCount:1}),f).GET()).json();assert.equal(partial.status,'partial');assert.equal(partial.summary.length,0);assert.equal(Object.keys(partial.indicators).length,3);assert.deepEqual(Object.keys(full),['status','updatedAt','indicators','summary','sources','warnings']);});
 
 test("fetch uses runtime global receiver",async()=>{await fetchBls({fetchImpl:async function(){assert.equal(this,globalThis);return Response.json(data());}});});
