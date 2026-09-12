@@ -1,4 +1,5 @@
 /// <reference types="vite/client" />
+import { blsDiagnostic } from "./p0-bls-diagnostic.mjs";
 import { productionFredProbe } from "./p0-production-fred-probe.mjs";
 /** Cloudflare Worker entry point for the vinext-starter template. */
 import { handleImageOptimization, DEFAULT_DEVICE_SIZES, DEFAULT_IMAGE_SIZES } from "vinext/server/image-optimization";
@@ -37,6 +38,7 @@ const worker = {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const url = new URL(request.url);
     if (url.pathname === "/api/internal/p0-fred-transport-check") return productionFredProbe(request, { importMetaProd: import.meta.env.PROD, nodeEnv: typeof process !== "undefined" ? process.env.NODE_ENV : undefined, workerContext: ctx, workerUserAgent: typeof navigator !== "undefined" ? navigator.userAgent : undefined });
+    if (url.pathname === "/api/internal/p0-bls-transport-check") return blsDiagnostic(request, env, { importMetaProd: import.meta.env.PROD, nodeEnv: typeof process !== "undefined" ? process.env.NODE_ENV : undefined, workerContext: ctx, workerUserAgent: typeof navigator !== "undefined" ? navigator.userAgent : undefined });
     if (url.pathname === "/api/indicators/korea-funds") return koreaFunds(request, env);
     if (url.pathname === "/api/core-pce") return corePceResponse(request, env);
     if (url.pathname === "/api/data-health") return dataHealth(request, env);
