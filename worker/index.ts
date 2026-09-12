@@ -1,4 +1,5 @@
 /// <reference types="vite/client" />
+import { fredApiShadow } from "./p0-fred-api-shadow.mjs";
 import { fredBlsShadow } from "./p0-fred-bls-shadow.mjs";
 import { blsDiagnostic } from "./p0-bls-diagnostic.mjs";
 import { productionFredProbe } from "./p0-production-fred-probe.mjs";
@@ -38,6 +39,7 @@ interface ExecutionContext {
 const worker = {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const url = new URL(request.url);
+    if (url.pathname === "/api/internal/p0-fred-api-shadow-check") return fredApiShadow(request, env, { importMetaProd: import.meta.env.PROD, nodeEnv: typeof process !== "undefined" ? process.env.NODE_ENV : undefined, workerContext: ctx, workerUserAgent: typeof navigator !== "undefined" ? navigator.userAgent : undefined });
     if (url.pathname === "/api/internal/p0-fred-bls-shadow-check") return fredBlsShadow(request, { importMetaProd: import.meta.env.PROD, nodeEnv: typeof process !== "undefined" ? process.env.NODE_ENV : undefined, workerContext: ctx, workerUserAgent: typeof navigator !== "undefined" ? navigator.userAgent : undefined });
     if (url.pathname === "/api/internal/p0-fred-transport-check") return productionFredProbe(request, { importMetaProd: import.meta.env.PROD, nodeEnv: typeof process !== "undefined" ? process.env.NODE_ENV : undefined, workerContext: ctx, workerUserAgent: typeof navigator !== "undefined" ? navigator.userAgent : undefined });
     if (url.pathname === "/api/internal/p0-bls-transport-check") return blsDiagnostic(request, env, { importMetaProd: import.meta.env.PROD, nodeEnv: typeof process !== "undefined" ? process.env.NODE_ENV : undefined, workerContext: ctx, workerUserAgent: typeof navigator !== "undefined" ? navigator.userAgent : undefined });
