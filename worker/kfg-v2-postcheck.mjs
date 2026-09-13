@@ -165,7 +165,8 @@ export function createKfgV2PostcheckHandler({authenticate, env, reader=readD1Pos
       const toDate = url.searchParams.get('to');
       if ((fromDate || toDate) && (!/^\d{8}$/.test(fromDate||'') || !/^\d{8}$/.test(toDate||'') || fromDate > toDate))
         return json({temporary: TEMPORARY_KFG_V2_POSTCHECK_ONLY, error:'INVALID_WINDOW'},400);
-      if (fromDate && toDate && Number(toDate)-Number(fromDate)>10000)
+      const researchOnly = url.searchParams.get('research') === '1';
+      if (fromDate && toDate && Number(toDate)-Number(fromDate)>(researchOnly ? 20000 : 10000))
         return json({temporary: TEMPORARY_KFG_V2_POSTCHECK_ONLY, error:'WINDOW_TOO_LARGE'},413);
       const persisted = await reader(env.DB,{fromDate,toDate});
       const components = componentReader ? await componentReader() : null;
