@@ -21,7 +21,7 @@ function snapshotKind(s,date){
 const factorOf=s=>({factor:'Breadth',advanceRatio:s.breadth.advanceRatio,advanceValueShare:s.breadth.advanceValueShare,score:s.breadth.score,status:s.breadth.status,
  coverage:{return:s.returnCoverage,tradingValue:s.tradingValueCoverage,marketCap:s.marketCapCoverage}});
 
-/** Explicit injected transport only. No route, scheduling, persistent resource or implicit live fetch. */
+/** Explicit injected transport only. No route, scheduling or implicit live fetch. */
 export async function runKoreaMarketBackfill({store,key,fetchImpl,targetAdditionalDates=5,now=Date.now}={}){
  if(!store||typeof fetchImpl!=='function'||!Number.isSafeInteger(targetAdditionalDates)||targetAdditionalDates<1||targetAdditionalDates>5)throw Error('INVALID_RUN_CONFIGURATION');
  if(running.has(store))throw Error('RUN_ALREADY_ACTIVE');running.add(store);
@@ -29,9 +29,11 @@ export async function runKoreaMarketBackfill({store,key,fetchImpl,targetAddition
  const report=(status,code=null)=>({researchOnly:true,productionEligible:false,status,safeErrorCode:code,requestCount:requests,additionalSuccessfulDates:additional,rowsStored,reusedDates:reused,skippedWeekends,noObservationDates:noObservations,checkpoint:structuredClone(checkpoint)});
  const stop=async code=>{const failure={...checkpoint,status:'ERROR',lastFailureCode:code};try{await store.saveBackfillProgress(failure);checkpoint=failure;}catch{return report('ERROR','CHECKPOINT_SAVE_FAILED');}return report('ERROR',code);};
  try{
+  if(store.acquireLease && !await store.acquireLease())return report('ALREADY_RUNNING');
   try{checkpoint=await store.getBackfillProgress()??emptyCheckpoint();validateCheckpoint(checkpoint);}catch{return report('ERROR','CHECKPOINT_READ_OR_VALIDATION_FAILED');}
   let date=previousMarketCandidate(checkpoint.oldestProcessedDate??BACKFILL_POLICY.anchor);
   while(additional<targetAdditionalDates&&requests<BACKFILL_POLICY.maxProviderRequests&&examined<BACKFILL_POLICY.maxCalendarCandidates){
+   if(store.renewLease){try{await store.renewLease();}catch{return report('ERROR','LEASE_LOST');}}
    examined++;if(weekend(date)){skippedWeekends++;date=previousMarketCandidate(date);continue;}
    checkpoint={...checkpoint,lastAttemptedDate:date};let existing;
    try{existing=await store.getMarketDate(date);}catch{return await stop('MARKET_READ_FAILED');}
@@ -44,6 +46,14 @@ export async function runKoreaMarketBackfill({store,key,fetchImpl,targetAddition
     }});}catch{checkpoint={...checkpoint,requestCount:checkpoint.requestCount+requests-before};return await stop('PROVIDER_FAILURE');}
     checkpoint={...checkpoint,requestCount:checkpoint.requestCount+requests-before};
     kind=snapshotKind(snapshot,date);if(kind==='INVALID')return await stop('PROVIDER_OR_SNAPSHOT_INVALID');
+   }
+   if(store.atomicMarketDateSave){
+    // D1 commits rows, quality, Breadth and progress together; never repeat/increment
+    // the memory adapter's separate writes. Completed dates are not rewritten.
+    try{if(!existing)await store.saveMarketDate(snapshot);checkpoint=await store.getBackfillProgress();validateCheckpoint(checkpoint);}
+    catch{return await stop('ATOMIC_DATE_SAVE_FAILED');}
+    if(kind==='VALID'){additional++;if(!existing)rowsStored+=snapshot.rows.length;}else noObservations++;
+    date=previousMarketCandidate(date);continue;
    }
    try{
     if(!existing)await store.saveMarketDate(snapshot);
@@ -62,5 +72,5 @@ export async function runKoreaMarketBackfill({store,key,fetchImpl,targetAddition
   }
   const final={...checkpoint,status:'PAUSED'};try{await store.saveBackfillProgress(final);checkpoint=final;}catch{return report('ERROR','CHECKPOINT_SAVE_FAILED');}
   return report(additional===targetAdditionalDates?'CHUNK_COMPLETE':'LIMIT_REACHED');
- }finally{running.delete(store);}
+ }finally{try{if(store.releaseLease)await store.releaseLease();}finally{running.delete(store);}}
 }

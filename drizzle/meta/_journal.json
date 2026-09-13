@@ -8,6 +8,13 @@
       "when": 1788527916225,
       "tag": "0000_stormy_miek",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1789286400000,
+      "tag": "0001_kfg_v2_research",
+      "breakpoints": true
     }
   ]
 }
