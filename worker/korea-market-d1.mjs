@@ -160,6 +160,11 @@ export class D1KoreaMarketHistoryStore {
       close,return_pct AS returnPct,trading_value AS tradingValue,market_cap AS marketCap
       FROM kfg_v2_market_rows WHERE security_id=? ORDER BY date ASC`,[securityId]).all()).results;
   }
+  async getAllMarketRows() {
+    return (await this.#statement(`SELECT date,security_id AS securityId,short_code AS shortCode,market,
+      close,return_pct AS returnPct,trading_value AS tradingValue,market_cap AS marketCap
+      FROM kfg_v2_market_rows ORDER BY date ASC,security_id ASC`).all()).results;
+  }
   async saveFactorSnapshot(date,factor) {
     // Breadth is committed with the date. Standalone overwrites/repairs are forbidden.
     const snapshot=await this.getMarketDate(date);
