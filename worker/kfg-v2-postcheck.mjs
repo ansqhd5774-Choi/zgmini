@@ -64,7 +64,7 @@ export function summarizeKfgV2Postcheck(input) {
   const histories = input.historyCounts ?? [];
   const uniqueSuccessfulDates = Number(dates.uniqueSuccessfulDates ?? 0);
   const successfulDatesTotal = Number(checkpoint.successfulDatesTotal ?? 0);
-  const factor = readiness(histories);
+  const factor = input.research?.readiness ?? readiness(histories);
   const factorHistoryReady = factor.momentum.ready && factor.strength.ready && factor.volatility.ready;
   const backfillComplete = successfulDatesTotal === 620 && uniqueSuccessfulDates === 620 &&
     checkpoint.oldestProcessedDate === '20240222';
