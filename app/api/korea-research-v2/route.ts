@@ -8,7 +8,7 @@ const handler = (request: Request) => createKfgV2PostcheckHandler({
   env,
   publicAccess: true,
   componentReader: () => publicSnapshot(env as any),
-})(request);
+} as any)(request);
 
 export function GET(request: Request) { return handler(request); }
 export function POST() { return Response.json({temporary: 'KFG_V2_RESEARCH_READ_ONLY', error: 'METHOD_NOT_ALLOWED'}, {status: 405}); }

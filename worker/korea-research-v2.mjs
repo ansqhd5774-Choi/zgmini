@@ -160,10 +160,13 @@ export function researchReadiness({breadth=[],momentum=[],strength=[],credit=[],
     return map;
   }, new Map());
   return Object.fromEntries(Object.entries(histories).map(([name,history]) => {
-    const available = history.filter(point => validScore(point.value ?? point.score)).length;
-    const effective = marketRows.length && ['momentum','strength','volatility'].includes(name)
-      ? Math.max(...depth.values(), 0) : available;
-    return [name,{available,required:required[name],ready:effective >= required[name]}];
+    const scoreCount = history.filter(point => validScore(point.value ?? point.score)).length;
+    const usesMarketHistory = marketRows.length && ['momentum','strength','volatility'].includes(name);
+    // `available` describes the history depth used by the factor gate. Keep the
+    // number of actually emitted factor points separate so the public summary
+    // cannot claim readiness from one metric while displaying another.
+    const available = usesMarketHistory ? Math.max(...depth.values(), 0) : scoreCount;
+    return [name,{available,scoreCount,required:required[name],ready:available >= required[name]}];
   }));
 }
 

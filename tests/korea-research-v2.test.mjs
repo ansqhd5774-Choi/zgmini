@@ -51,6 +51,14 @@ test('readiness enforces fixed warm-up observations',()=>{
   assert.equal(result.strength.ready,true);
   assert.equal(result.volatility.ready,true);
 });
+test('readiness reports market history depth separately from emitted factor points',()=>{
+  const marketRows = Array.from({length:343},(_,i)=>({date:date(i),securityId:'A'}));
+  const result = researchReadiness({momentum:[point(date(342),50)],marketRows});
+  assert.equal(result.momentum.available,343);
+  assert.equal(result.momentum.scoreCount,1);
+  assert.equal(result.momentum.required,311);
+  assert.equal(result.momentum.ready,true);
+});
 test('research factor bundle is research-only and keeps existing component histories',()=>{
   const result=calculateResearchFactors({marketRows:rows(20),breadth:[point('20240120',50)],credit:[point('20240120',50)],liquidation:[point('20240120',50)]});
   assert.equal(result.researchOnly,true); assert.equal(result.productionEligible,false);
