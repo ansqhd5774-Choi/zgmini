@@ -122,7 +122,14 @@ export function buildResearchComposite({breadth=[],momentum=[],strength=[],credi
 }
 
 export function researchReadiness({breadth=[],momentum=[],strength=[],credit=[],liquidation=[],volatility=[]}={}) {
-  return Object.fromEntries(Object.entries({breadth,momentum,strength,credit,liquidation,volatility}).map(([name,history]) => [name,{available:history.filter(point => validScore(point.value ?? point.score)).length,ready:history.some(point => validScore(point.value ?? point.score))}]));
+  const histories = {breadth,momentum,strength,credit,liquidation,volatility};
+  const required = {breadth:1,momentum:RESEARCH_V2_REQUIRED_HISTORY.momentum,
+    strength:RESEARCH_V2_REQUIRED_HISTORY.strength,credit:1,liquidation:1,
+    volatility:RESEARCH_V2_REQUIRED_HISTORY.volatility};
+  return Object.fromEntries(Object.entries(histories).map(([name,history]) => {
+    const available = history.filter(point => validScore(point.value ?? point.score)).length;
+    return [name,{available,required:required[name],ready:available >= required[name]}];
+  }));
 }
 
 /** Research-only calculation over persisted market rows and already validated component histories. */
