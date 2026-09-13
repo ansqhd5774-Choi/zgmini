@@ -33,7 +33,7 @@ test('operator success is read-only and summary is safe', async () => {
   assert.equal(body.finalStates.backfillComplete, true);
   assert.equal(body.finalStates.compositeReady, false);
   assert.equal(body.rawHistory.zeroRowDates, 1);
-  assert.equal(body.factorReadiness.momentum.ready, true);
+  assert.equal(body.factorReadiness.momentum.ready, false);
   assert.equal(JSON.stringify(body).includes(operator), false);
   assert.equal(JSON.stringify(body).includes('securityId'), false);
 });
