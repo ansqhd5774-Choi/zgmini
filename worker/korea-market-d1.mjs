@@ -185,6 +185,24 @@ export class D1KoreaMarketHistoryStore {
       VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`,[snapshotDate,research.methodologyVersion,JSON.stringify(research.factors),JSON.stringify(research.composite),research.historyMode,research.pointInTimeVerified?1:0,research.historicalVintageVerified?1:0,research.sourcePublishedAt,research.composite?.observationDate??snapshotDate,now,now,null])]);
     return true;
   }
+  async saveComponentHistory(indicators = []) {
+    const now=new Date().toISOString(), statements=[];
+    for (const indicator of indicators) {
+      if (!['LEV_BLEND20_60','L3_PRESSURE_P252'].includes(indicator?.id)) continue;
+      for (const point of indicator.history ?? []) {
+        if (!/^\d{8}$/.test(point?.date)) continue;
+        const score=Number.isFinite(point?.score)?point.score:(Number.isFinite(point?.value)?point.value:null);
+        statements.push(this.#statement(`INSERT INTO kfg_v2_component_history(component_id,date,score,captured_at) VALUES (?,?,?,?) ON CONFLICT(component_id,date) DO NOTHING`,[indicator.id,point.date,score,now]));
+      }
+    }
+    for(let i=0;i<statements.length;i+=90) await this.#db.batch(statements.slice(i,i+90));
+    return statements.length;
+  }
+  async getPersistedComponentHistory() {
+    const {results}=await this.#statement(`SELECT component_id AS id,date,score FROM kfg_v2_component_history ORDER BY component_id,date`).all();
+    const by=new Map(); for(const row of results){if(!by.has(row.id))by.set(row.id,{id:row.id,history:[]});by.get(row.id).history.push({date:row.date,score:row.score});}
+    return [...by.values()];
+  }
   async backfillResearchSnapshots(years=1, componentIndicators=[]) {
     if(years!==1) fail('INVALID_SNAPSHOT_RANGE');
     const latest=(await this.#statement(`SELECT MAX(date) AS date FROM kfg_v2_market_dates WHERE status='COMPLETE'`).first())?.date;
@@ -194,7 +212,22 @@ export class D1KoreaMarketHistoryStore {
     const cutoff=latestDate.toISOString().slice(0,10).replaceAll('-','');
     const dates=(await this.#statement(`SELECT date FROM kfg_v2_market_dates WHERE status='COMPLETE' AND date>=? ORDER BY date DESC`,[cutoff]).all()).results.map(r=>r.date);
     let written=0;
-    for(const date of dates) if(await this.saveResearchSnapshotForDate(date,componentIndicators)) written++;
+    if (componentIndicators.length) await this.saveComponentHistory(componentIndicators);
+    const persisted=await this.getPersistedComponentHistory();
+    const calcIndicators=persisted.length?persisted:componentIndicators;
+    const warmDates=(await this.#statement(`SELECT date FROM kfg_v2_market_dates WHERE status='COMPLETE' AND date<=? ORDER BY date DESC LIMIT ?`,[dates[0],dates.length+311]).all()).results.map(r=>r.date).sort();
+    const ph=warmDates.map(()=>'?').join(',');
+    const rows=(await this.#statement(`SELECT date,security_id AS securityId,short_code AS shortCode,market,close,return_pct AS returnPct,trading_value AS tradingValue,market_cap AS marketCap FROM kfg_v2_market_rows WHERE date IN (${ph}) ORDER BY date,security_id`,warmDates).all()).results;
+    const breadth=(await this.#statement(`SELECT date,score FROM kfg_v2_factor_snapshots WHERE factor='Breadth' AND date IN (${ph}) ORDER BY date`,warmDates).all()).results;
+    const research=calculateResearchFactors({marketRows:rows,breadth,componentIndicators:calcIndicators});
+    const target=new Set(dates);
+    for(const date of dates){
+      const composite=research.composite.history.find(p=>p.date===date);
+      if(!composite || await this.#statement('SELECT date FROM kfg_v2_research_snapshots WHERE date=?',[date]).first()) continue;
+      const factors=Object.fromEntries(Object.entries(research.factors).map(([k,v])=>[k,v.find(p=>p.date===date)??{date,value:null}]));
+      await this.#db.batch([this.#guard(),this.#statement(`INSERT INTO kfg_v2_research_snapshots(date,methodology_version,factors_json,composite_json,history_mode,point_in_time_verified,historical_vintage_verified,source_published_at,source_observed_at,fetched_at,calculated_at,correction_fingerprint) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`,[date,research.methodologyVersion,JSON.stringify(factors),JSON.stringify({...research.composite,history:[]}),research.historyMode,0,0,null,date,new Date().toISOString(),new Date().toISOString(),null])]);
+      written++;
+    }
     return {requested:dates.length,written,latestDate:dates[0]??null,oldestDate:dates.at(-1)??null,range:'1Y',cutoffDate:cutoff};
   }
   async getLatestResearchSnapshot() {

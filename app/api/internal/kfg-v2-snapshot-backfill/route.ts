@@ -16,7 +16,7 @@ export async function POST(request:Request){
   const store=new D1KoreaMarketHistoryStore((env as any).DB);
   const runId=crypto.randomUUID();
   if(!(await store.acquireLease(runId))) return safe({error:'ALREADY_RUNNING'},409);
-  try { const components=(await publicSnapshot(env as any))?.indicators??[]; const result=await store.backfillResearchSnapshots(years,components); return safe({status:'SUCCESS',...result},200); }
+  try { const existing=await store.getPersistedComponentHistory(); const components=existing.length?existing:(await publicSnapshot(env as any))?.indicators??[]; const result=await store.backfillResearchSnapshots(years,components); return safe({status:'SUCCESS',componentHistoryPersisted:existing.length>0,...result},200); }
   catch { return safe({error:'SNAPSHOT_BACKFILL_FAILED'},500); }
   finally { await store.releaseLease(); }
 }
