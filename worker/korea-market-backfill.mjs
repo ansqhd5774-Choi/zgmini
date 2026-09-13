@@ -22,17 +22,18 @@ const factorOf=s=>({factor:'Breadth',advanceRatio:s.breadth.advanceRatio,advance
  coverage:{return:s.returnCoverage,tradingValue:s.tradingValueCoverage,marketCap:s.marketCapCoverage}});
 
 /** Explicit injected transport only. No route, scheduling or implicit live fetch. */
-export async function runKoreaMarketBackfill({store,key,fetchImpl,targetAdditionalDates=5,now=Date.now}={}){
+export async function runKoreaMarketBackfill({store,key,fetchImpl,targetAdditionalDates=5,requestCap=BACKFILL_POLICY.maxProviderRequests,runId,now=Date.now}={}){
  if(!store||typeof fetchImpl!=='function'||!Number.isSafeInteger(targetAdditionalDates)||targetAdditionalDates<1||targetAdditionalDates>5)throw Error('INVALID_RUN_CONFIGURATION');
+ if(!Number.isSafeInteger(requestCap)||requestCap<1||requestCap>BACKFILL_POLICY.maxProviderRequests)throw Error('INVALID_RUN_CONFIGURATION');
  if(running.has(store))throw Error('RUN_ALREADY_ACTIVE');running.add(store);
  let checkpoint=emptyCheckpoint(),requests=0,additional=0,rowsStored=0,reused=0,skippedWeekends=0,noObservations=0,examined=0;
  const report=(status,code=null)=>({researchOnly:true,productionEligible:false,status,safeErrorCode:code,requestCount:requests,additionalSuccessfulDates:additional,rowsStored,reusedDates:reused,skippedWeekends,noObservationDates:noObservations,checkpoint:structuredClone(checkpoint)});
  const stop=async code=>{const failure={...checkpoint,status:'ERROR',lastFailureCode:code};try{await store.saveBackfillProgress(failure);checkpoint=failure;}catch{return report('ERROR','CHECKPOINT_SAVE_FAILED');}return report('ERROR',code);};
  try{
-  if(store.acquireLease && !await store.acquireLease())return report('ALREADY_RUNNING');
+  if(store.acquireLease && !await store.acquireLease(runId))return report('ALREADY_RUNNING');
   try{checkpoint=await store.getBackfillProgress()??emptyCheckpoint();validateCheckpoint(checkpoint);}catch{return report('ERROR','CHECKPOINT_READ_OR_VALIDATION_FAILED');}
   let date=previousMarketCandidate(checkpoint.oldestProcessedDate??BACKFILL_POLICY.anchor);
-  while(additional<targetAdditionalDates&&requests<BACKFILL_POLICY.maxProviderRequests&&examined<BACKFILL_POLICY.maxCalendarCandidates){
+  while(additional<targetAdditionalDates&&requests<requestCap&&examined<BACKFILL_POLICY.maxCalendarCandidates){
    if(store.renewLease){try{await store.renewLease();}catch{return report('ERROR','LEASE_LOST');}}
    examined++;if(weekend(date)){skippedWeekends++;date=previousMarketCandidate(date);continue;}
    checkpoint={...checkpoint,lastAttemptedDate:date};let existing;
@@ -41,8 +42,8 @@ export async function runKoreaMarketBackfill({store,key,fetchImpl,targetAddition
    if(existing){kind=snapshotKind(existing,date);if(kind==='INVALID')return await stop('STORED_DATE_CORRUPT');reused++;}
    else{
     const before=requests;
-    try{snapshot=await fetchMarketDate(date,key,{now,policy:{...MARKET_V2_POLICY,maxPages:Math.min(MARKET_V2_POLICY.maxPages,BACKFILL_POLICY.maxProviderRequests-requests)},fetchImpl:(...args)=>{
-     if(requests>=BACKFILL_POLICY.maxProviderRequests)throw Error('REQUEST_HARD_CAP');requests++;return Reflect.apply(fetchImpl,globalThis,args);
+    try{snapshot=await fetchMarketDate(date,key,{now,policy:{...MARKET_V2_POLICY,maxPages:Math.min(MARKET_V2_POLICY.maxPages,requestCap-requests)},fetchImpl:(...args)=>{
+     if(requests>=requestCap)throw Error('REQUEST_HARD_CAP');requests++;return Reflect.apply(fetchImpl,globalThis,args);
     }});}catch{checkpoint={...checkpoint,requestCount:checkpoint.requestCount+requests-before};return await stop('PROVIDER_FAILURE');}
     checkpoint={...checkpoint,requestCount:checkpoint.requestCount+requests-before};
     kind=snapshotKind(snapshot,date);if(kind==='INVALID')return await stop('PROVIDER_OR_SNAPSHOT_INVALID');

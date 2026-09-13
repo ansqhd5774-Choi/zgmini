@@ -1,0 +1,12 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {createKfgV2CanaryHandler} from '../worker/kfg-v2-canary.mjs';
+
+const request=(method='POST',body)=>new Request('https://zgmini.kr/api/internal/kfg-v2-canary',{method,body:body===undefined?undefined:JSON.stringify(body),headers:{'content-type':'application/json'}});
+const env={DB:{},FSC_API_KEY:'fixture'};
+const context=(user=null)=>{let runnerCalls=0;const runner=async({targetAdditionalDates,requestCap})=>{runnerCalls++;return {status:'CHUNK_COMPLETE',requestCount:requestCap,additionalSuccessfulDates:targetAdditionalDates,rowsStored:3,safeErrorCode:null,checkpoint:{successfulTradingDates:targetAdditionalDates,oldestProcessedDate:'20260909'}};};const h=createKfgV2CanaryHandler({env,authenticate:async()=>user,storeFactory:()=>({getWriteUsage:()=>({rowsWritten:0})}),runner});return {h,counts:()=>({runnerCalls})};};
+test('unauthenticated rejects before payload/runner',async()=>{const c=context();const r=await c.h(request('POST',{targetAdditional:5,requestCap:10}));assert.equal(r.status,401);assert.equal(c.counts().runnerCalls,0);});
+test('invalid limits reject before runner',async()=>{for(const body of [{targetAdditional:6,requestCap:10},{targetAdditional:5,requestCap:11},{targetAdditional:5,requestCap:10,concurrency:2},{targetAdditional:5,requestCap:10,retry:1}]){const c=context({userId:'owner'});assert.equal((await c.h(request('POST',body))).status,400);assert.equal(c.counts().runnerCalls,0);}});
+test('GET cannot mutate',async()=>{const c=context({userId:'owner'});assert.equal((await c.h(request('GET'))).status,405);assert.equal(c.counts().runnerCalls,0);});
+test('valid authenticated request returns safe summary',async()=>{const c=context({userId:'owner'});const r=await c.h(request('POST',{targetAdditional:5,requestCap:10,runId:'canary-1'}));const body=await r.json();assert.equal(r.status,200);assert.equal(body.runId,'canary-1');assert.equal(body.providerRequests,10);assert.equal(body.successfulDatesAdded,5);assert.equal(body.successfulDatesTotal,5);assert.equal(body.rowsStored,3);assert.equal(body.temporary,'TEMPORARY_KFG_V2_CANARY_ONLY');assert.equal('rows' in body,false);assert.equal('apiKey' in body,false);});
+test('invalid run id gets server id and no raw data',async()=>{const c=context({userId:'owner'});const body=await (await c.h(request('POST',{targetAdditional:1,requestCap:1,runId:'bad id'}))).json();assert.match(body.runId,/^[0-9a-f-]{36}$/);assert.equal(Object.keys(body).some(k=>/secret|token|url|raw/i.test(k)),false);});
