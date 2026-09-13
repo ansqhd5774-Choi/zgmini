@@ -185,12 +185,17 @@ export class D1KoreaMarketHistoryStore {
       VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`,[snapshotDate,research.methodologyVersion,JSON.stringify(research.factors),JSON.stringify(research.composite),research.historyMode,research.pointInTimeVerified?1:0,research.historicalVintageVerified?1:0,research.sourcePublishedAt,research.composite?.observationDate??snapshotDate,now,now,null])]);
     return true;
   }
-  async backfillResearchSnapshots(limit=366, componentIndicators=[]) {
-    if(!Number.isSafeInteger(limit)||limit<1||limit>366) fail('INVALID_SNAPSHOT_LIMIT');
-    const dates=(await this.#statement(`SELECT date FROM kfg_v2_market_dates WHERE status='COMPLETE' ORDER BY date DESC LIMIT ?`,[limit]).all()).results.map(r=>r.date);
+  async backfillResearchSnapshots(years=1, componentIndicators=[]) {
+    if(years!==1) fail('INVALID_SNAPSHOT_RANGE');
+    const latest=(await this.#statement(`SELECT MAX(date) AS date FROM kfg_v2_market_dates WHERE status='COMPLETE'`).first())?.date;
+    if(!latest) return {requested:0,written:0,latestDate:null,oldestDate:null,range:'1Y'};
+    const latestDate=new Date(`${latest.slice(0,4)}-${latest.slice(4,6)}-${latest.slice(6,8)}T00:00:00Z`);
+    latestDate.setUTCFullYear(latestDate.getUTCFullYear()-1);
+    const cutoff=latestDate.toISOString().slice(0,10).replaceAll('-','');
+    const dates=(await this.#statement(`SELECT date FROM kfg_v2_market_dates WHERE status='COMPLETE' AND date>=? ORDER BY date DESC`,[cutoff]).all()).results.map(r=>r.date);
     let written=0;
     for(const date of dates) if(await this.saveResearchSnapshotForDate(date,componentIndicators)) written++;
-    return {requested:dates.length,written,latestDate:dates[0]??null,oldestDate:dates.at(-1)??null};
+    return {requested:dates.length,written,latestDate:dates[0]??null,oldestDate:dates.at(-1)??null,range:'1Y',cutoffDate:cutoff};
   }
   async getLatestResearchSnapshot() {
     const row=await this.#statement('SELECT * FROM kfg_v2_research_snapshots ORDER BY date DESC LIMIT 1').first();

@@ -11,12 +11,12 @@ export async function POST(request:Request){
   const user=await getChatGPTUser(request);
   if(!user?.userId||!norm(user.email)) return safe({error:'AUTH_REQUIRED'},401);
   if(!norm((env as any)[OPERATOR])||norm(user.email)!==norm((env as any)[OPERATOR])) return safe({error:'OPERATOR_REQUIRED'},403);
-  let limit=366; try { const p=await request.json(); if(p?.limit!==undefined) limit=p.limit; } catch {}
-  if(!Number.isSafeInteger(limit)||limit<1||limit>366) return safe({error:'INVALID_LIMIT'},400);
+  let years=1; try { const p=await request.json(); if(p?.years!==undefined) years=p.years; } catch {}
+  if(years!==1) return safe({error:'INVALID_RANGE'},400);
   const store=new D1KoreaMarketHistoryStore((env as any).DB);
   const runId=crypto.randomUUID();
   if(!(await store.acquireLease(runId))) return safe({error:'ALREADY_RUNNING'},409);
-  try { const components=(await publicSnapshot(env as any))?.indicators??[]; const result=await store.backfillResearchSnapshots(limit,components); return safe({status:'SUCCESS',...result},200); }
+  try { const components=(await publicSnapshot(env as any))?.indicators??[]; const result=await store.backfillResearchSnapshots(years,components); return safe({status:'SUCCESS',...result},200); }
   catch { return safe({error:'SNAPSHOT_BACKFILL_FAILED'},500); }
   finally { await store.releaseLease(); }
 }
