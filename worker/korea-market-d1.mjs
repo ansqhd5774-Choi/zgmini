@@ -203,7 +203,7 @@ export class D1KoreaMarketHistoryStore {
     const by=new Map(); for(const row of results){if(!by.has(row.id))by.set(row.id,{id:row.id,history:[]});by.get(row.id).history.push({date:row.date,score:row.score});}
     return [...by.values()];
   }
-  async backfillResearchSnapshots(years=1, componentIndicators=[]) {
+  async backfillResearchSnapshots(years=1, componentIndicators=[], maxSnapshots=10) {
     if(years!==1) fail('INVALID_SNAPSHOT_RANGE');
     const latest=(await this.#statement(`SELECT MAX(date) AS date FROM kfg_v2_market_dates WHERE status='COMPLETE'`).first())?.date;
     if(!latest) return {requested:0,written:0,latestDate:null,oldestDate:null,range:'1Y'};
@@ -215,20 +215,20 @@ export class D1KoreaMarketHistoryStore {
     if (componentIndicators.length) await this.saveComponentHistory(componentIndicators);
     const persisted=await this.getPersistedComponentHistory();
     const calcIndicators=persisted.length?persisted:componentIndicators;
-    const warmDates=(await this.#statement(`SELECT date FROM kfg_v2_market_dates WHERE status='COMPLETE' AND date<=? ORDER BY date DESC LIMIT ?`,[dates[0],dates.length+311]).all()).results.map(r=>r.date).sort();
+    const targetDates=dates.slice(0,Math.max(1,Math.min(10,maxSnapshots)));
+    const warmDates=(await this.#statement(`SELECT date FROM kfg_v2_market_dates WHERE status='COMPLETE' AND date<=? ORDER BY date DESC LIMIT ?`,[targetDates[0],targetDates.length+311]).all()).results.map(r=>r.date).sort();
     const ph=warmDates.map(()=>'?').join(',');
     const rows=(await this.#statement(`SELECT date,security_id AS securityId,short_code AS shortCode,market,close,return_pct AS returnPct,trading_value AS tradingValue,market_cap AS marketCap FROM kfg_v2_market_rows WHERE date IN (${ph}) ORDER BY date,security_id`,warmDates).all()).results;
     const breadth=(await this.#statement(`SELECT date,score FROM kfg_v2_factor_snapshots WHERE factor='Breadth' AND date IN (${ph}) ORDER BY date`,warmDates).all()).results;
     const research=calculateResearchFactors({marketRows:rows,breadth,componentIndicators:calcIndicators});
-    const target=new Set(dates);
-    for(const date of dates){
+    for(const date of targetDates){
       const composite=research.composite.history.find(p=>p.date===date);
       if(!composite || await this.#statement('SELECT date FROM kfg_v2_research_snapshots WHERE date=?',[date]).first()) continue;
       const factors=Object.fromEntries(Object.entries(research.factors).map(([k,v])=>[k,v.find(p=>p.date===date)??{date,value:null}]));
       await this.#db.batch([this.#guard(),this.#statement(`INSERT INTO kfg_v2_research_snapshots(date,methodology_version,factors_json,composite_json,history_mode,point_in_time_verified,historical_vintage_verified,source_published_at,source_observed_at,fetched_at,calculated_at,correction_fingerprint) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`,[date,research.methodologyVersion,JSON.stringify(factors),JSON.stringify({...research.composite,history:[]}),research.historyMode,0,0,null,date,new Date().toISOString(),new Date().toISOString(),null])]);
       written++;
     }
-    return {requested:dates.length,written,latestDate:dates[0]??null,oldestDate:dates.at(-1)??null,range:'1Y',cutoffDate:cutoff};
+    return {requested:dates.length,written,remaining:dates.length-written,complete:dates.length-written===0,latestDate:dates[0]??null,oldestDate:dates.at(-1)??null,range:'1Y',cutoffDate:cutoff};
   }
   async getLatestResearchSnapshot() {
     const row=await this.#statement('SELECT * FROM kfg_v2_research_snapshots ORDER BY date DESC LIMIT 1').first();
