@@ -50,8 +50,8 @@ test('invalid calendar date rejected for daily too',async()=>{assert.equal((awai
 for(const id of ['CPIAUCNS','PPIFIS','UNRATE','PAYEMS','PCEPILFE'])test(id+' monthly policy remains strict',()=>{
  assert.equal(FRED_PROFILES[id].datePolicy,'MONTH_START');assert.throws(()=>parseObservations({observations:daily()},id),/INVALID_DATE/);
 });
-test('allowlist rejects unknown/prototype names and DGS10 official routing',()=>{
- for(const id of ['OTHER','toString','__proto__','DGS10'])assert.throws(()=>observationsUrl(id,key),/INVALID_SERIES/);
+test('allowlist rejects unknown/prototype names',()=>{
+ for(const id of ['OTHER','toString','__proto__'])assert.throws(()=>observationsUrl(id,key),/INVALID_SERIES/);
 });
 test('daily duplicate conflict and pagination rejected',()=>{
  const p=daily();p.push({date:'2026-09-11',value:'2'});assert.throws(()=>parseObservations({observations:p},'DCOILWTICO'),/DUPLICATE_CONFLICT/);
@@ -72,8 +72,8 @@ for(const [label,fetchImpl,status] of [
  assert.equal(r.status,status);assert.equal(n,1);assert.equal(r.data.length,0);assert.ok(!JSON.stringify(r).includes(key));
 });
 test('missing key blocks before transport',async()=>{const r=await fetchMarketFred('PCEPILFE',{fetchImpl:()=>assert.fail('no request')});assert.equal(r.status,'KEY_MISSING');});
-test('DGS10 unchanged CSV helper, no API key',async()=>{
- let n=0;const r=await fetchMarketFred('DGS10',{key,fetchImpl:async(url,init)=>{n++;assert.equal(url.hostname,'fred.stlouisfed.org');assert.equal(url.pathname,'/graph/fredgraph.csv');assert.equal(url.searchParams.get('id'),'DGS10');assert.equal(url.searchParams.has('api_key'),false);assert.equal(init.headers.accept,'text/csv');return new Response('DATE,DGS10\n2026-09-09,4.6\n2026-09-10,4.7');}});
+test('DGS10 official API activation replaces prior CSV routing',async()=>{
+ let n=0;const r=await fetchMarketFred('DGS10',{key,fetchImpl:async(url,init)=>{n++;assert.equal(url.hostname,'api.stlouisfed.org');assert.equal(url.pathname,'/fred/series/observations');assert.equal(url.searchParams.get('series_id'),'DGS10');assert.equal(url.searchParams.get('api_key'),key);assert.equal(init.headers.accept,'application/json');return Response.json({observations:[{date:'2026-09-09',value:'4.6'},{date:'2026-09-10',value:'4.7'}]});}});
  assert.equal(n,1);assert.equal(r.status,'SUCCESS');assert.equal(r.data.at(-1).value,4.7);
 });
 test('route passes key to official provider; all-seven gate untouched',()=>{
