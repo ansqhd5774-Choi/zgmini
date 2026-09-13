@@ -38,10 +38,11 @@ function rollingPercentile(points, window=252, inverse=false) {
 }
 function marketReturns(rows, horizon) {
   const histories = bySecurity(rows), dates = uniqueDates(rows), result = [];
+  for (const history of histories.values()) history.indexByDate = new Map(history.map((row, index) => [row.date, index]));
   for (const date of dates) {
     const items = [];
     for (const history of histories.values()) {
-      const index = history.findIndex(row => row.date === date);
+      const index = history.indexByDate.get(date) ?? -1;
       if (index < horizon) continue;
       const current = history[index], previous = history[index-horizon];
       if (!finite(current.close) || !finite(previous.close) || previous.close <= 0 || !finite(previous.marketCap) || previous.marketCap <= 0) continue;
@@ -56,6 +57,16 @@ function standardDeviation(values) {
   const mean = values.reduce((sum,value) => sum + value, 0) / values.length;
   return Math.sqrt(values.reduce((sum,value) => sum + (value-mean) ** 2, 0) / values.length);
 }
+function rollingExtrema(history, window, pick) {
+  const deque=[], out=Array(history.length).fill(null);
+  for(let i=0;i<history.length;i++) {
+    const value=history[i].close;
+    while(deque.length && deque[0] < i-window+1) deque.shift();
+    if(finite(value)) { while(deque.length && pick(history[deque.at(-1)].close,value)) deque.pop(); deque.push(i); }
+    if(deque.length && i>=window-1) out[i]=history[deque[0]].close;
+  }
+  return out;
+}
 
 export function calculateMomentum(rows) {
   const ret20 = rollingPercentile(marketReturns(rows,20),252);
@@ -66,17 +77,24 @@ export function calculateMomentum(rows) {
 
 export function calculateStrength(rows) {
   const histories = bySecurity(rows), dates = uniqueDates(rows), values = [];
+  for (const history of histories.values()) {
+    history.indexByDate = new Map(history.map((row, index) => [row.date, index]));
+    const prefix=[0], ma125=[], high252=[], low252=[];
+    for (const row of history) prefix.push(prefix.at(-1)+(finite(row.close)?row.close:0));
+    for (let i=0;i<history.length;i++) ma125[i]=i>=124?(prefix[i+1]-prefix[i-124])/125:null;
+    high252.splice(0,high252.length,...rollingExtrema(history,252,(a,b)=>a<=b));
+    low252.splice(0,low252.length,...rollingExtrema(history,252,(a,b)=>a>=b));
+    history.stats={ma125,high252,low252};
+  }
   for (const date of dates) {
     const components = [];
     for (const history of histories.values()) {
-      const index = history.findIndex(row => row.date === date);
+      const index = history.indexByDate.get(date) ?? -1;
       if (index < 251) continue;
       const current = history[index], prior = history.slice(0,index+1).map(row => row.close).filter(finite);
       if (!finite(current.close) || prior.length < 125) continue;
-      const ma = prior.slice(-125).reduce((sum,value) => sum+value,0)/125;
-      const window = prior.slice(-252);
-      if (!finite(ma) || !window.length) continue;
-      const high = Math.max(...window), low = Math.min(...window);
+      const {ma125,high252,low252}=history.stats, ma=ma125[index], high=high252[index], low=low252[index];
+      if (!finite(ma) || !finite(high) || !finite(low)) continue;
       components.push({above:current.close >= ma ? 100 : 0, balance:high === low ? 50 : 100*(current.close-low)/(high-low)});
     }
     values.push({date,value:components.length ? clamp(components.reduce((sum,item) => sum+(item.above+item.balance)/2,0)/components.length) : null});
