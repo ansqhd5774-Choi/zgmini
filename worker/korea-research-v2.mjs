@@ -149,14 +149,21 @@ export function buildResearchComposite({breadth=[],momentum=[],strength=[],credi
     previousObservationDate:previous?.date ?? null,changePoints:current&&previous ? current.value-previous.value : null,history};
 }
 
-export function researchReadiness({breadth=[],momentum=[],strength=[],credit=[],liquidation=[],volatility=[]}={}) {
+export function researchReadiness({breadth=[],momentum=[],strength=[],credit=[],liquidation=[],volatility=[],marketRows=[]}={}) {
   const histories = {breadth,momentum,strength,credit,liquidation,volatility};
   const required = {breadth:1,momentum:RESEARCH_V2_REQUIRED_HISTORY.momentum,
     strength:RESEARCH_V2_REQUIRED_HISTORY.strength,credit:1,liquidation:1,
     volatility:RESEARCH_V2_REQUIRED_HISTORY.volatility};
+  const depth = marketRows.reduce((map,row) => {
+    const id = row?.securityId ?? row?.security_id;
+    if (id != null) map.set(id, (map.get(id) ?? 0) + 1);
+    return map;
+  }, new Map());
   return Object.fromEntries(Object.entries(histories).map(([name,history]) => {
     const available = history.filter(point => validScore(point.value ?? point.score)).length;
-    return [name,{available,required:required[name],ready:available >= required[name]}];
+    const effective = marketRows.length && ['momentum','strength','volatility'].includes(name)
+      ? Math.max(...depth.values(), 0) : available;
+    return [name,{available,required:required[name],ready:effective >= required[name]}];
   }));
 }
 
@@ -171,6 +178,7 @@ export function calculateResearchFactors({marketRows=[],breadth=[],momentum=[],s
   strength = strength.length ? strength : (marketRows.length ? calculateStrength(marketRows) : []);
   volatility = volatility.length ? volatility : (marketRows.length ? calculateVolatility(marketRows) : []);
   const histories = {breadth,momentum,strength,credit,liquidation,volatility};
+  const readiness = researchReadiness({...histories,marketRows});
   return {researchOnly:true,productionEligible:false,methodologyVersion:RESEARCH_V2_VERSION,
-    factors:histories,readiness:researchReadiness(histories),composite:buildResearchComposite(histories)};
+    factors:histories,readiness,composite:buildResearchComposite(histories)};
 }
