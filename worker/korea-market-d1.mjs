@@ -168,7 +168,7 @@ export class D1KoreaMarketHistoryStore {
   }
   async saveResearchSnapshotForDate(date, componentIndicators = []) {
     let dates;
-    try { dates=(await this.#statement(`SELECT date FROM kfg_v2_market_dates WHERE status='COMPLETE' ORDER BY date DESC LIMIT 312`).all()).results.map(r=>r.date).sort();
+    try { dates=(await this.#statement(`SELECT date FROM kfg_v2_market_dates WHERE status='COMPLETE' AND date<=? ORDER BY date DESC LIMIT 312`,[date]).all()).results.map(r=>r.date).sort();
       await this.#statement('SELECT date FROM kfg_v2_research_snapshots LIMIT 1').first();
     } catch { return false; }
     if(!dates.includes(date)) fail('SNAPSHOT_DATE_NOT_COMPLETE');
@@ -184,6 +184,13 @@ export class D1KoreaMarketHistoryStore {
       (date,methodology_version,factors_json,composite_json,history_mode,point_in_time_verified,historical_vintage_verified,source_published_at,source_observed_at,fetched_at,calculated_at,correction_fingerprint)
       VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`,[snapshotDate,research.methodologyVersion,JSON.stringify(research.factors),JSON.stringify(research.composite),research.historyMode,research.pointInTimeVerified?1:0,research.historicalVintageVerified?1:0,research.sourcePublishedAt,research.composite?.observationDate??snapshotDate,now,now,null])]);
     return true;
+  }
+  async backfillResearchSnapshots(limit=366, componentIndicators=[]) {
+    if(!Number.isSafeInteger(limit)||limit<1||limit>366) fail('INVALID_SNAPSHOT_LIMIT');
+    const dates=(await this.#statement(`SELECT date FROM kfg_v2_market_dates WHERE status='COMPLETE' ORDER BY date DESC LIMIT ?`,[limit]).all()).results.map(r=>r.date);
+    let written=0;
+    for(const date of dates) if(await this.saveResearchSnapshotForDate(date,componentIndicators)) written++;
+    return {requested:dates.length,written,latestDate:dates[0]??null,oldestDate:dates.at(-1)??null};
   }
   async getLatestResearchSnapshot() {
     const row=await this.#statement('SELECT * FROM kfg_v2_research_snapshots ORDER BY date DESC LIMIT 1').first();
