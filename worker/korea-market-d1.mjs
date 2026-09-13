@@ -215,7 +215,7 @@ export class D1KoreaMarketHistoryStore {
     if (componentIndicators.length) await this.saveComponentHistory(componentIndicators);
     const persisted=await this.getPersistedComponentHistory();
     const calcIndicators=persisted.length?persisted:componentIndicators;
-    const targetDates=dates.slice(0,Math.max(1,Math.min(10,maxSnapshots)));
+    const targetDates=dates.slice(0,Math.max(1,Math.min(1,maxSnapshots)));
     const warmDates=(await this.#statement(`SELECT date FROM kfg_v2_market_dates WHERE status='COMPLETE' AND date<=? ORDER BY date DESC LIMIT ?`,[targetDates[0],targetDates.length+311]).all()).results.map(r=>r.date).sort();
     const ph=warmDates.map(()=>'?').join(',');
     const rows=(await this.#statement(`SELECT date,security_id AS securityId,short_code AS shortCode,market,close,return_pct AS returnPct,trading_value AS tradingValue,market_cap AS marketCap FROM kfg_v2_market_rows WHERE date IN (${ph}) ORDER BY date,security_id`,warmDates).all()).results;
