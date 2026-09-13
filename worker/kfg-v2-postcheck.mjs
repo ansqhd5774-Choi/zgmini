@@ -111,7 +111,9 @@ export function summarizeKfgV2Postcheck(input) {
   };
 }
 
-async function readD1Postcheck(db) {
+async function readD1Postcheck(db, {fromDate=null, toDate=null}={}) {
+  const bounds = fromDate && toDate ? ' AND date>=? AND date<=?' : '';
+  const args = fromDate && toDate ? [fromDate,toDate] : [];
   const checkpoint = await db.prepare(`SELECT successful_trading_date_count AS successfulDatesTotal,
     latest_processed_date AS latestProcessedDate, oldest_processed_date AS oldestProcessedDate, status
     FROM kfg_v2_backfill_progress WHERE methodology_version='KFG_RESEARCH_V2'`).first();
@@ -129,7 +131,7 @@ async function readD1Postcheck(db) {
   )`).first();
   const coverageRows = (await db.prepare(`SELECT date, return_coverage AS returnCoverage,
     trading_value_coverage AS tradingValueCoverage, market_cap_coverage AS marketCapCoverage
-    FROM kfg_v2_market_dates WHERE status='COMPLETE' ORDER BY date ASC`).all()).results;
+    FROM kfg_v2_market_dates WHERE status='COMPLETE'${bounds} ORDER BY date ASC`).bind(...args).all()).results;
   const breadth = await db.prepare(`SELECT
     (SELECT COUNT(*) FROM kfg_v2_factor_snapshots WHERE factor='Breadth') AS snapshotCount,
     (SELECT COUNT(DISTINCT date) FROM kfg_v2_factor_snapshots WHERE factor='Breadth') AS distinctDates,
@@ -139,12 +141,12 @@ async function readD1Postcheck(db) {
     (SELECT COUNT(*) FROM kfg_v2_factor_snapshots WHERE factor='Breadth' AND (score IS NULL OR status != 'VALID')) AS invalidScoreCount,
     (SELECT COUNT(*) FROM kfg_v2_factor_snapshots WHERE factor='Breadth' AND (score < 0 OR score > 100)) AS scoreOutside0To100`).first();
   const breadthHistory = (await db.prepare(`SELECT date,score FROM kfg_v2_factor_snapshots
-    WHERE factor='Breadth' ORDER BY date ASC`).all()).results;
+    WHERE factor='Breadth'${bounds} ORDER BY date ASC`).bind(...args).all()).results;
   const historyCounts = (await db.prepare(`SELECT security_id AS securityId, COUNT(DISTINCT date) AS historyCount
-    FROM kfg_v2_market_rows GROUP BY security_id`).all()).results;
+    FROM kfg_v2_market_rows WHERE 1=1${bounds} GROUP BY security_id`).bind(...args).all()).results;
   const marketRows = (await db.prepare(`SELECT date,security_id AS securityId,short_code AS shortCode,market,
     close,return_pct AS returnPct,trading_value AS tradingValue,market_cap AS marketCap
-    FROM kfg_v2_market_rows ORDER BY date ASC,security_id ASC`).all()).results;
+    FROM kfg_v2_market_rows WHERE 1=1${bounds} ORDER BY date ASC,security_id ASC`).bind(...args).all()).results;
   return {checkpoint, dates, raw: {...raw, ...duplicates}, coverageRows, breadth, breadthHistory, historyCounts, marketRows};
 }
 
@@ -158,7 +160,14 @@ export function createKfgV2PostcheckHandler({authenticate, env, reader=readD1Pos
     if (!operatorEmail || normalizedEmail(user.email) !== operatorEmail)
       return json({temporary: TEMPORARY_KFG_V2_POSTCHECK_ONLY, error: 'OPERATOR_REQUIRED'}, 403);
     try {
-      const persisted = await reader(env.DB);
+      const url = new URL(request.url);
+      const fromDate = url.searchParams.get('from');
+      const toDate = url.searchParams.get('to');
+      if ((fromDate || toDate) && (!/^\d{8}$/.test(fromDate||'') || !/^\d{8}$/.test(toDate||'') || fromDate > toDate))
+        return json({temporary: TEMPORARY_KFG_V2_POSTCHECK_ONLY, error:'INVALID_WINDOW'},400);
+      if (fromDate && toDate && Number(toDate)-Number(fromDate)>10000)
+        return json({temporary: TEMPORARY_KFG_V2_POSTCHECK_ONLY, error:'WINDOW_TOO_LARGE'},413);
+      const persisted = await reader(env.DB,{fromDate,toDate});
       const components = componentReader ? await componentReader() : null;
       const componentIndicators = components?.indicators ?? [];
       const adapted = researchHistoriesFromPublicIndicators(componentIndicators);
