@@ -106,6 +106,16 @@ function normalizeHistory(history) {
   return map;
 }
 
+/** Adapt the existing public component histories without changing their API or orientation. */
+export function researchHistoriesFromPublicIndicators(indicators = []) {
+  const byId = new Map(indicators.map(indicator => [indicator?.id, indicator]));
+  const history = id => (byId.get(id)?.history ?? []).map(point => ({
+    date: point?.date,
+    value: point?.score ?? point?.value ?? null,
+  }));
+  return {credit: history('LEV_BLEND20_60'), liquidation: history('L3_PRESSURE_P252')};
+}
+
 export function buildResearchComposite({breadth=[],momentum=[],strength=[],credit=[],liquidation=[],volatility=[]}={}) {
   const series = {breadth,momentum,strength,credit,liquidation,volatility};
   const maps = Object.fromEntries(Object.entries(series).map(([name,history]) => [name,normalizeHistory(history)]));
@@ -133,10 +143,15 @@ export function researchReadiness({breadth=[],momentum=[],strength=[],credit=[],
 }
 
 /** Research-only calculation over persisted market rows and already validated component histories. */
-export function calculateResearchFactors({marketRows=[],breadth=[],credit=[],liquidation=[]}={}) {
-  const momentum = calculateMomentum(marketRows);
-  const strength = calculateStrength(marketRows);
-  const volatility = calculateVolatility(marketRows);
+export function calculateResearchFactors({marketRows=[],breadth=[],momentum=[],strength=[],credit=[],liquidation=[],volatility=[],componentIndicators=[]}={}) {
+  if ((!credit.length || !liquidation.length) && componentIndicators.length) {
+    const adapted = researchHistoriesFromPublicIndicators(componentIndicators);
+    credit = credit.length ? credit : adapted.credit;
+    liquidation = liquidation.length ? liquidation : adapted.liquidation;
+  }
+  momentum = momentum.length ? momentum : (marketRows.length ? calculateMomentum(marketRows) : []);
+  strength = strength.length ? strength : (marketRows.length ? calculateStrength(marketRows) : []);
+  volatility = volatility.length ? volatility : (marketRows.length ? calculateVolatility(marketRows) : []);
   const histories = {breadth,momentum,strength,credit,liquidation,volatility};
   return {researchOnly:true,productionEligible:false,methodologyVersion:RESEARCH_V2_VERSION,
     factors:histories,readiness:researchReadiness(histories),composite:buildResearchComposite(histories)};

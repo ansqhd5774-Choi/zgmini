@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {buildResearchComposite,calculateMomentum,calculateStrength,calculateVolatility,researchReadiness,calculateResearchFactors,RESEARCH_V2_WEIGHTS} from '../worker/korea-research-v2.mjs';
+import {buildResearchComposite,calculateMomentum,calculateStrength,calculateVolatility,researchReadiness,calculateResearchFactors,researchHistoriesFromPublicIndicators,RESEARCH_V2_WEIGHTS} from '../worker/korea-research-v2.mjs';
 
 const date = index => { const d=new Date(Date.UTC(2024,0,1+index)); return d.toISOString().slice(0,10).replaceAll('-',''); };
 const rows = (count=520) => Array.from({length:count},(_,i)=>({date:date(i),securityId:'A',shortCode:'A',market:'KOSPI',close:100+i*.1,returnPct:.1,tradingValue:1000,marketCap:100000}));
@@ -55,4 +55,18 @@ test('research factor bundle is research-only and keeps existing component histo
   const result=calculateResearchFactors({marketRows:rows(20),breadth:[point('20240120',50)],credit:[point('20240120',50)],liquidation:[point('20240120',50)]});
   assert.equal(result.researchOnly,true); assert.equal(result.productionEligible,false);
   assert.equal(result.factors.credit[0].value,50); assert.equal(result.composite.status,'UNAVAILABLE');
+});
+test('existing credit and liquidation histories feed the six-factor composite by exact date',()=>{
+  const indicators = [
+    {id:'LEV_BLEND20_60',history:[point('20260908',40),point('20260909',60)]},
+    {id:'L3_PRESSURE_P252',history:[point('20260908',20),point('20260909',10)]},
+  ];
+  const adapted = researchHistoriesFromPublicIndicators(indicators);
+  assert.deepEqual(adapted.credit,[point('20260908',40),point('20260909',60)]);
+  const result = calculateResearchFactors({breadth:[point('20260909',80)],componentIndicators:indicators,
+    marketRows:[],momentum:[point('20260909',70)],strength:[point('20260909',65)],volatility:[point('20260909',55)]});
+  assert.equal(result.factors.credit.at(-1).value,60);
+  assert.equal(result.factors.liquidation.at(-1).value,10);
+  assert.equal(result.composite.score,60*.15+10*.15+80*.25+70*.2+65*.15+55*.1);
+  assert.equal(result.composite.observationDate,'20260909');
 });
