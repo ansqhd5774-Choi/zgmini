@@ -74,7 +74,7 @@ test('OFF: original Map identity and complete public JSON byte equality, even su
   const adapted = await (await consumer({...b, data}).GET()).text();
   assert.equal(adapted, original);
   assert.deepEqual(Object.keys(JSON.parse(adapted)), ['status', 'updatedAt', 'indicators', 'summary', 'sources', 'warnings']);
-  assert.equal(FALLBACK_PRODUCTION_ENABLED, false);
+  assert.equal(FALLBACK_PRODUCTION_ENABLED, true); // Live entry enabled; explicit OFF simulation remains unchanged.
 });
 
 test('OFF does not apply eligible secondary; ON fixture produces public-compatible indicator', async () => {

@@ -24,7 +24,7 @@ function transport(missing=[], bad={}) {
 test('OFF: four real parser successes preserved exactly and one batch, zero FRED',async()=>{
   const r=await collectProviderCandidates({fetchImpl:transport(),now,blsKey:'fixture-key'});
   const expected=parseBls(payload());assert.deepEqual(r.appliedBlsResult.data,expected.data);assert.deepEqual(r.appliedBlsResult.statuses,expected.statuses);
-  assert.deepEqual(r.requestCounts,{bls:1,fred:0});assert.equal(r.fallbackProductionEnabled,false);assert.equal(FALLBACK_PRODUCTION_ENABLED,false);
+  assert.deepEqual(r.requestCounts,{bls:1,fred:0});assert.equal(r.fallbackProductionEnabled,true);assert.equal(FALLBACK_PRODUCTION_ENABLED,true);
   assert.ok(Object.values(r.metrics).every(m=>m.candidate.decision==='USE_PRIMARY'));
 });
 test('UNRATE TIMEOUT candidate uses actual adapter values but OFF keeps original failure',async()=>{

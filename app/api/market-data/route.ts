@@ -1,6 +1,7 @@
 import { env } from "cloudflare:workers";
 import { payrollChanges } from "../../../lib/market-data/semantics.mjs";
-import { fetchBls, fetchFred } from "../../../lib/market-data/providers.mjs";
+import { fetchFred } from "../../../lib/market-data/providers.mjs";
+import { fetchBlsWithFallback as fetchBls } from "../../../lib/market-data/live-fallback.mjs";
 type Point = { date: string; value: number };
 type ChartPoint = { label: string; value: number };
 type Direction = "up" | "down" | "flat";
@@ -183,10 +184,10 @@ export async function GET() {
   const indicators: Record<string, LiveIndicator & { currentValue: number; previousValue: number }> = {};
 
   const started = Date.now();
-  const bindings = env as { BLS_API_KEY?: string; BLS_REGISTRATION_KEY?: string };
+  const bindings = env as { BLS_API_KEY?: string; BLS_REGISTRATION_KEY?: string; FRED_API_KEY?: string };
   const key = bindings.BLS_API_KEY?.trim() || bindings.BLS_REGISTRATION_KEY?.trim();
   const [blsResult, fredResults] = await Promise.all([
-    fetchBls({ key }),
+    fetchBls({ key, fredKey: bindings.FRED_API_KEY?.trim() }),
     Promise.all(Object.entries(FRED_SERIES).map(async ([name, id]) => ({ name, id, ...await fetchFred(id) }))),
   ]);
   const bls = blsResult.data;
