@@ -1,6 +1,7 @@
 # P0-6A: fallback eligibility preparation (OFF)
 
-Base: `a832c18b8f3c5cf828c3f78c196aebf3fc68eacf`.
+Initial base: `a832c18b8f3c5cf828c3f78c196aebf3fc68eacf`.
+PPI confirmation base: `e14416e41fc7a5f588d8f809b28ebd59a1b2b246`.
 No production wiring, network requests, provider modifications or public contract changes.
 `evaluateFallbackEligibility` is an internal pure decision helper. It neither fetches
 nor computes scores, YoY or payroll deltas. It is not imported by a route.
@@ -14,15 +15,29 @@ YES means the existing project semantic mapping, not a new same-vintage equality
 | Metric / BLS → FRED | Economic meaning | Raw unit / kind | Frequency / adjustment | Formula input | Date convention / agency | semanticEquivalent |
 | --- | --- | --- | --- | --- | --- | --- |
 | CPI CUUR0000SA0 → CPIAUCNS | All urban consumers, all items CPI | Index 1982–84=100 / level | Monthly / NSA | Current and prior calendar YoY | BLS year+month / FRED observation month first day; BLS | YES |
-| PPI WPSFD4 → PPIFIS | Final Demand producer prices candidate | Index Nov 2009=100 / level, per existing candidate metadata | Monthly / SA candidate | Calendar YoY | Same month convention; BLS authority candidate | VERIFY_REQUIRED |
+| PPI WPSFD4 → PPIFIS | Final Demand producer prices | Index Nov 2009=100 / level | Monthly / SA | Calendar YoY | Same month convention; BLS | YES |
 | Unemployment LNS14000000 → UNRATE | Civilian unemployment rate | Percent / rate | Monthly / SA | Raw current and previous rate | Same month convention; BLS | YES |
 | Payroll CES0000000001 → PAYEMS | Total nonfarm employment | Thousands of Persons / level | Monthly / SA | Two monthly changes from three levels, existing adapter | Same month convention; BLS | YES |
 
-The P0-5B document explicitly does **not** establish an explicit FRED source-code
-mapping for PPI. Matching candidate labels, index base and adjustment, and successful
-shadow transformation are insufficient to prove identical observation series.
-PPI is therefore excluded from secondary eligibility until that evidence is supplied.
-Its existing primary data and shadow implementation remain untouched.
+P0-6A-PPI-MAPPING-CONFIRMATION supplies official BLS/FRED evidence in the user task:
+BLS WPSFD4 is Final demand; FRED PPIFIS is Producer Price Index by Commodity: Final
+Demand, sourced from U.S. Bureau of Labor Statistics. Both are monthly, seasonally
+adjusted, Index Nov 2009=100. The supplied observations also match:
+
+| Observation month | BLS WPSFD4 | FRED PPIFIS |
+| --- | --- | --- |
+| 2026-04 | 156.061 | 156.061 |
+| 2026-05 | 156.864 | 156.864 |
+| 2026-06 | 156.667 | 156.667 |
+| 2026-07 | 156.784 | 156.784 |
+| 2026-08 | 157.411 | 157.411 |
+
+These supplied metadata and multi-month observations supersede the earlier
+VERIFY_REQUIRED decision. They were not fetched again during this task.
+semanticEquivalent is YES; revisionSensitive and VINTAGE_SENSITIVE remain intact.
+This does not guarantee equality across future revisions or all historical vintages.
+PPI eligibility now enforces the same exact YoY-history checks as CPI; no formula
+is recalculated here. Existing primary data and shadow implementation are untouched.
 
 ## Input contract and triggers
 

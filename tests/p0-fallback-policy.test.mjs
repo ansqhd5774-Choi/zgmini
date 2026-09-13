@@ -32,9 +32,25 @@ test('only missing batch member switches; other three BLS results retained', () 
   const decisions=Object.keys(FALLBACK_MAPPINGS).map(metric=>run(metric==='unemployment'?failure('MISSING_SERIES'):primary(metric),secondary(metric),metric));
   assert.deepEqual(decisions.map(d=>d.decision),['USE_PRIMARY','USE_PRIMARY','USE_SECONDARY','USE_PRIMARY']);
 });
-test('PPI mapping not independently established: no fallback', () => {
-  assert.equal(FALLBACK_MAPPINGS.ppi.semanticEquivalent,'VERIFY_REQUIRED');
-  assert.equal(run(failure('TIMEOUT'),secondary('ppi'),'ppi').reason,'MAPPING_VERIFY_REQUIRED');
+test('PPI mapping confirmed: valid equivalent secondary eligible', () => {
+  assert.equal(FALLBACK_MAPPINGS.ppi.semanticEquivalent,'YES');
+  assert.equal(run(failure('TIMEOUT'),secondary('ppi'),'ppi').decision,'USE_SECONDARY');
+});
+test('PPI supplied official five-month observations and metadata match', () => {
+  // User-supplied official evidence; no live API retrieval in this test.
+  const bls = [['2026-04',156.061],['2026-05',156.864],['2026-06',156.667],['2026-07',156.784],['2026-08',157.411]];
+  const fred = [['2026-04',156.061],['2026-05',156.864],['2026-06',156.667],['2026-07',156.784],['2026-08',157.411]];
+  assert.deepEqual(bls, fred);
+  const m = FALLBACK_MAPPINGS.ppi;
+  assert.equal(m.sourceSeriesId,'WPSFD4'); assert.equal(m.transportSeriesId,'PPIFIS');
+  assert.equal(m.unit,'Index Nov 2009=100'); assert.equal(m.frequency,'Monthly');
+  assert.equal(m.seasonalAdjustment,'SA'); assert.equal(m.authority,'BLS');
+  assert.equal(m.revisionSensitive,true); assert.equal(m.mappingQualification,'VINTAGE_SENSITIVE');
+});
+test('PPI eligibility still requires exact YoY baselines and matching metadata', () => {
+  for (const patch of [{rawYearAgo:undefined},{rawPreviousYearAgo:undefined},{yearAgoObservedAt:'2025-07-01'},{rawYearAgo:0},{unit:'Index 1982=100'},{seasonalAdjustment:'NSA'},{semantic:'FAIL'}]) {
+    assert.equal(run(failure('TIMEOUT'),{...secondary('ppi'),...patch},'ppi').decision,'BLOCKED');
+  }
 });
 for (const [field, value] of [['semantic','FAIL'],['status','MISSING_OBSERVATION'],['unit','wrong'],['frequency','Daily'],['seasonalAdjustment','NSA'],['semanticUnit','level'],['transportMode','FRED_GRAPH_CSV'],['sourceSeriesId','WRONG'],['transportSeriesId','WRONG'],['currentValue',NaN],['previousValue',Infinity],['previousObservedAt','2026-06-01'],['observedAt','invalid'],['fetchedAt','invalid'],['providerUpdatedDataIsCurrent',false],['fixture',true],['example',true],['synthetic',true]]) test(`secondary ${field}=${String(value)} blocked`, () => {
   const r=run(failure('TIMEOUT'),{...secondary('unemployment'),[field]:value});
@@ -49,7 +65,7 @@ test('secondary stale/future rejected without selecting a newer provider automat
 for (const q of [{}, {...quality,dataOrigin:'FIXTURE'},{...quality,status:'STALE'},{...quality,requiredHistoryVerified:false},{...quality,observationPolicy:'FORWARD_FILL'}]) test('unverified provenance/history/policy blocked '+JSON.stringify(q), () => {
   assert.equal(run(failure('TIMEOUT'),secondary('unemployment'),'unemployment',q).decision,'BLOCKED');
 });
-for (const metric of ['cpi','unemployment','payroll']) test(`${metric}: accepted formula inputs identical, no conversion in decision`, () => {
+for (const metric of ['cpi','ppi','unemployment','payroll']) test(`${metric}: accepted formula inputs identical, no conversion in decision`, () => {
   const s=secondary(metric),r=run(failure('TIMEOUT'),s,metric);
   assert.equal(r.decision,'USE_SECONDARY');assert.equal(r.selected.currentValue,s.currentValue);assert.equal(r.selected.previousValue,s.previousValue);
   assert.equal(r.selected.sourceSeries,FALLBACK_MAPPINGS[metric].sourceSeriesId);
