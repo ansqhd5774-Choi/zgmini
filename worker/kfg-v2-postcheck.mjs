@@ -150,19 +150,23 @@ async function readD1Postcheck(db, {fromDate=null, toDate=null}={}) {
   return {checkpoint, dates, raw: {...raw, ...duplicates}, coverageRows, breadth, breadthHistory, historyCounts, marketRows};
 }
 
-export function createKfgV2PostcheckHandler({authenticate, env, reader=readD1Postcheck, componentReader} = {}) {
-  if (typeof authenticate !== 'function' || !env?.DB) throw Error('INVALID_POSTCHECK_CONFIGURATION');
+export function createKfgV2PostcheckHandler({authenticate, env, reader=readD1Postcheck, componentReader, publicAccess=false} = {}) {
+  if ((!publicAccess && typeof authenticate !== 'function') || !env?.DB) throw Error('INVALID_POSTCHECK_CONFIGURATION');
   return async function handle(request) {
     if (request.method !== 'GET') return json({temporary: TEMPORARY_KFG_V2_POSTCHECK_ONLY, error: 'METHOD_NOT_ALLOWED'}, 405);
-    const user = await authenticate(request);
-    if (!user?.userId || !normalizedEmail(user.email)) return json({temporary: TEMPORARY_KFG_V2_POSTCHECK_ONLY, error: 'AUTH_REQUIRED'}, 401);
-    const operatorEmail = normalizedEmail(env[POSTCHECK_OPERATOR_EMAIL_NAME]);
-    if (!operatorEmail || normalizedEmail(user.email) !== operatorEmail)
-      return json({temporary: TEMPORARY_KFG_V2_POSTCHECK_ONLY, error: 'OPERATOR_REQUIRED'}, 403);
+    if (!publicAccess) {
+      const user = await authenticate(request);
+      if (!user?.userId || !normalizedEmail(user.email)) return json({temporary: TEMPORARY_KFG_V2_POSTCHECK_ONLY, error: 'AUTH_REQUIRED'}, 401);
+      const operatorEmail = normalizedEmail(env[POSTCHECK_OPERATOR_EMAIL_NAME]);
+      if (!operatorEmail || normalizedEmail(user.email) !== operatorEmail)
+        return json({temporary: TEMPORARY_KFG_V2_POSTCHECK_ONLY, error: 'OPERATOR_REQUIRED'}, 403);
+    }
     try {
       const url = new URL(request.url);
       const fromDate = url.searchParams.get('from');
       const toDate = url.searchParams.get('to');
+      if (publicAccess && (!fromDate || !toDate))
+        return json({temporary: 'KFG_V2_RESEARCH_READ_ONLY', error:'WINDOW_REQUIRED'},400);
       if ((fromDate || toDate) && (!/^\d{8}$/.test(fromDate||'') || !/^\d{8}$/.test(toDate||'') || fromDate > toDate))
         return json({temporary: TEMPORARY_KFG_V2_POSTCHECK_ONLY, error:'INVALID_WINDOW'},400);
       if (fromDate && toDate && Number(toDate)-Number(fromDate)>20000)
@@ -178,7 +182,8 @@ export function createKfgV2PostcheckHandler({authenticate, env, reader=readD1Pos
         research.composite = {...research.composite, status: 'UNAVAILABLE', score: null,
           observationDate: null, previousObservationDate: null, changePoints: null};
       }
-      return json(summarizeKfgV2Postcheck({...persisted, research}));
+      const summary = summarizeKfgV2Postcheck({...persisted, research});
+      return json(publicAccess ? {...summary, temporary: 'KFG_V2_RESEARCH_READ_ONLY'} : summary);
     }
     catch { return json({temporary: TEMPORARY_KFG_V2_POSTCHECK_ONLY, error: 'READ_POSTCHECK_FAILED'}, 500); }
   };
