@@ -173,6 +173,11 @@ export function createKfgV2PostcheckHandler({authenticate, env, reader=readD1Pos
       const adapted = researchHistoriesFromPublicIndicators(componentIndicators);
       const research = calculateResearchFactors({marketRows: persisted.marketRows ?? [], breadth: persisted.breadthHistory ?? [],
         credit: adapted.credit, liquidation: adapted.liquidation});
+      const warmupReady = Object.values(research.readiness ?? {}).every(factor => factor?.ready === true);
+      if (!warmupReady && research.composite) {
+        research.composite = {...research.composite, status: 'UNAVAILABLE', score: null,
+          observationDate: null, previousObservationDate: null, changePoints: null};
+      }
       return json(summarizeKfgV2Postcheck({...persisted, research}));
     }
     catch { return json({temporary: TEMPORARY_KFG_V2_POSTCHECK_ONLY, error: 'READ_POSTCHECK_FAILED'}, 500); }
