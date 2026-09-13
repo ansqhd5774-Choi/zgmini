@@ -1,0 +1,11 @@
+# KFG V2-B1: resumable research runner, persistence blocked
+
+Existing D1 binding `DB` and Drizzle schema store user favorites only. No research market/factor/checkpoint persistence adapter, KV, Durable Object or R2 binding is configured. Phase2 research and KoreaMarketHistoryStore are memory-only. Classification: EXISTING_BUT_NOT_APPROPRIATE. No schema/resource/binding changes are made. No runtime route is connected. Deployment and 5+5 production canary are blocked pending an appropriate persistent store and protected invocation mechanism.
+
+Runner reuses fetchMarketDate and its standardization/Breadth. Fixed anchor 20260910; first candidate 20260909; walk backward in UTC. Weekends are skipped locally. Exact weekday zero-count observations advance the processed boundary but never the successful count. Provider/schema/storage errors stop without advancing the failed date. No retry. Upstream calls, including pagination, are capped at 10 per invocation and sequential. Pagination receives only the remaining budget. Five additional successful dates is the maximum chunk target; 64 calendar candidates also bound cached-history traversal.
+
+Date snapshot precedes factor save, and both precede the success checkpoint. A partial save is recoverable: a complete stored date is reused without provider fetch or duplicate date write; missing factor is repaired before checkpoint advancement. Corrupt stored dates and conflicting factors stop. A checkpoint write failure leaves the previous processed boundary. Store failures may prevent durable accounting of attempted requests; persistent transaction support is still required before runtime canary. The in-process store lock prevents concurrent runs only within one process, not across Worker isolates.
+
+Checkpoint counters are cumulative. rowsProcessed counts standardized stored rows (KOSPI/KOSDAQ), not excluded KONEX rows. latest/oldestProcessedDate bound processed weekdays including empty results. lastAttemptedDate/lastSuccessfulDate/lastFailureCode are internal. PAUSED means a chunk boundary, not completion of 620 observations. The long-term target is 620 successful trading observations; this task executes none live.
+
+Public V1, UI, existing Breadth formula and Stock V2 collector are unchanged. No current universe is imposed on historical rows. Momentum/Strength/Volatility are not calculated.
