@@ -54,7 +54,7 @@ test('duplicate and coverage checks remain summary-only', () => {
 
 test('unbounded read uses incremental latest window while audit remains explicit', async () => {
   const modes = [];
-  const reader = async (_db, options) => { modes.push(options); return {...fixture(), calculationMode: options.mode === 'latest' ? 'INCREMENTAL_LATEST_WINDOW' : 'BOUNDED_AUDIT_WINDOW', materializedTradingDates: options.mode === 'latest' ? 271 : 620, fullHistoryMaterialized: options.mode !== 'latest'}; };
+  const reader = async (_db, options) => { modes.push(options); return {...fixture(), calculationMode: options.mode === 'latest' ? 'INCREMENTAL_LATEST_WINDOW' : 'BOUNDED_AUDIT_WINDOW', materializedTradingDates: options.mode === 'latest' ? 311 : 620, fullHistoryMaterialized: options.mode !== 'latest'}; };
   const handler = createKfgV2PostcheckHandler({env, authenticate: async () => ({userId: 'u', email: operator}), reader});
   const latest = await handler(request('GET'));
   const latestBody = await latest.json();

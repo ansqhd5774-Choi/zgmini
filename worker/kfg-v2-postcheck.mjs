@@ -137,7 +137,7 @@ async function readD1Postcheck(db, {fromDate=null, toDate=null, mode='latest'}={
   )`).first();
   const coverageRows = (await db.prepare(`SELECT date, return_coverage AS returnCoverage,
     trading_value_coverage AS tradingValueCoverage, market_cap_coverage AS marketCapCoverage
-    FROM kfg_v2_market_dates WHERE status='COMPLETE'${incrementalLatest ? ' AND date IN (SELECT date FROM kfg_v2_market_dates WHERE status=\'COMPLETE\' ORDER BY date DESC LIMIT 271)' : bounds} ORDER BY date ASC`).bind(...args).all()).results;
+    FROM kfg_v2_market_dates WHERE status='COMPLETE'${incrementalLatest ? ' AND date IN (SELECT date FROM kfg_v2_market_dates WHERE status=\'COMPLETE\' ORDER BY date DESC LIMIT 311)' : bounds} ORDER BY date ASC`).bind(...args).all()).results;
   const breadth = await db.prepare(`SELECT
     (SELECT COUNT(*) FROM kfg_v2_factor_snapshots WHERE factor='Breadth') AS snapshotCount,
     (SELECT COUNT(DISTINCT date) FROM kfg_v2_factor_snapshots WHERE factor='Breadth') AS distinctDates,
@@ -147,12 +147,12 @@ async function readD1Postcheck(db, {fromDate=null, toDate=null, mode='latest'}={
     (SELECT COUNT(*) FROM kfg_v2_factor_snapshots WHERE factor='Breadth' AND (score IS NULL OR status != 'VALID')) AS invalidScoreCount,
     (SELECT COUNT(*) FROM kfg_v2_factor_snapshots WHERE factor='Breadth' AND (score < 0 OR score > 100)) AS scoreOutside0To100`).first();
   const breadthHistory = (await db.prepare(`SELECT date,score FROM kfg_v2_factor_snapshots
-    WHERE factor='Breadth'${incrementalLatest ? ' AND date IN (SELECT date FROM kfg_v2_market_dates WHERE status=\'COMPLETE\' ORDER BY date DESC LIMIT 271)' : bounds} ORDER BY date ASC`).bind(...args).all()).results;
+    WHERE factor='Breadth'${incrementalLatest ? ' AND date IN (SELECT date FROM kfg_v2_market_dates WHERE status=\'COMPLETE\' ORDER BY date DESC LIMIT 311)' : bounds} ORDER BY date ASC`).bind(...args).all()).results;
   const historyCounts = (await db.prepare(`SELECT security_id AS securityId, COUNT(DISTINCT date) AS historyCount
-    FROM kfg_v2_market_rows WHERE 1=1${incrementalLatest ? ' AND date IN (SELECT date FROM kfg_v2_market_dates WHERE status=\'COMPLETE\' ORDER BY date DESC LIMIT 271)' : bounds} GROUP BY security_id`).bind(...args).all()).results;
+    FROM kfg_v2_market_rows WHERE 1=1${incrementalLatest ? ' AND date IN (SELECT date FROM kfg_v2_market_dates WHERE status=\'COMPLETE\' ORDER BY date DESC LIMIT 311)' : bounds} GROUP BY security_id`).bind(...args).all()).results;
   const marketRows = (await db.prepare(`SELECT date,security_id AS securityId,short_code AS shortCode,market,
     close,return_pct AS returnPct,trading_value AS tradingValue,market_cap AS marketCap
-    FROM kfg_v2_market_rows WHERE 1=1${incrementalLatest ? ' AND date IN (SELECT date FROM kfg_v2_market_dates WHERE status=\'COMPLETE\' ORDER BY date DESC LIMIT 271)' : bounds} ORDER BY date ASC,security_id ASC`).bind(...args).all()).results;
+    FROM kfg_v2_market_rows WHERE 1=1${incrementalLatest ? ' AND date IN (SELECT date FROM kfg_v2_market_dates WHERE status=\'COMPLETE\' ORDER BY date DESC LIMIT 311)' : bounds} ORDER BY date ASC,security_id ASC`).bind(...args).all()).results;
   return {checkpoint, dates, raw: {...raw, ...duplicates}, coverageRows, breadth, breadthHistory, historyCounts, marketRows,
     calculationMode: incrementalLatest ? 'INCREMENTAL_LATEST_WINDOW' : 'BOUNDED_AUDIT_WINDOW',
     materializedTradingDates: incrementalLatest ? coverageRows.length : null,
