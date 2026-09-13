@@ -183,5 +183,7 @@ export function calculateResearchFactors({marketRows=[],breadth=[],momentum=[],s
   const histories = {breadth,momentum,strength,credit,liquidation,volatility};
   const readiness = researchReadiness({...histories,marketRows});
   return {researchOnly:true,productionEligible:false,methodologyVersion:RESEARCH_V2_VERSION,
+    historyMode:'RECONSTRUCTED_CURRENT_VINTAGE',pointInTimeVerified:false,
+    historicalVintageVerified:false,publicationLagStatus:'UNCONFIRMED',sourcePublishedAt:null,
     factors:histories,readiness,composite:buildResearchComposite(histories)};
 }

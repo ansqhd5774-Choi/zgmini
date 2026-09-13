@@ -34,6 +34,7 @@ test('operator success is read-only and summary is safe', async () => {
   assert.equal(body.finalStates.compositeReady, false);
   assert.equal(body.rawHistory.zeroRowDates, 1);
   assert.equal(body.factorReadiness.momentum.ready, false);
+  assert.equal(body.research.productionEligible, false);
   assert.equal(JSON.stringify(body).includes(operator), false);
   assert.equal(JSON.stringify(body).includes('securityId'), false);
 });
@@ -49,4 +50,21 @@ test('duplicate and coverage checks remain summary-only', () => {
   assert.equal(body.rawHistory.duplicateDateSecurityPairs, 2);
   assert.equal(body.breadth.missingDates, 1);
   assert.equal(body.coverage.return.minimum, 0);
+});
+
+test('research summary discloses current-vintage gate without enabling production', () => {
+  const body = summarizeKfgV2Postcheck({...fixture(), research: {
+    methodologyVersion: 'kr-research-v2-1.0.0',
+    historyMode: 'RECONSTRUCTED_CURRENT_VINTAGE',
+    pointInTimeVerified: false,
+    historicalVintageVerified: false,
+    publicationLagStatus: 'UNCONFIRMED',
+    sourcePublishedAt: null,
+    readiness: {momentum:{ready:false},strength:{ready:false},volatility:{ready:false}},
+    composite: {status: 'UNAVAILABLE', score: null},
+  }});
+  assert.equal(body.research.historyMode, 'RECONSTRUCTED_CURRENT_VINTAGE');
+  assert.equal(body.research.pointInTimeVerified, false);
+  assert.equal(body.research.historicalVintageVerified, false);
+  assert.equal(body.research.productionEligible, false);
 });

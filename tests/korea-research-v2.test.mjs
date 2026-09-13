@@ -62,6 +62,10 @@ test('readiness reports market history depth separately from emitted factor poin
 test('research factor bundle is research-only and keeps existing component histories',()=>{
   const result=calculateResearchFactors({marketRows:rows(20),breadth:[point('20240120',50)],credit:[point('20240120',50)],liquidation:[point('20240120',50)]});
   assert.equal(result.researchOnly,true); assert.equal(result.productionEligible,false);
+  assert.equal(result.historyMode,'RECONSTRUCTED_CURRENT_VINTAGE');
+  assert.equal(result.pointInTimeVerified,false);
+  assert.equal(result.historicalVintageVerified,false);
+  assert.equal(result.publicationLagStatus,'UNCONFIRMED');
   assert.equal(result.factors.credit[0].value,50); assert.equal(result.composite.status,'UNAVAILABLE');
 });
 test('existing credit and liquidation histories feed the six-factor composite by exact date',()=>{
