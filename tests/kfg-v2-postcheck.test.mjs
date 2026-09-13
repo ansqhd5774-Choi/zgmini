@@ -52,6 +52,22 @@ test('duplicate and coverage checks remain summary-only', () => {
   assert.equal(body.coverage.return.minimum, 0);
 });
 
+test('unbounded read uses incremental latest window while audit remains explicit', async () => {
+  const modes = [];
+  const reader = async (_db, options) => { modes.push(options); return {...fixture(), calculationMode: options.mode === 'latest' ? 'INCREMENTAL_LATEST_WINDOW' : 'BOUNDED_AUDIT_WINDOW', materializedTradingDates: options.mode === 'latest' ? 271 : 620, fullHistoryMaterialized: options.mode !== 'latest'}; };
+  const handler = createKfgV2PostcheckHandler({env, authenticate: async () => ({userId: 'u', email: operator}), reader});
+  const latest = await handler(request('GET'));
+  const latestBody = await latest.json();
+  assert.equal(latest.status, 200);
+  assert.equal(modes[0].mode, 'latest');
+  assert.equal(latestBody.calculation.mode, 'INCREMENTAL_LATEST_WINDOW');
+  assert.equal(latestBody.calculation.fullHistoryMaterialized, false);
+  const audit = await handler(new Request('https://zgmini.kr/api/internal/kfg-v2-postcheck?from=20260901&to=20260910', {method:'GET'}));
+  assert.equal(audit.status, 200);
+  assert.equal(modes[1].mode, 'audit');
+  assert.equal((await audit.json()).calculation.fullHistoryMaterialized, true);
+});
+
 test('research summary discloses current-vintage gate without enabling production', () => {
   const body = summarizeKfgV2Postcheck({...fixture(), research: {
     methodologyVersion: 'kr-research-v2-1.0.0',
