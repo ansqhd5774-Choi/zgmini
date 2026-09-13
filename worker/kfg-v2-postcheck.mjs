@@ -99,8 +99,15 @@ export function summarizeKfgV2Postcheck(input) {
     finalStates: {
       backfillComplete,
       factorHistoryReady,
-      compositeReady: false,
+      compositeReady: Boolean(input.research?.composite?.score != null && input.research?.composite?.status === 'READY'),
     },
+    research: input.research ? {
+      researchOnly: true,
+      productionEligible: false,
+      methodologyVersion: input.research.methodologyVersion,
+      factors: input.research.readiness,
+      composite: input.research.composite,
+    } : null,
   };
 }
 
@@ -131,12 +138,17 @@ async function readD1Postcheck(db) {
       ON f.factor='Breadth' AND f.date=m.date WHERE m.status='COMPLETE' AND f.date IS NULL) AS missingDates,
     (SELECT COUNT(*) FROM kfg_v2_factor_snapshots WHERE factor='Breadth' AND (score IS NULL OR status != 'VALID')) AS invalidScoreCount,
     (SELECT COUNT(*) FROM kfg_v2_factor_snapshots WHERE factor='Breadth' AND (score < 0 OR score > 100)) AS scoreOutside0To100`).first();
+  const breadthHistory = (await db.prepare(`SELECT date,score FROM kfg_v2_factor_snapshots
+    WHERE factor='Breadth' ORDER BY date ASC`).all()).results;
   const historyCounts = (await db.prepare(`SELECT security_id AS securityId, COUNT(DISTINCT date) AS historyCount
     FROM kfg_v2_market_rows GROUP BY security_id`).all()).results;
-  return {checkpoint, dates, raw: {...raw, ...duplicates}, coverageRows, breadth, historyCounts};
+  const marketRows = (await db.prepare(`SELECT date,security_id AS securityId,short_code AS shortCode,market,
+    close,return_pct AS returnPct,trading_value AS tradingValue,market_cap AS marketCap
+    FROM kfg_v2_market_rows ORDER BY date ASC,security_id ASC`).all()).results;
+  return {checkpoint, dates, raw: {...raw, ...duplicates}, coverageRows, breadth, breadthHistory, historyCounts, marketRows};
 }
 
-export function createKfgV2PostcheckHandler({authenticate, env, reader=readD1Postcheck} = {}) {
+export function createKfgV2PostcheckHandler({authenticate, env, reader=readD1Postcheck, componentReader} = {}) {
   if (typeof authenticate !== 'function' || !env?.DB) throw Error('INVALID_POSTCHECK_CONFIGURATION');
   return async function handle(request) {
     if (request.method !== 'GET') return json({temporary: TEMPORARY_KFG_V2_POSTCHECK_ONLY, error: 'METHOD_NOT_ALLOWED'}, 405);
@@ -145,7 +157,17 @@ export function createKfgV2PostcheckHandler({authenticate, env, reader=readD1Pos
     const operatorEmail = normalizedEmail(env[POSTCHECK_OPERATOR_EMAIL_NAME]);
     if (!operatorEmail || normalizedEmail(user.email) !== operatorEmail)
       return json({temporary: TEMPORARY_KFG_V2_POSTCHECK_ONLY, error: 'OPERATOR_REQUIRED'}, 403);
-    try { return json(summarizeKfgV2Postcheck(await reader(env.DB))); }
+    try {
+      const persisted = await reader(env.DB);
+      const components = componentReader ? await componentReader() : null;
+      const componentIndicators = components?.indicators ?? [];
+      const adapted = researchHistoriesFromPublicIndicators(componentIndicators);
+      const research = calculateResearchFactors({marketRows: persisted.marketRows ?? [], breadth: persisted.breadthHistory ?? [],
+        credit: adapted.credit, liquidation: adapted.liquidation});
+      return json(summarizeKfgV2Postcheck({...persisted, research}));
+    }
     catch { return json({temporary: TEMPORARY_KFG_V2_POSTCHECK_ONLY, error: 'READ_POSTCHECK_FAILED'}, 500); }
   };
 }
+import {runFscScoped} from './phase2-fsc-scoped.mjs';
+import {calculateResearchFactors, researchHistoriesFromPublicIndicators} from './korea-research-v2.mjs';
