@@ -217,9 +217,12 @@ export class D1KoreaMarketHistoryStore {
     const calcIndicators=persisted.length?persisted:componentIndicators;
     const targetDates=dates.slice(0,Math.max(1,Math.min(1,maxSnapshots)));
     const warmDates=(await this.#statement(`SELECT date FROM kfg_v2_market_dates WHERE status='COMPLETE' AND date<=? ORDER BY date DESC LIMIT ?`,[targetDates[0],targetDates.length+311]).all()).results.map(r=>r.date).sort();
-    const ph=warmDates.map(()=>'?').join(',');
-    const rows=(await this.#statement(`SELECT date,security_id AS securityId,short_code AS shortCode,market,close,return_pct AS returnPct,trading_value AS tradingValue,market_cap AS marketCap FROM kfg_v2_market_rows WHERE date IN (${ph}) ORDER BY date,security_id`,warmDates).all()).results;
-    const breadth=(await this.#statement(`SELECT date,score FROM kfg_v2_factor_snapshots WHERE factor='Breadth' AND date IN (${ph}) ORDER BY date`,warmDates).all()).results;
+    const rows=[], breadth=[];
+    for(let i=0;i<warmDates.length;i+=90){
+      const part=warmDates.slice(i,i+90), ph=part.map(()=>'?').join(',');
+      rows.push(...(await this.#statement(`SELECT date,security_id AS securityId,short_code AS shortCode,market,close,return_pct AS returnPct,trading_value AS tradingValue,market_cap AS marketCap FROM kfg_v2_market_rows WHERE date IN (${ph}) ORDER BY date,security_id`,part).all()).results);
+      breadth.push(...(await this.#statement(`SELECT date,score FROM kfg_v2_factor_snapshots WHERE factor='Breadth' AND date IN (${ph}) ORDER BY date`,part).all()).results);
+    }
     const research=calculateResearchFactors({marketRows:rows,breadth,componentIndicators:calcIndicators});
     for(const date of targetDates){
       const composite=research.composite.history.find(p=>p.date===date);
