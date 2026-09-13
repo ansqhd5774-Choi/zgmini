@@ -159,7 +159,7 @@ async function readD1Postcheck(db, {fromDate=null, toDate=null, mode='latest'}={
     fullHistoryMaterialized: !incrementalLatest};
 }
 
-export function createKfgV2PostcheckHandler({authenticate, env, reader=readD1Postcheck, componentReader, publicAccess=false} = {}) {
+export function createKfgV2PostcheckHandler({authenticate, env, reader=readD1Postcheck, snapshotReader, componentReader, publicAccess=false} = {}) {
   if ((!publicAccess && typeof authenticate !== 'function') || !env?.DB) throw Error('INVALID_POSTCHECK_CONFIGURATION');
   return async function handle(request) {
     if (request.method !== 'GET') return json({temporary: TEMPORARY_KFG_V2_POSTCHECK_ONLY, error: 'METHOD_NOT_ALLOWED'}, 405);
@@ -175,6 +175,15 @@ export function createKfgV2PostcheckHandler({authenticate, env, reader=readD1Pos
       const fromDate = url.searchParams.get('from');
       const toDate = url.searchParams.get('to');
       const mode = url.searchParams.get('mode') || ((!fromDate && !toDate) ? 'latest' : 'audit');
+      if (publicAccess && mode === 'latest' && typeof snapshotReader === 'function') {
+        const snapshot = await snapshotReader(env.DB);
+        return json({temporary:'KFG_V2_RESEARCH_READ_ONLY',readOnly:true,calculation:{mode:'PERSISTED_LATEST_SNAPSHOT',fullHistoryMaterialized:false},research:snapshot ? {
+          researchOnly:true,productionEligible:false,methodologyVersion:snapshot.methodologyVersion,historyMode:snapshot.historyMode,
+          pointInTimeVerified:snapshot.pointInTimeVerified,historicalVintageVerified:snapshot.historicalVintageVerified,
+          sourcePublishedAt:snapshot.sourcePublishedAt,sourceObservedAt:snapshot.sourceObservedAt,fetchedAt:snapshot.fetchedAt,
+          calculatedAt:snapshot.calculatedAt,composite:snapshot.composite,factors:snapshot.factors
+        } : null,error:snapshot?null:'SNAPSHOT_NOT_AVAILABLE'}, snapshot ? 200 : 503);
+      }
       if ((fromDate || toDate) && (!/^\d{8}$/.test(fromDate||'') || !/^\d{8}$/.test(toDate||'') || fromDate > toDate))
         return json({temporary: TEMPORARY_KFG_V2_POSTCHECK_ONLY, error:'INVALID_WINDOW'},400);
       if (fromDate && toDate && Number(toDate)-Number(fromDate)>20000)

@@ -8,7 +8,7 @@ const json=(body,status=200)=>Response.json(body,{status,headers:{'cache-control
 const safeRunId=value=>typeof value==='string'&&/^[A-Za-z0-9._:-]{1,128}$/.test(value)?value:null;
 const normalizedEmail=value=>typeof value==='string'?value.trim().toLowerCase():null;
 
-export function createKfgV2CanaryHandler({authenticate,env,storeFactory=(db)=>new D1KoreaMarketHistoryStore(db),runner=runKoreaMarketBackfill}={}) {
+export function createKfgV2CanaryHandler({authenticate,env,storeFactory=(db)=>new D1KoreaMarketHistoryStore(db),runner=runKoreaMarketBackfill,componentReader=async()=>[]}={}) {
   if(typeof authenticate!=='function'||!env?.DB) throw Error('INVALID_CANARY_CONFIGURATION');
   return async function handle(request) {
     if(request.method!=='POST') return json({temporary:TEMPORARY_KFG_V2_CANARY_ONLY,error:'METHOD_NOT_ALLOWED'},405);
@@ -29,7 +29,8 @@ export function createKfgV2CanaryHandler({authenticate,env,storeFactory=(db)=>ne
     }
     const store=storeFactory(env.DB);
     let result;
-    try { result=await runner({store,key:env.FSC_API_KEY,fetchImpl:globalThis.fetch,targetAdditionalDates:targetAdditional,requestCap,runId}); }
+    let componentIndicators=[]; try { const snapshot=await componentReader(); componentIndicators=snapshot?.indicators??[]; } catch { componentIndicators=[]; }
+    try { result=await runner({store,key:env.FSC_API_KEY,fetchImpl:globalThis.fetch,targetAdditionalDates:targetAdditional,requestCap,runId,componentIndicators}); }
     catch { return json({temporary:TEMPORARY_KFG_V2_CANARY_ONLY,runId,status:'ERROR',failureCode:'RUNNER_FAILURE',leaseReleased:false},500); }
     const checkpoint=result.checkpoint??{};
     return json({temporary:TEMPORARY_KFG_V2_CANARY_ONLY,runId,status:result.status,

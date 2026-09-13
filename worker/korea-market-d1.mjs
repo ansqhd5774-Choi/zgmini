@@ -1,5 +1,6 @@
 import {calculateBreadth, validMarketDate} from './korea-market-v2.mjs';
 import {PHASE3_POLICY} from './phase3-korea-stock-price.mjs';
+import {calculateResearchFactors, researchHistoriesFromPublicIndicators} from './korea-research-v2.mjs';
 
 export const RESEARCH_METHODOLOGY = 'KFG_RESEARCH_V2';
 export const D1_PARAMETER_LIMIT = 100;
@@ -164,6 +165,30 @@ export class D1KoreaMarketHistoryStore {
     return (await this.#statement(`SELECT date,security_id AS securityId,short_code AS shortCode,market,
       close,return_pct AS returnPct,trading_value AS tradingValue,market_cap AS marketCap
       FROM kfg_v2_market_rows ORDER BY date ASC,security_id ASC`).all()).results;
+  }
+  async saveResearchSnapshotForDate(date, componentIndicators = []) {
+    let dates;
+    try { dates=(await this.#statement(`SELECT date FROM kfg_v2_market_dates WHERE status='COMPLETE' ORDER BY date DESC LIMIT 312`).all()).results.map(r=>r.date).sort();
+      await this.#statement('SELECT date FROM kfg_v2_research_snapshots LIMIT 1').first();
+    } catch { return false; }
+    if(!dates.includes(date)) fail('SNAPSHOT_DATE_NOT_COMPLETE');
+    const placeholders=dates.map(()=>'?').join(',');
+    const rows=(await this.#statement(`SELECT date,security_id AS securityId,short_code AS shortCode,market,close,return_pct AS returnPct,trading_value AS tradingValue,market_cap AS marketCap FROM kfg_v2_market_rows WHERE date IN (${placeholders}) ORDER BY date,security_id`,dates).all()).results;
+    const breadth=(await this.#statement(`SELECT date,score FROM kfg_v2_factor_snapshots WHERE factor='Breadth' AND date IN (${placeholders}) ORDER BY date`,dates).all()).results;
+    const adapted=researchHistoriesFromPublicIndicators(componentIndicators);
+    const research=calculateResearchFactors({marketRows:rows,breadth,credit:adapted.credit,liquidation:adapted.liquidation});
+    const snapshotDate=research.composite?.observationDate??date;
+    if(await this.#statement('SELECT date FROM kfg_v2_research_snapshots WHERE date=?',[snapshotDate]).first()) return false;
+    const now=new Date().toISOString();
+    await this.#db.batch([this.#guard(),this.#statement(`INSERT INTO kfg_v2_research_snapshots
+      (date,methodology_version,factors_json,composite_json,history_mode,point_in_time_verified,historical_vintage_verified,source_published_at,source_observed_at,fetched_at,calculated_at,correction_fingerprint)
+      VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`,[snapshotDate,research.methodologyVersion,JSON.stringify(research.factors),JSON.stringify(research.composite),research.historyMode,research.pointInTimeVerified?1:0,research.historicalVintageVerified?1:0,research.sourcePublishedAt,research.composite?.observationDate??snapshotDate,now,now,null])]);
+    return true;
+  }
+  async getLatestResearchSnapshot() {
+    const row=await this.#statement('SELECT * FROM kfg_v2_research_snapshots ORDER BY date DESC LIMIT 1').first();
+    if(!row) return null;
+    return {date:row.date,methodologyVersion:row.methodology_version,factors:JSON.parse(row.factors_json),composite:JSON.parse(row.composite_json),historyMode:row.history_mode,pointInTimeVerified:Boolean(row.point_in_time_verified),historicalVintageVerified:Boolean(row.historical_vintage_verified),sourcePublishedAt:row.source_published_at,sourceObservedAt:row.source_observed_at,fetchedAt:row.fetched_at,calculatedAt:row.calculated_at,correctionFingerprint:row.correction_fingerprint};
   }
   async saveFactorSnapshot(date,factor) {
     // Breadth is committed with the date. Standalone overwrites/repairs are forbidden.

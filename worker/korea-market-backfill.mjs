@@ -22,7 +22,7 @@ const factorOf=s=>({factor:'Breadth',advanceRatio:s.breadth.advanceRatio,advance
  coverage:{return:s.returnCoverage,tradingValue:s.tradingValueCoverage,marketCap:s.marketCapCoverage}});
 
 /** Explicit injected transport only. No route, scheduling or implicit live fetch. */
-export async function runKoreaMarketBackfill({store,key,fetchImpl,targetAdditionalDates=5,requestCap=BACKFILL_POLICY.maxProviderRequests,runId,now=Date.now}={}){
+export async function runKoreaMarketBackfill({store,key,fetchImpl,targetAdditionalDates=5,requestCap=BACKFILL_POLICY.maxProviderRequests,runId,now=Date.now,componentIndicators=[]}={}){
  if(!store||typeof fetchImpl!=='function'||!Number.isSafeInteger(targetAdditionalDates)||targetAdditionalDates<1||targetAdditionalDates>5)throw Error('INVALID_RUN_CONFIGURATION');
  if(!Number.isSafeInteger(requestCap)||requestCap<1||requestCap>BACKFILL_POLICY.maxProviderRequests)throw Error('INVALID_RUN_CONFIGURATION');
  if(running.has(store))throw Error('RUN_ALREADY_ACTIVE');running.add(store);
@@ -51,7 +51,7 @@ export async function runKoreaMarketBackfill({store,key,fetchImpl,targetAddition
    if(store.atomicMarketDateSave){
     // D1 commits rows, quality, Breadth and progress together; never repeat/increment
     // the memory adapter's separate writes. Completed dates are not rewritten.
-    try{if(!existing)await store.saveMarketDate(snapshot);checkpoint=await store.getBackfillProgress();validateCheckpoint(checkpoint);}
+    try{if(!existing)await store.saveMarketDate(snapshot);if(kind==='VALID'&&store.saveResearchSnapshotForDate)await store.saveResearchSnapshotForDate(date,componentIndicators);checkpoint=await store.getBackfillProgress();validateCheckpoint(checkpoint);}
     catch{return await stop('ATOMIC_DATE_SAVE_FAILED');}
     if(kind==='VALID'){additional++;if(!existing)rowsStored+=snapshot.rows.length;}else noObservations++;
     date=previousMarketCandidate(date);continue;
