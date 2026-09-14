@@ -10,6 +10,7 @@ const ROW_KEYS = ['date','securityId','shortCode','market','close','returnPct','
 const STATUSES = ['IDLE','RUNNING','PAUSED','COMPLETE','ERROR'];
 const fail = code => { throw Error(code); };
 const integer = n => Number.isSafeInteger(n) && n >= 0;
+const utcDateKey = (now=Date.now()) => new Date(now).toISOString().slice(0,10).replaceAll('-','');
 const factorOf = s => ({factor:'Breadth', advanceRatio:s.breadth.advanceRatio,
   advanceValueShare:s.breadth.advanceValueShare, score:s.breadth.score, status:s.breadth.status,
   coverage:{return:s.returnCoverage,tradingValue:s.tradingValueCoverage,marketCap:s.marketCapCoverage}});
@@ -21,7 +22,7 @@ export function sumRowsWritten(results) {
 }
 
 function validateSnapshot(s) {
-  if (!s || !validMarketDate(s.requestedDate) || s.requestedDate > '20260910' || !s.complete ||
+  if (!s || !validMarketDate(s.requestedDate) || s.requestedDate > utcDateKey() || !s.complete ||
       !Array.isArray(s.rows) || !integer(s.totalCount) || s.rowsReceived !== s.totalCount ||
       !['SUCCESS','NO_TRADING_OBSERVATION'].includes(s.status)) fail('INVALID_SNAPSHOT');
   const seen = new Set();
