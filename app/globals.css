@@ -1265,6 +1265,8 @@ html,body{overflow-x:hidden}
 .cnn-period-button[aria-pressed=true]{border-color:var(--zg-gold);background:var(--zg-gold);color:#1b2530;font-weight:800}
 .cnn-period-button:focus-visible,.cnn-panel-note a:focus-visible,.zg-detail:focus-visible{outline:2px solid var(--zg-link,#6eb7ff);outline-offset:2px}
 .cnn-panel-note a,.zg-detail{touch-action:manipulation}
+.cnn-chart-empty span{max-width:34ch;line-height:1.35}
+@media(max-width:767px){.cnn-chart-empty{gap:5px;font-size:10px}.cnn-chart-empty span{max-width:24ch}}
 @media(max-width:767px){.cnn-period-toolbar{gap:3px;margin:4px 0}.cnn-period-button{height:24px;min-height:24px;padding:0 6px;font-size:9px}}
 @media(max-width:480px){
  :root{--zg-market-heading-h:66px;--zg-market-main-h:178px;--zg-market-footer-h:34px}
