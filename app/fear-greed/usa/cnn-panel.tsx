@@ -1,12 +1,13 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { ArrowRight, BarChart3, CircleAlert, Gauge, ShieldCheck } from "lucide-react";
+import { BarChart3, CircleAlert, Gauge } from "lucide-react";
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { marketPeriods as periods } from "../../market-card-shared";
 import { MarketPeriodControls } from "../../market-period-controls";
 import { MarketStateBadge } from "../../market-state-badge";
 import { MarketCardHeader } from "../../market-card-header";
+import { MarketCardFooter } from "../../market-card-footer";
 
 type HistoryPoint = { date?: string; timestamp?: string; score?: number; value?: number };
 type IndexPayload = {
@@ -73,6 +74,6 @@ export default function CnnPanel() {
         </div>
       </div>
     </div>
-    <div className="cnn-panel-note"><ShieldCheck size={17}/><span>원본 응답이 검증되지 않으면 이전값이나 임의값으로 대체하지 않습니다.</span><a href="/fear-greed/usa/">세부 지표 보기 <ArrowRight size={14}/></a></div>
+    <MarketCardFooter href="/fear-greed/usa/" label="미국 공포탐욕지수 세부 지표 보기">원본 응답이 검증되지 않으면 이전값이나 임의값으로 대체하지 않습니다.</MarketCardFooter>
   </section>;
 }
