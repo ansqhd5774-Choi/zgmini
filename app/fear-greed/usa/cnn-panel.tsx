@@ -5,6 +5,7 @@ import { ArrowRight, BarChart3, CircleAlert, Gauge, ShieldCheck } from "lucide-r
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { marketPeriods as periods } from "../../market-card-shared";
 import { MarketPeriodControls } from "../../market-period-controls";
+import { MarketStateBadge } from "../../market-state-badge";
 
 type HistoryPoint = { date?: string; timestamp?: string; score?: number; value?: number };
 type IndexPayload = {
@@ -61,7 +62,7 @@ export default function CnnPanel() {
         <img src="/flags/us.svg" alt="" aria-hidden="true" />
         <div><p className="cnn-eyebrow">CNN FEAR &amp; GREED INDEX</p><h2 id="cnn-panel-title">미국 시장</h2><p>S&amp;P 500 · NASDAQ</p></div>
       </div>
-      <div className="cnn-source" aria-live="polite"><span>데이터 기준일</span><strong>{dateLabel(payload?.observedAt ?? payload?.updatedAt)}</strong><small role="status">{loading ? "확인 중" : status}</small></div>
+      <MarketStateBadge date={dateLabel(payload?.observedAt ?? payload?.updatedAt)} label="데이터 기준일" source={loading ? "확인 중" : status}/>
     </div>
     <div className="cnn-panel-main">
       <div className={`cnn-score-orb is-${currentTone}`}>
