@@ -1204,6 +1204,9 @@ html,body{overflow-x:hidden}
 .zg-component .zg-detail{margin-top:auto}
 .zg-scenario-empty{min-height:104px}
 @media(max-width:767px){
+ .zg-country-panel-grid{display:grid!important;grid-template-columns:1fr!important;gap:8px!important;overflow:visible!important;padding:0!important;scroll-snap-type:none!important}
+ .zg-country-panel-grid>.cnn-reference-panel,.zg-country-panel-grid>.zg-country-grid{width:100%!important;flex:none!important;scroll-snap-align:none!important}
+ .zg-country-panel-grid>.zg-country-grid{display:contents!important}
   .zg-header-inner{min-height:52px;padding:5px 0 0;gap:4px}
   .zg-header-inner>a{padding:2px 4px}
   .zg-header-inner>a div img{width:112px}
