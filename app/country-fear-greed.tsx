@@ -22,11 +22,7 @@ const ratingLabels: Record<string, string> = {
 };
 
 const countries = [
-  { name: "미국", code: "us", api: "fear-greed", label: "CNN Fear & Greed Index" },
   { name: "한국", code: "kr", api: "kospi-fear-greed", label: "ZGmini 한국 2요소 베타" },
-  { name: "일본", code: "jp", api: "nikkei-fear-greed", label: "Nikkei Fear & Greed · 4요소 모델" },
-  { name: "중국", code: "cn", api: null, label: "검증된 데이터 미연결" },
-  { name: "유럽", code: "eu", api: null, label: "검증된 데이터 미연결" },
 ];
 
 export default function CountryFearGreed() {
@@ -77,7 +73,7 @@ export default function CountryFearGreed() {
       </div>
       <CnnPanel />
       <div className="zg-country-grid">
-        {countries.filter((country) => country.code === "us" || country.code === "kr" || Boolean(values[country.code]) || (loading && Boolean(country.api))).map((country) => {
+        {countries.filter((country) => country.code === "kr" || Boolean(values[country.code]) || (loading && Boolean(country.api))).map((country) => {
           if (country.code === "kr") return <KoreanCountryCard key="kr" />;
           const value = values[country.code];
           const rating = value

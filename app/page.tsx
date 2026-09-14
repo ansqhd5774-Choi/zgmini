@@ -1,7 +1,6 @@
 "use client";
 import {CompositeMarketSection,ScenarioSection,StrengthPanel} from "./dashboard-ui";
 
-import KoreaFunds from "./korea-funds";
 
 import { useEffect, useMemo, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from "react";
 import {
@@ -935,7 +934,6 @@ export default function Home() {
           {/* Full document navigation resets the dashboard view. */}
           {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
           <a href="/" aria-label="ZGmini 대시보드로 이동" className="flex min-w-0 items-center gap-3 rounded-xl focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white">
-            <img src="/zgmini-logo.png" alt="" width={40} height={40} className="size-10 shrink-0 rounded-xl object-contain mix-blend-lighten" />
             <div className="min-w-0"><img src="/zgmini-name.png" alt="ZGmini" width={1920} height={540} className="h-auto w-36 max-w-full rounded mix-blend-lighten sm:w-44" /></div>
           </a>
           <nav aria-label="주 메뉴"><button aria-current={view==='dashboard'?'page':undefined} onClick={()=>setView('dashboard')}>대시보드</button><button aria-current={view==='countries'?'page':undefined} onClick={()=>setView('countries')}>국가비교</button><button aria-current={view==='strength'?'page':undefined} onClick={()=>setView('strength')}>섹터·테마</button><button aria-current={view==='scenarios'?'page':undefined} onClick={()=>setView('scenarios')}>시나리오</button><button aria-current={view==='data'?'page':undefined} onClick={()=>setView('data')}>데이터센터</button></nav>
@@ -981,10 +979,10 @@ export default function Home() {
       </header>
 
       <div className="zg-container">
-        <div className="zg-toolbar"><PeriodSelector period={period} onChange={setPeriod}/>
+        <div className="zg-toolbar">
           <div className="header-update"><Clock3 className="size-4"/><span>최종 업데이트</span><strong>{formatUpdatedAt(updatedAt)}</strong><span className={`api-status api-status-${marketDataLoading ? "loading" : marketData?.status ?? "fallback"}`} aria-label={marketDataLoading ? "API 연결 중" : marketData?.status === "live" ? "실시간 경제지표 API 연결됨" : "경제지표 API 부분 연결 또는 예시 데이터"}>{marketDataLoading ? "API 연결 중" : marketData?.status === "live" ? "경제지표 API 연결됨" : "경제지표 API 부분 연결"}</span></div>
         </div>
-        <div className="zg-data-notice" role="status"><Info size={16}/><span>{marketDataLoading?'경제지표를 불러오고 있습니다.':marketData?.status==='live'?'공식 자료와 ZGmini 자체 계산값을 표시합니다.':marketDataError?'경제지표 연결 지연 · 예시 자료 포함. 실제 투자 판단에 사용하지 마세요.':'일부 경제점수에 예시 자료가 포함됩니다.'}</span></div>
+        <div className="zg-data-notice zg-data-notice-compact" role="status"><Info size={16}/><span>{marketDataLoading?'경제지표를 불러오고 있습니다.':marketData?.status==='live'?'공식 자료와 ZGmini 자체 계산값을 표시합니다.':marketDataError?'경제지표 연결 지연 · 일부 값은 보류됩니다.':'일부 경제점수는 예시 상태입니다.'}</span></div>
         {(view==='dashboard'||view==='countries')&&<CountryFearGreed/>}
         {view==='dashboard'&&<>
           <CompositeMarketSection items={displaySummaryItems} points={periodPoints[period]} demo={marketData?.status!=='live'} loading={marketDataLoading} onDetail={label=>{setCategory(label==='유가'?'전체':label as typeof category);setView('data');}}/>
@@ -992,7 +990,6 @@ export default function Home() {
           <div id="strength" className="zg-strength-grid">{(['sector','theme'] as const).map(kind=><StrengthPanel key={kind} title={kind==='sector'?'섹터 강도':'테마 강도'} items={kind==='sector'?sectorSentiment:themeSentiment} points={periodPoints[period]} onAll={()=>setView('strength')} onFavorite={user?name=>{const item=(kind==='sector'?sectorSentiment:themeSentiment).find(x=>x.name===name);if(item)void toggleFavorite(kind,item);}:undefined} isFavorite={name=>favorites.has(sentimentKey(kind,name))}/>)}</div>
         </>}
         {view==='scenarios'&&<ScenarioSection/>}
-        {(view==='dashboard'||view==='data')&&<KoreaFunds/>}
         {favoriteItems.length > 0 && (
           <section className="mt-6" aria-labelledby="favorite-title">
             <div className="mb-3 flex items-center gap-2"><Star className="size-5 fill-amber-300 text-amber-300"/><h2 id="favorite-title" className="text-xl font-extrabold tracking-[-0.03em] text-white">내 즐겨찾기</h2></div>
