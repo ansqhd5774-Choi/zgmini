@@ -22,7 +22,6 @@ type IndexPayload = {
 
 const label = (rating = "") => rating || "확인 불가";
 const dateLabel = (value?: string) => value ? new Intl.DateTimeFormat("ko-KR", { dateStyle: "medium", timeZone: "Asia/Seoul" }).format(new Date(value)) : "—";
-const tone = (score: number | null) => score === null ? "neutral" : score < 45 ? "fear" : score > 55 ? "greed" : "neutral";
 
 function normalizeHistory(history: HistoryPoint[] = []) {
   return history.flatMap((point) => {
