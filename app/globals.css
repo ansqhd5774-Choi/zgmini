@@ -1204,6 +1204,7 @@ html,body{overflow-x:hidden}
 .zg-component .zg-detail{margin-top:auto}
 .zg-scenario-empty{min-height:104px}
 @media(max-width:767px){
+ :root{--zg-market-heading-h:70px;--zg-market-main-h:188px;--zg-market-footer-h:34px}
  .zg-country-panel-grid{display:grid!important;grid-template-columns:1fr!important;gap:8px!important;overflow:visible!important;padding:0!important;scroll-snap-type:none!important}
  .zg-country-panel-grid>.cnn-reference-panel,.zg-country-panel-grid>.zg-country-grid{width:100%!important;flex:none!important;scroll-snap-align:none!important}
  .zg-country-panel-grid>.zg-country-grid{display:contents!important}
@@ -1264,6 +1265,7 @@ html,body{overflow-x:hidden}
 .cnn-period-button:focus-visible,.cnn-panel-note a:focus-visible,.zg-detail:focus-visible{outline:2px solid var(--zg-link,#6eb7ff);outline-offset:2px}
 @media(max-width:767px){.cnn-period-toolbar{gap:3px;margin:4px 0}.cnn-period-button{height:24px;min-height:24px;padding:0 6px;font-size:9px}}
 @media(max-width:480px){
+ :root{--zg-market-heading-h:66px;--zg-market-main-h:178px;--zg-market-footer-h:34px}
   .zg-country-panel-grid .cnn-market-title h2{font-size:20px}
   .zg-country-panel-grid .cnn-score-orb{min-height:84px;height:84px}
   .zg-country-panel-grid .cnn-chart{height:84px}
@@ -1321,9 +1323,9 @@ html,body{overflow-x:hidden}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;animation-duration:.001ms!important;transition-duration:.001ms!important}}
 /* Reference-proportioned mobile market cards: compact summary height and single-line controls. */
 @media(max-width:767px){
- .zg-country-panel-grid>.cnn-reference-panel,.zg-country-panel-grid>.zg-country-grid .korea-reference-panel{height:292px!important;min-height:292px!important}
- .zg-country-panel-grid .cnn-panel-heading{height:70px!important;min-height:70px!important;padding:8px 10px 4px!important}
- .zg-country-panel-grid .cnn-panel-main,.zg-country-panel-grid .korea-reference-panel .cnn-panel-main{height:188px!important;min-height:188px!important;flex-basis:188px!important;grid-template-columns:92px minmax(0,1fr)!important;gap:8px!important;padding:0 10px 6px!important}
+ .zg-country-panel-grid>.cnn-reference-panel,.zg-country-panel-grid>.zg-country-grid .korea-reference-panel{height:var(--zg-market-heading-h)!important;min-height:var(--zg-market-heading-h)!important}
+ .zg-country-panel-grid .cnn-panel-heading{height:var(--zg-market-heading-h)!important;min-height:var(--zg-market-heading-h)!important;padding:8px 10px 4px!important}
+ .zg-country-panel-grid .cnn-panel-main,.zg-country-panel-grid .korea-reference-panel .cnn-panel-main{height:var(--zg-market-main-h)!important;min-height:var(--zg-market-main-h)!important;flex-basis:var(--zg-market-main-h)!important;grid-template-columns:92px minmax(0,1fr)!important;gap:8px!important;padding:0 10px 6px!important}
  .zg-country-panel-grid .cnn-score-orb{width:88px!important;height:88px!important;min-height:88px!important}
  .zg-country-panel-grid .cnn-score-orb strong{font-size:30px!important}
  .zg-country-panel-grid .cnn-score-orb span{font-size:12px!important}
@@ -1340,7 +1342,7 @@ html,body{overflow-x:hidden}
 @media(max-width:480px){
  .zg-country-panel-grid>.cnn-reference-panel,.zg-country-panel-grid>.zg-country-grid .korea-reference-panel{height:278px!important;min-height:278px!important}
  .zg-country-panel-grid .cnn-panel-heading{height:66px!important;min-height:66px!important}
- .zg-country-panel-grid .cnn-panel-main,.zg-country-panel-grid .korea-reference-panel .cnn-panel-main{height:178px!important;min-height:178px!important;flex-basis:178px!important;grid-template-columns:86px minmax(0,1fr)!important}
+ .zg-country-panel-grid .cnn-panel-main,.zg-country-panel-grid .korea-reference-panel .cnn-panel-main{height:var(--zg-market-main-h)!important;min-height:var(--zg-market-main-h)!important;flex-basis:var(--zg-market-main-h)!important;grid-template-columns:86px minmax(0,1fr)!important}
  .zg-country-panel-grid .cnn-score-orb{width:82px!important;height:82px!important;min-height:82px!important}
  .zg-country-panel-grid .cnn-chart{height:82px!important}
  .zg-country-panel-grid .korea-reference-panel .cnn-trend-block>div[style]{height:86px!important}
