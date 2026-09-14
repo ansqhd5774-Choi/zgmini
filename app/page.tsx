@@ -936,7 +936,7 @@ export default function Home() {
           <a href="/" aria-label="ZGmini 대시보드로 이동" className="flex min-w-0 items-center gap-3 rounded-xl focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white">
             <div className="min-w-0"><img src="/zgmini-name.png" alt="ZGmini" width={1920} height={540} className="h-auto w-36 max-w-full rounded mix-blend-lighten sm:w-44" /></div>
           </a>
-          <nav aria-label="주 메뉴"><button aria-current={view==='dashboard'?'page':undefined} onClick={()=>setView('dashboard')}>대시보드</button><button aria-current={view==='countries'?'page':undefined} onClick={()=>setView('countries')}>국가비교</button><button aria-current={view==='strength'?'page':undefined} onClick={()=>setView('strength')}>섹터·테마</button><button aria-current={view==='scenarios'?'page':undefined} onClick={()=>setView('scenarios')}>시나리오</button><button aria-current={view==='data'?'page':undefined} onClick={()=>setView('data')}>데이터센터</button></nav>
+          <nav aria-label="주 메뉴"><button aria-current={view==='dashboard'?'page':undefined} onClick={()=>setView('dashboard')}>대시보드</button><button aria-current={view==='strength'?'page':undefined} onClick={()=>setView('strength')}>섹터·테마</button><button aria-current={view==='scenarios'?'page':undefined} onClick={()=>setView('scenarios')}>아웃브레이크</button></nav>
           <div className="flex items-center justify-end gap-2">
             {sessionLoading ? (
               <span className="hidden text-xs text-slate-400 sm:inline">계정 확인 중</span>

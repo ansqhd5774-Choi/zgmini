@@ -1,5 +1,5 @@
 "use client";
-import {DashboardTip,ScoreScale} from './dashboard-ui';
+import {Gauge,ShieldCheck,ArrowUpRight} from 'lucide-react';
 import {useState} from 'react';
 import {LineChart,Line,ResponsiveContainer,Tooltip,XAxis,YAxis,CartesianGrid} from 'recharts';
 import {useKoreaFunds,type Composite} from './korea-funds-store';
@@ -38,12 +38,9 @@ export function KoreanCountryCard(){
  const {composite:c,loading}=useKoreaFunds();
  const color=colors[c?.stageCode??'']??'#64748b';
  const valid=typeof c?.displayScore==='number';
- return <article className="zg-country-card is-clickable" data-testid="kr-composite" aria-busy={loading}>
-  <img className="zg-flag" src="/flags/kr.svg" alt="" aria-hidden="true"/>
-  <div className="zg-card-heading"><h3>한국</h3><DashboardTip label="한국 지수 안내">신용융자 50% + 반대매매 압력 역점수 50%. 베타 운영 비중입니다. {c?.status==='STALE'?'갱신 대기: 최근 공통 관측일의 과거 유효값입니다.':c?.status==='WARMUP'?'계산 준비기간입니다.':!valid?'유효한 공통 자료가 없습니다.':''} 이전 관측 대비 {c?.changePoints!=null?`${c.changePoints>=0?'+':''}${c.changePoints.toFixed(1)}점 (${formatDate(c.previousObservationDate)})`:'비교 자료 없음'}. 한국 주식시장 전체 심리를 대표하지 않습니다.</DashboardTip></div>
-  <p>자체 산출 · 베타 {c?.changePoints!=null&&<span title={`이전 관측 대비 (${formatDate(c.previousObservationDate)})`}>· {c.changePoints>=0?"+":""}{c.changePoints.toFixed(1)}점</span>}</p>
-  <div className="zg-country-number"><strong>{valid?c!.displayScore!.toFixed(1):'—'}</strong><span style={{color}}>{valid?c!.stageLabel:loading?'확인 중':c?.status==='WARMUP'?'준비기간':'미제공'}</span><div style={{flex:1,minWidth:40,maxWidth:90}}>{c&&<CompositeChart item={c} mini height={36}/>}</div></div>
-  <ScoreScale score={c?.displayScore??null} label="한국 공포·탐욕" color={color}/>
-  <div className="zg-country-meta"><small>기준 {formatDate(c?.observationDate??null)}{c?.status==='STALE'?' · 갱신 대기':''}</small><a className="zg-detail" href="/fear-greed/korea/" aria-label="한국 공포탐욕지수 상세보기">상세 보기 →</a></div>
+ return <article className="cnn-reference-panel korea-reference-panel" data-testid="kr-composite" aria-busy={loading}>
+  <div className="cnn-panel-heading"><div className="cnn-market-title"><img src="/flags/kr.svg" alt="" aria-hidden="true"/><div><p className="cnn-eyebrow">ZGMINI KOREA SENTIMENT</p><h2>한국 시장</h2><p>KOSPI · 국내 투자심리</p></div></div><div className="cnn-source"><span>관측 기준일</span><strong>{formatDate(c?.observationDate??null)}</strong><small>{valid?'검증된 지수':'자체 산출 · 베타'}</small></div></div>
+  <div className="cnn-panel-main"><div className={`cnn-score-orb ${valid?`is-${(c?.stageCode??'').toLowerCase().replace('extreme_','')}`:''}`}><Gauge size={22}/><strong>{valid?c!.displayScore!.toFixed(1):'—'}</strong><span>{valid?c!.stageLabel:loading?'확인 중':'자료 준비 중'}</span><small>한국 공포 ↔ 탐욕</small></div><div className="cnn-trend-block">{c?<CompositeChart item={c} mini={false} height={190}/>:<div className="cnn-chart is-empty"><div className="cnn-chart-empty"><ShieldCheck size={18}/><span>공통 관측 자료를 확인 중입니다.</span></div></div>}</div></div>
+  <div className="cnn-panel-note"><ShieldCheck size={16}/><span>신용융자와 반대매매 압력을 결합한 ZGmini 내부 산출값입니다.</span><a href="/fear-greed/korea/" aria-label="한국 공포탐욕지수 상세보기">상세 보기 <ArrowUpRight size={14}/></a></div>
  </article>;
 }
