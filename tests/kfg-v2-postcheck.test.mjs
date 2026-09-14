@@ -84,3 +84,16 @@ test('research summary discloses current-vintage gate without enabling productio
   assert.equal(body.research.historicalVintageVerified, false);
   assert.equal(body.research.productionEligible, false);
 });
+
+test('current publication eligibility is separate from historical backtest eligibility', () => {
+  const body = summarizeKfgV2Postcheck({...fixture(), research: {
+    methodologyVersion: 'kr-research-v2-1.0.0',
+    historyMode: 'RECONSTRUCTED_CURRENT_VINTAGE',
+    pointInTimeVerified: false,
+    historicalVintageVerified: false,
+    composite: {status: 'READY', score: 55, observationDate: '20260910'},
+  }});
+  assert.equal(body.research.currentProductionEligible, true);
+  assert.equal(body.research.historicalBacktestEligible, false);
+  assert.equal(body.research.productionEligible, false);
+});

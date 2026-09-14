@@ -5,7 +5,8 @@ import { D1KoreaMarketHistoryStore } from '../../../worker/korea-market-d1.mjs';
 
 // Public read-only Research V2 summary. Unbounded reads use the incremental
 // latest warm-up window; explicit from/to remains available for bounded audit.
-// productionEligible remains false and no provider or D1 write path is reachable.
+// `productionEligible` is retained as a legacy research-only marker; current
+// publication eligibility is reported separately as `currentProductionEligible`.
 const handler = (request: Request) => createKfgV2PostcheckHandler({
   env,
   publicAccess: true,
