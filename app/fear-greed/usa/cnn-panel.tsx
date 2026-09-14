@@ -61,7 +61,7 @@ export default function CnnPanel() {
   const status = payload?.status === "verified" && score !== null ? "검증된 CNN 원본" : "원본 확인 필요";
   const currentTone = tone(score);
 
-  return <section className="cnn-reference-panel" aria-labelledby="cnn-panel-title" data-testid="cnn-reference-panel">
+  return <section className="cnn-reference-panel" aria-labelledby="cnn-panel-title" data-testid="cnn-reference-panel" data-market-state={loading?'loading':score===null?'unavailable':history.length>1?'ready':'empty'} aria-busy={loading}>
     <div className="cnn-panel-heading">
       <div className="cnn-market-title">
         <img src="/flags/us.svg" alt="" aria-hidden="true" />
