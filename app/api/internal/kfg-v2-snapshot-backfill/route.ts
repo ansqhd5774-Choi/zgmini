@@ -1,5 +1,5 @@
 import { env } from 'cloudflare:workers';
-import { getChatGPTUser } from '../../../../chatgpt-auth';
+import { getChatGPTUser } from '../../../chatgpt-auth';
 import { publicSnapshot } from '../../../../worker/korea-funds.mjs';
 import { D1KoreaMarketHistoryStore } from '../../../../worker/korea-market-d1.mjs';
 
@@ -8,10 +8,10 @@ const safe=(body:any,status=200)=>Response.json({temporary:'TEMPORARY_KFG_V2_SNA
 const norm=(v:any)=>typeof v==='string'?v.trim().toLowerCase():null;
 export async function POST(request:Request){
   if(request.method!=='POST') return safe({error:'METHOD_NOT_ALLOWED'},405);
-  const user=await getChatGPTUser(request);
+  const user=await getChatGPTUser();
   if(!user?.userId||!norm(user.email)) return safe({error:'AUTH_REQUIRED'},401);
   if(!norm((env as any)[OPERATOR])||norm(user.email)!==norm((env as any)[OPERATOR])) return safe({error:'OPERATOR_REQUIRED'},403);
-  let years=1; try { const p=await request.json(); if(p?.years!==undefined) years=p.years; } catch {}
+  let years=1; try { const p:any=await request.json(); if(p?.years!==undefined) years=p.years; } catch {}
   if(years!==1) return safe({error:'INVALID_RANGE'},400);
   const store=new D1KoreaMarketHistoryStore((env as any).DB);
   const runId=crypto.randomUUID();

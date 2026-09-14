@@ -17,7 +17,7 @@ export async function POST(request:Request){
     const components=await store.getPersistedComponentHistory();
     if(!components.some((x:any)=>x.id==='LEV_BLEND20_60')||!components.some((x:any)=>x.id==='L3_PRESSURE_P252'))
       return json({status:'NO_OP',reason:'COMPONENT_HISTORY_NOT_READY',requestCount:0},200);
-    const result=await runKoreaMarketDaily({store,key:(env as any).FSC_API_KEY,fetchImpl:globalThis.fetch,runId:crypto.randomUUID(),componentIndicators:components,requestCap:1});
+    const result:any=await (runKoreaMarketDaily as any)({store,key:(env as any).FSC_API_KEY,fetchImpl:globalThis.fetch,runId:crypto.randomUUID(),componentIndicators:components as any,requestCap:1});
     return json(result, result.status==='FAILED'?500:200);
   } catch { return json({status:'FAILED',reason:'DAILY_UPDATE_FAILED'},500); }
 }
