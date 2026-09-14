@@ -183,6 +183,7 @@ export function createKfgV2PostcheckHandler({authenticate, env, reader=readD1Pos
           researchOnly:true,productionEligible:false,currentProductionEligible:snapshot.currentProductionEligible===true, historicalBacktestEligible:snapshot.historicalBacktestEligible===true,
           methodologyVersion:snapshot.methodologyVersion,historyMode:snapshot.historyMode,
           pointInTimeVerified:snapshot.pointInTimeVerified,historicalVintageVerified:snapshot.historicalVintageVerified,
+          freshness:snapshot.freshness,
           sourcePublishedAt:snapshot.sourcePublishedAt,sourceObservedAt:snapshot.sourceObservedAt,fetchedAt:snapshot.fetchedAt,
           calculatedAt:snapshot.calculatedAt,composite:snapshot.composite,factors:snapshot.factors
         } : null,error:snapshot?null:'SNAPSHOT_NOT_AVAILABLE'}, snapshot ? 200 : 503);

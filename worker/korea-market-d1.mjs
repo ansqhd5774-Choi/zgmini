@@ -240,8 +240,10 @@ export class D1KoreaMarketHistoryStore {
   async getLatestResearchSnapshot() {
     const row=await this.#statement('SELECT * FROM kfg_v2_research_snapshots ORDER BY date DESC LIMIT 1').first();
     if(!row) return null;
+    const latestStored=(await this.#statement("SELECT MAX(date) AS date FROM kfg_v2_market_dates WHERE status='COMPLETE'").first())?.date??null;
     const composite=JSON.parse(row.composite_json);
-    return {date:row.date,methodologyVersion:row.methodology_version,factors:JSON.parse(row.factors_json),composite,historyMode:row.history_mode,pointInTimeVerified:Boolean(row.point_in_time_verified),historicalVintageVerified:Boolean(row.historical_vintage_verified),currentProductionEligible:composite?.status==='READY' && composite?.observationDate===row.date,historicalBacktestEligible:Boolean(row.historical_vintage_verified),sourcePublishedAt:row.source_published_at,sourceObservedAt:row.source_observed_at,fetchedAt:row.fetched_at,calculatedAt:row.calculated_at,correctionFingerprint:row.correction_fingerprint};
+    const freshnessStatus=latestStored&&latestStored>row.date?'UPDATE_PENDING':'CURRENT';
+    return {date:row.date,methodologyVersion:row.methodology_version,factors:JSON.parse(row.factors_json),composite,historyMode:row.history_mode,pointInTimeVerified:Boolean(row.point_in_time_verified),historicalVintageVerified:Boolean(row.historical_vintage_verified),currentProductionEligible:composite?.status==='READY' && composite?.observationDate===row.date,historicalBacktestEligible:Boolean(row.historical_vintage_verified),freshness:{status:freshnessStatus,snapshotObservationDate:row.date,latestStoredObservationDate:latestStored},sourcePublishedAt:row.source_published_at,sourceObservedAt:row.source_observed_at,fetchedAt:row.fetched_at,calculatedAt:row.calculated_at,correctionFingerprint:row.correction_fingerprint};
   }
   async saveFactorSnapshot(date,factor) {
     // Breadth is committed with the date. Standalone overwrites/repairs are forbidden.
