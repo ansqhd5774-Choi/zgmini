@@ -104,6 +104,8 @@ export function summarizeKfgV2Postcheck(input) {
     research: input.research ? {
       researchOnly: true,
       productionEligible: false,
+      currentProductionEligible: Boolean(input.research.composite?.status === 'READY' && input.research.composite?.observationDate),
+      historicalBacktestEligible: Boolean(input.research.historicalVintageVerified === true),
       methodologyVersion: input.research.methodologyVersion,
       historyMode: input.research.historyMode ?? 'RECONSTRUCTED_CURRENT_VINTAGE',
       pointInTimeVerified: input.research.pointInTimeVerified ?? false,
@@ -178,7 +180,8 @@ export function createKfgV2PostcheckHandler({authenticate, env, reader=readD1Pos
       if (publicAccess && mode === 'latest' && typeof snapshotReader === 'function') {
         const snapshot = await snapshotReader(env.DB);
         return json({temporary:'KFG_V2_RESEARCH_READ_ONLY',readOnly:true,calculation:{mode:'PERSISTED_LATEST_SNAPSHOT',fullHistoryMaterialized:false},research:snapshot ? {
-          researchOnly:true,productionEligible:false,methodologyVersion:snapshot.methodologyVersion,historyMode:snapshot.historyMode,
+          researchOnly:true,productionEligible:false,currentProductionEligible:snapshot.currentProductionEligible===true, historicalBacktestEligible:snapshot.historicalBacktestEligible===true,
+          methodologyVersion:snapshot.methodologyVersion,historyMode:snapshot.historyMode,
           pointInTimeVerified:snapshot.pointInTimeVerified,historicalVintageVerified:snapshot.historicalVintageVerified,
           sourcePublishedAt:snapshot.sourcePublishedAt,sourceObservedAt:snapshot.sourceObservedAt,fetchedAt:snapshot.fetchedAt,
           calculatedAt:snapshot.calculatedAt,composite:snapshot.composite,factors:snapshot.factors
