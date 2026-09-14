@@ -1260,6 +1260,7 @@ html,body{overflow-x:hidden}
 .cnn-period-toolbar{display:flex;flex-wrap:nowrap;align-items:center;gap:5px;margin:8px 0;min-width:0}
 .cnn-period-button{min-height:30px;height:30px;border:1px solid var(--zg-control-border);border-radius:999px;padding:0 10px;background:transparent;color:var(--zg-text-secondary);font-size:11px;white-space:nowrap}
 .cnn-period-button[aria-pressed=true]{border-color:var(--zg-gold);background:var(--zg-gold);color:#1b2530;font-weight:800}
+.cnn-period-button:focus-visible,.cnn-panel-note a:focus-visible,.zg-detail:focus-visible{outline:2px solid var(--zg-link,#6eb7ff);outline-offset:2px}
 @media(max-width:767px){.cnn-period-toolbar{gap:3px;margin:4px 0}.cnn-period-button{height:24px;min-height:24px;padding:0 6px;font-size:9px}}
 @media(max-width:480px){
   .zg-country-panel-grid .cnn-market-title h2{font-size:20px}
