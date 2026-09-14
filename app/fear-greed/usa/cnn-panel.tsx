@@ -67,7 +67,7 @@ export default function CnnPanel() {
         <img src="/flags/us.svg" alt="" aria-hidden="true" />
         <div><p className="cnn-eyebrow">CNN FEAR &amp; GREED INDEX</p><h2 id="cnn-panel-title">미국 시장</h2><p>S&amp;P 500 · NASDAQ</p></div>
       </div>
-      <div className="cnn-source"><span>데이터 기준일</span><strong>{dateLabel(payload?.observedAt ?? payload?.updatedAt)}</strong><small>{status}</small></div>
+      <div className="cnn-source" aria-live="polite"><span>데이터 기준일</span><strong>{dateLabel(payload?.observedAt ?? payload?.updatedAt)}</strong><small role="status">{loading ? "확인 중" : status}</small></div>
     </div>
     <div className="cnn-panel-main">
       <div className={`cnn-score-orb is-${currentTone}`}>
