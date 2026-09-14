@@ -215,7 +215,10 @@ export class D1KoreaMarketHistoryStore {
     if (componentIndicators.length) await this.saveComponentHistory(componentIndicators);
     const persisted=await this.getPersistedComponentHistory();
     const calcIndicators=persisted.length?persisted:componentIndicators;
-    const targetDates=dates.slice(0,Math.max(1,Math.min(1,maxSnapshots)));
+    const existingRows=(await this.#statement(`SELECT date FROM kfg_v2_research_snapshots WHERE date>=?`,[cutoff]).all()).results;
+    const existingDates=new Set(existingRows.map(r=>r.date));
+    const pendingDates=dates.filter(date=>!existingDates.has(date));
+    const targetDates=pendingDates.slice(0,Math.max(1,Math.min(1,maxSnapshots)));
     const warmDates=(await this.#statement(`SELECT date FROM kfg_v2_market_dates WHERE status='COMPLETE' AND date<=? ORDER BY date DESC LIMIT ?`,[targetDates[0],targetDates.length+311]).all()).results.map(r=>r.date).sort();
     const rows=[], breadth=[];
     for(let i=0;i<warmDates.length;i+=10){
@@ -231,7 +234,8 @@ export class D1KoreaMarketHistoryStore {
       await this.#db.batch([this.#guard(),this.#statement(`INSERT INTO kfg_v2_research_snapshots(date,methodology_version,factors_json,composite_json,history_mode,point_in_time_verified,historical_vintage_verified,source_published_at,source_observed_at,fetched_at,calculated_at,correction_fingerprint) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`,[date,research.methodologyVersion,JSON.stringify(factors),JSON.stringify({...research.composite,history:[]}),research.historyMode,0,0,null,date,new Date().toISOString(),new Date().toISOString(),null])]);
       written++;
     }
-    return {requested:dates.length,written,remaining:dates.length-written,complete:dates.length-written===0,latestDate:dates[0]??null,oldestDate:dates.at(-1)??null,range:'1Y',cutoffDate:cutoff};
+    const remaining=pendingDates.length-written;
+    return {requested:dates.length,written,remaining,complete:remaining===0,latestDate:dates[0]??null,oldestDate:dates.at(-1)??null,range:'1Y',cutoffDate:cutoff};
   }
   async getLatestResearchSnapshot() {
     const row=await this.#statement('SELECT * FROM kfg_v2_research_snapshots ORDER BY date DESC LIMIT 1').first();
