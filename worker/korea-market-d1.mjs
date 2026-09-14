@@ -218,7 +218,7 @@ export class D1KoreaMarketHistoryStore {
     const existingRows=(await this.#statement(`SELECT date FROM kfg_v2_research_snapshots WHERE date>=?`,[cutoff]).all()).results;
     const existingDates=new Set(existingRows.map(r=>r.date));
     const pendingDates=dates.filter(date=>!existingDates.has(date));
-    const targetDates=pendingDates.slice(0,Math.max(1,Math.min(1,maxSnapshots)));
+    const targetDates=pendingDates.slice(0,Math.max(1,Math.min(10,maxSnapshots)));
     const warmDates=(await this.#statement(`SELECT date FROM kfg_v2_market_dates WHERE status='COMPLETE' AND date<=? ORDER BY date DESC LIMIT ?`,[targetDates[0],targetDates.length+311]).all()).results.map(r=>r.date).sort();
     const rows=[], breadth=[];
     for(let i=0;i<warmDates.length;i+=10){
