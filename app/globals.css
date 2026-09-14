@@ -1257,6 +1257,7 @@ html,body{overflow-x:hidden}
 }
 
 /* Shared period controls for both market cards. */
+:root{--zg-market-gap:10px;--zg-market-heading-h:66px;--zg-market-main-h:148px;--zg-market-footer-h:34px}
 .cnn-period-toolbar{display:flex;flex-wrap:nowrap;align-items:center;gap:5px;margin:8px 0;min-width:0}
 .cnn-period-button{min-height:30px;height:30px;border:1px solid var(--zg-control-border);border-radius:999px;padding:0 10px;background:transparent;color:var(--zg-text-secondary);font-size:11px;white-space:nowrap}
 .cnn-period-button[aria-pressed=true]{border-color:var(--zg-gold);background:var(--zg-gold);color:#1b2530;font-weight:800}
