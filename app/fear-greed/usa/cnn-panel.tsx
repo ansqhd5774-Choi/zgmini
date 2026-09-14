@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { ArrowRight, BarChart3, CircleAlert, Gauge, ShieldCheck } from "lucide-react";
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { marketPeriods as periods } from "../../market-card-shared";
+import { MarketPeriodControls } from "../../market-period-controls";
 
 type HistoryPoint = { date?: string; timestamp?: string; score?: number; value?: number };
 type IndexPayload = {
@@ -70,7 +71,7 @@ export default function CnnPanel() {
         <small>공포 ↔ 탐욕</small>
       </div>
       <div className="cnn-trend-block">
-        <div className="cnn-trend-toolbar"><div role="group" aria-label="CNN 지수 기간 선택" className="cnn-period-toolbar">{periods.map((item) => <button className="cnn-period-button" key={item.key} type="button" aria-pressed={period === item.key} onClick={() => setPeriod(item.key)}>{item.label}</button>)}</div><span>0 — 100</span></div>
+        <div className="cnn-trend-toolbar"><MarketPeriodControls activeKey={period} onChange={(key)=>setPeriod(key as (typeof periods)[number]["key"])} ariaLabel="CNN 지수 기간 선택"/><span>0 — 100</span></div>
         <div className={`cnn-chart${history.length > 1 ? "" : " is-empty"}`} aria-label="CNN Fear and Greed 지수 추이">
           {history.length > 1 ? <ResponsiveContainer width="100%" height="100%"><AreaChart data={history} margin={{ top: 8, right: 8, left: -24, bottom: 0 }}><defs><linearGradient id="cnn-fill" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#ff626b" stopOpacity=".6"/><stop offset="100%" stopColor="#ff626b" stopOpacity="0"/></linearGradient></defs><CartesianGrid vertical={false} stroke="var(--zg-chart-grid,#365269)" strokeDasharray="3 5" strokeWidth={1}/><XAxis dataKey="date" hide/><YAxis domain={[0, 100]} ticks={[0, 50, 100]} axisLine={false} tickLine={false} tick={{ fill: "var(--zg-text-meta,#a8bcd0)", fontSize: 10 }}/><Tooltip labelFormatter={(value) => dateLabel(String(value))} formatter={(value) => [`${Number(value).toFixed(0)}점`, "지수"]} contentStyle={{ background: "#081d2c", border: "1px solid #1d3b51", color: "#f4f7fb" }}/><Area type="monotone" dataKey="score" stroke="#ff7076" fill="url(#cnn-fill)" strokeWidth={2} dot={false} isAnimationActive={false}/></AreaChart></ResponsiveContainer> : <div className="cnn-chart-empty"><CircleAlert size={18}/><span>기간별 원자료 미제공 · 현재값만 표시합니다.</span></div>}
         </div>

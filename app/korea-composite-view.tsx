@@ -4,14 +4,16 @@ import {useState} from 'react';
 import {LineChart,Line,ResponsiveContainer,Tooltip,XAxis,YAxis,CartesianGrid} from 'recharts';
 import {useKoreaFunds,type Composite} from './korea-funds-store';
 import {marketPeriodDays} from './market-card-shared';
+import {MarketPeriodControls} from './market-period-controls';
 export const formatDate=(s:string|null)=>s?`${s.slice(0,4)}-${s.slice(4,6)}-${s.slice(6,8)}`:'—';
 const time=(d:string)=>Date.parse(`${formatDate(d)}T00:00:00Z`);
+const marketPeriodsKey=(days:number)=>({7:'1w',30:'1m',90:'3m',180:'6m',365:'1y'} as Record<number,string>)[days]??'3m';
 const colors:Record<string,string>={EXTREME_FEAR:'#b91c1c',FEAR:'#dc2626',NEUTRAL:'#64748b',GREED:'#15803d',EXTREME_GREED:'#166534'};
 export function CompositeChart({item,mini=false,height}:{item:Composite;mini?:boolean;height?:number}){
  const [days,setDays]=useState(90),end=item.history.at(-1)?.date;
  const rows=item.history.filter(p=>end&&time(p.date)>=time(end)-days*86400000).map(p=>({...p,time:time(p.date)}));
  return <div className="min-w-0">
-  {!mini&&<div role="group" aria-label="한국 공포탐욕 차트 기간" className="cnn-period-toolbar">{marketPeriodDays.map(([n,label])=><button className="cnn-period-button" key={n} aria-pressed={days===n} onClick={()=>setDays(Number(n))}>{label}</button>)}</div>}
+  {!mini&&<MarketPeriodControls activeKey={marketPeriodsKey(days)} onChange={(key)=>setDays(marketPeriodDays.find(([n])=>String(n)===key)?.[0]??days)} ariaLabel="한국 공포탐욕 차트 기간"/>}
   <div style={{height:height??(mini?64:240)}} aria-label="한국 공포탐욕 추이 0~100점"><ResponsiveContainer width="100%" height="100%"><LineChart data={rows} accessibilityLayer margin={{top:8,right:8,left:mini?0:-20,bottom:4}}>
    {!mini&&<CartesianGrid vertical={false} stroke="var(--zg-chart-grid,#365269)" strokeDasharray="3 5" strokeWidth={1}/>}<XAxis hide={mini} type="number" dataKey="time" domain={['dataMin','dataMax']} tickFormatter={v=>new Date(v).toISOString().slice(0,10)} minTickGap={40} axisLine={{stroke:'var(--zg-chart-axis,#60798d)',strokeWidth:1}} tickLine={false} tick={{fontSize:11,fill:"var(--zg-text-meta,#8fa8bb)"}}/><YAxis hide={mini} axisLine={false} tickLine={false} domain={[0,100]} ticks={[0,50,100]} tick={{fontSize:11,fill:"var(--zg-text-meta,#8fa8bb)"}}/>
    <Tooltip content={({active,payload})=>{const p=payload?.[0]?.payload;return active&&p?<div className="rounded border bg-white p-2 text-sm text-slate-900">{formatDate(p.date)}<br/>{p.displayScore===null?'자료 없음':`${p.displayScore.toFixed(1)}점 · ${p.stageLabel}`}</div>:null;}}/>
