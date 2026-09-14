@@ -157,6 +157,12 @@ export class D1KoreaMarketHistoryStore {
       breadth:calculateBreadth(results),status:m.status==='COMPLETE'?'SUCCESS':'NO_TRADING_OBSERVATION',
       safeErrorCode:null,requestCount:m.request_count};
   }
+  async getLatestMarketDate() {
+    return (await this.#statement('SELECT MAX(date) AS date FROM kfg_v2_market_dates').first())?.date ?? null;
+  }
+  async getLatestCompleteMarketDate() {
+    return (await this.#statement("SELECT MAX(date) AS date FROM kfg_v2_market_dates WHERE status='COMPLETE'").first())?.date ?? null;
+  }
   async getSecurityHistory(securityId) {
     return (await this.#statement(`SELECT date,security_id AS securityId,short_code AS shortCode,market,
       close,return_pct AS returnPct,trading_value AS tradingValue,market_cap AS marketCap
