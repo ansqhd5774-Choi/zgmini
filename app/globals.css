@@ -1304,3 +1304,29 @@ html,body{overflow-x:hidden}
  .zg-component .zg-card-heading .zg-tip-wrap{transform:scale(.9);transform-origin:right center}
 }
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;animation-duration:.001ms!important;transition-duration:.001ms!important}}
+/* Reference-proportioned mobile market cards: compact summary height and single-line controls. */
+@media(max-width:767px){
+ .zg-country-panel-grid>.cnn-reference-panel,.zg-country-panel-grid>.zg-country-grid .korea-reference-panel{height:292px!important;min-height:292px!important}
+ .zg-country-panel-grid .cnn-panel-heading{height:70px!important;min-height:70px!important;padding:8px 10px 4px!important}
+ .zg-country-panel-grid .cnn-panel-main,.zg-country-panel-grid .korea-reference-panel .cnn-panel-main{height:188px!important;min-height:188px!important;flex-basis:188px!important;grid-template-columns:92px minmax(0,1fr)!important;gap:8px!important;padding:0 10px 6px!important}
+ .zg-country-panel-grid .cnn-score-orb{width:88px!important;height:88px!important;min-height:88px!important}
+ .zg-country-panel-grid .cnn-score-orb strong{font-size:30px!important}
+ .zg-country-panel-grid .cnn-score-orb span{font-size:12px!important}
+ .zg-country-panel-grid .cnn-score-orb small{font-size:9px!important}
+ .zg-country-panel-grid .cnn-trend-toolbar{gap:3px!important;min-height:24px!important;white-space:nowrap!important}
+ .zg-country-panel-grid .cnn-trend-toolbar>div{display:flex!important;flex-wrap:nowrap!important;gap:3px!important;min-width:0!important}
+ .zg-country-panel-grid .cnn-trend-toolbar button{min-height:24px!important;height:24px!important;padding:0 6px!important;font-size:9px!important;white-space:nowrap!important}
+ .zg-country-panel-grid .cnn-trend-toolbar>span:last-child{font-size:9px!important}
+ .zg-country-panel-grid .cnn-chart{height:90px!important}
+ .zg-country-panel-grid .korea-reference-panel .cnn-trend-block>div[style]{height:94px!important}
+ .zg-country-panel-grid .cnn-panel-note{height:34px!important;min-height:34px!important;flex-basis:34px!important;padding:7px 10px!important;font-size:9px!important;line-height:1.2!important}
+ .zg-country-panel-grid .cnn-panel-note a{font-size:9px!important}
+}
+@media(max-width:480px){
+ .zg-country-panel-grid>.cnn-reference-panel,.zg-country-panel-grid>.zg-country-grid .korea-reference-panel{height:278px!important;min-height:278px!important}
+ .zg-country-panel-grid .cnn-panel-heading{height:66px!important;min-height:66px!important}
+ .zg-country-panel-grid .cnn-panel-main,.zg-country-panel-grid .korea-reference-panel .cnn-panel-main{height:178px!important;min-height:178px!important;flex-basis:178px!important;grid-template-columns:86px minmax(0,1fr)!important}
+ .zg-country-panel-grid .cnn-score-orb{width:82px!important;height:82px!important;min-height:82px!important}
+ .zg-country-panel-grid .cnn-chart{height:82px!important}
+ .zg-country-panel-grid .korea-reference-panel .cnn-trend-block>div[style]{height:86px!important}
+}
