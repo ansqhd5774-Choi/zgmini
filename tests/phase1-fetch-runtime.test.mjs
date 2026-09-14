@@ -3,7 +3,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
-import {Miniflare} from 'miniflare';
+import {createMiniflare, MFResponse} from './miniflare-harness.mjs';
 import {requestStage,runProvider,phase1KoreaDataCheck} from '../worker/phase1-korea.mjs';
 const env={FSC_API_KEY:'synthetic-only',KOSIS_API_KEY:'synthetic-only',BOK_API_KEY:'synthetic-only'};
 const state=()=>({provider:'KOSIS',stages:[]});
@@ -44,12 +44,12 @@ test('missing global fetch and malformed credential preparation fail safely',asy
 test('Worker native fetch rejects context receiver but accepts global receiver',async()=>{
  let calls=0;
  const script=`export default {async fetch(){const out={};for(const mode of ['member','global']){try{const ctx={fetch:globalThis.fetch};const r=mode==='member'?await ctx.fetch('https://example.test/'):await Reflect.apply(ctx.fetch,globalThis,['https://example.test/']);out[mode]={status:r.status};}catch(e){out[mode]={name:e.name,illegalInvocation:/illegal invocation/i.test(e.message)};}}return Response.json(out);}}`;
- const mf=new Miniflare({modules:true,script,compatibilityDate:'2026-05-15',outboundService:async()=>{calls++;return new Response('{}');}});
+ const mf=createMiniflare({modules:true,script,compatibilityDate:'2026-05-15',outboundService:async()=>{calls++;return new MFResponse('{}');}});
  try{const r=await(await mf.dispatchFetch('http://localhost/')).json();assert.deepEqual(r.member,{name:'TypeError',illegalInvocation:true});assert.equal(r.global.status,200);assert.equal(calls,1);}finally{await mf.dispose();}
 });
 test('actual diagnostic module reaches outbound stub in Worker without fetch injection',async()=>{
  const source=await readFile(new URL('../worker/phase1-korea.mjs',import.meta.url),'utf8');const hosts=[];
- const mf=new Miniflare({modules:true,script:source+'\nexport default {fetch:phase1KoreaDataCheck};',bindings:env,compatibilityDate:'2026-05-15',outboundService:async request=>{hosts.push(new URL(request.url).hostname);return new Response('{}',{headers:{'content-type':'application/json'}});}});
+ const mf=createMiniflare({modules:true,script:source+'\nexport default {fetch:phase1KoreaDataCheck};',bindings:env,compatibilityDate:'2026-05-15',outboundService:async request=>{hosts.push(new URL(request.url).hostname);return new MFResponse('{}',{headers:{'content-type':'application/json'}});}});
  try{const data=await(await mf.dispatchFetch('http://localhost/api/internal/phase1-korea-data-check')).json();
  assert.deepEqual(hosts.sort(),['apis.data.go.kr','ecos.bok.or.kr','kosis.kr']);
  for(const p of ['fsc','kosis','bok']){assert.equal(data[p].fetchInvoked,true);assert.equal(data[p].requestPrepared,true);assert.equal(data[p].fetchFunctionAvailable,true);assert.equal(data[p].responseReceived,true);assert.equal(data[p].httpStatus,200);}

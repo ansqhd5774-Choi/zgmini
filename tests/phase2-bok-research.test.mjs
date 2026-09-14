@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {build} from 'esbuild';
-import {Miniflare} from 'miniflare';
+import {createMiniflare, MFResponse} from './miniflare-harness.mjs';
 import {matchesBokTarget,selectBokCandidates,sourceDiagnostics,bokHistoryAnalysis,creditSpread,fscOverlap,researchDecision,runBokResearch,BOK_POLICY} from '../worker/phase2-bok-research.mjs';
 import {runHistoryResearch,OPERATIONS} from '../worker/phase2-korea-history.mjs';
 const now=new Date('2026-09-11T00:00:00Z');
@@ -49,4 +49,4 @@ test('same route keeps FSC summaries unchanged and does not refetch FSC for corr
  assert.deepEqual(after.series,before.series);assert.deepEqual(after.correlations,before.correlations);assert.equal(fscCalls,3);assert.equal(bokCalls,8);assert.equal(after.bok.overlap.usdkrw[0].raw.overlapCount,2);
  for(const key of ['fsc-fixture','bok-fixture'])assert.ok(!JSON.stringify(after).includes(key));
 });
-test('actual Worker uses existing native fetch transport and emits no raw data',async()=>{const bundled=await build({stdin:{contents:"import {runBokResearch} from './worker/phase2-bok-research.mjs';export default {fetch(){return runBokResearch({BOK_API_KEY:'synthetic-key'},{now:new Date('2026-09-11T00:00:00Z')}).then(x=>Response.json(x));}}",resolveDir:process.cwd()},bundle:true,format:'esm',platform:'browser',write:false});let calls=0;const mf=new Miniflare({modules:true,script:bundled.outputFiles[0].text,compatibilityDate:'2026-05-15',outboundService:async req=>{calls++;return new Response(JSON.stringify(outbound(req.url)),{headers:{'content-type':'application/json'}});}});try{const r=await(await mf.dispatchFetch('http://localhost/')).json();assert.equal(r.status,'SUCCESS');assert.equal(calls,8);assert.equal(r.series.usdkrw.uniqueObservationCount,2);}finally{await mf.dispose();}});
+test('actual Worker uses existing native fetch transport and emits no raw data',async()=>{const bundled=await build({stdin:{contents:"import {runBokResearch} from './worker/phase2-bok-research.mjs';export default {fetch(){return runBokResearch({BOK_API_KEY:'synthetic-key'},{now:new Date('2026-09-11T00:00:00Z')}).then(x=>Response.json(x));}}",resolveDir:process.cwd()},bundle:true,format:'esm',platform:'browser',write:false});let calls=0;const mf=createMiniflare({modules:true,script:bundled.outputFiles[0].text,compatibilityDate:'2026-05-15',outboundService:async req=>{calls++;return new MFResponse(JSON.stringify(outbound(req.url)),{headers:{'content-type':'application/json'}});}});try{const r=await(await mf.dispatchFetch('http://localhost/')).json();assert.equal(r.status,'SUCCESS');assert.equal(calls,8);assert.equal(r.series.usdkrw.uniqueObservationCount,2);}finally{await mf.dispose();}});

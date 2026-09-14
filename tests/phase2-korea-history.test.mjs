@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {build} from 'esbuild';
-import {Miniflare} from 'miniflare';
+import {createMiniflare, MFResponse} from './miniflare-harness.mjs';
 import {historyUrl,parseHistoryPage,fetchHistory,cmaGroups,runHistoryResearch,OPERATIONS,RESEARCH_POLICY} from '../worker/phase2-korea-history.mjs';
 const now=new Date('2026-09-11T00:00:00Z'),key='fixture-credential-only';
 const page=(rows,total=rows.length,pageNo=1)=>({response:{header:{resultCode:'00'},body:{totalCount:total,pageNo,items:{item:rows}}}});
@@ -25,7 +25,7 @@ test('CMA category totals stay separate; unrelated category is never summed',()=
 test('CMA failure is isolated while each required operation fetched once',async()=>{const counts={};const data=await runHistoryResearch({FSC_API_KEY:key},{now,fetch:async u=>{const op=u.pathname.split('/').at(-1);counts[op]=(counts[op]??0)+1;if(op===OPERATIONS.cma.operation)throw Error(key);return Response.json(page([row(),row(1),row(2)]));}});assert.equal(data.status,'SUCCESS');assert.equal(data.operations.cma.status,'FAILED');assert.deepEqual(Object.values(counts),[1,1,1]);assert.equal(data.series.length,11);const s=JSON.stringify(data);for(const forbidden of [key,'RAW_FIELD_MUST_NOT_ESCAPE','https://','serviceKey','"points"','"baseDate"'])assert.ok(!s.includes(forbidden),forbidden);assert.equal(data.correlations.raw.length,15);});
 test('real Worker module uses outbound stubs only, caches summary and rejects arbitrary queries',async()=>{
  const bundled=await build({stdin:{contents:"import {phase2KoreaHistoryCheck} from './worker/phase2-korea-history.mjs'; Date.now=()=>Date.parse('2026-09-11T00:00:00Z'); export default {fetch:phase2KoreaHistoryCheck};",resolveDir:process.cwd()},bundle:true,write:false,format:'esm',platform:'browser'});
- let calls=0;const mf=new Miniflare({modules:true,script:bundled.outputFiles[0].text,compatibilityDate:'2026-05-15',bindings:{FSC_API_KEY:key},outboundService:async()=>{calls++;return new Response(JSON.stringify(page([row(),row(1),row(2)])),{headers:{'content-type':'application/json'}});}});
+ let calls=0;const mf=createMiniflare({modules:true,script:bundled.outputFiles[0].text,compatibilityDate:'2026-05-15',bindings:{FSC_API_KEY:key},outboundService:async()=>{calls++;return new MFResponse(JSON.stringify(page([row(),row(1),row(2)])),{headers:{'content-type':'application/json'}});}});
  try{
   const first=await mf.dispatchFetch('http://localhost/api/internal/phase2-korea-history-check');assert.equal(first.status,200);const data=await first.json();assert.equal(data.operations.credit.status,'SUCCESS');assert.equal(calls,2);assert.equal(data.fromCache,false);
   const second=await(await mf.dispatchFetch('http://localhost/api/internal/phase2-korea-history-check')).json();assert.equal(second.fromCache,true);assert.equal(calls,2);
