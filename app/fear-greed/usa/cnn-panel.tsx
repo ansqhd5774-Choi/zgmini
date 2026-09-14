@@ -6,6 +6,7 @@ import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YA
 import { marketPeriods as periods } from "../../market-card-shared";
 import { MarketPeriodControls } from "../../market-period-controls";
 import { MarketStateBadge } from "../../market-state-badge";
+import { MarketCardHeader } from "../../market-card-header";
 
 type HistoryPoint = { date?: string; timestamp?: string; score?: number; value?: number };
 type IndexPayload = {
@@ -57,13 +58,7 @@ export default function CnnPanel() {
   const currentTone = tone(score);
 
   return <section className="cnn-reference-panel" aria-labelledby="cnn-panel-title" data-testid="cnn-reference-panel" data-market-state={loading?'loading':score===null?'unavailable':history.length>1?'ready':'empty'} aria-busy={loading}>
-    <div className="cnn-panel-heading">
-      <div className="cnn-market-title">
-        <img src="/flags/us.svg" alt="" aria-hidden="true" />
-        <div><p className="cnn-eyebrow">CNN FEAR &amp; GREED INDEX</p><h2 id="cnn-panel-title">미국 시장</h2><p>S&amp;P 500 · NASDAQ</p></div>
-      </div>
-      <MarketStateBadge date={dateLabel(payload?.observedAt ?? payload?.updatedAt)} label="데이터 기준일" source={loading ? "확인 중" : status}/>
-    </div>
+    <MarketCardHeader flag="/flags/us.svg" eyebrow="CNN FEAR & GREED INDEX" title="미국 시장" description="S&P 500 · NASDAQ" dateLabel="데이터 기준일" date={dateLabel(payload?.observedAt ?? payload?.updatedAt)} source={loading ? "확인 중" : status}/>
     <div className="cnn-panel-main">
       <div className={`cnn-score-orb is-${currentTone}`}>
         <Gauge size={26} aria-hidden="true" />

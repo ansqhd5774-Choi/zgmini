@@ -5,7 +5,7 @@ import {LineChart,Line,ResponsiveContainer,Tooltip,XAxis,YAxis,CartesianGrid} fr
 import {useKoreaFunds,type Composite} from './korea-funds-store';
 import {marketPeriodDays} from './market-card-shared';
 import {MarketPeriodControls} from './market-period-controls';
-import {MarketStateBadge} from './market-state-badge';
+import {MarketCardHeader} from './market-card-header';
 export const formatDate=(s:string|null)=>s?`${s.slice(0,4)}-${s.slice(4,6)}-${s.slice(6,8)}`:'—';
 const time=(d:string)=>Date.parse(`${formatDate(d)}T00:00:00Z`);
 const marketPeriodsKey=(days:number)=>({7:'1w',30:'1m',90:'3m',180:'6m',365:'1y'} as Record<number,string>)[days]??'3m';
@@ -43,7 +43,7 @@ export function KoreanCountryCard(){
  const color=colors[c?.stageCode??'']??'#64748b';
  const valid=typeof c?.displayScore==='number';
  return <article className="cnn-reference-panel korea-reference-panel" data-testid="kr-composite" data-market-state={loading?'loading':!c?'empty':valid?'ready':'unavailable'} aria-busy={loading}>
-  <div className="cnn-panel-heading"><div className="cnn-market-title"><img src="/flags/kr.svg" alt="" aria-hidden="true"/><div><p className="cnn-eyebrow">ZGMINI KOREA SENTIMENT</p><h2>한국 시장</h2><p>KOSPI · 국내 투자심리</p></div></div><MarketStateBadge date={formatDate(c?.observationDate??null)} label="관측 기준일" source={loading?'확인 중':valid?'검증된 지수':'자체 산출 · 베타'}/></div>
+  <MarketCardHeader flag="/flags/kr.svg" eyebrow="ZGMINI KOREA SENTIMENT" title="한국 시장" description="KOSPI · 국내 투자심리" dateLabel="관측 기준일" date={formatDate(c?.observationDate??null)} source={loading?'확인 중':valid?'검증된 지수':'자체 산출 · 베타'}/>
   <div className="cnn-panel-main"><div className={`cnn-score-orb ${valid?`is-${(c?.stageCode??'').toLowerCase().replace('extreme_','')}`:''}`}><Gauge size={22}/><strong>{valid?c!.displayScore!.toFixed(1):'—'}</strong><span>{valid?c!.stageLabel:loading?'확인 중':'자료 준비 중'}</span><small>한국 공포 ↔ 탐욕</small></div><div className="cnn-trend-block"><div className="cnn-trend-toolbar"><span>한국 지수 추이</span><span>0 — 100</span></div>{c?<CompositeChart item={c} mini={false} height={166}/>:<div className="cnn-chart is-empty"><div className="cnn-chart-empty"><ShieldCheck size={18}/><span>공통 관측 자료를 확인 중입니다.</span></div></div>}</div></div>
   <div className="cnn-panel-note"><ShieldCheck size={16}/><span>신용융자와 반대매매 압력을 결합한 ZGmini 내부 산출값입니다.</span><a href="/fear-greed/korea/" aria-label="한국 공포탐욕지수 상세보기">상세 보기 <ArrowUpRight size={14}/></a></div>
  </article>;
