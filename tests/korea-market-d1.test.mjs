@@ -1,7 +1,7 @@
 import test, {before, after, beforeEach} from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
-import {Miniflare} from 'miniflare';
+import {createMiniflare, MFResponse} from './miniflare-harness.mjs';
 import {D1KoreaMarketHistoryStore as Store, ROWS_PER_INSERT, sumRowsWritten} from '../worker/korea-market-d1.mjs';
 import {standardizeMarketSnapshot} from '../worker/korea-market-v2.mjs';
 import {runKoreaMarketBackfill as run} from '../worker/korea-market-backfill.mjs';
@@ -12,7 +12,7 @@ const tables=['kfg_v2_factor_snapshots','kfg_v2_market_rows','kfg_v2_market_date
 let mf, db;
 before(async()=>{
   // Actual Miniflare/workerd D1 SQLite, no fake transaction implementation, no remote DB.
-  mf=new Miniflare({modules:true,script:'export default {fetch(){return new Response("fixture only")}}',
+  mf=createMiniflare({modules:true,script:'export default {fetch(){return new MFResponse("fixture only")}}',
     compatibilityDate:'2026-05-15',d1Databases:['DB']});
   db=await mf.getD1Database('DB');
   for(const sql of favorites.split('--> statement-breakpoint')) await db.prepare(sql.trim()).run();
@@ -142,3 +142,4 @@ test('rowsWritten observation and unknown metadata distinct from zero',async()=>
   assert.equal(sumRowsWritten([{meta:{rows_written:2}},{meta:{rows_written:3}}]),5);
   const s=await store();await s.saveMarketDate(snapshot());assert.ok(s.getWriteUsage().rowsWritten>0);
 });
+
