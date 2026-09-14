@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { BarChart3, CircleAlert } from "lucide-react";
+import { CircleAlert } from "lucide-react";
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { marketPeriods as periods } from "../../market-card-shared";
 import { MarketPeriodControls } from "../../market-period-controls";
