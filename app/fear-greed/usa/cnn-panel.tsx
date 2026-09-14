@@ -1,13 +1,14 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { BarChart3, CircleAlert, Gauge } from "lucide-react";
+import { BarChart3, CircleAlert } from "lucide-react";
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { marketPeriods as periods } from "../../market-card-shared";
 import { MarketPeriodControls } from "../../market-period-controls";
 import { MarketStateBadge } from "../../market-state-badge";
 import { MarketCardHeader } from "../../market-card-header";
 import { MarketCardFooter } from "../../market-card-footer";
+import { MarketScoreOrb } from "../../market-score-orb";
 
 type HistoryPoint = { date?: string; timestamp?: string; score?: number; value?: number };
 type IndexPayload = {
@@ -56,17 +57,11 @@ export default function CnnPanel() {
   }, [payload?.history, period]);
   const stage = label(payload?.rating);
   const status = payload?.status === "verified" && score !== null ? "검증된 CNN 원본" : "원본 확인 필요";
-  const currentTone = tone(score);
 
   return <section className="cnn-reference-panel" aria-labelledby="cnn-panel-title" data-testid="cnn-reference-panel" data-market-state={loading?'loading':score===null?'unavailable':history.length>1?'ready':'empty'} aria-busy={loading}>
     <MarketCardHeader flag="/flags/us.svg" eyebrow="CNN FEAR & GREED INDEX" title="미국 시장" description="S&P 500 · NASDAQ" dateLabel="데이터 기준일" date={dateLabel(payload?.observedAt ?? payload?.updatedAt)} source={loading ? "확인 중" : status}/>
     <div className="cnn-panel-main">
-      <div className={`cnn-score-orb is-${currentTone}`}>
-        <Gauge size={26} aria-hidden="true" />
-        <strong>{loading ? "—" : score === null ? "—" : Math.round(score)}</strong>
-        <span>{loading ? "확인 중" : stage}</span>
-        <small>공포 ↔ 탐욕</small>
-      </div>
+      <MarketScoreOrb score={loading || score===null ? "—" : String(Math.round(score))} state={loading ? "확인 중" : stage} caption="공포 ↔ 탐욕"/>
       <div className="cnn-trend-block">
         <div className="cnn-trend-toolbar"><MarketPeriodControls activeKey={period} onChange={(key)=>setPeriod(key as (typeof periods)[number]["key"])} ariaLabel="CNN 지수 기간 선택"/><span>0 — 100</span></div>
         <div className={`cnn-chart${history.length > 1 ? "" : " is-empty"}`} aria-label="CNN Fear and Greed 지수 추이">
