@@ -1297,6 +1297,11 @@ html,body{overflow-x:hidden}
 .cnn-panel-note svg{width:15px;height:15px;flex:0 0 auto}
 .cnn-reference-panel[aria-busy=true] .cnn-score-orb{opacity:.78}
 .cnn-reference-panel[aria-busy=true] .cnn-panel-note{opacity:.82}
+.korea-reference-panel[data-market-state=loading] .cnn-chart,
+.korea-reference-panel[data-market-state=empty] .cnn-chart{background:#071a29}
+.korea-reference-panel[data-market-state=loading] .cnn-panel-note,
+.korea-reference-panel[data-market-state=empty] .cnn-panel-note{color:var(--zg-text-meta)}
+.korea-reference-panel[data-market-state=unavailable] .cnn-score-orb{border-style:dashed}
 .cnn-reference-panel .cnn-panel-note a{font-size:11px}
 .zg-component .zg-card-heading{display:flex;justify-content:space-between;gap:6px}
 .zg-component .zg-card-heading h3{display:flex;align-items:center;min-width:0}
