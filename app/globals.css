@@ -1154,3 +1154,5 @@ body{background:var(--zg-page)!important;color:var(--zg-text)}.zg-header{backgro
 .korea-reference-panel{grid-column:1 / -1;width:100%}
 
 .zg-country-grid:has(.korea-reference-panel){display:block;overflow:visible}.zg-country-grid .korea-reference-panel{width:100%;grid-column:auto}.cnn-score-orb{border-radius:12px;background:linear-gradient(145deg,#173a4b,#0b2638);border-color:var(--zg-border);min-height:128px}.cnn-score-orb:after{content:'0                         50                         100';display:block;width:82%;margin-top:10px;border-top:3px solid #65849e;color:var(--zg-text-meta);font-size:8px;white-space:pre;letter-spacing:-.2px}.cnn-score-orb.is-fear:after{border-color:var(--zg-danger-text)}.cnn-score-orb.is-greed:after{border-color:var(--zg-positive-text)}
+
+.zg-strength{border-color:var(--zg-border)!important}.zg-strength-score{color:var(--zg-text-meta);font-size:12px;font-weight:600;white-space:nowrap}.cnn-score-orb small{color:var(--zg-text-meta)}

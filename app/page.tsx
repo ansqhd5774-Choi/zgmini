@@ -987,7 +987,7 @@ export default function Home() {
         {view==='dashboard'&&<>
           <CompositeMarketSection items={displaySummaryItems} points={periodPoints[period]} demo={marketData?.status!=='live'} loading={marketDataLoading} onDetail={label=>{setCategory(label==='유가'?'전체':label as typeof category);setView('data');}}/>
           <ScenarioSection/>
-          <div id="strength" className="zg-strength-grid">{(['sector','theme'] as const).map(kind=><StrengthPanel key={kind} title={kind==='sector'?'섹터 강도':'테마 강도'} items={kind==='sector'?sectorSentiment:themeSentiment} points={periodPoints[period]} onAll={()=>setView('strength')} onFavorite={user?name=>{const item=(kind==='sector'?sectorSentiment:themeSentiment).find(x=>x.name===name);if(item)void toggleFavorite(kind,item);}:undefined} isFavorite={name=>favorites.has(sentimentKey(kind,name))}/>)}</div>
+          <div id="strength" className="zg-strength-grid">{(['sector','theme'] as const).map(kind=><StrengthPanel key={kind} title={kind==='sector'?'섹터 순위 (예시)':'테마 순위 (예시)'} items={kind==='sector'?sectorSentiment:themeSentiment} points={periodPoints[period]} onAll={()=>setView('strength')} onFavorite={user?name=>{const item=(kind==='sector'?sectorSentiment:themeSentiment).find(x=>x.name===name);if(item)void toggleFavorite(kind,item);}:undefined} isFavorite={name=>favorites.has(sentimentKey(kind,name))}/>)}</div>
         </>}
         {view==='scenarios'&&<ScenarioSection/>}
         {favoriteItems.length > 0 && (
