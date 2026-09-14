@@ -15,9 +15,21 @@ test("renders ZGmini metadata in the Workers runtime", async () => {
     }
   }
   await walk(serverRoot);
-  modules.push({type:"ESModule", path:path.join(serverRoot,"wrapper.js"), contents:`import worker from "./index.js"; export default { fetch(request, env, ctx) { return worker.fetch(request, env, ctx); } };`});
+  modules.push({type:"ESModule", path:path.join(serverRoot,"wrapper.js"), contents:`import worker from "./index.js"; export default { fetch(request, env, ctx) { const headers = new Headers(request.headers); headers.set("host", "zgmini.kr"); return worker.fetch(new Request(request, {headers}), env, ctx); } };`});
   modules.sort((a,b)=>a.path.endsWith("wrapper.js")?-1:b.path.endsWith("wrapper.js")?1:0);
   let outboundCalls=0;
   const mf=createMiniflare({rootPath:process.cwd(),modulesRoot:serverRoot,modules,compatibilityDate:"2026-05-15",compatibilityFlags:["nodejs_compat"],outboundService:()=>{outboundCalls++;throw new Error("External requests are forbidden in the HTML test")},serviceBindings:{ASSETS:()=>new MFResponse("Not found",{status:404})}});
-  try { const response=await mf.dispatchFetch("http://localhost/",{headers:{accept:"text/html"}}); assert.equal(response.status,200); const html=await response.text(); const head=html.match(/<head>([\s\S]*?)<\/head>/i)?.[1]??""; assert.ok(head.includes("<title>ZGmini | 공포탐욕지수·글로벌 증시·경제지표 한눈에</title>")); assert.equal((head.match(/rel="canonical"/g)??[]).length,1); assert.ok(/<meta(?=[^>]*name="robots")(?=[^>]*content="index, follow")[^>]*>/i.test(head)); assert.equal(outboundCalls,0); } finally {await mf.dispose();}
+  try {
+    const response=await mf.dispatchFetch("http://localhost/",{headers:{accept:"text/html"},redirect:"manual"});
+    assert.equal(response.status,200);
+    assert.match(response.headers.get("content-type")??"",/^text\/html\b/i);
+    const html=await response.text();
+    assert.ok(html.includes('data-testid="korea-funds"'));
+    const head=html.match(/<head>([\s\S]*?)<\/head>/i)?.[1]??"";
+    assert.ok(head.includes("<title>ZGmini | 공포탐욕지수·글로벌 증시·경제지표 한눈에</title>"));
+    assert.equal((head.match(/rel="canonical"/g)??[]).length,1);
+    assert.ok(/<link(?=[^>]*rel="canonical")(?=[^>]*href="https:\/\/zgmini\.kr\/")[^>]*>/i.test(head));
+    assert.ok(/<meta(?=[^>]*name="robots")(?=[^>]*content="index, follow")[^>]*>/i.test(head));
+    assert.equal(outboundCalls,0);
+  } finally { await mf.dispose(); }
 });
