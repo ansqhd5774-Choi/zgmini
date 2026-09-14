@@ -1261,9 +1261,10 @@ html,body{overflow-x:hidden}
 :root{--zg-market-gap:10px;--zg-market-heading-h:66px;--zg-market-main-h:148px;--zg-market-footer-h:34px}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;scroll-behavior:auto!important;transition-duration:.01ms!important}}
 .cnn-period-toolbar{display:flex;flex-wrap:nowrap;align-items:center;gap:5px;margin:8px 0;min-width:0}
-.cnn-period-button{min-height:30px;height:30px;border:1px solid var(--zg-control-border);border-radius:999px;padding:0 10px;background:transparent;color:var(--zg-text-secondary);font-size:11px;white-space:nowrap}
+.cnn-period-button{min-height:30px;height:30px;border:1px solid var(--zg-control-border);border-radius:999px;padding:0 10px;background:transparent;color:var(--zg-text-secondary);font-size:11px;white-space:nowrap;touch-action:manipulation}
 .cnn-period-button[aria-pressed=true]{border-color:var(--zg-gold);background:var(--zg-gold);color:#1b2530;font-weight:800}
 .cnn-period-button:focus-visible,.cnn-panel-note a:focus-visible,.zg-detail:focus-visible{outline:2px solid var(--zg-link,#6eb7ff);outline-offset:2px}
+.cnn-panel-note a,.zg-detail{touch-action:manipulation}
 @media(max-width:767px){.cnn-period-toolbar{gap:3px;margin:4px 0}.cnn-period-button{height:24px;min-height:24px;padding:0 6px;font-size:9px}}
 @media(max-width:480px){
  :root{--zg-market-heading-h:66px;--zg-market-main-h:178px;--zg-market-footer-h:34px}
