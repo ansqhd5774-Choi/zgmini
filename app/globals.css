@@ -1370,6 +1370,9 @@ html,body{overflow-x:hidden}
  .zg-country-panel-grid .cnn-chart{height:126px;margin-top:2px}
  .zg-country-panel-grid .korea-reference-panel .cnn-trend-block>div[style]{height:132px!important}
  .zg-country-panel-grid .cnn-panel-note{height:34px;min-height:34px;flex-basis:34px;padding:8px 12px;font-size:9px}
+ .zg-country-panel-grid .cnn-panel-note span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+ .zg-country-panel-grid .cnn-panel-note a{min-width:0;max-width:42%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:9px}
+ .zg-country-panel-grid .cnn-panel-note a svg{flex:0 0 auto}
  .zg-macro-row{grid-template-columns:1fr;gap:10px}
  .zg-macro-row .zg-master{min-height:220px;padding:16px}
  .zg-macro-row .zg-component-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
