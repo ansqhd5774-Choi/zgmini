@@ -1346,6 +1346,35 @@ html,body{overflow-x:hidden}
  .zg-country-panel-grid .cnn-panel-note{height:34px!important;min-height:34px!important;flex-basis:34px!important;padding:7px 10px!important;font-size:9px!important;line-height:1.2!important}
  .zg-country-panel-grid .cnn-panel-note a{font-size:9px!important}
 }
+
+/* Medium web/tablet layout: preserve both markets without desktop compression. */
+@media(min-width:768px) and (max-width:1023px){
+ .zg-container{width:calc(100% - 32px);max-width:920px}
+ .zg-country-panel-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+ .zg-country-panel-grid>.cnn-reference-panel,.zg-country-panel-grid>.zg-country-grid .korea-reference-panel{height:306px;min-height:306px}
+ .zg-country-panel-grid .cnn-panel-heading{height:82px;min-height:82px;padding:12px 14px 6px;gap:10px}
+ .zg-country-panel-grid .cnn-market-title{gap:9px}
+ .zg-country-panel-grid .cnn-market-title img{width:38px;height:26px}
+ .zg-country-panel-grid .cnn-market-title h2{font-size:22px}
+ .zg-country-panel-grid .cnn-market-title p:last-child{font-size:11px}
+ .zg-country-panel-grid .cnn-eyebrow{font-size:8px;letter-spacing:.12em}
+ .zg-country-panel-grid .cnn-source{font-size:9px}
+ .zg-country-panel-grid .cnn-source strong{font-size:11px}
+ .zg-country-panel-grid .cnn-source small{font-size:8px}
+ .zg-country-panel-grid .cnn-panel-main{grid-template-columns:108px minmax(0,1fr);gap:10px;height:190px;min-height:190px;flex-basis:190px;padding:0 14px 8px}
+ .zg-country-panel-grid .cnn-score-orb{width:108px;height:108px;min-height:108px}
+ .zg-country-panel-grid .cnn-score-orb strong{font-size:34px}
+ .zg-country-panel-grid .cnn-score-orb span{font-size:13px}
+ .zg-country-panel-grid .cnn-trend-toolbar{gap:4px;min-height:24px;font-size:9px}
+ .zg-country-panel-grid .cnn-trend-toolbar button{min-height:25px;height:25px;padding:0 7px;font-size:9px}
+ .zg-country-panel-grid .cnn-chart{height:126px;margin-top:2px}
+ .zg-country-panel-grid .korea-reference-panel .cnn-trend-block>div[style]{height:132px!important}
+ .zg-country-panel-grid .cnn-panel-note{height:34px;min-height:34px;flex-basis:34px;padding:8px 12px;font-size:9px}
+ .zg-macro-row{grid-template-columns:1fr;gap:10px}
+ .zg-macro-row .zg-master{min-height:220px;padding:16px}
+ .zg-macro-row .zg-component-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+ .zg-macro-row .zg-component{min-height:170px}
+}
 @media(max-width:480px){
  .zg-country-panel-grid>.cnn-reference-panel,.zg-country-panel-grid>.zg-country-grid .korea-reference-panel{height:278px!important;min-height:278px!important}
  .zg-country-panel-grid .cnn-panel-heading{height:66px!important;min-height:66px!important}
