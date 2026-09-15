@@ -1361,12 +1361,15 @@ html,body{overflow-x:hidden}
  .zg-country-panel-grid .cnn-source{font-size:9px}
  .zg-country-panel-grid .cnn-source strong{font-size:11px}
  .zg-country-panel-grid .cnn-source small{font-size:8px}
- .zg-country-panel-grid .cnn-panel-main{grid-template-columns:108px minmax(0,1fr);gap:10px;height:190px;min-height:190px;flex-basis:190px;padding:0 14px 8px}
- .zg-country-panel-grid .cnn-score-orb{width:108px;height:108px;min-height:108px}
+ .zg-country-panel-grid .cnn-panel-main{grid-template-columns:100px minmax(0,1fr);gap:10px;height:190px;min-height:190px;flex-basis:190px;padding:0 14px 8px}
+ .zg-country-panel-grid .cnn-score-orb{width:100px;height:100px;min-height:100px}
  .zg-country-panel-grid .cnn-score-orb strong{font-size:34px}
  .zg-country-panel-grid .cnn-score-orb span{font-size:13px}
  .zg-country-panel-grid .cnn-trend-toolbar{gap:4px;min-height:24px;font-size:9px}
  .zg-country-panel-grid .cnn-trend-toolbar button{min-height:25px;height:25px;padding:0 7px;font-size:9px}
+ .zg-country-panel-grid .cnn-period-toolbar{gap:4px;margin:4px 0;justify-content:flex-start}
+ .zg-country-panel-grid .cnn-period-button{min-height:25px;height:25px;padding:0 7px;font-size:9px}
+ .zg-country-panel-grid .korea-reference-panel .cnn-trend-toolbar>span:first-child{display:none}
  .zg-country-panel-grid .cnn-chart{height:126px;margin-top:2px}
  .zg-country-panel-grid .korea-reference-panel .cnn-trend-block>div[style]{height:132px!important}
  .zg-country-panel-grid .cnn-panel-note{height:34px;min-height:34px;flex-basis:34px;padding:8px 12px;font-size:9px}
