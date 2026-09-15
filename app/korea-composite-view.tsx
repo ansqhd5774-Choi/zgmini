@@ -45,9 +45,9 @@ export function KoreanCountryCard(){
  const {composite:c,loading}=useKoreaFunds();
  const color=colors[c?.stageCode??'']??'#64748b';
  const valid=typeof c?.displayScore==='number';
- return <article className="cnn-reference-panel korea-reference-panel" data-testid="kr-composite" data-market-state={loading?'loading':!c?'empty':valid?'ready':'unavailable'} aria-busy={loading}>
+ return <article className="cnn-reference-panel korea-reference-panel fg-card" data-testid="kr-composite" data-market-state={loading?'loading':!c?'empty':valid?'ready':'unavailable'} aria-busy={loading}>
   <MarketCardHeader flag="/flags/kr.svg" eyebrow="ZGMINI KOREA SENTIMENT" title="한국 시장" description="KOSPI · 국내 투자심리" dateLabel="관측 기준일" date={formatDate(c?.observationDate??null)} source={loading?'확인 중':valid?'검증된 지수':'자체 산출 · 베타'}/>
-  <div className="cnn-panel-main"><MarketScoreOrb score={valid?c!.displayScore!.toFixed(1):'—'} state={valid?(c!.stageLabel??'확인 불가'):loading?'확인 중':'자료 준비 중'} caption="한국 공포 ↔ 탐욕"/><MarketTrendFrame><div className="cnn-trend-toolbar"><span>한국 지수 추이</span><span>0 — 100</span></div>{c?<CompositeChart item={c} mini={false} height={166}/>:<div className="cnn-chart is-empty"><div className="cnn-chart-empty"><ShieldCheck size={18}/><span>공통 관측 자료를 확인 중입니다.</span></div></div>}</MarketTrendFrame></div>
+  <div className="cnn-panel-main fg-main"><MarketScoreOrb score={valid?c!.displayScore!.toFixed(1):'—'} state={valid?(c!.stageLabel??'확인 불가'):loading?'확인 중':'자료 준비 중'} caption="한국 공포 ↔ 탐욕"/><MarketTrendFrame><div className="cnn-trend-toolbar"><span>한국 지수 추이</span><span>0 — 100</span></div>{c?<CompositeChart item={c} mini={false} height={166}/>:<div className="cnn-chart is-empty"><div className="cnn-chart-empty"><ShieldCheck size={18}/><span>공통 관측 자료를 확인 중입니다.</span></div></div>}</MarketTrendFrame></div>
   <MarketCardFooter href="/fear-greed/korea/" label="한국 공포탐욕지수 상세보기">신용융자와 반대매매 압력을 결합한 ZGmini 내부 산출값입니다.</MarketCardFooter>
  </article>;
 }

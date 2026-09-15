@@ -58,9 +58,9 @@ export default function CnnPanel() {
   const stage = label(payload?.rating);
   const status = payload?.status === "verified" && score !== null ? "검증된 CNN 원본" : "원본 확인 필요";
 
-  return <section className="cnn-reference-panel" aria-labelledby="cnn-panel-title" data-testid="cnn-reference-panel" data-market-state={loading?'loading':score===null?'unavailable':history.length>1?'ready':'empty'} aria-busy={loading}>
+  return <section className="cnn-reference-panel fg-card" aria-labelledby="cnn-panel-title" data-testid="cnn-reference-panel" data-market-state={loading?'loading':score===null?'unavailable':history.length>1?'ready':'empty'} aria-busy={loading}>
     <MarketCardHeader flag="/flags/us.svg" eyebrow="CNN FEAR & GREED INDEX" title="미국 시장" description="S&P 500 · NASDAQ" dateLabel="데이터 기준일" date={dateLabel(payload?.observedAt ?? payload?.updatedAt)} source={loading ? "확인 중" : status}/>
-    <div className="cnn-panel-main">
+    <div className="cnn-panel-main fg-main">
       <MarketScoreOrb score={loading || score===null ? "—" : String(Math.round(score))} state={loading ? "확인 중" : stage} caption="공포 ↔ 탐욕"/>
       <MarketTrendFrame>
         <div className="cnn-trend-toolbar"><MarketPeriodControls activeKey={period} onChange={(key)=>setPeriod(key as (typeof periods)[number]["key"])} ariaLabel="CNN 지수 기간 선택"/><span>0 — 100</span></div>
