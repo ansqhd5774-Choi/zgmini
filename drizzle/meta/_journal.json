@@ -36,6 +36,13 @@
       "when": 1789387200000,
       "tag": "0004_kfg_v2_components",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1790000000000,
+      "tag": "0005_kfg_rev7_foundation",
+      "breakpoints": true
     }
   ]
 }
