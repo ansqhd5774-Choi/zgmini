@@ -1,4 +1,5 @@
 import {REV7_VERSION,REV7_INDEX_ID,REV7_FACTORS,REV7_DIRECTIONS} from './korea-rev7-engine.mjs';
+import {populateHistoricalSnapshots} from './korea-rev7-public-projection.mjs';
 
 export const PUBLIC_VERSION=`${REV7_VERSION}-public-2`;
 export const PUBLIC_CACHE_KEY=`${REV7_VERSION}:${PUBLIC_VERSION}`;
@@ -91,6 +92,8 @@ function unavailable(reason){
 export async function publicSnapshot(env,context={}){
   const loadProgress=context.loadProgress??defaultLoadProgress;
   const loadRows=context.loadRows??defaultLoadRows;
+  const materializeHistory=context.materializeHistory??populateHistoricalSnapshots;
+  const autoMaterializeHistory=context.autoMaterializeHistory??!context.loadRows;
   const clock=context.clock??(()=>new Date(Date.now()));
   const progress=await loadProgress(env);
   if(progress?.status!=='COMPLETE'||Number(progress?.successfulTradingDates)<1030){
@@ -102,7 +105,12 @@ export async function publicSnapshot(env,context={}){
     };
   }
 
-  const rows=(await loadRows(env,PUBLIC_HISTORY_LIMIT)).map(normalizeSnapshotRow)
+  let rawRows=await loadRows(env,PUBLIC_HISTORY_LIMIT);
+  if(autoMaterializeHistory&&rawRows.length<PUBLIC_HISTORY_LIMIT){
+    await materializeHistory(env,{calculatedAt:clock().toISOString()});
+    rawRows=await loadRows(env,PUBLIC_HISTORY_LIMIT);
+  }
+  const rows=rawRows.map(normalizeSnapshotRow)
     .filter(row=>row.methodologyVersion===REV7_VERSION&&/^\d{8}$/.test(row.date??''));
 
   if(!rows.length){
