@@ -7,18 +7,38 @@ export type Summary={label:string;score:number;value:string;note:string;data:Das
 export function DashboardTip({label,children}:{label:string;children:ReactNode}){
  const [open,setOpen]=useState(false),id=useId(),timer=useRef<ReturnType<typeof setTimeout>|null>(null);
  const root=useRef<HTMLSpanElement>(null);
- useEffect(()=>{if(!open)return;const close=(e:PointerEvent)=>{if(!root.current?.contains(e.target as Node)){if(timer.current)clearTimeout(timer.current);setOpen(false)}};document.addEventListener('pointerdown',close);return()=>document.removeEventListener('pointerdown',close)},[open]);
  const [coords,setCoords]=useState({left:12,top:0});
- const show=()=>{const r=root.current?.getBoundingClientRect();setCoords({left:Math.max(12,Math.min((r?.right??252)-240,window.innerWidth-252)),top:Math.min(r?.bottom??0,window.innerHeight-180)});setOpen(true)};
- const clear=()=>{if(timer.current)clearTimeout(timer.current)};
- return <span ref={root} className="zg-tip-wrap" onMouseEnter={()=>{clear();timer.current=setTimeout(show,250)}} onMouseLeave={()=>{clear();timer.current=setTimeout(()=>setOpen(false),100)}} onBlur={e=>{if(!e.currentTarget.contains(e.relatedTarget))setOpen(false)}} onKeyDown={e=>{if(e.key==='Escape'){setOpen(false);clear();}}}>
- <button type="button" className="zg-info" aria-label={label} aria-expanded={open} aria-describedby={open?id:undefined} onFocus={show} onClick={show}><Info size={16}/></button>
- {open&&<><span id={id} role="tooltip" className="zg-tip" style={{position:"fixed",right:"auto",...coords}}>{children}</span></>}
+ const clear=()=>{if(timer.current){clearTimeout(timer.current);timer.current=null}};
+ const close=()=>{clear();setOpen(false)};
+ const show=()=>{clear();const r=root.current?.getBoundingClientRect();setCoords({left:Math.max(12,Math.min((r?.right??252)-240,window.innerWidth-252)),top:Math.min(r?.bottom??0,window.innerHeight-180)});setOpen(true)};
+ useEffect(()=>()=>clear(),[]);
+ useEffect(()=>{if(!open)return;const dismiss=(e:PointerEvent)=>{if(!root.current?.contains(e.target as Node))close()};document.addEventListener('pointerdown',dismiss);return()=>document.removeEventListener('pointerdown',dismiss)},[open]);
+ return <span
+  ref={root}
+  className="zg-tip-wrap"
+  onMouseEnter={()=>{clear();timer.current=setTimeout(show,250)}}
+  onMouseLeave={()=>{clear();timer.current=setTimeout(close,100)}}
+  onBlur={e=>{if(!e.currentTarget.contains(e.relatedTarget))close()}}
+  onKeyDown={e=>{if(e.key==='Escape'){e.stopPropagation();close()}}}
+ >
+  <button
+   type="button"
+   className="zg-info"
+   aria-label={label}
+   aria-expanded={open}
+   aria-controls={open?id:undefined}
+   aria-describedby={open?id:undefined}
+   onFocus={show}
+   onClick={()=>open?close():show()}
+  >
+   <Info size={16}/>
+  </button>
+  {open&&<span id={id} role="tooltip" className="zg-tip" style={{position:"fixed",right:"auto",...coords}}>{children}</span>}
  </span>;
 }
 export function ScoreScale({score,label,color}:{score:number|null;label:string;color:string}){const band=score===null?'unknown':score<25?'danger':score<40?'caution':score<60?'neutral':score<75?'positive':'strong';return <div className={`zg-scale zg-scale-${band}`} data-score-band={band} role="meter" aria-label={label} aria-valuemin={0} aria-valuemax={100} aria-valuenow={score??undefined}><div style={{width:`${score??0}%`,background:color}}/>{score!==null&&<i style={{left:`${score}%`,borderColor:color}}/>}</div>}
 const scoreColor=(score:number)=>score<25?'#ef4444':score<40?'#f59e0b':score<60?'#94a3b8':score<75?'#22c55e':'#10b981';
-function Sparkline({data,label}:{data:DashboardPoint[];label:string}){return <div className="zg-spark" aria-label={`${label} 관측 추이`}><ResponsiveContainer width="100%" height="100%"><LineChart data={data} accessibilityLayer margin={{top:6,right:6,left:6,bottom:6}}><Tooltip offset={10} cursor={{stroke:'#AAB2BC',strokeWidth:1}} formatter={v=>[v,'점수']} contentStyle={{fontSize:13,borderRadius:4,border:'1px solid #D7DCE2'}}/><Line type="linear" dataKey="value" stroke="#3478D4" strokeWidth={2} dot={false} activeDot={{r:4}} isAnimationActive={false}/></LineChart></ResponsiveContainer></div>}
+function Sparkline({data,label}:{data:DashboardPoint[];label:string}){return <div className="zg-spark" aria-label={`${label} 관측 추이`}><ResponsiveContainer width="100%" height="100%" initialDimension={{width:1,height:1}}><LineChart data={data} accessibilityLayer margin={{top:6,right:6,left:6,bottom:6}}><Tooltip offset={10} cursor={{stroke:'#AAB2BC',strokeWidth:1}} formatter={v=>[v,'점수']} contentStyle={{fontSize:13,borderRadius:4,border:'1px solid #D7DCE2'}}/><Line type="linear" dataKey="value" stroke="#3478D4" strokeWidth={2} dot={false} activeDot={{r:4}} isAnimationActive={false}/></LineChart></ResponsiveContainer></div>}
 // Mirrors the existing market-data model (route.ts overallScore); does not calculate scores.
 const model=[{label:'물가',weight:30,Icon:Coins,basis:'Core PCE · CPI · PPI 평균'},{label:'고용',weight:30,Icon:Users,basis:'실업률 · 비농업 고용'},{label:'금리',weight:25,Icon:Percent,basis:'미국 10년물 금리'},{label:'유가',weight:15,Icon:Droplet,basis:'WTI 가격 · 변동폭'}];
 export function CompositeMarketSection({items,points,demo,loading,onDetail}:{items:Summary[];points:number;demo:boolean;loading:boolean;onDetail:(label:string)=>void}){

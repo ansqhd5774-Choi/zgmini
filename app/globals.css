@@ -148,11 +148,8 @@ button,
 .api-status-partial { color: #fcd34d; }
 .api-status-partial::before { background: #f59e0b; }
 .api-status-loading { color: #cbd5e1; }
-.api-status-loading::before { background: #cbd5e1; animation: api-pulse 1.2s ease-in-out infinite; }
+.api-status-loading::before { background: #cbd5e1; }
 
-@keyframes api-pulse {
-  50% { opacity: 0.35; }
-}
 
 .summary-card {
   display: block;
@@ -484,6 +481,7 @@ button,
 }
 
 .indicator-trigger:hover,
+.indicator-trigger:focus-visible,
 .indicator-trigger[data-state="open"] {
   background: #eff6ff;
 }
@@ -717,7 +715,8 @@ button,
   transition: background-color 150ms ease, box-shadow 150ms ease, transform 150ms ease;
 }
 
-.compact-gauge:hover {
+.compact-gauge:hover,
+.compact-gauge:focus-visible {
   background: rgba(255, 255, 255, 0.06);
 }
 
@@ -1062,7 +1061,7 @@ button,
 }
 .country-filter-flag { width: 1.15rem; height: .78rem; object-fit: cover; border: 1px solid #cbd5e1; vertical-align: middle; }
 .importance-header { color: inherit; font: inherit; text-align: center; cursor: pointer; }
-.importance-header span { display:inline-block; margin-left:.2rem; animation: subtle-arrow 1.8s ease-in-out infinite; }
+.importance-header span { display:inline-block; margin-left:.2rem; opacity:.8; }
 .importance-header-wrap { position: relative; display:flex; align-items:center; justify-content:center; }
 .importance-popover { position:absolute; z-index:30; top:calc(100% + .35rem); left:50%; transform:translateX(-50%); min-width:10rem; padding:.55rem; display:flex; flex-direction:column; gap:.35rem; border:1px solid #cbd5e1; border-radius:.45rem; background:#fff; box-shadow:0 8px 20px rgba(15,23,42,.16); text-align:left; }
 .importance-popover label { display:flex; align-items:center; gap:.4rem; padding:.2rem .3rem; color:#334155; font-size:.72rem; font-weight:700; white-space:nowrap; cursor:pointer; }
@@ -1070,7 +1069,6 @@ button,
 .importance-popover label span { color:#f59e0b; letter-spacing:.04em; }
 .country-option { display:flex; align-items:center; gap:.4rem; color:#334155 !important; letter-spacing:0 !important; }
 .country-option img { width:1.2rem; height:.8rem; object-fit:cover; border:1px solid #cbd5e1; }
-@keyframes subtle-arrow { 0%,70%,100% { opacity:.45; } 35% { opacity:1; } }
 .country-flag-backdrop {
   position: absolute;
   z-index: -2;
@@ -1111,19 +1109,19 @@ button,
 /* ZGmini analytical dashboard: scoped to preserve detail-page styling. */
 :root{--zg-page-bg:#363636;--zg-page-bg-secondary:#3B3B3B;--zg-page-divider:#474747;--zg-header-bg:#07162D;--zg-header-bg-hover:#0B1D37;--zg-header-border:#162842;--zg-surface-1:#ECEEF0;--zg-surface-2:#F8FAFC;--zg-surface-3:#FFF;--zg-surface-hover:#F4F6F8;--zg-border-light:#D7DCE2;--zg-border-medium:#C5CBD3;--zg-border-hover:#AEB7C2;--zg-border-dark:#4B4B4B;--zg-text-primary:#172033;--zg-text-secondary:#556274;--zg-text-muted:#7D8998;--zg-text-dark-primary:#F7F8FA;--zg-text-dark-secondary:#CBD2DC;--zg-text-dark-muted:#98A2B3;--zg-brand:#FABC42;--zg-brand-hover:#E9AA2F;--zg-brand-active:#D99C27;--zg-brand-soft:#FFF4D6;--zg-positive:#0B9F41;--zg-positive-dark:#087732;--zg-positive-soft:#E7F6EC;--zg-warning:#E06A00;--zg-warning-dark:#AC5100;--zg-warning-soft:#FFF0DF;--zg-danger:#EF3B3B;--zg-danger-dark:#C52B2B;--zg-danger-soft:#FDEBEC;--zg-neutral:#64748B;--zg-neutral-dark:#475569;--zg-neutral-soft:#E9EEF4;--zg-info:#3478D4;--zg-info-dark:#245FAE;--zg-info-soft:#E9F1FC;--zg-chart-track:#DDE3EA;--zg-chart-grid:#E5E9EE;--zg-chart-crosshair:#AAB2BC;--zg-link:#2563EB;--zg-link-hover:#1D4ED8;--motion-fast:120ms;--motion-normal:160ms;--motion-medium:220ms;--motion-carousel:280ms;--ease-standard:ease-out;--ease-slide:cubic-bezier(.2,.8,.2,1)}
 .zg-dashboard{font-size:14px;font-variant-numeric:tabular-nums;line-height:1.5;color:var(--zg-text-primary)}
-.zg-dashboard :focus-visible{outline:2px solid var(--zg-brand);outline-offset:2px}
+.zg-dashboard :focus-visible{outline:2px solid var(--zg-focus-dark);outline-offset:2px;position:relative;z-index:2}.zg-scenario-card :focus-visible,.zg-scenario-empty :focus-visible,.zg-data-notice :focus-visible{outline-color:var(--zg-focus-light)}
 .zg-container,.zg-header-inner{width:calc(100% - 48px);max-width:1480px;margin:0 auto;min-width:0}
 .zg-container{padding-bottom:40px}.zg-header{background:var(--zg-header-bg);border-bottom:1px solid var(--zg-header-border)}
-.zg-header-inner{min-height:64px;display:flex;align-items:center;justify-content:space-between;gap:24px}.zg-header-inner>a{background:#111418;padding:4px 8px;border-radius:3px;gap:8px}.zg-header-inner>a>img{width:32px;height:32px}.zg-header-inner>a div img{width:128px}.zg-header nav{display:flex;align-self:stretch;gap:24px;overflow-x:auto}.zg-header nav button{position:relative;white-space:nowrap;color:#CBD2DC;font-size:14px;min-height:44px}.zg-header nav button:after{position:absolute;bottom:0;left:0;width:100%;height:2px;background:var(--zg-brand);content:'';transform:scaleX(0);transform-origin:left;transition:transform 140ms ease-out}.zg-header nav button:hover{color:white}.zg-header nav button:hover:after,.zg-header nav button[aria-current]:after{transform:scaleX(1)}.zg-header nav button[aria-current]{color:var(--zg-brand)}
-.zg-toolbar{margin-top:16px;display:flex;justify-content:space-between;gap:16px;align-items:center;min-height:48px;flex-wrap:wrap}.zg-toolbar>div:first-child{background:transparent;gap:8px;padding:0;overflow:auto;max-width:100%}.zg-toolbar button{height:36px;min-width:60px;border:1px solid #4A4A4A;border-radius:3px;font-size:14px;box-shadow:none}.zg-toolbar button:not(.bg-white){background:#2F2F2F}.zg-toolbar button:hover{border-color:#626262}.zg-toolbar .header-update{font-size:13px;gap:8px;flex-wrap:wrap;justify-content:flex-start;white-space:normal}.zg-toolbar .header-update strong{font-size:13px}.zg-dashboard .api-status{font-size:12px}.zg-dashboard .api-status:before{animation:none}.zg-data-notice{display:flex;gap:8px;align-items:center;min-height:34px;padding:8px 12px;background:#FFF8E7;border:1px solid #ECDCA7;color:#725817;font-size:13px;margin-top:12px;border-radius:3px}.zg-data-notice svg{flex-shrink:0}
+.zg-header-inner{min-height:64px;display:flex;align-items:center;justify-content:space-between;gap:24px}.zg-header-inner>a{background:#111418;padding:4px 8px;border-radius:3px;gap:8px}.zg-header-inner>a>img{width:32px;height:32px}.zg-header-inner>a div img{width:128px}.zg-header nav{display:flex;align-self:stretch;gap:24px;overflow-x:auto}.zg-header nav button{position:relative;white-space:nowrap;color:#CBD2DC;font-size:14px;min-height:44px}.zg-header nav button:after{position:absolute;bottom:0;left:0;width:100%;height:2px;background:var(--zg-brand);content:'';transform:scaleX(0);transform-origin:left;transition:transform 140ms ease-out}.zg-header nav button:hover,.zg-header nav button:focus-visible{color:white}.zg-header nav button:hover:after,.zg-header nav button:focus-visible:after,.zg-header nav button[aria-current]:after{transform:scaleX(1)}.zg-header nav button[aria-current]{color:var(--zg-brand)}
+.zg-toolbar{margin-top:16px;display:flex;justify-content:space-between;gap:16px;align-items:center;min-height:48px;flex-wrap:wrap}.zg-toolbar>div:first-child{background:transparent;gap:8px;padding:0;overflow:auto;max-width:100%}.zg-toolbar button{height:36px;min-width:60px;border:1px solid #4A4A4A;border-radius:3px;font-size:14px;box-shadow:none}.zg-toolbar button:not(.bg-white){background:#2F2F2F}.zg-toolbar button:hover,.zg-toolbar button:focus-visible{border-color:#626262}.zg-toolbar .header-update{font-size:13px;gap:8px;flex-wrap:wrap;justify-content:flex-start;white-space:normal}.zg-toolbar .header-update strong{font-size:13px}.zg-dashboard .api-status{font-size:12px}.zg-dashboard .api-status:before{animation:none}.zg-data-notice{display:flex;gap:8px;align-items:center;min-height:34px;padding:8px 12px;background:#FFF8E7;border:1px solid #ECDCA7;color:#725817;font-size:13px;margin-top:12px;border-radius:3px}.zg-data-notice svg{flex-shrink:0}
 .zg-section{margin-top:24px;scroll-margin-top:24px}.zg-section-heading{display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:12px;color:var(--zg-text-dark-primary)}.zg-section-heading h2{font-size:22px;font-weight:700;display:flex;align-items:center;gap:8px;line-height:1.3}.zg-section-heading h2 svg{width:20px;color:var(--zg-brand)}.zg-section-heading p{font-size:13px;color:#CBD2DC}.zg-brand-tag{font-size:12px;border:1px solid #82703F;color:#FABC42;padding:4px 8px;border-radius:4px}.zg-card-heading{display:flex;align-items:center;justify-content:space-between;gap:8px}.zg-card-heading h3{font-size:16px;font-weight:700;display:flex;align-items:center;gap:8px}.zg-card-heading h2{font-size:20px;font-weight:700}.zg-card-heading svg{color:#64748B}
-.zg-country-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}.zg-country-card{position:relative;isolation:isolate;border:1px solid var(--zg-border-light);border-radius:8px;background:var(--zg-surface-2);padding:12px 16px;min-width:0;height:180px}.zg-flag{position:absolute;right:0;top:10%;height:80%;width:75%;object-fit:contain;opacity:.05;pointer-events:none;z-index:-1;transition:opacity 160ms}.zg-country-card:hover .zg-flag{opacity:.08}.zg-country-card>p{font-size:13px;color:#556274;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.zg-country-number{display:flex;gap:12px;align-items:baseline;margin:8px 0}.zg-country-number strong{font-size:38px;font-weight:700;line-height:1.2}.zg-country-number span{font-size:14px;font-weight:600}.zg-country-meta{display:flex;align-items:center;justify-content:space-between;gap:4px;margin-top:12px}.zg-country-meta small{font-size:12px;color:#556274}.zg-detail{font-size:13px;color:var(--zg-link);display:inline-flex;align-items:center;gap:4px;min-height:24px}.zg-detail:hover{color:var(--zg-link-hover);text-decoration:underline}.zg-detail svg{transition:transform 160ms}.zg-detail:hover svg{transform:translateX(2px)}.is-clickable:hover{background:#FFF;border-color:#B8C0CA;box-shadow:0 3px 10px #0000001a;transform:translateY(-1px)}
+.zg-country-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}.zg-country-card{position:relative;isolation:isolate;border:1px solid var(--zg-border-light);border-radius:8px;background:var(--zg-surface-2);padding:12px 16px;min-width:0;height:180px}.zg-flag{position:absolute;right:0;top:10%;height:80%;width:75%;object-fit:contain;opacity:.05;pointer-events:none;z-index:-1;transition:opacity 160ms}.zg-country-card:hover .zg-flag{opacity:.08}.zg-country-card>p{font-size:13px;color:#556274;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.zg-country-number{display:flex;gap:12px;align-items:baseline;margin:8px 0}.zg-country-number strong{font-size:38px;font-weight:700;line-height:1.2}.zg-country-number span{font-size:14px;font-weight:600}.zg-country-meta{display:flex;align-items:center;justify-content:space-between;gap:4px;margin-top:12px}.zg-country-meta small{font-size:12px;color:#556274}.zg-detail{font-size:13px;color:var(--zg-link);display:inline-flex;align-items:center;gap:4px;min-height:24px}.zg-detail:hover{color:var(--zg-link-hover);text-decoration:underline}.zg-detail svg{transition:transform 160ms}.zg-detail:hover svg{transform:translateX(2px)}.is-clickable:hover,.is-clickable:focus-within{background:#FFF;border-color:#B8C0CA;box-shadow:0 3px 10px #0000001a;transform:translateY(-1px)}
 .zg-scale{height:6px;background:var(--zg-chart-track);border-radius:999px;position:relative;margin:8px 4px}.zg-scale>div{height:100%;border-radius:inherit;transition:width 200ms ease-out}.zg-scale i{position:absolute;top:50%;transform:translate(-50%,-50%);width:8px;height:8px;border:2px solid;background:white;border-radius:50%;transition:width 140ms,height 140ms}.zg-scale:hover i{width:10px;height:10px}.zg-scale-labels{display:flex;justify-content:space-between;font-size:12px;color:#556274}
 .zg-master{display:grid;grid-template-columns:22fr 53fr 25fr;gap:24px;background:var(--zg-surface-1);border:1px solid var(--zg-border-light);border-radius:3px;padding:20px;min-height:180px}.zg-eyebrow{font-size:13px;color:#556274}.zg-master-number{display:flex;align-items:baseline;gap:12px;margin:8px 0}.zg-master-number strong{font-size:48px;line-height:1.2;font-weight:700}.zg-master-number span{font-size:15px;font-weight:600}.zg-master-context{border-left:1px solid #D7DCE2;border-right:1px solid #D7DCE2;padding:0 24px;min-width:0}.zg-master h3{font-weight:600;font-size:14px;margin-bottom:8px}.zg-master-context p{font-size:15px;line-height:1.5}.zg-master-context small{font-size:12px;color:#556274}.zg-spark{height:48px;max-width:300px;width:100%;margin:8px 0}.zg-weights button{display:flex;justify-content:space-between;width:100%;padding:4px 8px;font-size:13px;border-radius:3px}.zg-weights .is-linked{background:var(--zg-brand-soft)}.zg-weights h3{display:flex;align-items:center;gap:4px}
 .zg-component-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-top:12px}.zg-component{border:1px solid #D7DCE2;background:#ECEEF0;border-radius:3px;padding:12px 16px;min-height:155px;transition:background 160ms,border-color 160ms}.zg-component.is-linked{border-color:#FABC42;background:#FFF}.zg-component-number{display:flex;gap:12px;align-items:baseline;margin:4px 0}.zg-component-number strong{font-size:30px;font-weight:700;line-height:1.2}.zg-component-number span{font-weight:600;font-size:14px}.zg-component p{font-size:13px;color:#556274;min-height:20px}.zg-component>.zg-detail{margin-top:4px}.zg-component.is-linked .zg-card-heading svg{color:#AC7100}
 .zg-tip-wrap{position:relative;display:inline-flex;vertical-align:middle}.zg-info{display:inline-flex;align-items:center;justify-content:center;min-width:28px;min-height:28px;border-radius:4px;color:#556274}.zg-tip{position:absolute;top:100%;right:0;z-index:100;width:240px;max-width:calc(100vw - 40px);padding:12px;background:#172033;color:#FFF;border-radius:4px;box-shadow:0 4px 12px #0003;font-size:13px;font-weight:400;line-height:1.6;animation:zg-tooltip 130ms ease-out}.zg-tip-dismiss{position:fixed;inset:0;background:transparent;z-index:90;cursor:default}.zg-tip-wrap:has(.zg-tip){z-index:100}@keyframes zg-tooltip{from{opacity:0;transform:translateY(3px)}to{opacity:1;transform:translateY(0)}}
 .zg-scenario-empty{display:flex;align-items:center;gap:20px;border:1px solid #D7DCE2;border-top:3px solid #FABC42;background:#F8FAFC;padding:24px;border-radius:4px;min-height:132px}.zg-scenario-empty h3{font-size:16px;font-weight:700;margin-bottom:8px}.zg-scenario-empty p{color:#556274;font-size:14px}.zg-scenario-empty>span{font-size:34px;margin-left:auto}.zg-scenario-empty>svg{color:#64748B;flex-shrink:0}.zg-carousel-wrap{position:relative}.zg-scenario-track{display:grid;grid-auto-flow:column;grid-auto-columns:calc((100% - 36px)/4);gap:12px;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;padding-bottom:4px}.zg-scenario-card{background:#F8FAFC;border:1px solid #D7DCE2;border-top:3px solid #FABC42;border-radius:4px;padding:16px;min-height:175px;scroll-snap-align:start}.zg-scenario-card h3{font-size:15px;font-weight:700;min-height:42px;margin-top:8px}.zg-scenario-number{font-size:34px;font-weight:700}.zg-scenario-number small{font-size:13px;color:#3478D4;margin-left:12px}.zg-scenario-card small{font-size:12px}.zg-neutral-tag{font-size:12px;background:#EEF1F4;padding:2px 8px;border-radius:4px}.zg-next,.zg-prev{position:absolute;z-index:30;top:35%;background:#FFFC;border:1px solid #D7DCE2;width:36px;height:56px;display:grid;place-items:center}.zg-next{right:0}.zg-prev{left:0}
-.zg-strength-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:24px}.zg-strength{background:#ECEEF0;border:1px solid #D7DCE2;border-radius:3px;padding:16px 20px;min-width:0}.zg-strength>p{font-size:13px;color:#556274;margin:4px 0 12px}.zg-strength li{display:grid;grid-template-columns:24px 120px 1fr 32px 28px;align-items:center;gap:8px;min-height:40px;border-radius:3px}.zg-strength li:hover{background:#FFFFFF8C}.zg-strength li>b{font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.zg-strength li>span{font-size:13px;color:#556274}.zg-strength-bar{height:6px;background:#DCE2E8;border-radius:999px}.zg-strength-bar i{display:block;height:100%;background:#64748B;border-radius:inherit;opacity:.8}.zg-strength li:hover i{opacity:1}.zg-strength li>strong{font-size:14px}.zg-footer{border-top:1px solid #474747;color:#CBD2DC;text-align:center;padding:24px;font-size:13px}.zg-dashboard [data-testid="korea-funds"]{margin-top:24px}.zg-dashboard [data-testid="korea-funds"] article{border-radius:3px;box-shadow:none}.zg-dashboard [data-testid="korea-funds"] h2{font-size:20px}.zg-dashboard [data-testid="korea-funds"] .animate-pulse{animation:none}.zg-dashboard .sentiment-card{box-shadow:none}.zg-dashboard .indicator-panel{border-radius:3px}.zg-dashboard .text-\[11px\]{font-size:12px}
+.zg-strength-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:24px}.zg-strength{background:#ECEEF0;border:1px solid #D7DCE2;border-radius:3px;padding:16px 20px;min-width:0}.zg-strength>p{font-size:13px;color:#556274;margin:4px 0 12px}.zg-strength li{display:grid;grid-template-columns:24px 120px 1fr 32px 28px;align-items:center;gap:8px;min-height:40px;border-radius:3px}.zg-strength li:hover,.zg-strength li:focus-within{background:#FFFFFF8C}.zg-strength li>b{font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.zg-strength li>span{font-size:13px;color:#556274}.zg-strength-bar{height:6px;background:#DCE2E8;border-radius:999px}.zg-strength-bar i{display:block;height:100%;background:#64748B;border-radius:inherit;opacity:.8}.zg-strength li:hover i,.zg-strength li:focus-within i{opacity:1}.zg-strength li>strong{font-size:14px}.zg-footer{border-top:1px solid #474747;color:#CBD2DC;text-align:center;padding:24px;font-size:13px}.zg-dashboard [data-testid="korea-funds"]{margin-top:24px}.zg-dashboard [data-testid="korea-funds"] article{border-radius:3px;box-shadow:none}.zg-dashboard [data-testid="korea-funds"] h2{font-size:20px}.zg-dashboard [data-testid="korea-funds"] .animate-pulse{animation:none}.zg-dashboard .sentiment-card{box-shadow:none}.zg-dashboard .indicator-panel{border-radius:3px}.zg-dashboard .text-\[11px\]{font-size:12px}
 @media(min-width:1920px){.zg-container,.zg-header-inner{max-width:1520px}}
 @media(max-width:1440px){.zg-container,.zg-header-inner{width:calc(100% - 40px)}}
 @media(max-width:1200px){.zg-container,.zg-header-inner{width:calc(100% - 32px)}.zg-header nav{gap:16px}.zg-country-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.zg-master{grid-template-columns:1fr 1.8fr 1fr}.zg-strength li{grid-template-columns:20px 100px 1fr 28px 28px}.zg-scenario-track{grid-auto-columns:calc((100% - 24px)/3)}}
@@ -1143,37 +1141,25 @@ body{background:var(--zg-page)!important;color:var(--zg-text)}.zg-header{backgro
 @media(max-width:480px){.zg-macro-row .zg-component-grid{grid-template-columns:1fr}}
 .zg-component-panel{background:linear-gradient(145deg,#102638 0%,#081D2C 65%,#071925 100%);border:1px solid var(--zg-border);border-radius:8px;padding:12px;box-shadow:inset 0 1px 0 rgba(255,255,255,.04)}
 .zg-app{background:var(--zg-page);color:var(--zg-text);min-height:100svh;min-height:100dvh;padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom)}
-@media(prefers-reduced-motion:reduce){.zg-dashboard *,.zg-dashboard *:before,.zg-dashboard *:after{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
 .zg-data-notice-compact{margin-top:8px;min-height:28px;padding:5px 10px;border:0;border-left:2px solid var(--zg-gold);border-radius:3px;background:#0b2233;color:var(--zg-text-secondary);font-size:11px}.zg-data-notice-compact svg{color:var(--zg-gold);width:14px}
 .zg-header-inner>a{background:transparent;mix-blend-mode:lighten}
-.cnn-reference-panel{margin:0 0 14px;border:1px solid var(--zg-border);border-radius:10px;background:linear-gradient(135deg,#102b40 0%,#081d2c 58%,#061725 100%);box-shadow:inset 0 1px 0 rgba(255,255,255,.04);overflow:hidden}.cnn-panel-heading{display:flex;justify-content:space-between;gap:18px;padding:20px 22px 12px}.cnn-market-title{display:flex;align-items:center;gap:14px}.cnn-market-title img{width:46px;height:31px;object-fit:cover;border-radius:3px;box-shadow:0 0 0 1px #ffffff33}.cnn-market-title h2{font-size:28px;line-height:1.1;font-weight:800;color:var(--zg-text)}.cnn-market-title p:last-child{margin-top:3px;color:var(--zg-text-secondary);font-size:13px}.cnn-eyebrow{color:var(--zg-gold);font-size:10px;font-weight:800;letter-spacing:.16em}.cnn-source{display:flex;flex-direction:column;align-items:flex-end;gap:2px;color:var(--zg-text-meta);font-size:11px;text-align:right}.cnn-source strong{color:var(--zg-text);font-size:14px}.cnn-source small{color:var(--zg-positive-text)}.cnn-panel-main{display:grid;grid-template-columns:180px minmax(0,1fr);gap:18px;align-items:center;padding:4px 22px 18px}.cnn-score-orb{display:flex;min-height:156px;flex-direction:column;align-items:center;justify-content:center;border:1px solid #ffffff1a;border-radius:50%;background:radial-gradient(circle,#173a4b 0%,#0b2638 58%,transparent 59%);color:var(--zg-text-secondary);text-align:center}.cnn-score-orb svg{margin-bottom:4px;color:var(--zg-gold)}.cnn-score-orb strong{font-size:48px;line-height:1;font-weight:900}.cnn-score-orb span{margin-top:7px;font-size:17px;font-weight:800}.cnn-score-orb small{margin-top:2px;color:var(--zg-text-meta);font-size:11px}.cnn-score-orb.is-fear strong,.cnn-score-orb.is-fear span{color:var(--zg-danger-text)}.cnn-score-orb.is-greed strong,.cnn-score-orb.is-greed span{color:var(--zg-positive-text)}.cnn-trend-block{min-width:0}.cnn-trend-toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;color:var(--zg-text-meta);font-size:11px}.cnn-trend-toolbar div{display:flex;gap:5px;flex-wrap:wrap}.cnn-trend-toolbar button{min-height:30px;border:1px solid var(--zg-control-border);border-radius:999px;padding:0 11px;color:var(--zg-text-secondary);font-size:11px}.cnn-trend-toolbar button[aria-pressed=true]{border-color:var(--zg-gold);background:var(--zg-gold);color:#1b2530;font-weight:800}.cnn-chart{height:140px;min-width:0;margin-top:4px}.cnn-chart-empty{display:flex;height:100%;align-items:center;justify-content:center;gap:8px;border:1px dashed #65849e66;color:var(--zg-text-meta);font-size:12px;text-align:center}.cnn-panel-note{display:flex;align-items:center;gap:8px;border-top:1px solid #1d3b51;background:#071a29;padding:11px 22px;color:var(--zg-text-secondary);font-size:12px}.cnn-panel-note svg{color:var(--zg-positive-text);flex-shrink:0}.cnn-panel-note a{display:inline-flex;align-items:center;gap:4px;margin-left:auto;color:var(--zg-link);font-weight:700;white-space:nowrap}.cnn-components-panel{margin-top:22px;border:1px solid var(--zg-border);border-radius:10px;background:linear-gradient(145deg,#102638,#081d2c 70%);padding:22px;color:var(--zg-text)}.cnn-components-panel h2{margin-top:3px;font-size:24px;font-weight:800}.cnn-components-panel>div:first-child>p:last-child{margin-top:5px;color:var(--zg-text-secondary);font-size:13px}.cnn-component-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:8px;margin-top:18px}.cnn-component-grid article{display:flex;min-height:138px;flex-direction:column;align-items:center;justify-content:center;gap:5px;border:1px solid var(--zg-border);border-radius:8px;background:#071a29;text-align:center}.cnn-component-grid article svg{color:var(--zg-text-meta)}.cnn-component-grid h3{font-size:12px;color:var(--zg-text-secondary)}.cnn-component-grid strong{font-size:28px;color:var(--zg-text)}.cnn-component-grid span{font-size:10px;color:var(--zg-text-meta)}
-@media(max-width:767px){.cnn-panel-heading{padding:16px 14px 10px}.cnn-market-title h2{font-size:24px}.cnn-source{font-size:10px}.cnn-panel-main{grid-template-columns:1fr;gap:2px;padding:4px 14px 14px}.cnn-score-orb{min-height:128px;width:128px;margin:0 auto}.cnn-score-orb strong{font-size:40px}.cnn-chart{height:126px}.cnn-panel-note{align-items:flex-start;padding:10px 14px;font-size:11px;flex-wrap:wrap}.cnn-panel-note a{margin-left:0}.cnn-components-panel{padding:16px 14px}.cnn-component-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.cnn-component-grid article{min-height:120px}}
+.cnn-reference-panel{margin:0 0 14px;border:1px solid var(--zg-border);border-radius:10px;background:linear-gradient(135deg,#102b40 0%,#081d2c 58%,#061725 100%);box-shadow:inset 0 1px 0 rgba(255,255,255,.04);overflow:hidden}.cnn-panel-heading{display:flex;justify-content:space-between;gap:18px;padding:20px 22px 12px}.cnn-market-title{display:flex;align-items:center;gap:14px}.cnn-market-title img{width:46px;height:31px;object-fit:cover;border-radius:3px;box-shadow:0 0 0 1px #ffffff33}.cnn-market-title h2{font-size:28px;line-height:1.1;font-weight:800;color:var(--zg-text)}.cnn-market-title p:last-child{margin-top:3px;color:var(--zg-text-secondary);font-size:13px}.cnn-eyebrow{color:var(--zg-gold);font-size:10px;font-weight:800;letter-spacing:.16em}.cnn-source{display:flex;flex-direction:column;align-items:flex-end;gap:2px;color:var(--zg-text-meta);font-size:11px;text-align:right}.cnn-source strong{color:var(--zg-text);font-size:14px}.cnn-source small{color:var(--zg-positive-text)}.cnn-panel-main{display:grid;grid-template-columns:180px minmax(0,1fr);gap:18px;align-items:center;padding:4px 22px 18px}.cnn-score-orb{display:flex;min-height:156px;flex-direction:column;align-items:center;justify-content:center;border:1px solid #ffffff1a;border-radius:50%;background:radial-gradient(circle,#173a4b 0%,#0b2638 58%,transparent 59%);color:var(--zg-text-secondary);text-align:center}.cnn-score-orb svg{margin-bottom:4px;color:var(--zg-gold)}.cnn-score-orb strong{font-size:48px;line-height:1;font-weight:900}.cnn-score-orb span{margin-top:7px;font-size:17px;font-weight:800}.cnn-score-orb small{margin-top:1px;color:var(--zg-text-meta);font-size:11px}.cnn-score-orb.is-fear strong,.cnn-score-orb.is-fear span{color:var(--zg-danger-text)}.cnn-score-orb.is-greed strong,.cnn-score-orb.is-greed span{color:var(--zg-positive-text)}.cnn-trend-block{min-width:0}.cnn-chart{min-width:0}.cnn-chart-empty{display:flex;height:100%;align-items:center;justify-content:center;gap:8px;border:1px dashed #65849e66;color:var(--zg-text-meta);font-size:12px;text-align:center}.cnn-panel-note{display:flex;align-items:center;gap:8px;border-top:1px solid #1d3b51;background:#071a29;padding:11px 22px;color:var(--zg-text-secondary);font-size:12px}.cnn-panel-note svg{color:var(--zg-positive-text);flex-shrink:0}.cnn-panel-note a{display:inline-flex;align-items:center;gap:4px;margin-left:auto;color:var(--zg-link);font-weight:700;white-space:nowrap}.cnn-components-panel{margin-top:22px;border:1px solid var(--zg-border);border-radius:10px;background:linear-gradient(145deg,#102638,#081d2c 70%);padding:22px;color:var(--zg-text)}.cnn-components-panel h2{margin-top:3px;font-size:24px;font-weight:800}.cnn-components-panel>div:first-child>p:last-child{margin-top:5px;color:var(--zg-text-secondary);font-size:13px}.cnn-component-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:8px;margin-top:18px}.cnn-component-grid article{display:flex;min-height:138px;flex-direction:column;align-items:center;justify-content:center;gap:5px;border:1px solid var(--zg-border);border-radius:8px;background:#071a29;text-align:center}.cnn-component-grid article svg{color:var(--zg-text-meta)}.cnn-component-grid h3{font-size:12px;color:var(--zg-text-secondary)}.cnn-component-grid strong{font-size:28px;color:var(--zg-text)}.cnn-component-grid span{font-size:10px;color:var(--zg-text-meta)}
+@media(max-width:767px){.cnn-panel-heading{padding:16px 14px 10px}.cnn-market-title h2{font-size:24px}.cnn-source{font-size:10px}.cnn-panel-main{grid-template-columns:1fr;gap:2px;padding:4px 14px 14px}.cnn-score-orb{min-height:128px;width:128px;margin:0 auto}.cnn-score-orb strong{font-size:40px}.cnn-panel-note{align-items:flex-start;padding:10px 14px;font-size:11px;flex-wrap:wrap}.cnn-panel-note a{margin-left:0}.cnn-components-panel{padding:16px 14px}.cnn-component-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.cnn-component-grid article{min-height:120px}}
 
-.cnn-chart.is-empty{height:104px}.korea-reference-panel .cnn-panel-main{padding-bottom:12px}.korea-reference-panel .cnn-trend-block>div>div:first-child{margin-top:0!important}.korea-reference-panel .cnn-trend-block button{min-height:28px;border:1px solid var(--zg-control-border);border-radius:999px;background:transparent;color:var(--zg-text-secondary);padding:0 10px;font-size:11px}.korea-reference-panel .cnn-trend-block button.bg-blue-700{border-color:var(--zg-gold);background:var(--zg-gold);color:#1b2530}.korea-reference-panel .cnn-trend-block p{color:var(--zg-text-meta)}.korea-reference-panel .recharts-cartesian-axis-tick text{fill:var(--zg-text-meta)}
-
-.korea-reference-panel{grid-column:1 / -1;width:100%}
-
-.zg-country-grid:has(.korea-reference-panel){display:block;overflow:visible}.zg-country-grid .korea-reference-panel{width:100%;grid-column:auto}.cnn-score-orb{border-radius:12px;background:linear-gradient(145deg,#173a4b,#0b2638);border-color:var(--zg-border);min-height:128px}
+.zg-country-panel-grid .fg-card{width:100%}.cnn-score-orb{border-radius:12px;background:linear-gradient(145deg,#173a4b,#0b2638);border-color:var(--zg-border);min-height:128px}
 
 .zg-strength{border-color:var(--zg-border)!important}.zg-strength-score{color:var(--zg-text-meta);font-size:12px;font-weight:600;white-space:nowrap}.cnn-score-orb small{color:var(--zg-text-meta)}
 
 /* Target-A compact country card proportions */
-.cnn-reference-panel{margin-bottom:10px}.cnn-panel-heading{padding:12px 18px 8px}.cnn-panel-main{gap:14px;padding:2px 18px 10px}.cnn-score-orb{min-height:112px}.cnn-score-orb strong{font-size:42px}.cnn-score-orb span{margin-top:4px;font-size:15px}.cnn-chart{height:96px}.cnn-panel-note{padding:8px 18px;font-size:11px}.korea-reference-panel .cnn-panel-main{padding-bottom:8px}.korea-reference-panel .cnn-trend-block>div>div[style*='height']{height:112px!important}.zg-country-section>.cnn-reference-panel + .korea-reference-panel{margin-top:8px}@media(max-width:767px){.cnn-panel-heading{padding:12px 14px 8px}.cnn-panel-main{padding:2px 14px 10px}.cnn-score-orb{min-height:112px}.cnn-chart{height:96px}}
+.cnn-reference-panel{margin-bottom:10px}.cnn-panel-heading{padding:12px 18px 8px}.cnn-panel-main{gap:14px;padding:2px 18px 10px}.cnn-score-orb{min-height:112px}.cnn-score-orb strong{font-size:42px}.cnn-score-orb span{margin-top:4px;font-size:15px}.cnn-panel-note{padding:8px 18px;font-size:11px}@media(max-width:767px){.cnn-panel-heading{padding:12px 14px 8px}.cnn-panel-main{padding:2px 14px 10px}.cnn-score-orb{min-height:112px}}
 
-.zg-country-panel-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;align-items:stretch}.zg-country-panel-grid>.cnn-reference-panel,.zg-country-panel-grid>.zg-country-grid{min-width:0;margin:0}.zg-country-panel-grid>.zg-country-grid{display:block}.zg-country-panel-grid>.zg-country-grid .korea-reference-panel{height:100%;min-height:0}.zg-country-panel-grid .cnn-panel-main{grid-template-columns:128px minmax(0,1fr)}@media(max-width:560px){.zg-country-panel-grid{grid-template-columns:1fr}.zg-country-panel-grid .cnn-panel-main{grid-template-columns:1fr}}
+.zg-country-panel-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;align-items:stretch}.zg-country-panel-grid>.cnn-reference-panel,.zg-country-panel-grid>.zg-country-grid{min-width:0;margin:0}.zg-country-panel-grid>.zg-country-grid{display:block;overflow:visible}.zg-country-panel-grid .cnn-reference-panel{margin-bottom:0}.zg-country-panel-grid .fg-card{width:100%}@media(max-width:560px){.zg-country-panel-grid{grid-template-columns:1fr}}
 
 .cnn-detail-panel{margin-top:18px;border:1px solid var(--zg-border);border-radius:10px;background:linear-gradient(145deg,#102638,#081d2c 70%);padding:22px;color:var(--zg-text)}.cnn-detail-heading{display:flex;justify-content:space-between;gap:20px}.cnn-detail-heading h1{font-size:30px;font-weight:800}.cnn-detail-heading p:last-child,.cnn-detail-heading>span{color:var(--zg-text-secondary);font-size:13px}.cnn-spectrum{margin-top:22px}.cnn-spectrum-labels,.cnn-spectrum-track{display:flex;justify-content:space-between}.cnn-spectrum-labels b{font-size:12px;color:var(--zg-text-secondary)}.cnn-spectrum-track{height:24px;margin-top:8px;padding:0 4px;border-radius:999px;background:linear-gradient(90deg,#c9153d,#eb734e 28%,#d8b04e 52%,#15d877);color:#fff;font-size:12px;align-items:center}.cnn-spectrum-empty{display:flex;justify-content:center;align-items:center;gap:8px;border:1px dashed #65849e66;min-height:70px;margin-top:8px;color:var(--zg-text-meta);font-size:12px}.cnn-detail-panel .cnn-components-panel{margin:24px 0 0;padding:0;border:0;background:none}.cnn-return-cta{display:inline-flex;margin-top:22px;border-radius:999px;background:var(--zg-gold);color:#1b2530;padding:12px 18px;font-weight:800}@media(max-width:767px){.cnn-detail-panel{padding:16px 14px}.cnn-detail-heading{display:block}.cnn-detail-heading h1{font-size:24px}.cnn-spectrum-labels b{font-size:9px}.cnn-component-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 
 .zg-app,.zg-container,.zg-section,.zg-country-panel-grid,.cnn-reference-panel,.cnn-detail-panel{min-width:0;max-width:100%}.cnn-trend-block,.cnn-chart,.recharts-responsive-container{min-width:0;max-width:100%}
 
-.zg-country-panel-grid{align-items:stretch}.zg-country-panel-grid>.cnn-reference-panel,.zg-country-panel-grid>.zg-country-grid .korea-reference-panel{height:246px;display:flex;flex-direction:column}.zg-country-panel-grid .cnn-panel-heading{min-height:64px}.zg-country-panel-grid .cnn-panel-main{flex:1;min-height:0;align-items:center;padding-top:0;padding-bottom:8px}.zg-country-panel-grid .cnn-chart{height:86px}.zg-country-panel-grid .cnn-panel-note{min-height:34px}.zg-country-panel-grid .korea-reference-panel .cnn-trend-block>div>div[style*='height']{height:86px!important}.zg-country-panel-grid .korea-reference-panel .cnn-trend-block{overflow:hidden}
-
-.zg-country-panel-grid>.cnn-reference-panel,.zg-country-panel-grid>.zg-country-grid .korea-reference-panel{height:246px}.zg-country-panel-grid .cnn-panel-heading{height:70px;flex:0 0 70px}.zg-country-panel-grid .cnn-panel-main{height:142px;flex:0 0 142px;box-sizing:border-box}.zg-country-panel-grid .cnn-panel-note{margin-top:auto;height:34px;min-height:34px;box-sizing:border-box}.zg-country-panel-grid .korea-reference-panel .cnn-panel-main{height:142px;flex-basis:142px}.zg-country-panel-grid .korea-reference-panel .cnn-trend-block{align-self:center}
 /* Dashboard visual calibration: shared controls, scale semantics, and compact first viewport. */
-.zg-country-panel-grid .cnn-trend-toolbar{min-height:30px;align-items:center}
-.zg-country-panel-grid .cnn-trend-toolbar>div{justify-content:flex-end}
-.zg-country-panel-grid .cnn-trend-toolbar>span:last-child{white-space:nowrap;color:var(--zg-text-meta)}
-.zg-country-panel-grid .korea-reference-panel .cnn-trend-toolbar{padding:0 2px}
 .zg-component .zg-card-heading h3{font-size:14px;font-weight:800;color:var(--zg-text)}
 .zg-scale{height:5px;background:#294156;border-radius:3px}
 .zg-scale>div{transition:width 260ms ease-out}
@@ -1181,36 +1167,19 @@ body{background:var(--zg-page)!important;color:var(--zg-text)}.zg-header{backgro
 .zg-macro-row .zg-master,.zg-macro-row .zg-component{min-height:184px}
 .zg-section{margin-top:10px;padding:10px 14px}
 .zg-scenario-empty{min-height:108px;padding:18px 20px}
-@media(min-width:1280px){.zg-country-panel-grid>.cnn-reference-panel,.zg-country-panel-grid>.zg-country-grid .korea-reference-panel{height:232px}.zg-country-panel-grid .cnn-panel-heading{height:64px;flex-basis:64px}.zg-country-panel-grid .cnn-panel-main{height:134px;flex-basis:134px}.zg-country-panel-grid .cnn-panel-note{height:34px}}
 /* Final responsive composition pass: shared card geometry and mobile-safe flow. */
 html,body{overflow-x:hidden}
 .zg-dashboard{min-height:100dvh}
 .zg-container{max-width:1440px}
 .zg-section-heading{min-height:34px;align-items:center}
 .zg-country-panel-grid{align-items:stretch}
-.zg-country-panel-grid>.cnn-reference-panel,.zg-country-panel-grid>.zg-country-grid .korea-reference-panel{height:248px;min-height:248px;overflow:hidden}
-.zg-country-panel-grid .cnn-panel-heading{height:var(--zg-market-heading-h);min-height:var(--zg-market-heading-h);flex:0 0 var(--zg-market-heading-h);padding:10px 18px 6px}
-.zg-country-panel-grid .cnn-panel-main{height:var(--zg-market-main-h);min-height:var(--zg-market-main-h);flex:0 0 var(--zg-market-main-h);padding:0 18px 8px;align-items:center}
-.zg-country-panel-grid .cnn-panel-note{height:var(--zg-market-footer-h);min-height:var(--zg-market-footer-h);flex:0 0 var(--zg-market-footer-h);overflow:hidden;white-space:nowrap}
-.zg-country-panel-grid .cnn-score-orb{min-height:112px}
-.zg-country-panel-grid .cnn-chart{height:94px}
-.zg-country-panel-grid .korea-reference-panel .cnn-panel-main{height:148px;min-height:148px;flex-basis:148px}
-.zg-country-panel-grid .korea-reference-panel .cnn-trend-block{min-width:0;align-self:stretch}
-.zg-country-panel-grid .korea-reference-panel .cnn-trend-toolbar{margin-top:3px}
-.zg-country-panel-grid .korea-reference-panel .cnn-trend-block>div[style]{height:104px!important}
+
 .zg-component-grid{align-items:stretch}
 .zg-component{min-height:164px}
 .zg-component .zg-card-heading{min-height:22px;align-items:center}
 .zg-component .zg-detail{margin-top:auto}
 .zg-scenario-empty{min-height:104px}
 @media(max-width:767px){
- .zg-country-panel-grid .cnn-source{gap:1px;font-size:8px;line-height:1.15}
- .zg-country-panel-grid .cnn-source strong{font-size:10px}
- .zg-country-panel-grid .cnn-source small{font-size:8px}
- :root{--zg-market-heading-h:70px;--zg-market-main-h:188px;--zg-market-footer-h:34px}
- .zg-country-panel-grid{display:grid!important;grid-template-columns:1fr!important;gap:8px!important;overflow:visible!important;padding:0!important;scroll-snap-type:none!important}
- .zg-country-panel-grid>.cnn-reference-panel,.zg-country-panel-grid>.zg-country-grid{width:100%!important;flex:none!important;scroll-snap-align:none!important}
- .zg-country-panel-grid>.zg-country-grid{display:contents!important}
   .zg-header-inner{min-height:52px;padding:5px 0 0;gap:4px}
   .zg-header-inner>a{padding:2px 4px}
   .zg-header-inner>a div img{width:112px}
@@ -1224,28 +1193,6 @@ html,body{overflow-x:hidden}
   .zg-section-heading{min-height:28px;gap:5px}
   .zg-section-heading h2{font-size:18px}
   .zg-section-heading p{font-size:11px}
-  .zg-country-panel-grid{display:grid;grid-template-columns:1fr;gap:8px}
-  .zg-country-panel-grid>.cnn-reference-panel,.zg-country-panel-grid>.zg-country-grid .korea-reference-panel{height:auto;min-height:0;overflow:visible}
-  .zg-country-panel-grid .cnn-panel-heading{height:auto;min-height:0;flex:auto;padding:11px 12px 7px}
-  .zg-country-panel-grid .cnn-market-title{gap:9px}
-  .zg-country-panel-grid .cnn-market-title img{width:38px;height:26px}
-  .zg-country-panel-grid .cnn-market-title h2{font-size:22px}
-  .zg-country-panel-grid .cnn-market-title p:last-child{font-size:11px}
-  .zg-country-panel-grid .cnn-eyebrow{font-size:8px}
-  .zg-country-panel-grid .cnn-source{font-size:9px}
-  .zg-country-panel-grid .cnn-source strong{font-size:12px}
-  .zg-country-panel-grid .cnn-panel-main,.zg-country-panel-grid .korea-reference-panel .cnn-panel-main{display:grid;grid-template-columns:1fr;height:auto;min-height:0;flex:auto;gap:8px;padding:0 12px 10px}
-  .zg-country-panel-grid .cnn-score-orb{width:100%;min-height:92px;height:92px;border-radius:10px}
-  .zg-country-panel-grid .cnn-score-orb strong{font-size:34px}
-  .zg-country-panel-grid .cnn-score-orb span{font-size:14px;margin-top:3px}
-  .zg-country-panel-grid .cnn-score-orb small{font-size:10px}
-  .zg-country-panel-grid .cnn-trend-block{width:100%;min-width:0}
-  .zg-country-panel-grid .cnn-trend-toolbar{min-height:26px;font-size:10px}
-  .zg-country-panel-grid .cnn-trend-toolbar button{min-height:26px;padding:0 8px;font-size:10px}
-  .zg-country-panel-grid .cnn-chart{height:96px;margin-top:2px}
-  .zg-country-panel-grid .korea-reference-panel .cnn-trend-block>div[style]{height:106px!important}
-  .zg-country-panel-grid .cnn-panel-note{height:auto;min-height:34px;flex:auto;white-space:normal;padding:8px 12px;font-size:10px;line-height:1.35;align-items:flex-start}
-  .zg-country-panel-grid .cnn-panel-note a{margin-left:auto;flex:0 0 auto}
   .zg-macro-row{gap:8px}
   .zg-macro-row .zg-master,.zg-macro-row .zg-component{min-height:150px}
   .zg-macro-row .zg-master{padding:11px}
@@ -1261,8 +1208,6 @@ html,body{overflow-x:hidden}
 }
 
 /* Shared period controls for both market cards. */
-:root{--zg-market-gap:10px;--zg-market-heading-h:66px;--zg-market-main-h:148px;--zg-market-footer-h:34px}
-@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;scroll-behavior:auto!important;transition-duration:.01ms!important}}
 .cnn-period-toolbar{display:flex;flex-wrap:nowrap;align-items:center;gap:5px;margin:8px 0;min-width:0}
 .cnn-period-button{min-height:30px;height:30px;border:1px solid var(--zg-control-border);border-radius:999px;padding:0 10px;background:transparent;color:var(--zg-text-secondary);font-size:11px;white-space:nowrap;touch-action:manipulation}
 .cnn-period-button[aria-pressed=true]{border-color:var(--zg-gold);background:var(--zg-gold);color:#1b2530;font-weight:800}
@@ -1271,36 +1216,155 @@ html,body{overflow-x:hidden}
 .cnn-chart-empty span{max-width:34ch;line-height:1.35}
 @media(max-width:767px){.cnn-chart-empty{gap:5px;font-size:10px}.cnn-chart-empty span{max-width:24ch}}
 @media(max-width:767px){.cnn-period-toolbar{gap:3px;margin:4px 0}.cnn-period-button{height:24px;min-height:24px;padding:0 6px;font-size:9px}}
-@media(max-width:480px){
- :root{--zg-market-heading-h:66px;--zg-market-main-h:178px;--zg-market-footer-h:34px}
-  .zg-country-panel-grid .cnn-market-title h2{font-size:20px}
-  .zg-country-panel-grid .cnn-score-orb{min-height:84px;height:84px}
-  .zg-country-panel-grid .cnn-chart{height:84px}
-  .zg-country-panel-grid .korea-reference-panel .cnn-trend-block>div[style]{height:94px!important}
-  .zg-component-grid{grid-template-columns:1fr}
+
+/* W5: non-card Korea chart geometry is CSS-owned; shared card geometry remains in fg-* slots. */
+.korea-composite-chart-host{height:240px;min-width:0}
+.korea-composite-chart-host.is-mini{height:64px}
+
+/* W2: Fear & Greed shared geometry ownership.
+   FearGreedCardShell owns card/header/content/period/chart/footer geometry.
+   Country renderers paint inside the shared slots and do not override slot size. */
+:root{
+  --fg-card-height:232px;
+  --fg-header-height:64px;
+  --fg-footer-height:34px;
+  --fg-score-width:128px;
+  --fg-score-height:100px;
+  --fg-chart-height:90px;
+  --fg-period-height:25px;
+  --fg-card-padding:14px;
+  --fg-card-gap:10px;
 }
-/* Mobile market-card composition follows the supplied reference: compact horizontal cards. */
-@media(max-width:767px){
-  /* Mobile cards remain in one vertical flow; horizontal carousel is intentionally disabled. */
-  .zg-country-panel-grid>.cnn-reference-panel,.zg-country-panel-grid>.zg-country-grid .korea-reference-panel{height:350px;min-height:350px;overflow:hidden}
-  .zg-country-panel-grid .cnn-panel-heading{height:92px;min-height:92px;display:flex;align-items:flex-start}
-  .zg-country-panel-grid .cnn-panel-main,.zg-country-panel-grid .korea-reference-panel .cnn-panel-main{display:grid;grid-template-columns:108px minmax(0,1fr);align-items:center;height:220px;min-height:220px;flex:0 0 220px;gap:10px;padding:0 12px 8px}
-  .zg-country-panel-grid .cnn-score-orb{width:108px;height:108px;min-height:108px;border-radius:50%}
-  .zg-country-panel-grid .cnn-score-orb strong{font-size:34px}
-  .zg-country-panel-grid .cnn-trend-block{min-width:0;align-self:center}
-  .zg-country-panel-grid .cnn-chart{height:122px}
-  .zg-country-panel-grid .korea-reference-panel .cnn-trend-block>div[style]{height:128px!important}
-  .zg-country-panel-grid .cnn-panel-note{height:38px;min-height:38px;flex:0 0 38px;overflow:hidden;white-space:nowrap;padding:8px 12px}
-  .zg-country-panel-grid .cnn-panel-note span{overflow:hidden;text-overflow:ellipsis}
+.fg-card{
+  --fg-card-border-block-total:2px; /* 1px top + 1px bottom border */
+  --fg-content-height:calc(
+    var(--fg-card-height)
+    - var(--fg-header-height)
+    - var(--fg-footer-height)
+    - var(--fg-card-border-block-total)
+  );
+
+  height:var(--fg-card-height);
+  min-height:var(--fg-card-height);
+  box-sizing:border-box;
+  display:flex;
+  flex-direction:column;
+  overflow:hidden; /* Decorative frame clipping only; slot sizing owns content geometry. */
 }
-@media(max-width:480px){
-  .zg-country-panel-grid>.cnn-reference-panel,.zg-country-panel-grid>.zg-country-grid .korea-reference-panel{height:336px;min-height:336px}
-  .zg-country-panel-grid .cnn-panel-heading{height:84px;min-height:84px}
-  .zg-country-panel-grid .cnn-panel-main,.zg-country-panel-grid .korea-reference-panel .cnn-panel-main{grid-template-columns:96px minmax(0,1fr);height:214px;min-height:214px;flex-basis:214px;gap:8px}
-  .zg-country-panel-grid .cnn-score-orb{width:96px;height:96px;min-height:96px}
-  .zg-country-panel-grid .cnn-chart{height:112px}
-  .zg-country-panel-grid .korea-reference-panel .cnn-trend-block>div[style]{height:116px!important}
+.fg-header-slot{
+  height:var(--fg-header-height);
+  min-height:var(--fg-header-height);
+  flex:0 0 var(--fg-header-height);
 }
+.fg-header-slot .cnn-panel-heading{
+  height:100%;
+  min-height:0;
+  box-sizing:border-box;
+}
+.fg-content-slot{
+  height:var(--fg-content-height);
+  min-height:var(--fg-content-height);
+  flex:0 0 var(--fg-content-height);
+  display:grid;
+  grid-template-columns:var(--fg-score-width) minmax(0,1fr);
+  align-items:center;
+  gap:var(--fg-card-gap);
+  padding:0 var(--fg-card-padding);
+  box-sizing:border-box;
+}
+.fg-score-slot{
+  width:var(--fg-score-width);
+  min-width:0;
+  align-self:center;
+}
+.fg-score-slot .cnn-score-orb{
+  width:100%;
+  height:var(--fg-score-height);
+  min-height:var(--fg-score-height);
+  box-sizing:border-box;
+}
+.fg-analysis-slot{
+  min-width:0;
+  min-height:0;
+  align-self:stretch;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+}
+.fg-period-slot{
+  height:var(--fg-period-height);
+  min-height:var(--fg-period-height);
+  display:flex;
+  align-items:center;
+  justify-content:flex-start;
+  gap:0;
+  color:var(--zg-text-meta);
+  font-size:var(--fg-period-size);
+  font-weight:var(--fg-period-weight);
+  line-height:var(--fg-period-line);
+  letter-spacing:var(--fg-period-letter);
+}
+.fg-period-slot .cnn-period-toolbar{
+  width:100%;
+  height:var(--fg-period-height);
+  min-height:var(--fg-period-height);
+  margin:0;
+  display:flex;
+  flex:1 1 100%;
+  min-width:0;
+  gap:4px;
+}
+.fg-period-slot .cnn-period-button{
+  height:var(--fg-period-height);
+  min-height:var(--fg-period-height);
+  flex:1 1 0;
+  min-width:0;
+  padding:0 7px;
+  font-size:var(--fg-period-size);
+  font-weight:var(--fg-period-weight);
+  line-height:var(--fg-period-line);
+  letter-spacing:var(--fg-period-letter);
+}
+.fg-chart-slot{
+  height:var(--fg-chart-height);
+  min-height:var(--fg-chart-height);
+  margin-top:2px;
+  min-width:0;
+}
+.fg-renderer,
+.fg-chart-renderer{
+  width:100%;
+  height:100%;
+  min-width:0;
+  min-height:0;
+}
+.fg-renderer>.recharts-responsive-container,
+.fg-chart-renderer>.recharts-responsive-container,
+.fg-renderer>.cnn-chart-empty{
+  width:100%;
+  height:100%;
+}
+.fg-footer-slot{
+  height:var(--fg-footer-height);
+  min-height:var(--fg-footer-height);
+  flex:0 0 var(--fg-footer-height);
+}
+.fg-footer-slot .cnn-panel-note{
+  height:100%;
+  min-height:0;
+  box-sizing:border-box;
+  padding:8px var(--fg-card-padding);
+}
+
+/* W7 owns Fear & Greed responsive breakpoints below.
+   Unrelated macro layout keeps its existing responsive behavior. */
+@media(max-width:1023px){
+  .zg-macro-row{grid-template-columns:1fr;gap:10px}
+  .zg-macro-row .zg-master{min-height:220px;padding:16px}
+  .zg-macro-row .zg-component-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+  .zg-macro-row .zg-component{min-height:170px}
+}
+
 /* Final polish for unresolved states and hierarchy. */
 :root{--zg-score-extreme-fear:#ef4444;--zg-score-fear:#f59e0b;--zg-score-neutral:#94a3b8;--zg-score-greed:#22c55e;--zg-score-extreme-greed:#10b981}
 .zg-info,.zg-card-heading svg{color:var(--zg-text-meta)}
@@ -1316,78 +1380,1709 @@ html,body{overflow-x:hidden}
 .cnn-reference-panel[data-market-state=loading] .cnn-chart,
 .cnn-reference-panel[data-market-state=empty] .cnn-chart{background:#071a29}
 .cnn-reference-panel[data-market-state=unavailable] .cnn-score-orb{border-style:dashed}
-.cnn-reference-panel .cnn-panel-note a{font-size:11px}
 .zg-component .zg-card-heading{display:flex;justify-content:space-between;gap:6px}
 .zg-component .zg-card-heading h3{display:flex;align-items:center;min-width:0}
 .zg-component .zg-component-number span{font-size:12px;white-space:nowrap}
 @media(max-width:767px){
  .zg-dashboard .header-update svg{width:13px;height:13px}
  .cnn-reference-panel .cnn-panel-note svg{width:14px;height:14px}
- .cnn-reference-panel .cnn-panel-note a{font-size:10px}
  .zg-component .zg-card-heading h3{font-size:13px}
- .zg-component .zg-card-heading .zg-tip-wrap{transform:scale(.9);transform-origin:right center}
-}
-@media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;animation-duration:.001ms!important;transition-duration:.001ms!important}}
-/* Reference-proportioned mobile market cards: compact summary height and single-line controls. */
-@media(max-width:767px){
- .zg-country-panel-grid>.cnn-reference-panel,.zg-country-panel-grid>.zg-country-grid .korea-reference-panel{height:var(--zg-market-heading-h)!important;min-height:var(--zg-market-heading-h)!important}
- .zg-country-panel-grid .cnn-panel-heading{height:var(--zg-market-heading-h)!important;min-height:var(--zg-market-heading-h)!important;padding:8px 10px 4px!important}
- .zg-country-panel-grid .cnn-panel-main,.zg-country-panel-grid .korea-reference-panel .cnn-panel-main{height:var(--zg-market-main-h)!important;min-height:var(--zg-market-main-h)!important;flex-basis:var(--zg-market-main-h)!important;grid-template-columns:92px minmax(0,1fr)!important;gap:8px!important;padding:0 10px 6px!important}
- .zg-country-panel-grid .cnn-score-orb{width:88px!important;height:88px!important;min-height:88px!important}
- .zg-country-panel-grid .cnn-score-orb strong{font-size:30px!important}
- .zg-country-panel-grid .cnn-score-orb span{font-size:12px!important}
- .zg-country-panel-grid .cnn-score-orb small{font-size:9px!important}
- .zg-country-panel-grid .cnn-trend-toolbar{gap:3px!important;min-height:24px!important;white-space:nowrap!important}
- .zg-country-panel-grid .cnn-trend-toolbar>div{display:flex!important;flex-wrap:nowrap!important;gap:3px!important;min-width:0!important}
- .zg-country-panel-grid .cnn-trend-toolbar button{min-height:24px!important;height:24px!important;padding:0 6px!important;font-size:9px!important;white-space:nowrap!important}
- .zg-country-panel-grid .cnn-trend-toolbar>span:last-child{font-size:9px!important}
- .zg-country-panel-grid .cnn-chart{height:90px!important}
- .zg-country-panel-grid .korea-reference-panel .cnn-trend-block>div[style]{height:94px!important}
- .zg-country-panel-grid .cnn-panel-note{height:34px!important;min-height:34px!important;flex-basis:34px!important;padding:7px 10px!important;font-size:9px!important;line-height:1.2!important}
- .zg-country-panel-grid .cnn-panel-note a{font-size:9px!important}
+ .zg-component .zg-card-heading .zg-info svg{width:14px;height:14px}
 }
 
-/* Medium web/tablet layout: preserve both markets without desktop compression. */
-@media(min-width:768px) and (max-width:1023px){
- .fg-card{--fg-card-height:306px;height:var(--fg-card-height);min-height:var(--fg-card-height);display:flex;flex-direction:column}
- .fg-main{flex:1;min-height:0}
- .zg-container{width:calc(100% - 32px);max-width:920px}
- .zg-country-panel-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
- .zg-country-panel-grid>.cnn-reference-panel,.zg-country-panel-grid>.zg-country-grid .korea-reference-panel{height:306px;min-height:306px}
- .zg-country-panel-grid .cnn-panel-heading{height:82px;min-height:82px;padding:12px 14px 6px;gap:10px}
- .zg-country-panel-grid .cnn-market-title{gap:9px}
- .zg-country-panel-grid .cnn-market-title img{width:38px;height:26px}
- .zg-country-panel-grid .cnn-market-title h2{font-size:22px}
- .zg-country-panel-grid .cnn-market-title p:last-child{font-size:11px}
- .zg-country-panel-grid .cnn-eyebrow{font-size:8px;letter-spacing:.12em}
- .zg-country-panel-grid .cnn-source{font-size:9px}
- .zg-country-panel-grid .cnn-source strong{font-size:11px}
- .zg-country-panel-grid .cnn-source small{font-size:8px}
- .zg-country-panel-grid .cnn-panel-main{grid-template-columns:100px minmax(0,1fr);gap:10px;height:190px;min-height:190px;flex-basis:190px;padding:0 14px 8px}
- .zg-country-panel-grid .cnn-score-orb{width:100px;height:100px;min-height:100px}
- .zg-country-panel-grid .cnn-score-orb strong{font-size:34px}
- .zg-country-panel-grid .cnn-score-orb span{font-size:13px}
- .zg-country-panel-grid .cnn-trend-toolbar{gap:4px;min-height:24px;font-size:9px}
- .zg-country-panel-grid .cnn-trend-toolbar button{min-height:25px;height:25px;padding:0 7px;font-size:9px}
- .zg-country-panel-grid .cnn-period-toolbar{gap:4px;margin:4px 0;justify-content:flex-start}
- .zg-country-panel-grid .cnn-period-button{min-height:25px;height:25px;padding:0 7px;font-size:9px}
- .zg-country-panel-grid .korea-reference-panel .cnn-trend-toolbar>span:first-child{display:none}
- .zg-country-panel-grid .cnn-chart{height:126px;margin-top:2px}
- .zg-country-panel-grid .korea-reference-panel .cnn-trend-block>div[style]{height:132px!important}
- .zg-country-panel-grid .cnn-panel-note{height:34px;min-height:34px;flex-basis:34px;padding:8px 12px;font-size:9px}
- .zg-country-panel-grid .cnn-panel-note span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
- .zg-country-panel-grid .cnn-panel-note a{min-width:0;max-width:42%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:9px}
- .zg-country-panel-grid .cnn-panel-note a svg{flex:0 0 auto}
- .zg-macro-row{grid-template-columns:1fr;gap:10px}
- .zg-macro-row .zg-master{min-height:220px;padding:16px}
- .zg-macro-row .zg-component-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
- .zg-macro-row .zg-component{min-height:170px}
+/* W6: Fear & Greed typography ownership.
+   One role -> one shared token contract. Country variants do not own typography. */
+.fg-card{
+  --fg-font-family:Pretendard,"Noto Sans KR","Apple SD Gothic Neo","Malgun Gothic",Arial,sans-serif;
+
+  --fg-eyebrow-size:10px;
+  --fg-eyebrow-weight:800;
+  --fg-eyebrow-line:1;
+  --fg-eyebrow-letter:.16em;
+
+  --fg-title-size:28px;
+  --fg-title-weight:800;
+  --fg-title-line:1.1;
+  --fg-title-letter:0;
+
+  --fg-subtitle-size:13px;
+  --fg-subtitle-weight:400;
+  --fg-subtitle-line:1.2;
+  --fg-subtitle-letter:0;
+
+  --fg-meta-size:11px;
+  --fg-meta-weight:400;
+  --fg-meta-line:1.2;
+  --fg-meta-letter:0;
+  --fg-meta-strong-size:14px;
+  --fg-meta-strong-weight:700;
+  --fg-meta-status-size:11px;
+
+  --fg-score-size:42px;
+  --fg-score-weight:900;
+  --fg-score-line:1;
+  --fg-score-letter:0;
+
+  --fg-state-size:15px;
+  --fg-state-weight:800;
+  --fg-state-line:1.15;
+  --fg-state-letter:0;
+
+  --fg-caption-size:11px;
+  --fg-caption-weight:400;
+  --fg-caption-line:1.2;
+  --fg-caption-letter:0;
+
+  --fg-trend-size:12px;
+  --fg-trend-weight:400;
+  --fg-trend-line:1.35;
+  --fg-trend-letter:0;
+
+  --fg-period-size:9px;
+  --fg-period-weight:400;
+  --fg-period-line:1;
+  --fg-period-letter:0;
+
+  --fg-footer-size:9px;
+  --fg-footer-weight:400;
+  --fg-footer-line:1.2;
+  --fg-footer-letter:0;
+  --fg-footer-link-size:11px;
+  --fg-footer-link-weight:700;
+
+  font-family:var(--fg-font-family);
 }
+.fg-card button,
+.fg-card a{font-family:inherit}
+
+.fg-card .cnn-eyebrow{
+  font-size:var(--fg-eyebrow-size);
+  font-weight:var(--fg-eyebrow-weight);
+  line-height:var(--fg-eyebrow-line);
+  letter-spacing:var(--fg-eyebrow-letter);
+}
+.fg-card .cnn-market-title h2{
+  font-size:var(--fg-title-size);
+  font-weight:var(--fg-title-weight);
+  line-height:var(--fg-title-line);
+  letter-spacing:var(--fg-title-letter);
+}
+.fg-card .cnn-market-title p:last-child{
+  font-size:var(--fg-subtitle-size);
+  font-weight:var(--fg-subtitle-weight);
+  line-height:var(--fg-subtitle-line);
+  letter-spacing:var(--fg-subtitle-letter);
+}
+.fg-card .cnn-source{
+  font-size:var(--fg-meta-size);
+  font-weight:var(--fg-meta-weight);
+  line-height:var(--fg-meta-line);
+  letter-spacing:var(--fg-meta-letter);
+}
+.fg-card .cnn-source strong{
+  font-size:var(--fg-meta-strong-size);
+  font-weight:var(--fg-meta-strong-weight);
+  line-height:var(--fg-meta-line);
+  letter-spacing:var(--fg-meta-letter);
+}
+.fg-card .cnn-source small{
+  font-size:var(--fg-meta-status-size);
+  font-weight:var(--fg-meta-weight);
+  line-height:var(--fg-meta-line);
+  letter-spacing:var(--fg-meta-letter);
+}
+.fg-card .cnn-score-orb strong{
+  font-size:var(--fg-score-size);
+  font-weight:var(--fg-score-weight);
+  line-height:var(--fg-score-line);
+  letter-spacing:var(--fg-score-letter);
+}
+.fg-card .cnn-score-orb span{
+  font-size:var(--fg-state-size);
+  font-weight:var(--fg-state-weight);
+  line-height:var(--fg-state-line);
+  letter-spacing:var(--fg-state-letter);
+}
+.fg-card .cnn-score-orb small{
+  font-size:var(--fg-caption-size);
+  font-weight:var(--fg-caption-weight);
+  line-height:var(--fg-caption-line);
+  letter-spacing:var(--fg-caption-letter);
+}
+.fg-card .cnn-chart-empty{
+  font-size:var(--fg-trend-size);
+  font-weight:var(--fg-trend-weight);
+  line-height:var(--fg-trend-line);
+  letter-spacing:var(--fg-trend-letter);
+}
+.fg-card .fg-period-slot,
+.fg-card .cnn-period-button{
+  font-size:var(--fg-period-size);
+  font-weight:var(--fg-period-weight);
+  line-height:var(--fg-period-line);
+  letter-spacing:var(--fg-period-letter);
+}
+.fg-card .cnn-period-button[aria-pressed=true]{font-weight:800}
+.fg-card .cnn-panel-note{
+  font-size:var(--fg-footer-size);
+  font-weight:var(--fg-footer-weight);
+  line-height:var(--fg-footer-line);
+  letter-spacing:var(--fg-footer-letter);
+}
+.fg-card .cnn-panel-note a{
+  min-width:0;
+  max-width:42%;
+  margin-left:auto;
+  overflow:hidden;
+  flex:0 0 auto;
+  font-size:var(--fg-footer-link-size);
+  font-weight:var(--fg-footer-link-weight);
+  line-height:var(--fg-footer-line);
+  letter-spacing:var(--fg-footer-letter);
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+
+/* W7.2: period slots render shared controls only.
+   Redundant scale/leading labels are removed, and country-card vertical spacing
+   is owned solely by the shared grid gap. */
+
+/* W7.3: derived content-height belongs to .fg-card, not :root.
+   Breakpoint-specific fg-card tokens are therefore resolved in the same owner scope,
+   preventing leftover internal space when card/header/footer values change. */
+
+/* W7: Fear & Greed responsive ownership.
+   Breakpoints are content-driven and shared by USA/Korea.
+   No country-specific geometry or typography forks are allowed. */
+
+/* Wide desktop: two peer cards. Base fg-* geometry/typography applies. */
+@media(min-width:1100px){
+  .zg-country-panel-grid{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:10px;
+  }
+}
+
+/* Tablet / narrow desktop: stack the two markets before their internal controls collide. */
+@media(min-width:768px) and (max-width:1099px){
+  .zg-container{width:calc(100% - 32px);max-width:1020px}
+  .zg-country-panel-grid{
+    grid-template-columns:1fr;
+    gap:10px;
+    overflow:visible;
+  }
+  .zg-country-panel-grid>.cnn-reference-panel,
+  .zg-country-panel-grid>.zg-country-grid{
+    width:100%;
+    min-width:0;
+    margin:0;
+  }
+  .zg-country-panel-grid>.zg-country-grid{display:block;overflow:visible}
+
+  .fg-card{
+    --fg-card-height:248px;
+    --fg-header-height:70px;
+    --fg-footer-height:34px;
+    --fg-score-width:110px;
+    --fg-score-height:100px;
+    --fg-chart-height:96px;
+    --fg-card-padding:14px;
+    --fg-card-gap:12px;
+
+    --fg-eyebrow-size:8px;
+    --fg-eyebrow-letter:.12em;
+    --fg-title-size:22px;
+    --fg-subtitle-size:11px;
+    --fg-meta-size:9px;
+    --fg-meta-strong-size:11px;
+    --fg-meta-status-size:8px;
+    --fg-score-size:34px;
+    --fg-state-size:13px;
+    --fg-footer-link-size:9px;
+  }
+
+  .fg-card .cnn-market-title{gap:9px}
+  .fg-card .cnn-market-title img{width:38px;height:26px}
+  .fg-card .cnn-panel-note span{
+    flex:1 1 auto;
+    min-width:0;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+  }
+  .fg-card .cnn-panel-note a svg{flex:0 0 auto}
+
+  .fg-period-slot .cnn-period-toolbar{gap:6px}
+}
+
+/* Mobile: one market per row, shared compact internal geometry. */
+@media(max-width:767px){
+  .zg-country-panel-grid{
+    grid-template-columns:1fr;
+    gap:8px;
+    overflow:visible;
+    padding:0;
+    scroll-snap-type:none;
+  }
+  .zg-country-panel-grid>.cnn-reference-panel,
+  .zg-country-panel-grid>.zg-country-grid{
+    width:100%;
+    min-width:0;
+    margin:0;
+    flex:none;
+    scroll-snap-align:none;
+  }
+  .zg-country-panel-grid>.zg-country-grid{display:block;overflow:visible}
+
+  .fg-card{
+    --fg-card-height:300px;
+    --fg-header-height:76px;
+    --fg-footer-height:40px;
+    --fg-score-width:96px;
+    --fg-score-height:92px;
+    --fg-chart-height:96px;
+    --fg-card-padding:12px;
+    --fg-card-gap:10px;
+
+    --fg-eyebrow-size:8px;
+    --fg-eyebrow-letter:.12em;
+    --fg-title-size:22px;
+    --fg-subtitle-size:11px;
+    --fg-meta-size:9px;
+    --fg-meta-strong-size:12px;
+    --fg-meta-status-size:8px;
+    --fg-score-size:30px;
+    --fg-state-size:12px;
+    --fg-caption-size:9px;
+    --fg-trend-size:10px;
+    --fg-footer-link-size:9px;
+  }
+
+  .fg-header-slot .cnn-panel-heading{padding:8px 10px 4px}
+  .fg-card .cnn-market-title{gap:9px}
+  .fg-card .cnn-market-title img{width:38px;height:26px}
+  .fg-card .cnn-source{gap:1px;max-width:42%}
+  .fg-card .cnn-score-orb span{margin-top:3px}
+
+  .fg-period-slot .cnn-period-toolbar{gap:3px}
+  .fg-period-slot .cnn-period-button{padding-inline:4px}
+
+  .fg-card .cnn-panel-note{
+    gap:6px;
+    white-space:nowrap;
+  }
+  .fg-card .cnn-panel-note span{
+    flex:1 1 auto;
+    min-width:0;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+  }
+  .fg-card .cnn-panel-note a{
+    max-width:46%;
+    flex:0 0 auto;
+  }
+}
+
+/* Compact phones: keep all five period buttons accessible without overlap. */
+@media(max-width:560px){
+  .fg-card{
+    --fg-card-height:286px;
+    --fg-header-height:72px;
+    --fg-footer-height:40px;
+    --fg-score-width:88px;
+    --fg-score-height:86px;
+    --fg-chart-height:88px;
+    --fg-card-padding:10px;
+    --fg-card-gap:8px;
+    --fg-title-size:20px;
+  }
+
+  .fg-content-slot{padding-inline:10px}
+  .fg-period-slot .cnn-period-button{padding-inline:3px}
+  .fg-card .cnn-panel-note a{max-width:50%}
+}
+
+/* W7.4: mobile information-density cleanup.
+   Primary data stays visible; repeated explanatory copy is deferred or shortened. */
+@media(max-width:767px){
+  /* The header already exposes partial API status; avoid repeating a full-width notice below it. */
+  .zg-data-notice{display:none}
+
+  /* Country cards already identify model/context; remove the repeated section explanation on mobile. */
+  .zg-section:has(.zg-country-panel-grid) .zg-section-heading p{display:none}
+
+  /* Footer is one compact row: provenance + short action. */
+  .fg-card .cnn-panel-note{
+    flex-wrap:nowrap;
+    align-items:center;
+    gap:6px;
+    white-space:nowrap;
+  }
+  .fg-card .cnn-panel-note span{
+    flex:1 1 auto;
+    min-width:0;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+  }
+  .fg-card .cnn-panel-note a{
+    flex:0 0 auto;
+    max-width:none;
+    margin-left:auto;
+    white-space:nowrap;
+  }
+
+  /* Empty/history status should stay visually secondary. */
+  .fg-card .cnn-chart-empty{
+    gap:5px;
+    text-align:center;
+  }
+}
+
+/* W8: Accessibility / interaction / motion ownership. */
+.zg-dashboard button,
+.zg-dashboard a{
+  touch-action:manipulation;
+}
+
+.fg-card .cnn-panel-note a{
+  display:inline-flex;
+  min-height:24px;
+  align-items:center;
+}
+
+/* Non-essential repeated motion is intentionally disabled in the default experience.
+   Finite interaction transitions remain, and reduced-motion removes those too. */
+.api-status-loading::before,
+.importance-header span{
+  animation:none;
+}
+
+/* Keyboard focus should remain visible and not sit underneath adjacent UI. */
+.zg-dashboard :where(a,button,[role="button"],[tabindex]:not([tabindex="-1"])){
+  scroll-margin-block:12px;
+}
+
+/* One authoritative reduced-motion contract for the whole ZGMINI app. */
+@media(prefers-reduced-motion:reduce){
+  .zg-app *,
+  .zg-app *::before,
+  .zg-app *::after{
+    animation:none!important;
+    transition:none!important;
+    scroll-behavior:auto!important;
+  }
+}
+
+/* W7.5: Sector / Theme ranking mobile ownership.
+   Narrow viewports use one full-width ranking panel per row instead of compressing
+   two peer panels into unreadable half-width columns. */
+@media(max-width:767px){
+  .zg-strength-grid{
+    grid-template-columns:1fr;
+    gap:10px;
+    margin-top:12px;
+  }
+
+  .zg-strength{
+    width:100%;
+    min-width:0;
+    padding:14px 12px;
+  }
+
+  .zg-strength .zg-card-heading{
+    align-items:center;
+    gap:8px;
+  }
+
+  .zg-strength .zg-card-heading h2{
+    min-width:0;
+    font-size:18px;
+    line-height:1.15;
+    white-space:nowrap;
+  }
+
+  /* "예시" is already repeated in title/score; remove the long duplicate helper line on mobile. */
+  .zg-strength>p{
+    display:none;
+  }
+
+  /* Rows keep the name readable; score/actions stay compact on the right. */
+  .zg-strength li{
+    grid-template-columns:20px minmax(0,1fr) auto 40px 40px;
+    gap:6px;
+    min-height:40px;
+  }
+
+  .zg-strength li:not(:has(>button.zg-detail)){
+    grid-template-columns:20px minmax(0,1fr) auto 40px;
+  }
+
+  .zg-strength li>b{
+    min-width:0;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+  }
+
+  .zg-strength-score{
+    white-space:nowrap;
+  }
+
+  .zg-strength li>.zg-tip-wrap,
+  .zg-strength li>button.zg-detail{
+    justify-self:end;
+  }
+}
+
+@media(max-width:430px){
+  .zg-strength{
+    padding:12px 10px;
+  }
+
+  .zg-strength li{
+    grid-template-columns:18px minmax(0,1fr) auto 40px 40px;
+    gap:4px;
+  }
+
+  .zg-strength li:not(:has(>button.zg-detail)){
+    grid-template-columns:18px minmax(0,1fr) auto 40px;
+  }
+}
+
+/* U9.5 responsive block superseded by U9.9.
+   Prior U9.5 revision remains preserved separately. */
+
+/* U4.7 — USA score hierarchy / clean tooltip / single-point locator.
+   - whole number is primary, decimal is secondary
+   - current position is one dot only
+   - 25 / 75 numeric labels are removed to avoid collision with the live marker
+   - 0 / 50 / 100 remain as orientation anchors */
+.fg-card.fg-shared-shell .cnn-score-orb-hero{
+  display:flex;
+  width:100%;
+  height:100%;
+  min-height:0;
+  align-items:center;
+  justify-content:center;
+  border:0;
+  border-radius:0;
+  background:transparent;
+  padding:0;
+}
+
+.fg-card.fg-shared-shell .cnn-spectrum-gauge{
+  position:relative;
+  width:min(100%,220px);
+  aspect-ratio:220/142;
+}
+
+.fg-card.fg-shared-shell .cnn-spectrum-gauge svg{
+  display:block;
+  width:100%;
+  height:100%;
+  overflow:visible;
+}
+
+.fg-card.fg-shared-shell .cnn-spectrum-backdrop,
+.fg-card.fg-shared-shell .cnn-spectrum-band,
+.fg-card.fg-shared-shell .cnn-spectrum-inner-guide{
+  fill:none;
+}
+
+.fg-card.fg-shared-shell .cnn-spectrum-backdrop{
+  stroke:#112738;
+  stroke-width:30;
+  stroke-linecap:butt;
+}
+
+.fg-card.fg-shared-shell .cnn-spectrum-band{
+  fill:none;
+  stroke-width:18;
+  stroke-linecap:butt;
+  filter:drop-shadow(0 2px 4px rgba(0,0,0,.20));
+}
+
+.fg-card.fg-shared-shell .cnn-spectrum-band.is-extreme-fear{stroke:#9f2233}
+.fg-card.fg-shared-shell .cnn-spectrum-band.is-fear{stroke:#f2555a}
+.fg-card.fg-shared-shell .cnn-spectrum-band.is-neutral{stroke:#9aa8b6}
+.fg-card.fg-shared-shell .cnn-spectrum-band.is-greed{stroke:#58c88a}
+.fg-card.fg-shared-shell .cnn-spectrum-band.is-extreme-greed{stroke:#15865e}
+
+.fg-card.fg-shared-shell .cnn-spectrum-inner-guide{
+  stroke:rgba(168,188,208,.16);
+  stroke-width:1;
+  stroke-dasharray:2 5;
+}
+
+.fg-card.fg-shared-shell .cnn-spectrum-tick{
+  stroke:rgba(244,247,251,.42);
+  stroke-width:1;
+}
+
+.fg-card.fg-shared-shell .cnn-spectrum-tick.is-major{
+  stroke:rgba(244,247,251,.78);
+  stroke-width:1.5;
+}
+
+.fg-card.fg-shared-shell .cnn-spectrum-scale-label{
+  fill:#9eafc1;
+  font-family:var(--fg-font-family);
+  font-size:8px;
+  font-weight:700;
+  letter-spacing:-.01em;
+}
+
+.fg-card.fg-shared-shell .cnn-spectrum-scale-label.is-center{
+  fill:#bdc9d5;
+  font-size:8.5px;
+}
+
+.fg-card.fg-shared-shell .cnn-dot-marker{
+  fill:#fffdf6;
+  stroke:var(--zg-gold);
+  stroke-width:3;
+  transform-box:fill-box;
+  transform-origin:center;
+  animation:cnn-current-dot-pulse 1.9s ease-in-out infinite;
+}
+
+@keyframes cnn-current-dot-pulse{
+  0%,100%{opacity:1;transform:scale(1)}
+  50%{opacity:.62;transform:scale(.84)}
+  72%{opacity:1;transform:scale(1.12)}
+}
+
+.fg-card.fg-shared-shell .cnn-spectrum-center{
+  position:absolute;
+  left:50%;
+  top:69.5%;
+  display:flex;
+  width:52%;
+  transform:translate(-50%,-50%);
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  text-align:center;
+  pointer-events:none;
+}
+
+.fg-card.fg-shared-shell .cnn-score-value{
+  display:inline-flex;
+  align-items:baseline;
+  justify-content:center;
+  color:var(--zg-text);
+  font-weight:900;
+  line-height:.88;
+  letter-spacing:-.055em;
+  text-shadow:0 2px 10px rgba(0,0,0,.18);
+}
+
+.fg-card.fg-shared-shell .cnn-score-whole{
+  font-size:50px;
+  line-height:.88;
+}
+
+.fg-card.fg-shared-shell .cnn-score-fraction{
+  margin-left:2px;
+  font-size:27px;
+  font-weight:800;
+  line-height:1;
+  letter-spacing:-.03em;
+}
+
+.fg-card.fg-shared-shell .cnn-spectrum-center>span{
+  margin-top:6px;
+  color:var(--zg-neutral-text);
+  font-size:16px;
+  font-weight:900;
+  line-height:1;
+  letter-spacing:-.01em;
+}
+
+.fg-card.fg-shared-shell .cnn-score-orb-hero.is-fear .cnn-score-value,
+.fg-card.fg-shared-shell .cnn-score-orb-hero.is-fear .cnn-spectrum-center>span{
+  color:var(--zg-danger-text);
+}
+
+.fg-card.fg-shared-shell .cnn-score-orb-hero.is-greed .cnn-score-value,
+.fg-card.fg-shared-shell .cnn-score-orb-hero.is-greed .cnn-spectrum-center>span{
+  color:var(--zg-positive-text);
+}
+
+.fg-card.fg-shared-shell .cnn-spectrum-center small{
+  margin-top:5px;
+  color:var(--zg-text-meta);
+  font-size:9px;
+  line-height:1.1;
+}
+
+.cnn-history-tooltip{
+  min-width:92px;
+  border:1px solid var(--zg-border);
+  border-radius:4px;
+  background:#071a29;
+  padding:8px 10px;
+  box-shadow:0 8px 20px rgba(0,0,0,.22);
+  color:var(--zg-text);
+}
+
+.cnn-history-tooltip span{
+  display:block;
+  color:var(--zg-text-meta);
+  font-size:10px;
+  line-height:1.2;
+  white-space:nowrap;
+}
+
+.cnn-history-tooltip strong{
+  display:block;
+  margin-top:4px;
+  color:var(--zg-danger-text);
+  font-size:16px;
+  font-weight:900;
+  line-height:1;
+  font-variant-numeric:tabular-nums;
+}
+
+
+
+
+
+/* U4.8 — selected-period comparison strip + decimal baseline + current-dot pulse */
+
+
+.fg-card.fg-shared-shell .cnn-score-orb-hero{
+  flex-direction:column;
+}
+
+.fg-card.fg-shared-shell .cnn-spectrum-gauge{
+  flex:0 0 auto;
+}
+
+.fg-card.fg-shared-shell .cnn-score-comparisons{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) 1px minmax(0,1fr);
+  width:100%;
+  margin:0;
+  padding:8px 8px 4px;
+  border-top:1px solid rgba(168,188,208,.12);
+  background:rgba(3,18,29,.38);
+  box-sizing:border-box;
+}
+
+.fg-card.fg-shared-shell .cnn-score-comparison{
+  display:flex;
+  min-width:0;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  text-align:center;
+}
+
+.fg-card.fg-shared-shell .cnn-score-comparison>span{
+  color:var(--zg-text-meta);
+  font-size:9px;
+  font-weight:700;
+  line-height:1.2;
+  white-space:nowrap;
+}
+
+.fg-card.fg-shared-shell .cnn-score-comparison>strong{
+  display:inline-flex;
+  margin-top:4px;
+  align-items:center;
+  gap:4px;
+  color:var(--zg-neutral-text);
+  font-size:15px;
+  font-weight:900;
+  line-height:1;
+  font-variant-numeric:tabular-nums;
+}
+
+.fg-card.fg-shared-shell .cnn-score-comparison>strong i{
+  font-size:8px;
+  font-style:normal;
+}
+
+.fg-card.fg-shared-shell .cnn-score-comparison.is-down>strong{
+  color:var(--zg-danger-text);
+}
+
+.fg-card.fg-shared-shell .cnn-score-comparison.is-up>strong{
+  color:var(--zg-positive-text);
+}
+
+.fg-card.fg-shared-shell .cnn-score-comparison-divider{
+  width:1px;
+  min-height:28px;
+  align-self:center;
+  background:rgba(168,188,208,.18);
+}
+
+
+
+
+
+/* U4.9 — first-load motion + Fear/Greed chart interval guides.
+   - score/marker count up from 0 to the verified CNN value
+   - chart reveals left -> right once on initial render
+   - current-position dot has the approved low-intensity infinite pulse exception
+   - reduced-motion remains authoritative and disables all three effects */
+.fg-card.fg-shared-shell .fg-chart-slot .fg-renderer{
+  clip-path:inset(0 0 0 0);
+  animation:cnn-history-reveal 1.05s ease-out 120ms both;
+}
+
+@keyframes cnn-history-reveal{
+  from{clip-path:inset(0 100% 0 0)}
+  to{clip-path:inset(0 0 0 0)}
+}
+
+/* 25 / 50 / 75 are semantic guide boundaries in the chart.
+   Recharts owns the actual line positions; this only keeps labels compact. */
+.fg-card.fg-shared-shell .recharts-yAxis .recharts-cartesian-axis-tick-value{
+  font-variant-numeric:tabular-nums;
+}
+
+@media(prefers-reduced-motion:reduce){
+  .fg-card.fg-shared-shell .cnn-dot-marker,
+  .fg-card.fg-shared-shell .fg-chart-slot .fg-renderer{
+    animation:none!important;
+  }
+}
+
+/* U5 — USA history-chart visual completion.
+   Real CNN history only: visible date axis, semantic 25/50/75 guide lines,
+   and a latest-observation marker/label. */
+.fg-card.fg-shared-shell .fg-chart-slot{
+  overflow:visible;
+}
+
+.fg-card.fg-shared-shell .recharts-cartesian-axis-tick-value{
+  font-family:var(--fg-font-family);
+  font-variant-numeric:tabular-nums;
+}
+
+.fg-card.fg-shared-shell .recharts-reference-dot text{
+  paint-order:stroke;
+  stroke:#071a29;
+  stroke-width:3px;
+  stroke-linejoin:round;
+}
+
+
+
+/* U5.2 — Chart readability / latest-point refinement.
+   - restore readable Y-axis labels
+   - remove redundant latest-value text (the headline gauge already owns the value)
+   - latest chart point gets a short finite emphasis on render / period change */
+.fg-card.fg-shared-shell .cnn-latest-point circle{
+  transform-box:fill-box;
+  transform-origin:center;
+  animation:cnn-latest-point-pop 1.15s ease-out 3;
+}
+
+@keyframes cnn-latest-point-pop{
+  0%,100%{
+    opacity:1;
+    transform:scale(1);
+  }
+  45%{
+    opacity:.58;
+    transform:scale(.78);
+  }
+  72%{
+    opacity:1;
+    transform:scale(1.32);
+  }
+}
+
+@media(prefers-reduced-motion:reduce){
+  .fg-card.fg-shared-shell .cnn-latest-point circle{
+    animation:none!important;
+  }
+}
+
+/* U5.3 — Mobile ONE-VIEW composition.
+   Goal: on a typical 390x844 phone, keep the complete USA card and complete Korea card
+   visible within the first screen as much as practical, without hiding data.
+   Mobile-only; desktop/tablet remain unchanged. */
 @media(max-width:480px){
- .zg-country-panel-grid>.cnn-reference-panel,.zg-country-panel-grid>.zg-country-grid .korea-reference-panel{height:278px!important;min-height:278px!important}
- .zg-country-panel-grid .cnn-panel-heading{height:66px!important;min-height:66px!important}
- .zg-country-panel-grid .cnn-panel-main,.zg-country-panel-grid .korea-reference-panel .cnn-panel-main{height:var(--zg-market-main-h)!important;min-height:var(--zg-market-main-h)!important;flex-basis:var(--zg-market-main-h)!important;grid-template-columns:86px minmax(0,1fr)!important}
- .zg-country-panel-grid .cnn-score-orb{width:82px!important;height:82px!important;min-height:82px!important}
- .zg-country-panel-grid .cnn-chart{height:82px!important}
- .zg-country-panel-grid .korea-reference-panel .cnn-trend-block>div[style]{height:86px!important}
+  /* Compress page chrome before touching analytical content. */
+  .zg-header-inner{
+    min-height:46px;
+    padding-top:3px;
+  }
+
+  .zg-header nav{
+    min-height:32px;
+    height:32px;
+    gap:14px;
+  }
+
+  .zg-header nav button{
+    min-height:32px;
+    font-size:12px;
+  }
+
+  .zg-container{
+    width:calc(100% - 16px);
+  }
+
+  .zg-toolbar{
+    margin-top:5px;
+    min-height:26px;
+  }
+
+  .zg-toolbar .header-update,
+  .zg-dashboard .header-update strong{
+    font-size:10px;
+  }
+
+  .zg-section{
+    margin-top:6px;
+    padding:7px;
+  }
+
+  .zg-section-heading{
+    min-height:22px;
+    margin-bottom:6px;
+  }
+
+  .zg-section-heading h2{
+    font-size:17px;
+    line-height:1.15;
+  }
+
+  .zg-country-panel-grid{
+    gap:6px;
+  }
+
+  /* Korea: current state is unavailable/compact, so keep all semantics but use less empty space. */
+  .zg-country-panel-grid .fg-card:not(.fg-shared-shell){
+    --fg-card-height:220px;
+    --fg-header-height:58px;
+    --fg-footer-height:30px;
+    --fg-score-width:72px;
+    --fg-score-height:70px;
+    --fg-chart-height:70px;
+    --fg-period-height:23px;
+    --fg-card-padding:8px;
+    --fg-card-gap:6px;
+
+    --fg-eyebrow-size:7px;
+    --fg-title-size:18px;
+    --fg-subtitle-size:9px;
+    --fg-meta-size:8px;
+    --fg-meta-strong-size:10px;
+    --fg-meta-status-size:7px;
+    --fg-score-size:26px;
+    --fg-state-size:10px;
+    --fg-trend-size:9px;
+    --fg-footer-size:8px;
+    --fg-footer-link-size:8px;
+  }
+
+  .zg-country-panel-grid .fg-card:not(.fg-shared-shell) .fg-header-slot .cnn-panel-heading{
+    padding:6px 8px 3px;
+  }
+
+  .zg-country-panel-grid .fg-card:not(.fg-shared-shell) .cnn-market-title{
+    gap:7px;
+  }
+
+  .zg-country-panel-grid .fg-card:not(.fg-shared-shell) .cnn-market-title img{
+    width:34px;
+    height:23px;
+  }
+
+  .zg-country-panel-grid .fg-card:not(.fg-shared-shell) .fg-content-slot{
+    padding-inline:8px;
+  }
+
+  .zg-country-panel-grid .fg-card:not(.fg-shared-shell) .fg-period-slot .cnn-period-toolbar{
+    gap:3px;
+  }
+
+  .zg-country-panel-grid .fg-card:not(.fg-shared-shell) .fg-period-slot .cnn-period-button{
+    height:23px;
+    min-height:23px;
+    padding-inline:2px;
+    font-size:8px;
+  }
+
+  .zg-country-panel-grid .fg-card:not(.fg-shared-shell) .fg-footer-slot .cnn-panel-note{
+    padding:4px 8px;
+  }
 }
+
+/* U5.5 — Move final-update status into the header top-right.
+   Removes one standalone mobile row and recovers vertical space for ONE-VIEW. */
+.zg-header-tools{
+  display:flex;
+  align-items:center;
+  justify-content:flex-end;
+  gap:10px;
+  margin-left:auto;
+  min-width:0;
+}
+
+.zg-header-tools .zg-toolbar{
+  margin:0;
+  min-height:0;
+  padding:0;
+  display:flex;
+  align-items:center;
+}
+
+.zg-header-tools .header-update{
+  justify-content:flex-end;
+  max-width:none;
+}
+
+.zg-account-tools{
+  display:flex;
+  align-items:center;
+  justify-content:flex-end;
+  flex:0 0 auto;
+}
+
+@media(max-width:767px){
+  .zg-header-inner{
+    position:relative;
+  }
+
+  .zg-header-tools{
+    position:absolute;
+    top:7px;
+    right:0;
+    gap:4px;
+  }
+
+  .zg-header-tools .zg-toolbar{
+    display:block;
+  }
+
+  .zg-header-tools .header-update{
+    display:flex;
+    align-items:center;
+    gap:4px;
+    white-space:nowrap;
+  }
+
+  .zg-header-tools .zg-update-label,
+  .zg-header-tools .api-status{
+    display:none;
+  }
+
+  .zg-header-tools .header-update strong{
+    color:var(--zg-text-dark-secondary);
+    font-size:10px;
+    font-weight:700;
+  }
+
+  .zg-header-tools .header-update svg{
+    width:12px;
+    height:12px;
+  }
+
+  /* the old standalone toolbar row is gone, so the first content section can rise */
+  .zg-container{
+    padding-top:0;
+  }
+
+  .zg-section:first-of-type{
+    margin-top:5px;
+  }
+}
+
+@media(max-width:480px){
+  .zg-header-tools{
+    top:6px;
+    right:2px;
+  }
+
+  .zg-header-tools .header-update strong{
+    font-size:9px;
+  }
+}
+
+/* U5.11 — CNN 5-band sentiment semantics.
+   Approved display ranges:
+   0–<25 Extreme Fear
+   25–<45 Fear
+   45–<55 Neutral
+   55–<75 Greed
+   75–100 Extreme Greed
+
+   Gauge uses exact visual band boundaries.
+   Chart shows subtle background zones and horizontal boundaries at 25/45/55/75.
+   Y-axis labels stay compact at 0/25/50/75/100 to avoid 45/55 text crowding. */
+
+/* U5.12 — Gauge rendering compatibility repair.
+   U5.11 could render a black arc when markup/CSS versions were temporarily out of sync.
+   Keep both the new five-band SVG and the previous single-arc markup visually safe. */
+.fg-card.fg-shared-shell .cnn-spectrum-arc{
+  fill:none;
+  stroke:url(#cnn-spectrum-gradient);
+  stroke-width:18;
+  stroke-linecap:butt;
+  filter:drop-shadow(0 2px 4px rgba(0,0,0,.20));
+}
+
+.fg-card.fg-shared-shell .cnn-spectrum-band{
+  fill:none;
+  stroke-width:18;
+  stroke-linecap:butt;
+  filter:drop-shadow(0 2px 4px rgba(0,0,0,.20));
+}
+
+/* U9.17 — USA canonical responsive owner.
+   BLOCKER FIX: OLD BREAKPOINT RULE REACTIVATION
+
+   One card, one geometry owner.
+   The card responds to ITS OWN WIDTH through a container query.
+   Viewport-specific USA position corrections from prior revisions were removed.
+
+   Rules:
+   - size may scale continuously
+   - element position is always container-relative
+   - only one structural switch exists:
+       compact card <= 500px  -> period controls horizontal above chart
+       wide card    > 500px   -> period controls vertical at chart right
+   - no responsive negative margins, translateY or top-% position calibration
+   - comparison/date centering from U9.15 is canonical
+   - CNN eyebrow stays hidden at every size so old desktop styling cannot reappear
+*/
+
+.fg-card.fg-shared-shell{
+  container: fg-shared / inline-size;
+
+  /* stop generic fixed-height fg-card ownership for USA */
+  height:auto;
+  min-height:0;
+
+  --fg-shared-header-h:clamp(48px,6cqi,58px);
+  --fg-shared-content-h:clamp(141px,20cqi,190px);
+  --fg-shared-footer-h:clamp(28px,3.5cqi,34px);
+
+  --fg-shared-pad:clamp(7px,1.5cqi,16px);
+  --fg-shared-gap:clamp(6px,1.25cqi,12px);
+  --fg-shared-left:clamp(168px,30%,300px);
+
+  --fg-shared-gauge-w:clamp(142px,20cqi,180px);
+  --fg-shared-comparison-h:clamp(30px,4cqi,36px);
+  --fg-shared-date-h:clamp(9px,1.2cqi,11px);
+
+  --fg-shared-period-size:24px;
+  --fg-shared-period-gap:5px;
+  --fg-shared-period-rail:28px;
+  --fg-shared-analysis-gap:4px;
+
+  --fg-title-size:clamp(18px,2.5cqi,24px);
+  --fg-subtitle-size:clamp(8px,1.15cqi,11px);
+  --fg-footer-size:clamp(8px,1cqi,10px);
+  --fg-footer-link-size:clamp(8px,1.05cqi,11px);
+}
+
+/* Header owns one stable relationship across all card widths. */
+.fg-card.fg-shared-shell .fg-header-slot{
+  height:var(--fg-shared-header-h);
+  min-height:var(--fg-shared-header-h);
+  flex:0 0 var(--fg-shared-header-h);
+}
+
+.fg-card.fg-shared-shell .fg-header-slot .cnn-panel-heading{
+  width:100%;
+  height:100%;
+  min-height:0;
+  display:grid;
+  grid-template-columns:var(--fg-shared-left) minmax(0,1fr);
+  align-items:center;
+  gap:var(--fg-shared-gap);
+  padding:5px var(--fg-shared-pad);
+  box-sizing:border-box;
+}
+
+.fg-card.fg-shared-shell .cnn-eyebrow{
+  display:none;
+}
+
+.fg-card.fg-shared-shell .cnn-market-title{
+  min-width:0;
+  width:100%;
+  display:flex;
+  align-items:center;
+  gap:clamp(6px,1cqi,9px);
+}
+
+.fg-card.fg-shared-shell .cnn-market-title>div{
+  min-width:0;
+}
+
+.fg-card.fg-shared-shell .cnn-market-title img{
+  width:clamp(30px,4.5cqi,38px);
+  height:auto;
+  flex:0 0 auto;
+}
+
+.fg-card.fg-shared-shell .cnn-market-title h2{
+  font-size:var(--fg-title-size);
+  white-space:nowrap;
+}
+
+.fg-card.fg-shared-shell .cnn-market-title p:last-child{
+  font-size:var(--fg-subtitle-size);
+  white-space:nowrap;
+}
+
+.fg-card.fg-shared-shell .cnn-header-insight{
+  width:100%;
+  height:100%;
+  min-width:0;
+  margin:0;
+  display:grid;
+  align-items:center;
+  border-left:1.5px solid rgba(129,185,255,.72);
+  padding-left:clamp(7px,1cqi,10px);
+  box-sizing:border-box;
+}
+
+.fg-card.fg-shared-shell .cnn-header-insight p{
+  width:100%;
+  height:auto;
+  margin:0;
+  overflow:hidden;
+  color:var(--zg-text-secondary);
+  font-size:clamp(9.5px,1.25cqi,11px);
+  font-weight:600;
+  line-height:1.22;
+  letter-spacing:-.012em;
+  text-align:left;
+  overflow-wrap:anywhere;
+}
+
+/* Main content: one left score column + one analysis column. */
+.fg-card.fg-shared-shell .fg-content-slot{
+  height:var(--fg-shared-content-h);
+  min-height:var(--fg-shared-content-h);
+  flex:0 0 var(--fg-shared-content-h);
+  display:grid;
+  grid-template-columns:var(--fg-shared-left) minmax(0,1fr);
+  grid-template-rows:1fr;
+  align-items:stretch;
+  gap:var(--fg-shared-gap);
+  padding:0 var(--fg-shared-pad);
+  box-sizing:border-box;
+}
+
+/* Left score column: center is owned by rows, never by viewport offsets. */
+.fg-card.fg-shared-shell .fg-score-slot,
+.fg-card.fg-shared-shell .fg-score-slot .cnn-score-orb{
+  width:100%;
+  height:100%;
+  min-width:0;
+  min-height:0;
+  align-self:stretch;
+}
+
+.fg-card.fg-shared-shell .cnn-score-orb-hero{
+  width:100%;
+  height:100%;
+  min-height:0;
+  display:grid;
+  grid-template-columns:1fr;
+  grid-template-rows:
+    minmax(0,1fr)
+    var(--fg-shared-comparison-h)
+    var(--fg-shared-date-h);
+  align-items:stretch;
+  justify-items:stretch;
+  gap:0;
+  padding:0;
+  border:0;
+  border-radius:0;
+  background:transparent;
+}
+
+.fg-card.fg-shared-shell .cnn-spectrum-gauge{
+  grid-row:1;
+  width:min(100%,var(--fg-shared-gauge-w));
+  max-width:var(--fg-shared-gauge-w);
+  margin:0;
+  place-self:center;
+  flex:none;
+}
+
+.fg-card.fg-shared-shell .cnn-score-whole{
+  font-size:clamp(32px,5cqi,44px);
+}
+
+.fg-card.fg-shared-shell .cnn-score-fraction{
+  margin-top:0;
+  font-size:clamp(16px,2.5cqi,22px);
+}
+
+.fg-card.fg-shared-shell .cnn-spectrum-center>span{
+  margin-top:5px;
+  font-size:clamp(9.5px,1.4cqi,13px);
+}
+
+/* Comparison outer box keeps its own row.
+   Label + value are centered as one unit, independent of card ratio. */
+.fg-card.fg-shared-shell .cnn-score-comparisons{
+  grid-row:2;
+  width:100%;
+  height:var(--fg-shared-comparison-h);
+  min-height:var(--fg-shared-comparison-h);
+  max-height:var(--fg-shared-comparison-h);
+  margin:0;
+  padding:0;
+  display:grid;
+  grid-template-columns:minmax(0,1fr) 1px minmax(0,1fr);
+  grid-template-rows:1fr;
+  align-items:stretch;
+  border:0;
+  border-top:1px solid rgba(168,188,208,.13);
+  border-radius:0;
+  background:rgba(3,18,29,.34);
+  box-sizing:border-box;
+}
+
+.fg-card.fg-shared-shell .cnn-score-comparison{
+  min-width:0;
+  min-height:0;
+  display:grid;
+  grid-template-rows:auto auto;
+  place-content:center;
+  place-items:center;
+  gap:2px;
+  padding:0;
+  text-align:center;
+}
+
+.fg-card.fg-shared-shell .cnn-score-comparison>span{
+  margin:0;
+  color:var(--zg-text-meta);
+  font-size:clamp(7px,.9cqi,9px);
+  font-weight:700;
+  line-height:1;
+  white-space:nowrap;
+}
+
+.fg-card.fg-shared-shell .cnn-score-comparison>strong{
+  margin:0;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:3px;
+  font-size:clamp(10px,1.25cqi,14px);
+  font-weight:900;
+  line-height:1;
+  font-variant-numeric:tabular-nums;
+}
+
+.fg-card.fg-shared-shell .cnn-score-comparison>strong i{
+  font-size:clamp(6px,.75cqi,8px);
+}
+
+.fg-card.fg-shared-shell .cnn-score-comparison-divider{
+  width:1px;
+  height:60%;
+  min-height:0;
+  place-self:center;
+  background:rgba(168,188,208,.18);
+}
+
+.fg-card.fg-shared-shell .cnn-score-observed-date{
+  grid-row:3;
+  width:100%;
+  height:var(--fg-shared-date-h);
+  margin:0;
+  padding:0;
+  display:grid;
+  place-items:center;
+  color:var(--zg-text-meta);
+  font-size:clamp(7px,.8cqi,8px);
+  font-weight:700;
+  line-height:1;
+  text-align:center;
+  white-space:nowrap;
+  font-variant-numeric:tabular-nums;
+}
+
+/* Period labels remain visual abbreviations without changing period keys/click logic. */
+.fg-card.fg-shared-shell .fg-period-slot .cnn-period-button{
+  position:relative;
+  padding:0;
+  border-radius:50%;
+  font-size:0;
+  line-height:1;
+  overflow:hidden;
+}
+
+.fg-card.fg-shared-shell .fg-period-slot .cnn-period-button::after{
+  color:inherit;
+  font-family:var(--fg-font-family);
+  font-size:9px;
+  font-weight:750;
+  line-height:1;
+  letter-spacing:-.02em;
+}
+.fg-card.fg-shared-shell .fg-period-slot .cnn-period-button:nth-child(1)::after{content:"1W"}
+.fg-card.fg-shared-shell .fg-period-slot .cnn-period-button:nth-child(2)::after{content:"1M"}
+.fg-card.fg-shared-shell .fg-period-slot .cnn-period-button:nth-child(3)::after{content:"3M"}
+.fg-card.fg-shared-shell .fg-period-slot .cnn-period-button:nth-child(4)::after{content:"6M"}
+.fg-card.fg-shared-shell .fg-period-slot .cnn-period-button:nth-child(5)::after{content:"1Y"}
+.fg-card.fg-shared-shell .fg-period-slot .cnn-period-button[aria-pressed=true]::after{font-weight:900}
+
+/* Default / wide card mode: vertical rail on the right.
+   The complete control group is centered by the rail parent. */
+.fg-card.fg-shared-shell .fg-analysis-slot{
+  width:100%;
+  min-width:0;
+  min-height:0;
+  align-self:stretch;
+  display:grid;
+  grid-template-columns:minmax(0,1fr) var(--fg-shared-period-rail);
+  grid-template-rows:minmax(0,1fr);
+  column-gap:var(--fg-shared-analysis-gap);
+  align-items:stretch;
+}
+
+.fg-card.fg-shared-shell .fg-chart-slot{
+  grid-column:1;
+  grid-row:1;
+  width:100%;
+  height:100%;
+  min-height:0;
+  margin:0;
+  overflow:visible;
+}
+
+.fg-card.fg-shared-shell .fg-period-slot{
+  grid-column:2;
+  grid-row:1;
+  width:var(--fg-shared-period-rail);
+  min-width:var(--fg-shared-period-rail);
+  max-width:var(--fg-shared-period-rail);
+  height:100%;
+  min-height:0;
+  padding:0;
+  border:0;
+  background:transparent;
+  display:grid;
+  place-items:center;
+}
+
+.fg-card.fg-shared-shell .fg-period-slot .cnn-period-toolbar{
+  width:var(--fg-shared-period-size);
+  max-width:var(--fg-shared-period-size);
+  height:auto;
+  min-height:0;
+  margin:0;
+  display:flex;
+  flex:0 0 auto;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:var(--fg-shared-period-gap);
+}
+
+.fg-card.fg-shared-shell .fg-period-slot .cnn-period-button{
+  width:var(--fg-shared-period-size);
+  min-width:var(--fg-shared-period-size);
+  max-width:var(--fg-shared-period-size);
+  height:var(--fg-shared-period-size);
+  min-height:var(--fg-shared-period-size);
+  max-height:var(--fg-shared-period-size);
+  flex:0 0 var(--fg-shared-period-size);
+  display:grid;
+  place-items:center;
+}
+
+.fg-card.fg-shared-shell .fg-period-slot .cnn-period-button::after{
+  position:static;
+  display:block;
+  width:auto;
+  height:auto;
+  margin:0;
+  transform:none;
+  text-align:center;
+}
+
+/* Chart renderer consumes its slot. */
+.fg-card.fg-shared-shell .fg-chart-slot .fg-renderer,
+.fg-card.fg-shared-shell .fg-chart-slot .fg-chart-renderer,
+.fg-card.fg-shared-shell .fg-chart-slot .recharts-responsive-container{
+  width:100%;
+  height:100%;
+  min-height:0;
+}
+
+.fg-card.fg-shared-shell .recharts-cartesian-axis-tick-value{
+  font-size:9px;
+}
+
+/* Footer: generic footer ownership is replaced by this one USA rule. */
+.fg-card.fg-shared-shell .fg-footer-slot{
+  height:var(--fg-shared-footer-h);
+  min-height:var(--fg-shared-footer-h);
+  flex:0 0 var(--fg-shared-footer-h);
+}
+
+.fg-card.fg-shared-shell .fg-footer-slot .cnn-panel-note{
+  width:100%;
+  height:100%;
+  min-height:0;
+  box-sizing:border-box;
+  padding:4px var(--fg-shared-pad);
+}
+
+/* Sole structural switch — based on CARD width, not browser viewport. */
+@container fg-shared (max-width:500px){
+  .fg-card.fg-shared-shell{
+    --fg-shared-left:40%;
+    --fg-shared-gauge-w:min(142px,100%);
+    --fg-shared-comparison-h:30px;
+    --fg-shared-date-h:9px;
+    --fg-shared-period-size:26px;
+    --fg-shared-period-gap:5px;
+  }
+
+  .fg-card.fg-shared-shell .cnn-header-insight p{
+    font-size:9.5px;
+    line-height:1.22;
+  }
+
+  .fg-card.fg-shared-shell .fg-analysis-slot{
+    grid-template-columns:1fr;
+    grid-template-rows:26px minmax(0,1fr);
+    row-gap:2px;
+    column-gap:0;
+  }
+
+  .fg-card.fg-shared-shell .fg-period-slot{
+    grid-column:1;
+    grid-row:1;
+    width:100%;
+    min-width:0;
+    max-width:none;
+    height:26px;
+    min-height:26px;
+    display:grid;
+    place-items:center;
+  }
+
+  .fg-card.fg-shared-shell .fg-period-slot .cnn-period-toolbar{
+    width:auto;
+    max-width:none;
+    height:26px;
+    min-height:26px;
+    margin:0;
+    display:flex;
+    flex-direction:row;
+    align-items:center;
+    justify-content:center;
+    gap:var(--fg-shared-period-gap);
+  }
+
+  .fg-card.fg-shared-shell .fg-period-slot .cnn-period-button{
+    width:var(--fg-shared-period-size);
+    min-width:var(--fg-shared-period-size);
+    max-width:var(--fg-shared-period-size);
+    height:var(--fg-shared-period-size);
+    min-height:var(--fg-shared-period-size);
+    max-height:var(--fg-shared-period-size);
+    flex:0 0 var(--fg-shared-period-size);
+  }
+
+  .fg-card.fg-shared-shell .fg-period-slot .cnn-period-button::after{
+    position:absolute;
+    inset:0;
+    width:100%;
+    height:100%;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    margin:0;
+    transform:none;
+  }
+
+  .fg-card.fg-shared-shell .fg-chart-slot{
+    grid-column:1;
+    grid-row:2;
+  }
+}
+
+/* U9.18 — Period label true-center restoration ONLY.
+   U9.17 canonical cleanup correctly removed legacy breakpoint owners,
+   but wide-mode period labels lost the full-circle centering contract:
+   ::after was reset to position:static/display:block.
+
+   U9.18 restores ONE alignment rule for all card widths:
+   the visible 1W/1M/3M/6M/1Y label owns the full circle and is centered
+   on both axes by flex alignment.
+
+   No size, rail position, chart, gauge, comparison, header, footer,
+   breakpoint/container-query, or data logic changes. */
+
+.fg-card.fg-shared-shell .fg-period-slot .cnn-period-button::after{
+  position:absolute;
+  inset:0;
+  width:100%;
+  height:100%;
+  margin:0;
+  padding:0;
+
+  display:flex;
+  align-items:center;
+  justify-content:center;
+
+  box-sizing:border-box;
+  text-align:center;
+  line-height:1;
+  transform:none;
+}
+
+/* U9.19 — Wide period-rail breathing-room fix ONLY.
+   Root cause:
+   In U9.17/U9.18 wide mode, the five period buttons occupy:
+     5×24px + 4×5px = 140px
+   while --fg-shared-content-h could resolve to its 141px minimum.
+   That leaves only ~0.5px above/below the centered stack, so 1Y visually
+   collides with the content/footer boundary.
+
+   Fix:
+   - wide card minimum content height: 160px
+   - compact card (<=500px) keeps the approved 141px content height
+   - no position offsets, no button-size change, no chart/gauge/header/footer redesign */
+
+.fg-card.fg-shared-shell{
+  --fg-shared-content-h:clamp(160px,20cqi,190px);
+}
+
+@container fg-shared (max-width:500px){
+  .fg-card.fg-shared-shell{
+    --fg-shared-content-h:141px;
+  }
+}
+
+/* U9.20 — Wide score-stack centering.
+   Approved fix after U9.19:
+   - keep wide content height >=160px for the vertical period rail
+   - keep the left score stack at the proven 141px visual height
+   - center that 141px stack inside the taller wide content area
+   - comparison/date move upward naturally as part of the centered stack
+   - gauge center stays unchanged mathematically
+   - no viewport-specific position offsets, negative margins, translateY or top-% hacks
+
+   Compact card <=500px remains unchanged because its content height is already 141px. */
+
+.fg-card.fg-shared-shell{
+  --fg-shared-score-stack-h:141px;
+}
+
+@container fg-shared (min-width:501px){
+  .fg-card.fg-shared-shell .fg-score-slot{
+    display:grid;
+    place-items:center;
+  }
+
+  .fg-card.fg-shared-shell .fg-score-slot .cnn-score-orb{
+    width:100%;
+    height:min(100%,var(--fg-shared-score-stack-h));
+    min-height:0;
+    align-self:center;
+    justify-self:stretch;
+  }
+}
+
+/* U12.1 — Compact USA card final-gate repair.
+   Root cause:
+   The max-width:500px container query correctly affected descendants, but
+   custom properties assigned back onto the query container itself were not
+   reliable as compact geometry owners. That left the mobile card with the
+   wide content-height/column proportions and caused the interpretation text
+   to run into the horizontal period controls.
+
+   Final compact contract:
+   - header/content columns are explicitly 40% / 60% on descendants
+   - compact content is the intended 141px
+   - period buttons are the intended 26px
+   - <=400px card width uses the already-approved 9px interpretation size
+   - no negative margins, translateY, top-% offsets, or viewport-width hacks
+*/
+
+@container fg-shared (max-width:500px){
+  .fg-card.fg-shared-shell .fg-header-slot .cnn-panel-heading,
+  .fg-card.fg-shared-shell .fg-content-slot{
+    grid-template-columns:40% minmax(0,1fr);
+  }
+
+  .fg-card.fg-shared-shell .fg-content-slot{
+    height:141px;
+    min-height:141px;
+    flex:0 0 141px;
+  }
+
+  .fg-card.fg-shared-shell .cnn-spectrum-gauge{
+    width:min(100%,142px);
+    max-width:142px;
+  }
+
+  .fg-card.fg-shared-shell .fg-period-slot .cnn-period-button{
+    width:26px;
+    min-width:26px;
+    max-width:26px;
+    height:26px;
+    min-height:26px;
+    max-height:26px;
+    flex-basis:26px;
+  }
+}
+
+@container fg-shared (max-width:400px){
+  .fg-card.fg-shared-shell .cnn-header-insight p{
+    font-size:9px;
+    line-height:1.2;
+  }
+}
+
+/* U12.3 — <=400px header capacity fix.
+   At a 358px USA card width the interpretation wraps to four lines.
+   The canonical 48px header cannot contain 4×9px×1.2 line-height plus
+   its 5px top/bottom padding, so the text intrudes into the period row.
+   Give only the <=400px compact card enough header block-size.
+   No offsets, negative margins, translateY, or wide-layout changes. */
+
+@container fg-shared (max-width:400px){
+  .fg-card.fg-shared-shell .fg-header-slot{
+    height:56px;
+    min-height:56px;
+    flex:0 0 56px;
+  }
+}
+
+/* U12.4 — compact header clearance finalization.
+   U12.3 removed the visible collision, but geometry still measured a small
+   interpretation/period-row line-box contact at 430/390. Provide positive
+   structural clearance only on <=400px cards.
+
+   No wide geometry, chart, gauge, period size, offsets, negative margins,
+   translateY, data logic, or accessibility semantics are changed. */
+
+@container fg-shared (max-width:400px){
+  .fg-card.fg-shared-shell .fg-header-slot{
+    height:62px;
+    min-height:62px;
+    flex:0 0 62px;
+  }
+}
+
+/* K1 — Shared Fear & Greed visual shell owner.
+   USA remains the reference implementation, but presentation ownership now
+   lives on the opt-in .fg-shared-shell class rather than the USA identity.
+   Country-specific renderers may reuse this shell without inheriting USA data. */

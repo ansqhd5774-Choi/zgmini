@@ -99,7 +99,7 @@ export default function CountryFearGreed() {
               </div>
               <ScoreScale score={value?.score ?? null} label={`${country.name} 공포·탐욕`} color={color} />
               <div className="zg-country-meta">
-                <small>기준 {(value?.updatedAt ?? value?.observedAt)?.slice(0, 10) ?? "—"}</small>
+                <small>기준 {value?.observedAt?.slice(0, 10) ?? "—"}</small>
                 {country.api ? <a className="zg-detail" href={country.code === "us" ? "https://www.cnn.com/markets/fear-and-greed" : "https://nikkei.feargreedchart.com/api-docs"} target="_blank" rel="noreferrer">출처 ↗</a> : <small>연결 준비 중</small>}
               </div>
             </article>

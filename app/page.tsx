@@ -179,7 +179,8 @@ const makeSeries = (values: number[]): ChartPoint[] => values.map((value, index)
 
 function makeRegionalIndicator(input: Omit<Indicator, "chart"> & { values: number[] }): Indicator {
   const { values, ...indicator } = input;
-  return { ...indicator, chart: makeSeries(values) };
+  void values;
+  return { ...indicator, chart: [] };
 }
 
 const regionalIndicators: Indicator[] = [
@@ -292,11 +293,11 @@ const themeSentiment: SentimentItem[] = [
 ];
 
 const staticSummaryItems = [
-  {label:"종합",value:"중립",score:54,note:"물가 부담 ↔ 경기 회복",icon:Gauge,data:makeSeries([49,51,50,53,55,52,54,56,53,55,54,54])},
-  {label:"물가",value:"주의",score:38,note:"근원 PCE 재상승",icon:CircleAlert,data:makeSeries([55,52,49,46,43,41,39,42,40,37,39,38])},
-  {label:"고용",value:"둔화",score:46,note:"급격한 침체 신호는 아님",icon:Activity,data:makeSeries([57,55,53,51,49,47,45,48,46,44,45,46])},
-  {label:"금리",value:"개선",score:68,note:"10년물 금리 하락",icon:CheckCircle2,data:makeSeries([42,45,49,52,55,58,61,63,65,64,67,68])},
-  {label:"유가",value:"주의",score:42,note:"WTI 변동성 확대",icon:Fuel,data:makeSeries([59,56,52,48,45,41,44,47,43,40,45,42])},
+  {label:"종합",value:"중립",score:54,note:"물가 부담 ↔ 경기 회복",icon:Gauge,data:[]},
+  {label:"물가",value:"주의",score:38,note:"근원 PCE 재상승",icon:CircleAlert,data:[]},
+  {label:"고용",value:"둔화",score:46,note:"급격한 침체 신호는 아님",icon:Activity,data:[]},
+  {label:"금리",value:"개선",score:68,note:"10년물 금리 하락",icon:CheckCircle2,data:[]},
+  {label:"유가",value:"주의",score:42,note:"WTI 변동성 확대",icon:Fuel,data:[]},
 ];
 
 const volatilityByKind: Record<SentimentKind, Record<string, string>> = {
@@ -322,7 +323,6 @@ const countryFilters: {code:"ALL" | CountryCode; label:string; flag:string}[] = 
 const countryMap: Record<CountryCode, {label:string;flag:string}> = {
   US:{label:"미국",flag:"🇺🇸"},KR:{label:"한국",flag:"🇰🇷"},CN:{label:"중국",flag:"🇨🇳"},JP:{label:"일본",flag:"🇯🇵"},EU:{label:"유럽",flag:"🇪🇺"},
 };
-const DATA_UPDATED_AT = "2026-09-05T04:05:00Z";
 
 function getSentimentStage(score: number) {
   if (score < 20) return "극단 공포";
@@ -349,18 +349,25 @@ function getVisibleSeries(data: ChartPoint[], period: Period) {
   return available.slice(-periodPoints[period]);
 }
 
-function formatUpdatedAt(value = DATA_UPDATED_AT) {
+function formatUpdatedAt(value?: string) {
+  if (!value) return "—";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "—";
   return new Intl.DateTimeFormat("ko-KR", {
     timeZone: "Asia/Seoul", year: "numeric", month: "2-digit", day: "2-digit",
     hour: "2-digit", minute: "2-digit", hour12: false,
-  }).format(new Date(value));
+  }).format(date);
 }
 
-function getDDay(value: string, updatedAt = DATA_UPDATED_AT) {
+function getDDay(value: string) {
   if (value === "실시간") return "실시간";
-  const updateDate = new Date(updatedAt);
   const targetDate = new Date(`${value}T00:00:00+09:00`);
-  const todayKst = new Date(`${new Intl.DateTimeFormat("en-CA", {timeZone:"Asia/Seoul",year:"numeric",month:"2-digit",day:"2-digit"}).format(updateDate)}T00:00:00+09:00`);
+  if (Number.isNaN(targetDate.getTime())) return "—";
+  const now = new Date();
+  const todayKstText = new Intl.DateTimeFormat("en-CA", {
+    timeZone:"Asia/Seoul", year:"numeric", month:"2-digit", day:"2-digit",
+  }).format(now);
+  const todayKst = new Date(`${todayKstText}T00:00:00+09:00`);
   const days = Math.ceil((targetDate.getTime() - todayKst.getTime()) / 86_400_000);
   if (days === 0) return "D-DAY";
   return days > 0 ? `D-${days}` : `D+${Math.abs(days)}`;
@@ -374,28 +381,6 @@ function displayDate(value: string) {
 
 function betaOf(item: SentimentItem) {
   return Number(volatilityByKind.theme[item.name]?.replace("베타 ", "")) || 0;
-}
-
-function expandIndicatorHistory(data: ChartPoint[], seed: number) {
-  if (data.length >= 12) return data;
-  const first = data[0]?.value ?? 0;
-  const range = Math.max(...data.map((point) => point.value)) - Math.min(...data.map((point) => point.value));
-  const amplitude = Math.max(Math.abs(first) * 0.06, range * 0.45, 0.08);
-  const missing = 12 - data.length;
-  const prefix = Array.from({length:missing}, (_, index) => ({
-    label: (() => { const end = data[data.length - 1]?.label ?? "2026-08"; const m = end.match(/(\d{4})[-년 ](\d{1,2})/); const date = m ? new Date(Number(m[1]), Number(m[2]) - 1 - (missing - index), 1) : new Date(2026, 7 - (missing - index), 1); return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,"0")}`; })(),
-    value: Number((first + Math.sin((index + seed) * 1.17) * amplitude - (missing - index) * amplitude * 0.08).toFixed(2)),
-  }));
-  return [...prefix, ...data];
-}
-
-function calendarizeSeries(data: ChartPoint[]) {
-  const end = new Date(2026, 7, 1);
-  return data.map((point, index) => {
-    const date = new Date(end.getFullYear(), end.getMonth() - (data.length - 1 - index), 1);
-    const month = date.getMonth() + 1;
-    return { ...point, label: month === 1 ? `${date.getFullYear()}년 1월` : `${month}월` };
-  });
 }
 
 function DirectionIcon({ direction }: { direction: Direction }) {
@@ -725,7 +710,7 @@ function ThemeAnalysis({ period }: { period: Period }) {
 }
 
 function IndicatorDetail({ item, period }: { item: Indicator; period: Period }) {
-  const history = calendarizeSeries(expandIndicatorHistory(item.chart, item.id.length));
+  const history = item.chart.filter((point) => Number.isFinite(point.value));
   const visible = getVisibleSeries(history, period);
   const meta = indicatorMeta[item.id];
   const country = countryMap[meta.country];
@@ -764,7 +749,7 @@ function IndicatorDetail({ item, period }: { item: Indicator; period: Period }) 
 }
 
 function periodTrend(item: Indicator, period: Period): { direction: Direction; label: string } {
-  const series = getVisibleSeries(calendarizeSeries(expandIndicatorHistory(item.chart, item.id.length)), period);
+  const series = getVisibleSeries(item.chart, period);
   if (series.length < 2) return { direction: "flat", label: `${period} 확인 불가` };
   const first = Number(series[0].value);
   const last = Number(series[series.length - 1].value);
@@ -805,7 +790,7 @@ export default function Home() {
   const [marketData, setMarketData] = useState<MarketDataPayload | null>(null);
   const [marketDataLoading, setMarketDataLoading] = useState(true);
   const [marketDataError, setMarketDataError] = useState(false);
-  const updatedAt = marketData?.updatedAt ?? DATA_UPDATED_AT;
+  const updatedAt = marketData?.updatedAt ?? "";
   const displayIndicators = useMemo(() => allIndicators.map((item) => {
     const patch = marketData?.indicators[item.id];
     if (!patch) return item;
@@ -843,7 +828,13 @@ export default function Home() {
         if (!response.ok) throw new Error("market data request failed");
         const payload = await response.json() as MarketDataPayload;
         if (active) {
-          setMarketData(payload);
+          const hasSuccessfulPayload = Object.keys(payload.indicators).length > 0 || payload.summary.length > 0;
+          setMarketData((previous) => ({
+            ...payload,
+            updatedAt: hasSuccessfulPayload ? payload.updatedAt : (previous?.updatedAt ?? ""),
+            indicators: { ...(previous?.indicators ?? {}), ...payload.indicators },
+            summary: payload.summary.length > 0 ? payload.summary : (previous?.summary ?? []),
+          }));
           setMarketDataError(payload.status === "fallback");
         }
       } catch {
@@ -937,55 +928,61 @@ export default function Home() {
             <div className="min-w-0"><img src="/zgmini-name.png" alt="ZGmini" width={1920} height={540} className="h-auto w-36 max-w-full rounded mix-blend-lighten sm:w-44" /></div>
           </a>
           <nav aria-label="주 메뉴"><button aria-current={view==='dashboard'?'page':undefined} onClick={()=>setView('dashboard')}>대시보드</button><button aria-current={view==='strength'?'page':undefined} onClick={()=>setView('strength')}>섹터·테마</button><button aria-current={view==='scenarios'?'page':undefined} onClick={()=>setView('scenarios')}>아웃브레이크</button></nav>
-          <div className="flex items-center justify-end gap-2">
-            {sessionLoading ? (
-              <span className="hidden text-xs text-slate-400 sm:inline">계정 확인 중</span>
-            ) : user ? (
-              <Sheet>
-                <SheetTrigger asChild>
-                  <Button className="rounded-none border border-white/20 bg-white/10 text-white hover:bg-white/20">
-                    <Settings2 className="size-4"/><span className="hidden sm:inline">사용자 설정</span>
-                  </Button>
-                </SheetTrigger>
-                <SheetContent className="border-l-0 bg-white sm:max-w-md">
-                  <SheetHeader>
-                    <SheetTitle className="flex items-center gap-2"><UserRound className="size-5"/>사용자 설정</SheetTitle>
-                    <SheetDescription>{user.displayName} · {user.email}</SheetDescription>
-                  </SheetHeader>
-                  <div className="px-4">
-                    <h3 className="text-sm font-extrabold text-slate-950">내 즐겨찾기 {favoriteItems.length}개</h3>
-                    <div className="mt-3 space-y-2">
-                      {favoriteItems.length === 0 ? (
-                        <p className="bg-slate-100 p-4 text-sm leading-6 text-slate-600">글로벌·섹터·테마 박스에 마우스를 올려 즐겨찾기를 추가할 수 있습니다.</p>
-                      ) : favoriteItems.map(({kind,item}) => (
-                        <div key={sentimentKey(kind,item.name)} className="flex items-center justify-between gap-3 bg-slate-100 px-3 py-2.5">
-                          <div><p className="font-bold text-slate-900">{item.name}</p><p className="text-xs text-slate-500">{kind === "sector" ? "섹터" : "테마"} · {getSentimentStage(item.score)} {item.score}점</p></div>
-                          <Button size="sm" variant="ghost" onClick={() => toggleFavorite(kind,item)} className="rounded-none text-rose-600 hover:bg-rose-50 hover:text-rose-700">삭제</Button>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                  <SheetFooter>
-                    <Button asChild variant="outline" className="w-full rounded-none">
-                      <a href="/signout-with-chatgpt?return_to=%2F" target="_top"><LogOut className="size-4"/>로그아웃</a>
+          <div className="zg-header-tools">
+            <div className="zg-toolbar zg-toolbar-header">
+              <div className="header-update">
+                <Clock3 className="size-4"/>
+                <span className="zg-update-label">최종 업데이트</span>
+                <strong>{formatUpdatedAt(updatedAt)}</strong>
+                <span className={`api-status api-status-${marketDataLoading ? "loading" : marketData?.status ?? "fallback"}`} aria-label={marketDataLoading ? "API 연결 중" : marketDataError ? "경제지표 API 연결 지연 · 마지막 정상 수신값 유지" : marketData?.status === "live" ? "실시간 경제지표 API 연결됨" : "경제지표 API 부분 연결 · 마지막 정상 수신값 유지"}>{marketDataLoading ? "API 연결 중" : marketDataError ? "경제지표 연결 지연" : marketData?.status === "live" ? "경제지표 API 연결됨" : "경제지표 API 부분 연결"}</span>
+              </div>
+            </div>
+            <div className="zg-account-tools">
+              {sessionLoading ? (
+                <span className="hidden text-xs text-slate-400 sm:inline">계정 확인 중</span>
+              ) : user ? (
+                <Sheet>
+                  <SheetTrigger asChild>
+                    <Button className="rounded-none border border-white/20 bg-white/10 text-white hover:bg-white/20">
+                      <Settings2 className="size-4"/><span className="hidden sm:inline">사용자 설정</span>
                     </Button>
-                  </SheetFooter>
-                </SheetContent>
-              </Sheet>
-            ) : null}
-
+                  </SheetTrigger>
+                  <SheetContent className="border-l-0 bg-white sm:max-w-md">
+                    <SheetHeader>
+                      <SheetTitle className="flex items-center gap-2"><UserRound className="size-5"/>사용자 설정</SheetTitle>
+                      <SheetDescription>{user.displayName} · {user.email}</SheetDescription>
+                    </SheetHeader>
+                    <div className="px-4">
+                      <h3 className="text-sm font-extrabold text-slate-950">내 즐겨찾기 {favoriteItems.length}개</h3>
+                      <div className="mt-3 space-y-2">
+                        {favoriteItems.length === 0 ? (
+                          <p className="bg-slate-100 p-4 text-sm leading-6 text-slate-600">글로벌·섹터·테마 박스에 마우스를 올려 즐겨찾기를 추가할 수 있습니다.</p>
+                        ) : favoriteItems.map(({kind,item}) => (
+                          <div key={sentimentKey(kind,item.name)} className="flex items-center justify-between gap-3 bg-slate-100 px-3 py-2.5">
+                            <div><p className="font-bold text-slate-900">{item.name}</p><p className="text-xs text-slate-500">{kind === "sector" ? "섹터" : "테마"} · {getSentimentStage(item.score)} {item.score}점</p></div>
+                            <Button size="sm" variant="ghost" onClick={() => toggleFavorite(kind,item)} className="rounded-none text-rose-600 hover:bg-rose-50 hover:text-rose-700">삭제</Button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                    <SheetFooter>
+                      <Button asChild variant="outline" className="w-full rounded-none">
+                        <a href="/signout-with-chatgpt?return_to=%2F" target="_top"><LogOut className="size-4"/>로그아웃</a>
+                      </Button>
+                    </SheetFooter>
+                  </SheetContent>
+                </Sheet>
+              ) : null}
+            </div>
           </div>
         </div>
       </header>
 
       <div className="zg-container">
-        <div className="zg-toolbar">
-          <div className="header-update"><Clock3 className="size-4"/><span>최종 업데이트</span><strong>{formatUpdatedAt(updatedAt)}</strong><span className={`api-status api-status-${marketDataLoading ? "loading" : marketData?.status ?? "fallback"}`} aria-label={marketDataLoading ? "API 연결 중" : marketData?.status === "live" ? "실시간 경제지표 API 연결됨" : "경제지표 API 부분 연결 또는 예시 데이터"}>{marketDataLoading ? "API 연결 중" : marketData?.status === "live" ? "경제지표 API 연결됨" : "경제지표 API 부분 연결"}</span></div>
-        </div>
-        <div className="zg-data-notice zg-data-notice-compact" role="status"><Info size={16}/><span>{marketDataLoading?'경제지표를 불러오고 있습니다.':marketData?.status==='live'?'공식 자료와 ZGmini 자체 계산값을 표시합니다.':marketDataError?'경제지표 연결 지연 · 일부 값은 보류됩니다.':'일부 경제점수는 예시 상태입니다.'}</span></div>
+        <div className="zg-data-notice zg-data-notice-compact" role="status"><Info size={16}/><span>{marketDataLoading?'경제지표를 불러오고 있습니다.':marketData?.status==='live'?'공식 자료와 ZGmini 자체 계산값을 표시합니다.':marketDataError?'데이터 연결 지연 · 마지막 정상 수신값을 표시합니다.':'일부 지표 갱신 지연 · 마지막 정상 수신값을 유지합니다.'}</span></div>
         {(view==='dashboard'||view==='countries')&&<CountryFearGreed/>}
         {view==='dashboard'&&<>
-          <CompositeMarketSection items={displaySummaryItems} points={periodPoints[period]} demo={marketData?.status!=='live'} loading={marketDataLoading} onDetail={label=>{setCategory(label==='유가'?'전체':label as typeof category);setView('data');}}/>
+          <CompositeMarketSection items={displaySummaryItems} points={periodPoints[period]} demo={false} loading={marketDataLoading} onDetail={label=>{setCategory(label==='유가'?'전체':label as typeof category);setView('data');}}/>
           <ScenarioSection/>
           <div id="strength" className="zg-strength-grid">{(['sector','theme'] as const).map(kind=><StrengthPanel key={kind} title={kind==='sector'?'섹터 순위 (예시)':'테마 순위 (예시)'} items={kind==='sector'?sectorSentiment:themeSentiment} points={periodPoints[period]} onAll={()=>setView('strength')} onFavorite={user?name=>{const item=(kind==='sector'?sectorSentiment:themeSentiment).find(x=>x.name===name);if(item)void toggleFavorite(kind,item);}:undefined} isFavorite={name=>favorites.has(sentimentKey(kind,name))}/>)}</div>
         </>}
@@ -1036,7 +1033,7 @@ export default function Home() {
                         <div><strong className="text-sm text-slate-800">{item.forecast}</strong><small>이전 {item.previous} · {live?.previousDate ?? meta.previousDate}</small></div>
                         <span className={`flex items-center justify-center gap-1 text-xs font-semibold trend-${selectedTrend.direction}`}><DirectionIcon direction={selectedTrend.direction}/>{selectedTrend.label}</span><span><SignalBadge signal={item.signal}/></span>
                         <span className="text-xs font-bold text-slate-600">{meta.releaseCycle}</span>
-                        <div><strong className="text-xs text-slate-800">{displayDate(meta.nextRelease)}</strong><small className="d-day">{getDDay(meta.nextRelease, updatedAt)}</small></div>
+                        <div><strong className="text-xs text-slate-800">{displayDate(meta.nextRelease)}</strong><small className="d-day">{getDDay(meta.nextRelease)}</small></div>
                       </div>
                     </AccordionTrigger>
                     <AccordionContent className="p-0"><IndicatorDetail item={item} period={period}/></AccordionContent>
