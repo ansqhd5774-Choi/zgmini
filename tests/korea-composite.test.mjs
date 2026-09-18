@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {calculateComposite as calc,describeScore,buildComposite,WEIGHTS,COMPOSITE_VERSION,TOLERANCE} from '../worker/korea-composite.mjs';
 import {PUBLIC_CACHE_KEY} from '../worker/korea-funds.mjs';
+import {REV7_VERSION} from '../worker/korea-rev7-engine.mjs';
 const now=new Date('2026-09-11T00:00:00Z');
 const indicator=(id,history,status='READY')=>({id,history,status,observationDate:history.at(-1)?.date??null});
 const make=(g,p,gs='READY',ps='READY')=>[indicator('LEV_BLEND20_60',g,gs),indicator('L3_PRESSURE_P252',p,ps)];
@@ -19,6 +20,6 @@ test('source stale and old observation are stale',()=>{assert.equal(buildComposi
 test('duplicates dedupe and conflicts reject',()=>{assert.equal(buildComposite(make([point(50),point(50)],[point(50)]),now).history.length,1);assert.equal(buildComposite(make([point(50),point(51)],[point(50)]),now).score,null);});
 test('future addition cannot change historical scores',()=>{const a=make([point(30)],[point(70)]);const before=buildComposite(a,now).history;a.forEach(i=>i.history.push(point(90,'20260910')));assert.deepEqual(buildComposite(a,now).history.slice(0,1),before);});
 test('contributions reconcile without rounding inputs',()=>{const c=buildComposite(make([point(47.888446215139446)],[point(5.577689243027891)]),now);assert.ok(Math.abs(c.score-71.15537848605578)<TOLERANCE);assert.equal(c.displayScore,71.2);assert.equal(c.stageLabel,'탐욕');assert.ok(Math.abs(c.components.reduce((a,v)=>a+v.weightedContribution,0)-c.score)<TOLERANCE);});
-test('cache includes separate composite version',()=>assert.ok(PUBLIC_CACHE_KEY.includes(COMPOSITE_VERSION)));
+test('public cache identity uses Revision 7 rather than legacy composite version',()=>{assert.ok(PUBLIC_CACHE_KEY.includes(REV7_VERSION));assert.ok(!PUBLIC_CACHE_KEY.includes(COMPOSITE_VERSION));});
 test('bounded output keeps nulls and source dates',()=>{const rows=Array.from({length:400},(_,i)=>point(i===399?null:50,new Date(Date.UTC(2025,0,1+i)).toISOString().slice(0,10).replaceAll('-','')));const c=buildComposite(make(rows,rows),now);assert.equal(c.history.length,366);assert.equal(c.history.at(-1).score,null);assert.equal(c.pointInTimeVerified,false);assert.equal(c.sourcePublishedAt,null);});
 test('Korean UI shares store and no old source/history fallback',()=>{const store=readFileSync(new URL('../app/korea-funds-store.ts',import.meta.url),'utf8');assert.equal((store.match(/fetch\(/g)??[]).length,1);for(const f of ['korea-funds.tsx','korea-composite-view.tsx'])assert.ok(readFileSync(new URL(`../app/${f}`,import.meta.url),'utf8').includes('useKoreaFunds'));const detail=readFileSync(new URL('../app/fear-greed/korea/page.tsx',import.meta.url),'utf8');assert.ok(!detail.includes('await GET'));assert.ok(!readFileSync(new URL('../app/fear-greed/korea/data-panel.tsx',import.meta.url),'utf8').includes('kospi'));});

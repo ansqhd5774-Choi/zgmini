@@ -33,8 +33,11 @@ function normalizeCompositeHistory(history:Composite['history']):Array<MarketFea
   if(!/^\d{8}$/.test(point.date))return [];
   const pointTime=time(point.date);
   if(!Number.isFinite(pointTime))return [];
-  const score=typeof point.score==='number'&&Number.isFinite(point.score)&&point.score>=0&&point.score<=100
-   ?point.score
+  const visibleScore=typeof point.displayScore==='number'&&Number.isFinite(point.displayScore)
+   ?point.displayScore
+   :point.score;
+  const score=typeof visibleScore==='number'&&Number.isFinite(visibleScore)&&visibleScore>=0&&visibleScore<=100
+   ?visibleScore
    :null;
   return [{date:point.date,time:pointTime,score}];
  }).sort((a,b)=>a.time-b.time);
@@ -126,19 +129,10 @@ function buildKoreaAxisTicks(points:ReturnType<typeof normalizeCompositeHistory>
 }
 
 function componentModelLabel(composite:Composite|null){
- if(!composite)return '한국 V2 모델';
- if(composite.fallbackApplied)return 'V2 자료 대기 · V1 2요소 대체값';
- if(composite.methodologyVersion==='kr-fg-2f-cs-2.0.0'){
-  const leverage=composite.components.find(component=>component.id==='KR_LEVERAGE_INTENSITY_Z252_E50');
-  const liquidation=composite.components.find(component=>component.id==='KR_LIQUIDATION_LOG_Z252_INV_E50');
-  const penalty=composite.components.find(component=>component.id==='KR_CORPORATE_STRESS_PENALTY');
-  if(leverage&&liquidation&&penalty)return `신용융자·반대매매 ${Math.round(leverage.weight*100)}/${Math.round(liquidation.weight*100)} + 기업스트레스 최대 10점 감점`;
-  return '한국 V2 기업스트레스 감점 모델';
- }
- const credit=composite.components.find(component=>component.id==='LEV_BLEND20_60');
- const liquidation=composite.components.find(component=>component.id==='L3_PRESSURE_P252');
- if(!credit||!liquidation)return '한국 V1 2요소 모델';
- return `V1 신용융자 ${Math.round(credit.weight*100)}%·반대매매 역점수 ${Math.round(liquidation.weight*100)}%`;
+ if(!composite)return '한국 Revision 7';
+ return composite.methodologyVersion==='kr-fg-cnn-r7-1.0.0'
+  ?'Revision 7 · 7개 지표 동일가중'
+  :'한국 Revision 7';
 }
 
 function buildKoreaInsight({
@@ -154,10 +148,10 @@ function buildKoreaInsight({
  periodLabel:string;
  loading:boolean;
 }){
- if(loading)return '한국 V2 투자심리 데이터를 확인하고 있습니다.';
+ if(loading)return '한국 Revision 7 투자심리 데이터를 확인하고 있습니다.';
  if(!composite||typeof composite.displayScore!=='number'){
-  if(composite?.status==='WARMUP')return '한국 V2 모델의 계산 준비기간입니다.';
-  return '한국 V2 모델의 공통 관측값을 확인할 수 없습니다.';
+  if(composite?.status==='WARMUP')return '한국 Revision 7 모델의 계산 준비기간입니다.';
+  return '한국 Revision 7 모델의 유효 관측값을 확인할 수 없습니다.';
  }
 
  const model=componentModelLabel(composite);
@@ -237,9 +231,9 @@ export function KoreaCompositeView({detail=false}:{detail?:boolean}){
   {valid&&<div role="meter" aria-label="한국 공포·탐욕지수" aria-valuemin={0} aria-valuemax={100} aria-valuenow={c!.displayScore!} className="h-2 overflow-hidden rounded bg-slate-200"><div className="h-full" style={{width:`${c!.displayScore}%`,background:colors[c!.stageCode??'']}}/></div>}
   <p className="mt-3 text-xs text-slate-600">관측 기준일 {formatDate(c?.observationDate??null)}</p>
   <p className="mt-2 text-sm text-slate-700">이전 관측 대비 {c?.changePoints!=null?`${c.changePoints>=0?'+':''}${c.changePoints.toFixed(1)}점 (${formatDate(c.previousObservationDate)})`:'비교 자료 없음'}</p>
-  {c?.status==='STALE'&&<p role="status" className="mt-2 text-sm text-amber-700">{c.fallbackApplied?'V2 입력자료를 확인할 수 없어 V1 대체값을 표시합니다.':`갱신 대기 · ${c.staleReason?.includes('COMMON_DATE_LAG')?'구성자료의 관측일이 달라 최근 공통일을 표시합니다.':'자료가 지연되거나 조회되지 않아 과거 유효값을 표시합니다.'}`}</p>}
+  {c?.status==='STALE'&&<p role="status" className="mt-2 text-sm text-amber-700">갱신 대기 · Revision 7의 최근 유효 관측값을 표시합니다.</p>}
   {c&&<CompositeChart item={c} mini={!detail}/>}
-  {detail&&<><p className="mt-5 text-sm">{c?.briefMethodology??'신용융자/투자자예탁금과 실제 반대매매금액을 50%씩 반영하고 기업스트레스 급증 시 최대 10점을 감점하는 V2 지수입니다.'}</p><p className="mt-3 text-sm">기업스트레스는 부도·영업정지·회생·해산·채권은행 관리절차 공시가 평상보다 증가할 때만 감점하며, 공시가 적다는 이유만으로 탐욕 점수를 추가하지 않습니다.</p><p className="mt-3 text-xs">과거 점수는 현재 확보한 원자료로 재구성한 이력입니다. 당시 공표시점·빈티지는 검증되지 않았습니다.</p></>}
+  {detail&&<><p className="mt-5 text-sm">{c?.briefMethodology??'Revision 7은 7개 시장심리 지표를 각각 1/7 동일가중으로 종합합니다.'}</p><p className="mt-3 text-sm">모멘텀·시장강도·시장폭·풋/콜·변동성·안전자산 선호·신용스프레드를 각각 공포↔탐욕 방향의 0~100 점수로 변환합니다. 결측 Factor가 있으면 남은 지표로 재가중하지 않습니다.</p><p className="mt-3 text-xs">과거 점수는 현재 확보한 원자료로 재구성한 이력이며 당시 point-in-time 빈티지는 검증되지 않았습니다. 현재는 연구용 베타입니다.</p></>}
  </div>;
 }
 
@@ -270,7 +264,7 @@ export function KoreanCountryCard(){
  const latestHistoryPoint=validHistory(chartHistory).at(-1)??null;
  const chartAxis=useMemo(()=>buildKoreaAxisTicks(chartHistory,selectedPeriod),[chartHistory,selectedPeriod]);
  const insight=buildKoreaInsight({composite:c,dayDelta,periodDelta,periodLabel,loading});
- const source=c?.sourceAttribution??'ZGmini 한국 V2 자체 산출';
+ const source=c?.sourceAttribution??'한국거래소 통계정보 · 한국은행 ECOS · ZGmini 자체 가공';
 
  return <FearGreedCardShell
   className="korea-target-card"
@@ -282,7 +276,7 @@ export function KoreanCountryCard(){
    flag:"/flags/kr.svg",
    eyebrow:"ZGMINI KOREA FEAR & GREED",
    title:"한국 시장",
-   description:"KOSPI · 신용융자·반대매매·기업스트레스",
+   description:"KOSPI · 7개 시장심리 지표 동일가중",
    dateLabel:"관측 기준일",
    date:cardDate(c?.observationDate),
    source,

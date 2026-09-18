@@ -1,99 +1,216 @@
-import {buildComposite,COMPOSITE_VERSION} from './korea-composite.mjs';
-import {buildCompositeV2,V2_COMPOSITE_VERSION} from './korea-composite-v2.mjs';
-import {runFscScoped,SCOPED_PROFILE,SCOPED_VERSION,SCOPED_COPY} from './phase2-fsc-scoped.mjs';
-export const PUBLIC_VERSION=`${SCOPED_VERSION}-public-1`;
-export const PUBLIC_CACHE_KEY=`${SCOPED_PROFILE}:${PUBLIC_VERSION}:${COMPOSITE_VERSION}:${V2_COMPOSITE_VERSION}`;
+import {REV7_VERSION,REV7_INDEX_ID,REV7_FACTORS,REV7_DIRECTIONS} from './korea-rev7-engine.mjs';
+
+export const PUBLIC_VERSION=`${REV7_VERSION}-public-2`;
+export const PUBLIC_CACHE_KEY=`${REV7_VERSION}:${PUBLIC_VERSION}`;
 export const CACHE_MS=15*60*1000;
 export const DEGRADED_CACHE_MS=5*1000;
+export const PUBLIC_HISTORY_LIMIT=270;
+
 const valid=x=>typeof x==='number'&&Number.isFinite(x)&&x>=0&&x<=100;
-const iso=d=>`${d.slice(0,4)}-${d.slice(4,6)}-${d.slice(6,8)}`;
-const epoch=d=>Date.parse(`${iso(d)}T00:00:00Z`);
-export function recentHistory(scores){
- const last=scores.findLast(p=>valid(p.value));if(!last)return [];
- const cutoff=new Date(epoch(last.date));cutoff.setUTCFullYear(cutoff.getUTCFullYear()-1);
- return scores.filter(p=>epoch(p.date)>=cutoff.getTime()&&p.date<=last.date).slice(-366)
-   .map(p=>({date:p.date,score:valid(p.value)?p.value:null}));
+const finite=x=>typeof x==='number'&&Number.isFinite(x);
+const round1=x=>finite(x)?Math.round((x+Number.EPSILON)*10)/10:null;
+const epoch=d=>/^\d{8}$/.test(d??'')?Date.parse(`${d.slice(0,4)}-${d.slice(4,6)}-${d.slice(6,8)}T00:00:00Z`):NaN;
+
+const FACTOR_META=Object.freeze({
+  momentum:{name:'모멘텀',brief:'KOSPI의 125관측 이동평균 대비 위치를 504개 유효 관측으로 정규화한 점수'},
+  strength:{name:'시장 강도',brief:'KOSPI 종목의 251관측 신고가·신저가 균형을 504개 유효 관측으로 정규화한 점수'},
+  breadth:{name:'시장 폭',brief:'상승·하락 거래량 차이의 EMA19·EMA39 오실레이터 누적값을 정규화한 점수'},
+  putCall:{name:'풋/콜',brief:'KOSPI200 옵션 Put/Call 5관측 평균을 공포 방향에서 역변환한 점수'},
+  volatility:{name:'변동성',brief:'VKOSPI200의 50관측 이동평균 대비 상대수준을 공포 방향에서 역변환한 점수'},
+  safeHaven:{name:'안전자산 선호',brief:'KOSPI와 국채 총수익지수의 20관측 수익률 차이를 정규화한 점수'},
+  junkBond:{name:'신용 스프레드',brief:'BBB- 3년과 AA- 3년 금리차를 공포 방향에서 역변환한 점수'},
+});
+
+export const STAGE_POLICY='0≤x<25 EXTREME_FEAR; 25≤x<45 FEAR; 45≤x≤55 NEUTRAL; 55<x≤75 GREED; 75<x≤100 EXTREME_GREED';
+
+export function stageForDisplayScore(displayScore){
+  if(!valid(displayScore))return {stageCode:null,stageLabel:null};
+  if(displayScore<25)return {stageCode:'EXTREME_FEAR',stageLabel:'극단적 공포'};
+  if(displayScore<45)return {stageCode:'FEAR',stageLabel:'공포'};
+  if(displayScore<=55)return {stageCode:'NEUTRAL',stageLabel:'중립'};
+  if(displayScore<=75)return {stageCode:'GREED',stageLabel:'탐욕'};
+  return {stageCode:'EXTREME_GREED',stageLabel:'극단적 탐욕'};
 }
 
-function compactLegacy(composite){
- return {methodologyVersion:composite.methodologyVersion,score:composite.score,displayScore:composite.displayScore,stageCode:composite.stageCode,stageLabel:composite.stageLabel,observationDate:composite.observationDate,status:composite.status};
+function parseJson(value,fallback=null){
+  if(typeof value!=='string')return fallback;
+  try{return JSON.parse(value);}catch{return fallback;}
 }
-function selectActiveComposite(v2,v1){
- if(valid(v2?.score))return {...v2,activeMethodologyVersion:V2_COMPOSITE_VERSION,fallbackApplied:false,fallbackReason:null};
- if(valid(v1?.score))return {...v1,status:'STALE',staleReason:`V2_FALLBACK,${v2?.staleReason??v2?.status??'V2_UNAVAILABLE'}`,activeMethodologyVersion:V2_COMPOSITE_VERSION,fallbackApplied:true,fallbackReason:v2?.staleReason??v2?.status??'V2_UNAVAILABLE',sourceAttribution:`${v1.sourceAttribution} · V2 입력 불가로 V1 대체`};
- return {...v2,activeMethodologyVersion:V2_COMPOSITE_VERSION,fallbackApplied:false,fallbackReason:null};
+function normalizeSnapshotRow(row){
+  const factors=parseJson(row?.factors_json,{});
+  const composite=parseJson(row?.composite_json,{});
+  const score=valid(composite?.score)?composite.score:null;
+  return {
+    date:row?.date??null,
+    methodologyVersion:row?.methodology_version??null,
+    factors,
+    score,
+    displayScore:round1(score),
+    status:composite?.status??(score===null?'WARMUP':'READY'),
+    historyMode:row?.history_mode??'RECONSTRUCTED_CURRENT_VINTAGE',
+    pointInTimeVerified:Boolean(row?.point_in_time_verified),
+    calculatedAt:row?.calculated_at??null,
+  };
+}
+function factorScore(row,id){
+  const score=row?.factors?.[id]?.score;
+  return valid(score)?score:null;
 }
 
-function fullActiveSnapshot(data){
- return Array.isArray(data?.indicators)&&data.indicators.length>=2&&data.indicators.every(item=>valid(item?.score))
-  &&data?.composite?.methodologyVersion===V2_COMPOSITE_VERSION
-  &&valid(data?.composite?.score)&&data?.composite?.fallbackApplied!==true;
+export async function defaultLoadProgress(env){
+  const row=await env.DB.prepare(`SELECT successful_trading_date_count AS successfulTradingDates,status
+    FROM kfg_rev7_backfill_progress WHERE methodology_version=? LIMIT 1`).bind(REV7_VERSION).first();
+  return row??null;
 }
-function unavailableV2(reason='V2_REFRESH_FAILED'){
- return {methodologyVersion:V2_COMPOSITE_VERSION,status:'UNAVAILABLE',staleReason:reason,score:null,displayScore:null,stageCode:null,stageLabel:null,history:[],components:[],sourceAttribution:'금융위원회 공공데이터포털 · 금융투자협회종합통계정보 · 공시정보조회서비스 · ZGmini 자체 가공'};
+export async function defaultLoadRows(env,limit=PUBLIC_HISTORY_LIMIT){
+  const result=await env.DB.prepare(`SELECT date,methodology_version,factors_json,composite_json,
+      history_mode,point_in_time_verified,calculated_at
+    FROM kfg_rev7_snapshots
+    WHERE methodology_version=?
+    ORDER BY date DESC LIMIT ?`).bind(REV7_VERSION,limit).all();
+  return [...(result?.results??[])].reverse();
 }
 
-export function publicIndicator(source,scores,now){
- const history=source.quality.complete?recentHistory(scores):[];
- const last=history.findLast(p=>valid(p.score)),previous=last?history.slice(0,history.lastIndexOf(last)).findLast(p=>valid(p.score)):null;
- const stale=last&&(now.getTime()-epoch(last.date)>7*86400000||!source.calculationReady);
- return {id:source.id,name:source.label,status:last?(stale?'STALE':'READY'):source.status==='WARMUP'?'WARMUP':'UNAVAILABLE',
-   score:last?.score??null,scoreScale:{min:0,max:100},observationDate:last?.date??null,
-   previousObservationDate:previous?.date??null,changePoints:previous?last.score-previous.score:null,
-   fetchedAt:source.fetchedAt,sourcePublishedAt:null,history,historyMode:source.historyMode,
-   pointInTimeVerified:false,unit:null,
-   briefExplanation:source.id==='LEV_BLEND20_60'?'최근 신용융자 변화의 과거 대비 상대 수준':'최근 3관측 평균 반대매매 금액의 과거 대비 상대 수준',
-   inputStartDate:source.inputStartDate,requiredRawObservations:source.requiredRawObservations,
-   staleReason:stale?'OBSERVATION_DELAY_OR_INVALID_LATEST_INPUT':null};
+function unavailable(reason){
+  return {
+    id:REV7_INDEX_ID,name:'ZGmini 한국 공포·탐욕지수',beta:true,
+    methodologyVersion:REV7_VERSION,activeMethodologyVersion:REV7_VERSION,
+    status:'UNAVAILABLE',staleReason:reason,score:null,displayScore:null,
+    stageCode:null,stageLabel:null,scoreScale:{min:0,max:100},
+    observationDate:null,previousObservationDate:null,changePoints:null,
+    history:[],weights:Object.fromEntries(REV7_FACTORS.map(id=>[id,1/7])),
+    components:[],historyMode:'RECONSTRUCTED_CURRENT_VINTAGE',
+    pointInTimeVerified:false,researchOnly:true,productionEligible:false,
+    sourcePublishedAt:null,
+    sourceAttribution:'한국거래소 통계정보 · 한국은행 ECOS · ZGmini 자체 가공',
+    stagePolicy:STAGE_POLICY,fallbackApplied:false,fallbackReason:null,
+    briefMethodology:'Revision 7은 7개 시장심리 지표를 각각 1/7 동일가중으로 종합합니다.',
+  };
 }
+
 export async function publicSnapshot(env,context={}){
- const histories={},clock=context.clock??(()=>new Date(Date.now()));
- const result=await runFscScoped(env,{...context,onIndicatorScores:(name,scores)=>{histories[name]=scores;}});
- const snapshot={profileId:SCOPED_PROFILE,methodologyVersion:PUBLIC_VERSION,snapshotGeneratedAt:clock().toISOString(),
-   indicators:['credit','capital'].map(name=>publicIndicator(result.indicators[name],histories[name]??[],clock())),
-   sourceAttribution:{label:SCOPED_COPY.source,url:'https://www.data.go.kr/data/15094809/openapi.do'},
-   disclaimer:SCOPED_COPY.introduction,historyExplanation:SCOPED_COPY.history,liquidationExplanation:SCOPED_COPY.liquidation};
- const legacyComposite=buildComposite(snapshot.indicators,clock());
- const v2Composite=await buildCompositeV2(env,context,clock());
- return {...snapshot,activeMethodologyVersion:V2_COMPOSITE_VERSION,legacyComposite:compactLegacy(legacyComposite),composite:selectActiveComposite(v2Composite,legacyComposite)};
+  const loadProgress=context.loadProgress??defaultLoadProgress;
+  const loadRows=context.loadRows??defaultLoadRows;
+  const clock=context.clock??(()=>new Date(Date.now()));
+  const progress=await loadProgress(env);
+  if(progress?.status!=='COMPLETE'||Number(progress?.successfulTradingDates)<1030){
+    return {
+      profileId:'ZGMINI_KR_FG_REV7',methodologyVersion:REV7_VERSION,
+      activeMethodologyVersion:REV7_VERSION,snapshotGeneratedAt:clock().toISOString(),
+      indicators:[],composite:unavailable('REV7_BACKFILL_NOT_COMPLETE'),
+      researchOnly:true,productionEligible:false,
+    };
+  }
+
+  const rows=(await loadRows(env,PUBLIC_HISTORY_LIMIT)).map(normalizeSnapshotRow)
+    .filter(row=>row.methodologyVersion===REV7_VERSION&&/^\d{8}$/.test(row.date??''));
+
+  if(!rows.length){
+    return {
+      profileId:'ZGMINI_KR_FG_REV7',methodologyVersion:REV7_VERSION,
+      activeMethodologyVersion:REV7_VERSION,snapshotGeneratedAt:clock().toISOString(),
+      indicators:[],composite:unavailable('REV7_SNAPSHOT_HISTORY_MISSING'),
+      researchOnly:true,productionEligible:false,
+    };
+  }
+
+  const latest=rows.findLast(row=>valid(row.score))??null;
+  if(!latest){
+    return {
+      profileId:'ZGMINI_KR_FG_REV7',methodologyVersion:REV7_VERSION,
+      activeMethodologyVersion:REV7_VERSION,snapshotGeneratedAt:clock().toISOString(),
+      indicators:[],composite:unavailable('REV7_READY_SNAPSHOT_MISSING'),
+      researchOnly:true,productionEligible:false,
+    };
+  }
+
+  const previous=rows.slice(0,rows.lastIndexOf(latest)).findLast(row=>valid(row.score))??null;
+  const displayScore=round1(latest.score);
+  const stage=stageForDisplayScore(displayScore);
+  const stale=Number.isFinite(epoch(latest.date))&&clock().getTime()-epoch(latest.date)>7*86400000;
+
+  const history=rows.map(row=>{
+    const ds=round1(row.score);
+    const s=stageForDisplayScore(ds);
+    return {date:row.date,score:row.score,displayScore:ds,stageCode:s.stageCode,stageLabel:s.stageLabel};
+  });
+
+  const indicators=REV7_FACTORS.map(id=>{
+    const factorHistory=rows.map(row=>({date:row.date,score:factorScore(row,id)}));
+    const current=factorHistory.findLast(point=>valid(point.score))??null;
+    const before=current?factorHistory.slice(0,factorHistory.lastIndexOf(current)).findLast(point=>valid(point.score))??null:null;
+    return {
+      id,name:FACTOR_META[id].name,status:current?(stale?'STALE':'READY'):'WARMUP',
+      score:current?.score??null,scoreScale:{min:0,max:100},
+      observationDate:current?.date??null,previousObservationDate:before?.date??null,
+      changePoints:current&&before?current.score-before.score:null,
+      history:factorHistory,historyMode:'RECONSTRUCTED_CURRENT_VINTAGE',
+      pointInTimeVerified:false,briefExplanation:FACTOR_META[id].brief,
+      direction:REV7_DIRECTIONS[id],weight:1/7,
+    };
+  });
+
+  const components=REV7_FACTORS.map(id=>({
+    id,label:FACTOR_META[id].name,score:factorScore(latest,id),
+    direction:REV7_DIRECTIONS[id],weight:1/7,
+    weightedContribution:valid(factorScore(latest,id))?factorScore(latest,id)/7:null,
+  }));
+
+  return {
+    profileId:'ZGMINI_KR_FG_REV7',
+    methodologyVersion:REV7_VERSION,
+    activeMethodologyVersion:REV7_VERSION,
+    snapshotGeneratedAt:clock().toISOString(),
+    indicators,
+    composite:{
+      id:REV7_INDEX_ID,name:'ZGmini 한국 공포·탐욕지수',beta:true,
+      methodologyVersion:REV7_VERSION,activeMethodologyVersion:REV7_VERSION,
+      status:stale?'STALE':'READY',staleReason:stale?'OBSERVATION_DELAY':null,
+      score:latest.score,displayScore,stageCode:stage.stageCode,stageLabel:stage.stageLabel,
+      scoreScale:{min:0,max:100},observationDate:latest.date,
+      previousObservationDate:previous?.date??null,
+      changePoints:previous?latest.score-previous.score:null,
+      history,weights:Object.fromEntries(REV7_FACTORS.map(id=>[id,1/7])),
+      components,historyMode:'RECONSTRUCTED_CURRENT_VINTAGE',pointInTimeVerified:false,
+      researchOnly:true,productionEligible:false,sourcePublishedAt:null,
+      sourceAttribution:'한국거래소 통계정보 · 한국은행 ECOS · ZGmini 자체 가공',
+      stagePolicy:STAGE_POLICY,fallbackApplied:false,fallbackReason:null,
+      briefMethodology:'Revision 7은 모멘텀·시장강도·시장폭·풋/콜·변동성·안전자산 선호·신용스프레드 7개 지표를 각각 1/7 동일가중으로 종합합니다. 각 지표는 최근 504개 유효 관측의 Z-score를 Normal CDF로 0~100에 변환하며 공포 방향 지표는 역변환합니다.',
+    },
+    sourceAttribution:{label:'한국거래소 통계정보 · 한국은행 ECOS · ZGmini 자체 가공',url:'https://openapi.krx.co.kr/'},
+    researchOnly:true,productionEligible:false,
+  };
 }
+
 const response=(data,status=200)=>{
- const body=JSON.stringify(data);
- if(new TextEncoder().encode(body).length>131072)return Response.json({error:'RESPONSE_LIMIT'},{status:503});
- return new Response(body,{status,headers:{'Content-Type':'application/json','Cache-Control':'no-store','X-Content-Type-Options':'nosniff'}});
+  const body=JSON.stringify(data);
+  if(new TextEncoder().encode(body).length>131072)return Response.json({error:'RESPONSE_LIMIT'},{status:503});
+  return new Response(body,{status,headers:{'Content-Type':'application/json','Cache-Control':'no-store','X-Content-Type-Options':'nosniff'}});
 };
+
 export function createKoreaFundsHandler(context={}){
- let cache=null,inFlight=null;
- return async(request,env)=>{
-   if(request.method!=='GET')return response({error:'METHOD_NOT_ALLOWED'},405);
-   if(new URL(request.url).search)return response({error:'QUERY_NOT_ALLOWED'},400);
-   const now=Date.now();
-   if(cache?.key===PUBLIC_CACHE_KEY&&now-cache.at<(cache.ttl??CACHE_MS))return response(cache.data);
-   if(!inFlight)inFlight=(async()=>{
-     let data;
-     try{data=await publicSnapshot(env,context);}
-     catch{data={profileId:SCOPED_PROFILE,methodologyVersion:PUBLIC_VERSION,activeMethodologyVersion:V2_COMPOSITE_VERSION,snapshotGeneratedAt:new Date(Date.now()).toISOString(),indicators:[],error:'DATA_UNAVAILABLE'};}
-     // Preserve real previous success per indicator, without changing source dates.
-     if(cache?.key===PUBLIC_CACHE_KEY){
-       for(const old of cache.data.indicators){
-         const next=data.indicators.find(i=>i.id===old.id);
-         if(valid(old.score)&&(!next||next.score===null)){
-           const stale={...old,status:'STALE',staleReason:'REFRESH_FAILED'};
-           if(next)data.indicators[data.indicators.indexOf(next)]=stale;else data.indicators.push(stale);
-         }
-       }
-     }
-     // After retaining real previous indicators, rebuild an explicit V1 fallback if V2 is unavailable.
-     // This prevents an initial transient failure from poisoning the public composite.
-     if(!valid(data?.composite?.score)){
-       const legacyComposite=buildComposite(data.indicators,(context.clock??(()=>new Date()))());
-       data.legacyComposite=compactLegacy(legacyComposite);
-       data.composite=selectActiveComposite(data?.composite??unavailableV2(),legacyComposite);
-     }
-     const ttl=fullActiveSnapshot(data)?CACHE_MS:DEGRADED_CACHE_MS;
-     cache={key:PUBLIC_CACHE_KEY,at:Date.now(),ttl,data};return data;
-   })().finally(()=>{inFlight=null;});
-   return response(await inFlight);
- };
+  let cache=null,inFlight=null;
+  return async(request,env)=>{
+    if(request.method!=='GET')return response({error:'METHOD_NOT_ALLOWED'},405);
+    if(new URL(request.url).search)return response({error:'QUERY_NOT_ALLOWED'},400);
+    const now=Date.now();
+    if(cache?.key===PUBLIC_CACHE_KEY&&now-cache.at<(cache.ttl??CACHE_MS))return response(cache.data);
+    if(!inFlight)inFlight=(async()=>{
+      let data;
+      try{data=await publicSnapshot(env,context);}
+      catch{
+        data={
+          profileId:'ZGMINI_KR_FG_REV7',methodologyVersion:REV7_VERSION,
+          activeMethodologyVersion:REV7_VERSION,snapshotGeneratedAt:new Date().toISOString(),
+          indicators:[],composite:unavailable('REV7_PUBLIC_READ_FAILED'),
+          researchOnly:true,productionEligible:false,
+        };
+      }
+      const ttl=valid(data?.composite?.score)?CACHE_MS:DEGRADED_CACHE_MS;
+      cache={key:PUBLIC_CACHE_KEY,at:Date.now(),ttl,data};
+      return data;
+    })().finally(()=>{inFlight=null;});
+    return response(await inFlight);
+  };
 }
 export const koreaFunds=createKoreaFundsHandler();

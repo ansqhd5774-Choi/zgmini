@@ -22,7 +22,7 @@ const ratingLabels: Record<string, string> = {
 };
 
 const countries = [
-  { name: "한국", code: "kr", api: "kospi-fear-greed", label: "ZGmini 한국 2요소 베타" },
+  { name: "한국", code: "kr", api: "kospi-fear-greed", label: "ZGmini 한국 Revision 7" },
 ];
 
 export default function CountryFearGreed() {

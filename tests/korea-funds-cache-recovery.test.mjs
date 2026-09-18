@@ -1,91 +1,83 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createKoreaFundsHandler,CACHE_MS,DEGRADED_CACHE_MS} from '../worker/korea-funds.mjs';
-import {__resetV2CacheForTests,V2_COMPOSITE_VERSION} from '../worker/korea-composite-v2.mjs';
+import {REV7_VERSION,REV7_FACTORS,REV7_INDEX_ID} from '../worker/korea-rev7-engine.mjs';
 
-const date=i=>new Date(Date.UTC(2024,0,1)+i*86400000).toISOString().slice(0,10).replaceAll('-','');
-const rows=Array.from({length:700},(_,i)=>({
- basDt:date(i),
- crdTrFingWhl:100000+i*20,
- invrDpsgAmt:1000000+i*100,
- brkTrdUcolMnyVsOppsTrdAmt:5000+(i%23)*75,
-}));
-const page=(items,total=items.length)=>({response:{header:{resultCode:'00',resultMsg:'NORMAL SERVICE.'},body:{pageNo:1,totalCount:total,items:{item:items}}}});
+const weights=Object.fromEntries(REV7_FACTORS.map(id=>[id,1/7]));
+const row=(date,score)=>{
+ const factors=Object.fromEntries(REV7_FACTORS.map((id,index)=>[id,{id,raw:index,score:score+index/10}]));
+ const compositeScore=REV7_FACTORS.reduce((sum,id)=>sum+factors[id].score,0)/7;
+ return {
+  date,methodology_version:REV7_VERSION,
+  factors_json:JSON.stringify(factors),
+  composite_json:JSON.stringify({id:REV7_INDEX_ID,score:compositeScore,status:'READY',observationDate:date,weights}),
+  history_mode:'RECONSTRUCTED_CURRENT_VINTAGE',point_in_time_verified:0,calculated_at:'2026-09-18T00:00:00Z',
+ };
+};
+const rows=[row('20260913',48),row('20260914',49),row('20260915',50)];
 const req=()=>new Request('https://local.test/api/indicators/korea-funds');
-const env={FSC_API_KEY:'fixture-fsc',FSC_DISCLOSURE_API_KEY:'fixture-disc'};
 
-test('initial degraded snapshot retries before normal cache TTL',async()=>{
- __resetV2CacheForTests();
+test('initial incomplete Revision 7 snapshot retries after degraded cache TTL',async()=>{
  const oldNow=Date.now;
- let now=Date.parse('2025-12-01T00:00:00Z');
- let creditFails=true;
- let creditCalls=0;
+ let now=Date.parse('2026-09-15T12:00:00Z');
+ let ready=false,progressCalls=0,rowCalls=0;
  Date.now=()=>now;
  try{
-  const context={
-   clock:()=>new Date(`${date(699).slice(0,4)}-${date(699).slice(4,6)}-${date(699).slice(6,8)}T00:00:00Z`),
-   fetch:async url=>{
-    if(url.pathname.includes('getGrantingOfCreditBalanceInfo')){
-     creditCalls++;
-     if(creditFails)return new Response('',{status:503});
-     return Response.json(page(rows));
-    }
-    if(url.pathname.includes('GetDiscInfoService_V2'))return Response.json(page([],0));
-    return Response.json(page(rows));
-   },
-  };
-  const handler=createKoreaFundsHandler(context);
+  const handler=createKoreaFundsHandler({
+   clock:()=>new Date('2026-09-15T12:00:00Z'),
+   loadProgress:async()=>{progressCalls++;return ready?{status:'COMPLETE',successfulTradingDates:1030}:{status:'RUNNING',successfulTradingDates:1000};},
+   loadRows:async()=>{rowCalls++;return rows;},
+  });
 
-  const first=await (await handler(req(),env)).json();
-  assert.equal(first.indicators.find(x=>x.id==='LEV_BLEND20_60')?.score,null);
-  assert.equal(first.composite?.status,'UNAVAILABLE');
-  const callsAfterFailure=creditCalls;
+  const first=await (await handler(req(),{})).json();
+  assert.equal(first.composite.methodologyVersion,REV7_VERSION);
+  assert.equal(first.composite.score,null);
+  assert.equal(first.composite.staleReason,'REV7_BACKFILL_NOT_COMPLETE');
+  assert.equal(rowCalls,0);
+  const progressAfterFailure=progressCalls;
 
   now+=DEGRADED_CACHE_MS-1;
-  await handler(req(),env);
-  assert.equal(creditCalls,callsAfterFailure);
+  await handler(req(),{});
+  assert.equal(progressCalls,progressAfterFailure);
 
   assert.ok(DEGRADED_CACHE_MS<CACHE_MS);
-  creditFails=false;
+  ready=true;
   now+=2;
-  const second=await (await handler(req(),env)).json();
-  assert.ok(creditCalls>callsAfterFailure);
-  assert.equal(second.composite?.methodologyVersion,V2_COMPOSITE_VERSION);
-  assert.equal(second.composite?.fallbackApplied,false);
-  assert.equal(second.composite?.status,'READY');
-  assert.equal(typeof second.indicators.find(x=>x.id==='LEV_BLEND20_60')?.score,'number');
-  assert.equal(typeof second.composite?.score,'number');
+  const second=await (await handler(req(),{})).json();
+  assert.ok(progressCalls>progressAfterFailure);
+  assert.equal(rowCalls,1);
+  assert.equal(second.composite.methodologyVersion,REV7_VERSION);
+  assert.equal(second.composite.fallbackApplied,false);
+  assert.equal(second.composite.status,'READY');
+  assert.equal(second.indicators.length,7);
+  assert.equal(typeof second.composite.score,'number');
  }finally{
   Date.now=oldNow;
-  __resetV2CacheForTests();
  }
 });
 
-test('healthy V2 snapshot keeps normal cache TTL',async()=>{
- __resetV2CacheForTests();
+test('healthy Revision 7 snapshot keeps normal cache TTL',async()=>{
  const oldNow=Date.now;
- let now=Date.parse('2025-12-01T00:00:00Z');
- let calls=0;
+ let now=Date.parse('2026-09-15T12:00:00Z');
+ let progressCalls=0,rowCalls=0;
  Date.now=()=>now;
  try{
-  const context={
-   clock:()=>new Date(`${date(699).slice(0,4)}-${date(699).slice(4,6)}-${date(699).slice(6,8)}T00:00:00Z`),
-   fetch:async url=>{
-    calls++;
-    if(url.pathname.includes('GetDiscInfoService_V2'))return Response.json(page([],0));
-    return Response.json(page(rows));
-   },
-  };
-  const handler=createKoreaFundsHandler(context);
-  const first=await (await handler(req(),env)).json();
-  assert.equal(first.composite?.methodologyVersion,V2_COMPOSITE_VERSION);
-  assert.equal(first.composite?.status,'READY');
-  const callsAfterFirst=calls;
+  const handler=createKoreaFundsHandler({
+   clock:()=>new Date('2026-09-15T12:00:00Z'),
+   loadProgress:async()=>{progressCalls++;return {status:'COMPLETE',successfulTradingDates:1030};},
+   loadRows:async()=>{rowCalls++;return rows;},
+  });
+
+  const first=await (await handler(req(),{})).json();
+  assert.equal(first.composite.methodologyVersion,REV7_VERSION);
+  assert.equal(first.composite.status,'READY');
+  const progressAfterFirst=progressCalls,rowAfterFirst=rowCalls;
+
   now+=DEGRADED_CACHE_MS+1000;
-  await handler(req(),env);
-  assert.equal(calls,callsAfterFirst);
+  await handler(req(),{});
+  assert.equal(progressCalls,progressAfterFirst);
+  assert.equal(rowCalls,rowAfterFirst);
  }finally{
   Date.now=oldNow;
-  __resetV2CacheForTests();
  }
 });

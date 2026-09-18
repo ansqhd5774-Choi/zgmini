@@ -23,7 +23,7 @@ test('K2 keeps the Korea score model and component orientation independent from 
   assert.equal(composite.components[1].orientedScore,80);
 });
 
-test('K2 Korean card wires active V2 plus explicit V1 fallback without USA coupling',()=>{
+test('K2 Korean card wires Revision 7 only without USA coupling',()=>{
   const ui=read('app/korea-composite-view.tsx');
   const store=read('app/korea-funds-store.ts');
 
@@ -33,19 +33,19 @@ test('K2 Korean card wires active V2 plus explicit V1 fallback without USA coupl
   assert.match(ui,/normalizeCompositeHistory\(c\?\.history\?\?\[\]\)/);
   assert.match(ui,/c\?\.observationDate/);
   assert.match(ui,/c\?\.sourceAttribution/);
-  assert.match(ui,/KR_LEVERAGE_INTENSITY_Z252_E50/);
-  assert.match(ui,/KR_LIQUIDATION_LOG_Z252_INV_E50/);
-  assert.match(ui,/KR_CORPORATE_STRESS_PENALTY/);
-  assert.match(ui,/fallbackApplied/);
+  assert.match(ui,/Revision 7/);
+  assert.match(ui,/7개 시장심리 지표 동일가중/);
   assert.match(ui,/buildKoreaInsight/);
   assert.match(ui,/dayLabel:"이전 대비"/);
   assert.match(ui,/comparisonAriaLabel:"한국 공포탐욕 변화량"/);
   assert.match(ui,/gradientId="korea-fg-fill"/);
+  assert.doesNotMatch(ui,/KR_LEVERAGE_INTENSITY_Z252_E50|KR_LIQUIDATION_LOG_Z252_INV_E50|KR_CORPORATE_STRESS_PENALTY/);
+  assert.doesNotMatch(ui,/기업스트레스 최대 10점 감점/);
   assert.doesNotMatch(ui,/fetch\("\/api\/fear-greed"/);
   assert.doesNotMatch(ui,/CNN FEAR & GREED INDEX/);
 
-  assert.match(store,/kr-fg-2f-cs-2\.0\.0/);
-  assert.match(store,/kr-fg-2f-1\.0\.0/);
+  assert.match(store,/kr-fg-cnn-r7-1\.0\.0/);
+  assert.doesNotMatch(store,/kr-fg-2f-cs-2\.0\.0|kr-fg-2f-1\.0\.0/);
   assert.match(store,/historyMode:'RECONSTRUCTED_CURRENT_VINTAGE'/);
   assert.match(store,/pointInTimeVerified:false/);
   assert.match(store,/sourceAttribution:string/);
