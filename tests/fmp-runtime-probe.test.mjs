@@ -40,3 +40,12 @@ test("secret is never returned", async()=> {
   const out=await runFmpRuntimeProbe({apiKey:secret,fetchImpl:async()=>response([{symbol:"AAPL"}])});
   assert.equal(JSON.stringify(out).includes(secret),false);
 });
+
+
+test("route imports the FMP runtime function contract", async()=> {
+  const { readFile } = await import("node:fs/promises");
+  const route = await readFile(new URL("../app/api/internal/fmp-runtime-probe/route.ts", import.meta.url), "utf8");
+  assert.match(route, /import\s*\{\s*runFmpRuntimeProbe\s*\}\s*from\s*["'][^"']*fmp-runtime-probe\.mjs["']/);
+  assert.doesNotMatch(route, /createCensusRuntimeProbeHandler/);
+  assert.match(route, /runFmpRuntimeProbe\s*\(/);
+});

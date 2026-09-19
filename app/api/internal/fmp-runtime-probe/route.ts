@@ -1,6 +1,6 @@
 import { env } from "cloudflare:workers";
 import { getChatGPTUser } from "../../../chatgpt-auth";
-import { createCensusRuntimeProbeHandler } from "../../../../worker/fmp-runtime-probe.mjs";
+import { runFmpRuntimeProbe } from "../../../../worker/fmp-runtime-probe.mjs";
 
 export async function GET() {
   const user = await getChatGPTUser();
