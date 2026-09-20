@@ -34,6 +34,10 @@ test('collector requests every registered FRED series and wires official externa
       status:'READY_CURRENT_VINTAGE_RAW',
       rows:[{observationDate:'2026-01-02',market:0.2,ig:0.3,hy:0.4}],
     }),
+    fetchGscpi:async () => ({
+      status:'READY_CURRENT_VINTAGE_RAW',
+      rows:[{observationDate:'2026-01-01',value:-0.25}],
+    }),
     fetchCopper:async () => ({
       status:'READY_CURRENT_VINTAGE_RAW',
       rows:[{observationDate:'2026-01-01',value:9000}],
@@ -55,10 +59,13 @@ test('collector requests every registered FRED series and wires official externa
   assert.equal(out.external.dvpRepoRows.length,1);
   assert.equal(out.external.triPartyRepoRows.length,1);
   assert.equal(out.external.cmdiRows.length,1);
+  assert.equal(out.external.gscpiRows.length,1);
   assert.equal(out.external.copperRows.length,1);
   assert.equal(out.external.bisDsrParsed.dataset,'WS_DSR');
   assert.equal(out.external.bisDebtGdpParsed.dataset,'WS_TC');
-  assert.equal(out.external.gscpiRows.length,0);
+  assert.equal(out.providerSummary.gscpi.status,'READY_CURRENT_VINTAGE_RAW');
+  assert.equal(out.providerSummary.gscpi.latest,'2026-01-01');
+  assert.equal(out.providerSummary.deferred.gscpiProductionFetch,undefined);
 });
 
 test('collector refuses to infer a missing FRED secret', async () => {

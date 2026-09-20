@@ -3,6 +3,7 @@ import {fetchDiagnosticFredSeries} from '../lib/diagnostic-layer/official-macro-
 import {OFR_MNEMONICS, fetchOfrRepoSeries} from '../lib/diagnostic-layer/batch-b-official-adapters.mjs';
 import {
   fetchCmdiWorkbook,
+  fetchGscpiWorkbook,
   fetchWorldBankCopper,
 } from '../lib/diagnostic-layer/nyfed-worldbank-adapters.mjs';
 import {parseBisColumnCsv} from '../lib/diagnostic-layer/bis-bulk-parser.mjs';
@@ -154,6 +155,7 @@ const DEFAULT_ADAPTERS = Object.freeze({
   fetchFred: fetchDiagnosticFredSeries,
   fetchOfr: fetchOfrRepoSeries,
   fetchCmdi: fetchCmdiWorkbook,
+  fetchGscpi: fetchGscpiWorkbook,
   fetchCopper: fetchWorldBankCopper,
   fetchBis: fetchBisBulkDataset,
 });
@@ -187,6 +189,7 @@ export async function collectDiagnosticLiveInputs({
     dvp,
     triParty,
     cmdi,
+    gscpi,
     copper,
     bisDsr,
     bisTc,
@@ -202,6 +205,12 @@ export async function collectDiagnosticLiveInputs({
       timeoutMs: 8000,
     }),
     impl.fetchCmdi({
+      fetchImpl: bounded.fetchImpl,
+      timeoutMs: 12000,
+      maxBytes: 15_000_000,
+      maxRequests: 4,
+    }),
+    impl.fetchGscpi({
       fetchImpl: bounded.fetchImpl,
       timeoutMs: 12000,
       maxBytes: 15_000_000,
@@ -237,12 +246,12 @@ export async function collectDiagnosticLiveInputs({
       dvpRepoRows: dvp?.status === 'READY_CURRENT_VINTAGE' ? dvp.rows : [],
       triPartyRepoRows: triParty?.status === 'READY_CURRENT_VINTAGE' ? triParty.rows : [],
       cmdiRows: cmdi?.status === 'READY_CURRENT_VINTAGE_RAW' ? cmdi.rows : [],
+      gscpiRows: gscpi?.status === 'READY_CURRENT_VINTAGE_RAW' ? gscpi.rows : [],
       copperRows: copper?.status === 'READY_CURRENT_VINTAGE_RAW' ? copper.rows : [],
       bisDsrParsed: bisDsr?.status === 'READY_CURRENT_VINTAGE_RAW' ? bisDsr.parsed : null,
       bisDebtGdpParsed: bisTc?.status === 'READY_CURRENT_VINTAGE_RAW' ? bisTc.parsed : null,
 
       // Intentionally unresolved / separately deferred inputs.
-      gscpiRows: [],
       assetPriceRows: [],
       speculativeFlowMagnitude4QRows: [],
       breadthScoreRows: [],
@@ -263,6 +272,11 @@ export async function collectDiagnosticLiveInputs({
         rows: Array.isArray(cmdi?.rows) ? cmdi.rows.length : 0,
         latest: latestDate(cmdi?.rows),
       },
+      gscpi: {
+        status: gscpi?.status ?? 'UNKNOWN',
+        rows: Array.isArray(gscpi?.rows) ? gscpi.rows.length : 0,
+        latest: latestDate(gscpi?.rows),
+      },
       copper: {
         status: copper?.status ?? 'UNKNOWN',
         rows: Array.isArray(copper?.rows) ? copper.rows.length : 0,
@@ -273,7 +287,6 @@ export async function collectDiagnosticLiveInputs({
         debtGdp: {status: bisTc?.status ?? 'UNKNOWN'},
       },
       deferred: {
-        gscpiProductionFetch: 'DEFERRED_EXACT_CURRENT_URL_UNRESOLVED',
         assetPriceRuntime: 'DEFERRED_NON_BLOCKING',
         speculativeFlowRawRuntime: 'DEFERRED_NON_BLOCKING',
         earningsHistoricalPointInTime: 'PARTIAL',
