@@ -221,3 +221,33 @@ test('partial map reports unresolved diagnostic domains', () => {
   assert.ok(Object.hasOwn(out.partials,'assetBubbleSafety'));
   assert.ok(Object.hasOwn(out.partials,'debtRiskSafety'));
 });
+
+
+test('R48_STAGGERED_RECESSION_RELEASE_REGRESSION: recession snapshot carries each component independently to asOf', () => {
+  const series=baseSeries();
+
+  // Keep later NFP / IP / retail rows while intentionally staggering the
+  // four components that were missing in the R47 Production canary.
+  series.GDPC1=series.GDPC1.filter(row=>row.observationDate<='2012-01-01');
+  series.DPCERA3M086SBEA=series.DPCERA3M086SBEA.slice(0,-2);
+  series.UNRATE=series.UNRATE.slice(0,-1);
+  series.DSPIC96=series.DSPIC96.slice(0,-2);
+
+  const out=buildFullDiagnosticOrchestrator({
+    asOfDate:'2030-12-31',
+    baseOverall:60,
+    series,
+    external:externalInputs(),
+  });
+
+  const latestArtifactRow=out.artifacts.recession.rows.at(-1);
+  assert.equal(latestArtifactRow.status,'PARTIAL');
+  assert.ok(latestArtifactRow.missing.includes('realGdp'));
+  assert.ok(latestArtifactRow.missing.includes('realPce'));
+  assert.ok(latestArtifactRow.missing.includes('unemployment'));
+  assert.ok(latestArtifactRow.missing.includes('disposableIncome'));
+
+  assert.equal(out.snapshot.diagnostics.recessionDefense.status,'READY');
+  assert.equal(out.snapshot.diagnostics.recessionDefense.score!==null,true);
+  assert.deepEqual(out.snapshot.diagnostics.recessionDefense.missing,[]);
+});
