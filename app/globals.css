@@ -3291,3 +3291,28 @@ html,body{overflow-x:hidden}
     grid-template-columns:22px minmax(0,1fr) auto 44px;
   }
 }
+
+/* =====================================================================
+   ZGMINI Stage 12 R2 W12.3 — narrow-card header overflow correction
+   At <=1440px the "준비 중" badge is redundant with the card body state
+   and consumes the title column. Hide only that redundant badge and give
+   the title the recovered width. 1920px layout is intentionally unchanged.
+   ===================================================================== */
+@media(max-width:1440px){
+  .zg-r55-badge{
+    display:none;
+  }
+  .zg-r55-card-head{
+    grid-template-columns:28px minmax(0,1fr) 20px;
+  }
+}
+@media(max-width:720px){
+  .zg-r55-card-head{
+    grid-template-columns:24px minmax(0,1fr) 44px;
+  }
+}
+@media(max-width:390px){
+  .zg-r55-card-head{
+    grid-template-columns:22px minmax(0,1fr) 44px;
+  }
+}
