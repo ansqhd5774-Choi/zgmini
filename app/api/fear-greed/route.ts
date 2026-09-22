@@ -1,3 +1,4 @@
+import { cachePublicFeed } from "../../../lib/public-feed-cache.mjs";
 import { parseCnnIndex } from "../../../lib/cnn-index.mjs";
 
 const CNN_GRAPH_URL = "https://production.dataviz.cnn.io/index/fearandgreed/graphdata";
@@ -10,7 +11,7 @@ const CNN_REQUEST_HEADERS = {
   "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/152.0.0.0 Safari/537.36",
 } as const;
 
-export async function GET() {
+async function loadCnn() {
   try {
     const response = await fetch(CNN_GRAPH_URL, {
       headers: CNN_REQUEST_HEADERS,
@@ -51,3 +52,5 @@ export async function GET() {
     );
   }
 }
+
+export const GET = cachePublicFeed(loadCnn);

@@ -12,6 +12,9 @@ const handler=withMarketScoreCache(createMarketScoreR1Handler({
   orchestrate:buildFullDiagnosticOrchestrator,
 } as any), {env});
 
-export function GET(request:Request){
-  return handler(request);
+export async function GET(request:Request){
+  const response=await handler(request);
+  const headers=new Headers(response.headers);
+  headers.set("X-Robots-Tag","noindex");
+  return new Response(response.body,{status:response.status,headers});
 }

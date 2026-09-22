@@ -1,9 +1,0 @@
-# Vite content-hashed assets: changed content always has a new URL.
-/assets/*
-  Cache-Control: public, max-age=31536000, immutable
-
-# Mutable crawler documents: short cache, existing ETag revalidation retained.
-/robots.txt
-  Cache-Control: public, max-age=300, must-revalidate
-/sitemap.xml
-  Cache-Control: public, max-age=300, must-revalidate

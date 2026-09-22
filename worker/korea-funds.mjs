@@ -194,7 +194,7 @@ const response=(data,status=200)=>{
   const privateKeys=new Set(['weights','weight','weightedContribution','direction','briefMethodology','briefExplanation']);
   const body=JSON.stringify(data,(key,value)=>privateKeys.has(key)?undefined:value);
   if(new TextEncoder().encode(body).length>131072)return Response.json({error:'RESPONSE_LIMIT'},{status:503});
-  return new Response(body,{status,headers:{'Content-Type':'application/json','Cache-Control':'no-store','X-Content-Type-Options':'nosniff'}});
+  return new Response(body,{status,headers:{'Content-Type':'application/json','Cache-Control':'no-store','X-Content-Type-Options':'nosniff','X-Robots-Tag':'noindex'}});
 };
 
 export function createKoreaFundsHandler(context={}){
