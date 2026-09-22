@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import { BarChart3, CircleAlert } from "lucide-react";
 import CnnPanel from "./cnn-panel";
 
-const title = "미국 공포탐욕지수·CNN Fear & Greed 차트 | ZGmini";
-const description = "미국 CNN 공포탐욕지수의 최근 제공 점수와 기간별 차트, 관측일을 확인하세요. 미국 주식시장 투자심리의 변화를 ZGmini에서 살펴볼 수 있습니다.";
+const title = "CNN 공포탐욕지수 | 미국 증시 심리·차트 - ZGmini";
+const description = "미국 증시, 지금은 공포일까요 탐욕일까요? CNN 공포탐욕지수의 최근 점수와 기간별 흐름을 차트로 살펴보세요. 데이터 관측일도 함께 안내해요.";
 const url = "https://zgmini.kr/fear-greed/usa/";
 export const metadata: Metadata = {
   title, description, alternates:{canonical:url},

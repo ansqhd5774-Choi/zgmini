@@ -3,22 +3,22 @@ import NaverAnalytics from "./naver-analytics";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "ZGmini | 미국·한국 공포탐욕지수와 경제지표",
-  description: "미국·한국 공포탐욕지수 차트와 물가·고용·금리·자금흐름 등 주요 경제지표를 확인하세요. 지표별 관측일과 데이터 제공 상태를 함께 보여주는 ZGmini.",
+  title: "공포탐욕지수 한눈에 | 미국·한국 차트 - ZGmini",
+  description: "지금 시장 분위기가 궁금한가요? 미국·한국 공포탐욕지수와 기간별 차트를 한곳에서 살펴보세요. 주요 경제지표와 관측일도 함께 확인할 수 있어요.",
   metadataBase: new URL("https://zgmini.kr"),
   alternates: { canonical: "/" },
   robots: { index: true, follow: true },
   openGraph: {
-    title: "ZGmini | 미국·한국 공포탐욕지수와 경제지표",
-    description: "미국·한국 공포탐욕지수 차트와 주요 경제지표를 관측일·데이터 제공 상태와 함께 확인하세요.",
+    title: "공포탐욕지수 한눈에 | 미국·한국 차트 - ZGmini",
+    description: "시장이 불안할 때도, 분위기가 좋을 때도. 미국·한국 공포탐욕지수와 차트를 ZGmini에서 편하게 살펴보세요.",
     url: "https://zgmini.kr/",
     type: "website",
     siteName: "ZGmini",
   },
   twitter: {
     card: "summary_large_image",
-    title: "ZGmini | 미국·한국 공포탐욕지수와 경제지표",
-    description: "미국·한국 공포탐욕지수 차트와 주요 경제지표를 관측일·데이터 제공 상태와 함께 확인하세요.",
+    title: "공포탐욕지수 한눈에 | 미국·한국 차트 - ZGmini",
+    description: "시장이 불안할 때도, 분위기가 좋을 때도. 미국·한국 공포탐욕지수와 차트를 ZGmini에서 편하게 살펴보세요.",
   },
   icons: { icon: "/zgmini-logo.png", shortcut: "/zgmini-logo.png", apple: "/zgmini-logo.png" },
   other: {
@@ -35,7 +35,7 @@ const structuredData = {
       url: "https://zgmini.kr/",
       name: "ZGmini",
       alternateName: "즈그미니",
-      description: "미국·한국 공포탐욕지수 차트와 물가·고용·금리·자금흐름 등 주요 경제지표를 확인하세요. 지표별 관측일과 데이터 제공 상태를 함께 보여주는 ZGmini.",
+      description: "지금 시장 분위기가 궁금한가요? 미국·한국 공포탐욕지수와 기간별 차트를 한곳에서 살펴보세요. 주요 경제지표와 관측일도 함께 확인할 수 있어요.",
       inLanguage: "ko-KR",
     },
     {

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import DataPanel from "./data-panel";
-const title = "한국 공포탐욕지수·코스피 투자심리 차트 | ZGmini";
-const description = "한국 공포탐욕지수의 최근 제공 점수와 기간별 차트, 관측일을 확인하세요. 국내 증시 투자심리를 살펴보는 ZGmini 자체 지표입니다.";
+const title = "한국 공포탐욕지수 | 코스피 시장심리·차트 - ZGmini";
+const description = "요즘 국내 증시 분위기가 궁금하다면, 한국 공포탐욕지수와 기간별 차트를 살펴보세요. ZGmini 자체 지표의 최근 제공 점수와 관측일을 함께 안내해요.";
 const url = "https://zgmini.kr/fear-greed/korea/";
 export const metadata: Metadata = {
   title, description, alternates: { canonical:url }, robots:{index:true,follow:true},
