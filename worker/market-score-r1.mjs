@@ -1,5 +1,6 @@
 import {buildCompositeMarketScore} from "../lib/market-score/composite-model-r1.mjs";
 import {buildCmR1DomainResults} from "../lib/market-score/domain-adapter-r1.mjs";
+import {buildConsumptionC1,buildCommoditiesK1} from "../lib/market-score/public-domain-producers-r1.mjs";
 import {buildEmploymentR538} from "../lib/diagnostic-layer/employment-r538-components.mjs";
 import {
   buildDollarFxR53,
@@ -82,13 +83,25 @@ export function createMarketScoreR1Handler({
         {asOfDate:asOf},
       );
 
+      const approvedPublicDomains={
+        ...(collected?.external?.publicDomainScores??{}),
+        consumption:buildConsumptionC1({
+          recessionRows:diagnostic?.artifacts?.recession?.rows??[],
+          asOfDate:asOf,
+        }),
+        commodities:buildCommoditiesK1({
+          supplyRows:diagnostic?.artifacts?.supply?.rows??[],
+          asOfDate:asOf,
+        }),
+      };
+
       const domains=buildCmR1DomainResults({
         diagnostics,
         employment,
         rates:rate,
         fundFlows:fundFlow,
         dollarFx,
-        publicDomains:collected?.external?.publicDomainScores??{},
+        publicDomains:approvedPublicDomains,
       });
       const composite=buildCompositeMarketScore(domains,{updatedAt:instant.toISOString()});
 

@@ -51,9 +51,15 @@ test("public market-score returns truthful PARTIAL without renormalization",asyn
   assert.equal(body.dataQuality.reweighted,false);
   assert.equal(body.dataQuality.overallComputable,false);
   assert.ok(body.dataQuality.readyDomains<12);
-  assert.ok(body.domains.some(x=>x.id==="consumption"&&x.status==="UNAVAILABLE"));
-  assert.ok(body.domains.some(x=>x.id==="breadth"&&x.status==="UNAVAILABLE"));
-  assert.ok(body.domains.some(x=>x.id==="commodities"&&x.status==="UNAVAILABLE"));
+  const consumption=body.domains.find(x=>x.id==="consumption");
+  const breadth=body.domains.find(x=>x.id==="breadth");
+  const commodities=body.domains.find(x=>x.id==="commodities");
+  assert.equal(consumption.status,"PARTIAL");
+  assert.equal(consumption.score,null);
+  assert.equal(breadth.status,"UNAVAILABLE");
+  assert.equal(breadth.score,null);
+  assert.equal(commodities.status,"PARTIAL");
+  assert.equal(commodities.score,null);
 });
 
 test("public market-score computes Overall only when explicit missing producers are supplied",async()=>{
