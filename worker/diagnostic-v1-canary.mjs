@@ -9,6 +9,9 @@ import {
 import {parseBisColumnCsv} from '../lib/diagnostic-layer/bis-bulk-parser.mjs';
 import {unzipSelected} from '../lib/diagnostic-layer/xlsx-lite.mjs';
 import {buildFullDiagnosticOrchestrator} from '../lib/diagnostic-layer/full-diagnostic-orchestrator.mjs';
+import {collectBreadthB1R1Runtime} from '../lib/market-score/breadth-b1-r1-runtime.mjs';
+import {collectEarningsE1R1Runtime} from '../lib/market-score/earnings-e1-r1-runtime.mjs';
+import {fetchSecRegisteredFundFlows} from '../lib/market-score/sec-fund-flow-r1-provider.mjs';
 
 const OPERATOR_ENV = 'KFG_V2_CANARY_OPERATOR_EMAIL';
 const REQUEST_CAP = 64;
@@ -19,6 +22,8 @@ const ALLOWED_HOSTS = new Set([
   'www.newyorkfed.org',
   'thedocs.worldbank.org',
   'data.bis.org',
+  'www.sec.gov',
+  'sec.gov',
 ]);
 
 const BIS_DATASETS = Object.freeze({
@@ -158,6 +163,7 @@ const DEFAULT_ADAPTERS = Object.freeze({
   fetchGscpi: fetchGscpiWorkbook,
   fetchCopper: fetchWorldBankCopper,
   fetchBis: fetchBisBulkDataset,
+  fetchFundFlows: fetchSecRegisteredFundFlows,
 });
 
 export async function collectDiagnosticLiveInputs({
@@ -226,6 +232,8 @@ export async function collectDiagnosticLiveInputs({
     impl.fetchBis('WS_TC', {fetchImpl: bounded.fetchImpl}),
   ]);
 
+  const fundFlows = await impl.fetchFundFlows({fetchImpl: bounded.fetchImpl});
+
   const series = {};
   for (const result of fredResults) {
     if (result?.status === 'READY_CURRENT_VINTAGE' && Array.isArray(result.rows)) {
@@ -240,9 +248,14 @@ export async function collectDiagnosticLiveInputs({
   const latestDate = rows =>
     Array.isArray(rows) && rows.length ? rows.at(-1)?.observationDate ?? null : null;
 
-  return {
+    const breadth = await collectBreadthB1R1Runtime({env, fetchImpl});
+  const earnings = await collectEarningsE1R1Runtime({env, fetchImpl});
+
+return {
     series,
     external: {
+      publicDomainScores: {breadth, earnings},
+      registeredFundFlowRows: fundFlows?.status === 'READY_CURRENT_VINTAGE_RAW' ? fundFlows.rows : [],
       dvpRepoRows: dvp?.status === 'READY_CURRENT_VINTAGE' ? dvp.rows : [],
       triPartyRepoRows: triParty?.status === 'READY_CURRENT_VINTAGE' ? triParty.rows : [],
       cmdiRows: cmdi?.status === 'READY_CURRENT_VINTAGE_RAW' ? cmdi.rows : [],
@@ -256,8 +269,13 @@ export async function collectDiagnosticLiveInputs({
       speculativeFlowMagnitude4QRows: [],
       breadthScoreRows: [],
       earningsScores: null,
-    },
-    providerSummary: {
+    },    providerSummary: {
+      secFundFlows: {
+        status: fundFlows?.status ?? 'UNKNOWN',
+        rows: Array.isArray(fundFlows?.rows) ? fundFlows.rows.length : 0,
+        latest: latestDate(fundFlows?.rows),
+        sourceReleaseDate: fundFlows?.sourceReleaseDate ?? null,
+      },
       fred: {
         requested: fredIds.length,
         ready: fredIds.length - fredFailed.length,
