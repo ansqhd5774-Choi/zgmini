@@ -3098,6 +3098,13 @@ html,body{overflow-x:hidden}
 /* R55 market geometry is owned here; legacy dashboard layout classes are not used. */
 /* The trend uses the former insight space while the score keeps its geometry. */
 .fg-card.fg-shared-shell{
+  --fg-shared-content-h:clamp(174px,22cqi,210px);
+  --fg-shared-date-h:18px;
+}
+.fg-card.fg-shared-shell .cnn-score-orb-hero{row-gap:6px}
+.fg-card.fg-shared-shell .fg-score-slot .cnn-score-orb{height:100%;max-height:none}
+.fg-card.fg-shared-shell .cnn-score-observed-date{font-size:clamp(10px,1.25cqi,12px);line-height:1.2}
+.fg-card.fg-shared-shell{
   display:grid;
   grid-template-columns:var(--fg-shared-pad) var(--fg-shared-left) var(--fg-shared-gap) minmax(0,1fr) var(--fg-shared-pad);
   grid-template-rows:auto var(--fg-shared-content-h) auto;
@@ -3119,7 +3126,7 @@ html,body{overflow-x:hidden}
 .zg-r55-period button{min-width:32px;min-height:32px;padding:4px;background:#071c33;color:#b9c8d7;font-size:11px}
 .zg-r55-period button[aria-pressed="true"]:enabled{background:#fabc42;color:#071a2d}
 .zg-r55-period button:disabled{opacity:.55;cursor:not-allowed}
-.zg-r55-expand{min-height:44px;padding:6px 12px;border:1px solid #31506d;border-radius:6px;background:#071c33;color:#dbe8f6;font-size:12px;font-weight:800;white-space:nowrap}
+.zg-r55-expand{width:44px;min-height:44px;padding:6px;display:grid;place-items:center;border:1px solid #31506d;border-radius:6px;background:#071c33;color:#dbe8f6;font-size:12px;font-weight:800;white-space:nowrap}
 .zg-r55-expand:hover{background:#0b2947}
 .zg-r55-expand:focus-visible,.zg-r55-card:focus-visible{outline:2px solid #fabc42;outline-offset:2px}
 .zg-r55-shell{--r55-card-height:150px;--r55-card-expanded:220px;--r55-gap:10px;min-width:0}

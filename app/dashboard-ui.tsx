@@ -175,8 +175,8 @@ export function CompositeMarketSection({items,points,demo,loading}:{items:Summar
    <div className="zg-r55-period" role="group" aria-label="종합 시장 점수 추이 기간" title={hasDatedHistory?'제공된 관측 마지막 날짜 기준':'날짜가 있는 추이 데이터 제공 시 이용 가능'}>
     {marketPeriods.map(p=><button key={p.label} type="button" disabled={!hasDatedHistory} aria-pressed={periodDays===p.days} onClick={()=>setPeriodDays(p.days)}>{p.label}</button>)}
    </div>
-   <button type="button" className="zg-r55-expand" aria-expanded={expanded} onClick={toggle}>
-    {expanded?'전체 접기':'전체 펼침'}
+   <button type="button" className="zg-r55-expand" aria-label={expanded?'전체 접기':'전체 펼침'} title={expanded?'전체 접기':'전체 펼침'} aria-expanded={expanded} onClick={toggle}>
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true" style={{transform:expanded?'rotate(180deg)':undefined}}><path d="M12 4v16M5 13l7 7 7-7"/></svg>
    </button>
    </div>
   </div>
