@@ -1,6 +1,10 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import {collectEquiblesBreadthB1R1,PRO_DAILY_LIMIT} from "../lib/market-score/equibles-b1-r1-provider.mjs";
+import {collectEquiblesBreadthB1R1 as collectActual,PRO_DAILY_LIMIT} from "../lib/market-score/equibles-b1-r1-provider.mjs";
+
+// Deterministic verification fixture, not evidence of live price-basis or rights.
+const verified=async({snapshot,members})=>({asOfDate:snapshot.asOfDate,lagCompletedUsSessions:0,publicDisplayRightsVerified:true,verifiedPriceBasisTickers:members.map(m=>m.ticker)});
+const collectEquiblesBreadthB1R1=options=>collectActual({validateSnapshot:verified,...options});
 
 function response(body,{status=200,limit=100000}={}){
   return new Response(JSON.stringify(body),{
@@ -34,7 +38,7 @@ function prices(currentDate="2026-09-18",previousDate="2026-09-17",current=101,p
       ...newer.map((date,i)=>({date,close:102+i,volume:10})),
       {date:currentDate,close:current,volume},
       {date:previousDate,close:previous,volume:8},
-      {date:"2026-09-16",close:99,volume:7},
+      {date:"2026-09-15",close:99,volume:7},
     ],
     meta:{limit:5,offset:0,count:3+newer.length,hasMore:false},
   };
@@ -161,13 +165,13 @@ test("missing price coverage remains PARTIAL/null and never renormalizes",async(
   assert.equal(out.quality.returnCoverage,0.97);
 });
 
-test("three newer completed price dates make the PIT snapshot stale",async()=>{
+test("verified completed session lag, not received bar count, makes snapshot stale",async()=>{
   const fetchImpl=async url=>{
     const u=new URL(url);
     if(u.pathname.endsWith("/indexes/sp-500")) return response(page({data:[member("A")],total:1}));
     return response(prices("2026-09-18","2026-09-17",101,100,10,["2026-09-23","2026-09-22","2026-09-21"]));
   };
-  const out=await collectEquiblesBreadthB1R1({apiKey:"eq_test",fetchImpl});
+  const out=await collectEquiblesBreadthB1R1({apiKey:"eq_test",fetchImpl,validateSnapshot:async x=>({...await verified(x),lagCompletedUsSessions:3})});
   assert.equal(out.status,"PARTIAL");
   assert.equal(out.score,null);
   assert.equal(out.missing[0],"STALE");
@@ -186,4 +190,49 @@ test("provider output exposes derived result only, not raw constituent or bar ar
   assert.equal("members" in out,false);
   assert.equal("pricePairs" in out,false);
   assert.equal(JSON.stringify(out).includes("previousClose"),false);
+});
+
+
+test("quota alone cannot prove freshness or price basis and cannot start price fanout",async()=>{
+ let calls=0;
+ const out=await collectActual({apiKey:"eq_test",fetchImpl:async()=>{calls++;return response(page({data:[member("A")]}));}});
+ assert.equal(calls,1);
+ assert.equal(out.status,"PARTIAL");
+ assert.equal(out.score,null);
+ assert.deepEqual(out.missing,["B1_SESSION_AND_PRICE_BASIS_UNVERIFIED"]);
+});
+test("unverified corporate action price basis stays outside coverage",async()=>{
+ let calls=0;
+ const out=await collectActual({apiKey:"eq_test",validateSnapshot:async()=>({asOfDate:"2026-09-18",lagCompletedUsSessions:0,publicDisplayRightsVerified:true,verifiedPriceBasisTickers:[]}),
+ fetchImpl:async()=>{calls++;return response(page({data:[member("A")]}));}});
+ assert.equal(calls,1);
+ assert.equal(out.score,null);
+ assert.equal(out.quality.returnCoverage,0);
+});
+test("incorrect pagination count fails before price calls",async()=>{
+ let calls=0;const p=page({data:[member("A")]});p.meta.count=0;
+ const out=await collectEquiblesBreadthB1R1({apiKey:"eq_test",fetchImpl:async()=>{calls++;return response(p);}});
+ assert.equal(calls,1);
+ assert.deepEqual(out.missing,["EQUIBLES_INDEX_PAGINATION_INVALID"]);
+});
+
+test("duplicated price observation dates fail coverage",async()=>{
+ const out=await collectEquiblesBreadthB1R1({apiKey:"eq_test",fetchImpl:async url=>{
+  if(new URL(url).pathname.endsWith("/indexes/sp-500"))return response(page({data:[member("A")]}));
+  const p=prices();p.data.push({...p.data[0]});return response(p);
+ }});
+ assert.equal(out.status,"PARTIAL");assert.equal(out.quality.returnCoverage,0);
+});
+test("quota and mock freshness evidence do not imply public display rights",async()=>{
+ let calls=0;
+ const out=await collectEquiblesBreadthB1R1({apiKey:"eq_test",validateSnapshot:async x=>({...await verified(x),publicDisplayRightsVerified:false}),
+ fetchImpl:async()=>{calls++;return response(page({data:[member("A")]}));}});
+ assert.equal(calls,1);assert.equal(out.score,null);
+ assert.deepEqual(out.missing,["EQUIBLES_PUBLIC_ENTITLEMENT_UNVERIFIED"]);
+});
+
+test("duplicate unlinked constituents cannot masquerade as complete pagination",async()=>{
+ const p=page({data:[member("A",99),member(null,.5,false),member(null,.5,false)]});
+ const out=await collectEquiblesBreadthB1R1({apiKey:"eq_test",fetchImpl:async()=>response(p)});
+ assert.equal(out.score,null);assert.deepEqual(out.missing,["EQUIBLES_DUPLICATE_MEMBER"]);
 });

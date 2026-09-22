@@ -108,7 +108,7 @@ const r55Cards=[
  {label:'기업실적',Icon:BriefcaseBusiness,basis:'공개 점수 결과를 표시합니다. PARTIAL/UNAVAILABLE은 0점으로 대체하지 않습니다.',details:['주당이익 성장','매출 성장률','이익 성장비','영업·순이익률']},
  {label:'유동성',Icon:Landmark,basis:'공개 점수 결과를 표시합니다. PARTIAL/UNAVAILABLE은 0점으로 대체하지 않습니다.',details:['은행 준비금','통화량 증가','재무부 계정변화','익일 역레포']},
  {label:'자금흐름',Icon:ArrowLeftRight,basis:'공개 점수 결과를 표시합니다. PARTIAL/UNAVAILABLE은 0점으로 대체하지 않습니다.',details:['외국인 주식','펀드 자금흐름','국제자본 흐름','위험자산 비중']},
- {label:'수급·폭',Icon:Network,basis:'공개 점수 결과를 표시합니다. PARTIAL/UNAVAILABLE은 0점으로 대체하지 않습니다.',details:['200일선 상회','상승·하락선','52주 신고가-신저가','동일가중']},
+ {label:'수급·폭',Icon:Network,basis:'Data by Equibles. S&P 500 추적펀드의 일별 구성 기준이며 공식 S&P DJI 구성 파일이 아닙니다. 종가×거래량은 거래대금 대용값입니다. 권리·관측일·커버리지 검증 전에는 점수를 표시하지 않습니다.',details:[]},
  {label:'달러환율',Icon:DollarSign,basis:'공개 점수 결과를 표시합니다. PARTIAL/UNAVAILABLE은 0점으로 대체하지 않습니다.',details:['광의 달러지수','3개월 변화율','신흥국 달러지수','달러 변동성']},
  {label:'유가원자재',Icon:Droplet,basis:'공개 점수 결과를 표시합니다. 공급충격 점수를 유가·원자재 점수로 대체하지 않습니다.',details:['서부텍사스유','브렌트유','구리','휘발유']}
 ] as const;

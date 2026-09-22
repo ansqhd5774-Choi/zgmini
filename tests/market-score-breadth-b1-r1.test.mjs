@@ -193,3 +193,15 @@ test("B1-R1 score is bounded 0 to 100",()=>{
   assert.equal(fear.status,"READY");
   assert.equal(fear.score,0);
 });
+
+
+test("missing volume is not coerced to a valid zero",()=>{
+ const out=buildBreadthB1R1({observationDate:obs,snapshot:snapshot([member("A"),member("B")]),
+ pricePairs:[pair("A",100,101,null),pair("B",100,99,10)]});
+ assert.equal(out.score,null);
+ assert.equal(out.quality.tradingValueCoverage,0.5);
+});
+test("missing weight is not silently accepted as zero weight",()=>{
+ const out=buildBreadthB1R1({observationDate:obs,snapshot:snapshot([member("A",null)]),pricePairs:[pair("A",100,101,10)]});
+ assert.deepEqual(out.missing,["WEIGHT_COVERAGE_UNAVAILABLE"]);
+});
