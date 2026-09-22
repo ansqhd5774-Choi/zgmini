@@ -107,7 +107,7 @@ const r55Cards=[
  {label:'소비',Icon:ShoppingCart,basis:'공개 점수 결과를 표시합니다. PARTIAL/UNAVAILABLE은 0점으로 대체하지 않습니다.',details:['실질 소비지출','소매판매','가처분소득','저축률']},
  {label:'기업실적',Icon:BriefcaseBusiness,basis:'공개 점수 결과를 표시합니다. PARTIAL/UNAVAILABLE은 0점으로 대체하지 않습니다.',details:['주당이익 성장','매출 성장률','이익 성장비','영업·순이익률']},
  {label:'유동성',Icon:Landmark,basis:'공개 점수 결과를 표시합니다. PARTIAL/UNAVAILABLE은 0점으로 대체하지 않습니다.',details:['은행 준비금','통화량 증가','재무부 계정변화','익일 역레포']},
- {label:'자금흐름',Icon:ArrowLeftRight,basis:'공개 점수 결과를 표시합니다. PARTIAL/UNAVAILABLE은 0점으로 대체하지 않습니다.',details:['외국인 주식','펀드 자금흐름','국제자본 흐름','위험자산 비중']},
+ {label:'자금흐름',Icon:ArrowLeftRight,basis:'SEC 등록펀드 전체 순유입을 전월 순자산으로 나눈 월별 비율입니다. 미국 주식형 펀드만의 값이 아닙니다. 추이는 실제 월별 점수이며 일별 보간하지 않습니다.',details:[]},
  {label:'수급·폭',Icon:Network,basis:'Data by Equibles. S&P 500 추적펀드의 일별 구성 기준이며 공식 S&P DJI 구성 파일이 아닙니다. 종가×거래량은 거래대금 대용값입니다. 권리·관측일·커버리지 검증 전에는 점수를 표시하지 않습니다.',details:[]},
  {label:'달러환율',Icon:DollarSign,basis:'공개 점수 결과를 표시합니다. PARTIAL/UNAVAILABLE은 0점으로 대체하지 않습니다.',details:['광의 달러지수','3개월 변화율','신흥국 달러지수','달러 변동성']},
  {label:'유가원자재',Icon:Droplet,basis:'공개 점수 결과를 표시합니다. 공급충격 점수를 유가·원자재 점수로 대체하지 않습니다.',details:['서부텍사스유','브렌트유','구리','휘발유']}
@@ -232,7 +232,7 @@ export function CompositeMarketSection({items,points,demo,loading}:{items:Summar
 
        const band=score===null?'unknown':score<25?'danger':score<40?'caution':score<60?'neutral':score<75?'positive':'strong';
        const detailRows=domain?.indicators?.length
-        ?domain.indicators.slice(0,4).map((item,i)=>({label:item.name??item.label??m.details[i]??`지표 ${i+1}`,score:validPublicScore(item.score)?item.score:null,raw:r55DomainIds[index]==="breadth",value:item.status==="READY"&&typeof item.value==="number"&&Number.isFinite(item.value)?item.value:null,unit:item.unit??""}))
+        ?domain.indicators.slice(0,4).map((item,i)=>({label:item.name??item.label??m.details[i]??`지표 ${i+1}`,score:validPublicScore(item.score)?item.score:null,raw:r55DomainIds[index]==="breadth"||r55DomainIds[index]==="fundFlows",value:item.status==="READY"&&typeof item.value==="number"&&Number.isFinite(item.value)?item.value:null,unit:item.unit??""}))
         :[];
        return <article
         key={m.label}
