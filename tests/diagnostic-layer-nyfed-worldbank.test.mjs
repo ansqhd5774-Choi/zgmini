@@ -156,6 +156,11 @@ test('bounded World Bank fetch uses only the exact recovered workbook URL', asyn
   assert.equal(calls,1);
   assert.equal(result.status,'READY_CURRENT_VINTAGE_RAW');
   assert.equal(result.rows[0].value,715);
+  assert.equal(result.file,'CMO-Historical-Data-Monthly.xlsx');
+  assert.ok(Number.isFinite(Date.parse(result.collectedAt)));
+  assert.equal(result.rows[0].collectedAt,result.collectedAt);
+  assert.equal(result.rows[0].releaseDate,null);
+  assert.equal(result.rows[0].observationDate,'1960-01-01');
 });
 
 test('bounded GSCPI fetch uses the exact current official NY Fed workbook URL', async () => {

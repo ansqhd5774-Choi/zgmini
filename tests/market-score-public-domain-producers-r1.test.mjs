@@ -116,8 +116,39 @@ test("public API wires approved C1 and K1 internally while B1 remains unavailabl
 
   assert.equal(commodities.status,"READY");
   assert.equal(commodities.score,35);
+  assert.deepEqual(commodities.trend,[{label:"2026-08-01",value:35}]);
 
   assert.equal(breadth.status,"UNAVAILABLE");
   assert.equal(breadth.score,null);
   assert.equal(body.dataQuality.reweighted,false);
+});
+
+
+test("K1 history uses same-row component scores, sorted dates, and excludes future rows",()=>{
+  const out=buildCommoditiesK1({asOfDate:"2026-09-22",supplyRows:[
+    mrow("2026-09-01",{oilScore:20,gasolineScore:40,copperScore:60,score:99}),
+    mrow("2026-08-01",{oilScore:0,gasolineScore:0,copperScore:0,score:99}),
+    mrow("2026-10-01",{oilScore:100,gasolineScore:100,copperScore:100}),
+  ]});
+  assert.equal(out.score,35);
+  assert.deepEqual(out.trend,[{label:"2026-08-01",value:0},{label:"2026-09-01",value:35}]);
+});
+test("K1 missing latest component cannot fall back to older components or diagnostic score",()=>{
+  const out=buildCommoditiesK1({asOfDate:"2026-09-22",supplyRows:[
+    mrow("2026-08-01",{oilScore:20,gasolineScore:40,copperScore:60}),
+    mrow("2026-09-01",{oilScore:20,gasolineScore:40,copperScore:null,score:90}),
+  ]});
+  assert.equal(out.status,"PARTIAL");
+  assert.equal(out.score,null);
+  assert.deepEqual(out.trend,[]);
+});
+test("K1 chart does not bridge missing components or missing months",()=>{
+  for(const middle of [[],[mrow("2026-08-01",{oilScore:10,gasolineScore:20,copperScore:null})]]){
+    const out=buildCommoditiesK1({asOfDate:"2026-09-22",supplyRows:[
+      mrow("2026-07-01",{oilScore:10,gasolineScore:20,copperScore:30}),
+      ...middle,
+      mrow("2026-09-01",{oilScore:20,gasolineScore:40,copperScore:60}),
+    ]});
+    assert.deepEqual(out.trend,[{label:"2026-09-01",value:35}]);
+  }
 });
