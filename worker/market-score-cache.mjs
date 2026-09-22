@@ -46,8 +46,9 @@ export function withMarketScoreCache(handler, {
           stored.headers.set('cache-control', `public, max-age=${TTL}`);
           stored.headers.set('x-market-cache-stored-at', String(now()));
           await cache.put(key, stored);
+          output.headers.set('x-market-cache-write', await cache.match(key) ? 'STORED' : 'NOT_RETAINED');
         }
-      } catch { /* Never cache a failed or malformed result. */ }
+      } catch (error) { output.headers.set('x-market-cache-write', error instanceof TypeError ? 'TYPE_ERROR' : 'FAILED'); }
     }
     return output;
   };
