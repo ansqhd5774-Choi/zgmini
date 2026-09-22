@@ -2,6 +2,7 @@
 import {useEffect,useId,useRef,useState,type ReactNode,type CSSProperties} from 'react';
 import {Activity,ArrowRight,ChevronLeft,ChevronRight,Info,Radar,Coins,Users,Percent,Droplet,Landmark,ShieldCheck,Factory,ShoppingCart,BriefcaseBusiness,ArrowLeftRight,Network,DollarSign} from 'lucide-react';
 import {Line,LineChart,ResponsiveContainer,Tooltip,XAxis,YAxis,ReferenceDot} from 'recharts';
+import {readMarketSnapshot,saveMarketSnapshot} from '../lib/market-score/browser-snapshot.mjs';
 import {marketDetailRows} from '../lib/market-score/detail-catalog.mjs';
 export type DashboardPoint={label:string;value:number};
 export type Summary={label:string;score:number;value:string;note:string;data:DashboardPoint[]};
@@ -136,20 +137,34 @@ export function CompositeMarketSection({items,points,demo,loading}:{items:Summar
 
  useEffect(()=>{
   const controller=new AbortController();
-  let alive=true;
-  setMarketLoading(true);
-  fetch('/api/market-score',{signal:controller.signal,cache:'default'})
+  let alive=true,expiryTimer:ReturnType<typeof setTimeout>|undefined;
+  let storage:Storage|undefined;
+  try{storage=window.sessionStorage}catch{/* Storage may be disabled. */}
+  const cached=storage?readMarketSnapshot(storage):null;
+  if(cached){setMarket(cached.body);setMarketLoading(false)}
+  else setMarketLoading(true);
+  // Cached observations expire even if the network is slow or unavailable.
+  const expireAt=(expiresAt:number)=>{
+   clearTimeout(expiryTimer);
+   expiryTimer=setTimeout(()=>{if(alive){setMarket(null);setMarketError('MARKET_SCORE_UNAVAILABLE');setMarketLoading(true);void load()}},Math.max(0,expiresAt-Date.now()));
+  };
+  if(cached)expireAt(cached.expiresAt);
+  const load=()=>fetch('/api/market-score',{signal:controller.signal,cache:'default'})
    .then(async response=>{
     const body=await response.json() as MarketScoreResponse;
     if(!response.ok||body?.status!=='SUCCESS')throw new Error('MARKET_SCORE_UNAVAILABLE');
-    if(alive){setMarket(body);setMarketError(null)}
+    if(alive){
+     setMarket(body);setMarketError(null);
+     if(storage){saveMarketSnapshot(storage,body,response.headers);const saved=readMarketSnapshot(storage);if(saved)expireAt(saved.expiresAt)}
+    }
    })
    .catch(error=>{
     if(error?.name==='AbortError')return;
-    if(alive){setMarket(null);setMarketError('MARKET_SCORE_UNAVAILABLE')}
+    if(alive&&!cached){setMarket(null);setMarketError('MARKET_SCORE_UNAVAILABLE')}
    })
    .finally(()=>{if(alive)setMarketLoading(false)});
-  return()=>{alive=false;controller.abort()};
+  void load();
+  return()=>{alive=false;clearTimeout(expiryTimer);controller.abort()};
  },[]);
 
  const toggle=()=>setExpanded(v=>!v);

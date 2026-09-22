@@ -69,3 +69,11 @@ test('successful refresh ahead replaces the cached observation',async()=>{
   assert.deepEqual(await (await h(request())).json(),body);await Promise.all(jobs);
   assert.deepEqual(await (await h(request())).json(),updated);
 });
+
+test('warm memory hit skips database without extending expiry',async()=>{
+ let reads=0,time=Date.parse(body.updatedAt),calls=0;
+ const cache={match:async()=>{reads++;return null},put:async()=>{}};
+ const h=withMarketScoreCache(async()=>{calls++;return Response.json(body)},{getCache:()=>cache,now:()=>time});
+ await h(request());await h(request());assert.equal(reads,1);assert.equal(calls,1);
+ time+=300000;await h(request());assert.equal(reads,2);assert.equal(calls,2);
+});

@@ -13,6 +13,11 @@ export function withMarketScoreCache(handler, {
   const pending=new Map();
   const refreshAttempts=new Map();
   let store;
+  const memory=new Map();
+  function remember(key,response){
+    if(memory.size>=4&&!memory.has(key))memory.clear();
+    memory.set(key,response.clone());
+  }
   function collect(request,key,cache,start){
     if(pending.has(key.url))return pending.get(key.url);
     const job=(async()=>{
@@ -28,6 +33,7 @@ export function withMarketScoreCache(handler, {
             const stored=output.clone();
             stored.headers.set('cache-control',`public, max-age=${TTL}`);
             stored.headers.set('x-market-cache-stored-at',String(now()));
+            remember(key.url,stored);
             await cache.put(key,stored);
             output.headers.set('x-market-cache-write','STORED');
           }
@@ -51,7 +57,13 @@ export function withMarketScoreCache(handler, {
     let cache;
     try { cache = store ??= getCache(); } catch { /* Unsupported runtime uses origin. */ }
     try {
-      const hit = await cache?.match(key);
+      let hit=memory.get(key.url)?.clone();
+      const memoryAt=Number(hit?.headers.get('x-market-cache-stored-at'));
+      if(!hit||start-memoryAt>=TTL*1000||start<memoryAt){
+        memory.delete(key.url);
+        hit=await cache?.match(key);
+        if(hit)remember(key.url,hit);
+      }
       const stored = Number(hit?.headers.get('x-market-cache-stored-at'));
       const age = Math.floor((start - stored) / 1000);
       if (hit && stored > 0 && age >= 0 && age < TTL) {
