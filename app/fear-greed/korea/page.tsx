@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import DataPanel from "./data-panel";
-const title = "한국 공포탐욕지수 오늘 | 국내 증시 투자심리 - ZGmini";
-const description = "오늘 한국 공포탐욕지수와 국내 증시 투자심리 상태를 확인하세요. 현재 점수와 공포·중립·탐욕 단계, 기간별 변화와 주요 시장 심리를 ZGmini에서 한눈에 확인할 수 있습니다.";
-const url = "https://zgmini.kr/fear-greed/korea/";
+const title = "한국 공포탐욕지수·코스피 투자심리 차트 | ZGmini";
+const description = "한국 공포탐욕지수의 최근 제공 점수와 기간별 차트, 관측일을 확인하세요. 국내 증시 투자심리를 살펴보는 ZGmini 자체 지표입니다.";
+const url = "https://zgmini.kr/fear-greed/korea";
 export const metadata: Metadata = {
   title, description, alternates: { canonical:url }, robots:{index:true,follow:true},
   openGraph:{title,description:"한국 증시의 현재 공포탐욕 점수와 투자심리 변화, 기간별 흐름을 확인하세요.",url,type:"website",siteName:"ZGmini"},

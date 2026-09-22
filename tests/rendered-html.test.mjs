@@ -26,10 +26,19 @@ test("renders ZGmini metadata in the Workers runtime", async () => {
     const html=await response.text();
     assert.ok(html.includes('data-testid="korea-funds"'));
     const head=html.match(/<head>([\s\S]*?)<\/head>/i)?.[1]??"";
-    assert.ok(head.includes("<title>ZGmini | 공포탐욕지수·글로벌 증시·경제지표 한눈에</title>"));
+    assert.ok(head.includes("<title>ZGmini | 미국·한국 공포탐욕지수와 경제지표</title>"));
     assert.equal((head.match(/rel="canonical"/g)??[]).length,1);
     assert.ok(/<link(?=[^>]*rel="canonical")(?=[^>]*href="https:\/\/zgmini\.kr\/")[^>]*>/i.test(head));
     assert.ok(/<meta(?=[^>]*name="robots")(?=[^>]*content="index, follow")[^>]*>/i.test(head));
     assert.equal(outboundCalls,0);
+    for(const route of ['/fear-greed/usa','/fear-greed/korea']){
+      const detail=await mf.dispatchFetch(`http://localhost${route}?ui=197`,{headers:{accept:'text/html'},redirect:'manual'});
+      assert.equal(detail.status,200);
+      const detailHtml=await detail.text();
+      const detailHead=detailHtml.match(/<head>([\s\S]*?)<\/head>/i)?.[1]??'';
+      assert.equal((detailHead.match(/rel="canonical"/g)??[]).length,1);
+      assert.ok(detailHead.includes(`href="https://zgmini.kr${route}"`));
+      assert.ok(!detailHead.includes('ui=197'));
+    }
   } finally { await mf.dispose(); }
 });
