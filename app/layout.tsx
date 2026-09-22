@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import NaverAnalytics from "./naver-analytics";
 import "./globals.css";
+import "./responsive.css";
 
 export const metadata: Metadata = {
   title: "공포탐욕지수 한눈에 | 미국·한국 차트 - ZGmini",

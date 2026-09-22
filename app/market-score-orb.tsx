@@ -230,8 +230,8 @@ export function MarketScoreOrb({
                 {(tick === 0 || tick === 50 || tick === 100) ? (
                   <text
                     className={`cnn-spectrum-scale-label ${tick === 50 ? 'is-center' : ''}`}
-                    x={label.x}
-                    y={label.y + (tick === 0 || tick === 100 ? 4 : 2)}
+                    x={tick === 0 ? 18 : tick === 100 ? 202 : label.x}
+                    y={tick === 0 || tick === 100 ? 126 : label.y + 2}
                     textAnchor="middle"
                     dominantBaseline="middle"
                   >
