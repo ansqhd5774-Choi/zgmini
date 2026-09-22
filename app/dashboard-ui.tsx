@@ -41,22 +41,56 @@ const scoreColor=(score:number)=>score<25?'#ef4444':score<40?'#f59e0b':score<60?
 function Sparkline({data,label}:{data:DashboardPoint[];label:string}){return <div className="zg-spark" aria-label={`${label} 관측 추이`}><ResponsiveContainer width="100%" height="100%" initialDimension={{width:1,height:1}}><LineChart data={data} accessibilityLayer margin={{top:6,right:6,left:6,bottom:6}}><Tooltip offset={10} cursor={{stroke:'#AAB2BC',strokeWidth:1}} formatter={v=>[v,'점수']} contentStyle={{fontSize:13,borderRadius:4,border:'1px solid #D7DCE2'}}/><Line type="linear" dataKey="value" stroke="#3478D4" strokeWidth={2} dot={false} activeDot={{r:4}} isAnimationActive={false}/></LineChart></ResponsiveContainer></div>}
 // Stage 12 R2 / W09.2 content ownership correction:
 // The legacy 4-component market score is not the target content.
-// This section is owned exclusively by the new 12-domain + 8-risk design.
-// Until the approved 12-domain public score contract is wired, no legacy score
-// may be reused as a substitute for the new content.
+// CM-R1 now owns the public 12-domain composite contract.
+// PARTIAL / UNAVAILABLE data is never converted to a fake numeric score.
+type MarketScoreDomain={
+ id:string;
+ name:string;
+ score:number|null;
+ status:"READY"|"PARTIAL"|"UNAVAILABLE"|string;
+ state?:string|null;
+ interpretation?:string|null;
+ trend?:DashboardPoint[];
+ indicators?:Array<{name?:string;label?:string;score?:number|null;status?:string}>;
+ freshness?:string|null;
+ updatedAt?:string|null;
+ missingFactors?:string[];
+};
+type MarketScoreResponse={
+ status:string;
+ modelVersion?:string;
+ overall:{score:number|null;status:string;state?:string|null;trend?:DashboardPoint[]};
+ domains:MarketScoreDomain[];
+ diagnostics8?:Record<string,{status:string;score:number|null;missingFactors?:string[]}>;
+ updatedAt?:string|null;
+ dataQuality?:{
+  readyDomains?:number;
+  totalDomains?:number;
+  missingDomains?:string[];
+  partialDomains?:string[];
+  coverageWeight?:number;
+  overallComputable?:boolean;
+  reweighted?:boolean;
+ };
+};
+const r55DomainIds=["inflation","employment","rates","credit","growth","consumption","earnings","liquidity","fundFlows","breadth","dollarFx","commodities"] as const;
+const diagnosticKeys=["inflationStability","recessionDefense","liquidityCrisisDefense","creditRiskDefense","earningsRecessionDefense","assetBubbleSafety","debtRiskSafety","supplyShockSafety"] as const;
+const validPublicScore=(value:unknown):value is number=>typeof value==="number"&&Number.isFinite(value)&&value>=0&&value<=100;
+const publicStatusLabel=(status?:string)=>status==="READY"?"연결됨":status==="PARTIAL"?"부분 데이터":"데이터 준비 중";
+
 const r55Cards=[
- {label:'물가',Icon:Coins,basis:'신규 12영역 점수 계약 준비 중입니다. 레거시 점수를 대체값으로 사용하지 않습니다.',details:['근원 소비지출물가','근원 소비자물가','소비자물가','기대물가']},
- {label:'고용',Icon:Users,basis:'신규 12영역 점수 계약 준비 중입니다. 레거시 점수를 대체값으로 사용하지 않습니다.',details:['비농업고용','실업률','실업수당','임금상승률']},
- {label:'금리',Icon:Percent,basis:'신규 12영역 점수 계약 준비 중입니다. 레거시 점수를 대체값으로 사용하지 않습니다.',details:['정책금리','2년물','10년 실질','10년물']},
- {label:'채권신용',Icon:Activity,basis:'신규 12영역 점수 계약 준비 중입니다. 레거시 점수를 대체값으로 사용하지 않습니다.',details:['HY 신용 스트레스','IG 신용 스트레스','채권 변동성','회사채 시장위험']},
- {label:'경기',Icon:Activity,basis:'신규 12영역 점수 계약 준비 중입니다. 레거시 점수를 대체값으로 사용하지 않습니다.',details:['실질 국내총생산','제조업','서비스업','산업생산']},
- {label:'소비',Icon:Coins,basis:'신규 12영역 점수 계약 준비 중입니다. 레거시 점수를 대체값으로 사용하지 않습니다.',details:['실질 소비지출','소매판매','가처분소득','저축률']},
- {label:'기업실적',Icon:Activity,basis:'신규 12영역 점수 계약 준비 중입니다. 레거시 점수를 대체값으로 사용하지 않습니다.',details:['주당이익 성장','매출 성장률','이익 성장비','영업·순이익률']},
- {label:'유동성',Icon:Droplet,basis:'신규 12영역 점수 계약 준비 중입니다. 레거시 점수를 대체값으로 사용하지 않습니다.',details:['은행 준비금','통화량 증가','재무부 계정변화','익일 역레포']},
- {label:'자금흐름',Icon:Activity,basis:'신규 12영역 점수 계약 준비 중입니다. 레거시 점수를 대체값으로 사용하지 않습니다.',details:['외국인 주식','펀드 자금흐름','국제자본 흐름','위험자산 비중']},
- {label:'수급·폭',Icon:Activity,basis:'신규 12영역 점수 계약 준비 중입니다. 레거시 점수를 대체값으로 사용하지 않습니다.',details:['200일선 상회','상승·하락선','52주 신고가-신저가','동일가중']},
- {label:'달러환율',Icon:Percent,basis:'신규 12영역 점수 계약 준비 중입니다. 레거시 점수를 대체값으로 사용하지 않습니다.',details:['광의 달러지수','3개월 변화율','신흥국 달러지수','달러 변동성']},
- {label:'유가원자재',Icon:Droplet,basis:'신규 12영역 점수 계약 준비 중입니다. 레거시 유가 점수를 원자재 통합점수로 대체 사용하지 않습니다.',details:['서부텍사스유','브렌트유','구리','휘발유']}
+ {label:'물가',Icon:Coins,basis:'CM-R1 공개 점수 API 결과를 표시합니다. PARTIAL/UNAVAILABLE은 0점으로 대체하지 않습니다.',details:['근원 소비지출물가','근원 소비자물가','소비자물가','기대물가']},
+ {label:'고용',Icon:Users,basis:'CM-R1 공개 점수 API 결과를 표시합니다. PARTIAL/UNAVAILABLE은 0점으로 대체하지 않습니다.',details:['비농업고용','실업률','실업수당','임금상승률']},
+ {label:'금리',Icon:Percent,basis:'CM-R1 공개 점수 API 결과를 표시합니다. PARTIAL/UNAVAILABLE은 0점으로 대체하지 않습니다.',details:['정책금리','2년물','10년 실질','10년물']},
+ {label:'채권신용',Icon:Activity,basis:'CM-R1 공개 점수 API 결과를 표시합니다. PARTIAL/UNAVAILABLE은 0점으로 대체하지 않습니다.',details:['HY 신용 스트레스','IG 신용 스트레스','채권 변동성','회사채 시장위험']},
+ {label:'경기',Icon:Activity,basis:'CM-R1 공개 점수 API 결과를 표시합니다. PARTIAL/UNAVAILABLE은 0점으로 대체하지 않습니다.',details:['실질 국내총생산','제조업','서비스업','산업생산']},
+ {label:'소비',Icon:Coins,basis:'CM-R1 공개 점수 API 결과를 표시합니다. PARTIAL/UNAVAILABLE은 0점으로 대체하지 않습니다.',details:['실질 소비지출','소매판매','가처분소득','저축률']},
+ {label:'기업실적',Icon:Activity,basis:'CM-R1 공개 점수 API 결과를 표시합니다. PARTIAL/UNAVAILABLE은 0점으로 대체하지 않습니다.',details:['주당이익 성장','매출 성장률','이익 성장비','영업·순이익률']},
+ {label:'유동성',Icon:Droplet,basis:'CM-R1 공개 점수 API 결과를 표시합니다. PARTIAL/UNAVAILABLE은 0점으로 대체하지 않습니다.',details:['은행 준비금','통화량 증가','재무부 계정변화','익일 역레포']},
+ {label:'자금흐름',Icon:Activity,basis:'CM-R1 공개 점수 API 결과를 표시합니다. PARTIAL/UNAVAILABLE은 0점으로 대체하지 않습니다.',details:['외국인 주식','펀드 자금흐름','국제자본 흐름','위험자산 비중']},
+ {label:'수급·폭',Icon:Activity,basis:'CM-R1 공개 점수 API 결과를 표시합니다. PARTIAL/UNAVAILABLE은 0점으로 대체하지 않습니다.',details:['200일선 상회','상승·하락선','52주 신고가-신저가','동일가중']},
+ {label:'달러환율',Icon:Percent,basis:'CM-R1 공개 점수 API 결과를 표시합니다. PARTIAL/UNAVAILABLE은 0점으로 대체하지 않습니다.',details:['광의 달러지수','3개월 변화율','신흥국 달러지수','달러 변동성']},
+ {label:'유가원자재',Icon:Droplet,basis:'CM-R1 공개 점수 API 결과를 표시합니다. 공급충격 점수를 유가·원자재 점수로 대체하지 않습니다.',details:['서부텍사스유','브렌트유','구리','휘발유']}
 ] as const;
 
 const diagnosticSubscores=[
@@ -73,20 +107,46 @@ const diagnosticSubscores=[
 export function CompositeMarketSection({items,points,demo,loading,onDetail}:{items:Summary[];points:number;demo:boolean;loading:boolean;onDetail:(label:string)=>void}){
  void items;
  void points;
- void loading;
- void onDetail;
  const [expanded,setExpanded]=useState(false);
+ const [market,setMarket]=useState<MarketScoreResponse|null>(null);
+ const [marketLoading,setMarketLoading]=useState(true);
+ const [marketError,setMarketError]=useState<string|null>(null);
+
+ useEffect(()=>{
+  const controller=new AbortController();
+  let alive=true;
+  setMarketLoading(true);
+  fetch('/api/market-score',{signal:controller.signal,cache:'no-store'})
+   .then(async response=>{
+    const body=await response.json() as MarketScoreResponse;
+    if(!response.ok||body?.status!=='SUCCESS')throw new Error('MARKET_SCORE_UNAVAILABLE');
+    if(alive){setMarket(body);setMarketError(null)}
+   })
+   .catch(error=>{
+    if(error?.name==='AbortError')return;
+    if(alive){setMarket(null);setMarketError('MARKET_SCORE_UNAVAILABLE')}
+   })
+   .finally(()=>{if(alive)setMarketLoading(false)});
+  return()=>{alive=false;controller.abort()};
+ },[]);
+
  const toggle=()=>setExpanded(v=>!v);
  const keyToggle=(e:React.KeyboardEvent<HTMLElement>)=>{
   if(e.currentTarget!==e.target)return;
   if(e.key==='Enter'||e.key===' '){e.preventDefault();toggle()}
  };
+ const busy=loading||marketLoading;
+ const overallScore=market?.overall?.status==='READY'&&validPublicScore(market.overall.score)?market.overall.score:null;
+ const overallStatus=busy?'불러오는 중':marketError?'데이터 확인 중':publicStatusLabel(market?.overall?.status);
+ const readyDomains=market?.dataQuality?.readyDomains??0;
+ const totalDomains=market?.dataQuality?.totalDomains??12;
+ const coverageWeight=market?.dataQuality?.coverageWeight??0;
 
  return <section id="market" className="zg-section">
   <div className="zg-section-heading zg-r55-heading">
    <div>
     <h2><Activity/>종합 시장 점수</h2>
-    <span className="zg-brand-tag">ZGmini 독자 지표{demo?' · 예시':''}</span>
+    <span className="zg-brand-tag">ZGmini 독자 지표 · CM-R1{demo?' · 예시':''}</span>
    </div>
    <button type="button" className="zg-r55-expand" aria-expanded={expanded} onClick={toggle}>
     {expanded?'전체 접기':'전체 펼침'}
@@ -99,77 +159,100 @@ export function CompositeMarketSection({items,points,demo,loading,onDetail}:{ite
      <div className="zg-r55-summary-top">
       <span className="zg-eyebrow">12개 영역 종합 · 공포탐욕과 별개</span>
       <div className="zg-r55-master-number">
-       <strong style={{color:'#94a3b8'}}>—</strong>
-       <span>데이터 준비 중</span>
+       <strong style={{color:overallScore===null?'#94a3b8':scoreColor(overallScore)}}>{overallScore===null?'—':Math.round(overallScore)}</strong>
+       <span>{overallStatus}</span>
       </div>
-      <ScoreScale score={null} label="종합 시장 점수" color="#64748b"/>
+      <ScoreScale score={overallScore} label="종합 시장 점수" color={overallScore===null?'#64748b':scoreColor(overallScore)}/>
       <div className="zg-scale-labels"><span>0</span><span>50</span><span>100</span></div>
      </div>
 
      <div className="zg-r55-summary-chart">
       <h3>12개 영역 종합</h3>
-      <p>신규 12개 영역 기반 종합 점수 연결 준비 중입니다. 기존 4개 지표의 종합점수를 대체값으로 사용하지 않습니다.</p>
-      <div className="zg-r55-empty-spark" aria-label="신규 종합 추이 데이터 준비 중">추이 데이터 준비 중</div>
+      <p>{marketError?'공개 점수 API를 확인 중입니다.':`${readyDomains}/${totalDomains} 영역 READY · 커버리지 가중치 ${coverageWeight}/100 · 누락 가중치 자동 재분배 없음`}</p>
+      {market?.overall?.trend?.length
+       ?<Sparkline data={market.overall.trend} label="종합 시장 점수"/>
+       :<div className="zg-r55-empty-spark" aria-label="종합 추이 데이터 없음">추이 데이터 준비 중</div>}
      </div>
 
      <div className="zg-r55-subscore-area" aria-label="8개 위험 지표">
       <div className="zg-r55-subscore-grid">
-       {diagnosticSubscores.map((s,index)=><div key={s.name} className="zg-r55-subscore" data-index={index}>
-        <div className="zg-r55-subscore-head">
-         <span className="zg-r55-subscore-title">
-          <span onClick={e=>e.stopPropagation()}><DashboardTip label={`${s.name} 반영 항목`}>{s.components}. 신규 위험지표 공개 점수 연결 전에는 숫자를 표시하지 않습니다.</DashboardTip></span>
-          <b>{s.name}</b>
-         </span>
-         <strong>—</strong>
+       {diagnosticSubscores.map((s,index)=>{
+        const diag=market?.diagnostics8?.[diagnosticKeys[index]];
+        const score=diag?.status==='READY'&&validPublicScore(diag.score)?diag.score:null;
+        return <div key={s.name} className="zg-r55-subscore" data-index={index}>
+         <div className="zg-r55-subscore-head">
+          <span className="zg-r55-subscore-title">
+           <span onClick={e=>e.stopPropagation()}><DashboardTip label={`${s.name} 반영 항목`}>{s.components}. API diagnostics8에서 READY인 경우에만 숫자를 표시합니다.</DashboardTip></span>
+           <b>{s.name}</b>
+          </span>
+          <strong>{score===null?'—':Math.round(score)}</strong>
+         </div>
+         <div className="zg-r55-subscore-foot">
+          <span className="zg-r55-subscore-meter" aria-hidden="true"><i style={{width:`${score??0}%`}}/></span>
+          <span>{busy?'불러오는 중':publicStatusLabel(diag?.status)}</span>
+         </div>
         </div>
-        <div className="zg-r55-subscore-foot">
-         <span className="zg-r55-subscore-meter" aria-hidden="true"><i/></span>
-         <span>준비 중</span>
-        </div>
-       </div>)}
+       })}
       </div>
      </div>
     </article>
 
     <div className="zg-r55-component-panel zg-component-panel" data-testid="component-panel">
      <div className="zg-r55-card-grid zg-component-grid" data-testid="component-grid">
-      {r55Cards.map(m=>{
+      {r55Cards.map((m,index)=>{
        const Icon=m.Icon;
+       const domain=market?.domains?.find(d=>d.id===r55DomainIds[index]);
+       const score=domain?.status==='READY'&&validPublicScore(domain.score)?domain.score:null;
+       const band=score===null?'unknown':score<25?'danger':score<40?'caution':score<60?'neutral':score<75?'positive':'strong';
+       const detailRows=domain?.indicators?.length
+        ?domain.indicators.slice(0,4).map((item,i)=>({label:item.name??item.label??m.details[i]??`지표 ${i+1}`,score:validPublicScore(item.score)?item.score:null}))
+        :m.details.map(label=>({label,score:null}));
+       const note=busy
+        ?'공개 점수 불러오는 중'
+        :marketError
+          ?'공개 점수 API 확인 중'
+          :domain?.status==='READY'
+            ?(domain.interpretation??'CM-R1 공개 점수 연결됨')
+            :domain?.status==='PARTIAL'
+              ?'일부 필수 입력이 충족되지 않아 숫자를 표시하지 않습니다.'
+              :'승인된 공개 점수 producer 연결 대기';
        return <article
         key={m.label}
-        className="zg-r55-card band-unknown"
-        data-status="unavailable"
+        className={`zg-r55-card band-${band}`}
+        data-status={(domain?.status??'unavailable').toLowerCase()}
         tabIndex={0}
         role="button"
         aria-expanded={expanded}
-        aria-label={`${m.label} 데이터 준비 중`}
+        aria-label={`${m.label} ${score===null?publicStatusLabel(domain?.status):`${Math.round(score)}점`}`}
         onClick={toggle}
         onKeyDown={keyToggle}
        >
         <div className="zg-r55-card-head">
          <span className="zg-r55-card-icon"><Icon size={18} aria-hidden="true"/></span>
          <h3>{m.label}</h3>
-         <span className="zg-r55-badge">준비 중</span>
+         <span className="zg-r55-badge">{busy?'불러오는 중':publicStatusLabel(domain?.status)}</span>
          <span onClick={e=>e.stopPropagation()}><DashboardTip label={`${m.label} 산출 근거`}>{m.basis}</DashboardTip></span>
         </div>
         <div className="zg-r55-card-mid">
          <div className="zg-r55-card-number">
-          <strong style={{color:'#94a3b8'}}>—</strong>
-          <span>데이터 준비 중</span>
+          <strong style={{color:score===null?'#94a3b8':scoreColor(score)}}>{score===null?'—':Math.round(score)}</strong>
+          <span>{score===null?publicStatusLabel(domain?.status):'CM-R1'}</span>
          </div>
-         <div className="zg-r55-card-spark-empty" aria-label={`${m.label} 추이 데이터 준비 중`}>—</div>
+         {domain?.trend?.length
+          ?<Sparkline data={domain.trend} label={m.label}/>
+          :<div className="zg-r55-card-spark-empty" aria-label={`${m.label} 추이 데이터 없음`}>—</div>}
         </div>
-        <ScoreScale score={null} label={`${m.label} 점수`} color="#64748b"/>
-        <p className="zg-r55-note">신규 12영역 공개 점수 연결 준비 중</p>
+        <ScoreScale score={score} label={`${m.label} 점수`} color={score===null?'#64748b':scoreColor(score)}/>
+        <p className="zg-r55-note">{note}</p>
         <div className="zg-r55-details" aria-hidden={!expanded}>
-         {m.details.map(label=><div className="zg-r55-detail" key={label}><span>{label}</span><i/><b>—</b></div>)}
+         {detailRows.map(row=><div className="zg-r55-detail" key={row.label}><span>{row.label}</span><i/><b>{row.score===null?'—':Math.round(row.score)}</b></div>)}
         </div>
         <button
          type="button"
          className="zg-detail zg-r55-detail-button"
-         disabled
-         onClick={e=>e.stopPropagation()}
-        >데이터 준비 중 <ArrowRight size={14}/></button>
+         disabled={!domain?.indicators?.length}
+         onClick={e=>{e.stopPropagation();if(domain?.indicators?.length)onDetail(m.label)}}
+        >{domain?.indicators?.length?'상세 보기':'상세 데이터 준비 중'} <ArrowRight size={14}/></button>
        </article>
       })}
      </div>

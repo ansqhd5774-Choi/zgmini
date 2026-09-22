@@ -1,0 +1,121 @@
+import {buildCompositeMarketScore} from "../lib/market-score/composite-model-r1.mjs";
+import {buildCmR1DomainResults} from "../lib/market-score/domain-adapter-r1.mjs";
+import {buildEmploymentR538} from "../lib/diagnostic-layer/employment-r538-components.mjs";
+import {
+  buildDollarFxR53,
+  buildFundFlowR53,
+  buildRateR53,
+} from "../lib/diagnostic-layer/open-resolution-r53-components.mjs";
+
+const finite=value=>typeof value==="number"&&Number.isFinite(value);
+const validDate=value=>typeof value==="string"&&/^\d{4}-\d{2}-\d{2}$/.test(value);
+
+function safeJson(body,status=200){
+  return Response.json(body,{
+    status,
+    headers:{
+      "cache-control":"public, max-age=300, s-maxage=900, stale-while-revalidate=1800",
+      "x-content-type-options":"nosniff",
+    },
+  });
+}
+
+function diagnostics8(snapshot){
+  return Object.fromEntries(
+    Object.entries(snapshot?.diagnostics??{}).map(([id,value])=>[
+      id,
+      {
+        status:value?.status??"UNAVAILABLE",
+        score:finite(value?.score)?value.score:null,
+        missingFactors:Array.isArray(value?.missing)?value.missing:[],
+      },
+    ]),
+  );
+}
+
+export function createMarketScoreR1Handler({
+  env,
+  fetchImpl=globalThis.fetch,
+  collectInputs,
+  orchestrate,
+  now=()=>new Date(),
+}={}){
+  if(typeof collectInputs!=="function")throw new Error("COLLECT_INPUTS_REQUIRED");
+  if(typeof orchestrate!=="function")throw new Error("ORCHESTRATE_REQUIRED");
+
+  return async request=>{
+    if(request.method!=="GET")return safeJson({status:"FAILED",reason:"METHOD_NOT_ALLOWED"},405);
+
+    const instant=now();
+    const asOf=instant instanceof Date&&!Number.isNaN(instant.valueOf())
+      ? instant.toISOString().slice(0,10)
+      : null;
+    if(!validDate(asOf))return safeJson({status:"FAILED",reason:"INVALID_SERVER_TIME"},500);
+
+    try{
+      const collected=await collectInputs({env,asOf,fetchImpl});
+      const diagnostic=orchestrate({
+        asOfDate:asOf,
+        baseOverall:null,
+        series:collected?.series??{},
+        external:collected?.external??{},
+      });
+
+      const diagnostics=diagnostic?.snapshot?.diagnostics??{};
+      const employment=buildEmploymentR538({
+        unemploymentRows:collected?.series?.UNRATE??[],
+        payrollLevelRows:collected?.series?.PAYEMS??[],
+        asOfDate:asOf,
+      });
+      const rate=buildRateR53({
+        tenYearRows:collected?.series?.DGS10??[],
+        asOfDate:asOf,
+        recessionScore:diagnostics?.recessionDefense?.score??null,
+        creditScore:diagnostics?.creditRiskDefense?.score??null,
+      });
+      const fundFlow=buildFundFlowR53(
+        collected?.external?.registeredFundFlowRows??[],
+        {asOfDate:asOf},
+      );
+      const dollarFx=buildDollarFxR53(
+        collected?.series?.DTWEXBGS??[],
+        {asOfDate:asOf},
+      );
+
+      const domains=buildCmR1DomainResults({
+        diagnostics,
+        employment,
+        rates:rate,
+        fundFlows:fundFlow,
+        dollarFx,
+        publicDomains:collected?.external?.publicDomainScores??{},
+      });
+      const composite=buildCompositeMarketScore(domains,{updatedAt:instant.toISOString()});
+
+      return safeJson({
+        status:"SUCCESS",
+        modelVersion:composite.modelVersion,
+        asOfDate:asOf,
+        overall:composite.overall,
+        domains:composite.domains,
+        diagnostics8:diagnostics8(diagnostic?.snapshot),
+        updatedAt:composite.updatedAt,
+        dataQuality:{
+          ...composite.dataQuality,
+          historyMode:diagnostic?.historyMode??"CURRENT_VINTAGE_ONLY",
+          lookAheadSafe:diagnostic?.lookAheadSafe??false,
+          limitations:diagnostic?.limitations??{},
+        },
+      },200);
+    }catch(error){
+      return safeJson({
+        status:"FAILED",
+        reason:error?.status??"MARKET_SCORE_UNAVAILABLE",
+        overall:{score:null,status:"UNAVAILABLE",state:null,trend:[]},
+        domains:[],
+        updatedAt:null,
+        dataQuality:{overallComputable:false,reweighted:false},
+      },503);
+    }
+  };
+}
