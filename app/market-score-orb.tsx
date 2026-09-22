@@ -263,7 +263,7 @@ export function MarketScoreOrb({
 
         <div className="cnn-score-comparisons" aria-label={comparisonAriaLabel}>
           <div className={`cnn-score-comparison is-${deltaDirection(animatedDayDelta)}`}>
-            <span>{dayLabel}</span>
+            <span aria-label={dayLabel}>{dayLabel.replace(/ 대비$/, "")}</span>
             <strong>
               {formatDelta(animatedDayDelta)}
               {deltaDirection(animatedDayDelta) === 'up' ? <i aria-hidden="true">▲</i> : deltaDirection(animatedDayDelta) === 'down' ? <i aria-hidden="true">▼</i> : null}
@@ -271,7 +271,7 @@ export function MarketScoreOrb({
           </div>
           <div className="cnn-score-comparison-divider" aria-hidden="true"/>
           <div className={`cnn-score-comparison is-${deltaDirection(animatedPeriodDelta)}`}>
-            <span>{periodLabel ?? '기간 대비'}</span>
+            <span aria-label={periodLabel ?? '기간 대비'}>{(periodLabel ?? '기간 대비').replace(/ 대비$/, '')}</span>
             <strong>
               {formatDelta(animatedPeriodDelta)}
               {deltaDirection(animatedPeriodDelta) === 'up' ? <i aria-hidden="true">▲</i> : deltaDirection(animatedPeriodDelta) === 'down' ? <i aria-hidden="true">▼</i> : null}
