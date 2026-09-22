@@ -1,10 +1,10 @@
 "use client";
-import {useEffect,useId,useRef,useState,type ReactNode} from 'react';
+import {useEffect,useId,useRef,useState,type ReactNode,type CSSProperties} from 'react';
 import {Activity,ArrowRight,ChevronLeft,ChevronRight,Info,Radar,Coins,Users,Percent,Droplet} from 'lucide-react';
 import {Line,LineChart,ResponsiveContainer,Tooltip} from 'recharts';
 export type DashboardPoint={label:string;value:number};
 export type Summary={label:string;score:number;value:string;note:string;data:DashboardPoint[]};
-export function DashboardTip({label,children}:{label:string;children:ReactNode}){
+export function DashboardTip({label,children,trigger}:{label:string;children:ReactNode;trigger?:ReactNode}){
  const [open,setOpen]=useState(false),id=useId(),timer=useRef<ReturnType<typeof setTimeout>|null>(null);
  const root=useRef<HTMLSpanElement>(null);
  const [coords,setCoords]=useState({left:12,top:0});
@@ -29,9 +29,9 @@ export function DashboardTip({label,children}:{label:string;children:ReactNode})
    aria-controls={open?id:undefined}
    aria-describedby={open?id:undefined}
    onFocus={show}
-   onClick={()=>open?close():show()}
+   onClick={show}
   >
-   <Info size={16}/>
+   {trigger??<Info size={16}/>}
   </button>
   {open&&<span id={id} role="tooltip" className="zg-tip" style={{position:"fixed",right:"auto",...coords}}>{children}</span>}
  </span>;
@@ -76,6 +76,13 @@ type MarketScoreResponse={
 const r55DomainIds=["inflation","employment","rates","credit","growth","consumption","earnings","liquidity","fundFlows","breadth","dollarFx","commodities"] as const;
 const diagnosticKeys=["inflationStability","recessionDefense","liquidityCrisisDefense","creditRiskDefense","earningsRecessionDefense","assetBubbleSafety","debtRiskSafety","supplyShockSafety"] as const;
 const validPublicScore=(value:unknown):value is number=>typeof value==="number"&&Number.isFinite(value)&&value>=0&&value<=100;
+const marketPeriods=[{label:'1D',days:1},{label:'1W',days:7},{label:'1M',days:30},{label:'3M',days:90},{label:'6M',days:180},{label:'1Y',days:365}] as const;
+function marketTrendWindow(data:DashboardPoint[]|undefined,days:number){
+ const dated=(data??[]).filter(p=>/^\d{4}-\d{2}-\d{2}/.test(p.label)&&Number.isFinite(Date.parse(p.label))&&validPublicScore(p.value));
+ if(!dated.length)return [];
+ const end=Math.max(...dated.map(p=>Date.parse(p.label)));
+ return dated.filter(p=>Date.parse(p.label)>=end-days*86400000).sort((a,b)=>Date.parse(a.label)-Date.parse(b.label));
+}
 const publicStatusLabel=(status?:string)=>status==="READY"?"연결됨":status==="PARTIAL"?"부분 데이터":"데이터 준비 중";
 
 const r55Cards=[
@@ -108,6 +115,7 @@ export function CompositeMarketSection({items,points,demo,loading,onDetail}:{ite
  void items;
  void points;
  const [expanded,setExpanded]=useState(false);
+ const [periodDays,setPeriodDays]=useState(30);
  const [market,setMarket]=useState<MarketScoreResponse|null>(null);
  const [marketLoading,setMarketLoading]=useState(true);
  const [marketError,setMarketError]=useState<string|null>(null);
@@ -141,38 +149,44 @@ export function CompositeMarketSection({items,points,demo,loading,onDetail}:{ite
  const readyDomains=market?.dataQuality?.readyDomains??0;
  const totalDomains=market?.dataQuality?.totalDomains??12;
  const coverageWeight=market?.dataQuality?.coverageWeight??0;
+ const overallTrend=marketTrendWindow(market?.overall?.trend,periodDays);
+ const hasDatedHistory=[market?.overall?.trend,...(market?.domains??[]).map(d=>d.trend)].some(data=>marketTrendWindow(data,365).length>1);
 
- return <section id="market" className="zg-section">
+ return <section id="market" className="zg-section zg-r55-market">
   <div className="zg-section-heading zg-r55-heading">
    <div>
     <h2><Activity/>종합 시장 점수</h2>
     <span className="zg-brand-tag">ZGmini 독자 지표 · CM-R1{demo?' · 예시':''}</span>
    </div>
+   <div className="zg-r55-header-controls">
+   <div className="zg-r55-period" role="group" aria-label="종합 시장 점수 추이 기간" title={hasDatedHistory?'제공된 관측 마지막 날짜 기준':'날짜가 있는 추이 데이터 제공 시 이용 가능'}>
+    {marketPeriods.map(p=><button key={p.label} type="button" disabled={!hasDatedHistory} aria-pressed={periodDays===p.days} onClick={()=>setPeriodDays(p.days)}>{p.label}</button>)}
+   </div>
    <button type="button" className="zg-r55-expand" aria-expanded={expanded} onClick={toggle}>
     {expanded?'전체 접기':'전체 펼침'}
    </button>
+   </div>
   </div>
 
-  <div className="zg-r55-shell zg-macro-row" data-testid="macro-row" data-expanded={expanded?'true':'false'}>
+  <div className="zg-r55-shell" data-testid="macro-row" data-expanded={expanded?'true':'false'}>
    <div className="zg-r55-body">
-    <article className="zg-r55-summary zg-master" data-testid="composite-panel">
-     <div className="zg-r55-summary-top">
-      <span className="zg-eyebrow">12개 영역 종합 · 공포탐욕과 별개</span>
+    <article className="zg-r55-summary" data-testid="composite-panel">
+     <div className="zg-r55-summary-top" role="img" aria-label={`종합 시장 점수 ${overallScore===null?overallStatus:`${Math.round(overallScore)}점`}`}>
+      <div className="zg-r55-gauge-ring" data-missing={overallScore===null} style={{'--r55-score-angle':`${(overallScore??0)*2.7}deg`,'--r55-score-color':overallScore===null?'#64748b':scoreColor(overallScore)} as CSSProperties}/>
       <div className="zg-r55-master-number">
        <strong style={{color:overallScore===null?'#94a3b8':scoreColor(overallScore)}}>{overallScore===null?'—':Math.round(overallScore)}</strong>
        <span>{overallStatus}</span>
       </div>
-      <ScoreScale score={overallScore} label="종합 시장 점수" color={overallScore===null?'#64748b':scoreColor(overallScore)}/>
-      <div className="zg-scale-labels"><span>0</span><span>50</span><span>100</span></div>
      </div>
 
      <div className="zg-r55-summary-chart">
       <h3>12개 영역 종합</h3>
-      <p>{marketError?'공개 점수 API를 확인 중입니다.':`${readyDomains}/${totalDomains} 영역 READY · 커버리지 가중치 ${coverageWeight}/100 · 누락 가중치 자동 재분배 없음`}</p>
-      {market?.overall?.trend?.length
-       ?<Sparkline data={market.overall.trend} label="종합 시장 점수"/>
+      {overallTrend.length>1
+       ?<Sparkline data={overallTrend} label="종합 시장 점수"/>
        :<div className="zg-r55-empty-spark" aria-label="종합 추이 데이터 없음">추이 데이터 준비 중</div>}
      </div>
+
+     <p className="zg-r55-coverage" role="status">{marketError?'공개 점수 API를 확인 중입니다.':busy?'공개 점수 불러오는 중':`${readyDomains}/${totalDomains} 영역 READY · 커버리지 가중치 ${coverageWeight}/100 · 누락 가중치 자동 재분배 없음`}</p>
 
      <div className="zg-r55-subscore-area" aria-label="8개 위험 지표">
       <div className="zg-r55-subscore-grid">
@@ -182,13 +196,12 @@ export function CompositeMarketSection({items,points,demo,loading,onDetail}:{ite
         return <div key={s.name} className="zg-r55-subscore" data-index={index}>
          <div className="zg-r55-subscore-head">
           <span className="zg-r55-subscore-title">
-           <span onClick={e=>e.stopPropagation()}><DashboardTip label={`${s.name} 반영 항목`}>{s.components}. API diagnostics8에서 READY인 경우에만 숫자를 표시합니다.</DashboardTip></span>
-           <b>{s.name}</b>
+           <span onClick={e=>e.stopPropagation()}><DashboardTip label={`${s.name} 반영 항목`} trigger={<b>{s.name}</b>}>{s.components}. API diagnostics8에서 READY인 경우에만 숫자를 표시합니다.</DashboardTip></span>
           </span>
           <strong>{score===null?'—':Math.round(score)}</strong>
          </div>
          <div className="zg-r55-subscore-foot">
-          <span className="zg-r55-subscore-meter" aria-hidden="true"><i style={{width:`${score??0}%`}}/></span>
+          <span className="zg-r55-subscore-meter" aria-hidden="true"><i style={{width:`${score??0}%`,background:score===null?'transparent':scoreColor(score)}}/></span>
           <span>{busy?'불러오는 중':publicStatusLabel(diag?.status)}</span>
          </div>
         </div>
@@ -197,16 +210,17 @@ export function CompositeMarketSection({items,points,demo,loading,onDetail}:{ite
      </div>
     </article>
 
-    <div className="zg-r55-component-panel zg-component-panel" data-testid="component-panel">
-     <div className="zg-r55-card-grid zg-component-grid" data-testid="component-grid">
+    <div className="zg-r55-component-panel" data-testid="component-panel">
+     <div className="zg-r55-card-grid" data-testid="component-grid">
       {r55Cards.map((m,index)=>{
        const Icon=m.Icon;
        const domain=market?.domains?.find(d=>d.id===r55DomainIds[index]);
        const score=domain?.status==='READY'&&validPublicScore(domain.score)?domain.score:null;
+       const trend=marketTrendWindow(domain?.trend,periodDays);
        const band=score===null?'unknown':score<25?'danger':score<40?'caution':score<60?'neutral':score<75?'positive':'strong';
        const detailRows=domain?.indicators?.length
         ?domain.indicators.slice(0,4).map((item,i)=>({label:item.name??item.label??m.details[i]??`지표 ${i+1}`,score:validPublicScore(item.score)?item.score:null}))
-        :m.details.map(label=>({label,score:null}));
+        :[];
        const note=busy
         ?'공개 점수 불러오는 중'
         :marketError
@@ -238,13 +252,14 @@ export function CompositeMarketSection({items,points,demo,loading,onDetail}:{ite
           <strong style={{color:score===null?'#94a3b8':scoreColor(score)}}>{score===null?'—':Math.round(score)}</strong>
           <span>{score===null?publicStatusLabel(domain?.status):'CM-R1'}</span>
          </div>
-         {domain?.trend?.length
-          ?<Sparkline data={domain.trend} label={m.label}/>
+         {trend.length>1
+          ?<Sparkline data={trend} label={m.label}/>
           :<div className="zg-r55-card-spark-empty" aria-label={`${m.label} 추이 데이터 없음`}>—</div>}
         </div>
         <ScoreScale score={score} label={`${m.label} 점수`} color={score===null?'#64748b':scoreColor(score)}/>
         <p className="zg-r55-note">{note}</p>
         <div className="zg-r55-details" aria-hidden={!expanded}>
+         {!detailRows.length&&<p className="zg-r55-detail-empty">공개된 세부 지표가 없습니다.</p>}
          {detailRows.map(row=><div className="zg-r55-detail" key={row.label}><span>{row.label}</span><i/><b>{row.score===null?'—':Math.round(row.score)}</b></div>)}
         </div>
         <button

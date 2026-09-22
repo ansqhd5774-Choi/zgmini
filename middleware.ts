@@ -4,6 +4,10 @@ const canonicalHost = "zgmini.kr";
 
 export function middleware(request: NextRequest) {
   const host = request.headers.get("host")?.split(":")[0].toLowerCase();
+  // Local development must render the current worktree, not redirect to Production.
+  if (process.env.NODE_ENV === "development" && (host === "localhost" || host === "127.0.0.1")) {
+    return NextResponse.next();
+  }
   if (host && host !== canonicalHost) {
     const url = request.nextUrl.clone();
     url.protocol = "https:";
