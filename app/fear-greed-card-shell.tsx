@@ -21,7 +21,7 @@ type FearGreedCardShellProps = {
 export function FearGreedCardShell({className='',layoutVariant='legacy',testId,marketState,busy,header,score,period,chart,footer}:FearGreedCardShellProps){
   const layoutClass = layoutVariant === 'shared' ? 'fg-shared-shell' : '';
   return <section className={`cnn-reference-panel fg-card ${layoutClass} ${className}`.trim()} data-testid={testId} data-market-state={marketState} aria-busy={busy}>
-    <div className="fg-header-slot"><MarketCardHeader {...header}/></div>
+    <div className="fg-header-slot"><MarketCardHeader {...header} rightContent={layoutVariant==='shared'?<></>:header.rightContent}/></div>
     <div className="fg-content-slot">
       <div className="fg-score-slot"><MarketScoreOrb score={score.value} state={score.state} caption={score.caption} variant={score.variant} dayDelta={score.dayDelta} periodDelta={score.periodDelta} periodLabel={score.periodLabel} metaDate={score.metaDate} dayLabel={score.dayLabel} comparisonAriaLabel={score.comparisonAriaLabel}/></div>
       <MarketTrendFrame className="fg-analysis-slot"><div className="fg-period-slot">{period}</div><div className="fg-chart-slot"><div className="fg-renderer">{chart}</div></div></MarketTrendFrame>

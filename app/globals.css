@@ -3096,6 +3096,21 @@ html,body{overflow-x:hidden}
    explicit unavailable states. No mock score is introduced.
    ===================================================================== */
 /* R55 market geometry is owned here; legacy dashboard layout classes are not used. */
+/* The trend uses the former insight space while the score keeps its geometry. */
+.fg-card.fg-shared-shell{
+  display:grid;
+  grid-template-columns:var(--fg-shared-pad) var(--fg-shared-left) var(--fg-shared-gap) minmax(0,1fr) var(--fg-shared-pad);
+  grid-template-rows:auto var(--fg-shared-content-h) auto;
+}
+.fg-card.fg-shared-shell .fg-header-slot{grid-column:2;grid-row:1}
+.fg-card.fg-shared-shell .fg-header-slot .cnn-panel-heading{grid-template-columns:minmax(0,1fr);padding:5px 0}
+.fg-card.fg-shared-shell .fg-content-slot{display:contents}
+.fg-card.fg-shared-shell .fg-score-slot{grid-column:2;grid-row:2}
+.fg-card.fg-shared-shell .fg-analysis-slot{grid-column:4;grid-row:1 / 3;padding-top:8px;box-sizing:border-box}
+.fg-card.fg-shared-shell .fg-footer-slot{grid-column:1 / -1;grid-row:3}
+@container fg-shared (max-width:500px){
+  .fg-card.fg-shared-shell .fg-header-slot .cnn-panel-heading{grid-template-columns:minmax(0,1fr)}
+}
 .zg-r55-market{container:marketShell / inline-size}
 .zg-r55-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:52px}
 .zg-r55-heading>div:not(.zg-r55-header-controls){display:flex;align-items:center;gap:10px;min-width:0;flex-wrap:wrap}
