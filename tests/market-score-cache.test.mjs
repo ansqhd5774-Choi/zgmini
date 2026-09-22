@@ -41,3 +41,31 @@ test('non-GET never touches cache',async()=>{
   const h=withMarketScoreCache(async()=>new Response(null,{status:405}),{getCache:()=>{throw Error('must not run')}});
   assert.equal((await h(new Request(request(),{method:'POST'}))).status,405);
 });
+
+test('simultaneous cold requests share collection and each response remains readable',async()=>{
+  let calls=0,release;const gate=new Promise(r=>release=r);
+  const h=withMarketScoreCache(async()=>{calls++;await gate;return Response.json(body)}, {getCache:()=>undefined});
+  const jobs=Array.from({length:5},()=>h(request()));
+  await new Promise(r=>setImmediate(r));assert.equal(calls,1);release();
+  for(const response of await Promise.all(jobs))assert.deepEqual(await response.json(),body);
+});
+test('refresh ahead serves valid cache immediately and failure does not extend hard expiry',async()=>{
+  const s=setup();await s.handler(request());s.advance(240000);
+  let time=Date.parse(body.updatedAt)+240000,calls=0,release;const jobs=[];
+  const gate=new Promise(r=>release=r);
+  const h=withMarketScoreCache(async()=>{calls++;await gate;return Response.json({status:'FAILED'},{status:503})},
+    {getCache:()=>s.cache,now:()=>time,waitUntil:job=>jobs.push(job)});
+  for(const response of await Promise.all([h(request()),h(request())])){
+    assert.equal(response.headers.get('x-market-cache'),'HIT');assert.deepEqual(await response.json(),body);
+  }
+  assert.equal(calls,1);assert.equal(jobs.length,1);release();await Promise.all(jobs);
+  time+=60000;assert.equal((await h(request())).status,503);assert.equal(calls,2);
+});
+test('successful refresh ahead replaces the cached observation',async()=>{
+  const s=setup();await s.handler(request());s.advance(240000);const jobs=[];
+  const updated={...body,updatedAt:'2026-09-23T00:04:00Z'};
+  const h=withMarketScoreCache(async()=>Response.json(updated),{getCache:()=>s.cache,
+    now:()=>Date.parse(updated.updatedAt),waitUntil:job=>jobs.push(job)});
+  assert.deepEqual(await (await h(request())).json(),body);await Promise.all(jobs);
+  assert.deepEqual(await (await h(request())).json(),updated);
+});

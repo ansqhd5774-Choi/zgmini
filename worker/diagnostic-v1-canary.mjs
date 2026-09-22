@@ -182,24 +182,16 @@ export async function collectDiagnosticLiveInputs({
   const impl = {...DEFAULT_ADAPTERS, ...adapters};
   const fredIds = Object.keys(DIAGNOSTIC_FRED_SERIES);
 
-  const fredResults = await mapLimit(fredIds, FRED_CONCURRENCY, seriesId =>
+  const [fredResults, externalResults, fundFlows, breadth, earnings] = await Promise.all([
+  mapLimit(fredIds, FRED_CONCURRENCY, seriesId =>
     impl.fetchFred(seriesId, {
       key: env.FRED_API_KEY,
       asOf,
       fetchImpl: bounded.fetchImpl,
       timeoutMs: 8000,
     })
-  );
-
-  const [
-    dvp,
-    triParty,
-    cmdi,
-    gscpi,
-    copper,
-    bisDsr,
-    bisTc,
-  ] = await Promise.all([
+  ),
+  Promise.all([
     impl.fetchOfr(OFR_MNEMONICS.DVP, {
       asOf,
       fetchImpl: bounded.fetchImpl,
@@ -230,9 +222,12 @@ export async function collectDiagnosticLiveInputs({
     }),
     impl.fetchBis('WS_DSR', {fetchImpl: bounded.fetchImpl}),
     impl.fetchBis('WS_TC', {fetchImpl: bounded.fetchImpl}),
+  ]),
+  impl.fetchFundFlows({fetchImpl: bounded.fetchImpl}),
+  collectBreadthB1R1Runtime({env, fetchImpl}),
+  collectEarningsE1R1Runtime({env, fetchImpl}),
   ]);
-
-  const fundFlows = await impl.fetchFundFlows({fetchImpl: bounded.fetchImpl});
+  const [dvp,triParty,cmdi,gscpi,copper,bisDsr,bisTc]=externalResults;
 
   const series = {};
   for (const result of fredResults) {
@@ -248,8 +243,6 @@ export async function collectDiagnosticLiveInputs({
   const latestDate = rows =>
     Array.isArray(rows) && rows.length ? rows.at(-1)?.observationDate ?? null : null;
 
-    const breadth = await collectBreadthB1R1Runtime({env, fetchImpl});
-  const earnings = await collectEarningsE1R1Runtime({env, fetchImpl});
 
 return {
     series,

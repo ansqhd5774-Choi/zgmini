@@ -1,9 +1,10 @@
 // Public derived responses only. Uses the existing DB binding, no provider data.
 export function marketScoreResponseStore(db) {
   if (!db) return undefined;
-  const initialize = () => db.prepare(`CREATE TABLE IF NOT EXISTS market_score_response_cache_v1 (
+  let initialized;
+  const initialize = () => initialized ??= db.prepare(`CREATE TABLE IF NOT EXISTS market_score_response_cache_v1 (
     cache_key TEXT PRIMARY KEY, body TEXT NOT NULL, stored_at INTEGER NOT NULL
-  )`).run();
+  )`).run().catch(error=>{initialized=null;throw error;});
   return {
     async match(request) {
       await initialize();
