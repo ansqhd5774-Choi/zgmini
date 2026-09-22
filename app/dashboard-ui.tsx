@@ -124,7 +124,7 @@ const diagnosticSubscores=[
  {name:'공급 충격',components:'NY Fed GSCPI, 유가충격, 휘발유, 구리, 산업생산, Headline-Core 물가괴리'}
 ] as const;
 
-export function CompositeMarketSection({items,points,demo,loading,onDetail}:{items:Summary[];points:number;demo:boolean;loading:boolean;onDetail:(label:string)=>void}){
+export function CompositeMarketSection({items,points,demo,loading}:{items:Summary[];points:number;demo:boolean;loading:boolean}){
  void items;
  void points;
  const [expanded,setExpanded]=useState(false);
@@ -215,7 +215,6 @@ export function CompositeMarketSection({items,points,demo,loading,onDetail}:{ite
          </div>
          <div className="zg-r55-subscore-foot">
           <span className="zg-r55-subscore-meter" aria-hidden="true"><i style={{width:`${score??0}%`,background:score===null?'transparent':scoreColor(score)}}/></span>
-          <span>{busy?'불러오는 중':publicStatusLabel(diag?.status)}</span>
          </div>
         </div>
        })}
@@ -269,12 +268,7 @@ export function CompositeMarketSection({items,points,demo,loading,onDetail}:{ite
         <div className="zg-r55-details" aria-hidden={!expanded}>
          {detailRows.map(row=><div className="zg-r55-detail" key={row.label}><span>{row.label}</span><ScoreScale score={row.score} label={`${row.label} 구성 점수`} color={row.score===null?'#64748b':scoreColor(row.score)}/><b style={{color:row.score===null?'#94a3b8':scoreColor(row.score)}}>{row.score===null?'—':Math.round(row.score)}</b></div>)}
         </div>
-        <button
-         type="button"
-         className="zg-detail zg-r55-detail-button"
-         hidden={!domain?.indicators?.length}
-         onClick={e=>{e.stopPropagation();if(domain?.indicators?.length)onDetail(m.label)}}
-        >{domain?.indicators?.length?'상세 보기':'상세 데이터 준비 중'} <ArrowRight size={14}/></button>
+
        </article>
       })}
      </div>

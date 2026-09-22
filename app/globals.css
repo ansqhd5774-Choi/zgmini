@@ -3162,9 +3162,6 @@ html,body{overflow-x:hidden}
 .zg-r55-card-number .zg-r55-day-change{font-size:12px;line-height:1;color:var(--r55-card-accent)}
 .zg-r55-detail b{font-weight:800;text-align:right}
 .zg-r55-detail-empty{margin:0;color:#aebfd0;font-size:11px;line-height:1.5}
-.zg-r55-detail-button{margin-top:4px;min-height:16px;padding:0;background:transparent;font-size:10px;line-height:16px}
-.zg-r55-detail-button:disabled{color:#9fb2c5;cursor:not-allowed}
-.zg-r55-shell[data-expanded="false"] .zg-r55-detail-button{display:none}
 @container marketShell (max-width:1279px) and (min-width:721px){
  .zg-r55-body{grid-template-columns:clamp(196px,18cqw,224px) minmax(0,1fr)}
  .zg-r55-card-grid{grid-template-columns:repeat(auto-fit,minmax(158px,1fr))}
@@ -3199,4 +3196,3 @@ html,body{overflow-x:hidden}
 .zg-r55-scale-labels{display:flex;justify-content:space-between;color:var(--zg-text-meta);font-size:10px;line-height:1.2;font-variant-numeric:tabular-nums}
 
 .zg-r55-scale-labels span:nth-child(2){color:#eef4fa;font-weight:800}
-.zg-r55-detail-button[hidden]{display:none}
