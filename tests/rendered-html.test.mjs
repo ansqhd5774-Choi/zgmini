@@ -31,7 +31,7 @@ test("renders ZGmini metadata in the Workers runtime", async () => {
     assert.ok(/<link(?=[^>]*rel="canonical")(?=[^>]*href="https:\/\/zgmini\.kr\/")[^>]*>/i.test(head));
     assert.ok(/<meta(?=[^>]*name="robots")(?=[^>]*content="index, follow")[^>]*>/i.test(head));
     assert.equal(outboundCalls,0);
-    for(const route of ['/fear-greed/usa','/fear-greed/korea']){
+    for(const route of ['/fear-greed/usa/','/fear-greed/korea/']){
       const detail=await mf.dispatchFetch(`http://localhost${route}?ui=197`,{headers:{accept:'text/html'},redirect:'manual'});
       assert.equal(detail.status,200);
       const detailHtml=await detail.text();
