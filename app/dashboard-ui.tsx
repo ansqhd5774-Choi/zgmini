@@ -2,6 +2,7 @@
 import {useEffect,useId,useRef,useState,type ReactNode,type CSSProperties} from 'react';
 import {Activity,ArrowRight,ChevronLeft,ChevronRight,Info,Radar,Coins,Users,Percent,Droplet,Landmark,ShieldCheck,Factory,ShoppingCart,BriefcaseBusiness,ArrowLeftRight,Network,DollarSign} from 'lucide-react';
 import {Line,LineChart,ResponsiveContainer,Tooltip} from 'recharts';
+import {MarketFearGreedChart} from './market-fear-greed-chart';
 export type DashboardPoint={label:string;value:number};
 export type Summary={label:string;score:number;value:string;note:string;data:DashboardPoint[]};
 export function DashboardTip({label,children,trigger}:{label:string;children:ReactNode;trigger?:ReactNode}){
@@ -39,6 +40,16 @@ export function DashboardTip({label,children,trigger}:{label:string;children:Rea
 export function ScoreScale({score,label,color}:{score:number|null;label:string;color:string}){const band=score===null?'unknown':score<25?'danger':score<40?'caution':score<60?'neutral':score<75?'positive':'strong';return <div className={`zg-scale zg-scale-${band}`} data-score-band={band} role="meter" aria-label={label} aria-valuemin={0} aria-valuemax={100} aria-valuenow={score??undefined}><div style={{width:`${score??0}%`,background:color}}/>{score!==null&&<i style={{left:`${score}%`,borderColor:color}}/>}</div>}
 const scoreColor=(score:number)=>score<25?'#ef4444':score<40?'#f59e0b':score<60?'#94a3b8':score<75?'#22c55e':'#10b981';
 function Sparkline({data,label}:{data:DashboardPoint[];label:string}){return <div className="zg-spark" aria-label={`${label} 관측 추이`}><ResponsiveContainer width="100%" height="100%" initialDimension={{width:1,height:1}}><LineChart data={data} accessibilityLayer margin={{top:6,right:6,left:6,bottom:6}}><Tooltip offset={10} cursor={{stroke:'#AAB2BC',strokeWidth:1}} formatter={v=>[v,'점수']} contentStyle={{fontSize:13,borderRadius:4,border:'1px solid #D7DCE2'}}/><Line type="linear" dataKey="value" stroke="#3478D4" strokeWidth={2} dot={false} activeDot={{r:4}} isAnimationActive={false}/></LineChart></ResponsiveContainer></div>}
+function CommodityTrend({data}:{data:DashboardPoint[]}){
+ const id=useId().replace(/:/g,'');
+ const points=data.map(p=>({date:p.label,score:p.value}));
+ const latest=points.at(-1)??null;
+ return <div className="zg-spark" aria-label="유가원자재 월별 관측 추이" title="월간 관측값 · 단일 관측점은 점으로 표시">
+  <MarketFearGreedChart compact data={points} axisTicks={[]} axisLabels={new Map()}
+   latestPoint={latest} instanceKey={id} gradientId={`commodity-${id}`}
+   formatTooltipLabel={date=>`${date.slice(0,7)} · 월간 관측`}/>
+ </div>;
+}
 // Stage 12 R2 / W09.2 content ownership correction:
 // The legacy 4-component market score is not the target content.
 // CM-R1 now owns the public 12-domain composite contract.
@@ -217,6 +228,7 @@ export function CompositeMarketSection({items,points,demo,loading,onDetail}:{ite
        const domain=market?.domains?.find(d=>d.id===r55DomainIds[index]);
        const score=domain?.status==='READY'&&validPublicScore(domain.score)?domain.score:null;
        const trend=marketTrendWindow(domain?.trend,periodDays);
+       const isCommodity=domain?.id==='commodities';
        const band=score===null?'unknown':score<25?'danger':score<40?'caution':score<60?'neutral':score<75?'positive':'strong';
        const detailRows=domain?.indicators?.length
         ?domain.indicators.slice(0,4).map((item,i)=>({label:item.name??item.label??m.details[i]??`지표 ${i+1}`,score:validPublicScore(item.score)?item.score:null}))
@@ -241,9 +253,12 @@ export function CompositeMarketSection({items,points,demo,loading,onDetail}:{ite
         <div className="zg-r55-card-mid">
          <div className="zg-r55-card-number">
           <strong style={{color:score===null?'#94a3b8':scoreColor(score)}}>{score===null?'—':Math.round(score)}</strong>
+          {isCommodity&&<span className="zg-r55-day-change" aria-label="전일 대비 확인 불가: 월간 관측 자료" title="전일 비교 관측값 없음 · 월간 자료">전일 <b>-</b></span>}
 
          </div>
-         {trend.length>1
+         {isCommodity&&trend.length>0
+          ?<CommodityTrend data={trend}/>
+          :trend.length>1
           ?<Sparkline data={trend} label={m.label}/>
           :<div className="zg-r55-card-spark-empty" aria-label={`${m.label} 추이 데이터 없음`}>—</div>}
         </div>
@@ -252,7 +267,7 @@ export function CompositeMarketSection({items,points,demo,loading,onDetail}:{ite
 
         <div className="zg-r55-details" aria-hidden={!expanded}>
          {!detailRows.length&&<p className="zg-r55-detail-empty">공개된 세부 지표가 없습니다.</p>}
-         {detailRows.map(row=><div className="zg-r55-detail" key={row.label}><span>{row.label}</span><i/><b>{row.score===null?'—':Math.round(row.score)}</b></div>)}
+         {detailRows.map(row=><div className={`zg-r55-detail${isCommodity?' zg-r55-detail-meter':''}`} key={row.label}><span>{row.label}</span><b>{row.score===null?'—':Math.round(row.score)}</b>{isCommodity&&<ScoreScale score={row.score} label={`${row.label} 구성 점수`} color={row.score===null?'#64748b':scoreColor(row.score)}/>}</div>)}
         </div>
         <button
          type="button"

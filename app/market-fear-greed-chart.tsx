@@ -48,6 +48,7 @@ export function MarketFearGreedChart({
   gradientId,
   formatTooltipLabel,
   emptyLabel = '이력 없음',
+  compact = false,
 }: {
   data: MarketFearGreedChartPoint[];
   axisTicks: string[];
@@ -57,15 +58,16 @@ export function MarketFearGreedChart({
   gradientId: string;
   formatTooltipLabel: (value: string) => string;
   emptyLabel?: string;
+  compact?: boolean;
 }) {
   const prefersReducedMotion = usePrefersReducedMotion();
 
-  if (data.length <= 1) {
+  if (data.length === 0 || (!compact && data.length === 1)) {
     return <div className="cnn-chart-empty"><CircleAlert size={18}/><span>{emptyLabel}</span></div>;
   }
 
   return <ResponsiveContainer width="100%" height="100%" initialDimension={{width:1,height:1}}>
-    <AreaChart data={data} accessibilityLayer margin={{ top: 6, right: 14, left: 0, bottom: 4 }}>
+    <AreaChart data={data} accessibilityLayer margin={compact ? {top:6,right:6,left:6,bottom:6} : { top: 6, right: 14, left: 0, bottom: 4 }}>
       <defs>
         <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stopColor="#ff626b" stopOpacity=".6"/>
@@ -73,6 +75,7 @@ export function MarketFearGreedChart({
         </linearGradient>
       </defs>
       <XAxis
+        hide={compact}
         dataKey="date"
         ticks={axisTicks}
         interval={0}
@@ -83,6 +86,7 @@ export function MarketFearGreedChart({
         tick={{ fill: 'var(--zg-text-meta,#a8bcd0)', fontSize: 9 }}
       />
       <YAxis
+        hide={compact}
         domain={[0, 100]}
         ticks={[0, 50, 75, 100]}
         axisLine={false}
@@ -104,7 +108,7 @@ export function MarketFearGreedChart({
         className="cnn-latest-point"
         x={latestPoint.date}
         y={latestPoint.score}
-        r={4.4}
+        r={compact ? 3 : 4.4}
         fill="#ff7076"
         stroke="#fff7f7"
         strokeWidth={2}
@@ -134,7 +138,7 @@ export function MarketFearGreedChart({
         dot={false}
         connectNulls={false}
         activeDot={{ r: 3.5, strokeWidth: 0, fill: '#ffd1d4' }}
-        isAnimationActive={!prefersReducedMotion}
+        isAnimationActive={!compact && !prefersReducedMotion}
         animationBegin={120}
         animationDuration={950}
         animationEasing="ease-out"

@@ -3155,7 +3155,10 @@ html,body{overflow-x:hidden}
 .zg-r55-details{display:none;margin-top:8px}
 .zg-r55-shell[data-expanded="true"] .zg-r55-details{display:block}
 .zg-r55-detail{min-height:18px;display:grid;grid-template-columns:minmax(0,1fr) 22px;gap:5px;align-items:center;color:#aebfd0;font-size:10px}
-.zg-r55-detail i{display:none}
+.zg-r55-detail-meter{padding:3px 0;row-gap:3px}
+.zg-r55-detail-meter>.zg-scale{grid-column:1/-1;height:5px;margin:0 0 3px}
+.zg-r55-card-number .zg-r55-day-change{font-size:10px;line-height:1.2;white-space:nowrap}
+.zg-r55-day-change b{font-size:12px;margin-left:3px}
 .zg-r55-detail b{font-weight:800;text-align:right}
 .zg-r55-detail-empty{margin:0;color:#aebfd0;font-size:11px;line-height:1.5}
 .zg-r55-detail-button{margin-top:6px;min-height:28px;padding:2px 0;background:transparent;font-size:11px}
