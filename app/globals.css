@@ -3118,7 +3118,7 @@ html,body{overflow-x:hidden}
 .zg-r55-summary-chart h3{margin:0 0 6px;font-size:12px}
 .zg-r55-summary-chart .zg-spark{height:84px}
 .zg-r55-empty-spark{height:84px;display:grid;place-items:center;padding:6px;border:1px dashed #31506d;border-radius:5px;color:#a1b5c8;font-size:11px;text-align:center}
-.zg-r55-coverage{margin:0;color:#aebfd0;font-size:11px;line-height:1.5;overflow-wrap:anywhere}
+.zg-r55-coverage{display:flex;justify-content:flex-end;margin:0;color:#aebfd0;font-size:11px;line-height:1.5;overflow-wrap:anywhere}
 .zg-r55-subscore-area{min-width:0}
 .zg-r55-subscore-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
 .zg-r55-subscore{min-width:0;min-height:40px;padding:3px 4px;border-top:1px dashed #2a5b83}
@@ -3143,7 +3143,7 @@ html,body{overflow-x:hidden}
 .zg-r55-card-head h3{margin:0;min-width:0;font-size:13px;line-height:1.2;font-weight:850;letter-spacing:-.4px;white-space:nowrap}
 .zg-r55-badge{display:none}
 .zg-r55-card-head .zg-info{min-width:24px;min-height:24px;padding:0}
-.zg-r55-card-mid{height:62px;display:grid;grid-template-columns:minmax(54px,72px) minmax(0,1fr);align-items:center;gap:4px}
+.zg-r55-card-mid{height:62px;display:grid;grid-template-columns:56px minmax(0,1fr);align-items:center;gap:4px}
 .zg-r55-card-number strong{display:block;font-size:38px;line-height:1;font-weight:900;letter-spacing:-1px}
 .zg-r55-card-number span{display:block;margin-top:3px;color:#aebfd0;font-size:10px;line-height:1.2}
 .zg-r55-card-mid .zg-spark,.zg-r55-card-spark-empty{height:56px}

@@ -1,6 +1,6 @@
 "use client";
 import {useEffect,useId,useRef,useState,type ReactNode,type CSSProperties} from 'react';
-import {Activity,ArrowRight,ChevronLeft,ChevronRight,Info,Radar,Coins,Users,Percent,Droplet} from 'lucide-react';
+import {Activity,ArrowRight,ChevronLeft,ChevronRight,Info,Radar,Coins,Users,Percent,Droplet,Landmark} from 'lucide-react';
 import {Line,LineChart,ResponsiveContainer,Tooltip} from 'recharts';
 export type DashboardPoint={label:string;value:number};
 export type Summary={label:string;score:number;value:string;note:string;data:DashboardPoint[]};
@@ -86,18 +86,18 @@ function marketTrendWindow(data:DashboardPoint[]|undefined,days:number){
 const publicStatusLabel=(status?:string)=>status==="READY"?"연결됨":status==="PARTIAL"?"부분 데이터":"데이터 준비 중";
 
 const r55Cards=[
- {label:'물가',Icon:Coins,basis:'CM-R1 공개 점수 API 결과를 표시합니다. PARTIAL/UNAVAILABLE은 0점으로 대체하지 않습니다.',details:['근원 소비지출물가','근원 소비자물가','소비자물가','기대물가']},
- {label:'고용',Icon:Users,basis:'CM-R1 공개 점수 API 결과를 표시합니다. PARTIAL/UNAVAILABLE은 0점으로 대체하지 않습니다.',details:['비농업고용','실업률','실업수당','임금상승률']},
- {label:'금리',Icon:Percent,basis:'CM-R1 공개 점수 API 결과를 표시합니다. PARTIAL/UNAVAILABLE은 0점으로 대체하지 않습니다.',details:['정책금리','2년물','10년 실질','10년물']},
- {label:'채권신용',Icon:Activity,basis:'CM-R1 공개 점수 API 결과를 표시합니다. PARTIAL/UNAVAILABLE은 0점으로 대체하지 않습니다.',details:['HY 신용 스트레스','IG 신용 스트레스','채권 변동성','회사채 시장위험']},
- {label:'경기',Icon:Activity,basis:'CM-R1 공개 점수 API 결과를 표시합니다. PARTIAL/UNAVAILABLE은 0점으로 대체하지 않습니다.',details:['실질 국내총생산','제조업','서비스업','산업생산']},
- {label:'소비',Icon:Coins,basis:'CM-R1 공개 점수 API 결과를 표시합니다. PARTIAL/UNAVAILABLE은 0점으로 대체하지 않습니다.',details:['실질 소비지출','소매판매','가처분소득','저축률']},
- {label:'기업실적',Icon:Activity,basis:'CM-R1 공개 점수 API 결과를 표시합니다. PARTIAL/UNAVAILABLE은 0점으로 대체하지 않습니다.',details:['주당이익 성장','매출 성장률','이익 성장비','영업·순이익률']},
- {label:'유동성',Icon:Droplet,basis:'CM-R1 공개 점수 API 결과를 표시합니다. PARTIAL/UNAVAILABLE은 0점으로 대체하지 않습니다.',details:['은행 준비금','통화량 증가','재무부 계정변화','익일 역레포']},
- {label:'자금흐름',Icon:Activity,basis:'CM-R1 공개 점수 API 결과를 표시합니다. PARTIAL/UNAVAILABLE은 0점으로 대체하지 않습니다.',details:['외국인 주식','펀드 자금흐름','국제자본 흐름','위험자산 비중']},
- {label:'수급·폭',Icon:Activity,basis:'CM-R1 공개 점수 API 결과를 표시합니다. PARTIAL/UNAVAILABLE은 0점으로 대체하지 않습니다.',details:['200일선 상회','상승·하락선','52주 신고가-신저가','동일가중']},
- {label:'달러환율',Icon:Percent,basis:'CM-R1 공개 점수 API 결과를 표시합니다. PARTIAL/UNAVAILABLE은 0점으로 대체하지 않습니다.',details:['광의 달러지수','3개월 변화율','신흥국 달러지수','달러 변동성']},
- {label:'유가원자재',Icon:Droplet,basis:'CM-R1 공개 점수 API 결과를 표시합니다. 공급충격 점수를 유가·원자재 점수로 대체하지 않습니다.',details:['서부텍사스유','브렌트유','구리','휘발유']}
+ {label:'물가',Icon:Coins,basis:'공개 점수 결과를 표시합니다. PARTIAL/UNAVAILABLE은 0점으로 대체하지 않습니다.',details:['근원 소비지출물가','근원 소비자물가','소비자물가','기대물가']},
+ {label:'고용',Icon:Users,basis:'공개 점수 결과를 표시합니다. PARTIAL/UNAVAILABLE은 0점으로 대체하지 않습니다.',details:['비농업고용','실업률','실업수당','임금상승률']},
+ {label:'금리',Icon:Percent,basis:'공개 점수 결과를 표시합니다. PARTIAL/UNAVAILABLE은 0점으로 대체하지 않습니다.',details:['정책금리','2년물','10년 실질','10년물']},
+ {label:'채권신용',Icon:Activity,basis:'공개 점수 결과를 표시합니다. PARTIAL/UNAVAILABLE은 0점으로 대체하지 않습니다.',details:['HY 신용 스트레스','IG 신용 스트레스','채권 변동성','회사채 시장위험']},
+ {label:'경기',Icon:Activity,basis:'공개 점수 결과를 표시합니다. PARTIAL/UNAVAILABLE은 0점으로 대체하지 않습니다.',details:['실질 국내총생산','제조업','서비스업','산업생산']},
+ {label:'소비',Icon:Coins,basis:'공개 점수 결과를 표시합니다. PARTIAL/UNAVAILABLE은 0점으로 대체하지 않습니다.',details:['실질 소비지출','소매판매','가처분소득','저축률']},
+ {label:'기업실적',Icon:Activity,basis:'공개 점수 결과를 표시합니다. PARTIAL/UNAVAILABLE은 0점으로 대체하지 않습니다.',details:['주당이익 성장','매출 성장률','이익 성장비','영업·순이익률']},
+ {label:'유동성',Icon:Landmark,basis:'공개 점수 결과를 표시합니다. PARTIAL/UNAVAILABLE은 0점으로 대체하지 않습니다.',details:['은행 준비금','통화량 증가','재무부 계정변화','익일 역레포']},
+ {label:'자금흐름',Icon:Activity,basis:'공개 점수 결과를 표시합니다. PARTIAL/UNAVAILABLE은 0점으로 대체하지 않습니다.',details:['외국인 주식','펀드 자금흐름','국제자본 흐름','위험자산 비중']},
+ {label:'수급·폭',Icon:Activity,basis:'공개 점수 결과를 표시합니다. PARTIAL/UNAVAILABLE은 0점으로 대체하지 않습니다.',details:['200일선 상회','상승·하락선','52주 신고가-신저가','동일가중']},
+ {label:'달러환율',Icon:Percent,basis:'공개 점수 결과를 표시합니다. PARTIAL/UNAVAILABLE은 0점으로 대체하지 않습니다.',details:['광의 달러지수','3개월 변화율','신흥국 달러지수','달러 변동성']},
+ {label:'유가원자재',Icon:Droplet,basis:'공개 점수 결과를 표시합니다. 공급충격 점수를 유가·원자재 점수로 대체하지 않습니다.',details:['서부텍사스유','브렌트유','구리','휘발유']}
 ] as const;
 
 const diagnosticSubscores=[
@@ -156,7 +156,7 @@ export function CompositeMarketSection({items,points,demo,loading,onDetail}:{ite
   <div className="zg-section-heading zg-r55-heading">
    <div>
     <h2><Activity/>종합 시장 점수</h2>
-    <span className="zg-brand-tag">ZGmini 독자 지표 · CM-R1{demo?' · 예시':''}</span>
+    <span className="zg-brand-tag">ZGmini 독자 지표{demo?' · 예시':''}</span>
    </div>
    <div className="zg-r55-header-controls">
    <div className="zg-r55-period" role="group" aria-label="종합 시장 점수 추이 기간" title={hasDatedHistory?'제공된 관측 마지막 날짜 기준':'날짜가 있는 추이 데이터 제공 시 이용 가능'}>
@@ -180,13 +180,13 @@ export function CompositeMarketSection({items,points,demo,loading,onDetail}:{ite
      </div>
 
      <div className="zg-r55-summary-chart">
-      <h3>12개 영역 종합</h3>
+
       {overallTrend.length>1
        ?<Sparkline data={overallTrend} label="종합 시장 점수"/>
        :<div className="zg-r55-empty-spark" aria-label="종합 추이 데이터 없음">추이 데이터 준비 중</div>}
      </div>
 
-     <p className="zg-r55-coverage" role="status">{marketError?'공개 점수 API를 확인 중입니다.':busy?'공개 점수 불러오는 중':`${readyDomains}/${totalDomains} 영역 READY · 커버리지 가중치 ${coverageWeight}/100 · 누락 가중치 자동 재분배 없음`}</p>
+     <div className="zg-r55-coverage"><DashboardTip label="종합 점수 데이터 안내">{marketError?'공개 점수 API를 확인 중입니다.':busy?'공개 점수 불러오는 중':`${readyDomains}/${totalDomains} 영역 READY · 커버리지 가중치 ${coverageWeight}/100 · 누락 가중치 자동 재분배 없음`}</DashboardTip></div>
 
      <div className="zg-r55-subscore-area" aria-label="8개 위험 지표">
       <div className="zg-r55-subscore-grid">
@@ -221,15 +221,6 @@ export function CompositeMarketSection({items,points,demo,loading,onDetail}:{ite
        const detailRows=domain?.indicators?.length
         ?domain.indicators.slice(0,4).map((item,i)=>({label:item.name??item.label??m.details[i]??`지표 ${i+1}`,score:validPublicScore(item.score)?item.score:null}))
         :[];
-       const note=busy
-        ?'공개 점수 불러오는 중'
-        :marketError
-          ?'공개 점수 API 확인 중'
-          :domain?.status==='READY'
-            ?(domain.interpretation??'CM-R1 공개 점수 연결됨')
-            :domain?.status==='PARTIAL'
-              ?'일부 필수 입력이 충족되지 않아 숫자를 표시하지 않습니다.'
-              :'승인된 공개 점수 producer 연결 대기';
        return <article
         key={m.label}
         className={`zg-r55-card band-${band}`}
@@ -250,14 +241,14 @@ export function CompositeMarketSection({items,points,demo,loading,onDetail}:{ite
         <div className="zg-r55-card-mid">
          <div className="zg-r55-card-number">
           <strong style={{color:score===null?'#94a3b8':scoreColor(score)}}>{score===null?'—':Math.round(score)}</strong>
-          <span>{score===null?publicStatusLabel(domain?.status):'CM-R1'}</span>
+          {score===null&&<span>{publicStatusLabel(domain?.status)}</span>}
          </div>
          {trend.length>1
           ?<Sparkline data={trend} label={m.label}/>
           :<div className="zg-r55-card-spark-empty" aria-label={`${m.label} 추이 데이터 없음`}>—</div>}
         </div>
         <ScoreScale score={score} label={`${m.label} 점수`} color={score===null?'#64748b':scoreColor(score)}/>
-        <p className="zg-r55-note">{note}</p>
+
         <div className="zg-r55-details" aria-hidden={!expanded}>
          {!detailRows.length&&<p className="zg-r55-detail-empty">공개된 세부 지표가 없습니다.</p>}
          {detailRows.map(row=><div className="zg-r55-detail" key={row.label}><span>{row.label}</span><i/><b>{row.score===null?'—':Math.round(row.score)}</b></div>)}
