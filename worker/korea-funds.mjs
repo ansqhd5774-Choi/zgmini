@@ -1,7 +1,7 @@
 import {REV7_VERSION,REV7_INDEX_ID,REV7_FACTORS,REV7_DIRECTIONS} from './korea-rev7-engine.mjs';
 import {populateHistoricalSnapshots} from './korea-rev7-public-projection.mjs';
 
-export const PUBLIC_VERSION=`${REV7_VERSION}-public-2`;
+export const PUBLIC_VERSION=`${REV7_VERSION}-public-3`;
 export const PUBLIC_CACHE_KEY=`${REV7_VERSION}:${PUBLIC_VERSION}`;
 export const CACHE_MS=15*60*1000;
 export const DEGRADED_CACHE_MS=5*1000;
@@ -191,7 +191,8 @@ export async function publicSnapshot(env,context={}){
 }
 
 const response=(data,status=200)=>{
-  const body=JSON.stringify(data);
+  const privateKeys=new Set(['weights','weight','weightedContribution','direction','briefMethodology','briefExplanation']);
+  const body=JSON.stringify(data,(key,value)=>privateKeys.has(key)?undefined:value);
   if(new TextEncoder().encode(body).length>131072)return Response.json({error:'RESPONSE_LIMIT'},{status:503});
   return new Response(body,{status,headers:{'Content-Type':'application/json','Cache-Control':'no-store','X-Content-Type-Options':'nosniff'}});
 };

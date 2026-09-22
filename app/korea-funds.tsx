@@ -15,7 +15,6 @@ function Card({item,index}:{item:Indicator;index:number}){
  const history=item.history.filter(p=>cutoff&&stamp(p.date)>=cutoff.getTime()).map(p=>({...p,time:stamp(p.date)}));
  return <article className="min-w-0 border border-slate-300 bg-white p-4 text-slate-900 sm:p-5">
   <h3 className="text-lg font-extrabold">{item.name}</h3>
-  <p className="mt-1 min-h-10 text-sm text-slate-600">{item.briefExplanation}</p>
   <div className="mt-3 text-3xl font-bold tabular-nums">{typeof item.score==='number'?item.score.toFixed(1):'—'}<span className="ml-1 text-sm font-normal text-slate-500">점 / 100</span></div>
   <p className="mt-2 text-sm">{item.changePoints!==null?`이전 관측 대비 ${item.changePoints>=0?'+':''}${item.changePoints.toFixed(1)}점`:'이전 비교 자료 없음'}</p>
   <p className="mt-1 text-xs text-slate-500">관측 기준일 {date(end)}</p>
@@ -28,7 +27,7 @@ function Card({item,index}:{item:Indicator;index:number}){
     <Line type="linear" dataKey="score" stroke={index%2?"#b45309":"#475569"} strokeWidth={2} dot={false} connectNulls={false} isAnimationActive={false}/>
    </LineChart></ResponsiveContainer>:<div className="flex h-full items-center justify-center bg-slate-50 text-sm text-slate-500">표시할 유효 이력이 없습니다</div>}
   </div>
-  <details className="mt-2 border-t border-slate-200 pt-2 text-sm"><summary className="min-h-11 cursor-pointer py-3">계산 방식</summary><div className="space-y-2 pb-2 leading-6 text-slate-600"><p>{item.briefExplanation}</p><p>종합 반영 비중: 1/7 동일가중. 결측 Factor가 있으면 재가중하지 않습니다.</p></div></details>
+
  </article>;
 }
 export default function KoreaFunds(){

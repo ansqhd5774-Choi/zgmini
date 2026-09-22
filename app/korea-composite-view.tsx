@@ -131,7 +131,7 @@ function buildKoreaAxisTicks(points:ReturnType<typeof normalizeCompositeHistory>
 function componentModelLabel(composite:Composite|null){
  if(!composite)return '한국 Revision 7';
  return composite.methodologyVersion==='kr-fg-cnn-r7-1.0.0'
-  ?'Revision 7 · 7개 지표 동일가중'
+  ?'한국 시장 투자심리'
   :'한국 Revision 7';
 }
 
@@ -233,7 +233,7 @@ export function KoreaCompositeView({detail=false}:{detail?:boolean}){
   <p className="mt-2 text-sm text-slate-700">이전 관측 대비 {c?.changePoints!=null?`${c.changePoints>=0?'+':''}${c.changePoints.toFixed(1)}점 (${formatDate(c.previousObservationDate)})`:'비교 자료 없음'}</p>
   {c?.status==='STALE'&&<p role="status" className="mt-2 text-sm text-amber-700">갱신 대기 · Revision 7의 최근 유효 관측값을 표시합니다.</p>}
   {c&&<CompositeChart item={c} mini={!detail}/>}
-  {detail&&<><p className="mt-5 text-sm">{c?.briefMethodology??'Revision 7은 7개 시장심리 지표를 각각 1/7 동일가중으로 종합합니다.'}</p><p className="mt-3 text-sm">모멘텀·시장강도·시장폭·풋/콜·변동성·안전자산 선호·신용스프레드를 각각 공포↔탐욕 방향의 0~100 점수로 변환합니다. 결측 Factor가 있으면 남은 지표로 재가중하지 않습니다.</p><p className="mt-3 text-xs">과거 점수는 현재 확보한 원자료로 재구성한 이력이며 당시 point-in-time 빈티지는 검증되지 않았습니다. 현재는 연구용 베타입니다.</p></>}
+  {detail&&<p className="mt-3 text-xs">과거 점수는 현재 확보한 원자료로 재구성한 이력이며 당시 point-in-time 빈티지는 검증되지 않았습니다. 현재는 연구용 베타입니다.</p>}
  </div>;
 }
 
@@ -276,7 +276,7 @@ export function KoreanCountryCard(){
    flag:"/flags/kr.svg",
    eyebrow:"ZGMINI KOREA FEAR & GREED",
    title:"한국 시장",
-   description:"KOSPI · 7개 시장심리 지표 동일가중",
+   description:"KOSPI · 시장 투자심리",
    dateLabel:"관측 기준일",
    date:cardDate(c?.observationDate),
    source,

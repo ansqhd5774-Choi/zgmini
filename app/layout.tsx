@@ -8,14 +8,14 @@ export const metadata: Metadata = {
   metadataBase: new URL("https://zgmini.kr"),
   alternates: { canonical: "/" },
   robots: { index: true, follow: true },
-  openGraph: {
+  openGraph: {images: [{url:"https://zgmini.kr/zgmini-share.png",width:1200,height:630,alt:"ZGmini · 미국과 한국 시장 분위기를 한눈에"}],
     title: "공포탐욕지수 한눈에 | 미국·한국 차트 - ZGmini",
     description: "시장이 불안할 때도, 분위기가 좋을 때도. 미국·한국 공포탐욕지수와 차트를 ZGmini에서 편하게 살펴보세요.",
     url: "https://zgmini.kr/",
     type: "website",
     siteName: "ZGmini",
   },
-  twitter: {
+  twitter: {images:["https://zgmini.kr/zgmini-share.png"],
     card: "summary_large_image",
     title: "공포탐욕지수 한눈에 | 미국·한국 차트 - ZGmini",
     description: "시장이 불안할 때도, 분위기가 좋을 때도. 미국·한국 공포탐욕지수와 차트를 ZGmini에서 편하게 살펴보세요.",

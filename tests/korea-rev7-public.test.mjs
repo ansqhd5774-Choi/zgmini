@@ -118,3 +118,21 @@ test('sparse production snapshot history materializes locked Revision 7 history 
   assert.equal(snap.composite.methodologyVersion,REV7_VERSION);
   assert.equal(snap.composite.fallbackApplied,false);
 });
+
+test('public HTTP responses omit confidential formula metadata on fresh, cached and unavailable paths',async()=>{
+  const forbidden=new Set(['weights','weight','weightedContribution','direction','briefMethodology','briefExplanation']);
+  function inspect(value){
+    if(!value||typeof value!=='object')return;
+    for(const [key,item] of Object.entries(value)){assert.ok(!forbidden.has(key),`exposed ${key}`);inspect(item);}
+  }
+  for(const complete of [true,false]){
+    const handler=createKoreaFundsHandler({loadProgress:async()=>({status:complete?'COMPLETE':'RUNNING',successfulTradingDates:complete?1030:1000}),loadRows:async()=>rows,clock:()=>new Date('2026-09-15T12:00:00Z')});
+    for(let i=0;i<2;i++){
+      const result=await handler(new Request('https://zgmini.kr/api/indicators/korea-funds'),{});
+      assert.equal(result.status,200);
+      const data=await result.json();inspect(data);
+      if(complete){assert.equal(data.composite.score,JSON.parse(rows[2].composite_json).score);assert.equal(data.composite.history.length,3);assert.equal(data.indicators.length,7);}
+      else assert.equal(data.composite.score,null);
+    }
+  }
+});
