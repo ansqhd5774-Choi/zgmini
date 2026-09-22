@@ -9,7 +9,7 @@ export const marketPeriods = [
 export type MarketPeriod = (typeof marketPeriods)[number]["key"];
 export type MarketPeriodConfig = (typeof marketPeriods)[number];
 
-export const DEFAULT_MARKET_PERIOD: MarketPeriod = "1M";
+export const DEFAULT_MARKET_PERIOD: MarketPeriod = "3M";
 export const DEFAULT_KOREA_MARKET_PERIOD: MarketPeriod = "3M";
 
 export function getMarketPeriodConfig(period: MarketPeriod): MarketPeriodConfig {

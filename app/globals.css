@@ -2473,7 +2473,7 @@ html,body{overflow-x:hidden}
   --fg-shared-left:clamp(168px,30%,300px);
 
   --fg-shared-gauge-w:clamp(142px,20cqi,180px);
-  --fg-shared-comparison-h:clamp(30px,4cqi,36px);
+  --fg-shared-comparison-h:44px;
   --fg-shared-date-h:clamp(9px,1.2cqi,11px);
 
   --fg-shared-period-size:24px;
@@ -2631,7 +2631,7 @@ html,body{overflow-x:hidden}
 }
 
 /* Comparison outer box keeps its own row.
-   Label + value are centered as one unit, independent of card ratio. */
+   Each comparison keeps its label left and value right at bounded readable sizes. */
 .fg-card.fg-shared-shell .cnn-score-comparisons{
   grid-row:2;
   width:100%;
@@ -2641,8 +2641,8 @@ html,body{overflow-x:hidden}
   margin:0;
   padding:0;
   display:grid;
-  grid-template-columns:minmax(0,1fr) 1px minmax(0,1fr);
-  grid-template-rows:1fr;
+  grid-template-columns:minmax(0,1fr);
+  grid-template-rows:repeat(2,minmax(0,1fr));
   align-items:stretch;
   border:0;
   border-top:1px solid rgba(168,188,208,.13);
@@ -2655,18 +2655,18 @@ html,body{overflow-x:hidden}
   min-width:0;
   min-height:0;
   display:grid;
-  grid-template-rows:auto auto;
-  place-content:center;
-  place-items:center;
+  grid-template-columns:minmax(0,1fr) auto;
+  grid-template-rows:1fr;
+  align-items:center;
   gap:2px;
-  padding:0;
-  text-align:center;
+  padding:0 8px;
+  text-align:left;
 }
 
 .fg-card.fg-shared-shell .cnn-score-comparison>span{
   margin:0;
   color:var(--zg-text-meta);
-  font-size:clamp(7px,.9cqi,9px);
+  font-size:clamp(10px,1.1cqi,12px);
   font-weight:700;
   line-height:1;
   white-space:nowrap;
@@ -2678,17 +2678,18 @@ html,body{overflow-x:hidden}
   align-items:center;
   justify-content:center;
   gap:3px;
-  font-size:clamp(10px,1.25cqi,14px);
+  font-size:clamp(12px,1.4cqi,14px);
   font-weight:900;
   line-height:1;
   font-variant-numeric:tabular-nums;
 }
 
 .fg-card.fg-shared-shell .cnn-score-comparison>strong i{
-  font-size:clamp(6px,.75cqi,8px);
+  font-size:8px;
 }
 
 .fg-card.fg-shared-shell .cnn-score-comparison-divider{
+  display:none;
   width:1px;
   height:60%;
   min-height:0;
@@ -2846,7 +2847,7 @@ html,body{overflow-x:hidden}
   .fg-card.fg-shared-shell{
     --fg-shared-left:40%;
     --fg-shared-gauge-w:min(142px,100%);
-    --fg-shared-comparison-h:30px;
+    --fg-shared-comparison-h:44px;
     --fg-shared-date-h:9px;
     --fg-shared-period-size:26px;
     --fg-shared-period-gap:5px;
@@ -3107,7 +3108,7 @@ html,body{overflow-x:hidden}
 .zg-r55-expand:focus-visible,.zg-r55-card:focus-visible{outline:2px solid #fabc42;outline-offset:2px}
 .zg-r55-shell{--r55-card-height:150px;--r55-card-expanded:240px;--r55-gap:10px;min-width:0}
 .zg-r55-body{display:grid;grid-template-columns:224px minmax(0,1fr);gap:var(--r55-gap);align-items:start;min-width:0}
-.zg-r55-summary{display:grid;grid-template-columns:minmax(0,1fr);gap:10px;min-width:0;padding:12px;border:1px solid #17446d;border-radius:7px;background:#071a2d;color:#eef4fa}
+.zg-r55-summary{position:relative;display:grid;grid-template-columns:minmax(0,1fr);gap:10px;min-width:0;padding:12px;border:1px solid #17446d;border-radius:7px;background:#071a2d;color:#eef4fa}
 .zg-r55-summary-top{position:relative;height:120px;display:grid;place-items:center;min-width:0}
 .zg-r55-gauge-ring{position:absolute;width:118px;height:118px;border-radius:50%;background:conic-gradient(from 225deg,var(--r55-score-color) 0deg var(--r55-score-angle),#183a5b var(--r55-score-angle) 270deg,transparent 270deg);mask:radial-gradient(circle,transparent 60%,#000 61%)}
 .zg-r55-gauge-ring[data-missing="true"]{background:conic-gradient(from 225deg,#31506d 0deg 270deg,transparent 270deg)}
@@ -3118,7 +3119,7 @@ html,body{overflow-x:hidden}
 .zg-r55-summary-chart h3{margin:0 0 6px;font-size:12px}
 .zg-r55-summary-chart .zg-spark{height:84px}
 .zg-r55-empty-spark{height:84px;display:grid;place-items:center;padding:6px;border:1px dashed #31506d;border-radius:5px;color:#a1b5c8;font-size:11px;text-align:center}
-.zg-r55-coverage{display:flex;justify-content:flex-end;margin:0;color:#aebfd0;font-size:11px;line-height:1.5;overflow-wrap:anywhere}
+.zg-r55-coverage{position:absolute;top:8px;right:8px;z-index:1;display:flex;justify-content:flex-end;margin:0;color:#aebfd0;font-size:11px;line-height:1.5;overflow-wrap:anywhere}
 .zg-r55-subscore-area{min-width:0}
 .zg-r55-subscore-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
 .zg-r55-subscore{min-width:0;min-height:40px;padding:3px 4px;border-top:1px dashed #2a5b83}
@@ -3176,7 +3177,7 @@ html,body{overflow-x:hidden}
  .zg-r55-gauge-ring{width:112px;height:112px}
  .zg-r55-summary-chart{grid-column:2;grid-row:1;align-self:center}
  .zg-r55-summary-chart .zg-spark,.zg-r55-empty-spark{height:90px}
- .zg-r55-coverage,.zg-r55-subscore-area{grid-column:1 / -1}
+ .zg-r55-subscore-area{grid-column:1 / -1}
  .zg-r55-subscore{min-height:60px}
  .zg-r55-subscore-title b{font-size:11px;letter-spacing:-.3px}
  .zg-r55-subscore-title .zg-info{min-width:32px;min-height:32px}
@@ -3188,3 +3189,5 @@ html,body{overflow-x:hidden}
  .zg-r55-card-icon{width:20px;height:20px}
  .zg-r55-card-number strong{font-size:34px}
 }
+
+.zg-r55-scale-labels{display:flex;justify-content:space-between;color:var(--zg-text-meta);font-size:10px;line-height:1.2;font-variant-numeric:tabular-nums}
