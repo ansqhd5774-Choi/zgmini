@@ -68,7 +68,7 @@ export default function CountryFearGreed() {
   return (
     <section className="zg-section zg-country-section" aria-labelledby="global-title">
       <div className="zg-section-heading">
-        <h2 id="global-title">공포·탐욕</h2>
+        <h1 id="global-title">공포·탐욕</h1>
         <p>각 시장의 별도 모델 · 국가 간 동일 척도로 해석하지 마세요.</p>
       </div>
       <div className="zg-country-panel-grid">
