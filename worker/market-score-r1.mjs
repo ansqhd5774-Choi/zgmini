@@ -15,7 +15,7 @@ function safeJson(body,status=200){
   return Response.json(body,{
     status,
     headers:{
-      "cache-control":"public, max-age=300, s-maxage=900, stale-while-revalidate=1800",
+      "cache-control":status===200?"public, max-age=300, must-revalidate":"no-store",
       "x-content-type-options":"nosniff",
     },
   });

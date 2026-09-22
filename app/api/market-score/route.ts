@@ -3,12 +3,14 @@ import { collectDiagnosticLiveInputs } from "../../../worker/diagnostic-v1-canar
 import { buildFullDiagnosticOrchestrator } from "../../../lib/diagnostic-layer/full-diagnostic-orchestrator.mjs";
 import { createMarketScoreR1Handler } from "../../../worker/market-score-r1.mjs";
 
-const handler=createMarketScoreR1Handler({
+import { withMarketScoreCache } from "../../../worker/market-score-cache.mjs";
+
+const handler=withMarketScoreCache(createMarketScoreR1Handler({
   env,
   fetchImpl:globalThis.fetch,
   collectInputs:collectDiagnosticLiveInputs,
   orchestrate:buildFullDiagnosticOrchestrator,
-} as any);
+} as any), {env});
 
 export function GET(request:Request){
   return handler(request);

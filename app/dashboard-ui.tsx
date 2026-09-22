@@ -124,7 +124,7 @@ export function CompositeMarketSection({items,points,demo,loading,onDetail}:{ite
   const controller=new AbortController();
   let alive=true;
   setMarketLoading(true);
-  fetch('/api/market-score',{signal:controller.signal,cache:'no-store'})
+  fetch('/api/market-score',{signal:controller.signal,cache:'default'})
    .then(async response=>{
     const body=await response.json() as MarketScoreResponse;
     if(!response.ok||body?.status!=='SUCCESS')throw new Error('MARKET_SCORE_UNAVAILABLE');
@@ -143,7 +143,7 @@ export function CompositeMarketSection({items,points,demo,loading,onDetail}:{ite
   if(e.currentTarget!==e.target)return;
   if(e.key==='Enter'||e.key===' '){e.preventDefault();toggle()}
  };
- const busy=loading||marketLoading;
+ const busy=marketLoading;
  const overallScore=market?.overall?.status==='READY'&&validPublicScore(market.overall.score)?market.overall.score:null;
  const overallStatus=busy?'불러오는 중':marketError?'데이터 확인 중':publicStatusLabel(market?.overall?.status);
  const readyDomains=market?.dataQuality?.readyDomains??0;

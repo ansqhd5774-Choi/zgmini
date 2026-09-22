@@ -6,8 +6,9 @@ const src=fs.readFileSync(new URL("../app/dashboard-ui.tsx",import.meta.url),"ut
 
 test("Stage12 market UI fetches the CM-R1 public API",()=>{
   assert.match(src,/fetch\(['"]\/api\/market-score['"]/);
-  assert.match(src,/cache:\s*['"]no-store['"]/);
+  assert.match(src,/cache:\s*['"]default['"]/);
   assert.match(src,/modelVersion/);
+  assert.match(src,/const busy=marketLoading;/);
 });
 
 test("12 public domains remain fixed and ordered",()=>{

@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import {DIAGNOSTIC_FRED_SERIES} from '../lib/diagnostic-layer/input-registry.mjs';
 import {
   collectDiagnosticLiveInputs,
   createDiagnosticV1CanaryHandler,
@@ -54,8 +55,8 @@ test('collector requests every registered FRED series and wires official externa
     fetchImpl:async()=>{throw new Error('NETWORK_MUST_NOT_RUN_IN_TEST');},
     adapters,
   });
-  assert.equal(seenFred.length,39);
-  assert.equal(Object.keys(out.series).length,39);
+  assert.deepEqual([...seenFred].sort(),Object.keys(DIAGNOSTIC_FRED_SERIES).sort());
+  assert.deepEqual(Object.keys(out.series).sort(),Object.keys(DIAGNOSTIC_FRED_SERIES).sort());
   assert.equal(out.external.dvpRepoRows.length,1);
   assert.equal(out.external.triPartyRepoRows.length,1);
   assert.equal(out.external.cmdiRows.length,1);
