@@ -3218,3 +3218,8 @@ html,body{overflow-x:hidden}
 .zg-r55-scale-labels{display:flex;justify-content:space-between;color:var(--zg-text-meta);font-size:10px;line-height:1.2;font-variant-numeric:tabular-nums}
 
 .zg-r55-scale-labels span:nth-child(2){color:#eef4fa;font-weight:800}
+
+/* Keep the four requested detail rows readable in narrow cards. */
+.zg-r55-detail{min-height:28px;row-gap:3px;padding:3px 0;line-height:1.4}
+.zg-r55-detail>span{overflow-wrap:anywhere;word-break:keep-all}
+.zg-r55-detail b{white-space:nowrap}

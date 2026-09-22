@@ -2,6 +2,7 @@
 import {useEffect,useId,useRef,useState,type ReactNode,type CSSProperties} from 'react';
 import {Activity,ArrowRight,ChevronLeft,ChevronRight,Info,Radar,Coins,Users,Percent,Droplet,Landmark,ShieldCheck,Factory,ShoppingCart,BriefcaseBusiness,ArrowLeftRight,Network,DollarSign} from 'lucide-react';
 import {Line,LineChart,ResponsiveContainer,Tooltip,XAxis,YAxis,ReferenceDot} from 'recharts';
+import {marketDetailRows} from '../lib/market-score/detail-catalog.mjs';
 export type DashboardPoint={label:string;value:number};
 export type Summary={label:string;score:number;value:string;note:string;data:DashboardPoint[]};
 export function DashboardTip({label,children,trigger}:{label:string;children:ReactNode;trigger?:ReactNode}){
@@ -231,9 +232,7 @@ export function CompositeMarketSection({items,points,demo,loading}:{items:Summar
        const trend=marketTrendWindow(domain?.trend,periodDays);
 
        const band=score===null?'unknown':score<25?'danger':score<40?'caution':score<60?'neutral':score<75?'positive':'strong';
-       const detailRows=domain?.indicators?.length
-        ?domain.indicators.slice(0,4).map((item,i)=>({label:item.name??item.label??m.details[i]??`지표 ${i+1}`,score:validPublicScore(item.score)?item.score:null,raw:r55DomainIds[index]==="breadth"||r55DomainIds[index]==="fundFlows",value:item.status==="READY"&&typeof item.value==="number"&&Number.isFinite(item.value)?item.value:null,unit:item.unit??""}))
-        :[];
+       const detailRows=marketDetailRows(r55DomainIds[index],domain?.indicators);
        return <article
         key={m.label}
         className={`zg-r55-card band-${band}`}
