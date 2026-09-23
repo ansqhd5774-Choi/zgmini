@@ -5,8 +5,8 @@ import {buildEmploymentR538} from "../lib/diagnostic-layer/employment-r538-compo
 import {
   buildDollarFxR53,
   buildFundFlowR53,
-  buildRateR53,
 } from "../lib/diagnostic-layer/open-resolution-r53-components.mjs";
+import {buildRateR2} from "../lib/market-score/rate-r2.mjs";
 
 const finite=value=>typeof value==="number"&&Number.isFinite(value);
 const validDate=value=>typeof value==="string"&&/^\d{4}-\d{2}-\d{2}$/.test(value);
@@ -68,11 +68,16 @@ export function createMarketScoreR1Handler({
         payrollLevelRows:collected?.series?.PAYEMS??[],
         asOfDate:asOf,
       });
-      const rate=buildRateR53({
-        tenYearRows:collected?.series?.DGS10??[],
+      const rateSeries=collected?.rateR2?.series??{};
+      const rate=buildRateR2({
+        effrRows:rateSeries.EFFR??[],
+        policyLowerRows:rateSeries.DFEDTARL??[],
+        policyUpperRows:rateSeries.DFEDTARU??[],
+        twoYearRows:rateSeries.DGS2??[],
+        realTenYearRows:rateSeries.DFII10??[],
+        threeMonthRows:rateSeries.DGS3MO??[],
+        tenYearRows:rateSeries.DGS10??[],
         asOfDate:asOf,
-        recessionScore:diagnostics?.recessionDefense?.score??null,
-        creditScore:diagnostics?.creditRiskDefense?.score??null,
       });
       const fundFlow=buildFundFlowR53(
         collected?.external?.registeredFundFlowRows??[],
@@ -110,7 +115,7 @@ export function createMarketScoreR1Handler({
         modelVersion:composite.modelVersion,
         asOfDate:asOf,
         overall:composite.overall,
-        domains:composite.domains,
+        domains:composite.domains.map(domain=>domain.id==='rates'?{...domain,modelVersion:rate.modelVersion}:domain),
         diagnostics8:diagnostics8(diagnostic?.snapshot),
         updatedAt:composite.updatedAt,
         dataQuality:{

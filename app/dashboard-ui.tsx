@@ -247,7 +247,7 @@ export function CompositeMarketSection({items,points,demo,loading}:{items:Summar
        const trend=marketTrendWindow(domain?.trend,periodDays);
 
        const band=score===null?'unknown':score<25?'danger':score<40?'caution':score<60?'neutral':score<75?'positive':'strong';
-       const detailRows=marketDetailRows(r55DomainIds[index],domain?.indicators);
+       const detailRows=marketDetailRows(r55DomainIds[index],domain?.indicators) as Array<{label:string;score:number|null;raw:boolean;value:number|null;displayValue?:string|null;unit:string}>;
        return <article
         key={m.label}
         className={`zg-r55-card band-${band}`}
@@ -280,7 +280,7 @@ export function CompositeMarketSection({items,points,demo,loading}:{items:Summar
         <div className="zg-r55-scale-labels" aria-hidden="true"><span>0</span><span>50</span><span>100</span></div>
 
         <div className="zg-r55-details" aria-hidden={!expanded}>
-         {detailRows.map(row=><div className="zg-r55-detail" key={row.label}><span>{row.label}</span>{!row.raw&&<ScoreScale score={row.score} label={`${row.label} 구성 점수`} color={row.score===null?'#64748b':scoreColor(row.score)}/>}<b style={{color:row.score===null?'#94a3b8':scoreColor(row.score),gridColumn:row.raw?'2 / 4':undefined,textAlign:'right'}}>{row.raw?(row.value===null?'—':`${Number(row.value.toFixed(2))}${row.unit}`):(row.score===null?'—':Math.round(row.score))}</b></div>)}
+         {detailRows.map(row=><div className="zg-r55-detail" key={row.label}><span>{row.label}</span>{!row.raw&&<ScoreScale score={row.score} label={`${row.label} 구성 점수`} color={row.score===null?'#64748b':scoreColor(row.score)}/>}<b style={{color:row.score===null?'#94a3b8':scoreColor(row.score),gridColumn:row.raw?'2 / 4':undefined,textAlign:'right'}}>{row.raw?(row.displayValue??(row.value===null?'—':`${Number(row.value.toFixed(2))}${row.unit}`)):(row.score===null?'—':Math.round(row.score))}</b></div>)}
         </div>
 
        </article>
