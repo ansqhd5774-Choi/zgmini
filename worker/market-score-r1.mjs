@@ -7,6 +7,8 @@ import {
   buildFundFlowR53,
 } from "../lib/diagnostic-layer/open-resolution-r53-components.mjs";
 import {buildRateR2} from "../lib/market-score/rate-r2.mjs";
+import {collectBreadthR2PublicDomainR1} from "../lib/market-score/breadth-r2-worker-domain-r1.mjs";
+import {buildBreadthR2UnavailablePublicDomain} from "../lib/market-score/breadth-r2-public-domain-r1.mjs";
 
 const finite=value=>typeof value==="number"&&Number.isFinite(value);
 const validDate=value=>typeof value==="string"&&/^\d{4}-\d{2}-\d{2}$/.test(value);
@@ -40,6 +42,7 @@ export function createMarketScoreR1Handler({
   collectInputs,
   orchestrate,
   now=()=>new Date(),
+  collectBreadthDomain=collectBreadthR2PublicDomainR1,
 }={}){
   if(typeof collectInputs!=="function")throw new Error("COLLECT_INPUTS_REQUIRED");
   if(typeof orchestrate!=="function")throw new Error("ORCHESTRATE_REQUIRED");
@@ -54,7 +57,17 @@ export function createMarketScoreR1Handler({
     if(!validDate(asOf))return safeJson({status:"FAILED",reason:"INVALID_SERVER_TIME"},500);
 
     try{
-      const collected=await collectInputs({env,asOf,fetchImpl});
+      const [collected,breadthDomain]=await Promise.all([
+        collectInputs({env,asOf,fetchImpl}),
+        Promise.resolve()
+          .then(()=>collectBreadthDomain({
+            env,
+            asOf,
+            fetchImpl,
+            runtimeOptions:{now:()=>instant},
+          }))
+          .catch(()=>buildBreadthR2UnavailablePublicDomain("BREADTH_R2_RUNTIME_UNAVAILABLE",instant.toISOString())),
+      ]);
       const diagnostic=orchestrate({
         asOfDate:asOf,
         baseOverall:null,
@@ -98,6 +111,9 @@ export function createMarketScoreR1Handler({
           supplyRows:diagnostic?.artifacts?.supply?.rows??[],
           asOfDate:asOf,
         }),
+        // Breadth-R2 is authoritative for the public breadth slot.
+        // Any legacy external.publicDomainScores.breadth value is intentionally overridden.
+        breadth:breadthDomain,
       };
 
       const domains=buildCmR1DomainResults({

@@ -4,6 +4,7 @@ import {Activity,ArrowRight,ChevronLeft,ChevronRight,Info,Radar,Coins,Users,Perc
 import {Line,LineChart,ResponsiveContainer,Tooltip,XAxis,YAxis,ReferenceDot} from 'recharts';
 import {readMarketSnapshot,saveMarketSnapshot} from '../lib/market-score/browser-snapshot.mjs';
 import {marketDetailRows} from '../lib/market-score/detail-catalog.mjs';
+import {breadthNotice} from '../lib/market-score/breadth-notice.mjs';
 export type DashboardPoint={label:string;value:number};
 export type Summary={label:string;score:number;value:string;note:string;data:DashboardPoint[]};
 export function DashboardTip({label,children,trigger}:{label:string;children:ReactNode;trigger?:ReactNode}){
@@ -110,7 +111,7 @@ const r55Cards=[
  {label:'기업실적',Icon:BriefcaseBusiness,basis:'공개 점수 결과를 표시합니다. PARTIAL/UNAVAILABLE은 0점으로 대체하지 않습니다.',details:['주당이익 성장','매출 성장률','이익 성장비','영업·순이익률']},
  {label:'유동성',Icon:Landmark,basis:'공개 점수 결과를 표시합니다. PARTIAL/UNAVAILABLE은 0점으로 대체하지 않습니다.',details:['은행 준비금','통화량 증가','재무부 계정변화','익일 역레포']},
  {label:'자금흐름',Icon:ArrowLeftRight,basis:'SEC 등록펀드 전체 순유입을 전월 순자산으로 나눈 월별 비율입니다. 미국 주식형 펀드만의 값이 아닙니다. 추이는 실제 월별 점수이며 일별 보간하지 않습니다.',details:[]},
- {label:'수급·폭',Icon:Network,basis:'Data by Equibles. S&P 500 추적펀드의 일별 구성 기준이며 공식 S&P DJI 구성 파일이 아닙니다. 종가×거래량은 거래대금 대용값입니다. 권리·관측일·커버리지 검증 전에는 점수를 표시하지 않습니다.',details:[]},
+ {label:'수급·폭',Icon:Network,basis:'BEA 해외 포트폴리오 주식수급, SEC 주식공급 폭, CFTC 기관·레버리지 선물 포지션을 각 25%로 결합합니다. 네 항목 모두 필요하며 결측 시 재가중하지 않습니다.',details:[]},
  {label:'달러환율',Icon:DollarSign,basis:'공개 점수 결과를 표시합니다. PARTIAL/UNAVAILABLE은 0점으로 대체하지 않습니다.',details:['광의 달러지수','3개월 변화율','신흥국 달러지수','달러 변동성']},
  {label:'유가원자재',Icon:Droplet,basis:'공개 점수 결과를 표시합니다. 공급충격 점수를 유가·원자재 점수로 대체하지 않습니다.',details:['서부텍사스유','브렌트유','구리','휘발유']}
 ] as const;
@@ -247,7 +248,8 @@ export function CompositeMarketSection({items,points,demo,loading}:{items:Summar
        const trend=marketTrendWindow(domain?.trend,periodDays);
 
        const band=score===null?'unknown':score<25?'danger':score<40?'caution':score<60?'neutral':score<75?'positive':'strong';
-       const detailRows=marketDetailRows(r55DomainIds[index],domain?.indicators) as Array<{label:string;score:number|null;raw:boolean;value:number|null;displayValue?:string|null;unit:string}>;
+       const detailRows=marketDetailRows(r55DomainIds[index],domain?.indicators) as Array<{label:string;score:number|null;raw:boolean;value:number|null;displayValue?:string|null;unit:string;asOfDate?:string|null;source?:string|null}>;
+       const notice=!busy?breadthNotice(domain):null;
        return <article
         key={m.label}
         className={`zg-r55-card band-${band}`}
@@ -263,9 +265,10 @@ export function CompositeMarketSection({items,points,demo,loading}:{items:Summar
         <div className="zg-r55-card-head">
          <span className="zg-r55-card-icon"><Icon size={18} aria-hidden="true"/></span>
          <h3>{m.label}</h3>
-         <span className="zg-r55-badge">{busy?'로딩':score===null?'미완료':domain?.state??(score<25?'위험':score<40?'주의':score<60?'중립':score<75?'양호':'안정')}</span>
-         <span onClick={e=>e.stopPropagation()}><DashboardTip label={`${m.label} 산출 근거`}>{m.basis}</DashboardTip></span>
+         <span className="zg-r55-badge">{busy?'로딩':score===null?(notice?.badge??'미완료'):domain?.state??(score<25?'위험':score<40?'주의':score<60?'중립':score<75?'양호':'안정')}</span>
+         <span onClick={e=>e.stopPropagation()}><DashboardTip label={`${m.label} 산출 근거`}>{notice?`${notice.detail} ${m.basis}`:m.basis}</DashboardTip></span>
         </div>
+        {notice&&<p data-testid="breadth-unavailable-reason" style={{margin:'6px 0',fontSize:12,lineHeight:1.5,color:'#cbd5e1'}}>{notice.message}</p>}
         <div className="zg-r55-card-mid">
          <div className="zg-r55-card-number">
           <strong style={{color:score===null?'#94a3b8':scoreColor(score)}}>{score===null?'—':Math.round(score)}</strong>
@@ -280,7 +283,15 @@ export function CompositeMarketSection({items,points,demo,loading}:{items:Summar
         <div className="zg-r55-scale-labels" aria-hidden="true"><span>0</span><span>50</span><span>100</span></div>
 
         <div className="zg-r55-details" aria-hidden={!expanded}>
-         {detailRows.map(row=><div className="zg-r55-detail" key={row.label}><span>{row.label}</span>{!row.raw&&<ScoreScale score={row.score} label={`${row.label} 구성 점수`} color={row.score===null?'#64748b':scoreColor(row.score)}/>}<b style={{color:row.score===null?'#94a3b8':scoreColor(row.score),gridColumn:row.raw?'2 / 4':undefined,textAlign:'right'}}>{row.raw?(row.displayValue??(row.value===null?'—':`${Number(row.value.toFixed(2))}${row.unit}`)):(row.score===null?'—':Math.round(row.score))}</b></div>)}
+         {detailRows.map(row=>{
+          const breadthMeta=r55DomainIds[index]==='breadth';
+          const rawText=row.displayValue??(row.value===null?'—':`${Number(row.value.toFixed(2))}${breadthMeta?(row.unit?` ${row.unit}`:''):row.unit}`);
+          return <div className="zg-r55-detail" key={row.label}>
+           <span>{row.label}{breadthMeta&&<small style={{display:'block',marginTop:2,fontSize:10,lineHeight:1.2,color:'#94a3b8'}}>{rawText} · {row.asOfDate??'관측일 확인 중'}</small>}</span>
+           {!row.raw&&<ScoreScale score={row.score} label={`${row.label} 구성 점수`} color={row.score===null?'#64748b':scoreColor(row.score)}/>}
+           <b style={{color:row.score===null?'#94a3b8':scoreColor(row.score),gridColumn:row.raw?'2 / 4':undefined,textAlign:'right'}}>{row.raw?rawText:(row.score===null?'—':Math.round(row.score))}</b>
+          </div>;
+         })}
         </div>
 
        </article>
