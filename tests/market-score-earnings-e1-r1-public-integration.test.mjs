@@ -3,6 +3,34 @@ import assert from "node:assert/strict";
 
 import {buildCmR1DomainResults} from "../lib/market-score/domain-adapter-r1.mjs";
 import {createMarketScoreR1Handler} from "../worker/market-score-r1.mjs";
+import {collectEarningsE1R2PublicDomain} from "../lib/market-score/sec-earnings-e1-r2-provider.mjs";
+
+test("E1-R2 PARTIAL parser failure preserves upstream methodology through public response",async()=>{
+  const earnings=await collectEarningsE1R2PublicDomain({
+    asOf:"2026-09-23",
+    fetchImpl:async()=>Response.json({parse:{text:"<table></table>"}}),
+  });
+  assert.equal(earnings.methodologyVersion,"E1-R2");
+  assert.equal(earnings.status,"PARTIAL");
+  assert.equal(earnings.score,null);
+  assert.deepEqual(earnings.missing,["WIKIPEDIA_UNIVERSE_PARSE_FAILED"]);
+  const adapted=buildCmR1DomainResults({publicDomains:{earnings}}).find(x=>x.id==="earnings");
+  assert.equal(adapted.methodologyVersion,earnings.methodologyVersion);
+  const handler=createMarketScoreR1Handler({
+    env:{},now:()=>new Date("2026-09-23T00:00:00Z"),
+    collectInputs:async()=>({series:{},external:{publicDomainScores:{earnings}}}),
+    orchestrate:()=>({snapshot:{diagnostics:{}},artifacts:{}}),
+  });
+  const response=await handler(new Request("https://zgmini.kr/api/market-score"));
+  assert.equal(response.status,200);
+  const body=await response.json();
+  const out=body.domains.find(x=>x.id==="earnings");
+  assert.equal(out.methodologyVersion,earnings.methodologyVersion);
+  assert.equal(out.status,"PARTIAL");
+  assert.equal(out.score,null);
+  assert.deepEqual(out.missingFactors,earnings.missing);
+  assert.equal(body.dataQuality.reweighted,false);
+});
 
 const readyEarnings = {
   id:"earnings",
