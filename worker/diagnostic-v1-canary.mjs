@@ -10,7 +10,7 @@ import {parseBisColumnCsv} from '../lib/diagnostic-layer/bis-bulk-parser.mjs';
 import {unzipSelected} from '../lib/diagnostic-layer/xlsx-lite.mjs';
 import {buildFullDiagnosticOrchestrator} from '../lib/diagnostic-layer/full-diagnostic-orchestrator.mjs';
 import {collectBreadthB1R1Runtime} from '../lib/market-score/breadth-b1-r1-runtime.mjs';
-import {collectEarningsE1R1Runtime} from '../lib/market-score/earnings-e1-r1-runtime.mjs';
+import {collectEarningsE1R2PublicDomain} from '../lib/market-score/sec-earnings-e1-r2-provider.mjs';
 import {fetchSecRegisteredFundFlows} from '../lib/market-score/sec-fund-flow-r1-provider.mjs';
 
 const OPERATOR_ENV = 'KFG_V2_CANARY_OPERATOR_EMAIL';
@@ -24,6 +24,8 @@ const ALLOWED_HOSTS = new Set([
   'data.bis.org',
   'www.sec.gov',
   'sec.gov',
+  'data.sec.gov',
+  'en.wikipedia.org',
 ]);
 
 const BIS_DATASETS = Object.freeze({
@@ -164,6 +166,7 @@ const DEFAULT_ADAPTERS = Object.freeze({
   fetchCopper: fetchWorldBankCopper,
   fetchBis: fetchBisBulkDataset,
   fetchFundFlows: fetchSecRegisteredFundFlows,
+  fetchEarnings: collectEarningsE1R2PublicDomain,
 });
 
 export async function collectDiagnosticLiveInputs({
@@ -225,7 +228,7 @@ export async function collectDiagnosticLiveInputs({
   ]),
   impl.fetchFundFlows({fetchImpl: bounded.fetchImpl}),
   collectBreadthB1R1Runtime({env, fetchImpl}),
-  collectEarningsE1R1Runtime({env, fetchImpl}),
+  impl.fetchEarnings({asOf, fetchImpl:bounded.fetchImpl}),
   ]);
   const [dvp,triParty,cmdi,gscpi,copper,bisDsr,bisTc]=externalResults;
 
@@ -297,10 +300,17 @@ return {
         dsr: {status: bisDsr?.status ?? 'UNKNOWN'},
         debtGdp: {status: bisTc?.status ?? 'UNKNOWN'},
       },
+      earnings: {
+        status: earnings?.status ?? 'UNKNOWN',
+        methodologyVersion: earnings?.methodologyVersion ?? null,
+        asOfDate: earnings?.asOfDate ?? null,
+        financialPeriodEnd: earnings?.financialPeriodEnd ?? null,
+        providerRequests: earnings?.providerRequests ?? 0,
+      },
       deferred: {
         assetPriceRuntime: 'DEFERRED_NON_BLOCKING',
         speculativeFlowRawRuntime: 'DEFERRED_NON_BLOCKING',
-        earningsHistoricalPointInTime: 'PARTIAL',
+        earningsHistoricalPointInTime: 'RESEARCH_VALIDATED_RUNTIME_CURRENT_ONLY',
         assetBreadthPointInTime: 'PARTIAL',
       },
     },

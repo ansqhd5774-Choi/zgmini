@@ -48,6 +48,10 @@ test('collector requests every registered FRED series and wires official externa
       status:'READY_CURRENT_VINTAGE_RAW',
       parsed:{dataset,series:[]},
     }),
+    fetchEarnings:async () => ({
+      id:'earnings',status:'PARTIAL',score:null,methodologyVersion:'E1-R2',
+      source:'SEC EDGAR + Wikipedia',missing:['fixture'],
+    }),
   };
   const out=await collectDiagnosticLiveInputs({
     env,
