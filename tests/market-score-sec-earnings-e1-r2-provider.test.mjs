@@ -55,7 +55,11 @@ test("E1-R2 public provider uses Wikipedia current universe, SEC frames, and ded
   const fetchImpl=async input=>{
     calls++;
     const u=new URL(String(input));
-    if(u.hostname==="en.wikipedia.org")return response({parse:{revid:999,text:wikiHtml()}});
+    if(u.hostname==="en.wikipedia.org"){
+      assert.equal(u.searchParams.get("page"),"List_of_S&P_500_companies");
+      assert.ok(!u.search.includes("%2526"));
+      return response({parse:{revid:999,text:wikiHtml()}});
+    }
     if(u.hostname!=="data.sec.gov")return response({},404);
     const parts=u.pathname.split("/");
     const tag=decodeURIComponent(parts.at(-3));
