@@ -181,3 +181,12 @@ test('approved method retains valid zero and fails closed for every missing axis
   assert.deepEqual(Object.values(zero.weights),[.25,.25,.25,.25]);
   for(const id of ids){const result=finalizeBreadthR2Candidate({indicators:indicators.map(x=>x.id===id?{...x,status:'PARTIAL',score:null}:x)});assert.equal(result.status,'PARTIAL');assert.equal(result.score,null);}
 });
+import {collectBreadthR2PublicDomainR1} from '../lib/market-score/breadth-r2-worker-domain-r1.mjs';
+test('hosted BEA_API_KEY connects without changing secrets or exposing them',async()=>{
+  for(const env of [{DB:{},BEA_API_KEY:'fixture'},{DB:{},BEA_USER_ID:' ',BEA_API_KEY:'fixture'},{DB:{},BEA_USER_ID:'fixture',BEA_API_KEY:'other'}]){
+    let received;
+    const domain=await collectBreadthR2PublicDomainR1({env,asOf:'2026-09-23',breadthServiceFactory:()=>({run:async args=>{received=args.beaUserId;return finalFixture();}})});
+    assert.equal(received,'fixture');assert.equal(domain.status,'READY');assert.equal(JSON.stringify(domain).includes('fixture'),false);
+  }
+  const missing=await collectBreadthR2PublicDomainR1({env:{DB:{}},asOf:'2026-09-23'});assert.equal(missing.score,null);assert.ok(missing.missingFactors.includes('BREADTH_R2_PROVIDER_CONFIGURATION_MISSING'));
+});
