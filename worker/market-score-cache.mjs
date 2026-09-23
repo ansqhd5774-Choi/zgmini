@@ -1,7 +1,7 @@
 import {marketScoreResponseStore} from './market-score-response-store.mjs';
 // Cache only the anonymous public result, never provider inputs or credentials.
 // Bump namespace when the public scoring contract changes.
-const NAMESPACE = 'market-score-response-v3';
+const NAMESPACE = 'market-score-response-v4';
 const TTL = 300;
 
 export function withMarketScoreCache(handler, {
