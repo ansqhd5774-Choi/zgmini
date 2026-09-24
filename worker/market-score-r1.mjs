@@ -9,6 +9,11 @@ import {
 import {buildRateR2} from "../lib/market-score/rate-r2.mjs";
 import {collectBreadthR2PublicDomainR1} from "../lib/market-score/breadth-r2-worker-domain-r1.mjs";
 import {buildBreadthR2UnavailablePublicDomain} from "../lib/market-score/breadth-r2-public-domain-r1.mjs";
+import {
+  INFLATION_SCORING_SERIES,
+  loadStoredInflationSeries,
+  buildStoredInflationScoringSeries,
+} from "./inflation-history-reader.mjs";
 
 const finite=value=>typeof value==="number"&&Number.isFinite(value);
 const validDate=value=>typeof value==="string"&&/^\d{4}-\d{2}-\d{2}$/.test(value);
@@ -57,22 +62,53 @@ export function createMarketScoreR1Handler({
     if(!validDate(asOf))return safeJson({status:"FAILED",reason:"INVALID_SERVER_TIME"},500);
 
     try{
-      const [collected,breadthDomain]=await Promise.all([
+      const [collectionState,storageState,breadthState]=await Promise.allSettled([
         collectInputs({env,asOf,fetchImpl}),
-        Promise.resolve()
-          .then(()=>collectBreadthDomain({
-            env,
-            asOf,
-            fetchImpl,
-            runtimeOptions:{now:()=>instant},
-          }))
-          .catch(()=>buildBreadthR2UnavailablePublicDomain("BREADTH_R2_RUNTIME_UNAVAILABLE",instant.toISOString())),
+        loadStoredInflationSeries(env?.DB,{asOf}),
+        Promise.resolve().then(()=>collectBreadthDomain({
+          env,
+          asOf,
+          fetchImpl,
+          runtimeOptions:{now:()=>instant},
+        })),
       ]);
+      const collected=collectionState.status==="fulfilled"
+        ? collectionState.value
+        : {series:{},external:{},rateR2:{series:{}}};
+      const storedInflation=storageState.status==="fulfilled"
+        ? storageState.value
+        : {
+            status:"STORAGE_READ_FAILED",
+            source:"STORED_HISTORY_ONLY",
+            asOf,
+            series:{},
+            snapshots:{},
+            missing:[...INFLATION_SCORING_SERIES],
+            issues:["STORAGE_READ_FAILED"],
+          };
+      const breadthDomain=breadthState.status==="fulfilled"
+        ? breadthState.value
+        : buildBreadthR2UnavailablePublicDomain("BREADTH_R2_RUNTIME_UNAVAILABLE",instant.toISOString());
+
+      if(
+        collectionState.status==="rejected"
+        && Object.keys(storedInflation?.series??{}).length===0
+      ){
+        throw collectionState.reason;
+      }
+
+      const scoringSeries=buildStoredInflationScoringSeries(
+        collected?.series??{},
+        storedInflation,
+      );
+      const scoringExternal={...(collected?.external??{})};
+      delete scoringExternal.inflationExpectationsRows;
+
       const diagnostic=orchestrate({
         asOfDate:asOf,
         baseOverall:null,
-        series:collected?.series??{},
-        external:collected?.external??{},
+        series:scoringSeries,
+        external:scoringExternal,
       });
 
       const diagnostics=diagnostic?.snapshot?.diagnostics??{};
@@ -131,7 +167,7 @@ export function createMarketScoreR1Handler({
         modelVersion:composite.modelVersion,
         asOfDate:asOf,
         overall:composite.overall,
-        domains:composite.domains.map(domain=>domain.id==='rates'?{...domain,modelVersion:rate.modelVersion}:domain),
+        domains:composite.domains,
         diagnostics8:diagnostics8(diagnostic?.snapshot),
         updatedAt:composite.updatedAt,
         dataQuality:{

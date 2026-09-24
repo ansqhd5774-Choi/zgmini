@@ -1,5 +1,7 @@
 import {DIAGNOSTIC_FRED_SERIES} from '../lib/diagnostic-layer/input-registry.mjs';
 import {fetchDiagnosticFredSeries} from '../lib/diagnostic-layer/official-macro-adapters.mjs';
+import {persistInflationApiHistory} from './api-history-store.mjs';
+import {INFLATION_SCORING_SERIES, loadStoredInflationSeries, buildStoredInflationScoringSeries} from './inflation-history-reader.mjs';
 import {OFR_MNEMONICS, fetchOfrRepoSeries} from '../lib/diagnostic-layer/batch-b-official-adapters.mjs';
 import {
   fetchCmdiWorkbook,
@@ -10,7 +12,7 @@ import {parseBisColumnCsv} from '../lib/diagnostic-layer/bis-bulk-parser.mjs';
 import {unzipSelected} from '../lib/diagnostic-layer/xlsx-lite.mjs';
 import {buildFullDiagnosticOrchestrator} from '../lib/diagnostic-layer/full-diagnostic-orchestrator.mjs';
 import {collectBreadthB1R1Runtime} from '../lib/market-score/breadth-b1-r1-runtime.mjs';
-import {readEarningsE1R4StoredScore} from '../lib/market-score/sec-earnings-e1-r4-provider.mjs';
+import {collectEarningsE1R3PublicDomain} from '../lib/market-score/sec-earnings-e1-r3-provider.mjs';
 import {fetchSecRegisteredFundFlows} from '../lib/market-score/sec-fund-flow-r1-provider.mjs';
 
 const OPERATOR_ENV = 'KFG_V2_CANARY_OPERATOR_EMAIL';
@@ -166,7 +168,7 @@ const DEFAULT_ADAPTERS = Object.freeze({
   fetchCopper: fetchWorldBankCopper,
   fetchBis: fetchBisBulkDataset,
   fetchFundFlows: fetchSecRegisteredFundFlows,
-  fetchEarnings: readEarningsE1R4StoredScore,
+  fetchEarnings: collectEarningsE1R3PublicDomain,
 });
 
 export async function collectDiagnosticLiveInputs({
@@ -228,9 +230,21 @@ export async function collectDiagnosticLiveInputs({
   ]),
   impl.fetchFundFlows({fetchImpl: bounded.fetchImpl}),
   collectBreadthB1R1Runtime({env, fetchImpl}),
-  impl.fetchEarnings({asOf, db:env?.DB}),
+  impl.fetchEarnings({asOf, fetchImpl:bounded.fetchImpl, db:env?.DB}),
   ]);
   const [dvp,triParty,cmdi,gscpi,copper,bisDsr,bisTc]=externalResults;
+
+  try {
+    await persistInflationApiHistory(env?.DB, fredResults, {
+      asOf,
+      retrievedAt: new Date().toISOString(),
+    });
+  } catch (error) {
+    console.warn(
+      '[api-history] inflation persistence failed',
+      error instanceof Error ? error.message : 'UNKNOWN_ERROR',
+    );
+  }
 
   const series = {};
   for (const result of fredResults) {
@@ -388,19 +402,91 @@ export function createDiagnosticV1CanaryHandler({
     }
 
     try {
-      const collected = await collectInputs({
-        env,
-        asOf: body.asOf,
-        fetchImpl,
-        requestCap: REQUEST_CAP,
-      });
+      const [collectionState, storageState] = await Promise.allSettled([
+        collectInputs({
+          env,
+          asOf: body.asOf,
+          fetchImpl,
+          requestCap: REQUEST_CAP,
+        }),
+        loadStoredInflationSeries(env?.DB, {asOf: body.asOf}),
+      ]);
+
+      const collected = collectionState.status === 'fulfilled'
+        ? collectionState.value
+        : {
+            series: {},
+            external: {},
+            providerSummary: {},
+            requestCount: 0,
+            networkLog: [],
+          };
+
+      const storedInflation = storageState.status === 'fulfilled'
+        ? storageState.value
+        : {
+            status: 'STORAGE_READ_FAILED',
+            source: 'STORED_HISTORY_ONLY',
+            asOf: body.asOf,
+            series: {},
+            snapshots: {},
+            missing: [...INFLATION_SCORING_SERIES],
+            issues: ['STORAGE_READ_FAILED'],
+          };
+
+      const scoringSeries = buildStoredInflationScoringSeries(
+        collected.series,
+        storedInflation,
+      );
       const result = orchestrate({
         asOfDate: body.asOf,
         baseOverall: body.baseOverall,
-        series: collected.series,
+        series: scoringSeries,
         external: collected.external,
       });
-      return safeJson(summarizeDiagnosticCanary(result, collected), 200);
+
+      const storedSnapshots = Object.values(storedInflation?.snapshots ?? {});
+      const retrievedAts = storedSnapshots
+        .map(item => item?.retrievedAt)
+        .filter(value => typeof value === 'string' && value);
+      const observationDates = storedSnapshots
+        .map(item => item?.latestObservationDate)
+        .filter(value => typeof value === 'string' && value);
+
+      const summaryCollected = {
+        ...collected,
+        providerSummary: {
+          ...(collected?.providerSummary ?? {}),
+          inflationApiCollection: collectionState.status === 'fulfilled'
+            ? {
+                status: 'FULFILLED_STORE_PIPELINE',
+                requestCount: collected?.requestCount ?? 0,
+              }
+            : {
+                status: 'FAILED_STORE_PIPELINE',
+                reason: collectionState.reason instanceof DiagnosticCanaryError
+                  ? collectionState.reason.status
+                  : 'COLLECTION_FAILED',
+                requestCount: 0,
+              },
+          inflationStoredHistory: {
+            status: storedInflation?.status ?? 'UNKNOWN',
+            source: storedInflation?.source ?? 'STORED_HISTORY_ONLY',
+            asOf: storedInflation?.asOf ?? body.asOf,
+            datasetCount: Object.keys(storedInflation?.series ?? {}).length,
+            missing: Array.isArray(storedInflation?.missing) ? storedInflation.missing : [],
+            issues: Array.isArray(storedInflation?.issues) ? storedInflation.issues : [],
+            oldestRetrievedAt: retrievedAts.length ? [...retrievedAts].sort()[0] : null,
+            latestRetrievedAt: retrievedAts.length ? [...retrievedAts].sort().at(-1) : null,
+            latestObservationDate: observationDates.length
+              ? [...observationDates].sort().at(-1)
+              : null,
+            freshnessContract: 'OBSERVED_TIMESTAMPS_ONLY_NO_THRESHOLD',
+          },
+        },
+      };
+
+      return safeJson(summarizeDiagnosticCanary(result, summaryCollected), 200);
     } catch (error) {
       return safeJson({
         status: 'FAILED',
