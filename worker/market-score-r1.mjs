@@ -1,6 +1,7 @@
 import {buildCompositeMarketScore} from "../lib/market-score/composite-model-r1.mjs";
 import {buildCmR1DomainResults} from "../lib/market-score/domain-adapter-r1.mjs";
 import {buildConsumptionC1,buildCommoditiesK1} from "../lib/market-score/public-domain-producers-r1.mjs";
+import {loadStoredConsumptionC1R3} from "./consumption-r3-history-reader.mjs";
 import {buildEmploymentR538} from "../lib/diagnostic-layer/employment-r538-components.mjs";
 import {
   buildDollarFxR53,
@@ -48,6 +49,8 @@ export function createMarketScoreR1Handler({
   orchestrate,
   now=()=>new Date(),
   collectBreadthDomain=collectBreadthR2PublicDomainR1,
+
+  loadConsumptionDomain=loadStoredConsumptionC1R3,
 }={}){
   if(typeof collectInputs!=="function")throw new Error("COLLECT_INPUTS_REQUIRED");
   if(typeof orchestrate!=="function")throw new Error("ORCHESTRATE_REQUIRED");
@@ -62,7 +65,7 @@ export function createMarketScoreR1Handler({
     if(!validDate(asOf))return safeJson({status:"FAILED",reason:"INVALID_SERVER_TIME"},500);
 
     try{
-      const [collectionState,storageState,breadthState]=await Promise.allSettled([
+      const [collectionState,storageState,breadthState,consumptionState]=await Promise.allSettled([
         collectInputs({env,asOf,fetchImpl}),
         loadStoredInflationSeries(env?.DB,{asOf}),
         Promise.resolve().then(()=>collectBreadthDomain({
@@ -71,6 +74,7 @@ export function createMarketScoreR1Handler({
           fetchImpl,
           runtimeOptions:{now:()=>instant},
         })),
+        Promise.resolve().then(()=>loadConsumptionDomain(env?.DB,{asOf})),
       ]);
       const collected=collectionState.status==="fulfilled"
         ? collectionState.value
@@ -89,6 +93,9 @@ export function createMarketScoreR1Handler({
       const breadthDomain=breadthState.status==="fulfilled"
         ? breadthState.value
         : buildBreadthR2UnavailablePublicDomain("BREADTH_R2_RUNTIME_UNAVAILABLE",instant.toISOString());
+      const consumptionDomain=consumptionState.status==="fulfilled"
+        ? consumptionState.value
+        : {status:"PARTIAL",score:null,missingFactors:["C1_R3_STORAGE_READ_FAILED"],indicators:[],trend:[],freshness:"STORED_CALCULATION_HISTORY_ONLY",updatedAt:null,methodologyVersion:"R3.45P",interpretation:"C1-R3.45P: stored calculation history only; live fallback forbidden"};
 
       if(
         collectionState.status==="rejected"
@@ -139,10 +146,7 @@ export function createMarketScoreR1Handler({
 
       const approvedPublicDomains={
         ...(collected?.external?.publicDomainScores??{}),
-        consumption:buildConsumptionC1({
-          recessionRows:diagnostic?.artifacts?.recession?.rows??[],
-          asOfDate:asOf,
-        }),
+        consumption:consumptionDomain,
         commodities:buildCommoditiesK1({
           supplyRows:diagnostic?.artifacts?.supply?.rows??[],
           asOfDate:asOf,
