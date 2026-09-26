@@ -8,7 +8,7 @@ import {
   buildFundFlowR53,
 } from "../lib/diagnostic-layer/open-resolution-r53-components.mjs";
 import {buildRateR2} from "../lib/market-score/rate-r2.mjs";
-import {collectBreadthR2PublicDomainR1} from "../lib/market-score/breadth-r2-worker-domain-r1.mjs";
+import {readBreadthR2StoredPublicDomainR2} from "../lib/market-score/breadth-r2-worker-domain-r2.mjs";
 import {buildBreadthR2UnavailablePublicDomain} from "../lib/market-score/breadth-r2-public-domain-r1.mjs";
 import {
   INFLATION_SCORING_SERIES,
@@ -48,7 +48,7 @@ export function createMarketScoreR1Handler({
   collectInputs,
   orchestrate,
   now=()=>new Date(),
-  collectBreadthDomain=collectBreadthR2PublicDomainR1,
+  collectBreadthDomain=readBreadthR2StoredPublicDomainR2,
 
   loadConsumptionDomain=loadStoredConsumptionC1R3,
 }={}){

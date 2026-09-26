@@ -3,6 +3,7 @@ import { collectDiagnosticLiveInputs } from "../../../worker/diagnostic-v1-canar
 import { buildFullDiagnosticOrchestrator } from "../../../lib/diagnostic-layer/full-diagnostic-orchestrator.mjs";
 import { createMarketScoreR1Handler } from "../../../worker/market-score-r1.mjs";
 import { collectRateR2Inputs } from "../../../lib/market-score/rate-r2-provider.mjs";
+import { collectBreadthR2StoreOnlyR2 } from "../../../lib/market-score/breadth-r2-worker-domain-r2.mjs";
 import { collectEarningsE1R4ToStore } from "../../../lib/market-score/sec-earnings-e1-r4-provider.mjs";
 
 import { withMarketScoreCache } from "../../../worker/market-score-cache.mjs";
@@ -29,6 +30,12 @@ const handler=withMarketScoreCache(createMarketScoreR1Handler({
 } as any), {env,waitUntil});
 
 export async function GET(request:Request){
+  const asOf=new Date().toISOString().slice(0,10);
+  waitUntil(
+    Promise.resolve()
+      .then(()=>collectBreadthR2StoreOnlyR2({env,asOf}))
+      .catch(()=>null),
+  );
   const response=await handler(request);
   const headers=new Headers(response.headers);
   headers.set("X-Robots-Tag","noindex");
