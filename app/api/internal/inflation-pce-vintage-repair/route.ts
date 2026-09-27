@@ -63,7 +63,7 @@ function minusMonths(dateStr: string, n: number) {
 }
 
 function vintageField(seriesId: string, vintageDate: string) {
-  return `${seriesId}_${vintageDate.replaceAll("-","")}`;
+  return `${seriesId}_PC1_${vintageDate.replaceAll("-","")}`;
 }
 
 function numericCell(v: unknown): number | null {
