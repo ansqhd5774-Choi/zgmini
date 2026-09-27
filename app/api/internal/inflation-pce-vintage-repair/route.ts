@@ -155,6 +155,50 @@ async function fetchSameVintagePc1(
     }
   }
 
+  const observationFieldNames = [...new Set(
+    data.observations.flatMap((row:any) =>
+      row && typeof row === "object" ? Object.keys(row) : []
+    )
+  )].sort();
+  const sampleObservationFieldNames = [0, Math.floor(data.observations.length / 2), data.observations.length - 1]
+    .filter((index,pos,all)=>index >= 0 && all.indexOf(index) === pos)
+    .map(index => ({
+      index,
+      fieldNames: data.observations[index] && typeof data.observations[index] === "object"
+        ? Object.keys(data.observations[index]).sort()
+        : [],
+    }));
+
+  let scheduleObservationRowMatchCount = 0;
+  let expectedSeriesVintageFieldPresenceCount = 0;
+  let expectedDateFieldPresenceCount = 0;
+  let expectedCompactDateFieldPresenceCount = 0;
+  for (const item of schedule) {
+    const row = byDate.get(item.observationDate);
+    if (!row || typeof row !== "object") continue;
+    scheduleObservationRowMatchCount += 1;
+    if (Object.prototype.hasOwnProperty.call(row,vintageField(seriesId,item.availableAt))) {
+      expectedSeriesVintageFieldPresenceCount += 1;
+    }
+    if (Object.prototype.hasOwnProperty.call(row,item.availableAt)) {
+      expectedDateFieldPresenceCount += 1;
+    }
+    if (Object.prototype.hasOwnProperty.call(row,item.availableAt.replaceAll("-",""))) {
+      expectedCompactDateFieldPresenceCount += 1;
+    }
+  }
+
+  const fieldDiagnostics = {
+    topLevelFieldNames: data && typeof data === "object" ? Object.keys(data).sort() : [],
+    observationFieldCount: observationFieldNames.length,
+    observationFieldNames,
+    sampleObservationFieldNames,
+    scheduleObservationRowMatchCount,
+    expectedSeriesVintageFieldPresenceCount,
+    expectedDateFieldPresenceCount,
+    expectedCompactDateFieldPresenceCount,
+  };
+
   const rows: RepairRow[] = [];
   const missing: ScheduleRow[] = [];
   for (const item of schedule) {
@@ -169,6 +213,7 @@ async function fetchSameVintagePc1(
     vintageDateCount:vintages.length,
     scheduleCount:schedule.length,
     responseObservationRows:data.observations.length,
+    fieldDiagnostics,
     rows,
     missing,
   };
