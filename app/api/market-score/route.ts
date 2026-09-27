@@ -7,6 +7,7 @@ import { collectBreadthR2StoreOnlyR2 } from "../../../lib/market-score/breadth-r
 import { collectEarningsE1R4ToStore } from "../../../lib/market-score/sec-earnings-e1-r4-provider.mjs";
 
 import { withMarketScoreCache } from "../../../worker/market-score-cache.mjs";
+import { runConsumptionR3OperationalRefresh } from "../../../worker/consumption-r3-operational-refresh.mjs";
 
 const collectMarketScoreInputs=async(args:any)=>{
   const earningsStoreTask=collectEarningsE1R4ToStore({
@@ -31,6 +32,12 @@ const handler=withMarketScoreCache(createMarketScoreR1Handler({
 
 export async function GET(request:Request){
   const asOf=new Date().toISOString().slice(0,10);
+  // C1_R3_OPERATIONAL_REFRESH_WAITUNTIL: bounded, stored-first quarterly refresh.
+  waitUntil(
+    Promise.resolve()
+      .then(()=>runConsumptionR3OperationalRefresh({env,asOf,fetchImpl:globalThis.fetch}))
+      .catch(()=>null),
+  );
   waitUntil(
     Promise.resolve()
       .then(()=>collectBreadthR2StoreOnlyR2({env,asOf}))
