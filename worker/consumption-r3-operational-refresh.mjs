@@ -17,10 +17,11 @@ const REVISION="R3.45P";
 const MAX_SOURCES_PER_RUN=10;
 const HEAVY_SOURCE_KEYS=Object.freeze(new Set(["CENSUS:MARTS","NYFED:HHDC","EIA:WPSR"]));
 
-export function selectConsumptionR3SourceBatch(missing=[]){
+export function selectConsumptionR3SourceBatch(missing=[],limit=MAX_SOURCES_PER_RUN){
   if(!Array.isArray(missing))throw new Error("C1_R3_BATCH_MISSING_INVALID");
+  if(!Number.isSafeInteger(limit)||limit<1||limit>MAX_SOURCES_PER_RUN)throw new Error("C1_R3_BATCH_LIMIT_INVALID");
   const light=missing.filter(key=>!HEAVY_SOURCE_KEYS.has(key));
-  if(light.length)return light.slice(0,MAX_SOURCES_PER_RUN);
+  if(light.length)return light.slice(0,limit);
   const heavy=missing.find(key=>HEAVY_SOURCE_KEYS.has(key));
   return heavy?[heavy]:[];
 }
@@ -99,6 +100,7 @@ export async function runConsumptionR3OperationalRefresh({
   asOf,
   fetchImpl=globalThis.fetch,
   now=()=>new Date(),
+  maxSourcesPerRun=MAX_SOURCES_PER_RUN,
   dependencies={},
 }={}){
   if(!validDate(asOf))throw new Error("C1_R3_RUNTIME_ASOF_INVALID");
@@ -146,7 +148,7 @@ export async function runConsumptionR3OperationalRefresh({
     return {...calc,providerRequests:0,quarter:target.quarter,scoreDate:target.scoreDate};
   }
 
-  const batch=selectConsumptionR3SourceBatch(missing);
+  const batch=selectConsumptionR3SourceBatch(missing,maxSourcesPerRun);
   const attemptDate=asOf;
   const claimKey=batch[0];
   const startedAt=now().toISOString();
@@ -229,13 +231,15 @@ export async function runConsumptionR3OperationalRefresh({
 
 export const C1_R3_OPERATIONAL_REFRESH_CONTRACT=Object.freeze({
   revision:REVISION,
-  operationalRevision:"C1-OP-R2",
-  trigger:"CRON_PRIMARY_WITH_PUBLIC_FALLBACK",
-  primaryTrigger:"CLOUDFLARE_SCHEDULED_CRON",
+  operationalRevision:"C1-OP-R3",
+  trigger:"EXTERNAL_HTTP_PRIMARY_WITH_INTERNAL_FALLBACKS",
+  primaryTrigger:"AUTHENTICATED_EXTERNAL_HTTP_SCHEDULER",
+  secondaryTrigger:"CLOUDFLARE_SCHEDULED_CRON",
   fallbackTrigger:"PUBLIC_MARKET_SCORE_WAITUNTIL",
-  cron:"17 * * * *",
+  externalRoute:"/api/internal/c1-r3-refresh",
   target:"LATEST_COMPLETED_QUARTER_ONLY",
   maxProviderSourcesPerInvocation:MAX_SOURCES_PER_RUN,
+  externalMaxSourcesPerInvocation:1,
   maxHeavySourcesPerInvocation:1,
   retry:"ON_NEXT_UTC_DATE_FOR_SAME_FAILED_BATCH",
   sourcePersistence:"D1_BEFORE_CALCULATION",
