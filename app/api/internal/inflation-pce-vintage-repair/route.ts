@@ -1,6 +1,6 @@
 import { env } from "cloudflare:workers";
 import { chatGPTSignInPath, getChatGPTUser } from "../../../chatgpt-auth";
-import { loadStoredInflationSeries } from "../../../../worker/inflation-history-reader.mjs";
+import { loadStoredInflationPitSeries } from "../../../../worker/inflation-pit-reader.mjs";
 
 const ROUTE_PATH = "/api/internal/inflation-pce-vintage-repair";
 const OBSERVATION_END = "2026-09-24";
@@ -76,7 +76,7 @@ async function loadSchedule(db: any) {
   if (!db || typeof db.prepare !== "function") {
     throw new Error("DB_BINDING_MISSING");
   }
-  const reader = await loadStoredInflationSeries(db,{asOf: OBSERVATION_END});
+  const reader = await loadStoredInflationPitSeries(db,{asOf: OBSERVATION_END,seriesIds:[...SERIES]});
   if (!reader || typeof reader !== "object" || !reader.series || typeof reader.series !== "object") {
     throw new Error("PIT_READER_INVALID_RESULT");
   }
