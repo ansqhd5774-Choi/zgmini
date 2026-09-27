@@ -147,10 +147,10 @@ test("Breadth collector failure is isolated to PARTIAL instead of failing the wh
   assert.equal(body.dataQuality.reweighted,false);
 });
 
-test("dashboard source uses R2 explanation and visibly renders Breadth raw/date metadata",()=>{
+test("dashboard source uses B1-R3 explanation and visibly renders Breadth raw/date metadata",()=>{
   const source=fs.readFileSync(new URL("../app/dashboard-ui.tsx",import.meta.url),"utf8");
   assert.doesNotMatch(source,/Data by Equibles/);
-  assert.match(source,/BEA 해외 포트폴리오 주식수급/);
+  assert.match(source,/S&P500 현재 구성종목의 IEX 일별 가격·거래량 저장값/);
   assert.match(source,/breadthMeta/);
   assert.match(source,/row\.asOfDate/);
 });

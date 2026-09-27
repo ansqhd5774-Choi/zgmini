@@ -111,7 +111,7 @@ const r55Cards=[
  {label:'기업실적',Icon:BriefcaseBusiness,basis:'공개 점수 결과를 표시합니다. PARTIAL/UNAVAILABLE은 0점으로 대체하지 않습니다.',details:['주당이익 성장','매출 성장률','이익 성장비','영업·순이익률']},
  {label:'유동성',Icon:Landmark,basis:'공개 점수 결과를 표시합니다. PARTIAL/UNAVAILABLE은 0점으로 대체하지 않습니다.',details:['은행 준비금','통화량 증가','재무부 계정변화','익일 역레포']},
  {label:'자금흐름',Icon:ArrowLeftRight,basis:'SEC 등록펀드 전체 순유입을 전월 순자산으로 나눈 월별 비율입니다. 미국 주식형 펀드만의 값이 아닙니다. 추이는 실제 월별 점수이며 일별 보간하지 않습니다.',details:[]},
- {label:'수급·폭',Icon:Network,basis:'BEA 해외 포트폴리오 주식수급, SEC 주식공급 폭, CFTC 기관·레버리지 선물 포지션을 각 25%로 결합합니다. 네 항목 모두 필요하며 결측 시 재가중하지 않습니다.',details:[]},
+ {label:'수급·폭',Icon:Network,basis:'S&P500 현재 구성종목의 IEX 일별 가격·거래량 저장값으로 계산합니다. 상승종목비율 60% + 상승거래대금비율 40%이며, 수익률·거래대금 커버리지는 품질 지표입니다.',details:[]},
  {label:'달러환율',Icon:DollarSign,basis:'공개 점수 결과를 표시합니다. PARTIAL/UNAVAILABLE은 0점으로 대체하지 않습니다.',details:['광의 달러지수','3개월 변화율','신흥국 달러지수','달러 변동성']},
  {label:'유가원자재',Icon:Droplet,basis:'공개 점수 결과를 표시합니다. 공급충격 점수를 유가·원자재 점수로 대체하지 않습니다.',details:['서부텍사스유','브렌트유','구리','휘발유']}
 ] as const;
