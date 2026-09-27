@@ -10,13 +10,6 @@ import { withMarketScoreCache } from "../../../worker/market-score-cache.mjs";
 import { runConsumptionR3OperationalRefresh } from "../../../worker/consumption-r3-operational-refresh.mjs";
 
 const collectMarketScoreInputs=async(args:any)=>{
-  const earningsStoreTask=collectEarningsE1R4ToStore({
-    asOf:args?.asOf,
-    fetchImpl:args?.fetchImpl??globalThis.fetch,
-    db:env?.DB,
-  } as any);
-  waitUntil(earningsStoreTask.catch(()=>undefined));
-
   return collectRateR2Inputs({
     base:await collectDiagnosticLiveInputs(args),
     asOf:args?.asOf,
@@ -33,6 +26,12 @@ const handler=withMarketScoreCache(createMarketScoreR1Handler({
 
 export async function GET(request:Request){
   const asOf=new Date().toISOString().slice(0,10);
+  const earningsStoreTask=collectEarningsE1R4ToStore({
+    asOf,
+    fetchImpl:globalThis.fetch,
+    db:env?.DB,
+  } as any);
+  waitUntil(earningsStoreTask.catch(()=>undefined));
   // C1_R3_OPERATIONAL_REFRESH_WAITUNTIL: bounded, stored-first quarterly refresh.
   waitUntil(
     Promise.resolve()

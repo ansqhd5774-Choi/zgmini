@@ -12,7 +12,7 @@ import {parseBisColumnCsv} from '../lib/diagnostic-layer/bis-bulk-parser.mjs';
 import {unzipSelected} from '../lib/diagnostic-layer/xlsx-lite.mjs';
 import {buildFullDiagnosticOrchestrator} from '../lib/diagnostic-layer/full-diagnostic-orchestrator.mjs';
 import {collectBreadthB1R1Runtime} from '../lib/market-score/breadth-b1-r1-runtime.mjs';
-import {collectEarningsE1R3PublicDomain} from '../lib/market-score/sec-earnings-e1-r3-provider.mjs';
+import {readEarningsE1R4StoredScore} from '../lib/market-score/sec-earnings-e1-r4-provider.mjs';
 import {fetchSecRegisteredFundFlows} from '../lib/market-score/sec-fund-flow-r1-provider.mjs';
 
 const OPERATOR_ENV = 'KFG_V2_CANARY_OPERATOR_EMAIL';
@@ -168,7 +168,7 @@ const DEFAULT_ADAPTERS = Object.freeze({
   fetchCopper: fetchWorldBankCopper,
   fetchBis: fetchBisBulkDataset,
   fetchFundFlows: fetchSecRegisteredFundFlows,
-  fetchEarnings: collectEarningsE1R3PublicDomain,
+  fetchEarnings: readEarningsE1R4StoredScore,
 });
 
 export async function collectDiagnosticLiveInputs({
@@ -230,7 +230,7 @@ export async function collectDiagnosticLiveInputs({
   ]),
   impl.fetchFundFlows({fetchImpl: bounded.fetchImpl}),
   collectBreadthB1R1Runtime({env, fetchImpl}),
-  impl.fetchEarnings({asOf, fetchImpl:bounded.fetchImpl, db:env?.DB}),
+  impl.fetchEarnings({asOf, db:env?.DB}),
   ]);
   const [dvp,triParty,cmdi,gscpi,copper,bisDsr,bisTc]=externalResults;
 
