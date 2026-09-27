@@ -96,3 +96,11 @@ test('disconnect does not cancel shared collection; failed end retains delivered
   await assert.rejects(readProgressiveMarketResponse(streamMarketScore(async(_r,notify)=>{notify(partial);throw new Error('private error')},request()),x=>seen.push(x),()=>{}),/MARKET_SCORE_UNAVAILABLE/);
   assert.equal(seen.length,1);
 });
+
+ test('worker lifetime includes stream completion after returning headers',async()=>{
+  const slow=deferred();let lifetime,finished=false;
+  const response=streamMarketScore(async()=>{await slow.promise;return Response.json(partial)},request(),{waitUntil:task=>{lifetime=task}});
+  assert.ok(lifetime instanceof Promise);
+  const reading=readProgressiveMarketResponse(response,()=>{},()=>{finished=true});
+  assert.equal(finished,false);slow.resolve();await lifetime;await reading;assert.equal(finished,true);
+ });

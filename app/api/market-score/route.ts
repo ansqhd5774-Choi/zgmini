@@ -43,7 +43,7 @@ export async function GET(request:Request){
       .catch(()=>null),
   );
   const response=request.headers.get('accept')?.includes('application/x-ndjson')
-    ? streamMarketScore(handler,request)
+    ? streamMarketScore(handler,request,{waitUntil})
     : await handler(request);
   const headers=new Headers(response.headers);
   headers.set("X-Robots-Tag","noindex");

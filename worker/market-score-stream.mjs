@@ -1,5 +1,5 @@
 // Only the existing public score payload crosses this boundary, never collector inputs.
-export function streamMarketScore(handler,request) {
+export function streamMarketScore(handler,request,{waitUntil}={}) {
   let closed=false,previous='';
   const encoder=new TextEncoder();
   const body=new ReadableStream({
@@ -12,7 +12,7 @@ export function streamMarketScore(handler,request) {
         controller.enqueue(encoder.encode(line+'\n'));
       };
       send({type:'start'});
-      Promise.resolve().then(()=>handler(request,body=>send({type:'snapshot',body})))
+      const completion=Promise.resolve().then(()=>handler(request,body=>send({type:'snapshot',body})))
         .then(async response=>{
           const body=await response.json();
           if(!response.ok||body.status!=='SUCCESS')send({type:'error',reason:'MARKET_SCORE_UNAVAILABLE'});
@@ -20,6 +20,8 @@ export function streamMarketScore(handler,request) {
         })
         .catch(()=>send({type:'error',reason:'MARKET_SCORE_UNAVAILABLE'}))
         .finally(()=>{if(!closed){closed=true;controller.close()}});
+      // The request has returned headers, but provider and cache work is still live.
+      if(typeof waitUntil==='function')waitUntil(completion);
     },
     cancel(){closed=true},
   });
