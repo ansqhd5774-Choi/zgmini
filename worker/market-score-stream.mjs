@@ -1,6 +1,6 @@
 // Only the existing public score payload crosses this boundary, never collector inputs.
 export function streamMarketScore(handler,request,{waitUntil}={}) {
-  let closed=false,previous='';
+  let closed=false,previous='',heartbeat;
   const encoder=new TextEncoder();
   const body=new ReadableStream({
     start(controller){
@@ -12,6 +12,7 @@ export function streamMarketScore(handler,request,{waitUntil}={}) {
         controller.enqueue(encoder.encode(line+'\n'));
       };
       send({type:'start'});
+      heartbeat=setInterval(()=>send({type:'heartbeat'}),5000);
       const completion=Promise.resolve().then(()=>handler(request,body=>send({type:'snapshot',body})))
         .then(async response=>{
           const body=await response.json();
@@ -19,11 +20,11 @@ export function streamMarketScore(handler,request,{waitUntil}={}) {
           else send({type:'complete',body,cacheControl:response.headers.get('cache-control'),age:response.headers.get('age')});
         })
         .catch(()=>send({type:'error',reason:'MARKET_SCORE_UNAVAILABLE'}))
-        .finally(()=>{if(!closed){closed=true;controller.close()}});
+        .finally(()=>{clearInterval(heartbeat);if(!closed){closed=true;controller.close()}});
       // The request has returned headers, but provider and cache work is still live.
       if(typeof waitUntil==='function')waitUntil(completion);
     },
-    cancel(){closed=true},
+    cancel(){closed=true;clearInterval(heartbeat)},
   });
   return new Response(body,{headers:{
     'content-type':'application/x-ndjson; charset=utf-8',

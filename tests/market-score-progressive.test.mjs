@@ -1,3 +1,5 @@
+import {createProgressiveComputationCache} from '../worker/market-score-computation-cache.mjs';
+import {buildFullDiagnosticOrchestrator} from '../lib/diagnostic-layer/full-diagnostic-orchestrator.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createMarketScoreR1Handler} from '../worker/market-score-r1.mjs';
@@ -104,3 +106,14 @@ test('disconnect does not cancel shared collection; failed end retains delivered
   const reading=readProgressiveMarketResponse(response,()=>{},()=>{finished=true});
   assert.equal(finished,false);slow.resolve();await lifetime;await reading;assert.equal(finished,true);
  });
+
+test('memoized progress preserves orchestrator results and invalidates changed histories',()=>{
+ const compute=createProgressiveComputationCache();let calls=0;
+ const fn=({rows})=>{calls++;return rows.length};
+ const rows=[{value:1}];assert.equal(compute(fn,{rows}),1);assert.equal(compute(fn,{rows}),1);assert.equal(calls,1);
+ assert.equal(compute(fn,{rows:[...rows,{value:2}]}),2);assert.equal(calls,2);
+ const base={asOfDate:'2026-09-27',series:{},external:{},baseOverall:null};
+ assert.deepEqual(buildFullDiagnosticOrchestrator({...base,compute}),buildFullDiagnosticOrchestrator(base));
+ const next={...base,series:{UNRATE:[{observationDate:'2026-08-01',value:4}]}};
+ assert.deepEqual(buildFullDiagnosticOrchestrator({...next,compute}),buildFullDiagnosticOrchestrator(next));
+});

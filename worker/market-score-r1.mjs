@@ -1,3 +1,4 @@
+import {createProgressiveComputationCache} from './market-score-computation-cache.mjs';
 import {buildCompositeMarketScore} from "../lib/market-score/composite-model-r1.mjs";
 import {buildCmR1DomainResults} from "../lib/market-score/domain-adapter-r1.mjs";
 import {buildConsumptionC1,buildCommoditiesK1} from "../lib/market-score/public-domain-producers-r1.mjs";
@@ -63,11 +64,12 @@ export function createMarketScoreR1Handler({
       : null;
     if(!validDate(asOf))return safeJson({status:"FAILED",reason:"INVALID_SERVER_TIME"},500);
 
+    const compute=createProgressiveComputationCache();
     let progressTimer;
     const state={collected:{series:{},external:{}},storedInflation:{series:{}},breadthDomain:null,consumptionDomain:null};
     const emit=()=>{
       if(typeof onProgress!=='function')return;
-      try { onProgress(composeMarketSnapshot({...state,orchestrate,asOf,instant})); } catch { /* Pending inputs are not a request failure. */ }
+      try { onProgress(composeMarketSnapshot({...state,orchestrate,asOf,instant,compute})); } catch { /* Pending inputs are not a request failure. */ }
     };
     const update=(key,value)=>{
       state[key]=value;
@@ -108,7 +110,7 @@ export function createMarketScoreR1Handler({
         : {status:"PARTIAL",score:null,missingFactors:["C1_R3_STORAGE_READ_FAILED"],indicators:[],trend:[],freshness:"STORED_CALCULATION_HISTORY_ONLY",updatedAt:null,methodologyVersion:"R3.45P",interpretation:"C1-R3.45P: stored calculation history only; live fallback forbidden"};
 
       clearTimeout(progressTimer);
-      const body=composeMarketSnapshot({collected,storedInflation,breadthDomain,consumptionDomain,orchestrate,asOf,instant});
+      const body=composeMarketSnapshot({collected,storedInflation,breadthDomain,consumptionDomain,orchestrate,asOf,instant,compute});
       if(collectionState.status==='rejected'&&!body.domains.some(domain=>domain.status==='READY'))throw collectionState.reason;
       return safeJson(body);
     }catch(error){
@@ -126,7 +128,7 @@ export function createMarketScoreR1Handler({
   };
 }
 
-function composeMarketSnapshot({collected,storedInflation,breadthDomain,consumptionDomain,orchestrate,asOf,instant}) {
+function composeMarketSnapshot({collected,storedInflation,breadthDomain,consumptionDomain,orchestrate,asOf,instant,compute}) {
       const scoringSeries=buildStoredInflationScoringSeries(
         collected?.series??{},
         storedInflation,
@@ -137,18 +139,19 @@ function composeMarketSnapshot({collected,storedInflation,breadthDomain,consumpt
       const diagnostic=orchestrate({
         asOfDate:asOf,
         baseOverall:null,
+        compute,
         series:scoringSeries,
         external:scoringExternal,
       });
 
       const diagnostics=diagnostic?.snapshot?.diagnostics??{};
-      const employment=buildEmploymentR538({
+      const employment=compute(buildEmploymentR538,{
         unemploymentRows:collected?.series?.UNRATE??[],
         payrollLevelRows:collected?.series?.PAYEMS??[],
         asOfDate:asOf,
       });
       const rateSeries=collected?.rateR2?.series??{};
-      const rate=buildRateR2({
+      const rate=compute(buildRateR2,{
         effrRows:rateSeries.EFFR??[],
         policyLowerRows:rateSeries.DFEDTARL??[],
         policyUpperRows:rateSeries.DFEDTARU??[],
@@ -158,11 +161,11 @@ function composeMarketSnapshot({collected,storedInflation,breadthDomain,consumpt
         tenYearRows:rateSeries.DGS10??[],
         asOfDate:asOf,
       });
-      const fundFlow=buildFundFlowR53(
+      const fundFlow=compute(buildFundFlowR53,
         collected?.external?.registeredFundFlowRows??[],
         {asOfDate:asOf},
       );
-      const dollarFx=buildDollarFxR53(
+      const dollarFx=compute(buildDollarFxR53,
         collected?.series?.DTWEXBGS??[],
         {asOfDate:asOf},
       );
@@ -170,7 +173,7 @@ function composeMarketSnapshot({collected,storedInflation,breadthDomain,consumpt
       const approvedPublicDomains={
         ...(collected?.external?.publicDomainScores??{}),
         consumption:consumptionDomain,
-        commodities:buildCommoditiesK1({
+        commodities:compute(buildCommoditiesK1,{
           supplyRows:diagnostic?.artifacts?.supply?.rows??[],
           asOfDate:asOf,
         }),
