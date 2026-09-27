@@ -15,6 +15,15 @@ import {refreshConsumptionR3FromStored} from "./consumption-r3-refresh.mjs";
 
 const REVISION="R3.45P";
 const MAX_SOURCES_PER_RUN=10;
+const HEAVY_SOURCE_KEYS=Object.freeze(new Set(["CENSUS:MARTS","NYFED:HHDC","EIA:WPSR"]));
+
+export function selectConsumptionR3SourceBatch(missing=[]){
+  if(!Array.isArray(missing))throw new Error("C1_R3_BATCH_MISSING_INVALID");
+  const light=missing.filter(key=>!HEAVY_SOURCE_KEYS.has(key));
+  if(light.length)return light.slice(0,MAX_SOURCES_PER_RUN);
+  const heavy=missing.find(key=>HEAVY_SOURCE_KEYS.has(key));
+  return heavy?[heavy]:[];
+}
 const initByDb=new WeakMap();
 
 const validDate=v=>typeof v==="string"&&/^\d{4}-\d{2}-\d{2}$/.test(v);
@@ -137,7 +146,7 @@ export async function runConsumptionR3OperationalRefresh({
     return {...calc,providerRequests:0,quarter:target.quarter,scoreDate:target.scoreDate};
   }
 
-  const batch=missing.slice(0,MAX_SOURCES_PER_RUN);
+  const batch=selectConsumptionR3SourceBatch(missing);
   const attemptDate=asOf;
   const claimKey=batch[0];
   const startedAt=now().toISOString();
@@ -220,9 +229,14 @@ export async function runConsumptionR3OperationalRefresh({
 
 export const C1_R3_OPERATIONAL_REFRESH_CONTRACT=Object.freeze({
   revision:REVISION,
-  trigger:"PUBLIC_MARKET_SCORE_WAITUNTIL",
+  operationalRevision:"C1-OP-R2",
+  trigger:"CRON_PRIMARY_WITH_PUBLIC_FALLBACK",
+  primaryTrigger:"CLOUDFLARE_SCHEDULED_CRON",
+  fallbackTrigger:"PUBLIC_MARKET_SCORE_WAITUNTIL",
+  cron:"17 * * * *",
   target:"LATEST_COMPLETED_QUARTER_ONLY",
   maxProviderSourcesPerInvocation:MAX_SOURCES_PER_RUN,
+  maxHeavySourcesPerInvocation:1,
   retry:"ON_NEXT_UTC_DATE_FOR_SAME_FAILED_BATCH",
   sourcePersistence:"D1_BEFORE_CALCULATION",
   calculation:"STORED_SOURCE_ONLY",

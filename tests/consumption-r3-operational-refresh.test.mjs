@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {
   runConsumptionR3OperationalRefresh,
+  selectConsumptionR3SourceBatch,
   C1_R3_OPERATIONAL_REFRESH_CONTRACT,
 } from "../worker/consumption-r3-operational-refresh.mjs";
 import {
@@ -86,8 +87,13 @@ test("future refresh stores at most 10 sources per invocation and calculates on 
 });
 
 test("runtime contract is background-only and bounded",()=>{
-  assert.equal(C1_R3_OPERATIONAL_REFRESH_CONTRACT.trigger,"PUBLIC_MARKET_SCORE_WAITUNTIL");
+  assert.equal(C1_R3_OPERATIONAL_REFRESH_CONTRACT.trigger,"CRON_PRIMARY_WITH_PUBLIC_FALLBACK");
+  assert.equal(C1_R3_OPERATIONAL_REFRESH_CONTRACT.operationalRevision,"C1-OP-R2");
+  assert.equal(C1_R3_OPERATIONAL_REFRESH_CONTRACT.primaryTrigger,"CLOUDFLARE_SCHEDULED_CRON");
+  assert.equal(C1_R3_OPERATIONAL_REFRESH_CONTRACT.fallbackTrigger,"PUBLIC_MARKET_SCORE_WAITUNTIL");
+  assert.equal(C1_R3_OPERATIONAL_REFRESH_CONTRACT.cron,"17 * * * *");
   assert.equal(C1_R3_OPERATIONAL_REFRESH_CONTRACT.maxProviderSourcesPerInvocation,10);
+  assert.equal(C1_R3_OPERATIONAL_REFRESH_CONTRACT.maxHeavySourcesPerInvocation,1);
   assert.equal(C1_R3_OPERATIONAL_REFRESH_CONTRACT.calculation,"STORED_SOURCE_ONLY");
   assert.equal(C1_R3_OPERATIONAL_REFRESH_CONTRACT.responsePathIndependent,true);
 });
@@ -134,4 +140,10 @@ test("fresh D1 initializes C1 source tables before the first future-quarter read
 
   const list=await listCompleteConsumptionR3Fixtures(db,{throughScoreDate:"2026-09-30"});
   assert.deepEqual(list,[]);
+});
+
+test("heavy parser sources are isolated to one source per invocation",()=>{
+  const light=C1_R3_REQUIRED_SOURCE_KEYS.filter(k=>k.startsWith("ALFRED:")).slice(0,12);
+  assert.equal(selectConsumptionR3SourceBatch([...light,"CENSUS:MARTS"]).length,10);
+  assert.deepEqual(selectConsumptionR3SourceBatch(["CENSUS:MARTS","NYFED:HHDC","EIA:WPSR"]),["CENSUS:MARTS"]);
 });

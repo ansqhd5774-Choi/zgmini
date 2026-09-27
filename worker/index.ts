@@ -12,6 +12,7 @@ import { phase1KoreaDataCheck } from "./phase1-korea.mjs";
 import { phase2KoreaHistoryCheck } from "./phase2-korea-history.mjs";
 import { koreaFunds } from "./korea-funds.mjs";
 import { phase3KoreaStockPriceCheck } from "./phase3-korea-stock-price.mjs";
+import { runConsumptionR3OperationalRefresh } from "./consumption-r3-operational-refresh.mjs";
 
 interface Env {
   ASSETS: Fetcher;
@@ -23,6 +24,13 @@ interface Env {
       };
     };
   };
+}
+
+interface ScheduledController {
+  cron: string;
+  scheduledTime: number;
+  type: "scheduled";
+  noRetry(): void;
 }
 
 interface ExecutionContext {
@@ -73,6 +81,23 @@ const worker = {
     }
 
     return handler.fetch(request, env, ctx);
+  },
+
+  async scheduled(controller: ScheduledController, env: Env, _ctx: ExecutionContext): Promise<void> {
+    const asOf = new Date(controller.scheduledTime).toISOString().slice(0, 10);
+    const result = await runConsumptionR3OperationalRefresh({
+      env,
+      asOf,
+      fetchImpl: globalThis.fetch,
+    });
+    console.log("C1_OP_R2_CRON", JSON.stringify({
+      cron: controller.cron,
+      asOf,
+      status: result?.status ?? null,
+      providerRequests: result?.providerRequests ?? 0,
+      remainingSources: result?.remainingSources ?? null,
+      calculated: result?.calculated ?? false,
+    }));
   },
 };
 
