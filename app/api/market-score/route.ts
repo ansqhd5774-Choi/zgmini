@@ -3,7 +3,7 @@ import { collectDiagnosticLiveInputs } from "../../../worker/diagnostic-v1-canar
 import { buildFullDiagnosticOrchestrator } from "../../../lib/diagnostic-layer/full-diagnostic-orchestrator.mjs";
 import { createMarketScoreR1Handler } from "../../../worker/market-score-r1.mjs";
 import { collectRateR2Inputs } from "../../../lib/market-score/rate-r2-provider.mjs";
-import { collectBreadthR2StoreOnlyR2 } from "../../../lib/market-score/breadth-r2-worker-domain-r2.mjs";
+import { collectBreadthB1R3StoreOnlyR1, readBreadthB1R3StoredPublicDomainR1 } from "../../../lib/market-score/breadth-b1-r3-worker-domain.mjs";
 import { collectEarningsE1R4ToStore } from "../../../lib/market-score/sec-earnings-e1-r4-provider.mjs";
 
 import { withMarketScoreCache } from "../../../worker/market-score-cache.mjs";
@@ -28,6 +28,7 @@ const handler=withMarketScoreCache(createMarketScoreR1Handler({
   fetchImpl:globalThis.fetch,
   collectInputs:collectMarketScoreInputs,
   orchestrate:buildFullDiagnosticOrchestrator,
+  collectBreadthDomain:readBreadthB1R3StoredPublicDomainR1,
 } as any), {env,waitUntil});
 
 export async function GET(request:Request){
@@ -40,7 +41,7 @@ export async function GET(request:Request){
   );
   waitUntil(
     Promise.resolve()
-      .then(()=>collectBreadthR2StoreOnlyR2({env,asOf}))
+      .then(()=>collectBreadthB1R3StoreOnlyR1({env,asOf,fetchImpl:globalThis.fetch}))
       .catch(()=>null),
   );
   const response=await handler(request);

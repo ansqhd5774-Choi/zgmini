@@ -8,8 +8,7 @@ import {
   buildFundFlowR53,
 } from "../lib/diagnostic-layer/open-resolution-r53-components.mjs";
 import {buildRateR2} from "../lib/market-score/rate-r2.mjs";
-import {readBreadthR2StoredPublicDomainR2} from "../lib/market-score/breadth-r2-worker-domain-r2.mjs";
-import {buildBreadthR2UnavailablePublicDomain} from "../lib/market-score/breadth-r2-public-domain-r1.mjs";
+import {readBreadthB1R3StoredPublicDomainR1,buildBreadthB1R3UnavailablePublicDomain} from "../lib/market-score/breadth-b1-r3-worker-domain.mjs";
 import {
   INFLATION_SCORING_SERIES,
   loadStoredInflationSeries,
@@ -48,7 +47,7 @@ export function createMarketScoreR1Handler({
   collectInputs,
   orchestrate,
   now=()=>new Date(),
-  collectBreadthDomain=readBreadthR2StoredPublicDomainR2,
+  collectBreadthDomain=readBreadthB1R3StoredPublicDomainR1,
 
   loadConsumptionDomain=loadStoredConsumptionC1R3,
 }={}){
@@ -92,7 +91,7 @@ export function createMarketScoreR1Handler({
           };
       const breadthDomain=breadthState.status==="fulfilled"
         ? breadthState.value
-        : buildBreadthR2UnavailablePublicDomain("BREADTH_R2_RUNTIME_UNAVAILABLE",instant.toISOString());
+        : buildBreadthB1R3UnavailablePublicDomain("B1_R3_RUNTIME_UNAVAILABLE",asOf,instant.toISOString());
       const consumptionDomain=consumptionState.status==="fulfilled"
         ? consumptionState.value
         : {status:"PARTIAL",score:null,missingFactors:["C1_R3_STORAGE_READ_FAILED"],indicators:[],trend:[],freshness:"STORED_CALCULATION_HISTORY_ONLY",updatedAt:null,methodologyVersion:"R3.45P",interpretation:"C1-R3.45P: stored calculation history only; live fallback forbidden"};
@@ -151,7 +150,7 @@ export function createMarketScoreR1Handler({
           supplyRows:diagnostic?.artifacts?.supply?.rows??[],
           asOfDate:asOf,
         }),
-        // Breadth-R2 is authoritative for the public breadth slot.
+        // B1-R3 stored breadth is authoritative for the public breadth slot.
         // Any legacy external.publicDomainScores.breadth value is intentionally overridden.
         breadth:breadthDomain,
       };

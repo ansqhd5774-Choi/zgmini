@@ -69,20 +69,23 @@ test("stored public reader projects score without provider access",async()=>{
 
 test("production route schedules store-only collection through waitUntil before response",()=>{
   const route=text("app/api/market-score/route.ts");
-  assert.match(route,/collectBreadthR2StoreOnlyR2/);
-  assert.match(route,/waitUntil\([\s\S]*collectBreadthR2StoreOnlyR2/);
-  assert.doesNotMatch(route,/await\s+collectBreadthR2StoreOnlyR2/);
-  assert.ok(route.indexOf("collectBreadthR2StoreOnlyR2")<route.lastIndexOf("await handler(request)"));
+  assert.doesNotMatch(route,/collectBreadthR2StoreOnlyR2/);
+  assert.match(route,/collectBreadthB1R3StoreOnlyR1/);
+  assert.match(route,/waitUntil\([\s\S]*collectBreadthB1R3StoreOnlyR1/);
+  assert.doesNotMatch(route,/await\s+collectBreadthB1R3StoreOnlyR1/);
+  assert.ok(route.indexOf("collectBreadthB1R3StoreOnlyR1")<route.lastIndexOf("await handler(request)"));
 });
 
 test("score path uses D1 stored reader and does not invoke live breadth service",()=>{
   const worker=text("worker/market-score-r1.mjs");
-  const domain=text("lib/market-score/breadth-r2-worker-domain-r2.mjs");
-  assert.match(worker,/collectBreadthDomain=readBreadthR2StoredPublicDomainR2/);
-  assert.doesNotMatch(worker,/collectBreadthR2PublicDomainR1/);
-  assert.match(domain,/readBreadthR2StoredScore/);
-  assert.doesNotMatch(domain,/breadth-r2-provider-client/);
-  assert.doesNotMatch(domain,/\bfetch\s*\(/);
+  const r2Domain=text("lib/market-score/breadth-r2-worker-domain-r2.mjs");
+  const r3Domain=text("lib/market-score/breadth-b1-r3-worker-domain.mjs");
+  assert.match(worker,/collectBreadthDomain=readBreadthB1R3StoredPublicDomainR1/);
+  assert.doesNotMatch(worker,/collectBreadthDomain=readBreadthR2StoredPublicDomainR2/);
+  assert.match(r2Domain,/readBreadthR2StoredScore/);
+  assert.doesNotMatch(r2Domain,/breadth-r2-provider-client/);
+  assert.doesNotMatch(r2Domain,/\bfetch\s*\(/);
+  assert.match(r3Domain,/readBreadthB1R3StoredPublicDomainR1/);
 });
 
 test("collector remains store-only and stored reader remains provider-request zero",()=>{
