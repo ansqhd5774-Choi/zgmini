@@ -9,13 +9,12 @@ import { collectEarningsE1R4ToStore } from "../../../lib/market-score/sec-earnin
 import { withMarketScoreCache } from "../../../worker/market-score-cache.mjs";
 import { runConsumptionR3OperationalRefresh } from "../../../worker/consumption-r3-operational-refresh.mjs";
 
-const collectMarketScoreInputs=async(args:any)=>{
-  return collectRateR2Inputs({
-    base:await collectDiagnosticLiveInputs(args),
-    asOf:args?.asOf,
-    fetchImpl:args?.fetchImpl??globalThis.fetch,
-  } as any);
-};
+import {streamMarketScore} from "../../../worker/market-score-stream.mjs";
+import {collectProgressiveMarketInputs} from "../../../worker/market-score-progressive-inputs.mjs";
+const collectMarketScoreInputs=(args:any)=>collectProgressiveMarketInputs(args,{
+  collectBase:collectDiagnosticLiveInputs,
+  collectRates:collectRateR2Inputs,
+});
 const handler=withMarketScoreCache(createMarketScoreR1Handler({
   env,
   fetchImpl:globalThis.fetch,
@@ -43,7 +42,9 @@ export async function GET(request:Request){
       .then(()=>collectBreadthB1R3StoreOnlyR1({env,asOf,fetchImpl:globalThis.fetch}))
       .catch(()=>null),
   );
-  const response=await handler(request);
+  const response=request.headers.get('accept')?.includes('application/x-ndjson')
+    ? streamMarketScore(handler,request)
+    : await handler(request);
   const headers=new Headers(response.headers);
   headers.set("X-Robots-Tag","noindex");
   return new Response(response.body,{status:response.status,headers});

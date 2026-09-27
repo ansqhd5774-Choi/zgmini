@@ -919,7 +919,7 @@ export default function Home() {
 
   return (
     <main className="zg-app zg-dashboard min-h-screen" data-testid="dashboard-root">
-      <link rel="preload" href="/api/market-score" as="fetch" crossOrigin="anonymous" />
+
       <script type="application/ld+json" dangerouslySetInnerHTML={{__html: JSON.stringify({ "@context": "https://schema.org",        "@type": "WebPage",       "@id": "https://zgmini.kr/#webpage",       url: "https://zgmini.kr/",       name: "공포탐욕지수 한눈에 | 미국·한국 차트 - ZGmini",       description: "미국·한국 공포탐욕지수와 기간별 차트, 주요 경제지표를 한곳에서 살펴보세요.",       isPartOf: { "@id": "https://zgmini.kr/#website" },       about: { "@id": "https://zgmini.kr/#organization" },       inLanguage: "ko-KR",      }).replace(/</g, "\\u003c")}}/>
       <header className="zg-header text-white">
         <div className="zg-header-inner">

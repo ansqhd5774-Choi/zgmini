@@ -54,7 +54,7 @@ export function createMarketScoreR1Handler({
   if(typeof collectInputs!=="function")throw new Error("COLLECT_INPUTS_REQUIRED");
   if(typeof orchestrate!=="function")throw new Error("ORCHESTRATE_REQUIRED");
 
-  return async request=>{
+  return async (request,onProgress)=>{
     if(request.method!=="GET")return safeJson({status:"FAILED",reason:"METHOD_NOT_ALLOWED"},405);
 
     const instant=now();
@@ -63,17 +63,28 @@ export function createMarketScoreR1Handler({
       : null;
     if(!validDate(asOf))return safeJson({status:"FAILED",reason:"INVALID_SERVER_TIME"},500);
 
+    let progressTimer;
+    const state={collected:{series:{},external:{}},storedInflation:{series:{}},breadthDomain:null,consumptionDomain:null};
+    const emit=()=>{
+      if(typeof onProgress!=='function')return;
+      try { onProgress(composeMarketSnapshot({...state,orchestrate,asOf,instant})); } catch { /* Pending inputs are not a request failure. */ }
+    };
+    const update=(key,value)=>{
+      state[key]=value;
+      if(typeof onProgress==='function'&&!progressTimer)progressTimer=setTimeout(()=>{progressTimer=null;emit();},50);
+      return value;
+    };
     try{
       const [collectionState,storageState,breadthState,consumptionState]=await Promise.allSettled([
-        collectInputs({env,asOf,fetchImpl}),
-        loadStoredInflationSeries(env?.DB,{asOf}),
+        collectInputs({env,asOf,fetchImpl,onProgress:value=>update('collected',value)}).then(value=>update('collected',value)),
+        loadStoredInflationSeries(env?.DB,{asOf}).then(value=>update('storedInflation',value)),
         Promise.resolve().then(()=>collectBreadthDomain({
           env,
           asOf,
           fetchImpl,
           runtimeOptions:{now:()=>instant},
-        })),
-        Promise.resolve().then(()=>loadConsumptionDomain(env?.DB,{asOf})),
+        })).then(value=>update('breadthDomain',value)),
+        Promise.resolve().then(()=>loadConsumptionDomain(env?.DB,{asOf})).then(value=>update('consumptionDomain',value)),
       ]);
       const collected=collectionState.status==="fulfilled"
         ? collectionState.value
@@ -96,13 +107,26 @@ export function createMarketScoreR1Handler({
         ? consumptionState.value
         : {status:"PARTIAL",score:null,missingFactors:["C1_R3_STORAGE_READ_FAILED"],indicators:[],trend:[],freshness:"STORED_CALCULATION_HISTORY_ONLY",updatedAt:null,methodologyVersion:"R3.45P",interpretation:"C1-R3.45P: stored calculation history only; live fallback forbidden"};
 
-      if(
-        collectionState.status==="rejected"
-        && Object.keys(storedInflation?.series??{}).length===0
-      ){
-        throw collectionState.reason;
-      }
+      clearTimeout(progressTimer);
+      const body=composeMarketSnapshot({collected,storedInflation,breadthDomain,consumptionDomain,orchestrate,asOf,instant});
+      if(collectionState.status==='rejected'&&!body.domains.some(domain=>domain.status==='READY'))throw collectionState.reason;
+      return safeJson(body);
+    }catch(error){
+      clearTimeout(progressTimer);
+      emit();
+      return safeJson({
+        status:"FAILED",
+        reason:error?.status??"MARKET_SCORE_UNAVAILABLE",
+        overall:{score:null,status:"UNAVAILABLE",state:null,trend:[]},
+        domains:[],
+        updatedAt:null,
+        dataQuality:{overallComputable:false,reweighted:false},
+      },503);
+    }
+  };
+}
 
+function composeMarketSnapshot({collected,storedInflation,breadthDomain,consumptionDomain,orchestrate,asOf,instant}) {
       const scoringSeries=buildStoredInflationScoringSeries(
         collected?.series??{},
         storedInflation,
@@ -163,9 +187,18 @@ export function createMarketScoreR1Handler({
         dollarFx,
         publicDomains:approvedPublicDomains,
       });
+      // A monthly supply union must not briefly publish an older score while a
+      // later-dated input is still in flight. This is a domain-local gate only.
+      if(Array.isArray(collected?.inputSettled)){
+        const supplyInputs=['MCOILWTICO','GASREGCOVM','INDPRO','gscpi','copper'];
+        if(!supplyInputs.every(id=>collected.inputSettled.includes(id))||!storedInflation?.status){
+          const domain=domains.find(d=>d.id==='commodities');
+          Object.assign(domain,{status:'PARTIAL',score:null,trend:[],indicators:[]});
+        }
+      }
       const composite=buildCompositeMarketScore(domains,{updatedAt:instant.toISOString()});
 
-      return safeJson({
+      return {
         status:"SUCCESS",
         modelVersion:composite.modelVersion,
         asOfDate:asOf,
@@ -179,16 +212,5 @@ export function createMarketScoreR1Handler({
           lookAheadSafe:diagnostic?.lookAheadSafe??false,
           limitations:diagnostic?.limitations??{},
         },
-      },200);
-    }catch(error){
-      return safeJson({
-        status:"FAILED",
-        reason:error?.status??"MARKET_SCORE_UNAVAILABLE",
-        overall:{score:null,status:"UNAVAILABLE",state:null,trend:[]},
-        domains:[],
-        updatedAt:null,
-        dataQuality:{overallComputable:false,reweighted:false},
-      },503);
-    }
-  };
+      };
 }

@@ -177,6 +177,7 @@ export async function collectDiagnosticLiveInputs({
   fetchImpl = globalThis.fetch,
   requestCap = REQUEST_CAP,
   adapters = {},
+  onProgress,
 } = {}) {
   if (!validDate(asOf)) fail('INVALID_AS_OF');
   if (typeof env?.FRED_API_KEY !== 'string' || !env.FRED_API_KEY.trim()) {
@@ -187,52 +188,61 @@ export async function collectDiagnosticLiveInputs({
   const impl = {...DEFAULT_ADAPTERS, ...adapters};
   const fredIds = Object.keys(DIAGNOSTIC_FRED_SERIES);
 
+  const progress={fredResults:[], externalResults:[], fredIds, bounded};
+  const publish=()=>{ if(typeof onProgress==='function') onProgress(assembleCollected(progress)); };
+  const tracked=async(key,job,index)=>{
+    let result;
+    try { result=await job(); } catch { result={status:'REQUEST_FAILED',...(key==='fredResults'?{seriesId:fredIds[index]}:{})}; }
+    if(index===undefined)progress[key]=result;
+    else progress[key][index]=result;
+    publish();
+    return result;
+  };
   const [fredResults, externalResults, fundFlows, breadth, earnings] = await Promise.all([
-  mapLimit(fredIds, FRED_CONCURRENCY, seriesId =>
-    impl.fetchFred(seriesId, {
+  mapLimit(fredIds, FRED_CONCURRENCY, (seriesId,index) =>
+    tracked('fredResults',()=>impl.fetchFred(seriesId, {
       key: env.FRED_API_KEY,
       asOf,
       fetchImpl: bounded.fetchImpl,
       timeoutMs: 8000,
-    })
+    }),index)
   ),
   Promise.all([
-    impl.fetchOfr(OFR_MNEMONICS.DVP, {
+    tracked('externalResults',()=>impl.fetchOfr(OFR_MNEMONICS.DVP, {
       asOf,
       fetchImpl: bounded.fetchImpl,
       timeoutMs: 8000,
-    }),
-    impl.fetchOfr(OFR_MNEMONICS.TRI_PARTY, {
+    }),0),
+    tracked('externalResults',()=>impl.fetchOfr(OFR_MNEMONICS.TRI_PARTY, {
       asOf,
       fetchImpl: bounded.fetchImpl,
       timeoutMs: 8000,
-    }),
-    impl.fetchCmdi({
+    }),1),
+    tracked('externalResults',()=>impl.fetchCmdi({
       fetchImpl: bounded.fetchImpl,
       timeoutMs: 12000,
       maxBytes: 15_000_000,
       maxRequests: 4,
-    }),
-    impl.fetchGscpi({
+    }),2),
+    tracked('externalResults',()=>impl.fetchGscpi({
       fetchImpl: bounded.fetchImpl,
       timeoutMs: 12000,
       maxBytes: 15_000_000,
       maxRequests: 4,
-    }),
-    impl.fetchCopper({
+    }),3),
+    tracked('externalResults',()=>impl.fetchCopper({
       fetchImpl: bounded.fetchImpl,
       timeoutMs: 12000,
       maxBytes: 15_000_000,
       maxRequests: 4,
-    }),
-    impl.fetchBis('WS_DSR', {fetchImpl: bounded.fetchImpl}),
-    impl.fetchBis('WS_TC', {fetchImpl: bounded.fetchImpl}),
+    }),4),
+    tracked('externalResults',()=>impl.fetchBis('WS_DSR', {fetchImpl: bounded.fetchImpl}),5),
+    tracked('externalResults',()=>impl.fetchBis('WS_TC', {fetchImpl: bounded.fetchImpl}),6),
   ]),
-  impl.fetchFundFlows({fetchImpl: bounded.fetchImpl}),
-  collectBreadthB1R1Runtime({env, fetchImpl}),
-  impl.fetchEarnings({asOf, db:env?.DB}),
+  tracked('fundFlows',()=>impl.fetchFundFlows({fetchImpl: bounded.fetchImpl})),
+  tracked('breadth',()=>collectBreadthB1R1Runtime({env, fetchImpl})),
+  tracked('earnings',()=>impl.fetchEarnings({asOf, db:env?.DB})),
   ]);
-  const [dvp,triParty,cmdi,gscpi,copper,bisDsr,bisTc]=externalResults;
 
   try {
     await persistInflationApiHistory(env?.DB, fredResults, {
@@ -246,6 +256,11 @@ export async function collectDiagnosticLiveInputs({
     );
   }
 
+  return assembleCollected({fredResults, externalResults, fundFlows, breadth, earnings, fredIds, bounded});
+}
+
+function assembleCollected({fredResults, externalResults, fundFlows, breadth, earnings, fredIds, bounded}) {
+  const [dvp,triParty,cmdi,gscpi,copper,bisDsr,bisTc]=externalResults;
   const series = {};
   for (const result of fredResults) {
     if (result?.status === 'READY_CURRENT_VINTAGE' && Array.isArray(result.rows)) {
@@ -263,6 +278,9 @@ export async function collectDiagnosticLiveInputs({
 
 return {
     series,
+    // Internal completion markers, never included in the public response.
+    inputSettled:[...fredResults.filter(Boolean).map(r=>r.seriesId).filter(Boolean),
+      ...externalResults.flatMap((r,i)=>r?[['dvp','triParty','cmdi','gscpi','copper','bisDsr','bisTc'][i]]:[])],
     external: {
       publicDomainScores: {breadth, earnings},
       registeredFundFlowRows: fundFlows?.status === 'READY_CURRENT_VINTAGE_RAW' ? fundFlows.rows : [],

@@ -2,6 +2,7 @@
 import {useEffect,useId,useRef,useState,type ReactNode,type CSSProperties} from 'react';
 import {Activity,ArrowRight,ChevronLeft,ChevronRight,Info,Radar,Coins,Users,Percent,Droplet,Landmark,ShieldCheck,Factory,ShoppingCart,BriefcaseBusiness,ArrowLeftRight,Network,DollarSign} from 'lucide-react';
 import {Line,LineChart,ResponsiveContainer,Tooltip,XAxis,YAxis,ReferenceDot} from 'recharts';
+import {readProgressiveMarketResponse} from '../lib/market-score/read-progressive-response.mjs';
 import {readMarketSnapshot,saveMarketSnapshot} from '../lib/market-score/browser-snapshot.mjs';
 import {marketDetailRows} from '../lib/market-score/detail-catalog.mjs';
 import {breadthNotice} from '../lib/market-score/breadth-notice.mjs';
@@ -150,20 +151,28 @@ export function CompositeMarketSection({items,points,demo,loading}:{items:Summar
    expiryTimer=setTimeout(()=>{if(alive){setMarket(null);setMarketError('MARKET_SCORE_UNAVAILABLE');setMarketLoading(true);void load()}},Math.max(0,expiresAt-Date.now()));
   };
   if(cached)expireAt(cached.expiresAt);
-  const load=()=>fetch('/api/market-score',{signal:controller.signal,cache:'default'})
-   .then(async response=>{
-    const body=await response.json() as MarketScoreResponse;
-    if(!response.ok||body?.status!=='SUCCESS')throw new Error('MARKET_SCORE_UNAVAILABLE');
-    if(alive){
-     setMarket(body);setMarketError(null);
-     if(storage){saveMarketSnapshot(storage,body,response.headers);const saved=readMarketSnapshot(storage);if(saved)expireAt(saved.expiresAt)}
-    }
-   })
-   .catch(error=>{
-    if(error?.name==='AbortError')return;
-    if(alive&&!cached){setMarket(null);setMarketError('MARKET_SCORE_UNAVAILABLE')}
-   })
-   .finally(()=>{if(alive)setMarketLoading(false)});
+  const load=()=>{
+   let received=false;
+   return fetch('/api/market-score',{signal:controller.signal,cache:'no-store',headers:{accept:'application/x-ndjson'}})
+    .then(response=>readProgressiveMarketResponse(response,
+     (body:MarketScoreResponse)=>{
+      if(!alive)return;
+      received=true;setMarket(body);setMarketError(null);
+      const deadline=Date.parse(body.updatedAt??'')+300000;
+      if(Number.isFinite(deadline))expireAt(deadline);
+     },
+     (body:MarketScoreResponse,headers:Headers)=>{
+      if(alive&&storage){saveMarketSnapshot(storage,body,headers);const saved=readMarketSnapshot(storage);if(saved)expireAt(saved.expiresAt)}
+     }))
+    .catch(error=>{
+     if(error?.name==='AbortError')return;
+     if(alive){
+      if(!received&&(!cached||cached.expiresAt<=Date.now()))setMarket(null);
+      setMarketError('MARKET_SCORE_UNAVAILABLE');
+     }
+    })
+    .finally(()=>{if(alive)setMarketLoading(false)});
+  };
   void load();
   return()=>{alive=false;clearTimeout(expiryTimer);controller.abort()};
  },[]);
@@ -266,7 +275,7 @@ export function CompositeMarketSection({items,points,demo,loading}:{items:Summar
         <div className="zg-r55-card-head">
          <span className="zg-r55-card-icon"><Icon size={18} aria-hidden="true"/></span>
          <h3>{m.label}</h3>
-         <span className="zg-r55-badge">{busy?'로딩':score===null?(notice?.badge??'미완료'):domain?.state??(score<25?'위험':score<40?'주의':score<60?'중립':score<75?'양호':'안정')}</span>
+         <span className="zg-r55-badge">{busy&&score===null?'로딩':score===null?(notice?.badge??'미완료'):domain?.state??(score<25?'위험':score<40?'주의':score<60?'중립':score<75?'양호':'안정')}</span>
          <span onClick={e=>e.stopPropagation()}><DashboardTip label={`${m.label} 산출 근거`}>{notice?`${notice.detail} ${m.basis}`:m.basis}</DashboardTip></span>
         </div>
         {notice&&<p data-testid="breadth-unavailable-reason" style={{margin:'6px 0',fontSize:12,lineHeight:1.5,color:'#cbd5e1'}}>{notice.message}</p>}

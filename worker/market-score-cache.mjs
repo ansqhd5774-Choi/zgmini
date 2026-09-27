@@ -11,6 +11,8 @@ export function withMarketScoreCache(handler, {
   waitUntil,
 } = {}) {
   const pending=new Map();
+  const observers=new Map();
+  const latest=new Map();
   const refreshAttempts=new Map();
   let store;
   const memory=new Map();
@@ -21,7 +23,10 @@ export function withMarketScoreCache(handler, {
   function collect(request,key,cache,start){
     if(pending.has(key.url))return pending.get(key.url);
     const job=(async()=>{
-      const response=await handler(request);
+      const response=await handler(request,body=>{
+        latest.set(key.url,body);
+        for(const notify of observers.get(key.url)??[]) { try{notify(body)}catch{} }
+      });
       const headers=new Headers(response.headers);
       headers.set('x-market-cache',cache?'MISS':'BYPASS');
       headers.set('server-timing',`market;dur=${now()-start};desc="collect"`);
@@ -40,11 +45,11 @@ export function withMarketScoreCache(handler, {
         }catch(error){output.headers.set('x-market-cache-write',error instanceof TypeError?'TYPE_ERROR':'FAILED');}
       }
       return output;
-    })().finally(()=>pending.delete(key.url));
+    })().finally(()=>{pending.delete(key.url);latest.delete(key.url)});
     pending.set(key.url,job);
     return job;
   }
-  return async request => {
+  return async (request,onProgress) => {
     if (request.method !== 'GET') return handler(request);
     const start = now();
     const url = new URL(request.url);
@@ -81,6 +86,15 @@ export function withMarketScoreCache(handler, {
         return new Response(hit.body, {status:hit.status, headers});
       }
     } catch { /* Cache failure must not break the public API. */ }
-    return (await collect(request,key,cache,start)).clone();
+    if(typeof onProgress==='function'){
+      if(!observers.has(key.url))observers.set(key.url,new Set());
+      observers.get(key.url).add(onProgress);
+      if(latest.has(key.url))onProgress(latest.get(key.url));
+    }
+    try { return (await collect(request,key,cache,start)).clone(); }
+    finally {
+      observers.get(key.url)?.delete(onProgress);
+      if(!observers.get(key.url)?.size)observers.delete(key.url);
+    }
   };
 }
