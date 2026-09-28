@@ -7,6 +7,24 @@ import {readMarketSnapshot,saveMarketSnapshot} from '../lib/market-score/browser
 import {marketDetailRows} from '../lib/market-score/detail-catalog.mjs';
 import {breadthNotice} from '../lib/market-score/breadth-notice.mjs';
 export type DashboardPoint={label:string;value:number};
+type MarketTrendPoint={label?:string;date?:string;value?:number;score?:number};
+function normalizeMarketTrendPoints(data?:MarketTrendPoint[]):DashboardPoint[]{
+ return (Array.isArray(data)?data:[]).flatMap(point=>{
+  const label=typeof point?.label==='string'&&point.label
+   ?point.label
+   :typeof point?.date==='string'&&point.date
+    ?point.date
+    :null;
+  const rawValue=typeof point?.value==='number'
+   ?point.value
+   :typeof point?.score==='number'
+    ?point.score
+    :null;
+  return label!==null&&rawValue!==null&&Number.isFinite(rawValue)
+   ?[{label,value:rawValue}]
+   :[];
+ });
+}
 export type Summary={label:string;score:number;value:string;note:string;data:DashboardPoint[]};
 export function DashboardTip({label,children,trigger}:{label:string;children:ReactNode;trigger?:ReactNode}){
  const [open,setOpen]=useState(false),id=useId(),timer=useRef<ReturnType<typeof setTimeout>|null>(null);
@@ -67,7 +85,7 @@ type MarketScoreDomain={
  status:"READY"|"PARTIAL"|"UNAVAILABLE"|string;
  state?:string|null;
  interpretation?:string|null;
- trend?:DashboardPoint[];
+ trend?:MarketTrendPoint[];
  indicators?:Array<{name?:string;label?:string;score?:number|null;status?:string;value?:number|null;unit?:string}>;
  freshness?:string|null;
  updatedAt?:string|null;
@@ -188,8 +206,8 @@ export function CompositeMarketSection({items,points,demo,loading}:{items:Summar
  const readyDomains=market?.dataQuality?.readyDomains??0;
  const totalDomains=market?.dataQuality?.totalDomains??12;
  const coverageWeight=market?.dataQuality?.coverageWeight??0;
- const overallTrend=marketTrendWindow(market?.overall?.trend,periodDays);
- const hasDatedHistory=[market?.overall?.trend,...(market?.domains??[]).map(d=>d.trend)].some(data=>marketTrendWindow(data,365).length>1);
+ const overallTrend=marketTrendWindow(normalizeMarketTrendPoints(market?.overall?.trend),periodDays);
+ const hasDatedHistory=[market?.overall?.trend,...(market?.domains??[]).map(d=>d.trend)].some(data=>marketTrendWindow(normalizeMarketTrendPoints(data),365).length>1);
 
  return <section id="market" className="zg-section zg-r55-market">
   <div className="zg-section-heading zg-r55-heading">
@@ -255,7 +273,7 @@ export function CompositeMarketSection({items,points,demo,loading}:{items:Summar
        const Icon=m.Icon;
        const domain=market?.domains?.find(d=>d.id===r55DomainIds[index]);
        const score=domain?.status==='READY'&&validPublicScore(domain.score)?domain.score:null;
-       const trend=marketTrendWindow(domain?.trend,periodDays);
+       const trend=marketTrendWindow(normalizeMarketTrendPoints(domain?.trend),periodDays);
 
        const band=score===null?'unknown':score<25?'danger':score<40?'caution':score<60?'neutral':score<75?'positive':'strong';
        const detailRows=marketDetailRows(r55DomainIds[index],domain?.indicators) as Array<{label:string;score:number|null;raw:boolean;value:number|null;displayValue?:string|null;unit:string;asOfDate?:string|null;source?:string|null}>;
