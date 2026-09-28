@@ -150,7 +150,7 @@ export function CompositeMarketSection({items,points,demo,loading}:{items:Summar
  void items;
  void points;
  const [expanded,setExpanded]=useState(false);
- const [periodDays,setPeriodDays]=useState(90);
+ const [periodDays,setPeriodDays]=useState(365);
  const [market,setMarket]=useState<MarketScoreResponse|null>(null);
  const [marketLoading,setMarketLoading]=useState(true);
  const [marketError,setMarketError]=useState<string|null>(null);
