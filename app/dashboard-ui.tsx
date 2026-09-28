@@ -157,42 +157,42 @@ export function CompositeMarketSection({items,points,demo,loading}:{items:Summar
 
  useEffect(()=>{
   const controller=new AbortController();
-  let alive=true,expiryTimer:ReturnType<typeof setTimeout>|undefined;
+  let alive=true;
   let storage:Storage|undefined;
   try{storage=window.sessionStorage}catch{/* Storage may be disabled. */}
-  const cached=storage?readMarketSnapshot(storage):null;
+  const cached=storage?readMarketSnapshot(storage,Date.now(),{allowExpired:true}):null;
   if(cached){setMarket(cached.body);setMarketLoading(false)}
   else setMarketLoading(true);
-  // Cached observations expire even if the network is slow or unavailable.
-  const expireAt=(expiresAt:number)=>{
-   clearTimeout(expiryTimer);
-   expiryTimer=setTimeout(()=>{if(alive){setMarket(null);setMarketError('MARKET_SCORE_UNAVAILABLE');setMarketLoading(true);void load()}},Math.max(0,expiresAt-Date.now()));
+  // A mounted page is a fixed snapshot. Only a manual page reload fetches again.
+  // Retain the last displayed result while that reload's request completes.
+  const publish=(body:MarketScoreResponse)=>{
+   setMarket(previous=>JSON.stringify(previous)===JSON.stringify(body)?previous:body);
+   setMarketError(null);
   };
-  if(cached)expireAt(cached.expiresAt);
   const load=()=>{
    let received=false;
    return fetch('/api/market-score',{signal:controller.signal,cache:'no-store',headers:{accept:'application/x-ndjson'}})
     .then(response=>readProgressiveMarketResponse(response,
      (body:MarketScoreResponse)=>{
       if(!alive)return;
-      received=true;setMarket(body);setMarketError(null);
-      const deadline=Date.parse(body.updatedAt??'')+300000;
-      if(Number.isFinite(deadline))expireAt(deadline);
+      received=true;if(!cached)publish(body);
      },
      (body:MarketScoreResponse,headers:Headers)=>{
-      if(alive&&storage){saveMarketSnapshot(storage,body,headers);const saved=readMarketSnapshot(storage);if(saved)expireAt(saved.expiresAt)}
+      if(!alive)return;
+      publish(body);
+      if(storage)saveMarketSnapshot(storage,body,headers);
      }))
     .catch(error=>{
      if(error?.name==='AbortError')return;
      if(alive){
-      if(!received&&(!cached||cached.expiresAt<=Date.now()))setMarket(null);
+      if(!received&&!cached)setMarket(null);
       setMarketError('MARKET_SCORE_UNAVAILABLE');
      }
     })
     .finally(()=>{if(alive)setMarketLoading(false)});
   };
   void load();
-  return()=>{alive=false;clearTimeout(expiryTimer);controller.abort()};
+  return()=>{alive=false;controller.abort()};
  },[]);
 
  const toggle=()=>setExpanded(v=>!v);
