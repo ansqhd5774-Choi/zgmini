@@ -43,6 +43,15 @@ function diagnostics8(snapshot){
   );
 }
 
+export function projectInflationMethodologyVersion(compositeDomains=[],sourceDomains=[]){
+  const methodologyVersion=sourceDomains.find(domain=>domain?.id==="inflation")?.methodologyVersion??null;
+  return (Array.isArray(compositeDomains)?compositeDomains:[]).map(domain=>
+    domain?.id==="inflation"
+      ? {...domain,methodologyVersion}
+      : domain
+  );
+}
+
 function inflationR2Partial(reason="INFLATION_R2_STORAGE_PENDING"){
   return {status:"PARTIAL",score:null,missingFactors:[reason],indicators:[],trend:[],freshness:"STORED_INITIAL_RELEASE_HISTORY_ONLY",updatedAt:null,methodologyVersion:"INFLATION_R2_R29_56",interpretation:"Inflation R2: stored PIT history only; live fallback forbidden"};
 }
@@ -211,13 +220,14 @@ function composeMarketSnapshot({collected,storedInflation,inflationR2Domain,brea
         }
       }
       const composite=buildCompositeMarketScore(domains,{updatedAt:instant.toISOString()});
+      const publicCompositeDomains=projectInflationMethodologyVersion(composite.domains,domains);
 
       return {
         status:"SUCCESS",
         modelVersion:composite.modelVersion,
         asOfDate:asOf,
         overall:composite.overall,
-        domains:composite.domains,
+        domains:publicCompositeDomains,
         diagnostics8:diagnostics8(diagnostic?.snapshot),
         updatedAt:composite.updatedAt,
         dataQuality:{
