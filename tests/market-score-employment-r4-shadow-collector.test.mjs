@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { DatabaseSync } from "node:sqlite";
 import { collectEmploymentR4Shadow } from "../lib/market-score/employment-r4-shadow-collector.mjs";
-import { parseEta539ShadowRows, parseBlsDiffusionShadowRows } from "../lib/market-score/employment-r4-shadow-provider.mjs";
+import { createEmploymentR4ShadowProvider, parseEta539ShadowRows, parseBlsDiffusionShadowRows } from "../lib/market-score/employment-r4-shadow-provider.mjs";
 import { EMPLOYMENT_R4_CORE_STATES, EMPLOYMENT_R4_DIFFUSION_SERIES, EMPLOYMENT_R4_PIT_CLASSES, EMPLOYMENT_R4_SHADOW_TABLES } from "../lib/market-score/employment-r4-shadow-contract.mjs";
 
 function sqliteD1(){
@@ -145,4 +145,52 @@ test("production FORWARD_ONLY mode stores only latest provider observations from
   assert.equal(sqlite.prepare(`SELECT COUNT(*) n FROM ${EMPLOYMENT_R4_SHADOW_TABLES.history}`).get().n,59);
   assert.equal(sqlite.prepare(`SELECT COUNT(*) n FROM ${EMPLOYMENT_R4_SHADOW_TABLES.runs} WHERE status='SUCCESS'`).get().n,1);
   sqlite.close();
+});
+
+
+test("BLS provider keeps one multi-series POST when all 8 diffusion series are returned",async()=>{
+  const rt="2026-09-29T00:00:00.000Z";
+  const calls=[];
+  const fetchImpl=async(url,opts={})=>{
+    calls.push({url:String(url),method:opts.method??"GET"});
+    assert.equal(opts.method,"POST");
+    return {ok:true,status:200,async json(){return blsPayload()}};
+  };
+  const provider=createEmploymentR4ShadowProvider({fetchImpl,now:()=>new Date(rt)});
+  const out=await provider.fetchGeographicDiffusion();
+  assert.equal(out.requestCount,1);
+  assert.equal(out.transport.fallbackUsed,false);
+  assert.equal(out.transport.primaryReturned,8);
+  assert.equal(new Set(out.rows.map(r=>r.providerSeriesId)).size,8);
+  assert.equal(calls.length,1);
+});
+
+test("BLS provider falls back to official single-series GET only for missing diffusion IDs",async()=>{
+  const rt="2026-09-29T00:00:00.000Z";
+  const ids=Object.keys(EMPLOYMENT_R4_DIFFUSION_SERIES);
+  const calls=[];
+  const singlePayload=id=>({status:"REQUEST_SUCCEEDED",message:[],Results:{series:[{
+    seriesID:id,
+    data:[{year:"2026",period:"M08",value:"60.0",footnotes:[]}],
+  }]}});
+  const fetchImpl=async(url,opts={})=>{
+    const u=String(url);
+    calls.push({url:u,method:opts.method??"GET"});
+    if((opts.method??"GET")==="POST"){
+      return {ok:true,status:200,async json(){return{status:"REQUEST_SUCCEEDED",message:[],Results:{series:[]}}}};
+    }
+    const id=decodeURIComponent(u.slice(u.lastIndexOf("/")+1));
+    assert.ok(ids.includes(id));
+    return {ok:true,status:200,async json(){return singlePayload(id)}};
+  };
+  const provider=createEmploymentR4ShadowProvider({fetchImpl,now:()=>new Date(rt)});
+  const out=await provider.fetchGeographicDiffusion();
+  assert.equal(out.requestCount,9);
+  assert.equal(out.transport.primaryReturned,0);
+  assert.equal(out.transport.fallbackUsed,true);
+  assert.equal(out.transport.fallbackRequests,8);
+  assert.equal(new Set(out.rows.map(r=>r.providerSeriesId)).size,8);
+  assert.equal(out.rows.filter(r=>r.pitClass===EMPLOYMENT_R4_PIT_CLASSES.forwardObserved).length,8);
+  assert.equal(calls.filter(x=>x.method==="POST").length,1);
+  assert.equal(calls.filter(x=>x.method==="GET").length,8);
 });
