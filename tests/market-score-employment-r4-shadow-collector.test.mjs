@@ -91,12 +91,12 @@ test("real parser progression adds only new observations; response hash and movi
   };
   let tick=0;
   const now=()=>new Date(`2026-09-2${tick++}T01:00:00Z`);
-  const first=await collectEmploymentR4Shadow({db,provider,now,claimsHistoryWeeks:3});
+  const first=await collectEmploymentR4Shadow({db,provider,now,claimsHistoryWeeks:3,rowMode:"ALL_FETCHED"});
   assert.equal(first.status,"SUCCESS");
   assert.equal(first.inserted,118); // 51*2 claims + 8*2 diffusion
   const h1=sqlite.prepare(`SELECT COUNT(*) n FROM ${EMPLOYMENT_R4_SHADOW_TABLES.history}`).get().n;
   run=1;
-  const second=await collectEmploymentR4Shadow({db,provider,now,claimsHistoryWeeks:3});
+  const second=await collectEmploymentR4Shadow({db,provider,now,claimsHistoryWeeks:3,rowMode:"ALL_FETCHED"});
   assert.equal(second.status,"SUCCESS");
   assert.equal(second.inserted,59); // 51 new claims + 8 new diffusion
   assert.equal(second.revised,0);
@@ -107,5 +107,42 @@ test("real parser progression adds only new observations; response hash and movi
     WHERE logical_series_id='STATE_INITIAL_CLAIMS' AND geography_code='AL' AND observation_date='2026-09-12'`).get();
   assert.equal(oldForward.available_at,"2026-09-20T00:00:00.000Z");
   assert.equal(oldForward.pit_class,EMPLOYMENT_R4_PIT_CLASSES.forwardObserved);
+  sqlite.close();
+});
+
+
+test("production FORWARD_ONLY mode stores only latest provider observations from large fetched history",async()=>{
+  const {sqlite,db}=sqliteD1();
+  const rt="2026-09-28T00:00:00.000Z";
+  const weeks=[];
+  for(let i=0;i<60;i++){
+    const d=new Date(Date.UTC(2025,7,16)+i*7*86400000);
+    weeks.push(`${String(d.getUTCMonth()+1).padStart(2,"0")}/${String(d.getUTCDate()).padStart(2,"0")}/${d.getUTCFullYear()}`);
+  }
+  const months=[];
+  for(let y=2025;y<=2026;y++)for(let m=1;m<=12;m++)months.push(`${y}-${String(m).padStart(2,"0")}`);
+  const provider={
+    async fetchStateClaims({historyWeeks}={}){
+      assert.equal(historyWeeks,2);
+      const parsed=await parseEta539ShadowRows(claimsCsvWeeks(weeks),{retrievedAt:rt,historyWeeks:60});
+      return {...parsed,requestCount:1,retrievedAt:rt};
+    },
+    async fetchGeographicDiffusion(){
+      const parsed=await parseBlsDiffusionShadowRows(blsPayloadMonths(months),{retrievedAt:rt});
+      return {...parsed,requestCount:1,retrievedAt:rt};
+    }
+  };
+  const out=await collectEmploymentR4Shadow({db,provider,now:()=>new Date(rt)});
+  assert.equal(out.status,"SUCCESS");
+  assert.equal(out.rowMode,"FORWARD_ONLY");
+  assert.equal(out.inserted,59);
+  assert.equal(out.revised,0);
+  assert.equal(out.providers.DOL_ETA.fetchedRows,3060);
+  assert.equal(out.providers.DOL_ETA.selectedRows,51);
+  assert.equal(out.providers.BLS_CES_SAE.fetchedRows,192);
+  assert.equal(out.providers.BLS_CES_SAE.selectedRows,8);
+  assert.equal(sqlite.prepare(`SELECT COUNT(*) n FROM ${EMPLOYMENT_R4_SHADOW_TABLES.current}`).get().n,59);
+  assert.equal(sqlite.prepare(`SELECT COUNT(*) n FROM ${EMPLOYMENT_R4_SHADOW_TABLES.history}`).get().n,59);
+  assert.equal(sqlite.prepare(`SELECT COUNT(*) n FROM ${EMPLOYMENT_R4_SHADOW_TABLES.runs} WHERE status='SUCCESS'`).get().n,1);
   sqlite.close();
 });

@@ -48,11 +48,32 @@ test("worker runs store-only collector after success cadence expires",async()=>{
     now:()=>new Date("2026-09-28T00:00:00Z"),
     storeFactory:()=>fakeStore({run_id:"old",status:"SUCCESS",completed_at:"2026-09-20T00:00:00Z"}),
     providerFactory:({fetchImpl})=>{providerCreated++;assert.equal(typeof fetchImpl,"function");return{tag:"provider"}},
-    collector:async({provider})=>{called++;assert.equal(provider.tag,"provider");return{status:"SUCCESS",providerRequests:2,inserted:10}},
+    collector:async({provider,claimsHistoryWeeks,rowMode})=>{
+      called++;
+      assert.equal(provider.tag,"provider");
+      assert.equal(claimsHistoryWeeks,2);
+      assert.equal(rowMode,"FORWARD_ONLY");
+      return{status:"SUCCESS",providerRequests:2,inserted:10,rowMode};
+    },
   });
   assert.equal(out.status,"SUCCESS");
   assert.equal(out.providerRequests,2);
   assert.equal(out.scoreComputed,false);
   assert.equal(called,1);
   assert.equal(providerCreated,1);
+});
+
+
+test("worker contract freezes bounded forward-only Production collection",async()=>{
+  let args=null;
+  const out=await collectEmploymentR4ShadowStoreOnlyR1({
+    env:{DB:{prepare(){}}},
+    now:()=>new Date("2026-09-28T00:00:00Z"),
+    storeFactory:()=>fakeStore(null),
+    providerFactory:()=>({tag:"provider"}),
+    collector:async input=>{args=input;return{status:"SUCCESS",providerRequests:2,inserted:59,rowMode:input.rowMode};},
+  });
+  assert.equal(args.claimsHistoryWeeks,2);
+  assert.equal(args.rowMode,"FORWARD_ONLY");
+  assert.equal(out.rowMode,"FORWARD_ONLY");
 });
