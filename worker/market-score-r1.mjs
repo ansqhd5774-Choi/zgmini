@@ -17,6 +17,8 @@ import {
   buildStoredInflationScoringSeries,
 } from "./inflation-history-reader.mjs";
 
+import {buildLiquidityActivePublicDomainR1} from "../lib/market-score/liquidity-active-public-domain-r1.mjs";
+import {loadLiquidityActiveHistory} from "./liquidity-active-history-reader.mjs";
 const finite=value=>typeof value==="number"&&Number.isFinite(value);
 const validDate=value=>typeof value==="string"&&/^\d{4}-\d{2}-\d{2}$/.test(value);
 
@@ -66,6 +68,7 @@ export function createMarketScoreR1Handler({
 
   loadConsumptionDomain=loadStoredConsumptionC1R3,
   loadInflationDomain=loadStoredInflationR2Domain,
+  loadLiquidityHistory=loadLiquidityActiveHistory,
 }={}){
   if(typeof collectInputs!=="function")throw new Error("COLLECT_INPUTS_REQUIRED");
   if(typeof orchestrate!=="function")throw new Error("ORCHESTRATE_REQUIRED");
@@ -81,7 +84,7 @@ export function createMarketScoreR1Handler({
 
     const compute=createProgressiveComputationCache();
     let progressTimer;
-    const state={collected:{series:{},external:{}},storedInflation:{series:{}},inflationR2Domain:inflationR2Partial(),breadthDomain:null,consumptionDomain:null};
+    const state={collected:{series:{},external:{}},storedInflation:{series:{}},inflationR2Domain:inflationR2Partial(),breadthDomain:null,consumptionDomain:null ,liquidityHistory:[]};
     const emit=()=>{
       if(typeof onProgress!=='function')return;
       try { onProgress(composeMarketSnapshot({...state,orchestrate,asOf,instant,compute})); } catch { /* Pending inputs are not a request failure. */ }
@@ -92,7 +95,7 @@ export function createMarketScoreR1Handler({
       return value;
     };
     try{
-      const [collectionState,storageState,inflationR2State,breadthState,consumptionState]=await Promise.allSettled([
+      const [collectionState,storageState,inflationR2State,breadthState,consumptionState,liquidityHistoryState]=await Promise.allSettled([
         collectInputs({env,asOf,fetchImpl,onProgress:value=>update('collected',value)}).then(value=>update('collected',value)),
         loadStoredInflationSeries(env?.DB,{asOf}).then(value=>update('storedInflation',value)),
         Promise.resolve().then(()=>loadInflationDomain(env?.DB,{asOf})).then(value=>update('inflationR2Domain',value)),
@@ -103,6 +106,7 @@ export function createMarketScoreR1Handler({
           runtimeOptions:{now:()=>instant},
         })).then(value=>update('breadthDomain',value)),
         Promise.resolve().then(()=>loadConsumptionDomain(env?.DB,{asOf})).then(value=>update('consumptionDomain',value)),
+        Promise.resolve().then(()=>loadLiquidityHistory(env?.DB,{asOf})).then(value=>update("liquidityHistory",value)),
       ]);
       const collected=collectionState.status==="fulfilled"
         ? collectionState.value
@@ -129,7 +133,10 @@ export function createMarketScoreR1Handler({
         : {status:"PARTIAL",score:null,missingFactors:["C1_R3_STORAGE_READ_FAILED"],indicators:[],trend:[],freshness:"STORED_CALCULATION_HISTORY_ONLY",updatedAt:null,methodologyVersion:"R3.45P",interpretation:"C1-R3.45P: stored calculation history only; live fallback forbidden"};
 
       clearTimeout(progressTimer);
-      const body=composeMarketSnapshot({collected,storedInflation,inflationR2Domain,breadthDomain,consumptionDomain,orchestrate,asOf,instant,compute});
+      const liquidityHistory=liquidityHistoryState.status==="fulfilled"&&Array.isArray(liquidityHistoryState.value)
+        ? liquidityHistoryState.value
+        : [];
+      const body=composeMarketSnapshot({liquidityHistory,collected,storedInflation,inflationR2Domain,breadthDomain,consumptionDomain,orchestrate,asOf,instant,compute});
       if(collectionState.status==='rejected'&&!body.domains.some(domain=>domain.status==='READY'))throw collectionState.reason;
       return safeJson(body);
     }catch(error){
@@ -147,7 +154,7 @@ export function createMarketScoreR1Handler({
   };
 }
 
-function composeMarketSnapshot({collected,storedInflation,inflationR2Domain,breadthDomain,consumptionDomain,orchestrate,asOf,instant,compute}) {
+function composeMarketSnapshot({liquidityHistory,collected,storedInflation,inflationR2Domain,breadthDomain,consumptionDomain,orchestrate,asOf,instant,compute}) {
       const scoringSeries=buildStoredInflationScoringSeries(
         collected?.series??{},
         storedInflation,
@@ -189,6 +196,12 @@ function composeMarketSnapshot({collected,storedInflation,inflationR2Domain,brea
         {asOfDate:asOf},
       );
 
+      const liquidityDomain=buildLiquidityActivePublicDomainR1({
+        diagnostic,
+        storedTrend:liquidityHistory,
+        asOfDate:asOf,
+      });
+
       const approvedPublicDomains={
         ...(collected?.external?.publicDomainScores??{}),
         inflation:inflationR2Domain,
@@ -200,6 +213,7 @@ function composeMarketSnapshot({collected,storedInflation,inflationR2Domain,brea
         // B1-R3 stored breadth is authoritative for the public breadth slot.
         // Any legacy external.publicDomainScores.breadth value is intentionally overridden.
         breadth:breadthDomain,
+        ...(liquidityDomain?.status==="READY"?{liquidity:liquidityDomain}:{}),
       };
 
       const domains=buildCmR1DomainResults({
