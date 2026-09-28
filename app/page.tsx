@@ -918,8 +918,7 @@ export default function Home() {
   }
 
   return (
-    <main className="zg-app zg-dashboard min-h-screen" data-testid="dashboard-root">
-
+    <main className="zg-app zg-dashboard min-h-screen" data-testid="dashboard-root" data-view={view}>
       <script type="application/ld+json" dangerouslySetInnerHTML={{__html: JSON.stringify({ "@context": "https://schema.org",        "@type": "WebPage",       "@id": "https://zgmini.kr/#webpage",       url: "https://zgmini.kr/",       name: "공포탐욕지수 한눈에 | 미국·한국 차트 - ZGmini",       description: "미국·한국 공포탐욕지수와 기간별 차트, 주요 경제지표를 한곳에서 살펴보세요.",       isPartOf: { "@id": "https://zgmini.kr/#website" },       about: { "@id": "https://zgmini.kr/#organization" },       inLanguage: "ko-KR",      }).replace(/</g, "\\u003c")}}/>
       <header className="zg-header text-white">
         <div className="zg-header-inner">
@@ -939,6 +938,23 @@ export default function Home() {
               </div>
             </div>
             <div className="zg-account-tools">
+              <Sheet>
+                <SheetTrigger asChild>
+                  <Button type="button" className="zg-dashboard-info-button rounded-none border border-white/20 bg-white/10 text-white hover:bg-white/20" aria-label="대시보드 안내">
+                    <Info className="size-4"/><span className="hidden xl:inline">안내</span>
+                  </Button>
+                </SheetTrigger>
+                <SheetContent className="border-l-0 bg-white sm:max-w-md">
+                  <SheetHeader>
+                    <SheetTitle className="flex items-center gap-2"><Info className="size-5"/>ZGmini 안내</SheetTitle>
+                    <SheetDescription>대시보드 데이터 상태와 이용 안내</SheetDescription>
+                  </SheetHeader>
+                  <div className="space-y-3 px-4 text-sm leading-6 text-slate-700">
+                    <p>{marketDataLoading?'경제지표를 불러오고 있습니다.':marketData?.status==='live'?'공식 자료와 ZGmini 자체 계산값을 표시합니다.':marketDataError?'데이터 연결 지연 · 마지막 정상 수신값을 표시합니다.':'일부 지표 갱신 지연 · 마지막 정상 수신값을 유지합니다.'}</p>
+                    <p>ZGmini는 공식 자료와 독자 모델을 연결합니다. 투자 권유가 아니며, 예시 데이터는 별도로 표시합니다.</p>
+                  </div>
+                </SheetContent>
+              </Sheet>
               {sessionLoading ? (
                 <span className="hidden text-xs text-slate-400 sm:inline">계정 확인 중</span>
               ) : user ? (
@@ -980,15 +996,17 @@ export default function Home() {
       </header>
 
       <div className="zg-container">
-        <div className="zg-data-notice zg-data-notice-compact" role="status"><Info size={16}/><span>{marketDataLoading?'경제지표를 불러오고 있습니다.':marketData?.status==='live'?'공식 자료와 ZGmini 자체 계산값을 표시합니다.':marketDataError?'데이터 연결 지연 · 마지막 정상 수신값을 표시합니다.':'일부 지표 갱신 지연 · 마지막 정상 수신값을 유지합니다.'}</span></div>
+        {view!=='dashboard'&&<div className="zg-data-notice zg-data-notice-compact" role="status"><Info size={16}/><span>{marketDataLoading?'경제지표를 불러오고 있습니다.':marketData?.status==='live'?'공식 자료와 ZGmini 자체 계산값을 표시합니다.':marketDataError?'데이터 연결 지연 · 마지막 정상 수신값을 표시합니다.':'일부 지표 갱신 지연 · 마지막 정상 수신값을 유지합니다.'}</span></div>}
         {(view==='dashboard'||view==='countries')&&<CountryFearGreed/>}
         {view==='dashboard'&&<>
           <CompositeMarketSection items={displaySummaryItems} points={periodPoints[period]} demo={false} loading={marketDataLoading}/>
-          <ScenarioSection/>
-          <div id="strength" className="zg-strength-grid">{(['sector','theme'] as const).map(kind=><StrengthPanel key={kind} title={kind==='sector'?'섹터 순위 (예시)':'테마 순위 (예시)'} items={kind==='sector'?sectorSentiment:themeSentiment} points={periodPoints[period]} onAll={()=>setView('strength')} onFavorite={user?name=>{const item=(kind==='sector'?sectorSentiment:themeSentiment).find(x=>x.name===name);if(item)void toggleFavorite(kind,item);}:undefined} isFavorite={name=>favorites.has(sentimentKey(kind,name))}/>)}</div>
+          <div className="zg-dashboard-secondary">
+            <ScenarioSection/>
+            <div id="strength" className="zg-strength-grid zg-strength-grid-compact">{(['sector','theme'] as const).map(kind=><StrengthPanel key={kind} title={kind==='sector'?'섹터 순위 (예시)':'테마 순위 (예시)'} items={kind==='sector'?sectorSentiment:themeSentiment} points={periodPoints[period]} onAll={()=>setView('strength')} onFavorite={user?name=>{const item=(kind==='sector'?sectorSentiment:themeSentiment).find(x=>x.name===name);if(item)void toggleFavorite(kind,item);}:undefined} isFavorite={name=>favorites.has(sentimentKey(kind,name))}/>)}</div>
+          </div>
         </>}
         {view==='scenarios'&&<ScenarioSection/>}
-        {favoriteItems.length > 0 && (
+        {view!=='dashboard' && favoriteItems.length > 0 && (
           <section className="mt-6" aria-labelledby="favorite-title">
             <div className="mb-3 flex items-center gap-2"><Star className="size-5 fill-amber-300 text-amber-300"/><h2 id="favorite-title" className="text-xl font-extrabold tracking-[-0.03em] text-white">내 즐겨찾기</h2></div>
             <div className="sentiment-grid sentiment-grid-favorite">
@@ -1048,7 +1066,7 @@ export default function Home() {
         {view==='strength'&&<><SentimentSection title="섹터별 심리 점수 · 예시" description="실제 지수가 아닌 예시 점수·추세·베타 · CNN 지수와 무관" items={sectorSentiment} period={period} kind="sector" favorites={favorites} onToggle={user ? toggleFavorite : undefined}/>
         <SentimentSection title="테마별 심리 점수 · 예시" description="실제 지수가 아닌 예시 점수·추세·베타 · CNN 지수와 무관" items={themeSentiment} period={period} kind="theme" favorites={favorites} onToggle={user ? toggleFavorite : undefined}/></>}
       </div>
-      <footer className="zg-footer">ZGmini · 공식 자료와 독자 모델을 연결합니다. 투자 권유가 아니며, 예시 데이터는 별도로 표시합니다.</footer>
+      {view!=='dashboard'&&<footer className="zg-footer">ZGmini · 공식 자료와 독자 모델을 연결합니다. 투자 권유가 아니며, 예시 데이터는 별도로 표시합니다.</footer>}
       <Toaster richColors position="bottom-right"/>
     </main>
   );
