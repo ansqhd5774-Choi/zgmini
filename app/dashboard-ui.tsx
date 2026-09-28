@@ -6,6 +6,7 @@ import {readProgressiveMarketResponse} from '../lib/market-score/read-progressiv
 import {readMarketSnapshot,saveMarketSnapshot} from '../lib/market-score/browser-snapshot.mjs';
 import {marketDetailRows} from '../lib/market-score/detail-catalog.mjs';
 import {breadthNotice} from '../lib/market-score/breadth-notice.mjs';
+import {breadthB1R3PreviousSessionDelta} from '../lib/market-score/breadth-b1-r3-ui-delta.mjs';
 export type DashboardPoint={label:string;value:number};
 type MarketTrendPoint={label?:string;date?:string;value?:number;score?:number};
 function normalizeMarketTrendPoints(data?:MarketTrendPoint[]):DashboardPoint[]{
@@ -273,7 +274,9 @@ export function CompositeMarketSection({items,points,demo,loading}:{items:Summar
        const Icon=m.Icon;
        const domain=market?.domains?.find(d=>d.id===r55DomainIds[index]);
        const score=domain?.status==='READY'&&validPublicScore(domain.score)?domain.score:null;
-       const trend=marketTrendWindow(normalizeMarketTrendPoints(domain?.trend),periodDays);
+       const normalizedTrend=normalizeMarketTrendPoints(domain?.trend);
+       const trend=marketTrendWindow(normalizedTrend,periodDays);
+       const breadthDelta=r55DomainIds[index]==='breadth'?breadthB1R3PreviousSessionDelta(domain?.trend):null;
 
        const band=score===null?'unknown':score<25?'danger':score<40?'caution':score<60?'neutral':score<75?'positive':'strong';
        const detailRows=marketDetailRows(r55DomainIds[index],domain?.indicators) as Array<{label:string;score:number|null;raw:boolean;value:number|null;displayValue?:string|null;unit:string;asOfDate?:string|null;source?:string|null}>;
@@ -300,7 +303,11 @@ export function CompositeMarketSection({items,points,demo,loading}:{items:Summar
         <div className="zg-r55-card-mid">
          <div className="zg-r55-card-number">
           <strong style={{color:score===null?'#94a3b8':scoreColor(score)}}>{score===null?'—':Math.round(score)}</strong>
-          <span className="zg-r55-day-change" aria-label="전일 대비 확인 불가" title="검증된 전일 비교 점수 없음">-</span>
+          <span
+            className="zg-r55-day-change"
+            aria-label={breadthDelta?`전 거래일 ${breadthDelta.previousDate} 대비 ${breadthDelta.delta>=0?'+':''}${breadthDelta.delta.toFixed(1)}점`:'전일 대비 확인 불가'}
+            title={breadthDelta?`${breadthDelta.previousDate} 대비`:'검증된 전일 비교 점수 없음'}
+           >{breadthDelta?`${breadthDelta.delta>=0?'+':''}${breadthDelta.delta.toFixed(1)}`:'-'}</span>
 
          </div>
          {trend.length>0
