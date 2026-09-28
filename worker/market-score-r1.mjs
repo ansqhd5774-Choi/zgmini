@@ -17,7 +17,7 @@ import {
   buildStoredInflationScoringSeries,
 } from "./inflation-history-reader.mjs";
 
-import {buildLiquidityActivePublicDomainR1} from "../lib/market-score/liquidity-active-public-domain-r1.mjs";
+import {buildLiquidityActivePublicDomainR1,selectLiquidityPublicDomainR1} from "../lib/market-score/liquidity-active-public-domain-r1.mjs";
 import {loadLiquidityActiveHistory} from "./liquidity-active-history-reader.mjs";
 const finite=value=>typeof value==="number"&&Number.isFinite(value);
 const validDate=value=>typeof value==="string"&&/^\d{4}-\d{2}-\d{2}$/.test(value);
@@ -213,8 +213,9 @@ function composeMarketSnapshot({liquidityHistory,collected,storedInflation,infla
         // B1-R3 stored breadth is authoritative for the public breadth slot.
         // Any legacy external.publicDomainScores.breadth value is intentionally overridden.
         breadth:breadthDomain,
-        ...(liquidityDomain?.status==="READY"?{liquidity:liquidityDomain}:{}),
       };
+      approvedPublicDomains.liquidity=selectLiquidityPublicDomainR1(approvedPublicDomains.liquidity,liquidityDomain);
+
 
       const domains=buildCmR1DomainResults({
         diagnostics,
