@@ -13,8 +13,8 @@ test('commodity values are matched by identity, never by array position',()=>{
 });
 test('unavailable or ambiguous values and different fund universes are not substituted',()=>{
  assert.equal(marketDetailRows('fundFlows',[{name:'등록펀드 순유입',status:'READY',value:0.16}])[1].value,null);
- assert.equal(marketDetailRows('inflation',[{name:'Core PCE',status:'PARTIAL',score:65}])[0].score,null);
- assert.equal(marketDetailRows('inflation',[{name:'Core PCE',status:'READY',score:65},{name:'Core PCE',status:'READY',score:66}])[0].score,null);
+ assert.equal(marketDetailRows('inflation',[{name:'목표안정',status:'PARTIAL',score:65}])[0].score,null);
+ assert.equal(marketDetailRows('inflation',[{name:'목표안정',status:'READY',score:65},{name:'목표안정',status:'READY',score:66}])[0].score,null);
 });
 test('verified breadth raw values preserve zero and units',()=>{
  const r=marketDetailRows('breadth',[{name:'상승 종목 비율',status:'READY',value:0,unit:'%'}])[1];

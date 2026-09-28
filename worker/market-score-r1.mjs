@@ -9,6 +9,7 @@ import {
   buildFundFlowR53,
 } from "../lib/diagnostic-layer/open-resolution-r53-components.mjs";
 import {buildRateR2} from "../lib/market-score/rate-r2.mjs";
+import {loadStoredInflationR2Domain} from "./inflation-r2-reader.mjs";
 import {readBreadthB1R3StoredPublicDomainR1,buildBreadthB1R3UnavailablePublicDomain} from "../lib/market-score/breadth-b1-r3-worker-domain.mjs";
 import {
   INFLATION_SCORING_SERIES,
@@ -42,6 +43,10 @@ function diagnostics8(snapshot){
   );
 }
 
+function inflationR2Partial(reason="INFLATION_R2_STORAGE_PENDING"){
+  return {status:"PARTIAL",score:null,missingFactors:[reason],indicators:[],trend:[],freshness:"STORED_INITIAL_RELEASE_HISTORY_ONLY",updatedAt:null,methodologyVersion:"INFLATION_R2_R29_56",interpretation:"Inflation R2: stored PIT history only; live fallback forbidden"};
+}
+
 export function createMarketScoreR1Handler({
   env,
   fetchImpl=globalThis.fetch,
@@ -51,6 +56,7 @@ export function createMarketScoreR1Handler({
   collectBreadthDomain=readBreadthB1R3StoredPublicDomainR1,
 
   loadConsumptionDomain=loadStoredConsumptionC1R3,
+  loadInflationDomain=loadStoredInflationR2Domain,
 }={}){
   if(typeof collectInputs!=="function")throw new Error("COLLECT_INPUTS_REQUIRED");
   if(typeof orchestrate!=="function")throw new Error("ORCHESTRATE_REQUIRED");
@@ -66,7 +72,7 @@ export function createMarketScoreR1Handler({
 
     const compute=createProgressiveComputationCache();
     let progressTimer;
-    const state={collected:{series:{},external:{}},storedInflation:{series:{}},breadthDomain:null,consumptionDomain:null};
+    const state={collected:{series:{},external:{}},storedInflation:{series:{}},inflationR2Domain:inflationR2Partial(),breadthDomain:null,consumptionDomain:null};
     const emit=()=>{
       if(typeof onProgress!=='function')return;
       try { onProgress(composeMarketSnapshot({...state,orchestrate,asOf,instant,compute})); } catch { /* Pending inputs are not a request failure. */ }
@@ -77,9 +83,10 @@ export function createMarketScoreR1Handler({
       return value;
     };
     try{
-      const [collectionState,storageState,breadthState,consumptionState]=await Promise.allSettled([
+      const [collectionState,storageState,inflationR2State,breadthState,consumptionState]=await Promise.allSettled([
         collectInputs({env,asOf,fetchImpl,onProgress:value=>update('collected',value)}).then(value=>update('collected',value)),
         loadStoredInflationSeries(env?.DB,{asOf}).then(value=>update('storedInflation',value)),
+        Promise.resolve().then(()=>loadInflationDomain(env?.DB,{asOf})).then(value=>update('inflationR2Domain',value)),
         Promise.resolve().then(()=>collectBreadthDomain({
           env,
           asOf,
@@ -102,6 +109,9 @@ export function createMarketScoreR1Handler({
             missing:[...INFLATION_SCORING_SERIES],
             issues:["STORAGE_READ_FAILED"],
           };
+      const inflationR2Domain=inflationR2State.status==="fulfilled"
+        ? inflationR2State.value
+        : inflationR2Partial("INFLATION_R2_STORAGE_READ_FAILED");
       const breadthDomain=breadthState.status==="fulfilled"
         ? breadthState.value
         : buildBreadthB1R3UnavailablePublicDomain("B1_R3_RUNTIME_UNAVAILABLE",asOf,instant.toISOString());
@@ -110,7 +120,7 @@ export function createMarketScoreR1Handler({
         : {status:"PARTIAL",score:null,missingFactors:["C1_R3_STORAGE_READ_FAILED"],indicators:[],trend:[],freshness:"STORED_CALCULATION_HISTORY_ONLY",updatedAt:null,methodologyVersion:"R3.45P",interpretation:"C1-R3.45P: stored calculation history only; live fallback forbidden"};
 
       clearTimeout(progressTimer);
-      const body=composeMarketSnapshot({collected,storedInflation,breadthDomain,consumptionDomain,orchestrate,asOf,instant,compute});
+      const body=composeMarketSnapshot({collected,storedInflation,inflationR2Domain,breadthDomain,consumptionDomain,orchestrate,asOf,instant,compute});
       if(collectionState.status==='rejected'&&!body.domains.some(domain=>domain.status==='READY'))throw collectionState.reason;
       return safeJson(body);
     }catch(error){
@@ -128,7 +138,7 @@ export function createMarketScoreR1Handler({
   };
 }
 
-function composeMarketSnapshot({collected,storedInflation,breadthDomain,consumptionDomain,orchestrate,asOf,instant,compute}) {
+function composeMarketSnapshot({collected,storedInflation,inflationR2Domain,breadthDomain,consumptionDomain,orchestrate,asOf,instant,compute}) {
       const scoringSeries=buildStoredInflationScoringSeries(
         collected?.series??{},
         storedInflation,
@@ -172,6 +182,7 @@ function composeMarketSnapshot({collected,storedInflation,breadthDomain,consumpt
 
       const approvedPublicDomains={
         ...(collected?.external?.publicDomainScores??{}),
+        inflation:inflationR2Domain,
         consumption:consumptionDomain,
         commodities:compute(buildCommoditiesK1,{
           supplyRows:diagnostic?.artifacts?.supply?.rows??[],
