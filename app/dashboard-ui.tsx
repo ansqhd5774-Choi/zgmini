@@ -322,7 +322,7 @@ export function CompositeMarketSection({items,points,demo,loading}:{items:Summar
           const breadthMeta=r55DomainIds[index]==='breadth';
           const rawText=row.displayValue??(row.value===null?'—':`${Number(row.value.toFixed(2))}${breadthMeta?(row.unit?` ${row.unit}`:''):row.unit}`);
           return <div className="zg-r55-detail" key={row.label}>
-           <span>{row.label}{breadthMeta&&<small style={{display:'block',marginTop:2,fontSize:10,lineHeight:1.2,color:'#94a3b8'}}>{rawText} · {row.asOfDate??'관측일 확인 중'}</small>}</span>
+           <span>{row.label}</span>
            {!row.raw&&<ScoreScale score={row.score} label={`${row.label} 구성 점수`} color={row.score===null?'#64748b':scoreColor(row.score)}/>}
            <b style={{color:row.score===null?'#94a3b8':scoreColor(row.score),gridColumn:row.raw?'2 / 4':undefined,textAlign:'right'}}>{row.raw?rawText:(row.score===null?'—':Math.round(row.score))}</b>
           </div>;
