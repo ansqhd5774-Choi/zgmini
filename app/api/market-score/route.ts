@@ -13,6 +13,7 @@ import { runConsumptionR3OperationalRefresh } from "../../../worker/consumption-
 
 import {streamMarketScore} from "../../../worker/market-score-stream.mjs";
 import {collectProgressiveMarketInputs} from "../../../worker/market-score-progressive-inputs.mjs";
+import { collectGrowthR2StoreOnlyR1 } from "../../../lib/market-score/growth-r2-worker-domain-r1.mjs";
 const collectMarketScoreInputs=(args:any)=>collectProgressiveMarketInputs(args,{
   collectBase:collectDiagnosticLiveInputs,
   collectRates:collectRateR2Inputs,
@@ -54,7 +55,12 @@ export async function GET(request:Request){
       .then(()=>runEmploymentR4ShadowRuntimeStep({env,fetchImpl:globalThis.fetch}))
       .catch(()=>null),
   );
-  const response=request.headers.get('accept')?.includes('application/x-ndjson')
+    waitUntil(
+    Promise.resolve()
+      .then(()=>collectGrowthR2StoreOnlyR1({env,asOf,fetchImpl:globalThis.fetch}))
+      .catch(()=>null),
+  );
+const response=request.headers.get('accept')?.includes('application/x-ndjson')
     ? streamMarketScore(handler,request,{waitUntil})
     : await handler(request);
   const headers=new Headers(response.headers);

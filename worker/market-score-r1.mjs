@@ -19,6 +19,7 @@ import {
 
 import {buildLiquidityActivePublicDomainR1,selectLiquidityPublicDomainR1} from "../lib/market-score/liquidity-active-public-domain-r1.mjs";
 import {loadLiquidityActiveHistory} from "./liquidity-active-history-reader.mjs";
+import {loadStoredGrowthR2PublicDomainR1} from "../lib/market-score/growth-r2-worker-domain-r1.mjs";
 const finite=value=>typeof value==="number"&&Number.isFinite(value);
 const validDate=value=>typeof value==="string"&&/^\d{4}-\d{2}-\d{2}$/.test(value);
 
@@ -69,6 +70,7 @@ export function createMarketScoreR1Handler({
   loadConsumptionDomain=loadStoredConsumptionC1R3,
   loadInflationDomain=loadStoredInflationR2Domain,
   loadLiquidityHistory=loadLiquidityActiveHistory,
+  loadGrowthDomain=loadStoredGrowthR2PublicDomainR1,
 }={}){
   if(typeof collectInputs!=="function")throw new Error("COLLECT_INPUTS_REQUIRED");
   if(typeof orchestrate!=="function")throw new Error("ORCHESTRATE_REQUIRED");
@@ -84,7 +86,7 @@ export function createMarketScoreR1Handler({
 
     const compute=createProgressiveComputationCache();
     let progressTimer;
-    const state={collected:{series:{},external:{}},storedInflation:{series:{}},inflationR2Domain:inflationR2Partial(),breadthDomain:null,consumptionDomain:null ,liquidityHistory:[]};
+    const state={collected:{series:{},external:{}},storedInflation:{series:{}},inflationR2Domain:inflationR2Partial(),breadthDomain:null,consumptionDomain:null ,liquidityHistory:[],growthDomain:null};
     const emit=()=>{
       if(typeof onProgress!=='function')return;
       try { onProgress(composeMarketSnapshot({...state,orchestrate,asOf,instant,compute})); } catch { /* Pending inputs are not a request failure. */ }
@@ -95,7 +97,7 @@ export function createMarketScoreR1Handler({
       return value;
     };
     try{
-      const [collectionState,storageState,inflationR2State,breadthState,consumptionState,liquidityHistoryState]=await Promise.allSettled([
+      const [collectionState,storageState,inflationR2State,breadthState,consumptionState,growthState,liquidityHistoryState]=await Promise.allSettled([
         collectInputs({env,asOf,fetchImpl,onProgress:value=>update('collected',value)}).then(value=>update('collected',value)),
         loadStoredInflationSeries(env?.DB,{asOf}).then(value=>update('storedInflation',value)),
         Promise.resolve().then(()=>loadInflationDomain(env?.DB,{asOf})).then(value=>update('inflationR2Domain',value)),
@@ -106,6 +108,7 @@ export function createMarketScoreR1Handler({
           runtimeOptions:{now:()=>instant},
         })).then(value=>update('breadthDomain',value)),
         Promise.resolve().then(()=>loadConsumptionDomain(env?.DB,{asOf})).then(value=>update('consumptionDomain',value)),
+        Promise.resolve().then(()=>loadGrowthDomain(env?.DB,{asOf})).then(value=>update('growthDomain',value)),
         Promise.resolve().then(()=>loadLiquidityHistory(env?.DB,{asOf})).then(value=>update("liquidityHistory",value)),
       ]);
       const collected=collectionState.status==="fulfilled"
@@ -131,12 +134,15 @@ export function createMarketScoreR1Handler({
       const consumptionDomain=consumptionState.status==="fulfilled"
         ? consumptionState.value
         : {status:"PARTIAL",score:null,missingFactors:["C1_R3_STORAGE_READ_FAILED"],indicators:[],trend:[],freshness:"STORED_CALCULATION_HISTORY_ONLY",updatedAt:null,methodologyVersion:"R3.45P",interpretation:"C1-R3.45P: stored calculation history only; live fallback forbidden"};
+      const growthDomain=growthState.status==="fulfilled"
+        ? growthState.value
+        : {status:"NOT_READY",score:null,coverage:0,requiredCoverage:24,missingFactors:["GROWTH_R2_STORAGE_READ_FAILED"],staleFactors:[],methodologyVersion:"GROWTH_R2_G16_CANDIDATE_R1"};
 
       clearTimeout(progressTimer);
       const liquidityHistory=liquidityHistoryState.status==="fulfilled"&&Array.isArray(liquidityHistoryState.value)
         ? liquidityHistoryState.value
         : [];
-      const body=composeMarketSnapshot({liquidityHistory,collected,storedInflation,inflationR2Domain,breadthDomain,consumptionDomain,orchestrate,asOf,instant,compute});
+      const body=composeMarketSnapshot({liquidityHistory,collected,storedInflation,inflationR2Domain,breadthDomain,consumptionDomain,growthDomain,orchestrate,asOf,instant,compute});
       if(collectionState.status==='rejected'&&!body.domains.some(domain=>domain.status==='READY'))throw collectionState.reason;
       return safeJson(body);
     }catch(error){
@@ -154,7 +160,7 @@ export function createMarketScoreR1Handler({
   };
 }
 
-function composeMarketSnapshot({liquidityHistory,collected,storedInflation,inflationR2Domain,breadthDomain,consumptionDomain,orchestrate,asOf,instant,compute}) {
+function composeMarketSnapshot({liquidityHistory,collected,storedInflation,inflationR2Domain,breadthDomain,consumptionDomain,growthDomain,orchestrate,asOf,instant,compute}) {
       const scoringSeries=buildStoredInflationScoringSeries(
         collected?.series??{},
         storedInflation,
@@ -206,6 +212,7 @@ function composeMarketSnapshot({liquidityHistory,collected,storedInflation,infla
         ...(collected?.external?.publicDomainScores??{}),
         inflation:inflationR2Domain,
         consumption:consumptionDomain,
+        growth:growthDomain,
         commodities:compute(buildCommoditiesK1,{
           supplyRows:diagnostic?.artifacts?.supply?.rows??[],
           asOfDate:asOf,
@@ -234,7 +241,12 @@ function composeMarketSnapshot({liquidityHistory,collected,storedInflation,infla
           Object.assign(domain,{status:'PARTIAL',score:null,trend:[],indicators:[]});
         }
       }
-      const composite=buildCompositeMarketScore(domains,{updatedAt:instant.toISOString()});
+      const growthR2CompositeBase=buildCompositeMarketScore(domains,{updatedAt:instant.toISOString()});
+      const composite=growthDomain?.status==="READY"
+        ? {...growthR2CompositeBase,domains:growthR2CompositeBase.domains.map(domain=>domain?.id==="growth"
+          ? {...domain,methodologyVersion:growthDomain?.methodologyVersion??"GROWTH_R2_G16_CANDIDATE_R1"}
+          : domain)}
+        : growthR2CompositeBase;
       const publicCompositeDomains=projectInflationMethodologyVersion(composite.domains,domains);
 
       return {
