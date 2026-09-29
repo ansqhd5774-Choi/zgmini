@@ -5,6 +5,7 @@ import {buildStoredGrowthR2Domain} from "../lib/market-score/growth-r2-worker-do
 import {GROWTH_R2_FEATURE_IDS} from "../lib/market-score/growth-r2-contract.mjs";
 import {ensureGrowthR2HistoricalSeed} from "../lib/market-score/growth-r2-d1-store-r1.mjs";
 import {GROWTH_R2_SEED_ROWS,GROWTH_R2_SEED_SHA256} from "../lib/market-score/growth-r2-seed-r1.mjs";
+import {collectGrowthR2ForwardRecords} from "../lib/market-score/growth-r2-forward-provider-r1.mjs";
 
 const rows=(n=84,start=100)=>Array.from({length:n},(_,i)=>({observationDate:`${2019+Math.floor(i/12)}-${String(i%12+1).padStart(2,"0")}-01`,value:start+i}));
 const baseDiagnostics={inflationStability:{status:"READY",score:60,missing:[]},recessionDefense:{status:"READY",score:58,missing:[]},creditRiskDefense:{status:"READY",score:55,missing:[]}};
@@ -86,3 +87,72 @@ test("Growth R2 historical seed respects D1 100 bound-parameter limit",async()=>
   assert.equal(state.maxBindCount,84);
 });
 
+
+
+function jsonResponse(value,status=200){return new Response(JSON.stringify(value),{status,headers:{"content-type":"application/json"}});}
+function textResponse(value,status=200){return new Response(value,{status,headers:{"content-type":"text/plain"}});}
+function censusTable(rows){return [["data_type_code","time_slot_id","seasonally_adj","category_code","cell_value","error_data","time","us"],...rows];}
+
+function growthForwardFetchMock(){
+  const calls=[];
+  const fetchImpl=async(url,opts={})=>{
+    const u=String(url);calls.push({url:u,method:opts?.method??"GET"});
+    if(u.includes("/timeseries/eits/m3")){
+      const q=new URL(u).searchParams,cat=q.get("category_code"),time=q.get("time")??"2026";
+      const by={
+        MTM:[["NO","1","yes","MTM","1200000","no",`${time}-08`,"1"],["VS","1","yes","MTM","1000000","no",`${time}-08`,"1"],["TI","1","yes","MTM","1800000","no",`${time}-08`,"1"]],
+        MDM:[["NO","1","yes","MDM","600000","no",`${time}-08`,"1"]],
+        NXA:[["NO","1","yes","NXA","300000","no",`${time}-08`,"1"],["VS","1","yes","NXA","250000","no",`${time}-08`,"1"]],
+        MTU:[["UO","1","yes","MTU","900000","no",`${time}-08`,"1"]],
+      };
+      return jsonResponse(censusTable(by[cat]??[]));
+    }
+    if(u.includes("/timeseries/eits/bfs")){
+      const q=new URL(u).searchParams,time=q.get("time")??"2026";
+      assert.equal(q.get("category_code"),null,"BFS must stay one unpartitioned year request");
+      return jsonResponse(censusTable([
+        ["T","1","yes","BA_BA","510000","no",`${time}-08`,"1"],
+        ["T","1","yes","BA_HBA","320000","no",`${time}-08`,"1"],
+        ["T","1","yes","BA_WBA","170000","no",`${time}-08`,"1"],
+        ["X","1","yes","BA_BA","1","no",`${time}-08`,"1"],
+      ]));
+    }
+    if(u.includes("/releases/g17/Current/ipdisk/ip_sa.txt")){
+      const codes=["B50001","GMF","G21","G2211A2"];
+      return textResponse(codes.flatMap((code,j)=>[
+        `"${code}" 2021 ${Array.from({length:12},(_,i)=>100+j+i/10).join(" ")}`,
+        `"${code}" 2026 ${Array.from({length:12},(_,i)=>110+j+i/10).join(" ")}`,
+      ]).join("\n"));
+    }
+    if(u.includes("/Releases/G17/Current/ipdisk/utl_sa.txt")){
+      const codes=["B50001","GMF"];
+      return textResponse(codes.flatMap((code,j)=>[
+        `"${code}" 2026 ${Array.from({length:12},(_,i)=>75+j+i/100).join(" ")}`,
+      ]).join("\n"));
+    }
+    if(u.includes("api.bls.gov/publicAPI/v2/timeseries/data/")){
+      const ids=["CES0000000001","CES0500000002","CES3000000009","CES0500000016","CES6056132001"];
+      return jsonResponse({status:"REQUEST_SUCCEEDED",Results:{series:ids.map((seriesID,j)=>({seriesID,data:[1,2,3,4].map((m,i)=>({year:"2026",period:`M${String(m).padStart(2,"0")}`,value:String(1000+j*100+i*10)}))}))}});
+    }
+    throw new Error(`UNEXPECTED_FETCH:${u}`);
+  };
+  return {fetchImpl,calls};
+}
+
+test("Growth R2 BFS forward provider uses Census category_code BA_* with data_type_code T in one request",async()=>{
+  const {fetchImpl,calls}=growthForwardFetchMock();
+  const seedRows=["G019","G020","G021","G022"].map((candidateId,i)=>({candidateId,observationDate:"2021-12-01",pitEligible:true,harmonizedValue:100+i}));
+  const out=await collectGrowthR2ForwardRecords({env:{CENSUS_API_KEY:"test-only"},asOf:"2026-09-29",fetchImpl,seedRows,now:()=>new Date("2026-09-29T00:00:00.000Z")});
+  assert.equal(out.status,"READY");
+  assert.equal(out.records.length,24);
+  assert.equal(out.providerRequestCount,8);
+  const bfsCalls=calls.filter(x=>x.url.includes("/timeseries/eits/bfs"));
+  assert.equal(bfsCalls.length,1);
+  const bfs=Object.fromEntries(out.records.filter(x=>["G060","G061","G062"].includes(x.candidateId)).map(x=>[x.candidateId,x]));
+  assert.equal(bfs.G060.harmonizedValue,510000);
+  assert.equal(bfs.G061.harmonizedValue,320000);
+  assert.equal(bfs.G062.harmonizedValue,170000);
+  assert.equal(bfs.G060.selector,"BFS_US_BA_SA");
+  assert.equal(bfs.G061.selector,"BFS_US_HBA_SA");
+  assert.equal(bfs.G062.selector,"BFS_US_WBA_SA");
+});
