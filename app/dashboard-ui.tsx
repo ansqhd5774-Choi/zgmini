@@ -254,9 +254,8 @@ export function CompositeMarketSection({items,points,demo,loading}:{items:Summar
         const score=diag?.status==='READY'&&validPublicScore(diag.score)?diag.score:null;
         return <div key={s.name} className="zg-r55-subscore" data-index={index}>
          <div className="zg-r55-subscore-head">
-          <span className="zg-r55-subscore-title">
-           <span onClick={e=>e.stopPropagation()}><DashboardTip label={`${s.name} 반영 항목`} trigger={<b>{s.name}</b>}>{s.components}. API diagnostics8에서 READY인 경우에만 숫자를 표시합니다.</DashboardTip></span>
-          </span>
+          <span className="zg-r55-subscore-title"><b>{s.name}</b></span>
+          <span onClick={e=>e.stopPropagation()}><DashboardTip label={`${s.name} 반영 항목`}>{s.components}. API diagnostics8에서 READY인 경우에만 숫자를 표시합니다.</DashboardTip></span>
           <strong>{score===null?'—':Math.round(score)}</strong>
          </div>
          <div className="zg-r55-subscore-foot">

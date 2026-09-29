@@ -940,7 +940,7 @@ export default function Home() {
             <div className="zg-account-tools">
               <Sheet>
                 <SheetTrigger asChild>
-                  <Button type="button" className="zg-dashboard-info-button rounded-none border border-white/20 bg-white/10 text-white hover:bg-white/20" aria-label="대시보드 안내">
+                  <Button type="button" className="zg-dashboard-info-button rounded-none border border-white/20 bg-white/10 text-white hover:bg-white/20 zg-header-icon-action" aria-label="대시보드 안내" title="안내">
                     <Info className="size-4"/><span className="hidden xl:inline">안내</span>
                   </Button>
                 </SheetTrigger>
@@ -960,7 +960,7 @@ export default function Home() {
               ) : user ? (
                 <Sheet>
                   <SheetTrigger asChild>
-                    <Button className="rounded-none border border-white/20 bg-white/10 text-white hover:bg-white/20">
+                    <Button className="rounded-none border border-white/20 bg-white/10 text-white hover:bg-white/20 zg-header-icon-action" aria-label="사용자 설정" title="사용자 설정">
                       <Settings2 className="size-4"/><span className="hidden sm:inline">사용자 설정</span>
                     </Button>
                   </SheetTrigger>
