@@ -3,6 +3,8 @@ import assert from "node:assert/strict";
 import {createMarketScoreR1Handler} from "../worker/market-score-r1.mjs";
 import {buildStoredGrowthR2Domain} from "../lib/market-score/growth-r2-worker-domain-r1.mjs";
 import {GROWTH_R2_FEATURE_IDS} from "../lib/market-score/growth-r2-contract.mjs";
+import {ensureGrowthR2HistoricalSeed} from "../lib/market-score/growth-r2-d1-store-r1.mjs";
+import {GROWTH_R2_SEED_ROWS,GROWTH_R2_SEED_SHA256} from "../lib/market-score/growth-r2-seed-r1.mjs";
 
 const rows=(n=84,start=100)=>Array.from({length:n},(_,i)=>({observationDate:`${2019+Math.floor(i/12)}-${String(i%12+1).padStart(2,"0")}-01`,value:start+i}));
 const baseDiagnostics={inflationStability:{status:"READY",score:60,missing:[]},recessionDefense:{status:"READY",score:58,missing:[]},creditRiskDefense:{status:"READY",score:55,missing:[]}};
@@ -33,3 +35,54 @@ test("stored Growth R2 requires exact 24 non-stale features and computes determi
   const a=await buildStoredGrowthR2Domain(feature,{asOf:"2026-06-01"});const b=await buildStoredGrowthR2Domain(feature,{asOf:"2026-06-01"});assert.equal(a.status,"READY");assert.equal(a.coverage,24);assert.equal(a.score,b.score);assert.equal(a.inputSnapshotId,b.inputSnapshotId);
   const stale=await buildStoredGrowthR2Domain(feature,{asOf:"2026-09-29"});assert.equal(stale.status,"NOT_READY");assert.ok(stale.staleFactors.length>0);
 });
+
+function createD1BindLimitDb(maxBindParams=100){
+  const state={historyRows:0,historyInsertCalls:0,maxBindCount:0,meta:new Map()};
+  const execute=(sql,args,mode)=>{
+    state.maxBindCount=Math.max(state.maxBindCount,args.length);
+    if(args.length>maxBindParams)throw new Error(`D1_BIND_PARAMETER_LIMIT_EXCEEDED:${args.length}`);
+    if(mode==="first"&&/SELECT value FROM growth_r2_meta_v1 WHERE key=\?/i.test(sql)){
+      const value=state.meta.get(args[0]);
+      return value==null?null:{value};
+    }
+    if(mode==="run"&&/INSERT OR IGNORE INTO growth_r2_feature_history_v1/i.test(sql)){
+      assert.equal(args.length%21,0);
+      const rowsWritten=args.length/21;
+      state.historyRows+=rowsWritten;
+      state.historyInsertCalls++;
+      return {meta:{changes:rowsWritten}};
+    }
+    if(mode==="run"&&/INSERT OR REPLACE INTO growth_r2_meta_v1/i.test(sql)){
+      state.meta.set(args[0],args[1]);
+      return {meta:{changes:1}};
+    }
+    if(mode==="all")return {results:[]};
+    return mode==="first"?null:{meta:{changes:0}};
+  };
+  const statement=(sql,args=[])=>({
+    bind(...next){return statement(sql,next)},
+    run:async()=>execute(sql,args,"run"),
+    first:async()=>execute(sql,args,"first"),
+    all:async()=>execute(sql,args,"all"),
+  });
+  const db={
+    prepare:sql=>statement(sql),
+    batch:async statements=>Promise.all(statements.map(st=>st.run())),
+  };
+  return {db,state};
+}
+
+test("Growth R2 historical seed respects D1 100 bound-parameter limit",async()=>{
+  const {db,state}=createD1BindLimitDb(100);
+  const result=await ensureGrowthR2HistoricalSeed(db,{nowIso:"2026-09-29T00:00:00.000Z"});
+  assert.equal(GROWTH_R2_SEED_ROWS.length,1065);
+  assert.equal(result.status,"SEEDED");
+  assert.equal(result.rowCount,1065);
+  assert.equal(result.rowsWritten,1065);
+  assert.equal(state.historyRows,1065);
+  assert.equal(state.meta.get("historical_seed_sha256"),GROWTH_R2_SEED_SHA256);
+  assert.ok(state.historyInsertCalls>1);
+  assert.ok(state.maxBindCount<=100,`max bind count was ${state.maxBindCount}`);
+  assert.equal(state.maxBindCount,84);
+});
+
