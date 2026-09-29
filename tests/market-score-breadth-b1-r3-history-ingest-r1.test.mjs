@@ -136,7 +136,7 @@ test("internal route is authenticated store-only and has no provider/network acq
   const src=readFileSync(new URL("../app/api/internal/b1-r3-history-import/route.ts",import.meta.url),"utf8");
   assert.match(src,/B1_R3_HISTORY_IMPORT_SECRET/);
   assert.match(src,/authorization/);
-  assert.match(src,/ingestBreadthB1R3HistoricalPayloadR1/);
+  assert.match(src,/ingestBreadthB1R3HistoricalPayloadR2/);
   assert.match(src,/METHOD_NOT_ALLOWED/);
   assert.doesNotMatch(src,/marketparquet\.com|raw\.githubusercontent|fetchSp500|fetchBarsCatalogue|fetchTickerPair/);
 });

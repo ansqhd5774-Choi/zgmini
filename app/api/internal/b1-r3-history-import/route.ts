@@ -1,8 +1,8 @@
 import {env} from "cloudflare:workers";
 import {
-  B1_R3_HISTORY_INGEST_R1,
-  ingestBreadthB1R3HistoricalPayloadR1,
-} from "../../../../lib/market-score/breadth-b1-r3-history-ingest-r1.mjs";
+  B1_R3_HISTORY_INGEST_R2,
+  ingestBreadthB1R3HistoricalPayloadR2,
+} from "../../../../lib/market-score/breadth-b1-r3-history-ingest-r2.mjs";
 
 const MAX_BODY_BYTES=750000;
 
@@ -37,7 +37,7 @@ async function authorized(request:Request){
 
 export async function POST(request:Request){
   const auth=await authorized(request);
-  if(!auth.ok)return json({status:"ERROR",code:auth.code,ingestVersion:B1_R3_HISTORY_INGEST_R1},auth.status);
+  if(!auth.ok)return json({status:"ERROR",code:auth.code,ingestVersion:B1_R3_HISTORY_INGEST_R2},auth.status);
 
   const length=Number(request.headers.get("content-length")??0);
   if(Number.isFinite(length)&&length>MAX_BODY_BYTES)return json({status:"ERROR",code:"PAYLOAD_TOO_LARGE"},413);
@@ -46,21 +46,21 @@ export async function POST(request:Request){
   try{payload=await request.json()}catch{return json({status:"ERROR",code:"JSON_INVALID"},400)}
 
   try{
-    const result=await ingestBreadthB1R3HistoricalPayloadR1({env,payload});
+    const result=await ingestBreadthB1R3HistoricalPayloadR2({env,payload});
     if(result.status==="PAUSED_LIVE_PRIORITY")return json(result,409);
     return json(result,200);
   }catch(error:any){
     const message=String(error?.message??error??"INGEST_ERROR");
-    const client=/PAYLOAD|CONTRACT|DATE|UNIVERSE|ROW_|PROTECTED|PREVIOUS|EXISTING_/i.test(message);
+    const client=/PAYLOAD|CONTRACT|DATE|UNIVERSE|ROW_|PROTECTED|PREVIOUS|EXISTING_|SEMANTIC_/i.test(message);
     return json({
       status:"ERROR",
       code:message.slice(0,200),
-      ingestVersion:B1_R3_HISTORY_INGEST_R1,
+      ingestVersion:B1_R3_HISTORY_INGEST_R2,
       providerRequests:0,
     },client?400:500);
   }
 }
 
 export async function GET(){
-  return json({status:"ERROR",code:"METHOD_NOT_ALLOWED",ingestVersion:B1_R3_HISTORY_INGEST_R1},405);
+  return json({status:"ERROR",code:"METHOD_NOT_ALLOWED",ingestVersion:B1_R3_HISTORY_INGEST_R2},405);
 }
