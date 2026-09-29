@@ -5,8 +5,8 @@ import { createMarketScoreR1Handler } from "../../../worker/market-score-r1.mjs"
 import { collectRateR2Inputs } from "../../../lib/market-score/rate-r2-provider.mjs";
 import { collectBreadthB1R3StoreOnlyR1, readBreadthB1R3StoredPublicDomainR1 } from "../../../lib/market-score/breadth-b1-r3-worker-domain.mjs";
 import { collectInflationR2StoreOnly } from "../../../worker/inflation-r2-collector.mjs";
-import { collectEmploymentR4ShadowStoreOnlyR1 } from "../../../lib/market-score/employment-r4-shadow-worker-domain.mjs";
 import { collectEarningsE1R4ToStore } from "../../../lib/market-score/sec-earnings-e1-r4-provider.mjs";
+import { runEmploymentR4ShadowRuntimeStep } from "../../../lib/market-score/employment-r4-runtime-trigger.mjs";
 
 import { withMarketScoreCache } from "../../../worker/market-score-cache.mjs";
 import { runConsumptionR3OperationalRefresh } from "../../../worker/consumption-r3-operational-refresh.mjs";
@@ -51,7 +51,7 @@ export async function GET(request:Request){
   );
   waitUntil(
     Promise.resolve()
-      .then(()=>collectEmploymentR4ShadowStoreOnlyR1({env,fetchImpl:globalThis.fetch}))
+      .then(()=>runEmploymentR4ShadowRuntimeStep({env,fetchImpl:globalThis.fetch}))
       .catch(()=>null),
   );
   const response=request.headers.get('accept')?.includes('application/x-ndjson')
