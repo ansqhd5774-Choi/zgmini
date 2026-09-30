@@ -1,4 +1,4 @@
-import {collectDiagnosticLiveInputs} from './diagnostic-v1-canary.mjs';
+import {collectDiagnosticLiveInputs,fetchBisBulkDataset} from './diagnostic-v1-canary.mjs';
 import {collectRateR2Inputs} from '../lib/market-score/rate-r2-provider.mjs';
 import {collectBreadthB1R3StoreOnlyR1,readBreadthB1R3StoredPublicDomainR1} from '../lib/market-score/breadth-b1-r3-worker-domain.mjs';
 import {collectInflationR2StoreOnly} from './inflation-r2-collector.mjs';
@@ -10,7 +10,14 @@ import {createMarketScoreR1Handler} from './market-score-r1.mjs';
 import {buildFullDiagnosticOrchestrator} from '../lib/diagnostic-layer/full-diagnostic-orchestrator.mjs';
 import {marketOperationalStore,readStoredMarketInputs} from './market-operational-store.mjs';
 
-export const MARKET_COLLECTION_JOBS=Object.freeze(['macro','rates','earnings','consumption','breadth','inflation','employment','growth']);
+export const MARKET_COLLECTION_JOBS=Object.freeze(['macro','rates','credit','supply','fundFlows','bisDsr','bisTc','earnings','consumption','breadth','inflation','employment','growth']);
+const SOURCE_GROUPS={macro:['fetchFred'],credit:['fetchOfr','fetchCmdi'],supply:['fetchGscpi','fetchCopper'],fundFlows:['fetchFundFlows']};
+const EXTERNAL_KEYS={macro:['publicDomainScores'],credit:['dvpRepoRows','triPartyRepoRows','cmdiRows'],supply:['gscpiRows','copperRows'],fundFlows:['registeredFundFlowRows']};
+async function collectGroup(args,group){
+ const adapters=Object.fromEntries(['fetchFred','fetchOfr','fetchCmdi','fetchGscpi','fetchCopper','fetchFundFlows','fetchBis'].filter(key=>!SOURCE_GROUPS[group].includes(key)).map(key=>[key,async()=>({status:'SKIPPED_JOB'})]));
+ const out=await collectDiagnosticLiveInputs({...args,requestCap:48,adapters});
+ return {...(group==='macro'?{series:out.series,inputSettled:out.inputSettled}:{}),external:Object.fromEntries(EXTERNAL_KEYS[group].map(key=>[key,out.external[key]]))};
+}
 const unavailableFetch=async()=>{throw Error('SCORE_CALCULATION_NETWORK_FORBIDDEN')};
 export async function calculateStoredMarketScore(env,store,now){
  const handler=createMarketScoreR1Handler({env,fetchImpl:unavailableFetch,
@@ -42,7 +49,12 @@ export async function runMarketOperationalRefresh({env,job,store,now=Date.now(),
   const asOf=new Date(now).toISOString().slice(0,10),requestFetch=boundedFetch(fetchImpl);
   const args={env,asOf,fetchImpl:requestFetch};
   const jobs={
-   macro:()=>collectDiagnosticLiveInputs({...args,requestCap:48}),
+   macro:()=>collectGroup(args,'macro'),
+   credit:()=>collectGroup(args,'credit'),
+   supply:()=>collectGroup(args,'supply'),
+   fundFlows:()=>collectGroup(args,'fundFlows'),
+   bisDsr:async()=>{const r=await fetchBisBulkDataset('WS_DSR',{fetchImpl:requestFetch,country:'US'});return {status:r.status,external:{bisDsrParsed:r.parsed}}},
+   bisTc:async()=>{const r=await fetchBisBulkDataset('WS_TC',{fetchImpl:requestFetch,country:'US'});return {status:r.status,external:{bisDebtGdpParsed:r.parsed}}},
    rates:()=>collectRateR2Inputs(args),
    earnings:()=>collectEarningsE1R4ToStore({...args,db:env.DB}),
    consumption:()=>runConsumptionR3OperationalRefresh({...args,maxSourcesPerRun:1}),
@@ -53,7 +65,7 @@ export async function runMarketOperationalRefresh({env,job,store,now=Date.now(),
    ...collectors,
   };
   phase='COLLECT';const collected=await jobs[selected]();
-  if(selected==='macro'||selected==='rates'){
+  if(['macro','rates','credit','supply','fundFlows','bisDsr','bisTc'].includes(selected)){
    phase='STORE';
    // Keep normalized observations, not URLs, request logs or credentials.
    const {series,external,inputSettled,rateR2,providerSummary}=collected;

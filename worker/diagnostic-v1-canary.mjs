@@ -125,6 +125,7 @@ async function readResponseBytes(response, maxBytes = 25_000_000) {
 
 export async function fetchBisBulkDataset(dataset, {
   fetchImpl = globalThis.fetch,
+  country,
 } = {}) {
   const spec = BIS_DATASETS[dataset];
   if (!spec) return {dataset, status: 'INVALID_DATASET', requestCount: 0, parsed: null};
@@ -148,7 +149,7 @@ export async function fetchBisBulkDataset(dataset, {
       dataset,
       status: 'READY_CURRENT_VINTAGE_RAW',
       requestCount: 1,
-      parsed: parseBisColumnCsv(csvText, dataset),
+      parsed: parseBisColumnCsv(csvText, dataset, {country}),
     };
   } catch (error) {
     return {

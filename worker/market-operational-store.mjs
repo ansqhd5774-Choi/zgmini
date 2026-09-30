@@ -18,7 +18,7 @@ export function marketOperationalStore(db){
   async claim(job,now){
    await init();const id=crypto.randomUUID();
    await db.prepare('INSERT OR IGNORE INTO market_collection_jobs_v1(job) VALUES(?)').bind(job).run();
-   await db.prepare('UPDATE market_collection_jobs_v1 SET lease_id=?,lease_until=?,status=? WHERE job=? AND lease_until<=?').bind(id,now+180000,'RUNNING',job,now).run();
+   await db.prepare('UPDATE market_collection_jobs_v1 SET lease_id=?,lease_until=?,finished_at=?,status=? WHERE job=? AND lease_until<=?').bind(id,now+180000,now,'RUNNING',job,now).run();
    const row=await db.prepare('SELECT lease_id FROM market_collection_jobs_v1 WHERE job=?').bind(job).first();return row?.lease_id===id?id:null;
   },
   async next(jobs){await init();const rows=[];for(const job of jobs){const row=await db.prepare('SELECT finished_at FROM market_collection_jobs_v1 WHERE job=?').bind(job).first();rows.push({job,time:row?.finished_at??0})}return rows.sort((a,b)=>a.time-b.time)[0].job},
@@ -27,10 +27,9 @@ export function marketOperationalStore(db){
 }
 
 export async function readStoredMarketInputs(store,now=Date.now()){
- const [macro,rates]=await Promise.all([store.readInput('macro'),store.readInput('rates')]);
+ const batches=await Promise.all(['macro','credit','supply','fundFlows','bisDsr','bisTc','rates'].map(key=>store.readInput(key)));
  const fresh=x=>x&&now>=x.storedAt&&now-x.storedAt<36*3600000?x.body:{};
- const base=fresh(macro),rate=fresh(rates);
- return {...base,...rate,series:base.series??{},external:base.external??{},providerSummary:{...base.providerSummary,...rate.providerSummary}};
+ return batches.map(fresh).reduce((all,part)=>({...all,...part,series:{...all.series,...part.series},external:{...all.external,...part.external},providerSummary:{...all.providerSummary,...part.providerSummary}}),{series:{},external:{},providerSummary:{}});
 }
 
 export async function storedMarketResponse(request,{store,now=Date.now()}={}){

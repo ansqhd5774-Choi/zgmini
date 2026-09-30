@@ -13,6 +13,13 @@ import {
 test('CSV parser handles quotes and escaped quotes', () => {
   assert.deepEqual(parseCsvLine('A,"B,C","D""E"'), ['A','B,C','D"E']);
 });
+test('country-limited collection retains exactly the same US observations',()=>{
+ const csv='FREQ,BORROWERS_CTY,Series,2026-Q1\nQ,US,Q:US,12\nQ,KR,Q:KR,20\n';
+ const full=parseBisColumnCsv(csv,'WS_DSR');
+ const limited=parseBisColumnCsv(csv,'WS_DSR',{country:'US'});
+ assert.deepEqual(limited.series,full.series.filter(x=>x.country==='US'));
+ assert.deepEqual(limited.periods,full.periods);
+});
 
 test('BIS quarter converts to quarter-start observation date', () => {
   assert.equal(bisQuarterToDate('2026-Q1'),'2026-01-01');
