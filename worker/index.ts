@@ -17,6 +17,7 @@ import { refreshKoreaRev7 } from "./korea-rev7-refresh.mjs";
 import { koreaRev7ExternalScheduler } from "./korea-rev7-external-scheduler.mjs";
 import { env as runtimeEnv } from "cloudflare:workers";
 import { runMarketOperationalRefresh } from "./market-operational-refresh.mjs";
+import { inspectEmploymentR6AuthProbe } from "./employment-r6-auth-probe.mjs";
 
 interface Env {
   ASSETS: Fetcher;
@@ -53,6 +54,7 @@ const worker = {
     const url = new URL(request.url);
     if (url.pathname.replace(/\/$/, '') === '/api/internal/korea-rev7-scheduled') return koreaRev7ExternalScheduler(request, runtimeEnv, {ctx});
     if (url.pathname.replace(/\/$/, '') === '/api/internal/market-scheduled') return koreaRev7ExternalScheduler(request, runtimeEnv, {ctx,refresh:runMarketOperationalRefresh,responseBudgetMs:5000,logTag:'MARKET_EXTERNAL'});
+    if (url.pathname.replace(/\/$/, '') === '/api/internal/employment-r6-auth-probe') return Response.json(inspectEmploymentR6AuthProbe(request), {status:200,headers:{"cache-control":"no-store, no-cache, must-revalidate","pragma":"no-cache","x-robots-tag":"noindex, nofollow"}});
     if (url.pathname === "/api/internal/p0-fred-api-shadow-check") return fredApiShadow(request, env, { importMetaProd: import.meta.env.PROD, nodeEnv: typeof process !== "undefined" ? process.env.NODE_ENV : undefined, workerContext: ctx, workerUserAgent: typeof navigator !== "undefined" ? navigator.userAgent : undefined });
     if (url.pathname === "/api/internal/p0-fred-bls-shadow-check") return fredBlsShadow(request, { importMetaProd: import.meta.env.PROD, nodeEnv: typeof process !== "undefined" ? process.env.NODE_ENV : undefined, workerContext: ctx, workerUserAgent: typeof navigator !== "undefined" ? navigator.userAgent : undefined });
     if (url.pathname === "/api/internal/p0-fred-transport-check") return productionFredProbe(request, { importMetaProd: import.meta.env.PROD, nodeEnv: typeof process !== "undefined" ? process.env.NODE_ENV : undefined, workerContext: ctx, workerUserAgent: typeof navigator !== "undefined" ? navigator.userAgent : undefined });
