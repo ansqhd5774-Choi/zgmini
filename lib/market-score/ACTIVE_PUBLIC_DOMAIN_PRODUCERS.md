@@ -17,36 +17,10 @@ Policy:
 - missing component => PARTIAL / null;
 - no missing-weight renormalization.
 
-## B1 Breadth — ACTIVE / R4
+## B1 Breadth — NOT ACTIVE / UNAVAILABLE
 
-Storage / collection:
-- existing B1-R3 D1 tables and store-only collector remain preserved;
-- public scoring reads stored data only; page requests never call a provider;
-- public source metadata comes from stored row provenance and is not hard-coded to a provider.
-
-Daily breadth:
-```
-DailyBreadth =
-    0.60 * AdvanceRatio
-  + 0.40 * AdvanceValueShare
-```
-
-Final B1-R4 score:
-```
-B1R4 =
-    0.50 * DailyBreadth
-  + 0.30 * EMA5(DailyBreadth)
-  + 0.20 * EMA20(DailyBreadth)
-```
-
-Policy:
-- return coverage >= 98%;
-- trading-value coverage >= 98%;
-- stored universe/pair coverage >= 98%;
-- maximum lag <= 2 completed market sessions;
-- missing coverage => PARTIAL / null;
-- no missing-weight renormalization;
-- EMA restarts after a missing market-session gap rather than bridging unavailable history.
+No approved US producer + universe + PIT/coverage contract exists yet.
+No proxy substitution is allowed.
 
 ## K1 Commodities — ACTIVE
 
