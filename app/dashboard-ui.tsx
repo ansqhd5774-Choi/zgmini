@@ -313,11 +313,14 @@ export function CompositeMarketSection({items,points,demo,loading}:{items:Summar
            >{breadthDelta?`${breadthDelta.delta>=0?'+':''}${breadthDelta.delta.toFixed(1)}`:'-'}</span>
 
          </div>
-         {trend.length>0
-          ?<CardTrend data={trend} label={m.label} color={score===null?'#94a3b8':scoreColor(score)}/>
-          :<div className="zg-r55-card-spark-empty" aria-label={`${m.label} 추이 데이터 없음`}>—</div>}
+         <div className="zg-r55-card-visual">
+          {trend.length>0
+           ?<CardTrend data={trend} label={m.label} color={score===null?'#94a3b8':scoreColor(score)}/>
+           :<div className="zg-r55-card-spark-empty" aria-label={`${m.label} 추이 데이터 없음`}>—</div>}
+          <div className="zg-r55-card-compact-scale"><ScoreScale score={score} label={`${m.label} 점수`} color={score===null?'#64748b':scoreColor(score)}/></div>
+         </div>
         </div>
-        <ScoreScale score={score} label={`${m.label} 점수`} color={score===null?'#64748b':scoreColor(score)}/>
+        <div className="zg-r55-card-wide-scale"><ScoreScale score={score} label={`${m.label} 점수`} color={score===null?'#64748b':scoreColor(score)}/></div>
         <div className="zg-r55-scale-labels" aria-hidden="true"><span>0</span><span>50</span><span>100</span></div>
 
         <div className="zg-r55-details" aria-hidden={!expanded}>

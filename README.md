@@ -1,5 +1,13 @@
 # vinext-starter
 
+## ZGmini API 운영 기준
+
+- [API별 무료 한도·호출 주기·저장 위치](docs/API_OPERATIONS_R1.md)
+- [기계 판독 관리 대장](config/api-operations.json)
+- 경로 검증: `node scripts/check-api-operations.mjs`
+
+관리 대장과 실제 런타임 제한 적용 상태는 문서에서 구분합니다.
+
 A clean full-stack starter running on [vinext](https://github.com/cloudflare/vinext), with optional Cloudflare D1 and Drizzle support.
 
 ## Prerequisites
