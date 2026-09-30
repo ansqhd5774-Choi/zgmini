@@ -3437,3 +3437,93 @@ body .zg-r55-market .zg-r55-shell[data-expanded="false"] article.zg-r55-card>.zg
   }
   .zg-dashboard[data-view="dashboard"] .zg-r55-shell[data-expanded="false"] .zg-r55-card-compact-scale .zg-scale::after{display:none}
 }
+
+/* UI1_R4_EXPANDED_TOP_LOCK_R15 */
+@media(min-width:1280px){
+  .zg-dashboard[data-view="dashboard"] .zg-r55-shell[data-expanded="true"] .zg-r55-card{
+    display:grid;
+    grid-template-rows:20px 40px auto;
+    row-gap:4px;
+    padding:4px 8px;
+    align-content:start;
+    height:auto;
+    max-height:none;
+    min-height:80px;
+    overflow:visible;
+  }
+  .zg-dashboard[data-view="dashboard"] .zg-r55-shell[data-expanded="true"] .zg-r55-card-head{
+    height:20px;
+    min-height:20px;
+    grid-template-columns:minmax(0,1fr) auto 20px;
+    gap:4px;
+  }
+  .zg-dashboard[data-view="dashboard"] .zg-r55-shell[data-expanded="true"] .zg-r55-card-head .zg-info{
+    width:20px;
+    height:20px;
+    min-width:20px;
+    min-height:20px;
+  }
+  .zg-dashboard[data-view="dashboard"] .zg-r55-shell[data-expanded="true"] .zg-r55-card-head .zg-info svg{
+    width:13px;
+    height:13px;
+  }
+  .zg-dashboard[data-view="dashboard"] .zg-r55-shell[data-expanded="true"] .zg-r55-card-mid{
+    height:40px;
+    min-height:40px;
+    grid-template-columns:48px minmax(0,1fr);
+    gap:8px;
+    align-items:center;
+    overflow:visible;
+  }
+  .zg-dashboard[data-view="dashboard"] .zg-r55-shell[data-expanded="true"] .zg-r55-card-number{
+    width:48px;
+    min-width:48px;
+    align-self:center;
+    overflow:visible;
+  }
+  .zg-dashboard[data-view="dashboard"] .zg-r55-shell[data-expanded="true"] .zg-r55-card-number strong{
+    font-size:30px;
+    line-height:1;
+  }
+  .zg-dashboard[data-view="dashboard"] .zg-r55-shell[data-expanded="true"] .zg-r55-card-visual{
+    min-width:0;
+    height:40px;
+    display:flex;
+    align-items:center;
+  }
+  .zg-dashboard[data-view="dashboard"] .zg-r55-shell[data-expanded="true"] .zg-r55-card-visual>.zg-spark,
+  .zg-dashboard[data-view="dashboard"] .zg-r55-shell[data-expanded="true"] .zg-r55-card-visual>.zg-r55-card-spark-empty{
+    width:100%;
+    height:24px;
+    min-height:24px;
+    overflow:hidden;
+  }
+  .zg-dashboard[data-view="dashboard"] .zg-r55-shell[data-expanded="true"] .zg-r55-card-compact-scale{
+    display:block;
+    position:absolute;
+    left:10px;
+    right:10px;
+    top:68px;
+    bottom:auto;
+    width:auto;
+    height:4px;
+    margin:0;
+    z-index:1;
+    pointer-events:none;
+  }
+  .zg-dashboard[data-view="dashboard"] .zg-r55-shell[data-expanded="true"] .zg-r55-card-compact-scale>.zg-scale{
+    width:100%;
+    height:4px;
+    margin:0;
+    border-radius:999px;
+    --zg-scale-track:#103653;
+    background:linear-gradient(to right,var(--zg-score-color) 0%,var(--zg-score-color) var(--zg-score),#103653 var(--zg-score),#103653 100%);
+  }
+  .zg-dashboard[data-view="dashboard"] .zg-r55-shell[data-expanded="true"] .zg-r55-card-compact-scale .zg-scale::after{display:none}
+  .zg-dashboard[data-view="dashboard"] .zg-r55-shell[data-expanded="true"] .zg-r55-card-wide-scale,
+  .zg-dashboard[data-view="dashboard"] .zg-r55-shell[data-expanded="true"] .zg-r55-scale-labels{display:none}
+  .zg-dashboard[data-view="dashboard"] .zg-r55-shell[data-expanded="true"] .zg-r55-details{
+    display:block;
+    margin-top:8px;
+  }
+}
