@@ -99,12 +99,13 @@ test("runtime contract declares sequential BED wiring through the existing waitU
   assert.equal(EMPLOYMENT_R4_RUNTIME_TRIGGER_CONTRACT.bedFailureIsolatedFromDailyResult,true);
 });
 
-test("route wires employment shadow runtime only through waitUntil and preserves the current response branch",()=>{
+test("scheduled path collects employment shadow without public request triggers",()=>{
   const route=fs.readFileSync(new URL("../app/api/market-score/route.ts",import.meta.url),"utf8");
-  assert.match(route,/runEmploymentR4ShadowRuntimeStep/);
-  assert.match(route,/waitUntil\(\s*Promise\.resolve\(\)\s*\.then\(\(\)=>runEmploymentR4ShadowRuntimeStep\(\{env,fetchImpl:globalThis\.fetch\}\)\)/s);
-  assert.doesNotMatch(route,/collectEmploymentR4ShadowStoreOnlyR1/);
-  assert.match(route,/const\s+response\s*=\s*request\.headers\.get\(['"]accept['"]\)\?\.includes\(['"]application\/x-ndjson['"]\)\s*\?\s*streamMarketScore\(handler,request,\{waitUntil\}\)\s*:\s*await\s+handler\(request\);/s);
+  const scheduled=fs.readFileSync(new URL("../worker/market-operational-refresh.mjs",import.meta.url),"utf8");
+  assert.match(route,/storedMarketResponse/);
+  assert.doesNotMatch(route,/runEmploymentR4ShadowRuntimeStep|waitUntil/);
+  assert.match(scheduled,/employment:.*runEmploymentR4ShadowRuntimeStep/);
+  assert.doesNotMatch(scheduled,/collectEmploymentR4ShadowStoreOnlyR1/);
 });
 
 test("runtime contract preserves store-only and public score isolation",()=>{

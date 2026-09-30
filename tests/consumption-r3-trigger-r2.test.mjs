@@ -16,13 +16,14 @@ test("C1-OP-R2 worker has scheduled primary trigger",()=>{
 
 test("C1-OP-R2 Cloudflare config has hourly cron",()=>{
   assert.match(vite,/const C1_OP_R2_CRON = "17 \* \* \* \*";/);
-  assert.match(vite,/triggers:\s*\{[\s\S]*crons:\s*\[C1_OP_R2_CRON\]/);
+  assert.match(vite,/triggers:\s*\{[\s\S]*crons:\s*\[C1_OP_R2_CRON,\s*"37 \* \* \* \*"\]/);
 });
 
-test("public market-score fallback remains during R2 transition",()=>{
-  assert.match(route,/runConsumptionR3OperationalRefresh/);
-  assert.match(route,/waitUntil\s*\(/);
-  assert.match(route,/C1_R3_OPERATIONAL_REFRESH_WAITUNTIL/);
+test("public reads are decoupled from the scheduled C1 collector",()=>{
+  const scheduled=fs.readFileSync("worker/market-operational-refresh.mjs","utf8");
+  assert.match(route,/storedMarketResponse/);
+  assert.doesNotMatch(route,/waitUntil|runConsumptionR3OperationalRefresh/);
+  assert.match(scheduled,/consumption:.*runConsumptionR3OperationalRefresh/);
 });
 
 test("cron is hourly and offset from minute zero",()=>{

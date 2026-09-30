@@ -48,3 +48,11 @@ test('failed source does not fabricate score and releases lease',async()=>{
  const r=await runMarketOperationalRefresh({env:{DB:db},store,job:'rates',now,collectors:{rates:()=>{throw Error('secret-url')}},calculate:()=>{throw Error('must not calculate')}});
  assert.deepEqual(r,{status:'ERROR',job:'rates',phase:'COLLECT'});assert.equal(await store.readScore(),null);assert.ok(await store.claim('pipeline',now+1));sqlite.close();
 });
+test('scheduled score persistence continues the existing liquidity trend history',async()=>{
+ const {store,sqlite}=fixture();
+ await store.writeScore({status:'SUCCESS',asOfDate:'2026-09-30',domains:[{id:'liquidity',status:'READY',score:0}]},now);
+ const row=sqlite.prepare('SELECT * FROM market_liquidity_active_history_v1').get();
+ assert.equal(row.score,0);assert.equal(row.as_of_date,'2026-09-30');
+ await store.writeScore({status:'SUCCESS',asOfDate:'2026-09-30',domains:[{id:'liquidity',status:'PARTIAL',score:null}]},now+1);
+ assert.equal(sqlite.prepare('SELECT score FROM market_liquidity_active_history_v1').get().score,0);sqlite.close();
+});

@@ -49,18 +49,20 @@ test("R3 public projection preserves four breadth detail ids",()=>{
   assert.deepEqual(d.indicators.map(x=>x.score),[62.5,59.375,99,98]);
 });
 
-test("market-score route wires R3 collector in waitUntil and R3 stored reader in score path",()=>{
+test("scheduled collector uses R3 and public requests only read the snapshot",()=>{
   const route=fs.readFileSync(new URL("../app/api/market-score/route.ts",import.meta.url),"utf8");
-  assert.match(route,/collectBreadthB1R3StoreOnlyR1/);
-  assert.match(route,/collectBreadthDomain:readBreadthB1R3StoredPublicDomainR1/);
-  assert.match(route,/waitUntil\([\s\S]*collectBreadthB1R3StoreOnlyR1/);
-  assert.doesNotMatch(route,/collectBreadthR2StoreOnlyR2/);
+  const scheduled=fs.readFileSync(new URL("../worker/market-operational-refresh.mjs",import.meta.url),"utf8");
+  assert.match(route,/storedMarketResponse/);
+  assert.doesNotMatch(route,/collectBreadth|waitUntil/);
+  assert.match(scheduled,/breadth:.*collectBreadthB1R3StoreOnlyR1/);
+  assert.match(scheduled,/collectBreadthDomain:readBreadthB1R3StoredPublicDomainR1/);
+  assert.doesNotMatch(scheduled,/collectBreadthR2StoreOnlyR2/);
 });
 
-test("production R3 wiring preserves current Earnings R4 and Consumption R3 background paths",()=>{
-  const route=fs.readFileSync(new URL("../app/api/market-score/route.ts",import.meta.url),"utf8");
-  assert.match(route,/collectEarningsE1R4ToStore/);
-  assert.match(route,/runConsumptionR3OperationalRefresh/);
+test("scheduled wiring preserves current Earnings R4 and Consumption R3 paths",()=>{
+  const scheduled=fs.readFileSync(new URL("../worker/market-operational-refresh.mjs",import.meta.url),"utf8");
+  assert.match(scheduled,/earnings:.*collectEarningsE1R4ToStore/);
+  assert.match(scheduled,/consumption:.*runConsumptionR3OperationalRefresh/);
 });
 
 test("market-score worker defaults to stored B1-R3 reader and R3 fallback",()=>{

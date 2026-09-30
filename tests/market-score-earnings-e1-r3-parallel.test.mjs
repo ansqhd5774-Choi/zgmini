@@ -2,14 +2,16 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {readFile} from "node:fs/promises";
 
-test("E1-R4 score path reads stored D1 while API collection runs independently in waitUntil",async()=>{
+test("E1-R4 score path reads stored D1 while API collection runs independently in scheduled jobs",async()=>{
   const route=await readFile(new URL("../app/api/market-score/route.ts",import.meta.url),"utf8");
   const worker=await readFile(new URL("../worker/diagnostic-v1-canary.mjs",import.meta.url),"utf8");
   const provider=await readFile(new URL("../lib/market-score/sec-earnings-e1-r4-provider.mjs",import.meta.url),"utf8");
 
-  assert.match(route,/collectEarningsE1R4ToStore/);
-  assert.match(route,/waitUntil\(earningsStoreTask\.catch\(\(\)=>undefined\)\)/);
-  assert.match(route,/base:await collectDiagnosticLiveInputs\(args\)/);
+  const scheduled=await readFile(new URL("../worker/market-operational-refresh.mjs",import.meta.url),"utf8");
+  assert.match(route,/storedMarketResponse/);
+  assert.doesNotMatch(route,/collectEarnings|waitUntil/);
+  assert.match(scheduled,/earnings:.*collectEarningsE1R4ToStore/);
+  assert.match(scheduled,/collectInputs:.*readStoredMarketInputs/);
 
   assert.match(worker,/readEarningsE1R4StoredScore/);
   assert.match(worker,/fetchEarnings:\s*readEarningsE1R4StoredScore/);

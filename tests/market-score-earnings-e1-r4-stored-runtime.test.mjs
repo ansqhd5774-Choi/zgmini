@@ -99,15 +99,15 @@ test("E1 stored periods accumulate and R4 score reader remains provider-free",as
   assert.ok(details.every(x=>Number.isFinite(x.score)));
 });
 
-test("E1 R4 stored scoring/collection wiring is parallel and cache-independent",()=>{
+test("E1 R4 stored scoring/collection wiring is scheduled and independent of page reads",()=>{
   const route=fs.readFileSync(new URL("../app/api/market-score/route.ts",import.meta.url),"utf8");
   const worker=fs.readFileSync(new URL("../worker/diagnostic-v1-canary.mjs",import.meta.url),"utf8");
   const provider=fs.readFileSync(new URL("../lib/market-score/sec-earnings-e1-r4-provider.mjs",import.meta.url),"utf8");
 
-  const getIndex=route.indexOf("export async function GET");
-  const earningsTaskIndex=route.indexOf("const earningsStoreTask=collectEarningsE1R4ToStore");
-  assert.ok(getIndex>=0&&earningsTaskIndex>getIndex);
-  assert.match(route,/waitUntil\(earningsStoreTask\.catch\(\(\)=>undefined\)\)/);
+  const scheduled=fs.readFileSync(new URL("../worker/market-operational-refresh.mjs",import.meta.url),"utf8");
+  assert.match(route,/storedMarketResponse/);
+  assert.doesNotMatch(route,/collectEarningsE1R4ToStore|waitUntil/);
+  assert.match(scheduled,/earnings:.*collectEarningsE1R4ToStore/);
 
   assert.match(worker,/readEarningsE1R4StoredScore/);
   assert.match(worker,/fetchEarnings:\s*readEarningsE1R4StoredScore/);

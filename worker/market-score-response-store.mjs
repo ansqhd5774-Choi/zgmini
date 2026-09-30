@@ -3,7 +3,7 @@ const finiteScore=value=>typeof value==="number"&&Number.isFinite(value)&&value>
 const validDate=value=>typeof value==="string"&&/^\d{4}-\d{2}-\d{2}$/.test(value);
 const LIQUIDITY_HISTORY_METHOD="DIAGNOSTIC_SCORE_TRANSFORM_R1";
 
-function liquidityHistoryRow(body,storedAt){
+export function liquidityHistoryRow(body,storedAt){
   try{
     const parsed=JSON.parse(body);
     const domain=Array.isArray(parsed?.domains)

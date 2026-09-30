@@ -115,10 +115,13 @@ test('NY Fed missing endpoints never become zero; true zero remains available',(
   assert.deepEqual(parsed.DFEDTARU,[{observationDate:'2026-09-21',value:0.25}]);
 });
 
-test('ACTIVE route collects official RATE_R2 inputs while preserving diagnostic collection',async()=>{
+test('scheduled RATE_R2 collector preserves the official provider and stored-only score path',async()=>{
   const route=await readFile(new URL('../app/api/market-score/route.ts',import.meta.url),'utf8');
-  assert.match(route,/collectInputs:collectMarketScoreInputs/);
-  assert.match(route,/base:await collectDiagnosticLiveInputs\(args\)/);
-  assert.match(route,/collectRateR2Inputs/);
-  assert.doesNotMatch(route,/collectMarketScoreRateDetails/);
+  const scheduled=await readFile(new URL('../worker/market-operational-refresh.mjs',import.meta.url),'utf8');
+  assert.match(route,/storedMarketResponse/);
+  assert.doesNotMatch(route,/collectRateR2Inputs|collectDiagnosticLiveInputs/);
+  assert.match(scheduled,/rates:.*collectRateR2Inputs/);
+  assert.match(scheduled,/collectDiagnosticLiveInputs/);
+  assert.match(scheduled,/collectInputs:.*readStoredMarketInputs/);
+  assert.doesNotMatch(scheduled,/collectMarketScoreRateDetails/);
 });
