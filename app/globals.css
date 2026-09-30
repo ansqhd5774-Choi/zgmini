@@ -3441,3 +3441,96 @@ html,body{overflow-x:hidden}
   }
 }
 
+/* UI1_R4_CARD_COLLISION_FIX_R2
+   Structural collision fix: the score owns the left lane; trend + progress own
+   a separate right visual lane. Compact PC progress never sits beneath score text.
+   Data, score semantics, card height, expanded details and interaction stay unchanged. */
+.zg-r55-card-compact-scale{display:none}
+.zg-r55-card-wide-scale>.zg-scale{height:10px;margin:5px 0 7px;border-radius:999px}
+.zg-r55-card-wide-scale .zg-scale i{display:none}
+.zg-r55-card-wide-scale .zg-scale{background:#103653}
+
+@media(min-width:1280px){
+  .zg-dashboard[data-view="dashboard"] .zg-r55-shell[data-expanded="false"] .zg-r55-card{
+    display:grid;
+    grid-template-rows:20px 40px;
+    row-gap:4px;
+    padding:4px 8px;
+    align-content:start;
+  }
+  .zg-dashboard[data-view="dashboard"] .zg-r55-shell[data-expanded="false"] .zg-r55-card-head{
+    height:20px;
+    min-height:20px;
+    grid-template-columns:minmax(0,1fr) auto 20px;
+    gap:4px;
+  }
+  .zg-dashboard[data-view="dashboard"] .zg-r55-shell[data-expanded="false"] .zg-r55-card-head .zg-info{
+    width:20px;
+    height:20px;
+    min-width:20px;
+    min-height:20px;
+  }
+  .zg-dashboard[data-view="dashboard"] .zg-r55-shell[data-expanded="false"] .zg-r55-card-head .zg-info svg{
+    width:13px;
+    height:13px;
+  }
+  .zg-dashboard[data-view="dashboard"] .zg-r55-shell[data-expanded="false"] .zg-r55-card-mid{
+    height:40px;
+    min-height:40px;
+    grid-template-columns:48px minmax(0,1fr);
+    gap:8px;
+    align-items:center;
+    overflow:hidden;
+  }
+  .zg-dashboard[data-view="dashboard"] .zg-r55-shell[data-expanded="false"] .zg-r55-card-number{
+    width:48px;
+    min-width:48px;
+    align-self:center;
+    overflow:visible;
+  }
+  .zg-dashboard[data-view="dashboard"] .zg-r55-shell[data-expanded="false"] .zg-r55-card-number strong{
+    font-size:30px;
+    line-height:1;
+  }
+  .zg-dashboard[data-view="dashboard"] .zg-r55-shell[data-expanded="false"] .zg-r55-card-visual{
+    min-width:0;
+    height:40px;
+    display:grid;
+    grid-template-rows:24px 4px;
+    row-gap:4px;
+    align-content:center;
+  }
+  .zg-dashboard[data-view="dashboard"] .zg-r55-shell[data-expanded="false"] .zg-r55-card-visual>.zg-spark,
+  .zg-dashboard[data-view="dashboard"] .zg-r55-shell[data-expanded="false"] .zg-r55-card-visual>.zg-r55-card-spark-empty{
+    width:100%;
+    height:24px;
+    min-height:24px;
+    overflow:hidden;
+  }
+  .zg-dashboard[data-view="dashboard"] .zg-r55-shell[data-expanded="false"] .zg-r55-card-compact-scale{
+    display:block;
+    min-width:0;
+    height:4px;
+  }
+  .zg-dashboard[data-view="dashboard"] .zg-r55-shell[data-expanded="false"] .zg-r55-card-compact-scale>.zg-scale{
+    width:100%;
+    height:4px;
+    margin:0;
+    border-radius:999px;
+    background:#103653;
+  }
+  .zg-dashboard[data-view="dashboard"] .zg-r55-shell[data-expanded="false"] .zg-r55-card-compact-scale .zg-scale i{
+    display:none;
+  }
+  .zg-dashboard[data-view="dashboard"] .zg-r55-shell[data-expanded="false"] .zg-r55-card-wide-scale,
+  .zg-dashboard[data-view="dashboard"] .zg-r55-shell[data-expanded="false"] .zg-r55-scale-labels{
+    display:none;
+  }
+  .zg-dashboard[data-view="dashboard"] .zg-r55-shell[data-expanded="true"] .zg-r55-card-compact-scale{
+    display:none;
+  }
+  .zg-dashboard[data-view="dashboard"] .zg-r55-shell[data-expanded="true"] .zg-r55-card-wide-scale{
+    display:block;
+  }
+}
+
