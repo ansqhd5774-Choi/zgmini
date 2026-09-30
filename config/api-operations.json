@@ -1,0 +1,363 @@
+{
+  "schemaVersion": 1,
+  "revision": "API_OPERATIONS_R1",
+  "reviewedAt": "2026-10-01",
+  "scope": "현재 주요 수집 경로 17개. 저장소 내 전체 URL 목록 또는 현재 운영 성공 목록이 아님.",
+  "runtimePolicyLoaded": false,
+  "schedules": {
+    "market_rotation": {
+      "triggerMinutes": 5,
+      "jobs": 13,
+      "nominalCycleMinutes": 65,
+      "evidenceDate": "2026-09-30",
+      "status": "PREVIOUS_RUNTIME_VERIFIED_NOT_RECHECKED"
+    },
+    "korea_15m": {
+      "triggerMinutes": 15,
+      "evidenceDate": "2026-09-30",
+      "status": "PREVIOUS_RUNTIME_VERIFIED_NOT_RECHECKED"
+    },
+    "request_cache_60s": {
+      "cacheSeconds": 60,
+      "status": "SOURCE_VERIFIED_NO_DURABLE_STORE"
+    }
+  },
+  "providers": [
+    {
+      "id": "fred",
+      "name": "FRED / ALFRED",
+      "quotaNote": "공식 일일·분당 고정 한도 미확인. 120회/분을 확정값으로 사용하지 않음.",
+      "quotaEvidence": "https://fred.stlouisfed.org/docs/api/fred/",
+      "quotaReviewedAt": "2026-10-01",
+      "jobs": [
+        "macro",
+        "inflation",
+        "consumption"
+      ],
+      "storageModules": [
+        "worker/market-operational-store.mjs",
+        "worker/api-history-store.mjs",
+        "worker/consumption-r3-source-store.mjs"
+      ],
+      "authNote": "KEY_REQUIRED_FOR_API; CSV 별도",
+      "sourceModule": "worker/diagnostic-v1-canary.mjs",
+      "persistence": "EXISTING_D1",
+      "schedule": "market_rotation",
+      "enforcement": "EXISTING_COLLECTOR_ONLY",
+      "successfulResponseMustPersist": true
+    },
+    {
+      "id": "bls",
+      "name": "BLS",
+      "quotaNote": "등록 500회/일, 미등록 25회/일; 10초당 50회. 등록키 갱신·요청 전달 확인 필요.",
+      "quotaEvidence": "https://www.bls.gov/developers/api_faqs.htm",
+      "quotaReviewedAt": "2026-10-01",
+      "jobs": [
+        "employment",
+        "growth"
+      ],
+      "storageModules": [
+        "lib/market-score/employment-r4-shadow-store.mjs",
+        "lib/market-score/growth-r2-d1-store-r1.mjs"
+      ],
+      "authNote": "현재 무등록 호출 경로 포함",
+      "sourceModule": "lib/market-score/employment-r4-shadow-provider.mjs",
+      "persistence": "EXISTING_D1",
+      "schedule": "market_rotation",
+      "enforcement": "EXISTING_COLLECTOR_ONLY",
+      "successfulResponseMustPersist": true
+    },
+    {
+      "id": "census",
+      "name": "Census",
+      "quotaNote": "구 문서의 무키 500회/일을 현행 허용으로 해석 금지. 현재 데이터 API 키 필요; 키별 한도 미확인.",
+      "quotaEvidence": "https://api.census.gov/data/2024/cps/basic/apr/examples.html",
+      "quotaReviewedAt": "2026-10-01",
+      "jobs": [
+        "growth",
+        "consumption"
+      ],
+      "storageModules": [
+        "lib/market-score/growth-r2-d1-store-r1.mjs",
+        "worker/consumption-r3-source-store.mjs"
+      ],
+      "authNote": "API 키 / XLSX 별도",
+      "sourceModule": "lib/market-score/growth-r2-forward-provider-r1.mjs",
+      "persistence": "EXISTING_D1",
+      "schedule": "market_rotation",
+      "enforcement": "EXISTING_COLLECTOR_ONLY",
+      "successfulResponseMustPersist": true
+    },
+    {
+      "id": "fed",
+      "name": "Federal Reserve",
+      "quotaNote": "공식 파일 다운로드 고정 호출 한도 미확인.",
+      "quotaEvidence": "https://www.federalreserve.gov/datadownload/",
+      "quotaReviewedAt": "2026-10-01",
+      "jobs": [
+        "rates",
+        "growth"
+      ],
+      "storageModules": [
+        "worker/market-operational-store.mjs",
+        "lib/market-score/growth-r2-d1-store-r1.mjs"
+      ],
+      "authNote": "공개 CSV/TXT",
+      "sourceModule": "lib/market-score/rate-r2-provider.mjs",
+      "persistence": "EXISTING_D1",
+      "schedule": "market_rotation",
+      "enforcement": "EXISTING_COLLECTOR_ONLY",
+      "successfulResponseMustPersist": true
+    },
+    {
+      "id": "nyfed",
+      "name": "New York Fed",
+      "quotaNote": "API·XLSX의 공통 무료 횟수 미확인.",
+      "quotaEvidence": "https://markets.newyorkfed.org/static/docs/markets-api.html",
+      "quotaReviewedAt": "2026-10-01",
+      "jobs": [
+        "rates",
+        "credit",
+        "supply",
+        "consumption"
+      ],
+      "storageModules": [
+        "worker/market-operational-store.mjs",
+        "worker/consumption-r3-source-store.mjs"
+      ],
+      "authNote": "공개 API/XLSX",
+      "sourceModule": "lib/diagnostic-layer/nyfed-worldbank-adapters.mjs",
+      "persistence": "EXISTING_D1",
+      "schedule": "market_rotation",
+      "enforcement": "EXISTING_COLLECTOR_ONLY",
+      "successfulResponseMustPersist": true
+    },
+    {
+      "id": "ofr",
+      "name": "OFR",
+      "quotaNote": "숫자로 공표된 무료 호출 한도 미확인.",
+      "quotaEvidence": "https://www.financialresearch.gov/short-term-funding-monitor/api-specs/api-use/",
+      "quotaReviewedAt": "2026-10-01",
+      "jobs": [
+        "credit"
+      ],
+      "storageModules": [
+        "worker/market-operational-store.mjs"
+      ],
+      "authNote": "공개 API",
+      "sourceModule": "lib/diagnostic-layer/batch-b-official-adapters.mjs",
+      "persistence": "EXISTING_D1",
+      "schedule": "market_rotation",
+      "enforcement": "EXISTING_COLLECTOR_ONLY",
+      "successfulResponseMustPersist": true
+    },
+    {
+      "id": "bis",
+      "name": "BIS",
+      "quotaNote": "정해진 무료 일일 횟수 미확인. 필요시 제공처가 제한 가능.",
+      "quotaEvidence": "https://www.bis.org/about/legal/permitted-use-statistics",
+      "quotaReviewedAt": "2026-10-01",
+      "jobs": [
+        "bisDsr",
+        "bisTc"
+      ],
+      "storageModules": [
+        "worker/market-operational-store.mjs"
+      ],
+      "authNote": "공개 ZIP 다운로드",
+      "sourceModule": "worker/diagnostic-v1-canary.mjs",
+      "persistence": "EXISTING_D1",
+      "schedule": "market_rotation",
+      "enforcement": "EXISTING_COLLECTOR_ONLY",
+      "successfulResponseMustPersist": true
+    },
+    {
+      "id": "sec",
+      "name": "SEC",
+      "quotaNote": "최대 초당 10회; 전체 SEC 호출 합산. 무료 접근과 공개 재배포 권리는 별도.",
+      "quotaEvidence": "https://www.sec.gov/about/webmaster-frequently-asked-questions",
+      "quotaReviewedAt": "2026-10-01",
+      "jobs": [
+        "fundFlows",
+        "earnings"
+      ],
+      "storageModules": [
+        "worker/market-operational-store.mjs",
+        "lib/market-score/earnings-e1-r3-d1-store.mjs"
+      ],
+      "authNote": "식별 User-Agent",
+      "sourceModule": "lib/market-score/sec-earnings-e1-r4-provider.mjs",
+      "persistence": "EXISTING_D1",
+      "schedule": "market_rotation",
+      "enforcement": "EXISTING_COLLECTOR_ONLY",
+      "successfulResponseMustPersist": true
+    },
+    {
+      "id": "worldbank",
+      "name": "World Bank",
+      "quotaNote": "Pink Sheet 파일 다운로드 횟수 미확인.",
+      "quotaEvidence": "https://www.worldbank.org/en/research/commodity-markets",
+      "quotaReviewedAt": "2026-10-01",
+      "jobs": [
+        "supply"
+      ],
+      "storageModules": [
+        "worker/market-operational-store.mjs"
+      ],
+      "authNote": "공개 XLSX",
+      "sourceModule": "lib/diagnostic-layer/nyfed-worldbank-adapters.mjs",
+      "persistence": "EXISTING_D1",
+      "schedule": "market_rotation",
+      "enforcement": "EXISTING_COLLECTOR_ONLY",
+      "successfulResponseMustPersist": true
+    },
+    {
+      "id": "eia",
+      "name": "EIA",
+      "quotaNote": "API 일반 안내: 시간당 약 9000회 미만·초당 5회 미만, 보장 한도 아님. 현재 WPSR CSV에 그대로 적용 불가.",
+      "quotaEvidence": "https://www.eia.gov/opendata/faqs.php",
+      "quotaReviewedAt": "2026-10-01",
+      "jobs": [
+        "consumption"
+      ],
+      "storageModules": [
+        "worker/consumption-r3-source-store.mjs"
+      ],
+      "authNote": "현재 경로 CSV; API 무료 키 별도",
+      "sourceModule": "worker/consumption-r3-provider-collector.mjs",
+      "persistence": "EXISTING_D1",
+      "schedule": "market_rotation",
+      "enforcement": "EXISTING_COLLECTOR_ONLY",
+      "successfulResponseMustPersist": true
+    },
+    {
+      "id": "dol",
+      "name": "DOL ETA",
+      "quotaNote": "ETA539 CSV의 공식 호출 한도 미확인.",
+      "quotaEvidence": "https://oui.doleta.gov/unemploy/claims.asp",
+      "quotaReviewedAt": "2026-10-01",
+      "jobs": [
+        "employment"
+      ],
+      "storageModules": [
+        "lib/market-score/employment-r4-shadow-store.mjs"
+      ],
+      "authNote": "공개 CSV",
+      "sourceModule": "lib/market-score/employment-r4-shadow-provider.mjs",
+      "persistence": "EXISTING_D1",
+      "schedule": "market_rotation",
+      "enforcement": "EXISTING_COLLECTOR_ONLY",
+      "successfulResponseMustPersist": true
+    },
+    {
+      "id": "cnn",
+      "name": "CNN",
+      "quotaNote": "공식 무료 API 계약·호출 한도 미확인. 내부 웹 피드를 무제한 API로 취급 금지.",
+      "quotaEvidence": "https://www.cnn.com/markets/fear-and-greed",
+      "quotaReviewedAt": "2026-10-01",
+      "jobs": [],
+      "storageModules": [],
+      "authNote": "현재 웹 피드",
+      "sourceModule": "app/api/fear-greed/route.ts",
+      "persistence": "MEMORY_CACHE_ONLY",
+      "schedule": "request_cache_60s",
+      "enforcement": "EXISTING_COLLECTOR_ONLY",
+      "successfulResponseMustPersist": false
+    },
+    {
+      "id": "krx",
+      "name": "KRX",
+      "quotaNote": "OPEN API 약관: 키당 하루 10000회 이하. 실제 data-dbg 서비스·계정 적용 한도 별도 확인.",
+      "quotaEvidence": "https://openapi.krx.co.kr/contents/OPP/INFO/OPPINFO002.jsp",
+      "quotaReviewedAt": "2026-10-01",
+      "jobs": [
+        "korea"
+      ],
+      "storageModules": [
+        "worker/korea-rev7-d1.mjs"
+      ],
+      "authNote": "서비스 승인·키 필요",
+      "sourceModule": "worker/korea-rev7-provider.mjs",
+      "persistence": "EXISTING_D1",
+      "schedule": "korea_15m",
+      "enforcement": "EXISTING_COLLECTOR_ONLY",
+      "successfulResponseMustPersist": true
+    },
+    {
+      "id": "ecos",
+      "name": "한국은행 ECOS",
+      "quotaNote": "키별 공식 수치 미확인. 100000회 등 추정값 사용 금지.",
+      "quotaEvidence": "https://ecos.bok.or.kr/api/",
+      "quotaReviewedAt": "2026-10-01",
+      "jobs": [
+        "korea"
+      ],
+      "storageModules": [
+        "worker/korea-rev7-d1.mjs"
+      ],
+      "authNote": "키 필요",
+      "sourceModule": "worker/korea-rev7-provider.mjs",
+      "persistence": "EXISTING_D1",
+      "schedule": "korea_15m",
+      "enforcement": "EXISTING_COLLECTOR_ONLY",
+      "successfulResponseMustPersist": true
+    },
+    {
+      "id": "wikipedia",
+      "name": "Wikipedia",
+      "quotaNote": "인증·User-Agent·API 종류별 제한. 일일 무제한으로 지정하지 않음.",
+      "quotaEvidence": "https://www.mediawiki.org/wiki/Wikimedia_APIs/Rate_limits",
+      "quotaReviewedAt": "2026-10-01",
+      "jobs": [
+        "earnings"
+      ],
+      "storageModules": [
+        "lib/market-score/earnings-e1-r3-d1-store.mjs"
+      ],
+      "authNote": "Action API",
+      "sourceModule": "lib/market-score/sec-earnings-e1-r4-provider.mjs",
+      "persistence": "EXISTING_D1",
+      "schedule": "market_rotation",
+      "enforcement": "EXISTING_COLLECTOR_ONLY",
+      "successfulResponseMustPersist": true
+    },
+    {
+      "id": "github_dataset",
+      "name": "GitHub 공개 구성종목 CSV",
+      "quotaNote": "raw.githubusercontent.com에 GitHub REST API 60/5000회 한도 적용 금지. 원시 파일 한도 미확인.",
+      "quotaEvidence": "https://github.com/datasets/s-and-p-500-companies",
+      "quotaReviewedAt": "2026-10-01",
+      "jobs": [
+        "breadth"
+      ],
+      "storageModules": [
+        "lib/market-score/breadth-b1-r3-store.mjs"
+      ],
+      "authNote": "공개 CSV",
+      "sourceModule": "lib/market-score/breadth-b1-r3-contract.mjs",
+      "persistence": "EXISTING_D1",
+      "schedule": "market_rotation",
+      "enforcement": "EXISTING_COLLECTOR_ONLY",
+      "successfulResponseMustPersist": true
+    },
+    {
+      "id": "sophostechne",
+      "name": "Sophostechne 가격",
+      "quotaNote": "공식 무료 호출 보장·숫자 한도 미확인. 현 수집기 배치·재시도 설정 별도.",
+      "quotaEvidence": "https://bars.sophostechne.com",
+      "quotaReviewedAt": "2026-10-01",
+      "jobs": [
+        "breadth"
+      ],
+      "storageModules": [
+        "lib/market-score/breadth-b1-r3-store.mjs"
+      ],
+      "authNote": "공개 가격 피드",
+      "sourceModule": "lib/market-score/breadth-b1-r3-provider.mjs",
+      "persistence": "EXISTING_D1",
+      "schedule": "market_rotation",
+      "enforcement": "EXISTING_COLLECTOR_ONLY",
+      "successfulResponseMustPersist": true
+    }
+  ]
+}
