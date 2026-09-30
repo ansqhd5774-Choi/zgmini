@@ -15,6 +15,7 @@ import { phase3KoreaStockPriceCheck } from "./phase3-korea-stock-price.mjs";
 import { runConsumptionR3OperationalRefresh } from "./consumption-r3-operational-refresh.mjs";
 import { refreshKoreaRev7 } from "./korea-rev7-refresh.mjs";
 import { koreaRev7ExternalScheduler } from "./korea-rev7-external-scheduler.mjs";
+import { env as runtimeEnv } from "cloudflare:workers";
 
 interface Env {
   ASSETS: Fetcher;
@@ -49,7 +50,7 @@ interface ExecutionContext {
 const worker = {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const url = new URL(request.url);
-    if (url.pathname.replace(/\/$/, '') === '/api/internal/korea-rev7-scheduled') return koreaRev7ExternalScheduler(request, env, {ctx});
+    if (url.pathname.replace(/\/$/, '') === '/api/internal/korea-rev7-scheduled') return koreaRev7ExternalScheduler(request, runtimeEnv, {ctx});
     if (url.pathname === "/api/internal/p0-fred-api-shadow-check") return fredApiShadow(request, env, { importMetaProd: import.meta.env.PROD, nodeEnv: typeof process !== "undefined" ? process.env.NODE_ENV : undefined, workerContext: ctx, workerUserAgent: typeof navigator !== "undefined" ? navigator.userAgent : undefined });
     if (url.pathname === "/api/internal/p0-fred-bls-shadow-check") return fredBlsShadow(request, { importMetaProd: import.meta.env.PROD, nodeEnv: typeof process !== "undefined" ? process.env.NODE_ENV : undefined, workerContext: ctx, workerUserAgent: typeof navigator !== "undefined" ? navigator.userAgent : undefined });
     if (url.pathname === "/api/internal/p0-fred-transport-check") return productionFredProbe(request, { importMetaProd: import.meta.env.PROD, nodeEnv: typeof process !== "undefined" ? process.env.NODE_ENV : undefined, workerContext: ctx, workerUserAgent: typeof navigator !== "undefined" ? navigator.userAgent : undefined });
