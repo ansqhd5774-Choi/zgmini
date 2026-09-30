@@ -3527,3 +3527,18 @@ body .zg-r55-market .zg-r55-shell[data-expanded="false"] article.zg-r55-card>.zg
     margin-top:8px;
   }
 }
+
+/* UI1_R4_HEADER_GEOMETRY_LOCK_R16 */
+@media(min-width:1280px){
+  .zg-dashboard[data-view="dashboard"] .zg-r55-card-head{
+    height:20px;
+    min-height:20px;
+    max-height:20px;
+  }
+  .zg-dashboard[data-view="dashboard"] .zg-r55-card-head h3{
+    min-width:0;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+}
