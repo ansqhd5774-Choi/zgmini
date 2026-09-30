@@ -1,0 +1,73 @@
+import {collectDiagnosticLiveInputs} from './diagnostic-v1-canary.mjs';
+import {collectRateR2Inputs} from '../lib/market-score/rate-r2-provider.mjs';
+import {collectBreadthB1R3StoreOnlyR1,readBreadthB1R3StoredPublicDomainR1} from '../lib/market-score/breadth-b1-r3-worker-domain.mjs';
+import {collectInflationR2StoreOnly} from './inflation-r2-collector.mjs';
+import {collectEarningsE1R4ToStore} from '../lib/market-score/sec-earnings-e1-r4-provider.mjs';
+import {runEmploymentR4ShadowRuntimeStep} from '../lib/market-score/employment-r4-runtime-trigger.mjs';
+import {runConsumptionR3OperationalRefresh} from './consumption-r3-operational-refresh.mjs';
+import {collectGrowthR2StoreOnlyR1} from '../lib/market-score/growth-r2-worker-domain-r1.mjs';
+import {createMarketScoreR1Handler} from './market-score-r1.mjs';
+import {buildFullDiagnosticOrchestrator} from '../lib/diagnostic-layer/full-diagnostic-orchestrator.mjs';
+import {marketOperationalStore,readStoredMarketInputs} from './market-operational-store.mjs';
+
+export const MARKET_COLLECTION_JOBS=Object.freeze(['macro','rates','earnings','consumption','breadth','inflation','employment','growth']);
+const unavailableFetch=async()=>{throw Error('SCORE_CALCULATION_NETWORK_FORBIDDEN')};
+export async function calculateStoredMarketScore(env,store,now){
+ const handler=createMarketScoreR1Handler({env,fetchImpl:unavailableFetch,
+  collectInputs:()=>readStoredMarketInputs(store,now),orchestrate:buildFullDiagnosticOrchestrator,
+  collectBreadthDomain:readBreadthB1R3StoredPublicDomainR1,now:()=>new Date(now)});
+ const response=await handler(new Request('https://zgmini.kr/api/market-score'));
+ if(!response.ok)throw Error('STORED_CALCULATION_FAILED');
+ const body=await response.json();
+ if(body.status!=='SUCCESS'||body.domains?.length!==12)throw Error('SCORE_CONTRACT_FAILED');
+ await store.writeScore(body,now);
+ return {readyDomains:body.dataQuality?.readyDomains??body.domains.filter(x=>x.status==='READY').length};
+}
+function boundedFetch(fetchImpl){return async(input,init={})=>{
+ const timeout=AbortSignal.timeout(20000);
+ const signal=init.signal?AbortSignal.any([init.signal,timeout]):timeout;
+ return Reflect.apply(fetchImpl,globalThis,[input,{...init,signal}]);
+};}
+export async function runMarketOperationalRefresh({env,job,store,now=Date.now(),fetchImpl=globalThis.fetch,collectors={},calculate=calculateStoredMarketScore}={}){
+ if(!env?.DB&&!store)return {status:'CONFIGURATION_MISSING'};
+ if(job&&!MARKET_COLLECTION_JOBS.includes(job))return {status:'INVALID_JOB'};
+ store??=marketOperationalStore(env.DB);
+ const lease=await store.claim('pipeline',now);
+ if(!lease)return {status:'ALREADY_RUNNING'};
+ let selected,jobLease,phase='SELECT';
+ try{
+  selected=job??await store.next(MARKET_COLLECTION_JOBS);
+  jobLease=await store.claim(selected,now);
+  if(!jobLease)return {status:'ALREADY_RUNNING',job:selected};
+  const asOf=new Date(now).toISOString().slice(0,10),requestFetch=boundedFetch(fetchImpl);
+  const args={env,asOf,fetchImpl:requestFetch};
+  const jobs={
+   macro:()=>collectDiagnosticLiveInputs({...args,requestCap:48}),
+   rates:()=>collectRateR2Inputs(args),
+   earnings:()=>collectEarningsE1R4ToStore({...args,db:env.DB}),
+   consumption:()=>runConsumptionR3OperationalRefresh({...args,maxSourcesPerRun:1}),
+   breadth:()=>collectBreadthB1R3StoreOnlyR1(args),
+   inflation:()=>collectInflationR2StoreOnly(args),
+   employment:()=>runEmploymentR4ShadowRuntimeStep(args),
+   growth:()=>collectGrowthR2StoreOnlyR1(args),
+   ...collectors,
+  };
+  phase='COLLECT';const collected=await jobs[selected]();
+  if(selected==='macro'||selected==='rates'){
+   phase='STORE';
+   // Keep normalized observations, not URLs, request logs or credentials.
+   const {series,external,inputSettled,rateR2,providerSummary}=collected;
+   const input={...(series?{series}:{}),...(external?{external}:{}),...(inputSettled?{inputSettled}:{}),...(rateR2?{rateR2}:{}),providerSummary};
+   if(new TextEncoder().encode(JSON.stringify(input)).length>1800000)throw Error('INPUT_STORAGE_LIMIT');
+   await store.writeInput(selected,input,now);
+  }
+  phase='CALCULATE';const result=await calculate(env,store,now);
+  const sourceStatus=collected?.status??collected?.rateR2?.status??'COLLECTED';
+  const failed=/^(FAIL|FAILED|ERROR)$/.test(sourceStatus);
+  await store.finish(selected,jobLease,now,failed?'SOURCE_FAILED':'COMPLETE');
+  return {status:failed?'SOURCE_FAILED':'COMPLETE',job:selected,sourceStatus,...result};
+ }catch{
+  if(jobLease)await store.finish(selected,jobLease,now,`${phase}_FAILED`).catch(()=>{});
+  return {status:'ERROR',job:selected,phase};
+ }finally{await store.finish('pipeline',lease,now,'IDLE')}
+}
