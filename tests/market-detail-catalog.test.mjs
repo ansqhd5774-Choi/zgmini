@@ -20,3 +20,16 @@ test('verified breadth raw values preserve zero and units',()=>{
  const r=marketDetailRows('breadth',[{name:'상승 종목 비율',status:'READY',value:0,unit:'%'}])[1];
  assert.equal(r.value,0);assert.equal(r.unit,'%');assert.equal(r.raw,true);assert.equal(r.score,null);
 });
+
+
+test('Growth R2 representative UI rows map by stable feature id',()=>{
+ const rows=marketDetailRows('growth',[
+  {id:'G060',status:'READY',score:38,observationDate:'2026-08-01'},
+  {id:'G010',status:'READY',score:52,observationDate:'2026-08-01'},
+  {id:'G035',status:'READY',score:41,observationDate:'2026-08-01'},
+  {id:'G019',status:'READY',score:47,observationDate:'2026-08-01'},
+ ]);
+ assert.deepEqual(rows.map(r=>r.label),['제조업 신규주문','산업생산','비농업고용 증감','신규 사업체 신청']);
+ assert.deepEqual(rows.map(r=>r.score),[52,47,41,38]);
+ assert.deepEqual(rows.map(r=>r.asOfDate),['2026-08-01','2026-08-01','2026-08-01','2026-08-01']);
+});

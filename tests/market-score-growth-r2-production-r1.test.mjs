@@ -34,6 +34,8 @@ test("stored Growth R2 requires exact 24 non-stale features and computes determi
   const feature=[];
   for(const [j,id] of GROWTH_R2_FEATURE_IDS.entries())for(let m=1;m<=4;m++)feature.push({candidateId:id,observationDate:`2026-0${m}-01`,availableAt:`2026-0${m+1}-05T00:00:00.000Z`,pitEligible:true,harmonizedValue:j*10+m,sourceHash:`${id}-${m}`,frequency:"MONTHLY"});
   const a=await buildStoredGrowthR2Domain(feature,{asOf:"2026-06-01"});const b=await buildStoredGrowthR2Domain(feature,{asOf:"2026-06-01"});assert.equal(a.status,"READY");assert.equal(a.coverage,24);assert.equal(a.score,b.score);assert.equal(a.inputSnapshotId,b.inputSnapshotId);
+  assert.deepEqual(a.indicators.map(x=>x.id),["G010","G019","G035","G060"]);
+  assert.ok(a.indicators.every(x=>x.status==="READY"&&typeof x.score==="number"));
   const stale=await buildStoredGrowthR2Domain(feature,{asOf:"2026-09-29"});assert.equal(stale.status,"NOT_READY");assert.ok(stale.staleFactors.length>0);
 });
 
