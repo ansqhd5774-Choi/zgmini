@@ -1,8 +1,8 @@
-# ZGMINI Public Domain Producers — Revision 1 ACTIVE
+# ZGMINI Public Domain Producers — Revision 3 ACTIVE
 
-Approved: 2026-09-22
+Approved: 2026-10-01
 
-This revision supplements CM-R1 without changing CM-R1 domain weights.
+This revision supersedes Revision 2 for active public-domain producer wiring while preserving CM-R1 domain weights. Revisions 1 and 2 remain preserved.
 
 ## C1 Consumption — ACTIVE
 
@@ -17,36 +17,65 @@ Policy:
 - missing component => PARTIAL / null;
 - no missing-weight renormalization.
 
-## B1 Breadth — NOT ACTIVE / UNAVAILABLE
+## B1 Breadth — ACTIVE / R4
 
-No approved US producer + universe + PIT/coverage contract exists yet.
-No proxy substitution is allowed.
+Storage / collection:
+- existing B1-R3 D1 tables and store-only collector remain preserved;
+- public scoring reads stored data only; page requests never call a provider;
+- public source metadata comes from stored row provenance and is not hard-coded to a provider.
 
-## K1 Commodities — ACTIVE
-
+Daily breadth:
 ```
-CommoditiesScore =
-    0.50 * oilScore
-  + 0.25 * gasolineScore
-  + 0.25 * copperScore
+DailyBreadth =
+    0.60 * AdvanceRatio
+  + 0.40 * AdvanceValueShare
+```
+
+Final B1-R4 score:
+```
+B1R4 =
+    0.50 * DailyBreadth
+  + 0.30 * EMA5(DailyBreadth)
+  + 0.20 * EMA20(DailyBreadth)
 ```
 
 Policy:
-- all three scores are required;
-- missing component => PARTIAL / null;
+- return coverage >= 98%;
+- trading-value coverage >= 98%;
+- stored universe/pair coverage >= 98%;
+- maximum lag <= 2 completed market sessions;
+- missing coverage => PARTIAL / null;
 - no missing-weight renormalization;
-- supplyShockSafety is not a substitute.
+- EMA restarts after a missing market-session gap rather than bridging unavailable history.
 
-Copper provenance:
-- World Bank Pink Sheet
-- CMO-Historical-Data-Monthly.xlsx
-- Monthly Prices
-- Copper column BM
-- $/mt
+## K1 Commodities — ACTIVE / R2
 
-Existing producer semantics reused:
-- inverse trailing percentile
-- lookback 240 months
-- minValid 60
+Formula:
+```
+K1R2 =
+    0.30 * WTI
+  + 0.25 * Brent
+  + 0.25 * Copper
+  + 0.20 * Gasoline
+```
+
+Component scoring:
+- each price series uses max(0, 1M log shock, 3M log shock);
+- each shock becomes an inverse trailing percentile score;
+- lookback: up to 240 monthly observations;
+- minimum valid history: 60 observations.
+
+As-of policy:
+- WTI, Brent, Copper and Gasoline select their latest valid score independently;
+- maximum permitted lag: 2 calendar months from the requested as-of month;
+- any missing or stale component => PARTIAL / null;
+- no missing-weight renormalization;
+- supplyShockSafety is not a substitute for K1-R2.
+
+Sources:
+- WTI: FRED/EIA MCOILWTICO;
+- Brent: FRED/EIA MCOILBRENTEU;
+- Gasoline: FRED/EIA GASREGCOVM;
+- Copper: World Bank Pink Sheet stored input when available.
 
 Previous proposal/evidence revisions remain preserved.

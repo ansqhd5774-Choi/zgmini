@@ -74,19 +74,21 @@ test("production collection is scheduled separately from stored public reads",()
   assert.doesNotMatch(route,/collectBreadth|waitUntil/);
   assert.doesNotMatch(scheduled,/collectBreadthR2StoreOnlyR2/);
   assert.match(scheduled,/breadth:.*collectBreadthB1R3StoreOnlyR1/);
-  assert.match(scheduled,/collectBreadthDomain:readBreadthB1R3StoredPublicDomainR1/);
+  assert.match(scheduled,/collectBreadthDomain:readBreadthB1R4StoredPublicDomainR1/);
 });
 
 test("score path uses D1 stored reader and does not invoke live breadth service",()=>{
   const worker=text("worker/market-score-r1.mjs");
   const r2Domain=text("lib/market-score/breadth-r2-worker-domain-r2.mjs");
   const r3Domain=text("lib/market-score/breadth-b1-r3-worker-domain.mjs");
-  assert.match(worker,/collectBreadthDomain=readBreadthB1R3StoredPublicDomainR1/);
+  const r4Domain=text("lib/market-score/breadth-b1-r4-worker-domain.mjs");
+  assert.match(worker,/collectBreadthDomain=readBreadthB1R4StoredPublicDomainR1/);
   assert.doesNotMatch(worker,/collectBreadthDomain=readBreadthR2StoredPublicDomainR2/);
   assert.match(r2Domain,/readBreadthR2StoredScore/);
   assert.doesNotMatch(r2Domain,/breadth-r2-provider-client/);
   assert.doesNotMatch(r2Domain,/\bfetch\s*\(/);
-  assert.match(r3Domain,/readBreadthB1R3StoredPublicDomainR1/);
+  assert.match(r3Domain,/collectBreadthB1R3StoreOnlyR1/);
+  assert.match(r4Domain,/readBreadthB1R4StoredPublicDomainR1/);
 });
 
 test("collector remains store-only and stored reader remains provider-request zero",()=>{

@@ -6,7 +6,7 @@ import {readProgressiveMarketResponse} from '../lib/market-score/read-progressiv
 import {readMarketSnapshot,saveMarketSnapshot} from '../lib/market-score/browser-snapshot.mjs';
 import {marketDetailRows} from '../lib/market-score/detail-catalog.mjs';
 import {breadthNotice} from '../lib/market-score/breadth-notice.mjs';
-import {breadthB1R3PreviousSessionDelta} from '../lib/market-score/breadth-b1-r3-ui-delta.mjs';
+import {breadthB1R4PreviousSessionDelta} from '../lib/market-score/breadth-b1-r4-ui-delta.mjs';
 export type DashboardPoint={label:string;value:number};
 type MarketTrendPoint={label?:string;date?:string;value?:number;score?:number};
 function normalizeMarketTrendPoints(data?:MarketTrendPoint[]):DashboardPoint[]{
@@ -126,14 +126,14 @@ const r55Cards=[
  {label:'고용',Icon:Users,basis:'공개 점수 결과를 표시합니다. PARTIAL/UNAVAILABLE은 0점으로 대체하지 않습니다.',details:['비농업고용','실업률','실업수당','임금상승률']},
  {label:'금리',Icon:Percent,basis:'공개 점수 결과를 표시합니다. PARTIAL/UNAVAILABLE은 0점으로 대체하지 않습니다.',details:['정책금리','2년물','10년 실질','10년물']},
  {label:'채권신용',Icon:ShieldCheck,basis:'공개 점수 결과를 표시합니다. PARTIAL/UNAVAILABLE은 0점으로 대체하지 않습니다.',details:['HY 신용 스트레스','IG 신용 스트레스','채권 변동성','회사채 시장위험']},
- {label:'경기',Icon:Factory,basis:'공개 점수 결과를 표시합니다. PARTIAL/UNAVAILABLE은 0점으로 대체하지 않습니다.',details:['실질 국내총생산','제조업','서비스업','산업생산']},
+ {label:'경기',Icon:Factory,basis:'Growth R2 경기 총점은 저장된 24개 지표 전체의 승인 가중합입니다. 아래 4개는 총점 산식의 대체값이 아니라 대표 점수입니다.',details:['제조업 신규주문','산업생산','비농업고용 증감','신규 사업체 신청']},
  {label:'소비',Icon:ShoppingCart,basis:'공개 점수 결과를 표시합니다. PARTIAL/UNAVAILABLE은 0점으로 대체하지 않습니다.',details:['실질 소매판매','실질 가처분소득','개인저축률','카드 연체율']},
  {label:'기업실적',Icon:BriefcaseBusiness,basis:'공개 점수 결과를 표시합니다. PARTIAL/UNAVAILABLE은 0점으로 대체하지 않습니다.',details:['주당이익 성장','매출 성장률','이익 성장비','영업·순이익률']},
  {label:'유동성',Icon:Landmark,basis:'공개 점수 결과를 표시합니다. PARTIAL/UNAVAILABLE은 0점으로 대체하지 않습니다.',details:['은행 준비금','통화량 증가','재무부 계정변화','익일 역레포']},
  {label:'자금흐름',Icon:ArrowLeftRight,basis:'SEC 등록펀드 전체 순유입을 전월 순자산으로 나눈 월별 비율입니다. 미국 주식형 펀드만의 값이 아닙니다. 추이는 실제 월별 점수이며 일별 보간하지 않습니다.',details:[]},
- {label:'수급·폭',Icon:Network,basis:'S&P500 현재 구성종목의 IEX 일별 가격·거래량 저장값으로 계산합니다. 상승종목비율 60% + 상승거래대금비율 40%이며, 수익률·거래대금 커버리지는 품질 지표입니다.',details:[]},
+ {label:'수급·폭',Icon:Network,basis:'S&P500 저장 종가·거래량으로 당일 시장폭(상승종목비율 60% + 상승거래대금비율 40%)을 계산하고, 당일 50% + 5일 EMA 30% + 20일 EMA 20%로 최종 점수를 만듭니다. 수익률·거래대금 커버리지는 98% 품질 게이트입니다.',details:[]},
  {label:'달러환율',Icon:DollarSign,basis:'공개 점수 결과를 표시합니다. PARTIAL/UNAVAILABLE은 0점으로 대체하지 않습니다.',details:['광의 달러지수','3개월 변화율','신흥국 달러지수','달러 변동성']},
- {label:'유가원자재',Icon:Droplet,basis:'공개 점수 결과를 표시합니다. 공급충격 점수를 유가·원자재 점수로 대체하지 않습니다.',details:['서부텍사스유','브렌트유','구리','휘발유']}
+ {label:'유가원자재',Icon:Droplet,basis:'K1-R2는 WTI 30% + Brent 25% + 구리 25% + 휘발유 20%입니다. 각 구성요소의 최신 유효 월간 점수를 독립 선택하며 최대 2개월 지연만 허용하고 결측 재가중은 하지 않습니다.',details:['서부텍사스유','브렌트유','구리','휘발유']}
 ] as const;
 
 const diagnosticSubscores=[
@@ -279,7 +279,7 @@ export function CompositeMarketSection({items,points,demo,loading}:{items:Summar
        const score=domain?.status==='READY'&&validPublicScore(domain.score)?domain.score:null;
        const normalizedTrend=normalizeMarketTrendPoints(domain?.trend);
        const trend=marketTrendWindow(normalizedTrend,periodDays);
-       const breadthDelta=r55DomainIds[index]==='breadth'?breadthB1R3PreviousSessionDelta(domain?.trend):null;
+       const breadthDelta=r55DomainIds[index]==='breadth'?breadthB1R4PreviousSessionDelta(domain?.trend):null;
 
        const band=score===null?'unknown':score<25?'danger':score<40?'caution':score<60?'neutral':score<75?'positive':'strong';
        const detailRows=marketDetailRows(r55DomainIds[index],domain?.indicators) as Array<{label:string;score:number|null;raw:boolean;value:number|null;displayValue?:string|null;unit:string;asOfDate?:string|null;source?:string|null}>;

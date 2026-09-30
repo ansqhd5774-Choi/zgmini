@@ -1,7 +1,8 @@
 import {createProgressiveComputationCache} from './market-score-computation-cache.mjs';
 import {buildCompositeMarketScore} from "../lib/market-score/composite-model-r1.mjs";
 import {buildCmR1DomainResults} from "../lib/market-score/domain-adapter-r1.mjs";
-import {buildConsumptionC1,buildCommoditiesK1} from "../lib/market-score/public-domain-producers-r1.mjs";
+import {buildConsumptionC1} from "../lib/market-score/public-domain-producers-r1.mjs";
+import {buildCommoditiesK1R2} from "../lib/market-score/public-domain-producers-r2.mjs";
 import {loadStoredConsumptionC1R3} from "./consumption-r3-history-reader.mjs";
 import {buildEmploymentR538} from "../lib/diagnostic-layer/employment-r538-components.mjs";
 import {
@@ -10,7 +11,7 @@ import {
 } from "../lib/diagnostic-layer/open-resolution-r53-components.mjs";
 import {buildRateR2} from "../lib/market-score/rate-r2.mjs";
 import {loadStoredInflationR2Domain} from "./inflation-r2-reader.mjs";
-import {readBreadthB1R3StoredPublicDomainR1,buildBreadthB1R3UnavailablePublicDomain} from "../lib/market-score/breadth-b1-r3-worker-domain.mjs";
+import {readBreadthB1R4StoredPublicDomainR1,buildBreadthB1R4UnavailablePublicDomain} from "../lib/market-score/breadth-b1-r4-worker-domain.mjs";
 import {
   INFLATION_SCORING_SERIES,
   loadStoredInflationSeries,
@@ -65,7 +66,7 @@ export function createMarketScoreR1Handler({
   collectInputs,
   orchestrate,
   now=()=>new Date(),
-  collectBreadthDomain=readBreadthB1R3StoredPublicDomainR1,
+  collectBreadthDomain=readBreadthB1R4StoredPublicDomainR1,
 
   loadConsumptionDomain=loadStoredConsumptionC1R3,
   loadInflationDomain=loadStoredInflationR2Domain,
@@ -130,7 +131,7 @@ export function createMarketScoreR1Handler({
         : inflationR2Partial("INFLATION_R2_STORAGE_READ_FAILED");
       const breadthDomain=breadthState.status==="fulfilled"
         ? breadthState.value
-        : buildBreadthB1R3UnavailablePublicDomain("B1_R3_RUNTIME_UNAVAILABLE",asOf,instant.toISOString());
+        : buildBreadthB1R4UnavailablePublicDomain("B1_R4_RUNTIME_UNAVAILABLE",asOf,instant.toISOString());
       const consumptionDomain=consumptionState.status==="fulfilled"
         ? consumptionState.value
         : {status:"PARTIAL",score:null,missingFactors:["C1_R3_STORAGE_READ_FAILED"],indicators:[],trend:[],freshness:"STORED_CALCULATION_HISTORY_ONLY",updatedAt:null,methodologyVersion:"R3.45P",interpretation:"C1-R3.45P: stored calculation history only; live fallback forbidden"};
@@ -213,11 +214,14 @@ function composeMarketSnapshot({liquidityHistory,collected,storedInflation,infla
         inflation:inflationR2Domain,
         consumption:consumptionDomain,
         growth:growthDomain,
-        commodities:compute(buildCommoditiesK1,{
-          supplyRows:diagnostic?.artifacts?.supply?.rows??[],
+        commodities:compute(buildCommoditiesK1R2,{
+          wtiRows:collected?.series?.MCOILWTICO??[],
+          brentRows:collected?.series?.MCOILBRENTEU??[],
+          copperRows:collected?.external?.copperRows??[],
+          gasolineRows:collected?.series?.GASREGCOVM??[],
           asOfDate:asOf,
         }),
-        // B1-R3 stored breadth is authoritative for the public breadth slot.
+        // B1-R4 stored breadth score is authoritative for the public breadth slot.
         // Any legacy external.publicDomainScores.breadth value is intentionally overridden.
         breadth:breadthDomain,
       };
@@ -235,7 +239,7 @@ function composeMarketSnapshot({liquidityHistory,collected,storedInflation,infla
       // A monthly supply union must not briefly publish an older score while a
       // later-dated input is still in flight. This is a domain-local gate only.
       if(Array.isArray(collected?.inputSettled)){
-        const supplyInputs=['MCOILWTICO','GASREGCOVM','INDPRO','gscpi','copper'];
+        const supplyInputs=['MCOILWTICO','MCOILBRENTEU','GASREGCOVM','INDPRO','gscpi','copper'];
         if(!supplyInputs.every(id=>collected.inputSettled.includes(id))||!storedInflation?.status){
           const domain=domains.find(d=>d.id==='commodities');
           Object.assign(domain,{status:'PARTIAL',score:null,trend:[],indicators:[]});
