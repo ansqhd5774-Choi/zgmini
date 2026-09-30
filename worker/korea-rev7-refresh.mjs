@@ -49,8 +49,11 @@ export async function refreshKoreaRev7({env,store,fetchDate=fetchRev7Date,calcul
   const status=caughtUp?'COMPLETE':waitingPublication?'WAITING_PUBLICATION':'BACKLOG';
   await store.markBackfillStatus(caughtUp?'COMPLETE':'IDLE');
   return {status,providerRequests,storedDates,calculated,latestDate:latest,scoreDate:(await store.getLatestSnapshot())?.date??null,processedThrough:checkpoint,targetDate:target,caughtUp,nextDate:caughtUp?null:shift(checkpoint,1)};
- }catch{
-  await store.markBackfillStatus('ERROR',`${phase}_FAILED`).catch(()=>{});
-  return {status:'ERROR',phase,providerRequests,storedDates,calculated};
+ }catch(error){
+  const allowed=/^(?:UPSTREAM_HTTP_\d{3}|BODY_MISSING|BODY_LIMIT|INVALID_JSON|TIMEOUT|KRX_SCHEMA_ERROR|KOSPI_EXACT_INDEX_MISSING|KOSPI_STOCK_DATE_MISMATCH|KOSPI_STOCK_IDENTITY_ERROR|KOSPI_STOCK_ROWS_TOO_LOW|STANDARD_KOSPI200_OPTION_MISSING|VKOSPI200_MISSING|KTB_TOTAL_RETURN_MISSING|INVALID_SNAPSHOT|LATEST_SCORE_NOT_READY)$/;
+  const reason=allowed.test(error?.message??'')?error.message:`${phase}_FAILED`;
+  if(phase==='COLLECT')providerRequests+=(error?.krxRequestCount??0)+(error?.bokRequestCount??0);
+  await store.markBackfillStatus('ERROR',reason).catch(()=>{});
+  return {status:'ERROR',phase,reason,providerRequests,storedDates,calculated};
  }finally{await store.releaseLease();}
 }

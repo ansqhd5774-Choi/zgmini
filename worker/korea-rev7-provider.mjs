@@ -93,6 +93,7 @@ export async function fetchRev7Date(date,{krxKey,bokKey,fetchImpl=globalThis.fet
   const krx=async pathname=>{krxRequestCount++;return krxRows(pathname,date,krxKey,fetchImpl,policy);};
   const bok=async item=>{bokRequestCount++;return bokValue(item,date,bokKey,fetchImpl,policy);};
 
+  try {
   const indexRows=await krx('idx/kospi_dd_trd');
   const kospi=exact(indexRows,'IDX_NM','코스피');
   const kospiClose=num(kospi?.CLSPRC_IDX);
@@ -156,4 +157,9 @@ export async function fetchRev7Date(date,{krxKey,bokKey,fetchImpl=globalThis.fet
     researchOnly:true,
     productionEligible:false,
   };
+  } catch(error) {
+    error.krxRequestCount=krxRequestCount;
+    error.bokRequestCount=bokRequestCount;
+    throw error;
+  }
 }

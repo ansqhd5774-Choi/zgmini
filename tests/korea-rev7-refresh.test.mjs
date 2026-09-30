@@ -2,6 +2,14 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {refreshKoreaRev7} from '../worker/korea-rev7-refresh.mjs';
 const env={KRX_API_KEY:'test',BOK_API_KEY:'test'};
+test('provider failures preserve safe reason and call count without exposing arbitrary errors',async()=>{
+ const f=fixture();
+ const args={env,store:f.store,now:new Date('2026-09-17T00:00:00Z')};
+ const result=await refreshKoreaRev7({...args,fetchDate:async()=>{throw Object.assign(Error('UPSTREAM_HTTP_503'),{krxRequestCount:1,bokRequestCount:0});}});
+ assert.equal(result.reason,'UPSTREAM_HTTP_503');assert.equal(result.providerRequests,1);assert.deepEqual(f.events,[]);
+ const unsafe=await refreshKoreaRev7({...args,fetchDate:async()=>{throw Error('https://provider/private-key');}});
+ assert.equal(unsafe.reason,'COLLECT_FAILED');assert.equal(JSON.stringify(unsafe).includes('private-key'),false);
+});
 function fixture(){
  let date='20260915',scoreDate=date,lease=false;const events=[];
  const store={
