@@ -1,3 +1,5 @@
+import {runPublicFeeds} from "./public-feed-collectors";
+import {readPublicFeed,readPublicFeedHealth} from "./public-feed-store.mjs";
 /// <reference types="vite/client" />
 import { fredApiShadow } from "./p0-fred-api-shadow.mjs";
 import { fredBlsShadow } from "./p0-fred-bls-shadow.mjs";
@@ -6,7 +8,6 @@ import { productionFredProbe } from "./p0-production-fred-probe.mjs";
 /** Cloudflare Worker entry point for the vinext-starter template. */
 import { handleImageOptimization, DEFAULT_DEVICE_SIZES, DEFAULT_IMAGE_SIZES } from "vinext/server/image-optimization";
 import handler from "vinext/server/app-router-entry";
-import { dataHealth, corePceResponse } from "./data-health.mjs";
 import sitemapXml from "../public/sitemap.xml?raw";
 import { phase1KoreaDataCheck } from "./phase1-korea.mjs";
 import { phase2KoreaHistoryCheck } from "./phase2-korea-history.mjs";
@@ -54,7 +55,7 @@ const worker = {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const url = new URL(request.url);
     if (url.pathname.replace(/\/$/, '') === '/api/internal/korea-rev7-scheduled') return koreaRev7ExternalScheduler(request, runtimeEnv, {ctx});
-    if (url.pathname.replace(/\/$/, '') === '/api/internal/market-scheduled') return koreaRev7ExternalScheduler(request, runtimeEnv, {ctx,refresh:runMarketOperationalRefresh,responseBudgetMs:5000,logTag:'MARKET_EXTERNAL'});
+    if (url.pathname.replace(/\/$/, '') === '/api/internal/market-scheduled') return koreaRev7ExternalScheduler(request, runtimeEnv, {ctx,refresh:async (args:any)=>{const [market,feeds]=await Promise.allSettled([runMarketOperationalRefresh(args),runPublicFeeds(args)]);console.log('PUBLIC_FEEDS',JSON.stringify(feeds.status==='fulfilled'?feeds.value:{status:'ERROR'}));return market.status==='fulfilled'?market.value:{status:'ERROR'}},responseBudgetMs:5000,logTag:'MARKET_EXTERNAL'});
     if (url.pathname.replace(/\/$/, '') === '/api/internal/employment-r6-scheduled') return koreaRev7ExternalScheduler(request, runtimeEnv, {ctx,refresh:runEmploymentR6Producer,responseBudgetMs:5000,logTag:'EMP_R6_EXTERNAL'});
     if (url.pathname.replace(/\/$/, '') === '/api/internal/employment-r6-auth-probe') return Response.json(inspectEmploymentR6AuthProbe(request), {status:200,headers:{"cache-control":"no-store, no-cache, must-revalidate","pragma":"no-cache","x-robots-tag":"noindex, nofollow"}});
     if (url.pathname === "/api/internal/p0-fred-api-shadow-check") return fredApiShadow(request, env, { importMetaProd: import.meta.env.PROD, nodeEnv: typeof process !== "undefined" ? process.env.NODE_ENV : undefined, workerContext: ctx, workerUserAgent: typeof navigator !== "undefined" ? navigator.userAgent : undefined });
@@ -62,8 +63,8 @@ const worker = {
     if (url.pathname === "/api/internal/p0-fred-transport-check") return productionFredProbe(request, { importMetaProd: import.meta.env.PROD, nodeEnv: typeof process !== "undefined" ? process.env.NODE_ENV : undefined, workerContext: ctx, workerUserAgent: typeof navigator !== "undefined" ? navigator.userAgent : undefined });
     if (url.pathname === "/api/internal/p0-bls-transport-check") return blsDiagnostic(request, env, { importMetaProd: import.meta.env.PROD, nodeEnv: typeof process !== "undefined" ? process.env.NODE_ENV : undefined, workerContext: ctx, workerUserAgent: typeof navigator !== "undefined" ? navigator.userAgent : undefined });
     if (url.pathname === "/api/indicators/korea-funds") return koreaFunds(request, env);
-    if (url.pathname === "/api/core-pce") return corePceResponse(request, env);
-    if (url.pathname === "/api/data-health") return dataHealth(request, env);
+    if (url.pathname === "/api/core-pce") return readPublicFeed(runtimeEnv.DB, "core-pce");
+    if (url.pathname === "/api/data-health") return readPublicFeedHealth(runtimeEnv.DB);
     if (url.pathname === "/api/internal/phase1-korea-data-check") return phase1KoreaDataCheck(request, env);
     if (url.pathname === "/api/internal/phase2-korea-history-check") return phase2KoreaHistoryCheck(request, env);
     if (url.pathname === "/api/internal/phase3-korea-stock-price-check") return phase3KoreaStockPriceCheck(request, env);

@@ -1,1 +1,3 @@
-export async function GET(){const sourceUrl="https://nikkei.feargreedchart.com/api-docs";try{const r=await fetch("https://nikkei.feargreedchart.com/api/?action=nikkei",{headers:{Accept:"application/json"},cache:"no-store",signal:AbortSignal.timeout(10000)});if(!r.ok)throw Error("upstream");const d=await r.json() as {score?:number;label?:string;updated_at?:string;nikkei?:{level?:number}};if(typeof d.score!=="number"||d.score<0||d.score>100||typeof d.updated_at!=="string")throw Error("invalid");return Response.json({status:"verified",source:"Nikkei Fear & Greed Index",sourceUrl,score:d.score,rating:d.label??"",updatedAt:d.updated_at,nikkei:d.nikkei??null})}catch{return Response.json({status:"unavailable",score:null,sourceUrl},{status:503})}}
+import {env} from "cloudflare:workers";
+import {readPublicFeed} from "../../../worker/public-feed-store.mjs";
+export async function GET(){return readPublicFeed(env.DB, "nikkei-fear-greed");}

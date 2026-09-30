@@ -154,25 +154,23 @@ async function provenance(id,key,asOf) {
 }
 
 
-let pceCache=null;
-export async function corePceResponse(req,env) {
- const headers={'Cache-Control':'no-store','Content-Type':'application/json; charset=utf-8'};
- if(req.method!=='GET')return new Response(null,{status:405,headers:{...headers,Allow:'GET'}});
- if(pceCache&&pceCache.until>Date.now()){const value=await pceCache.promise;return Response.json(value,{status:value.status==='OK'?200:503,headers});}
- const promise=(async()=>{
-  try {
-   if(!env.FRED_API_KEY||!env.BEA_API_KEY)throw Error('MISSING_SECRET');
-   const now=new Date().toISOString();
-   const [f,b]=await Promise.all([fredSeries('PCEPILFE',env.FRED_API_KEY,now.slice(0,10)),bea(env.BEA_API_KEY,new Date(now).getUTCFullYear(),true)]);
-   if(f.status!=='PASS'||b.status!=='PASS')throw Error('OFFICIAL_API_FAILED');
-   const actual=normalizeCorePce(f.rows,b.series[0].rows,now.slice(0,10));
-   let schedule=null,scheduleStatus='FAILED';
-   try {const r=await fetch('https://www.bea.gov/news/schedule/ics/online-calendar-subscription.ics',{redirect:'manual',signal:AbortSignal.timeout(18000)});if(!r.ok)throw Error('CALENDAR_FAILED');schedule=parseBeaCalendar(await r.text(),now);scheduleStatus=schedule.next?'OK':'FAILED';}catch{}
-   const latest=actual.at(-1);const monthTitle=new Intl.DateTimeFormat('en-US',{month:'long',year:'numeric',timeZone:'UTC'}).format(new Date(latest.date+'-01T00:00:00Z'));
-   const release=schedule?.events.find(e=>e.title===`Personal Income and Outlays, ${monthTitle}`)??null;
-   return {status:'OK',checkedAt:now,actual,forecast:null,forecastSource:null,surprise:null,interpretation:pceInterpretation(actual),source:'FRED (BEA)',sourceUrl:'https://fred.stlouisfed.org/series/PCEPILFE',crossValidation:'PASS',referenceMonth:latest.date,lastUpdated:f.last_updated,release,nextRelease:schedule?.next??null,scheduleStatus,scheduleSource:'https://www.bea.gov/news/schedule/ics/online-calendar-subscription.ics'};
-  }catch{return {status:'FAILED',actual:[],forecast:null,surprise:null,nextRelease:null,message:'최신 데이터 확인 불가'};}
- })();
- const entry={until:Date.now()+300000,promise};pceCache=entry;const result=await promise;if(result.status!=='OK')entry.until=Date.now()+60000;return Response.json(result,{status:result.status==='OK'?200:503,headers});
+export async function collectCorePceFeed(env,store,clock=Date.now()) {
+ const now=new Date(clock).toISOString();
+ if(!env.FRED_API_KEY||!env.BEA_API_KEY)throw Error('MISSING_SECRET');
+ const [f,b]=await Promise.all([fredSeries('PCEPILFE',env.FRED_API_KEY,now.slice(0,10)),bea(env.BEA_API_KEY,new Date(now).getUTCFullYear(),true)]);
+ if(f.status!=='PASS'||b.status!=='PASS')throw Error('OFFICIAL_API_FAILED');
+ let calendar=null;
+ try{const r=await fetch('https://www.bea.gov/news/schedule/ics/online-calendar-subscription.ics',{redirect:'manual',signal:AbortSignal.timeout(8000)});if(r.ok)calendar=await r.text();}catch{}
+ await store.writeInput('core-pce',{f,b,calendar},clock);
+ const saved=await store.readInput('core-pce');
+ if(!saved||saved.storedAt!==clock)throw Error('INPUT_READBACK_FAILED');
+ return Response.json(calculateCorePceFeed(saved.body,now));
 }
-
+export function calculateCorePceFeed({f,b,calendar},now){
+ const actual=normalizeCorePce(f.rows,b.series[0].rows,now.slice(0,10));
+ const schedule=calendar?parseBeaCalendar(calendar,now):null;
+ const latest=actual.at(-1);if(!latest)throw Error('PCE_HISTORY_MISSING');
+ const monthTitle=new Intl.DateTimeFormat('en-US',{month:'long',year:'numeric',timeZone:'UTC'}).format(new Date(latest.date+'-01T00:00:00Z'));
+ const release=schedule?.events.find(e=>e.title===`Personal Income and Outlays, ${monthTitle}`)??null;
+ return {status:'OK',checkedAt:now,actual,forecast:null,forecastSource:null,surprise:null,interpretation:pceInterpretation(actual),source:'FRED (BEA)',sourceUrl:'https://fred.stlouisfed.org/series/PCEPILFE',crossValidation:'PASS',referenceMonth:latest.date,lastUpdated:f.last_updated,release,nextRelease:schedule?.next??null,scheduleStatus:schedule?.next?'OK':'FAILED',scheduleSource:'https://www.bea.gov/news/schedule/ics/online-calendar-subscription.ics'};
+}

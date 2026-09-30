@@ -1,1 +1,3 @@
-export async function GET(){const sourceUrl="https://ftse.feargreedchart.com/api-docs";try{const r=await fetch("https://ftse.feargreedchart.com/api/?action=ftse",{headers:{Accept:"application/json"},cache:"no-store",signal:AbortSignal.timeout(10000)});if(!r.ok)throw Error("upstream");const d=await r.json() as {score?:number;label?:string;updated?:string;ftse?:{level?:number}};if(typeof d.score!=="number"||d.score<0||d.score>100||typeof d.updated!=="string")throw Error("invalid");return Response.json({status:"verified",source:"FTSE Fear & Greed Index",sourceUrl,score:d.score,rating:d.label??"",updatedAt:d.updated,level:d.ftse?.level??null})}catch{return Response.json({status:"unavailable",score:null,sourceUrl},{status:503})}}
+import {env} from "cloudflare:workers";
+import {readPublicFeed} from "../../../worker/public-feed-store.mjs";
+export async function GET(){return readPublicFeed(env.DB, "ftse-fear-greed");}
