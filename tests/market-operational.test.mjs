@@ -10,6 +10,15 @@ function fixture(){
 }
 const now=Date.parse('2026-09-30T00:00:00Z');
 const score={status:'SUCCESS',domains:Array.from({length:12},(_,i)=>({id:String(i),score:i===0?0:null})),overall:{score:null,status:'PARTIAL'}};
+test('large normalized history is compressed in storage and restored without value loss',async()=>{
+ const {store,sqlite}=fixture();
+ const input={series:{A:Array.from({length:75000},(_,i)=>({date:'2026-09-30',value:i%3===0?0:i%3===1?null:i}))}};
+ assert.ok(JSON.stringify(input).length>1800000);
+ await store.writeInput('macro',input,now);
+ const stored=sqlite.prepare('SELECT body FROM market_input_batches_v1').get().body;
+ assert.ok(stored.startsWith('gzip:'));assert.ok(stored.length<1800000);
+ assert.deepEqual((await store.readInput('macro')).body,input);sqlite.close();
+});
 test('collection persists inputs before calculation and public reads perform no collection',async()=>{
  const {store,db,sqlite}=fixture();let calls=0;
  const out=await runMarketOperationalRefresh({env:{DB:db},store,job:'macro',now,

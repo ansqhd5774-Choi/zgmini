@@ -70,7 +70,6 @@ export async function runMarketOperationalRefresh({env,job,store,now=Date.now(),
    // Keep normalized observations, not URLs, request logs or credentials.
    const {series,external,inputSettled,rateR2,providerSummary}=collected;
    const input={...(series?{series}:{}),...(external?{external}:{}),...(inputSettled?{inputSettled}:{}),...(rateR2?{rateR2}:{}),providerSummary};
-   if(new TextEncoder().encode(JSON.stringify(input)).length>1800000)throw Error('INPUT_STORAGE_LIMIT');
    await store.writeInput(selected,input,now);
   }
   phase='CALCULATE';const result=await calculate(env,store,now);
@@ -78,8 +77,9 @@ export async function runMarketOperationalRefresh({env,job,store,now=Date.now(),
   const failed=/^(FAIL|FAILED|ERROR)$/.test(sourceStatus);
   await store.finish(selected,jobLease,now,failed?'SOURCE_FAILED':'COMPLETE');
   return {status:failed?'SOURCE_FAILED':'COMPLETE',job:selected,sourceStatus,...result};
- }catch{
+ }catch(error){
   if(jobLease)await store.finish(selected,jobLease,now,`${phase}_FAILED`).catch(()=>{});
-  return {status:'ERROR',job:selected,phase};
+  const reason=['INPUT_STORAGE_LIMIT','STORED_CALCULATION_FAILED','SCORE_CONTRACT_FAILED'].includes(error?.message)?error.message:null;
+  return {status:'ERROR',job:selected,phase,...(reason?{reason}:{})};
  }finally{await store.finish('pipeline',lease,now,'IDLE')}
 }

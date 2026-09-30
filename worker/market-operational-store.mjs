@@ -1,5 +1,8 @@
 // Private normalized inputs and separately stored public projections.
 // Public reads never call providers or compute scores.
+import {gzipSync,gunzipSync} from 'node:zlib';
+import {Buffer} from 'node:buffer';
+const decodeInput=text=>JSON.parse(text.startsWith('gzip:')?gunzipSync(Buffer.from(text.slice(5),'base64'),{maxOutputLength:32000000}).toString('utf8'):text);
 export function marketOperationalStore(db){
  if(!db)throw Error('STORAGE_UNAVAILABLE');
  let ready;
@@ -11,9 +14,9 @@ export function marketOperationalStore(db){
  const read=async(table,key)=>{await init();const row=await db.prepare(`SELECT body,stored_at FROM ${table} WHERE ${table==='market_input_batches_v1'?'batch_key':'snapshot_key'}=?`).bind(key).first();return row?{body:JSON.parse(row.body),storedAt:row.stored_at}:null};
  return {
   initialize:init,
-  async readInput(key){await init();const row=await db.prepare('SELECT body,stored_at FROM market_input_batches_v1 WHERE batch_key LIKE ? ORDER BY stored_at DESC LIMIT 1').bind(key+':%').first();return row?{body:JSON.parse(row.body),storedAt:row.stored_at}:null},
+  async readInput(key){await init();const row=await db.prepare('SELECT body,stored_at FROM market_input_batches_v1 WHERE batch_key LIKE ? ORDER BY stored_at DESC LIMIT 1').bind(key+':%').first();return row?{body:decodeInput(row.body),storedAt:row.stored_at}:null},
   readScore:()=>read('market_public_snapshots_v1','current'),
-  async writeInput(key,body,now){await init();await db.prepare('INSERT INTO market_input_batches_v1 VALUES(?,?,?) ON CONFLICT(batch_key) DO UPDATE SET body=excluded.body,stored_at=excluded.stored_at').bind(key+':'+new Date(now).toISOString().slice(0,10),JSON.stringify(body),now).run()},
+  async writeInput(key,body,now){await init();const json=JSON.stringify(body);if(Buffer.byteLength(json)>32000000)throw Error('INPUT_STORAGE_LIMIT');const encoded='gzip:'+gzipSync(json).toString('base64');if(encoded.length>1800000)throw Error('INPUT_STORAGE_LIMIT');await db.prepare('INSERT INTO market_input_batches_v1 VALUES(?,?,?) ON CONFLICT(batch_key) DO UPDATE SET body=excluded.body,stored_at=excluded.stored_at').bind(key+':'+new Date(now).toISOString().slice(0,10),encoded,now).run()},
   async writeScore(body,now){await init();const encoded=JSON.stringify(body);for(const key of [new Date(now).toISOString().slice(0,10),'current'])await db.prepare('INSERT INTO market_public_snapshots_v1 VALUES(?,?,?) ON CONFLICT(snapshot_key) DO UPDATE SET body=excluded.body,stored_at=excluded.stored_at').bind(key,encoded,now).run()},
   async claim(job,now){
    await init();const id=crypto.randomUUID();
