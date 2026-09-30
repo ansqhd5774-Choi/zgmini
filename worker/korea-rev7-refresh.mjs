@@ -18,8 +18,11 @@ export async function refreshKoreaRev7({env,store,fetchDate=fetchRev7Date,calcul
  try{
   const progress=await store.getBackfillProgress();
   if(!progress?.latestProcessedDate||progress.successfulTradingDates<1030)return {status:'HISTORY_NOT_READY',providerRequests};
-  const today=new Date(now.getTime()+9*3600000).toISOString().slice(0,10).replaceAll('-','');
-  const target=shift(today,-1);
+  const koreaNow=new Date(now.getTime()+9*3600000);
+  const today=koreaNow.toISOString().slice(0,10).replaceAll('-','');
+  // After the close/publication buffer, attempt today's official daily file.
+  // A missing publication stays pending; no future observation is fabricated.
+  const target=koreaNow.getUTCHours()>=18?today:shift(today,-1);
   let date=shift(progress.latestProcessedDate,1);
   for(let n=0;n<maxDates&&date<=target;n++,date=shift(date,1)){
    await store.renewLease();phase='COLLECT';
@@ -27,7 +30,8 @@ export async function refreshKoreaRev7({env,store,fetchDate=fetchRev7Date,calcul
    providerRequests+=(raw.krxRequestCount??0)+(raw.bokRequestCount??0);
    if(raw.requestedDate!==date||!raw.complete||!['SUCCESS','NO_TRADING_OBSERVATION'].includes(raw.status))throw Error('INVALID_SNAPSHOT');
    // A recent empty response may mean publication delay, not a closed session.
-   if(raw.status==='NO_TRADING_OBSERVATION'&&date>shift(today,-3)){waitingPublication=true;break;}
+   const weekday=new Date(`${date.slice(0,4)}-${date.slice(4,6)}-${date.slice(6,8)}T00:00:00Z`).getUTCDay();
+   if(raw.status==='NO_TRADING_OBSERVATION'&&weekday!==0&&weekday!==6&&date>shift(today,-3)){waitingPublication=true;break;}
    phase='STORE';await store.saveDate(raw);storedDates++;
   }
   const latest=await store.getLatestCompleteDate();

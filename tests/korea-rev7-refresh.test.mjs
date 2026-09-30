@@ -51,3 +51,14 @@ test('missing credentials and concurrent run make zero provider calls',async()=>
  f.store.acquireLease=async()=>false;
  assert.equal((await refreshKoreaRev7({env,store:f.store,fetchDate})).status,'ALREADY_RUNNING');
 });
+test('closed weekends do not block the next trading day',async()=>{
+ const f=fixture();await f.store.saveDate({requestedDate:'20260925'});f.events.length=0;
+ const r=await refreshKoreaRev7({env,store:f.store,now:new Date('2026-09-28T00:00:00Z'),maxDates:2,fetchDate:async date=>({requestedDate:date,complete:true,status:'NO_TRADING_OBSERVATION'}),calculate:({date})=>({observationDate:date,score:48})});
+ assert.equal(r.processedThrough,'20260927');assert.equal(r.caughtUp,true);assert.equal(r.storedDates,2);
+});
+test('evening collection attempts current published day but never invents unavailable data',async()=>{
+ const f=fixture();await f.store.saveDate({requestedDate:'20260929'});
+ let requested;
+ const r=await refreshKoreaRev7({env,store:f.store,now:new Date('2026-09-30T09:00:00Z'),fetchDate:async date=>{requested=date;return {requestedDate:date,complete:true,status:'NO_TRADING_OBSERVATION'};},calculate:({date})=>({observationDate:date,score:48})});
+ assert.equal(requested,'20260930');assert.equal(r.status,'WAITING_PUBLICATION');assert.equal(r.storedDates,0);assert.equal(r.targetDate,'20260930');
+});
