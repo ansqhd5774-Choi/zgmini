@@ -3384,63 +3384,6 @@ html,body{overflow-x:hidden}
   .zg-dashboard[data-view="dashboard"] .zg-header-icon-action span{display:none}
 }
 
-/* UI1_R4_CARD_COLLISION_FIX_R1
-   Compact PC market cards: separate score, trend and progress lanes so the
-   score glyphs can never collide with the trend line or progress meter.
-   Geometry only; data, score semantics and expanded-state content unchanged. */
-@media(min-width:1280px){
-  .zg-dashboard[data-view="dashboard"] .zg-r55-shell[data-expanded="false"] .zg-r55-card{
-    display:grid;
-    grid-template-rows:20px 32px 4px;
-    row-gap:2px;
-    padding:4px 8px;
-    align-content:start;
-  }
-  .zg-dashboard[data-view="dashboard"] .zg-r55-shell[data-expanded="false"] .zg-r55-card-head{
-    height:20px;
-    min-height:20px;
-    grid-template-columns:minmax(0,1fr) auto 20px;
-    gap:4px;
-  }
-  .zg-dashboard[data-view="dashboard"] .zg-r55-shell[data-expanded="false"] .zg-r55-card-head .zg-info{
-    width:20px;
-    height:20px;
-    min-width:20px;
-    min-height:20px;
-  }
-  .zg-dashboard[data-view="dashboard"] .zg-r55-shell[data-expanded="false"] .zg-r55-card-head .zg-info svg{
-    width:13px;
-    height:13px;
-  }
-  .zg-dashboard[data-view="dashboard"] .zg-r55-shell[data-expanded="false"] .zg-r55-card-mid{
-    height:32px;
-    min-height:32px;
-    grid-template-columns:48px minmax(0,1fr);
-    gap:8px;
-    align-items:center;
-    overflow:hidden;
-  }
-  .zg-dashboard[data-view="dashboard"] .zg-r55-shell[data-expanded="false"] .zg-r55-card-number{
-    min-width:48px;
-    align-self:center;
-  }
-  .zg-dashboard[data-view="dashboard"] .zg-r55-shell[data-expanded="false"] .zg-r55-card-number strong{
-    font-size:30px;
-    line-height:1;
-  }
-  .zg-dashboard[data-view="dashboard"] .zg-r55-shell[data-expanded="false"] .zg-r55-card-mid .zg-spark,
-  .zg-dashboard[data-view="dashboard"] .zg-r55-shell[data-expanded="false"] .zg-r55-card-spark-empty{
-    height:20px;
-    min-height:20px;
-    align-self:center;
-  }
-  .zg-dashboard[data-view="dashboard"] .zg-r55-shell[data-expanded="false"] .zg-r55-card>.zg-scale{
-    height:4px;
-    margin:0 0 0 56px;
-    align-self:start;
-  }
-}
-
 /* UI1_R4_CARD_COLLISION_FIX_R2
    Structural collision fix: the score owns the left lane; trend + progress own
    a separate right visual lane. Compact PC progress never sits beneath score text.
