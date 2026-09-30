@@ -22,6 +22,7 @@ test('forward collection commits raw, reads stored input and persists score, the
  calculate:({date})=>({observationDate:date,score:48})};
  const r=await refreshKoreaRev7(args);
  assert.equal(r.scoreDate,'20260916');assert.equal(r.providerRequests,7);
+ assert.equal(r.status,'COMPLETE');assert.equal(r.caughtUp,true);assert.equal(r.nextDate,null);
  assert.deepEqual(f.events,['persist','read','score']);assert.equal(f.lease(),false);
  await refreshKoreaRev7(args);assert.equal(calls,1);
 });
@@ -36,6 +37,13 @@ test('recent empty data is retried and not permanently stored as a holiday',asyn
  const f=fixture();
  const r=await refreshKoreaRev7({env,store:f.store,now:new Date('2026-09-17T00:00:00Z'),fetchDate:async date=>({requestedDate:date,complete:true,status:'NO_TRADING_OBSERVATION'})});
  assert.equal(r.storedDates,0);assert.deepEqual(f.events,[]);
+ assert.equal(r.status,'WAITING_PUBLICATION');assert.equal(r.caughtUp,false);assert.equal(r.nextDate,'20260916');
+});
+test('a successful bounded chunk is not confused with caught-up collection',async()=>{
+ const f=fixture();
+ const r=await refreshKoreaRev7({env,store:f.store,now:new Date('2026-09-30T00:00:00Z'),fetchDate:async date=>({requestedDate:date,complete:true,status:'SUCCESS'}),calculate:({date})=>({observationDate:date,score:48})});
+ assert.equal(r.status,'BACKLOG');assert.equal(r.caughtUp,false);
+ assert.equal(r.processedThrough,'20260916');assert.equal(r.targetDate,'20260929');assert.equal(r.nextDate,'20260917');
 });
 test('missing credentials and concurrent run make zero provider calls',async()=>{
  const f=fixture();const fetchDate=()=>{throw Error('must not call')};

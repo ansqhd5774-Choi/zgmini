@@ -14,7 +14,7 @@ export async function refreshKoreaRev7({env,store,fetchDate=fetchRev7Date,calcul
  if(!Number.isInteger(maxDates)||maxDates<1||maxDates>2)throw Error('INVALID_LIMIT');
  store??=new Rev7D1Store(env.DB,{leaseMs:600000});
  if(!await store.acquireLease())return {status:'ALREADY_RUNNING',providerRequests:0};
- let providerRequests=0,storedDates=0,calculated=false,phase='READ';
+ let providerRequests=0,storedDates=0,calculated=false,phase='READ',waitingPublication=false;
  try{
   const progress=await store.getBackfillProgress();
   if(!progress?.latestProcessedDate||progress.successfulTradingDates<1030)return {status:'HISTORY_NOT_READY',providerRequests};
@@ -27,7 +27,7 @@ export async function refreshKoreaRev7({env,store,fetchDate=fetchRev7Date,calcul
    providerRequests+=(raw.krxRequestCount??0)+(raw.bokRequestCount??0);
    if(raw.requestedDate!==date||!raw.complete||!['SUCCESS','NO_TRADING_OBSERVATION'].includes(raw.status))throw Error('INVALID_SNAPSHOT');
    // A recent empty response may mean publication delay, not a closed session.
-   if(raw.status==='NO_TRADING_OBSERVATION'&&date>shift(today,-3))break;
+   if(raw.status==='NO_TRADING_OBSERVATION'&&date>shift(today,-3)){waitingPublication=true;break;}
    phase='STORE';await store.saveDate(raw);storedDates++;
   }
   const latest=await store.getLatestCompleteDate();
@@ -40,8 +40,11 @@ export async function refreshKoreaRev7({env,store,fetchDate=fetchRev7Date,calcul
    if(result.observationDate!==latest||!Number.isFinite(result.score))throw Error('LATEST_SCORE_NOT_READY');
    calculated=await store.saveSnapshot(result);
   }
-  await store.markBackfillStatus('COMPLETE');
-  return {status:'COMPLETE',providerRequests,storedDates,calculated,latestDate:latest,scoreDate:(await store.getLatestSnapshot())?.date??null};
+  const checkpoint=(await store.getBackfillProgress()).latestProcessedDate;
+  const caughtUp=checkpoint>=target;
+  const status=caughtUp?'COMPLETE':waitingPublication?'WAITING_PUBLICATION':'BACKLOG';
+  await store.markBackfillStatus(caughtUp?'COMPLETE':'IDLE');
+  return {status,providerRequests,storedDates,calculated,latestDate:latest,scoreDate:(await store.getLatestSnapshot())?.date??null,processedThrough:checkpoint,targetDate:target,caughtUp,nextDate:caughtUp?null:shift(checkpoint,1)};
  }catch{
   await store.markBackfillStatus('ERROR',`${phase}_FAILED`).catch(()=>{});
   return {status:'ERROR',phase,providerRequests,storedDates,calculated};

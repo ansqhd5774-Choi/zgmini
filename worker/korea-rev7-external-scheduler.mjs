@@ -18,6 +18,6 @@ export async function koreaRev7ExternalScheduler(request,env,{refresh=refreshKor
   let timer;
   const result=ctx?await Promise.race([work,new Promise(resolve=>{timer=setTimeout(()=>resolve({status:'RUNNING'}),responseBudgetMs);})]).finally(()=>clearTimeout(timer)):await work;
   if(result.status==='RUNNING')return reply(result,202);
-  return reply(result,['COMPLETE','ALREADY_RUNNING'].includes(result.status)?200:503);
+  return reply(result,['COMPLETE','BACKLOG','WAITING_PUBLICATION','ALREADY_RUNNING'].includes(result.status)?200:503);
  }catch{return reply({status:'ERROR'},503);}
 }
