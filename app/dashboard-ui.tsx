@@ -230,6 +230,7 @@ export function CompositeMarketSection({items,points,demo,loading}:{items:Summar
   <div className="zg-r55-shell" data-testid="macro-row" data-expanded={expanded?'true':'false'}>
    <div className="zg-r55-body">
     <article className="zg-r55-summary" data-testid="composite-panel">
+     <div className="zg-r55-primary-zone">
      <div className="zg-r55-summary-top" role="img" aria-label={`종합 시장 점수 ${overallScore===null?overallStatus:`${Math.round(overallScore)}점`}`}>
       <div className="zg-r55-gauge-ring" data-missing={overallScore===null} style={{'--r55-score-angle':`${(overallScore??0)*2.7}deg`,'--r55-score-color':overallScore===null?'#64748b':scoreColor(overallScore)} as CSSProperties}/>
       <div className="zg-r55-master-number">
@@ -246,24 +247,27 @@ export function CompositeMarketSection({items,points,demo,loading}:{items:Summar
      </div>
 
      <div className="zg-r55-coverage"><DashboardTip label="종합 점수 데이터 안내">{marketError?'공개 점수 API를 확인 중입니다.':busy?'공개 점수 불러오는 중':`${readyDomains}/${totalDomains} 영역의 자료를 확인했습니다.`}</DashboardTip></div>
+     </div>
 
-     <div className="zg-r55-subscore-area" aria-label="8개 위험 지표">
-      <div className="zg-r55-subscore-grid">
+     <div className="zg-r55-diagnostics-zone">
+      <div className="zg-r55-subscore-area" aria-label="8개 위험 지표">
+       <div className="zg-r55-subscore-grid">
        {diagnosticSubscores.map((s,index)=>{
         const diag=market?.diagnostics8?.[diagnosticKeys[index]];
         const score=diag?.status==='READY'&&validPublicScore(diag.score)?diag.score:null;
         return <div key={s.name} className="zg-r55-subscore" data-index={index}>
          <div className="zg-r55-subscore-head">
           <span className="zg-r55-subscore-title"><b>{s.name}</b></span>
-          <span onClick={e=>e.stopPropagation()}><DashboardTip label={`${s.name} 반영 항목`}>{s.components}. API diagnostics8에서 READY인 경우에만 숫자를 표시합니다.</DashboardTip></span>
-          <strong>{score===null?'—':Math.round(score)}</strong>
+          <span onClick={e=>e.stopPropagation()} className="zg-r55-subscore-info"><DashboardTip label={`${s.name} 반영 항목`}>{s.components}. API diagnostics8에서 READY인 경우에만 숫자를 표시합니다.</DashboardTip></span>
          </div>
          <div className="zg-r55-subscore-foot">
           <span className="zg-r55-subscore-meter" aria-hidden="true"><i style={{width:`${score??0}%`,background:score===null?'transparent':scoreColor(score)}}/></span>
+          <strong className="zg-r55-subscore-value">{score===null?'—':Math.round(score)}</strong>
          </div>
         </div>
        })}
       </div>
+     </div>
      </div>
     </article>
 
