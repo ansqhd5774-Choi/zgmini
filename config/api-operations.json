@@ -20,6 +20,11 @@
     "request_cache_60s": {
       "cacheSeconds": 60,
       "status": "SOURCE_VERIFIED_NO_DURABLE_STORE"
+    },
+    "cnn_stored_15m": {
+      "triggerMinutes": 5,
+      "minimumCollectionMinutes": 15,
+      "status": "IMPLEMENTED_PENDING_RUNTIME_VERIFICATION"
     }
   },
   "providers": [
@@ -256,13 +261,15 @@
       "quotaEvidence": "https://www.cnn.com/markets/fear-and-greed",
       "quotaReviewedAt": "2026-10-01",
       "jobs": [],
-      "storageModules": [],
+      "storageModules": [
+        "worker/public-feed-store.mjs"
+      ],
       "authNote": "현재 웹 피드",
-      "sourceModule": "app/api/fear-greed/route.ts",
-      "persistence": "MEMORY_CACHE_ONLY",
-      "schedule": "request_cache_60s",
+      "sourceModule": "worker/feed-collectors/fear-greed.ts",
+      "persistence": "EXISTING_D1",
+      "schedule": "cnn_stored_15m",
       "enforcement": "EXISTING_COLLECTOR_ONLY",
-      "successfulResponseMustPersist": false
+      "successfulResponseMustPersist": true
     },
     {
       "id": "krx",
@@ -359,5 +366,7 @@
       "enforcement": "EXISTING_COLLECTOR_ONLY",
       "successfulResponseMustPersist": true
     }
-  ]
+  ],
+  "publicReadPolicy": "STORED_ONLY_R1",
+  "implementationReference": "docs/STORED_ONLY_R1.md"
 }
