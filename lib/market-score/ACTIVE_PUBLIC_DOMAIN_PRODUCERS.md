@@ -1,8 +1,8 @@
-# ZGMINI Public Domain Producers — Revision 2 ACTIVE
+# ZGMINI Public Domain Producers — Revision 3 ACTIVE
 
 Approved: 2026-10-01
 
-This revision supersedes Revision 1 for active public-domain producer wiring while preserving CM-R1 domain weights. Revision 1 remains preserved.
+This revision supersedes Revision 2 for active public-domain producer wiring while preserving CM-R1 domain weights. Revisions 1 and 2 remain preserved.
 
 ## C1 Consumption — ACTIVE
 
@@ -48,31 +48,34 @@ Policy:
 - no missing-weight renormalization;
 - EMA restarts after a missing market-session gap rather than bridging unavailable history.
 
-## K1 Commodities — ACTIVE
+## K1 Commodities — ACTIVE / R2
 
+Formula:
 ```
-CommoditiesScore =
-    0.50 * oilScore
-  + 0.25 * gasolineScore
-  + 0.25 * copperScore
+K1R2 =
+    0.30 * WTI
+  + 0.25 * Brent
+  + 0.25 * Copper
+  + 0.20 * Gasoline
 ```
 
-Policy:
-- all three scores are required;
-- missing component => PARTIAL / null;
+Component scoring:
+- each price series uses max(0, 1M log shock, 3M log shock);
+- each shock becomes an inverse trailing percentile score;
+- lookback: up to 240 monthly observations;
+- minimum valid history: 60 observations.
+
+As-of policy:
+- WTI, Brent, Copper and Gasoline select their latest valid score independently;
+- maximum permitted lag: 2 calendar months from the requested as-of month;
+- any missing or stale component => PARTIAL / null;
 - no missing-weight renormalization;
-- supplyShockSafety is not a substitute.
+- supplyShockSafety is not a substitute for K1-R2.
 
-Copper provenance:
-- World Bank Pink Sheet
-- CMO-Historical-Data-Monthly.xlsx
-- Monthly Prices
-- Copper column BM
-- $/mt
-
-Existing producer semantics reused:
-- inverse trailing percentile
-- lookback 240 months
-- minValid 60
+Sources:
+- WTI: FRED/EIA MCOILWTICO;
+- Brent: FRED/EIA MCOILBRENTEU;
+- Gasoline: FRED/EIA GASREGCOVM;
+- Copper: World Bank Pink Sheet stored input when available.
 
 Previous proposal/evidence revisions remain preserved.

@@ -26,7 +26,7 @@ test('Batch A registry contains all evidence-locked FRED series', () => {
     'GDP','BOGZ1LM793164115Q','BOGZ1LM103164115Q','BOGZ1FL153064486Q',
     'BOGZ1FA153064475Q','BOGZ1FL153064475Q',
     'B471RC1Q027SBEA','A455RC1Q027SBEA','A464RC1Q027SBEA',
-    'MCOILWTICO','GASREGCOVM',
+    'MCOILWTICO','MCOILBRENTEU','GASREGCOVM',
   ];
   assert.deepEqual([...BATCH_A_FRED_SERIES_IDS].sort(), [...required].sort());
 });
@@ -40,6 +40,7 @@ test('evidence-locked inflation/recession/supply roles map to exact source IDs',
   assert.equal(roles.get('recession.realPce').seriesId, 'DPCERA3M086SBEA');
   assert.equal(roles.get('recession.disposableIncome').seriesId, 'DSPIC96');
   assert.equal(roles.get('supply.wti').seriesId, 'MCOILWTICO');
+  assert.equal(roles.get('supply.brent').seriesId, 'MCOILBRENTEU');
   assert.equal(roles.get('supply.gasoline').seriesId, 'GASREGCOVM');
 });
 

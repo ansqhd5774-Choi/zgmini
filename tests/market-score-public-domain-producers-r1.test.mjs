@@ -5,6 +5,7 @@ import {
   buildConsumptionC1,
   buildCommoditiesK1,
 } from "../lib/market-score/public-domain-producers-r1.mjs";
+import {buildCommoditiesK1R2} from "../lib/market-score/public-domain-producers-r2.mjs";
 import {createMarketScoreR1Handler} from "../worker/market-score-r1.mjs";
 
 const mrow=(date,extra)=>({observationDate:date,...extra});
@@ -59,7 +60,7 @@ test("K1 is PARTIAL/null with no renormalization when any factor is missing",()=
   assert.deepEqual(out.missingFactors,["COPPER_SCORE_MISSING"]);
 });
 
-test("public API wires approved C1 and K1 internally while B1 remains unavailable",async()=>{
+test("public API wires approved C1 and active K1-R2 internally while B1 remains unavailable",async()=>{
   const diagnostics={
     inflationStability:{status:"READY",score:60,missing:[]},
     recessionDefense:{status:"READY",score:58,missing:[]},
@@ -74,9 +75,13 @@ test("public API wires approved C1 and K1 internally while B1 remains unavailabl
       PAYEMS:rows(84,150000),
       DGS10:rows(320,3.5),
       DTWEXBGS:rows(320,100),
+      MCOILWTICO:rows(92,70),
+      MCOILBRENTEU:rows(92,75),
+      GASREGCOVM:rows(93,2.5),
     },
     external:{
       registeredFundFlowRows:rows(24,.2),
+      copperRows:rows(92,7000),
       publicDomainScores:{
         consumption:{status:"READY",score:1},
         commodities:{status:"READY",score:1},
@@ -114,9 +119,13 @@ test("public API wires approved C1 and K1 internally while B1 remains unavailabl
   assert.equal(consumption.status,"READY");
   assert.equal(consumption.score,70);
 
+  const expectedK1=buildCommoditiesK1R2({
+    wtiRows:rows(92,70),brentRows:rows(92,75),copperRows:rows(92,7000),gasolineRows:rows(93,2.5),
+    asOfDate:"2026-09-22",
+  });
   assert.equal(commodities.status,"READY");
-  assert.equal(commodities.score,35);
-  assert.deepEqual(commodities.trend,[{label:"2026-08-01",value:35}]);
+  assert.equal(commodities.score,expectedK1.score);
+  assert.equal(commodities.indicators.length,4);
 
   assert.equal(breadth.status,"UNAVAILABLE");
   assert.equal(breadth.score,null);
