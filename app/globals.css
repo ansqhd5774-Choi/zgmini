@@ -3220,6 +3220,10 @@ html,body{overflow-x:hidden}
 
 .zg-r55-scale-labels span:nth-child(2){color:#eef4fa;font-weight:800}
 
+/* F9G: collapsed gauge owns a full-height in-card slot. */
+body .zg-r55-market .zg-r55-shell[data-expanded="false"] article.zg-r55-card>.zg-scale{position:absolute;left:clamp(.65rem,1.1vw,1rem);right:clamp(.65rem,1.1vw,1rem);bottom:8px;width:auto;height:10px;margin:0}
+body .zg-r55-market .zg-r55-shell[data-expanded="false"] article.zg-r55-card>.zg-r55-scale-labels{display:none}
+
 /* Keep the four requested detail rows readable in narrow cards. */
 .zg-r55-detail{min-height:28px;row-gap:3px;padding:3px 0;line-height:1.4}
 .zg-r55-detail>span{overflow-wrap:anywhere;word-break:keep-all}
