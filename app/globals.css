@@ -3593,3 +3593,12 @@ body .zg-r55-market .zg-r55-shell[data-expanded="false"] article.zg-r55-card>.zg
     height:20px;
   }
 }
+
+/* UI1_R4_HEADER_INFO_20_SPECIFICITY_R19 */
+@media(min-width:1280px){
+  .zg-dashboard[data-view="dashboard"] .zg-r55-shell[data-expanded="false"] .zg-r55-card-head .zg-info svg,
+  .zg-dashboard[data-view="dashboard"] .zg-r55-shell[data-expanded="true"] .zg-r55-card-head .zg-info svg{
+    width:20px;
+    height:20px;
+  }
+}
