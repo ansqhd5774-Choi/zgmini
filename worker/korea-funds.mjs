@@ -1,5 +1,4 @@
 import {REV7_VERSION,REV7_INDEX_ID,REV7_FACTORS,REV7_DIRECTIONS} from './korea-rev7-engine.mjs';
-import {populateHistoricalSnapshots} from './korea-rev7-public-projection.mjs';
 
 export const PUBLIC_VERSION=`${REV7_VERSION}-public-3`;
 export const PUBLIC_CACHE_KEY=`${REV7_VERSION}:${PUBLIC_VERSION}`;
@@ -92,11 +91,9 @@ function unavailable(reason){
 export async function publicSnapshot(env,context={}){
   const loadProgress=context.loadProgress??defaultLoadProgress;
   const loadRows=context.loadRows??defaultLoadRows;
-  const materializeHistory=context.materializeHistory??populateHistoricalSnapshots;
-  const autoMaterializeHistory=context.autoMaterializeHistory??!context.loadRows;
   const clock=context.clock??(()=>new Date(Date.now()));
   const progress=await loadProgress(env);
-  if(progress?.status!=='COMPLETE'||Number(progress?.successfulTradingDates)<1030){
+  if(Number(progress?.successfulTradingDates)<1030||!progress){
     return {
       profileId:'ZGMINI_KR_FG_REV7',methodologyVersion:REV7_VERSION,
       activeMethodologyVersion:REV7_VERSION,snapshotGeneratedAt:clock().toISOString(),
@@ -105,11 +102,7 @@ export async function publicSnapshot(env,context={}){
     };
   }
 
-  let rawRows=await loadRows(env,PUBLIC_HISTORY_LIMIT);
-  if(autoMaterializeHistory&&rawRows.length<PUBLIC_HISTORY_LIMIT){
-    await materializeHistory(env,{calculatedAt:clock().toISOString()});
-    rawRows=await loadRows(env,PUBLIC_HISTORY_LIMIT);
-  }
+  const rawRows=await loadRows(env,PUBLIC_HISTORY_LIMIT);
   const rows=rawRows.map(normalizeSnapshotRow)
     .filter(row=>row.methodologyVersion===REV7_VERSION&&/^\d{8}$/.test(row.date??''));
 

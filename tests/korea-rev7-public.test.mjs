@@ -97,7 +97,7 @@ test('public source accepts only Revision 7 and removes legacy public fallback',
   assert.ok(!view.includes('기업스트레스 최대 10점 감점'));
 });
 
-test('sparse production snapshot history materializes locked Revision 7 history once',async()=>{
+test('sparse public history stays read-only even if materialization is requested',async()=>{
   let reads=0,materializeCalls=0;
   const snap=await publicSnapshot({},{
     loadProgress:async()=>({status:'COMPLETE',successfulTradingDates:1030}),
@@ -112,9 +112,9 @@ test('sparse production snapshot history materializes locked Revision 7 history 
     autoMaterializeHistory:true,
     clock:()=>new Date('2026-09-15T12:00:00Z'),
   });
-  assert.equal(materializeCalls,1);
-  assert.equal(reads,2);
-  assert.equal(snap.composite.history.length,3);
+  assert.equal(materializeCalls,0);
+  assert.equal(reads,1);
+  assert.equal(snap.composite.history.length,1);
   assert.equal(snap.composite.methodologyVersion,REV7_VERSION);
   assert.equal(snap.composite.fallbackApplied,false);
 });

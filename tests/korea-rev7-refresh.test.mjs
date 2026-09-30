@@ -1,0 +1,45 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {refreshKoreaRev7} from '../worker/korea-rev7-refresh.mjs';
+const env={KRX_API_KEY:'test',BOK_API_KEY:'test'};
+function fixture(){
+ let date='20260915',scoreDate=date,lease=false;const events=[];
+ const store={
+  acquireLease:async()=>{lease=true;return true},renewLease:async()=>{},releaseLease:async()=>{lease=false},
+  getBackfillProgress:async()=>({latestProcessedDate:date,successfulTradingDates:1030}),
+  getLatestCompleteDate:async()=>date,getLatestSnapshot:async()=>({date:scoreDate}),
+  saveDate:async raw=>{events.push('persist');date=raw.requestedDate},
+  getHistory:async()=>{events.push('read');return {date}},
+  saveSnapshot:async result=>{events.push('score');scoreDate=result.observationDate;return true},
+  markBackfillStatus:async()=>{},
+ };
+ return {store,events,lease:()=>lease};
+}
+test('forward collection commits raw, reads stored input and persists score, then no-ops',async()=>{
+ const f=fixture();let calls=0;
+ const args={env,store:f.store,now:new Date('2026-09-17T00:00:00Z'),
+ fetchDate:async date=>{calls++;return {requestedDate:date,complete:true,status:'SUCCESS',krxRequestCount:5,bokRequestCount:2}},
+ calculate:({date})=>({observationDate:date,score:48})};
+ const r=await refreshKoreaRev7(args);
+ assert.equal(r.scoreDate,'20260916');assert.equal(r.providerRequests,7);
+ assert.deepEqual(f.events,['persist','read','score']);assert.equal(f.lease(),false);
+ await refreshKoreaRev7(args);assert.equal(calls,1);
+});
+test('failed calculation resumes stored input without repeating provider calls',async()=>{
+ const f=fixture();let calls=0;
+ const args={env,store:f.store,now:new Date('2026-09-17T00:00:00Z'),fetchDate:async date=>{calls++;return {requestedDate:date,complete:true,status:'SUCCESS'}},calculate:()=>{throw Error('test')}};
+ assert.equal((await refreshKoreaRev7(args)).phase,'CALCULATE');
+ assert.equal((await refreshKoreaRev7({...args,calculate:({date})=>({observationDate:date,score:0})})).calculated,true);
+ assert.equal(calls,1);assert.equal(f.lease(),false);
+});
+test('recent empty data is retried and not permanently stored as a holiday',async()=>{
+ const f=fixture();
+ const r=await refreshKoreaRev7({env,store:f.store,now:new Date('2026-09-17T00:00:00Z'),fetchDate:async date=>({requestedDate:date,complete:true,status:'NO_TRADING_OBSERVATION'})});
+ assert.equal(r.storedDates,0);assert.deepEqual(f.events,[]);
+});
+test('missing credentials and concurrent run make zero provider calls',async()=>{
+ const f=fixture();const fetchDate=()=>{throw Error('must not call')};
+ assert.equal((await refreshKoreaRev7({env:{},store:f.store,fetchDate})).status,'CONFIGURATION_MISSING');
+ f.store.acquireLease=async()=>false;
+ assert.equal((await refreshKoreaRev7({env,store:f.store,fetchDate})).status,'ALREADY_RUNNING');
+});

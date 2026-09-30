@@ -13,6 +13,7 @@ import { phase2KoreaHistoryCheck } from "./phase2-korea-history.mjs";
 import { koreaFunds } from "./korea-funds.mjs";
 import { phase3KoreaStockPriceCheck } from "./phase3-korea-stock-price.mjs";
 import { runConsumptionR3OperationalRefresh } from "./consumption-r3-operational-refresh.mjs";
+import { refreshKoreaRev7 } from "./korea-rev7-refresh.mjs";
 
 interface Env {
   ASSETS: Fetcher;
@@ -84,6 +85,10 @@ const worker = {
   },
 
   async scheduled(controller: ScheduledController, env: Env, _ctx: ExecutionContext): Promise<void> {
+    if(controller.cron==='37 * * * *'){
+      console.log('KOREA_REV7_REFRESH',JSON.stringify(await refreshKoreaRev7({env,now:new Date(controller.scheduledTime)})));
+      return;
+    }
     const asOf = new Date(controller.scheduledTime).toISOString().slice(0, 10);
     const result = await runConsumptionR3OperationalRefresh({
       env,
