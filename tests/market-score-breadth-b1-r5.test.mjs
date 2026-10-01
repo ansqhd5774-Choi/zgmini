@@ -10,7 +10,10 @@ test("R5 is explicit four-factor breadth scoring",()=>{
   const out=composeBreadthB1R5Score({advanceRatio:.62,advanceValueShare:.58,ema5:61,ema20:57});
   assert.ok(out);
   near(out.score,.30*62+.20*58+.30*61+.20*57);
-  assert.deepEqual(out.factors,{advanceRatio:62,advanceValueShare:57.99999999999999,ema5:61,ema20:57});
+  near(out.factors.advanceRatio,62);
+  near(out.factors.advanceValueShare,58);
+  near(out.factors.ema5,61);
+  near(out.factors.ema20,57);
 });
 
 test("R5 preserves R4 numeric continuity while exposing four factors",async()=>{
