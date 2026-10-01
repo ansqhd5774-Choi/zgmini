@@ -45,3 +45,16 @@ test('B1-R5 detail rows use new stable ids and formula factors',()=>{
  assert.deepEqual(rows.map(r=>r.score),[62.5,59,60,58]);
  assert.deepEqual(rows.map(r=>r.unit),['%','%','점','점']);
 });
+
+
+test('Employment R54 detail rows map by stable factor id',()=>{
+ const rows=marketDetailRows('employment',[
+  {id:'employment-44',name:'주 실업수당 개선 비율',status:'READY',score:80,value:80,unit:'%'},
+  {id:'employment-42',name:'비농업고용 3M 평균 증감',status:'READY',score:75,value:145,unit:'천명/월'},
+  {id:'employment-41',name:'실업률',status:'READY',score:70,value:4.2,unit:'%'},
+  {id:'employment-43',name:'신규 실업수당 4W 평균',status:'READY',score:68,value:220000,unit:'건'},
+ ]);
+ assert.deepEqual(rows.map(r=>r.label),['실업률','비농업고용 3M 평균 증감','신규 실업수당 4W 평균','주 실업수당 개선 비율']);
+ assert.deepEqual(rows.map(r=>r.score),[70,75,68,80]);
+ assert.deepEqual(rows.map(r=>r.value),[4.2,145,220000,80]);
+});
