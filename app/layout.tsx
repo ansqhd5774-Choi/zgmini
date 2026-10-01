@@ -4,8 +4,8 @@ import "./globals.css";
 import "./responsive.css";
 
 export const metadata: Metadata = {
-  title: "공포탐욕지수 한눈에 | 미국·한국 차트 - ZGmini",
-  description: "지금 시장 분위기가 궁금한가요? 미국·한국 공포탐욕지수와 기간별 차트를 한곳에서 살펴보세요. 주요 경제지표와 관측일도 함께 확인할 수 있어요.",
+  title: "미국·한국 공포탐욕지수 | 현재 점수·과거 차트 - ZGmini",
+  description: "미국 CNN 공포탐욕지수와 한국 시장 투자심리를 확인하세요. 현재 점수, 관측일, 1주~1년 차트와 지수 읽는 법을 한곳에서 제공합니다. 국가별 모델과 출처를 구분해 안내합니다.",
   metadataBase: new URL("https://zgmini.kr"),
   alternates: { canonical: "/" },
   robots: { index: true, follow: true },

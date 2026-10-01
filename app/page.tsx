@@ -996,6 +996,11 @@ export default function Home() {
       </header>
 
       <div className="zg-container">
+        {view==='dashboard'&&<nav aria-label="공포탐욕지수 바로가기" className="my-4 flex flex-wrap gap-2 text-sm font-semibold text-blue-100">
+          <a className="rounded border border-slate-600 px-4 py-3 hover:bg-slate-800 focus-visible:outline-2 focus-visible:outline-amber-400" href="/fear-greed/usa/">미국 공포탐욕지수 상세 →</a>
+          <a className="rounded border border-slate-600 px-4 py-3 hover:bg-slate-800 focus-visible:outline-2 focus-visible:outline-amber-400" href="/fear-greed/korea/">한국 공포탐욕지수 상세 →</a>
+          <a className="rounded border border-slate-600 px-4 py-3 hover:bg-slate-800 focus-visible:outline-2 focus-visible:outline-amber-400" href="/guide/fear-greed/">처음이라면? 지수 읽는 법 →</a>
+        </nav>}
         {view!=='dashboard'&&<div className="zg-data-notice zg-data-notice-compact" role="status"><Info size={16}/><span>{marketDataLoading?'경제지표를 불러오고 있습니다.':marketData?.status==='live'?'공식 자료와 ZGmini 자체 계산값을 표시합니다.':marketDataError?'데이터 연결 지연 · 마지막 정상 수신값을 표시합니다.':'일부 지표 갱신 지연 · 마지막 정상 수신값을 유지합니다.'}</span></div>}
         {(view==='dashboard'||view==='countries')&&<CountryFearGreed/>}
         {view==='dashboard'&&<>

@@ -12,7 +12,7 @@ export default async function KoreaPage() {
   const schema = {"@context":"https://schema.org","@type":"WebPage","@id":`${url}#webpage`,url,name:title,description,isPartOf:{"@id":"https://zgmini.kr/#website"},inLanguage:"ko-KR"};
   return <div className="min-h-screen bg-[#07162d]"><main className="mx-auto max-w-5xl px-4 py-8 text-slate-100 sm:px-6 sm:py-12">
     <script type="application/ld+json" dangerouslySetInnerHTML={{__html:JSON.stringify(schema).replace(/</g,"\\u003c")}}/>
-    <a href="https://zgmini.kr/" className="inline-flex min-h-11 items-center text-sm text-blue-200">← ZGmini 메인 대시보드</a>
+    <a href="https://zgmini.kr/" className="inline-flex min-h-11 items-center text-sm text-blue-200">← ZGmini 메인 대시보드</a><nav aria-label="관련 지수 안내" className="my-4 flex flex-wrap gap-4 text-sm text-blue-200"><a className="py-2 underline" href="/guide/fear-greed/">공포탐욕지수 읽는 법 →</a><a className="py-2 underline" href="/fear-greed/usa/">미국 지수도 확인하기 →</a></nav>
     <h1 className="mt-4 text-2xl font-extrabold sm:text-4xl">한국 공포탐욕지수</h1>
     <DataPanel/>
     <div className="mt-12 space-y-8 text-sm leading-7 text-slate-300 sm:text-base">
