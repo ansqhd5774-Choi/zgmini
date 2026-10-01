@@ -258,7 +258,11 @@ export function CompositeMarketSection({items,points,demo,loading}:{items:Summar
         return <div key={s.name} className="zg-r55-subscore" data-index={index}>
          <div className="zg-r55-subscore-head">
           <span className="zg-r55-subscore-title"><b>{s.name}</b></span>
-          <span onClick={e=>e.stopPropagation()} className="zg-r55-subscore-info"><DashboardTip label={`${s.name} 반영 항목`}>{s.components}. API diagnostics8에서 READY인 경우에만 숫자를 표시합니다.</DashboardTip></span>
+          <span onClick={e=>e.stopPropagation()} className="zg-r55-subscore-info">
+           {diagnosticKeys[index]==='inflationStability'
+            ?<a className="zg-info" href="/inflation/" aria-label="인플레이션 상세페이지 열기" title="인플레이션 상세페이지 열기"><ArrowUpRight size={12} aria-hidden="true"/></a>
+            :<DashboardTip label={`${s.name} 반영 항목`}>{s.components}. API diagnostics8에서 READY인 경우에만 숫자를 표시합니다.</DashboardTip>}
+          </span>
          </div>
          <div className="zg-r55-subscore-foot">
           <span className="zg-r55-subscore-meter" aria-hidden="true"><i style={{width:`${score??0}%`,background:score===null?'transparent':scoreColor(score)}}/></span>
@@ -300,9 +304,7 @@ export function CompositeMarketSection({items,points,demo,loading}:{items:Summar
          <span className="zg-r55-card-icon"><Icon size={18} aria-hidden="true"/></span>
          <h3>{m.label}</h3>
          <span className="zg-r55-badge">{busy&&score===null?'로딩':score===null?(notice?.badge??'미완료'):domain?.state??(score<25?'위험':score<40?'주의':score<60?'중립':score<75?'양호':'안정')}</span>
-         {r55DomainIds[index]==='inflation'
-          ?<a className="zg-info" href="/inflation/" aria-label="인플레이션 상세페이지 열기" title="인플레이션 상세페이지 열기" onClick={e=>e.stopPropagation()}><ArrowUpRight size={16} aria-hidden="true"/></a>
-          :<span onClick={e=>e.stopPropagation()}><DashboardTip label={`${m.label} 산출 근거`}>{notice?`${notice.detail} ${m.basis}`:m.basis}</DashboardTip></span>}
+         <span onClick={e=>e.stopPropagation()}><DashboardTip label={`${m.label} 산출 근거`}>{notice?`${notice.detail} ${m.basis}`:m.basis}</DashboardTip></span>
         </div>
         {notice&&<p data-testid="breadth-unavailable-reason" style={{margin:'6px 0',fontSize:12,lineHeight:1.5,color:'#cbd5e1'}}>{notice.message}</p>}
         <div className="zg-r55-card-mid">
