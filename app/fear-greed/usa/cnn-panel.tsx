@@ -305,6 +305,14 @@ const componentDefinitions = [
   },
 ] as const;
 
+const scoreGuide = [
+  { range: "0–24", label: "극심한 공포" },
+  { range: "25–44", label: "공포" },
+  { range: "45–55", label: "중립" },
+  { range: "56–75", label: "탐욕" },
+  { range: "76–100", label: "극심한 탐욕" },
+] as const;
+
 function componentValue(id: string, value: number) {
   if (id === "market-momentum") return value.toLocaleString("en-US", { maximumFractionDigits: 2 });
   if (id === "stock-price-breadth") return value.toLocaleString("en-US", { maximumFractionDigits: 2 });
@@ -319,9 +327,22 @@ function signedPercent(value: number) {
   return `${sign}${value.toFixed(2)}%`;
 }
 
-function componentReading(component: CnnComponent | undefined) {
+function componentReading(
+  component: CnnComponent | undefined,
+  referenceGap: number | null,
+) {
   if (!component) return "검증 가능한 저장 데이터가 없어 해석을 표시하지 않습니다.";
-  return `CNN 정규화 점수 ${component.score.toFixed(1)}/100 · ${component.rating} 구간입니다.`;
+
+  const normalized = `CNN 정규화 점수는 ${component.score.toFixed(1)}/100 · ${component.rating} 구간입니다.`;
+  if (referenceGap === null) return normalized;
+
+  const relation = referenceGap > 0
+    ? `기준보다 ${Math.abs(referenceGap).toFixed(2)}% 위`
+    : referenceGap < 0
+      ? `기준보다 ${Math.abs(referenceGap).toFixed(2)}% 아래`
+      : "기준과 같은 수준";
+
+  return `원시값은 ${relation}입니다. ${normalized} 원시값의 방향과 0~100 정규화 강도는 같은 척도가 아닙니다.`;
 }
 
 function buildMarketInsight({
@@ -480,10 +501,10 @@ export default function CnnPanel() {
         formatTooltipLabel={dateLabel}
       />}
       footer={{
-        href: "/fear-greed/usa/",
-        label: "자세히",
-        ariaLabel: "미국 공포탐욕지수 세부 지표 보기",
-        children: "원본 기준",
+        href: "https://www.cnn.com/markets/fear-and-greed",
+        label: "CNN 원본",
+        ariaLabel: "CNN Fear & Greed 원본 페이지 열기",
+        children: "데이터 출처",
       }}
     />
 
@@ -506,6 +527,10 @@ export default function CnnPanel() {
         <div><strong>기준과 비교</strong><span>평균·상대 강도·정상 변동폭 확인</span></div>
         <b aria-hidden="true">→</b>
         <div><strong>0~100 정규화</strong><span>낮을수록 공포 · 높을수록 탐욕</span></div>
+      </div>
+
+      <div className="cnn-score-guide" aria-label="CNN 공포탐욕 점수 해석 구간">
+        {scoreGuide.map((item) => <span key={item.range}><b>{item.range}</b><small>{item.label}</small></span>)}
       </div>
 
       <div className="cnn-component-education-grid">
@@ -551,6 +576,15 @@ export default function CnnPanel() {
               </div>
             </div>
 
+            <div className="cnn-component-scorebar" aria-label={component ? `${definition.title} CNN 정규화 점수 ${component.score.toFixed(1)}점` : `${definition.title} 점수 확인 필요`}>
+              <div className="cnn-component-scorebar-track">
+                {component ? <i style={{ left: `${component.score}%` }} aria-hidden="true"/> : null}
+              </div>
+              <div className="cnn-component-scorebar-ticks" aria-hidden="true">
+                <span>0</span><span>25</span><span>45</span><span>55</span><span>75</span><span>100</span>
+              </div>
+            </div>
+
             <div className="cnn-component-direction" aria-label={`${definition.title} 해석 방향`}>
               <span><b>공포 방향</b>{definition.fearDirection}</span>
               <span><b>탐욕 방향</b>{definition.greedDirection}</span>
@@ -558,7 +592,7 @@ export default function CnnPanel() {
 
             <div className="cnn-component-interpretation">
               <strong>현재 해석</strong>
-              <p>{componentReading(component)}</p>
+              <p>{componentReading(component, referenceGap)}</p>
               <small>{component ? `원시값 기준일 ${dateLabel(component.rawObservedAt)}` : "임의 수치로 대체하지 않습니다."}</small>
             </div>
           </article>;
