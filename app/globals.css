@@ -4391,3 +4391,10 @@ tr[data-judgement="neutral"] .inflation-judgement{border-color:rgba(148,163,184,
 .credit-risk-target-card .fg-analysis-slot{grid-template-columns:minmax(0,1fr)!important;grid-template-rows:minmax(0,1fr)!important;column-gap:0!important}
 .credit-risk-target-card .fg-chart-slot{grid-column:1/-1!important;grid-row:1!important;width:100%!important}
 @media(max-width:767px){.credit-risk-target-card{margin-top:12px}}
+
+
+/* Earnings recession detail — stored E1 trend, no period rail */
+.earnings-recession-target-card{margin-top:20px}
+.earnings-recession-target-card .fg-analysis-slot{grid-template-columns:minmax(0,1fr)!important;grid-template-rows:minmax(0,1fr)!important;column-gap:0!important}
+.earnings-recession-target-card .fg-chart-slot{grid-column:1/-1!important;grid-row:1!important;width:100%!important}
+@media(max-width:767px){.earnings-recession-target-card{margin-top:12px}}
