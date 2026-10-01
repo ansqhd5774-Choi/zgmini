@@ -80,6 +80,9 @@ test('UI four preserves policy range and raw display values',()=>{
   assert.deepEqual(r.indicators.map(x=>x.name),['Fed 정책금리','미국 2년물','미국 10년 실질금리','장단기 금리차']);
   assert.equal(r.indicators[3].componentId,'curve');
   assert.equal(r.indicators[3].currentValue,d10.at(-1).value-d3m.at(-1).value);
+  assert.deepEqual(r.indicators.map(x=>x.score),[
+    r.componentScores.policy,r.componentScores.nominal,r.componentScores.real,r.componentScores.curve,
+  ]);
   assert.equal(r.indicators[0].value,null);
   assert.deepEqual(r.indicators[0].currentRange,{lower:3.5,upper:3.75});
   assert.equal(r.indicators[0].displayValue,'3.5–3.75%');
@@ -138,6 +141,13 @@ test('detail output carries complete contract and preserves unavailable metadata
     assert.deepEqual(items[0].currentRange,{lower:3.5,upper:3.75});
     assert.ok(items[0].history.every(row=>!Object.hasOwn(row,'value')));
   }
+  const details=marketDetailRows('rates',result.indicators);
+  assert.deepEqual(details.map(x=>x.score),[
+    result.componentScores.policy,result.componentScores.nominal,result.componentScores.real,result.componentScores.curve,
+  ]);
+  assert.ok(details.every(x=>x.raw===false));
+  assert.equal(details[0].displayValue,'3.5–3.75%');
+  assert.equal(details[1].displayValue,result.indicators[1].displayValue);
   const missing=buildRateR3({...fullInputs(),policyUpperRows:[]});
   const detail=marketDetailRows('rates',missing.indicators)[0];
   assert.equal(detail.status,'UNAVAILABLE');

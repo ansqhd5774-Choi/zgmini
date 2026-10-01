@@ -34,6 +34,19 @@ test('Growth R2 representative UI rows map by stable feature id',()=>{
  assert.deepEqual(rows.map(r=>r.asOfDate),['2026-08-01','2026-08-01','2026-08-01','2026-08-01']);
 });
 
+
+test('RATE R3 detail rows display scores while preserving raw metadata',()=>{
+ const rows=marketDetailRows('rates',[
+  {componentId:'curve',name:'장단기 금리차',status:'READY',score:64,currentValue:1.01,displayValue:'1.01%',unit:'%'},
+  {componentId:'policy',name:'Fed 정책금리',status:'READY',score:21,currentRange:{lower:3.75,upper:4},displayValue:'3.75–4%',unit:'%'},
+  {componentId:'real',name:'미국 10년 실질금리',status:'READY',score:12,currentValue:2.91,displayValue:'2.91%',unit:'%'},
+  {componentId:'nominal',name:'미국 2년물',status:'READY',score:18,currentValue:4.89,displayValue:'4.89%',unit:'%'},
+ ]);
+ assert.deepEqual(rows.map(r=>r.score),[21,18,12,64]);
+ assert.ok(rows.every(r=>r.raw===false));
+ assert.deepEqual(rows.map(r=>r.displayValue),['3.75–4%','4.89%','2.91%','1.01%']);
+});
+
 test('B1-R5 detail rows use new stable ids and formula factors',()=>{
  const rows=marketDetailRows('breadth',[
   {id:'breadth-44',name:'20일 수급 EMA',status:'READY',score:58,value:58,unit:'점'},
