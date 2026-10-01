@@ -4095,5 +4095,5 @@ body .zg-r55-market .zg-r55-shell[data-expanded="false"] article.zg-r55-card>.zg
   }
 }
 
-/* Opaque outline for the US market information control. */
-.zg-dashboard[data-view="dashboard"] .fg-card.fg-shared-shell[data-testid="cnn-reference-panel"] .zg-fg-info-wrap:not([open]) > .zg-fg-info-action{border-color:#6b91b0}
+/* Transparent outline for the US market information control. */
+.zg-dashboard[data-view="dashboard"] .fg-card.fg-shared-shell[data-testid="cnn-reference-panel"] .zg-fg-info-wrap:not([open]) > .zg-fg-info-action{border-color:transparent}
