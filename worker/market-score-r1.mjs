@@ -10,6 +10,7 @@ import {
   buildFundFlowR53,
 } from "../lib/diagnostic-layer/open-resolution-r53-components.mjs";
 import {buildRateR3} from "../lib/market-score/rate-r3.mjs";
+import {buildCreditR2} from "../lib/market-score/credit-r2.mjs";
 import {loadStoredInflationR2Domain} from "./inflation-r2-reader.mjs";
 import {readBreadthB1R5StoredPublicDomainR1,buildBreadthB1R5UnavailablePublicDomain} from "../lib/market-score/breadth-b1-r5-worker-domain.mjs";
 import {
@@ -201,6 +202,15 @@ function composeMarketSnapshot({liquidityHistory,collected,storedInflation,infla
         tenYearRows:rateSeries.DGS10??[],
         asOfDate:asOf,
       });
+      const credit=compute(buildCreditR2,{
+        cmdi:collected?.external?.cmdiRows??[],
+        nfciCredit:collected?.series?.NFCICREDIT??[],
+        y2:collected?.series?.DGS2??[],
+        y5:collected?.series?.DGS5??[],
+        y10:collected?.series?.DGS10??[],
+        y30:collected?.series?.DGS30??[],
+        asOfDate:asOf,
+      });
       const fundFlow=compute(buildFundFlowR53,
         collected?.external?.registeredFundFlowRows??[],
         {asOfDate:asOf},
@@ -239,6 +249,7 @@ function composeMarketSnapshot({liquidityHistory,collected,storedInflation,infla
         diagnostics,
         employment,
         rates:rate,
+        credit,
         fundFlows:fundFlow,
         dollarFx,
         publicDomains:approvedPublicDomains,
