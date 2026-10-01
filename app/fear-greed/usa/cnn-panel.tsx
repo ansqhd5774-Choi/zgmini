@@ -389,7 +389,7 @@ function buildMarketInsight({
   return `${stage} 구간에서 뚜렷한 방향 변화는 확인되지 않습니다.`;
 }
 
-export default function CnnPanel() {
+export default function CnnPanel({ showEducation = false }: { showEducation?: boolean }) {
   const [payload, setPayload] = useState<IndexPayload | null>(null);
   const [selectedPeriod, setSelectedPeriod] = useState<MarketPeriod>(DEFAULT_MARKET_PERIOD);
   const [loading, setLoading] = useState(true);
@@ -508,7 +508,7 @@ export default function CnnPanel() {
       }}
     />
 
-    <section className="cnn-education-panel" aria-labelledby="cnn-education-title">
+    {showEducation ? <section className="cnn-education-panel" aria-labelledby="cnn-education-title">
       <header className="cnn-education-header">
         <div>
           <p className="cnn-eyebrow">LEARN THE 7 COMPONENTS</p>
@@ -605,6 +605,6 @@ export default function CnnPanel() {
       </aside>
 
       <a className="cnn-return-cta" href="/">← 메인 대시보드로 돌아가기</a>
-    </section>
+    </section> : null}
   </>;
 }
