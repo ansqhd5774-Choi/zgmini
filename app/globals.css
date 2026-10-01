@@ -3244,9 +3244,9 @@ body .zg-r55-market .zg-r55-shell[data-expanded="false"] article.zg-r55-card>.zg
    UI1_LAYOUT_ARCH_R1 — PC 1-screen dashboard owner (>=1280px)
    Approved 2026-09-29. UI-only: data/API/formula/score semantics unchanged.
    1366x768 is the height anchor; 1280x800 is the width anchor.
-   responsive.css owns <1280; this block owns PC dashboard geometry.
+   Shared dashboard geometry; responsive.css adapts tracks below 1280px.
    ===================================================================== */
-@media(min-width:1280px){
+@media(min-width:0px){
   .zg-dashboard[data-view="dashboard"]{
     --ui1-gap:8px;
     --ui1-section-pad-y:8px;
@@ -3416,7 +3416,7 @@ body .zg-r55-market .zg-r55-shell[data-expanded="false"] article.zg-r55-card>.zg
 
 
 /* UI1_R4_FULL_WIDTH_COMPACT_METER_R13 */
-@media(min-width:1280px){
+@media(min-width:0px){
   .zg-dashboard[data-view="dashboard"] .zg-r55-shell{--r55-card-height:80px}
   .zg-dashboard[data-view="dashboard"] .zg-r55-card-grid{grid-auto-rows:minmax(80px,auto)}
   .zg-dashboard[data-view="dashboard"] .zg-r55-card{min-height:80px}
@@ -3448,7 +3448,7 @@ body .zg-r55-market .zg-r55-shell[data-expanded="false"] article.zg-r55-card>.zg
 }
 
 /* UI1_R4_EXPANDED_TOP_LOCK_R15 */
-@media(min-width:1280px){
+@media(min-width:0px){
   .zg-dashboard[data-view="dashboard"] .zg-r55-shell[data-expanded="true"] .zg-r55-card{
     display:grid;
     grid-template-rows:20px 40px auto;
@@ -3538,7 +3538,7 @@ body .zg-r55-market .zg-r55-shell[data-expanded="false"] article.zg-r55-card>.zg
 }
 
 /* UI1_R4_HEADER_GEOMETRY_LOCK_R16 */
-@media(min-width:1280px){
+@media(min-width:0px){
   .zg-dashboard[data-view="dashboard"] .zg-r55-card-head{
     height:20px;
     min-height:20px;
@@ -3553,7 +3553,7 @@ body .zg-r55-market .zg-r55-shell[data-expanded="false"] article.zg-r55-card>.zg
 }
 
 /* UI1_R4_HEADER_VISUAL_CENTER_R17 */
-@media(min-width:1280px){
+@media(min-width:0px){
   .zg-dashboard[data-view="dashboard"] .zg-r55-card-head{
     align-items:center;
   }
@@ -3584,7 +3584,7 @@ body .zg-r55-market .zg-r55-shell[data-expanded="false"] article.zg-r55-card>.zg
 }
 
 /* UI1_R4_HEADER_VISUAL_20_R18 */
-@media(min-width:1280px){
+@media(min-width:0px){
   .zg-dashboard[data-view="dashboard"] .zg-r55-card-head h3{
     height:20px;
     line-height:20px;
@@ -3604,7 +3604,7 @@ body .zg-r55-market .zg-r55-shell[data-expanded="false"] article.zg-r55-card>.zg
 }
 
 /* UI1_R4_HEADER_INFO_20_SPECIFICITY_R19 */
-@media(min-width:1280px){
+@media(min-width:0px){
   .zg-dashboard[data-view="dashboard"] .zg-r55-shell[data-expanded="false"] .zg-r55-card-head .zg-info svg,
   .zg-dashboard[data-view="dashboard"] .zg-r55-shell[data-expanded="true"] .zg-r55-card-head .zg-info svg{
     width:20px;
@@ -3613,7 +3613,7 @@ body .zg-r55-market .zg-r55-shell[data-expanded="false"] article.zg-r55-card>.zg
 }
 
 /* UI1_R4_SCORE_ANCHORED_METER_R21 */
-@media(min-width:1280px){
+@media(min-width:0px){
   .zg-dashboard[data-view="dashboard"] .zg-r55-card-number{
     position:relative;
   }
@@ -3648,7 +3648,7 @@ body .zg-r55-market .zg-r55-shell[data-expanded="false"] article.zg-r55-card>.zg
 }
 
 /* UI1_R4_EXPAND_CONTROL_TRANSPARENT_R26 */
-@media(min-width:1280px){
+@media(min-width:0px){
   .zg-dashboard[data-view="dashboard"] .zg-r55-expand{
     width:26px;
     min-width:26px;
@@ -3680,7 +3680,7 @@ body .zg-r55-market .zg-r55-shell[data-expanded="false"] article.zg-r55-card>.zg
 }
 
 /* UI1_R4_VERTICAL_PERIOD_SIZE_SYNC_R29 */
-@media(min-width:1280px){
+@media(min-width:0px){
   .zg-dashboard[data-view="dashboard"] .fg-card.fg-shared-shell .fg-period-slot{
     width:30px;
     min-width:30px;
@@ -3713,7 +3713,7 @@ body .zg-r55-market .zg-r55-shell[data-expanded="false"] article.zg-r55-card>.zg
 }
 
 /* UI1_R4_VERTICAL_PERIOD_DIVIDERS_OFF_R31 */
-@media(min-width:1280px){
+@media(min-width:0px){
   .zg-dashboard[data-view="dashboard"] .fg-card.fg-shared-shell .fg-period-slot .cnn-period-button{
     border-bottom:0;
   }

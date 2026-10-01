@@ -98,6 +98,79 @@
  .zg-r55-detail b{grid-column:2!important}
 }
 @media(max-width:359px){.zg-r55-card-grid{grid-template-columns:minmax(0,1fr)}}
+/* The final PC dashboard remains the visual model at narrower widths.
+   Keep its hierarchy; reflow tracks instead of enlarging every card. */
+@media(max-width:1279px){
+ .zg-dashboard[data-view="dashboard"] .zg-container{padding-inline:12px}
+ .zg-dashboard[data-view="dashboard"] .zg-r55-heading>div:first-child{flex-direction:row;align-items:center;flex-wrap:wrap;gap:6px 8px}
+ .zg-dashboard[data-view="dashboard"] .zg-section-heading :is(h1,h2){font-size:18px}
+ .zg-dashboard[data-view="dashboard"] .fg-card.fg-shared-shell{
+  --fg-shared-left:34%;--fg-shared-content-h:160px;
+  grid-template-columns:8px minmax(0,34fr) 8px minmax(0,66fr) 8px;
+  grid-template-rows:48px 160px auto;
+ }
+ .zg-dashboard[data-view="dashboard"] .fg-card.fg-shared-shell .fg-header-slot{grid-column:2;grid-row:1;height:48px;min-height:0}
+ .zg-dashboard[data-view="dashboard"] .fg-card.fg-shared-shell .fg-score-slot{grid-column:2;grid-row:2;width:100%;padding:0;justify-self:stretch}
+ .zg-dashboard[data-view="dashboard"] .fg-card.fg-shared-shell .cnn-score-orb{min-height:0;height:100%;display:flex;gap:4px}
+ .zg-dashboard[data-view="dashboard"] .fg-card.fg-shared-shell .cnn-spectrum-gauge{width:100%;min-width:0;max-width:168px;flex:none}
+ .zg-dashboard[data-view="dashboard"] .fg-card.fg-shared-shell .cnn-score-whole{font-size:clamp(26px,8cqi,42px)}
+ .zg-dashboard[data-view="dashboard"] .fg-card.fg-shared-shell .cnn-score-fraction{font-size:18px}
+ .zg-dashboard[data-view="dashboard"] .fg-card.fg-shared-shell .cnn-market-title h2{font-size:18px;line-height:1.2}
+ .zg-dashboard[data-view="dashboard"] .fg-card.fg-shared-shell .cnn-market-title p:last-child{font-size:9px}
+ .zg-dashboard[data-view="dashboard"] .fg-card.fg-shared-shell .cnn-score-comparisons{padding:4px;min-height:32px;height:32px;gap:2px}
+ .zg-dashboard[data-view="dashboard"] .fg-card.fg-shared-shell .cnn-score-comparison{flex-wrap:wrap;gap:2px}
+ .zg-dashboard[data-view="dashboard"] .fg-card.fg-shared-shell .cnn-score-observed-date{height:16px;min-height:16px;font-size:10px}
+ .zg-dashboard[data-view="dashboard"] .fg-card.fg-shared-shell .fg-analysis-slot{grid-column:4;grid-row:1 / 3;min-height:0;padding-block:8px;grid-template-rows:24px minmax(0,1fr)}
+ .zg-dashboard[data-view="dashboard"] .fg-card.fg-shared-shell .fg-footer-slot{grid-column:1 / -1;grid-row:3;min-height:28px;height:auto}
+ .zg-dashboard[data-view="dashboard"] .fg-card.fg-shared-shell .fg-footer-slot .cnn-panel-note{min-height:28px;font-size:9px;line-height:1.35}
+ .zg-dashboard[data-view="dashboard"] .zg-r55-summary{grid-template-columns:220px minmax(0,1fr);grid-template-rows:auto;height:auto;min-height:76px}
+ .zg-dashboard[data-view="dashboard"] .zg-r55-primary-zone{grid-template-columns:60px minmax(0,1fr) 24px;width:100%;height:60px;gap:6px}
+ .zg-dashboard[data-view="dashboard"] .zg-r55-summary-top{width:60px}
+ .zg-dashboard[data-view="dashboard"] .zg-r55-summary-chart{width:100%}
+ .zg-dashboard[data-view="dashboard"] .zg-r55-diagnostics-zone,
+ .zg-dashboard[data-view="dashboard"] .zg-r55-diagnostics-zone .zg-r55-subscore-area{height:auto;min-height:0}
+ .zg-dashboard[data-view="dashboard"] .zg-r55-subscore-grid{grid-template-columns:repeat(4,minmax(0,1fr));height:auto}
+ .zg-dashboard[data-view="dashboard"] .zg-r55-subscore{height:54px;min-height:54px;padding:2px 6px;grid-template-rows:26px 18px;gap:2px}
+ .zg-dashboard[data-view="dashboard"] .zg-r55-subscore-head{height:26px;min-height:26px;padding-right:20px}
+ .zg-dashboard[data-view="dashboard"] .zg-r55-subscore-title{height:26px}
+ .zg-dashboard[data-view="dashboard"] .zg-r55-subscore-title b{font-size:12px;line-height:14px;word-break:keep-all;overflow-wrap:normal}
+ .zg-dashboard[data-view="dashboard"] .zg-r55-subscore:nth-child(4n){border-right:0}
+ .zg-dashboard[data-view="dashboard"] .zg-r55-card-grid{grid-template-columns:repeat(4,minmax(0,1fr))}
+ .zg-dashboard[data-view="dashboard"] .zg-r55-detail{font-size:12px;min-height:28px;grid-template-columns:minmax(0,1fr) 24% 24px;column-gap:4px}
+ .zg-dashboard[data-view="dashboard"] .zg-r55-detail>span{grid-column:auto}
+ .zg-dashboard[data-view="dashboard"] .zg-r55-detail>.zg-scale{grid-column:auto}
+ .zg-dashboard[data-view="dashboard"] .zg-r55-detail b{grid-column:3!important}
+ .zg-dashboard[data-view="dashboard"] .zg-r55-badge{grid-column:auto;grid-row:auto}
+}
+@media(max-width:899px){
+ .zg-dashboard[data-view="dashboard"] .zg-country-panel-grid{grid-template-columns:minmax(0,1fr)}
+ .zg-dashboard[data-view="dashboard"] .fg-card.fg-shared-shell{grid-template-columns:8px minmax(0,30fr) 8px minmax(0,70fr) 8px;--fg-shared-left:30%}
+ .zg-dashboard[data-view="dashboard"] .zg-r55-card-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+ .zg-dashboard[data-view="dashboard"] .zg-r55-summary{grid-template-columns:minmax(0,1fr);grid-template-rows:auto auto}
+ .zg-dashboard[data-view="dashboard"] .zg-r55-primary-zone{max-width:340px}
+ .zg-dashboard[data-view="dashboard"] .zg-dashboard-secondary{grid-template-columns:minmax(0,1fr)}
+}
+@media(max-width:599px){
+ .zg-dashboard[data-view="dashboard"] .zg-container{padding-inline:8px}
+ .zg-dashboard[data-view="dashboard"] .zg-section-heading :is(h1,h2){font-size:16px}
+ .zg-dashboard[data-view="dashboard"] .zg-country-section .zg-section-heading p{display:none}
+ .zg-dashboard[data-view="dashboard"] .fg-card.fg-shared-shell{--fg-shared-left:38%;grid-template-columns:8px minmax(0,38fr) 8px minmax(0,62fr) 8px;grid-template-rows:44px 150px auto}
+ .zg-dashboard[data-view="dashboard"] .fg-card.fg-shared-shell .cnn-market-title h2{font-size:16px}
+ .zg-dashboard[data-view="dashboard"] .fg-card.fg-shared-shell .fg-period-slot{grid-column:2;grid-row:2}
+ .zg-dashboard[data-view="dashboard"] .fg-card.fg-shared-shell .fg-period-slot .cnn-period-toolbar{flex-direction:column}
+ .zg-dashboard[data-view="dashboard"] .fg-card.fg-shared-shell .fg-period-slot .cnn-period-button{flex:0 0 26px}
+ .zg-dashboard[data-view="dashboard"] .fg-card.fg-shared-shell .cnn-score-comparison{flex-direction:column}
+ .zg-dashboard[data-view="dashboard"] .fg-card.fg-shared-shell .recharts-cartesian-axis-tick-value{font-size:9px}
+ .zg-dashboard[data-view="dashboard"] .zg-r55-heading{flex-wrap:wrap}
+ .zg-dashboard[data-view="dashboard"] .zg-r55-card-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .zg-dashboard[data-view="dashboard"] .zg-r55-subscore-title b{font-size:11px}
+ .zg-dashboard[data-view="dashboard"] .zg-r55-detail{font-size:11px;grid-template-columns:minmax(0,1fr) 22% 22px}
+ .zg-dashboard[data-view="dashboard"] .zg-strength-grid-compact{grid-template-columns:minmax(0,1fr)}
+}
+@media(max-width:359px){
+ .zg-dashboard[data-view="dashboard"] .zg-r55-card-grid{grid-template-columns:minmax(0,1fr)}
+ .zg-dashboard[data-view="dashboard"] .zg-r55-subscore-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
 /* Keep twelve domains in balanced rows while retaining readable card widths. */
 @media(max-width:1279px){.zg-r55-card-grid{grid-template-columns:repeat(4,minmax(0,1fr))}}
 @container marketShell (max-width:1100px){.zg-r55-card-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
