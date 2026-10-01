@@ -3702,3 +3702,10 @@ body .zg-r55-market .zg-r55-shell[data-expanded="false"] article.zg-r55-card>.zg
     font-weight:750;
   }
 }
+
+/* UI1_R4_VERTICAL_PERIOD_DIVIDERS_OFF_R31 */
+@media(min-width:1280px){
+  .zg-dashboard[data-view="dashboard"] .fg-card.fg-shared-shell .fg-period-slot .cnn-period-button{
+    border-bottom:0;
+  }
+}
