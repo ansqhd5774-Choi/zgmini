@@ -3727,3 +3727,35 @@ body .zg-r55-market .zg-r55-shell[data-expanded="false"] article.zg-r55-card>.zg
     height:16px;
   }
 }
+/* UI1_R4_VERTICAL_PERIOD_SIZE_SYNC_R29 */
+@media(min-width:1280px){
+  .zg-dashboard[data-view="dashboard"] .fg-card.fg-shared-shell .fg-period-slot{
+    width:30px;
+    min-width:30px;
+    max-width:30px;
+  }
+  .zg-dashboard[data-view="dashboard"] .fg-card.fg-shared-shell .fg-period-slot .cnn-period-toolbar{
+    width:30px;
+    min-width:30px;
+    max-width:30px;
+    gap:0;
+  }
+  .zg-dashboard[data-view="dashboard"] .fg-card.fg-shared-shell .fg-period-slot .cnn-period-button{
+    width:28px;
+    min-width:28px;
+    max-width:28px;
+    height:26px;
+    min-height:26px;
+    max-height:26px;
+    flex:0 0 26px;
+    padding:0;
+    box-sizing:border-box;
+    display:grid;
+    place-items:center;
+  }
+  .zg-dashboard[data-view="dashboard"] .fg-card.fg-shared-shell .fg-period-slot .cnn-period-button::after{
+    font-size:10px;
+    line-height:1;
+    font-weight:750;
+  }
+}
