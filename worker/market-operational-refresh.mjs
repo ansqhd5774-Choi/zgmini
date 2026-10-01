@@ -31,6 +31,17 @@ export async function calculateStoredMarketScore(env,store,now){
  await store.writeScore(body,now);
  return {readyDomains:body.dataQuality?.readyDomains??body.domains.filter(x=>x.status==='READY').length};
 }
+export async function refreshStoredMarketScoreSnapshot({env,store,now=Date.now()}={}){
+ if(!env?.DB&&!store)return {status:'CONFIGURATION_MISSING'};
+ store??=marketOperationalStore(env.DB);
+ try{
+  const result=await calculateStoredMarketScore(env,store,now);
+  return {status:'COMPLETE',providerRequests:0,...result};
+ }catch(error){
+  const reason=['STORED_CALCULATION_FAILED','SCORE_CONTRACT_FAILED'].includes(error?.message)?error.message:'STORED_PRECOMPUTE_FAILED';
+  return {status:'ERROR',providerRequests:0,reason};
+ }
+}
 function boundedFetch(fetchImpl){return async(input,init={})=>{
  const timeout=AbortSignal.timeout(20000);
  const signal=init.signal?AbortSignal.any([init.signal,timeout]):timeout;
