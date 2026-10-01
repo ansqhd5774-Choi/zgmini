@@ -18,11 +18,11 @@ test("R5 is explicit four-factor breadth scoring",()=>{
 
 test("R5 preserves R4 numeric continuity while exposing four factors",async()=>{
   const base={
-    id:"breadth",status:"READY",score:60.7,source:"IEX HIST",
+    id:"breadth",status:"READY",score:59,source:"IEX HIST",
     components:{advanceRatio:.60,advanceValueShare:.55},
     smoothing:{dailyScore:58,ema5:62,ema20:57},
     runtime:{asOfDate:"2026-10-01",observationDate:"2026-10-01",lagTradingSessions:0},
-    observationDate:"2026-10-01",trend:[{label:"2026-10-01",value:60.7}],
+    observationDate:"2026-10-01",trend:[{label:"2026-10-01",value:59}],
   };
   const out=await readBreadthB1R5StoredScore({
     asOfDate:"2026-10-01",
@@ -33,6 +33,7 @@ test("R5 preserves R4 numeric continuity while exposing four factors",async()=>{
   assert.equal(out.providerRequests,0);
   assert.equal(out.storageMode,"D1_STORED_ONLY");
   near(out.score,.30*60+.20*55+.30*62+.20*57);
+  near(out.score,base.score);
 });
 
 test("R5 public projection exposes four new stable indicators",()=>{
