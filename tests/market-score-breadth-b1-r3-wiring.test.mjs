@@ -55,7 +55,7 @@ test("scheduled collector uses R3 and public requests only read the snapshot",()
   assert.match(route,/storedMarketResponse/);
   assert.doesNotMatch(route,/collectBreadth|waitUntil/);
   assert.match(scheduled,/breadth:.*collectBreadthB1R3StoreOnlyR1/);
-  assert.match(scheduled,/collectBreadthDomain:readBreadthB1R4StoredPublicDomainR1/);
+  assert.match(scheduled,/collectBreadthDomain:readBreadthB1R5StoredPublicDomainR1/);
   assert.doesNotMatch(scheduled,/collectBreadthR2StoreOnlyR2/);
 });
 
@@ -65,14 +65,14 @@ test("scheduled wiring preserves current Earnings R4 and Consumption R3 paths",(
   assert.match(scheduled,/consumption:.*runConsumptionR3OperationalRefresh/);
 });
 
-test("market-score worker defaults to stored B1-R4 reader and R4 fallback",()=>{
+test("market-score worker defaults to stored B1-R5 reader and R5 fallback",()=>{
   const worker=fs.readFileSync(new URL("../worker/market-score-r1.mjs",import.meta.url),"utf8");
-  assert.match(worker,/collectBreadthDomain=readBreadthB1R4StoredPublicDomainR1/);
-  assert.match(worker,/buildBreadthB1R4UnavailablePublicDomain/);
+  assert.match(worker,/collectBreadthDomain=readBreadthB1R5StoredPublicDomainR1/);
+  assert.match(worker,/buildBreadthB1R5UnavailablePublicDomain/);
   assert.doesNotMatch(worker,/collectBreadthDomain=readBreadthR2StoredPublicDomainR2/);
 });
 
-test("domain adapter preserves B1-R4 stored source instead of hard-coded provider",()=>{
+test("domain adapter preserves active stored B1 source instead of hard-coded provider",()=>{
   const adapter=fs.readFileSync(new URL("../lib/market-score/domain-adapter-r1.mjs",import.meta.url),"utf8");
   assert.match(adapter,/publicDomains\.breadth\?\.source\?\?"D1_STORED_BREADTH_PRICE_VOLUME"/);
   assert.doesNotMatch(adapter,/explicitDomain\("breadth","수급·폭","ZGMINI_BREADTH_R2_METHOD_R1"/);
