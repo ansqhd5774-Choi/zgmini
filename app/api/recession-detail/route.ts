@@ -44,12 +44,16 @@ export async function GET(){
  const current=snapshot(recession.rows,latestDate);
  const months=[...new Set((recession.rows??[]).map((r:any)=>r?.observationDate).filter((x:any)=>typeof x==="string"))].sort().slice(-12);
  const trend=months.map((date:any)=>{const s=snapshot(recession.rows,date);return s.status==="READY"&&finite(s.score)?{label:date,value:s.score}:null}).filter(Boolean);
- const supplementals=[
-  {id:"initialClaims",...findIndicator(publicSnapshot,"employment","신규 실업수당 4W 평균")},
-  {id:"yieldCurve",...findIndicator(publicSnapshot,"rates","장단기 금리차")},
-  {id:"hyCreditStress",...findIndicator(publicSnapshot,"credit","HY 신용 스트레스")},
-  {id:"creditConditions",...findIndicator(publicSnapshot,"credit","신용여건")},
- ].map((x:any)=>({id:x.id,name:x.name??x.label??null,status:x.status??"UNAVAILABLE",score:finite(x.score)?x.score:null,value:finite(x.value)?x.value:null,displayValue:x.displayValue??null,unit:x.unit??null,observationDate:x.observationDate??x.asOfDate??null,source:x.source??null}));
+ const supplementalSpecs=[
+  ["initialClaims","employment","신규 실업수당 4W 평균"],
+  ["yieldCurve","rates","장단기 금리차"],
+  ["hyCreditStress","credit","HY 신용 스트레스"],
+  ["creditConditions","credit","신용여건"],
+ ] as const;
+ const supplementals=supplementalSpecs.map(([id,domainId,name])=>{
+  const x:any=findIndicator(publicSnapshot,domainId,name)??{};
+  return {id,name:x.name??x.label??name,status:x.status??"UNAVAILABLE",score:finite(x.score)?x.score:null,value:finite(x.value)?x.value:null,displayValue:x.displayValue??null,unit:x.unit??null,observationDate:x.observationDate??x.asOfDate??null,source:x.source??null};
+ });
  return Response.json({
   status:current.status,score:current.score,asOfDate:latestDate,methodologyVersion:"RECESSION_R13_CURRENT_VINTAGE",
   historyMode:"STORED_INPUTS_CURRENT_VINTAGE",lookAheadSafe:false,trend,components:current.components,supplementals,
