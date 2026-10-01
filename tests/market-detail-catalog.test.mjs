@@ -33,3 +33,15 @@ test('Growth R2 representative UI rows map by stable feature id',()=>{
  assert.deepEqual(rows.map(r=>r.score),[52,47,41,38]);
  assert.deepEqual(rows.map(r=>r.asOfDate),['2026-08-01','2026-08-01','2026-08-01','2026-08-01']);
 });
+
+test('B1-R5 detail rows use new stable ids and formula factors',()=>{
+ const rows=marketDetailRows('breadth',[
+  {id:'breadth-44',name:'20일 수급 EMA',status:'READY',score:58,value:58,unit:'점'},
+  {id:'breadth-42',name:'상승거래대금비율',status:'READY',score:59,value:59,unit:'%'},
+  {id:'breadth-41',name:'상승종목비율',status:'READY',score:62.5,value:62.5,unit:'%'},
+  {id:'breadth-43',name:'5일 수급 EMA',status:'READY',score:60,value:60,unit:'점'},
+ ]);
+ assert.deepEqual(rows.map(r=>r.label),['상승종목비율','상승거래대금비율','5일 수급 EMA','20일 수급 EMA']);
+ assert.deepEqual(rows.map(r=>r.score),[62.5,59,60,58]);
+ assert.deepEqual(rows.map(r=>r.unit),['%','%','점','점']);
+});
