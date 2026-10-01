@@ -86,8 +86,14 @@ export async function runMarketOperationalRefresh({env,job,store,now=Date.now(),
    const input={...(series?{series}:{}),...(external?{external}:{}),...(inputSettled?{inputSettled}:{}),...(rateR2?{rateR2}:{}),providerSummary};
    await store.writeInput(selected==='macroCredit'?'macro':selected,input,now);
   }
-  phase='CALCULATE';const result=await calculate(env,store,now);
   const sourceStatus=collected?.status??collected?.rateR2?.status??'COLLECTED';
+  if(selected==='growth'){
+   const failed=/^(FAIL|FAILED|ERROR)$/.test(sourceStatus);
+   const finalStatus=failed?'SOURCE_FAILED':'COMPLETE';
+   await store.finish(selected,jobLease,now,finalStatus);
+   return {status:finalStatus,job:selected,sourceStatus,readyDomains:null,precomputeDeferred:true};
+  }
+  phase='CALCULATE';const result=await calculate(env,store,now);
   const macroFailures=selected==='macro'?(collected?.providerSummary?.fred?.failed??[]):[];
   const failed=/^(FAIL|FAILED|ERROR)$/.test(sourceStatus)||macroFailures.length>0;
   const backlog=selected==='breadth'&&sourceStatus==='PARTIAL_BATCH';
