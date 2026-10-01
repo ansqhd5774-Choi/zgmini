@@ -545,7 +545,7 @@ export default function CnnPanel({ showEducation = false }: { showEducation?: bo
               ? "greed"
               : "neutral";
 
-          return <article className="cnn-education-card" key={definition.id} data-tone={tone}>
+          return <article className="cnn-education-card" key={definition.id} data-tone={tone} data-layout={index === componentDefinitions.length - 1 ? "wide" : "standard"}>
             <div className="cnn-education-card-head">
               <span className="cnn-component-number">{String(index + 1).padStart(2, "0")}</span>
               <div>
