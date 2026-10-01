@@ -1,6 +1,7 @@
 "use client";
 
-import {useEffect,useMemo,useState} from "react";
+import {useEffect,useMemo,useRef,useState,type FocusEvent} from "react";
+import {Info} from "lucide-react";
 import {MarketCardHeader} from "../market-card-header";
 import {MarketScoreOrb} from "../market-score-orb";
 import {MarketTrendFrame} from "../market-trend-frame";
@@ -27,42 +28,46 @@ type InflationPayload={
   trend?:Array<{label:string;value:number}>;
 };
 
-const axisDefs=[
- {id:"TARGET_STABILITY",title:"목표 안정성",question:"기조 물가는 2% 목표에 가까워지고 있는가?",meaning:"Core PCE와 Core CPI를 함께 보며 연준 목표와의 거리를 평가합니다.",pressure:"2% 목표에서 이탈",stable:"2% 목표에 근접",features:["CORE_PCE","CORE_CPI"]},
- {id:"UNDERLYING_MOMENTUM",title:"기조 모멘텀",question:"최근 기조 물가의 속도는 둔화되고 있는가?",meaning:"Core CPI 3개월 연율과 Median·Trimmed Mean CPI를 함께 봅니다.",pressure:"기조 물가 재가속",stable:"기조 물가 둔화",features:["CORE_CPI_3M","MEDIAN_CPI","TRIM16_CPI"]},
- {id:"HEADLINE_PRESSURE",title:"헤드라인 물가 압력",question:"전체 소비물가 압력은 얼마나 강한가?",meaning:"Headline PCE의 초기 발표 기준 물가 압력을 평가합니다.",pressure:"헤드라인 압력 확대",stable:"헤드라인 압력 완화",features:["HEADLINE_PCE"]},
- {id:"EXPECTATIONS",title:"기대 인플레이션",question:"시장은 중장기 물가를 얼마나 높게 보고 있는가?",meaning:"5년 기대 인플레이션을 통해 기대가 고착되는지 확인합니다.",pressure:"기대 인플레 상승",stable:"기대 인플레 안정",features:["INF_EXPECT"]},
- {id:"SUPPLY_PIPELINE",title:"공급 파이프라인",question:"에너지·생산자·수입물가 압력은 커지고 있는가?",meaning:"WTI·휘발유·PPI·수입물가를 묶어 공급 측 압력을 봅니다.",pressure:"공급비용 압력 확대",stable:"공급비용 압력 완화",features:["WTI","GASOLINE","PPI_FINAL","PPI_CORE_FD","IMPORT_EX_FUEL"]},
- {id:"LABOR_COST_PERSISTENCE",title:"노동비용 지속성",question:"임금과 노동비용이 서비스 물가를 계속 밀어 올리는가?",meaning:"임금·ECI·단위노동비용을 통해 끈적한 물가 압력을 평가합니다.",pressure:"노동비용 압력 확대",stable:"노동비용 압력 완화",features:["WAGE_YOY","ECI_COST","UNIT_LABOR_COST"]},
- {id:"DEMAND_CONTEXT",title:"수요 환경",question:"실물 수요가 물가 압력을 지지하고 있는가?",meaning:"산업생산의 최근 속도를 이용해 수요 측 배경을 확인합니다.",pressure:"수요 과열 방향",stable:"수요 압력 완화",features:["INDPRO"]},
+type FeatureMeta={
+ label:string;
+ content:string;
+ unit:string;
+ note:string;
+ criterion:"TWO"|"ZERO"|"PAST_MEDIAN"|"PAST_MEDIAN_ABS";
+ help:string;
+};
+
+const featureOrder=[
+ "CORE_PCE","CORE_CPI","CORE_CPI_3M","MEDIAN_CPI","TRIM16_CPI","HEADLINE_PCE","INF_EXPECT",
+ "PPI_FINAL","PPI_CORE_FD","IMPORT_EX_FUEL","WTI","GASOLINE","WAGE_YOY","ECI_COST","UNIT_LABOR_COST","INDPRO",
 ] as const;
 
-const featureMeta:Record<string,{label:string;unit:string;note:string}>={
- CORE_PCE:{label:"Core PCE",unit:"%",note:"YoY · 초기발표 빈티지"},
- CORE_CPI:{label:"Core CPI",unit:"%",note:"YoY"},
- CORE_CPI_3M:{label:"Core CPI 3M",unit:"%",note:"3개월 연율"},
- MEDIAN_CPI:{label:"Median CPI",unit:"%",note:"3개월 연율"},
- TRIM16_CPI:{label:"16% Trimmed Mean CPI",unit:"%",note:"3개월 연율"},
- HEADLINE_PCE:{label:"Headline PCE",unit:"%",note:"YoY · 초기발표 빈티지"},
- INF_EXPECT:{label:"5Y 기대 인플레이션",unit:"%",note:"수준"},
- WTI:{label:"WTI",unit:"%",note:"3개월 변화"},
- GASOLINE:{label:"미국 휘발유",unit:"%",note:"3개월 변화"},
- PPI_FINAL:{label:"PPI Final Demand",unit:"%",note:"3개월 연율"},
- PPI_CORE_FD:{label:"Core PPI Final Demand",unit:"%",note:"3개월 연율"},
- IMPORT_EX_FUEL:{label:"수입물가 ex Fuel",unit:"%",note:"YoY"},
- WAGE_YOY:{label:"평균 시간당 임금",unit:"%",note:"YoY"},
- ECI_COST:{label:"Employment Cost Index",unit:"%",note:"YoY"},
- UNIT_LABOR_COST:{label:"Unit Labor Cost",unit:"",note:"저장값"},
- INDPRO:{label:"산업생산",unit:"%",note:"3개월 연율"},
+const featureMeta:Record<string,FeatureMeta>={
+ CORE_PCE:{label:"Core PCE",content:"연준이 중시하는 기조 소비물가",unit:"%",note:"YoY · 초기발표",criterion:"TWO",help:"2%에 가까울수록 물가 안정에 긍정적입니다. 2%에서 멀어질수록 기조 물가 압력이 남아 있는 것으로 봅니다."},
+ CORE_CPI:{label:"Core CPI",content:"식품·에너지를 제외한 소비자물가",unit:"%",note:"YoY",criterion:"TWO",help:"2% 근처가 안정 방향입니다. 현재 수준이 높더라도 최근 값이 둔화하면 개선 방향으로 해석할 수 있습니다."},
+ CORE_CPI_3M:{label:"Core CPI 3M",content:"최근 3개월의 기조 물가 속도",unit:"%",note:"3개월 연율",criterion:"TWO",help:"최근 물가 속도를 빠르게 확인하는 지표입니다. 2% 부근으로 낮아질수록 긍정적이고 재가속하면 부정적입니다."},
+ MEDIAN_CPI:{label:"Median CPI",content:"품목별 중간값으로 본 끈적한 물가",unit:"%",note:"3개월 연율",criterion:"TWO",help:"극단적인 가격 변동 영향을 줄여 기조 물가를 봅니다. 2% 근처로 둔화할수록 긍정적입니다."},
+ TRIM16_CPI:{label:"16% Trimmed Mean CPI",content:"가격 급등락 품목을 제거한 기조 물가",unit:"%",note:"3개월 연율",criterion:"TWO",help:"이상치 영향을 줄인 물가입니다. 2%에 가까워질수록 광범위한 물가 압력이 완화되는 방향입니다."},
+ HEADLINE_PCE:{label:"Headline PCE",content:"전체 개인소비지출 물가",unit:"%",note:"YoY · 초기발표",criterion:"TWO",help:"식품·에너지를 포함한 전체 소비물가입니다. 2% 부근이 안정 방향이며 크게 높으면 부정적입니다."},
+ INF_EXPECT:{label:"5Y 기대 인플레이션",content:"시장이 예상하는 중기 물가 수준",unit:"%",note:"수준",criterion:"TWO",help:"기대 인플레이션이 2% 근처에서 안정되면 긍정적입니다. 지속 상승하면 물가 기대 고착 위험으로 봅니다."},
+ PPI_FINAL:{label:"PPI Final Demand",content:"최종수요 생산자 가격 압력",unit:"%",note:"3개월 연율",criterion:"PAST_MEDIAN",help:"생산단계 가격 상승률이 과거 정상 범위보다 높아질수록 향후 소비자물가 압력에 부정적입니다."},
+ PPI_CORE_FD:{label:"Core PPI Final Demand",content:"식품·에너지 등을 제외한 생산자물가",unit:"%",note:"3개월 연율",criterion:"PAST_MEDIAN",help:"기조 생산비용 압력을 봅니다. 과거 중앙값보다 크게 높으면 부정적이고 낮아지면 긍정적입니다."},
+ IMPORT_EX_FUEL:{label:"수입물가 ex Fuel",content:"연료를 제외한 수입 가격 압력",unit:"%",note:"YoY",criterion:"PAST_MEDIAN",help:"수입가격이 과거 정상 범위보다 높아지면 국내 물가로 전가될 가능성이 있어 부정적으로 해석합니다."},
+ WTI:{label:"WTI",content:"국제유가의 단기 비용 압력",unit:"%",note:"3개월 변화",criterion:"ZERO",help:"3개월 유가 변화가 0% 근처면 안정적입니다. 급등할수록 에너지와 운송비를 통해 물가 압력이 커질 수 있습니다."},
+ GASOLINE:{label:"미국 휘발유",content:"소비자가 체감하는 에너지 가격",unit:"%",note:"3개월 변화",criterion:"ZERO",help:"3개월 변화율이 0% 근처면 안정 방향입니다. 빠른 상승은 소비자물가와 기대인플레이션에 부정적입니다."},
+ WAGE_YOY:{label:"평균 시간당 임금",content:"임금에서 오는 서비스 물가 압력",unit:"%",note:"YoY",criterion:"PAST_MEDIAN",help:"임금 상승률이 과거 정상 범위를 크게 웃돌면 서비스 물가가 오래 유지될 수 있어 부정적입니다."},
+ ECI_COST:{label:"Employment Cost Index",content:"임금·복리후생을 포함한 고용비용",unit:"%",note:"YoY",criterion:"PAST_MEDIAN",help:"기업의 전체 노동비용을 봅니다. 과거 중앙값을 크게 웃도는 상승률은 지속적인 물가 압력으로 해석합니다."},
+ UNIT_LABOR_COST:{label:"Unit Labor Cost",content:"생산 한 단위당 노동비용",unit:"",note:"저장값",criterion:"PAST_MEDIAN",help:"단위노동비용이 과거 정상 범위보다 높아지면 기업의 가격 전가 압력이 커질 수 있습니다."},
+ INDPRO:{label:"산업생산",content:"수요·생산 활동의 물가 배경",unit:"%",note:"3개월 연율",criterion:"PAST_MEDIAN_ABS",help:"수요 환경은 너무 강하거나 너무 약한 극단 모두 위험으로 봅니다. 과거 중앙 수준에 가까울수록 안정적으로 평가합니다."},
 };
 
 const developmentCandidates=[
- "Shelter CPI",
- "Core Services ex-Housing",
- "Supercore Services",
- "Michigan Inflation Expectations",
- "NY Fed Inflation Expectations",
- "ISM Prices Paid",
+ {label:"Shelter CPI",content:"주거비 인플레이션",criterion:"지속 둔화",help:"주거비는 CPI에서 비중이 큽니다. 상승률이 지속적으로 둔화하는지 확인할 예정입니다."},
+ {label:"Core Services ex-Housing",content:"주거비 제외 핵심 서비스 물가",criterion:"지속 둔화",help:"서비스 부문의 끈적한 물가 압력을 확인하기 위한 지표입니다."},
+ {label:"Supercore Services",content:"연준이 주목하는 서비스 기조 물가",criterion:"지속 둔화",help:"노동집약적 서비스 물가의 지속성을 확인하기 위한 보조 지표입니다."},
+ {label:"Michigan 기대인플레",content:"소비자 장단기 기대물가",criterion:"안정",help:"소비자의 기대가 높아지면 임금·가격 결정에 영향을 줄 수 있어 기대의 안정 여부를 봅니다."},
+ {label:"NY Fed 기대인플레",content:"가계가 예상하는 향후 물가",criterion:"안정",help:"가계의 1년·3년 등 기대 인플레이션이 재상승하는지 확인하기 위한 지표입니다."},
+ {label:"ISM Prices Paid",content:"기업 구매단계 가격 압력",criterion:"50 부근 안정",help:"기업이 체감하는 투입가격 압력을 보여주며 급등하면 선행 물가 압력으로 볼 수 있습니다."},
 ];
 
 function dateLabel(value?:string|null){
@@ -78,15 +83,42 @@ function stage(score:number|null|undefined){
  if(score>=25)return "물가 압력";
  return "강한 물가 압력";
 }
-function tone(score:number|null|undefined){
- const s=stage(score);
- return s.includes("압력")?"fear":s.includes("안정")?"greed":"neutral";
+function judgement(score:number|null|undefined){
+ if(typeof score!=="number"||!Number.isFinite(score))return {label:"확인 필요",tone:"neutral"};
+ if(score>=60)return {label:"긍정",tone:"positive"};
+ if(score>=45)return {label:"중립",tone:"neutral"};
+ return {label:"부정",tone:"negative"};
 }
 function formatRaw(feature:string,row:FeatureRow|null|undefined){
  if(!row||typeof row.value!=="number"||!Number.isFinite(row.value))return "—";
- const meta=featureMeta[feature];
- const digits=Math.abs(row.value)>=100?1:2;
+ const meta=featureMeta[feature],digits=Math.abs(row.value)>=100?1:2;
  return `${row.value.toFixed(digits)}${meta?.unit??""}`;
+}
+function formatCriterion(feature:string,row:FeatureRow|null|undefined){
+ const meta=featureMeta[feature];
+ if(meta.criterion==="TWO")return "2% 근처";
+ if(meta.criterion==="ZERO")return "0% 근처";
+ if(typeof row?.center==="number"&&Number.isFinite(row.center)){
+  const value=row.center.toFixed(Math.abs(row.center)>=10?1:2);
+  return meta.criterion==="PAST_MEDIAN_ABS"?`과거 중앙값 ${value} 근처`:`과거 중앙값 ${value} 이하·근처`;
+ }
+ return meta.criterion==="PAST_MEDIAN_ABS"?"과거 정상 범위":"과거 중앙값 이하·근처";
+}
+
+function HelpTip({label,text}:{label:string;text:string}){
+ const [open,setOpen]=useState(false);
+ const root=useRef<HTMLSpanElement>(null);
+ useEffect(()=>{
+  if(!open)return;
+  const close=(event:PointerEvent)=>{if(!root.current?.contains(event.target as Node))setOpen(false)};
+  document.addEventListener("pointerdown",close);
+  return()=>document.removeEventListener("pointerdown",close);
+ },[open]);
+ const blur=(event:FocusEvent<HTMLSpanElement>)=>{if(!event.currentTarget.contains(event.relatedTarget))setOpen(false)};
+ return <span ref={root} className="inflation-help" onMouseEnter={()=>setOpen(true)} onMouseLeave={()=>setOpen(false)} onBlur={blur}>
+  <button type="button" aria-label={`${label} 해석 방향`} aria-expanded={open} onFocus={()=>setOpen(true)} onClick={event=>{event.stopPropagation();setOpen(v=>!v)}}><Info size={14}/></button>
+  {open?<span role="tooltip"><strong>해석 방향</strong>{text}</span>:null}
+ </span>;
 }
 
 export default function InflationPanel(){
@@ -109,162 +141,83 @@ export default function InflationPanel(){
  const latestPoint:MarketFearGreedChartValidPoint|null=latest&&typeof latest.score==="number"?{date:latest.date,score:latest.score}:null;
  const axisLabels=new Map(trend.map(p=>[p.date,p.date.slice(5,7)]));
  const axisTicks=trend.filter((_,i)=>i===0||i===trend.length-1||i%2===0).map(p=>p.date);
- const previous=allTrend.at(-2)?.value;
- const threeMonth=allTrend.at(-4)?.value;
+ const previous=allTrend.at(-2)?.value,threeMonth=allTrend.at(-4)?.value;
  const previousDelta=score!==null&&typeof previous==="number"?score-previous:null;
  const threeMonthDelta=score!==null&&typeof threeMonth==="number"?score-threeMonth:null;
- const axes=payload?.axes??{};
  const features=payload?.features??{};
- const readyAxes=axisDefs.filter(x=>typeof axes[x.id]==="number").length;
 
  return <>
   <section className="cnn-reference-panel fg-card fg-shared-shell inflation-target-card" data-testid="inflation-detail-hero" data-market-state={loading?"loading":score===null?"unavailable":"ready"} aria-busy={loading}>
    <div className="fg-header-slot">
-    <MarketCardHeader
-     flag="/flags/us.svg"
-     eyebrow="ZGMINI INFLATION R2"
-     title="미국 인플레이션"
-     description="Stored PIT History · 7축"
-     dateLabel="데이터 기준일"
-     date={dateLabel(payload?.asOfDate)}
-     source={payload?.methodologyVersion??"INFLATION_R2"}
-    />
+    <MarketCardHeader flag="/flags/us.svg" eyebrow="ZGMINI INFLATION R2" title="미국 인플레이션" description="Stored PIT History" dateLabel="데이터 기준일" date={dateLabel(payload?.asOfDate)} source={payload?.methodologyVersion??"INFLATION_R2"}/>
    </div>
    <div className="fg-content-slot">
     <div className="fg-score-slot">
-     <MarketScoreOrb
-      score={loading||score===null?"—":score.toFixed(1)}
-      state={loading?"확인 중":stage(score)}
-      variant="hero"
-      dayDelta={previousDelta}
-      periodDelta={threeMonthDelta}
-      periodLabel="3개월 대비"
-      dayLabel="전월 대비"
-      comparisonAriaLabel="인플레이션 안정성 점수 변화"
-      metaDate={dateLabel(payload?.asOfDate)}
-     />
+     <MarketScoreOrb score={loading||score===null?"—":score.toFixed(1)} state={loading?"확인 중":stage(score)} variant="hero" dayDelta={previousDelta} periodDelta={threeMonthDelta} periodLabel="3개월 대비" dayLabel="전월 대비" comparisonAriaLabel="인플레이션 안정성 점수 변화" metaDate={dateLabel(payload?.asOfDate)}/>
     </div>
     <MarketTrendFrame className="fg-analysis-slot">
-     <div className="fg-period-slot">
-      <div role="group" aria-label="인플레이션 점수 추이 기간" className="cnn-period-toolbar">
-       {[3,6,12].map(n=><button key={n} type="button" className="cnn-period-button" aria-pressed={period===n} onClick={()=>setPeriod(n as 3|6|12)}>{n===12?"1년":`${n}개월`}</button>)}
+     <div className="fg-period-slot inflation-period-slot">
+      <div role="group" aria-label="인플레이션 점수 추이 기간" className="inflation-period-control">
+       {([{n:3,label:"3M"},{n:6,label:"6M"},{n:12,label:"1Y"}] as const).map(item=><button key={item.n} type="button" aria-pressed={period===item.n} onClick={()=>setPeriod(item.n)}>{item.label}</button>)}
       </div>
      </div>
-     <div className="fg-chart-slot">
-      <div className="fg-renderer">
-       <MarketFearGreedChart data={trend} axisTicks={axisTicks} axisLabels={axisLabels} latestPoint={latestPoint} instanceKey={String(period)} gradientId="inflation-fill" formatTooltipLabel={dateLabel} emptyLabel={loading?"확인 중":"이력 없음"}/>
-      </div>
-     </div>
+     <div className="fg-chart-slot"><div className="fg-renderer"><MarketFearGreedChart data={trend} axisTicks={axisTicks} axisLabels={axisLabels} latestPoint={latestPoint} instanceKey={String(period)} gradientId="inflation-fill" formatTooltipLabel={dateLabel} emptyLabel={loading?"확인 중":"이력 없음"}/></div></div>
     </MarketTrendFrame>
    </div>
-   <div className="fg-footer-slot">
-    <div className="cnn-panel-note"><span>데이터 출처</span><strong>저장된 초기발표 이력만 사용 · Live fallback 없음</strong></div>
+   <div className="fg-footer-slot"><div className="cnn-panel-note"><span>데이터 출처</span><strong>저장된 초기발표 이력만 사용 · Live fallback 없음</strong></div></div>
+  </section>
+
+  <section className="inflation-explainer" aria-labelledby="inflation-what-title">
+   <p className="cnn-eyebrow">WHAT IS INFLATION?</p>
+   <h1 id="inflation-what-title">인플레이션이란?</h1>
+   <p>인플레이션은 상품과 서비스의 전반적인 가격 수준이 지속적으로 오르는 현상입니다. 한두 품목의 가격만 보는 것이 아니라 소비자물가, 생산자물가, 임금, 에너지, 기대인플레이션처럼 서로 다른 지표가 같은 방향으로 움직이는지 함께 확인해야 합니다.</p>
+   <div className="inflation-direction-strip">
+    <span><b>물가 압력</b>기조 물가↑ · 비용↑ · 임금↑ · 기대물가↑</span>
+    <span><b>물가 안정</b>2% 목표 접근 · 비용 안정 · 기대물가 안정</span>
    </div>
   </section>
 
-  <section className="cnn-education-panel" aria-labelledby="inflation-detail-title">
-   <header className="cnn-education-header">
-    <div>
-     <p className="cnn-eyebrow">INFLATION R2 · 7 VALIDATED AXES</p>
-     <h1 id="inflation-detail-title">인플레이션을 7개 축으로 이해하기</h1>
-     <p>대시보드의 대표 4개만 반복하지 않고 Inflation R2의 전체 7개 축과 실제 하위 지표를 모두 보여줍니다.</p>
-    </div>
-    <div className="cnn-education-status" aria-label="확인된 인플레이션 축 수"><strong>{loading?"—":`${readyAxes}/7`}</strong><span>현재 확인된 축</span></div>
+  <section className="inflation-indicator-section" aria-labelledby="inflation-indicator-title">
+   <header>
+    <div><p className="cnn-eyebrow">INFLATION INDICATORS</p><h2 id="inflation-indicator-title">인플레이션 분석 지표</h2></div>
+    <p>기준과 현재값을 비교해 <b>긍정 / 중립 / 부정</b>으로 단순화했습니다. ⓘ에서 해석 방향을 확인할 수 있습니다.</p>
    </header>
-
-   <div className="cnn-method-strip">
-    <div><strong>저장 원자료</strong><span>초기발표 PIT / PCE same-vintage</span></div>
-    <b aria-hidden="true">→</b>
-    <div><strong>16개 하위 feature</strong><span>실제 저장값을 정규화</span></div>
-    <b aria-hidden="true">→</b>
-    <div><strong>7개 축 평균</strong><span>높을수록 물가 안정</span></div>
+   <div className="inflation-table-wrap">
+    <table className="inflation-indicator-table">
+     <thead><tr><th>지표</th><th>내용</th><th>기준</th><th>현재</th><th>판단</th><th><span className="sr-only">도움말</span>ⓘ</th></tr></thead>
+     <tbody>
+      {featureOrder.map(feature=>{
+       const row=features[feature],meta=featureMeta[feature],result=judgement(row?.score);
+       return <tr key={feature} data-judgement={result.tone}>
+        <th scope="row"><strong>{meta.label}</strong><small>{meta.note}</small></th>
+        <td>{meta.content}</td>
+        <td>{formatCriterion(feature,row)}</td>
+        <td><strong>{formatRaw(feature,row)}</strong><small>{dateLabel(row?.observationDate)}</small></td>
+        <td><span className="inflation-judgement">{result.label}</span></td>
+        <td><HelpTip label={meta.label} text={meta.help}/></td>
+       </tr>;
+      })}
+      {developmentCandidates.map(item=><tr key={item.label} data-development="true">
+       <th scope="row"><strong>{item.label}</strong></th>
+       <td>{item.content}</td>
+       <td>{item.criterion}</td>
+       <td>—</td>
+       <td><span className="inflation-judgement is-development">개발중</span></td>
+       <td><HelpTip label={item.label} text={`${item.help} 현재 ZGmini 데이터 연결 개발 중입니다.`}/></td>
+      </tr>)}
+     </tbody>
+    </table>
    </div>
-
-   <div className="cnn-composite-formula" aria-label="Inflation R2 종합점수 구조">
-    <div><span>검증 축</span><strong>{loading?"—":`${readyAxes}/7`}</strong></div>
-    <b aria-hidden="true">× 동일비중</b>
-    <div><span>산식</span><strong>1 / 7</strong></div>
-    <b aria-hidden="true">→</b>
-    <div className="is-total"><span>현재 안정성 점수</span><strong>{score===null?"—":score.toFixed(1)}</strong></div>
-   </div>
-   <p className="cnn-composite-caption">Inflation R2의 승인 산식과 저장 데이터만 읽습니다. 상세페이지가 별도 점수를 계산하거나 대시보드 점수를 대체하지 않습니다.</p>
-
-   <div className="cnn-score-guide" aria-label="인플레이션 안정성 점수 해석 구간">
-    <span><b>0–&lt;25</b><small>강한 물가 압력</small></span>
-    <span><b>25–&lt;45</b><small>물가 압력</small></span>
-    <span><b>45–&lt;60</b><small>중립</small></span>
-    <span><b>60–&lt;75</b><small>안정</small></span>
-    <span><b>75–100</b><small>매우 안정</small></span>
-   </div>
-
-   <section className="cnn-component-overview" aria-labelledby="inflation-overview-title">
-    <div className="cnn-component-overview-head"><div><p className="cnn-eyebrow">CURRENT AXIS SNAPSHOT</p><h2 id="inflation-overview-title">7개 축 한눈에 보기</h2></div><span>축 점수 → 상태 → 구성 지표 순서로 읽으세요.</span></div>
-    <div className="cnn-component-overview-list" role="list">
-     {axisDefs.map((def,index)=>{
-      const value=typeof axes[def.id]==="number"?axes[def.id]!:null;
-      return <div className="cnn-component-overview-row" data-tone={tone(value)} role="listitem" key={def.id}>
-       <div className="cnn-component-overview-name"><span>{String(index+1).padStart(2,"0")}</span><strong>{def.title}</strong></div>
-       <div className="cnn-component-overview-value"><small>축 점수</small><strong>{value===null?"—":value.toFixed(1)}</strong></div>
-       <div className="cnn-component-overview-score"><small>구성 지표</small><strong>{def.features.length}개</strong></div>
-       <div className="cnn-component-overview-rating"><small>현재 상태</small><strong>{stage(value)}</strong></div>
-      </div>;
-     })}
-    </div>
-   </section>
-
-   <div className="cnn-component-education-grid">
-    {axisDefs.map((def,index)=>{
-     const axisScore=typeof axes[def.id]==="number"?axes[def.id]!:null;
-     return <article className="cnn-education-card" key={def.id} data-tone={tone(axisScore)} data-layout={index===axisDefs.length-1?"wide":"standard"}>
-      <div className="cnn-education-card-head"><span className="cnn-component-number">{String(index+1).padStart(2,"0")}</span><div><h2>{def.title}</h2><p>{def.question}</p></div><span className="cnn-component-rating">{stage(axisScore)}</span></div>
-      <p className="cnn-component-meaning">{def.meaning}</p>
-
-      <div className="cnn-component-metrics">
-       <div><span>축 점수</span><strong>{axisScore===null?"—":`${axisScore.toFixed(1)} / 100`}</strong></div>
-       <div><span>구성 지표</span><strong>{def.features.length}개</strong></div>
-       <div><span>기준일</span><strong>{dateLabel(payload?.asOfDate)}</strong></div>
-       <div className="cnn-component-score"><span>산식 상태</span><strong>{axisScore===null?"확인 필요":"READY"}</strong></div>
-      </div>
-
-      <div className="cnn-component-scorebar" aria-label={axisScore===null?`${def.title} 점수 확인 필요`:`${def.title} 점수 ${axisScore.toFixed(1)}점`}>
-       <div className="cnn-component-scorebar-track">{axisScore!==null?<i style={{left:`${axisScore}%`}} aria-hidden="true"/>:null}</div>
-       <div className="cnn-component-scorebar-ticks" aria-hidden="true"><span>0</span><span>25</span><span>45</span><span>60</span><span>75</span><span>100</span></div>
-      </div>
-
-      <div className="cnn-component-direction" aria-label={`${def.title} 해석 방향`}><span><b>압력 방향</b>{def.pressure}</span><span><b>안정 방향</b>{def.stable}</span></div>
-
-      <div className="cnn-component-reading-grid">
-       <div className="cnn-component-reading is-raw">
-        <strong>실제 하위 지표</strong>
-        {def.features.map(feature=>{
-         const row=features[feature]; const meta=featureMeta[feature];
-         return <p key={feature}><b>{meta.label}</b> · {formatRaw(feature,row)} · 정규화 {typeof row?.score==="number"?row.score.toFixed(1):"—"}점 <small>({meta.note} · {dateLabel(row?.observationDate)})</small></p>;
-        })}
-       </div>
-       <div className="cnn-component-reading is-score">
-        <strong>축 해석</strong>
-        <p>{axisScore===null?"검증 가능한 축 점수가 없습니다.":`${axisScore.toFixed(1)} / 100 · ${stage(axisScore)}. 이 값은 해당 축의 승인 구성요소만으로 계산된 저장 이력 기반 점수입니다.`}</p>
-        <small>임의값·실시간 provider fallback을 사용하지 않습니다.</small>
-       </div>
-      </div>
-     </article>;
-    })}
-   </div>
-
-   <section className="cnn-component-overview" aria-labelledby="inflation-dev-title">
-    <div className="cnn-component-overview-head"><div><p className="cnn-eyebrow">NEXT INDICATORS</p><h2 id="inflation-dev-title">추가 예정 지표</h2></div><span>아직 승인 데이터 연결 전이므로 숫자를 표시하지 않습니다.</span></div>
-    <div className="cnn-component-overview-list" role="list">
-     {developmentCandidates.map((name,index)=><div className="cnn-component-overview-row" data-tone="neutral" role="listitem" key={name}>
-      <div className="cnn-component-overview-name"><span>{String(index+1).padStart(2,"0")}</span><strong>{name}</strong></div>
-      <div className="cnn-component-overview-value"><small>현재값</small><strong>—</strong></div>
-      <div className="cnn-component-overview-score"><small>점수</small><strong>—</strong></div>
-      <div className="cnn-component-overview-rating"><small>상태</small><strong>개발 작업중...</strong></div>
-     </div>)}
-    </div>
-   </section>
-
-   <aside className="cnn-education-note"><strong>데이터 원칙</strong><p>API는 저장 전용, 상세페이지와 산식은 저장된 데이터만 읽습니다. 현재 연결되지 않은 지표는 이름만 공개하고 ‘개발 작업중...’으로 표시합니다.</p></aside>
-   <a className="cnn-return-cta" href="/">← 메인 대시보드로 돌아가기</a>
   </section>
+
+  <details className="inflation-methodology">
+   <summary>ZGmini 인플레이션 점수 산식 보기</summary>
+   <div>
+    <p>현재 종합점수는 Inflation R2의 승인 산식을 그대로 사용합니다. 저장된 16개 하위 feature를 내부 7개 축으로 묶고 각 축을 동일비중 1/7로 반영합니다. 이 내부 축 구조는 상세페이지의 지표 수를 제한하는 기준이 아닙니다.</p>
+    <p><b>데이터 원칙:</b> 저장된 초기발표 이력만 사용하며 실시간 provider fallback이나 임의값을 사용하지 않습니다.</p>
+   </div>
+  </details>
+
+  <a className="cnn-return-cta" href="/">← 메인 대시보드로 돌아가기</a>
  </>;
 }
