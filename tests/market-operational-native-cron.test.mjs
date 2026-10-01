@@ -58,5 +58,5 @@ test("external market scheduler precomputes stored snapshot before slow collecti
  const block=worker.slice(start,end);
  assert.ok(block.indexOf("refreshStoredMarketScoreSnapshot")<block.indexOf("runMarketOperationalRefresh"));
  assert.match(block,/providerRequests:precompute\?\.providerRequests\?\?0/);
- assert.match(worker,/refresh:runMarketExternalRefresh,responseBudgetMs:5000,logTag:'MARKET_EXTERNAL'/);
+ assert.match(worker,/refresh:runMarketExternalRefresh,responseBudgetMs:25000,logTag:'MARKET_EXTERNAL'/);
 });

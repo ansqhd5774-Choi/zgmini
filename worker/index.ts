@@ -76,7 +76,7 @@ const worker = {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const url = new URL(request.url);
     if (url.pathname.replace(/\/$/, '') === '/api/internal/korea-rev7-scheduled') return koreaRev7ExternalScheduler(request, runtimeEnv, {ctx});
-    if (url.pathname.replace(/\/$/, '') === '/api/internal/market-scheduled') return koreaRev7ExternalScheduler(request, runtimeEnv, {ctx,refresh:runMarketExternalRefresh,responseBudgetMs:5000,logTag:'MARKET_EXTERNAL'});
+    if (url.pathname.replace(/\/$/, '') === '/api/internal/market-scheduled') return koreaRev7ExternalScheduler(request, runtimeEnv, {ctx,refresh:runMarketExternalRefresh,responseBudgetMs:25000,logTag:'MARKET_EXTERNAL'});
     if (url.pathname.replace(/\/$/, '') === '/api/internal/employment-r6-scheduled') return koreaRev7ExternalScheduler(request, runtimeEnv, {ctx,refresh:runEmploymentR6Producer,responseBudgetMs:5000,logTag:'EMP_R6_EXTERNAL'});
     if (url.pathname.replace(/\/$/, '') === '/api/internal/employment-r6-auth-probe') return Response.json(inspectEmploymentR6AuthProbe(request), {status:200,headers:{"cache-control":"no-store, no-cache, must-revalidate","pragma":"no-cache","x-robots-tag":"noindex, nofollow"}});
     if (url.pathname === "/api/internal/p0-fred-api-shadow-check") return fredApiShadow(request, env, { importMetaProd: import.meta.env.PROD, nodeEnv: typeof process !== "undefined" ? process.env.NODE_ENV : undefined, workerContext: ctx, workerUserAgent: typeof navigator !== "undefined" ? navigator.userAgent : undefined });
