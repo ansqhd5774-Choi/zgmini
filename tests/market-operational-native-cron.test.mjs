@@ -43,3 +43,10 @@ test("backlog jobs are selected before normal round-robin jobs",()=>{
  assert.match(source,/SELECT finished_at,status FROM market_collection_jobs_v1/);
  assert.match(source,/a\.status==='BACKLOG'\?0:1/);
 });
+
+
+test("breadth source failure is retried ahead of normal round-robin jobs",()=>{
+ const source=fs.readFileSync("worker/market-operational-store.mjs","utf8");
+ assert.match(source,/x\.job==='breadth'&&x\.status==='SOURCE_FAILED'/);
+ assert.match(source,/const priority=x=>/);
+});
