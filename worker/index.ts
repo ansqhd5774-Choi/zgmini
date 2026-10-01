@@ -56,12 +56,13 @@ export async function runMarketExternalRefresh(args:any){
     readyDomains:precompute?.readyDomains??null,
     reason:precompute?.reason??null,
   }));
-  const [market,feeds]=await Promise.allSettled([
-    runMarketOperationalRefresh(args),
-    runPublicFeeds(args),
-  ]);
-  console.log('PUBLIC_FEEDS',JSON.stringify(feeds.status==='fulfilled'?feeds.value:{status:'ERROR'}));
-  const result=market.status==='fulfilled'?market.value:{status:'ERROR'};
+  const result=await runMarketOperationalRefresh(args).catch(()=>({status:'ERROR'}));
+  if(result?.job==='macro'){
+    console.log('PUBLIC_FEEDS',JSON.stringify({status:'SKIPPED_MACRO_CPU_GUARD'}));
+  }else{
+    const feeds=await runPublicFeeds(args).catch(()=>({status:'ERROR'}));
+    console.log('PUBLIC_FEEDS',JSON.stringify(feeds));
+  }
   return {...result,precomputeStatus:precompute?.status??null};
 }
 
