@@ -4366,3 +4366,7 @@ tr[data-judgement="neutral"] .inflation-judgement{border-color:rgba(148,163,184,
  .inflation-indicator-section>header>p{margin-top:8px;text-align:left}
  .inflation-help>[role="tooltip"]{position:fixed;left:16px;right:16px;top:auto;bottom:20px;width:auto;max-width:none}
 }
+
+/* Inflation detail: no period rail; fixed 1Y chart */
+.inflation-target-card .fg-analysis-slot{grid-template-columns:minmax(0,1fr)!important;grid-template-rows:minmax(0,1fr)!important;column-gap:0!important}
+.inflation-target-card .fg-chart-slot{grid-column:1/-1!important;grid-row:1!important;width:100%!important}

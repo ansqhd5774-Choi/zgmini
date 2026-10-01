@@ -124,7 +124,7 @@ function HelpTip({label,text}:{label:string;text:string}){
 export default function InflationPanel(){
  const [payload,setPayload]=useState<InflationPayload|null>(null);
  const [loading,setLoading]=useState(true);
- const [period,setPeriod]=useState<3|6|12>(12);
+
 
  useEffect(()=>{
   const controller=new AbortController();
@@ -136,7 +136,7 @@ export default function InflationPanel(){
 
  const score=typeof payload?.score==="number"&&Number.isFinite(payload.score)?payload.score:null;
  const allTrend=useMemo(()=>Array.isArray(payload?.trend)?payload!.trend!.filter(p=>typeof p.value==="number"&&Number.isFinite(p.value)):[],[payload?.trend]);
- const trend=allTrend.slice(-period).map(p=>({date:p.label,score:p.value} satisfies MarketFearGreedChartPoint));
+ const trend=allTrend.slice(-12).map(p=>({date:p.label,score:p.value} satisfies MarketFearGreedChartPoint));
  const latest=trend.at(-1);
  const latestPoint:MarketFearGreedChartValidPoint|null=latest&&typeof latest.score==="number"?{date:latest.date,score:latest.score}:null;
  const axisLabels=new Map(trend.map(p=>[p.date,p.date.slice(5,7)]));
@@ -156,12 +156,7 @@ export default function InflationPanel(){
      <MarketScoreOrb score={loading||score===null?"—":score.toFixed(1)} state={loading?"확인 중":stage(score)} variant="hero" dayDelta={previousDelta} periodDelta={threeMonthDelta} periodLabel="3개월 대비" dayLabel="전월 대비" comparisonAriaLabel="인플레이션 안정성 점수 변화" metaDate={dateLabel(payload?.asOfDate)}/>
     </div>
     <MarketTrendFrame className="fg-analysis-slot">
-     <div className="fg-period-slot inflation-period-slot">
-      <div role="group" aria-label="인플레이션 점수 추이 기간" className="inflation-period-control">
-       {([{n:3,label:"3M"},{n:6,label:"6M"},{n:12,label:"1Y"}] as const).map(item=><button key={item.n} type="button" aria-pressed={period===item.n} onClick={()=>setPeriod(item.n)}>{item.label}</button>)}
-      </div>
-     </div>
-     <div className="fg-chart-slot"><div className="fg-renderer"><MarketFearGreedChart data={trend} axisTicks={axisTicks} axisLabels={axisLabels} latestPoint={latestPoint} instanceKey={String(period)} gradientId="inflation-fill" formatTooltipLabel={dateLabel} emptyLabel={loading?"확인 중":"이력 없음"}/></div></div>
+     <div className="fg-chart-slot"><div className="fg-renderer"><MarketFearGreedChart data={trend} axisTicks={axisTicks} axisLabels={axisLabels} latestPoint={latestPoint} instanceKey="1Y" gradientId="inflation-fill" formatTooltipLabel={dateLabel} emptyLabel={loading?"확인 중":"이력 없음"}/></div></div>
     </MarketTrendFrame>
    </div>
    <div className="fg-footer-slot"><div className="cnn-panel-note"><span>데이터 출처</span><strong>저장된 초기발표 이력만 사용 · Live fallback 없음</strong></div></div>
