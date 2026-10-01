@@ -11,7 +11,7 @@ import {
 } from "../lib/diagnostic-layer/open-resolution-r53-components.mjs";
 import {buildRateR2} from "../lib/market-score/rate-r2.mjs";
 import {loadStoredInflationR2Domain} from "./inflation-r2-reader.mjs";
-import {readBreadthB1R4StoredPublicDomainR1,buildBreadthB1R4UnavailablePublicDomain} from "../lib/market-score/breadth-b1-r4-worker-domain.mjs";
+import {readBreadthB1R5StoredPublicDomainR1,buildBreadthB1R5UnavailablePublicDomain} from "../lib/market-score/breadth-b1-r5-worker-domain.mjs";
 import {
   INFLATION_SCORING_SERIES,
   loadStoredInflationSeries,
@@ -66,7 +66,7 @@ export function createMarketScoreR1Handler({
   collectInputs,
   orchestrate,
   now=()=>new Date(),
-  collectBreadthDomain=readBreadthB1R4StoredPublicDomainR1,
+  collectBreadthDomain=readBreadthB1R5StoredPublicDomainR1,
 
   loadConsumptionDomain=loadStoredConsumptionC1R3,
   loadInflationDomain=loadStoredInflationR2Domain,
@@ -131,7 +131,7 @@ export function createMarketScoreR1Handler({
         : inflationR2Partial("INFLATION_R2_STORAGE_READ_FAILED");
       const breadthDomain=breadthState.status==="fulfilled"
         ? breadthState.value
-        : buildBreadthB1R4UnavailablePublicDomain("B1_R4_RUNTIME_UNAVAILABLE",asOf,instant.toISOString());
+        : buildBreadthB1R5UnavailablePublicDomain("B1_R5_RUNTIME_UNAVAILABLE",asOf,instant.toISOString());
       const consumptionDomain=consumptionState.status==="fulfilled"
         ? consumptionState.value
         : {status:"PARTIAL",score:null,missingFactors:["C1_R3_STORAGE_READ_FAILED"],indicators:[],trend:[],freshness:"STORED_CALCULATION_HISTORY_ONLY",updatedAt:null,methodologyVersion:"R3.45P",interpretation:"C1-R3.45P: stored calculation history only; live fallback forbidden"};
@@ -221,7 +221,7 @@ function composeMarketSnapshot({liquidityHistory,collected,storedInflation,infla
           gasolineRows:collected?.series?.GASREGCOVM??[],
           asOfDate:asOf,
         }),
-        // B1-R4 stored breadth score is authoritative for the public breadth slot.
+        // B1-R5 stored four-factor breadth score is authoritative for the public breadth slot.
         // Any legacy external.publicDomainScores.breadth value is intentionally overridden.
         breadth:breadthDomain,
       };

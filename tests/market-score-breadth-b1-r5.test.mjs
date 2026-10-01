@@ -1,0 +1,52 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import {composeBreadthB1R5Score,readBreadthB1R5StoredScore} from "../lib/market-score/breadth-b1-r5-reader.mjs";
+import {projectBreadthB1R5PublicDomain,assertBreadthB1R5PublicContract} from "../lib/market-score/breadth-b1-r5-worker-domain.mjs";
+import {B1_R5_METHOD} from "../lib/market-score/breadth-b1-r5-contract.mjs";
+
+const near=(actual,expected,eps=1e-9)=>assert.ok(Math.abs(actual-expected)<=eps,`expected ${actual} ~= ${expected}`);
+
+test("R5 is explicit four-factor breadth scoring",()=>{
+  const out=composeBreadthB1R5Score({advanceRatio:.62,advanceValueShare:.58,ema5:61,ema20:57});
+  assert.ok(out);
+  near(out.score,.30*62+.20*58+.30*61+.20*57);
+  near(out.factors.advanceRatio,62);
+  near(out.factors.advanceValueShare,58);
+  near(out.factors.ema5,61);
+  near(out.factors.ema20,57);
+});
+
+test("R5 preserves R4 numeric continuity while exposing four factors",async()=>{
+  const base={
+    id:"breadth",status:"READY",score:59,source:"IEX HIST",
+    components:{advanceRatio:.60,advanceValueShare:.55},
+    smoothing:{dailyScore:58,ema5:62,ema20:57},
+    runtime:{asOfDate:"2026-10-01",observationDate:"2026-10-01",lagTradingSessions:0},
+    observationDate:"2026-10-01",trend:[{label:"2026-10-01",value:59}],
+  };
+  const out=await readBreadthB1R5StoredScore({
+    asOfDate:"2026-10-01",
+    storedR4Reader:async()=>base,
+  });
+  assert.equal(out.status,"READY");
+  assert.equal(out.methodologyVersion,B1_R5_METHOD);
+  assert.equal(out.providerRequests,0);
+  assert.equal(out.storageMode,"D1_STORED_ONLY");
+  near(out.score,.30*60+.20*55+.30*62+.20*57);
+  near(out.score,base.score);
+});
+
+test("R5 public projection exposes four new stable indicators",()=>{
+  const domain=projectBreadthB1R5PublicDomain({
+    status:"READY",score:61,methodologyVersion:B1_R5_METHOD,source:"stored-source",
+    observationDate:"2026-10-01",
+    components:{advanceRatio:.625,advanceValueShare:.59},
+    smoothing:{ema5:60,ema20:58},
+    runtime:{asOfDate:"2026-10-01",observationDate:"2026-10-01",lagTradingSessions:0},
+    trend:[{label:"2026-10-01",value:61}],
+  });
+  assertBreadthB1R5PublicContract(domain);
+  assert.deepEqual(domain.indicators.map(x=>x.id),["breadth-41","breadth-42","breadth-43","breadth-44"]);
+  assert.deepEqual(domain.indicators.map(x=>x.name),["상승종목비율","상승거래대금비율","5일 수급 EMA","20일 수급 EMA"]);
+  assert.deepEqual(domain.indicators.map(x=>x.score),[62.5,59,60,58]);
+});
