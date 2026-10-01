@@ -4377,3 +4377,10 @@ tr[data-judgement="neutral"] .inflation-judgement{border-color:rgba(148,163,184,
 .recession-target-card .fg-analysis-slot{grid-template-columns:minmax(0,1fr)!important;grid-template-rows:minmax(0,1fr)!important;column-gap:0!important}
 .recession-target-card .fg-chart-slot{grid-column:1/-1!important;grid-row:1!important;width:100%!important}
 @media(max-width:767px){.recession-target-card{margin-top:12px}}
+
+
+/* Liquidity crisis detail — fixed stored-history chart, no period rail */
+.liquidity-crisis-target-card{margin-top:20px}
+.liquidity-crisis-target-card .fg-analysis-slot{grid-template-columns:minmax(0,1fr)!important;grid-template-rows:minmax(0,1fr)!important;column-gap:0!important}
+.liquidity-crisis-target-card .fg-chart-slot{grid-column:1/-1!important;grid-row:1!important;width:100%!important}
+@media(max-width:767px){.liquidity-crisis-target-card{margin-top:12px}}
