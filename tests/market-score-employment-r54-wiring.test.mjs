@@ -15,8 +15,7 @@ test("R54 adapter publishes explicit score and four factors",()=>{
  const domain=buildCmR1DomainResults({employment:{
   status:"READY",score:72,methodologyVersion:"EMPLOYMENT_R54_STORED_4FACTOR_R1",
   asOfDate:"2026-10-01",indicators,
-  current:{observationDate:"2026-08-01",score:64.5},
-  rows:[{observationDate:"2026-08-01",score:64.5}],
+  trend:[{label:"2026-08-01",value:71}],
  }}).find(x=>x.id==="employment");
  assert.equal(domain.score,72);
  assert.equal(domain.methodologyVersion,"EMPLOYMENT_R54_STORED_4FACTOR_R1");
@@ -32,17 +31,15 @@ test("R54 detail catalog is stable-id ordered",()=>{
 test("R54 public candidate never falls back to legacy score when partial",()=>{
  const domain=buildCmR1DomainResults({employment:{
   status:"PARTIAL",score:null,methodologyVersion:"EMPLOYMENT_R54_STORED_4FACTOR_R1",
-  missingFactors:["employment-43"],current:{observationDate:"2026-08-01",score:64.5},
-  rows:[{observationDate:"2026-08-01",score:64.5}],
+  missingFactors:["employment-43"],trend:[],
  }}).find(x=>x.id==="employment");
  assert.equal(domain.status,"PARTIAL");
  assert.equal(domain.score,null);
 });
 
-test("market score source wires stored R54 loader and retains R538 trend only",()=>{
+test("market score source wires stored R54 loader without legacy R538 mixing",()=>{
  const source=fs.readFileSync("worker/market-score-r1.mjs","utf8");
  assert.match(source,/loadEmploymentR54CandidateFromStored/);
  assert.match(source,/employmentR54Domain/);
- assert.match(source,/legacyEmployment/);
- assert.match(source,/rows:legacyEmployment\?\.rows/);
+ assert.doesNotMatch(source,/buildEmploymentR538|legacyEmployment/);
 });
