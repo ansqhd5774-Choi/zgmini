@@ -51,3 +51,14 @@ test("breadth source failure is retried ahead of normal round-robin jobs",()=>{
  assert.match(source,/x\.job==='breadth'&&x\.status==='SOURCE_FAILED'/);
  assert.match(source,/const priority=x=>/);
 });
+
+
+test("external market scheduler precomputes stored snapshot before slow collection",()=>{
+ const start=worker.indexOf("export async function runMarketExternalRefresh");
+ const end=worker.indexOf("// Image security config");
+ assert.ok(start>=0&&end>start);
+ const block=worker.slice(start,end);
+ assert.ok(block.indexOf("refreshStoredMarketScoreSnapshot")<block.indexOf("runMarketOperationalRefresh"));
+ assert.match(block,/providerRequests:precompute\?\.providerRequests\?\?0/);
+ assert.match(worker,/refresh:runMarketExternalRefresh,responseBudgetMs:5000,logTag:'MARKET_EXTERNAL'/);
+});
