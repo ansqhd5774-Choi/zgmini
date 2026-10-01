@@ -233,7 +233,14 @@ export function KoreaCompositeView({detail=false}:{detail?:boolean}){
   <p className="mt-2 text-sm text-slate-700">이전 관측 대비 {c?.changePoints!=null?`${c.changePoints>=0?'+':''}${c.changePoints.toFixed(1)}점 (${formatDate(c.previousObservationDate)})`:'비교 자료 없음'}</p>
   {c?.status==='STALE'&&<p role="status" className="mt-2 text-sm text-amber-700">갱신 대기 · Revision 7의 최근 유효 관측값을 표시합니다.</p>}
   {c&&<CompositeChart item={c} mini={!detail}/>}
-  {detail&&<p className="mt-3 text-xs">과거 점수는 현재 확보한 원자료로 재구성한 이력이며 당시 point-in-time 빈티지는 검증되지 않았습니다. 현재는 연구용 베타입니다.</p>}
+  {detail&&<>
+  <p className="mt-3 text-xs">과거 점수는 현재 확보한 원자료로 재구성한 이력이며 당시 point-in-time 빈티지는 검증되지 않았습니다. 현재는 연구용 베타입니다.</p>
+  <div className="mt-4 flex flex-wrap items-center gap-4 text-xs">
+   <span className="font-semibold text-slate-700">데이터 출처</span>
+   <a className="text-blue-700 underline" href="https://data.krx.co.kr/contents/MDC/MAIN/main/index.cmd" aria-label="한국거래소 KRX Data Marketplace 원본 페이지 열기">KRX 원본 ↗</a>
+   <a className="text-blue-700 underline" href="https://ecos.bok.or.kr/" aria-label="한국은행 ECOS 원본 페이지 열기">ECOS 원본 ↗</a>
+  </div>
+ </>}
  </div>;
 }
 
