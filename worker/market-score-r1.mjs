@@ -4,7 +4,7 @@ import {buildCmR1DomainResults} from "../lib/market-score/domain-adapter-r1.mjs"
 import {buildConsumptionC1} from "../lib/market-score/public-domain-producers-r1.mjs";
 import {buildCommoditiesK1R2} from "../lib/market-score/public-domain-producers-r2.mjs";
 import {loadStoredConsumptionC1R3} from "./consumption-r3-history-reader.mjs";
-import {buildEmploymentR538} from "../lib/diagnostic-layer/employment-r538-components.mjs";
+import {loadEmploymentR54CandidateFromStored,EMPLOYMENT_R54_METHOD} from "../lib/market-score/employment-r54-candidate.mjs";
 import {
   buildDollarFxR53,
   buildFundFlowR53,
@@ -60,6 +60,10 @@ function inflationR2Partial(reason="INFLATION_R2_STORAGE_PENDING"){
   return {status:"PARTIAL",score:null,missingFactors:[reason],indicators:[],trend:[],freshness:"STORED_INITIAL_RELEASE_HISTORY_ONLY",updatedAt:null,methodologyVersion:"INFLATION_R2_R29_56",interpretation:"Inflation R2: stored PIT history only; live fallback forbidden"};
 }
 
+function employmentR54Partial(reason="EMPLOYMENT_R54_STORAGE_PENDING",asOf=null){
+  return {status:"PARTIAL",score:null,missingFactors:[reason],indicators:[],trend:[],freshness:"STORED_ONLY",updatedAt:null,methodologyVersion:EMPLOYMENT_R54_METHOD,interpretation:"Employment R54 candidate: stored data only; missing factors are not reweighted",asOfDate:asOf};
+}
+
 export function createMarketScoreR1Handler({
   env,
   fetchImpl=globalThis.fetch,
@@ -72,6 +76,7 @@ export function createMarketScoreR1Handler({
   loadInflationDomain=loadStoredInflationR2Domain,
   loadLiquidityHistory=loadLiquidityActiveHistory,
   loadGrowthDomain=loadStoredGrowthR2PublicDomainR1,
+  loadEmploymentDomain=loadEmploymentR54CandidateFromStored,
 }={}){
   if(typeof collectInputs!=="function")throw new Error("COLLECT_INPUTS_REQUIRED");
   if(typeof orchestrate!=="function")throw new Error("ORCHESTRATE_REQUIRED");
@@ -87,7 +92,7 @@ export function createMarketScoreR1Handler({
 
     const compute=createProgressiveComputationCache();
     let progressTimer;
-    const state={collected:{series:{},external:{}},storedInflation:{series:{}},inflationR2Domain:inflationR2Partial(),breadthDomain:null,consumptionDomain:null ,liquidityHistory:[],growthDomain:null};
+    const state={collected:{series:{},external:{}},storedInflation:{series:{}},inflationR2Domain:inflationR2Partial(),employmentR54Domain:employmentR54Partial("EMPLOYMENT_R54_PENDING",asOf),breadthDomain:null,consumptionDomain:null,liquidityHistory:[],growthDomain:null};
     const emit=()=>{
       if(typeof onProgress!=='function')return;
       try { onProgress(composeMarketSnapshot({...state,orchestrate,asOf,instant,compute})); } catch { /* Pending inputs are not a request failure. */ }
@@ -115,6 +120,12 @@ export function createMarketScoreR1Handler({
       const collected=collectionState.status==="fulfilled"
         ? collectionState.value
         : {series:{},external:{},rateR2:{series:{}}};
+      const employmentR54Domain=await Promise.resolve().then(()=>loadEmploymentDomain(env?.DB,{
+        unemploymentRows:collected?.series?.UNRATE??[],
+        payrollLevelRows:collected?.series?.PAYEMS??[],
+        asOfDate:asOf,
+      })).catch(()=>employmentR54Partial("EMPLOYMENT_R54_STORAGE_READ_FAILED",asOf));
+      update("employmentR54Domain",employmentR54Domain);
       const storedInflation=storageState.status==="fulfilled"
         ? storageState.value
         : {
@@ -143,7 +154,7 @@ export function createMarketScoreR1Handler({
       const liquidityHistory=liquidityHistoryState.status==="fulfilled"&&Array.isArray(liquidityHistoryState.value)
         ? liquidityHistoryState.value
         : [];
-      const body=composeMarketSnapshot({liquidityHistory,collected,storedInflation,inflationR2Domain,breadthDomain,consumptionDomain,growthDomain,orchestrate,asOf,instant,compute});
+      const body=composeMarketSnapshot({liquidityHistory,collected,storedInflation,inflationR2Domain,employmentR54Domain,breadthDomain,consumptionDomain,growthDomain,orchestrate,asOf,instant,compute});
       if(collectionState.status==='rejected'&&!body.domains.some(domain=>domain.status==='READY'))throw collectionState.reason;
       return safeJson(body);
     }catch(error){
@@ -161,7 +172,7 @@ export function createMarketScoreR1Handler({
   };
 }
 
-function composeMarketSnapshot({liquidityHistory,collected,storedInflation,inflationR2Domain,breadthDomain,consumptionDomain,growthDomain,orchestrate,asOf,instant,compute}) {
+function composeMarketSnapshot({liquidityHistory,collected,storedInflation,inflationR2Domain,employmentR54Domain,breadthDomain,consumptionDomain,growthDomain,orchestrate,asOf,instant,compute}) {
       const scoringSeries=buildStoredInflationScoringSeries(
         collected?.series??{},
         storedInflation,
@@ -178,11 +189,7 @@ function composeMarketSnapshot({liquidityHistory,collected,storedInflation,infla
       });
 
       const diagnostics=diagnostic?.snapshot?.diagnostics??{};
-      const employment=compute(buildEmploymentR538,{
-        unemploymentRows:collected?.series?.UNRATE??[],
-        payrollLevelRows:collected?.series?.PAYEMS??[],
-        asOfDate:asOf,
-      });
+      const employment=employmentR54Domain??employmentR54Partial("EMPLOYMENT_R54_PENDING",asOf);
       const rateSeries=collected?.rateR2?.series??{};
       const rate=compute(buildRateR2,{
         effrRows:rateSeries.EFFR??[],
