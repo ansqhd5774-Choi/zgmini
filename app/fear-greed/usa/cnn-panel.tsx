@@ -327,22 +327,54 @@ function signedPercent(value: number) {
   return `${sign}${value.toFixed(2)}%`;
 }
 
-function componentReading(
+function rawValueReading(
+  id: string,
   component: CnnComponent | undefined,
   referenceGap: number | null,
 ) {
-  if (!component) return "검증 가능한 저장 데이터가 없어 해석을 표시하지 않습니다.";
+  if (!component) return "검증 가능한 저장 원시값이 없습니다.";
 
-  const normalized = `CNN 정규화 점수는 ${component.score.toFixed(1)}/100 · ${component.rating} 구간입니다.`;
-  if (referenceGap === null) return normalized;
+  if (id === "market-momentum" && referenceGap !== null) {
+    if (referenceGap > 0) return `S&P 500이 125일 이동평균보다 ${Math.abs(referenceGap).toFixed(2)}% 위입니다. 원시 추세는 상승 모멘텀 방향입니다.`;
+    if (referenceGap < 0) return `S&P 500이 125일 이동평균보다 ${Math.abs(referenceGap).toFixed(2)}% 아래입니다. 원시 추세는 약화 방향입니다.`;
+    return "S&P 500이 125일 이동평균과 같은 수준입니다.";
+  }
 
-  const relation = referenceGap > 0
-    ? `기준보다 ${Math.abs(referenceGap).toFixed(2)}% 위`
-    : referenceGap < 0
-      ? `기준보다 ${Math.abs(referenceGap).toFixed(2)}% 아래`
-      : "기준과 같은 수준";
+  if (id === "stock-price-strength") {
+    if (component.rawValue > 0) return "원시값이 양수여서 신고가 우위 방향입니다. CNN 등급은 이 값의 최근 상대 위치까지 함께 반영합니다.";
+    if (component.rawValue < 0) return "원시값이 음수여서 신저가 우위 방향입니다. CNN 등급은 이 값의 최근 상대 위치까지 함께 반영합니다.";
+    return "신고가와 신저가 강도가 균형에 가까운 원시값입니다.";
+  }
 
-  return `원시값은 ${relation}입니다. ${normalized} 원시값의 방향과 0~100 정규화 강도는 같은 척도가 아닙니다.`;
+  if (id === "stock-price-breadth") {
+    return "McClellan Summation Index는 절대 숫자 하나만으로 공포·탐욕을 정하지 않습니다. 최근 범위 안에서 현재 위치를 CNN 환산점수와 함께 봅니다.";
+  }
+
+  if (id === "put-call-options") {
+    return `현재 Put/Call 비율은 ${component.rawValue.toFixed(3)}입니다. 비율이 높아질수록 방어·불안 심리가 강해지는 경향이 있지만, 하나의 고정 숫자만으로 등급을 정하지 않습니다.`;
+  }
+
+  if (id === "market-volatility" && referenceGap !== null) {
+    const direction = referenceGap > 0 ? "높아" : referenceGap < 0 ? "낮아" : "같아";
+    return `VIX가 50일 평균보다 ${Math.abs(referenceGap).toFixed(2)}% ${direction} 최근 평균 대비 예상 변동성을 보여줍니다. VIX는 주가 상승·하락 방향을 예측하는 지표가 아닙니다.`;
+  }
+
+  if (id === "junk-bond-demand") {
+    return `고위험채와 투자등급채의 스프레드는 ${component.rawValue.toFixed(3)}%p입니다. 스프레드가 좁을수록 위험 선호, 넓을수록 공포 방향입니다.`;
+  }
+
+  if (id === "safe-haven-demand") {
+    if (component.rawValue > 0) return `최근 20거래일 주식이 국채보다 ${component.rawValue.toFixed(3)}%p 더 강했습니다. 다만 플러스라고 자동으로 탐욕은 아니며, 최근 상대 범위에서 약하면 CNN은 공포로 분류할 수 있습니다.`;
+    if (component.rawValue < 0) return `최근 20거래일 국채가 주식보다 ${Math.abs(component.rawValue).toFixed(3)}%p 더 강했습니다. 안전자산 선호가 커진 방향입니다.`;
+    return "최근 20거래일 주식과 국채 수익률 차이가 거의 없습니다.";
+  }
+
+  return "원시값은 해당 지표 고유 단위로 읽고, CNN 환산점수와 함께 해석합니다.";
+}
+
+function normalizedReading(component: CnnComponent | undefined) {
+  if (!component) return "검증 가능한 CNN 환산점수가 없습니다.";
+  return `${component.score.toFixed(1)} / 100 · ${component.rating}. 원시값의 절대 수준과 별개로 CNN이 이 지표의 상대적인 공포·탐욕 강도를 0~100으로 환산한 값입니다.`;
 }
 
 function buildMarketInsight({
@@ -529,6 +561,8 @@ export default function CnnPanel({ showEducation = false }: { showEducation?: bo
         <div><strong>0~100 정규화</strong><span>낮을수록 공포 · 높을수록 탐욕</span></div>
       </div>
 
+      <p className="cnn-scale-note"><strong>중요:</strong> 원시값의 방향과 CNN 환산점수는 같은 척도가 아닙니다. 예를 들어 주식이 채권보다 강하거나 S&P 500이 이동평균 위에 있어도, 최근 상대 범위에서 약하면 CNN 점수는 공포로 나올 수 있습니다.</p>
+
       <div className="cnn-score-guide" aria-label="CNN 공포탐욕 점수 해석 구간">
         {scoreGuide.map((item) => <span key={item.range}><b>{item.range}</b><small>{item.label}</small></span>)}
       </div>
@@ -590,10 +624,16 @@ export default function CnnPanel({ showEducation = false }: { showEducation?: bo
               <span><b>탐욕 방향</b>{definition.greedDirection}</span>
             </div>
 
-            <div className="cnn-component-interpretation">
-              <strong>현재 해석</strong>
-              <p>{componentReading(component, referenceGap)}</p>
-              <small>{component ? `원시값 기준일 ${dateLabel(component.rawObservedAt)}` : "임의 수치로 대체하지 않습니다."}</small>
+            <div className="cnn-component-reading-grid">
+              <div className="cnn-component-reading is-raw">
+                <strong>원시값 해석</strong>
+                <p>{rawValueReading(definition.id, component, referenceGap)}</p>
+              </div>
+              <div className="cnn-component-reading is-score">
+                <strong>CNN 환산점수</strong>
+                <p>{normalizedReading(component)}</p>
+                <small>{component ? `원시값 기준일 ${dateLabel(component.rawObservedAt)}` : "임의 수치로 대체하지 않습니다."}</small>
+              </div>
             </div>
           </article>;
         })}
