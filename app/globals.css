@@ -4056,3 +4056,88 @@ body .zg-r55-market .zg-r55-shell[data-expanded="false"] article.zg-r55-card>.zg
     grid-column:auto;
   }
 }
+
+
+/* FEAR_GREED_EDU_R1_SCORE_GUIDE */
+.cnn-score-guide{
+  display:grid;
+  grid-template-columns:25fr 20fr 11fr 20fr 25fr;
+  margin-top:12px;
+  overflow:hidden;
+  border:1px solid var(--zg-border);
+  border-radius:6px;
+}
+.cnn-score-guide span{
+  min-width:0;
+  padding:8px 6px;
+  text-align:center;
+  border-right:1px solid rgba(255,255,255,.08);
+}
+.cnn-score-guide span:last-child{border-right:0}
+.cnn-score-guide span:nth-child(1){background:rgba(143,31,47,.28)}
+.cnn-score-guide span:nth-child(2){background:rgba(242,85,90,.18)}
+.cnn-score-guide span:nth-child(3){background:rgba(154,168,182,.14)}
+.cnn-score-guide span:nth-child(4){background:rgba(88,200,138,.13)}
+.cnn-score-guide span:nth-child(5){background:rgba(21,134,94,.22)}
+.cnn-score-guide b,
+.cnn-score-guide small{
+  display:block;
+}
+.cnn-score-guide b{
+  font-size:11px;
+  line-height:1.2;
+  color:var(--zg-text);
+}
+.cnn-score-guide small{
+  margin-top:3px;
+  font-size:10px;
+  line-height:1.25;
+  color:var(--zg-text-secondary);
+}
+.cnn-component-scorebar{
+  margin-top:12px;
+}
+.cnn-component-scorebar-track{
+  position:relative;
+  height:8px;
+  border-radius:999px;
+  background:linear-gradient(
+    90deg,
+    #8f1f2f 0 25%,
+    #f2555a 25% 45%,
+    #9aa8b6 45% 55%,
+    #58c88a 55% 75%,
+    #15865e 75% 100%
+  );
+}
+.cnn-component-scorebar-track i{
+  position:absolute;
+  top:50%;
+  width:12px;
+  height:12px;
+  border:2px solid #fff;
+  border-radius:50%;
+  background:#071a29;
+  transform:translate(-50%,-50%);
+  box-shadow:0 0 0 2px rgba(3,18,29,.65);
+}
+.cnn-component-scorebar-ticks{
+  display:flex;
+  justify-content:space-between;
+  margin-top:5px;
+  color:var(--zg-text-meta);
+  font-size:9px;
+  line-height:1;
+}
+
+@media(max-width:767px){
+  .cnn-score-guide span{
+    padding:7px 3px;
+  }
+  .cnn-score-guide b{
+    font-size:10px;
+  }
+  .cnn-score-guide small{
+    font-size:9px;
+  }
+}
