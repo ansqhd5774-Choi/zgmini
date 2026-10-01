@@ -209,6 +209,7 @@ function composeMarketSnapshot({liquidityHistory,collected,storedInflation,infla
         y5:collected?.series?.DGS5??[],
         y10:collected?.series?.DGS10??[],
         y30:collected?.series?.DGS30??[],
+        bondVolatilityRows:diagnostic?.artifacts?.bondVolatility?.rows??[],
         asOfDate:asOf,
       });
       const fundFlow=compute(buildFundFlowR53,
