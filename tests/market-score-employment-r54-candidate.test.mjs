@@ -79,3 +79,57 @@ test("R54 candidate keeps explicit 30/30/20/20 weights",()=>{
   });
   assert.equal(Object.values(EMPLOYMENT_R54_WEIGHTS).reduce((a,b)=>a+b,0),1);
 });
+
+
+test("R54 compact claim aggregates preserve raw calculation",async()=>{
+  const unemployment=monthRows(2016,130,6,()=>-0.01);
+  const payroll=monthRows(2016,130,140000,()=>150);
+  const raw=claimRows("2025-01-04",60);
+  const rawOut=buildEmploymentR54Candidate({
+    unemploymentRows:unemployment,
+    payrollLevelRows:payroll,
+    shadowRows:raw,
+    asOfDate:"2026-12-31",
+  });
+
+  const byDate=new Map();
+  const byState=new Map();
+  for(const row of raw){
+    const d=byDate.get(row.observationDate)??[];
+    d.push(row.value);byDate.set(row.observationDate,d);
+    const s=byState.get(row.geographyCode)??[];
+    s.push({observationDate:row.observationDate,value:row.value});byState.set(row.geographyCode,s);
+  }
+  const weekly=[...byDate].map(([observationDate,values])=>({
+    observation_date:observationDate,value:values.reduce((a,b)=>a+b,0),
+  })).sort((a,b)=>a.observation_date.localeCompare(b.observation_date));
+
+  const state4w=new Map();
+  for(const [state,rows] of byState){
+    rows.sort((a,b)=>a.observationDate.localeCompare(b.observationDate));
+    for(let i=3;i<rows.length;i++){
+      const avg=rows.slice(i-3,i+1).reduce((sum,x)=>sum+x.value,0)/4;
+      const bucket=state4w.get(rows[i].observationDate)??new Map();
+      bucket.set(state,avg);state4w.set(rows[i].observationDate,bucket);
+    }
+  }
+  const dates=[...state4w.keys()].sort();
+  const breadth=[];
+  for(let i=4;i<dates.length;i++){
+    const cur=state4w.get(dates[i]),prior=state4w.get(dates[i-4]);
+    let eligible=0,improved=0;
+    for(const [state,value] of cur){const p=prior.get(state);if(p==null)continue;eligible++;if(value<=p)improved++;}
+    if(eligible>=51)breadth.push({observation_date:dates[i],value:100*improved/eligible});
+  }
+
+  const compactOut=buildEmploymentR54Candidate({
+    unemploymentRows:unemployment,
+    payrollLevelRows:payroll,
+    claimsWeeklyTotalRows:weekly,
+    claimsBreadthScoreRows:breadth,
+    asOfDate:"2026-12-31",
+  });
+  assert.equal(compactOut.status,"READY");
+  assert.ok(Math.abs(compactOut.score-rawOut.score)<1e-9);
+  assert.deepEqual(compactOut.indicators.map(x=>[x.id,x.score,x.value]),rawOut.indicators.map(x=>[x.id,x.score,x.value]));
+});
