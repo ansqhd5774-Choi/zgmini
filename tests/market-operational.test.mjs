@@ -17,7 +17,7 @@ test('large normalized history is compressed in storage and restored without val
  await store.writeInput('macro',input,now);
  const stored=sqlite.prepare('SELECT body FROM market_input_batches_v1').get().body;
  assert.ok(stored.startsWith('gzip:'));assert.ok(stored.length<1800000);
- assert.deepEqual((await store.readInput('macro')).body,input);sqlite.close();
+ assert.deepEqual((await store.readInput('macro')).body.series,input.series);sqlite.close();
 });
 test('collection persists inputs before calculation and public reads perform no collection',async()=>{
  const {store,db,sqlite}=fixture();let calls=0;
@@ -55,4 +55,25 @@ test('scheduled score persistence continues the existing liquidity trend history
  assert.equal(row.score,0);assert.equal(row.as_of_date,'2026-09-30');
  await store.writeScore({status:'SUCCESS',asOfDate:'2026-09-30',domains:[{id:'liquidity',status:'PARTIAL',score:null}]},now+1);
  assert.equal(sqlite.prepare('SELECT score FROM market_liquidity_active_history_v1').get().score,0);sqlite.close();
+});
+
+
+test('failed macro refresh preserves stored observations without refreshing their age',async()=>{
+ const {store,db,sqlite}=fixture();
+ await store.writeInput('macro',{series:{UNRATE:[{value:0}],PAYEMS:[{value:100}]}},now);
+ const r=await runMarketOperationalRefresh({env:{DB:db},store,job:'macro',now:now+3600000,
+  collectors:{macro:async()=>({series:{UNRATE:[]},providerSummary:{fred:{failed:[{seriesId:'UNRATE',status:'TIMEOUT'}]}}})},
+  calculate:async(_env,s,time)=>{const x=await readStoredMarketInputs(s,time);assert.equal(x.series.UNRATE[0].value,0);return {readyDomains:1}}});
+ assert.equal(r.status,'SOURCE_FAILED');assert.deepEqual(r.failedSeries,[{seriesId:'UNRATE',status:'TIMEOUT'}]);
+ assert.equal((await store.readInput('macro')).body.seriesStoredAt.UNRATE,now);
+ const expired=await readStoredMarketInputs(store,now+36*3600000);
+ assert.equal(expired.series.UNRATE,undefined);sqlite.close();
+});
+
+test('legacy incomplete current batch can recover actual prior-day data within existing freshness window',async()=>{
+ const {store,sqlite}=fixture();await store.initialize();
+ sqlite.prepare('INSERT INTO market_input_batches_v1 VALUES(?,?,?)').run('macro:2026-09-29',JSON.stringify({series:{UNRATE:[{value:4}]}}),now-3600000);
+ sqlite.prepare('INSERT INTO market_input_batches_v1 VALUES(?,?,?)').run('macro:2026-09-30',JSON.stringify({series:{PAYEMS:[{value:101}]}}),now);
+ const x=await readStoredMarketInputs(store,now);assert.equal(x.series.UNRATE[0].value,4);assert.equal(x.series.PAYEMS[0].value,101);
+ assert.equal(x.seriesStoredAt.UNRATE,now-3600000);sqlite.close();
 });

@@ -17,7 +17,7 @@ const EXTERNAL_KEYS={macro:['publicDomainScores'],credit:['dvpRepoRows','triPart
 async function collectGroup(args,group){
  const adapters=Object.fromEntries(['fetchFred','fetchOfr','fetchCmdi','fetchGscpi','fetchCopper','fetchFundFlows','fetchBis'].filter(key=>!SOURCE_GROUPS[group].includes(key)).map(key=>[key,async()=>({status:'SKIPPED_JOB'})]));
  const out=await collectDiagnosticLiveInputs({...args,requestCap:48,adapters});
- return {...(group==='macro'?{series:out.series,inputSettled:out.inputSettled}:{}),external:Object.fromEntries(EXTERNAL_KEYS[group].map(key=>[key,out.external[key]]))};
+ return {providerSummary:out.providerSummary,...(group==='macro'?{series:out.series,inputSettled:out.inputSettled}:{}),external:Object.fromEntries(EXTERNAL_KEYS[group].map(key=>[key,out.external[key]]))};
 }
 const unavailableFetch=async()=>{throw Error('SCORE_CALCULATION_NETWORK_FORBIDDEN')};
 export async function calculateStoredMarketScore(env,store,now){
@@ -75,9 +75,10 @@ export async function runMarketOperationalRefresh({env,job,store,now=Date.now(),
   }
   phase='CALCULATE';const result=await calculate(env,store,now);
   const sourceStatus=collected?.status??collected?.rateR2?.status??'COLLECTED';
-  const failed=/^(FAIL|FAILED|ERROR)$/.test(sourceStatus);
+  const macroFailures=selected==='macro'?(collected?.providerSummary?.fred?.failed??[]):[];
+  const failed=/^(FAIL|FAILED|ERROR)$/.test(sourceStatus)||macroFailures.length>0;
   await store.finish(selected,jobLease,now,failed?'SOURCE_FAILED':'COMPLETE');
-  return {status:failed?'SOURCE_FAILED':'COMPLETE',job:selected,sourceStatus,...result};
+  return {status:failed?'SOURCE_FAILED':'COMPLETE',job:selected,sourceStatus,...(macroFailures.length?{failedSeries:macroFailures.map(({seriesId,status})=>({seriesId,status}))}:{}),...result};
  }catch(error){
   if(jobLease)await store.finish(selected,jobLease,now,`${phase}_FAILED`).catch(()=>{});
   const reason=['INPUT_STORAGE_LIMIT','STORED_CALCULATION_FAILED','SCORE_CONTRACT_FAILED'].includes(error?.message)?error.message:(String(error?.message??'').match(/^GROWTH_R2_[A-Z0-9_]+/)?.[0]??null);
