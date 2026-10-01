@@ -100,7 +100,7 @@ function growthForwardFetchMock(){
     if(u.includes("/timeseries/eits/m3")){
       const q=new URL(u).searchParams,cat=q.get("category_code"),time=q.get("time")??"2026";
       const by={
-        MTM:[["NO","1","yes","MTM","1200000","no",`${time}-08`,"1"],["VS","1","yes","MTM","1000000","no",`${time}-08`,"1"],["TI","1","yes","MTM","1800000","no",`${time}-08`,"1"]],
+        MTM:[["NO","1","yes","MTM","1,200,000","no",`${time}-08`,"1"],["VS","1","yes","MTM","1,000,000","no",`${time}-08`,"1"],["TI","1","yes","MTM","1,800,000","no",`${time}-08`,"1"]],
         MDM:[["NO","1","yes","MDM","600000","no",`${time}-08`,"1"]],
         NXA:[["NO","1","yes","NXA","300000","no",`${time}-08`,"1"],["VS","1","yes","NXA","250000","no",`${time}-08`,"1"]],
         MTU:[["UO","1","yes","MTU","900000","no",`${time}-08`,"1"]],
