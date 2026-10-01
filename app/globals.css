@@ -4153,3 +4153,60 @@ body .zg-r55-market .zg-r55-shell[data-expanded="false"] article.zg-r55-card>.zg
     grid-column:auto;
   }
 }
+
+
+/* FEAR_GREED_EDU_READING_R1 */
+.cnn-scale-note{
+  margin-top:12px;
+  border-left:4px solid #f4b942;
+  background:#081f30;
+  padding:10px 12px;
+  color:var(--zg-text-secondary);
+  font-size:12px;
+  line-height:1.6;
+}
+.cnn-scale-note strong{
+  color:#ffd166;
+}
+.cnn-component-reading-grid{
+  display:grid;
+  grid-template-columns:1fr;
+  gap:8px;
+  margin-top:16px;
+}
+.cnn-component-reading{
+  min-width:0;
+  border:1px solid #19384c;
+  background:#071b29;
+  padding:10px 12px;
+}
+.cnn-component-reading>strong{
+  display:block;
+  font-size:12px;
+  line-height:1.3;
+}
+.cnn-component-reading p{
+  margin-top:4px;
+  color:#d7e2ec;
+  font-size:12px;
+  line-height:1.6;
+}
+.cnn-component-reading small{
+  display:block;
+  margin-top:4px;
+  color:var(--zg-text-meta);
+  font-size:11px;
+  line-height:1.4;
+}
+.cnn-component-reading.is-raw{
+  border-left:4px solid #4b6f88;
+}
+.cnn-component-reading.is-score{
+  border-left:4px solid #36536a;
+}
+.cnn-education-card[data-tone="fear"] .cnn-component-reading.is-score{
+  border-left-color:#c75b67;
+}
+.cnn-education-card[data-tone="greed"] .cnn-component-reading.is-score{
+  border-left-color:#38a77e;
+}
