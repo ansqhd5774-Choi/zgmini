@@ -43,7 +43,7 @@ test("CM-R1 adapter accepts only explicit approved public-domain inputs for unre
 });
 
 
-test("Employment R54 explicit score and indicators override legacy current score while preserving legacy trend",()=>{
+test("Employment R54 explicit score, indicators and native trend are preserved",()=>{
   const employment={
     status:"READY",
     score:72,
@@ -55,17 +55,16 @@ test("Employment R54 explicit score and indicators override legacy current score
       {id:"employment-43",name:"신규 실업수당 4W 평균",status:"READY",score:68,value:220000,unit:"건"},
       {id:"employment-44",name:"주 실업수당 개선 비율",status:"READY",score:80,value:80,unit:"%"},
     ],
-    current:{observationDate:"2026-08-01",score:64.5},
-    rows:[
-      {observationDate:"2026-07-01",score:63},
-      {observationDate:"2026-08-01",score:64.5},
+    trend:[
+      {label:"2026-07-01",value:70},
+      {label:"2026-08-01",value:72},
     ],
   };
   const domain=buildCmR1DomainResults({employment}).find(x=>x.id==="employment");
   assert.equal(domain.score,72);
   assert.equal(domain.methodologyVersion,"EMPLOYMENT_R54_STORED_4FACTOR_R1");
   assert.deepEqual(domain.indicators.map(x=>x.id),["employment-41","employment-42","employment-43","employment-44"]);
-  assert.deepEqual(domain.trend,[{label:"2026-07-01",value:63},{label:"2026-08-01",value:64.5}]);
+  assert.deepEqual(domain.trend,[{label:"2026-07-01",value:70},{label:"2026-08-01",value:72}]);
 });
 
 test("Employment R54 PARTIAL never falls back to legacy current score",()=>{
@@ -74,8 +73,7 @@ test("Employment R54 PARTIAL never falls back to legacy current score",()=>{
     score:null,
     methodologyVersion:"EMPLOYMENT_R54_STORED_4FACTOR_R1",
     missingFactors:["employment-43"],
-    current:{observationDate:"2026-08-01",score:64.5},
-    rows:[{observationDate:"2026-08-01",score:64.5}],
+    trend:[],
   }}).find(x=>x.id==="employment");
   assert.equal(domain.status,"PARTIAL");
   assert.equal(domain.score,null);
