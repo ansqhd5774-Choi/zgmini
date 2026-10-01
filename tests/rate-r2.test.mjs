@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {buildRateR2,RATE_R2_CONTRACT} from '../lib/market-score/rate-r2.mjs';
+import {buildRateR3} from '../lib/market-score/rate-r3.mjs';
 import {marketDetailRows} from '../lib/market-score/detail-catalog.mjs';
 import {createMarketScoreR1Handler} from '../worker/market-score-r1.mjs';
 
@@ -144,7 +145,11 @@ test('detail output carries complete contract and preserves unavailable metadata
   assert.equal(missing.status,'READY'); // Target range is display-only; EFFR drives the policy axis.
 });
 
-test('public runtime uses RATE_R2, ignores diagnostic recession/credit caps and never substitutes base rates',async()=>{
+test('RATE_R2 builder remains preserved while public runtime is RATE_R3',async()=>{
+  const legacy=buildRateR2(fullInputs());
+  assert.equal(legacy.modelVersion,'RATE_R2');
+  assert.deepEqual(legacy.weights,{policy:.25,nominal:.25,real:.25,curve:.25});
+
   const series={EFFR:effr,DGS2:d2,DFII10:real10,DGS3MO:d3m,DGS10:d10,DFEDTARL:lower,DFEDTARU:upper};
   const run=async rateSeries=>{
     const handler=createMarketScoreR1Handler({
@@ -157,8 +162,8 @@ test('public runtime uses RATE_R2, ignores diagnostic recession/credit caps and 
     return (await response.json()).domains.find(domain=>domain.id==='rates');
   };
   const ready=await run(series);
-  assert.equal(ready.modelVersion,'RATE_R2');
-  assert.equal(ready.score,buildRateR2(fullInputs()).score);
+  assert.equal(ready.modelVersion,'RATE_R3');
+  assert.equal(ready.score,buildRateR3(fullInputs()).score);
   assert.equal(ready.indicators.length,4);
   const missing=await run({});
   assert.equal(missing.status,'UNAVAILABLE');
