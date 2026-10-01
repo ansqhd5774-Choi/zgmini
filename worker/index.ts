@@ -57,7 +57,7 @@ export async function runMarketExternalRefresh(args:any){
     reason:precompute?.reason??null,
   }));
   const result=await runMarketOperationalRefresh(args).catch(()=>({status:'ERROR'}));
-  if(['macro','macroCredit'].includes(result?.job)){
+  if(['macro','macroCredit','growth'].includes(result?.job)){
     console.log('PUBLIC_FEEDS',JSON.stringify({status:'SKIPPED_MACRO_CPU_GUARD'}));
   }else{
     const feeds=await runPublicFeeds(args).catch(()=>({status:'ERROR'}));
