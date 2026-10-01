@@ -546,9 +546,9 @@ export default function CnnPanel({ showEducation = false }: { showEducation?: bo
         formatTooltipLabel={dateLabel}
       />}
       footer={{
-        href: "https://edition.cnn.com/markets/fear-and-greed",
-        label: "자세히",
-        ariaLabel: "CNN Fear & Greed 원본 페이지 열기",
+        href: showEducation ? "https://edition.cnn.com/markets/fear-and-greed" : "/fear-greed/usa/",
+        label: showEducation ? "CNN 원본" : "자세히",
+        ariaLabel: showEducation ? "CNN Fear & Greed 원본 페이지 열기" : "미국 공포·탐욕 상세 페이지 열기",
         children: "데이터 출처",
       }}
     />
