@@ -1873,12 +1873,14 @@ html,body{overflow-x:hidden}
 
 .fg-card.fg-shared-shell .cnn-spectrum-gauge{
   position:relative;
+  display:grid;
   width:min(100%,220px);
   aspect-ratio:220/142;
 }
 
 .fg-card.fg-shared-shell .cnn-spectrum-gauge svg{
   display:block;
+  grid-area:1/1;
   width:100%;
   height:100%;
   overflow:visible;
@@ -1954,12 +1956,16 @@ html,body{overflow-x:hidden}
 }
 
 .fg-card.fg-shared-shell .cnn-spectrum-center{
-  position:absolute;
-  left:50%;
-  top:69.5%;
+  position:static;
+  grid-area:1/1;
+  align-self:end;
+  justify-self:center;
   display:flex;
   width:52%;
-  transform:translate(-50%,-50%);
+  margin:0 0 2px;
+  transform:none;
+  z-index:1;
+  gap:4px;
   flex-direction:column;
   align-items:center;
   justify-content:center;
@@ -1992,11 +1998,14 @@ html,body{overflow-x:hidden}
 }
 
 .fg-card.fg-shared-shell .cnn-spectrum-center>span{
-  margin-top:6px;
+  min-height:20px;
+  margin-top:0;
+  padding:0 8px;
+  border-radius:10px;
   color:var(--zg-neutral-text);
   font-size:16px;
   font-weight:900;
-  line-height:1;
+  line-height:20px;
   letter-spacing:-.01em;
 }
 
@@ -2625,7 +2634,7 @@ html,body{overflow-x:hidden}
 }
 
 .fg-card.fg-shared-shell .cnn-spectrum-center>span{
-  margin-top:5px;
+  margin-top:0;
   font-size:clamp(9.5px,1.4cqi,13px);
 }
 
@@ -3263,7 +3272,7 @@ body .zg-r55-market .zg-r55-shell[data-expanded="false"] article.zg-r55-card>.zg
   .zg-dashboard[data-view="dashboard"] .cnn-market-title p:last-child{margin-top:4px}
   .zg-dashboard[data-view="dashboard"] .fg-card.fg-shared-shell .cnn-score-orb-hero{row-gap:0}
   .zg-dashboard[data-view="dashboard"] .fg-card.fg-shared-shell .cnn-score-fraction{margin-left:4px;font-size:20px;font-weight:800;line-height:1}
-  .zg-dashboard[data-view="dashboard"] .fg-card.fg-shared-shell .cnn-spectrum-center>span{margin-top:4px;display:inline-flex;align-items:center;justify-content:center;min-height:22px;padding:4px 8px;border:1px solid rgba(168,188,208,.35);border-radius:12px;background:rgba(7,26,41,.62);font-size:10px;line-height:1}
+  .zg-dashboard[data-view="dashboard"] .fg-card.fg-shared-shell .cnn-spectrum-center>span{margin-top:0;display:inline-flex;align-items:center;justify-content:center;min-height:20px;padding:0 8px;border:1px solid rgba(168,188,208,.35);border-radius:10px;background:rgba(7,26,41,.62);font-size:10px;line-height:20px}
   .zg-dashboard[data-view="dashboard"] .fg-card.fg-shared-shell .cnn-score-comparison{gap:4px}
   .zg-dashboard[data-view="dashboard"] .fg-card.fg-shared-shell .fg-footer-slot .cnn-panel-note{padding:4px 8px}
 
@@ -3378,8 +3387,8 @@ body .zg-r55-market .zg-r55-shell[data-expanded="false"] article.zg-r55-card>.zg
   .zg-dashboard[data-view="dashboard"] .fg-card.fg-shared-shell .cnn-score-orb-hero.is-fear .cnn-spectrum-center>span{border-color:rgba(255,95,101,.55);background:rgba(121,26,37,.22)}
   .zg-dashboard[data-view="dashboard"] .fg-card.fg-shared-shell .cnn-score-orb-hero.is-greed .cnn-spectrum-center>span{border-color:rgba(69,217,159,.52);background:rgba(21,134,94,.18)}
   .zg-dashboard[data-view="dashboard"] .fg-card.fg-shared-shell .cnn-score-comparisons{min-height:32px;height:32px;padding:4px 8px;border-top:1px solid rgba(168,188,208,.12);border-radius:4px;background:rgba(3,18,29,.34)}
-  .zg-dashboard[data-view="dashboard"] .fg-card.fg-shared-shell .cnn-score-comparison>span{font-size:8px}
-  .zg-dashboard[data-view="dashboard"] .fg-card.fg-shared-shell .cnn-score-comparison>strong{margin-top:0;font-size:11px}
+  .zg-dashboard[data-view="dashboard"] .fg-card.fg-shared-shell .cnn-score-comparison>span{font-size:9px}
+  .zg-dashboard[data-view="dashboard"] .fg-card.fg-shared-shell .cnn-score-comparison>strong{margin-top:0;font-size:12px}
   .zg-dashboard[data-view="dashboard"] .fg-card.fg-shared-shell .cnn-score-observed-date{min-height:12px;height:12px;font-size:8px;line-height:1}
   .zg-dashboard[data-view="dashboard"] .zg-r55-shell[data-expanded="false"] .zg-r55-card{height:72px;max-height:72px;overflow:hidden;display:grid;grid-template-rows:20px 40px;row-gap:4px;align-content:start}
   .zg-dashboard[data-view="dashboard"] .zg-r55-shell[data-expanded="false"] .zg-r55-card-compact-scale{display:block;min-width:0;height:4px}

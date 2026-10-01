@@ -26,11 +26,11 @@ function gaugeArcPath(start: number, end: number, radius = 84) {
 }
 
 const CNN_GAUGE_BANDS = [
-  { key: 'extreme-fear', start: 0, end: 25, color: '#9f2233' },
-  { key: 'fear', start: 25, end: 45, color: '#f2555a' },
-  { key: 'neutral', start: 45, end: 55, color: '#9aa8b6' },
-  { key: 'greed', start: 55, end: 75, color: '#58c88a' },
-  { key: 'extreme-greed', start: 75, end: 100, color: '#15865e' },
+  { key: 'extreme-fear', start: 0, end: 25 },
+  { key: 'fear', start: 25, end: 45 },
+  { key: 'neutral', start: 45, end: 55 },
+  { key: 'greed', start: 55, end: 75 },
+  { key: 'extreme-greed', start: 75, end: 100 },
 ] as const;
 
 
@@ -189,21 +189,6 @@ export function MarketScoreOrb({
       <div className={`cnn-score-orb cnn-score-orb-hero ${tone}`} role="group" aria-live="polite" aria-label={ariaLabel}>
         <div className="cnn-spectrum-gauge">
           <svg viewBox="0 0 220 142" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
-            <defs>
-              <linearGradient id="cnn-spectrum-gradient" x1="26" y1="0" x2="194" y2="0" gradientUnits="userSpaceOnUse">
-                <stop offset="0%" stopColor="#9f2233"/>
-                <stop offset="25%" stopColor="#9f2233"/>
-                <stop offset="25%" stopColor="#f2555a"/>
-                <stop offset="45%" stopColor="#f2555a"/>
-                <stop offset="45%" stopColor="#9aa8b6"/>
-                <stop offset="55%" stopColor="#9aa8b6"/>
-                <stop offset="55%" stopColor="#58c88a"/>
-                <stop offset="75%" stopColor="#58c88a"/>
-                <stop offset="75%" stopColor="#15865e"/>
-                <stop offset="100%" stopColor="#15865e"/>
-              </linearGradient>
-            </defs>
-
             <path className="cnn-spectrum-backdrop" d="M 26 112 A 84 84 0 0 1 194 112"/>
             {CNN_GAUGE_BANDS.map((band) => (
               <path
@@ -211,7 +196,6 @@ export function MarketScoreOrb({
                 className={`cnn-spectrum-band is-${band.key}`}
                 d={gaugeArcPath(band.start, band.end)}
                 fill="none"
-                stroke={band.color}
                 strokeWidth={18}
                 strokeLinecap="butt"
               />
