@@ -32,7 +32,7 @@ export function marketOperationalStore(db){
    await db.prepare('UPDATE market_collection_jobs_v1 SET lease_id=?,lease_until=?,finished_at=?,status=? WHERE job=? AND lease_until<=?').bind(id,now+180000,now,'RUNNING',job,now).run();
    const row=await db.prepare('SELECT lease_id FROM market_collection_jobs_v1 WHERE job=?').bind(job).first();return row?.lease_id===id?id:null;
   },
-  async next(jobs){await init();const rows=[];for(const job of jobs){const row=await db.prepare('SELECT finished_at,status FROM market_collection_jobs_v1 WHERE job=?').bind(job).first();rows.push({job,time:row?.finished_at??0,status:row?.status??null})}return rows.sort((a,b)=>(a.status==='BACKLOG'?0:1)-(b.status==='BACKLOG'?0:1)||a.time-b.time)[0].job},
+  async next(jobs){await init();const rows=[];for(const job of jobs){const row=await db.prepare('SELECT finished_at,status FROM market_collection_jobs_v1 WHERE job=?').bind(job).first();rows.push({job,time:row?.finished_at??0,status:row?.status??null})}const priority=x=>x.status==='BACKLOG'||(x.job==='breadth'&&x.status==='SOURCE_FAILED')?0:1;return rows.sort((a,b)=>priority(a)-priority(b)||a.time-b.time)[0].job},
   async finish(job,id,now,status){await db.prepare('UPDATE market_collection_jobs_v1 SET lease_id=NULL,lease_until=0,finished_at=?,status=? WHERE job=? AND lease_id=?').bind(now,status,job,id).run()},
  };
 }
