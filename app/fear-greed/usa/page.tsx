@@ -18,7 +18,7 @@ export default function UsaFearGreedPage() {
         <a className="py-2 underline" href="/guide/fear-greed/">공포탐욕지수 읽는 법 →</a>
         <a className="py-2 underline" href="/fear-greed/korea/">한국 지수도 확인하기 →</a>
       </nav>
-      <CnnPanel/>
+      <CnnPanel showEducation/>
     </div>
   </main>;
 }
