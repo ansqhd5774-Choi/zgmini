@@ -1,8 +1,8 @@
 import type {Metadata} from "next";
 import InflationPanel from "./inflation-panel";
 
-const title="미국 인플레이션 | 7개 축과 전체 구성지표 - ZGmini";
-const description="ZGmini Inflation R2의 현재 점수와 7개 축, 실제 하위 물가 지표, 저장 이력 기반 추이를 한 페이지에서 확인하세요.";
+const title="미국 인플레이션 | 주요 지표·현재값·판단 - ZGmini";
+const description="미국 인플레이션 점수 추이와 주요 물가 지표의 기준, 현재값, 긍정·중립·부정 판단을 한 페이지에서 확인하세요.";
 const url="https://zgmini.kr/inflation/";
 
 export const metadata:Metadata={
