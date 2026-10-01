@@ -4295,10 +4295,10 @@ body .zg-r55-market .zg-r55-shell[data-expanded="false"] article.zg-r55-card>.zg
 
 /* Inflation detail R2 — beginner-first indicator view */
 .inflation-target-card{margin-top:20px}
-.inflation-period-slot{display:flex;justify-content:flex-end;align-items:center}
-.inflation-period-control{display:inline-flex;align-items:center;gap:0;border:1px solid rgba(106,145,176,.48);background:rgba(7,26,41,.72);border-radius:8px;overflow:hidden}
-.inflation-period-control button{height:32px;min-width:52px;padding:0 12px;border:0;border-right:1px solid rgba(106,145,176,.28);background:transparent;color:#9fb5c9;font-size:12px;font-weight:700;cursor:pointer}
-.inflation-period-control button:last-child{border-right:0}
+.fg-card.fg-shared-shell .inflation-period-slot{grid-column:2;grid-row:1;width:44px;min-width:44px;max-width:44px;height:100%;display:grid;place-items:center}
+.inflation-period-control{width:36px;display:flex;flex-direction:column;align-items:stretch;gap:0;border:1px solid rgba(106,145,176,.48);background:rgba(7,26,41,.72);border-radius:8px;overflow:hidden}
+.inflation-period-control button{width:36px;min-width:36px;max-width:36px;height:32px;min-height:32px;padding:0;border:0;border-bottom:1px solid rgba(106,145,176,.28);background:transparent;color:#9fb5c9;font-size:11px;font-weight:700;cursor:pointer}
+.inflation-period-control button:last-child{border-bottom:0}
 .inflation-period-control button:hover{background:rgba(255,255,255,.06);color:#eaf3fb}
 .inflation-period-control button[aria-pressed="true"]{background:#f4c34e;color:#102131}
 .inflation-period-control button:focus-visible{outline:2px solid #f4c34e;outline-offset:-2px}
