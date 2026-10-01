@@ -4229,3 +4229,31 @@ body .zg-r55-market .zg-r55-shell[data-expanded="false"] article.zg-r55-card>.zg
     padding:8px 0 0;
   }
 }
+
+/* FEAR_GREED_EDU_READABILITY_R1 */
+@media(min-width:768px){
+  .cnn-component-reading-grid{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+  }
+}
+.cnn-score-guide b{
+  font-size:12px;
+}
+.cnn-score-guide small{
+  font-size:11px;
+}
+.cnn-component-scorebar-ticks{
+  font-size:11px;
+}
+@media(max-width:767px){
+  .cnn-component-reading-grid{
+    grid-template-columns:1fr;
+  }
+  .cnn-score-guide b,
+  .cnn-score-guide small{
+    font-size:11px;
+  }
+  .cnn-component-scorebar-ticks{
+    font-size:11px;
+  }
+}
