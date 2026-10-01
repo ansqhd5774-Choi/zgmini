@@ -87,8 +87,10 @@ export async function runMarketOperationalRefresh({env,job,store,now=Date.now(),
   phase='CALCULATE';const result=await calculate(env,store,now);
   const sourceStatus=collected?.status??collected?.rateR2?.status??'COLLECTED';
   const failed=/^(FAIL|FAILED|ERROR)$/.test(sourceStatus);
-  await store.finish(selected,jobLease,now,failed?'SOURCE_FAILED':'COMPLETE');
-  return {status:failed?'SOURCE_FAILED':'COMPLETE',job:selected,sourceStatus,...result};
+  const backlog=selected==='breadth'&&sourceStatus==='PARTIAL_BATCH';
+  const finalStatus=failed?'SOURCE_FAILED':backlog?'BACKLOG':'COMPLETE';
+  await store.finish(selected,jobLease,now,finalStatus);
+  return {status:finalStatus,job:selected,sourceStatus,...result};
  }catch(error){
   if(jobLease)await store.finish(selected,jobLease,now,`${phase}_FAILED`).catch(()=>{});
   const reason=['INPUT_STORAGE_LIMIT','STORED_CALCULATION_FAILED','SCORE_CONTRACT_FAILED'].includes(error?.message)?error.message:(String(error?.message??'').match(/^GROWTH_R2_[A-Z0-9_]+/)?.[0]??null);
