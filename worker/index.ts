@@ -95,6 +95,21 @@ const worker = {
   },
 
   async scheduled(controller: ScheduledController, env: Env, _ctx: ExecutionContext): Promise<void> {
+    if(controller.cron==='*/5 * * * *'){
+      const result = await runMarketOperationalRefresh({
+        env,
+        now: controller.scheduledTime,
+        fetchImpl: globalThis.fetch,
+      });
+      console.log("MARKET_OP_R1_CRON", JSON.stringify({
+        cron: controller.cron,
+        status: result?.status ?? null,
+        job: result?.job ?? null,
+        sourceStatus: result?.sourceStatus ?? null,
+        readyDomains: result?.readyDomains ?? null,
+      }));
+      return;
+    }
     if(controller.cron==='37 * * * *'){
       console.log('KOREA_REV7_REFRESH',JSON.stringify(await refreshKoreaRev7({env,now:new Date(controller.scheduledTime)})));
       return;
