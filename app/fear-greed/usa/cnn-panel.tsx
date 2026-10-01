@@ -347,11 +347,14 @@ function rawValueReading(
   }
 
   if (id === "stock-price-breadth") {
-    return "McClellan Summation Index는 절대 숫자 하나만으로 공포·탐욕을 정하지 않습니다. 최근 범위 안에서 현재 위치를 CNN 환산점수와 함께 봅니다.";
+    if (component.rawValue < 0) return `McClellan Summation Index가 ${component.rawValue.toLocaleString("en-US", { maximumFractionDigits: 2 })}로 음수입니다. CNN 설명상 낮거나 음수인 값은 약세 신호입니다. 최종 공포·탐욕 강도는 최근 상대 범위와 CNN 환산점수를 함께 봅니다.`;
+    return `McClellan Summation Index는 ${component.rawValue.toLocaleString("en-US", { maximumFractionDigits: 2 })}입니다. 양수라는 이유만으로 탐욕으로 단정하지 않고 최근 상대 범위와 CNN 환산점수를 함께 봅니다.`;
   }
 
   if (id === "put-call-options") {
-    return `현재 Put/Call 비율은 ${component.rawValue.toFixed(3)}입니다. 비율이 높아질수록 방어·불안 심리가 강해지는 경향이 있지만, 하나의 고정 숫자만으로 등급을 정하지 않습니다.`;
+    const ratio = component.rawValue.toFixed(3);
+    if (component.rawValue > 1) return `현재 Put/Call 비율은 ${ratio}입니다. CNN 설명상 1.0 초과는 bearish 신호로 봅니다. 최종 공포·탐욕 강도는 최근 상대 범위까지 반영한 CNN 환산점수와 함께 확인합니다.`;
+    return `현재 Put/Call 비율은 ${ratio}입니다. 1.0 아래에서는 콜이 풋보다 상대적으로 많지만, 이것만으로 탐욕을 확정하지 않고 최근 상대 범위와 CNN 환산점수를 함께 확인합니다.`;
   }
 
   if (id === "market-volatility" && referenceGap !== null) {
