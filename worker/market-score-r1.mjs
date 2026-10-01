@@ -9,7 +9,7 @@ import {
   buildDollarFxR53,
   buildFundFlowR53,
 } from "../lib/diagnostic-layer/open-resolution-r53-components.mjs";
-import {buildRateR2} from "../lib/market-score/rate-r2.mjs";
+import {buildRateR3} from "../lib/market-score/rate-r3.mjs";
 import {loadStoredInflationR2Domain} from "./inflation-r2-reader.mjs";
 import {readBreadthB1R5StoredPublicDomainR1,buildBreadthB1R5UnavailablePublicDomain} from "../lib/market-score/breadth-b1-r5-worker-domain.mjs";
 import {
@@ -191,7 +191,7 @@ function composeMarketSnapshot({liquidityHistory,collected,storedInflation,infla
       const diagnostics=diagnostic?.snapshot?.diagnostics??{};
       const employment=employmentR54Domain??employmentR54Partial("EMPLOYMENT_R54_PENDING",asOf);
       const rateSeries=collected?.rateR2?.series??{};
-      const rate=compute(buildRateR2,{
+      const rate=compute(buildRateR3,{
         effrRows:rateSeries.EFFR??[],
         policyLowerRows:rateSeries.DFEDTARL??[],
         policyUpperRows:rateSeries.DFEDTARU??[],
