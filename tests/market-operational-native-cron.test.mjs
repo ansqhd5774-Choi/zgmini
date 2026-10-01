@@ -9,7 +9,10 @@ test("market operational refresh has a native 5-minute cron trigger",()=>{
  assert.match(vite,/const MARKET_OP_R1_CRON = "\*\/5 \* \* \* \*";/);
  assert.match(vite,/crons: \[C1_OP_R2_CRON, "37 \* \* \* \*", MARKET_OP_R1_CRON\]/);
  assert.match(worker,/controller\.cron==='\*\/5 \* \* \* \*'/);
+ assert.match(worker,/refreshStoredMarketScoreSnapshot\(\{\s*env,\s*now: controller\.scheduledTime,/s);
  assert.match(worker,/runMarketOperationalRefresh\(\{\s*env,\s*now: controller\.scheduledTime,/s);
+ const block=worker.slice(worker.indexOf("if(controller.cron==='*/5 * * * *')"),worker.indexOf("if(controller.cron==='37 * * * *')"));
+ assert.ok(block.indexOf('refreshStoredMarketScoreSnapshot')<block.indexOf('runMarketOperationalRefresh'));
 });
 
 test("market native cron does not use HTTP waitUntil",()=>{
@@ -18,4 +21,12 @@ test("market native cron does not use HTTP waitUntil",()=>{
  assert.ok(start>=0&&end>start);
  const block=worker.slice(start,end);
  assert.doesNotMatch(block,/waitUntil/);
+});
+
+test("stored precompute is provider-free and precedes potentially slow collection",()=>{
+ const source=fs.readFileSync("worker/market-operational-refresh.mjs","utf8");
+ assert.match(source,/refreshStoredMarketScoreSnapshot/);
+ assert.match(source,/providerRequests:0/);
+ const fn=source.slice(source.indexOf("export async function refreshStoredMarketScoreSnapshot"),source.indexOf("function boundedFetch"));
+ assert.doesNotMatch(fn,/fetchImpl|collectDiagnosticLiveInputs|collectRateR2Inputs|collectBreadthB1R3StoreOnlyR1/);
 });

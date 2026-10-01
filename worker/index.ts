@@ -17,7 +17,7 @@ import { runConsumptionR3OperationalRefresh } from "./consumption-r3-operational
 import { refreshKoreaRev7 } from "./korea-rev7-refresh.mjs";
 import { koreaRev7ExternalScheduler } from "./korea-rev7-external-scheduler.mjs";
 import { env as runtimeEnv } from "cloudflare:workers";
-import { runMarketOperationalRefresh } from "./market-operational-refresh.mjs";
+import { runMarketOperationalRefresh, refreshStoredMarketScoreSnapshot } from "./market-operational-refresh.mjs";
 import { runEmploymentR6Producer } from "./employment-r6-producer.mjs";
 import { inspectEmploymentR6AuthProbe } from "./employment-r6-auth-probe.mjs";
 
@@ -96,6 +96,17 @@ const worker = {
 
   async scheduled(controller: ScheduledController, env: Env, _ctx: ExecutionContext): Promise<void> {
     if(controller.cron==='*/5 * * * *'){
+      const precompute = await refreshStoredMarketScoreSnapshot({
+        env,
+        now: controller.scheduledTime,
+      });
+      console.log("MARKET_SCORE_PRECOMPUTE_CRON", JSON.stringify({
+        cron: controller.cron,
+        status: precompute?.status ?? null,
+        providerRequests: precompute?.providerRequests ?? 0,
+        readyDomains: precompute?.readyDomains ?? null,
+        reason: precompute?.reason ?? null,
+      }));
       const result = await runMarketOperationalRefresh({
         env,
         now: controller.scheduledTime,
