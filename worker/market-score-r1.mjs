@@ -4,7 +4,6 @@ import {buildCmR1DomainResults} from "../lib/market-score/domain-adapter-r1.mjs"
 import {buildConsumptionC1} from "../lib/market-score/public-domain-producers-r1.mjs";
 import {buildCommoditiesK1R2} from "../lib/market-score/public-domain-producers-r2.mjs";
 import {loadStoredConsumptionC1R3} from "./consumption-r3-history-reader.mjs";
-import {buildEmploymentR538} from "../lib/diagnostic-layer/employment-r538-components.mjs";
 import {loadEmploymentR54CandidateFromStored,EMPLOYMENT_R54_METHOD} from "../lib/market-score/employment-r54-candidate.mjs";
 import {
   buildDollarFxR53,
@@ -190,17 +189,7 @@ function composeMarketSnapshot({liquidityHistory,collected,storedInflation,infla
       });
 
       const diagnostics=diagnostic?.snapshot?.diagnostics??{};
-      const legacyEmployment=compute(buildEmploymentR538,{
-        unemploymentRows:collected?.series?.UNRATE??[],
-        payrollLevelRows:collected?.series?.PAYEMS??[],
-        asOfDate:asOf,
-      });
-      const employment={
-        ...(employmentR54Domain??employmentR54Partial("EMPLOYMENT_R54_PENDING",asOf)),
-        rows:legacyEmployment?.rows??[],
-        chart:legacyEmployment?.chart??[],
-        current:legacyEmployment?.current??null,
-      };
+      const employment=employmentR54Domain??employmentR54Partial("EMPLOYMENT_R54_PENDING",asOf);
       const rateSeries=collected?.rateR2?.series??{};
       const rate=compute(buildRateR2,{
         effrRows:rateSeries.EFFR??[],
