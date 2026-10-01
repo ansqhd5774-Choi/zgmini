@@ -45,6 +45,26 @@ interface ExecutionContext {
   passThroughOnException(): void;
 }
 
+export async function runMarketExternalRefresh(args:any){
+  const precompute=await refreshStoredMarketScoreSnapshot({
+    env:args?.env,
+    now:args?.now??Date.now(),
+  });
+  console.log('MARKET_SCORE_PRECOMPUTE_EXTERNAL',JSON.stringify({
+    status:precompute?.status??null,
+    providerRequests:precompute?.providerRequests??0,
+    readyDomains:precompute?.readyDomains??null,
+    reason:precompute?.reason??null,
+  }));
+  const [market,feeds]=await Promise.allSettled([
+    runMarketOperationalRefresh(args),
+    runPublicFeeds(args),
+  ]);
+  console.log('PUBLIC_FEEDS',JSON.stringify(feeds.status==='fulfilled'?feeds.value:{status:'ERROR'}));
+  const result=market.status==='fulfilled'?market.value:{status:'ERROR'};
+  return {...result,precomputeStatus:precompute?.status??null};
+}
+
 // Image security config. SVG sources with .svg extension auto-skip the
 // optimization endpoint on the client side (served directly, no proxy).
 // To route SVGs through the optimizer (with security headers), set
@@ -55,7 +75,7 @@ const worker = {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const url = new URL(request.url);
     if (url.pathname.replace(/\/$/, '') === '/api/internal/korea-rev7-scheduled') return koreaRev7ExternalScheduler(request, runtimeEnv, {ctx});
-    if (url.pathname.replace(/\/$/, '') === '/api/internal/market-scheduled') return koreaRev7ExternalScheduler(request, runtimeEnv, {ctx,refresh:async (args:any)=>{const [market,feeds]=await Promise.allSettled([runMarketOperationalRefresh(args),runPublicFeeds(args)]);console.log('PUBLIC_FEEDS',JSON.stringify(feeds.status==='fulfilled'?feeds.value:{status:'ERROR'}));return market.status==='fulfilled'?market.value:{status:'ERROR'}},responseBudgetMs:5000,logTag:'MARKET_EXTERNAL'});
+    if (url.pathname.replace(/\/$/, '') === '/api/internal/market-scheduled') return koreaRev7ExternalScheduler(request, runtimeEnv, {ctx,refresh:runMarketExternalRefresh,responseBudgetMs:5000,logTag:'MARKET_EXTERNAL'});
     if (url.pathname.replace(/\/$/, '') === '/api/internal/employment-r6-scheduled') return koreaRev7ExternalScheduler(request, runtimeEnv, {ctx,refresh:runEmploymentR6Producer,responseBudgetMs:5000,logTag:'EMP_R6_EXTERNAL'});
     if (url.pathname.replace(/\/$/, '') === '/api/internal/employment-r6-auth-probe') return Response.json(inspectEmploymentR6AuthProbe(request), {status:200,headers:{"cache-control":"no-store, no-cache, must-revalidate","pragma":"no-cache","x-robots-tag":"noindex, nofollow"}});
     if (url.pathname === "/api/internal/p0-fred-api-shadow-check") return fredApiShadow(request, env, { importMetaProd: import.meta.env.PROD, nodeEnv: typeof process !== "undefined" ? process.env.NODE_ENV : undefined, workerContext: ctx, workerUserAgent: typeof navigator !== "undefined" ? navigator.userAgent : undefined });
