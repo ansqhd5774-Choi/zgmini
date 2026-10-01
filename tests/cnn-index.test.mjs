@@ -88,3 +88,70 @@ test("rejects missing, invalid, stale and future headline observations without s
   }
   assert.throws(() => parseCnnIndex({}, now));
 });
+
+
+test("exposes seven verified CNN subindicators with raw and reference values", () => {
+  const component = (score, rating, y, timestamp = Date.parse("2026-09-04T23:58:00Z")) => ({
+    timestamp,
+    score,
+    rating,
+    data: [{ x: timestamp, y, rating }],
+  });
+
+  const parsed = parseCnnIndex({
+    fear_and_greed: observation,
+    market_momentum_sp500: component(72.4, "greed", 6500.25),
+    market_momentum_sp125: {
+      timestamp: Date.parse("2026-09-04T23:58:00Z"),
+      data: [{ x: Date.parse("2026-09-04T23:58:00Z"), y: 6310.5, rating: "greed" }],
+    },
+    stock_price_strength: component(61.4, "greed", 0.257),
+    stock_price_breadth: component(62.2, "greed", 1276.64),
+    put_call_options: component(77.4, "extreme greed", 0.704),
+    market_volatility_vix: component(50, "neutral", 18.39),
+    market_volatility_vix_50: {
+      timestamp: Date.parse("2026-09-04T23:58:00Z"),
+      data: [{ x: Date.parse("2026-09-04T23:58:00Z"), y: 20.15, rating: "neutral" }],
+    },
+    junk_bond_demand: component(24, "extreme fear", 1.394),
+    safe_haven_demand: component(93.6, "extreme greed", 8.701),
+  }, now);
+
+  assert.equal(parsed.components.length, 7);
+  assert.deepEqual(parsed.components[0], {
+    id: "market-momentum",
+    score: 72.4,
+    rating: "탐욕",
+    observedAt: "2026-09-04T23:58:00.000Z",
+    rawValue: 6500.25,
+    rawObservedAt: "2026-09-04T23:58:00.000Z",
+    referenceValue: 6310.5,
+    referenceObservedAt: "2026-09-04T23:58:00.000Z",
+  });
+  assert.deepEqual(parsed.components[4], {
+    id: "market-volatility",
+    score: 50,
+    rating: "중립",
+    observedAt: "2026-09-04T23:58:00.000Z",
+    rawValue: 18.39,
+    rawObservedAt: "2026-09-04T23:58:00.000Z",
+    referenceValue: 20.15,
+    referenceObservedAt: "2026-09-04T23:58:00.000Z",
+  });
+  assert.equal(parsed.components[6].id, "safe-haven-demand");
+  assert.equal(parsed.components[6].rawValue, 8.701);
+});
+
+test("drops invalid component blocks instead of fabricating values", () => {
+  const parsed = parseCnnIndex({
+    fear_and_greed: observation,
+    market_volatility_vix: {
+      timestamp: Date.parse("2026-09-04T23:58:00Z"),
+      score: null,
+      rating: "fear",
+      data: [{ x: Date.parse("2026-09-04T23:58:00Z"), y: 25.1, rating: "fear" }],
+    },
+  }, now);
+
+  assert.deepEqual(parsed.components, []);
+});
