@@ -103,7 +103,7 @@ export async function runMarketOperationalRefresh({env,job,store,now=Date.now(),
  }catch(error){
   if(jobLease)await store.finish(selected,jobLease,now,`${phase}_FAILED`).catch(()=>{});
   const reason=['INPUT_STORAGE_LIMIT','STORED_CALCULATION_FAILED','SCORE_CONTRACT_FAILED'].includes(error?.message)?error.message:(String(error?.message??'').match(/^GROWTH_R2_[A-Z0-9_]+(?::G\d{3})?/)?.[0]??null);
-  if(selected==='growth')console.warn('GROWTH_R2_COLLECTION_ERROR',JSON.stringify({job:selected,phase,reason:reason??'GROWTH_R2_UNKNOWN'}));
+  if(selected==='growth'){const featureId=String(error?.message??'').match(/:(G\d{3})(?::|$)/)?.[1]??null;console.warn('GROWTH_R2_COLLECTION_ERROR',JSON.stringify({job:selected,phase,reason:reason??'GROWTH_R2_UNKNOWN',featureId}));}
   return {status:'ERROR',job:selected,phase,...(reason?{reason}:{})};
  }finally{await store.finish('pipeline',lease,now,'IDLE')}
 }
