@@ -29,19 +29,10 @@ function claimRows(start,count){
   }
   return rows;
 }
-function diffusionRows(count){
-  const rows=[];
-  for(let i=0;i<count;i++){
-    const d=new Date(Date.UTC(2025,i,28)).toISOString().slice(0,10);
-    rows.push({logicalSeriesId:"STATE_EMP_DIFFUSION_3M",observationDate:d,value:55+i});
-  }
-  return rows;
-}
-
 test("R54 candidate uses four stored employment factors without reweighting",()=>{
   const unemployment=monthRows(2016,130,6,()=>-0.01);
   const payroll=monthRows(2016,130,140000,()=>150);
-  const shadow=[...claimRows("2025-01-04",60),...diffusionRows(12)];
+  const shadow=claimRows("2025-01-04",60);
   const out=buildEmploymentR54Candidate({
     unemploymentRows:unemployment,
     payrollLevelRows:payroll,
@@ -52,13 +43,13 @@ test("R54 candidate uses four stored employment factors without reweighting",()=
   assert.equal(out.status,"READY");
   assert.equal(out.indicators.length,4);
   assert.deepEqual(out.indicators.map(x=>x.id),["employment-41","employment-42","employment-43","employment-44"]);
-  assert.deepEqual(out.indicators.map(x=>x.name),["실업률","비농업고용 3M 평균 증감","신규 실업수당 4W 평균","주 고용확산 3M"]);
+  assert.deepEqual(out.indicators.map(x=>x.name),["실업률","비농업고용 3M 평균 증감","신규 실업수당 4W 평균","주 실업수당 개선 비율"]);
   assert.ok(out.indicators.every(x=>x.status==="READY"));
   const weighted=
     EMPLOYMENT_R54_WEIGHTS.unemployment*out.indicators[0].score+
     EMPLOYMENT_R54_WEIGHTS.payrollMomentum*out.indicators[1].score+
     EMPLOYMENT_R54_WEIGHTS.claims4w*out.indicators[2].score+
-    EMPLOYMENT_R54_WEIGHTS.stateDiffusion3m*out.indicators[3].score;
+    EMPLOYMENT_R54_WEIGHTS.claimsBreadth*out.indicators[3].score;
   assert.ok(Math.abs(out.score-weighted)<1e-9);
 });
 
@@ -68,11 +59,12 @@ test("R54 candidate returns PARTIAL when a factor is missing and never renormali
   const out=buildEmploymentR54Candidate({
     unemploymentRows:unemployment,
     payrollLevelRows:payroll,
-    shadowRows:claimRows("2025-01-04",60),
+    shadowRows:[],
     asOfDate:"2026-12-31",
   });
   assert.equal(out.status,"PARTIAL");
   assert.equal(out.score,null);
+  assert.ok(out.missingFactors.includes("employment-43"));
   assert.ok(out.missingFactors.includes("employment-44"));
 });
 
@@ -81,7 +73,7 @@ test("R54 candidate keeps explicit 30/30/20/20 weights",()=>{
     unemployment:0.30,
     payrollMomentum:0.30,
     claims4w:0.20,
-    stateDiffusion3m:0.20,
+    claimsBreadth:0.20,
   });
   assert.equal(Object.values(EMPLOYMENT_R54_WEIGHTS).reduce((a,b)=>a+b,0),1);
 });
