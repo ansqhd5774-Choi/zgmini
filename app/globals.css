@@ -4370,3 +4370,10 @@ tr[data-judgement="neutral"] .inflation-judgement{border-color:rgba(148,163,184,
 /* Inflation detail: no period rail; fixed 1Y chart */
 .inflation-target-card .fg-analysis-slot{grid-template-columns:minmax(0,1fr)!important;grid-template-rows:minmax(0,1fr)!important;column-gap:0!important}
 .inflation-target-card .fg-chart-slot{grid-column:1/-1!important;grid-row:1!important;width:100%!important}
+
+
+/* Recession detail — fixed 1Y chart, no period rail */
+.recession-target-card{margin-top:20px}
+.recession-target-card .fg-analysis-slot{grid-template-columns:minmax(0,1fr)!important;grid-template-rows:minmax(0,1fr)!important;column-gap:0!important}
+.recession-target-card .fg-chart-slot{grid-column:1/-1!important;grid-row:1!important;width:100%!important}
+@media(max-width:767px){.recession-target-card{margin-top:12px}}
