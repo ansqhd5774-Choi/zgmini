@@ -41,3 +41,43 @@ test("CM-R1 adapter accepts only explicit approved public-domain inputs for unre
   assert.equal(out.find(x=>x.id==="breadth").score,49);
   assert.equal(out.find(x=>x.id==="commodities").score,47);
 });
+
+
+test("Employment R54 explicit score and indicators override legacy current score while preserving legacy trend",()=>{
+  const employment={
+    status:"READY",
+    score:72,
+    methodologyVersion:"EMPLOYMENT_R54_STORED_4FACTOR_R1",
+    asOfDate:"2026-10-01",
+    indicators:[
+      {id:"employment-41",name:"실업률",status:"READY",score:70,value:4.2,unit:"%"},
+      {id:"employment-42",name:"비농업고용 3M 평균 증감",status:"READY",score:75,value:145,unit:"천명/월"},
+      {id:"employment-43",name:"신규 실업수당 4W 평균",status:"READY",score:68,value:220000,unit:"건"},
+      {id:"employment-44",name:"주 실업수당 개선 비율",status:"READY",score:80,value:80,unit:"%"},
+    ],
+    current:{observationDate:"2026-08-01",score:64.5},
+    rows:[
+      {observationDate:"2026-07-01",score:63},
+      {observationDate:"2026-08-01",score:64.5},
+    ],
+  };
+  const domain=buildCmR1DomainResults({employment}).find(x=>x.id==="employment");
+  assert.equal(domain.score,72);
+  assert.equal(domain.methodologyVersion,"EMPLOYMENT_R54_STORED_4FACTOR_R1");
+  assert.deepEqual(domain.indicators.map(x=>x.id),["employment-41","employment-42","employment-43","employment-44"]);
+  assert.deepEqual(domain.trend,[{label:"2026-07-01",value:63},{label:"2026-08-01",value:64.5}]);
+});
+
+test("Employment R54 PARTIAL never falls back to legacy current score",()=>{
+  const domain=buildCmR1DomainResults({employment:{
+    status:"PARTIAL",
+    score:null,
+    methodologyVersion:"EMPLOYMENT_R54_STORED_4FACTOR_R1",
+    missingFactors:["employment-43"],
+    current:{observationDate:"2026-08-01",score:64.5},
+    rows:[{observationDate:"2026-08-01",score:64.5}],
+  }}).find(x=>x.id==="employment");
+  assert.equal(domain.status,"PARTIAL");
+  assert.equal(domain.score,null);
+  assert.deepEqual(domain.missingFactors,["employment-43"]);
+});
