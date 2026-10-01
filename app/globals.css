@@ -3856,9 +3856,6 @@ body .zg-r55-market .zg-r55-shell[data-expanded="false"] article.zg-r55-card>.zg
   background:#061722;
   padding:20px;
 }
-.cnn-component-education-grid>.cnn-education-card:last-child:nth-child(odd){
-  grid-column:1/-1;
-}
 .cnn-education-card-head{
   display:grid;
   grid-template-columns:32px minmax(0,1fr) auto;
@@ -4037,9 +4034,6 @@ body .zg-r55-market .zg-r55-shell[data-expanded="false"] article.zg-r55-card>.zg
   }
   .cnn-education-card{
     padding:16px;
-  }
-  .cnn-component-education-grid>.cnn-education-card:last-child:nth-child(odd){
-    grid-column:auto;
   }
   .cnn-education-card-head{
     grid-template-columns:32px minmax(0,1fr);
