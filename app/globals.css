@@ -4257,3 +4257,37 @@ body .zg-r55-market .zg-r55-shell[data-expanded="false"] article.zg-r55-card>.zg
     font-size:11px;
   }
 }
+
+/* FEAR_GREED_EDU_OVERVIEW_R1 */
+.cnn-component-overview{margin-top:16px;border:1px solid var(--zg-border);background:#061722}
+.cnn-component-overview-head{display:flex;align-items:end;justify-content:space-between;gap:16px;padding:14px 16px;border-bottom:1px solid #19384c}
+.cnn-component-overview-head h2{margin-top:3px;font-size:15px;line-height:1.3;font-weight:800}
+.cnn-component-overview-head>span{max-width:360px;color:var(--zg-text-meta);font-size:11px;line-height:1.45;text-align:right}
+.cnn-component-overview-list{display:grid}
+.cnn-component-overview-row{display:grid;grid-template-columns:minmax(180px,1.4fr) minmax(120px,1fr) 92px 108px;align-items:center;min-height:52px;border-bottom:1px solid #19384c}
+.cnn-component-overview-row:last-child{border-bottom:0}
+.cnn-component-overview-row>div{min-width:0;padding:8px 12px}
+.cnn-component-overview-name{display:flex;align-items:center;gap:10px}
+.cnn-component-overview-name>span{display:grid;width:28px;height:28px;place-items:center;border:1px solid #2d536d;color:#bcd0e0;font-size:11px;font-weight:800;flex:none}
+.cnn-component-overview-name strong{font-size:13px;line-height:1.3}
+.cnn-component-overview-value,.cnn-component-overview-score,.cnn-component-overview-rating{border-left:1px solid #19384c}
+.cnn-component-overview-row small{display:block;color:var(--zg-text-meta);font-size:10px;line-height:1.2}
+.cnn-component-overview-row strong{display:block;margin-top:3px}
+.cnn-component-overview-value strong{font-size:14px;line-height:1.25}
+.cnn-component-overview-score strong{font-size:15px;line-height:1.2}
+.cnn-component-overview-rating strong{font-size:12px;line-height:1.25}
+.cnn-component-overview-row[data-tone="fear"] .cnn-component-overview-rating strong{color:#ff9ca3}
+.cnn-component-overview-row[data-tone="greed"] .cnn-component-overview-rating strong{color:#78ddb2}
+@media(max-width:767px){
+  .cnn-component-overview-head{display:block;padding:12px}
+  .cnn-component-overview-head>span{display:block;max-width:none;margin-top:6px;text-align:left}
+  .cnn-component-overview-row{grid-template-columns:minmax(0,1fr) auto;min-height:0}
+  .cnn-component-overview-row>div{padding:8px 10px}
+  .cnn-component-overview-name{grid-column:1/-1;border-bottom:1px solid rgba(25,56,76,.72)}
+  .cnn-component-overview-value,.cnn-component-overview-score,.cnn-component-overview-rating{border-left:0}
+  .cnn-component-overview-value{grid-column:1}
+  .cnn-component-overview-score{grid-column:2;text-align:right}
+  .cnn-component-overview-rating{grid-column:1/-1;padding-top:0!important}
+  .cnn-component-overview-rating small{display:inline;margin-right:8px}
+  .cnn-component-overview-rating strong{display:inline;margin-top:0}
+}
