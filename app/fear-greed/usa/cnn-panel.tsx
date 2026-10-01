@@ -597,6 +597,44 @@ export default function CnnPanel({ showEducation = false }: { showEducation?: bo
         {scoreGuide.map((item) => <span key={item.range}><b>{item.range}</b><small>{item.label}</small></span>)}
       </div>
 
+      <section className="cnn-component-overview" aria-labelledby="cnn-component-overview-title">
+        <div className="cnn-component-overview-head">
+          <div>
+            <p className="cnn-eyebrow">CURRENT COMPONENT SNAPSHOT</p>
+            <h2 id="cnn-component-overview-title">7개 구성요소 한눈에 보기</h2>
+          </div>
+          <span>원시값 → CNN 환산점수 → 상태 순서로 읽으세요.</span>
+        </div>
+        <div className="cnn-component-overview-list" role="list">
+          {componentDefinitions.map((definition, index) => {
+            const component = componentMap.get(definition.id);
+            const overviewTone = component?.rating.includes("공포")
+              ? "fear"
+              : component?.rating.includes("탐욕")
+                ? "greed"
+                : "neutral";
+            return <div className="cnn-component-overview-row" data-tone={overviewTone} role="listitem" key={definition.id}>
+              <div className="cnn-component-overview-name">
+                <span>{String(index + 1).padStart(2, "0")}</span>
+                <strong>{definition.title}</strong>
+              </div>
+              <div className="cnn-component-overview-value">
+                <small>현재 원시값</small>
+                <strong>{component ? componentValue(definition.id, component.rawValue) : "—"}</strong>
+              </div>
+              <div className="cnn-component-overview-score">
+                <small>CNN 점수</small>
+                <strong>{component ? component.score.toFixed(1) : "—"}</strong>
+              </div>
+              <div className="cnn-component-overview-rating">
+                <small>현재 상태</small>
+                <strong>{component?.rating ?? "확인 필요"}</strong>
+              </div>
+            </div>;
+          })}
+        </div>
+      </section>
+
       <div className="cnn-component-education-grid">
         {componentDefinitions.map((definition, index) => {
           const component = componentMap.get(definition.id);
