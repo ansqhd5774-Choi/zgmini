@@ -45,6 +45,8 @@ test("R54 candidate uses four stored employment factors without reweighting",()=
   assert.deepEqual(out.indicators.map(x=>x.id),["employment-41","employment-42","employment-43","employment-44"]);
   assert.deepEqual(out.indicators.map(x=>x.name),["실업률","비농업고용 3M 평균 증감","신규 실업수당 4W 평균","주 실업수당 개선 비율"]);
   assert.ok(out.indicators.every(x=>x.status==="READY"));
+  assert.ok(out.trend.length>0);
+  assert.ok(out.trend.every(x=>typeof x.value==="number"&&x.value>=0&&x.value<=100));
   const weighted=
     EMPLOYMENT_R54_WEIGHTS.unemployment*out.indicators[0].score+
     EMPLOYMENT_R54_WEIGHTS.payrollMomentum*out.indicators[1].score+
