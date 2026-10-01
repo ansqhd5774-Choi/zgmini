@@ -4147,3 +4147,15 @@ body .zg-r55-market .zg-r55-shell[data-expanded="false"] article.zg-r55-card>.zg
     font-size:9px;
   }
 }
+
+/* FEAR_GREED_EDU_LAYOUT_R1 */
+@media(min-width:768px){
+  .cnn-component-education-grid>.cnn-education-card[data-layout="wide"]{
+    grid-column:1/-1;
+  }
+}
+@media(max-width:767px){
+  .cnn-component-education-grid>.cnn-education-card[data-layout="wide"]{
+    grid-column:auto;
+  }
+}
