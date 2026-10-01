@@ -306,11 +306,11 @@ const componentDefinitions = [
 ] as const;
 
 const scoreGuide = [
-  { range: "0–24", label: "극심한 공포" },
-  { range: "25–44", label: "공포" },
+  { range: "0–<25", label: "극심한 공포" },
+  { range: "25–<45", label: "공포" },
   { range: "45–55", label: "중립" },
-  { range: "56–75", label: "탐욕" },
-  { range: "76–100", label: "극심한 탐욕" },
+  { range: ">55–75", label: "탐욕" },
+  { range: ">75–100", label: "극심한 탐욕" },
 ] as const;
 
 function componentValue(id: string, value: number) {
@@ -571,25 +571,24 @@ export default function CnnPanel({ showEducation = false }: { showEducation?: bo
         <div><strong>0~100 정규화</strong><span>낮을수록 공포 · 높을수록 탐욕</span></div>
       </div>
 
-      <div className="cnn-composite-formula" aria-label="CNN 공포탐욕 종합점수 계산">
+      <div className="cnn-composite-formula" aria-label="CNN 공포탐욕 구성점수 평균과 현재 종합점수 비교">
         <div>
           <span>7개 구성점수 합</span>
           <strong>{componentScoreSum === null ? "—" : componentScoreSum.toFixed(1)}</strong>
         </div>
         <b aria-hidden="true">÷ 7</b>
         <div>
-          <span>동일 비중 평균</span>
+          <span>구성요소 단순평균</span>
           <strong>{componentScoreAverage === null ? "—" : componentScoreAverage.toFixed(1)}</strong>
         </div>
-        <b aria-hidden="true">=</b>
+        <b aria-hidden="true">↔</b>
         <div className="is-total">
-          <span>현재 종합점수</span>
+          <span>CNN 현재 종합점수</span>
           <strong>{score === null ? "—" : score.toFixed(1)}</strong>
         </div>
       </div>
       <p className="cnn-composite-caption">
-        7개 구성요소가 모두 확인되면 각 점수를 같은 비중으로 평균해 종합점수와 비교합니다.
-        {componentScoreAverage !== null && score !== null && Math.abs(componentScoreAverage - score) <= 0.11 ? " 현재 값은 일치합니다." : ""}
+        7개 구성요소는 동일 비중으로 반영됩니다. 다만 각 구성요소와 CNN 종합점수의 갱신 시각이 서로 다를 수 있어, 화면에 보이는 7개 현재값의 단순평균과 종합점수가 소수점 단위에서 다를 수 있습니다. 이 페이지의 현재 종합점수는 CNN이 제공한 종합값을 우선 표시합니다.
       </p>
 
       <p className="cnn-scale-note"><strong>중요:</strong> 원시값의 방향과 CNN 환산점수는 같은 척도가 아닙니다. 예를 들어 주식이 채권보다 강하거나 S&P 500이 이동평균 위에 있어도, 최근 상대 범위에서 약하면 CNN 점수는 공포로 나올 수 있습니다.</p>
