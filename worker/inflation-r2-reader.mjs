@@ -4,6 +4,7 @@ import {INFLATION_PCE_PC1_MODE,INFLATION_PCE_PC1_SERIES} from "./inflation-pce-p
 import {
   buildInflationR2StoredHistory,
   calculateInflationR2At,
+  snapshotInflationR2Features,
   INFLATION_R2_METHOD_REVISION,
 } from "../lib/diagnostic-layer/inflation-r2-stored.mjs";
 
@@ -111,6 +112,7 @@ export async function loadStoredInflationR2Domain(db,{asOf}={}){
 
   const history=buildInflationR2StoredHistory({pitSeries:pit.series,pcePc1:pc1.series});
   const current=calculateInflationR2At(history,asOf);
+  const features=snapshotInflationR2Features(history,asOf);
   if(current.status!=="READY"){
     return partial("INFLATION_R2_COMPONENT_MISSING",{missingFactors:current.missing,axes:current.axes});
   }
@@ -148,6 +150,7 @@ export async function loadStoredInflationR2Domain(db,{asOf}={}){
     methodologyVersion:INFLATION_R2_METHOD_REVISION,
     interpretation:"Inflation R2: 7 validated axes, equal 1/7 robust non-fitted top-level weights; stored PIT history only",
     axes:current.axes,
+    features,
     storage:{
       pitStatus:pit.status,
       pitLookAheadSafe:pit.lookAheadSafe===true,
