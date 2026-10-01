@@ -14,6 +14,10 @@ export default function UsaFearGreedPage() {
   return <main className="min-h-screen bg-[#03121d] px-4 py-8 text-slate-100 sm:px-8 sm:py-12">
     <div className="mx-auto max-w-6xl">
       <a className="inline-flex min-h-11 items-center text-sm text-blue-200" href="/">← ZGmini 메인 대시보드</a>
+      <nav aria-label="관련 지수 안내" className="my-4 flex flex-wrap gap-4 text-sm text-blue-200">
+        <a className="py-2 underline" href="/guide/fear-greed/">공포탐욕지수 읽는 법 →</a>
+        <a className="py-2 underline" href="/fear-greed/korea/">한국 지수도 확인하기 →</a>
+      </nav>
       <CnnPanel/>
     </div>
   </main>;
