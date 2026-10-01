@@ -15,12 +15,24 @@ type HistoryPoint = {
   rating?: string;
 };
 
+type CnnComponent = {
+  id: string;
+  score: number;
+  rating: string;
+  observedAt: string;
+  rawValue: number;
+  rawObservedAt: string;
+  referenceValue?: number;
+  referenceObservedAt?: string;
+};
+
 type IndexPayload = {
   status?: string;
   score?: number | null;
   rating?: string;
   observedAt?: string;
   history?: HistoryPoint[];
+  components?: CnnComponent[];
 };
 
 const label = (rating = "") => rating || "확인 불가";
@@ -219,6 +231,120 @@ function subtractCalendarDays(value: string | undefined, days: number) {
 }
 
 
+
+const componentDefinitions = [
+  {
+    id: "market-momentum",
+    title: "시장 모멘텀",
+    question: "S&P 500은 장기 추세보다 강한가?",
+    metricLabel: "S&P 500",
+    referenceLabel: "125일 이동평균",
+    meaning: "S&P 500 지수를 125거래일 이동평균과 비교해 시장의 큰 추세를 확인합니다.",
+    fearDirection: "125일 평균 아래",
+    greedDirection: "125일 평균 위",
+  },
+  {
+    id: "stock-price-strength",
+    title: "주가 강도",
+    question: "신고가 종목이 신저가 종목보다 강한가?",
+    metricLabel: "52주 신고가·신저가 강도",
+    referenceLabel: null,
+    meaning: "NYSE에서 52주 신고가와 신저가의 힘을 비교해 시장 내부의 강도를 봅니다.",
+    fearDirection: "신저가 우세",
+    greedDirection: "신고가 우세",
+  },
+  {
+    id: "stock-price-breadth",
+    title: "시장 폭",
+    question: "상승 거래량이 시장 전체로 퍼지고 있는가?",
+    metricLabel: "McClellan Volume Summation",
+    referenceLabel: null,
+    meaning: "상승 종목과 하락 종목의 거래량 차이를 누적해 상승 참여가 넓은지 확인합니다.",
+    fearDirection: "하락 거래량 우세",
+    greedDirection: "상승 거래량 우세",
+  },
+  {
+    id: "put-call-options",
+    title: "풋/콜 옵션",
+    question: "옵션 투자자는 하락을 얼마나 경계하는가?",
+    metricLabel: "Put / Call 비율",
+    referenceLabel: null,
+    meaning: "최근 옵션 시장에서 풋과 콜 수요의 균형을 봅니다. 풋 비중이 커질수록 방어 심리가 강해집니다.",
+    fearDirection: "비율 상승",
+    greedDirection: "비율 하락",
+  },
+  {
+    id: "market-volatility",
+    title: "시장 변동성",
+    question: "예상 변동성은 평소보다 높은가?",
+    metricLabel: "VIX",
+    referenceLabel: "VIX 50일 평균",
+    meaning: "S&P 500 옵션에 반영된 예상 변동성인 VIX를 50일 평균과 비교합니다.",
+    fearDirection: "VIX가 평균보다 높음",
+    greedDirection: "VIX가 평균보다 낮음",
+  },
+  {
+    id: "junk-bond-demand",
+    title: "정크본드 수요",
+    question: "투자자는 낮은 신용등급의 위험까지 감수하는가?",
+    metricLabel: "고위험-투자등급 스프레드",
+    referenceLabel: null,
+    meaning: "고위험 회사채와 투자등급 회사채의 금리 차이로 신용위험에 대한 보상 요구를 확인합니다.",
+    fearDirection: "스프레드 확대",
+    greedDirection: "스프레드 축소",
+  },
+  {
+    id: "safe-haven-demand",
+    title: "안전자산 수요",
+    question: "주식과 국채 중 어느 쪽이 더 강한가?",
+    metricLabel: "20일 주식-국채 수익률 차",
+    referenceLabel: null,
+    meaning: "최근 20거래일 주식과 미국 국채의 수익률 차이로 위험자산 선호를 확인합니다.",
+    fearDirection: "국채 상대우위",
+    greedDirection: "주식 상대우위",
+  },
+] as const;
+
+const scoreGuide = [
+  { range: "0–24", label: "극심한 공포" },
+  { range: "25–44", label: "공포" },
+  { range: "45–55", label: "중립" },
+  { range: "56–75", label: "탐욕" },
+  { range: "76–100", label: "극심한 탐욕" },
+] as const;
+
+function componentValue(id: string, value: number) {
+  if (id === "market-momentum") return value.toLocaleString("en-US", { maximumFractionDigits: 2 });
+  if (id === "stock-price-breadth") return value.toLocaleString("en-US", { maximumFractionDigits: 2 });
+  if (id === "market-volatility") return value.toFixed(2);
+  if (id === "put-call-options" || id === "stock-price-strength") return value.toFixed(3);
+  if (id === "junk-bond-demand" || id === "safe-haven-demand") return `${value.toFixed(3)}%p`;
+  return value.toLocaleString("en-US", { maximumFractionDigits: 3 });
+}
+
+function signedPercent(value: number) {
+  const sign = value > 0 ? "+" : "";
+  return `${sign}${value.toFixed(2)}%`;
+}
+
+function componentReading(
+  component: CnnComponent | undefined,
+  referenceGap: number | null,
+) {
+  if (!component) return "검증 가능한 저장 데이터가 없어 해석을 표시하지 않습니다.";
+
+  const normalized = `CNN 정규화 점수는 ${component.score.toFixed(1)}/100 · ${component.rating} 구간입니다.`;
+  if (referenceGap === null) return normalized;
+
+  const relation = referenceGap > 0
+    ? `기준보다 ${Math.abs(referenceGap).toFixed(2)}% 위`
+    : referenceGap < 0
+      ? `기준보다 ${Math.abs(referenceGap).toFixed(2)}% 아래`
+      : "기준과 같은 수준";
+
+  return `원시값은 ${relation}입니다. ${normalized} 원시값의 방향과 0~100 정규화 강도는 같은 척도가 아닙니다.`;
+}
+
 function buildMarketInsight({
   stage,
   score,
@@ -330,51 +456,155 @@ export default function CnnPanel() {
     loading,
   });
 
-  return <FearGreedCardShell
-    className="usa-target-card"
-    layoutVariant="shared"
-    testId="cnn-reference-panel"
-    marketState={loading ? "loading" : score === null ? "unavailable" : history.length > 1 ? "ready" : "empty"}
-    busy={loading}
-    header={{
-      flag: "/flags/us.svg",
-      eyebrow: "CNN FEAR & GREED INDEX",
-      title: "미국 시장",
-      description: "S&P 500 · NASDAQ",
-      dateLabel: "데이터 기준일",
-      date: dateLabel(payload?.observedAt),
-      source: loading ? "확인 중" : status,
-      rightContent: <MarketCardInsight text={marketInsight}/>,
-    }}
-    score={{
-      value: loading || score === null ? "—" : score.toFixed(1),
-      state: loading ? "확인 중" : stage,
-      caption: "",
-      variant: "hero",
-      dayDelta,
-      periodDelta,
-      periodLabel: currentPeriodLabel,
-      metaDate: dateLabel(payload?.observedAt),
-    }}
-    period={<MarketPeriodControls
-      activeKey={selectedPeriod}
-      onChange={setSelectedPeriod}
-      ariaLabel="CNN 지수 기간 선택"
-    />}
-    chart={<MarketFearGreedChart
-      data={history}
-      axisTicks={chartAxis.ticks}
-      axisLabels={chartAxis.labels}
-      latestPoint={latestHistoryPoint}
-      instanceKey={selectedPeriod}
-      gradientId="cnn-fill"
-      formatTooltipLabel={dateLabel}
-    />}
-    footer={{
-      href: "/fear-greed/usa/",
-      label: "자세히",
-      ariaLabel: "미국 공포탐욕지수 세부 지표 보기",
-      children: "원본 기준",
-    }}
-  />;
+  const componentMap = new Map((payload?.components ?? []).map((component) => [component.id, component]));
+  const verifiedComponentCount = componentDefinitions.filter((item) => componentMap.has(item.id)).length;
+
+  return <>
+    <FearGreedCardShell
+      className="usa-target-card"
+      layoutVariant="shared"
+      testId="cnn-reference-panel"
+      marketState={loading ? "loading" : score === null ? "unavailable" : history.length > 1 ? "ready" : "empty"}
+      busy={loading}
+      header={{
+        flag: "/flags/us.svg",
+        eyebrow: "CNN FEAR & GREED INDEX",
+        title: "미국 시장",
+        description: "S&P 500 · NASDAQ",
+        dateLabel: "데이터 기준일",
+        date: dateLabel(payload?.observedAt),
+        source: loading ? "확인 중" : status,
+        rightContent: <MarketCardInsight text={marketInsight}/>,
+      }}
+      score={{
+        value: loading || score === null ? "—" : score.toFixed(1),
+        state: loading ? "확인 중" : stage,
+        caption: "",
+        variant: "hero",
+        dayDelta,
+        periodDelta,
+        periodLabel: currentPeriodLabel,
+        metaDate: dateLabel(payload?.observedAt),
+      }}
+      period={<MarketPeriodControls
+        activeKey={selectedPeriod}
+        onChange={setSelectedPeriod}
+        ariaLabel="CNN 지수 기간 선택"
+      />}
+      chart={<MarketFearGreedChart
+        data={history}
+        axisTicks={chartAxis.ticks}
+        axisLabels={chartAxis.labels}
+        latestPoint={latestHistoryPoint}
+        instanceKey={selectedPeriod}
+        gradientId="cnn-fill"
+        formatTooltipLabel={dateLabel}
+      />}
+      footer={{
+        href: "https://www.cnn.com/markets/fear-and-greed",
+        label: "CNN 원본",
+        ariaLabel: "CNN Fear & Greed 원본 페이지 열기",
+        children: "데이터 출처",
+      }}
+    />
+
+    <section className="cnn-education-panel" aria-labelledby="cnn-education-title">
+      <header className="cnn-education-header">
+        <div>
+          <p className="cnn-eyebrow">LEARN THE 7 COMPONENTS</p>
+          <h1 id="cnn-education-title">공포·탐욕지수를 숫자로 이해하기</h1>
+          <p>종합점수만 보지 않고, 어떤 시장 데이터가 공포와 탐욕을 만들었는지 7개 구성요소로 확인합니다.</p>
+        </div>
+        <div className="cnn-education-status" aria-label="검증된 구성요소 수">
+          <strong>{loading ? "—" : `${verifiedComponentCount}/7`}</strong>
+          <span>현재 확인된 구성요소</span>
+        </div>
+      </header>
+
+      <div className="cnn-method-strip">
+        <div><strong>원시값</strong><span>실제 시장에서 관측된 숫자</span></div>
+        <b aria-hidden="true">→</b>
+        <div><strong>기준과 비교</strong><span>평균·상대 강도·정상 변동폭 확인</span></div>
+        <b aria-hidden="true">→</b>
+        <div><strong>0~100 정규화</strong><span>낮을수록 공포 · 높을수록 탐욕</span></div>
+      </div>
+
+      <div className="cnn-score-guide" aria-label="CNN 공포탐욕 점수 해석 구간">
+        {scoreGuide.map((item) => <span key={item.range}><b>{item.range}</b><small>{item.label}</small></span>)}
+      </div>
+
+      <div className="cnn-component-education-grid">
+        {componentDefinitions.map((definition, index) => {
+          const component = componentMap.get(definition.id);
+          const referenceGap = component?.referenceValue && component.referenceValue !== 0
+            ? ((component.rawValue / component.referenceValue) - 1) * 100
+            : null;
+          const tone = component?.rating.includes("공포")
+            ? "fear"
+            : component?.rating.includes("탐욕")
+              ? "greed"
+              : "neutral";
+
+          return <article className="cnn-education-card" key={definition.id} data-tone={tone}>
+            <div className="cnn-education-card-head">
+              <span className="cnn-component-number">{String(index + 1).padStart(2, "0")}</span>
+              <div>
+                <h2>{definition.title}</h2>
+                <p>{definition.question}</p>
+              </div>
+              <span className="cnn-component-rating">{component?.rating ?? "확인 필요"}</span>
+            </div>
+
+            <p className="cnn-component-meaning">{definition.meaning}</p>
+
+            <div className="cnn-component-metrics">
+              <div>
+                <span>{definition.metricLabel}</span>
+                <strong>{component ? componentValue(definition.id, component.rawValue) : "—"}</strong>
+              </div>
+              {definition.referenceLabel ? <div>
+                <span>{definition.referenceLabel}</span>
+                <strong>{component?.referenceValue !== undefined ? componentValue(definition.id, component.referenceValue) : "—"}</strong>
+              </div> : null}
+              {definition.referenceLabel ? <div>
+                <span>기준 대비</span>
+                <strong>{referenceGap === null ? "—" : signedPercent(referenceGap)}</strong>
+              </div> : null}
+              <div className="cnn-component-score">
+                <span>CNN 정규화 점수</span>
+                <strong>{component ? `${component.score.toFixed(1)} / 100` : "—"}</strong>
+              </div>
+            </div>
+
+            <div className="cnn-component-scorebar" aria-label={component ? `${definition.title} CNN 정규화 점수 ${component.score.toFixed(1)}점` : `${definition.title} 점수 확인 필요`}>
+              <div className="cnn-component-scorebar-track">
+                {component ? <i style={{ left: `${component.score}%` }} aria-hidden="true"/> : null}
+              </div>
+              <div className="cnn-component-scorebar-ticks" aria-hidden="true">
+                <span>0</span><span>25</span><span>45</span><span>55</span><span>75</span><span>100</span>
+              </div>
+            </div>
+
+            <div className="cnn-component-direction" aria-label={`${definition.title} 해석 방향`}>
+              <span><b>공포 방향</b>{definition.fearDirection}</span>
+              <span><b>탐욕 방향</b>{definition.greedDirection}</span>
+            </div>
+
+            <div className="cnn-component-interpretation">
+              <strong>현재 해석</strong>
+              <p>{componentReading(component, referenceGap)}</p>
+              <small>{component ? `원시값 기준일 ${dateLabel(component.rawObservedAt)}` : "임의 수치로 대체하지 않습니다."}</small>
+            </div>
+          </article>;
+        })}
+      </div>
+
+      <aside className="cnn-education-note">
+        <strong>숫자를 읽는 핵심</strong>
+        <p>원시값의 절대 숫자만으로 매수·매도를 판단하지 않습니다. 각 구성요소가 자신의 기준에서 얼마나 벗어났는지를 정규화한 CNN 점수와 함께 읽습니다.</p>
+      </aside>
+
+      <a className="cnn-return-cta" href="/">← 메인 대시보드로 돌아가기</a>
+    </section>
+  </>;
 }
