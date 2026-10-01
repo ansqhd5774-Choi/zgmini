@@ -244,7 +244,7 @@ export function KoreaCompositeView({detail=false}:{detail?:boolean}){
  </div>;
 }
 
-export function KoreanCountryCard(){
+export function KoreanCountryCard({detail=false}:{detail?:boolean}={}){
  const {composite:c,loading}=useKoreaFunds();
  const [selectedPeriod,setSelectedPeriod]=useState<MarketPeriod>(DEFAULT_KOREA_MARKET_PERIOD);
  const valid=typeof c?.displayScore==='number'&&Number.isFinite(c.displayScore);
@@ -317,10 +317,170 @@ export function KoreanCountryCard(){
    emptyLabel={loading?'확인 중':c?.status==='WARMUP'?'계산 준비 중':'공통 관측 이력 없음'}
   />}
   footer={{
-   href:"/fear-greed/korea/",
-   label:"자세히",
-   ariaLabel:"한국 공포탐욕지수 상세보기",
+   href:detail?"https://data.krx.co.kr/contents/MDC/MAIN/main/index.cmd":"/fear-greed/korea/",
+   label:detail?"KRX 원본":"자세히",
+   ariaLabel:detail?"한국거래소 KRX Data Marketplace 원본 페이지 열기":"한국 공포탐욕지수 상세보기",
    children:source,
   }}
  />;
+}
+
+
+const koreaScoreGuide=[
+ {range:"0–<25",label:"극심한 공포"},
+ {range:"25–<45",label:"공포"},
+ {range:"45–55",label:"중립"},
+ {range:">55–75",label:"탐욕"},
+ {range:">75–100",label:"극심한 탐욕"},
+] as const;
+
+const koreaDetailDefinitions=[
+ {id:"momentum",title:"모멘텀",question:"한국 시장의 추세는 얼마나 강한가?",meaning:"가격 흐름과 추세 강도를 0~100으로 정규화해 현재 시장 모멘텀을 봅니다.",fearDirection:"추세 약화",greedDirection:"추세 강화"},
+ {id:"strength",title:"시장 강도",question:"상승 종목의 힘이 하락 종목보다 우세한가?",meaning:"시장 내부의 상승·하락 강도를 비교해 위험선호가 얼마나 퍼져 있는지 확인합니다.",fearDirection:"하락 강도 우세",greedDirection:"상승 강도 우세"},
+ {id:"breadth",title:"시장 폭",question:"상승 참여가 시장 전반으로 퍼지고 있는가?",meaning:"일부 종목이 아니라 시장 전체의 참여 폭이 넓어지는지 정규화 점수로 확인합니다.",fearDirection:"상승 참여 축소",greedDirection:"상승 참여 확대"},
+ {id:"putCall",title:"풋/콜",question:"옵션 수요는 방어와 위험선호 중 어디에 가까운가?",meaning:"풋·콜 수요의 상대적 위치를 이용해 투자자의 방어 심리와 위험선호를 측정합니다.",fearDirection:"풋 수요 상대 우세",greedDirection:"콜 수요 상대 우세"},
+ {id:"volatility",title:"변동성",question:"시장 변동성은 안정되고 있는가?",meaning:"시장 변동성의 상대 수준을 0~100으로 정규화해 불안과 안정 정도를 확인합니다.",fearDirection:"변동성 확대",greedDirection:"변동성 안정"},
+ {id:"safeHaven",title:"안전자산 선호",question:"투자자는 위험자산보다 안전자산을 더 선호하는가?",meaning:"안전자산 선호의 상대 강도를 통해 위험회피 심리가 커지는지 확인합니다.",fearDirection:"안전자산 선호 확대",greedDirection:"위험자산 선호 확대"},
+ {id:"junkBond",title:"신용 스프레드",question:"신용위험에 대한 경계가 커지고 있는가?",meaning:"신용 스프레드의 상대 위치를 통해 시장이 위험을 얼마나 감수하는지 측정합니다.",fearDirection:"스프레드 확대",greedDirection:"스프레드 축소"},
+] as const;
+
+function koreaStageFromScore(score:number|null|undefined){
+ if(typeof score!=="number"||!Number.isFinite(score))return "확인 필요";
+ if(score<25)return "극심한 공포";
+ if(score<45)return "공포";
+ if(score<=55)return "중립";
+ if(score<=75)return "탐욕";
+ return "극심한 탐욕";
+}
+
+function koreaToneFromScore(score:number|null|undefined){
+ const stage=koreaStageFromScore(score);
+ return stage.includes("공포")?"fear":stage.includes("탐욕")?"greed":"neutral";
+}
+
+export function KoreaDetailPanel(){
+ const {composite:c,indicators,loading}=useKoreaFunds();
+ const indicatorMap=new Map(indicators.map(item=>[item.id,item]));
+ const readyCount=koreaDetailDefinitions.filter(definition=>indicatorMap.get(definition.id)?.status==="READY").length;
+ const compositeScore=typeof c?.displayScore==="number"&&Number.isFinite(c.displayScore)?c.displayScore:null;
+
+ return <>
+  <KoreanCountryCard detail/>
+
+  <section className="cnn-education-panel" aria-labelledby="korea-education-title">
+   <header className="cnn-education-header">
+    <div>
+     <p className="cnn-eyebrow">LEARN THE 7 COMPONENTS</p>
+     <h1 id="korea-education-title">한국 공포·탐욕지수를 숫자로 이해하기</h1>
+     <p>종합점수만 보지 않고, 한국 Revision 7을 구성하는 7개 시장심리 요소를 각각 확인합니다.</p>
+    </div>
+    <div className="cnn-education-status" aria-label="확인된 한국 구성요소 수">
+     <strong>{loading?"—":`${readyCount}/7`}</strong>
+     <span>현재 확인된 구성요소</span>
+    </div>
+   </header>
+
+   <div className="cnn-method-strip">
+    <div><strong>시장 원자료</strong><span>KRX·ECOS 기반 저장 데이터</span></div>
+    <b aria-hidden="true">→</b>
+    <div><strong>구성요소 정규화</strong><span>각 요소를 0~100 점수로 환산</span></div>
+    <b aria-hidden="true">→</b>
+    <div><strong>Revision 7 종합</strong><span>낮을수록 공포 · 높을수록 탐욕</span></div>
+   </div>
+
+   <div className="cnn-composite-formula" aria-label="한국 공포탐욕 Revision 7 구성요소와 종합점수">
+    <div><span>구성요소</span><strong>{loading?"—":`${readyCount}/7`}</strong></div>
+    <b aria-hidden="true">→</b>
+    <div><span>모델 버전</span><strong>R7</strong></div>
+    <b aria-hidden="true">↔</b>
+    <div className="is-total"><span>현재 종합점수</span><strong>{compositeScore===null?"—":compositeScore.toFixed(1)}</strong></div>
+   </div>
+   <p className="cnn-composite-caption">현재 공개 API는 구성요소별 정규화 점수와 이력은 제공하지만 각 지표의 원시 입력값은 노출하지 않습니다. 원시값을 임의 생성하지 않고 저장·공개된 점수만 표시합니다.</p>
+
+   <p className="cnn-scale-note"><strong>중요:</strong> 각 구성요소 점수는 서로 다른 시장 데이터를 0~100 척도로 정규화한 값입니다. 개별 점수 하나만으로 매수·매도를 판단하지 않고 종합점수와 변화 방향을 함께 봅니다.</p>
+
+   <div className="cnn-score-guide" aria-label="한국 공포탐욕 점수 해석 구간">
+    {koreaScoreGuide.map(item=><span key={item.range}><b>{item.range}</b><small>{item.label}</small></span>)}
+   </div>
+
+   <section className="cnn-component-overview" aria-labelledby="korea-component-overview-title">
+    <div className="cnn-component-overview-head">
+     <div>
+      <p className="cnn-eyebrow">CURRENT COMPONENT SNAPSHOT</p>
+      <h2 id="korea-component-overview-title">7개 구성요소 한눈에 보기</h2>
+     </div>
+     <span>현재 점수 → 이전 대비 → 현재 상태 순서로 읽으세요.</span>
+    </div>
+    <div className="cnn-component-overview-list" role="list">
+     {koreaDetailDefinitions.map((definition,index)=>{
+      const indicator=indicatorMap.get(definition.id);
+      return <div className="cnn-component-overview-row" data-tone={koreaToneFromScore(indicator?.score)} role="listitem" key={definition.id}>
+       <div className="cnn-component-overview-name"><span>{String(index+1).padStart(2,"0")}</span><strong>{definition.title}</strong></div>
+       <div className="cnn-component-overview-value"><small>현재 점수</small><strong>{typeof indicator?.score==="number"?indicator.score.toFixed(1):"—"}</strong></div>
+       <div className="cnn-component-overview-score"><small>이전 대비</small><strong>{typeof indicator?.changePoints==="number"?`${indicator.changePoints>=0?"+":""}${indicator.changePoints.toFixed(1)}`:"—"}</strong></div>
+       <div className="cnn-component-overview-rating"><small>현재 상태</small><strong>{koreaStageFromScore(indicator?.score)}</strong></div>
+      </div>;
+     })}
+    </div>
+   </section>
+
+   <div className="cnn-component-education-grid">
+    {koreaDetailDefinitions.map((definition,index)=>{
+     const indicator=indicatorMap.get(definition.id);
+     const score=typeof indicator?.score==="number"&&Number.isFinite(indicator.score)?indicator.score:null;
+     const tone=koreaToneFromScore(score);
+     const change=typeof indicator?.changePoints==="number"&&Number.isFinite(indicator.changePoints)?indicator.changePoints:null;
+     return <article className="cnn-education-card" key={definition.id} data-tone={tone} data-layout={index===koreaDetailDefinitions.length-1?"wide":"standard"}>
+      <div className="cnn-education-card-head">
+       <span className="cnn-component-number">{String(index+1).padStart(2,"0")}</span>
+       <div><h2>{definition.title}</h2><p>{definition.question}</p></div>
+       <span className="cnn-component-rating">{koreaStageFromScore(score)}</span>
+      </div>
+
+      <p className="cnn-component-meaning">{definition.meaning}</p>
+
+      <div className="cnn-component-metrics">
+       <div><span>현재 원시값</span><strong>API 미노출</strong></div>
+       <div><span>관측 기준일</span><strong>{formatDate(indicator?.observationDate??null)}</strong></div>
+       <div><span>이전 대비</span><strong>{change===null?"—":`${change>=0?"+":""}${change.toFixed(1)}점`}</strong></div>
+       <div className="cnn-component-score"><span>Revision 7 정규화 점수</span><strong>{score===null?"—":`${score.toFixed(1)} / 100`}</strong></div>
+      </div>
+
+      <div className="cnn-component-scorebar" aria-label={score===null?`${definition.title} 점수 확인 필요`:`${definition.title} 정규화 점수 ${score.toFixed(1)}점`}>
+       <div className="cnn-component-scorebar-track">{score!==null?<i style={{left:`${score}%`}} aria-hidden="true"/>:null}</div>
+       <div className="cnn-component-scorebar-ticks" aria-hidden="true"><span>0</span><span>25</span><span>45</span><span>55</span><span>75</span><span>100</span></div>
+      </div>
+
+      <div className="cnn-component-direction" aria-label={`${definition.title} 해석 방향`}>
+       <span><b>공포 방향</b>{definition.fearDirection}</span>
+       <span><b>탐욕 방향</b>{definition.greedDirection}</span>
+      </div>
+
+      <div className="cnn-component-reading-grid">
+       <div className="cnn-component-reading is-raw">
+        <strong>데이터 해석</strong>
+        <p>{score===null?"현재 유효 구성점수를 확인할 수 없습니다.":`현재 ${score.toFixed(1)}점으로 ${koreaStageFromScore(score)} 구간입니다. 원시 입력값은 현재 공개 API에서 제공하지 않습니다.`}</p>
+       </div>
+       <div className="cnn-component-reading is-score">
+        <strong>정규화 점수</strong>
+        <p>{score===null?"검증 가능한 Revision 7 점수가 없습니다.":`${score.toFixed(1)} / 100 · ${koreaStageFromScore(score)}. 이전 관측 대비 ${change===null?"비교 자료 없음":`${change>=0?"+":""}${change.toFixed(1)}점`}입니다.`}</p>
+        <small>{indicator?.status==="READY"?"저장 데이터 기반 READY":"임의 수치로 대체하지 않습니다."}</small>
+       </div>
+      </div>
+     </article>;
+    })}
+   </div>
+
+   <aside className="cnn-education-note">
+    <strong>숫자를 읽는 핵심</strong>
+    <p>한국 Revision 7은 7개 구성요소의 정규화 점수와 종합점수를 함께 봅니다. 원시값이 공개되지 않은 항목은 추정치로 채우지 않습니다.</p>
+   </aside>
+
+   <div className="mt-6 flex flex-wrap gap-4 text-sm">
+    <a className="cnn-return-cta" href="https://data.krx.co.kr/contents/MDC/MAIN/main/index.cmd">KRX 원본 ↗</a>
+    <a className="cnn-return-cta" href="https://ecos.bok.or.kr/">ECOS 원본 ↗</a>
+    <a className="cnn-return-cta" href="/">← 메인 대시보드로 돌아가기</a>
+   </div>
+  </section>
+ </>;
 }
