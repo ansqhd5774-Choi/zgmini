@@ -54,7 +54,7 @@ test('Employment R54 detail rows map by stable factor id',()=>{
   {id:'employment-41',name:'실업률',status:'READY',score:70,value:4.2,unit:'%'},
   {id:'employment-43',name:'신규 실업수당 4W 평균',status:'READY',score:68,value:220000,unit:'건'},
  ]);
- assert.deepEqual(rows.map(r=>r.label),['실업률','비농업고용 3M 평균 증감','신규 실업수당 4W 평균','주 실업수당 개선 비율']);
+ assert.deepEqual(rows.map(r=>r.label),['실업률','일자리 증가세','실업수당 신청','지역 고용 개선']);
  assert.deepEqual(rows.map(r=>r.score),[70,75,68,80]);
  assert.deepEqual(rows.map(r=>r.value),[4.2,145,220000,80]);
 });
