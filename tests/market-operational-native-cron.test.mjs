@@ -30,3 +30,15 @@ test("stored precompute is provider-free and precedes potentially slow collectio
  const fn=source.slice(source.indexOf("export async function refreshStoredMarketScoreSnapshot"),source.indexOf("function boundedFetch"));
  assert.doesNotMatch(fn,/fetchImpl|collectDiagnosticLiveInputs|collectRateR2Inputs|collectBreadthB1R3StoreOnlyR1/);
 });
+
+test("breadth partial batches stay on backlog until coverage completes",()=>{
+ const source=fs.readFileSync("worker/market-operational-refresh.mjs","utf8");
+ assert.match(source,/selected==='breadth'&&sourceStatus==='PARTIAL_BATCH'/);
+ assert.match(source,/backlog\?'BACKLOG':'COMPLETE'/);
+});
+
+test("backlog jobs are selected before normal round-robin jobs",()=>{
+ const source=fs.readFileSync("worker/market-operational-store.mjs","utf8");
+ assert.match(source,/SELECT finished_at,status FROM market_collection_jobs_v1/);
+ assert.match(source,/a\.status==='BACKLOG'\?0:1/);
+});
