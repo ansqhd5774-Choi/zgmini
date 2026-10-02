@@ -1,0 +1,538 @@
+{
+  "sourceCommit": "de0504f191ab2ba5e0bdbdebd312f162f25f035e",
+  "githubMain": "7369d8d203f084bed8f9d766fc0952d42b972c7b",
+  "files": [
+    {
+      "path": ".openai/hosting.json",
+      "bytes": 96,
+      "sha256": "7b4a52eb6a48fb8160466db8dacab61167d8ca7b473f050d4136336947280a76"
+    },
+    {
+      "path": "app/chatgpt-auth.ts",
+      "bytes": 2640,
+      "sha256": "e19651c2d1db12696883ae3eb79d4f09dce249f7afa1144a62d544e2e18299ca"
+    },
+    {
+      "path": "build/sites-vite-plugin.ts",
+      "bytes": 1299,
+      "sha256": "abd6bc3a592961e978ab72fceb8ee7647824d9a2321ee5b5777b2a05d69526cc"
+    },
+    {
+      "path": "db/index.ts",
+      "bytes": 436,
+      "sha256": "effa59e46bcbb42dfb7b46911e809a1de0f2c37df1fd935e3dca89023eaf97e4"
+    },
+    {
+      "path": "db/schema.ts",
+      "bytes": 721,
+      "sha256": "696f27ebb67d286a22683d7e526b2a4248cb54e11475c9c640709dc3d668450f"
+    },
+    {
+      "path": "drizzle.config.ts",
+      "bytes": 155,
+      "sha256": "73d0807c58e541dc3eaf175909fb5acc966faed61f74ff659d9d55027bf3e25b"
+    },
+    {
+      "path": "drizzle/0000_stormy_miek.sql",
+      "bytes": 519,
+      "sha256": "522f4cf2ceed34b53dae8d8e1c65a928f0e74b39a1d812c84998ae3809c71d01"
+    },
+    {
+      "path": "drizzle/0001_kfg_v2_research.sql",
+      "bytes": 2662,
+      "sha256": "8ed3591e622bdcce140e46d8cd3dcb5ee969d110d0e9e338e44f8dc9ef251b8f"
+    },
+    {
+      "path": "drizzle/0002_kfg_v2_incremental_read.sql",
+      "bytes": 168,
+      "sha256": "e0cfcbbf73d69a146e43bbf0a446edb0a8aec9e690bb81d1c92ada6906423baf"
+    },
+    {
+      "path": "drizzle/0003_kfg_v2_snapshots.sql",
+      "bytes": 664,
+      "sha256": "9c94b739df38bb474adbf83fa6b28a23c1e4559cf542ac49987e0fb9a29b8038"
+    },
+    {
+      "path": "drizzle/0004_kfg_v2_components.sql",
+      "bytes": 263,
+      "sha256": "42c0e011bcff75552c7f692438e8a43827f1a80ea7fe56da46a65c1c0814a18d"
+    },
+    {
+      "path": "drizzle/0005_kfg_rev7_foundation.sql",
+      "bytes": 3389,
+      "sha256": "45a1821e1fbdffbd28529eabf46eb1e55e8eb0b272b915f34b737dc49c2cd572"
+    },
+    {
+      "path": "drizzle/0006_c1_r3_foundation.sql",
+      "bytes": 247001,
+      "sha256": "459455e0682f32fc39ea29d4d7c70babdb872ef2b5b0ed217a70cc3148bbedea"
+    },
+    {
+      "path": "drizzle/meta/0000_snapshot.json",
+      "bytes": 2206,
+      "sha256": "9576951b4a963d54231368feed15057b768172ebc5a8a1b826f6e90e2c07f176"
+    },
+    {
+      "path": "drizzle/meta/_journal.json",
+      "bytes": 1131,
+      "sha256": "2e950648daa44ef29feedd9b3a35c10c40f5425bec7da17763889df0fec25910"
+    },
+    {
+      "path": "middleware.ts",
+      "bytes": 764,
+      "sha256": "db3a98508881bf00aef8f3389b02ed482e675af2b219e1d51890053adc30800f"
+    },
+    {
+      "path": "package-lock.json",
+      "bytes": 512980,
+      "sha256": "a50062c7a04fe385bd1ca90ffbeb5cbebba372592c88d5b1934de584e258485f"
+    },
+    {
+      "path": "package.json",
+      "bytes": 2002,
+      "sha256": "cd4ee2de2cbcc95b99806e4b3622d976e30e7ab36d847ef7f45783308d4ecdc6"
+    },
+    {
+      "path": "scripts/build-verified.sh",
+      "bytes": 687,
+      "sha256": "61024a70b28a732585428398f58ca96331b6850642683bf4a35297974a0125f4"
+    },
+    {
+      "path": "scripts/check-api-operations.mjs",
+      "bytes": 1401,
+      "sha256": "1b4758496ac7d7da23c979afe883e2c51a4e0cc03bdfd6173fd514fbaa38b00d"
+    },
+    {
+      "path": "scripts/install-ci.sh",
+      "bytes": 6515,
+      "sha256": "388931f5ba7c5de359f39ed6a7d2e5bed199f488b1acf2889f7bb513cc11ac6f"
+    },
+    {
+      "path": "scripts/sites-env.sh",
+      "bytes": 1582,
+      "sha256": "29bc00ff806de5fe25039b869e32e9a458e273555b139a09b4f9c1ed8f59df73"
+    },
+    {
+      "path": "vite.config.ts",
+      "bytes": 2033,
+      "sha256": "848ab925beff0ecfeef3b4f586fa81c44d307b69a97dc6f5ba86feb42010428f"
+    },
+    {
+      "path": "worker/api-history-store.mjs",
+      "bytes": 9997,
+      "sha256": "0fe5b1010e8e2b27ba161676340874575465ce6f287f6167efbbfbaf82bf6897"
+    },
+    {
+      "path": "worker/census-runtime-probe.mjs",
+      "bytes": 5413,
+      "sha256": "c7a40d33fd23564c663906be603feb9364b9c1c6291d4c763b2f2facbd9582d7"
+    },
+    {
+      "path": "worker/consumption-r3-census-lib.mjs",
+      "bytes": 13602,
+      "sha256": "e81efabbb8d858e2f53ce277df5b5177f8d984212e7e29c77d4748c9262b7cad"
+    },
+    {
+      "path": "worker/consumption-r3-external-scheduler.mjs",
+      "bytes": 3371,
+      "sha256": "2ef34b608005db8e053af5c8030deab80aacc4429eb3db6aa66a22eff14ba357"
+    },
+    {
+      "path": "worker/consumption-r3-history-reader.mjs",
+      "bytes": 3418,
+      "sha256": "9d2d8b0a93a9016c4302b9250a62735512ee47515204cf09363e352f27952068"
+    },
+    {
+      "path": "worker/consumption-r3-nyfed-lib.mjs",
+      "bytes": 17635,
+      "sha256": "030f74687b18dab8de3d3e64c3d442cbbb59a6cc43502453fb4bf3303fe35c0d"
+    },
+    {
+      "path": "worker/consumption-r3-operational-calculator.mjs",
+      "bytes": 10520,
+      "sha256": "4ff8fdcccc65eebdac797a6131b7c8493f2c30eecf37d48c90079237da02fd2f"
+    },
+    {
+      "path": "worker/consumption-r3-operational-refresh.mjs",
+      "bytes": 9088,
+      "sha256": "3470caed6703096f1c5fad21bc042975036b0687bcfd2f7f976e77ca8d8813d4"
+    },
+    {
+      "path": "worker/consumption-r3-provider-collector.mjs",
+      "bytes": 8520,
+      "sha256": "15e4be167ef37aec5bdfe87546b6baf79add20d8906ce0d210d00f1ae0f3dd56"
+    },
+    {
+      "path": "worker/consumption-r3-refresh.mjs",
+      "bytes": 2424,
+      "sha256": "145562a8186e0ec1adcb7e1bac9bb93e4ef154ff7f44167623e9cf9f73eb0796"
+    },
+    {
+      "path": "worker/consumption-r3-score-store.mjs",
+      "bytes": 2958,
+      "sha256": "50f3544b3abc28764a2a2f909e75dd30a1c237fa98938c4aace4211c14b3fe3e"
+    },
+    {
+      "path": "worker/consumption-r3-seed.mjs",
+      "bytes": 3979,
+      "sha256": "c81597371d7247419469e56b991ce864a98c8494697c038cf6809cc828b0cb2a"
+    },
+    {
+      "path": "worker/consumption-r3-source-store.mjs",
+      "bytes": 5737,
+      "sha256": "bc71cb9f878584af4969b87f9436195ef120a4097d785ac51b7454300c408408"
+    },
+    {
+      "path": "worker/data-health.mjs",
+      "bytes": 18559,
+      "sha256": "9a96a6a506949120f60af4f2ee9e5b9d05ff12f01338747a6e7e616e862208f8"
+    },
+    {
+      "path": "worker/diagnostic-v1-canary.mjs",
+      "bytes": 19099,
+      "sha256": "58f55339d84601ae367680514086b48b5c6311d5b800e7c9d3f242857834cde4"
+    },
+    {
+      "path": "worker/employment-r6-auth-probe.mjs",
+      "bytes": 1129,
+      "sha256": "78f91bd6621bbbc96ac8af6e0ada3d749f586c3c91c8877c31ea193b3de2f36e"
+    },
+    {
+      "path": "worker/employment-r6-producer.mjs",
+      "bytes": 2483,
+      "sha256": "28d31b970e69d00dbfceb055b77b7f136e50448465c915920e049d4348d7971a"
+    },
+    {
+      "path": "worker/feed-collectors/fear-greed.ts",
+      "bytes": 1789,
+      "sha256": "d0422e663218ba113fb5ec2ad0167236f58337f8d6d896f8e7028b9b983fbdcb"
+    },
+    {
+      "path": "worker/feed-collectors/ftse-fear-greed.ts",
+      "bytes": 851,
+      "sha256": "ce74ad99d4ccce7ac7765b2a96608907891ce786c8e2bae3743f465722633ef1"
+    },
+    {
+      "path": "worker/feed-collectors/kospi-fear-greed.ts",
+      "bytes": 1273,
+      "sha256": "ca568368f0efc75032c6d459adf05ed4d156ac24241526b9603677e7df2d6961"
+    },
+    {
+      "path": "worker/feed-collectors/kospi-history.ts",
+      "bytes": 960,
+      "sha256": "0486832ad3bdb69beee0c1bece19cdcec1ac38f0e947b3d42e23dfeea47f0380"
+    },
+    {
+      "path": "worker/feed-collectors/nikkei-fear-greed.ts",
+      "bytes": 868,
+      "sha256": "19a8b34fc73c7eed1315e8cf399d57e83836f0ddb985d4d8f7ca989da355a85c"
+    },
+    {
+      "path": "worker/fmp-runtime-probe.mjs",
+      "bytes": 2927,
+      "sha256": "386d9b2fe697ba4850ea54f1035c5d59e10132c1f12b0dfd84c419d7d552411e"
+    },
+    {
+      "path": "worker/growth-r2-forward-runtime-probe.mjs",
+      "bytes": 12317,
+      "sha256": "64a38d01e6d719674bbcae324a120fba17b2a9b0900512f99a7dc5d60b751517"
+    },
+    {
+      "path": "worker/growth-r2-r1.mjs",
+      "bytes": 1405,
+      "sha256": "c0cb58c05b5ab57e368fb77d66156ae5ca69e26e7b1399f8423a2cc33582c088"
+    },
+    {
+      "path": "worker/index.ts",
+      "bytes": 11206,
+      "sha256": "e8646124e1337dfa3d056dc02ecb424490b70d56b40daf216ffb5274d9bd7f28"
+    },
+    {
+      "path": "worker/inflation-history-reader.mjs",
+      "bytes": 6287,
+      "sha256": "d72a62b43730cb3065bc5db4c4890626479e0714dcf6b0673cd10555c19f7aa3"
+    },
+    {
+      "path": "worker/inflation-pce-pc1-store.mjs",
+      "bytes": 6119,
+      "sha256": "50ea2f8c22d4e9ef757ac790eaa053d36f67a61e2b09d0e57016a5f6c9207033"
+    },
+    {
+      "path": "worker/inflation-pit-backfill.mjs",
+      "bytes": 9034,
+      "sha256": "75f66b0b00952082d36094227b576fda92e29726fa70982a0d3cdae1c54cf54a"
+    },
+    {
+      "path": "worker/inflation-pit-reader.mjs",
+      "bytes": 5784,
+      "sha256": "0d904bdabfde74c2fc4a3ce104884137bdf110d24c2b2a1a87319a0b35d214ca"
+    },
+    {
+      "path": "worker/inflation-r2-collector.mjs",
+      "bytes": 2926,
+      "sha256": "12a3f34c0ef4d2f456593b192713f64b67b2fb26b4b336bc560c2ada4c3b6b27"
+    },
+    {
+      "path": "worker/inflation-r2-reader.mjs",
+      "bytes": 6665,
+      "sha256": "0000498c277424298121cb76c2266593a07917181ca0e40a54bde09a383576ad"
+    },
+    {
+      "path": "worker/kfg-rev7-canary.mjs",
+      "bytes": 3533,
+      "sha256": "ba2316554a47d557a1ff57b660cdef733c4126b06d9e28e750e3c95270999961"
+    },
+    {
+      "path": "worker/kfg-v2-canary.mjs",
+      "bytes": 3512,
+      "sha256": "a76cf0d550479f86f43b58b34340e6633de07824d4ebfca0051a49b18ebc4d42"
+    },
+    {
+      "path": "worker/kfg-v2-postcheck.mjs",
+      "bytes": 14183,
+      "sha256": "13d7017c622d469b43be05e325c57ab3101c1cc1ae4c5a069a6932a67d643175"
+    },
+    {
+      "path": "worker/korea-composite-v2.mjs",
+      "bytes": 14938,
+      "sha256": "8016180cc9a4a530aa2408d4c816b783e47b7649fcb78337fa42f253913f7461"
+    },
+    {
+      "path": "worker/korea-composite.mjs",
+      "bytes": 4023,
+      "sha256": "a2047ae2cc90042bcfe916652a355d5440ecf49364876bc90dd23a962a03e0f7"
+    },
+    {
+      "path": "worker/korea-funds.mjs",
+      "bytes": 11368,
+      "sha256": "c1be3915614fdffef0a3a49ef885e5c0183c9ab23fc8149896069dbbd2423eb2"
+    },
+    {
+      "path": "worker/korea-market-backfill.mjs",
+      "bytes": 7595,
+      "sha256": "b84d403e63793983c26f5fcbd36ddc65b114446cc47bd0e780871e94b29d064d"
+    },
+    {
+      "path": "worker/korea-market-d1.mjs",
+      "bytes": 23238,
+      "sha256": "bd5b2d0e3c3b7d461da4451feb5e52e4baafea99401d90bf430b7075035c98e7"
+    },
+    {
+      "path": "worker/korea-market-daily.mjs",
+      "bytes": 3592,
+      "sha256": "874a3ae37ad9d27e10506abc8da364acda213e8e314e03cdddf1b568b25bced5"
+    },
+    {
+      "path": "worker/korea-market-v2.mjs",
+      "bytes": 10953,
+      "sha256": "217d24668f7d8780b303d74d574944c58208b0fa3832479cce21329e66dc2471"
+    },
+    {
+      "path": "worker/korea-research-v2.mjs",
+      "bytes": 11318,
+      "sha256": "213976aea8f4e5ddde7450c4ace866448fdcfc53299bfc8e7a61682f7390d5a0"
+    },
+    {
+      "path": "worker/korea-rev7-backfill.mjs",
+      "bytes": 7761,
+      "sha256": "fb50705b1da4efd8754e48170579c870af457a184d0d9bd572098bf7227c6ba0"
+    },
+    {
+      "path": "worker/korea-rev7-d1.mjs",
+      "bytes": 13237,
+      "sha256": "e1670949b8c368fd2bf94bbe5cc4e650771b83d271c8024bf5a1a98e82b00019"
+    },
+    {
+      "path": "worker/korea-rev7-engine.mjs",
+      "bytes": 8289,
+      "sha256": "8c6b4b0b3069b43f0d939de9a8186661a3d8c350cd927da7f7a6eb89d84ba6a1"
+    },
+    {
+      "path": "worker/korea-rev7-external-scheduler.mjs",
+      "bytes": 1695,
+      "sha256": "f9d8e9d9673f6ae17cf413825e9e675c2982fa9a89f1ee7323202e0d6457baac"
+    },
+    {
+      "path": "worker/korea-rev7-provider.mjs",
+      "bytes": 7164,
+      "sha256": "f64effb062920c65ab796a10c37e9a6cc7991379b044d33b03d8bf0a66e04b9d"
+    },
+    {
+      "path": "worker/korea-rev7-public-projection.mjs",
+      "bytes": 3106,
+      "sha256": "d58f5e017ad858fa622266b525819ae24ff1df77ea1c10b7700668ced64b2401"
+    },
+    {
+      "path": "worker/korea-rev7-refresh.mjs",
+      "bytes": 4437,
+      "sha256": "a39c9280f39a2cf52bc9e1bb73648f4ee2872a870afafd94109473967ad76f26"
+    },
+    {
+      "path": "worker/liquidity-active-history-reader.mjs",
+      "bytes": 1007,
+      "sha256": "681a5e7d468636cf3ce98b9a91244b1d2f3925705457a614663f79aabfef5e10"
+    },
+    {
+      "path": "worker/market-data-feed.ts",
+      "bytes": 12367,
+      "sha256": "6fd04dafecc0e3882b241fb4127ac1d6b50b0efc1b1e9ce5de79adcdcae4ff91"
+    },
+    {
+      "path": "worker/market-operational-refresh.mjs",
+      "bytes": 8271,
+      "sha256": "913b174be1857dda311798e2369e06076e3f913e9c890f98b61f1489a09bd2a0"
+    },
+    {
+      "path": "worker/market-operational-store.mjs",
+      "bytes": 7589,
+      "sha256": "7aa7ffae4242001e951ec2c077588632fd2046205ff7a2a3c492c287ee6dbc9d"
+    },
+    {
+      "path": "worker/market-score-cache.mjs",
+      "bytes": 4704,
+      "sha256": "54ec187c01714194fae48f02d33829eabf576f055c22463aa32bdf669fdc2048"
+    },
+    {
+      "path": "worker/market-score-computation-cache.mjs",
+      "bytes": 871,
+      "sha256": "0df3678969230c385d9172adf096f3927275dc5e18521e6472660dace2f0d3ec"
+    },
+    {
+      "path": "worker/market-score-progressive-inputs.mjs",
+      "bytes": 840,
+      "sha256": "a3a7e94e85f4eef102560896e71aa842c2c900b5d54bcfce9a8335858cc46a1d"
+    },
+    {
+      "path": "worker/market-score-r1.mjs",
+      "bytes": 14068,
+      "sha256": "cfb8481a32475d3eaa0508aa5827c45240fb257c4ad6d25aef6453f056b21cb7"
+    },
+    {
+      "path": "worker/market-score-response-store.mjs",
+      "bytes": 3166,
+      "sha256": "aa96b71a76c4c5d1125d2bdd73e7486de39155896af6a4dca37620ed26afd457"
+    },
+    {
+      "path": "worker/market-score-stream.mjs",
+      "bytes": 1664,
+      "sha256": "5329dfa82b7bb0592e426574b83b0b5557f8127449274616ad42276703c219c2"
+    },
+    {
+      "path": "worker/p0-bls-diagnostic.mjs",
+      "bytes": 4261,
+      "sha256": "6a03fc755c88ae3eb76bf2e851819f3fba8c44f3c9362fd71cb4df17900431e6"
+    },
+    {
+      "path": "worker/p0-fred-api-shadow.mjs",
+      "bytes": 3004,
+      "sha256": "78ea2a663343397c5d5f4d9dc83bb37918798634e58f099765cdc97e7aaed8d6"
+    },
+    {
+      "path": "worker/p0-fred-bls-shadow.mjs",
+      "bytes": 2920,
+      "sha256": "4b76956fb3ce4db6a58f801c78391bfa8e843df10fd91944133e81c408d061a1"
+    },
+    {
+      "path": "worker/p0-fred-transport.mjs",
+      "bytes": 3918,
+      "sha256": "b3c860f72b59484a458688904044c7d59cb2b414beba368e7b955b387abf0fa5"
+    },
+    {
+      "path": "worker/p0-production-fred-probe.mjs",
+      "bytes": 872,
+      "sha256": "3117b4628ddbd1be6bd2863eeb676e4dad3de9f3d4adc94b1866bdc681d6274e"
+    },
+    {
+      "path": "worker/p0-runtime-signals.mjs",
+      "bytes": 2210,
+      "sha256": "f93992f86d54355fb2dcd59e2f7a0b5720e92ea78c5b0a4ce84847fe0f7cca8d"
+    },
+    {
+      "path": "worker/phase1-korea.mjs",
+      "bytes": 37675,
+      "sha256": "b7fdd1d1058e576691856fd6f09523f7888b04ef7326963e82d5703c58a021f2"
+    },
+    {
+      "path": "worker/phase2-bok-research.mjs",
+      "bytes": 16019,
+      "sha256": "70b47355881cdc9d6e440ce543971054b4c0f0585f5e0de19b6da72a8272993c"
+    },
+    {
+      "path": "worker/phase2-fsc-scoped.mjs",
+      "bytes": 7009,
+      "sha256": "dccde556fcd6593d08ac617d68be20ae6572909f78158ccebfa38b3d0a39ca8e"
+    },
+    {
+      "path": "worker/phase2-korea-analysis.mjs",
+      "bytes": 9045,
+      "sha256": "c6426b59045321f63e2d43fd63881e0426055a59f8a56f0f94ae95e725152920"
+    },
+    {
+      "path": "worker/phase2-korea-history.mjs",
+      "bytes": 12351,
+      "sha256": "8516eba20cef7162dbfb7b90c7f5b23f522c9993c9081e919612b19fa189e8ed"
+    },
+    {
+      "path": "worker/phase2-methodology.mjs",
+      "bytes": 14139,
+      "sha256": "3249eacf73cf741a4f87432576235dda652e90e720968c7e3d7c3a1106d031dd"
+    },
+    {
+      "path": "worker/phase2-sensitivity.mjs",
+      "bytes": 13397,
+      "sha256": "9888931e5d95a3468f7a58d4c145a1135eda0ca2c2f38cebe216555f0f4e26ec"
+    },
+    {
+      "path": "worker/phase3-korea-stock-price.mjs",
+      "bytes": 8601,
+      "sha256": "1c2f4b5235e45bc5fc757f338ee884c3752cc60005bfbf4a58e9892a3cfdd319"
+    },
+    {
+      "path": "worker/public-feed-collectors.ts",
+      "bytes": 897,
+      "sha256": "e9fd422b608ccb1bdde838f74407008d528871715b7ad9c18567168a58cc70dd"
+    },
+    {
+      "path": "worker/public-feed-refresh.mjs",
+      "bytes": 2042,
+      "sha256": "c0698132f036f29005318ba0f5b44b26ebb426274930128170f1c25f4c171c14"
+    },
+    {
+      "path": "worker/public-feed-store.mjs",
+      "bytes": 3525,
+      "sha256": "c3644d2c6db9082b619ceb33b0c3adcc4ba221c819274c3b9dd644fdd23ad7ea"
+    },
+    {
+      "path": "wrangler.types.jsonc",
+      "bytes": 272,
+      "sha256": "db127c9bee3c75c03b1992785336d71b42abafc56bde47ed7c01dcee2e94542e"
+    }
+  ],
+  "referencedEnvironmentNames": [
+    "ASSETS",
+    "BEA_API_KEY",
+    "BEA_USER_ID",
+    "BLS_API_KEY",
+    "BLS_REGISTRATION_KEY",
+    "BOK_API_KEY",
+    "CENSUS_API_KEY",
+    "CODEX_SANDBOX",
+    "DB",
+    "EIA_API_KEY",
+    "EQUIBLES_API_KEY",
+    "EQUIBLES_B1_PLAN",
+    "FMP_API_KEY",
+    "FRED_API_KEY",
+    "FSC_API_KEY",
+    "FSC_DISCLOSURE_API_KEY",
+    "IMAGES",
+    "KFG_V2_CANARY_OPERATOR_EMAIL",
+    "KOREA_REV7_SCHEDULER_SECRET",
+    "MINIFLARE_REGISTRY_PATH",
+    "NODE_ENV",
+    "PROD",
+    "WRANGLER_LOG_PATH",
+    "WRANGLER_WRITE_LOGS"
+  ],
+  "environmentNameScope": "tracked app/lib/worker + audited build/scripts; names only, no runtime presence claim"
+}
