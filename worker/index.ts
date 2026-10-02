@@ -58,6 +58,15 @@ export async function runMarketExternalRefresh(args:any){
     reason:precompute?.reason??null,
   }));
   const result=await runMarketOperationalRefresh(args).catch(()=>({status:'ERROR'}));
+  const asOf=new Date(args?.now??Date.now()).toISOString().slice(0,10);
+  const earningsHistory=await backfillEarningsE1R4OneYearToStore({
+    asOf,
+    db:args?.env?.DB,
+    fetchImpl:args?.fetchImpl??globalThis.fetch,
+    now:()=>new Date(args?.now??Date.now()),
+    maxPeriods:4,
+  }).catch(error=>({status:'ERROR',providerRequests:0,remaining:[],error:String(error?.message??error)}));
+  console.log('E1_R4_ONE_YEAR_BACKFILL_EXTERNAL',JSON.stringify({status:earningsHistory?.status??null,providerRequests:earningsHistory?.providerRequests??0,remaining:earningsHistory?.remaining??null}));
   if(['macro','macroCredit','growth'].includes(result?.job)){
     console.log('PUBLIC_FEEDS',JSON.stringify({status:'SKIPPED_MACRO_CPU_GUARD'}));
   }else{
