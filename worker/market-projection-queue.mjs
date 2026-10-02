@@ -6,9 +6,10 @@ const ID_SET=new Set(PROJECTION_IDS);
 
 export function normalizeProjectionJob(message){
   const body=message?.body??message;
+  if(!body||typeof body!=='object'||Object.keys(body).some(key=>!['id','sourceVersion','sourceStoredAt'].includes(key)))throw Error('INVALID_MESSAGE_FIELDS');
   const id=body?.id;
   const sourceVersion=body?.sourceVersion??null;
-  const sourceStoredAt=Number(body?.sourceStoredAt);
+  const sourceStoredAt=body?.sourceStoredAt;
   if(!ID_SET.has(id))throw Error('INVALID_PROJECTION_ID');
   if(sourceVersion!==null && (typeof sourceVersion!=='string'||sourceVersion.length>128))throw Error('INVALID_SOURCE_VERSION');
   if(!Number.isFinite(sourceStoredAt)||sourceStoredAt<0)throw Error('INVALID_SOURCE_STORED_AT');
@@ -24,14 +25,14 @@ export function createProjectionQueueConsumer({buildProjection,writeProjection,n
       try{
         const job=normalizeProjectionJob(message);
         const built=await buildProjection(job,env);
-        if(!built||typeof built.body!=='object')throw Error('PROJECTION_BUILD_FAILED');
+        if(!built||!built.body||typeof built.body!=='object'||Array.isArray(built.body))throw Error('PROJECTION_BUILD_FAILED');
         const storedAt=Number.isFinite(built.storedAt)?built.storedAt:now();
         await writeProjection(job.id,built.body,storedAt,env);
         message?.ack?.();
         results.push({id:job.id,status:'ACK',storedAt});
       }catch(error){
         message?.retry?.();
-        results.push({id:message?.body?.id??null,status:'RETRY',reason:String(error?.message??'PROJECTION_QUEUE_FAILED')});
+        results.push({id:ID_SET.has(message?.body?.id)?message.body.id:null,status:'RETRY',reason:/^[A-Z_]{1,64}$/.test(error?.message??'')?error.message:'PROJECTION_QUEUE_FAILED'});
       }
     }
     return {version:PROJECTION_QUEUE_VERSION,processed:results.length,results};

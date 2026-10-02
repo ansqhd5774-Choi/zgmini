@@ -13,14 +13,17 @@ export const PUBLIC_PROJECTION_KEYS=Object.freeze({
 const KEY_SET=new Set(Object.values(PUBLIC_PROJECTION_KEYS));
 const validKey=key=>typeof key==='string'&&KEY_SET.has(key);
 
-export function publicProjectionStore(db){
+export function publicProjectionStore(db,{onRead}={}){
   if(!db?.prepare)throw Error('STORAGE_UNAVAILABLE');
   return Object.freeze({
     async read(key){
       if(!validKey(key))throw Error('INVALID_PROJECTION_KEY');
-      const row=await db.prepare(
+      const statement=db.prepare(
         'SELECT body,stored_at FROM market_public_snapshots_v1 WHERE snapshot_key=?'
-      ).bind(key).first();
+      ).bind(key);
+      const result=typeof statement.all==='function'?await statement.all():null;
+      const row=result?(result.results?.[0]??null):await statement.first();
+      onRead?.(result?.meta??null);
       return row?{body:JSON.parse(row.body),storedAt:Number(row.stored_at)}:null;
     },
     async write(key,body,storedAt=Date.now()){

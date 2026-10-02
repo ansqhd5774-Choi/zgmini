@@ -1,0 +1,47 @@
+[
+  {
+    "id": "recession",
+    "file": "app/api/recession-detail/route.ts",
+    "sourceSha256": "9b1e4d4255f4d66d0f60f7b1d90f89d2010f9d369f8b0a726a7204af00344565"
+  },
+  {
+    "id": "liquidityCrisis",
+    "file": "app/api/liquidity-crisis-detail/route.ts",
+    "sourceSha256": "dbb2449f4ac0e2adb4adcb32464a83935b6243586f83c43f144b6d7d92696bf3"
+  },
+  {
+    "id": "creditRisk",
+    "file": "app/api/credit-risk-detail/route.ts",
+    "sourceSha256": "b9ee59579014c30d3c0fa6eeb0b6912706c9a7f92eb282a07bf11c20ba281626"
+  },
+  {
+    "id": "earningsRecession",
+    "file": "app/api/earnings-recession-detail/route.ts",
+    "sourceSha256": "c36020daa4c13dacae67937d8def6d7c38e319bad636c84d0971c93d4c5358bd"
+  },
+  {
+    "id": "assetBubble",
+    "file": "app/api/asset-bubble-detail/route.ts",
+    "sourceSha256": "fd38af720daa1fd7aa48fe0b165ff1e74a0e1c498457db4d5199ec373f2f1b75"
+  },
+  {
+    "id": "debtRisk",
+    "file": "app/api/debt-risk-detail/route.ts",
+    "sourceSha256": "e47b809645b169111b50811188ae9d7153ed9a1355e2b9241e178ff18010e737"
+  },
+  {
+    "id": "supplyShock",
+    "file": "app/api/supply-shock-detail/route.ts",
+    "sourceSha256": "521e7edc60c1e95af478ba668750201ebdd63944820967ba8fd8e8df9eb2ed7c"
+  },
+  {
+    "id": "inflation",
+    "file": "worker/inflation-r2-reader.mjs",
+    "sourceSha256": "0000498c277424298121cb76c2266593a07917181ca0e40a54bde09a383576ad"
+  },
+  {
+    "id": "koreaFearGreed",
+    "file": "worker/korea-funds.mjs",
+    "sourceSha256": "c1be3915614fdffef0a3a49ef885e5c0183c9ab23fc8149896069dbbd2423eb2"
+  }
+]

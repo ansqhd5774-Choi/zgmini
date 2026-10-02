@@ -1,0 +1,113 @@
+{
+  "at": "2026-10-02T20:05:27.639Z",
+  "localFixture": true,
+  "producerMessages": 9,
+  "ack": 9,
+  "retry": 0,
+  "initialProjectionWrites": 9,
+  "sourceWrites": 0,
+  "historyWrites": 0,
+  "providerCalls": 0,
+  "projections": [
+    {
+      "snapshot_key": "detail:asset-bubble:v1",
+      "bytes": 1628,
+      "stored_at": 1790971527011
+    },
+    {
+      "snapshot_key": "detail:credit-risk:v1",
+      "bytes": 4828,
+      "stored_at": 1790971526630
+    },
+    {
+      "snapshot_key": "detail:debt-risk:v1",
+      "bytes": 1590,
+      "stored_at": 1790971527293
+    },
+    {
+      "snapshot_key": "detail:earnings-recession:v1",
+      "bytes": 2192,
+      "stored_at": 1790971526717
+    },
+    {
+      "snapshot_key": "detail:inflation:v1",
+      "bytes": 5207,
+      "stored_at": 1790971514095
+    },
+    {
+      "snapshot_key": "detail:liquidity-crisis:v1",
+      "bytes": 4024,
+      "stored_at": 1790971520568
+    },
+    {
+      "snapshot_key": "detail:recession:v1",
+      "bytes": 2823,
+      "stored_at": 1790971514465
+    },
+    {
+      "snapshot_key": "detail:supply-shock:v1",
+      "bytes": 2295,
+      "stored_at": 1790971527623
+    },
+    {
+      "snapshot_key": "public:korea-fear-greed:v1",
+      "bytes": 119598,
+      "stored_at": 1790971527630
+    }
+  ],
+  "routing": {
+    "coreQueries": 186,
+    "historyQueries": 30
+  },
+  "result": {
+    "version": "PUBLIC_PROJECTION_QUEUE_R1",
+    "processed": 9,
+    "results": [
+      {
+        "id": "inflation",
+        "status": "ACK",
+        "storedAt": 1790971514095
+      },
+      {
+        "id": "recession",
+        "status": "ACK",
+        "storedAt": 1790971514465
+      },
+      {
+        "id": "liquidityCrisis",
+        "status": "ACK",
+        "storedAt": 1790971520568
+      },
+      {
+        "id": "creditRisk",
+        "status": "ACK",
+        "storedAt": 1790971526630
+      },
+      {
+        "id": "earningsRecession",
+        "status": "ACK",
+        "storedAt": 1790971526717
+      },
+      {
+        "id": "assetBubble",
+        "status": "ACK",
+        "storedAt": 1790971527011
+      },
+      {
+        "id": "debtRisk",
+        "status": "ACK",
+        "storedAt": 1790971527293
+      },
+      {
+        "id": "supplyShock",
+        "status": "ACK",
+        "storedAt": 1790971527623
+      },
+      {
+        "id": "koreaFearGreed",
+        "status": "ACK",
+        "storedAt": 1790971527630
+      }
+    ]
+  }
+}
