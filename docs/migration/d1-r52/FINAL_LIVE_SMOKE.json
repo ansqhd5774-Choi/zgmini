@@ -1,0 +1,135 @@
+{
+  "at": "2026-10-02T20:38:37.621Z",
+  "version": "bf48ae6a-58bc-4e4e-bd03-adf6e88fcc85",
+  "pass": true,
+  "results": [
+    {
+      "path": "/",
+      "status": 200,
+      "ssr": "bypassed"
+    },
+    {
+      "path": "/inflation/",
+      "status": 200,
+      "ssr": "bypassed"
+    },
+    {
+      "path": "/recession/",
+      "status": 200,
+      "ssr": "bypassed"
+    },
+    {
+      "path": "/liquidity-crisis/",
+      "status": 200,
+      "ssr": "bypassed"
+    },
+    {
+      "path": "/credit-risk/",
+      "status": 200,
+      "ssr": "bypassed"
+    },
+    {
+      "path": "/earnings-recession/",
+      "status": 200,
+      "ssr": "bypassed"
+    },
+    {
+      "path": "/asset-bubble/",
+      "status": 200,
+      "ssr": "bypassed"
+    },
+    {
+      "path": "/debt-risk/",
+      "status": 200,
+      "ssr": "bypassed"
+    },
+    {
+      "path": "/supply-shock/",
+      "status": 200,
+      "ssr": "bypassed"
+    },
+    {
+      "path": "/api/session",
+      "status": 200,
+      "ssr": null
+    },
+    {
+      "path": "/flags/us.svg",
+      "status": 200,
+      "ssr": null
+    },
+    {
+      "path": "//api/internal/x",
+      "status": 403,
+      "ssr": null
+    },
+    {
+      "path": "/api/%69nternal/x",
+      "status": 403,
+      "ssr": null
+    },
+    {
+      "path": "/api/%252finternal/x",
+      "status": 403,
+      "ssr": null
+    },
+    {
+      "path": "//api/admin/x",
+      "status": 403,
+      "ssr": null
+    },
+    {
+      "path": "//api/favorites",
+      "status": 403,
+      "ssr": null
+    },
+    {
+      "path": "/api/auth/signin",
+      "status": 404,
+      "ssr": null,
+      "contract": "No such route: 404; actual Sites auth entrypoints checked separately"
+    },
+    {
+      "path": "/",
+      "method": "POST",
+      "status": 403,
+      "ssr": null
+    },
+    {
+      "path": "/",
+      "method": "PUT",
+      "status": 403,
+      "ssr": null
+    },
+    {
+      "path": "/",
+      "method": "PATCH",
+      "status": 403,
+      "ssr": null
+    },
+    {
+      "path": "/",
+      "method": "DELETE",
+      "status": 403,
+      "ssr": null
+    },
+    {
+      "path": "/",
+      "method": "HEAD",
+      "status": 200,
+      "ssr": "bypassed"
+    },
+    {
+      "path": "/signin-with-chatgpt",
+      "status": 403
+    },
+    {
+      "path": "/signout-with-chatgpt",
+      "status": 403
+    },
+    {
+      "path": "/callback",
+      "status": 403
+    }
+  ]
+}

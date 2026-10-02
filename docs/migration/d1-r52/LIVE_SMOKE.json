@@ -1,0 +1,123 @@
+{
+  "at": "2026-10-02T20:19:53.895Z",
+  "version": "052205d6-7107-48cd-af5e-d0825b518194",
+  "result": [
+    {
+      "path": "/",
+      "status": 200,
+      "ssr": "bypassed"
+    },
+    {
+      "path": "/inflation/",
+      "status": 200,
+      "ssr": "bypassed"
+    },
+    {
+      "path": "/recession/",
+      "status": 200,
+      "ssr": "bypassed"
+    },
+    {
+      "path": "/liquidity-crisis/",
+      "status": 200,
+      "ssr": "bypassed"
+    },
+    {
+      "path": "/credit-risk/",
+      "status": 200,
+      "ssr": "bypassed"
+    },
+    {
+      "path": "/earnings-recession/",
+      "status": 200,
+      "ssr": "bypassed"
+    },
+    {
+      "path": "/asset-bubble/",
+      "status": 200,
+      "ssr": "bypassed"
+    },
+    {
+      "path": "/debt-risk/",
+      "status": 200,
+      "ssr": "bypassed"
+    },
+    {
+      "path": "/supply-shock/",
+      "status": 200,
+      "ssr": "bypassed"
+    },
+    {
+      "path": "/api/session",
+      "status": 200,
+      "ssr": null
+    },
+    {
+      "path": "/flags/us.svg",
+      "status": 200,
+      "ssr": null
+    },
+    {
+      "path": "/api/internal/market-refresh",
+      "status": 403,
+      "ssr": null
+    },
+    {
+      "path": "/api/admin/x",
+      "status": 403,
+      "ssr": null
+    },
+    {
+      "path": "/api/favorites",
+      "status": 403,
+      "ssr": null
+    },
+    {
+      "path": "/signin-with-chatgpt",
+      "status": 403,
+      "ssr": null
+    },
+    {
+      "path": "/",
+      "method": "POST",
+      "status": 403,
+      "ssr": null
+    },
+    {
+      "path": "/",
+      "method": "PUT",
+      "status": 403,
+      "ssr": null
+    },
+    {
+      "path": "/",
+      "method": "PATCH",
+      "status": 403,
+      "ssr": null
+    },
+    {
+      "path": "/",
+      "method": "DELETE",
+      "status": 403,
+      "ssr": null
+    },
+    {
+      "path": "/",
+      "method": "HEAD",
+      "status": 200,
+      "ssr": "bypassed"
+    }
+  ],
+  "quota": {
+    "status": 503,
+    "category": null,
+    "body": {
+      "status": "unavailable",
+      "reason": "STORED_PROJECTION_PENDING"
+    }
+  },
+  "production": {
+    "status": 200,
+    "bytes": 86560
+  }
+}
