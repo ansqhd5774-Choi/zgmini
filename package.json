@@ -16,8 +16,8 @@
     "lint": "bash scripts/sites-env.sh -- eslint . --ignore-pattern dist --ignore-pattern .next",
     "db:generate": "bash scripts/sites-env.sh -- drizzle-kit generate",
     "candidate:test:ci": "node --test scripts/candidate-guard.test.mjs",
-    "candidate:build:ci": "node scripts/candidate-branch-gate.mjs && node --test scripts/candidate-guard.test.mjs && node scripts/build-candidate-r7.mjs && node scripts/check-candidate-shells-r7.mjs && node scripts/check-candidate-r5.mjs",
-    "candidate:deploy:ci": "node scripts/candidate-branch-gate.mjs && node node_modules/wrangler/bin/wrangler.js deploy --config dist/server/wrangler.json",
+    "candidate:build:ci": "node scripts/candidate-branch-gate.mjs && npm run candidate:r52:test && node scripts/build-candidate-r52.mjs && node scripts/check-candidate-r52.mjs",
+    "candidate:deploy:ci": "node scripts/candidate-branch-gate.mjs && node scripts/check-candidate-r52.mjs && node node_modules/wrangler/bin/wrangler.js deploy --config dist/server/wrangler.json",
     "candidate:r52:test": "node --test scripts/projection-runtime-r52.test.mjs tests/market-projection-queue.test.mjs tests/market-public-projection-store.test.mjs scripts/candidate-guard.test.mjs scripts/candidate-2db-r5.test.mjs",
     "candidate:r52:build": "node scripts/build-candidate-r52.mjs",
     "candidate:r52:deploy": "node scripts/candidate-branch-gate.mjs && node scripts/check-candidate-r52.mjs && node node_modules/wrangler/bin/wrangler.js deploy --config dist/server/wrangler.json"
