@@ -32,7 +32,7 @@ export function createProjectionQueueConsumer({buildProjection,writeProjection,n
         results.push({id:job.id,status:'ACK',storedAt});
       }catch(error){
         message?.retry?.();
-        results.push({id:ID_SET.has(message?.body?.id)?message.body.id:null,status:'RETRY',reason:/^[A-Z_]{1,64}$/.test(error?.message??'')?error.message:'PROJECTION_QUEUE_FAILED'});
+        results.push({id:ID_SET.has(message?.body?.id)?message.body.id:null,status:'RETRY',reason:/^[A-Z][A-Z0-9_]{0,63}$/.test(error?.message??'')?error.message:'PROJECTION_QUEUE_FAILED'});
       }
     }
     return {version:PROJECTION_QUEUE_VERSION,processed:results.length,results};
