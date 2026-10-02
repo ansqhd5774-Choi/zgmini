@@ -269,7 +269,9 @@ export function CompositeMarketSection({items,points,demo,loading}:{items:Summar
                ?<a className="zg-info" href="/credit-risk/" aria-label="신용 위험 상세페이지 열기" title="신용 위험 상세페이지 열기"><ArrowUpRight size={12} aria-hidden="true"/></a>
                :diagnosticKeys[index]==='earningsRecessionDefense'
                 ?<a className="zg-info" href="/earnings-recession/" aria-label="실적 침체 상세페이지 열기" title="실적 침체 상세페이지 열기"><ArrowUpRight size={12} aria-hidden="true"/></a>
-                :<DashboardTip label={`${s.name} 반영 항목`}>{s.components}. API diagnostics8에서 READY인 경우에만 숫자를 표시합니다.</DashboardTip>}
+                :diagnosticKeys[index]==='assetBubbleSafety'
+                 ?<a className="zg-info" href="/asset-bubble/" aria-label="자산 버블 상세페이지 열기" title="자산 버블 상세페이지 열기"><ArrowUpRight size={12} aria-hidden="true"/></a>
+                 :<DashboardTip label={`${s.name} 반영 항목`}>{s.components}. API diagnostics8에서 READY인 경우에만 숫자를 표시합니다.</DashboardTip>}
           </span>
          </div>
          <div className="zg-r55-subscore-foot">
