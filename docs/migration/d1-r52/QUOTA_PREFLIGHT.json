@@ -1,0 +1,10 @@
+{
+  "at": "2026-10-02T20:21:32.272Z",
+  "version": "052205d6-7107-48cd-af5e-d0825b518194",
+  "status": 500,
+  "category": "D1_QUOTA",
+  "body": {
+    "temporary": "TEMPORARY_KFG_V2_POSTCHECK_ONLY",
+    "error": "READ_POSTCHECK_FAILED"
+  }
+}
