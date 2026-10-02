@@ -1,0 +1,64 @@
+[
+  {
+    "path": "tests/diagnostic-layer-official-macro.test.mjs",
+    "bytes": 9400,
+    "imports": [
+      "node:test",
+      "node:assert/strict",
+      "../lib/diagnostic-layer/input-registry.mjs",
+      "../lib/diagnostic-layer/official-macro-adapters.mjs"
+    ],
+    "decision": "NOT_IMPORTED: compatibility probe 25/30, authoritative baseline also 25/30; preserve baseline tests"
+  },
+  {
+    "path": "tests/market-score-breadth-r74-bridge.test.mjs",
+    "bytes": 10025,
+    "imports": [
+      "node:test",
+      "node:assert/strict",
+      "node:fs",
+      "../lib/market-score/breadth-r2-public-domain-r1.mjs",
+      "../lib/market-score/detail-catalog.mjs",
+      "../lib/market-score/domain-adapter-r1.mjs",
+      "../lib/market-score/composite-model-r1.mjs",
+      "../worker/market-score-r1.mjs",
+      "node:child_process",
+      "../lib/market-score/breadth-r2-method-r1.mjs",
+      "../lib/market-score/breadth-r2-worker-domain-r1.mjs"
+    ],
+    "decision": "NOT_IMPORTED: compatibility probe 25/30, authoritative baseline also 25/30; preserve baseline tests"
+  },
+  {
+    "path": "tests/market-score-public-domain-producers-r1.test.mjs",
+    "bytes": 5950,
+    "imports": [
+      "node:test",
+      "node:assert/strict",
+      "../lib/market-score/public-domain-producers-r1.mjs",
+      "../lib/market-score/public-domain-producers-r2.mjs",
+      "../worker/market-score-r1.mjs"
+    ],
+    "decision": "NOT_IMPORTED: compatibility probe 25/30, authoritative baseline also 25/30; preserve baseline tests"
+  },
+  {
+    "path": "tests/fear-greed-education-ui.test.mjs",
+    "bytes": 1988,
+    "imports": [
+      "node:test",
+      "node:assert/strict",
+      "node:fs"
+    ],
+    "decision": "DEFER: alternate education UI expectations; preserve deployed UI"
+  },
+  {
+    "path": "tests/market-score-growth-r2-chart-history-r1.test.mjs",
+    "bytes": 1424,
+    "imports": [
+      "node:test",
+      "node:assert/strict",
+      "../lib/market-score/growth-r2-worker-domain-r1.mjs",
+      "../lib/market-score/growth-r2-contract.mjs"
+    ],
+    "decision": "DEFER: incompatible alternate growth collector fixture"
+  }
+]

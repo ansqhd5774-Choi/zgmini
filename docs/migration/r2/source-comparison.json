@@ -1,0 +1,430 @@
+{
+  "authoritative": "de0504f191ab2ba5e0bdbdebd312f162f25f035e",
+  "githubMain": "7369d8d203f084bed8f9d766fc0952d42b972c7b",
+  "local": "aa8ff46400a63405d27d6208f1fcd4d8c3097f27",
+  "migration": "aa8ff46400a63405d27d6208f1fcd4d8c3097f27",
+  "commonAncestor": "0c4098b2dbc8b1d0818194603b6710a3ccccfccf",
+  "mergeTreeExit": 1,
+  "files": [
+    {
+      "path": "app/api/asset-bubble-detail/route.ts",
+      "classification": "SITES_ONLY_CHANGE",
+      "productionExists": true,
+      "githubExists": false,
+      "action": "PRESERVE_PRODUCTION_PENDING_SEMANTIC_REVIEW"
+    },
+    {
+      "path": "app/api/credit-risk-detail/route.ts",
+      "classification": "SITES_ONLY_CHANGE",
+      "productionExists": true,
+      "githubExists": false,
+      "action": "PRESERVE_PRODUCTION_PENDING_SEMANTIC_REVIEW"
+    },
+    {
+      "path": "app/api/debt-risk-detail/route.ts",
+      "classification": "SITES_ONLY_CHANGE",
+      "productionExists": true,
+      "githubExists": false,
+      "action": "PRESERVE_PRODUCTION_PENDING_SEMANTIC_REVIEW"
+    },
+    {
+      "path": "app/api/earnings-recession-detail/route.ts",
+      "classification": "SITES_ONLY_CHANGE",
+      "productionExists": true,
+      "githubExists": false,
+      "action": "PRESERVE_PRODUCTION_PENDING_SEMANTIC_REVIEW"
+    },
+    {
+      "path": "app/api/inflation-detail/route.ts",
+      "classification": "SITES_ONLY_CHANGE",
+      "productionExists": true,
+      "githubExists": false,
+      "action": "PRESERVE_PRODUCTION_PENDING_SEMANTIC_REVIEW"
+    },
+    {
+      "path": "app/api/internal/earnings-r4-one-year-backfill/route.ts",
+      "classification": "SITES_ONLY_CHANGE",
+      "productionExists": true,
+      "githubExists": false,
+      "action": "PRESERVE_PRODUCTION_PENDING_SEMANTIC_REVIEW"
+    },
+    {
+      "path": "app/api/liquidity-crisis-detail/route.ts",
+      "classification": "SITES_ONLY_CHANGE",
+      "productionExists": true,
+      "githubExists": false,
+      "action": "PRESERVE_PRODUCTION_PENDING_SEMANTIC_REVIEW"
+    },
+    {
+      "path": "app/api/recession-detail/route.ts",
+      "classification": "SITES_ONLY_CHANGE",
+      "productionExists": true,
+      "githubExists": false,
+      "action": "PRESERVE_PRODUCTION_PENDING_SEMANTIC_REVIEW"
+    },
+    {
+      "path": "app/api/supply-shock-detail/route.ts",
+      "classification": "SITES_ONLY_CHANGE",
+      "productionExists": true,
+      "githubExists": false,
+      "action": "PRESERVE_PRODUCTION_PENDING_SEMANTIC_REVIEW"
+    },
+    {
+      "path": "app/asset-bubble/asset-bubble-panel.tsx",
+      "classification": "SITES_ONLY_CHANGE",
+      "productionExists": true,
+      "githubExists": false,
+      "action": "PRESERVE_PRODUCTION_PENDING_SEMANTIC_REVIEW"
+    },
+    {
+      "path": "app/asset-bubble/page.tsx",
+      "classification": "SITES_ONLY_CHANGE",
+      "productionExists": true,
+      "githubExists": false,
+      "action": "PRESERVE_PRODUCTION_PENDING_SEMANTIC_REVIEW"
+    },
+    {
+      "path": "app/country-fear-greed.tsx",
+      "classification": "SITES_ONLY_CHANGE",
+      "productionExists": true,
+      "githubExists": true,
+      "action": "PRESERVE_PRODUCTION_PENDING_SEMANTIC_REVIEW"
+    },
+    {
+      "path": "app/credit-risk/credit-risk-panel.tsx",
+      "classification": "SITES_ONLY_CHANGE",
+      "productionExists": true,
+      "githubExists": false,
+      "action": "PRESERVE_PRODUCTION_PENDING_SEMANTIC_REVIEW"
+    },
+    {
+      "path": "app/credit-risk/page.tsx",
+      "classification": "SITES_ONLY_CHANGE",
+      "productionExists": true,
+      "githubExists": false,
+      "action": "PRESERVE_PRODUCTION_PENDING_SEMANTIC_REVIEW"
+    },
+    {
+      "path": "app/dashboard-ui.tsx",
+      "classification": "BOTH_CHANGED",
+      "productionExists": true,
+      "githubExists": true,
+      "action": "PRESERVE_PRODUCTION_PENDING_SEMANTIC_REVIEW"
+    },
+    {
+      "path": "app/debt-risk/debt-risk-panel.tsx",
+      "classification": "SITES_ONLY_CHANGE",
+      "productionExists": true,
+      "githubExists": false,
+      "action": "PRESERVE_PRODUCTION_PENDING_SEMANTIC_REVIEW"
+    },
+    {
+      "path": "app/debt-risk/page.tsx",
+      "classification": "SITES_ONLY_CHANGE",
+      "productionExists": true,
+      "githubExists": false,
+      "action": "PRESERVE_PRODUCTION_PENDING_SEMANTIC_REVIEW"
+    },
+    {
+      "path": "app/earnings-recession/earnings-recession-panel.tsx",
+      "classification": "SITES_ONLY_CHANGE",
+      "productionExists": true,
+      "githubExists": false,
+      "action": "PRESERVE_PRODUCTION_PENDING_SEMANTIC_REVIEW"
+    },
+    {
+      "path": "app/earnings-recession/page.tsx",
+      "classification": "SITES_ONLY_CHANGE",
+      "productionExists": true,
+      "githubExists": false,
+      "action": "PRESERVE_PRODUCTION_PENDING_SEMANTIC_REVIEW"
+    },
+    {
+      "path": "app/fear-greed/korea/data-panel.tsx",
+      "classification": "SITES_ONLY_CHANGE",
+      "productionExists": true,
+      "githubExists": true,
+      "action": "PRESERVE_PRODUCTION_PENDING_SEMANTIC_REVIEW"
+    },
+    {
+      "path": "app/fear-greed/korea/page.tsx",
+      "classification": "SITES_ONLY_CHANGE",
+      "productionExists": true,
+      "githubExists": true,
+      "action": "PRESERVE_PRODUCTION_PENDING_SEMANTIC_REVIEW"
+    },
+    {
+      "path": "app/fear-greed/usa/cnn-panel.tsx",
+      "classification": "BOTH_CHANGED",
+      "productionExists": true,
+      "githubExists": true,
+      "action": "PRESERVE_PRODUCTION_PENDING_SEMANTIC_REVIEW"
+    },
+    {
+      "path": "app/globals.css",
+      "classification": "BOTH_CHANGED",
+      "productionExists": true,
+      "githubExists": true,
+      "action": "PRESERVE_PRODUCTION_PENDING_SEMANTIC_REVIEW"
+    },
+    {
+      "path": "app/guide/fear-greed/page.tsx",
+      "classification": "SITES_ONLY_CHANGE",
+      "productionExists": true,
+      "githubExists": false,
+      "action": "PRESERVE_PRODUCTION_PENDING_SEMANTIC_REVIEW"
+    },
+    {
+      "path": "app/inflation/inflation-panel.tsx",
+      "classification": "SITES_ONLY_CHANGE",
+      "productionExists": true,
+      "githubExists": false,
+      "action": "PRESERVE_PRODUCTION_PENDING_SEMANTIC_REVIEW"
+    },
+    {
+      "path": "app/inflation/page.tsx",
+      "classification": "SITES_ONLY_CHANGE",
+      "productionExists": true,
+      "githubExists": false,
+      "action": "PRESERVE_PRODUCTION_PENDING_SEMANTIC_REVIEW"
+    },
+    {
+      "path": "app/korea-composite-view.tsx",
+      "classification": "SITES_ONLY_CHANGE",
+      "productionExists": true,
+      "githubExists": true,
+      "action": "PRESERVE_PRODUCTION_PENDING_SEMANTIC_REVIEW"
+    },
+    {
+      "path": "app/layout.tsx",
+      "classification": "SITES_ONLY_CHANGE",
+      "productionExists": true,
+      "githubExists": true,
+      "action": "PRESERVE_PRODUCTION_PENDING_SEMANTIC_REVIEW"
+    },
+    {
+      "path": "app/liquidity-crisis/liquidity-crisis-panel.tsx",
+      "classification": "SITES_ONLY_CHANGE",
+      "productionExists": true,
+      "githubExists": false,
+      "action": "PRESERVE_PRODUCTION_PENDING_SEMANTIC_REVIEW"
+    },
+    {
+      "path": "app/liquidity-crisis/page.tsx",
+      "classification": "SITES_ONLY_CHANGE",
+      "productionExists": true,
+      "githubExists": false,
+      "action": "PRESERVE_PRODUCTION_PENDING_SEMANTIC_REVIEW"
+    },
+    {
+      "path": "app/market-score-orb.tsx",
+      "classification": "SITES_ONLY_CHANGE",
+      "productionExists": true,
+      "githubExists": true,
+      "action": "PRESERVE_PRODUCTION_PENDING_SEMANTIC_REVIEW"
+    },
+    {
+      "path": "app/page.tsx",
+      "classification": "SITES_ONLY_CHANGE",
+      "productionExists": true,
+      "githubExists": true,
+      "action": "PRESERVE_PRODUCTION_PENDING_SEMANTIC_REVIEW"
+    },
+    {
+      "path": "app/recession/page.tsx",
+      "classification": "SITES_ONLY_CHANGE",
+      "productionExists": true,
+      "githubExists": false,
+      "action": "PRESERVE_PRODUCTION_PENDING_SEMANTIC_REVIEW"
+    },
+    {
+      "path": "app/recession/recession-panel.tsx",
+      "classification": "SITES_ONLY_CHANGE",
+      "productionExists": true,
+      "githubExists": false,
+      "action": "PRESERVE_PRODUCTION_PENDING_SEMANTIC_REVIEW"
+    },
+    {
+      "path": "app/responsive.css",
+      "classification": "BOTH_CHANGED",
+      "productionExists": true,
+      "githubExists": true,
+      "action": "PRESERVE_PRODUCTION_PENDING_SEMANTIC_REVIEW"
+    },
+    {
+      "path": "app/supply-shock/page.tsx",
+      "classification": "SITES_ONLY_CHANGE",
+      "productionExists": true,
+      "githubExists": false,
+      "action": "PRESERVE_PRODUCTION_PENDING_SEMANTIC_REVIEW"
+    },
+    {
+      "path": "app/supply-shock/supply-shock-panel.tsx",
+      "classification": "SITES_ONLY_CHANGE",
+      "productionExists": true,
+      "githubExists": false,
+      "action": "PRESERVE_PRODUCTION_PENDING_SEMANTIC_REVIEW"
+    },
+    {
+      "path": "lib/diagnostic-layer/inflation-r2-stored.mjs",
+      "classification": "SITES_ONLY_CHANGE",
+      "productionExists": true,
+      "githubExists": true,
+      "action": "PRESERVE_PRODUCTION_PENDING_SEMANTIC_REVIEW"
+    },
+    {
+      "path": "lib/market-score/detail-catalog.mjs",
+      "classification": "BOTH_CHANGED",
+      "productionExists": true,
+      "githubExists": true,
+      "action": "PRESERVE_PRODUCTION_PENDING_SEMANTIC_REVIEW"
+    },
+    {
+      "path": "lib/market-score/growth-r2-chart-history-r1.mjs",
+      "classification": "BOTH_CHANGED",
+      "productionExists": true,
+      "githubExists": true,
+      "action": "PRESERVE_PRODUCTION_PENDING_SEMANTIC_REVIEW"
+    },
+    {
+      "path": "lib/market-score/growth-r2-d1-store-r1.mjs",
+      "classification": "BOTH_CHANGED",
+      "productionExists": true,
+      "githubExists": true,
+      "action": "PRESERVE_PRODUCTION_PENDING_SEMANTIC_REVIEW"
+    },
+    {
+      "path": "lib/market-score/growth-r2-forward-provider-r1.mjs",
+      "classification": "SITES_ONLY_CHANGE",
+      "productionExists": true,
+      "githubExists": true,
+      "action": "PRESERVE_PRODUCTION_PENDING_SEMANTIC_REVIEW"
+    },
+    {
+      "path": "lib/market-score/growth-r2-forward-stage-r1.mjs",
+      "classification": "SITES_ONLY_CHANGE",
+      "productionExists": true,
+      "githubExists": false,
+      "action": "PRESERVE_PRODUCTION_PENDING_SEMANTIC_REVIEW"
+    },
+    {
+      "path": "lib/market-score/growth-r2-worker-domain-r1.mjs",
+      "classification": "BOTH_CHANGED",
+      "productionExists": true,
+      "githubExists": true,
+      "action": "PRESERVE_PRODUCTION_PENDING_SEMANTIC_REVIEW"
+    },
+    {
+      "path": "lib/market-score/sec-earnings-e1-r4-provider.mjs",
+      "classification": "SITES_ONLY_CHANGE",
+      "productionExists": true,
+      "githubExists": true,
+      "action": "PRESERVE_PRODUCTION_PENDING_SEMANTIC_REVIEW"
+    },
+    {
+      "path": "public/sitemap.xml",
+      "classification": "SITES_ONLY_CHANGE",
+      "productionExists": true,
+      "githubExists": true,
+      "action": "PRESERVE_PRODUCTION_PENDING_SEMANTIC_REVIEW"
+    },
+    {
+      "path": "tests/diagnostic-layer-official-macro.test.mjs",
+      "classification": "GITHUB_ONLY_CHANGE",
+      "productionExists": true,
+      "githubExists": true,
+      "action": "PRESERVE_PRODUCTION_PENDING_SEMANTIC_REVIEW"
+    },
+    {
+      "path": "tests/fear-greed-education-ui.test.mjs",
+      "classification": "GITHUB_ONLY_CHANGE",
+      "productionExists": false,
+      "githubExists": true,
+      "action": "REVIEW_GITHUB_ADDITION"
+    },
+    {
+      "path": "tests/market-operational-native-cron.test.mjs",
+      "classification": "BOTH_CHANGED",
+      "productionExists": true,
+      "githubExists": true,
+      "action": "PRESERVE_PRODUCTION_PENDING_SEMANTIC_REVIEW"
+    },
+    {
+      "path": "tests/market-operational.test.mjs",
+      "classification": "SITES_ONLY_CHANGE",
+      "productionExists": true,
+      "githubExists": true,
+      "action": "PRESERVE_PRODUCTION_PENDING_SEMANTIC_REVIEW"
+    },
+    {
+      "path": "tests/market-score-breadth-r74-bridge.test.mjs",
+      "classification": "GITHUB_ONLY_CHANGE",
+      "productionExists": true,
+      "githubExists": true,
+      "action": "PRESERVE_PRODUCTION_PENDING_SEMANTIC_REVIEW"
+    },
+    {
+      "path": "tests/market-score-earnings-e1-r4-one-year-backfill.test.mjs",
+      "classification": "SITES_ONLY_CHANGE",
+      "productionExists": true,
+      "githubExists": false,
+      "action": "PRESERVE_PRODUCTION_PENDING_SEMANTIC_REVIEW"
+    },
+    {
+      "path": "tests/market-score-growth-r2-chart-history-r1.test.mjs",
+      "classification": "GITHUB_ONLY_CHANGE",
+      "productionExists": false,
+      "githubExists": true,
+      "action": "REVIEW_GITHUB_ADDITION"
+    },
+    {
+      "path": "tests/market-score-growth-r2-production-r1.test.mjs",
+      "classification": "BOTH_CHANGED",
+      "productionExists": true,
+      "githubExists": true,
+      "action": "PRESERVE_PRODUCTION_PENDING_SEMANTIC_REVIEW"
+    },
+    {
+      "path": "tests/market-score-growth-r2-ui-r1.test.mjs",
+      "classification": "SITES_ONLY_CHANGE",
+      "productionExists": true,
+      "githubExists": false,
+      "action": "PRESERVE_PRODUCTION_PENDING_SEMANTIC_REVIEW"
+    },
+    {
+      "path": "tests/market-score-public-domain-producers-r1.test.mjs",
+      "classification": "GITHUB_ONLY_CHANGE",
+      "productionExists": true,
+      "githubExists": true,
+      "action": "PRESERVE_PRODUCTION_PENDING_SEMANTIC_REVIEW"
+    },
+    {
+      "path": "worker/index.ts",
+      "classification": "BOTH_CHANGED",
+      "productionExists": true,
+      "githubExists": true,
+      "action": "PRESERVE_PRODUCTION_PENDING_SEMANTIC_REVIEW"
+    },
+    {
+      "path": "worker/inflation-r2-reader.mjs",
+      "classification": "SITES_ONLY_CHANGE",
+      "productionExists": true,
+      "githubExists": true,
+      "action": "PRESERVE_PRODUCTION_PENDING_SEMANTIC_REVIEW"
+    },
+    {
+      "path": "worker/market-operational-refresh.mjs",
+      "classification": "BOTH_CHANGED",
+      "productionExists": true,
+      "githubExists": true,
+      "action": "PRESERVE_PRODUCTION_PENDING_SEMANTIC_REVIEW"
+    },
+    {
+      "path": "worker/market-operational-store.mjs",
+      "classification": "BOTH_CHANGED",
+      "productionExists": true,
+      "githubExists": true,
+      "action": "PRESERVE_PRODUCTION_PENDING_SEMANTIC_REVIEW"
+    }
+  ]
+}

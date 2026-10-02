@@ -1,0 +1,7 @@
+{
+  "buildExit": 0,
+  "buildDurationSeconds": 16.986,
+  "runtimeVerified": false,
+  "dependencyInstall": "EXISTING_NODE_MODULES",
+  "node": "24.19.0"
+}

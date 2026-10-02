@@ -1,0 +1,61 @@
+cc142701c5e1f8584c46457bac0e7c8d4956df80
+100644 b4059eac312b02ef229e22922ecdc76320609c15 1	app/dashboard-ui.tsx
+100644 1e59523eac6837d0020b3a1b55fa4257ef50fbff 2	app/dashboard-ui.tsx
+100644 102733d9231f0fb665fd6aeb1c3bf4a20bd7f57a 3	app/dashboard-ui.tsx
+100644 db823a61993df1aae9d9c84d8d92b19df0ae087e 1	app/fear-greed/usa/cnn-panel.tsx
+100644 a57a94d673cb264d872a7f721ace32ee5ad828fc 2	app/fear-greed/usa/cnn-panel.tsx
+100644 a6a40833d10c7751e3fb3d1d5fa1b2aab8ed177e 3	app/fear-greed/usa/cnn-panel.tsx
+100644 087d8bc8a4eb7835b397ae1014f06bd336d222c2 1	app/globals.css
+100644 c4a405ddeaaea693130b993c1e01326a201c6d61 2	app/globals.css
+100644 b3ec74f934602ee9f91e388be7ac6ebf25ef7c72 3	app/globals.css
+100644 07dcf6d6b696ee5fed6aae52251eee2d6fac5b92 1	lib/market-score/detail-catalog.mjs
+100644 71488d172aecd1cc8ce98d6cc9315b54d7215471 2	lib/market-score/detail-catalog.mjs
+100644 5b0d07078c919c37041c4d70717abee705a08ff2 3	lib/market-score/detail-catalog.mjs
+100644 82a7d172e79c717b9f28b4fb62cbbcd83f894ffb 2	lib/market-score/growth-r2-chart-history-r1.mjs
+100644 c174a85cf635b5e7a8f6204e7b8b8291bd9037c8 3	lib/market-score/growth-r2-chart-history-r1.mjs
+100644 83db4715dfc425371a90034421fc8b4b9362c07b 1	lib/market-score/growth-r2-d1-store-r1.mjs
+100644 17ffd20a67fb09c9551b102da94f19ced0ebe77b 2	lib/market-score/growth-r2-d1-store-r1.mjs
+100644 fe6d09896e11cb2a8ce2ce8df0cba4d5d9a63a17 3	lib/market-score/growth-r2-d1-store-r1.mjs
+100644 98bb5c4de26ab12658e071c410929687ccbb0dcb 1	lib/market-score/growth-r2-worker-domain-r1.mjs
+100644 4313af8b66f7850e4087129587382b8c8ec60dbd 2	lib/market-score/growth-r2-worker-domain-r1.mjs
+100644 7e569b2ba43ac85fd3dabc5c7d9b1c6f05dbe2bf 3	lib/market-score/growth-r2-worker-domain-r1.mjs
+100644 1924c724bce56f00bf7cac74214f944400c0b691 2	tests/market-operational-native-cron.test.mjs
+100644 de0b0edbb9e8305fff44f6e49b3dad37ba3bbd1c 3	tests/market-operational-native-cron.test.mjs
+100644 e627b2434a2628f4493e50dc34c4bbf72d3fbc33 1	tests/market-score-growth-r2-production-r1.test.mjs
+100644 a738661592f06d9f38a2478ddbd00ce9aa807275 2	tests/market-score-growth-r2-production-r1.test.mjs
+100644 4433f72a6f9b3a6f2809d6a26a5cc9e3a88f0f5b 3	tests/market-score-growth-r2-production-r1.test.mjs
+100644 fc8169c9ab79a6cf2bb4baddbff9648ff651cd7e 1	worker/index.ts
+100644 c3a8a884001d6af211257bee7ff64f7208641a28 2	worker/index.ts
+100644 1b7084b199aa3c83a2912efb617099cece55d664 3	worker/index.ts
+100644 53c7ccf56e2c0ea1a9e467377391fdd3dc8cf47c 1	worker/market-operational-refresh.mjs
+100644 04813139a47f57bbad8a1b93c7dd5ccc53e24f30 2	worker/market-operational-refresh.mjs
+100644 f0963f2596561d2eefb1cab48d92846cc5064115 3	worker/market-operational-refresh.mjs
+100644 2c63d996d99e3f26682974abfc93b8eb2ffe513f 1	worker/market-operational-store.mjs
+100644 2681cfb21dafac44f8e4bf83d0cb9200709439b9 2	worker/market-operational-store.mjs
+100644 8295a862bf8ffbaf665cf37f4b7133d9e93e2c98 3	worker/market-operational-store.mjs
+
+Auto-merging app/dashboard-ui.tsx
+CONFLICT (content): Merge conflict in app/dashboard-ui.tsx
+Auto-merging app/fear-greed/usa/cnn-panel.tsx
+CONFLICT (content): Merge conflict in app/fear-greed/usa/cnn-panel.tsx
+Auto-merging app/globals.css
+CONFLICT (content): Merge conflict in app/globals.css
+Auto-merging app/responsive.css
+Auto-merging lib/market-score/detail-catalog.mjs
+CONFLICT (content): Merge conflict in lib/market-score/detail-catalog.mjs
+Auto-merging lib/market-score/growth-r2-chart-history-r1.mjs
+CONFLICT (add/add): Merge conflict in lib/market-score/growth-r2-chart-history-r1.mjs
+Auto-merging lib/market-score/growth-r2-d1-store-r1.mjs
+CONFLICT (content): Merge conflict in lib/market-score/growth-r2-d1-store-r1.mjs
+Auto-merging lib/market-score/growth-r2-worker-domain-r1.mjs
+CONFLICT (content): Merge conflict in lib/market-score/growth-r2-worker-domain-r1.mjs
+Auto-merging tests/market-operational-native-cron.test.mjs
+CONFLICT (add/add): Merge conflict in tests/market-operational-native-cron.test.mjs
+Auto-merging tests/market-score-growth-r2-production-r1.test.mjs
+CONFLICT (content): Merge conflict in tests/market-score-growth-r2-production-r1.test.mjs
+Auto-merging worker/index.ts
+CONFLICT (content): Merge conflict in worker/index.ts
+Auto-merging worker/market-operational-refresh.mjs
+CONFLICT (content): Merge conflict in worker/market-operational-refresh.mjs
+Auto-merging worker/market-operational-store.mjs
+CONFLICT (content): Merge conflict in worker/market-operational-store.mjs

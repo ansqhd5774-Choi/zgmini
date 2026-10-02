@@ -1,0 +1,52 @@
+{
+  "site": {
+    "id": "appgprj_6a9aab599d64819185bbc870a6e728d7",
+    "latest_version_number": 377,
+    "current_live_url": "https://zgmini.kr",
+    "status": "active"
+  },
+  "version": {
+    "id": "appgprj_6a9aab599d64819185bbc870a6e728d7~appgver_932a1316f8408191854a0b50617f36b8",
+    "version_number": 377,
+    "source": {
+      "commit_sha": "de0504f191ab2ba5e0bdbdebd312f162f25f035e"
+    },
+    "deployment_id": "appgdep_6abf6e52302c8191bff780c618ef7d08"
+  },
+  "deployment": {
+    "id": "appgdep_6abf6e52302c8191bff780c618ef7d08",
+    "project_id": "appgprj_6a9aab599d64819185bbc870a6e728d7",
+    "title": "즤그미니!",
+    "version_id": "appgprj_6a9aab599d64819185bbc870a6e728d7~appgver_932a1316f8408191854a0b50617f36b8",
+    "type": "publish",
+    "status": "succeeded",
+    "url": "https://zgmini.ansqhd5774.chatgpt.site",
+    "has_mcp": false,
+    "screenshot_asset_pointer": "sediment://file_00000000d4dc81f89634e7d8f6dfbbc6",
+    "provider_deployment_id": "site---6a9aab599d64819185bbc870a6e728d7",
+    "failure_message": null,
+    "env_set_revision": 37,
+    "updated_at": "2026-10-02T08:45:13.868831+00:00"
+  },
+  "runtimeEnvironmentNames": [
+    "B1_R3_HISTORY_IMPORT_SECRET",
+    "BEA_API_KEY",
+    "BLS_API_KEY",
+    "BOK_API_KEY",
+    "C1_R3_EXTERNAL_SCHEDULER_SECRET",
+    "CENSUS_API_KEY",
+    "EIA_API_KEY",
+    "EQUIBLES_API_KEY",
+    "FMP_API_KEY",
+    "FRED_API_KEY",
+    "FSC_API_KEY",
+    "FSC_DISCLOSURE_API_KEY",
+    "KFG_V2_CANARY_OPERATOR_EMAIL",
+    "KFG_V2_CANARY_SECRET",
+    "KFG_V2_DAILY_SCHEDULER_SECRET",
+    "KOREA_REV7_SCHEDULER_SECRET",
+    "KOSIS_API_KEY",
+    "KRX_API_KEY"
+  ],
+  "secretValuesRecorded": false
+}

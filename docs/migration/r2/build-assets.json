@@ -1,0 +1,14 @@
+{
+  "diskFiles": 38,
+  "maxAssetBytes": 1032611,
+  "wranglerScannedFiles": 41,
+  "wranglerTotalUploadKiB": 5463.33,
+  "wranglerGzipKiB": 1069.07,
+  "accountId": "6e9b57e718b247330a6efa42a9516e95",
+  "generatedName": "zgmini-migration-candidate",
+  "generatedRoutes": [],
+  "generatedCrons": [],
+  "realD1Connected": false,
+  "dryRunExit": 0,
+  "runtimeVerified": false
+}

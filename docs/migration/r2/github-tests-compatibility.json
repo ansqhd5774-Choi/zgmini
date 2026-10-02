@@ -1,0 +1,27 @@
+{
+  "githubCandidate": {
+    "tests": 30,
+    "pass": 25,
+    "fail": 5,
+    "decision": "REJECT_IMPORT_NO_RUNTIME_CHANGES"
+  },
+  "restoredAuthoritativeBaseline": {
+    "exit": 1,
+    "summary": [
+      "✖ Batch A registry contains all evidence-locked FRED series (2.8193ms)",
+      "✖ Batch A coverage reports no fabricated historical availability (0.34ms)",
+      "✖ dashboard source uses B1-R3 explanation and visibly renders Breadth raw/date metadata (2.9123ms)",
+      "✖ bridge preserves all other eleven domain outputs and detail rows (299.2531ms)",
+      "✖ public API wires approved C1 and K1 internally while B1 remains unavailable (49.819ms)",
+      "ℹ tests 30",
+      "ℹ pass 25",
+      "ℹ fail 5",
+      "✖ failing tests:",
+      "✖ Batch A registry contains all evidence-locked FRED series (2.8193ms)",
+      "✖ Batch A coverage reports no fabricated historical availability (0.34ms)",
+      "✖ dashboard source uses B1-R3 explanation and visibly renders Breadth raw/date metadata (2.9123ms)",
+      "✖ bridge preserves all other eleven domain outputs and detail rows (299.2531ms)",
+      "✖ public API wires approved C1 and K1 internally while B1 remains unavailable (49.819ms)"
+    ]
+  }
+}
