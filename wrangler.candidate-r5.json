@@ -9,5 +9,5 @@
   "preview_urls":false,
   "routes":[],
   "triggers":{"crons":[]},
-  "assets":{"binding":"ASSETS","run_worker_first":true}
+  "assets":{"binding":"ASSETS","run_worker_first":true,"html_handling":"none"}
 }

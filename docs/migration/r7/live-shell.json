@@ -1,0 +1,386 @@
+{
+  "version": "565d438c-8c40-40d7-9d87-ececab4e35d1",
+  "observed_at": "2026-10-02T12:21:49.498Z",
+  "checks": [
+    {
+      "route": "/",
+      "method": "GET",
+      "rsc": false,
+      "status": 200,
+      "artifact": "/__candidate_shells/index.html",
+      "bytes": 85476,
+      "sha256": "6339f0572e02d8287708078c23b286cddddcdb6c3e0f58262d9875a20d902f2a",
+      "ssr": "bypassed"
+    },
+    {
+      "route": "/",
+      "method": "GET",
+      "rsc": true,
+      "status": 200,
+      "artifact": "/__candidate_shells/index.rsc",
+      "bytes": 4448,
+      "sha256": "1d8354c8881c6f4930363aa913b747f8301686eaa991379004a359f92ec551a0",
+      "ssr": "bypassed"
+    },
+    {
+      "route": "/",
+      "method": "HEAD",
+      "rsc": false,
+      "status": 200,
+      "artifact": "/__candidate_shells/index.html",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "ssr": "bypassed"
+    },
+    {
+      "route": "/",
+      "method": "HEAD",
+      "rsc": true,
+      "status": 200,
+      "artifact": "/__candidate_shells/index.rsc",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "ssr": "bypassed"
+    },
+    {
+      "route": "/inflation/",
+      "method": "GET",
+      "rsc": false,
+      "status": 200,
+      "artifact": "/__candidate_shells/inflation.html",
+      "bytes": 32762,
+      "sha256": "6f3cf25449d834b09353931089ec5dc6d1800aeae5736bbb8381928eb20abfa1",
+      "ssr": "bypassed"
+    },
+    {
+      "route": "/inflation/",
+      "method": "GET",
+      "rsc": true,
+      "status": 200,
+      "artifact": "/__candidate_shells/inflation.rsc",
+      "bytes": 4714,
+      "sha256": "b817a04a2894201ad779f6b99d5131c3216c22bdfb5181bba664b7ade4215a69",
+      "ssr": "bypassed"
+    },
+    {
+      "route": "/inflation/",
+      "method": "HEAD",
+      "rsc": false,
+      "status": 200,
+      "artifact": "/__candidate_shells/inflation.html",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "ssr": "bypassed"
+    },
+    {
+      "route": "/inflation/",
+      "method": "HEAD",
+      "rsc": true,
+      "status": 200,
+      "artifact": "/__candidate_shells/inflation.rsc",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "ssr": "bypassed"
+    },
+    {
+      "route": "/recession/",
+      "method": "GET",
+      "rsc": false,
+      "status": 200,
+      "artifact": "/__candidate_shells/recession.html",
+      "bytes": 25692,
+      "sha256": "6aec112127f1e060d93dbade77d4d1612832aec20e4dd97c828d7c3834189775",
+      "ssr": "bypassed"
+    },
+    {
+      "route": "/recession/",
+      "method": "GET",
+      "rsc": true,
+      "status": 200,
+      "artifact": "/__candidate_shells/recession.rsc",
+      "bytes": 4781,
+      "sha256": "a5edc2f66663c376de8509e131f11906195f19eb218f474e3a798a791cf4ca56",
+      "ssr": "bypassed"
+    },
+    {
+      "route": "/recession/",
+      "method": "HEAD",
+      "rsc": false,
+      "status": 200,
+      "artifact": "/__candidate_shells/recession.html",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "ssr": "bypassed"
+    },
+    {
+      "route": "/recession/",
+      "method": "HEAD",
+      "rsc": true,
+      "status": 200,
+      "artifact": "/__candidate_shells/recession.rsc",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "ssr": "bypassed"
+    },
+    {
+      "route": "/liquidity-crisis/",
+      "method": "GET",
+      "rsc": false,
+      "status": 200,
+      "artifact": "/__candidate_shells/liquidity-crisis.html",
+      "bytes": 31247,
+      "sha256": "156fd993981578a5e7a8ef4d35f561842ba5cff4149de2d367c7e37a08bd4e1f",
+      "ssr": "bypassed"
+    },
+    {
+      "route": "/liquidity-crisis/",
+      "method": "GET",
+      "rsc": true,
+      "status": 200,
+      "artifact": "/__candidate_shells/liquidity-crisis.rsc",
+      "bytes": 4852,
+      "sha256": "b2d3216f846828de22484cf17769afdfdaef332121ff7d42cf8fb038b040b684",
+      "ssr": "bypassed"
+    },
+    {
+      "route": "/liquidity-crisis/",
+      "method": "HEAD",
+      "rsc": false,
+      "status": 200,
+      "artifact": "/__candidate_shells/liquidity-crisis.html",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "ssr": "bypassed"
+    },
+    {
+      "route": "/liquidity-crisis/",
+      "method": "HEAD",
+      "rsc": true,
+      "status": 200,
+      "artifact": "/__candidate_shells/liquidity-crisis.rsc",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "ssr": "bypassed"
+    },
+    {
+      "route": "/credit-risk/",
+      "method": "GET",
+      "rsc": false,
+      "status": 200,
+      "artifact": "/__candidate_shells/credit-risk.html",
+      "bytes": 27288,
+      "sha256": "37a218e73768109a1161a1d4a07d0e41dd8d3c9776df26292c747fdd37aba002",
+      "ssr": "bypassed"
+    },
+    {
+      "route": "/credit-risk/",
+      "method": "GET",
+      "rsc": true,
+      "status": 200,
+      "artifact": "/__candidate_shells/credit-risk.rsc",
+      "bytes": 4714,
+      "sha256": "0793a7b439f6d768096de55daaed4b61794461bc2dfa62f2118c00befb095e27",
+      "ssr": "bypassed"
+    },
+    {
+      "route": "/credit-risk/",
+      "method": "HEAD",
+      "rsc": false,
+      "status": 200,
+      "artifact": "/__candidate_shells/credit-risk.html",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "ssr": "bypassed"
+    },
+    {
+      "route": "/credit-risk/",
+      "method": "HEAD",
+      "rsc": true,
+      "status": 200,
+      "artifact": "/__candidate_shells/credit-risk.rsc",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "ssr": "bypassed"
+    },
+    {
+      "route": "/earnings-recession/",
+      "method": "GET",
+      "rsc": false,
+      "status": 200,
+      "artifact": "/__candidate_shells/earnings-recession.html",
+      "bytes": 23743,
+      "sha256": "bda767df4f6c1f2439f44ff275db4573948e135848870908ba24c192ff0fbbc3",
+      "ssr": "bypassed"
+    },
+    {
+      "route": "/earnings-recession/",
+      "method": "GET",
+      "rsc": true,
+      "status": 200,
+      "artifact": "/__candidate_shells/earnings-recession.rsc",
+      "bytes": 4908,
+      "sha256": "1427d5bbbafced6c48b5fbd0bc50c7e702b7049377a7dfcb8f0c46c1684a4baa",
+      "ssr": "bypassed"
+    },
+    {
+      "route": "/earnings-recession/",
+      "method": "HEAD",
+      "rsc": false,
+      "status": 200,
+      "artifact": "/__candidate_shells/earnings-recession.html",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "ssr": "bypassed"
+    },
+    {
+      "route": "/earnings-recession/",
+      "method": "HEAD",
+      "rsc": true,
+      "status": 200,
+      "artifact": "/__candidate_shells/earnings-recession.rsc",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "ssr": "bypassed"
+    },
+    {
+      "route": "/asset-bubble/",
+      "method": "GET",
+      "rsc": false,
+      "status": 200,
+      "artifact": "/__candidate_shells/asset-bubble.html",
+      "bytes": 25105,
+      "sha256": "446f283442b51649cc19cd24051d8285f493d7464af329c84297b078b3eb65b4",
+      "ssr": "bypassed"
+    },
+    {
+      "route": "/asset-bubble/",
+      "method": "GET",
+      "rsc": true,
+      "status": 200,
+      "artifact": "/__candidate_shells/asset-bubble.rsc",
+      "bytes": 4824,
+      "sha256": "b3972117a50c76ddbf593f8a4889aebadbdaa35edf856c465a00c8ee813c7d25",
+      "ssr": "bypassed"
+    },
+    {
+      "route": "/asset-bubble/",
+      "method": "HEAD",
+      "rsc": false,
+      "status": 200,
+      "artifact": "/__candidate_shells/asset-bubble.html",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "ssr": "bypassed"
+    },
+    {
+      "route": "/asset-bubble/",
+      "method": "HEAD",
+      "rsc": true,
+      "status": 200,
+      "artifact": "/__candidate_shells/asset-bubble.rsc",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "ssr": "bypassed"
+    },
+    {
+      "route": "/debt-risk/",
+      "method": "GET",
+      "rsc": false,
+      "status": 200,
+      "artifact": "/__candidate_shells/debt-risk.html",
+      "bytes": 23549,
+      "sha256": "2d26a54ee68195e59e53a8214ede7c16c46b8b81d783bf6bea96a5a25ae820c0",
+      "ssr": "bypassed"
+    },
+    {
+      "route": "/debt-risk/",
+      "method": "GET",
+      "rsc": true,
+      "status": 200,
+      "artifact": "/__candidate_shells/debt-risk.rsc",
+      "bytes": 4619,
+      "sha256": "1206a637fb9e8b9680090a33b5f8efefa1a683ac0c4049b93c1915f5327366a3",
+      "ssr": "bypassed"
+    },
+    {
+      "route": "/debt-risk/",
+      "method": "HEAD",
+      "rsc": false,
+      "status": 200,
+      "artifact": "/__candidate_shells/debt-risk.html",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "ssr": "bypassed"
+    },
+    {
+      "route": "/debt-risk/",
+      "method": "HEAD",
+      "rsc": true,
+      "status": 200,
+      "artifact": "/__candidate_shells/debt-risk.rsc",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "ssr": "bypassed"
+    },
+    {
+      "route": "/supply-shock/",
+      "method": "GET",
+      "rsc": false,
+      "status": 200,
+      "artifact": "/__candidate_shells/supply-shock.html",
+      "bytes": 24459,
+      "sha256": "d6e92c069789e275b78048f8919fc97b229054a25a756b50b484ea29e7756923",
+      "ssr": "bypassed"
+    },
+    {
+      "route": "/supply-shock/",
+      "method": "GET",
+      "rsc": true,
+      "status": 200,
+      "artifact": "/__candidate_shells/supply-shock.rsc",
+      "bytes": 4673,
+      "sha256": "ca99ba11a902c47a04e77c98e311b1194c2e2ab5f0a59f062160240d6984e819",
+      "ssr": "bypassed"
+    },
+    {
+      "route": "/supply-shock/",
+      "method": "HEAD",
+      "rsc": false,
+      "status": 200,
+      "artifact": "/__candidate_shells/supply-shock.html",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "ssr": "bypassed"
+    },
+    {
+      "route": "/supply-shock/",
+      "method": "HEAD",
+      "rsc": true,
+      "status": 200,
+      "artifact": "/__candidate_shells/supply-shock.rsc",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "ssr": "bypassed"
+    },
+    {
+      "route": "/",
+      "method": "POST",
+      "status": 403
+    },
+    {
+      "route": "/",
+      "method": "PUT",
+      "status": 403
+    },
+    {
+      "route": "/",
+      "method": "PATCH",
+      "status": 403
+    },
+    {
+      "route": "/",
+      "method": "DELETE",
+      "status": 403
+    }
+  ]
+}

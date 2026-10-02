@@ -1,0 +1,153 @@
+{
+  "observed_at": "2026-10-02T12:20:58.052Z",
+  "pages": [
+    {
+      "path": "/inflation/",
+      "heading": "인플레이션이란?",
+      "scrollWidth": 1425,
+      "tables": 1,
+      "width": 1440,
+      "errors": 0
+    },
+    {
+      "path": "/recession/",
+      "heading": "경기침체란?",
+      "scrollWidth": 1425,
+      "tables": 1,
+      "width": 1440,
+      "errors": 0
+    },
+    {
+      "path": "/liquidity-crisis/",
+      "heading": "유동성 위기란?",
+      "scrollWidth": 1425,
+      "tables": 1,
+      "width": 1440,
+      "errors": 0
+    },
+    {
+      "path": "/credit-risk/",
+      "heading": "신용 위험이란?",
+      "scrollWidth": 1425,
+      "tables": 1,
+      "width": 1440,
+      "errors": 0
+    },
+    {
+      "path": "/earnings-recession/",
+      "heading": "실적 침체란?",
+      "scrollWidth": 1425,
+      "tables": 1,
+      "width": 1440,
+      "errors": 0
+    },
+    {
+      "path": "/asset-bubble/",
+      "heading": "자산 버블이란?",
+      "scrollWidth": 1425,
+      "tables": 1,
+      "width": 1440,
+      "errors": 0
+    },
+    {
+      "path": "/debt-risk/",
+      "heading": "부채 위험이란?",
+      "scrollWidth": 1425,
+      "tables": 1,
+      "width": 1440,
+      "errors": 0
+    },
+    {
+      "path": "/supply-shock/",
+      "heading": "공급 충격이란?",
+      "scrollWidth": 1425,
+      "tables": 1,
+      "width": 1440,
+      "errors": 0
+    },
+    {
+      "path": "/",
+      "heading": "미국·한국 공포탐욕지수",
+      "scrollWidth": 375,
+      "tables": 0,
+      "width": 390,
+      "errors": 0
+    },
+    {
+      "path": "/inflation/",
+      "heading": "인플레이션이란?",
+      "scrollWidth": 375,
+      "tables": 1,
+      "width": 390,
+      "errors": 0
+    },
+    {
+      "path": "/recession/",
+      "heading": "경기침체란?",
+      "scrollWidth": 375,
+      "tables": 1,
+      "width": 390,
+      "errors": 0
+    },
+    {
+      "path": "/liquidity-crisis/",
+      "heading": "유동성 위기란?",
+      "scrollWidth": 375,
+      "tables": 1,
+      "width": 390,
+      "errors": 0
+    },
+    {
+      "path": "/credit-risk/",
+      "heading": "신용 위험이란?",
+      "scrollWidth": 375,
+      "tables": 1,
+      "width": 390,
+      "errors": 0
+    },
+    {
+      "path": "/earnings-recession/",
+      "heading": "실적 침체란?",
+      "scrollWidth": 375,
+      "tables": 1,
+      "width": 390,
+      "errors": 0
+    },
+    {
+      "path": "/asset-bubble/",
+      "heading": "자산 버블이란?",
+      "scrollWidth": 375,
+      "tables": 1,
+      "width": 390,
+      "errors": 0
+    },
+    {
+      "path": "/debt-risk/",
+      "heading": "부채 위험이란?",
+      "scrollWidth": 375,
+      "tables": 1,
+      "width": 390,
+      "errors": 0
+    },
+    {
+      "path": "/supply-shock/",
+      "heading": "공급 충격이란?",
+      "scrollWidth": 375,
+      "tables": 1,
+      "width": 390,
+      "errors": 0
+    }
+  ],
+  "root_pc": {
+    "width": 1440,
+    "scrollWidth": 1440,
+    "errors": 0,
+    "gauge": 0,
+    "status": 0,
+    "value": "—"
+  },
+  "period_click": true,
+  "info_expanded": true,
+  "client_api_fetch": true,
+  "data_hover": "UNVERIFIED_D1_UNBOUND"
+}

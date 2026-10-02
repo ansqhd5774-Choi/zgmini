@@ -1,0 +1,566 @@
+{
+  "version": "565d438c-8c40-40d7-9d87-ececab4e35d1",
+  "status": "PASS",
+  "rows": [
+    {
+      "route": "/",
+      "before": {
+        "route": "/",
+        "requests": 49,
+        "cpu_samples": 31,
+        "statuses": [
+          200
+        ],
+        "cpu_p50": 22,
+        "cpu_p90": 35,
+        "cpu_p95": 89,
+        "cpu_p99": 94,
+        "cpu_max": 94,
+        "wall_p50": 23,
+        "wall_p95": 115,
+        "size_min": 85574,
+        "size_max": 85610,
+        "over10": 31,
+        "runtime_errors": 0,
+        "verdict": "FAIL"
+      },
+      "after": {
+        "route": "/",
+        "requests": 57,
+        "cpu_samples": 31,
+        "statuses": [
+          200
+        ],
+        "cpu_p50": 0,
+        "cpu_p90": 1,
+        "cpu_p95": 1,
+        "cpu_p99": 2,
+        "cpu_max": 2,
+        "wall_p50": 7,
+        "wall_p95": 15,
+        "size_min": 85476,
+        "size_max": 85476,
+        "over10": 0,
+        "runtime_errors": 0,
+        "verdict": "PASS"
+      }
+    },
+    {
+      "route": "/api/market-score",
+      "before": {
+        "route": "/api/market-score",
+        "requests": 71,
+        "cpu_samples": 31,
+        "statuses": [
+          503
+        ],
+        "cpu_p50": 0,
+        "cpu_p90": 0,
+        "cpu_p95": 0,
+        "cpu_p99": 0,
+        "cpu_max": 0,
+        "wall_p50": 0,
+        "wall_p95": 0,
+        "size_min": 56,
+        "size_max": 56,
+        "over10": 0,
+        "runtime_errors": 0,
+        "verdict": "PASS"
+      },
+      "after": {
+        "route": "/api/market-score",
+        "requests": 72,
+        "cpu_samples": 31,
+        "statuses": [
+          503
+        ],
+        "cpu_p50": 0,
+        "cpu_p90": 0,
+        "cpu_p95": 0,
+        "cpu_p99": 0,
+        "cpu_max": 0,
+        "wall_p50": 0,
+        "wall_p95": 1,
+        "size_min": 56,
+        "size_max": 56,
+        "over10": 0,
+        "runtime_errors": 0,
+        "verdict": "PASS"
+      }
+    },
+    {
+      "route": "/inflation/",
+      "before": {
+        "route": "/inflation/",
+        "requests": 68,
+        "cpu_samples": 31,
+        "statuses": [
+          200
+        ],
+        "cpu_p50": 9,
+        "cpu_p90": 16,
+        "cpu_p95": 24,
+        "cpu_p99": 24,
+        "cpu_max": 24,
+        "wall_p50": 9,
+        "wall_p95": 27,
+        "size_min": 32809,
+        "size_max": 32827,
+        "over10": 7,
+        "runtime_errors": 0,
+        "verdict": "FAIL"
+      },
+      "after": {
+        "route": "/inflation/",
+        "requests": 72,
+        "cpu_samples": 31,
+        "statuses": [
+          200
+        ],
+        "cpu_p50": 0,
+        "cpu_p90": 0,
+        "cpu_p95": 0,
+        "cpu_p99": 1,
+        "cpu_max": 1,
+        "wall_p50": 4,
+        "wall_p95": 6,
+        "size_min": 32762,
+        "size_max": 32762,
+        "over10": 0,
+        "runtime_errors": 0,
+        "verdict": "PASS"
+      }
+    },
+    {
+      "route": "/recession/",
+      "before": {
+        "route": "/recession/",
+        "requests": 71,
+        "cpu_samples": 31,
+        "statuses": [
+          200
+        ],
+        "cpu_p50": 7,
+        "cpu_p90": 11,
+        "cpu_p95": 16,
+        "cpu_p99": 18,
+        "cpu_max": 18,
+        "wall_p50": 8,
+        "wall_p95": 18,
+        "size_min": 25739,
+        "size_max": 25757,
+        "over10": 6,
+        "runtime_errors": 0,
+        "verdict": "FAIL"
+      },
+      "after": {
+        "route": "/recession/",
+        "requests": 72,
+        "cpu_samples": 31,
+        "statuses": [
+          200
+        ],
+        "cpu_p50": 0,
+        "cpu_p90": 0,
+        "cpu_p95": 1,
+        "cpu_p99": 7,
+        "cpu_max": 7,
+        "wall_p50": 7,
+        "wall_p95": 11,
+        "size_min": 25692,
+        "size_max": 25692,
+        "over10": 0,
+        "runtime_errors": 0,
+        "verdict": "PASS"
+      }
+    },
+    {
+      "route": "/liquidity-crisis/",
+      "before": {
+        "route": "/liquidity-crisis/",
+        "requests": 68,
+        "cpu_samples": 31,
+        "statuses": [
+          200
+        ],
+        "cpu_p50": 7,
+        "cpu_p90": 14,
+        "cpu_p95": 18,
+        "cpu_p99": 38,
+        "cpu_max": 38,
+        "wall_p50": 8,
+        "wall_p95": 40,
+        "size_min": 31294,
+        "size_max": 31312,
+        "over10": 9,
+        "runtime_errors": 0,
+        "verdict": "FAIL"
+      },
+      "after": {
+        "route": "/liquidity-crisis/",
+        "requests": 71,
+        "cpu_samples": 31,
+        "statuses": [
+          200
+        ],
+        "cpu_p50": 0,
+        "cpu_p90": 0,
+        "cpu_p95": 0,
+        "cpu_p99": 0,
+        "cpu_max": 0,
+        "wall_p50": 8,
+        "wall_p95": 11,
+        "size_min": 31247,
+        "size_max": 31247,
+        "over10": 0,
+        "runtime_errors": 0,
+        "verdict": "PASS"
+      }
+    },
+    {
+      "route": "/credit-risk/",
+      "before": {
+        "route": "/credit-risk/",
+        "requests": 70,
+        "cpu_samples": 31,
+        "statuses": [
+          200
+        ],
+        "cpu_p50": 8,
+        "cpu_p90": 13,
+        "cpu_p95": 14,
+        "cpu_p99": 16,
+        "cpu_max": 16,
+        "wall_p50": 9,
+        "wall_p95": 17,
+        "size_min": 27335,
+        "size_max": 27353,
+        "over10": 8,
+        "runtime_errors": 0,
+        "verdict": "FAIL"
+      },
+      "after": {
+        "route": "/credit-risk/",
+        "requests": 70,
+        "cpu_samples": 31,
+        "statuses": [
+          200
+        ],
+        "cpu_p50": 0,
+        "cpu_p90": 0,
+        "cpu_p95": 0,
+        "cpu_p99": 0,
+        "cpu_max": 0,
+        "wall_p50": 9,
+        "wall_p95": 12,
+        "size_min": 27288,
+        "size_max": 27288,
+        "over10": 0,
+        "runtime_errors": 0,
+        "verdict": "PASS"
+      }
+    },
+    {
+      "route": "/earnings-recession/",
+      "before": {
+        "route": "/earnings-recession/",
+        "requests": 70,
+        "cpu_samples": 31,
+        "statuses": [
+          200
+        ],
+        "cpu_p50": 6,
+        "cpu_p90": 15,
+        "cpu_p95": 33,
+        "cpu_p99": 44,
+        "cpu_max": 44,
+        "wall_p50": 7,
+        "wall_p95": 35,
+        "size_min": 23790,
+        "size_max": 23808,
+        "over10": 4,
+        "runtime_errors": 0,
+        "verdict": "FAIL"
+      },
+      "after": {
+        "route": "/earnings-recession/",
+        "requests": 70,
+        "cpu_samples": 31,
+        "statuses": [
+          200
+        ],
+        "cpu_p50": 0,
+        "cpu_p90": 0,
+        "cpu_p95": 0,
+        "cpu_p99": 0,
+        "cpu_max": 0,
+        "wall_p50": 7,
+        "wall_p95": 14,
+        "size_min": 23743,
+        "size_max": 23743,
+        "over10": 0,
+        "runtime_errors": 0,
+        "verdict": "PASS"
+      }
+    },
+    {
+      "route": "/asset-bubble/",
+      "before": {
+        "route": "/asset-bubble/",
+        "requests": 69,
+        "cpu_samples": 31,
+        "statuses": [
+          200
+        ],
+        "cpu_p50": 7,
+        "cpu_p90": 14,
+        "cpu_p95": 15,
+        "cpu_p99": 22,
+        "cpu_max": 22,
+        "wall_p50": 7,
+        "wall_p95": 16,
+        "size_min": 25152,
+        "size_max": 25170,
+        "over10": 5,
+        "runtime_errors": 0,
+        "verdict": "FAIL"
+      },
+      "after": {
+        "route": "/asset-bubble/",
+        "requests": 71,
+        "cpu_samples": 31,
+        "statuses": [
+          200
+        ],
+        "cpu_p50": 0,
+        "cpu_p90": 0,
+        "cpu_p95": 1,
+        "cpu_p99": 7,
+        "cpu_max": 7,
+        "wall_p50": 7,
+        "wall_p95": 12,
+        "size_min": 25105,
+        "size_max": 25105,
+        "over10": 0,
+        "runtime_errors": 0,
+        "verdict": "PASS"
+      }
+    },
+    {
+      "route": "/debt-risk/",
+      "before": {
+        "route": "/debt-risk/",
+        "requests": 70,
+        "cpu_samples": 31,
+        "statuses": [
+          200
+        ],
+        "cpu_p50": 7,
+        "cpu_p90": 10,
+        "cpu_p95": 12,
+        "cpu_p99": 12,
+        "cpu_max": 12,
+        "wall_p50": 7,
+        "wall_p95": 14,
+        "size_min": 23596,
+        "size_max": 23614,
+        "over10": 3,
+        "runtime_errors": 0,
+        "verdict": "FAIL"
+      },
+      "after": {
+        "route": "/debt-risk/",
+        "requests": 71,
+        "cpu_samples": 31,
+        "statuses": [
+          200
+        ],
+        "cpu_p50": 0,
+        "cpu_p90": 0,
+        "cpu_p95": 0,
+        "cpu_p99": 0,
+        "cpu_max": 0,
+        "wall_p50": 8,
+        "wall_p95": 12,
+        "size_min": 23549,
+        "size_max": 23549,
+        "over10": 0,
+        "runtime_errors": 0,
+        "verdict": "PASS"
+      }
+    },
+    {
+      "route": "/supply-shock/",
+      "before": {
+        "route": "/supply-shock/",
+        "requests": 71,
+        "cpu_samples": 31,
+        "statuses": [
+          200
+        ],
+        "cpu_p50": 7,
+        "cpu_p90": 13,
+        "cpu_p95": 15,
+        "cpu_p99": 16,
+        "cpu_max": 16,
+        "wall_p50": 8,
+        "wall_p95": 18,
+        "size_min": 24506,
+        "size_max": 24524,
+        "over10": 6,
+        "runtime_errors": 0,
+        "verdict": "FAIL"
+      },
+      "after": {
+        "route": "/supply-shock/",
+        "requests": 70,
+        "cpu_samples": 31,
+        "statuses": [
+          200
+        ],
+        "cpu_p50": 0,
+        "cpu_p90": 0,
+        "cpu_p95": 1,
+        "cpu_p99": 1,
+        "cpu_max": 1,
+        "wall_p50": 9,
+        "wall_p95": 16,
+        "size_min": 24459,
+        "size_max": 24459,
+        "over10": 0,
+        "runtime_errors": 0,
+        "verdict": "PASS"
+      }
+    },
+    {
+      "route": "/api/inflation-detail",
+      "before": {
+        "route": "/api/inflation-detail",
+        "requests": 71,
+        "cpu_samples": 31,
+        "statuses": [
+          503
+        ],
+        "cpu_p50": 0,
+        "cpu_p90": 0,
+        "cpu_p95": 0,
+        "cpu_p99": 0,
+        "cpu_max": 0,
+        "wall_p50": 0,
+        "wall_p95": 1,
+        "size_min": 56,
+        "size_max": 56,
+        "over10": 0,
+        "runtime_errors": 0,
+        "verdict": "PASS"
+      },
+      "after": {
+        "route": "/api/inflation-detail",
+        "requests": 72,
+        "cpu_samples": 31,
+        "statuses": [
+          503
+        ],
+        "cpu_p50": 0,
+        "cpu_p90": 0,
+        "cpu_p95": 0,
+        "cpu_p99": 4,
+        "cpu_max": 4,
+        "wall_p50": 0,
+        "wall_p95": 1,
+        "size_min": 56,
+        "size_max": 56,
+        "over10": 0,
+        "runtime_errors": 0,
+        "verdict": "PASS"
+      }
+    },
+    {
+      "route": "/api/session",
+      "before": {
+        "route": "/api/session",
+        "requests": 72,
+        "cpu_samples": 31,
+        "statuses": [
+          200
+        ],
+        "cpu_p50": 1,
+        "cpu_p90": 2,
+        "cpu_p95": 2,
+        "cpu_p99": 13,
+        "cpu_max": 13,
+        "wall_p50": 1,
+        "wall_p95": 2,
+        "size_min": 13,
+        "size_max": 13,
+        "over10": 1,
+        "runtime_errors": 0,
+        "verdict": "NOT_PROVEN_WARN_CAUSE"
+      },
+      "after": {
+        "route": "/api/session",
+        "requests": 73,
+        "cpu_samples": 31,
+        "statuses": [
+          200
+        ],
+        "cpu_p50": 1,
+        "cpu_p90": 2,
+        "cpu_p95": 3,
+        "cpu_p99": 3,
+        "cpu_max": 3,
+        "wall_p50": 1,
+        "wall_p95": 4,
+        "size_min": 13,
+        "size_max": 13,
+        "over10": 0,
+        "runtime_errors": 0,
+        "verdict": "PASS"
+      }
+    },
+    {
+      "route": "/flags/us.svg",
+      "before": {
+        "route": "/flags/us.svg",
+        "requests": 68,
+        "cpu_samples": 31,
+        "statuses": [
+          200
+        ],
+        "cpu_p50": 0,
+        "cpu_p90": 0,
+        "cpu_p95": 2,
+        "cpu_p99": 3,
+        "cpu_max": 3,
+        "wall_p50": 8,
+        "wall_p95": 12,
+        "size_min": 765,
+        "size_max": 765,
+        "over10": 0,
+        "runtime_errors": 0,
+        "verdict": "PASS"
+      },
+      "after": {
+        "route": "/flags/us.svg",
+        "requests": 71,
+        "cpu_samples": 31,
+        "statuses": [
+          200
+        ],
+        "cpu_p50": 0,
+        "cpu_p90": 0,
+        "cpu_p95": 0,
+        "cpu_p99": 3,
+        "cpu_max": 3,
+        "wall_p50": 8,
+        "wall_p95": 14,
+        "size_min": 765,
+        "size_max": 765,
+        "over10": 0,
+        "runtime_errors": 0,
+        "verdict": "PASS"
+      }
+    }
+  ],
+  "outliers": []
+}

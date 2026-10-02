@@ -1,7 +1,8 @@
 import {readFileSync,readdirSync} from 'node:fs';
 import {execFileSync} from 'node:child_process';
 import assert from 'node:assert/strict';
-assert.equal(execFileSync('git',['branch','--show-current'],{encoding:'utf8'}).trim(),'migration/cloudflare-workers-r1');
+import {candidateBranchGate} from './candidate-branch-gate.mjs';
+candidateBranchGate();
 const c=JSON.parse(readFileSync('dist/server/wrangler.json'));
 assert.equal(c.name,'zgmini-migration-candidate-r5');
 assert.equal(c.account_id,'6e9b57e718b247330a6efa42a9516e95');
