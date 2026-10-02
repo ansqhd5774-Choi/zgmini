@@ -21,6 +21,7 @@ import { runMarketOperationalRefresh, refreshStoredMarketScoreSnapshot } from ".
 import { runEmploymentR6Producer } from "./employment-r6-producer.mjs";
 import { inspectEmploymentR6AuthProbe } from "./employment-r6-auth-probe.mjs";
 import { backfillEarningsE1R4OneYearToStore } from "../lib/market-score/sec-earnings-e1-r4-provider.mjs";
+import { ensureGrowthR2ChartHistoryR1 } from "../lib/market-score/growth-r2-worker-domain-r1.mjs";
 
 interface Env {
   ASSETS: Fetcher;
@@ -127,6 +128,13 @@ const worker = {
 
   async scheduled(controller: ScheduledController, env: Env, _ctx: ExecutionContext): Promise<void> {
     if(controller.cron==='*/5 * * * *'){
+      const growthChart = await ensureGrowthR2ChartHistoryR1({
+        env,
+        asOf: new Date(controller.scheduledTime).toISOString().slice(0,10),
+        fetchImpl: globalThis.fetch,
+        now: () => new Date(controller.scheduledTime),
+      }).catch(error=>({status:'ERROR',rowsWritten:0,recordCount:0,error:String(error?.message??error)}));
+      console.log("GROWTH_R2_CHART_HISTORY", JSON.stringify({cron:controller.cron,status:growthChart?.status??null,rowsWritten:growthChart?.rowsWritten??0,recordCount:growthChart?.recordCount??0}));
       const precompute = await refreshStoredMarketScoreSnapshot({
         env,
         now: controller.scheduledTime,
