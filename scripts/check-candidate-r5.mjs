@@ -1,0 +1,16 @@
+import {readFileSync,readdirSync} from 'node:fs';
+import {execFileSync} from 'node:child_process';
+import assert from 'node:assert/strict';
+assert.equal(execFileSync('git',['branch','--show-current'],{encoding:'utf8'}).trim(),'migration/cloudflare-workers-r1');
+const c=JSON.parse(readFileSync('dist/server/wrangler.json'));
+assert.equal(c.name,'zgmini-migration-candidate-r5');
+assert.equal(c.account_id,'6e9b57e718b247330a6efa42a9516e95');
+assert.equal(c.workers_dev,true);
+assert.deepEqual(c.routes,[]);assert.deepEqual(c.triggers.crons,[]);assert.deepEqual(c.d1_databases,[]);assert.deepEqual(c.vars,{});
+assert.equal(c.images,undefined);assert.deepEqual(c.services,[]);
+const bundle=readFileSync('dist/server/index.js','utf8');
+assert(bundle.includes('CANDIDATE_WRITE_DISABLED')&&bundle.includes('CANDIDATE_DB_UNBOUND'));
+assert(!bundle.includes('zg-r55-gauge-ring'));
+for(const file of readdirSync('dist/client/assets').filter(x=>x.endsWith('.css')))assert(!readFileSync('dist/client/assets/'+file,'utf8').includes('zg-r55-gauge-ring'));
+assert.equal(execFileSync('git',['diff','de0504f191ab2ba5e0bdbdebd312f162f25f035e','--','app','lib','db','worker/index.ts','middleware.ts'],{encoding:'utf8'}),'');
+console.log('PASS: R5 deployment contract, immutable Production application source, write guard, gauge DOM/CSS removal.');

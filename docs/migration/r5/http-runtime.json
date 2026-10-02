@@ -1,0 +1,294 @@
+{
+  "observed_at": "2026-10-02T11:37:03.458Z",
+  "url": "https://zgmini-migration-candidate-r5.ansqhd5774.workers.dev/",
+  "html_rendered": true,
+  "html_gauge_present": false,
+  "assets_from_html": 11,
+  "results": [
+    {
+      "path": "/",
+      "method": "GET",
+      "status": 200,
+      "content_type": "text/html; charset=utf-8",
+      "bytes": 85476,
+      "credential_or_stack_pattern": false,
+      "redirect": null
+    },
+    {
+      "path": "/inflation/",
+      "method": "GET",
+      "status": 200,
+      "content_type": "text/html; charset=utf-8",
+      "bytes": 32762,
+      "credential_or_stack_pattern": false,
+      "redirect": null
+    },
+    {
+      "path": "/recession/",
+      "method": "GET",
+      "status": 200,
+      "content_type": "text/html; charset=utf-8",
+      "bytes": 25692,
+      "credential_or_stack_pattern": false,
+      "redirect": null
+    },
+    {
+      "path": "/asset-bubble/",
+      "method": "GET",
+      "status": 200,
+      "content_type": "text/html; charset=utf-8",
+      "bytes": 25105,
+      "credential_or_stack_pattern": false,
+      "redirect": null
+    },
+    {
+      "path": "/flags/us.svg",
+      "method": "GET",
+      "status": 200,
+      "content_type": "image/svg+xml",
+      "bytes": 765,
+      "credential_or_stack_pattern": false,
+      "redirect": null
+    },
+    {
+      "path": "/api/candidate-status",
+      "method": "GET",
+      "status": 200,
+      "content_type": "application/json",
+      "bytes": 67,
+      "credential_or_stack_pattern": false,
+      "redirect": null,
+      "reason": null
+    },
+    {
+      "path": "/api/market-score",
+      "method": "GET",
+      "status": 503,
+      "content_type": "application/json",
+      "bytes": 56,
+      "credential_or_stack_pattern": false,
+      "redirect": null,
+      "reason": "CANDIDATE_DB_UNBOUND"
+    },
+    {
+      "path": "/api/inflation-detail",
+      "method": "GET",
+      "status": 503,
+      "content_type": "application/json",
+      "bytes": 56,
+      "credential_or_stack_pattern": false,
+      "redirect": null,
+      "reason": "CANDIDATE_DB_UNBOUND"
+    },
+    {
+      "path": "/api/core-pce",
+      "method": "GET",
+      "status": 503,
+      "content_type": "application/json",
+      "bytes": 56,
+      "credential_or_stack_pattern": false,
+      "redirect": null,
+      "reason": "CANDIDATE_DB_UNBOUND"
+    },
+    {
+      "path": "/api/session",
+      "method": "GET",
+      "status": 200,
+      "content_type": "application/json",
+      "bytes": 13,
+      "credential_or_stack_pattern": false,
+      "redirect": null,
+      "reason": null
+    },
+    {
+      "path": "/api/internal/market-refresh",
+      "method": "GET",
+      "status": 403,
+      "content_type": "text/plain;charset=UTF-8",
+      "bytes": 24,
+      "credential_or_stack_pattern": false,
+      "redirect": null
+    },
+    {
+      "path": "/api/favorites",
+      "method": "GET",
+      "status": 403,
+      "content_type": "text/plain;charset=UTF-8",
+      "bytes": 24,
+      "credential_or_stack_pattern": false,
+      "redirect": null
+    },
+    {
+      "path": "/signin-with-chatgpt",
+      "method": "GET",
+      "status": 403,
+      "content_type": "text/plain;charset=UTF-8",
+      "bytes": 24,
+      "credential_or_stack_pattern": false,
+      "redirect": null
+    },
+    {
+      "path": "/api/market-score",
+      "method": "POST",
+      "status": 403,
+      "content_type": "text/plain;charset=UTF-8",
+      "bytes": 24,
+      "credential_or_stack_pattern": false,
+      "redirect": null
+    },
+    {
+      "path": "/api/market-score",
+      "method": "PUT",
+      "status": 403,
+      "content_type": "text/plain;charset=UTF-8",
+      "bytes": 24,
+      "credential_or_stack_pattern": false,
+      "redirect": null
+    },
+    {
+      "path": "/api/market-score",
+      "method": "PATCH",
+      "status": 403,
+      "content_type": "text/plain;charset=UTF-8",
+      "bytes": 24,
+      "credential_or_stack_pattern": false,
+      "redirect": null
+    },
+    {
+      "path": "/api/market-score",
+      "method": "DELETE",
+      "status": 403,
+      "content_type": "text/plain;charset=UTF-8",
+      "bytes": 24,
+      "credential_or_stack_pattern": false,
+      "redirect": null
+    },
+    {
+      "path": "/api/favorites",
+      "method": "POST",
+      "status": 403,
+      "content_type": "text/plain;charset=UTF-8",
+      "bytes": 24,
+      "credential_or_stack_pattern": false,
+      "redirect": null
+    },
+    {
+      "path": "/api/session",
+      "method": "POST",
+      "status": 403,
+      "content_type": "text/plain;charset=UTF-8",
+      "bytes": 24,
+      "credential_or_stack_pattern": false,
+      "redirect": null
+    },
+    {
+      "path": "/api/internal/market-refresh",
+      "method": "POST",
+      "status": 403,
+      "content_type": "text/plain;charset=UTF-8",
+      "bytes": 24,
+      "credential_or_stack_pattern": false,
+      "redirect": null
+    },
+    {
+      "path": "/assets/index-QxupBb_7.css",
+      "method": "GET",
+      "status": 200,
+      "content_type": "text/css",
+      "bytes": 307561,
+      "credential_or_stack_pattern": false,
+      "redirect": null,
+      "gauge_css_present": false
+    },
+    {
+      "path": "/assets/layout-segment-context-Dsqr0TYt.js",
+      "method": "GET",
+      "status": 200,
+      "content_type": "text/javascript",
+      "bytes": 288,
+      "credential_or_stack_pattern": false,
+      "redirect": null
+    },
+    {
+      "path": "/assets/rolldown-runtime-S-ySWqyJ.js",
+      "method": "GET",
+      "status": 200,
+      "content_type": "text/javascript",
+      "bytes": 694,
+      "credential_or_stack_pattern": false,
+      "redirect": null
+    },
+    {
+      "path": "/assets/index-ZNzskTEV.js",
+      "method": "GET",
+      "status": 200,
+      "content_type": "text/javascript",
+      "bytes": 83484,
+      "credential_or_stack_pattern": false,
+      "redirect": null
+    },
+    {
+      "path": "/assets/framework-CXnKph_e.js",
+      "method": "GET",
+      "status": 200,
+      "content_type": "text/javascript",
+      "bytes": 189805,
+      "credential_or_stack_pattern": false,
+      "redirect": null
+    },
+    {
+      "path": "/assets/naver-analytics-l-2mOf50.js",
+      "method": "GET",
+      "status": 200,
+      "content_type": "text/javascript",
+      "bytes": 486,
+      "credential_or_stack_pattern": false,
+      "redirect": null
+    },
+    {
+      "path": "/assets/page-CSyyzl8f.js",
+      "method": "GET",
+      "status": 200,
+      "content_type": "text/javascript",
+      "bytes": 323581,
+      "credential_or_stack_pattern": false,
+      "redirect": null
+    },
+    {
+      "path": "/assets/market-card-insight-DSoxNxYI.js",
+      "method": "GET",
+      "status": 200,
+      "content_type": "text/javascript",
+      "bytes": 3918,
+      "credential_or_stack_pattern": false,
+      "redirect": null
+    },
+    {
+      "path": "/assets/market-fear-greed-chart-BhOj9f9s.js",
+      "method": "GET",
+      "status": 200,
+      "content_type": "text/javascript",
+      "bytes": 340547,
+      "credential_or_stack_pattern": false,
+      "redirect": null
+    },
+    {
+      "path": "/assets/cnn-panel-DAUoFb9w.js",
+      "method": "GET",
+      "status": 200,
+      "content_type": "text/javascript",
+      "bytes": 20794,
+      "credential_or_stack_pattern": false,
+      "redirect": null
+    },
+    {
+      "path": "/assets/korea-composite-view-Q0vT0b7z.js",
+      "method": "GET",
+      "status": 200,
+      "content_type": "text/javascript",
+      "bytes": 18522,
+      "credential_or_stack_pattern": false,
+      "redirect": null
+    }
+  ]
+}
