@@ -19,6 +19,7 @@ import { koreaRev7ExternalScheduler } from "./korea-rev7-external-scheduler.mjs"
 import { env as runtimeEnv } from "cloudflare:workers";
 import { runMarketOperationalRefresh, refreshStoredMarketScoreSnapshot } from "./market-operational-refresh.mjs";
 import { runEmploymentR6Producer } from "./employment-r6-producer.mjs";
+import { ensureGrowthR2ChartHistoryR1 } from "../lib/market-score/growth-r2-worker-domain-r1.mjs";
 import { inspectEmploymentR6AuthProbe } from "./employment-r6-auth-probe.mjs";
 
 interface Env {
