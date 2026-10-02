@@ -1,10 +1,10 @@
 # ZGMINI Cloudflare R9 — DNS and Rollback Procedure
 
 ## Scope
-Preparation only. Do not change Cafe24, Gabia, Cloudflare zone, or Production from this document.
+Preparation only. Do not change Cafe24, Cloudflare zone, or Production from this document.
 
 ## Current state
-- Registrar: Gabia
+- Registrar / domain manager: Cafe24
 - Authoritative DNS: Cafe24
 - apex zgmini.kr currently points to Sites via CNAME
 - www points to apex
@@ -31,9 +31,9 @@ Save a timestamped before-state.
 4. Confirm the zone-provided Cloudflare nameservers.
 
 ## Nameserver cutover
-At Gabia, replace the current Cafe24 authoritative nameservers with the Cloudflare-assigned nameservers.
+In Cafe24 domain management, replace the current authoritative nameservers with the Cloudflare-assigned nameservers.
 
-Do not transfer the domain registrar.
+Do not transfer the domain registrar away from Cafe24.
 
 ## Active-zone verification
 Before Worker custom-domain attachment:
@@ -67,7 +67,7 @@ Check from public DNS/HTTPS:
 
 ## Rollback
 If cutover fails before the Worker Custom Domain is stable:
-1. restore the previous Cafe24 nameservers at Gabia, or restore the previous known-good web DNS target according to the actual failure boundary
+1. restore the previous Cafe24 nameservers in Cafe24 domain management, or restore the previous known-good web DNS target according to the actual failure boundary
 2. keep the candidate/target D1 isolated
 3. do not point Production writers at an uncertain target
 4. verify zgmini.kr returns to the last known working Sites deployment
