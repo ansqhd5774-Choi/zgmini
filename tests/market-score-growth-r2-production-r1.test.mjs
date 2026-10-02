@@ -33,7 +33,7 @@ test("Growth R2 overrides D2 only when stored domain is READY",async()=>{
 test("stored Growth R2 requires exact 24 non-stale features and computes deterministically",async()=>{
   const feature=[];
   for(const [j,id] of GROWTH_R2_FEATURE_IDS.entries())for(let m=1;m<=4;m++)feature.push({candidateId:id,observationDate:`2026-0${m}-01`,availableAt:`2026-0${m+1}-05T00:00:00.000Z`,pitEligible:true,harmonizedValue:j*10+m,sourceHash:`${id}-${m}`,frequency:"MONTHLY"});
-  const a=await buildStoredGrowthR2Domain(feature,{asOf:"2026-06-01"});const b=await buildStoredGrowthR2Domain(feature,{asOf:"2026-06-01"});assert.equal(a.status,"READY");assert.equal(a.coverage,24);assert.equal(a.score,b.score);assert.equal(a.inputSnapshotId,b.inputSnapshotId);
+  const a=await buildStoredGrowthR2Domain(feature,{asOf:"2026-06-01"});const b=await buildStoredGrowthR2Domain(feature,{asOf:"2026-06-01"});assert.equal(a.status,"READY");assert.equal(a.coverage,24);assert.equal(a.score,b.score);assert.equal(a.inputSnapshotId,b.inputSnapshotId);assert.ok(a.trend.length>1,"READY Growth R2 must expose stored one-year trend, not a single-dot chart");assert.equal(a.trend.at(-1).value,a.score);
   const stale=await buildStoredGrowthR2Domain(feature,{asOf:"2026-09-29"});assert.equal(stale.status,"NOT_READY");assert.ok(stale.staleFactors.length>0);
 });
 
