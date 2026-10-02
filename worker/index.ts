@@ -117,6 +117,18 @@ const worker = {
 
   async scheduled(controller: ScheduledController, env: Env, _ctx: ExecutionContext): Promise<void> {
     if(controller.cron==='*/5 * * * *'){
+      const growthChart = await ensureGrowthR2ChartHistoryR1({
+        env,
+        asOf: new Date(controller.scheduledTime).toISOString().slice(0,10),
+        fetchImpl: globalThis.fetch,
+        now: () => new Date(controller.scheduledTime),
+      }).catch(error=>({status:'ERROR',rowsWritten:0,recordCount:0,error:String(error?.message??error)}));
+      console.log("GROWTH_R2_CHART_HISTORY", JSON.stringify({
+        cron: controller.cron,
+        status: growthChart?.status ?? null,
+        rowsWritten: growthChart?.rowsWritten ?? 0,
+        recordCount: growthChart?.recordCount ?? 0,
+      }));
       const precompute = await refreshStoredMarketScoreSnapshot({
         env,
         now: controller.scheduledTime,
