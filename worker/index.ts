@@ -20,6 +20,7 @@ import { env as runtimeEnv } from "cloudflare:workers";
 import { runMarketOperationalRefresh, refreshStoredMarketScoreSnapshot } from "./market-operational-refresh.mjs";
 import { runEmploymentR6Producer } from "./employment-r6-producer.mjs";
 import { inspectEmploymentR6AuthProbe } from "./employment-r6-auth-probe.mjs";
+import { backfillEarningsE1R4OneYearToStore } from "../lib/market-score/sec-earnings-e1-r4-provider.mjs";
 
 interface Env {
   ASSETS: Fetcher;
@@ -133,6 +134,19 @@ const worker = {
         now: controller.scheduledTime,
         fetchImpl: globalThis.fetch,
       });
+      const earningsHistory = await backfillEarningsE1R4OneYearToStore({
+        asOf: new Date(controller.scheduledTime).toISOString().slice(0,10),
+        db: env.DB,
+        fetchImpl: globalThis.fetch,
+        now: () => new Date(controller.scheduledTime),
+        maxPeriods: 4,
+      }).catch(error=>({status:'ERROR',providerRequests:0,remaining:[],error:String(error?.message??error)}));
+      console.log("E1_R4_ONE_YEAR_BACKFILL", JSON.stringify({
+        cron: controller.cron,
+        status: earningsHistory?.status ?? null,
+        providerRequests: earningsHistory?.providerRequests ?? 0,
+        remaining: earningsHistory?.remaining ?? null,
+      }));
       console.log("MARKET_OP_R1_CRON", JSON.stringify({
         cron: controller.cron,
         status: result?.status ?? null,

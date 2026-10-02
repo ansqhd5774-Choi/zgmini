@@ -38,7 +38,7 @@ export default function EarningsRecessionPanel(){
  useEffect(()=>{const c=new AbortController();fetch("/api/earnings-recession-detail",{cache:"no-store",signal:c.signal}).then(async r=>{if(!r.ok)throw Error();return r.json() as Promise<Payload>}).then(setPayload).catch(()=>setPayload(null)).finally(()=>setLoading(false));return()=>c.abort()},[]);
  const diagnosticScore=typeof payload?.score==="number"&&Number.isFinite(payload.score)?payload.score:null;
  const stored=payload?.storedE1;
- const trend=useMemo(()=>(stored?.trend??[]).filter(p=>typeof p.value==="number"&&Number.isFinite(p.value)).slice(-8).map(p=>({date:p.label,score:p.value} satisfies MarketFearGreedChartPoint)),[stored?.trend]);
+ const trend=useMemo(()=>(stored?.trend??[]).filter(p=>typeof p.value==="number"&&Number.isFinite(p.value)).slice(-5).map(p=>({date:p.label,score:p.value} satisfies MarketFearGreedChartPoint)),[stored?.trend]);
  const latest=trend.at(-1),latestPoint:MarketFearGreedChartValidPoint|null=latest?{date:latest.date,score:latest.score as number}:null;
  const axisTicks=trend.map(p=>p.date),axisLabels=new Map(trend.map(p=>[p.date,p.date.slice(2,7).replace("-","/")]));
  const rows=new Map((stored?.indicators??[]).map(x=>[x.id,x]));
