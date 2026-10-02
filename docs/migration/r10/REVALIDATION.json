@@ -1,0 +1,27 @@
+{
+  "observed_at": "2026-10-02T13:15:39.730Z",
+  "base": "e130b9232dc2810174a699ed376f85174d89ea3f",
+  "validated_head": "1e3d3a8cce73d45f4fa679ad5b31506f93e81f57",
+  "merge_sha": "1158682fbf5511433127897fadb7bea8d249418d",
+  "status": "PASS",
+  "clean_npm_ci_exit": 0,
+  "candidate_build_ci_exit": 0,
+  "static_html": 9,
+  "static_rsc": 9,
+  "candidate_contract": "PASS",
+  "generated_SELECT_only_bundle": "PASS",
+  "tests": {
+    "pass": 14,
+    "fail": 0
+  },
+  "detached_HEAD_gate": "PASS",
+  "wrong_branch_build_deploy_rejections": 4,
+  "missing_artifact_negative_check": "PASS",
+  "wrangler_dry_run_exit": 0,
+  "actual_deploy": false,
+  "git_integration_activated": false,
+  "production_scripts_unchanged": true,
+  "production_DNS_D1_main_changes": 0,
+  "linux_native_execution": "NOT_EXECUTED_NODE_MISSING",
+  "readiness": "HOSTED_BUILD_INTEGRATION_READY"
+}

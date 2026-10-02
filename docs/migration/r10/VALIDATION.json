@@ -1,0 +1,60 @@
+{
+  "observed_at": "2026-10-02T13:04:47.655Z",
+  "base": "e130b9232dc2810174a699ed376f85174d89ea3f",
+  "head": "377629fe4baa4b34cd709073eff2336d3b5180b3",
+  "node": "v24.19.0",
+  "clean_install": {
+    "exit": 0,
+    "packages": 673,
+    "lockfile_unchanged": true,
+    "credentials_requested": false
+  },
+  "build_ci": {
+    "exit": 0,
+    "overall": "FAIL",
+    "static_shell_directory": false,
+    "html_shells": 0,
+    "rsc_shells": 0,
+    "missing_step": "scripts/build-candidate-r7.mjs"
+  },
+  "tests": {
+    "ci_guard": 7,
+    "full_candidate": 14,
+    "failed": 0
+  },
+  "detached_head": "PASS",
+  "wrong_branch": {
+    "main": "build/deploy rejected",
+    "other": "build/deploy rejected",
+    "artifact_created": false
+  },
+  "deploy": {
+    "dry_run_exit": 0,
+    "actual_deploy": false,
+    "command": "node scripts/candidate-branch-gate.mjs && node node_modules/wrangler/bin/wrangler.js deploy --config dist/server/wrangler.json",
+    "config": {
+      "name": "zgmini-migration-candidate-r5",
+      "workers_dev": true,
+      "routes": [],
+      "crons": [],
+      "D1": [],
+      "services": [],
+      "runtime_vars_count": 0
+    }
+  },
+  "generated_checks": {
+    "SELECT_only_adapter": true,
+    "write_guard": true,
+    "gauge_removed": true,
+    "static_artifact_contract": "FAIL_ENOENT"
+  },
+  "production_scripts_unchanged": true,
+  "production_source_config_delta": 0,
+  "linux": {
+    "command_portability": "PASS_STATIC",
+    "native_execution": "NOT_EXECUTED_NATIVE_NODE_MISSING"
+  },
+  "git_integration_activated": false,
+  "merge": false,
+  "readiness": "NOT_READY"
+}
