@@ -48,14 +48,16 @@ The generated deployment must retain:
 - D1: none until recovery/import is authorized
 - runtime vars/secrets: none for the DB-unbound candidate
 - static shell allowlist: 9 routes
+- static shell artifacts: 9 HTML + 9 RSC required; missing artifact = build failure
 - read/write guard unchanged
 
 ## Build command behavior
 `candidate:build:ci` performs:
 1. branch gate
 2. candidate guard tests
-3. Vite candidate build
-4. generated deployment contract check
+3. R7 build-time static HTML/RSC shell generation
+4. R7 shell artifact verification (9 HTML + 9 RSC)
+5. final candidate generated deployment contract check
 
 The contract check rejects:
 - wrong Worker name/account
