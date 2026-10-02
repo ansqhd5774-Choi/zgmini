@@ -55,7 +55,6 @@
 .zg-r55-scale-labels{font-size:clamp(.65rem,5cqi,.85rem)}
 .zg-r55-summary{container:summary / inline-size;padding:clamp(.65rem,1vw,1rem)}
 .zg-r55-summary-top{height:auto;aspect-ratio:1.2;min-height:7.5rem}
-.zg-r55-gauge-ring{width:85%;height:auto;aspect-ratio:1}
 .zg-r55-master-number strong{font-size:clamp(2rem,20cqi,3rem)}
 .zg-r55-master-number span{font-size:clamp(.75rem,6cqi,1rem)}
 .zg-r55-subscore-title b{font-size:clamp(.7rem,5cqi,.85rem);white-space:normal;letter-spacing:normal;word-break:keep-all}
@@ -70,7 +69,6 @@
 @media(max-width:760px){
  .zg-r55-body{grid-template-columns:minmax(0,1fr)}
  .zg-r55-summary{grid-template-columns:minmax(7rem,35%) minmax(0,1fr)}
- .zg-r55-gauge-ring{width:90%;max-width:11rem}
  .zg-r55-summary-top{height:auto}
  .zg-r55-card-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
 }
