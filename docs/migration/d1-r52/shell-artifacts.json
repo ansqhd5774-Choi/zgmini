@@ -1,0 +1,80 @@
+{
+  "generated_at": "2026-10-02T20:12:05.093Z",
+  "duration_seconds": 30.137,
+  "method": "Build-time allowlisted rendering of compiled local Workerd/Vinext bundle, official Vinext RSC extraction; no public runtime snapshot or API static export.",
+  "client_assets_identical": true,
+  "routes": [
+    {
+      "route": "/",
+      "html": "/__candidate_shells/index.html",
+      "rsc": "/__candidate_shells/index.rsc",
+      "html_bytes": 85476,
+      "rsc_bytes": 4448,
+      "sha256": "3c64b190da66c9a9e38f73de1cf92c04fc214ed4e8b50688887580143b9396b8"
+    },
+    {
+      "route": "/inflation/",
+      "html": "/__candidate_shells/inflation.html",
+      "rsc": "/__candidate_shells/inflation.rsc",
+      "html_bytes": 32762,
+      "rsc_bytes": 4714,
+      "sha256": "54da964e07a02a978330b7d8c93fe091201565bb466cccb138d506eef7739914"
+    },
+    {
+      "route": "/recession/",
+      "html": "/__candidate_shells/recession.html",
+      "rsc": "/__candidate_shells/recession.rsc",
+      "html_bytes": 25692,
+      "rsc_bytes": 4781,
+      "sha256": "6328835b4ab00673ebd54084069f0cf703e0f5e6f02c1235049a482cbb31dfe4"
+    },
+    {
+      "route": "/liquidity-crisis/",
+      "html": "/__candidate_shells/liquidity-crisis.html",
+      "rsc": "/__candidate_shells/liquidity-crisis.rsc",
+      "html_bytes": 31247,
+      "rsc_bytes": 4852,
+      "sha256": "8162d3e4a72e07af18419fb5a619f3b91b617f7a94da9e0cc7350d6d8cbb117d"
+    },
+    {
+      "route": "/credit-risk/",
+      "html": "/__candidate_shells/credit-risk.html",
+      "rsc": "/__candidate_shells/credit-risk.rsc",
+      "html_bytes": 27288,
+      "rsc_bytes": 4714,
+      "sha256": "c865d803ca5fa6dee068a29017c3c30ebf5a6d69cb73df1c23b58301f7c959dc"
+    },
+    {
+      "route": "/earnings-recession/",
+      "html": "/__candidate_shells/earnings-recession.html",
+      "rsc": "/__candidate_shells/earnings-recession.rsc",
+      "html_bytes": 23743,
+      "rsc_bytes": 4908,
+      "sha256": "b3508350b3d1440388688f4f47b10dcf51f14c68c9e58f6f15d063aa5c4e6cce"
+    },
+    {
+      "route": "/asset-bubble/",
+      "html": "/__candidate_shells/asset-bubble.html",
+      "rsc": "/__candidate_shells/asset-bubble.rsc",
+      "html_bytes": 25105,
+      "rsc_bytes": 4824,
+      "sha256": "8491aa2d8fe808cc90bfe6cd7a3840bec45e20f99f118e6d27adef8071a1894c"
+    },
+    {
+      "route": "/debt-risk/",
+      "html": "/__candidate_shells/debt-risk.html",
+      "rsc": "/__candidate_shells/debt-risk.rsc",
+      "html_bytes": 23549,
+      "rsc_bytes": 4619,
+      "sha256": "c6354e5ad53eb0f3cb0483261485f68748a8ce9008f3298bee58a299a99b3faa"
+    },
+    {
+      "route": "/supply-shock/",
+      "html": "/__candidate_shells/supply-shock.html",
+      "rsc": "/__candidate_shells/supply-shock.rsc",
+      "html_bytes": 24459,
+      "rsc_bytes": 4673,
+      "sha256": "732b81e9c2f1acd3aaf3a73779e602833f590fec335bd75897901690be1da305"
+    }
+  ]
+}
