@@ -3,7 +3,7 @@ import {PUBLIC_PROJECTION_KEYS} from '../worker/market-public-projection-store.m
 import {normalizeProjectionJob,createProjectionQueueConsumer} from '../worker/market-projection-queue.mjs';
 import {readProjectionResponse,projectionWriter,PROJECTION_ROUTES} from '../worker/projection-runtime-r52.mjs';
 import {observedSourceEnv} from '../worker/projection-checkpoint-r52.mjs';
-import {readOnlyDualEnv} from '../worker/candidate-2db-guard.mjs';
+import {readOnlyDualEnv,candidate2dbWorker} from '../worker/candidate-2db-guard.mjs';
 const now=Date.parse('2026-10-02T18:00:00Z');
 function fixture({sourceAt=now-86400000,expectedAt=sourceAt,version='v1',expectedVersion=version,status='READY',validUntil}={}){
  const trace=[],payload={status:'READY',score:0,missingFactors:[],history:[]},envelope={payload,projection:{status,sourceStoredAt:sourceAt,sourceVersion:version,expectedSourceStoredAt:expectedAt,expectedSourceVersion:expectedVersion,validUntil,asOf:'2026-10-02'}};
@@ -22,3 +22,5 @@ test('failed write RETRY, success ACK only after storage; invalid job never invo
 test('KFG READY projection expires at original observation-delay boundary',async()=>{const f=fixture({validUntil:now});const r=await readProjectionResponse(new Request('https://candidate/api/indicators/korea-funds'),f.native,'koreaFearGreed',{now});assert.equal(r.status,503);assert.equal(f.trace.length,1);});
 test('direct read helper rejects mutation before SQL',async()=>{const f=fixture();assert.equal((await readProjectionResponse(new Request('https://candidate/api/inflation-detail',{method:'POST'}),f.native,'inflation',{now})).status,405);assert.equal(f.trace.length,0);});
 test('quota 503 exposes classification only, no raw diagnostic',async()=>{const error=new Error('D1_ERROR',{cause:new Error("Your account has exceeded D1's free tier daily row read limit.")});const db={prepare(){return {bind(){return this},all:async()=>{throw error}}}};const r=await readProjectionResponse(new Request('https://candidate/api/inflation-detail'),db,'inflation',{now});assert.equal(r.status,503);assert.equal(r.headers.get('x-projection-read-error'),'D1_QUOTA');assert.deepEqual(await r.json(),{reason:'PROJECTION_READ_UNAVAILABLE'});});
+
+test('canonical and encoded internal path variants fail closed before handler',async()=>{let calls=0;const w=candidate2dbWorker({fetch(){calls++;return new Response('ok')}});for(const p of ['//api/internal/x','/api/%69nternal/x','/%2fapi/internal/x','/api/%252finternal/x','//api/admin/x','//api/favorites'])assert.equal((await w.fetch(new Request('https://candidate'+p),{},{})).status,403,p);assert.equal(calls,0);});
