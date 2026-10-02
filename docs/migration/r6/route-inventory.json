@@ -1,0 +1,324 @@
+[
+  {
+    "route": "/api/asset-bubble-detail/",
+    "source": "app/api/asset-bubble-detail/route.ts",
+    "type": "GET_API",
+    "candidate": "UNAVAILABLE_DB_UNBOUND",
+    "live_profiled": false
+  },
+  {
+    "route": "/api/credit-risk-detail/",
+    "source": "app/api/credit-risk-detail/route.ts",
+    "type": "GET_API",
+    "candidate": "UNAVAILABLE_DB_UNBOUND",
+    "live_profiled": false
+  },
+  {
+    "route": "/api/debt-risk-detail/",
+    "source": "app/api/debt-risk-detail/route.ts",
+    "type": "GET_API",
+    "candidate": "UNAVAILABLE_DB_UNBOUND",
+    "live_profiled": false
+  },
+  {
+    "route": "/api/earnings-recession-detail/",
+    "source": "app/api/earnings-recession-detail/route.ts",
+    "type": "GET_API",
+    "candidate": "UNAVAILABLE_DB_UNBOUND",
+    "live_profiled": false
+  },
+  {
+    "route": "/api/favorites/",
+    "source": "app/api/favorites/route.ts",
+    "type": "GET_API",
+    "candidate": "DENIED",
+    "live_profiled": false
+  },
+  {
+    "route": "/api/fear-greed/",
+    "source": "app/api/fear-greed/route.ts",
+    "type": "GET_API",
+    "candidate": "UNAVAILABLE_DB_UNBOUND",
+    "live_profiled": false
+  },
+  {
+    "route": "/api/ftse-fear-greed/",
+    "source": "app/api/ftse-fear-greed/route.ts",
+    "type": "GET_API",
+    "candidate": "UNAVAILABLE_DB_UNBOUND",
+    "live_profiled": false
+  },
+  {
+    "route": "/api/inflation-detail/",
+    "source": "app/api/inflation-detail/route.ts",
+    "type": "GET_API",
+    "candidate": "UNAVAILABLE_DB_UNBOUND",
+    "live_profiled": true
+  },
+  {
+    "route": "/api/internal/b1-r3-history-import/",
+    "source": "app/api/internal/b1-r3-history-import/route.ts",
+    "type": "GET_API",
+    "candidate": "DENIED",
+    "live_profiled": false
+  },
+  {
+    "route": "/api/internal/c1-r3-refresh/",
+    "source": "app/api/internal/c1-r3-refresh/route.ts",
+    "type": "GET_API",
+    "candidate": "DENIED",
+    "live_profiled": false
+  },
+  {
+    "route": "/api/internal/census-runtime-probe/",
+    "source": "app/api/internal/census-runtime-probe/route.ts",
+    "type": "GET_API",
+    "candidate": "DENIED",
+    "live_profiled": false
+  },
+  {
+    "route": "/api/internal/diagnostic-v1-canary/",
+    "source": "app/api/internal/diagnostic-v1-canary/route.ts",
+    "type": "GET_API",
+    "candidate": "DENIED",
+    "live_profiled": false
+  },
+  {
+    "route": "/api/internal/earnings-r4-one-year-backfill/",
+    "source": "app/api/internal/earnings-r4-one-year-backfill/route.ts",
+    "type": "GET_API",
+    "candidate": "DENIED",
+    "live_profiled": false
+  },
+  {
+    "route": "/api/internal/employment-r6-auth-probe/",
+    "source": "app/api/internal/employment-r6-auth-probe/route.ts",
+    "type": "GET_API",
+    "candidate": "DENIED",
+    "live_profiled": false
+  },
+  {
+    "route": "/api/internal/fmp-runtime-probe/",
+    "source": "app/api/internal/fmp-runtime-probe/route.ts",
+    "type": "GET_API",
+    "candidate": "DENIED",
+    "live_profiled": false
+  },
+  {
+    "route": "/api/internal/growth-r2-forward-runtime-probe/",
+    "source": "app/api/internal/growth-r2-forward-runtime-probe/route.ts",
+    "type": "GET_API",
+    "candidate": "DENIED",
+    "live_profiled": false
+  },
+  {
+    "route": "/api/internal/inflation-pce-vintage-repair/",
+    "source": "app/api/internal/inflation-pce-vintage-repair/route.ts",
+    "type": "GET_API",
+    "candidate": "DENIED",
+    "live_profiled": false
+  },
+  {
+    "route": "/api/internal/kfg-rev7-canary/",
+    "source": "app/api/internal/kfg-rev7-canary/route.ts",
+    "type": "GET_API",
+    "candidate": "DENIED",
+    "live_profiled": false
+  },
+  {
+    "route": "/api/internal/kfg-v2-canary/",
+    "source": "app/api/internal/kfg-v2-canary/route.ts",
+    "type": "GET_API",
+    "candidate": "DENIED",
+    "live_profiled": false
+  },
+  {
+    "route": "/api/internal/kfg-v2-daily-update/",
+    "source": "app/api/internal/kfg-v2-daily-update/route.ts",
+    "type": "GET_API",
+    "candidate": "DENIED",
+    "live_profiled": false
+  },
+  {
+    "route": "/api/internal/kfg-v2-postcheck/",
+    "source": "app/api/internal/kfg-v2-postcheck/route.ts",
+    "type": "GET_API",
+    "candidate": "DENIED",
+    "live_profiled": false
+  },
+  {
+    "route": "/api/internal/kfg-v2-snapshot-backfill/",
+    "source": "app/api/internal/kfg-v2-snapshot-backfill/route.ts",
+    "type": "GET_API",
+    "candidate": "DENIED",
+    "live_profiled": false
+  },
+  {
+    "route": "/api/internal/korea-rev7-refresh/",
+    "source": "app/api/internal/korea-rev7-refresh/route.ts",
+    "type": "OTHER_HANDLER",
+    "candidate": "DENIED",
+    "live_profiled": false
+  },
+  {
+    "route": "/api/internal/market-refresh/",
+    "source": "app/api/internal/market-refresh/route.ts",
+    "type": "OTHER_HANDLER",
+    "candidate": "DENIED",
+    "live_profiled": false
+  },
+  {
+    "route": "/api/korea-research-v2/",
+    "source": "app/api/korea-research-v2/route.ts",
+    "type": "GET_API",
+    "candidate": "UNAVAILABLE_DB_UNBOUND",
+    "live_profiled": false
+  },
+  {
+    "route": "/api/kospi-fear-greed/",
+    "source": "app/api/kospi-fear-greed/route.ts",
+    "type": "GET_API",
+    "candidate": "UNAVAILABLE_DB_UNBOUND",
+    "live_profiled": false
+  },
+  {
+    "route": "/api/kospi-history/",
+    "source": "app/api/kospi-history/route.ts",
+    "type": "GET_API",
+    "candidate": "UNAVAILABLE_DB_UNBOUND",
+    "live_profiled": false
+  },
+  {
+    "route": "/api/liquidity-crisis-detail/",
+    "source": "app/api/liquidity-crisis-detail/route.ts",
+    "type": "GET_API",
+    "candidate": "UNAVAILABLE_DB_UNBOUND",
+    "live_profiled": false
+  },
+  {
+    "route": "/api/market-data/",
+    "source": "app/api/market-data/route.ts",
+    "type": "GET_API",
+    "candidate": "UNAVAILABLE_DB_UNBOUND",
+    "live_profiled": false
+  },
+  {
+    "route": "/api/market-score/",
+    "source": "app/api/market-score/route.ts",
+    "type": "GET_API",
+    "candidate": "UNAVAILABLE_DB_UNBOUND",
+    "live_profiled": true
+  },
+  {
+    "route": "/api/nikkei-fear-greed/",
+    "source": "app/api/nikkei-fear-greed/route.ts",
+    "type": "GET_API",
+    "candidate": "UNAVAILABLE_DB_UNBOUND",
+    "live_profiled": false
+  },
+  {
+    "route": "/api/recession-detail/",
+    "source": "app/api/recession-detail/route.ts",
+    "type": "GET_API",
+    "candidate": "UNAVAILABLE_DB_UNBOUND",
+    "live_profiled": false
+  },
+  {
+    "route": "/api/session/",
+    "source": "app/api/session/route.ts",
+    "type": "GET_API",
+    "candidate": "FRAMEWORK_GET",
+    "live_profiled": true
+  },
+  {
+    "route": "/api/supply-shock-detail/",
+    "source": "app/api/supply-shock-detail/route.ts",
+    "type": "GET_API",
+    "candidate": "UNAVAILABLE_DB_UNBOUND",
+    "live_profiled": false
+  },
+  {
+    "route": "/asset-bubble/",
+    "source": "app/asset-bubble/page.tsx",
+    "type": "PAGE",
+    "candidate": "FRAMEWORK_GET",
+    "live_profiled": true
+  },
+  {
+    "route": "/credit-risk/",
+    "source": "app/credit-risk/page.tsx",
+    "type": "PAGE",
+    "candidate": "FRAMEWORK_GET",
+    "live_profiled": true
+  },
+  {
+    "route": "/debt-risk/",
+    "source": "app/debt-risk/page.tsx",
+    "type": "PAGE",
+    "candidate": "FRAMEWORK_GET",
+    "live_profiled": true
+  },
+  {
+    "route": "/earnings-recession/",
+    "source": "app/earnings-recession/page.tsx",
+    "type": "PAGE",
+    "candidate": "FRAMEWORK_GET",
+    "live_profiled": true
+  },
+  {
+    "route": "/fear-greed/korea/",
+    "source": "app/fear-greed/korea/page.tsx",
+    "type": "PAGE",
+    "candidate": "FRAMEWORK_GET",
+    "live_profiled": false
+  },
+  {
+    "route": "/fear-greed/usa/",
+    "source": "app/fear-greed/usa/page.tsx",
+    "type": "PAGE",
+    "candidate": "FRAMEWORK_GET",
+    "live_profiled": false
+  },
+  {
+    "route": "/guide/fear-greed/",
+    "source": "app/guide/fear-greed/page.tsx",
+    "type": "PAGE",
+    "candidate": "FRAMEWORK_GET",
+    "live_profiled": false
+  },
+  {
+    "route": "/inflation/",
+    "source": "app/inflation/page.tsx",
+    "type": "PAGE",
+    "candidate": "FRAMEWORK_GET",
+    "live_profiled": true
+  },
+  {
+    "route": "/liquidity-crisis/",
+    "source": "app/liquidity-crisis/page.tsx",
+    "type": "PAGE",
+    "candidate": "FRAMEWORK_GET",
+    "live_profiled": true
+  },
+  {
+    "route": "/",
+    "source": "app/page.tsx",
+    "type": "PAGE",
+    "candidate": "FRAMEWORK_GET",
+    "live_profiled": true
+  },
+  {
+    "route": "/recession/",
+    "source": "app/recession/page.tsx",
+    "type": "PAGE",
+    "candidate": "FRAMEWORK_GET",
+    "live_profiled": true
+  },
+  {
+    "route": "/supply-shock/",
+    "source": "app/supply-shock/page.tsx",
+    "type": "PAGE",
+    "candidate": "FRAMEWORK_GET",
+    "live_profiled": true
+  }
+]

@@ -1,0 +1,123 @@
+[
+  {
+    "route": "/",
+    "samples": 29,
+    "p50": 21,
+    "p95": 35,
+    "p99": 36,
+    "first_observed_cpu": [
+      94,
+      89
+    ]
+  },
+  {
+    "route": "/api/market-score",
+    "samples": 30,
+    "p50": 0,
+    "p95": 0,
+    "p99": 0,
+    "first_observed_cpu": [
+      0
+    ]
+  },
+  {
+    "route": "/inflation/",
+    "samples": 30,
+    "p50": 9,
+    "p95": 24,
+    "p99": 24,
+    "first_observed_cpu": [
+      14
+    ]
+  },
+  {
+    "route": "/recession/",
+    "samples": 31,
+    "p50": 7,
+    "p95": 16,
+    "p99": 18,
+    "first_observed_cpu": []
+  },
+  {
+    "route": "/liquidity-crisis/",
+    "samples": 30,
+    "p50": 7,
+    "p95": 18,
+    "p99": 38,
+    "first_observed_cpu": [
+      7
+    ]
+  },
+  {
+    "route": "/credit-risk/",
+    "samples": 31,
+    "p50": 8,
+    "p95": 14,
+    "p99": 16,
+    "first_observed_cpu": []
+  },
+  {
+    "route": "/earnings-recession/",
+    "samples": 31,
+    "p50": 6,
+    "p95": 33,
+    "p99": 44,
+    "first_observed_cpu": []
+  },
+  {
+    "route": "/asset-bubble/",
+    "samples": 30,
+    "p50": 7,
+    "p95": 15,
+    "p99": 22,
+    "first_observed_cpu": [
+      10
+    ]
+  },
+  {
+    "route": "/debt-risk/",
+    "samples": 31,
+    "p50": 7,
+    "p95": 12,
+    "p99": 12,
+    "first_observed_cpu": []
+  },
+  {
+    "route": "/supply-shock/",
+    "samples": 31,
+    "p50": 7,
+    "p95": 15,
+    "p99": 16,
+    "first_observed_cpu": []
+  },
+  {
+    "route": "/api/inflation-detail",
+    "samples": 30,
+    "p50": 0,
+    "p95": 0,
+    "p99": 0,
+    "first_observed_cpu": [
+      0
+    ]
+  },
+  {
+    "route": "/api/session",
+    "samples": 30,
+    "p50": 1,
+    "p95": 2,
+    "p99": 13,
+    "first_observed_cpu": [
+      1
+    ]
+  },
+  {
+    "route": "/flags/us.svg",
+    "samples": 30,
+    "p50": 0,
+    "p95": 2,
+    "p99": 3,
+    "first_observed_cpu": [
+      0
+    ]
+  }
+]
