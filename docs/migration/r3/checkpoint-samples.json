@@ -1,0 +1,30 @@
+[
+  {
+    "table": "kfg_rev7_backfill_progress",
+    "sample_only": true,
+    "metadata": [
+      {
+        "latest_processed_date": "20261001",
+        "oldest_processed_date": "20220630",
+        "rows_processed": 989962,
+        "status": "IDLE"
+      }
+    ]
+  },
+  {
+    "table": "market_collection_jobs_v1",
+    "sample_only": true,
+    "metadata": [
+      {
+        "status": "COMPLETE"
+      }
+    ]
+  },
+  {
+    "table": "market_score_response_cache_v1",
+    "sample_only": true,
+    "metadata": [
+      {}
+    ]
+  }
+]

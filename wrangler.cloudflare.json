@@ -2,7 +2,7 @@
   "$schema": "./node_modules/wrangler/config-schema.json",
   "name": "zgmini-migration-candidate",
   "account_id": "6e9b57e718b247330a6efa42a9516e95",
-  "main": "worker/index.ts",
+  "main": "worker/candidate.ts",
   "compatibility_date": "2026-09-01",
   "compatibility_flags": ["nodejs_compat"],
   "workers_dev": false,

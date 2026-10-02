@@ -1,5 +1,6 @@
 import vinext from "vinext";
 import { defineConfig } from "vite";
+import {candidateImportBoundary} from './scripts/candidate-import-boundary.mjs';
 
 // Independent migration build. Existing Sites configuration remains untouched.
 export default defineConfig(async () => {
@@ -8,7 +9,7 @@ export default defineConfig(async () => {
   process.env.MINIFLARE_REGISTRY_PATH ??= ".wrangler/registry";
   const { cloudflare } = await import("@cloudflare/vite-plugin");
   return {
-    plugins: [vinext(), cloudflare({
+    plugins: [candidateImportBoundary(process.cwd()), vinext(), cloudflare({
       configPath: "wrangler.cloudflare.json",
       viteEnvironment: { name: "rsc", childEnvironments: ["ssr"] },
       inspectorPort: false,

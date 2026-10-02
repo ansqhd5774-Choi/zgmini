@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 
 const config = JSON.parse(readFileSync(new URL('../wrangler.cloudflare.json', import.meta.url), 'utf8'));
 assert.equal(config.name, 'zgmini-migration-candidate');
+assert.equal(config.main, 'worker/candidate.ts');
 assert.equal(config.workers_dev, false);
 assert.equal(config.preview_urls, false);
 assert.deepEqual(config.routes, []);

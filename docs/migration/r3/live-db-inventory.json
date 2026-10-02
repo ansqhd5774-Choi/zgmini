@@ -1,0 +1,1222 @@
+{
+  "observed_at": "2026-10-02T11:00:37.840Z",
+  "binding": "DB",
+  "database_id": null,
+  "database_name": null,
+  "owner_account": null,
+  "size_bytes": null,
+  "tables": [
+    {
+      "table": "api_history_chunks_v1",
+      "columns": [
+        "provider",
+        "dataset",
+        "chunk_sha256",
+        "first_observation_date",
+        "last_observation_date",
+        "row_count",
+        "payload_json",
+        "first_seen_at"
+      ],
+      "row_count": null,
+      "row_count_lower_bound": 1,
+      "has_more": true,
+      "projection": {
+        "truncated": true,
+        "truncated_values": 1,
+        "omitted_columns": 0,
+        "omitted_rows": 0,
+        "next_offset": 1
+      }
+    },
+    {
+      "table": "api_history_snapshots_v1",
+      "columns": [
+        "provider",
+        "dataset",
+        "snapshot_sha256",
+        "as_of",
+        "retrieved_at",
+        "status",
+        "history_mode",
+        "row_count",
+        "latest_observation_date",
+        "chunk_hashes_json",
+        "provenance_json"
+      ],
+      "row_count": null,
+      "row_count_lower_bound": 1,
+      "has_more": true,
+      "projection": {
+        "truncated": false,
+        "truncated_values": 0,
+        "omitted_columns": 0,
+        "omitted_rows": 0,
+        "next_offset": 1
+      }
+    },
+    {
+      "table": "c1_r3_candidate_scores_v1",
+      "columns": [
+        "revision",
+        "score_date",
+        "candidate_id",
+        "score",
+        "observation_date",
+        "computed_at",
+        "source_snapshot_sha256"
+      ],
+      "row_count": null,
+      "row_count_lower_bound": 1,
+      "has_more": true,
+      "projection": {
+        "truncated": false,
+        "truncated_values": 0,
+        "omitted_columns": 0,
+        "omitted_rows": 0,
+        "next_offset": 1
+      }
+    },
+    {
+      "table": "c1_r3_refresh_claims_v1",
+      "columns": [
+        "revision",
+        "score_date",
+        "attempt_date",
+        "claim_key",
+        "status",
+        "started_at",
+        "finished_at",
+        "detail"
+      ],
+      "row_count": null,
+      "row_count_lower_bound": 1,
+      "has_more": true,
+      "projection": {
+        "truncated": false,
+        "truncated_values": 0,
+        "omitted_columns": 0,
+        "omitted_rows": 0,
+        "next_offset": 1
+      }
+    },
+    {
+      "table": "c1_r3_source_snapshots_v1",
+      "columns": [
+        "revision",
+        "score_date",
+        "quarter",
+        "source_key",
+        "provider",
+        "payload_sha256",
+        "payload_json",
+        "retrieved_at",
+        "source_url"
+      ],
+      "row_count": 0,
+      "row_count_lower_bound": 0,
+      "has_more": false,
+      "projection": {
+        "truncated": false,
+        "truncated_values": 0,
+        "omitted_columns": 0,
+        "omitted_rows": 0,
+        "next_offset": null
+      }
+    },
+    {
+      "table": "favorite_sentiments",
+      "columns": [
+        "id",
+        "user_id",
+        "item_key",
+        "item_type",
+        "item_name",
+        "created_at"
+      ],
+      "row_count": 0,
+      "row_count_lower_bound": 0,
+      "has_more": false,
+      "projection": {
+        "truncated": false,
+        "truncated_values": 0,
+        "omitted_columns": 0,
+        "omitted_rows": 0,
+        "next_offset": null
+      }
+    },
+    {
+      "table": "growth_r2_feature_current_v1",
+      "columns": [
+        "candidate_id",
+        "observation_date",
+        "observation_period",
+        "available_at",
+        "release_date",
+        "vintage_id",
+        "pit_eligible",
+        "provider",
+        "selector",
+        "frequency",
+        "native_value",
+        "native_unit",
+        "harmonized_value",
+        "harmonized_unit",
+        "transform_rule",
+        "source_hash",
+        "source_url",
+        "feature_revision",
+        "method_revision",
+        "retrieved_at",
+        "record_hash"
+      ],
+      "row_count": null,
+      "row_count_lower_bound": 1,
+      "has_more": true,
+      "projection": {
+        "truncated": false,
+        "truncated_values": 0,
+        "omitted_columns": 0,
+        "omitted_rows": 0,
+        "next_offset": 1
+      }
+    },
+    {
+      "table": "growth_r2_feature_history_v1",
+      "columns": [
+        "candidate_id",
+        "observation_date",
+        "observation_period",
+        "available_at",
+        "release_date",
+        "vintage_id",
+        "pit_eligible",
+        "provider",
+        "selector",
+        "frequency",
+        "native_value",
+        "native_unit",
+        "harmonized_value",
+        "harmonized_unit",
+        "transform_rule",
+        "source_hash",
+        "source_url",
+        "feature_revision",
+        "method_revision",
+        "retrieved_at",
+        "record_hash"
+      ],
+      "row_count": null,
+      "row_count_lower_bound": 1,
+      "has_more": true,
+      "projection": {
+        "truncated": false,
+        "truncated_values": 0,
+        "omitted_columns": 0,
+        "omitted_rows": 0,
+        "next_offset": 1
+      }
+    },
+    {
+      "table": "growth_r2_forward_stage_v1",
+      "columns": [
+        "candidate_id",
+        "stage",
+        "body_json",
+        "retrieved_at"
+      ],
+      "row_count": 0,
+      "row_count_lower_bound": 0,
+      "has_more": false,
+      "projection": {
+        "truncated": false,
+        "truncated_values": 0,
+        "omitted_columns": 0,
+        "omitted_rows": 0,
+        "next_offset": null
+      }
+    },
+    {
+      "table": "growth_r2_meta_v1",
+      "columns": [
+        "key",
+        "value",
+        "updated_at"
+      ],
+      "row_count": 1,
+      "row_count_lower_bound": 1,
+      "has_more": false,
+      "projection": {
+        "truncated": false,
+        "truncated_values": 0,
+        "omitted_columns": 0,
+        "omitted_rows": 0,
+        "next_offset": null
+      }
+    },
+    {
+      "table": "growth_r2_provider_snapshots_v1",
+      "columns": [
+        "provider_group",
+        "snapshot_hash",
+        "retrieved_at",
+        "source_url",
+        "payload_json"
+      ],
+      "row_count": null,
+      "row_count_lower_bound": 1,
+      "has_more": true,
+      "projection": {
+        "truncated": false,
+        "truncated_values": 0,
+        "omitted_columns": 0,
+        "omitted_rows": 0,
+        "next_offset": 1
+      }
+    },
+    {
+      "table": "kfg_rev7_backfill_progress",
+      "columns": [
+        "methodology_version",
+        "anchor_date",
+        "latest_processed_date",
+        "oldest_processed_date",
+        "successful_trading_date_count",
+        "krx_request_count",
+        "bok_request_count",
+        "rows_processed",
+        "status",
+        "last_attempted_date",
+        "last_successful_date",
+        "last_failure_code",
+        "active_run_id",
+        "lease_until"
+      ],
+      "row_count": 1,
+      "row_count_lower_bound": 1,
+      "has_more": false,
+      "projection": {
+        "truncated": false,
+        "truncated_values": 0,
+        "omitted_columns": 0,
+        "omitted_rows": 0,
+        "next_offset": null
+      }
+    },
+    {
+      "table": "kfg_rev7_daily_series",
+      "columns": [
+        "date",
+        "kospi_close",
+        "vkospi200_close",
+        "ktb_total_return",
+        "government_prime_total_return",
+        "standard_put_volume",
+        "standard_call_volume",
+        "put_call_ratio",
+        "aa_minus_3y",
+        "bbb_minus_3y",
+        "junk_spread",
+        "fetched_at"
+      ],
+      "row_count": null,
+      "row_count_lower_bound": 1,
+      "has_more": true,
+      "projection": {
+        "truncated": false,
+        "truncated_values": 0,
+        "omitted_columns": 0,
+        "omitted_rows": 0,
+        "next_offset": 1
+      }
+    },
+    {
+      "table": "kfg_rev7_kospi_rows",
+      "columns": [
+        "date",
+        "security_id",
+        "short_code",
+        "close",
+        "high",
+        "low",
+        "change_amount",
+        "share_volume"
+      ],
+      "row_count": null,
+      "row_count_lower_bound": 1,
+      "has_more": true,
+      "projection": {
+        "truncated": false,
+        "truncated_values": 0,
+        "omitted_columns": 0,
+        "omitted_rows": 0,
+        "next_offset": 1
+      }
+    },
+    {
+      "table": "kfg_rev7_market_dates",
+      "columns": [
+        "date",
+        "status",
+        "kospi_count",
+        "valid_high_count",
+        "valid_low_count",
+        "valid_share_volume_count",
+        "rows_stored",
+        "krx_request_count",
+        "bok_request_count",
+        "fetched_at",
+        "methodology_version"
+      ],
+      "row_count": null,
+      "row_count_lower_bound": 1,
+      "has_more": true,
+      "projection": {
+        "truncated": false,
+        "truncated_values": 0,
+        "omitted_columns": 0,
+        "omitted_rows": 0,
+        "next_offset": 1
+      }
+    },
+    {
+      "table": "kfg_rev7_snapshots",
+      "columns": [
+        "date",
+        "methodology_version",
+        "factors_json",
+        "composite_json",
+        "history_mode",
+        "point_in_time_verified",
+        "source_observed_at",
+        "calculated_at"
+      ],
+      "row_count": null,
+      "row_count_lower_bound": 1,
+      "has_more": true,
+      "projection": {
+        "truncated": false,
+        "truncated_values": 0,
+        "omitted_columns": 0,
+        "omitted_rows": 0,
+        "next_offset": 1
+      }
+    },
+    {
+      "table": "kfg_v2_backfill_progress",
+      "columns": [
+        "methodology_version",
+        "anchor_date",
+        "latest_processed_date",
+        "oldest_processed_date",
+        "successful_trading_date_count",
+        "request_count",
+        "rows_processed",
+        "status",
+        "last_attempted_date",
+        "last_successful_date",
+        "last_failure_code",
+        "active_run_id",
+        "lease_until"
+      ],
+      "row_count": 1,
+      "row_count_lower_bound": 1,
+      "has_more": false,
+      "projection": {
+        "truncated": false,
+        "truncated_values": 0,
+        "omitted_columns": 0,
+        "omitted_rows": 0,
+        "next_offset": null
+      }
+    },
+    {
+      "table": "kfg_v2_component_history",
+      "columns": [
+        "component_id",
+        "date",
+        "score",
+        "captured_at"
+      ],
+      "row_count": null,
+      "row_count_lower_bound": 1,
+      "has_more": true,
+      "projection": {
+        "truncated": false,
+        "truncated_values": 0,
+        "omitted_columns": 0,
+        "omitted_rows": 0,
+        "next_offset": 1
+      }
+    },
+    {
+      "table": "kfg_v2_factor_snapshots",
+      "columns": [
+        "factor",
+        "date",
+        "score",
+        "status",
+        "advance_ratio",
+        "advance_value_share"
+      ],
+      "row_count": null,
+      "row_count_lower_bound": 1,
+      "has_more": true,
+      "projection": {
+        "truncated": false,
+        "truncated_values": 0,
+        "omitted_columns": 0,
+        "omitted_rows": 0,
+        "next_offset": 1
+      }
+    },
+    {
+      "table": "kfg_v2_market_dates",
+      "columns": [
+        "date",
+        "status",
+        "universe_count",
+        "kospi_count",
+        "kosdaq_count",
+        "valid_return_count",
+        "valid_trading_value_count",
+        "valid_market_cap_count",
+        "return_coverage",
+        "trading_value_coverage",
+        "market_cap_coverage",
+        "rows_stored",
+        "provider",
+        "methodology_version",
+        "rows_received",
+        "total_count",
+        "konex_excluded",
+        "duplicate_count",
+        "fetched_at",
+        "request_count"
+      ],
+      "row_count": null,
+      "row_count_lower_bound": 1,
+      "has_more": true,
+      "projection": {
+        "truncated": false,
+        "truncated_values": 0,
+        "omitted_columns": 0,
+        "omitted_rows": 0,
+        "next_offset": 1
+      }
+    },
+    {
+      "table": "kfg_v2_market_rows",
+      "columns": [
+        "date",
+        "security_id",
+        "short_code",
+        "market",
+        "close",
+        "return_pct",
+        "trading_value",
+        "market_cap"
+      ],
+      "row_count": null,
+      "row_count_lower_bound": 1,
+      "has_more": true,
+      "projection": {
+        "truncated": false,
+        "truncated_values": 0,
+        "omitted_columns": 0,
+        "omitted_rows": 0,
+        "next_offset": 1
+      }
+    },
+    {
+      "table": "kfg_v2_research_snapshots",
+      "columns": [
+        "date",
+        "methodology_version",
+        "factors_json",
+        "composite_json",
+        "history_mode",
+        "point_in_time_verified",
+        "historical_vintage_verified",
+        "source_published_at",
+        "source_observed_at",
+        "fetched_at",
+        "calculated_at",
+        "correction_fingerprint"
+      ],
+      "row_count": null,
+      "row_count_lower_bound": 1,
+      "has_more": true,
+      "projection": {
+        "truncated": false,
+        "truncated_values": 0,
+        "omitted_columns": 0,
+        "omitted_rows": 0,
+        "next_offset": 1
+      }
+    },
+    {
+      "table": "market_collection_jobs_v1",
+      "columns": [
+        "job",
+        "lease_id",
+        "lease_until",
+        "finished_at",
+        "status"
+      ],
+      "row_count": null,
+      "row_count_lower_bound": 1,
+      "has_more": true,
+      "projection": {
+        "truncated": false,
+        "truncated_values": 0,
+        "omitted_columns": 0,
+        "omitted_rows": 0,
+        "next_offset": 1
+      }
+    },
+    {
+      "table": "market_input_batches_v1",
+      "columns": [
+        "batch_key",
+        "body",
+        "stored_at"
+      ],
+      "row_count": null,
+      "row_count_lower_bound": 1,
+      "has_more": true,
+      "projection": {
+        "truncated": true,
+        "truncated_values": 1,
+        "omitted_columns": 0,
+        "omitted_rows": 0,
+        "next_offset": 1
+      }
+    },
+    {
+      "table": "market_liquidity_active_history_v1",
+      "columns": [
+        "as_of_date",
+        "methodology_version",
+        "score",
+        "stored_at"
+      ],
+      "row_count": null,
+      "row_count_lower_bound": 1,
+      "has_more": true,
+      "projection": {
+        "truncated": false,
+        "truncated_values": 0,
+        "omitted_columns": 0,
+        "omitted_rows": 0,
+        "next_offset": 1
+      }
+    },
+    {
+      "table": "market_public_snapshots_v1",
+      "columns": [
+        "snapshot_key",
+        "body",
+        "stored_at"
+      ],
+      "row_count": null,
+      "row_count_lower_bound": 1,
+      "has_more": true,
+      "projection": {
+        "truncated": true,
+        "truncated_values": 1,
+        "omitted_columns": 0,
+        "omitted_rows": 0,
+        "next_offset": 1
+      }
+    },
+    {
+      "table": "market_score_breadth_b1_r3_current_v1",
+      "columns": [
+        "trade_date",
+        "ticker",
+        "previous_date",
+        "previous_close",
+        "current_close",
+        "current_volume",
+        "source",
+        "feed",
+        "provenance_json",
+        "first_seen_at",
+        "last_seen_at",
+        "retrieved_at",
+        "last_as_of_date"
+      ],
+      "row_count": null,
+      "row_count_lower_bound": 1,
+      "has_more": true,
+      "projection": {
+        "truncated": false,
+        "truncated_values": 0,
+        "omitted_columns": 0,
+        "omitted_rows": 0,
+        "next_offset": 1
+      }
+    },
+    {
+      "table": "market_score_breadth_b1_r3_history_v1",
+      "columns": [
+        "history_id",
+        "trade_date",
+        "ticker",
+        "previous_date",
+        "previous_close",
+        "current_close",
+        "current_volume",
+        "source",
+        "feed",
+        "provenance_json",
+        "change_type",
+        "retrieved_at",
+        "as_of_date"
+      ],
+      "row_count": null,
+      "row_count_lower_bound": 1,
+      "has_more": true,
+      "projection": {
+        "truncated": false,
+        "truncated_values": 0,
+        "omitted_columns": 0,
+        "omitted_rows": 0,
+        "next_offset": 1
+      }
+    },
+    {
+      "table": "market_score_breadth_b1_r3_lock_v1",
+      "columns": [
+        "lock_key",
+        "token",
+        "expires_at"
+      ],
+      "row_count": 0,
+      "row_count_lower_bound": 0,
+      "has_more": false,
+      "projection": {
+        "truncated": false,
+        "truncated_values": 0,
+        "omitted_columns": 0,
+        "omitted_rows": 0,
+        "next_offset": null
+      }
+    },
+    {
+      "table": "market_score_breadth_b1_r3_runs_v1",
+      "columns": [
+        "run_id",
+        "as_of_date",
+        "trade_date",
+        "status",
+        "started_at",
+        "completed_at",
+        "provider_requests",
+        "collected_rows",
+        "inserted_count",
+        "updated_count",
+        "noop_count",
+        "current_rows",
+        "history_rows_added",
+        "coverage",
+        "upstream_ms",
+        "storage_write_ms",
+        "failure_code",
+        "detail_json"
+      ],
+      "row_count": null,
+      "row_count_lower_bound": 1,
+      "has_more": true,
+      "projection": {
+        "truncated": false,
+        "truncated_values": 0,
+        "omitted_columns": 0,
+        "omitted_rows": 0,
+        "next_offset": 1
+      }
+    },
+    {
+      "table": "market_score_breadth_b1_r3_semantic_v1",
+      "columns": [
+        "trade_date",
+        "previous_date",
+        "semantic_contract",
+        "semantic_schema",
+        "semantic_sha256",
+        "member_count",
+        "pair_count",
+        "first_seen_at",
+        "last_seen_at"
+      ],
+      "row_count": null,
+      "row_count_lower_bound": 1,
+      "has_more": true,
+      "projection": {
+        "truncated": false,
+        "truncated_values": 0,
+        "omitted_columns": 0,
+        "omitted_rows": 0,
+        "next_offset": 1
+      }
+    },
+    {
+      "table": "market_score_breadth_b1_r3_universe_v1",
+      "columns": [
+        "trade_date",
+        "members_json",
+        "member_count",
+        "provenance_json",
+        "first_seen_at",
+        "last_seen_at",
+        "retrieved_at"
+      ],
+      "row_count": null,
+      "row_count_lower_bound": 1,
+      "has_more": true,
+      "projection": {
+        "truncated": true,
+        "truncated_values": 1,
+        "omitted_columns": 0,
+        "omitted_rows": 0,
+        "next_offset": 1
+      }
+    },
+    {
+      "table": "market_score_breadth_r2_current_v1",
+      "columns": [
+        "provider",
+        "observation_key",
+        "observation_date",
+        "entity_type",
+        "entity_id",
+        "metric",
+        "value",
+        "unit",
+        "provenance_json",
+        "first_seen_at",
+        "last_seen_at",
+        "retrieved_at",
+        "last_as_of_date"
+      ],
+      "row_count": 0,
+      "row_count_lower_bound": 0,
+      "has_more": false,
+      "projection": {
+        "truncated": false,
+        "truncated_values": 0,
+        "omitted_columns": 0,
+        "omitted_rows": 0,
+        "next_offset": null
+      }
+    },
+    {
+      "table": "market_score_breadth_r2_event_v1",
+      "columns": [
+        "event_id",
+        "source_key",
+        "content_hash",
+        "retrieved_at",
+        "event_type"
+      ],
+      "row_count": null,
+      "row_count_lower_bound": 1,
+      "has_more": true,
+      "projection": {
+        "truncated": false,
+        "truncated_values": 0,
+        "omitted_columns": 0,
+        "omitted_rows": 0,
+        "next_offset": 1
+      }
+    },
+    {
+      "table": "market_score_breadth_r2_history_v1",
+      "columns": [
+        "history_id",
+        "provider",
+        "observation_key",
+        "observation_date",
+        "entity_type",
+        "entity_id",
+        "metric",
+        "value",
+        "unit",
+        "provenance_json",
+        "change_type",
+        "retrieved_at",
+        "as_of_date"
+      ],
+      "row_count": 0,
+      "row_count_lower_bound": 0,
+      "has_more": false,
+      "projection": {
+        "truncated": false,
+        "truncated_values": 0,
+        "omitted_columns": 0,
+        "omitted_rows": 0,
+        "next_offset": null
+      }
+    },
+    {
+      "table": "market_score_breadth_r2_lock_v1",
+      "columns": [
+        "lock_key",
+        "token",
+        "expires_at"
+      ],
+      "row_count": 1,
+      "row_count_lower_bound": 1,
+      "has_more": false,
+      "projection": {
+        "truncated": false,
+        "truncated_values": 0,
+        "omitted_columns": 0,
+        "omitted_rows": 0,
+        "next_offset": null
+      }
+    },
+    {
+      "table": "market_score_breadth_r2_runs_v1",
+      "columns": [
+        "run_id",
+        "as_of_date",
+        "status",
+        "started_at",
+        "completed_at",
+        "provider_requests",
+        "collected_rows",
+        "inserted_count",
+        "updated_count",
+        "noop_count",
+        "current_rows",
+        "history_rows_added",
+        "upstream_ms",
+        "storage_write_ms",
+        "storage_read_ms",
+        "score_compute_ms",
+        "failure_code",
+        "detail_json"
+      ],
+      "row_count": 0,
+      "row_count_lower_bound": 0,
+      "has_more": false,
+      "projection": {
+        "truncated": false,
+        "truncated_values": 0,
+        "omitted_columns": 0,
+        "omitted_rows": 0,
+        "next_offset": null
+      }
+    },
+    {
+      "table": "market_score_breadth_r2_universe_v1",
+      "columns": [
+        "universe_key",
+        "observation_key",
+        "observation_date",
+        "body_json",
+        "member_count",
+        "provenance_json",
+        "first_seen_at",
+        "last_seen_at",
+        "retrieved_at"
+      ],
+      "row_count": 0,
+      "row_count_lower_bound": 0,
+      "has_more": false,
+      "projection": {
+        "truncated": false,
+        "truncated_values": 0,
+        "omitted_columns": 0,
+        "omitted_rows": 0,
+        "next_offset": null
+      }
+    },
+    {
+      "table": "market_score_earnings_e1_r3_current_v1",
+      "columns": [
+        "period_end",
+        "cik",
+        "metric",
+        "value",
+        "ticker",
+        "company_name",
+        "frame",
+        "prior_frame",
+        "provenance_json",
+        "first_seen_at",
+        "last_seen_at",
+        "retrieved_at"
+      ],
+      "row_count": null,
+      "row_count_lower_bound": 1,
+      "has_more": true,
+      "projection": {
+        "truncated": false,
+        "truncated_values": 0,
+        "omitted_columns": 0,
+        "omitted_rows": 0,
+        "next_offset": 1
+      }
+    },
+    {
+      "table": "market_score_earnings_e1_r3_history_v1",
+      "columns": [
+        "history_id",
+        "period_end",
+        "cik",
+        "metric",
+        "value",
+        "ticker",
+        "company_name",
+        "frame",
+        "prior_frame",
+        "provenance_json",
+        "change_type",
+        "retrieved_at"
+      ],
+      "row_count": null,
+      "row_count_lower_bound": 1,
+      "has_more": true,
+      "projection": {
+        "truncated": false,
+        "truncated_values": 0,
+        "omitted_columns": 0,
+        "omitted_rows": 0,
+        "next_offset": 1
+      }
+    },
+    {
+      "table": "market_score_earnings_e1_r3_lock_v1",
+      "columns": [
+        "lock_key",
+        "token",
+        "expires_at"
+      ],
+      "row_count": 0,
+      "row_count_lower_bound": 0,
+      "has_more": false,
+      "projection": {
+        "truncated": false,
+        "truncated_values": 0,
+        "omitted_columns": 0,
+        "omitted_rows": 0,
+        "next_offset": null
+      }
+    },
+    {
+      "table": "market_score_earnings_e1_r3_runs_v1",
+      "columns": [
+        "run_id",
+        "period_end",
+        "status",
+        "started_at",
+        "completed_at",
+        "universe_count",
+        "provider_requests",
+        "eps_count",
+        "revenue_count",
+        "margin_count",
+        "inserted_count",
+        "updated_count",
+        "noop_count",
+        "current_rows",
+        "history_rows_added",
+        "upstream_ms",
+        "storage_write_ms",
+        "storage_read_ms",
+        "score_compute_ms",
+        "failure_code"
+      ],
+      "row_count": null,
+      "row_count_lower_bound": 1,
+      "has_more": true,
+      "projection": {
+        "truncated": false,
+        "truncated_values": 0,
+        "omitted_columns": 0,
+        "omitted_rows": 0,
+        "next_offset": 1
+      }
+    },
+    {
+      "table": "market_score_earnings_e1_r3_universe_v1",
+      "columns": [
+        "period_end",
+        "body_json",
+        "security_count",
+        "issuer_count",
+        "wikipedia_revision_id",
+        "retrieved_at"
+      ],
+      "row_count": null,
+      "row_count_lower_bound": 1,
+      "has_more": true,
+      "projection": {
+        "truncated": true,
+        "truncated_values": 1,
+        "omitted_columns": 0,
+        "omitted_rows": 0,
+        "next_offset": 1
+      }
+    },
+    {
+      "table": "market_score_employment_r4_shadow_current_v1",
+      "columns": [
+        "logical_series_id",
+        "provider",
+        "provider_series_id",
+        "geography_type",
+        "geography_code",
+        "frequency",
+        "unit",
+        "seasonal_adjustment",
+        "population_coverage",
+        "observation_date",
+        "release_date",
+        "available_at",
+        "retrieved_at",
+        "value",
+        "source_revision",
+        "source_hash",
+        "quality_status",
+        "pit_class",
+        "schema_version",
+        "provenance_json",
+        "first_seen_at",
+        "last_seen_at"
+      ],
+      "row_count": null,
+      "row_count_lower_bound": 1,
+      "has_more": true,
+      "projection": {
+        "truncated": false,
+        "truncated_values": 0,
+        "omitted_columns": 0,
+        "omitted_rows": 0,
+        "next_offset": 1
+      }
+    },
+    {
+      "table": "market_score_employment_r4_shadow_history_v1",
+      "columns": [
+        "history_id",
+        "logical_series_id",
+        "provider",
+        "provider_series_id",
+        "geography_type",
+        "geography_code",
+        "frequency",
+        "unit",
+        "seasonal_adjustment",
+        "population_coverage",
+        "observation_date",
+        "release_date",
+        "available_at",
+        "retrieved_at",
+        "value",
+        "source_revision",
+        "source_hash",
+        "quality_status",
+        "pit_class",
+        "schema_version",
+        "provenance_json",
+        "change_type",
+        "recorded_at"
+      ],
+      "row_count": null,
+      "row_count_lower_bound": 1,
+      "has_more": true,
+      "projection": {
+        "truncated": false,
+        "truncated_values": 0,
+        "omitted_columns": 0,
+        "omitted_rows": 0,
+        "next_offset": 1
+      }
+    },
+    {
+      "table": "market_score_employment_r4_shadow_lock_v1",
+      "columns": [
+        "lock_key",
+        "token",
+        "expires_at"
+      ],
+      "row_count": null,
+      "row_count_lower_bound": 1,
+      "has_more": true,
+      "projection": {
+        "truncated": false,
+        "truncated_values": 0,
+        "omitted_columns": 0,
+        "omitted_rows": 0,
+        "next_offset": 1
+      }
+    },
+    {
+      "table": "market_score_employment_r4_shadow_runs_v1",
+      "columns": [
+        "run_id",
+        "provider",
+        "collector_revision",
+        "status",
+        "started_at",
+        "completed_at",
+        "provider_requests",
+        "collected_rows",
+        "inserted_count",
+        "revised_count",
+        "noop_count",
+        "rejected_count",
+        "partial_count",
+        "current_rows",
+        "history_rows_added",
+        "failure_code",
+        "detail_json"
+      ],
+      "row_count": null,
+      "row_count_lower_bound": 1,
+      "has_more": true,
+      "projection": {
+        "truncated": false,
+        "truncated_values": 0,
+        "omitted_columns": 0,
+        "omitted_rows": 0,
+        "next_offset": 1
+      }
+    },
+    {
+      "table": "market_score_response_cache_v1",
+      "columns": [
+        "cache_key",
+        "body",
+        "stored_at"
+      ],
+      "row_count": 1,
+      "row_count_lower_bound": 1,
+      "has_more": false,
+      "projection": {
+        "truncated": true,
+        "truncated_values": 1,
+        "omitted_columns": 0,
+        "omitted_rows": 0,
+        "next_offset": null
+      }
+    },
+    {
+      "table": "market_score_breadth_r2_raw_v1",
+      "error": "READ_UNAVAILABLE"
+    },
+    {
+      "table": "market_score_breadth_r2_snapshot_v1",
+      "error": "READ_UNAVAILABLE"
+    }
+  ],
+  "favorites": {
+    "row_count": 0,
+    "has_more": false,
+    "truncated": false
+  }
+}

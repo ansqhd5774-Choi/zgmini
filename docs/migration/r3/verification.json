@@ -1,0 +1,17 @@
+{
+  "baseline": "de0504f191ab2ba5e0bdbdebd312f162f25f035e",
+  "branch": "migration/cloudflare-workers-r1",
+  "guard_tests": {"passed": 5, "failed": 0, "evidence": "node --test scripts/candidate-guard.test.mjs"},
+  "configuration_check": "PASS",
+  "candidate_build": "PASS",
+  "wrangler_dry_run": {"status":"PASS","upload_kib":5197.49,"gzip_kib":1000.95},
+  "approved_patch_apply_check": "PASS",
+  "production_baseline_app_lib_db_worker_index_diff": "EMPTY",
+  "dns_gui": "Cafe24 authenticated zgmini.kr selected; apex CNAME custom-domains.chatgpt.site and Modify controls visible",
+  "sites_db_gui": "Connected live database, favorite_sentiments empty; no ID/account/export control visible",
+  "candidate_deployed": false,
+  "bound_cloudflare_runtime_test": "NOT_RUN",
+  "production_changes": 0,
+  "dns_changes": 0,
+  "existing_db_writes": 0
+}
