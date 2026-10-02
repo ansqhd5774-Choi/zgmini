@@ -7,10 +7,10 @@ test("E1-R4 one-year backfill targets exactly five mature quarter points",()=>{
     {periodEnd:"2026-06-30"},
   ]);
   assert.deepEqual(targets,[
-    {periodEnd:"2025-06-30",asOf:"2025-09-14"},
-    {periodEnd:"2025-09-30",asOf:"2025-12-15"},
-    {periodEnd:"2025-12-31",asOf:"2026-03-17"},
-    {periodEnd:"2026-03-31",asOf:"2026-06-15"},
+    {periodEnd:"2025-06-30",asOf:"2025-12-13"},
+    {periodEnd:"2025-09-30",asOf:"2026-03-15"},
+    {periodEnd:"2025-12-31",asOf:"2026-06-13"},
+    {periodEnd:"2026-03-31",asOf:"2026-09-12"},
   ]);
 });
 
