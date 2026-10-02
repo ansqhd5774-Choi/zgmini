@@ -1,0 +1,105 @@
+{
+  "file": "dist/server/index.js",
+  "sha256": "b5bf0f85fa509a3c6be1e4f66960b24efd58126d8719b290d23e0741243d18d4",
+  "adapter_region": true,
+  "production_operational_store_region": true,
+  "production_store_on_public_read_path": false,
+  "public_route_regions": [
+    "market-score",
+    "earnings-recession-detail",
+    "asset-bubble-detail",
+    "debt-risk-detail",
+    "liquidity-crisis-detail",
+    "recession-detail",
+    "credit-risk-detail",
+    "supply-shock-detail"
+  ],
+  "compiled_market_score_GET": "PASS",
+  "sqls": [
+    {
+      "sql": "SELECT body,stored_at FROM market_public_snapshots_v1 WHERE snapshot_key=?",
+      "args": [
+        "current"
+      ]
+    },
+    {
+      "sql": "SELECT body,stored_at FROM market_input_batches_v1 WHERE batch_key LIKE ? ORDER BY stored_at DESC LIMIT 1",
+      "args": [
+        "macro:%"
+      ]
+    },
+    {
+      "sql": "SELECT body,stored_at FROM market_input_batches_v1 WHERE batch_key LIKE ? AND stored_at < ? ORDER BY stored_at DESC LIMIT 1",
+      "args": [
+        "macro:%",
+        1790942400000
+      ]
+    },
+    {
+      "sql": "SELECT body,stored_at FROM market_input_batches_v1 WHERE batch_key LIKE ? ORDER BY stored_at DESC LIMIT 1",
+      "args": [
+        "macro:%"
+      ]
+    },
+    {
+      "sql": "SELECT body,stored_at FROM market_input_batches_v1 WHERE batch_key LIKE ? ORDER BY stored_at DESC LIMIT 1",
+      "args": [
+        "credit:%"
+      ]
+    },
+    {
+      "sql": "SELECT body,stored_at FROM market_input_batches_v1 WHERE batch_key LIKE ? ORDER BY stored_at DESC LIMIT 1",
+      "args": [
+        "supply:%"
+      ]
+    },
+    {
+      "sql": "SELECT body,stored_at FROM market_input_batches_v1 WHERE batch_key LIKE ? ORDER BY stored_at DESC LIMIT 1",
+      "args": [
+        "fundFlows:%"
+      ]
+    },
+    {
+      "sql": "SELECT body,stored_at FROM market_input_batches_v1 WHERE batch_key LIKE ? ORDER BY stored_at DESC LIMIT 1",
+      "args": [
+        "bisDsr:%"
+      ]
+    },
+    {
+      "sql": "SELECT body,stored_at FROM market_input_batches_v1 WHERE batch_key LIKE ? ORDER BY stored_at DESC LIMIT 1",
+      "args": [
+        "bisTc:%"
+      ]
+    },
+    {
+      "sql": "SELECT body,stored_at FROM market_input_batches_v1 WHERE batch_key LIKE ? ORDER BY stored_at DESC LIMIT 1",
+      "args": [
+        "rates:%"
+      ]
+    },
+    {
+      "sql": "SELECT body,stored_at FROM market_input_batches_v1 WHERE batch_key LIKE ? AND stored_at < ? ORDER BY stored_at DESC LIMIT 1",
+      "args": [
+        "macro:%",
+        1790942400000
+      ]
+    },
+    {
+      "sql": "SELECT body,stored_at FROM market_public_snapshots_v1 WHERE snapshot_key=?",
+      "args": [
+        "current"
+      ]
+    },
+    {
+      "sql": "SELECT body,stored_at FROM market_public_snapshots_v1 WHERE snapshot_key=?",
+      "args": [
+        "current"
+      ]
+    }
+  ],
+  "compiled_reader_execution": "PASS",
+  "compiled_write_denials": 5,
+  "static_html": 9,
+  "static_rsc": 9,
+  "gauge_removed": true
+}

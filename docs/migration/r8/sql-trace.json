@@ -1,0 +1,105 @@
+{
+  "fixture": true,
+  "real_D1": false,
+  "select_only": true,
+  "traces": [
+    {
+      "sql": "SELECT body,stored_at FROM market_public_snapshots_v1 WHERE snapshot_key=?",
+      "args": [
+        "current"
+      ]
+    },
+    {
+      "sql": "SELECT body,stored_at FROM market_input_batches_v1 WHERE batch_key LIKE ? ORDER BY stored_at DESC LIMIT 1",
+      "args": [
+        "macro:%"
+      ]
+    },
+    {
+      "sql": "SELECT body,stored_at FROM market_input_batches_v1 WHERE batch_key LIKE ? AND stored_at < ? ORDER BY stored_at DESC LIMIT 1",
+      "args": [
+        "macro:%",
+        1790942400000
+      ]
+    },
+    {
+      "sql": "SELECT body,stored_at FROM market_input_batches_v1 WHERE batch_key LIKE ? ORDER BY stored_at DESC LIMIT 1",
+      "args": [
+        "macro:%"
+      ]
+    },
+    {
+      "sql": "SELECT body,stored_at FROM market_input_batches_v1 WHERE batch_key LIKE ? ORDER BY stored_at DESC LIMIT 1",
+      "args": [
+        "credit:%"
+      ]
+    },
+    {
+      "sql": "SELECT body,stored_at FROM market_input_batches_v1 WHERE batch_key LIKE ? ORDER BY stored_at DESC LIMIT 1",
+      "args": [
+        "supply:%"
+      ]
+    },
+    {
+      "sql": "SELECT body,stored_at FROM market_input_batches_v1 WHERE batch_key LIKE ? ORDER BY stored_at DESC LIMIT 1",
+      "args": [
+        "fundFlows:%"
+      ]
+    },
+    {
+      "sql": "SELECT body,stored_at FROM market_input_batches_v1 WHERE batch_key LIKE ? ORDER BY stored_at DESC LIMIT 1",
+      "args": [
+        "bisDsr:%"
+      ]
+    },
+    {
+      "sql": "SELECT body,stored_at FROM market_input_batches_v1 WHERE batch_key LIKE ? ORDER BY stored_at DESC LIMIT 1",
+      "args": [
+        "bisTc:%"
+      ]
+    },
+    {
+      "sql": "SELECT body,stored_at FROM market_input_batches_v1 WHERE batch_key LIKE ? ORDER BY stored_at DESC LIMIT 1",
+      "args": [
+        "rates:%"
+      ]
+    },
+    {
+      "sql": "SELECT body,stored_at FROM market_input_batches_v1 WHERE batch_key LIKE ? AND stored_at < ? ORDER BY stored_at DESC LIMIT 1",
+      "args": [
+        "macro:%",
+        1790942400000
+      ]
+    },
+    {
+      "sql": "SELECT body,stored_at FROM market_public_snapshots_v1 WHERE snapshot_key=?",
+      "args": [
+        "current"
+      ]
+    },
+    {
+      "sql": "SELECT body,stored_at FROM market_public_snapshots_v1 WHERE snapshot_key=?",
+      "args": [
+        "current"
+      ]
+    },
+    {
+      "sql": "SELECT body,stored_at FROM market_public_snapshots_v1 WHERE snapshot_key=?",
+      "args": [
+        "current"
+      ]
+    },
+    {
+      "sql": "SELECT body,stored_at FROM market_public_snapshots_v1 WHERE snapshot_key=?",
+      "args": [
+        "current"
+      ]
+    },
+    {
+      "sql": "SELECT body,stored_at FROM market_public_snapshots_v1 WHERE snapshot_key=?",
+      "args": [
+        "current"
+      ]
+    }
+  ]
+}
