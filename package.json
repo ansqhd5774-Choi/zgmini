@@ -16,7 +16,7 @@
     "lint": "bash scripts/sites-env.sh -- eslint . --ignore-pattern dist --ignore-pattern .next",
     "db:generate": "bash scripts/sites-env.sh -- drizzle-kit generate",
     "candidate:test:ci": "node --test scripts/candidate-guard.test.mjs",
-    "candidate:build:ci": "node scripts/candidate-branch-gate.mjs && node --test scripts/candidate-guard.test.mjs && node node_modules/vite/bin/vite.js build --config vite.candidate-r5.config.ts && node scripts/check-candidate-r5.mjs",
+    "candidate:build:ci": "node scripts/candidate-branch-gate.mjs && node --test scripts/candidate-guard.test.mjs && node scripts/build-candidate-r7.mjs && node scripts/check-candidate-shells-r7.mjs && node scripts/check-candidate-r5.mjs",
     "candidate:deploy:ci": "node scripts/candidate-branch-gate.mjs && node node_modules/wrangler/bin/wrangler.js deploy --config dist/server/wrangler.json"
   },
   "dependencies": {
