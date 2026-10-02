@@ -1,0 +1,2364 @@
+{
+  "baseline": "de0504f191ab2ba5e0bdbdebd312f162f25f035e",
+  "method": "Static extraction only; source DDL is not live sqlite_master evidence. Missing live table cannot be assumed absent.",
+  "scanned_files": 312,
+  "counts": {
+    "LIVE_CONFIRMED": 50,
+    "SOURCE_REFERENCED_NOT_VISIBLE": 5,
+    "LIVE_VISIBLE_NOT_SOURCE_DECLARED": 0
+  },
+  "tables": [
+    {
+      "table": "api_history_chunks_v1",
+      "classification": "LIVE_CONFIRMED",
+      "source_declared": true,
+      "live_visible": true,
+      "live_columns": [
+        "provider",
+        "dataset",
+        "chunk_sha256",
+        "first_observation_date",
+        "last_observation_date",
+        "row_count",
+        "payload_json",
+        "first_seen_at"
+      ],
+      "exact_rows": null,
+      "ddl": [
+        {
+          "file": "worker/api-history-store.mjs",
+          "line": 165
+        }
+      ]
+    },
+    {
+      "table": "api_history_snapshots_v1",
+      "classification": "LIVE_CONFIRMED",
+      "source_declared": true,
+      "live_visible": true,
+      "live_columns": [
+        "provider",
+        "dataset",
+        "snapshot_sha256",
+        "as_of",
+        "retrieved_at",
+        "status",
+        "history_mode",
+        "row_count",
+        "latest_observation_date",
+        "chunk_hashes_json",
+        "provenance_json"
+      ],
+      "exact_rows": null,
+      "ddl": [
+        {
+          "file": "worker/api-history-store.mjs",
+          "line": 176
+        }
+      ]
+    },
+    {
+      "table": "c1_r3_candidate_scores_v1",
+      "classification": "LIVE_CONFIRMED",
+      "source_declared": true,
+      "live_visible": true,
+      "live_columns": [
+        "revision",
+        "score_date",
+        "candidate_id",
+        "score",
+        "observation_date",
+        "computed_at",
+        "source_snapshot_sha256"
+      ],
+      "exact_rows": null,
+      "ddl": [
+        {
+          "file": "drizzle/0006_c1_r3_foundation.sql",
+          "line": 1
+        },
+        {
+          "file": "worker/consumption-r3-score-store.mjs",
+          "line": 11
+        },
+        {
+          "file": "worker/consumption-r3-seed.mjs",
+          "line": 38
+        }
+      ]
+    },
+    {
+      "table": "c1_r3_refresh_claims_v1",
+      "classification": "LIVE_CONFIRMED",
+      "source_declared": true,
+      "live_visible": true,
+      "live_columns": [
+        "revision",
+        "score_date",
+        "attempt_date",
+        "claim_key",
+        "status",
+        "started_at",
+        "finished_at",
+        "detail"
+      ],
+      "exact_rows": null,
+      "ddl": [
+        {
+          "file": "worker/consumption-r3-operational-refresh.mjs",
+          "line": 46
+        }
+      ]
+    },
+    {
+      "table": "c1_r3_source_snapshots_v1",
+      "classification": "LIVE_CONFIRMED",
+      "source_declared": true,
+      "live_visible": true,
+      "live_columns": [
+        "revision",
+        "score_date",
+        "quarter",
+        "source_key",
+        "provider",
+        "payload_sha256",
+        "payload_json",
+        "retrieved_at",
+        "source_url"
+      ],
+      "exact_rows": 0,
+      "ddl": [
+        {
+          "file": "worker/consumption-r3-source-store.mjs",
+          "line": 20
+        }
+      ]
+    },
+    {
+      "table": "favorite_sentiments",
+      "classification": "LIVE_CONFIRMED",
+      "source_declared": true,
+      "live_visible": true,
+      "live_columns": [
+        "id",
+        "user_id",
+        "item_key",
+        "item_type",
+        "item_name",
+        "created_at"
+      ],
+      "exact_rows": 0,
+      "ddl": [
+        {
+          "file": "drizzle/0000_stormy_miek.sql",
+          "line": 1
+        }
+      ]
+    },
+    {
+      "table": "growth_r2_feature_current_v1",
+      "classification": "LIVE_CONFIRMED",
+      "source_declared": true,
+      "live_visible": true,
+      "live_columns": [
+        "candidate_id",
+        "observation_date",
+        "observation_period",
+        "available_at",
+        "release_date",
+        "vintage_id",
+        "pit_eligible",
+        "provider",
+        "selector",
+        "frequency",
+        "native_value",
+        "native_unit",
+        "harmonized_value",
+        "harmonized_unit",
+        "transform_rule",
+        "source_hash",
+        "source_url",
+        "feature_revision",
+        "method_revision",
+        "retrieved_at",
+        "record_hash"
+      ],
+      "exact_rows": null,
+      "ddl": [
+        {
+          "file": "lib/market-score/growth-r2-d1-store-r1.mjs",
+          "line": 50
+        }
+      ]
+    },
+    {
+      "table": "growth_r2_feature_history_v1",
+      "classification": "LIVE_CONFIRMED",
+      "source_declared": true,
+      "live_visible": true,
+      "live_columns": [
+        "candidate_id",
+        "observation_date",
+        "observation_period",
+        "available_at",
+        "release_date",
+        "vintage_id",
+        "pit_eligible",
+        "provider",
+        "selector",
+        "frequency",
+        "native_value",
+        "native_unit",
+        "harmonized_value",
+        "harmonized_unit",
+        "transform_rule",
+        "source_hash",
+        "source_url",
+        "feature_revision",
+        "method_revision",
+        "retrieved_at",
+        "record_hash"
+      ],
+      "exact_rows": null,
+      "ddl": [
+        {
+          "file": "lib/market-score/growth-r2-d1-store-r1.mjs",
+          "line": 39
+        }
+      ]
+    },
+    {
+      "table": "growth_r2_forward_stage_v1",
+      "classification": "LIVE_CONFIRMED",
+      "source_declared": true,
+      "live_visible": true,
+      "live_columns": [
+        "candidate_id",
+        "stage",
+        "body_json",
+        "retrieved_at"
+      ],
+      "exact_rows": 0,
+      "ddl": [
+        {
+          "file": "lib/market-score/growth-r2-d1-store-r1.mjs",
+          "line": 63
+        }
+      ]
+    },
+    {
+      "table": "growth_r2_meta_v1",
+      "classification": "LIVE_CONFIRMED",
+      "source_declared": true,
+      "live_visible": true,
+      "live_columns": [
+        "key",
+        "value",
+        "updated_at"
+      ],
+      "exact_rows": 1,
+      "ddl": [
+        {
+          "file": "lib/market-score/growth-r2-d1-store-r1.mjs",
+          "line": 58
+        }
+      ]
+    },
+    {
+      "table": "growth_r2_provider_snapshots_v1",
+      "classification": "LIVE_CONFIRMED",
+      "source_declared": true,
+      "live_visible": true,
+      "live_columns": [
+        "provider_group",
+        "snapshot_hash",
+        "retrieved_at",
+        "source_url",
+        "payload_json"
+      ],
+      "exact_rows": null,
+      "ddl": [
+        {
+          "file": "lib/market-score/growth-r2-d1-store-r1.mjs",
+          "line": 59
+        }
+      ]
+    },
+    {
+      "table": "kfg_rev7_backfill_progress",
+      "classification": "LIVE_CONFIRMED",
+      "source_declared": true,
+      "live_visible": true,
+      "live_columns": [
+        "methodology_version",
+        "anchor_date",
+        "latest_processed_date",
+        "oldest_processed_date",
+        "successful_trading_date_count",
+        "krx_request_count",
+        "bok_request_count",
+        "rows_processed",
+        "status",
+        "last_attempted_date",
+        "last_successful_date",
+        "last_failure_code",
+        "active_run_id",
+        "lease_until"
+      ],
+      "exact_rows": 1,
+      "ddl": [
+        {
+          "file": "drizzle/0005_kfg_rev7_foundation.sql",
+          "line": 59
+        }
+      ]
+    },
+    {
+      "table": "kfg_rev7_daily_series",
+      "classification": "LIVE_CONFIRMED",
+      "source_declared": true,
+      "live_visible": true,
+      "live_columns": [
+        "date",
+        "kospi_close",
+        "vkospi200_close",
+        "ktb_total_return",
+        "government_prime_total_return",
+        "standard_put_volume",
+        "standard_call_volume",
+        "put_call_ratio",
+        "aa_minus_3y",
+        "bbb_minus_3y",
+        "junk_spread",
+        "fetched_at"
+      ],
+      "exact_rows": null,
+      "ddl": [
+        {
+          "file": "drizzle/0005_kfg_rev7_foundation.sql",
+          "line": 31
+        }
+      ]
+    },
+    {
+      "table": "kfg_rev7_kospi_rows",
+      "classification": "LIVE_CONFIRMED",
+      "source_declared": true,
+      "live_visible": true,
+      "live_columns": [
+        "date",
+        "security_id",
+        "short_code",
+        "close",
+        "high",
+        "low",
+        "change_amount",
+        "share_volume"
+      ],
+      "exact_rows": null,
+      "ddl": [
+        {
+          "file": "drizzle/0005_kfg_rev7_foundation.sql",
+          "line": 15
+        }
+      ]
+    },
+    {
+      "table": "kfg_rev7_market_dates",
+      "classification": "LIVE_CONFIRMED",
+      "source_declared": true,
+      "live_visible": true,
+      "live_columns": [
+        "date",
+        "status",
+        "kospi_count",
+        "valid_high_count",
+        "valid_low_count",
+        "valid_share_volume_count",
+        "rows_stored",
+        "krx_request_count",
+        "bok_request_count",
+        "fetched_at",
+        "methodology_version"
+      ],
+      "exact_rows": null,
+      "ddl": [
+        {
+          "file": "drizzle/0005_kfg_rev7_foundation.sql",
+          "line": 1
+        }
+      ]
+    },
+    {
+      "table": "kfg_rev7_snapshots",
+      "classification": "LIVE_CONFIRMED",
+      "source_declared": true,
+      "live_visible": true,
+      "live_columns": [
+        "date",
+        "methodology_version",
+        "factors_json",
+        "composite_json",
+        "history_mode",
+        "point_in_time_verified",
+        "source_observed_at",
+        "calculated_at"
+      ],
+      "exact_rows": null,
+      "ddl": [
+        {
+          "file": "drizzle/0005_kfg_rev7_foundation.sql",
+          "line": 46
+        }
+      ]
+    },
+    {
+      "table": "kfg_v2_backfill_progress",
+      "classification": "LIVE_CONFIRMED",
+      "source_declared": true,
+      "live_visible": true,
+      "live_columns": [
+        "methodology_version",
+        "anchor_date",
+        "latest_processed_date",
+        "oldest_processed_date",
+        "successful_trading_date_count",
+        "request_count",
+        "rows_processed",
+        "status",
+        "last_attempted_date",
+        "last_successful_date",
+        "last_failure_code",
+        "active_run_id",
+        "lease_until"
+      ],
+      "exact_rows": 1,
+      "ddl": [
+        {
+          "file": "drizzle/0001_kfg_v2_research.sql",
+          "line": 37
+        }
+      ]
+    },
+    {
+      "table": "kfg_v2_component_history",
+      "classification": "LIVE_CONFIRMED",
+      "source_declared": true,
+      "live_visible": true,
+      "live_columns": [
+        "component_id",
+        "date",
+        "score",
+        "captured_at"
+      ],
+      "exact_rows": null,
+      "ddl": [
+        {
+          "file": "drizzle/0004_kfg_v2_components.sql",
+          "line": 1
+        }
+      ]
+    },
+    {
+      "table": "kfg_v2_factor_snapshots",
+      "classification": "LIVE_CONFIRMED",
+      "source_declared": true,
+      "live_visible": true,
+      "live_columns": [
+        "factor",
+        "date",
+        "score",
+        "status",
+        "advance_ratio",
+        "advance_value_share"
+      ],
+      "exact_rows": null,
+      "ddl": [
+        {
+          "file": "drizzle/0001_kfg_v2_research.sql",
+          "line": 27
+        }
+      ]
+    },
+    {
+      "table": "kfg_v2_market_dates",
+      "classification": "LIVE_CONFIRMED",
+      "source_declared": true,
+      "live_visible": true,
+      "live_columns": [
+        "date",
+        "status",
+        "universe_count",
+        "kospi_count",
+        "kosdaq_count",
+        "valid_return_count",
+        "valid_trading_value_count",
+        "valid_market_cap_count",
+        "return_coverage",
+        "trading_value_coverage",
+        "market_cap_coverage",
+        "rows_stored",
+        "provider",
+        "methodology_version",
+        "rows_received",
+        "total_count",
+        "konex_excluded",
+        "duplicate_count",
+        "fetched_at",
+        "request_count"
+      ],
+      "exact_rows": null,
+      "ddl": [
+        {
+          "file": "drizzle/0001_kfg_v2_research.sql",
+          "line": 1
+        }
+      ]
+    },
+    {
+      "table": "kfg_v2_market_rows",
+      "classification": "LIVE_CONFIRMED",
+      "source_declared": true,
+      "live_visible": true,
+      "live_columns": [
+        "date",
+        "security_id",
+        "short_code",
+        "market",
+        "close",
+        "return_pct",
+        "trading_value",
+        "market_cap"
+      ],
+      "exact_rows": null,
+      "ddl": [
+        {
+          "file": "drizzle/0001_kfg_v2_research.sql",
+          "line": 17
+        }
+      ]
+    },
+    {
+      "table": "kfg_v2_research_snapshots",
+      "classification": "LIVE_CONFIRMED",
+      "source_declared": true,
+      "live_visible": true,
+      "live_columns": [
+        "date",
+        "methodology_version",
+        "factors_json",
+        "composite_json",
+        "history_mode",
+        "point_in_time_verified",
+        "historical_vintage_verified",
+        "source_published_at",
+        "source_observed_at",
+        "fetched_at",
+        "calculated_at",
+        "correction_fingerprint"
+      ],
+      "exact_rows": null,
+      "ddl": [
+        {
+          "file": "drizzle/0003_kfg_v2_snapshots.sql",
+          "line": 1
+        }
+      ]
+    },
+    {
+      "table": "market_collection_jobs_v1",
+      "classification": "LIVE_CONFIRMED",
+      "source_declared": true,
+      "live_visible": true,
+      "live_columns": [
+        "job",
+        "lease_id",
+        "lease_until",
+        "finished_at",
+        "status"
+      ],
+      "exact_rows": null,
+      "ddl": [
+        {
+          "file": "worker/market-operational-store.mjs",
+          "line": 26
+        }
+      ]
+    },
+    {
+      "table": "market_input_batches_v1",
+      "classification": "LIVE_CONFIRMED",
+      "source_declared": true,
+      "live_visible": true,
+      "live_columns": [
+        "batch_key",
+        "body",
+        "stored_at"
+      ],
+      "exact_rows": null,
+      "ddl": [
+        {
+          "file": "worker/market-operational-store.mjs",
+          "line": 24
+        }
+      ]
+    },
+    {
+      "table": "market_liquidity_active_history_v1",
+      "classification": "LIVE_CONFIRMED",
+      "source_declared": true,
+      "live_visible": true,
+      "live_columns": [
+        "as_of_date",
+        "methodology_version",
+        "score",
+        "stored_at"
+      ],
+      "exact_rows": null,
+      "ddl": [
+        {
+          "file": "worker/market-operational-store.mjs",
+          "line": 27
+        },
+        {
+          "file": "worker/market-score-response-store.mjs",
+          "line": 36
+        }
+      ]
+    },
+    {
+      "table": "market_public_snapshots_v1",
+      "classification": "LIVE_CONFIRMED",
+      "source_declared": true,
+      "live_visible": true,
+      "live_columns": [
+        "snapshot_key",
+        "body",
+        "stored_at"
+      ],
+      "exact_rows": null,
+      "ddl": [
+        {
+          "file": "worker/market-operational-store.mjs",
+          "line": 25
+        }
+      ]
+    },
+    {
+      "table": "market_score_breadth_b1_r3_current_v1",
+      "classification": "LIVE_CONFIRMED",
+      "source_declared": true,
+      "live_visible": true,
+      "live_columns": [
+        "trade_date",
+        "ticker",
+        "previous_date",
+        "previous_close",
+        "current_close",
+        "current_volume",
+        "source",
+        "feed",
+        "provenance_json",
+        "first_seen_at",
+        "last_seen_at",
+        "retrieved_at",
+        "last_as_of_date"
+      ],
+      "exact_rows": null,
+      "ddl": [
+        {
+          "file": "lib/market-score/breadth-b1-r3-store.mjs",
+          "line": 19
+        }
+      ]
+    },
+    {
+      "table": "market_score_breadth_b1_r3_history_v1",
+      "classification": "LIVE_CONFIRMED",
+      "source_declared": true,
+      "live_visible": true,
+      "live_columns": [
+        "history_id",
+        "trade_date",
+        "ticker",
+        "previous_date",
+        "previous_close",
+        "current_close",
+        "current_volume",
+        "source",
+        "feed",
+        "provenance_json",
+        "change_type",
+        "retrieved_at",
+        "as_of_date"
+      ],
+      "exact_rows": null,
+      "ddl": [
+        {
+          "file": "lib/market-score/breadth-b1-r3-store.mjs",
+          "line": 27
+        }
+      ]
+    },
+    {
+      "table": "market_score_breadth_b1_r3_lock_v1",
+      "classification": "LIVE_CONFIRMED",
+      "source_declared": true,
+      "live_visible": true,
+      "live_columns": [
+        "lock_key",
+        "token",
+        "expires_at"
+      ],
+      "exact_rows": 0,
+      "ddl": [
+        {
+          "file": "lib/market-score/breadth-b1-r3-store.mjs",
+          "line": 44
+        }
+      ]
+    },
+    {
+      "table": "market_score_breadth_b1_r3_runs_v1",
+      "classification": "LIVE_CONFIRMED",
+      "source_declared": true,
+      "live_visible": true,
+      "live_columns": [
+        "run_id",
+        "as_of_date",
+        "trade_date",
+        "status",
+        "started_at",
+        "completed_at",
+        "provider_requests",
+        "collected_rows",
+        "inserted_count",
+        "updated_count",
+        "noop_count",
+        "current_rows",
+        "history_rows_added",
+        "coverage",
+        "upstream_ms",
+        "storage_write_ms",
+        "failure_code",
+        "detail_json"
+      ],
+      "exact_rows": null,
+      "ddl": [
+        {
+          "file": "lib/market-score/breadth-b1-r3-store.mjs",
+          "line": 37
+        }
+      ]
+    },
+    {
+      "table": "market_score_breadth_b1_r3_semantic_v1",
+      "classification": "LIVE_CONFIRMED",
+      "source_declared": true,
+      "live_visible": true,
+      "live_columns": [
+        "trade_date",
+        "previous_date",
+        "semantic_contract",
+        "semantic_schema",
+        "semantic_sha256",
+        "member_count",
+        "pair_count",
+        "first_seen_at",
+        "last_seen_at"
+      ],
+      "exact_rows": null,
+      "ddl": [
+        {
+          "file": "lib/market-score/breadth-b1-r3-history-ingest-r2.mjs",
+          "line": 20
+        }
+      ]
+    },
+    {
+      "table": "market_score_breadth_b1_r3_universe_v1",
+      "classification": "LIVE_CONFIRMED",
+      "source_declared": true,
+      "live_visible": true,
+      "live_columns": [
+        "trade_date",
+        "members_json",
+        "member_count",
+        "provenance_json",
+        "first_seen_at",
+        "last_seen_at",
+        "retrieved_at"
+      ],
+      "exact_rows": null,
+      "ddl": [
+        {
+          "file": "lib/market-score/breadth-b1-r3-store.mjs",
+          "line": 34
+        }
+      ]
+    },
+    {
+      "table": "market_score_breadth_r2_current_v1",
+      "classification": "LIVE_CONFIRMED",
+      "source_declared": true,
+      "live_visible": true,
+      "live_columns": [
+        "provider",
+        "observation_key",
+        "observation_date",
+        "entity_type",
+        "entity_id",
+        "metric",
+        "value",
+        "unit",
+        "provenance_json",
+        "first_seen_at",
+        "last_seen_at",
+        "retrieved_at",
+        "last_as_of_date"
+      ],
+      "exact_rows": 0,
+      "ddl": [
+        {
+          "file": "lib/market-score/breadth-r2-d1-store-r2.mjs",
+          "line": 45
+        }
+      ]
+    },
+    {
+      "table": "market_score_breadth_r2_event_v1",
+      "classification": "LIVE_CONFIRMED",
+      "source_declared": true,
+      "live_visible": true,
+      "live_columns": [
+        "event_id",
+        "source_key",
+        "content_hash",
+        "retrieved_at",
+        "event_type"
+      ],
+      "exact_rows": null,
+      "ddl": [
+        {
+          "file": "lib/market-score/breadth-r2-d1-store.mjs",
+          "line": 74
+        }
+      ]
+    },
+    {
+      "table": "market_score_breadth_r2_history_v1",
+      "classification": "LIVE_CONFIRMED",
+      "source_declared": true,
+      "live_visible": true,
+      "live_columns": [
+        "history_id",
+        "provider",
+        "observation_key",
+        "observation_date",
+        "entity_type",
+        "entity_id",
+        "metric",
+        "value",
+        "unit",
+        "provenance_json",
+        "change_type",
+        "retrieved_at",
+        "as_of_date"
+      ],
+      "exact_rows": 0,
+      "ddl": [
+        {
+          "file": "lib/market-score/breadth-r2-d1-store-r2.mjs",
+          "line": 63
+        }
+      ]
+    },
+    {
+      "table": "market_score_breadth_r2_lock_v1",
+      "classification": "LIVE_CONFIRMED",
+      "source_declared": true,
+      "live_visible": true,
+      "live_columns": [
+        "lock_key",
+        "token",
+        "expires_at"
+      ],
+      "exact_rows": 1,
+      "ddl": [
+        {
+          "file": "lib/market-score/breadth-r2-d1-store-r2.mjs",
+          "line": 116
+        },
+        {
+          "file": "lib/market-score/breadth-r2-lease-r1.mjs",
+          "line": 32
+        }
+      ]
+    },
+    {
+      "table": "market_score_breadth_r2_raw_v1",
+      "classification": "LIVE_CONFIRMED",
+      "source_declared": true,
+      "live_visible": true,
+      "live_columns": null,
+      "exact_rows": null,
+      "ddl": [
+        {
+          "file": "lib/market-score/breadth-r2-d1-store.mjs",
+          "line": 67
+        }
+      ]
+    },
+    {
+      "table": "market_score_breadth_r2_runs_v1",
+      "classification": "LIVE_CONFIRMED",
+      "source_declared": true,
+      "live_visible": true,
+      "live_columns": [
+        "run_id",
+        "as_of_date",
+        "status",
+        "started_at",
+        "completed_at",
+        "provider_requests",
+        "collected_rows",
+        "inserted_count",
+        "updated_count",
+        "noop_count",
+        "current_rows",
+        "history_rows_added",
+        "upstream_ms",
+        "storage_write_ms",
+        "storage_read_ms",
+        "score_compute_ms",
+        "failure_code",
+        "detail_json"
+      ],
+      "exact_rows": 0,
+      "ddl": [
+        {
+          "file": "lib/market-score/breadth-r2-d1-store-r2.mjs",
+          "line": 94
+        }
+      ]
+    },
+    {
+      "table": "market_score_breadth_r2_snapshot_v1",
+      "classification": "LIVE_CONFIRMED",
+      "source_declared": true,
+      "live_visible": true,
+      "live_columns": null,
+      "exact_rows": null,
+      "ddl": [
+        {
+          "file": "lib/market-score/breadth-r2-d1-store.mjs",
+          "line": 86
+        }
+      ]
+    },
+    {
+      "table": "market_score_breadth_r2_universe_v1",
+      "classification": "LIVE_CONFIRMED",
+      "source_declared": true,
+      "live_visible": true,
+      "live_columns": [
+        "universe_key",
+        "observation_key",
+        "observation_date",
+        "body_json",
+        "member_count",
+        "provenance_json",
+        "first_seen_at",
+        "last_seen_at",
+        "retrieved_at"
+      ],
+      "exact_rows": 0,
+      "ddl": [
+        {
+          "file": "lib/market-score/breadth-r2-d1-store-r2.mjs",
+          "line": 80
+        }
+      ]
+    },
+    {
+      "table": "market_score_earnings_e1_r3_current_v1",
+      "classification": "LIVE_CONFIRMED",
+      "source_declared": true,
+      "live_visible": true,
+      "live_columns": [
+        "period_end",
+        "cik",
+        "metric",
+        "value",
+        "ticker",
+        "company_name",
+        "frame",
+        "prior_frame",
+        "provenance_json",
+        "first_seen_at",
+        "last_seen_at",
+        "retrieved_at"
+      ],
+      "exact_rows": null,
+      "ddl": [
+        {
+          "file": "lib/market-score/earnings-e1-r3-d1-store.mjs",
+          "line": 28
+        }
+      ]
+    },
+    {
+      "table": "market_score_earnings_e1_r3_history_v1",
+      "classification": "LIVE_CONFIRMED",
+      "source_declared": true,
+      "live_visible": true,
+      "live_columns": [
+        "history_id",
+        "period_end",
+        "cik",
+        "metric",
+        "value",
+        "ticker",
+        "company_name",
+        "frame",
+        "prior_frame",
+        "provenance_json",
+        "change_type",
+        "retrieved_at"
+      ],
+      "exact_rows": null,
+      "ddl": [
+        {
+          "file": "lib/market-score/earnings-e1-r3-d1-store.mjs",
+          "line": 45
+        }
+      ]
+    },
+    {
+      "table": "market_score_earnings_e1_r3_lock_v1",
+      "classification": "LIVE_CONFIRMED",
+      "source_declared": true,
+      "live_visible": true,
+      "live_columns": [
+        "lock_key",
+        "token",
+        "expires_at"
+      ],
+      "exact_rows": 0,
+      "ddl": [
+        {
+          "file": "lib/market-score/earnings-e1-r3-d1-store.mjs",
+          "line": 95
+        }
+      ]
+    },
+    {
+      "table": "market_score_earnings_e1_r3_runs_v1",
+      "classification": "LIVE_CONFIRMED",
+      "source_declared": true,
+      "live_visible": true,
+      "live_columns": [
+        "run_id",
+        "period_end",
+        "status",
+        "started_at",
+        "completed_at",
+        "universe_count",
+        "provider_requests",
+        "eps_count",
+        "revenue_count",
+        "margin_count",
+        "inserted_count",
+        "updated_count",
+        "noop_count",
+        "current_rows",
+        "history_rows_added",
+        "upstream_ms",
+        "storage_write_ms",
+        "storage_read_ms",
+        "score_compute_ms",
+        "failure_code"
+      ],
+      "exact_rows": null,
+      "ddl": [
+        {
+          "file": "lib/market-score/earnings-e1-r3-d1-store.mjs",
+          "line": 71
+        }
+      ]
+    },
+    {
+      "table": "market_score_earnings_e1_r3_universe_v1",
+      "classification": "LIVE_CONFIRMED",
+      "source_declared": true,
+      "live_visible": true,
+      "live_columns": [
+        "period_end",
+        "body_json",
+        "security_count",
+        "issuer_count",
+        "wikipedia_revision_id",
+        "retrieved_at"
+      ],
+      "exact_rows": null,
+      "ddl": [
+        {
+          "file": "lib/market-score/earnings-e1-r3-d1-store.mjs",
+          "line": 63
+        }
+      ]
+    },
+    {
+      "table": "market_score_employment_r4_shadow_current_v1",
+      "classification": "LIVE_CONFIRMED",
+      "source_declared": true,
+      "live_visible": true,
+      "live_columns": [
+        "logical_series_id",
+        "provider",
+        "provider_series_id",
+        "geography_type",
+        "geography_code",
+        "frequency",
+        "unit",
+        "seasonal_adjustment",
+        "population_coverage",
+        "observation_date",
+        "release_date",
+        "available_at",
+        "retrieved_at",
+        "value",
+        "source_revision",
+        "source_hash",
+        "quality_status",
+        "pit_class",
+        "schema_version",
+        "provenance_json",
+        "first_seen_at",
+        "last_seen_at"
+      ],
+      "exact_rows": null,
+      "ddl": [
+        {
+          "file": "lib/market-score/employment-r4-shadow-store.mjs",
+          "line": 110
+        }
+      ]
+    },
+    {
+      "table": "market_score_employment_r4_shadow_history_v1",
+      "classification": "LIVE_CONFIRMED",
+      "source_declared": true,
+      "live_visible": true,
+      "live_columns": [
+        "history_id",
+        "logical_series_id",
+        "provider",
+        "provider_series_id",
+        "geography_type",
+        "geography_code",
+        "frequency",
+        "unit",
+        "seasonal_adjustment",
+        "population_coverage",
+        "observation_date",
+        "release_date",
+        "available_at",
+        "retrieved_at",
+        "value",
+        "source_revision",
+        "source_hash",
+        "quality_status",
+        "pit_class",
+        "schema_version",
+        "provenance_json",
+        "change_type",
+        "recorded_at"
+      ],
+      "exact_rows": null,
+      "ddl": [
+        {
+          "file": "lib/market-score/employment-r4-shadow-store.mjs",
+          "line": 137
+        }
+      ]
+    },
+    {
+      "table": "market_score_employment_r4_shadow_lock_v1",
+      "classification": "LIVE_CONFIRMED",
+      "source_declared": true,
+      "live_visible": true,
+      "live_columns": [
+        "lock_key",
+        "token",
+        "expires_at"
+      ],
+      "exact_rows": null,
+      "ddl": [
+        {
+          "file": "lib/market-score/employment-r4-shadow-store.mjs",
+          "line": 185
+        }
+      ]
+    },
+    {
+      "table": "market_score_employment_r4_shadow_runs_v1",
+      "classification": "LIVE_CONFIRMED",
+      "source_declared": true,
+      "live_visible": true,
+      "live_columns": [
+        "run_id",
+        "provider",
+        "collector_revision",
+        "status",
+        "started_at",
+        "completed_at",
+        "provider_requests",
+        "collected_rows",
+        "inserted_count",
+        "revised_count",
+        "noop_count",
+        "rejected_count",
+        "partial_count",
+        "current_rows",
+        "history_rows_added",
+        "failure_code",
+        "detail_json"
+      ],
+      "exact_rows": null,
+      "ddl": [
+        {
+          "file": "lib/market-score/employment-r4-shadow-store.mjs",
+          "line": 164
+        }
+      ]
+    },
+    {
+      "table": "market_score_employment_r6_feature_history_v1",
+      "classification": "SOURCE_REFERENCED_NOT_VISIBLE",
+      "source_declared": true,
+      "live_visible": false,
+      "live_columns": null,
+      "exact_rows": null,
+      "ddl": [
+        {
+          "file": "lib/market-score/employment-r6-store.mjs",
+          "line": 81
+        }
+      ]
+    },
+    {
+      "table": "market_score_employment_r6_raw_snapshot_v1",
+      "classification": "SOURCE_REFERENCED_NOT_VISIBLE",
+      "source_declared": true,
+      "live_visible": false,
+      "live_columns": null,
+      "exact_rows": null,
+      "ddl": [
+        {
+          "file": "lib/market-score/employment-r6-store.mjs",
+          "line": 61
+        }
+      ]
+    },
+    {
+      "table": "market_score_employment_r6_read_model_v1",
+      "classification": "SOURCE_REFERENCED_NOT_VISIBLE",
+      "source_declared": true,
+      "live_visible": false,
+      "live_columns": null,
+      "exact_rows": null,
+      "ddl": [
+        {
+          "file": "lib/market-score/employment-r6-store.mjs",
+          "line": 98
+        }
+      ]
+    },
+    {
+      "table": "market_score_employment_r6_read_pointer_v1",
+      "classification": "SOURCE_REFERENCED_NOT_VISIBLE",
+      "source_declared": true,
+      "live_visible": false,
+      "live_columns": null,
+      "exact_rows": null,
+      "ddl": [
+        {
+          "file": "lib/market-score/employment-r6-store.mjs",
+          "line": 112
+        }
+      ]
+    },
+    {
+      "table": "market_score_response_cache_v1",
+      "classification": "LIVE_CONFIRMED",
+      "source_declared": true,
+      "live_visible": true,
+      "live_columns": [
+        "cache_key",
+        "body",
+        "stored_at"
+      ],
+      "exact_rows": 1,
+      "ddl": [
+        {
+          "file": "worker/market-score-response-store.mjs",
+          "line": 33
+        }
+      ]
+    },
+    {
+      "table": "public_feed_snapshots_v1",
+      "classification": "SOURCE_REFERENCED_NOT_VISIBLE",
+      "source_declared": true,
+      "live_visible": false,
+      "live_columns": null,
+      "exact_rows": null,
+      "ddl": [
+        {
+          "file": "worker/public-feed-store.mjs",
+          "line": 22
+        }
+      ]
+    }
+  ],
+  "unknown": [],
+  "source_ddl": [
+    {
+      "file": "drizzle/0000_stormy_miek.sql",
+      "line": 1,
+      "kind": "TABLE",
+      "name": "favorite_sentiments",
+      "sql": "CREATE TABLE `favorite_sentiments` (\n\t`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,\n\t`user_id` text NOT NULL,\n\t`item_key` text NOT NULL,\n\t`item_type` text NOT NULL,\n\t`item_name` text NOT NULL,\n\t`created_at` text DEFAULT CURRENT_TIMESTAMP NOT NULL\n);",
+      "unresolved_template": false,
+      "has_fk": false,
+      "virtual": false,
+      "generated": false
+    },
+    {
+      "file": "drizzle/0000_stormy_miek.sql",
+      "line": 10,
+      "kind": "INDEX",
+      "name": "idx_favorite_sentiments_user_item",
+      "sql": "CREATE UNIQUE INDEX `idx_favorite_sentiments_user_item` ON `favorite_sentiments` (`user_id`,`item_key`);",
+      "unresolved_template": false,
+      "has_fk": false,
+      "virtual": false,
+      "generated": false
+    },
+    {
+      "file": "drizzle/0000_stormy_miek.sql",
+      "line": 11,
+      "kind": "INDEX",
+      "name": "idx_favorite_sentiments_user_created",
+      "sql": "CREATE INDEX `idx_favorite_sentiments_user_created` ON `favorite_sentiments` (`user_id`,`created_at`);",
+      "unresolved_template": false,
+      "has_fk": false,
+      "virtual": false,
+      "generated": false
+    },
+    {
+      "file": "drizzle/0001_kfg_v2_research.sql",
+      "line": 1,
+      "kind": "TABLE",
+      "name": "kfg_v2_market_dates",
+      "sql": "CREATE TABLE kfg_v2_market_dates (\n  date TEXT PRIMARY KEY NOT NULL CHECK(length(date) = 8 AND date NOT GLOB '*[^0-9]*'),\n  status TEXT NOT NULL CHECK(status IN ('COMPLETE', 'NO_TRADING_OBSERVATION')),\n  universe_count INTEGER NOT NULL CHECK(universe_count >= 0),\n  kospi_count INTEGER NOT NULL, kosdaq_count INTEGER NOT NULL,\n  valid_return_count INTEGER NOT NULL, valid_trading_value_count INTEGER NOT NULL,\n  valid_market_cap_count INTEGER NOT NULL,\n  return_coverage REAL, trading_value_coverage REAL, market_cap_coverage REAL,\n  rows_stored INTEGER NOT NULL CHECK(rows_stored = universe_count),\n  provider TEXT NOT NULL,\n  methodology_version TEXT NOT NULL CHECK(methodology_version = 'KFG_RESEARCH_V2'),\n  rows_received INTEGER NOT NULL, total_count INTEGER NOT NULL,\n  konex_excluded INTEGER NOT NULL, duplicate_count INTEGER NOT NULL,\n  fetched_at TEXT, request_count INTEGER NOT NULL CHECK(request_count >= 0)\n);",
+      "unresolved_template": false,
+      "has_fk": false,
+      "virtual": false,
+      "generated": false
+    },
+    {
+      "file": "drizzle/0001_kfg_v2_research.sql",
+      "line": 17,
+      "kind": "TABLE",
+      "name": "kfg_v2_market_rows",
+      "sql": "CREATE TABLE kfg_v2_market_rows (\n  date TEXT NOT NULL REFERENCES kfg_v2_market_dates(date) DEFERRABLE INITIALLY DEFERRED,\n  security_id TEXT NOT NULL, short_code TEXT NOT NULL,\n  market TEXT NOT NULL CHECK(market IN ('KOSPI', 'KOSDAQ')),\n  close REAL, return_pct REAL, trading_value REAL, market_cap REAL,\n  PRIMARY KEY(date, security_id)\n);",
+      "unresolved_template": false,
+      "has_fk": true,
+      "virtual": false,
+      "generated": false
+    },
+    {
+      "file": "drizzle/0001_kfg_v2_research.sql",
+      "line": 25,
+      "kind": "INDEX",
+      "name": "kfg_v2_security_date",
+      "sql": "CREATE INDEX kfg_v2_security_date ON kfg_v2_market_rows(security_id, date);",
+      "unresolved_template": false,
+      "has_fk": false,
+      "virtual": false,
+      "generated": false
+    },
+    {
+      "file": "drizzle/0001_kfg_v2_research.sql",
+      "line": 27,
+      "kind": "TABLE",
+      "name": "kfg_v2_factor_snapshots",
+      "sql": "CREATE TABLE kfg_v2_factor_snapshots (\n  factor TEXT NOT NULL CHECK(factor = 'Breadth'),\n  date TEXT NOT NULL REFERENCES kfg_v2_market_dates(date),\n  score REAL NOT NULL CHECK(score BETWEEN 0 AND 100),\n  status TEXT NOT NULL CHECK(status = 'VALID'),\n  advance_ratio REAL NOT NULL CHECK(advance_ratio BETWEEN 0 AND 1),\n  advance_value_share REAL NOT NULL CHECK(advance_value_share BETWEEN 0 AND 1),\n  PRIMARY KEY(factor, date)\n);",
+      "unresolved_template": false,
+      "has_fk": true,
+      "virtual": false,
+      "generated": false
+    },
+    {
+      "file": "drizzle/0001_kfg_v2_research.sql",
+      "line": 37,
+      "kind": "TABLE",
+      "name": "kfg_v2_backfill_progress",
+      "sql": "CREATE TABLE kfg_v2_backfill_progress (\n  methodology_version TEXT PRIMARY KEY NOT NULL CHECK(methodology_version = 'KFG_RESEARCH_V2'),\n  anchor_date TEXT NOT NULL DEFAULT '20260910' CHECK(anchor_date = '20260910'),\n  latest_processed_date TEXT, oldest_processed_date TEXT,\n  successful_trading_date_count INTEGER NOT NULL DEFAULT 0 CHECK(successful_trading_date_count >= 0),\n  request_count INTEGER NOT NULL DEFAULT 0 CHECK(request_count >= 0),\n  rows_processed INTEGER NOT NULL DEFAULT 0 CHECK(rows_processed >= 0),\n  status TEXT NOT NULL DEFAULT 'IDLE' CHECK(status IN ('IDLE','RUNNING','PAUSED','COMPLETE','ERROR')),\n  last_attempted_date TEXT, last_successful_date TEXT, last_failure_code TEXT,\n  active_run_id TEXT, lease_until INTEGER\n);",
+      "unresolved_template": false,
+      "has_fk": false,
+      "virtual": false,
+      "generated": false
+    },
+    {
+      "file": "drizzle/0002_kfg_v2_incremental_read.sql",
+      "line": 2,
+      "kind": "INDEX",
+      "name": "kfg_v2_date_security",
+      "sql": "CREATE INDEX kfg_v2_date_security ON kfg_v2_market_rows(date, security_id);",
+      "unresolved_template": false,
+      "has_fk": false,
+      "virtual": false,
+      "generated": false
+    },
+    {
+      "file": "drizzle/0003_kfg_v2_snapshots.sql",
+      "line": 1,
+      "kind": "TABLE",
+      "name": "kfg_v2_research_snapshots",
+      "sql": "CREATE TABLE kfg_v2_research_snapshots (\n  date TEXT PRIMARY KEY NOT NULL REFERENCES kfg_v2_market_dates(date),\n  methodology_version TEXT NOT NULL,\n  factors_json TEXT NOT NULL,\n  composite_json TEXT NOT NULL,\n  history_mode TEXT NOT NULL,\n  point_in_time_verified INTEGER NOT NULL CHECK(point_in_time_verified IN (0,1)),\n  historical_vintage_verified INTEGER NOT NULL CHECK(historical_vintage_verified IN (0,1)),\n  source_published_at TEXT,\n  source_observed_at TEXT NOT NULL,\n  fetched_at TEXT,\n  calculated_at TEXT NOT NULL,\n  correction_fingerprint TEXT\n);",
+      "unresolved_template": false,
+      "has_fk": true,
+      "virtual": false,
+      "generated": false
+    },
+    {
+      "file": "drizzle/0003_kfg_v2_snapshots.sql",
+      "line": 15,
+      "kind": "INDEX",
+      "name": "kfg_v2_research_snapshots_latest",
+      "sql": "CREATE INDEX kfg_v2_research_snapshots_latest ON kfg_v2_research_snapshots(date DESC);",
+      "unresolved_template": false,
+      "has_fk": false,
+      "virtual": false,
+      "generated": false
+    },
+    {
+      "file": "drizzle/0004_kfg_v2_components.sql",
+      "line": 1,
+      "kind": "TABLE",
+      "name": "kfg_v2_component_history",
+      "sql": "CREATE TABLE kfg_v2_component_history (\n  component_id TEXT NOT NULL,\n  date TEXT NOT NULL,\n  score REAL,\n  captured_at TEXT NOT NULL,\n  PRIMARY KEY(component_id, date)\n);",
+      "unresolved_template": false,
+      "has_fk": false,
+      "virtual": false,
+      "generated": false
+    },
+    {
+      "file": "drizzle/0004_kfg_v2_components.sql",
+      "line": 8,
+      "kind": "INDEX",
+      "name": "kfg_v2_component_history_date",
+      "sql": "CREATE INDEX kfg_v2_component_history_date ON kfg_v2_component_history(date DESC);",
+      "unresolved_template": false,
+      "has_fk": false,
+      "virtual": false,
+      "generated": false
+    },
+    {
+      "file": "drizzle/0005_kfg_rev7_foundation.sql",
+      "line": 1,
+      "kind": "TABLE",
+      "name": "kfg_rev7_market_dates",
+      "sql": "CREATE TABLE kfg_rev7_market_dates (\n  date TEXT PRIMARY KEY NOT NULL CHECK(length(date) = 8 AND date NOT GLOB '*[^0-9]*'),\n  status TEXT NOT NULL CHECK(status IN ('COMPLETE', 'NO_TRADING_OBSERVATION')),\n  kospi_count INTEGER NOT NULL CHECK(kospi_count >= 0),\n  valid_high_count INTEGER NOT NULL CHECK(valid_high_count >= 0),\n  valid_low_count INTEGER NOT NULL CHECK(valid_low_count >= 0),\n  valid_share_volume_count INTEGER NOT NULL CHECK(valid_share_volume_count >= 0),\n  rows_stored INTEGER NOT NULL CHECK(rows_stored = kospi_count),\n  krx_request_count INTEGER NOT NULL CHECK(krx_request_count >= 0),\n  bok_request_count INTEGER NOT NULL CHECK(bok_request_count >= 0),\n  fetched_at TEXT,\n  methodology_version TEXT NOT NULL CHECK(methodology_version = 'kr-fg-cnn-r7-1.0.0')\n);",
+      "unresolved_template": false,
+      "has_fk": false,
+      "virtual": false,
+      "generated": false
+    },
+    {
+      "file": "drizzle/0005_kfg_rev7_foundation.sql",
+      "line": 15,
+      "kind": "TABLE",
+      "name": "kfg_rev7_kospi_rows",
+      "sql": "CREATE TABLE kfg_rev7_kospi_rows (\n  date TEXT NOT NULL REFERENCES kfg_rev7_market_dates(date) DEFERRABLE INITIALLY DEFERRED,\n  security_id TEXT NOT NULL,\n  short_code TEXT NOT NULL,\n  close REAL,\n  high REAL,\n  low REAL,\n  change_amount REAL,\n  share_volume REAL,\n  PRIMARY KEY(date, security_id)\n);",
+      "unresolved_template": false,
+      "has_fk": true,
+      "virtual": false,
+      "generated": false
+    },
+    {
+      "file": "drizzle/0005_kfg_rev7_foundation.sql",
+      "line": 27,
+      "kind": "INDEX",
+      "name": "kfg_rev7_security_date",
+      "sql": "CREATE INDEX kfg_rev7_security_date ON kfg_rev7_kospi_rows(security_id, date);",
+      "unresolved_template": false,
+      "has_fk": false,
+      "virtual": false,
+      "generated": false
+    },
+    {
+      "file": "drizzle/0005_kfg_rev7_foundation.sql",
+      "line": 29,
+      "kind": "INDEX",
+      "name": "kfg_rev7_date_security",
+      "sql": "CREATE INDEX kfg_rev7_date_security ON kfg_rev7_kospi_rows(date, security_id);",
+      "unresolved_template": false,
+      "has_fk": false,
+      "virtual": false,
+      "generated": false
+    },
+    {
+      "file": "drizzle/0005_kfg_rev7_foundation.sql",
+      "line": 31,
+      "kind": "TABLE",
+      "name": "kfg_rev7_daily_series",
+      "sql": "CREATE TABLE kfg_rev7_daily_series (\n  date TEXT PRIMARY KEY NOT NULL REFERENCES kfg_rev7_market_dates(date),\n  kospi_close REAL NOT NULL,\n  vkospi200_close REAL NOT NULL,\n  ktb_total_return REAL NOT NULL,\n  government_prime_total_return REAL,\n  standard_put_volume REAL NOT NULL CHECK(standard_put_volume >= 0),\n  standard_call_volume REAL NOT NULL CHECK(standard_call_volume >= 0),\n  put_call_ratio REAL,\n  aa_minus_3y REAL,\n  bbb_minus_3y REAL,\n  junk_spread REAL,\n  fetched_at TEXT\n);",
+      "unresolved_template": false,
+      "has_fk": true,
+      "virtual": false,
+      "generated": false
+    },
+    {
+      "file": "drizzle/0005_kfg_rev7_foundation.sql",
+      "line": 46,
+      "kind": "TABLE",
+      "name": "kfg_rev7_snapshots",
+      "sql": "CREATE TABLE kfg_rev7_snapshots (\n  date TEXT PRIMARY KEY NOT NULL REFERENCES kfg_rev7_market_dates(date),\n  methodology_version TEXT NOT NULL CHECK(methodology_version = 'kr-fg-cnn-r7-1.0.0'),\n  factors_json TEXT NOT NULL,\n  composite_json TEXT NOT NULL,\n  history_mode TEXT NOT NULL CHECK(history_mode = 'RECONSTRUCTED_CURRENT_VINTAGE'),\n  point_in_time_verified INTEGER NOT NULL CHECK(point_in_time_verified IN (0,1)),\n  source_observed_at TEXT NOT NULL,\n  calculated_at TEXT NOT NULL\n);",
+      "unresolved_template": false,
+      "has_fk": true,
+      "virtual": false,
+      "generated": false
+    },
+    {
+      "file": "drizzle/0005_kfg_rev7_foundation.sql",
+      "line": 57,
+      "kind": "INDEX",
+      "name": "kfg_rev7_snapshots_latest",
+      "sql": "CREATE INDEX kfg_rev7_snapshots_latest ON kfg_rev7_snapshots(date DESC);",
+      "unresolved_template": false,
+      "has_fk": false,
+      "virtual": false,
+      "generated": false
+    },
+    {
+      "file": "drizzle/0005_kfg_rev7_foundation.sql",
+      "line": 59,
+      "kind": "TABLE",
+      "name": "kfg_rev7_backfill_progress",
+      "sql": "CREATE TABLE kfg_rev7_backfill_progress (\n  methodology_version TEXT PRIMARY KEY NOT NULL CHECK(methodology_version = 'kr-fg-cnn-r7-1.0.0'),\n  anchor_date TEXT NOT NULL DEFAULT '20260915' CHECK(anchor_date = '20260915'),\n  latest_processed_date TEXT,\n  oldest_processed_date TEXT,\n  successful_trading_date_count INTEGER NOT NULL DEFAULT 0 CHECK(successful_trading_date_count >= 0),\n  krx_request_count INTEGER NOT NULL DEFAULT 0 CHECK(krx_request_count >= 0),\n  bok_request_count INTEGER NOT NULL DEFAULT 0 CHECK(bok_request_count >= 0),\n  rows_processed INTEGER NOT NULL DEFAULT 0 CHECK(rows_processed >= 0),\n  status TEXT NOT NULL DEFAULT 'IDLE' CHECK(status IN ('IDLE','RUNNING','PAUSED','COMPLETE','ERROR')),\n  last_attempted_date TEXT,\n  last_successful_date TEXT,\n  last_failure_code TEXT,\n  active_run_id TEXT,\n  lease_until INTEGER\n);",
+      "unresolved_template": false,
+      "has_fk": false,
+      "virtual": false,
+      "generated": false
+    },
+    {
+      "file": "drizzle/0006_c1_r3_foundation.sql",
+      "line": 1,
+      "kind": "TABLE",
+      "name": "c1_r3_candidate_scores_v1",
+      "sql": "CREATE TABLE IF NOT EXISTS c1_r3_candidate_scores_v1 (\n  revision TEXT NOT NULL,\n  score_date TEXT NOT NULL,\n  candidate_id TEXT NOT NULL,\n  score REAL NOT NULL,\n  observation_date TEXT,\n  computed_at TEXT NOT NULL,\n  source_snapshot_sha256 TEXT,\n  PRIMARY KEY(revision,score_date,candidate_id)\n);",
+      "unresolved_template": false,
+      "has_fk": false,
+      "virtual": false,
+      "generated": false
+    },
+    {
+      "file": "drizzle/0006_c1_r3_foundation.sql",
+      "line": 12,
+      "kind": "INDEX",
+      "name": "c1_r3_candidate_scores_lookup_v1",
+      "sql": "CREATE INDEX IF NOT EXISTS c1_r3_candidate_scores_lookup_v1 ON c1_r3_candidate_scores_v1(revision,score_date DESC);",
+      "unresolved_template": false,
+      "has_fk": false,
+      "virtual": false,
+      "generated": false
+    },
+    {
+      "file": "lib/market-score/breadth-b1-r3-history-ingest-r2.mjs",
+      "line": 20,
+      "kind": "TABLE",
+      "name": "market_score_breadth_b1_r3_semantic_v1",
+      "sql": "CREATE TABLE IF NOT EXISTS market_score_breadth_b1_r3_semantic_v1(\n    trade_date TEXT PRIMARY KEY,\n    previous_date TEXT NOT NULL,\n    semantic_contract TEXT NOT NULL,\n    semantic_schema TEXT NOT NULL,\n    semantic_sha256 TEXT NOT NULL,\n    member_count INTEGER NOT NULL,\n    pair_count INTEGER NOT NULL,\n    first_seen_at TEXT NOT NULL,\n    last_seen_at TEXT NOT NULL\n  )",
+      "unresolved_template": false,
+      "has_fk": false,
+      "virtual": false,
+      "generated": false
+    },
+    {
+      "file": "lib/market-score/breadth-b1-r3-history-ingest-r2.mjs",
+      "line": 31,
+      "kind": "INDEX",
+      "name": "market_score_breadth_b1_r3_semantic_hash_v1",
+      "sql": "CREATE INDEX IF NOT EXISTS market_score_breadth_b1_r3_semantic_hash_v1\n    ON market_score_breadth_b1_r3_semantic_v1(semantic_sha256)",
+      "unresolved_template": false,
+      "has_fk": false,
+      "virtual": false,
+      "generated": false
+    },
+    {
+      "file": "lib/market-score/breadth-b1-r3-store.mjs",
+      "line": 19,
+      "kind": "TABLE",
+      "name": "market_score_breadth_b1_r3_current_v1",
+      "sql": "CREATE TABLE IF NOT EXISTS market_score_breadth_b1_r3_current_v1(\n        trade_date TEXT NOT NULL,ticker TEXT NOT NULL,previous_date TEXT NOT NULL,\n        previous_close REAL NOT NULL,current_close REAL NOT NULL,current_volume REAL NOT NULL,\n        source TEXT NOT NULL,feed TEXT,provenance_json TEXT NOT NULL,\n        first_seen_at TEXT NOT NULL,last_seen_at TEXT NOT NULL,retrieved_at TEXT NOT NULL,last_as_of_date TEXT NOT NULL,\n        PRIMARY KEY(trade_date,ticker))",
+      "unresolved_template": false,
+      "has_fk": false,
+      "virtual": false,
+      "generated": false
+    },
+    {
+      "file": "lib/market-score/breadth-b1-r3-store.mjs",
+      "line": 25,
+      "kind": "INDEX",
+      "name": "market_score_breadth_b1_r3_current_date_v1",
+      "sql": "CREATE INDEX IF NOT EXISTS market_score_breadth_b1_r3_current_date_v1\n        ON market_score_breadth_b1_r3_current_v1(trade_date DESC,ticker)",
+      "unresolved_template": false,
+      "has_fk": false,
+      "virtual": false,
+      "generated": false
+    },
+    {
+      "file": "lib/market-score/breadth-b1-r3-store.mjs",
+      "line": 27,
+      "kind": "TABLE",
+      "name": "market_score_breadth_b1_r3_history_v1",
+      "sql": "CREATE TABLE IF NOT EXISTS market_score_breadth_b1_r3_history_v1(\n        history_id INTEGER PRIMARY KEY AUTOINCREMENT,trade_date TEXT NOT NULL,ticker TEXT NOT NULL,previous_date TEXT NOT NULL,\n        previous_close REAL NOT NULL,current_close REAL NOT NULL,current_volume REAL NOT NULL,\n        source TEXT NOT NULL,feed TEXT,provenance_json TEXT NOT NULL,\n        change_type TEXT NOT NULL CHECK(change_type IN('INSERT','UPDATE')),retrieved_at TEXT NOT NULL,as_of_date TEXT NOT NULL)",
+      "unresolved_template": false,
+      "has_fk": false,
+      "virtual": false,
+      "generated": false
+    },
+    {
+      "file": "lib/market-score/breadth-b1-r3-store.mjs",
+      "line": 32,
+      "kind": "INDEX",
+      "name": "market_score_breadth_b1_r3_history_date_v1",
+      "sql": "CREATE INDEX IF NOT EXISTS market_score_breadth_b1_r3_history_date_v1\n        ON market_score_breadth_b1_r3_history_v1(trade_date,ticker,history_id)",
+      "unresolved_template": false,
+      "has_fk": false,
+      "virtual": false,
+      "generated": false
+    },
+    {
+      "file": "lib/market-score/breadth-b1-r3-store.mjs",
+      "line": 34,
+      "kind": "TABLE",
+      "name": "market_score_breadth_b1_r3_universe_v1",
+      "sql": "CREATE TABLE IF NOT EXISTS market_score_breadth_b1_r3_universe_v1(\n        trade_date TEXT PRIMARY KEY,members_json TEXT NOT NULL,member_count INTEGER NOT NULL,provenance_json TEXT NOT NULL,\n        first_seen_at TEXT NOT NULL,last_seen_at TEXT NOT NULL,retrieved_at TEXT NOT NULL)",
+      "unresolved_template": false,
+      "has_fk": false,
+      "virtual": false,
+      "generated": false
+    },
+    {
+      "file": "lib/market-score/breadth-b1-r3-store.mjs",
+      "line": 37,
+      "kind": "TABLE",
+      "name": "market_score_breadth_b1_r3_runs_v1",
+      "sql": "CREATE TABLE IF NOT EXISTS market_score_breadth_b1_r3_runs_v1(\n        run_id TEXT PRIMARY KEY,as_of_date TEXT NOT NULL,trade_date TEXT,status TEXT NOT NULL,started_at TEXT NOT NULL,completed_at TEXT NOT NULL,\n        provider_requests INTEGER NOT NULL DEFAULT 0,collected_rows INTEGER NOT NULL DEFAULT 0,inserted_count INTEGER NOT NULL DEFAULT 0,\n        updated_count INTEGER NOT NULL DEFAULT 0,noop_count INTEGER NOT NULL DEFAULT 0,current_rows INTEGER NOT NULL DEFAULT 0,\n        history_rows_added INTEGER NOT NULL DEFAULT 0,coverage REAL,upstream_ms REAL,storage_write_ms REAL,failure_code TEXT,detail_json TEXT NOT NULL)",
+      "unresolved_template": false,
+      "has_fk": false,
+      "virtual": false,
+      "generated": false
+    },
+    {
+      "file": "lib/market-score/breadth-b1-r3-store.mjs",
+      "line": 42,
+      "kind": "INDEX",
+      "name": "market_score_breadth_b1_r3_runs_time_v1",
+      "sql": "CREATE INDEX IF NOT EXISTS market_score_breadth_b1_r3_runs_time_v1\n        ON market_score_breadth_b1_r3_runs_v1(as_of_date,completed_at DESC)",
+      "unresolved_template": false,
+      "has_fk": false,
+      "virtual": false,
+      "generated": false
+    },
+    {
+      "file": "lib/market-score/breadth-b1-r3-store.mjs",
+      "line": 44,
+      "kind": "TABLE",
+      "name": "market_score_breadth_b1_r3_lock_v1",
+      "sql": "CREATE TABLE IF NOT EXISTS market_score_breadth_b1_r3_lock_v1(lock_key TEXT PRIMARY KEY,token TEXT NOT NULL,expires_at TEXT NOT NULL)",
+      "unresolved_template": false,
+      "has_fk": false,
+      "virtual": false,
+      "generated": false
+    },
+    {
+      "file": "lib/market-score/breadth-r2-d1-store-r2.mjs",
+      "line": 45,
+      "kind": "TABLE",
+      "name": "market_score_breadth_r2_current_v1",
+      "sql": "CREATE TABLE IF NOT EXISTS market_score_breadth_r2_current_v1 (\n        provider TEXT NOT NULL,\n        observation_key TEXT NOT NULL,\n        observation_date TEXT NOT NULL,\n        entity_type TEXT NOT NULL,\n        entity_id TEXT NOT NULL,\n        metric TEXT NOT NULL,\n        value REAL NOT NULL,\n        unit TEXT,\n        provenance_json TEXT NOT NULL,\n        first_seen_at TEXT NOT NULL,\n        last_seen_at TEXT NOT NULL,\n        retrieved_at TEXT NOT NULL,\n        last_as_of_date TEXT NOT NULL,\n        PRIMARY KEY(provider,observation_key,entity_type,entity_id,metric)\n      )",
+      "unresolved_template": false,
+      "has_fk": false,
+      "virtual": false,
+      "generated": false
+    },
+    {
+      "file": "lib/market-score/breadth-r2-d1-store-r2.mjs",
+      "line": 61,
+      "kind": "INDEX",
+      "name": "market_score_breadth_r2_current_obs_v1",
+      "sql": "CREATE INDEX IF NOT EXISTS market_score_breadth_r2_current_obs_v1\n        ON market_score_breadth_r2_current_v1(provider,observation_date DESC,observation_key,metric,entity_id)",
+      "unresolved_template": false,
+      "has_fk": false,
+      "virtual": false,
+      "generated": false
+    },
+    {
+      "file": "lib/market-score/breadth-r2-d1-store-r2.mjs",
+      "line": 63,
+      "kind": "TABLE",
+      "name": "market_score_breadth_r2_history_v1",
+      "sql": "CREATE TABLE IF NOT EXISTS market_score_breadth_r2_history_v1 (\n        history_id INTEGER PRIMARY KEY AUTOINCREMENT,\n        provider TEXT NOT NULL,\n        observation_key TEXT NOT NULL,\n        observation_date TEXT NOT NULL,\n        entity_type TEXT NOT NULL,\n        entity_id TEXT NOT NULL,\n        metric TEXT NOT NULL,\n        value REAL NOT NULL,\n        unit TEXT,\n        provenance_json TEXT NOT NULL,\n        change_type TEXT NOT NULL CHECK(change_type IN ('INSERT','UPDATE')),\n        retrieved_at TEXT NOT NULL,\n        as_of_date TEXT NOT NULL\n      )",
+      "unresolved_template": false,
+      "has_fk": false,
+      "virtual": false,
+      "generated": false
+    },
+    {
+      "file": "lib/market-score/breadth-r2-d1-store-r2.mjs",
+      "line": 78,
+      "kind": "INDEX",
+      "name": "market_score_breadth_r2_history_obs_v1",
+      "sql": "CREATE INDEX IF NOT EXISTS market_score_breadth_r2_history_obs_v1\n        ON market_score_breadth_r2_history_v1(provider,observation_key,metric,entity_id,history_id)",
+      "unresolved_template": false,
+      "has_fk": false,
+      "virtual": false,
+      "generated": false
+    },
+    {
+      "file": "lib/market-score/breadth-r2-d1-store-r2.mjs",
+      "line": 80,
+      "kind": "TABLE",
+      "name": "market_score_breadth_r2_universe_v1",
+      "sql": "CREATE TABLE IF NOT EXISTS market_score_breadth_r2_universe_v1 (\n        universe_key TEXT NOT NULL,\n        observation_key TEXT NOT NULL,\n        observation_date TEXT NOT NULL,\n        body_json TEXT NOT NULL,\n        member_count INTEGER NOT NULL,\n        provenance_json TEXT NOT NULL,\n        first_seen_at TEXT NOT NULL,\n        last_seen_at TEXT NOT NULL,\n        retrieved_at TEXT NOT NULL,\n        PRIMARY KEY(universe_key,observation_key)\n      )",
+      "unresolved_template": false,
+      "has_fk": false,
+      "virtual": false,
+      "generated": false
+    },
+    {
+      "file": "lib/market-score/breadth-r2-d1-store-r2.mjs",
+      "line": 92,
+      "kind": "INDEX",
+      "name": "market_score_breadth_r2_universe_obs_v1",
+      "sql": "CREATE INDEX IF NOT EXISTS market_score_breadth_r2_universe_obs_v1\n        ON market_score_breadth_r2_universe_v1(universe_key,observation_date DESC,observation_key)",
+      "unresolved_template": false,
+      "has_fk": false,
+      "virtual": false,
+      "generated": false
+    },
+    {
+      "file": "lib/market-score/breadth-r2-d1-store-r2.mjs",
+      "line": 94,
+      "kind": "TABLE",
+      "name": "market_score_breadth_r2_runs_v1",
+      "sql": "CREATE TABLE IF NOT EXISTS market_score_breadth_r2_runs_v1 (\n        run_id TEXT PRIMARY KEY,\n        as_of_date TEXT NOT NULL,\n        status TEXT NOT NULL,\n        started_at TEXT NOT NULL,\n        completed_at TEXT NOT NULL,\n        provider_requests INTEGER NOT NULL DEFAULT 0,\n        collected_rows INTEGER NOT NULL DEFAULT 0,\n        inserted_count INTEGER NOT NULL DEFAULT 0,\n        updated_count INTEGER NOT NULL DEFAULT 0,\n        noop_count INTEGER NOT NULL DEFAULT 0,\n        current_rows INTEGER NOT NULL DEFAULT 0,\n        history_rows_added INTEGER NOT NULL DEFAULT 0,\n        upstream_ms REAL,\n        storage_write_ms REAL,\n        storage_read_ms REAL,\n        score_compute_ms REAL,\n        failure_code TEXT,\n        detail_json TEXT NOT NULL\n      )",
+      "unresolved_template": false,
+      "has_fk": false,
+      "virtual": false,
+      "generated": false
+    },
+    {
+      "file": "lib/market-score/breadth-r2-d1-store-r2.mjs",
+      "line": 114,
+      "kind": "INDEX",
+      "name": "market_score_breadth_r2_runs_time_v1",
+      "sql": "CREATE INDEX IF NOT EXISTS market_score_breadth_r2_runs_time_v1\n        ON market_score_breadth_r2_runs_v1(as_of_date,completed_at DESC)",
+      "unresolved_template": false,
+      "has_fk": false,
+      "virtual": false,
+      "generated": false
+    },
+    {
+      "file": "lib/market-score/breadth-r2-d1-store-r2.mjs",
+      "line": 116,
+      "kind": "TABLE",
+      "name": "market_score_breadth_r2_lock_v1",
+      "sql": "CREATE TABLE IF NOT EXISTS market_score_breadth_r2_lock_v1 (\n        lock_key TEXT PRIMARY KEY,\n        token TEXT NOT NULL,\n        expires_at TEXT NOT NULL\n      )",
+      "unresolved_template": false,
+      "has_fk": false,
+      "virtual": false,
+      "generated": false
+    },
+    {
+      "file": "lib/market-score/breadth-r2-d1-store.mjs",
+      "line": 67,
+      "kind": "TABLE",
+      "name": "market_score_breadth_r2_raw_v1",
+      "sql": "CREATE TABLE IF NOT EXISTS market_score_breadth_r2_raw_v1 (\n        content_hash TEXT PRIMARY KEY,\n        source_key TEXT NOT NULL,\n        payload_json TEXT NOT NULL,\n        first_retrieved_at TEXT NOT NULL\n      )",
+      "unresolved_template": false,
+      "has_fk": false,
+      "virtual": false,
+      "generated": false
+    },
+    {
+      "file": "lib/market-score/breadth-r2-d1-store.mjs",
+      "line": 74,
+      "kind": "TABLE",
+      "name": "market_score_breadth_r2_event_v1",
+      "sql": "CREATE TABLE IF NOT EXISTS market_score_breadth_r2_event_v1 (\n        event_id INTEGER PRIMARY KEY AUTOINCREMENT,\n        source_key TEXT NOT NULL,\n        content_hash TEXT NOT NULL,\n        retrieved_at TEXT NOT NULL,\n        event_type TEXT NOT NULL,\n        FOREIGN KEY(content_hash) REFERENCES market_score_breadth_r2_raw_v1(content_hash)\n      )",
+      "unresolved_template": false,
+      "has_fk": true,
+      "virtual": false,
+      "generated": false
+    },
+    {
+      "file": "lib/market-score/breadth-r2-d1-store.mjs",
+      "line": 83,
+      "kind": "INDEX",
+      "name": "market_score_breadth_r2_event_source_time_v1",
+      "sql": "CREATE INDEX IF NOT EXISTS market_score_breadth_r2_event_source_time_v1\n        ON market_score_breadth_r2_event_v1(source_key, retrieved_at DESC, event_id DESC)",
+      "unresolved_template": false,
+      "has_fk": false,
+      "virtual": false,
+      "generated": false
+    },
+    {
+      "file": "lib/market-score/breadth-r2-d1-store.mjs",
+      "line": 86,
+      "kind": "TABLE",
+      "name": "market_score_breadth_r2_snapshot_v1",
+      "sql": "CREATE TABLE IF NOT EXISTS market_score_breadth_r2_snapshot_v1 (\n        cache_key TEXT PRIMARY KEY,\n        body_json TEXT NOT NULL,\n        cached_at TEXT NOT NULL\n      )",
+      "unresolved_template": false,
+      "has_fk": false,
+      "virtual": false,
+      "generated": false
+    },
+    {
+      "file": "lib/market-score/breadth-r2-lease-r1.mjs",
+      "line": 32,
+      "kind": "TABLE",
+      "name": "market_score_breadth_r2_lock_v1",
+      "sql": "CREATE TABLE IF NOT EXISTS market_score_breadth_r2_lock_v1 (\n      lock_key TEXT PRIMARY KEY,\n      token TEXT NOT NULL,\n      expires_at TEXT NOT NULL\n    )",
+      "unresolved_template": false,
+      "has_fk": false,
+      "virtual": false,
+      "generated": false
+    },
+    {
+      "file": "lib/market-score/earnings-e1-r3-d1-store.mjs",
+      "line": 28,
+      "kind": "TABLE",
+      "name": "market_score_earnings_e1_r3_current_v1",
+      "sql": "CREATE TABLE IF NOT EXISTS market_score_earnings_e1_r3_current_v1 (\n        period_end TEXT NOT NULL,\n        cik TEXT NOT NULL,\n        metric TEXT NOT NULL,\n        value REAL NOT NULL,\n        ticker TEXT,\n        company_name TEXT,\n        frame TEXT NOT NULL,\n        prior_frame TEXT,\n        provenance_json TEXT NOT NULL,\n        first_seen_at TEXT NOT NULL,\n        last_seen_at TEXT NOT NULL,\n        retrieved_at TEXT NOT NULL,\n        PRIMARY KEY(period_end,cik,metric)\n      )",
+      "unresolved_template": false,
+      "has_fk": false,
+      "virtual": false,
+      "generated": false
+    },
+    {
+      "file": "lib/market-score/earnings-e1-r3-d1-store.mjs",
+      "line": 43,
+      "kind": "INDEX",
+      "name": "market_score_earnings_e1_r3_current_period_metric_v1",
+      "sql": "CREATE INDEX IF NOT EXISTS market_score_earnings_e1_r3_current_period_metric_v1\n        ON market_score_earnings_e1_r3_current_v1(period_end,metric,cik)",
+      "unresolved_template": false,
+      "has_fk": false,
+      "virtual": false,
+      "generated": false
+    },
+    {
+      "file": "lib/market-score/earnings-e1-r3-d1-store.mjs",
+      "line": 45,
+      "kind": "TABLE",
+      "name": "market_score_earnings_e1_r3_history_v1",
+      "sql": "CREATE TABLE IF NOT EXISTS market_score_earnings_e1_r3_history_v1 (\n        history_id INTEGER PRIMARY KEY AUTOINCREMENT,\n        period_end TEXT NOT NULL,\n        cik TEXT NOT NULL,\n        metric TEXT NOT NULL,\n        value REAL NOT NULL,\n        ticker TEXT,\n        company_name TEXT,\n        frame TEXT NOT NULL,\n        prior_frame TEXT,\n        provenance_json TEXT NOT NULL,\n        change_type TEXT NOT NULL CHECK(change_type IN ('INSERT','UPDATE')),\n        retrieved_at TEXT NOT NULL\n      )",
+      "unresolved_template": false,
+      "has_fk": false,
+      "virtual": false,
+      "generated": false
+    },
+    {
+      "file": "lib/market-score/earnings-e1-r3-d1-store.mjs",
+      "line": 59,
+      "kind": "INDEX",
+      "name": "market_score_earnings_e1_r3_history_period_metric_v1",
+      "sql": "CREATE INDEX IF NOT EXISTS market_score_earnings_e1_r3_history_period_metric_v1\n        ON market_score_earnings_e1_r3_history_v1(period_end,metric,cik,history_id)",
+      "unresolved_template": false,
+      "has_fk": false,
+      "virtual": false,
+      "generated": false
+    },
+    {
+      "file": "lib/market-score/earnings-e1-r3-d1-store.mjs",
+      "line": 61,
+      "kind": "INDEX",
+      "name": "market_score_earnings_e1_r3_history_cik_metric_v1",
+      "sql": "CREATE INDEX IF NOT EXISTS market_score_earnings_e1_r3_history_cik_metric_v1\n        ON market_score_earnings_e1_r3_history_v1(cik,metric,period_end,history_id)",
+      "unresolved_template": false,
+      "has_fk": false,
+      "virtual": false,
+      "generated": false
+    },
+    {
+      "file": "lib/market-score/earnings-e1-r3-d1-store.mjs",
+      "line": 63,
+      "kind": "TABLE",
+      "name": "market_score_earnings_e1_r3_universe_v1",
+      "sql": "CREATE TABLE IF NOT EXISTS market_score_earnings_e1_r3_universe_v1 (\n        period_end TEXT PRIMARY KEY,\n        body_json TEXT NOT NULL,\n        security_count INTEGER NOT NULL,\n        issuer_count INTEGER NOT NULL,\n        wikipedia_revision_id TEXT,\n        retrieved_at TEXT NOT NULL\n      )",
+      "unresolved_template": false,
+      "has_fk": false,
+      "virtual": false,
+      "generated": false
+    },
+    {
+      "file": "lib/market-score/earnings-e1-r3-d1-store.mjs",
+      "line": 71,
+      "kind": "TABLE",
+      "name": "market_score_earnings_e1_r3_runs_v1",
+      "sql": "CREATE TABLE IF NOT EXISTS market_score_earnings_e1_r3_runs_v1 (\n        run_id TEXT PRIMARY KEY,\n        period_end TEXT NOT NULL,\n        status TEXT NOT NULL,\n        started_at TEXT NOT NULL,\n        completed_at TEXT NOT NULL,\n        universe_count INTEGER NOT NULL DEFAULT 0,\n        provider_requests INTEGER NOT NULL DEFAULT 0,\n        eps_count INTEGER NOT NULL DEFAULT 0,\n        revenue_count INTEGER NOT NULL DEFAULT 0,\n        margin_count INTEGER NOT NULL DEFAULT 0,\n        inserted_count INTEGER NOT NULL DEFAULT 0,\n        updated_count INTEGER NOT NULL DEFAULT 0,\n        noop_count INTEGER NOT NULL DEFAULT 0,\n        current_rows INTEGER NOT NULL DEFAULT 0,\n        history_rows_added INTEGER NOT NULL DEFAULT 0,\n        upstream_ms REAL,\n        storage_write_ms REAL,\n        storage_read_ms REAL,\n        score_compute_ms REAL,\n        failure_code TEXT\n      )",
+      "unresolved_template": false,
+      "has_fk": false,
+      "virtual": false,
+      "generated": false
+    },
+    {
+      "file": "lib/market-score/earnings-e1-r3-d1-store.mjs",
+      "line": 93,
+      "kind": "INDEX",
+      "name": "market_score_earnings_e1_r3_runs_period_time_v1",
+      "sql": "CREATE INDEX IF NOT EXISTS market_score_earnings_e1_r3_runs_period_time_v1\n        ON market_score_earnings_e1_r3_runs_v1(period_end,completed_at DESC)",
+      "unresolved_template": false,
+      "has_fk": false,
+      "virtual": false,
+      "generated": false
+    },
+    {
+      "file": "lib/market-score/earnings-e1-r3-d1-store.mjs",
+      "line": 95,
+      "kind": "TABLE",
+      "name": "market_score_earnings_e1_r3_lock_v1",
+      "sql": "CREATE TABLE IF NOT EXISTS market_score_earnings_e1_r3_lock_v1 (\n        lock_key TEXT PRIMARY KEY,\n        token TEXT NOT NULL,\n        expires_at TEXT NOT NULL\n      )",
+      "unresolved_template": false,
+      "has_fk": false,
+      "virtual": false,
+      "generated": false
+    },
+    {
+      "file": "lib/market-score/employment-r4-shadow-store.mjs",
+      "line": 110,
+      "kind": "TABLE",
+      "name": "market_score_employment_r4_shadow_current_v1",
+      "sql": "CREATE TABLE IF NOT EXISTS market_score_employment_r4_shadow_current_v1 (\n        logical_series_id TEXT NOT NULL,\n        provider TEXT NOT NULL,\n        provider_series_id TEXT NOT NULL,\n        geography_type TEXT NOT NULL,\n        geography_code TEXT NOT NULL,\n        frequency TEXT NOT NULL,\n        unit TEXT,\n        seasonal_adjustment TEXT,\n        population_coverage TEXT,\n        observation_date TEXT NOT NULL,\n        release_date TEXT,\n        available_at TEXT,\n        retrieved_at TEXT NOT NULL,\n        value REAL NOT NULL,\n        source_revision TEXT,\n        source_hash TEXT NOT NULL,\n        quality_status TEXT NOT NULL,\n        pit_class TEXT NOT NULL,\n        schema_version INTEGER NOT NULL,\n        provenance_json TEXT NOT NULL,\n        first_seen_at TEXT NOT NULL,\n        last_seen_at TEXT NOT NULL,\n        PRIMARY KEY(logical_series_id,geography_type,geography_code,observation_date)\n      )",
+      "unresolved_template": false,
+      "has_fk": false,
+      "virtual": false,
+      "generated": false
+    },
+    {
+      "file": "lib/market-score/employment-r4-shadow-store.mjs",
+      "line": 135,
+      "kind": "INDEX",
+      "name": "market_score_employment_r4_shadow_current_lookup_v1",
+      "sql": "CREATE INDEX IF NOT EXISTS market_score_employment_r4_shadow_current_lookup_v1\n        ON market_score_employment_r4_shadow_current_v1(logical_series_id,observation_date DESC,geography_type,geography_code)",
+      "unresolved_template": false,
+      "has_fk": false,
+      "virtual": false,
+      "generated": false
+    },
+    {
+      "file": "lib/market-score/employment-r4-shadow-store.mjs",
+      "line": 137,
+      "kind": "TABLE",
+      "name": "market_score_employment_r4_shadow_history_v1",
+      "sql": "CREATE TABLE IF NOT EXISTS market_score_employment_r4_shadow_history_v1 (\n        history_id INTEGER PRIMARY KEY AUTOINCREMENT,\n        logical_series_id TEXT NOT NULL,\n        provider TEXT NOT NULL,\n        provider_series_id TEXT NOT NULL,\n        geography_type TEXT NOT NULL,\n        geography_code TEXT NOT NULL,\n        frequency TEXT NOT NULL,\n        unit TEXT,\n        seasonal_adjustment TEXT,\n        population_coverage TEXT,\n        observation_date TEXT NOT NULL,\n        release_date TEXT,\n        available_at TEXT,\n        retrieved_at TEXT NOT NULL,\n        value REAL NOT NULL,\n        source_revision TEXT,\n        source_hash TEXT NOT NULL,\n        quality_status TEXT NOT NULL,\n        pit_class TEXT NOT NULL,\n        schema_version INTEGER NOT NULL,\n        provenance_json TEXT NOT NULL,\n        change_type TEXT NOT NULL CHECK(change_type IN ('INSERT','UPDATE')),\n        recorded_at TEXT NOT NULL\n      )",
+      "unresolved_template": false,
+      "has_fk": false,
+      "virtual": false,
+      "generated": false
+    },
+    {
+      "file": "lib/market-score/employment-r4-shadow-store.mjs",
+      "line": 162,
+      "kind": "INDEX",
+      "name": "market_score_employment_r4_shadow_history_lookup_v1",
+      "sql": "CREATE INDEX IF NOT EXISTS market_score_employment_r4_shadow_history_lookup_v1\n        ON market_score_employment_r4_shadow_history_v1(logical_series_id,geography_type,geography_code,observation_date,history_id)",
+      "unresolved_template": false,
+      "has_fk": false,
+      "virtual": false,
+      "generated": false
+    },
+    {
+      "file": "lib/market-score/employment-r4-shadow-store.mjs",
+      "line": 164,
+      "kind": "TABLE",
+      "name": "market_score_employment_r4_shadow_runs_v1",
+      "sql": "CREATE TABLE IF NOT EXISTS market_score_employment_r4_shadow_runs_v1 (\n        run_id TEXT PRIMARY KEY,\n        provider TEXT NOT NULL,\n        collector_revision TEXT NOT NULL,\n        status TEXT NOT NULL,\n        started_at TEXT NOT NULL,\n        completed_at TEXT NOT NULL,\n        provider_requests INTEGER NOT NULL DEFAULT 0,\n        collected_rows INTEGER NOT NULL DEFAULT 0,\n        inserted_count INTEGER NOT NULL DEFAULT 0,\n        revised_count INTEGER NOT NULL DEFAULT 0,\n        noop_count INTEGER NOT NULL DEFAULT 0,\n        rejected_count INTEGER NOT NULL DEFAULT 0,\n        partial_count INTEGER NOT NULL DEFAULT 0,\n        current_rows INTEGER NOT NULL DEFAULT 0,\n        history_rows_added INTEGER NOT NULL DEFAULT 0,\n        failure_code TEXT,\n        detail_json TEXT NOT NULL\n      )",
+      "unresolved_template": false,
+      "has_fk": false,
+      "virtual": false,
+      "generated": false
+    },
+    {
+      "file": "lib/market-score/employment-r4-shadow-store.mjs",
+      "line": 183,
+      "kind": "INDEX",
+      "name": "market_score_employment_r4_shadow_runs_time_v1",
+      "sql": "CREATE INDEX IF NOT EXISTS market_score_employment_r4_shadow_runs_time_v1\n        ON market_score_employment_r4_shadow_runs_v1(completed_at DESC,status)",
+      "unresolved_template": false,
+      "has_fk": false,
+      "virtual": false,
+      "generated": false
+    },
+    {
+      "file": "lib/market-score/employment-r4-shadow-store.mjs",
+      "line": 185,
+      "kind": "TABLE",
+      "name": "market_score_employment_r4_shadow_lock_v1",
+      "sql": "CREATE TABLE IF NOT EXISTS market_score_employment_r4_shadow_lock_v1 (\n        lock_key TEXT PRIMARY KEY,\n        token TEXT NOT NULL,\n        expires_at TEXT NOT NULL\n      )",
+      "unresolved_template": false,
+      "has_fk": false,
+      "virtual": false,
+      "generated": false
+    },
+    {
+      "file": "lib/market-score/employment-r6-store.mjs",
+      "line": 61,
+      "kind": "TABLE",
+      "name": "market_score_employment_r6_raw_snapshot_v1",
+      "sql": "CREATE TABLE IF NOT EXISTS market_score_employment_r6_raw_snapshot_v1 (\n        snapshot_id TEXT NOT NULL,\n        chunk_index INTEGER NOT NULL,\n        chunk_count INTEGER NOT NULL,\n        release_group TEXT NOT NULL,\n        provider TEXT NOT NULL,\n        request_key TEXT NOT NULL,\n        release_at TEXT,\n        retrieved_at TEXT NOT NULL,\n        http_status INTEGER,\n        content_type TEXT,\n        body_sha256 TEXT NOT NULL,\n        body_chunk TEXT NOT NULL,\n        detail_json TEXT NOT NULL,\n        created_at TEXT NOT NULL,\n        PRIMARY KEY(snapshot_id,chunk_index)\n      )",
+      "unresolved_template": false,
+      "has_fk": false,
+      "virtual": false,
+      "generated": false
+    },
+    {
+      "file": "lib/market-score/employment-r6-store.mjs",
+      "line": 78,
+      "kind": "INDEX",
+      "name": "market_score_employment_r6_raw_snapshot_lookup_v1",
+      "sql": "CREATE INDEX IF NOT EXISTS market_score_employment_r6_raw_snapshot_lookup_v1\n        ON market_score_employment_r6_raw_snapshot_v1(release_group,retrieved_at DESC,request_key)",
+      "unresolved_template": false,
+      "has_fk": false,
+      "virtual": false,
+      "generated": false
+    },
+    {
+      "file": "lib/market-score/employment-r6-store.mjs",
+      "line": 81,
+      "kind": "TABLE",
+      "name": "market_score_employment_r6_feature_history_v1",
+      "sql": "CREATE TABLE IF NOT EXISTS market_score_employment_r6_feature_history_v1 (\n        feature_history_id INTEGER PRIMARY KEY AUTOINCREMENT,\n        feature_id TEXT NOT NULL,\n        observation_date TEXT NOT NULL,\n        score_as_of TEXT NOT NULL,\n        formula_hash TEXT NOT NULL,\n        feature_score REAL,\n        raw_value REAL,\n        status TEXT NOT NULL,\n        source_hash TEXT NOT NULL,\n        detail_json TEXT NOT NULL,\n        recorded_at TEXT NOT NULL,\n        UNIQUE(feature_id,observation_date,score_as_of,formula_hash,source_hash)\n      )",
+      "unresolved_template": false,
+      "has_fk": false,
+      "virtual": false,
+      "generated": false
+    },
+    {
+      "file": "lib/market-score/employment-r6-store.mjs",
+      "line": 95,
+      "kind": "INDEX",
+      "name": "market_score_employment_r6_feature_history_lookup_v1",
+      "sql": "CREATE INDEX IF NOT EXISTS market_score_employment_r6_feature_history_lookup_v1\n        ON market_score_employment_r6_feature_history_v1(feature_id,score_as_of DESC,observation_date DESC)",
+      "unresolved_template": false,
+      "has_fk": false,
+      "virtual": false,
+      "generated": false
+    },
+    {
+      "file": "lib/market-score/employment-r6-store.mjs",
+      "line": 98,
+      "kind": "TABLE",
+      "name": "market_score_employment_r6_read_model_v1",
+      "sql": "CREATE TABLE IF NOT EXISTS market_score_employment_r6_read_model_v1 (\n        version_id TEXT PRIMARY KEY,\n        score_as_of TEXT NOT NULL,\n        formula_hash TEXT NOT NULL,\n        data_hash TEXT NOT NULL,\n        status TEXT NOT NULL,\n        employment_score REAL,\n        model_json TEXT NOT NULL,\n        created_at TEXT NOT NULL,\n        ready_at TEXT\n      )",
+      "unresolved_template": false,
+      "has_fk": false,
+      "virtual": false,
+      "generated": false
+    },
+    {
+      "file": "lib/market-score/employment-r6-store.mjs",
+      "line": 109,
+      "kind": "INDEX",
+      "name": "market_score_employment_r6_read_model_lookup_v1",
+      "sql": "CREATE INDEX IF NOT EXISTS market_score_employment_r6_read_model_lookup_v1\n        ON market_score_employment_r6_read_model_v1(status,score_as_of DESC,ready_at DESC)",
+      "unresolved_template": false,
+      "has_fk": false,
+      "virtual": false,
+      "generated": false
+    },
+    {
+      "file": "lib/market-score/employment-r6-store.mjs",
+      "line": 112,
+      "kind": "TABLE",
+      "name": "market_score_employment_r6_read_pointer_v1",
+      "sql": "CREATE TABLE IF NOT EXISTS market_score_employment_r6_read_pointer_v1 (\n        pointer_key TEXT PRIMARY KEY,\n        version_id TEXT NOT NULL,\n        updated_at TEXT NOT NULL,\n        CHECK(pointer_key='CURRENT')\n      )",
+      "unresolved_template": false,
+      "has_fk": false,
+      "virtual": false,
+      "generated": false
+    },
+    {
+      "file": "lib/market-score/growth-r2-d1-store-r1.mjs",
+      "line": 39,
+      "kind": "TABLE",
+      "name": "growth_r2_feature_history_v1",
+      "sql": "CREATE TABLE IF NOT EXISTS growth_r2_feature_history_v1 (\n        candidate_id TEXT NOT NULL, observation_date TEXT NOT NULL, observation_period TEXT,\n        available_at TEXT NOT NULL, release_date TEXT, vintage_id TEXT NOT NULL,\n        pit_eligible INTEGER NOT NULL, provider TEXT, selector TEXT, frequency TEXT,\n        native_value REAL, native_unit TEXT, harmonized_value REAL NOT NULL, harmonized_unit TEXT,\n        transform_rule TEXT, source_hash TEXT, source_url TEXT, feature_revision TEXT,\n        method_revision TEXT, retrieved_at TEXT NOT NULL, record_hash TEXT NOT NULL,\n        PRIMARY KEY(candidate_id,observation_date,record_hash)\n      )",
+      "unresolved_template": false,
+      "has_fk": false,
+      "virtual": false,
+      "generated": false
+    },
+    {
+      "file": "lib/market-score/growth-r2-d1-store-r1.mjs",
+      "line": 48,
+      "kind": "INDEX",
+      "name": "growth_r2_history_lookup_v1",
+      "sql": "CREATE INDEX IF NOT EXISTS growth_r2_history_lookup_v1\n        ON growth_r2_feature_history_v1(candidate_id,observation_date,available_at)",
+      "unresolved_template": false,
+      "has_fk": false,
+      "virtual": false,
+      "generated": false
+    },
+    {
+      "file": "lib/market-score/growth-r2-d1-store-r1.mjs",
+      "line": 50,
+      "kind": "TABLE",
+      "name": "growth_r2_feature_current_v1",
+      "sql": "CREATE TABLE IF NOT EXISTS growth_r2_feature_current_v1 (\n        candidate_id TEXT PRIMARY KEY, observation_date TEXT NOT NULL, observation_period TEXT,\n        available_at TEXT NOT NULL, release_date TEXT, vintage_id TEXT NOT NULL,\n        pit_eligible INTEGER NOT NULL, provider TEXT, selector TEXT, frequency TEXT,\n        native_value REAL, native_unit TEXT, harmonized_value REAL NOT NULL, harmonized_unit TEXT,\n        transform_rule TEXT, source_hash TEXT, source_url TEXT, feature_revision TEXT,\n        method_revision TEXT, retrieved_at TEXT NOT NULL, record_hash TEXT NOT NULL\n      )",
+      "unresolved_template": false,
+      "has_fk": false,
+      "virtual": false,
+      "generated": false
+    },
+    {
+      "file": "lib/market-score/growth-r2-d1-store-r1.mjs",
+      "line": 58,
+      "kind": "TABLE",
+      "name": "growth_r2_meta_v1",
+      "sql": "CREATE TABLE IF NOT EXISTS growth_r2_meta_v1 (key TEXT PRIMARY KEY,value TEXT NOT NULL,updated_at TEXT NOT NULL)",
+      "unresolved_template": false,
+      "has_fk": false,
+      "virtual": false,
+      "generated": false
+    },
+    {
+      "file": "lib/market-score/growth-r2-d1-store-r1.mjs",
+      "line": 59,
+      "kind": "TABLE",
+      "name": "growth_r2_provider_snapshots_v1",
+      "sql": "CREATE TABLE IF NOT EXISTS growth_r2_provider_snapshots_v1 (\n        provider_group TEXT NOT NULL,snapshot_hash TEXT NOT NULL,retrieved_at TEXT NOT NULL,\n        source_url TEXT,payload_json TEXT NOT NULL,PRIMARY KEY(provider_group,snapshot_hash)\n      )",
+      "unresolved_template": false,
+      "has_fk": false,
+      "virtual": false,
+      "generated": false
+    },
+    {
+      "file": "lib/market-score/growth-r2-d1-store-r1.mjs",
+      "line": 63,
+      "kind": "TABLE",
+      "name": "growth_r2_forward_stage_v1",
+      "sql": "CREATE TABLE IF NOT EXISTS growth_r2_forward_stage_v1 (\n        candidate_id TEXT PRIMARY KEY,stage TEXT NOT NULL,body_json TEXT NOT NULL,retrieved_at TEXT NOT NULL\n      )",
+      "unresolved_template": false,
+      "has_fk": false,
+      "virtual": false,
+      "generated": false
+    },
+    {
+      "file": "worker/api-history-store.mjs",
+      "line": 165,
+      "kind": "TABLE",
+      "name": "api_history_chunks_v1",
+      "sql": "CREATE TABLE IF NOT EXISTS api_history_chunks_v1 (\n        provider TEXT NOT NULL,\n        dataset TEXT NOT NULL,\n        chunk_sha256 TEXT NOT NULL,\n        first_observation_date TEXT,\n        last_observation_date TEXT,\n        row_count INTEGER NOT NULL,\n        payload_json TEXT NOT NULL,\n        first_seen_at TEXT NOT NULL,\n        PRIMARY KEY(provider, dataset, chunk_sha256)\n      )",
+      "unresolved_template": false,
+      "has_fk": false,
+      "virtual": false,
+      "generated": false
+    },
+    {
+      "file": "worker/api-history-store.mjs",
+      "line": 176,
+      "kind": "TABLE",
+      "name": "api_history_snapshots_v1",
+      "sql": "CREATE TABLE IF NOT EXISTS api_history_snapshots_v1 (\n        provider TEXT NOT NULL,\n        dataset TEXT NOT NULL,\n        snapshot_sha256 TEXT NOT NULL,\n        as_of TEXT NOT NULL,\n        retrieved_at TEXT NOT NULL,\n        status TEXT NOT NULL,\n        history_mode TEXT,\n        row_count INTEGER NOT NULL,\n        latest_observation_date TEXT,\n        chunk_hashes_json TEXT NOT NULL,\n        provenance_json TEXT NOT NULL,\n        PRIMARY KEY(provider, dataset, snapshot_sha256)\n      )",
+      "unresolved_template": false,
+      "has_fk": false,
+      "virtual": false,
+      "generated": false
+    },
+    {
+      "file": "worker/api-history-store.mjs",
+      "line": 190,
+      "kind": "INDEX",
+      "name": "api_history_snapshots_lookup_v1",
+      "sql": "CREATE INDEX IF NOT EXISTS api_history_snapshots_lookup_v1\n        ON api_history_snapshots_v1(provider, dataset, retrieved_at DESC)",
+      "unresolved_template": false,
+      "has_fk": false,
+      "virtual": false,
+      "generated": false
+    },
+    {
+      "file": "worker/consumption-r3-operational-refresh.mjs",
+      "line": 46,
+      "kind": "TABLE",
+      "name": "c1_r3_refresh_claims_v1",
+      "sql": "CREATE TABLE IF NOT EXISTS c1_r3_refresh_claims_v1 (\n        revision TEXT NOT NULL,\n        score_date TEXT NOT NULL,\n        attempt_date TEXT NOT NULL,\n        claim_key TEXT NOT NULL,\n        status TEXT NOT NULL,\n        started_at TEXT NOT NULL,\n        finished_at TEXT,\n        detail TEXT,\n        PRIMARY KEY(revision,score_date,attempt_date,claim_key)\n      )",
+      "unresolved_template": false,
+      "has_fk": false,
+      "virtual": false,
+      "generated": false
+    },
+    {
+      "file": "worker/consumption-r3-operational-refresh.mjs",
+      "line": 57,
+      "kind": "INDEX",
+      "name": "c1_r3_refresh_claim_lookup_v1",
+      "sql": "CREATE INDEX IF NOT EXISTS c1_r3_refresh_claim_lookup_v1\n        ON c1_r3_refresh_claims_v1(revision,score_date,attempt_date)",
+      "unresolved_template": false,
+      "has_fk": false,
+      "virtual": false,
+      "generated": false
+    },
+    {
+      "file": "worker/consumption-r3-score-store.mjs",
+      "line": 11,
+      "kind": "TABLE",
+      "name": "c1_r3_candidate_scores_v1",
+      "sql": "CREATE TABLE IF NOT EXISTS c1_r3_candidate_scores_v1 (\n        revision TEXT NOT NULL,\n        score_date TEXT NOT NULL,\n        candidate_id TEXT NOT NULL,\n        score REAL NOT NULL,\n        observation_date TEXT,\n        computed_at TEXT NOT NULL,\n        source_snapshot_sha256 TEXT,\n        PRIMARY KEY(revision,score_date,candidate_id)\n      )",
+      "unresolved_template": false,
+      "has_fk": false,
+      "virtual": false,
+      "generated": false
+    },
+    {
+      "file": "worker/consumption-r3-score-store.mjs",
+      "line": 21,
+      "kind": "INDEX",
+      "name": "c1_r3_candidate_scores_lookup_v1",
+      "sql": "CREATE INDEX IF NOT EXISTS c1_r3_candidate_scores_lookup_v1\n        ON c1_r3_candidate_scores_v1(revision,score_date DESC)",
+      "unresolved_template": false,
+      "has_fk": false,
+      "virtual": false,
+      "generated": false
+    },
+    {
+      "file": "worker/consumption-r3-seed.mjs",
+      "line": 38,
+      "kind": "TABLE",
+      "name": "c1_r3_candidate_scores_v1",
+      "sql": "CREATE TABLE IF NOT EXISTS c1_r3_candidate_scores_v1 (\n      revision TEXT NOT NULL,\n      score_date TEXT NOT NULL,\n      candidate_id TEXT NOT NULL,\n      score REAL NOT NULL,\n      observation_date TEXT,\n      computed_at TEXT NOT NULL,\n      source_snapshot_sha256 TEXT,\n      PRIMARY KEY(revision,score_date,candidate_id)\n    );",
+      "unresolved_template": false,
+      "has_fk": false,
+      "virtual": false,
+      "generated": false
+    },
+    {
+      "file": "worker/consumption-r3-seed.mjs",
+      "line": 48,
+      "kind": "INDEX",
+      "name": "c1_r3_candidate_scores_lookup_v1",
+      "sql": "CREATE INDEX IF NOT EXISTS c1_r3_candidate_scores_lookup_v1 ON c1_r3_candidate_scores_v1(revision,score_date DESC);",
+      "unresolved_template": false,
+      "has_fk": false,
+      "virtual": false,
+      "generated": false
+    },
+    {
+      "file": "worker/consumption-r3-source-store.mjs",
+      "line": 20,
+      "kind": "TABLE",
+      "name": "c1_r3_source_snapshots_v1",
+      "sql": "CREATE TABLE IF NOT EXISTS c1_r3_source_snapshots_v1 (\n        revision TEXT NOT NULL,\n        score_date TEXT NOT NULL,\n        quarter TEXT NOT NULL,\n        source_key TEXT NOT NULL,\n        provider TEXT NOT NULL,\n        payload_sha256 TEXT NOT NULL,\n        payload_json TEXT NOT NULL,\n        retrieved_at TEXT NOT NULL,\n        source_url TEXT,\n        PRIMARY KEY(revision,score_date,source_key)\n      )",
+      "unresolved_template": false,
+      "has_fk": false,
+      "virtual": false,
+      "generated": false
+    },
+    {
+      "file": "worker/consumption-r3-source-store.mjs",
+      "line": 32,
+      "kind": "INDEX",
+      "name": "c1_r3_source_snapshots_lookup_v1",
+      "sql": "CREATE INDEX IF NOT EXISTS c1_r3_source_snapshots_lookup_v1\n        ON c1_r3_source_snapshots_v1(revision,score_date DESC,source_key)",
+      "unresolved_template": false,
+      "has_fk": false,
+      "virtual": false,
+      "generated": false
+    },
+    {
+      "file": "worker/market-operational-store.mjs",
+      "line": 24,
+      "kind": "TABLE",
+      "name": "market_input_batches_v1",
+      "sql": "CREATE TABLE IF NOT EXISTS market_input_batches_v1 (batch_key TEXT PRIMARY KEY,body TEXT NOT NULL,stored_at INTEGER NOT NULL)",
+      "unresolved_template": false,
+      "has_fk": false,
+      "virtual": false,
+      "generated": false
+    },
+    {
+      "file": "worker/market-operational-store.mjs",
+      "line": 25,
+      "kind": "TABLE",
+      "name": "market_public_snapshots_v1",
+      "sql": "CREATE TABLE IF NOT EXISTS market_public_snapshots_v1 (snapshot_key TEXT PRIMARY KEY,body TEXT NOT NULL,stored_at INTEGER NOT NULL)",
+      "unresolved_template": false,
+      "has_fk": false,
+      "virtual": false,
+      "generated": false
+    },
+    {
+      "file": "worker/market-operational-store.mjs",
+      "line": 26,
+      "kind": "TABLE",
+      "name": "market_collection_jobs_v1",
+      "sql": "CREATE TABLE IF NOT EXISTS market_collection_jobs_v1 (job TEXT PRIMARY KEY,lease_id TEXT,lease_until INTEGER NOT NULL DEFAULT 0,finished_at INTEGER NOT NULL DEFAULT 0,status TEXT)",
+      "unresolved_template": false,
+      "has_fk": false,
+      "virtual": false,
+      "generated": false
+    },
+    {
+      "file": "worker/market-operational-store.mjs",
+      "line": 27,
+      "kind": "TABLE",
+      "name": "market_liquidity_active_history_v1",
+      "sql": "CREATE TABLE IF NOT EXISTS market_liquidity_active_history_v1 (as_of_date TEXT NOT NULL,methodology_version TEXT NOT NULL,score REAL NOT NULL,stored_at INTEGER NOT NULL,PRIMARY KEY(as_of_date,methodology_version))",
+      "unresolved_template": false,
+      "has_fk": false,
+      "virtual": false,
+      "generated": false
+    },
+    {
+      "file": "worker/market-score-response-store.mjs",
+      "line": 33,
+      "kind": "TABLE",
+      "name": "market_score_response_cache_v1",
+      "sql": "CREATE TABLE IF NOT EXISTS market_score_response_cache_v1 (\n      cache_key TEXT PRIMARY KEY, body TEXT NOT NULL, stored_at INTEGER NOT NULL\n    )",
+      "unresolved_template": false,
+      "has_fk": false,
+      "virtual": false,
+      "generated": false
+    },
+    {
+      "file": "worker/market-score-response-store.mjs",
+      "line": 36,
+      "kind": "TABLE",
+      "name": "market_liquidity_active_history_v1",
+      "sql": "CREATE TABLE IF NOT EXISTS market_liquidity_active_history_v1 (\n      as_of_date TEXT NOT NULL,\n      methodology_version TEXT NOT NULL,\n      score REAL NOT NULL,\n      stored_at INTEGER NOT NULL,\n      PRIMARY KEY(as_of_date, methodology_version)\n    )",
+      "unresolved_template": false,
+      "has_fk": false,
+      "virtual": false,
+      "generated": false
+    },
+    {
+      "file": "worker/public-feed-store.mjs",
+      "line": 22,
+      "kind": "TABLE",
+      "name": "public_feed_snapshots_v1",
+      "sql": "CREATE TABLE IF NOT EXISTS public_feed_snapshots_v1(kind TEXT NOT NULL,feed_key TEXT NOT NULL,snapshot_key TEXT NOT NULL,body TEXT NOT NULL,stored_at INTEGER NOT NULL,PRIMARY KEY(kind,feed_key,snapshot_key))",
+      "unresolved_template": false,
+      "has_fk": false,
+      "virtual": false,
+      "generated": false
+    }
+  ],
+  "live_schema_complete": false,
+  "live_indexes_fk_triggers_views_virtual_generated": "UNKNOWN"
+}
