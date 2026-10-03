@@ -53,6 +53,15 @@ export async function readStoredMarketInputs(store,now=Date.now()){
  return batches.map(fresh).reduce((all,part)=>({...all,...part,series:{...all.series,...part.series},external:{...all.external,...part.external},providerSummary:{...all.providerSummary,...part.providerSummary}}),{series:{},external:{},providerSummary:{}});
 }
 
+export async function readStoredMarketInputsSelected(store,keys,now=Date.now()){
+ if(!Array.isArray(keys)||!keys.length)return {series:{},external:{},providerSummary:{}};
+ const unique=[...new Set(keys)];
+ for(const key of unique)if(!['macro','credit','supply','fundFlows','bisDsr','bisTc','rates'].includes(key))throw Error('INVALID_INPUT_BATCH_KEY');
+ const batches=await Promise.all(unique.map(key=>store.readInput(key)));
+ const fresh=(x,key)=>x&&now>=x.storedAt&&now-x.storedAt<INPUT_TTL?(key==='macro'?mergeStoredMacro(null,x,now):x.body):{};
+ return batches.map((batch,index)=>fresh(batch,unique[index])).reduce((all,part)=>({...all,...part,series:{...all.series,...part.series},external:{...all.external,...part.external},providerSummary:{...all.providerSummary,...part.providerSummary}}),{series:{},external:{},providerSummary:{}});
+}
+
 export async function storedMarketResponse(request,{store,now=Date.now()}={}){
  const headers={'cache-control':'no-store','x-robots-tag':'noindex','x-market-cache':'STORED','vary':'Accept','x-content-type-options':'nosniff'};
  if(request.method!=='GET')return Response.json({status:'FAILED',reason:'METHOD_NOT_ALLOWED'},{status:405,headers});
