@@ -20,10 +20,12 @@ export async function consumeProjectionBatch(batch,native,ctx){
   const existing=await publicProjectionStore(observed.env.DB_CORE).read(PUBLIC_PROJECTION_KEYS[job.id]);
   const p=existing?.body?.projection;
   if(p?.status==='READY'&&p.sourceVersion===job.sourceVersion&&p.sourceStoredAt===job.sourceStoredAt&&existing.body.payload)return {body:existing.body.payload,storedAt:existing.storedAt};
-  await writer.invalidate(job.id,job);
-  const input=await loadProjectionSource(job.id,observed.env);observed.assertHealthy();
-  const body=await builders[job.id](input);
-  const after=await readSourceCheckpoint(observed.env);observed.assertHealthy();
+  const phases:any[]=[];
+  const tInvalidate=performance.now();await writer.invalidate(job.id,job);phases.push({phase:'invalidate',elapsedMs:performance.now()-tInvalidate});
+  const tLoad=performance.now();const input=await loadProjectionSource(job.id,observed.env,{onPhase:(x:any)=>phases.push(x)});phases.push({phase:'load-total',elapsedMs:performance.now()-tLoad});observed.assertHealthy();
+  const tBuild=performance.now();const body=await builders[job.id](input);phases.push({phase:'build',elapsedMs:performance.now()-tBuild});
+  const tCheckpoint=performance.now();const after=await readSourceCheckpoint(observed.env);phases.push({phase:'checkpoint-after',elapsedMs:performance.now()-tCheckpoint});observed.assertHealthy();
+  console.log('R53_PROJECTION_PROFILE',JSON.stringify({id:job.id,phases:phases.map(p=>({phase:p.phase,elapsedMs:Math.round(Number(p.elapsedMs)*100)/100}))}));
   if(after.sourceVersion!==before.sourceVersion)throw Error('SOURCE_CHECKPOINT_CHANGED');
   return {body,storedAt:Date.now()};
  },writeProjection:(id,body,storedAt)=>writer.write(id,body,storedAt,jobs.get(id))});
