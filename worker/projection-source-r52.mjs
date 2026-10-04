@@ -39,6 +39,6 @@ export async function loadProjectionSource(id,env,{now=Date.now(),onPhase}={}){
  }
  const keys=PROJECTION_INPUT_BATCHES[id];
  if(!keys)throw Error('INVALID_PROJECTION_ID');
- const inputStarted=performance.now(),inputs=await readStoredMarketInputsSelected(store,keys,now);mark('source:inputs',inputStarted);
+ const inputStarted=performance.now(),inputs=await readStoredMarketInputsSelected(store,keys,now,{anchorToLatestBatch:id==='liquidityCrisis'||id==='creditRisk'});mark('source:inputs',inputStarted);
  return {inputs,snapshot,publicSnapshot:snapshot,nowIso};
 }

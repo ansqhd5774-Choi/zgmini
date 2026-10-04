@@ -1,5 +1,5 @@
 import {scoreCmdiComponentsR1} from "../../lib/diagnostic-layer/r1-diagnostic-pipeline.mjs";
-import {buildBondVolatilityR6} from "../../lib/diagnostic-layer/bond-vol-r6-components.mjs";
+import {buildBondVolatilityR6} from "./liquidity-optimized-components.mjs";
 import {creditRiskDefense} from "../../lib/diagnostic-layer/model.mjs";
 
 const finite=(v:unknown):v is number=>typeof v==="number"&&Number.isFinite(v);
