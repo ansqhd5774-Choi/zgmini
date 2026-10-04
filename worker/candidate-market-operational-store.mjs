@@ -53,12 +53,14 @@ export async function readStoredMarketInputs(store,now=Date.now()){
  return batches.map(fresh).reduce((all,part)=>({...all,...part,series:{...all.series,...part.series},external:{...all.external,...part.external},providerSummary:{...all.providerSummary,...part.providerSummary}}),{series:{},external:{},providerSummary:{}});
 }
 
-export async function readStoredMarketInputsSelected(store,keys,now=Date.now()){
+export async function readStoredMarketInputsSelected(store,keys,now=Date.now(),{anchorToLatestBatch=false}={}){
  if(!Array.isArray(keys)||!keys.length)return {series:{},external:{},providerSummary:{}};
  const unique=[...new Set(keys)];
  for(const key of unique)if(!['macro','credit','supply','fundFlows','bisDsr','bisTc','rates'].includes(key))throw Error('INVALID_INPUT_BATCH_KEY');
  const batches=await Promise.all(unique.map(key=>store.readInput(key)));
- const fresh=(x,key)=>x&&now>=x.storedAt&&now-x.storedAt<INPUT_TTL?(key==='macro'?mergeStoredMacro(null,x,now):x.body):{};
+ const storedTimes=batches.map(x=>Number(x?.storedAt)).filter(Number.isFinite);
+ const referenceNow=anchorToLatestBatch&&storedTimes.length?Math.max(...storedTimes):now;
+ const fresh=(x,key)=>x&&referenceNow>=x.storedAt&&referenceNow-x.storedAt<INPUT_TTL?(key==='macro'?mergeStoredMacro(null,x,referenceNow):x.body):{};
  return batches.map((batch,index)=>fresh(batch,unique[index])).reduce((all,part)=>({...all,...part,series:{...all.series,...part.series},external:{...all.external,...part.external},providerSummary:{...all.providerSummary,...part.providerSummary}}),{series:{},external:{},providerSummary:{}});
 }
 
