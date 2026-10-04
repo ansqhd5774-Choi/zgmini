@@ -1,14 +1,32 @@
+import {PUBLIC_PROJECTION_KEYS,publicProjectionStore} from './market-public-projection-store.mjs';
 import {createProjectionQueueConsumer,projectionQueueMessage,PROJECTION_IDS} from './market-projection-queue.mjs';
 import {observedSourceEnv,readProjectionCheckpoint,readProjectionCheckpoints} from './projection-checkpoint-r52.mjs';
 import {builders} from './projection-builders.ts';
 import {loadProjectionSource} from './projection-source-r52.mjs';
 import {projectionWriter} from './projection-runtime-r52.mjs';
-export async function enqueueAfterStoredSourceSuccess(native,{sourceSucceeded}){
+export async function enqueueProjectionIds(native,ids,{sourceSucceeded,skipReady=true}={}){
  if(sourceSucceeded!==true)throw Error('SOURCE_SUCCESS_REQUIRED');
  if(!native.PUBLIC_PROJECTION_QUEUE?.sendBatch)throw Error('QUEUE_UNAVAILABLE');
- const observed=observedSourceEnv(native),checkpoints=await readProjectionCheckpoints(observed.env,PROJECTION_IDS);observed.assertHealthy();
- const jobs=PROJECTION_IDS.map(id=>projectionQueueMessage(id,checkpoints[id]));
- return native.PUBLIC_PROJECTION_QUEUE.sendBatch(jobs.map(body=>({body})));
+ const selected=[...new Set(ids??[])];
+ if(!selected.length)return {sent:0,skipped:0};
+ for(const id of selected)if(!PROJECTION_IDS.includes(id))throw Error('INVALID_PROJECTION_ID');
+ const observed=observedSourceEnv(native),checkpoints=await readProjectionCheckpoints(observed.env,selected);observed.assertHealthy();
+ const store=publicProjectionStore(observed.env.DB_CORE),jobs=[];let skipped=0;
+ for(const id of selected){
+  const checkpoint=checkpoints[id];
+  if(skipReady){
+   const existing=await store.read(PUBLIC_PROJECTION_KEYS[id]);
+   const p=existing?.body?.projection;
+   if(p?.status==='READY'&&p.sourceVersion===checkpoint.sourceVersion&&p.sourceStoredAt===checkpoint.sourceStoredAt&&existing?.body?.payload){skipped++;continue;}
+  }
+  jobs.push(projectionQueueMessage(id,checkpoint));
+ }
+ if(!jobs.length)return {sent:0,skipped};
+ await native.PUBLIC_PROJECTION_QUEUE.sendBatch(jobs.map(body=>({body})));
+ return {sent:jobs.length,skipped};
+}
+export async function enqueueAfterStoredSourceSuccess(native,{sourceSucceeded}){
+ return enqueueProjectionIds(native,PROJECTION_IDS,{sourceSucceeded,skipReady:true});
 }
 export async function consumeProjectionBatch(batch,native,ctx){
  const observed=observedSourceEnv(native),writer=projectionWriter(native.DB_CORE),jobs=new Map();
