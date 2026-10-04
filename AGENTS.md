@@ -11,10 +11,16 @@
 - Completed source changes must be reflected in GitHub `main` and the final commit SHA must be recorded as Evidence.
 
 ## 2. Production platform and deployment
-- ZGMINI Production uses Cloudflare Workers / D1 / Cron as the default architecture.
-- The normal deployment contract is:
-  `GitHub main -> Cloudflare automatic build/deploy -> Production verification`.
-- Do not bypass GitHub `main` with a direct Production deployment unless the user explicitly approves it.
+- ZGMINI Production uses Cloudflare Workers / D1 / Cron as the runtime architecture.
+- This repository's checked-in deployment contract is OpenAI Sites based:
+  `GitHub main -> Sites remote builder -> Saved Version -> exact Version deploy -> Production verification`.
+- `.openai/hosting.json` is the hosting contract and currently declares the Sites project plus D1 binding `DB`.
+- The repository README explicitly states that the remote Sites builder runs `npm run build` against the pushed commit and that this starter does not use `wrangler.jsonc`.
+- Do not assume a GitHub Actions workflow, Cloudflare GitHub App check-run, or direct Cloudflare Git integration exists merely because the runtime is Cloudflare.
+- Production identity must be verified using the exact pushed Git commit, the Sites Saved Version source commit, the deployed version, and the deployment ID when Sites access is available.
+- Save Version and Deploy are separate gates. Never deploy a version whose source commit does not equal the intended pushed commit.
+- Poll only the exact deployment ID returned by the deploy call; do not start a second deployment because the first is still building.
+- Do not bypass GitHub `main` or the approved Sites Save/Deploy path with a direct Cloudflare deployment unless the user explicitly approves it.
 - Build success is not Production success.
 - After a source change that affects Production, verify deployment identity/status, required Production HTTP/API behavior, and the actual Production UI when applicable.
 
