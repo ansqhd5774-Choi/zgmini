@@ -12,8 +12,8 @@ const http=candidate2dbWorker({async fetch(request,env,ctx){
  return handler.fetch(request,env,ctx);
 }});
 export default Object.freeze({...http,async scheduled(controller,native,ctx){
- const {enqueueAfterStoredSourceSuccess}=await import('./projection-queue-r52.ts');
- ctx.waitUntil(enqueueAfterStoredSourceSuccess(native,{sourceSucceeded:true}));
+ const {enqueueProjectionIds}=await import('./projection-queue-r52.ts');
+ ctx.waitUntil(enqueueProjectionIds(native,['inflation','creditRisk','earningsRecession','assetBubble','debtRisk','supplyShock','koreaFearGreed'],{sourceSucceeded:true,skipReady:false}));
 },async queue(batch,native,ctx){
  const {consumeProjectionBatch}=await import('./projection-queue-r52.ts');
  const result=await consumeProjectionBatch(batch,native,ctx);
