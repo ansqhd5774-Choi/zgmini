@@ -7,13 +7,20 @@ This document does NOT authorize final cutover yet.
 
 ## Preconditions
 R6 execution may start only after:
-- R5.2 remote projection creation PASS
-- 8 detail + KFG public parity PASS or explained snapshot drift
-- optimized visitor GET CPU PASS/WARN under Free gate
-- D1 rows-read materially reduced
-- candidate write guard PASS
-- Production isolation still intact
-- R5.2 implementation is present in GitHub source-of-truth
+- all 9 stored public projections are remotely READY
+- projection visitor reads are fixed-key SELECT-only with measured rows_read=1
+- candidate public routes are healthy
+- candidate write guard / Production isolation remain intact
+- temporary candidate verification crons/probes are removed
+- current migration implementation is present in GitHub source-of-truth
+
+Current proven precondition state (2026-10-04):
+- 9/9 public projection endpoints: HTTP 200
+- liquidityCrisis: READY and scoreMatch=true
+- all 9 fixed projection reads: rows_read=1
+- temporary credit cron/probes: removed
+- latest migration source includes R6 Production Worker preparation
+- current Sites vs candidate exact JSON equality is not expected until final source delta is synchronized because Sites writers resumed after the authoritative export snapshot
 
 ## Authoritative source
 Sites D1 remains source-of-truth until final writer cutover.
