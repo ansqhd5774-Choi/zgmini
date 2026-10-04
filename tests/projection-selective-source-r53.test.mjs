@@ -28,3 +28,18 @@ test('selected reader rejects unapproved batch keys',async()=>{
  const store={async readInput(){throw Error('SHOULD_NOT_RUN')}};
  await assert.rejects(()=>readStoredMarketInputsSelected(store,['macro','not-real'],Date.now()),/INVALID_INPUT_BATCH_KEY/);
 });
+
+
+test('snapshot-relative reader anchors TTL to latest selected batch',async()=>{
+ const store={async readInput(key){
+  if(key==='macro')return {storedAt:100,body:{series:{MACRO:[{observationDate:'2026-01-01',value:1}]}}};
+  if(key==='credit')return {storedAt:110,body:{external:{creditRows:[1]}}};
+  return null;
+ }};
+ const staleAtWallClock=await readStoredMarketInputsSelected(store,['macro','credit'],1000000);
+ assert.deepEqual(staleAtWallClock.series,{});
+ assert.deepEqual(staleAtWallClock.external,{});
+ const anchored=await readStoredMarketInputsSelected(store,['macro','credit'],1000000,{anchorToLatestBatch:true});
+ assert.ok(anchored.series.MACRO);
+ assert.deepEqual(anchored.external.creditRows,[1]);
+});
