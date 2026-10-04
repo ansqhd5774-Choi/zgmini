@@ -47,24 +47,44 @@ interface ExecutionContext {
 }
 
 export async function runMarketExternalRefresh(args:any){
+  const startedAt=Date.now();
   const precompute=await refreshStoredMarketScoreSnapshot({
     env:args?.env,
     now:args?.now??Date.now(),
   });
+  const precomputeMs=Date.now()-startedAt;
   console.log('MARKET_SCORE_PRECOMPUTE_EXTERNAL',JSON.stringify({
     status:precompute?.status??null,
     providerRequests:precompute?.providerRequests??0,
     readyDomains:precompute?.readyDomains??null,
     reason:precompute?.reason??null,
+    elapsedMs:precomputeMs,
   }));
+  const marketStartedAt=Date.now();
   const result=await runMarketOperationalRefresh(args).catch(()=>({status:'ERROR'}));
+  const marketMs=Date.now()-marketStartedAt;
+  console.log('MARKET_EXTERNAL_STAGE',JSON.stringify({
+    stage:'market',
+    status:result?.status??null,
+    job:result?.job??null,
+    elapsedMs:marketMs,
+  }));
+  let feedStatus='SKIPPED_MACRO_CPU_GUARD',feedMs=0;
   if(['macro','macroCredit'].includes(result?.job)){
-    console.log('PUBLIC_FEEDS',JSON.stringify({status:'SKIPPED_MACRO_CPU_GUARD'}));
+    console.log('PUBLIC_FEEDS',JSON.stringify({status:feedStatus,attempted:0,elapsedMs:0}));
   }else{
-    const feeds=await runPublicFeeds(args).catch(()=>({status:'ERROR'}));
-    console.log('PUBLIC_FEEDS',JSON.stringify(feeds));
+    const feedStartedAt=Date.now();
+    const feeds=await runPublicFeeds({...args,maxFeedsPerRun:1}).catch(()=>({status:'ERROR',attempted:0}));
+    feedMs=Date.now()-feedStartedAt;
+    feedStatus=feeds?.status??'ERROR';
+    console.log('PUBLIC_FEEDS',JSON.stringify({...feeds,elapsedMs:feedMs}));
   }
-  return {...result,precomputeStatus:precompute?.status??null};
+  return {
+    ...result,
+    precomputeStatus:precompute?.status??null,
+    stageDurationsMs:{precompute:precomputeMs,market:marketMs,publicFeeds:feedMs,total:Date.now()-startedAt},
+    publicFeedStatus:feedStatus,
+  };
 }
 
 // Image security config. SVG sources with .svg extension auto-skip the

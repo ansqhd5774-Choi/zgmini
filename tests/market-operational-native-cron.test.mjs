@@ -62,3 +62,14 @@ test("external market scheduler precomputes stored snapshot before slow collecti
  assert.match(block,/providerRequests:precompute\?\.providerRequests\?\?0/);
  assert.match(worker,/refresh:runMarketExternalRefresh,responseBudgetMs:5000,logTag:'MARKET_EXTERNAL'/);
 });
+
+test("external market scheduler caps public feed tail to one due feed and emits stage timings",()=>{
+ const start=worker.indexOf("export async function runMarketExternalRefresh");
+ const end=worker.indexOf("// Image security config");
+ assert.ok(start>=0&&end>start);
+ const block=worker.slice(start,end);
+ assert.match(block,/runPublicFeeds\(\{\.\.\.args,maxFeedsPerRun:1\}\)/);
+ assert.match(block,/stageDurationsMs:/);
+ assert.match(block,/MARKET_EXTERNAL_STAGE/);
+ assert.match(block,/elapsedMs/);
+});
