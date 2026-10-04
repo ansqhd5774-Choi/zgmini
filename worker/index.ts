@@ -48,18 +48,30 @@ interface ExecutionContext {
 
 export async function runMarketExternalRefresh(args:any){
   const startedAt=Date.now();
-  const precompute=await refreshStoredMarketScoreSnapshot({
-    env:args?.env,
-    now:args?.now??Date.now(),
-  });
-  const precomputeMs=Date.now()-startedAt;
-  console.log('MARKET_SCORE_PRECOMPUTE_EXTERNAL',JSON.stringify({
-    status:precompute?.status??null,
-    providerRequests:precompute?.providerRequests??0,
-    readyDomains:precompute?.readyDomains??null,
-    reason:precompute?.reason??null,
-    elapsedMs:precomputeMs,
-  }));
+  const feedStartedAt=Date.now();
+  const feeds=await runPublicFeeds({...args,maxFeedsPerRun:1}).catch(()=>({status:'ERROR',attempted:0,feeds:[]}));
+  const feedMs=Date.now()-feedStartedAt;
+  const attempted=feeds?.attempted??0;
+  const feedStatus=feeds?.status??'ERROR';
+  console.log('PUBLIC_FEEDS',JSON.stringify({...feeds,elapsedMs:feedMs}));
+  if(attempted>0){
+    console.log('MARKET_EXTERNAL_STAGE',JSON.stringify({
+      stage:'public-feed',
+      status:feedStatus,
+      attempted,
+      elapsedMs:feedMs,
+    }));
+    return {
+      status:feedStatus==='PARTIAL'?'SOURCE_FAILED':'BACKLOG',
+      job:'public-feed',
+      sourceStatus:feedStatus,
+      readyDomains:null,
+      precomputeStatus:'SKIPPED_EXTERNAL_PHASED',
+      publicFeedStatus:feedStatus,
+      stageDurationsMs:{precompute:0,market:0,publicFeeds:feedMs,total:Date.now()-startedAt},
+    };
+  }
+
   const marketStartedAt=Date.now();
   const result=await runMarketOperationalRefresh(args).catch(()=>({status:'ERROR'}));
   const marketMs=Date.now()-marketStartedAt;
@@ -69,20 +81,10 @@ export async function runMarketExternalRefresh(args:any){
     job:result?.job??null,
     elapsedMs:marketMs,
   }));
-  let feedStatus='SKIPPED_MACRO_CPU_GUARD',feedMs=0;
-  if(['macro','macroCredit'].includes(result?.job)){
-    console.log('PUBLIC_FEEDS',JSON.stringify({status:feedStatus,attempted:0,elapsedMs:0}));
-  }else{
-    const feedStartedAt=Date.now();
-    const feeds=await runPublicFeeds({...args,maxFeedsPerRun:1}).catch(()=>({status:'ERROR',attempted:0}));
-    feedMs=Date.now()-feedStartedAt;
-    feedStatus=feeds?.status??'ERROR';
-    console.log('PUBLIC_FEEDS',JSON.stringify({...feeds,elapsedMs:feedMs}));
-  }
   return {
     ...result,
-    precomputeStatus:precompute?.status??null,
-    stageDurationsMs:{precompute:precomputeMs,market:marketMs,publicFeeds:feedMs,total:Date.now()-startedAt},
+    precomputeStatus:'SKIPPED_EXTERNAL_PHASED',
+    stageDurationsMs:{precompute:0,market:marketMs,publicFeeds:feedMs,total:Date.now()-startedAt},
     publicFeedStatus:feedStatus,
   };
 }

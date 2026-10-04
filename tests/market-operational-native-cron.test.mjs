@@ -53,23 +53,26 @@ test("breadth source failure is retried ahead of normal round-robin jobs",()=>{
 });
 
 
-test("external market scheduler precomputes stored snapshot before slow collection",()=>{
- const start=worker.indexOf("export async function runMarketExternalRefresh");
- const end=worker.indexOf("// Image security config");
- assert.ok(start>=0&&end>start);
- const block=worker.slice(start,end);
- assert.ok(block.indexOf("refreshStoredMarketScoreSnapshot")<block.indexOf("runMarketOperationalRefresh"));
- assert.match(block,/providerRequests:precompute\?\.providerRequests\?\?0/);
- assert.match(worker,/refresh:runMarketExternalRefresh,responseBudgetMs:5000,logTag:'MARKET_EXTERNAL'/);
-});
-
-test("external market scheduler caps public feed tail to one due feed and emits stage timings",()=>{
+test("external market scheduler phases one due public feed before market work",()=>{
  const start=worker.indexOf("export async function runMarketExternalRefresh");
  const end=worker.indexOf("// Image security config");
  assert.ok(start>=0&&end>start);
  const block=worker.slice(start,end);
  assert.match(block,/runPublicFeeds\(\{\.\.\.args,maxFeedsPerRun:1\}\)/);
- assert.match(block,/stageDurationsMs:/);
+ assert.ok(block.indexOf("runPublicFeeds")<block.indexOf("runMarketOperationalRefresh"));
+ assert.match(block,/if\(attempted>0\)/);
+ assert.match(block,/job:'public-feed'/);
+ assert.match(block,/precomputeStatus:'SKIPPED_EXTERNAL_PHASED'/);
+ assert.doesNotMatch(block,/refreshStoredMarketScoreSnapshot/);
+ assert.match(worker,/refresh:runMarketExternalRefresh,responseBudgetMs:5000,logTag:'MARKET_EXTERNAL'/);
+});
+
+test("external market scheduler runs one market job only when no public feed is due",()=>{
+ const start=worker.indexOf("export async function runMarketExternalRefresh");
+ const end=worker.indexOf("// Image security config");
+ assert.ok(start>=0&&end>start);
+ const block=worker.slice(start,end);
+ assert.match(block,/const result=await runMarketOperationalRefresh\(args\)/);
+ assert.match(block,/stageDurationsMs:\{precompute:0,market:marketMs,publicFeeds:feedMs/);
  assert.match(block,/MARKET_EXTERNAL_STAGE/);
- assert.match(block,/elapsedMs/);
 });
