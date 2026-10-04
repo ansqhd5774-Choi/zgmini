@@ -36,10 +36,10 @@ test('snapshot-relative reader anchors TTL to latest selected batch',async()=>{
   if(key==='credit')return {storedAt:110,body:{external:{creditRows:[1]}}};
   return null;
  }};
- const staleAtWallClock=await readStoredMarketInputsSelected(store,['macro','credit'],1000000);
+ const staleAtWallClock=await readStoredMarketInputsSelected(store,['macro','credit'],200000000);
  assert.deepEqual(staleAtWallClock.series,{});
  assert.deepEqual(staleAtWallClock.external,{});
- const anchored=await readStoredMarketInputsSelected(store,['macro','credit'],1000000,{anchorToLatestBatch:true});
+ const anchored=await readStoredMarketInputsSelected(store,['macro','credit'],200000000,{anchorToLatestBatch:true});
  assert.ok(anchored.series.MACRO);
  assert.deepEqual(anchored.external.creditRows,[1]);
 });
