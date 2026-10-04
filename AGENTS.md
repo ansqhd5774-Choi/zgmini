@@ -17,8 +17,10 @@
 - `.openai/hosting.json` is the hosting contract and currently declares the Sites project plus D1 binding `DB`.
 - The repository README explicitly states that the remote Sites builder runs `npm run build` against the pushed commit and that this starter does not use `wrangler.jsonc`.
 - Do not assume a GitHub Actions workflow, Cloudflare GitHub App check-run, or direct Cloudflare Git integration exists merely because the runtime is Cloudflare.
-- Production identity must be verified using the exact pushed Git commit, the Sites Saved Version source commit, the deployed version, and the deployment ID when Sites access is available.
-- Save Version and Deploy are separate gates. Never deploy a version whose source commit does not equal the intended pushed commit.
+- GitHub `main` and the Sites source repository may use different commit namespaces. Do not require raw SHA equality across the two repositories unless same-repository identity has been proven for that run.
+- Before Save/Deploy, prove source parity from the latest GitHub `main` into the Sites source using the strongest available evidence: exact synchronized source, scoped file/blob hashes, tree/archive manifest, or another explicit cross-repository parity check.
+- Production identity must record the GitHub `main` SHA, the Sites Saved Version source identity, the deployed version, and the deployment ID when Sites access is available.
+- Save Version and Deploy are separate gates. Never deploy a version until its source has been proven to represent the intended GitHub `main` content for the requested scope.
 - Poll only the exact deployment ID returned by the deploy call; do not start a second deployment because the first is still building.
 - Do not bypass GitHub `main` or the approved Sites Save/Deploy path with a direct Cloudflare deployment unless the user explicitly approves it.
 - Build success is not Production success.
@@ -35,9 +37,11 @@
 
 ## 4. Runtime diagnosis
 - For Production runtime failures, use this priority:
-  1. Cloudflare runtime/build/deployment evidence
-  2. PostHog production behavior/error evidence
-  3. GitHub source investigation
+  1. Sites worker/runtime logs and Sites deployment status when the Sites tools are available
+  2. Cloudflare runtime evidence when a direct Cloudflare read path is available
+  3. PostHog production behavior/error evidence
+  4. GitHub source investigation
+- Use Sites D1 read tools (`sites.read_database_overview`, `sites.read_database_table_rows`, or current equivalents) for read-only D1 verification when available; do not infer D1 health from public HTTP alone.
 - Do not treat a successful build as proof that Runtime is healthy.
 - Keep test events separate from real Production events.
 - Do not put secrets or sensitive user data into logs, analytics, commits, or Evidence.
@@ -54,7 +58,13 @@
 
 ## 7. Browser and external tools
 - Use free/static/API methods when they are sufficient.
-- Use TinyFish only when real browser interaction is actually required, such as login, dynamic UI, or browser-only state.
+- TinyFish Agent/Browser is DEFAULT_DENY because it is metered and quota-limited.
+- Do not use TinyFish Agent/Browser for ordinary public-page checks, HTTP/API verification, static DOM inspection, or any task that GitHub, Sites read tools, normal web search, Context7, official docs, or another free connector can complete.
+- TinyFish Agent/Browser may be used only when login, clicking/input, JavaScript-only state, or a real-browser-only failure is essential and free alternatives have been exhausted.
+- Unless the user explicitly requested TinyFish for that task, obtain user approval immediately before starting a metered Agent/Browser run.
+- Default to one run. If a run times out or errors after submission, inspect the same run state; do not automatically start a replacement run.
+- Reuse an existing valid profile instead of creating duplicate profiles.
+- A TinyFish quota/wallet limit is not a project BLOCKER when the same goal can proceed through a free path.
 - Do not use Remote Desktop Commander for work GitHub/Codex can perform directly.
 - RDC is reserved for user-PC-only files, local CMD-only state, locally installed GUI software, or other machine-local dependencies.
 - Do not create paid resources, start subscriptions, buy credits, or create ongoing billable infrastructure without user approval.
@@ -65,9 +75,10 @@
 - Follow the active ZGMINI CMD work standard when a task requires local execution.
 
 ## 9. Cost controls
-- Prefer GitHub, Cloudflare free capabilities, PostHog free capabilities, Context7, and ordinary web/static verification when sufficient.
-- Avoid metered TinyFish, Firecrawl, DigitalOcean, paid APIs, or other billable paths when an equivalent free method is available.
-- Ask for approval immediately before a new paid/billable resource or irreversible external change.
+- Prefer GitHub, Sites read-only capabilities, Cloudflare free capabilities, PostHog free capabilities, Context7, ordinary web search, official docs, and static/API verification when sufficient.
+- Avoid metered TinyFish Agent/Browser, Firecrawl credits, DigitalOcean, paid APIs, or other billable paths when an equivalent free method is available.
+- If a paid/quota-limited tool is already exhausted, switch to an approved free fallback instead of repeatedly probing the exhausted service.
+- Ask for approval immediately before a new paid/billable resource, wallet/credit top-up, subscription change, or irreversible external change.
 
 ## 10. Work execution and reporting
 - Continue independent work lanes without stopping for unnecessary status reports.
@@ -77,7 +88,9 @@
 - Distinguish clearly:
   - source modified
   - GitHub main reflected
-  - Cloudflare deployed
+  - Sites version saved
+  - Sites deployment succeeded
+  - Cloudflare/runtime healthy
   - Runtime verified
   - Production UI verified
 
@@ -98,7 +111,9 @@ A Production-affecting task is complete only when every applicable item below pa
 - source drift = none
 - requested source change = PASS
 - GitHub main reflection = PASS
-- Cloudflare Production deployment = PASS
+- Sites source parity with the intended GitHub `main` scope = PASS
+- Sites Saved Version = PASS
+- Sites deployment = PASS
 - required Production HTTP/API = PASS
 - required data store/read = PASS when applicable
 - approved formula/data contract = unchanged
