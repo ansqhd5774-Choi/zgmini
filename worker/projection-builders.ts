@@ -1,0 +1,10 @@
+import {buildProjection as inflation} from './projection-builders/inflation.mjs';
+import {buildProjection as recession} from './projection-builders/recession.ts';
+import {buildProjection as liquidityCrisis} from './projection-builders/liquidityCrisis.ts';
+import {buildProjection as creditRisk} from './projection-builders/creditRisk.ts';
+import {buildProjection as earningsRecession} from './projection-builders/earningsRecession.ts';
+import {buildProjection as assetBubble} from './projection-builders/assetBubble.ts';
+import {buildProjection as debtRisk} from './projection-builders/debtRisk.ts';
+import {buildProjection as supplyShock} from './projection-builders/supplyShock.ts';
+import {buildProjection as koreaFearGreed} from './projection-builders/koreaFearGreed.mjs';
+export const builders=Object.freeze({inflation,recession,liquidityCrisis,creditRisk,earningsRecession,assetBubble,debtRisk,supplyShock,koreaFearGreed});
