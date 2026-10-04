@@ -36,6 +36,15 @@ test('scheduler stores output, retains last good data on failure, and honors dur
  r=await refreshPublicFeeds({env:{DB:db},store,locks,collectors,now:now+15*60000});assert.equal(r.status,'PARTIAL');assert.equal((await store.readOutput('fear-greed')).storedAt,now);
  await refreshPublicFeeds({env:{DB:db},store,locks,collectors,now:now+16*60000});assert.equal(calls,8);sql.close();
 });
+test('bounded scheduler attempts at most one due public feed per run and defers the rest',async()=>{
+ const {sql,db,store,locks}=fixture();let calls=0;
+ const collectors=Object.fromEntries(Object.keys(FEED_POLICY).map(key=>[key,async(s,t)=>{calls++;await s.writeInput(key,{score:0},t);return Response.json({status:'verified',score:0})}]));
+ const first=await refreshPublicFeeds({env:{DB:db},store,locks,collectors,now,maxFeedsPerRun:1});
+ assert.equal(calls,1);assert.equal(first.attempted,1);assert.equal(first.status,'BACKLOG');assert.equal(first.feeds.filter(x=>x.status==='DEFERRED').length,6);
+ const second=await refreshPublicFeeds({env:{DB:db},store,locks,collectors,now,maxFeedsPerRun:1});
+ assert.equal(calls,2);assert.equal(second.attempted,1);assert.equal(second.status,'BACKLOG');
+ sql.close();
+});
 test('public feed routes contain no collector or live provider calls',()=>{
  for(const key of Object.keys(FEED_POLICY).filter(x=>x!=='core-pce')){
   const source=readFileSync(new URL(`../app/api/${key}/route.ts`,import.meta.url),'utf8');
