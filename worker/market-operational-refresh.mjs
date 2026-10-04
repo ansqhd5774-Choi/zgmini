@@ -19,7 +19,7 @@ const EXTERNAL_KEYS={macro:['publicDomainScores'],credit:['dvpRepoRows','triPart
 async function collectGroup(args,group){
  const adapters=Object.fromEntries(['fetchFred','fetchOfr','fetchCmdi','fetchGscpi','fetchCopper','fetchFundFlows','fetchBis'].filter(key=>!SOURCE_GROUPS[group].includes(key)).map(key=>[key,async()=>({status:'SKIPPED_JOB'})]));
  const out=await collectDiagnosticLiveInputs({...args,requestCap:48,adapters});
- return {...(group==='macro'?{series:out.series,inputSettled:out.inputSettled}:{}),external:Object.fromEntries(EXTERNAL_KEYS[group].map(key=>[key,out.external[key]]))};
+ return {...(group==='macro'?{series:out.series,inputSettled:out.inputSettled,providerSummary:{fred:out.providerSummary?.fred}}:{}),external:Object.fromEntries(EXTERNAL_KEYS[group].map(key=>[key,out.external[key]]))};
 }
 const unavailableFetch=async()=>{throw Error('SCORE_CALCULATION_NETWORK_FORBIDDEN')};
 export async function calculateStoredMarketScore(env,store,now){
@@ -80,6 +80,14 @@ export async function runMarketOperationalRefresh({env,job,store,now=Date.now(),
    ...collectors,
   };
   phase='COLLECT';const collected=await jobs[selected]();
+  if(selected==='macro'&&!Object.values(collected?.series??{}).some(rows=>Array.isArray(rows)&&rows.length)){
+   const fred=collected?.providerSummary?.fred;
+   const failures={};
+   for(const item of fred?.failed??[]){const status=/^[A-Z0-9_]{1,64}$/.test(item?.status??'')?item.status:'UNKNOWN';failures[status]=(failures[status]??0)+1;}
+   console.warn('R60_MACRO_SOURCE_FAILED',JSON.stringify({reason:'MACRO_NO_READY_SERIES',requested:fred?.requested??null,ready:0,failures}));
+   await store.finish(selected,jobLease,now,'SOURCE_FAILED');
+   return {status:'SOURCE_FAILED',job:selected,reason:'MACRO_NO_READY_SERIES'};
+  }
   const collectedStatus=collected?.status??collected?.rateR2?.status;
   if(/^(FAIL|FAILED|ERROR|CONFIGURATION_MISSING|UNAVAILABLE)$/.test(collectedStatus??'')){
    await store.finish(selected,jobLease,now,'SOURCE_FAILED');

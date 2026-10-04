@@ -10,6 +10,14 @@ function fixture(){
 }
 const now=Date.parse('2026-09-30T00:00:00Z');
 const score={status:'SUCCESS',domains:Array.from({length:12},(_,i)=>({id:String(i),score:i===0?0:null})),overall:{score:null,status:'PARTIAL'}};
+test('empty macro cannot replace stored source, create slices or refresh score',async()=>{
+ const {store,db,sqlite}=fixture();const old={series:{PAYEMS:[{observationDate:'2026-09-01',value:0}]}};
+ await store.writeInput('macro',old,now-1);await store.writeScore(score,now-1);
+ const out=await runMarketOperationalRefresh({env:{DB:db},store,job:'macro',now,collectors:{macro:async()=>({series:{},providerSummary:{fred:{requested:42,ready:0,failed:[{status:'REQUEST_FAILED'}]}}})},calculate:()=>{throw Error('MUST_NOT_CALCULATE')}});
+ assert.deepEqual(out,{status:'SOURCE_FAILED',job:'macro',reason:'MACRO_NO_READY_SERIES'});
+ assert.deepEqual((await store.readInput('macro')).body,old);assert.equal((await store.readScore()).storedAt,now-1);
+ assert.equal(sqlite.prepare("SELECT count(*) n FROM market_input_batches_v1 WHERE batch_key LIKE 'projection-macro:%'").get().n,0);sqlite.close();
+});
 test('large normalized history is compressed in storage and restored without value loss',async()=>{
  const {store,sqlite}=fixture();
  const input={series:{A:Array.from({length:75000},(_,i)=>({date:'2026-09-30',value:i%3===0?0:i%3===1?null:i}))}};
