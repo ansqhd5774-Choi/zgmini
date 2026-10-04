@@ -2,6 +2,8 @@ import {readFileSync,readdirSync} from 'node:fs';
 import assert from 'node:assert/strict';
 import {candidateBranchGate} from './candidate-branch-gate.mjs';
 import {WRITER_CRONS} from '../worker/candidate-writer-r1.mjs';
+import {checkWriterLinkage} from './check-candidate-writer-linkage-r3.mjs';
+console.log('PASS: compiled writer linkage',checkWriterLinkage());
 candidateBranchGate();
 const c=JSON.parse(readFileSync('dist/server/wrangler.json'));
 assert.equal(c.name,'zgmini-migration-candidate-r5');
