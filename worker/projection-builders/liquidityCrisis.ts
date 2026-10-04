@@ -1,6 +1,4 @@
-import {buildBankEmergencyR7,buildFundingStressR7} from "../../lib/diagnostic-layer/liquidity-funding-r7-components.mjs";
-import {buildBankReservesR1,buildTgaR1,buildOnRrpR1,buildM2R1} from "../../lib/diagnostic-layer/score-transform-r1.mjs";
-import {buildBondVolatilityR6} from "../../lib/diagnostic-layer/bond-vol-r6-components.mjs";
+import {buildBankEmergencyR7,buildFundingStressR7,buildBankReservesR1,buildTgaR1,buildOnRrpR1,buildM2R1,buildBondVolatilityR6} from "./liquidity-optimized-components.mjs";
 import {liquidityCrisisDefense} from "../../lib/diagnostic-layer/model.mjs";
 
 const finite=(v:unknown):v is number=>typeof v==="number"&&Number.isFinite(v);

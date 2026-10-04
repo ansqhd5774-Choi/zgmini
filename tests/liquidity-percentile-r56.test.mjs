@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {expandingPercentileValues,expandingPercentileRows} from '../lib/diagnostic-layer/series-math.mjs';
+import {expandingPercentileValues} from '../worker/projection-builders/liquidity-optimized-components.mjs';
+import {expandingPercentileRows} from '../lib/diagnostic-layer/series-math.mjs';
 
 function legacy(values,{inverse=false,minValid=1}={}){
   const out=new Array(values.length).fill(null);
