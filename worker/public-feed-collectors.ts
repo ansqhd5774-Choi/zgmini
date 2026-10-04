@@ -6,8 +6,8 @@ import {collect as nikkei} from './feed-collectors/nikkei-fear-greed';
 import {collectMarketDataFeed} from './market-data-feed';
 import {collectCorePceFeed} from './data-health.mjs';
 import {refreshPublicFeeds} from './public-feed-refresh.mjs';
-export function runPublicFeeds({env}: {env:any}){
- return refreshPublicFeeds({env,collectors:{
+export function runPublicFeeds({env,maxFeedsPerRun}: {env:any,maxFeedsPerRun?:number}){
+ return refreshPublicFeeds({env,maxFeedsPerRun,collectors:{
   'fear-greed':cnn,'kospi-fear-greed':kospi,'kospi-history':history,'ftse-fear-greed':ftse,'nikkei-fear-greed':nikkei,
   'market-data':(store:any,now:number)=>collectMarketDataFeed(env,store,now),
   'core-pce':(store:any,now:number)=>collectCorePceFeed(env,store,now),
