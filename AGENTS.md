@@ -9,6 +9,8 @@
 - Never overwrite newer remote work with a stale local/workspace copy.
 - Keep changed files limited to the minimum scope required by the user request.
 - Completed source changes must be reflected in GitHub `main` and the final commit SHA must be recorded as Evidence.
+- Treat current SHA, Sites version/deployment IDs, tool availability, quotas/credits, runner/device state, and plugin connectivity as volatile state. Never use remembered values as current truth; refresh them from the live source when they matter.
+- Reuse prior Evidence only when the identity and contract it depended on are still unchanged. Historical version/SHA values remain history, not a current baseline.
 
 ## 2. Production platform and deployment
 - ZGMINI Production uses Cloudflare Workers / D1 / Cron as the runtime architecture.
