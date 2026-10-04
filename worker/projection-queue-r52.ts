@@ -32,13 +32,19 @@ export async function consumeProjectionBatch(batch,native,ctx){
  const observed=observedSourceEnv(native),writer=projectionWriter(native.DB_CORE),jobs=new Map();
  const consume=createProjectionQueueConsumer({buildProjection:async(job)=>{
   jobs.set(job.id,job);
+  console.log('R60_PROJECTION_BEGIN',JSON.stringify({id:job.id,sourceStoredAt:job.sourceStoredAt}));
+  const phase=(name:string,state:string,start:number,metadata:any={})=>console.log('R60_PROJECTION_PHASE',JSON.stringify({id:job.id,phase:name,state,elapsedMs:Math.round((performance.now()-start)*100)/100,...metadata}));
   const phases:any[]=[];
-  const tLoad=performance.now();const input=await loadProjectionSource(job.id,observed.env,{now:job.sourceStoredAt,onPhase:(x:any)=>phases.push(x)});phases.push({phase:'load-total',elapsedMs:performance.now()-tLoad});observed.assertHealthy();
-  const tBuild=performance.now();const body=await builders[job.id](input);phases.push({phase:'build',elapsedMs:performance.now()-tBuild});
-  const tCheckpoint=performance.now();const after=await readProjectionCheckpoint(observed.env,job.id);phases.push({phase:'checkpoint-final',elapsedMs:performance.now()-tCheckpoint});observed.assertHealthy();
+  const tLoad=performance.now();phase('load','begin',tLoad);const input=await loadProjectionSource(job.id,observed.env,{now:job.sourceStoredAt,onPhase:(x:any)=>phases.push(x),onMetadata:(x:any)=>phase('load','input',tLoad,x)});phases.push({phase:'load-total',elapsedMs:performance.now()-tLoad});observed.assertHealthy();phase('load','end',tLoad);
+  const tBuild=performance.now();phase('build','begin',tBuild);const body=await builders[job.id](input);phases.push({phase:'build',elapsedMs:performance.now()-tBuild});phase('build','end',tBuild);
+  const tCheckpoint=performance.now();phase('checkpoint','begin',tCheckpoint);const after=await readProjectionCheckpoint(observed.env,job.id);phases.push({phase:'checkpoint-final',elapsedMs:performance.now()-tCheckpoint});observed.assertHealthy();phase('checkpoint','end',tCheckpoint);
   console.log('R55_PROJECTION_PROFILE',JSON.stringify({id:job.id,phases:phases.map(p=>({phase:p.phase,elapsedMs:Math.round(Number(p.elapsedMs)*100)/100}))}));
   if(job.sourceVersion!==after.sourceVersion||job.sourceStoredAt!==after.sourceStoredAt)throw Error('SOURCE_CHECKPOINT_CHANGED');
   return {body,storedAt:Date.now()};
- },writeProjection:(id,body,storedAt)=>writer.write(id,body,storedAt,jobs.get(id))});
+ },writeProjection:async(id,body,storedAt)=>{
+  const start=performance.now();console.log('R60_PROJECTION_PHASE',JSON.stringify({id,phase:'write',state:'begin',elapsedMs:0}));
+  const result=await writer.write(id,body,storedAt,jobs.get(id));
+  console.log('R60_PROJECTION_PHASE',JSON.stringify({id,phase:'write',state:'end',elapsedMs:Math.round((performance.now()-start)*100)/100}));return result;
+ }});
  return consume(batch,Object.freeze({}),ctx);
 }

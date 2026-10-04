@@ -15,7 +15,7 @@ export const PROJECTION_INPUT_BATCHES=Object.freeze({
  supplyShock:Object.freeze(['macro','supply']),
 });
 
-export async function loadProjectionSource(id,env,{now=Date.now(),onPhase}={}){
+export async function loadProjectionSource(id,env,{now=Date.now(),onPhase,onMetadata}={}){
  const mark=(phase,start)=>{const elapsed=performance.now()-start;if(typeof onPhase==='function')onPhase({phase,elapsedMs:elapsed,id});};
  const nowIso=new Date(now).toISOString(),asOf=nowIso.slice(0,10);
  if(id==='koreaFearGreed'){
@@ -39,6 +39,6 @@ export async function loadProjectionSource(id,env,{now=Date.now(),onPhase}={}){
  }
  const keys=PROJECTION_INPUT_BATCHES[id];
  if(!keys)throw Error('INVALID_PROJECTION_ID');
- const inputStarted=performance.now(),inputs=await readStoredMarketInputsSelected(store,keys,now,{anchorToLatestBatch:id==='liquidityCrisis'||id==='creditRisk'});mark('source:inputs',inputStarted);
+ const inputStarted=performance.now(),inputs=await readStoredMarketInputsSelected(store,keys,now,{anchorToLatestBatch:id==='liquidityCrisis'||id==='creditRisk',projectionId:id,onMetadata});mark('source:inputs',inputStarted);
  return {inputs,snapshot,publicSnapshot:snapshot,nowIso};
 }

@@ -21,6 +21,7 @@ export default Object.freeze({...http,async scheduled(controller,native,ctx){
  const result=await runCandidateWriter(controller,native).catch(()=>({status:'ERROR',lane:'scheduled',reason:'WRITER_EXECUTION_FAILED'}));
  console.log('CANDIDATE_WRITER_R2',JSON.stringify(result));
 },async queue(batch,native,ctx){
+ for(const message of batch.messages??[]){const job=message.body;if(job&&typeof job.id==='string'&&/^[A-Za-z]{1,32}$/.test(job.id)&&Number.isFinite(job.sourceStoredAt))console.log('R60_PROJECTION_BEGIN',JSON.stringify({id:job.id,sourceStoredAt:job.sourceStoredAt,stage:'before-consumer-import'}));}
  const {consumeProjectionBatch}=await import('./projection-queue-r52.ts');
  const result=await consumeProjectionBatch(batch,native,ctx);
  console.log(JSON.stringify({projectionQueue:true,processed:result.processed,results:result.results}));

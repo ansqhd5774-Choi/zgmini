@@ -2,6 +2,7 @@
 // Mirrors the public read contract without schema initialization or write methods.
 import {gunzipSync} from 'node:zlib';
 import {Buffer} from 'node:buffer';
+import {projectionMacroKey} from './projection-input-manifest-r60.mjs';
 
 const INPUT_TTL=36*3600000;
 const decodeInput=text=>JSON.parse(text.startsWith('gzip:')?gunzipSync(Buffer.from(text.slice(5),'base64'),{maxOutputLength:32000000}).toString('utf8'):text);
@@ -39,6 +40,17 @@ export function marketOperationalStore(db){
    return latest;
   },
   readScore:()=>read('market_public_snapshots_v1','current'),
+  async readProjectionMacro(id,onMetadata){
+   const prefix=projectionMacroKey(id);
+   const row=await db.prepare('SELECT body,stored_at FROM market_input_batches_v1 WHERE batch_key LIKE ? ORDER BY stored_at DESC LIMIT 1').bind(prefix+':%').first();
+   const latest=await db.prepare('SELECT stored_at FROM market_input_batches_v1 WHERE batch_key LIKE ? ORDER BY stored_at DESC LIMIT 1').bind('macro:%').first();
+   if(row&&row.stored_at===latest?.stored_at){
+    onMetadata?.({sourcePath:'SLICE',batch:prefix,encodedBytes:Buffer.byteLength(row.body)});
+    return {body:decodeInput(row.body),storedAt:row.stored_at};
+   }
+   onMetadata?.({sourcePath:'LEGACY_FULL_MACRO',batch:'macro',reason:row?'SLICE_SOURCE_CHANGED':'SLICE_MISSING'});
+   return this.readInput('macro');
+  },
   writeInput:deny,
   writeScore:deny,
   claim:deny,
@@ -53,11 +65,11 @@ export async function readStoredMarketInputs(store,now=Date.now()){
  return batches.map(fresh).reduce((all,part)=>({...all,...part,series:{...all.series,...part.series},external:{...all.external,...part.external},providerSummary:{...all.providerSummary,...part.providerSummary}}),{series:{},external:{},providerSummary:{}});
 }
 
-export async function readStoredMarketInputsSelected(store,keys,now=Date.now(),{anchorToLatestBatch=false}={}){
+export async function readStoredMarketInputsSelected(store,keys,now=Date.now(),{anchorToLatestBatch=false,projectionId,onMetadata}={}){
  if(!Array.isArray(keys)||!keys.length)return {series:{},external:{},providerSummary:{}};
  const unique=[...new Set(keys)];
  for(const key of unique)if(!['macro','credit','supply','fundFlows','bisDsr','bisTc','rates'].includes(key))throw Error('INVALID_INPUT_BATCH_KEY');
- const batches=await Promise.all(unique.map(key=>store.readInput(key)));
+ const batches=await Promise.all(unique.map(key=>key==='macro'&&projectionId&&store.readProjectionMacro?store.readProjectionMacro(projectionId,onMetadata):store.readInput(key)));
  const storedTimes=batches.map(x=>Number(x?.storedAt)).filter(Number.isFinite);
  const referenceNow=anchorToLatestBatch&&storedTimes.length?Math.max(...storedTimes):now;
  const fresh=(x,key)=>x&&referenceNow>=x.storedAt&&referenceNow-x.storedAt<INPUT_TTL?(key==='macro'?mergeStoredMacro(null,x,referenceNow):x.body):{};

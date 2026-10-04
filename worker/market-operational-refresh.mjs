@@ -11,6 +11,7 @@ import {collectGrowthR2StoreOnlyR1} from '../lib/market-score/growth-r2-worker-d
 import {createMarketScoreR1Handler} from './market-score-r1.mjs';
 import {buildFullDiagnosticOrchestrator} from '../lib/diagnostic-layer/full-diagnostic-orchestrator.mjs';
 import {marketOperationalStore,readStoredMarketInputs} from './market-operational-store.mjs';
+import {writeProjectionMacroSlices} from './projection-input-writer-r60.mjs';
 
 export const MARKET_COLLECTION_JOBS=Object.freeze(['macroCredit','macro','rates','credit','supply','fundFlows','bisDsr','bisTc','earnings','consumption','breadth','inflation','employment','growth']);
 const SOURCE_GROUPS={macro:['fetchFred'],credit:['fetchOfr','fetchCmdi'],supply:['fetchGscpi','fetchCopper'],fundFlows:['fetchFundFlows']};
@@ -90,6 +91,7 @@ export async function runMarketOperationalRefresh({env,job,store,now=Date.now(),
    const {series,external,inputSettled,rateR2,providerSummary}=collected;
    const input={...(series?{series}:{}),...(external?{external}:{}),...(inputSettled?{inputSettled}:{}),...(rateR2?{rateR2}:{}),providerSummary};
    await store.writeInput(selected==='macroCredit'?'macro':selected,input,now);
+   if(selected==='macro'&&env.DB)await writeProjectionMacroSlices({db:env.DB,store,storedAt:now});
   }
   phase='CALCULATE';const result=await calculate(env,store,now);
   const sourceStatus=collected?.status??collected?.rateR2?.status??'COLLECTED';
