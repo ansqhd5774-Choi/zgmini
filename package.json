@@ -20,7 +20,10 @@
     "candidate:deploy:ci": "node scripts/candidate-branch-gate.mjs && node scripts/check-candidate-r52.mjs && node node_modules/wrangler/bin/wrangler.js deploy --config dist/server/wrangler.json",
     "candidate:r52:test": "node --test tests/credit-bond-optimized-r519.test.mjs scripts/projection-runtime-r52.test.mjs tests/market-projection-queue.test.mjs tests/market-public-projection-store.test.mjs scripts/candidate-guard.test.mjs scripts/candidate-2db-r5.test.mjs tests/projection-selective-source-r53.test.mjs tests/projection-writer-hotpath-r54.test.mjs tests/projection-checkpoint-r55.test.mjs tests/liquidity-percentile-r56.test.mjs",
     "candidate:r52:build": "node scripts/build-candidate-r52.mjs",
-    "candidate:r52:deploy": "node scripts/candidate-branch-gate.mjs && node scripts/check-candidate-r52.mjs && node node_modules/wrangler/bin/wrangler.js deploy --config dist/server/wrangler.json"
+    "candidate:r52:deploy": "node scripts/candidate-branch-gate.mjs && node scripts/check-candidate-r52.mjs && node node_modules/wrangler/bin/wrangler.js deploy --config dist/server/wrangler.json",
+    "production:r6:test": "node --test tests/production-2db-boundary-r6.test.mjs",
+    "production:r6:build": "node scripts/candidate-branch-gate.mjs && node --test tests/production-2db-boundary-r6.test.mjs && node scripts/build-production-r6.mjs",
+    "production:r6:deploy": "node scripts/candidate-branch-gate.mjs && node scripts/check-production-r6.mjs && node node_modules/wrangler/bin/wrangler.js deploy --config dist/server/wrangler.json"
   },
   "dependencies": {
     "@base-ui/react": "^1.7.0",
