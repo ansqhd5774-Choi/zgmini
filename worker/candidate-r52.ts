@@ -2,8 +2,15 @@ import handler from 'vinext/server/app-router-entry';
 import {candidate2dbWorker} from './candidate-2db-guard.mjs';
 import {staticShell} from './candidate-shell-r7.mjs';
 import {PROJECTION_ROUTES,readProjectionResponse} from './projection-runtime-r52.mjs';
+import {marketOperationalStore} from './candidate-market-operational-store.mjs';
 const http=candidate2dbWorker({async fetch(request,env,ctx){
  const path=decodeURIComponent(new URL(request.url).pathname).replace(/\/+/g,'/').replace(/\/$/,'')||'/';
+ if(path==='/api/candidate-input-metadata'){
+  const store=marketOperationalStore(env.DB_CORE);
+  const [macro,credit]=await Promise.all([store.readInput('macro'),store.readInput('credit')]);
+  const summarize=x=>({storedAt:x?.storedAt??null,seriesKeys:Object.keys(x?.body?.series??{}),externalKeys:Object.keys(x?.body?.external??{}),providerKeys:Object.keys(x?.body?.providerSummary??{})});
+  return Response.json({macro:summarize(macro),credit:summarize(credit)},{headers:{'cache-control':'no-store'}});
+ }
  const id=PROJECTION_ROUTES[path];
  if(id)return readProjectionResponse(request,env.DB_CORE,id);
  const shell=await staticShell(request,env);if(shell)return shell;
