@@ -4,7 +4,6 @@ import {staticShell} from './candidate-shell-r7.mjs';
 import {PROJECTION_ROUTES,readProjectionResponse} from './projection-runtime-r52.mjs';
 const http=candidate2dbWorker({async fetch(request,env,ctx){
  const path=decodeURIComponent(new URL(request.url).pathname).replace(/\/+/g,'/').replace(/\/$/,'')||'/';
- if(path==='/api/candidate-revision')return Response.json({revision:'R59_SOURCE_CLOCK',source:'pending'},{headers:{'cache-control':'no-store'}});
  const id=PROJECTION_ROUTES[path];
  if(id)return readProjectionResponse(request,env.DB_CORE,id);
  const shell=await staticShell(request,env);if(shell)return shell;
@@ -13,8 +12,8 @@ const http=candidate2dbWorker({async fetch(request,env,ctx){
  return handler.fetch(request,env,ctx);
 }});
 export default Object.freeze({...http,async scheduled(controller,native,ctx){
- const {enqueueProjectionIds}=await import('./projection-queue-r52.ts');
- ctx.waitUntil(enqueueProjectionIds(native,['liquidityCrisis'],{sourceSucceeded:true,skipReady:false}));
+ const {enqueueAfterStoredSourceSuccess}=await import('./projection-queue-r52.ts');
+ ctx.waitUntil(enqueueAfterStoredSourceSuccess(native,{sourceSucceeded:true}));
 },async queue(batch,native,ctx){
  const {consumeProjectionBatch}=await import('./projection-queue-r52.ts');
  const result=await consumeProjectionBatch(batch,native,ctx);
