@@ -1,0 +1,363 @@
+ZGMINI CODEX CLOUDFLARE PRODUCTION DEPLOY HANDOFF R1
+작성일: 2026-10-04
+목적: ChatGPT 환경에서 직접 완료할 수 없었던 Cloudflare Git Integration 최초 연결부터 ZGMINI Production 배포/검증/최종 cutover까지 Codex가 이어서 실행한다.
+
+===============================================================================
+0. 최우선 규칙
+===============================================================================
+1) 작업 시작 즉시 저장소 root의 AGENTS.md와
+   docs/ZGMINI_PLUGIN_EXECUTION_RULES_COMPACT_R5.md를 읽고 그대로 적용한다.
+2) GitHub latest main이 SOURCE OF TRUTH이다.
+3) 아래 기록된 SHA는 시작 시점 Evidence일 뿐 현재값으로 재사용하지 않는다.
+   시작 시 반드시 remote main을 live 조회한다.
+4) OpenAI Sites는 DEPLOYMENT RETIRED. Save Version/Deploy/Publish/source sync 금지.
+5) 승인 없는 direct Wrangler Production deploy 금지.
+6) migration/analysis branch 전체 merge 금지.
+7) 산식/가중치/정규화/지표 계약 변경 금지.
+8) D1 schema 변경/수동 데이터 조작 금지.
+9) Cafe24 DNS는 Cloudflare Cutover Gate 전 변경 금지.
+10) Secret/API token/password/MFA 값은 채팅, 파일, commit, Evidence에 저장 금지.
+11) 사용자에게 중간 진행보고로 멈추지 말고, 로그인/MFA/CAPTCHA처럼 사용자만 할 수 있는 실제 blocker가 있을 때만 요청한다.
+12) 비용 발생 리소스 생성/구독/Wallet 충전 금지.
+
+===============================================================================
+1. 현재 확인된 시작 상태
+===============================================================================
+Repository:
+  ansqhd5774-Choi/zgmini
+
+Authoritative branch:
+  main
+
+작업 시작 전 마지막 관측 main:
+  05d05cf90bf2420b5588cceb70c51d9e7b8779b4
+  message: chore: trigger Cloudflare production build
+
+반드시 시작 시 최신 main 재조회.
+다르면 최신 main을 기준으로 SOURCE_DRIFT 판정 후 진행.
+
+Cloudflare account:
+  6e9b57e718b247330a6efa42a9516e95
+
+Existing candidate Worker:
+  zgmini-migration-candidate-r5
+
+D1:
+  DB_CORE    -> zgmini-core-r42
+  DB_HISTORY -> zgmini-history-r42
+
+Queue:
+  PUBLIC_PROJECTION_QUEUE -> zgmini-public-projection-r1
+
+기존 Queue 확인값:
+  max_batch_size = 1
+  max_concurrency = 1
+
+기존 projection 마지막 Evidence:
+  9 / 9 READY
+  sourceVersion/sourceStoredAt checkpoint 일치
+
+현재 blocker:
+- ChatGPT가 사용한 Wrangler OAuth로 Workers/D1/Deployment read는 가능.
+- Cloudflare Workers Builds API는 403.
+  trigger read: HTTP 403 / code 10000 Authentication error
+  builds read: HTTP 403 / code 12004 Forbidden
+- GitHub main에 no-op trigger commit을 push했으나 Cloudflare check-run 0.
+- 즉 Cloudflare Git Integration 최초 연결이 아직 완료되지 않은 것으로 판정.
+- ChatGPT 환경에는 Cloudflare Plugin 없음.
+- Remote Desktop Commander device는 offline 상태였음.
+
+===============================================================================
+2. 최종 목표
+===============================================================================
+아래 경로를 실제로 완성한다.
+
+GitHub latest main
+-> Cloudflare Git Integration
+-> hosted Build/Test
+-> exact Cloudflare Deployment
+-> workers.dev Runtime 검증
+-> D1 / Queue / projection 검증
+-> Runtime CPU/5xx 검증
+-> Cafe24 DNS cutover
+-> zgmini.kr HTTPS/API/UI 최종 검증
+
+모든 applicable Gate가 PASS일 때만 완료 보고.
+
+===============================================================================
+3. Cloudflare Git Integration 최초 연결
+===============================================================================
+먼저 Cloudflare의 현재 live 상태를 조회한다.
+
+필수 확인:
+  DEPLOYMENT_CONTROL_PLANE=CLOUDFLARE
+  GITHUB_MAIN_SHA=<live>
+  SOURCE_DRIFT=NONE
+  SITES_DEPLOY_ALLOWED=NO
+  DIRECT_WRANGLER_ALLOWED=NO
+
+Cloudflare Dashboard 또는 공식 Workers Builds API를 사용한다.
+
+대상:
+  Worker: zgmini-migration-candidate-r5
+  Repository: ansqhd5774-Choi/zgmini
+  Production branch: main
+  Root directory: /
+  Install command: npm ci
+  Build command: npm run candidate:build:ci
+  Deploy command: npm run candidate:deploy:ci
+  Preview / non-production builds: OFF
+  Build environment variable:
+    WORKERS_CI_BRANCH=main
+
+주의:
+- Worker 이름 변경 금지.
+- DB_CORE / DB_HISTORY / Queue binding 변경 금지.
+- route/custom domain/DNS는 이 단계에서 건드리지 않는다.
+- direct Wrangler deploy로 우회하지 않는다.
+
+Cloudflare GitHub App 최초 OAuth/install 승인이 필요한 경우:
+- Codex가 로그인된 브라우저/Computer Use를 사용할 수 있으면 직접 진행.
+- GitHub App에서 ansqhd5774-Choi/zgmini 접근을 허용.
+- MFA/CAPTCHA/사용자 재인증이 실제로 표시될 때만 USER_ACTION_REQUIRED로 중단.
+- 사용자에게 password/token/MFA 값을 채팅으로 요구하지 않는다.
+
+API 방식이 가능할 경우 공식 Workers Builds API만 사용.
+필요한 user-scoped API token은 Cloudflare 공식 UI에서 생성하고 process memory/environment에만 사용.
+토큰 원문을 Evidence/commit/log에 저장 금지.
+
+참고 공식 API 흐름:
+1. GitHub account/repo ID 확인
+2. PUT /accounts/{account_id}/builds/repos/connections
+3. Worker tag 확인
+4. build token 확인
+5. production trigger 생성/확인
+6. environment variable 설정
+7. first build trigger
+
+기존 trigger가 있으면 중복 생성 금지.
+
+===============================================================================
+4. Hosted Build / Deployment
+===============================================================================
+Git Integration 연결 후:
+1) live GitHub main SHA 재조회.
+2) Cloudflare connected repository = ansqhd5774-Choi/zgmini 확인.
+3) connected production branch = main 확인.
+4) root/build/deploy command 확인.
+5) 동일 main SHA로 hosted build를 시작/관측.
+6) pending/building 상태에서는 새 build/deployment 생성 금지.
+7) 같은 exact build/deployment ID만 poll.
+8) 실패 시 자동 새 배포 금지. 먼저 exact log/root cause 확인.
+9) build가 성공해도 Production PASS로 처리 금지.
+10) exact deployment source SHA가 live GitHub main과 일치해야 PASS.
+
+최초 연결 후 기존 main이 자동 build되지 않는 경우:
+- 공식 Workers Builds trigger endpoint로 current main build를 시작할 수 있으면 그것을 우선.
+- 불가능할 때만 tree 변경 없는 no-op commit을 main에 1회 생성해 build trigger.
+- 반복 no-op commit 금지.
+
+===============================================================================
+5. Candidate Runtime 검증
+===============================================================================
+exact deployment SUCCEEDED 후 workers.dev에서 확인:
+
+필수:
+  /
+  /api/market-score
+  /api/fear-greed
+  /api/data-health
+
+Detail API:
+  /api/inflation-detail
+  /api/recession-detail
+  /api/liquidity-crisis-detail
+  /api/credit-risk-detail
+  /api/earnings-recession-detail
+  /api/asset-bubble-detail
+  /api/debt-risk-detail
+  /api/supply-shock-detail
+  /api/indicators/korea-funds
+
+판정:
+- 필요한 정상 endpoint는 200.
+- 404/5xx가 있으면 원인 확인.
+- public HTTP만으로 D1/Queue PASS 추정 금지.
+
+===============================================================================
+6. D1 / Queue / Projection Gate
+===============================================================================
+Worker settings에서 실제 binding 확인:
+  DB_CORE
+  DB_HISTORY
+  PUBLIC_PROJECTION_QUEUE
+
+D1 read-only 검증:
+  DB_CORE = zgmini-core-r42
+  DB_HISTORY = zgmini-history-r42
+
+9 projection:
+  detail:inflation:v1
+  detail:recession:v1
+  detail:liquidity-crisis:v1
+  detail:credit-risk:v1
+  detail:earnings-recession:v1
+  detail:asset-bubble:v1
+  detail:debt-risk:v1
+  detail:supply-shock:v1
+  public:korea-fear-greed:v1
+
+각 row 확인:
+- 존재
+- projection.status = READY
+- sourceVersion = expectedSourceVersion
+- sourceStoredAt = expectedSourceStoredAt
+- stale 아님
+
+Queue:
+- producer/consumer 정상
+- 동일 queue = zgmini-public-projection-r1
+- retry/backlog/poison 상태 확인
+- 결과 계약 변경 금지
+
+수동 D1 write로 PASS 만들지 않는다.
+
+===============================================================================
+7. Runtime CPU / Error Gate
+===============================================================================
+Cloudflare Worker logs/observability에서 exact deployment 기준 확인.
+
+금지 오류:
+- exceededCpu / 1102
+- waitUntil cancellation
+- 반복 5xx
+- unhandled exception
+- Queue consumer 반복 retry/failure
+
+CPU 문제 발생 시:
+- 지표 삭제 금지
+- weight/threshold/산식 변경 금지
+- Queue 실행단위/입력/checkpoint/read path만 최소 수정
+- 변경 필요 시 GitHub latest main에서 최소 수정 -> test -> main -> Git Build/Deploy 순서 재수행
+
+===============================================================================
+8. Cloudflare Cutover Gate
+===============================================================================
+Cafe24 DNS 변경 전 전부 PASS 필요:
+
+- candidate source가 GitHub latest main에 회수됨
+- migration branch 전체 merge 없음
+- Cloudflare Git integration repo/main PASS
+- hosted build/test PASS
+- exact deployment succeeded
+- workers.dev API/UI 정상
+- D1 bindings/read PASS
+- Queue producer/consumer PASS
+- projection 9/9 READY
+- Runtime CPU/waitUntil/5xx 오류 없음
+- 산식/계약 변경 0
+- rollback 경로 준비
+
+하나라도 FAIL이면 DNS 변경 금지.
+
+===============================================================================
+9. Cafe24 DNS Cutover
+===============================================================================
+R5 기준 DOMAIN/DNS AUTHORITY는 Cafe24.
+
+Gate PASS 후에만:
+1. zgmini.kr 현재 DNS live 조회.
+2. 기존 record 전체 중 cutover 관련 record와 rollback 값 기록.
+3. Cloudflare 측 custom domain/target 준비.
+4. Cafe24 DNS에서 승인된 hostname만 Cloudflare target으로 전환.
+5. unrelated DNS/mail/verification record 수정 금지.
+6. DNS propagation 확인.
+7. HTTPS certificate 정상 확인.
+
+이 작업은 사용자의 현재 "배포작업을 최종 완료까지 진행" 지시 범위로 진행하되,
+Cloudflare Cutover Gate가 전부 PASS하기 전에는 절대 실행하지 않는다.
+
+===============================================================================
+10. Production 최종 검증
+===============================================================================
+zgmini.kr에서 확인:
+- HTTPS 정상
+- /
+- /api/market-score
+- /api/fear-greed
+- /api/data-health
+- 8 detail pages/API
+- sitemap.xml
+- robots.txt
+- static assets
+- PC/mobile UI 핵심 화면
+- redirect loop 없음
+- 5xx/1102 없음
+- current data 정상
+- D1 / Queue / projection 정상
+- Cloudflare exact deployment가 실제 트래픽 대상
+- Sites가 deployment authority/traffic target이 아님
+
+===============================================================================
+11. 완료 판정
+===============================================================================
+전부 PASS일 때만 완료:
+
+LATEST_MAIN=PASS
+SOURCE_DRIFT=NONE
+GITHUB_REFLECTION=PASS
+DEPLOYMENT_AUTHORITY_GATE=PASS
+CLOUDFLARE_GIT_INTEGRATION=PASS
+CLOUDFLARE_BUILD=PASS
+EXACT_DEPLOYMENT=SUCCEEDED
+WORKERS_DEV=PASS
+WORKER_RUNTIME=PASS
+D1=PASS
+QUEUE=PASS
+PROJECTION=9/9_READY
+FORMULA_CONTRACT=UNCHANGED
+CAFE24_DNS=PASS
+HTTPS=PASS
+PRODUCTION_HTTP=PASS
+PRODUCTION_UI=PASS
+RUNTIME_ERROR=NONE
+TEMP_WORKAROUND=0
+SITES_DEPLOY=0
+DIRECT_WRANGLER_PROD_DEPLOY=0
+
+===============================================================================
+12. 실패 보고 형식
+===============================================================================
+실제 blocker가 발생할 때만 아래 형식으로 보고:
+
+LAST PASS:
+FIRST FAIL:
+EXACT ERROR:
+ROOT CAUSE:
+SIDE EFFECT:
+MINIMUM FIX:
+RETEST:
+USER_ACTION_REQUIRED:
+
+MFA/CAPTCHA/사용자 계정 재인증 외에는 사용자에게 작업을 되넘기지 말고 Codex가 계속 실행한다.
+
+===============================================================================
+13. 최종 보고
+===============================================================================
+사용자는 중간 보고를 원하지 않는다.
+
+완료 시 결론만 보고:
+- GitHub final main SHA
+- Cloudflare exact build/deployment ID
+- workers.dev PASS
+- D1 PASS
+- Queue PASS
+- projection 9/9 READY
+- Runtime error 0
+- Cafe24 DNS PASS
+- zgmini.kr HTTPS/API/UI PASS
+- Sites deploy 0
+- direct Wrangler deploy 0
+- 최종 결과: PRODUCTION COMPLETE
+
+완료되지 않았다면 "완료"라고 보고하지 않는다.
