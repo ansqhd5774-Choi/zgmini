@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>ZGmini · 시장 지표와 공포탐욕지수</title>
+    <link>https://zgmini.kr/</link>
+    <description>미국과 한국 시장의 공포탐욕지수 및 시장 지표를 살펴보는 ZGmini의 주요 페이지입니다. 실제 점수와 관측일은 각 페이지에서 확인할 수 있습니다.</description>
+    <language>ko-KR</language>
+    <atom:link href="https://zgmini.kr/rss.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>미국·한국 공포탐욕지수와 종합 시장 지표</title>
+      <link>https://zgmini.kr/</link>
+      <guid isPermaLink="true">https://zgmini.kr/</guid>
+      <description>ZGmini 대시보드에서 미국과 한국 시장의 투자심리, 기간별 변화와 주요 시장 지표를 함께 확인하세요. 시장별 지표는 서로 다른 모델을 사용하므로 같은 척도로 직접 비교하지 않습니다. 데이터의 관측일과 제공 상태는 대시보드에서 확인할 수 있습니다.</description>
+    </item>
+    <item>
+      <title>한국 공포탐욕지수 · 코스피 시장심리</title>
+      <link>https://zgmini.kr/fear-greed/korea/</link>
+      <guid isPermaLink="true">https://zgmini.kr/fear-greed/korea/</guid>
+      <description>요즘 국내 증시 분위기가 궁금하다면 한국 공포탐욕지수와 기간별 차트를 살펴보세요. ZGmini 자체 지표의 최근 제공 점수와 관측일을 함께 안내합니다.</description>
+    </item>
+    <item>
+      <title>CNN 공포탐욕지수 · 미국 시장 투자심리</title>
+      <link>https://zgmini.kr/fear-greed/usa/</link>
+      <guid isPermaLink="true">https://zgmini.kr/fear-greed/usa/</guid>
+      <description>미국 시장의 CNN 공포탐욕지수와 기간별 변화를 확인하고, 시장 모멘텀·주가 강도·시장 폭·풋콜 옵션·시장 변동성·정크본드 수요·안전자산 수요 등 구성요소의 의미를 살펴보세요.</description>
+    </item>
+  </channel>
+</rss>

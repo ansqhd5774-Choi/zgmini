@@ -3,7 +3,10 @@ import {candidate2dbWorker} from './candidate-2db-guard.mjs';
 import {staticShell} from './candidate-shell-r7.mjs';
 import {PROJECTION_ROUTES,readProjectionResponse} from './projection-runtime-r52.mjs';
 import {readPublicFeedHealth} from './public-feed-store.mjs';
+import {rssResponse} from './rss-feed.mjs';
+import rssXml from '../public/rss.xml?raw';
 const http=candidate2dbWorker({async fetch(request,env,ctx){
+ const feed=rssResponse(request,rssXml);if(feed)return feed;
  const path=decodeURIComponent(new URL(request.url).pathname).replace(/\/+/g,'/').replace(/\/$/,'')||'/';
  const id=PROJECTION_ROUTES[path];
  if(id)return readProjectionResponse(request,env.DB_CORE,id);
