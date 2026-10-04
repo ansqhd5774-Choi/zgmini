@@ -14,8 +14,9 @@ const http=candidate2dbWorker({async fetch(request,env,ctx){
  return handler.fetch(request,env,ctx);
 }});
 export default Object.freeze({...http,async scheduled(controller,native,ctx){
- const {enqueueAfterStoredSourceSuccess}=await import('./projection-queue-r52.ts');
- ctx.waitUntil(enqueueAfterStoredSourceSuccess(native,{sourceSucceeded:true}));
+ const {runCandidateWriter}=await import('./candidate-writer-r1.mjs');
+ const result=await runCandidateWriter(controller,native).catch(()=>({status:'ERROR',lane:'scheduled',reason:'WRITER_EXECUTION_FAILED'}));
+ console.log('CANDIDATE_WRITER_R2',JSON.stringify(result));
 },async queue(batch,native,ctx){
  const {consumeProjectionBatch}=await import('./projection-queue-r52.ts');
  const result=await consumeProjectionBatch(batch,native,ctx);

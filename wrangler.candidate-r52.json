@@ -11,7 +11,7 @@
   "preview_urls": false,
   "routes": [],
   "triggers": {
-    "crons": []
+    "crons": ["*/5 * * * *", "37 * * * *"]
   },
   "assets": {
     "binding": "ASSETS",

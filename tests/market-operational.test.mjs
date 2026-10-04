@@ -41,7 +41,7 @@ test('lease excludes concurrent collectors and daily input history survives late
  await store.finish('pipeline',id,now,'IDLE');
  await store.writeInput('macro',{series:{A:[1]}},now);await store.writeInput('macro',{series:{A:[2]}},now+86400000);
  assert.equal(sqlite.prepare('SELECT count(*) AS n FROM market_input_batches_v1').get().n,2);
- assert.deepEqual((await store.readInput('macro')).body.series.A,[2]);assert.equal(await store.next(MARKET_COLLECTION_JOBS),'macro');sqlite.close();
+ assert.deepEqual((await store.readInput('macro')).body.series.A,[2]);assert.equal(await store.next(MARKET_COLLECTION_JOBS),'macroCredit');sqlite.close();
 });
 test('failed source does not fabricate score and releases lease',async()=>{
  const {store,db,sqlite}=fixture();

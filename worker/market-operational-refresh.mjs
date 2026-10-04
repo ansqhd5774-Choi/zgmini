@@ -79,6 +79,11 @@ export async function runMarketOperationalRefresh({env,job,store,now=Date.now(),
    ...collectors,
   };
   phase='COLLECT';const collected=await jobs[selected]();
+  const collectedStatus=collected?.status??collected?.rateR2?.status;
+  if(/^(FAIL|FAILED|ERROR|CONFIGURATION_MISSING|UNAVAILABLE)$/.test(collectedStatus??'')){
+   await store.finish(selected,jobLease,now,'SOURCE_FAILED');
+   return {status:'SOURCE_FAILED',job:selected,sourceStatus:collectedStatus};
+  }
   if(['macroCredit','macro','rates','credit','supply','fundFlows','bisDsr','bisTc'].includes(selected)){
    phase='STORE';
    // Keep normalized observations, not URLs, request logs or credentials.
