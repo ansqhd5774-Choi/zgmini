@@ -33,7 +33,7 @@ export async function consumeProjectionBatch(batch,native,ctx){
  const consume=createProjectionQueueConsumer({buildProjection:async(job)=>{
   jobs.set(job.id,job);
   const phases:any[]=[];
-  const tLoad=performance.now();const input=await loadProjectionSource(job.id,observed.env,{onPhase:(x:any)=>phases.push(x)});phases.push({phase:'load-total',elapsedMs:performance.now()-tLoad});observed.assertHealthy();
+  const tLoad=performance.now();const input=await loadProjectionSource(job.id,observed.env,{now:job.sourceStoredAt,onPhase:(x:any)=>phases.push(x)});phases.push({phase:'load-total',elapsedMs:performance.now()-tLoad});observed.assertHealthy();
   const tBuild=performance.now();const body=await builders[job.id](input);phases.push({phase:'build',elapsedMs:performance.now()-tBuild});
   const tCheckpoint=performance.now();const after=await readProjectionCheckpoint(observed.env,job.id);phases.push({phase:'checkpoint-final',elapsedMs:performance.now()-tCheckpoint});observed.assertHealthy();
   console.log('R55_PROJECTION_PROFILE',JSON.stringify({id:job.id,phases:phases.map(p=>({phase:p.phase,elapsedMs:Math.round(Number(p.elapsedMs)*100)/100}))}));
