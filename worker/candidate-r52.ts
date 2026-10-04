@@ -2,14 +2,21 @@ import handler from 'vinext/server/app-router-entry';
 import {candidate2dbWorker} from './candidate-2db-guard.mjs';
 import {staticShell} from './candidate-shell-r7.mjs';
 import {PROJECTION_ROUTES,readProjectionResponse} from './projection-runtime-r52.mjs';
-import {marketOperationalStore} from './candidate-market-operational-store.mjs';
+import {marketOperationalStore,readStoredMarketInputsSelected} from './candidate-market-operational-store.mjs';
 const http=candidate2dbWorker({async fetch(request,env,ctx){
  const path=decodeURIComponent(new URL(request.url).pathname).replace(/\/+/g,'/').replace(/\/$/,'')||'/';
  if(path==='/api/candidate-input-metadata'){
   const store=marketOperationalStore(env.DB_CORE);
-  const [macro,credit]=await Promise.all([store.readInput('macro'),store.readInput('credit')]);
+  const [macro,credit,snapshot]=await Promise.all([store.readInput('macro'),store.readInput('credit'),store.readScore()]);
+  const selected=await readStoredMarketInputsSelected(store,['macro','credit'],Number(snapshot?.storedAt)||Date.now(),{anchorToLatestBatch:true});
+  const count=v=>Array.isArray(v)?v.length:(v&&typeof v==='object'?Object.keys(v).length:0);
   const summarize=x=>({storedAt:x?.storedAt??null,seriesKeys:Object.keys(x?.body?.series??{}),externalKeys:Object.keys(x?.body?.external??{}),providerKeys:Object.keys(x?.body?.providerSummary??{})});
-  return Response.json({macro:summarize(macro),credit:summarize(credit)},{headers:{'cache-control':'no-store'}});
+  return Response.json({
+   snapshotStoredAt:snapshot?.storedAt??null,
+   macro:summarize(macro),credit:summarize(credit),
+   directCounts:{DGS2:count(macro?.body?.series?.DGS2),DGS5:count(macro?.body?.series?.DGS5),DGS10:count(macro?.body?.series?.DGS10),DGS30:count(macro?.body?.series?.DGS30),cmdiRows:count(credit?.body?.external?.cmdiRows)},
+   selectedCounts:{DGS2:count(selected?.series?.DGS2),DGS5:count(selected?.series?.DGS5),DGS10:count(selected?.series?.DGS10),DGS30:count(selected?.series?.DGS30),cmdiRows:count(selected?.external?.cmdiRows)}
+  },{headers:{'cache-control':'no-store'}});
  }
  const id=PROJECTION_ROUTES[path];
  if(id)return readProjectionResponse(request,env.DB_CORE,id);
