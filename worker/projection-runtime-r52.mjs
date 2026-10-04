@@ -15,15 +15,15 @@ export async function readProjectionResponse(request,readOnlyCore,id,{now=Date.n
  return Response.json(body,{headers:{'cache-control':'no-store','x-public-projection':'STORED',...(Number.isFinite(readMeta?.rows_read)?{'x-projection-rows-read':String(readMeta.rows_read)}:{}),'x-projection-source-at':new Date(projection.sourceStoredAt).toISOString()}});
 }
 export function projectionWriter(core){
- const store=publicProjectionStore(core);
  return Object.freeze({async write(id,body,storedAt,job){
   const key=PUBLIC_PROJECTION_KEYS[id];if(!key)throw Error('INVALID_PROJECTION_KEY');
-  const current=await store.read(key);const p=current?.body?.projection;
-  if(p?.expectedSourceStoredAt>job.sourceStoredAt||p?.sourceStoredAt>job.sourceStoredAt)throw Error('SUPERSEDED_PROJECTION_JOB');
-  if(p?.sourceStoredAt===job.sourceStoredAt&&p?.sourceVersion===job.sourceVersion&&p?.status==='READY')return {key,idempotent:true};
   const envelope={payload:body,projection:{status:'READY',builtAt:storedAt,sourceStoredAt:job.sourceStoredAt,sourceVersion:job.sourceVersion,expectedSourceStoredAt:job.sourceStoredAt,expectedSourceVersion:job.sourceVersion,asOf:new Date(storedAt).toISOString().slice(0,10),...(id==='koreaFearGreed'&&body?.composite?.status==='READY'&&/^\d{8}$/.test(body?.composite?.observationDate??'')?{validUntil:Date.parse(body.composite.observationDate.slice(0,4)+'-'+body.composite.observationDate.slice(4,6)+'-'+body.composite.observationDate.slice(6,8)+'T00:00:00Z')+7*86400000+1}:{})}};
-  const result=await core.prepare("INSERT INTO market_public_snapshots_v1(snapshot_key,body,stored_at) VALUES(?,?,?) ON CONFLICT(snapshot_key) DO UPDATE SET body=excluded.body,stored_at=excluded.stored_at WHERE COALESCE(json_extract(market_public_snapshots_v1.body,'$.projection.expectedSourceStoredAt'),-1)<=? AND COALESCE(json_extract(market_public_snapshots_v1.body,'$.projection.sourceStoredAt'),-1)<=? AND COALESCE(json_extract(market_public_snapshots_v1.body,'$.projection.expectedSourceVersion'),?)=?").bind(key,JSON.stringify(envelope),storedAt,job.sourceStoredAt,job.sourceStoredAt,job.sourceVersion,job.sourceVersion).run();
+  const encoded=JSON.stringify(envelope);
+  const result=await core.prepare("INSERT INTO market_public_snapshots_v1(snapshot_key,body,stored_at) VALUES(?,?,?) ON CONFLICT(snapshot_key) DO UPDATE SET body=excluded.body,stored_at=excluded.stored_at WHERE COALESCE(json_extract(market_public_snapshots_v1.body,'$.projection.expectedSourceStoredAt'),-1)<=? AND COALESCE(json_extract(market_public_snapshots_v1.body,'$.projection.sourceStoredAt'),-1)<=? AND COALESCE(json_extract(market_public_snapshots_v1.body,'$.projection.expectedSourceVersion'),?)=?").bind(key,encoded,storedAt,job.sourceStoredAt,job.sourceStoredAt,job.sourceVersion,job.sourceVersion).run();
   if(result?.meta?.changes===0)throw Error('SUPERSEDED_PROJECTION_JOB');
-  return {key,storedAt,bytes:new TextEncoder().encode(JSON.stringify(envelope)).length};
- },async invalidate(id,job){const key=PUBLIC_PROJECTION_KEYS[id];if(!key)throw Error('INVALID_PROJECTION_KEY');const row=await store.read(key);if(!row)return;const p=row.body?.projection;if(p?.expectedSourceStoredAt>job.sourceStoredAt)return;return store.write(key,{...row.body,projection:{...p,status:'STALE',expectedSourceStoredAt:job.sourceStoredAt,expectedSourceVersion:job.sourceVersion}},row.storedAt);}});
+  return {key,storedAt,bytes:new TextEncoder().encode(encoded).length};
+ },async invalidate(id,job){
+  const key=PUBLIC_PROJECTION_KEYS[id];if(!key)throw Error('INVALID_PROJECTION_KEY');
+  return core.prepare("UPDATE market_public_snapshots_v1 SET body=json_set(body,'$.projection.status','STALE','$.projection.expectedSourceStoredAt',?,'$.projection.expectedSourceVersion',?) WHERE snapshot_key=? AND COALESCE(json_extract(body,'$.projection.expectedSourceStoredAt'),-1)<=?").bind(job.sourceStoredAt,job.sourceVersion,key,job.sourceStoredAt).run();
+ }});
 }
