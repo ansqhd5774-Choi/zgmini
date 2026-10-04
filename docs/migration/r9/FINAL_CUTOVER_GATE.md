@@ -104,7 +104,7 @@ Before nameserver change:
 - confirm mail/verification/other records if any
 - verify apex and www intended final behavior
 
-Registrar can remain Gabia.
+Registrar remains Cafe24; no registrar transfer is required.
 
 ### G9 — Custom Domain
 After zone is active:
@@ -140,13 +140,23 @@ Rollback trigger examples:
 Rollback means restore the last known working DNS/hosting path and leave the migrated target isolated for diagnosis.
 
 ## Current blocker classification
-BLOCKER:
-- Existing Sites D1 recovery/export path: SUPPORT_REQUIRED
 
-NON_BLOCKING / deferred:
-- Cloudflare full-zone/nameserver switch
-- Custom Domain
-- Production Worker activation
-- hosted Linux build run
+Resolved since the original R9 document:
+- Sites D1 recovery/export path
+- target Free 2DB creation/import
+- candidate DB binding/routing
+- hosted candidate build/deploy
+- Queue CPU optimization
+- 9/9 stored projection creation
+- fixed projection rows_read=1
 
-These become active only after D1 parity can be tested.
+Current BLOCKER:
+- R6 final source freeze / final delta capture has not been executed.
+- The authoritative Sites source is still live and can continue to drift from the imported target pair.
+- Production Worker source/config is prepared in GitHub but must not be activated before final source parity and controlled writer probe.
+
+Deferred until R6 parity/writer probe PASS:
+- Cloudflare Production Worker activation
+- Cafe24 -> Cloudflare nameserver cutover
+- Custom Domain / TLS activation
+- final Production UI/API smoke test
