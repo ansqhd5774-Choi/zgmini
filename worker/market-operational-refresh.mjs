@@ -25,7 +25,6 @@ async function collectGroup(args,group){
 const unavailableFetch=async()=>{throw Error('SCORE_CALCULATION_NETWORK_FORBIDDEN')};
 export async function calculateStoredMarketScore(env,store,now){
  const handler=createMarketScoreR1Handler({env,fetchImpl:unavailableFetch,
-  profile:phase=>console.log('R61_MARKET_PHASE',JSON.stringify({job:'stored-score',phase})),
   collectInputs:()=>readStoredMarketInputs(store,now),orchestrate:buildStoredDiagnostic,
   collectBreadthDomain:readBreadthB1R5StoredPublicDomainR1,now:()=>new Date(now)});
  const response=await handler(new Request('https://zgmini.kr/api/market-score'));

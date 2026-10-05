@@ -71,7 +71,6 @@ export function createMarketScoreR1Handler({
   collectInputs,
   orchestrate,
   now=()=>new Date(),
-  profile=()=>{},
   collectBreadthDomain=readBreadthB1R5StoredPublicDomainR1,
 
   loadConsumptionDomain=loadStoredConsumptionC1R3,
@@ -92,8 +91,7 @@ export function createMarketScoreR1Handler({
       : null;
     if(!validDate(asOf))return safeJson({status:"FAILED",reason:"INVALID_SERVER_TIME"},500);
 
-    const cachedCompute=createProgressiveComputationCache();
-    const compute=(fn,...args)=>{profile(`compute:${fn.name}:start`);const result=cachedCompute(fn,...args);profile(`compute:${fn.name}:done`);return result;};
+    const compute=createProgressiveComputationCache();
     let progressTimer;
     const state={collected:{series:{},external:{}},storedInflation:{series:{}},inflationR2Domain:inflationR2Partial(),employmentR54Domain:employmentR54Partial("EMPLOYMENT_R54_PENDING",asOf),breadthDomain:null,consumptionDomain:null,liquidityHistory:[],growthDomain:null};
     const emit=()=>{
@@ -101,13 +99,11 @@ export function createMarketScoreR1Handler({
       try { onProgress(composeMarketSnapshot({...state,orchestrate,asOf,instant,compute})); } catch { /* Pending inputs are not a request failure. */ }
     };
     const update=(key,value)=>{
-      profile(`loaded:${key}`);
       state[key]=value;
       if(typeof onProgress==='function'&&!progressTimer)progressTimer=setTimeout(()=>{progressTimer=null;emit();},50);
       return value;
     };
     try{
-      profile('load-start');
       const [collectionState,storageState,inflationR2State,breadthState,consumptionState,growthState,liquidityHistoryState]=await Promise.allSettled([
         collectInputs({env,asOf,fetchImpl,onProgress:value=>update('collected',value)}).then(value=>update('collected',value)),
         loadStoredInflationSeries(env?.DB,{asOf}).then(value=>update('storedInflation',value)),
@@ -122,7 +118,6 @@ export function createMarketScoreR1Handler({
         Promise.resolve().then(()=>loadGrowthDomain(env?.DB,{asOf})).then(value=>update('growthDomain',value)),
         Promise.resolve().then(()=>loadLiquidityHistory(env?.DB,{asOf})).then(value=>update("liquidityHistory",value)),
       ]);
-      profile('load-settled');
       const collected=collectionState.status==="fulfilled"
         ? collectionState.value
         : {series:{},external:{},rateR2:{series:{}}};
@@ -160,9 +155,7 @@ export function createMarketScoreR1Handler({
       const liquidityHistory=liquidityHistoryState.status==="fulfilled"&&Array.isArray(liquidityHistoryState.value)
         ? liquidityHistoryState.value
         : [];
-      profile('compose-start');
       const body=composeMarketSnapshot({liquidityHistory,collected,storedInflation,inflationR2Domain,employmentR54Domain,breadthDomain,consumptionDomain,growthDomain,orchestrate,asOf,instant,compute});
-      profile('compose-done');
       if(collectionState.status==='rejected'&&!body.domains.some(domain=>domain.status==='READY'))throw collectionState.reason;
       return safeJson(body);
     }catch(error){
