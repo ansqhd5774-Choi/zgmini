@@ -102,7 +102,7 @@ function growthForwardFetchMock(){
     if(u.includes("/timeseries/eits/m3")){
       const q=new URL(u).searchParams,cat=q.get("category_code"),time=q.get("time")??"2026";
       const by={
-        MTM:[["NO","1","yes","MTM","1200000","no",`${time}-08`,"1"],["VS","1","yes","MTM","1000000","no",`${time}-08`,"1"],["TI","1","yes","MTM","1800000","no",`${time}-08`,"1"]],
+        MTM:[["NO","1","yes","MTM","1,200,000","no",`${time}-08`,"1"],["VS","1","yes","MTM","1,000,000","no",`${time}-08`,"1"],["TI","1","yes","MTM","1,800,000","no",`${time}-08`,"1"]],
         MDM:[["NO","1","yes","MDM","600000","no",`${time}-08`,"1"]],
         NXA:[["NO","1","yes","NXA","300000","no",`${time}-08`,"1"],["VS","1","yes","NXA","250000","no",`${time}-08`,"1"]],
         MTU:[["UO","1","yes","MTU","900000","no",`${time}-08`,"1"]],
@@ -157,4 +157,14 @@ test("Growth R2 BFS forward provider uses Census category_code BA_* with data_ty
   assert.equal(bfs.G060.selector,"BFS_US_BA_SA");
   assert.equal(bfs.G061.selector,"BFS_US_HBA_SA");
   assert.equal(bfs.G062.selector,"BFS_US_WBA_SA");
+});
+
+
+test("Growth R2 forward parser accepts comma-formatted Census cell values",async()=>{
+  const {fetchImpl}=growthForwardFetchMock();
+  const seedRows=["G019","G020","G021","G022"].map((candidateId,i)=>({candidateId,observationDate:"2021-12-01",pitEligible:true,harmonizedValue:100+i}));
+  const out=await collectGrowthR2ForwardRecords({env:{CENSUS_API_KEY:"test-only"},asOf:"2026-09-29",fetchImpl,seedRows,now:()=>new Date("2026-09-29T00:00:00.000Z")});
+  const g010=out.records.find(x=>x.candidateId==="G010");
+  assert.equal(g010.harmonizedValue,1200);
+  assert.equal(out.records.length,24);
 });
