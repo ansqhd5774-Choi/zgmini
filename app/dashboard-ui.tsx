@@ -2,7 +2,7 @@
 // Cloudflare Git Integration deployment marker: plain-language macro labels R1
 import {useEffect,useId,useRef,useState,type ReactNode,type CSSProperties} from 'react';
 import {Activity,ArrowRight,ArrowUpRight,ChevronLeft,ChevronRight,Info,Radar,Coins,Users,Percent,Droplet,Landmark,ShieldCheck,Factory,ShoppingCart,BriefcaseBusiness,ArrowLeftRight,Network,DollarSign} from 'lucide-react';
-import {Line,LineChart,ResponsiveContainer,Tooltip,XAxis,YAxis,ReferenceDot} from 'recharts';
+import {Line,LineChart,ResponsiveContainer,Tooltip,YAxis,ReferenceDot,ReferenceLine} from 'recharts';
 import {readProgressiveMarketResponse} from '../lib/market-score/read-progressive-response.mjs';
 import {readMarketSnapshot,saveMarketSnapshot} from '../lib/market-score/browser-snapshot.mjs';
 import {marketDetailRows} from '../lib/market-score/detail-catalog.mjs';
@@ -67,10 +67,19 @@ function CardTrend({data,label,color}:{data:DashboardPoint[];label:string;color:
  const latest=data.at(-1);
  return <div className="zg-spark" aria-label={`${label} 관측 추이`}>
   <ResponsiveContainer width="100%" height="100%" initialDimension={{width:1,height:1}}>
-   <LineChart data={data} accessibilityLayer margin={{top:6,right:6,left:4,bottom:6}}>
-    <XAxis hide dataKey="label"/><YAxis hide domain={[0,100]}/>
-    <Tooltip labelFormatter={v=>String(v)} formatter={v=>[typeof v==='number'?v.toFixed(1):'—','점수']} contentStyle={{background:'#071a2d',border:'1px solid #17446d',color:'#eef4fa',fontSize:11}}/>
-    <Line type="linear" dataKey="value" stroke={color} strokeWidth={1.8} dot={false} connectNulls={false} isAnimationActive={false}/>
+   <LineChart data={data} accessibilityLayer={false} margin={{top:5,right:4,left:0,bottom:5}}>
+    <YAxis
+     domain={[0,100]}
+     ticks={[0,25,50,75,100]}
+     axisLine={false}
+     tickLine={false}
+     width={15}
+     tick={{fill:'#6f8295',fontSize:7,fontWeight:600}}
+    />
+    <ReferenceLine y={25} stroke="rgba(111,130,149,.22)" strokeDasharray="2 3" strokeWidth={0.8}/>
+    <ReferenceLine y={50} stroke="rgba(111,130,149,.26)" strokeDasharray="2 3" strokeWidth={0.8}/>
+    <ReferenceLine y={75} stroke="rgba(111,130,149,.22)" strokeDasharray="2 3" strokeWidth={0.8}/>
+    <Line type="linear" dataKey="value" stroke={color} strokeWidth={1.8} dot={false} activeDot={false} connectNulls={false} isAnimationActive={false}/>
     {latest&&<ReferenceDot x={latest.label} y={latest.value} r={2.5} fill={color} stroke={color}/>}
    </LineChart>
   </ResponsiveContainer>
