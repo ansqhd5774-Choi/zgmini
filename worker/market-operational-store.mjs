@@ -20,6 +20,18 @@ export function marketOperationalStore(db){
   initialize:init,
   async readInput(key){await init();const row=await db.prepare('SELECT body,stored_at FROM market_input_batches_v1 WHERE batch_key LIKE ? ORDER BY stored_at DESC LIMIT 1').bind(key+':%').first();return row?{body:decodeInput(row.body),storedAt:row.stored_at}:null},
   readScore:()=>read('market_public_snapshots_v1','current'),
+  async readScoreHistory({sinceDate='0000-00-00',limit=370}={}){
+   await init();
+   const bounded=Math.max(1,Math.min(1000,Math.trunc(Number(limit)||370)));
+   const rows=await db.prepare("SELECT snapshot_key,body,stored_at FROM market_public_snapshots_v1 WHERE snapshot_key!='current' AND snapshot_key>=? ORDER BY snapshot_key ASC LIMIT ?").bind(sinceDate,bounded).all();
+   const list=Array.isArray(rows?.results)?rows.results:[];
+   return list.flatMap(row=>{
+    try{
+     const body=JSON.parse(row.body);
+     return [{date:row.snapshot_key,score:body?.overall?.status==='READY'?body?.overall?.score:null,body,storedAt:row.stored_at}];
+    }catch{return []}
+   });
+  },
   async writeInput(key,body,now){await init();const json=JSON.stringify(body);if(Buffer.byteLength(json)>32000000)throw Error('INPUT_STORAGE_LIMIT');const encoded='gzip:'+gzipSync(json).toString('base64');if(encoded.length>1800000)throw Error('INPUT_STORAGE_LIMIT');await db.prepare('INSERT INTO market_input_batches_v1 VALUES(?,?,?) ON CONFLICT(batch_key) DO UPDATE SET body=excluded.body,stored_at=excluded.stored_at').bind(key+':'+new Date(now).toISOString().slice(0,10),encoded,now).run()},
   async writeScore(body,now){
    await init();const encoded=JSON.stringify(body);
