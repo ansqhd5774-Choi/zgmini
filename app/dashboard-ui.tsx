@@ -124,24 +124,24 @@ const publicStatusLabel=(status?:string)=>status==="READY"?"연결됨":status===
 const r55Cards=[
  {label:'물가',Icon:Coins,basis:'공개 점수 결과를 표시합니다. PARTIAL/UNAVAILABLE은 0점으로 대체하지 않습니다.',details:['근원 소비지출물가','근원 소비자물가','소비자물가','기대물가']},
  {label:'고용',Icon:Users,basis:'공개 점수 결과를 표시합니다. PARTIAL/UNAVAILABLE은 0점으로 대체하지 않습니다.',details:['비농업고용','실업률','실업수당','임금상승률']},
- {label:'금리',Icon:Percent,basis:'공개 점수 결과를 표시합니다. PARTIAL/UNAVAILABLE은 0점으로 대체하지 않습니다.',details:['정책금리','2년물','10년 실질','10년물']},
- {label:'채권신용',Icon:ShieldCheck,basis:'공개 점수 결과를 표시합니다. PARTIAL/UNAVAILABLE은 0점으로 대체하지 않습니다.',details:['HY 신용 스트레스','IG 신용 스트레스','채권 변동성','회사채 시장위험']},
+ {label:'금리',Icon:Percent,basis:'공개 점수 결과를 표시합니다. PARTIAL/UNAVAILABLE은 0점으로 대체하지 않습니다.',details:['미국 기준금리','2년 국채금리','미국 실질금리','장단기 금리차']},
+ {label:'채권신용',Icon:ShieldCheck,basis:'공개 점수 결과를 표시합니다. PARTIAL/UNAVAILABLE은 0점으로 대체하지 않습니다.',details:['고위험 회사채','우량 회사채','채권 변동성','회사채 시장위험']},
  {label:'경기',Icon:Factory,basis:'Growth R2 경기 총점은 저장된 24개 지표 전체의 승인 가중합입니다. 아래 4개는 총점 산식의 대체값이 아니라 대표 점수입니다.',details:['제조업 신규주문','산업생산','비농업고용 증감','신규 사업체 신청']},
  {label:'소비',Icon:ShoppingCart,basis:'공개 점수 결과를 표시합니다. PARTIAL/UNAVAILABLE은 0점으로 대체하지 않습니다.',details:['실질 소매판매','실질 가처분소득','개인저축률','카드 연체율']},
- {label:'기업실적',Icon:BriefcaseBusiness,basis:'공개 점수 결과를 표시합니다. PARTIAL/UNAVAILABLE은 0점으로 대체하지 않습니다.',details:['주당이익 성장','매출 성장률','이익 성장비','영업·순이익률']},
- {label:'유동성',Icon:Landmark,basis:'공개 점수 결과를 표시합니다. PARTIAL/UNAVAILABLE은 0점으로 대체하지 않습니다.',details:['은행 준비금','통화량 증가','재무부 계정변화','익일 역레포']},
- {label:'자금흐름',Icon:ArrowLeftRight,basis:'SEC 등록펀드의 전체 순유입, 순유입 모멘텀, 인덱스·비인덱스 동반 유입, 환매 압력을 저장 이력 기준으로 종합합니다. 추이는 실제 월별 관측만 사용합니다.',details:['전체 등록펀드 순유입','순유입 모멘텀','인덱스·비인덱스 동반 유입','환매 압력']},
- {label:'수급·폭',Icon:Network,basis:'B1-R5는 저장된 S&P500 종가·거래량만 사용합니다. 상승종목비율 30% + 상승거래대금비율 20% + 5일 수급 EMA 30% + 20일 수급 EMA 20%로 계산하며, 98% 커버리지 미달 시 점수를 만들지 않습니다.',details:[]},
- {label:'달러환율',Icon:DollarSign,basis:'Broad Dollar Index의 수준, 단기·중기 모멘텀, 변동성을 저장 이력 기준으로 평가합니다. 결측 시 재가중하지 않습니다.',details:['달러 수준 부담','단기 달러 모멘텀','중기 달러 모멘텀','달러 변동성']},
- {label:'유가원자재',Icon:Droplet,basis:'K1-R2는 WTI 30% + Brent 25% + 구리 25% + 휘발유 20%입니다. 각 구성요소의 최신 유효 월간 점수를 독립 선택하며 최대 2개월 지연만 허용하고 결측 재가중은 하지 않습니다.',details:['서부텍사스유','브렌트유','구리','휘발유']}
+ {label:'기업실적',Icon:BriefcaseBusiness,basis:'공개 점수 결과를 표시합니다. PARTIAL/UNAVAILABLE은 0점으로 대체하지 않습니다.',details:['주당이익 성장','매출 성장률','이익 증가 종목','영업·순이익률']},
+ {label:'유동성',Icon:Landmark,basis:'공개 점수 결과를 표시합니다. PARTIAL/UNAVAILABLE은 0점으로 대체하지 않습니다.',details:['은행 준비금','시중 통화량','재무부 현금','연준 단기자금']},
+ {label:'자금흐름',Icon:ArrowLeftRight,basis:'SEC 등록펀드의 전체 순유입, 순유입 추세, 펀드 동반 유입, 환매 압력을 저장 이력 기준으로 종합합니다. 추이는 실제 월별 관측만 사용합니다.',details:['전체 펀드 순유입','순유입 추세','펀드 동반 유입','환매 압력']},
+ {label:'수급·폭',Icon:Network,basis:'B1-R5는 저장된 S&P500 종가·거래량만 사용합니다. 오른 종목 비율 30% + 상승 거래비중 20% + 5일 수급 추세 30% + 20일 수급 추세 20%로 계산하며, 98% 커버리지 미달 시 점수를 만들지 않습니다.',details:[]},
+ {label:'달러환율',Icon:DollarSign,basis:'미국 달러 종합지수의 수준, 단기·중기 추세, 변동성을 저장 이력 기준으로 평가합니다. 결측 시 재가중하지 않습니다.',details:['달러 강세 부담','단기 달러 추세','중기 달러 추세','달러 변동성']},
+ {label:'유가원자재',Icon:Droplet,basis:'K1-R2는 미국 원유 30% + 국제 원유 25% + 구리 25% + 휘발유 20%입니다. 각 구성요소의 최신 유효 월간 점수를 독립 선택하며 최대 2개월 지연만 허용하고 결측 재가중은 하지 않습니다.',details:['미국 원유','국제 원유','구리','휘발유']}
 ] as const;
 
 const diagnosticSubscores=[
  {name:'인플레이션',href:'/inflation/',components:'근원 PCE, 근원 CPI, CPI, 기대물가'},
  {name:'경기 침체',href:'/recession/',components:'비농업고용, 실질 GDP, 산업생산, 실질 소비지출, 실업률, 소매판매, 가처분소득'},
- {name:'유동성 위기',href:'/liquidity-crisis/',components:'단기자금시장 스트레스, 은행준비금, TGA 변화, ON RRP, M2, 채권변동성'},
- {name:'신용 위험',href:'/credit-risk/',components:'HY CMDI, IG CMDI, Total CMDI, 채권변동성'},
- {name:'실적 침체',href:'/earnings-recession/',components:'EPS 성장, 영업·순이익률, 매출성장, 이익성장 폭'},
+ {name:'유동성 위기',href:'/liquidity-crisis/',components:'단기자금시장 위험, 은행 준비금, 재무부 현금, 연준 단기자금, 시중 통화량, 채권 변동성'},
+ {name:'신용 위험',href:'/credit-risk/',components:'고위험 회사채, 우량 회사채, 전체 회사채, 채권 변동성'},
+ {name:'실적 침체',href:'/earnings-recession/',components:'주당이익 성장, 영업·순이익률, 매출 성장, 이익 증가 종목'},
  {name:'자산 버블',href:'/asset-bubble/',components:'밸류에이션 압력, 가격가속, 위험자산비중, 투기성 자금흐름, 시장폭 괴리, 과잉유동성'},
  {name:'부채 위험',href:'/debt-risk/',components:'Debt Service Ratio, 부채/GDP, 금리부담, 신용스트레스, 실적상환능력'},
  {name:'공급 충격',href:'/supply-shock/',components:'NY Fed GSCPI, 유가충격, 휘발유, 구리, 산업생산, Headline-Core 물가괴리'}
