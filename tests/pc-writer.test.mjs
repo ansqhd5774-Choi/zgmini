@@ -47,3 +47,12 @@ test('local writer merges stored composite history before saving and publishing'
  assert.match(src,/body\.overall\.trend=mergeStoredCompositeTrend/);
  assert.match(src,/trendPoints:body\.overall\?\.trend\?\.length\?\?0/);
 });
+
+
+test('local writer preserves liquidity coverage evidence through publish',()=>{
+ const src=fs.readFileSync(new URL('../scripts/pc-writer/run-local.mjs',import.meta.url),'utf8');
+ assert.match(src,/LIQUIDITY_1Y_COVERAGE/);
+ assert.match(src,/liquidityCoverage/);
+ assert.match(src,/report\.market=\{\.\.\.report\.market,\.\.\.await publishMarket/);
+ assert.match(src,/console\.warn=originalWarn/);
+});
