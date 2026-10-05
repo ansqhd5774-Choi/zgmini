@@ -6,6 +6,7 @@ import {GROWTH_R2_FEATURE_IDS} from "../lib/market-score/growth-r2-contract.mjs"
 import {ensureGrowthR2HistoricalSeed} from "../lib/market-score/growth-r2-d1-store-r1.mjs";
 import {GROWTH_R2_SEED_ROWS,GROWTH_R2_SEED_SHA256} from "../lib/market-score/growth-r2-seed-r1.mjs";
 import {collectGrowthR2ForwardRecords} from "../lib/market-score/growth-r2-forward-provider-r1.mjs";
+import {marketDetailRows} from "../lib/market-score/detail-catalog.mjs";
 
 const rows=(n=84,start=100)=>Array.from({length:n},(_,i)=>({observationDate:`${2019+Math.floor(i/12)}-${String(i%12+1).padStart(2,"0")}-01`,value:start+i}));
 const baseDiagnostics={inflationStability:{status:"READY",score:60,missing:[]},recessionDefense:{status:"READY",score:58,missing:[]},creditRiskDefense:{status:"READY",score:55,missing:[]}};
@@ -37,6 +38,16 @@ test("stored Growth R2 requires exact 24 non-stale features and computes determi
   assert.deepEqual(a.indicators.map(x=>x.id),["G010","G019","G035","G060"]);
   assert.ok(a.indicators.every(x=>x.status==="READY"&&typeof x.score==="number"));
   const stale=await buildStoredGrowthR2Domain(feature,{asOf:"2026-09-29"});assert.equal(stale.status,"NOT_READY");assert.ok(stale.staleFactors.length>0);
+});
+
+test("Growth card keeps approved R2 detail rows when representative indicators are incomplete",()=>{
+  const rows=marketDetailRows("growth",[
+    {id:"G010",score:61,status:"READY",observationDate:"2026-08-01"},
+    {id:"G019",score:52,status:"READY",observationDate:"2026-08-01"},
+  ]);
+  assert.deepEqual(rows.map(x=>x.label),["제조업 신규주문","산업생산","비농업고용 증감","신규 사업체 신청"]);
+  assert.deepEqual(rows.map(x=>x.score),[61,52,null,null]);
+  assert.ok(!rows.some(x=>["실질 GDP 성장률","제조업 모멘텀","서비스업 매출 모멘텀"].includes(x.label)));
 });
 
 function createD1BindLimitDb(maxBindParams=100){
