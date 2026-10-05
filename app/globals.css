@@ -4503,3 +4503,19 @@ body .zg-r55-market .zg-r55-shell[data-expanded="false"] article.zg-r55-card>.zg
   box-shadow:none!important;
   border-radius:0!important;
 }
+
+
+/* MINI_CHART_R5 — mini charts are display-only; never own pointer/focus UI. */
+.zg-r55-card .zg-r55-mini-chart{
+  -webkit-tap-highlight-color:transparent;
+}
+.zg-r55-card .zg-r55-mini-chart .recharts-responsive-container,
+.zg-r55-card .zg-r55-mini-chart .recharts-wrapper,
+.zg-r55-card .zg-r55-mini-chart .recharts-surface{
+  pointer-events:none!important;
+}
+.zg-r55-card .zg-r55-mini-chart :focus,
+.zg-r55-card .zg-r55-mini-chart :focus-visible{
+  outline:0!important;
+  box-shadow:none!important;
+}
