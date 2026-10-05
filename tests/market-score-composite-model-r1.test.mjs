@@ -4,6 +4,7 @@ import {
   COMPOSITE_MODEL_VERSION,
   DOMAIN_WEIGHTS,
   buildCompositeMarketScore,
+  buildCompositeTrend,
 } from "../lib/market-score/composite-model-r1.mjs";
 
 const ids=DOMAIN_WEIGHTS.map(x=>x.id);
@@ -56,4 +57,59 @@ test("CM-R1 keeps fixed 12-domain order regardless of input order",()=>{
   const input=ready(55).reverse();
   const out=buildCompositeMarketScore(input);
   assert.deepEqual(out.domains.map(x=>x.id),ids);
+});
+
+
+test("CM-R1 reconstructs monthly Overall trend from stored domain histories without reweighting",()=>{
+  const input=DOMAIN_WEIGHTS.map((spec,index)=>({
+    id:spec.id,
+    status:"READY",
+    score:60+index/10,
+    trend:[
+      {label:"2026-07-31",value:40+index},
+      {label:"2026-08-31",value:50+index},
+      {label:"2026-09-30",value:55+index},
+    ],
+  }));
+  const out=buildCompositeMarketScore(input,{updatedAt:"2026-10-05T12:00:00.000Z"});
+  assert.equal(out.overall.status,"READY");
+  assert.ok(out.overall.trend.length>=4);
+  const september=out.overall.trend.find(point=>point.label==="2026-09-30");
+  const expectedSeptember=DOMAIN_WEIGHTS.reduce((sum,spec,index)=>sum+(55+index)*spec.weight,0)/100;
+  assert.ok(september);
+  assert.ok(Math.abs(september.value-expectedSeptember)<1e-12);
+  assert.equal(out.overall.trend.at(-1).label,"2026-10-05");
+  assert.equal(out.overall.trend.at(-1).value,out.overall.score);
+});
+
+test("CM-R1 composite history never looks ahead and skips incomplete 12-domain anchors",()=>{
+  const input=DOMAIN_WEIGHTS.map((spec,index)=>({
+    id:spec.id,
+    status:"READY",
+    score:70,
+    trend:[
+      {label:"2026-01-31",value:50+index/10},
+      {label:"2026-02-28",value:60+index/10},
+    ],
+  }));
+  input.find(x=>x.id==="earnings").trend=[
+    {label:"2026-02-15",value:61},
+  ];
+  const trend=buildCompositeTrend(
+    input.map((d,index)=>({...d,weight:DOMAIN_WEIGHTS[index].weight})),
+    {asOfDate:"2026-03-15",currentScore:70,points:4},
+  );
+  assert.equal(trend.some(point=>point.label==="2026-01-31"),false);
+  assert.equal(trend.some(point=>point.label==="2026-02-28"),true);
+  assert.deepEqual(trend.at(-1),{label:"2026-03-15",value:70});
+});
+
+test("CM-R1 composite history stays empty when Overall is not computable",()=>{
+  const input=ready(60);
+  input.find(x=>x.id==="credit").status="PARTIAL";
+  input.find(x=>x.id==="credit").score=null;
+  for(const item of input)item.trend=[{label:"2026-09-30",value:60}];
+  const out=buildCompositeMarketScore(input,{updatedAt:"2026-10-05T12:00:00Z"});
+  assert.equal(out.overall.status,"PARTIAL");
+  assert.deepEqual(out.overall.trend,[]);
 });
