@@ -13,7 +13,7 @@ function cardTrendSource(){
 
 test("macro mini charts use a quiet fixed 0-100 guide without X axis or tooltip",()=>{
   const card=cardTrendSource();
-  assert.match(card,/accessibilityLayer=\{false\}/);
+  assert.match(card,/accessibilityLayer=\{false\}/);\n  assert.match(card,/tabIndex=\{-1\}/);\n  assert.match(card,/onPointerDown=\{event=>event\.preventDefault\(\)\}/);
   assert.match(card,/domain=\{\[0,100\]\}/);
   assert.match(card,/zg-r55-mini-y-labels/);\n  assert.match(card,/>100<\/span><span>50<\/span><span>0<\/span>/);
   assert.match(card,/fontSize:7/);\n  assert.match(card,/YAxis hide domain=\{\[0,100\]\} width=\{0\}/);
