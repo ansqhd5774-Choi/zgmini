@@ -199,7 +199,7 @@ candidate -> Production 전환 전 모두 PASS:
 - DB: Cloudflare D1
 - QUEUE: Cloudflare Queues(승인 contract만)
 - SCHEDULER: Cloudflare Cron 또는 승인 외부 scheduler
-- 2026-10-05 승인: PC가 저장 데이터 기반 시장/Korea/projection 계산을 담당하고 Cloudflare Cron은 기존 주기로 원자료를 수집한다. `ZGMINI_COMPUTE_TARGET=pc`와 `docs/PC_WRITER_R1.md`의 저장·검증 계약을 따른다. 산식/TTL/DB 스키마/DNS 계약은 변경하지 않는다.
+- 2026-10-05 최신 승인: PC가 API 수집·원자료 저장·시장/Korea/projection 계산을 담당한다. Cloudflare에는 공개 결과만 게시한다. PC 게시 검증 후 Cloudflare Cron 수집을 중지한다. `docs/PC_WRITER_R2.md`가 이전 R1의 수집 위치 계약을 대체한다. 산식/TTL/원격 DB 스키마/DNS 계약은 변경하지 않는다. RDC는 사용하지 않는다.
 - DOMAIN/DNS AUTHORITY: Cloudflare
 - OPENAI SITES: DEPLOYMENT RETIRED
 - DIRECT WRANGLER PROD DEPLOY: DEFAULT DENY

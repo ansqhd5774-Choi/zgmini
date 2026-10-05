@@ -16,13 +16,11 @@
     }
   ],
   "vars": {
-    "ZGMINI_COMPUTE_TARGET": "pc"
+    "ZGMINI_COMPUTE_TARGET": "pc",
+    "ZGMINI_COLLECTION_TARGET": "pc"
   },
   "triggers": {
-    "crons": [
-      "*/5 * * * *",
-      "37 * * * *"
-    ]
+    "crons": []
   },
   "assets": {
     "binding": "ASSETS",

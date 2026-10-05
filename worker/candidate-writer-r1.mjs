@@ -4,6 +4,7 @@ const CORE_PROJECTIONS=Object.freeze(['inflation','recession','liquidityCrisis',
 let runtimePromise;
 const loadRuntime=()=>runtimePromise??=import('./candidate-writer-runtime-r1.mjs');
 export async function runCandidateWriter(controller,native,deps={}){
+ if(native.ZGMINI_COLLECTION_TARGET==='pc')return {status:'PC_COLLECTION_OWNER'};
  if(!WRITER_CRONS.includes(controller.cron))return {status:'IGNORED'};
  const korea=controller.cron==='37 * * * *';
  const localCompute=native.ZGMINI_COMPUTE_TARGET==='pc';
