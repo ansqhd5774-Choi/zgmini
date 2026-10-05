@@ -11,40 +11,34 @@ function sourceBetween(startToken,endToken){
   return src.slice(start,end);
 }
 
-test("domain mini charts keep the fixed 0-100 scale",()=>{
+test("market charts use hidden numeric time axes so selected periods keep their true duration",()=>{
+  const charts=sourceBetween("function timeScaledTrend(","// Stage 12");
+  assert.match(charts,/function timeScaledTrend\(data:DashboardPoint\[\],periodDays:number\)/);
+  assert.match(charts,/const start=end-Math\.max\(1,periodDays\)\*86400000/);
+  assert.equal((charts.match(/<XAxis hide dataKey="ts" type="number" domain=\{\[scaled\.start,scaled\.end\]\}\/?>/g)??[]).length,2);
+  assert.match(src,/SummaryTrend data=\{overallTrend\}[^\n]*periodDays=\{periodDays\}/);
+  assert.match(src,/CardTrend data=\{trend\}[^\n]*periodDays=\{periodDays\}/);
+});
+
+test("domain mini charts keep the fixed 0-100 score scale while time spacing is numeric",()=>{
   const card=sourceBetween("function CardTrend(","function summaryTrendScale(");
-  assert.match(card,/accessibilityLayer=\{false\}/);
-  assert.match(card,/tabIndex=\{-1\}/);
-  assert.match(card,/onPointerDown=\{event=>event\.preventDefault\(\)\}/);
   assert.match(card,/YAxis hide domain=\{\[0,100\]\} width=\{0\}/);
   assert.match(card,/ReferenceLine y=\{25\}/);
   assert.match(card,/ReferenceLine y=\{50\}/);
   assert.match(card,/ReferenceLine y=\{75\}/);
   assert.match(card,/>100<\/span><span>50<\/span><span>0<\/span>/);
-  assert.doesNotMatch(card,/<Tooltip/);
-  assert.doesNotMatch(card,/<XAxis/);
 });
 
-test("composite summary chart uses an adaptive Y range instead of fixed 0-100",()=>{
+test("composite summary keeps adaptive Y range and current point",()=>{
   const scale=sourceBetween("function summaryTrendScale(","// Stage 12");
   assert.match(scale,/Math\.max\(8,\(rawMax-rawMin\)\*1\.35\)/);
   assert.match(scale,/YAxis hide domain=\{\[scale\.low,scale\.high\]\} width=\{0\}/);
-  assert.match(scale,/ReferenceLine y=\{scale\.q1\}/);
-  assert.match(scale,/ReferenceLine y=\{scale\.mid\}/);
-  assert.match(scale,/ReferenceLine y=\{scale\.q3\}/);
-  assert.match(scale,/summaryAxisLabel\(scale\.high\)/);
-  assert.match(scale,/summaryAxisLabel\(scale\.low\)/);
+  assert.match(scale,/ReferenceDot x=\{latest\.ts\} y=\{latest\.value\}/);
   assert.doesNotMatch(scale,/YAxis hide domain=\{\[0,100\]\}/);
 });
 
-test("composite panel renders SummaryTrend while domain cards still render CardTrend",()=>{
-  assert.match(src,/\?<SummaryTrend data=\{overallTrend\} label="종합 시장 점수"/);
-  assert.match(src,/\?<CardTrend data=\{trend\} label=\{m\.label\}/);
-});
-
-test("both chart types keep the current point without hover dots",()=>{
-  const charts=sourceBetween("function CardTrend(","// Stage 12");
-  assert.equal((charts.match(/activeDot=\{false\}/g)??[]).length,2);
-  assert.equal((charts.match(/dot=\{false\}/g)??[]).length,2);
-  assert.equal((charts.match(/<ReferenceDot/g)??[]).length,2);
+test("market charts remain tooltip-free and visually omit the X axis",()=>{
+  const charts=sourceBetween("function timeScaledTrend(","// Stage 12");
+  assert.doesNotMatch(charts,/<Tooltip/);
+  assert.equal((charts.match(/<XAxis hide/g)??[]).length,2);
 });
