@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {
   buildAssetBubbleR9Partial,
   buildPriceAccelerationR9,
+  buildSpeculativeFlowMagnitudeR57,
   buildSpeculativeFlowsR9,
 } from '../lib/diagnostic-layer/asset-bubble-r9-components.mjs';
 
@@ -95,3 +96,41 @@ test('Asset Bubble becomes READY only when all six locked components are present
   assert.equal(out.rows[0].status,'READY');
   assert.ok(Math.abs(out.rows[0].score-(60*.35+70*.25+80*.15+90*.10+40*.10+50*.05))<1e-12);
 });
+
+test('R57.1 speculative flow uses four transaction quarters over t-4 holdings', () => {
+  const out=buildSpeculativeFlowMagnitudeR57({
+    transactionRows:[
+      {quarter:'2019-Q2',value:1},
+      {quarter:'2019-Q3',value:2},
+      {quarter:'2019-Q4',value:3},
+      {quarter:'2020-Q1',value:4},
+    ],
+    holdingsRows:[{quarter:'2019-Q1',value:100}],
+  });
+  assert.equal(out.status,'READY_CURRENT_VINTAGE');
+  assert.equal(out.formula,'ABS(SUM_T_T3_DIV_H_T4)');
+  const row=out.rows.find(item=>item.quarter==='2020-Q1');
+  assert.ok(row);
+  assert.equal(row.flowSum4Q,10);
+  assert.equal(row.holdingsLag4Q,100);
+  assert.equal(row.holdingsQuarter,'2019-Q1');
+  assert.ok(Math.abs(row.value-0.1)<1e-12);
+});
+
+test('R57.1 speculative flow requires all four transactions and t-4 holdings', () => {
+  const completeTx=[
+    {quarter:'2019-Q2',value:1},
+    {quarter:'2019-Q3',value:2},
+    {quarter:'2019-Q4',value:3},
+    {quarter:'2020-Q1',value:4},
+  ];
+  for(const args of [
+    {transactionRows:completeTx.slice(1),holdingsRows:[{quarter:'2019-Q1',value:100}]},
+    {transactionRows:completeTx,holdingsRows:[]},
+  ]){
+    const out=buildSpeculativeFlowMagnitudeR57(args);
+    assert.equal(out.status,'INSUFFICIENT_HISTORY');
+    assert.equal(out.rows.length,0);
+  }
+});
+

@@ -342,7 +342,7 @@ return {
       },
       deferred: {
         assetPriceRuntime: 'DEFERRED_NON_BLOCKING',
-        speculativeFlowRawRuntime: 'DEFERRED_NON_BLOCKING',
+        speculativeFlowRawRuntime: 'WIRED_R57_FRB_Z1_T4_DENOMINATOR',
         earningsHistoricalPointInTime: 'RESEARCH_VALIDATED_RUNTIME_CURRENT_ONLY',
         assetBreadthPointInTime: 'PARTIAL',
       },
