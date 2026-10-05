@@ -52,7 +52,19 @@ try{
  }
  await marketOperationalStore(core).writeScore(body,now);
  save(path.join(base,'local-market-result.json'),body);
- report.market={status:'LOCAL_STORED',readyDomains:body.domains.filter(x=>x.status==='READY').length,trendPoints:body.overall?.trend?.length??0};
+ const liquidityTrend=body.domains.find(x=>x.id==='liquidity')?.trend??[];
+ const liquidityDates=liquidityTrend.map(x=>x?.label??x?.date).filter(x=>typeof x==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(x)).sort();
+ report.market={
+  status:'LOCAL_STORED',
+  readyDomains:body.domains.filter(x=>x.status==='READY').length,
+  trendPoints:body.overall?.trend?.length??0,
+  liquidityTrend:{
+   points:liquidityTrend.length,
+   first:liquidityDates.at(0)??null,
+   last:liquidityDates.at(-1)??null,
+   spanDays:liquidityDates.length>1?Math.floor((Date.parse(liquidityDates.at(-1)+'T00:00:00Z')-Date.parse(liquidityDates.at(0)+'T00:00:00Z'))/86400000):0,
+  },
+ };
  const koreaStore=new Rev7D1Store(history,{leaseMs:600000});
  const latest=await koreaStore.getLatestCompleteDate();
  const prior=await koreaStore.getLatestSnapshot();
