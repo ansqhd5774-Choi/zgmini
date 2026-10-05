@@ -113,3 +113,48 @@ test("CM-R1 composite history stays empty when Overall is not computable",()=>{
   assert.equal(out.overall.status,"PARTIAL");
   assert.deepEqual(out.overall.trend,[]);
 });
+
+
+test("CM-R1 keeps real intra-month composite changes instead of collapsing to month-end only",()=>{
+  const input=DOMAIN_WEIGHTS.map((spec,index)=>({
+    id:spec.id,
+    status:"READY",
+    score:60,
+    trend:[
+      {label:"2026-09-20",value:40+index},
+      {label:"2026-09-24",value:45+index},
+      {label:"2026-09-28",value:50+index},
+      {label:"2026-10-02",value:55+index},
+    ],
+  }));
+  const out=buildCompositeMarketScore(input,{updatedAt:"2026-10-05T12:00:00.000Z"});
+  assert.deepEqual(out.overall.trend.map(point=>point.label),[
+    "2026-09-20",
+    "2026-09-24",
+    "2026-09-28",
+    "2026-10-02",
+    "2026-10-05",
+  ]);
+  assert.equal(out.overall.trend.at(-1).value,out.overall.score);
+});
+
+test("CM-R1 union-date history still skips dates until all 12 domains have a prior score",()=>{
+  const input=DOMAIN_WEIGHTS.map((spec,index)=>({
+    id:spec.id,
+    status:"READY",
+    score:70,
+    trend:[
+      {label:"2026-09-20",value:40+index},
+      {label:"2026-09-24",value:50+index},
+    ],
+  }));
+  input.find(x=>x.id==="liquidity").trend=[
+    {label:"2026-09-23",value:60},
+    {label:"2026-09-24",value:62},
+  ];
+  const trend=buildCompositeTrend(input,{asOfDate:"2026-09-25",currentScore:70,points:370});
+  assert.equal(trend.some(point=>point.label==="2026-09-20"),false);
+  assert.equal(trend.some(point=>point.label==="2026-09-23"),true);
+  assert.equal(trend.some(point=>point.label==="2026-09-24"),true);
+  assert.deepEqual(trend.at(-1),{label:"2026-09-25",value:70});
+});
