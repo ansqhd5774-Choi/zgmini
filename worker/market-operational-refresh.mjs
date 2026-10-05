@@ -13,6 +13,7 @@ import {buildStoredDiagnostic} from './stored-diagnostic-r61.mjs';
 import {marketOperationalStore,readStoredMarketInputs} from './market-operational-store.mjs';
 import {writeProjectionMacroSlices} from './projection-input-writer-r60.mjs';
 import {macroCollectionReadiness,mergeSuccessfulMacroCredit} from './macro-result-contract-r61.mjs';
+import {mergeStoredCompositeTrend,oneYearHistoryStart} from './composite-history.mjs';
 
 export const MARKET_COLLECTION_JOBS=Object.freeze(['macroCredit','macro','rates','credit','supply','fundFlows','bisDsr','bisTc','earnings','consumption','breadth','inflation','employment','growth']);
 const SOURCE_GROUPS={macro:['fetchFred'],credit:['fetchOfr','fetchCmdi'],supply:['fetchGscpi','fetchCopper'],fundFlows:['fetchFundFlows']};
@@ -31,6 +32,15 @@ export async function calculateStoredMarketScore(env,store,now){
  if(!response.ok)throw Error('STORED_CALCULATION_FAILED');
  const body=await response.json();
  if(body.status!=='SUCCESS'||body.domains?.length!==12)throw Error('SCORE_CONTRACT_FAILED');
+ if(body?.overall?.status==='READY'&&typeof store.readScoreHistory==='function'){
+  const storedHistory=await store.readScoreHistory({sinceDate:oneYearHistoryStart(now),limit:370});
+  body.overall.trend=mergeStoredCompositeTrend({
+   legacyTrend:body.overall.trend,
+   storedSnapshots:storedHistory,
+   currentScore:body.overall.score,
+   currentDate:body.asOfDate??new Date(now).toISOString().slice(0,10),
+  });
+ }
  await store.writeScore(body,now);
  return {readyDomains:body.dataQuality?.readyDomains??body.domains.filter(x=>x.status==='READY').length};
 }
