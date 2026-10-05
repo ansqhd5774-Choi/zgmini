@@ -16,7 +16,7 @@ test("macro mini charts use a quiet fixed 0-100 guide without X axis or tooltip"
   assert.match(card,/accessibilityLayer=\{false\}/);
   assert.match(card,/domain=\{\[0,100\]\}/);
   assert.match(card,/ticks=\{\[0,50,100\]\}/);
-  assert.match(card,/fontSize:7/);\n  assert.match(card,/width=\{11\}/);
+  assert.match(card,/fontSize:7/);\n  assert.match(card,/width=\{12\}/);
   assert.match(card,/ReferenceLine y=\{25\}/);
   assert.match(card,/ReferenceLine y=\{50\}/);
   assert.match(card,/ReferenceLine y=\{75\}/);

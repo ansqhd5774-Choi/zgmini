@@ -67,13 +67,13 @@ function CardTrend({data,label,color}:{data:DashboardPoint[];label:string;color:
  const latest=data.at(-1);
  return <div className="zg-spark" aria-label={`${label} 관측 추이`}>
   <ResponsiveContainer width="100%" height="100%" initialDimension={{width:1,height:1}}>
-   <LineChart data={data} accessibilityLayer={false} margin={{top:5,right:4,left:0,bottom:5}}>
+   <LineChart data={data} accessibilityLayer={false} margin={{top:3,right:3,left:0,bottom:3}}>
     <YAxis
      domain={[0,100]}
      ticks={[0,50,100]}
      axisLine={false}
      tickLine={false}
-     width={11}
+     width={12}
      tick={{fill:'#6f8295',fontSize:7,fontWeight:600}}
     />
     <ReferenceLine y={25} stroke="rgba(111,130,149,.22)" strokeDasharray="2 3" strokeWidth={0.8}/>

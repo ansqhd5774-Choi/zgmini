@@ -3461,8 +3461,8 @@ body .zg-r55-market .zg-r55-shell[data-expanded="false"] article.zg-r55-card>.zg
   .zg-dashboard[data-view="dashboard"] .zg-r55-shell[data-expanded="false"] .zg-r55-card-visual>.zg-spark,
   .zg-dashboard[data-view="dashboard"] .zg-r55-shell[data-expanded="false"] .zg-r55-card-visual>.zg-r55-card-spark-empty{
     width:100%;
-    height:24px;
-    min-height:24px;
+    height:36px;
+    min-height:36px;
     overflow:hidden;
   }
   .zg-dashboard[data-view="dashboard"] .zg-r55-shell[data-expanded="false"] .zg-r55-card-compact-scale{
@@ -3556,8 +3556,8 @@ body .zg-r55-market .zg-r55-shell[data-expanded="false"] article.zg-r55-card>.zg
   .zg-dashboard[data-view="dashboard"] .zg-r55-shell[data-expanded="true"] .zg-r55-card-visual>.zg-spark,
   .zg-dashboard[data-view="dashboard"] .zg-r55-shell[data-expanded="true"] .zg-r55-card-visual>.zg-r55-card-spark-empty{
     width:100%;
-    height:24px;
-    min-height:24px;
+    height:36px;
+    min-height:36px;
     overflow:hidden;
   }
   .zg-dashboard[data-view="dashboard"] .zg-r55-shell[data-expanded="true"] .zg-r55-card-compact-scale{
@@ -4457,4 +4457,14 @@ body .zg-r55-market .zg-r55-shell[data-expanded="false"] article.zg-r55-card>.zg
     display:inline;
     margin-top:0;
   }
+}
+
+
+/* MINI_CHART_R3 — card sparkline focus/outline suppression only. */
+.zg-r55-card .zg-spark .recharts-wrapper:focus,
+.zg-r55-card .zg-spark .recharts-wrapper:focus-visible,
+.zg-r55-card .zg-spark .recharts-surface:focus,
+.zg-r55-card .zg-spark .recharts-surface:focus-visible{
+  outline:none!important;
+  box-shadow:none!important;
 }
