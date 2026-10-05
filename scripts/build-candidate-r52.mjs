@@ -7,7 +7,7 @@ import {extractRscPayloadFromPrerenderedHtml} from '../node_modules/vinext/dist/
 import {candidateBranchGate} from './candidate-branch-gate.mjs';
 candidateBranchGate();
 execFileSync(process.execPath,['--test','tests/candidate-writer-linkage-r3.test.mjs'],{stdio:'inherit'});
-execFileSync(process.execPath,['--test','tests/projection-input-r60.test.mjs'],{stdio:'inherit'});
+execFileSync(process.execPath,['--test','tests/projection-input-r60.test.mjs','tests/fred-auth-probe-r61.test.mjs'],{stdio:'inherit'});
 const env={...process.env,CLOUDFLARE_LOAD_DEV_VARS_FROM_DOT_ENV:'false'};
 mkdirSync('work',{recursive:true});mkdirSync('docs/migration/d1-r52',{recursive:true});
 const run=(args,log)=>new Promise((resolve,reject)=>{const fd=openSync(log,'w');const p=spawn(process.execPath,args,{env,stdio:['ignore',fd,fd]});p.on('exit',code=>{closeSync(fd);code===0?resolve():reject(Error(`Build step failed; see ${log}`));});});
