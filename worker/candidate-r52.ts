@@ -18,10 +18,6 @@ const http=candidate2dbWorker({async fetch(request,env,ctx){
 }});
 export default Object.freeze({...http,async scheduled(controller,native,ctx){
  if(controller.cron==='*/5 * * * *'){
-  const {runOnceFredAuthProbe}=await import('./fred-auth-probe-r61.mjs');
-  await runOnceFredAuthProbe(native,controller.scheduledTime);
-  const {runNextFredSubsetProbe}=await import('./fred-subset-probe-r61.mjs');
-  if(await runNextFredSubsetProbe(native,controller.scheduledTime))return;
   const {runOnceMacroRecovery}=await import('./macro-recovery-probe-r61.mjs');
   if(await runOnceMacroRecovery(native,controller))return;
  }

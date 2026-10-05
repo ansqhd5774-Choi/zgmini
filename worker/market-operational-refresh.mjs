@@ -9,7 +9,7 @@ import {runEmploymentR4ShadowRuntimeStep} from '../lib/market-score/employment-r
 import {runConsumptionR3OperationalRefresh} from './consumption-r3-operational-refresh.mjs';
 import {collectGrowthR2StoreOnlyR1} from '../lib/market-score/growth-r2-worker-domain-r1.mjs';
 import {createMarketScoreR1Handler} from './market-score-r1.mjs';
-import {buildFullDiagnosticOrchestrator} from '../lib/diagnostic-layer/full-diagnostic-orchestrator.mjs';
+import {buildStoredDiagnostic} from './stored-diagnostic-r61.mjs';
 import {marketOperationalStore,readStoredMarketInputs} from './market-operational-store.mjs';
 import {writeProjectionMacroSlices} from './projection-input-writer-r60.mjs';
 import {macroCollectionReadiness} from './macro-result-contract-r61.mjs';
@@ -25,7 +25,7 @@ async function collectGroup(args,group){
 const unavailableFetch=async()=>{throw Error('SCORE_CALCULATION_NETWORK_FORBIDDEN')};
 export async function calculateStoredMarketScore(env,store,now){
  const handler=createMarketScoreR1Handler({env,fetchImpl:unavailableFetch,
-  collectInputs:()=>readStoredMarketInputs(store,now),orchestrate:buildFullDiagnosticOrchestrator,
+  collectInputs:()=>readStoredMarketInputs(store,now),orchestrate:buildStoredDiagnostic,
   collectBreadthDomain:readBreadthB1R5StoredPublicDomainR1,now:()=>new Date(now)});
  const response=await handler(new Request('https://zgmini.kr/api/market-score'));
  if(!response.ok)throw Error('STORED_CALCULATION_FAILED');

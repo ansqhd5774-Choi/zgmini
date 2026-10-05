@@ -1,4 +1,0 @@
-import test from 'node:test';import assert from 'node:assert/strict';
-import {FRED_PROBE_GROUPS,inspectFredSubset} from '../worker/fred-subset-probe-r61.mjs';
-test('subsets retain full registry and order',()=>{assert.deepEqual(FRED_PROBE_GROUPS[0],['PAYEMS']);assert.equal(FRED_PROBE_GROUPS[1].length,6);assert.deepEqual(FRED_PROBE_GROUPS[2],['DGS2']);assert.equal(FRED_PROBE_GROUPS[5].length,42);});
-test('actual adapter failure retains safe HTTP evidence without key/body',async()=>{const logs=[];const out=await inspectFredSubset(['PAYEMS'],{FRED_API_KEY:'a'.repeat(32)},{fetchImpl:async()=>new Response('sensitive',{status:403}),log:(...x)=>logs.push(x)});assert.equal(out.status,'SOURCE_FAILED');assert.equal(out.ready,0);assert.match(JSON.stringify(logs),/403/);assert.ok(!JSON.stringify(logs).includes('sensitive'));assert.ok(!JSON.stringify(logs).includes('a'.repeat(32)));});

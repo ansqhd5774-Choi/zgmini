@@ -1,8 +1,0 @@
-import test from 'node:test';import assert from 'node:assert/strict';
-import {probeFredAuth,runOnceFredAuthProbe} from '../worker/fred-auth-probe-r61.mjs';
-const env={FRED_API_KEY:'a'.repeat(32)};
-for(const [code,status] of [[400,'HTTP_400'],[403,'HTTP_403'],[429,'QUOTA_EXCEEDED']])test(`safe HTTP ${code}`,async()=>{const r=await probeFredAuth(env,{fetchImpl:async()=>new Response('sensitive',{status:code})});assert.equal(r.status,status);assert.equal(r.httpStatus,code);assert.ok(!JSON.stringify(r).includes(env.FRED_API_KEY));});
-test('invalid key never requests provider',async()=>{const r=await probeFredAuth({FRED_API_KEY:'invalid'},{fetchImpl:()=>{throw Error('MUST_NOT_FETCH')}});assert.equal(r.status,'KEY_FORMAT_INVALID');assert.equal(r.requestCount,0)});
-test('timeout has no exception payload',async()=>{const r=await probeFredAuth(env,{fetchImpl:()=>{throw new DOMException(env.FRED_API_KEY,'TimeoutError')}});assert.equal(r.status,'TIMEOUT');assert.ok(!JSON.stringify(r).includes(env.FRED_API_KEY));});
-test('bounded window yields metadata only',async()=>{const r=await probeFredAuth(env,{now:Date.parse('2026-10-05'),fetchImpl:async(url)=>{assert.equal(url.searchParams.get('limit'),'12');assert.ok(url.searchParams.get('observation_start'));return Response.json({observations:[{date:'2026-09-01',value:'4.2'}]});}});assert.equal(r.status,'READY');assert.equal(r.rowCount,1);assert.equal(r.latestObservationDate,'2026-09-01');assert.ok(!JSON.stringify(r).includes('4.2'));});
-test('receipt excludes repeat request',async()=>{await runOnceFredAuthProbe({DB_CORE:{prepare:()=>({bind:()=>({run:async()=>({meta:{changes:0}})})})}},Date.now());});
