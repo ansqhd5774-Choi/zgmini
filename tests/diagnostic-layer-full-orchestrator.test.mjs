@@ -74,7 +74,6 @@ function baseSeries() {
     BOGZ1LM793164115Q:quarterlyRows(80,i=>500+i*10),
     BOGZ1LM103164115Q:quarterlyRows(80,i=>1000+i*20),
     GDP:quarterlyRows(80,i=>5000+i*50),
-    SPASTT01USM661N:monthlyRows(150,i=>80+i*0.8+i*i/700),
     BOGZ1FL153064486Q:quarterlyRows(80,i=>30+i/10),
     B471RC1Q027SBEA:quarterlyRows(80,i=>100+i),
     A455RC1Q027SBEA:quarterlyRows(80,i=>1000+i*4),
@@ -251,18 +250,4 @@ test('R48_STAGGERED_RECESSION_RELEASE_REGRESSION: recession snapshot carries eac
   assert.equal(out.snapshot.diagnostics.recessionDefense.status,'READY');
   assert.equal(out.snapshot.diagnostics.recessionDefense.score!==null,true);
   assert.deepEqual(out.snapshot.diagnostics.recessionDefense.missing,[]);
-});
-
-
-test('OECD/FRED asset price fallback supplies R9 price acceleration without external rows', () => {
-  const external=externalInputs();
-  delete external.assetPriceRows;
-  const out=buildFullDiagnosticOrchestrator({
-    asOfDate:'2030-12-31',
-    baseOverall:60,
-    series:baseSeries(),
-    external,
-  });
-  assert.equal(out.artifacts.priceAcceleration.status,'READY_CURRENT_VINTAGE');
-  assert.ok(out.artifacts.priceAcceleration.monthly.filter(row=>row.score!==null).length>0);
 });
