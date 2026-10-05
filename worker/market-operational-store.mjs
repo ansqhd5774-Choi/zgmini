@@ -4,6 +4,7 @@ import {gzipSync,gunzipSync} from 'node:zlib';
 import {Buffer} from 'node:buffer';
 import {liquidityHistoryRow} from './market-score-response-store.mjs';
 import {LIQUIDITY_ACTIVE_HISTORY_METHOD} from './liquidity-active-history-reader.mjs';
+import {mergeStoredMacro} from './candidate-market-operational-store.mjs';
 const decodeInput=text=>JSON.parse(text.startsWith('gzip:')?gunzipSync(Buffer.from(text.slice(5),'base64'),{maxOutputLength:32000000}).toString('utf8'):text);
 export function marketOperationalStore(db){
  if(!db)throw Error('STORAGE_UNAVAILABLE');
@@ -39,7 +40,7 @@ export function marketOperationalStore(db){
 
 export async function readStoredMarketInputs(store,now=Date.now()){
  const batches=await Promise.all(['macro','credit','supply','fundFlows','bisDsr','bisTc','rates'].map(key=>store.readInput(key)));
- const fresh=x=>x&&now>=x.storedAt&&now-x.storedAt<36*3600000?x.body:{};
+ const fresh=(x,i)=>x&&now>=x.storedAt&&now-x.storedAt<36*3600000?(i===0?mergeStoredMacro(null,x,now):x.body):{};
  return batches.map(fresh).reduce((all,part)=>({...all,...part,series:{...all.series,...part.series},external:{...all.external,...part.external},providerSummary:{...all.providerSummary,...part.providerSummary}}),{series:{},external:{},providerSummary:{}});
 }
 

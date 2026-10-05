@@ -10,3 +10,10 @@ export function macroCollectionReadiness(collected){
   missing:required.filter(id=>!ready.includes(id)),
   reason:complete?null:ready.length?'MACRO_REQUIRED_SERIES_MISSING':'MACRO_NO_READY_SERIES'};
 }
+export function mergeSuccessfulMacroCredit(previous,collected,storedAt){
+ if(collected?.status!=='READY_CURRENT_VINTAGE'||!collected?.series?.NFCICREDIT?.length)throw Error('MACRO_CREDIT_NOT_READY');
+ const body=previous?.body??{},series={...body.series,NFCICREDIT:collected.series.NFCICREDIT};
+ const seriesStoredAt=Object.fromEntries(Object.keys(body.series??{}).map(id=>[id,body.seriesStoredAt?.[id]??previous.storedAt]));
+ seriesStoredAt.NFCICREDIT=storedAt;
+ return {...body,series,seriesStoredAt};
+}

@@ -12,7 +12,7 @@ import {createMarketScoreR1Handler} from './market-score-r1.mjs';
 import {buildStoredDiagnostic} from './stored-diagnostic-r61.mjs';
 import {marketOperationalStore,readStoredMarketInputs} from './market-operational-store.mjs';
 import {writeProjectionMacroSlices} from './projection-input-writer-r60.mjs';
-import {macroCollectionReadiness} from './macro-result-contract-r61.mjs';
+import {macroCollectionReadiness,mergeSuccessfulMacroCredit} from './macro-result-contract-r61.mjs';
 
 export const MARKET_COLLECTION_JOBS=Object.freeze(['macroCredit','macro','rates','credit','supply','fundFlows','bisDsr','bisTc','earnings','consumption','breadth','inflation','employment','growth']);
 const SOURCE_GROUPS={macro:['fetchFred'],credit:['fetchOfr','fetchCmdi'],supply:['fetchGscpi','fetchCopper'],fundFlows:['fetchFundFlows']};
@@ -25,6 +25,7 @@ async function collectGroup(args,group){
 const unavailableFetch=async()=>{throw Error('SCORE_CALCULATION_NETWORK_FORBIDDEN')};
 export async function calculateStoredMarketScore(env,store,now){
  const handler=createMarketScoreR1Handler({env,fetchImpl:unavailableFetch,
+  profile:phase=>console.log('R61_MARKET_PHASE',JSON.stringify({job:'stored-score',phase})),
   collectInputs:()=>readStoredMarketInputs(store,now),orchestrate:buildStoredDiagnostic,
   collectBreadthDomain:readBreadthB1R5StoredPublicDomainR1,now:()=>new Date(now)});
  const response=await handler(new Request('https://zgmini.kr/api/market-score'));
@@ -94,6 +95,10 @@ export async function runMarketOperationalRefresh({env,job,store,now=Date.now(),
    return {status:'SOURCE_FAILED',job:selected,reason:macroReadiness.reason};
   }
   const collectedStatus=collected?.status??collected?.rateR2?.status;
+  if(selected==='macroCredit'&&(collectedStatus!=='READY_CURRENT_VINTAGE'||!collected?.series?.NFCICREDIT?.length)){
+   await store.finish(selected,jobLease,now,'SOURCE_FAILED');
+   return {status:'SOURCE_FAILED',job:selected,reason:'MACRO_CREDIT_NOT_READY'};
+  }
   if(/^(FAIL|FAILED|ERROR|CONFIGURATION_MISSING|UNAVAILABLE)$/.test(collectedStatus??'')){
    await store.finish(selected,jobLease,now,'SOURCE_FAILED');
    return {status:'SOURCE_FAILED',job:selected,sourceStatus:collectedStatus};
@@ -102,10 +107,11 @@ export async function runMarketOperationalRefresh({env,job,store,now=Date.now(),
    phase='STORE';
    // Keep normalized observations, not URLs, request logs or credentials.
    const {series,external,inputSettled,rateR2,providerSummary}=collected;
-   const input={...(series?{series}:{}),...(external?{external}:{}),...(inputSettled?{inputSettled}:{}),...(rateR2?{rateR2}:{}),providerSummary};
+   let input={...(series?{series}:{}),...(external?{external}:{}),...(inputSettled?{inputSettled}:{}),...(rateR2?{rateR2}:{}),providerSummary};
+   if(selected==='macroCredit')input=mergeSuccessfulMacroCredit(await store.readInput('macro'),collected,now);
    await store.writeInput(selected==='macroCredit'?'macro':selected,input,now);
    profile('input-stored');
-   if(selected==='macro'&&env.DB)await writeProjectionMacroSlices({db:env.DB,store,storedAt:now});
+   if(['macro','macroCredit'].includes(selected)&&env.DB)await writeProjectionMacroSlices({db:env.DB,store,storedAt:now});
    if(selected==='macro')profile('slices-stored');
   }
   phase='CALCULATE';profile('calculate-start');const result=await calculate(env,store,now);profile('calculate-complete');
