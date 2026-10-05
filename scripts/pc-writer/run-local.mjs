@@ -6,6 +6,7 @@ import {execFileSync} from 'node:child_process';
 import {localDatabase} from './local-db.mjs';
 import {installLocalRuntime} from './local-env.mjs';
 import {client,credential,read,save,hash} from './d1.mjs';
+import {mergeStoredCompositeTrend,oneYearHistoryStart} from '../../worker/composite-history.mjs';
 
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../..');
 const base=process.env.ZGMINI_PC_HOME??path.join(os.homedir(),'.zgmini','pc-writer');
@@ -40,9 +41,18 @@ try{
  const {PUBLIC_PROJECTION_KEYS}=await import('../../worker/market-public-projection-store.mjs');
  const now=Date.now();
  const body=await calculateMarket(root,core,now);
+ if(body?.overall?.status==='READY'){
+  const storedHistory=await marketOperationalStore(core).readScoreHistory({sinceDate:oneYearHistoryStart(now),limit:370});
+  body.overall.trend=mergeStoredCompositeTrend({
+   legacyTrend:body.overall.trend,
+   storedSnapshots:storedHistory,
+   currentScore:body.overall.score,
+   currentDate:body.asOfDate??new Date(now).toISOString().slice(0,10),
+  });
+ }
  await marketOperationalStore(core).writeScore(body,now);
  save(path.join(base,'local-market-result.json'),body);
- report.market={status:'LOCAL_STORED',readyDomains:body.domains.filter(x=>x.status==='READY').length};
+ report.market={status:'LOCAL_STORED',readyDomains:body.domains.filter(x=>x.status==='READY').length,trendPoints:body.overall?.trend?.length??0};
  const koreaStore=new Rev7D1Store(history,{leaseMs:600000});
  const latest=await koreaStore.getLatestCompleteDate();
  const prior=await koreaStore.getLatestSnapshot();
