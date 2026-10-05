@@ -9,7 +9,9 @@ export function candidate2dbImportBoundary(root){
  const rel=file.slice(prefix.length);let rewritten=base.transform(code,id)?.code??code;
  rewritten=rewritten.replaceAll(prefix+'worker/candidate-env.ts',adapter);
  if(historyReaders.includes(rel))rewritten=rewritten.replace(/\benv(?:\?)?\.DB\b/g,m=>m.replace('DB','DB_HISTORY'));
- if(['worker/korea-market-d1.mjs','worker/korea-rev7-d1.mjs'].includes(rel)){
+ // Only the statically linked scheduled runtime imports this distinct module.
+ const scheduledStore=rel==='worker/korea-rev7-d1.mjs'&&id.endsWith('?scheduled-writer');
+ if(['worker/korea-market-d1.mjs','worker/korea-rev7-d1.mjs'].includes(rel)&&!scheduledStore){
  if(!rewritten.includes('constructor(db,'))throw Error('Candidate history constructor identity changed');
  rewritten=`import {env as candidate2dbEnv} from ${JSON.stringify(adapter)};\n`+rewritten.replace(/constructor\(db,([^)]*)\)\s*\{/,m=>m+' db=candidate2dbEnv.DB_HISTORY;');
  }
