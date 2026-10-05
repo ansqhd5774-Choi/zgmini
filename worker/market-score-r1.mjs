@@ -180,6 +180,13 @@ function composeMarketSnapshot({liquidityHistory,collected,storedInflation,infla
       );
       const scoringExternal={...(collected?.external??{})};
       delete scoringExternal.inflationExpectationsRows;
+      const storedEarnings=scoringExternal?.publicDomainScores?.earnings;
+      scoringExternal.earningsScores=storedEarnings?.status==="READY"?{
+        epsGrowth:finite(storedEarnings?.components?.epsGrowth?.score)?storedEarnings.components.epsGrowth.score:null,
+        margin:finite(storedEarnings?.components?.margin?.score)?storedEarnings.components.margin.score:null,
+        revenueGrowth:finite(storedEarnings?.components?.revenueGrowth?.score)?storedEarnings.components.revenueGrowth.score:null,
+        earningsGrowthBreadth:finite(storedEarnings?.components?.earningsGrowthBreadth?.score)?storedEarnings.components.earningsGrowthBreadth.score:null,
+      }:null;
 
       const diagnostic=orchestrate({
         asOfDate:asOf,
