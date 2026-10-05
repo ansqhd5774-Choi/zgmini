@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import {
-  applyRateContextGuardR53,buildFundFlowR53,buildDollarFxR53,coverageBoundaryR53,buildStressPulseR53
+  applyRateContextGuardR53,buildFundFlowR53,buildFundFlowR54,FUND_FLOW_R54_WEIGHTS,buildDollarFxR53,coverageBoundaryR53,buildStressPulseR53
 } from '../lib/diagnostic-layer/open-resolution-r53-components.mjs';
 import {DIAGNOSTIC_FRED_SERIES} from '../lib/diagnostic-layer/input-registry.mjs';
 
@@ -16,3 +16,19 @@ test('R53.3 dollar FX multi-horizon stress',()=>{const rows=daily('2000-01-01',4
 test('R53.3 coverage boundary forbids proxy/reweight',()=>{const o=coverageBoundaryR53({activeSourceExistsAtEvent:false,approvedBridgeCoversEvent:false,event:'2008 GFC',domain:'유동성'});assert.equal(o.status,'COVERAGE_BOUNDARY_CLOSED');assert.equal(o.proxySubstitutionAllowed,false);assert.equal(o.reweightAllowed,false)});
 test('R53.3 Stress Pulse is hidden and no Overall penalty',()=>{const o=buildStressPulseR53([{id:'rate',stress:90,persistent:true},{id:'credit',stress:85,persistent:true},{id:'liquidity',stress:95,persistent:true},{id:'fundFlow',stress:40,persistent:false},{id:'breadth',stress:30,persistent:false},{id:'dollarFx',stress:20,persistent:false}]);assert.equal(o.state,'STRESS');assert.equal(o.overallPenaltyApplied,false)});
 test('R53.3 registry has Broad Dollar',()=>{assert.ok(Object.hasOwn(DIAGNOSTIC_FRED_SERIES,'DTWEXBGS'));assert.equal(DIAGNOSTIC_FRED_SERIES.DTWEXBGS.frequency,'DAILY')});
+
+test('R54 fund flow combines exactly four approved component scores',()=>{
+ const rows=monthly(2000,36,i=>0).map((row,i)=>({observationDate:row.observationDate,value:-0.2+i*0.02,allNetRatio:-0.2+i*0.02,indexNetRatio:-0.1+i*0.025,nonIndexNetRatio:-0.3+i*0.018,allOutflowRatio:-(2.2+(i%7)*0.08)}));
+ const out=buildFundFlowR54(rows,{asOfDate:'2002-12-01',minValid:12});
+ assert.equal(out.status,'READY');
+ const latest=out.rows.find(row=>row.observationDate===out.observationDate);
+ assert.ok([latest.allNetScore,latest.momentumScore,latest.participationScore,latest.redemptionScore].every(Number.isFinite));
+ const expected=FUND_FLOW_R54_WEIGHTS.allNet*latest.allNetScore+FUND_FLOW_R54_WEIGHTS.momentum*latest.momentumScore+FUND_FLOW_R54_WEIGHTS.participation*latest.participationScore+FUND_FLOW_R54_WEIGHTS.redemption*latest.redemptionScore;
+ assert.ok(Math.abs(out.score-expected)<1e-12);
+ assert.ok(Math.abs(out.shock-(100-latest.momentumScore))<1e-12);
+});
+test('R54 fund flow never reweights a missing required raw series',()=>{
+ const rows=monthly(2000,24,i=>i).map((row,i)=>({observationDate:row.observationDate,value:i/100,allNetRatio:i/100,indexNetRatio:i/90,allOutflowRatio:-2}));
+ const out=buildFundFlowR54(rows,{asOfDate:'2001-12-01',minValid:12});
+ assert.equal(out.status,'PARTIAL');assert.equal(out.score,null);assert.equal(out.reason,'FUND_FLOW_R54_REQUIRED_SERIES_MISSING');
+});
