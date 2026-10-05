@@ -7,7 +7,7 @@ import {loadStoredConsumptionC1R3} from "./consumption-r3-history-reader.mjs";
 import {loadEmploymentR54CandidateFromStored,EMPLOYMENT_R54_METHOD} from "../lib/market-score/employment-r54-candidate.mjs";
 import {
   buildDollarFxR53,
-  buildFundFlowR53,
+  buildFundFlowR54,
 } from "../lib/diagnostic-layer/open-resolution-r53-components.mjs";
 import {buildRateR3} from "../lib/market-score/rate-r3.mjs";
 import {buildCreditR2} from "../lib/market-score/credit-r2.mjs";
@@ -219,7 +219,7 @@ function composeMarketSnapshot({liquidityHistory,collected,storedInflation,infla
         y30:collected?.series?.DGS30??[],
         asOfDate:asOf,
       });
-      const fundFlow=compute(buildFundFlowR53,
+      const fundFlow=compute(buildFundFlowR54,
         collected?.external?.registeredFundFlowRows??[],
         {asOfDate:asOf},
       );
