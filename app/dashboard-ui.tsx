@@ -130,7 +130,7 @@ const r55Cards=[
  {label:'소비',Icon:ShoppingCart,basis:'공개 점수 결과를 표시합니다. PARTIAL/UNAVAILABLE은 0점으로 대체하지 않습니다.',details:['실질 소매판매','실질 가처분소득','개인저축률','카드 연체율']},
  {label:'기업실적',Icon:BriefcaseBusiness,basis:'공개 점수 결과를 표시합니다. PARTIAL/UNAVAILABLE은 0점으로 대체하지 않습니다.',details:['주당이익 성장','매출 성장률','이익 성장비','영업·순이익률']},
  {label:'유동성',Icon:Landmark,basis:'공개 점수 결과를 표시합니다. PARTIAL/UNAVAILABLE은 0점으로 대체하지 않습니다.',details:['은행 준비금','통화량 증가','재무부 계정변화','익일 역레포']},
- {label:'자금흐름',Icon:ArrowLeftRight,basis:'SEC 등록펀드 전체 순유입을 전월 순자산으로 나눈 월별 비율입니다. 미국 주식형 펀드만의 값이 아닙니다. 추이는 실제 월별 점수이며 일별 보간하지 않습니다.',details:[]},
+ {label:'자금흐름',Icon:ArrowLeftRight,basis:'SEC 등록펀드의 전체 순유입, 순유입 모멘텀, 인덱스·비인덱스 동반 유입, 환매 압력을 저장 이력 기준으로 종합합니다. 추이는 실제 월별 관측만 사용합니다.',details:['전체 등록펀드 순유입','순유입 모멘텀','인덱스·비인덱스 동반 유입','환매 압력']},
  {label:'수급·폭',Icon:Network,basis:'B1-R5는 저장된 S&P500 종가·거래량만 사용합니다. 상승종목비율 30% + 상승거래대금비율 20% + 5일 수급 EMA 30% + 20일 수급 EMA 20%로 계산하며, 98% 커버리지 미달 시 점수를 만들지 않습니다.',details:[]},
  {label:'달러환율',Icon:DollarSign,basis:'공개 점수 결과를 표시합니다. PARTIAL/UNAVAILABLE은 0점으로 대체하지 않습니다.',details:['광의 달러지수','3개월 변화율','신흥국 달러지수','달러 변동성']},
  {label:'유가원자재',Icon:Droplet,basis:'K1-R2는 WTI 30% + Brent 25% + 구리 25% + 휘발유 20%입니다. 각 구성요소의 최신 유효 월간 점수를 독립 선택하며 최대 2개월 지연만 허용하고 결측 재가중은 하지 않습니다.',details:['서부텍사스유','브렌트유','구리','휘발유']}
