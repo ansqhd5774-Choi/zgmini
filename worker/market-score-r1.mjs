@@ -210,6 +210,7 @@ function composeMarketSnapshot({liquidityHistory,collected,storedInflation,infla
         asOfDate:asOf,
       });
       const credit=compute(buildCreditR2,{
+        compute,
         cmdi:collected?.external?.cmdiRows??[],
         nfciCredit:collected?.series?.NFCICREDIT??[],
         y2:collected?.series?.DGS2??[],

@@ -12,6 +12,9 @@ export function candidate2dbImportBoundary(root){
   const original="'../diagnostic-layer/bond-vol-r6-components.mjs'";
   if(!rewritten.includes(original))throw Error('Candidate credit component import changed');
   rewritten=rewritten.replace(original,JSON.stringify(prefix+'worker/projection-builders/liquidity-optimized-components.mjs'));
+  const bondCall='buildBondVolatilityR6({y2,y5,y10,y30})';
+  if(!rewritten.includes(bondCall)||!rewritten.includes(' asOfDate,'))throw Error('Candidate credit computation identity changed');
+  rewritten=rewritten.replace(' asOfDate,',' asOfDate,\n compute=(fn,args)=>fn(args),').replace(bondCall,'compute(buildBondVolatilityR6,{y2,y5,y10,y30})');
  }
  if(historyReaders.includes(rel))rewritten=rewritten.replace(/\benv(?:\?)?\.DB\b/g,m=>m.replace('DB','DB_HISTORY'));
  // Only the statically linked scheduled runtime imports this distinct module.
