@@ -66,8 +66,12 @@ export function MarketFearGreedChart({
     return <div className="cnn-chart-empty"><CircleAlert size={18}/><span>{emptyLabel}</span></div>;
   }
 
-  return <ResponsiveContainer width="100%" height="100%" initialDimension={{width:1,height:1}}>
-    <AreaChart data={data} margin={compact ? {top:6,right:6,left:6,bottom:6} : { top: 6, right: 14, left: 0, bottom: 4 }}>
+  return <div
+    className="cnn-history-chart-hitbox"
+    onMouseDown={event=>event.preventDefault()}
+  >
+    <ResponsiveContainer width="100%" height="100%" initialDimension={{width:1,height:1}}>
+    <AreaChart data={data} tabIndex={-1} margin={compact ? {top:6,right:6,left:6,bottom:6} : { top: 6, right: 14, left: 0, bottom: 4 }}>
       <defs>
         <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stopColor="#ff626b" stopOpacity=".6"/>
@@ -144,5 +148,6 @@ export function MarketFearGreedChart({
         animationEasing="ease-out"
       />
     </AreaChart>
-  </ResponsiveContainer>;
+    </ResponsiveContainer>
+  </div>;
 }
