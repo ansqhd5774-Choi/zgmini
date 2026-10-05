@@ -341,7 +341,7 @@ return {
         providerRequests: earnings?.providerRequests ?? 0,
       },
       deferred: {
-        assetPriceRuntime: 'WIRED_OECD_FRED_SPASTT01USM661N',
+        assetPriceRuntime: 'DEFERRED_NON_BLOCKING',
         speculativeFlowRawRuntime: 'WIRED_R57_FRB_Z1_T4_DENOMINATOR',
         earningsHistoricalPointInTime: 'RESEARCH_VALIDATED_RUNTIME_CURRENT_ONLY',
         assetBreadthPointInTime: 'PARTIAL',
