@@ -8,8 +8,11 @@ import {buildCreditR2} from '../lib/market-score/credit-r2.mjs';
 import {createProgressiveComputationCache} from '../worker/market-score-computation-cache.mjs';
 import {buildBondVolatilityR6} from '../worker/projection-builders/liquidity-optimized-components.mjs';
 for(const length of [0,20,271,400])test(`stored orchestration exact parity including artifacts, length ${length}`,()=>{
- const rows=Array.from({length},(_,i)=>({observationDate:new Date(Date.UTC(2000,0,1+i)).toISOString().slice(0,10),value:i%29===0?null:i%23===0?0:2+(i%13)/100}));
- const args={asOfDate:'2026-10-05',baseOverall:null,series:Object.fromEntries(Object.keys(DIAGNOSTIC_FRED_SERIES).map(id=>[id,rows])),external:{}};
+ const value=i=>i%29===0?null:i%23===0?0:2+(i%13)/100;
+ const rows=Array.from({length},(_,i)=>({observationDate:new Date(Date.UTC(2000,0,1+i)).toISOString().slice(0,10),value:value(i)}));
+ const quarterlyRows=Array.from({length},(_,i)=>({observationDate:new Date(Date.UTC(1927,i*3,1)).toISOString().slice(0,10),value:value(i)}));
+ const r57Quarterly=new Set(['BOGZ1FA153064475Q','BOGZ1FL153064475Q']);
+ const args={asOfDate:'2026-10-05',baseOverall:null,series:Object.fromEntries(Object.keys(DIAGNOSTIC_FRED_SERIES).map(id=>[id,r57Quarterly.has(id)?quarterlyRows:rows])),external:{}};
  let calls=0;const compute=(fn,...values)=>{calls++;return fn(...values)};
  assert.deepEqual(buildStoredDiagnostic({...args,compute}),buildFullDiagnosticOrchestrator(args));assert(calls>0);
 });
