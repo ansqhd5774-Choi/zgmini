@@ -1,5 +1,5 @@
 import {buildAssetBubbleBatchA} from "../../lib/diagnostic-layer/batch-a-components.mjs";
-import {buildAssetBubbleR9Partial,buildPriceAccelerationR9,buildSpeculativeFlowMagnitudeR57,buildSpeculativeFlowsR9} from "../../lib/diagnostic-layer/asset-bubble-r9-components.mjs";
+import {buildAssetBubbleR9Partial,buildPriceAccelerationR9,buildSpeculativeFlowsR9} from "../../lib/diagnostic-layer/asset-bubble-r9-components.mjs";
 
 const finite=(v:unknown):v is number=>typeof v==="number"&&Number.isFinite(v);
 const validDate=(v:unknown):v is string=>typeof v==="string"&&/^\\d{4}-\\d{2}-\\d{2}$/.test(v);
@@ -9,12 +9,8 @@ export function buildProjection({inputs,snapshot,publicSnapshot,e1,nowIso}:any){
  const body=snapshot?.body??{},asOf=validDate(body?.asOfDate)?body.asOfDate:nowIso.slice(0,10);
  const series=inputs?.series??{},external=inputs?.external??{};
  const batch=buildAssetBubbleBatchA({publicFinancialEquity:series.BOGZ1LM793164115Q??[],publicNonfinancialEquity:series.BOGZ1LM103164115Q??[],nominalGdp:series.GDP??[],riskAssetShare:series.BOGZ1FL153064486Q??[],m2:series.M2SL??[]});
- const hasExternalAssetPrice=Array.isArray(external.assetPriceRows)&&external.assetPriceRows.length>0;
- const assetPriceRows=hasExternalAssetPrice?external.assetPriceRows:(series.SPASTT01USM661N??[]);
- const price=buildPriceAccelerationR9(assetPriceRows);
- const r57=buildSpeculativeFlowMagnitudeR57({transactionRows:series.BOGZ1FA153064475Q??[],holdingsRows:series.BOGZ1FL153064475Q??[]});
- const flowRows=Array.isArray(external.speculativeFlowMagnitude4QRows)&&external.speculativeFlowMagnitude4QRows.length?external.speculativeFlowMagnitude4QRows:r57.rows;
- const spec=buildSpeculativeFlowsR9(flowRows,price.quarterly);
+ const price=buildPriceAccelerationR9(external.assetPriceRows??[]);
+ const spec=buildSpeculativeFlowsR9(external.speculativeFlowMagnitude4QRows??[],price.quarterly);
  const bubble=buildAssetBubbleR9Partial({valuationScoreRows:batch.valuation.score,priceAccelerationQuarterRows:price.quarterly,riskAssetShareScoreRows:batch.riskAssetShare.score,speculativeFlowRows:spec.rows,excessLiquidityScoreRows:batch.excessLiquidity.score,breadthScoreRows:external.breadthScoreRows??[]});
  const diag=body?.diagnostics8?.assetBubbleSafety??null;
  const score=diag?.status==="READY"&&finite(diag?.score)?diag.score:null;
@@ -29,9 +25,9 @@ export function buildProjection({inputs,snapshot,publicSnapshot,e1,nowIso}:any){
  const breadthRow=latest(external.breadthScoreRows??[],asOf,"score");
  const indicators=[
   valuePoint("valuationPressure","밸류에이션 압력",valuationScore,valuationRaw,"배","Federal Reserve Z.1 / BEA",0.35),
-  {id:"priceAcceleration",name:"가격가속",status:finite(priceRow?.priceAccelScore)?"READY":"PARTIAL",score:finite(priceRow?.priceAccelScore)?priceRow.priceAccelScore:null,value:finite(priceRow?.priceAccelRaw)?priceRow.priceAccelRaw:null,unit:"log 가속",observationDate:priceRow?.observationDate??null,source:hasExternalAssetPrice?"Stored asset price series":"OECD via FRED · SPASTT01USM661N",weight:0.25},
+  {id:"priceAcceleration",name:"가격가속",status:finite(priceRow?.priceAccelScore)?"READY":"PARTIAL",score:finite(priceRow?.priceAccelScore)?priceRow.priceAccelScore:null,value:finite(priceRow?.priceAccelRaw)?priceRow.priceAccelRaw:null,unit:"log 가속",observationDate:priceRow?.observationDate??null,source:"Stored asset price series",weight:0.25},
   valuePoint("riskAssetShare","위험자산 비중",riskScore,riskRaw,"%p","Federal Reserve Z.1",0.15),
-  {id:"speculativeFlows",name:"투기성 자금흐름",status:finite(specRow?.score)?"READY":"PARTIAL",score:finite(specRow?.score)?specRow.score:null,value:finite(specRow?.flowMagnitude4Q)?specRow.flowMagnitude4Q:null,unit:"4Q 흐름",observationDate:specRow?.observationDate??null,source:Array.isArray(external.speculativeFlowMagnitude4QRows)&&external.speculativeFlowMagnitude4QRows.length?"Stored flow magnitude":"Federal Reserve Z.1 derived 4Q",weight:0.10},
+  {id:"speculativeFlows",name:"투기성 자금흐름",status:finite(specRow?.score)?"READY":"PARTIAL",score:finite(specRow?.score)?specRow.score:null,value:finite(specRow?.flowMagnitude4Q)?specRow.flowMagnitude4Q:null,unit:"4Q 흐름",observationDate:specRow?.observationDate??null,source:"Stored flow magnitude",weight:0.10},
   {id:"breadthDivergence",name:"시장폭 괴리",status:finite(breadthRow?.score)?"READY":"PARTIAL",score:finite(breadthRow?.score)?breadthRow.score:null,value:null,unit:"점",observationDate:breadthRow?.observationDate??null,source:"Stored breadth score",weight:0.10},
   valuePoint("excessLiquidity","과잉유동성",excessScore,excessRaw,"%p","Federal Reserve M2 / BEA GDP",0.05),
  ];
