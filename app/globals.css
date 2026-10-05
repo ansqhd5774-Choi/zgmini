@@ -3140,6 +3140,10 @@ html,body{overflow-x:hidden}
 .zg-r55-summary-chart{min-width:0}
 .zg-r55-summary-chart h3{margin:0 0 6px;font-size:12px}
 .zg-r55-summary-chart .zg-spark{height:84px}
+.zg-r55-summary-chart .recharts-wrapper:focus,
+.zg-r55-summary-chart .recharts-wrapper:focus-visible,
+.zg-r55-summary-chart .recharts-surface:focus,
+.zg-r55-summary-chart .recharts-surface:focus-visible{outline:none}
 .zg-r55-empty-spark{height:84px;display:grid;place-items:center;padding:6px;border:1px dashed #31506d;border-radius:5px;color:#a1b5c8;font-size:11px;text-align:center}
 .zg-r55-coverage{position:absolute;top:8px;right:8px;z-index:1;display:flex;justify-content:flex-end;margin:0;color:#aebfd0;font-size:11px;line-height:1.5;overflow-wrap:anywhere}
 .zg-r55-subscore-area{min-width:0}
