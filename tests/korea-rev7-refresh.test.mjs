@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {refreshKoreaRev7} from '../worker/korea-rev7-refresh.mjs';
 const env={KRX_API_KEY:'test',BOK_API_KEY:'test'};
+test('deferred calculation stores the provider date but never loads heavy history or claims a new score',async()=>{const f=fixture();const result=await refreshKoreaRev7({env,store:f.store,deferCalculation:true,now:new Date('2026-09-17T00:00:00Z'),fetchDate:async date=>({requestedDate:date,complete:true,status:'SUCCESS'}),calculate:()=>{throw Error('MUST_NOT_CALCULATE')}});assert.deepEqual(f.events,['persist']);assert.equal(result.calculated,false);assert.equal(result.scoreDate,'20260915');assert.equal(result.latestDate,'20260916');assert.equal(f.lease(),false)});
 test('provider failures preserve safe reason and call count without exposing arbitrary errors',async()=>{
  const f=fixture();
  const args={env,store:f.store,now:new Date('2026-09-17T00:00:00Z')};

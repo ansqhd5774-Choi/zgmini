@@ -1,0 +1,30 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {DatabaseSync} from 'node:sqlite';
+import {readonly,client} from '../scripts/pc-writer/d1.mjs';
+import {marketPlan} from '../scripts/pc-writer/publish.mjs';
+
+test('readonly transport rejects mutations and stacked statements',()=>{
+ for(const sql of ['DELETE FROM x','SELECT 1; DELETE FROM x','PRAGMA x','CREATE TABLE x(y)','SELECT 1 -- hidden'])assert.equal(readonly(sql),false);
+ assert.equal(readonly('SELECT body,stored_at FROM market_public_snapshots_v1 WHERE snapshot_key=?'),true);
+});
+function database(){const db=new DatabaseSync(':memory:');db.exec('CREATE TABLE market_collection_jobs_v1(job TEXT PRIMARY KEY,lease_id TEXT,lease_until INTEGER); CREATE TABLE market_public_snapshots_v1(snapshot_key TEXT PRIMARY KEY,body TEXT,stored_at INTEGER);');db.prepare('INSERT INTO market_collection_jobs_v1 VALUES(?,?,?)').run('pipeline','owner',Date.now()+60000);db.prepare('INSERT INTO market_public_snapshots_v1 VALUES(?,?,?)').run('current','{}',10);return db;}
+const body={status:'SUCCESS',domains:Array.from({length:12},()=>({status:'PARTIAL'}))};
+function execute(db,plan){db.exec('BEGIN');try{for(const item of plan)db.prepare(item.sql).run(...item.params);db.exec('COMMIT');}catch(error){db.exec('ROLLBACK');throw error;}}
+test('publication is guarded by the existing pipeline lease and prior generation',()=>{
+ const db=database();assert.throws(()=>execute(db,marketPlan(body,20,'other',10)));
+ assert.equal(db.prepare("SELECT stored_at FROM market_public_snapshots_v1 WHERE snapshot_key='current'").get().stored_at,10);
+ assert.throws(()=>execute(db,marketPlan(body,20,'owner',9)));
+ execute(db,marketPlan(body,20,'owner',10));
+ assert.equal(db.prepare("SELECT stored_at FROM market_public_snapshots_v1 WHERE snapshot_key='current'").get().stored_at,20);db.close();
+});
+test('incomplete response cannot be published as a complete market envelope',()=>{
+ assert.throws(()=>marketPlan({status:'SUCCESS',domains:[]},20,'owner',10));
+});
+test('read adapters cannot write or change schema',async()=>{
+ const c=client({account:'a'.repeat(32),core:'a'.repeat(36),history:'b'.repeat(36)},'unused');
+ const db=c.adapter('a'.repeat(36));
+ await assert.rejects(db.prepare('INSERT INTO x VALUES(?)').bind(1).run(),/REMOTE_WRITE_DISABLED/);
+ await assert.rejects(db.batch([]),/REMOTE_WRITE_DISABLED/);
+ assert.throws(()=>db.exec('CREATE TABLE x(y)'),/SCHEMA_CHANGE_DISABLED/);
+});

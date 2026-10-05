@@ -6,6 +6,7 @@ const loadRuntime=()=>runtimePromise??=import('./candidate-writer-runtime-r1.mjs
 export async function runCandidateWriter(controller,native,deps={}){
  if(!WRITER_CRONS.includes(controller.cron))return {status:'IGNORED'};
  const korea=controller.cron==='37 * * * *';
+ const localCompute=native.ZGMINI_COMPUTE_TARGET==='pc';
  const phase=name=>console.log('R61_WRITER_PHASE',JSON.stringify({lane:korea?'korea':'core',phase:name}));
  const db=korea?native.DB_HISTORY:native.DB_CORE;
  if(!db)return {status:'CONFIGURATION_MISSING',lane:korea?'korea':'core'};
@@ -18,7 +19,7 @@ export async function runCandidateWriter(controller,native,deps={}){
   phase('korea-import');
   const refresh=deps.korea??(await loadRuntime()).refreshKoreaRev7;
   phase('korea-call');
-  result=await refresh({env,now:new Date(controller.scheduledTime),maxDates:1});
+  result=await refresh({env,now:new Date(controller.scheduledTime),maxDates:1,deferCalculation:localCompute});
   phase('korea-return');
  }else{
   const feeds=deps.feeds??(await loadRuntime()).runPublicFeeds;
@@ -26,9 +27,11 @@ export async function runCandidateWriter(controller,native,deps={}){
   if(feed.attempted>0)return {status:feed.status,lane:'public-feed',attempted:feed.attempted};
   if(feed.status!=='COMPLETE')return {status:feed.status??'ERROR',lane:'public-feed',attempted:0};
   const market=deps.market??(await loadRuntime()).runMarketOperationalRefresh;
-  result=await market({env,now:controller.scheduledTime,fetchImpl:globalThis.fetch});
+  result=await market({env,now:controller.scheduledTime,fetchImpl:globalThis.fetch,...(localCompute?{calculate:async()=>({calculation:'PC_PENDING'})}:{})});
  }
  if(!['COMPLETE','BACKLOG','WAITING_PUBLICATION'].includes(result?.status))return {status:result?.status??'ERROR',lane:korea?'korea':'market'};
+ // The PC owns score/projection publication; Cron retains collection and its cadence.
+ if(localCompute)return {status:result.status,lane:korea?'korea':'market',job:result.job??null,calculation:'PC_PENDING',projectionCount:0};
  phase('checkpoint-after');const after=await checkpoints(native,ids);
  const changed=ids.filter(id=>after[id]?.sourceVersion!==before[id]?.sourceVersion||after[id]?.sourceStoredAt!==before[id]?.sourceStoredAt);
  const queue=changed.length?await enqueue(native,changed,{sourceSucceeded:true,skipReady:true}):{sent:0,skipped:0};

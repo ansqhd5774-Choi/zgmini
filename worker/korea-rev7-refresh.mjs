@@ -7,7 +7,7 @@ const key=(env,names)=>names.map(n=>env?.[n]).find(v=>typeof v==='string'&&v.tri
 
 // Bounded forward collection; the existing historical anchor is never reset.
 // Raw data is committed first. Calculation failure resumes from stored rows.
-export async function refreshKoreaRev7({env,store,fetchDate=fetchRev7Date,calculate=calculateRev7,now=new Date(),maxDates=1}={}){
+export async function refreshKoreaRev7({env,store,fetchDate=fetchRev7Date,calculate=calculateRev7,now=new Date(),maxDates=1,deferCalculation=false}={}){
  const krxKey=key(env,['KRX_API_KEY','KRX_AUTH_KEY','KRX_OPEN_API_KEY','KRX_OPENAPI_KEY']);
  const bokKey=key(env,['BOK_API_KEY','ECOS_API_KEY','BOK_ECOS_API_KEY']);
  if(!krxKey||!bokKey||(!store&&!env?.DB))return {status:'CONFIGURATION_MISSING',providerRequests:0};
@@ -36,7 +36,7 @@ export async function refreshKoreaRev7({env,store,fetchDate=fetchRev7Date,calcul
   }
   const latest=await store.getLatestCompleteDate();
   const snapshot=await store.getLatestSnapshot();
-  if(latest&&(!snapshot||snapshot.date<latest)){
+  if(!deferCalculation&&latest&&(!snapshot||snapshot.date<latest)){
    phase='CALCULATE';await store.renewLease();
    const updated=await store.getBackfillProgress();
    const history=await store.getHistory(updated.successfulTradingDates);
