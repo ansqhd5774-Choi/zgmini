@@ -3,10 +3,19 @@ import assert from 'node:assert/strict';
 import {DatabaseSync} from 'node:sqlite';
 import {readonly,client} from '../scripts/pc-writer/d1.mjs';
 import {marketPlan} from '../scripts/pc-writer/publish.mjs';
+import {readBreadthB1R5StoredScore} from '../lib/market-score/breadth-b1-r5-reader.mjs';
 
 test('readonly transport rejects mutations and stacked statements',()=>{
  for(const sql of ['DELETE FROM x','SELECT 1; DELETE FROM x','PRAGMA x','CREATE TABLE x(y)','SELECT 1 -- hidden'])assert.equal(readonly(sql),false);
  assert.equal(readonly('SELECT body,stored_at FROM market_public_snapshots_v1 WHERE snapshot_key=?'),true);
+ assert.equal(readonly('WITH recent AS (SELECT value FROM inputs) SELECT SUM(value) FROM recent'),true);
+ for(const sql of ['WITH recent AS (SELECT 1) DELETE FROM x','WITH recent AS (DELETE FROM x RETURNING *) SELECT * FROM recent'])assert.equal(readonly(sql),false);
+});
+test('stored breadth reads existing schema without any initialization write',async()=>{
+ const queries=[];
+ const db={prepare(sql){assert.equal(readonly(sql),true);queries.push(sql);return {bind(){return this},async all(){return {results:[]}}};}};
+ const out=await readBreadthB1R5StoredScore({db,asOfDate:'2026-10-05'});
+ assert.equal(out.status,'PARTIAL');assert.deepEqual(out.missing,['B1_R4_STORED_COVERAGE_MISSING']);assert.ok(queries.length>0);
 });
 function database(){const db=new DatabaseSync(':memory:');db.exec('CREATE TABLE market_collection_jobs_v1(job TEXT PRIMARY KEY,lease_id TEXT,lease_until INTEGER); CREATE TABLE market_public_snapshots_v1(snapshot_key TEXT PRIMARY KEY,body TEXT,stored_at INTEGER);');db.prepare('INSERT INTO market_collection_jobs_v1 VALUES(?,?,?)').run('pipeline','owner',Date.now()+60000);db.prepare('INSERT INTO market_public_snapshots_v1 VALUES(?,?,?)').run('current','{}',10);return db;}
 const body={status:'SUCCESS',domains:Array.from({length:12},()=>({status:'PARTIAL'}))};

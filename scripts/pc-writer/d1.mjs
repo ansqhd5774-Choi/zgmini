@@ -7,7 +7,7 @@ import {createHash} from 'node:crypto';
 export const hash=value=>createHash('sha256').update(JSON.stringify(value)).digest('hex');
 export function save(file,value){fs.mkdirSync(path.dirname(file),{recursive:true});fs.writeFileSync(file+'.tmp',JSON.stringify(value));fs.renameSync(file+'.tmp',file);}
 export function read(file){return JSON.parse(fs.readFileSync(file,'utf8'));}
-export function readonly(sql){return /^\s*SELECT\b/i.test(sql)&&!/[;]|--|\/\*|\b(insert|update|delete|replace|create|drop|alter|attach|detach|pragma|vacuum)\b/i.test(sql);}
+export function readonly(sql){return /^\s*(SELECT|WITH)\b/i.test(sql)&&/\bSELECT\b/i.test(sql)&&!/[;]|--|\/\*|\b(insert|update|delete|replace|create|drop|alter|attach|detach|pragma|vacuum)\b/i.test(sql);}
 
 // Reuse the user's existing official Wrangler login. Never log credentials.
 export function credential(root){
@@ -41,7 +41,7 @@ export function client({account,core,history},token){
  function adapter(db,{directory,allowWrites=false}={}){
   const pending=new Map();
   const prepare=(sql,params=[])=>({sql,params,bind(...p){return prepare(sql,p)},async all(){
-   if(!readonly(sql))throw Error('READ_ONLY_SQL_REQUIRED');
+   if(!readonly(sql)){stats.readFailures++;throw Error('READ_ONLY_SQL_REQUIRED');}
    const key=hash({db,sql,params});
    if(!pending.has(key))pending.set(key,(async()=>{const result=await query(db,sql,params);if(directory){const file=path.join(directory,key+'.json');save(file,result);return read(file);}return result;})());
    return pending.get(key);
