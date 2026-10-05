@@ -116,3 +116,48 @@ test("public market-score failure never fabricates zero",async()=>{
   assert.equal(body.overall.score,null);
   assert.equal(body.dataQuality.overallComputable,false);
 });
+
+
+test("stored READY earnings components are wired into earnings diagnostic input",async()=>{
+  let captured=null;
+  const collectInputs=async()=>({
+    series:{},
+    external:{
+      publicDomainScores:{
+        earnings:{
+          status:"READY",
+          score:62.5,
+          components:{
+            epsGrowth:{score:70},
+            margin:{score:60},
+            revenueGrowth:{score:50},
+            earningsGrowthBreadth:{score:40},
+          },
+        },
+      },
+    },
+  });
+  const orchestrate=({external})=>{
+    captured=external.earningsScores;
+    return {
+      historyMode:"CURRENT_VINTAGE_ONLY",
+      lookAheadSafe:false,
+      snapshot:{diagnostics},
+      limitations:{},
+    };
+  };
+  const h=createMarketScoreR1Handler({
+    env:{},
+    collectInputs,
+    orchestrate,
+    now:()=>new Date("2026-09-22T00:00:00.000Z"),
+  });
+  const res=await h(new Request("https://zgmini.kr/api/market-score"));
+  assert.equal(res.status,200);
+  assert.deepEqual(captured,{
+    epsGrowth:70,
+    margin:60,
+    revenueGrowth:50,
+    earningsGrowthBreadth:40,
+  });
+});
