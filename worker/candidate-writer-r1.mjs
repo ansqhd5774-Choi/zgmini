@@ -29,7 +29,11 @@ export async function runCandidateWriter(controller,native,deps={}){
   const market=deps.market??(await loadRuntime()).runMarketOperationalRefresh;
   result=await market({env,now:controller.scheduledTime,fetchImpl:globalThis.fetch,...(localCompute?{calculate:async()=>({calculation:'PC_PENDING'})}:{})});
  }
- if(!['COMPLETE','BACKLOG','WAITING_PUBLICATION'].includes(result?.status))return {status:result?.status??'ERROR',lane:korea?'korea':'market'};
+ if(!['COMPLETE','BACKLOG','WAITING_PUBLICATION'].includes(result?.status)){
+  const safe={};
+  for(const key of ['job','phase','reason','sourceStatus'])if(typeof result?.[key]==='string'&&/^[A-Za-z0-9_]{1,80}$/.test(result[key]))safe[key]=result[key];
+  return {status:result?.status??'ERROR',lane:korea?'korea':'market',...safe};
+ }
  // The PC owns score/projection publication; Cron retains collection and its cadence.
  if(localCompute)return {status:result.status,lane:korea?'korea':'market',job:result.job??null,calculation:'PC_PENDING',projectionCount:0};
  phase('checkpoint-after');const after=await checkpoints(native,ids);
