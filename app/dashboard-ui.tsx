@@ -2,7 +2,7 @@
 // Cloudflare Git Integration deployment marker: plain-language macro labels R1
 import {useEffect,useId,useRef,useState,type ReactNode,type CSSProperties} from 'react';
 import {Activity,ArrowRight,ArrowUpRight,ChevronLeft,ChevronRight,Info,Radar,Coins,Users,Percent,Droplet,Landmark,ShieldCheck,Factory,ShoppingCart,BriefcaseBusiness,ArrowLeftRight,Network,DollarSign} from 'lucide-react';
-import {Line,LineChart,ResponsiveContainer,YAxis,ReferenceDot,ReferenceLine} from 'recharts';
+import {Line,LineChart,ResponsiveContainer,XAxis,YAxis,ReferenceDot,ReferenceLine} from 'recharts';
 import {readProgressiveMarketResponse} from '../lib/market-score/read-progressive-response.mjs';
 import {readMarketSnapshot,saveMarketSnapshot} from '../lib/market-score/browser-snapshot.mjs';
 import {marketDetailRows} from '../lib/market-score/detail-catalog.mjs';
@@ -62,18 +62,29 @@ export function DashboardTip({label,children,trigger}:{label:string;children:Rea
 }
 export function ScoreScale({score,label,color}:{score:number|null;label:string;color:string}){const band=score===null?'unknown':score<25?'danger':score<40?'caution':score<60?'neutral':score<75?'positive':'strong';const style={'--zg-score':`${score??0}%`,'--zg-score-color':color} as CSSProperties;return <div className={`zg-scale zg-scale-${band}`} data-score-band={band} role="meter" aria-label={label} aria-valuemin={0} aria-valuemax={100} aria-valuenow={score??undefined} style={style}/>} 
 const scoreColor=(score:number)=>score<25?'#ef4444':score<40?'#f59e0b':score<60?'#94a3b8':score<75?'#22c55e':'#10b981';
-function CardTrend({data,label,color}:{data:DashboardPoint[];label:string;color:string}){
- const latest=data.at(-1);
+function timeScaledTrend(data:DashboardPoint[],periodDays:number){
+ const points=data.flatMap(point=>{
+  const ts=Date.parse(point.label);
+  return Number.isFinite(ts)?[{...point,ts}]:[];
+ });
+ const end=points.length?Math.max(...points.map(point=>point.ts)):Date.now();
+ const start=end-Math.max(1,periodDays)*86400000;
+ return {points,start,end};
+}
+
+function CardTrend({data,label,color,periodDays}:{data:DashboardPoint[];label:string;color:string;periodDays:number}){
+ const scaled=timeScaledTrend(data,periodDays),latest=scaled.points.at(-1);
  return <div className="zg-spark zg-r55-mini-chart" aria-label={`${label} 관측 추이`} onPointerDown={event=>event.preventDefault()}>
   <div className="zg-r55-mini-y-labels" aria-hidden="true"><span>100</span><span>50</span><span>0</span></div>
   <ResponsiveContainer width="100%" height="100%" initialDimension={{width:1,height:1}}>
-   <LineChart data={data} accessibilityLayer={false} tabIndex={-1} margin={{top:3,right:3,left:13,bottom:3}}>
+   <LineChart data={scaled.points} accessibilityLayer={false} tabIndex={-1} margin={{top:3,right:3,left:13,bottom:3}}>
+    <XAxis hide dataKey="ts" type="number" domain={[scaled.start,scaled.end]}/>
     <YAxis hide domain={[0,100]} width={0}/>
     <ReferenceLine y={25} stroke="rgba(111,130,149,.22)" strokeDasharray="2 3" strokeWidth={0.8}/>
     <ReferenceLine y={50} stroke="rgba(111,130,149,.26)" strokeDasharray="2 3" strokeWidth={0.8}/>
     <ReferenceLine y={75} stroke="rgba(111,130,149,.22)" strokeDasharray="2 3" strokeWidth={0.8}/>
     <Line type="linear" dataKey="value" stroke={color} strokeWidth={1.8} dot={false} activeDot={false} connectNulls={false} isAnimationActive={false}/>
-    {latest&&<ReferenceDot x={latest.label} y={latest.value} r={2.5} fill={color} stroke={color}/>}
+    {latest&&<ReferenceDot x={latest.ts} y={latest.value} r={2.5} fill={color} stroke={color}/>}
    </LineChart>
   </ResponsiveContainer>
  </div>;
@@ -96,18 +107,19 @@ function summaryTrendScale(data:DashboardPoint[]){
 }
 const summaryAxisLabel=(value:number)=>Math.abs(value-Math.round(value))<0.05?String(Math.round(value)):value.toFixed(1);
 
-function SummaryTrend({data,label,color}:{data:DashboardPoint[];label:string;color:string}){
- const latest=data.at(-1),scale=summaryTrendScale(data);
+function SummaryTrend({data,label,color,periodDays}:{data:DashboardPoint[];label:string;color:string;periodDays:number}){
+ const scaled=timeScaledTrend(data,periodDays),latest=scaled.points.at(-1),scale=summaryTrendScale(data);
  return <div className="zg-spark zg-r55-mini-chart zg-r55-summary-mini-chart" aria-label={`${label} 관측 추이`} onPointerDown={event=>event.preventDefault()}>
   <div className="zg-r55-mini-y-labels" aria-hidden="true"><span>{summaryAxisLabel(scale.high)}</span><span>{summaryAxisLabel(scale.mid)}</span><span>{summaryAxisLabel(scale.low)}</span></div>
   <ResponsiveContainer width="100%" height="100%" initialDimension={{width:1,height:1}}>
-   <LineChart data={data} accessibilityLayer={false} tabIndex={-1} margin={{top:3,right:3,left:13,bottom:3}}>
+   <LineChart data={scaled.points} accessibilityLayer={false} tabIndex={-1} margin={{top:3,right:3,left:13,bottom:3}}>
+    <XAxis hide dataKey="ts" type="number" domain={[scaled.start,scaled.end]}/>
     <YAxis hide domain={[scale.low,scale.high]} width={0}/>
     <ReferenceLine y={scale.q1} stroke="rgba(111,130,149,.22)" strokeDasharray="2 3" strokeWidth={0.8}/>
     <ReferenceLine y={scale.mid} stroke="rgba(111,130,149,.26)" strokeDasharray="2 3" strokeWidth={0.8}/>
     <ReferenceLine y={scale.q3} stroke="rgba(111,130,149,.22)" strokeDasharray="2 3" strokeWidth={0.8}/>
     <Line type="linear" dataKey="value" stroke={color} strokeWidth={1.8} dot={false} activeDot={false} connectNulls={false} isAnimationActive={false}/>
-    {latest&&<ReferenceDot x={latest.label} y={latest.value} r={2.5} fill={color} stroke={color}/>}
+    {latest&&<ReferenceDot x={latest.ts} y={latest.value} r={2.5} fill={color} stroke={color}/>}
    </LineChart>
   </ResponsiveContainer>
  </div>;
@@ -277,7 +289,7 @@ export function CompositeMarketSection({items,points,demo,loading}:{items:Summar
      <div className="zg-r55-summary-chart">
 
       {overallTrend.length>1
-       ?<SummaryTrend data={overallTrend} label="종합 시장 점수" color={overallScore===null?'#94a3b8':scoreColor(overallScore)}/>
+       ?<SummaryTrend data={overallTrend} label="종합 시장 점수" color={overallScore===null?'#94a3b8':scoreColor(overallScore)} periodDays={periodDays}/>
        :<div className="zg-r55-empty-spark" aria-label="종합 추이 데이터 없음">추이 데이터 준비 중</div>}
      </div>
 
@@ -350,7 +362,7 @@ export function CompositeMarketSection({items,points,demo,loading}:{items:Summar
          </div>
          <div className="zg-r55-card-visual">
           {trend.length>0
-           ?<CardTrend data={trend} label={m.label} color={score===null?'#94a3b8':scoreColor(score)}/>
+           ?<CardTrend data={trend} label={m.label} color={score===null?'#94a3b8':scoreColor(score)} periodDays={periodDays}/>
            :<div className="zg-r55-card-spark-empty" aria-label={`${m.label} 추이 데이터 없음`}>—</div>}
          </div>
         </div>
