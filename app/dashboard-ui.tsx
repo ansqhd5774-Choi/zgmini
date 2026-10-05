@@ -70,10 +70,10 @@ function CardTrend({data,label,color}:{data:DashboardPoint[];label:string;color:
    <LineChart data={data} accessibilityLayer={false} margin={{top:5,right:4,left:0,bottom:5}}>
     <YAxis
      domain={[0,100]}
-     ticks={[0,25,50,75,100]}
+     ticks={[0,50,100]}
      axisLine={false}
      tickLine={false}
-     width={15}
+     width={11}
      tick={{fill:'#6f8295',fontSize:7,fontWeight:600}}
     />
     <ReferenceLine y={25} stroke="rgba(111,130,149,.22)" strokeDasharray="2 3" strokeWidth={0.8}/>
