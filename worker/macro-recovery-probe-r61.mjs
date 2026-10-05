@@ -9,7 +9,7 @@ export async function runOnceMacroRecovery(native,controller){
   const slice=await db.prepare('SELECT stored_at FROM market_input_batches_v1 WHERE batch_key LIKE ? ORDER BY stored_at DESC LIMIT 1').bind(`projection-macro:${id}:%`).first();
   if(slice?.stored_at!==macro.stored_at)return false;
  }
- const job='diagnostic:stored-score-recovery-r61:20261005';
+ const job='diagnostic:stored-score-recovery-r61:20261005:credit-optimized';
  const claim=await db.prepare('INSERT OR IGNORE INTO market_collection_jobs_v1(job,status,finished_at) VALUES(?,?,?)').bind(job,'PROBE_CLAIMED',controller.scheduledTime).run();
  if(claim.meta?.changes!==1)return false;
  console.log('R61_MACRO_RECOVERY',JSON.stringify({phase:'start'}));

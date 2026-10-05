@@ -8,6 +8,11 @@ export function candidate2dbImportBoundary(root){
  const file=id.split('?')[0].replaceAll('\\','/');if(!file.startsWith(prefix)||file===adapter||file.includes('/node_modules/'))return null;
  const rel=file.slice(prefix.length);let rewritten=base.transform(code,id)?.code??code;
  rewritten=rewritten.replaceAll(prefix+'worker/candidate-env.ts',adapter);
+ if(rel==='lib/market-score/credit-r2.mjs'){
+  const original="'../diagnostic-layer/bond-vol-r6-components.mjs'";
+  if(!rewritten.includes(original))throw Error('Candidate credit component import changed');
+  rewritten=rewritten.replace(original,JSON.stringify(prefix+'worker/projection-builders/liquidity-optimized-components.mjs'));
+ }
  if(historyReaders.includes(rel))rewritten=rewritten.replace(/\benv(?:\?)?\.DB\b/g,m=>m.replace('DB','DB_HISTORY'));
  // Only the statically linked scheduled runtime imports this distinct module.
  const scheduledStore=rel==='worker/korea-rev7-d1.mjs'&&id.endsWith('?scheduled-writer');
