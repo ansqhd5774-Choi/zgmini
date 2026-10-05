@@ -59,6 +59,8 @@ export async function runMarketOperationalRefresh({env,job,store,now=Date.now(),
  let selected,jobLease,phase='SELECT';
  try{
   selected=job??await store.next(MARKET_COLLECTION_JOBS);
+  const profile=phase=>console.log('R61_MARKET_PHASE',JSON.stringify({job:selected,phase}));
+  profile('selected');
   jobLease=await store.claim(selected,now);
   if(!jobLease)return {status:'ALREADY_RUNNING',job:selected};
   const asOf=new Date(now).toISOString().slice(0,10),requestFetch=boundedFetch(fetchImpl);
@@ -80,7 +82,8 @@ export async function runMarketOperationalRefresh({env,job,store,now=Date.now(),
    growth:()=>collectGrowthR2StoreOnlyR1(args),
    ...collectors,
   };
-  phase='COLLECT';const collected=await jobs[selected]();
+  phase='COLLECT';profile('collect-start');const collected=await jobs[selected]();
+  profile('collect-complete');
   const macroReadiness=selected==='macro'?macroCollectionReadiness(collected):null;
   if(macroReadiness&&!macroReadiness.complete){
    const fred=collected?.providerSummary?.fred;
@@ -101,9 +104,11 @@ export async function runMarketOperationalRefresh({env,job,store,now=Date.now(),
    const {series,external,inputSettled,rateR2,providerSummary}=collected;
    const input={...(series?{series}:{}),...(external?{external}:{}),...(inputSettled?{inputSettled}:{}),...(rateR2?{rateR2}:{}),providerSummary};
    await store.writeInput(selected==='macroCredit'?'macro':selected,input,now);
+   profile('input-stored');
    if(selected==='macro'&&env.DB)await writeProjectionMacroSlices({db:env.DB,store,storedAt:now});
+   if(selected==='macro')profile('slices-stored');
   }
-  phase='CALCULATE';const result=await calculate(env,store,now);
+  phase='CALCULATE';profile('calculate-start');const result=await calculate(env,store,now);profile('calculate-complete');
   const sourceStatus=collected?.status??collected?.rateR2?.status??'COLLECTED';
   const failed=/^(FAIL|FAILED|ERROR)$/.test(sourceStatus);
   const backlog=selected==='breadth'&&sourceStatus==='PARTIAL_BATCH';

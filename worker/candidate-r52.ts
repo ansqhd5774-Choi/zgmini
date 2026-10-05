@@ -22,6 +22,8 @@ export default Object.freeze({...http,async scheduled(controller,native,ctx){
   await runOnceFredAuthProbe(native,controller.scheduledTime);
   const {runNextFredSubsetProbe}=await import('./fred-subset-probe-r61.mjs');
   if(await runNextFredSubsetProbe(native,controller.scheduledTime))return;
+  const {runOnceMacroRecovery}=await import('./macro-recovery-probe-r61.mjs');
+  if(await runOnceMacroRecovery(native,controller))return;
  }
  const {runCandidateWriter}=await import('./candidate-writer-r1.mjs');
  const result=await runCandidateWriter(controller,native).catch(error=>({status:'ERROR',lane:'scheduled',reason:'WRITER_EXECUTION_FAILED',errorName:/^[A-Za-z]{1,40}$/.test(error?.name??'')?error.name:'Error',errorCode:/^[A-Z][A-Z0-9_]{1,80}$/.test(error?.message??'')?error.message:/no such table/i.test(error?.message??'')?'D1_TABLE_MISSING':'UNCLASSIFIED'}));
