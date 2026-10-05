@@ -232,7 +232,7 @@ export function CompositeMarketSection({items,points,demo,loading}:{items:Summar
     <article className="zg-r55-summary" data-testid="composite-panel">
      <div className="zg-r55-primary-zone">
      <div className="zg-r55-summary-top" role="img" aria-label={`종합 시장 점수 ${overallScore===null?overallStatus:`${Math.round(overallScore)}점`}`}>
-      <div className="zg-r55-master-number">
+      <div className="zg-r55-master-number" data-score-mode="number-only">
        <strong style={{color:overallScore===null?'#94a3b8':scoreColor(overallScore)}}>{overallScore===null?'—':Math.round(overallScore)}</strong>
       </div>
      </div>
