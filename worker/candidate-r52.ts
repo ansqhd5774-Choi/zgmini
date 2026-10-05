@@ -24,7 +24,7 @@ export default Object.freeze({...http,async scheduled(controller,native,ctx){
   if(await runNextFredSubsetProbe(native,controller.scheduledTime))return;
  }
  const {runCandidateWriter}=await import('./candidate-writer-r1.mjs');
- const result=await runCandidateWriter(controller,native).catch(()=>({status:'ERROR',lane:'scheduled',reason:'WRITER_EXECUTION_FAILED'}));
+ const result=await runCandidateWriter(controller,native).catch(error=>({status:'ERROR',lane:'scheduled',reason:'WRITER_EXECUTION_FAILED',errorName:/^[A-Za-z]{1,40}$/.test(error?.name??'')?error.name:'Error',errorCode:/^[A-Z][A-Z0-9_]{1,80}$/.test(error?.message??'')?error.message:/no such table/i.test(error?.message??'')?'D1_TABLE_MISSING':'UNCLASSIFIED'}));
  console.log('CANDIDATE_WRITER_R2',JSON.stringify(result));
 },async queue(batch,native,ctx){
  for(const message of batch.messages??[]){const job=message.body;if(job&&typeof job.id==='string'&&/^[A-Za-z]{1,32}$/.test(job.id)&&Number.isFinite(job.sourceStoredAt))console.log('R60_PROJECTION_BEGIN',JSON.stringify({id:job.id,sourceStoredAt:job.sourceStoredAt,stage:'before-consumer-import'}));}
