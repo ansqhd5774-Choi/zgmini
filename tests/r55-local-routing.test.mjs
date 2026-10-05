@@ -22,5 +22,6 @@ test('Production still canonicalizes noncanonical hosts and preserves canonical 
   assert.equal(new URL(result.url).protocol,'https:');
  }
  assert.equal(route('production','zgmini.kr').next,true);
+ assert.equal(route('production','zgmini-migration-candidate-r5.example.workers.dev').next,true);
  assert.equal(new URL(route('development','example.com').url).hostname,'zgmini.kr');
 });
