@@ -1348,6 +1348,8 @@ html,body{overflow-x:hidden}
 .fg-chart-slot .recharts-wrapper:focus-visible,
 .fg-chart-slot .recharts-surface:focus,
 .fg-chart-slot .recharts-surface:focus-visible{outline:none}
+.cnn-history-chart-hitbox{width:100%;height:100%;min-width:0;min-height:0}
+.cnn-history-chart-hitbox:focus,.cnn-history-chart-hitbox:focus-visible{outline:none}
 .fg-footer-slot{
   height:var(--fg-footer-height);
   min-height:var(--fg-footer-height);
