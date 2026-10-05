@@ -18,7 +18,9 @@ test('slices preserve absence, zero, null, row metadata and matching timestamps'
 test('all six builders produce exactly equal output for full and sliced fixtures',async()=>{
  const ids=[...new Set(Object.values(PROJECTION_MACRO_SERIES).flat())];
  for(const n of [0,1,13,61,180]){
-  const series=Object.fromEntries(ids.map((id,j)=>[id,Array.from({length:n},(_,i)=>({observationDate:new Date(Date.UTC(2010+Math.floor(i/12),i%12,1)).toISOString().slice(0,10),value:i%19===0?null:i%17===0?0:1000+j*10+i+(i%7)*3}))]));
+  const r57Quarterly=new Set(['BOGZ1FA153064475Q','BOGZ1FL153064475Q']);
+  const makeRows=(id,j)=>Array.from({length:n},(_,i)=>({observationDate:r57Quarterly.has(id)?new Date(Date.UTC(2010+Math.floor(i/4),(i%4)*3,1)).toISOString().slice(0,10):new Date(Date.UTC(2010+Math.floor(i/12),i%12,1)).toISOString().slice(0,10),value:i%19===0?null:i%17===0?0:1000+j*10+i+(i%7)*3}));
+  const series=Object.fromEntries(ids.map((id,j)=>[id,makeRows(id,j)]));
   if(n>1)for(const rows of Object.values(series))rows.push({...rows[1],value:33});
   const body={series,seriesStoredAt:Object.fromEntries(ids.map(k=>[k,now])),external:{},providerSummary:{}};
   const snapshot={body:{asOfDate:'2026-10-02',domains:[],diagnostics8:{}}};
