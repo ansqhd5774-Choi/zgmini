@@ -20,6 +20,8 @@ export default Object.freeze({...http,async scheduled(controller,native,ctx){
  if(controller.cron==='*/5 * * * *'){
   const {runOnceFredAuthProbe}=await import('./fred-auth-probe-r61.mjs');
   await runOnceFredAuthProbe(native,controller.scheduledTime);
+  const {runNextFredSubsetProbe}=await import('./fred-subset-probe-r61.mjs');
+  if(await runNextFredSubsetProbe(native,controller.scheduledTime))return;
  }
  const {runCandidateWriter}=await import('./candidate-writer-r1.mjs');
  const result=await runCandidateWriter(controller,native).catch(()=>({status:'ERROR',lane:'scheduled',reason:'WRITER_EXECUTION_FAILED'}));
