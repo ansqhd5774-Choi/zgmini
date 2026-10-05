@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
 import {DatabaseSync} from 'node:sqlite';
 import {readonly,client} from '../scripts/pc-writer/d1.mjs';
 import {marketPlan} from '../scripts/pc-writer/publish.mjs';
@@ -36,4 +37,13 @@ test('read adapters cannot write or change schema',async()=>{
  await assert.rejects(db.prepare('INSERT INTO x VALUES(?)').bind(1).run(),/REMOTE_WRITE_DISABLED/);
  await assert.rejects(db.batch([]),/REMOTE_WRITE_DISABLED/);
  assert.throws(()=>db.exec('CREATE TABLE x(y)'),/SCHEMA_CHANGE_DISABLED/);
+});
+
+
+test('local writer merges stored composite history before saving and publishing',()=>{
+ const src=fs.readFileSync(new URL('../scripts/pc-writer/run-local.mjs',import.meta.url),'utf8');
+ assert.match(src,/mergeStoredCompositeTrend/);
+ assert.match(src,/readScoreHistory\(\{sinceDate:oneYearHistoryStart\(now\),limit:370\}\)/);
+ assert.match(src,/body\.overall\.trend=mergeStoredCompositeTrend/);
+ assert.match(src,/trendPoints:body\.overall\?\.trend\?\.length\?\?0/);
 });
