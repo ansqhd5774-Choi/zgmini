@@ -27,7 +27,15 @@ const env={DB:core,DB_CORE:core,DB_HISTORY:history};
 const hook=installLocalRuntime(env);
 const report={at:new Date().toISOString(),source,mode:publish?'PUBLISH':'DRY_RUN',inputLocation:'LOCAL_SQLITE',providerCalls:0,projections:[]};
 const originalFetch=globalThis.fetch;
+const originalWarn=console.warn;
+let liquidityCoverage=null;
 try{
+ console.warn=(...args)=>{
+  if(args[0]==="LIQUIDITY_1Y_COVERAGE"&&typeof args[1]==="string"){
+   try{liquidityCoverage=JSON.parse(args[1]);}catch{}
+  }
+  return originalWarn(...args);
+ };
  // Calculation has no API keys and cannot fetch provider data or remote inputs.
  globalThis.fetch=async()=>{report.providerCalls++;throw Error('CALCULATION_NETWORK_FORBIDDEN')};
  const {calculateMarket}=await import('./market.mjs');
@@ -64,6 +72,7 @@ try{
    last:liquidityDates.at(-1)??null,
    spanDays:liquidityDates.length>1?Math.floor((Date.parse(liquidityDates.at(-1)+'T00:00:00Z')-Date.parse(liquidityDates.at(0)+'T00:00:00Z'))/86400000):0,
   },
+  liquidityCoverage,
  };
  const koreaStore=new Rev7D1Store(history,{leaseMs:600000});
  const latest=await koreaStore.getLatestCompleteDate();
@@ -94,7 +103,7 @@ try{
   const lease=await claimMarket(remote,config.core);if(!lease)throw Error('REMOTE_MARKET_LEASE_BUSY');
   try{
    const previous=(await remote.query(config.core,"SELECT stored_at FROM market_public_snapshots_v1 WHERE snapshot_key='current'")).results[0]?.stored_at;
-   report.market=await publishMarket(remote,config.core,read(path.join(base,'local-market-result.json')),now,lease,previous,path.join(base,'local-market-ledger.json'));
+   report.market={...report.market,...await publishMarket(remote,config.core,read(path.join(base,'local-market-result.json')),now,lease,previous,path.join(base,'local-market-ledger.json'))};
   }finally{await releaseMarket(remote,config.core,lease);}
   // Explicit allowlist: publish display outputs only, never provider input/history rows.
   for(const {id} of report.projections){
@@ -130,4 +139,4 @@ try{
  }
  report.status=publish?'VERIFIED':'DRY_RUN_PASS';
 }catch(error){report.status='FAILED';report.error=/^[A-Z0-9_]+$/.test(error.message??'')?error.message:error.code??'LOCAL_WRITER_FAILED';process.exitCode=1;}
-finally{globalThis.fetch=originalFetch;hook.deregister();core.close();history.close();save(path.join(base,'local-writer-last-run.json'),report);console.log(JSON.stringify(report));}
+finally{globalThis.fetch=originalFetch;console.warn=originalWarn;hook.deregister();core.close();history.close();save(path.join(base,'local-writer-last-run.json'),report);console.log(JSON.stringify(report));}
