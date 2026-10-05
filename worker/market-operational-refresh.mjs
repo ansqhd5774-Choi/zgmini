@@ -12,6 +12,7 @@ import {createMarketScoreR1Handler} from './market-score-r1.mjs';
 import {buildFullDiagnosticOrchestrator} from '../lib/diagnostic-layer/full-diagnostic-orchestrator.mjs';
 import {marketOperationalStore,readStoredMarketInputs} from './market-operational-store.mjs';
 import {writeProjectionMacroSlices} from './projection-input-writer-r60.mjs';
+import {macroCollectionReadiness} from './macro-result-contract-r61.mjs';
 
 export const MARKET_COLLECTION_JOBS=Object.freeze(['macroCredit','macro','rates','credit','supply','fundFlows','bisDsr','bisTc','earnings','consumption','breadth','inflation','employment','growth']);
 const SOURCE_GROUPS={macro:['fetchFred'],credit:['fetchOfr','fetchCmdi'],supply:['fetchGscpi','fetchCopper'],fundFlows:['fetchFundFlows']};
@@ -80,13 +81,14 @@ export async function runMarketOperationalRefresh({env,job,store,now=Date.now(),
    ...collectors,
   };
   phase='COLLECT';const collected=await jobs[selected]();
-  if(selected==='macro'&&!Object.values(collected?.series??{}).some(rows=>Array.isArray(rows)&&rows.length)){
+  const macroReadiness=selected==='macro'?macroCollectionReadiness(collected):null;
+  if(macroReadiness&&!macroReadiness.complete){
    const fred=collected?.providerSummary?.fred;
    const failures={};
    for(const item of fred?.failed??[]){const status=/^[A-Z0-9_]{1,64}$/.test(item?.status??'')?item.status:'UNKNOWN';failures[status]=(failures[status]??0)+1;}
-   console.warn('R60_MACRO_SOURCE_FAILED',JSON.stringify({reason:'MACRO_NO_READY_SERIES',requested:fred?.requested??null,ready:0,failures}));
+   console.warn('R60_MACRO_SOURCE_FAILED',JSON.stringify({...macroReadiness,failures}));
    await store.finish(selected,jobLease,now,'SOURCE_FAILED');
-   return {status:'SOURCE_FAILED',job:selected,reason:'MACRO_NO_READY_SERIES'};
+   return {status:'SOURCE_FAILED',job:selected,reason:macroReadiness.reason};
   }
   const collectedStatus=collected?.status??collected?.rateR2?.status;
   if(/^(FAIL|FAILED|ERROR|CONFIGURATION_MISSING|UNAVAILABLE)$/.test(collectedStatus??'')){
