@@ -38,11 +38,11 @@ ZGMINI PLUGIN & EXECUTION RULES — COMPACT R5 FINAL
 - 현재 트래픽이 Sites를 향해도 Sites가 deployment authority라는 뜻은 아님.
 - 현재 source/runtime 판정에 Sites 과거 상태 사용 금지.
 
-## 4. Domain / DNS — CAFE24 AUTHORITY
-- `zgmini.kr` 도메인/DNS 관리 주체는 Cafe24.
+## 4. Domain / DNS — CLOUDFLARE AUTHORITY
+- `zgmini.kr` DNS authority는 Cloudflare. 도메인 등록기관과 DNS authority를 혼동 금지.
 - DNS target과 DNS authority를 혼동 금지.
 - 현재 DNS target은 Gate 직전 live 조회.
-- Cloudflare candidate 검증 완료 전 Cafe24 DNS 변경 금지.
+- Cloudflare candidate 검증 완료 전 추가 DNS/route 변경 금지.
 - DNS cutover 전 기존 레코드와 rollback 경로 확인.
 - cutover 후 HTTPS/도메인 정상 확인 전 완료 판정 금지.
 
@@ -152,7 +152,7 @@ candidate -> Production 전환 전 모두 PASS:
 - 필요한 projection/read model READY
 - CPU/waitUntil/5xx 오류 없음
 - 산식/계약 변경 0
-이 Gate 전 Cafe24 DNS 변경 금지.
+이 Gate 전 추가 Cloudflare DNS/route 변경 금지.
 
 ## 16. Production 완료 Gate
 필요 항목 모두 만족해야 완료:
@@ -168,7 +168,7 @@ candidate -> Production 전환 전 모두 PASS:
 - Queue/Cron 정상(해당 시)
 - 산식/계약 훼손 없음
 - 실제 Production UI 정상(해당 시)
-- 최종 전환 시 Cafe24 DNS/HTTPS 정상
+- 최종 전환 시 Cloudflare DNS/HTTPS 정상
 - Runtime 오류 없음 또는 목표 무관함이 Evidence로 증명
 - 요청 기능 실제 동작
 - 임시 workaround/debug endpoint/우회 스크립트/credential 파일 0.
@@ -200,7 +200,7 @@ candidate -> Production 전환 전 모두 PASS:
 - QUEUE: Cloudflare Queues(승인 contract만)
 - SCHEDULER: Cloudflare Cron 또는 승인 외부 scheduler
 - 2026-10-05 승인: PC가 저장 데이터 기반 시장/Korea/projection 계산을 담당하고 Cloudflare Cron은 기존 주기로 원자료를 수집한다. `ZGMINI_COMPUTE_TARGET=pc`와 `docs/PC_WRITER_R1.md`의 저장·검증 계약을 따른다. 산식/TTL/DB 스키마/DNS 계약은 변경하지 않는다.
-- DOMAIN/DNS AUTHORITY: Cafe24
+- DOMAIN/DNS AUTHORITY: Cloudflare
 - OPENAI SITES: DEPLOYMENT RETIRED
 - DIRECT WRANGLER PROD DEPLOY: DEFAULT DENY
 - SUPABASE: DEFAULT DENY
