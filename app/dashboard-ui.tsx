@@ -78,6 +78,40 @@ function CardTrend({data,label,color}:{data:DashboardPoint[];label:string;color:
   </ResponsiveContainer>
  </div>;
 }
+
+function summaryTrendScale(data:DashboardPoint[]){
+ const values=data.map(point=>point.value).filter(value=>Number.isFinite(value));
+ if(!values.length)return {low:0,mid:50,high:100,q1:25,q3:75};
+ const rawMin=Math.min(...values),rawMax=Math.max(...values);
+ const center=(rawMin+rawMax)/2;
+ const requestedSpan=Math.max(8,(rawMax-rawMin)*1.35);
+ let low=Math.max(0,center-requestedSpan/2);
+ let high=Math.min(100,center+requestedSpan/2);
+ if(high-low<requestedSpan){
+  if(low===0)high=Math.min(100,requestedSpan);
+  else if(high===100)low=Math.max(0,100-requestedSpan);
+ }
+ const mid=(low+high)/2;
+ return {low,mid,high,q1:low+(high-low)*0.25,q3:low+(high-low)*0.75};
+}
+const summaryAxisLabel=(value:number)=>Math.abs(value-Math.round(value))<0.05?String(Math.round(value)):value.toFixed(1);
+
+function SummaryTrend({data,label,color}:{data:DashboardPoint[];label:string;color:string}){
+ const latest=data.at(-1),scale=summaryTrendScale(data);
+ return <div className="zg-spark zg-r55-mini-chart zg-r55-summary-mini-chart" aria-label={`${label} 관측 추이`} onPointerDown={event=>event.preventDefault()}>
+  <div className="zg-r55-mini-y-labels" aria-hidden="true"><span>{summaryAxisLabel(scale.high)}</span><span>{summaryAxisLabel(scale.mid)}</span><span>{summaryAxisLabel(scale.low)}</span></div>
+  <ResponsiveContainer width="100%" height="100%" initialDimension={{width:1,height:1}}>
+   <LineChart data={data} accessibilityLayer={false} tabIndex={-1} margin={{top:3,right:3,left:13,bottom:3}}>
+    <YAxis hide domain={[scale.low,scale.high]} width={0}/>
+    <ReferenceLine y={scale.q1} stroke="rgba(111,130,149,.22)" strokeDasharray="2 3" strokeWidth={0.8}/>
+    <ReferenceLine y={scale.mid} stroke="rgba(111,130,149,.26)" strokeDasharray="2 3" strokeWidth={0.8}/>
+    <ReferenceLine y={scale.q3} stroke="rgba(111,130,149,.22)" strokeDasharray="2 3" strokeWidth={0.8}/>
+    <Line type="linear" dataKey="value" stroke={color} strokeWidth={1.8} dot={false} activeDot={false} connectNulls={false} isAnimationActive={false}/>
+    {latest&&<ReferenceDot x={latest.label} y={latest.value} r={2.5} fill={color} stroke={color}/>}
+   </LineChart>
+  </ResponsiveContainer>
+ </div>;
+}
 // Stage 12 R2 / W09.2 content ownership correction:
 // The legacy 4-component market score is not the target content.
 // CM-R1 now owns the public 12-domain composite contract.
@@ -243,7 +277,7 @@ export function CompositeMarketSection({items,points,demo,loading}:{items:Summar
      <div className="zg-r55-summary-chart">
 
       {overallTrend.length>1
-       ?<CardTrend data={overallTrend} label="종합 시장 점수" color={overallScore===null?'#94a3b8':scoreColor(overallScore)}/>
+       ?<SummaryTrend data={overallTrend} label="종합 시장 점수" color={overallScore===null?'#94a3b8':scoreColor(overallScore)}/>
        :<div className="zg-r55-empty-spark" aria-label="종합 추이 데이터 없음">추이 데이터 준비 중</div>}
      </div>
 
