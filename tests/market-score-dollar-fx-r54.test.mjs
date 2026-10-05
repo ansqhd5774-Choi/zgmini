@@ -45,3 +45,16 @@ test('legacy dollar FX input cannot be substituted into R54 factor ids',()=>{
  assert.deepEqual(rows.map(x=>x.label),['Broad Dollar Index','달러 3개월 변화율','EME Dollar Index','달러 변동성']);
  assert.deepEqual(rows.map(x=>x.score),[50,null,null,null]);
 });
+
+
+test('R54 dollar FX public trend retains up to one year of stored score rows',()=>{
+ const rows=Array.from({length:40},(_,i)=>({
+  ...dollarFx.rows[0],
+  observationDate:`2026-08-${String((i%28)+1).padStart(2,'0')}`,
+  score:40+i/10,
+ }));
+ const domain=buildCmR1DomainResults({dollarFx:{...dollarFx,rows}}).find(x=>x.id==='dollarFx');
+ assert.equal(domain.trend.length,40);
+ assert.equal(domain.trend.at(0).value,40);
+ assert.equal(domain.trend.at(-1).value,43.9);
+});
