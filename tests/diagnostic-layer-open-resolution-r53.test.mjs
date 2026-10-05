@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import {
-  applyRateContextGuardR53,buildFundFlowR53,buildFundFlowR54,FUND_FLOW_R54_WEIGHTS,buildDollarFxR53,coverageBoundaryR53,buildStressPulseR53
+  applyRateContextGuardR53,buildFundFlowR53,buildFundFlowR54,FUND_FLOW_R54_WEIGHTS,buildDollarFxR53,buildDollarFxR54,DOLLAR_FX_R54_WEIGHTS,coverageBoundaryR53,buildStressPulseR53
 } from '../lib/diagnostic-layer/open-resolution-r53-components.mjs';
 import {DIAGNOSTIC_FRED_SERIES} from '../lib/diagnostic-layer/input-registry.mjs';
 
@@ -31,4 +31,25 @@ test('R54 fund flow never reweights a missing required raw series',()=>{
  const rows=monthly(2000,24,i=>i).map((row,i)=>({observationDate:row.observationDate,value:i/100,allNetRatio:i/100,indexNetRatio:i/90,allOutflowRatio:-2}));
  const out=buildFundFlowR54(rows,{asOfDate:'2001-12-01',minValid:12});
  assert.equal(out.status,'PARTIAL');assert.equal(out.score,null);assert.equal(out.reason,'FUND_FLOW_R54_REQUIRED_SERIES_MISSING');
+});
+
+test('R54 dollar FX combines level, short, medium and volatility with approved weights',()=>{
+ const rows=daily('2000-01-01',500,i=>100+Math.sin(i/17)*1.5+i*0.01);
+ const out=buildDollarFxR54(rows,{asOfDate:'2001-05-14',minValid:252});
+ assert.equal(out.status,'READY');
+ const latest=out.rows.find(row=>row.observationDate===out.observationDate);
+ assert.ok([latest.levelScore,latest.shortMomentumScore,latest.mediumMomentumScore,latest.volatilityScore].every(Number.isFinite));
+ const expected=DOLLAR_FX_R54_WEIGHTS.level*latest.levelScore
+  +DOLLAR_FX_R54_WEIGHTS.shortMomentum*latest.shortMomentumScore
+  +DOLLAR_FX_R54_WEIGHTS.mediumMomentum*latest.mediumMomentumScore
+  +DOLLAR_FX_R54_WEIGHTS.volatility*latest.volatilityScore;
+ assert.ok(Math.abs(out.score-expected)<1e-12);
+ assert.equal(out.methodologyVersion,'DOLLAR_FX_R54_1');
+});
+test('R54 dollar FX requires warmup and never fabricates component scores',()=>{
+ const rows=daily('2026-01-01',100,i=>100+i*.01);
+ const out=buildDollarFxR54(rows,{asOfDate:'2026-04-10',minValid:252});
+ assert.equal(out.status,'PARTIAL');
+ assert.equal(out.score,null);
+ assert.equal(out.reason,'DOLLAR_FX_R54_WARMUP');
 });
