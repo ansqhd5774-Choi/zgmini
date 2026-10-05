@@ -1,6 +1,6 @@
 "use client";
 import {useEffect,useId,useRef,useState,type ReactNode,type CSSProperties} from 'react';
-import {Activity,ArrowRight,ChevronLeft,ChevronRight,Info,Radar,Coins,Users,Percent,Droplet,Landmark,ShieldCheck,Factory,ShoppingCart,BriefcaseBusiness,ArrowLeftRight,Network,DollarSign} from 'lucide-react';
+import {Activity,ArrowRight,ArrowUpRight,ChevronLeft,ChevronRight,Info,Radar,Coins,Users,Percent,Droplet,Landmark,ShieldCheck,Factory,ShoppingCart,BriefcaseBusiness,ArrowLeftRight,Network,DollarSign} from 'lucide-react';
 import {Line,LineChart,ResponsiveContainer,Tooltip,XAxis,YAxis,ReferenceDot} from 'recharts';
 import {readProgressiveMarketResponse} from '../lib/market-score/read-progressive-response.mjs';
 import {readMarketSnapshot,saveMarketSnapshot} from '../lib/market-score/browser-snapshot.mjs';
@@ -137,14 +137,14 @@ const r55Cards=[
 ] as const;
 
 const diagnosticSubscores=[
- {name:'인플레이션',components:'근원 PCE, 근원 CPI, CPI, 기대물가'},
- {name:'경기 침체',components:'비농업고용, 실질 GDP, 산업생산, 실질 소비지출, 실업률, 소매판매, 가처분소득'},
- {name:'유동성 위기',components:'단기자금시장 스트레스, 은행준비금, TGA 변화, ON RRP, M2, 채권변동성'},
- {name:'신용 위험',components:'HY CMDI, IG CMDI, Total CMDI, 채권변동성'},
- {name:'실적 침체',components:'EPS 성장, 영업·순이익률, 매출성장, 이익성장 폭'},
- {name:'자산 버블',components:'밸류에이션 압력, 가격가속, 위험자산비중, 투기성 자금흐름, 시장폭 괴리, 과잉유동성'},
- {name:'부채 위험',components:'Debt Service Ratio, 부채/GDP, 금리부담, 신용스트레스, 실적상환능력'},
- {name:'공급 충격',components:'NY Fed GSCPI, 유가충격, 휘발유, 구리, 산업생산, Headline-Core 물가괴리'}
+ {name:'인플레이션',href:'/inflation/',components:'근원 PCE, 근원 CPI, CPI, 기대물가'},
+ {name:'경기 침체',href:'/recession/',components:'비농업고용, 실질 GDP, 산업생산, 실질 소비지출, 실업률, 소매판매, 가처분소득'},
+ {name:'유동성 위기',href:'/liquidity-crisis/',components:'단기자금시장 스트레스, 은행준비금, TGA 변화, ON RRP, M2, 채권변동성'},
+ {name:'신용 위험',href:'/credit-risk/',components:'HY CMDI, IG CMDI, Total CMDI, 채권변동성'},
+ {name:'실적 침체',href:'/earnings-recession/',components:'EPS 성장, 영업·순이익률, 매출성장, 이익성장 폭'},
+ {name:'자산 버블',href:'/asset-bubble/',components:'밸류에이션 압력, 가격가속, 위험자산비중, 투기성 자금흐름, 시장폭 괴리, 과잉유동성'},
+ {name:'부채 위험',href:'/debt-risk/',components:'Debt Service Ratio, 부채/GDP, 금리부담, 신용스트레스, 실적상환능력'},
+ {name:'공급 충격',href:'/supply-shock/',components:'NY Fed GSCPI, 유가충격, 휘발유, 구리, 산업생산, Headline-Core 물가괴리'}
 ] as const;
 
 export function CompositeMarketSection({items,points,demo,loading}:{items:Summary[];points:number;demo:boolean;loading:boolean}){
@@ -256,7 +256,7 @@ export function CompositeMarketSection({items,points,demo,loading}:{items:Summar
         return <div key={s.name} className="zg-r55-subscore" data-index={index}>
          <div className="zg-r55-subscore-head">
           <span className="zg-r55-subscore-title"><b>{s.name}</b></span>
-          <span onClick={e=>e.stopPropagation()} className="zg-r55-subscore-info"><DashboardTip label={`${s.name} 반영 항목`}>{s.components}. API diagnostics8에서 READY인 경우에만 숫자를 표시합니다.</DashboardTip></span>
+          <span onClick={e=>e.stopPropagation()} className="zg-r55-subscore-info"><a className="zg-info" href={s.href} aria-label={`${s.name} 상세페이지 열기`} title={`${s.name} 상세페이지`}><ArrowUpRight size={12} aria-hidden="true"/></a></span>
          </div>
          <div className="zg-r55-subscore-foot">
           <span className="zg-r55-subscore-meter" aria-hidden="true"><i style={{width:`${score??0}%`,background:score===null?'transparent':scoreColor(score)}}/></span>
