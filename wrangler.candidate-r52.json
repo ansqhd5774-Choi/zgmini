@@ -9,10 +9,20 @@
   ],
   "workers_dev": true,
   "preview_urls": false,
-  "routes": [],
-  "vars": {"ZGMINI_COMPUTE_TARGET":"pc"},
+  "routes": [
+    {
+      "pattern": "zgmini.kr",
+      "custom_domain": true
+    }
+  ],
+  "vars": {
+    "ZGMINI_COMPUTE_TARGET": "pc"
+  },
   "triggers": {
-    "crons": ["*/5 * * * *", "37 * * * *"]
+    "crons": [
+      "*/5 * * * *",
+      "37 * * * *"
+    ]
   },
   "assets": {
     "binding": "ASSETS",
