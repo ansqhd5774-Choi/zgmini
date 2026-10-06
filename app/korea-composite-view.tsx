@@ -7,6 +7,7 @@ import {MarketPeriodControls} from './market-period-controls';
 import {FearGreedCardShell} from './fear-greed-card-shell';
 import {MarketCardInsight} from './market-card-insight';
 import {MarketFearGreedChart,type MarketFearGreedChartPoint,type MarketFearGreedChartValidPoint} from './market-fear-greed-chart';
+import {fearGreedStateColor} from '../lib/fear-greed-state-color.mjs';
 
 export const formatDate=(s:string|null)=>s?`${s.slice(0,4)}-${s.slice(4,6)}-${s.slice(6,8)}`:'—';
 const time=(d:string)=>Date.parse(`${formatDate(d)}T00:00:00Z`);
@@ -300,6 +301,7 @@ export function KoreanCountryCard(){
    ariaLabel="한국 공포탐욕 차트 기간"
   />}
   chart={<MarketFearGreedChart
+   color={fearGreedStateColor(loading?'확인 중':valid?(c!.stageLabel??'확인 불가'):'확인 불가')}
    data={chartHistory}
    axisTicks={chartAxis.ticks}
    axisLabels={chartAxis.labels}

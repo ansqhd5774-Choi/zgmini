@@ -49,6 +49,7 @@ export function MarketFearGreedChart({
   formatTooltipLabel,
   emptyLabel = '이력 없음',
   compact = false,
+  color = '#ff7076',
 }: {
   data: MarketFearGreedChartPoint[];
   axisTicks: string[];
@@ -59,6 +60,7 @@ export function MarketFearGreedChart({
   formatTooltipLabel: (value: string) => string;
   emptyLabel?: string;
   compact?: boolean;
+  color?: string;
 }) {
   const prefersReducedMotion = usePrefersReducedMotion();
 
@@ -74,8 +76,8 @@ export function MarketFearGreedChart({
     <AreaChart data={data} accessibilityLayer={false} tabIndex={-1} margin={compact ? {top:6,right:6,left:6,bottom:6} : { top: 6, right: 14, left: 0, bottom: 4 }}>
       <defs>
         <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#ff626b" stopOpacity=".6"/>
-          <stop offset="100%" stopColor="#ff626b" stopOpacity="0"/>
+          <stop offset="0%" stopColor={color} stopOpacity=".6"/>
+          <stop offset="100%" stopColor={color} stopOpacity="0"/>
         </linearGradient>
       </defs>
       <XAxis
@@ -113,7 +115,7 @@ export function MarketFearGreedChart({
         x={latestPoint.date}
         y={latestPoint.score}
         r={compact ? 3 : 4.4}
-        fill="#ff7076"
+        fill={color}
         stroke="#fff7f7"
         strokeWidth={2}
         ifOverflow="visible"
@@ -136,12 +138,12 @@ export function MarketFearGreedChart({
       <Area
         type="monotone"
         dataKey="score"
-        stroke="#ff7076"
+        stroke={color}
         fill={`url(#${gradientId})`}
         strokeWidth={2.2}
         dot={false}
         connectNulls={false}
-        activeDot={{ r: 3.5, strokeWidth: 0, fill: '#ffd1d4' }}
+        activeDot={{ r: 3.5, strokeWidth: 0, fill: color }}
         isAnimationActive={!compact && !prefersReducedMotion}
         animationBegin={120}
         animationDuration={950}

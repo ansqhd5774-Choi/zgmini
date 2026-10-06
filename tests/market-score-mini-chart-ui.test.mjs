@@ -47,7 +47,7 @@ test("domain charts remain compact while the composite has visible dates",()=>{
 test("composite uses sentiment area styling without the removed captions",()=>{
   const summary=sourceBetween("function SummaryTrend(","// Stage 12");
   assert.match(summary,/<AreaChart/);
-  assert.match(summary,/<Area type="monotone" dataKey="value" stroke="#ff7076"/);
+  assert.match(summary,/<Area type="monotone" dataKey="value" stroke=\{color\}/);
   assert.match(summary,/<linearGradient/);
   assert.doesNotMatch(src,/className="zg-r55-main-period"|<span>종합 점수<\/span>|<span>\/ 100<\/span>/);
   assert.match(src,/ArrowUpRight size=\{14\}/);
