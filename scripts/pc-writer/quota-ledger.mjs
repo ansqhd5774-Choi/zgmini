@@ -58,9 +58,10 @@ export class QuotaLedger{
   const policy=policyForProvider(provider);if(!policy)return {allowed:true,provider,guarded:false};
   const item=this.item(provider,now);const at=nextAllowed(item,policy,now);
   const blocked=at!=null&&at>now;
-  const event={provider,at:new Date(now).toISOString(),allowed:!blocked,mode:this.mode};
+  const enforced=blocked&&this.mode==='enforce'&&policy.hard!==false;
+  const event={provider,at:new Date(now).toISOString(),allowed:!enforced,blocked,mode:this.mode};
   if(blocked){event.reason='QUOTA_COOLDOWN';event.retryAt=new Date(at).toISOString();item.quotaState=this.mode==='enforce'?'COOLDOWN':'QUOTA_WARNING';}
-  if(blocked&&this.mode==='enforce'&&policy.hard!==false){this.events.push(event);this.persist();const error=Error('PROVIDER_QUOTA_GUARD');error.code='PROVIDER_QUOTA_GUARD';error.provider=provider;error.retryAt=at;throw error;}
+  if(enforced){this.events.push(event);this.persist();const error=Error('PROVIDER_QUOTA_GUARD');error.code='PROVIDER_QUOTA_GUARD';error.provider=provider;error.retryAt=at;throw error;}
   item.requestTimes.push(now);item.lastRequestAt=now;
   if(!blocked)item.quotaState='AVAILABLE';
   this.events.push(event);this.persist();
@@ -76,6 +77,6 @@ export class QuotaLedger{
  summary(){
   const providers={};
   for(const [provider,item] of Object.entries(this.value.providers))providers[provider]={requests:item.requestTimes.length,lastRequestAt:item.lastRequestAt,lastSuccessAt:item.lastSuccessAt,lastStatus:item.lastStatus,quotaState:item.quotaState};
-  return {version:VERSION,mode:this.mode,guarded:this.events.filter(x=>x.allowed===false).length,events:this.events.map(x=>({...x})),providers};
+  return {version:VERSION,mode:this.mode,guarded:this.events.filter(x=>x.blocked&&x.allowed===false).length,warnings:this.events.filter(x=>x.blocked&&x.allowed===true).length,events:this.events.map(x=>({...x})),providers};
  }
 }

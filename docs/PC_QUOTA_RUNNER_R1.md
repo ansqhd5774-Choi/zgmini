@@ -50,6 +50,24 @@ node scripts\pc-writer\quota-runner.mjs --enforce-quota
 
 `--enforce-quota`는 FRED, 등록 BLS, BEA, SEC, KRX, KOSIS의 확정 정책을 대상으로 한다. Census 키 보유량, EIA 권고치, MarketParquet 요금제, BOK/BIS/World Bank 등 근거가 불완전한 값은 경고만 남기고 자동 차단하지 않는다.
 
+## 게시 전 안전 게이트
+
+`--publish`는 수집 전에 다음 조건을 모두 확인한다.
+
+- 로컬 `HEAD`가 `config.json`의 승인 source와 일치
+- 로컬 `HEAD`가 `origin/main`과 일치
+- 이전 게시 원장에 `SUBMITTING`이 남아 있지 않음
+
+하나라도 맞지 않으면 외부 API 호출과 게시를 시작하지 않고 `quota-runner-last-run.json`에 원인을 기록한다. `SUBMITTING`이면 재실행하지 말고 먼저 D1 read-back으로 결과를 확인한다.
+
+수집이 `--enforce-quota`에서 확정 한도에 걸리면 해당 cycle의 게시를 건너뛰고 `QUOTA_GUARDED`로 종료한다. 관찰 모드의 경고는 호출을 막지 않으며, `guarded`와 `warnings`를 구분해 원장에 남긴다.
+
+원격 결과의 저장 시각과 projection 상태는 다음 읽기 전용 명령으로 확인할 수 있다.
+
+```cmd
+node scripts\\pc-writer\\read-publication-readback.mjs
+```
+
 ## 원장
 
 `%USERPROFILE%\.zgmini\pc-writer\quota-ledger.json`에 다음 메타데이터만 저장한다.

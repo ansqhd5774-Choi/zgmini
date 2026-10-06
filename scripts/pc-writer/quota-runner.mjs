@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
-import {spawnSync} from 'node:child_process';
+import {execFileSync,spawnSync} from 'node:child_process';
 import {read,save} from './d1.mjs';
 import {PROVIDER_QUOTA_POLICY} from './quota-policy.mjs';
 
@@ -17,6 +17,17 @@ if(process.argv.includes('--plan')){
  process.exit(0);
 }
 const report={at:new Date().toISOString(),lane,mode,publish,status:'STARTED'};
+if(publish){
+ try{
+  const source=execFileSync('git',['rev-parse','HEAD'],{cwd:root,encoding:'utf8',windowsHide:true}).trim();
+  const originMain=execFileSync('git',['rev-parse','origin/main'],{cwd:root,encoding:'utf8',windowsHide:true}).trim();
+  const config=read(path.join(base,'config.json'));
+  if(config.source!==source){report.status='SOURCE_APPROVAL_MISMATCH';report.expectedSource=config.source;report.actualSource=source;save(path.join(base,'quota-runner-last-run.json'),report);console.log(JSON.stringify(report));process.exit(2);}
+  if(source!==originMain){report.status='SOURCE_DRIFT_ORIGIN_MAIN';report.localSource=source;report.originMain=originMain;save(path.join(base,'quota-runner-last-run.json'),report);console.log(JSON.stringify(report));process.exit(2);}
+  const ledger=path.join(base,'local-publication-ledger.json');
+  if(fs.existsSync(ledger)&&read(ledger).status==='SUBMITTING'){report.status='PUBLICATION_READBACK_REQUIRED';save(path.join(base,'quota-runner-last-run.json'),report);console.log(JSON.stringify(report));process.exit(2);}
+ }catch(error){report.status=error.code==='ENOENT'?'PUBLISH_PREFLIGHT_MISSING':'PUBLISH_PREFLIGHT_FAILED';save(path.join(base,'quota-runner-last-run.json'),report);console.log(JSON.stringify(report));process.exit(2);}
+}
 const lock=path.join(base,'quota-runner.lock');
 fs.mkdirSync(base,{recursive:true});
 if(fs.existsSync(lock)){

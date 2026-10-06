@@ -21,7 +21,10 @@ test('observe mode records requests and reports cooldown without blocking',()=>{
  ledger.beforeRequest('FRED',1_000);
  const second=ledger.beforeRequest('FRED',1_100);
  assert.equal(second.allowed,true);
+ assert.equal(second.warning.blocked,true);
  assert.equal(second.warning.reason,'QUOTA_COOLDOWN');
+ assert.equal(ledger.summary().guarded,0);
+ assert.equal(ledger.summary().warnings,1);
  const saved=JSON.parse(fs.readFileSync(path.join(base,'quota-ledger.json'),'utf8'));
  assert.equal(saved.providers.FRED.requestTimes.length,2);
  assert.equal(JSON.stringify(saved).includes('secret'),false);
@@ -31,6 +34,7 @@ test('enforce mode blocks a request inside the minimum interval',()=>{
  const base=temp();const ledger=new QuotaLedger(base,{mode:'enforce'});
  ledger.beforeRequest('FRED',1_000);
  assert.throws(()=>ledger.beforeRequest('FRED',1_100),error=>error.code==='PROVIDER_QUOTA_GUARD');
+ assert.equal(ledger.summary().guarded,1);
 });
 
 test('daily provider limit is enforced from the request ledger',()=>{
