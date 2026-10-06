@@ -124,10 +124,10 @@ function growthForwardFetchMock(){
     if(u.includes("/timeseries/eits/m3")){
       const q=new URL(u).searchParams,cat=q.get("category_code"),time=q.get("time")??"2026";
       const by={
-        MTM:[["NO","1","yes","MTM","1,200,000","no",`${time}-08`,"1"],["VS","1","yes","MTM","1,000,000","no",`${time}-08`,"1"],["TI","1","yes","MTM","1,800,000","no",`${time}-08`,"1"]],
+        MTM:[["UO","1","yes","MTM","900000","no",`${time}-08`,"1"],["NO","1","yes","MTM","1,200,000","no",`${time}-08`,"1"],["VS","1","yes","MTM","1,000,000","no",`${time}-08`,"1"],["TI","1","yes","MTM","1,800,000","no",`${time}-08`,"1"]],
         MDM:[["NO","1","yes","MDM","600000","no",`${time}-08`,"1"]],
         NXA:[["NO","1","yes","NXA","300000","no",`${time}-08`,"1"],["VS","1","yes","NXA","250000","no",`${time}-08`,"1"]],
-        MTU:[["UO","1","yes","MTU","900000","no",`${time}-08`,"1"]],
+        MTU:[["NO","1","yes","MTU","120000","no",`${time}-08`,"1"]],
       };
       return jsonResponse(censusTable(by[cat]??[]));
     }
@@ -135,9 +135,9 @@ function growthForwardFetchMock(){
       const q=new URL(u).searchParams,time=q.get("time")??"2026";
       assert.equal(q.get("category_code"),null,"BFS must stay one unpartitioned year request");
       return jsonResponse(censusTable([
-        ["T","1","yes","BA_BA","510000","no",`${time}-08`,"1"],
-        ["T","1","yes","BA_HBA","320000","no",`${time}-08`,"1"],
-        ["T","1","yes","BA_WBA","170000","no",`${time}-08`,"1"],
+        ["BA_BA","1","yes","TOTAL","510000","no",`${time}-08`,"1"],
+        ["BA_HBA","1","yes","TOTAL","320000","no",`${time}-08`,"1"],
+        ["BA_WBA","1","yes","TOTAL","170000","no",`${time}-08`,"1"],
         ["X","1","yes","BA_BA","1","no",`${time}-08`,"1"],
       ]));
     }
@@ -163,13 +163,16 @@ function growthForwardFetchMock(){
   return {fetchImpl,calls};
 }
 
-test("Growth R2 BFS forward provider uses Census category_code BA_* with data_type_code T in one request",async()=>{
+test("Growth R2 BFS forward provider uses Census category_code TOTAL with data_type_code BA_* in one request",async()=>{
   const {fetchImpl,calls}=growthForwardFetchMock();
   const seedRows=["G019","G020","G021","G022"].map((candidateId,i)=>({candidateId,observationDate:"2021-12-01",pitEligible:true,harmonizedValue:100+i}));
   const out=await collectGrowthR2ForwardRecords({env:{CENSUS_API_KEY:"test-only"},asOf:"2026-09-29",fetchImpl,seedRows,now:()=>new Date("2026-09-29T00:00:00.000Z")});
   assert.equal(out.status,"READY");
   assert.equal(out.records.length,24);
-  assert.equal(out.providerRequestCount,8);
+  assert.equal(out.providerRequestCount,7);
+  assert.equal(out.records.find(x=>x.candidateId==="G015").harmonizedValue,900);
+  assert.equal(calls.filter(x=>x.url.includes("/m3")).length,3);
+  assert.ok(!calls.some(x=>new URL(x.url).searchParams.get("category_code")==="MTU"));
   const bfsCalls=calls.filter(x=>x.url.includes("/timeseries/eits/bfs"));
   assert.equal(bfsCalls.length,1);
   const bfs=Object.fromEntries(out.records.filter(x=>["G060","G061","G062"].includes(x.candidateId)).map(x=>[x.candidateId,x]));
