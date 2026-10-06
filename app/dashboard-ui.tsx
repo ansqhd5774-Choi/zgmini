@@ -90,16 +90,68 @@ function CardTrend({data,label,color,periodDays}:{data:DashboardPoint[];label:st
  </div>;
 }
 
-const summaryDateLabel=(value:number)=>new Date(value).toISOString().slice(5,10).replace('-','/');
+function summaryDateParts(ts:number){
+ const date=new Date(ts);
+ if(!Number.isFinite(date.getTime()))return null;
+ return {year:date.getUTCFullYear(),month:date.getUTCMonth()+1,monthText:String(date.getUTCMonth()+1).padStart(2,'0'),dayText:String(date.getUTCDate()).padStart(2,'0')};
+}
+function sampleSummaryPoints<T>(points:T[],count:number){
+ if(points.length<=count)return points;
+ if(count<=1)return [points.at(-1)!];
+ const selected:T[]=[];
+ const seen=new Set<number>();
+ for(let index=0;index<count;index++){
+  const pointIndex=Math.round(index*(points.length-1)/(count-1));
+  if(seen.has(pointIndex))continue;
+  seen.add(pointIndex);selected.push(points[pointIndex]);
+ }
+ return selected;
+}
+function summaryAxisConfig(points:Array<DashboardPoint&{ts:number}>,periodDays:number){
+ const labels=new Map<number,string>();
+ const add=(point:DashboardPoint&{ts:number},label:string)=>labels.set(point.ts,label);
+ if(!points.length)return {ticks:[] as number[],labels};
+ if(periodDays<=30){
+  const count=periodDays<=7?4:5;
+  for(const point of sampleSummaryPoints(points,count)){
+   const parts=summaryDateParts(point.ts);if(parts)add(point,`${parts.monthText}.${parts.dayText}`);
+  }
+  return {ticks:[...labels.keys()],labels};
+ }
+ const monthGroups=new Map<string,{year:number;month:number;monthText:string;point:DashboardPoint&{ts:number}}>();
+ for(const point of points){
+  const parts=summaryDateParts(point.ts);if(!parts)continue;
+  const key=`${parts.year}-${parts.monthText}`;
+  if(!monthGroups.has(key))monthGroups.set(key,{year:parts.year,month:parts.month,monthText:parts.monthText,point});
+ }
+ const groups=[...monthGroups.values()];
+ if(periodDays<=90){
+  for(const group of groups)add(group.point,group.monthText);
+  return {ticks:[...labels.keys()],labels};
+ }
+ if(periodDays<=180){
+  for(const group of groups.slice(-6))add(group.point,group.monthText);
+  return {ticks:[...labels.keys()],labels};
+ }
+ const selectedIndexes=new Set<number>([0,Math.max(0,groups.length-1)]);
+ for(let index=2;index<groups.length-1;index+=2)selectedIndexes.add(index);
+ const latestYear=groups.at(-1)?.year;
+ groups.forEach((group,index)=>{if(group.month===12&&latestYear&&group.year<latestYear)selectedIndexes.add(index)});
+ [...selectedIndexes].sort((a,b)=>a-b).forEach(index=>{
+  const group=groups[index];if(!group)return;
+  add(group.point,group.month===12&&latestYear&&group.year<latestYear?`${String(group.year).slice(-2)}.12`:group.monthText);
+ });
+ return {ticks:[...labels.keys()],labels};
+}
 
 function SummaryTrend({data,label,color,periodDays}:{data:DashboardPoint[];label:string;color:string;periodDays:number}){
- const scaled=timeScaledTrend(data,periodDays),latest=scaled.points.at(-1);
+ const scaled=timeScaledTrend(data,periodDays),latest=scaled.points.at(-1),axis=summaryAxisConfig(scaled.points,periodDays);
  const gradientId=`summary-${useId().replace(/:/g,'')}`;
  return <div className="zg-spark zg-r55-mini-chart zg-r55-summary-mini-chart" aria-label={`${label} 관측 추이`} onPointerDown={event=>event.preventDefault()}>
   <ResponsiveContainer width="100%" height="100%" initialDimension={{width:1,height:1}}>
    <AreaChart data={scaled.points} accessibilityLayer={false} tabIndex={-1} margin={{top:12,right:18,left:0,bottom:4}}>
     <defs><linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={color} stopOpacity=".6"/><stop offset="100%" stopColor={color} stopOpacity="0"/></linearGradient></defs>
-    <XAxis dataKey="ts" type="number" domain={[scaled.start,scaled.end]} ticks={[scaled.start,scaled.start+(scaled.end-scaled.start)/4,scaled.start+(scaled.end-scaled.start)/2,scaled.start+(scaled.end-scaled.start)*3/4,scaled.end]} tickFormatter={summaryDateLabel} minTickGap={30} tick={{fill:'#a9bfd1',fontSize:12}} axisLine={false} tickLine={false} height={28}/>
+    <XAxis dataKey="ts" type="number" domain={[scaled.start,scaled.end]} ticks={axis.ticks} interval={0} tickMargin={5} tickFormatter={value=>axis.labels.get(Number(value))??''} tick={{fill:'var(--zg-text-meta,#a8bcd0)',fontSize:9}} axisLine={false} tickLine={false} height={30}/>
     <YAxis domain={[0,100]} ticks={[0,50,100]} tick={{fill:'#a9bfd1',fontSize:13}} axisLine={false} tickLine={false} width={36}/>
     <ReferenceArea y1={0} y2={25} fill="#8f1f2f" fillOpacity={0.055}/>
     <ReferenceArea y1={25} y2={45} fill="#f2555a" fillOpacity={0.035}/>
