@@ -96,6 +96,29 @@
  .zg-r55-detail b{grid-column:2!important}
 }
 @media(max-width:359px){.zg-r55-card-grid{grid-template-columns:minmax(0,1fr)}}
+/* The composite is a main chart, with its own readable score and date axes. */
+.zg-dashboard[data-view="dashboard"] .zg-r55-summary{display:grid;grid-template-columns:132px minmax(0,1fr);grid-template-rows:auto auto;height:auto;min-height:0;padding:16px;gap:16px}
+.zg-dashboard[data-view="dashboard"] .zg-r55-primary-zone,.zg-dashboard[data-view="dashboard"] .zg-r55-diagnostics-zone{display:contents}
+.zg-dashboard[data-view="dashboard"] .zg-r55-summary-top{grid-column:1;grid-row:1;width:auto;height:auto;min-height:180px;aspect-ratio:auto}
+.zg-dashboard[data-view="dashboard"] .zg-r55-master-number{gap:10px}
+.zg-dashboard[data-view="dashboard"] .zg-r55-master-number strong{font-size:52px}
+.zg-dashboard[data-view="dashboard"] .zg-r55-master-number span{max-width:none;font-size:14px}
+.zg-dashboard[data-view="dashboard"] .zg-r55-summary-chart{grid-column:2;grid-row:1;width:100%;height:auto;min-width:0}
+.zg-dashboard[data-view="dashboard"] .zg-r55-summary-chart .zg-spark{width:100%;max-width:none;height:200px;min-height:200px}
+.zg-dashboard[data-view="dashboard"] .zg-r55-main-period{margin:0 0 4px;text-align:right;font-size:13px;color:#a9bfd1;font-variant-numeric:tabular-nums}
+.zg-dashboard[data-view="dashboard"] .zg-r55-subscore-area{grid-column:1 / -1;grid-row:2;width:100%;height:auto;min-height:0}
+.zg-dashboard[data-view="dashboard"] .zg-r55-subscore-grid{height:auto;min-height:0}
+.zg-dashboard[data-view="dashboard"] .zg-r55-subscore-title b{font-size:14px}
+@container marketShell (max-width:760px){
+ .zg-dashboard[data-view="dashboard"] .zg-r55-summary{grid-template-columns:minmax(0,1fr);gap:12px;padding:12px}
+ .zg-dashboard[data-view="dashboard"] .zg-r55-summary-top{grid-column:1;grid-row:1;min-height:76px}
+ .zg-dashboard[data-view="dashboard"] .zg-r55-master-number{flex-direction:row;gap:12px}
+ .zg-dashboard[data-view="dashboard"] .zg-r55-master-number strong{font-size:44px}
+ .zg-dashboard[data-view="dashboard"] .zg-r55-summary-chart{grid-column:1;grid-row:2}
+ .zg-dashboard[data-view="dashboard"] .zg-r55-subscore-area{grid-row:3}
+ .zg-dashboard[data-view="dashboard"] .zg-r55-summary-chart .zg-spark{height:180px;min-height:180px}
+ .zg-dashboard[data-view="dashboard"] .zg-r55-main-period{font-size:12px}
+}
 /* Keep twelve domains in balanced rows while retaining readable card widths. */
 @media(max-width:1279px){.zg-r55-card-grid{grid-template-columns:repeat(4,minmax(0,1fr))}}
 @container marketShell (max-width:1100px){.zg-r55-card-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
