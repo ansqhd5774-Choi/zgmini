@@ -81,3 +81,27 @@ test("desktop diagnostics stay in one row while mobile proportions remain unchan
   assert.match(mobile,/zg-r55-summary-chart \.zg-spark\{height:180px;min-height:180px\}/);
   assert.match(mobile,/zg-r55-master-number strong\{font-size:44px\}/);
 });
+
+
+test("desktop composite spacing follows one 8px owner contract while mobile keeps 12px",()=>{
+  assert.match(responsive,/--r55-summary-pad:8px;--r55-summary-gap:8px/);
+
+  const midStart=responsive.indexOf("@container marketShell (min-width:761px) and (max-width:1279px)");
+  assert.ok(midStart>=0);
+  const mid=responsive.slice(midStart,responsive.indexOf("\n}",midStart)+2);
+  assert.match(mid,/gap:var\(--r55-summary-gap\);padding:var\(--r55-summary-pad\)/);
+
+  const wideStart=responsive.indexOf("@container marketShell (min-width:1280px)");
+  assert.ok(wideStart>=0);
+  const wide=responsive.slice(wideStart,responsive.indexOf("\n}",wideStart)+2);
+  assert.match(wide,/gap:var\(--r55-summary-gap\);padding:var\(--r55-summary-pad\)/);
+
+  assert.match(responsive,/zg-r55-subscore:first-child\{padding-left:0\}/);
+  assert.match(responsive,/zg-r55-subscore:last-child\{padding-right:0\}/);
+
+  const mobileStart=responsive.indexOf("@container marketShell (max-width:760px)");
+  assert.ok(mobileStart>=0);
+  const mobile=responsive.slice(mobileStart,responsive.indexOf("\n}",mobileStart)+2);
+  assert.match(mobile,/zg-r55-summary\{grid-template-columns:minmax\(0,1fr\);gap:12px;padding:12px\}/);
+  assert.match(mobile,/zg-r55-summary-chart \.zg-spark\{height:180px;min-height:180px\}/);
+});
