@@ -105,7 +105,7 @@
 .zg-dashboard[data-view="dashboard"] .zg-r55-master-number span{max-width:none;font-size:14px}
 .zg-dashboard[data-view="dashboard"] .zg-r55-summary-chart{grid-column:2;grid-row:1;width:100%;height:auto;min-width:0}
 .zg-dashboard[data-view="dashboard"] .zg-r55-summary-chart .zg-spark{width:100%;max-width:none;height:200px;min-height:200px}
-.zg-dashboard[data-view="dashboard"] .zg-r55-main-period{margin:0 0 4px;text-align:right;font-size:13px;color:#a9bfd1;font-variant-numeric:tabular-nums}
+.zg-dashboard[data-view="dashboard"] .zg-r55-main-period{margin:0 0 4px;padding-right:28px;text-align:right;font-size:13px;color:#a9bfd1;font-variant-numeric:tabular-nums}
 .zg-dashboard[data-view="dashboard"] .zg-r55-subscore-area{grid-column:1 / -1;grid-row:2;width:100%;height:auto;min-height:0}
 .zg-dashboard[data-view="dashboard"] .zg-r55-subscore-grid{height:auto;min-height:0}
 .zg-dashboard[data-view="dashboard"] .zg-r55-subscore-title b{font-size:14px}
