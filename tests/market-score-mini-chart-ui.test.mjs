@@ -12,6 +12,14 @@ function sourceBetween(startToken,endToken){
   return src.slice(start,end);
 }
 
+
+test("market trend windows keep one prior observation so sparse monthly lines reach the 1Y boundary",()=>{
+  const windowSource=sourceBetween("function marketTrendWindow(","const publicStatusLabel");
+  assert.match(windowSource,/const inside=dated\.filter\(p=>Date\.parse\(p\.label\)>=start\)/);
+  assert.match(windowSource,/const prior=dated\.filter\(p=>Date\.parse\(p\.label\)<start\)\.at\(-1\)/);
+  assert.match(windowSource,/return prior\?\[prior,\.\.\.inside\]:inside/);
+});
+
 test("market charts use numeric time axes so selected periods keep their true duration",()=>{
   const charts=sourceBetween("function timeScaledTrend(","// Stage 12");
   assert.match(charts,/function timeScaledTrend\(data:DashboardPoint\[\],periodDays:number\)/);
