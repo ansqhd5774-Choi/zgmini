@@ -216,10 +216,13 @@
  .zg-dashboard[data-view="dashboard"] .fg-card.fg-shared-shell .fg-footer-slot .cnn-panel-note a{margin-right:36px;min-height:24px;display:inline-flex;align-items:center}
 
  .zg-dashboard[data-view="dashboard"] .zg-r55-beta-label{display:none}
- .zg-dashboard[data-view="dashboard"] .zg-r55-heading{gap:6px;min-height:0}
+ .zg-dashboard[data-view="dashboard"] .zg-r55-heading{display:flex;align-items:center;flex-wrap:wrap;gap:6px;min-height:0}
  .zg-dashboard[data-view="dashboard"] .zg-r55-heading>div:not(.zg-r55-header-controls){flex-direction:row;align-items:center;gap:6px}
  .zg-dashboard[data-view="dashboard"] .zg-brand-tag{font-size:10px;padding:3px 5px}
  .zg-dashboard[data-view="dashboard"] .zg-r55-period button{min-height:40px;font-size:11px}
+ .zg-dashboard[data-view="dashboard"] .zg-r55-header-controls{width:auto;flex:0 0 auto;margin-left:auto;justify-content:flex-end;flex-wrap:nowrap}
+ .zg-dashboard[data-view="dashboard"] .zg-r55-period{flex:0 0 auto}
+ .zg-dashboard[data-view="dashboard"] .zg-r55-period button{flex:0 0 32px;width:32px;min-width:32px}
  .zg-dashboard[data-view="dashboard"] .zg-r55-body{grid-template-columns:minmax(0,1fr);gap:8px}
  .zg-dashboard[data-view="dashboard"] .zg-r55-summary{grid-template-columns:64px minmax(0,1fr);grid-template-rows:120px auto;gap:8px;padding:8px}
  .zg-dashboard[data-view="dashboard"] .zg-r55-summary-top{grid-column:1;grid-row:1;min-height:0;height:120px;width:100%}
