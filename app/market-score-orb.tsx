@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Gauge } from 'lucide-react';
+import {fearGreedStateColor} from '../lib/fear-greed-state-color.mjs';
 
 type ScoreVariant = 'compact' | 'hero';
 
@@ -252,11 +253,11 @@ export function MarketScoreOrb({
           </svg>
 
           <div className="cnn-spectrum-center">
-            <strong className="cnn-score-value">
+            <strong className="cnn-score-value" style={{color:fearGreedStateColor(state)}}>
               <span className="cnn-score-whole">{wholeScore}</span>
               {decimalScore ? <span className="cnn-score-fraction">.{decimalScore}</span> : null}
             </strong>
-            <span>{state}</span>
+            <span style={{color:fearGreedStateColor(state)}}>{state}</span>
             {caption ? <small>{caption}</small> : null}
           </div>
         </div>
@@ -286,8 +287,8 @@ export function MarketScoreOrb({
   return (
     <div className={`cnn-score-orb ${tone}`} role="group" aria-live="polite" aria-label={ariaLabel}>
       <Gauge size={22} aria-hidden="true"/>
-      <strong>{score}</strong>
-      <span>{state}</span>
+      <strong style={{color:fearGreedStateColor(state)}}>{score}</strong>
+      <span style={{color:fearGreedStateColor(state)}}>{state}</span>
       {caption ? <small>{caption}</small> : null}
     </div>
   );

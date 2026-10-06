@@ -6,6 +6,7 @@ import { MarketPeriodControls } from "../../market-period-controls";
 import { FearGreedCardShell } from "../../fear-greed-card-shell";
 import { MarketCardInsight } from "../../market-card-insight";
 import { MarketFearGreedChart } from "../../market-fear-greed-chart";
+import {fearGreedStateColor} from '../../../lib/fear-greed-state-color.mjs';
 
 type HistoryPoint = {
   date?: string;
@@ -537,6 +538,7 @@ export default function CnnPanel({ showEducation = false }: { showEducation?: bo
         ariaLabel="CNN 지수 기간 선택"
       />}
       chart={<MarketFearGreedChart
+        color={fearGreedStateColor(loading?'확인 중':stage)}
         data={history}
         axisTicks={chartAxis.ticks}
         axisLabels={chartAxis.labels}

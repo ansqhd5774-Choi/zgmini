@@ -98,7 +98,7 @@ function SummaryTrend({data,label,color,periodDays}:{data:DashboardPoint[];label
  return <div className="zg-spark zg-r55-mini-chart zg-r55-summary-mini-chart" aria-label={`${label} 관측 추이`} onPointerDown={event=>event.preventDefault()}>
   <ResponsiveContainer width="100%" height="100%" initialDimension={{width:1,height:1}}>
    <AreaChart data={scaled.points} accessibilityLayer={false} tabIndex={-1} margin={{top:12,right:18,left:0,bottom:4}}>
-    <defs><linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#ff626b" stopOpacity=".6"/><stop offset="100%" stopColor="#ff626b" stopOpacity="0"/></linearGradient></defs>
+    <defs><linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={color} stopOpacity=".6"/><stop offset="100%" stopColor={color} stopOpacity="0"/></linearGradient></defs>
     <XAxis dataKey="ts" type="number" domain={[scaled.start,scaled.end]} ticks={[scaled.start,scaled.start+(scaled.end-scaled.start)/4,scaled.start+(scaled.end-scaled.start)/2,scaled.start+(scaled.end-scaled.start)*3/4,scaled.end]} tickFormatter={summaryDateLabel} minTickGap={30} tick={{fill:'#a9bfd1',fontSize:12}} axisLine={false} tickLine={false} height={28}/>
     <YAxis domain={[0,100]} ticks={[0,50,100]} tick={{fill:'#a9bfd1',fontSize:13}} axisLine={false} tickLine={false} width={36}/>
     <ReferenceArea y1={0} y2={25} fill="#8f1f2f" fillOpacity={0.055}/>
@@ -110,8 +110,8 @@ function SummaryTrend({data,label,color,periodDays}:{data:DashboardPoint[];label
     <ReferenceLine y={45} stroke="rgba(240,163,74,.34)" strokeDasharray="3 5"/>
     <ReferenceLine y={55} stroke="rgba(168,188,208,.40)" strokeDasharray="3 5"/>
     <ReferenceLine y={75} stroke="rgba(35,201,143,.40)" strokeDasharray="3 5"/>
-    <Area type="monotone" dataKey="value" stroke="#ff7076" fill={`url(#${gradientId})`} strokeWidth={2.2} dot={false} activeDot={false} connectNulls={false} isAnimationActive={false}/>
-    {latest&&<ReferenceDot x={latest.ts} y={latest.value} r={4.4} fill="#ff7076" stroke="#fff7f7" strokeWidth={2}/>}
+    <Area type="monotone" dataKey="value" stroke={color} fill={`url(#${gradientId})`} strokeWidth={2.2} dot={false} activeDot={false} connectNulls={false} isAnimationActive={false}/>
+    {latest&&<ReferenceDot x={latest.ts} y={latest.value} r={4.4} fill={color} stroke="#fff7f7" strokeWidth={2}/>}
    </AreaChart>
   </ResponsiveContainer>
  </div>;
