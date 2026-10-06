@@ -2,7 +2,7 @@
 // Cloudflare Git Integration deployment marker: plain-language macro labels R1
 import {useEffect,useId,useRef,useState,type ReactNode,type CSSProperties} from 'react';
 import {Activity,ArrowRight,ArrowUpRight,ChevronLeft,ChevronRight,Info,Radar,Coins,Users,Percent,Droplet,Landmark,ShieldCheck,Factory,ShoppingCart,BriefcaseBusiness,ArrowLeftRight,Network,DollarSign} from 'lucide-react';
-import {Area,AreaChart,ReferenceArea,Line,LineChart,ResponsiveContainer,XAxis,YAxis,ReferenceDot,ReferenceLine} from 'recharts';
+import {Area,AreaChart,ReferenceArea,Line,LineChart,ResponsiveContainer,XAxis,YAxis,ReferenceDot,ReferenceLine,Tooltip} from 'recharts';
 import {readProgressiveMarketResponse} from '../lib/market-score/read-progressive-response.mjs';
 import {readMarketSnapshot,saveMarketSnapshot} from '../lib/market-score/browser-snapshot.mjs';
 import {marketDetailRows} from '../lib/market-score/detail-catalog.mjs';
@@ -148,7 +148,7 @@ function summaryAxisConfig(points:Array<DashboardPoint&{ts:number}>,periodDays:n
 function SummaryTrend({data,label,color,periodDays}:{data:DashboardPoint[];label:string;color:string;periodDays:number}){
  const scaled=timeScaledTrend(data,periodDays),latest=scaled.points.at(-1),axis=summaryAxisConfig(scaled.points,periodDays);
  const gradientId=`summary-${useId().replace(/:/g,'')}`;
- return <div className="zg-spark zg-r55-mini-chart zg-r55-summary-mini-chart" style={{height:120,minHeight:120,maxHeight:120}} aria-label={`${label} 관측 추이`} onPointerDown={event=>event.preventDefault()}>
+ return <div className="zg-spark zg-r55-mini-chart zg-r55-summary-mini-chart" style={{height:120,minHeight:120,maxHeight:120}} aria-label={`${label} 관측 추이`}>
   <ResponsiveContainer width="100%" height="100%" initialDimension={{width:1,height:1}}>
    <AreaChart data={scaled.points} accessibilityLayer={false} tabIndex={-1} margin={{top:12,right:18,left:0,bottom:4}}>
     <defs><linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={color} stopOpacity=".6"/><stop offset="100%" stopColor={color} stopOpacity="0"/></linearGradient></defs>
@@ -163,7 +163,21 @@ function SummaryTrend({data,label,color,periodDays}:{data:DashboardPoint[];label
     <ReferenceLine y={45} stroke="rgba(240,163,74,.34)" strokeDasharray="3 5"/>
     <ReferenceLine y={55} stroke="rgba(168,188,208,.40)" strokeDasharray="3 5"/>
     <ReferenceLine y={75} stroke="rgba(35,201,143,.40)" strokeDasharray="3 5"/>
-    <Area type="monotone" dataKey="value" stroke={color} fill={`url(#${gradientId})`} strokeWidth={2.2} dot={false} activeDot={false} connectNulls={false} isAnimationActive={false}/>
+    <Tooltip
+     isAnimationActive={false}
+     cursor={{stroke:'var(--zg-chart-crosshair,#aab2bc)',strokeDasharray:'3 4'}}
+     content={({active,payload,label:tooltipLabel})=>{
+      if(!active||!payload?.length)return null;
+      const point=payload[0]?.payload as DashboardPoint&{ts:number};
+      const parts=summaryDateParts(Number(tooltipLabel));
+      const value=point?.value;
+      return <div className="cnn-history-tooltip">
+       <span>{parts?`${parts.year}. ${parts.monthText}. ${parts.dayText}.`:point?.label??'—'}</span>
+       <strong style={{color:typeof value==='number'&&Number.isFinite(value)?scoreColor(value):'#94a3b8'}}>{typeof value==='number'&&Number.isFinite(value)?value.toFixed(1):'—'}</strong>
+      </div>;
+     }}
+    />
+    <Area type="monotone" dataKey="value" stroke={color} fill={`url(#${gradientId})`} strokeWidth={2.2} dot={false} activeDot={{r:3.5,strokeWidth:0,fill:color}} connectNulls={false} isAnimationActive={false}/>
     {latest&&<ReferenceDot x={latest.ts} y={latest.value} r={4.4} fill={color} stroke="#fff7f7" strokeWidth={2}/>}
    </AreaChart>
   </ResponsiveContainer>
@@ -328,9 +342,9 @@ export function CompositeMarketSection({items,points,demo,loading}:{items:Summar
    <div className="zg-r55-body">
     <article className="zg-r55-summary" data-testid="composite-panel">
      <div className="zg-r55-primary-zone">
-     <div className="zg-r55-summary-top" role="img" aria-label={`종합 시장 점수 ${overallScore===null?overallStatus:`${Math.round(overallScore)}점`}`}>
+     <div className="zg-r55-summary-top" role="img" aria-label={`종합 시장 점수 ${overallScore===null?overallStatus:`${overallScore.toFixed(1)}점`}`}>
       <div className="zg-r55-master-number" data-score-mode="number-only">
-       <strong style={{color:overallScore===null?'#94a3b8':scoreColor(overallScore)}}>{overallScore===null?'—':Math.round(overallScore)}</strong>
+       <strong style={{color:overallScore===null?'#94a3b8':scoreColor(overallScore)}}>{overallScore===null?'—':overallScore.toFixed(1)}</strong>
       </div>
       <div className="zg-r55-coverage"><DashboardTip label="종합 점수 데이터 안내">{marketError?'공개 점수 API를 확인 중입니다.':busy?'공개 점수 불러오는 중':`${readyDomains}/${totalDomains} 영역의 자료를 확인했습니다.`}</DashboardTip></div>
      </div>

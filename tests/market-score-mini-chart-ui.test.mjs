@@ -52,7 +52,10 @@ test("composite main chart matches fear-greed x-axis labeling style",()=>{
 
 test("domain charts remain compact while the composite has visible dates",()=>{
   const charts=sourceBetween("function timeScaledTrend(","// Stage 12");
-  assert.doesNotMatch(charts,/<Tooltip/);
+  const card=sourceBetween("function CardTrend(","function summaryDateParts(");
+  const summary=sourceBetween("function SummaryTrend(","// Stage 12");
+  assert.doesNotMatch(card,/<Tooltip/);
+  assert.match(summary,/<Tooltip/);
   assert.equal((charts.match(/<XAxis hide/g)??[]).length,1);
 });
 

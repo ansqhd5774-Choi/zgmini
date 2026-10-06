@@ -2026,6 +2026,7 @@ html,body{overflow-x:hidden}
 
 .cnn-history-tooltip{
   min-width:92px;
+  text-align:center;
   border:1px solid var(--zg-border);
   border-radius:4px;
   background:#071a29;
