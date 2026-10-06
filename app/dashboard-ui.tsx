@@ -8,6 +8,7 @@ import {readMarketSnapshot,saveMarketSnapshot} from '../lib/market-score/browser
 import {marketDetailRows} from '../lib/market-score/detail-catalog.mjs';
 import {breadthNotice} from '../lib/market-score/breadth-notice.mjs';
 import {breadthB1R4PreviousSessionDelta as breadthPreviousSessionDelta} from '../lib/market-score/breadth-b1-r4-ui-delta.mjs';
+import {amplifyCompositeDisplayScore,amplifyCompositeDisplayTrend} from '../lib/market-score/composite-display-sensitivity-r1.mjs';
 export type DashboardPoint={label:string;value:number};
 type MarketTrendPoint={label?:string;date?:string;value?:number;score?:number};
 function normalizeMarketTrendPoints(data?:MarketTrendPoint[]):DashboardPoint[]{
@@ -297,12 +298,13 @@ export function CompositeMarketSection({items,points,demo,loading}:{items:Summar
   if(e.key==='Enter'||e.key===' '){e.preventDefault();toggle()}
  };
  const busy=marketLoading;
- const overallScore=market?.overall?.status==='READY'&&validPublicScore(market.overall.score)?market.overall.score:null;
+ const overallRawScore=market?.overall?.status==='READY'&&validPublicScore(market.overall.score)?market.overall.score:null;
+ const overallScore=overallRawScore===null?null:amplifyCompositeDisplayScore(overallRawScore);
  const overallStatus=busy?'불러오는 중':marketError?'데이터 확인 중':publicStatusLabel(market?.overall?.status);
  const readyDomains=market?.dataQuality?.readyDomains??0;
  const totalDomains=market?.dataQuality?.totalDomains??12;
  const coverageWeight=market?.dataQuality?.coverageWeight??0;
- const overallTrend=marketTrendWindow(normalizeMarketTrendPoints(market?.overall?.trend),periodDays);
+ const overallTrend=marketTrendWindow(amplifyCompositeDisplayTrend(normalizeMarketTrendPoints(market?.overall?.trend)),periodDays);
  const hasDatedHistory=[market?.overall?.trend,...(market?.domains??[]).map(d=>d.trend)].some(data=>marketTrendWindow(normalizeMarketTrendPoints(data),365).length>1);
 
  return <section id="market" className="zg-section zg-r55-market">
