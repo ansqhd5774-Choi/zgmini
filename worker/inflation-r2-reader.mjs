@@ -72,10 +72,10 @@ async function loadPc1Series(db,{asOf}={}){
   }
   return {series,snapshots,missing,issues};
 }
-function monthEnds(asOf,count=12){
+export function completedMonthEnds(asOf,count=13){
   const end=new Date(`${asOf}T00:00:00Z`),out=[];
   for(let offset=count-1;offset>=0;offset-=1){
-    const d=new Date(Date.UTC(end.getUTCFullYear(),end.getUTCMonth()-offset+1,0));
+    const d=new Date(Date.UTC(end.getUTCFullYear(),end.getUTCMonth()-offset,0));
     out.push(d.toISOString().slice(0,10));
   }
   return out;
@@ -120,10 +120,15 @@ export async function loadStoredInflationR2Domain(db,{asOf}={}){
     ["기대인플레","EXPECTATIONS"],
     ["공급압력","SUPPLY_PIPELINE"],
   ];
-  const trend=monthEnds(asOf,13)
+  const trend=completedMonthEnds(asOf,13)
     .map(date=>({date,result:calculateInflationR2At(history,date)}))
     .filter(item=>item.result.status==="READY")
     .map(item=>({label:item.date,value:item.result.score}));
+  if(current.status==="READY"&&finite(current.score)){
+    const index=trend.findIndex(item=>item.label===asOf);
+    if(index>=0)trend.splice(index,1,{label:asOf,value:current.score});
+    else trend.push({label:asOf,value:current.score});
+  }
   const retrievedAts=[
     ...Object.values(pit.snapshots??{}).map(item=>item?.retrievedAt),
     ...Object.values(pc1.snapshots??{}).map(item=>item?.retrievedAt),
