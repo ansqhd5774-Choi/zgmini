@@ -2,7 +2,7 @@
 // Cloudflare Git Integration deployment marker: plain-language macro labels R1
 import {useEffect,useId,useRef,useState,type ReactNode,type CSSProperties} from 'react';
 import {Activity,ArrowRight,ArrowUpRight,ChevronLeft,ChevronRight,Info,Radar,Coins,Users,Percent,Droplet,Landmark,ShieldCheck,Factory,ShoppingCart,BriefcaseBusiness,ArrowLeftRight,Network,DollarSign} from 'lucide-react';
-import {Line,LineChart,ResponsiveContainer,XAxis,YAxis,ReferenceDot,ReferenceLine} from 'recharts';
+import {Area,AreaChart,ReferenceArea,Line,LineChart,ResponsiveContainer,XAxis,YAxis,ReferenceDot,ReferenceLine} from 'recharts';
 import {readProgressiveMarketResponse} from '../lib/market-score/read-progressive-response.mjs';
 import {readMarketSnapshot,saveMarketSnapshot} from '../lib/market-score/browser-snapshot.mjs';
 import {marketDetailRows} from '../lib/market-score/detail-catalog.mjs';
@@ -94,17 +94,25 @@ const summaryDateLabel=(value:number)=>new Date(value).toISOString().slice(5,10)
 
 function SummaryTrend({data,label,color,periodDays}:{data:DashboardPoint[];label:string;color:string;periodDays:number}){
  const scaled=timeScaledTrend(data,periodDays),latest=scaled.points.at(-1);
+ const gradientId=`summary-${useId().replace(/:/g,'')}`;
  return <div className="zg-spark zg-r55-mini-chart zg-r55-summary-mini-chart" aria-label={`${label} 관측 추이`} onPointerDown={event=>event.preventDefault()}>
   <ResponsiveContainer width="100%" height="100%" initialDimension={{width:1,height:1}}>
-   <LineChart data={scaled.points} accessibilityLayer={false} tabIndex={-1} margin={{top:12,right:18,left:0,bottom:4}}>
+   <AreaChart data={scaled.points} accessibilityLayer={false} tabIndex={-1} margin={{top:12,right:18,left:0,bottom:4}}>
+    <defs><linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#ff626b" stopOpacity=".6"/><stop offset="100%" stopColor="#ff626b" stopOpacity="0"/></linearGradient></defs>
     <XAxis dataKey="ts" type="number" domain={[scaled.start,scaled.end]} ticks={[scaled.start,scaled.start+(scaled.end-scaled.start)/4,scaled.start+(scaled.end-scaled.start)/2,scaled.start+(scaled.end-scaled.start)*3/4,scaled.end]} tickFormatter={summaryDateLabel} minTickGap={30} tick={{fill:'#a9bfd1',fontSize:12}} axisLine={false} tickLine={false} height={28}/>
     <YAxis domain={[0,100]} ticks={[0,50,100]} tick={{fill:'#a9bfd1',fontSize:13}} axisLine={false} tickLine={false} width={36}/>
-    <ReferenceLine y={0} stroke="rgba(111,130,149,.22)" strokeDasharray="3 4"/>
-    <ReferenceLine y={50} stroke="rgba(111,130,149,.4)" strokeDasharray="3 4"/>
-    <ReferenceLine y={100} stroke="rgba(111,130,149,.22)" strokeDasharray="3 4"/>
-    <Line type="linear" dataKey="value" stroke={color} strokeWidth={2.2} dot={false} activeDot={false} connectNulls={false} isAnimationActive={false}/>
-    {latest&&<ReferenceDot x={latest.ts} y={latest.value} r={3.5} fill={color} stroke={color}/>}
-   </LineChart>
+    <ReferenceArea y1={0} y2={25} fill="#8f1f2f" fillOpacity={0.055}/>
+    <ReferenceArea y1={25} y2={45} fill="#f2555a" fillOpacity={0.035}/>
+    <ReferenceArea y1={45} y2={55} fill="#9aa8b6" fillOpacity={0.045}/>
+    <ReferenceArea y1={55} y2={75} fill="#58c88a" fillOpacity={0.03}/>
+    <ReferenceArea y1={75} y2={100} fill="#15865e" fillOpacity={0.04}/>
+    <ReferenceLine y={25} stroke="rgba(255,98,107,.40)" strokeDasharray="3 5"/>
+    <ReferenceLine y={45} stroke="rgba(240,163,74,.34)" strokeDasharray="3 5"/>
+    <ReferenceLine y={55} stroke="rgba(168,188,208,.40)" strokeDasharray="3 5"/>
+    <ReferenceLine y={75} stroke="rgba(35,201,143,.40)" strokeDasharray="3 5"/>
+    <Area type="monotone" dataKey="value" stroke="#ff7076" fill={`url(#${gradientId})`} strokeWidth={2.2} dot={false} activeDot={false} connectNulls={false} isAnimationActive={false}/>
+    {latest&&<ReferenceDot x={latest.ts} y={latest.value} r={4.4} fill="#ff7076" stroke="#fff7f7" strokeWidth={2}/>}
+   </AreaChart>
   </ResponsiveContainer>
  </div>;
 }
@@ -266,14 +274,11 @@ export function CompositeMarketSection({items,points,demo,loading}:{items:Summar
      <div className="zg-r55-primary-zone">
      <div className="zg-r55-summary-top" role="img" aria-label={`종합 시장 점수 ${overallScore===null?overallStatus:`${Math.round(overallScore)}점`}`}>
       <div className="zg-r55-master-number" data-score-mode="number-only">
-       <span>종합 점수</span>
        <strong style={{color:overallScore===null?'#94a3b8':scoreColor(overallScore)}}>{overallScore===null?'—':Math.round(overallScore)}</strong>
-       <span>/ 100</span>
       </div>
      </div>
 
      <div className="zg-r55-summary-chart">
-      {overallTrend.length>1&&<p className="zg-r55-main-period" aria-label="종합 점수 차트 표시 기간" style={{paddingRight:28}}>{new Date(timeScaledTrend(overallTrend,periodDays).start).toISOString().slice(0,10)} ~ {new Date(timeScaledTrend(overallTrend,periodDays).end).toISOString().slice(0,10)}</p>}
       {overallTrend.length>1
        ?<SummaryTrend data={overallTrend} label="종합 시장 점수" color={overallScore===null?'#94a3b8':scoreColor(overallScore)} periodDays={periodDays}/>
        :<div className="zg-r55-empty-spark" aria-label="종합 추이 데이터 없음">추이 데이터 준비 중</div>}
@@ -291,7 +296,7 @@ export function CompositeMarketSection({items,points,demo,loading}:{items:Summar
         return <div key={s.name} className="zg-r55-subscore" data-index={index}>
          <div className="zg-r55-subscore-head">
           <span className="zg-r55-subscore-title"><b>{s.name}</b></span>
-          <span onClick={e=>e.stopPropagation()} className="zg-r55-subscore-info"><a className="zg-info" href={s.href} aria-label={`${s.name} 상세페이지 열기`} title={`${s.name} 상세페이지`}><ArrowUpRight size={12} aria-hidden="true"/></a></span>
+          <span onClick={e=>e.stopPropagation()} className="zg-r55-subscore-info"><a className="zg-info" href={s.href} aria-label={`${s.name} 상세페이지 열기`} title={`${s.name} 상세페이지`}><ArrowUpRight size={14} aria-hidden="true"/></a></span>
          </div>
          <div className="zg-r55-subscore-foot">
           <span className="zg-r55-subscore-meter" aria-hidden="true"><i style={{width:`${score??0}%`,background:score===null?'transparent':scoreColor(score)}}/></span>
