@@ -4527,6 +4527,9 @@ body .zg-r55-market .zg-r55-shell[data-expanded="false"] article.zg-r55-card>.zg
   margin:0;
   -webkit-tap-highlight-color:transparent;
 }
+.zg-r55-summary-chart .zg-r55-summary-mini-chart{
+  height:120px;
+}
 .zg-r55-summary-chart .zg-r55-mini-y-labels{
   position:absolute;
   inset:2px auto 2px 0;
