@@ -4,6 +4,7 @@ import {INFLATION_PCE_PC1_MODE,INFLATION_PCE_PC1_SERIES} from "./inflation-pce-p
 import {
   buildInflationR2StoredHistory,
   calculateInflationR2At,
+  snapshotInflationR2Features,
   INFLATION_R2_METHOD_REVISION,
 } from "../lib/diagnostic-layer/inflation-r2-stored.mjs";
 
@@ -80,6 +81,30 @@ export function completedMonthEnds(asOf,count=13){
   }
   return out;
 }
+export async function loadStoredInflationR2Analysis(db,{asOf}={}){
+  if(!validDate(asOf))throw new Error("INFLATION_R2_ASOF_INVALID");
+  if(!db||typeof db.prepare!=="function")return {status:"PARTIAL",reason:"INFLATION_R2_DB_UNAVAILABLE"};
+  const [pit,pc1]=await Promise.all([
+    loadStoredInflationPitSeries(db,{asOf,seriesIds:[...INFLATION_PIT_SERIES]}),
+    loadPc1Series(db,{asOf}),
+  ]);
+  if(pit.status!=="READY_STORED_PIT_HISTORY")return {status:"PARTIAL",reason:"INFLATION_R2_PIT_INCOMPLETE"};
+  if(pc1.missing.length||pc1.issues.length)return {status:"PARTIAL",reason:"INFLATION_R2_PCE_PC1_INCOMPLETE"};
+  const history=buildInflationR2StoredHistory({pitSeries:pit.series,pcePc1:pc1.series});
+  const current=calculateInflationR2At(history,asOf);
+  if(current.status!=="READY")return {status:"PARTIAL",reason:"INFLATION_R2_COMPONENT_MISSING",missing:current.missing??[]};
+  return {
+    status:"READY",
+    asOf,
+    methodologyVersion:INFLATION_R2_METHOD_REVISION,
+    features:snapshotInflationR2Features(history,asOf),
+    axes:current.axes,
+    score:current.score,
+    providerRequests:0,
+    source:"LOCAL_STORED_PIT_HISTORY",
+  };
+}
+
 function partial(reason,extra={}){
   return {
     status:"PARTIAL",
