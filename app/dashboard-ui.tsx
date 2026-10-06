@@ -273,7 +273,7 @@ export function CompositeMarketSection({items,points,demo,loading}:{items:Summar
      </div>
 
      <div className="zg-r55-summary-chart">
-      {overallTrend.length>1&&<p className="zg-r55-main-period">{new Date(timeScaledTrend(overallTrend,periodDays).start).toISOString().slice(0,10)} ~ {new Date(timeScaledTrend(overallTrend,periodDays).end).toISOString().slice(0,10)}</p>}
+      {overallTrend.length>1&&<p className="zg-r55-main-period" aria-label="종합 점수 차트 표시 기간" style={{paddingRight:28}}>{new Date(timeScaledTrend(overallTrend,periodDays).start).toISOString().slice(0,10)} ~ {new Date(timeScaledTrend(overallTrend,periodDays).end).toISOString().slice(0,10)}</p>}
       {overallTrend.length>1
        ?<SummaryTrend data={overallTrend} label="종합 시장 점수" color={overallScore===null?'#94a3b8':scoreColor(overallScore)} periodDays={periodDays}/>
        :<div className="zg-r55-empty-spark" aria-label="종합 추이 데이터 없음">추이 데이터 준비 중</div>}
