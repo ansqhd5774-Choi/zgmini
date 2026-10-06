@@ -56,3 +56,10 @@ test('local writer preserves liquidity coverage evidence through publish',()=>{
  assert.match(src,/report\.market=\{\.\.\.report\.market,\.\.\.await publishMarket/);
  assert.match(src,/console\.warn=originalWarn/);
 });
+
+test('local cycle blocks publication after collection error',()=>{
+ const src=fs.readFileSync(new URL('../scripts/pc-writer/local-cycle.mjs',import.meta.url),'utf8');
+ assert.match(src,/collectionFailed=collection\.status!==0/);
+ assert.match(src,/COLLECTION_FAILED_PUBLISH_BLOCKED/);
+ assert.match(src,/publishSkipped/);
+});

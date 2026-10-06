@@ -43,7 +43,7 @@ try{
  report.exitCode=child.status;
  report.collection=fs.existsSync(path.join(base,'local-collection-last-run.json'))?read(path.join(base,'local-collection-last-run.json')):null;
  report.publication=fs.existsSync(path.join(base,'local-cycle-last-run.json'))?read(path.join(base,'local-cycle-last-run.json')):null;
- report.status=child.status===0?(publishBlock?'COLLECTION_COMPLETE_PUBLISH_BLOCKED':'COMPLETE'):'NOT_VERIFIED';
+ report.status=child.status===0?(publishBlock?'COLLECTION_COMPLETE_PUBLISH_BLOCKED':report.publication?.status?.endsWith('PUBLISH_BLOCKED')?report.publication.status:'COMPLETE'):'NOT_VERIFIED';
  save(path.join(base,'quota-runner-last-run.json'),report);
  console.log(JSON.stringify(report));
  if(child.status!==0)process.exitCode=1;
