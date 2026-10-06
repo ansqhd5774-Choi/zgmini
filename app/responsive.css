@@ -99,6 +99,20 @@
 /* Keep twelve domains in balanced rows while retaining readable card widths. */
 @media(max-width:1279px){.zg-r55-card-grid{grid-template-columns:repeat(4,minmax(0,1fr))}}
 @container marketShell (max-width:1100px){.zg-r55-card-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+/* Keep the summary above the cards instead of squeezing it into a sidebar. */
+@container marketShell (min-width:761px) and (max-width:1279px){
+ .zg-dashboard .zg-r55-body{grid-template-columns:minmax(0,1fr)}
+ .zg-dashboard .zg-r55-summary{grid-template-columns:132px minmax(0,1fr);grid-template-rows:auto auto;height:auto;min-height:0;gap:12px;padding:12px}
+ .zg-dashboard .zg-r55-primary-zone,.zg-dashboard .zg-r55-diagnostics-zone{display:contents}
+ .zg-dashboard .zg-r55-summary-top{grid-column:1;grid-row:1;width:auto;height:100px;min-height:0;aspect-ratio:auto}
+ .zg-dashboard .zg-r55-summary-chart{grid-column:2;grid-row:1;width:auto;height:auto;align-self:center}
+ .zg-dashboard .zg-r55-summary-chart .zg-spark{height:84px}
+ .zg-dashboard .zg-r55-subscore-area{grid-column:1 / -1;grid-row:2;height:auto;min-height:0}
+ .zg-dashboard .zg-r55-subscore-grid{grid-template-columns:repeat(4,minmax(0,1fr));height:auto;min-height:0}
+ .zg-dashboard .zg-r55-subscore{height:auto;min-height:40px}
+ .zg-dashboard .zg-r55-master-number strong{font-size:34px}
+ .zg-dashboard .zg-r55-subscore-title b{font-size:13px}
+}
 @container marketShell (max-width:760px){
  .zg-r55-body{grid-template-columns:minmax(0,1fr)}
  .zg-r55-summary{grid-template-columns:minmax(7rem,35%) minmax(0,1fr)}
