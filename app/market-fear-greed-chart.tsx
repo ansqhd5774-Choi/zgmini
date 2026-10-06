@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { CircleAlert } from 'lucide-react';
+import {fearGreedStateColor} from '../lib/fear-greed-state-color.mjs';
 import {
   Area,
   AreaChart,
@@ -131,7 +132,7 @@ export function MarketFearGreedChart({
             : null;
           return <div className="cnn-history-tooltip">
             <span>{formatTooltipLabel(String(tooltipLabel))}</span>
-            <strong>{tooltipValue === null ? '—' : tooltipValue.toFixed(1)}</strong>
+            <strong style={{color:fearGreedStateColor(tooltipValue===null?'확인 불가':tooltipValue<45?'공포':tooltipValue<=55?'중립':'탐욕')}}>{tooltipValue === null ? '—' : tooltipValue.toFixed(1)}</strong>
           </div>;
         }}
       />
