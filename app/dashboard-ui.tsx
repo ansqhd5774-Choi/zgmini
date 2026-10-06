@@ -207,10 +207,12 @@ const diagnosticKeys=["inflationStability","recessionDefense","liquidityCrisisDe
 const validPublicScore=(value:unknown):value is number=>typeof value==="number"&&Number.isFinite(value)&&value>=0&&value<=100;
 const marketPeriods=[{label:'1D',days:1},{label:'1W',days:7},{label:'1M',days:30},{label:'3M',days:90},{label:'6M',days:180},{label:'1Y',days:365}] as const;
 function marketTrendWindow(data:DashboardPoint[]|undefined,days:number){
- const dated=(data??[]).filter(p=>/^\d{4}-\d{2}-\d{2}/.test(p.label)&&Number.isFinite(Date.parse(p.label))&&validPublicScore(p.value));
+ const dated=(data??[]).filter(p=>/^\d{4}-\d{2}-\d{2}/.test(p.label)&&Number.isFinite(Date.parse(p.label))&&validPublicScore(p.value)).sort((a,b)=>Date.parse(a.label)-Date.parse(b.label));
  if(!dated.length)return [];
- const end=Math.max(...dated.map(p=>Date.parse(p.label)));
- return dated.filter(p=>Date.parse(p.label)>=end-days*86400000).sort((a,b)=>Date.parse(a.label)-Date.parse(b.label));
+ const end=Date.parse(dated.at(-1)!.label),start=end-days*86400000;
+ const inside=dated.filter(p=>Date.parse(p.label)>=start);
+ const prior=dated.filter(p=>Date.parse(p.label)<start).at(-1);
+ return prior?[prior,...inside]:inside;
 }
 const publicStatusLabel=(status?:string)=>status==="READY"?"연결됨":status==="PARTIAL"?"부분 데이터":"데이터 준비 중";
 
