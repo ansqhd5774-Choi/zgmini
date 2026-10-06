@@ -131,7 +131,7 @@
  .zg-dashboard .zg-r55-summary-chart{grid-column:2;grid-row:1;width:auto;height:auto;align-self:center}
  .zg-dashboard .zg-r55-summary-chart .zg-spark{height:84px}
  .zg-dashboard .zg-r55-subscore-area{grid-column:1 / -1;grid-row:2;height:auto;min-height:0}
- .zg-dashboard .zg-r55-subscore-grid{grid-template-columns:repeat(4,minmax(0,1fr));height:auto;min-height:0}
+ .zg-dashboard .zg-r55-subscore-grid{grid-template-columns:repeat(8,minmax(0,1fr));height:auto;min-height:0}
  .zg-dashboard .zg-r55-subscore{height:auto;min-height:40px}
  .zg-dashboard .zg-r55-master-number strong{font-size:34px}
  .zg-dashboard .zg-r55-subscore-title b{font-size:13px}
@@ -142,18 +142,14 @@
  .zg-r55-card-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
 }
 @media(max-width:359px){.zg-r55-card-grid{grid-template-columns:minmax(0,1fr)}}
-/* Wide screens keep the main chart proportional beside the diagnostics. */
+/* Wide screens keep the same one-row diagnostic topology as desktop. */
 @container marketShell (min-width:1280px){
- .zg-dashboard[data-view="dashboard"] .zg-r55-summary{grid-template-columns:minmax(0,3fr) minmax(0,2fr);grid-template-rows:auto;gap:16px;padding:12px;align-items:center}
- .zg-dashboard[data-view="dashboard"] .zg-r55-primary-zone{display:grid;grid-template-columns:88px minmax(0,1fr);gap:8px;min-width:0;width:100%;height:auto;grid-column:1;grid-row:1}
- .zg-dashboard[data-view="dashboard"] .zg-r55-summary-top{min-height:120px}
+ .zg-dashboard[data-view="dashboard"] .zg-r55-summary{grid-template-columns:132px minmax(0,1fr);grid-template-rows:auto auto;gap:12px;padding:12px;align-items:center}
+ .zg-dashboard[data-view="dashboard"] .zg-r55-primary-zone,.zg-dashboard[data-view="dashboard"] .zg-r55-diagnostics-zone{display:contents}
+ .zg-dashboard[data-view="dashboard"] .zg-r55-summary-top{grid-column:1;grid-row:1;min-height:120px}
  .zg-dashboard[data-view="dashboard"] .zg-r55-master-number strong{font-size:48px}
+ .zg-dashboard[data-view="dashboard"] .zg-r55-summary-chart{grid-column:2;grid-row:1;width:100%;height:auto;min-width:0}
  .zg-dashboard[data-view="dashboard"] .zg-r55-coverage{position:absolute;top:8px;right:8px;grid-column:auto;grid-row:auto}
- .zg-dashboard[data-view="dashboard"] .zg-r55-diagnostics-zone{display:block;grid-column:2;grid-row:1;width:100%;min-width:0;height:auto;border-left:1px solid #17446d;padding-left:16px}
- .zg-dashboard[data-view="dashboard"] .zg-r55-diagnostics-zone .zg-r55-subscore-area{height:auto;min-height:0}
- .zg-dashboard[data-view="dashboard"] .zg-r55-subscore-grid{grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:repeat(4,auto);gap:4px 12px;height:auto;min-height:0}
- .zg-dashboard[data-view="dashboard"] .zg-r55-subscore{height:auto;min-height:48px;padding:4px 8px;border-right:0!important;grid-template-rows:24px 16px;gap:4px}
- .zg-dashboard[data-view="dashboard"] .zg-r55-subscore-head,.zg-dashboard[data-view="dashboard"] .zg-r55-subscore-title{height:24px;min-height:24px}
- .zg-dashboard[data-view="dashboard"] .zg-r55-subscore-title b{font-size:15px}
- .zg-dashboard[data-view="dashboard"] .zg-r55-subscore-foot{height:16px;min-height:16px}
+ .zg-dashboard[data-view="dashboard"] .zg-r55-subscore-area{grid-column:1 / -1;grid-row:2;width:100%;height:auto;min-height:0;padding-left:0;border-left:0}
+ .zg-dashboard[data-view="dashboard"] .zg-r55-subscore-grid{grid-template-columns:repeat(8,minmax(0,1fr));grid-template-rows:auto;gap:0;height:auto;min-height:0}
 }
