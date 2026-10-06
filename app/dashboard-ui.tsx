@@ -307,7 +307,7 @@ export function CompositeMarketSection({items,points,demo,loading}:{items:Summar
   <div className="zg-section-heading zg-r55-heading">
    <div>
     <h2><Activity/>종합 시장 점수</h2>
-    <span style={{fontSize:12,fontWeight:500,color:'#a8bacb',whiteSpace:'nowrap'}}>베타 버전 v1.0</span>
+    <span style={{fontSize:12,fontWeight:500,color:'#a8bacb',whiteSpace:'nowrap'}}>베타 버전 v1.1</span>
     <span className="zg-brand-tag">ZGmini 독자 지표{demo?' · 예시':''}</span>
    </div>
    <div className="zg-r55-header-controls">
