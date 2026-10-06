@@ -161,7 +161,7 @@
 
 /* Mobile dashboard: preserve the shared renderers and data, reflow their slots.
    These viewport rules intentionally follow the generic card container rules. */
-@media(max-width:550px){
+@media(max-width:960px){
  .zg-dashboard[data-view="dashboard"] .zg-container{width:calc(100% - 20px)}
  .zg-dashboard[data-view="dashboard"] .zg-section{padding:8px;margin-top:8px}
  .zg-dashboard[data-view="dashboard"] .zg-section-heading{margin-bottom:8px;gap:6px}
