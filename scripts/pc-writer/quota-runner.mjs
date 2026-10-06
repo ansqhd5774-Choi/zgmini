@@ -16,17 +16,19 @@ if(process.argv.includes('--plan')){
  console.log(JSON.stringify({status:'PLAN',mode,providers:Object.entries(PROVIDER_QUOTA_POLICY).map(([provider,policy])=>({provider,label:policy.label,hard:policy.hard,perSecond:policy.perSecond??null,per10Sec:policy.per10Sec??null,perMinute:policy.perMinute??null,perHour:policy.perHour??null,perDay:policy.perDay??null,minIntervalMs:policy.minIntervalMs,limitSource:policy.limitSource}))}));
  process.exit(0);
 }
-const report={at:new Date().toISOString(),lane,mode,publish,status:'STARTED'};
+const report={at:new Date().toISOString(),lane,mode,publish,status:'STARTED',publishAllowed:!publish};
+let publishBlock=null;
 if(publish){
  try{
   const source=execFileSync('git',['rev-parse','HEAD'],{cwd:root,encoding:'utf8',windowsHide:true}).trim();
   const originMain=execFileSync('git',['rev-parse','origin/main'],{cwd:root,encoding:'utf8',windowsHide:true}).trim();
   const config=read(path.join(base,'config.json'));
-  if(config.source!==source){report.status='SOURCE_APPROVAL_MISMATCH';report.expectedSource=config.source;report.actualSource=source;save(path.join(base,'quota-runner-last-run.json'),report);console.log(JSON.stringify(report));process.exit(2);}
-  if(source!==originMain){report.status='SOURCE_DRIFT_ORIGIN_MAIN';report.localSource=source;report.originMain=originMain;save(path.join(base,'quota-runner-last-run.json'),report);console.log(JSON.stringify(report));process.exit(2);}
-  const ledger=path.join(base,'local-publication-ledger.json');
-  if(fs.existsSync(ledger)&&read(ledger).status==='SUBMITTING'){report.status='PUBLICATION_READBACK_REQUIRED';save(path.join(base,'quota-runner-last-run.json'),report);console.log(JSON.stringify(report));process.exit(2);}
- }catch(error){report.status=error.code==='ENOENT'?'PUBLISH_PREFLIGHT_MISSING':'PUBLISH_PREFLIGHT_FAILED';save(path.join(base,'quota-runner-last-run.json'),report);console.log(JSON.stringify(report));process.exit(2);}
+  if(config.source!==source)publishBlock={status:'SOURCE_APPROVAL_MISMATCH',expectedSource:config.source,actualSource:source};
+  else if(source!==originMain)publishBlock={status:'SOURCE_DRIFT_ORIGIN_MAIN',localSource:source,originMain};
+  else{const ledger=path.join(base,'local-publication-ledger.json');if(fs.existsSync(ledger)&&read(ledger).status==='SUBMITTING')publishBlock={status:'PUBLICATION_READBACK_REQUIRED'};}
+ }catch(error){publishBlock={status:error.code==='ENOENT'?'PUBLISH_PREFLIGHT_MISSING':'PUBLISH_PREFLIGHT_FAILED'};}
+ if(publishBlock)Object.assign(report,publishBlock,{publishAllowed:false});
+ else report.publishAllowed=true;
 }
 const lock=path.join(base,'quota-runner.lock');
 fs.mkdirSync(base,{recursive:true});
@@ -36,12 +38,12 @@ if(fs.existsSync(lock)){
 fs.writeFileSync(lock,JSON.stringify({pid:process.pid,at:Date.now()}),{flag:'wx'});
 try{
  const env={...process.env,ZGMINI_QUOTA_MODE:mode};
- const args=[path.join(here,'local-cycle.mjs'),...(lane==='korea'?['--korea']:[]),...(publish?['--publish']:[])];
+ const args=[path.join(here,'local-cycle.mjs'),...(lane==='korea'?['--korea']:[]),...(publish&&!publishBlock?['--publish']:[])];
  const child=spawnSync(process.execPath,args,{cwd:root,env,windowsHide:true,stdio:'inherit',timeout:30*60*1000});
  report.exitCode=child.status;
  report.collection=fs.existsSync(path.join(base,'local-collection-last-run.json'))?read(path.join(base,'local-collection-last-run.json')):null;
  report.publication=fs.existsSync(path.join(base,'local-cycle-last-run.json'))?read(path.join(base,'local-cycle-last-run.json')):null;
- report.status=child.status===0?'COMPLETE':'NOT_VERIFIED';
+ report.status=child.status===0?(publishBlock?'COLLECTION_COMPLETE_PUBLISH_BLOCKED':'COMPLETE'):'NOT_VERIFIED';
  save(path.join(base,'quota-runner-last-run.json'),report);
  console.log(JSON.stringify(report));
  if(child.status!==0)process.exitCode=1;

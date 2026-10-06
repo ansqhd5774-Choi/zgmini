@@ -58,7 +58,7 @@ node scripts\pc-writer\quota-runner.mjs --enforce-quota
 - 로컬 `HEAD`가 `origin/main`과 일치
 - 이전 게시 원장에 `SUBMITTING`이 남아 있지 않음
 
-하나라도 맞지 않으면 외부 API 호출과 게시를 시작하지 않고 `quota-runner-last-run.json`에 원인을 기록한다. `SUBMITTING`이면 재실행하지 말고 먼저 D1 read-back으로 결과를 확인한다.
+게시 조건이 맞지 않으면 게시만 건너뛰고 PC 수집·로컬 저장·계산은 계속 수행한다. `quota-runner-last-run.json`에는 `COLLECTION_COMPLETE_PUBLISH_BLOCKED`와 함께 원인을 기록한다. `SUBMITTING`이면 게시를 재실행하지 말고 먼저 D1 read-back으로 결과를 확인한다.
 
 수집이 `--enforce-quota`에서 확정 한도에 걸리면 해당 cycle의 게시를 건너뛰고 `QUOTA_GUARDED`로 종료한다. 관찰 모드의 경고는 호출을 막지 않으며, `guarded`와 `warnings`를 구분해 원장에 남긴다.
 
