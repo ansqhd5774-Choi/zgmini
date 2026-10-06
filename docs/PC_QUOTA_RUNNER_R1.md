@@ -68,6 +68,8 @@ node scripts\pc-writer\quota-runner.mjs --enforce-quota
 node scripts\\pc-writer\\read-publication-readback.mjs
 ```
 
+등록된 `ZGMINI-PC-Local-Core`와 `ZGMINI-PC-Local-Korea` 작업은 저장소의 `quota-runner.mjs --publish`를 호출해야 한다. 예약 주기나 작업 이름은 바꾸지 않고, 기존 VBS의 실행 대상만 quota runner로 연결한다. 구형 `ZGMINI-PC-Writer` 작업은 비활성 상태를 유지한다.
+
 ## 원장
 
 `%USERPROFILE%\.zgmini\pc-writer\quota-ledger.json`에 다음 메타데이터만 저장한다.
