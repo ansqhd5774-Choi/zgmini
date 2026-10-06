@@ -4,6 +4,7 @@ import {fileURLToPath} from 'node:url';
 import {localDatabase} from './local-db.mjs';
 import {loadLocalProviders,installLocalRuntime} from './local-env.mjs';
 import {save} from './d1.mjs';
+import {createQuotaFetch} from './quota-fetch.mjs';
 
 export async function collectLocal(base,{lane='core',importOnly=false}={}){
  const core=localDatabase(path.join(base,'storage','core.sqlite'));
@@ -11,11 +12,12 @@ export async function collectLocal(base,{lane='core',importOnly=false}={}){
  const env={...loadLocalProviders(base),DB:core,DB_CORE:core,DB_HISTORY:history,ZGMINI_COMPUTE_TARGET:'pc'};
  const hooks=installLocalRuntime(env);
  const originalFetch=globalThis.fetch,providers={};
+ const quota=createQuotaFetch({base,originalFetch});
  globalThis.fetch=async(input,init)=>{
   const host=new URL(typeof input==='string'||input instanceof URL?input:input.url).hostname;
   const item=providers[host]??={requests:0,statuses:{}};item.requests++;
-  try{const response=await originalFetch(input,init);item.statuses[response.status]=(item.statuses[response.status]??0)+1;return response;}
-  catch{item.statuses.NETWORK_ERROR=(item.statuses.NETWORK_ERROR??0)+1;throw Error('LOCAL_PROVIDER_NETWORK_ERROR');}
+  try{const response=await quota.fetch(input,init);item.statuses[response.status]=(item.statuses[response.status]??0)+1;return response;}
+  catch(error){const status=error?.code??'NETWORK_ERROR';item.statuses[status]=(item.statuses[status]??0)+1;if(error?.code==='PROVIDER_QUOTA_GUARD')throw error;throw Error('LOCAL_PROVIDER_NETWORK_ERROR');}
  };
  try{
   const {runPublicFeeds}=await import('../../worker/public-feed-collectors.ts');
@@ -30,7 +32,7 @@ export async function collectLocal(base,{lane='core',importOnly=false}={}){
    result=feed.attempted>0||feed.status!=='COMPLETE'?{...feed,lane:'public-feed'}:await runMarketOperationalRefresh({env,now:Date.now(),fetchImpl:globalThis.fetch,calculate:async()=>({calculation:'PC_PENDING'})});
   }
   // Reports contain statuses only; provider URLs and exception messages are excluded.
-  const report={at:new Date().toISOString(),lane,status:result.status,job:result.job??null,attempted:result.attempted??null,feeds:result.feeds?.map(({key,status})=>({key,status})),providers};
+  const report={at:new Date().toISOString(),lane,status:result.status,job:result.job??null,attempted:result.attempted??null,feeds:result.feeds?.map(({key,status})=>({key,status})),providers,quota:quota.summary()};
   save(path.join(base,'local-collection-last-run.json'),report);
   return report;
  }finally{globalThis.fetch=originalFetch;hooks.deregister();core.close();history.close();}
