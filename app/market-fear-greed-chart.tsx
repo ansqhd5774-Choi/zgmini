@@ -94,7 +94,7 @@ export function MarketFearGreedChart({
       <YAxis
         hide={compact}
         domain={[0, 100]}
-        ticks={[0, 50, 75, 100]}
+        ticks={[0, 25, 50, 75, 100]}
         axisLine={false}
         tickLine={false}
         width={28}
@@ -106,8 +106,8 @@ export function MarketFearGreedChart({
       <ReferenceArea y1={55} y2={75} fill="#58c88a" fillOpacity={0.03} ifOverflow="hidden"/>
       <ReferenceArea y1={75} y2={100} fill="#15865e" fillOpacity={0.04} ifOverflow="hidden"/>
       <ReferenceLine y={25} stroke="rgba(255,98,107,.40)" strokeDasharray="3 5" strokeWidth={1}/>
-      <ReferenceLine y={45} stroke="rgba(240,163,74,.34)" strokeDasharray="3 5" strokeWidth={1}/>
-      <ReferenceLine y={55} stroke="rgba(168,188,208,.40)" strokeDasharray="3 5" strokeWidth={1}/>
+      <ReferenceLine y={45} stroke="rgba(240,163,74,.80)" strokeDasharray="3 5" strokeWidth={1}/>
+      <ReferenceLine y={55} stroke="rgba(168,188,208,.80)" strokeDasharray="3 5" strokeWidth={1}/>
       <ReferenceLine y={75} stroke="rgba(35,201,143,.40)" strokeDasharray="3 5" strokeWidth={1}/>
       {latestPoint ? <ReferenceDot
         key={`latest-${instanceKey}-${latestPoint.date}-${latestPoint.score}`}

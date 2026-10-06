@@ -388,18 +388,19 @@ export function CompositeMarketSection({items,points,demo,loading}:{items:Summar
         <div className="zg-r55-card-head">
          <span className="zg-r55-card-icon"><Icon size={18} aria-hidden="true"/></span>
          <h3>{m.label}</h3>
-         <span className="zg-r55-badge">{busy&&score===null?'로딩':score===null?(notice?.badge??'미완료'):domain?.state??(score<25?'위험':score<40?'주의':score<60?'중립':score<75?'양호':'안정')}</span>
          <span onClick={e=>e.stopPropagation()}><DashboardTip label={`${m.label} 산출 근거`}>{notice?`${notice.detail} ${m.basis}`:m.basis}</DashboardTip></span>
         </div>
         {notice&&<p data-testid="breadth-unavailable-reason" style={{margin:'6px 0',fontSize:12,lineHeight:1.5,color:'#cbd5e1'}}>{notice.message}</p>}
         <div className="zg-r55-card-mid">
          <div className="zg-r55-card-number">
+          <span className="zg-r55-badge">{busy&&score===null?'로딩':score===null?(notice?.badge??'미완료'):domain?.state??(score<25?'위험':score<40?'주의':score<60?'중립':score<75?'양호':'안정')}</span>
           <strong style={{color:score===null?'#94a3b8':scoreColor(score)}}>{score===null?'—':Math.round(score)}</strong>
           <span
             className="zg-r55-day-change"
+            data-direction={breadthDelta?(breadthDelta.delta>0?'up':breadthDelta.delta<0?'down':'flat'):'unknown'}
             aria-label={breadthDelta?`전 거래일 ${breadthDelta.previousDate} 대비 ${breadthDelta.delta>=0?'+':''}${breadthDelta.delta.toFixed(1)}점`:'전일 대비 확인 불가'}
             title={breadthDelta?`${breadthDelta.previousDate} 대비`:'검증된 전일 비교 점수 없음'}
-           >{breadthDelta?`${breadthDelta.delta>=0?'+':''}${breadthDelta.delta.toFixed(1)}`:'-'}</span>
+           >{breadthDelta?(breadthDelta.delta>0?'▲':breadthDelta.delta<0?'▼':'-'):'—'}</span>
           <div className="zg-r55-card-compact-scale"><ScoreScale score={score} label={`${m.label} 점수`} color={score===null?'#64748b':scoreColor(score)}/></div>
          </div>
          <div className="zg-r55-card-visual">
