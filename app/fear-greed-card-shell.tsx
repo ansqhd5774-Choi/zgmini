@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import {Info} from 'lucide-react';
+import {ArrowUpRight,Info} from 'lucide-react';
 import { MarketCardHeader } from './market-card-header';
 import { MarketCardFooter } from './market-card-footer';
 import { MarketScoreOrb } from './market-score-orb';
@@ -22,11 +22,11 @@ type FearGreedCardShellProps = {
 export function FearGreedCardShell({className='',layoutVariant='legacy',testId,marketState,busy,header,score,period,chart,footer}:FearGreedCardShellProps){
   const layoutClass = layoutVariant === 'shared' ? 'fg-shared-shell' : '';
   return <section className={`cnn-reference-panel fg-card ${layoutClass} ${className}`.trim()} data-testid={testId} data-market-state={marketState} aria-busy={busy}>
-    <div className="fg-header-slot"><MarketCardHeader {...header} rightContent={layoutVariant==='shared'?<></>:header.rightContent}/></div>
+    <div className="fg-header-slot"><MarketCardHeader {...header} titleAction={<a className="fg-market-detail-link" href={footer.href} aria-label={footer.ariaLabel??`${header.title} 상세페이지 열기`}><ArrowUpRight size={14}/></a>} rightContent={layoutVariant==='shared'?<></>:header.rightContent}/></div>
     <div className="fg-content-slot">
       <div className="fg-score-slot"><MarketScoreOrb score={score.value} state={score.state} caption={score.caption} variant={score.variant} dayDelta={score.dayDelta} periodDelta={score.periodDelta} periodLabel={score.periodLabel} metaDate={score.metaDate} dayLabel={score.dayLabel} comparisonAriaLabel={score.comparisonAriaLabel}/></div>
       <MarketTrendFrame className="fg-analysis-slot"><details className="zg-fg-info-wrap"><summary className="zg-fg-info-action" aria-label={`${header.title} 공포·탐욕 안내`} title={`${header.title} 공포·탐욕 안내`}><Info size={14}/></summary><div className="zg-fg-info-tip" role="note"><strong>{header.title} 공포·탐욕</strong><span>{header.description}</span><small>{header.source}</small></div></details><div className="fg-period-slot">{period}</div><div className="fg-chart-slot"><div className="fg-renderer">{chart}</div></div></MarketTrendFrame>
     </div>
-    <div className="fg-footer-slot"><MarketCardFooter {...footer}/></div>
+    <div className="fg-footer-slot"><MarketCardFooter {...footer} date={score.metaDate}/></div>
   </section>;
 }

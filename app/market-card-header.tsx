@@ -10,6 +10,7 @@ export function MarketCardHeader({
   date,
   source,
   rightContent,
+  titleAction,
 }:{
   flag:string;
   eyebrow:string;
@@ -19,13 +20,14 @@ export function MarketCardHeader({
   date:string;
   source:string;
   rightContent?:ReactNode;
+  titleAction?:ReactNode;
 }){
   return <div className="cnn-panel-heading" role="group" aria-label={`${title} 시장 카드`}>
     <div className="cnn-market-title">
       <img src={flag} alt="" aria-hidden="true"/>
       <div>
         <p className="cnn-eyebrow">{eyebrow}</p>
-        <h2>{title}</h2>
+        <h2>{title}{titleAction}</h2>
         <p>{description}</p>
       </div>
     </div>

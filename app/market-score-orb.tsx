@@ -189,6 +189,10 @@ export function MarketScoreOrb({
     return (
       <div className={`cnn-score-orb cnn-score-orb-hero ${tone}`} role="group" aria-live="polite" aria-label={ariaLabel}>
         <div className="cnn-spectrum-gauge">
+          <div className="cnn-linear-gauge" aria-hidden="true">
+            {CNN_GAUGE_BANDS.map((band) => <div key={band.key} className="cnn-linear-band" style={{width:`${band.end-band.start}%`,background:band.color}}/>)}
+            {value !== null ? <div className="cnn-linear-marker" style={{left:`${Math.max(0,Math.min(100,value))}%`}}/> : null}
+          </div>
           <svg viewBox="0 0 220 142" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
             <defs>
               <linearGradient id="cnn-spectrum-gradient" x1="26" y1="0" x2="194" y2="0" gradientUnits="userSpaceOnUse">
