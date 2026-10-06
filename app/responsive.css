@@ -349,6 +349,12 @@
  .zg-dashboard[data-view="dashboard"] .zg-r55-shell[data-expanded="false"] .zg-r55-card-visual .zg-spark,
  .zg-dashboard[data-view="dashboard"] .zg-r55-shell[data-expanded="false"] .zg-r55-card-spark-empty{height:100%;min-height:60px}
  .zg-dashboard[data-view="dashboard"] .zg-r55-shell[data-expanded="false"] :is(.zg-r55-card-wide-scale,.zg-r55-card-compact-scale,.zg-r55-scale-labels){display:none}
+ /* Expanded cards reserve the same score lane as collapsed cards. */
+ .zg-dashboard[data-view="dashboard"] .zg-r55-shell[data-expanded="true"] .zg-r55-card-mid{grid-template-columns:84px minmax(0,1fr);column-gap:6px}
+ .zg-dashboard[data-view="dashboard"] .zg-r55-shell[data-expanded="true"] .zg-r55-card-number{width:84px;min-width:84px;display:flex;align-items:center;justify-content:flex-start;gap:0}
+ .zg-dashboard[data-view="dashboard"] .zg-r55-shell[data-expanded="true"] .zg-r55-card-number>.zg-r55-badge{width:30px;box-sizing:border-box;text-align:center;padding-inline:2px}
+ .zg-dashboard[data-view="dashboard"] .zg-r55-shell[data-expanded="true"] .zg-r55-card-number>strong{width:36px;flex:none;text-align:left;font-variant-numeric:tabular-nums}
+ .zg-dashboard[data-view="dashboard"] .zg-r55-shell[data-expanded="true"] .zg-r55-card-number>.zg-r55-day-change{width:11px;flex:none;align-self:center;text-align:left;line-height:1;margin-top:0;margin-bottom:0}
  .zg-dashboard[data-view="dashboard"]{--zg-ui-period-width:26px;--zg-ui-period-height:26px;--zg-ui-period-font:10px;--zg-ui-info-size:24px;--zg-ui-master-score:52px;--zg-ui-gauge-width:144px;--zg-ui-gauge-height:98px;--zg-ui-gauge-score:40px}
  .zg-dashboard[data-view="dashboard"] .fg-card.fg-shared-shell .fg-period-slot .cnn-period-toolbar{width:28px;min-width:28px;max-width:28px}
  .zg-dashboard[data-view="dashboard"] .fg-card.fg-shared-shell .fg-period-slot .cnn-period-button{width:var(--zg-ui-period-width);min-width:var(--zg-ui-period-width);max-width:var(--zg-ui-period-width);height:var(--zg-ui-period-height);min-height:var(--zg-ui-period-height);max-height:var(--zg-ui-period-height)}
