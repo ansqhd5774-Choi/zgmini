@@ -59,14 +59,20 @@ test("composite uses sentiment area styling without the removed captions",()=>{
 });
 
 
-test("wide composite layout is tightened without changing mobile proportions",()=>{
+test("desktop diagnostics stay in one row while mobile proportions remain unchanged",()=>{
+  const midStart=responsive.indexOf("@container marketShell (min-width:761px) and (max-width:1279px)");
+  assert.ok(midStart>=0);
+  const mid=responsive.slice(midStart,responsive.indexOf("\n}",midStart)+2);
+  assert.match(mid,/zg-r55-subscore-grid\{grid-template-columns:repeat\(8,minmax\(0,1fr\)\)/);
+
   const wideStart=responsive.indexOf("@container marketShell (min-width:1280px)");
   assert.ok(wideStart>=0);
   const wide=responsive.slice(wideStart,responsive.indexOf("\n}",wideStart)+2);
-  assert.match(wide,/gap:16px;padding:12px/);
-  assert.match(wide,/grid-template-columns:88px minmax\(0,1fr\);gap:8px/);
-  assert.match(wide,/zg-r55-master-number strong\{font-size:48px\}/);
-  assert.match(wide,/padding-left:16px/);
+  assert.match(wide,/grid-template-columns:132px minmax\(0,1fr\)/);
+  assert.match(wide,/zg-r55-primary-zone,.+zg-r55-diagnostics-zone\{display:contents\}/);
+  assert.match(wide,/zg-r55-subscore-grid\{grid-template-columns:repeat\(8,minmax\(0,1fr\)\);grid-template-rows:auto;gap:0/);
+  assert.doesNotMatch(wide,/repeat\(2,minmax\(0,1fr\)\)/);
+  assert.doesNotMatch(wide,/border-left:1px/);
 
   const mobileStart=responsive.indexOf("@container marketShell (max-width:760px)");
   assert.ok(mobileStart>=0);
