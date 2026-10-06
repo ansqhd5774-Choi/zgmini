@@ -5,6 +5,7 @@ import {localDatabase} from './local-db.mjs';
 import {loadLocalProviders,installLocalRuntime} from './local-env.mjs';
 import {save} from './d1.mjs';
 import {createQuotaFetch} from './quota-fetch.mjs';
+import {recordCollectionChecks} from './collection-checks.mjs';
 
 export async function collectLocal(base,{lane='core',importOnly=false}={}){
  const core=localDatabase(path.join(base,'storage','core.sqlite'));
@@ -35,6 +36,7 @@ export async function collectLocal(base,{lane='core',importOnly=false}={}){
   const report={at:new Date().toISOString(),lane,status:result.status,job:result.job??null,attempted:result.attempted??null,feeds:result.feeds?.map(({key,status})=>({key,status})),providers,quota:quota.summary()};
   for(const key of ['phase','reason','sourceStatus'])if(typeof result?.[key]==='string'&&/^[A-Za-z0-9_.:-]{1,120}$/.test(result[key]))report[key]=result[key];
   save(path.join(base,'local-collection-last-run.json'),report);
+  recordCollectionChecks(base,report);
   return report;
  }finally{globalThis.fetch=originalFetch;hooks.deregister();core.close();history.close();}
 }
