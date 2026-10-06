@@ -97,7 +97,7 @@
 }
 @media(max-width:359px){.zg-r55-card-grid{grid-template-columns:minmax(0,1fr)}}
 /* The composite is a main chart, with its own readable score and date axes. */
-.zg-dashboard[data-view="dashboard"] .zg-r55-summary{display:grid;grid-template-columns:132px minmax(0,1fr);grid-template-rows:auto auto;height:auto;min-height:0;padding:16px;gap:16px}
+.zg-dashboard[data-view="dashboard"] .zg-r55-summary{--r55-summary-pad:8px;--r55-summary-gap:8px;display:grid;grid-template-columns:132px minmax(0,1fr);grid-template-rows:auto auto;height:auto;min-height:0;padding:var(--r55-summary-pad);gap:var(--r55-summary-gap)}
 .zg-dashboard[data-view="dashboard"] .zg-r55-primary-zone,.zg-dashboard[data-view="dashboard"] .zg-r55-diagnostics-zone{display:contents}
 .zg-dashboard[data-view="dashboard"] .zg-r55-summary-top{grid-column:1;grid-row:1;width:auto;height:auto;min-height:120px;aspect-ratio:auto}
 .zg-dashboard[data-view="dashboard"] .zg-r55-master-number{gap:10px}
@@ -109,6 +109,11 @@
 .zg-dashboard[data-view="dashboard"] .zg-r55-subscore-area{grid-column:1 / -1;grid-row:2;width:100%;height:auto;min-height:0}
 .zg-dashboard[data-view="dashboard"] .zg-r55-subscore-grid{height:auto;min-height:0}
 .zg-dashboard[data-view="dashboard"] .zg-r55-subscore-title b{font-size:14px}
+@container marketShell (min-width:761px){
+ .zg-dashboard[data-view="dashboard"] .zg-r55-subscore{padding-inline:8px}
+ .zg-dashboard[data-view="dashboard"] .zg-r55-subscore:first-child{padding-left:0}
+ .zg-dashboard[data-view="dashboard"] .zg-r55-subscore:last-child{padding-right:0}
+}
 @container marketShell (max-width:760px){
  .zg-dashboard[data-view="dashboard"] .zg-r55-summary{grid-template-columns:minmax(0,1fr);gap:12px;padding:12px}
  .zg-dashboard[data-view="dashboard"] .zg-r55-summary-top{grid-column:1;grid-row:1;min-height:76px}
@@ -125,7 +130,7 @@
 /* Keep the summary above the cards instead of squeezing it into a sidebar. */
 @container marketShell (min-width:761px) and (max-width:1279px){
  .zg-dashboard .zg-r55-body{grid-template-columns:minmax(0,1fr)}
- .zg-dashboard .zg-r55-summary{grid-template-columns:132px minmax(0,1fr);grid-template-rows:auto auto;height:auto;min-height:0;gap:12px;padding:12px}
+ .zg-dashboard .zg-r55-summary{grid-template-columns:132px minmax(0,1fr);grid-template-rows:auto auto;height:auto;min-height:0;gap:var(--r55-summary-gap);padding:var(--r55-summary-pad)}
  .zg-dashboard .zg-r55-primary-zone,.zg-dashboard .zg-r55-diagnostics-zone{display:contents}
  .zg-dashboard .zg-r55-summary-top{grid-column:1;grid-row:1;width:auto;height:100px;min-height:0;aspect-ratio:auto}
  .zg-dashboard .zg-r55-summary-chart{grid-column:2;grid-row:1;width:auto;height:auto;align-self:center}
@@ -144,7 +149,7 @@
 @media(max-width:359px){.zg-r55-card-grid{grid-template-columns:minmax(0,1fr)}}
 /* Wide screens keep the same one-row diagnostic topology as desktop. */
 @container marketShell (min-width:1280px){
- .zg-dashboard[data-view="dashboard"] .zg-r55-summary{grid-template-columns:132px minmax(0,1fr);grid-template-rows:auto auto;gap:12px;padding:12px;align-items:center}
+ .zg-dashboard[data-view="dashboard"] .zg-r55-summary{grid-template-columns:132px minmax(0,1fr);grid-template-rows:auto auto;gap:var(--r55-summary-gap);padding:var(--r55-summary-pad);align-items:center}
  .zg-dashboard[data-view="dashboard"] .zg-r55-primary-zone,.zg-dashboard[data-view="dashboard"] .zg-r55-diagnostics-zone{display:contents}
  .zg-dashboard[data-view="dashboard"] .zg-r55-summary-top{grid-column:1;grid-row:1;min-height:120px}
  .zg-dashboard[data-view="dashboard"] .zg-r55-master-number strong{font-size:48px}
