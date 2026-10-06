@@ -936,23 +936,6 @@ export default function Home() {
               </div>
             </div>
             <div className="zg-account-tools">
-              <Sheet>
-                <SheetTrigger asChild>
-                  <Button type="button" className="zg-dashboard-info-button rounded-none border border-white/20 bg-white/10 text-white hover:bg-white/20 zg-header-icon-action" aria-label="대시보드 안내" title="안내">
-                    <Info className="size-4"/><span className="hidden xl:inline">안내</span>
-                  </Button>
-                </SheetTrigger>
-                <SheetContent className="border-l-0 bg-white sm:max-w-md">
-                  <SheetHeader>
-                    <SheetTitle className="flex items-center gap-2"><Info className="size-5"/>ZGmini 안내</SheetTitle>
-                    <SheetDescription>대시보드 데이터 상태와 이용 안내</SheetDescription>
-                  </SheetHeader>
-                  <div className="space-y-3 px-4 text-sm leading-6 text-slate-700">
-                    <p>{marketDataLoading?'경제지표를 불러오고 있습니다.':marketData?.status==='live'?'공식 자료와 ZGmini 자체 계산값을 표시합니다.':marketDataError?'데이터 연결 지연 · 마지막 정상 수신값을 표시합니다.':'일부 지표 갱신 지연 · 마지막 정상 수신값을 유지합니다.'}</p>
-                    <p>ZGmini는 공식 자료와 독자 모델을 연결합니다. 투자 권유가 아니며, 예시 데이터는 별도로 표시합니다.</p>
-                  </div>
-                </SheetContent>
-              </Sheet>
               {sessionLoading ? (
                 <span className="hidden text-xs text-slate-400 sm:inline">계정 확인 중</span>
               ) : user ? (
