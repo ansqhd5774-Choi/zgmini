@@ -12,6 +12,17 @@
 
 ## 실행
 
+탐색기에서 저장소 루트의 `ZGMINI_QUOTA_RUNNER.cmd`를 더블클릭하면 메뉴가 열립니다. 명령 프롬프트에서는 다음처럼 실행합니다.
+
+```cmd
+ZGMINI_QUOTA_RUNNER.cmd plan
+ZGMINI_QUOTA_RUNNER.cmd observe
+ZGMINI_QUOTA_RUNNER.cmd enforce
+ZGMINI_QUOTA_RUNNER.cmd publish
+ZGMINI_QUOTA_RUNNER.cmd korea
+ZGMINI_QUOTA_RUNNER.cmd korea-publish
+```
+
 기본 실행은 공급자 호출을 관찰하고 원장을 갱신한다.
 
 ```cmd
