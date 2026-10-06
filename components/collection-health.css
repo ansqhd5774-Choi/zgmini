@@ -1,4 +1,7 @@
 .zg-collection-health{position:relative;color:#94a3b8}
+.zg-header-tools .zg-toolbar-header>.header-update:has(.zg-collection-health){overflow:visible}
+.zg-header-tools .zg-toolbar-header .zg-collection-health>button{min-width:36px;min-height:36px;width:36px;height:36px;background:transparent;border:1px solid currentColor;border-radius:6px;color:inherit}
+.zg-header-tools .zg-toolbar-header .zg-collection-health>button svg{color:inherit;width:18px;height:18px}
 .zg-collection-health.healthy{color:#10b981}
 .zg-collection-health.partial{color:#f5b942}
 .zg-collection-health.stale{color:#f87171}
