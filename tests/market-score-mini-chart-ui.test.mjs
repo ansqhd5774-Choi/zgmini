@@ -21,7 +21,7 @@ test("market charts use numeric time axes so selected periods keep their true du
 });
 
 test("domain mini charts keep the fixed 0-100 score scale while time spacing is numeric",()=>{
-  const card=sourceBetween("function CardTrend(","const summaryDateLabel=");
+  const card=sourceBetween("function CardTrend(","function summaryDateParts(");
   assert.match(card,/YAxis hide domain=\{\[0,100\]\} width=\{0\}/);
   assert.match(card,/ReferenceLine y=\{25\}/);
   assert.match(card,/ReferenceLine y=\{50\}/);
@@ -29,13 +29,17 @@ test("domain mini charts keep the fixed 0-100 score scale while time spacing is 
   assert.match(card,/>100<\/span><span>50<\/span><span>0<\/span>/);
 });
 
-test("composite main chart shows fixed score ticks, selected dates and current point",()=>{
-  const scale=sourceBetween("function SummaryTrend(","// Stage 12");
-  assert.match(scale,/YAxis domain=\{\[0,100\]\} ticks=\{\[0,50,100\]\}/);
-  assert.match(scale,/tickFormatter=\{summaryDateLabel\}/);
-  assert.match(scale,/ticks=\{\[scaled\.start,[^\n]*scaled\.end\]\}/);
+test("composite main chart matches fear-greed x-axis labeling style",()=>{
+  const scale=sourceBetween("function summaryDateParts(","// Stage 12");
+  assert.match(scale,/fontSize:9/);
+  assert.match(scale,/fill:'var\(--zg-text-meta,#a8bcd0\)'/);
+  assert.match(scale,/height=\{30\}/);
+  assert.match(scale,/tickMargin=\{5\}/);
+  assert.match(scale,/interval=\{0\}/);
+  assert.match(scale,/periodDays<=90/);
+  assert.match(scale,/periodDays<=180/);
+  assert.match(scale,/String\(group\.year\)\.slice\(-2\).*12/);
   assert.match(scale,/ReferenceDot x=\{latest\.ts\} y=\{latest\.value\}/);
-  assert.doesNotMatch(scale,/summaryTrendScale/);
 });
 
 test("domain charts remain compact while the composite has visible dates",()=>{
