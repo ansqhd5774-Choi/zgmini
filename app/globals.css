@@ -3350,7 +3350,7 @@ body .zg-r55-market .zg-r55-shell[data-expanded="false"] article.zg-r55-card>.zg
   .zg-dashboard[data-view="dashboard"] .zg-strength-grid-compact .zg-strength li>button.zg-detail{min-width:24px;min-height:24px;padding:4px;font-size:10px}
 
   .zg-dashboard-info-button{min-width:34px;min-height:34px;padding-inline:8px}
-  .zg-dashboard[data-view="dashboard"] .zg-r55-coverage{position:static;grid-column:3;grid-row:1;width:24px;height:24px;min-width:24px;display:grid;place-items:center;align-self:start;justify-self:center}
+  .zg-dashboard[data-view="dashboard"] .zg-r55-summary-top .zg-r55-coverage{position:absolute;top:0;right:0;width:24px;height:24px;min-width:24px;display:grid;place-items:center;margin:0}
   .zg-dashboard[data-view="dashboard"] .zg-r55-subscore:last-child{border-right:0}
   .zg-dashboard[data-view="dashboard"] .zg-r55-component-panel{width:100%;min-width:0}
   .zg-dashboard[data-view="dashboard"] .zg-r55-card-number .zg-r55-day-change{font-size:9px}
