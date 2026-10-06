@@ -3,6 +3,7 @@ import {candidate2dbWorker} from './candidate-2db-guard.mjs';
 import {staticShell} from './candidate-shell-r7.mjs';
 import {PROJECTION_ROUTES,readProjectionResponse} from './projection-runtime-r52.mjs';
 import {readPublicFeedHealth} from './public-feed-store.mjs';
+import {readCollectionHealth} from './collection-health.mjs';
 import {rssResponse} from './rss-feed.mjs';
 import rssXml from '../public/rss.xml?raw';
 const http=candidate2dbWorker({async fetch(request,env,ctx){
@@ -11,6 +12,7 @@ const http=candidate2dbWorker({async fetch(request,env,ctx){
  const id=PROJECTION_ROUTES[path];
  if(id)return readProjectionResponse(request,env.DB_CORE,id);
  if(path==='/api/data-health')return readPublicFeedHealth(env.DB_CORE);
+ if(path==='/api/collection-health')return readCollectionHealth(env.DB_CORE);
  const shell=await staticShell(request,env);if(shell)return shell;
  if(env.ASSETS&&/\.(?:css|js|svg|png|jpg|webp|ico|xml|txt)$/.test(path))return env.ASSETS.fetch(request);
  if(path==='/api/session')return Response.json({user:null});

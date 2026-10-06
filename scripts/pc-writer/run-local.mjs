@@ -96,6 +96,9 @@ try{
  }
  if(report.providerCalls)throw Error('CALCULATION_ATTEMPTED_NETWORK');
  globalThis.fetch=originalFetch;
+ const {storeLocalCollectionHealth}=await import('./collection-health.mjs');
+ const health=await storeLocalCollectionHealth(core,history,now);
+ report.collectionHealth={normal:health.normal,total:health.total,status:health.status};
  if(publish){
   const remote=client(config,credential(root));
   save(path.join(base,'local-publication-ledger.json'),{status:'SUBMITTING',source,at:Date.now()});

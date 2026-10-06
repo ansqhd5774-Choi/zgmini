@@ -1,0 +1,12 @@
+.zg-collection-health{position:relative;color:#94a3b8}
+.zg-collection-health.healthy{color:#10b981}
+.zg-collection-health.partial{color:#f5b942}
+.zg-collection-health.stale{color:#f87171}
+.zg-collection-health>button{display:grid;place-items:center;width:36px;height:36px;border:1px solid currentColor;border-radius:6px;background:transparent;cursor:pointer}
+.zg-collection-health>button:focus-visible{outline:2px solid #fff;outline-offset:3px}
+.zg-collection-health.partial>button svg{animation:zg-collection-pulse 2.5s ease-in-out infinite}
+.zg-collection-health [role=status]{position:absolute;right:0;top:calc(100% + 8px);z-index:100;display:grid;gap:5px;width:max-content;max-width:calc(100vw - 32px);padding:12px 14px;border:1px solid #31516a;border-radius:8px;background:#071b2b;color:#e2e8f0;box-shadow:0 8px 24px #0005;font-size:12px;line-height:1.5}
+.zg-collection-health [role=status] strong{color:inherit;font-size:13px}
+.zg-collection-health [role=status] time{color:#94a3b8}
+@keyframes zg-collection-pulse{0%,100%{opacity:1}50%{opacity:.4}}
+@media(prefers-reduced-motion:reduce){.zg-collection-health.partial>button svg{animation:none}}

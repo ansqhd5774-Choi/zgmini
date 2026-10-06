@@ -31,6 +31,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { toast } from "sonner";
 import CountryFearGreed from "./country-fear-greed";
 import CorePceRow from "./core-pce-row";
+import CollectionHealthIndicator from "@/components/collection-health-indicator";
 
 type Direction = "up" | "down" | "flat";
 type Signal = "positive" | "negative" | "neutral";
@@ -931,10 +932,7 @@ export default function Home() {
           <div className="zg-header-tools">
             <div className="zg-toolbar zg-toolbar-header">
               <div className="header-update">
-                <Clock3 className="size-4"/>
-                <span className="zg-update-label">최종 업데이트</span>
-                <strong>{formatUpdatedAt(updatedAt)}</strong>
-                <span className={`api-status api-status-${marketDataLoading ? "loading" : marketData?.status ?? "fallback"}`} aria-label={marketDataLoading ? "API 연결 중" : marketDataError ? "경제지표 API 연결 지연 · 마지막 정상 수신값 유지" : marketData?.status === "live" ? "실시간 경제지표 API 연결됨" : "경제지표 API 부분 연결 · 마지막 정상 수신값 유지"}>{marketDataLoading ? "API 연결 중" : marketDataError ? "경제지표 연결 지연" : marketData?.status === "live" ? "경제지표 API 연결됨" : "경제지표 API 부분 연결"}</span>
+                <CollectionHealthIndicator/>
               </div>
             </div>
             <div className="zg-account-tools">
