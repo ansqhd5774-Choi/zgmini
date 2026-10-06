@@ -276,6 +276,7 @@ export function CompositeMarketSection({items,points,demo,loading}:{items:Summar
       <div className="zg-r55-master-number" data-score-mode="number-only">
        <strong style={{color:overallScore===null?'#94a3b8':scoreColor(overallScore)}}>{overallScore===null?'—':Math.round(overallScore)}</strong>
       </div>
+      <div className="zg-r55-coverage"><DashboardTip label="종합 점수 데이터 안내">{marketError?'공개 점수 API를 확인 중입니다.':busy?'공개 점수 불러오는 중':`${readyDomains}/${totalDomains} 영역의 자료를 확인했습니다.`}</DashboardTip></div>
      </div>
 
      <div className="zg-r55-summary-chart">
@@ -283,8 +284,6 @@ export function CompositeMarketSection({items,points,demo,loading}:{items:Summar
        ?<SummaryTrend data={overallTrend} label="종합 시장 점수" color={overallScore===null?'#94a3b8':scoreColor(overallScore)} periodDays={periodDays}/>
        :<div className="zg-r55-empty-spark" aria-label="종합 추이 데이터 없음">추이 데이터 준비 중</div>}
      </div>
-
-     <div className="zg-r55-coverage"><DashboardTip label="종합 점수 데이터 안내">{marketError?'공개 점수 API를 확인 중입니다.':busy?'공개 점수 불러오는 중':`${readyDomains}/${totalDomains} 영역의 자료를 확인했습니다.`}</DashboardTip></div>
      </div>
 
      <div className="zg-r55-diagnostics-zone">
