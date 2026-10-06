@@ -120,7 +120,7 @@ export async function loadStoredInflationR2Domain(db,{asOf}={}){
     ["기대인플레","EXPECTATIONS"],
     ["공급압력","SUPPLY_PIPELINE"],
   ];
-  const trend=monthEnds(asOf,12)
+  const trend=monthEnds(asOf,13)
     .map(date=>({date,result:calculateInflationR2At(history,date)}))
     .filter(item=>item.result.status==="READY")
     .map(item=>({label:item.date,value:item.result.score}));
