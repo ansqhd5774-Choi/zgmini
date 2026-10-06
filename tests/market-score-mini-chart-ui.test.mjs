@@ -60,12 +60,12 @@ test("composite uses sentiment area styling without the removed captions",()=>{
 
 
 test("desktop diagnostics stay in one row while mobile proportions remain unchanged",()=>{
-  const midStart=responsive.indexOf("@container marketShell (min-width:761px) and (max-width:1279px)");
+  const midStart=responsive.indexOf("@container marketShell (min-width:761px) and (max-width:959px)");
   assert.ok(midStart>=0);
   const mid=responsive.slice(midStart,responsive.indexOf("\n}",midStart)+2);
   assert.match(mid,/zg-r55-subscore-grid\{grid-template-columns:repeat\(8,minmax\(0,1fr\)\)/);
 
-  const wideStart=responsive.indexOf("@container marketShell (min-width:1280px)");
+  const wideStart=responsive.indexOf("@container marketShell (min-width:960px)");
   assert.ok(wideStart>=0);
   const wide=responsive.slice(wideStart,responsive.indexOf("\n}",wideStart)+2);
   assert.match(wide,/grid-template-columns:132px minmax\(0,1fr\)/);
@@ -86,12 +86,12 @@ test("desktop diagnostics stay in one row while mobile proportions remain unchan
 test("desktop composite spacing follows one 8px owner contract while mobile keeps 12px",()=>{
   assert.match(responsive,/--r55-summary-pad:8px;--r55-summary-gap:8px/);
 
-  const midStart=responsive.indexOf("@container marketShell (min-width:761px) and (max-width:1279px)");
+  const midStart=responsive.indexOf("@container marketShell (min-width:761px) and (max-width:959px)");
   assert.ok(midStart>=0);
   const mid=responsive.slice(midStart,responsive.indexOf("\n}",midStart)+2);
   assert.match(mid,/gap:var\(--r55-summary-gap\);padding:var\(--r55-summary-pad\)/);
 
-  const wideStart=responsive.indexOf("@container marketShell (min-width:1280px)");
+  const wideStart=responsive.indexOf("@container marketShell (min-width:960px)");
   assert.ok(wideStart>=0);
   const wide=responsive.slice(wideStart,responsive.indexOf("\n}",wideStart)+2);
   assert.match(wide,/gap:var\(--r55-summary-gap\);padding:var\(--r55-summary-pad\)/);
