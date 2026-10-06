@@ -11,5 +11,7 @@ test("monthly 1Y chart contracts use 13 monthly points",()=>{
   assert.match(growthDomain,/for\(let n=12;n>=0;n--\)/);
   assert.match(growthDomain,/getUTCMonth\(\)-12,1/);
   assert.match(growthDomain,/earliestBy/);
+  assert.match(growthDomain,/label\.slice\(0,7\)===month/);
+  assert.match(growthDomain,/splice\(i,1,\{label:asOf,value:currentScore\}\)/);
   assert.match(growthHistory,/getUTCMonth\(\)-12,1/);
 });
