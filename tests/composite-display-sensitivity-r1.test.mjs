@@ -7,11 +7,11 @@ import {
   amplifyCompositeDisplayTrend,
 } from "../lib/market-score/composite-display-sensitivity-r1.mjs";
 
-test("composite display sensitivity is fixed at approved 2x around 50",()=>{
-  assert.equal(COMPOSITE_DISPLAY_SENSITIVITY_R1,2);
+test("composite display sensitivity is fixed at approved 2.5x around 50",()=>{
+  assert.equal(COMPOSITE_DISPLAY_SENSITIVITY_R1,2.5);
   assert.equal(amplifyCompositeDisplayScore(50),50);
-  assert.equal(amplifyCompositeDisplayScore(53.13843904506898),56.27687809013796);
-  assert.equal(amplifyCompositeDisplayScore(45),40);
+  assert.equal(amplifyCompositeDisplayScore(53.13843904506898),57.84609761267245);
+  assert.equal(amplifyCompositeDisplayScore(45),37.5);
   assert.equal(amplifyCompositeDisplayScore(80),100);
 });
 
@@ -20,8 +20,8 @@ test("composite display trend amplifies only values and preserves labels",()=>{
     {label:"2026-10-01",value:49.5},
     {label:"2026-10-06",value:53},
   ]),[
-    {label:"2026-10-01",value:49},
-    {label:"2026-10-06",value:56},
+    {label:"2026-10-01",value:48.75},
+    {label:"2026-10-06",value:57.5},
   ]);
 });
 
