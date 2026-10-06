@@ -147,7 +147,9 @@
  .zg-dashboard[data-view="dashboard"] .zg-r55-summary{grid-template-columns:minmax(0,3fr) minmax(0,2fr);grid-template-rows:auto;gap:24px;align-items:center}
  .zg-dashboard[data-view="dashboard"] .zg-r55-primary-zone{display:grid;grid-template-columns:104px minmax(0,1fr);gap:12px;min-width:0;width:100%;height:auto;grid-column:1;grid-row:1}
  .zg-dashboard[data-view="dashboard"] .zg-r55-summary-top{min-height:200px}
+ .zg-dashboard[data-view="dashboard"] .zg-r55-coverage{position:absolute;top:8px;right:8px;grid-column:auto;grid-row:auto}
  .zg-dashboard[data-view="dashboard"] .zg-r55-diagnostics-zone{display:block;grid-column:2;grid-row:1;width:100%;min-width:0;height:auto;border-left:1px solid #17446d;padding-left:20px}
+ .zg-dashboard[data-view="dashboard"] .zg-r55-diagnostics-zone .zg-r55-subscore-area{height:auto;min-height:0}
  .zg-dashboard[data-view="dashboard"] .zg-r55-subscore-grid{grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:repeat(4,auto);gap:4px 12px;height:auto;min-height:0}
  .zg-dashboard[data-view="dashboard"] .zg-r55-subscore{height:auto;min-height:48px;padding:4px 8px;border-right:0!important;grid-template-rows:24px 16px;gap:4px}
  .zg-dashboard[data-view="dashboard"] .zg-r55-subscore-head,.zg-dashboard[data-view="dashboard"] .zg-r55-subscore-title{height:24px;min-height:24px}
