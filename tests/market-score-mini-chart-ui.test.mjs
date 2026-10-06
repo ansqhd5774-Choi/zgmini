@@ -12,11 +12,10 @@ function sourceBetween(startToken,endToken){
   return src.slice(start,end);
 }
 
-test("market trend windows keep one prior observation for sparse monthly continuity",()=>{
+test("market trend windows delegate to the exact-boundary anchor helper",()=>{
   const windowSource=sourceBetween("function marketTrendWindow(","const publicStatusLabel");
-  assert.match(windowSource,/const inside=dated\.filter\(p=>Date\.parse\(p\.label\)>=start\)/);
-  assert.match(windowSource,/const prior=dated\.filter\(p=>Date\.parse\(p\.label\)<start\)\.at\(-1\)/);
-  assert.match(windowSource,/return prior\?\[prior,\.\.\.inside\]:inside/);
+  assert.match(src,/marketTrendWindowR1/);
+  assert.match(windowSource,/return marketTrendWindowR1\(data\?\?\[\],days\)/);
 });
 
 test("market charts use numeric time axes so selected periods keep their true duration",()=>{
