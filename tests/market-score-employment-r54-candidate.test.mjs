@@ -4,6 +4,8 @@ import {
   buildEmploymentR54Candidate,
   EMPLOYMENT_R54_METHOD,
   EMPLOYMENT_R54_WEIGHTS,
+  EMPLOYMENT_R54_CLAIMS_READ_WEEKS,
+  loadEmploymentR54CandidateFromStored,
 } from "../lib/market-score/employment-r54-candidate.mjs";
 
 function monthRows(startYear,count,startValue,stepFn){
@@ -132,4 +134,23 @@ test("R54 compact claim aggregates preserve raw calculation",async()=>{
   assert.equal(compactOut.status,"READY");
   assert.ok(Math.abs(compactOut.score-rawOut.score)<1e-9);
   assert.deepEqual(compactOut.indicators.map(x=>[x.id,x.score,x.value]),rawOut.indicators.map(x=>[x.id,x.score,x.value]));
+});
+
+
+test("R54 stored reader loads 108 claim weeks so 1Y trend is not truncated",async()=>{
+  assert.equal(EMPLOYMENT_R54_CLAIMS_READ_WEEKS,108);
+  const sql=[];
+  const db={
+    prepare(statement){
+      sql.push(statement);
+      return {
+        bind(){return this},
+        async all(){return {results:[]}},
+      };
+    },
+  };
+  const out=await loadEmploymentR54CandidateFromStored(db,{asOfDate:"2026-10-07"});
+  assert.equal(out.status,"PARTIAL");
+  assert.equal(sql.length,2);
+  assert.ok(sql.every(statement=>statement.includes("LIMIT 108")));
 });
