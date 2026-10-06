@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 
 const src=fs.readFileSync(new URL("../app/dashboard-ui.tsx",import.meta.url),"utf8");
+const responsive=fs.readFileSync(new URL("../app/responsive.css",import.meta.url),"utf8");
 
 function sourceBetween(startToken,endToken){
   const start=src.indexOf(startToken);
@@ -55,4 +56,22 @@ test("composite uses sentiment area styling without the removed captions",()=>{
   assert.match(summary,/<linearGradient/);
   assert.doesNotMatch(src,/className="zg-r55-main-period"|<span>종합 점수<\/span>|<span>\/ 100<\/span>/);
   assert.match(src,/ArrowUpRight size=\{14\}/);
+});
+
+
+test("wide composite layout is tightened without changing mobile proportions",()=>{
+  const wideStart=responsive.indexOf("@container marketShell (min-width:1280px)");
+  assert.ok(wideStart>=0);
+  const wide=responsive.slice(wideStart,responsive.indexOf("\n}",wideStart)+2);
+  assert.match(wide,/gap:16px;padding:12px/);
+  assert.match(wide,/grid-template-columns:88px minmax\(0,1fr\);gap:8px/);
+  assert.match(wide,/zg-r55-master-number strong\{font-size:48px\}/);
+  assert.match(wide,/padding-left:16px/);
+
+  const mobileStart=responsive.indexOf("@container marketShell (max-width:760px)");
+  assert.ok(mobileStart>=0);
+  const mobile=responsive.slice(mobileStart,responsive.indexOf("\n}",mobileStart)+2);
+  assert.match(mobile,/zg-r55-summary-top\{grid-column:1;grid-row:1;min-height:76px\}/);
+  assert.match(mobile,/zg-r55-summary-chart \.zg-spark\{height:180px;min-height:180px\}/);
+  assert.match(mobile,/zg-r55-master-number strong\{font-size:44px\}/);
 });
