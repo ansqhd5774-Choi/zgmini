@@ -47,7 +47,7 @@ if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.ur
  try{
   const jobArg=process.argv.find(arg=>arg.startsWith('--job='));
   const job=jobArg?jobArg.slice('--job='.length):null;
-  console.log(JSON.stringify(await collectLocal(process.env.ZGMINI_PC_HOME??path.join(os.homedir(),'.zgmini','pc-writer'),{lane:process.argv.includes('--korea')?'korea':'core',importOnly:process.argv.includes('--import-only'),job}));
+  console.log(JSON.stringify(await collectLocal(process.env.ZGMINI_PC_HOME??path.join(os.homedir(),'.zgmini','pc-writer'),{lane:process.argv.includes('--korea')?'korea':'core',importOnly:process.argv.includes('--import-only'),job})));
  }
  catch(error){console.log(JSON.stringify({status:'FAILED',code:error.code??'LOCAL_COLLECTION_FAILED',...(process.argv.includes('--import-only')?{importError:error.message}:{})}));process.exitCode=1;}
 }
