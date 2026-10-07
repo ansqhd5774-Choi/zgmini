@@ -88,13 +88,14 @@ test("breadth R6 backfill treats dated MarketParquet 403 as a terminal source li
 });
 
 test("breadth R6 shadow backfill plans a bounded 260-session window and remains local-only",()=>{
-  const dates=marketSessionsBack("2026-10-02",260);
-  assert.equal(dates.length,260);
+  const dates=marketSessionsBack("2026-10-02",520);
+  assert.equal(dates.length,520);
   assert.equal(dates.at(-1),"2026-10-02");
   assert.ok(dates[0]<dates.at(-1));
   const src=fs.readFileSync(new URL("../scripts/pc-writer/backfill-breadth-r6-shadow.mjs",import.meta.url),"utf8");
-  assert.match(src,/TARGET_SESSIONS=260/);
-  assert.match(src,/REQUIRED_PRICE_SESSIONS=252/);
+  assert.match(src,/TARGET_SESSIONS=520/);
+  assert.match(src,/REQUIRED_PRICE_SESSIONS=512/);
+  assert.match(src,/historyWindowExtended/);
   assert.match(src,/noPublish:true/);
   assert.match(src,/dbSchemaChanged:false/);
   assert.doesNotMatch(src,/publishMarket|remote\.|--publish|CREATE TABLE|ALTER TABLE/);
