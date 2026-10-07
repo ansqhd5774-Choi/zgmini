@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import {parseTsv} from "../scripts/pc-writer/sec-dera-zip-r1.mjs";
+import {normalizeSecDate} from "../scripts/pc-writer/backfill-sec-fund-flow-raw-r1.mjs";
 
 test("SEC DERA TSV parser preserves header names and missing values",()=>{
   const rows=parseTsv("ACCESSION_NUMBER\tSERIES_ID\tNET_ASSETS\r\nA\tS1\t100\r\nB\tS2\t\r\n");
@@ -31,4 +32,22 @@ test("raw backtest remains formula- and weight-neutral",()=>{
   assert.match(src,/formulaSelected:false/);
   assert.match(src,/weightSelected:false/);
   assert.match(src,/productionFormulaChanged:false/);
+});
+
+
+test("SEC DERA date normalizer accepts SEC export variants deterministically",()=>{
+  assert.equal(normalizeSecDate("2019-10-31"),"2019-10-31");
+  assert.equal(normalizeSecDate("20191031"),"2019-10-31");
+  assert.equal(normalizeSecDate("31-OCT-2019"),"2019-10-31");
+  assert.equal(normalizeSecDate("10/31/2019"),"2019-10-31");
+  assert.equal(normalizeSecDate("2019-10-31T00:00:00"),"2019-10-31");
+  assert.equal(normalizeSecDate("not-a-date"),null);
+});
+
+test("raw backfill refuses to checkpoint parsed zero-row SEC quarters",()=>{
+  const src=fs.readFileSync(new URL("../scripts/pc-writer/backfill-sec-fund-flow-raw-r1.mjs",import.meta.url),"utf8");
+  assert.match(src,/SEC_NCEN_PARSED_ZERO_ROWS/);
+  assert.match(src,/SEC_NPORT_PARSED_ZERO_ROWS/);
+  assert.match(src,/ZERO_CLASSIFICATIONS/);
+  assert.match(src,/ZERO_MONTHS/);
 });
