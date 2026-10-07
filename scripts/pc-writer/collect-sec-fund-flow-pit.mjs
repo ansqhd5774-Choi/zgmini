@@ -91,6 +91,7 @@ export async function collectSecFundFlowPit(base=process.env.ZGMINI_PC_HOME??DEF
   }catch(error){
     report.status="FAILED";
     report.error=/^[A-Z0-9_:-]+$/.test(String(error?.message??""))?String(error.message):String(error?.code??"SEC_FUND_FLOW_PIT_COLLECTION_FAILED");
+    if(Array.isArray(error?.candidateSheets))report.candidateSheets=error.candidateSheets;
     report.quota=quota.summary();
     throw error;
   }finally{
