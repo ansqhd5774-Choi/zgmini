@@ -8,6 +8,7 @@ import {installLocalRuntime} from './local-env.mjs';
 import {client,credential,read,save,hash} from './d1.mjs';
 import {mergeStoredCompositeTrend,oneYearHistoryStart} from '../../worker/composite-history.mjs';
 import {publicationCompatibility,recoverPublication,appendPublicationEvent} from './publication-guard.mjs';
+import {koreaPublicationPlan} from './korea-publication.mjs';
 
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../..');
 const base=process.env.ZGMINI_PC_HOME??path.join(os.homedir(),'.zgmini','pc-writer');
@@ -126,8 +127,8 @@ try{
   if(koreaOutput){
    const existing=(await remote.query(config.history,'SELECT * FROM kfg_rev7_snapshots WHERE date=?',[koreaOutput.date])).results[0];
    if(!existing){
-    const columns=Object.keys(koreaOutput);
-    await remote.request(config.history,[{sql:`INSERT INTO kfg_rev7_snapshots(${columns.join(',')}) VALUES(${columns.map(()=>'?').join(',')}) ON CONFLICT(date) DO NOTHING`,params:columns.map(k=>koreaOutput[k])}]);
+    const checkpoint=await history.prepare('SELECT * FROM kfg_rev7_market_dates WHERE date=?').bind(koreaOutput.date).first();
+    await remote.request(config.history,koreaPublicationPlan(koreaOutput,checkpoint));
     const check=(await remote.query(config.history,'SELECT * FROM kfg_rev7_snapshots WHERE date=?',[koreaOutput.date])).results[0];
     if(check?.composite_json!==koreaOutput.composite_json||check?.factors_json!==koreaOutput.factors_json)throw Error('LOCAL_KOREA_PUBLICATION_MISMATCH');
    }
