@@ -14,14 +14,15 @@ const finite=value=>typeof value==="number"&&Number.isFinite(value);
 const validDate=value=>typeof value==="string"&&/^\d{4}-\d{2}-\d{2}$/.test(value);
 const domain=(market,id)=>market?.domains?.find(item=>item?.id===id)??null;
 
-export function buildDollarPitTrend({revisions=[],signalDates=[]}={}){
+export function buildDollarPitTrend({revisions=[],signalVintagePairs=[]}={}){
   const trend=[],diagnostics=[];
-  for(const date of Array.isArray(signalDates)?signalDates:[]){
-    if(!validDate(date))continue;
-    const rows=pointInTimeDollarRows(revisions,date);
-    const out=buildDollarFxR2Shadow(rows,{asOfDate:date,minValid:252});
-    diagnostics.push({date,inputRows:rows.length,status:out.status,score:finite(out.score)?out.score:null,reason:out.reason??null});
-    if(out.status==="READY"&&finite(out.score))trend.push({label:date,value:out.score});
+  for(const item of Array.isArray(signalVintagePairs)?signalVintagePairs:[]){
+    const signalDate=String(item?.signalDate??""),vintageDate=String(item?.vintageDate??"");
+    if(!validDate(signalDate)||!validDate(vintageDate)||vintageDate>=signalDate)continue;
+    const rows=pointInTimeDollarRows(revisions,vintageDate);
+    const out=buildDollarFxR2Shadow(rows,{asOfDate:signalDate,minValid:252});
+    diagnostics.push({signalDate,vintageDate,inputRows:rows.length,status:out.status,score:finite(out.score)?out.score:null,reason:out.reason??null});
+    if(out.status==="READY"&&finite(out.score))trend.push({label:signalDate,value:out.score});
   }
   return {trend,diagnostics};
 }
@@ -39,12 +40,13 @@ export async function backtestDollarR21PitShadow(base=process.env.ZGMINI_PC_HOME
     ]);
     const revisions=pitBatch?.body?.series?.DTWEXBGS_PIT_REVISIONS??[];
     const signalDates=pitBatch?.body?.signalDates??[];
+    const signalVintagePairs=pitBatch?.body?.signalVintagePairs??[];
     const benchmark=benchmarkBatch?.body?.series?.SP500??[];
-    if(!pitBatch?.body?.lookAheadSafe||pitBatch?.body?.historyMode!=="ALFRED_VINTAGE_DATES_OUTPUT_TYPE_1")throw new Error("DOLLAR_R21_PIT_BATCH_NOT_SAFE");
-    if(revisions.length<252||signalDates.length<250)throw new Error("DOLLAR_R21_PIT_BATCH_INCOMPLETE");
+    if(!pitBatch?.body?.lookAheadSafe||pitBatch?.body?.historyMode!=="ALFRED_PRIOR_DAY_PIT_OUTPUT_TYPE_1"||pitBatch?.body?.informationCutoffPolicy!=="PRIOR_CALENDAR_DAY")throw new Error("DOLLAR_R21_PIT_BATCH_NOT_SAFE");
+    if(revisions.length<252||signalDates.length<250||signalVintagePairs.length!==signalDates.length)throw new Error("DOLLAR_R21_PIT_BATCH_INCOMPLETE");
     if(benchmark.length<250)throw new Error("SP500_SHADOW_BENCHMARK_MISSING");
 
-    const built=buildDollarPitTrend({revisions,signalDates});
+    const built=buildDollarPitTrend({revisions,signalVintagePairs});
     if(built.trend.length<250)throw new Error("DOLLAR_R21_PIT_TREND_SHORT");
     const pair=evaluationSummaryPair(domain(market,"dollarFx")?.trend??[],built.trend,benchmark);
 
@@ -71,7 +73,8 @@ export async function backtestDollarR21PitShadow(base=process.env.ZGMINI_PC_HOME
       mode:"DOLLAR_R21_PIT_BACKTEST_ONLY",
       asOf:market?.asOfDate??null,
       lookAheadSafe:true,
-      historyMode:"ALFRED_VINTAGE_DATES_OUTPUT_TYPE_1",
+      historyMode:"ALFRED_PRIOR_DAY_PIT_OUTPUT_TYPE_1",
+      informationCutoffPolicy:"PRIOR_CALENDAR_DAY",
       providerCalls:0,
       publicMutation:false,
       productionFormulaChanged:false,
