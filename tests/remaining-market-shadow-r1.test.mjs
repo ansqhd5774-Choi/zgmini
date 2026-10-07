@@ -13,7 +13,7 @@ function breadthFixture({tickers=500,sessions=252}={}){
     for(let i=0;i<tickers;i++){
       const previousClose=100+i/10+d*.02;
       const currentClose=previousClose+(i%3===0?-0.1:0.2);
-      rows.push({trade_date:tradeDate,ticker:members[i],previous_close:previousClose,current_close:currentClose,current_volume:1000+i});
+      rows.push({trade_date:tradeDate,ticker:members[i],previous_close:d===sessions-1?previousClose:null,current_close:currentClose,current_volume:1000+i});
     }
   }
   return {members,rows};
@@ -27,6 +27,7 @@ test("breadth R6 component engine requires full 50/200/252-session coverage befo
   assert.ok(typeof ready.score==="number"&&ready.score>=0&&ready.score<=100);
   assert.equal(ready.scoreStatus,"READY_SHADOW");
   assert.equal(ready.coverage.highLow52w,500);
+  assert.equal(ready.coverage.oneDay,500);
   assert.equal(typeof ready.ratios.aboveMa50,"number");
   assert.equal(typeof ready.ratios.aboveMa200,"number");
 
@@ -35,6 +36,18 @@ test("breadth R6 component engine requires full 50/200/252-session coverage befo
   assert.equal(partial.status,"PARTIAL");
   assert.equal(partial.readiness.highLow52w,false);
   assert.equal(partial.score,null);
+});
+
+
+test("breadth R6 historical MA/high-low calculations accept supplemental close-only rows",()=>{
+  const fixture=breadthFixture({tickers:500,sessions:252});
+  const historical=fixture.rows.filter(row=>row.previous_close===null);
+  assert.ok(historical.length>0);
+  const out=buildBreadthR6Components(fixture,{});
+  assert.equal(out.status,"READY");
+  assert.equal(out.coverage.ma200,500);
+  assert.equal(out.coverage.highLow52w,500);
+  assert.ok(typeof out.score==="number");
 });
 
 test("fund-flow R2 applies approved 50/35/15 weights with 12-week confidence ramp",()=>{
