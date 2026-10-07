@@ -67,9 +67,10 @@ test("approved raw N-PORT R2 uses all three B.6 flow months and no prior-month a
   assert.equal(item.redemption3m,15);
   assert.equal(item.netFlow3m,51);
   const src=fs.readFileSync(new URL("../scripts/pc-writer/backfill-sec-fund-flow-raw-r1.mjs",import.meta.url),"utf8");
-  assert.match(src,/SALES_FLOW_MON1/);
-  assert.match(src,/SALES_FLOW_MON2/);
-  assert.match(src,/SALES_FLOW_MON3/);
+  assert.match(src,/threeMonthFlow\(row,"SALES"\)/);
+  assert.match(src,/threeMonthFlow\(row,"REINVESTMENT"\)/);
+  assert.match(src,/threeMonthFlow\(row,"REDEMPTION"\)/);
+  assert.match(src,/\[1,2,3\]\.map/);
   assert.match(src,/CURRENT_REPORTED_NET_ASSETS_RESEARCH_NORMALIZATION/);
   assert.doesNotMatch(src,/previousMonth\(/);
   assert.doesNotMatch(src,/state\.lastFund/);
