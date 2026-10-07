@@ -98,6 +98,28 @@ test("SEC XLSX parser prefers the explicit Table 3.2 sheet when another flow tab
   assert.ok(Math.abs(out.rows[0].allNetRatio-.1)<1e-12);
 });
 
+test("SEC XLSX parser uses percent-scale evidence when two generic sheets share the same flow labels",()=>{
+  const strings=["All - Net","Index - Net","Non-Index - Net","All - Outflow"];
+  const ss='<sst xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'+strings.map(x=>'<si><t>'+x+'</t></si>').join('')+'</sst>';
+  const pct=Array.from({length:12},(_,i)=>.1+i/100);
+  const usd=Array.from({length:12},(_,i)=>25+i);
+  const row=(r,labelIndex,series)=>'<row r="'+r+'">'+cell('A'+r,'s',labelIndex)+series.map((v,i)=>cell(String.fromCharCode(66+i)+r,'n',v)).join('')+'</row>';
+  const makeSheet=(vals,outflow)=>'<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetData>'+
+    row(1,0,vals)+row(2,1,vals.map(x=>x+.2))+row(3,2,vals.map(x=>x-.2))+row(4,3,outflow)+
+    '</sheetData></worksheet>';
+  const zip=crcIgnoredZip({
+    "xl/workbook.xml":'<workbook xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="Flows A" sheetId="1" r:id="rId1"/><sheet name="Flows B" sheetId="2" r:id="rId2"/></sheets></workbook>',
+    "xl/_rels/workbook.xml.rels":'<Relationships><Relationship Id="rId1" Target="worksheets/sheet1.xml"/><Relationship Id="rId2" Target="worksheets/sheet2.xml"/></Relationships>',
+    "xl/sharedStrings.xml":ss,
+    "xl/worksheets/sheet1.xml":makeSheet(usd,usd.map(x=>-200-x)),
+    "xl/worksheets/sheet2.xml":makeSheet(pct,pct.map(x=>-2-x)),
+  });
+  const out=parseSecFundFlowSupportingXlsx(zip,{periodEnd:"2025-12-31"});
+  assert.equal(out.sheetName,"Flows B");
+  assert.equal(out.selectionEvidence.percentScale,true);
+  assert.ok(out.selectionEvidence.maxAbs<25);
+});
+
 test("matrix parser requires all four Table 3.2 series",()=>{
   const matrix=[["Table 3.2: Aggregate Inflows, Outflows, and Net Flows of Index and Non-Index Funds (Percent of Net Assets)"],["All","Net",...Array(12).fill(.1)]];
   assert.equal(parseSecFundFlowTableMatrix(matrix,{periodEnd:"2025-12-31",sheetName:"3.2"}),null);
