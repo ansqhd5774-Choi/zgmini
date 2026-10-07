@@ -7,6 +7,7 @@ import {localDatabase} from './local-db.mjs';
 import {installLocalRuntime} from './local-env.mjs';
 import {client,credential,read,save,hash} from './d1.mjs';
 import {mergeStoredCompositeTrend,oneYearHistoryStart} from '../../worker/composite-history.mjs';
+import {publicationCompatibility,recoverPublication,appendPublicationEvent} from './publication-guard.mjs';
 
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../..');
 const base=process.env.ZGMINI_PC_HOME??path.join(os.homedir(),'.zgmini','pc-writer');
@@ -14,10 +15,11 @@ const publish=process.argv.includes('--publish');
 const config=read(path.join(base,'config.json'));
 const source=execFileSync('git',['rev-parse','HEAD'],{cwd:root,encoding:'utf8',windowsHide:true}).trim();
 if(publish){
- if(config.source!==source||config.collectionTarget!=='pc'||config.enabled!==true)throw Error('LOCAL_PUBLICATION_NOT_APPROVED');
+ if(config.collectionTarget!=='pc'||config.enabled!==true)throw Error('LOCAL_PUBLICATION_NOT_APPROVED');
+ const main=execFileSync('git',['rev-parse','origin/main'],{cwd:root,encoding:'utf8',windowsHide:true}).trim();
+ const blocked=publicationCompatibility(root,config.source,source,main);
+ if(blocked)throw Error(blocked.status);
  execFileSync('git',['diff','--quiet','HEAD','--','worker','lib','scripts/pc-writer'],{cwd:root,stdio:'pipe',windowsHide:true});
- const ledger=path.join(base,'local-publication-ledger.json');
- if(fs.existsSync(ledger)&&read(ledger).status==='SUBMITTING')throw Error('LOCAL_PUBLICATION_REQUIRES_READBACK');
 }
 const seed=read(path.join(base,'local-seed-progress.json'));
 if(!Object.keys(seed).length||Object.values(seed).some(x=>!x.complete))throw Error('LOCAL_SEED_INCOMPLETE');
@@ -101,19 +103,20 @@ try{
  report.collectionHealth={normal:health.normal,total:health.total,status:health.status};
  if(publish){
   const remote=client(config,credential(root));
+  report.recovery=await recoverPublication(remote,config.core,base);
   save(path.join(base,'local-publication-ledger.json'),{status:'SUBMITTING',source,at:Date.now()});
   const {claimMarket,releaseMarket,publishMarket}=await import('./publish.mjs');
   const lease=await claimMarket(remote,config.core);if(!lease)throw Error('REMOTE_MARKET_LEASE_BUSY');
   try{
    const previous=(await remote.query(config.core,"SELECT stored_at FROM market_public_snapshots_v1 WHERE snapshot_key='current'")).results[0]?.stored_at;
-   report.market={...report.market,...await publishMarket(remote,config.core,read(path.join(base,'local-market-result.json')),now,lease,previous,path.join(base,'local-market-ledger.json'))};
+   report.market={...report.market,...(previous>now?{status:'REMOTE_NEWER_PRESERVED',storedAt:previous}:await publishMarket(remote,config.core,read(path.join(base,'local-market-result.json')),now,lease,previous,path.join(base,'local-market-ledger.json')))};
   }finally{await releaseMarket(remote,config.core,lease);}
   // Explicit allowlist: publish display outputs only, never provider input/history rows.
   for(const {id} of report.projections){
    const row=await core.prepare('SELECT body,stored_at FROM market_public_snapshots_v1 WHERE snapshot_key=?').bind(PUBLIC_PROJECTION_KEYS[id]).first();
    const envelope=JSON.parse(row.body);
-   const current=(await remote.query(config.core,'SELECT body FROM market_public_snapshots_v1 WHERE snapshot_key=?',[PUBLIC_PROJECTION_KEYS[id]])).results[0];
-   if(current&&JSON.parse(current.body).projection?.sourceStoredAt>envelope.projection.sourceStoredAt)throw Error('REMOTE_PROJECTION_NEWER_THAN_LOCAL');
+   const current=(await remote.query(config.core,'SELECT body,stored_at FROM market_public_snapshots_v1 WHERE snapshot_key=?',[PUBLIC_PROJECTION_KEYS[id]])).results[0];
+   if(current&&(JSON.parse(current.body).projection?.sourceStoredAt>envelope.projection.sourceStoredAt||current.stored_at>row.stored_at)){report.projections.find(x=>x.id===id).status='REMOTE_NEWER_PRESERVED';continue;}
    if(current&&hash(JSON.parse(current.body))===hash(envelope))continue;
    await projectionWriter(remote.adapter(config.core,{allowWrites:true})).write(id,envelope.payload,row.stored_at,envelope.projection);
    const check=(await remote.query(config.core,'SELECT body FROM market_public_snapshots_v1 WHERE snapshot_key=?',[PUBLIC_PROJECTION_KEYS[id]])).results[0];
@@ -142,4 +145,4 @@ try{
  }
  report.status=publish?'VERIFIED':'DRY_RUN_PASS';
 }catch(error){report.status='FAILED';report.error=/^[A-Z0-9_]+$/.test(error.message??'')?error.message:error.code??'LOCAL_WRITER_FAILED';process.exitCode=1;}
-finally{globalThis.fetch=originalFetch;console.warn=originalWarn;hook.deregister();core.close();history.close();save(path.join(base,'local-writer-last-run.json'),report);console.log(JSON.stringify(report));}
+finally{globalThis.fetch=originalFetch;console.warn=originalWarn;hook.deregister();core.close();history.close();save(path.join(base,'local-writer-last-run.json'),report);if(publish)appendPublicationEvent(base,{at:report.at,source,status:report.status,error:report.error??null,recovery:report.recovery?.outcome??null});console.log(JSON.stringify(report));}

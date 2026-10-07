@@ -5,6 +5,7 @@ import {fileURLToPath} from 'node:url';
 import {execFileSync,spawnSync} from 'node:child_process';
 import {read,save} from './d1.mjs';
 import {PROVIDER_QUOTA_POLICY} from './quota-policy.mjs';
+import {publicationCompatibility,appendPublicationEvent} from './publication-guard.mjs';
 
 const here=path.dirname(fileURLToPath(import.meta.url));
 const base=process.env.ZGMINI_PC_HOME??path.join(os.homedir(),'.zgmini','pc-writer');
@@ -23,11 +24,9 @@ if(publish){
   const source=execFileSync('git',['rev-parse','HEAD'],{cwd:root,encoding:'utf8',windowsHide:true}).trim();
   const originMain=execFileSync('git',['rev-parse','origin/main'],{cwd:root,encoding:'utf8',windowsHide:true}).trim();
   const config=read(path.join(base,'config.json'));
-  if(config.source!==source)publishBlock={status:'SOURCE_APPROVAL_MISMATCH',expectedSource:config.source,actualSource:source};
-  else if(source!==originMain)publishBlock={status:'SOURCE_DRIFT_ORIGIN_MAIN',localSource:source,originMain};
-  else{const ledger=path.join(base,'local-publication-ledger.json');if(fs.existsSync(ledger)&&read(ledger).status==='SUBMITTING')publishBlock={status:'PUBLICATION_READBACK_REQUIRED'};}
+  publishBlock=publicationCompatibility(root,config.source,source,originMain);
  }catch(error){publishBlock={status:error.code==='ENOENT'?'PUBLISH_PREFLIGHT_MISSING':'PUBLISH_PREFLIGHT_FAILED'};}
- if(publishBlock)Object.assign(report,publishBlock,{publishAllowed:false});
+ if(publishBlock)Object.assign(report,publishBlock,{publishAllowed:false,publishBlock:publishBlock.status});
  else report.publishAllowed=true;
 }
 const lock=path.join(base,'quota-runner.lock');
@@ -45,6 +44,9 @@ try{
  report.publication=fs.existsSync(path.join(base,'local-cycle-last-run.json'))?read(path.join(base,'local-cycle-last-run.json')):null;
  report.status=child.status===0?(publishBlock?'COLLECTION_COMPLETE_PUBLISH_BLOCKED':report.publication?.status?.endsWith('PUBLISH_BLOCKED')?report.publication.status:'COMPLETE'):'NOT_VERIFIED';
  save(path.join(base,'quota-runner-last-run.json'),report);
+ appendPublicationEvent(base,{at:report.at,status:report.status,reason:publishBlock?.status??report.publication?.publishSkipped??null,files:publishBlock?.files,publishAllowed:report.publishAllowed,exitCode:report.exitCode});
+ if(publishBlock)console.error(`PUBLICATION_BLOCKED: ${publishBlock.status}`);
  console.log(JSON.stringify(report));
  if(child.status!==0)process.exitCode=1;
+ else if(publishBlock)process.exitCode=2;
 }finally{try{fs.unlinkSync(lock);}catch{}}
