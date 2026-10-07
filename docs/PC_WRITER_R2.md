@@ -15,7 +15,11 @@ Node 24 이상을 사용한다. `seed-local.mjs`는 기존 금융 테이블을 �
 
 `collect-local.mjs`는 기존 수집기를 로컬 SQLite에 연결한다. 한 번에 public feed 1개 또는 market job 1개이며, `--korea`는 기존 maxDates=1 규칙을 유지한다. 공급자 실패 때 마지막 정상 저장 자료를 유지한다.
 
-`run-local.mjs`는 키 없이 로컬 저장 데이터만 계산한다. 계산 중 네트워크 접근은 차단한다. `--publish`는 승인된 Git SHA·clean source·활성 설정을 요구한다. 공개 점수, 상세 projection, public feed output, 한국시장 산출 snapshot만 원격에 게시하고 재조회한다. `SUBMITTING`이 남으면 무조건 재시도하지 않는다.
+`run-local.mjs`는 키 없이 로컬 저장 데이터만 계산한다. 계산 중 네트워크 접근은 차단한다. `--publish`는 활성 설정·clean source와 승인 소스의 게시 계약 호환성을 요구한다. 전체 Git SHA 일치는 요구하지 않는다. `worker/`, `lib/`, 운영용 `scripts/pc-writer/`, package manifest/lock 변경은 검토 대상으로 보호한다. UI·콘텐츠·연구 backfill/backtest 변경은 게시를 막지 않는다. config.source와 로컬 origin/main 양쪽에 대해 게시 관련 파일을 비교한다. 원격 main 조회 실패 또는 로컬 origin/main 갱신 지연은 별도 상태이며 이 비교는 마지막으로 가져온 main 기준이다.
+
+공개 점수, 상세 projection, public feed output, 한국시장 산출 snapshot만 원격에 게시하고 재조회한다. `SUBMITTING`이 남으면 원격 lease와 현재 시장 결과를 읽는다. 활성 게시가 있거나 read-back 실패/충돌이면 보류한다. 조회가 성공하면 기존 기록을 보존한 `READBACK_RECOVERED`로 전환하고 다음 게시에서 각 결과를 조정한다. 이것은 전체 게시 완료를 뜻하지 않는다. 최신 원격 시장/projection/feed는 덮어쓰지 않는다. 성공한 전체 게시만 VERIFIED다.
+
+`publication-events.jsonl`에는 게시 성공·실패·차단 원인과 시각을 누적 보존한다. 차단 시 stderr 경고 및 예약 작업 종료 코드 2를 반환하므로 수집 성공을 게시 성공으로 표시하지 않는다. 외부 알림 서비스는 추가하지 않는다.
 
 `local-cycle.mjs`는 단일 PID 잠금으로 수집과 계산·게시를 순서대로 실행한다. `install-local.mjs`는 같은 SHA의 실제 VERIFIED 결과 이후에만 Windows 예약 작업을 등록한다. core는 5분, Korea는 매시 37분이다. 이전 작업은 삭제하지 않고 비활성화하여 롤백 경로로 보존한다. PC와 로그인 세션 및 인터넷 연결이 필요하다.
 
