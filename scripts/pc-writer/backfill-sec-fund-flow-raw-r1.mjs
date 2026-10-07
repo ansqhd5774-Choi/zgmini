@@ -10,8 +10,10 @@ import {save} from "./d1.mjs";
 import {readZipIndex,readZipEntryText,parseTsv} from "./sec-dera-zip-r1.mjs";
 
 const DEFAULT_BASE=path.join(os.homedir(),".zgmini","pc-writer");
-const STATE_NAME="local-sec-fund-flow-raw-backfill-r1.json";
-const REPORT_NAME="local-sec-fund-flow-raw-backfill-last-run.json";
+const STATE_NAME="local-sec-fund-flow-raw-backfill-r2.json";
+const LEGACY_STATE_NAME="local-sec-fund-flow-raw-backfill-r1.json";
+const REPORT_NAME="local-sec-fund-flow-raw-backfill-r2-last-run.json";
+const METHODOLOGY_VERSION="SEC_RAW_NPORT_3M_CUMULATIVE_R2";
 const TEMP_DIR_NAME="sec-dera-backfill-r1";
 const NPORT_QUARTERS=Object.freeze([
   "2019q4","2020q1","2020q2","2020q3","2020q4",
@@ -54,12 +56,6 @@ const number=value=>{
 const yes=value=>String(value??"").trim().toUpperCase()==="Y";
 const quarterUrl=(kind,quarter)=>`https://www.sec.gov/files/dera/data/form-${kind==="nport"?"n-port":"n-cen"}-data-sets/${quarter}_${kind}.zip`;
 
-function monthKey(date){return String(date??"").slice(0,7)}
-function previousMonth(a,b){
-  if(!validDate(a)||!validDate(b))return false;
-  const [ay,am]=a.slice(0,7).split("-").map(Number),[by,bm]=b.slice(0,7).split("-").map(Number);
-  return ay*12+am+1===by*12+bm;
-}
 function latestClassification(events,date){
   let found=null;
   for(const event of events??[]){if(event.filingDate<=date)found=event;else break}
@@ -127,18 +123,38 @@ function processNcen(state,index){
   }
   return {events,series:Object.keys(state.classifications).length,submissionRows:submissions.size,fundRows:funds.length};
 }
+function threeMonthFlow(row,prefix){
+  const values=[1,2,3].map(month=>number(row[`${prefix}_FLOW_MON${month}`]));
+  return values.every(finite)?values.reduce((a,b)=>a+b,0):null;
+}
+export function buildNportThreeMonthItem(row,sub){
+  const seriesId=String(row?.SERIES_ID??"").trim();
+  if(!sub||!seriesId)return null;
+  const netAssets=number(row.NET_ASSETS);
+  const sales3m=threeMonthFlow(row,"SALES");
+  const reinvestment3m=threeMonthFlow(row,"REINVESTMENT");
+  const redemption3m=threeMonthFlow(row,"REDEMPTION");
+  if(!finite(netAssets)||netAssets<=0||![sales3m,reinvestment3m,redemption3m].every(finite))return null;
+  return {
+    seriesId,
+    reportDate:sub.reportDate,
+    filingDate:sub.filingDate,
+    netAssets,
+    sales3m,
+    reinvestment3m,
+    redemption3m,
+    netFlow3m:sales3m+reinvestment3m-redemption3m,
+  };
+}
 function processNport(state,index){
   const submissions=submissionMap(parseTsv(readZipEntryText(index,"SUBMISSION.tsv",{maxBytes:30_000_000})),"nport");
   const funds=parseTsv(readZipEntryText(index,"FUND_REPORTED_INFO.tsv",{maxBytes:140_000_000}));
   const groups=new Map();
   for(const row of funds){
-    const accession=String(row.ACCESSION_NUMBER??"").trim(),seriesId=String(row.SERIES_ID??"").trim();
-    const sub=submissions.get(accession);
-    if(!sub||!seriesId)continue;
-    const netAssets=number(row.NET_ASSETS),sales=number(row.SALES_FLOW_MON3),reinvest=number(row.REINVESTMENT_FLOW_MON3),redeem=number(row.REDEMPTION_FLOW_MON3);
-    if(!finite(netAssets)||netAssets<=0||![sales,reinvest,redeem].every(finite))continue;
-    const item={seriesId,reportDate:sub.reportDate,filingDate:sub.filingDate,netAssets,netFlow:sales+reinvest-redeem,outflow:redeem};
-    const key=seriesId+"|"+sub.reportDate;
+    const accession=String(row.ACCESSION_NUMBER??"").trim();
+    const item=buildNportThreeMonthItem(row,submissions.get(accession));
+    if(!item)continue;
+    const key=item.seriesId+"|"+item.reportDate;
     const prior=groups.get(key);
     if(!prior||item.filingDate<prior.filingDate)groups.set(key,item);
   }
@@ -150,33 +166,45 @@ function processNport(state,index){
   let produced=0;
   for(const [reportDate,items] of [...byMonth.entries()].sort(([a],[b])=>a.localeCompare(b))){
     const signalDate=items.reduce((max,item)=>item.filingDate>max?item.filingDate:max,"0000-00-00");
-    const totals={all:{net:0,outflow:0,assets:0,count:0},index:{net:0,outflow:0,assets:0,count:0},nonIndex:{net:0,outflow:0,assets:0,count:0}};
+    const totals={
+      all:{net3m:0,redemption3m:0,assets:0,count:0},
+      index:{net3m:0,redemption3m:0,assets:0,count:0},
+      nonIndex:{net3m:0,redemption3m:0,assets:0,count:0},
+    };
     let classifiableAssets=0,possibleAssets=0,skippedFundOfFund=0;
     for(const item of items){
-      const prior=state.lastFund[item.seriesId];
-      if(!prior||!previousMonth(prior.reportDate,item.reportDate)||!finite(prior.netAssets)||prior.netAssets<=0){
-        state.lastFund[item.seriesId]={reportDate:item.reportDate,netAssets:item.netAssets};
-        continue;
-      }
-      possibleAssets+=prior.netAssets;
+      possibleAssets+=item.netAssets;
       const classification=latestClassification(state.classifications[item.seriesId],signalDate);
-      if(classification){
-        classifiableAssets+=prior.netAssets;
-        if(classification.isFundOfFund){skippedFundOfFund++;state.lastFund[item.seriesId]={reportDate:item.reportDate,netAssets:item.netAssets};continue}
-        const bucket=classification.isIndex?"index":"nonIndex";
-        totals[bucket].net+=item.netFlow;totals[bucket].outflow+=item.outflow;totals[bucket].assets+=prior.netAssets;totals[bucket].count++;
-        totals.all.net+=item.netFlow;totals.all.outflow+=item.outflow;totals.all.assets+=prior.netAssets;totals.all.count++;
+      if(!classification)continue;
+      classifiableAssets+=item.netAssets;
+      if(classification.isFundOfFund){skippedFundOfFund++;continue}
+      const bucket=classification.isIndex?"index":"nonIndex";
+      for(const target of [totals[bucket],totals.all]){
+        target.net3m+=item.netFlow3m;
+        target.redemption3m+=item.redemption3m;
+        target.assets+=item.netAssets;
+        target.count++;
       }
-      state.lastFund[item.seriesId]={reportDate:item.reportDate,netAssets:item.netAssets};
     }
     if(totals.all.assets>0){
-      state.monthly[reportDate]={
+      state.signals[reportDate]={
         observationDate:reportDate,
         availableAt:signalDate,
-        allNetRatio:100*totals.all.net/totals.all.assets,
-        indexNetRatio:totals.index.assets>0?100*totals.index.net/totals.index.assets:null,
-        nonIndexNetRatio:totals.nonIndex.assets>0?100*totals.nonIndex.net/totals.nonIndex.assets:null,
-        allOutflowRatio:-100*totals.all.outflow/totals.all.assets,
+        methodologyVersion:METHODOLOGY_VERSION,
+        flowWindowMonths:3,
+        ratioBasis:"CURRENT_REPORTED_NET_ASSETS_RESEARCH_NORMALIZATION",
+        officialTable32Comparable:false,
+        allNetFlow3m:totals.all.net3m,
+        indexNetFlow3m:totals.index.net3m,
+        nonIndexNetFlow3m:totals.nonIndex.net3m,
+        allRedemption3m:totals.all.redemption3m,
+        allCurrentNetAssets:totals.all.assets,
+        indexCurrentNetAssets:totals.index.assets,
+        nonIndexCurrentNetAssets:totals.nonIndex.assets,
+        allNetFlow3mToCurrentAssetsPct:100*totals.all.net3m/totals.all.assets,
+        indexNetFlow3mToCurrentAssetsPct:totals.index.assets>0?100*totals.index.net3m/totals.index.assets:null,
+        nonIndexNetFlow3mToCurrentAssetsPct:totals.nonIndex.assets>0?100*totals.nonIndex.net3m/totals.nonIndex.assets:null,
+        allRedemption3mToCurrentAssetsPct:100*totals.all.redemption3m/totals.all.assets,
         classificationCoverageRatio:possibleAssets>0?classifiableAssets/possibleAssets:null,
         fundCount:totals.all.count,
         indexFundCount:totals.index.count,
@@ -188,23 +216,27 @@ function processNport(state,index){
   }
   return {produced,filings:groups.size,submissionRows:submissions.size,fundRows:funds.length,reportMonths:byMonth.size};
 }
-function loadState(file){
-  if(!fs.existsSync(file))return {version:1,nportProcessed:[],ncenProcessed:[],classifications:{},lastFund:{},monthly:{}};
-  const state=JSON.parse(fs.readFileSync(file,"utf8"));
-  if(state?.version!==1)throw new Error("SEC_RAW_BACKFILL_STATE_VERSION");
-  state.nportProcessed=Array.isArray(state.nportProcessed)?state.nportProcessed:[];
-  state.ncenProcessed=Array.isArray(state.ncenProcessed)?state.ncenProcessed:[];
-  state.classifications=state.classifications&&typeof state.classifications==="object"?state.classifications:{};
-  state.lastFund=state.lastFund&&typeof state.lastFund==="object"?state.lastFund:{};
-  state.monthly=state.monthly&&typeof state.monthly==="object"?state.monthly:{};
-  if(state.ncenProcessed.length&&Object.keys(state.classifications).length===0){
-    state.ncenProcessed=[];
-    state.ncenCheckpointResetReason="ZERO_CLASSIFICATIONS";
+function newState(){return {version:2,methodologyVersion:METHODOLOGY_VERSION,nportProcessed:[],ncenProcessed:[],classifications:{},signals:{}}}
+function loadState(file,legacyFile){
+  if(fs.existsSync(file)){
+    const state=JSON.parse(fs.readFileSync(file,"utf8"));
+    if(state?.version!==2||state?.methodologyVersion!==METHODOLOGY_VERSION)throw new Error("SEC_RAW_BACKFILL_STATE_VERSION");
+    state.nportProcessed=Array.isArray(state.nportProcessed)?state.nportProcessed:[];
+    state.ncenProcessed=Array.isArray(state.ncenProcessed)?state.ncenProcessed:[];
+    state.classifications=state.classifications&&typeof state.classifications==="object"?state.classifications:{};
+    state.signals=state.signals&&typeof state.signals==="object"?state.signals:{};
+    return state;
   }
-  if(state.nportProcessed.length&&Object.keys(state.monthly).length===0){
-    state.nportProcessed=[];
-    state.lastFund={};
-    state.nportCheckpointResetReason="ZERO_MONTHS";
+  const state=newState();
+  if(fs.existsSync(legacyFile)){
+    try{
+      const legacy=JSON.parse(fs.readFileSync(legacyFile,"utf8"));
+      if(legacy?.version===1&&legacy.classifications&&Object.keys(legacy.classifications).length>0){
+        state.classifications=legacy.classifications;
+        state.ncenProcessed=Array.isArray(legacy.ncenProcessed)?legacy.ncenProcessed:[];
+        state.migratedFromLegacyR1=true;
+      }
+    }catch{}
   }
   return state;
 }
@@ -215,17 +247,17 @@ function ncenNeeded(state,targetQuarter){
 }
 
 export async function backfillSecRawFundFlows(base=process.env.ZGMINI_PC_HOME??DEFAULT_BASE){
-  const stateFile=path.join(base,STATE_NAME),reportFile=path.join(base,REPORT_NAME),tempDir=path.join(base,TEMP_DIR_NAME);
-  const state=loadState(stateFile);
+  const stateFile=path.join(base,STATE_NAME),legacyStateFile=path.join(base,LEGACY_STATE_NAME),reportFile=path.join(base,REPORT_NAME),tempDir=path.join(base,TEMP_DIR_NAME);
+  const state=loadState(stateFile,legacyStateFile);
   const target=NPORT_QUARTERS.find(q=>!state.nportProcessed.includes(q))??null;
   const originalFetch=globalThis.fetch;
   const quota=createQuotaFetch({base,originalFetch,mode:"enforce"});
   globalThis.fetch=quota.fetch;
-  const report={version:1,status:"RUNNING",at:new Date().toISOString(),noPublish:true,dbSchemaChanged:false,providerCalls:0,targetQuarter:target,ncenProcessedThisRun:[],nportProcessedThisRun:null,
-    checkpointReset:{ncen:state.ncenCheckpointResetReason??null,nport:state.nportCheckpointResetReason??null}};
+  const report={version:2,methodologyVersion:METHODOLOGY_VERSION,status:"RUNNING",at:new Date().toISOString(),noPublish:true,dbSchemaChanged:false,providerCalls:0,targetQuarter:target,ncenProcessedThisRun:[],nportProcessedThisRun:null,
+    migratedFromLegacyR1:Boolean(state.migratedFromLegacyR1)};
   try{
     if(!target){
-      report.status="COMPLETE";report.months=Object.keys(state.monthly).length;report.first=Object.keys(state.monthly).sort()[0]??null;report.last=Object.keys(state.monthly).sort().at(-1)??null;return report;
+      report.status="COMPLETE";report.signals=Object.keys(state.signals).length;report.first=Object.keys(state.signals).sort()[0]??null;report.last=Object.keys(state.signals).sort().at(-1)??null;return report;
     }
     for(const quarter of ncenNeeded(state,target)){
       const file=path.join(tempDir,quarter+"_ncen.zip");
@@ -250,9 +282,9 @@ export async function backfillSecRawFundFlows(base=process.env.ZGMINI_PC_HOME??D
     report.processedQuarters=state.nportProcessed.length;
     report.requiredQuarters=NPORT_QUARTERS.length;
     report.remaining=NPORT_QUARTERS.length-state.nportProcessed.length;
-    report.months=Object.keys(state.monthly).length;
-    report.first=Object.keys(state.monthly).sort()[0]??null;
-    report.last=Object.keys(state.monthly).sort().at(-1)??null;
+    report.signals=Object.keys(state.signals).length;
+    report.first=Object.keys(state.signals).sort()[0]??null;
+    report.last=Object.keys(state.signals).sort().at(-1)??null;
     report.quota=quota.summary();
     return report;
   }catch(error){
