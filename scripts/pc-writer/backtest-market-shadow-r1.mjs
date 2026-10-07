@@ -99,6 +99,34 @@ export function evaluateSeries(series,benchmark){
     bands,rows,
   };
 }
+function alignForComparison(baseline,candidate){
+  const base=normalizeSeries(baseline),cand=normalizeSeries(candidate);
+  if(!base.length||!cand.length)return {baseline:[],shadow:[]};
+  const first=base[0].label,last=base.at(-1).label;
+  const shadow=cand.filter(row=>row.label>=first&&row.label<=last);
+  const aligned=[];
+  for(const row of shadow){
+    const found=latestAtOrBefore(base,row.label);
+    if(found)aligned.push({label:row.label,value:found.value});
+  }
+  return {baseline:aligned,shadow:shadow.slice(-aligned.length)};
+}
+function evaluationSummaryPair(baseline,candidate,benchmark){
+  const aligned=alignForComparison(baseline,candidate);
+  const baseEval=evaluateSeries(aligned.baseline,benchmark);
+  const shadowEval=evaluateSeries(aligned.shadow,benchmark);
+  return {
+    baseline:baseEval,
+    shadow:shadowEval,
+    comparison:{
+      matchedSignals:Math.min(baseEval.observations,shadowEval.observations),
+      correlation1mDelta:finite(baseEval.correlation1m)&&finite(shadowEval.correlation1m)?shadowEval.correlation1m-baseEval.correlation1m:null,
+      correlation3mDelta:finite(baseEval.correlation3m)&&finite(shadowEval.correlation3m)?shadowEval.correlation3m-baseEval.correlation3m:null,
+      note:"Positive correlation means higher score aligned with higher subsequent S&P 500 return; small samples require manual review.",
+    },
+  };
+}
+
 function monthEndDates(rows=[],count=13){
   const byMonth=new Map();
   for(const row of normalizeSeries(rows))byMonth.set(row.label.slice(0,7),row.label);
@@ -176,25 +204,21 @@ export async function runMarketShadowBacktest(base=process.env.ZGMINI_PC_HOME??D
 
     const results={
       inflation:{
-        baseline:evaluateSeries(domain(market,"inflation")?.trend??[],benchmark),
-        shadow:evaluateSeries(shadowInflation,benchmark),
+        ...evaluationSummaryPair(domain(market,"inflation")?.trend??[],shadowInflation,benchmark),
         lookAheadSafe:true,
       },
       dollarFx:{
-        baseline:evaluateSeries(domain(market,"dollarFx")?.trend??[],benchmark),
-        shadow:evaluateSeries(dollar?.trend??[],benchmark),
+        ...evaluationSummaryPair(domain(market,"dollarFx")?.trend??[],dollar?.trend??[],benchmark),
         lookAheadSafe:false,
         caveat:"CURRENT_VINTAGE_DOLLAR_HISTORY",
       },
       commodities:{
-        baseline:evaluateSeries(domain(market,"commodities")?.trend??[],benchmark),
-        shadow:evaluateSeries(commodities?.trend??[],benchmark),
+        ...evaluationSummaryPair(domain(market,"commodities")?.trend??[],commodities?.trend??[],benchmark),
         lookAheadSafe:false,
         caveat:"CURRENT_VINTAGE_COMMODITY_HISTORY",
       },
       breadth:{
-        baseline:evaluateSeries(domain(market,"breadth")?.trend??[],benchmark),
-        shadow:evaluateSeries(shadowBreadth,benchmark),
+        ...evaluationSummaryPair(domain(market,"breadth")?.trend??[],shadowBreadth,benchmark),
         lookAheadSafe:false,
         caveat:"CURRENT_UNIVERSE_SURVIVORSHIP_BIAS",
         historySessions:[...new Set(breadthInput.rows.map(row=>row.trade_date))].length,
