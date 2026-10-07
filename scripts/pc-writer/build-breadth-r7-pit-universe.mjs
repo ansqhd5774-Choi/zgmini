@@ -107,7 +107,26 @@ export async function buildBreadthR7PitUniverse(base=process.env.ZGMINI_PC_HOME?
     if(!relevantEvents.length)throw new Error("SP500_PIT_NO_RELEVANT_EVENTS");
 
     const reconstructed=reconstructPitUniverses({currentMembers,currentDate,targetDates:dates,events:relevantEvents});
-    if(reconstructed.anomalies.length)throw new Error("SP500_PIT_EVENT_CONSISTENCY_FAILED");
+    if(reconstructed.anomalies.length){
+      report.currentDate=currentDate;
+      report.currentMembers=currentMembers.length;
+      report.first=dates[0];
+      report.last=dates.at(-1);
+      report.archiveEntries=archiveEntries.size;
+      report.candidateReleases=candidates.length;
+      report.parsedReleases=releaseAudit.filter(item=>item.eventRows>0).length;
+      report.relevantEvents=relevantEvents.length;
+      report.anomalyCount=reconstructed.anomalies.length;
+      report.anomalies=reconstructed.anomalies.slice(0,25);
+      report.anomalyEvents=report.anomalies.map(anomaly=>({
+        ...anomaly,
+        matchingEvents:relevantEvents.filter(event=>event.ticker===anomaly.ticker).map(event=>({
+          effectiveDate:event.effectiveDate,action:event.action,releaseDate:event.releaseDate,sourceUrl:event.sourceUrl,
+        })),
+        currentMember:currentMembers.includes(anomaly.ticker),
+      }));
+      throw new Error("SP500_PIT_EVENT_CONSISTENCY_FAILED");
+    }
     const counts=reconstructed.universes.map(item=>item.memberCount);
     const minCount=Math.min(...counts),maxCount=Math.max(...counts);
     if(minCount<490||maxCount>520)throw new Error("SP500_PIT_RECONSTRUCTED_COUNT_INVALID");
