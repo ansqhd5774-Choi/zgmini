@@ -149,7 +149,7 @@ export default function InflationPanel(){
  return <>
   <section className="cnn-reference-panel fg-card fg-shared-shell inflation-target-card" data-testid="inflation-detail-hero" data-market-state={loading?"loading":score===null?"unavailable":"ready"} aria-busy={loading}>
    <div className="fg-header-slot">
-    <MarketCardHeader flag="/flags/us.svg" eyebrow="ZGMINI INFLATION R2" title="미국 인플레이션" description="Stored PIT History" dateLabel="데이터 기준일" date={dateLabel(payload?.asOfDate)} source={payload?.methodologyVersion??"INFLATION_R2"}/>
+    <MarketCardHeader flag="/flags/us.svg" eyebrow="ZGMINI INFLATION R2" title="미국 인플레이션" description="초기발표 당시 자료 기반" dateLabel="데이터 기준일" date={dateLabel(payload?.asOfDate)} source={payload?.methodologyVersion??"INFLATION_R2"}/>
    </div>
    <div className="fg-content-slot">
     <div className="fg-score-slot">
@@ -159,7 +159,7 @@ export default function InflationPanel(){
      <div className="fg-chart-slot"><div className="fg-renderer"><MarketFearGreedChart data={trend} axisTicks={axisTicks} axisLabels={axisLabels} latestPoint={latestPoint} instanceKey="1Y" gradientId="inflation-fill" formatTooltipLabel={dateLabel} emptyLabel={loading?"확인 중":"이력 없음"}/></div></div>
     </MarketTrendFrame>
    </div>
-   <div className="fg-footer-slot"><div className="cnn-panel-note"><span>데이터 출처</span><strong>저장된 초기발표 이력만 사용 · Live fallback 없음</strong></div></div>
+   <div className="fg-footer-slot"><div className="cnn-panel-note"><span>데이터 출처</span><strong>저장된 초기발표 이력만 사용 · 실시간 대체 조회 없음</strong></div></div>
   </section>
 
   <section className="inflation-explainer" aria-labelledby="inflation-what-title">
@@ -175,7 +175,7 @@ export default function InflationPanel(){
   <section className="inflation-indicator-section" aria-labelledby="inflation-indicator-title">
    <header>
     <div><p className="cnn-eyebrow">INFLATION INDICATORS</p><h2 id="inflation-indicator-title">인플레이션 분석 지표</h2></div>
-    <p>기준과 현재값을 비교해 <b>긍정 / 중립 / 부정</b>으로 단순화했습니다. ⓘ에서 해석 방향을 확인할 수 있습니다.</p>
+    <p>저장된 정규화 점수의 구간을 <b>긍정 / 중립 / 부정</b>으로 단순화했습니다. ⓘ에서 해석 방향을 확인할 수 있습니다.</p>
    </header>
    <div className="inflation-table-wrap">
     <table className="inflation-indicator-table">
