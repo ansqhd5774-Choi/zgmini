@@ -41,7 +41,7 @@ function latestClassification(events,date){
 }
 async function download(url,file,{fetchImpl,report}){
   if(fs.existsSync(file)&&fs.statSync(file).size>100)return {file,reused:true};
-  const response=await fetchImpl(url,{headers:SEC_HEADERS,redirect:"follow",signal:AbortSignal.timeout(120000)});
+  const response=await fetchImpl(url,{headers:SEC_HEADERS,redirect:"follow",signal:AbortSignal.timeout(30*60*1000)});
   report.providerCalls++;
   if(!response.ok)throw new Error("SEC_DERA_HTTP_"+String(response.status??0));
   const hinted=Number(response.headers.get("content-length")??0);
