@@ -20,7 +20,7 @@ const OUTPUT_NAME="local-breadth-r7-pit-universe.json";
 const REPORT_NAME="local-breadth-r7-pit-universe-last-run.json";
 const TARGET_SESSIONS=520;
 const ARCHIVE_PAGE_SIZE=100;
-const MAX_ARCHIVE_PAGES=5;
+const MAX_ARCHIVE_PAGES=6;
 const MAX_RELEASE_CALLS=60;
 const USER_AGENT="ZGMINI/1.0 (+https://zgmini.kr)";
 const validDate=value=>typeof value==="string"&&/^\d{4}-\d{2}-\d{2}$/.test(value);
@@ -38,8 +38,8 @@ function targetSessions(endDate,count=TARGET_SESSIONS){
   }
   return out.reverse();
 }
-function archiveUrl(offset){
-  return `https://press.spglobal.com/index.php?keywords=s%26P+500+index&l=${ARCHIVE_PAGE_SIZE}&o=${offset}&s=2429`;
+export function archiveUrl(offset){
+  return `https://press.spglobal.com/index.php?l=${ARCHIVE_PAGE_SIZE}&o=${offset}&s=2429`;
 }
 async function fetchText(fetchImpl,url,label){
   const response=await fetchImpl(url,{headers:{accept:"text/html,application/xhtml+xml","user-agent":USER_AGENT},redirect:"follow",signal:AbortSignal.timeout(30000)});
