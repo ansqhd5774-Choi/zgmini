@@ -391,6 +391,16 @@
  .zg-dashboard[data-view="dashboard"] .zg-r55-subscore:first-child,.zg-dashboard[data-view="dashboard"] .zg-r55-subscore:last-child{padding:6px 4px}
 }
 
+.zg-r55-boundary-line{display:none}
+.zg-dashboard[data-view="dashboard"] .zg-r55-card-visual .zg-r55-boundary-line{display:block}
+.zg-dashboard[data-view="dashboard"] .zg-r55-card-visual .zg-r55-boundary-line .recharts-reference-line-line{stroke-dasharray:none}
+/* Use the spare horizontal space beside desktop indicator values. */
+@media(min-width:960px){
+ .zg-dashboard[data-view="dashboard"] .zg-r55-card-visual .zg-r55-boundary-line{display:block}
+ .zg-dashboard[data-view="dashboard"] .zg-r55-card-visual .zg-r55-boundary-line .recharts-reference-line-line{stroke-dasharray:none}
+ .zg-dashboard[data-view="dashboard"] .zg-r55-shell[data-expanded] .zg-r55-card-visual{margin-left:-16px}
+}
+
 /* The composite chart supports the same pointer/touch tooltip as sentiment charts. */
 .zg-dashboard[data-view="dashboard"] .zg-r55-summary-chart .zg-r55-mini-chart :is(.recharts-responsive-container,.recharts-wrapper,.recharts-surface){pointer-events:auto!important}
 
