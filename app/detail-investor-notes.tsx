@@ -73,7 +73,11 @@ export default function DetailInvestorNotes({topic}:{topic:Topic}) {
         {href:"https://www.bls.gov/schedule/news_release/cpi.htm",label:"CPI 공식 발표 일정"},
         {href:"https://www.bea.gov/news/schedule",label:"BEA 공식 발표 일정"},
       ]:[]}
-      related={guide.related.map(id=>({href:paths[id],label:labels[id]}))}/>
+      related={[...guide.related.map(id=>({href:paths[id],label:labels[id]})),
+        ...((topic==="usa"||topic==="korea")?[{href:"/guides/fear-greed-buying/",label:"공포탐욕지수 매수 기준과 한계"}]:[]),
+        ...(topic==="inflation"?[{href:"/guides/cpi-pce-release/",label:"CPI·PCE 발표시간과 결과 해석"}]:[]),
+        ...((topic==="inflation"||topic==="recession")?[{href:"/guides/fomc/",label:"FOMC 일정과 금리 결정 읽기"}]:[]),
+      ]}/>
     {(topic==="usa"||topic==="korea")&&<section className="mt-8 space-y-3 text-sm leading-7 text-slate-300" aria-label="한국·미국 공포탐욕지수 비교">
       <h2 className="text-xl font-bold text-white">한국·미국 공포탐욕지수 비교</h2>
       <div className="overflow-x-auto">

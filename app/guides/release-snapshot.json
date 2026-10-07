@@ -1,0 +1,17 @@
+{
+  "checkedAt": "2026-10-07",
+  "mode": "manual-official-snapshot",
+  "events": [
+    {"id":"cpi","name":"CPI・2026년 9월분","at":"2026-10-14T12:30:00Z","source":"https://www.bls.gov/schedule/news_release/cpi.htm"},
+    {"id":"pce","name":"PCE・2026년 9월분","at":"2026-10-29T12:30:00Z","source":"https://www.bea.gov/news/schedule"},
+    {"id":"fomc","name":"FOMC 금리 결정・10월 회의","at":"2026-10-28T18:00:00Z","source":"https://www.federalreserve.gov/newsevents/2026-october.htm"},
+    {"id":"press","name":"FOMC 기자회견","at":"2026-10-28T18:30:00Z","source":"https://www.federalreserve.gov/newsevents/2026-october.htm"}
+  ],
+  "releases": [
+    {"name":"전체 CPI","period":"2026년 8월","unit":"전월 대비 %, 계절조정","previous":0.1,"actual":0.4,"consensus":null,"publishedAt":"2026-09-11","source":"https://www.bls.gov/news.release/archives/cpi_09112026.htm"},
+    {"name":"근원 CPI","period":"2026년 8월","unit":"전월 대비 %, 계절조정","previous":0.2,"actual":0.3,"consensus":null,"publishedAt":"2026-09-11","source":"https://www.bls.gov/news.release/archives/cpi_09112026.htm"},
+    {"name":"전체 PCE 물가지수","period":"2026년 8월","unit":"전월 대비 %","previous":0.1,"actual":0.3,"consensus":null,"publishedAt":"2026-09-30","source":"https://www.bea.gov/news/2026/personal-income-and-outlays-august-2026"},
+    {"name":"근원 PCE 물가지수","period":"2026년 8월","unit":"전월 대비 %","previous":0.1,"actual":0.2,"consensus":null,"publishedAt":"2026-09-30","source":"https://www.bea.gov/news/2026/personal-income-and-outlays-august-2026"}
+  ],
+  "fed": {"period":"2026-09-16 결정","targetRange":"3.75~4.00%","change":"+0.25%p","consensus":null,"source":"https://www.federalreserve.gov/newsevents/pressreleases/monetary20260916a.htm"}
+}
