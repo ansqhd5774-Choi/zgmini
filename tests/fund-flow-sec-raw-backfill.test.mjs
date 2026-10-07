@@ -48,8 +48,8 @@ test("raw backfill refuses to checkpoint parsed zero-row SEC quarters",()=>{
   const src=fs.readFileSync(new URL("../scripts/pc-writer/backfill-sec-fund-flow-raw-r1.mjs",import.meta.url),"utf8");
   assert.match(src,/SEC_NCEN_PARSED_ZERO_ROWS/);
   assert.match(src,/SEC_NPORT_PARSED_ZERO_ROWS/);
-  assert.match(src,/ZERO_CLASSIFICATIONS/);
-  assert.match(src,/ZERO_MONTHS/);
+  assert.match(src,/state\.nportProcessed\.push\(target\)/);
+  assert.ok(src.indexOf("SEC_NPORT_PARSED_ZERO_ROWS")<src.indexOf("state.nportProcessed.push(target)"));
 });
 
 
@@ -81,4 +81,12 @@ test("R2 preserves valid legacy N-CEN classifications but does not reuse invalid
   assert.match(src,/migratedFromLegacyR1/);
   assert.match(src,/state\.classifications=legacy\.classifications/);
   assert.doesNotMatch(src,/state\.nportProcessed=legacy\.nportProcessed/);
+});
+
+
+test("R2 output is isolated from the obsolete R1 backtest artifact and labels Table 3.2 non-comparability",()=>{
+  const backtest=fs.readFileSync(new URL("../scripts/pc-writer/backtest-sec-fund-flow-raw-r1.mjs",import.meta.url),"utf8");
+  assert.match(backtest,/local-sec-fund-flow-raw-backtest-r2\.json/);
+  assert.match(backtest,/officialTable32Comparable:false/);
+  assert.match(backtest,/CURRENT_REPORTED_NET_ASSETS_RESEARCH_NORMALIZATION/);
 });
