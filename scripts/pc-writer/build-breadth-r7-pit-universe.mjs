@@ -12,6 +12,7 @@ import {
   extractSpGlobalArchiveEntries,
   isSp500MembershipHeadline,
   parseSp500ChangeRows,
+  reconcileCurrentMembersWithOfficialEvents,
   reconstructPitUniverses,
 } from "../../lib/market-score/sp500-pit-universe-r1.mjs";
 
@@ -106,10 +107,16 @@ export async function buildBreadthR7PitUniverse(base=process.env.ZGMINI_PC_HOME?
     const relevantEvents=[...uniqueEvents.values()].filter(event=>event.effectiveDate>dates[0]&&event.effectiveDate<=currentDate);
     if(!relevantEvents.length)throw new Error("SP500_PIT_NO_RELEVANT_EVENTS");
 
-    const reconstructed=reconstructPitUniverses({currentMembers,currentDate,targetDates:dates,events:relevantEvents});
+    const anchor=reconcileCurrentMembersWithOfficialEvents({currentMembers,currentDate,events:relevantEvents});
+    if(anchor.members.length<490||anchor.members.length>520)throw new Error("SP500_PIT_RECONCILED_CURRENT_COUNT_INVALID");
+    const reconstructed=reconstructPitUniverses({currentMembers:anchor.members,currentDate,targetDates:dates,events:relevantEvents});
     if(reconstructed.anomalies.length){
       report.currentDate=currentDate;
-      report.currentMembers=currentMembers.length;
+      report.sourceCurrentMembers=currentMembers.length;
+    report.currentMembers=anchor.members.length;
+    report.currentAnchorReconciled=anchor.repairs.length>0;
+    report.currentAnchorRepairCount=anchor.repairs.length;
+    report.currentAnchorRepairs=anchor.repairs;
       report.first=dates[0];
       report.last=dates.at(-1);
       report.archiveEntries=archiveEntries.size;
@@ -139,8 +146,13 @@ export async function buildBreadthR7PitUniverse(base=process.env.ZGMINI_PC_HOME?
       sourceAuthority:"S&P Dow Jones Indices / S&P Global Press Releases",
       sourceMode:"OFFICIAL_EFFECTIVE_DATE_CHANGE_HISTORY_REVERSED_FROM_CURRENT_UNIVERSE",
       currentDate,
-      currentMemberCount:currentMembers.length,
-      currentMemberHash:memberHash(currentMembers),
+      sourceCurrentMemberCount:currentMembers.length,
+      sourceCurrentMemberHash:memberHash(currentMembers),
+      currentMemberCount:anchor.members.length,
+      currentMemberHash:memberHash(anchor.members),
+      currentAnchorReconciled:anchor.repairs.length>0,
+      currentAnchorRepairCount:anchor.repairs.length,
+      currentAnchorRepairs:anchor.repairs,
       targetSessions:dates.length,
       first:dates[0],
       last:dates.at(-1),

@@ -8,6 +8,7 @@ import {
   extractSpGlobalArchiveEntries,
   isSp500MembershipHeadline,
   parseSp500ChangeRows,
+  reconcileCurrentMembersWithOfficialEvents,
   reconstructPitUniverses,
 } from "../lib/market-score/sp500-pit-universe-r1.mjs";
 
@@ -119,4 +120,41 @@ test("S&P table effective dates override prose dates on spin-off pages",()=>{
     ["2025-10-30","Addition","SOLS"],
     ["2025-10-31","Deletion","KMX"],
   ]);
+});
+
+
+test("official latest event repairs a lagging current universe before reverse PIT reconstruction",()=>{
+  const events=[
+    {effectiveDate:"2026-10-01",action:"Addition",ticker:"VYLR",releaseDate:"2026-10-01",sourceUrl:"https://press.spglobal.com/vylor"},
+    {effectiveDate:"2026-10-06",action:"Deletion",ticker:"CTVA",releaseDate:"2026-10-01",sourceUrl:"https://press.spglobal.com/vylor"},
+    {effectiveDate:"2026-10-06",action:"Addition",ticker:"TWLO",releaseDate:"2026-10-01",sourceUrl:"https://press.spglobal.com/vylor"},
+  ];
+  const anchor=reconcileCurrentMembersWithOfficialEvents({
+    currentMembers:["AAA","CTVA"],
+    currentDate:"2026-10-05",
+    events,
+  });
+  assert.deepEqual(anchor.members,["AAA","CTVA","VYLR"]);
+  assert.deepEqual(anchor.repairs.map(x=>[x.ticker,x.action,x.effectiveDate]),[["VYLR","ADD","2026-10-01"]]);
+  const out=reconstructPitUniverses({
+    currentMembers:anchor.members,
+    currentDate:"2026-10-05",
+    targetDates:["2026-09-30","2026-10-01","2026-10-05"],
+    events,
+  });
+  assert.equal(out.anomalies.length,0);
+  const byDate=new Map(out.universes.map(row=>[row.tradeDate,row.members]));
+  assert.deepEqual(byDate.get("2026-09-30"),["AAA","CTVA"]);
+  assert.deepEqual(byDate.get("2026-10-01"),["AAA","CTVA","VYLR"]);
+  assert.deepEqual(byDate.get("2026-10-05"),["AAA","CTVA","VYLR"]);
+});
+
+test("official latest deletion removes a stale ticker from the current anchor",()=>{
+  const anchor=reconcileCurrentMembersWithOfficialEvents({
+    currentMembers:["AAA","OLD"],
+    currentDate:"2026-10-08",
+    events:[{effectiveDate:"2026-10-06",action:"Deletion",ticker:"OLD"}],
+  });
+  assert.deepEqual(anchor.members,["AAA"]);
+  assert.deepEqual(anchor.repairs.map(x=>[x.ticker,x.action]),[["OLD","REMOVE"]]);
 });
