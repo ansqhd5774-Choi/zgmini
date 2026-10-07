@@ -25,7 +25,7 @@ try{
  const publishAllowed=publishRequested&&!quotaGuarded&&!collectionFailed;
  const publishSkipped=publishRequested&&!publishAllowed?(quotaGuarded?'QUOTA_GUARD':collectionFailed?'COLLECTION_FAILED':null):null;
  const publication=spawnSync(process.execPath,[path.join(here,'run-local.mjs'),...(publishAllowed?['--publish']:[])],{windowsHide:true,stdio:['ignore','pipe','pipe'],timeout:30*60000});
- let prospective=null,prospectiveReport=null,fundFlowProspective=null,fundFlowProspectiveReport=null;
+ let prospective=null,prospectiveReport=null,fundFlowProspective=null,fundFlowProspectiveReport=null,breadthProspective=null,breadthProspectiveReport=null;
  if(lane==='core'){
   prospective=spawnSync(process.execPath,[path.join(here,'dollar-prospective-forward-r1.mjs')],{windowsHide:true,stdio:['ignore','pipe','pipe'],timeout:5*60000});
   const prospectiveFile=path.join(base,'local-dollar-prospective-last-run.json');
@@ -33,6 +33,9 @@ try{
   fundFlowProspective=spawnSync(process.execPath,[path.join(here,'fund-flow-index-prospective-r1.mjs')],{windowsHide:true,stdio:['ignore','pipe','pipe'],timeout:5*60000});
   const fundFlowProspectiveFile=path.join(base,'local-fund-flow-index-prospective-last-run.json');
   fundFlowProspectiveReport=fs.existsSync(fundFlowProspectiveFile)?read(fundFlowProspectiveFile):null;
+  breadthProspective=spawnSync(process.execPath,[path.join(here,'breadth-r7-prospective-r1.mjs')],{windowsHide:true,stdio:['ignore','pipe','pipe'],timeout:10*60000});
+  const breadthProspectiveFile=path.join(base,'local-breadth-r7-prospective-last-run.json');
+  breadthProspectiveReport=fs.existsSync(breadthProspectiveFile)?read(breadthProspectiveFile):null;
  }
  const researchProspective=lane==='core'?{
   nonBlocking:true,
@@ -57,7 +60,20 @@ try{
   eligible3m:fundFlowProspectiveReport?.eligible3m??null,
   error:fundFlowProspectiveReport?.error??(fundFlowProspective?.error?.code??null),
  }:{nonBlocking:true,status:'SKIPPED_KOREA_LANE'};
- const report={at:new Date().toISOString(),lane,collectionExit:collection.status,collectionStatus:collectionReport?.status??null,publicationExit:publication.status,publishRequested,publishSkipped,researchProspective,researchFundFlowProspective,status:publication.status===0?(publishSkipped==='QUOTA_GUARD'?'QUOTA_GUARDED':publishSkipped==='COLLECTION_FAILED'?'COLLECTION_FAILED_PUBLISH_BLOCKED':'COMPLETE'):'PUBLICATION_NOT_VERIFIED'};
+ const researchBreadthProspective=lane==='core'?{
+  nonBlocking:true,
+  exit:breadthProspective?.status??null,
+  status:breadthProspectiveReport?.status??(breadthProspective?.status===0?'REPORT_MISSING':'EXECUTION_FAILED'),
+  pitRefreshed:breadthProspectiveReport?.pitRefreshed??null,
+  initialized:breadthProspectiveReport?.initialized??null,
+  recorded:breadthProspectiveReport?.recorded??null,
+  signalDate:breadthProspectiveReport?.signalDate??null,
+  totalSignals:breadthProspectiveReport?.totalSignals??null,
+  eligible1m:breadthProspectiveReport?.eligible1m??null,
+  eligible3m:breadthProspectiveReport?.eligible3m??null,
+  error:breadthProspectiveReport?.error??breadthProspectiveReport?.reason??(breadthProspective?.error?.code??null),
+ }:{nonBlocking:true,status:'SKIPPED_KOREA_LANE'};
+ const report={at:new Date().toISOString(),lane,collectionExit:collection.status,collectionStatus:collectionReport?.status??null,publicationExit:publication.status,publishRequested,publishSkipped,researchProspective,researchFundFlowProspective,researchBreadthProspective,status:publication.status===0?(publishSkipped==='QUOTA_GUARD'?'QUOTA_GUARDED':publishSkipped==='COLLECTION_FAILED'?'COLLECTION_FAILED_PUBLISH_BLOCKED':'COMPLETE'):'PUBLICATION_NOT_VERIFIED'};
  save(path.join(base,'local-cycle-last-run.json'),report);console.log(JSON.stringify(report));
  if(publication.status!==0)process.exitCode=1;
 }finally{fs.unlinkSync(file);}

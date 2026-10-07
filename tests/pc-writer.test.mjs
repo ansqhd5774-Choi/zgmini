@@ -88,3 +88,15 @@ test('local core cycle automatically accumulates prospective index-fund flow evi
  assert.doesNotMatch(src,/if\(fundFlowProspective\.status!==0\)process\.exitCode=1/);
  assert.match(src,/if\(publication\.status!==0\)process\.exitCode=1/);
 });
+
+
+test('local core cycle automatically accumulates prospective Breadth R7 PIT evidence without gating publication',()=>{
+ const src=fs.readFileSync(new URL('../scripts/pc-writer/local-cycle.mjs',import.meta.url),'utf8');
+ assert.match(src,/breadth-r7-prospective-r1\.mjs/);
+ assert.match(src,/local-breadth-r7-prospective-last-run\.json/);
+ assert.match(src,/researchBreadthProspective/);
+ assert.match(src,/nonBlocking:true/);
+ assert.match(src,/pitRefreshed/);
+ assert.doesNotMatch(src,/if\(breadthProspective\.status!==0\)process\.exitCode=1/);
+ assert.match(src,/if\(publication\.status!==0\)process\.exitCode=1/);
+});
