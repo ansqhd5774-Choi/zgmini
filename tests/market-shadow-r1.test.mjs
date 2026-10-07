@@ -1,8 +1,8 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
-import {buildInflationR3Shadow,INFLATION_R3_SHADOW_WEIGHTS} from "../lib/market-score/inflation-r3-shadow.mjs";
-import {buildDollarFxR2Shadow,DOLLAR_FX_R2_SHADOW_WEIGHTS} from "../lib/market-score/dollar-fx-r2-shadow.mjs";
+import {buildInflationR3Shadow,INFLATION_R3_SHADOW_WEIGHTS,inflationTargetScoreR31,inflationMomentumScoreR31} from "../lib/market-score/inflation-r3-shadow.mjs";
+import {buildDollarFxR2Shadow,DOLLAR_FX_R2_SHADOW_WEIGHTS,dollarDirectionalScoreR21,dollarVolatilityScoreR21} from "../lib/market-score/dollar-fx-r2-shadow.mjs";
 import {buildCommoditiesR3Shadow,COMMODITIES_R3_SHADOW_WEIGHTS} from "../lib/market-score/commodities-r3-shadow.mjs";
 
 const sum=obj=>Object.values(obj).reduce((a,b)=>a+b,0);
@@ -15,21 +15,36 @@ const monthRows=(count,start=100,slope=.4)=>Array.from({length:count},(_,i)=>({
   value:start+i*slope+Math.sin(i/4),
 }));
 
-test("inflation R3 shadow uses the approved 40/30/15/15 structure only",()=>{
+test("inflation R3.1 uses direct 2pct target distance and direct momentum magnitude",()=>{
   assert.equal(sum(INFLATION_R3_SHADOW_WEIGHTS),1);
-  const out=buildInflationR3Shadow({axes:{
-    TARGET_STABILITY:40,
-    UNDERLYING_MOMENTUM:50,
-    EXPECTATIONS:60,
-    LABOR_COST_PERSISTENCE:70,
-  },asOfDate:"2026-10-07"});
+  assert.equal(inflationTargetScoreR31(2),100);
+  assert.equal(inflationTargetScoreR31(3),50);
+  assert.equal(inflationTargetScoreR31(4),0);
+  assert.equal(inflationMomentumScoreR31({currentRate:3.4,shortRunRate:2.5}),72.5);
+  const out=buildInflationR3Shadow({
+    features:{
+      CORE_PCE:{value:3.0},
+      CORE_CPI:{value:3.4},
+      CORE_CPI_3M:{value:2.5},
+      MEDIAN_CPI:{value:2.4},
+      TRIM16_CPI:{value:2.6},
+      INF_EXPECT:{value:2.4},
+    },
+    axes:{LABOR_COST_PERSISTENCE:70},
+    asOfDate:"2026-10-07",
+  });
   assert.equal(out.status,"READY");
-  assert.equal(out.score,50.5);
+  assert.equal(out.score,60.25);
+  assert.equal(out.raw.shortRunRate,2.5);
   assert.equal(out.mode,"SHADOW_ONLY");
   assert.equal(out.productionFormulaChanged,false);
 });
 
-test("dollar R2 shadow becomes READY from stored-length daily history and keeps approved weights",()=>{
+test("dollar R2.1 uses fixed raw-magnitude thresholds and stays shadow-only",()=>{
+  assert.equal(dollarDirectionalScoreR21(0,8),50);
+  assert.equal(dollarDirectionalScoreR21(8,8),0);
+  assert.equal(dollarDirectionalScoreR21(-8,8),100);
+  assert.equal(dollarVolatilityScoreR21(1),50);
   assert.equal(sum(DOLLAR_FX_R2_SHADOW_WEIGHTS),1);
   const rows=dayRows(420);
   const out=buildDollarFxR2Shadow(rows,{asOfDate:rows.at(-1).observationDate,minValid:252});

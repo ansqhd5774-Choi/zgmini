@@ -32,7 +32,7 @@ export async function analyzeMarketShadowR1(base=process.env.ZGMINI_PC_HOME??DEF
     const inputs=await readStoredMarketInputsSelected(store,["macro","supply"],Date.now(),{anchorToLatestBatch:true});
     const inflationInputs=await loadStoredInflationR2Analysis(db,{asOf});
     const inflation=inflationInputs.status==="READY"
-      ?buildInflationR3Shadow({axes:inflationInputs.axes,asOfDate:asOf})
+      ?buildInflationR3Shadow({features:inflationInputs.features,axes:inflationInputs.axes,asOfDate:asOf})
       :{status:"PARTIAL",score:null,reason:inflationInputs.reason??"INFLATION_ANALYSIS_NOT_READY"};
     const dollar=buildDollarFxR2Shadow(inputs?.series?.DTWEXBGS??[],{asOfDate:asOf});
     const commodities=buildCommoditiesR3Shadow({
@@ -45,8 +45,8 @@ export async function analyzeMarketShadowR1(base=process.env.ZGMINI_PC_HOME??DEF
     const report={
       version:1,status:"PASS",mode:"SHADOW_ONLY",asOf,providerCalls:0,publicMutation:false,productionFormulaChanged:false,
       candidates:{
-        inflationR3:{...compare(domain(market,"inflation"),inflation),candidate:inflation},
-        dollarR2:{...compare(domain(market,"dollarFx"),dollar),candidate:dollar},
+        inflationR31:{...compare(domain(market,"inflation"),inflation),candidate:inflation},
+        dollarR21:{...compare(domain(market,"dollarFx"),dollar),candidate:dollar},
         commoditiesR3:{...compare(domain(market,"commodities"),commodities),candidate:commodities},
       },
     };
