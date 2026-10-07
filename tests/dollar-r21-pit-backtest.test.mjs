@@ -7,14 +7,14 @@ import {buildDollarPitTrend} from "../scripts/pc-writer/backtest-dollar-r21-pit-
 test("ALFRED dollar PIT request uses explicit vintage dates and real-time-period output",()=>{
   const url=dollarPitFredUrl({
     key:"a".repeat(32),
-    signalDates:["2025-02-01","2025-03-01"],
+    vintageDates:["2025-01-31","2025-02-28"],
     observationStart:"2022-02-01",
     observationEnd:"2025-03-01",
     offset:0,
   });
   assert.equal(url.searchParams.get("series_id"),"DTWEXBGS");
   assert.equal(url.searchParams.get("output_type"),"1");
-  assert.equal(url.searchParams.get("vintage_dates"),"2025-02-01,2025-03-01");
+  assert.equal(url.searchParams.get("vintage_dates"),"2025-01-31,2025-02-28");
   assert.equal(url.searchParams.get("units"),"lin");
 });
 
@@ -37,7 +37,7 @@ test("PIT reconstruction selects only the revision known on the requested vintag
 test("dollar PIT backtest remains shadow-only and cannot publish",()=>{
   const collect=fs.readFileSync(new URL("../scripts/pc-writer/collect-dollar-r21-pit-shadow.mjs",import.meta.url),"utf8");
   const backtest=fs.readFileSync(new URL("../scripts/pc-writer/backtest-dollar-r21-pit-shadow.mjs",import.meta.url),"utf8");
-  assert.match(collect,/ALFRED_VINTAGE_DATES_OUTPUT_TYPE_1/);
+  assert.match(collect,/ALFRED_PRIOR_DAY_PIT_OUTPUT_TYPE_1/);
   assert.match(collect,/storedForShadowOnly:true/);
   assert.match(backtest,/DOLLAR_R21_PIT_BACKTEST_ONLY/);
   assert.match(backtest,/lookAheadSafe:true/);
@@ -52,7 +52,8 @@ test("PIT trend builder does not fabricate scores when history is insufficient",
     const d=new Date(Date.UTC(2024,0,1+i)).toISOString().slice(0,10);
     revisions.push({observationDate:d,value:100+i/100,realtimeStart:d,realtimeEnd:"9999-12-31"});
   }
-  const out=buildDollarPitTrend({revisions,signalDates:["2024-04-09"]});
+  const out=buildDollarPitTrend({revisions,signalVintagePairs:[{signalDate:"2024-04-09",vintageDate:"2024-04-08"}]});
   assert.equal(out.trend.length,0);
   assert.equal(out.diagnostics[0].status,"PARTIAL");
+  assert.equal(out.diagnostics[0].vintageDate,"2024-04-08");
 });
