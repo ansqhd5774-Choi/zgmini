@@ -1,6 +1,7 @@
 import {spawn,execFileSync} from 'node:child_process';
 import {mkdirSync,readFileSync,writeFileSync,readdirSync,openSync,closeSync} from 'node:fs';
 import {createHash} from 'node:crypto';
+import {dirname} from 'node:path';
 import {setTimeout as delay} from 'node:timers/promises';
 import {shellRoutes,shellArtifact} from '../worker/candidate-shell-r7.mjs';
 import {extractRscPayloadFromPrerenderedHtml} from '../node_modules/vinext/dist/build/prerender.js';
@@ -34,8 +35,8 @@ try{
 await run(['node_modules/vite/bin/vite.js','build','--config','vite.candidate-r52.config.ts'],'work/r7-candidate-build.log');
 const after=hashes();if(JSON.stringify(before)!==JSON.stringify(after))throw Error('Renderer/client asset identity drift across candidate builds');
 mkdirSync('dist/client/__candidate_shells',{recursive:true});
-const manifest=shells.map(({route,html,rsc})=>{for(const [data,isRsc] of [[html,false],[rsc,true]])writeFileSync('dist/client'+shellArtifact(route,isRsc),data);return {route,html:shellArtifact(route),rsc:shellArtifact(route,true),html_bytes:Buffer.byteLength(html),rsc_bytes:Buffer.byteLength(rsc),sha256:createHash('sha256').update(html).digest('hex')};});
+const manifest=shells.map(({route,html,rsc})=>{for(const [data,isRsc] of [[html,false],[rsc,true]]){const target='dist/client'+shellArtifact(route,isRsc);mkdirSync(dirname(target),{recursive:true});writeFileSync(target,data);}return {route,html:shellArtifact(route),rsc:shellArtifact(route,true),html_bytes:Buffer.byteLength(html),rsc_bytes:Buffer.byteLength(rsc),sha256:createHash('sha256').update(html).digest('hex')};});
 writeFileSync('docs/migration/d1-r52/shell-artifacts.json',JSON.stringify({generated_at:new Date().toISOString(),duration_seconds:(Date.now()-begin)/1000,method:'Build-time allowlisted rendering of compiled local Workerd/Vinext bundle, official Vinext RSC extraction; no public runtime snapshot or API static export.',client_assets_identical:true,routes:manifest},null,2)+'\n');
 execFileSync(process.execPath,['scripts/check-candidate-r52.mjs'],{stdio:'inherit'});
 execFileSync(process.execPath,['scripts/check-candidate-writer-scheduled-r3.mjs'],{stdio:'inherit',env});
-console.log('PASS:9 HTML/RSC shells, identical client assets, final candidate contract');
+console.log(`PASS:${shellRoutes.length} HTML/RSC shells, identical client assets, final candidate contract`);
