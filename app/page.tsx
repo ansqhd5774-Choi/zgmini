@@ -1,5 +1,6 @@
 "use client";
 import {CompositeMarketSection,ScenarioSection,StrengthPanel} from "./dashboard-ui";
+import OutbreakEvents, {OutbreakSummary} from './outbreak-events';
 
 
 import { useEffect, useMemo, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from "react";
@@ -777,6 +778,7 @@ function SummaryMiniChart({ data, period, score, label }: { data: ChartPoint[]; 
 
 export default function Home() {
   const [view,setView]=useState("dashboard");
+  const [outbreakEvent,setOutbreakEvent]=useState('fed');
   const [category, setCategory] = useState<(typeof categories)[number]>("전체");
   const [countryFilter, setCountryFilter] = useState<Set<"ALL" | CountryCode>>(new Set(["ALL"]));
   const [importanceLevels, setImportanceLevels] = useState<Set<number>>(new Set());
@@ -982,11 +984,11 @@ export default function Home() {
         {view==='dashboard'&&<>
           <CompositeMarketSection items={displaySummaryItems} points={periodPoints[period]} demo={false} loading={marketDataLoading}/>
           <div className="zg-dashboard-secondary">
-            <ScenarioSection/>
+            <OutbreakSummary onOpen={id=>{setOutbreakEvent(id);setView('scenarios');}}/>
             <div id="strength" className="zg-strength-grid zg-strength-grid-compact">{(['sector','theme'] as const).map(kind=><StrengthPanel key={kind} title={kind==='sector'?'섹터 순위 (예시)':'테마 순위 (예시)'} items={kind==='sector'?sectorSentiment:themeSentiment} points={periodPoints[period]} onAll={()=>setView('strength')} onFavorite={user?name=>{const item=(kind==='sector'?sectorSentiment:themeSentiment).find(x=>x.name===name);if(item)void toggleFavorite(kind,item);}:undefined} isFavorite={name=>favorites.has(sentimentKey(kind,name))}/>)}</div>
           </div>
         </>}
-        {view==='scenarios'&&<ScenarioSection/>}
+        {view==='scenarios'&&<OutbreakEvents initialEvent={outbreakEvent}/>}
         {view!=='dashboard' && favoriteItems.length > 0 && (
           <section className="mt-6" aria-labelledby="favorite-title">
             <div className="mb-3 flex items-center gap-2"><Star className="size-5 fill-amber-300 text-amber-300"/><h2 id="favorite-title" className="text-xl font-extrabold tracking-[-0.03em] text-white">내 즐겨찾기</h2></div>
