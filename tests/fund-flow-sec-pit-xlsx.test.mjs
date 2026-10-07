@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import {deflateRawSync} from "node:zlib";
 import {parseSecFundFlowSupportingXlsx,parseSecFundFlowTableMatrix} from "../lib/market-score/sec-fund-flow-xlsx-r1.mjs";
 import {buildSecFundFlowPitSignals} from "../scripts/pc-writer/backtest-sec-fund-flow-pit-r1.mjs";
+import {resolveSecSupportingDataUrlFromPage} from "../scripts/pc-writer/collect-sec-fund-flow-pit.mjs";
 
 function crcIgnoredZip(entries){
   const locals=[],centrals=[];let offset=0;
@@ -136,6 +137,14 @@ test("PIT signal builder applies later SEC vintages only after their release",()
   assert.equal(signals.length,1);
   assert.equal(signals[0].availableAt,"2024-08-06");
   assert.equal(signals[0].periodEnd,"2024-03-31");
+});
+
+test("SEC supporting link resolver selects the official XLSX for an exact report period",()=>{
+  const html='<ul><li><a href="/files/report.pdf">Period Ending December 2023</a> (<a href="/files/im-registered-fund-statistics-20240517.xlsx">Supporting Data</a>)</li><li><a href="/files/other.pdf">Period Ending September 2023</a> (<a href="/files/im-registered-fund-statistics-20240418.xlsx">Supporting Data</a>)</li></ul>';
+  assert.equal(
+    resolveSecSupportingDataUrlFromPage(html,"2023-12-31"),
+    "https://www.sec.gov/files/im-registered-fund-statistics-20240517.xlsx"
+  );
 });
 
 test("SEC PIT collector and backtest remain shadow-only",async()=>{
