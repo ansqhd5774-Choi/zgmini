@@ -5,7 +5,25 @@ import {spawnSync} from 'node:child_process';
 import {createHash} from 'node:crypto';
 
 export const hash=value=>createHash('sha256').update(JSON.stringify(value)).digest('hex');
-export function save(file,value){fs.mkdirSync(path.dirname(file),{recursive:true});fs.writeFileSync(file+'.tmp',JSON.stringify(value));fs.renameSync(file+'.tmp',file);}
+const WINDOWS_RENAME_RETRY_CODES=new Set(['EACCES','EPERM','EBUSY']);
+const WINDOWS_RENAME_RETRY_DELAYS_MS=Object.freeze([25,50,100,200,400,800,1600,3200]);
+const sleepSync=ms=>Atomics.wait(new Int32Array(new SharedArrayBuffer(4)),0,0,ms);
+export function renameWithRetrySync(from,to,{renameSync=fs.renameSync,platform=process.platform,sleep=sleepSync}={}){
+ let attempt=0;
+ for(;;){
+  try{return renameSync(from,to);}
+  catch(error){
+   if(platform!=='win32'||!WINDOWS_RENAME_RETRY_CODES.has(error?.code)||attempt>=WINDOWS_RENAME_RETRY_DELAYS_MS.length)throw error;
+   sleep(WINDOWS_RENAME_RETRY_DELAYS_MS[attempt++]);
+  }
+ }
+}
+export function save(file,value){
+ fs.mkdirSync(path.dirname(file),{recursive:true});
+ const temp=file+'.tmp';
+ fs.writeFileSync(temp,JSON.stringify(value));
+ renameWithRetrySync(temp,file);
+}
 export function read(file){return JSON.parse(fs.readFileSync(file,'utf8'));}
 export function readonly(sql){return /^\s*(SELECT|WITH)\b/i.test(sql)&&/\bSELECT\b/i.test(sql)&&!/[;]|--|\/\*|\b(insert|update|delete|replace|create|drop|alter|attach|detach|pragma|vacuum)\b/i.test(sql);}
 
