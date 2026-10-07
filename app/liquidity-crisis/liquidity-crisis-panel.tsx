@@ -52,7 +52,7 @@ export default function LiquidityCrisisPanel(){
 
  return <>
   <section className="cnn-reference-panel fg-card fg-shared-shell liquidity-crisis-target-card" data-testid="liquidity-crisis-detail-hero" data-market-state={loading?"loading":score===null?"unavailable":"ready"} aria-busy={loading}>
-   <div className="fg-header-slot"><MarketCardHeader flag="/flags/us.svg" eyebrow="ZGMINI LIQUIDITY CRISIS" title="미국 유동성 위기" description="Stored score history · no interpolation" dateLabel="데이터 기준일" date={dateLabel(payload?.asOfDate)} source={payload?.methodologyVersion??"DIAGNOSTIC_R1"}/></div>
+   <div className="fg-header-slot"><MarketCardHeader flag="/flags/us.svg" eyebrow="ZGMINI LIQUIDITY CRISIS" title="미국 유동성 위기" description="저장 점수 이력 · 누락 구간 보간 없음" dateLabel="데이터 기준일" date={dateLabel(payload?.asOfDate)} source={payload?.methodologyVersion??"DIAGNOSTIC_R1"}/></div>
    <div className="fg-content-slot">
     <div className="fg-score-slot"><MarketScoreOrb score={loading||score===null?"—":score.toFixed(1)} state={loading?"확인 중":stage(score)} variant="hero" dayDelta={score!==null&&typeof prev==="number"?score-prev:null} periodDelta={score!==null&&typeof first==="number"&&trend.length>1?score-first:null} periodLabel="저장이력 대비" dayLabel="이전 대비" comparisonAriaLabel="유동성 위기 방어점수 변화" metaDate={dateLabel(payload?.asOfDate)}/></div>
     <MarketTrendFrame className="fg-analysis-slot"><div className="fg-chart-slot"><div className="fg-renderer"><MarketFearGreedChart data={trend} axisTicks={axisTicks} axisLabels={axisLabels} latestPoint={latestPoint} instanceKey="stored-1y" gradientId="liquidity-crisis-fill" formatTooltipLabel={dateLabel} emptyLabel={loading?"확인 중":"저장이력 없음"}/></div></div></MarketTrendFrame>

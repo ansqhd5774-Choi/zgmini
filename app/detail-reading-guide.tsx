@@ -13,12 +13,12 @@ export default function DetailReadingGuide({ title, sections, sources, related }
       <h3 className="mb-2 font-bold text-white">{section.title}</h3>
       <p>{section.text}</p>
     </div>)}
-    <div>
+    {sources.length>0&&<div>
       <h3 className="mb-2 font-bold text-white">출처와 확인 경로</h3>
       <ul className="flex flex-wrap gap-x-6 gap-y-2">{sources.map(link => <li key={link.href}>
         <a className="inline-flex min-h-11 items-center text-blue-200 underline" href={link.href}>{link.label} →</a>
       </li>)}</ul>
-    </div>
+    </div>}
     <nav aria-label="함께 읽을 지표" className="flex flex-wrap gap-x-6 gap-y-2">{related.map(link =>
       <a key={link.href} className="inline-flex min-h-11 items-center text-blue-200 underline" href={link.href}>{link.label} →</a>
     )}</nav>

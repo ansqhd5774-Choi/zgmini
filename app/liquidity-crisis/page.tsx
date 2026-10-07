@@ -1,3 +1,4 @@
+import DetailInvestorNotes from "../detail-investor-notes";
 import type {Metadata} from "next";
 import LiquidityCrisisPanel from "./liquidity-crisis-panel";
 
@@ -16,6 +17,7 @@ export default function LiquidityCrisisPage(){
   <div className="mx-auto max-w-6xl">
    <a className="inline-flex min-h-11 items-center text-sm text-blue-200" href="/">← ZGmini 메인 대시보드</a>
    <LiquidityCrisisPanel/>
-  </div>
+  <DetailInvestorNotes topic="liquidity-crisis"/>
+</div>
  </main>;
 }

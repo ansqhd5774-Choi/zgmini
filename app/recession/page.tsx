@@ -1,3 +1,4 @@
+import DetailInvestorNotes from "../detail-investor-notes";
 import type {Metadata} from "next";
 import RecessionPanel from "./recession-panel";
 import DetailReadingGuide from "../detail-reading-guide";
@@ -26,6 +27,7 @@ export default function RecessionPage(){
     sources={[{href:"https://www.bls.gov/cps/",label:"미국 노동통계국 고용·실업 통계"},{href:"https://www.bea.gov/data/gdp/gross-domestic-product",label:"미국 경제분석국 GDP"}]}
     related={[{href:"/inflation/",label:"미국 인플레이션 지표"},{href:"/fear-greed/usa/",label:"미국 공포탐욕지수"}]}
    />
-  </div>
+  <DetailInvestorNotes topic="recession"/>
+</div>
  </main>;
 }

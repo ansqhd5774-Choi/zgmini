@@ -1,3 +1,4 @@
+import DetailInvestorNotes from "../../detail-investor-notes";
 import type { Metadata } from "next";
 import CnnPanel from "./cnn-panel";
 import DetailReadingGuide from "../../detail-reading-guide";
@@ -28,6 +29,7 @@ export default function UsaFearGreedPage() {
         sources={[{href:"https://www.cnn.com/markets/fear-and-greed",label:"CNN Fear & Greed 원본"}]}
         related={[{href:"/fear-greed/korea/",label:"한국 공포탐욕지수"},{href:"/inflation/",label:"미국 인플레이션 지표"},{href:"/recession/",label:"미국 경기침체 지표"}]}
       />
-    </div>
+    <DetailInvestorNotes topic="usa"/>
+</div>
   </main>;
 }

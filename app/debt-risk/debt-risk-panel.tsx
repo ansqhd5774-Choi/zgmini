@@ -40,7 +40,7 @@ export default function DebtRiskPanel(){
  const rows=new Map((payload?.indicators??[]).map(x=>[x.id,x]));
  return <>
   <section className="cnn-reference-panel fg-card fg-shared-shell debt-risk-target-card" data-testid="debt-risk-detail-hero" data-market-state={loading?"loading":score===null?"unavailable":"ready"} aria-busy={loading}>
-   <div className="fg-header-slot"><MarketCardHeader flag="/flags/us.svg" eyebrow="ZGMINI DEBT RISK R7" title="미국 부채 위험" description="Stored inputs · Current vintage" dateLabel="데이터 기준일" date={dateLabel(payload?.asOfDate)} source={payload?.methodologyVersion??"DEBT_RISK_R7"}/></div>
+   <div className="fg-header-slot"><MarketCardHeader flag="/flags/us.svg" eyebrow="ZGMINI DEBT RISK R7" title="미국 부채 위험" description="저장된 현재 개정 자료 기반" dateLabel="데이터 기준일" date={dateLabel(payload?.asOfDate)} source={payload?.methodologyVersion??"DEBT_RISK_R7"}/></div>
    <div className="fg-content-slot"><div className="fg-score-slot"><MarketScoreOrb score={loading||score===null?"—":score.toFixed(1)} state={loading?"확인 중":stage(score)} variant="hero" dayDelta={null} periodDelta={null} periodLabel="진단 추이" dayLabel="이전 대비" comparisonAriaLabel="부채 위험 안전점수 상태" metaDate={dateLabel(payload?.asOfDate)}/></div>
     <MarketTrendFrame className="fg-analysis-slot"><div className="fg-chart-slot"><div className="fg-renderer"><MarketFearGreedChart data={trend} axisTicks={axisTicks} axisLabels={axisLabels} latestPoint={latestPoint} instanceKey="debt-risk" gradientId="debt-risk-fill" formatTooltipLabel={dateLabel} emptyLabel={loading?"확인 중":"완성 점수 저장이력 없음"}/></div></div></MarketTrendFrame></div>
    <div className="fg-footer-slot"><div className="cnn-panel-note"><span>점수 원칙</span><strong>5개 구성요소 완전 입력 시만 계산 · 결측 재가중 없음</strong></div></div>
