@@ -80,3 +80,14 @@ test("S&P prose parser handles official off-cycle replace wording",()=>{
     {effectiveDate:"2026-08-24",action:"Deletion",ticker:"JNPR",sourceUrl:"https://press.spglobal.com/x",releaseDate:"2026-08-13"},
   ]);
 });
+
+
+test("Breadth R7 persists exact event-consistency evidence before failing closed",()=>{
+  const src=fs.readFileSync(new URL("../scripts/pc-writer/build-breadth-r7-pit-universe.mjs",import.meta.url),"utf8");
+  assert.match(src,/report\.anomalyCount=reconstructed\.anomalies\.length/);
+  assert.match(src,/report\.anomalies=reconstructed\.anomalies\.slice\(0,25\)/);
+  assert.match(src,/report\.anomalyEvents=report\.anomalies\.map/);
+  assert.match(src,/matchingEvents:relevantEvents\.filter/);
+  assert.match(src,/currentMember:currentMembers\.includes/);
+  assert.match(src,/SP500_PIT_EVENT_CONSISTENCY_FAILED/);
+});
