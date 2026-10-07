@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import CnnPanel from "./cnn-panel";
+import DetailReadingGuide from "../../detail-reading-guide";
 
-const title = "CNN 공포탐욕지수 | 7개 구성요소와 해석 - ZGmini";
-const description = "CNN 공포탐욕지수의 현재 점수와 7개 구성요소를 원시값, 비교기준, 정규화 점수와 함께 초보자도 이해하기 쉽게 살펴보세요.";
+const title = "미국 공포탐욕지수 | CNN 점수·차트·7개 구성요소 - ZGmini";
+const description = "미국 CNN 공포탐욕지수의 최근 점수·관측일·기간별 차트와 7개 구성요소를 확인하세요. 원시값과 환산점수의 차이, 해석 기준과 CNN 출처를 함께 안내합니다.";
 const url = "https://zgmini.kr/fear-greed/usa/";
 export const metadata: Metadata = {
   title, description, alternates:{canonical:url},
@@ -19,6 +20,14 @@ export default function UsaFearGreedPage() {
         <a className="py-2 underline" href="/fear-greed/korea/">한국 지수도 확인하기 →</a>
       </nav>
       <CnnPanel showEducation/>
+      <DetailReadingGuide title="미국 공포탐욕지수 확인 순서"
+        sections={[
+          {title:"점수와 관측일을 함께 확인하세요",text:"차트의 점수는 해당 관측일의 투자심리를 보여줍니다. 방문한 날짜와 데이터 관측일이 같다는 뜻은 아닙니다. 현재 점수, 관측일, 선택한 기간의 흐름을 함께 확인하고, 원본 확인 필요나 이력 없음 상태에서는 확인되지 않은 값을 해석하지 마세요."},
+          {title:"CNN 지수와 ZGmini 한국 지수의 차이",text:"미국 상세는 CNN이 제공한 종합값을 표시하고, 아래에서 7개 구성요소의 원시값과 CNN 환산점수를 설명합니다. 한국 상세는 ZGmini 자체 지표입니다. 두 지수는 입력 시장과 산출 방식이 달라 같은 점수라고 동일한 투자 상황을 뜻하지 않습니다."},
+        ]}
+        sources={[{href:"https://www.cnn.com/markets/fear-and-greed",label:"CNN Fear & Greed 원본"}]}
+        related={[{href:"/fear-greed/korea/",label:"한국 공포탐욕지수"},{href:"/inflation/",label:"미국 인플레이션 지표"},{href:"/recession/",label:"미국 경기침체 지표"}]}
+      />
     </div>
   </main>;
 }
