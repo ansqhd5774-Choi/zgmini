@@ -58,7 +58,7 @@ function pearson(xs,ys){
   const dy=Math.sqrt(pairs.reduce((s,[,y])=>s+(y-my)**2,0));
   return dx>0&&dy>0?num/(dx*dy):null;
 }
-function evaluateSeries(series,benchmark){
+export function evaluateSeries(series,benchmark){
   const signals=normalizeSeries(series),prices=benchmarkRows(benchmark),rows=[];
   for(const signal of signals){
     const base=latestAtOrBefore(prices,signal.label);
