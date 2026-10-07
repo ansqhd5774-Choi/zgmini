@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
+import {archiveUrl} from "../scripts/pc-writer/build-breadth-r7-pit-universe.mjs";
 import {
   normalizeSpGlobalDate,
   normalizePitTicker,
@@ -64,4 +65,18 @@ test("Breadth R7 PIT builder is research-only and cannot mutate production",()=>
   assert.match(src,/productionFormulaChanged:false/);
   assert.match(src,/noPublish:true/);
   assert.doesNotMatch(src,/publishMarket|remote\.|--publish|INSERT INTO|UPDATE |DELETE FROM|CREATE TABLE|ALTER TABLE/);
+});
+
+
+test("Breadth R7 uses unfiltered official archive pagination deep enough for the 520-session window",()=>{
+  assert.equal(archiveUrl(0),"https://press.spglobal.com/index.php?l=100&o=0&s=2429");
+  assert.equal(archiveUrl(500),"https://press.spglobal.com/index.php?l=100&o=500&s=2429");
+});
+
+test("S&P prose parser handles official off-cycle replace wording",()=>{
+  const html='<p>Reddit Inc. (NYSE: RDDT) will replace Juniper Networks Inc. (NYSE: JNPR) in the S&P 500 effective prior to the opening of trading on Monday, August 24.</p>';
+  assert.deepEqual(parseSp500ChangeRows(html,{sourceUrl:"https://press.spglobal.com/x",releaseDate:"2026-08-13"}),[
+    {effectiveDate:"2026-08-24",action:"Addition",ticker:"RDDT",sourceUrl:"https://press.spglobal.com/x",releaseDate:"2026-08-13"},
+    {effectiveDate:"2026-08-24",action:"Deletion",ticker:"JNPR",sourceUrl:"https://press.spglobal.com/x",releaseDate:"2026-08-13"},
+  ]);
 });
