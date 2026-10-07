@@ -9,7 +9,7 @@ import {evaluateSeries} from "./backtest-market-shadow-r1.mjs";
 const DEFAULT_BASE=path.join(os.homedir(),".zgmini","pc-writer");
 const STATE_NAME="local-sec-fund-flow-raw-backfill-r2.json";
 const METHODOLOGY_VERSION="SEC_RAW_NPORT_3M_CUMULATIVE_R2";
-const OUTPUT_NAME="local-sec-fund-flow-raw-backtest-r1.json";
+const OUTPUT_NAME="local-sec-fund-flow-raw-backtest-r2.json";
 const finite=value=>typeof value==="number"&&Number.isFinite(value);
 
 function signals(rows,field){
@@ -55,6 +55,7 @@ export async function backtestSecRawFundFlows(base=process.env.ZGMINI_PC_HOME??D
       methodologyVersion:METHODOLOGY_VERSION,
       historyMode:"AS_FILED_ORIGINAL_NPORT_3M_CUMULATIVE_WITH_PRIOR_NCEN_CLASSIFICATION",
       ratioBasis:"CURRENT_REPORTED_NET_ASSETS_RESEARCH_NORMALIZATION",
+      officialTable32Comparable:false,
       providerCalls:0,publicMutation:false,productionFormulaChanged:false,formulaSelected:false,weightSelected:false,
       coverage:{signals:rows.length,first:rows[0]?.observationDate??null,last:rows.at(-1)?.observationDate??null,meanClassificationCoverage:coverage.length?coverage.reduce((a,b)=>a+b,0)/coverage.length:null},
       features:evaluated,
