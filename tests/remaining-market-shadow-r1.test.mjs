@@ -1,8 +1,8 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
-import {buildBreadthR6Components,BREADTH_R6_MIN_COVERAGE} from "../lib/market-score/breadth-r6-shadow.mjs";
-import {buildFundFlowsR2Components} from "../lib/market-score/fund-flows-r2-shadow.mjs";
+import {buildBreadthR6Components,BREADTH_R6_MIN_COVERAGE,BREADTH_R6_WEIGHTS} from "../lib/market-score/breadth-r6-shadow.mjs";
+import {buildFundFlowsR2Components,FUND_FLOWS_R2_WEIGHTS,flowPreferenceScoreR2,confidenceAdjustedFlowScoreR2} from "../lib/market-score/fund-flows-r2-shadow.mjs";
 
 function breadthFixture({tickers=500,sessions=252}={}){
   const members=Array.from({length:tickers},(_,i)=>"T"+String(i).padStart(3,"0"));
@@ -22,8 +22,9 @@ test("breadth R6 component engine requires full 50/200/252-session coverage befo
   const ready=buildBreadthR6Components(breadthFixture(),{});
   assert.equal(BREADTH_R6_MIN_COVERAGE,.98);
   assert.equal(ready.status,"READY");
-  assert.equal(ready.score,null);
-  assert.equal(ready.scoreStatus,"PENDING_WEIGHT_APPROVAL");
+  assert.equal(Object.values(BREADTH_R6_WEIGHTS).reduce((a,b)=>a+b,0),1);
+  assert.ok(typeof ready.score==="number"&&ready.score>=0&&ready.score<=100);
+  assert.equal(ready.scoreStatus,"READY_SHADOW");
   assert.equal(ready.coverage.highLow52w,500);
   assert.equal(typeof ready.ratios.aboveMa50,"number");
   assert.equal(typeof ready.ratios.aboveMa200,"number");
@@ -35,12 +36,13 @@ test("breadth R6 component engine requires full 50/200/252-session coverage befo
   assert.equal(partial.score,null);
 });
 
-test("fund-flow R2 components combine stored SEC context with stored ICI weekly splits without assigning weights",()=>{
+test("fund-flow R2 applies approved 50/35/15 weights with 12-week confidence ramp",()=>{
   const out=buildFundFlowsR2Components({
     secRows:[
       {observationDate:"2026-02-01",allNetRatio:.1,indexNetRatio:.3,nonIndexNetRatio:-.2,allOutflowRatio:-3.1},
       {observationDate:"2026-03-01",allNetRatio:.16,indexNetRatio:.51,nonIndexNetRatio:-.23,allOutflowRatio:-3.3},
     ],
+    secBaselineScore:38,
     iciRows:[
       {observationDate:"2026-09-02",equity:-5461,domesticEquity:-4719,worldEquity:-742,bond:12684,total:8136},
       {observationDate:"2026-09-09",equity:-11701,domesticEquity:-13318,worldEquity:1617,bond:11546,total:1631},
@@ -49,8 +51,12 @@ test("fund-flow R2 components combine stored SEC context with stored ICI weekly 
     ],
   });
   assert.equal(out.status,"READY");
-  assert.equal(out.score,null);
-  assert.equal(out.scoreStatus,"PENDING_WEIGHT_APPROVAL");
+  assert.equal(Object.values(FUND_FLOWS_R2_WEIGHTS).reduce((a,b)=>a+b,0),1);
+  assert.ok(typeof out.score==="number"&&out.score>=0&&out.score<=100);
+  assert.equal(out.scoreStatus,"READY_SHADOW");
+  assert.equal(out.confidence.ratio,4/12);
+  assert.equal(flowPreferenceScoreR2(-16937,35636),0);
+  assert.equal(confidenceAdjustedFlowScoreR2(0,4),50+(4/12)*(0-50));
   assert.equal(out.latest.equity,12875);
   assert.equal(out.cumulative4w.equity,-16937);
   assert.equal(out.relative.latestEquityMinusBond,4713);
@@ -62,6 +68,8 @@ test("remaining shadow workflow is isolated from production publish paths",()=>{
   const analyze=fs.readFileSync(new URL("../scripts/pc-writer/analyze-remaining-market-shadow-r1.mjs",import.meta.url),"utf8");
   assert.match(collect,/shadowIciFundFlows/);
   assert.match(collect,/noPublish:true/);
+  assert.match(collect,/accumulatedRows/);
+  assert.match(collect,/slice\(-104\)/);
   assert.doesNotMatch(collect,/publishMarket|remote\.|--publish/);
   assert.match(analyze,/providerCalls:0/);
   assert.match(analyze,/productionFormulaChanged:false/);

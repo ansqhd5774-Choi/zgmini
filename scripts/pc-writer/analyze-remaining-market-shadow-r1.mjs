@@ -41,22 +41,23 @@ export async function analyzeRemainingMarketShadowR1(base=process.env.ZGMINI_PC_
     ]);
     const secRows=secBatch?.body?.external?.registeredFundFlowRows??[];
     const iciRows=iciBatch?.body?.external?.iciCombinedFlowRows??[];
-    const fundFlows=buildFundFlowsR2Components({secRows,iciRows});
+    const fundBase=domain(market,"fundFlows");
+    const fundFlows=buildFundFlowsR2Components({secRows,iciRows,secBaselineScore:finite(fundBase?.score)?fundBase.score:null});
 
-    const breadthBase=domain(market,"breadth"),fundBase=domain(market,"fundFlows");
+    const breadthBase=domain(market,"breadth");
     const report={
       version:1,status:"PASS",mode:"SHADOW_ONLY",asOf,providerCalls:0,publicMutation:false,productionFormulaChanged:false,
       breadthR6:{
         baselineScore:finite(breadthBase?.score)?breadthBase.score:null,
         baselineStatus:breadthBase?.status??"UNAVAILABLE",
-        candidateScore:null,
+        candidateScore:finite(breadth?.score)?breadth.score:null,
         candidateStatus:breadth.status,
         candidate:breadth,
       },
       fundFlowsR2:{
         baselineScore:finite(fundBase?.score)?fundBase.score:null,
         baselineStatus:fundBase?.status??"UNAVAILABLE",
-        candidateScore:null,
+        candidateScore:finite(fundFlows?.score)?fundFlows.score:null,
         candidateStatus:fundFlows.status,
         candidate:fundFlows,
       },

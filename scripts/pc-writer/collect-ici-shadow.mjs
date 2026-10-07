@@ -33,12 +33,25 @@ export async function collectIciShadow(base=process.env.ZGMINI_PC_HOME??DEFAULT_
       report.reason=result?.reason??"ICI_NOT_READY";
       return report;
     }
-    await marketOperationalStore(core).writeInput(BATCH_KEY,{
-      external:{iciCombinedFlowRows:result.rows},
+    const store=marketOperationalStore(core);
+    const prior=await store.readInput(BATCH_KEY);
+    const merged=new Map();
+    for(const row of prior?.body?.external?.iciCombinedFlowRows??[]){
+      if(typeof row?.observationDate==="string")merged.set(row.observationDate,row);
+    }
+    for(const row of result.rows){
+      if(typeof row?.observationDate==="string")merged.set(row.observationDate,row);
+    }
+    const accumulated=[...merged.values()].sort((a,b)=>a.observationDate.localeCompare(b.observationDate)).slice(-104);
+    await store.writeInput(BATCH_KEY,{
+      external:{iciCombinedFlowRows:accumulated},
       providerSummary:{ici:{status:result.status,source:result.source,sourcePage:result.sourcePage,sourceUrl:result.sourceUrl??null}},
       storedForShadowOnly:true,
     },Date.now());
     report.stored=true;
+    report.accumulatedRows=accumulated.length;
+    report.accumulatedFirst=accumulated[0]?.observationDate??null;
+    report.accumulatedLast=accumulated.at(-1)?.observationDate??null;
     report.status="STORED";
     return report;
   }catch(error){
