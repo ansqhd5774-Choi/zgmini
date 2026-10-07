@@ -95,6 +95,7 @@ test("breadth R6 shadow backfill plans a bounded 260-session window and remains 
   const src=fs.readFileSync(new URL("../scripts/pc-writer/backfill-breadth-r6-shadow.mjs",import.meta.url),"utf8");
   assert.match(src,/TARGET_SESSIONS=520/);
   assert.match(src,/REQUIRED_PRICE_SESSIONS=512/);
+  assert.match(src,/historyWindowExtended/);
   assert.match(src,/noPublish:true/);
   assert.match(src,/dbSchemaChanged:false/);
   assert.doesNotMatch(src,/publishMarket|remote\.|--publish|CREATE TABLE|ALTER TABLE/);
