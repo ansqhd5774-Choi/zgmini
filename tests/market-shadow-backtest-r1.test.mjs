@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import {parseSp500FredPayload} from "../scripts/pc-writer/collect-sp500-shadow.mjs";
-import {evaluateSeries} from "../scripts/pc-writer/backtest-market-shadow-r1.mjs";
+import {evaluateSeries,evaluationSummaryPair} from "../scripts/pc-writer/backtest-market-shadow-r1.mjs";
 import {buildBreadthR6Trend} from "../lib/market-score/breadth-r6-shadow.mjs";
 
 function dailyBenchmark(count=140,start=100){
@@ -29,6 +29,21 @@ test("backtest computes 1m and 3m forward returns and drawdown from signal score
   assert.ok(out.rows[0].return1m>0);
   assert.ok(out.rows[0].return3m>out.rows[0].return1m);
   assert.equal(out.rows[0].band,"strong");
+});
+
+test("backtest evaluates full candidate history while matched comparison remains overlap-only",()=>{
+  const benchmark=dailyBenchmark(220);
+  const baseline=[{label:"2026-01-10",value:45}];
+  const candidate=[
+    {label:"2026-01-10",value:50},
+    {label:"2026-02-10",value:60},
+    {label:"2026-03-10",value:70},
+  ];
+  const out=evaluationSummaryPair(baseline,candidate,benchmark);
+  assert.equal(out.baseline.observations,1);
+  assert.equal(out.shadow.observations,3);
+  assert.equal(out.comparison.matchedSignals,1);
+  assert.match(out.comparison.note,/full available shadow history/);
 });
 
 test("breadth R6 historical trend can derive daily direction from prior close-only rows",()=>{

@@ -111,18 +111,20 @@ function alignForComparison(baseline,candidate){
   }
   return {baseline:aligned,shadow:shadow.slice(-aligned.length)};
 }
-function evaluationSummaryPair(baseline,candidate,benchmark){
+export function evaluationSummaryPair(baseline,candidate,benchmark){
+  const baselineEval=evaluateSeries(baseline,benchmark);
+  const shadowEval=evaluateSeries(candidate,benchmark);
   const aligned=alignForComparison(baseline,candidate);
-  const baseEval=evaluateSeries(aligned.baseline,benchmark);
-  const shadowEval=evaluateSeries(aligned.shadow,benchmark);
+  const matchedBaseline=evaluateSeries(aligned.baseline,benchmark);
+  const matchedShadow=evaluateSeries(aligned.shadow,benchmark);
   return {
-    baseline:baseEval,
+    baseline:baselineEval,
     shadow:shadowEval,
     comparison:{
-      matchedSignals:Math.min(baseEval.observations,shadowEval.observations),
-      correlation1mDelta:finite(baseEval.correlation1m)&&finite(shadowEval.correlation1m)?shadowEval.correlation1m-baseEval.correlation1m:null,
-      correlation3mDelta:finite(baseEval.correlation3m)&&finite(shadowEval.correlation3m)?shadowEval.correlation3m-baseEval.correlation3m:null,
-      note:"Positive correlation means higher score aligned with higher subsequent S&P 500 return; small samples require manual review.",
+      matchedSignals:Math.min(matchedBaseline.observations,matchedShadow.observations),
+      correlation1mDelta:finite(matchedBaseline.correlation1m)&&finite(matchedShadow.correlation1m)?matchedShadow.correlation1m-matchedBaseline.correlation1m:null,
+      correlation3mDelta:finite(matchedBaseline.correlation3m)&&finite(matchedShadow.correlation3m)?matchedShadow.correlation3m-matchedBaseline.correlation3m:null,
+      note:"Candidate metrics use the full available shadow history; baseline deltas use matched overlapping signal dates only.",
     },
   };
 }
