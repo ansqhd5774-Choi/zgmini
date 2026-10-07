@@ -23,8 +23,34 @@ const NCEN_BOOTSTRAP=Object.freeze(["2018q3","2018q4","2019q1","2019q2","2019q3"
 const MAX_DOWNLOAD_BYTES=800_000_000;
 const SEC_HEADERS=Object.freeze({"user-agent":"ZGMINI/1.0 (+https://zgmini.kr)","accept-encoding":"gzip, deflate"});
 const validDate=value=>typeof value==="string"&&/^\d{4}-\d{2}-\d{2}$/.test(value);
+const MONTHS=Object.freeze({JAN:"01",FEB:"02",MAR:"03",APR:"04",MAY:"05",JUN:"06",JUL:"07",AUG:"08",SEP:"09",OCT:"10",NOV:"11",DEC:"12"});
+export function normalizeSecDate(value){
+  const raw=String(value??"").trim().replace(/^["']|["']$/g,"");
+  if(!raw)return null;
+  let m=raw.match(/^(\d{4})-(\d{2})-(\d{2})(?:[T\s].*)?$/);
+  if(m){
+    const date=`${m[1]}-${m[2]}-${m[3]}`;
+    const parsed=new Date(date+"T00:00:00Z");
+    return !Number.isNaN(parsed.valueOf())&&parsed.toISOString().slice(0,10)===date?date:null;
+  }
+  m=raw.match(/^(\d{4})(\d{2})(\d{2})$/);
+  if(m)return normalizeSecDate(`${m[1]}-${m[2]}-${m[3]}`);
+  m=raw.match(/^(\d{1,2})[-\s]([A-Za-z]{3})[-\s](\d{4})$/);
+  if(m){
+    const mm=MONTHS[m[2].toUpperCase()];
+    return mm?normalizeSecDate(`${m[3]}-${mm}-${String(Number(m[1])).padStart(2,"0")}`):null;
+  }
+  m=raw.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if(m)return normalizeSecDate(`${m[3]}-${String(Number(m[1])).padStart(2,"0")}-${String(Number(m[2])).padStart(2,"0")}`);
+  return null;
+}
 const finite=value=>typeof value==="number"&&Number.isFinite(value);
-const number=value=>{const x=Number(value);return Number.isFinite(x)?x:null};
+const number=value=>{
+  const raw=String(value??"").trim().replaceAll(",","");
+  if(!raw)return null;
+  const normalized=/^\(.*\)$/.test(raw)?"-"+raw.slice(1,-1):raw;
+  const x=Number(normalized);return Number.isFinite(x)?x:null;
+};
 const yes=value=>String(value??"").trim().toUpperCase()==="Y";
 const quarterUrl=(kind,quarter)=>`https://www.sec.gov/files/dera/data/form-${kind==="nport"?"n-port":"n-cen"}-data-sets/${quarter}_${kind}.zip`;
 
@@ -63,15 +89,15 @@ function submissionMap(rows,kind){
   const map=new Map();
   for(const row of rows){
     const accession=String(row.ACCESSION_NUMBER??"").trim();
-    const filingDate=String(row.FILING_DATE??"").slice(0,10);
-    if(!accession||!validDate(filingDate))continue;
+    const filingDate=normalizeSecDate(row.FILING_DATE);
+    if(!accession||!filingDate)continue;
     if(kind==="nport"){
-      const subType=String(row.SUB_TYPE??"").trim();
-      const reportDate=String(row.REPORT_DATE??"").slice(0,10);
-      if(subType!=="NPORT-P"||!validDate(reportDate))continue;
+      const subType=String(row.SUB_TYPE??"").trim().toUpperCase();
+      const reportDate=normalizeSecDate(row.REPORT_DATE);
+      if(subType!=="NPORT-P"||!reportDate)continue;
       map.set(accession,{filingDate,reportDate});
     }else{
-      const subType=String(row.SUBMISSION_TYPE??"").trim();
+      const subType=String(row.SUBMISSION_TYPE??"").trim().toUpperCase();
       if(subType!=="N-CEN")continue;
       map.set(accession,{filingDate});
     }
@@ -99,7 +125,7 @@ function processNcen(state,index){
       list.push(event);list.sort((a,b)=>a.filingDate.localeCompare(b.filingDate));state.classifications[seriesId]=list;events++;
     }
   }
-  return {events,series:Object.keys(state.classifications).length};
+  return {events,series:Object.keys(state.classifications).length,submissionRows:submissions.size,fundRows:funds.length};
 }
 function processNport(state,index){
   const submissions=submissionMap(parseTsv(readZipEntryText(index,"SUBMISSION.tsv",{maxBytes:30_000_000})),"nport");
@@ -160,12 +186,26 @@ function processNport(state,index){
       produced++;
     }
   }
-  return {produced,filings:groups.size};
+  return {produced,filings:groups.size,submissionRows:submissions.size,fundRows:funds.length,reportMonths:byMonth.size};
 }
 function loadState(file){
   if(!fs.existsSync(file))return {version:1,nportProcessed:[],ncenProcessed:[],classifications:{},lastFund:{},monthly:{}};
   const state=JSON.parse(fs.readFileSync(file,"utf8"));
   if(state?.version!==1)throw new Error("SEC_RAW_BACKFILL_STATE_VERSION");
+  state.nportProcessed=Array.isArray(state.nportProcessed)?state.nportProcessed:[];
+  state.ncenProcessed=Array.isArray(state.ncenProcessed)?state.ncenProcessed:[];
+  state.classifications=state.classifications&&typeof state.classifications==="object"?state.classifications:{};
+  state.lastFund=state.lastFund&&typeof state.lastFund==="object"?state.lastFund:{};
+  state.monthly=state.monthly&&typeof state.monthly==="object"?state.monthly:{};
+  if(state.ncenProcessed.length&&Object.keys(state.classifications).length===0){
+    state.ncenProcessed=[];
+    state.ncenCheckpointResetReason="ZERO_CLASSIFICATIONS";
+  }
+  if(state.nportProcessed.length&&Object.keys(state.monthly).length===0){
+    state.nportProcessed=[];
+    state.lastFund={};
+    state.nportCheckpointResetReason="ZERO_MONTHS";
+  }
   return state;
 }
 function ncenNeeded(state,targetQuarter){
@@ -181,7 +221,8 @@ export async function backfillSecRawFundFlows(base=process.env.ZGMINI_PC_HOME??D
   const originalFetch=globalThis.fetch;
   const quota=createQuotaFetch({base,originalFetch,mode:"enforce"});
   globalThis.fetch=quota.fetch;
-  const report={version:1,status:"RUNNING",at:new Date().toISOString(),noPublish:true,dbSchemaChanged:false,providerCalls:0,targetQuarter:target,ncenProcessedThisRun:[],nportProcessedThisRun:null};
+  const report={version:1,status:"RUNNING",at:new Date().toISOString(),noPublish:true,dbSchemaChanged:false,providerCalls:0,targetQuarter:target,ncenProcessedThisRun:[],nportProcessedThisRun:null,
+    checkpointReset:{ncen:state.ncenCheckpointResetReason??null,nport:state.nportCheckpointResetReason??null}};
   try{
     if(!target){
       report.status="COMPLETE";report.months=Object.keys(state.monthly).length;report.first=Object.keys(state.monthly).sort()[0]??null;report.last=Object.keys(state.monthly).sort().at(-1)??null;return report;
@@ -190,6 +231,7 @@ export async function backfillSecRawFundFlows(base=process.env.ZGMINI_PC_HOME??D
       const file=path.join(tempDir,quarter+"_ncen.zip");
       await download(quarterUrl("ncen",quarter),file,{fetchImpl:globalThis.fetch,report});
       const result=processNcen(state,readZipIndex(file));
+      if(result.submissionRows===0||result.fundRows===0||result.events===0)throw new Error("SEC_NCEN_PARSED_ZERO_ROWS");
       state.ncenProcessed.push(quarter);
       report.ncenProcessedThisRun.push({quarter,...result});
       save(stateFile,state);
@@ -198,6 +240,7 @@ export async function backfillSecRawFundFlows(base=process.env.ZGMINI_PC_HOME??D
     const file=path.join(tempDir,target+"_nport.zip");
     const downloadResult=await download(quarterUrl("nport",target),file,{fetchImpl:globalThis.fetch,report});
     const processed=processNport(state,readZipIndex(file));
+    if(processed.submissionRows===0||processed.fundRows===0||processed.filings===0)throw new Error("SEC_NPORT_PARSED_ZERO_ROWS");
     state.nportProcessed.push(target);
     state.updatedAt=new Date().toISOString();
     save(stateFile,state);
