@@ -63,3 +63,16 @@ test('local cycle blocks publication after collection error',()=>{
  assert.match(src,/COLLECTION_FAILED_PUBLISH_BLOCKED/);
  assert.match(src,/publishSkipped/);
 });
+
+
+test('local core cycle automatically accumulates prospective dollar evidence without gating publication',()=>{
+ const src=fs.readFileSync(new URL('../scripts/pc-writer/local-cycle.mjs',import.meta.url),'utf8');
+ assert.match(src,/lane==='core'/);
+ assert.match(src,/dollar-prospective-forward-r1\.mjs/);
+ assert.match(src,/local-dollar-prospective-last-run\.json/);
+ assert.match(src,/researchProspective/);
+ assert.match(src,/nonBlocking:true/);
+ assert.match(src,/SKIPPED_KOREA_LANE/);
+ assert.match(src,/if\(publication\.status!==0\)process\.exitCode=1/);
+ assert.doesNotMatch(src,/if\(prospective\.status!==0\)process\.exitCode=1/);
+});
