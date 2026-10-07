@@ -24,7 +24,7 @@ test("K1 extracts USA presentation into an opt-in shared shell", async () => {
 
   assert.match(chart, /accessibilityLayer/);
   assert.match(chart, /prefers-reduced-motion: reduce/);
-  assert.match(chart, /ticks=\{\[0, 50, 75, 100\]\}/);
+  assert.match(chart, /ticks=\{\[0, 25, 50, 75, 100\]\}/);
   assert.match(chart, /ReferenceArea y1=\{0\} y2=\{25\}/);
   assert.match(chart, /ReferenceLine y=\{75\}/);
   assert.match(chart, /cnn-latest-point/);
