@@ -1,12 +1,13 @@
+import {PUBLIC_DISPLAY_MAX_AGE_MS} from './public-display-freshness.mjs';
 // Public reads have no collector dependency and never initialize or write tables.
 export const FEED_POLICY=Object.freeze({
- 'fear-greed':{intervalMs:15*60000,maxAgeMs:6*3600000},
- 'market-data':{intervalMs:6*3600000,maxAgeMs:36*3600000},
- 'core-pce':{intervalMs:6*3600000,maxAgeMs:36*3600000},
- 'kospi-fear-greed':{intervalMs:6*3600000,maxAgeMs:36*3600000},
- 'kospi-history':{intervalMs:6*3600000,maxAgeMs:36*3600000},
- 'ftse-fear-greed':{intervalMs:6*3600000,maxAgeMs:36*3600000},
- 'nikkei-fear-greed':{intervalMs:6*3600000,maxAgeMs:36*3600000},
+ 'fear-greed':{intervalMs:15*60000,maxAgeMs:PUBLIC_DISPLAY_MAX_AGE_MS},
+ 'market-data':{intervalMs:6*3600000,maxAgeMs:PUBLIC_DISPLAY_MAX_AGE_MS},
+ 'core-pce':{intervalMs:6*3600000,maxAgeMs:PUBLIC_DISPLAY_MAX_AGE_MS},
+ 'kospi-fear-greed':{intervalMs:6*3600000,maxAgeMs:PUBLIC_DISPLAY_MAX_AGE_MS},
+ 'kospi-history':{intervalMs:6*3600000,maxAgeMs:PUBLIC_DISPLAY_MAX_AGE_MS},
+ 'ftse-fear-greed':{intervalMs:6*3600000,maxAgeMs:PUBLIC_DISPLAY_MAX_AGE_MS},
+ 'nikkei-fear-greed':{intervalMs:6*3600000,maxAgeMs:PUBLIC_DISPLAY_MAX_AGE_MS},
 });
 export function publicFeedStore(db){
  const read=async(kind,key)=>{

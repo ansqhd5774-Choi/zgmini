@@ -17,7 +17,9 @@ test('empty/stale public reads never fetch; stored zero survives and daily histo
   assert.equal((await readPublicFeed(db,'fear-greed',{now})).status,503);
   await store.initialize();await store.writeOutput('fear-greed',{status:'verified',score:0},now);
   const r=await readPublicFeed(db,'fear-greed',{now});assert.equal(r.headers.get('x-data-source'),'STORED');assert.equal((await r.json()).score,0);
-  assert.equal((await readPublicFeed(db,'fear-greed',{now:now+6*3600000})).status,503);
+  assert.equal((await readPublicFeed(db,'fear-greed',{now:now+6*3600000})).status,200);
+  assert.equal((await readPublicFeed(db,'fear-greed',{now:now+8*86400000-1})).status,200);
+  assert.equal((await readPublicFeed(db,'fear-greed',{now:now+8*86400000})).status,503);
   await store.writeOutput('fear-greed',{status:'verified',score:1},now+86400000);
   assert.equal(sql.prepare("SELECT count(*) n FROM public_feed_snapshots_v1 WHERE kind='output'").get().n,3);
  }finally{globalThis.fetch=original;sql.close()}
