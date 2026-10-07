@@ -91,3 +91,32 @@ test("Breadth R7 persists exact event-consistency evidence before failing closed
   assert.match(src,/currentMember:currentMembers\.includes/);
   assert.match(src,/SP500_PIT_EVENT_CONSISTENCY_FAILED/);
 });
+
+
+test("S&P table rows take precedence so mixed-index prose cannot leak SmallCap tickers into S&P 500",()=>{
+  const html='<p>Interactive Brokers Group Inc. (NASD: IBKR) will replace Walgreens Boots Alliance Inc. (NASD: WBA) in the S&P 500 effective prior to the opening of trading on Thursday, August 28.</p>'+
+    '<p>Kinetik Holdings Inc. (NYSE: KNTK) will replace Pacific Premier Bancorp Inc. (NASD: PPBI) in the S&P SmallCap 600 effective prior to the opening of trading on Tuesday, September 2.</p>'+
+    '<table><tr><th>Effective Date</th><th>Index Name</th><th>Action</th><th>Company Name</th><th>Ticker</th><th>GICS Sector</th></tr>'+
+    '<tr><td>Aug 28, 2025</td><td>S&P 500</td><td>Addition</td><td>Interactive Brokers Group</td><td>IBKR</td><td>Financials</td></tr>'+
+    '<tr><td>Aug 28, 2025</td><td>S&P 500</td><td>Deletion</td><td>Walgreens Boots Alliance</td><td>WBA</td><td>Consumer Staples</td></tr>'+
+    '<tr><td>Sept 2, 2025</td><td>S&P SmallCap 600</td><td>Addition</td><td>Kinetik Holdings</td><td>KNTK</td><td>Energy</td></tr>'+
+    '<tr><td>Sept 2, 2025</td><td>S&P SmallCap 600</td><td>Deletion</td><td>Pacific Premier Bancorp</td><td>PPBI</td><td>Financials</td></tr></table>';
+  const out=parseSp500ChangeRows(html,{sourceUrl:"https://press.spglobal.com/mixed",releaseDate:"2025-08-25"});
+  assert.deepEqual(out.map(x=>[x.effectiveDate,x.action,x.ticker]),[
+    ["2025-08-28","Addition","IBKR"],
+    ["2025-08-28","Deletion","WBA"],
+  ]);
+  assert.equal(out.some(x=>x.ticker==="KNTK"||x.ticker==="PPBI"),false);
+});
+
+test("S&P table effective dates override prose dates on spin-off pages",()=>{
+  const html='<p>Solstice Advance Materials Inc. (NASD: SOLS) will replace CarMax Inc. (NYSE: KMX) in the S&P 500 effective prior to the opening of trading on Friday, October 31.</p>'+
+    '<table><tr><th>Effective Date</th><th>Index Name</th><th>Action</th><th>Company Name</th><th>Ticker</th><th>GICS Sector</th></tr>'+
+    '<tr><td>Oct 30, 2025</td><td>S&P 500</td><td>Addition</td><td>Solstice Advance Materials</td><td>SOLS</td><td>Materials</td></tr>'+
+    '<tr><td>Oct 31, 2025</td><td>S&P 500</td><td>Deletion</td><td>CarMax</td><td>KMX</td><td>Consumer Discretionary</td></tr></table>';
+  const out=parseSp500ChangeRows(html,{sourceUrl:"https://press.spglobal.com/spinoff",releaseDate:"2025-10-27"});
+  assert.deepEqual(out.map(x=>[x.effectiveDate,x.action,x.ticker]),[
+    ["2025-10-30","Addition","SOLS"],
+    ["2025-10-31","Deletion","KMX"],
+  ]);
+});
