@@ -25,7 +25,24 @@ try{
  const publishAllowed=publishRequested&&!quotaGuarded&&!collectionFailed;
  const publishSkipped=publishRequested&&!publishAllowed?(quotaGuarded?'QUOTA_GUARD':collectionFailed?'COLLECTION_FAILED':null):null;
  const publication=spawnSync(process.execPath,[path.join(here,'run-local.mjs'),...(publishAllowed?['--publish']:[])],{windowsHide:true,stdio:['ignore','pipe','pipe'],timeout:30*60000});
- const report={at:new Date().toISOString(),lane,collectionExit:collection.status,collectionStatus:collectionReport?.status??null,publicationExit:publication.status,publishRequested,publishSkipped,status:publication.status===0?(publishSkipped==='QUOTA_GUARD'?'QUOTA_GUARDED':publishSkipped==='COLLECTION_FAILED'?'COLLECTION_FAILED_PUBLISH_BLOCKED':'COMPLETE'):'PUBLICATION_NOT_VERIFIED'};
+ let prospective=null,prospectiveReport=null;
+ if(lane==='core'){
+  prospective=spawnSync(process.execPath,[path.join(here,'dollar-prospective-forward-r1.mjs')],{windowsHide:true,stdio:['ignore','pipe','pipe'],timeout:5*60000});
+  const prospectiveFile=path.join(base,'local-dollar-prospective-last-run.json');
+  prospectiveReport=fs.existsSync(prospectiveFile)?read(prospectiveFile):null;
+ }
+ const researchProspective=lane==='core'?{
+  nonBlocking:true,
+  exit:prospective?.status??null,
+  status:prospectiveReport?.status??(prospective?.status===0?'REPORT_MISSING':'EXECUTION_FAILED'),
+  recorded:prospectiveReport?.recorded??null,
+  signalDate:prospectiveReport?.signalDate??null,
+  totalSignals:prospectiveReport?.totalSignals??null,
+  eligible1m:prospectiveReport?.eligible1m??null,
+  eligible3m:prospectiveReport?.eligible3m??null,
+  error:prospectiveReport?.error??(prospective?.error?.code??null),
+ }:{nonBlocking:true,status:'SKIPPED_KOREA_LANE'};
+ const report={at:new Date().toISOString(),lane,collectionExit:collection.status,collectionStatus:collectionReport?.status??null,publicationExit:publication.status,publishRequested,publishSkipped,researchProspective,status:publication.status===0?(publishSkipped==='QUOTA_GUARD'?'QUOTA_GUARDED':publishSkipped==='COLLECTION_FAILED'?'COLLECTION_FAILED_PUBLISH_BLOCKED':'COMPLETE'):'PUBLICATION_NOT_VERIFIED'};
  save(path.join(base,'local-cycle-last-run.json'),report);console.log(JSON.stringify(report));
  if(publication.status!==0)process.exitCode=1;
 }finally{fs.unlinkSync(file);}
