@@ -7,7 +7,7 @@ import {save} from './d1.mjs';
 import {createQuotaFetch} from './quota-fetch.mjs';
 import {recordCollectionChecks} from './collection-checks.mjs';
 
-export async function collectLocal(base,{lane='core',importOnly=false}={}){
+export async function collectLocal(base,{lane='core',importOnly=false,job=null}={}){
  const core=localDatabase(path.join(base,'storage','core.sqlite'));
  const history=localDatabase(path.join(base,'storage','history.sqlite'));
  const env={...loadLocalProviders(base),DB:core,DB_CORE:core,DB_HISTORY:history,ZGMINI_COMPUTE_TARGET:'pc'};
@@ -29,8 +29,11 @@ export async function collectLocal(base,{lane='core',importOnly=false}={}){
   let result;
   if(lane==='korea')result=await refreshKoreaRev7({env:{...env,DB:history},store:new Rev7D1Store(history,{leaseMs:600000}),now:new Date(),maxDates:1,deferCalculation:true});
   else{
-   const feed=await runPublicFeeds({env,maxFeedsPerRun:1});
-   result=feed.attempted>0||feed.status!=='COMPLETE'?{...feed,lane:'public-feed'}:await runMarketOperationalRefresh({env,now:Date.now(),fetchImpl:globalThis.fetch,calculate:async()=>({calculation:'PC_PENDING'})});
+   if(job)result=await runMarketOperationalRefresh({env,job,now:Date.now(),fetchImpl:globalThis.fetch,calculate:async()=>({calculation:'PC_PENDING'})});
+   else{
+    const feed=await runPublicFeeds({env,maxFeedsPerRun:1});
+    result=feed.attempted>0||feed.status!=='COMPLETE'?{...feed,lane:'public-feed'}:await runMarketOperationalRefresh({env,now:Date.now(),fetchImpl:globalThis.fetch,calculate:async()=>({calculation:'PC_PENDING'})});
+   }
   }
   // Reports contain statuses only; provider URLs and exception messages are excluded.
   const report={at:new Date().toISOString(),lane,status:result.status,job:result.job??null,attempted:result.attempted??null,feeds:result.feeds?.map(({key,status})=>({key,status})),providers,quota:quota.summary()};
@@ -41,6 +44,10 @@ export async function collectLocal(base,{lane='core',importOnly=false}={}){
  }finally{globalThis.fetch=originalFetch;hooks.deregister();core.close();history.close();}
 }
 if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.url)){
- try{console.log(JSON.stringify(await collectLocal(process.env.ZGMINI_PC_HOME??path.join(os.homedir(),'.zgmini','pc-writer'),{lane:process.argv.includes('--korea')?'korea':'core',importOnly:process.argv.includes('--import-only')})));}
+ try{
+  const jobArg=process.argv.find(arg=>arg.startsWith('--job='));
+  const job=jobArg?jobArg.slice('--job='.length):null;
+  console.log(JSON.stringify(await collectLocal(process.env.ZGMINI_PC_HOME??path.join(os.homedir(),'.zgmini','pc-writer'),{lane:process.argv.includes('--korea')?'korea':'core',importOnly:process.argv.includes('--import-only'),job}));
+ }
  catch(error){console.log(JSON.stringify({status:'FAILED',code:error.code??'LOCAL_COLLECTION_FAILED',...(process.argv.includes('--import-only')?{importError:error.message}:{})}));process.exitCode=1;}
 }

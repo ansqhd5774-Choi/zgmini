@@ -21,7 +21,16 @@ const EXTERNAL_KEYS={macro:['publicDomainScores'],credit:['dvpRepoRows','triPart
 async function collectGroup(args,group){
  const adapters=Object.fromEntries(['fetchFred','fetchOfr','fetchCmdi','fetchGscpi','fetchCopper','fetchFundFlows','fetchBis'].filter(key=>!SOURCE_GROUPS[group].includes(key)).map(key=>[key,async()=>({status:'SKIPPED_JOB'})]));
  const out=await collectDiagnosticLiveInputs({...args,requestCap:48,adapters});
- return {...(group==='macro'?{series:out.series,inputSettled:out.inputSettled,providerSummary:{fred:out.providerSummary?.fred}}:{}),external:Object.fromEntries(EXTERNAL_KEYS[group].map(key=>[key,out.external[key]]))};
+ const providerSummary=group==='macro'
+  ?{fred:out.providerSummary?.fred}
+  :group==='fundFlows'
+   ?{secFundFlows:out.providerSummary?.secFundFlows}
+   :undefined;
+ return {
+  ...(group==='macro'?{series:out.series,inputSettled:out.inputSettled}:{}),
+  ...(providerSummary?{providerSummary}:{}),
+  external:Object.fromEntries(EXTERNAL_KEYS[group].map(key=>[key,out.external[key]])),
+ };
 }
 const unavailableFetch=async()=>{throw Error('SCORE_CALCULATION_NETWORK_FORBIDDEN')};
 export async function calculateStoredMarketScore(env,store,now){
