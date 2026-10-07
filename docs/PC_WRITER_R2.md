@@ -21,6 +21,8 @@ Node 24 이상을 사용한다. `seed-local.mjs`는 기존 금융 테이블을 �
 
 `publication-events.jsonl`에는 게시 성공·실패·차단 원인과 시각을 누적 보존한다. 차단 시 stderr 경고 및 예약 작업 종료 코드 2를 반환하므로 수집 성공을 게시 성공으로 표시하지 않는다. 외부 알림 서비스는 추가하지 않는다.
 
+한국시장 snapshot은 FK가 참조하는 해당 날짜의 실제 로컬 COMPLETE 확인 메타데이터와 함께 원자적 batch로 게시한다. 원자료 종목 행은 업로드하지 않는다. 확인 메타데이터가 없으면 임의 count/date를 생성하지 않고 실패한다. 기존 날짜 기록은 덮어쓰지 않는다.
+
 `local-cycle.mjs`는 단일 PID 잠금으로 수집과 계산·게시를 순서대로 실행한다. `install-local.mjs`는 같은 SHA의 실제 VERIFIED 결과 이후에만 Windows 예약 작업을 등록한다. core는 5분, Korea는 매시 37분이다. 이전 작업은 삭제하지 않고 비활성화하여 롤백 경로로 보존한다. PC와 로그인 세션 및 인터넷 연결이 필요하다.
 
 ## Cloudflare 전환
