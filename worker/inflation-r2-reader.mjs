@@ -105,6 +105,31 @@ export async function loadStoredInflationR2Analysis(db,{asOf}={}){
   };
 }
 
+export async function loadStoredInflationR2AnalysisTimeline(db,{asOf,dates=[]}={}){
+  if(!validDate(asOf))throw new Error("INFLATION_R2_ASOF_INVALID");
+  if(!Array.isArray(dates)||dates.some(date=>!validDate(date)||date>asOf))throw new Error("INFLATION_R2_TIMELINE_DATES_INVALID");
+  if(!db||typeof db.prepare!=="function")return {status:"PARTIAL",reason:"INFLATION_R2_DB_UNAVAILABLE",rows:[]};
+  const [pit,pc1]=await Promise.all([
+    loadStoredInflationPitSeries(db,{asOf,seriesIds:[...INFLATION_PIT_SERIES]}),
+    loadPc1Series(db,{asOf}),
+  ]);
+  if(pit.status!=="READY_STORED_PIT_HISTORY")return {status:"PARTIAL",reason:"INFLATION_R2_PIT_INCOMPLETE",rows:[]};
+  if(pc1.missing.length||pc1.issues.length)return {status:"PARTIAL",reason:"INFLATION_R2_PCE_PC1_INCOMPLETE",rows:[]};
+  const history=buildInflationR2StoredHistory({pitSeries:pit.series,pcePc1:pc1.series});
+  const rows=[];
+  for(const date of dates){
+    const current=calculateInflationR2At(history,date);
+    if(current.status!=="READY")continue;
+    rows.push({
+      date,
+      score:current.score,
+      axes:current.axes,
+      features:snapshotInflationR2Features(history,date),
+    });
+  }
+  return {status:"READY",rows,providerRequests:0,source:"LOCAL_STORED_PIT_HISTORY"};
+}
+
 function partial(reason,extra={}){
   return {
     status:"PARTIAL",
