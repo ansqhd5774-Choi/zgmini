@@ -91,10 +91,19 @@ export async function buildBreadthR7PitUniverse(base=process.env.ZGMINI_PC_HOME?
       const html=await fetchText(globalThis.fetch,release.url,"SP500_PIT_RELEASE");
       const parsed=parseSp500ChangeRows(html,{sourceUrl:release.url,releaseDate:release.releaseDate});
       releaseAudit.push({releaseDate:release.releaseDate,title:release.title,url:release.url,eventRows:parsed.length});
-      if(parsed.length)events.push(...parsed);
+      if(!parsed.length){
+        report.failedRelease={releaseDate:release.releaseDate,title:release.title,url:release.url};
+        throw new Error("SP500_PIT_RELEASE_PARSE_MISSING");
+      }
+      events.push(...parsed);
       await sleep(250);
     }
-    const relevantEvents=events.filter(event=>event.effectiveDate>dates[0]&&event.effectiveDate<=currentDate);
+    const uniqueEvents=new Map();
+    for(const event of events){
+      const key=`${event.effectiveDate}|${event.action}|${event.ticker}`;
+      if(!uniqueEvents.has(key))uniqueEvents.set(key,event);
+    }
+    const relevantEvents=[...uniqueEvents.values()].filter(event=>event.effectiveDate>dates[0]&&event.effectiveDate<=currentDate);
     if(!relevantEvents.length)throw new Error("SP500_PIT_NO_RELEVANT_EVENTS");
 
     const reconstructed=reconstructPitUniverses({currentMembers,currentDate,targetDates:dates,events:relevantEvents});
