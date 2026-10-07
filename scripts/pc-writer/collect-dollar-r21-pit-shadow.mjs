@@ -16,6 +16,7 @@ const PAGE_LIMIT=100000;
 const MAX_PAGES=4;
 const validDate=value=>typeof value==="string"&&/^\d{4}-\d{2}-\d{2}$/.test(value);
 const finite=value=>typeof value==="number"&&Number.isFinite(value);
+const sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 const domain=(market,id)=>market?.domains?.find(item=>item?.id===id)??null;
 
 function minusYears(date,years){
@@ -135,6 +136,7 @@ export async function collectDollarR21PitShadow(base=process.env.ZGMINI_PC_HOME?
       }
       if(offset+parsed.received>=totalCount)break;
       if(page===MAX_PAGES-1)throw new Error("DOLLAR_R21_PIT_PAGE_CAP_EXCEEDED");
+      await sleep(550);
     }
     const rows=[...revisions.values()].sort((a,b)=>a.observationDate.localeCompare(b.observationDate)||a.realtimeStart.localeCompare(b.realtimeStart));
     if(rows.length<252)throw new Error("DOLLAR_R21_PIT_HISTORY_SHORT");
