@@ -97,8 +97,11 @@ export async function backfillBreadthR6Shadow(base=process.env.ZGMINI_PC_HOME??D
         const prior=JSON.parse(fs.readFileSync(historyFile,"utf8"));
         if(prior?.universeDate===universeDate&&prior?.memberHash===memberHash(members)){
           for(const [k,row] of normalizeSupplementalRows(prior.rows))rows.set(k,row);
-          for(const date of prior.attemptedDates??[])if(validDate(date))attemptedDates.add(date);
-          for(const ticker of prior.attemptedTickers??[])if(members.includes(ticker))attemptedTickers.add(ticker);
+          const sameWindow=Number(prior?.targetSessions)===TARGET_SESSIONS&&Number(prior?.requiredPriceSessions)===REQUIRED_PRICE_SESSIONS;
+          if(sameWindow){
+            for(const date of prior.attemptedDates??[])if(validDate(date))attemptedDates.add(date);
+            for(const ticker of prior.attemptedTickers??[])if(members.includes(ticker))attemptedTickers.add(ticker);
+          }else report.historyWindowExtended={fromTarget:Number(prior?.targetSessions??0),toTarget:TARGET_SESSIONS};
         }else report.resetReason="CURRENT_UNIVERSE_CHANGED";
       }catch{report.resetReason="SHADOW_HISTORY_CORRUPT"}
     }
