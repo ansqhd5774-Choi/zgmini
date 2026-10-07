@@ -76,3 +76,15 @@ test('local core cycle automatically accumulates prospective dollar evidence wit
  assert.match(src,/if\(publication\.status!==0\)process\.exitCode=1/);
  assert.doesNotMatch(src,/if\(prospective\.status!==0\)process\.exitCode=1/);
 });
+
+
+test('local core cycle automatically accumulates prospective index-fund flow evidence without gating publication',()=>{
+ const src=fs.readFileSync(new URL('../scripts/pc-writer/local-cycle.mjs',import.meta.url),'utf8');
+ assert.match(src,/fund-flow-index-prospective-r1\.mjs/);
+ assert.match(src,/local-fund-flow-index-prospective-last-run\.json/);
+ assert.match(src,/researchFundFlowProspective/);
+ assert.match(src,/nonBlocking:true/);
+ assert.match(src,/observedReleaseDate/);
+ assert.doesNotMatch(src,/if\(fundFlowProspective\.status!==0\)process\.exitCode=1/);
+ assert.match(src,/if\(publication\.status!==0\)process\.exitCode=1/);
+});

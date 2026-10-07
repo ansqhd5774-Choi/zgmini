@@ -25,11 +25,14 @@ try{
  const publishAllowed=publishRequested&&!quotaGuarded&&!collectionFailed;
  const publishSkipped=publishRequested&&!publishAllowed?(quotaGuarded?'QUOTA_GUARD':collectionFailed?'COLLECTION_FAILED':null):null;
  const publication=spawnSync(process.execPath,[path.join(here,'run-local.mjs'),...(publishAllowed?['--publish']:[])],{windowsHide:true,stdio:['ignore','pipe','pipe'],timeout:30*60000});
- let prospective=null,prospectiveReport=null;
+ let prospective=null,prospectiveReport=null,fundFlowProspective=null,fundFlowProspectiveReport=null;
  if(lane==='core'){
   prospective=spawnSync(process.execPath,[path.join(here,'dollar-prospective-forward-r1.mjs')],{windowsHide:true,stdio:['ignore','pipe','pipe'],timeout:5*60000});
   const prospectiveFile=path.join(base,'local-dollar-prospective-last-run.json');
   prospectiveReport=fs.existsSync(prospectiveFile)?read(prospectiveFile):null;
+  fundFlowProspective=spawnSync(process.execPath,[path.join(here,'fund-flow-index-prospective-r1.mjs')],{windowsHide:true,stdio:['ignore','pipe','pipe'],timeout:5*60000});
+  const fundFlowProspectiveFile=path.join(base,'local-fund-flow-index-prospective-last-run.json');
+  fundFlowProspectiveReport=fs.existsSync(fundFlowProspectiveFile)?read(fundFlowProspectiveFile):null;
  }
  const researchProspective=lane==='core'?{
   nonBlocking:true,
@@ -42,7 +45,19 @@ try{
   eligible3m:prospectiveReport?.eligible3m??null,
   error:prospectiveReport?.error??(prospective?.error?.code??null),
  }:{nonBlocking:true,status:'SKIPPED_KOREA_LANE'};
- const report={at:new Date().toISOString(),lane,collectionExit:collection.status,collectionStatus:collectionReport?.status??null,publicationExit:publication.status,publishRequested,publishSkipped,researchProspective,status:publication.status===0?(publishSkipped==='QUOTA_GUARD'?'QUOTA_GUARDED':publishSkipped==='COLLECTION_FAILED'?'COLLECTION_FAILED_PUBLISH_BLOCKED':'COMPLETE'):'PUBLICATION_NOT_VERIFIED'};
+ const researchFundFlowProspective=lane==='core'?{
+  nonBlocking:true,
+  exit:fundFlowProspective?.status??null,
+  status:fundFlowProspectiveReport?.status??(fundFlowProspective?.status===0?'REPORT_MISSING':'EXECUTION_FAILED'),
+  initialized:fundFlowProspectiveReport?.initialized??null,
+  recorded:fundFlowProspectiveReport?.recorded??null,
+  observedReleaseDate:fundFlowProspectiveReport?.observedReleaseDate??null,
+  totalSignals:fundFlowProspectiveReport?.totalSignals??null,
+  eligible1m:fundFlowProspectiveReport?.eligible1m??null,
+  eligible3m:fundFlowProspectiveReport?.eligible3m??null,
+  error:fundFlowProspectiveReport?.error??(fundFlowProspective?.error?.code??null),
+ }:{nonBlocking:true,status:'SKIPPED_KOREA_LANE'};
+ const report={at:new Date().toISOString(),lane,collectionExit:collection.status,collectionStatus:collectionReport?.status??null,publicationExit:publication.status,publishRequested,publishSkipped,researchProspective,researchFundFlowProspective,status:publication.status===0?(publishSkipped==='QUOTA_GUARD'?'QUOTA_GUARDED':publishSkipped==='COLLECTION_FAILED'?'COLLECTION_FAILED_PUBLISH_BLOCKED':'COMPLETE'):'PUBLICATION_NOT_VERIFIED'};
  save(path.join(base,'local-cycle-last-run.json'),report);console.log(JSON.stringify(report));
  if(publication.status!==0)process.exitCode=1;
 }finally{fs.unlinkSync(file);}
