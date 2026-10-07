@@ -19,7 +19,7 @@ test("raw N-PORT/N-CEN backfill is bounded, checkpointed and research-only",()=>
   assert.match(src,/SUBMISSION\.tsv/);
   assert.match(src,/FUND_REPORTED_INFO\.tsv/);
   assert.match(src,/MASTER_FUNDS\.tsv/);
-  assert.match(src,/SUB_TYPE!==\"NPORT-P\"/);
+  assert.match(src,/subType!==\"NPORT-P\"/);
   assert.match(src,/noPublish:true/);
   assert.match(src,/dbSchemaChanged:false/);
   assert.doesNotMatch(src,/publishMarket|remote\.|--publish|CREATE TABLE|ALTER TABLE/);
