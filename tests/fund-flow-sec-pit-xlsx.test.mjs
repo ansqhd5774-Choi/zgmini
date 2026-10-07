@@ -70,6 +70,34 @@ test("matrix parser accepts the combined series labels used by SEC supporting da
   assert.ok(Math.abs(out[0].allOutflowRatio-(-2.16))<1e-12);
 });
 
+test("SEC XLSX parser prefers the explicit Table 3.2 sheet when another flow table has the same row labels",()=>{
+  const strings=[
+    "All - Net","Index - Net","Non-Index - Net","All - Outflow",
+    "Table 3.2: Aggregate Inflows, Outflows, and Net Flows of Index and Non-Index Funds (Percent of Net Assets)"
+  ];
+  const ss='<sst xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'+strings.map(x=>'<si><t>'+x+'</t></si>').join('')+'</sst>';
+  const vals=Array.from({length:12},(_,i)=>.1+i/100);
+  const row=(r,labelIndex,series)=>'<row r="'+r+'">'+cell('A'+r,'s',labelIndex)+series.map((v,i)=>cell(String.fromCharCode(66+i)+r,'n',v)).join('')+'</row>';
+  const makeSheet=(withTitle,multiplier)=>'<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetData>'+
+    (withTitle?'<row r="1">'+cell('A1','s',4)+'</row>':'')+
+    row(withTitle?2:1,0,vals.map(x=>x*multiplier))+
+    row(withTitle?3:2,1,vals.map(x=>(x+.2)*multiplier))+
+    row(withTitle?4:3,2,vals.map(x=>(x-.2)*multiplier))+
+    row(withTitle?5:4,3,vals.map(x=>(-2-x)*multiplier))+
+    '</sheetData></worksheet>';
+  const zip=crcIgnoredZip({
+    "xl/workbook.xml":'<workbook xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="3.1" sheetId="1" r:id="rId1"/><sheet name="3.2" sheetId="2" r:id="rId2"/></sheets></workbook>',
+    "xl/_rels/workbook.xml.rels":'<Relationships><Relationship Id="rId1" Target="worksheets/sheet1.xml"/><Relationship Id="rId2" Target="worksheets/sheet2.xml"/></Relationships>',
+    "xl/sharedStrings.xml":ss,
+    "xl/worksheets/sheet1.xml":makeSheet(false,100),
+    "xl/worksheets/sheet2.xml":makeSheet(true,1),
+  });
+  const out=parseSecFundFlowSupportingXlsx(zip,{periodEnd:"2025-12-31"});
+  assert.equal(out.sheetName,"3.2");
+  assert.equal(out.selectionEvidence.exactSheet,true);
+  assert.ok(Math.abs(out.rows[0].allNetRatio-.1)<1e-12);
+});
+
 test("matrix parser requires all four Table 3.2 series",()=>{
   const matrix=[["Table 3.2: Aggregate Inflows, Outflows, and Net Flows of Index and Non-Index Funds (Percent of Net Assets)"],["All","Net",...Array(12).fill(.1)]];
   assert.equal(parseSecFundFlowTableMatrix(matrix,{periodEnd:"2025-12-31",sheetName:"3.2"}),null);
