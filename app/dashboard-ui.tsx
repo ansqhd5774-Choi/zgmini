@@ -82,6 +82,8 @@ function CardTrend({data,label,color,periodDays}:{data:DashboardPoint[];label:st
    <LineChart data={scaled.points} accessibilityLayer={false} tabIndex={-1} margin={{top:3,right:3,left:13,bottom:3}}>
     <XAxis hide dataKey="ts" type="number" domain={[scaled.start,scaled.end]}/>
     <YAxis hide domain={[0,100]} width={0}/>
+    <ReferenceLine className="zg-r55-boundary-line" y={0} stroke="rgba(168,188,208,.4)" strokeWidth={1}/>
+    <ReferenceLine className="zg-r55-boundary-line" y={100} stroke="rgba(168,188,208,.4)" strokeWidth={1}/>
     <ReferenceLine y={25} stroke="rgba(111,130,149,.22)" strokeDasharray="2 3" strokeWidth={0.8}/>
     <ReferenceLine y={50} stroke="rgba(111,130,149,.26)" strokeDasharray="2 3" strokeWidth={0.8}/>
     <ReferenceLine y={75} stroke="rgba(111,130,149,.22)" strokeDasharray="2 3" strokeWidth={0.8}/>
