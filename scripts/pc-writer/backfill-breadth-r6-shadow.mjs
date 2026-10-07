@@ -18,6 +18,11 @@ const REQUIRED_PRICE_SESSIONS=512;
 const MIN_COVERAGE=.98;
 const MAX_DAILY_SNAPSHOTS=12;
 const MAX_TICKER_HISTORY_CALLS=80;
+const HISTORICAL_TICKER_ALIASES=Object.freeze({
+  FISV:Object.freeze(["FI"]),
+  MRSH:Object.freeze(["MMC"]),
+  ECHO:Object.freeze(["SATS"]),
+});
 
 const validDate=value=>typeof value==="string"&&/^\d{4}-\d{2}-\d{2}$/.test(value);
 const finite=value=>typeof value==="number"&&Number.isFinite(value);
@@ -25,6 +30,10 @@ const sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 const memberHash=members=>createHash("sha256").update(JSON.stringify([...members].sort())).digest("hex");
 const key=(date,ticker)=>date+"|"+ticker;
 export const isMarketParquetTerminalAccessError=error=>/MARKETPARQUET_HTTP_(401|403|404)/.test(String(error?.message??error??""));
+export function historicalTickerCandidates(ticker){
+  const current=String(ticker??"").trim();
+  return current?[current,...(HISTORICAL_TICKER_ALIASES[current]??[])]:[];
+}
 
 export function marketSessionsBack(endDate,count=TARGET_SESSIONS){
   if(!validDate(endDate)||!Number.isInteger(count)||count<1)throw new TypeError("BREADTH_R6_SESSION_RANGE_INVALID");
@@ -61,12 +70,13 @@ function countCoverage(map,members,dateSet){
   return {counts,ready,readyCount:ready.length,requiredCount:Math.ceil(members.length*MIN_COVERAGE)};
 }
 
-function checkpoint(file,{universeDate,members,rows,attemptedDates,attemptedTickers}){
+function checkpoint(file,{universeDate,members,rows,attemptedDates,attemptedTickers,attemptedAliases}){
   save(file,{
     version:1,universeDate,memberCount:members.length,memberHash:memberHash(members),
     targetSessions:TARGET_SESSIONS,requiredPriceSessions:REQUIRED_PRICE_SESSIONS,
     rows:[...rows.values()].sort((a,b)=>a.tradeDate.localeCompare(b.tradeDate)||a.ticker.localeCompare(b.ticker)),
     attemptedDates:[...attemptedDates].sort(),attemptedTickers:[...attemptedTickers].sort(),
+    attemptedAliases:[...attemptedAliases].sort(),
     updatedAt:new Date().toISOString(),
   });
 }
@@ -77,7 +87,7 @@ export async function backfillBreadthR6Shadow(base=process.env.ZGMINI_PC_HOME??D
   const originalFetch=globalThis.fetch;
   const quota=createQuotaFetch({base,originalFetch,mode:"enforce"});
   globalThis.fetch=quota.fetch;
-  const report={version:1,status:"RUNNING",startedAt:new Date().toISOString(),noPublish:true,dbSchemaChanged:false,providerCalls:0,dailySnapshotCalls:0,tickerHistoryCalls:0};
+  const report={version:1,status:"RUNNING",startedAt:new Date().toISOString(),noPublish:true,dbSchemaChanged:false,providerCalls:0,dailySnapshotCalls:0,tickerHistoryCalls:0,tickerAliasCalls:0};
   try{
     const universe=await core.prepare(
       "SELECT trade_date,members_json,member_count FROM market_score_breadth_b1_r3_universe_v1 ORDER BY trade_date DESC LIMIT 1"
@@ -90,7 +100,7 @@ export async function backfillBreadthR6Shadow(base=process.env.ZGMINI_PC_HOME??D
 
     const targetDates=marketSessionsBack(universeDate,TARGET_SESSIONS),dateSet=new Set(targetDates);
     const rows=normalizeSupplementalRows([]);
-    const attemptedDates=new Set(),attemptedTickers=new Set();
+    const attemptedDates=new Set(),attemptedTickers=new Set(),attemptedAliases=new Set();
 
     if(fs.existsSync(historyFile)){
       try{
@@ -101,6 +111,7 @@ export async function backfillBreadthR6Shadow(base=process.env.ZGMINI_PC_HOME??D
           if(sameWindow){
             for(const date of prior.attemptedDates??[])if(validDate(date))attemptedDates.add(date);
             for(const ticker of prior.attemptedTickers??[])if(members.includes(ticker))attemptedTickers.add(ticker);
+            for(const aliasKey of prior.attemptedAliases??[])if(typeof aliasKey==="string")attemptedAliases.add(aliasKey);
           }else report.historyWindowExtended={fromTarget:Number(prior?.targetSessions??0),toTarget:TARGET_SESSIONS};
         }else report.resetReason="CURRENT_UNIVERSE_CHANGED";
       }catch{report.resetReason="SHADOW_HISTORY_CORRUPT"}
@@ -139,7 +150,7 @@ export async function backfillBreadthR6Shadow(base=process.env.ZGMINI_PC_HOME??D
         for(const row of snap.rows??[]){
           rows.set(key(date,row.ticker),{tradeDate:date,ticker:row.ticker,currentClose:row.currentClose,currentVolume:row.currentVolume,source:"MARKETPARQUET_SHADOW"});
         }
-        checkpoint(historyFile,{universeDate,members,rows,attemptedDates,attemptedTickers});
+        checkpoint(historyFile,{universeDate,members,rows,attemptedDates,attemptedTickers,attemptedAliases});
         coverage=countCoverage(rows,members,dateSet);
       }catch(error){
         if(!isMarketParquetTerminalAccessError(error))throw error;
@@ -165,12 +176,33 @@ export async function backfillBreadthR6Shadow(base=process.env.ZGMINI_PC_HOME??D
         const k=key(bar.date,ticker);
         if(!rows.has(k))rows.set(k,{tradeDate:bar.date,ticker,currentClose:bar.close,currentVolume:bar.volume,source:"IEX_HISTORY_SHADOW"});
       }
-      checkpoint(historyFile,{universeDate,members,rows,attemptedDates,attemptedTickers});
+      checkpoint(historyFile,{universeDate,members,rows,attemptedDates,attemptedTickers,attemptedAliases});
       coverage=countCoverage(rows,members,dateSet);
       await sleep(125);
     }
 
-    checkpoint(historyFile,{universeDate,members,rows,attemptedDates,attemptedTickers});
+    const aliasRepairs=[...coverage.counts.entries()]
+      .filter(([,count])=>count<REQUIRED_PRICE_SESSIONS)
+      .flatMap(([ticker])=>historicalTickerCandidates(ticker).slice(1).map(alias=>({ticker,alias,key:ticker+"|"+alias})))
+      .filter(item=>!attemptedAliases.has(item.key));
+    for(const item of aliasRepairs){
+      if(coverage.readyCount>=coverage.requiredCount)break;
+      const result=await fetchTickerHistory({ticker:item.alias,fetchImpl:globalThis.fetch});
+      report.providerCalls+=Number(result.providerRequests??1);
+      report.tickerHistoryCalls++;
+      report.tickerAliasCalls++;
+      attemptedAliases.add(item.key);
+      for(const bar of result.bars??[]){
+        if(!dateSet.has(bar.date))continue;
+        const k=key(bar.date,item.ticker);
+        if(!rows.has(k))rows.set(k,{tradeDate:bar.date,ticker:item.ticker,currentClose:bar.close,currentVolume:bar.volume,source:"IEX_HISTORY_ALIAS:"+item.alias});
+      }
+      checkpoint(historyFile,{universeDate,members,rows,attemptedDates,attemptedTickers,attemptedAliases});
+      coverage=countCoverage(rows,members,dateSet);
+      await sleep(125);
+    }
+
+    checkpoint(historyFile,{universeDate,members,rows,attemptedDates,attemptedTickers,attemptedAliases});
     coverage=countCoverage(rows,members,dateSet);
     report.universeDate=universeDate;
     report.targetFirst=targetDates[0];

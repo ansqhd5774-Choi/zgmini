@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import {buildBreadthR6Components,BREADTH_R6_MIN_COVERAGE,BREADTH_R6_WEIGHTS} from "../lib/market-score/breadth-r6-shadow.mjs";
 import {buildFundFlowsR2Components,FUND_FLOWS_R2_WEIGHTS,flowPreferenceScoreR2,confidenceAdjustedFlowScoreR2} from "../lib/market-score/fund-flows-r2-shadow.mjs";
-import {marketSessionsBack,isMarketParquetTerminalAccessError} from "../scripts/pc-writer/backfill-breadth-r6-shadow.mjs";
+import {marketSessionsBack,isMarketParquetTerminalAccessError,historicalTickerCandidates} from "../scripts/pc-writer/backfill-breadth-r6-shadow.mjs";
 
 function breadthFixture({tickers=500,sessions=252}={}){
   const members=Array.from({length:tickers},(_,i)=>"T"+String(i).padStart(3,"0"));
@@ -77,6 +77,13 @@ test("fund-flow R2 applies approved 50/35/15 weights with 12-week confidence ram
   assert.equal(out.coverage.iciWeeksUsed,4);
 });
 
+
+test("breadth R6 backfill stitches only verified same-security historical ticker aliases",()=>{
+  assert.deepEqual(historicalTickerCandidates("FISV"),["FISV","FI"]);
+  assert.deepEqual(historicalTickerCandidates("MRSH"),["MRSH","MMC"]);
+  assert.deepEqual(historicalTickerCandidates("ECHO"),["ECHO","SATS"]);
+  assert.deepEqual(historicalTickerCandidates("Q"),["Q"]);
+});
 
 test("breadth R6 backfill treats dated MarketParquet 403 as a terminal source limitation and falls back",()=>{
   assert.equal(isMarketParquetTerminalAccessError(new Error("MARKETPARQUET_HTTP_403")),true);
