@@ -24,6 +24,7 @@ const finite=value=>typeof value==="number"&&Number.isFinite(value);
 const sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 const memberHash=members=>createHash("sha256").update(JSON.stringify([...members].sort())).digest("hex");
 const key=(date,ticker)=>date+"|"+ticker;
+export const isMarketParquetTerminalAccessError=error=>/MARKETPARQUET_HTTP_(401|403|404)/.test(String(error?.message??error??""));
 
 export function marketSessionsBack(endDate,count=TARGET_SESSIONS){
   if(!validDate(endDate)||!Number.isInteger(count)||count<1)throw new TypeError("BREADTH_R6_SESSION_RANGE_INVALID");
@@ -126,15 +127,23 @@ export async function backfillBreadthR6Shadow(base=process.env.ZGMINI_PC_HOME??D
     const missingGlobalDates=targetDates.filter(date=>!anyDates.has(date)&&!attemptedDates.has(date));
     for(const date of missingGlobalDates.slice(0,MAX_DAILY_SNAPSHOTS)){
       if(coverage.readyCount>=coverage.requiredCount)break;
-      const snap=await fetchMarketParquetDateSnapshot({symbols:members,date,fetchImpl:globalThis.fetch});
-      report.providerCalls+=Number(snap.providerRequests??1);
+      report.providerCalls++;
       report.dailySnapshotCalls++;
-      attemptedDates.add(date);
-      for(const row of snap.rows??[]){
-        rows.set(key(date,row.ticker),{tradeDate:date,ticker:row.ticker,currentClose:row.currentClose,currentVolume:row.currentVolume,source:"MARKETPARQUET_SHADOW"});
+      try{
+        const snap=await fetchMarketParquetDateSnapshot({symbols:members,date,fetchImpl:globalThis.fetch});
+        report.providerCalls+=Math.max(0,Number(snap.providerRequests??1)-1);
+        attemptedDates.add(date);
+        for(const row of snap.rows??[]){
+          rows.set(key(date,row.ticker),{tradeDate:date,ticker:row.ticker,currentClose:row.currentClose,currentVolume:row.currentVolume,source:"MARKETPARQUET_SHADOW"});
+        }
+        checkpoint(historyFile,{universeDate,members,rows,attemptedDates,attemptedTickers});
+        coverage=countCoverage(rows,members,dateSet);
+      }catch(error){
+        if(!isMarketParquetTerminalAccessError(error))throw error;
+        report.marketParquetDateStatus="UNAVAILABLE_FALLBACK_IEX";
+        report.marketParquetDateError=String(error?.message??error);
+        break;
       }
-      checkpoint(historyFile,{universeDate,members,rows,attemptedDates,attemptedTickers});
-      coverage=countCoverage(rows,members,dateSet);
     }
 
     const deficient=[...coverage.counts.entries()]
