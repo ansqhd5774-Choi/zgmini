@@ -46,9 +46,28 @@ test("SEC supporting XLSX parser reconstructs Table 3.2 percentage rows",()=>{
   assert.equal(out.rows[0].observationDate,"2025-01-01");
   assert.equal(out.rows.at(-1).observationDate,"2025-12-01");
   assert.equal(out.rows[0].allNetRatio,.1);
-  assert.equal(out.rows[0].indexNetRatio,.3);
+  assert.ok(Math.abs(out.rows[0].indexNetRatio-.3)<1e-12);
   assert.equal(out.rows[0].nonIndexNetRatio,-.1);
   assert.equal(out.rows[0].allOutflowRatio,-2.1);
+});
+
+test("matrix parser accepts the combined series labels used by SEC supporting data",()=>{
+  const vals=Array.from({length:18},(_,i)=>0.1+i/100);
+  const matrix=[
+    ["Historical supporting data"],
+    ["All - Net",...vals],
+    ["Index - Net",...vals.map(x=>x+.2)],
+    ["Non-Index - Net",...vals.map(x=>x-.2)],
+    ["All - Outflow",...vals.map(x=>-2-x)],
+  ];
+  const out=parseSecFundFlowTableMatrix(matrix,{periodEnd:"2025-12-31",sheetName:"Supporting Data"});
+  assert.equal(out.length,12);
+  assert.equal(out[0].observationDate,"2025-01-01");
+  assert.equal(out.at(-1).observationDate,"2025-12-01");
+  assert.ok(Math.abs(out[0].allNetRatio-.16)<1e-12);
+  assert.ok(Math.abs(out[0].indexNetRatio-.36)<1e-12);
+  assert.ok(Math.abs(out[0].nonIndexNetRatio-(-.04))<1e-12);
+  assert.ok(Math.abs(out[0].allOutflowRatio-(-2.16))<1e-12);
 });
 
 test("matrix parser requires all four Table 3.2 series",()=>{
