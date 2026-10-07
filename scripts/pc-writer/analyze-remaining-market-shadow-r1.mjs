@@ -2,6 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
 import {fileURLToPath} from "node:url";
+import {createHash} from "node:crypto";
 import {localDatabase} from "./local-db.mjs";
 import {marketOperationalStore} from "../../worker/candidate-market-operational-store.mjs";
 import {buildBreadthR6Components} from "../../lib/market-score/breadth-r6-shadow.mjs";
@@ -11,16 +12,38 @@ const DEFAULT_BASE=path.join(os.homedir(),".zgmini","pc-writer");
 const finite=value=>typeof value==="number"&&Number.isFinite(value);
 const validDate=value=>typeof value==="string"&&/^\d{4}-\d{2}-\d{2}$/.test(value);
 const domain=(market,id)=>market?.domains?.find(item=>item?.id===id)??null;
+const memberHash=members=>createHash("sha256").update(JSON.stringify([...members].sort())).digest("hex");
 
-async function breadthInputs(db,asOf){
+async function breadthInputs(db,asOf,base){
   const universe=await db.prepare(
     "SELECT trade_date,members_json,member_count FROM market_score_breadth_b1_r3_universe_v1 WHERE trade_date<=? ORDER BY trade_date DESC LIMIT 1"
   ).bind(asOf).first();
   const members=(()=>{try{return JSON.parse(universe?.members_json??"[]")}catch{return[]}})();
-  const rows=(await db.prepare(
+  const stored=(await db.prepare(
     "SELECT trade_date,ticker,previous_close,current_close,current_volume FROM market_score_breadth_b1_r3_current_v1 WHERE trade_date IN (SELECT trade_date FROM (SELECT DISTINCT trade_date FROM market_score_breadth_b1_r3_current_v1 WHERE trade_date<=? ORDER BY trade_date DESC LIMIT 270)) ORDER BY trade_date,ticker"
   ).bind(asOf).all()).results??[];
-  return {members,rows,universeDate:universe?.trade_date??null,memberCount:Number(universe?.member_count??0)};
+  const byKey=new Map();
+  const historyFile=path.join(base,"local-breadth-r6-shadow-history.json");
+  if(fs.existsSync(historyFile)){
+    try{
+      const shadow=JSON.parse(fs.readFileSync(historyFile,"utf8"));
+      if(shadow?.universeDate===universe?.trade_date&&shadow?.memberHash===memberHash(members)){
+        for(const row of shadow.rows??[]){
+          const tradeDate=String(row?.tradeDate??""),ticker=String(row?.ticker??"").trim();
+          if(validDate(tradeDate)&&ticker)byKey.set(tradeDate+"|"+ticker,{
+            trade_date:tradeDate,ticker,previous_close:null,
+            current_close:Number(row?.currentClose),current_volume:Number(row?.currentVolume??0),
+          });
+        }
+      }
+    }catch{}
+  }
+  for(const row of stored){
+    const tradeDate=String(row?.trade_date??""),ticker=String(row?.ticker??"").trim();
+    if(validDate(tradeDate)&&ticker)byKey.set(tradeDate+"|"+ticker,row);
+  }
+  const rows=[...byKey.values()].sort((a,b)=>String(a.trade_date).localeCompare(String(b.trade_date))||String(a.ticker).localeCompare(String(b.ticker)));
+  return {members,rows,universeDate:universe?.trade_date??null,memberCount:Number(universe?.member_count??0),supplemented:byKey.size-stored.length};
 }
 
 export async function analyzeRemainingMarketShadowR1(base=process.env.ZGMINI_PC_HOME??DEFAULT_BASE){
@@ -32,7 +55,7 @@ export async function analyzeRemainingMarketShadowR1(base=process.env.ZGMINI_PC_
     const asOf=validDate(market?.asOfDate)?market.asOfDate:new Date().toISOString().slice(0,10);
     const store=marketOperationalStore(db);
 
-    const breadthRaw=await breadthInputs(db,asOf);
+    const breadthRaw=await breadthInputs(db,asOf,base);
     const breadth=buildBreadthR6Components({rows:breadthRaw.rows,members:breadthRaw.members,asOfDate:breadthRaw.universeDate??asOf});
 
     const [secBatch,iciBatch]=await Promise.all([
@@ -53,6 +76,7 @@ export async function analyzeRemainingMarketShadowR1(base=process.env.ZGMINI_PC_
         candidateScore:finite(breadth?.score)?breadth.score:null,
         candidateStatus:breadth.status,
         candidate:breadth,
+        supplementalRows:Math.max(0,Number(breadthRaw.supplemented??0)),
       },
       fundFlowsR2:{
         baselineScore:finite(fundBase?.score)?fundBase.score:null,

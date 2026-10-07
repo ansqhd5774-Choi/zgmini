@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import {buildBreadthR6Components,BREADTH_R6_MIN_COVERAGE,BREADTH_R6_WEIGHTS} from "../lib/market-score/breadth-r6-shadow.mjs";
 import {buildFundFlowsR2Components,FUND_FLOWS_R2_WEIGHTS,flowPreferenceScoreR2,confidenceAdjustedFlowScoreR2} from "../lib/market-score/fund-flows-r2-shadow.mjs";
+import {marketSessionsBack} from "../scripts/pc-writer/backfill-breadth-r6-shadow.mjs";
 
 function breadthFixture({tickers=500,sessions=252}={}){
   const members=Array.from({length:tickers},(_,i)=>"T"+String(i).padStart(3,"0"));
@@ -61,6 +62,20 @@ test("fund-flow R2 applies approved 50/35/15 weights with 12-week confidence ram
   assert.equal(out.cumulative4w.equity,-16937);
   assert.equal(out.relative.latestEquityMinusBond,4713);
   assert.equal(out.coverage.iciWeeksUsed,4);
+});
+
+
+test("breadth R6 shadow backfill plans a bounded 260-session window and remains local-only",()=>{
+  const dates=marketSessionsBack("2026-10-02",260);
+  assert.equal(dates.length,260);
+  assert.equal(dates.at(-1),"2026-10-02");
+  assert.ok(dates[0]<dates.at(-1));
+  const src=fs.readFileSync(new URL("../scripts/pc-writer/backfill-breadth-r6-shadow.mjs",import.meta.url),"utf8");
+  assert.match(src,/TARGET_SESSIONS=260/);
+  assert.match(src,/REQUIRED_PRICE_SESSIONS=252/);
+  assert.match(src,/noPublish:true/);
+  assert.match(src,/dbSchemaChanged:false/);
+  assert.doesNotMatch(src,/publishMarket|remote\.|--publish|CREATE TABLE|ALTER TABLE/);
 });
 
 test("remaining shadow workflow is isolated from production publish paths",()=>{
