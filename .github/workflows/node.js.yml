@@ -27,8 +27,12 @@ jobs:
         with:
           node-version: '24'
       - name: Install locked dependencies
+        id: install
         run: npm ci
-      - name: Build and regression tests
-        run: npm test
+      - name: Build
+        run: npm run build
+      - name: Regression tests
+        run: node --test tests/*.test.mjs
       - name: PC publication recovery tests
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
         run: node --test scripts/pc-writer/publication-guard.test.mjs scripts/pc-writer/korea-publication.test.mjs scripts/pc-writer/local-db.test.mjs
