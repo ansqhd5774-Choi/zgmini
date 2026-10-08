@@ -15,7 +15,7 @@ test("U10 accessibility contracts stay explicit", async () => {
 
   assert.match(panel, /<MarketFearGreedChart/);
   assert.match(chart, /<AreaChart[^>]*accessibilityLayer/);
-  assert.match(chart, /isAnimationActive=\{!prefersReducedMotion\}/);
+  assert.match(chart, /isAnimationActive=\{!compact && !prefersReducedMotion\}/);
   assert.match(chart, /<Tooltip[\s\S]*?isAnimationActive="auto"/);
 
   assert.match(periods, /aria-pressed=/);
@@ -46,7 +46,9 @@ test("U11 rejects fabricated fallback data and derives changes/insight from veri
   assert.doesNotMatch(route, /finica\.io/i);
   assert.doesNotMatch(route, /score\s*<\s*45/);
   assert.doesNotMatch(route, /score\s*>\s*55/);
-  assert.match(route, /status:\s*"unavailable"/);
+  assert.match(route, /readPublicFeed\(env\.DB, "fear-greed"\)/);
+  assert.match(await read("worker/public-feed-store.mjs"), /unavailable/);
+  assert.doesNotMatch(route, /fetch\(/);
 
   assert.doesNotMatch(panel, /payload\?\.insight/);
   assert.doesNotMatch(panel, /payload\?\.previous/);
@@ -56,6 +58,6 @@ test("U11 rejects fabricated fallback data and derives changes/insight from veri
 
   // User-requested chart cleanup: keep the semantic 25 guide area/line,
   // but do not render "25" as a Y-axis tick label.
-  assert.match(chart, /ticks=\{\[0,\s*50,\s*75,\s*100\]\}/);
-  assert.doesNotMatch(chart, /ticks=\{\[0,\s*25,\s*50,\s*75,\s*100\]\}/);
+  assert.match(chart, /ticks=\{\[0,\s*25,\s*50,\s*75,\s*100\]\}/);
+  assert.match(chart, /domain=\{\[0,\s*100\]\}/);
 });

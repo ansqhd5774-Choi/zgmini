@@ -9,7 +9,7 @@ test('fund flow R54 switches to four stable score rows only when all four indica
   {id:'fund-flow-54-1',name:'전체 등록펀드 순유입',status:'READY',score:62,value:0.16,unit:'%'},
   {id:'fund-flow-54-3',name:'인덱스·비인덱스 동반 유입',status:'READY',score:71,unit:'%'},
  ]);
- assert.deepEqual(rows.map(r=>r.label),['전체 등록펀드 순유입','순유입 모멘텀','인덱스·비인덱스 동반 유입','환매 압력']);
+ assert.deepEqual(rows.map(r=>r.label),['전체 펀드 순유입','순유입 추세','펀드 동반 유입','환매 압력']);
  assert.deepEqual(rows.map(r=>r.score),[62,55,71,48]);
  assert.ok(rows.every(r=>r.raw===false));
 });

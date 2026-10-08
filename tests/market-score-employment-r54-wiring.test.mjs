@@ -24,7 +24,7 @@ test("R54 adapter publishes explicit score and four factors",()=>{
 
 test("R54 detail catalog is stable-id ordered",()=>{
  const rows=marketDetailRows("employment",[indicators[3],indicators[1],indicators[0],indicators[2]]);
- assert.deepEqual(rows.map(x=>x.label),["실업률","비농업고용 3M 평균 증감","신규 실업수당 4W 평균","주 실업수당 개선 비율"]);
+ assert.deepEqual(rows.map(x=>x.label),["실업률","일자리 증가세","실업수당 신청","지역 고용 개선"]);
  assert.deepEqual(rows.map(x=>x.score),[70,75,68,80]);
 });
 

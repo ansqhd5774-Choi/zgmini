@@ -6,7 +6,7 @@ const src=fs.readFileSync(new URL("../app/dashboard-ui.tsx",import.meta.url),"ut
 
 test("Stage12 market UI fetches the CM-R1 public API",()=>{
   assert.match(src,/fetch\(['"]\/api\/market-score['"]/);
-  assert.match(src,/cache:\s*['"]default['"]/);
+  assert.match(src,/cache:\s*['"]no-store['"]/);
   assert.match(src,/modelVersion/);
   assert.match(src,/const busy=marketLoading;/);
 });
@@ -23,7 +23,7 @@ test("UI preserves data honesty for partial/unavailable domains",()=>{
   assert.match(src,/overall\.score|null|overallScore/);
   assert.match(src,/부분 데이터/);
   assert.match(src,/데이터 준비 중/);
-  assert.match(src,/누락 가중치 자동 재분배 없음/);
+  assert.match(src,/결측 시 재가중하지 않습니다/);
   assert.doesNotMatch(src,/신규 12영역 공개 점수 연결 준비 중/);
 });
 
