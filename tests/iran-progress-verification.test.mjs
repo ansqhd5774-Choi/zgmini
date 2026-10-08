@@ -1,0 +1,30 @@
+import test from 'node:test';import assert from 'node:assert/strict';
+import {hash} from '../scripts/iran-progress/store.mjs';
+import {groundProposal,eventSeverity,verifyEvent,stageScore} from '../scripts/iran-progress/verification.mjs';
+import {collectDiscovery,normalizeArticles} from '../scripts/iran-progress/discovery.mjs';
+const now=Date.parse('2026-10-08T12:00:00Z');
+const text='Confirmed attack caused injuries at the location.';
+const facts={eventAt:now-3600000,axis:'IRN_ISR',hormuz:false,actorVerified:true,connectionVerified:true,attackConfirmed:true,scaleVerified:true,injuries:true,severityFacts:{injuries:true}};
+const doc=(id,root)=>({id,independentRoot:root,text,textHash:hash(text),status:'COLLECTED',termsApproved:true,verificationOrigin:'FIXED_RULE',assertionStatus:'VERIFIED',parserVersion:'FIXTURE_R13',verifiedAt:now,sourceClass:'REPORTER_PRIMARY',verifiedFacts:facts});
+const proposal=()=>({eventId:'event-1',revision:1,facts,evidence:[{sourceId:'a',quote:text},{sourceId:'b',quote:text}]});
+test('verbatim text grounds candidate but alone cannot verify facts',()=>{const documents=[doc('a','a'),doc('b','b')].map(d=>({...d,assertionStatus:'PENDING'}));assert.equal(groundProposal(proposal(),documents).status,'GROUNDED_CANDIDATE');assert.equal(verifyEvent(proposal(),documents,now).status,'PENDING_REVIEW');});
+test('two independently verified structured facts produce deterministic severity',()=>{const e=verifyEvent(proposal(),[doc('a','a'),doc('b','b')],now);assert.equal(e.status,'VERIFIED');assert.equal(e.severity,3);});
+test('syndicated copies do not become two independent witnesses',()=>{assert.equal(verifyEvent(proposal(),[doc('a','agency'),doc('b','agency')],now).status,'PENDING_REVIEW');});
+test('Ollama cannot verify source assertions or inject final scores',()=>{const docs=[doc('a','a'),doc('b','b')].map(d=>({...d,verificationOrigin:'OLLAMA'}));assert.equal(verifyEvent(proposal(),docs,now).status,'PENDING_REVIEW');});
+test('unsupported quote, altered source hash and attribution uncertainty held',()=>{const p=proposal();p.evidence[0].quote='The agreement ended all fighting.';assert.equal(verifyEvent(p,[doc('a','a'),doc('b','b')],now).status,'PENDING_REVIEW');assert.equal(verifyEvent(proposal(),[{...doc('a','a'),textHash:'wrong'},doc('b','b')],now).status,'PENDING_REVIEW');assert.equal(verifyEvent({...proposal(),facts:{...facts,actorVerified:false}},[doc('a','a'),doc('b','b')],now).status,'PENDING_REVIEW');});
+test('unknown harm never maps to a limited harmless attack',()=>{assert.equal(eventSeverity({attackConfirmed:true,scaleVerified:true,limitedAttack:true}),null);assert.equal(eventSeverity({attackConfirmed:true,scaleVerified:true,confirmedFatalities:10}),10);assert.equal(eventSeverity({attackConfirmed:true,scaleVerified:true,limitedAttack:true,noMajorHarmConfirmed:true}),1);});
+test('stage enum uses approved fixed score, arbitrary AI number is rejected',()=>{assert.equal(stageScore('D','END_AGREEMENT'),100);assert.equal(stageScore('N','IAEA_IMPLEMENTATION_VERIFIED'),100);assert.equal(stageScore('D',90),null);});
+test('unverified top-level severity cannot override grounded severity facts',()=>{const f={...facts,confirmedFatalities:100};const p={...proposal(),facts:f};const e=verifyEvent(p,[doc('a','a'),doc('b','b')],now);assert.equal(e.severity,3);});
+test('discovery dedups article URLs and never converts seen time to event time',()=>{const a={title:'Iran news',url:'https://example.test/news',seendate:'20261008T110000Z'};const r=normalizeArticles(JSON.stringify({articles:[a,a]}),{start:now-3600000,end:now});assert.equal(r.articles.length,1);assert.equal(r.articles[0].eventAt,null);assert.equal(r.articles[0].occurrenceVerified,false);});
+test('saturated windows shrink before advancing, resume preserves progress',async()=>{let calls=0;const checkpoint={version:'GDELT_DISCOVERY_R13',from:now-6*3600000,cursor:now-6*3600000,target:now,span:6*3600000,knownGaps:[],processedChunks:0};const r=await collectDiscovery({now,checkpoint,maxChunks:1,delay:async()=>{},fetcher:async()=>{calls++;return new Response(JSON.stringify({articles:Array.from({length:250},()=>({title:'Iran',url:'https://example.test/news',seendate:'20261008T070000Z'}))}));}});assert.equal(calls,1);assert.equal(r.checkpoint.cursor,checkpoint.cursor);assert.equal(r.checkpoint.span,3*3600000);const resumed=await collectDiscovery({now,checkpoint:r.checkpoint,maxChunks:1,delay:async()=>{},fetcher:async()=>new Response(JSON.stringify({articles:[]}))});assert.equal(resumed.checkpoint.cursor,checkpoint.cursor+3*3600000);assert.equal(resumed.observationVerified,false);});
+test('provider error does not advance discovery checkpoint or invent empty result',async()=>{const checkpoint={version:'GDELT_DISCOVERY_R13',from:now-3600000,cursor:now-3600000,target:now,span:3600000,knownGaps:[],processedChunks:0};const r=await collectDiscovery({now,checkpoint,maxChunks:1,fetcher:async()=>new Response('blocked',{status:403})});assert.equal(r.status,'SOURCE_FAILED');assert.equal(r.checkpoint.cursor,checkpoint.cursor);});
+test('429 persists cooldown and subsequent execution performs no request',async()=>{
+ const r=await collectDiscovery({now,maxChunks:1,fetcher:async()=>new Response('limited',{status:429,headers:{'retry-after':'43200'}})});
+ assert.equal(r.checkpoint.retryAt,now+43200000);
+ let calls=0;const resumed=await collectDiscovery({now:now+3600000,checkpoint:r.checkpoint,fetcher:async()=>{calls++;throw Error('must not fetch');}});
+ assert.equal(resumed.status,'DEFERRED');assert.equal(calls,0);assert.equal(resumed.checkpoint.cursor,r.checkpoint.cursor);
+});
+test('invalid checkpoint span cannot produce a nonadvancing collection loop',async()=>{
+ const checkpoint={version:'GDELT_DISCOVERY_R13',from:now-3600000,cursor:now-3600000,target:now,span:0,knownGaps:[],processedChunks:0};
+ await assert.rejects(collectDiscovery({now,checkpoint}),/CHECKPOINT_INVALID/);
+});
