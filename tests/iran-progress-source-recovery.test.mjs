@@ -13,6 +13,8 @@ test('official GDELT manifest is source metadata, never verified incidents',()=>
  assert.equal(result.status,'MANIFEST_ONLY');
  assert.equal(result.archives.length,3);
  assert.equal(result.archives[0].type,'export.CSV.zip');
+ assert.equal(result.archives[2].reportedMd5.length,31);
+ assert.equal(result.archives[2].checksumVerified,false);
  assert.equal(result.publishedAt,Date.parse('2026-10-08T15:30:00Z'));
  assert.equal(result.attackCount,null);
  assert.equal(result.coverageVerified,false);
