@@ -57,8 +57,8 @@ export async function readBoundedBytes(response,maxBytes){
  return result;
 }
 
-export async function fetchMasterWindow({startAt,targetAt,fetcher=fetch,rangeBytes=MAX_INDEX}={}){
- if(!Number.isSafeInteger(rangeBytes)||rangeBytes<1024*1024||rangeBytes>MAX_INDEX)throw Error('GDELT_RANGE_INVALID');
+export async function fetchMasterWindow({startAt,targetAt,fetcher=fetch,rangeBytes=MAX_INDEX,now=Date.now()}={}){
+ if(!Number.isSafeInteger(rangeBytes)||rangeBytes<1024*1024||rangeBytes>MAX_INDEX||!finiteTime(now))throw Error('GDELT_RANGE_INVALID');
  // Range is essential: masterfilelist.txt exceeds 100 MB. Do not download the whole catalogue.
  let response;
  try{response=await fetcher(INDEX,{headers:{Range:'bytes=-'+rangeBytes,Accept:'text/plain'},signal:AbortSignal.timeout(45000)});}
@@ -70,7 +70,7 @@ export async function fetchMasterWindow({startAt,targetAt,fetcher=fetch,rangeByt
  try{
   const bytes=await readBoundedBytes(response,rangeBytes);
   const parsed=masterWindowRows(bytes.toString('utf8'),{startAt,targetAt,tail:true});
-  return {...parsed,checkedAt:Date.now(),indexUrl:INDEX,indexRange:range};
+  return {...parsed,checkedAt:now,indexUrl:INDEX,indexRange:range};
  }catch(error){return fail(/^[A-Z0-9_]+$/.test(error?.message??'')?error.message:'GDELT_MASTER_PARSE_FAILED');}
 }
 
@@ -102,9 +102,9 @@ export async function collectGdeltArchiveChunk({store,now=Date.now(),fetcher=fet
  const newestNeeded=cp.targetAt;
  const cache=store.getCheckpoint('gdelt-events-index-r14');
  let index=cache?.status==='INDEXED'&&cache.startAt<=cp.nextAt&&cache.targetAt>=newestNeeded
-  &&Number.isSafeInteger(cache.checkedAt)&&now-cache.checkedAt<24*3600000?cache:null;
+  &&Number.isSafeInteger(cache.checkedAt)&&cache.checkedAt<=now&&now-cache.checkedAt<24*3600000?cache:null;
  if(!index){
-  index=await fetchMasterWindow({startAt:cp.nextAt,targetAt:newestNeeded,fetcher});
+  index=await fetchMasterWindow({startAt:cp.nextAt,targetAt:newestNeeded,fetcher,now});
   if(index.status!=='INDEXED'){
    if(index.httpStatus===429)cp.retryAt=retryDelay(index.retryAfter,now);
    store.checkpoint('gdelt-events-r14',cp);
