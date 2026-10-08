@@ -68,3 +68,10 @@ test('score is only calculated on PC and GET route never calls provider or compu
  assert.match(ui,/금리 심리/);
  assert.doesNotMatch(get,/fetch\(|INSERT INTO|UPDATE |calculateMarket|buildRateSentimentR1/);
 });
+
+test('vinext App Router exposes the stored-only fallback without provider calls or writes',()=>{
+ const source=fs.readFileSync(new URL('../app/api/rate-sentiment/route.ts',import.meta.url),'utf8');
+ assert.match(source,/export async function GET\(request:Request\)/);
+ assert.match(source,/storedRateSentimentResponse\(request,\{db:env\.DB\}\)/);
+ assert.doesNotMatch(source,/fetch\(|INSERT INTO|UPDATE |--publish|CREATE TABLE|ALTER TABLE/);
+});
