@@ -6,6 +6,7 @@ import {randomUUID} from 'node:crypto';
 import {openStore,hash} from './store.mjs';
 import {collectGdeltArchiveChunk,readBoundedBytes} from './gdelt-backfill-r14.mjs';
 import {parseMaradAlertsPage} from './marad-alert-candidates.mjs';
+import {parseMaradAdvisoryContext} from './marad-advisory-context.mjs';
 import {collectionSlot,completedCollectionSlot} from './collection-policy.mjs';
 import {collectSources} from './sources.mjs';
 const args=process.argv.slice(2);
@@ -25,6 +26,13 @@ try{
    store.putSource(id+':'+hash(source),{...metadata,bodyHash:body?hash(body):null},now);
   }
   store.checkpoint('collection-sources-r14',Object.fromEntries(Object.entries(sources).map(([id,s])=>[id,{status:s.status,httpStatus:s.httpStatus,observationDate:s.observationDate,lastAttemptAt:s.lastAttemptAt}])));
+  let maradAdvisories={status:'SOURCE_FAILED',attackCount:null,eventVerified:false,coverageVerified:false};
+  if(sources.marad?.status==='COLLECTED'){
+   maradAdvisories={...parseMaradAdvisoryContext(sources.marad.body),bodyHash:hash(sources.marad.body),collectedAt:now};
+   const {collectedAt,...receipt}=maradAdvisories;
+   store.putSource('marad-advisory-context-v1:'+hash(receipt),receipt,now);
+  }
+  store.checkpoint('marad-advisory-context-r14',maradAdvisories);
   let marad={status:'SOURCE_FAILED'};
   try{
    const response=await fetch('https://www.maritime.dot.gov/msci-alerts',{signal:AbortSignal.timeout(20000)});
@@ -41,7 +49,7 @@ try{
   const cp=store.getCheckpoint('gdelt-events-r14');
   const storageVerified=cp?.nextAt===backfill.nextAt&&cp?.archivesSaved===backfill.archivesSaved;
   const finishedAt=Date.now();
-  const report={version:'IRAN_COLLECTION_R14',startedAt:now,finishedAt,sources:store.getCheckpoint('collection-sources-r14'),marad,backfill,storageVerified,
+  const report={version:'IRAN_COLLECTION_R14',startedAt:now,finishedAt,sources:store.getCheckpoint('collection-sources-r14'),marad,maradAdvisories,backfill,storageVerified,
    eventVerification:'PENDING',coverageVerified:false,publication:'NOT_REQUESTED'};
   store.checkpoint('collection-last-run-r14',report);
   // Failures remain resumable within the same six-hour slot; provider cooldown is separate.
