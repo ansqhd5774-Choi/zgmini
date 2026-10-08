@@ -44,3 +44,11 @@ DB schema·산식·가중치·UI·D1·배포 변경 없음. 새 계정·모델 �
 - 저장된 G7 발표와 Israel/Palestine 연설 2개를 R1.4.4로 재분석했다. 후보는 각각 MARITIME 1개, DIPLOMACY 1개이며 원문 일치·PC 저장 재조회 확인. 가자 휴전은 최종 후보에서 제외됐다. 후보는 여전히 PENDING_REVIEW/verified=false다.
 - 회귀 검사: 21개 파일 138 PASS / 0 FAIL. 모델 가중치 학습은 없으며 프롬프트·출력 범위 검사 보완이다.
 - 현재 공식 사실·관측 범위·AIS 상위 이용 근거 및 일별 품질 검증은 미완료다. 점수/산식/가중치/원격 DB/UI/배포 변경은 없다. 실제 Production PENDING/null 증거는 기존 검증을 재사용한다.
+# AIS 관측 기록 및 전체 기사 재개 — 2026-10-09
+
+- R1.4.4로 기존 공식 기사 23개 전체를 저장 원문에서 재분석했다. 후보 63개(외교 12·군사 5·해상 4·핵 32·기타 10), 후보 없는 기사 5개, 가자 휴전 제외 기록 1개. 후보/제외 기록의 원문 일치 및 모든 후보 PENDING_REVIEW 확인. 이전 136개 분석 원장은 유지하며, 후보 감소를 사실 정확도나 사건 수로 해석하지 않는다.
+- 파나마 해사청의 On Peace(IMO 9893204) 발표를 실제 HTTP 200으로 읽고 최소 사실 후보·문서 해시를 PC에 저장·재조회했다. 발표는 10월 5일 19:30 UTC, 부상 12명·이송 10명을 설명하지만 공격 주체는 미상이다. UKMTO 156/157과의 사건 매칭·이란 연관성·재이용 조건은 미확정이다. 독립 VERIFIED 사건이나 추가 사건 건수로 승격하지 않았다.
+- 출처: https://www.amp.gob.pa/noticias/notas-de-prensa/amp-informa-sobre-el-incidente-sufrido-por-la-nave-on-peace/
+- 기존 PC 수집에 hormuz.now /api/health의 최소 feed 표본을 추가했다. 타일·성공/실패·누적 poll·마지막 정상 시각만 저장하며 PortWatch/config 등은 제외한다. 원격 DB나 산식에는 연결하지 않는다. 현재 누적 횟수·표본을 과거 일별 coverage로 변환하지 않으며 서버 재시작으로 누적 수가 줄어도 이전 품질을 조작하지 않는다.
+- 수동 실제 PC 실행: health HTTP 200 → 최소 receipt 저장 → read-back 확인. qualityVerified/coverageVerified/upstreamTermsVerified 모두 false 유지. 정기 trigger의 새 health 수집은 아직 미검증이다.
+- 회귀 검사: 관련 22개 파일 141 PASS / 0 FAIL. 승인된 산식·가중치·UI·원격 DB·배포 변경 없음. AIS 상위 이용 근거와 일별 품질, 사건 귀속·강도·관측 범위는 여전히 미완료다.

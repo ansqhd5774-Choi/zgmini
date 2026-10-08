@@ -21,7 +21,7 @@ try{
  else if(args.includes('--scheduled')&&completedCollectionSlot(store.getCheckpoint('collection-slot-r14'),now)){
   console.log(JSON.stringify({status:'SKIPPED',reason:'COLLECTION_SLOT_COMPLETED'}));
  }else{
-  const sources=await collectSources({now,ids:['ais','marad','gdelt','iaea']});
+  const sources=await collectSources({now,ids:['ais','aisHealth','marad','gdelt','iaea']});
   for(const [id,source] of Object.entries(sources)){
    const {body,...metadata}=source;
    store.putSource(id+':'+hash(source),{...metadata,bodyHash:body?hash(body):null},now);

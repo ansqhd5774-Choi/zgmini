@@ -1,4 +1,15 @@
 export const AIS_DAILY_URL='https://hormuz.now/api/daily.json';
+export const AIS_HEALTH_URL='https://hormuz.now/api/health';
+export function parseAisHealth(body,{now=Date.now()}={}){
+ const data=JSON.parse(body),f=data.feed;
+ if(!f||!['lastGood','tilesOk','tiles','failures','polls','goodPolls'].every(k=>Number.isSafeInteger(f[k])&&f[k]>=0)
+  ||f.lastGood>now||f.tilesOk>f.tiles||f.goodPolls>f.polls)throw Error('AIS_HEALTH_INVALID');
+ // Counters can reset after a provider restart. A point sample is not daily coverage.
+ return {source:'hormuz.now',sourceUrl:AIS_HEALTH_URL,observedAt:now,
+  feed:{lastGood:f.lastGood,tilesOk:f.tilesOk,tiles:f.tiles,failures:f.failures,polls:f.polls,goodPolls:f.goodPolls},
+  qualityVerified:false,coverageVerified:false,upstreamTermsVerified:false,scope:'POINT_IN_TIME_FEED_SAMPLE',
+  attribution:{name:'hormuz.now',url:'https://hormuz.now/data',license:'CC BY 4.0',modified:true}};
+}
 const DAY=86400000;
 export function parseAisDaily(body,{now=Date.now()}={}){
  const data=JSON.parse(body);
