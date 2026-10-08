@@ -5,10 +5,27 @@ import './outbreak-events.css';
 import {Landmark, Swords, Target} from 'lucide-react';
 
 const events = [
-  {id:'fed', category:'통화 정책', title:'연준 금리 정책', question:'다음 FOMC 회의에서 기준금리를 인상할까?', outcome:'다음 회의의 목표금리 상단이 직전 회의보다 상승', signals:['물가 발표','고용 지표','연준 공식 발언'], assets:'미국 국채 · 달러 · 주식'},
+  {id:'fed', category:'통화 정책', title:'금리 심리', question:'최근 미국 시장금리 움직임은 얼마나 우호적인가?', outcome:'기존 H.15 국채금리 기반 RSI·금리차·변동성 점수', signals:['2년물·3개월물 금리차','2년물·10년물 RSI','10년물 금리 변동성'], assets:'미국 국채 · 달러 · 주식'},
   {id:'iran', category:'지정학', title:'이란 전쟁 종전', question:'향후 3개월 안에 종전 합의가 성립할까?', outcome:'당사자·합의 범위·이행 기준을 확정한 뒤 분석 시작', signals:['공식 협상','합의 발표','합의 이행'], assets:'유가 · 에너지 · 위험 자산'},
   {id:'ukraine', category:'지정학', title:'러우 전쟁 종전', question:'향후 3개월 안에 종전 합의가 성립할까?', outcome:'휴전과 종전을 구분하고 당사자·이행 기준 확정', signals:['공식 회담','협상 조건','합의 이행'], assets:'유럽 주식 · 에너지 · 곡물'},
 ];
+
+type RateSentimentPoint={label:string;value:number};
+type RateSentimentSnapshot={status:'READY';score:number;observationDate:string;version:string;sourceStoredAt:number;week:RateSentimentPoint[];oneMonth:RateSentimentPoint[]};
+function useRateSentiment(){
+ const [snapshot,setSnapshot]=useState<RateSentimentSnapshot|null>(null);
+ useEffect(()=>{
+  let live=true;
+  fetch('/api/rate-sentiment',{cache:'no-store'}).then(async response=>{
+   if(!response.ok)return null;
+   const data=await response.json();
+   if(data?.status!=='READY'||!Number.isFinite(data.score)||!Array.isArray(data.week)||data.week.length!==5||data.week.some((point:RateSentimentPoint)=>!Number.isFinite(point.value)))return null;
+   return data as RateSentimentSnapshot;
+  }).then(value=>{if(live)setSnapshot(value);}).catch(()=>{if(live)setSnapshot(null);});
+  return()=>{live=false;};
+ },[]);
+ return snapshot;
+}
 
 function SummaryTitle({title,war}:{title:string;war:boolean}){
   const ref=useRef<HTMLHeadingElement>(null);
@@ -34,10 +51,20 @@ function SummaryTitle({title,war}:{title:string;war:boolean}){
 }
 
 export function OutbreakSummary({onOpen}:{onOpen:(id:string)=>void}){
-  const [preview,setPreview]=useState(false);
-  useEffect(()=>{setPreview(['localhost','127.0.0.1'].includes(location.hostname)&&new URLSearchParams(location.search).get('visual-fixture')==='1');},[]);
-  const samples=[[24,28,26,34,31,39,44,40,48,51,47,55],[63,60,64,56,50,54,48,43,47,39,42,36],[18,22,20,27,24,31,29,35,39,34,46,46]];
-  return <section className="ob-summary" aria-labelledby="ob-summary-title"><header><h2 id="ob-summary-title"><Target aria-hidden="true"/>아웃브레이크</h2><span className="ob-development">개발중</span></header><div className="ob-summary-track">{events.map((event,index)=>{const values=samples[index],last=values[values.length-1],delta=last-values[values.length-2],color=last<25?'#ef4444':last<40?'#f59e0b':last<60?'#94a3b8':last<75?'#22c55e':'#10b981';const points=values.map((value,i)=>`${26+i*12},${100-value*.8}`).join(' ');return <button type="button" className="ob-summary-card" key={event.id} aria-label={`${event.title} 상세 보기 · 시안용 예시 차트`} onClick={()=>onOpen(event.id)}><SummaryTitle title={event.title} war={event.id!=='fed'}/><div className="ob-summary-value"><strong style={{color:preview?color:'#94a3b8'}}>{preview?last:'—'}<small>%</small></strong>{preview&&<span className={`ob-direction ob-direction-${delta>0?'up':delta<0?'down':'flat'}`} role="img" aria-label={delta>0?'상승':delta<0?'하락':'횡보'}>{delta>0?'▲':delta<0?'▼':''}</span>}</div><svg className="ob-summary-chart" viewBox="0 0 170 124" preserveAspectRatio="none" role="img" aria-label={`${event.title} 확률 추이 예시 · 실제 분석값 아님`}><defs><linearGradient id={`ob-fill-${event.id}`} x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={color} stopOpacity=".25"/><stop offset="100%" stopColor={color} stopOpacity="0"/></linearGradient></defs>{[0,50,100].map(value=><g key={value}><text x="20" y={103-value*.8} textAnchor="end" fill="#96aabd" fontSize="8">{value}</text><line x1="26" x2="158" y1={100-value*.8} y2={100-value*.8} stroke="currentColor" strokeDasharray="2 4"/></g>)}{preview&&<><polygon points={`26,100 ${points} 158,100`} fill={`url(#ob-fill-${event.id})`}/><polyline points={points} fill="none" stroke={color} strokeWidth="2" strokeLinejoin="round" strokeLinecap="round"/><circle cx="158" cy={100-last*.8} r="3" fill={color}/></>}<text x="26" y="119" fill="#96aabd" fontSize="8">이전</text><text x="158" y="119" textAnchor="end" fill="#96aabd" fontSize="8">최근</text></svg></button>;})}</div></section>;
+ const rate=useRateSentiment();
+ const [preview,setPreview]=useState(false);
+ useEffect(()=>{setPreview(['localhost','127.0.0.1'].includes(location.hostname)&&new URLSearchParams(location.search).get('visual-fixture')==='1');},[]);
+ const samples=[[24,28,26,34,31,39,44,40,48,51,47,55],[63,60,64,56,50,54,48,43,47,39,42,36],[18,22,20,27,24,31,29,35,39,34,46,46]];
+ return <section className="ob-summary" aria-labelledby="ob-summary-title"><header><h2 id="ob-summary-title"><Target aria-hidden="true"/>아웃브레이크</h2><span className="ob-development">개발중</span></header><div className="ob-summary-track">{events.map((event,index)=>{
+  const fed=event.id==='fed',visible=fed?!!rate:preview;
+  const values=fed?(rate?.week.map(row=>row.value)??[]):samples[index];
+  const last=visible&&values.length?values[values.length-1]:null;
+  const previous=visible&&values.length>1?values[values.length-2]:null;
+  const delta=last!==null&&previous!==null?last-previous:null;
+  const color=last===null?'#94a3b8':last<25?'#ef4444':last<40?'#f59e0b':last<60?'#94a3b8':last<75?'#22c55e':'#10b981';
+  const points=values.map((value,i)=>`${26+(values.length>1?132*i/(values.length-1):0)},${100-value*.8}`).join(' ');
+  return <button type="button" className="ob-summary-card" key={event.id} aria-label={fed?`${event.title} 상세 보기 · ${rate?'저장 데이터':'데이터 대기'}`:`${event.title} 상세 보기 · 시안용 예시 차트`} onClick={()=>onOpen(event.id)}><SummaryTitle title={event.title} war={!fed}/><div className="ob-summary-value"><strong style={{color:visible?color:'#94a3b8'}}>{last!==null?(fed?last.toFixed(1):last):'—'}<small>{fed?'점':'%'}</small></strong>{delta!==null&&<span className={`ob-direction ob-direction-${delta>0?'up':delta<0?'down':'flat'}`} role="img" aria-label={delta>0?'상승':delta<0?'하락':'횡보'}>{delta>0?'▲':delta<0?'▼':''}</span>}</div><svg className="ob-summary-chart" viewBox="0 0 170 124" preserveAspectRatio="none" role="img" aria-label={fed?'금리 심리 저장 점수 추이':`${event.title} 확률 추이 예시 · 실제 분석값 아님`}><defs><linearGradient id={`ob-fill-${event.id}`} x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={color} stopOpacity=".25"/><stop offset="100%" stopColor={color} stopOpacity="0"/></linearGradient></defs>{[0,50,100].map(value=><g key={value}><text x="20" y={103-value*.8} textAnchor="end" fill="#96aabd" fontSize="8">{value}</text><line x1="26" x2="158" y1={100-value*.8} y2={100-value*.8} stroke="currentColor" strokeDasharray="2 4"/></g>)}{visible&&values.length>1&&last!==null&&<><polygon points={`26,100 ${points} 158,100`} fill={`url(#ob-fill-${event.id})`}/><polyline points={points} fill="none" stroke={color} strokeWidth="2" strokeLinejoin="round" strokeLinecap="round"/><circle cx="158" cy={100-last*.8} r="3" fill={color}/></>}<text x="26" y="119" fill="#96aabd" fontSize="8">이전</text><text x="158" y="119" textAnchor="end" fill="#96aabd" fontSize="8">최근</text></svg></button>;
+ })}</div></section>;
 }
 
 export default function OutbreakEvents({initialEvent='fed'}:{initialEvent?:string}){
