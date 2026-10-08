@@ -21,7 +21,7 @@ function timestamp(input){
 function eventDay(value){
  if(!/^\d{8}$/.test(value))throw Error('GDELT_EVENT_DAY_INVALID');
  const day=value.slice(0,4)+'-'+value.slice(4,6)+'-'+value.slice(6,8);
- const n=timestamp(value+'000000');
+ let n;try{n=timestamp(value+'000000');}catch{throw Error('GDELT_EVENT_DAY_INVALID');}
  return {day,utc:n};
 }
 const table=Array.from({length:256},(_,i)=>{
