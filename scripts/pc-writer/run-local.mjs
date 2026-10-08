@@ -63,6 +63,10 @@ try{
  }
  await marketOperationalStore(core).writeScore(body,now);
  save(path.join(base,'local-market-result.json'),body);
+ // Rate sentiment is a separate stored-data score; never modify the approved Rate R3 domain.
+ const {preparePublicRateSentiment,publishPublicRateSentiment}=await import('./rate-sentiment-publication.mjs');
+ const rateSentiment=await preparePublicRateSentiment(core,now);
+ report.rateSentiment={status:rateSentiment.status,observationDate:rateSentiment.observationDate??null,reason:rateSentiment.reason??null};
  const liquidityTrend=body.domains.find(x=>x.id==='liquidity')?.trend??[];
  const liquidityDates=liquidityTrend.map(x=>x?.label??x?.date).filter(x=>typeof x==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(x)).sort();
  report.market={
@@ -123,6 +127,8 @@ try{
    const check=(await remote.query(config.core,'SELECT body FROM market_public_snapshots_v1 WHERE snapshot_key=?',[PUBLIC_PROJECTION_KEYS[id]])).results[0];
    if(!check||hash(JSON.parse(check.body).payload)!==hash(envelope.payload))throw Error('LOCAL_PROJECTION_PUBLICATION_MISMATCH');
   }
+  // Reuse the existing public snapshot table; publish only the bounded display score.
+  report.rateSentiment.publication=(await publishPublicRateSentiment(remote,config.core,rateSentiment)).status;
   const koreaOutput=await history.prepare('SELECT * FROM kfg_rev7_snapshots ORDER BY date DESC LIMIT 1').first();
   if(koreaOutput){
    const existing=(await remote.query(config.history,'SELECT * FROM kfg_rev7_snapshots WHERE date=?',[koreaOutput.date])).results[0];
