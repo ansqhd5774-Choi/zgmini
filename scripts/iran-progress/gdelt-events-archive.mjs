@@ -22,7 +22,7 @@ function eventDay(value){
  if(!/^\d{8}$/.test(value))throw Error('GDELT_EVENT_DAY_INVALID');
  const day=value.slice(0,4)+'-'+value.slice(4,6)+'-'+value.slice(6,8);
  const n=timestamp(value+'000000');
- return {day:day.slice(0,4)+'-'+day.slice(4,6)+'-'+day.slice(6,8),utc:n};
+ return {day,utc:n};
 }
 const table=Array.from({length:256},(_,i)=>{
  let c=i;for(let j=0;j<8;j++)c=(c&1)?0xEDB88320^(c>>>1):c>>>1;
