@@ -1,5 +1,4 @@
 // Source-recovery research only: no provider requests, no verification promotion.
-const GDELT_ROOT='http://data.gdeltproject.org/gdeltv2/';
 const TYPES=Object.freeze(['export.CSV.zip','mentions.CSV.zip','gkg.csv.zip']);
 const alternatives=Object.freeze({
  ukmto: Object.freeze([
@@ -26,12 +25,12 @@ export function parseGdeltArchiveManifest(raw){
  const archives=[];
  let at=null;
  for(let i=0;i<3;i++){
-  const match=lines[i].trim().match(/^([1-9]\d{0,11}) ([a-f0-9]{32}) (https?:\/\/data\.gdeltproject\.org\/gdeltv2\/(\d{14})\.(export\.CSV\.zip|mentions\.CSV\.zip|gkg\.csv\.zip))$/);
+  const match=lines[i].trim().match(/^([1-9]\d{0,11}) ([a-f0-9]{31,32}) (https?:\/\/data\.gdeltproject\.org\/gdeltv2\/(\d{14})\.(export\.CSV\.zip|mentions\.CSV\.zip|gkg\.csv\.zip))$/);
   if(!match||match[5]!==TYPES[i])throw Error('GDELT_MANIFEST_SOURCE_INVALID');
   const epoch=stampToEpoch(match[4]);
   if(at!==null&&at!==epoch)throw Error('GDELT_MANIFEST_VERSION_MISMATCH');
   at=epoch;
-  archives.push({type:TYPES[i],bytes:Number(match[1]),md5:match[2],url:match[3],publishedAt:epoch});
+  archives.push({type:TYPES[i],bytes:Number(match[1]),reportedMd5:match[2],checksumVerified:false,url:match[3],publishedAt:epoch});
  }
  return {status:'MANIFEST_ONLY',publishedAt:at,archives,discoveryOnly:true,...forbiddenOutcome};
 }
