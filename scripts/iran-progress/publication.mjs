@@ -1,10 +1,15 @@
 import {IRAN_PROGRESS_PUBLIC_KEY,IRAN_PROGRESS_STATUS_KEY,validatePublicIran} from '../../worker/iran-progress-public.mjs';
 import {hash} from './store.mjs';
+import {IRAN_PROGRESS_VERSION} from '../../lib/iran-progress/r13.mjs';
 export function publicBody(result,history,now){
  const body={version:result.version,status:result.status,score:result.score,domains:result.domains,relations:result.relations,
   overallEnded:result.overallEnded,observationAt:result.observationAt,lastVerifiedAt:result.lastVerifiedAt,
   calculatedAt:result.calculatedAt,publishedAt:now,interpretation:result.interpretation,historyMode:'AS_PUBLISHED',
-  history:history.filter(p=>p.at>=now-14*86400000).slice(-56)};
+  history:history.filter(p=>p.at>=now-14*86400000).slice(-56),
+  hormuzMethod:result.hormuz?.method??null,transit:result.hormuz?.traffic?{
+   restrictionScore:result.hormuz.traffic.restrictionScore,continuity:result.hormuz.traffic.continuity,
+   dailyAverage:result.hormuz.traffic.dailyAverage,attribution:result.hormuz.traffic.attribution,
+   limitation:result.hormuz.traffic.limitation}:null};
  if(!validatePublicIran(body,now))throw Error('IRAN_PUBLIC_CONTRACT_INVALID');
  if(now-body.lastVerifiedAt>86400000)throw Error('IRAN_VERIFICATION_EXPIRED');
  return body;
@@ -14,7 +19,7 @@ export async function publishIran(remote,db,body,{now=Date.now()}={}){
  return publishSnapshot(remote,db,IRAN_PROGRESS_PUBLIC_KEY,body,body.publishedAt);
 }
 export async function publishIranStatus(remote,db,result){
- if(result?.version!=='IRAN_PROGRESS_R1_3'||!['READY','PENDING'].includes(result.status)||!Number.isSafeInteger(result.calculatedAt))throw Error('IRAN_STATUS_CONTRACT_INVALID');
+ if(result?.version!==IRAN_PROGRESS_VERSION||!['READY','PENDING'].includes(result.status)||!Number.isSafeInteger(result.calculatedAt))throw Error('IRAN_STATUS_CONTRACT_INVALID');
  const body={version:result.version,status:result.status,score:null,missing:result.missing,calculatedAt:result.calculatedAt,
   reason:result.hormuz?.status==='H_PENDING_NEW_EVENT'?'H_PENDING_NEW_EVENT':result.status==='READY'?null:'VERIFIED_INPUT_PENDING'};
  return publishSnapshot(remote,db,IRAN_PROGRESS_STATUS_KEY,body,result.calculatedAt);

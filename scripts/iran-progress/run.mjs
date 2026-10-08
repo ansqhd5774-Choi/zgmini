@@ -9,7 +9,7 @@ import {interpretSource} from './ai.mjs';
 import {publicBody,publishIran,publishIranStatus} from './publication.mjs';
 import {client,credential} from '../pc-writer/d1.mjs';
 import {fileURLToPath} from 'node:url';
-import {IRAN_CONFLICT_START_DATE} from './contract.mjs';
+import {H_TRANSIT_METHOD} from '../../lib/iran-progress/transit-ais.mjs';
 import {collectDiscovery} from './discovery.mjs';
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../..');
 const base=process.env.ZGMINI_IRAN_HOME??path.join(os.homedir(),'.zgmini','iran-progress-r13');
@@ -23,8 +23,8 @@ try{
   if(process.exitCode===0){store.release(owner);store.close();process.exit(0);}
  }
  const verified=store.getCheckpoint('verified-input')??{};
- verified.transit??={baselineApproved:true,termsApproved:false,unit:'daily_transit_calls',portid:'chokepoint6',conflictStartDate:IRAN_CONFLICT_START_DATE};
- const sources=await collectSources({now,conflictStartDate:verified.transit?.conflictStartDate});
+ // Older IMF transit checkpoints are never reused for the AIS method.
+ const sources=await collectSources({now});
  for(const [id,body] of Object.entries(sources)){
   // Unconfirmed reuse terms: preserve provenance/structured measurements, not whole articles.
   const {body:raw,...metadata}=body;
@@ -40,15 +40,12 @@ try{
  }
  // Never infer verified relations or zero attacks from successful downloads.
  const input={...verified,events:store.events()};
- if(verified.transit&&sources.portwatch.rows){
-  let baseline=store.getCheckpoint('transit-baseline');
-  if(!baseline){
-   const end=Date.parse(verified.transit.conflictStartDate+'T00:00:00Z');
-   const rows=sources.portwatch.rows.filter(r=>Date.parse(r.date+'T00:00:00Z')>=end-28*86400000&&Date.parse(r.date+'T00:00:00Z')<end);
-   if(rows.length===28){baseline={rows,conflictStartDate:verified.transit.conflictStartDate,sourceHash:hash(rows),capturedAt:now};store.putDecision('transit-baseline:'+baseline.sourceHash,baseline,now);store.checkpoint('transit-baseline',baseline);}
-  }
-  input.transit={...verified.transit,baselineRows:baseline?.rows,baselineFrozen:!!baseline&&baseline.conflictStartDate===verified.transit.conflictStartDate,rows:sources.portwatch.rows,observationDate:sources.portwatch.observationDate,sourceStoredAt:sources.portwatch.sourceStoredAt};
- }
+ const ais=sources.ais;
+ const policy=store.getCheckpoint('ais-verification')??{};
+ input.transit={method:H_TRANSIT_METHOD,source:'hormuz.now',termsApproved:true,
+  upstreamTermsVerified:policy.upstreamTermsVerified===true,restriction:verified.aisRestriction,
+  rows:(ais.rows??[]).map(r=>({...r,qualityVerified:policy.days?.[r.date]?.verified===true&&policy.days[r.date].rowHash===hash(r)})),
+  observationDate:ais.observationDate,sourceStoredAt:ais.sourceStoredAt};
  // Existing coverage is retained, never advanced by mere fetch/compute success.
  for(const c of [...Object.values(input.coverage??{}),input.hormuzCoverage].filter(Boolean)){
   c.requiredSources=c.requiredSources?.map(s=>({...s,status:sources[s.id]?.status==='COLLECTED'?s.status:'SOURCE_FAILED'}));
@@ -89,7 +86,7 @@ try{
   const remote=client(config,credential(root));
   if(result.status!=='READY'){await publishIranStatus(remote,config.core,result);publication='STATUS_VERIFIED';}
   else {
-  const history=store.db.prepare("SELECT body FROM publications ORDER BY published_at").all().map(r=>JSON.parse(r.body)).map(b=>({at:b.publishedAt,value:b.score}));
+ const history=store.db.prepare("SELECT body FROM publications ORDER BY published_at").all().map(r=>JSON.parse(r.body)).filter(b=>b.version===result.version).map(b=>({at:b.publishedAt,value:b.score}));
   const publishedAt=Date.now();history.push({at:publishedAt,value:result.score});
   const body=publicBody(result,history,publishedAt),readback=await publishIran(remote,config.core,body,{now:publishedAt});
   publication=readback.status;
@@ -97,7 +94,7 @@ try{
   await publishIranStatus(remote,config.core,result);
   }
  }
- const report={id,version:result.version,status:result.status,score:result.score,missing:result.missing,sources:store.getCheckpoint('sources'),discovery,ai,calculatedAt,publication,reason:result.status==='READY'?null:'VERIFIED_INPUT_CONTRACT_PENDING'};
+ const report={id,version:result.version,status:result.status,score:result.score,missing:result.missing,sources:store.getCheckpoint('sources'),hormuzReason:result.hormuz.reason??null,aisRows:input.transit.rows.length,discovery,ai,calculatedAt,publication,reason:result.status==='READY'?null:'VERIFIED_INPUT_CONTRACT_PENDING'};
  fs.writeFileSync(path.join(base,'last-run.json'),JSON.stringify(report,null,2));
  console.log(JSON.stringify(report));
 }finally{store.release(owner);store.close();}

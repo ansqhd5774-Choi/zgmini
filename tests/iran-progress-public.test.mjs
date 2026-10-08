@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {storedIranProgressResponse,validatePublicIran,IRAN_PROGRESS_STATUS_KEY} from '../worker/iran-progress-public.mjs';
 import {publicBody,publishIran} from '../scripts/iran-progress/publication.mjs';
 const now=Date.parse('2026-10-08T12:00:00Z');
-const ready=()=>({version:'IRAN_PROGRESS_R1_3',status:'READY',score:46.8,domains:{D:40,C:50,M:25,H:62,N:80},relations:{IRN_ISR:'ACTIVE',IRN_USA:'CEASEFIRE_PROGRESS'},overallEnded:false,observationAt:now,lastVerifiedAt:now,calculatedAt:now,publishedAt:now,historyMode:'AS_PUBLISHED',history:[]});
+const ready=()=>({version:'IRAN_PROGRESS_R1_3_AIS',status:'READY',score:46.8,domains:{D:40,C:50,M:25,H:62,N:80},relations:{IRN_ISR:'ACTIVE',IRN_USA:'CEASEFIRE_PROGRESS'},overallEnded:false,observationAt:now,lastVerifiedAt:now,calculatedAt:now,publishedAt:now,historyMode:'AS_PUBLISHED',history:[]});
 const db=body=>({prepare:()=>({bind:()=>({first:async()=>body?{body:JSON.stringify(body),stored_at:now}:null})})});
 test('stored-only reader returns pending without provider calls or fabricated zero',async()=>{const r=await storedIranProgressResponse(new Request('https://example.test/api/iran-progress'),{db:db(null),now});assert.equal(r.status,503);assert.equal((await r.json()).score,null);});
 test('raw weighted sum validated, no amplified score admitted',()=>{assert.equal(validatePublicIran(ready(),now),true);assert.equal(validatePublicIran({...ready(),score:90},now),false);});
