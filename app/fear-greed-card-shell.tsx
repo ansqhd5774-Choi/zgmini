@@ -1,3 +1,5 @@
+import {ContentHelp} from './content-help';
+import {HELP,HelpText} from './help-copy';
 import type { ReactNode } from 'react';
 import {ArrowUpRight,Info} from 'lucide-react';
 import { MarketCardHeader } from './market-card-header';
@@ -26,7 +28,7 @@ export function FearGreedCardShell({className='',layoutVariant='legacy',testId,m
     <div className="fg-header-slot"><MarketCardHeader {...header} titleAction={<a className="fg-market-detail-link" href={detailHref??footer.href} aria-label={detailHref?`${header.title} 상세페이지 열기`:footer.ariaLabel??`${header.title} 상세페이지 열기`}><ArrowUpRight size={14}/></a>} rightContent={layoutVariant==='shared'?<></>:header.rightContent}/></div>
     <div className="fg-content-slot">
       <div className="fg-score-slot"><MarketScoreOrb score={score.value} state={score.state} caption={score.caption} variant={score.variant} dayDelta={score.dayDelta} periodDelta={score.periodDelta} periodLabel={score.periodLabel} metaDate={score.metaDate} dayLabel={score.dayLabel} comparisonAriaLabel={score.comparisonAriaLabel}/></div>
-      <MarketTrendFrame className="fg-analysis-slot"><details className="zg-fg-info-wrap"><summary className="zg-fg-info-action" aria-label={`${header.title} 공포·탐욕 안내`} title={`${header.title} 공포·탐욕 안내`}><Info size={14}/></summary><div className="zg-fg-info-tip" role="note"><strong>{header.title} 공포·탐욕</strong><span>{header.description}</span><small>{header.source}</small></div></details><div className="fg-period-slot">{period}</div><div className="fg-chart-slot"><div className="fg-renderer">{chart}</div></div></MarketTrendFrame>
+      <MarketTrendFrame className="fg-analysis-slot"><span className="zg-fg-info-wrap"><ContentHelp label={`${header.title} 공포·탐욕 도움말`}><HelpText copy={header.title.includes('한국')?HELP.korea:HELP.usa}/></ContentHelp></span><div className="fg-period-slot">{period}</div><div className="fg-chart-slot"><div className="fg-renderer">{chart}</div></div></MarketTrendFrame>
     </div>
     <div className="fg-footer-slot"><MarketCardFooter {...footer} date={score.metaDate}/></div>
   </section>;

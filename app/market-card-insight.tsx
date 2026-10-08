@@ -34,7 +34,7 @@ export function MarketCardInsight({ text }: { text: string }) {
     return () => observer.disconnect();
   }, [text]);
 
-  return <div className="cnn-header-insight" aria-label={text} title={text}>
+  return <div className="cnn-header-insight" aria-label={text}>
     <p ref={textRef}>{text}</p>
   </div>;
 }

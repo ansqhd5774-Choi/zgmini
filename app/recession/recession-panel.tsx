@@ -1,4 +1,7 @@
 "use client";
+import {ContentHelp} from '../content-help';
+import {HelpText} from '../help-copy';
+
 
 import {useEffect,useMemo,useRef,useState,type FocusEvent} from "react";
 import {Info} from "lucide-react";
@@ -63,15 +66,7 @@ function fmt(value:number|null|undefined,unit=""){
  const digits=Math.abs(value)>=100?0:2;
  return `${value.toFixed(digits)}${unit}`;
 }
-function HelpTip({label,text}:{label:string;text:string}){
- const [open,setOpen]=useState(false); const root=useRef<HTMLSpanElement>(null);
- useEffect(()=>{if(!open)return;const close=(e:PointerEvent)=>{if(!root.current?.contains(e.target as Node))setOpen(false)};document.addEventListener("pointerdown",close);return()=>document.removeEventListener("pointerdown",close)},[open]);
- const blur=(e:FocusEvent<HTMLSpanElement>)=>{if(!e.currentTarget.contains(e.relatedTarget))setOpen(false)};
- return <span ref={root} className="inflation-help" onMouseEnter={()=>setOpen(true)} onMouseLeave={()=>setOpen(false)} onBlur={blur}>
-  <button type="button" aria-label={`${label} 해석 방향`} aria-expanded={open} onFocus={()=>setOpen(true)} onClick={e=>{e.stopPropagation();setOpen(v=>!v)}}><Info size={14}/></button>
-  {open?<span role="tooltip"><strong>해석 방향</strong>{text}</span>:null}
- </span>;
-}
+function HelpTip({label,text}:{label:string;text:string}){return <ContentHelp label={label+' 도움말'}><HelpText copy={{meaning:text,reading:'원자료의 단위와 기준선, 관측일을 함께 확인하세요. 원자료의 상승·하락과 시장 평가 점수의 상승·하락은 서로 다를 수 있습니다.',note:'자료가 없거나 개발 중인 항목은 숫자를 표시하지 않습니다. 「—」는 0이 아닙니다.'}}/></ContentHelp>;}
 
 export default function RecessionPanel(){
  const [payload,setPayload]=useState<Payload|null>(null),[loading,setLoading]=useState(true);

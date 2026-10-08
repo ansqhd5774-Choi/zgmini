@@ -1,4 +1,7 @@
 "use client";
+import {ContentHelp} from '../content-help';
+import {HelpText} from '../help-copy';
+
 
 import {useEffect,useMemo,useRef,useState,type FocusEvent} from "react";
 import {Info} from "lucide-react";
@@ -28,7 +31,7 @@ function dateLabel(v?:string|null){if(!v)return "—";const d=new Date(v.length=
 function stage(s:number|null|undefined){if(typeof s!=="number"||!Number.isFinite(s))return "데이터 준비 중";if(s>=75)return "매우 양호";if(s>=60)return "양호";if(s>=45)return "중립";if(s>=25)return "부채 주의";return "부채 위험"}
 function judge(s:number|null|undefined,status?:string){if(status!=="READY"||typeof s!=="number"||!Number.isFinite(s))return {label:"데이터 준비 중",tone:"neutral"};if(s>=60)return {label:"긍정",tone:"positive"};if(s>=45)return {label:"중립",tone:"neutral"};return {label:"부정",tone:"negative"}}
 function fmt(r:Row|null|undefined){if(!r||typeof r.value!=="number"||!Number.isFinite(r.value))return "—";const n=Math.abs(r.value)>=100?1:3;return r.value.toFixed(n)+(r.unit?" "+r.unit:"")}
-function HelpTip({label,text}:{label:string;text:string}){const [open,setOpen]=useState(false);const root=useRef<HTMLSpanElement>(null);useEffect(()=>{if(!open)return;const close=(e:PointerEvent)=>{if(!root.current?.contains(e.target as Node))setOpen(false)};document.addEventListener("pointerdown",close);return()=>document.removeEventListener("pointerdown",close)},[open]);const blur=(e:FocusEvent<HTMLSpanElement>)=>{if(!e.currentTarget.contains(e.relatedTarget))setOpen(false)};return <span ref={root} className="inflation-help" onMouseEnter={()=>setOpen(true)} onMouseLeave={()=>setOpen(false)} onBlur={blur}><button type="button" aria-label={label+" 해석 방향"} aria-expanded={open} onFocus={()=>setOpen(true)} onClick={e=>{e.stopPropagation();setOpen(v=>!v)}}><Info size={14}/></button>{open?<span role="tooltip"><strong>해석 방향</strong>{text}</span>:null}</span>}
+function HelpTip({label,text}:{label:string;text:string}){return <ContentHelp label={label+' 도움말'}><HelpText copy={{meaning:text,reading:'원자료의 단위와 기준선, 관측일을 함께 확인하세요. 원자료의 상승·하락과 시장 평가 점수의 상승·하락은 서로 다를 수 있습니다.',note:'자료가 없거나 개발 중인 항목은 숫자를 표시하지 않습니다. 「—」는 0이 아닙니다.'}}/></ContentHelp>;}
 
 export default function DebtRiskPanel(){
  const [payload,setPayload]=useState<Payload|null>(null),[loading,setLoading]=useState(true);

@@ -10,6 +10,8 @@ import {breadthNotice} from '../lib/market-score/breadth-notice.mjs';
 import {breadthB1R4PreviousSessionDelta as breadthPreviousSessionDelta} from '../lib/market-score/breadth-b1-r4-ui-delta.mjs';
 import {marketTrendWindowR1} from '../lib/market-score/market-trend-window-r1.mjs';
 import {amplifyCompositeDisplayScore,amplifyCompositeDisplayTrend} from '../lib/market-score/composite-display-sensitivity-r1.mjs';
+import {ContentHelp} from './content-help';
+import {HELP,HelpText} from './help-copy';
 export type DashboardPoint={label:string;value:number};
 type MarketTrendPoint={label?:string;date?:string;value?:number;score?:number};
 function normalizeMarketTrendPoints(data?:MarketTrendPoint[]):DashboardPoint[]{
@@ -30,38 +32,7 @@ function normalizeMarketTrendPoints(data?:MarketTrendPoint[]):DashboardPoint[]{
  });
 }
 export type Summary={label:string;score:number;value:string;note:string;data:DashboardPoint[]};
-export function DashboardTip({label,children,trigger}:{label:string;children:ReactNode;trigger?:ReactNode}){
- const [open,setOpen]=useState(false),id=useId(),timer=useRef<ReturnType<typeof setTimeout>|null>(null);
- const root=useRef<HTMLSpanElement>(null);
- const [coords,setCoords]=useState({left:12,top:0});
- const clear=()=>{if(timer.current){clearTimeout(timer.current);timer.current=null}};
- const close=()=>{clear();setOpen(false)};
- const show=()=>{clear();const r=root.current?.getBoundingClientRect();setCoords({left:Math.max(12,Math.min((r?.right??252)-240,window.innerWidth-252)),top:Math.min(r?.bottom??0,window.innerHeight-180)});setOpen(true)};
- useEffect(()=>()=>clear(),[]);
- useEffect(()=>{if(!open)return;const dismiss=(e:PointerEvent)=>{if(!root.current?.contains(e.target as Node))close()};document.addEventListener('pointerdown',dismiss);return()=>document.removeEventListener('pointerdown',dismiss)},[open]);
- return <span
-  ref={root}
-  className="zg-tip-wrap"
-  onMouseEnter={()=>{clear();timer.current=setTimeout(show,250)}}
-  onMouseLeave={()=>{clear();timer.current=setTimeout(close,100)}}
-  onBlur={e=>{if(!e.currentTarget.contains(e.relatedTarget))close()}}
-  onKeyDown={e=>{if(e.key==='Escape'){e.stopPropagation();close()}}}
- >
-  <button
-   type="button"
-   className="zg-info"
-   aria-label={label}
-   aria-expanded={open}
-   aria-controls={open?id:undefined}
-   aria-describedby={open?id:undefined}
-   onFocus={show}
-   onClick={show}
-  >
-   {trigger??<Info size={16}/>}
-  </button>
-  {open&&<span id={id} role="tooltip" className="zg-tip" style={{position:"fixed",right:"auto",...coords}}>{children}</span>}
- </span>;
-}
+export function DashboardTip({label,children,trigger}:{label:string;children:ReactNode;trigger?:ReactNode}){return <ContentHelp label={label} trigger={trigger}>{children}</ContentHelp>;}
 export function ScoreScale({score,label,color}:{score:number|null;label:string;color:string}){const band=score===null?'unknown':score<25?'danger':score<40?'caution':score<60?'neutral':score<75?'positive':'strong';const style={'--zg-score':`${score??0}%`,'--zg-score-color':color} as CSSProperties;return <div className={`zg-scale zg-scale-${band}`} data-score-band={band} role="meter" aria-label={label} aria-valuemin={0} aria-valuemax={100} aria-valuenow={score??undefined} style={style}/>} 
 const scoreColor=(score:number)=>score<25?'#ef4444':score<40?'#f59e0b':score<60?'#94a3b8':score<75?'#22c55e':'#10b981';
 function timeScaledTrend(data:DashboardPoint[],periodDays:number){
@@ -344,7 +315,7 @@ export function CompositeMarketSection({items,points,demo,loading}:{items:Summar
       <div className="zg-r55-master-number" data-score-mode="number-only">
        <strong style={{color:overallScore===null?'#94a3b8':scoreColor(overallScore)}}>{overallScore===null?'—':overallScore.toFixed(1)}</strong>
       </div>
-      <div className="zg-r55-coverage"><DashboardTip label="종합 점수 데이터 안내">{marketError?'공개 점수 API를 확인 중입니다.':busy?'공개 점수 불러오는 중':`${readyDomains}/${totalDomains} 영역의 자료를 확인했습니다.`}</DashboardTip></div>
+      <div className="zg-r55-coverage"><DashboardTip label="종합 시장 점수 도움말"><HelpText copy={HELP.composite}/></DashboardTip></div>
      </div>
 
      <div className="zg-r55-summary-chart">
@@ -362,7 +333,7 @@ export function CompositeMarketSection({items,points,demo,loading}:{items:Summar
         const score=diag?.status==='READY'&&validPublicScore(diag.score)?diag.score:null;
         return <div key={s.name} className="zg-r55-subscore" data-index={index}>
          <div className="zg-r55-subscore-head">
-          <span className="zg-r55-subscore-title"><b>{s.name}</b></span>
+          <span className="zg-r55-subscore-title"><b>{s.name}</b><DashboardTip label={`${s.name} 도움말`}><HelpText copy={HELP[s.name]}/></DashboardTip></span>
           <span onClick={e=>e.stopPropagation()} className="zg-r55-subscore-info"><a className="zg-info" href={s.href} aria-label={`${s.name} 상세페이지 열기`} title={`${s.name} 상세페이지`}><ArrowUpRight size={14} aria-hidden="true"/></a></span>
          </div>
          <div className="zg-r55-subscore-foot">
@@ -404,7 +375,7 @@ export function CompositeMarketSection({items,points,demo,loading}:{items:Summar
         <div className="zg-r55-card-head">
          <span className="zg-r55-card-icon"><Icon size={18} aria-hidden="true"/></span>
          <h3>{m.label}</h3>
-         <span onClick={e=>e.stopPropagation()}><DashboardTip label={`${m.label} 산출 근거`}>{notice?`${notice.detail} ${m.basis}`:m.basis}</DashboardTip></span>
+         <span onClick={e=>e.stopPropagation()}><DashboardTip label={`${m.label} 도움말`}><HelpText copy={HELP[m.label]}/></DashboardTip></span>
         </div>
         {notice&&<p data-testid="breadth-unavailable-reason" style={{margin:'6px 0',fontSize:12,lineHeight:1.5,color:'#cbd5e1'}}>{notice.message}</p>}
         <div className="zg-r55-card-mid">
@@ -451,4 +422,4 @@ export function CompositeMarketSection({items,points,demo,loading}:{items:Summar
 
 export type Scenario={id:string;title:string;category:string;probability:number|null;previous?:number;updatedAt?:string;confidence?:string;reason?:string};
 export function ScenarioSection({items=[]}:{items?:Scenario[]}){const ref=useRef<HTMLDivElement>(null),[position,setPosition]=useState({left:false,right:items.length>4});useEffect(()=>{const el=ref.current;if(!el)return;const measure=()=>setPosition({left:el.scrollLeft>4,right:el.scrollLeft+el.clientWidth<el.scrollWidth-4});const observer=new ResizeObserver(measure);observer.observe(el);measure();return()=>observer.disconnect();},[items.length]);const move=(dir:number)=>ref.current?.scrollBy({left:dir*ref.current.clientWidth,behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth'});return <section id="scenarios" className="zg-section"><div className="zg-section-heading"><h2><Radar/>아웃브레이크</h2><p>주요 사건의 가능성을 추적하는 모델</p></div>{!items.length?<div className="zg-scenario-empty"><Radar size={28}/><div><h3>모델 준비 중</h3><p>검증된 시나리오가 연결되면 확률과 산출 근거를 제공합니다. 현재 공개된 확률은 없습니다.</p></div><span>—</span></div>:<div className="zg-carousel-wrap">{position.left&&<button className="zg-prev" aria-label="이전 아웃브레이크" onClick={()=>move(-1)}><ChevronLeft/></button>}<div ref={ref} className="zg-scenario-track" onScroll={()=>{const e=ref.current!;setPosition({left:e.scrollLeft>4,right:e.scrollLeft+e.clientWidth<e.scrollWidth-4})}}>{items.map(s=><article className="zg-scenario-card" key={s.id}><div className="zg-card-heading"><span className="zg-neutral-tag">{s.category}</span>{s.confidence&&<span>{s.confidence}</span>}</div><h3>{s.title}</h3><div className="zg-scenario-number">{s.probability===null?'—':`${s.probability}%`}{s.previous!==undefined&&s.probability!==null&&<small>{s.probability-s.previous>=0?'+':''}{s.probability-s.previous}%p</small>}</div><ScoreScale score={s.probability} label={s.title} color="#FABC42"/><small>기준 {s.updatedAt??'확인 중'}</small>{s.reason&&<DashboardTip label="아웃브레이크 근거">{s.reason}</DashboardTip>}</article>)}</div>{position.right&&<button className="zg-next" aria-label="다음 아웃브레이크" onClick={()=>move(1)}><ChevronRight/></button>}</div>}</section>}
-export function StrengthPanel({title,items,points,onAll,onFavorite,isFavorite}:{title:string;items:{name:string;score:number;data:DashboardPoint[]}[];points:number;onAll:()=>void;onFavorite?:(name:string)=>void;isFavorite?:(name:string)=>boolean}){return <section className="zg-strength"><div className="zg-card-heading"><h2>{title}</h2><button className="zg-detail" onClick={onAll}>전체 보기 <ArrowRight size={14}/></button></div><p>표시용 예시 순위 · 실제 지수 아님</p><ol>{[...items].sort((a,b)=>b.score-a.score).slice(0,5).map((item,index)=>{const series=item.data.slice(-points),delta=series.length>1?series.at(-1)!.value-series[0].value:null;return <li key={item.name}><span>{index+1}</span><b>{item.name}</b><strong className="zg-strength-score">예시 {item.score}</strong><DashboardTip label={`${item.name} 기간 비교`}>{item.name} · 현재 예시 점수 {item.score} · 선택 구간 변화 {delta===null?'확인 불가':`${delta>=0?'+':''}${delta}p`}</DashboardTip>{onFavorite&&<button className="zg-detail" onClick={()=>onFavorite(item.name)} aria-label={`${item.name} 즐겨찾기`}>{isFavorite?.(item.name)?'해제':'추가'}</button>}</li>})}</ol></section>}
+export function StrengthPanel({title,items,points,onAll,onFavorite,isFavorite}:{title:string;items:{name:string;score:number;data:DashboardPoint[]}[];points:number;onAll:()=>void;onFavorite?:(name:string)=>void;isFavorite?:(name:string)=>boolean}){return <section className="zg-strength"><div className="zg-card-heading"><h2>{title}<DashboardTip label={`${title.replace(' (예시)','')} 도움말`}><HelpText copy={title.includes('섹터')?HELP.sector:HELP.theme}/></DashboardTip></h2><button className="zg-detail" onClick={onAll}>전체 보기 <ArrowRight size={14}/></button></div><p>표시용 예시 순위 · 실제 지수 아님</p><ol>{[...items].sort((a,b)=>b.score-a.score).slice(0,5).map((item,index)=>{const series=item.data.slice(-points),delta=series.length>1?series.at(-1)!.value-series[0].value:null;return <li key={item.name}><span>{index+1}</span><b>{item.name}</b><strong className="zg-strength-score">예시 {item.score}</strong><DashboardTip label={`${item.name} 기간 비교`}><HelpText copy={{...(title.includes('섹터')?HELP.sector:HELP.theme),meaning:`${item.name}의 표시용 예시 점수입니다. 현재 예시 점수는 ${item.score}점입니다.`}}/></DashboardTip>{onFavorite&&<button className="zg-detail" onClick={()=>onFavorite(item.name)} aria-label={`${item.name} 즐겨찾기`}>{isFavorite?.(item.name)?'해제':'추가'}</button>}</li>})}</ol></section>}
