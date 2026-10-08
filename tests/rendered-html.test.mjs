@@ -24,9 +24,9 @@ test("renders ZGmini metadata in the Workers runtime", async () => {
     assert.equal(response.status,200);
     assert.match(response.headers.get("content-type")??"",/^text\/html\b/i);
     const html=await response.text();
-    assert.ok(html.includes('data-testid="korea-funds"'));
+    assert.ok(html.includes('korea-target-card'));
     const head=html.match(/<head>([\s\S]*?)<\/head>/i)?.[1]??"";
-    assert.ok(head.includes("<title>공포탐욕지수 한눈에 | 미국·한국 차트 - ZGmini</title>"));
+    assert.ok(head.includes("<title>ZGmini 지그미니 | 미국·한국 공포탐욕지수와 경제지표</title>"));
     assert.equal((head.match(/rel="canonical"/g)??[]).length,1);
     assert.ok(/<link(?=[^>]*rel="canonical")(?=[^>]*href="https:\/\/zgmini\.kr\/")[^>]*>/i.test(head));
     assert.ok(/<meta(?=[^>]*name="robots")(?=[^>]*content="index, follow")[^>]*>/i.test(head));

@@ -1,3 +1,4 @@
+import {marketDataFeedFixtureSource} from './market-data-feed-fixture.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -44,8 +45,8 @@ test('zero primary preserved',async()=>{
 test('missing key does not attempt unauthenticated secondary',async()=>{
  const {calls}=await run(['CUUR0000SA0'],{noKey:true});assert.deepEqual(calls,['BLS']);
 });
-const route=fs.readFileSync(new URL('../app/api/market-data/route.ts',import.meta.url),'utf8');
-const compile=bls=>new Function('env','fetchBls','fetchFred','payrollChanges',ts.transpile(route.replace(/^import .*;\r?\n/gm,'').replace('export async function GET','async function GET'),{target:ts.ScriptTarget.ES2022,module:ts.ModuleKind.None})+';return GET;')({},async()=>bls,async()=>({data:rows(),status:'SUCCESS',durationMs:0}),payrollChanges);
+const route=marketDataFeedFixtureSource();
+const compile=bls=>new Function('env','fetchBls','fetchFred','payrollChanges',ts.transpile(route.replace(/^import .*;\r?\n/gm,'').replace('export async function collectMarketDataFeed','async function collectMarketDataFeed'),{target:ts.ScriptTarget.ES2022,module:ts.ModuleKind.None})+';return GET;')({},async()=>bls,async()=>({data:rows(),status:'SUCCESS',durationMs:0}),payrollChanges);
 test('live entry wired; unchanged public shape and seven-input summary with secondary',async()=>{
  assert.ok(route.includes('fetchBlsWithFallback as fetchBls'));assert.ok(route.includes('fredKey: bindings.FRED_API_KEY?.trim()'));
  const {result}=await run(Object.keys(mapping));const output=await(await compile(result)()).json();

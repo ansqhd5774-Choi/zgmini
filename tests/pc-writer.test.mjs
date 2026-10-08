@@ -53,7 +53,7 @@ test('local writer preserves liquidity coverage evidence through publish',()=>{
  const src=fs.readFileSync(new URL('../scripts/pc-writer/run-local.mjs',import.meta.url),'utf8');
  assert.match(src,/LIQUIDITY_1Y_COVERAGE/);
  assert.match(src,/liquidityCoverage/);
- assert.match(src,/report\.market=\{\.\.\.report\.market,\.\.\.await publishMarket/);
+ assert.match(src,/report\.market=\{\.\.\.report\.market,\.\.\.\(previous>now\?\{status:'REMOTE_NEWER_PRESERVED',storedAt:previous\}:await publishMarket/);
  assert.match(src,/console\.warn=originalWarn/);
 });
 

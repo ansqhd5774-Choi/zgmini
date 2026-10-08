@@ -1,3 +1,4 @@
+import {marketDataFeedFixtureSource} from './market-data-feed-fixture.mjs';
 import {payrollChanges} from '../lib/market-data/semantics.mjs';
 import test from 'node:test';import assert from 'node:assert/strict';import fs from 'node:fs';import ts from 'typescript';import {createHash} from 'node:crypto';
 import {fetchBls,fetchFred,parseBls,parseFred,numberValue,BLS_SERIES} from '../lib/market-data/providers.mjs';
@@ -8,15 +9,15 @@ test('timeout covers stalled response body',async()=>{const s=Date.now();const r
 test('network failure',async()=>assert.equal((await fetchBls({fetchImpl:async()=>{throw Error('secret upstream text');}})).status,'REQUEST_FAILED'));
 test('M13 excluded; dates parsed; zero valid; invalid values not live',()=>{const p=data();p.Results.series[0].data.push({year:'2026',period:'M13',value:'999'});p.Results.series[0].data[4].value='0';assert.deepEqual(parseBls(p).data.get(ids[0]).at(-1),{date:'2026-02-01',value:0});for(const v of [null,'', ' ', 'NaN','Infinity','1x'])assert.equal(numberValue(v),null);assert.equal(numberValue('0'),0);p.Results.series[0].data[0].value='';assert.equal(parseBls(p).data.has(ids[0]),false);});
 test('FRED skips missing holidays, retains 0; invalid dates and numbers rejected',()=>{assert.deepEqual(parseFred('observation_date,DGS10\n2026-09-01,0\n2026-09-02,.\n2026-09-03,4'),[{date:'2026-09-01',value:0},{date:'2026-09-03',value:4}]);assert.throws(()=>parseFred('DATE,x\n2026-02-30,1\n2026-03-01,2'));});
-const route=fs.readFileSync(new URL('../app/api/market-data/route.ts',import.meta.url),'utf8');
-const compile=(source,bls,fred)=>new Function('env','fetchBls','fetchFred','payrollChanges',ts.transpile(source.replace(/^import .*;\r?\n/gm,'').replace('export async function GET','async function GET'),{target:ts.ScriptTarget.ES2022,module:ts.ModuleKind.None})+';return {GET,makeYoyIndicator,makeDirectIndicator,buildSummary};')({},bls,fred,payrollChanges);
+const route=marketDataFeedFixtureSource();
+const compile=(source,bls,fred)=>new Function('env','fetchBls','fetchFred','payrollChanges',ts.transpile(source.replace(/^import .*;\r?\n/gm,'').replace('export async function collectMarketDataFeed','async function collectMarketDataFeed'),{target:ts.ScriptTarget.ES2022,module:ts.ModuleKind.None})+';return {GET,makeYoyIndicator,makeDirectIndicator,buildSummary};')({},bls,fred,payrollChanges);
 const funcs=compile(route);const points=[{date:'2025-01-01',value:100},{date:'2025-02-01',value:100},{date:'2026-01-01',value:103},{date:'2026-02-01',value:104}];
 for(const label of ['Core PCE','CPI','PPI'])test(label+' raw price index becomes YoY input',()=>{const i=funcs.makeYoyIndicator(points,{});assert.ok(Math.abs(i.currentValue-4)<1e-10);assert.ok(Math.abs(i.previousValue-3)<1e-10);assert.equal(i.currentDate,'2026-02-01');});
 for(const [label,v] of [['Unemployment',4.3],['10Y',4.95],['WTI',97.26]])test(label+' direct level remains formula input',()=>{const i=funcs.makeDirectIndicator([{date:'2026-01-01',value:v-1},{date:'2026-02-01',value:v}],{suffix:''});assert.equal(i.currentValue,v);assert.equal(i.previousValue,v-1);});
 test('Payroll uses two consecutive monthly changes and preserves formula',()=>{const changes=payrollChanges([{date:'2026-01-01',value:159000},{date:'2026-02-01',value:159150},{date:'2026-03-01',value:159120}]);const i=funcs.makeDirectIndicator(changes,{suffix:'천 명'});assert.equal(i.currentValue,-30);assert.equal(i.previousValue,150);assert.equal(i.currentDate,'2026-03-01');assert.ok(route.includes('(payrolls.currentValue - 150) * 0.08'));});
 // Canonical hash derived from 68a1ff352b02b1c1d96e604bd9bbcac09fb21eab.
 // Only checkout CRLF is normalized; every other protected character is retained.
-const protectedSummary = s => s.slice(s.indexOf('function buildSummary('), s.indexOf('export async function GET'));
+const protectedSummary = s => s.slice(s.indexOf('function buildSummary('), s.indexOf('export async function collectMarketDataFeed'));
 const summaryHash = text => createHash('sha256').update(text.replaceAll('\r\n', '\n')).digest('hex');
 const expectedSummaryHash = 'ac75496c6bed1cc531c1720b3ab995dac3272e0183f2c1aa76eb73e5f24bed0e';
 test('buildSummary byte-exact apart from EOL and all-seven gate unchanged', () => {

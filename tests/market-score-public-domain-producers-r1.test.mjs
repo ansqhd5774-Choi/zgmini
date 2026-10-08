@@ -60,7 +60,7 @@ test("K1 is PARTIAL/null with no renormalization when any factor is missing",()=
   assert.deepEqual(out.missingFactors,["COPPER_SCORE_MISSING"]);
 });
 
-test("public API wires approved C1 and active K1-R2 internally while B1 remains unavailable",async()=>{
+test("public API uses stored consumption and active K1-R2 while missing breadth remains partial",async()=>{
   const diagnostics={
     inflationStability:{status:"READY",score:60,missing:[]},
     recessionDefense:{status:"READY",score:58,missing:[]},
@@ -105,7 +105,7 @@ test("public API wires approved C1 and active K1-R2 internally while B1 remains 
   });
 
   const h=createMarketScoreR1Handler({
-    env:{},collectInputs,orchestrate,
+    env:{},collectInputs,orchestrate,loadConsumptionDomain:async()=>({status:"READY",score:70}),
     now:()=>new Date("2026-09-22T00:00:00.000Z"),
   });
   const res=await h(new Request("https://zgmini.kr/api/market-score"));
@@ -127,7 +127,7 @@ test("public API wires approved C1 and active K1-R2 internally while B1 remains 
   assert.equal(commodities.score,expectedK1.score);
   assert.equal(commodities.indicators.length,4);
 
-  assert.equal(breadth.status,"UNAVAILABLE");
+  assert.equal(breadth.status,"PARTIAL");
   assert.equal(breadth.score,null);
   assert.equal(body.dataQuality.reweighted,false);
 });

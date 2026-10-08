@@ -35,7 +35,7 @@ test('R54 dollar FX public domain exposes four stable factors',()=>{
 test('R54 dollar FX detail catalog maps by stable factor id',()=>{
  const domain=buildCmR1DomainResults({dollarFx}).find(x=>x.id==='dollarFx');
  const rows=marketDetailRows('dollarFx',[...domain.indicators].reverse());
- assert.deepEqual(rows.map(x=>x.label),['달러 수준 부담','단기 달러 모멘텀','중기 달러 모멘텀','달러 변동성']);
+ assert.deepEqual(rows.map(x=>x.label),['달러 강세 부담','단기 달러 추세','중기 달러 추세','달러 변동성']);
  assert.deepEqual(rows.map(x=>x.score),[38,42,47,55]);
  assert.ok(rows.every(x=>x.raw===false));
 });
