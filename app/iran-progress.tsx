@@ -3,6 +3,8 @@ import {useEffect,useState} from 'react';
 import {Swords,TrendingUp,TrendingDown,Minus} from 'lucide-react';
 import {iranView} from '../lib/iran-progress/view.mjs';
 
+import {ContentHelp} from './content-help';
+import {HELP,HelpText} from './help-copy';
 export function useIranProgress(){
  const [view,setView]=useState(()=>iranView({status:'PENDING'}));
  useEffect(()=>{const controller=new AbortController();
@@ -20,11 +22,11 @@ function IranChart({view,compact=false}:{view:View;compact?:boolean}){
 }
 export function IranSummaryCard({view,onOpen}:{view:View;onOpen:()=>void}){
  const previous=view.history.length>1?view.history.at(-2)!.value:null,delta=view.score!==null&&previous!==null?view.score-previous:null;
- return <button type="button" className="ob-summary-card ob-iran-summary" aria-label={`이란 종전 진전도 상세 보기 · ${view.message}`} onClick={onOpen}>
+ return <div className="ob-help-card"><ContentHelp label="이란 종전 진전도 도움말"><HelpText copy={HELP.iran}/></ContentHelp><button type="button" className="ob-summary-card ob-iran-summary" aria-label={`이란 종전 진전도 상세 보기 · ${view.message}`} onClick={onOpen}>
   <h3 className="ob-fit-title"><Swords aria-hidden="true"/><span>이란 종전 진전도</span></h3>
   <div className="ob-summary-value"><strong><IranScore value={view.score}/></strong>{delta!==null&&<span className={`ob-direction ob-direction-${delta>0?'up':delta<0?'down':'flat'}`}>{delta>0?<TrendingUp aria-hidden="true"/>:delta<0?<TrendingDown aria-hidden="true"/>:<Minus aria-hidden="true"/>}{delta>0?'상승':delta<0?'하락':'횡보'}</span>}</div>
   {view.score===null?<div className="ob-iran-pending" role="status">{view.message}</div>:<IranChart view={view} compact/>}
- </button>;
+ </button></div>;
 }
 const stateLabels:Record<string,string>={UNKNOWN:'미확인',ACTIVE:'교전 지속',CEASEFIRE_PROGRESS:'휴전·종전 진행',ENDED:'종전 확인',RECONFLICT:'재충돌'};
 export function IranDetail({view}:{view:View}){
