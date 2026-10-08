@@ -1,4 +1,17 @@
-# 이란 종전 진전도 R1.3 — 초기 구현과 운영 준비 상태
+# 이란 종전 진전도 R1.3 — 구현과 운영 준비 상태
+
+## 추가 구현·검증 — 2026-10-09 KST
+
+- GDELT DOC 기사 발견을 bounded chunk/checkpoint로 추가했다. 250건 포화 구간은 범위를 줄이고 최소 구간도 포화되면 관측 공백을 기록한다. 발견 시각을 사건 발생 시각으로 사용하지 않는다.
+- 실제 DOC 조회는429로 종료됐으며 cursor는 전진하지 않았다.429 처리에는 Retry-After와 최소6시간 대기 기록을 추가했다. 해당 수정의 검증은 fixture이며 공급자 재조회는 하지 않았다.
+- 후보 원문 인용·해시, 독립 출처, 고정 규칙으로 검증된 구조화 사실, 사건 귀속 및 피해 강도 검증 인터페이스를 추가했다. Ollama 해석만으로 VERIFIED를 생성하지 않는다. 운영 공급원별 사실 파서는 아직 연결되지 않았다.
+- 관련 테스트49개 통과(기존 저장 조회 회귀3개 포함). 기존 Candidate build 증거는 재사용하며 PC 수집 변경 후 배포 build를 재실행하지 않았다.
+- PR179의 기존 커밋 GitHub CI 성공을 확인했다. 이번 추가 변경의 CI 결과와 구분한다.
+- UKMTO 주소를 공식 `/recent-incidents`로 수정했지만 실제 직접 조회는403이다. warnings 경로도403이다. 브라우저 수집 화면의0건은 완전한 사건 관측으로 인정하지 않았다.
+- 사용자는 광고 또는 유료 기능이 있는 상업 운영이라고 확인했다. IMF 공식 조건은 잠재적 상업적 재이용에 `copyright@imf.org` 허가 요청을 안내한다. 로컬 요청 초안만 작성했으며 발송·허가·상업 게시 모두 미실행이다.
+
+IMF 공식 조건: https://www.imf.org/en/about/copyright-and-terms
+GDELT DOC 규격: https://blog.gdeltproject.org/gdelt-doc-2-0-api-debuts/amp/
 
 ## 승인 계약
 
@@ -45,10 +58,11 @@ PortWatch 카탈로그가 아니라 실제 FeatureServer를 조회했다. `n_tot
 ```
 node scripts/iran-progress/run.mjs
 node scripts/iran-progress/run.mjs --ai
+node scripts/iran-progress/run.mjs --discover --ai
 node scripts/iran-progress/run.mjs --publish
 ```
 
-기본 실행은 원천 확인과 로컬 저장만 수행한다. `--ai`는 확보된Iran 관련 RSS 항목만 후보로 처리하며 결과를 자동 VERIFIED로 승격하지 않는다. 동일 sourceHash의 처리 완료 후보는 checkpoint로 재사용한다. 현재 RSS는 전체 이란 자료 감시를 대체하지 않는다.
+기본 실행은 원천 확인과 로컬 저장만 수행한다. `--discover`는 GDELT DOC 발견 후보를 재개 가능한 큐에 저장한다. `--ai`는 확보된Iran 관련 RSS 또는 발견 기사 제목1건을 후보로 처리하며 결과를 자동 VERIFIED로 승격하지 않는다. 제목 해석은 원문 검증을 대체하지 않는다. 동일 sourceHash의 처리 완료 후보는 checkpoint로 재사용한다. 현재 RSS는 전체 이란 자료 감시를 대체하지 않는다.
 
 계산 입력은 로컬 `verified-input` checkpoint와 immutable event_revisions다. **검증된 입력 생성·사건 귀속/중복 확인을 끝까지 자동 수행하는 운영 단계는 아직 연결되지 않았다.** 수집 HTTP 성공만으로 이 checkpoint나 coverageThrough를 생성하지 않는다. 영향 영역의 중요한 미해결 후보만 READY를 차단한다.
 

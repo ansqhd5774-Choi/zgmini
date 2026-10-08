@@ -12,6 +12,7 @@ export function openStore(file){
  CREATE TABLE IF NOT EXISTS calculations(id TEXT PRIMARY KEY,input_hash TEXT NOT NULL,body TEXT NOT NULL,calculated_at INTEGER NOT NULL);
  CREATE TABLE IF NOT EXISTS publications(id TEXT PRIMARY KEY,body TEXT NOT NULL,published_at INTEGER NOT NULL);
  CREATE TABLE IF NOT EXISTS checkpoints(name TEXT PRIMARY KEY,body TEXT NOT NULL);
+ CREATE TABLE IF NOT EXISTS discovery_candidates(id TEXT PRIMARY KEY,body TEXT NOT NULL,first_seen_at INTEGER NOT NULL,state TEXT NOT NULL DEFAULT 'DISCOVERED');
  CREATE TABLE IF NOT EXISTS lease(id INTEGER PRIMARY KEY CHECK(id=1),owner TEXT NOT NULL,until_at INTEGER NOT NULL);`);
  const immutable=(table,id,body,now)=>{
   const encoded=JSON.stringify(body),old=db.prepare(`SELECT body FROM ${table} WHERE id=?`).get(id);
@@ -21,6 +22,9 @@ export function openStore(file){
  };
  return {db,close:()=>db.close(),
   putSource:(id,body,now)=>immutable('sources',id,body,now),putDecision:(id,body,now)=>immutable('decisions',id,body,now),
+  putCandidate(body,now){db.prepare('INSERT OR IGNORE INTO discovery_candidates(id,body,first_seen_at) VALUES(?,?,?)').run(body.id,JSON.stringify(body),now);},
+  candidates(limit=3){if(!Number.isInteger(limit)||limit<1||limit>20)throw Error('CANDIDATE_LIMIT');return db.prepare("SELECT body FROM discovery_candidates WHERE state='DISCOVERED' ORDER BY first_seen_at,id LIMIT ?").all(limit).map(r=>JSON.parse(r.body));},
+  finishCandidate(id,state){if(!['INTERPRETED','REVIEW_PENDING','REJECTED'].includes(state))throw Error('CANDIDATE_STATE_INVALID');db.prepare('UPDATE discovery_candidates SET state=? WHERE id=?').run(state,id);},
   putEvent(e){const encoded=JSON.stringify(e),old=db.prepare('SELECT body FROM event_revisions WHERE event_id=? AND revision=?').get(e.eventId,e.revision);
    if(old&&old.body!==encoded)throw Error('IMMUTABLE_REVISION_CONFLICT');
    if(!old)db.prepare('INSERT INTO event_revisions VALUES(?,?,?,?)').run(e.eventId,e.revision,encoded,e.verifiedAt);},

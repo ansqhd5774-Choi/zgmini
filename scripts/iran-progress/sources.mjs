@@ -1,7 +1,7 @@
 export const PORTWATCH_LAYER='https://services9.arcgis.com/weJ1QsnbMYJlCHdG/arcgis/rest/services/Daily_Chokepoints_Data/FeatureServer/0';
 export async function boundedRead(url,{fetcher=fetch,maxBytes=4000000}={}){
  const response=await fetcher(url,{signal:AbortSignal.timeout(20000),headers:{Accept:'application/json, application/rss+xml, text/plain, text/html'}});
- if(!response.ok)return {status:'SOURCE_FAILED',httpStatus:response.status};
+ if(!response.ok)return {status:'SOURCE_FAILED',httpStatus:response.status,retryAfter:response.headers.get('retry-after')};
  if(!response.body)throw Error('SOURCE_BODY_MISSING');
  const reader=response.body.getReader();const parts=[];let size=0;
  try{for(;;){const {value,done}=await reader.read();if(done)break;size+=value.byteLength;if(size>maxBytes)throw Error('SOURCE_PAYLOAD_LIMIT');parts.push(value);}}
@@ -25,7 +25,7 @@ export async function collectSources({now=Date.now(),fetcher=fetch,conflictStart
  const specs={
   portwatch:PORTWATCH_LAYER+'/query?'+new URLSearchParams({f:'json',where:`portid='chokepoint6' AND date >= DATE '${from}'`,outFields:'date,portid,portname,n_total',orderByFields:'date ASC',resultRecordCount:'2000'}),
   gdelt:'https://data.gdeltproject.org/gdeltv2/lastupdate.txt',
-  ukmto:'https://www.ukmto.org/ukmto-products/recent-incidents',
+  ukmto:'https://www.ukmto.org/recent-incidents',
   iaea:'https://www.iaea.org/feeds/topnews',
  };
  const output={};

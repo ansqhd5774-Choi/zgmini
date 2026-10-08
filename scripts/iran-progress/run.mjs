@@ -10,6 +10,7 @@ import {publicBody,publishIran,publishIranStatus} from './publication.mjs';
 import {client,credential} from '../pc-writer/d1.mjs';
 import {fileURLToPath} from 'node:url';
 import {IRAN_CONFLICT_START_DATE} from './contract.mjs';
+import {collectDiscovery} from './discovery.mjs';
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../..');
 const base=process.env.ZGMINI_IRAN_HOME??path.join(os.homedir(),'.zgmini','iran-progress-r13');
 const store=openStore(path.join(base,'iran.sqlite')),owner=randomUUID(),now=Date.now();
@@ -30,6 +31,13 @@ try{
   store.putSource(id+':'+hash(body),{...metadata,bodyHash:raw?hash(raw):null},now);
  }
  store.checkpoint('sources',Object.fromEntries(Object.entries(sources).map(([id,s])=>[id,{status:s.status,httpStatus:s.httpStatus,observationDate:s.observationDate,lastAttemptAt:s.lastAttemptAt}])));
+ let discovery={status:'NOT_REQUESTED'};
+ if(process.argv.includes('--discover')){
+  const d=await collectDiscovery({now,checkpoint:store.getCheckpoint('gdelt-discovery'),maxChunks:2});
+  for(const article of d.articles)store.putCandidate(article,now);
+  store.checkpoint('gdelt-discovery',d.checkpoint);
+  discovery={status:d.status,error:d.error,articlesStored:d.articles.length,processedChunks:d.checkpoint.processedChunks,cursor:d.checkpoint.cursor,target:d.checkpoint.target,knownGapCount:d.checkpoint.knownGaps.length,observationVerified:false};
+ }
  // Never infer verified relations or zero attacks from successful downloads.
  const input={...verified,events:store.events()};
  if(verified.transit&&sources.portwatch.rows){
@@ -45,7 +53,6 @@ try{
  for(const c of [...Object.values(input.coverage??{}),input.hormuzCoverage].filter(Boolean)){
   c.requiredSources=c.requiredSources?.map(s=>({...s,status:sources[s.id]?.status==='COLLECTED'?s.status:'SOURCE_FAILED'}));
  }
- const calculatedAt=Date.now(),result=buildIranProgress(input,calculatedAt),id=store.calculate(input,result);
  let ai={status:'NOT_REQUESTED'};
  if(process.argv.includes('--ai')&&sources.iaea.status==='COLLECTED'){
   const text=(sources.iaea.body.match(/<item\b[\s\S]*?<\/item>/gi)??[]).filter(x=>/iran/i.test(x)).slice(0,3).join('\n').replace(/<[^>]*>/g,' ').replace(/\s+/g,' ').slice(0,12000);
@@ -61,6 +68,21 @@ try{
    }catch{ai={status:'PENDING',reason:'AI_CANDIDATE_VALIDATION_FAILED'};}
   }
  }
+ if(process.argv.includes('--ai')){
+  const article=store.candidates(1)[0];
+  if(article){
+   try{
+    const tags=await fetch('http://127.0.0.1:11434/api/tags',{signal:AbortSignal.timeout(5000)}).then(r=>r.json());
+    const model=tags.models?.find(m=>m.name==='gemma3:4b');
+    const interpreted=await interpretSource(article.title,{modelDigest:model?.digest,now:Date.now()});
+    store.putDecision('discovery:'+article.id+':'+interpreted.modelDigest+':'+interpreted.promptVersion,{...interpreted,articleId:article.id,url:article.url,sourceLevel:'HEADLINE_ONLY',eventVerification:'PENDING'},interpreted.interpretedAt);
+    store.finishCandidate(article.id,'REVIEW_PENDING');ai={status:'CANDIDATE_ONLY',candidateCount:interpreted.candidates.length,sourceLevel:'HEADLINE_ONLY'};
+   }catch{ai={status:'PENDING',reason:'AI_DISCOVERY_VALIDATION_FAILED'};}
+  }
+ }
+ // Candidate interpretation never advances the verified-input checkpoint.
+ // Calculate only after collection/interpretation has completed.
+ const calculatedAt=Date.now(),result=buildIranProgress(input,calculatedAt),id=store.calculate(input,result);
  let publication='NOT_SUBMITTED';
  if(process.argv.includes('--publish')){
   const config=JSON.parse(fs.readFileSync(path.join(os.homedir(),'.zgmini','pc-writer','config.json'),'utf8'));
@@ -75,7 +97,7 @@ try{
   await publishIranStatus(remote,config.core,result);
   }
  }
- const report={id,version:result.version,status:result.status,score:result.score,missing:result.missing,sources:store.getCheckpoint('sources'),ai,calculatedAt,publication,reason:result.status==='READY'?null:'VERIFIED_INPUT_CONTRACT_PENDING'};
+ const report={id,version:result.version,status:result.status,score:result.score,missing:result.missing,sources:store.getCheckpoint('sources'),discovery,ai,calculatedAt,publication,reason:result.status==='READY'?null:'VERIFIED_INPUT_CONTRACT_PENDING'};
  fs.writeFileSync(path.join(base,'last-run.json'),JSON.stringify(report,null,2));
  console.log(JSON.stringify(report));
 }finally{store.release(owner);store.close();}
