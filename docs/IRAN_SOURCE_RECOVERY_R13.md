@@ -34,6 +34,15 @@ Status: **RESEARCH ONLY / NOT IN ACTIVE COLLECTION**. This change has no new pro
 - `tests/iran-progress-source-recovery.test.mjs`: malformed host, mixed vintage, calendar validity, no-alerts-not-zero, 403/429 and no auto-activation scenarios.
 - Neither module is imported by the active collector. **There is no alternative-provider runtime PASS and no full source replacement.**
 
+
+## Candidate parsers — implemented, not activated
+
+- `scripts/iran-progress/gdelt-events-archive.mjs` decodes an official **single-entry 15-minute Events ZIP** using bounded memory and compressed/uncompressed size checks, ZIP structural validation, CRC-32 and official manifest MD5. Original GDELT CSV tab records must have 61 columns; event day and 15-minute discovery timestamp stay separate. A missing leading MD5 zero can be normalized only after computing the actual archive checksum. Results are `CANDIDATES_ONLY` with `eventAt:null`, `attackCount:null` and `coverageVerified:false`. GDELT event IDs deduplicate rows but do not prove independently verified real-world attacks.
+- `scripts/iran-progress/marad-alert-candidates.mjs` parses linked public **Active/Cancelled Alerts** only when the government listing shape matches. Extracted entries are still official *notices*, not a complete attack count, and are never auto-promoted into military or maritime observations. An empty active listing explicitly returns `NO_ACTIVE_ALERTS_LISTED`, not `NO_ATTACKS`.
+- Bounded archive retrieval, 28-day archive checkpoint/backfill, automatic secondary fact-source corroboration and commercial-rights verification remain **not implemented or not validated**. Neither parser is imported into the active PC runner. New provider calls and 6-hour installation have **not** been enabled.
+- The official GDELT 2.0 Events codebook defines event-day, DATEADDED and SOURCEURL separately: https://data.gdeltproject.org/documentation/GDELT-Event_Codebook-V2.0.pdf . Its official terms allow commercial use of original open datasets with GDELT citation: https://gdeltproject.org/about.html .
+- MARAD public Alerts listing: https://www.maritime.dot.gov/msci-alerts . The observed public listing has no active Alerts while historical Cancelled Alerts remain visible; this cannot establish event completeness.
+
 ## Activation prerequisites
 1. Independently verify MARAD Alerts' structure, event-level coverage and normal read path. Treat advisories as risk context, not incident list.
 2. Build bounded GDELT ZIP reads and deterministic event-candidate parsing, validate error/backlog/checkpoints and actual coverage, then use official corroboration to verify events; enforce provider rate limits.
