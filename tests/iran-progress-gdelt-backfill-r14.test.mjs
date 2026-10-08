@@ -49,7 +49,7 @@ test('master index only accepts original host and 15-minute timestamps, not an i
  assert.equal(r.status,'INDEXED');assert.equal(r.entries.length,2);
  assert.equal(r.entries[0].at,START);assert.equal(r.attackCount,null);
  assert.equal(r.coverageVerified,false);assert.equal(r.eventVerified,false);
- assert.throws(()=>masterWindowRows('INCOMPLETE_PREFIX\n'+manifest.replace('data.gdeltproject.org','evil.test'),{startAt:START,targetAt:TARGET}),/TAIL_INCOMPLETE/);
+ assert.throws(()=>masterWindowRows('INCOMPLETE_PREFIX\n'+manifest.replaceAll('data.gdeltproject.org','evil.test'),{startAt:START,targetAt:TARGET}),/TAIL_INCOMPLETE/);
 });
 test('archive collection saves metadata+candidate before cursor, resumes without a duplicate request',async()=>{
  calls.length=0;const db=store();
@@ -60,7 +60,7 @@ test('archive collection saves metadata+candidate before cursor, resumes without
  const record=[...db.saved.values()][0];assert.equal(record.checksumVerified,true);
  assert.equal(record.coverageVerified,false);assert.equal(record.attackCount,null);
  const second=await collectGdeltArchiveChunk({store:db,now:NOW,maxArchives:1,fetcher:goodFetch});
- assert.equal(second.status,'CAUGHT_UP');assert.equal(second.processed,1);assert.equal(db.candidates.size,2);assert.equal(db.saved.size,2);
+ assert.equal(second.status,'CAUGHT_UP',JSON.stringify(second));assert.equal(second.processed,1);assert.equal(db.candidates.size,2);assert.equal(db.saved.size,2);
  const third=await collectGdeltArchiveChunk({store:db,now:NOW,maxArchives:1,fetcher:()=>{throw Error('unexpected network');}});
  assert.equal(third.status,'CAUGHT_UP');assert.equal(db.saved.size,2);
  assert.equal(calls.filter(c=>c.url.endsWith('/masterfilelist.txt')).length,1);
