@@ -15,3 +15,23 @@ node scripts/iran-progress/analyze-receipts-r14.mjs --model=qwen3:4b --source=<�
 ```
 
 DB schema·산식·가중치·UI·D1·배포 변경 없음. 새 계정·모델 다운로드·유료 API 이용 없음.
+
+## 전체 본문 분석과 예약 연결 — 후속 구현·운영 검증
+
+`article-text-r14.mjs`는 일본 외무성 보도자료 및 GOV.UK의 공식 news/speeches/statements HTML 본문을 처리한다. 승인된 HTTPS host/path만 허용하고 인증 정보·query·redirect·임의 host를 거부한다. 공개 목록에서 관련 URL을 발견하되 전체 기사·사건 관측 범위가 완전하다고 간주하지 않는다. body container가 없거나 100~60,000자 범위를 벗어나면 제목·첫 부분으로 대체하지 않고 보류한다. 모델의 요청당 12,000자 제한은 유지한다. 긴 본문은 최대 6부분으로 나누고 전체 텍스트가 보존되는지 검사한다. 부분별 분석을 불변 원장에 저장하여 중단 후 재사용하며, 모든 부분이 완료돼야 전체 본문 분석으로 저장한다. 메뉴·스크립트·이미지·관련 링크는 제외한다. 별도 PDF 첨부 문서까지 분석했다는 의미는 아니다.
+
+일본 외무성의 [Legal Notices](https://www.mofa.go.jp/about/legalmatters.html) 및 [PDL1.0](https://www.digital.go.jp/en/resources/open_data/public_data_license_v1.0), [GOV.UK 이용 조건](https://www.gov.uk/help/terms-conditions) 및 [OGLv3](https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/)을 확인했다. PC 직접 HTTP 조회는 모두 200이었다. 웹 도구에서 OGL 원문이 403이었던 결과와 PC 정상 조회를 구분한다. 텍스트 재이용·출처/가공 표시 범위만 사용하며 제3자 권리 표시는 보류한다. 원문 text·HTML hash·원래 발표일·이용 조건 receipt를 PC SQLite에 먼저 저장·재조회한다. 원문 전체를 Git·D1·공개 응답에 보내지 않는다. 이용 조건은 최대 7일 cache 후 재확인하며 변경·접근 실패 시 보류한다.
+
+`article-analysis-r14.mjs`는 저장된 본문 전체를 로컬 qwen3:4b에 전달한다. 모델이 직접 인용을 재작성하던 실제 실패를 확인한 뒤 R1.4.1 프롬프트에서 원문 블록 번호를 선택하도록 변경했다. 프로그램이 선택된 원문을 그대로 인용에 연결하며, 블록 번호·분류·완료 응답·원문 일치를 검사한다. 국가 표기는 선택된 원문의 명시적 문자열만 추출하고 사건 발생 시각은 null로 유지한다. AI 분류·ASSERTED/DENIED/PROPOSED/UNKNOWN은 검토 후보의 의미이며 사실 VERIFIED가 아니다. 협상과 휴전, 부정문, 공격 주체 불명, 출처 속 명령을 구분하는 예시를 프롬프트에 추가했다. 이는 모델 가중치 재학습이 아니다.
+
+입력 원문·model digest·prompt version·추론 설정을 기록한다. 기존 유효 분석은 재사용하고 새 분석 identity는 저장 원문에서 재개할 수 있다. 아직 분석하지 않은 URL은 유지한다. 429는 해당 site의 나머지 요청을 중단하고 cooldown을 보존한다. 401/403·권리 예외·본문/layout 문제는 반복 요청하지 않고 보류한다. 새로운 parser version이 관련 layout 문제를 해결한 경우에만 재검토한다. GOV.UK 뉴스의 원래 발표일이 time element 대신 govuk:first-published-at metadata에 있는 실제 사례를 수정·재검증했다. updated-at을 발표일이나 사건 발생일로 사용하지 않는다.
+
+`evaluate-article-ai-r14.mjs`의 5가지 합성 시나리오를 실제 같은 qwen3:4b/digest/R1.4.1 프롬프트로 실행·저장·재조회해 모두 PASS했다. 협상≠종전, 명시적 휴전 부정, 공격 주체 불명, 무관 기사 제외, 외부 지시 무시를 검사한다. 합성 평가 결과는 시장 사건·점수 원장과 분리한다. 5개 사례 통과는 모든 기사에서의 정확도 보장이 아니다. 예약 분석은 동일 model/digest/prompt의 불변 PASS 평가 receipt를 확인하며 모델/프롬프트 변경 시 평가 없이 진행하지 않는다.
+
+`collect-r14.mjs --analyze-articles`는 기존 lease 안에서 수집 후 최대 2개 기사를 처리한다. 예약 태스크 ZGMINI-PC-Iran-Progress-R13은 기존 설정을 비공개 XML로 백업하고 run-articles.vbs로 변경·재조회했다. KST 00/06/12/18, IgnoreNew, WakeToRun=false를 유지하며 publish flag가 없다. 새 task나 self-hosted GitHub runner는 만들지 않았다. 저장·태스크 등록과 실제 정기 trigger 실행은 구분한다. 태스크 등록 후 정기 trigger 도래 결과는 아직 확인하지 않았다.
+
+수동 bounded 실행 `collect-r14.mjs --max=1 --analyze-articles`에서 원자료 수집·새 GDELT archive checkpoint 전진·기사 본문 분석·실제 저장 재조회를 확인했다. `run.mjs --ai`도 동일 본문 분석 모듈로 변경해 게시 단계에서 제목 분석으로 돌아가지 않도록 했다. 실제 run 실행은 PENDING/null, D/C/M/H/N 미충족, publication=NOT_SUBMITTED였다. UKMTO 목록 403은 source 접근 제한으로 보존했고 우회하지 않았다. 이번 단계의 D1 게시·main 병합·Cloudflare 배포는 미실행이다.
+
+초기 공개 목록의 23개 URL을 bounded chunk로 처리했다. 실제 공식 HTML 본문 23건·전체 분석 decision 23건·검토 후보 136건을 저장·재조회했다. 후보 인용 전체가 부모 원문에 존재하며 모든 후보는 PENDING_REVIEW/verified=false였다. 기사 23건 또는 후보 136건을 물리적 사건 수로 해석하지 않는다. 긴 기사 3건은 12,266/17,031/19,826자이며 각각 2부분을 모두 처리했다. 이 목록의 미시도·현재 보류 기사 0건을 확인했지만, 검색 밖 기사나 전체 교전 관측 범위가 완전하다는 증거는 아니다.
+
+검증: `node --test tests/iran-progress*.test.mjs` 137 PASS/0 FAIL. 전체 원문 보존, 부분 재개, 원래 발표일과 수정일 구분, 불완전 응답 거부, 미평가 model/prompt의 예약 분석 차단을 포함한다. 실제 모델의 5개 합성 사례 PASS와 실제 기사 저장·수동 경로 실행을 fixture 검사와 구분한다. 중요한 사건 보류 3건/VERIFIED 사건 0건, D/C/M/H/N 입력 미충족과 AIS 권리·품질 미충족은 유지된다. 분석 후보의 사건 중복·독립 근거·귀속·강도 및 관계별 실제 상태 검증이 다음 단계다.

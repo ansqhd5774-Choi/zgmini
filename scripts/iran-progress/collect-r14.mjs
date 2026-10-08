@@ -9,8 +9,9 @@ import {parseMaradAlertsPage} from './marad-alert-candidates.mjs';
 import {parseMaradAdvisoryContext} from './marad-advisory-context.mjs';
 import {collectionSlot,completedCollectionSlot} from './collection-policy.mjs';
 import {collectSources} from './sources.mjs';
+import {processOfficialArticles} from './article-analysis-r14.mjs';
 const args=process.argv.slice(2);
-if(args.some(a=>a!=='--scheduled'&&!/^--max=\d+$/.test(a)))throw Error('IRAN_COLLECTION_ARGS_INVALID');
+if(args.some(a=>!['--scheduled','--analyze-articles'].includes(a)&&!/^--max=\d+$/.test(a)))throw Error('IRAN_COLLECTION_ARGS_INVALID');
 const max=Number((args.find(a=>a.startsWith('--max='))??'--max=48').split('=')[1]);
 if(!Number.isSafeInteger(max)||max<1||max>96)throw Error('IRAN_COLLECTION_ARGS_INVALID');
 const base=process.env.ZGMINI_IRAN_HOME??path.join(os.homedir(),'.zgmini','iran-progress-r13');
@@ -48,9 +49,15 @@ try{
   const backfill=await collectGdeltArchiveChunk({store,now,maxArchives:max,archiveDirectory:path.join(base,'gdelt-archives'),throttle:()=>new Promise(r=>setTimeout(r,500))});
   const cp=store.getCheckpoint('gdelt-events-r14');
   const storageVerified=cp?.nextAt===backfill.nextAt&&cp?.archivesSaved===backfill.archivesSaved;
+  // The same lease serializes collection and bounded local AI; neither may publish.
+  let articleAnalysis={status:'NOT_REQUESTED'};
+  if(args.includes('--analyze-articles')){
+   articleAnalysis=await processOfficialArticles({store,maxArticles:2,requireEvaluation:true});
+   fs.writeFileSync(path.join(base,'article-analysis-last-run.json'),JSON.stringify(articleAnalysis,null,2));
+  }
   const finishedAt=Date.now();
   const report={version:'IRAN_COLLECTION_R14',startedAt:now,finishedAt,sources:store.getCheckpoint('collection-sources-r14'),marad,maradAdvisories,backfill,storageVerified,
-   eventVerification:'PENDING',coverageVerified:false,publication:'NOT_REQUESTED'};
+   articleAnalysis,eventVerification:'PENDING',coverageVerified:false,publication:'NOT_REQUESTED'};
   store.checkpoint('collection-last-run-r14',report);
   // Failures remain resumable within the same six-hour slot; provider cooldown is separate.
   if(args.includes('--scheduled'))store.checkpoint('collection-slot-r14',{slot:collectionSlot(now),completed:storageVerified&&['RUNNING','CAUGHT_UP'].includes(backfill.status),finishedAt});
