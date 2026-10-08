@@ -4,7 +4,7 @@ import {deflateRawSync} from 'node:zlib';
 import {createHash} from 'node:crypto';
 import {collectGdeltArchiveChunk,fetchMasterWindow,masterWindowRows} from '../scripts/iran-progress/gdelt-backfill-r14.mjs';
 const H=3600000,S=900000,NOW=Date.parse('2026-10-08T16:00:00Z');
-const START=NOW-H,TARGET=START+S,EARLIER=START-S;
+const START=NOW-3*S,TARGET=START+S,EARLIER=START-S;
 const stamp=n=>new Date(n).toISOString().replace(/[-:TZ.]/g,'').slice(0,14);
 const ts=n=>new Date(n).toISOString().replace(/[-:TZ.]/g,'').slice(0,14);
 function row(id,at){
@@ -81,7 +81,7 @@ test('source 429 preserves cursor and retry cooldown; does not retry during cool
 test('missing master archive is backlog blocker, never a fabricated zero event',async()=>{
  const db=store();
  const onlyFirst='TRUNCATED\n'+manifest.split('\n').filter(x=>x.includes(stamp(EARLIER))||x.includes(stamp(START))).join('\n')+'\n';
- const index=await fetchMasterWindow({startAt:START,targetAt:TARGET,rangeBytes:1048576,fetcher:async()=>new Response(onlyFirst,{status:206,headers:{'content-range':'bytes 900-1600/1601'}})});
+ const index=await fetchMasterWindow({startAt:START,targetAt:TARGET,rangeBytes:1048576,now:NOW,fetcher:async()=>new Response(onlyFirst,{status:206,headers:{'content-range':'bytes 900-1600/1601'}})});
  assert.equal(index.status,'INDEXED');assert.equal(index.entries.length,1);
  db.checkpoint('gdelt-events-index-r14',index);
  const a=await collectGdeltArchiveChunk({store:db,now:NOW,maxArchives:3,fetcher:goodFetch});
