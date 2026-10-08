@@ -33,10 +33,11 @@ export async function interpretStoredArticle({store,sourceId,article,model,model
    if(parts.length>1){result={...result,sourceId,partIndex:i,partCount:parts.length,sourceLevel:'ARTICLE_PART_TEXT',eventVerification:'PENDING'};store.putDecision(id,result,result.interpretedAt);
     if(store.db.prepare('SELECT body FROM decisions WHERE id=?').get(id)?.body!==JSON.stringify(result))throw Error('ARTICLE_PART_READBACK_FAILED');}
   }
-  if(result.sourceHash!==hash(parts[i])||result.candidates.some(c=>!parts[i].includes(c.quote)))throw Error('ARTICLE_PART_SOURCE_MISMATCH');results.push(result);
+  if(result.sourceHash!==hash(parts[i])||[...result.candidates,...(result.scopeRejectedCandidates??[])].some(c=>!parts[i].includes(c.quote)))throw Error('ARTICLE_PART_SOURCE_MISMATCH');results.push(result);
  }
  const candidates=[...new Map(results.flatMap((r,i)=>r.candidates.map(c=>({...c,partIndex:i}))).map(c=>[hash([c.quote,c.type,c.claimStatus]),c])).values()];
- const final={...results.at(-1),sourceHash:article.textHash,sourceLevel:'FULL_ARTICLE_TEXT',partCount:parts.length,partHashes:parts.map(hash),candidates,interpretedAt:Date.now()};delete final.partIndex;return final;
+ const scopeRejectedCandidates=results.flatMap((r,i)=>(r.scopeRejectedCandidates??[]).map(c=>({...c,partIndex:i})));
+ const final={...results.at(-1),sourceHash:article.textHash,sourceLevel:'FULL_ARTICLE_TEXT',partCount:parts.length,partHashes:parts.map(hash),candidates,scopeRejectedCandidates,interpretedAt:Date.now()};delete final.partIndex;return final;
 }
 async function rightsReceipt(store,site,fetcher,now){
  const cp=store.getCheckpoint('article-rights:'+site);

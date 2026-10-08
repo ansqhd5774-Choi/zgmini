@@ -4,7 +4,7 @@ import {openStore,hash} from '../scripts/iran-progress/store.mjs';
 import {officialArticlePolicy,parseOfficialArticle,discoverOfficialArticles} from '../scripts/iran-progress/article-text-r14.mjs';
 import {processOfficialArticles,articleAnalysisInstallReady,articleParts,interpretStoredArticle} from '../scripts/iran-progress/article-analysis-r14.mjs';
 import {interpretSource,ARTICLE_PROMPT_VERSION,articleEvidenceBlocks} from '../scripts/iran-progress/ai.mjs';
-import {evaluateArticleModel} from '../scripts/iran-progress/evaluate-article-ai-r14.mjs';
+import {evaluateArticleModel,EVALUATION_CASES} from '../scripts/iran-progress/evaluate-article-ai-r14.mjs';
 const url='https://www.mofa.go.jp/press/release/pressite_test_123.html';
 const text='Iran and the United States held indirect talks. The statement did not announce a ceasefire or a final peace agreement. The foreign ministers discussed safe navigation.';
 const html=(body=text)=>`<h2>Iran call</h2><div id="maincontents"><div class="rightalign">October 1, 2026</div><div class="read-text"><p>${body}</p></div><div class="main-section"><p>The report remains a statement requiring independent verification.</p></div><div class="relatedlink-section">FOOTER IRAN ATTACK</div></div>`;
@@ -43,6 +43,13 @@ test('full article prompt retains negation, forbids inferred actors/date and rec
  for(const override of [{actors:['Israel']},{eventAt:'2026-10-01'},{type:'PEACE_CONFIRMED'},{evidenceId:99},{quote:'Iran agreed to a ceasefire.'}]){
   await assert.rejects(interpretSource(quote,{mode:'FULL_ARTICLE_TEXT',modelDigest:'digest',fetcher:async()=>modelReply([{evidenceId:0,type:'CEASEFIRE',claimStatus:'DENIED',...override}])}),/UNSUPPORTED/);
  }
+});
+test('an unrelated Gaza ceasefire model selection is preserved as rejected evidence, not Iran candidate',async()=>{
+ const quote='Nearly a year ago in Gaza, a ceasefire was declared. Yet killings continued.';
+ const r=await interpretSource(quote,{mode:'FULL_ARTICLE_TEXT',modelDigest:'digest',fetcher:async()=>modelReply([{evidenceId:0,type:'CEASEFIRE',claimStatus:'ASSERTED'}])});
+ assert.equal(r.candidates.length,0);assert.equal(r.scopeRejectedCandidates.length,1);
+ assert.equal(r.scopeRejectedCandidates[0].quote,quote);assert.equal(r.scopeRejectedCandidates[0].verified,false);
+ assert.equal(r.scopeRejectedCandidates[0].reason,'GAZA_CEASEFIRE_WITHOUT_IRAN_RELATION_EVIDENCE');
 });
 function fixtureFetch(counter){return async u=>{
  counter.push(u);
@@ -85,8 +92,8 @@ test('new analysis identity resumes immutable article without re-downloading or 
 test('model evaluation is synthetic, immutable and never writes input or events; failure is preserved',async()=>{
  const store=openStore(':memory:');try{
  let calls=0;const args={store,modelDigest:'digest',interpreter:async()=>{calls++;return {candidates:[]};}};
- const r=await evaluateArticleModel(args);assert.equal(r.status,'PENDING');assert.equal(r.synthetic,true);assert.equal(calls,5);
- const replay=await evaluateArticleModel(args);assert.equal(replay.reused,true);assert.equal(calls,5);
+ const r=await evaluateArticleModel(args);assert.equal(r.status,'PENDING');assert.equal(r.synthetic,true);assert.equal(calls,EVALUATION_CASES.length);
+ const replay=await evaluateArticleModel(args);assert.equal(replay.reused,true);assert.equal(calls,EVALUATION_CASES.length);
  assert.equal(store.events().length,0);assert.equal(store.getCheckpoint('verified-input'),null);assert.equal(store.db.prepare('SELECT count(*) n FROM publications').get().n,0);
  }finally{store.close();}
 });
