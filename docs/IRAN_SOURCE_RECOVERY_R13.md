@@ -43,6 +43,21 @@ Status: **RESEARCH ONLY / NOT IN ACTIVE COLLECTION**. This change has no new pro
 - The official GDELT 2.0 Events codebook defines event-day, DATEADDED and SOURCEURL separately: https://data.gdeltproject.org/documentation/GDELT-Event_Codebook-V2.0.pdf . Its official terms allow commercial use of original open datasets with GDELT citation: https://gdeltproject.org/about.html .
 - MARAD public Alerts listing: https://www.maritime.dot.gov/msci-alerts . The observed public listing has no active Alerts while historical Cancelled Alerts remain visible; this cannot establish event completeness.
 
+## R1.4 GDELT historical Events archive backfill — implemented, not activated
+
+Code: `scripts/iran-progress/gdelt-backfill-r14.mjs`. Tests: `tests/iran-progress-gdelt-backfill-r14.test.mjs`.
+Explicit PC research CLI (not enabled or scheduled): `node scripts/iran-progress/gdelt-backfill-r14.mjs --max=48`.
+
+- Initial 28-day window at 15-minute granularity; each invocation downloads at most 48 ZIP slices by default (1-96 permitted).
+- Queries the official HTTPS GDELT masterfilelist using a bounded last-16 MiB HTTP Range 206 only. Rejects HTTP 200 full 128+ MB index, invalid/missing Content-Range and insufficient tail coverage.
+- Restricts to original Events files with timestamp, byte length and MD5 from manifest. ZIP is bounded to 16 MiB, decompressed CSV to 96 MiB and 1,000,000 rows; validation includes ZIP directory, CRC, date, domain and MD5. No unverified file is accepted.
+- Existing separate local SQLite (`.zgmini/iran-progress-r13/iran.sqlite`) persists source metadata, SHA256 and candidate records before advancing the resumable 15-minute checkpoint. No DB migration or raw ZIP/article-body persistence.
+- Missing expected archive stops at the exact gap. HTTP 429 keeps the cursor and Retry-After with a minimum six-hour pause; HTTP 403, checksum mismatch and parser/write failures do not advance it.
+- Date hints are not verified occurrence timestamps. Attack count stays null and the new data never advances `verified-input`, M/H coverage, source approval or READY.
+- No active PC runner imports this research module. It does not alter Core/Korea jobs, deployed calculation, D1, GitHub main, Cloudflare scheduler or UI.
+- Hosted test run 37810559466: Build PASS, regression 1784 PASS / 0 FAIL / 3 SKIP, PC publication tests 11/11 PASS. Fixture testing is distinct from actual PC data collection.
+- Missing gates: actual official Range/ZIP request from authorized PC, 28-day checkpoint forward progress, corroborated event verification, operator-approved source activation, D1 read-back and end-to-end UI/scheduler.
+
 ## Activation prerequisites
 1. Independently verify MARAD Alerts' structure, event-level coverage and normal read path. Treat advisories as risk context, not incident list.
 2. Build bounded GDELT ZIP reads and deterministic event-candidate parsing, validate error/backlog/checkpoints and actual coverage, then use official corroboration to verify events; enforce provider rate limits.
