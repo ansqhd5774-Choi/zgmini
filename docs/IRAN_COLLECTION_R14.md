@@ -12,6 +12,12 @@
 
 `node scripts/iran-progress/inspect-r14.mjs`는 SQLite와 작업 XML을 읽기 전용으로 확인한다. 원문·인증정보를 출력하지 않는다.
 
+## 승인된 초기 연속 백필
+
+`node scripts/iran-progress/backfill-continuous-r14.mjs --max-chunks=32 --max-minutes=60`은 기존 checkpoint가 있는 초기 수집을 96개씩 연속 처리한다. 묶음 사이에 6시간을 기다리지 않는다. 각 자식 실행은 기존 lease·ZIP checksum·로컬 원본 재사용·원자적 SQLite 저장 계약을 사용하며, 끝난 뒤 읽기 전용 checkpoint 재조회가 결과와 일치해야 다음 묶음을 시작한다.
+
+최신 30분 성숙 대기 시각까지 따라잡으면 종료한다. 429/cooldown, lease 점유, source 실패, 누락 archive에는 추가 묶음을 실행하지 않는다. 최대 묶음 수/시간 제한 도달은 RUNNING으로 기록하고 기존 cursor를 보존한다. `backfill-continuous-last-run.json`에 진행 결과를 남긴다. 이 명령은 새 반복 작업을 등록하지 않으며 기존 6시간 수집 설정·산식·검증 상태·D1 게시를 변경하지 않는다.
+
 ## 실제 확인과 남은 조건
 
 - 최초 checkpoint 재조회: 이전 8구간 실행 성공, 백필 9개 저장 확인. 이어서 미완료 1구간을 실행한 후 bounded chunk로 전진했다.
