@@ -18,7 +18,7 @@ test('unavailable or ambiguous values are not substituted and R53 raw display re
  assert.equal(marketDetailRows('inflation',[{name:'목표안정',status:'READY',score:65},{name:'목표안정',status:'READY',score:66}])[0].score,null);
 });
 test('verified breadth raw values preserve zero and units',()=>{
- const r=marketDetailRows('breadth',[{name:'상승 종목 비율',status:'READY',value:0,unit:'%'}])[1];
+ const r=marketDetailRows('breadth',[{name:'주식공급 폭',status:'READY',value:0,unit:'%'}])[1];
  assert.equal(r.value,0);assert.equal(r.unit,'%');assert.equal(r.raw,true);assert.equal(r.score,null);
 });
 
@@ -55,7 +55,7 @@ test('B1-R5 detail rows use new stable ids and formula factors',()=>{
   {id:'breadth-41',name:'상승종목비율',status:'READY',score:62.5,value:62.5,unit:'%'},
   {id:'breadth-43',name:'5일 수급 EMA',status:'READY',score:60,value:60,unit:'점'},
  ]);
- assert.deepEqual(rows.map(r=>r.label),['상승종목비율','상승거래대금비율','5일 수급 EMA','20일 수급 EMA']);
+ assert.deepEqual(rows.map(r=>r.label),['오른 종목 비율','상승 거래비중','5일 수급 추세','20일 수급 추세']);
  assert.deepEqual(rows.map(r=>r.score),[62.5,59,60,58]);
  assert.deepEqual(rows.map(r=>r.unit),['%','%','점','점']);
 });

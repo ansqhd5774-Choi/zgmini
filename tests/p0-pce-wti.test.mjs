@@ -1,3 +1,4 @@
+import {marketDataFeedFixtureSource} from './market-data-feed-fixture.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -9,8 +10,8 @@ const now=()=>Date.parse('2026-09-13T00:00:00Z'), key='fixture-private-key';
 const monthly=()=>Array.from({length:18},(_,i)=>({date:new Date(Date.UTC(2025,2+i,1)).toISOString().slice(0,10),value:String(100+i)}));
 const daily=()=>[{date:'2026-09-09',value:'70'},{date:'2026-09-10',value:'.'},{date:'2026-09-11',value:'71'},{date:'2026-09-12',value:'.'}];
 const run=(id,observations,extra={})=>fetchMarketFred(id,{key,now,fetchImpl:async()=>Response.json({observations}),...extra});
-const route=fs.readFileSync(new URL('../app/api/market-data/route.ts',import.meta.url),'utf8');
-const funcs=new Function('env','fetchBls','fetchFred','payrollChanges',ts.transpile(route.replace(/^import .*;\r?\n/gm,'').replace('export async function GET','async function GET'),{target:ts.ScriptTarget.ES2022,module:ts.ModuleKind.None})+';return {makeYoyIndicator,makeDirectIndicator};')({},null,null,payrollChanges);
+const route=marketDataFeedFixtureSource();
+const funcs=new Function('env','fetchBls','fetchFred','payrollChanges',ts.transpile(route.replace(/^import .*;\r?\n/gm,'').replace('export async function collectMarketDataFeed','async function collectMarketDataFeed'),{target:ts.ScriptTarget.ES2022,module:ts.ModuleKind.None})+';return {makeYoyIndicator,makeDirectIndicator};')({},null,null,payrollChanges);
 
 for(const id of ['PCEPILFE','DCOILWTICO'])test(id+' official native raw URL; one observations request',async()=>{
  let calls=0;const r=await run(id,id==='PCEPILFE'?monthly():daily(),{fetchImpl:async(url,init)=>{

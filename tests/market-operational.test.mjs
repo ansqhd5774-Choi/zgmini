@@ -1,3 +1,5 @@
+import {DIAGNOSTIC_FRED_SERIES} from '../lib/diagnostic-layer/input-registry.mjs';
+import {PUBLIC_DISPLAY_MAX_AGE_MS} from '../worker/public-display-freshness.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {DatabaseSync} from 'node:sqlite';
@@ -30,8 +32,8 @@ test('large normalized history is compressed in storage and restored without val
 test('collection persists inputs before calculation and public reads perform no collection',async()=>{
  const {store,db,sqlite}=fixture();let calls=0;
  const out=await runMarketOperationalRefresh({env:{DB:db},store,job:'macro',now,
-  collectors:{macro:async()=>{calls++;return {series:{A:[{value:0}]},external:{},networkLog:['private-key']}}},
-  calculate:async(_env,s,time)=>{const raw=await readStoredMarketInputs(s,time);assert.equal(raw.series.A[0].value,0);assert.equal(raw.networkLog,undefined);await s.writeScore(score,time);return {readyDomains:1}}});
+  collectors:{macro:async()=>{calls++;return {series:Object.fromEntries(Object.keys(DIAGNOSTIC_FRED_SERIES).map(id=>[id,[{observationDate:'2026-09-01',value:0}]])),external:{},networkLog:['private-key']}}},
+  calculate:async(_env,s,time)=>{const raw=await readStoredMarketInputs(s,time);assert.equal(raw.series.PAYEMS[0].value,0);assert.equal(raw.networkLog,undefined);await s.writeScore(score,time);return {readyDomains:1}}});
  assert.equal(out.status,'COMPLETE');
  const freshInstance=marketOperationalStore(db);
  for(let i=0;i<3;i++)assert.deepEqual(await (await storedMarketResponse(new Request('https://zgmini.kr/api/market-score'),{store:freshInstance,now})).json(),score);
@@ -41,7 +43,8 @@ test('stored stream supports complete frame, zero and null; expired storage neve
  const {store,sqlite}=fixture();await store.writeScore(score,now);
  const r=await storedMarketResponse(new Request('https://zgmini.kr/api/market-score',{headers:{accept:'application/x-ndjson'}}),{store,now});
  const frame=JSON.parse(await r.text());assert.equal(frame.type,'complete');assert.equal(frame.body.domains[0].score,0);
- const stale=await storedMarketResponse(new Request('https://zgmini.kr/api/market-score'),{store,now:now+30*60000});assert.equal(stale.status,503);assert.equal((await stale.json()).overall.score,null);sqlite.close();
+ const retained=await storedMarketResponse(new Request('https://zgmini.kr/api/market-score'),{store,now:now+PUBLIC_DISPLAY_MAX_AGE_MS-1});assert.equal(retained.status,200);assert.deepEqual(await retained.json(),score);
+ const stale=await storedMarketResponse(new Request('https://zgmini.kr/api/market-score'),{store,now:now+PUBLIC_DISPLAY_MAX_AGE_MS});assert.equal(stale.status,503);assert.equal((await stale.json()).overall.score,null);sqlite.close();
 });
 test('lease excludes concurrent collectors and daily input history survives later collection',async()=>{
  const {store,db,sqlite}=fixture();const id=await store.claim('pipeline',now);

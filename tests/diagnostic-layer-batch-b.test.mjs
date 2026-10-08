@@ -33,8 +33,8 @@ const daily = (count, fn) => {
   });
 };
 
-test('Batch B adds only EXPINF5YR and preserves Batch A 38-series scope', () => {
-  assert.equal(BATCH_A_FRED_SERIES_IDS.length,38);
+test('Batch B adds only EXPINF5YR and preserves Batch A 41-series scope', () => {
+  assert.equal(BATCH_A_FRED_SERIES_IDS.length,41);
   assert.deepEqual([...BATCH_B_FRED_SERIES_IDS],['EXPINF5YR']);
   const spec = diagnosticSeriesSpec('EXPINF5YR');
   assert.equal(spec.authority,'CLEVELAND_FED');

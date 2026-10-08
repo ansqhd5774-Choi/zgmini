@@ -6,7 +6,8 @@ import {pairedFeatureCorrelation} from "../scripts/pc-writer/analyze-dollar-r24-
 test("R2.4 redundancy diagnostic computes aligned feature correlation",()=>{
   const a=[{label:"2026-01-01",value:1},{label:"2026-01-02",value:2},{label:"2026-01-03",value:3}];
   const b=[{label:"2026-01-01",value:2},{label:"2026-01-02",value:4},{label:"2026-01-03",value:6}];
-  assert.equal(pairedFeatureCorrelation(a,b),1);
+  assert.ok(Math.abs(pairedFeatureCorrelation(a,b)-1)<=Number.EPSILON);
+  assert.ok(Math.abs(pairedFeatureCorrelation(a,b.map(p=>({...p,value:-p.value})))+1)<=Number.EPSILON);
 });
 
 test("R2.4 redundancy diagnostic is read-only and selects no formula or weights",()=>{

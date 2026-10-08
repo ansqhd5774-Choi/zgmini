@@ -1,3 +1,4 @@
+import {marketDataFeedFixtureSource} from './market-data-feed-fixture.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -22,11 +23,11 @@ const batch = () => ({...parseBls(payload()), durationMs: 1, requestCount: 1, re
 const secondary = (metric, points = rows(metric)) => fetchApiShadowSeries(metric, 'fixture-key', {
   now, fetchImpl: async () => Response.json({observations: points.map(p => ({...p, value: String(p.value)}))}),
 });
-const route = fs.readFileSync(new URL('../app/api/market-data/route.ts', import.meta.url), 'utf8');
+const route = marketDataFeedFixtureSource();
 class FixedDate extends Date {constructor(...args) {super(...(args.length ? args : [fetchedAt]));}}
 function consumer(b) {
   return new Function('env', 'fetchBls', 'fetchFred', 'payrollChanges', 'Date', ts.transpile(
-    route.replace(/^import .*;\r?\n/gm, '').replace('export async function GET', 'async function GET'),
+    route.replace(/^import .*;\r?\n/gm, '').replace('export async function collectMarketDataFeed', 'async function collectMarketDataFeed'),
     {target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.None}) + ';return {GET,makeYoyIndicator,makeDirectIndicator};')(
     {}, async () => b, async () => ({data: rows('cpi'), status: 'SUCCESS', durationMs: 1}), payrollChanges, FixedDate);
 }

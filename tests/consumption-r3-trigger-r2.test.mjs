@@ -16,7 +16,7 @@ test("C1-OP-R2 worker has scheduled primary trigger",()=>{
 
 test("C1-OP-R2 Cloudflare config has hourly cron",()=>{
   assert.match(vite,/const C1_OP_R2_CRON = "17 \* \* \* \*";/);
-  assert.match(vite,/triggers:\s*\{[\s\S]*crons:\s*\[C1_OP_R2_CRON,\s*"37 \* \* \* \*"\]/);
+  assert.match(vite,/triggers:\s*\{[\s\S]*crons:\s*\[C1_OP_R2_CRON,\s*"37 \* \* \* \*",\s*MARKET_OP_R1_CRON\]/);
 });
 
 test("public reads are decoupled from the scheduled C1 collector",()=>{
