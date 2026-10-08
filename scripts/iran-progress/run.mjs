@@ -5,7 +5,7 @@ import {randomUUID} from 'node:crypto';
 import {openStore,hash} from './store.mjs';
 import {collectSources} from './sources.mjs';
 import {buildIranProgress} from '../../lib/iran-progress/r13.mjs';
-import {interpretSource} from './ai.mjs';
+import {interpretSource,candidateHeadline} from './ai.mjs';
 import {publicBody,publishIran,publishIranStatus} from './publication.mjs';
 import {client,credential} from '../pc-writer/d1.mjs';
 import {fileURLToPath} from 'node:url';
@@ -67,11 +67,15 @@ try{
  }
  if(process.argv.includes('--ai')){
   const article=store.candidates(1)[0];
-  if(article){
+  if(article&&!candidateHeadline(article)){
+   // GDELT structured rows have no original headline. Never synthesize source text.
+   store.finishCandidate(article.id,'REVIEW_PENDING');
+   ai={status:'PENDING',reason:'CANDIDATE_SOURCE_TEXT_REQUIRED'};
+  }else if(article){
    try{
     const tags=await fetch('http://127.0.0.1:11434/api/tags',{signal:AbortSignal.timeout(5000)}).then(r=>r.json());
     const model=tags.models?.find(m=>m.name==='gemma3:4b');
-    const interpreted=await interpretSource(article.title,{modelDigest:model?.digest,now:Date.now()});
+    const interpreted=await interpretSource(candidateHeadline(article),{modelDigest:model?.digest,now:Date.now()});
     store.putDecision('discovery:'+article.id+':'+interpreted.modelDigest+':'+interpreted.promptVersion,{...interpreted,articleId:article.id,url:article.url,sourceLevel:'HEADLINE_ONLY',eventVerification:'PENDING'},interpreted.interpretedAt);
     store.finishCandidate(article.id,'REVIEW_PENDING');ai={status:'CANDIDATE_ONLY',candidateCount:interpreted.candidates.length,sourceLevel:'HEADLINE_ONLY'};
    }catch{ai={status:'PENDING',reason:'AI_DISCOVERY_VALIDATION_FAILED'};}

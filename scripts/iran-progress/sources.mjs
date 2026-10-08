@@ -9,7 +9,7 @@ export async function boundedRead(url,{fetcher=fetch,maxBytes=4000000}={}){
  const bytes=new Uint8Array(size);let at=0;for(const p of parts){bytes.set(p,at);at+=p.length;}
  return {status:'COLLECTED',httpStatus:response.status,body:new TextDecoder().decode(bytes)};
 }
-export async function collectSources({now=Date.now(),fetcher=fetch}={}){
+export async function collectSources({now=Date.now(),fetcher=fetch,ids=null}={}){
  const specs={
   ais:AIS_DAILY_URL,
   marad:'https://www.maritime.dot.gov/msci-advisories',
@@ -18,7 +18,9 @@ export async function collectSources({now=Date.now(),fetcher=fetch}={}){
   iaea:'https://www.iaea.org/feeds/topnews',
  };
  const output={};
+ if(ids&&(!Array.isArray(ids)||ids.some(id=>!Object.hasOwn(specs,id))))throw Error('SOURCE_IDS_INVALID');
  for(const [id,url] of Object.entries(specs)){
+  if(ids&&!ids.includes(id))continue;
   try{const r=await boundedRead(url,{fetcher});output[id]={...r,url,sourceStoredAt:now,lastAttemptAt:now};
    if(id==='ais'&&r.status==='COLLECTED'){const sanitized=parseAisDaily(r.body,{now});output[id]={...output[id],...sanitized,body:JSON.stringify(sanitized)};}
    // Discovery/feeds do not establish complete event coverage or independently verified facts.
