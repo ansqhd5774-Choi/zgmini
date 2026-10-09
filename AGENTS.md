@@ -192,6 +192,7 @@ candidate -> Production 전환 전 모두 PASS:
 - schema/parser 오류와 외부 서비스 오류를 구분.
 
 ## 19. ACTIVE CONTRACT
+- 2026-10-09 최신 사용자 승인: 이란 아웃브레이크 1차는 기사 기반 참고 흐름 점수로 제공한다. 임시 기준점 50에서 고정 규칙으로 확전은 하락, 완화는 상승시킨다. 기존 5개 영역 가중치는 유지한다. 엄격한 R1.3 공식 종전 판정과 분리하며 종전 확률로 표시하지 않는다. 최근 14일 차트는 보도일 기준 재구성임을 명시하고, 수집 실패는 마지막 값 보존·갱신 지연으로 처리한다. 이 참고 모델의 출시 조건에 AIS 완전 검증이나 공식 종전 확인을 추가하지 않는다.
 - SOURCE OF TRUTH: GitHub latest main
 - DEPLOYMENT CONTROL PLANE: Cloudflare
 - DEFAULT DEPLOY: GitHub main -> Cloudflare Git integration -> Build -> Deployment -> Production
