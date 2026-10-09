@@ -259,7 +259,7 @@
  .zg-dashboard[data-view="dashboard"] .zg-r55-subscore{position:relative;min-height:40px;padding:6px 4px;border-top:0;border-right:0;display:grid;grid-template-columns:minmax(0,1fr);align-items:center;gap:4px}
  .zg-dashboard[data-view="dashboard"] .zg-r55-subscore-head{min-width:0;display:flex;align-items:center;gap:2px;padding-right:0;justify-content:space-between}
  .zg-dashboard[data-view="dashboard"] .zg-r55-subscore-title b{font-size:12px;line-height:1.3;white-space:normal;word-break:keep-all}
- .zg-dashboard[data-view="dashboard"] .zg-r55-subscore-info{position:static;opacity:1}
+ .zg-dashboard[data-view="dashboard"] .zg-r55-subscore-info{position:relative;opacity:1;flex-shrink:0}
  .zg-dashboard[data-view="dashboard"] .zg-r55-subscore-info .zg-info{display:grid;place-items:center;width:32px;height:32px;min-height:32px}
  .zg-dashboard[data-view="dashboard"] .zg-r55-subscore:focus-within{outline:2px solid var(--zg-gold);outline-offset:-2px;border-radius:4px}
  .zg-dashboard[data-view="dashboard"] .zg-r55-subscore-foot{margin:0;gap:5px}
