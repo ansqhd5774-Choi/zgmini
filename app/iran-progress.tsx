@@ -3,6 +3,7 @@ import {useEffect,useState} from 'react';
 import {Swords,TrendingUp,TrendingDown,Minus} from 'lucide-react';
 import {iranView} from '../lib/iran-progress/view.mjs';
 
+import {OutbreakChange} from './outbreak-change';
 import {ContentHelp} from './content-help';
 import {HELP,HelpText} from './help-copy';
 export function useIranProgress(){
@@ -27,10 +28,11 @@ function IranChart({view,compact=false}:{view:View;compact?:boolean}){
 }
 export function IranSummaryCard({view,onOpen}:{view:View;onOpen:()=>void}){
  if(view.overallEnded)return null;
- const previous=view.history.length>1?view.history.at(-2)!.value:null,delta=view.score!==null&&previous!==null?view.score-previous:null;
+ const daily='chartHistory' in view?view.chartHistory:view.history;
+ const previous=daily.length>1?daily.at(-2)!.value:null;
  return <div className="ob-help-card"><ContentHelp label="이란 전쟁 도움말"><HelpText copy={HELP.iran}/></ContentHelp><button type="button" className="ob-summary-card ob-iran-summary" aria-label={`이란 전쟁 상세 보기 · ${view.message}`} onClick={onOpen}>
   <h3 className="ob-fit-title"><Swords aria-hidden="true"/><span>이란 전쟁</span></h3>
-  {view.score!==null&&<div className="ob-summary-value"><strong><IranScore value={view.score}/></strong>{delta!==null&&<span className={`ob-direction ob-direction-${delta>0?'up':delta<0?'down':'flat'}`}>{delta>0?<TrendingUp aria-hidden="true"/>:delta<0?<TrendingDown aria-hidden="true"/>:<Minus aria-hidden="true"/>}{delta>0?'상승':delta<0?'하락':'횡보'}</span>}</div>}
+  {view.score!==null&&<div className="ob-summary-value"><strong><IranScore value={view.score}/></strong><OutbreakChange current={view.score} previous={previous}/></div>}
   {view.score===null?<div className="ob-iran-fact-preview" role="status">{view.facts.length?<><strong>미국–이란 협상 관련 발표</strong><span>{view.facts[0].publicationDate} · 카타르 외교부</span><span>현재 상태 미확인</span></>:view.message}</div>:<IranChart view={view} compact/>}
  </button></div>;
 }
