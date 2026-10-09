@@ -4,11 +4,11 @@ import {openStore,hash} from './store.mjs';
 import {classifyFlowCandidate,buildReferenceFlow} from '../../lib/iran-progress/reference-flow-r1.mjs';
 import {publishReferenceFlow} from './publication.mjs';
 import {client,credential} from '../pc-writer/d1.mjs';
-export function calculateStoredFlow(store,now=Date.now()){
+export function calculateStoredFlow(store,now=Date.now(),{collectionFailed=false}={}){
  const evaluation=store.getCheckpoint('article-ai-evaluation-r14');
  if(!evaluation||evaluation.status!=='PASS')throw Error('FLOW_ARTICLE_EVALUATION_PENDING');
  const feeds=['mofa','govuk'].map(s=>store.getCheckpoint('article-feed:'+s));
- const collectionOk=feeds.every(f=>f?.sourceId&&Number.isFinite(f.checkedAt)&&now-f.checkedAt>=0&&now-f.checkedAt<=86400000);
+ const collectionOk=!collectionFailed&&feeds.every(f=>f?.sourceId&&Number.isFinite(f.checkedAt)&&now-f.checkedAt>=0&&now-f.checkedAt<=86400000);
  const previous=store.getCheckpoint('reference-flow-last-valid-r1');
  if(!collectionOk)return buildReferenceFlow([],{collectionOk:false,previousResult:previous});
  const events=[],seen=new Set();let articleCount=0,candidateCount=0;
@@ -35,7 +35,7 @@ if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.ur
  const store=openStore(path.join(base,'iran.sqlite')),owner=randomUUID(),now=Date.now();
  try{
   if(!store.claim(owner,now))throw Error('FLOW_LEASE_HELD');
-  const body=calculateStoredFlow(store,now);
+  const body=calculateStoredFlow(store,now,{collectionFailed:process.argv.includes('--collection-failed')});
   if(mode==='--preview')console.log(JSON.stringify(body));
   else{
    const config=JSON.parse(fs.readFileSync(path.join(os.homedir(),'.zgmini','pc-writer','config.json'),'utf8'));
