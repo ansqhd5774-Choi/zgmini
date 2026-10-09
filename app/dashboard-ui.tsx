@@ -223,7 +223,7 @@ const diagnosticSubscores=[
  {name:'실적 침체',href:'/earnings-recession/',components:'주당이익 성장, 영업·순이익률, 매출 성장, 이익 증가 종목'},
  {name:'자산 버블',href:'/asset-bubble/',components:'밸류에이션 압력, 가격가속, 위험자산비중, 투기성 자금흐름, 시장폭 괴리, 과잉유동성'},
  {name:'부채 위험',href:'/debt-risk/',components:'Debt Service Ratio, 부채/GDP, 금리부담, 신용스트레스, 실적상환능력'},
- {name:'공급 충격',href:'/supply-shock/',components:'NY Fed GSCPI, 유가충격, 휘발유, 구리, 산업생산, Headline-Core 물가괴리'}
+ {name:'공급 충격',href:'/supply-shock/',components:'글로벌 공급망, 미국 석유 공급, 에너지 가격, 공급 주도 물가, 산업생산'}
 ] as const;
 
 export function CompositeMarketSection({items,points,demo,loading}:{items:Summary[];points:number;demo:boolean;loading:boolean}){
@@ -235,6 +235,8 @@ export function CompositeMarketSection({items,points,demo,loading}:{items:Summar
  const [marketLoading,setMarketLoading]=useState(true);
  const [marketError,setMarketError]=useState<string|null>(null);
  const [assetBubble,setAssetBubble]=useState<{status:string;score:number|null;scoreObservationQuarter?:string}|null>(null);
+ const [supplyShock,setSupplyShock]=useState<{status:string;score:number|null;scoreObservationMonth?:string}|null>(null);
+ useEffect(()=>{const controller=new AbortController();fetch('/api/supply-shock-detail',{signal:controller.signal,cache:'no-store'}).then(async response=>{if(!response.ok)throw Error('SUPPLY_UNAVAILABLE');return response.json()}).then(body=>{if(!controller.signal.aborted&&body.methodologyVersion==='SUPPLY_SHOCK_R10')setSupplyShock(body)}).catch(()=>{});return()=>controller.abort();},[]);
 
  useEffect(()=>{
   const controller=new AbortController();
@@ -341,7 +343,7 @@ export function CompositeMarketSection({items,points,demo,loading}:{items:Summar
       <div className="zg-r55-subscore-area" aria-label="8개 위험 지표">
        <div className="zg-r55-subscore-grid">
        {diagnosticSubscores.map((s,index)=>{
-        const diag=diagnosticKeys[index]==='assetBubbleSafety'?assetBubble:market?.diagnostics8?.[diagnosticKeys[index]];
+        const diag=diagnosticKeys[index]==='assetBubbleSafety'?assetBubble:diagnosticKeys[index]==='supplyShockSafety'?supplyShock:market?.diagnostics8?.[diagnosticKeys[index]];
         const score=diag?.status==='READY'&&validPublicScore(diag.score)?diag.score:null;
         return <div key={s.name} className="zg-r55-subscore" data-index={index} title={diagnosticKeys[index]==='assetBubbleSafety'&&assetBubble?.scoreObservationQuarter?`평가 분기 ${assetBubble.scoreObservationQuarter} · 상세 페이지와 동일한 R10 저장 점수`:undefined}>
          <div className="zg-r55-subscore-head">
