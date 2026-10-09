@@ -45,12 +45,13 @@ function timeScaledTrend(data:DashboardPoint[],periodDays:number){
  return {points,start,end};
 }
 
-function CardTrend({data,label,color,periodDays}:{data:DashboardPoint[];label:string;color:string;periodDays:number}){
+function CardTrend({data,label,color,periodDays,missingDates=[]}:{data:DashboardPoint[];label:string;color:string;periodDays:number;missingDates?:string[]}){
  const scaled=timeScaledTrend(data,periodDays),latest=scaled.points.at(-1);
+ const chartPoints=[...scaled.points,...missingDates.map(label=>({label,ts:Date.parse(label),value:null}))].filter(point=>Number.isFinite(point.ts)&&point.ts>=scaled.start&&point.ts<=scaled.end).sort((a,b)=>a.ts-b.ts);
  return <div className="zg-spark zg-r55-mini-chart" aria-label={`${label} 관측 추이`} onPointerDown={event=>event.preventDefault()}>
   <div className="zg-r55-mini-y-labels" aria-hidden="true"><span>100</span><span>50</span><span>0</span></div>
   <ResponsiveContainer width="100%" height="100%" initialDimension={{width:1,height:1}}>
-   <LineChart data={scaled.points} accessibilityLayer={false} tabIndex={-1} margin={{top:3,right:3,left:13,bottom:3}}>
+   <LineChart data={chartPoints} accessibilityLayer={false} tabIndex={-1} margin={{top:3,right:3,left:13,bottom:3}}>
     <XAxis hide dataKey="ts" type="number" domain={[scaled.start,scaled.end]}/>
     <YAxis hide domain={[0,100]} width={0}/>
     <ReferenceLine className="zg-r55-boundary-line" y={0} stroke="rgba(168,188,208,.4)" strokeWidth={1}/>
@@ -206,7 +207,7 @@ const r55Cards=[
  {label:'금리',Icon:Percent,basis:'공개 점수 결과를 표시합니다. PARTIAL/UNAVAILABLE은 0점으로 대체하지 않습니다.',details:['미국 기준금리','2년 국채금리','미국 실질금리','장단기 금리차']},
  {label:'채권신용',Icon:ShieldCheck,basis:'공개 점수 결과를 표시합니다. PARTIAL/UNAVAILABLE은 0점으로 대체하지 않습니다.',details:['고위험 회사채','우량 회사채','채권 변동성','회사채 시장위험']},
  {label:'경기',Icon:Factory,basis:'Growth R2 경기 총점은 저장된 24개 지표 전체의 승인 가중합입니다. 아래 4개는 총점 산식의 대체값이 아니라 대표 점수입니다.',details:['제조업 신규주문','산업생산','비농업고용 증감','신규 사업체 신청']},
- {label:'소비',Icon:ShoppingCart,basis:'월간 실질 소비 증가세: 최근 3개월 연율 70% + 전년 대비 30%. 50점은 정체 기준이며 확률이 아닙니다. 기준월은 최신 발표된 관측월입니다.',details:['실질 소비 최근 3개월','실질 소비 전년 대비','소비 가속·둔화 (보조)']},
+ {label:'소비',Icon:ShoppingCart,basis:'소비 R5: 실제 소비 30%, 소득 25%, 고용 15%, 가계 금융 여력 20%, 소비 확산 10%. 역사적 상대 수준을 평가하며 확률이 아닙니다.',details:['실제 소비','소득 기반','고용 기반','가계 금융 여력','소비 확산']},
  {label:'기업실적',Icon:BriefcaseBusiness,basis:'공개 점수 결과를 표시합니다. PARTIAL/UNAVAILABLE은 0점으로 대체하지 않습니다.',details:['주당이익 성장','매출 성장률','이익 증가 종목','영업·순이익률']},
  {label:'유동성',Icon:Landmark,basis:'공개 점수 결과를 표시합니다. PARTIAL/UNAVAILABLE은 0점으로 대체하지 않습니다.',details:['은행 준비금','시중 통화량','재무부 현금','연준 단기자금']},
  {label:'자금흐름',Icon:ArrowLeftRight,basis:'SEC 등록펀드의 전체 순유입, 순유입 추세, 펀드 동반 유입, 환매 압력을 저장 이력 기준으로 종합합니다. 추이는 실제 월별 관측만 사용합니다.',details:['전체 펀드 순유입','순유입 추세','펀드 동반 유입','환매 압력']},
@@ -372,7 +373,7 @@ export function CompositeMarketSection({items,points,demo,loading}:{items:Summar
        const breadthDelta=r55DomainIds[index]==='breadth'?breadthPreviousSessionDelta(domain?.trend):null;
 
        const band=score===null?'unknown':score<25?'danger':score<40?'caution':score<60?'neutral':score<75?'positive':'strong';
-       const detailRows=marketDetailRows(r55DomainIds[index],domain?.indicators) as Array<{label:string;score:number|null;raw:boolean;value:number|null;displayValue?:string|null;unit:string;asOfDate?:string|null;source?:string|null}>;
+       const detailRows=marketDetailRows(r55DomainIds[index],domain?.indicators) as Array<{label:string;score:number|null;raw:boolean;value:number|null;displayValue?:string|null;unit:string;asOfDate?:string|null;source?:string|null;area?:string;areaHeading?:string|null;weight?:number|null;referenceCount?:number;referenceExpected?:number}>;
        const notice=!busy?breadthNotice(domain):null;
        return <article
         key={m.label}
@@ -406,7 +407,7 @@ export function CompositeMarketSection({items,points,demo,loading}:{items:Summar
          </div>
          <div className="zg-r55-card-visual">
           {trend.length>0
-           ?<CardTrend data={trend} label={m.label} color={score===null?'#94a3b8':scoreColor(score)} periodDays={periodDays}/>
+           ?<CardTrend data={trend} label={m.label} color={score===null?'#94a3b8':scoreColor(score)} periodDays={periodDays} missingDates={r55DomainIds[index]==='consumption'?(domain?.trend??[]).filter(point=>point.value==null&&point.score==null).map(point=>point.date??point.label??''):[]}/>
            :<div className="zg-r55-card-spark-empty" aria-label={`${m.label} 추이 데이터 없음`}>—</div>}
          </div>
         </div>
@@ -417,6 +418,11 @@ export function CompositeMarketSection({items,points,demo,loading}:{items:Summar
          {detailRows.map(row=>{
           const breadthMeta=r55DomainIds[index]==='breadth';
           const rawText=row.displayValue??(row.value===null?'—':`${Number(row.value.toFixed(2))}${breadthMeta?(row.unit?` ${row.unit}`:''):row.unit}`);
+          if(row.area)return <div key={row.label} style={{gridColumn:'1 / -1',minWidth:0}}>
+           {row.areaHeading&&<div style={{fontWeight:700,margin:'10px 0 6px',color:'#cbd5e1'}}>{row.areaHeading}</div>}
+           <div className="zg-r55-detail"><span>{row.label}</span><ScoreScale score={row.score} label={`${row.label} 구성 점수`} color={row.score===null?'#64748b':scoreColor(row.score)}/><b style={{color:row.score===null?'#94a3b8':scoreColor(row.score)}}>{row.score===null?'—':Math.round(row.score)}</b></div>
+           <div style={{fontSize:11,color:'#94a3b8',lineHeight:1.6,overflowWrap:'anywhere'}}>원값 {rawText} · 전체 비중 {row.weight??'—'}% · 기준 {row.asOfDate??'미확인'}<br/>{row.source??'출처 미확인'}{row.referenceCount!==undefined&&row.referenceExpected!==undefined&&row.referenceCount<row.referenceExpected?` · 참조 ${row.referenceCount}/${row.referenceExpected}`:''}</div>
+          </div>;
           return <div className="zg-r55-detail" key={row.label}>
            <span>{row.label}</span>
            {!row.raw&&<ScoreScale score={row.score} label={`${row.label} 구성 점수`} color={row.score===null?'#64748b':scoreColor(row.score)}/>}
