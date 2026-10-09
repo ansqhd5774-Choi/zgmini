@@ -234,6 +234,18 @@ export function CompositeMarketSection({items,points,demo,loading}:{items:Summar
  const [market,setMarket]=useState<MarketScoreResponse|null>(null);
  const [marketLoading,setMarketLoading]=useState(true);
  const [marketError,setMarketError]=useState<string|null>(null);
+ const [assetBubble,setAssetBubble]=useState<{status:string;score:number|null;scoreObservationQuarter?:string}|null>(null);
+
+ useEffect(()=>{
+  const controller=new AbortController();
+  // The summary uses the same stored R10 publication as its detail page.
+  // This display connection does not change the 12-domain composite formula.
+  fetch('/api/asset-bubble-detail',{signal:controller.signal,cache:'no-store'})
+   .then(async response=>{if(!response.ok)throw Error('ASSET_BUBBLE_UNAVAILABLE');return response.json()})
+   .then(body=>{if(!controller.signal.aborted&&body.methodologyVersion==='ASSET_BUBBLE_R10_CANDIDATE')setAssetBubble(body)})
+   .catch(()=>{/* Missing publication remains unavailable. */});
+  return()=>controller.abort();
+ },[]);
 
  useEffect(()=>{
   const controller=new AbortController();
@@ -329,9 +341,9 @@ export function CompositeMarketSection({items,points,demo,loading}:{items:Summar
       <div className="zg-r55-subscore-area" aria-label="8개 위험 지표">
        <div className="zg-r55-subscore-grid">
        {diagnosticSubscores.map((s,index)=>{
-        const diag=market?.diagnostics8?.[diagnosticKeys[index]];
+        const diag=diagnosticKeys[index]==='assetBubbleSafety'?assetBubble:market?.diagnostics8?.[diagnosticKeys[index]];
         const score=diag?.status==='READY'&&validPublicScore(diag.score)?diag.score:null;
-        return <div key={s.name} className="zg-r55-subscore" data-index={index}>
+        return <div key={s.name} className="zg-r55-subscore" data-index={index} title={diagnosticKeys[index]==='assetBubbleSafety'&&assetBubble?.scoreObservationQuarter?`평가 분기 ${assetBubble.scoreObservationQuarter} · 상세 페이지와 동일한 R10 저장 점수`:undefined}>
          <div className="zg-r55-subscore-head">
           <span className="zg-r55-subscore-title"><DashboardTip label={`${s.name} 도움말`}><HelpText copy={HELP[s.name]}/></DashboardTip><a className="zg-subscore-name-link" href={s.href}><b>{s.name}</b></a></span>
           <span onClick={e=>e.stopPropagation()} className="zg-r55-subscore-info"><a className="zg-info" href={s.href} aria-label={`${s.name} 상세페이지 열기`} title={`${s.name} 상세페이지`}><ArrowUpRight size={18} aria-hidden="true"/></a></span>
