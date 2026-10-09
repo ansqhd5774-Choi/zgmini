@@ -1,8 +1,8 @@
-import {TrendingUp,TrendingDown,Minus} from 'lucide-react';
-import {percentChange} from '../lib/iran-progress/percent-change.mjs';
 export function OutbreakChange({current,previous,comparison='전일'}:{current:number|null;previous:number|null;comparison?:string}){
- const percent=percentChange(current,previous);
- if(percent===null)return null;
- const direction=percent>0?'up':percent<0?'down':'flat';
- return <span className={`ob-direction ob-direction-${direction}`} title={`${comparison} 대비 ${percent>0?'+':''}${percent.toFixed(1)}%`} aria-label={`${comparison} 대비 ${percent>0?'+':''}${percent.toFixed(1)}%`}><span>{percent>0?'+':''}{percent.toFixed(1)}%</span>{percent>0?<TrendingUp aria-hidden="true"/>:percent<0?<TrendingDown aria-hidden="true"/>:<Minus aria-hidden="true"/>}</span>;
+ if(current===null||previous===null||!Number.isFinite(current)||!Number.isFinite(previous))return null;
+ const difference=current-previous;
+ const amount=Math.round(Math.abs(difference));
+ const text=amount===0?'0':`${difference>0?'+':'-'}${amount}`;
+ const direction=amount===0?'flat':difference>0?'up':'down';
+ return <span className={`ob-direction ob-direction-${direction}`} title={`${comparison} 대비 ${text}점`} aria-label={`${comparison} 대비 ${text}점`}>{text}</span>;
 }
