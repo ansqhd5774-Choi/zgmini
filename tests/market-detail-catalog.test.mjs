@@ -3,9 +3,19 @@ import assert from 'node:assert/strict';
 import {marketDetailRows} from '../lib/market-score/detail-catalog.mjs';
 const ids=['inflation','employment','rates','credit','growth','consumption','earnings','liquidity','fundFlows','breadth','dollarFx','commodities'];
 test('detail catalog preserves the legacy one-row fund-flow snapshot until R54 indicators arrive',()=>{
- const rows=ids.flatMap(id=>marketDetailRows(id));assert.equal(rows.length,45);
- assert.equal(new Set(rows.map(r=>r.label)).size,45);
+ // R4 replaces the four legacy consumption rows with two score factors and one explanatory row.
+ const rows=ids.flatMap(id=>marketDetailRows(id));assert.equal(rows.length,44);
+ assert.equal(new Set(rows.map(r=>r.label)).size,44);
  assert.ok(rows.every(r=>r.score===null&&r.value===null));
+});
+test('consumption R4 exposes two score factors and unscored acceleration',()=>{
+ const rows=marketDetailRows('consumption',[
+  {name:'실질 소비 최근 3개월',status:'READY',score:70,value:2,unit:'% 연율'},
+  {name:'실질 소비 전년 대비',status:'READY',score:60,value:1,unit:'%'},
+  {name:'소비 가속·둔화',status:'READY',score:null,value:0,unit:'%p'},
+ ]);
+ assert.deepEqual(rows.map(row=>row.score),[70,60,null]);
+ assert.equal(rows[2].raw,true);assert.equal(rows[2].value,0);
 });
 test('commodity values are matched by identity, never by array position',()=>{
  const rows=marketDetailRows('commodities',[{name:'휘발유',status:'READY',score:51},{name:'WTI',status:'READY',score:0},{name:'구리',status:'READY',score:33}]);

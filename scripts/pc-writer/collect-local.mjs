@@ -6,6 +6,7 @@ import {loadLocalProviders,installLocalRuntime} from './local-env.mjs';
 import {save} from './d1.mjs';
 import {createQuotaFetch} from './quota-fetch.mjs';
 import {recordCollectionChecks} from './collection-checks.mjs';
+import {collectConsumptionR4} from './consumption-r4.mjs';
 
 export async function collectLocal(base,{lane='core',importOnly=false,job=null}={}){
  const core=localDatabase(path.join(base,'storage','core.sqlite'));
@@ -29,10 +30,11 @@ export async function collectLocal(base,{lane='core',importOnly=false,job=null}=
   let result;
   if(lane==='korea')result=await refreshKoreaRev7({env:{...env,DB:history},store:new Rev7D1Store(history,{leaseMs:600000}),now:new Date(),maxDates:1,deferCalculation:true});
   else{
-   if(job)result=await runMarketOperationalRefresh({env,job,now:Date.now(),fetchImpl:globalThis.fetch,calculate:async()=>({calculation:'PC_PENDING'})});
+   const collectors={consumption:()=>collectConsumptionR4({db:core,fetchImpl:globalThis.fetch})};
+   if(job)result=await runMarketOperationalRefresh({env,job,now:Date.now(),fetchImpl:globalThis.fetch,collectors,calculate:async()=>({calculation:'PC_PENDING'})});
    else{
     const feed=await runPublicFeeds({env,maxFeedsPerRun:1});
-    result=feed.attempted>0||feed.status!=='COMPLETE'?{...feed,lane:'public-feed'}:await runMarketOperationalRefresh({env,now:Date.now(),fetchImpl:globalThis.fetch,calculate:async()=>({calculation:'PC_PENDING'})});
+    result=feed.attempted>0||feed.status!=='COMPLETE'?{...feed,lane:'public-feed'}:await runMarketOperationalRefresh({env,now:Date.now(),fetchImpl:globalThis.fetch,collectors,calculate:async()=>({calculation:'PC_PENDING'})});
    }
   }
   // Reports contain statuses only; provider URLs and exception messages are excluded.

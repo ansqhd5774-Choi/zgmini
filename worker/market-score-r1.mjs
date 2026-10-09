@@ -3,7 +3,7 @@ import {buildCompositeMarketScore} from "../lib/market-score/composite-model-r1.
 import {buildCmR1DomainResults} from "../lib/market-score/domain-adapter-r1.mjs";
 import {buildConsumptionC1} from "../lib/market-score/public-domain-producers-r1.mjs";
 import {buildCommoditiesK1R2} from "../lib/market-score/public-domain-producers-r2.mjs";
-import {loadStoredConsumptionC1R3} from "./consumption-r3-history-reader.mjs";
+import {loadStoredConsumptionR4} from "./consumption-r4-reader.mjs";
 import {loadEmploymentR54CandidateFromStored,EMPLOYMENT_R54_METHOD} from "../lib/market-score/employment-r54-candidate.mjs";
 import {
   buildDollarFxR54,
@@ -73,7 +73,7 @@ export function createMarketScoreR1Handler({
   now=()=>new Date(),
   collectBreadthDomain=readBreadthB1R5StoredPublicDomainR1,
 
-  loadConsumptionDomain=loadStoredConsumptionC1R3,
+  loadConsumptionDomain=loadStoredConsumptionR4,
   loadInflationDomain=loadStoredInflationR2Domain,
   loadLiquidityHistory=loadLiquidityActiveHistory,
   loadGrowthDomain=loadStoredGrowthR2PublicDomainR1,
@@ -146,7 +146,7 @@ export function createMarketScoreR1Handler({
         : buildBreadthB1R5UnavailablePublicDomain("B1_R5_RUNTIME_UNAVAILABLE",asOf,instant.toISOString());
       const consumptionDomain=consumptionState.status==="fulfilled"
         ? consumptionState.value
-        : {status:"PARTIAL",score:null,missingFactors:["C1_R3_STORAGE_READ_FAILED"],indicators:[],trend:[],freshness:"STORED_CALCULATION_HISTORY_ONLY",updatedAt:null,methodologyVersion:"R3.45P",interpretation:"C1-R3.45P: stored calculation history only; live fallback forbidden"};
+        : {status:"PARTIAL",score:null,missingFactors:["CONSUMPTION_R4_STORAGE_READ_FAILED"],indicators:[],trend:[],freshness:"STORED_MONTHLY_REAL_PCE",updatedAt:null,methodologyVersion:"CONSUMPTION_R4",interpretation:"Consumption R4: stored data only; live fallback forbidden"};
       const growthDomain=growthState.status==="fulfilled"
         ? growthState.value
         : {status:"NOT_READY",score:null,coverage:0,requiredCoverage:24,missingFactors:["GROWTH_R2_STORAGE_READ_FAILED"],staleFactors:[],methodologyVersion:"GROWTH_R2_G16_CANDIDATE_R1"};
@@ -277,7 +277,9 @@ function composeMarketSnapshot({liquidityHistory,collected,storedInflation,infla
           ? {...domain,methodologyVersion:growthDomain?.methodologyVersion??"GROWTH_R2_G16_CANDIDATE_R1"}
           : domain)}
         : growthR2CompositeBase;
-      const publicCompositeDomains=projectInflationMethodologyVersion(composite.domains,domains);
+      const publicCompositeDomains=projectInflationMethodologyVersion(composite.domains,domains).map(domain=>domain.id==='consumption'
+        ? {...domain,methodologyVersion:consumptionDomain?.methodologyVersion??'CONSUMPTION_R4',asOfDate:asOf,historyMode:'CURRENT_VINTAGE_ONLY',lookAheadSafe:false}
+        : domain);
 
       return {
         status:"SUCCESS",
