@@ -425,7 +425,7 @@ export function CompositeMarketSection({items,points,demo,loading}:{items:Summar
            <div style={{fontSize:11,color:'#94a3b8',lineHeight:1.6,overflowWrap:'anywhere'}}>원값 {rawText} · 전체 비중 {row.weight??'—'}% · 기준 {row.asOfDate??'미확인'}<br/>{row.source??'출처 미확인'}{row.referenceCount!==undefined&&row.referenceExpected!==undefined&&row.referenceCount<row.referenceExpected?` · 참조 ${row.referenceCount}/${row.referenceExpected}`:''}</div>
           </div>;
           return <div className="zg-r55-detail" key={row.label}>
-           <span>{row.label}</span>
+           <span style={r55DomainIds[index]==='consumption'?{fontSize:'clamp(10px, 2.6vw, 14px)'}:undefined}>{row.label}</span>
            {!row.raw&&<ScoreScale score={row.score} label={`${row.label} 구성 점수`} color={row.score===null?'#64748b':scoreColor(row.score)}/>}
            <b style={{color:row.score===null?'#94a3b8':scoreColor(row.score),gridColumn:row.raw?'2 / 4':undefined,textAlign:'right'}}>{row.raw?rawText:(row.score===null?'—':Math.round(row.score))}</b>
           </div>;
