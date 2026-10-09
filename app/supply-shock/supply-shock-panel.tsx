@@ -46,7 +46,7 @@ export default function SupplyShockPanel(){
  const score=typeof payload?.score==="number"&&Number.isFinite(payload.score)?payload.score:null;
  const trend=useMemo(()=>(payload?.trend??[]).filter(p=>typeof p.value==="number"&&Number.isFinite(p.value)).map(p=>({date:p.label,score:p.value} satisfies MarketFearGreedChartPoint)),[payload?.trend]);
  const latest=trend.at(-1),latestPoint:MarketFearGreedChartValidPoint|null=latest?{date:latest.date,score:latest.score as number}:null;
- const axisTicks=trend.map(p=>p.date),axisLabels=new Map(trend.map(p=>[p.date,p.date.slice(2,7).replace("-","/")]));
+ const axisTicks=trend.filter((_,i)=>i===0||i===trend.length-1||i%Math.max(1,Math.ceil((trend.length-1)/4))===0).map(p=>p.date),axisLabels=new Map(trend.map(p=>[p.date,p.date.slice(2,7).replace("-","/")]));
  const previous=trend.at(-2)?.score,first=trend.at(0)?.score;
  const rows=new Map((payload?.indicators??[]).map(x=>[x.id,x]));
  return <>
