@@ -4,6 +4,7 @@ import fs from 'node:fs';
 import {gzipSync} from 'node:zlib';
 import {preparePublicRateSentiment,publishPublicRateSentiment,RATE_SENTIMENT_PUBLIC_KEY} from '../scripts/pc-writer/rate-sentiment-publication.mjs';
 import {storedRateSentimentResponse} from '../worker/rate-sentiment-public.mjs';
+import {buildRateSentimentR1} from '../lib/market-score/rate-sentiment-r1-research.mjs';
 
 function dbState({series=null,storedAt=Date.parse('2026-10-08T00:00:00Z')}={}){
  const data=new Map();
@@ -23,6 +24,12 @@ function sample(){
  }
  return series;
 }
+test('PC calculation preserves score through calendar day 7 and expires on day 8',()=>{
+ const s=sample(),last=s.DGS2.at(-1).observationDate;
+ const calc=days=>buildRateSentimentR1({dgs2Rows:s.DGS2,dgs3moRows:s.DGS3MO,dgs10Rows:s.DGS10,asOfDate:new Date(Date.parse(last+'T00:00:00Z')+days*86400000).toISOString().slice(0,10)});
+ assert.equal(calc(7).status,'READY');assert.equal(calc(7).score,calc(0).score);
+ assert.equal(calc(8).status,'STALE');assert.equal(calc(8).score,null);
+});
 test('writer publishes only bounded display data and requires remote readback',async()=>{
  const series=sample(),asOf=series.DGS2.at(-1).observationDate;
  const now=Date.parse(asOf+'T12:00:00Z');
