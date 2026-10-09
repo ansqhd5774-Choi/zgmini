@@ -47,3 +47,41 @@ test('out-of-range asOf and absent raw input are never fabricated',()=>{
  assert.equal(empty.rows.length,0);
  assert.equal(empty.score,null);
 });
+
+test('Q4 price does not imply quarterly macro observations have Q4 coverage',()=>{
+ const quarters=[],m2=[],prices=[];
+ for(let y=2015;y<=2026;y++){
+  for(let m=1;m<=12;m++){
+   if(y===2026&&m>10)break;
+   const month=String(m).padStart(2,'0');
+   prices.push({observationDate:`${y}-${month}-28`,value:100+((y-2015)*12+m)*2});
+   if(y===2026&&m>9)continue;
+   m2.push({observationDate:`${y}-${month}-01`,value:10000+(y-2015)*280+m*7});
+   if(m%3===1)quarters.push({observationDate:`${y}-${month}-01`,value:4000+(y-2015)*180+m*12});
+  }
+ }
+ const macroSeries={
+   GDP:quarters.map((r,i)=>({...r,value:18000+i*95})),
+   BOGZ1LM793164115Q:quarters.map((r,i)=>({...r,value:13000000+i*80000})),
+   BOGZ1LM103164115Q:quarters.map((r,i)=>({...r,value:18000000+i*90000})),
+   BOGZ1FL153064486Q:quarters.map((r,i)=>({...r,value:28+i*0.15})),
+   BOGZ1FA153064475Q:quarters.map((r,i)=>({...r,value:10000+i*250})),
+   BOGZ1FL153064475Q:quarters.map((r,i)=>({...r,value:5500000+i*24000})),
+   M2SL:m2,
+ };
+ const out=evaluateAssetBubbleR10Candidate({macroSeries,sp500ShadowRows:prices,asOfDate:'2026-10-09'});
+ assert.equal(out.lastQuarter,'2026-Q4');
+ assert.equal(out.inputStatus.latestQuarterByFactor.priceAcceleration,'2026-Q4');
+ for(const id of ['valuationPressure','riskAssetShare','speculativeFlows','excessLiquidity']){
+  assert.equal(out.inputStatus.latestQuarterByFactor[id],'2026-Q3');
+ }
+ const latest=out.rows.at(-1);
+ assert.equal(latest.knownWeight,0.2);
+ assert.deepEqual(latest.missing,[
+   'valuationPressure','riskAssetShare','speculativeFlows','breadthDivergence','excessLiquidity',
+ ]);
+ const q3=out.rows.find(row=>row.quarter==='2026-Q3');
+ assert.equal(q3.knownWeight,0.85);
+ assert.deepEqual(q3.missing,['breadthDivergence']);
+ assert.equal(q3.score,null); // never reweight or mislabel historical Q3 as current Q4
+});
