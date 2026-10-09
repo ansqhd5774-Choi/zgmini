@@ -10,6 +10,7 @@ import {mergeStoredCompositeTrend,oneYearHistoryStart} from '../../worker/compos
 import {publicationCompatibility,recoverPublication,appendPublicationEvent} from './publication-guard.mjs';
 import {koreaPublicationPlan} from './korea-publication.mjs';
 import {readAssetR10Projection} from './asset-r10-projection.mjs';
+import {buildSupplyR10} from './supply-r10.mjs';
 
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../..');
 const base=process.env.ZGMINI_PC_HOME??path.join(os.homedir(),'.zgmini','pc-writer');
@@ -98,8 +99,17 @@ try{
    catch{report.assetR10Calculation={status:'FAILED_PREVIOUS_RELEASE_PRESERVED'};}
   }
   const scope={...env,DB:id==='koreaFearGreed'?history:core};
-  const r10=id==='assetBubble'?readAssetR10Projection(base):null;
-  if(r10)report.assetR10={status:r10.status,reason:r10.reason??null,reasons:r10.reasons??[]};
+  let r10=null;
+  if(id==='assetBubble')r10=readAssetR10Projection(base);
+  if(id==='supplyShock'){
+   try{r10=buildSupplyR10(base);}catch{r10={status:'FAILED',reason:'SUPPLY_R10_CALCULATION_FAILED'};}
+  }
+  if(id==='supplyShock'&&r10)report.supplyR10={status:r10.status,reason:r10.reason??null,score:r10.payload?.score??null,scoreObservationMonth:r10.payload?.scoreObservationMonth??null};
+  if(id==='assetBubble'&&r10)report.assetR10={status:r10.status,reason:r10.reason??null,reasons:r10.reasons??[]};
+  if(id==='supplyShock'&&r10?.status!=='READY'){
+   report.projections.push({id,status:'PREVIOUS_RELEASE_PRESERVED'});
+   continue;
+  }
   const coreCheckpoint=await readProjectionCheckpoint(scope,id);
   // Preserve the operational checkpoint's monotonic clock. The payload keeps
   // its separate input timestamps; the hash invalidates changed R10 results.
@@ -129,7 +139,8 @@ try{
    report.market={...report.market,...(previous>now?{status:'REMOTE_NEWER_PRESERVED',storedAt:previous}:await publishMarket(remote,config.core,read(path.join(base,'local-market-result.json')),now,lease,previous,path.join(base,'local-market-ledger.json')))};
   }finally{await releaseMarket(remote,config.core,lease);}
   // Explicit allowlist: publish display outputs only, never provider input/history rows.
-  for(const {id} of report.projections){
+  for(const {id,status} of report.projections){
+   if(status==='PREVIOUS_RELEASE_PRESERVED')continue;
    const row=await core.prepare('SELECT body,stored_at FROM market_public_snapshots_v1 WHERE snapshot_key=?').bind(PUBLIC_PROJECTION_KEYS[id]).first();
    const envelope=JSON.parse(row.body);
    const current=(await remote.query(config.core,'SELECT body,stored_at FROM market_public_snapshots_v1 WHERE snapshot_key=?',[PUBLIC_PROJECTION_KEYS[id]])).results[0];

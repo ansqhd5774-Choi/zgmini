@@ -11,9 +11,14 @@ import {MarketTrendFrame} from "../market-trend-frame";
 import {MarketFearGreedChart,type MarketFearGreedChartPoint,type MarketFearGreedChartValidPoint} from "../market-fear-greed-chart";
 
 type Row={id:string;name:string;status:string;score:number|null;value:number|null;unit:string;observationDate:string|null;source:string;weight:number};
-type Payload={status:string;score:number|null;asOfDate?:string|null;methodologyVersion?:string;missingFactors?:string[];indicators?:Row[];trend?:Array<{label:string;value:number}>};
+type Payload={status:string;score:number|null;asOfDate?:string|null;scoreObservationMonth?:string;methodologyVersion?:string;notes?:string[];missingFactors?:string[];indicators?:Row[];trend?:Array<{label:string;value:number}>};
 
 const meta:Record<string,{label:string;content:string;criterion:string;help:string}>={
+ G:{label:'글로벌 공급망 압력',content:'NY Fed GSCPI의 공급망 압력',criterion:'압력이 낮을수록 양호',help:'세계 운송·제조업 자료를 종합합니다. 정규분포 함수로 변환한 위험점수이며 충격 발생 확률이 아닙니다. 가중치 35%입니다.'},
+ E:{label:'미국 석유 공급 제약',content:'재고·생산·정제 자료의 수요 통제 잔차',criterion:'물량 부족 압력이 낮을수록 양호',help:'EIA 재고·생산·정제·수출입·제품 공급량으로 계절성과 수요 영향을 줄입니다. 공급 원인을 확정하는 지표는 아닙니다. 가중치 25%입니다.'},
+ O:{label:'에너지 가격 충격',content:'WTI·휘발유 가격의 예상 밖 변화',criterion:'상승 압력이 낮을수록 양호',help:'저장된 가격 변화에서 자기 시차·수요 또는 원유 가격 영향을 통제한 잔차를 평가합니다. 가중치 15%입니다.'},
+ P:{label:'공급 주도 물가 압력',content:'SF Fed 근원 PCE 공급 주도 월간 기여도',criterion:'물가 압력이 낮을수록 양호',help:'가격과 수량 변화로 분리한 공급 주도 근원 PCE 기여도를 사용합니다. 불분명한 항목은 공급으로 편입하지 않습니다. 가중치 15%입니다.'},
+ I:{label:'산업생산 충격',content:'실질 소비 영향을 통제한 생산 변화',criterion:'생산 감소 압력이 낮을수록 양호',help:'산업생산 변화에서 실질 소비지수 변화와 자기 시차를 통제한 잔차를 평가합니다. 가중치 10%입니다.'},
  gscpi:{label:"NY Fed GSCPI",content:"글로벌 공급망 압력의 종합 상태",criterion:"낮은 압력·높은 점수",help:"운송비·배송시간 등 글로벌 공급망 압력을 종합한 지수입니다. 압력이 낮을수록 공급 충격 방어에 긍정적입니다."},
  oilShock:{label:"WTI 유가충격",content:"WTI의 1개월·3개월 급등 충격",criterion:"급등이 작을수록 양호",help:"최근 1개월과 3개월 로그변화 중 더 큰 양의 충격을 사용합니다. 급격한 유가 상승은 생산·운송비를 높일 수 있습니다."},
  gasolineShock:{label:"휘발유 충격",content:"휘발유 가격의 단기 급등 충격",criterion:"급등이 작을수록 양호",help:"소비자 체감 에너지비용과 운송비 상승 압력을 빠르게 포착합니다."},
@@ -21,7 +26,7 @@ const meta:Record<string,{label:string;content:string;criterion:string;help:stri
  industrialProduction:{label:"산업생산",content:"최근 3개월 산업생산의 연율 성장",criterion:"강하고 안정적일수록 양호",help:"공급 충격이 실제 생산 위축으로 번지는지 확인합니다. 성장률이 장기분포에서 높을수록 긍정적입니다."},
  headlineCoreGap:{label:"Headline-Core 물가괴리",content:"헤드라인 CPI와 근원 CPI의 상승률 차이",criterion:"격차 확대가 작을수록 양호",help:"에너지·식품 등 공급측 가격이 근원물가보다 얼마나 더 강하게 오르는지 봅니다. 격차 확대는 공급 충격 신호가 될 수 있습니다."},
 };
-const order=["gscpi","oilShock","gasolineShock","copperShock","industrialProduction","headlineCoreGap"] as const;
+const order=['G','E','O','P','I'] as const;
 const dev=[
  ["운임지수","해상·컨테이너 운임의 급등 여부","급등 없음","운송비 급등을 추가 공급망 스트레스 지표로 연결할 예정입니다."],
  ["배송지연","공급업체 납기 지연 정도","지연 완화","기업 현장에서 나타나는 공급 병목을 추가할 예정입니다."],
@@ -46,7 +51,7 @@ export default function SupplyShockPanel(){
  const rows=new Map((payload?.indicators??[]).map(x=>[x.id,x]));
  return <>
   <section className="cnn-reference-panel fg-card fg-shared-shell supply-shock-target-card" data-testid="supply-shock-detail-hero" data-market-state={loading?"loading":score===null?"unavailable":"ready"} aria-busy={loading}>
-   <div className="fg-header-slot"><MarketCardHeader flag="/flags/us.svg" eyebrow="ZGMINI SUPPLY SHOCK R9" title="미국 공급 충격" description="저장된 현재 개정 자료 기반" dateLabel="데이터 기준일" date={dateLabel(payload?.asOfDate)} source={payload?.methodologyVersion??"SUPPLY_SHOCK_R9"}/></div>
+   <div className="fg-header-slot"><MarketCardHeader flag="/flags/us.svg" eyebrow="ZGMINI SUPPLY SHOCK R10" title="미국 공급 충격" description="5개 평가 영역 · 높은 점수는 낮은 공급 충격 위험" dateLabel="공통 기준월" date={payload?.scoreObservationMonth??'—'} source={payload?.methodologyVersion??"SUPPLY_SHOCK_R10"}/></div>
    <div className="fg-content-slot">
     <div className="fg-score-slot"><MarketScoreOrb score={loading||score===null?"—":score.toFixed(1)} state={loading?"확인 중":stage(score)} variant="hero" dayDelta={score!==null&&typeof previous==="number"?score-previous:null} periodDelta={score!==null&&typeof first==="number"&&trend.length>1?score-first:null} periodLabel="1년 내 첫 점 대비" dayLabel="이전 대비" comparisonAriaLabel="공급 충격 안전점수 변화" metaDate={dateLabel(payload?.asOfDate)}/></div>
     <MarketTrendFrame className="fg-analysis-slot"><div className="fg-chart-slot"><div className="fg-renderer"><MarketFearGreedChart data={trend} axisTicks={axisTicks} axisLabels={axisLabels} latestPoint={latestPoint} instanceKey="supply-shock-1y" gradientId="supply-shock-fill" formatTooltipLabel={dateLabel} emptyLabel={loading?"확인 중":"계산 가능한 최근 1년 이력 없음"}/></div></div></MarketTrendFrame>
@@ -56,8 +61,8 @@ export default function SupplyShockPanel(){
 
   <section className="inflation-explainer" aria-labelledby="supply-shock-what-title">
    <p className="cnn-eyebrow">WHAT IS A SUPPLY SHOCK?</p><h1 id="supply-shock-what-title">공급 충격이란?</h1>
-   <p>공급 충격은 원유·원자재·운송·생산 능력 같은 공급 측 요인이 갑자기 악화되어 생산비와 물가를 끌어올리고 동시에 생산을 압박하는 상황입니다. 단순한 물가 상승과 구분하기 위해 공급망 압력, 에너지·원자재 가격 충격, 산업생산, 헤드라인과 근원물가의 괴리를 함께 봅니다.</p>
-   <div className="inflation-direction-strip"><span><b>충격 방향</b>GSCPI↑ · 유가↑ · 원자재↑ · 생산↓ · Headline-Core 괴리↑</span><span><b>안정 방향</b>공급망 정상화 · 원자재 안정 · 생산 견조 · 물가괴리 축소</span></div>
+   <p>공급망 압력 35%, 미국 석유 공급 제약 25%, 에너지 가격 충격 15%, 공급 주도 물가 압력 15%, 산업생산 충격 10%를 종합합니다. 높은 점수는 관측된 공급 충격 위험이 낮다는 뜻이며 발생 확률이 아닙니다. 총 12개 입력 자료를 사용합니다.</p>
+   <p>현재 수정 자료로 재구성한 월간 이력입니다. 수요 영향을 통계적으로 줄인 결과이며 공급 원인을 확정하지 않습니다. 당시 발표본 기준 검증은 미완료입니다.</p>
   </section>
 
   <section className="inflation-indicator-section" aria-labelledby="supply-shock-indicator-title"><header><div><p className="cnn-eyebrow">SUPPLY SHOCK INDICATORS</p><h2 id="supply-shock-indicator-title">공급 충격 분석 지표</h2></div><p>실제 저장 입력으로 계산 가능한 값만 표시합니다. <b>긍정 / 중립 / 부정</b>은 각 안전점수 기준이며 ⓘ에서 해석 방향을 확인하세요.</p></header>
