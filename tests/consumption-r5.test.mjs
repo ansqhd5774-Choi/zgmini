@@ -59,7 +59,7 @@ test('R5 dashboard selects four ecosystem representatives without changing full 
  const result=calculateConsumptionR5(fixture(),{asOfDate:'2023-04-30'});
  const rows=marketDetailRows('consumption',result.indicators);
  assert.equal(rows.length,4);
- assert.deepEqual(rows.map(x=>x.label),['실질 소비 최근 3개월','실질 가처분소득 최근 3개월','실질 총급여 전년 대비','소비자대출 연체율']);
+ assert.deepEqual(rows.map(x=>x.label),['실질 소비','가처분소득','실질 총급여','대출 연체율']);
  assert.deepEqual(rows.map(x=>x.score),['pce3','income3','payroll','delinquency'].map(id=>result.indicators.find(x=>x.id===id).score));
  assert.equal(result.indicators.filter(x=>x.area).length,13);
  assert.ok(rows.every(x=>!x.raw&&!x.area));

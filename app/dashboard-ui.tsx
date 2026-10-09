@@ -48,7 +48,7 @@ function timeScaledTrend(data:DashboardPoint[],periodDays:number){
 function CardTrend({data,label,color,periodDays,missingDates=[]}:{data:DashboardPoint[];label:string;color:string;periodDays:number;missingDates?:string[]}){
  const scaled=timeScaledTrend(data,periodDays),latest=scaled.points.at(-1);
  const chartPoints=[...scaled.points,...missingDates.map(label=>({label,ts:Date.parse(label),value:null}))].filter(point=>Number.isFinite(point.ts)&&point.ts>=scaled.start&&point.ts<=scaled.end).sort((a,b)=>a.ts-b.ts);
- return <div className="zg-spark zg-r55-mini-chart" aria-label={`${label} 관측 추이`} onPointerDown={event=>event.preventDefault()}>
+ return <div className="zg-spark zg-r55-mini-chart" aria-label={`${label} 관측 추이${missingDates.length?' · 점선은 결측 구간 연결이며 관측값이 아닙니다':''}`} title={missingDates.length?'점선: 미발표 자료가 있는 구간의 시각적 연결. 해당 월 점수는 결측입니다.':undefined} onPointerDown={event=>event.preventDefault()}>
   <div className="zg-r55-mini-y-labels" aria-hidden="true"><span>100</span><span>50</span><span>0</span></div>
   <ResponsiveContainer width="100%" height="100%" initialDimension={{width:1,height:1}}>
    <LineChart data={chartPoints} accessibilityLayer={false} tabIndex={-1} margin={{top:3,right:3,left:13,bottom:3}}>
@@ -59,6 +59,7 @@ function CardTrend({data,label,color,periodDays,missingDates=[]}:{data:Dashboard
     <ReferenceLine y={25} stroke="rgba(111,130,149,.22)" strokeDasharray="2 3" strokeWidth={0.8}/>
     <ReferenceLine y={50} stroke="rgba(111,130,149,.26)" strokeDasharray="2 3" strokeWidth={0.8}/>
     <ReferenceLine y={75} stroke="rgba(111,130,149,.22)" strokeDasharray="2 3" strokeWidth={0.8}/>
+    {missingDates.length>0&&<Line type="linear" dataKey="value" stroke={color} strokeOpacity={0.65} strokeDasharray="2 3" strokeWidth={1.2} dot={false} activeDot={false} connectNulls={true} isAnimationActive={false}/>}
     <Line type="linear" dataKey="value" stroke={color} strokeWidth={1.8} dot={false} activeDot={false} connectNulls={false} isAnimationActive={false}/>
     {latest&&<ReferenceDot x={latest.ts} y={latest.value} r={2.5} fill={color} stroke={color}/>}
    </LineChart>
@@ -424,7 +425,7 @@ export function CompositeMarketSection({items,points,demo,loading}:{items:Summar
            <div style={{fontSize:11,color:'#94a3b8',lineHeight:1.6,overflowWrap:'anywhere'}}>원값 {rawText} · 전체 비중 {row.weight??'—'}% · 기준 {row.asOfDate??'미확인'}<br/>{row.source??'출처 미확인'}{row.referenceCount!==undefined&&row.referenceExpected!==undefined&&row.referenceCount<row.referenceExpected?` · 참조 ${row.referenceCount}/${row.referenceExpected}`:''}</div>
           </div>;
           return <div className="zg-r55-detail" key={row.label}>
-           <span>{row.label}</span>
+           <span style={r55DomainIds[index]==='consumption'?{fontSize:'clamp(10px, 2.6vw, 14px)'}:undefined}>{row.label}</span>
            {!row.raw&&<ScoreScale score={row.score} label={`${row.label} 구성 점수`} color={row.score===null?'#64748b':scoreColor(row.score)}/>}
            <b style={{color:row.score===null?'#94a3b8':scoreColor(row.score),gridColumn:row.raw?'2 / 4':undefined,textAlign:'right'}}>{row.raw?rawText:(row.score===null?'—':Math.round(row.score))}</b>
           </div>;
