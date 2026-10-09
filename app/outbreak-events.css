@@ -30,3 +30,8 @@
 .ob-iran-timeline li{margin:12px 0;overflow-wrap:anywhere}
 
 .ob-summary .ob-summary-card .ob-direction{height:auto;padding:0;border:0;border-radius:0;background:transparent;gap:0;font-size:11px;line-height:1.2}
+
+.ob-summary .ob-summary-card .ob-direction{font-size:13px;font-weight:800;letter-spacing:-.02em;font-variant-numeric:tabular-nums;line-height:1.2}
+.ob-summary .ob-summary-card .ob-direction-up{color:#34d399;text-shadow:0 0 8px rgb(52 211 153 / 24%)}
+.ob-summary .ob-summary-card .ob-direction-down{color:#fb7185;text-shadow:0 0 8px rgb(251 113 133 / 24%)}
+.ob-summary .ob-summary-card .ob-direction-flat{color:#94a3b8;text-shadow:none}
