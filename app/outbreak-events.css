@@ -28,3 +28,5 @@
 .ob-iran-timeline a{color:#7dd3fc;text-underline-offset:3px}
 .ob-iran-timeline ul{padding-left:18px}
 .ob-iran-timeline li{margin:12px 0;overflow-wrap:anywhere}
+
+.ob-summary .ob-summary-card .ob-direction{height:auto;padding:0;border:0;border-radius:0;background:transparent;gap:0;font-size:11px;line-height:1.2}
