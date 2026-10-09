@@ -24,7 +24,7 @@ export function calculateStoredFlow(store,now=Date.now()){
  if(!articleCount)throw Error('FLOW_NO_SUPPORTED_ARTICLES');
  const result=buildReferenceFlow(events,{asOfDate:new Date(now).toISOString().slice(0,10)});
  const body={...result,publishedAt:now,collectionCheckedAt:Math.min(...feeds.map(f=>f.checkedAt)),articleCount,candidateCount,
-  events:result.ledger.map(({evidence,...e})=>e)};
+  events:result.ledger.filter(e=>Date.parse(e.date+'T00:00:00Z')>=Date.parse(result.asOfDate+'T00:00:00Z')-13*86400000).slice(-100).map(({evidence,...e})=>e)};
  delete body.ledger;
  return body;
 }
