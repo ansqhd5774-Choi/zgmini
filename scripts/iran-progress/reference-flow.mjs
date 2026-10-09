@@ -4,6 +4,8 @@ import {openStore,hash} from './store.mjs';
 import {classifyFlowCandidate,buildReferenceFlow} from '../../lib/iran-progress/reference-flow-r1.mjs';
 import {publishReferenceFlow} from './publication.mjs';
 import {client,credential} from '../pc-writer/d1.mjs';
+import {REVIEWED_FLOW_KEY,reviewedSignals} from './reviewed-flow.mjs';
+import {FLOW_RULES} from '../../lib/iran-progress/reference-flow-r1.mjs';
 export function calculateStoredFlow(store,now=Date.now(),{collectionFailed=false}={}){
  const evaluation=store.getCheckpoint('article-ai-evaluation-r14');
  if(!evaluation||evaluation.status!=='PASS')throw Error('FLOW_ARTICLE_EVALUATION_PENDING');
@@ -22,9 +24,12 @@ export function calculateStoredFlow(store,now=Date.now(),{collectionFailed=false
   for(const c of d.candidates??[]){candidateCount++;const e=classifyFlowCandidate(c,source);if(e.accepted)events.push(e);}
  }
  if(!articleCount)throw Error('FLOW_NO_SUPPORTED_ARTICLES');
- const result=buildReferenceFlow(events,{asOfDate:new Date(now).toISOString().slice(0,10)});
+ const reviewed=reviewedSignals(store.getCheckpoint(REVIEWED_FLOW_KEY));
+ const result=buildReferenceFlow([...events,...reviewed],{asOfDate:new Date(now).toISOString().slice(0,10)});
  const body={...result,publishedAt:now,collectionCheckedAt:Math.min(...feeds.map(f=>f.checkedAt)),articleCount,candidateCount,
-  events:result.ledger.filter(e=>Date.parse(e.date+'T00:00:00Z')>=Date.parse(result.asOfDate+'T00:00:00Z')-13*86400000).slice(-100).map(({evidence,...e})=>e)};
+  reviewedMethod:reviewed.length?'REVIEWED_NEWS_FLOW_STEP6':null,
+  reviewedSignals:result.ledger.filter(e=>reviewed.includes(e)).map(({evidence,...e})=>e),
+  events:result.ledger.filter(e=>FLOW_RULES.some(r=>r.id===e.rule)&&/^https:\/\/(?:www\.mofa\.go\.jp|www\.gov\.uk)\//.test(e.sourceUrl)&&Date.parse(e.date+'T00:00:00Z')>=Date.parse(result.asOfDate+'T00:00:00Z')-13*86400000).slice(-100).map(({evidence,...e})=>e)};
  delete body.ledger;
  return body;
 }
