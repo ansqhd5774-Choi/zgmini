@@ -3,6 +3,7 @@ import {FEED_POLICY,publicFeedStore} from '../../worker/public-feed-store.mjs';
 import path from 'node:path';
 import os from 'node:os';
 import {readCollectionChecks} from './collection-checks.mjs';
+import {readAdditionalCollectionEntries} from './additional-collection-health.mjs';
 
 // These are collection JOBS, not a claim about every individual API series.
 export const HEALTH_JOBS=['macroCredit','macro','rates','credit','supply','fundFlows','bisDsr','bisTc','earnings','consumption','breadth','inflation','employment','growth'];
@@ -21,6 +22,7 @@ export async function buildLocalCollectionHealth(core,history,now=Date.now(),bas
  }
  const korea=await history.prepare("SELECT fetched_at FROM kfg_rev7_market_dates WHERE status IN ('COMPLETE','NO_TRADING_OBSERVATION') ORDER BY fetched_at DESC LIMIT 1").first();
  entries.push({id:'korea',storedAt:korea?.fetched_at?Date.parse(korea.fetched_at):null,complete:!!korea});
+ entries.push(...readAdditionalCollectionEntries(base));
  const checks=readCollectionChecks(base);
  return collectionHealthSummary(entries.map(entry=>{
   const check=checks[entry.id];
