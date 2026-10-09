@@ -5,6 +5,8 @@ import {hash,read,save} from './d1.mjs';
 
 // UI/content commits do not change the approved publisher contract.
 export function affectsPublication(file){
+ // Iran uses a separate collector and publisher; it is not a core PC writer dependency.
+ if(file.startsWith('lib/iran-progress/')||file==='worker/iran-progress-public.mjs')return false;
  return /^(worker\/|lib\/)/.test(file)||/^package(?:-lock)?\.json$/.test(file)||
   (file.startsWith('scripts/pc-writer/')&&!/(?:^|\/)(?:backfill-|backtest-|inspect-|probe-|check-|verify-|read-)/.test(file)&&!file.endsWith('.test.mjs'));
 }
