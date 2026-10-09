@@ -5,10 +5,13 @@
 .zg-dashboard[data-view="dashboard"] .zg-subscore-name-link:hover{color:var(--zg-gold);text-decoration:underline;text-underline-offset:3px}
 .zg-dashboard[data-view="dashboard"] .zg-r55-subscore-head{padding-right:34px;min-height:32px;height:auto}
 .zg-dashboard[data-view="dashboard"] .zg-r55-subscore-info{width:32px;height:32px;top:0}
-.zg-dashboard[data-view="dashboard"] .zg-r55-subscore-info .zg-info{width:32px;height:32px;min-width:32px;min-height:32px;display:grid;place-items:center;border:1px solid #29495e;border-radius:5px}
+.zg-dashboard[data-view="dashboard"] .zg-r55-subscore-info .zg-info{width:32px;height:32px;min-width:32px;min-height:32px;display:grid;place-items:center;border:1px solid transparent;border-radius:5px;background:transparent}
 .zg-dashboard[data-view="dashboard"] .zg-r55-subscore-info .zg-info svg{width:18px;height:18px}
 .zg-dashboard[data-view="dashboard"] .zg-market-title-help{display:inline-flex;vertical-align:middle;margin-left:4px;font-size:14px;line-height:1}
 .zg-dashboard[data-view="dashboard"] .zg-market-title-help .zg-help-trigger{width:32px;height:32px;min-width:32px;min-height:32px}
+.zg-dashboard[data-view="dashboard"] .fg-market-name-link{color:inherit;text-decoration:none}
+.zg-dashboard[data-view="dashboard"] .fg-market-name-link:hover{text-decoration:underline;text-underline-offset:3px}
+.zg-dashboard[data-view="dashboard"] .zg-help .zg-help-trigger svg{color:inherit;width:15px;height:15px}
 @media(max-width:959px){
 .zg-section{padding:clamp(.75rem,1.6vw,1.5rem)}
 .zg-section-heading{flex-wrap:wrap;gap:clamp(.5rem,1vw,1rem)}
