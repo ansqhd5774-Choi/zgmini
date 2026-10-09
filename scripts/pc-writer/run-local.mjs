@@ -9,6 +9,7 @@ import {client,credential,read,save,hash} from './d1.mjs';
 import {mergeStoredCompositeTrend,oneYearHistoryStart} from '../../worker/composite-history.mjs';
 import {publicationCompatibility,recoverPublication,appendPublicationEvent} from './publication-guard.mjs';
 import {koreaPublicationPlan} from './korea-publication.mjs';
+import {readAssetR10Projection} from './asset-r10-projection.mjs';
 
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../..');
 const base=process.env.ZGMINI_PC_HOME??path.join(os.homedir(),'.zgmini','pc-writer');
@@ -90,13 +91,24 @@ try{
   finally{await koreaStore.releaseLease();}
  }else report.korea={status:'UNCHANGED',date:prior.date};
  for(const id of Object.keys(PUBLIC_PROJECTION_KEYS)){
+  // Recompute only from saved inputs when the R10 input set is installed.
+  // No provider fetch, and failure preserves the previous valid release file.
+  if(id==='assetBubble'&&fs.existsSync(path.join(base,'local-asset-bubble-r10-breadth-research.json'))){
+   try{execFileSync(process.execPath,[path.join(root,'scripts/pc-writer/build-asset-r10-release.mjs')],{cwd:root,stdio:'pipe',windowsHide:true});}
+   catch{report.assetR10Calculation={status:'FAILED_PREVIOUS_RELEASE_PRESERVED'};}
+  }
   const scope={...env,DB:id==='koreaFearGreed'?history:core};
-  const checkpoint=await readProjectionCheckpoint(scope,id);
+  const r10=id==='assetBubble'?readAssetR10Projection(base):null;
+  if(r10)report.assetR10={status:r10.status,reason:r10.reason??null,reasons:r10.reasons??[]};
+  const coreCheckpoint=await readProjectionCheckpoint(scope,id);
+  // Preserve the operational checkpoint's monotonic clock. The payload keeps
+  // its separate input timestamps; the hash invalidates changed R10 results.
+  const checkpoint=r10?.status==='READY'?{...coreCheckpoint,sourceVersion:coreCheckpoint.sourceVersion+':'+r10.checkpoint.sourceVersion}:coreCheckpoint;
   const existing=await core.prepare('SELECT body FROM market_public_snapshots_v1 WHERE snapshot_key=?').bind(PUBLIC_PROJECTION_KEYS[id]).first('body');
   const p=existing?JSON.parse(existing).projection:null;
   if(p?.status!=='READY'||p.sourceVersion!==checkpoint.sourceVersion||p.sourceStoredAt!==checkpoint.sourceStoredAt){
-   const input=await loadProjectionSource(id,scope,{now:checkpoint.sourceStoredAt});
-   const payload=await builders[id](input);
+   const input=r10?.status==='READY'?null:await loadProjectionSource(id,scope,{now:checkpoint.sourceStoredAt});
+   const payload=r10?.status==='READY'?r10.payload:await builders[id](input);
    await projectionWriter(core).write(id,payload,Date.now(),checkpoint);
   }
   report.projections.push({id,status:'LOCAL_READY'});
