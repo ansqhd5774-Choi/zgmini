@@ -22,3 +22,9 @@
 
 .ob-summary .ob-summary-card .ob-direction{width:auto;height:18px;flex:0 0 auto;gap:3px;padding:0 4px;border:1px solid currentColor;border-radius:4px;font-size:9px;line-height:1;white-space:nowrap}.ob-summary .ob-summary-card .ob-direction>svg{width:11px;height:11px;flex:0 0 11px;stroke-width:2}.ob-summary .ob-summary-card .ob-direction-flat::before{content:none}
 .ob-summary .ob-iran-summary .ob-summary-value strong{color:#94a3b8}.ob-iran-pending{flex:1;display:flex;align-items:center;justify-content:center;color:#96aabd;font-size:11px;line-height:1.5;padding:6px}.ob-iran-chart{display:block;width:100%;height:auto;max-height:220px}.ob-probability .ob-score-fraction{font-size:.48em}
+.ob-iran-fact-preview{display:flex;flex-direction:column;gap:5px;padding:8px 4px;color:#96aabd;font-size:11px;line-height:1.45;white-space:normal}
+.ob-iran-fact-preview strong{font-size:12px;color:#cbd5e1}
+.ob-iran-timeline{margin:12px 0}
+.ob-iran-timeline a{color:#7dd3fc;text-underline-offset:3px}
+.ob-iran-timeline ul{padding-left:18px}
+.ob-iran-timeline li{margin:12px 0;overflow-wrap:anywhere}

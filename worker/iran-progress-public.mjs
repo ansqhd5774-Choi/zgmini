@@ -1,4 +1,5 @@
 import {IRAN_PROGRESS_VERSION,WEIGHTS,DAY} from '../lib/iran-progress/r13.mjs';
+import {IRAN_FACTS_KEY,validateIranFacts,visibleIranFacts} from '../lib/iran-progress/facts.mjs';
 export const IRAN_PROGRESS_PUBLIC_KEY='public:iran-progress:r13';
 export const IRAN_PROGRESS_STATUS_KEY='public:iran-progress:r13:status';
 const finiteScore=n=>Number.isFinite(n)&&n>=0&&n<=100;
@@ -19,7 +20,7 @@ export function validatePublicIran(body,now){
  return true;
 }
 /** @param {Request} request @param {{db?: any, now?: number}} options */
-export async function storedIranProgressResponse(request,{db,now=Date.now()}={}){
+async function storedScoreResponse(request,{db,now=Date.now()}={}){
  const headers={'cache-control':'no-store','x-robots-tag':'noindex','x-content-type-options':'nosniff','x-iran-progress-source':'STORED'};
  if(request.method!=='GET')return Response.json({status:'FAILED',reason:'METHOD_NOT_ALLOWED'},{status:405,headers});
  if(!db?.prepare)return Response.json({status:'UNAVAILABLE',score:null,reason:'STORED_DATABASE_UNBOUND'},{status:503,headers});
@@ -37,4 +38,17 @@ export async function storedIranProgressResponse(request,{db,now=Date.now()}={})
  const age=now-Math.min(body.observationAt,body.lastVerifiedAt);
  if(age>72*DAY/24)return Response.json({status:'STALE',score:null,reason:'OBSERVATION_EXPIRED',observationAt:body.observationAt},{status:503,headers});
  return Response.json({...body,status:age>DAY?'STALE':'READY',displayState:age>DAY?'갱신 지연':'정상'},{headers});
+}
+export async function storedIranProgressResponse(request,{db,now=Date.now()}={}){
+ const response=await storedScoreResponse(request,{db,now});
+ const score=await response.clone().json();
+ if(request.method!=='GET'||score.status==='UNAVAILABLE')return response;
+ let row;try{row=await db.prepare('SELECT body,stored_at FROM market_public_snapshots_v1 WHERE snapshot_key=?').bind(IRAN_FACTS_KEY).first();}
+ catch{return Response.json({status:'UNAVAILABLE',score:null,reason:'STORED_FACTS_READ_FAILED'},{status:503,headers:response.headers});}
+ if(!row)return response;
+ let body;try{body=JSON.parse(row.body);}catch{body=null;}
+ if(!validateIranFacts(body,now))return Response.json({status:'UNAVAILABLE',score:null,reason:'STORED_FACTS_INVALID'},{status:503,headers:response.headers});
+ const facts=visibleIranFacts(body,now);
+ return Response.json({...score,contentState:facts.length?'AVAILABLE':'PENDING',factsSnapshot:body,
+  currentStateVerified:false},{status:facts.length?200:response.status,headers:response.headers});
 }
