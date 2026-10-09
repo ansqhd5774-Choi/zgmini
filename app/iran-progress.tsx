@@ -16,13 +16,14 @@ export function useIranProgress(){
  return view;
 }
 type View=ReturnType<typeof iranView>;
+function iranScoreColor(value:number|null){return value===null?'#94a3b8':value<25?'#ef4444':value<40?'#f59e0b':value<60?'#94a3b8':value<75?'#22c55e':'#10b981';}
 export function IranScore({value}:{value:number|null}){return <>{value===null?'—':<>{value.toFixed(1).split('.')[0]}<small className="ob-score-fraction">.{value.toFixed(1).split('.')[1]}</small></>}</>;}
 function IranChart({view,compact=false}:{view:View;compact?:boolean}){
  const history='chartHistory' in view?view.chartHistory:view.history;
  const x=(p:{at:number},i:number)=>'chartEndAt' in view?26+132*(p.at-(view.chartEndAt-13*86400000))/(13*86400000):26+(history.length>1?132*i/(history.length-1):66);
  const points=history.map((p:{at:number;value:number},i:number)=>`${x(p,i)},${54-p.value*.44}`).join(' ');
  const last=history.at(-1),value=view.score;
- const color=value===null?'#94a3b8':value<25?'#ef4444':value<40?'#f59e0b':value<60?'#94a3b8':value<75?'#22c55e':'#10b981';
+ const color=iranScoreColor(value);
  const fillId=compact?'ob-fill-iran-summary':'ob-fill-iran-detail';
  return <svg className={compact?'ob-summary-chart':'ob-iran-chart'} viewBox="0 0 170 68" preserveAspectRatio="xMidYMid meet" role="img" aria-label="이란 전쟁 최근 14일 일별 참고 흐름"><title>기사 발표일 기준 재구성 · 마지막 계산값 유지 구간 포함</title><defs><linearGradient id={fillId} x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={color} stopOpacity=".25"/><stop offset="100%" stopColor={color} stopOpacity="0"/></linearGradient></defs>{[0,50,100].map(v=><g key={v}><text x="20" y={57-v*.44} textAnchor="end" fill="#96aabd" fontSize="9">{v}</text><line x1="26" x2="158" y1={54-v*.44} y2={54-v*.44} stroke="currentColor" strokeDasharray="2 4"/></g>)}{history.length>1&&last&&<><polygon points={`26,54 ${points} 158,54`} fill={`url(#${fillId})`}/><polyline points={points} fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/><circle cx={x(last,history.length-1)} cy={54-last.value*.44} r="3" fill={color}/></>}{history.map((p:{at:number;value:number;carried?:boolean})=><g key={p.at}><title>{new Date(p.at).toISOString().slice(0,10)} · {p.value.toFixed(1)} · {p.carried?'마지막 계산값 유지':'보도 반영'}</title></g>)}<text x="26" y="66" fontSize="9" fill="#96aabd">0</text><text x="158" y="66" textAnchor="end" fontSize="9" fill="#96aabd">14</text></svg>;
 }
@@ -32,7 +33,7 @@ export function IranSummaryCard({view,onOpen}:{view:View;onOpen:()=>void}){
  const previous=daily.length>1?daily.at(-2)!.value:null;
  return <div className="ob-help-card"><ContentHelp label="이란 전쟁 도움말"><HelpText copy={HELP.iran}/></ContentHelp><button type="button" className="ob-summary-card ob-iran-summary" aria-label={`이란 전쟁 상세 보기 · ${view.message}`} onClick={onOpen}>
   <h3 className="ob-fit-title"><Swords aria-hidden="true"/><span>이란 전쟁</span></h3>
-  {view.score!==null&&<div className="ob-summary-value"><strong><IranScore value={view.score}/></strong><OutbreakChange current={view.score} previous={previous}/></div>}
+  {view.score!==null&&<div className="ob-summary-value"><strong style={{color:iranScoreColor(view.score)}}><IranScore value={view.score}/></strong><OutbreakChange current={view.score} previous={previous}/></div>}
   {view.score===null?<div className="ob-iran-fact-preview" role="status">{view.facts.length?<><strong>미국–이란 협상 관련 발표</strong><span>{view.facts[0].publicationDate} · 카타르 외교부</span><span>현재 상태 미확인</span></>:view.message}</div>:<IranChart view={view} compact/>}
  </button></div>;
 }
