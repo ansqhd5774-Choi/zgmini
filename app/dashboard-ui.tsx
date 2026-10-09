@@ -333,7 +333,7 @@ export function CompositeMarketSection({items,points,demo,loading}:{items:Summar
         const score=diag?.status==='READY'&&validPublicScore(diag.score)?diag.score:null;
         return <div key={s.name} className="zg-r55-subscore" data-index={index}>
          <div className="zg-r55-subscore-head">
-          <span className="zg-r55-subscore-title"><a className="zg-subscore-name-link" href={s.href}><b>{s.name}</b></a><DashboardTip label={`${s.name} 도움말`}><HelpText copy={HELP[s.name]}/></DashboardTip></span>
+          <span className="zg-r55-subscore-title"><DashboardTip label={`${s.name} 도움말`}><HelpText copy={HELP[s.name]}/></DashboardTip><a className="zg-subscore-name-link" href={s.href}><b>{s.name}</b></a></span>
           <span onClick={e=>e.stopPropagation()} className="zg-r55-subscore-info"><a className="zg-info" href={s.href} aria-label={`${s.name} 상세페이지 열기`} title={`${s.name} 상세페이지`}><ArrowUpRight size={18} aria-hidden="true"/></a></span>
          </div>
          <div className="zg-r55-subscore-foot">
