@@ -64,7 +64,7 @@ test("composite uses sentiment area styling without the removed captions",()=>{
   assert.match(summary,/<Area type="monotone" dataKey="value" stroke=\{color\}/);
   assert.match(summary,/<linearGradient/);
   assert.doesNotMatch(src,/className="zg-r55-main-period"|<span>종합 점수<\/span>|<span>\/ 100<\/span>/);
-  assert.match(src,/ArrowUpRight size=\{14\}/);
+  assert.match(src,/ArrowUpRight size=\{18\}/);
 });
 
 
