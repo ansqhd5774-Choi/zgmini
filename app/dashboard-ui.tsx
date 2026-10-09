@@ -48,7 +48,7 @@ function timeScaledTrend(data:DashboardPoint[],periodDays:number){
 function CardTrend({data,label,color,periodDays,missingDates=[]}:{data:DashboardPoint[];label:string;color:string;periodDays:number;missingDates?:string[]}){
  const scaled=timeScaledTrend(data,periodDays),latest=scaled.points.at(-1);
  const chartPoints=[...scaled.points,...missingDates.map(label=>({label,ts:Date.parse(label),value:null}))].filter(point=>Number.isFinite(point.ts)&&point.ts>=scaled.start&&point.ts<=scaled.end).sort((a,b)=>a.ts-b.ts);
- return <div className="zg-spark zg-r55-mini-chart" aria-label={`${label} 관측 추이`} onPointerDown={event=>event.preventDefault()}>
+ return <div className="zg-spark zg-r55-mini-chart" aria-label={`${label} 관측 추이${missingDates.length?' · 점선은 결측 구간 연결이며 관측값이 아닙니다':''}`} title={missingDates.length?'점선: 미발표 자료가 있는 구간의 시각적 연결. 해당 월 점수는 결측입니다.':undefined} onPointerDown={event=>event.preventDefault()}>
   <div className="zg-r55-mini-y-labels" aria-hidden="true"><span>100</span><span>50</span><span>0</span></div>
   <ResponsiveContainer width="100%" height="100%" initialDimension={{width:1,height:1}}>
    <LineChart data={chartPoints} accessibilityLayer={false} tabIndex={-1} margin={{top:3,right:3,left:13,bottom:3}}>
@@ -59,6 +59,7 @@ function CardTrend({data,label,color,periodDays,missingDates=[]}:{data:Dashboard
     <ReferenceLine y={25} stroke="rgba(111,130,149,.22)" strokeDasharray="2 3" strokeWidth={0.8}/>
     <ReferenceLine y={50} stroke="rgba(111,130,149,.26)" strokeDasharray="2 3" strokeWidth={0.8}/>
     <ReferenceLine y={75} stroke="rgba(111,130,149,.22)" strokeDasharray="2 3" strokeWidth={0.8}/>
+    {missingDates.length>0&&<Line type="linear" dataKey="value" stroke={color} strokeOpacity={0.65} strokeDasharray="2 3" strokeWidth={1.2} dot={false} activeDot={false} connectNulls={true} isAnimationActive={false}/>}
     <Line type="linear" dataKey="value" stroke={color} strokeWidth={1.8} dot={false} activeDot={false} connectNulls={false} isAnimationActive={false}/>
     {latest&&<ReferenceDot x={latest.ts} y={latest.value} r={2.5} fill={color} stroke={color}/>}
    </LineChart>
