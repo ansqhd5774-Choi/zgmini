@@ -313,7 +313,7 @@ export function CompositeMarketSection({items,points,demo,loading}:{items:Summar
      <div className="zg-r55-primary-zone">
      <div className="zg-r55-summary-top" role="img" aria-label={`종합 시장 점수 ${overallScore===null?overallStatus:`${overallScore.toFixed(1)}점`}`}>
       <div className="zg-r55-master-number" data-score-mode="number-only">
-       <strong style={{color:overallScore===null?'#94a3b8':scoreColor(overallScore)}}>{overallScore===null?'—':overallScore.toFixed(1)}</strong>
+       <strong style={{color:overallScore===null?'#94a3b8':scoreColor(overallScore)}}>{overallScore===null?'—':<>{overallScore.toFixed(1).split('.')[0]}<span className="zg-composite-fraction">.{overallScore.toFixed(1).split('.')[1]}</span></>}</strong>
       </div>
       <div className="zg-r55-coverage"><DashboardTip label="종합 시장 점수 도움말"><HelpText copy={HELP.composite}/></DashboardTip></div>
      </div>
@@ -333,8 +333,8 @@ export function CompositeMarketSection({items,points,demo,loading}:{items:Summar
         const score=diag?.status==='READY'&&validPublicScore(diag.score)?diag.score:null;
         return <div key={s.name} className="zg-r55-subscore" data-index={index}>
          <div className="zg-r55-subscore-head">
-          <span className="zg-r55-subscore-title"><b>{s.name}</b><DashboardTip label={`${s.name} 도움말`}><HelpText copy={HELP[s.name]}/></DashboardTip></span>
-          <span onClick={e=>e.stopPropagation()} className="zg-r55-subscore-info"><a className="zg-info" href={s.href} aria-label={`${s.name} 상세페이지 열기`} title={`${s.name} 상세페이지`}><ArrowUpRight size={14} aria-hidden="true"/></a></span>
+          <span className="zg-r55-subscore-title"><a className="zg-subscore-name-link" href={s.href}><b>{s.name}</b></a><DashboardTip label={`${s.name} 도움말`}><HelpText copy={HELP[s.name]}/></DashboardTip></span>
+          <span onClick={e=>e.stopPropagation()} className="zg-r55-subscore-info"><a className="zg-info" href={s.href} aria-label={`${s.name} 상세페이지 열기`} title={`${s.name} 상세페이지`}><ArrowUpRight size={18} aria-hidden="true"/></a></span>
          </div>
          <div className="zg-r55-subscore-foot">
           <span className="zg-r55-subscore-meter" aria-hidden="true"><i style={{width:`${score??0}%`,background:score===null?'transparent':scoreColor(score)}}/></span>
