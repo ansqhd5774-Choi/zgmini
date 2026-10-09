@@ -206,7 +206,7 @@ const r55Cards=[
  {label:'금리',Icon:Percent,basis:'공개 점수 결과를 표시합니다. PARTIAL/UNAVAILABLE은 0점으로 대체하지 않습니다.',details:['미국 기준금리','2년 국채금리','미국 실질금리','장단기 금리차']},
  {label:'채권신용',Icon:ShieldCheck,basis:'공개 점수 결과를 표시합니다. PARTIAL/UNAVAILABLE은 0점으로 대체하지 않습니다.',details:['고위험 회사채','우량 회사채','채권 변동성','회사채 시장위험']},
  {label:'경기',Icon:Factory,basis:'Growth R2 경기 총점은 저장된 24개 지표 전체의 승인 가중합입니다. 아래 4개는 총점 산식의 대체값이 아니라 대표 점수입니다.',details:['제조업 신규주문','산업생산','비농업고용 증감','신규 사업체 신청']},
- {label:'소비',Icon:ShoppingCart,basis:'공개 점수 결과를 표시합니다. PARTIAL/UNAVAILABLE은 0점으로 대체하지 않습니다.',details:['실질 소매판매','실질 가처분소득','개인저축률','카드 연체율']},
+ {label:'소비',Icon:ShoppingCart,basis:'월간 실질 소비 증가세: 최근 3개월 연율 70% + 전년 대비 30%. 50점은 정체 기준이며 확률이 아닙니다. 기준월은 최신 발표된 관측월입니다.',details:['실질 소비 최근 3개월','실질 소비 전년 대비','소비 가속·둔화 (보조)']},
  {label:'기업실적',Icon:BriefcaseBusiness,basis:'공개 점수 결과를 표시합니다. PARTIAL/UNAVAILABLE은 0점으로 대체하지 않습니다.',details:['주당이익 성장','매출 성장률','이익 증가 종목','영업·순이익률']},
  {label:'유동성',Icon:Landmark,basis:'공개 점수 결과를 표시합니다. PARTIAL/UNAVAILABLE은 0점으로 대체하지 않습니다.',details:['은행 준비금','시중 통화량','재무부 현금','연준 단기자금']},
  {label:'자금흐름',Icon:ArrowLeftRight,basis:'SEC 등록펀드의 전체 순유입, 순유입 추세, 펀드 동반 유입, 환매 압력을 저장 이력 기준으로 종합합니다. 추이는 실제 월별 관측만 사용합니다.',details:['전체 펀드 순유입','순유입 추세','펀드 동반 유입','환매 압력']},
