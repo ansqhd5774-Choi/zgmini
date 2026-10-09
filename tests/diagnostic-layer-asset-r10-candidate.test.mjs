@@ -71,3 +71,15 @@ test('contradictory duplicate quarters fail rather than silently overwrite', () 
     transactionRows:[{quarter:'2025-Q2',value:1},{quarter:'2025-Q2',value:2}],
   }), /DUPLICATE_QUARTER_CONFLICT/);
 });
+
+test('latest quarter missing acceleration keeps current speculative status PARTIAL', () => {
+  const out = buildR10SpeculativeFlowCandidate({
+    transactionRows: ['2025-Q2','2025-Q3','2025-Q4','2026-Q1','2026-Q2'].map(quarter => ({quarter, value: 20})),
+    holdingsRows: [{quarter:'2025-Q1',value:200},{quarter:'2025-Q2',value:200}],
+    priceAccelerationQuarterRows: [{quarter:'2026-Q1',priceAccelRaw:0.2}],
+  });
+  assert.equal(out.rows.length, 2);
+  assert.equal(out.rows[0].score, 50);
+  assert.equal(out.rows[1].score, null);
+  assert.equal(out.status, 'PARTIAL');
+});
