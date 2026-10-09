@@ -9,7 +9,7 @@ import {Landmark, Swords, Target, TrendingUp, TrendingDown, Minus} from 'lucide-
 
 const events = [
   {id:'fed', category:'통화 정책', title:'금리 심리', question:'최근 미국 시장금리 움직임은 얼마나 우호적인가?', outcome:'기존 H.15 국채금리 기반 RSI·금리차·변동성 점수', signals:['2년물·3개월물 금리차','2년물·10년물 RSI','10년물 금리 변동성'], assets:'미국 국채 · 달러 · 주식'},
-  {id:'iran', category:'지정학', title:'이란 종전 진전도', question:'검증된 현재 증거에서 종전은 얼마나 진전됐는가?', outcome:'이란–이스라엘·이란–미국의 공식 합의와 실제 이행을 독립 검증', signals:['공식 협상','합의 발표','합의 이행'], assets:'유가 · 에너지 · 위험 자산'},
+  {id:'iran', category:'지정학', title:'이란 전쟁', question:'검증된 현재 증거에서 종전은 얼마나 진전됐는가?', outcome:'이란–이스라엘·이란–미국의 공식 합의와 실제 이행을 독립 검증', signals:['공식 협상','합의 발표','합의 이행'], assets:'유가 · 에너지 · 위험 자산'},
   {id:'ukraine', category:'지정학', title:'러우 전쟁 종전', question:'향후 3개월 안에 종전 합의가 성립할까?', outcome:'휴전과 종전을 구분하고 당사자·이행 기준 확정', signals:['공식 회담','협상 조건','합의 이행'], assets:'유럽 주식 · 에너지 · 곡물'},
 ];
 
