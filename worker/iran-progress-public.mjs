@@ -1,5 +1,6 @@
 import {IRAN_PROGRESS_VERSION,WEIGHTS,DAY} from '../lib/iran-progress/r13.mjs';
 import {IRAN_FACTS_KEY,validateIranFacts,visibleIranFacts} from '../lib/iran-progress/facts.mjs';
+import {IRAN_FLOW_KEY,validateReferenceFlow} from '../lib/iran-progress/reference-public.mjs';
 export const IRAN_PROGRESS_PUBLIC_KEY='public:iran-progress:r13';
 export const IRAN_PROGRESS_STATUS_KEY='public:iran-progress:r13:status';
 const finiteScore=n=>Number.isFinite(n)&&n>=0&&n<=100;
@@ -39,7 +40,17 @@ async function storedScoreResponse(request,{db,now=Date.now()}={}){
  if(age>72*DAY/24)return Response.json({status:'STALE',score:null,reason:'OBSERVATION_EXPIRED',observationAt:body.observationAt},{status:503,headers});
  return Response.json({...body,status:age>DAY?'STALE':'READY',displayState:age>DAY?'갱신 지연':'정상'},{headers});
 }
+/** @param {Request} request @param {{db?: any, now?: number}} options */
 export async function storedIranProgressResponse(request,{db,now=Date.now()}={}){
+ if(request.method==='GET'&&db?.prepare){
+  let row;try{row=await db.prepare('SELECT body,stored_at FROM market_public_snapshots_v1 WHERE snapshot_key=?').bind(IRAN_FLOW_KEY).first();}
+  catch{return Response.json({status:'UNAVAILABLE',score:null,reason:'FLOW_READ_FAILED'},{status:503});}
+  if(row){
+   let flow;try{flow=JSON.parse(row.body);}catch{flow=null;}
+   if(!validateReferenceFlow(flow,now))return Response.json({status:'UNAVAILABLE',score:null,reason:'FLOW_INVALID'},{status:503});
+   return Response.json({...flow,status:now-flow.collectionCheckedAt>86400000?'UPDATE_DELAYED':flow.status},{headers:{'cache-control':'no-store','x-iran-progress-source':'STORED'}});
+  }
+ }
  const response=await storedScoreResponse(request,{db,now});
  const score=await response.clone().json();
  if(request.method!=='GET'||score.status==='UNAVAILABLE')return response;

@@ -2,6 +2,11 @@ import {IRAN_PROGRESS_PUBLIC_KEY,IRAN_PROGRESS_STATUS_KEY,validatePublicIran} fr
 import {hash} from './store.mjs';
 import {IRAN_PROGRESS_VERSION} from '../../lib/iran-progress/r13.mjs';
 import {IRAN_FACTS_KEY,validateIranFacts} from '../../lib/iran-progress/facts.mjs';
+import {IRAN_FLOW_KEY,validateReferenceFlow} from '../../lib/iran-progress/reference-public.mjs';
+export async function publishReferenceFlow(remote,db,body,{now=Date.now()}={}){
+ if(!validateReferenceFlow(body,now))throw Error('FLOW_PUBLIC_CONTRACT_INVALID');
+ return publishSnapshot(remote,db,IRAN_FLOW_KEY,body,body.publishedAt);
+}
 export async function publishOfficialFacts(remote,db,body,{now=Date.now()}={}){
  if(!validateIranFacts(body,now))throw Error('FACT_PUBLIC_CONTRACT_INVALID');
  return publishSnapshot(remote,db,IRAN_FACTS_KEY,body,body.publishedAt);
