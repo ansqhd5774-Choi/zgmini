@@ -1,0 +1,4 @@
+import test from 'node:test';import assert from 'node:assert/strict';import {buildReferenceFlow} from '../lib/iran-progress/reference-flow-r1.mjs';
+const event=(date,delta)=>({accepted:true,type:'MILITARY',rule:'TEST',date,delta,evidence:'signal',sourceUrl:'https://example.test'});
+test('event changes double before domain limits while weights stay fixed',()=>{const r=buildReferenceFlow([event('2026-10-07',-3)],{asOfDate:'2026-10-09',sensitivity:2});assert.equal(r.domains.MILITARY,44);assert.equal(r.ledger[0].effectiveDelta,-6);assert.equal(r.score,48.8);assert.equal(r.weights.MILITARY,.2);});
+test('clipping and later recovery differ from scaling the final score',()=>{const r=buildReferenceFlow([event('2026-10-07',-30),event('2026-10-08',3)],{asOfDate:'2026-10-09',sensitivity:2});assert.equal(r.domains.MILITARY,6);assert.equal(r.score,41.2);assert.throws(()=>buildReferenceFlow([],{sensitivity:3}),/SENSITIVITY_INVALID/);});
