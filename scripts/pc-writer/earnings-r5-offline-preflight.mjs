@@ -7,7 +7,6 @@ import {fileURLToPath} from "node:url";
 import {classifySecFact,validateSecFsdsHeaders} from "../../lib/market-score/earnings-e1-r5-input-contract.mjs";
 import {inspectXlsxArchive} from "../../lib/market-score/earnings-e1-r5-offline-preflight.mjs";
 
-const here=path.dirname(fileURLToPath(import.meta.url));
 const defaultBase=process.env.ZGMINI_PC_HOME??path.join(os.homedir(),".zgmini","pc-writer");
 const clean=value=>String(value??"").trim();
 const split=line=>String(line??"").replace(/\r$/,"").split("\t").map(clean);
@@ -147,7 +146,7 @@ export async function inspectBlsInputXlsx(file){
   return {
     ...archive,
     source:"BLS_SATELLITE_INPUT_TO_INDUSTRY",
-    schemaStatus:archive.status==="FAIL"?"INVALID":"CONTAINER_ONLY_PENDING_CELL_SCHEMA",
+    schemaStatus:archive.status==="FAIL"?"INVALID":"CELL_SAMPLE_INSPECTED_MAPPING_PENDING",
     file:{name:path.basename(file),bytes:buffer.length,sha256:await hashFile(file)},
   };
 }
