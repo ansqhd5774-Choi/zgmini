@@ -8,6 +8,7 @@ import {formatEarningsR5OfficialPreflightText,runEarningsR5OfficialPreflight} fr
 import {formatEarningsR5CurrentFrameAuditText,runEarningsR5CurrentFrameAudit} from "./earnings-r5-current-frame-audit.mjs";
 import {formatEarningsR5CoverageDiagnosticText,runEarningsR5CoverageDiagnostic} from "./earnings-r5-coverage-diagnostic.mjs";
 import {formatEarningsR5FiscalPeriodDiagnosticText,runEarningsR5FiscalPeriodDiagnostic} from "./earnings-r5-fiscal-period-diagnostic.mjs";
+import {formatEarningsR5DocumentFocusDiagnosticText,runEarningsR5DocumentFocusDiagnostic} from "./earnings-r5-document-focus-diagnostic.mjs";
 
 const defaultBase=process.env.ZGMINI_PC_HOME??path.join(os.homedir(),".zgmini","pc-writer");
 
@@ -39,6 +40,8 @@ export function formatEarningsR5ShadowCollectionText(report){
     formatEarningsR5CoverageDiagnosticText(report?.coverageDiagnostic??{}).trimEnd(),
     "",
     formatEarningsR5FiscalPeriodDiagnosticText(report?.fiscalPeriodDiagnostic??{}).trimEnd(),
+    "",
+    formatEarningsR5DocumentFocusDiagnosticText(report?.documentFocusDiagnostic??{}).trimEnd(),
   ];
   return lines.join("\r\n")+"\r\n";
 }
@@ -51,9 +54,10 @@ export async function runEarningsR5ShadowCollection({incoming,coreFile,reportsDi
   const currentFrameAudit=await runEarningsR5CurrentFrameAudit({incoming:inputDir,coreFile:core,asOf});
   const coverageDiagnostic=await runEarningsR5CoverageDiagnostic({incoming:inputDir,coreFile:core,asOf});
   const fiscalPeriodDiagnostic=await runEarningsR5FiscalPeriodDiagnostic({incoming:inputDir,coreFile:core,asOf});
+  const documentFocusDiagnostic=await runEarningsR5DocumentFocusDiagnostic({incoming:inputDir,coreFile:core,asOf});
   const status=collection.status==="COMPLETE"&&preflight.status==="PASS"&&currentFrameAudit.status==="PASS"?"PASS":"PARTIAL";
   const report={
-    version:5,
+    version:6,
     methodologyVersion:"E1-R5-SHADOW-R1",
     at:new Date().toISOString(),
     active:false,
@@ -64,6 +68,7 @@ export async function runEarningsR5ShadowCollection({incoming,coreFile,reportsDi
     currentFrameAudit,
     coverageDiagnostic,
     fiscalPeriodDiagnostic,
+    documentFocusDiagnostic,
   };
   const outDir=reportsDir??path.join(defaultBase,"manual-input","e1-r5","reports");
   fs.mkdirSync(outDir,{recursive:true});
