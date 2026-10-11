@@ -9,6 +9,7 @@ import {formatEarningsR5CurrentFrameAuditText,runEarningsR5CurrentFrameAudit} fr
 import {formatEarningsR5CoverageDiagnosticText,runEarningsR5CoverageDiagnostic} from "./earnings-r5-coverage-diagnostic.mjs";
 import {formatEarningsR5FiscalPeriodDiagnosticText,runEarningsR5FiscalPeriodDiagnostic} from "./earnings-r5-fiscal-period-diagnostic.mjs";
 import {formatEarningsR5DocumentFocusDiagnosticText,runEarningsR5DocumentFocusDiagnostic} from "./earnings-r5-document-focus-diagnostic.mjs";
+import {formatEarningsR5CoverageRecoveryDiagnosticText,runEarningsR5CoverageRecoveryDiagnostic} from "./earnings-r5-coverage-recovery-diagnostic.mjs";
 
 const defaultBase=process.env.ZGMINI_PC_HOME??path.join(os.homedir(),".zgmini","pc-writer");
 
@@ -42,6 +43,8 @@ export function formatEarningsR5ShadowCollectionText(report){
     formatEarningsR5FiscalPeriodDiagnosticText(report?.fiscalPeriodDiagnostic??{}).trimEnd(),
     "",
     formatEarningsR5DocumentFocusDiagnosticText(report?.documentFocusDiagnostic??{}).trimEnd(),
+    "",
+    formatEarningsR5CoverageRecoveryDiagnosticText(report?.coverageRecoveryDiagnostic??{}).trimEnd(),
   ];
   return lines.join("\r\n")+"\r\n";
 }
@@ -55,9 +58,10 @@ export async function runEarningsR5ShadowCollection({incoming,coreFile,reportsDi
   const coverageDiagnostic=await runEarningsR5CoverageDiagnostic({incoming:inputDir,coreFile:core,asOf});
   const fiscalPeriodDiagnostic=await runEarningsR5FiscalPeriodDiagnostic({incoming:inputDir,coreFile:core,asOf});
   const documentFocusDiagnostic=await runEarningsR5DocumentFocusDiagnostic({incoming:inputDir,coreFile:core,asOf});
+  const coverageRecoveryDiagnostic=await runEarningsR5CoverageRecoveryDiagnostic({incoming:inputDir,coreFile:core,asOf,preflight});
   const status=collection.status==="COMPLETE"&&preflight.status==="PASS"&&currentFrameAudit.status==="PASS"?"PASS":"PARTIAL";
   const report={
-    version:6,
+    version:7,
     methodologyVersion:"E1-R5-SHADOW-R1",
     at:new Date().toISOString(),
     active:false,
@@ -69,6 +73,7 @@ export async function runEarningsR5ShadowCollection({incoming,coreFile,reportsDi
     coverageDiagnostic,
     fiscalPeriodDiagnostic,
     documentFocusDiagnostic,
+    coverageRecoveryDiagnostic,
   };
   const outDir=reportsDir??path.join(defaultBase,"manual-input","e1-r5","reports");
   fs.mkdirSync(outDir,{recursive:true});
