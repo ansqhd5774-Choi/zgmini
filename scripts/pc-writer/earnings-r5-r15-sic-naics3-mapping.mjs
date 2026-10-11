@@ -35,10 +35,10 @@ export function buildR15MappingFromBuffers(buffers){
   const document=buildApprovedSicNaics3Document({
     sic1987To2002:relations.sic1987ToNaics2002,
     naics2002To2007:relations.naics2002To2007,
-    naics2007To2012:relations.naics2007ToNaics2012,
-    naics2012To2017:relations.naics2012ToNaics2017,
-    naics2017To2022Changes:relations.naics2017ToNaics2022Changes,
-    naics2022To2017Changes:relations.naics2022ToNaics2017Changes,
+    naics2007To2012:relations.naics2007To2012,
+    naics2012To2017:relations.naics2012To2017,
+    naics2017To2022Changes:relations.naics2017To2022Changes,
+    naics2022To2017Changes:relations.naics2022To2017Changes,
   });
   return {document,relations,sources};
 }
