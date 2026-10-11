@@ -15,15 +15,19 @@ test("R14 cost-pressure diagnostic text preserves fail-closed and non-production
       outputMeta:{naics3Count:60},
       output:{status:"PASS",readyCount:60},
     },
-    mapping:{status:"PARTIAL",approvedRows:0,reason:"APPROVED_SIC_NAICS3_MAPPING_REQUIRED"},
-    s10:{status:"PARTIAL",raw:null,issuerCoverage:null,revenueCoverage:null},
+    mapping:{status:"PASS",approvedRows:800,ambiguousRows:120,noNaicsRows:30,reason:null},
+    s10:{
+      status:"PARTIAL",raw:null,issuerCoverage:null,revenueCoverage:null,
+      classification:{classes:{EXACT:430,AMBIGUOUS:25,NO_NAICS:15,NO_PPI:30},total:500,complete:true},
+    },
     s11:{status:"PASS",raw:1.4,transform:"DIRECT_YOY_PERCENT_NO_RECALCULATION"},
     networkCalls:0,
     dbWrites:0,
     policies:{productionActivation:false},
   });
   assert.match(text,/E1-R5 R14 COST PRESSURE DIAGNOSTIC: PARTIAL/);
-  assert.match(text,/SIC_NAICS3_MAPPING: PARTIAL/);
+  assert.match(text,/SIC_NAICS3_MAPPING: PASS exact=800 ambiguous=120 noNaics=30/);
+  assert.match(text,/S10_CLASSES: EXACT=430 AMBIGUOUS=25 NO_NAICS=15 NO_PPI=30 total=500 complete=YES/);
   assert.match(text,/S10: PARTIAL raw=null/);
   assert.match(text,/S11: PASS raw=1\.4 transform=DIRECT_YOY_PERCENT_NO_RECALCULATION/);
   assert.match(text,/NETWORK_CALLS: 0/);
