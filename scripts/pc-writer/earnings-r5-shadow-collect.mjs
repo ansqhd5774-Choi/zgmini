@@ -5,6 +5,7 @@ import {fileURLToPath} from "node:url";
 import {execFileSync} from "node:child_process";
 import {collectEarningsR5OfficialPreflightInputs} from "./earnings-r5-official-download.mjs";
 import {formatEarningsR5OfficialPreflightText,runEarningsR5OfficialPreflight} from "./earnings-r5-official-preflight.mjs";
+import {formatEarningsR5CurrentFrameAuditText,runEarningsR5CurrentFrameAudit} from "./earnings-r5-current-frame-audit.mjs";
 
 const defaultBase=process.env.ZGMINI_PC_HOME??path.join(os.homedir(),".zgmini","pc-writer");
 
@@ -30,18 +31,21 @@ export function formatEarningsR5ShadowCollectionText(report){
     `SEC_SUBMISSIONS_EXTRACTION: ${submissions.status??"-"} selected=${submissions.selected??0} extracted=${submissions.extracted??0}`,
     "",
     formatEarningsR5OfficialPreflightText(report?.preflight??{}).trimEnd(),
+    "",
+    formatEarningsR5CurrentFrameAuditText(report?.currentFrameAudit??{}).trimEnd(),
   ];
   return lines.join("\r\n")+"\r\n";
 }
 
-export async function runEarningsR5ShadowCollection({incoming,coreFile,reportsDir,fetchImpl=globalThis.fetch,execFile=execFileSync}={}){
+export async function runEarningsR5ShadowCollection({incoming,coreFile,reportsDir,asOf,fetchImpl=globalThis.fetch,execFile=execFileSync}={}){
   const inputDir=incoming??path.join(defaultBase,"manual-input","e1-r5","incoming");
   const core=coreFile??path.join(defaultBase,"storage","core.sqlite");
   const collection=await collectEarningsR5OfficialPreflightInputs({incoming:inputDir,coreFile:core,fetchImpl,execFile});
   const preflight=await runEarningsR5OfficialPreflight({incoming:inputDir,coreFile:core});
-  const status=collection.status==="COMPLETE"&&preflight.status==="PASS"?"PASS":"PARTIAL";
+  const currentFrameAudit=await runEarningsR5CurrentFrameAudit({incoming:inputDir,coreFile:core,asOf});
+  const status=collection.status==="COMPLETE"&&preflight.status==="PASS"&&currentFrameAudit.status==="PASS"?"PASS":"PARTIAL";
   const report={
-    version:2,
+    version:3,
     methodologyVersion:"E1-R5-SHADOW-R1",
     at:new Date().toISOString(),
     active:false,
@@ -49,6 +53,7 @@ export async function runEarningsR5ShadowCollection({incoming,coreFile,reportsDi
     dbWrites:0,
     collection,
     preflight,
+    currentFrameAudit,
   };
   const outDir=reportsDir??path.join(defaultBase,"manual-input","e1-r5","reports");
   fs.mkdirSync(outDir,{recursive:true});
@@ -66,6 +71,7 @@ if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.ur
       incoming:cli.incoming?path.resolve(cli.incoming):undefined,
       coreFile:cli.core?path.resolve(cli.core):undefined,
       reportsDir:cli["reports-dir"]?path.resolve(cli["reports-dir"]):undefined,
+      asOf:cli["as-of"]??undefined,
     });
     console.log(JSON.stringify({
       status:result.report.status,
