@@ -84,4 +84,67 @@ test("R14 S10 mapping fails closed until an explicitly approved SIC to NAICS3 ta
   assert.equal(report.revenueCoverage,0.8);
   assert.equal(report.raw,3.25);
   assert.equal(report.weighting,"PRIOR_REVENUE_MAPPED_ONLY");
+  assert.deepEqual(report.classification.classes,{EXACT:2,AMBIGUOUS:0,NO_NAICS:1,NO_PPI:0});
+  assert.equal(report.classification.complete,true);
+});
+
+test("R15 approved mapping preserves exact ambiguous and no-NAICS classes without overlap",()=>{
+  const approved=validateApprovedSicNaics3Mapping({
+    status:"APPROVED",
+    version:"test-v2",
+    rows:[{sic:"2834",naics3:"325",approved:true},{sic:"3571",naics3:"334",approved:true}],
+    ambiguous:[{sic:"1311",naics3:["211","213"],reason:"MULTIPLE_2022_NAICS3_TARGETS"}],
+    noNaics:[{sic:"9998",reason:"MISSING_SIC1987_TO_NAICS2002"}],
+  });
+  assert.equal(approved.status,"PASS");
+  assert.equal(approved.approvedRows,2);
+  assert.equal(approved.ambiguousRows,1);
+  assert.equal(approved.noNaicsRows,1);
+  assert.equal(approved.ambiguousSics.has("1311"),true);
+  assert.equal(approved.noNaicsSics.has("9998"),true);
+
+  const conflict=validateApprovedSicNaics3Mapping({
+    status:"APPROVED",
+    rows:[{sic:"2834",naics3:"325",approved:true}],
+    ambiguous:[{sic:"2834",naics3:["325","326"]}],
+  });
+  assert.equal(conflict.status,"FAIL");
+  assert.equal(conflict.reason,"SIC_NAICS3_CLASS_OVERLAP");
+});
+
+test("R15 S10 classifies every issuer EXACT AMBIGUOUS NO_NAICS or NO_PPI without changing raw weighting",()=>{
+  const approved=validateApprovedSicNaics3Mapping({
+    status:"APPROVED",
+    version:"test-v3",
+    rows:[
+      {sic:"2834",naics3:"325",approved:true},
+      {sic:"3571",naics3:"334",approved:true},
+      {sic:"4813",naics3:"517",approved:true},
+    ],
+    ambiguous:[{sic:"1311",naics3:["211","213"]}],
+    noNaics:[{sic:"9998",reason:"NO_TARGET"}],
+  });
+  const issuerRows=[
+    {sic:"2834",priorYear:{revenue:300}},
+    {sic:"3571",priorYear:{revenue:100}},
+    {sic:"4813",priorYear:{revenue:200}},
+    {sic:"1311",priorYear:{revenue:150}},
+    {sic:"9998",priorYear:{revenue:50}},
+    {sic:null,priorYear:{revenue:50}},
+  ];
+  const inputSeries=[{naics:"325",annualized3m:8},{naics:"334",annualized3m:2},{naics:"517",annualized3m:6}];
+  const outputSeries=[{naics3:"325",annualized3m:3},{naics3:"334",annualized3m:4}];
+  const report=buildS10CostPressureCoverage({issuerRows,approvedMapping:approved,inputSeries,outputSeries});
+  assert.deepEqual(report.classification.classes,{EXACT:2,AMBIGUOUS:1,NO_NAICS:2,NO_PPI:1});
+  assert.equal(report.classification.total,6);
+  assert.equal(report.classification.classified,6);
+  assert.equal(report.classification.complete,true);
+  assert.equal(report.reasons.AMBIGUOUS_NAICS3,1);
+  assert.equal(report.reasons.NO_SIC,1);
+  assert.equal(report.reasons.NO_APPROVED_NAICS3,1);
+  assert.equal(report.reasons.NO_OUTPUT_PPI,1);
+  assert.equal(report.mappedIssuers,2);
+  assert.equal(report.mappedRevenue,400);
+  assert.equal(report.eligibleRevenue,850);
+  assert.equal(report.raw,3.25);
 });
