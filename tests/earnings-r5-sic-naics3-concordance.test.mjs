@@ -16,6 +16,17 @@ test("official Census workbook parser locates labeled code columns and keeps man
   assert.deepEqual([...report.map.get("5678")],["222222"]);
 });
 
+test("legacy XLS numeric SIC cells recover the official four-digit leading-zero code",()=>{
+  const report=parseCensusConcordanceWorkbook({Concordance:[
+    ["1987 SIC Code","1987 SIC Description","2002 NAICS Code","2002 NAICS Description"],
+    [111,"Wheat","111140","Wheat Farming"],
+    [112,"Rice","111160","Rice Farming"],
+  ]},{fromYear:1987,toYear:2002,fromSystem:"sic",toSystem:"naics",fromDigits:4,toDigits:6});
+  assert.equal(report.status,"PASS");
+  assert.deepEqual([...report.map.get("0111")],["111140"]);
+  assert.deepEqual([...report.map.get("0112")],["111160"]);
+});
+
 test("approved rule accepts multiple official paths only when all end in one 2022 NAICS3",()=>{
   const chain={
     sic1987To2002:relation([["1234","111111"],["1234","111112"]]),
