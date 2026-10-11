@@ -13,7 +13,7 @@ export function recordCollectionChecks(base,report){
  const items=readCollectionChecks(base),checkedAt=Date.parse(report.at);
  if(!Number.isFinite(checkedAt))throw Error('INVALID_CHECK_TIMESTAMP');
  const requests=Object.values(report.providers??{}).reduce((n,x)=>n+(x.requests??0),0);
- const put=(id,outcome)=>{items[id]={checkedAt,outcome};};
+ const put=(id,outcome)=>{const previous=items[id];items[id]={checkedAt,outcome,lastSuccessAt:outcome==='success'?checkedAt:previous?.lastSuccessAt??(previous?.outcome==='success'?previous.checkedAt:null)};};
  for(const feed of report.feeds??[]){
   if(feed.status==='COMPLETE'&&requests>0)put('feed:'+feed.key,'success');
   else if(feed.status==='FAILED')put('feed:'+feed.key,'failure');
@@ -25,5 +25,5 @@ export function recordCollectionChecks(base,report){
   if(requests>0&&report.status==='COMPLETE')put('job:'+report.job,'success');
   else if(['ERROR','FAILED','SOURCE_FAILED','CONFIGURATION_MISSING'].includes(report.status))put('job:'+report.job,'failure');
  }
- save(path.join(base,'collection-checks.json'),{version:1,items});
+ save(path.join(base,'collection-checks.json'),{version:2,items});
 }

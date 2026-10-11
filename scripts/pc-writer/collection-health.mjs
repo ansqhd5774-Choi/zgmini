@@ -18,7 +18,7 @@ export async function buildLocalCollectionHealth(core,history,now=Date.now(),bas
   const output=await core.prepare("SELECT stored_at FROM public_feed_snapshots_v1 WHERE kind='output' AND feed_key=? AND snapshot_key='current'").bind(id).first();
   const attempt=await core.prepare('SELECT finished_at,status FROM market_collection_jobs_v1 WHERE job=?').bind('feed:'+id).first();
   const failed=attempt?.status==='FAILED'&&attempt.finished_at>(row?.stored_at??0);
-  entries.push({id:'feed:'+id,storedAt:row?.stored_at??null,checkedAt:failed?attempt.finished_at:row?.stored_at??null,outcome:failed?'failure':!!row&&output?.stored_at>=row.stored_at?'success':'unknown'});
+  entries.push({id:'feed:'+id,storedAt:row?.stored_at??null,lastSuccessAt:!!row&&output?.stored_at>=row.stored_at?row.stored_at:null,checkedAt:failed?attempt.finished_at:row?.stored_at??null,outcome:failed?'failure':!!row&&output?.stored_at>=row.stored_at?'success':'unknown'});
  }
  const korea=await history.prepare("SELECT fetched_at FROM kfg_rev7_market_dates WHERE status IN ('COMPLETE','NO_TRADING_OBSERVATION') ORDER BY fetched_at DESC LIMIT 1").first();
  entries.push({id:'korea',storedAt:korea?.fetched_at?Date.parse(korea.fetched_at):null,complete:!!korea});
@@ -26,7 +26,8 @@ export async function buildLocalCollectionHealth(core,history,now=Date.now(),bas
  const checks=readCollectionChecks(base);
  return collectionHealthSummary(entries.map(entry=>{
   const check=checks[entry.id];
-  return check&&check.checkedAt>=(entry.checkedAt??entry.storedAt??0)?{...entry,...check}:entry;
+  const lastSuccessAt=Math.max(entry.lastSuccessAt??(entry.outcome==='success'?entry.checkedAt??entry.storedAt:0)??0,check?.lastSuccessAt??(check?.outcome==='success'?check.checkedAt:0)??0)||null;
+  return {...(check&&check.checkedAt>=(entry.checkedAt??entry.storedAt??0)?{...entry,...check}:entry),lastSuccessAt};
  }),now);
 }
 export async function storeLocalCollectionHealth(core,history,now=Date.now(),base){
