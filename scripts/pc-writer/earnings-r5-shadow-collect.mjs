@@ -18,13 +18,16 @@ function parseArgs(argv=process.argv.slice(2)){
 }
 
 export function formatEarningsR5ShadowCollectionText(report){
+  const companyFacts=report?.collection?.extraction?.companyFacts??{};
+  const submissions=report?.collection?.extraction?.submissions??{};
   const lines=[
     `E1-R5 SHADOW COLLECTION: ${report?.status??"UNKNOWN"}`,
     `AT: ${report?.at??"-"}`,
     `NETWORK_CALLS: ${report?.collection?.networkCalls??"-"}`,
     `DB_WRITES: ${report?.dbWrites??"-"}`,
     `DOWNLOAD_REQUESTS: ${report?.collection?.download?.requestCount??"-"}`,
-    `SEC_EXTRACTION: ${report?.collection?.extraction?.status??"-"} selected=${report?.collection?.extraction?.selected??0} extracted=${report?.collection?.extraction?.extracted??0}`,
+    `SEC_COMPANYFACTS_EXTRACTION: ${companyFacts.status??"-"} selected=${companyFacts.selected??0} extracted=${companyFacts.extracted??0}`,
+    `SEC_SUBMISSIONS_EXTRACTION: ${submissions.status??"-"} selected=${submissions.selected??0} extracted=${submissions.extracted??0}`,
     "",
     formatEarningsR5OfficialPreflightText(report?.preflight??{}).trimEnd(),
   ];
@@ -38,7 +41,7 @@ export async function runEarningsR5ShadowCollection({incoming,coreFile,reportsDi
   const preflight=await runEarningsR5OfficialPreflight({incoming:inputDir,coreFile:core});
   const status=collection.status==="COMPLETE"&&preflight.status==="PASS"?"PASS":"PARTIAL";
   const report={
-    version:1,
+    version:2,
     methodologyVersion:"E1-R5-SHADOW-R1",
     at:new Date().toISOString(),
     active:false,
