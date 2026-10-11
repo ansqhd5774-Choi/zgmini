@@ -132,6 +132,13 @@ function extractTarEntries(zipFile,targetDir,entries,{execFile=execFileSync,batc
   }
 }
 
+function extractedEntryExists(targetDir,entry){
+  const normalized=String(entry).replace(/\\/g,"/");
+  const nested=path.join(targetDir,...normalized.split("/"));
+  if(fs.existsSync(nested))return true;
+  return fs.existsSync(path.join(targetDir,path.basename(normalized)));
+}
+
 function extractUniverseSecJson({zipFile,targetDir,coreFile,execFile=execFileSync,missingReason,noRowsReason}={}){
   if(!zipFile||!fs.existsSync(zipFile))return {status:"MISSING",reason:missingReason,extracted:0,dbWrites:0};
   const universe=readLatestEarningsUniverse(coreFile??path.join(defaultBase,"storage","core.sqlite"));
@@ -143,7 +150,7 @@ function extractUniverseSecJson({zipFile,targetDir,coreFile,execFile=execFileSyn
   if(!selected.length)return {status:"PARTIAL",reason:noRowsReason,archiveEntries:listed.length,selected:0,extracted:0,dbReads:1,dbWrites:0};
   try{extractTarEntries(zipFile,targetDir,selected,{execFile});}
   catch(error){return {status:"FAIL",reason:"TAR_EXTRACT_FAILED",code:error?.code??null,archiveEntries:listed.length,selected:selected.length,extracted:0,dbReads:1,dbWrites:0};}
-  const extracted=selected.filter(entry=>fs.existsSync(path.join(targetDir,path.basename(entry)))).length;
+  const extracted=selected.filter(entry=>extractedEntryExists(targetDir,entry)).length;
   return {
     status:extracted===selected.length?"PASS":"PARTIAL",
     reason:extracted===selected.length?null:"SEC_JSON_EXTRACTION_INCOMPLETE",
