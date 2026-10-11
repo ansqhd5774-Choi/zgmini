@@ -15,6 +15,12 @@ const SOURCE_KEYS=Object.freeze([
   "blsUnitLaborCostDuration",
   "blsProducerOutputSeries",
   "blsProducerOutputData",
+  "censusSic1987ToNaics2002",
+  "censusNaics2002To2007",
+  "censusNaics2007To2012",
+  "censusNaics2012To2017",
+  "censusNaics2017To2022Changes",
+  "censusNaics2022To2017Changes",
 ]);
 const MAX_BYTES=Object.freeze({
   blsUnitLaborCostSeries:25_000_000,
@@ -22,6 +28,12 @@ const MAX_BYTES=Object.freeze({
   blsUnitLaborCostDuration:5_000_000,
   blsProducerOutputSeries:100_000_000,
   blsProducerOutputData:250_000_000,
+  censusSic1987ToNaics2002:10_000_000,
+  censusNaics2002To2007:10_000_000,
+  censusNaics2007To2012:10_000_000,
+  censusNaics2012To2017:10_000_000,
+  censusNaics2017To2022Changes:10_000_000,
+  censusNaics2022To2017Changes:10_000_000,
 });
 
 async function sha256File(file){
