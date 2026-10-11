@@ -8,7 +8,14 @@ test("one-command R5 shadow collection emits copyable bounded evidence",()=>{
     status:"PARTIAL",
     at:"2026-10-11T00:00:00.000Z",
     dbWrites:0,
-    collection:{networkCalls:4,download:{requestCount:4},extraction:{status:"PASS",selected:500,extracted:500}},
+    collection:{
+      networkCalls:5,
+      download:{requestCount:5},
+      extraction:{
+        companyFacts:{status:"PASS",selected:500,extracted:500},
+        submissions:{status:"PASS",selected:500,extracted:500},
+      },
+    },
     preflight:{
       status:"PARTIAL",at:"2026-10-11T00:00:00.000Z",active:false,networkCalls:0,dbReads:1,dbWrites:0,
       universe:{status:"PASS",periodEnd:"2026-06-30",memberCount:500},
@@ -22,9 +29,10 @@ test("one-command R5 shadow collection emits copyable bounded evidence",()=>{
     },
   });
   assert.match(text,/E1-R5 SHADOW COLLECTION: PARTIAL/);
-  assert.match(text,/NETWORK_CALLS: 4/);
+  assert.match(text,/NETWORK_CALLS: 5/);
   assert.match(text,/DB_WRITES: 0/);
-  assert.match(text,/SEC_EXTRACTION: PASS selected=500 extracted=500/);
+  assert.match(text,/SEC_COMPANYFACTS_EXTRACTION: PASS selected=500 extracted=500/);
+  assert.match(text,/SEC_SUBMISSIONS_EXTRACTION: PASS selected=500 extracted=500/);
   assert.match(text,/SEC_Q4_EPS_ANNUAL_MINUS_9M: FORBIDDEN/);
 });
 
