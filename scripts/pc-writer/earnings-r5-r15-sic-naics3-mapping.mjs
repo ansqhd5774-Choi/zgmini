@@ -9,12 +9,12 @@ import {buildApprovedSicNaics3Document,parseCensusConcordanceWorkbook} from "../
 
 const defaultBase=process.env.ZGMINI_PC_HOME??path.join(os.homedir(),".zgmini","pc-writer");
 const SOURCE_SPECS=Object.freeze([
-  {key:"censusSic1987ToNaics2002",fromYear:1987,toYear:2002,fromSystem:"sic",toSystem:"naics",fromDigits:4,toDigits:6,changesOnly:false},
-  {key:"censusNaics2002To2007",fromYear:2002,toYear:2007,fromSystem:"naics",toSystem:"naics",fromDigits:6,toDigits:6,changesOnly:false},
-  {key:"censusNaics2007To2012",fromYear:2007,toYear:2012,fromSystem:"naics",toSystem:"naics",fromDigits:6,toDigits:6,changesOnly:false},
-  {key:"censusNaics2012To2017",fromYear:2012,toYear:2017,fromSystem:"naics",toSystem:"naics",fromDigits:6,toDigits:6,changesOnly:false},
-  {key:"censusNaics2017To2022Changes",fromYear:2017,toYear:2022,fromSystem:"naics",toSystem:"naics",fromDigits:6,toDigits:6,changesOnly:true},
-  {key:"censusNaics2022To2017Changes",fromYear:2022,toYear:2017,fromSystem:"naics",toSystem:"naics",fromDigits:6,toDigits:6,changesOnly:true},
+  {key:"censusSic1987ToNaics2002",fromYear:1987,toYear:2002,fromSystem:"sic",toSystem:"naics",fromDigits:4,toDigits:6},
+  {key:"censusNaics2002To2007",fromYear:2002,toYear:2007,fromSystem:"naics",toSystem:"naics",fromDigits:6,toDigits:6},
+  {key:"censusNaics2007To2012",fromYear:2007,toYear:2012,fromSystem:"naics",toSystem:"naics",fromDigits:6,toDigits:6},
+  {key:"censusNaics2012To2017",fromYear:2012,toYear:2017,fromSystem:"naics",toSystem:"naics",fromDigits:6,toDigits:6},
+  {key:"censusNaics2017To2022",fromYear:2017,toYear:2022,fromSystem:"naics",toSystem:"naics",fromDigits:6,toDigits:6},
+  {key:"censusNaics2022To2017",fromYear:2022,toYear:2017,fromSystem:"naics",toSystem:"naics",fromDigits:6,toDigits:6},
 ]);
 const sha256=buffer=>createHash("sha256").update(buffer).digest("hex");
 
@@ -37,8 +37,8 @@ export function buildR15MappingFromBuffers(buffers){
     naics2002To2007:relations.naics2002To2007,
     naics2007To2012:relations.naics2007To2012,
     naics2012To2017:relations.naics2012To2017,
-    naics2017To2022Changes:relations.naics2017To2022Changes,
-    naics2022To2017Changes:relations.naics2022To2017Changes,
+    naics2017To2022:relations.naics2017To2022,
+    naics2022To2017:relations.naics2022To2017,
   });
   return {document,relations,sources};
 }
@@ -50,7 +50,7 @@ export function runEarningsR5R15SicNaics3Mapping({incoming,mappingFile,reportsDi
   const buffers={};
   for(const spec of SOURCE_SPECS){const source=E1_R5_OFFICIAL_SOURCE_MANIFEST[spec.key];const file=source?path.join(inputDir,source.localName):null;if(file&&fs.existsSync(file)&&fs.statSync(file).isFile())buffers[spec.key]=fs.readFileSync(file);}
   const built=buildR15MappingFromBuffers(buffers);
-  const report={version:1,methodologyVersion:"E1-R5-SHADOW-R1",at:new Date().toISOString(),active:false,researchOnly:true,status:built.document.status==="APPROVED"?"PASS":"PARTIAL",reason:built.document.reason??null,networkCalls:0,dbWrites:0,sourceFiles:built.sources,mapping:{status:built.document.status,version:built.document.version,policy:built.document.policy??null,unchanged2017Rule:built.document.unchanged2017Rule??null,summary:built.document.summary??null,symmetry:built.document.symmetry??null}};
+  const report={version:1,methodologyVersion:"E1-R5-SHADOW-R1",at:new Date().toISOString(),active:false,researchOnly:true,status:built.document.status==="APPROVED"?"PASS":"PARTIAL",reason:built.document.reason??null,networkCalls:0,dbWrites:0,sourceFiles:built.sources,mapping:{status:built.document.status,version:built.document.version,policy:built.document.policy??null,finalConcordance:built.document.finalConcordance??null,summary:built.document.summary??null,symmetry:built.document.symmetry??null}};
   fs.mkdirSync(reportDir,{recursive:true});
   const reportJson=path.join(reportDir,"e1-r5-r15-sic-naics3-last.json");const reportTxt=path.join(reportDir,"e1-r5-r15-sic-naics3-last.txt");
   fs.writeFileSync(reportJson,JSON.stringify(report,null,2));
@@ -69,7 +69,7 @@ export function formatEarningsR5R15SicNaics3Text(report){
     `E1-R5 R15 SIC-NAICS3 MAPPING: ${report?.status??"UNKNOWN"}`,
     `AT: ${report?.at??"-"}`,
     `POLICY: ${report?.mapping?.policy??"-"}`,
-    `UNCHANGED_2017_RULE: ${report?.mapping?.unchanged2017Rule??"-"}`,
+    `FINAL_CONCORDANCE: ${report?.mapping?.finalConcordance??"-"}`,
     `MAPPING_STATUS: ${report?.mapping?.status??"-"}`,
     `EXACT: ${summary.exact??0}`,
     `AMBIGUOUS: ${summary.ambiguous??0}`,
