@@ -1,5 +1,9 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import {recordCollectionChecks,readCollectionChecks} from '../scripts/pc-writer/collection-checks.mjs';
 import {collectionHealthSummary,readCollectionHealth,COLLECTION_WINDOW_MS} from '../worker/collection-health.mjs';
 const now=Date.UTC(2026,9,6,14);
 test('only completed recent storage counts; old, future, failed and missing do not',()=>{
@@ -29,4 +33,23 @@ test('visitor preserves failure and independent check timestamp',async()=>{
  const db={prepare(){return {bind(){return {first:async()=>({body:JSON.stringify(body)})}}}}};
  const value=await (await readCollectionHealth(db,now+1)).json();
  assert.equal(value.failed,1);assert.equal(value.status,'partial');assert.equal(value.items[0].storedAt,0);
+});
+test('eight day success survives later failure and expires at the boundary',async()=>{
+ const lastSuccessAt=now-7*24*60*60*1000;
+ const body=collectionHealthSummary([{id:'a',checkedAt:now-1,outcome:'failure',lastSuccessAt}],now);
+ assert.equal(body.normal,1);assert.equal(body.failed,0);assert.equal(body.recentFailures,1);assert.equal(body.windowHours,192);
+ const db={prepare(){return {bind(){return {first:async()=>({body:JSON.stringify(body)})}}}}};
+ assert.equal((await (await readCollectionHealth(db,now+1)).json()).normal,1);
+ assert.equal(collectionHealthSummary(body.items,lastSuccessAt+COLLECTION_WINDOW_MS).failed,1);
+ assert.equal(collectionHealthSummary([{id:'future',lastSuccessAt:now+1,outcome:'failure',checkedAt:now}],now).normal,0);
+});
+test('check recorder preserves last success on failure and ignores cache hits',()=>{
+ const base=fs.mkdtempSync(path.join(os.tmpdir(),'collection-health-'));
+ try{
+  recordCollectionChecks(base,{at:new Date(now-100).toISOString(),job:'macro',status:'COMPLETE',providers:{fred:{requests:1}}});
+  recordCollectionChecks(base,{at:new Date(now).toISOString(),job:'macro',status:'FAILED'});
+  recordCollectionChecks(base,{at:new Date(now+1).toISOString(),job:'macro',status:'COMPLETE',providers:{}});
+  const check=readCollectionChecks(base)['job:macro'];
+  assert.equal(check.lastSuccessAt,now-100);assert.equal(check.outcome,'failure');assert.equal(check.checkedAt,now);
+ }finally{fs.rmSync(base,{recursive:true,force:true});}
 });
