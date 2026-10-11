@@ -13,13 +13,13 @@ function mockFetchRecorder(){
   return {calls,fetchImpl};
 }
 
-test("R14 cost-pressure downloader fetches five official BLS metadata/data files once and reuses them",async()=>{
+test("R14 cost-pressure downloader fetches BLS plus official Census concordances once and reuses them",async()=>{
   const dir=fixture();
   try{
     const first=mockFetchRecorder();
     const result=await downloadEarningsR5R14CostPressureFiles({incoming:dir,fetchImpl:first.fetchImpl});
     assert.equal(result.status,"COMPLETE");
-    assert.equal(result.requestCount,5);
+    assert.equal(result.requestCount,11);
     assert.equal(result.dbWrites,0);
     assert.deepEqual(first.calls.map(row=>row.url),[
       E1_R5_OFFICIAL_SOURCE_MANIFEST.blsUnitLaborCostSeries.url,
@@ -27,6 +27,12 @@ test("R14 cost-pressure downloader fetches five official BLS metadata/data files
       E1_R5_OFFICIAL_SOURCE_MANIFEST.blsUnitLaborCostDuration.url,
       E1_R5_OFFICIAL_SOURCE_MANIFEST.blsProducerOutputSeries.url,
       E1_R5_OFFICIAL_SOURCE_MANIFEST.blsProducerOutputData.url,
+      E1_R5_OFFICIAL_SOURCE_MANIFEST.censusSic1987ToNaics2002.url,
+      E1_R5_OFFICIAL_SOURCE_MANIFEST.censusNaics2002To2007.url,
+      E1_R5_OFFICIAL_SOURCE_MANIFEST.censusNaics2007To2012.url,
+      E1_R5_OFFICIAL_SOURCE_MANIFEST.censusNaics2012To2017.url,
+      E1_R5_OFFICIAL_SOURCE_MANIFEST.censusNaics2017To2022Changes.url,
+      E1_R5_OFFICIAL_SOURCE_MANIFEST.censusNaics2022To2017Changes.url,
     ]);
     assert.ok(first.calls.every(row=>row.options.redirect==="error"));
     assert.ok(result.results.every(row=>row.status==="DOWNLOADED"&&row.requestCount===1&&/^[a-f0-9]{64}$/.test(row.sha256)));
