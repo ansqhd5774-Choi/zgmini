@@ -4,15 +4,48 @@ import {
   E1_R5_BEA_CONTRACT,
   E1_R5_BLS_CONTRACT,
   E1_R5_FORWARD_CONTRACT,
+  E1_R5_INPUT_CONTRACT_VERSION,
+  E1_R5_SEC_CONTRACT,
+  canDeriveQ4FromAnnualMinusNineMonths,
   classifySecFact,
   isConsolidatedSecFact,
+  isExplicitCalendarQuarterFrame,
   secDurationAllowed,
   secMetricForTag,
   secUnitAllowed,
+  validateSecCompanyFactsDocument,
   validateSecFsdsHeaders,
 } from "../lib/market-score/earnings-e1-r5-input-contract.mjs";
 
-test("SEC FSDS contract requires submission identity and numeric fact timing fields",()=>{
+test("SEC Company Facts is primary and FSDS is secondary validation",()=>{
+  assert.equal(E1_R5_INPUT_CONTRACT_VERSION,"E1-R5-INPUT-R2");
+  assert.equal(E1_R5_SEC_CONTRACT.preferredBulkSource,"COMPANYFACTS_ZIP");
+  assert.equal(E1_R5_SEC_CONTRACT.secondaryBulkSource,"FINANCIAL_STATEMENT_DATA_SETS");
+  assert.equal(E1_R5_SEC_CONTRACT.companyFactsPolicy.q4EpsAnnualMinusNineMonths,"FORBIDDEN");
+  assert.equal(E1_R5_SEC_CONTRACT.companyFactsPolicy.ambiguousFactPolicy,"MISSING");
+});
+
+test("SEC Company Facts document and explicit quarter frames are validated",()=>{
+  assert.deepEqual(
+    validateSecCompanyFactsDocument({cik:320193,facts:{"us-gaap":{Revenues:{}}}}),
+    {status:"PASS",reason:null,cik:"0000320193"},
+  );
+  assert.equal(validateSecCompanyFactsDocument({cik:320193,facts:{}}).reason,"COMPANYFACTS_US_GAAP_MISSING");
+  assert.equal(isExplicitCalendarQuarterFrame("CY2026Q1"),true);
+  assert.equal(isExplicitCalendarQuarterFrame("CY2026Q4"),true);
+  assert.equal(isExplicitCalendarQuarterFrame("CY2026"),false);
+  assert.equal(isExplicitCalendarQuarterFrame("FY2026Q4"),false);
+});
+
+test("Q4 EPS subtraction is forbidden while matched additive flows may be derived",()=>{
+  assert.equal(canDeriveQ4FromAnnualMinusNineMonths("eps"),false);
+  for(const metric of ["revenue","operatingIncome","netIncome","operatingCashFlow","capex"]){
+    assert.equal(canDeriveQ4FromAnnualMinusNineMonths(metric),true);
+  }
+  assert.equal(canDeriveQ4FromAnnualMinusNineMonths("unknown"),false);
+});
+
+test("SEC FSDS secondary contract requires submission identity and numeric fact timing fields",()=>{
   const pass=validateSecFsdsHeaders({
     submissionHeaders:["adsh","cik","form","period","filed","fy","fp","sic"],
     numberHeaders:["adsh","tag","version","ddate","qtrs","uom","value","coreg"],
@@ -36,7 +69,7 @@ test("SEC tag mapping preserves existing E1 revenue semantics and adds R5 cash-f
   assert.equal(secMetricForTag("CustomRegistrantMetric"),null);
 });
 
-test("income statement facts must be single-quarter while cash-flow facts may be cumulative",()=>{
+test("FSDS income statement facts must be single-quarter while cash-flow facts may be cumulative",()=>{
   assert.equal(secDurationAllowed("eps",1),true);
   assert.equal(secDurationAllowed("eps",2),false);
   assert.equal(secDurationAllowed("revenue",1),true);
@@ -48,7 +81,7 @@ test("income statement facts must be single-quarter while cash-flow facts may be
   }
 });
 
-test("SEC fact classifier rejects co-registrants, wrong duration and wrong units",()=>{
+test("SEC FSDS fact classifier rejects co-registrants, wrong duration and wrong units",()=>{
   assert.equal(isConsolidatedSecFact(null),true);
   assert.equal(isConsolidatedSecFact(""),true);
   assert.equal(isConsolidatedSecFact("0000123456"),false);
