@@ -33,7 +33,7 @@ test("approved rule accepts multiple official paths only when all end in one 202
     naics2002To2007:relation([["111111","111121"],["111112","111122"]]),
     naics2007To2012:relation([["111121","111131"],["111122","111132"]]),
     naics2012To2017:relation([["111131","111141"],["111132","111142"]]),
-    naics2017To2022Changes:relation([["111141","112111"],["111142","112112"]]),
+    naics2017To2022:relation([["111141","112111"],["111142","112112"]]),
   };
   const result=resolveSicTo2022Naics3("1234",chain);
   assert.equal(result.status,"EXACT");
@@ -47,14 +47,14 @@ test("approved rule rejects a SIC when official paths split across different 202
     naics2002To2007:relation([["111111","111121"],["111112","111122"]]),
     naics2007To2012:relation([["111121","111131"],["111122","111132"]]),
     naics2012To2017:relation([["111131","111141"],["111132","111142"]]),
-    naics2017To2022Changes:relation([["111141","112111"],["111142","113111"]]),
+    naics2017To2022:relation([["111141","112111"],["111142","113111"]]),
   };
   const result=resolveSicTo2022Naics3("1234",chain);
   assert.equal(result.status,"AMBIGUOUS");
   assert.deepEqual(result.naics3,["112","113"]);
 });
 
-test("2017 to 2022 forward and reverse changes tables must be symmetric",()=>{
+test("2017 to 2022 full forward and reverse concordances must be symmetric",()=>{
   const forward=relation([["111111","112111"],["111112","112112"]]);
   const reverse=relation([["112111","111111"],["112112","111112"]]);
   assert.equal(validate2017To2022DirectionalConcordance(forward,reverse).status,"PASS");
@@ -67,26 +67,26 @@ test("approved document contains only exact SIC mappings and leaves ambiguous ca
   const naics2002To2007=relation([["111111","111121"],["211111","211121"],["311111","311121"]]);
   const naics2007To2012=relation([["111121","111131"],["211121","211131"],["311121","311131"]]);
   const naics2012To2017=relation([["111131","111141"],["211131","211141"],["311131","311141"]]);
-  const naics2017To2022Changes=relation([["111141","112111"],["211141","212111"],["311141","312111"]]);
-  const naics2022To2017Changes=relation([["112111","111141"],["212111","211141"],["312111","311141"]]);
-  const document=buildApprovedSicNaics3Document({sic1987To2002,naics2002To2007,naics2007To2012,naics2012To2017,naics2017To2022Changes,naics2022To2017Changes});
+  const naics2017To2022=relation([["111141","112111"],["211141","212111"],["311141","312111"]]);
+  const naics2022To2017=relation([["112111","111141"],["212111","211141"],["312111","311141"]]);
+  const document=buildApprovedSicNaics3Document({sic1987To2002,naics2002To2007,naics2007To2012,naics2012To2017,naics2017To2022,naics2022To2017});
   assert.equal(document.status,"APPROVED");
+  assert.equal(document.finalConcordance,"FULL_CENSUS_2017_TO_2022_WITH_REVERSE_VALIDATION");
   assert.deepEqual(document.rows,[{sic:"1234",naics3:"112",approved:true}]);
   assert.equal(document.summary.exact,1);
   assert.equal(document.summary.ambiguous,1);
   assert.equal(document.summary.noNaics,0);
 });
 
-test("unchanged 2017 codes use identity only when absent from the complete changes table",()=>{
+test("full final concordance fails closed when a 2017 code has no official 2022 target",()=>{
   const chain={
     sic1987To2002:relation([["1234","444111"]]),
     naics2002To2007:relation([["444111","444121"]]),
     naics2007To2012:relation([["444121","444131"]]),
     naics2012To2017:relation([["444131","444141"]]),
-    naics2017To2022Changes:relation([["999999","888888"]]),
+    naics2017To2022:relation([["999999","888888"]]),
   };
   const result=resolveSicTo2022Naics3("1234",chain);
-  assert.equal(result.status,"EXACT");
-  assert.equal(result.naics3,"444");
-  assert.deepEqual(result.naics2022,["444141"]);
+  assert.equal(result.status,"NO_NAICS");
+  assert.equal(result.reason,"MISSING_NAICS2017_TO_2022");
 });
