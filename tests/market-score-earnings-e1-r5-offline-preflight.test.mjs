@@ -81,19 +81,26 @@ test("BEA preflight requires the approved A051RC or corporate-profits marker",()
   assert.equal(inspectBeaText("other series").status,"PARTIAL");
 });
 
-test("minimal XLSX archive is recognized using only Node built-ins",()=>{
-  const workbook='<?xml version="1.0"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheets><sheet name="Satellite Input" sheetId="1" r:id="rId1" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"/></sheets></workbook>';
+test("minimal XLSX archive is recognized and cell schema is sampled using only Node built-ins",()=>{
+  const workbook='<?xml version="1.0"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="Satellite Input" sheetId="1" r:id="rId1"/></sheets></workbook>';
+  const relationships='<?xml version="1.0"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Target="worksheets/sheet1.xml" Type="worksheet"/></Relationships>';
+  const shared='<?xml version="1.0"?><sst xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><si><t>Code</t></si><si><t>IN327</t></si></sst>';
+  const sheet='<?xml version="1.0"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetData><row r="1"><c r="A1" t="s"><v>0</v></c><c r="B1" t="inlineStr"><is><t>2026-08</t></is></c></row><row r="2"><c r="A2" t="s"><v>1</v></c><c r="B2"><v>123.456</v></c></row></sheetData></worksheet>';
   const archive=storedZip({
     "[Content_Types].xml":"<Types/>",
     "xl/workbook.xml":workbook,
-    "xl/worksheets/sheet1.xml":"<worksheet/>",
+    "xl/_rels/workbook.xml.rels":relationships,
+    "xl/sharedStrings.xml":shared,
+    "xl/worksheets/sheet1.xml":sheet,
   });
   const entries=listZipEntries(archive);
-  assert.equal(entries.length,3);
+  assert.equal(entries.length,5);
   assert.equal(readZipEntry(archive,entries.find(x=>x.name==="xl/workbook.xml")).toString("utf8"),workbook);
   const report=inspectXlsxArchive(archive);
   assert.equal(report.status,"PASS");
   assert.deepEqual(report.sheets,["Satellite Input"]);
   assert.equal(report.worksheetEntryCount,1);
+  assert.deepEqual(report.samples[0].inputCodeCandidates,["IN327"]);
+  assert.deepEqual(report.samples[0].sampledRows[1].cells,["IN327",123.456]);
   assert.match(sha256(archive),/^[a-f0-9]{64}$/);
 });
