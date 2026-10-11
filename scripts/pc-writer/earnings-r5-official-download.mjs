@@ -11,6 +11,7 @@ import {readLatestEarningsUniverse} from "./earnings-r5-offline-preflight.mjs";
 const defaultBase=process.env.ZGMINI_PC_HOME??path.join(os.homedir(),".zgmini","pc-writer");
 const MAX_BYTES=Object.freeze({
   secCompanyFacts:2_500_000_000,
+  secSubmissions:2_500_000_000,
   blsUnitLaborCost:250_000_000,
   blsProducerInput:100_000_000,
   beaCorporateProfits:100_000_000,
@@ -82,7 +83,7 @@ export async function downloadEarningsR5OfficialFiles({incoming,fetchImpl=global
   const directory=incoming??path.join(defaultBase,"manual-input","e1-r5","incoming");
   fs.mkdirSync(directory,{recursive:true});
   const manifest=E1_R5_OFFICIAL_SOURCE_MANIFEST;
-  const keys=["secCompanyFacts","blsUnitLaborCost","blsProducerInput","beaCorporateProfits"];
+  const keys=["secCompanyFacts","secSubmissions","blsUnitLaborCost","blsProducerInput","beaCorporateProfits"];
   const results=[];
   for(const key of keys){
     const source=manifest[key];
@@ -98,23 +99,25 @@ export async function downloadEarningsR5OfficialFiles({incoming,fetchImpl=global
   };
 }
 
-function safeCompanyFactsEntry(entry){
+function safeSecJsonEntry(entry){
   const normalized=String(entry??"").replace(/\\/g,"/");
   if(!normalized||normalized.startsWith("/")||normalized.includes("../"))return null;
-  const match=normalized.match(/^(?:companyfacts\/)?(CIK\d{10}\.json)$/);
+  const match=normalized.match(/^(?:(?:companyfacts|submissions)\/)?(CIK\d{10}\.json)$/);
   return match?{entry:normalized,file:match[1]}:null;
 }
 
-export function selectCompanyFactsEntries(archiveEntries,universeCiks){
+export function selectSecJsonEntries(archiveEntries,universeCiks){
   const wanted=new Set([...(universeCiks??[])].map(cik=>`CIK${String(cik).padStart(10,"0")}.json`));
   const selected=[];
   const seen=new Set();
   for(const raw of archiveEntries??[]){
-    const safe=safeCompanyFactsEntry(raw);if(!safe||!wanted.has(safe.file)||seen.has(safe.file))continue;
+    const safe=safeSecJsonEntry(raw);if(!safe||!wanted.has(safe.file)||seen.has(safe.file))continue;
     seen.add(safe.file);selected.push(safe.entry);
   }
   return selected.sort();
 }
+
+export const selectCompanyFactsEntries=selectSecJsonEntries;
 
 function listTarEntries(zipFile,{execFile=execFileSync}={}){
   const stdout=execFile("tar",["-tf",zipFile],{encoding:"utf8",maxBuffer:64*1024*1024,windowsHide:true});
@@ -129,46 +132,62 @@ function extractTarEntries(zipFile,targetDir,entries,{execFile=execFileSync,batc
   }
 }
 
-export function extractEarningsR5CompanyFacts({zipFile,targetDir,coreFile,execFile=execFileSync}={}){
-  if(!zipFile||!fs.existsSync(zipFile))return {status:"MISSING",reason:"COMPANYFACTS_ZIP_REQUIRED",extracted:0,dbWrites:0};
+function extractUniverseSecJson({zipFile,targetDir,coreFile,execFile=execFileSync,missingReason,noRowsReason}={}){
+  if(!zipFile||!fs.existsSync(zipFile))return {status:"MISSING",reason:missingReason,extracted:0,dbWrites:0};
   const universe=readLatestEarningsUniverse(coreFile??path.join(defaultBase,"storage","core.sqlite"));
   if(universe.status!=="PASS")return {status:"PARTIAL",reason:"EARNINGS_UNIVERSE_REQUIRED",extracted:0,dbReads:universe.status==="MISSING"?0:1,dbWrites:0};
   let listed;
   try{listed=listTarEntries(zipFile,{execFile});}
   catch(error){return {status:"FAIL",reason:"TAR_LIST_FAILED",code:error?.code??null,extracted:0,dbReads:1,dbWrites:0};}
-  const selected=selectCompanyFactsEntries(listed,universe.ciks);
-  if(!selected.length)return {status:"PARTIAL",reason:"NO_UNIVERSE_COMPANYFACTS_IN_ZIP",archiveEntries:listed.length,selected:0,extracted:0,dbReads:1,dbWrites:0};
-  const out=targetDir??path.join(path.dirname(zipFile),E1_R5_OFFICIAL_SOURCE_MANIFEST.secCompanyFacts.extractedDirectory);
-  try{extractTarEntries(zipFile,out,selected,{execFile});}
+  const selected=selectSecJsonEntries(listed,universe.ciks);
+  if(!selected.length)return {status:"PARTIAL",reason:noRowsReason,archiveEntries:listed.length,selected:0,extracted:0,dbReads:1,dbWrites:0};
+  try{extractTarEntries(zipFile,targetDir,selected,{execFile});}
   catch(error){return {status:"FAIL",reason:"TAR_EXTRACT_FAILED",code:error?.code??null,archiveEntries:listed.length,selected:selected.length,extracted:0,dbReads:1,dbWrites:0};}
-  const extracted=selected.filter(entry=>fs.existsSync(path.join(out,path.basename(entry)))).length;
+  const extracted=selected.filter(entry=>fs.existsSync(path.join(targetDir,path.basename(entry)))).length;
   return {
     status:extracted===selected.length?"PASS":"PARTIAL",
-    reason:extracted===selected.length?null:"COMPANYFACTS_EXTRACTION_INCOMPLETE",
+    reason:extracted===selected.length?null:"SEC_JSON_EXTRACTION_INCOMPLETE",
     archiveEntries:listed.length,
     universeCount:universe.ciks.size,
     selected:selected.length,
     extracted,
-    targetDir:out,
+    targetDir,
     dbReads:1,
     dbWrites:0,
   };
 }
 
+export function extractEarningsR5CompanyFacts({zipFile,targetDir,coreFile,execFile=execFileSync}={}){
+  const out=targetDir??path.join(path.dirname(zipFile??"."),E1_R5_OFFICIAL_SOURCE_MANIFEST.secCompanyFacts.extractedDirectory);
+  return extractUniverseSecJson({zipFile,targetDir:out,coreFile,execFile,missingReason:"COMPANYFACTS_ZIP_REQUIRED",noRowsReason:"NO_UNIVERSE_COMPANYFACTS_IN_ZIP"});
+}
+
+export function extractEarningsR5Submissions({zipFile,targetDir,coreFile,execFile=execFileSync}={}){
+  const out=targetDir??path.join(path.dirname(zipFile??"."),E1_R5_OFFICIAL_SOURCE_MANIFEST.secSubmissions.extractedDirectory);
+  return extractUniverseSecJson({zipFile,targetDir:out,coreFile,execFile,missingReason:"SUBMISSIONS_ZIP_REQUIRED",noRowsReason:"NO_UNIVERSE_SUBMISSIONS_IN_ZIP"});
+}
+
 export async function collectEarningsR5OfficialPreflightInputs(options={}){
   const incoming=options.incoming??path.join(defaultBase,"manual-input","e1-r5","incoming");
+  const coreFile=options.coreFile??path.join(defaultBase,"storage","core.sqlite");
   const download=await downloadEarningsR5OfficialFiles({incoming,fetchImpl:options.fetchImpl});
-  const extraction=extractEarningsR5CompanyFacts({
+  const companyFacts=extractEarningsR5CompanyFacts({
     zipFile:path.join(incoming,E1_R5_OFFICIAL_SOURCE_MANIFEST.secCompanyFacts.localName),
     targetDir:path.join(incoming,E1_R5_OFFICIAL_SOURCE_MANIFEST.secCompanyFacts.extractedDirectory),
-    coreFile:options.coreFile??path.join(defaultBase,"storage","core.sqlite"),
+    coreFile,
+    execFile:options.execFile??execFileSync,
+  });
+  const submissions=extractEarningsR5Submissions({
+    zipFile:path.join(incoming,E1_R5_OFFICIAL_SOURCE_MANIFEST.secSubmissions.localName),
+    targetDir:path.join(incoming,E1_R5_OFFICIAL_SOURCE_MANIFEST.secSubmissions.extractedDirectory),
+    coreFile,
     execFile:options.execFile??execFileSync,
   });
   return {
-    status:extraction.status==="PASS"?"COMPLETE":"PARTIAL",
+    status:companyFacts.status==="PASS"&&submissions.status==="PASS"?"COMPLETE":"PARTIAL",
     networkCalls:download.requestCount,
     dbWrites:0,
     download,
-    extraction,
+    extraction:{companyFacts,submissions},
   };
 }
