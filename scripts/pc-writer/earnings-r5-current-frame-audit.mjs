@@ -1,0 +1,286 @@
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
+import {fileURLToPath} from "node:url";
+import {E1_R5_SEC_CONTRACT,secUnitAllowed,validateSecCompanyFactsDocument} from "../../lib/market-score/earnings-e1-r5-input-contract.mjs";
+import {buildEarningsR5RawComponents} from "../../lib/market-score/earnings-e1-r5-shadow-calculator.mjs";
+import {latestMatureFrame,MATURE_LAG_DAYS} from "../../lib/market-score/sec-earnings-e1-r2-provider.mjs";
+import {readLatestEarningsUniverse,inspectBlsPrFile} from "./earnings-r5-offline-preflight.mjs";
+import {E1_R5_OFFICIAL_SOURCE_MANIFEST} from "../../lib/market-score/earnings-e1-r5-official-sources.mjs";
+
+const defaultBase=process.env.ZGMINI_PC_HOME??path.join(os.homedir(),".zgmini","pc-writer");
+const finite=value=>typeof value==="number"&&Number.isFinite(value);
+const clean=value=>String(value??"").trim();
+const dateDay=value=>{
+  if(typeof value!=="string"||!/^\d{4}-\d{2}-\d{2}$/.test(value))return null;
+  const ms=Date.parse(`${value}T00:00:00Z`);return Number.isFinite(ms)?Math.floor(ms/86400000):null;
+};
+const pct=value=>finite(value)?`${(value*100).toFixed(1)}%`:"-";
+
+function parseArgs(argv=process.argv.slice(2)){
+  const out={};
+  for(const item of argv){const match=item.match(/^--([^=]+)=(.*)$/);if(match)out[match[1]]=match[2];}
+  return out;
+}
+
+export function sicDivision(sic){
+  const value=Number(String(sic??"").replace(/\D/g,""));
+  if(!Number.isInteger(value)||value<=0)return null;
+  if(value>=100&&value<=999)return {id:"A",label:"AGRICULTURE_FORESTRY_FISHING",financial:false};
+  if(value>=1000&&value<=1499)return {id:"B",label:"MINING",financial:false};
+  if(value>=1500&&value<=1799)return {id:"C",label:"CONSTRUCTION",financial:false};
+  if(value>=2000&&value<=3999)return {id:"D",label:"MANUFACTURING",financial:false};
+  if(value>=4000&&value<=4999)return {id:"E",label:"TRANSPORT_COMMUNICATION_UTILITIES",financial:false};
+  if(value>=5000&&value<=5199)return {id:"F",label:"WHOLESALE_TRADE",financial:false};
+  if(value>=5200&&value<=5999)return {id:"G",label:"RETAIL_TRADE",financial:false};
+  if(value>=6000&&value<=6799)return {id:"H",label:"FINANCE_INSURANCE_REAL_ESTATE",financial:true};
+  if(value>=7000&&value<=8999)return {id:"I",label:"SERVICES",financial:false};
+  if(value>=9100&&value<=9999)return {id:"J",label:"PUBLIC_ADMINISTRATION",financial:false};
+  return null;
+}
+
+function durationDays(fact){
+  const start=dateDay(fact?.start),end=dateDay(fact?.end);
+  return start!=null&&end!=null&&end>=start?end-start+1:null;
+}
+
+function endNearFrame(fact,frameEnd){
+  const end=dateDay(fact?.end),target=dateDay(frameEnd);
+  return end!=null&&target!=null&&Math.abs(end-target)<=45;
+}
+
+function eligibleFact(fact,{metric,frame,frameEnd,asOf}){
+  if(!fact||fact.frame!==frame||!E1_R5_SEC_CONTRACT.forms.includes(clean(fact.form))||!finite(fact.val))return false;
+  if(typeof fact.filed==="string"&&fact.filed>asOf)return false;
+  if(!endNearFrame(fact,frameEnd))return false;
+  const duration=durationDays(fact);
+  if(duration==null||duration<55||duration>120)return false;
+  return true;
+}
+
+function factCandidates(document,{metric,tag,frame,frameEnd,asOf}){
+  const concept=document?.facts?.[E1_R5_SEC_CONTRACT.taxonomy]?.[tag];
+  if(!concept?.units||typeof concept.units!=="object")return [];
+  const out=[];
+  for(const [unit,rows] of Object.entries(concept.units)){
+    if(!secUnitAllowed(metric,unit)||!Array.isArray(rows))continue;
+    for(const fact of rows){
+      if(!eligibleFact(fact,{metric,frame,frameEnd,asOf}))continue;
+      out.push({...fact,tag,unit,duration:durationDays(fact)});
+    }
+  }
+  out.sort((a,b)=>String(b.filed??"").localeCompare(String(a.filed??""))||String(b.accn??"").localeCompare(String(a.accn??"")));
+  return out;
+}
+
+function chooseLatest(candidates){
+  if(!candidates.length)return {fact:null,reason:"NO_EXPLICIT_FRAME_FACT"};
+  const latestFiled=String(candidates[0].filed??"");
+  const top=candidates.filter(row=>String(row.filed??"")===latestFiled);
+  const values=[...new Set(top.map(row=>row.val))];
+  if(values.length>1)return {fact:null,reason:"LATEST_FILED_VALUE_CONFLICT",candidateCount:candidates.length,latestFiled};
+  return {fact:top[0],reason:null,candidateCount:candidates.length,latestFiled};
+}
+
+export function selectCompanyFact(document,{metric,frame,frameEnd,asOf,tag=null}={}){
+  const tags=tag?[tag]:(E1_R5_SEC_CONTRACT.tags?.[metric]??[]);
+  for(const candidateTag of tags){
+    const chosen=chooseLatest(factCandidates(document,{metric,tag:candidateTag,frame,frameEnd,asOf}));
+    if(chosen.fact)return {...chosen,tag:candidateTag};
+    if(chosen.reason==="LATEST_FILED_VALUE_CONFLICT")return {...chosen,tag:candidateTag};
+  }
+  return {fact:null,reason:"NO_EXPLICIT_FRAME_FACT",tag:null,candidateCount:0};
+}
+
+function pairComparable(current,prior){
+  if(!current||!prior)return false;
+  const currentEnd=dateDay(current.end),priorEnd=dateDay(prior.end);
+  if(currentEnd==null||priorEnd==null)return false;
+  const gap=currentEnd-priorEnd;if(gap<320||gap>410)return false;
+  if(!Number.isInteger(current.duration)||!Number.isInteger(prior.duration)||Math.abs(current.duration-prior.duration)>45)return false;
+  return true;
+}
+
+function samePeriod(...facts){
+  const rows=facts.filter(Boolean);if(rows.length!==facts.length||!rows.length)return false;
+  const ends=rows.map(row=>dateDay(row.end));if(ends.some(value=>value==null))return false;
+  const durations=rows.map(row=>row.duration);if(durations.some(value=>!Number.isInteger(value)))return false;
+  return Math.max(...ends)-Math.min(...ends)<=45&&Math.max(...durations)-Math.min(...durations)<=45;
+}
+
+function selectComparablePair(document,{metric,currentFrame,priorFrame,currentEnd,priorEnd,asOf}){
+  const tags=E1_R5_SEC_CONTRACT.tags?.[metric]??[];
+  for(const tag of tags){
+    const current=selectCompanyFact(document,{metric,frame:currentFrame,frameEnd:currentEnd,asOf,tag});
+    const prior=selectCompanyFact(document,{metric,frame:priorFrame,frameEnd:priorEnd,asOf,tag});
+    if(current.reason==="LATEST_FILED_VALUE_CONFLICT"||prior.reason==="LATEST_FILED_VALUE_CONFLICT")return {current:null,prior:null,tag,reason:"FACT_CONFLICT"};
+    if(current.fact&&prior.fact&&pairComparable(current.fact,prior.fact))return {current:current.fact,prior:prior.fact,tag,reason:null};
+  }
+  return {current:null,prior:null,tag:null,reason:"NO_COMPARABLE_PAIR"};
+}
+
+function companyFile(directory,cik){
+  const file=path.join(directory,`CIK${cik}.json`);return fs.existsSync(file)?file:null;
+}
+
+function readJson(file){try{return JSON.parse(fs.readFileSync(file,"utf8"));}catch{return null;}}
+
+export function buildIssuerRowFromDocuments({member,companyFacts,submission,frame,asOf}){
+  const cik=String(member?.cik??"").padStart(10,"0");
+  const validation=validateSecCompanyFactsDocument(companyFacts);
+  if(validation.status!=="PASS"||validation.cik!==cik)return {cik,ticker:member?.ticker??null,name:member?.name??null,current:{},priorYear:{},isFinancial:null,sectorId:null,audit:{status:"INVALID_COMPANYFACTS"}};
+
+  const sic=Number(String(submission?.sic??"").replace(/\D/g,""));
+  const division=sicDivision(sic);
+  const eps=selectComparablePair(companyFacts,{metric:"eps",currentFrame:frame.frame,priorFrame:frame.priorFrame,currentEnd:frame.end,priorEnd:frame.priorEnd,asOf});
+  const revenue=selectComparablePair(companyFacts,{metric:"revenue",currentFrame:frame.frame,priorFrame:frame.priorFrame,currentEnd:frame.end,priorEnd:frame.priorEnd,asOf});
+  const op=selectComparablePair(companyFacts,{metric:"operatingIncome",currentFrame:frame.frame,priorFrame:frame.priorFrame,currentEnd:frame.end,priorEnd:frame.priorEnd,asOf});
+  const net=selectComparablePair(companyFacts,{metric:"netIncome",currentFrame:frame.frame,priorFrame:frame.priorFrame,currentEnd:frame.end,priorEnd:frame.priorEnd,asOf});
+  const cfo=selectCompanyFact(companyFacts,{metric:"operatingCashFlow",frame:frame.frame,frameEnd:frame.end,asOf});
+  const capex=selectCompanyFact(companyFacts,{metric:"capex",frame:frame.frame,frameEnd:frame.end,asOf});
+
+  const currentRevenue=revenue.current;
+  const priorRevenue=revenue.prior;
+  const currentOp=op.current;
+  const priorOp=op.prior;
+  const currentCfo=cfo.fact;
+  const currentCapex=capex.fact;
+  const current={
+    eps:eps.current?.val??null,
+    revenue:currentRevenue?.val??null,
+    operatingIncome:currentOp&&currentRevenue&&samePeriod(currentOp,currentRevenue)?currentOp.val:null,
+    netIncome:net.current?.val??null,
+    operatingCashFlow:currentCfo&&currentRevenue&&samePeriod(currentCfo,currentRevenue)?currentCfo.val:null,
+    capex:currentCapex&&currentRevenue&&samePeriod(currentCapex,currentRevenue)?currentCapex.val:null,
+  };
+  const priorYear={
+    eps:eps.prior?.val??null,
+    revenue:priorRevenue?.val??null,
+    operatingIncome:priorOp&&priorRevenue&&samePeriod(priorOp,priorRevenue)?priorOp.val:null,
+    netIncome:net.prior?.val??null,
+  };
+  return {
+    cik,ticker:member?.ticker??null,name:member?.name??null,
+    isFinancial:division?division.financial:null,
+    sectorId:division?.id??null,
+    sic:Number.isInteger(sic)&&sic>0?sic:null,
+    sicDivision:division?.label??null,
+    current,priorYear,
+    audit:{
+      status:"PASS",
+      epsTag:eps.tag??null,
+      revenueTag:revenue.tag??null,
+      sicKnown:!!division,
+      directQuarterOnly:true,
+      q4EpsAnnualMinusNineMonths:"FORBIDDEN",
+    },
+  };
+}
+
+function rawCoverageGate(raw){
+  const c=raw?.components??{};
+  const checks={
+    S1_EPS:{coverage:c.epsGrowthStrength?.coverage??null,min:0.80},
+    S2_REVENUE:{coverage:c.revenueGrowth?.coverage??null,min:0.80},
+    S3_MARGIN_LEVEL:{coverage:c.operatingMarginLevel?.coverage??null,min:0.80},
+    S4_MARGIN_CHANGE:{coverage:c.operatingMarginChange?.coverage??null,min:0.80},
+    S5_FCF_MARGIN:{coverage:c.freeCashFlowMargin?.coverage??null,min:0.70},
+    S7_EPS_BREADTH:{coverage:c.epsImprovementBreadth?.coverage??null,min:0.80},
+    S8_PROFITABLE_BREADTH:{coverage:c.profitableCompanyBreadth?.coverage??null,min:0.80},
+  };
+  for(const value of Object.values(checks))value.pass=finite(value.coverage)&&value.coverage>=value.min;
+  return checks;
+}
+
+function formatRaw(value){return finite(value)?String(Math.round(value*1e6)/1e6):"null";}
+
+export async function runEarningsR5CurrentFrameAudit({incoming,coreFile,asOf=new Date().toISOString().slice(0,10),lagDays=MATURE_LAG_DAYS}={}){
+  const inputDir=incoming??path.join(defaultBase,"manual-input","e1-r5","incoming");
+  const core=coreFile??path.join(defaultBase,"storage","core.sqlite");
+  const universe=readLatestEarningsUniverse(core);
+  const frame=latestMatureFrame(asOf,{lagDays});
+  if(universe.status!=="PASS"||!frame)return {status:"PARTIAL",reason:universe.status!=="PASS"?"UNIVERSE_REQUIRED":"MATURE_FRAME_REQUIRED",active:false,dbWrites:0,networkCalls:0};
+
+  const factsDir=path.join(inputDir,E1_R5_OFFICIAL_SOURCE_MANIFEST.secCompanyFacts.extractedDirectory);
+  const submissionsDir=path.join(inputDir,E1_R5_OFFICIAL_SOURCE_MANIFEST.secSubmissions.extractedDirectory);
+  const rows=[];let factFiles=0,submissionFiles=0,invalidFacts=0;
+  for(const member of universe.members){
+    const factFile=companyFile(factsDir,member.cik),submissionFile=companyFile(submissionsDir,member.cik);
+    if(factFile)factFiles++;if(submissionFile)submissionFiles++;
+    const facts=factFile?readJson(factFile):null,submission=submissionFile?readJson(submissionFile):null;
+    const row=buildIssuerRowFromDocuments({member,companyFacts:facts,submission,frame,asOf});
+    if(row.audit?.status!=="PASS")invalidFacts++;
+    rows.push(row);
+  }
+
+  const laborFile=path.join(inputDir,E1_R5_OFFICIAL_SOURCE_MANIFEST.blsUnitLaborCost.localName);
+  const labor=await inspectBlsPrFile(laborFile,{seriesId:E1_R5_OFFICIAL_SOURCE_MANIFEST.blsUnitLaborCost.seriesId});
+  const latestLabor=labor.latest&&labor.latest.year===frame.year&&labor.latest.quarter===frame.quarter?labor.latest.value:null;
+  const raw=buildEarningsR5RawComponents({issuerRows:rows,unitLaborCostYoY:latestLabor});
+  const gates=rawCoverageGate(raw);
+  const divisions=[...new Set(rows.map(row=>row.sectorId).filter(Boolean))].sort();
+  const sectorEligible=raw.components?.improvingSectorBreadth?.eligibleCount??0;
+
+  return {
+    version:1,
+    methodologyVersion:"E1-R5-SHADOW-R1",
+    at:new Date().toISOString(),
+    asOf,
+    active:false,
+    status:Object.values(gates).every(value=>value.pass)?"PASS":"PARTIAL",
+    networkCalls:0,
+    dbReads:1,
+    dbWrites:0,
+    frame:{...frame},
+    universe:{periodEnd:universe.periodEnd,memberCount:universe.memberCount},
+    sourceCoverage:{companyFactsFiles:factFiles,submissionFiles,invalidCompanyFacts:invalidFacts,sicKnown:rows.filter(row=>row.sic!=null).length,nonFinancial:rows.filter(row=>row.isFinancial===false).length,financial:rows.filter(row=>row.isFinancial===true).length,unknownFinancial:rows.filter(row=>row.isFinancial==null).length,sicDivisions:divisions},
+    gates,
+    rawStatus:raw.status,
+    rawMissing:raw.missing,
+    rawComponents:raw.components,
+    quality:{...raw.quality,sectorEligibleCount:sectorEligible,sicDivisionMapping:"RESEARCH_ONLY_SEC_SIC_DIVISIONS"},
+    policies:{directQuarterOnly:true,q4EpsAnnualMinusNineMonths:"FORBIDDEN",noRenormalization:true,productionActivation:false},
+  };
+}
+
+export function formatEarningsR5CurrentFrameAuditText(report){
+  const c=report?.rawComponents??{},g=report?.gates??{};
+  const lines=[
+    `E1-R5 CURRENT FRAME AUDIT: ${report?.status??"UNKNOWN"}`,
+    `AT: ${report?.at??"-"}`,
+    `AS_OF: ${report?.asOf??"-"}`,
+    `FRAME: ${report?.frame?.frame??"-"} prior=${report?.frame?.priorFrame??"-"} end=${report?.frame?.end??"-"}`,
+    `UNIVERSE: ${report?.universe?.memberCount??0} period=${report?.universe?.periodEnd??"-"}`,
+    `FILES: companyFacts=${report?.sourceCoverage?.companyFactsFiles??0} submissions=${report?.sourceCoverage?.submissionFiles??0} invalidFacts=${report?.sourceCoverage?.invalidCompanyFacts??0}`,
+    `SIC: known=${report?.sourceCoverage?.sicKnown??0} nonFinancial=${report?.sourceCoverage?.nonFinancial??0} financial=${report?.sourceCoverage?.financial??0} unknown=${report?.sourceCoverage?.unknownFinancial??0} divisions=${(report?.sourceCoverage?.sicDivisions??[]).join(",")||"-"}`,
+  ];
+  for(const [key,value] of Object.entries(g))lines.push(`${key}_COVERAGE: ${pct(value.coverage)} min=${pct(value.min)} ${value.pass?"PASS":"FAIL"}`);
+  lines.push(
+    `S1_EPS_RAW: ${formatRaw(c.epsGrowthStrength?.raw)}`,
+    `S2_REVENUE_RAW: ${formatRaw(c.revenueGrowth?.raw)}`,
+    `S3_MARGIN_LEVEL_RAW: ${formatRaw(c.operatingMarginLevel?.raw)}`,
+    `S4_MARGIN_CHANGE_RAW: ${formatRaw(c.operatingMarginChange?.raw)}`,
+    `S5_FCF_MARGIN_RAW: ${formatRaw(c.freeCashFlowMargin?.raw)}`,
+    `S7_EPS_IMPROVEMENT_BREADTH_RAW: ${formatRaw(c.epsImprovementBreadth?.raw)}`,
+    `S8_PROFITABLE_BREADTH_RAW: ${formatRaw(c.profitableCompanyBreadth?.raw)}`,
+    `S9_IMPROVING_SIC_DIVISION_BREADTH_RAW: ${formatRaw(c.improvingSectorBreadth?.raw)} eligible=${c.improvingSectorBreadth?.eligibleCount??0}`,
+    `S11_UNIT_LABOR_COST_RAW: ${formatRaw(c.unitLaborCostPressure?.raw)}`,
+    `RAW_MISSING: ${(report?.rawMissing??[]).join(",")||"NONE"}`,
+    `Q4_EPS_ANNUAL_MINUS_9M: ${report?.policies?.q4EpsAnnualMinusNineMonths??"-"}`,
+    `NETWORK_CALLS: ${report?.networkCalls??0}`,
+    `DB_WRITES: ${report?.dbWrites??0}`,
+  );
+  return lines.join("\r\n")+"\r\n";
+}
+
+if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.url)){
+  try{
+    const cli=parseArgs();
+    const report=await runEarningsR5CurrentFrameAudit({incoming:cli.incoming?path.resolve(cli.incoming):undefined,coreFile:cli.core?path.resolve(cli.core):undefined,asOf:cli["as-of"]??undefined});
+    const reportsDir=cli["reports-dir"]?path.resolve(cli["reports-dir"]):path.join(defaultBase,"manual-input","e1-r5","reports");
+    fs.mkdirSync(reportsDir,{recursive:true});
+    const jsonFile=path.join(reportsDir,"e1-r5-current-frame-audit-last.json"),textFile=path.join(reportsDir,"e1-r5-current-frame-audit-last.txt");
+    fs.writeFileSync(jsonFile,JSON.stringify(report,null,2));fs.writeFileSync(textFile,formatEarningsR5CurrentFrameAuditText(report));
+    console.log(JSON.stringify({status:report.status,textReport:textFile,jsonReport:jsonFile,networkCalls:0,dbWrites:0}));
+  }catch(error){console.log(JSON.stringify({status:"FAILED",code:error?.code??"E1_R5_CURRENT_FRAME_AUDIT_FAILED"}));process.exitCode=1;}
+}
