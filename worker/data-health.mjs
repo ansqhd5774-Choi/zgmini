@@ -15,7 +15,7 @@ async function request(url, init={}) {
   if(new URL(url).hostname==='api.stlouisfed.org'){const slot=Math.max(Date.now(),fredNextRequest);fredNextRequest=slot+700;const delay=slot-Date.now();if(delay>0)await new Promise(resolve=>setTimeout(resolve,delay));}
   const started=Date.now();
   try {
-    const r=await fetch(url,{...init,redirect:'manual',signal:AbortSignal.timeout(18000)});
+    const r=await fetch(url,{...init,redirect:'manual',signal:init.signal??AbortSignal.timeout(18000)});
     if(r.status===429)return fail('RATE_LIMITED',429);
     if(r.status>=300&&r.status<400)return fail('UNEXPECTED_UPSTREAM_REDIRECT',r.status);
     let body; try {body=await r.json();} catch {return {...fail(r.status===429?'RATE_LIMITED':'NON_JSON_RESPONSE',r.status)};}
@@ -62,7 +62,7 @@ async function bea(key,year,onlyPce=false) {
   const series=[];
   for(const [id,table,freq]of(onlyPce?[['PCEPILFE','T20804','M']]:[['PCEPILFE','T20804','M'],['GDPC1','T10106','Q']])) {
     const u=new URL('https://apps.bea.gov/api/data');u.search=new URLSearchParams({UserID:key,method:'GetData',datasetname:'NIPA',TableName:table,Frequency:freq,Year:[year-2,year-1,year].join(','),ResultFormat:'JSON'});
-    const r=await request(u);if(r.status!=='PASS'){series.push({id,...r});continue;}
+    const r=await request(u,onlyPce?{signal:AbortSignal.timeout(45000)}:{});if(r.status!=='PASS'){series.push({id,...r});continue;}
     const rows=(r.body.BEAAPI?.Results?.Data??[]).filter(p=>id==='GDPC1'?p.LineNumber==='1':/excluding food and energy/i.test(p.LineDescription)&&!/market.based/i.test(p.LineDescription)).flatMap(p=>{const value=numeric(typeof p.DataValue==='string'?p.DataValue.replaceAll(',',''):p.DataValue);const period=p.TimePeriod;const date=/^\d{4}M\d{2}$/.test(period)?period.slice(0,4)+'-'+period.slice(5)+'-01':/^\d{4}Q[1-4]$/.test(period)?period.slice(0,4)+'-'+String((Number(period.slice(5))-1)*3+1).padStart(2,'0')+'-01':null;return value===null||!date?[]:[{date,value,period,unit:p.CL_UNIT,unitMultiplier:p.UNIT_MULT,description:p.LineDescription,line:p.LineNumber,seriesCode:p.SeriesCode}];}).sort((a,b)=>a.date.localeCompare(b.date));
     series.push({id,status:rows.length?'PASS':'FAIL',reason:rows.length?null:'MATCHING_DATA_NOT_FOUND',http:r.http,table,latest:rows.at(-1)??null,rows});
   }
@@ -157,8 +157,18 @@ async function provenance(id,key,asOf) {
 export async function collectCorePceFeed(env,store,clock=Date.now()) {
  const now=new Date(clock).toISOString();
  if(!env.FRED_API_KEY||!env.BEA_API_KEY)throw Error('MISSING_SECRET');
- const [f,b]=await Promise.all([fredSeries('PCEPILFE',env.FRED_API_KEY,now.slice(0,10)),bea(env.BEA_API_KEY,new Date(now).getUTCFullYear(),true)]);
- if(f.status!=='PASS'||b.status!=='PASS')throw Error('OFFICIAL_API_FAILED');
+ const checked=async collect=>{
+  let result=await collect();
+  const failures=result.series??[result];
+  if(result.status!=='PASS'&&failures.some(x=>x.reason==='NETWORK_OR_TIMEOUT'||x.http===429||x.http>=500)){
+   await new Promise(resolve=>setTimeout(resolve,2000));result=await collect();
+  }
+  return result;
+ };
+ const [f,b]=await Promise.all([checked(()=>fredSeries('PCEPILFE',env.FRED_API_KEY,now.slice(0,10))),checked(()=>bea(env.BEA_API_KEY,new Date(now).getUTCFullYear(),true))]);
+ const diagnostics=[['FRED',f],['BEA',b]].map(([provider,result])=>({provider,status:result.status,reason:result.reason??result.series?.find(x=>x.status!=='PASS')?.reason??null,http:result.http??result.series?.[0]?.http??null}));
+ await store.writeInput('core-pce-diagnostics',{checkedAt:now,providers:diagnostics},clock);
+ if(f.status!=='PASS'||b.status!=='PASS'){const error=Error('OFFICIAL_API_FAILED');error.providerDiagnostics=diagnostics;throw error;}
  let calendar=null;
  try{const r=await fetch('https://www.bea.gov/news/schedule/ics/online-calendar-subscription.ics',{redirect:'manual',signal:AbortSignal.timeout(8000)});if(r.ok)calendar=await r.text();}catch{}
  await store.writeInput('core-pce',{f,b,calendar},clock);

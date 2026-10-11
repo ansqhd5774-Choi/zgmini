@@ -27,7 +27,7 @@ export async function refreshPublicFeeds({env,collectors,now=Date.now(),store,lo
     if(body.status==='fallback'||body.status==='FAILED'||body.status==='unavailable')throw Error('INVALID_OUTPUT');
     await store.writeOutput(key,body,now);
     await locks.finish(attempt,token,now,'COMPLETE');results.push({key,status:'COMPLETE'});
-   }catch{await locks.finish(attempt,token,now,'FAILED');results.push({key,status:'FAILED'})}
+   }catch(error){await locks.finish(attempt,token,now,'FAILED');results.push({key,status:'FAILED',...(Array.isArray(error?.providerDiagnostics)?{providers:error.providerDiagnostics}: {})})}
   }}
   const workers=limit===Infinity?Object.keys(FEED_POLICY).length:1;
   await Promise.all(Array.from({length:workers},()=>work()));

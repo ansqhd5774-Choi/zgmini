@@ -5,6 +5,7 @@ import {fileURLToPath} from 'node:url';
 import {spawnSync} from 'node:child_process';
 import {save,read} from './d1.mjs';
 import {collectSupplyR10} from './supply-r10.mjs';
+import {collectAlpacaIncremental} from './alpaca-incremental.mjs';
 
 const here=path.dirname(fileURLToPath(import.meta.url));
 const base=process.env.ZGMINI_PC_HOME??path.join(os.homedir(),'.zgmini','pc-writer');
@@ -21,6 +22,7 @@ try{
  // A provider failure retains stored good data; publication still reads local storage.
  const collectionReport=fs.existsSync(path.join(base,'local-collection-last-run.json'))?read(path.join(base,'local-collection-last-run.json')):null;
  const supplyR10=lane==='core'?await collectSupplyR10(base):{status:'SKIPPED_KOREA_LANE'};
+ if(lane==='core')await collectAlpacaIncremental(base);
  const quotaGuarded=process.env.ZGMINI_QUOTA_MODE==='enforce'&&(collectionReport?.quota?.guarded??0)>0;
  const collectionFailed=collection.status!==0||['ERROR','FAILED','SOURCE_FAILED'].includes(collectionReport?.status);
  const publishRequested=process.argv.includes('--publish');
