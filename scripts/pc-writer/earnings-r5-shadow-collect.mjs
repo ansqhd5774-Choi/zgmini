@@ -6,6 +6,7 @@ import {execFileSync} from "node:child_process";
 import {collectEarningsR5OfficialPreflightInputs} from "./earnings-r5-official-download.mjs";
 import {formatEarningsR5OfficialPreflightText,runEarningsR5OfficialPreflight} from "./earnings-r5-official-preflight.mjs";
 import {formatEarningsR5CurrentFrameAuditText,runEarningsR5CurrentFrameAudit} from "./earnings-r5-current-frame-audit.mjs";
+import {formatEarningsR5CoverageDiagnosticText,runEarningsR5CoverageDiagnostic} from "./earnings-r5-coverage-diagnostic.mjs";
 
 const defaultBase=process.env.ZGMINI_PC_HOME??path.join(os.homedir(),".zgmini","pc-writer");
 
@@ -33,6 +34,8 @@ export function formatEarningsR5ShadowCollectionText(report){
     formatEarningsR5OfficialPreflightText(report?.preflight??{}).trimEnd(),
     "",
     formatEarningsR5CurrentFrameAuditText(report?.currentFrameAudit??{}).trimEnd(),
+    "",
+    formatEarningsR5CoverageDiagnosticText(report?.coverageDiagnostic??{}).trimEnd(),
   ];
   return lines.join("\r\n")+"\r\n";
 }
@@ -43,9 +46,10 @@ export async function runEarningsR5ShadowCollection({incoming,coreFile,reportsDi
   const collection=await collectEarningsR5OfficialPreflightInputs({incoming:inputDir,coreFile:core,fetchImpl,execFile});
   const preflight=await runEarningsR5OfficialPreflight({incoming:inputDir,coreFile:core});
   const currentFrameAudit=await runEarningsR5CurrentFrameAudit({incoming:inputDir,coreFile:core,asOf});
+  const coverageDiagnostic=await runEarningsR5CoverageDiagnostic({incoming:inputDir,coreFile:core,asOf});
   const status=collection.status==="COMPLETE"&&preflight.status==="PASS"&&currentFrameAudit.status==="PASS"?"PASS":"PARTIAL";
   const report={
-    version:3,
+    version:4,
     methodologyVersion:"E1-R5-SHADOW-R1",
     at:new Date().toISOString(),
     active:false,
@@ -54,6 +58,7 @@ export async function runEarningsR5ShadowCollection({incoming,coreFile,reportsDi
     collection,
     preflight,
     currentFrameAudit,
+    coverageDiagnostic,
   };
   const outDir=reportsDir??path.join(defaultBase,"manual-input","e1-r5","reports");
   fs.mkdirSync(outDir,{recursive:true});
