@@ -124,6 +124,23 @@ test("R11 BLS parser scans recent months beyond the old 220-column diagnostic ca
   assert.ok(Math.abs(report.series[0].annualized3m-400*Math.log(104/100))<1e-12);
 });
 
+test("R13 BLS parser resolves the official Mon-YY headers and ignores trailing NA",()=>{
+  const shared=["Title","Code","Apr-26","May-26","Jun-26","Jul-26","Aug-26","Inputs to 112, animal production, excluding capital investment and labor","IN112","NA"];
+  const buffer=xlsxFixture({sheetName:"Sheet1",sharedValues:shared,rows:[
+    `<row r="5">${s("A5",0)}${s("B5",1)}</row>`,
+    `<row r="6">${s("C6",2)}${s("D6",3)}${s("E6",4)}${s("F6",5)}${s("G6",6)}</row>`,
+    `<row r="7">${s("A7",7)}${s("B7",8)}${n("C7",100)}${n("D7",101)}${n("E7",102)}${n("F7",104)}${s("G7",9)}</row>`,
+  ]});
+  const report=parseBlsSatelliteInputWorkbook(buffer,{asOf:"2026-10-11"});
+  assert.equal(report.status,"PASS");
+  assert.equal(report.rootSeriesCount,1);
+  assert.equal(report.annualized3mReadyCount,1);
+  assert.equal(report.series[0].code,"IN112");
+  assert.equal(report.series[0].latest.month,"2026-07-01");
+  assert.equal(report.series[0].lag3m.month,"2026-04-01");
+  assert.ok(Math.abs(report.series[0].annualized3m-400*Math.log(104/100))<1e-12);
+});
+
 test("R9 parsers fail closed when required semantic rows are absent",()=>{
   const empty=xlsxFixture({sharedValues:["Header"],rows:[`<row r="1">${s("A1",0)}</row>`]});
   const bea=parseBeaA051rcQuarterlyWorkbook(empty,{asOf:"2026-10-11"});
