@@ -5,7 +5,15 @@ import readline from "node:readline";
 import {createHash} from "node:crypto";
 import {DatabaseSync} from "node:sqlite";
 import {fileURLToPath} from "node:url";
-import {classifySecFact,validateSecFsdsHeaders} from "../../lib/market-score/earnings-e1-r5-input-contract.mjs";
+import {
+  E1_R5_SEC_CONTRACT,
+  classifySecFact,
+  isExplicitCalendarQuarterFrame,
+  secMetricForTag,
+  secUnitAllowed,
+  validateSecCompanyFactsDocument,
+  validateSecFsdsHeaders,
+} from "../../lib/market-score/earnings-e1-r5-input-contract.mjs";
 import {inspectXlsxArchive} from "../../lib/market-score/earnings-e1-r5-offline-preflight.mjs";
 
 const defaultBase=process.env.ZGMINI_PC_HOME??path.join(os.homedir(),".zgmini","pc-writer");
@@ -14,6 +22,7 @@ const split=line=>String(line??"").replace(/\r$/,"").split("\t").map(clean);
 const indexOfHeaders=headers=>Object.fromEntries(headers.map((value,index)=>[value.toLowerCase(),index]));
 const finite=value=>typeof value==="number"&&Number.isFinite(value);
 const padCik=value=>{const digits=String(value??"").replace(/\D/g,"");return digits?digits.padStart(10,"0"):null;};
+const metricKeys=Object.freeze(["eps","revenue","operatingIncome","netIncome","operatingCashFlow","capex"]);
 
 function args(argv=process.argv.slice(2)){
   const out={};
@@ -74,6 +83,93 @@ export function readLatestEarningsUniverse(coreFile){
   }finally{try{db?.close();}catch{}}
 }
 
+function companyFactsPath(directory,cik){
+  const candidates=[`CIK${cik}.json`,`${cik}.json`];
+  for(const name of candidates){
+    const file=path.join(directory,name);
+    if(fs.existsSync(file)&&fs.statSync(file).isFile())return file;
+  }
+  return null;
+}
+
+export async function inspectSecCompanyFactsDir(directory,{universeCiks=null}={}){
+  if(!directory||!fs.existsSync(directory)||!fs.statSync(directory).isDirectory())return {status:"MISSING",reason:"SEC_COMPANYFACTS_DIR_REQUIRED"};
+  const universe=universeCiks instanceof Set?universeCiks:null;
+  if(!universe||!universe.size)return {status:"PARTIAL",reason:"EARNINGS_UNIVERSE_REQUIRED",source:"SEC_COMPANYFACTS_EXTRACTED_DIR"};
+
+  const factCounts=Object.fromEntries(metricKeys.map(key=>[key,0]));
+  const explicitQuarterFactCounts=Object.fromEntries(metricKeys.map(key=>[key,0]));
+  const issuerSets=Object.fromEntries(metricKeys.map(key=>[key,new Set()]));
+  const explicitQuarterIssuerSets=Object.fromEntries(metricKeys.map(key=>[key,new Set()]));
+  const q4ExplicitIssuerSets=Object.fromEntries(metricKeys.map(key=>[key,new Set()]));
+  const aggregateHash=createHash("sha256");
+  let filesFound=0,parsedFiles=0,parseFailures=0,invalidDocuments=0;
+
+  for(const cik of [...universe].sort()){
+    const file=companyFactsPath(directory,cik);
+    if(!file)continue;
+    filesFound++;
+    const fileHash=await hashFile(file);
+    aggregateHash.update(`${path.basename(file)}:${fileHash}\n`);
+    let document;
+    try{document=JSON.parse(fs.readFileSync(file,"utf8"));}
+    catch{parseFailures++;continue;}
+    const validation=validateSecCompanyFactsDocument(document);
+    if(validation.status!=="PASS"||validation.cik!==cik){invalidDocuments++;continue;}
+    parsedFiles++;
+    const facts=document.facts?.[E1_R5_SEC_CONTRACT.taxonomy]??{};
+    for(const [tag,concept] of Object.entries(facts)){
+      const metric=secMetricForTag(tag);if(!metric)continue;
+      const units=concept?.units;
+      if(!units||typeof units!=="object")continue;
+      for(const [unit,rows] of Object.entries(units)){
+        if(!secUnitAllowed(metric,unit)||!Array.isArray(rows))continue;
+        for(const fact of rows){
+          if(!E1_R5_SEC_CONTRACT.forms.includes(clean(fact?.form))||!finite(fact?.val))continue;
+          factCounts[metric]++;
+          issuerSets[metric].add(cik);
+          if(isExplicitCalendarQuarterFrame(fact?.frame)){
+            explicitQuarterFactCounts[metric]++;
+            explicitQuarterIssuerSets[metric].add(cik);
+            if(/Q4$/.test(clean(fact?.frame)))q4ExplicitIssuerSets[metric].add(cik);
+          }
+        }
+      }
+    }
+  }
+
+  const coverage=Object.fromEntries(metricKeys.map(metric=>{
+    const matched=issuerSets[metric].size;
+    return [metric,{matched,universeCount:universe.size,coverage:universe.size?matched/universe.size:null}];
+  }));
+  const explicitQuarterCoverage=Object.fromEntries(metricKeys.map(metric=>{
+    const matched=explicitQuarterIssuerSets[metric].size;
+    return [metric,{matched,universeCount:universe.size,coverage:universe.size?matched/universe.size:null}];
+  }));
+  const q4ExplicitIssuerCounts=Object.fromEntries(metricKeys.map(metric=>[metric,q4ExplicitIssuerSets[metric].size]));
+
+  return {
+    status:parsedFiles?"PASS":"PARTIAL",
+    reason:parsedFiles?null:"SEC_COMPANYFACTS_NO_VALID_UNIVERSE_FILES",
+    source:"SEC_COMPANYFACTS_EXTRACTED_DIR",
+    preferredBulkSource:E1_R5_SEC_CONTRACT.preferredBulkSource,
+    noDbWrites:true,
+    universeCount:universe.size,
+    filesFound,
+    missingUniverseFiles:Math.max(0,universe.size-filesFound),
+    parsedFiles,
+    parseFailures,
+    invalidDocuments,
+    aggregateSha256:filesFound?aggregateHash.digest("hex"):null,
+    factCounts,
+    explicitQuarterFactCounts,
+    coverage,
+    explicitQuarterCoverage,
+    q4ExplicitIssuerCounts,
+    q4EpsAnnualMinusNineMonths:E1_R5_SEC_CONTRACT.companyFactsPolicy.q4EpsAnnualMinusNineMonths,
+  };
+}
+
 export async function inspectSecFiles({subFile,numFile,universeCiks=null}={}){
   if(!subFile||!numFile||!fs.existsSync(subFile)||!fs.existsSync(numFile))return {status:"MISSING",reason:"SEC_FILES_REQUIRED"};
   const universe=universeCiks instanceof Set?universeCiks:null;
@@ -88,7 +184,7 @@ export async function inspectSecFiles({subFile,numFile,universeCiks=null}={}){
     submissions.set(adsh,{cik,form});forms[form]++;
   }
   let numHeaders=null,numIndex=null;
-  const accepted=Object.fromEntries(["eps","revenue","operatingIncome","netIncome","operatingCashFlow","capex"].map(key=>[key,0]));
+  const accepted=Object.fromEntries(metricKeys.map(key=>[key,0]));
   const uniqueCiks=Object.fromEntries(Object.keys(accepted).map(key=>[key,new Set()]));
   const rejected={UNMAPPED_TAG:0,COREGISTRANT_FACT:0,INVALID_DURATION:0,INVALID_UNIT:0};
   let matchedSubmissionFacts=0;
@@ -118,7 +214,7 @@ export async function inspectSecFiles({subFile,numFile,universeCiks=null}={}){
   const submissionUniverseCount=universe?[...new Set([...submissions.values()].map(item=>item.cik))].filter(cik=>universe.has(cik)).length:null;
   return {
     status:"PASS",
-    source:"SEC_FSDS_EXTRACTED_FILES",
+    source:"SEC_FSDS_EXTRACTED_FILES_SECONDARY",
     noDbWrites:true,
     submissionCount:submissions.size,
     submissionUniverseCount,
@@ -201,7 +297,7 @@ export async function runEarningsR5OfflinePreflight(options={}){
   const coreFile=options.coreFile??path.join(defaultBase,"storage","core.sqlite");
   const universe=readLatestEarningsUniverse(coreFile);
   const result={
-    version:1,
+    version:2,
     at:new Date().toISOString(),
     methodologyVersion:"E1-R5-SHADOW-R1",
     active:false,
@@ -210,14 +306,15 @@ export async function runEarningsR5OfflinePreflight(options={}){
     dbWrites:0,
     universe:{...universe,ciks:undefined,members:undefined},
     inputs:{
-      sec:await inspectSecFiles({subFile:options.secSub??path.join(incoming,"sub.txt"),numFile:options.secNum??path.join(incoming,"num.txt"),universeCiks:universe.ciks}),
+      sec:await inspectSecCompanyFactsDir(options.secCompanyFactsDir??path.join(incoming,"companyfacts"),{universeCiks:universe.ciks}),
+      secFsdsSecondary:await inspectSecFiles({subFile:options.secSub??path.join(incoming,"sub.txt"),numFile:options.secNum??path.join(incoming,"num.txt"),universeCiks:universe.ciks}),
       blsUnitLaborCost:await inspectBlsPrFile(options.blsPr??path.join(incoming,"pr.data.0.Current")),
       blsProducerInput:await inspectBlsInputXlsx(options.blsInput??path.join(incoming,"bls-satellite-input-to-industry-indexes.xlsx")),
       beaCorporateProfits:await inspectBeaFile(options.bea??path.join(incoming,"bea-corporate-profits.csv")),
     },
   };
-  const statuses=Object.values(result.inputs).map(item=>item.status);
-  result.status=statuses.every(status=>status==="PASS")&&universe.status==="PASS"?"PASS":"PARTIAL";
+  const required=[result.inputs.sec,result.inputs.blsUnitLaborCost,result.inputs.blsProducerInput,result.inputs.beaCorporateProfits];
+  result.status=required.every(item=>item.status==="PASS")&&universe.status==="PASS"?"PASS":"PARTIAL";
   return result;
 }
 
@@ -227,6 +324,7 @@ if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.ur
     const result=await runEarningsR5OfflinePreflight({
       incoming,
       coreFile:cli.core?path.resolve(cli.core):undefined,
+      secCompanyFactsDir:cli["sec-companyfacts-dir"]?path.resolve(cli["sec-companyfacts-dir"]):undefined,
       secSub:cli["sec-sub"]?path.resolve(cli["sec-sub"]):undefined,
       secNum:cli["sec-num"]?path.resolve(cli["sec-num"]):undefined,
       blsPr:cli["bls-pr"]?path.resolve(cli["bls-pr"]):undefined,
