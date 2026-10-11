@@ -57,6 +57,21 @@ test("R9 BEA parser resolves multi-row quarterly headers and exact YoY pair",()=
   assert.equal(report.lookAheadSafeHistorical,false);
 });
 
+test("R11 BEA parser scans current quarters beyond the old 180-column diagnostic cap",()=>{
+  const shared=["Q2","Q3","Q1","A051RC","Corporate profits with IVA and CCAdj"];
+  const buffer=xlsxFixture({sheetName:"T11200-Q",sharedValues:shared,rows:[
+    `<row r="1">${n("JA1",2025)}${n("JC1",2026)}</row>`,
+    `<row r="2">${s("JA2",0)}${s("JB2",1)}${s("JC2",2)}${s("JD2",0)}</row>`,
+    `<row r="3">${s("A3",3)}${s("B3",4)}${n("JA3",100)}${n("JB3",105)}${n("JC3",110)}${n("JD3",120)}</row>`,
+  ]});
+  const report=parseBeaA051rcQuarterlyWorkbook(buffer,{asOf:"2026-10-11"});
+  assert.equal(report.status,"PASS");
+  assert.equal(report.latest.period,"2026Q2");
+  assert.equal(report.latest.value,120);
+  assert.equal(report.priorYear.period,"2025Q2");
+  assert.equal(report.priorYear.value,100);
+});
+
 test("R9 BLS satellite parser keeps only root IN### series and computes exact 3M annualized change",()=>{
   const shared=["Series","Title","2026-04","2026-05","2026-06","2026-07","IN327","Inputs to 327, excluding capital investment and labor","IN3271"];
   const buffer=xlsxFixture({sheetName:"Satellite",sharedValues:shared,rows:[
@@ -83,6 +98,22 @@ test("R10 BLS satellite parser resolves merged-year style month headers",()=>{
     `<row r="1">${n("C1",2025)}${n("F1",2026)}</row>`,
     `<row r="2">${s("A2",0)}${s("B2",1)}${s("C2",2)}${s("D2",3)}${s("E2",4)}${s("F2",5)}</row>`,
     `<row r="3">${s("A3",6)}${s("B3",7)}${n("C3",100)}${n("D3",101)}${n("E3",102)}${n("F3",104)}</row>`,
+  ]});
+  const report=parseBlsSatelliteInputWorkbook(buffer,{asOf:"2026-10-11"});
+  assert.equal(report.status,"PASS");
+  assert.equal(report.rootSeriesCount,1);
+  assert.equal(report.annualized3mReadyCount,1);
+  assert.equal(report.series[0].latest.month,"2026-01-01");
+  assert.equal(report.series[0].lag3m.month,"2025-10-01");
+  assert.ok(Math.abs(report.series[0].annualized3m-400*Math.log(104/100))<1e-12);
+});
+
+test("R11 BLS parser scans recent months beyond the old 220-column diagnostic cap",()=>{
+  const shared=["Series","Title","Oct","Nov","Dec","Jan","IN327","Inputs to 327, excluding capital investment and labor"];
+  const buffer=xlsxFixture({sheetName:"Satellite",sharedValues:shared,rows:[
+    `<row r="1">${n("JA1",2025)}${n("JD1",2026)}</row>`,
+    `<row r="2">${s("A2",0)}${s("B2",1)}${s("JA2",2)}${s("JB2",3)}${s("JC2",4)}${s("JD2",5)}</row>`,
+    `<row r="3">${s("A3",6)}${s("B3",7)}${n("JA3",100)}${n("JB3",101)}${n("JC3",102)}${n("JD3",104)}</row>`,
   ]});
   const report=parseBlsSatelliteInputWorkbook(buffer,{asOf:"2026-10-11"});
   assert.equal(report.status,"PASS");
