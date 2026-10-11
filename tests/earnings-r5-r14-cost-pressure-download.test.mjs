@@ -31,8 +31,8 @@ test("R14 cost-pressure downloader fetches BLS plus official Census concordances
       E1_R5_OFFICIAL_SOURCE_MANIFEST.censusNaics2002To2007.url,
       E1_R5_OFFICIAL_SOURCE_MANIFEST.censusNaics2007To2012.url,
       E1_R5_OFFICIAL_SOURCE_MANIFEST.censusNaics2012To2017.url,
-      E1_R5_OFFICIAL_SOURCE_MANIFEST.censusNaics2017To2022Changes.url,
-      E1_R5_OFFICIAL_SOURCE_MANIFEST.censusNaics2022To2017Changes.url,
+      E1_R5_OFFICIAL_SOURCE_MANIFEST.censusNaics2017To2022.url,
+      E1_R5_OFFICIAL_SOURCE_MANIFEST.censusNaics2022To2017.url,
     ]);
     assert.ok(first.calls.every(row=>row.options.redirect==="error"));
     assert.ok(result.results.every(row=>row.status==="DOWNLOADED"&&row.requestCount===1&&/^[a-f0-9]{64}$/.test(row.sha256)));
