@@ -7,6 +7,7 @@ import {buildEarningsR5RawComponentsWithS13R33} from "../../lib/market-score/ear
 import {latestMatureFrame,MATURE_LAG_DAYS} from "../../lib/market-score/sec-earnings-e1-r2-provider.mjs";
 import {readLatestEarningsUniverse,inspectBlsPrFile} from "./earnings-r5-offline-preflight.mjs";
 import {E1_R5_OFFICIAL_SOURCE_MANIFEST} from "../../lib/market-score/earnings-e1-r5-official-sources.mjs";
+import {loadEarningsR5CurrentFrameOfficialInputs} from "./earnings-r5-current-frame-official-inputs.mjs";
 
 const defaultBase=process.env.ZGMINI_PC_HOME??path.join(os.homedir(),".zgmini","pc-writer");
 const finite=value=>typeof value==="number"&&Number.isFinite(value);
@@ -16,6 +17,7 @@ const dateDay=value=>{
   const ms=Date.parse(`${value}T00:00:00Z`);return Number.isFinite(ms)?Math.floor(ms/86400000):null;
 };
 const pct=value=>finite(value)?`${(value*100).toFixed(1)}%`:"-";
+const nearlyEqual=(a,b,tolerance=1e-9)=>finite(a)&&finite(b)&&Math.abs(a-b)<=tolerance;
 
 function parseArgs(argv=process.argv.slice(2)){
   const out={};
@@ -132,8 +134,8 @@ export function classifyCurrentFrameS13({auditFileExists=false,auditParsed=false
   return {status:"REJECTED",reason:binding?.reason??"R33_AUDIT_REJECTED",source:binding?.source??"SEC_R33",sourceVersion:binding?.sourceVersion??null};
 }
 
-export function buildCurrentFrameRawComponents({issuerRows=[],unitLaborCostYoY=null,guidanceR33Audit=null}={}){
-  return buildEarningsR5RawComponentsWithS13R33({issuerRows,unitLaborCostYoY,guidanceR33Audit});
+export function buildCurrentFrameRawComponents({issuerRows=[],beaCorporateProfits=null,producerIndustries=[],unitLaborCostYoY=null,guidanceR33Audit=null}={}){
+  return buildEarningsR5RawComponentsWithS13R33({issuerRows,beaCorporateProfits,producerIndustries,unitLaborCostYoY,guidanceR33Audit});
 }
 
 export function buildIssuerRowFromDocuments({member,companyFacts,submission,frame,asOf}){
@@ -205,7 +207,7 @@ function rawCoverageGate(raw){
 
 function formatRaw(value){return finite(value)?String(Math.round(value*1e6)/1e6):"null";}
 
-export async function runEarningsR5CurrentFrameAudit({incoming,coreFile,r33AuditFile,asOf=new Date().toISOString().slice(0,10),lagDays=MATURE_LAG_DAYS}={}){
+export async function runEarningsR5CurrentFrameAudit({incoming,coreFile,r33AuditFile,mappingFile,asOf=new Date().toISOString().slice(0,10),lagDays=MATURE_LAG_DAYS}={}){
   const inputDir=incoming??path.join(defaultBase,"manual-input","e1-r5","incoming");
   const core=coreFile??path.join(defaultBase,"storage","core.sqlite");
   const r33File=r33AuditFile??path.join(defaultBase,"manual-input","e1-r5","reports","e1-r5-r33-guidance-candidate-audit-last.json");
@@ -231,14 +233,28 @@ export async function runEarningsR5CurrentFrameAudit({incoming,coreFile,r33Audit
   const laborFile=path.join(inputDir,E1_R5_OFFICIAL_SOURCE_MANIFEST.blsUnitLaborCost.localName);
   const labor=await inspectBlsPrFile(laborFile,{seriesId:E1_R5_OFFICIAL_SOURCE_MANIFEST.blsUnitLaborCost.seriesId});
   const latestLabor=labor.latest&&labor.latest.year===frame.year&&labor.latest.quarter===frame.quarter?labor.latest.value:null;
-  const raw=buildCurrentFrameRawComponents({issuerRows:rows,unitLaborCostYoY:latestLabor,guidanceR33Audit:r33Audit});
+  const official=loadEarningsR5CurrentFrameOfficialInputs({inputDir,issuerRows:rows,frame,asOf,mappingFile});
+  const raw=buildCurrentFrameRawComponents({
+    issuerRows:rows,
+    beaCorporateProfits:official.beaCorporateProfits,
+    producerIndustries:official.producerIndustries,
+    unitLaborCostYoY:latestLabor,
+    guidanceR33Audit:r33Audit,
+  });
+  const rawS10=raw.components?.producerCostPressure;
+  const s10Recomputed=official.s10?.status==="READY"&&nearlyEqual(rawS10?.raw,official.s10.raw)&&nearlyEqual(rawS10?.coverage,official.s10.revenueCoverage,1e-9);
+  if(official.s10?.status==="READY"&&!s10Recomputed){
+    raw.components.producerCostPressure={...(rawS10??{}),raw:null,coverage:null,bindingReason:"S10_CURRENT_FRAME_RECOMPUTE_MISMATCH"};
+    raw.missing=[...new Set([...(raw.missing??[]),"S10"])];
+    raw.status="PARTIAL";
+  }
   const s13=classifyCurrentFrameS13({auditFileExists:r33AuditFileExists,auditParsed:r33AuditParsed,binding:raw.s13Binding});
   const gates=rawCoverageGate(raw);
   const divisions=[...new Set(rows.map(row=>row.sectorId).filter(Boolean))].sort();
   const sectorEligible=raw.components?.improvingSectorBreadth?.eligibleCount??0;
 
   return {
-    version:1,
+    version:2,
     methodologyVersion:"E1-R5-SHADOW-R1",
     at:new Date().toISOString(),
     asOf,
@@ -250,13 +266,15 @@ export async function runEarningsR5CurrentFrameAudit({incoming,coreFile,r33Audit
     frame:{...frame},
     universe:{periodEnd:universe.periodEnd,memberCount:universe.memberCount},
     sourceCoverage:{companyFactsFiles:factFiles,submissionFiles,invalidCompanyFacts:invalidFacts,sicKnown:rows.filter(row=>row.sic!=null).length,nonFinancial:rows.filter(row=>row.isFinancial===false).length,financial:rows.filter(row=>row.isFinancial===true).length,unknownFinancial:rows.filter(row=>row.isFinancial==null).length,sicDivisions:divisions,guidanceR33AuditFile:r33AuditFileExists},
+    s6:official.s6,
+    s10:{...official.s10,recomputed:s10Recomputed},
     s13,
     gates,
     rawStatus:raw.status,
     rawMissing:raw.missing,
     rawComponents:raw.components,
     quality:{...raw.quality,sectorEligibleCount:sectorEligible,sicDivisionMapping:"RESEARCH_ONLY_SEC_SIC_DIVISIONS"},
-    policies:{directQuarterOnly:true,q4EpsAnnualMinusNineMonths:"FORBIDDEN",noRenormalization:true,productionActivation:false},
+    policies:{directQuarterOnly:true,q4EpsAnnualMinusNineMonths:"FORBIDDEN",noRenormalization:true,productionActivation:false,formulaChanged:false,weightChanged:false,scoringGateChanged:false},
   };
 }
 
@@ -278,9 +296,13 @@ export function formatEarningsR5CurrentFrameAuditText(report){
     `S3_MARGIN_LEVEL_RAW: ${formatRaw(c.operatingMarginLevel?.raw)}`,
     `S4_MARGIN_CHANGE_RAW: ${formatRaw(c.operatingMarginChange?.raw)}`,
     `S5_FCF_MARGIN_RAW: ${formatRaw(c.freeCashFlowMargin?.raw)}`,
+    `S6_BEA_CORPORATE_PROFIT_RAW: ${formatRaw(c.beaCorporateProfitGrowth?.raw)}`,
+    `S6_STATUS: ${report?.s6?.status??"MISSING"} source=${report?.s6?.source??"-"}`,
     `S7_EPS_IMPROVEMENT_BREADTH_RAW: ${formatRaw(c.epsImprovementBreadth?.raw)}`,
     `S8_PROFITABLE_BREADTH_RAW: ${formatRaw(c.profitableCompanyBreadth?.raw)}`,
     `S9_IMPROVING_SIC_DIVISION_BREADTH_RAW: ${formatRaw(c.improvingSectorBreadth?.raw)} eligible=${c.improvingSectorBreadth?.eligibleCount??0}`,
+    `S10_PRODUCER_COST_PRESSURE_RAW: ${formatRaw(c.producerCostPressure?.raw)} coverage=${pct(c.producerCostPressure?.coverage)}`,
+    `S10_STATUS: ${report?.s10?.status??"MISSING"} recomputed=${report?.s10?.recomputed===true?"YES":"NO"} mapping=${report?.s10?.mappingStatus??"-"}`,
     `S11_UNIT_LABOR_COST_RAW: ${formatRaw(c.unitLaborCostPressure?.raw)}`,
     `S13_GUIDANCE_BREADTH_RAW: ${formatRaw(c.guidanceBreadth?.raw)}`,
     `S13_STATUS: ${report?.s13?.status??"MISSING"}`,
@@ -289,6 +311,9 @@ export function formatEarningsR5CurrentFrameAuditText(report){
     `S13_SOURCE_VERSION: ${report?.s13?.sourceVersion??"-"}`,
     `RAW_MISSING: ${(report?.rawMissing??[]).join(",")||"NONE"}`,
     `Q4_EPS_ANNUAL_MINUS_9M: ${report?.policies?.q4EpsAnnualMinusNineMonths??"-"}`,
+    `FORMULA_CHANGED: ${report?.policies?.formulaChanged===true?"YES":"NO"}`,
+    `WEIGHT_CHANGED: ${report?.policies?.weightChanged===true?"YES":"NO"}`,
+    `SCORING_GATE_CHANGED: ${report?.policies?.scoringGateChanged===true?"YES":"NO"}`,
     `NETWORK_CALLS: ${report?.networkCalls??0}`,
     `DB_WRITES: ${report?.dbWrites??0}`,
   );
@@ -302,6 +327,7 @@ if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.ur
       incoming:cli.incoming?path.resolve(cli.incoming):undefined,
       coreFile:cli.core?path.resolve(cli.core):undefined,
       r33AuditFile:cli["r33-audit"]?path.resolve(cli["r33-audit"]):undefined,
+      mappingFile:cli.mapping?path.resolve(cli.mapping):undefined,
       asOf:cli["as-of"]??undefined,
     });
     const reportsDir=cli["reports-dir"]?path.resolve(cli["reports-dir"]):path.join(defaultBase,"manual-input","e1-r5","reports");
