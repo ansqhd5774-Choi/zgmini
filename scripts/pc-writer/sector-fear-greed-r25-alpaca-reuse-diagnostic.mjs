@@ -14,15 +14,16 @@ const finite=v=>typeof v==="number"&&Number.isFinite(v);
 const validDate=v=>typeof v==="string"&&/^\d{4}-\d{2}-\d{2}$/.test(v)&&Number.isFinite(Date.parse(`${v}T00:00:00Z`));
 const percentile=(values,p)=>{if(!values.length)return null;const a=[...values].sort((x,y)=>x-y),i=Math.min(a.length-1,Math.max(0,Math.floor((a.length-1)*p)));return a[i];};
 const round=v=>finite(v)?Math.round(v*1000000)/1000000:null;
-function safeArray(file){try{const value=JSON.parse(fs.readFileSync(file,"utf8"));return Array.isArray(value)?value:[];}catch{return [];}}
+const safeArray=file=>{try{const value=JSON.parse(fs.readFileSync(file,"utf8"));return Array.isArray(value)?value:[];}catch{return [];}};
+
+export function maxFiniteR25(values=[]){let max=null;for(const value of values)if(finite(value)&&(max===null||value>max))max=value;return max;}
 
 export function mergeAlpacaRows(rowSets=[]){
   const byKey=new Map(),conflicts=[];
   for(const rows of rowSets)for(const row of Array.isArray(rows)?rows:[]){
     const ticker=String(row?.ticker??"").trim(),date=String(row?.tradeDate??row?.trade_date??row?.date??"").slice(0,10),close=Number(row?.currentClose??row?.current_close??row?.close),volume=Number(row?.currentVolume??row?.current_volume??row?.volume);
     if(!ticker||!validDate(date)||!finite(close)||close<=0)continue;
-    const normalized={ticker,date,close,volume:finite(volume)&&volume>=0?volume:null};
-    const key=`${ticker}|${date}`,old=byKey.get(key);
+    const normalized={ticker,date,close,volume:finite(volume)&&volume>=0?volume:null},key=`${ticker}|${date}`,old=byKey.get(key);
     if(old&&(old.close!==normalized.close||old.volume!==normalized.volume))conflicts.push({ticker,date});
     if(!old)byKey.set(key,normalized);
   }
@@ -38,9 +39,11 @@ export function summarizeTickerCoverage(rows=[]){
 }
 
 export function compareOverlap(alpacaRows=[],referenceRows=[]){
-  const ref=new Map();for(const row of referenceRows){const ticker=String(row?.ticker??"").trim(),date=String(row?.tradeDate??row?.trade_date??row?.date??"").slice(0,10),close=Number(row?.currentClose??row?.current_close??row?.close);if(ticker&&validDate(date)&&finite(close)&&close>0)ref.set(`${ticker}|${date}`,close);}
-  const diffs=[];for(const row of alpacaRows){const value=ref.get(`${row.ticker}|${row.date}`);if(finite(value)&&value>0)diffs.push(Math.abs(row.close/value-1));}
-  return {pairs:diffs.length,medianRelativeDifference:round(percentile(diffs,0.50)),p95RelativeDifference:round(percentile(diffs,0.95)),maxRelativeDifference:round(diffs.length?Math.max(...diffs):null),aboveOnePercent:diffs.filter(v=>v>.01).length};
+  const ref=new Map();
+  for(const row of referenceRows){const ticker=String(row?.ticker??"").trim(),date=String(row?.tradeDate??row?.trade_date??row?.date??"").slice(0,10),close=Number(row?.currentClose??row?.current_close??row?.close);if(ticker&&validDate(date)&&finite(close)&&close>0)ref.set(`${ticker}|${date}`,close);}
+  const diffs=[];let aboveOnePercent=0,maxRelativeDifference=null;
+  for(const row of alpacaRows){const value=ref.get(`${row.ticker}|${row.date}`);if(!finite(value)||value<=0)continue;const diff=Math.abs(row.close/value-1);diffs.push(diff);if(diff>.01)aboveOnePercent++;if(maxRelativeDifference===null||diff>maxRelativeDifference)maxRelativeDifference=diff;}
+  return {pairs:diffs.length,medianRelativeDifference:round(percentile(diffs,0.50)),p95RelativeDifference:round(percentile(diffs,0.95)),maxRelativeDifference:round(maxRelativeDifference),aboveOnePercent};
 }
 
 function listStoredFiles(dir){
@@ -50,8 +53,8 @@ function listStoredFiles(dir){
 }
 
 function readReferenceRows(base){
-  const names=["local-breadth-r7-pit-price-history.json","local-breadth-r6-shadow-history.json"],rows=[];
-  for(const name of names){const file=path.join(base,name);if(!fs.existsSync(file))continue;try{const payload=JSON.parse(fs.readFileSync(file,"utf8"));for(const row of payload?.rows??[])rows.push(row);}catch{}}
+  const rows=[];
+  for(const name of ["local-breadth-r7-pit-price-history.json","local-breadth-r6-shadow-history.json"]){const file=path.join(base,name);if(!fs.existsSync(file))continue;try{const payload=JSON.parse(fs.readFileSync(file,"utf8"));for(const row of payload?.rows??[])rows.push(row);}catch{}}
   return rows;
 }
 
@@ -68,4 +71,4 @@ export function runSectorFearGreedR25AlpacaReuseDiagnostic(base=process.env.ZGMI
   fs.mkdirSync(base,{recursive:true});const jsonFile=path.join(base,OUTPUT_JSON),txtFile=path.join(base,OUTPUT_TXT);fs.writeFileSync(jsonFile,JSON.stringify(report,null,2)+"\n");fs.writeFileSync(txtFile,lines.join("\n")+"\n");return {status:report.status,jsonFile,txtFile,providerCalls:0,summary,overlap};
 }
 
-if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.url)){try{console.log(JSON.stringify(runSectorFearGreedR25AlpacaReuseDiagnostic(),null,2));}catch(error){const message=String(error?.message??""),code=/^[A-Z0-9_:-]+$/.test(message)?message:"R25_ALPACA_REUSE_DIAGNOSTIC_FAILED";console.log(JSON.stringify({status:"FAILED",code,providerCalls:0,publicMutation:false,productionFormulaChanged:false}));process.exitCode=1;}}
+if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.url)){try{console.log(JSON.stringify(runSectorFearGreedR25AlpacaReuseDiagnostic(),null,2));}catch(error){const message=String(error?.message??""),code=/^[A-Z0-9_:-]+$/.test(message)?message:"R25_ALPACA_REUSE_DIAGNOSTIC_FAILED";console.log(JSON.stringify({status:"FAILED",code,errorName:String(error?.name??"Error"),providerCalls:0,publicMutation:false,productionFormulaChanged:false}));process.exitCode=1;}}
