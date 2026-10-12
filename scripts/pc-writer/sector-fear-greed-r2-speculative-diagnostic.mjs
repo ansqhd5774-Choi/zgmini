@@ -6,7 +6,7 @@ import {gunzipSync} from "node:zlib";
 import {fileURLToPath} from "node:url";
 import {parsePitSectorHistoryCsv,buildPointInTimeSectorInputs} from "../../lib/market-score/sector-fear-greed-r1-inputs.mjs";
 import {SECTOR_FEAR_GREED_R1_ETFS} from "../../lib/market-score/sector-fear-greed-r1-shadow.mjs";
-import {buildSectorSpeculativeCandidate} from "../../lib/market-score/sector-fear-greed-r2-speculative-shadow.mjs";
+import {buildSectorSpeculativeCandidate,buildSectorSpeculativeCandidateR21} from "../../lib/market-score/sector-fear-greed-r2-speculative-shadow.mjs";
 
 const DEFAULT_BASE=path.join(os.homedir(),".zgmini","pc-writer");
 const PIT_FILE="local-sector-fear-greed-r1-pit-gics.csv";
@@ -27,24 +27,49 @@ function pearson(left,right){if(left.length!==right.length||left.length<20)retur
 function correlate(aRows,aKey,bRows,bKey){const bMap=new Map(bRows.filter(row=>finite(row?.[bKey])).map(row=>[row.date,row[bKey]])),x=[],y=[];for(const row of aRows){if(!finite(row?.[aKey])||!bMap.has(row.date))continue;x.push(row[aKey]);y.push(bMap.get(row.date));}return {observations:x.length,pearson:pearson(x,y)};}
 function etfReturn20(rows=[]){const series=normalizePriceRows(rows),out=[];for(let i=20;i<series.length;i++)out.push({date:series[i].date,return20:series[i].close/series[i-20].close-1});return out;}
 function round(value){return finite(value)?Math.round(value*10000)/10000:null;}
+function compactCorr(map){return Object.fromEntries(Object.entries(map).map(([k,v])=>[k,{observations:v.observations,pearson:round(v.pearson)}]));}
+function maxAbs(map){return Math.max(0,...Object.values(map).map(item=>Math.abs(item.pearson??0)));}
 
 export function runSectorFearGreedR2SpeculativeDiagnostic(base=process.env.ZGMINI_PC_HOME??DEFAULT_BASE,{now=new Date()}={}){
   const pitPath=path.join(base,PIT_FILE),pricePath=path.join(base,PRICE_FILE);if(!fs.existsSync(pitPath))throw new Error("SECTOR_SPEC_PIT_HISTORY_MISSING");if(!fs.existsSync(pricePath))throw new Error("SECTOR_SPEC_IEX_PRICE_HISTORY_MISSING");
   const pit=parsePitSectorHistoryCsv(fs.readFileSync(pitPath,"utf8")),storage=readStorage(base),derived=buildPointInTimeSectorInputs({rows:storage.rows,pitHistory:pit}),pricePayload=safeJson(pricePath),series=pricePayload?.series??{},spyRows=normalizePriceRows(series.SPY??[]),sectors={};
   for(const [sectorId,ticker] of Object.entries(SECTOR_FEAR_GREED_R1_ETFS)){
-    const candidate=buildSectorSpeculativeCandidate({rows:storage.rows,spyRows,pitHistory:pit,sectorId}),pitRows=derived.sectors[sectorId]??[],etfR20=etfReturn20(series[ticker]??[]);
-    const correlations={
-      tailVsEtfReturn20:correlate(candidate.history,"tailBalance",etfR20,"return20"),
-      leadershipVsEtfReturn20:correlate(candidate.history,"speculativeLeadership",etfR20,"return20"),
-      volumeVsDemand:correlate(candidate.history,"speculativeVolume",pitRows,"volumeBreadth"),
-      tailVsBreadth50:correlate(candidate.history,"tailBalance",pitRows,"b50"),
+    const etfRows=normalizePriceRows(series[ticker]??[]),r2=buildSectorSpeculativeCandidate({rows:storage.rows,spyRows,pitHistory:pit,sectorId}),r21=buildSectorSpeculativeCandidateR21({rows:storage.rows,spyRows,etfRows,pitHistory:pit,sectorId}),pitRows=derived.sectors[sectorId]??[],etfR20=etfReturn20(etfRows);
+    const oldCorrelations={
+      tailVsEtfReturn20:correlate(r2.history,"tailBalance",etfR20,"return20"),
+      leadershipVsEtfReturn20:correlate(r2.history,"speculativeLeadership",etfR20,"return20"),
+      volumeVsDemand:correlate(r2.history,"speculativeVolume",pitRows,"volumeBreadth"),
+      tailVsBreadth50:correlate(r2.history,"tailBalance",pitRows,"b50"),
     };
-    const maxAbsCorrelation=Math.max(0,...Object.values(correlations).map(item=>Math.abs(item.pearson??0)));
-    sectors[sectorId]={ticker,status:candidate.status,score:candidate.score,historyObservations:candidate.history.length,current:{tailBalance:candidate.metrics.tailBalance.current,maxLottery:candidate.metrics.maxLottery.current,speculativeLeadership:candidate.metrics.speculativeLeadership.current,speculativeVolume:candidate.metrics.speculativeVolume.current},referenceObservations:{tailBalance:candidate.metrics.tailBalance.referenceObservations,speculativeLeadership:candidate.metrics.speculativeLeadership.referenceObservations,speculativeVolume:candidate.metrics.speculativeVolume.referenceObservations},correlations:Object.fromEntries(Object.entries(correlations).map(([k,v])=>[k,{observations:v.observations,pearson:round(v.pearson)}])),maxAbsCorrelation:round(maxAbsCorrelation),redundancyFlag:maxAbsCorrelation>=0.85?"HIGH":"NOT_HIGH"};
+    const r21ExistingCorrelations={
+      lotteryVsEtfReturn20:correlate(r21.history,"lotteryDemand",etfR20,"return20"),
+      lotteryVsBreadth50:correlate(r21.history,"lotteryDemand",pitRows,"b50"),
+      lotteryVsDemand:correlate(r21.history,"lotteryDemand",pitRows,"volumeBreadth"),
+      leadershipVsEtfReturn20:correlate(r21.history,"speculativeLeadership",etfR20,"return20"),
+      volumeVsDemand:correlate(r21.history,"speculativeVolume",pitRows,"volumeBreadth"),
+    };
+    const r21InternalCorrelations={
+      lotteryVsLeadership:correlate(r21.history,"lotteryDemand",r21.history,"speculativeLeadership"),
+      lotteryVsVolume:correlate(r21.history,"lotteryDemand",r21.history,"speculativeVolume"),
+      leadershipVsVolume:correlate(r21.history,"speculativeLeadership",r21.history,"speculativeVolume"),
+    };
+    const oldMax=maxAbs(oldCorrelations),r21Max=maxAbs(r21ExistingCorrelations),r21InternalMax=maxAbs(r21InternalCorrelations);
+    sectors[sectorId]={
+      ticker,
+      historyObservations:r21.history.length,
+      oldR2:{status:r2.status,score:r2.score,current:{tailBalance:r2.metrics.tailBalance.current,speculativeLeadership:r2.metrics.speculativeLeadership.current,speculativeVolume:r2.metrics.speculativeVolume.current},referenceObservations:{tailBalance:r2.metrics.tailBalance.referenceObservations,speculativeLeadership:r2.metrics.speculativeLeadership.referenceObservations,speculativeVolume:r2.metrics.speculativeVolume.referenceObservations},correlations:compactCorr(oldCorrelations),maxAbsExistingCorrelation:round(oldMax)},
+      r21:{status:r21.status,score:r21.score,current:{lotteryDemand:r21.metrics.lotteryDemand.current,speculativeLeadership:r21.metrics.speculativeLeadership.current,speculativeVolume:r21.metrics.speculativeVolume.current},referenceObservations:{lotteryDemand:r21.metrics.lotteryDemand.referenceObservations,speculativeLeadership:r21.metrics.speculativeLeadership.referenceObservations,speculativeVolume:r21.metrics.speculativeVolume.referenceObservations},existingCorrelations:compactCorr(r21ExistingCorrelations),internalCorrelations:compactCorr(r21InternalCorrelations),maxAbsExistingCorrelation:round(r21Max),maxAbsInternalCorrelation:round(r21InternalMax),redundancyFlag:r21Max>=0.85?"HIGH":"NOT_HIGH"},
+    };
   }
-  const generatedAt=(now instanceof Date?now:new Date(now)).toISOString(),report={version:1,generatedAt,status:"SHADOW_DIAGNOSTIC_COMPLETE",mode:"R2_SPECULATIVE_APPETITE_RESEARCH_ONLY",providerCalls:0,rawRowsStored:false,publicMutation:false,dbSchemaChanged:false,productionFormulaChanged:false,schedulerChanged:false,referenceRequirement:756,candidateWeights:{tailBalance:0.40,speculativeLeadership:0.40,speculativeVolume:0.20},economicIntent:"REPLACE_UNAVAILABLE_OPTIONS_WITH_CROSS_SECTIONAL_SPECULATIVE_RISK_APPETITE",constituentRows:storage.rows.length,spyRows:spyRows.length,storedMergeDiagnostics:storage.diagnostics,sectors};
-  const lines=["ZGMINI SECTOR FEAR & GREED R2 SPECULATIVE APPETITE DIAGNOSTIC",`generatedAt=${generatedAt}`,`status=${report.status}`,`constituentRows=${report.constituentRows} spyRows=${report.spyRows}`,`storedConflicts=${report.storedMergeDiagnostics.conflicts}`,"candidate=40% TAIL_BALANCE + 40% SPECULATIVE_LEADERSHIP + 20% SPECULATIVE_VOLUME","referenceRequirement=756 (UNCHANGED)","","SECTOR | ETF | HISTORY | TAIL_REF | LEAD_REF | VOL_REF | MAX_ABS_CORR | REDUNDANCY"];
-  for(const [sectorId,item] of Object.entries(sectors)){lines.push(`${sectorId} | ${item.ticker} | ${item.historyObservations} | ${item.referenceObservations.tailBalance} | ${item.referenceObservations.speculativeLeadership} | ${item.referenceObservations.speculativeVolume} | ${item.maxAbsCorrelation??"NA"} | ${item.redundancyFlag}`);lines.push(`  corr tail~ETF20=${item.correlations.tailVsEtfReturn20.pearson??"NA"}(${item.correlations.tailVsEtfReturn20.observations}) lead~ETF20=${item.correlations.leadershipVsEtfReturn20.pearson??"NA"}(${item.correlations.leadershipVsEtfReturn20.observations}) vol~D=${item.correlations.volumeVsDemand.pearson??"NA"}(${item.correlations.volumeVsDemand.observations}) tail~B50=${item.correlations.tailVsBreadth50.pearson??"NA"}(${item.correlations.tailVsBreadth50.observations})`);}
+  const generatedAt=(now instanceof Date?now:new Date(now)).toISOString(),report={version:2,generatedAt,status:"SHADOW_DIAGNOSTIC_COMPLETE",mode:"R2_1_SPECULATIVE_APPETITE_RESEARCH_ONLY",providerCalls:0,rawRowsStored:false,publicMutation:false,dbSchemaChanged:false,productionFormulaChanged:false,schedulerChanged:false,referenceRequirement:756,oldCandidateWeights:{tailBalance:0.40,speculativeLeadership:0.40,speculativeVolume:0.20},r21CandidateWeights:{lotteryDemand:0.40,speculativeLeadership:0.40,speculativeVolume:0.20},economicIntent:"REPLACE_REDUNDANT_TAIL_BALANCE_WITH_SECTOR_ETF_RESIDUAL_LOTTERY_DEMAND",constituentRows:storage.rows.length,spyRows:spyRows.length,storedMergeDiagnostics:storage.diagnostics,sectors};
+  const lines=["ZGMINI SECTOR FEAR & GREED R2.1 SPECULATIVE APPETITE DIAGNOSTIC",`generatedAt=${generatedAt}`,`status=${report.status}`,`constituentRows=${report.constituentRows} spyRows=${report.spyRows}`,`storedConflicts=${report.storedMergeDiagnostics.conflicts}`,"oldCandidate=40% TAIL_BALANCE + 40% SPECULATIVE_LEADERSHIP + 20% SPECULATIVE_VOLUME","r21Candidate=40% RESIDUAL_LOTTERY_DEMAND + 40% SPECULATIVE_LEADERSHIP + 20% SPECULATIVE_VOLUME","referenceRequirement=756 (UNCHANGED)","","SECTOR | ETF | HISTORY | LOTTERY_REF | LEAD_REF | VOL_REF | OLD_MAX_EXISTING | R21_MAX_EXISTING | R21_MAX_INTERNAL | REDUNDANCY"];
+  for(const [sectorId,item] of Object.entries(sectors)){
+    const old=item.oldR2,r21=item.r21;
+    lines.push(`${sectorId} | ${item.ticker} | ${item.historyObservations} | ${r21.referenceObservations.lotteryDemand} | ${r21.referenceObservations.speculativeLeadership} | ${r21.referenceObservations.speculativeVolume} | ${old.maxAbsExistingCorrelation??"NA"} | ${r21.maxAbsExistingCorrelation??"NA"} | ${r21.maxAbsInternalCorrelation??"NA"} | ${r21.redundancyFlag}`);
+    lines.push(`  old corr tail~ETF20=${old.correlations.tailVsEtfReturn20.pearson??"NA"} tail~B50=${old.correlations.tailVsBreadth50.pearson??"NA"}`);
+    lines.push(`  r21 corr lottery~ETF20=${r21.existingCorrelations.lotteryVsEtfReturn20.pearson??"NA"} lottery~B50=${r21.existingCorrelations.lotteryVsBreadth50.pearson??"NA"} lottery~D=${r21.existingCorrelations.lotteryVsDemand.pearson??"NA"} lead~ETF20=${r21.existingCorrelations.leadershipVsEtfReturn20.pearson??"NA"} vol~D=${r21.existingCorrelations.volumeVsDemand.pearson??"NA"}`);
+    lines.push(`  r21 internal lottery~lead=${r21.internalCorrelations.lotteryVsLeadership.pearson??"NA"} lottery~vol=${r21.internalCorrelations.lotteryVsVolume.pearson??"NA"} lead~vol=${r21.internalCorrelations.leadershipVsVolume.pearson??"NA"}`);
+  }
   lines.push("","providerCalls=0 rawRowsStored=false publicMutation=false dbSchemaChanged=false productionFormulaChanged=false schedulerChanged=false","note=CANDIDATE_ONLY_NOT_APPROVED_NOT_PRODUCTION");
   fs.mkdirSync(base,{recursive:true});const jsonFile=path.join(base,OUTPUT_JSON),txtFile=path.join(base,OUTPUT_TXT);fs.writeFileSync(jsonFile,JSON.stringify(report,null,2)+"\n");fs.writeFileSync(txtFile,lines.join("\n")+"\n");return {status:report.status,jsonFile,txtFile,providerCalls:0,publicMutation:false,productionFormulaChanged:false};
 }
