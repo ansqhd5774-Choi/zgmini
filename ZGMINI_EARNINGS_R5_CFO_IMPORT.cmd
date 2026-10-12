@@ -2,7 +2,7 @@
 setlocal EnableExtensions
 
 set "ROOT=%~dp0"
-set "IMPORTER=%ROOT%scripts\pc-writer\earnings-r5-cfo-survey-local-import-r2.mjs"
+set "IMPORTER=%ROOT%scripts\pc-writer\earnings-r5-cfo-survey-local-import-r3.mjs"
 set "AUDIT=%ROOT%ZGMINI_EARNINGS_R5_FORWARD_AUDIT.cmd"
 if defined ZGMINI_PC_HOME (
   set "BASE=%ZGMINI_PC_HOME%"
@@ -26,7 +26,7 @@ set "REVISION_ARG="
 if not "%~6"=="" set "REVISION_ARG=--revision-id=%~6"
 
 if not exist "%IMPORTER%" (
-  echo [BLOCKED] earnings-r5-cfo-survey-local-import-r2.mjs not found.
+  echo [BLOCKED] earnings-r5-cfo-survey-local-import-r3.mjs not found.
   exit /b 2
 )
 if not exist "%SOURCE_FILE%" (
@@ -44,7 +44,7 @@ if exist "%ProgramFiles%\nodejs\node.exe" (
 )
 
 echo.
-echo [RUN] E1-R5 CFO Survey local PIT import R2
+echo [RUN] E1-R5 CFO Survey local PIT import R3
 echo [MODE] LOCAL SOURCE ONLY / NETWORK 0 / DB WRITE 0 / PRODUCTION OFF
 "%NODE%" "%IMPORTER%" "--base=%BASE%" "--file=%SOURCE_FILE%" "--source-url=%SOURCE_URL%" "--survey-year=%SURVEY_YEAR%" "--survey-quarter=%SURVEY_QUARTER%" "--release-at=%RELEASE_AT%" %REVISION_ARG%
 set "RC=%ERRORLEVEL%"
