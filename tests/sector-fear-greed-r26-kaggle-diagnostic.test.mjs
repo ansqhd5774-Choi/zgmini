@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import {parseR26CsvRow,candidateDotDashAlias,resolveR26PitTicker,inspectR26KaggleCsv,BENCHMARKS} from "../scripts/pc-writer/sector-fear-greed-r26-kaggle-diagnostic.mjs";
+import {parseR26CsvRow,candidateDotDashAlias,resolveR26PitTicker,inspectR26KaggleCsv,BENCHMARKS,r26ProviderCallsFromEnv} from "../scripts/pc-writer/sector-fear-greed-r26-kaggle-diagnostic.mjs";
 
 test("R2.6 CSV parser preserves quoted commas and escaped quotes",()=>{
   assert.deepEqual(parseR26CsvRow('2026-01-02,"BRK,B","a""b"'),["2026-01-02","BRK,B",'a"b']);
@@ -14,6 +14,23 @@ test("R2.6 PIT ticker resolver keeps exact identity ahead of dot-dash diagnostic
   assert.deepEqual(resolveR26PitTicker("ABC",pit),{ticker:"ABC",mode:"EXACT"});
   assert.equal(candidateDotDashAlias("BRK-B"),"BRK.B");
   assert.deepEqual(resolveR26PitTicker("BRK-B",pit),{ticker:"BRK.B",mode:"DOT_DASH_ALIAS"});
+});
+
+test("R2.6 provider-call evidence accepts only zero or one bounded acquisition request",()=>{
+  assert.equal(r26ProviderCallsFromEnv({}),0);
+  assert.equal(r26ProviderCallsFromEnv({ZGMINI_R26_KAGGLE_PROVIDER_CALLS:"0"}),0);
+  assert.equal(r26ProviderCallsFromEnv({ZGMINI_R26_KAGGLE_PROVIDER_CALLS:"1"}),1);
+  assert.equal(r26ProviderCallsFromEnv({ZGMINI_R26_KAGGLE_PROVIDER_CALLS:"2"}),0);
+  assert.equal(r26ProviderCallsFromEnv({ZGMINI_R26_KAGGLE_PROVIDER_CALLS:"bad"}),0);
+});
+
+test("R2.6 CMD acquisition is Windows-only, one-shot and shadow-isolated",()=>{
+  const source=fs.readFileSync(new URL("../scripts/pc-writer/run-sector-fear-greed-r26-kaggle-shadow.cmd",import.meta.url),"utf8");
+  assert.match(source,/curl\.exe -L --fail --silent --show-error --retry 0/);
+  assert.match(source,/andrewmvd\/sp-500-stocks\/sp500_stocks\.csv/);
+  assert.match(source,/ZGMINI_R26_KAGGLE_PROVIDER_CALLS=%PROVIDER_CALLS%/);
+  assert.doesNotMatch(source,/powershell|pwsh|wsl\.exe/i);
+  assert.doesNotMatch(source,/wrangler|d1 execute|cloudflare|publish|scheduler/i);
 });
 
 test("R2.6 inspection reports benchmark presence and PIT coverage without scoring",async()=>{
