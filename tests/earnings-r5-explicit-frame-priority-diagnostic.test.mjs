@@ -3,23 +3,23 @@ import assert from "node:assert/strict";
 import {selectExactExplicitFrameFact,selectPriorityComparablePair,buildExplicitFramePriorityDiagnosticFromDocuments} from "../scripts/pc-writer/earnings-r5-explicit-frame-priority-diagnostic.mjs";
 import {selectCompanyFact} from "../scripts/pc-writer/earnings-r5-current-frame-audit.mjs";
 
-const row=({val,start,end,frame,filed="2026-08-15",fy=2026,fp="Q2",form="10-Q"})=>({val,start,end,frame,filed,fy,fp,form,accn:`${end}-${val}`});
+const row=({val,start,end,frame,filed="2026-08-31",fy=2026,fp="Q2",form="10-Q"})=>({val,start,end,frame,filed,fy,fp,form,accn:`${end}-${val}`});
 function doc(){return {cik:"0000000001",facts:{"us-gaap":{
   EarningsPerShareDiluted:{units:{"USD/shares":[
-    row({val:2,start:"2026-05-01",end:"2026-07-31",frame:"CY2026Q2"}),
-    row({val:1,start:"2025-05-01",end:"2025-07-31",frame:"CY2025Q2",filed:"2025-08-15",fy:2025}),
+    row({val:2,start:"2026-05-16",end:"2026-08-15",frame:"CY2026Q2"}),
+    row({val:1,start:"2025-05-16",end:"2025-08-15",frame:"CY2025Q2",filed:"2025-08-31",fy:2025}),
   ]}},
   RevenueFromContractWithCustomerExcludingAssessedTax:{units:{USD:[
-    row({val:200,start:"2026-05-01",end:"2026-07-31",frame:"CY2026Q2"}),
-    row({val:180,start:"2025-05-01",end:"2025-07-31",frame:"CY2025Q2",filed:"2025-08-15",fy:2025}),
+    row({val:200,start:"2026-05-16",end:"2026-08-15",frame:"CY2026Q2"}),
+    row({val:180,start:"2025-05-16",end:"2025-08-15",frame:"CY2025Q2",filed:"2025-08-31",fy:2025}),
   ]}},
   OperatingIncomeLoss:{units:{USD:[
-    row({val:20,start:"2026-05-01",end:"2026-07-31",frame:"CY2026Q2"}),
-    row({val:18,start:"2025-05-01",end:"2025-07-31",frame:"CY2025Q2",filed:"2025-08-15",fy:2025}),
+    row({val:20,start:"2026-05-16",end:"2026-08-15",frame:"CY2026Q2"}),
+    row({val:18,start:"2025-05-16",end:"2025-08-15",frame:"CY2025Q2",filed:"2025-08-31",fy:2025}),
   ]}},
   NetIncomeLoss:{units:{USD:[
-    row({val:10,start:"2026-05-01",end:"2026-07-31",frame:"CY2026Q2"}),
-    row({val:9,start:"2025-05-01",end:"2025-07-31",frame:"CY2025Q2",filed:"2025-08-15",fy:2025}),
+    row({val:10,start:"2026-05-16",end:"2026-08-15",frame:"CY2026Q2"}),
+    row({val:9,start:"2025-05-16",end:"2025-08-15",frame:"CY2025Q2",filed:"2025-08-31",fy:2025}),
   ]}},
 }}};}
 
