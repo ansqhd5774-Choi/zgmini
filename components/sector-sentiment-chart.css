@@ -1,11 +1,12 @@
-.zg-sector-chart{align-self:start;min-width:0;background:#091e2b;border:1px solid #25465a;border-radius:4px;padding:16px;color:#e2e8f0}
+.zg-sector-chart{height:232px;box-sizing:border-box;align-self:start;min-width:0;background:#091e2b;border:1px solid #25465a;border-radius:4px;padding:16px;color:#e2e8f0}
 .zg-sector-chart h2{display:flex;align-items:center;height:30px;line-height:30px;font-size:18px;font-weight:800;margin:0;white-space:nowrap}
+.zg-sector-chart h2>svg{flex:none;width:18px;height:18px;margin-right:6px;color:#ffbf47}
 .zg-sector-chart-heading{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px;flex-wrap:nowrap}
 .zg-sector-period{display:flex;flex:none;width:142px;height:30px;box-sizing:border-box;border:1px solid rgba(107,145,176,.48);border-radius:6px;overflow:hidden;margin-left:auto}
 .zg-sector-period button{height:28px;width:28px;min-width:28px;padding:0;border:0;background:transparent;color:#aebfd0;font-size:10px;font-weight:800;cursor:pointer}
 .zg-sector-period button[aria-pressed=true]{background:#ffbf47;color:#071a29}
 .zg-sector-period button:focus-visible{outline:2px solid #38bdf8;outline-offset:-2px}
-.zg-sector-chart-plot{height:140px;min-width:0}
+.zg-sector-chart-plot{height:120px;min-width:0}
 .zg-sector-chart-legend{display:grid;grid-template-columns:repeat(11,minmax(0,1fr));gap:3px;margin-top:8px}
 .zg-sector-chart-legend button{min-width:0;white-space:nowrap;height:32px;padding:0;border:0;border-bottom:2px solid;border-radius:3px 3px 0 0;background:#102b3b;color:#e2e8f0;font-size:10px;font-weight:600;cursor:pointer}
 .zg-sector-chart-legend button:hover{background:#1a3a4d}
@@ -22,3 +23,4 @@
 .zg-theme-next:focus-visible{outline:2px solid #38bdf8;outline-offset:2px}
 .zg-theme-next:disabled{opacity:.3;cursor:default}
 @media(max-width:600px){.zg-sector-chart{padding:12px}.zg-sector-chart h2{font-size:16px}.zg-sector-chart-legend{gap:2px}.zg-sector-chart-legend button{font-size:9px}}
+@media(max-width:420px){.zg-sector-chart h2{font-size:14px}.zg-sector-chart h2>svg{width:16px;height:16px;margin-right:4px}}
