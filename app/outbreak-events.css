@@ -39,3 +39,8 @@
 .ob-summary .ob-summary-card .ob-summary-value>strong{display:inline-block}
 .ob-summary .ob-summary-card .ob-summary-value>.ob-direction{position:absolute;left:calc(50% + 28px);top:50%;transform:translateY(-50%);gap:3px}
 .ob-summary .ob-summary-card .ob-direction>svg{width:6px;height:12px;flex:0 0 6px}
+
+/* Keep chart axis labels inside the fixed summary cards. */
+.ob-summary .ob-summary-track .ob-summary-card .ob-summary-chart{height:60px;min-height:0;flex:0 0 60px;overflow:visible}
+.zg-dashboard[data-view="dashboard"] .zg-dashboard-secondary{margin-top:10px;gap:10px}
+.zg-dashboard[data-view="dashboard"] .zg-dashboard-secondary>.zg-strength-grid{margin-top:10px;gap:10px}
