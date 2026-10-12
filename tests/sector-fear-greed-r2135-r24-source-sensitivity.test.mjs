@@ -29,6 +29,12 @@ test("R2.13.5 component overlap reports identical rank ordering",()=>{
   assert.equal(lottery.spearman,1);
 });
 
+test("R2.13.5 reads large stored row sets without argument spread",()=>{
+  const source=fs.readFileSync(scriptPath,"utf8");
+  assert.equal(/dbRows\.push\(\.\.\./.test(source),false);
+  assert.match(source,/for\(const row of storedRows\)dbRows\.push\(row\)/);
+});
+
 test("R2.13.5 remains local read-only Shadow research",()=>{
   const source=fs.readFileSync(scriptPath,"utf8");
   assert.equal(/\bfetch\s*\(/.test(source),false);
