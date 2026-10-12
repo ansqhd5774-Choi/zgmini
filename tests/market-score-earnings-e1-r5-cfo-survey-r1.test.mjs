@@ -33,6 +33,7 @@ test("CFO Survey R1 is Shadow-only and preserves PIT versions",()=>{
   assert.equal(E1_R5_CFO_SURVEY_R1_CONTRACT.productionActivation,false);
   assert.equal(E1_R5_CFO_SURVEY_R1_CONTRACT.overwriteHistoricalPIT,false);
   assert.equal(E1_R5_CFO_SURVEY_R1_CONTRACT.apiKeyRequired,false);
+  assert.equal(E1_R5_CFO_SURVEY_R1_CONTRACT.availabilityPolicy,"RELEASE_AT_AND_STORED_AT_LTE_AS_OF");
 });
 
 test("release validation requires PIT timestamp, hash, revision and needed horizon values",()=>{
@@ -55,7 +56,7 @@ test("PIT record fixes target years and computes approved rolling-forward level"
   assert.equal(row.sourceHash,HASH_A);
 });
 
-test("as-of selection cannot see a later historical revision",()=>{
+test("as-of selection cannot see a later historical revision or a source stored later",()=>{
   const initial=buildCfoSurveyPITRecord(base());
   const revised=buildCfoSurveyPITRecord(base({
     releaseAt:"2026-12-15T14:00:00Z",
@@ -68,6 +69,16 @@ test("as-of selection cannot see a later historical revision",()=>{
   const rows=[initial,revised];
   assert.equal(selectCfoSurveyReleaseAsOf(rows,{asOf:"2026-08-01",surveyYear:2026,surveyQuarter:2})?.revisionId,"2026Q2_INITIAL");
   assert.equal(selectCfoSurveyReleaseAsOf(rows,{asOf:"2026-12-20",surveyYear:2026,surveyQuarter:2})?.revisionId,"2026Q2_ANNUAL_REVISION");
+
+  const lateStored=buildCfoSurveyPITRecord(base({
+    storedAt:"2026-10-13T00:00:00Z",
+    currentYearGrowth:9,
+    nextYearGrowth:8,
+    sourceHash:HASH_B,
+    revisionId:"2026Q2_IMPORTED_LATER",
+  }));
+  assert.equal(selectCfoSurveyReleaseAsOf([lateStored],{asOf:"2026-08-01",surveyYear:2026,surveyQuarter:2}),null);
+  assert.equal(selectCfoSurveyReleaseAsOf([lateStored],{asOf:"2026-10-14",surveyYear:2026,surveyQuarter:2})?.revisionId,"2026Q2_IMPORTED_LATER");
 });
 
 test("quarter sequencing handles Q1 rollover and rejects skipped quarters",()=>{
