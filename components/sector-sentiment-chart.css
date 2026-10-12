@@ -1,0 +1,24 @@
+.zg-sector-chart{align-self:start;min-width:0;background:#091e2b;border:1px solid #25465a;border-radius:4px;padding:16px;color:#e2e8f0}
+.zg-sector-chart h2{display:flex;align-items:center;height:30px;line-height:30px;font-size:18px;font-weight:800;margin:0;white-space:nowrap}
+.zg-sector-chart-heading{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px;flex-wrap:nowrap}
+.zg-sector-period{display:flex;flex:none;width:142px;height:30px;box-sizing:border-box;border:1px solid rgba(107,145,176,.48);border-radius:6px;overflow:hidden;margin-left:auto}
+.zg-sector-period button{height:28px;width:28px;min-width:28px;padding:0;border:0;background:transparent;color:#aebfd0;font-size:10px;font-weight:800;cursor:pointer}
+.zg-sector-period button[aria-pressed=true]{background:#ffbf47;color:#071a29}
+.zg-sector-period button:focus-visible{outline:2px solid #38bdf8;outline-offset:-2px}
+.zg-sector-chart-plot{height:140px;min-width:0}
+.zg-sector-chart-legend{display:grid;grid-template-columns:repeat(11,minmax(0,1fr));gap:3px;margin-top:8px}
+.zg-sector-chart-legend button{min-width:0;white-space:nowrap;height:32px;padding:0;border:0;border-bottom:2px solid;border-radius:3px 3px 0 0;background:#102b3b;color:#e2e8f0;font-size:10px;font-weight:600;cursor:pointer}
+.zg-sector-chart-legend button:hover{background:#1a3a4d}
+.zg-sector-chart-legend button[aria-pressed=false]{opacity:.35;background:transparent}
+.zg-sector-chart-legend button:focus-visible{outline:2px solid #38bdf8;outline-offset:2px}
+.zg-sector-chart-legend.is-draggable{display:flex;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;touch-action:pan-x pan-y;cursor:grab;user-select:none;overscroll-behavior-x:contain}
+.zg-sector-chart-legend.is-draggable::-webkit-scrollbar{display:none}
+.zg-sector-chart-legend.is-draggable:active{cursor:grabbing}
+.zg-sector-chart-legend.is-draggable button{flex:0 0 auto;padding:0 8px;font-size:10px;cursor:inherit}
+.zg-legend-row.has-next{display:flex;align-items:center;gap:6px;margin-top:8px;min-width:0}
+.zg-legend-row.has-next .zg-sector-chart-legend{flex:1;min-width:0;margin-top:0;position:relative}
+.zg-theme-next{flex:0 0 28px;width:28px;height:28px;display:flex;align-items:center;justify-content:center;padding:0;border:1px solid #345367;border-radius:50%;background:#153447;color:#dbe7f3;cursor:pointer}
+.zg-theme-next:hover{background:#254b60;border-color:#6eb7ff}
+.zg-theme-next:focus-visible{outline:2px solid #38bdf8;outline-offset:2px}
+.zg-theme-next:disabled{opacity:.3;cursor:default}
+@media(max-width:600px){.zg-sector-chart{padding:12px}.zg-sector-chart h2{font-size:16px}.zg-sector-chart-legend{gap:2px}.zg-sector-chart-legend button{font-size:9px}}

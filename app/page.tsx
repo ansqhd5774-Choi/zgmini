@@ -1,5 +1,6 @@
 "use client";
-import {CompositeMarketSection,ScenarioSection,StrengthPanel} from "./dashboard-ui";
+import {CompositeMarketSection,ScenarioSection} from "./dashboard-ui";
+import SectorSentimentChart,{SECTORS} from '../components/sector-sentiment-chart';
 import OutbreakEvents, {OutbreakSummary} from './outbreak-events';
 
 
@@ -985,7 +986,7 @@ export default function Home() {
           <CompositeMarketSection items={displaySummaryItems} points={periodPoints[period]} demo={false} loading={marketDataLoading}/>
           <div className="zg-dashboard-secondary">
             <OutbreakSummary onOpen={id=>{setOutbreakEvent(id);setView('scenarios');}}/>
-            <div id="strength" className="zg-strength-grid zg-strength-grid-compact">{(['sector','theme'] as const).map(kind=><StrengthPanel key={kind} title={kind==='sector'?'섹터 순위 (예시)':'테마 순위 (예시)'} items={kind==='sector'?sectorSentiment:themeSentiment} points={periodPoints[period]} onAll={()=>setView('strength')} onFavorite={user?name=>{const item=(kind==='sector'?sectorSentiment:themeSentiment).find(x=>x.name===name);if(item)void toggleFavorite(kind,item);}:undefined} isFavorite={name=>favorites.has(sentimentKey(kind,name))}/>)}</div>
+            <div id="strength" className="zg-strength-grid"><SectorSentimentChart/><SectorSentimentChart title="테마별 공포·탐욕" draggable series={themeSentiment.map((theme,index)=>({id:theme.name,name:theme.name,color:SECTORS[index%SECTORS.length].color}))}/></div>
           </div>
         </>}
         {view==='scenarios'&&<OutbreakEvents initialEvent={outbreakEvent}/>}
