@@ -104,6 +104,20 @@ test("CFO local audit does not leak a release published after as-of",()=>{
   assert.equal(out.surveyQuarter,2);
 });
 
+test("CFO local audit does not leak a historical release imported after as-of",()=>{
+  const document=cfoDocument();
+  document.releases[0]={
+    ...document.releases[0],
+    storedAt:"2026-10-13T00:00:00Z",
+    revisionId:"2026Q2_IMPORTED_LATE",
+  };
+  const out=auditLocalCfoSurveyFile(document,{asOf:"2026-08-01"});
+  assert.equal(out.status,"MISSING");
+  assert.equal(out.reason,"NO_READY_RELEASE_AS_OF");
+  assert.equal(out.surveyYear,undefined);
+  assert.equal(out.surveyQuarter,undefined);
+});
+
 test("end-to-end audit writes research reports only and performs no provider or DB work",()=>{
   const fx=fixture();
   try{
