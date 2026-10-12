@@ -36,10 +36,10 @@ export function normalizeCftcPositionRows(rows=[]){
     const date=isoDay(row?.report_date_as_yyyy_mm_dd);
     const code=String(row?.cftc_contract_market_code??"").trim();
     const openInterest=num(row,"open_interest_all");
-    const levLong=num(row,"lev_money_positions_long_all","lev_money_positions_long");
-    const levShort=num(row,"lev_money_positions_short_all","lev_money_positions_short");
-    const assetLong=num(row,"asset_mgr_positions_long_all","asset_mgr_positions_long");
-    const assetShort=num(row,"asset_mgr_positions_short_all","asset_mgr_positions_short");
+    const levLong=num(row,"lev_money_positions_long");
+    const levShort=num(row,"lev_money_positions_short");
+    const assetLong=num(row,"asset_mgr_positions_long");
+    const assetShort=num(row,"asset_mgr_positions_short");
     if(!date||!code||!finite(openInterest)||openInterest<=0||![levLong,levShort,assetLong,assetShort].every(Number.isFinite))continue;
     const normalized={date,code,market:String(row?.contract_market_name??row?.market_and_exchange_names??"").slice(0,120),openInterest,levLong,levShort,assetLong,assetShort};
     const key=`${code}|${date}`;
@@ -68,7 +68,7 @@ export function summarizeCftcPositionCoverage(rows,{asOfDate=new Date().toISOStr
 
 function buildUrl(){
   const codes=Object.values(CFTC_SECTOR_CODES).map(code=>`'${code}'`).join(",");
-  const select=["report_date_as_yyyy_mm_dd","cftc_contract_market_code","contract_market_name","market_and_exchange_names","open_interest_all","asset_mgr_positions_long","asset_mgr_positions_short","lev_money_positions_long_all","lev_money_positions_short_all"].join(",");
+  const select=["report_date_as_yyyy_mm_dd","cftc_contract_market_code","contract_market_name","market_and_exchange_names","open_interest_all","asset_mgr_positions_long","asset_mgr_positions_short","lev_money_positions_long","lev_money_positions_short"].join(",");
   const where=`cftc_contract_market_code in (${codes}) AND report_date_as_yyyy_mm_dd >= '${SINCE}'`;
   const q=new URLSearchParams({"$select":select,"$where":where,"$order":"report_date_as_yyyy_mm_dd ASC","$limit":"5000"});
   return `${API_BASE}?${q}`;
