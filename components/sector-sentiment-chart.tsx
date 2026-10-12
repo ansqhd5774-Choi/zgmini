@@ -3,6 +3,8 @@ import {useRef,useState} from 'react';
 import {ChevronRight,Layers3,Sparkles} from 'lucide-react';
 import {Line,LineChart,ResponsiveContainer,CartesianGrid,XAxis,YAxis,Tooltip,ReferenceLine} from 'recharts';
 import './sector-sentiment-chart.css';
+import ChartAxisLabels from './chart-axis-labels';
+import './chart-axis-labels.css';
 
 export const SECTORS=[
  {id:'technology',name:'정보기술',color:'#38bdf8'},
@@ -36,9 +38,10 @@ export default function SectorSentimentChart({data=[],series=SECTORS,title='섹�
  return <section className="zg-sector-chart" aria-label={`${series.length}개 ${title} 비교 차트`}>
   <div className="zg-sector-chart-heading"><h2>{draggable?<Sparkles size={18} aria-hidden="true"/>:<Layers3 size={18} aria-hidden="true"/>}{title}</h2><div className="zg-sector-period" aria-label={`${title} 기간`}>{[[7,'1W'],[30,'1M'],[90,'3M'],[180,'6M'],[365,'1Y']].map(([days,label])=><button key={days} type="button" aria-pressed={period===days} onClick={()=>setPeriod(Number(days))}>{label}</button>)}</div></div>
   <div className="zg-sector-chart-plot">
-   {!rows.length?<svg width="100%" height="100%" viewBox="0 0 600 280" preserveAspectRatio="none" role="img" aria-label={`${title} 차트, 0부터 100점 축`}><rect x="36" y="6" width="552" height="268" fill="#071a27"/>{[0,25,50,75,100].map(value=>{const y=274-value*2.68;return <g key={value}><line x1="36" x2="588" y1={y} y2={y} stroke={value===50?'#64748b':'#25465a'} strokeDasharray="3 5"/><text x="28" y={y+4} textAnchor="end" fontSize="11" fill="#9db0c2">{value}</text></g>})}</svg>:<ResponsiveContainer width="100%" height="100%">
+   {!rows.length&&<ChartAxisLabels ticks={[0,25,50,75,100]} top={2.15} bottom={97.85} left={4.67}/>}
+   {!rows.length?<svg className="zg-chart-empty-svg" width="100%" height="100%" viewBox="0 0 600 280" preserveAspectRatio="none" role="img" aria-label={`${title} 차트, 0부터 100점 축`}><rect x="36" y="6" width="552" height="268" fill="#071a27"/>{[0,25,50,75,100].map(value=>{const y=274-value*2.68;return <g key={value}><line x1="36" x2="588" y1={y} y2={y} stroke={value===50?'#64748b':'#25465a'} strokeDasharray="3 5"/><text x="28" y={y+4} textAnchor="end" fontSize="11" fill="#9db0c2">{value}</text></g>})}</svg>:<ResponsiveContainer width="100%" height="100%">
     <LineChart data={visibleRows} margin={{top:6,right:12,bottom:0,left:0}}>
-     <CartesianGrid vertical={false} stroke="#25465a" strokeDasharray="3 5"/>
+     <CartesianGrid vertical={false} stroke="#456174" strokeDasharray="2 4"/>
      <XAxis dataKey="date" stroke="#9db0c2" fontSize={11} tickFormatter={date=>String(date).slice(5)} minTickGap={36}/>
      <YAxis domain={[0,100]} ticks={[0,25,50,75,100]} stroke="#9db0c2" fontSize={11} width={32}/>
      <ReferenceLine y={50} stroke="#64748b" strokeDasharray="4 5"/>
