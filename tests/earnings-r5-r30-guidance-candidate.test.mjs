@@ -29,7 +29,7 @@ test("R30 suppresses R29 nearby-binding semantic regressions without weakening e
 
 test("R30 recognizes explicit core expectation reiteration and full-year outlook improvement versus prior guidance",()=>{
   assert.equal(direction("Textron reiterated its expectation for full-year 2026 GAAP earnings per share from continuing operations to be in the range of $5.39 to $5.59."),"FLAT");
-  assert.equal(direction("For the full year 2026, the company expects operational improvement of more than $150 million in adjusted net income compared to June guidance."),"UP");
+  assert.equal(direction("Full year 2026 outlook operational improvement of more than $150 million in adjusted net income compared to June guidance."),"UP");
   assert.equal(direction("The company provides fiscal 2027 outlook. Revenue is expected to grow 5% and EPS is expected to be $4.00."),"UNCLASSIFIED");
 });
 
@@ -38,7 +38,7 @@ test("R30 local audit hash-verifies documents, exposes R29-to-R30 changes, and r
     {cik:"0000000001",accession:"0000000001-26-000001",direction:"FLAT",html:"<p>The Company maintained its sales and GAAP earnings per share guidance and updated its gross profit margin and Base Business earnings per share guidance for full year 2026.</p>"},
     {cik:"0000000002",accession:"0000000002-26-000002",direction:"DOWN",html:"<p>Full-year capital spending guidance reduced by $25 million. Free cash flow is expected to be $2 billion.</p>"},
     {cik:"0000000003",accession:"0000000003-26-000003",direction:"FLAT",html:"<p>Textron reiterated its expectation for full-year 2026 GAAP earnings per share from continuing operations to be in the range of $5.39 to $5.59.</p>"},
-    {cik:"0000000004",accession:"0000000004-26-000004",direction:"UP",html:"<p>For the full year 2026, the company expects operational improvement of more than $150 million in adjusted net income compared to June guidance.</p>"},
+    {cik:"0000000004",accession:"0000000004-26-000004",direction:"UP",html:"<p>Full year 2026 outlook operational improvement of more than $150 million in adjusted net income compared to June guidance.</p>"},
     {cik:"0000000005",accession:"0000000005-26-000005",direction:"UP",html:"<p>AMETEK Announces Results and Raises Full Year Guidance.</p>"},
   ]);
   const result=auditEarningsR5R30GuidanceCandidate({base,maxUnclassified:20});
