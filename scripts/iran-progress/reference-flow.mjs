@@ -6,11 +6,15 @@ import {publishReferenceFlow} from './publication.mjs';
 import {client,credential} from '../pc-writer/d1.mjs';
 import {REVIEWED_FLOW_KEY,reviewedSignals} from './reviewed-flow.mjs';
 import {FLOW_RULES} from '../../lib/iran-progress/reference-flow-r1.mjs';
+import {storedNewsSignals} from './continuous-news.mjs';
 export function calculateStoredFlow(store,now=Date.now(),{collectionFailed=false}={}){
  const evaluation=store.getCheckpoint('article-ai-evaluation-r14');
  if(!evaluation||evaluation.status!=='PASS')throw Error('FLOW_ARTICLE_EVALUATION_PENDING');
  const feeds=['mofa','govuk'].map(s=>store.getCheckpoint('article-feed:'+s));
- const collectionOk=!collectionFailed&&feeds.every(f=>f?.sourceId&&Number.isFinite(f.checkedAt)&&now-f.checkedAt>=0&&now-f.checkedAt<=86400000);
+ const newsReport=store.getCheckpoint('continuous-news-last-run-r1');
+ const officialOk=!collectionFailed&&feeds.every(f=>f?.sourceId&&Number.isFinite(f.checkedAt)&&now-f.checkedAt>=0&&now-f.checkedAt<=86400000);
+ const newsOk=newsReport?.storageVerified===true&&newsReport.status==='COMPLETE'&&Number.isFinite(newsReport.checkedAt)&&now-newsReport.checkedAt>=0&&now-newsReport.checkedAt<=86400000;
+ const collectionOk=officialOk||newsOk;
  const previous=store.getCheckpoint('reference-flow-last-valid-r1');
  if(!collectionOk)return buildReferenceFlow([],{collectionOk:false,previousResult:previous});
  const events=[],seen=new Set();let articleCount=0,candidateCount=0;
@@ -25,12 +29,17 @@ export function calculateStoredFlow(store,now=Date.now(),{collectionFailed=false
  }
  if(!articleCount)throw Error('FLOW_NO_SUPPORTED_ARTICLES');
  const reviewed=reviewedSignals(store.getCheckpoint(REVIEWED_FLOW_KEY));
- const result=buildReferenceFlow([...events,...reviewed],{asOfDate:new Date(now).toISOString().slice(0,10),sensitivity:1});
+ const news=storedNewsSignals(store);
+ const result=buildReferenceFlow([...events,...reviewed,...news],{asOfDate:new Date(now).toISOString().slice(0,10),sensitivity:1});
  const body={...result,displaySensitivity:3.5,publishedAt:now,collectionCheckedAt:Math.min(...feeds.map(f=>f.checkedAt)),articleCount,candidateCount,
   reviewedMethod:reviewed.length?'REVIEWED_NEWS_FLOW_STEP6':null,
+  newsCollection:store.getCheckpoint('continuous-news-last-run-r1'),
+  collectionCoverage:{official:officialOk?'FRESH':'DELAYED',news:newsOk?'FRESH':'DELAYED',completeEventCoverage:false},
+  newsSignals:result.ledger.filter(e=>news.some(n=>n.sourceUrl===e.sourceUrl&&n.rule===e.rule)).map(({evidence,receiptHash,...e})=>e),
   reviewedSignals:result.ledger.filter(e=>reviewed.some(r=>r.rule===e.rule&&r.date===e.date&&r.sourceUrl===e.sourceUrl)).map(({evidence,...e})=>e),
   events:result.ledger.filter(e=>FLOW_RULES.some(r=>r.id===e.rule)&&/^https:\/\/(?:www\.mofa\.go\.jp|www\.gov\.uk)\//.test(e.sourceUrl)&&Date.parse(e.date+'T00:00:00Z')>=Date.parse(result.asOfDate+'T00:00:00Z')-13*86400000).slice(-100).map(({evidence,...e})=>e)};
  delete body.ledger;
+ body.events=[...body.events,...body.newsSignals.filter(e=>Date.parse(e.date+'T00:00:00Z')>=Date.parse(body.asOfDate+'T00:00:00Z')-13*86400000)];
  return body;
 }
 if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.url)){
