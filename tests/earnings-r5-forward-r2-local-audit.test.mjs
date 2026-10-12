@@ -104,6 +104,20 @@ test("CFO local audit does not leak a release published after as-of",()=>{
   assert.equal(out.surveyQuarter,2);
 });
 
+test("CFO local audit does not leak a historical release imported after as-of",()=>{
+  const document=cfoDocument();
+  document.releases[0]={
+    ...document.releases[0],
+    storedAt:"2026-10-13T00:00:00Z",
+    revisionId:"2026Q2_IMPORTED_LATE",
+  };
+  const out=auditLocalCfoSurveyFile(document,{asOf:"2026-08-01"});
+  assert.equal(out.status,"MISSING");
+  assert.equal(out.reason,"NO_READY_RELEASE_AS_OF");
+  assert.equal(out.surveyYear,undefined);
+  assert.equal(out.surveyQuarter,undefined);
+});
+
 test("end-to-end audit writes research reports only and performs no provider or DB work",()=>{
   const fx=fixture();
   try{
@@ -125,4 +139,12 @@ test("end-to-end audit writes research reports only and performs no provider or 
     assert.match(text,/DB_WRITES: 0/);
     assert.match(text,/PRODUCTION_ACTIVATION: NO/);
   }finally{fs.rmSync(fx.base,{recursive:true,force:true});}
+});
+
+test("Windows CMD wrapper stays local-only and automatically uses imported CFO releases when present",()=>{
+  const source=fs.readFileSync(new URL("../ZGMINI_EARNINGS_R5_FORWARD_AUDIT.cmd",import.meta.url),"utf8");
+  assert.match(source,/earnings-r5-forward-r2-local-audit\.mjs/i);
+  assert.match(source,/cfo-survey-r1\\releases\.json/i);
+  assert.match(source,/e1-r5-forward-r2-local-audit-last\.txt/i);
+  assert.doesNotMatch(source,/--publish|wrangler|curl|powershell|wsl/i);
 });

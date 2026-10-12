@@ -176,8 +176,13 @@ export function auditLocalCfoSurveyFile(document,{asOf}={}){
   const invalidReasons={};
   for(const row of invalid){const reason=text(row?.reason)||"UNKNOWN";invalidReasons[reason]=(invalidReasons[reason]??0)+1;}
   const asOfMs=Date.parse(text(asOf));
-  const available=ready.filter(row=>!Number.isFinite(asOfMs)||Date.parse(row.releaseAt)<=asOfMs);
-  available.sort((a,b)=>periodOrdinal(b)-periodOrdinal(a)||Date.parse(b.releaseAt)-Date.parse(a.releaseAt));
+  const available=ready.filter(row=>{
+    if(!Number.isFinite(asOfMs))return true;
+    const releaseMs=Date.parse(text(row.releaseAt));
+    const storedMs=Date.parse(text(row.storedAt));
+    return Number.isFinite(releaseMs)&&Number.isFinite(storedMs)&&releaseMs<=asOfMs&&storedMs<=asOfMs;
+  });
+  available.sort((a,b)=>periodOrdinal(b)-periodOrdinal(a)||Date.parse(b.releaseAt)-Date.parse(a.releaseAt)||Date.parse(b.storedAt)-Date.parse(a.storedAt));
   const latest=available[0]??null;
   if(!latest){
     return {status:"MISSING",reason:"NO_READY_RELEASE_AS_OF",inputCount:input.length,readyCount:ready.length,invalidCount:invalid.length,invalidReasons,raw:null};
