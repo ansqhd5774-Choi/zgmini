@@ -14,7 +14,7 @@ import {SECTOR_FEAR_GREED_R1_ETFS} from "../lib/market-score/sector-fear-greed-r
 const sectorIds=Object.keys(SECTOR_FEAR_GREED_R1_ETFS);
 function dateAt(index){return new Date(Date.UTC(2022,0,1)+index*86400000).toISOString().slice(0,10)}
 function prices(n=900,offset=0){return Array.from({length:n},(_,i)=>({date:dateAt(i),close:100+offset+i*0.11+Math.sin(i/13)}))}
-function derived(n=756){
+function derived(n=800){
   return Array.from({length:n},(_,i)=>({
     date:dateAt(i),
     b50:0.45+0.1*Math.sin(i/17),
