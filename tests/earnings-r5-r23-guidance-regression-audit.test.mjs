@@ -20,7 +20,7 @@ function setup(entries){
 test("R23 exposes both R21 and R22 evidence for changed entries and flags possible regressions",()=>{
   const base=setup([
     {cik:"0000000001",accession:"0000000001-26-000001",direction:"MIXED",html:"<p>The company raised full-year revenue guidance by $500 million while reaffirming adjusted diluted EPS guidance. The company does not provide specific guidance for non-GAAP reconciling items.</p>"},
-    {cik:"0000000002",accession:"0000000002-26-000002",direction:"UNCLASSIFIED",html:"<p>Workday is reiterating its full-year financial guidance provided on its earnings call, with the exception of GAAP operating margin.</p>"},
+    {cik:"0000000002",accession:"0000000002-26-000002",direction:"UP",html:"<p>Comparable hotel EBITDA margins will increase 40 basis points compared with 2025 for the low and high end of the forecast comparable hotel RevPAR range.</p>"},
     {cik:"0000000003",accession:"0000000003-26-000003",direction:"UP",html:"<p>Air Products is raising its full-year fiscal 2026 adjusted EPS guidance to $13.39 to $13.49.</p>"},
   ]);
   const result=auditEarningsR5R23GuidanceRegression({base});
