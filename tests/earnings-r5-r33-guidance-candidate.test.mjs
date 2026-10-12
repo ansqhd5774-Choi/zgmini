@@ -17,7 +17,7 @@ function setup(entries){const base=fs.mkdtempSync(path.join(os.tmpdir(),"e1-r33-
 
 test("R33 removes R32 broad-reaffirmation semantic false positives",()=>{
   assert.equal(E1_R5_R33_GUIDANCE_CANDIDATE_POLICY.researchOnly,true);
-  const tyson="The company updated its fiscal 2026 segment operating income outlook for Beef, Chicken and Pork, while maintaining previous guidance for Prepared Foods and International segments.";
+  const tyson="The company updated its fiscal 2026 segment operating income outlook for Beef, Chicken and Pork; Pork, $200 million to $250 million, while maintaining previous guidance for Prepared Foods and International segments.";
   assert.equal(r32(tyson),"FLAT");assert.equal(r33(tyson),"UNCLASSIFIED");
   const boilerplate="Forward-looking statements can be identified by words such as believe, expect, maintain, continue, progress, target, outlook, or similar expressions, or when we discuss our guidance, priorities, strategies, goals and projections.";
   assert.equal(r32(boilerplate),"FLAT");assert.equal(r33(boilerplate),"UNCLASSIFIED");
@@ -39,7 +39,7 @@ test("R33 preserves R32 explicit core revisions",()=>{
 
 test("R33 local audit hash-verifies documents and exposes R32-to-R33 changes",()=>{
   const base=setup([
-    {cik:"0000000001",accession:"0000000001-26-000001",direction:"FLAT",html:"<p>The company updated its outlook while maintaining previous guidance for Prepared Foods and International segments.</p>"},
+    {cik:"0000000001",accession:"0000000001-26-000001",direction:"FLAT",html:"<p>The company updated its outlook for Beef and Chicken; Pork, $200 million to $250 million, while maintaining previous guidance for Prepared Foods and International segments.</p>"},
     {cik:"0000000002",accession:"0000000002-26-000002",direction:"UNCLASSIFIED",html:"<p>We are reiterating our Fiscal 2027 Net Bookings outlook of $8.0 to $8.2 billion.</p>"},
     {cik:"0000000003",accession:"0000000003-26-000003",direction:"FLAT",html:"<p>AT&T reiterates the financial outlook provided with its second-quarter 2026 earnings release.</p>"},
     {cik:"0000000004",accession:"0000000004-26-000004",direction:"UP",html:"<p>Previous FY26 Guidance Current FY26 Guidance1,2,3 Total revenue: (FY25 baseline: $23,099 million) Up ~ 11% Up ~13%.</p>"},
