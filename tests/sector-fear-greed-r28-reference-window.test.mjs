@@ -50,9 +50,9 @@ test("R2.8 raw derivation reproduces expected warmup counts without future leaka
 test("R2.8 composite keeps approved five-axis raw contribution without 85-percent renormalization",()=>{
   const weights={trend:.20,breadth:.20,demand:.15,relativeStrength:.15,volatility:.15},axisScores={trend:50,breadth:60,demand:40,relativeStrength:70,volatility:30};
   const score=currentComposite(axisScores,weights);
-  assert.equal(score,42.5);
+  assert.equal(score,43);
   const series=Object.fromEntries(Object.keys(weights).map((name,index)=>[name,[{date:"2026-01-01",score:axisScores[name]},{date:"2026-01-02",score:axisScores[name]+index}]]));
-  const composite=buildCompositeSeries(series,weights);assert.equal(composite.length,2);assert.equal(composite[0].score,42.5);
+  const composite=buildCompositeSeries(series,weights);assert.equal(composite.length,2);assert.equal(composite[0].score,43);
 });
 
 test("R2.8 cross-sector rank correlation handles monotonic ranks",()=>{
