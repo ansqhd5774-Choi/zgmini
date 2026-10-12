@@ -3,7 +3,7 @@ import os from "node:os";
 import path from "node:path";
 import {fileURLToPath} from "node:url";
 import {E1_R5_SEC_CONTRACT,secUnitAllowed,validateSecCompanyFactsDocument} from "../../lib/market-score/earnings-e1-r5-input-contract.mjs";
-import {buildEarningsR5RawComponents} from "../../lib/market-score/earnings-e1-r5-shadow-calculator.mjs";
+import {buildEarningsR5RawComponentsWithS13R33} from "../../lib/market-score/earnings-e1-r5-s13-r33-shadow.mjs";
 import {latestMatureFrame,MATURE_LAG_DAYS} from "../../lib/market-score/sec-earnings-e1-r2-provider.mjs";
 import {readLatestEarningsUniverse,inspectBlsPrFile} from "./earnings-r5-offline-preflight.mjs";
 import {E1_R5_OFFICIAL_SOURCE_MANIFEST} from "../../lib/market-score/earnings-e1-r5-official-sources.mjs";
@@ -125,6 +125,17 @@ function companyFile(directory,cik){
 
 function readJson(file){try{return JSON.parse(fs.readFileSync(file,"utf8"));}catch{return null;}}
 
+export function classifyCurrentFrameS13({auditFileExists=false,auditParsed=false,binding}={}){
+  if(!auditFileExists)return {status:"MISSING",reason:"R33_AUDIT_FILE_MISSING",source:"SEC_R33",sourceVersion:null};
+  if(!auditParsed)return {status:"REJECTED",reason:"R33_AUDIT_JSON_INVALID",source:"SEC_R33",sourceVersion:null};
+  if(binding?.status==="READY")return {status:"READY",reason:null,source:binding.source??"SEC_R33",sourceVersion:binding.sourceVersion??null};
+  return {status:"REJECTED",reason:binding?.reason??"R33_AUDIT_REJECTED",source:binding?.source??"SEC_R33",sourceVersion:binding?.sourceVersion??null};
+}
+
+export function buildCurrentFrameRawComponents({issuerRows=[],unitLaborCostYoY=null,guidanceR33Audit=null}={}){
+  return buildEarningsR5RawComponentsWithS13R33({issuerRows,unitLaborCostYoY,guidanceR33Audit});
+}
+
 export function buildIssuerRowFromDocuments({member,companyFacts,submission,frame,asOf}){
   const cik=String(member?.cik??"").padStart(10,"0");
   const validation=validateSecCompanyFactsDocument(companyFacts);
@@ -194,9 +205,13 @@ function rawCoverageGate(raw){
 
 function formatRaw(value){return finite(value)?String(Math.round(value*1e6)/1e6):"null";}
 
-export async function runEarningsR5CurrentFrameAudit({incoming,coreFile,asOf=new Date().toISOString().slice(0,10),lagDays=MATURE_LAG_DAYS}={}){
+export async function runEarningsR5CurrentFrameAudit({incoming,coreFile,r33AuditFile,asOf=new Date().toISOString().slice(0,10),lagDays=MATURE_LAG_DAYS}={}){
   const inputDir=incoming??path.join(defaultBase,"manual-input","e1-r5","incoming");
   const core=coreFile??path.join(defaultBase,"storage","core.sqlite");
+  const r33File=r33AuditFile??path.join(defaultBase,"manual-input","e1-r5","reports","e1-r5-r33-guidance-candidate-audit-last.json");
+  const r33AuditFileExists=fs.existsSync(r33File);
+  const r33Audit=r33AuditFileExists?readJson(r33File):null;
+  const r33AuditParsed=!!r33Audit&&typeof r33Audit==="object";
   const universe=readLatestEarningsUniverse(core);
   const frame=latestMatureFrame(asOf,{lagDays});
   if(universe.status!=="PASS"||!frame)return {status:"PARTIAL",reason:universe.status!=="PASS"?"UNIVERSE_REQUIRED":"MATURE_FRAME_REQUIRED",active:false,dbWrites:0,networkCalls:0};
@@ -216,7 +231,8 @@ export async function runEarningsR5CurrentFrameAudit({incoming,coreFile,asOf=new
   const laborFile=path.join(inputDir,E1_R5_OFFICIAL_SOURCE_MANIFEST.blsUnitLaborCost.localName);
   const labor=await inspectBlsPrFile(laborFile,{seriesId:E1_R5_OFFICIAL_SOURCE_MANIFEST.blsUnitLaborCost.seriesId});
   const latestLabor=labor.latest&&labor.latest.year===frame.year&&labor.latest.quarter===frame.quarter?labor.latest.value:null;
-  const raw=buildEarningsR5RawComponents({issuerRows:rows,unitLaborCostYoY:latestLabor});
+  const raw=buildCurrentFrameRawComponents({issuerRows:rows,unitLaborCostYoY:latestLabor,guidanceR33Audit:r33Audit});
+  const s13=classifyCurrentFrameS13({auditFileExists:r33AuditFileExists,auditParsed:r33AuditParsed,binding:raw.s13Binding});
   const gates=rawCoverageGate(raw);
   const divisions=[...new Set(rows.map(row=>row.sectorId).filter(Boolean))].sort();
   const sectorEligible=raw.components?.improvingSectorBreadth?.eligibleCount??0;
@@ -233,7 +249,8 @@ export async function runEarningsR5CurrentFrameAudit({incoming,coreFile,asOf=new
     dbWrites:0,
     frame:{...frame},
     universe:{periodEnd:universe.periodEnd,memberCount:universe.memberCount},
-    sourceCoverage:{companyFactsFiles:factFiles,submissionFiles,invalidCompanyFacts:invalidFacts,sicKnown:rows.filter(row=>row.sic!=null).length,nonFinancial:rows.filter(row=>row.isFinancial===false).length,financial:rows.filter(row=>row.isFinancial===true).length,unknownFinancial:rows.filter(row=>row.isFinancial==null).length,sicDivisions:divisions},
+    sourceCoverage:{companyFactsFiles:factFiles,submissionFiles,invalidCompanyFacts:invalidFacts,sicKnown:rows.filter(row=>row.sic!=null).length,nonFinancial:rows.filter(row=>row.isFinancial===false).length,financial:rows.filter(row=>row.isFinancial===true).length,unknownFinancial:rows.filter(row=>row.isFinancial==null).length,sicDivisions:divisions,guidanceR33AuditFile:r33AuditFileExists},
+    s13,
     gates,
     rawStatus:raw.status,
     rawMissing:raw.missing,
@@ -265,6 +282,11 @@ export function formatEarningsR5CurrentFrameAuditText(report){
     `S8_PROFITABLE_BREADTH_RAW: ${formatRaw(c.profitableCompanyBreadth?.raw)}`,
     `S9_IMPROVING_SIC_DIVISION_BREADTH_RAW: ${formatRaw(c.improvingSectorBreadth?.raw)} eligible=${c.improvingSectorBreadth?.eligibleCount??0}`,
     `S11_UNIT_LABOR_COST_RAW: ${formatRaw(c.unitLaborCostPressure?.raw)}`,
+    `S13_GUIDANCE_BREADTH_RAW: ${formatRaw(c.guidanceBreadth?.raw)}`,
+    `S13_STATUS: ${report?.s13?.status??"MISSING"}`,
+    `S13_REASON: ${report?.s13?.reason??"NONE"}`,
+    `S13_SOURCE: ${report?.s13?.source??"SEC_R33"}`,
+    `S13_SOURCE_VERSION: ${report?.s13?.sourceVersion??"-"}`,
     `RAW_MISSING: ${(report?.rawMissing??[]).join(",")||"NONE"}`,
     `Q4_EPS_ANNUAL_MINUS_9M: ${report?.policies?.q4EpsAnnualMinusNineMonths??"-"}`,
     `NETWORK_CALLS: ${report?.networkCalls??0}`,
@@ -276,7 +298,12 @@ export function formatEarningsR5CurrentFrameAuditText(report){
 if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.url)){
   try{
     const cli=parseArgs();
-    const report=await runEarningsR5CurrentFrameAudit({incoming:cli.incoming?path.resolve(cli.incoming):undefined,coreFile:cli.core?path.resolve(cli.core):undefined,asOf:cli["as-of"]??undefined});
+    const report=await runEarningsR5CurrentFrameAudit({
+      incoming:cli.incoming?path.resolve(cli.incoming):undefined,
+      coreFile:cli.core?path.resolve(cli.core):undefined,
+      r33AuditFile:cli["r33-audit"]?path.resolve(cli["r33-audit"]):undefined,
+      asOf:cli["as-of"]??undefined,
+    });
     const reportsDir=cli["reports-dir"]?path.resolve(cli["reports-dir"]):path.join(defaultBase,"manual-input","e1-r5","reports");
     fs.mkdirSync(reportsDir,{recursive:true});
     const jsonFile=path.join(reportsDir,"e1-r5-current-frame-audit-last.json"),textFile=path.join(reportsDir,"e1-r5-current-frame-audit-last.txt");
