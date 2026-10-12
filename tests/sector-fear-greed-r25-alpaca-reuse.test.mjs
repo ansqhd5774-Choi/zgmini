@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import {mergeAlpacaRows,summarizeTickerCoverage,compareOverlap} from "../scripts/pc-writer/sector-fear-greed-r25-alpaca-reuse-diagnostic.mjs";
+import {mergeAlpacaRows,summarizeTickerCoverage,compareOverlap,maxFiniteR25} from "../scripts/pc-writer/sector-fear-greed-r25-alpaca-reuse-diagnostic.mjs";
 
 test("R2.5 Alpaca merge deduplicates exact rows and reports conflicting duplicates",()=>{
   const a=[{ticker:"AAA",tradeDate:"2026-01-02",currentClose:10,currentVolume:100},{ticker:"AAA",tradeDate:"2026-01-03",currentClose:11,currentVolume:110}];
@@ -28,4 +28,9 @@ test("R2.5 overlap comparison is exact-date and reports relative differences",()
   assert.equal(out.pairs,2);
   assert.equal(out.aboveOnePercent,1);
   assert.equal(out.maxRelativeDifference,0.2);
+});
+
+test("R2.5 max helper handles very large arrays without argument spreading",()=>{
+  const values=Array.from({length:250000},(_,i)=>i/1000000);
+  assert.equal(maxFiniteR25(values),0.249999);
 });
