@@ -83,7 +83,7 @@ function readLocalStorage(base){
     const rows=[];
     if(tables.breadth){
       const stored=db.prepare("SELECT trade_date,ticker,current_close,current_volume FROM market_score_breadth_b1_r3_current_v1 ORDER BY trade_date,ticker").all();
-      rows.push(...stored);
+      for(const row of stored)rows.push(row);
     }
     let benchmark=null;
     if(tables.batches){
@@ -260,8 +260,10 @@ if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.ur
     const result=runSectorFearGreedR1Readiness();
     console.log(JSON.stringify(result,null,2));
   }catch(error){
-    const code=/^[A-Z0-9_:-]+$/.test(String(error?.message??""))?String(error.message):String(error?.code??"SECTOR_READINESS_FAILED");
-    console.log(JSON.stringify({status:"FAILED",code,providerCalls:0,publicMutation:false,dbSchemaChanged:false}));
+    const message=String(error?.message??"");
+    const code=/^[A-Z0-9_:-]+$/.test(message)?message:String(error?.code??"SECTOR_READINESS_FAILED");
+    const errorName=String(error?.name??"Error").replace(/[^A-Za-z0-9_-]/g,"").slice(0,40)||"Error";
+    console.log(JSON.stringify({status:"FAILED",code,errorName,providerCalls:0,publicMutation:false,dbSchemaChanged:false}));
     process.exitCode=1;
   }
 }
