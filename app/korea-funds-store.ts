@@ -20,10 +20,11 @@ const listeners=new Set<()=>void>();
 const subscribe=(fn:()=>void)=>{listeners.add(fn);return()=>{listeners.delete(fn);};};
 const snapshot=()=>state;
 function load(signal?:AbortSignal){
- if(inFlight)return inFlight;
+ if(signal?.aborted)return Promise.resolve();
+ if(inFlight)return inFlight.then(()=>load(signal));
  const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),95000);
  inFlight=fetch('/api/indicators/korea-funds',{cache:'no-store',signal:signal??controller.signal})
-  .then(async r=>{if(!r.ok)throw Error();return r.json() as Promise<{indicators?:Indicator[];composite?:Composite}>;})
+  .then(async r=>{if(!r.ok){if(r.status===503){const failure=await r.json() as {reason?:string};if(!signal?.aborted&&/STALE|EXPIRED/.test(failure.reason??'')){lastPayload=null;state={loading:false,indicators:[],composite:null};}}throw Error();}return r.json() as Promise<{indicators?:Indicator[];composite?:Composite}>;})
   .then(d=>{
    if(signal?.aborted||!acceptsStoredUpdate(lastPayload,d))return;
    lastPayload=d;

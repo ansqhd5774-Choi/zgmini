@@ -246,11 +246,14 @@ export function CompositeMarketSection({items,points,demo,loading}:{items:Summar
   let storage:Storage|undefined;
   try{storage=window.sessionStorage}catch{/* Storage may be disabled. */}
   const cached=storage?readMarketSnapshot(storage,Date.now()):null;
+  let accepted=cached?.body??null;
   if(cached){setMarket(cached.body);setMarketLoading(false)}
   else setMarketLoading(true);
   const publish=(body:MarketScoreResponse)=>{
-   setMarket(previous=>acceptsStoredUpdate(previous,body)?body:previous);
+   if(!acceptsStoredUpdate(accepted,body))return false;
+   accepted=body;setMarket(body);
    setMarketError(null);
+   return true;
   };
   const load=(signal:AbortSignal)=>{
    return fetch('/api/market-score',{signal,cache:'no-store',headers:{accept:'application/x-ndjson'}})
@@ -263,8 +266,7 @@ export function CompositeMarketSection({items,points,demo,loading}:{items:Summar
      },
      (body:MarketScoreResponse,headers:Headers)=>{
       if(!alive||signal.aborted)return;
-      publish(body);
-      if(storage)saveMarketSnapshot(storage,body,headers);
+      if(publish(body)&&storage)saveMarketSnapshot(storage,body,headers);
      });})
     .catch(error=>{
      if(error?.name==='AbortError')return;
