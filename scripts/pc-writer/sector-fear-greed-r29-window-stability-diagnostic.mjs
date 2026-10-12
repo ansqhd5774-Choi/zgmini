@@ -41,7 +41,7 @@ export function analyzeR29WindowStability(input){
     for(const sectorId of sectorIds){
       const sector=sectors[sectorId],values=windows.map(window=>Number(sector?.byWindow?.[String(window)]?.currentAxes?.[axis])).filter(finite);
       if(values.length===windows.length)spreads.push([sectorId,Math.max(...values)-Math.min(...values)]);
-      const deltas=Object.fromEntries(windows.map(window=>[String(window),sector?.byWindow?.[String(window)]?.axisDeltasVsFull?.[axis]));
+      const deltas=Object.fromEntries(windows.map(window=>[String(window),sector?.byWindow?.[String(window)]?.axisDeltasVsFull?.[axis]]));
       const winner=minWindow(deltas,windows);if(winner)winCounts[winner]++;
     }
     const worst=maxWithKey(spreads);
