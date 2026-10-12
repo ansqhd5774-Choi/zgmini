@@ -49,9 +49,25 @@ function decodeHtml(value){
     });
 }
 
+function decodeSourceEscapes(value){
+  return String(value??"")
+    .replace(/\\u([0-9a-fA-F]{4})/g,(_,code)=>String.fromCharCode(Number.parseInt(code,16)))
+    .replace(/\\n|\\r|\\t/g," ")
+    .replace(/\\\"/g,"\"");
+}
+
 function flattenedVisibleText(value){
   return decodeHtml(value)
     .replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi," ")
+    .replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi," ")
+    .replace(/<br\s*\/?\s*>/gi," ")
+    .replace(/<[^>]+>/g," ")
+    .replace(/\s+/g," ")
+    .trim();
+}
+
+function flattenedSourceText(value){
+  return decodeSourceEscapes(decodeHtml(value))
     .replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi," ")
     .replace(/<br\s*\/?\s*>/gi," ")
     .replace(/<[^>]+>/g," ")
@@ -70,6 +86,74 @@ function validateOfficialSourceUrl(value){
   return {status:"READY",reason:null,url:parsed.toString()};
 }
 
+function previousResponsePeriod(surveyYear,surveyQuarter){
+  if(surveyQuarter===1)return {year:surveyYear-1,quarter:4};
+  return {year:surveyYear,quarter:surveyQuarter-1};
+}
+
+function extractRevenueGrowthFromFlattenedText(pageText,{surveyYear,surveyQuarter,parserPath}){
+  const responseQuarterPattern=new RegExp(`\\bQ${surveyQuarter}\\s+${surveyYear}\\b`,"i");
+  if(!responseQuarterPattern.test(pageText))return {status:"MISSING",reason:"RESPONSE_QUARTER_NOT_FOUND"};
+
+  const previous=previousResponsePeriod(surveyYear,surveyQuarter);
+  const responseHeaderPattern=new RegExp(`\\bQ${surveyQuarter}\\s+${surveyYear}\\b[\\s\\S]{0,500}\\bQ${previous.quarter}\\s+${previous.year}\\b`,"i");
+  const targetYearSequencePattern=new RegExp(`\\b${surveyYear}\\b\\s+\\b${surveyYear+1}\\b\\s+\\b${surveyYear}\\b\\s+\\b${surveyYear+1}\\b`);
+  const meanMedianPairs=/(-?\d+(?:\.\d+)?)\s*%\s*\(\s*(-?\d+(?:\.\d+)?)\s*%\s*\)/g;
+  const revenuePattern=/\bRevenue\b/gi;
+  let sawResponseHeader=false;
+  let sawTargetYears=false;
+  let sawRevenue=false;
+  let sawRevenuePairs=false;
+
+  for(const revenueMatch of pageText.matchAll(revenuePattern)){
+    const revenueIndex=revenueMatch.index??-1;
+    if(revenueIndex<0)continue;
+    const prefix=pageText.slice(Math.max(0,revenueIndex-3500),revenueIndex);
+    if(!responseHeaderPattern.test(prefix))continue;
+    sawResponseHeader=true;
+    if(!targetYearSequencePattern.test(prefix))continue;
+    sawTargetYears=true;
+    sawRevenue=true;
+
+    const afterRevenue=pageText.slice(revenueIndex+revenueMatch[0].length,revenueIndex+1600);
+    const nextMetric=/\b(?:Price|Unit Cost|Employment|Average Wage)\b/i.exec(afterRevenue);
+    const revenueBlock=nextMetric?afterRevenue.slice(0,nextMetric.index):afterRevenue;
+    const pairs=[...revenueBlock.matchAll(meanMedianPairs)];
+    if(pairs.length<4)continue;
+    sawRevenuePairs=true;
+
+    const currentYearGrowth=Number(pairs[0][1]);
+    const nextYearGrowth=Number(pairs[1][1]);
+    if(!finite(currentYearGrowth))return {status:"MISSING",reason:"CURRENT_YEAR_REVENUE_GROWTH_MISSING"};
+    if(!finite(nextYearGrowth))return {status:"MISSING",reason:"NEXT_YEAR_REVENUE_GROWTH_MISSING"};
+
+    return {
+      status:"READY",
+      reason:null,
+      surveyYear,
+      surveyQuarter,
+      currentTargetYear:surveyYear,
+      nextTargetYear:surveyYear+1,
+      currentYearGrowth,
+      nextYearGrowth,
+      parserEvidence:{
+        responseQuarter:`Q${surveyQuarter} ${surveyYear}`,
+        comparisonQuarter:`Q${previous.quarter} ${previous.year}`,
+        targetYears:[surveyYear,surveyYear+1,surveyYear,surveyYear+1],
+        revenuePairs:pairs.length,
+        statistic:"MEAN_FROM_PUBLISHED_MEAN_MEDIAN_PAIRS",
+        parserPath,
+      },
+    };
+  }
+
+  if(!sawResponseHeader)return {status:"MISSING",reason:"GROWTH_RESPONSE_HEADER_NOT_FOUND"};
+  if(!sawTargetYears)return {status:"MISSING",reason:"TARGET_YEAR_HEADER_NOT_FOUND"};
+  if(!sawRevenue)return {status:"MISSING",reason:"REVENUE_ROW_NOT_FOUND"};
+  if(!sawRevenuePairs)return {status:"MISSING",reason:"REVENUE_MEAN_MEDIAN_PAIRS_MISSING"};
+  return {status:"MISSING",reason:"GROWTH_EXPECTATIONS_BLOCK_NOT_FOUND"};
+}
+
 export function parseRichmondFedCfoRevenueReleaseR2(value,{surveyYear,surveyQuarter}={}){
   const table=parseTableRelease(value,{surveyYear,surveyQuarter});
   if(table.status==="READY")return {...table,parserEvidence:{...table.parserEvidence,parserPath:"HTML_TABLE"}};
@@ -77,47 +161,29 @@ export function parseRichmondFedCfoRevenueReleaseR2(value,{surveyYear,surveyQuar
   if(!Number.isInteger(surveyYear)||surveyYear<2000||surveyYear>2100)return {status:"MISSING",reason:"SURVEY_YEAR_INVALID"};
   if(!Number.isInteger(surveyQuarter)||surveyQuarter<1||surveyQuarter>4)return {status:"MISSING",reason:"SURVEY_QUARTER_INVALID"};
 
-  const pageText=flattenedVisibleText(value);
-  const quarterPattern=new RegExp(`\\bQ${surveyQuarter}\\s+${surveyYear}\\b`,"i");
-  if(!quarterPattern.test(pageText))return {status:"MISSING",reason:"RESPONSE_QUARTER_NOT_FOUND"};
+  const representations=[
+    {parserPath:"FLATTENED_VISIBLE_TEXT",pageText:flattenedVisibleText(value)},
+    {parserPath:"FLATTENED_SOURCE_TEXT",pageText:flattenedSourceText(value)},
+  ];
+  const failures=[];
+  for(const representation of representations){
+    if(!representation.pageText)continue;
+    const parsed=extractRevenueGrowthFromFlattenedText(representation.pageText,{surveyYear,surveyQuarter,parserPath:representation.parserPath});
+    if(parsed.status==="READY")return parsed;
+    failures.push(parsed.reason);
+  }
 
-  const marker=/Mean\s*\(and Median\)\s*Expected Year-Over-Year Percentage Change for Calendar Years/i;
-  const markerMatch=marker.exec(pageText);
-  if(!markerMatch)return {status:"MISSING",reason:"GROWTH_EXPECTATIONS_BLOCK_NOT_FOUND"};
-  const section=pageText.slice(markerMatch.index,markerMatch.index+5000);
-  const yearPattern=new RegExp(`\\b${surveyYear}\\b\\s+\\b${surveyYear+1}\\b`);
-  if(!yearPattern.test(section))return {status:"MISSING",reason:"TARGET_YEAR_HEADER_NOT_FOUND"};
-
-  const revenueMatch=/\bRevenue\b/i.exec(section);
-  if(!revenueMatch)return {status:"MISSING",reason:"REVENUE_ROW_NOT_FOUND"};
-  const afterRevenue=section.slice(revenueMatch.index+revenueMatch[0].length);
-  const nextMetric=/\b(?:Price|Unit Cost|Employment|Average Wage)\b/i.exec(afterRevenue);
-  const revenueBlock=nextMetric?afterRevenue.slice(0,nextMetric.index):afterRevenue.slice(0,800);
-  const pairs=[...revenueBlock.matchAll(/(-?\d+(?:\.\d+)?)\s*%\s*\(\s*(-?\d+(?:\.\d+)?)\s*%\s*\)/g)];
-  if(pairs.length<2)return {status:"MISSING",reason:"REVENUE_MEAN_MEDIAN_PAIRS_MISSING"};
-
-  const currentYearGrowth=Number(pairs[0][1]);
-  const nextYearGrowth=Number(pairs[1][1]);
-  if(!finite(currentYearGrowth))return {status:"MISSING",reason:"CURRENT_YEAR_REVENUE_GROWTH_MISSING"};
-  if(!finite(nextYearGrowth))return {status:"MISSING",reason:"NEXT_YEAR_REVENUE_GROWTH_MISSING"};
-
-  return {
-    status:"READY",
-    reason:null,
-    surveyYear,
-    surveyQuarter,
-    currentTargetYear:surveyYear,
-    nextTargetYear:surveyYear+1,
-    currentYearGrowth,
-    nextYearGrowth,
-    parserEvidence:{
-      responseQuarter:`Q${surveyQuarter} ${surveyYear}`,
-      targetYears:[surveyYear,surveyYear+1],
-      revenuePairs:pairs.length,
-      statistic:"MEAN_FROM_PUBLISHED_MEAN_MEDIAN_PAIRS",
-      parserPath:"FLATTENED_VISIBLE_TEXT",
-    },
-  };
+  const priority=[
+    "RESPONSE_QUARTER_NOT_FOUND",
+    "GROWTH_RESPONSE_HEADER_NOT_FOUND",
+    "TARGET_YEAR_HEADER_NOT_FOUND",
+    "REVENUE_ROW_NOT_FOUND",
+    "REVENUE_MEAN_MEDIAN_PAIRS_MISSING",
+  ];
+  for(let index=priority.length-1;index>=0;index-=1){
+    if(failures.includes(priority[index]))return {status:"MISSING",reason:priority[index]};
+  }
+  return {status:"MISSING",reason:failures.at(-1)??"GROWTH_EXPECTATIONS_BLOCK_NOT_FOUND"};
 }
 
 function persistSourceEvidence(sourceDir,bytes,hash){
