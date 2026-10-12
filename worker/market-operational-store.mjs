@@ -6,6 +6,7 @@ import {Buffer} from 'node:buffer';
 import {liquidityHistoryRow} from './market-score-response-store.mjs';
 import {LIQUIDITY_ACTIVE_HISTORY_METHOD} from './liquidity-active-history-reader.mjs';
 import {mergeStoredMacro} from './candidate-market-operational-store.mjs';
+import {bisInputField,BIS_INPUT_TTL,readLastValidBis} from './bis-input-policy.mjs';
 const decodeInput=text=>JSON.parse(text.startsWith('gzip:')?gunzipSync(Buffer.from(text.slice(5),'base64'),{maxOutputLength:32000000}).toString('utf8'):text);
 export function marketOperationalStore(db){
  if(!db)throw Error('STORAGE_UNAVAILABLE');
@@ -19,7 +20,7 @@ export function marketOperationalStore(db){
  const read=async(table,key)=>{const row=await db.prepare(`SELECT body,stored_at FROM ${table} WHERE ${table==='market_input_batches_v1'?'batch_key':'snapshot_key'}=?`).bind(key).first();return row?{body:JSON.parse(row.body),storedAt:row.stored_at}:null};
  return {
   initialize:init,
-  async readInput(key){await init();const row=await db.prepare('SELECT body,stored_at FROM market_input_batches_v1 WHERE batch_key LIKE ? ORDER BY stored_at DESC LIMIT 1').bind(key+':%').first();return row?{body:decodeInput(row.body),storedAt:row.stored_at}:null},
+  async readInput(key){await init();if(bisInputField(key))return readLastValidBis(db,key,decodeInput);const row=await db.prepare('SELECT body,stored_at FROM market_input_batches_v1 WHERE batch_key LIKE ? ORDER BY stored_at DESC LIMIT 1').bind(key+':%').first();return row?{body:decodeInput(row.body),storedAt:row.stored_at}:null},
   readScore:()=>read('market_public_snapshots_v1','current'),
   async readScoreHistory({sinceDate='0000-00-00',limit=370}={}){
    await init();
@@ -53,7 +54,7 @@ export function marketOperationalStore(db){
 
 export async function readStoredMarketInputs(store,now=Date.now()){
  const batches=await Promise.all(['macro','credit','supply','fundFlows','bisDsr','bisTc','rates'].map(key=>store.readInput(key)));
- const fresh=(x,i)=>x&&now>=x.storedAt&&now-x.storedAt<36*3600000?(i===0?mergeStoredMacro(null,x,now):x.body):{};
+ const fresh=(x,i)=>x&&now>=x.storedAt&&now-x.storedAt<(i===4||i===5?BIS_INPUT_TTL:36*3600000)?(i===0?mergeStoredMacro(null,x,now):x.body):{};
  return batches.map(fresh).reduce((all,part)=>({...all,...part,series:{...all.series,...part.series},external:{...all.external,...part.external},providerSummary:{...all.providerSummary,...part.providerSummary}}),{series:{},external:{},providerSummary:{}});
 }
 

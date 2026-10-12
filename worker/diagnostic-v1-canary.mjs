@@ -130,12 +130,16 @@ export async function fetchBisBulkDataset(dataset, {
   const spec = BIS_DATASETS[dataset];
   if (!spec) return {dataset, status: 'INVALID_DATASET', requestCount: 0, parsed: null};
 
+  let phase='FETCH',httpStatus=null;
   try {
     const response = await Reflect.apply(fetchImpl, globalThis, [
       new URL(spec.url),
       {redirect: 'follow', headers: {accept: 'application/zip,*/*'}},
     ]);
+    httpStatus=response.status;
+    phase='BODY';
     const bytes = await readResponseBytes(response);
+    phase='UNZIP';
     const entries = await unzipSelected(bytes, {
       include: name => name.endsWith(spec.csv),
       maxEntries: 64,
@@ -145,6 +149,7 @@ export async function fetchBisBulkDataset(dataset, {
     const entry = [...entries].find(([name]) => name.endsWith(spec.csv));
     if (!entry) fail('BIS_CSV_NOT_FOUND');
     const csvText = new TextDecoder('utf-8').decode(entry[1]);
+    phase='PARSE';
     return {
       dataset,
       status: 'READY_CURRENT_VINTAGE_RAW',
@@ -155,6 +160,7 @@ export async function fetchBisBulkDataset(dataset, {
     return {
       dataset,
       status: error?.status ?? 'REQUEST_FAILED',
+      diagnostic:{phase,httpStatus,reason:error?.status??(error?.name==='AbortError'?'TIMEOUT':'REQUEST_FAILED')},
       requestCount: 0,
       parsed: null,
     };

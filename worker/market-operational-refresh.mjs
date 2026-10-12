@@ -1,4 +1,5 @@
 import {collectDiagnosticLiveInputs,fetchBisBulkDataset} from './diagnostic-v1-canary.mjs';
+import {bisInputField,validBisInput} from './bis-input-policy.mjs';
 import {fetchDiagnosticFredSeries} from '../lib/diagnostic-layer/official-macro-adapters.mjs';
 import {collectRateR2Inputs} from '../lib/market-score/rate-r2-provider.mjs';
 import {collectBreadthB1R3StoreOnlyR1} from '../lib/market-score/breadth-b1-r3-worker-domain.mjs';
@@ -90,8 +91,8 @@ export async function runMarketOperationalRefresh({env,job,store,now=Date.now(),
    credit:()=>collectGroup(args,'credit'),
    supply:()=>collectGroup(args,'supply'),
    fundFlows:()=>collectGroup(args,'fundFlows'),
-   bisDsr:async()=>{const r=await fetchBisBulkDataset('WS_DSR',{fetchImpl:requestFetch,country:'US'});return {status:r.status,external:{bisDsrParsed:r.parsed}}},
-   bisTc:async()=>{const r=await fetchBisBulkDataset('WS_TC',{fetchImpl:requestFetch,country:'US'});return {status:r.status,external:{bisDebtGdpParsed:r.parsed}}},
+   bisDsr:async()=>{const r=await fetchBisBulkDataset('WS_DSR',{fetchImpl:requestFetch,country:'US'});return {status:r.status,diagnostic:r.diagnostic,external:{bisDsrParsed:r.parsed}}},
+   bisTc:async()=>{const r=await fetchBisBulkDataset('WS_TC',{fetchImpl:requestFetch,country:'US'});return {status:r.status,diagnostic:r.diagnostic,external:{bisDebtGdpParsed:r.parsed}}},
    rates:()=>collectRateR2Inputs(args),
    earnings:()=>collectEarningsE1R4ToStore({...args,db:env.DB}),
    consumption:()=>runConsumptionR3OperationalRefresh({...args,maxSourcesPerRun:1}),
@@ -113,6 +114,10 @@ export async function runMarketOperationalRefresh({env,job,store,now=Date.now(),
    return {status:'SOURCE_FAILED',job:selected,reason:macroReadiness.reason};
   }
   const collectedStatus=collected?.status??collected?.rateR2?.status;
+  if(bisInputField(selected)&&(collectedStatus!=='READY_CURRENT_VINTAGE_RAW'||!validBisInput(selected,collected))){
+   await store.finish(selected,jobLease,now,'SOURCE_FAILED');
+   return {status:'SOURCE_FAILED',job:selected,sourceStatus:collectedStatus,reason:'BIS_INPUT_NOT_VALID',diagnostic:collected?.diagnostic};
+  }
   if(selected==='macroCredit'&&(collectedStatus!=='READY_CURRENT_VINTAGE'||!collected?.series?.NFCICREDIT?.length)){
    await store.finish(selected,jobLease,now,'SOURCE_FAILED');
    return {status:'SOURCE_FAILED',job:selected,reason:'MACRO_CREDIT_NOT_READY'};

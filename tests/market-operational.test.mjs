@@ -7,11 +7,21 @@ import {marketOperationalStore,readStoredMarketInputs,storedMarketResponse} from
 import {runMarketOperationalRefresh,MARKET_COLLECTION_JOBS} from '../worker/market-operational-refresh.mjs';
 function fixture(){
  const sqlite=new DatabaseSync(':memory:');
- const db={prepare(sql){const statement=sqlite.prepare(sql);const bound=args=>({bind:(...values)=>bound(values),run:async()=>statement.run(...args),first:async()=>statement.get(...args)});return bound([])}};
+ const db={prepare(sql){const statement=sqlite.prepare(sql);const bound=args=>({bind:(...values)=>bound(values),run:async()=>statement.run(...args),first:async()=>statement.get(...args),all:async()=>({results:statement.all(...args)})});return bound([])}};
  return {sqlite,db,store:marketOperationalStore(db)};
 }
 const now=Date.parse('2026-09-30T00:00:00Z');
 const score={status:'SUCCESS',domains:Array.from({length:12},(_,i)=>({id:String(i),score:i===0?0:null})),overall:{score:null,status:'PARTIAL'}};
+test('BIS failures and empty successful responses never write or calculate',async()=>{
+ for(const status of ['REQUEST_FAILED','HTTP_ERROR','QUOTA_EXCEEDED','READY_CURRENT_VINTAGE_RAW']){
+  const {store,db,sqlite}=fixture();
+  const out=await runMarketOperationalRefresh({env:{DB:db},store,job:'bisTc',now,collectors:{bisTc:async()=>({status,external:{bisDebtGdpParsed:null}})},calculate:()=>{throw Error('MUST_NOT_CALCULATE')}});
+  assert.equal(out.status,'SOURCE_FAILED');
+  assert.equal(sqlite.prepare("SELECT count(*) n FROM market_input_batches_v1").get().n,0);
+  assert.equal(sqlite.prepare("SELECT status FROM market_collection_jobs_v1 WHERE job='bisTc'").get().status,'SOURCE_FAILED');
+  sqlite.close();
+ }
+});
 test('empty macro cannot replace stored source, create slices or refresh score',async()=>{
  const {store,db,sqlite}=fixture();const old={series:{PAYEMS:[{observationDate:'2026-09-01',value:0}]}};
  await store.writeInput('macro',old,now-1);await store.writeScore(score,now-1);

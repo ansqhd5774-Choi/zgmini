@@ -5,7 +5,7 @@ import {scoreCmdiComponentsR1} from "../../lib/diagnostic-layer/r1-diagnostic-pi
 const finite=(v:unknown):v is number=>typeof v==="number"&&Number.isFinite(v);
 const validDate=(v:unknown):v is string=>typeof v==="string"&&/^\d{4}-\d{2}-\d{2}$/.test(v);
 function latest(rows:any[],asOf:string,field="value"){let best:any=null;for(const row of rows??[]){if(!validDate(row?.observationDate)||row.observationDate>asOf||!finite(row?.[field]))continue;if(!best||row.observationDate>best.observationDate)best=row}return best}
-function safeBis(dsr:any,tc:any){if(!dsr||!tc)return null;try{return buildBisDebtRiskComponents(dsr,tc)}catch{return null}}
+function safeBis(dsr:any,tc:any){try{return buildBisDebtRiskComponents(dsr,tc)}catch{return null}}
 function row(id:string,name:string,score:any,raw:any,unit:string,source:string,weight:number){return {id,name,status:finite(score?.value)?"READY":"PARTIAL",score:finite(score?.value)?score.value:null,value:finite(raw?.value)?raw.value:null,unit,observationDate:score?.observationDate??raw?.observationDate??null,source,weight}}
 
 export function buildProjection({inputs,snapshot,publicSnapshot,e1,nowIso}:any){
