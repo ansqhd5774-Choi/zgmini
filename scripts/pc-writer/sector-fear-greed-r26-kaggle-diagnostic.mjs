@@ -17,6 +17,7 @@ const finite=value=>typeof value==="number"&&Number.isFinite(value);
 const validDate=value=>typeof value==="string"&&/^\d{4}-\d{2}-\d{2}$/.test(value)&&Number.isFinite(Date.parse(`${value}T00:00:00Z`));
 const numberOrNull=value=>{const text=String(value??"").trim();if(!text)return null;const number=Number(text);return finite(number)?number:null;};
 const round=value=>finite(value)?Math.round(value*1_000_000)/1_000_000:null;
+export const r26ProviderCallsFromEnv=env=>{const value=Number(env?.ZGMINI_R26_KAGGLE_PROVIDER_CALLS??0);return Number.isInteger(value)&&value>=0&&value<=1?value:0;};
 
 export function parseR26CsvRow(line){
   const output=[];let current="",quoted=false;
@@ -117,12 +118,12 @@ function renderR26(report){
   lines.push("","note=SHADOW_DIAGNOSTIC_ONLY_98_PERCENT_IS_RESEARCH_COVERAGE_SUMMARY_NOT_AN_APPROVED_FORMULA_GATE","note=KAGGLE_DATASET_LICENSE_IS_REPORTED_CC0_BUT_UPSTREAM_MARKET_DATA_PROVENANCE_RIGHTS_REMAIN_UNVERIFIED","note=NO_PRODUCTION_D1_SCHEMA_SCHEDULER_OR_FORMULA_CHANGE");return lines.join("\n")+"\n";
 }
 
-export async function runSectorFearGreedR26KaggleDiagnostic(csvFile,base=process.env.ZGMINI_PC_HOME??DEFAULT_BASE,{now=new Date(),pitHistory=null}={}){
-  const loaded=pitHistory?{file:"INJECTED",history:pitHistory}:loadPitHistory(base),summary=await inspectR26KaggleCsv(csvFile,{pitHistory:loaded.history});
-  const report={version:"R2.6-KAGGLE-SHADOW-DIAGNOSTIC",generatedAt:(now instanceof Date?now:new Date(now)).toISOString(),status:"SHADOW_R26_KAGGLE_DIAGNOSTIC_COMPLETE",mode:"SHADOW_ONLY",dataset:KAGGLE_DATASET,datasetPage:KAGGLE_DATASET_PAGE,datasetLicenseEvidence:"CC0_PUBLIC_DOMAIN_REPORTED_BY_INDEXED_KAGGLE_METADATA",upstreamProvenanceVerified:false,commercialProductionEligible:false,pitFile:loaded.file,providerCalls:0,rawRowsStored:false,publicMutation:false,dbSchemaChanged:false,productionFormulaChanged:false,schedulerChanged:false,referenceRequirementChanged:false,targets:{...TARGETS},summary};
+export async function runSectorFearGreedR26KaggleDiagnostic(csvFile,base=process.env.ZGMINI_PC_HOME??DEFAULT_BASE,{now=new Date(),pitHistory=null,env=process.env}={}){
+  const loaded=pitHistory?{file:"INJECTED",history:pitHistory}:loadPitHistory(base),summary=await inspectR26KaggleCsv(csvFile,{pitHistory:loaded.history}),providerCalls=r26ProviderCallsFromEnv(env);
+  const report={version:"R2.6-KAGGLE-SHADOW-DIAGNOSTIC",generatedAt:(now instanceof Date?now:new Date(now)).toISOString(),status:"SHADOW_R26_KAGGLE_DIAGNOSTIC_COMPLETE",mode:"SHADOW_ONLY",dataset:KAGGLE_DATASET,datasetPage:KAGGLE_DATASET_PAGE,datasetLicenseEvidence:"CC0_PUBLIC_DOMAIN_REPORTED_BY_INDEXED_KAGGLE_METADATA",upstreamProvenanceVerified:false,commercialProductionEligible:false,pitFile:loaded.file,providerCalls,rawRowsStored:false,publicMutation:false,dbSchemaChanged:false,productionFormulaChanged:false,schedulerChanged:false,referenceRequirementChanged:false,targets:{...TARGETS},summary};
   fs.mkdirSync(base,{recursive:true});const jsonFile=path.join(base,OUTPUT_JSON),txtFile=path.join(base,OUTPUT_TXT);fs.writeFileSync(jsonFile,JSON.stringify(report,null,2)+"\n");fs.writeFileSync(txtFile,renderR26(report));return {...report,jsonFile,txtFile};
 }
 
 if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.url)){
-  runSectorFearGreedR26KaggleDiagnostic(process.argv[2]).then(result=>console.log(JSON.stringify(result,null,2))).catch(error=>{const message=String(error?.message??""),code=/^[A-Z0-9_:-]+$/.test(message)?message:"R26_KAGGLE_DIAGNOSTIC_FAILED";console.log(JSON.stringify({status:"FAILED",code,providerCalls:0,publicMutation:false,dbSchemaChanged:false,productionFormulaChanged:false,schedulerChanged:false}));process.exitCode=1;});
+  runSectorFearGreedR26KaggleDiagnostic(process.argv[2]).then(result=>console.log(JSON.stringify(result,null,2))).catch(error=>{const message=String(error?.message??""),code=/^[A-Z0-9_:-]+$/.test(message)?message:"R26_KAGGLE_DIAGNOSTIC_FAILED",providerCalls=r26ProviderCallsFromEnv(process.env);console.log(JSON.stringify({status:"FAILED",code,providerCalls,publicMutation:false,dbSchemaChanged:false,productionFormulaChanged:false,schedulerChanged:false}));process.exitCode=1;});
 }
