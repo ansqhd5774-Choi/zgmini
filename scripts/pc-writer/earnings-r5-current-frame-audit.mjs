@@ -3,6 +3,7 @@ import os from "node:os";
 import path from "node:path";
 import {fileURLToPath} from "node:url";
 import {E1_R5_SEC_CONTRACT,secUnitAllowed,validateSecCompanyFactsDocument} from "../../lib/market-score/earnings-e1-r5-input-contract.mjs";
+import {quarterFromCumulative} from "../../lib/market-score/earnings-e1-r5-contract.mjs";
 import {buildEarningsR5RawComponentsWithS13R33} from "../../lib/market-score/earnings-e1-r5-s13-r33-shadow.mjs";
 import {latestMatureFrame,MATURE_LAG_DAYS} from "../../lib/market-score/sec-earnings-e1-r2-provider.mjs";
 import {readLatestEarningsUniverse,inspectBlsPrFile} from "./earnings-r5-offline-preflight.mjs";
@@ -51,13 +52,18 @@ function endNearFrame(fact,frameEnd){
   return end!=null&&target!=null&&Math.abs(end-target)<=45;
 }
 
-function eligibleFact(fact,{metric,frame,frameEnd,asOf}){
-  if(!fact||fact.frame!==frame||!E1_R5_SEC_CONTRACT.forms.includes(clean(fact.form))||!finite(fact.val))return false;
+function eligibleFact(fact,{metric,frameEnd,asOf,maxDuration=120}){
+  if(!fact||!E1_R5_SEC_CONTRACT.forms.includes(clean(fact.form))||!finite(fact.val))return false;
   if(typeof fact.filed==="string"&&fact.filed>asOf)return false;
   if(!endNearFrame(fact,frameEnd))return false;
   const duration=durationDays(fact);
-  if(duration==null||duration<55||duration>120)return false;
+  if(duration==null||duration<55||duration>maxDuration)return false;
   return true;
+}
+
+function frameDistance(fact,frameEnd){
+  const end=dateDay(fact?.end),target=dateDay(frameEnd);
+  return end!=null&&target!=null?Math.abs(end-target):Number.POSITIVE_INFINITY;
 }
 
 function factCandidates(document,{metric,tag,frame,frameEnd,asOf}){
@@ -67,18 +73,26 @@ function factCandidates(document,{metric,tag,frame,frameEnd,asOf}){
   for(const [unit,rows] of Object.entries(concept.units)){
     if(!secUnitAllowed(metric,unit)||!Array.isArray(rows))continue;
     for(const fact of rows){
-      if(!eligibleFact(fact,{metric,frame,frameEnd,asOf}))continue;
-      out.push({...fact,tag,unit,duration:durationDays(fact)});
+      if(!eligibleFact(fact,{metric,frameEnd,asOf}))continue;
+      out.push({...fact,tag,unit,duration:durationDays(fact),explicitFrame:fact.frame===frame,frameDistance:frameDistance(fact,frameEnd)});
     }
   }
-  out.sort((a,b)=>String(b.filed??"").localeCompare(String(a.filed??""))||String(b.accn??"").localeCompare(String(a.accn??"")));
+  out.sort((a,b)=>
+    Number(b.explicitFrame)-Number(a.explicitFrame)||
+    a.frameDistance-b.frameDistance||
+    String(b.filed??"").localeCompare(String(a.filed??""))||
+    String(b.accn??"").localeCompare(String(a.accn??""))
+  );
   return out;
 }
 
 function chooseLatest(candidates){
   if(!candidates.length)return {fact:null,reason:"NO_EXPLICIT_FRAME_FACT"};
-  const latestFiled=String(candidates[0].filed??"");
-  const top=candidates.filter(row=>String(row.filed??"")===latestFiled);
+  const bestExplicit=Boolean(candidates[0].explicitFrame);
+  const bestDistance=candidates[0].frameDistance;
+  const nearest=candidates.filter(row=>Boolean(row.explicitFrame)===bestExplicit&&row.frameDistance===bestDistance);
+  const latestFiled=String(nearest[0].filed??"");
+  const top=nearest.filter(row=>String(row.filed??"")===latestFiled);
   const values=[...new Set(top.map(row=>row.val))];
   if(values.length>1)return {fact:null,reason:"LATEST_FILED_VALUE_CONFLICT",candidateCount:candidates.length,latestFiled};
   return {fact:top[0],reason:null,candidateCount:candidates.length,latestFiled};
@@ -95,7 +109,7 @@ export function selectCompanyFact(document,{metric,frame,frameEnd,asOf,tag=null}
 }
 
 function pairComparable(current,prior){
-  if(!current||!prior)return false;
+  if(!current||!prior||current.tag!==prior.tag||current.unit!==prior.unit)return false;
   const currentEnd=dateDay(current.end),priorEnd=dateDay(prior.end);
   if(currentEnd==null||priorEnd==null)return false;
   const gap=currentEnd-priorEnd;if(gap<320||gap>410)return false;
@@ -119,6 +133,71 @@ function selectComparablePair(document,{metric,currentFrame,priorFrame,currentEn
     if(current.fact&&prior.fact&&pairComparable(current.fact,prior.fact))return {current:current.fact,prior:prior.fact,tag,reason:null};
   }
   return {current:null,prior:null,tag:null,reason:"NO_COMPARABLE_PAIR"};
+}
+
+function flowRows(document,{metric,asOf}){
+  const out=[];
+  const cutoff=dateDay(asOf);
+  for(const tag of E1_R5_SEC_CONTRACT.tags?.[metric]??[]){
+    const concept=document?.facts?.[E1_R5_SEC_CONTRACT.taxonomy]?.[tag];
+    if(!concept?.units||typeof concept.units!=="object")continue;
+    for(const [unit,rows] of Object.entries(concept.units)){
+      if(!secUnitAllowed(metric,unit)||!Array.isArray(rows))continue;
+      for(const fact of rows){
+        if(!fact||!E1_R5_SEC_CONTRACT.forms.includes(clean(fact.form))||!finite(fact.val))continue;
+        if(typeof fact.filed==="string"&&fact.filed>asOf)continue;
+        const duration=durationDays(fact),end=dateDay(fact.end);
+        if(!Number.isInteger(duration)||duration<55||duration>400||end==null||end>cutoff)continue;
+        out.push({...fact,tag,unit,duration});
+      }
+    }
+  }
+  return out;
+}
+
+function periodKey(row){return `${row.tag}|${row.unit}|${row.start}|${row.end}`;}
+
+function uniqueFlowFacts(document,{metric,asOf}){
+  const grouped=new Map();
+  for(const row of flowRows(document,{metric,asOf})){
+    const key=periodKey(row);if(!grouped.has(key))grouped.set(key,[]);grouped.get(key).push(row);
+  }
+  const facts=[];
+  for(const rows of grouped.values()){
+    rows.sort((a,b)=>String(b.filed??"").localeCompare(String(a.filed??""))||String(b.accn??"").localeCompare(String(a.accn??"")));
+    const latestFiled=String(rows[0].filed??"");
+    const top=rows.filter(row=>String(row.filed??"")===latestFiled);
+    if(new Set(top.map(row=>row.val)).size===1)facts.push(top[0]);
+  }
+  return facts;
+}
+
+function sameTargetQuarter(fact,target){
+  if(!fact||!target||fact.end!==target.end)return false;
+  const a=fact.duration??durationDays(fact),b=target.duration??durationDays(target);
+  return Number.isInteger(a)&&Number.isInteger(b)&&Math.abs(a-b)<=15;
+}
+
+export function selectCurrentQuarterFlow(document,{metric,asOf,target}={}){
+  if(!target?.end)return {value:null,method:null,reason:"TARGET_PERIOD_MISSING"};
+  const facts=uniqueFlowFacts(document,{metric,asOf});
+  const direct=facts.filter(fact=>fact.duration<=120&&sameTargetQuarter(fact,target))
+    .sort((a,b)=>String(b.filed??"").localeCompare(String(a.filed??"")));
+  if(direct.length)return {value:direct[0].val,method:"DIRECT_QUARTER",fact:direct[0],priorFact:null,reason:null};
+  const cumulative=facts.filter(fact=>fact.duration>120&&fact.end===target.end)
+    .sort((a,b)=>String(b.filed??"").localeCompare(String(a.filed??""))||b.duration-a.duration);
+  for(const current of cumulative){
+    const priors=facts.filter(prior=>
+      prior.tag===current.tag&&prior.unit===current.unit&&prior.start===current.start&&
+      dateDay(prior.end)<dateDay(current.end)&&
+      dateDay(current.end)-dateDay(prior.end)>=55&&dateDay(current.end)-dateDay(prior.end)<=125&&
+      prior.duration<current.duration
+    ).sort((a,b)=>Math.abs((dateDay(current.end)-dateDay(a.end))-90)-Math.abs((dateDay(current.end)-dateDay(b.end))-90)||dateDay(b.end)-dateDay(a.end));
+    if(!priors.length)continue;
+    const value=quarterFromCumulative(current.val,priors[0].val);
+    if(finite(value))return {value,method:"CUMULATIVE_DELTA",fact:current,priorFact:priors[0],reason:null};
+  }
+  return {value:null,method:null,fact:null,priorFact:null,reason:facts.length?"NO_ALIGNED_QUARTER_FLOW":"NO_FLOW_FACT"};
 }
 
 function companyFile(directory,cik){
@@ -149,22 +228,20 @@ export function buildIssuerRowFromDocuments({member,companyFacts,submission,fram
   const revenue=selectComparablePair(companyFacts,{metric:"revenue",currentFrame:frame.frame,priorFrame:frame.priorFrame,currentEnd:frame.end,priorEnd:frame.priorEnd,asOf});
   const op=selectComparablePair(companyFacts,{metric:"operatingIncome",currentFrame:frame.frame,priorFrame:frame.priorFrame,currentEnd:frame.end,priorEnd:frame.priorEnd,asOf});
   const net=selectComparablePair(companyFacts,{metric:"netIncome",currentFrame:frame.frame,priorFrame:frame.priorFrame,currentEnd:frame.end,priorEnd:frame.priorEnd,asOf});
-  const cfo=selectCompanyFact(companyFacts,{metric:"operatingCashFlow",frame:frame.frame,frameEnd:frame.end,asOf});
-  const capex=selectCompanyFact(companyFacts,{metric:"capex",frame:frame.frame,frameEnd:frame.end,asOf});
 
   const currentRevenue=revenue.current;
   const priorRevenue=revenue.prior;
   const currentOp=op.current;
   const priorOp=op.prior;
-  const currentCfo=cfo.fact;
-  const currentCapex=capex.fact;
+  const cfo=selectCurrentQuarterFlow(companyFacts,{metric:"operatingCashFlow",asOf,target:currentRevenue});
+  const capex=selectCurrentQuarterFlow(companyFacts,{metric:"capex",asOf,target:currentRevenue});
   const current={
     eps:eps.current?.val??null,
     revenue:currentRevenue?.val??null,
     operatingIncome:currentOp&&currentRevenue&&samePeriod(currentOp,currentRevenue)?currentOp.val:null,
     netIncome:net.current?.val??null,
-    operatingCashFlow:currentCfo&&currentRevenue&&samePeriod(currentCfo,currentRevenue)?currentCfo.val:null,
-    capex:currentCapex&&currentRevenue&&samePeriod(currentCapex,currentRevenue)?currentCapex.val:null,
+    operatingCashFlow:finite(cfo.value)?cfo.value:null,
+    capex:finite(capex.value)?capex.value:null,
   };
   const priorYear={
     eps:eps.prior?.val??null,
@@ -185,6 +262,9 @@ export function buildIssuerRowFromDocuments({member,companyFacts,submission,fram
       revenueTag:revenue.tag??null,
       sicKnown:!!division,
       directQuarterOnly:true,
+      cfoMethod:cfo.method,
+      capexMethod:capex.method,
+      additiveFlowReconstruction:"MATCHED_TAG_UNIT_START_PERIOD_ONLY",
       q4EpsAnnualMinusNineMonths:"FORBIDDEN",
     },
   };
@@ -217,7 +297,6 @@ export async function runEarningsR5CurrentFrameAudit({incoming,coreFile,r33Audit
   const universe=readLatestEarningsUniverse(core);
   const frame=latestMatureFrame(asOf,{lagDays});
   if(universe.status!=="PASS"||!frame)return {status:"PARTIAL",reason:universe.status!=="PASS"?"UNIVERSE_REQUIRED":"MATURE_FRAME_REQUIRED",active:false,dbWrites:0,networkCalls:0};
-
   const factsDir=path.join(inputDir,E1_R5_OFFICIAL_SOURCE_MANIFEST.secCompanyFacts.extractedDirectory);
   const submissionsDir=path.join(inputDir,E1_R5_OFFICIAL_SOURCE_MANIFEST.secSubmissions.extractedDirectory);
   const rows=[];let factFiles=0,submissionFiles=0,invalidFacts=0;
@@ -254,7 +333,7 @@ export async function runEarningsR5CurrentFrameAudit({incoming,coreFile,r33Audit
   const sectorEligible=raw.components?.improvingSectorBreadth?.eligibleCount??0;
 
   return {
-    version:2,
+    version:3,
     methodologyVersion:"E1-R5-SHADOW-R1",
     at:new Date().toISOString(),
     asOf,
@@ -274,7 +353,7 @@ export async function runEarningsR5CurrentFrameAudit({incoming,coreFile,r33Audit
     rawMissing:raw.missing,
     rawComponents:raw.components,
     quality:{...raw.quality,sectorEligibleCount:sectorEligible,sicDivisionMapping:"RESEARCH_ONLY_SEC_SIC_DIVISIONS"},
-    policies:{directQuarterOnly:true,q4EpsAnnualMinusNineMonths:"FORBIDDEN",noRenormalization:true,productionActivation:false,formulaChanged:false,weightChanged:false,scoringGateChanged:false},
+    policies:{directQuarterOnly:true,frameSafeGeometryFallback:true,additiveFlowReconstruction:"MATCHED_TAG_UNIT_START_PERIOD_ONLY",q4EpsAnnualMinusNineMonths:"FORBIDDEN",noRenormalization:true,productionActivation:false,formulaChanged:false,weightChanged:false,scoringGateChanged:false},
   };
 }
 
