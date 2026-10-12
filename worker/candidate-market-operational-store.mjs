@@ -4,6 +4,7 @@ import {PUBLIC_DISPLAY_MAX_AGE_MS} from './public-display-freshness.mjs';
 import {gunzipSync} from 'node:zlib';
 import {Buffer} from 'node:buffer';
 import {projectionMacroKey} from './projection-input-manifest-r60.mjs';
+import {bisInputField,BIS_INPUT_TTL,readLastValidBis} from './bis-input-policy.mjs';
 
 const INPUT_TTL=36*3600000;
 const decodeInput=text=>JSON.parse(text.startsWith('gzip:')?gunzipSync(Buffer.from(text.slice(5),'base64'),{maxOutputLength:32000000}).toString('utf8'):text);
@@ -31,6 +32,7 @@ export function marketOperationalStore(db){
  return Object.freeze({
   initialize:async()=>true,
   async readInput(key){
+   if(bisInputField(key))return readLastValidBis(db,key,decodeInput);
    const row=await db.prepare('SELECT body,stored_at FROM market_input_batches_v1 WHERE batch_key LIKE ? ORDER BY stored_at DESC LIMIT 1').bind(key+':%').first();
    if(!row)return null;
    const latest={body:decodeInput(row.body),storedAt:row.stored_at};
@@ -62,7 +64,7 @@ export function marketOperationalStore(db){
 
 export async function readStoredMarketInputs(store,now=Date.now()){
  const batches=await Promise.all(['macro','credit','supply','fundFlows','bisDsr','bisTc','rates'].map(key=>store.readInput(key)));
- const fresh=(x,i)=>x&&now>=x.storedAt&&now-x.storedAt<INPUT_TTL?(i===0?mergeStoredMacro(null,x,now):x.body):{};
+ const fresh=(x,i)=>x&&now>=x.storedAt&&now-x.storedAt<(i===4||i===5?BIS_INPUT_TTL:INPUT_TTL)?(i===0?mergeStoredMacro(null,x,now):x.body):{};
  return batches.map(fresh).reduce((all,part)=>({...all,...part,series:{...all.series,...part.series},external:{...all.external,...part.external},providerSummary:{...all.providerSummary,...part.providerSummary}}),{series:{},external:{},providerSummary:{}});
 }
 
@@ -73,7 +75,7 @@ export async function readStoredMarketInputsSelected(store,keys,now=Date.now(),{
  const batches=await Promise.all(unique.map(key=>key==='macro'&&projectionId&&store.readProjectionMacro?store.readProjectionMacro(projectionId,onMetadata):store.readInput(key)));
  const storedTimes=batches.map(x=>Number(x?.storedAt)).filter(Number.isFinite);
  const referenceNow=anchorToLatestBatch&&storedTimes.length?Math.max(...storedTimes):now;
- const fresh=(x,key)=>x&&referenceNow>=x.storedAt&&referenceNow-x.storedAt<INPUT_TTL?(key==='macro'?mergeStoredMacro(null,x,referenceNow):x.body):{};
+ const fresh=(x,key)=>x&&referenceNow>=x.storedAt&&referenceNow-x.storedAt<(bisInputField(key)?BIS_INPUT_TTL:INPUT_TTL)?(key==='macro'?mergeStoredMacro(null,x,referenceNow):x.body):{};
  return batches.map((batch,index)=>fresh(batch,unique[index])).reduce((all,part)=>({...all,...part,series:{...all.series,...part.series},external:{...all.external,...part.external},providerSummary:{...all.providerSummary,...part.providerSummary}}),{series:{},external:{},providerSummary:{}});
 }
 
