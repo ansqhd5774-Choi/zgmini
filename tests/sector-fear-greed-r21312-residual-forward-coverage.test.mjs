@@ -9,14 +9,13 @@ const here=path.dirname(fileURLToPath(import.meta.url));
 const root=path.resolve(here,"..");
 
 test("R2.13.12 counts actual forward-session availability without inventing calendar rows",()=>{
-  const price=Array.from({length:100},(_,i)=>({date:`2026-01-${String(i+1).padStart(2,"0")}`,close:100+i})).filter(r=>Number(r.date.slice(-2))<=31);
-  const real=price.map((r,i)=>({...r,date:new Date(Date.UTC(2026,0,i+1)).toISOString().slice(0,10)}));
-  const residual=real.slice(30,70).map((r,i)=>({date:r.date,score:i}));
+  const real=Array.from({length:100},(_,i)=>({date:new Date(Date.UTC(2026,0,i+1)).toISOString().slice(0,10),close:100+i}));
+  const residual=real.slice(60,90).map((r,i)=>({date:r.date,score:i}));
   const s=summarizeResidualCoverage(residual,real);
-  assert.equal(s.residualN,40);
-  assert.equal(s.alignedN,40);
-  assert.equal(s.trail20Pairs,40);
-  assert.equal(s.forward20Pairs,30);
+  assert.equal(s.residualN,30);
+  assert.equal(s.alignedN,30);
+  assert.equal(s.trail20Pairs,30);
+  assert.equal(s.forward20Pairs,20);
   assert.equal(s.forward60Pairs,0);
   assert.equal(s.forward20CorrelationEligible,true);
   assert.equal(s.forward60CorrelationEligible,false);
