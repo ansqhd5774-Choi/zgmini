@@ -23,7 +23,7 @@ test("156 weekly observations in trailing three years satisfy candidate coverage
   const rows=[];
   for(const code of Object.values(CFTC_SECTOR_CODES)){
     for(let i=0;i<156;i++){
-      const d=new Date(Date.UTC(2023,10,7+i*7)).toISOString().slice(0,10);
+      const d=new Date(Date.UTC(2023,9,17+i*7)).toISOString().slice(0,10);
       rows.push(...normalizeCftcPositionRows([row(code,d)]));
     }
   }
