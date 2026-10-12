@@ -10,6 +10,8 @@ const OUTPUT_JSON="local-sector-fear-greed-r25-alpaca-reuse-diagnostic.json";
 const OUTPUT_TXT="local-sector-fear-greed-r25-alpaca-reuse-diagnostic.txt";
 const BENCHMARKS=["SPY",...Object.values(SECTOR_FEAR_GREED_R1_ETFS)];
 const TARGETS=Object.freeze({trendRelativeRaw:881,volatilityRaw:818,speculativeR24Raw:834,demandRaw:775,breadthConservativeRaw:1007});
+const ABOVE_ONE_PERCENT_THRESHOLD=0.01;
+const FLOAT_EPSILON=1e-12;
 const finite=v=>typeof v==="number"&&Number.isFinite(v);
 const validDate=v=>typeof v==="string"&&/^\d{4}-\d{2}-\d{2}$/.test(v)&&Number.isFinite(Date.parse(`${v}T00:00:00Z`));
 const percentile=(values,p)=>{if(!values.length)return null;const a=[...values].sort((x,y)=>x-y),i=Math.min(a.length-1,Math.max(0,Math.floor((a.length-1)*p)));return a[i];};
@@ -17,6 +19,7 @@ const round=v=>finite(v)?Math.round(v*1000000)/1000000:null;
 const safeArray=file=>{try{const value=JSON.parse(fs.readFileSync(file,"utf8"));return Array.isArray(value)?value:[];}catch{return [];}};
 
 export function maxFiniteR25(values=[]){let max=null;for(const value of values)if(finite(value)&&(max===null||value>max))max=value;return max;}
+export function isStrictlyAboveOnePercentR25(value){return finite(value)&&value>ABOVE_ONE_PERCENT_THRESHOLD+FLOAT_EPSILON;}
 
 export function mergeAlpacaRows(rowSets=[]){
   const byKey=new Map(),conflicts=[];
@@ -42,7 +45,7 @@ export function compareOverlap(alpacaRows=[],referenceRows=[]){
   const ref=new Map();
   for(const row of referenceRows){const ticker=String(row?.ticker??"").trim(),date=String(row?.tradeDate??row?.trade_date??row?.date??"").slice(0,10),close=Number(row?.currentClose??row?.current_close??row?.close);if(ticker&&validDate(date)&&finite(close)&&close>0)ref.set(`${ticker}|${date}`,close);}
   const diffs=[];let aboveOnePercent=0,maxRelativeDifference=null;
-  for(const row of alpacaRows){const value=ref.get(`${row.ticker}|${row.date}`);if(!finite(value)||value<=0)continue;const diff=Math.abs(row.close/value-1);diffs.push(diff);if(diff>.01)aboveOnePercent++;if(maxRelativeDifference===null||diff>maxRelativeDifference)maxRelativeDifference=diff;}
+  for(const row of alpacaRows){const value=ref.get(`${row.ticker}|${row.date}`);if(!finite(value)||value<=0)continue;const diff=Math.abs(row.close/value-1);diffs.push(diff);if(isStrictlyAboveOnePercentR25(diff))aboveOnePercent++;if(maxRelativeDifference===null||diff>maxRelativeDifference)maxRelativeDifference=diff;}
   return {pairs:diffs.length,medianRelativeDifference:round(percentile(diffs,0.50)),p95RelativeDifference:round(percentile(diffs,0.95)),maxRelativeDifference:round(maxRelativeDifference),aboveOnePercent};
 }
 
