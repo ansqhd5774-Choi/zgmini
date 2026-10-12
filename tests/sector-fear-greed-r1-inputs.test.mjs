@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {parseSectorUniverseCsv,buildCurrentUniverseSectorInputs} from "../lib/market-score/sector-fear-greed-r1-inputs.mjs";
+import {computeBreadthComponent} from "../lib/market-score/sector-fear-greed-r1-shadow.mjs";
 
 const sectors=[
   ["Information Technology","AAA"],
@@ -19,7 +20,7 @@ const sectors=[
 function fixtureCsv(){
   return ["Symbol,Security,GICS Sector",...sectors.map(([sector,ticker],i)=>`${ticker},\"Company ${i}, Inc.\",${sector}`)].join("\n");
 }
-function dateAt(index){return new Date(Date.UTC(2025,0,1)+index*86400000).toISOString().slice(0,10)}
+function dateAt(index){return new Date(Date.UTC(2023,0,1)+index*86400000).toISOString().slice(0,10)}
 function storedRows(days=260){
   const rows=[];
   for(let i=0;i<days;i++){
@@ -84,4 +85,16 @@ test("conflicting duplicate stored observations fail closed",()=>{
   const rows=storedRows(2);
   rows.push({...rows[0],currentClose:999});
   assert.throws(()=>buildCurrentUniverseSectorInputs({rows,universe}),/SECTOR_INPUT_DUPLICATE_CONFLICT/);
+});
+
+test("breadth percentile requires 756 valid post-warmup observations, so 52-week breadth needs at least 1007 raw sessions",()=>{
+  const universe=parseSectorUniverseCsv(fixtureCsv(),{requireSp500Size:false});
+  const shortInputs=buildCurrentUniverseSectorInputs({rows:storedRows(1006),universe});
+  const enoughInputs=buildCurrentUniverseSectorInputs({rows:storedRows(1007),universe});
+  const shortScore=computeBreadthComponent(shortInputs.sectors.technology);
+  const enoughScore=computeBreadthComponent(enoughInputs.sectors.technology);
+  assert.equal(shortScore.status,"PARTIAL");
+  assert.equal(shortScore.metrics.highLowNet.referenceObservations,755);
+  assert.equal(enoughScore.status,"READY");
+  assert.equal(enoughScore.metrics.highLowNet.referenceObservations,756);
 });
