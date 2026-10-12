@@ -57,7 +57,7 @@ test("parser fails closed on wrong response quarter, target years and ambiguous 
   assert.equal(wrongQuarter.status,"MISSING");
   assert.equal(wrongQuarter.reason,"RESPONSE_QUARTER_NOT_FOUND");
 
-  const wrongYears=officialHtml().replace(">2027</g,">2028<");
+  const wrongYears=officialHtml().replaceAll(">2027<",">2028<");
   const years=parseRichmondFedCfoRevenueRelease(wrongYears,{surveyYear:2026,surveyQuarter:3});
   assert.equal(years.status,"MISSING");
   assert.equal(years.reason,"TARGET_YEAR_HEADER_NOT_FOUND");
