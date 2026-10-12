@@ -11,6 +11,16 @@ function fixture(){
  return {sql,db,store:publicFeedStore(db),locks:marketOperationalStore(db)};
 }
 const now=Date.parse('2026-10-01T00:00:00Z');
+test('later collection cannot replace a newer CNN observation with older data',async()=>{
+ const {sql,db,store,locks}=fixture();await store.initialize();
+ const original={status:'verified',score:45,observedAt:'2026-10-01T00:00:00Z'};
+ await store.writeOutput('fear-greed',original,now);
+ const out=await refreshPublicFeeds({env:{DB:db},store,locks,now:now+FEED_POLICY['fear-greed'].intervalMs,maxFeedsPerRun:1,collectors:{'fear-greed':async()=>Response.json({status:'verified',score:38,observedAt:'2026-09-28T00:00:00Z'})}});
+ assert.equal(out.feeds.find(x=>x.key==='fear-greed').status,'FAILED');
+ assert.deepEqual((await store.readOutput('fear-greed')).body,original);
+ assert.equal((await store.readOutput('fear-greed')).storedAt,now);
+ sql.close();
+});
 test('empty/stale public reads never fetch; stored zero survives and daily history is preserved',async()=>{
  const {sql,db,store}=fixture();const original=globalThis.fetch;globalThis.fetch=()=>{throw Error('NETWORK_FORBIDDEN')};
  try{

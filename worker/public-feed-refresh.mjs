@@ -1,5 +1,6 @@
 import {FEED_POLICY,publicFeedStore} from './public-feed-store.mjs';
 import {marketOperationalStore} from './market-operational-store.mjs';
+import {acceptsStoredUpdate} from '../lib/market-score/live-refresh.mjs';
 
 // Authenticated scheduler only. Independent source failures retain last good output.
 export async function refreshPublicFeeds({env,collectors,now=Date.now(),store,locks,maxFeedsPerRun=Infinity}={}){
@@ -25,6 +26,7 @@ export async function refreshPublicFeeds({env,collectors,now=Date.now(),store,lo
     const response=await collectors[key](store,now);if(!response.ok)throw Error('PROVIDER_UNAVAILABLE');
     const body=await response.json();
     if(body.status==='fallback'||body.status==='FAILED'||body.status==='unavailable')throw Error('INVALID_OUTPUT');
+    if(!acceptsStoredUpdate(previous?.body,body))throw Error('OBSERVATION_REGRESSION');
     await store.writeOutput(key,body,now);
     await locks.finish(attempt,token,now,'COMPLETE');results.push({key,status:'COMPLETE'});
    }catch(error){await locks.finish(attempt,token,now,'FAILED');results.push({key,status:'FAILED',...(Array.isArray(error?.providerDiagnostics)?{providers:error.providerDiagnostics}: {})})}

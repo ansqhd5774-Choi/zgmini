@@ -1,12 +1,14 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { DEFAULT_MARKET_PERIOD, getMarketPeriodConfig, type MarketPeriod } from "../../market-card-shared";
 import { MarketPeriodControls } from "../../market-period-controls";
 import { FearGreedCardShell } from "../../fear-greed-card-shell";
 import { MarketCardInsight } from "../../market-card-insight";
 import { MarketFearGreedChart } from "../../market-fear-greed-chart";
 import {fearGreedStateColor} from '../../../lib/fear-greed-state-color.mjs';
+
+import {useStoredIndex} from '../../../components/use-stored-index';
 
 type HistoryPoint = {
   date?: string;
@@ -426,19 +428,11 @@ function buildMarketInsight({
 }
 
 export default function CnnPanel({ showEducation = false }: { showEducation?: boolean }) {
-  const [payload, setPayload] = useState<IndexPayload | null>(null);
+  const {payload,loading}=useStoredIndex<IndexPayload>("/api/fear-greed");
   const [selectedPeriod, setSelectedPeriod] = useState<MarketPeriod>(DEFAULT_MARKET_PERIOD);
-  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const controller = new AbortController();
-    fetch("/api/fear-greed", { cache: "no-store", signal: controller.signal })
-      .then((response) => response.json() as Promise<IndexPayload>)
-      .then(setPayload)
-      .catch(() => setPayload(null))
-      .finally(() => setLoading(false));
-    return () => controller.abort();
-  }, []);
+
+
 
   const score = typeof payload?.score === "number" && Number.isFinite(payload.score) ? payload.score : null;
   const allHistory = useMemo(() => normalizeHistory(payload?.history), [payload?.history]);

@@ -1,9 +1,10 @@
 "use client";
+import {useStoredIndex} from '../../components/use-stored-index';
 import {ContentHelp} from '../content-help';
 import {HelpText} from '../help-copy';
 
 
-import {useEffect,useMemo,useRef,useState,type FocusEvent} from "react";
+import {useMemo,useRef,useState,type FocusEvent} from "react";
 import {Info} from "lucide-react";
 import {MarketCardHeader} from "../market-card-header";
 import {MarketScoreOrb} from "../market-score-orb";
@@ -111,17 +112,7 @@ function formatCriterion(feature:string,row:FeatureRow|null|undefined){
 function HelpTip({label,text}:{label:string;text:string}){return <ContentHelp label={label+' 도움말'}><HelpText copy={{meaning:text,reading:'원자료의 단위와 기준선, 관측일을 함께 확인하세요. 원자료의 상승·하락과 시장 평가 점수의 상승·하락은 서로 다를 수 있습니다.',note:'자료가 없거나 개발 중인 항목은 숫자를 표시하지 않습니다. 「—」는 0이 아닙니다.'}}/></ContentHelp>;}
 
 export default function InflationPanel(){
- const [payload,setPayload]=useState<InflationPayload|null>(null);
- const [loading,setLoading]=useState(true);
-
-
- useEffect(()=>{
-  const controller=new AbortController();
-  fetch("/api/inflation-detail",{cache:"no-store",signal:controller.signal})
-   .then(async r=>{if(!r.ok)throw Error();return r.json() as Promise<InflationPayload>})
-   .then(setPayload).catch(()=>setPayload(null)).finally(()=>setLoading(false));
-  return()=>controller.abort();
- },[]);
+ const {payload,loading}=useStoredIndex<InflationPayload>('/api/inflation-detail');
 
  const score=typeof payload?.score==="number"&&Number.isFinite(payload.score)?payload.score:null;
  const allTrend=useMemo(()=>Array.isArray(payload?.trend)?payload!.trend!.filter(p=>typeof p.value==="number"&&Number.isFinite(p.value)):[],[payload?.trend]);

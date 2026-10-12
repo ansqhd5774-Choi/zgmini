@@ -2,21 +2,17 @@
 import ChartAxisLabels from '../components/chart-axis-labels';
 import '../components/chart-axis-labels.css';
 
-import {useEffect,useState} from 'react';
+
 import {Swords,TrendingUp,TrendingDown,Minus} from 'lucide-react';
+import {useStoredIndex} from '../components/use-stored-index';
 import {iranView} from '../lib/iran-progress/view.mjs';
 
 import {OutbreakChange} from './outbreak-change';
 import {ContentHelp} from './content-help';
 import {HELP,HelpText} from './help-copy';
 export function useIranProgress(){
- const [view,setView]=useState(()=>iranView({status:'PENDING'}));
- useEffect(()=>{const controller=new AbortController();
-  fetch('/api/iran-progress',{cache:'no-store',signal:controller.signal}).then(r=>r.json()).then(data=>{if(!controller.signal.aborted)setView(iranView(data));})
-   .catch(()=>{if(!controller.signal.aborted)setView(iranView(null));});
-  return()=>controller.abort();
- },[]);
- return view;
+ const {payload}=useStoredIndex<any>('/api/iran-progress');
+ return iranView(payload??{status:'PENDING'});
 }
 type View=ReturnType<typeof iranView>;
 function iranScoreColor(value:number|null){return value===null?'#94a3b8':value<25?'#ef4444':value<40?'#f59e0b':value<60?'#94a3b8':value<75?'#22c55e':'#10b981';}
