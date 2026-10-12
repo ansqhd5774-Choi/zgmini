@@ -42,7 +42,7 @@ test('candidate operational store reads with SELECT only and never initializes s
  };
  const db={prepare(sql){
   sqls.push(sql);assert.match(sql,/^SELECT\b/i);
-  return {bind(...args){this.args=args;return this;},async first(){
+  return {bind(...args){this.args=args;return this;},async all(){return {results:[]};},async first(){
    if(sql.includes('market_public_snapshots_v1'))return rows.score;
    if(sql.includes('market_input_batches_v1')){
     const key=String(this.args?.[0]??'');
