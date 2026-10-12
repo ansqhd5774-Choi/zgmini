@@ -7,7 +7,8 @@ test("R2.13.32 preserves the approved diagnostic constants",()=>{
   assert.equal(R21332_SPEC_WEIGHT,.15);
   assert.equal(R21332_SMOOTH_ALPHA,.5);
   assert.deepEqual(R21332_AXIS_WEIGHTS,{trend:.20,breadth:.20,demand:.15,relativeStrength:.15,volatility:.15});
-  assert.equal(Object.values(R21332_AXIS_WEIGHTS).reduce((a,b)=>a+b,0),.85);
+  const totalWeight=Object.values(R21332_AXIS_WEIGHTS).reduce((a,b)=>a+b,0);
+  assert.ok(Math.abs(totalWeight-.85)<Number.EPSILON);
 });
 
 test("R2.13.32 merges the ETF extension without overwriting existing benchmark dates",()=>{
