@@ -3,6 +3,7 @@ import ChartAxisLabels from '../components/chart-axis-labels';
 import '../components/chart-axis-labels.css';
 
 
+import {useStoredIndex} from '../components/use-stored-index';
 import {useEffect,useRef,useState} from 'react';
 import './outbreak-events.css';
 import {OutbreakChange} from './outbreak-change';
@@ -20,18 +21,8 @@ const events = [
 type RateSentimentPoint={label:string;value:number};
 type RateSentimentSnapshot={status:'READY';score:number;observationDate:string;version:string;sourceStoredAt:number;week:RateSentimentPoint[];oneMonth:RateSentimentPoint[]};
 function useRateSentiment(){
- const [snapshot,setSnapshot]=useState<RateSentimentSnapshot|null>(null);
- useEffect(()=>{
-  let live=true;
-  fetch('/api/rate-sentiment',{cache:'no-store'}).then(async response=>{
-   if(!response.ok)return null;
-   const data=await response.json();
-   if(data?.status!=='READY'||!Number.isFinite(data.score)||!Array.isArray(data.week)||data.week.length!==5||data.week.some((point:RateSentimentPoint)=>!Number.isFinite(point.value)))return null;
-   return data as RateSentimentSnapshot;
-  }).then(value=>{if(live)setSnapshot(value);}).catch(()=>{if(live)setSnapshot(null);});
-  return()=>{live=false;};
- },[]);
- return snapshot;
+ const {payload}=useStoredIndex<RateSentimentSnapshot>('/api/rate-sentiment');
+ return payload?.status==='READY'&&Number.isFinite(payload.score)&&Array.isArray(payload.week)&&payload.week.length===5&&payload.week.every(point=>Number.isFinite(point.value))?payload:null;
 }
 
 function SummaryTitle({title,war}:{title:string;war:boolean}){

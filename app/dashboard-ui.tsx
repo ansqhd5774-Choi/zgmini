@@ -4,6 +4,8 @@ import {useEffect,useId,useRef,useState,type ReactNode,type CSSProperties} from 
 import {Activity,ArrowRight,ArrowUpRight,ChevronLeft,ChevronRight,Info,Radar,Coins,Users,Percent,Droplet,Landmark,ShieldCheck,Factory,ShoppingCart,BriefcaseBusiness,ArrowLeftRight,Network,DollarSign} from 'lucide-react';
 import {Area,AreaChart,ReferenceArea,Line,LineChart,ResponsiveContainer,XAxis,YAxis,ReferenceDot,ReferenceLine,Tooltip} from 'recharts';
 import {readProgressiveMarketResponse} from '../lib/market-score/read-progressive-response.mjs';
+import {useStoredIndex} from '../components/use-stored-index';
+import {acceptsStoredUpdate,startStoredRefresh} from '../lib/market-score/live-refresh.mjs';
 import {readMarketSnapshot,saveMarketSnapshot} from '../lib/market-score/browser-snapshot.mjs';
 import {marketDetailRows} from '../lib/market-score/detail-catalog.mjs';
 import {breadthNotice} from '../lib/market-score/breadth-notice.mjs';
@@ -236,59 +238,47 @@ export function CompositeMarketSection({items,points,demo,loading}:{items:Summar
  const [market,setMarket]=useState<MarketScoreResponse|null>(null);
  const [marketLoading,setMarketLoading]=useState(true);
  const [marketError,setMarketError]=useState<string|null>(null);
- const [assetBubble,setAssetBubble]=useState<{status:string;score:number|null;scoreObservationQuarter?:string}|null>(null);
- const [supplyShock,setSupplyShock]=useState<{status:string;score:number|null;scoreObservationMonth?:string}|null>(null);
- useEffect(()=>{const controller=new AbortController();fetch('/api/supply-shock-detail',{signal:controller.signal,cache:'no-store'}).then(async response=>{if(!response.ok)throw Error('SUPPLY_UNAVAILABLE');return response.json()}).then(body=>{if(!controller.signal.aborted&&body.methodologyVersion==='SUPPLY_SHOCK_R10')setSupplyShock(body)}).catch(()=>{});return()=>controller.abort();},[]);
+ const {payload:assetBubble}=useStoredIndex<{status:string;score:number|null;scoreObservationQuarter?:string}>('/api/asset-bubble-detail');
+ const {payload:supplyShock}=useStoredIndex<{status:string;score:number|null;scoreObservationMonth?:string}>('/api/supply-shock-detail');
 
  useEffect(()=>{
-  const controller=new AbortController();
-  // The summary uses the same stored R10 publication as its detail page.
-  // This display connection does not change the 12-domain composite formula.
-  fetch('/api/asset-bubble-detail',{signal:controller.signal,cache:'no-store'})
-   .then(async response=>{if(!response.ok)throw Error('ASSET_BUBBLE_UNAVAILABLE');return response.json()})
-   .then(body=>{if(!controller.signal.aborted&&body.methodologyVersion==='ASSET_BUBBLE_R10_CANDIDATE')setAssetBubble(body)})
-   .catch(()=>{/* Missing publication remains unavailable. */});
-  return()=>controller.abort();
- },[]);
-
- useEffect(()=>{
-  const controller=new AbortController();
   let alive=true;
   let storage:Storage|undefined;
   try{storage=window.sessionStorage}catch{/* Storage may be disabled. */}
-  const cached=storage?readMarketSnapshot(storage,Date.now(),{allowExpired:true}):null;
+  const cached=storage?readMarketSnapshot(storage,Date.now()):null;
+  let accepted=cached?.body??null;
   if(cached){setMarket(cached.body);setMarketLoading(false)}
   else setMarketLoading(true);
-  // A mounted page is a fixed snapshot. Only a manual page reload fetches again.
-  // Retain the last displayed result while that reload's request completes.
   const publish=(body:MarketScoreResponse)=>{
-   setMarket(previous=>JSON.stringify(previous)===JSON.stringify(body)?previous:body);
+   if(!acceptsStoredUpdate(accepted,body))return false;
+   accepted=body;setMarket(body);
    setMarketError(null);
+   return true;
   };
-  const load=()=>{
-   let received=false;
-   return fetch('/api/market-score',{signal:controller.signal,cache:'no-store',headers:{accept:'application/x-ndjson'}})
-    .then(response=>readProgressiveMarketResponse(response,
+  const load=(signal:AbortSignal)=>{
+   return fetch('/api/market-score',{signal,cache:'no-store',headers:{accept:'application/x-ndjson'}})
+    .then(async response=>{
+     if(response.status===503){const failure=await response.clone().json() as {reason?:string};if(alive&&!signal.aborted&&failure.reason==='STORED_SCORE_STALE')setMarket(null);}
+     return readProgressiveMarketResponse(response,
      (body:MarketScoreResponse)=>{
-      if(!alive)return;
-      received=true;if(!cached)publish(body);
+      if(!alive||signal.aborted)return;
+      publish(body);
      },
      (body:MarketScoreResponse,headers:Headers)=>{
-      if(!alive)return;
-      publish(body);
-      if(storage)saveMarketSnapshot(storage,body,headers);
-     }))
+      if(!alive||signal.aborted)return;
+      if(publish(body)&&storage)saveMarketSnapshot(storage,body,headers);
+     });})
     .catch(error=>{
      if(error?.name==='AbortError')return;
      if(alive){
-      if(!received&&!cached)setMarket(null);
+      // Preserve the last accepted response on transient failure.
       setMarketError('MARKET_SCORE_UNAVAILABLE');
      }
     })
     .finally(()=>{if(alive)setMarketLoading(false)});
   };
-  void load();
-  return()=>{alive=false;controller.abort()};
+  const stop=startStoredRefresh(load);
+  return()=>{alive=false;stop()};
  },[]);
 
  const toggle=()=>setExpanded(v=>!v);
