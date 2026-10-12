@@ -7,9 +7,11 @@ import {
   classifyGuidanceBasis,
   classifyGuidanceDirection,
   extractSecEpsGuidance,
+  extractSecGuidanceRevisionPairs,
   isGuidanceWithdrawal,
   normalizeGuidancePeriodKey,
   normalizeSecGuidanceText,
+  parseDirectGuidanceRevisionSegment,
   parseGuidanceSegment,
   selectGuidanceAsOf,
 } from "../lib/market-score/earnings-e1-r5-guidance-r2.mjs";
@@ -35,12 +37,16 @@ test("normalization removes markup without treating results text as guidance",()
 
 test("period and basis parsing are explicit and do not guess",()=>{
   assert.equal(normalizeGuidancePeriodKey("fiscal year 2026 guidance"),"FY2026");
+  assert.equal(normalizeGuidancePeriodKey("Fiscal 2026 outlook"),"FY2026");
+  assert.equal(normalizeGuidancePeriodKey("FY26 guidance"),"FY2026");
+  assert.equal(normalizeGuidancePeriodKey("2026 Guidance"),"FY2026");
   assert.equal(normalizeGuidancePeriodKey("third quarter 2026 outlook"),"FY2026Q3");
   assert.equal(normalizeGuidancePeriodKey("Q4 2027 guidance"),"FY2027Q4");
   assert.equal(normalizeGuidancePeriodKey("next quarter guidance"),null);
   assert.equal(classifyGuidanceBasis("adjusted diluted EPS"),"ADJUSTED");
   assert.equal(classifyGuidanceBasis("non-GAAP EPS"),"ADJUSTED");
   assert.equal(classifyGuidanceBasis("GAAP diluted EPS"),"GAAP");
+  assert.equal(classifyGuidanceBasis("GAAP and adjusted EPS ranges"),null);
   assert.equal(classifyGuidanceBasis("diluted EPS"),null);
 });
 
@@ -62,6 +68,7 @@ test("strict parser accepts only same-document forward EPS ranges with PIT time"
   assert.equal(parseGuidanceSegment("Fiscal year 2026 EPS guidance is $5.00 to $5.20.",{form:"8-K",filedAt:"2026-08-01"}).reason,"BASIS_UNRESOLVED");
   assert.equal(parseGuidanceSegment("Fiscal year 2026 adjusted EPS guidance is about $5.10.",{form:"8-K",filedAt:"2026-08-01"}).reason,"EPS_RANGE_UNRESOLVED");
   assert.equal(parseGuidanceSegment("Fiscal year 2026 adjusted EPS guidance is $5.00 to $5.20.",{form:"8-K"}).reason,"AVAILABLE_AT_MISSING");
+  assert.equal(parseGuidanceSegment("Fiscal year 2026 adjusted EPS guidance is $5.00 to $5.20 from $4.80 to $5.00.",{form:"8-K",filedAt:"2026-08-01"}).reason,"EPS_RANGE_AMBIGUOUS");
 });
 
 test("withdrawal is missing rather than an automatic downgrade",()=>{
@@ -80,6 +87,34 @@ test("document extraction deduplicates repeated identical guidance ranges",()=>{
   assert.equal(out.status,"READY");
   assert.equal(out.candidates.length,1);
   assert.equal(out.candidates[0].periodKey,"FY2026");
+});
+
+test("direct SEC narrative revision parses current range to prior range",()=>{
+  const statement="The company is raising full-year 2026 adjusted EPS guidance range to $7.90 to $8.10 from $7.30 to $7.50.";
+  const out=parseDirectGuidanceRevisionSegment(statement,{form:"8-K",acceptedAt:"2026-08-05T11:00:00Z"});
+  assert.equal(out.status,"READY");
+  assert.equal(out.periodKey,"FY2026");
+  assert.equal(out.current.low,7.9);
+  assert.equal(out.current.high,8.1);
+  assert.equal(out.previous.low,7.3);
+  assert.equal(out.previous.high,7.5);
+  assert.ok(out.raw>0);
+});
+
+test("direct SEC guidance table preserves prior/current ordering",()=>{
+  const html=`
+    <h2>2026 Guidance</h2>
+    <table>
+      <tr><th>Metric</th><th>Prior</th><th>Current</th></tr>
+      <tr><td>Adjusted Diluted EPS</td><td>$4.00 to $4.20</td><td>$4.10 to $4.30</td></tr>
+    </table>`;
+  const out=extractSecGuidanceRevisionPairs(html,{form:"8-K",acceptedAt:"2026-05-12T16:05:48Z"});
+  assert.equal(out.status,"READY");
+  assert.equal(out.pairs.length,1);
+  assert.equal(out.pairs[0].periodKey,"FY2026");
+  assert.equal(out.pairs[0].previous.low,4);
+  assert.equal(out.pairs[0].current.low,4.1);
+  assert.equal(out.pairs[0].comparisonSource,"SAME_FILING_RESTATED_PRIOR_CURRENT");
 });
 
 test("as-of selection never uses a filing not yet available",()=>{
