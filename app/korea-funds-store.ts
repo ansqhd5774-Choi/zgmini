@@ -19,7 +19,7 @@ let lastPayload:unknown=null,stopRefresh:(()=>void)|null=null,subscribers=0;
 const listeners=new Set<()=>void>();
 const subscribe=(fn:()=>void)=>{listeners.add(fn);return()=>{listeners.delete(fn);};};
 const snapshot=()=>state;
-function load(signal?:AbortSignal){
+function load(signal?:AbortSignal):Promise<void>{
  if(signal?.aborted)return Promise.resolve();
  if(inFlight)return inFlight.then(()=>load(signal));
  const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),95000);
