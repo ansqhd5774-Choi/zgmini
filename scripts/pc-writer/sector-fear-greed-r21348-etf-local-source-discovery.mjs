@@ -31,6 +31,7 @@ function summary(rows,discoveryEnd=DISCOVERY_END){const dates=uniqueDatesR21348(
 function readActiveEtfRows(base){const files=listFiles(path.join(base,ALPACA_DIR));const byTicker=Object.fromEntries([...ETF_SET].map(t=>[t,[]]));let parsedFiles=0,totalRows=0,etfRows=0;for(const file of files){const data=safeJson(file);if(!Array.isArray(data))continue;parsedFiles++;totalRows+=data.length;for(const row of data){const ticker=String(row?.ticker??row?.symbol??"").toUpperCase();if(!ETF_SET.has(ticker))continue;byTicker[ticker].push(row);etfRows++;}}return{files:files.length,parsedFiles,totalRows,etfRows,byTicker};}
 
 export function runR21348(base=process.env.ZGMINI_PC_HOME??DEFAULT_BASE,{now=new Date()}={}){
+  const discoveryEnd=DISCOVERY_END;
   const iex=safeJson(path.join(base,IEX_FILE))??{},r21331=safeJson(path.join(base,R21331_FILE))??{},active=readActiveEtfRows(base);
   const sectors={};let etfsWithAnyPostLock=0;
   for(const [sectorId,ticker] of Object.entries(R21348_ETFS)){
