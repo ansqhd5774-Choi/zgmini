@@ -1,0 +1,8 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {R21354_FEATURE,R21354_MIN_TRAILING_ROWS,R21354_REFERENCE_OBSERVATIONS,collectAnchoredSpyRowsR21354,summarizeSpySourceR21354,targetDatesR21354} from '../scripts/pc-writer/sector-fear-greed-r21354-spy-source-overlap-inventory.mjs';
+
+test('R2.13.54 preserves frozen contract',()=>{assert.equal(R21354_FEATURE,'internalCorrelationShock');assert.equal(R21354_MIN_TRAILING_ROWS,64);assert.equal(R21354_REFERENCE_OBSERVATIONS,756);});
+test('R2.13.54 accepts explicit SPY and SPY-key rows but rejects unrelated untickered rows',()=>{const rows=collectAnchoredSpyRowsR21354({series:{SPY:[{date:'2026-01-01',close:100}]},other:[{date:'2026-01-02',close:999}],rows:[{ticker:'SPY',tradeDate:'2026-01-03',currentClose:101},{ticker:'QQQ',tradeDate:'2026-01-04',currentClose:102}]});assert.deepEqual(rows.map(x=>x.date),['2026-01-01','2026-01-03']);});
+test('R2.13.54 trailing-63 eligibility requires the 64th stored SPY row',()=>{const rows=[];for(let i=0;i<70;i++)rows.push({date:new Date(Date.UTC(2026,0,1+i)).toISOString().slice(0,10),close:100+i});const targets=[rows[62].date,rows[63].date,rows[69].date],s=summarizeSpySourceR21354(rows,targets);assert.equal(s.targetOverlap,3);assert.equal(s.trailing63Eligible,2);assert.equal(s.firstEligible,rows[63].date);});
+test('R2.13.54 extracts target dates from all frozen outcome cells',()=>{const source={featureResults:{internalCorrelationShock:{status:'READY_252',crossSectional:{detail:{5:{return:[{date:'2026-01-01'}],drawdown:[{date:'2026-01-02'}]},20:{return:[],drawdown:[{date:'2026-01-01'}]},60:{return:[],drawdown:[]}}}}}};assert.deepEqual(targetDatesR21354(source),['2026-01-01','2026-01-02']);});
