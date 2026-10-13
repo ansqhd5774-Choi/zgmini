@@ -2,7 +2,6 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import {fileURLToPath} from "node:url";
-import {SECTOR_FEAR_GREED_R1_ETFS} from "../../lib/market-score/sector-fear-greed-r1-shadow.mjs";
 
 const DEFAULT_BASE=path.join(os.homedir(),".zgmini","pc-writer");
 const LOCK_FILE="local-sector-fear-greed-r21346-prospective-lock-readiness.json";
@@ -14,6 +13,19 @@ const OUT="local-sector-fear-greed-r21347-prospective-data-inventory";
 export const R21347_EXPECTED_LOCK_STATUS="SHADOW_R21346_PROSPECTIVE_LOCK_READY";
 export const R21347_FEATURE="internalCorrelationShock";
 export const R21347_REFERENCE_OBSERVATIONS=756;
+export const R21347_SECTOR_ETFS=Object.freeze({
+  technology:"XLK",
+  healthcare:"XLV",
+  financials:"XLF",
+  discretionary:"XLY",
+  communication:"XLC",
+  industrials:"XLI",
+  staples:"XLP",
+  energy:"XLE",
+  utilities:"XLU",
+  realEstate:"XLRE",
+  materials:"XLB",
+});
 
 const validDate=x=>typeof x==="string"&&/^\d{4}-\d{2}-\d{2}$/.test(x)&&Number.isFinite(Date.parse(`${x}T00:00:00Z`));
 function safeJson(file){if(!fs.existsSync(file))return null;try{return JSON.parse(fs.readFileSync(file,"utf8"));}catch{return null;}}
@@ -37,7 +49,7 @@ export function runR21347(base=process.env.ZGMINI_PC_HOME??DEFAULT_BASE,{now=new
   const stockRows=stockFiles.flatMap(arr),stockDates=uniqueDatesR21347(stockRows),stockPostLockDates=stockDates.filter(d=>d>discoveryEnd);
 
   const iex=safeJson(path.join(base,IEX_FILE))??{},r21331=safeJson(path.join(base,R21331_FILE))??{},sectorEtfs={};
-  for(const [sectorId,ticker] of Object.entries(SECTOR_FEAR_GREED_R1_ETFS)){
+  for(const [sectorId,ticker] of Object.entries(R21347_SECTOR_ETFS)){
     const dates=uniqueDatesR21347([...(iex?.series?.[ticker]??[]),...(r21331?.series?.[ticker]??[])]),post=dates.filter(d=>d>discoveryEnd);
     sectorEtfs[sectorId]={ticker,totalDates:dates.length,latestDate:dates.at(-1)??null,postLockDates:post.length,firstPostLock:post[0]??null,lastPostLock:post.at(-1)??null,dates:post};
   }
@@ -45,7 +57,7 @@ export function runR21347(base=process.env.ZGMINI_PC_HOME??DEFAULT_BASE,{now=new
   const state=classifyReadinessR21347({stockPostLockDates,commonEtfPostLockDates});
   const report={version:"R2.13.47-PROSPECTIVE-DATA-INVENTORY",generatedAt:(now instanceof Date?now:new Date(now)).toISOString(),status:"SHADOW_R21347_PROSPECTIVE_DATA_INVENTORY_COMPLETE",mode:"LOCAL_READ_ONLY_INVENTORY",providerCalls:0,rawRowsStored:false,publicMutation:false,d1Mutation:false,dbSchemaChanged:false,productionFormulaChanged:false,schedulerChanged:false,referenceRequirementChanged:false,approvedR1ReferenceRequirement:756,normalizationChanged:false,weightsChanged:false,referenceWindowChanged:false,candidateSelected:false,optionsReplacementSelected:false,diagnosticOnly:true,contractHash:lock.contractHash,feature:R21347_FEATURE,discoveryEnd,stock:{files:stockFiles.length,rows:stockRows.length,totalDates:stockDates.length,latestDate:stockDates.at(-1)??null,postLockDates:stockPostLockDates.length,firstPostLock:stockPostLockDates[0]??null,lastPostLock:stockPostLockDates.at(-1)??null},sectorEtfs:Object.fromEntries(Object.entries(sectorEtfs).map(([id,x])=>[id,{ticker:x.ticker,totalDates:x.totalDates,latestDate:x.latestDate,postLockDates:x.postLockDates,firstPostLock:x.firstPostLock,lastPostLock:x.lastPostLock}])),commonEtfPostLock:{sessions:commonEtfPostLockDates.length,first:commonEtfPostLockDates[0]??null,last:commonEtfPostLockDates.at(-1)??null},state,next:state==="RAW_POST_LOCK_DATA_PRESENT_REQUIRES_FROZEN_SIGNAL_RECOMPUTE"?"RUN_FROZEN_PROSPECTIVE_SIGNAL_RECOMPUTE_WITHOUT_RETUNING":"WAIT_FOR_REQUIRED_LOCAL_POST_LOCK_DATA"};
   const jsonFile=path.join(base,`${OUT}.json`),txtFile=path.join(base,`${OUT}.txt`);saveJson(jsonFile,report);
-  const lines=["ZGMINI SECTOR FEAR & GREED R2.13.47 PROSPECTIVE DATA INVENTORY",`generatedAt=${report.generatedAt}`,`status=${report.status}`,`contractHash=${report.contractHash}`,`feature=${report.feature}`,`discoveryEnd=${discoveryEnd}`,`stockFiles=${report.stock.files} stockRows=${report.stock.rows} stockPostLockDates=${report.stock.postLockDates} stockLatest=${report.stock.latestDate??"NA"}`,`commonEtfPostLockSessions=${report.commonEtfPostLock.sessions} first=${report.commonEtfPostLock.first??"NA"} last=${report.commonEtfPostLock.last??"NA"}`,`state=${state}`,"","SECTOR | ETF | LATEST | POST_LOCK_DATES | FIRST_POST | LAST_POST",...Object.entries(report.sectorEtfs).map(([id,x])=>`${id} | ${x.ticker} | ${x.latestDate??"NA"} | ${x.postLockDates} | ${x.firstPostLock??"NA"} | ${x.lastPostLock??"NA"}`),"","note=R21346_CURRENT_PROSPECTIVE_OBSERVATIONS_WAS_A_READINESS_PLACEHOLDER_NOT_A_LOCAL_DATA_MEASUREMENT","note=R21347_ONLY_INVENTORIES_EXISTING_LOCAL_DATES_AND_DOES_NOT_RECOMPUTE_OR_RETUNE_THE_LOCKED_SIGNAL","note=NO_PROVIDER_NO_PUBLICATION_NO_FORMULA_WEIGHT_REFERENCE_SCHEMA_SCHEDULER_OR_PRODUCTION_CHANGE",`next=${report.next}`];saveText(txtFile,lines.join("\n")+"\n");return {...report,jsonFile,txtFile};
+  const lines=["ZGMINI SECTOR FEAR & GREED R2.13.47 PROSPECTIVE DATA INVENTORY",`generatedAt=${report.generatedAt}`,`status=${report.status}`,`contractHash=${report.contractHash}`,`feature=${report.feature}`,`discoveryEnd=${discoveryEnd}`,`stockFiles=${report.stock.files} stockRows=${report.stock.rows} stockPostLockDates=${report.stock.postLockDates} stockLatest=${report.stock.latestDate??"NA"}`,`commonEtfPostLockSessions=${report.commonEtfPostLock.sessions} first=${report.commonEtfPostLock.first??"NA"} last=${report.commonEtfPostLock.last??"NA"}`,`state=${state}`,"","SECTOR | ETF | LATEST | POST_LOCK_DATES | FIRST_POST | LAST_POST",...Object.entries(report.sectorEtfs).map(([id,x])=>`${id} | ${x.ticker} | ${x.latestDate??"NA"} | ${x.postLockDates} | ${x.firstPostLock??"NA"} | ${x.lastPostLock??"NA"}`),"","note=R21346_CURRENT_PROSPECTIVE_OBSERVATIONS_WAS_A_READINESS_PLACEHOLDER_NOT_A_LOCAL_DATA_MEASUREMENT","note=R21347_ONLY_INVENTORIES_EXISTING_LOCAL_DATES_AND_DOES_NOT_RECOMPUTE_OR_RETUNE_THE_LOCKED_SIGNAL","note=SECTOR_ETF_MAPPING_IS_THE_FROZEN_11_SECTOR_DIAGNOSTIC_MAPPING_COPIED_LOCALLY_TO_AVOID_DEPENDENCY_ON_A_RESEARCH_ONLY_MODULE_ABSENT_FROM_CURRENT_MAIN","note=NO_PROVIDER_NO_PUBLICATION_NO_FORMULA_WEIGHT_REFERENCE_SCHEMA_SCHEDULER_OR_PRODUCTION_CHANGE",`next=${report.next}`];saveText(txtFile,lines.join("\n")+"\n");return {...report,jsonFile,txtFile};
 }
 
 if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.url)){try{const r=runR21347();console.log(JSON.stringify({status:r.status,jsonFile:r.jsonFile,txtFile:r.txtFile,stock:r.stock,commonEtfPostLock:r.commonEtfPostLock,state:r.state,next:r.next},null,2));}catch(e){console.error(e?.stack??e?.message??String(e));process.exitCode=1;}}
