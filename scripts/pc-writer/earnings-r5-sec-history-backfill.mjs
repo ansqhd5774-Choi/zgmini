@@ -107,8 +107,8 @@ export function buildHistoricalBackfillPlan({checkpoint,submissionsByCik=new Map
   return {plan,currentIssuerCount:current.size,missingSubmissionCiks,noPriorCandidateCiks,plannedIssuerCount:new Set(plan.map(item=>item.cik)).size};
 }
 
-function buildSecArchiveDocumentUrl({cik,accessionNumber,document}){
-  const cikText=clean(cik).replace(/^0+/,"")||"0";const accession=clean(accessionNumber),file=clean(document);
+export function buildSecArchiveDocumentUrl({cik,accessionNumber,document,primaryDocument}){
+  const cikText=clean(cik).replace(/^0+/,"")||"0";const accession=clean(accessionNumber),file=clean(document??primaryDocument);
   if(!/^\d{1,10}$/.test(cikText)||cikText==="0"||!validAccession(accession)||!safePrimaryDocument(file))return null;
   return `https://www.sec.gov/Archives/edgar/data/${cikText}/${accession.replaceAll("-","")}/${file}`;
 }

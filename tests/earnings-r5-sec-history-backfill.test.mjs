@@ -4,6 +4,7 @@ import {
   E1_R5_SEC_HISTORY_BACKFILL_CONTRACT,
   E1_R5_SEC_HISTORY_BACKFILL_VERSION,
   buildHistoricalBackfillPlan,
+  buildSecArchiveDocumentUrl,
 } from "../scripts/pc-writer/earnings-r5-sec-history-backfill.mjs";
 
 function submission(rows){
@@ -63,6 +64,13 @@ test("plan selects bounded prior guidance candidates and excludes current/non-gu
   ]);
   assert.ok(result.plan.every(item=>item.accessionNumber!==item.currentAccessionNumber));
   assert.ok(result.plan.every(item=>item.filed<item.currentFiled));
+});
+
+test("SEC archive URL builder accepts the planner primaryDocument field",()=>{
+  assert.equal(
+    buildSecArchiveDocumentUrl({cik:"0000000001",accessionNumber:"0000000001-26-000090",primaryDocument:"q2.htm"}),
+    "https://www.sec.gov/Archives/edgar/data/1/000000000126000090/q2.htm",
+  );
 });
 
 test("plan reports missing local submissions and issuers without prior candidates without inventing data",()=>{
