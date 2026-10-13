@@ -29,6 +29,7 @@ test("forward R2 locks the approved 4/3/3 future-outlook structure",()=>{
   assert.equal(E1_R5_FORWARD_R2_CONTRACT.s12.managementGuidance.weight,4);
   assert.equal(E1_R5_FORWARD_R2_CONTRACT.s12.cfoForwardRevenue.weight,3);
   assert.equal(E1_R5_FORWARD_R2_CONTRACT.s12.analystEpsRevision.status,"OPTIONAL_FUTURE_ENHANCEMENT");
+  assert.equal(E1_R5_FORWARD_R2_CONTRACT.s12.analystEpsRevision.decision,"HOLD");
   assert.equal(E1_R5_FORWARD_R2_CONTRACT.s13.weight,3);
 });
 
