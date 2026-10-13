@@ -45,7 +45,8 @@ test("fewer than six valid monthly points stays not evaluable",()=>{
 });
 
 test("identical ranks fail as redundant even with enough observations",()=>{
-  const rows=[1,2,3,4,5,6].map((v,i)=>({
+  const x=[1,2,4,7,11,16];
+  const rows=x.map((v,i)=>({
     month:`m${i+1}`,
     comparableIssuerCount:20,
     s12aRaw:v,
@@ -58,8 +59,8 @@ test("identical ranks fail as redundant even with enough observations",()=>{
 });
 
 test("near-duplicate monotonic signals fail the static redundancy ceiling",()=>{
-  const x=[1,2,3,4,5,6,7];
-  const y=[1,2,3,4,5,7,6];
+  const x=[1,2,4,7,11,16,22];
+  const y=[1,2,4,7,11,22,16];
   const rows=x.map((v,i)=>({month:`m${i+1}`,comparableIssuerCount:20,s12aRaw:v,s13Raw:y[i]}));
   const out=evaluateG3Validation(rows);
   assert.equal(out.status,"FAILED");
