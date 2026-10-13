@@ -1,0 +1,9 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import {R21348_ETFS,R21348_REFERENCE_OBSERVATIONS,extractDateR21348,uniqueDatesR21348,intersectDatesR21348,classifyR21348} from "../scripts/pc-writer/sector-fear-greed-r21348-etf-local-source-discovery.mjs";
+
+test("R2.13.48 preserves frozen 11-sector ETF mapping and reference count",()=>{assert.equal(Object.keys(R21348_ETFS).length,11);assert.deepEqual(Object.values(R21348_ETFS),["XLK","XLV","XLF","XLY","XLC","XLI","XLP","XLE","XLU","XLRE","XLB"]);assert.equal(R21348_REFERENCE_OBSERVATIONS,756);});
+test("R2.13.48 extracts stored date variants",()=>{assert.equal(extractDateR21348({tradeDate:"2026-10-12"}),"2026-10-12");assert.equal(extractDateR21348({date:"2026-10-13T00:00:00Z"}),"2026-10-13");assert.equal(extractDateR21348({t:"2026-10-14T00:00:00Z"}),"2026-10-14");assert.equal(extractDateR21348({trade_date:"bad"}),null);});
+test("R2.13.48 sorts and deduplicates dates",()=>{assert.deepEqual(uniqueDatesR21348([{tradeDate:"2026-10-14"},{date:"2026-10-12"},{t:"2026-10-14T00:00:00Z"}]),["2026-10-12","2026-10-14"]);});
+test("R2.13.48 intersects common sector ETF sessions",()=>{assert.deepEqual(intersectDatesR21348([["2026-10-12","2026-10-13"],["2026-10-13"],["2026-10-13","2026-10-14"]]),["2026-10-13"]);});
+test("R2.13.48 classifies complete, partial, stale, and absent ETF stores",()=>{assert.equal(classifyR21348({commonPostLockDates:["2026-10-12"],etfsWithAnyPostLock:11,activeStoreEtfRows:11}),"POST_LOCK_ETF_DATA_AVAILABLE_LOCALLY");assert.equal(classifyR21348({commonPostLockDates:[],etfsWithAnyPostLock:3,activeStoreEtfRows:3}),"PARTIAL_POST_LOCK_ETF_DATA_AVAILABLE_LOCALLY");assert.equal(classifyR21348({commonPostLockDates:[],etfsWithAnyPostLock:0,activeStoreEtfRows:10}),"ETF_ROWS_EXIST_BUT_NO_POST_LOCK_SESSION");assert.equal(classifyR21348({commonPostLockDates:[],etfsWithAnyPostLock:0,activeStoreEtfRows:0}),"NO_SECTOR_ETF_ROWS_IN_ACTIVE_ALPACA_STORE");});
