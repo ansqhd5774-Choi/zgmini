@@ -1,0 +1,9 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {R21353_FEATURE,R21353_HORIZONS,R21353_REFERENCE_OBSERVATIONS,R21353_EXPECTED_DIRECTION,normalizeSpyR21353,buildRegimesR21353,regimeSummaryR21353,pairedSpecificityR21353} from '../scripts/pc-writer/sector-fear-greed-r21353-regime-sector-specificity.mjs';
+
+test('R2.13.53 preserves frozen feature contract',()=>{assert.equal(R21353_FEATURE,'internalCorrelationShock');assert.deepEqual(R21353_HORIZONS,[5,20,60]);assert.equal(R21353_REFERENCE_OBSERVATIONS,756);assert.equal(R21353_EXPECTED_DIRECTION,'NEGATIVE');});
+test('R2.13.53 normalizes nested SPY rows',()=>{const x=normalizeSpyR21353({series:{SPY:[{date:'2026-01-01',close:100},{date:'2026-01-02',close:101}]}});assert.equal(x.length,2);assert.equal(x[1].close,101);});
+test('R2.13.53 builds trailing-only regimes',()=>{const spy=[];let p=100;for(let i=0;i<100;i++){p*=1+(i%7===0?-.01:.002);spy.push({date:new Date(Date.UTC(2025,0,1+i)).toISOString().slice(0,10),close:p});}const target=spy.slice(63).map(x=>x.date),r=buildRegimesR21353(spy,target);assert.equal(r.rows.length,37);assert.ok(r.rows.every(x=>['UP_LOW','UP_HIGH','DOWN_LOW','DOWN_HIGH'].includes(x.regime)));});
+test('R2.13.53 regime summary preserves negative medians',()=>{const rows=[{date:'2026-01-01',partialIcVsFiveRaw:-.2},{date:'2026-01-02',partialIcVsFiveRaw:-.1}],reg=[{date:'2026-01-01',regime:'UP_LOW'},{date:'2026-01-02',regime:'UP_LOW'}],s=regimeSummaryR21353(rows,reg);assert.equal(s.UP_LOW.median,-.15);});
+test('R2.13.53 paired specificity detects drawdown more negative than return',()=>{const r=[],d=[];for(let i=0;i<84;i++){const date=new Date(Date.UTC(2025,0,1+i)).toISOString().slice(0,10);r.push({date,partialIcVsFiveRaw:.05});d.push({date,partialIcVsFiveRaw:-.15});}const x=pairedSpecificityR21353(r,d,5);assert.equal(x.medianDiffDrawdownMinusReturn,-.2);assert.equal(x.negative,84);assert.ok(x.neweyWest.mean<0);});
