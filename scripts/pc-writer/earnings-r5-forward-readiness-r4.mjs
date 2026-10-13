@@ -19,7 +19,7 @@ export const E1_R5_FORWARD_READINESS_R4_CONTRACT=Object.freeze({
   weightChanged:false,
   normalizationChanged:false,
   productionBaseline:"E1-R4",
-  purpose:"BIND_G2_MANUAL_SEC_MATCHING_REVIEW_TO_EXACT_SAMPLE_FINGERPRINT_WITHOUT_CHANGING_PRODUCTION",
+  purpose:"BIND_G2_MANUAL_SEC_MATCHING_REVIEW_TO_EXACT_CURRENT_SAMPLE_FINGERPRINT_WITHOUT_CHANGING_PRODUCTION",
 });
 export const E1_R5_SEC_MATCHING_MANUAL_REVIEW_REQUIRED_CHECKS=Object.freeze([
   "ISSUER",
@@ -41,10 +41,9 @@ function ensureDir(dir){fs.mkdirSync(dir,{recursive:true});}
 function readJson(file){return JSON.parse(fs.readFileSync(file,"utf8"));}
 function writeJsonAtomic(file,value){ensureDir(path.dirname(file));const part=`${file}.${process.pid}.part`;fs.writeFileSync(part,JSON.stringify(value,null,2)+"\n","utf8");fs.renameSync(part,file);}
 
-function canonicalReviewRows(sourceReview){
-  const rows=Array.isArray(sourceReview?.rows)?sourceReview.rows:[];
-  return rows.map(row=>({
-    sampleIndex:Number(row?.sampleIndex),
+function canonicalPair(row,index=null){
+  return {
+    sampleIndex:index===null?Number(row?.sampleIndex):index,
     cik:clean(row?.cik),
     currentAccessionNumber:clean(row?.currentAccessionNumber),
     priorAccessionNumber:clean(row?.priorAccessionNumber),
@@ -54,7 +53,31 @@ function canonicalReviewRows(sourceReview){
     unit:"USD_PER_SHARE",
     currentMidpoint:finite(row?.currentMidpoint)?row.currentMidpoint:null,
     previousMidpoint:finite(row?.previousMidpoint)?row.previousMidpoint:null,
-  })).sort((a,b)=>a.sampleIndex-b.sampleIndex||a.cik.localeCompare(b.cik)||a.currentAccessionNumber.localeCompare(b.currentAccessionNumber)||a.priorAccessionNumber.localeCompare(b.priorAccessionNumber));
+  };
+}
+function pairIdentity(row){
+  return JSON.stringify([row.cik,row.currentAccessionNumber,row.priorAccessionNumber,row.periodKey,row.metric,row.basis,row.unit,row.currentMidpoint,row.previousMidpoint]);
+}
+function canonicalReviewRows(sourceReview){
+  const rows=Array.isArray(sourceReview?.rows)?sourceReview.rows:[];
+  return rows.map(row=>canonicalPair(row)).sort((a,b)=>a.sampleIndex-b.sampleIndex||a.cik.localeCompare(b.cik)||a.currentAccessionNumber.localeCompare(b.currentAccessionNumber)||a.priorAccessionNumber.localeCompare(b.priorAccessionNumber));
+}
+
+export function evaluateSourceReviewCurrentBinding(sourceReview,crossReport){
+  if(!sourceReview)return {status:"MISSING",reason:"SOURCE_REVIEW_REPORT_MISSING",matchedCount:0};
+  if(sourceReview?.version!==E1_R5_FORWARD_READINESS_R4_CONTRACT.sourceReviewVersion)return {status:"MISMATCH",reason:"SOURCE_REVIEW_VERSION_MISMATCH",matchedCount:0};
+  const currentAsOf=crossReport?.asOf??crossReport?.audit?.asOf??null;
+  if((sourceReview?.sourceAsOf??null)!==(currentAsOf??null))return {status:"STALE",reason:"SOURCE_REVIEW_CROSS_REPORT_AS_OF_MISMATCH",matchedCount:0};
+  const auditPairs=Array.isArray(crossReport?.audit?.issuerPairs)?crossReport.audit.issuerPairs:[];
+  if(!auditPairs.length)return {status:"MISSING",reason:"CROSS_REPORT_PAIR_SET_MISSING",matchedCount:0};
+  const currentSet=new Set(auditPairs.map(row=>pairIdentity(canonicalPair(row,0))));
+  const rows=canonicalReviewRows(sourceReview);
+  let matchedCount=0;
+  for(const row of rows){
+    if(!currentSet.has(pairIdentity(row)))return {status:"STALE",reason:"SOURCE_REVIEW_CROSS_REPORT_PAIR_MISMATCH",matchedCount};
+    matchedCount++;
+  }
+  return {status:"MATCH",reason:"SOURCE_REVIEW_BOUND_TO_CURRENT_CROSS_REPORT",matchedCount};
 }
 
 export function buildSecMatchingManualReviewTemplate(sourceReview){
@@ -108,13 +131,17 @@ export function evaluateSecMatchingManualReview(sourceReview,manualEvidence){
 
 export function buildForwardReadinessR4({crossReport,cfoDocument,historyLedger,sourceReview,manualEvidence,asOf=new Date().toISOString()}={}){
   const base=buildForwardReadiness({crossReport,cfoDocument,historyLedger,asOf});
-  const manual=evaluateSecMatchingManualReview(sourceReview,manualEvidence);
+  const binding=evaluateSourceReviewCurrentBinding(sourceReview,crossReport);
+  const evaluated=evaluateSecMatchingManualReview(sourceReview,manualEvidence);
+  const manual=binding.status==="MATCH"?evaluated:{status:"PARTIAL_AUTOMATED_EVIDENCE",reason:binding.reason,evidencePresent:false,template:evaluated.template};
   const g2Evidence={
     comparison:"SAME_ISSUER_TARGET_PERIOD_EPS_METRIC_BASIS_USD_PER_SHARE_UNIT_ACROSS_FILINGS",
     comparableIssuerCount:base.sec.comparableIssuerCount,
     sourceReviewVersion:sourceReview?.version??null,
     sourceVersion:sourceReview?.sourceVersion??null,
     sourceAsOf:sourceReview?.sourceAsOf??null,
+    sourceBindingStatus:binding.status,
+    sourceBindingMatchedCount:binding.matchedCount,
     sampleCount:sourceReview?.sampleCount??null,
     expectedSampleFingerprint:manual.template?.sampleFingerprint??null,
     manualEvidenceVersion:manualEvidence?.version??null,
@@ -130,7 +157,7 @@ export function buildForwardReadinessR4({crossReport,cfoDocument,historyLedger,s
     productionBaseline:E1_R5_FORWARD_READINESS_R4_CONTRACT.productionBaseline,
     validationGates,
     nextRequiredEvidence,
-    secMatchingManualReview:{status:manual.status,reason:manual.reason,evidencePresent:manual.evidencePresent,expectedSampleFingerprint:manual.template?.sampleFingerprint??null},
+    secMatchingManualReview:{status:manual.status,reason:manual.reason,evidencePresent:manual.evidencePresent,sourceBindingStatus:binding.status,expectedSampleFingerprint:manual.template?.sampleFingerprint??null},
     networkCalls:0,
     dbWrites:0,
     productionActivation:false,
@@ -155,6 +182,7 @@ function formatText(report){
     `S13_RAW: ${formatNumber(report.raw.s13)}`,
     `G2_MATCHING_ACCURACY: ${g2?.status??"MISSING"}`,
     `G2_REASON: ${g2?.reason??"MISSING"}`,
+    `G2_SOURCE_BINDING: ${report.secMatchingManualReview.sourceBindingStatus??"MISSING"}`,
     `G2_EXPECTED_SAMPLE_FINGERPRINT: ${report.secMatchingManualReview.expectedSampleFingerprint??"-"}`,
     `NORMALIZATION: ${report.normalization.status} reason=${report.normalization.reason}`,
     `NETWORK_CALLS: 0`,
@@ -207,7 +235,7 @@ if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.ur
       reportsDir:cli["reports-dir"]?path.resolve(cli["reports-dir"]):undefined,
     });
     const g2=result.report.validationGates.find(row=>row.id==="G2_MATCHING_ACCURACY");
-    console.log(JSON.stringify({status:result.report.status,rawComponentsReady:result.report.rawComponentsReady,productionReady:false,g2Status:g2?.status??null,g2Reason:g2?.reason??null,manualTemplateFile:result.manualTemplateFile,textReport:result.textReport,jsonReport:result.jsonReport,networkCalls:0,dbWrites:0,productionActivation:false}));
+    console.log(JSON.stringify({status:result.report.status,rawComponentsReady:result.report.rawComponentsReady,productionReady:false,g2Status:g2?.status??null,g2Reason:g2?.reason??null,sourceBindingStatus:result.report.secMatchingManualReview.sourceBindingStatus,manualTemplateFile:result.manualTemplateFile,textReport:result.textReport,jsonReport:result.jsonReport,networkCalls:0,dbWrites:0,productionActivation:false}));
     if(!result.report.rawComponentsReady)process.exitCode=2;
   }catch(error){
     console.log(JSON.stringify({status:"FAILED",code:safeCode(error),networkCalls:0,dbWrites:0,productionActivation:false}));

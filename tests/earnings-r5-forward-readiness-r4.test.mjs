@@ -10,12 +10,19 @@ import {
   buildForwardReadinessR4,
   buildSecMatchingManualReviewTemplate,
   evaluateSecMatchingManualReview,
+  evaluateSourceReviewCurrentBinding,
   runForwardReadinessR4,
 } from "../scripts/pc-writer/earnings-r5-forward-readiness-r4.mjs";
 
 const HASH_A="a".repeat(64);
 const HASH_B="b".repeat(64);
 
+function comparablePairs(){
+  return [
+    {cik:"0000104169",currentAccessionNumber:"0000104169-26-000145",priorAccessionNumber:"0000104169-26-000095",periodKey:"FY2027",basis:"ADJUSTED",currentMidpoint:2.835,previousMidpoint:2.8},
+    {cik:"0001699150",currentAccessionNumber:"0001628280-26-051068",priorAccessionNumber:"0001628280-26-033204",periodKey:"FY2026",basis:"ADJUSTED",currentMidpoint:3.51,previousMidpoint:3.51},
+  ];
+}
 function crossReport(){
   return {
     version:"E1-R5-SEC-CROSS-FILING-AUDIT-R1",
@@ -29,6 +36,7 @@ function crossReport(){
       currentParse:{readyIssuers:43,ambiguousIssuers:2,noGuidanceIssuers:456},
       comparableIssuerCount:19,
       comparableIssuerCoverage:19/499,
+      issuerPairs:comparablePairs(),
       s12aRaw:0.013186813186813062,
       s13Raw:0.7894736842105263,
       directions:{up:16,same:2,down:1},
@@ -58,10 +66,7 @@ function sourceReview(){
     sourceReadyCount:2,
     flaggedYearRangeCount:0,
     manualAccuracyGate:"PENDING_HUMAN_SOURCE_TEXT_DECISION",
-    rows:[
-      {sampleIndex:1,cik:"0000104169",currentAccessionNumber:"0000104169-26-000145",priorAccessionNumber:"0000104169-26-000095",periodKey:"FY2027",basis:"ADJUSTED",currentMidpoint:2.835,previousMidpoint:2.8},
-      {sampleIndex:2,cik:"0001699150",currentAccessionNumber:"0001628280-26-051068",priorAccessionNumber:"0001628280-26-033204",periodKey:"FY2026",basis:"ADJUSTED",currentMidpoint:3.51,previousMidpoint:3.51},
-    ],
+    rows:comparablePairs().map((row,index)=>({sampleIndex:index+1,...row})),
   };
 }
 function passEvidence(review=sourceReview()){
@@ -79,6 +84,29 @@ test("R4 contract is shadow-only and preserves approved production baseline",()=
   assert.equal(E1_R5_FORWARD_READINESS_R4_CONTRACT.weightChanged,false);
 });
 
+test("current source review binds to exact cross-report pairs",()=>{
+  const binding=evaluateSourceReviewCurrentBinding(sourceReview(),crossReport());
+  assert.equal(binding.status,"MATCH");
+  assert.equal(binding.matchedCount,2);
+});
+
+test("old source review cannot be reused after a current cross-report pair changes",()=>{
+  const review=sourceReview();
+  const current=crossReport();
+  current.audit.issuerPairs[0]={...current.audit.issuerPairs[0],currentMidpoint:2.84};
+  const binding=evaluateSourceReviewCurrentBinding(review,current);
+  assert.equal(binding.status,"STALE");
+  assert.equal(binding.reason,"SOURCE_REVIEW_CROSS_REPORT_PAIR_MISMATCH");
+});
+
+test("source review from another cross-report asOf is stale even if pair values match",()=>{
+  const current=crossReport();
+  current.asOf="2026-10-14T04:00:00Z";
+  const binding=evaluateSourceReviewCurrentBinding(sourceReview(),current);
+  assert.equal(binding.status,"STALE");
+  assert.equal(binding.reason,"SOURCE_REVIEW_CROSS_REPORT_AS_OF_MISMATCH");
+});
+
 test("missing manual evidence keeps G2 partial without changing raw readiness",()=>{
   const out=buildForwardReadinessR4({crossReport:crossReport(),cfoDocument:cfoDocument(),historyLedger:ledger(),sourceReview:sourceReview(),manualEvidence:null,asOf:"2026-10-14T02:00:00Z"});
   const g2=out.validationGates.find(row=>row.id==="G2_MATCHING_ACCURACY");
@@ -86,6 +114,7 @@ test("missing manual evidence keeps G2 partial without changing raw readiness",(
   assert.equal(out.rawComponentsReady,true);
   assert.equal(g2.status,"PARTIAL_AUTOMATED_EVIDENCE");
   assert.equal(g2.reason,"MANUAL_REVIEW_EVIDENCE_MISSING");
+  assert.equal(g2.evidence.sourceBindingStatus,"MATCH");
   assert.equal(out.productionReady,false);
   assert.deepEqual(out.approvedWeights,{s12a:4,s12b:3,s13:3,futureBlock:10});
   assert.equal(out.nextRequiredEvidence.includes("MANUAL_SAMPLE_REVIEW_OF_SEC_PERIOD_BASIS_UNIT_MATCHING"),true);
@@ -99,12 +128,25 @@ test("exact PASS evidence elevates only G2 and removes the manual-review require
   assert.equal(g2.status,"EVIDENCE_PRESENT");
   assert.equal(g2.reason,"MANUAL_SAMPLE_REVIEW_EXACT_MATCH_PASS");
   assert.equal(out.secMatchingManualReview.evidencePresent,true);
+  assert.equal(out.secMatchingManualReview.sourceBindingStatus,"MATCH");
   assert.equal(out.nextRequiredEvidence.includes("MANUAL_SAMPLE_REVIEW_OF_SEC_PERIOD_BASIS_UNIT_MATCHING"),false);
   assert.equal(out.normalization.status,"NOT_READY");
   assert.equal(out.productionReady,false);
   assert.equal(out.productionActivation,false);
   assert.equal(out.formulaChanged,false);
   assert.equal(out.weightChanged,false);
+});
+
+test("matching manual evidence still cannot pass against a stale source review",()=>{
+  const review=sourceReview();
+  const evidence=passEvidence(review);
+  const current=crossReport();
+  current.audit.issuerPairs[0]={...current.audit.issuerPairs[0],currentMidpoint:2.84};
+  const out=buildForwardReadinessR4({crossReport:current,cfoDocument:cfoDocument(),historyLedger:ledger(),sourceReview:review,manualEvidence:evidence,asOf:"2026-10-14T02:00:00Z"});
+  const g2=out.validationGates.find(row=>row.id==="G2_MATCHING_ACCURACY");
+  assert.equal(g2.status,"PARTIAL_AUTOMATED_EVIDENCE");
+  assert.equal(g2.reason,"SOURCE_REVIEW_CROSS_REPORT_PAIR_MISMATCH");
+  assert.equal(out.secMatchingManualReview.evidencePresent,false);
 });
 
 test("sample drift rejects stale manual evidence",()=>{
