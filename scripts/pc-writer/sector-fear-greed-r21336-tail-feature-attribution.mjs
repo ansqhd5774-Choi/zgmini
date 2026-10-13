@@ -40,7 +40,11 @@ function saveText(file,value){fs.mkdirSync(path.dirname(file),{recursive:true});
 function listAlpacaFiles(dir){const base=fs.existsSync(dir)?fs.readdirSync(dir).filter(n=>/^group-\d+\.json$/.test(n)).sort().map(n=>path.join(dir,n)):[];const inc=path.join(dir,"incremental"),extra=fs.existsSync(inc)?fs.readdirSync(inc).filter(n=>!n.startsWith(".")).sort().map(n=>path.join(inc,n)).filter(f=>fs.statSync(f).isFile()):[];return [...base,...extra];}
 
 export function scoreR21336Feature(history=[],key,required=R21336_REFERENCE_OBSERVATIONS){
-  const rows=(Array.isArray(history)?history:[]).map(r=>({date:String(r?.date??"").slice(0,10),value:Number(r?.[key])})).filter(r=>validDate(r.date)&&finite(r.value)).sort((a,b)=>a.date.localeCompare(b.date));
+  const rows=(Array.isArray(history)?history:[]).map(r=>{
+    const raw=r?.[key];
+    const value=raw===null||raw===undefined||raw===""?NaN:Number(raw);
+    return {date:String(r?.date??"").slice(0,10),value};
+  }).filter(r=>validDate(r.date)&&finite(r.value)).sort((a,b)=>a.date.localeCompare(b.date));
   const out=[];
   for(let i=required-1;i<rows.length;i++){
     const sample=rows.slice(i-required+1,i+1),current=sample.at(-1).value;let below=0,equal=0;
