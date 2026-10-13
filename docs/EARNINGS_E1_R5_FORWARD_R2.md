@@ -108,6 +108,15 @@ S12A measures **magnitude**; S13 measures **breadth**. They are intentionally se
 
 Analyst Forward EPS Revision remains an **optional future enhancement**, not a current production requirement.
 
+Provider clarification received in October 2026 establishes the current decision:
+
+- Free-plan commercial use of a **derived indicator** is permitted as long as raw API data is not redistributed.
+- Earnings Trend coverage is **not available on the Free plan**; it requires the paid Starter plan.
+- `epsTrend.30daysAgo` is a lagged historical EPS-trend value, but it does **not guarantee a separately reconstructed point-in-time consensus snapshot for one specific fiscal target period**.
+- There is currently **no supported batch endpoint** for Earnings Trend across multiple tickers.
+
+Therefore AxionQuant is **not a current S12 production/shadow dependency** under the approved free-source and strict target-period PIT requirements. Keep it on HOLD as a possible later enhancement only if pricing, target-period PIT semantics, and incremental-information testing become acceptable.
+
 If AxionQuant or another provider later passes all rights/coverage/PIT gates, add the analyst signal in Shadow first and test incremental information versus S12A/S12B/S13. Do not increase the total E1 weight above 100% and do not automatically add 7 percentage points.
 
 ## Required Shadow validation before production
