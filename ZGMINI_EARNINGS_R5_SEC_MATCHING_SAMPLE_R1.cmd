@@ -1,5 +1,7 @@
 @echo off
 setlocal EnableExtensions DisableDelayedExpansion
+call "%~dp0scripts\resolve-local-node.cmd"
+if errorlevel 1 exit /b 2
 chcp 65001 >nul
 title ZGMINI E1-R5 SEC MATCHING SAMPLE R1
 
@@ -19,7 +21,7 @@ echo [DB_D1_WRITE] 0
 echo [PRODUCTION_ACTIVATION] NO
 echo.
 
-node "%~dp0scripts\pc-writer\earnings-r5-sec-matching-sample-r1.mjs" --base="%BASE%"
+"%NODE%" "%~dp0scripts\pc-writer\earnings-r5-sec-matching-sample-r1.mjs" --base="%BASE%"
 set "RC=%ERRORLEVEL%"
 
 echo [FINAL_EXIT_CODE] %RC%

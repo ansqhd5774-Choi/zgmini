@@ -1,5 +1,7 @@
 @echo off
 setlocal EnableExtensions
+call "%~dp0scripts\resolve-local-node.cmd"
+if errorlevel 1 exit /b 2
 chcp 65001 >nul
 set "SCRIPT_DIR=%~dp0"
 if defined ZGMINI_PC_HOME (
@@ -13,7 +15,7 @@ echo ============================================================
 echo [MODE] RESEARCH-ONLY / LOCAL STORED EVIDENCE / NETWORK 0 / DB WRITE 0 / PRODUCTION OFF
 echo [BASE] %BASE%
 echo.
-node "%SCRIPT_DIR%scripts\pc-writer\earnings-r5-forward-shadow-snapshot-r1.mjs" --base="%BASE%"
+"%NODE%" "%SCRIPT_DIR%scripts\pc-writer\earnings-r5-forward-shadow-snapshot-r1.mjs" --base="%BASE%"
 set "RC=%ERRORLEVEL%"
 echo.
 echo [FINAL_EXIT_CODE] %RC%

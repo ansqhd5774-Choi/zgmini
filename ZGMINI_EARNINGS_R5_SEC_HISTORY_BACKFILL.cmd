@@ -2,7 +2,11 @@
 setlocal EnableExtensions DisableDelayedExpansion
 chcp 65001 >nul
 
-set "BASE=%USERPROFILE%\.zgmini\pc-writer"
+if defined ZGMINI_PC_HOME (
+  set "BASE=%ZGMINI_PC_HOME%"
+) else (
+  set "BASE=%USERPROFILE%\.zgmini\pc-writer"
+)
 set "REPORT=%BASE%\manual-input\e1-r5\reports\e1-r5-sec-history-backfill-last.txt"
 set "REPORT_JSON=%BASE%\manual-input\e1-r5\reports\e1-r5-sec-history-backfill-last.json"
 
@@ -13,18 +17,15 @@ echo [MODE] RESEARCH-ONLY / LOCAL CHECKPOINT + SEC ARCHIVE / DB WRITE 0 / PRODUC
 echo [BASE] %BASE%
 echo.
 
-where node >nul 2>&1
-if errorlevel 1 (
-  echo [AUTOMATION_BLOCKED] node.exe not found in PATH.
-  exit /b 2
-)
+call "%~dp0scripts\resolve-local-node.cmd"
+if errorlevel 1 exit /b 2
 
 if not exist "scripts\pc-writer\earnings-r5-sec-history-backfill.mjs" (
   echo [BLOCKED] Run this CMD from the ZGMINI repository root containing the history backfill runner.
   exit /b 2
 )
 
-node scripts\pc-writer\earnings-r5-sec-history-backfill.mjs --base="%BASE%" --lookback-days=550 --prior-per-issuer=2 --max-requests=100
+"%NODE%" scripts\pc-writer\earnings-r5-sec-history-backfill.mjs --base="%BASE%" --lookback-days=550 --prior-per-issuer=2 --max-requests=100
 set "RC=%ERRORLEVEL%"
 
 echo.
@@ -41,7 +42,7 @@ if not "%RC%"=="0" goto :finish
 if not exist "%REPORT_JSON%" goto :finish
 if not exist "ZGMINI_EARNINGS_R5_SEC_CROSS_FILING_AUDIT.cmd" goto :finish
 
-node -e "const fs=require('fs');const x=JSON.parse(fs.readFileSync(process.argv[1],'utf8'));process.exit(x.status==='COMPLETE'&&Number(x.remainingAccessions)===0?0:10)" "%REPORT_JSON%" >nul 2>&1
+"%NODE%" -e "const fs=require('fs');const x=JSON.parse(fs.readFileSync(process.argv[1],'utf8'));process.exit(x.status==='COMPLETE'&&Number(x.remainingAccessions)===0?0:10)" "%REPORT_JSON%" >nul 2>&1
 if errorlevel 1 goto :finish
 
 echo.
