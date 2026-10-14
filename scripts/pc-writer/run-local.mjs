@@ -64,6 +64,16 @@ try{
    currentDate:body.asOfDate??new Date(now).toISOString().slice(0,10),
   });
  }
+ // Compare published-calculation snapshots from distinct dates, not reconstructed curves.
+ const priorRows=(await core.prepare("SELECT snapshot_key,body FROM market_public_snapshots_v1 WHERE snapshot_key!='current' AND snapshot_key<? ORDER BY snapshot_key DESC LIMIT 30").bind(body.asOfDate).all()).results;
+ const prior=priorRows.find(row=>/^\d{4}-\d{2}-\d{2}$/.test(row.snapshot_key)&&JSON.parse(row.body).status==='SUCCESS');
+ if(prior){
+  const previous=JSON.parse(prior.body);
+  for(const domain of body.domains){
+   const old=previous.domains?.find(item=>item.id===domain.id);
+   if(old?.status==='READY'&&typeof old.score==='number'&&Number.isFinite(old.score))domain.previousObservation={date:prior.snapshot_key,currentDate:body.asOfDate,score:old.score};
+  }
+ }
  await marketOperationalStore(core).writeScore(body,now);
  save(path.join(base,'local-market-result.json'),body);
  // Rate sentiment is a separate stored-data score; never modify the approved Rate R3 domain.
