@@ -8,11 +8,12 @@ ZGMINI PLUGIN & EXECUTION RULES — COMPACT R5 FINAL
 - 실제 다음 작업을 막는 경우만 BLOCKER.
 - 유효 Evidence 재사용. identity/contract 변경 시 해당 Gate만 재검증.
 - 무료 우선. 유료·종량제는 무료 대안이 충분하면 사용 금지.
-- 우선순위: 프로젝트 지침 > 이후 사용자 명시 승인 최신 운영 변경 > live tool/API Evidence > 최신 유효 Evidence > 과거 대화/메모리.
+- 상위 시스템·보안 제한을 준수한다. 동일 범위에서는 사용자의 최신 명시 지시·승인이 과거 프로젝트 지침보다 우선한다.
 - 지침과 최신 승인 contract 충돌 시 실행 중단 후 최신 contract 기준으로 지침 갱신.
 
 ## 1. GitHub — SOURCE OF TRUTH
 - 기준 소스는 GitHub 최신 `main`.
+- 개발 main, PC 운영 승인 SHA, 실제 실행·배포 SHA를 구분한다. PC 운영 source는 config·작업 등록·실행 기록으로 확인하며 main과 다르다는 이유만으로 교체하지 않는다.
 - 작업 전 remote main SHA / work-base SHA 확인.
 - 작업 중 main 변경 시 source drift 확인, stale overwrite 금지.
 - 목표에 필요한 최소 파일만 수정.
@@ -59,11 +60,10 @@ ZGMINI PLUGIN & EXECUTION RULES — COMPACT R5 FINAL
 불일치 시 배포 중단.
 
 ## 6. Cloudflare / D1 / Queue — RUNTIME
-- D1 기본 DB. Supabase 교체/중복저장 금지(승인 제외).
+- PC SQLite는 원자료·수집 이력·계산 저장소, D1은 공개 결과와 승인된 최소 제어 저장소다. 일반 계산은 원격 원자료에 의존하지 않는다. Supabase 교체/중복저장 금지(승인 제외).
 - API=저장 전용, 산식=저장 데이터 전용.
 - 승인 산식/가중치/정규화/지표 계약 변경 금지.
-- Runtime 우선순위:
-  `Cloudflare build/deployment > Worker logs > D1 read > Queue state > PostHog > source`
+- 실제 Runtime·저장/API 응답을 build/deployment 준비 상태와 구분한다. 배포 성공만으로 Runtime 정상 판정 금지.
 - public HTTP만으로 D1/Queue 정상 추정 금지.
 - D1 write는 read-back Evidence 확인.
 - Build / Worker / D1 / Queue / Cron 성공을 각각 구분.
@@ -120,8 +120,8 @@ ZGMINI PLUGIN & EXECUTION RULES — COMPACT R5 FINAL
 
 ## 13. DigitalOcean / RDC / Windows
 - DigitalOcean NON-DEFAULT. 비용 발생 리소스 생성 전 승인.
-- RDC LAST RESORT. GitHub/Cloudflare/Plugin 가능 작업에 사용 금지.
-- RDC는 PC-local/CMD/local Codex 상태 등에만 사용.
+- RDC 사용·실행·설치·연결·Online 요구 금지. 로컬 파일/Git/CMD는 로컬 Codex, 로그인·GUI는 사용 가능한 Computer Use를 사용한다.
+- 일반 채팅의 로컬 접근 제한은 AUTOMATION_BLOCKED이며 PC writer OFFLINE을 뜻하지 않는다.
 - offline/quota 소진 시 반복 polling 금지.
 - Windows는 CMD-only. PowerShell/WSL 임의 사용 금지.
 - CMD: 경로 quote, `%~dp0`, ASCII+CRLF, BOM 없음.
@@ -129,9 +129,9 @@ ZGMINI PLUGIN & EXECUTION RULES — COMPACT R5 FINAL
 - token/secret/password는 memory-only, Evidence 저장 금지.
 
 ## 14. 실행 우선순위
-- 소스: GitHub > RDC.
+- 개발 소스: GitHub latest main. PC 운영 소스: 승인 config·작업 등록·실행 기록.
 - 배포: `GitHub main -> Cloudflare Git integration -> Build -> exact Deployment -> Production`.
-- Runtime: `Cloudflare deployment/build > Worker logs > D1 > Queue > PostHog > source`.
+- Runtime: 실제 실행·API/저장 증거 우선. build/deploy와 Runtime 검증을 구분한다.
 - D1: Cloudflare D1 read > public 추정 금지.
 - UI: Figma > Production 실제 화면 > GitHub CSS/DOM.
 - 문서/API: Context7 > 공식문서 > 추정 금지.
@@ -171,7 +171,7 @@ candidate -> Production 전환 전 모두 PASS:
 - 최종 전환 시 Cloudflare DNS/HTTPS 정상
 - Runtime 오류 없음 또는 목표 무관함이 Evidence로 증명
 - 요청 기능 실제 동작
-- 임시 workaround/debug endpoint/우회 스크립트/credential 파일 0.
+- 임시 workaround/debug endpoint/우회 스크립트 정리. 정상 운영용 로컬 키 파일은 보존하고 Git·배포·Evidence에 포함하지 않는다.
 
 ## 17. 비용 / Evidence / FAIL
 - 무료 우선: GitHub, Cloudflare Free/read API, PostHog Free, Context7, Web, 공식문서.
@@ -199,11 +199,20 @@ candidate -> Production 전환 전 모두 PASS:
 - DEPLOYMENT CONTROL PLANE: Cloudflare
 - DEFAULT DEPLOY: GitHub main -> Cloudflare Git integration -> Build -> Deployment -> Production
 - RUNTIME: Cloudflare Workers
-- DB: Cloudflare D1
+- DB: PC SQLite 원자료·이력·계산 / Cloudflare D1 공개 결과·승인 최소 제어
 - QUEUE: Cloudflare Queues(승인 contract만)
-- SCHEDULER: Cloudflare Cron 또는 승인 외부 scheduler
+- SCHEDULER: Windows 작업 ZGMINI-PC-Local-Core / ZGMINI-PC-Local-Korea / ZGMINI-PC-Iran-Progress-R13. 기존 ZGMINI-PC-Writer는 비활성 복구용이다. Cloudflare Cron=0, ZGMINI_COLLECTION_TARGET=pc, ZGMINI_COMPUTE_TARGET=pc 유지. 승인 없는 원격 수집·계산 스케줄러 재활성화 금지.
 - 2026-10-05 최신 승인: PC가 API 수집·원자료 저장·시장/Korea/projection 계산을 담당한다. Cloudflare에는 공개 결과만 게시한다. PC 게시 검증 후 Cloudflare Cron 수집을 중지한다. `docs/PC_WRITER_R2.md`가 이전 R1의 수집 위치 계약을 대체한다. 산식/TTL/원격 DB 스키마/DNS 계약은 변경하지 않는다. RDC는 사용하지 않는다.
 - DOMAIN/DNS AUTHORITY: Cloudflare
 - OPENAI SITES: DEPLOYMENT RETIRED
 - DIRECT WRANGLER PROD DEPLOY: DEFAULT DENY
 - SUPABASE: DEFAULT DENY
+
+## 20. E: 이전 후 로컬 경로 계약
+- 현재 운영 경로·복구 정책은 `docs/PC_STORAGE_E_DRIVE.md`를 따른다.
+- 프로젝트 `E:\ZGmini\projects\`, 데이터 `E:\ZGmini\data\`, writer `E:\ZGmini\data\pc-writer\`, 이란 `E:\ZGmini\data\iran-progress-r13\`, Node `E:\ZGmini\runtime\node.exe`.
+- 기존 C: 프로젝트 경로와 `%USERPROFILE%\.zgmini`는 호환용 junction이다. 문자열만으로 미이전 판정·일괄 치환하지 않는다. 실제 대상을 확인한다.
+- junction 삭제·C: 운영 폴더 재생성·DB/checkpoint 초기화 금지. E: 접근 실패 시 빈 DB나 C: 대체 저장소를 만들지 않는다.
+- PC·로그인 세션·인터넷·E: 연결이 운영 조건이다. 채팅·Codex 창·RDC Online은 조건이 아니다.
+- 개인 PC 경로는 운영 배치 기록이며 모든 환경의 하드코딩 기본값이 아니다. 기존 경로 설정과 junction 호환을 보존한다.
+- 경로 이전만으로 운영 source·산식·TTL·DB 구조·작업 주기·배포·DNS를 변경하지 않는다.
