@@ -55,20 +55,20 @@ if not exist "%OUTPUT%" (
 echo [PASS] CFO Survey PIT release stored or confirmed NOOP.
 echo [OUTPUT] %OUTPUT%
 
-if exist "%AUDIT%" (
-  echo.
-  echo [RUN] E1-R5 Forward R2 local audit after import
-  call "%AUDIT%"
-  set "AUDIT_RC=%ERRORLEVEL%"
-  if not "%AUDIT_RC%"=="0" (
-    echo [AUDIT] Import succeeded, but Forward R2 audit exit=%AUDIT_RC%
-    exit /b %AUDIT_RC%
-  )
-  echo [PASS] CFO import and Forward R2 local audit completed.
-) else (
-  echo [INFO] Forward R2 audit wrapper not found; import itself completed.
+if not exist "%AUDIT%" goto :audit_missing
+echo.
+echo [RUN] E1-R5 Forward R2 local audit after import
+call "%AUDIT%"
+set "AUDIT_RC=%ERRORLEVEL%"
+if not "%AUDIT_RC%"=="0" (
+  echo [AUDIT] Import succeeded, but Forward R2 audit exit=%AUDIT_RC%
+  exit /b %AUDIT_RC%
 )
+echo [PASS] CFO import and Forward R2 local audit completed.
+exit /b 0
 
+:audit_missing
+echo [INFO] Forward R2 audit wrapper not found; import itself completed.
 exit /b 0
 
 :usage
