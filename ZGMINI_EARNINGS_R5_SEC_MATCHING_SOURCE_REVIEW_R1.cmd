@@ -1,5 +1,7 @@
 @echo off
 setlocal EnableExtensions DisableDelayedExpansion
+call "%~dp0scripts\resolve-local-node.cmd"
+if errorlevel 1 exit /b 2
 chcp 65001 >nul
 
 if defined ZGMINI_PC_HOME (
@@ -19,7 +21,7 @@ if not exist "scripts\pc-writer\earnings-r5-sec-matching-source-review-r1.mjs" (
   exit /b 2
 )
 
-node scripts\pc-writer\earnings-r5-sec-matching-source-review-r1.mjs --base="%BASE%"
+"%NODE%" scripts\pc-writer\earnings-r5-sec-matching-source-review-r1.mjs --base="%BASE%"
 set "RC=%ERRORLEVEL%"
 
 set "REPORT=%BASE%\manual-input\e1-r5\reports\e1-r5-sec-matching-source-review-r1-last.txt"

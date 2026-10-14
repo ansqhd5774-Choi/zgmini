@@ -3,12 +3,14 @@
 사용자 승인(2026-10-05): API 수집과 원자료 보관 및 계산은 PC에서 수행한다. Cloudflare는 홈페이지와 저장된 공개 결과를 제공한다. 원자료를 다시 Cloudflare로 업로드하지 않는다. 기존 산식·TTL·공개 응답·DNS는 유지한다.
 
 ## 로컬 저장
-- `%USERPROFILE%\.zgmini\pc-writer\providers.env`: 로컬 전용 키. Git/배포/로그 포함 금지.
+- 현재 운영 실제 경로는 `E:\ZGmini\data\pc-writer\`이며 `%USERPROFILE%\.zgmini\pc-writer\`는 junction을 통한 호환 경로다. 경로·복구 정책은 [E: 저장 운영 계약](PC_STORAGE_E_DRIVE.md)을 따른다.
+- `providers.env`: 로컬 전용 키. Git/배포/로그 포함 금지.
 - `storage/core.sqlite`: 시장 입력·수집 진행 상태·계산 결과.
 - `storage/history.sqlite`: 한국시장 원자료·이력·계산 결과.
 - `local-seed-progress.json`: 기존 저장 이력의 초기 복사 재개 지점.
 - `local-collection-last-run.json`: 실제 수집 결과와 호스트별 HTTP 상태. 요청 URL/키는 기록하지 않는다.
 - `local-writer-last-run.json`, `local-publication-ledger.json`: 계산 및 공개 결과 게시 검증.
+- `local-cycle-last-run.json`, `quota-runner-last-run.json`: 해당 실행기의 수집·계산·게시 결과. 등록 작업과 현재 실행기를 함께 확인한다.
 
 ## 실행
 Node 24 이상을 사용한다. `seed-local.mjs`는 기존 금융 테이블을 읽기 전용으로 초기 복사한다. 개인정보 테이블은 제외한다. 한국시장은 기존 체크섬 검증 캐시를 재사용한다. 일반 운영 중 원격 원자료 읽기는 하지 않는다.
@@ -23,7 +25,11 @@ Node 24 이상을 사용한다. `seed-local.mjs`는 기존 금융 테이블을 �
 
 한국시장 snapshot은 FK가 참조하는 해당 날짜의 실제 로컬 COMPLETE 확인 메타데이터와 함께 원자적 batch로 게시한다. 원자료 종목 행은 업로드하지 않는다. 확인 메타데이터가 없으면 임의 count/date를 생성하지 않고 실패한다. 기존 날짜 기록은 덮어쓰지 않는다.
 
-`local-cycle.mjs`는 단일 PID 잠금으로 수집과 계산·게시를 순서대로 실행한다. `install-local.mjs`는 같은 SHA의 실제 VERIFIED 결과 이후에만 Windows 예약 작업을 등록한다. core는 5분, Korea는 매시 37분이다. 이전 작업은 삭제하지 않고 비활성화하여 롤백 경로로 보존한다. PC와 로그인 세션 및 인터넷 연결이 필요하다.
+`local-cycle.mjs`는 단일 PID 잠금으로 수집과 계산·게시를 순서대로 실행한다. `quota-runner.mjs`는 이 실행 경로를 감싸 수집·게시 결과를 기록한다. 실제 진입점은 현재 등록 작업·launcher·config로 확인한다.
+
+`install-local.mjs`는 같은 SHA의 실제 VERIFIED 결과 이후에만 Windows 예약 작업을 등록한다. 현재 설치 코드는 `local-cycle.mjs` launcher를 생성하므로, 운영 quota runner launcher를 유지보수 목적으로 재등록하는 도구로 실행하지 않는다. `install.mjs`는 이전 writer 설치용이며 이전 경로 수정 목적으로 실행하지 않는다.
+
+core는 기본 5분, Korea는 매시 37분이며 이란 작업 `ZGMINI-PC-Iran-Progress-R13`도 운영 대상이다. 실제 주기는 등록값을 확인한다. 이전 `ZGMINI-PC-Writer`는 비활성 복구용으로 보존한다. PC·로그인 세션·인터넷·E: 연결이 필요하며 채팅·Codex 창이 열려 있을 필요는 없다.
 
 ## Cloudflare 전환
 PC 실제 게시와 D1 read-back 검증 후 Git Integration으로 배포한다. `ZGMINI_COLLECTION_TARGET=pc`는 scheduled handler를 I/O 이전에 종료한다. Cloudflare cron 목록은 비운다. D1 공개 결과 저장소와 HTTP 읽기 계약은 유지한다. direct Wrangler 배포나 DNS 변경은 하지 않는다.

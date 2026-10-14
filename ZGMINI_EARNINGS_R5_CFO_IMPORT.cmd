@@ -34,14 +34,8 @@ if not exist "%SOURCE_FILE%" (
   exit /b 2
 )
 
-if exist "%ProgramFiles%\nodejs\node.exe" (
-  set "NODE=%ProgramFiles%\nodejs\node.exe"
-) else if exist "%LOCALAPPDATA%\Programs\nodejs\node.exe" (
-  set "NODE=%LOCALAPPDATA%\Programs\nodejs\node.exe"
-) else (
-  echo [BLOCKED] Supported Node.js was not found.
-  exit /b 2
-)
+call "%~dp0scripts\resolve-local-node.cmd"
+if errorlevel 1 exit /b 2
 
 echo.
 echo [RUN] E1-R5 CFO Survey local PIT import R3
@@ -61,20 +55,20 @@ if not exist "%OUTPUT%" (
 echo [PASS] CFO Survey PIT release stored or confirmed NOOP.
 echo [OUTPUT] %OUTPUT%
 
-if exist "%AUDIT%" (
-  echo.
-  echo [RUN] E1-R5 Forward R2 local audit after import
-  call "%AUDIT%"
-  set "AUDIT_RC=%ERRORLEVEL%"
-  if not "%AUDIT_RC%"=="0" (
-    echo [AUDIT] Import succeeded, but Forward R2 audit exit=%AUDIT_RC%
-    exit /b %AUDIT_RC%
-  )
-  echo [PASS] CFO import and Forward R2 local audit completed.
-) else (
-  echo [INFO] Forward R2 audit wrapper not found; import itself completed.
+if not exist "%AUDIT%" goto :audit_missing
+echo.
+echo [RUN] E1-R5 Forward R2 local audit after import
+call "%AUDIT%"
+set "AUDIT_RC=%ERRORLEVEL%"
+if not "%AUDIT_RC%"=="0" (
+  echo [AUDIT] Import succeeded, but Forward R2 audit exit=%AUDIT_RC%
+  exit /b %AUDIT_RC%
 )
+echo [PASS] CFO import and Forward R2 local audit completed.
+exit /b 0
 
+:audit_missing
+echo [INFO] Forward R2 audit wrapper not found; import itself completed.
 exit /b 0
 
 :usage
