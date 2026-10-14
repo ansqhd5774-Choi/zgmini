@@ -1,4 +1,6 @@
 "use client";
+import {domainObservationDelta} from '../lib/market-score/domain-observation-delta.mjs';
+
 // Cloudflare Git Integration deployment marker: plain-language macro labels R1
 import {useEffect,useId,useRef,useState,type ReactNode,type CSSProperties} from 'react';
 import {Activity,ArrowRight,ArrowUpRight,ChevronLeft,ChevronRight,Info,Radar,Coins,Users,Percent,Droplet,Landmark,ShieldCheck,Factory,ShoppingCart,BriefcaseBusiness,ArrowLeftRight,Network,DollarSign} from 'lucide-react';
@@ -173,6 +175,7 @@ type MarketScoreDomain={
  state?:string|null;
  interpretation?:string|null;
  trend?:MarketTrendPoint[];
+ previousObservation?:{date:string;currentDate:string;score:number};
  indicators?:Array<{name?:string;label?:string;score?:number|null;status?:string;value?:number|null;unit?:string}>;
  freshness?:string|null;
  updatedAt?:string|null;
@@ -361,7 +364,8 @@ export function CompositeMarketSection({items,points,demo,loading}:{items:Summar
        const score=domain?.status==='READY'&&validPublicScore(domain.score)?domain.score:null;
        const normalizedTrend=normalizeMarketTrendPoints(domain?.trend);
        const trend=marketTrendWindow(normalizedTrend,periodDays);
-       const breadthDelta=r55DomainIds[index]==='breadth'?breadthPreviousSessionDelta(domain?.trend):null;
+       const breadthDelta=r55DomainIds[index]==='breadth'?breadthPreviousSessionDelta(domain?.trend):domainObservationDelta(domain?.trend,score,domain?.previousObservation);
+       const comparison=r55DomainIds[index]==='breadth'?'전 거래일':'직전 관측일';
 
        const band=score===null?'unknown':score<25?'danger':score<40?'caution':score<60?'neutral':score<75?'positive':'strong';
        const detailRows=marketDetailRows(r55DomainIds[index],domain?.indicators) as Array<{label:string;score:number|null;raw:boolean;value:number|null;displayValue?:string|null;unit:string;asOfDate?:string|null;source?:string|null;area?:string;areaHeading?:string|null;weight?:number|null;referenceCount?:number;referenceExpected?:number}>;
@@ -391,8 +395,8 @@ export function CompositeMarketSection({items,points,demo,loading}:{items:Summar
           <span
             className="zg-r55-day-change"
             data-direction={breadthDelta?(breadthDelta.delta>0?'up':breadthDelta.delta<0?'down':'flat'):'unknown'}
-            aria-label={breadthDelta?`전 거래일 ${breadthDelta.previousDate} 대비 ${breadthDelta.delta>=0?'+':''}${breadthDelta.delta.toFixed(1)}점`:'전일 대비 확인 불가'}
-            title={breadthDelta?`${breadthDelta.previousDate} 대비`:'검증된 전일 비교 점수 없음'}
+            aria-label={breadthDelta?`${comparison} ${breadthDelta.previousDate} 대비 ${breadthDelta.delta>=0?'+':''}${breadthDelta.delta.toFixed(1)}점`:'직전 관측 대비 확인 불가'}
+            title={breadthDelta?`${breadthDelta.previousDate} 대비`:'검증된 직전 관측 비교 점수 없음'}
            >{breadthDelta?(breadthDelta.delta>0?'▲':breadthDelta.delta<0?'▼':'-'):'—'}</span>
           <div className="zg-r55-card-compact-scale"><ScoreScale score={score} label={`${m.label} 점수`} color={score===null?'#64748b':scoreColor(score)}/></div>
          </div>
