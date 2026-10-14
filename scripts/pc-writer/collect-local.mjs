@@ -33,8 +33,8 @@ export async function collectLocal(base,{lane='core',importOnly=false,job=null}=
   else{
    const collectors={consumption:()=>collectConsumptionR5({db:core,fetchImpl:globalThis.fetch})};
    const now=Date.now();
-   const selectedJob=job??await overdueRateJob(core,now);
-   if(selectedJob)result=await runMarketOperationalRefresh({env,job:selectedJob,now,fetchImpl:globalThis.fetch,collectors,calculate:async()=>({calculation:'PC_PENDING'})});
+   job??=await overdueRateJob(core,now);
+   if(job)result=await runMarketOperationalRefresh({env,job,now,fetchImpl:globalThis.fetch,collectors,calculate:async()=>({calculation:'PC_PENDING'})});
    else{
     const feed=await runPublicFeeds({env,maxFeedsPerRun:1});
     result=feed.attempted>0||feed.status!=='COMPLETE'?{...feed,lane:'public-feed'}:await runMarketOperationalRefresh({env,now:Date.now(),fetchImpl:globalThis.fetch,collectors,calculate:async()=>({calculation:'PC_PENDING'})});
