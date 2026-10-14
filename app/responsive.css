@@ -354,7 +354,7 @@
  .zg-dashboard[data-view="dashboard"] .fg-card.fg-shared-shell .fg-footer-slot{height:auto;min-height:40px}
  .zg-dashboard[data-view="dashboard"] .fg-card.fg-shared-shell .fg-footer-slot .cnn-panel-note{height:auto;min-height:40px;box-sizing:border-box}
  .zg-dashboard[data-view="dashboard"] .fg-card.fg-shared-shell .fg-footer-slot .cnn-panel-note>span{padding-right:40px}
- .zg-dashboard[data-view="dashboard"] .zg-r55-day-change:is([data-direction="up"],[data-direction="down"]){font-size:0!important;display:inline-flex;align-items:center;height:11px;color:var(--r55-card-accent)}
+ .zg-dashboard[data-view="dashboard"] .zg-r55-day-change:is([data-direction="up"],[data-direction="down"]){font-size:0!important;display:inline-flex;align-items:center;height:11px}
  .zg-dashboard[data-view="dashboard"] .zg-r55-day-change[data-direction="up"]::after{content:"▲";font-size:11px;line-height:1}
  .zg-dashboard[data-view="dashboard"] .zg-r55-day-change[data-direction="down"]::after{content:"▼";font-size:11px;line-height:1}
  .zg-dashboard[data-view="dashboard"] .zg-r55-card-visual .zg-r55-mini-y-labels{display:none}
@@ -432,3 +432,11 @@
  .zg-dashboard[data-view="dashboard"] .zg-r55-shell[data-expanded] .zg-r55-card-number>.zg-r55-card-compact-scale{top:calc(100% + 10px)}
  .zg-dashboard[data-view="dashboard"] .zg-r55-shell[data-expanded="true"] .zg-r55-details{margin-top:16px}
 }
+
+/* Direction colors are independent of the score band. */
+.zg-dashboard[data-view="dashboard"] .zg-r55-card-number .zg-r55-day-change[data-direction="up"],
+.cnn-score-comparison.is-up i,
+.ob-summary .ob-summary-card .ob-direction-up>svg{color:#ef4444}
+.zg-dashboard[data-view="dashboard"] .zg-r55-card-number .zg-r55-day-change[data-direction="down"],
+.cnn-score-comparison.is-down i,
+.ob-summary .ob-summary-card .ob-direction-down>svg{color:#3b82f6}
