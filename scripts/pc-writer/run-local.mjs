@@ -66,12 +66,12 @@ try{
  }
  // Compare published-calculation snapshots from distinct dates, not reconstructed curves.
  const priorRows=(await core.prepare("SELECT snapshot_key,body FROM market_public_snapshots_v1 WHERE snapshot_key!='current' AND snapshot_key<? ORDER BY snapshot_key DESC LIMIT 30").bind(body.asOfDate).all()).results;
- const prior=priorRows.find(row=>/^\d{4}-\d{2}-\d{2}$/.test(row.snapshot_key)&&JSON.parse(row.body).status==='SUCCESS');
- if(prior){
-  const previous=JSON.parse(prior.body);
+ const priorMarket=priorRows.find(row=>/^\d{4}-\d{2}-\d{2}$/.test(row.snapshot_key)&&JSON.parse(row.body).status==='SUCCESS');
+ if(priorMarket){
+  const previous=JSON.parse(priorMarket.body);
   for(const domain of body.domains){
    const old=previous.domains?.find(item=>item.id===domain.id);
-   if(old?.status==='READY'&&typeof old.score==='number'&&Number.isFinite(old.score))domain.previousObservation={date:prior.snapshot_key,currentDate:body.asOfDate,score:old.score};
+   if(old?.status==='READY'&&typeof old.score==='number'&&Number.isFinite(old.score))domain.previousObservation={date:priorMarket.snapshot_key,currentDate:body.asOfDate,score:old.score};
   }
  }
  await marketOperationalStore(core).writeScore(body,now);
