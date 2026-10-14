@@ -440,3 +440,10 @@
 .zg-dashboard[data-view="dashboard"] .zg-r55-card-number .zg-r55-day-change[data-direction="down"],
 .cnn-score-comparison.is-down i,
 .ob-summary .ob-summary-card .ob-direction-down>svg{color:#ef4444}
+
+/* Match the 11px triangle used by the economic indicator cards. */
+.cnn-score-comparison.is-up i,.cnn-score-comparison.is-down i{font-size:11px!important;line-height:1!important;font-style:normal;display:inline-flex;align-items:center;justify-content:center;width:11px;height:11px;flex:0 0 11px}
+.ob-summary .ob-summary-card .ob-direction>svg{display:none}
+.ob-summary .ob-summary-card .ob-direction-up::after,.ob-summary .ob-summary-card .ob-direction-down::after{display:inline-flex;align-items:center;justify-content:center;width:11px;height:11px;font-size:11px;line-height:1;flex:0 0 11px;text-shadow:none}
+.ob-summary .ob-summary-card .ob-direction-up::after{content:"▲";color:#22c55e}
+.ob-summary .ob-summary-card .ob-direction-down::after{content:"▼";color:#ef4444}
