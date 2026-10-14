@@ -7,6 +7,7 @@ import {save} from './d1.mjs';
 import {createQuotaFetch} from './quota-fetch.mjs';
 import {recordCollectionChecks} from './collection-checks.mjs';
 import {collectConsumptionR5} from './consumption-r5.mjs';
+import {overdueRateJob} from './rate-refresh-priority.mjs';
 
 export async function collectLocal(base,{lane='core',importOnly=false,job=null}={}){
  const core=localDatabase(path.join(base,'storage','core.sqlite'));
@@ -31,7 +32,9 @@ export async function collectLocal(base,{lane='core',importOnly=false,job=null}=
   if(lane==='korea')result=await refreshKoreaRev7({env:{...env,DB:history},store:new Rev7D1Store(history,{leaseMs:600000}),now:new Date(),maxDates:1,deferCalculation:true});
   else{
    const collectors={consumption:()=>collectConsumptionR5({db:core,fetchImpl:globalThis.fetch})};
-   if(job)result=await runMarketOperationalRefresh({env,job,now:Date.now(),fetchImpl:globalThis.fetch,collectors,calculate:async()=>({calculation:'PC_PENDING'})});
+   const now=Date.now();
+   const selectedJob=job??await overdueRateJob(core,now);
+   if(selectedJob)result=await runMarketOperationalRefresh({env,job:selectedJob,now,fetchImpl:globalThis.fetch,collectors,calculate:async()=>({calculation:'PC_PENDING'})});
    else{
     const feed=await runPublicFeeds({env,maxFeedsPerRun:1});
     result=feed.attempted>0||feed.status!=='COMPLETE'?{...feed,lane:'public-feed'}:await runMarketOperationalRefresh({env,now:Date.now(),fetchImpl:globalThis.fetch,collectors,calculate:async()=>({calculation:'PC_PENDING'})});
