@@ -436,7 +436,7 @@
 /* Direction colors are independent of the score band. */
 .zg-dashboard[data-view="dashboard"] .zg-r55-card-number .zg-r55-day-change[data-direction="up"],
 .cnn-score-comparison.is-up i,
-.ob-summary .ob-summary-card .ob-direction-up>svg{color:#ef4444}
+.ob-summary .ob-summary-card .ob-direction-up>svg{color:#22c55e}
 .zg-dashboard[data-view="dashboard"] .zg-r55-card-number .zg-r55-day-change[data-direction="down"],
 .cnn-score-comparison.is-down i,
-.ob-summary .ob-summary-card .ob-direction-down>svg{color:#3b82f6}
+.ob-summary .ob-summary-card .ob-direction-down>svg{color:#ef4444}
