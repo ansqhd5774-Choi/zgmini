@@ -14,6 +14,7 @@ test("prospective cycle is shadow-only and nonblocking by contract",()=>{
   assert.equal(E1_R5_FORWARD_PROSPECTIVE_CYCLE_R1_CONTRACT.nonBlockingCaller,true);
   assert.equal(E1_R5_FORWARD_PROSPECTIVE_CYCLE_R1_CONTRACT.g4PitLedger,"E1-R5-G4-PIT-R1");
   assert.equal(E1_R5_FORWARD_PROSPECTIVE_CYCLE_R1_CONTRACT.g4PitNonBlocking,true);
+  assert.equal(E1_R5_FORWARD_PROSPECTIVE_CYCLE_R1_CONTRACT.g4PitOrder,"BEFORE_HEAVY_SEC_CROSS_AUDIT");
 });
 
 test("new UTC day refreshes",()=>{
@@ -37,6 +38,18 @@ test("same UTC day and unchanged inputs NOOP",()=>{
   assert.equal(out.reason,"UNCHANGED_SAME_UTC_DAY");
 });
 
+test("G4 PIT is persisted before the heavy SEC cross-filing audit",()=>{
+  const src=fs.readFileSync(new URL("../scripts/pc-writer/earnings-r5-forward-prospective-cycle-r1.mjs",import.meta.url),"utf8");
+  const g4Index=src.indexOf("const g4Pit=runG4PitNonBlocking");
+  const crossIndex=src.indexOf("const cross=runEarningsR5SecCrossFilingAudit");
+  assert.ok(g4Index>=0);
+  assert.ok(crossIndex>=0);
+  assert.ok(g4Index<crossIndex);
+  assert.match(src,/g4PitOrder:"BEFORE_HEAVY_SEC_CROSS_AUDIT"/);
+  assert.match(src,/CROSS_AUDIT_NOT_READY[\s\S]*\.\.\.g4Fields/);
+  assert.match(src,/READINESS_NOT_READY[\s\S]*\.\.\.g4Fields/);
+});
+
 test("prospective cycle integrates G4 PIT as a nonblocking research ledger",()=>{
   const src=fs.readFileSync(new URL("../scripts/pc-writer/earnings-r5-forward-prospective-cycle-r1.mjs",import.meta.url),"utf8");
   assert.match(src,/runG4PitLedgerR1/);
@@ -45,6 +58,15 @@ test("prospective cycle integrates G4 PIT as a nonblocking research ledger",()=>
   assert.match(src,/optionalG4Inputs/);
   assert.match(src,/catch\s*\(error\)/);
   assert.doesNotMatch(src,/productionActivation:true/);
+});
+
+test("local-cycle ignores stale prospective last-run after a timeout",()=>{
+  const src=fs.readFileSync(new URL("../scripts/pc-writer/local-cycle.mjs",import.meta.url),"utf8");
+  assert.match(src,/earningsR5ProspectiveStartedAt=Date\.now\(\)/);
+  assert.match(src,/candidateAt>=earningsR5ProspectiveStartedAt-1000/);
+  assert.match(src,/earningsR5ProspectiveReport=fresh\?candidate:null/);
+  assert.match(src,/staleReportIgnored:earningsR5ProspectiveReportStale/);
+  assert.match(src,/earningsR5Prospective\?\.error\?\.code/);
 });
 
 test("local-cycle integration is explicitly nonblocking",()=>{
