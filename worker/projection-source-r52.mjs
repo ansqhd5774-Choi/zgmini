@@ -5,6 +5,9 @@ import {loadPc1Series} from './projection-inflation-inputs.mjs';
 import {readEarningsE1R4StoredScore} from '../lib/market-score/sec-earnings-e1-r4-provider.mjs';
 import {defaultLoadProgress,defaultLoadRows} from './korea-funds.mjs';
 
+const finiteScore=value=>typeof value==='number'&&Number.isFinite(value)&&value>=0&&value<=100;
+const EARNINGS_E1_R5_IDS=Object.freeze(['S1','S2','S3','S4','S5','S6','S7','S8','S9','S10','S11','S12','S13']);
+
 export const PROJECTION_INPUT_BATCHES=Object.freeze({
  recession:Object.freeze(['macro']),
  liquidityCrisis:Object.freeze(['macro','credit']),
@@ -14,6 +17,24 @@ export const PROJECTION_INPUT_BATCHES=Object.freeze({
  debtRisk:Object.freeze(['macro','credit','bisDsr','bisTc']),
  supplyShock:Object.freeze(['macro','supply']),
 });
+
+export function selectStoredEarningsProjection(snapshot){
+ const earnings=Array.isArray(snapshot?.body?.domains)
+  ? snapshot.body.domains.find(domain=>domain?.id==='earnings')??null
+  : null;
+ const indicators=Array.isArray(earnings?.indicators)?earnings.indicators:[];
+ const byId=new Map(indicators.map(indicator=>[indicator?.id,indicator]));
+ const complete=earnings?.status==='READY'&&
+  earnings?.methodologyVersion==='E1-R5'&&
+  finiteScore(earnings?.score)&&
+  Array.isArray(earnings?.missingFactors)&&earnings.missingFactors.length===0&&
+  indicators.length===EARNINGS_E1_R5_IDS.length&&
+  EARNINGS_E1_R5_IDS.every(id=>{
+   const indicator=byId.get(id);
+   return indicator?.status==='READY'&&finiteScore(indicator?.score);
+  });
+ return complete?{...earnings,missing:[...earnings.missingFactors]}:null;
+}
 
 /** @param {import('./runtime-contracts').ProjectionId} id @param {ReturnType<typeof import('./projection-checkpoint-r52.mjs').observedSourceEnv>['env']} env @param {{now?:number,onPhase?:(phase:import('./runtime-contracts').ProjectionPhase)=>void,onMetadata?:(metadata:import('./runtime-contracts').ProjectionMetadata)=>void}} [options] */
 export async function loadProjectionSource(id,env,{now=Date.now(),onPhase,onMetadata}={}){
@@ -35,7 +56,9 @@ export async function loadProjectionSource(id,env,{now=Date.now(),onPhase,onMeta
  const snapshotStarted=performance.now(),snapshot=await store.readScore();mark('source:snapshot',snapshotStarted);
  if(id==='earningsRecession'){
   const date=/^\d{4}-\d{2}-\d{2}$/.test(snapshot?.body?.asOfDate??'')?snapshot.body.asOfDate:asOf;
-  const e1Started=performance.now(),e1=await readEarningsE1R4StoredScore({asOf:date,db:env.DB_CORE});mark('source:earnings',e1Started);
+  const e1Started=performance.now();
+  const e1=selectStoredEarningsProjection(snapshot)??await readEarningsE1R4StoredScore({asOf:date,db:env.DB_CORE});
+  mark('source:earnings',e1Started);
   return {snapshot,e1,nowIso};
  }
  const keys=PROJECTION_INPUT_BATCHES[id];
