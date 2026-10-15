@@ -1,5 +1,12 @@
 import {readOnlyDualEnv} from './candidate-2db-guard.mjs';
 
+const PROJECTION_BUILD_VERSIONS=Object.freeze({earningsRecession:'earnings-e1-r5-detail-r1'});
+
+function projectionCheckpointVersion(checkpoint,id){
+ const buildVersion=PROJECTION_BUILD_VERSIONS[id];
+ return buildVersion?{...checkpoint,sourceVersion:`${checkpoint.sourceVersion}:${buildVersion}`}:checkpoint;
+}
+
 export function observedSourceEnv(native){
  const safe=readOnlyDualEnv(native),failures=[];
  const failed=error=>{const message=String(error?.message??'')+' '+String(error?.cause?.message??'');const code=/quota|daily.*limit|row.*limit/i.test(message)?'D1_QUOTA':/different request|I\/O on behalf/i.test(message)?'SOURCE_REQUEST_SCOPE':/no such table/i.test(message)?'SOURCE_TABLE_MISSING':/CANDIDATE_WRITE_DISABLED/i.test(message)?'CANDIDATE_WRITE_DISABLED':/timeout|timed out/i.test(message)?'SOURCE_TIMEOUT':'STORED_SOURCE_READ_FAILED';failures.push(code);return Error(code);};
@@ -24,7 +31,8 @@ async function readHistoryCheckpoint(env){
 }
 
 export async function readProjectionCheckpoint(env,id){
- return id==='koreaFearGreed'?readHistoryCheckpoint(env):readCoreCheckpoint(env);
+ const checkpoint=id==='koreaFearGreed'?await readHistoryCheckpoint(env):await readCoreCheckpoint(env);
+ return projectionCheckpointVersion(checkpoint,id);
 }
 
 export async function readProjectionCheckpoints(env,ids){
@@ -34,7 +42,7 @@ export async function readProjectionCheckpoints(env,ids){
   needCore?readCoreCheckpoint(env):null,
   needHistory?readHistoryCheckpoint(env):null,
  ]);
- return Object.fromEntries(ids.map(id=>[id,id==='koreaFearGreed'?history:core]));
+ return Object.fromEntries(ids.map(id=>[id,projectionCheckpointVersion(id==='koreaFearGreed'?history:core,id)]));
 }
 
 // Backward-compatible combined checkpoint for tooling that still expects the old contract.
