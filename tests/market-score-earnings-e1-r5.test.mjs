@@ -2,11 +2,13 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {
   E1_R5_BLOCK_WEIGHTS,
+  E1_R5_FORWARD_SUBWEIGHTS,
   E1_R5_SCORE_KEYS,
   E1_R5_VERSION,
   E1_R5_WEIGHTS,
   buildEarningsE1R5,
   historicalPercentile,
+  scoreEarningsE1R5Raw,
 } from "../lib/market-score/earnings-e1-r5.mjs";
 
 const near=(actual,expected,tolerance=1e-12)=>assert.ok(Math.abs(actual-expected)<=tolerance,`${actual} != ${expected}`);
@@ -18,6 +20,7 @@ test("E1-R5 locks approved 13-component weights and 55/20/15/10 blocks",()=>{
     S7:0.10,S8:0.05,S9:0.05,S10:0.10,S11:0.05,S12:0.07,S13:0.03,
   });
   assert.deepEqual(E1_R5_BLOCK_WEIGHTS,{actual:0.55,breadth:0.20,costPressure:0.15,forward:0.10});
+  assert.deepEqual(E1_R5_FORWARD_SUBWEIGHTS,{S12A:4,S12B:3});
   assert.equal(Object.values(E1_R5_WEIGHTS).reduce((a,b)=>a+b,0),1);
   assert.equal(Object.values(E1_R5_BLOCK_WEIGHTS).reduce((a,b)=>a+b,0),1);
 });
@@ -60,4 +63,41 @@ test("E1-R5 preserves exact weighted arithmetic",()=>{
   const result=buildEarningsE1R5({scores});
   assert.equal(result.status,"READY");
   assert.equal(result.score,expected);
+});
+
+test("raw normalization applies inverse only to S10/S11 and approved 4:3 S12A/S12B mix",()=>{
+  const raw={};
+  const histories={};
+  for(let i=1;i<=11;i++){
+    const key=`S${i}`;
+    raw[key]=2;
+    histories[key]=[1,2,3];
+  }
+  raw.S12A=3; histories.S12A=[1,2,3,4];
+  raw.S12B=4; histories.S12B=[1,2,3,4];
+  raw.S13=2; histories.S13=[1,2,3,4];
+  const result=scoreEarningsE1R5Raw({raw,histories,asOfDate:"2026-10-16"});
+  assert.equal(result.status,"READY");
+  for(let i=1;i<=9;i++)assert.equal(result.components[`S${i}`],50);
+  assert.equal(result.components.S10,50);
+  assert.equal(result.components.S11,50);
+  assert.equal(result.forwardScores.S12A,62.5);
+  assert.equal(result.forwardScores.S12B,87.5);
+  assert.equal(result.forwardScores.S13,37.5);
+  near(result.components.S12,(4*62.5+3*87.5)/7);
+  assert.equal(result.components.S13,37.5);
+  assert.equal(result.historyMode,"CURRENT_AVAILABLE_HISTORY");
+  assert.equal(result.normalization,"HISTORICAL_PERCENTILE");
+});
+
+test("raw normalization preserves no-reweight when one history is absent",()=>{
+  const raw={},histories={};
+  for(let i=1;i<=11;i++){const key=`S${i}`;raw[key]=2;histories[key]=[1,2,3];}
+  Object.assign(raw,{S12A:2,S12B:2,S13:2});
+  Object.assign(histories,{S12A:[1,2,3],S12B:[],S13:[1,2,3]});
+  const result=scoreEarningsE1R5Raw({raw,histories});
+  assert.equal(result.status,"PARTIAL");
+  assert.equal(result.score,null);
+  assert.deepEqual(result.missing,["S12"]);
+  assert.equal(result.noReweight,true);
 });
