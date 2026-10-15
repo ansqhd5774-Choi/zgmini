@@ -4,16 +4,14 @@ import {readFileSync} from 'node:fs';
 
 const read=path=>readFileSync(path,'utf8');
 
-test('technical SEO sitemap includes every public route and current modified dates',()=>{
+test('technical SEO sitemap includes every public route with truthful lastmod values',()=>{
   const sitemap=read('public/sitemap.xml');
   assert.equal((sitemap.match(/<url>/g)||[]).length,16);
   assert.match(sitemap,/https:\/\/zgmini\.kr\/sector-fear-greed\/<\/loc><lastmod>2026-10-16<\/lastmod>/);
-  const refreshed=[
-    '/fear-greed/korea/','/fear-greed/usa/','/sector-fear-greed/','/inflation/','/recession/',
-    '/liquidity-crisis/','/credit-risk/','/earnings-recession/','/asset-bubble/','/debt-risk/',
-    '/supply-shock/','/guides/fear-greed-buying/','/guides/cpi-pce-release/','/guides/fomc/',
-  ];
-  for(const route of refreshed) assert.ok(sitemap.includes(`<loc>https://zgmini.kr${route}</loc><lastmod>2026-10-16</lastmod>`),route);
+  for(const route of ['/fear-greed/korea/','/fear-greed/usa/','/inflation/','/recession/','/guides/fear-greed-buying/','/guides/cpi-pce-release/','/guides/fomc/'])
+    assert.ok(sitemap.includes(`<loc>https://zgmini.kr${route}</loc><lastmod>2026-10-07</lastmod>`),route);
+  for(const route of ['/liquidity-crisis/','/credit-risk/','/earnings-recession/','/asset-bubble/','/debt-risk/','/supply-shock/'])
+    assert.ok(sitemap.includes(`<loc>https://zgmini.kr${route}</loc></url>`),route);
 });
 
 test('sector detail has dedicated social metadata and WebPage schema',()=>{
@@ -37,7 +35,7 @@ test('all three search guides emit Article structured data with canonical paths'
   const shell=read('app/guides/guide-page.tsx');
   assert.match(shell,/ArticleJsonLd/);
   assert.match(shell,/WebPageJsonLd/);
-  assert.match(shell,/dateModified="2026-10-16"/);
+  assert.match(shell,/dateModified="2026-10-07"/);
   for(const [file,path] of [
     ['app/guides/fear-greed-buying/page.tsx','/guides/fear-greed-buying/'],
     ['app/guides/cpi-pce-release/page.tsx','/guides/cpi-pce-release/'],
