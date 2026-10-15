@@ -11,7 +11,7 @@ test('older observation or publication rejected; zero and same-date revision ret
 });
 test('periodic and resume refresh serialize calls and clean up aborted requests',async()=>{
  const handlers=new Map(),docHandlers=new Map();let tick,finish,aborted=false,calls=0;
- const target={setTimeout:()=>1,clearTimeout:()=>{},setInterval:fn=>{tick=fn;return 1;},clearInterval:()=>{tick=null;},addEventListener:(k,f)=>handlers.set(k,f),removeEventListener:k=>handlers.delete(k)};
+ const target={setTimeout:()=>1,clearTimeout:()=>{},setInterval:(fn,ms)=>{assert.equal(ms,60000);tick=fn;return 1;},clearInterval:()=>{tick=null;},addEventListener:(k,f)=>handlers.set(k,f),removeEventListener:k=>handlers.delete(k)};
  const documentTarget={visibilityState:'visible',addEventListener:(k,f)=>docHandlers.set(k,f),removeEventListener:k=>docHandlers.delete(k)};
  const stop=startStoredRefresh(signal=>{calls++;signal.addEventListener('abort',()=>{aborted=true;finish();});return new Promise(r=>{finish=r;});},{target,documentTarget});
  assert.equal(calls,1);handlers.get('focus')();tick();assert.equal(calls,1);
