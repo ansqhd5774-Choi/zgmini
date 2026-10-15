@@ -3,6 +3,7 @@ import SearchIntentIntro from "../search-intent-intro";
 import type {Metadata} from "next";
 import InflationPanel from "./inflation-panel";
 import DetailReadingGuide from "../detail-reading-guide";
+import BeginnerRiskGuide from "../beginner-risk-guide";
 
 const title="미국 인플레이션 지수 | CPI·PCE·기대물가·물가 추이 - ZGmini";
 const description="미국 Core CPI·Core PCE·Headline PCE와 기대인플레이션, 생산자물가·임금·에너지 지표를 종합해 물가 안정 점수와 추이를 확인하세요. 현재값·관측일·판단도 함께 제공합니다.";
@@ -20,6 +21,7 @@ export default function InflationPage(){
    <a className="inline-flex min-h-11 items-center text-sm text-blue-200" href="/">← ZGmini 메인 대시보드</a>
    <SearchIntentIntro topic="inflation"/>
    <InflationPanel/>
+   <BeginnerRiskGuide topic="inflation"/>
    <DetailReadingGuide title="미국 인플레이션 점수를 읽는 방법"
     sections={[
      {title:"점수는 물가 상승률이 아닙니다",text:"ZGmini의 0~100 점수는 물가 안정 방향을 종합한 지표입니다. 71점이 물가 상승률 71%라는 뜻은 아닙니다. 실제 상승률은 구성 지표 표의 현재값과 단위에서 확인하세요. 점수가 높을수록 안정 방향이며, 각 지표의 긍정·중립·부정은 저장된 정규화 점수의 판단이며, 표의 기준 문구는 해석 방향을 설명합니다."},
