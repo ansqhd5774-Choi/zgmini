@@ -451,3 +451,8 @@
 /* Score-change indicators expire independently of data refresh. */
 .ob-direction[data-arrow-active="false"]::after{content:none!important}
 .zg-r55-day-change[data-arrow-active="false"][data-direction="up"],.zg-r55-day-change[data-arrow-active="false"][data-direction="down"]{visibility:hidden}
+.zg-dashboard .zg-r55-master-number{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px}
+.zg-composite-day-comparison{display:flex;align-items:center;justify-content:space-between;gap:8px;border:1px solid #31506d;border-radius:6px;background:rgba(7,26,41,.62);padding:4px 8px;box-sizing:border-box;width:100%;font-size:var(--zg-ui-comparison-font,12px);line-height:1.2;color:#a8bcd0;white-space:nowrap}
+.zg-composite-day-comparison>b{font-size:inherit;font-weight:800;font-variant-numeric:tabular-nums}
+.zg-composite-day-comparison>b[data-direction="up"]{color:#10b981}
+.zg-composite-day-comparison>b[data-direction="down"]{color:#ff626b}
