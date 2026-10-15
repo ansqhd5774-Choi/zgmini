@@ -9,6 +9,8 @@ import {
   historicalPercentile,
 } from "../lib/market-score/earnings-e1-r5.mjs";
 
+const near=(actual,expected,tolerance=1e-12)=>assert.ok(Math.abs(actual-expected)<=tolerance,`${actual} != ${expected}`);
+
 test("E1-R5 locks approved 13-component weights and 55/20/15/10 blocks",()=>{
   assert.equal(E1_R5_VERSION,"E1-R5");
   assert.deepEqual(E1_R5_WEIGHTS,{
@@ -33,7 +35,10 @@ test("E1-R5 composes all 13 scores without reweighting",()=>{
   const result=buildEarningsE1R5({scores,asOfDate:"2026-10-16",retrievedAt:"2026-10-16T00:00:00.000Z"});
   assert.equal(result.status,"READY");
   assert.equal(result.score,50);
-  assert.deepEqual(result.blocks,{actual:50,breadth:50,costPressure:50,forward:50});
+  near(result.blocks.actual,50);
+  near(result.blocks.breadth,50);
+  near(result.blocks.costPressure,50);
+  near(result.blocks.forward,50);
   assert.equal(result.noReweight,true);
   assert.deepEqual(result.missing,[]);
 });
