@@ -10,7 +10,7 @@ import {save,read,hash} from './d1.mjs';
 test('UI/content/research changes do not block; publisher/formula/dependencies do',()=>{
  for(const f of ['lib/iran-progress/facts.mjs','lib/iran-progress/r13.mjs','worker/iran-progress-public.mjs'])assert.equal(affectsPublication(f),false,f);
  assert.equal(affectsPublication('lib/market-score/composite-model-r1.mjs'),true);
- for(const f of ['app/dashboard-ui.tsx','app/responsive.css','docs/guide.md','scripts/pc-writer/backtest-sec.mjs'])assert.equal(affectsPublication(f),false,f);
+ for(const f of ['app/dashboard-ui.tsx','app/responsive.css','docs/guide.md','scripts/pc-writer/backtest-sec.mjs','scripts/pc-writer/inspect-earnings-r5-forward-validation-r1.mjs'])assert.equal(affectsPublication(f),false,f);
  for(const f of ['worker/projection-runtime-r52.mjs','lib/score.mjs','scripts/pc-writer/run-local.mjs','package-lock.json'])assert.equal(affectsPublication(f),true,f);
 });
 test('real Git comparison permits UI commits and rejects a formula change',()=>{
