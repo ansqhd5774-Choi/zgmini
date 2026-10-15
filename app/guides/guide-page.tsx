@@ -1,5 +1,6 @@
 import type {Metadata} from 'next';
 import type {ReactNode} from 'react';
+import {ArticleJsonLd,WebPageJsonLd} from '../seo-jsonld';
 
 export function guideMetadata(title:string,description:string,path:string):Metadata {
   const fullTitle=`${title} | ZGmini`,url=`https://zgmini.kr${path}`;
@@ -7,8 +8,10 @@ export function guideMetadata(title:string,description:string,path:string):Metad
     openGraph:{title:fullTitle,description,url,type:'article',siteName:'ZGmini'},
     twitter:{card:'summary',title:fullTitle,description}};
 }
-export default function GuidePage({title,answer,children}:{title:string;answer:string;children:ReactNode}) {
+export default function GuidePage({title,answer,path,children}:{title:string;answer:string;path:string;children:ReactNode}) {
   return <main className="min-h-screen bg-[#03121d] px-4 py-8 text-slate-100 sm:px-8 sm:py-12">
+    <WebPageJsonLd name={title} description={answer} path={path}/>
+    <ArticleJsonLd headline={title} description={answer} path={path} dateModified="2026-10-16"/>
     <article className="mx-auto max-w-4xl text-sm leading-7 sm:text-base">
       <a href="/" className="inline-flex min-h-11 items-center text-blue-200">← ZGmini 대시보드</a>
       <header className="mt-5 space-y-4"><p className="text-sm text-slate-400">투자 지표 활용 안내 · 내용 확인일 2026-10-07</p>
