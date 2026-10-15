@@ -15,6 +15,7 @@ export const PROJECTION_INPUT_BATCHES=Object.freeze({
  supplyShock:Object.freeze(['macro','supply']),
 });
 
+/** @param {import('./runtime-contracts').ProjectionId} id @param {ReturnType<typeof import('./projection-checkpoint-r52.mjs').observedSourceEnv>['env']} env @param {{now?:number,onPhase?:(phase:import('./runtime-contracts').ProjectionPhase)=>void,onMetadata?:(metadata:import('./runtime-contracts').ProjectionMetadata)=>void}} [options] */
 export async function loadProjectionSource(id,env,{now=Date.now(),onPhase,onMetadata}={}){
  const mark=(phase,start)=>{const elapsed=performance.now()-start;if(typeof onPhase==='function')onPhase({phase,elapsedMs:elapsed,id});};
  const nowIso=new Date(now).toISOString(),asOf=nowIso.slice(0,10);

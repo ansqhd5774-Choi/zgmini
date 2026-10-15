@@ -54,6 +54,7 @@ export async function calculateStoredMarketScore(env,store,now){
  await store.writeScore(body,now);
  return {readyDomains:body.dataQuality?.readyDomains??body.domains.filter(x=>x.status==='READY').length};
 }
+/** @param {{env?:import('./runtime-contracts').DataEnv,store?:ReturnType<typeof marketOperationalStore>,now?:number}} [options] @returns {Promise<import('./runtime-contracts').OperationalResult>} */
 export async function refreshStoredMarketScoreSnapshot({env,store,now=Date.now()}={}){
  if(!env?.DB&&!store)return {status:'CONFIGURATION_MISSING'};
  store??=marketOperationalStore(env.DB);
@@ -70,6 +71,7 @@ function boundedFetch(fetchImpl){return async(input,init={})=>{
  const signal=init.signal?AbortSignal.any([init.signal,timeout]):timeout;
  return Reflect.apply(fetchImpl,globalThis,[input,{...init,signal}]);
 };}
+/** @param {{env?:import('./runtime-contracts').DataEnv,job?:string,store?:ReturnType<typeof marketOperationalStore>,now?:number,fetchImpl?:typeof fetch,collectors?:Record<string,(args:{env:import('./runtime-contracts').DataEnv,asOf:string,fetchImpl:typeof fetch})=>Promise<unknown>>,calculate?:typeof calculateStoredMarketScore}} [options] @returns {Promise<import('./runtime-contracts').OperationalResult>} */
 export async function runMarketOperationalRefresh({env,job,store,now=Date.now(),fetchImpl=globalThis.fetch,collectors={},calculate=calculateStoredMarketScore}={}){
  if(!env?.DB&&!store)return {status:'CONFIGURATION_MISSING'};
  if(job&&!MARKET_COLLECTION_JOBS.includes(job))return {status:'INVALID_JOB'};

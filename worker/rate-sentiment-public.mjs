@@ -2,6 +2,7 @@ import {PUBLIC_DISPLAY_MAX_AGE_MS} from './public-display-freshness.mjs';
 import {rateSentimentCalendarLag,RATE_SENTIMENT_MAX_OBSERVATION_DAYS} from '../lib/market-score/rate-sentiment-freshness.mjs';
 
 export const RATE_SENTIMENT_PUBLIC_KEY='public:rate-sentiment:v1';
+/** @param {Request} request @param {{db?:D1Database,now?:number}} [options] */
 export async function storedRateSentimentResponse(request,{db,now=Date.now()}={}){
  const headers={'cache-control':'no-store','x-robots-tag':'noindex','x-content-type-options':'nosniff','x-rate-sentiment-source':'STORED'};
  if(request.method!=='GET')return Response.json({status:'FAILED',reason:'METHOD_NOT_ALLOWED'},{status:405,headers});

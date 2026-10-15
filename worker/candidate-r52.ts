@@ -6,7 +6,8 @@ import {readPublicFeedHealth} from './public-feed-store.mjs';
 import {readCollectionHealth} from './collection-health.mjs';
 import {rssResponse} from './rss-feed.mjs';
 import rssXml from '../public/rss.xml?raw';
-const http=candidate2dbWorker({async fetch(request,env,ctx){
+import type {CandidateEnv,CandidateReadEnv,WorkerContext,ProjectionJob} from './runtime-contracts';
+const http=candidate2dbWorker({async fetch(request:Request,env:CandidateReadEnv,ctx:WorkerContext){
  const feed=rssResponse(request,rssXml);if(feed)return feed;
  const path=decodeURIComponent(new URL(request.url).pathname).replace(/\/+/g,'/').replace(/\/$/,'')||'/';
  const id=PROJECTION_ROUTES[path];
@@ -18,11 +19,11 @@ const http=candidate2dbWorker({async fetch(request,env,ctx){
  if(path==='/api/session')return Response.json({user:null});
  return handler.fetch(request,env,ctx);
 }});
-export default Object.freeze({...http,async scheduled(controller,native,ctx){
+export default Object.freeze({...http,async scheduled(controller:ScheduledController,native:CandidateEnv,ctx:WorkerContext){
  const {runCandidateWriter}=await import('./candidate-writer-r1.mjs');
  const result=await runCandidateWriter(controller,native).catch(error=>({status:'ERROR',lane:'scheduled',reason:'WRITER_EXECUTION_FAILED',errorName:/^[A-Za-z]{1,40}$/.test(error?.name??'')?error.name:'Error',errorCode:/^[A-Z][A-Z0-9_]{1,80}$/.test(error?.message??'')?error.message:/no such table/i.test(error?.message??'')?'D1_TABLE_MISSING':'UNCLASSIFIED'}));
  console.log('CANDIDATE_WRITER_R2',JSON.stringify(result));
-},async queue(batch,native,ctx){
+},async queue(batch:MessageBatch<ProjectionJob>,native:CandidateEnv,ctx:WorkerContext){
  for(const message of batch.messages??[]){const job=message.body;if(job&&typeof job.id==='string'&&/^[A-Za-z]{1,32}$/.test(job.id)&&Number.isFinite(job.sourceStoredAt))console.log('R60_PROJECTION_BEGIN',JSON.stringify({id:job.id,sourceStoredAt:job.sourceStoredAt,stage:'before-consumer-import'}));}
  const {consumeProjectionBatch}=await import('./projection-queue-r52.ts');
  const result=await consumeProjectionBatch(batch,native,ctx);

@@ -289,6 +289,7 @@ export function buildBankEmergencyR7({
   };
 }
 
+/** @param {{sofr?:import('../runtime-contracts').ObservationRow[],iorb?:import('../runtime-contracts').ObservationRow[],obfr?:import('../runtime-contracts').ObservationRow[],dvpRepo?:import('../runtime-contracts').ObservationRow[],triPartyRepo?:import('../runtime-contracts').ObservationRow[],bankEmergency?:ReturnType<typeof buildBankEmergencyR7>}} [options] */
 export function buildFundingStressR7({
   sofr=[],
   iorb=[],
