@@ -69,6 +69,12 @@ test("local-cycle ignores stale prospective last-run after a timeout",()=>{
   assert.match(src,/earningsR5Prospective\?\.error\?\.code/);
 });
 
+test("local-cycle gives measured heavy E1-R5 path five minutes of headroom",()=>{
+  const src=fs.readFileSync(new URL("../scripts/pc-writer/local-cycle.mjs",import.meta.url),"utf8");
+  assert.match(src,/earnings-r5-forward-prospective-cycle-r1\.mjs'\)\],\{windowsHide:true,stdio:\['ignore','pipe','pipe'\],timeout:5\*60000\}/);
+  assert.doesNotMatch(src,/earnings-r5-forward-prospective-cycle-r1\.mjs'\)\],\{windowsHide:true,stdio:\['ignore','pipe','pipe'\],timeout:2\*60000\}/);
+});
+
 test("local-cycle integration is explicitly nonblocking",()=>{
   const src=fs.readFileSync(new URL("../scripts/pc-writer/local-cycle.mjs",import.meta.url),"utf8");
   assert.match(src,/earnings-r5-forward-prospective-cycle-r1\.mjs/);
