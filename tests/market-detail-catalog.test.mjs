@@ -32,6 +32,20 @@ test('verified breadth raw values preserve zero and units',()=>{
  assert.equal(r.value,0);assert.equal(r.unit,'%');assert.equal(r.raw,true);assert.equal(r.score,null);
 });
 
+test('E1-R5 earnings detail rows map all S1-S13 by stable id',()=>{
+ const indicators=Array.from({length:13},(_,index)=>({
+  id:`S${index+1}`,name:`legacy-name-${index+1}`,status:'READY',score:index+10,
+  value:index+0.5,unit:'점',asOfDate:'2026-10-16',source:'fixture',
+ }));
+ const rows=marketDetailRows('earnings',indicators);
+ assert.equal(rows.length,13);
+ assert.deepEqual(rows.map(row=>row.label),[
+  'EPS 성장 강도','매출 성장률','영업이익률 수준','영업이익률 변화','FCF 마진','BEA 기업이익 변화',
+  'EPS 개선 기업 비율','흑자 기업 비율','이익 개선 업종 비율','생산자 원가 압력','단위노동비용 압력','미래 전망 수정','기업 가이던스 방향',
+ ]);
+ assert.deepEqual(rows.map(row=>row.score),Array.from({length:13},(_,index)=>index+10));
+ assert.ok(rows.every(row=>row.asOfDate==='2026-10-16'&&row.source==='fixture'));
+});
 
 test('Growth R2 representative UI rows map by stable feature id',()=>{
  const rows=marketDetailRows('growth',[
@@ -44,7 +58,6 @@ test('Growth R2 representative UI rows map by stable feature id',()=>{
  assert.deepEqual(rows.map(r=>r.score),[52,47,41,38]);
  assert.deepEqual(rows.map(r=>r.asOfDate),['2026-08-01','2026-08-01','2026-08-01','2026-08-01']);
 });
-
 
 test('RATE R3 detail rows display scores while preserving raw metadata',()=>{
  const rows=marketDetailRows('rates',[
@@ -69,7 +82,6 @@ test('B1-R5 detail rows use new stable ids and formula factors',()=>{
  assert.deepEqual(rows.map(r=>r.score),[62.5,59,60,58]);
  assert.deepEqual(rows.map(r=>r.unit),['%','%','점','점']);
 });
-
 
 test('Employment R54 detail rows map by stable factor id',()=>{
  const rows=marketDetailRows('employment',[
