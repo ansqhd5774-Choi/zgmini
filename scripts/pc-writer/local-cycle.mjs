@@ -50,7 +50,7 @@ try{
   const earningsR5OfficialRefreshFile=path.join(base,'local-earnings-r5-official-refresh-cycle-last-run.json');
   earningsR5OfficialRefreshReport=fs.existsSync(earningsR5OfficialRefreshFile)?read(earningsR5OfficialRefreshFile):null;
   const earningsR5ProspectiveStartedAt=Date.now();
-  earningsR5Prospective=spawnSync(process.execPath,[path.join(here,'earnings-r5-forward-prospective-cycle-r1.mjs')],{windowsHide:true,stdio:['ignore','pipe','pipe'],timeout:2*60000});
+  earningsR5Prospective=spawnSync(process.execPath,[path.join(here,'earnings-r5-forward-prospective-cycle-r1.mjs')],{windowsHide:true,stdio:['ignore','pipe','pipe'],timeout:5*60000});
   const earningsR5ProspectiveFile=path.join(base,'local-earnings-r5-forward-prospective-last-run.json');
   if(fs.existsSync(earningsR5ProspectiveFile)){
    const candidate=read(earningsR5ProspectiveFile);
