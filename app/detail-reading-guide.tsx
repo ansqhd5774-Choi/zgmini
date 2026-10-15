@@ -42,7 +42,7 @@ export default function DetailReadingGuide({ title, sections, sources, related }
   sources: GuideLink[];
   related: GuideLink[];
 }) {
-  const relatedLinks=(seoRelatedOverrides[title]??related).slice(0,4);
+  const relatedLinks=seoRelatedOverrides[title]?.slice(0,4)??related.slice(0,4);
   return <section className="mt-12 space-y-6 text-sm leading-7 text-slate-300 sm:text-base" aria-label={title}>
     <h2 className="text-xl font-bold text-white">{title}</h2>
     {sections.map(section => <div key={section.title}>
