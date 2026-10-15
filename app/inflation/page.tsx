@@ -3,13 +3,13 @@ import type {Metadata} from "next";
 import InflationPanel from "./inflation-panel";
 import DetailReadingGuide from "../detail-reading-guide";
 
-const title="미국 인플레이션 | 주요 지표·현재값·판단 - ZGmini";
-const description="미국 인플레이션 점수 추이와 주요 물가 지표의 기준, 현재값, 긍정·중립·부정 판단을 한 페이지에서 확인하세요.";
+const title="미국 인플레이션 지수 | CPI·PCE·기대물가·물가 추이 - ZGmini";
+const description="미국 Core CPI·Core PCE·Headline PCE와 기대인플레이션, 생산자물가·임금·에너지 지표를 종합해 물가 안정 점수와 추이를 확인하세요. 현재값·관측일·판단도 함께 제공합니다.";
 const url="https://zgmini.kr/inflation/";
 
 export const metadata:Metadata={
  title,description,alternates:{canonical:url},robots:{index:true,follow:true},
- openGraph:{title,description,url,type:"website",siteName:"ZGmini",images:[{url:"https://zgmini.kr/zgmini-share.png",width:1200,height:630,alt:"ZGmini 미국 인플레이션 상세"}]},
+ openGraph:{title,description,url,type:"website",siteName:"ZGmini",images:[{url:"https://zgmini.kr/zgmini-share.png",width:1200,height:630,alt:"ZGmini 미국 CPI·PCE·인플레이션 분석"}]},
  twitter:{card:"summary_large_image",title,description,images:["https://zgmini.kr/zgmini-share.png"]},
 };
 
