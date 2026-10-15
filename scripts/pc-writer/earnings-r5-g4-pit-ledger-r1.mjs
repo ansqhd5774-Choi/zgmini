@@ -40,6 +40,11 @@ const finite=value=>typeof value==="number"&&Number.isFinite(value);
 const clean=value=>String(value??"").trim();
 const sha256=bytes=>createHash("sha256").update(bytes).digest("hex");
 const safeIso=value=>{const ms=Date.parse(clean(value));return Number.isFinite(ms)?new Date(ms).toISOString():null;};
+const filingIso=value=>/^\d{4}-\d{2}-\d{2}$/.test(clean(value))?`${clean(value)}T23:59:59.000Z`:safeIso(value);
+const latestIso=values=>{
+  const rows=(values??[]).map(filingIso).filter(Boolean).sort((a,b)=>Date.parse(a)-Date.parse(b));
+  return rows.at(-1)??null;
+};
 const stableJson=value=>Array.isArray(value)
   ?`[${value.map(stableJson).join(",")}]`
   :value&&typeof value==="object"
@@ -62,24 +67,34 @@ export function buildSecS1S2FromDocuments(documents,{asOf}={}){
   const asOfIso=safeIso(asOf);
   const asOfDate=asOfIso?.slice(0,10)??null;
   if(!asOfDate)return {s1:null,s2:null,eligibleS1:0,eligibleS2:0,totalDocuments:0,reason:"AS_OF_INVALID"};
-  const s1=[],s2=[];let revenuePairs=0,epsPairs=0;
+  const s1=[],s2=[],s1Availability=[],s2Availability=[];let revenuePairs=0,epsPairs=0;
   for(const item of Array.isArray(documents)?documents:[]){
     const document=item?.document??item;
     const revenue=selectFiscalComparablePair(document,{metric:"revenue",asOf:asOfDate,maxAgeDays:E1_R5_FISCAL_POLICY.maxCurrentAgeDays});
     if(!revenue.current||!revenue.prior)continue;
     revenuePairs++;
     const revenueRaw=percentChange(revenue.current.val,revenue.prior.val);
-    if(finite(revenueRaw))s2.push(revenueRaw);
+    if(finite(revenueRaw)){
+      s2.push(revenueRaw);
+      const available=latestIso([revenue.current.filed,revenue.prior.filed]);
+      if(available)s2Availability.push(available);
+    }
     const eps=selectFiscalComparablePair(document,{metric:"eps",asOf:asOfDate,maxAgeDays:E1_R5_FISCAL_POLICY.maxCurrentAgeDays});
     const aligned=eps.current&&eps.prior&&sameFiscalAnchor(eps.current,revenue.current)&&sameFiscalAnchor(eps.prior,revenue.prior);
     if(!aligned)continue;
     epsPairs++;
     const epsRaw=symmetricChange(eps.current.val,eps.prior.val);
-    if(finite(epsRaw))s1.push(epsRaw);
+    if(finite(epsRaw)){
+      s1.push(epsRaw);
+      const available=latestIso([revenue.current.filed,revenue.prior.filed,eps.current.filed,eps.prior.filed]);
+      if(available)s1Availability.push(available);
+    }
   }
   return {
     s1:median(s1),
     s2:median(s2),
+    s1SourceAsOf:latestIso(s1Availability),
+    s2SourceAsOf:latestIso(s2Availability),
     eligibleS1:s1.length,
     eligibleS2:s2.length,
     revenuePairCount:revenuePairs,
@@ -108,10 +123,10 @@ function readCompanyFacts(base,recordedAt){
     try{documents.push({name,document:JSON.parse(bytes.toString("utf8"))});}catch{parseErrors++;}
   }
   const sec=buildSecS1S2FromDocuments(documents,{asOf:recordedAt});
-  const common={source:"SEC_COMPANYFACTS",sourceAsOf:recordedAt,sourceStoredAt:maxMtime?new Date(maxMtime).toISOString():null,sourceHash:files.length?aggregate.digest("hex"):null,policyVersion:E1_R5_INPUT_CONTRACT_VERSION,maxCurrentAgeDays:E1_R5_FISCAL_POLICY.maxCurrentAgeDays,totalFiles:files.length,parsedFiles:documents.length,parseErrors};
+  const common={source:"SEC_COMPANYFACTS",sourceStoredAt:maxMtime?new Date(maxMtime).toISOString():null,sourceHash:files.length?aggregate.digest("hex"):null,policyVersion:E1_R5_INPUT_CONTRACT_VERSION,maxCurrentAgeDays:E1_R5_FISCAL_POLICY.maxCurrentAgeDays,totalFiles:files.length,parsedFiles:documents.length,parseErrors};
   return {
-    S1:componentRecord({...common,value:sec.s1,reason:"NO_ALIGNED_EPS_PAIRS",eligibleCount:sec.eligibleS1,revenuePairCount:sec.revenuePairCount,semantic:"MEDIAN_SYMMETRIC_CHANGE_CURRENT_VS_PRIOR_YEAR_DILUTED_EPS"}),
-    S2:componentRecord({...common,value:sec.s2,reason:"NO_REVENUE_PAIRS",eligibleCount:sec.eligibleS2,revenuePairCount:sec.revenuePairCount,semantic:"MEDIAN_PERCENT_CHANGE_CURRENT_VS_PRIOR_YEAR_REVENUE"}),
+    S1:componentRecord({...common,sourceAsOf:sec.s1SourceAsOf,value:sec.s1,reason:"NO_ALIGNED_EPS_PAIRS",eligibleCount:sec.eligibleS1,revenuePairCount:sec.revenuePairCount,semantic:"MEDIAN_SYMMETRIC_CHANGE_CURRENT_VS_PRIOR_YEAR_DILUTED_EPS"}),
+    S2:componentRecord({...common,sourceAsOf:sec.s2SourceAsOf,value:sec.s2,reason:"NO_REVENUE_PAIRS",eligibleCount:sec.eligibleS2,revenuePairCount:sec.revenuePairCount,semantic:"MEDIAN_PERCENT_CHANGE_CURRENT_VS_PRIOR_YEAR_REVENUE"}),
   };
 }
 
