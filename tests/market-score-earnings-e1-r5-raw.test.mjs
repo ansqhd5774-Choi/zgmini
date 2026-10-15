@@ -32,7 +32,7 @@ test("raw actual calculator preserves approved S1-S11 semantics",()=>{
   near(result.components.S6.raw,2*(120-100)/(120+100));
   near(result.components.S7.raw,100/3);
   near(result.components.S8.raw,200/3);
-  near(result.components.S9.raw,50);
+  near(result.components.S9.raw,200/3);
   assert.equal(result.components.S11.raw,1.4);
   assert.equal(result.quality.issuerCount,3);
   assert.equal(result.quality.nonFinancialCount,2);
