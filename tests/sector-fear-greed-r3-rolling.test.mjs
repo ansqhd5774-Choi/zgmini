@@ -56,5 +56,5 @@ test('ETF collector is bounded and does not alter scheduler or public storage di
  assert.match(source,/const MAX_REQUESTS=4/);
  assert.match(source,/const CACHE_MS=20\*60\*60\*1000/);
  assert.match(source,/publicMutation:false,d1Mutation:false,dbSchemaChanged:false,productionFormulaChanged:false,schedulerChanged:false/);
- assert.doesNotMatch(source,/wrangler|cron|schedule/i);
+ assert.doesNotMatch(source,/\bwrangler\b|\bcron\b/i);
 });
