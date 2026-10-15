@@ -39,6 +39,14 @@ export function deriveAffectedUrls(files,publicUrls){
     addAll(affected,publicUrls.filter(url=>new URL(url).pathname.startsWith('/guides/')));
   }
 
+  if(allFiles.has('app/guides/release-calendar.tsx') || allFiles.has('app/guides/release-snapshot.json')){
+    const releaseGuidePaths=new Set([
+      '/guides/cpi-pce-release/',
+      '/guides/fomc/',
+    ]);
+    addAll(affected,publicUrls.filter(url=>releaseGuidePaths.has(new URL(url).pathname)));
+  }
+
   if(allFiles.has('app/search-intent-intro.tsx')){
     const introPaths=new Set([
       '/credit-risk/',
