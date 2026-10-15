@@ -1,6 +1,6 @@
 import test from 'node:test';import assert from 'node:assert/strict';
 import {standardizeMarketSnapshot as snapshot,calculateBreadth,marketNumber,KoreaMarketHistoryStore,fetchMarketDate,createMarketSnapshotHandler,MARKET_V2_POLICY} from '../worker/korea-market-v2.mjs';
-import {createPhase3Handler} from '../worker/phase3-korea-stock-price.mjs';
+import {createPhase3Handler,PHASE3_POLICY} from '../worker/phase3-korea-stock-price.mjs';
 const date='20260911',now=()=>Date.parse('2026-09-13T00:00:00Z');
 const row=(id,ret='1',value='100',market='KOSPI')=>({basDt:date,srtnCd:id,isinCd:'ISIN'+id,mrktCtg:market,clpr:'10',fltRt:ret,trPrc:value,mrktTotAmt:'1000'});
 const page=(rows,total=rows.length)=>({response:{header:{resultCode:'00'},body:{totalCount:total,items:{item:rows}}}});
@@ -32,6 +32,17 @@ test('history store cloning, security date order, factors and checkpoint',()=>{
  store.saveFactorSnapshot(date,s.breadth);assert.equal(store.getFactorHistory()[0].score,45);const progress={latestProcessedDate:date,oldestProcessedDate:date,successfulTradingDates:1,requestCount:1,rowsProcessed:4,status:'PAUSED'};store.saveBackfillProgress(progress);progress.requestCount=99;assert.equal(store.getBackfillProgress().requestCount,1);assert.throws(()=>store.saveMarketDate({...s,complete:false}));
 });
 test('research route coalescing/cache, summary only, no secret/raw rows',async()=>{let n=0;const h=createMarketSnapshotHandler({runtime:true,now,fetchImpl:async()=>{n++;return Response.json(page(mixed()));}});const req=()=>new Request('https://local.test/check?basDt='+date);const [a,b]=await Promise.all([h(req(),{FSC_API_KEY:'private'}),h(req(),{FSC_API_KEY:'private'})]);const s=await a.json();await b.json();await h(req(),{FSC_API_KEY:'private'});assert.equal(n,1);assert.equal(s.researchOnly,true);assert.equal(s.productionEligible,false);assert.equal(s.rows,undefined);assert.ok(!JSON.stringify(s).includes('private'));});
-test('existing phase3 route snapshot mode only calls Stock V2 once',async()=>{let n=0;const h=createPhase3Handler({runtime:true,fetch:async()=>{n++;return Response.json(page(mixed()));}});const s=await(await h(new Request('https://local.test/check?mode=snapshot&basDt='+date),{FSC_API_KEY:'fixture'})).json();assert.equal(s.complete,true);assert.equal(n,1);});
+test('existing phase3 route snapshot mode only calls Stock V2 once',async t=>{
+ t.mock.timers.enable({apis:['Date'],now:now()});
+ let n=0;const h=createPhase3Handler({runtime:true,fetch:async()=>{n++;return Response.json(page(mixed()));}});
+ const response=await h(new Request('https://local.test/check?mode=snapshot&basDt='+date),{FSC_API_KEY:'fixture'});
+ assert.equal(response.status,200);const s=await response.json();assert.equal(s.complete,true);assert.equal(n,1);
+});
+test('phase3 snapshot expiry blocks even valid credentials without calling upstream',async t=>{
+ t.mock.timers.enable({apis:['Date'],now:Date.parse(PHASE3_POLICY.expiresAt)});
+ let calls=0;const h=createPhase3Handler({runtime:true,fetch:()=>{calls++;assert.fail('expired snapshot must not fetch');}});
+ const response=await h(new Request('https://local.test/check?mode=snapshot&basDt='+date),{FSC_API_KEY:'fixture-secret'});
+ assert.equal(response.status,410);const body=await response.json();assert.equal(body.safeErrorCode,'EXPIRED');assert.equal(calls,0);assert.equal(JSON.stringify(body).includes('fixture-secret'),false);
+});
 test('invalid date and local guard call nothing',async()=>{const h=createMarketSnapshotHandler({now,fetchImpl:()=>{throw Error('must not call');}});assert.equal((await h(new Request('https://local.test/?basDt=20260230'))).status,400);const s=await(await h(new Request('https://local.test/?basDt='+date),{FSC_API_KEY:'fixture'})).json();assert.equal(s.requestCount,0);});
 test('replayed page and missing total cannot claim complete',async()=>{const s=await fetchMarketDate(date,'fixture',{now,policy:{...MARKET_V2_POLICY,pageSize:1},fetchImpl:async()=>Response.json(page([row('1')],2))});assert.equal(s.safeErrorCode,'REPEATED_PAGE');assert.equal(s.complete,false);const bad=await fetchMarketDate(date,'fixture',{now,fetchImpl:async()=>Response.json(page([],null))});assert.equal(bad.complete,false);});

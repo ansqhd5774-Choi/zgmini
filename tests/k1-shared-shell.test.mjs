@@ -48,7 +48,8 @@ test("K1 extracts USA presentation into an opt-in shared shell", async () => {
 
 test("K1 leaves USA data semantics in the USA adapter", async () => {
   const panel = await read("app/fear-greed/usa/cnn-panel.tsx");
-  assert.match(panel, /fetch\("\/api\/fear-greed"/);
+  assert.match(panel, /import\s*\{useStoredIndex\}\s*from\s*['"]\.\.\/\.\.\/\.\.\/components\/use-stored-index['"]/);
+  assert.match(panel, /useStoredIndex<IndexPayload>\("\/api\/fear-greed"\)/);
   assert.match(panel, /previousHistoryBaseline\(allHistory, payload\?\.observedAt\)/);
   assert.match(panel, /historicalBaseline\(allHistory, targetTime\)/);
   assert.match(panel, /const marketInsight = buildMarketInsight\(/);
