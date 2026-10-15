@@ -25,3 +25,5 @@ jobs:
         env:
           SEO_HEALTH_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: node scripts/seo-production-health.mjs
+      - name: Verify canonical edge redirects
+        run: node scripts/seo-canonical-edge-health.mjs
