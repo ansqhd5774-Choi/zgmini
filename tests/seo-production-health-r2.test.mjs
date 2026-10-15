@@ -39,11 +39,24 @@ test('JSON-LD type parser reads graph and standalone nodes',()=>{
   assert.deepEqual([...types].sort(),['BreadcrumbList','Organization','WebSite']);
 });
 
-test('live sitemap parser requires loc and truthful ISO lastmod pairs',()=>{
-  const xml='<urlset><url><loc>https://zgmini.kr/</loc><lastmod>2026-10-16</lastmod></url><url><loc>https://zgmini.kr/about/</loc><lastmod>2026-10-16</lastmod></url></urlset>';
+test('live sitemap parser distinguishes URL presence from lastmod presence',()=>{
+  const xml='<urlset><url><loc>https://zgmini.kr/</loc><lastmod>2026-10-16</lastmod></url><url><loc>https://zgmini.kr/about/</loc></url></urlset>';
   const entries=liveSitemapEntries(xml);
   assert.equal(entries.get('https://zgmini.kr/'),'2026-10-16');
-  assert.equal(entries.get('https://zgmini.kr/about/'),'2026-10-16');
+  assert.equal(entries.get('https://zgmini.kr/about/'),null);
+  assert.equal(entries.size,2);
+});
+
+test('local public sitemap has all 16 URLs with truthful ISO lastmod values',()=>{
+  const entries=liveSitemapEntries(readFileSync('public/sitemap.xml','utf8'));
+  assert.equal(entries.size,16);
+  for(const [url,lastmod] of entries){
+    assert.match(url,/^https:\/\/zgmini\.kr\//);
+    assert.match(lastmod,/^\d{4}-\d{2}-\d{2}$/);
+  }
+  assert.equal(entries.get('https://zgmini.kr/earnings-recession/'),'2026-10-16');
+  assert.equal(entries.get('https://zgmini.kr/asset-bubble/'),'2026-10-16');
+  assert.equal(entries.get('https://zgmini.kr/supply-shock/'),'2026-10-16');
 });
 
 test('production SEO workflow is push-only and deployment-gated',()=>{
@@ -56,5 +69,6 @@ test('production SEO workflow is push-only and deployment-gated',()=>{
   assert.match(workflow,/SEO_HEALTH_GITHUB_TOKEN: \$\{\{ secrets\.GITHUB_TOKEN \}\}/);
   assert.match(script,/waitForCloudflare/);
   assert.match(script,/EXPECTED_PUBLIC_URLS=16/);
+  assert.match(script,/lastmod_missing:/);
   assert.match(script,/SEO_HEALTH_PASS=/);
 });

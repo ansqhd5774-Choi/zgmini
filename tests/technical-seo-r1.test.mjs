@@ -7,12 +7,10 @@ const read=path=>readFileSync(path,'utf8');
 test('technical SEO sitemap includes every public route with truthful lastmod values',()=>{
   const sitemap=read('public/sitemap.xml');
   assert.equal((sitemap.match(/<url>/g)||[]).length,16);
-  for(const route of ['/fear-greed/korea/','/sector-fear-greed/','/inflation/','/recession/','/liquidity-crisis/','/credit-risk/','/debt-risk/','/guides/cpi-pce-release/','/guides/fomc/'])
+  for(const route of ['/fear-greed/korea/','/sector-fear-greed/','/inflation/','/recession/','/liquidity-crisis/','/credit-risk/','/earnings-recession/','/asset-bubble/','/debt-risk/','/supply-shock/','/guides/cpi-pce-release/','/guides/fomc/'])
     assert.ok(sitemap.includes(`<loc>https://zgmini.kr${route}</loc><lastmod>2026-10-16</lastmod>`),route);
   for(const route of ['/fear-greed/usa/','/guides/fear-greed-buying/'])
     assert.ok(sitemap.includes(`<loc>https://zgmini.kr${route}</loc><lastmod>2026-10-07</lastmod>`),route);
-  for(const route of ['/earnings-recession/','/asset-bubble/','/supply-shock/'])
-    assert.ok(sitemap.includes(`<loc>https://zgmini.kr${route}</loc></url>`),route);
 });
 
 test('sector detail has dedicated social metadata and WebPage schema',()=>{

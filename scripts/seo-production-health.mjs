@@ -99,8 +99,12 @@ export function inspectHtml(html,expectedUrl){
 
 export function liveSitemapEntries(xml){
   const result=new Map();
-  for(const match of xml.matchAll(/<url>\s*<loc>(https:\/\/zgmini\.kr\/[^<]*)<\/loc>\s*<lastmod>(\d{4}-\d{2}-\d{2})<\/lastmod>\s*<\/url>/g)){
-    result.set(match[1],match[2]);
+  for(const match of xml.matchAll(/<url\b[^>]*>([\s\S]*?)<\/url>/g)){
+    const block=match[1];
+    const loc=block.match(/<loc>(https:\/\/zgmini\.kr\/[^<]*)<\/loc>/);
+    if(!loc) continue;
+    const lastmod=block.match(/<lastmod>([^<]+)<\/lastmod>/);
+    result.set(loc[1],lastmod?.[1]??null);
   }
   return result;
 }
@@ -147,9 +151,15 @@ async function main(){
   const liveEntries=liveSitemapEntries(sitemapResponse.text);
   const sitemapErrors=[];
   for(const url of publicUrls){
-    if(!liveEntries.has(url)) sitemapErrors.push(`missing:${url}`);
+    if(!liveEntries.has(url)){
+      sitemapErrors.push(`url_missing:${url}`);
+      continue;
+    }
+    const lastmod=liveEntries.get(url);
+    if(!lastmod) sitemapErrors.push(`lastmod_missing:${url}`);
+    else if(!/^\d{4}-\d{2}-\d{2}$/.test(lastmod)) sitemapErrors.push(`lastmod_invalid:${url}:${lastmod}`);
   }
-  if(liveEntries.size!==EXPECTED_PUBLIC_URLS) sitemapErrors.push(`count:${liveEntries.size}`);
+  if(liveEntries.size!==EXPECTED_PUBLIC_URLS) sitemapErrors.push(`url_count:${liveEntries.size}`);
   if(sitemapErrors.length) throw new Error(`SEO_HEALTH_SITEMAP_FAIL:${sitemapErrors.join(',')}`);
   console.log(`SEO_HEALTH_SITEMAP_PASS=${liveEntries.size}`);
 
