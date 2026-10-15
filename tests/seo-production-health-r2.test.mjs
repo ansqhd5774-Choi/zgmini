@@ -111,7 +111,8 @@ test('production SEO workflow is push-only, deployment-gated, and verifies canon
   assert.match(script,/waitForCloudflare/);
   assert.match(script,/EXPECTED_PUBLIC_URLS=16/);
   assert.match(script,/SEO_RUNTIME_MARKERS\.size!==EXPECTED_PUBLIC_URLS/);
-  assert.match(script,/description_stale:/);
+  assert.match(script,/function includesOrError\(errors,label,value,needle\)/);
+  assert.match(script,/SEO_RUNTIME_MARKERS\.get\(expectedUrl\)/);
   assert.match(script,/og_description_mismatch/);
   assert.match(script,/redirect:'manual'/);
   assert.match(script,/http:\/\/zgmini\.kr\/recession\//);
