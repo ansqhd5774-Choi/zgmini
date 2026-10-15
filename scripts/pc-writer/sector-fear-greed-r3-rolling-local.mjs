@@ -16,6 +16,7 @@ const FIXED_FILE='local-sector-fear-greed-r21332-full-252-historical-validation.
 const IEX_FILE='local-sector-fear-greed-r1-iex-price-history.json';
 const ETF_BACKFILL_FILE='local-sector-fear-greed-r21331-alpaca-sector-etf-backfill.json';
 const SPY_GAP_FILE='local-sector-fear-greed-r21322-spy-gap-backfill.json';
+const BENCHMARK_INVENTORY_FILE='local-sector-fear-greed-r2133-local-benchmark-inventory.json';
 const PIT_FILE='local-sector-fear-greed-r1-pit-gics.csv';
 const ALPACA_DIR='asset-r10-alpaca';
 const ETF_INCREMENTAL_FILE='local-sector-fear-greed-r3-etf-incremental.json';
@@ -46,14 +47,22 @@ export function loadSectorFearGreedR3RollingInputs(base=DEFAULT_BASE,{cutoffDate
   const stockRows=mergeSectorFearGreedR3StockRows(files.map(safeArray),{cutoffDate});
   if(!stockRows.length)throw Error('SECTOR_FEAR_GREED_R3_ROLLING_STOCK_ROWS_MISSING');
   const pitCsv=requireText(base,PIT_FILE);
-  const iex=requireJson(base,IEX_FILE),backfill=requireJson(base,ETF_BACKFILL_FILE),spyGap=requireJson(base,SPY_GAP_FILE);
+  const iex=requireJson(base,IEX_FILE),backfill=requireJson(base,ETF_BACKFILL_FILE),spyGap=requireJson(base,SPY_GAP_FILE),inventory=requireJson(base,BENCHMARK_INVENTORY_FILE);
   const incremental=safeJson(path.join(base,ETF_INCREMENTAL_FILE));
+  const selected=inventory?.selection?.selected??{};
+  const repairedRows={};
+  for(const ticker of SECTOR_FEAR_GREED_R3_BENCHMARKS){
+    const hit=selected[ticker],date=String(hit?.date??''),close=Number(hit?.close);
+    if(date!=='2026-08-27'||!Number.isFinite(close)||close<=0||hit?.marketParquetEvidence!==true)throw Error(`SECTOR_FEAR_GREED_R3_BENCHMARK_REPAIR_INVALID:${ticker}`);
+    repairedRows[ticker]=[{date,close,volume:0}];
+  }
   const series={};
   for(const ticker of SECTOR_FEAR_GREED_R3_BENCHMARKS){
     const pieces=[];
     if(ticker==='SPY')pieces.push(spyGap.rows??spyGap.series?.SPY??[]);
     else pieces.push(backfill.series?.[ticker]??[]);
     pieces.push(iex.series?.[ticker]??[]);
+    pieces.push(repairedRows[ticker]);
     pieces.push(incremental?.series?.[ticker]??[]);
     series[ticker]=mergeSectorFearGreedR3PriceRows(...pieces).filter(row=>!cutoffDate||row.date<=cutoffDate);
   }
