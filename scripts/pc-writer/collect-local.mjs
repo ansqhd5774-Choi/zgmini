@@ -8,6 +8,7 @@ import {createQuotaFetch} from './quota-fetch.mjs';
 import {recordCollectionChecks} from './collection-checks.mjs';
 import {collectConsumptionR5} from './consumption-r5.mjs';
 import {overdueRateJob} from './rate-refresh-priority.mjs';
+import {collectSectorFearGreedR3EtfIncremental} from './sector-fear-greed-r3-etf-incremental.mjs';
 
 export async function collectLocal(base,{lane='core',importOnly=false,job=null}={}){
  const core=localDatabase(path.join(base,'storage','core.sqlite'));
@@ -28,9 +29,14 @@ export async function collectLocal(base,{lane='core',importOnly=false,job=null}=
   const {refreshKoreaRev7}=await import('../../worker/korea-rev7-refresh.mjs');
   const {Rev7D1Store}=await import('../../worker/korea-rev7-d1.mjs');
   if(importOnly)return {status:'LOCAL_IMPORT_PASS'};
-  let result;
+  let result,sectorFearGreedEtf={status:'SKIPPED_KOREA_LANE',providerRequests:0};
   if(lane==='korea')result=await refreshKoreaRev7({env:{...env,DB:history},store:new Rev7D1Store(history,{leaseMs:600000}),now:new Date(),maxDates:1,deferCalculation:true});
   else{
+   try{
+    sectorFearGreedEtf=await collectSectorFearGreedR3EtfIncremental(base,{fetchImpl:globalThis.fetch,now:Date.now()});
+   }catch(error){
+    sectorFearGreedEtf={status:'FAILED_PRESERVE_EXISTING',providerRequests:0,code:/^[A-Z0-9_:.-]+$/.test(error?.code??error?.message??'')?(error.code??error.message):'SECTOR_FEAR_GREED_R3_ETF_COLLECTION_FAILED'};
+   }
    const collectors={consumption:()=>collectConsumptionR5({db:core,fetchImpl:globalThis.fetch})};
    const now=Date.now();
    job??=await overdueRateJob(core,now);
@@ -40,8 +46,8 @@ export async function collectLocal(base,{lane='core',importOnly=false,job=null}=
     result=feed.attempted>0||feed.status!=='COMPLETE'?{...feed,lane:'public-feed'}:await runMarketOperationalRefresh({env,now:Date.now(),fetchImpl:globalThis.fetch,collectors,calculate:async()=>({calculation:'PC_PENDING'})});
    }
   }
-  // Reports contain statuses only; provider URLs and exception messages are excluded.
-  const report={at:new Date().toISOString(),lane,status:result.status,job:result.job??null,attempted:result.attempted??null,feeds:result.feeds?.map(({key,status})=>({key,status})),providers,quota:quota.summary()};
+  // Reports contain statuses only; provider URLs, credentials, and exception messages are excluded.
+  const report={at:new Date().toISOString(),lane,status:result.status,job:result.job??null,attempted:result.attempted??null,feeds:result.feeds?.map(({key,status})=>({key,status})),sectorFearGreedEtf:{status:sectorFearGreedEtf.status,providerRequests:sectorFearGreedEtf.providerRequests??0,commonLatest:sectorFearGreedEtf.commonLatest??null,code:sectorFearGreedEtf.code??sectorFearGreedEtf.error??null},providers,quota:quota.summary()};
   for(const key of ['phase','reason','sourceStatus'])if(typeof result?.[key]==='string'&&/^[A-Za-z0-9_.:-]{1,120}$/.test(result[key]))report[key]=result[key];
   save(path.join(base,'local-collection-last-run.json'),report);
   recordCollectionChecks(base,report);
