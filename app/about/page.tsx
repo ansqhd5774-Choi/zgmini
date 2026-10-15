@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import {WebPageJsonLd} from '../seo-jsonld';
 
 const title='ZGMINI 소개 | 시장 심리와 경제지표';
 const description='미국·한국 시장 심리와 경제지표의 점수 및 과거 흐름을 함께 살펴보는 ZGMINI를 소개합니다.';
@@ -16,6 +17,7 @@ export const metadata: Metadata = {
 
 export default function AboutPage() {
   return <main style={{width:'min(760px, calc(100% - 32px))',margin:'48px auto',lineHeight:1.85,color:'#dce7f1'}}>
+    <WebPageJsonLd name={title} description={description} path="/about/"/>
     <a href="/"><img src="/zgmini-name.png" alt="ZGMINI 대시보드" width={128}/></a>
     <h1 style={{fontSize:'clamp(26px, 5vw, 38px)',lineHeight:1.3}}>시장 심리와 경제 흐름을 한곳에서</h1>
     <p>ZGMINI는 미국·한국 시장의 공포·탐욕 지수와 주요 경제지표를 점수와 차트로 살펴보는 한국어 대시보드입니다. 현재 값뿐 아니라 과거 흐름을 함께 비교할 수 있습니다.</p>
