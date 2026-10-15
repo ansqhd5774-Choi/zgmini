@@ -4,7 +4,7 @@ import DataPanel from "./data-panel";
 import DetailReadingGuide from "../../detail-reading-guide";
 
 const title = "한국 공포탐욕지수 - 오늘의 코스피 투자심리 | ZGmini";
-const description = "한국 공포탐욕지수의 최근 점수·관측일·기간별 차트로 국내 주식시장 투자심리를 확인하세요. 0~100 단계 해석과 한국거래소·한국은행 등 국내 시장 자료를 활용한 ZGmini 자체 지표의 특징을 함께 안내합니다.";
+const description = "한국 공포탐욕지수의 최근 점수·관측일·기간별 차트와 7개 핵심 신호를 확인하세요. 504개 유효 관측치 기준창으로 국내 주식시장 투자심리를 0~100으로 보여주는 ZGmini 자체 지표입니다.";
 const url = "https://zgmini.kr/fear-greed/korea/";
 export const metadata: Metadata = {
   title, description, alternates: { canonical:url }, robots:{index:true,follow:true},
@@ -14,11 +14,20 @@ export const metadata: Metadata = {
 export default async function KoreaPage() {
   return <div className="min-h-screen bg-[#07162d]"><main className="mx-auto max-w-5xl px-4 py-8 text-slate-100 sm:px-6 sm:py-12">
     <a href="https://zgmini.kr/" className="inline-flex min-h-11 items-center text-sm text-blue-200">← ZGmini 메인 대시보드</a>
-    <h1 className="mt-4 text-2xl font-extrabold sm:text-4xl">한국 공포탐욕지수</h1>
-    <section className="mt-4 max-w-3xl space-y-2 text-sm leading-7 text-slate-300 sm:text-base" aria-label="한국 공포탐욕지수 소개">
-      <p>한국 공포탐욕지수는 코스피 등 국내 주식시장의 위험 선호와 위험 회피 흐름을 0~100 점수로 보여주는 ZGmini 자체 지표입니다. 점수가 낮을수록 공포, 높을수록 탐욕 방향으로 해석합니다.</p>
-      <p>아래에서 최근 점수와 관측 기준일, 기간별 차트를 함께 확인하고 하루 수치보다 여러 거래일의 흐름이 어떻게 변하는지 살펴보세요. CNN 미국 공포탐욕지수와는 입력 시장과 산출 방식이 다릅니다.</p>
-    </section>
+    <header className="mt-4 max-w-4xl" aria-label="한국 공포탐욕지수 소개">
+      <p className="text-xs font-bold tracking-[0.2em] text-blue-300">DATA-DRIVEN KOREA MARKET SENTIMENT</p>
+      <h1 className="mt-3 text-2xl font-extrabold sm:text-4xl">한국 공포탐욕지수</h1>
+      <h2 className="mt-2 text-lg font-bold text-slate-200 sm:text-2xl">코스피 투자심리를 0~100으로 읽는 데이터 지표</h2>
+      <p className="mt-4 text-sm leading-7 text-slate-300 sm:text-base">한국 공포탐욕지수는 코스피 등 국내 주식시장의 위험 선호와 위험 회피 흐름을 0~100 점수로 보여주는 ZGmini 자체 지표입니다. 점수가 낮을수록 공포, 높을수록 탐욕 방향으로 해석합니다.</p>
+      <p className="mt-2 text-sm leading-7 text-slate-300 sm:text-base">Momentum·Strength·Breadth·Put/Call·Volatility·Safe Haven·Junk Bond 등 <strong className="text-white">7개 핵심 신호</strong>를 각 신호의 최근 <strong className="text-white">504개 유효 관측치 기준창</strong>에서 비교해 한국 시장의 투자심리 흐름을 수치화합니다. CNN 미국 공포탐욕지수와는 입력 시장과 산출 방식이 다릅니다.</p>
+      <div className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-4" aria-label="한국 공포탐욕 분석 범위">
+        <span className="bg-white/5 px-3 py-3"><strong className="block text-xl text-white">7</strong><small className="text-[11px] tracking-wider text-slate-400">SIGNALS</small></span>
+        <span className="bg-white/5 px-3 py-3"><strong className="block text-xl text-white">504</strong><small className="text-[11px] tracking-wider text-slate-400">WINDOW</small></span>
+        <span className="bg-white/5 px-3 py-3"><strong className="block text-xl text-white">0–100</strong><small className="text-[11px] tracking-wider text-slate-400">INDEX</small></span>
+        <span className="bg-white/5 px-3 py-3"><strong className="block text-xl text-white">KR</strong><small className="text-[11px] tracking-wider text-slate-400">MARKET</small></span>
+      </div>
+      <p className="mt-4 text-sm leading-7 text-slate-400">아래에서 최근 점수와 관측 기준일, 기간별 차트를 함께 확인하고 하루 수치보다 여러 거래일의 흐름이 어떻게 변하는지 살펴보세요.</p>
+    </header>
     <DataPanel/>
     <DetailReadingGuide title="한국 지수의 출처와 관측일"
       sections={[
