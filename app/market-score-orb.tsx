@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Gauge } from 'lucide-react';
 import {fearGreedStateColor} from '../lib/fear-greed-state-color.mjs';
+import {useScoreArrows} from '../components/score-arrow-provider';
 
 type ScoreVariant = 'compact' | 'hero';
 
@@ -141,6 +142,7 @@ export function MarketScoreOrb({
   metaDate,
   dayLabel = '전일 대비',
   comparisonAriaLabel = 'CNN 공포탐욕 변화량',
+  arrowId,
 }: {
   score: string;
   state: string;
@@ -152,7 +154,9 @@ export function MarketScoreOrb({
   metaDate?: string;
   dayLabel?: string;
   comparisonAriaLabel?: string;
+  arrowId?: string;
 }) {
+  const arrows=useScoreArrows(),showArrows=arrowId?arrows(arrowId,numericScore(score)):false;
   const tone = state.includes('공포') ? 'is-fear' : state.includes('탐욕') ? 'is-greed' : '';
   const ariaLabel = [caption, `${score}점`, state].filter(Boolean).join(' ');
   const targetScore = useMemo(() => numericScore(score), [score]);
@@ -271,7 +275,7 @@ export function MarketScoreOrb({
             <span aria-label={dayLabel}>{dayLabel.replace(/ 대비$/, "")}</span>
             <strong>
               {formatDelta(animatedDayDelta)}
-              {deltaDirection(animatedDayDelta) === 'up' ? <i aria-hidden="true">▲</i> : deltaDirection(animatedDayDelta) === 'down' ? <i aria-hidden="true">▼</i> : null}
+              {showArrows&&(deltaDirection(animatedDayDelta) === 'up' ? <i aria-hidden="true">▲</i> : deltaDirection(animatedDayDelta) === 'down' ? <i aria-hidden="true">▼</i> : null)}
             </strong>
           </div>
           <div className="cnn-score-comparison-divider" aria-hidden="true"/>
@@ -279,7 +283,7 @@ export function MarketScoreOrb({
             <span aria-label={periodLabel ?? '기간 대비'}>{(periodLabel ?? '기간 대비').replace(/ 대비$/, '')}</span>
             <strong>
               {formatDelta(animatedPeriodDelta)}
-              {deltaDirection(animatedPeriodDelta) === 'up' ? <i aria-hidden="true">▲</i> : deltaDirection(animatedPeriodDelta) === 'down' ? <i aria-hidden="true">▼</i> : null}
+              {showArrows&&(deltaDirection(animatedPeriodDelta) === 'up' ? <i aria-hidden="true">▲</i> : deltaDirection(animatedPeriodDelta) === 'down' ? <i aria-hidden="true">▼</i> : null)}
             </strong>
           </div>
         </div>

@@ -7,6 +7,7 @@ import {Activity,ArrowRight,ArrowUpRight,ChevronLeft,ChevronRight,Info,Radar,Coi
 import {Area,AreaChart,ReferenceArea,Line,LineChart,ResponsiveContainer,XAxis,YAxis,ReferenceDot,ReferenceLine,Tooltip} from 'recharts';
 import {readProgressiveMarketResponse} from '../lib/market-score/read-progressive-response.mjs';
 import {useStoredIndex} from '../components/use-stored-index';
+import {useScoreArrows} from '../components/score-arrow-provider';
 import {acceptsStoredUpdate,startStoredRefresh} from '../lib/market-score/live-refresh.mjs';
 import {readMarketSnapshot,saveMarketSnapshot} from '../lib/market-score/browser-snapshot.mjs';
 import {marketDetailRows} from '../lib/market-score/detail-catalog.mjs';
@@ -234,6 +235,7 @@ const diagnosticSubscores=[
 ] as const;
 
 export function CompositeMarketSection({items,points,demo,loading}:{items:Summary[];points:number;demo:boolean;loading:boolean}){
+ const arrows=useScoreArrows();
  void items;
  void points;
  const [expanded,setExpanded]=useState(false);
@@ -394,6 +396,7 @@ export function CompositeMarketSection({items,points,demo,loading}:{items:Summar
           <strong style={{color:score===null?'#94a3b8':scoreColor(score)}}>{score===null?'—':Math.round(score)}</strong>
           <span
             className="zg-r55-day-change"
+            data-arrow-active={arrows('domain:'+r55DomainIds[index],score)}
             data-direction={breadthDelta?(breadthDelta.delta>0?'up':breadthDelta.delta<0?'down':'flat'):'unknown'}
             aria-label={breadthDelta?`${comparison} ${breadthDelta.previousDate} 대비 ${breadthDelta.delta>=0?'+':''}${breadthDelta.delta.toFixed(1)}점`:'직전 관측 대비 확인 불가'}
             title={breadthDelta?`${breadthDelta.previousDate} 대비`:'검증된 직전 관측 비교 점수 없음'}

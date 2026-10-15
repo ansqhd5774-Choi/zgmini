@@ -283,7 +283,7 @@ export function KoreanCountryCard(){
    source,
    rightContent:<MarketCardInsight text={insight}/>,
   }}
-  score={{
+  score={{arrowId:"korea",
    value:loading||score===null?'—':score.toFixed(1),
    state:loading?'확인 중':valid?(c!.stageLabel??'확인 불가'):c?.status==='WARMUP'?'준비 중':'확인 불가',
    caption:"",
