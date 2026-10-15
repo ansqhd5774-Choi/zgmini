@@ -7,9 +7,9 @@ const read=path=>readFileSync(path,'utf8');
 test('technical SEO sitemap includes every public route with truthful lastmod values',()=>{
   const sitemap=read('public/sitemap.xml');
   assert.equal((sitemap.match(/<url>/g)||[]).length,16);
-  for(const route of ['/fear-greed/korea/','/sector-fear-greed/','/inflation/','/recession/','/liquidity-crisis/','/credit-risk/','/debt-risk/'])
+  for(const route of ['/fear-greed/korea/','/sector-fear-greed/','/inflation/','/recession/','/liquidity-crisis/','/credit-risk/','/debt-risk/','/guides/cpi-pce-release/','/guides/fomc/'])
     assert.ok(sitemap.includes(`<loc>https://zgmini.kr${route}</loc><lastmod>2026-10-16</lastmod>`),route);
-  for(const route of ['/fear-greed/usa/','/guides/fear-greed-buying/','/guides/cpi-pce-release/','/guides/fomc/'])
+  for(const route of ['/fear-greed/usa/','/guides/fear-greed-buying/'])
     assert.ok(sitemap.includes(`<loc>https://zgmini.kr${route}</loc><lastmod>2026-10-07</lastmod>`),route);
   for(const route of ['/earnings-recession/','/asset-bubble/','/supply-shock/'])
     assert.ok(sitemap.includes(`<loc>https://zgmini.kr${route}</loc></url>`),route);
@@ -32,20 +32,24 @@ test('market details share WebPage JSON-LD and related links are capped at four'
   assert.match(guide,/related\.slice\(0,4\)/);
 });
 
-test('all three search guides emit Article structured data with canonical paths',()=>{
+test('all three search guides emit Article structured data with truthful modification dates',()=>{
   const shell=read('app/guides/guide-page.tsx');
   assert.match(shell,/ArticleJsonLd/);
   assert.match(shell,/WebPageJsonLd/);
-  assert.match(shell,/dateModified="2026-10-07"/);
-  for(const [file,path] of [
-    ['app/guides/fear-greed-buying/page.tsx','/guides/fear-greed-buying/'],
-    ['app/guides/cpi-pce-release/page.tsx','/guides/cpi-pce-release/'],
-    ['app/guides/fomc/page.tsx','/guides/fomc/'],
-  ]){
-    const page=read(file);
-    assert.ok(page.includes(`const path='${path}';`),file);
-    assert.match(page,/<GuidePage title=\{title\} answer=\{answer\} path=\{path\}>/);
-  }
+  assert.match(shell,/dateModified='2026-10-07'/);
+  assert.match(shell,/dateModified=\{dateModified\}/);
+
+  const fear=read('app/guides/fear-greed-buying/page.tsx');
+  const cpi=read('app/guides/cpi-pce-release/page.tsx');
+  const fomc=read('app/guides/fomc/page.tsx');
+  assert.match(fear,/const path='\/guides\/fear-greed-buying\/'/);
+  assert.doesNotMatch(fear,/dateModified=/);
+  assert.match(cpi,/const path='\/guides\/cpi-pce-release\/'/);
+  assert.match(cpi,/미국 CPI·PCE 발표 일정·한국시간 \| 예상치 대비 결과 읽는 법/);
+  assert.match(cpi,/dateModified="2026-10-16"/);
+  assert.match(fomc,/const path='\/guides\/fomc\/'/);
+  assert.match(fomc,/FOMC 일정·한국시간 \| 미국 기준금리 발표 읽는 법/);
+  assert.match(fomc,/dateModified="2026-10-16"/);
 });
 
 test('homepage structured data strengthens ZGmini site and organization identity',()=>{
