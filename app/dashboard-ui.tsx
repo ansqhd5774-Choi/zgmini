@@ -9,7 +9,7 @@ import {Activity,ArrowRight,ArrowUpRight,ChevronLeft,ChevronRight,Info,Radar,Coi
 import {Area,AreaChart,ReferenceArea,Line,LineChart,ResponsiveContainer,XAxis,YAxis,ReferenceDot,ReferenceLine,Tooltip} from 'recharts';
 import {readProgressiveMarketResponse} from '../lib/market-score/read-progressive-response.mjs';
 import {useStoredIndex} from '../components/use-stored-index';
-import {useScoreArrows} from '../components/score-arrow-provider';
+import {useScoreArrows,StoredScoreDirection} from '../components/score-arrow-provider';
 import {acceptsStoredUpdate,startStoredRefresh} from '../lib/market-score/live-refresh.mjs';
 import {readMarketSnapshot,saveMarketSnapshot} from '../lib/market-score/browser-snapshot.mjs';
 import {marketDetailRows} from '../lib/market-score/detail-catalog.mjs';
@@ -360,7 +360,7 @@ export function CompositeMarketSection({items,points,demo,loading}:{items:Summar
          </div>
          <div className="zg-r55-subscore-foot">
           <span className="zg-r55-subscore-meter" aria-hidden="true"><i style={{width:`${score??0}%`,background:score===null?'transparent':scoreColor(score)}}/></span>
-          <LiveScoreValue value={score===null?null:Math.round(score)} className="zg-r55-subscore-value">{score===null?'—':Math.round(score)}</LiveScoreValue>
+          <LiveScoreValue value={score===null?null:Math.round(score)} className="zg-r55-subscore-value">{score===null?'—':Math.round(score)}<StoredScoreDirection id={'diagnostic:'+diagnosticKeys[index]} score={score}/></LiveScoreValue>
          </div>
         </div>
        })}

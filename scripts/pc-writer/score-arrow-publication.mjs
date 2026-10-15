@@ -14,12 +14,15 @@ export async function publishArrowState(remote,database,partition,samples,now=Da
  return {status:'VERIFIED',version:SCORE_ARROW_VERSION,entries:Object.keys(body.entries).length};
 }
 export async function publishCoreArrowState(remote,database,now=Date.now()){
- const rows=(await remote.query(database,"SELECT snapshot_key,body,stored_at FROM market_public_snapshots_v1 WHERE snapshot_key IN ('current','public:rate-sentiment:v1','public:korea-fear-greed:v1')")).results;
+ const rows=(await remote.query(database,"SELECT snapshot_key,body,stored_at FROM market_public_snapshots_v1 WHERE snapshot_key IN ('current','public:rate-sentiment:v1','public:korea-fear-greed:v1','detail:asset-bubble:v1','detail:supply-shock:v1')")).results;
  const samples={};
  for(const row of rows){
   const body=JSON.parse(row.body),sourceAt=row.stored_at;
   if(row.snapshot_key==='current'&&body.overall?.status==='READY')samples.composite={score:amplifyCompositeDisplayScore(body.overall.score),sourceAt,method:'COMPOSITE_DISPLAY_R1'};
   if(row.snapshot_key==='current')for(const d of body.domains??[])if(d.status==='READY')samples['domain:'+d.id]={score:d.score,sourceAt,method:d.version??d.methodologyVersion??null};
+  if(row.snapshot_key==='current')for(const [id,d] of Object.entries(body.diagnostics8??{}))if(!['assetBubbleSafety','supplyShockSafety'].includes(id)&&d.status==='READY')samples['diagnostic:'+id]={score:d.score,sourceAt,method:d.methodologyVersion??body.methodologyVersion??null};
+  const detailId=row.snapshot_key==='detail:asset-bubble:v1'?'assetBubbleSafety':row.snapshot_key==='detail:supply-shock:v1'?'supplyShockSafety':null;
+  if(detailId&&body.status==='READY')samples['diagnostic:'+detailId]={score:body.score,sourceAt,method:body.methodologyVersion??null};
   if(row.snapshot_key==='public:rate-sentiment:v1'&&body.status==='READY')samples.rate={score:body.score,sourceAt,method:body.version};
   if(row.snapshot_key==='public:korea-fear-greed:v1'){
    const c=body.payload?.composite;if(c?.status==='READY')samples.korea={score:c.displayScore,sourceAt,method:c.methodologyVersion};

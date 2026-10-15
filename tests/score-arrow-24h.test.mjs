@@ -1,9 +1,20 @@
 import test from 'node:test';import assert from 'node:assert/strict';import {DatabaseSync} from 'node:sqlite';
-import {nextArrowState,arrowVisible,startArrowClock,SCORE_ARROW_TTL_MS as DAY} from '../lib/market-score/score-arrow.mjs';
+import {nextArrowState,arrowVisible,storedArrowDelta,startArrowClock,SCORE_ARROW_TTL_MS as DAY} from '../lib/market-score/score-arrow.mjs';
 import {publishArrowState,publishCoreArrowState,ARROW_KEYS} from '../scripts/pc-writer/score-arrow-publication.mjs';
 import {storedScoreArrowResponse} from '../worker/score-arrow-public.mjs';
 const T=Date.parse('2026-10-15T03:00:00Z');
 const sample=(score,sourceAt=T,method='R1')=>({score,sourceAt,method});
+test('stored direction preserves the last real change and expires with its timestamp',()=>{
+ let state=nextArrowState(null,{risk:sample(60)},T);
+ assert.equal(storedArrowDelta(state.entries.risk,60,T),null);
+ state=nextArrowState(state,{risk:sample(59,T+1)},T+1);
+ assert.equal(storedArrowDelta(state.entries.risk,59,T+1),-1);
+ state=nextArrowState(state,{risk:sample(59,T+2)},T+2);
+ assert.equal(storedArrowDelta(state.entries.risk,59,T+2),-1);
+ assert.equal(state.entries.risk.changedAt,T+1);
+ assert.equal(storedArrowDelta(state.entries.risk,59,T+DAY+1),null);
+ assert.equal(storedArrowDelta({...state.entries.risk,previousValue:undefined},59,T+2),null);
+});
 test('first observation has no fabricated change time; a real move expires exactly 24h later',()=>{
  const first=nextArrowState(null,{rate:sample(60)},T);
  assert.equal(first.entries.rate.changedAt,null);assert.equal(arrowVisible(first.entries.rate,60,T),false);
@@ -50,6 +61,25 @@ function storage(){
  const remote={query:async(_db,sql,params=[])=>({results:db.prepare(sql).all(...params)}),request:async(_db,statements)=>{for(const s of statements)db.prepare(s.sql).run(...s.params);}};
  return {db,remote};
 }
+test('all eight diagnostics use their actual public sources; detail scores override incomplete core diagnostics',async()=>{
+ const {db,remote}=storage();
+ const ids=['inflationStability','recessionDefense','liquidityCrisisDefense','creditRiskDefense','earningsRecessionDefense','debtRiskSafety'];
+ const diagnostics8=Object.fromEntries(ids.map(id=>[id,{status:'READY',score:60}]));
+ diagnostics8.assetBubbleSafety={status:'READY',score:99};diagnostics8.supplyShockSafety={status:'READY',score:99};
+ const put=(key,body)=>db.prepare('INSERT INTO market_public_snapshots_v1 VALUES(?,?,?)').run(key,JSON.stringify(body),T);
+ put('current',{diagnostics8});put('detail:asset-bubble:v1',{status:'READY',score:22,methodologyVersion:'R10'});put('detail:supply-shock:v1',{status:'READY',score:36,methodologyVersion:'R10'});
+ try{
+  await publishCoreArrowState(remote,'db',T);
+  let entries=JSON.parse(db.prepare('SELECT body FROM market_public_snapshots_v1 WHERE snapshot_key=?').get(ARROW_KEYS.core).body).entries;
+  assert.equal(Object.keys(entries).filter(k=>k.startsWith('diagnostic:')).length,8);
+  assert.equal(entries['diagnostic:assetBubbleSafety'].value,22);assert.equal(entries['diagnostic:supplyShockSafety'].value,36);
+  diagnostics8.inflationStability.score=59;
+  db.prepare('UPDATE market_public_snapshots_v1 SET body=?,stored_at=? WHERE snapshot_key=?').run(JSON.stringify({diagnostics8}),T+1,'current');
+  await publishCoreArrowState(remote,'db',T+1);
+  entries=JSON.parse(db.prepare('SELECT body FROM market_public_snapshots_v1 WHERE snapshot_key=?').get(ARROW_KEYS.core).body).entries;
+  assert.equal(storedArrowDelta(entries['diagnostic:inflationStability'],59,T+1),-1);
+ }finally{db.close();}
+});
 test('real SQLite publication/readback and read-only API keep Core/Iran partitions independent',async()=>{
  const {db,remote}=storage();
  try{
