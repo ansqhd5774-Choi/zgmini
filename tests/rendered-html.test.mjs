@@ -4,7 +4,34 @@ import path from "node:path";
 import {readdir,readFile} from "node:fs/promises";
 import {createMiniflare, MFResponse} from "./miniflare-harness.mjs";
 
-test("renders ZGmini metadata in the Workers runtime", async () => {
+const publicRoutes=[
+  '/about/',
+  '/fear-greed/korea/',
+  '/fear-greed/usa/',
+  '/sector-fear-greed/',
+  '/inflation/',
+  '/recession/',
+  '/liquidity-crisis/',
+  '/credit-risk/',
+  '/earnings-recession/',
+  '/asset-bubble/',
+  '/debt-risk/',
+  '/supply-shock/',
+  '/guides/fear-greed-buying/',
+  '/guides/cpi-pce-release/',
+  '/guides/fomc/',
+];
+
+function headOf(html){return html.match(/<head>([\s\S]*?)<\/head>/i)?.[1]??"";}
+function hasDescription(head){return /<meta(?=[^>]*name="description")(?=[^>]*content="[^"]+")[^>]*>/i.test(head);}
+function hasRobots(head){return /<meta(?=[^>]*name="robots")(?=[^>]*content="index, follow")[^>]*>/i.test(head);}
+function hasTitle(head){return /<title>[^<]+<\/title>/i.test(head);}
+function hasSocialTitle(head){
+  return /<meta(?=[^>]*property="og:title")(?=[^>]*content="[^"]+")[^>]*>/i.test(head)
+    && /<meta(?=[^>]*name="twitter:title")(?=[^>]*content="[^"]+")[^>]*>/i.test(head);
+}
+
+test("renders SEO metadata for all 16 public pages in the Workers runtime", async () => {
   const serverRoot = path.resolve("dist/server");
   const modules = [];
   async function walk(dir) {
@@ -20,25 +47,34 @@ test("renders ZGmini metadata in the Workers runtime", async () => {
   let outboundCalls=0;
   const mf=createMiniflare({rootPath:process.cwd(),modulesRoot:serverRoot,modules,compatibilityDate:"2026-05-15",compatibilityFlags:["nodejs_compat"],outboundService:()=>{outboundCalls++;throw new Error("External requests are forbidden in the HTML test")},serviceBindings:{ASSETS:()=>new MFResponse("Not found",{status:404})}});
   try {
-    const response=await mf.dispatchFetch("http://localhost/",{headers:{accept:"text/html"},redirect:"manual"});
-    assert.equal(response.status,200);
-    assert.match(response.headers.get("content-type")??"",/^text\/html\b/i);
-    const html=await response.text();
-    assert.ok(html.includes('korea-target-card'));
-    const head=html.match(/<head>([\s\S]*?)<\/head>/i)?.[1]??"";
-    assert.ok(head.includes("<title>ZGmini 지그미니 | 미국·한국 공포탐욕지수와 경제지표</title>"));
-    assert.equal((head.match(/rel="canonical"/g)??[]).length,1);
-    assert.ok(/<link(?=[^>]*rel="canonical")(?=[^>]*href="https:\/\/zgmini\.kr\/")[^>]*>/i.test(head));
-    assert.ok(/<meta(?=[^>]*name="robots")(?=[^>]*content="index, follow")[^>]*>/i.test(head));
-    assert.equal(outboundCalls,0);
-    for(const route of ['/fear-greed/usa/','/fear-greed/korea/']){
-      const detail=await mf.dispatchFetch(`http://localhost${route}?ui=197`,{headers:{accept:'text/html'},redirect:'manual'});
-      assert.equal(detail.status,200);
-      const detailHtml=await detail.text();
-      const detailHead=detailHtml.match(/<head>([\s\S]*?)<\/head>/i)?.[1]??'';
-      assert.equal((detailHead.match(/rel="canonical"/g)??[]).length,1);
-      assert.ok(detailHead.includes(`href="https://zgmini.kr${route}"`));
-      assert.ok(!detailHead.includes('ui=197'));
+    const root=await mf.dispatchFetch("http://localhost/?seo=audit",{headers:{accept:"text/html"},redirect:"manual"});
+    assert.equal(root.status,200);
+    assert.match(root.headers.get("content-type")??"",/^text\/html\b/i);
+    const rootHtml=await root.text();
+    assert.ok(rootHtml.includes('korea-target-card'));
+    const rootHead=headOf(rootHtml);
+    assert.ok(rootHead.includes("<title>ZGmini 지그미니 | 미국·한국 공포탐욕지수와 경제지표</title>"));
+    assert.ok(hasDescription(rootHead));
+    assert.ok(hasRobots(rootHead));
+    assert.ok(hasSocialTitle(rootHead));
+    assert.equal((rootHead.match(/rel="canonical"/g)??[]).length,1);
+    assert.ok(/<link(?=[^>]*rel="canonical")(?=[^>]*href="https:\/\/zgmini\.kr\/")[^>]*>/i.test(rootHead));
+    assert.ok(!rootHead.includes('seo=audit'));
+
+    for(const route of publicRoutes){
+      const response=await mf.dispatchFetch(`http://localhost${route}?seo=audit`,{headers:{accept:'text/html'},redirect:'manual'});
+      assert.equal(response.status,200,route);
+      assert.match(response.headers.get('content-type')??'',/^text\/html\b/i,route);
+      const html=await response.text();
+      const head=headOf(html);
+      assert.ok(hasTitle(head),`${route}: title`);
+      assert.ok(hasDescription(head),`${route}: description`);
+      assert.ok(hasRobots(head),`${route}: robots`);
+      assert.ok(hasSocialTitle(head),`${route}: social title`);
+      assert.equal((head.match(/rel="canonical"/g)??[]).length,1,`${route}: canonical count`);
+      assert.ok(head.includes(`href="https://zgmini.kr${route}"`),`${route}: canonical href`);
+      assert.ok(!head.includes('seo=audit'),`${route}: query leaked into metadata`);
     }
+    assert.equal(outboundCalls,0);
   } finally { await mf.dispose(); }
 });
