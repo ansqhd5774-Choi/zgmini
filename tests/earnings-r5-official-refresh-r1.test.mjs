@@ -1,0 +1,14 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
+import {DatabaseSync} from "node:sqlite";
+import {E1_R5_OFFICIAL_REFRESH_R1_CONTRACT,E1_R5_OFFICIAL_REFRESH_R1_SOURCES,conditionalHeaders,fetchCandidate,readUniverse,runOfficialRefreshR1,selectSecEntries} from "../scripts/pc-writer/earnings-r5-official-refresh-r1.mjs";
+const tmp=()=>fs.mkdtempSync(path.join(os.tmpdir(),"r65-"));
+test("contract",()=>{const c=E1_R5_OFFICIAL_REFRESH_R1_CONTRACT;assert.equal(c.productionActivation,false);assert.equal(c.dbWrites,0);assert.equal(c.schedulerMutation,false);assert.equal(c.cadenceEmbedded,false);assert.equal(c.defaultMode,"DRY_RUN_NO_NETWORK");assert.match(E1_R5_OFFICIAL_REFRESH_R1_SOURCES.sec.url,/companyfacts\.zip$/);assert.equal(E1_R5_OFFICIAL_REFRESH_R1_SOURCES.bea.seriesCode,"A051RC");});
+test("conditional mtime header",()=>{const d=tmp(),f=path.join(d,"x");try{fs.writeFileSync(f,"x");const t=new Date("2026-10-11T13:57:40Z");fs.utimesSync(f,t,t);assert.equal(conditionalHeaders(f,"UA")["If-Modified-Since"],t.toUTCString());}finally{fs.rmSync(d,{recursive:true,force:true});}});
+test("304 preserves file",async()=>{const d=tmp(),f=path.join(d,"x");try{fs.writeFileSync(f,"old");const r=await fetchCandidate({source:{url:"https://x",maxBytes:10},target:f,fetchImpl:async()=>new Response(null,{status:304})});assert.equal(r.status,"NOT_MODIFIED");assert.equal(fs.readFileSync(f,"utf8"),"old");}finally{fs.rmSync(d,{recursive:true,force:true});}});
+test("same hash preserves file",async()=>{const d=tmp(),f=path.join(d,"x"),b=Buffer.from("same");try{fs.writeFileSync(f,b);const r=await fetchCandidate({source:{url:"https://x",maxBytes:10},target:f,fetchImpl:async()=>new Response(b,{status:200})});assert.equal(r.status,"SAME_HASH");assert.deepEqual(fs.readFileSync(f),b);}finally{fs.rmSync(d,{recursive:true,force:true});}});
+test("universe and archive selection",()=>{const d=tmp(),f=path.join(d,"core.sqlite"),db=new DatabaseSync(f);try{db.exec("CREATE TABLE market_score_earnings_e1_r3_universe_v1(period_end TEXT,body_json TEXT)");db.prepare("INSERT INTO market_score_earnings_e1_r3_universe_v1 VALUES(?,?)").run("2026-09-30",JSON.stringify({members:[{cik:"123"},{cik:"456"}]}));db.close();const u=readUniverse(f);assert.equal(u.status,"PASS");assert.deepEqual(selectSecEntries(["CIK0000000123.json","companyfacts/CIK0000000456.json","../CIK0000000123.json"],u.ciks),["CIK0000000123.json","companyfacts/CIK0000000456.json"]);}finally{try{db.close();}catch{}fs.rmSync(d,{recursive:true,force:true});}});
+test("default dry run never fetches",async()=>{const d=tmp();let n=0;try{const r=await runOfficialRefreshR1({base:d,fetchImpl:async()=>{n++;throw Error("NO");},writeReport:false});assert.equal(r.status,"DRY_RUN_NO_NETWORK");assert.equal(r.officialNetworkCalls,0);assert.equal(n,0);}finally{fs.rmSync(d,{recursive:true,force:true});}});
