@@ -43,7 +43,7 @@ test("G4 PIT contract is append-only research storage only",()=>{
   assert.deepEqual(E1_R5_G4_PIT_R1_CONTRACT.components,["S1","S2","S6","Growth","S12B"]);
 });
 
-test("S1/S2 use approved fiscal common-anchor SEC pairs",()=>{
+test("S1/S2 use approved fiscal common-anchor SEC pairs and filing-time provenance",()=>{
   const out=buildSecS1S2FromDocuments([
     companyFacts({cik:"1",revenueCurrent:120,revenuePrior:100,epsCurrent:1.2,epsPrior:1}),
     companyFacts({cik:"2",revenueCurrent:90,revenuePrior:100,epsCurrent:0.8,epsPrior:1}),
@@ -52,6 +52,8 @@ test("S1/S2 use approved fiscal common-anchor SEC pairs",()=>{
   assert.equal(out.eligibleS2,2);
   assert.equal(out.revenuePairCount,2);
   assert.equal(out.maxCurrentAgeDays,210);
+  assert.equal(out.s1SourceAsOf,"2026-08-01T23:59:59.000Z");
+  assert.equal(out.s2SourceAsOf,"2026-08-01T23:59:59.000Z");
   assert.ok(Math.abs(out.s2-5)<1e-12);
   assert.ok(Math.abs(out.s1-(-0.02020202020202022))<1e-12);
 });
@@ -68,6 +70,17 @@ test("snapshot preserves missing values instead of filling or reweighting",()=>{
   assert.deepEqual(snapshot.missing,["S12B"]);
   assert.equal(snapshot.state.S12B.value,null);
   assert.equal(snapshot.productionActivation,false);
+});
+
+test("same-day unchanged PIT state has a stable checkpoint and NOOPs",()=>{
+  const components={S1:component(1,"a"),S2:component(2,"b"),S6:component(3,"c"),Growth:component(4,"d"),S12B:component(5,"e")};
+  const a=buildG4PitSnapshot({recordedAt:"2026-10-16T01:00:00Z",components});
+  const b=buildG4PitSnapshot({recordedAt:"2026-10-16T02:00:00Z",components});
+  assert.equal(a.checkpoint,b.checkpoint);
+  const first=appendG4PitSnapshot({ledger:null,snapshot:a});
+  const second=appendG4PitSnapshot({ledger:first.ledger,snapshot:b});
+  assert.equal(second.status,"NOOP");
+  assert.equal(second.ledger.snapshots.length,1);
 });
 
 test("append dedupes checkpoints and rejects retroactive writes",()=>{
