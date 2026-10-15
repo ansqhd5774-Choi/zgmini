@@ -1,5 +1,6 @@
 "use client";
 import {domainObservationDelta} from '../lib/market-score/domain-observation-delta.mjs';
+import {compositeDayDelta,compositePeriodDelta} from '../lib/market-score/composite-day-delta.mjs';
 
 // Cloudflare Git Integration deployment marker: plain-language macro labels R1
 import {useEffect,useId,useRef,useState,type ReactNode,type CSSProperties} from 'react';
@@ -294,6 +295,10 @@ export function CompositeMarketSection({items,points,demo,loading}:{items:Summar
  const busy=marketLoading;
  const overallRawScore=market?.overall?.status==='READY'&&validPublicScore(market.overall.score)?market.overall.score:null;
  const overallScore=overallRawScore===null?null:amplifyCompositeDisplayScore(overallRawScore);
+ const overallDayChange=compositeDayDelta(market?.overall?.trend,overallRawScore);
+ const overallPeriodChange=compositePeriodDelta(market?.overall?.trend,overallRawScore,periodDays);
+ const overallArrows=arrows('composite',overallScore);
+ const overallComparisons=[{label:'전일',change:overallDayChange},{label:({'1':'1일','7':'1주','30':'1개월','90':'3개월','180':'6개월','365':'1년'} as Record<string,string>)[String(periodDays)]??`${periodDays}일`,change:overallPeriodChange}];
  const overallStatus=busy?'불러오는 중':marketError?'데이터 확인 중':publicStatusLabel(market?.overall?.status);
  const readyDomains=market?.dataQuality?.readyDomains??0;
  const totalDomains=market?.dataQuality?.totalDomains??12;
@@ -325,6 +330,11 @@ export function CompositeMarketSection({items,points,demo,loading}:{items:Summar
      <div className="zg-r55-summary-top" role="img" aria-label={`종합 시장 점수 ${overallScore===null?overallStatus:`${overallScore.toFixed(1)}점`}`}>
       <div className="zg-r55-master-number" data-score-mode="number-only">
        <strong style={{color:overallScore===null?'#94a3b8':scoreColor(overallScore)}}>{overallScore===null?'—':<>{overallScore.toFixed(1).split('.')[0]}<span className="zg-composite-fraction">.{overallScore.toFixed(1).split('.')[1]}</span></>}</strong>
+       <div className="zg-composite-comparisons" aria-label="종합 시장 점수 변화량">
+        {overallComparisons.map(({label,change})=><div key={label} className="zg-composite-day-comparison" title={change?`${change.previousDate} 대비 · 점수 차이`:'비교할 저장 점수 없음'}>
+         <span>{label}</span><b data-direction={change?(change.delta>0?'up':change.delta<0?'down':'flat'):'unknown'}>{change?`${change.delta>0?'+':''}${change.delta.toFixed(1)}`:'—'}{overallArrows&&change&&change.delta!==0?<i aria-hidden="true">{change.delta>0?'▲':'▼'}</i>:null}</b>
+        </div>)}
+       </div>
       </div>
       <div className="zg-r55-coverage"><DashboardTip label="종합 시장 점수 도움말"><HelpText copy={HELP.composite}/></DashboardTip></div>
      </div>

@@ -1,4 +1,5 @@
 import {nextArrowState,SCORE_ARROW_VERSION} from '../../lib/market-score/score-arrow.mjs';
+import {amplifyCompositeDisplayScore} from '../../lib/market-score/composite-display-sensitivity-r1.mjs';
 export const ARROW_KEYS=Object.freeze({core:'public:score-arrow:core:v1',iran:'public:score-arrow:iran:v1'});
 // Separate writer partitions and compare-and-swap prevent overlapping jobs from renewing a change.
 export async function publishArrowState(remote,database,partition,samples,now=Date.now()){
@@ -17,6 +18,7 @@ export async function publishCoreArrowState(remote,database,now=Date.now()){
  const samples={};
  for(const row of rows){
   const body=JSON.parse(row.body),sourceAt=row.stored_at;
+  if(row.snapshot_key==='current'&&body.overall?.status==='READY')samples.composite={score:amplifyCompositeDisplayScore(body.overall.score),sourceAt,method:'COMPOSITE_DISPLAY_R1'};
   if(row.snapshot_key==='current')for(const d of body.domains??[])if(d.status==='READY')samples['domain:'+d.id]={score:d.score,sourceAt,method:d.version??d.methodologyVersion??null};
   if(row.snapshot_key==='public:rate-sentiment:v1'&&body.status==='READY')samples.rate={score:body.score,sourceAt,method:body.version};
   if(row.snapshot_key==='public:korea-fear-greed:v1'){

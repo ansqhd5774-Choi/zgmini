@@ -67,14 +67,20 @@ test('real SQLite publication/readback and read-only API keep Core/Iran partitio
 test('Core metadata uses confirmed public outputs, not unpublished local calculations',async()=>{
  const {db,remote}=storage();
  const put=(key,body)=>db.prepare('INSERT INTO market_public_snapshots_v1 VALUES(?,?,?)').run(key,JSON.stringify(body),T);
- put('current',{domains:[{id:'prices',status:'READY',score:64},{id:'rates',status:'UNAVAILABLE',score:16}]});
+ put('current',{overall:{status:'READY',score:51},domains:[{id:'prices',status:'READY',score:64},{id:'rates',status:'UNAVAILABLE',score:16}]});
  put('public:rate-sentiment:v1',{status:'READY',score:60.8,version:'R1'});
  put('public:korea-fear-greed:v1',{payload:{composite:{status:'READY',displayScore:33.4,methodologyVersion:'REV7'}}});
  db.prepare('INSERT INTO public_feed_snapshots_v1 VALUES(?,?,?,?,?)').run('output','fear-greed','current',JSON.stringify({status:'verified',score:32.4}),T);
  try{
   await publishCoreArrowState(remote,'db',T);
   const {entries}=JSON.parse(db.prepare('SELECT body FROM market_public_snapshots_v1 WHERE snapshot_key=?').get(ARROW_KEYS.core).body);
-  assert.deepEqual(Object.keys(entries).sort(),['domain:prices','korea','rate','usa']);
+  assert.deepEqual(Object.keys(entries).sort(),['composite','domain:prices','korea','rate','usa']);
+  assert.equal(entries.composite.value,53.5);assert.equal(entries.composite.changedAt,null);
+  db.prepare('UPDATE market_public_snapshots_v1 SET body=?,stored_at=? WHERE snapshot_key=?').run(JSON.stringify({overall:{status:'READY',score:51.2}}),T+1,'current');
+  await publishCoreArrowState(remote,'db',T+1);
+  const changed=JSON.parse(db.prepare('SELECT body FROM market_public_snapshots_v1 WHERE snapshot_key=?').get(ARROW_KEYS.core).body).entries.composite;
+  assert.equal(changed.value,54.2);assert.equal(changed.changedAt,T+1);
+  assert.equal(arrowVisible(changed,54.2,T+DAY+1),false);
   assert.equal(entries.korea.value,33.4);assert.equal(entries.usa.value,32.4);
  }finally{db.close();}
 });
