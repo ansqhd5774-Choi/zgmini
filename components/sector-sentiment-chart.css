@@ -10,6 +10,9 @@
 .zg-sector-tooltip li{display:flex;align-items:baseline;justify-content:space-between;gap:6px;min-width:0}
 .zg-sector-tooltip li span{min-width:0;overflow-wrap:anywhere}
 .zg-sector-tooltip strong{flex:none;font-weight:800;font-variant-numeric:tabular-nums}
+.zg-sector-chart:has(.zg-sector-readout){height:auto;min-height:232px}
+.zg-sector-readout{position:relative;min-width:0}
+.zg-sector-readout .zg-sector-tooltip{width:100%;margin-top:10px;box-shadow:none}
 .zg-sector-chart-heading{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px;flex-wrap:nowrap}
 .zg-sector-period{display:flex;flex:none;width:142px;height:30px;box-sizing:border-box;border:1px solid rgba(107,145,176,.48);border-radius:6px;overflow:hidden;margin-left:auto}
 .zg-sector-period button{height:28px;width:28px;min-width:28px;padding:0;border:0;background:transparent;color:#aebfd0;font-size:10px;font-weight:800;cursor:pointer}
