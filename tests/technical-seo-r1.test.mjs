@@ -32,12 +32,17 @@ test('market details share WebPage JSON-LD and related links are capped at four'
   assert.match(guide,/related\.slice\(0,4\)/);
 });
 
-test('all three search guides emit Article structured data with truthful modification dates',()=>{
+test('all three search guides emit Article structured data with truthful publication and modification dates',()=>{
   const shell=read('app/guides/guide-page.tsx');
+  const jsonld=read('app/seo-jsonld.tsx');
   assert.match(shell,/ArticleJsonLd/);
   assert.match(shell,/WebPageJsonLd/);
+  assert.match(shell,/datePublished='2026-10-07'/);
   assert.match(shell,/dateModified='2026-10-07'/);
+  assert.match(shell,/datePublished=\{datePublished\}/);
   assert.match(shell,/dateModified=\{dateModified\}/);
+  assert.match(jsonld,/datePublished,/);
+  assert.match(jsonld,/dateModified,/);
 
   const fear=read('app/guides/fear-greed-buying/page.tsx');
   const cpi=read('app/guides/cpi-pce-release/page.tsx');
