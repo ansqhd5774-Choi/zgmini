@@ -39,6 +39,27 @@ export const INFLATION_R2_READER_CONTRACT=Object.freeze({
   networkRequests:0,
   providerRequests:0,
 });
+function previousFeatureRow(rows=[],asOf,current){
+  let previous=null;
+  for(const row of rows){
+    if(row.availableAt>asOf)break;
+    if(current&&row.observationDate===current.observationDate&&row.availableAt===current.availableAt)break;
+    previous=row;
+  }
+  return previous;
+}
+function withPreviousFeatures(history,features,asOf){
+  return Object.fromEntries(Object.entries(features).map(([feature,row])=>{
+    if(!row)return [feature,row];
+    const previous=previousFeatureRow(history?.[feature]??[],asOf,row);
+    return [feature,{
+      ...row,
+      previousObservationDate:previous?.observationDate??null,
+      previousAvailableAt:previous?.availableAt??null,
+      previousValue:finite(previous?.value)?previous.value:null,
+    }];
+  }));
+}
 export function buildProjection({pit,pc1,asOf}){
 if(pit.status!=="READY_STORED_PIT_HISTORY"){
     return partial("INFLATION_R2_PIT_INCOMPLETE",{storage:{pitStatus:pit.status,pc1Missing:pc1.missing}});
@@ -49,7 +70,7 @@ if(pit.status!=="READY_STORED_PIT_HISTORY"){
 
   const history=buildInflationR2StoredHistory({pitSeries:pit.series,pcePc1:pc1.series});
   const current=calculateInflationR2At(history,asOf);
-  const features=snapshotInflationR2Features(history,asOf);
+  const features=withPreviousFeatures(history,snapshotInflationR2Features(history,asOf),asOf);
   if(current.status!=="READY"){
     return partial("INFLATION_R2_COMPONENT_MISSING",{missingFactors:current.missing,axes:current.axes});
   }
