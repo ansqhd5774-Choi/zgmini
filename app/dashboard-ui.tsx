@@ -1,4 +1,5 @@
 "use client";
+import {LiveScoreValue} from '../components/live-score-value';
 import {domainObservationDelta} from '../lib/market-score/domain-observation-delta.mjs';
 import {compositeDayDelta,compositePeriodDelta} from '../lib/market-score/composite-day-delta.mjs';
 
@@ -329,7 +330,7 @@ export function CompositeMarketSection({items,points,demo,loading}:{items:Summar
      <div className="zg-r55-primary-zone">
      <div className="zg-r55-summary-top" role="img" aria-label={`종합 시장 점수 ${overallScore===null?overallStatus:`${overallScore.toFixed(1)}점`}`}>
       <div className="zg-r55-master-number" data-score-mode="number-only">
-       <strong style={{color:overallScore===null?'#94a3b8':scoreColor(overallScore)}}>{overallScore===null?'—':<>{overallScore.toFixed(1).split('.')[0]}<span className="zg-composite-fraction">.{overallScore.toFixed(1).split('.')[1]}</span></>}</strong>
+       <LiveScoreValue value={overallScore} style={{color:overallScore===null?'#94a3b8':scoreColor(overallScore)}}>{overallScore===null?'—':<>{overallScore.toFixed(1).split('.')[0]}<span className="zg-composite-fraction">.{overallScore.toFixed(1).split('.')[1]}</span></>}</LiveScoreValue>
        <div className="zg-composite-comparisons" aria-label="종합 시장 점수 변화량">
         {overallComparisons.map(({label,change})=><div key={label} className="zg-composite-day-comparison" title={change?`${change.previousDate} 대비 · 점수 차이`:'비교할 저장 점수 없음'}>
          <span>{label}</span><b data-direction={change?(change.delta>0?'up':change.delta<0?'down':'flat'):'unknown'}>{change?`${change.delta>0?'+':''}${change.delta.toFixed(1)}`:'—'}{overallArrows&&change&&change.delta!==0?<i aria-hidden="true">{change.delta>0?'▲':'▼'}</i>:null}</b>
@@ -359,7 +360,7 @@ export function CompositeMarketSection({items,points,demo,loading}:{items:Summar
          </div>
          <div className="zg-r55-subscore-foot">
           <span className="zg-r55-subscore-meter" aria-hidden="true"><i style={{width:`${score??0}%`,background:score===null?'transparent':scoreColor(score)}}/></span>
-          <strong className="zg-r55-subscore-value">{score===null?'—':Math.round(score)}</strong>
+          <LiveScoreValue value={score===null?null:Math.round(score)} className="zg-r55-subscore-value">{score===null?'—':Math.round(score)}</LiveScoreValue>
          </div>
         </div>
        })}
@@ -403,7 +404,7 @@ export function CompositeMarketSection({items,points,demo,loading}:{items:Summar
         <div className="zg-r55-card-mid">
          <div className="zg-r55-card-number">
           <span className="zg-r55-badge">{busy&&score===null?'로딩':score===null?(notice?.badge??'미완료'):domain?.state??(score<25?'위험':score<40?'주의':score<60?'중립':score<75?'양호':'안정')}</span>
-          <strong style={{color:score===null?'#94a3b8':scoreColor(score)}}>{score===null?'—':Math.round(score)}</strong>
+          <LiveScoreValue value={score===null?null:Math.round(score)} style={{color:score===null?'#94a3b8':scoreColor(score)}}>{score===null?'—':Math.round(score)}</LiveScoreValue>
           <span
             className="zg-r55-day-change"
             data-arrow-active={arrows('domain:'+r55DomainIds[index],score)}

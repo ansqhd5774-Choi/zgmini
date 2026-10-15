@@ -3,6 +3,7 @@ import NaverAnalytics from "./naver-analytics";
 import {ScoreArrowProvider} from '../components/score-arrow-provider';
 import "./globals.css";
 import "./responsive.css";
+import '../components/live-score-motion.css';
 
 export const metadata: Metadata = {
   title: "ZGmini 지그미니 | 미국·한국 공포탐욕지수와 경제지표",

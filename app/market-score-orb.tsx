@@ -3,6 +3,7 @@ import { Gauge } from 'lucide-react';
 import {fearGreedStateColor} from '../lib/fear-greed-state-color.mjs';
 import {clampedAnimationProgress} from '../lib/animation-progress.mjs';
 import {useScoreArrows} from '../components/score-arrow-provider';
+import {LiveScoreValue} from '../components/live-score-value';
 
 type ScoreVariant = 'compact' | 'hero';
 
@@ -263,10 +264,10 @@ export function MarketScoreOrb({
           </svg>
 
           <div className="cnn-spectrum-center">
-            <strong className="cnn-score-value" style={{color:fearGreedStateColor(state)}}>
+            <LiveScoreValue value={targetScore} className="cnn-score-value" style={{color:fearGreedStateColor(state)}}>
               <span className="cnn-score-whole">{wholeScore}</span>
               {decimalScore ? <span className="cnn-score-fraction">.{decimalScore}</span> : null}
-            </strong>
+            </LiveScoreValue>
             <span style={{color:fearGreedStateColor(state)}}>{state}</span>
             {caption ? <small>{caption}</small> : null}
           </div>
