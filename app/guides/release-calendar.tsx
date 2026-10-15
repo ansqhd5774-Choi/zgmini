@@ -1,13 +1,17 @@
 import snapshot from './release-snapshot.json';
 
+const formatKst=(at:string)=>new Intl.DateTimeFormat('ko-KR',{timeZone:'Asia/Seoul',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).format(new Date(at));
+
 export default function ReleaseCalendar({kind}:{kind:'inflation'|'fomc'}) {
   const events=snapshot.events.filter(event=>kind==='inflation'?['cpi','pce'].includes(event.id):['fomc','press'].includes(event.id));
+  const nextEvent=[...events].sort((a,b)=>new Date(a.at).getTime()-new Date(b.at).getTime()).at(0);
   return <section className="mt-10 space-y-5" aria-label="공식 발표 일정과 확인된 결과">
     <h2 className="text-xl font-bold text-white">공식 발표 일정과 확인된 결과</h2>
     <p className="text-sm text-slate-300">공식 자료 확인일: <time dateTime={snapshot.checkedAt}>{snapshot.checkedAt}</time>. 아래는 확인 당시 일정과 발표값입니다. 실시간 자동 갱신 자료가 아니며, 일정이 변경되거나 이후 발표가 있을 수 있으니 공식 출처를 확인하세요.</p>
+    {nextEvent?<p className="text-sm text-slate-200"><strong className="text-white">확인 당시 다음 공식 일정</strong> · {nextEvent.name} · <time dateTime={nextEvent.at}>{formatKst(nextEvent.at)}</time> 한국시간</p>:null}
     <ul className="space-y-3">{events.map(event=><li key={event.id} className="rounded-lg border border-slate-700 p-4">
       <strong className="block text-white">{event.name}</strong>
-      <time dateTime={event.at} className="block">{new Intl.DateTimeFormat('ko-KR',{timeZone:'Asia/Seoul',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).format(new Date(event.at))} 한국시간</time>
+      <time dateTime={event.at} className="block">{formatKst(event.at)} 한국시간</time>
       <span className="block text-sm text-slate-400">확인 당시 예정 · 발표값 미확인 · 예상치 미제공</span>
       <a href={event.source} className="inline-flex min-h-11 items-center text-blue-200 underline">공식 일정 확인 →</a>
     </li>)}</ul>
