@@ -25,7 +25,7 @@ export async function calculateMarket(root,db,now){
  const {createMarketScoreR1Handler}=await import('data:text/javascript;base64,'+Buffer.from(code).toString('base64'));
  const store=marketOperationalStore(db),base=process.env.ZGMINI_PC_HOME??path.join(os.homedir(),'.zgmini','pc-writer');
  const collectInputs=async()=>{
-  const collected=readStoredMarketInputs(store,now),current=collected?.external?.publicDomainScores?.earnings??null;
+  const collected=await readStoredMarketInputs(store,now),current=collected?.external?.publicDomainScores?.earnings??null;
   try{
    const result=await runEarningsR5ProductionCycle({base,now:new Date(now).toISOString()});
    const candidate=preserveEarningsDiagnosticCompatibility(result?.candidate,current);
