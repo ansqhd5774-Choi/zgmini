@@ -1,0 +1,40 @@
+/* Inflation R2 indicator table/card layout only */
+.inflation-r2-indicators .inflation-indicator-table-r2{min-width:980px;table-layout:fixed}
+.inflation-r2-indicators .inflation-indicator-table-r2 tbody th{width:150px}
+.inflation-r2-indicators .inflation-indicator-table-r2 td:nth-child(2){width:190px}
+.inflation-r2-indicators .inflation-indicator-table-r2 td:nth-child(3){width:120px}
+.inflation-r2-indicators .inflation-indicator-table-r2 td:nth-child(4),
+.inflation-r2-indicators .inflation-indicator-table-r2 td:nth-child(5){width:110px;color:#f2f7fa}
+.inflation-r2-indicators .inflation-indicator-table-r2 td:nth-child(6){width:118px}
+.inflation-r2-indicators .inflation-indicator-table-r2 td:nth-child(7){width:82px}
+.inflation-r2-indicators .inflation-indicator-table-r2 td:nth-child(8){width:50px;text-align:center}
+.inflation-r2-criterion{white-space:nowrap}
+.inflation-r2-value strong,.inflation-r2-release strong{display:block;color:#f2f7fa;font-size:12px}
+.inflation-r2-release small{white-space:nowrap}
+.inflation-r2-release.is-soon small{color:#f4c34e;font-weight:800}
+.inflation-r2-mobile-list{display:none}
+
+@media(max-width:767px){
+ .inflation-r2-indicators{padding:14px}
+ .inflation-r2-indicators .inflation-r2-table-wrap{display:none}
+ .inflation-r2-mobile-list{display:grid;gap:8px}
+ .inflation-r2-mobile-card{min-width:0;padding:12px;border:1px solid rgba(68,103,133,.3);background:rgba(4,18,31,.5)}
+ .inflation-r2-mobile-card.is-development{opacity:.82}
+ .inflation-r2-mobile-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+ .inflation-r2-mobile-head>div:first-child{min-width:0}
+ .inflation-r2-mobile-head strong{display:block;color:#eef5fa;font-size:12px;line-height:1.35;overflow-wrap:anywhere}
+ .inflation-r2-mobile-head small{display:block;margin-top:2px;color:#7891a6;font-size:9px}
+ .inflation-r2-mobile-actions{display:flex;align-items:center;gap:2px;flex:0 0 auto}
+ .inflation-r2-mobile-actions .inflation-judgement{min-width:52px;height:22px;padding:0 7px;font-size:10px}
+ .inflation-r2-mobile-content{margin:8px 0 0;color:#b9cad8;font-size:11px;line-height:1.45}
+ .inflation-r2-mobile-criterion{display:flex;align-items:center;gap:7px;margin:6px 0 0;color:#d4e0e9;font-size:10px}
+ .inflation-r2-mobile-criterion span{color:#7891a6;font-weight:700}
+ .inflation-r2-mobile-metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));margin-top:10px;border-top:1px solid rgba(68,103,133,.24)}
+ .inflation-r2-mobile-metrics>div{min-width:0;padding:8px 6px 0}
+ .inflation-r2-mobile-metrics>div+div{border-left:1px solid rgba(68,103,133,.24)}
+ .inflation-r2-mobile-metrics span,.inflation-r2-mobile-metrics strong,.inflation-r2-mobile-metrics small{display:block;min-width:0;text-align:center}
+ .inflation-r2-mobile-metrics span{color:#7891a6;font-size:9px;font-weight:700}
+ .inflation-r2-mobile-metrics strong{margin-top:3px;color:#f2f7fa;font-size:11px;white-space:nowrap}
+ .inflation-r2-mobile-metrics small{margin-top:2px;color:#7891a6;font-size:8.5px;line-height:1.25;white-space:nowrap}
+ .inflation-r2-mobile-metrics .is-soon small{color:#f4c34e;font-weight:800}
+}
