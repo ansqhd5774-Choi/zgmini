@@ -7,6 +7,7 @@ export default function DetailReadingGuide({ title, sections, sources, related }
   sources: GuideLink[];
   related: GuideLink[];
 }) {
+  const relatedLinks=related.slice(0,4);
   return <section className="mt-12 space-y-6 text-sm leading-7 text-slate-300 sm:text-base" aria-label={title}>
     <h2 className="text-xl font-bold text-white">{title}</h2>
     {sections.map(section => <div key={section.title}>
@@ -19,7 +20,7 @@ export default function DetailReadingGuide({ title, sections, sources, related }
         <a className="inline-flex min-h-11 items-center text-blue-200 underline" href={link.href}>{link.label} →</a>
       </li>)}</ul>
     </div>}
-    <nav aria-label="함께 읽을 지표" className="flex flex-wrap gap-x-6 gap-y-2">{related.map(link =>
+    <nav aria-label="함께 읽을 지표" className="flex flex-wrap gap-x-6 gap-y-2">{relatedLinks.map(link =>
       <a key={link.href} className="inline-flex min-h-11 items-center text-blue-200 underline" href={link.href}>{link.label} →</a>
     )}</nav>
   </section>;
