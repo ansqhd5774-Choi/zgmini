@@ -1,6 +1,8 @@
 import {IRAN_PROGRESS_VERSION,WEIGHTS,DAY} from '../lib/iran-progress/r13.mjs';
 import {IRAN_FACTS_KEY,validateIranFacts,visibleIranFacts} from '../lib/iran-progress/facts.mjs';
 import {IRAN_FLOW_KEY,validateReferenceFlow} from '../lib/iran-progress/reference-public.mjs';
+import {IRAN_FLOW_R2_KEY} from '../lib/iran-progress/reference-flow-r2.mjs';
+import {validateReferenceFlowR2} from '../lib/iran-progress/reference-public-r2.mjs';
 export const IRAN_PROGRESS_PUBLIC_KEY='public:iran-progress:r13';
 export const IRAN_PROGRESS_STATUS_KEY='public:iran-progress:r13:status';
 const finiteScore=n=>Number.isFinite(n)&&n>=0&&n<=100;
@@ -43,12 +45,19 @@ async function storedScoreResponse(request,{db,now=Date.now()}={}){
 /** @param {Request} request @param {{db?: any, now?: number}} options */
 export async function storedIranProgressResponse(request,{db,now=Date.now()}={}){
  if(request.method==='GET'&&db?.prepare){
+  let r2;try{r2=await db.prepare('SELECT body,stored_at FROM market_public_snapshots_v1 WHERE snapshot_key=?').bind(IRAN_FLOW_R2_KEY).first();}
+  catch{return Response.json({status:'UNAVAILABLE',score:null,reason:'FLOW_R2_READ_FAILED'},{status:503,headers:{'cache-control':'no-store'}});}
+  if(r2){
+   let flow;try{flow=JSON.parse(r2.body);}catch{flow=null;}
+   if(!validateReferenceFlowR2(flow,now))return Response.json({status:'UNAVAILABLE',score:null,reason:'FLOW_R2_INVALID'},{status:503,headers:{'cache-control':'no-store'}});
+   return Response.json({...flow,status:now-flow.collectionCheckedAt>86400000?'UPDATE_DELAYED':flow.status},{headers:{'cache-control':'no-store','x-iran-progress-source':'STORED','x-iran-flow-version':'R2','x-iran-flow-reader':'R2'}});
+  }
   let row;try{row=await db.prepare('SELECT body,stored_at FROM market_public_snapshots_v1 WHERE snapshot_key=?').bind(IRAN_FLOW_KEY).first();}
   catch{return Response.json({status:'UNAVAILABLE',score:null,reason:'FLOW_READ_FAILED'},{status:503});}
   if(row){
    let flow;try{flow=JSON.parse(row.body);}catch{flow=null;}
    if(!validateReferenceFlow(flow,now))return Response.json({status:'UNAVAILABLE',score:null,reason:'FLOW_INVALID'},{status:503});
-   return Response.json({...flow,status:now-flow.collectionCheckedAt>86400000?'UPDATE_DELAYED':flow.status},{headers:{'cache-control':'no-store','x-iran-progress-source':'STORED'}});
+   return Response.json({...flow,status:now-flow.collectionCheckedAt>86400000?'UPDATE_DELAYED':flow.status},{headers:{'cache-control':'no-store','x-iran-progress-source':'STORED','x-iran-flow-reader':'R2'}});
   }
  }
  const response=await storedScoreResponse(request,{db,now});

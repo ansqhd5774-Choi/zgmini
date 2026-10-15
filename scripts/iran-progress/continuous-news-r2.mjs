@@ -68,24 +68,37 @@ export async function collectNewsR2(store,{now=Date.now(),fetcher=fetch,maxArtic
  }
  const oldEvents=previous?.classifierVersion===CLASSIFIER_VERSION?storedR2Signals(store):[];
  const events=new Map(oldEvents.map(e=>[e.sourceUrl,e]));
+ // Saved receipts can be reclassified without waiting for a failing remote refresh.
+ for(const item of queue){
+  const a=item.article;if(!a||a.date>end||!validDate(a.date)||item.classifierVersion===CLASSIFIER_VERSION&&item.contentHash===hash(a))continue;
+  const receiptHash=hash(a);const row=store.db.prepare('SELECT body FROM sources WHERE id=?').get('news-metadata:'+receiptHash);
+  // New feed entries are persisted and analyzed under the bounded article budget below.
+  if(row?.body!==JSON.stringify(a))continue;
+  const decision=classifyR2Article(a);store.putDecision('news-flow-r2:'+CLASSIFIER_VERSION+':'+receiptHash,{...decision,receiptHash},now);
+  events.delete(item.url);if(decision.accepted){events.set(item.url,{...decision,receiptHash});report.accepted++;}
+  item.classifierVersion=CLASSIFIER_VERSION;item.contentHash=hash(a);item.analyzedAt=now;item.reason=decision.accepted?'ACCEPTED':decision.reason;report.analyzed++;
+ }
  const pending=queue.filter(i=>(i.article?.date??i.date)>=start&&(!i.retryAt||i.retryAt<=now)&&(i.classifierVersion!==CLASSIFIER_VERSION||i.contentHash!==hash(i.article)||new URL(i.url).hostname==='www.tasnimnews.ir'&&now-(i.fetchedAt??0)>=86400000)).sort((a,b)=>(a.analyzedAt??0)-(b.analyzedAt??0)||a.url.localeCompare(b.url));
  for(const item of pending.slice(0,maxArticles)){
   try{
+   let refreshFailed=false;
    if(!item.article||new URL(item.url).hostname==='www.tasnimnews.ir'&&now-(item.fetchedAt??0)>=86400000){
     if(!trustedR2Url(item.url))throw Error('R2_URL_INVALID');
-    const response=await boundedRead(item.url,{fetcher,maxBytes:1000000});if(response.status!=='COLLECTED')throw Error('R2_ARTICLE_FAILED');
-    item.article=parseNews(response.body,item.url);item.fetchedAt=now;
+    try{const response=await boundedRead(item.url,{fetcher,maxBytes:1000000});if(response.status!=='COLLECTED')throw Error('R2_ARTICLE_FAILED');
+     item.article=parseNews(response.body,item.url);item.fetchedAt=now;
+    }catch(error){if(!item.article)throw error;refreshFailed=true;report.failed++;}
    }
    const a=item.article;if(!validDate(a.date)||a.date>end||a.date<start)throw Error('R2_DATE_INVALID');
    const receiptHash=hash(a);store.putSource('news-metadata:'+receiptHash,a,now);
    if(store.db.prepare('SELECT body FROM sources WHERE id=?').get('news-metadata:'+receiptHash)?.body!==JSON.stringify(a))throw Error('R2_READBACK_FAILED');
    const decision=classifyR2Article(a);store.putDecision('news-flow-r2:'+CLASSIFIER_VERSION+':'+receiptHash,{...decision,receiptHash},now);
    events.delete(item.url);if(decision.accepted){events.set(item.url,{...decision,receiptHash});report.accepted++;}
-   item.classifierVersion=CLASSIFIER_VERSION;item.contentHash=hash(a);item.analyzedAt=now;item.reason=decision.accepted?'ACCEPTED':decision.reason;item.retryAt=null;report.analyzed++;
+   item.classifierVersion=CLASSIFIER_VERSION;item.contentHash=hash(a);item.analyzedAt=now;item.reason=refreshFailed?'ARTICLE_REFRESH_DELAYED':decision.accepted?'ACCEPTED':decision.reason;item.retryAt=refreshFailed?now+3600000:null;report.analyzed++;
   }catch{item.retryAt=now+3600000;item.reason='ANALYSIS_FAILED';report.failed++;}
   store.checkpoint('continuous-news-queue-r2',{items:queue});
  }
  report.pending=queue.filter(i=>!i.analyzedAt||i.classifierVersion!==CLASSIFIER_VERSION||i.contentHash!==hash(i.article)).length;
+ store.checkpoint('continuous-news-queue-r2',{items:queue});
  const successes=report.feeds.filter(f=>f.status==='COLLECTED');
  report.lastDiscoverySuccessAt=successes.length?now:previous?.lastDiscoverySuccessAt??null;
  const all=[...events.values()];
