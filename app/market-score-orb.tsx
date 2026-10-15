@@ -96,9 +96,10 @@ function useAnimatedNumber(
     }
 
     let frame = 0;
-    const startedAt = performance.now();
+    let startedAt: number | null = null;
 
     const tick = (now: number) => {
+      if (startedAt === null) startedAt = now;
       const progress = clampedAnimationProgress(now,startedAt,duration);
       const eased = 1 - Math.pow(1 - progress, 3);
       const next = start + (target - start) * eased;
