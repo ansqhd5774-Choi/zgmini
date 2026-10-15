@@ -14,6 +14,14 @@ test('About page owns its canonical and social metadata',()=>{
   assert.match(page,/robots: \{ index: true, follow: true \}/);
 });
 
+test('About page keeps only currently verified directory links',()=>{
+  const page=read('app/about/page.tsx');
+  assert.match(page,/https:\/\/shareyourstartup\.com\/s\/zgmini/);
+  assert.match(page,/https:\/\/www\.sitelike\.org\/similar\/zgmini\.kr\//);
+  assert.match(page,/https:\/\/twelve\.tools\/zgmini-kr/);
+  assert.doesNotMatch(page,/thesaasdir\.com/);
+});
+
 test('About metadata update has a truthful sitemap lastmod',()=>{
   const sitemap=read('public/sitemap.xml');
   assert.match(sitemap,/https:\/\/zgmini\.kr\/about\/<\/loc><lastmod>2026-10-16<\/lastmod>/);
