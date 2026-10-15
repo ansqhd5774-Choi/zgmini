@@ -21,7 +21,7 @@ export function WebPageJsonLd({name,description,path}:{name:string;description:s
   }}/>;
 }
 
-export function ArticleJsonLd({headline,description,path,dateModified}:{headline:string;description:string;path:string;dateModified:string}){
+export function ArticleJsonLd({headline,description,path,datePublished,dateModified}:{headline:string;description:string;path:string;datePublished:string;dateModified:string}){
   const url=new URL(path,SITE_URL).toString();
   return <JsonLd value={{
     '@context':'https://schema.org',
@@ -32,6 +32,7 @@ export function ArticleJsonLd({headline,description,path,dateModified}:{headline
     url,
     mainEntityOfPage:{'@id':`${url}#webpage`},
     inLanguage:'ko-KR',
+    datePublished,
     dateModified,
     author:{'@id':ORGANIZATION_ID},
     publisher:{'@id':ORGANIZATION_ID},
