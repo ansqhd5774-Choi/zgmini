@@ -48,6 +48,14 @@ test('all three search guides emit Article structured data with canonical paths'
   }
 });
 
+test('homepage structured data strengthens ZGmini site and organization identity',()=>{
+  const layout=read('app/layout.tsx');
+  assert.match(layout,/alternateName: \["지그미니", "zgmini\.kr"\]/);
+  assert.match(layout,/"https:\/\/shareyourstartup\.com\/s\/zgmini"/);
+  assert.match(layout,/"https:\/\/twelve\.tools\/zgmini-kr"/);
+  assert.doesNotMatch(layout,/thesaasdir/i);
+});
+
 test('robots policy remains unchanged and meta keywords are not introduced',()=>{
   const robots=read('public/robots.txt');
   assert.match(robots,/Sitemap: https:\/\/zgmini\.kr\/sitemap\.xml/);
