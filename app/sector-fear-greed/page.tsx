@@ -3,8 +3,8 @@ import SectorDetailCharts from './sector-detail-charts';
 import './sector-detail.css';
 
 export const metadata:Metadata={
- title:'섹터별 공포·탐욕 | 11개 섹터 비교 - ZGmini',
- description:'11개 섹터의 저장된 공포·탐욕 점수와 기간별 추이를 비교합니다.',
+ title:'미국 섹터별 공포·탐욕 지수 | 11개 업종 투자심리 분석 - ZGmini',
+ description:'미국 주식 11개 섹터의 공포·탐욕 지수를 5개 핵심 신호와 252거래일 데이터로 분석합니다. 기술·금융·에너지·헬스케어 등 업종별 투자심리와 강세·약세 흐름을 비교하세요.',
  alternates:{canonical:'https://zgmini.kr/sector-fear-greed/'},
 };
 
@@ -12,7 +12,20 @@ export default function SectorFearGreedPage(){
  return <main className="zg-sector-detail">
   <div className="zg-sector-detail-inner">
    <a className="zg-sector-detail-back" href="/#strength">← 대시보드로 돌아가기</a>
-   <header><h1>섹터별 공포·탐욕</h1><p>11개 섹터의 점수와 흐름을 비교하세요. 차트를 가리키거나 터치하면 같은 날짜의 점수를 함께 볼 수 있습니다.</p></header>
+   <header className="zg-sector-detail-hero">
+    <p className="zg-sector-detail-kicker">DATA-DRIVEN SECTOR SENTIMENT</p>
+    <h1>섹터별 공포·탐욕</h1>
+    <h2>데이터로 읽는 미국 섹터 투자심리</h2>
+    <p className="zg-sector-detail-lead">미국 주식 11개 섹터의 공포·탐욕 지수를 정량 분석합니다.</p>
+    <p className="zg-sector-detail-copy">가격 추세·시장폭·수요·상대강도·변동성 등 <strong>5개 핵심 신호</strong>와 SPY·11개 섹터 ETF, 종목별 가격·거래량, 시점별 섹터 분류 데이터를 결합해 투자심리를 수치화합니다. <strong>252거래일 × 11개 섹터, 총 2,772개의 일별 지수 포인트</strong>를 비교해 어느 업종에 공포와 탐욕이 집중되고 있는지 한눈에 확인할 수 있습니다.</p>
+    <div className="zg-sector-detail-stats" aria-label="섹터 공포 탐욕 분석 범위">
+     <span><strong>11</strong><small>SECTORS</small></span>
+     <span><strong>252</strong><small>TRADING DAYS</small></span>
+     <span><strong>5</strong><small>CORE SIGNALS</small></span>
+     <span><strong>2,772</strong><small>DAILY POINTS</small></span>
+    </div>
+    <p className="zg-sector-detail-hint">차트를 가리키거나 터치하면 같은 날짜의 11개 섹터 점수를 함께 볼 수 있습니다.</p>
+   </header>
    <SectorDetailCharts/>
   </div>
  </main>;
