@@ -35,6 +35,20 @@ test('IndexNow R1 expands only known shared surfaces',()=>{
     deriveAffectedUrls(['app/guides/guide-page.tsx'],sitemap),
     sitemap.filter(url=>new URL(url).pathname.startsWith('/guides/')),
   );
+  const introPaths=new Set([
+    '/credit-risk/',
+    '/liquidity-crisis/',
+    '/debt-risk/',
+    '/inflation/',
+    '/recession/',
+    '/earnings-recession/',
+    '/asset-bubble/',
+    '/supply-shock/',
+  ]);
+  assert.deepEqual(
+    deriveAffectedUrls(['app/search-intent-intro.tsx'],sitemap),
+    sitemap.filter(url=>introPaths.has(new URL(url).pathname)),
+  );
   assert.deepEqual(deriveAffectedUrls(['worker/korea-rev7-engine.mjs'],sitemap),[]);
   assert.deepEqual(deriveAffectedUrls(['app/api/market-score/route.ts'],sitemap),[]);
 });

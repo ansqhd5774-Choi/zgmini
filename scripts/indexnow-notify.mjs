@@ -39,11 +39,26 @@ export function deriveAffectedUrls(files,publicUrls){
     addAll(affected,publicUrls.filter(url=>new URL(url).pathname.startsWith('/guides/')));
   }
 
+  if(allFiles.has('app/search-intent-intro.tsx')){
+    const introPaths=new Set([
+      '/credit-risk/',
+      '/liquidity-crisis/',
+      '/debt-risk/',
+      '/inflation/',
+      '/recession/',
+      '/earnings-recession/',
+      '/asset-bubble/',
+      '/supply-shock/',
+    ]);
+    addAll(affected,publicUrls.filter(url=>introPaths.has(new URL(url).pathname)));
+  }
+
   for(const file of files){
     if(file==='app/page.tsx'){
       affected.add(`${SITE_ORIGIN}/`);
       continue;
     }
+    if(file==='app/search-intent-intro.tsx') continue;
     if(!file.startsWith('app/') || file.startsWith('app/api/')) continue;
 
     let matched=false;
