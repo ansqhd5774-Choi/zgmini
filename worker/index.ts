@@ -75,7 +75,7 @@ export async function runMarketExternalRefresh(args:any){
   }
 
   const marketStartedAt=Date.now();
-  const result=await runMarketOperationalRefresh(args).catch(()=>({status:'ERROR'}));
+  const result=await runMarketOperationalRefresh(args).catch(():import('./runtime-contracts').OperationalResult=>({status:'ERROR'}));
   const marketMs=Date.now()-marketStartedAt;
   console.log('MARKET_EXTERNAL_STAGE',JSON.stringify({
     stage:'market',

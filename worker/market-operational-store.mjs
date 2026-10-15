@@ -58,6 +58,7 @@ export async function readStoredMarketInputs(store,now=Date.now()){
  return batches.map(fresh).reduce((all,part)=>({...all,...part,series:{...all.series,...part.series},external:{...all.external,...part.external},providerSummary:{...all.providerSummary,...part.providerSummary}}),{series:{},external:{},providerSummary:{}});
 }
 
+/** @param {Request} request @param {{store?:ReturnType<typeof marketOperationalStore>,now?:number}} [options] */
 export async function storedMarketResponse(request,{store,now=Date.now()}={}){
  const headers={'cache-control':'no-store','x-robots-tag':'noindex','x-market-cache':'STORED','vary':'Accept','x-content-type-options':'nosniff'};
  if(request.method!=='GET')return Response.json({status:'FAILED',reason:'METHOD_NOT_ALLOWED'},{status:405,headers});

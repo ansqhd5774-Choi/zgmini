@@ -3,6 +3,7 @@ import {marketOperationalStore} from './market-operational-store.mjs';
 import {acceptsStoredUpdate} from '../lib/market-score/live-refresh.mjs';
 
 // Authenticated scheduler only. Independent source failures retain last good output.
+/** @param {{env?:import('./runtime-contracts').DataEnv,collectors?:Record<string,(store:ReturnType<typeof publicFeedStore>,now:number)=>Promise<unknown>>,now?:number,store?:ReturnType<typeof publicFeedStore>,locks?:ReturnType<typeof marketOperationalStore>,maxFeedsPerRun?:number}} [options] */
 export async function refreshPublicFeeds({env,collectors,now=Date.now(),store,locks,maxFeedsPerRun=Infinity}={}){
  store??=publicFeedStore(env.DB);locks??=marketOperationalStore(env.DB);
  const lease=await locks.claim('public-feeds',now);if(!lease)return {status:'ALREADY_RUNNING'};

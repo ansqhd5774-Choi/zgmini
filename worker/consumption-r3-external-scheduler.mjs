@@ -39,6 +39,7 @@ function withTimeout(fetchImpl,timeoutMs=PROVIDER_TIMEOUT_MS){
   };
 }
 
+/** @param {{env?:import('./runtime-contracts').DataEnv,refresh?:typeof runConsumptionR3OperationalRefresh,fetchImpl?:typeof fetch,now?:()=>Date,providerTimeoutMs?:number}} [options] */
 export function createConsumptionR3ExternalSchedulerHandler({
   env,
   refresh=runConsumptionR3OperationalRefresh,

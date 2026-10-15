@@ -33,6 +33,8 @@ jobs:
         run: npm ci
       - name: Build
         run: npm run build
+      - name: Type check
+        run: npm run typecheck
       - name: Regression tests
         run: node --test tests/*.test.mjs
       - name: PC publication recovery tests
