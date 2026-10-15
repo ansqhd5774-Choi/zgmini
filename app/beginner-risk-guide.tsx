@@ -13,6 +13,7 @@ type Topic=
  |"earnings-recession";
 
 type Factor={id:string;score:number};
+type BeginnerCopy={status:"COPY_ONLY";summary:string;whyItMatters:string;marketMeaning:string;sourceHash:string;sourceVersion:string;sourceStoredAt:number;generatedAt:number};
 type Config={
  endpoint:string;
  title:string;
@@ -57,6 +58,11 @@ const configs:Record<Topic,Config>={
 };
 
 function finiteScore(value:unknown){return typeof value==="number"&&Number.isFinite(value)?value:null;}
+function validBeginnerCopy(value:any):value is BeginnerCopy{
+ const expected=["generatedAt","marketMeaning","sourceHash","sourceStoredAt","sourceVersion","status","summary","whyItMatters"];
+ if(!value||typeof value!=="object"||Array.isArray(value)||Object.keys(value).sort().join("|")!==expected.join("|"))return false;
+ return value.status==="COPY_ONLY"&&typeof value.summary==="string"&&!!value.summary.trim()&&typeof value.whyItMatters==="string"&&!!value.whyItMatters.trim()&&typeof value.marketMeaning==="string"&&!!value.marketMeaning.trim()&&typeof value.sourceHash==="string"&&/^[a-f0-9]{64}$/.test(value.sourceHash)&&typeof value.sourceVersion==="string"&&!!value.sourceVersion.trim()&&Number.isFinite(value.sourceStoredAt)&&Number.isFinite(value.generatedAt);
+}
 
 function extractFactors(topic:Topic,payload:any,config:Config):Factor[]{
  let rows:any[]=[];
@@ -93,15 +99,18 @@ export default function BeginnerRiskGuide({topic}:{topic:Topic}){
  const positive=useMemo(()=>factors.filter(x=>x.score>=60).sort((a,b)=>b.score-a.score).slice(0,3),[factors]);
  const negative=useMemo(()=>factors.filter(x=>x.score<45).sort((a,b)=>a.score-b.score).slice(0,3),[factors]);
  const stage=score===null?"확인 필요":config.stage(score);
- const currentText=loading?"저장된 최신 결과를 확인하고 있습니다.":score===null?"현재 저장 결과만으로 종합 점수를 확인할 수 없습니다.":`현재 ${config.title} 점수는 ${score.toFixed(1)}점이며 ${stage} 구간입니다. ${config.highMeaning}`;
- return <section className="mt-5 space-y-4" data-testid={`beginner-risk-guide-${topic}`} aria-label={`${config.title} 초보자 해석`}>
+ const storedCopy=validBeginnerCopy(payload?.beginnerCopy)?payload.beginnerCopy:null;
+ const currentText=storedCopy?.summary??(loading?"저장된 최신 결과를 확인하고 있습니다.":score===null?"현재 저장 결과만으로 종합 점수를 확인할 수 없습니다.":`현재 ${config.title} 점수는 ${score.toFixed(1)}점이며 ${stage} 구간입니다. ${config.highMeaning}`);
+ const importanceText=storedCopy?.whyItMatters??config.importance;
+ const marketImpactText=storedCopy?.marketMeaning??config.marketImpact;
+ return <section className="mt-5 space-y-4" data-testid={`beginner-risk-guide-${topic}`} data-copy-source={storedCopy?"stored":"deterministic"} aria-label={`${config.title} 초보자 해석`}>
   <div className="rounded-lg bg-[#071c2a] p-4 sm:p-5">
    <p className="text-xs font-bold tracking-[.14em] text-cyan-300">BEGINNER GUIDE</p>
    <h2 className="mt-1 text-lg font-bold text-white">초보자라면 이렇게 보세요</h2>
    <div className="mt-4 grid gap-3 md:grid-cols-3">
     <article className="bg-[#0a2434] p-4"><h3 className="font-bold text-white">지금 어떤 상태인가요?</h3><p className="mt-2 text-sm leading-6 text-slate-300">{currentText}</p></article>
-    <article className="bg-[#0a2434] p-4"><h3 className="font-bold text-white">왜 중요한가요?</h3><p className="mt-2 text-sm leading-6 text-slate-300">{config.importance}</p></article>
-    <article className="bg-[#0a2434] p-4"><h3 className="font-bold text-white">주식시장에는?</h3><p className="mt-2 text-sm leading-6 text-slate-300">{config.marketImpact}</p><p className="mt-2 text-xs text-slate-400">이 지표 하나만으로 주가 방향을 확정하지 않습니다.</p></article>
+    <article className="bg-[#0a2434] p-4"><h3 className="font-bold text-white">왜 중요한가요?</h3><p className="mt-2 text-sm leading-6 text-slate-300">{importanceText}</p></article>
+    <article className="bg-[#0a2434] p-4"><h3 className="font-bold text-white">주식시장에는?</h3><p className="mt-2 text-sm leading-6 text-slate-300">{marketImpactText}</p><p className="mt-2 text-xs text-slate-400">이 지표 하나만으로 주가 방향을 확정하지 않습니다.</p></article>
    </div>
   </div>
   <div className="rounded-lg bg-[#071c2a] p-4 sm:p-5">
