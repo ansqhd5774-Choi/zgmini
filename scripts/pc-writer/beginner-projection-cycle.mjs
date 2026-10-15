@@ -27,7 +27,7 @@ export async function enrichLocalBeginnerProjections({core,fetcher,now=Date.now(
   if(!input){
    if(envelope.payload.beginnerCopy){
     const next={...envelope,payload:{...envelope.payload}};delete next.payload.beginnerCopy;
-    await core.prepare('UPDATE market_public_snapshots_v1 SET body=?,stored_at=? WHERE snapshot_key=?').bind(JSON.stringify(next),Math.max(Number(row.stored_at)||0,now),key).run();
+    await core.prepare('UPDATE market_public_snapshots_v1 SET body=? WHERE snapshot_key=?').bind(JSON.stringify(next),key).run();
    }
    items.push({id,status:'FALLBACK',reason:'BEGINNER_INPUT_UNAVAILABLE'});continue;
   }
@@ -35,12 +35,12 @@ export async function enrichLocalBeginnerProjections({core,fetcher,now=Date.now(
   try{
    const result=await enrichBeginnerPayload(id,envelope.payload,{checkpoint,existingCopy,fetcher:localFetch,model,modelDigest:validPublicBeginnerCopy(existingCopy)&&existingCopy.sourceHash===sourceHash?undefined:await digest(),now});
    const next={...envelope,payload:result.payload};
-   if(hash(next)!==hash(envelope))await core.prepare('UPDATE market_public_snapshots_v1 SET body=?,stored_at=? WHERE snapshot_key=?').bind(JSON.stringify(next),Math.max(Number(row.stored_at)||0,now),key).run();
+   if(hash(next)!==hash(envelope))await core.prepare('UPDATE market_public_snapshots_v1 SET body=? WHERE snapshot_key=?').bind(JSON.stringify(next),key).run();
    items.push({id,status:result.status,sourceHash});
   }catch(error){
    if(existingCopy){
     const next={...envelope,payload:{...envelope.payload}};delete next.payload.beginnerCopy;
-    await core.prepare('UPDATE market_public_snapshots_v1 SET body=?,stored_at=? WHERE snapshot_key=?').bind(JSON.stringify(next),Math.max(Number(row.stored_at)||0,now),key).run();
+    await core.prepare('UPDATE market_public_snapshots_v1 SET body=? WHERE snapshot_key=?').bind(JSON.stringify(next),key).run();
    }
    items.push({id,status:'FALLBACK',reason:safeReason(error),sourceHash});
   }
