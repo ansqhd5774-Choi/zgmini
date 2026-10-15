@@ -13,10 +13,10 @@ export default function ReleaseCalendar({kind}:{kind:'inflation'|'fomc'}) {
     </li>)}</ul>
     {kind==='inflation'?<div className="overflow-x-auto">
       <table className="w-full min-w-[560px] border-collapse text-left text-sm">
-        <caption className="mb-3 text-left text-slate-300">2026년 8월분 공식 발표값. ‘이전’은 같은 발표 자료에 기재된 7월 값입니다. 현재 개정 이력과 달라질 수 있습니다.</caption>
-        <thead><tr>{['지표·단위','이전','예상치','발표값','발표일·출처'].map(label=><th key={label} scope="col" className="border-b border-slate-700 p-3">{label}</th>)}</tr></thead>
+        <caption className="mb-3 text-left text-slate-300">가장 최근 확인 가능한 공식 발표값입니다. CPI와 PCE는 발표 주기가 달라 기준월이 서로 다를 수 있습니다. ‘이전’은 같은 발표 자료에 기재된 직전 월 값입니다.</caption>
+        <thead><tr>{['지표·기준월·단위','이전','예상치','발표값','발표일·출처'].map(label=><th key={label} scope="col" className="border-b border-slate-700 p-3">{label}</th>)}</tr></thead>
         <tbody>{snapshot.releases.map(row=><tr key={row.name}>
-          <th scope="row" className="border-b border-slate-800 p-3">{row.name}<span className="block font-normal text-slate-400">{row.unit}</span></th>
+          <th scope="row" className="border-b border-slate-800 p-3">{row.name}<span className="block font-normal text-slate-400">{row.period} · {row.unit}</span></th>
           <td className="border-b border-slate-800 p-3">{row.previous.toFixed(1)}</td>
           <td className="border-b border-slate-800 p-3">미제공</td>
           <td className="border-b border-slate-800 p-3 font-semibold">{row.actual.toFixed(1)}</td>
