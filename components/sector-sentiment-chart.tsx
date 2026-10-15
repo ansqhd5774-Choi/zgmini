@@ -1,5 +1,5 @@
 "use client";
-import {useRef,useState} from 'react';
+import {useEffect,useRef,useState} from 'react';
 import {ChevronRight,Layers3,Sparkles} from 'lucide-react';
 import {Line,LineChart,ResponsiveContainer,CartesianGrid,XAxis,YAxis,Tooltip,ReferenceLine} from 'recharts';
 import './sector-sentiment-chart.css';
@@ -24,14 +24,29 @@ const SHORT_NAMES:Record<SectorId,string>={technology:'기술',communication:'�
 // Connect dated formula outputs here. Missing values stay null; no synthetic scores.
 export type SectorSentimentPoint={date:string}&Partial<Record<SectorId,number|null>>;
 export type SentimentSeries={id:string;name:string;color:string;shortName?:string};
-export default function SectorSentimentChart({data=[],series=SECTORS,title='섹터별 공포·탐욕',draggable=false}:{data?:({date:string}&Record<string,string|number|null|undefined>)[];series?:readonly SentimentSeries[];title?:string;draggable?:boolean}){
+type ChartInputRow={date:string}&Record<string,string|number|null|undefined>;
+type SectorFearGreedStoredPayload={status?:string;history?:ChartInputRow[]};
+export default function SectorSentimentChart({data=[],series=SECTORS,title='섹터별 공포·탐욕',draggable=false}:{data?:ChartInputRow[];series?:readonly SentimentSeries[];title?:string;draggable?:boolean}){
  const [hidden,setHidden]=useState<Set<string>>(new Set());
+ const [storedData,setStoredData]=useState<ChartInputRow[]>([]);
  const drag=useRef<{x:number;left:number;active:boolean;moved:boolean}>({x:0,left:0,active:false,moved:false});
  const legendRef=useRef<HTMLDivElement>(null);
  const [atEnd,setAtEnd]=useState(false);
+ const autoStored=data.length===0&&series===SECTORS&&title==='섹터별 공포·탐욕'&&!draggable;
+ useEffect(()=>{
+  if(!autoStored){setStoredData([]);return;}
+  let active=true;const controller=new AbortController();
+  fetch('/api/sector-fear-greed',{cache:'no-store',signal:controller.signal}).then(async response=>{
+   if(!response.ok)throw new Error('SECTOR_FEAR_GREED_STORED_UNAVAILABLE');
+   const body=await response.json() as SectorFearGreedStoredPayload;
+   if(active&&body.status==='READY'&&Array.isArray(body.history))setStoredData(body.history);
+  }).catch(()=>{if(active)setStoredData([]);});
+  return()=>{active=false;controller.abort();};
+ },[autoStored]);
  const nextKeyword=()=>{const list=legendRef.current;if(!list)return;const next=Array.from(list.children).find(child=>(child as HTMLElement).offsetLeft>list.scrollLeft+2) as HTMLElement|undefined;const reduce=window.matchMedia('(prefers-reduced-motion: reduce)').matches;list.scrollTo({left:next?next.offsetLeft:list.scrollWidth-list.clientWidth,behavior:reduce?'auto':'smooth'});};
  const [period,setPeriod]=useState(90);
- const rows=data.filter(row=>/^\d{4}-\d{2}-\d{2}$/.test(row.date)&&Number.isFinite(Date.parse(row.date))).map(row=>({date:row.date,...Object.fromEntries(series.map(({id})=>{const value=row[id];return [id,typeof value==='number'&&Number.isFinite(value)&&value>=0&&value<=100?value:null]}))})).sort((a,b)=>a.date.localeCompare(b.date));
+ const sourceData:ChartInputRow[]=data.length?data:storedData;
+ const rows=sourceData.filter(row=>/^\d{4}-\d{2}-\d{2}$/.test(row.date)&&Number.isFinite(Date.parse(row.date))).map(row=>({date:row.date,...Object.fromEntries(series.map(({id})=>{const value=row[id];return [id,typeof value==='number'&&Number.isFinite(value)&&value>=0&&value<=100?value:null]}))})).sort((a,b)=>a.date.localeCompare(b.date));
  const toggle=(id:string)=>setHidden(previous=>{const next=new Set(previous);if(next.has(id))next.delete(id);else next.add(id);return next});
  const end=rows.length?Date.parse(rows[rows.length-1].date):0;
  const visibleRows=rows.filter(row=>Date.parse(row.date)>=end-period*86400000);

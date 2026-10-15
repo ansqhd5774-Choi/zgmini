@@ -23,6 +23,12 @@ try{
  const collectionReport=fs.existsSync(path.join(base,'local-collection-last-run.json'))?read(path.join(base,'local-collection-last-run.json')):null;
  const supplyR10=lane==='core'?await collectSupplyR10(base):{status:'SKIPPED_KOREA_LANE'};
  if(lane==='core')await collectAlpacaIncremental(base);
+ let sectorFearGreedR3=null,sectorFearGreedR3Report=null;
+ if(lane==='core'){
+  sectorFearGreedR3=spawnSync(process.execPath,[path.join(here,'sector-fear-greed-r3-local-cycle.mjs'),'--write-local'],{windowsHide:true,stdio:['ignore','pipe','pipe'],timeout:5*60000});
+  const sectorFearGreedR3File=path.join(base,'local-sector-fear-greed-r3-last-run.json');
+  sectorFearGreedR3Report=fs.existsSync(sectorFearGreedR3File)?read(sectorFearGreedR3File):null;
+ }
  const quotaGuarded=process.env.ZGMINI_QUOTA_MODE==='enforce'&&(collectionReport?.quota?.guarded??0)>0;
  const collectionFailed=collection.status!==0||['ERROR','FAILED','SOURCE_FAILED'].includes(collectionReport?.status);
  const publishRequested=process.argv.includes('--publish');
@@ -90,7 +96,16 @@ try{
   decision:earningsR5ProspectiveReport?.decision??null,
   error:earningsR5ProspectiveReport?.code??(earningsR5Prospective?.error?.code??null),
  }:{nonBlocking:true,status:'SKIPPED_KOREA_LANE'};
- const report={at:new Date().toISOString(),lane,collectionExit:collection.status,collectionStatus:collectionReport?.status??null,supplyR10,publicationExit:publication.status,publishRequested,publishSkipped,researchProspective,researchFundFlowProspective,researchBreadthProspective,researchEarningsR5Prospective,status:publication.status===0?(publishSkipped==='QUOTA_GUARD'?'QUOTA_GUARDED':publishSkipped==='COLLECTION_FAILED'?'COLLECTION_FAILED_PUBLISH_BLOCKED':'COMPLETE'):'PUBLICATION_NOT_VERIFIED'};
+ const sectorFearGreed=lane==='core'?{
+  nonBlocking:true,
+  exit:sectorFearGreedR3?.status??null,
+  status:sectorFearGreedR3Report?.status??(sectorFearGreedR3?.status===0?'REPORT_MISSING':'EXECUTION_FAILED'),
+  observationDate:sectorFearGreedR3Report?.observationDate??null,
+  historyPoints:sectorFearGreedR3Report?.historyPoints??null,
+  sectors:sectorFearGreedR3Report?.sectors??null,
+  error:sectorFearGreedR3Report?.error??(sectorFearGreedR3?.error?.code??null),
+ }:{nonBlocking:true,status:'SKIPPED_KOREA_LANE'};
+ const report={at:new Date().toISOString(),lane,collectionExit:collection.status,collectionStatus:collectionReport?.status??null,supplyR10,sectorFearGreed,publicationExit:publication.status,publishRequested,publishSkipped,researchProspective,researchFundFlowProspective,researchBreadthProspective,researchEarningsR5Prospective,status:publication.status===0?(publishSkipped==='QUOTA_GUARD'?'QUOTA_GUARDED':publishSkipped==='COLLECTION_FAILED'?'COLLECTION_FAILED_PUBLISH_BLOCKED':'COMPLETE'):'PUBLICATION_NOT_VERIFIED'};
  save(path.join(base,'local-cycle-last-run.json'),report);console.log(JSON.stringify(report));
  if(publication.status!==0)process.exitCode=1;
 }finally{fs.unlinkSync(file);}
