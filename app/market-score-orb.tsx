@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Gauge } from 'lucide-react';
 import {fearGreedStateColor} from '../lib/fear-greed-state-color.mjs';
+import {clampedAnimationProgress} from '../lib/animation-progress.mjs';
 import {useScoreArrows} from '../components/score-arrow-provider';
 
 type ScoreVariant = 'compact' | 'hero';
@@ -98,7 +99,7 @@ function useAnimatedNumber(
     const startedAt = performance.now();
 
     const tick = (now: number) => {
-      const progress = Math.min(1, (now - startedAt) / duration);
+      const progress = clampedAnimationProgress(now,startedAt,duration);
       const eased = 1 - Math.pow(1 - progress, 3);
       const next = start + (target - start) * eased;
 
