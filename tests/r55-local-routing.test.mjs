@@ -6,9 +6,10 @@ import ts from 'typescript';
 
 const source=fs.readFileSync(new URL('../middleware.ts',import.meta.url),'utf8');
 const code=ts.transpileModule(source,{compilerOptions:{module:ts.ModuleKind.CommonJS}}).outputText;
-function route(mode,host,{protocol='https:',forwardedProto}={}){
+function route(mode,host,{protocol='https:',forwardedProto,cfVisitorProto}={}){
  const headers=new Headers({host});
  if(forwardedProto)headers.set('x-forwarded-proto',forwardedProto);
+ if(cfVisitorProto)headers.set('cf-visitor',JSON.stringify({scheme:cfVisitorProto}));
  const context={exports:{},process:{env:{NODE_ENV:mode}},require:()=>({NextResponse:{next:()=>({next:true}),redirect:(url,status=308)=>({url:url.toString(),status})}})};
  vm.runInNewContext(code,context);
  return context.exports.middleware({headers,nextUrl:{protocol,clone:()=>new URL(`${protocol}//${host}/?r55=verify`)}});
@@ -35,4 +36,12 @@ test('Production redirects canonical HTTP requests to canonical HTTPS',()=>{
  const forwardedHttp=route('production','zgmini.kr',{protocol:'https:',forwardedProto:'http'});
  assert.equal(forwardedHttp.status,308);
  assert.equal(forwardedHttp.url,'https://zgmini.kr/?r55=verify');
+});
+test('Cloudflare CF-Visitor is authoritative for the original visitor scheme',()=>{
+ const cloudflareHttp=route('production','zgmini.kr',{protocol:'https:',forwardedProto:'https',cfVisitorProto:'http'});
+ assert.equal(cloudflareHttp.status,308);
+ assert.equal(cloudflareHttp.url,'https://zgmini.kr/?r55=verify');
+
+ const cloudflareHttps=route('production','zgmini.kr',{protocol:'http:',forwardedProto:'http',cfVisitorProto:'https'});
+ assert.equal(cloudflareHttps.next,true);
 });
