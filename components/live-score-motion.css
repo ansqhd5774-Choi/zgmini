@@ -1,8 +1,8 @@
 /* Transforms never change layout. Only visible directional indicators move. */
-@keyframes zg-arrow-rise{0%{transform:translateY(2px);opacity:.55}65%,100%{transform:translateY(-2px);opacity:1}}
-@keyframes zg-arrow-fall{0%{transform:translateY(-2px);opacity:.55}65%,100%{transform:translateY(2px);opacity:1}}
-.cnn-score-comparison.is-up i,.zg-composite-day-comparison>b[data-direction="up"] i,.zg-r55-day-change[data-direction="up"],.ob-direction-up[data-arrow-active="true"]::after{animation:zg-arrow-rise 1.3s ease-in-out infinite}
-.cnn-score-comparison.is-down i,.zg-composite-day-comparison>b[data-direction="down"] i,.zg-r55-day-change[data-direction="down"],.ob-direction-down[data-arrow-active="true"]::after{animation:zg-arrow-fall 1.3s ease-in-out infinite}
+@keyframes zg-arrow-rise{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
+@keyframes zg-arrow-fall{0%,100%{transform:translateY(0)}50%{transform:translateY(3px)}}
+.cnn-score-comparison.is-up i,.zg-composite-day-comparison>b[data-direction="up"] i,.zg-r55-day-change[data-direction="up"],.ob-direction-up[data-arrow-active="true"]::after{animation:zg-arrow-rise 1.6s ease-in-out infinite}
+.cnn-score-comparison.is-down i,.zg-composite-day-comparison>b[data-direction="down"] i,.zg-r55-day-change[data-direction="down"],.ob-direction-down[data-arrow-active="true"]::after{animation:zg-arrow-fall 1.6s ease-in-out infinite}
 .zg-composite-day-comparison i{display:inline-block}
 @keyframes zg-score-flash-a{0%,25%{text-shadow:0 0 14px var(--zg-change-color);filter:brightness(1.55)}100%{text-shadow:none;filter:none}}
 @keyframes zg-score-flash-b{0%,25%{text-shadow:0 0 14px var(--zg-change-color);filter:brightness(1.55)}100%{text-shadow:none;filter:none}}
