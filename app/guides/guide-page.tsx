@@ -8,13 +8,13 @@ export function guideMetadata(title:string,description:string,path:string):Metad
     openGraph:{title:fullTitle,description,url,type:'article',siteName:'ZGmini'},
     twitter:{card:'summary',title:fullTitle,description}};
 }
-export default function GuidePage({title,answer,path,children}:{title:string;answer:string;path:string;children:ReactNode}) {
+export default function GuidePage({title,answer,path,dateModified='2026-10-07',children}:{title:string;answer:string;path:string;dateModified?:string;children:ReactNode}) {
   return <main className="min-h-screen bg-[#03121d] px-4 py-8 text-slate-100 sm:px-8 sm:py-12">
     <WebPageJsonLd name={title} description={answer} path={path}/>
-    <ArticleJsonLd headline={title} description={answer} path={path} dateModified="2026-10-07"/>
+    <ArticleJsonLd headline={title} description={answer} path={path} dateModified={dateModified}/>
     <article className="mx-auto max-w-4xl text-sm leading-7 sm:text-base">
       <a href="/" className="inline-flex min-h-11 items-center text-blue-200">← ZGmini 대시보드</a>
-      <header className="mt-5 space-y-4"><p className="text-sm text-slate-400">투자 지표 활용 안내 · 내용 확인일 2026-10-07</p>
+      <header className="mt-5 space-y-4"><p className="text-sm text-slate-400">투자 지표 활용 안내 · 내용 확인일 {dateModified}</p>
         <h1 className="text-2xl font-bold text-white sm:text-3xl">{title}</h1>
         <p className="rounded-lg border border-slate-700 p-4 text-slate-200">{answer}</p>
       </header>
