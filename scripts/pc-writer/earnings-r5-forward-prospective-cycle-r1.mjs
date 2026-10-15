@@ -6,6 +6,7 @@ import {fileURLToPath} from "node:url";
 import {runEarningsR5SecCrossFilingAudit} from "./earnings-r5-sec-cross-filing-audit.mjs";
 import {runForwardReadinessR3} from "./earnings-r5-forward-readiness-r3.mjs";
 import {runForwardShadowSnapshotR1} from "./earnings-r5-forward-shadow-snapshot-r1.mjs";
+import {runG4PitLedgerR1} from "./earnings-r5-g4-pit-ledger-r1.mjs";
 
 export const E1_R5_FORWARD_PROSPECTIVE_CYCLE_R1_VERSION="E1-R5-FORWARD-PROSPECTIVE-CYCLE-R1";
 export const E1_R5_FORWARD_PROSPECTIVE_CYCLE_R1_CONTRACT=Object.freeze({
@@ -19,6 +20,8 @@ export const E1_R5_FORWARD_PROSPECTIVE_CYCLE_R1_CONTRACT=Object.freeze({
   productionBaseline:"E1-R4",
   refreshPolicy:"UTC_DAY_OR_INPUT_MTIME_AFTER_LAST_SNAPSHOT",
   nonBlockingCaller:true,
+  g4PitLedger:"E1-R5-G4-PIT-R1",
+  g4PitNonBlocking:true,
 });
 
 const DEFAULT_BASE=process.env.ZGMINI_PC_HOME??path.join(os.homedir(),".zgmini","pc-writer");
@@ -66,12 +69,12 @@ export function evaluateProspectiveRefresh({now=new Date().toISOString(),ledger=
     return {refresh:true,reason:"NEW_UTC_DAY",latestSnapshot:latestIso,maxInputMtime:maxInputMs===null?null:new Date(maxInputMs).toISOString()};
   }
   if(maxInputMs!==null&&maxInputMs>latestMs){
-    return {refresh:true,reason:"INPUT_CHANGED_AFTER_LAST_SNAPSHOT",latestSnapshot:latestIso,maxInputMtime:new Date(maxInputMs).toISOString()};
+    return {refresh:true,reason:"INPUT_CHANGED_AFTER_LAST_SNAPSHOT",latestSnapshot:latestIso,maxInputMtime:maxInputMs===null?null:new Date(maxInputMs).toISOString()};
   }
   return {refresh:false,reason:"UNCHANGED_SAME_UTC_DAY",latestSnapshot:latestIso,maxInputMtime:maxInputMs===null?null:new Date(maxInputMs).toISOString()};
 }
 
-export function runForwardProspectiveCycleR1({base=DEFAULT_BASE,now=new Date().toISOString()}={}){
+export function runForwardProspectiveCycleR1({base=DEFAULT_BASE,now=new Date().toISOString(),runG4Pit=runG4PitLedgerR1}={}){
   const e1=path.join(base,"manual-input","e1-r5");
   const reports=path.join(e1,"reports");
   const sourceFiles=[
@@ -79,6 +82,10 @@ export function runForwardProspectiveCycleR1({base=DEFAULT_BASE,now=new Date().t
     path.join(e1,"sec-guidance-r17","historical-backfill-r1.json"),
     path.join(reports,"e1-r5-sec-history-backfill-last.json"),
     path.join(e1,"cfo-survey-r1","releases.json"),
+  ];
+  const optionalG4Inputs=[
+    path.join(e1,"incoming","companyfacts"),
+    path.join(e1,"incoming","bea-section1-all.xlsx"),
   ];
   const missing=sourceFiles.filter(f=>!fs.existsSync(f));
   const ledgerFile=path.join(e1,"forward-shadow-r1","snapshots.json");
@@ -91,7 +98,7 @@ export function runForwardProspectiveCycleR1({base=DEFAULT_BASE,now=new Date().t
   }
 
   const ledger=fs.existsSync(ledgerFile)?readJson(ledgerFile):null;
-  const inputStats=sourceFiles.map(file=>({file,mtime:fs.statSync(file).mtime.toISOString(),size:fs.statSync(file).size}));
+  const inputStats=[...sourceFiles,...optionalG4Inputs.filter(fs.existsSync)].map(file=>({file,mtime:fs.statSync(file).mtime.toISOString(),size:fs.statSync(file).size}));
   const decision=evaluateProspectiveRefresh({now,ledger,inputStats});
 
   if(!decision.refresh){
@@ -115,6 +122,12 @@ export function runForwardProspectiveCycleR1({base=DEFAULT_BASE,now=new Date().t
   }
 
   const snapshot=runForwardShadowSnapshotR1({base,recordedAt:now});
+  let g4Pit=null;
+  try{
+    g4Pit=runG4Pit({base,recordedAt:now});
+  }catch(error){
+    g4Pit={status:"FAILED",code:clean(error?.code??error?.message??"G4_PIT_FAILED"),snapshot:null,snapshotCount:null,ledgerFile:path.join(e1,"g4-pit-r1","snapshots.json"),networkCalls:0,dbWrites:0,productionActivation:false};
+  }
   const report={
     version:E1_R5_FORWARD_PROSPECTIVE_CYCLE_R1_VERSION,
     at:new Date().toISOString(),
@@ -128,6 +141,12 @@ export function runForwardProspectiveCycleR1({base=DEFAULT_BASE,now=new Date().t
     snapshotCount:snapshot.snapshotCount,
     checkpoint:snapshot.snapshot.checkpoint,
     ledgerFile:snapshot.ledgerFile,
+    g4PitStatus:g4Pit.status,
+    g4PitCode:g4Pit.code??null,
+    g4PitSnapshotId:g4Pit.snapshot?.snapshotId??null,
+    g4PitSnapshotDate:g4Pit.snapshot?.snapshotDate??null,
+    g4PitSnapshotCount:g4Pit.snapshotCount??null,
+    g4PitLedgerFile:g4Pit.ledgerFile??null,
     lastRunFile,
     networkCalls:0,
     dbWrites:0,
