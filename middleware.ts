@@ -5,6 +5,8 @@ const candidateWorkerPrefix = "zgmini-migration-candidate-r5.";
 
 export function middleware(request: NextRequest) {
   const host = request.headers.get("host")?.split(":")[0].toLowerCase();
+  const forwardedProto = request.headers.get("x-forwarded-proto")?.split(",")[0]?.trim().toLowerCase();
+  const protocol = forwardedProto || request.nextUrl.protocol.replace(":", "").toLowerCase();
   // Local development must render the current worktree, not redirect to Production.
   if (process.env.NODE_ENV === "development" && (host === "localhost" || host === "127.0.0.1")) {
     return NextResponse.next();
@@ -12,7 +14,7 @@ export function middleware(request: NextRequest) {
   if (host?.startsWith(candidateWorkerPrefix) && host.endsWith(".workers.dev")) {
     return NextResponse.next();
   }
-  if (host && host !== canonicalHost) {
+  if ((host && host !== canonicalHost) || protocol !== "https") {
     const url = request.nextUrl.clone();
     url.protocol = "https:";
     url.host = canonicalHost;
