@@ -3,13 +3,13 @@ import type {Metadata} from "next";
 import RecessionPanel from "./recession-panel";
 import DetailReadingGuide from "../detail-reading-guide";
 
-const title="미국 경기침체 | 주요 지표·현재값·판단 - ZGmini";
-const description="미국 경기침체 방어점수와 고용·GDP·생산·소비·소득·신용 지표의 기준, 현재값, 긍정·중립·부정 판단을 한 페이지에서 확인하세요.";
+const title="미국 경기침체 지표 | 고용·GDP·생산·소비·신용 분석 - ZGmini";
+const description="미국 경기침체 위험을 고용, 실질 GDP, 산업생산, 소비, 소득, 신용지표로 확인하세요. 경기침체 방어점수와 각 경제지표의 현재값·관측일·기간별 흐름을 함께 제공합니다.";
 const url="https://zgmini.kr/recession/";
 
 export const metadata:Metadata={
  title,description,alternates:{canonical:url},robots:{index:true,follow:true},
- openGraph:{title,description,url,type:"website",siteName:"ZGmini",images:[{url:"https://zgmini.kr/zgmini-share.png",width:1200,height:630,alt:"ZGmini 미국 경기침체 상세"}]},
+ openGraph:{title,description,url,type:"website",siteName:"ZGmini",images:[{url:"https://zgmini.kr/zgmini-share.png",width:1200,height:630,alt:"ZGmini 미국 경기침체·고용·GDP 분석"}]},
  twitter:{card:"summary_large_image",title,description,images:["https://zgmini.kr/zgmini-share.png"]},
 };
 
