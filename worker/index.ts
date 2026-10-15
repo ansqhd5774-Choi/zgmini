@@ -11,6 +11,7 @@ import { productionFredProbe } from "./p0-production-fred-probe.mjs";
 import { handleImageOptimization, DEFAULT_DEVICE_SIZES, DEFAULT_IMAGE_SIZES } from "vinext/server/image-optimization";
 import handler from "vinext/server/app-router-entry";
 import sitemapXml from "../public/sitemap.xml?raw";
+import {canonicalHttpsRedirect} from "./canonical-https-redirect.mjs";
 import { phase1KoreaDataCheck } from "./phase1-korea.mjs";
 import { phase2KoreaHistoryCheck } from "./phase2-korea-history.mjs";
 import { koreaFunds } from "./korea-funds.mjs";
@@ -99,6 +100,8 @@ export async function runMarketExternalRefresh(args:any){
 
 const worker = {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
+    const canonicalRedirect=canonicalHttpsRedirect(request);
+    if(canonicalRedirect) return canonicalRedirect;
     const url = new URL(request.url);
     if (url.pathname.replace(/\/$/, '') === '/api/internal/korea-rev7-scheduled') return koreaRev7ExternalScheduler(request, runtimeEnv, {ctx});
     if (url.pathname.replace(/\/$/, '') === '/api/internal/market-scheduled') return koreaRev7ExternalScheduler(request, runtimeEnv, {ctx,refresh:runMarketExternalRefresh,responseBudgetMs:5000,logTag:'MARKET_EXTERNAL'});
@@ -175,9 +178,9 @@ const worker = {
       console.log("MARKET_OP_R1_CRON", JSON.stringify({
         cron: controller.cron,
         status: result?.status ?? null,
-        job: result?.job ?? null,
-        sourceStatus: result?.sourceStatus ?? null,
-        readyDomains: result?.readyDomains ?? null,
+        job: result?.job??null,
+        sourceStatus: result?.sourceStatus??null,
+        readyDomains: result?.readyDomains??null,
       }));
       return;
     }
