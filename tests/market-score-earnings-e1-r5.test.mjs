@@ -21,8 +21,8 @@ test("E1-R5 locks approved 13-component weights and 55/20/15/10 blocks",()=>{
   });
   assert.deepEqual(E1_R5_BLOCK_WEIGHTS,{actual:0.55,breadth:0.20,costPressure:0.15,forward:0.10});
   assert.deepEqual(E1_R5_FORWARD_SUBWEIGHTS,{S12A:4,S12B:3});
-  assert.equal(Object.values(E1_R5_WEIGHTS).reduce((a,b)=>a+b,0),1);
-  assert.equal(Object.values(E1_R5_BLOCK_WEIGHTS).reduce((a,b)=>a+b,0),1);
+  near(Object.values(E1_R5_WEIGHTS).reduce((a,b)=>a+b,0),1);
+  near(Object.values(E1_R5_BLOCK_WEIGHTS).reduce((a,b)=>a+b,0),1);
 });
 
 test("historical percentile uses mid-rank and supports inverse pressure scoring",()=>{
