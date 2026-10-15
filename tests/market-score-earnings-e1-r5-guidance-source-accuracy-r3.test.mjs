@@ -95,6 +95,15 @@ test("SEC EPS parser keeps Walmart-style Q3 and FY27 table periods separate",()=
   assert.equal(out.candidates.some(row=>row.periodKey==="FY2026"&&Math.abs(row.midpoint-2.835)<1e-12),false);
 });
 
+test("SEC EPS parser keeps pipe-packed Walmart Q3 table from inheriting following FY27 heading",()=>{
+  const pipes=" |".repeat(31);
+  const html=`
+    <p>Third quarter | The Company's third quarter fiscal 2027 guidance is based on the following Q3 FY26 figures: adjusted EPS $0.62. | Consolidated metric | Q3 FY27 | Net sales (cc) | Increase 3.0% to 3.75% | Operating income (cc) | Increase 2.0% to 4.0% | Adjusted EPS | $0.62 to $0.64 ${pipes} | Fiscal year 2027 | The Company's fiscal year guidance is based on the following FY26 figures: adjusted EPS $2.64.</p>`;
+  const out=extractSecEpsGuidance(html,META);
+  assert.ok(out.candidates.some(row=>row.periodKey==="FY2027Q3"&&Math.abs(row.midpoint-0.63)<1e-12));
+  assert.equal(out.candidates.some(row=>row.periodKey==="FY2027"&&Math.abs(row.midpoint-0.63)<1e-12),false);
+});
+
 test("SEC EPS parser infers Walmart-style undated quarter from nearby FY outlook without collapsing to annual",()=>{
   const html=`
     <p>Company issues guidance for Q2; reiterates outlook for FY27.</p>
