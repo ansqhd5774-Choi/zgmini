@@ -1,4 +1,5 @@
 import DetailInvestorNotes from "../detail-investor-notes";
+import SearchIntentIntro from "../search-intent-intro";
 import type {Metadata} from "next";
 import RecessionPanel from "./recession-panel";
 import DetailReadingGuide from "../detail-reading-guide";
@@ -17,6 +18,7 @@ export default function RecessionPage(){
  return <main className="min-h-screen bg-[#03121d] px-4 py-8 text-slate-100 sm:px-8 sm:py-12">
   <div className="mx-auto max-w-6xl">
    <a className="inline-flex min-h-11 items-center text-sm text-blue-200" href="/">← ZGmini 메인 대시보드</a>
+   <SearchIntentIntro topic="recession"/>
    <RecessionPanel/>
    <DetailReadingGuide title="경기침체 방어점수의 의미와 한계"
     sections={[
