@@ -447,3 +447,7 @@
 .ob-summary .ob-summary-card .ob-direction-up::after,.ob-summary .ob-summary-card .ob-direction-down::after{display:inline-flex;align-items:center;justify-content:center;width:11px;height:11px;font-size:11px;line-height:1;flex:0 0 11px;text-shadow:none}
 .ob-summary .ob-summary-card .ob-direction-up::after{content:"▲";color:#22c55e}
 .ob-summary .ob-summary-card .ob-direction-down::after{content:"▼";color:#ef4444}
+
+/* Score-change indicators expire independently of data refresh. */
+.ob-direction[data-arrow-active="false"]::after{content:none!important}
+.zg-r55-day-change[data-arrow-active="false"][data-direction="up"],.zg-r55-day-change[data-arrow-active="false"][data-direction="down"]{visibility:hidden}

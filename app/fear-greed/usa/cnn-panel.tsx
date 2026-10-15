@@ -516,7 +516,7 @@ export default function CnnPanel({ showEducation = false }: { showEducation?: bo
         source: loading ? "확인 중" : status,
         rightContent: <MarketCardInsight text={marketInsight}/>,
       }}
-      score={{
+      score={{arrowId:"usa",
         value: loading || score === null ? "—" : score.toFixed(1),
         state: loading ? "확인 중" : stage,
         caption: "",

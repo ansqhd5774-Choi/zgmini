@@ -20,10 +20,15 @@ test('zero is valid, missing values never become zero and integer changes stay c
 test('the shared React card renders fractional up/down labels and arrows; flat has no arrow',()=>{
  const file=new URL('../app/outbreak-change.tsx',import.meta.url),module={exports:{}};
  const code=ts.transpileModule(fs.readFileSync(file,'utf8'),{compilerOptions:{jsx:ts.JsxEmit.ReactJSX,module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText;
- new Function('require','module','exports',code)(createRequire(file),module,module.exports);
- const render=(current,previous)=>renderToStaticMarkup(React.createElement(module.exports.OutbreakChange,{current,previous}));
+ const require=createRequire(file);
+ let active=true;
+ new Function('require','module','exports',code)(id=>id==='../components/score-arrow-provider'?{useScoreArrows:()=>()=>active}:require(id),module,module.exports);
+ const render=(current,previous)=>renderToStaticMarkup(React.createElement(module.exports.OutbreakChange,{current,previous,series:'iran'}));
  const up=render(46.6,46.2),down=render(46.2,46.6),flat=render(46.2,46.2);
  assert.match(up,/aria-label="전일 대비 0.4점 상승"/);assert.match(up,/ob-direction-up/);assert.match(up,/0\.4<svg/);
  assert.match(down,/aria-label="전일 대비 0.4점 하락"/);assert.match(down,/ob-direction-down/);assert.match(down,/0\.4<svg/);
  assert.match(flat,/변화 없음/);assert.doesNotMatch(flat,/<svg/);assert.equal(render(null,46.2),'');
+ active=false;
+ const expired=render(46.6,46.2);
+ assert.match(expired,/0\.4/);assert.match(expired,/data-arrow-active="false"/);assert.doesNotMatch(expired,/<svg/);
 });

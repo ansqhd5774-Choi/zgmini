@@ -3,6 +3,7 @@ import {openStore,hash} from './store.mjs';import {collectNewsR2} from './contin
 import {buildReferenceFlowR2,classifyR2Article,CLASSIFIER_VERSION} from '../../lib/iran-progress/reference-flow-r2.mjs';
 import {validateReferenceFlowR2} from '../../lib/iran-progress/reference-public-r2.mjs';
 import {publishReferenceFlowR2} from './publication.mjs';import {client,credential} from '../pc-writer/d1.mjs';
+import {publishArrowState} from '../pc-writer/score-arrow-publication.mjs';
 
 const tokens=e=>new Set((e.evidence??'').toLowerCase().replace(/iranian|iran|navy|says|another|the |of |in |after |chief|spokesman/gi,' ').match(/[a-z]{3,}/g)??[]);
 export function resolveR2Events(input){
@@ -73,9 +74,12 @@ if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.ur
   if(mode.endsWith('preview')){store.checkpoint('reference-flow-preview-r2',body);console.log(JSON.stringify({mode:'PREVIEW',score:body.score,status:body.status,eventCount:body.eventCount,collectionStatus:body.newsCollection.status,possibleDuplicateCount:body.newsCollection.possibleDuplicateCount}));}
   else{
    const config=JSON.parse(fs.readFileSync(path.join(os.homedir(),'.zgmini','pc-writer','config.json'),'utf8'));
-   const result=await publishReferenceFlowR2(client(config,credential(root)),config.core,body,{now});
+   const remote=client(config,credential(root));
+   const result=await publishReferenceFlowR2(remote,config.core,body,{now});
    if(!['VERIFIED','UNCHANGED'].includes(result.status))throw Error('R2_REMOTE_NEWER_PRESERVED');
    store.checkpoint('reference-flow-last-valid-r2',body);store.checkpoint('reference-flow-publication-r2',{...result,score:body.score,eventCount:body.eventCount,publishedAt:body.publishedAt});
+   const arrows=await publishArrowState(remote,config.core,'iran',{iran:{score:body.score,sourceAt:body.publishedAt,method:body.version}});
+   store.checkpoint('score-arrow-publication-r1',arrows);
    console.log(JSON.stringify({...result,version:body.version,score:body.score,status:body.status,eventCount:body.eventCount,collectionStatus:body.newsCollection.status,possibleDuplicateCount:body.newsCollection.possibleDuplicateCount}));
   }
  }finally{store.release(owner);store.close();}
