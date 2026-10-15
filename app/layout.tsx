@@ -36,7 +36,7 @@ const structuredData = {
       "@id": "https://zgmini.kr/#website",
       url: "https://zgmini.kr/",
       name: "ZGmini",
-      alternateName: "지그미니",
+      alternateName: ["지그미니", "zgmini.kr"],
       description: "미국·한국 공포탐욕지수의 최근 점수와 기간별 차트를 확인하세요. 물가·고용·금리 등 주요 경제지표와 데이터 관측일을 함께 제공합니다.",
       inLanguage: "ko-KR",
     },
@@ -47,6 +47,10 @@ const structuredData = {
       name: "ZGmini",
       alternateName: "지그미니",
       url: "https://zgmini.kr/",
+      sameAs: [
+        "https://shareyourstartup.com/s/zgmini",
+        "https://twelve.tools/zgmini-kr",
+      ],
     },
   ],
 };
