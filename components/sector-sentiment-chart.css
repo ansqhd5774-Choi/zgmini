@@ -1,6 +1,15 @@
 .zg-sector-chart{height:232px;box-sizing:border-box;align-self:start;min-width:0;background:#091e2b;border:1px solid #25465a;border-radius:4px;padding:16px;color:#e2e8f0}
 .zg-sector-chart h2{display:flex;align-items:center;height:30px;line-height:30px;font-size:18px;font-weight:800;margin:0;white-space:nowrap}
 .zg-sector-chart h2>svg{flex:none;width:18px;height:18px;margin-right:6px;color:#ffbf47}
+.zg-sector-chart h2>a{color:inherit;text-decoration:none}
+.zg-sector-chart h2>a:hover{text-decoration:underline;text-underline-offset:4px}
+.zg-sector-chart h2>a:focus-visible{outline:2px solid #38bdf8;outline-offset:3px;border-radius:2px}
+.zg-sector-tooltip{width:min(320px,calc(100vw - 32px));box-sizing:border-box;padding:10px 12px;border:1px solid #456174;border-radius:8px;background:#0b2030;color:#e2e8f0;box-shadow:0 8px 24px #0005;font-size:12px;font-weight:700;line-height:1.5}
+.zg-sector-tooltip p{margin:0 0 6px;font-weight:800}
+.zg-sector-tooltip ul{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px 14px;list-style:none;margin:0;padding:0}
+.zg-sector-tooltip li{display:flex;align-items:baseline;justify-content:space-between;gap:6px;min-width:0}
+.zg-sector-tooltip li span{min-width:0;overflow-wrap:anywhere}
+.zg-sector-tooltip strong{flex:none;font-weight:800;font-variant-numeric:tabular-nums}
 .zg-sector-chart-heading{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px;flex-wrap:nowrap}
 .zg-sector-period{display:flex;flex:none;width:142px;height:30px;box-sizing:border-box;border:1px solid rgba(107,145,176,.48);border-radius:6px;overflow:hidden;margin-left:auto}
 .zg-sector-period button{height:28px;width:28px;min-width:28px;padding:0;border:0;background:transparent;color:#aebfd0;font-size:10px;font-weight:800;cursor:pointer}

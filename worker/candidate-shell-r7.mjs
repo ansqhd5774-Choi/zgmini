@@ -1,4 +1,4 @@
-export const shellRoutes=Object.freeze(['/','/inflation/','/recession/','/liquidity-crisis/','/credit-risk/','/earnings-recession/','/asset-bubble/','/debt-risk/','/supply-shock/','/guides/fear-greed-buying/','/guides/cpi-pce-release/','/guides/fomc/']);
+export const shellRoutes=Object.freeze(['/','/inflation/','/recession/','/liquidity-crisis/','/credit-risk/','/earnings-recession/','/asset-bubble/','/debt-risk/','/supply-shock/','/guides/fear-greed-buying/','/guides/cpi-pce-release/','/guides/fomc/','/sector-fear-greed/']);
 export function shellArtifact(path,rsc=false){return `/__candidate_shells/${path==='/'?'index':path.slice(1,-1)}.${rsc?'rsc':'html'}`;}
 export async function staticShell(request,env){
  const url=new URL(request.url);let path=url.pathname;
