@@ -42,7 +42,7 @@ test("renders SEO metadata for all 16 public pages in the Workers runtime", asyn
     }
   }
   await walk(serverRoot);
-  modules.push({type:"ESModule", path:path.join(serverRoot,"wrapper.js"), contents:`import worker from "./index.js"; export default { fetch(request, env, ctx) { const headers = new Headers(request.headers); headers.set("host", "zgmini.kr"); return worker.fetch(new Request(request, {headers}), env, ctx); } };`});
+  modules.push({type:"ESModule", path:path.join(serverRoot,"wrapper.js"), contents:`import worker from "./index.js"; export default { fetch(request, env, ctx) { const source = new URL(request.url); const target = new URL(source.pathname + source.search, "https://zgmini.kr"); const headers = new Headers(request.headers); headers.set("host", "zgmini.kr"); headers.set("x-forwarded-proto", "https"); return worker.fetch(new Request(target, {method:request.method,headers}), env, ctx); } };`});
   modules.sort((a,b)=>a.path.endsWith("wrapper.js")?-1:b.path.endsWith("wrapper.js")?1:0);
   let outboundCalls=0;
   const mf=createMiniflare({rootPath:process.cwd(),modulesRoot:serverRoot,modules,compatibilityDate:"2026-05-15",compatibilityFlags:["nodejs_compat"],outboundService:()=>{outboundCalls++;throw new Error("External requests are forbidden in the HTML test")},serviceBindings:{ASSETS:()=>new MFResponse("Not found",{status:404})}});
