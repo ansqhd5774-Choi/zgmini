@@ -35,7 +35,7 @@ try{
  const publishAllowed=publishRequested&&!quotaGuarded&&!collectionFailed;
  const publishSkipped=publishRequested&&!publishAllowed?(quotaGuarded?'QUOTA_GUARD':collectionFailed?'COLLECTION_FAILED':null):null;
  const publication=spawnSync(process.execPath,[path.join(here,'run-local.mjs'),...(publishAllowed?['--publish']:[])],{windowsHide:true,stdio:['ignore','pipe','pipe'],timeout:30*60000});
- let prospective=null,prospectiveReport=null,fundFlowProspective=null,fundFlowProspectiveReport=null,breadthProspective=null,breadthProspectiveReport=null,earningsR5OfficialRefresh=null,earningsR5OfficialRefreshReport=null,earningsR5Prospective=null,earningsR5ProspectiveReport=null;
+ let prospective=null,prospectiveReport=null,fundFlowProspective=null,fundFlowProspectiveReport=null,breadthProspective=null,breadthProspectiveReport=null,earningsR5OfficialRefresh=null,earningsR5OfficialRefreshReport=null,earningsR5Prospective=null,earningsR5ProspectiveReport=null,earningsR5ProspectiveReportStale=false;
  if(lane==='core'){
   prospective=spawnSync(process.execPath,[path.join(here,'dollar-prospective-forward-r1.mjs')],{windowsHide:true,stdio:['ignore','pipe','pipe'],timeout:5*60000});
   const prospectiveFile=path.join(base,'local-dollar-prospective-last-run.json');
@@ -49,9 +49,16 @@ try{
   earningsR5OfficialRefresh=spawnSync(process.execPath,[path.join(here,'earnings-r5-official-refresh-cycle-r1.mjs')],{windowsHide:true,stdio:['ignore','pipe','pipe'],timeout:30*60000});
   const earningsR5OfficialRefreshFile=path.join(base,'local-earnings-r5-official-refresh-cycle-last-run.json');
   earningsR5OfficialRefreshReport=fs.existsSync(earningsR5OfficialRefreshFile)?read(earningsR5OfficialRefreshFile):null;
+  const earningsR5ProspectiveStartedAt=Date.now();
   earningsR5Prospective=spawnSync(process.execPath,[path.join(here,'earnings-r5-forward-prospective-cycle-r1.mjs')],{windowsHide:true,stdio:['ignore','pipe','pipe'],timeout:2*60000});
   const earningsR5ProspectiveFile=path.join(base,'local-earnings-r5-forward-prospective-last-run.json');
-  earningsR5ProspectiveReport=fs.existsSync(earningsR5ProspectiveFile)?read(earningsR5ProspectiveFile):null;
+  if(fs.existsSync(earningsR5ProspectiveFile)){
+   const candidate=read(earningsR5ProspectiveFile);
+   const candidateAt=Date.parse(candidate?.at??'');
+   const fresh=Number.isFinite(candidateAt)&&candidateAt>=earningsR5ProspectiveStartedAt-1000;
+   earningsR5ProspectiveReport=fresh?candidate:null;
+   earningsR5ProspectiveReportStale=!fresh;
+  }
  }
  const researchProspective=lane==='core'?{
   nonBlocking:true,
@@ -108,6 +115,7 @@ try{
   snapshotDate:earningsR5ProspectiveReport?.snapshotDate??null,
   snapshotCount:earningsR5ProspectiveReport?.snapshotCount??null,
   decision:earningsR5ProspectiveReport?.decision??null,
+  staleReportIgnored:earningsR5ProspectiveReportStale,
   error:earningsR5ProspectiveReport?.code??(earningsR5Prospective?.error?.code??null),
  }:{nonBlocking:true,status:'SKIPPED_KOREA_LANE'};
  const sectorFearGreed=lane==='core'?{
