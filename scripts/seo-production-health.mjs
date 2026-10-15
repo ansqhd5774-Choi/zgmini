@@ -5,6 +5,25 @@ const SITE_ORIGIN='https://zgmini.kr';
 const REQUEST_TIMEOUT_MS=20_000;
 const EXPECTED_PUBLIC_URLS=16;
 
+export const SEO_RUNTIME_MARKERS=new Map([
+  [`${SITE_ORIGIN}/`,{titleIncludes:'미국·한국 공포탐욕지수와 경제지표'}],
+  [`${SITE_ORIGIN}/about/`,{descriptionIncludes:'ZGMINI를 소개합니다'}],
+  [`${SITE_ORIGIN}/fear-greed/korea/`,{descriptionIncludes:'504개 유효 관측치 기준창'}],
+  [`${SITE_ORIGIN}/fear-greed/usa/`,{descriptionIncludes:'원시값과 환산점수의 차이'}],
+  [`${SITE_ORIGIN}/sector-fear-greed/`,{descriptionIncludes:'5개 핵심 신호와 252거래일 데이터'}],
+  [`${SITE_ORIGIN}/inflation/`,{htmlIncludes:['미국 CPI·근원 CPI·PCE·근원 PCE와 기대물가 등 주요 물가 지표']}],
+  [`${SITE_ORIGIN}/recession/`,{htmlIncludes:['미국 경기침체 위험을 고용, 실질 GDP, 산업생산, 소비, 소득과 신용지표로 분석합니다.']}],
+  [`${SITE_ORIGIN}/liquidity-crisis/`,{htmlIncludes:['미국 금융시장의 현금 부족과 유동성 위기 위험을 분석합니다.']}],
+  [`${SITE_ORIGIN}/credit-risk/`,{htmlIncludes:['미국 회사채 시장의 신용 위험과 기업 자금조달 환경을 확인하세요.']}],
+  [`${SITE_ORIGIN}/earnings-recession/`,{descriptionIncludes:'현재 실적 안전점수와 관측일, 기간별 흐름',htmlIncludes:['미국 기업 실적의 둔화와 침체 위험을 EPS 성장']}],
+  [`${SITE_ORIGIN}/asset-bubble/`,{htmlIncludes:['미국 자산시장의 버블 위험을 밸류에이션 압력']}],
+  [`${SITE_ORIGIN}/debt-risk/`,{htmlIncludes:['미국 가계와 기업의 부채 부담을 DSR, 부채/GDP']}],
+  [`${SITE_ORIGIN}/supply-shock/`,{htmlIncludes:['미국 공급 충격 위험을 공급망 압력과 유가·원자재 변화로 살펴봅니다.']}],
+  [`${SITE_ORIGIN}/guides/fear-greed-buying/`,{descriptionIncludes:'매수 신호로 사용할 때의 한계'}],
+  [`${SITE_ORIGIN}/guides/cpi-pce-release/`,{descriptionIncludes:'CPI·PCE 공식 발표 일정의 한국시간',htmlIncludes:['확인 당시 다음 공식 일정']}],
+  [`${SITE_ORIGIN}/guides/fomc/`,{descriptionIncludes:'FOMC 공식 일정과 한국시간 발표 시각',htmlIncludes:['확인 당시 다음 공식 일정']}],
+]);
+
 function attrs(tag){
   const result={};
   for(const match of tag.matchAll(/([:\w-]+)\s*=\s*(["'])(.*?)\2/gs)) result[match[1].toLowerCase()]=match[3];
@@ -63,11 +82,19 @@ export function jsonLdTypes(html){
   return found;
 }
 
+function includesOrError(errors,label,value,needle){
+  if(needle && !value.includes(needle)) errors.push(`${label}_stale:${needle}`);
+}
+
 export function inspectHtml(html,expectedUrl){
   const title=firstTextElement(html,'title');
   const description=meta(html,'description');
   const robots=meta(html,'robots').toLowerCase();
   const canonical=canonicalLinks(html);
+  const ogTitle=meta(html,'og:title');
+  const ogDescription=meta(html,'og:description');
+  const twitterTitle=meta(html,'twitter:title');
+  const twitterDescription=meta(html,'twitter:description');
   const h1=firstTextElement(html,'h1');
   const types=jsonLdTypes(html);
   const path=new URL(expectedUrl).pathname;
@@ -78,12 +105,25 @@ export function inspectHtml(html,expectedUrl){
   if(!robots.includes('index') || !robots.includes('follow')) errors.push(`robots_invalid:${robots||'missing'}`);
   if(canonical.length!==1) errors.push(`canonical_count:${canonical.length}`);
   else if(canonical[0]!==expectedUrl) errors.push(`canonical_mismatch:${canonical[0]}`);
-  if(!meta(html,'og:title')) errors.push('og_title_missing');
-  if(!meta(html,'og:description')) errors.push('og_description_missing');
+  if(!ogTitle) errors.push('og_title_missing');
+  else if(ogTitle!==title) errors.push(`og_title_mismatch:${ogTitle}`);
+  if(!ogDescription) errors.push('og_description_missing');
+  else if(ogDescription!==description) errors.push('og_description_mismatch');
   if(meta(html,'og:url')!==expectedUrl) errors.push(`og_url_mismatch:${meta(html,'og:url')||'missing'}`);
-  if(!meta(html,'twitter:title')) errors.push('twitter_title_missing');
-  if(!meta(html,'twitter:description')) errors.push('twitter_description_missing');
+  if(!twitterTitle) errors.push('twitter_title_missing');
+  else if(twitterTitle!==title) errors.push(`twitter_title_mismatch:${twitterTitle}`);
+  if(!twitterDescription) errors.push('twitter_description_missing');
+  else if(twitterDescription!==description) errors.push('twitter_description_mismatch');
   if(!h1) errors.push('h1_missing');
+
+  const contract=SEO_RUNTIME_MARKERS.get(expectedUrl);
+  if(!contract){
+    errors.push('runtime_contract_missing');
+  }else{
+    includesOrError(errors,'title',title,contract.titleIncludes);
+    includesOrError(errors,'description',description,contract.descriptionIncludes);
+    for(const marker of contract.htmlIncludes??[]) includesOrError(errors,'html',html,marker);
+  }
 
   if(path==='/'){
     if(!types.has('WebSite')) errors.push('jsonld_website_missing');
@@ -160,6 +200,8 @@ async function main(){
   const localSitemap=readFileSync('public/sitemap.xml','utf8');
   const publicUrls=parseSitemap(localSitemap);
   if(publicUrls.length!==EXPECTED_PUBLIC_URLS) throw new Error(`SEO_HEALTH_PUBLIC_URL_COUNT:${publicUrls.length}`);
+  if(SEO_RUNTIME_MARKERS.size!==EXPECTED_PUBLIC_URLS) throw new Error(`SEO_HEALTH_RUNTIME_CONTRACT_COUNT:${SEO_RUNTIME_MARKERS.size}`);
+  for(const url of publicUrls) if(!SEO_RUNTIME_MARKERS.has(url)) throw new Error(`SEO_HEALTH_RUNTIME_CONTRACT_MISSING:${url}`);
 
   const check=await waitForCloudflare({repository,sha,token});
   console.log(`SEO_HEALTH_CLOUDFLARE_PASS=${check.id}`);
