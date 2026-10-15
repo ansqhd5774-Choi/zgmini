@@ -1,4 +1,4 @@
-import {AIS_DAILY_URL,parseAisDaily} from './ais.mjs';
+import {AIS_DAILY_URL,AIS_HEALTH_URL,parseAisDaily,parseAisHealth} from './ais.mjs';
 export async function boundedRead(url,{fetcher=fetch,maxBytes=4000000}={}){
  const response=await fetcher(url,{signal:AbortSignal.timeout(20000),headers:{Accept:'application/json, application/rss+xml, text/plain, text/html'}});
  if(!response.ok)return {status:'SOURCE_FAILED',httpStatus:response.status,retryAfter:response.headers.get('retry-after')};
@@ -9,18 +9,22 @@ export async function boundedRead(url,{fetcher=fetch,maxBytes=4000000}={}){
  const bytes=new Uint8Array(size);let at=0;for(const p of parts){bytes.set(p,at);at+=p.length;}
  return {status:'COLLECTED',httpStatus:response.status,body:new TextDecoder().decode(bytes)};
 }
-export async function collectSources({now=Date.now(),fetcher=fetch}={}){
+export async function collectSources({now=Date.now(),fetcher=fetch,ids=null}={}){
  const specs={
   ais:AIS_DAILY_URL,
+  aisHealth:AIS_HEALTH_URL,
   marad:'https://www.maritime.dot.gov/msci-advisories',
   gdelt:'https://data.gdeltproject.org/gdeltv2/lastupdate.txt',
   ukmto:'https://www.ukmto.org/recent-incidents',
   iaea:'https://www.iaea.org/feeds/topnews',
  };
  const output={};
+ if(ids&&(!Array.isArray(ids)||ids.some(id=>!Object.hasOwn(specs,id))))throw Error('SOURCE_IDS_INVALID');
  for(const [id,url] of Object.entries(specs)){
+  if(ids&&!ids.includes(id))continue;
   try{const r=await boundedRead(url,{fetcher});output[id]={...r,url,sourceStoredAt:now,lastAttemptAt:now};
    if(id==='ais'&&r.status==='COLLECTED'){const sanitized=parseAisDaily(r.body,{now});output[id]={...output[id],...sanitized,body:JSON.stringify(sanitized)};}
+   if(id==='aisHealth'&&r.status==='COLLECTED'){const sanitized=parseAisHealth(r.body,{now:Date.now()});output[id]={...output[id],...sanitized,body:JSON.stringify(sanitized)};}
    // Discovery/feeds do not establish complete event coverage or independently verified facts.
   }catch{output[id]={status:'SOURCE_FAILED',reason:'SOURCE_READ_OR_PARSE_FAILED',url,lastAttemptAt:now};}
  }

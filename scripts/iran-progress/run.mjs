@@ -5,7 +5,7 @@ import {randomUUID} from 'node:crypto';
 import {openStore,hash} from './store.mjs';
 import {collectSources} from './sources.mjs';
 import {buildIranProgress} from '../../lib/iran-progress/r13.mjs';
-import {interpretSource} from './ai.mjs';
+import {processOfficialArticles} from './article-analysis-r14.mjs';
 import {publicBody,publishIran,publishIranStatus} from './publication.mjs';
 import {client,credential} from '../pc-writer/d1.mjs';
 import {fileURLToPath} from 'node:url';
@@ -51,31 +51,9 @@ try{
   c.requiredSources=c.requiredSources?.map(s=>({...s,status:sources[s.id]?.status==='COLLECTED'?s.status:'SOURCE_FAILED'}));
  }
  let ai={status:'NOT_REQUESTED'};
- if(process.argv.includes('--ai')&&sources.iaea.status==='COLLECTED'){
-  const text=(sources.iaea.body.match(/<item\b[\s\S]*?<\/item>/gi)??[]).filter(x=>/iran/i.test(x)).slice(0,3).join('\n').replace(/<[^>]*>/g,' ').replace(/\s+/g,' ').slice(0,12000);
-  if(text){
-   const inputHash=hash(text),done=store.getCheckpoint('ai:'+inputHash);
-   if(done)ai={status:'UNCHANGED',sourceHash:inputHash};
-   else try{
-    const tags=await fetch('http://127.0.0.1:11434/api/tags',{signal:AbortSignal.timeout(5000)}).then(r=>r.json());
-    const model=tags.models?.find(m=>m.name==='gemma3:4b');
-    ai=await interpretSource(text,{modelDigest:model?.digest,now});
-    store.putDecision(inputHash+':'+ai.modelDigest+':'+ai.promptVersion,ai,now);store.checkpoint('ai:'+inputHash,{status:ai.status});
-    ai={status:ai.status,candidateCount:ai.candidates.length,sourceHash:ai.sourceHash};
-   }catch{ai={status:'PENDING',reason:'AI_CANDIDATE_VALIDATION_FAILED'};}
-  }
- }
  if(process.argv.includes('--ai')){
-  const article=store.candidates(1)[0];
-  if(article){
-   try{
-    const tags=await fetch('http://127.0.0.1:11434/api/tags',{signal:AbortSignal.timeout(5000)}).then(r=>r.json());
-    const model=tags.models?.find(m=>m.name==='gemma3:4b');
-    const interpreted=await interpretSource(article.title,{modelDigest:model?.digest,now:Date.now()});
-    store.putDecision('discovery:'+article.id+':'+interpreted.modelDigest+':'+interpreted.promptVersion,{...interpreted,articleId:article.id,url:article.url,sourceLevel:'HEADLINE_ONLY',eventVerification:'PENDING'},interpreted.interpretedAt);
-    store.finishCandidate(article.id,'REVIEW_PENDING');ai={status:'CANDIDATE_ONLY',candidateCount:interpreted.candidates.length,sourceLevel:'HEADLINE_ONLY'};
-   }catch{ai={status:'PENDING',reason:'AI_DISCOVERY_VALIDATION_FAILED'};}
-  }
+  ai=await processOfficialArticles({store,maxArticles:2,requireEvaluation:true});
+  fs.writeFileSync(path.join(base,'article-analysis-last-run.json'),JSON.stringify(ai,null,2));
  }
  // Candidate interpretation never advances the verified-input checkpoint.
  // Calculate only after collection/interpretation has completed.
