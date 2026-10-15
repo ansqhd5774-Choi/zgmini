@@ -3,6 +3,7 @@ import SearchIntentIntro from "../search-intent-intro";
 import type {Metadata} from "next";
 import RecessionPanel from "./recession-panel";
 import DetailReadingGuide from "../detail-reading-guide";
+import BeginnerRiskGuide from "../beginner-risk-guide";
 
 const title="미국 경기침체 지표 | 고용·GDP·생산·소비·신용 분석 - ZGmini";
 const description="미국 경기침체 위험을 고용, 실질 GDP, 산업생산, 소비, 소득, 신용지표로 확인하세요. 경기침체 방어점수와 각 경제지표의 현재값·관측일·기간별 흐름을 함께 제공합니다.";
@@ -20,6 +21,7 @@ export default function RecessionPage(){
    <a className="inline-flex min-h-11 items-center text-sm text-blue-200" href="/">← ZGmini 메인 대시보드</a>
    <SearchIntentIntro topic="recession"/>
    <RecessionPanel/>
+   <BeginnerRiskGuide topic="recession"/>
    <DetailReadingGuide title="경기침체 방어점수의 의미와 한계"
     sections={[
      {title:"점수가 높으면 침체 위험이 높다는 뜻인가요?",text:"아닙니다. 이 페이지의 점수는 경기침체 방어점수로, 높을수록 경기 방어가 양호한 방향입니다. 54점이 경기침체 발생 확률 54%라는 뜻은 아닙니다. 고용·실질 GDP·생산·소비·소득 등 구성 지표의 현재값과 판단을 함께 확인하세요."},
