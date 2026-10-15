@@ -1,11 +1,11 @@
 import GuidePage,{guideMetadata} from '../guide-page';
 import ReleaseCalendar from '../release-calendar';
 import DetailReadingGuide from '../../detail-reading-guide';
-const title='미국 CPI·PCE 발표시간과 예상치 대비 결과 읽는 법';
+const title='미국 CPI·PCE 발표 일정·한국시간 | 예상치 대비 결과 읽는 법';
 const answer='발표값과 예상치를 비교할 때는 같은 지표·기간·단위를 맞춰야 합니다. 전월 대비와 전년 대비, 전체와 근원 물가는 다른 값입니다. 공식 일정의 미국 현지 시각은 서머타임을 반영해 한국시간으로 확인하세요.';
 const path='/guides/cpi-pce-release/';
 export const metadata=guideMetadata(title,'CPI·PCE 공식 발표 일정의 한국시간, 확인된 발표값과 이전 값, 예상치 비교 방법과 단위 차이를 확인하세요.',path);
-export default function Page(){return <GuidePage title={title} answer={answer} path={path}>
+export default function Page(){return <GuidePage title={title} answer={answer} path={path} dateModified="2026-10-16">
   <ReleaseCalendar kind="inflation"/>
   <DetailReadingGuide title="예상치 대비 결과를 비교하는 순서" sections={[
     {title:'전체·근원, 전월·전년을 먼저 맞추세요',text:'전체 CPI 전년 대비 값과 근원 CPI 전월 대비 예상치를 비교하면 의미가 없습니다. CPI와 PCE도 조사 범위와 산출 방법이 다르므로 같은 통계처럼 숫자만 비교하지 않습니다.'},
