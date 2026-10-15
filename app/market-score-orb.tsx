@@ -273,7 +273,7 @@ export function MarketScoreOrb({
           </div>
         </div>
 
-        <div className="cnn-score-comparisons" aria-label={comparisonAriaLabel}>
+        <div className="cnn-score-comparisons" aria-label={comparisonAriaLabel} title={showArrows?undefined:'화살표는 최근 24시간 내 확인된 점수 변동이 있을 때 표시합니다.'}>
           <div className={`cnn-score-comparison is-${deltaDirection(animatedDayDelta)}`}>
             <span aria-label={dayLabel}>{dayLabel.replace(/ 대비$/, "")}</span>
             <strong>
