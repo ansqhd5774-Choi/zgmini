@@ -29,7 +29,7 @@ try{
  const publishAllowed=publishRequested&&!quotaGuarded&&!collectionFailed;
  const publishSkipped=publishRequested&&!publishAllowed?(quotaGuarded?'QUOTA_GUARD':collectionFailed?'COLLECTION_FAILED':null):null;
  const publication=spawnSync(process.execPath,[path.join(here,'run-local.mjs'),...(publishAllowed?['--publish']:[])],{windowsHide:true,stdio:['ignore','pipe','pipe'],timeout:30*60000});
- let prospective=null,prospectiveReport=null,fundFlowProspective=null,fundFlowProspectiveReport=null,breadthProspective=null,breadthProspectiveReport=null;
+ let prospective=null,prospectiveReport=null,fundFlowProspective=null,fundFlowProspectiveReport=null,breadthProspective=null,breadthProspectiveReport=null,earningsR5Prospective=null,earningsR5ProspectiveReport=null;
  if(lane==='core'){
   prospective=spawnSync(process.execPath,[path.join(here,'dollar-prospective-forward-r1.mjs')],{windowsHide:true,stdio:['ignore','pipe','pipe'],timeout:5*60000});
   const prospectiveFile=path.join(base,'local-dollar-prospective-last-run.json');
@@ -40,6 +40,9 @@ try{
   breadthProspective=spawnSync(process.execPath,[path.join(here,'breadth-r7-prospective-r1.mjs')],{windowsHide:true,stdio:['ignore','pipe','pipe'],timeout:10*60000});
   const breadthProspectiveFile=path.join(base,'local-breadth-r7-prospective-last-run.json');
   breadthProspectiveReport=fs.existsSync(breadthProspectiveFile)?read(breadthProspectiveFile):null;
+  earningsR5Prospective=spawnSync(process.execPath,[path.join(here,'earnings-r5-forward-prospective-cycle-r1.mjs')],{windowsHide:true,stdio:['ignore','pipe','pipe'],timeout:2*60000});
+  const earningsR5ProspectiveFile=path.join(base,'local-earnings-r5-forward-prospective-last-run.json');
+  earningsR5ProspectiveReport=fs.existsSync(earningsR5ProspectiveFile)?read(earningsR5ProspectiveFile):null;
  }
  const researchProspective=lane==='core'?{
   nonBlocking:true,
@@ -77,7 +80,17 @@ try{
   eligible3m:breadthProspectiveReport?.eligible3m??null,
   error:breadthProspectiveReport?.error??breadthProspectiveReport?.reason??(breadthProspective?.error?.code??null),
  }:{nonBlocking:true,status:'SKIPPED_KOREA_LANE'};
- const report={at:new Date().toISOString(),lane,collectionExit:collection.status,collectionStatus:collectionReport?.status??null,supplyR10,publicationExit:publication.status,publishRequested,publishSkipped,researchProspective,researchFundFlowProspective,researchBreadthProspective,status:publication.status===0?(publishSkipped==='QUOTA_GUARD'?'QUOTA_GUARDED':publishSkipped==='COLLECTION_FAILED'?'COLLECTION_FAILED_PUBLISH_BLOCKED':'COMPLETE'):'PUBLICATION_NOT_VERIFIED'};
+ const researchEarningsR5Prospective=lane==='core'?{
+  nonBlocking:true,
+  exit:earningsR5Prospective?.status??null,
+  status:earningsR5ProspectiveReport?.status??(earningsR5Prospective?.status===0?'REPORT_MISSING':'EXECUTION_FAILED'),
+  snapshotStatus:earningsR5ProspectiveReport?.snapshotStatus??null,
+  snapshotDate:earningsR5ProspectiveReport?.snapshotDate??null,
+  snapshotCount:earningsR5ProspectiveReport?.snapshotCount??null,
+  decision:earningsR5ProspectiveReport?.decision??null,
+  error:earningsR5ProspectiveReport?.code??(earningsR5Prospective?.error?.code??null),
+ }:{nonBlocking:true,status:'SKIPPED_KOREA_LANE'};
+ const report={at:new Date().toISOString(),lane,collectionExit:collection.status,collectionStatus:collectionReport?.status??null,supplyR10,publicationExit:publication.status,publishRequested,publishSkipped,researchProspective,researchFundFlowProspective,researchBreadthProspective,researchEarningsR5Prospective,status:publication.status===0?(publishSkipped==='QUOTA_GUARD'?'QUOTA_GUARDED':publishSkipped==='COLLECTION_FAILED'?'COLLECTION_FAILED_PUBLISH_BLOCKED':'COMPLETE'):'PUBLICATION_NOT_VERIFIED'};
  save(path.join(base,'local-cycle-last-run.json'),report);console.log(JSON.stringify(report));
  if(publication.status!==0)process.exitCode=1;
 }finally{fs.unlinkSync(file);}
