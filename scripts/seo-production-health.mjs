@@ -121,6 +121,24 @@ async function fetchText(url){
   }
 }
 
+async function fetchRedirect(url){
+  const controller=new AbortController();
+  const timeout=setTimeout(()=>controller.abort(),REQUEST_TIMEOUT_MS);
+  try{
+    const response=await fetch(url,{cache:'no-store',redirect:'manual',headers:{'cache-control':'no-cache','user-agent':'zgmini-seo-production-health-r2'},signal:controller.signal});
+    return {status:response.status,location:response.headers.get('location')??''};
+  }finally{
+    clearTimeout(timeout);
+  }
+}
+
+export function inspectCanonicalRedirect(result,expectedLocation){
+  const errors=[];
+  if(result.status!==301 && result.status!==308) errors.push(`http_${result.status}`);
+  if(result.location!==expectedLocation) errors.push(`location:${result.location||'missing'}`);
+  return errors;
+}
+
 async function checkPage(url,sha){
   const live=new URL(url);
   live.searchParams.set('seo_health',sha.slice(0,12));
@@ -145,6 +163,18 @@ async function main(){
 
   const check=await waitForCloudflare({repository,sha,token});
   console.log(`SEO_HEALTH_CLOUDFLARE_PASS=${check.id}`);
+
+  const redirectToken=sha.slice(0,12);
+  const redirectCases=[
+    [`http://zgmini.kr/?seo_redirect=${redirectToken}`,`https://zgmini.kr/?seo_redirect=${redirectToken}`],
+    [`http://zgmini.kr/recession/?seo_redirect=${redirectToken}`,`https://zgmini.kr/recession/?seo_redirect=${redirectToken}`],
+  ];
+  for(const [source,expected] of redirectCases){
+    const result=await fetchRedirect(source);
+    const errors=inspectCanonicalRedirect(result,expected);
+    if(errors.length) throw new Error(`SEO_HEALTH_REDIRECT_FAIL:${source}:${errors.join('|')}`);
+    console.log(`SEO_HEALTH_REDIRECT_PASS=${source}=>${expected} status=${result.status}`);
+  }
 
   const sitemapResponse=await fetchText(`${SITE_ORIGIN}/sitemap.xml?seo_health=${sha.slice(0,12)}`);
   if(sitemapResponse.status!==200) throw new Error(`SEO_HEALTH_SITEMAP_HTTP_${sitemapResponse.status}`);
