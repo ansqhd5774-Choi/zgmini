@@ -12,6 +12,8 @@ test("prospective cycle is shadow-only and nonblocking by contract",()=>{
   assert.equal(E1_R5_FORWARD_PROSPECTIVE_CYCLE_R1_CONTRACT.networkCalls,0);
   assert.equal(E1_R5_FORWARD_PROSPECTIVE_CYCLE_R1_CONTRACT.dbWrites,0);
   assert.equal(E1_R5_FORWARD_PROSPECTIVE_CYCLE_R1_CONTRACT.nonBlockingCaller,true);
+  assert.equal(E1_R5_FORWARD_PROSPECTIVE_CYCLE_R1_CONTRACT.g4PitLedger,"E1-R5-G4-PIT-R1");
+  assert.equal(E1_R5_FORWARD_PROSPECTIVE_CYCLE_R1_CONTRACT.g4PitNonBlocking,true);
 });
 
 test("new UTC day refreshes",()=>{
@@ -33,6 +35,16 @@ test("same UTC day and unchanged inputs NOOP",()=>{
   const out=evaluateProspectiveRefresh({now:"2026-10-15T12:00:00Z",ledger,inputStats:[{mtime:"2026-10-15T11:20:00Z"}]});
   assert.equal(out.refresh,false);
   assert.equal(out.reason,"UNCHANGED_SAME_UTC_DAY");
+});
+
+test("prospective cycle integrates G4 PIT as a nonblocking research ledger",()=>{
+  const src=fs.readFileSync(new URL("../scripts/pc-writer/earnings-r5-forward-prospective-cycle-r1.mjs",import.meta.url),"utf8");
+  assert.match(src,/runG4PitLedgerR1/);
+  assert.match(src,/g4PitStatus/);
+  assert.match(src,/g4-pit-r1/);
+  assert.match(src,/optionalG4Inputs/);
+  assert.match(src,/catch\s*\(error\)/);
+  assert.doesNotMatch(src,/productionActivation:true/);
 });
 
 test("local-cycle integration is explicitly nonblocking",()=>{
