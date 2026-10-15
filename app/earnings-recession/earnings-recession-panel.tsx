@@ -52,7 +52,7 @@ function HelpTip({label,text}:{label:string;text:string}){return <ContentHelp la
 
 export default function EarningsRecessionPanel(){
  const {payload,loading}=useStoredIndex<Payload>('/api/earnings-recession-detail');
- const diagnosticScore=typeof payload?.score==="number"&&Number.isFinite(payload.score)?payload.score:null,stored=payload?.storedE1,isR5=stored?.methodologyVersion==="E1-R5",activeMeta=isR5?r5Meta:r4Meta,activeOrder:isR5?r5Order:r4Order;
+ const diagnosticScore=typeof payload?.score==="number"&&Number.isFinite(payload.score)?payload.score:null,stored=payload?.storedE1,isR5=stored?.methodologyVersion==="E1-R5",activeMeta=isR5?r5Meta:r4Meta,activeOrder=isR5?r5Order:r4Order;
  const trend=useMemo(()=>(stored?.trend??[]).filter(p=>typeof p.value==="number"&&Number.isFinite(p.value)).slice(-8).map(p=>({date:p.label,score:p.value} satisfies MarketFearGreedChartPoint)),[stored?.trend]);
  const latest=trend.at(-1),latestPoint:MarketFearGreedChartValidPoint|null=latest?{date:latest.date,score:latest.score as number}:null,axisTicks=trend.map(p=>p.date),axisLabels=new Map(trend.map(p=>[p.date,p.date.slice(2,7).replace("-","/")])),rows=new Map((stored?.indicators??[]).map(x=>[x.id,x])),storedScore=typeof stored?.score==="number"&&Number.isFinite(stored.score)?stored.score:null;
  return <>
