@@ -1,9 +1,17 @@
 import type { Metadata } from 'next';
 
+const title='ZGMINI 소개 | 시장 심리와 경제지표';
+const description='미국·한국 시장 심리와 경제지표의 점수 및 과거 흐름을 함께 살펴보는 ZGMINI를 소개합니다.';
+const url='https://zgmini.kr/about/';
+const image='https://zgmini.kr/zgmini-share.png';
+
 export const metadata: Metadata = {
-  title: 'ZGMINI 소개 | 시장 심리와 경제지표',
-  description: '미국·한국 시장 심리와 경제지표의 점수 및 과거 흐름을 함께 살펴보는 ZGMINI를 소개합니다.',
-  alternates: { canonical: '/about/' },
+  title,
+  description,
+  alternates: { canonical: url },
+  robots: { index: true, follow: true },
+  openGraph: { title, description, url, type: 'website', siteName: 'ZGmini', images: [{url:image,width:1200,height:630,alt:'ZGMINI 소개 · 시장 심리와 경제지표'}] },
+  twitter: { card: 'summary_large_image', title, description, images: [image] },
 };
 
 export default function AboutPage() {
