@@ -11,9 +11,7 @@ export const metadata: Metadata = {
   twitter:{images:["https://zgmini.kr/zgmini-share.png"],card:"summary_large_image",title,description},
 };
 export default async function KoreaPage() {
-  const schema = {"@context":"https://schema.org","@type":"WebPage","@id":`${url}#webpage`,url,name:title,description,isPartOf:{"@id":"https://zgmini.kr/#website"},inLanguage:"ko-KR"};
   return <div className="min-h-screen bg-[#07162d]"><main className="mx-auto max-w-5xl px-4 py-8 text-slate-100 sm:px-6 sm:py-12">
-    <script type="application/ld+json" dangerouslySetInnerHTML={{__html:JSON.stringify(schema).replace(/</g,"\\u003c")}}/>
     <a href="https://zgmini.kr/" className="inline-flex min-h-11 items-center text-sm text-blue-200">← ZGmini 메인 대시보드</a>
     <h1 className="mt-4 text-2xl font-extrabold sm:text-4xl">한국 공포탐욕지수</h1>
     <DataPanel/>
