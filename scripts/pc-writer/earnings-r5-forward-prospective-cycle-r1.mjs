@@ -22,6 +22,7 @@ export const E1_R5_FORWARD_PROSPECTIVE_CYCLE_R1_CONTRACT=Object.freeze({
   nonBlockingCaller:true,
   g4PitLedger:"E1-R5-G4-PIT-R1",
   g4PitNonBlocking:true,
+  g4PitOrder:"BEFORE_HEAVY_SEC_CROSS_AUDIT",
 });
 
 const DEFAULT_BASE=process.env.ZGMINI_PC_HOME??path.join(os.homedir(),".zgmini","pc-writer");
@@ -50,6 +51,32 @@ function safeIso(value){
 function latestSnapshot(ledger){
   const rows=Array.isArray(ledger?.snapshots)?ledger.snapshots:[];
   return [...rows].filter(x=>safeIso(x?.recordedAt)).sort((a,b)=>Date.parse(a.recordedAt)-Date.parse(b.recordedAt)).at(-1)??null;
+}
+function runG4PitNonBlocking({runG4Pit,base,recordedAt,e1}){
+  try{
+    return runG4Pit({base,recordedAt});
+  }catch(error){
+    return {
+      status:"FAILED",
+      code:clean(error?.code??error?.message??"G4_PIT_FAILED"),
+      snapshot:null,
+      snapshotCount:null,
+      ledgerFile:path.join(e1,"g4-pit-r1","snapshots.json"),
+      networkCalls:0,
+      dbWrites:0,
+      productionActivation:false,
+    };
+  }
+}
+function g4ReportFields(g4Pit){
+  return {
+    g4PitStatus:g4Pit?.status??null,
+    g4PitCode:g4Pit?.code??null,
+    g4PitSnapshotId:g4Pit?.snapshot?.snapshotId??null,
+    g4PitSnapshotDate:g4Pit?.snapshot?.snapshotDate??null,
+    g4PitSnapshotCount:g4Pit?.snapshotCount??null,
+    g4PitLedgerFile:g4Pit?.ledgerFile??null,
+  };
 }
 
 export function evaluateProspectiveRefresh({now=new Date().toISOString(),ledger=null,inputStats=[]}={}){
@@ -107,27 +134,27 @@ export function runForwardProspectiveCycleR1({base=DEFAULT_BASE,now=new Date().t
     return report;
   }
 
+  // G4 is independent of the heavier SEC cross-filing audit. Persist the current
+  // approved PIT state first so a long shadow validation cannot prevent G4 history
+  // accumulation after an official/local input change.
+  const g4Pit=runG4PitNonBlocking({runG4Pit,base,recordedAt:now,e1});
+  const g4Fields=g4ReportFields(g4Pit);
+
   const cross=runEarningsR5SecCrossFilingAudit({base,asOf:now});
   if(cross.report.status!=="PASS"){
-    const report={version:E1_R5_FORWARD_PROSPECTIVE_CYCLE_R1_VERSION,at:new Date().toISOString(),status:"CROSS_AUDIT_NOT_READY",decision,crossStatus:cross.report.status,crossReason:cross.report.reason??null,networkCalls:0,dbWrites:0,productionActivation:false};
+    const report={version:E1_R5_FORWARD_PROSPECTIVE_CYCLE_R1_VERSION,at:new Date().toISOString(),status:"CROSS_AUDIT_NOT_READY",decision,crossStatus:cross.report.status,crossReason:cross.report.reason??null,...g4Fields,networkCalls:0,dbWrites:0,productionActivation:false};
     writeJsonAtomic(lastRunFile,report);
     return report;
   }
 
   const readiness=runForwardReadinessR3({base,asOf:now});
   if(readiness.report.rawComponentsReady!==true){
-    const report={version:E1_R5_FORWARD_PROSPECTIVE_CYCLE_R1_VERSION,at:new Date().toISOString(),status:"READINESS_NOT_READY",decision,readinessStatus:readiness.report.status,networkCalls:0,dbWrites:0,productionActivation:false};
+    const report={version:E1_R5_FORWARD_PROSPECTIVE_CYCLE_R1_VERSION,at:new Date().toISOString(),status:"READINESS_NOT_READY",decision,readinessStatus:readiness.report.status,...g4Fields,networkCalls:0,dbWrites:0,productionActivation:false};
     writeJsonAtomic(lastRunFile,report);
     return report;
   }
 
   const snapshot=runForwardShadowSnapshotR1({base,recordedAt:now});
-  let g4Pit=null;
-  try{
-    g4Pit=runG4Pit({base,recordedAt:now});
-  }catch(error){
-    g4Pit={status:"FAILED",code:clean(error?.code??error?.message??"G4_PIT_FAILED"),snapshot:null,snapshotCount:null,ledgerFile:path.join(e1,"g4-pit-r1","snapshots.json"),networkCalls:0,dbWrites:0,productionActivation:false};
-  }
   const report={
     version:E1_R5_FORWARD_PROSPECTIVE_CYCLE_R1_VERSION,
     at:new Date().toISOString(),
@@ -141,12 +168,7 @@ export function runForwardProspectiveCycleR1({base=DEFAULT_BASE,now=new Date().t
     snapshotCount:snapshot.snapshotCount,
     checkpoint:snapshot.snapshot.checkpoint,
     ledgerFile:snapshot.ledgerFile,
-    g4PitStatus:g4Pit.status,
-    g4PitCode:g4Pit.code??null,
-    g4PitSnapshotId:g4Pit.snapshot?.snapshotId??null,
-    g4PitSnapshotDate:g4Pit.snapshot?.snapshotDate??null,
-    g4PitSnapshotCount:g4Pit.snapshotCount??null,
-    g4PitLedgerFile:g4Pit.ledgerFile??null,
+    ...g4Fields,
     lastRunFile,
     networkCalls:0,
     dbWrites:0,
