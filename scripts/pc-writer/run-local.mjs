@@ -135,6 +135,8 @@ try{
   }
   report.projections.push({id,status:'LOCAL_READY'});
  }
+ const {enrichLocalBeginnerProjections}=await import('./beginner-projection-cycle.mjs');
+ report.beginnerCopy=await enrichLocalBeginnerProjections({core,fetcher:originalFetch,now:Date.now()});
  if(report.providerCalls)throw Error('CALCULATION_ATTEMPTED_NETWORK');
  globalThis.fetch=originalFetch;
  const {storeLocalCollectionHealth}=await import('./collection-health.mjs');
