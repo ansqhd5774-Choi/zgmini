@@ -26,7 +26,7 @@ export type SectorSentimentPoint={date:string}&Partial<Record<SectorId,number|nu
 export type SentimentSeries={id:string;name:string;color:string;shortName?:string};
 type ChartInputRow={date:string}&Record<string,string|number|null|undefined>;
 type SectorFearGreedStoredPayload={status?:string;history?:ChartInputRow[]};
-export default function SectorSentimentChart({data=[],series=SECTORS,title='섹터별 공포·탐욕',draggable=false}:{data?:ChartInputRow[];series?:readonly SentimentSeries[];title?:string;draggable?:boolean}){
+export default function SectorSentimentChart({data=[],series=SECTORS,title='섹터별 공포·탐욕',draggable=false,linkToDetail=true}:{data?:ChartInputRow[];series?:readonly SentimentSeries[];title?:string;draggable?:boolean;linkToDetail?:boolean}){
  const [hidden,setHidden]=useState<Set<string>>(new Set());
  const [storedData,setStoredData]=useState<ChartInputRow[]>([]);
  const drag=useRef<{x:number;left:number;active:boolean;moved:boolean}>({x:0,left:0,active:false,moved:false});
@@ -51,7 +51,7 @@ export default function SectorSentimentChart({data=[],series=SECTORS,title='섹�
  const end=rows.length?Date.parse(rows[rows.length-1].date):0;
  const visibleRows=rows.filter(row=>Date.parse(row.date)>=end-period*86400000);
  return <section className="zg-sector-chart" aria-label={`${series.length}개 ${title} 비교 차트`}>
-  <div className="zg-sector-chart-heading"><h2>{draggable?<Sparkles size={18} aria-hidden="true"/>:<Layers3 size={18} aria-hidden="true"/>}{title}</h2><div className="zg-sector-period" aria-label={`${title} 기간`}>{[[7,'1W'],[30,'1M'],[90,'3M'],[180,'6M'],[365,'1Y']].map(([days,label])=><button key={days} type="button" aria-pressed={period===days} onClick={()=>setPeriod(Number(days))}>{label}</button>)}</div></div>
+  <div className="zg-sector-chart-heading"><h2>{draggable?<Sparkles size={18} aria-hidden="true"/>:<Layers3 size={18} aria-hidden="true"/>}{autoStored&&linkToDetail?<a href="/sector-fear-greed/">{title}</a>:title}</h2><div className="zg-sector-period" aria-label={`${title} 기간`}>{[[7,'1W'],[30,'1M'],[90,'3M'],[180,'6M'],[365,'1Y']].map(([days,label])=><button key={days} type="button" aria-pressed={period===days} onClick={()=>setPeriod(Number(days))}>{label}</button>)}</div></div>
   <div className="zg-sector-chart-plot">
    {!rows.length&&<ChartAxisLabels ticks={[0,25,50,75,100]} top={2.15} bottom={97.85} left={4.67}/>}
    {!rows.length?<svg className="zg-chart-empty-svg" width="100%" height="100%" viewBox="0 0 600 280" preserveAspectRatio="none" role="img" aria-label={`${title} 차트, 0부터 100점 축`}><rect x="36" y="6" width="552" height="268" fill="#071a27"/>{[0,25,50,75,100].map(value=>{const y=274-value*2.68;return <g key={value}><line x1="36" x2="588" y1={y} y2={y} stroke={value===50?'#64748b':'#25465a'} strokeDasharray="3 5"/><text x="28" y={y+4} textAnchor="end" fontSize="11" fill="#9db0c2">{value}</text></g>})}</svg>:<ResponsiveContainer width="100%" height="100%">
@@ -60,7 +60,7 @@ export default function SectorSentimentChart({data=[],series=SECTORS,title='섹�
      <XAxis dataKey="date" stroke="#9db0c2" fontSize={11} tickFormatter={date=>String(date).slice(5)} minTickGap={36}/>
      <YAxis domain={[0,100]} ticks={[0,25,50,75,100]} stroke="#9db0c2" fontSize={11} width={32}/>
      <ReferenceLine y={50} stroke="#64748b" strokeDasharray="4 5"/>
-     <Tooltip labelFormatter={label=>String(label)} contentStyle={{background:'#0b2030',border:'1px solid #25465a',color:'#e2e8f0'}}/>
+     <Tooltip content={({active,payload,label})=>!active||!payload?.length?null:<div className="zg-sector-tooltip" role="status"><p>{String(label)}</p><ul>{payload.filter(entry=>typeof entry.value==='number'&&Number.isFinite(entry.value)).map(entry=><li key={String(entry.dataKey)} style={{color:entry.color}}><span>{entry.name}</span><strong>{Number(entry.value).toFixed(1)}</strong></li>)}</ul></div>}/>
      {series.map(sector=><Line key={sector.id} dataKey={sector.id} name={sector.name} stroke={sector.color} hide={hidden.has(sector.id)} strokeWidth={2} dot={false} activeDot={{r:4}} connectNulls={false} isAnimationActive={false}/>)}
     </LineChart>
    </ResponsiveContainer>}

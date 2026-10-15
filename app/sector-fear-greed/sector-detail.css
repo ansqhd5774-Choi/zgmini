@@ -1,0 +1,12 @@
+.zg-sector-detail{min-height:100vh;background:#03121d;color:#e2e8f0;padding:24px 20px 48px}
+.zg-sector-detail-inner{max-width:1160px;margin:auto}
+.zg-sector-detail-back{display:inline-flex;align-items:center;min-height:44px;color:#a5d5ff;font-size:14px;text-decoration:none}
+.zg-sector-detail header{margin:18px 0 24px}
+.zg-sector-detail h1{font-size:clamp(24px,4vw,34px);font-weight:800;margin:0 0 10px}
+.zg-sector-detail header p,.zg-sector-detail-guide p{color:#aebfd0;line-height:1.8;font-size:14px}
+.zg-sector-detail .zg-sector-chart{height:auto;padding:20px}
+.zg-sector-detail .zg-sector-chart-plot{height:360px}
+.zg-sector-detail-guide{margin-top:24px;padding:20px;border:1px solid #25465a;border-radius:8px;background:#091e2b}
+.zg-sector-detail-guide h2{font-size:18px;font-weight:800;margin:0 0 12px}
+.zg-sector-detail-guide p{margin:8px 0}
+@media(max-width:600px){.zg-sector-detail{padding:16px 12px 32px}.zg-sector-detail .zg-sector-chart{padding:12px}.zg-sector-detail .zg-sector-chart-plot{height:260px}.zg-sector-detail-guide{padding:16px}}
