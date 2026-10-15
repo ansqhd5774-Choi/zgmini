@@ -8,7 +8,8 @@ test('technical SEO sitemap includes every public route with truthful lastmod va
   const sitemap=read('public/sitemap.xml');
   assert.equal((sitemap.match(/<url>/g)||[]).length,16);
   assert.match(sitemap,/https:\/\/zgmini\.kr\/sector-fear-greed\/<\/loc><lastmod>2026-10-16<\/lastmod>/);
-  for(const route of ['/fear-greed/korea/','/fear-greed/usa/','/inflation/','/recession/','/guides/fear-greed-buying/','/guides/cpi-pce-release/','/guides/fomc/'])
+  assert.match(sitemap,/https:\/\/zgmini\.kr\/fear-greed\/korea\/<\/loc><lastmod>2026-10-16<\/lastmod>/);
+  for(const route of ['/fear-greed/usa/','/inflation/','/recession/','/guides/fear-greed-buying/','/guides/cpi-pce-release/','/guides/fomc/'])
     assert.ok(sitemap.includes(`<loc>https://zgmini.kr${route}</loc><lastmod>2026-10-07</lastmod>`),route);
   for(const route of ['/liquidity-crisis/','/credit-risk/','/earnings-recession/','/asset-bubble/','/debt-risk/','/supply-shock/'])
     assert.ok(sitemap.includes(`<loc>https://zgmini.kr${route}</loc></url>`),route);
