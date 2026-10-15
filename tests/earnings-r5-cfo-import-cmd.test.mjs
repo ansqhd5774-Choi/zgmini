@@ -4,7 +4,8 @@ import fs from "node:fs";
 
 test("CFO import CMD is local-only, validates output, and chains the read-only Forward audit",()=>{
   const source=fs.readFileSync(new URL("../ZGMINI_EARNINGS_R5_CFO_IMPORT.cmd",import.meta.url),"utf8");
-  assert.match(source,/earnings-r5-cfo-survey-local-import-r2\.mjs/i);
+  assert.match(source,/earnings-r5-cfo-survey-local-import-r3\.mjs/i);
+  assert.ok(fs.existsSync(new URL("../scripts/pc-writer/earnings-r5-cfo-survey-local-import-r3.mjs",import.meta.url)));
   assert.match(source,/ZGMINI_EARNINGS_R5_FORWARD_AUDIT\.cmd/i);
   assert.match(source,/cfo-survey-r1\\releases\.json/i);
   assert.match(source,/--file=/i);
