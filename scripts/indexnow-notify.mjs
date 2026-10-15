@@ -139,7 +139,7 @@ export async function submitIndexNow({key,urlList}){
 async function main(){
   const repository=process.env.GITHUB_REPOSITORY;
   const sha=process.env.GITHUB_SHA;
-  const token=process.env.GITHUB_TOKEN;
+  const token=process.env.INDEXNOW_GITHUB_TOKEN;
   const eventPath=process.env.GITHUB_EVENT_PATH;
   if(!repository || !sha || !token || !eventPath) throw new Error('INDEXNOW_ENV_MISSING');
 
