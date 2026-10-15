@@ -1,6 +1,9 @@
 import {readOnlyDualEnv} from './candidate-2db-guard.mjs';
 
-const PROJECTION_BUILD_VERSIONS=Object.freeze({earningsRecession:'earnings-e1-r5-detail-r1'});
+const PROJECTION_BUILD_VERSIONS=Object.freeze({
+ inflation:'inflation-indicator-table-r2',
+ earningsRecession:'earnings-e1-r5-detail-r1',
+});
 
 function projectionCheckpointVersion(checkpoint,id){
  const buildVersion=PROJECTION_BUILD_VERSIONS[id];
