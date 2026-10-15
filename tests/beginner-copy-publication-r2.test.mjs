@@ -69,6 +69,14 @@ test('writer wiring enriches after projection build and before remote publicatio
  assert.ok(remote>restore);
 });
 
+test('Ollama enrichment is localhost-only and preserves projection stored_at',()=>{
+ const src=fs.readFileSync('scripts/pc-writer/beginner-projection-cycle.mjs','utf8');
+ assert.match(src,/hostname!==['"]127\.0\.0\.1['"]/);
+ assert.match(src,/port!==['"]11434['"]/);
+ assert.match(src,/UPDATE market_public_snapshots_v1 SET body=\? WHERE snapshot_key=\?/);
+ assert.doesNotMatch(src,/SET body=\?,stored_at=\?/);
+});
+
 test('browser only reads validated stored copy and never calls Ollama',()=>{
  const src=fs.readFileSync('app/beginner-risk-guide.tsx','utf8');
  assert.match(src,/payload\?\.beginnerCopy/);
