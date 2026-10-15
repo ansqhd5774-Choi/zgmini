@@ -30,9 +30,7 @@ export default function AboutPage() {
       <a href="https://shareyourstartup.com/s/zgmini">Share Your Startup</a>
       <a href="https://www.sitelike.org/similar/zgmini.kr/">Sitelike</a>
       <a href="https://twelve.tools/zgmini-kr">Twelve Tools</a>
-      <a href="https://thesaasdir.com/product/zgmini?ref=badge" rel="dofollow"><img src="https://thesaasdir.com/badge/zgmini.svg" alt="TheSaaSDir 등록 배지" width={160} height={44}/></a>
     </div>
-    <p style={{fontSize:13,color:'#a8bdcc'}}>TheSaaSDir는 무료 등록을 준비 중이며, 접수·심사 및 공개 여부는 디렉터리의 실제 결과에 따라 달라집니다.</p>
     <p><a href="/">ZGMINI로 돌아가기 →</a></p>
   </main>;
 }
