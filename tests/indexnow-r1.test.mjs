@@ -35,6 +35,19 @@ test('IndexNow R1 expands only known shared surfaces',()=>{
     deriveAffectedUrls(['app/guides/guide-page.tsx'],sitemap),
     sitemap.filter(url=>new URL(url).pathname.startsWith('/guides/')),
   );
+  const releaseGuidePaths=new Set([
+    '/guides/cpi-pce-release/',
+    '/guides/fomc/',
+  ]);
+  const releaseGuideUrls=sitemap.filter(url=>releaseGuidePaths.has(new URL(url).pathname));
+  assert.deepEqual(
+    deriveAffectedUrls(['app/guides/release-calendar.tsx'],sitemap),
+    releaseGuideUrls,
+  );
+  assert.deepEqual(
+    deriveAffectedUrls(['app/guides/release-snapshot.json'],sitemap),
+    releaseGuideUrls,
+  );
   const introPaths=new Set([
     '/credit-risk/',
     '/liquidity-crisis/',
