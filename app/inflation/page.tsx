@@ -1,4 +1,5 @@
 import DetailInvestorNotes from "../detail-investor-notes";
+import SearchIntentIntro from "../search-intent-intro";
 import type {Metadata} from "next";
 import InflationPanel from "./inflation-panel";
 import DetailReadingGuide from "../detail-reading-guide";
@@ -17,6 +18,7 @@ export default function InflationPage(){
  return <main className="min-h-screen bg-[#03121d] px-4 py-8 text-slate-100 sm:px-8 sm:py-12">
   <div className="mx-auto max-w-6xl">
    <a className="inline-flex min-h-11 items-center text-sm text-blue-200" href="/">← ZGmini 메인 대시보드</a>
+   <SearchIntentIntro topic="inflation"/>
    <InflationPanel/>
    <DetailReadingGuide title="미국 인플레이션 점수를 읽는 방법"
     sections={[
