@@ -32,18 +32,15 @@ test('verified breadth raw values preserve zero and units',()=>{
  assert.equal(r.value,0);assert.equal(r.unit,'%');assert.equal(r.raw,true);assert.equal(r.score,null);
 });
 
-test('E1-R5 earnings detail rows map all S1-S13 by stable id',()=>{
+test('E1-R5 earnings dashboard exposes only four representative rows by stable id',()=>{
  const indicators=Array.from({length:13},(_,index)=>({
   id:`S${index+1}`,name:`legacy-name-${index+1}`,status:'READY',score:index+10,
   value:index+0.5,unit:'점',asOfDate:'2026-10-16',source:'fixture',
  }));
  const rows=marketDetailRows('earnings',indicators);
- assert.equal(rows.length,13);
- assert.deepEqual(rows.map(row=>row.label),[
-  'EPS 성장 강도','매출 성장률','영업이익률 수준','영업이익률 변화','FCF 마진','BEA 기업이익 변화',
-  'EPS 개선 기업 비율','흑자 기업 비율','이익 개선 업종 비율','생산자 원가 압력','단위노동비용 압력','미래 전망 수정','기업 가이던스 방향',
- ]);
- assert.deepEqual(rows.map(row=>row.score),Array.from({length:13},(_,index)=>index+10));
+ assert.equal(rows.length,4);
+ assert.deepEqual(rows.map(row=>row.label),['주당이익 성장','매출 성장률','이익 증가 종목','영업이익률']);
+ assert.deepEqual(rows.map(row=>row.score),[10,11,16,12]);
  assert.ok(rows.every(row=>row.asOfDate==='2026-10-16'&&row.source==='fixture'));
 });
 
