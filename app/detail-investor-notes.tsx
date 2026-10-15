@@ -1,4 +1,5 @@
 import DetailReadingGuide from "./detail-reading-guide";
+import {WebPageJsonLd} from "./seo-jsonld";
 
 type Topic = "usa" | "korea" | "inflation" | "recession" | "liquidity-crisis" | "credit-risk" | "earnings-recession" | "asset-bubble" | "debt-risk" | "supply-shock";
 type Guide = {title:string; sections:{title:string;text:string}[]; related:Topic[]};
@@ -62,6 +63,7 @@ const guides:Record<Topic,Guide> = {
 export default function DetailInvestorNotes({topic}:{topic:Topic}) {
   const guide=guides[topic];
   return <>
+    <WebPageJsonLd name={labels[topic]} description={`${guide.title}. 현재값·관측일·관련 지표를 함께 확인하세요.`} path={paths[topic]}/>
     <DetailReadingGuide title={guide.title}
       sections={[...guide.sections,
         {title:"날짜와 현재 제공 범위 확인",text:"관측일은 데이터가 설명하는 기간이며 화면 갱신일이나 공식 발표 시각과 다를 수 있습니다. 월별·분기별 자료의 월·분기 시작일 표기는 매일 갱신되는 시세가 아닙니다. ‘—’, ‘확인 필요’, ‘개발중’은 실제 값 0이 아니며, 개발중 항목은 현재 이용 가능한 관측값으로 해석하지 마세요."},

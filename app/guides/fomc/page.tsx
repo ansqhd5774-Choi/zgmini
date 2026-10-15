@@ -3,8 +3,9 @@ import ReleaseCalendar from '../release-calendar';
 import DetailReadingGuide from '../../detail-reading-guide';
 const title='FOMC 일정·발표시간과 미국 기준금리 결정 읽는 법';
 const answer='FOMC에서는 미국 연방기금금리 목표 범위와 통화정책 방향을 확인합니다. 금리 결정, 성명서, 기자회견을 구분해서 읽어야 합니다. 금리 인하 자체만으로 주가 상승을 확정할 수 없으며, 인하 확률은 실제 결정이나 ZGmini 평가점수와 다른 자료입니다.';
-export const metadata=guideMetadata(title,'FOMC 공식 일정과 한국시간 발표 시각, 확인된 미국 기준금리 목표 범위, 금리 결정·성명서·기자회견의 차이를 확인하세요.','/guides/fomc/');
-export default function Page(){return <GuidePage title={title} answer={answer}>
+const path='/guides/fomc/';
+export const metadata=guideMetadata(title,'FOMC 공식 일정과 한국시간 발표 시각, 확인된 미국 기준금리 목표 범위, 금리 결정·성명서·기자회견의 차이를 확인하세요.',path);
+export default function Page(){return <GuidePage title={title} answer={answer} path={path}>
   <ReleaseCalendar kind="fomc"/>
   <DetailReadingGuide title="발표를 읽는 순서와 흔한 혼동" sections={[
     {title:'금리 결정과 목표 범위를 먼저 확인하세요',text:'목표 범위의 상단·하단, 직전 결정 대비 변화폭을 함께 읽습니다. 0.25%포인트는 25bp이며, 변화율 0.25%와 같은 표현이 아닙니다. 정책금리 목표 범위와 시장에서 거래되는 채권 금리도 구별합니다.'},
