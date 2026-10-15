@@ -1,0 +1,27 @@
+name: Production SEO Health
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+  checks: read
+
+concurrency:
+  group: seo-production-health-main
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Verify production SEO after Cloudflare deployment
+        env:
+          SEO_HEALTH_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: node scripts/seo-production-health.mjs
