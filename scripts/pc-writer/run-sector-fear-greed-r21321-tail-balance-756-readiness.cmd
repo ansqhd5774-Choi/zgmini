@@ -1,0 +1,61 @@
+@echo off
+chcp 65001 >nul
+setlocal EnableExtensions
+
+set "BASE=%USERPROFILE%\.zgmini\pc-writer"
+set "LOG=%BASE%\ZGMINI-sector-fear-greed-r21321-tail-balance-756-readiness-log.txt"
+set "REPORT=%BASE%\local-sector-fear-greed-r21321-tail-balance-756-readiness.txt"
+
+if not exist "%BASE%" mkdir "%BASE%"
+>"%LOG%" echo ============================================================
+>>"%LOG%" echo ZGMINI SECTOR FEAR ^& GREED R2.13.21
+>>"%LOG%" echo TAIL BALANCE 756 READINESS
+>>"%LOG%" echo STARTED=%DATE% %TIME%
+>>"%LOG%" echo ============================================================
+>>"%LOG%" echo [SCOPE]
+>>"%LOG%" echo PROVIDER_CALLS=0
+>>"%LOG%" echo MODE=LOCAL_READ_ONLY_POST_BACKFILL_RECOMPUTE
+>>"%LOG%" echo PUBLIC_MUTATION=NO
+>>"%LOG%" echo D1_MUTATION=NO
+>>"%LOG%" echo DB_SCHEMA_CHANGE=NO
+>>"%LOG%" echo PRODUCTION_FORMULA_CHANGE=NO
+>>"%LOG%" echo REFERENCE_REQUIREMENT_CHANGE=NO
+>>"%LOG%" echo APPROVED_R1_REFERENCE=756_UNCHANGED
+>>"%LOG%" echo PRODUCTION_BENCHMARK_SOURCE_CHANGE=NO
+>>"%LOG%" echo.
+
+echo [1/2] R2.13.21 dedicated tests
+>>"%LOG%" echo [1/2] R2.13.21 dedicated tests
+call node --test tests\sector-fear-greed-r21321-tail-balance-756-readiness.test.mjs >>"%LOG%" 2>&1
+set "TEST_EXIT=%ERRORLEVEL%"
+>>"%LOG%" echo TEST_EXIT=%TEST_EXIT%
+if not "%TEST_EXIT%"=="0" goto :FAIL
+
+echo [2/2] Local post-backfill readiness recompute
+>>"%LOG%" echo [2/2] Local post-backfill readiness recompute
+call node scripts\pc-writer\sector-fear-greed-r21321-tail-balance-756-readiness.mjs >>"%LOG%" 2>&1
+set "RUNTIME_EXIT=%ERRORLEVEL%"
+>>"%LOG%" echo RUNTIME_EXIT=%RUNTIME_EXIT%
+if not "%RUNTIME_EXIT%"=="0" goto :FAIL
+
+if not exist "%REPORT%" (
+  >>"%LOG%" echo REPORT_MISSING=%REPORT%
+  goto :FAIL
+)
+>>"%LOG%" echo.
+>>"%LOG%" echo ============================================================
+>>"%LOG%" echo [R21321_REPORT]
+>>"%LOG%" echo ============================================================
+type "%REPORT%" >>"%LOG%"
+>>"%LOG%" echo.
+>>"%LOG%" echo STATUS=SHADOW_R21321_TAIL_BALANCE_756_READINESS_COMPLETE
+>>"%LOG%" echo FINAL_EXIT_CODE=0
+echo R2.13.21 COMPLETE
+exit /b 0
+
+:FAIL
+>>"%LOG%" echo.
+>>"%LOG%" echo STATUS=R21321_FAILED
+>>"%LOG%" echo FINAL_EXIT_CODE=1
+echo R2.13.21 FAILED
+exit /b 1
