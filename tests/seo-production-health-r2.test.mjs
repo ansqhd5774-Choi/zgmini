@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {inspectHtml,jsonLdTypes,liveSitemapEntries} from '../scripts/seo-production-health.mjs';
+import {inspectCanonicalRedirect,inspectHtml,jsonLdTypes,liveSitemapEntries} from '../scripts/seo-production-health.mjs';
 
 const detailUrl='https://zgmini.kr/fear-greed/korea/';
 const detailHtml=`<!doctype html><html><head>
@@ -47,6 +47,13 @@ test('live sitemap parser distinguishes URL presence from lastmod presence',()=>
   assert.equal(entries.size,2);
 });
 
+test('canonical redirect inspector requires a permanent redirect and exact HTTPS location',()=>{
+  assert.deepEqual(inspectCanonicalRedirect({status:308,location:'https://zgmini.kr/recession/?x=1'},'https://zgmini.kr/recession/?x=1'),[]);
+  assert.deepEqual(inspectCanonicalRedirect({status:301,location:'https://zgmini.kr/'},'https://zgmini.kr/'),[]);
+  assert.deepEqual(inspectCanonicalRedirect({status:200,location:''},'https://zgmini.kr/'),['http_200','location:missing']);
+  assert.deepEqual(inspectCanonicalRedirect({status:308,location:'https://zgmini.kr/'},'https://zgmini.kr/about/'),['location:https://zgmini.kr/']);
+});
+
 test('local public sitemap has all 16 URLs with truthful ISO lastmod values',()=>{
   const entries=liveSitemapEntries(readFileSync('public/sitemap.xml','utf8'));
   assert.equal(entries.size,16);
@@ -59,7 +66,7 @@ test('local public sitemap has all 16 URLs with truthful ISO lastmod values',()=
   assert.equal(entries.get('https://zgmini.kr/supply-shock/'),'2026-10-16');
 });
 
-test('production SEO workflow is push-only and deployment-gated',()=>{
+test('production SEO workflow is push-only, deployment-gated, and verifies canonical HTTP redirects',()=>{
   const workflow=readFileSync('.github/workflows/seo-production-health.yml','utf8');
   const script=readFileSync('scripts/seo-production-health.mjs','utf8');
   assert.match(workflow,/push:\s*\n\s*branches: \[main\]/);
@@ -69,6 +76,9 @@ test('production SEO workflow is push-only and deployment-gated',()=>{
   assert.match(workflow,/SEO_HEALTH_GITHUB_TOKEN: \$\{\{ secrets\.GITHUB_TOKEN \}\}/);
   assert.match(script,/waitForCloudflare/);
   assert.match(script,/EXPECTED_PUBLIC_URLS=16/);
+  assert.match(script,/redirect:'manual'/);
+  assert.match(script,/http:\/\/zgmini\.kr\/recession\//);
+  assert.match(script,/SEO_HEALTH_REDIRECT_PASS=/);
   assert.match(script,/lastmod_missing:/);
   assert.match(script,/SEO_HEALTH_PASS=/);
 });
