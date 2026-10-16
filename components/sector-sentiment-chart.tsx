@@ -1,5 +1,6 @@
 "use client";
 import {useRef,useState} from 'react';
+import {createPortal} from 'react-dom';
 import {useStoredIndex} from './use-stored-index';
 import {ChevronRight,Layers3,Sparkles} from 'lucide-react';
 import {Line,LineChart,ResponsiveContainer,CartesianGrid,XAxis,YAxis,Tooltip,ReferenceLine} from 'recharts';
@@ -29,6 +30,7 @@ type ChartInputRow={date:string}&Record<string,string|number|null|undefined>;
 type SectorFearGreedStoredPayload={status?:string;history?:ChartInputRow[]};
 export default function SectorSentimentChart({data=[],series=SECTORS,title='섹터별 공포·탐욕',draggable=false,linkToDetail=true}:{data?:ChartInputRow[];series?:readonly SentimentSeries[];title?:string;draggable?:boolean;linkToDetail?:boolean}){
  const [hidden,setHidden]=useState<Set<string>>(new Set());
+ const [readoutHost,setReadoutHost]=useState<HTMLDivElement|null>(null);
  const drag=useRef<{x:number;left:number;active:boolean;moved:boolean}>({x:0,left:0,active:false,moved:false});
  const legendRef=useRef<HTMLDivElement>(null);
  const [atEnd,setAtEnd]=useState(false);
@@ -52,11 +54,12 @@ export default function SectorSentimentChart({data=[],series=SECTORS,title='섹�
      <XAxis dataKey="date" stroke="#9db0c2" fontSize={11} tickFormatter={date=>String(date).slice(5)} minTickGap={36}/>
      <YAxis domain={[0,100]} ticks={[0,25,50,75,100]} stroke="#9db0c2" fontSize={11} width={32}/>
      <ReferenceLine y={50} stroke="#64748b" strokeDasharray="4 5"/>
-     <Tooltip content={({active,payload,label})=>!active||!payload?.length?null:<div className="zg-sector-tooltip" role="status"><p>{String(label)}</p><ul>{payload.filter(entry=>typeof entry.value==='number'&&Number.isFinite(entry.value)).map(entry=><li key={String(entry.dataKey)} style={{color:entry.color}}><span>{entry.name}</span><strong>{Number(entry.value).toFixed(1)}</strong></li>)}</ul></div>}/>
+     <Tooltip cursor={{stroke:'#cbd5e1',strokeWidth:1,strokeDasharray:'3 3'}} content={({active,payload,label})=>!readoutHost||!active||!payload?.length?null:createPortal(<div className="zg-sector-tooltip" role="status"><p>{String(label)}</p><ul>{payload.filter(entry=>typeof entry.value==='number'&&Number.isFinite(entry.value)).map(entry=><li key={String(entry.dataKey)} style={{color:entry.color}}><span>{entry.name}</span><strong>{Number(entry.value).toFixed(1)}</strong></li>)}</ul></div>,readoutHost)}/>
      {series.map(sector=><Line key={sector.id} dataKey={sector.id} name={sector.name} stroke={sector.color} hide={hidden.has(sector.id)} strokeWidth={2} dot={false} activeDot={{r:4}} connectNulls={false} isAnimationActive={false}/>)}
     </LineChart>
    </ResponsiveContainer>}
   </div>
   <div className={`zg-legend-row${draggable?' has-next':''}`}><div ref={legendRef} className={`zg-sector-chart-legend${draggable?' is-draggable':''}`} aria-label={draggable?'표시할 테마 선택':'표시할 섹터 선택'} onScroll={event=>{const list=event.currentTarget;setAtEnd(list.scrollLeft+list.clientWidth>=list.scrollWidth-2)}} onPointerDown={event=>{if(!draggable||event.pointerType!=='mouse'||event.button!==0)return;drag.current={x:event.clientX,left:event.currentTarget.scrollLeft,active:true,moved:false}}} onPointerMove={event=>{if(!drag.current.active)return;const dx=event.clientX-drag.current.x;if(Math.abs(dx)>5){drag.current.moved=true;event.currentTarget.setPointerCapture(event.pointerId);event.currentTarget.scrollLeft=drag.current.left-dx;event.preventDefault()}}} onPointerUp={()=>{drag.current.active=false}} onPointerCancel={()=>{drag.current.active=false}} onLostPointerCapture={()=>{drag.current.active=false}} onClickCapture={event=>{if(drag.current.moved){event.preventDefault();event.stopPropagation();drag.current.moved=false}}}>{series.map(sector=><button key={sector.id} type="button" title={sector.name} aria-label={sector.name} aria-pressed={!hidden.has(sector.id)} onClick={()=>toggle(sector.id)} style={{borderBottomColor:sector.color}}>{sector.shortName??SHORT_NAMES[sector.id as SectorId]??sector.name}</button>)}</div>{draggable&&<button type="button" className="zg-theme-next" aria-label="다음 테마로 이동" onClick={nextKeyword} disabled={atEnd}><ChevronRight size={16} aria-hidden="true"/></button>}</div>
+  <div ref={setReadoutHost} className="zg-sector-readout" aria-label={`${title} 선택 날짜 점수`}/>
  </section>;
 }
