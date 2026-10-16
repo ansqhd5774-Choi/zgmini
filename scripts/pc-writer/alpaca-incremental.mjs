@@ -4,14 +4,16 @@ export async function collectAlpacaIncremental(base,{fetchImpl=fetch,now=Date.no
  const file=path.join(base,'local-asset-bubble-r10-alpaca-collection.json'),dir=path.join(base,'asset-r10-alpaca');
  const read=f=>fs.existsSync(f)?JSON.parse(fs.readFileSync(f,'utf8')):null;
  const save=(f,v)=>{fs.writeFileSync(f+'.tmp',JSON.stringify(v));fs.renameSync(f+'.tmp',f);};
- const old=read(file);if(old&&now>=Date.parse(old.checkedAt)&&now-Date.parse(old.checkedAt)<(old.storageVerified?20:1)*3600000)return {status:'CACHED',runRequests:0};
- const report={checkedAt:new Date(now).toISOString(),status:'BLOCKED',runRequests:0,completedGroups:0,totalGroups:0,errorCode:null,storageVerified:false};
+ const end=new Date(now-86400000).toISOString().slice(0,10);
+ const checkpoint=path.join(dir,'incremental-checkpoint.json');
+ const old=read(file),storedThrough=read(checkpoint)?.through;
+ if(old&&(!old.storageVerified||storedThrough===end)&&now>=Date.parse(old.checkedAt)&&now-Date.parse(old.checkedAt)<(old.storageVerified?20:1)*3600000)return {status:'CACHED',runRequests:0};
+ const report={checkedAt:new Date(now).toISOString(),requestEnd:end,status:'BLOCKED',runRequests:0,completedGroups:0,totalGroups:0,errorCode:null,storageVerified:false};
  try{
   const env=loadLocalProviders(base);if(!env.APCA_API_KEY_ID||!env.APCA_API_SECRET_KEY)throw Error('ALPACA_CREDENTIAL_MISSING');
   const groups=fs.readdirSync(dir).filter(n=>/^group-\d+\.json$/.test(n)).sort().map(name=>({name,symbols:[...new Set(read(path.join(dir,name)).map(r=>r.ticker))]}));
   if(!groups.length)throw Error('ALPACA_UNIVERSE_MISSING');report.totalGroups=groups.length;
-  const checkpoint=path.join(dir,'incremental-checkpoint.json');
-  const start=read(checkpoint)?.through??read(path.join(dir,'checkpoint.json')).end,end=new Date(now-86400000).toISOString().slice(0,10);
+  const start=storedThrough??read(path.join(dir,'checkpoint.json')).end;
   if(start>end)return {status:'NO_NEW_WINDOW',runRequests:0};
   const output=path.join(dir,'incremental');fs.mkdirSync(output,{recursive:true});
   for(const group of groups){let token=null;const rows=[];do{

@@ -64,14 +64,15 @@ function buildUrl(start,end,token){
 export async function collectSectorFearGreedR3EtfIncremental(base=DEFAULT_BASE,{fetchImpl=globalThis.fetch,now=Date.now()}={}){
   const reportPath=path.join(base,REPORT_FILE),outputPath=path.join(base,SECTOR_FEAR_GREED_R3_ETF_INCREMENTAL_FILE);
   const priorReport=readJson(reportPath);
-  if(priorReport?.storageVerified&&Number.isFinite(Date.parse(priorReport.checkedAt))&&now-Date.parse(priorReport.checkedAt)>=0&&now-Date.parse(priorReport.checkedAt)<CACHE_MS){
+  const end=day(now-24*60*60*1000);
+  if(priorReport?.storageVerified&&priorReport.requestEnd===end&&Number.isFinite(Date.parse(priorReport.checkedAt))&&now-Date.parse(priorReport.checkedAt)>=0&&now-Date.parse(priorReport.checkedAt)<CACHE_MS){
     return {...priorReport,status:'CACHED',providerRequests:0};
   }
   const report={version:1,checkedAt:new Date(now).toISOString(),status:'FAILED_PRESERVE_EXISTING',providerRequests:0,maxProviderRequests:MAX_REQUESTS,storageVerified:false,publicMutation:false,d1Mutation:false,dbSchemaChanged:false,productionFormulaChanged:false,schedulerChanged:false};
   try{
     const iex=readJson(path.join(base,IEX_FILE));
     if(!iex)throw Error('SECTOR_FEAR_GREED_R3_ETF_BASE_FILE_MISSING');
-    const anchor=baseAnchor(iex),end=day(now-24*60*60*1000);
+    const anchor=baseAnchor(iex);
     report.baseAnchorDate=anchor;report.requestEnd=end;
     if(end<anchor){report.status='NO_NEW_WINDOW';report.storageVerified=true;saveJson(reportPath,report);return report;}
     const env=loadLocalProviders(base),key=env.APCA_API_KEY_ID,secret=env.APCA_API_SECRET_KEY;
