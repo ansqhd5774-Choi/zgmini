@@ -9,7 +9,7 @@ import {Activity,ArrowRight,ArrowUpRight,ChevronLeft,ChevronRight,Info,Radar,Coi
 import {Area,AreaChart,ReferenceArea,Line,LineChart,ResponsiveContainer,XAxis,YAxis,ReferenceDot,ReferenceLine,Tooltip} from 'recharts';
 import {readProgressiveMarketResponse} from '../lib/market-score/read-progressive-response.mjs';
 import {useStoredIndex} from '../components/use-stored-index';
-import {useScoreArrows,StoredScoreDirection} from '../components/score-arrow-provider';
+import {useScoreArrows,useScoreArrowDelta,StoredScoreDirection} from '../components/score-arrow-provider';
 import {acceptsStoredUpdate,startStoredRefresh} from '../lib/market-score/live-refresh.mjs';
 import {readMarketSnapshot,saveMarketSnapshot} from '../lib/market-score/browser-snapshot.mjs';
 import {marketDetailRows} from '../lib/market-score/detail-catalog.mjs';
@@ -238,6 +238,7 @@ const diagnosticSubscores=[
 
 export function CompositeMarketSection({items,points,demo,loading}:{items:Summary[];points:number;demo:boolean;loading:boolean}){
  const arrows=useScoreArrows();
+ const arrowDelta=useScoreArrowDelta();
  void items;
  void points;
  const [expanded,setExpanded]=useState(false);
@@ -379,6 +380,8 @@ export function CompositeMarketSection({items,points,demo,loading}:{items:Summar
        const trend=marketTrendWindow(normalizedTrend,periodDays);
        const breadthDelta=r55DomainIds[index]==='breadth'?breadthPreviousSessionDelta(domain?.trend):domainObservationDelta(domain?.trend,score,domain?.previousObservation);
        const comparison=r55DomainIds[index]==='breadth'?'전 거래일':'직전 관측일';
+       const publishedDelta=arrowDelta('domain:'+r55DomainIds[index],score);
+       const directionDelta=publishedDelta??breadthDelta?.delta??null;
 
        const band=score===null?'unknown':score<25?'danger':score<40?'caution':score<60?'neutral':score<75?'positive':'strong';
        const detailRows=marketDetailRows(r55DomainIds[index],domain?.indicators) as Array<{label:string;score:number|null;raw:boolean;value:number|null;displayValue?:string|null;unit:string;asOfDate?:string|null;source?:string|null;area?:string;areaHeading?:string|null;weight?:number|null;referenceCount?:number;referenceExpected?:number}>;
@@ -408,10 +411,10 @@ export function CompositeMarketSection({items,points,demo,loading}:{items:Summar
           <span
             className="zg-r55-day-change"
             data-arrow-active={arrows('domain:'+r55DomainIds[index],score)}
-            data-direction={breadthDelta?(breadthDelta.delta>0?'up':breadthDelta.delta<0?'down':'flat'):'unknown'}
-            aria-label={breadthDelta?`${comparison} ${breadthDelta.previousDate} 대비 ${breadthDelta.delta>=0?'+':''}${breadthDelta.delta.toFixed(1)}점`:'직전 관측 대비 확인 불가'}
-            title={breadthDelta?`${breadthDelta.previousDate} 대비`:'검증된 직전 관측 비교 점수 없음'}
-           >{breadthDelta?(breadthDelta.delta>0?'▲':breadthDelta.delta<0?'▼':'-'):'—'}</span>
+            data-direction={directionDelta===null?'unknown':directionDelta>0?'up':directionDelta<0?'down':'flat'}
+            aria-label={publishedDelta!==null?`직전 공개 점수 대비 ${publishedDelta>0?'+':''}${publishedDelta.toFixed(1)}점`:breadthDelta?`${comparison} ${breadthDelta.previousDate} 대비 ${breadthDelta.delta>=0?'+':''}${breadthDelta.delta.toFixed(1)}점`:'직전 관측 대비 확인 불가'}
+            title={publishedDelta!==null?'직전 공개 점수 대비 · 변동 후 24시간 표시':breadthDelta?`${breadthDelta.previousDate} 대비`:'검증된 직전 관측 비교 점수 없음'}
+           >{directionDelta===null?'—':directionDelta>0?'▲':directionDelta<0?'▼':'-'}</span>
           <div className="zg-r55-card-compact-scale"><ScoreScale score={score} label={`${m.label} 점수`} color={score===null?'#64748b':scoreColor(score)}/></div>
          </div>
          <div className="zg-r55-card-visual">

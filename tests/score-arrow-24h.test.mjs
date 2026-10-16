@@ -2,8 +2,21 @@ import test from 'node:test';import assert from 'node:assert/strict';import {Dat
 import {nextArrowState,arrowVisible,storedArrowDelta,startArrowClock,SCORE_ARROW_TTL_MS as DAY} from '../lib/market-score/score-arrow.mjs';
 import {publishArrowState,publishCoreArrowState,ARROW_KEYS} from '../scripts/pc-writer/score-arrow-publication.mjs';
 import {storedScoreArrowResponse} from '../worker/score-arrow-public.mjs';
+import {breadthB1R4PreviousSessionDelta} from '../lib/market-score/breadth-b1-r4-ui-delta.mjs';
 const T=Date.parse('2026-10-15T03:00:00Z');
 const sample=(score,sourceAt=T,method='R1')=>({score,sourceAt,method});
+
+test('breadth publication change remains available for 24h even when the historical chart lacks a session',()=>{
+ const trend=[{label:'2026-10-13',value:54.1377},{label:'2026-10-15',value:66.5928}];
+ assert.equal(breadthB1R4PreviousSessionDelta(trend),null);
+ let state=nextArrowState(null,{'domain:breadth':sample(54.1377,T)},T);
+ state=nextArrowState(state,{'domain:breadth':sample(66.5928,T+1000)},T+1000);
+ state=nextArrowState(state,{'domain:breadth':sample(66.5928,T+2000)},T+2000);
+ const entry=state.entries['domain:breadth'];
+ assert.equal(entry.changedAt,T+1000);
+ assert.equal(storedArrowDelta(entry,66.5928,T+1000+DAY-1),12.5);
+ assert.equal(storedArrowDelta(entry,66.5928,T+1000+DAY),null);
+});
 test('stored direction preserves the last real change and expires with its timestamp',()=>{
  let state=nextArrowState(null,{risk:sample(60)},T);
  assert.equal(storedArrowDelta(state.entries.risk,60,T),null);
