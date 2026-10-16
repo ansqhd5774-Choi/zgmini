@@ -8,6 +8,8 @@
 .inflation-target-card #inflation-fill stop:first-child{stop-color:var(--inflation-r2-score-color,#94a3b8)}
 .inflation-target-card .cnn-latest-point circle,
 .inflation-target-card .recharts-active-dot circle{fill:var(--inflation-r2-score-color,#94a3b8)}
+.inflation-target-card .cnn-source small{display:none}
+.inflation-target-card .cnn-score-observed-date{display:none}
 .inflation-r2-indicators .inflation-indicator-table-r2{min-width:980px;table-layout:fixed}
 .inflation-r2-indicators .inflation-indicator-table-r2 th,
 .inflation-r2-indicators .inflation-indicator-table-r2 td{text-align:center}
