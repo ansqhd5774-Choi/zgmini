@@ -17,7 +17,7 @@ test("inflation indicator R2 shows previous/current/release and mobile no-overfl
   assert.match(panel,/inflation-r2-mobile-list/);
   assert.match(css,/grid-template-columns:repeat\(3,minmax\(0,1fr\)\)/);
   assert.match(css,/\.inflation-r2-indicators \.inflation-indicator-table-r2 th,[\s\S]*\.inflation-r2-indicators \.inflation-indicator-table-r2 td\{text-align:center\}/);
-  assert.match(css,/\.inflation-r2-release small\{[^}]*color:#f4c34e;[^}]*font-weight:900/);
+  assert.match(css,/\.inflation-r2-indicators \.inflation-indicator-table-r2 td\.inflation-r2-release small\{[^}]*color:#f4c34e;[^}]*font-weight:900/);
   assert.match(css,/\.inflation-r2-mobile-metrics>div:last-child small\{[^}]*color:#f4c34e;[^}]*font-weight:900/);
 
   assert.match(css,/@media\(max-width:767px\)/);
