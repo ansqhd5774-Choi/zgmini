@@ -17,6 +17,10 @@ export function useScoreArrows(){
  const {entries,now}=useContext(ArrowContext);
  return (id:string,score:number|null)=>arrowVisible(entries[id],score,now);
 }
+export function useScoreArrowDelta(){
+ const {entries,now}=useContext(ArrowContext);
+ return (id:string,score:number|null)=>storedArrowDelta(entries[id],score,now);
+}
 export function StoredScoreDirection({id,score}:{id:string;score:number|null}){
  const {entries,now}=useContext(ArrowContext),delta=storedArrowDelta(entries[id],score,now);
  if(delta===null)return null;

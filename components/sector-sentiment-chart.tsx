@@ -9,15 +9,15 @@ import './chart-axis-labels.css';
 
 export const SECTORS=[
  {id:'technology',name:'정보기술',color:'#38bdf8'},
+ {id:'financials',name:'금융',color:'#34d399'},
  {id:'communication',name:'커뮤니케이션',color:'#a78bfa'},
  {id:'discretionary',name:'임의소비재',color:'#fb7185'},
  {id:'industrials',name:'산업재',color:'#fbbf24'},
- {id:'financials',name:'금융',color:'#34d399'},
- {id:'utilities',name:'유틸리티',color:'#c084fc'},
- {id:'healthcare',name:'헬스케어',color:'#2dd4bf'},
- {id:'materials',name:'소재',color:'#f97316'},
  {id:'energy',name:'에너지',color:'#e879f9'},
+ {id:'healthcare',name:'헬스케어',color:'#2dd4bf'},
  {id:'staples',name:'필수소비재',color:'#a3e635'},
+ {id:'utilities',name:'유틸리티',color:'#c084fc'},
+ {id:'materials',name:'소재',color:'#f97316'},
  {id:'realEstate',name:'부동산',color:'#94a3b8'},
 ] as const;
 export type SectorId=typeof SECTORS[number]['id'];
@@ -28,7 +28,7 @@ export type SentimentSeries={id:string;name:string;color:string;shortName?:strin
 type ChartInputRow={date:string}&Record<string,string|number|null|undefined>;
 type SectorFearGreedStoredPayload={status?:string;history?:ChartInputRow[]};
 export default function SectorSentimentChart({data=[],series=SECTORS,title='섹터별 공포·탐욕',draggable=false,linkToDetail=true}:{data?:ChartInputRow[];series?:readonly SentimentSeries[];title?:string;draggable?:boolean;linkToDetail?:boolean}){
- const [hidden,setHidden]=useState<Set<string>>(new Set());
+ const [hidden,setHidden]=useState<Set<string>>(()=>new Set(series===SECTORS?SECTORS.slice(6).map(sector=>sector.id):[]));
  const drag=useRef<{x:number;left:number;active:boolean;moved:boolean}>({x:0,left:0,active:false,moved:false});
  const legendRef=useRef<HTMLDivElement>(null);
  const [atEnd,setAtEnd]=useState(false);
