@@ -1,5 +1,7 @@
 /* Inflation R2 indicator table/card layout only */
 .inflation-r2-indicators .inflation-indicator-table-r2{min-width:980px;table-layout:fixed}
+.inflation-r2-indicators .inflation-indicator-table-r2 th,
+.inflation-r2-indicators .inflation-indicator-table-r2 td{text-align:center}
 .inflation-r2-indicators .inflation-indicator-table-r2 tbody th{width:150px}
 .inflation-r2-indicators .inflation-indicator-table-r2 td:nth-child(2){width:190px}
 .inflation-r2-indicators .inflation-indicator-table-r2 td:nth-child(3){width:120px}
@@ -10,8 +12,8 @@
 .inflation-r2-indicators .inflation-indicator-table-r2 td:nth-child(8){width:50px;text-align:center}
 .inflation-r2-criterion{white-space:nowrap}
 .inflation-r2-value strong,.inflation-r2-release strong{display:block;color:#f2f7fa;font-size:12px}
-.inflation-r2-release small{white-space:nowrap}
-.inflation-r2-release.is-soon small{color:#f4c34e;font-weight:800}
+.inflation-r2-release small{white-space:nowrap;color:#f4c34e;font-weight:900;font-size:11px}
+.inflation-r2-release.is-soon small{color:#f4c34e;font-weight:900}
 .inflation-r2-mobile-list{display:none}
 
 @media(max-width:767px){
@@ -36,5 +38,6 @@
  .inflation-r2-mobile-metrics span{color:#7891a6;font-size:9px;font-weight:700}
  .inflation-r2-mobile-metrics strong{margin-top:3px;color:#f2f7fa;font-size:11px;white-space:nowrap}
  .inflation-r2-mobile-metrics small{margin-top:2px;color:#7891a6;font-size:8.5px;line-height:1.25;white-space:nowrap}
- .inflation-r2-mobile-metrics .is-soon small{color:#f4c34e;font-weight:800}
+ .inflation-r2-mobile-metrics>div:last-child small{color:#f4c34e;font-weight:900;font-size:9.5px}
+ .inflation-r2-mobile-metrics .is-soon small{color:#f4c34e;font-weight:900}
 }
