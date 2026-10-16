@@ -1,11 +1,12 @@
 "use client";
 import {useEffect,useState} from 'react';
 import {acceptsStoredUpdate,startStoredRefresh} from '../lib/market-score/live-refresh.mjs';
-export function useStoredIndex<T>(url:string,initial:T|null=null){
+export function useStoredIndex<T>(url:string,initial:T|null=null,enabled=true){
  const [payload,setPayload]=useState<T|null>(initial);
  const [loading,setLoading]=useState(!initial);
  const [error,setError]=useState<string|null>(null);
  useEffect(()=>{
+  if(!enabled)return;
   let live=true,accepted=initial,lastPublication=0;
   const stop=startStoredRefresh(async(signal:AbortSignal)=>{
    try{
@@ -21,6 +22,6 @@ export function useStoredIndex<T>(url:string,initial:T|null=null){
    finally{if(live)setLoading(false);}
   });
   return()=>{live=false;stop();};
- },[url]);
+ },[url,enabled]);
  return {payload,loading,error};
 }

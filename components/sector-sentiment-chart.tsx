@@ -1,5 +1,6 @@
 "use client";
-import {useEffect,useRef,useState} from 'react';
+import {useRef,useState} from 'react';
+import {useStoredIndex} from './use-stored-index';
 import {ChevronRight,Layers3,Sparkles} from 'lucide-react';
 import {Line,LineChart,ResponsiveContainer,CartesianGrid,XAxis,YAxis,Tooltip,ReferenceLine} from 'recharts';
 import './sector-sentiment-chart.css';
@@ -28,21 +29,12 @@ type ChartInputRow={date:string}&Record<string,string|number|null|undefined>;
 type SectorFearGreedStoredPayload={status?:string;history?:ChartInputRow[]};
 export default function SectorSentimentChart({data=[],series=SECTORS,title='섹터별 공포·탐욕',draggable=false,linkToDetail=true}:{data?:ChartInputRow[];series?:readonly SentimentSeries[];title?:string;draggable?:boolean;linkToDetail?:boolean}){
  const [hidden,setHidden]=useState<Set<string>>(new Set());
- const [storedData,setStoredData]=useState<ChartInputRow[]>([]);
  const drag=useRef<{x:number;left:number;active:boolean;moved:boolean}>({x:0,left:0,active:false,moved:false});
  const legendRef=useRef<HTMLDivElement>(null);
  const [atEnd,setAtEnd]=useState(false);
  const autoStored=data.length===0&&series===SECTORS&&title==='섹터별 공포·탐욕'&&!draggable;
- useEffect(()=>{
-  if(!autoStored){setStoredData([]);return;}
-  let active=true;const controller=new AbortController();
-  fetch('/api/sector-fear-greed',{cache:'no-store',signal:controller.signal}).then(async response=>{
-   if(!response.ok)throw new Error('SECTOR_FEAR_GREED_STORED_UNAVAILABLE');
-   const body=await response.json() as SectorFearGreedStoredPayload;
-   if(active&&body.status==='READY'&&Array.isArray(body.history))setStoredData(body.history);
-  }).catch(()=>{if(active)setStoredData([]);});
-  return()=>{active=false;controller.abort();};
- },[autoStored]);
+ const {payload}=useStoredIndex<SectorFearGreedStoredPayload>('/api/sector-fear-greed',null,autoStored);
+ const storedData=autoStored&&payload?.status==='READY'&&Array.isArray(payload.history)?payload.history:[];
  const nextKeyword=()=>{const list=legendRef.current;if(!list)return;const next=Array.from(list.children).find(child=>(child as HTMLElement).offsetLeft>list.scrollLeft+2) as HTMLElement|undefined;const reduce=window.matchMedia('(prefers-reduced-motion: reduce)').matches;list.scrollTo({left:next?next.offsetLeft:list.scrollWidth-list.clientWidth,behavior:reduce?'auto':'smooth'});};
  const [period,setPeriod]=useState(90);
  const sourceData:ChartInputRow[]=data.length?data:storedData;
