@@ -1,4 +1,13 @@
 /* Inflation R2 indicator table/card layout only */
+.inflation-target-card:has(.cnn-score-orb[aria-label*="안정"]){--inflation-r2-score-color:#45d99f}
+.inflation-target-card:has(.cnn-score-orb[aria-label*="중립"]){--inflation-r2-score-color:#94a3b8}
+.inflation-target-card:has(.cnn-score-orb[aria-label*="압력"]){--inflation-r2-score-color:#ff7076}
+.inflation-target-card .cnn-spectrum-center .cnn-score-value,
+.inflation-target-card .cnn-spectrum-center>span{color:var(--inflation-r2-score-color,#94a3b8)!important}
+.inflation-target-card .recharts-area-curve{stroke:var(--inflation-r2-score-color,#94a3b8)}
+.inflation-target-card #inflation-fill stop:first-child{stop-color:var(--inflation-r2-score-color,#94a3b8)}
+.inflation-target-card .cnn-latest-point circle,
+.inflation-target-card .recharts-active-dot circle{fill:var(--inflation-r2-score-color,#94a3b8)}
 .inflation-r2-indicators .inflation-indicator-table-r2{min-width:980px;table-layout:fixed}
 .inflation-r2-indicators .inflation-indicator-table-r2 th,
 .inflation-r2-indicators .inflation-indicator-table-r2 td{text-align:center}
