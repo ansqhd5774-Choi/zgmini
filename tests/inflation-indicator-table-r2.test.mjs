@@ -20,6 +20,14 @@ test("inflation indicator R2 shows previous/current/release and mobile no-overfl
   assert.match(css,/\.inflation-r2-indicators \.inflation-indicator-table-r2 td\.inflation-r2-release small\{[^}]*color:#f4c34e;[^}]*font-weight:900/);
   assert.match(css,/\.inflation-r2-mobile-metrics>div:last-child small\{[^}]*color:#f4c34e;[^}]*font-weight:900/);
 
+  assert.match(css,/\.inflation-target-card:has\(\.cnn-score-orb\[aria-label\*="안정"\]\)\{--inflation-r2-score-color:#45d99f\}/);
+  assert.match(css,/\.inflation-target-card:has\(\.cnn-score-orb\[aria-label\*="중립"\]\)\{--inflation-r2-score-color:#94a3b8\}/);
+  assert.match(css,/\.inflation-target-card:has\(\.cnn-score-orb\[aria-label\*="압력"\]\)\{--inflation-r2-score-color:#ff7076\}/);
+  assert.match(css,/\.inflation-target-card \.cnn-spectrum-center \.cnn-score-value,[\s\S]*color:var\(--inflation-r2-score-color,#94a3b8\)!important/);
+  assert.match(css,/\.inflation-target-card \.recharts-area-curve\{stroke:var\(--inflation-r2-score-color,#94a3b8\)\}/);
+  assert.match(css,/#inflation-fill stop:first-child\{stop-color:var\(--inflation-r2-score-color,#94a3b8\)\}/);
+  assert.match(css,/\.inflation-target-card \.cnn-latest-point circle,[\s\S]*fill:var\(--inflation-r2-score-color,#94a3b8\)/);
+
   assert.match(css,/@media\(max-width:767px\)/);
   assert.match(css,/\.inflation-r2-indicators \.inflation-r2-table-wrap\{display:none\}/);
   assert.match(css,/\.inflation-r2-mobile-list\{display:grid/);
