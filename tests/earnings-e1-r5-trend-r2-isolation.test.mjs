@@ -20,6 +20,5 @@ test('E1-R5 keeps R1 for current score and uses R2 only for reconstructed trend'
 
 test('R2 ledger participates in the trend fingerprint without becoming current source metadata',()=>{
  assert.match(source,/TREND_HISTORY:/);
- const latestSourceCall=source.match(/const source=latestSource\(([^)]*)\)/)?.[1]??'';
- assert.equal(latestSourceCall,'allLocalSourceFiles(base)');
+ assert.match(source,/const source=latestSource\(allLocalSourceFiles\(base\)\)/);
 });
