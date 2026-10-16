@@ -39,6 +39,29 @@ test('large normalized history is compressed in storage and restored without val
  assert.ok(stored.startsWith('gzip:'));assert.ok(stored.length<1800000);
  assert.deepEqual((await store.readInput('macro')).body,input);sqlite.close();
 });
+
+test('partial or falsely ready rates cannot erase complete stored input or calculate a broken score',async()=>{
+ const ids=['EFFR','DFEDTARL','DFEDTARU','DGS3MO','DGS2','DGS10','DFII10'];
+ const old={rateR2:{status:'READY',series:Object.fromEntries(ids.map(id=>[id,[{observationDate:'2026-09-29',value:0}]]))}};
+ for(const candidate of [
+  {status:'PARTIAL',series:{DFII10:old.rateR2.series.DFII10},failures:[{provider:'NYFED_EFFR',status:'TIMEOUT'}]},
+  {status:'READY',series:{EFFR:old.rateR2.series.EFFR}},
+  {status:'READY',series:{...old.rateR2.series,DFEDTARU:[{observationDate:'2026-09-29',value:null}]}},
+ ]){
+  const {store,db,sqlite}=fixture();await store.writeInput('rates',old,now-1);await store.writeScore(score,now-1);
+  const out=await runMarketOperationalRefresh({env:{DB:db},store,job:'rates',now,collectors:{rates:async()=>({rateR2:candidate})},calculate:()=>{throw Error('MUST_NOT_CALCULATE')}});
+  assert.equal(out.status,'SOURCE_FAILED');assert.equal(out.reason,'RATES_INPUT_NOT_READY');
+  assert.deepEqual((await store.readInput('rates')).body,old);assert.equal((await store.readScore()).storedAt,now-1);
+  assert.ok(await store.claim('pipeline',now+1));sqlite.close();
+ }
+});
+
+test('complete official rates including zero are stored before calculation',async()=>{
+ const {store,db,sqlite}=fixture();
+ const input={rateR2:{status:'READY',series:Object.fromEntries(['EFFR','DFEDTARL','DFEDTARU','DGS3MO','DGS2','DGS10','DFII10'].map(id=>[id,[{observationDate:'2026-09-29',value:0}]]))}};
+ let calls=0;const out=await runMarketOperationalRefresh({env:{DB:db},store,job:'rates',now,collectors:{rates:async()=>input},calculate:async()=>{calls++;assert.deepEqual((await store.readInput('rates')).body.rateR2,input.rateR2);return {readyDomains:12};}});
+ assert.equal(out.status,'COMPLETE');assert.equal(calls,1);sqlite.close();
+});
 test('collection persists inputs before calculation and public reads perform no collection',async()=>{
  const {store,db,sqlite}=fixture();let calls=0;
  const out=await runMarketOperationalRefresh({env:{DB:db},store,job:'macro',now,
