@@ -1,0 +1,50 @@
+.inflation-target-card .cnn-score-comparisons.is-multi{
+ display:grid;
+ grid-template-columns:repeat(5,minmax(0,1fr));
+ align-items:stretch;
+ justify-content:center;
+ width:100%;
+ max-width:360px;
+ margin-inline:auto;
+}
+.inflation-target-card .cnn-score-comparisons.is-multi .cnn-score-comparison{
+ display:grid;
+ grid-template-columns:minmax(0,1fr);
+ grid-template-rows:auto auto;
+ place-items:center;
+ min-width:0;
+ gap:2px;
+ padding:0 4px;
+ text-align:center;
+}
+.inflation-target-card .cnn-score-comparisons.is-multi .cnn-score-comparison+.cnn-score-comparison{
+ border-left:1px solid rgba(80,112,137,.55);
+}
+.inflation-target-card .cnn-score-comparisons.is-multi .cnn-score-comparison>span,
+.inflation-target-card .cnn-score-comparisons.is-multi .cnn-score-comparison>strong{
+ display:block;
+ width:100%;
+ min-width:0;
+ text-align:center;
+ white-space:nowrap;
+}
+
+@media(max-width:767px){
+ .fg-card.fg-shared-shell.inflation-target-card .cnn-score-comparisons.is-multi{
+  width:100%;
+  max-width:none;
+  margin-inline:auto;
+ }
+ .fg-card.fg-shared-shell.inflation-target-card .cnn-score-comparisons.is-multi .cnn-score-comparison{
+  gap:1px;
+  padding:0 1px;
+ }
+ .fg-card.fg-shared-shell.inflation-target-card .cnn-score-comparisons.is-multi .cnn-score-comparison>span{
+  font-size:8px;
+  line-height:1;
+ }
+ .fg-card.fg-shared-shell.inflation-target-card .cnn-score-comparisons.is-multi .cnn-score-comparison>strong{
+  font-size:9.5px;
+  line-height:1;
+ }
+}
