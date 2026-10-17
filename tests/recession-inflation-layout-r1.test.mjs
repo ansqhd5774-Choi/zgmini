@@ -14,7 +14,9 @@ test("recession detail mirrors completed inflation shell and mobile layout",()=>
  assert.match(page,/aria-label="메인 대시보드로 돌아가기"/);
  assert.match(page,/className="[^"]*fixed left-4 top-4 z-50[^"]*bg-\[#0b2233\][^"]*" href="\/"/);
  assert.doesNotMatch(page,/aria-label="메인 대시보드로 돌아가기"[^>]*backdrop-blur/);
- assert.match(header,/a\[aria-label="메인 대시보드로 돌아가기"\]\{[\s\S]*position:fixed!important;[\s\S]*z-index:9999!important;[\s\S]*opacity:1!important;/);
+ assert.match(header,/a\[aria-label="메인 대시보드로 돌아가기"\]\{[\s\S]*position:fixed!important;[\s\S]*z-index:9999!important;[\s\S]*background:rgba\(11,34,51,\.64\)!important;[\s\S]*animation:recession-back-pulse 2\.4s ease-in-out infinite;/);
+ assert.match(header,/@keyframes recession-back-pulse\{/);
+ assert.match(header,/@media\(prefers-reduced-motion:reduce\)\{[\s\S]*animation:none!important/);
  assert.match(header,/top:max\(16px,env\(safe-area-inset-top\)\)!important;/);
  assert.match(header,/left:max\(16px,env\(safe-area-inset-left\)\)!important;/);
  assert.match(page,/import "\.\/recession-mobile-header\.css";/);
