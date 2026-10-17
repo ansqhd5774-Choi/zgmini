@@ -7,7 +7,7 @@ const WIDTH=112;
 const HEIGHT=32;
 const PAD_X=3;
 const PAD_Y=3;
-const finite=value=>typeof value==="number"&&Number.isFinite(value);
+const finite=(value:unknown):value is number=>typeof value==="number"&&Number.isFinite(value);
 
 function cleaned(points:InflationMiniTrendPoint[]|undefined){
  return (Array.isArray(points)?points:[])
