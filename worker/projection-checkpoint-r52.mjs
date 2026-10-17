@@ -1,7 +1,7 @@
 import {readOnlyDualEnv} from './candidate-2db-guard.mjs';
 
 const PROJECTION_BUILD_VERSIONS=Object.freeze({
- inflation:'inflation-indicator-table-r2-mini-chart-1y',
+ inflation:'inflation-indicator-table-r2-mini-chart-1y-score-comparisons-r1',
  earningsRecession:'earnings-e1-r5-detail-r1',
 });
 

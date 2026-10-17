@@ -11,6 +11,7 @@ import {MarketFearGreedChart,type MarketFearGreedChartPoint,type MarketFearGreed
 import {InflationFavoriteButton,InflationFavoriteHeaderIcon} from "./inflation-favorite-button";
 import {InflationMiniChart,type InflationMiniTrendPoint} from "./inflation-mini-chart";
 import "./inflation-indicator-r2.css";
+import "./inflation-score-comparisons-r1.css";
 
 type FeatureRow={
   observationDate:string|null;
@@ -25,6 +26,13 @@ type FeatureRow={
   previousValue?:number|null;
   trend?:InflationMiniTrendPoint[];
 };
+type InflationScoreComparisons={
+  week?:number|null;
+  month?:number|null;
+  threeMonth?:number|null;
+  sixMonth?:number|null;
+  year?:number|null;
+};
 type InflationPayload={
   status:string;
   score:number|null;
@@ -35,6 +43,7 @@ type InflationPayload={
   axes?:Record<string,number|null>;
   features?:Record<string,FeatureRow|null>;
   trend?:Array<{label:string;value:number}>;
+  scoreComparisons?:InflationScoreComparisons;
 };
 
 type ReleaseScheduleKey="PCE"|"CPI"|"PPI"|"IMPORT"|"EMPLOYMENT"|"ECI"|"PRODUCTIVITY"|"INDPRO"|null;
@@ -177,9 +186,13 @@ export default function InflationPanel(){
  const latestPoint:MarketFearGreedChartValidPoint|null=latest&&typeof latest.score==="number"?{date:latest.date,score:latest.score}:null;
  const axisLabels=new Map(trend.map(p=>[p.date,p.date.slice(5,7)]));
  const axisTicks=trend.filter((_,i)=>i===0||i===trend.length-1||i%2===0).map(p=>p.date);
- const previous=allTrend.at(-2)?.value,threeMonth=allTrend.at(-4)?.value;
- const previousDelta=score!==null&&typeof previous==="number"?score-previous:null;
- const threeMonthDelta=score!==null&&typeof threeMonth==="number"?score-threeMonth:null;
+ const scoreComparisonItems=[
+  {label:"1주",value:payload?.scoreComparisons?.week??null},
+  {label:"1개월",value:payload?.scoreComparisons?.month??null},
+  {label:"3개월",value:payload?.scoreComparisons?.threeMonth??null},
+  {label:"6개월",value:payload?.scoreComparisons?.sixMonth??null},
+  {label:"1년",value:payload?.scoreComparisons?.year??null},
+ ] as const;
  const features=payload?.features??{};
  const today=kstTodayKey();
 
@@ -190,7 +203,7 @@ export default function InflationPanel(){
    </div>
    <div className="fg-content-slot">
     <div className="fg-score-slot">
-     <MarketScoreOrb score={loading||score===null?"—":score.toFixed(1)} state={loading?"확인 중":stage(score)} variant="hero" dayDelta={previousDelta} periodDelta={threeMonthDelta} periodLabel="3개월 대비" dayLabel="전월 대비" comparisonAriaLabel="인플레이션 안정성 점수 변화" metaDate={dateLabel(payload?.asOfDate)}/>
+     <MarketScoreOrb score={loading||score===null?"—":score.toFixed(1)} state={loading?"확인 중":stage(score)} variant="hero" comparisonItems={scoreComparisonItems} comparisonAriaLabel="인플레이션 안정성 점수 변화" metaDate={dateLabel(payload?.asOfDate)}/>
     </div>
     <MarketTrendFrame className="fg-analysis-slot">
      <div className="fg-chart-slot"><div className="fg-renderer"><MarketFearGreedChart data={trend} axisTicks={axisTicks} axisLabels={axisLabels} latestPoint={latestPoint} instanceKey="1Y" gradientId="inflation-fill" formatTooltipLabel={dateLabel} emptyLabel={loading?"확인 중":"이력 없음"}/></div></div>

@@ -6,6 +6,7 @@ import {useScoreArrows} from '../components/score-arrow-provider';
 import {LiveScoreValue} from '../components/live-score-value';
 
 type ScoreVariant = 'compact' | 'hero';
+type ScoreComparisonItem = {label:string;value?:number|null};
 
 const GAUGE_CENTER_X = 110;
 const GAUGE_CENTER_Y = 112;
@@ -133,6 +134,14 @@ function useAnimatedNumber(
   return display ?? target;
 }
 
+function ScoreComparisonCell({item}:{item:ScoreComparisonItem}){
+  const animated=useAnimatedNumber(item.value,{enabled:true,duration:520,startFromZero:true});
+  return <div className={`cnn-score-comparison is-${deltaDirection(animated)}`}>
+    <span aria-label={`${item.label} 변화폭`}>{item.label}</span>
+    <strong>{formatDelta(animated)}</strong>
+  </div>;
+}
+
 
 export function MarketScoreOrb({
   score,
@@ -145,6 +154,7 @@ export function MarketScoreOrb({
   metaDate,
   dayLabel = '전일 대비',
   comparisonAriaLabel = 'CNN 공포탐욕 변화량',
+  comparisonItems,
   arrowId,
 }: {
   score: string;
@@ -157,6 +167,7 @@ export function MarketScoreOrb({
   metaDate?: string;
   dayLabel?: string;
   comparisonAriaLabel?: string;
+  comparisonItems?: readonly ScoreComparisonItem[];
   arrowId?: string;
 }) {
   const arrows=useScoreArrows(),showArrows=arrowId?arrows(arrowId,numericScore(score)):false;
@@ -182,6 +193,7 @@ export function MarketScoreOrb({
   const displayScore = animatedScore === null ? score : animatedScore.toFixed(1);
   const [wholeScore, decimalScore = ''] = displayScore.includes('.') ? displayScore.split('.', 2) : [displayScore, ''];
   const showMetaDate = Boolean(metaDate) && comparisonAriaLabel !== '인플레이션 안정성 점수 변화';
+  const hasComparisonItems=Array.isArray(comparisonItems)&&comparisonItems.length>0;
 
   if (variant === 'hero') {
     const value = animatedScore;
@@ -274,22 +286,24 @@ export function MarketScoreOrb({
           </div>
         </div>
 
-        <div className="cnn-score-comparisons" aria-label={comparisonAriaLabel} title={showArrows?undefined:'화살표는 최근 24시간 내 확인된 점수 변동이 있을 때 표시합니다.'}>
-          <div className={`cnn-score-comparison is-${deltaDirection(animatedDayDelta)}`}>
-            <span aria-label={dayLabel}>{dayLabel.replace(/ 대비$/, "")}</span>
-            <strong>
-              {formatDelta(animatedDayDelta)}
-              {showArrows&&(deltaDirection(animatedDayDelta) === 'up' ? <i aria-hidden="true">▲</i> : deltaDirection(animatedDayDelta) === 'down' ? <i aria-hidden="true">▼</i> : null)}
-            </strong>
-          </div>
-          <div className="cnn-score-comparison-divider" aria-hidden="true"/>
-          <div className={`cnn-score-comparison is-${deltaDirection(animatedPeriodDelta)}`}>
-            <span aria-label={periodLabel ?? '기간 대비'}>{(periodLabel ?? '기간 대비').replace(/ 대비$/, '')}</span>
-            <strong>
-              {formatDelta(animatedPeriodDelta)}
-              {showArrows&&(deltaDirection(animatedPeriodDelta) === 'up' ? <i aria-hidden="true">▲</i> : deltaDirection(animatedPeriodDelta) === 'down' ? <i aria-hidden="true">▼</i> : null)}
-            </strong>
-          </div>
+        <div className={`cnn-score-comparisons${hasComparisonItems?' is-multi':''}`} aria-label={comparisonAriaLabel} title={hasComparisonItems||showArrows?undefined:'화살표는 최근 24시간 내 확인된 점수 변동이 있을 때 표시합니다.'}>
+          {hasComparisonItems ? comparisonItems!.map(item=><ScoreComparisonCell key={item.label} item={item}/>) : <>
+            <div className={`cnn-score-comparison is-${deltaDirection(animatedDayDelta)}`}>
+              <span aria-label={dayLabel}>{dayLabel.replace(/ 대비$/, "")}</span>
+              <strong>
+                {formatDelta(animatedDayDelta)}
+                {showArrows&&(deltaDirection(animatedDayDelta) === 'up' ? <i aria-hidden="true">▲</i> : deltaDirection(animatedDayDelta) === 'down' ? <i aria-hidden="true">▼</i> : null)}
+              </strong>
+            </div>
+            <div className="cnn-score-comparison-divider" aria-hidden="true"/>
+            <div className={`cnn-score-comparison is-${deltaDirection(animatedPeriodDelta)}`}>
+              <span aria-label={periodLabel ?? '기간 대비'}>{(periodLabel ?? '기간 대비').replace(/ 대비$/, '')}</span>
+              <strong>
+                {formatDelta(animatedPeriodDelta)}
+                {showArrows&&(deltaDirection(animatedPeriodDelta) === 'up' ? <i aria-hidden="true">▲</i> : deltaDirection(animatedPeriodDelta) === 'down' ? <i aria-hidden="true">▼</i> : null)}
+              </strong>
+            </div>
+          </>}
         </div>
         {showMetaDate ? <div className="cnn-score-observed-date">{metaDate}</div> : null}
       </div>
