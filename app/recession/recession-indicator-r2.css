@@ -1,0 +1,132 @@
+/* Recession detail layout aligned with the completed inflation detail design. */
+.recession-target-card:has(.cnn-score-orb[aria-label*="양호"]){--recession-r2-score-color:#45d99f}
+.recession-target-card:has(.cnn-score-orb[aria-label*="중립"]){--recession-r2-score-color:#94a3b8}
+.recession-target-card:has(.cnn-score-orb[aria-label*="침체"]){--recession-r2-score-color:#ff7076}
+.recession-target-card .cnn-spectrum-center .cnn-score-value,
+.recession-target-card .cnn-spectrum-center>span{color:var(--recession-r2-score-color,#94a3b8)!important}
+.recession-target-card .recharts-area-curve{stroke:var(--recession-r2-score-color,#94a3b8)}
+.recession-target-card #recession-fill stop:first-child{stop-color:var(--recession-r2-score-color,#94a3b8)}
+.recession-target-card .cnn-latest-point circle,
+.recession-target-card .recharts-active-dot circle{fill:var(--recession-r2-score-color,#94a3b8)}
+.recession-target-card .cnn-source small{display:none}
+.recession-target-card .cnn-score-observed-date{display:none}
+
+.recession-r2-indicators .recession-indicator-table-r2{min-width:900px;table-layout:fixed}
+.recession-r2-indicators .recession-indicator-table-r2 th,
+.recession-r2-indicators .recession-indicator-table-r2 td{text-align:center}
+.recession-r2-indicators .recession-indicator-table-r2 tbody th{width:160px}
+.recession-r2-indicators .recession-indicator-table-r2 td:nth-child(2){width:230px}
+.recession-r2-indicators .recession-indicator-table-r2 td:nth-child(3){width:130px}
+.recession-r2-indicators .recession-indicator-table-r2 td:nth-child(4){width:190px;color:#f2f7fa}
+.recession-r2-indicators .recession-indicator-table-r2 td:nth-child(5){width:90px}
+.recession-r2-indicators .recession-indicator-table-r2 td:nth-child(6){width:54px;text-align:center}
+.recession-r2-criterion{white-space:nowrap}
+.recession-r2-value strong{display:block;color:#f2f7fa;font-size:12px}
+.recession-r2-value small{display:block;margin-top:3px;white-space:nowrap}
+.recession-r2-mobile-list{display:none}
+
+@container fg-shared (max-width:500px){
+ .recession-target-card .fg-header-slot .cnn-panel-heading{grid-template-columns:minmax(0,1fr) auto;align-items:start;column-gap:10px}
+ .recession-target-card .cnn-market-title{min-width:0}
+ .recession-target-card .cnn-market-title>div{min-width:0}
+ .recession-target-card .cnn-source{align-self:start;align-items:flex-end;max-width:none;text-align:right;white-space:nowrap}
+}
+
+@media(max-width:767px){
+ .recession-r2-indicators{padding:14px}
+ .recession-r2-indicators .recession-r2-table-wrap{display:none}
+ .recession-r2-mobile-list{display:grid;gap:8px}
+ .recession-r2-mobile-card{min-width:0;padding:12px;border:1px solid rgba(68,103,133,.3);background:rgba(4,18,31,.5)}
+ .recession-r2-mobile-card.is-development{opacity:.82}
+ .recession-r2-mobile-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+ .recession-r2-mobile-head>div:first-child{min-width:0}
+ .recession-r2-mobile-head strong{display:block;color:#eef5fa;font-size:12px;line-height:1.35;overflow-wrap:anywhere}
+ .recession-r2-mobile-head small{display:block;margin-top:2px;color:#7891a6;font-size:9px}
+ .recession-r2-mobile-actions{display:flex;align-items:center;gap:2px;flex:0 0 auto}
+ .recession-r2-mobile-actions .inflation-judgement{min-width:52px;height:22px;padding:0 7px;font-size:10px}
+ .recession-r2-mobile-content{margin:8px 0 0;color:#b9cad8;font-size:11px;line-height:1.45}
+ .recession-r2-mobile-criterion{display:flex;align-items:center;gap:7px;margin:6px 0 0;color:#d4e0e9;font-size:10px}
+ .recession-r2-mobile-criterion span{color:#7891a6;font-weight:700}
+ .recession-r2-mobile-metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));margin-top:10px;border-top:1px solid rgba(68,103,133,.24)}
+ .recession-r2-mobile-metrics>div{min-width:0;padding:8px 6px 0}
+ .recession-r2-mobile-metrics>div+div{border-left:1px solid rgba(68,103,133,.24)}
+ .recession-r2-mobile-metrics span,.recession-r2-mobile-metrics strong,.recession-r2-mobile-metrics small{display:block;min-width:0;text-align:center}
+ .recession-r2-mobile-metrics span{color:#7891a6;font-size:9px;font-weight:700}
+ .recession-r2-mobile-metrics strong{margin-top:3px;color:#f2f7fa;font-size:11px;white-space:nowrap}
+ .recession-r2-mobile-metrics small{margin-top:2px;color:#7891a6;font-size:8.5px;line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+ .fg-card.fg-shared-shell.recession-target-card{
+  grid-template-columns:10px minmax(0,40%) 6px minmax(0,1fr) 10px;
+  grid-template-rows:auto 132px auto;
+  align-items:stretch;
+ }
+ .fg-card.fg-shared-shell.recession-target-card .fg-header-slot{
+  grid-column:2 / 5;
+  grid-row:1;
+  width:100%;
+  height:48px;
+  min-height:48px;
+ }
+ .fg-card.fg-shared-shell.recession-target-card .fg-header-slot .cnn-panel-heading{
+  min-height:48px;
+  padding:5px 0 4px;
+  align-items:start;
+ }
+ .fg-card.fg-shared-shell.recession-target-card .cnn-market-title{gap:6px}
+ .fg-card.fg-shared-shell.recession-target-card .cnn-market-title img{width:28px;height:19px}
+ .fg-card.fg-shared-shell.recession-target-card .cnn-market-title h2{font-size:18px;line-height:1.15}
+ .fg-card.fg-shared-shell.recession-target-card .cnn-market-title p:last-child{margin-top:1px;font-size:10px;line-height:1.2}
+ .fg-card.fg-shared-shell.recession-target-card .cnn-source{font-size:10px;line-height:1.1}
+ .fg-card.fg-shared-shell.recession-target-card .cnn-source strong{font-size:11px;line-height:1.1}
+
+ .fg-card.fg-shared-shell.recession-target-card .fg-content-slot{display:contents}
+ .fg-card.fg-shared-shell.recession-target-card .fg-score-slot{
+  grid-column:2;
+  grid-row:2;
+  width:100%;
+  height:132px;
+  min-height:0;
+  padding:0;
+ }
+ .fg-card.fg-shared-shell.recession-target-card .fg-score-slot .cnn-score-orb{
+  width:100%;
+  height:132px;
+  min-height:0;
+  max-height:132px;
+  row-gap:2px;
+ }
+ .fg-card.fg-shared-shell.recession-target-card .cnn-spectrum-gauge{width:min(100%,112px);max-width:112px}
+ .fg-card.fg-shared-shell.recession-target-card .cnn-score-whole{font-size:36px}
+ .fg-card.fg-shared-shell.recession-target-card .cnn-score-fraction{font-size:18px;margin-left:1px}
+ .fg-card.fg-shared-shell.recession-target-card .cnn-spectrum-center>span{margin-top:1px;font-size:12px;line-height:1.1}
+ .fg-card.fg-shared-shell.recession-target-card .cnn-score-comparisons{height:28px;min-height:28px;max-height:28px}
+ .fg-card.fg-shared-shell.recession-target-card .cnn-score-comparison{gap:2px}
+ .fg-card.fg-shared-shell.recession-target-card .cnn-score-comparison>span{font-size:10px;line-height:1.1}
+ .fg-card.fg-shared-shell.recession-target-card .cnn-score-comparison>strong{font-size:11px;line-height:1.1}
+
+ .fg-card.fg-shared-shell.recession-target-card .fg-analysis-slot{
+  grid-column:4;
+  grid-row:2;
+  width:100%;
+  height:132px;
+  min-height:0;
+  padding:0;
+ }
+ .fg-card.fg-shared-shell.recession-target-card .fg-analysis-slot .fg-chart-slot,
+ .fg-card.fg-shared-shell.recession-target-card .fg-analysis-slot .fg-renderer,
+ .fg-card.fg-shared-shell.recession-target-card .fg-analysis-slot .cnn-chart{width:100%;height:132px;min-height:0}
+ .fg-card.fg-shared-shell.recession-target-card .recharts-responsive-container{height:100%!important;min-height:0!important}
+ .fg-card.fg-shared-shell.recession-target-card .recharts-cartesian-axis-tick-value{font-size:10px}
+
+ .fg-card.fg-shared-shell.recession-target-card .fg-footer-slot{grid-column:1 / -1;grid-row:3}
+ .fg-card.fg-shared-shell.recession-target-card .cnn-panel-note{
+  min-height:28px;
+  padding:5px 10px;
+  gap:6px;
+  font-size:10px;
+  line-height:1.2;
+  flex-wrap:nowrap;
+  justify-content:center;
+ }
+ .fg-card.fg-shared-shell.recession-target-card .cnn-panel-note strong{font-size:10px;white-space:nowrap}
+}
