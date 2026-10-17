@@ -219,6 +219,7 @@ export default function BeginnerRiskGuide({topic}:{topic:Topic}){
   <details className="rounded-lg bg-[#071c2a] p-4 sm:p-5">
    <summary className="cursor-pointer font-bold text-white">이 점수는 어떻게 계산하나요?</summary>
    <div className="mt-3 space-y-2 text-sm leading-6 text-slate-300">
+    <p className="text-xs text-slate-400">이 설명 영역은 점수·가중치·판정을 새로 계산하지 않고, 승인된 저장 결과를 해석합니다.</p>
     <p><strong className="text-slate-100">① 사용하는 지표</strong> {methodology.inputs}</p>
     <p><strong className="text-slate-100">② 평가 방법</strong> {methodology.interpretation}</p>
     <p><strong className="text-slate-100">③ 점수 읽는 법</strong> 75점 이상 {config.stage(75)}, 60~74점 {config.stage(60)}, 45~59점 중립, 25~44점 {config.stage(25)}, 25점 미만 {config.stage(0)}. {config.highMeaning} {config.lowMeaning}</p>
