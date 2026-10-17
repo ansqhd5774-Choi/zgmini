@@ -5,6 +5,12 @@ import {IRAN_FACTS_KEY,validateIranFacts} from '../../lib/iran-progress/facts.mj
 import {IRAN_FLOW_KEY,validateReferenceFlow} from '../../lib/iran-progress/reference-public.mjs';
 import {IRAN_FLOW_R2_KEY} from '../../lib/iran-progress/reference-flow-r2.mjs';
 import {validateReferenceFlowR2} from '../../lib/iran-progress/reference-public-r2.mjs';
+import {IRAN_FLOW_R3_KEY} from '../../lib/iran-progress/reference-flow-r3.mjs';
+import {validateReferenceFlowR3} from '../../lib/iran-progress/reference-public-r3.mjs';
+export async function publishReferenceFlowR3(remote,db,body,{now=Date.now()}={}){
+ if(!validateReferenceFlowR3(body,now))throw Error('FLOW_R3_PUBLIC_CONTRACT_INVALID');
+ return publishSnapshot(remote,db,IRAN_FLOW_R3_KEY,body,body.publishedAt);
+}
 export async function publishReferenceFlowR2(remote,db,body,{now=Date.now()}={}){
  if(!validateReferenceFlowR2(body,now))throw Error('FLOW_R2_PUBLIC_CONTRACT_INVALID');
  return publishSnapshot(remote,db,IRAN_FLOW_R2_KEY,body,body.publishedAt);
