@@ -8,6 +8,7 @@ import {MarketCardHeader} from "../market-card-header";
 import {MarketScoreOrb} from "../market-score-orb";
 import {MarketTrendFrame} from "../market-trend-frame";
 import {MarketFearGreedChart,type MarketFearGreedChartPoint,type MarketFearGreedChartValidPoint} from "../market-fear-greed-chart";
+import {InflationFavoriteButton,InflationFavoriteHeaderIcon} from "./inflation-favorite-button";
 import {InflationMiniChart,type InflationMiniTrendPoint} from "./inflation-mini-chart";
 import "./inflation-indicator-r2.css";
 
@@ -216,11 +217,12 @@ export default function InflationPanel(){
 
    <div className="inflation-table-wrap inflation-r2-table-wrap">
     <table className="inflation-indicator-table inflation-indicator-table-r2">
-     <thead><tr><th>지표</th><th>내용</th><th>기준</th><th>이전</th><th>현재</th><th>발표</th><th>판단</th><th>미니차트(1Y)</th><th><span className="sr-only">도움말</span>ⓘ</th></tr></thead>
+     <thead><tr><th className="inflation-r2-favorite-head"><span className="sr-only">즐겨찾기</span><InflationFavoriteHeaderIcon/></th><th>지표</th><th>내용</th><th>기준</th><th>이전</th><th>현재</th><th>발표</th><th>판단</th><th>미니차트(1Y)</th><th><span className="sr-only">도움말</span>ⓘ</th></tr></thead>
      <tbody>
       {featureOrder.map(feature=>{
        const row=features[feature],meta=featureMeta[feature],result=judgement(row?.score),release=releaseInfo(feature,today);
        return <tr key={feature} data-judgement={result.tone}>
+        <td className="inflation-r2-favorite-cell"><InflationFavoriteButton id={feature} label={meta.label}/></td>
         <th scope="row"><strong>{meta.label}</strong><small>{meta.note}</small></th>
         <td>{meta.content}</td>
         <td className="inflation-r2-criterion">{formatCriterion(feature,row)}</td>
@@ -233,6 +235,7 @@ export default function InflationPanel(){
        </tr>;
       })}
       {developmentCandidates.map(item=><tr key={item.label} data-development="true">
+       <td className="inflation-r2-favorite-cell"><InflationFavoriteButton id={`development:${item.label}`} label={item.label}/></td>
        <th scope="row"><strong>{item.label}</strong></th>
        <td>{item.content}</td>
        <td>{item.criterion}</td>
@@ -250,7 +253,7 @@ export default function InflationPanel(){
      const row=features[feature],meta=featureMeta[feature],result=judgement(row?.score),release=releaseInfo(feature,today);
      return <article className="inflation-r2-mobile-card" key={feature} data-judgement={result.tone}>
       <div className="inflation-r2-mobile-head">
-       <div><strong>{meta.label}</strong><small>{meta.note}</small></div>
+       <div className="inflation-r2-mobile-title"><InflationFavoriteButton id={feature} label={meta.label}/><div><strong>{meta.label}</strong><small>{meta.note}</small></div></div>
        <div className="inflation-r2-mobile-actions"><span className="inflation-judgement">{result.label}</span><HelpTip label={meta.label} text={meta.help}/></div>
       </div>
       <p className="inflation-r2-mobile-content">{meta.content}</p>
@@ -265,7 +268,7 @@ export default function InflationPanel(){
     })}
     {developmentCandidates.map(item=><article className="inflation-r2-mobile-card is-development" key={item.label}>
      <div className="inflation-r2-mobile-head">
-      <div><strong>{item.label}</strong></div>
+      <div className="inflation-r2-mobile-title"><InflationFavoriteButton id={`development:${item.label}`} label={item.label}/><div><strong>{item.label}</strong></div></div>
       <div className="inflation-r2-mobile-actions"><span className="inflation-judgement is-development">개발중</span><HelpTip label={item.label} text={`${item.help} 현재 ZGmini 데이터 연결 개발 중입니다.`}/></div>
      </div>
      <p className="inflation-r2-mobile-content">{item.content}</p>
