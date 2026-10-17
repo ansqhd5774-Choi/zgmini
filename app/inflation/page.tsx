@@ -21,9 +21,8 @@ export const metadata:Metadata={
 export default function InflationPage(){
  return <main className="min-h-screen bg-[#03121d] px-4 py-8 text-slate-100 sm:px-8 sm:py-12">
   <div className="mx-auto max-w-6xl">
-   <a className="group inline-flex min-h-11 items-center gap-2.5 text-sm font-semibold text-blue-200 transition-colors duration-200 hover:text-blue-100 active:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-300/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#03121d]" href="/">
-    <span aria-hidden="true" className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-blue-300/35 bg-blue-300/5 text-base font-bold leading-none shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] transition-all duration-200 group-hover:-translate-x-0.5 group-hover:border-blue-200/70 group-hover:bg-blue-300/15 group-active:scale-90 group-active:border-blue-100 group-active:bg-blue-200/20 motion-reduce:transform-none motion-reduce:transition-none">←</span>
-    <span className="transition-transform duration-200 group-hover:translate-x-0.5 group-active:translate-x-0 motion-reduce:transform-none motion-reduce:transition-none">ZGmini 메인 대시보드</span>
+   <a aria-label="메인 대시보드로 돌아가기" title="메인 대시보드로 돌아가기" className="group inline-flex h-11 w-11 items-center justify-center rounded-full border border-blue-300/35 bg-blue-300/5 text-blue-200 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] transition-all duration-200 hover:-translate-x-0.5 hover:border-blue-200/70 hover:bg-blue-300/15 hover:text-white hover:shadow-[0_0_16px_rgba(96,165,250,0.28),inset_0_1px_0_rgba(255,255,255,0.08)] active:translate-x-0 active:scale-90 active:border-blue-100 active:bg-blue-200/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-300/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#03121d] motion-reduce:transform-none motion-reduce:transition-none" href="/">
+    <span aria-hidden="true" className="text-xl font-bold leading-none">←</span>
    </a>
    <SearchIntentIntro topic="inflation"/>
    <RiskDetailBeginnerLayout><InflationPanel/><BeginnerRiskGuide topic="inflation"/></RiskDetailBeginnerLayout>
