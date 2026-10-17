@@ -8,6 +8,7 @@ import {MarketCardHeader} from "../market-card-header";
 import {MarketScoreOrb} from "../market-score-orb";
 import {MarketTrendFrame} from "../market-trend-frame";
 import {MarketFearGreedChart,type MarketFearGreedChartPoint,type MarketFearGreedChartValidPoint} from "../market-fear-greed-chart";
+import {InflationMiniChart,type InflationMiniTrendPoint} from "./inflation-mini-chart";
 import "./inflation-indicator-r2.css";
 
 type FeatureRow={
@@ -21,6 +22,7 @@ type FeatureRow={
   previousObservationDate?:string|null;
   previousAvailableAt?:string|null;
   previousValue?:number|null;
+  trend?:InflationMiniTrendPoint[];
 };
 type InflationPayload={
   status:string;
@@ -214,7 +216,7 @@ export default function InflationPanel(){
 
    <div className="inflation-table-wrap inflation-r2-table-wrap">
     <table className="inflation-indicator-table inflation-indicator-table-r2">
-     <thead><tr><th>지표</th><th>내용</th><th>기준</th><th>이전</th><th>현재</th><th>발표</th><th>판단</th><th><span className="sr-only">도움말</span>ⓘ</th></tr></thead>
+     <thead><tr><th>지표</th><th>내용</th><th>기준</th><th>이전</th><th>현재</th><th>발표</th><th>판단</th><th>미니차트(1Y)</th><th><span className="sr-only">도움말</span>ⓘ</th></tr></thead>
      <tbody>
       {featureOrder.map(feature=>{
        const row=features[feature],meta=featureMeta[feature],result=judgement(row?.score),release=releaseInfo(feature,today);
@@ -226,6 +228,7 @@ export default function InflationPanel(){
         <td className="inflation-r2-value"><strong>{formatRaw(feature,row)}</strong><small>{dateLabel(row?.availableAt)}</small></td>
         <td className={`inflation-r2-release release-${release.urgency}`}><strong>{release.cadence}</strong><small>{release.next?`${shortDateLabel(release.next)} · ${release.countdown}`:release.countdown}</small></td>
         <td><span className="inflation-judgement">{result.label}</span></td>
+        <td className="inflation-r2-spark-cell"><InflationMiniChart label={meta.label} points={row?.trend}/></td>
         <td><HelpTip label={meta.label} text={meta.help}/></td>
        </tr>;
       })}
@@ -235,6 +238,7 @@ export default function InflationPanel(){
        <td>{item.criterion}</td>
        <td>—</td><td>—</td><td>—</td>
        <td><span className="inflation-judgement is-development">개발중</span></td>
+       <td className="inflation-r2-spark-cell">—</td>
        <td><HelpTip label={item.label} text={`${item.help} 현재 ZGmini 데이터 연결 개발 중입니다.`}/></td>
       </tr>)}
      </tbody>
@@ -251,6 +255,7 @@ export default function InflationPanel(){
       </div>
       <p className="inflation-r2-mobile-content">{meta.content}</p>
       <p className="inflation-r2-mobile-criterion"><span>기준</span>{formatCriterion(feature,row)}</p>
+      <div className="inflation-r2-mobile-spark"><span>미니차트(1Y)</span><InflationMiniChart label={meta.label} points={row?.trend}/></div>
       <div className="inflation-r2-mobile-metrics">
        <div><span>이전</span><strong>{formatPrevious(feature,row)}</strong><small>{dateLabel(row?.previousAvailableAt)}</small></div>
        <div><span>현재</span><strong>{formatRaw(feature,row)}</strong><small>{dateLabel(row?.availableAt)}</small></div>
