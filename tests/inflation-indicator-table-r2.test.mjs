@@ -29,6 +29,8 @@ test("inflation indicator R2 shows previous/current/release and mobile no-overfl
   assert.match(css,/\.inflation-target-card \.cnn-latest-point circle,[\s\S]*fill:var\(--inflation-r2-score-color,#94a3b8\)/);
   assert.match(css,/\.inflation-target-card \.cnn-source small\{display:none\}/);
   assert.match(css,/\.inflation-target-card \.cnn-score-observed-date\{display:none\}/);
+  assert.match(css,/\.inflation-target-card \.fg-header-slot \.cnn-panel-heading\{grid-template-columns:minmax\(0,1fr\) auto;align-items:start;column-gap:10px\}/);
+  assert.match(css,/\.inflation-target-card \.cnn-source\{align-self:start;align-items:flex-end;max-width:none;text-align:right;white-space:nowrap\}/);
 
   assert.match(css,/@media\(max-width:767px\)/);
   assert.match(css,/\.inflation-r2-indicators \.inflation-r2-table-wrap\{display:none\}/);
