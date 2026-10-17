@@ -79,7 +79,7 @@ export function MarketFearGreedChart({
     onMouseDown={event=>event.preventDefault()}
   >
     <ResponsiveContainer width="100%" height="100%" initialDimension={{width:1,height:1}}>
-    <AreaChart data={data} accessibilityLayer={false} tabIndex={-1} margin={compact ? {top:6,right:6,left:6,bottom:6} : { top: showExtrema?30:6, right: 14, left: 0, bottom: 4 }}>
+    <AreaChart data={data} accessibilityLayer={false} tabIndex={-1} margin={compact ? {top:6,right:6,left:6,bottom:6} : { top: 6, right: 14, left: 0, bottom: 4 }}>
       <defs>
         <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stopColor={color} stopOpacity=".6"/>
@@ -155,7 +155,7 @@ export function MarketFearGreedChart({
         animationDuration={950}
         animationEasing="ease-out"
       />
-      {extrema.map(point=><ReferenceDot key={'extreme-'+point.kind} x={data[point.index].date} y={point.value} ifOverflow="visible" shape={<ChartExtremumPoint point={point} peerIndex={extrema.find(p=>p.kind!==point.kind)?.index} count={data.length} color={color}/>}/>)}
+      {extrema.map(point=><ReferenceDot key={'extreme-'+point.kind} x={data[point.index].date} y={point.value} ifOverflow="visible" shape={<ChartExtremumPoint point={point} peerIndex={extrema.find(p=>p.kind!==point.kind)?.index} samples={data.map(p=>({x:p.date,value:p.score}))} count={data.length} color={color}/>}/>)}
     </AreaChart>
     </ResponsiveContainer>
   </div>;
