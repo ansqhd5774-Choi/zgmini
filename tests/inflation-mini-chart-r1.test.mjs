@@ -32,7 +32,10 @@ test('inflation indicator table renders judgement then mini chart(1Y) then help'
  assert.match(mini,/viewBox=\{`0 0 \$\{WIDTH\} \$\{HEIGHT\}`\}/);
  assert.match(mini,/<path className="inflation-mini-chart-line"/);
  assert.doesNotMatch(mini,/<(?:text|circle|rect|line)\b/);
- assert.match(css,/\.inflation-mini-chart-line\{fill:none;stroke:#59c8f8;stroke-width:2/);
+ assert.match(css,/\.inflation-mini-chart-line\{fill:none;stroke:#cbd5e1;stroke-width:2/);
+ assert.match(css,/\[data-judgement="positive"\] \.inflation-mini-chart-line\{stroke:#77e59c\}/);
+ assert.match(css,/\[data-judgement="neutral"\] \.inflation-mini-chart-line\{stroke:#cbd5e1\}/);
+ assert.match(css,/\[data-judgement="negative"\] \.inflation-mini-chart-line\{stroke:#ff9a9a\}/);
  assert.match(css,/td:nth-child\(8\)\{width:130px;text-align:center\}/);
  assert.match(css,/td:nth-child\(9\)\{width:50px;text-align:center\}/);
 });

@@ -3,7 +3,10 @@
 .inflation-r2-indicators .inflation-indicator-table-r2 td:nth-child(9){width:50px;text-align:center}
 .inflation-r2-spark-cell{padding-left:8px!important;padding-right:8px!important}
 .inflation-mini-chart{display:block;width:112px;height:32px;margin:0 auto;overflow:visible}
-.inflation-mini-chart-line{fill:none;stroke:#59c8f8;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;vector-effect:non-scaling-stroke}
+.inflation-mini-chart-line{fill:none;stroke:#cbd5e1;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;vector-effect:non-scaling-stroke}
+.inflation-r2-indicators [data-judgement="positive"] .inflation-mini-chart-line{stroke:#77e59c}
+.inflation-r2-indicators [data-judgement="neutral"] .inflation-mini-chart-line{stroke:#cbd5e1}
+.inflation-r2-indicators [data-judgement="negative"] .inflation-mini-chart-line{stroke:#ff9a9a}
 .inflation-mini-chart-empty{display:inline-flex;min-width:112px;height:32px;align-items:center;justify-content:center;color:#5f7689;font-size:11px}
 .inflation-r2-mobile-spark{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:8px;padding-top:8px;border-top:1px solid rgba(68,103,133,.24)}
 .inflation-r2-mobile-spark>span{flex:0 0 auto;color:#7891a6;font-size:9px;font-weight:700}
