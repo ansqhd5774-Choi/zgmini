@@ -128,6 +128,11 @@ const verifiedImprovements:Partial<Record<Topic,VerifiedImprovement[]>>={
   caveat:"새 버전 도입은 예측 정확도 향상을 뜻하지 않으며, 저장된 R5가 활성화된 경우에만 해당합니다.",
  }],
  "asset-bubble":[{
+  version:"ASSET_BUBBLE_R9",date:"2026-10-05",category:"저장·검증",
+  change:"가격 지표가 누락될 때 승인된 OECD/FRED 저장 자료를 사용할 수 있도록 입력 연결을 보완했습니다. 기존 R9 점수 산출 방식과 가중치는 그대로 유지했습니다.",
+  marketUse:"점수의 변화와 데이터 입력 범위가 달라진 경우를 구분해 살펴볼 수 있습니다.",
+  caveat:"이는 예측 성능이 좋아졌다는 검증이 아니라 입력 자료 연결 개선입니다.",
+ },{
   version:"ASSET_BUBBLE_R10_CANDIDATE",date:"2026-10-09",category:"저장·검증",
   change:"R10 연구 후보의 저장 결과를 상세페이지와 게시 경로에 연결했습니다. 기존 R9 산출 방식은 변경하지 않았습니다.",
   marketUse:"연구 후보 점수와 기존 점수를 혼동하지 않고 평가 시점을 확인할 수 있습니다.",
