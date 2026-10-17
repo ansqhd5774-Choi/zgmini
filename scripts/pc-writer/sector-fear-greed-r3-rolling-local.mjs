@@ -44,7 +44,9 @@ function requireText(base,name){
 export function loadSectorFearGreedR3RollingInputs(base=DEFAULT_BASE,{cutoffDate=null}={}){
   const files=listAlpacaStockFiles(path.join(base,ALPACA_DIR));
   if(!files.length)throw Error('SECTOR_FEAR_GREED_R3_ROLLING_STOCK_STORE_MISSING');
-  const stockRows=mergeSectorFearGreedR3StockRows(files.map(safeArray),{cutoffDate});
+  // Incremental filenames are ordered by request start/end; later overlapping
+  // official batches supersede earlier bars. The raw batches remain untouched.
+  const stockRows=mergeSectorFearGreedR3StockRows(files.map(safeArray),{cutoffDate,allowProviderRevisions:true});
   if(!stockRows.length)throw Error('SECTOR_FEAR_GREED_R3_ROLLING_STOCK_ROWS_MISSING');
   const pitCsv=requireText(base,PIT_FILE);
   const iex=requireJson(base,IEX_FILE),backfill=requireJson(base,ETF_BACKFILL_FILE),spyGap=requireJson(base,SPY_GAP_FILE),inventory=requireJson(base,BENCHMARK_INVENTORY_FILE);

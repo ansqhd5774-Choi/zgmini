@@ -33,14 +33,14 @@ function normalizeRows(rows=[]){
 }
 function mergeRows(prior=[],fresh=[]){
   const map=new Map(normalizeRows(prior).map(x=>[x.date,x]));
-  let added=0;
+  let added=0;const revisions=[];
   for(const row of normalizeRows(fresh)){
     const old=map.get(row.date);
     if(old){
-      if(old.close!==row.close||old.volume!==row.volume)throw Error(`SECTOR_FEAR_GREED_R3_ETF_STORED_CONFLICT:${row.date}`);
+      if(old.close!==row.close||old.volume!==row.volume){revisions.push({previous:old,replacement:row});map.set(row.date,row);}
     }else{map.set(row.date,row);added++;}
   }
-  return {rows:[...map.values()].sort((a,b)=>a.date.localeCompare(b.date)),added};
+  return {rows:[...map.values()].sort((a,b)=>a.date.localeCompare(b.date)),added,revisions};
 }
 function baseAnchor(iex){
   const dates=SECTOR_FEAR_GREED_R3_BENCHMARKS.map(t=>normalizeRows(iex?.series?.[t]??[]).at(-1)?.date??null);
@@ -97,7 +97,8 @@ export async function collectSectorFearGreedR3EtfIncremental(base=DEFAULT_BASE,{
     }while(token);
 
     let overlapChecks=0,maxOverlapRelativeDiff=0;
-    const fresh={},prior=readJson(outputPath),series={};
+    const fresh={},prior=readJson(outputPath),series={},revisions=[];
+    if(prior&&(prior.source!=='ALPACA_IEX'||prior.feed!=='iex'||prior.adjustment!=='split'))throw Error('SECTOR_FEAR_GREED_R3_ETF_PRIOR_SOURCE_MISMATCH');
     for(const ticker of SECTOR_FEAR_GREED_R3_BENCHMARKS){
       fresh[ticker]=normalizeRows(bars[ticker]);
       const anchorFresh=fresh[ticker].find(x=>x.date===anchor);
@@ -109,6 +110,7 @@ export async function collectSectorFearGreedR3EtfIncremental(base=DEFAULT_BASE,{
       const append=fresh[ticker].filter(x=>x.date>anchor);
       const merged=mergeRows(prior?.series?.[ticker]??[],append);
       series[ticker]=merged.rows;
+      revisions.push(...merged.revisions.map(row=>({ticker,...row})));
     }
     const latestDates=SECTOR_FEAR_GREED_R3_BENCHMARKS.map(t=>series[t].at(-1)?.date??anchor);
     const commonLatest=[...latestDates].sort()[0];
@@ -117,12 +119,15 @@ export async function collectSectorFearGreedR3EtfIncremental(base=DEFAULT_BASE,{
       source:'ALPACA_IEX',feed:'iex',adjustment:'split',generatedAt:new Date(now).toISOString(),
       baseAnchorDate:anchor,targets:[...SECTOR_FEAR_GREED_R3_BENCHMARKS],series,
     };
+    // Keep the previous observations before accepting official revisions.
+    if(revisions.length)saveJson(path.join(base,'sector-etf-revisions',`${now}.json`),{source:'ALPACA_IEX',checkedAt:report.checkedAt,requestEnd:end,revisions});
     saveJson(outputPath,payload);
     const check=readJson(outputPath);
     if(!check||check.methodologyVersion!==SECTOR_FEAR_GREED_R3_ETF_INCREMENTAL_METHOD)throw Error('SECTOR_FEAR_GREED_R3_ETF_READBACK_FAILED');
     report.status=commonLatest>anchor?'COLLECTED':'NO_NEW_MARKET_SESSION';
     report.storageVerified=true;report.overlapChecks=overlapChecks;report.maxOverlapRelativeDiff=maxOverlapRelativeDiff;
     report.commonLatest=commonLatest;report.rows=Object.values(series).reduce((n,x)=>n+x.length,0);
+    report.revisedRows=revisions.length;
   }catch(error){
     report.error=/^[A-Z0-9_:.-]+$/.test(error?.message??'')?error.message:'SECTOR_FEAR_GREED_R3_ETF_COLLECTION_FAILED';
   }
