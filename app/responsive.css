@@ -458,3 +458,10 @@
 .zg-composite-day-comparison>b[data-direction="down"]{color:#ff626b}
 .zg-composite-comparisons{display:grid;gap:3px;width:100%}
 .zg-composite-day-comparison i{font-style:normal;font-size:12px;margin-left:2px}
+.zg-composite-pc-only,.zg-composite-day-comparison i.zg-composite-pc-only{display:none}
+@media(min-width:960px){
+ .zg-composite-comparisons{grid-template-columns:repeat(2,minmax(0,1fr));gap:0;border:1px solid #31506d;border-radius:6px;background:rgba(7,26,41,.62);padding:5px 0;box-sizing:border-box}
+ .zg-composite-day-comparison{flex-direction:column;justify-content:center;gap:4px;border:0;border-radius:0;background:transparent;padding:0 4px;min-width:0}
+ .zg-composite-day-comparison+.zg-composite-day-comparison{border-left:1px solid #31506d}
+ .zg-composite-pc-only,.zg-composite-day-comparison i.zg-composite-pc-only{display:inline}
+}
