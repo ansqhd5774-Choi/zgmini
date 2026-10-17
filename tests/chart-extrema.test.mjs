@@ -1,10 +1,18 @@
 import test from 'node:test';import assert from 'node:assert/strict';
-import {chartExtrema,clampedChartIndex,placeExtremaLabels} from '../lib/chart-extrema.mjs';
+import {chartExtrema,clampedChartIndex,placeExtremaLabels,extremaLeader} from '../lib/chart-extrema.mjs';
 test('displayed extrema preserve zero, ignore gaps and choose latest ties',()=>{
  const result=chartExtrema([{date:'2026-10-01',value:0},{date:'2026-10-02',value:null},{date:'2026-10-03',value:90},{date:'2026-10-04',value:90},{date:'2026-10-05',value:NaN}]);
  assert.deepEqual(result,[{date:'2026-10-01',value:0,index:0,kind:'min'},{date:'2026-10-04',value:90,index:3,kind:'max'}]);
  assert.deepEqual(chartExtrema([]),[]);assert.deepEqual(chartExtrema([{date:'undated',value:20}]),[]);
  assert.deepEqual(chartExtrema([{date:'2026-10-01',value:50},{date:'2026-10-02',value:50}]),[{date:'2026-10-02',value:50,index:1,kind:'flat'}]);
+});
+test('leaders choose the closest eligible face on all four sides',()=>{
+ const label={x:100,y:100};
+ for(const [point,side,end] of [[{x:40,y:102},'left','H 73'],[{x:160,y:102},'right','H 127'],[{x:100,y:40},'top','V 87'],[{x:100,y:160},'bottom','V 117']]){
+  const leader=extremaLeader(point,label);assert.equal(leader.side,side);assert.ok(leader.path.endsWith(end));
+ }
+ assert.equal(extremaLeader({x:40,y:80},label).side,'left');
+ assert.equal(extremaLeader({x:85,y:30},label).side,'top');
 });
 test('label placement finds clear space without mutating plot dimensions',()=>{
  const plot={x:32,y:6,width:300,height:84},before={...plot};

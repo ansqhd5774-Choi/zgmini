@@ -1,5 +1,5 @@
 import {usePlotArea,useXAxisScale,useYAxisScale} from 'recharts';
-import {placeExtremaLabels} from '../lib/chart-extrema.mjs';
+import {placeExtremaLabels,extremaLeader} from '../lib/chart-extrema.mjs';
 type Point={date:string;value:number;index:number;kind:string};
 // SVG text only: no tooltip box, and no pointer hit area over the line.
 export default function ChartExtremumPoint({cx,cy,point,color,peerIndex,samples}:{cx?:number;cy?:number;point:Point;count:number;color:string;peerIndex?:number;samples:Array<{x:string|number;value:number|null}>}){
@@ -13,9 +13,9 @@ export default function ChartExtremumPoint({cx,cy,point,color,peerIndex,samples}
  if(peer)targets.push({kind:point.kind==='max'?'min':'max',...peer});
  const label=plot?placeExtremaLabels(positions,targets,plot).find(p=>p.kind===point.kind):null;
  const x=label?.x??cx,y=label?.y??10;
- const below=y>cy,edge=below?y-13:y+16,elbow=below?edge-3:edge+3;
+ const leader=extremaLeader({x:cx,y:cy},{x,y});
  return <g className="zg-chart-extremum" data-label-clear={label?.hits===0} pointerEvents="none" aria-label={`${point.kind==='min'?'최저':point.kind==='max'?'최고':'최고·최저'} ${point.value.toFixed(1)} (${point.date.slice(5)})`}>
-  <path d={`M ${cx} ${cy+(below?4:-4)} V ${elbow} H ${x} V ${edge}`} fill="none" stroke={tint} strokeWidth={.8} opacity={.7}/>
+  <path data-leader-side={leader.side} d={leader.path} fill="none" stroke={tint} strokeWidth={.8} opacity={.7}/>
   <circle cx={cx} cy={cy} r={2.8} fill={tint} stroke={tint} strokeWidth={1}/>
   <text x={x} y={y} textAnchor="middle" fill={tint} fontSize={10} fontWeight={600} stroke="#071a29" strokeWidth={2.5} paintOrder="stroke" strokeLinejoin="round">
    <tspan x={x}>{point.value.toFixed(1)}</tspan><tspan x={x} dy={11} fontWeight={400}>({point.date.slice(5)})</tspan>
