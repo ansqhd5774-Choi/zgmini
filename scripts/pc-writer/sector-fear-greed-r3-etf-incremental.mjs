@@ -114,6 +114,11 @@ export async function collectSectorFearGreedR3EtfIncremental(base=DEFAULT_BASE,{
     }
     const latestDates=SECTOR_FEAR_GREED_R3_BENCHMARKS.map(t=>series[t].at(-1)?.date??anchor);
     const commonLatest=[...latestDates].sort()[0];
+    // A successful HTTP response can still omit a symbol's latest session.
+    // Do not certify/cache a partial batch for 20 hours or mix session dates.
+    const freshLatest=SECTOR_FEAR_GREED_R3_BENCHMARKS.map(t=>fresh[t].at(-1)?.date??null);
+    const newestFresh=[...freshLatest].filter(validDate).sort().at(-1);
+    if(!newestFresh||freshLatest.some(date=>date!==newestFresh)||latestDates.some(date=>date!==newestFresh))throw Error('SECTOR_FEAR_GREED_R3_ETF_INCOMPLETE_SESSION');
     const payload={
       version:1,methodologyVersion:SECTOR_FEAR_GREED_R3_ETF_INCREMENTAL_METHOD,
       source:'ALPACA_IEX',feed:'iex',adjustment:'split',generatedAt:new Date(now).toISOString(),
