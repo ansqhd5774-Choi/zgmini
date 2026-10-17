@@ -1,5 +1,13 @@
 /* Keep the recession mobile title and data basis date on the same top row. */
 @media(max-width:767px){
+ a[aria-label="메인 대시보드로 돌아가기"]{
+  position:fixed!important;
+  top:max(16px,env(safe-area-inset-top))!important;
+  left:max(16px,env(safe-area-inset-left))!important;
+  z-index:9999!important;
+  background:#0b2233!important;
+  opacity:1!important;
+ }
  .fg-card.fg-shared-shell.recession-target-card .fg-header-slot .cnn-panel-heading{
   grid-template-columns:minmax(0,1fr) auto;
   column-gap:10px;
