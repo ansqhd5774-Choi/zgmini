@@ -58,7 +58,7 @@ const configs:Record<Topic,Config>={
 };
 
 type MethodologyExplanation={inputs:string;interpretation:string;marketUse:string;limitation:string};
-type VerifiedImprovement={version:string;date:string;category:"산출 방식"|"저장·검증";change:string;marketUse:string;caveat?:string};
+type VerifiedImprovement={version:string;date:string;category:"산출 방식"|"저장·검증"|"데이터·추이"|"화면·해석";title?:string;change:string;marketUse:string;caveat?:string};
 
 // Public educational descriptions only; approved formulas, weights and internal normalization are not disclosed.
 const methodologyExplanations:Record<Topic,MethodologyExplanation>={
@@ -115,6 +115,50 @@ const methodologyExplanations:Record<Topic,MethodologyExplanation>={
 // Curated from merged PR #207 (2026-10-09), #204 (2026-10-09), #309 (2026-10-15).
 // These entries describe confirmed changes, not proof of better forecasting performance.
 const verifiedImprovements:Partial<Record<Topic,VerifiedImprovement[]>>={
+ inflation:[
+  {
+   version:"INFLATION_R2_R29_56",date:"2026-10-18",category:"화면·해석",
+   title:"5개 기간의 점수 변화폭 제공",
+   change:"전월·3개월 2개 비교를 1주·1개월·3개월·6개월·1년의 저장 이력 기반 비교로 확장했습니다. 실제 과거 기준일과 비교합니다.",
+   marketUse:"최근 하락과 중장기 흐름이 같은 방향인지 나란히 확인할 수 있습니다.",
+   caveat:"산출식과 가중치는 변경하지 않았습니다. 근거: GitHub PR #375.",
+  },
+  {
+   version:"INFLATION_R2_R29_56",date:"2026-10-18",category:"데이터·추이",
+   title:"개별 경제지표의 1년 추이 표시",
+   change:"16개 물가 관련 지표에 저장된 관측 이력을 사용하는 1년 미니차트를 연결했습니다.",
+   marketUse:"총점 외에 소비자물가·임금·에너지 등 개별 요인의 상승·하락 방향을 비교할 수 있습니다.",
+   caveat:"표시 및 저장 결과 구성 개선으로 산출식 변경은 아닙니다. 근거: GitHub PR #365.",
+  },
+  {
+   version:"INFLATION_R2_R29_56",date:"2026-10-07",category:"데이터·추이",
+   title:"월간 1년 차트의 기간 보정",
+   change:"12개월 점으로는 약 11개월만 보여주던 1년 차트의 범위를 13개 월 기준으로 보정했습니다.",
+   marketUse:"차트의 시작과 끝이 실제 1년 범위에 더 잘 맞도록 했습니다.",
+   caveat:"점수 산출식 변경이나 예측 성능 개선을 의미하지 않습니다. 근거: GitHub PR #99.",
+  },
+  {
+   version:"INFLATION_R2_R29_56",date:"2026-09-28",category:"저장·검증",
+   title:"공개 데이터의 산출식 버전 식별 유지",
+   change:"인플레이션 종합 점수에 실제 방법론 버전 식별자가 전달되도록 검증을 추가했습니다.",
+   marketUse:"어떤 계산 기준의 점수인지 버전으로 구분할 수 있습니다.",
+   caveat:"점수 자체의 산출 방식을 바꾸지는 않았습니다. 근거: GitHub 커밋 621cc331.",
+  },
+  {
+   version:"INFLATION_R2_R29_56",date:"2026-09-28",category:"산출 방식",
+   title:"인플레이션 R2 운영 산출식 도입",
+   change:"저장된 당시 발표 자료를 사용해 소비자물가·생산자물가·기대인플레이션·임금·에너지 등 지표의 안정성을 7개 평가 영역으로 종합하는 R2를 운영에 연결했습니다.",
+   marketUse:"하나의 CPI 발표 수치가 아닌 여러 물가 압력을 함께 살펴볼 수 있습니다.",
+   caveat:"R2 도입 사실의 기록이며, 이전 모델보다 예측 정확도가 높아졌다는 검증은 아닙니다. 근거: GitHub 커밋 b27662fe.",
+  },
+  {
+   version:"INFLATION_R2_R29_56",date:"2026-09-27",category:"저장·검증",
+   title:"R2 도입 전 발표 당시 자료 복구 경로 보정",
+   change:"PCE 발표 당시 이력을 복구할 때 일반 이력 대신 저장된 PIT 전용 읽기를 사용하고, PC1 원자료 필드 식별을 보정했습니다.",
+   marketUse:"당시 확인 가능했던 경제자료를 구분해 다루는 입력 검증을 보완했습니다.",
+   caveat:"운영 R2 활성화 이전의 입력 준비 이력입니다. 근거: GitHub 커밋 ccef172d·6bb180c2.",
+  },
+ ],
  "supply-shock":[{
   version:"SUPPLY_SHOCK_R10",date:"2026-10-09",category:"산출 방식",
   change:"기존 가격 중심 평가를 공급망·석유 공급·에너지 비용·공급 주도 물가·산업생산의 5개 영역 평가로 확대했습니다.",
@@ -236,7 +280,8 @@ export default function BeginnerRiskGuide({topic}:{topic:Topic}){
     <p>위 버전은 현재 공개된 저장 결과가 알려주는 산출식 식별자입니다. 페이지 버전·배포 버전과 다르며, 점수 변화가 모두 경제 상황 때문인 것은 아닙니다.</p>
     {topic==="earnings-recession"&&currentVersion&&payload?.methodologyVersion!==currentVersion?<p>실적 구성지표 버전과 메인 진단 버전은 별개입니다. 메인 진단: {payload?.methodologyVersion??"미확인"}</p>:null}
     {applicableImprovements.length?applicableImprovements.map(item=><div key={item.version+item.date} className="border-t border-slate-700/50 pt-3">
-     <p className="font-semibold text-slate-100">{item.version} · {item.date} · {item.category}</p>
+     <p className="text-xs text-slate-400">{item.date} · {item.category}</p>
+     <p className="font-semibold text-slate-100">{item.title??item.version}</p>
      <p className="mt-1">{item.change}</p>
      <p className="mt-1">시장 해석: {item.marketUse}</p>
      {item.caveat?<p className="mt-1 text-xs text-slate-400">{item.caveat}</p>:null}
