@@ -301,6 +301,7 @@ export function KoreanCountryCard(){
    ariaLabel="한국 공포탐욕 차트 기간"
   />}
   chart={<MarketFearGreedChart
+   showExtrema
    color={fearGreedStateColor(loading?'확인 중':valid?(c!.stageLabel??'확인 불가'):'확인 불가')}
    data={chartHistory}
    axisTicks={chartAxis.ticks}
