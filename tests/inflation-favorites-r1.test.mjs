@@ -24,3 +24,18 @@ test('inflation indicators expose animated icon-only favorite toggles on desktop
  assert.match(css,/td:nth-child\(9\)\{width:130px!important;text-align:center\}/);
  assert.match(css,/td:nth-child\(10\)\{width:50px!important;text-align:center\}/);
 });
+
+test('favorite order stacks selected indicators first in selection order and animates the move',()=>{
+ const favorite=read('app/inflation/inflation-favorite-button.tsx');
+ assert.match(favorite,/const favorites=\[\.\.\.readFavorites\(\)\]/);
+ assert.match(favorite,/favorites\.indexOf\(id\)/);
+ assert.match(favorite,/Number\.MAX_SAFE_INTEGER/);
+ assert.match(favorite,/container\.appendChild\(node\)/);
+ assert.match(favorite,/getBoundingClientRect\(\)\.top/);
+ assert.match(favorite,/translateY\(\$\{deltaY\}px\)/);
+ assert.match(favorite,/REORDER_DURATION_MS=420/);
+ assert.match(favorite,/cubic-bezier\(\.22,\.8,\.2,1\)/);
+ assert.match(favorite,/prefers-reduced-motion: reduce/);
+ assert.match(favorite,/dataset\.favoriteId=id/);
+ assert.match(favorite,/dataset\.favoriteBaseOrder/);
+});
