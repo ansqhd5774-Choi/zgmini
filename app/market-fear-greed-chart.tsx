@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { CircleAlert } from 'lucide-react';
 import {fearGreedStateColor} from '../lib/fear-greed-state-color.mjs';
+import {chartExtrema} from '../lib/chart-extrema.mjs';
+import ChartExtremumPoint from '../components/chart-extremum-point';
 import {
   Area,
   AreaChart,
@@ -51,6 +53,7 @@ export function MarketFearGreedChart({
   emptyLabel = '이력 없음',
   compact = false,
   color = '#ff7076',
+  showExtrema = false,
 }: {
   data: MarketFearGreedChartPoint[];
   axisTicks: string[];
@@ -62,8 +65,10 @@ export function MarketFearGreedChart({
   emptyLabel?: string;
   compact?: boolean;
   color?: string;
+  showExtrema?: boolean;
 }) {
   const prefersReducedMotion = usePrefersReducedMotion();
+  const extrema=compact||!showExtrema?[]:chartExtrema(data.map(p=>({date:/^\d{8}$/.test(p.date)?`${p.date.slice(0,4)}-${p.date.slice(4,6)}-${p.date.slice(6,8)}`:p.date.slice(0,10),value:p.score})));
 
   if (data.length === 0 || (!compact && data.length === 1)) {
     return <div className="cnn-chart-empty"><CircleAlert size={18}/><span>{emptyLabel}</span></div>;
@@ -74,7 +79,7 @@ export function MarketFearGreedChart({
     onMouseDown={event=>event.preventDefault()}
   >
     <ResponsiveContainer width="100%" height="100%" initialDimension={{width:1,height:1}}>
-    <AreaChart data={data} accessibilityLayer={false} tabIndex={-1} margin={compact ? {top:6,right:6,left:6,bottom:6} : { top: 6, right: 14, left: 0, bottom: 4 }}>
+    <AreaChart data={data} accessibilityLayer={false} tabIndex={-1} margin={compact ? {top:6,right:6,left:6,bottom:6} : { top: showExtrema?30:6, right: 14, left: 0, bottom: 4 }}>
       <defs>
         <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stopColor={color} stopOpacity=".6"/>
@@ -150,6 +155,7 @@ export function MarketFearGreedChart({
         animationDuration={950}
         animationEasing="ease-out"
       />
+      {extrema.map(point=><ReferenceDot key={'extreme-'+point.kind} x={data[point.index].date} y={point.value} ifOverflow="visible" shape={<ChartExtremumPoint point={point} peerIndex={extrema.find(p=>p.kind!==point.kind)?.index} count={data.length} color={color}/>}/>)}
     </AreaChart>
     </ResponsiveContainer>
   </div>;

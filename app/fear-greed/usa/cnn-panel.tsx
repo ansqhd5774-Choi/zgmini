@@ -532,6 +532,7 @@ export default function CnnPanel({ showEducation = false }: { showEducation?: bo
         ariaLabel="CNN 지수 기간 선택"
       />}
       chart={<MarketFearGreedChart
+        showExtrema
         color={fearGreedStateColor(loading?'확인 중':stage)}
         data={history}
         axisTicks={chartAxis.ticks}
