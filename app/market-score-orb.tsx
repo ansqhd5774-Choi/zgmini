@@ -181,6 +181,7 @@ export function MarketScoreOrb({
 
   const displayScore = animatedScore === null ? score : animatedScore.toFixed(1);
   const [wholeScore, decimalScore = ''] = displayScore.includes('.') ? displayScore.split('.', 2) : [displayScore, ''];
+  const showMetaDate = Boolean(metaDate) && comparisonAriaLabel !== '인플레이션 안정성 점수 변화';
 
   if (variant === 'hero') {
     const value = animatedScore;
@@ -290,7 +291,7 @@ export function MarketScoreOrb({
             </strong>
           </div>
         </div>
-        {metaDate ? <div className="cnn-score-observed-date">{metaDate}</div> : null}
+        {showMetaDate ? <div className="cnn-score-observed-date">{metaDate}</div> : null}
       </div>
     );
   }
