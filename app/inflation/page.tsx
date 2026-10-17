@@ -2,6 +2,7 @@ import DetailInvestorNotes from "../detail-investor-notes";
 import SearchIntentIntro from "../search-intent-intro";
 import type {Metadata} from "next";
 import InflationPanel from "./inflation-panel";
+import "./inflation-mobile-judgement.css";
 import DetailReadingGuide from "../detail-reading-guide";
 import BeginnerRiskGuide from "../beginner-risk-guide";
 import RiskDetailBeginnerLayout from "../risk-detail-beginner-layout";
