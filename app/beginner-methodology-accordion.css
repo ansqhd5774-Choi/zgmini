@@ -1,0 +1,86 @@
+/* Only the shared methodology-history accordion uses these motion styles. */
+.zg-method-history-summary{
+ display:flex;
+ align-items:center;
+ justify-content:space-between;
+ gap:12px;
+ list-style:none;
+ min-height:26px;
+}
+.zg-method-history-summary::-webkit-details-marker{display:none}
+.zg-method-history-title{
+ display:flex;
+ align-items:baseline;
+ gap:4px 10px;
+ flex-wrap:wrap;
+ min-width:0;
+ overflow-wrap:anywhere;
+}
+.zg-method-history-chevron{
+ width:17px;
+ height:17px;
+ flex-shrink:0;
+ color:#a4cfe3;
+ transition:transform 360ms cubic-bezier(.22,1,.36,1);
+}
+.zg-method-history[open] .zg-method-history-chevron{transform:rotate(180deg)}
+.zg-method-history-summary:focus-visible,
+.zg-method-history-close:focus-visible{
+ outline:2px solid #77d3ee;
+ outline-offset:4px;
+}
+/* Native <details> retains keyboard and screen-reader behavior.
+   Chrome supports interpolating auto heights and discrete content visibility. */
+@supports (interpolate-size:allow-keywords){
+ .zg-method-history{interpolate-size:allow-keywords}
+ .zg-method-history::details-content{
+  block-size:0;
+  opacity:0;
+  overflow:clip;
+  transition:block-size 420ms cubic-bezier(.22,1,.36,1),
+             opacity 260ms ease,
+             content-visibility 420ms allow-discrete;
+ }
+ .zg-method-history[open]::details-content{
+  block-size:auto;
+  opacity:1;
+ }
+ @starting-style{
+  .zg-method-history[open]::details-content{
+   block-size:0;
+   opacity:0;
+  }
+ }
+}
+.zg-method-history-close-row{
+ display:flex;
+ justify-content:center;
+ border-top:1px solid rgba(110,153,182,.23);
+ padding-top:12px;
+ margin-top:16px;
+}
+.zg-method-history-close{
+ display:inline-flex;
+ align-items:center;
+ justify-content:center;
+ gap:7px;
+ min-width:108px;
+ min-height:38px;
+ padding:8px 20px;
+ border:0;
+ border-radius:0;
+ background:rgba(102,178,222,.10);
+ color:#bedff2;
+ cursor:pointer;
+ font-size:13px;
+ font-weight:600;
+ transition:background-color 220ms ease,color 220ms ease,transform 220ms ease;
+}
+.zg-method-history-close:hover{background:rgba(102,178,222,.18);color:#fff;transform:translateY(-1px)}
+.zg-method-history-close:active{transform:translateY(0)}
+@media (prefers-reduced-motion:reduce){
+ .zg-method-history::details-content,
+ .zg-method-history-chevron,
+ .zg-method-history-close{transition:none!important}
+ .zg-method-history-close:hover,.zg-method-history-close:active{transform:none}
+}

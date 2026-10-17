@@ -1,6 +1,8 @@
 "use client";
 
-import {useEffect,useMemo,useState} from "react";
+import {useEffect,useMemo,useRef,useState} from "react";
+import {ChevronDown,ChevronUp} from "lucide-react";
+import "./beginner-methodology-accordion.css";
 
 type Topic=
  |"inflation"
@@ -218,6 +220,7 @@ function extractFactors(topic:Topic,payload:any,config:Config):Factor[]{
 
 export default function BeginnerRiskGuide({topic}:{topic:Topic}){
  const config=configs[topic];
+ const historyDetailsRef=useRef<HTMLDetailsElement>(null);
  const [payload,setPayload]=useState<any>(null);
  const [loading,setLoading]=useState(true);
  useEffect(()=>{
@@ -271,10 +274,13 @@ export default function BeginnerRiskGuide({topic}:{topic:Topic}){
     <p><strong className="text-slate-100">⑤ 결측·한계</strong> 필요한 자료가 없으면 임의의 0점으로 채우지 않고 미산출 상태로 남길 수 있습니다. {methodology.limitation}</p>
    </div>
   </details>
-  <details className="rounded-lg bg-[#071c2a] p-4 sm:p-5" data-testid={`beginner-methodology-history-${topic}`}>
-   <summary className="cursor-pointer font-bold text-white">
-    산출식 개선 이력
-    <span className="ml-2 inline-block max-w-full break-all text-xs font-normal text-slate-300" data-testid="current-methodology-version">현재 {loading?"확인 중":currentVersion??"버전 미확인"}{isCandidateVersion?" · 연구 후보":""}</span>
+  <details ref={historyDetailsRef} className="zg-method-history rounded-lg bg-[#071c2a] p-4 sm:p-5" data-testid={`beginner-methodology-history-${topic}`}>
+   <summary className="zg-method-history-summary cursor-pointer font-bold text-white">
+    <span className="zg-method-history-title">
+     <span>산출식 개선 이력</span>
+     <span className="text-xs font-normal text-slate-300" data-testid="current-methodology-version">현재 {loading?"확인 중":currentVersion??"버전 미확인"}{isCandidateVersion?" · 연구 후보":""}</span>
+    </span>
+    <ChevronDown aria-hidden="true" className="zg-method-history-chevron"/>
    </summary>
    <div className="mt-3 space-y-3 text-sm leading-6 text-slate-300">
     <p>위 버전은 현재 공개된 저장 결과가 알려주는 산출식 식별자입니다. 페이지 버전·배포 버전과 다르며, 점수 변화가 모두 경제 상황 때문인 것은 아닙니다.</p>
@@ -287,6 +293,12 @@ export default function BeginnerRiskGuide({topic}:{topic:Topic}){
      {item.caveat?<p className="mt-1 text-xs text-slate-400">{item.caveat}</p>:null}
     </div>):<p className="border-t border-slate-700/50 pt-3 text-slate-400">이 버전에 대해 공개 검증된 산출식 변경 이력은 정리 중입니다. 근거 없는 개선 효과나 날짜는 표시하지 않습니다.</p>}
     <p className="text-xs text-slate-400">이력은 확인된 변경 내용만 표시하며, 산출식 변경과 자료·화면 개선을 구분합니다. 최신 버전이 항상 더 정확한 예측을 의미하지는 않습니다.</p>
+    <div className="zg-method-history-close-row">
+     <button type="button" className="zg-method-history-close" aria-label="산출식 개선 이력 접기" onClick={()=>{if(historyDetailsRef.current)historyDetailsRef.current.open=false;}}>
+      <ChevronUp aria-hidden="true" size={16}/>
+      <span>접기</span>
+     </button>
+    </div>
    </div>
   </details>
  </section>;
