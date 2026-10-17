@@ -33,6 +33,12 @@ test("inflation indicator R2 shows previous/current/release and mobile no-overfl
   assert.match(css,/\.inflation-target-card \.cnn-source\{align-self:start;align-items:flex-end;max-width:none;text-align:right;white-space:nowrap\}/);
 
   assert.match(css,/@media\(max-width:767px\)/);
+  assert.match(css,/\.inflation-target-card\{[\s\S]*grid-template-columns:12px minmax\(0,42%\) 8px minmax\(0,1fr\) 12px;[\s\S]*grid-template-rows:auto 156px auto/);
+  assert.match(css,/\.inflation-target-card \.fg-score-slot\{grid-column:2;grid-row:2;[^}]*height:156px/);
+  assert.match(css,/\.inflation-target-card \.fg-analysis-slot\{grid-column:4;grid-row:2;[^}]*height:156px/);
+  assert.match(css,/\.inflation-target-card \.cnn-spectrum-gauge\{width:min\(100%,150px\);max-width:150px\}/);
+  assert.match(css,/\.inflation-target-card \.cnn-score-comparisons\{height:32px;min-height:32px;max-height:32px\}/);
+  assert.match(css,/\.inflation-target-card \.cnn-panel-note\{min-height:32px;padding:7px 12px;font-size:10px/);
   assert.match(css,/\.inflation-r2-indicators \.inflation-r2-table-wrap\{display:none\}/);
   assert.match(css,/\.inflation-r2-mobile-list\{display:grid/);
 
