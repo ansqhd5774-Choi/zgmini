@@ -14,11 +14,22 @@ test("inflation indicator R2 shows previous/current/release and mobile no-overfl
   assert.match(panel,/previousValue/);
   assert.match(panel,/releaseSchedules/);
   assert.match(panel,/D-\$\{days\}/);
+  assert.match(panel,/if\(days<=3\)return "imminent";/);
+  assert.match(panel,/if\(days<=7\)return "week";/);
+  assert.match(panel,/if\(days<=14\)return "fortnight";/);
+  assert.match(panel,/if\(days<=30\)return "month";/);
+  assert.match(panel,/release-\$\{release\.urgency\}/);
   assert.match(panel,/inflation-r2-mobile-list/);
   assert.match(css,/grid-template-columns:repeat\(3,minmax\(0,1fr\)\)/);
   assert.match(css,/\.inflation-r2-indicators \.inflation-indicator-table-r2 th,[\s\S]*\.inflation-r2-indicators \.inflation-indicator-table-r2 td\{text-align:center\}/);
-  assert.match(css,/\.inflation-r2-indicators \.inflation-indicator-table-r2 td\.inflation-r2-release small\{[^}]*color:#f4c34e;[^}]*font-weight:900/);
-  assert.match(css,/\.inflation-r2-mobile-metrics>div:last-child small\{[^}]*color:#f4c34e;[^}]*font-weight:900/);
+  assert.match(css,/\.inflation-r2-indicators \.inflation-indicator-table-r2 td\.inflation-r2-release\.release-month small\{color:#60a5fa;font-weight:800\}/);
+  assert.match(css,/\.inflation-r2-indicators \.inflation-indicator-table-r2 td\.inflation-r2-release\.release-fortnight small\{color:#22d3ee;font-weight:800\}/);
+  assert.match(css,/\.inflation-r2-indicators \.inflation-indicator-table-r2 td\.inflation-r2-release\.release-week small\{color:#f4c34e;font-weight:900\}/);
+  assert.match(css,/\.inflation-r2-indicators \.inflation-indicator-table-r2 td\.inflation-r2-release\.release-imminent small\{color:#fb7185;font-weight:900/);
+  assert.match(css,/\.inflation-r2-mobile-metrics \.release-month small\{color:#60a5fa;font-weight:800\}/);
+  assert.match(css,/\.inflation-r2-mobile-metrics \.release-fortnight small\{color:#22d3ee;font-weight:800\}/);
+  assert.match(css,/\.inflation-r2-mobile-metrics \.release-week small\{color:#f4c34e;font-weight:900\}/);
+  assert.match(css,/\.inflation-r2-mobile-metrics \.release-imminent small\{color:#fb7185;font-weight:900/);
 
   assert.match(css,/\.inflation-target-card:has\(\.cnn-score-orb\[aria-label\*="안정"\]\)\{--inflation-r2-score-color:#45d99f\}/);
   assert.match(css,/\.inflation-target-card:has\(\.cnn-score-orb\[aria-label\*="중립"\]\)\{--inflation-r2-score-color:#94a3b8\}/);

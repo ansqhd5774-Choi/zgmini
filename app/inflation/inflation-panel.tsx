@@ -35,6 +35,7 @@ type InflationPayload={
 };
 
 type ReleaseScheduleKey="PCE"|"CPI"|"PPI"|"IMPORT"|"EMPLOYMENT"|"ECI"|"PRODUCTIVITY"|"INDPRO"|null;
+type ReleaseUrgency="unknown"|"distant"|"month"|"fortnight"|"week"|"imminent";
 type FeatureMeta={
  label:string;
  content:string;
@@ -110,6 +111,14 @@ function kstTodayKey(){
 function daysBetween(from:string,to:string){
  return Math.round((Date.parse(to+"T00:00:00Z")-Date.parse(from+"T00:00:00Z"))/86400000);
 }
+function releaseUrgency(days:number|null):ReleaseUrgency{
+ if(days===null)return "unknown";
+ if(days<=3)return "imminent";
+ if(days<=7)return "week";
+ if(days<=14)return "fortnight";
+ if(days<=30)return "month";
+ return "distant";
+}
 function releaseInfo(feature:string,today:string){
  const meta=featureMeta[feature];
  const next=meta.schedule?releaseSchedules[meta.schedule].find(date=>date>=today)??null:null;
@@ -118,7 +127,7 @@ function releaseInfo(feature:string,today:string){
   cadence:meta.cadence,
   next,
   countdown:days===null?"일정 미정":days===0?"오늘":`D-${days}`,
-  dueSoon:days!==null&&days<=7,
+  urgency:releaseUrgency(days),
  };
 }
 function stage(score:number|null|undefined){
@@ -215,7 +224,7 @@ export default function InflationPanel(){
         <td className="inflation-r2-criterion">{formatCriterion(feature,row)}</td>
         <td className="inflation-r2-value"><strong>{formatPrevious(feature,row)}</strong><small>{dateLabel(row?.previousAvailableAt)}</small></td>
         <td className="inflation-r2-value"><strong>{formatRaw(feature,row)}</strong><small>{dateLabel(row?.availableAt)}</small></td>
-        <td className={`inflation-r2-release${release.dueSoon?" is-soon":""}`}><strong>{release.cadence}</strong><small>{release.next?`${shortDateLabel(release.next)} · ${release.countdown}`:release.countdown}</small></td>
+        <td className={`inflation-r2-release release-${release.urgency}`}><strong>{release.cadence}</strong><small>{release.next?`${shortDateLabel(release.next)} · ${release.countdown}`:release.countdown}</small></td>
         <td><span className="inflation-judgement">{result.label}</span></td>
         <td><HelpTip label={meta.label} text={meta.help}/></td>
        </tr>;
@@ -245,7 +254,7 @@ export default function InflationPanel(){
       <div className="inflation-r2-mobile-metrics">
        <div><span>이전</span><strong>{formatPrevious(feature,row)}</strong><small>{dateLabel(row?.previousAvailableAt)}</small></div>
        <div><span>현재</span><strong>{formatRaw(feature,row)}</strong><small>{dateLabel(row?.availableAt)}</small></div>
-       <div className={release.dueSoon?"is-soon":""}><span>발표</span><strong>{release.cadence}</strong><small>{release.next?`${shortDateLabel(release.next)} · ${release.countdown}`:release.countdown}</small></div>
+       <div className={`release-${release.urgency}`}><span>발표</span><strong>{release.cadence}</strong><small>{release.next?`${shortDateLabel(release.next)} · ${release.countdown}`:release.countdown}</small></div>
       </div>
      </article>;
     })}
