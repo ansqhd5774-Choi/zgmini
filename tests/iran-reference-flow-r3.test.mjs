@@ -10,6 +10,16 @@ import {publishReferenceFlowR3} from '../scripts/iran-progress/publication.mjs';
 import {iranView} from '../lib/iran-progress/view.mjs';
 const a=(title,sourceUrl='https://www.bbc.com/news/articles/example',summary='')=>({title,sourceUrl,summary,date:'2026-10-17'});
 const event=title=>classifyR3Article(a(title));
+test('stored Saudi Houthi casualty and building reports count, explanatory replays do not',()=>{
+ for(const title of [
+  'Houthi missile attack on Yemeni presidential palace kills five, minister says',
+  'Houthi missile hits Aramco building after Saudi-led coalition strike on Yemen fuel depot',
+ ]){const result=event(title);assert.equal(result.rule,'MILITARY_ATTACK',title);assert.equal(result.delta,-12);}
+ assert.equal(event('Houthi missile attack on Yemeni presidential palace kills five, minister says').target,'palace');
+ assert.equal(event('Houthi missile hits Aramco building after Saudi-led coalition strike on Yemen fuel depot').target,'building');
+ for(const title of ['Houthis strike Yemen’s Aden: What that means','Houthi missile attack on Yemen palace could kill five','Houthi missile attack on Yemen palace failed to kill five'])assert.equal(event(title).accepted,false,title);
+ assert.equal(event("Saudi minister vows 'serious response' to Houthi attacks on airports").rule,'MILITARY_WARNING');
+});
 test('regional executed attacks, interception and threats are distinct',()=>{
  for(const[title,rule]of [['Houthis fired missiles at Aden airport','MILITARY_ATTACK'],['Saudi Arabia strikes Sanaa in Yemen','MILITARY_ATTACK'],['Houthis vow more attacks on Saudi airports','MILITARY_WARNING'],['Saudi Arabia intercepted Houthi missiles','MILITARY_INTERCEPTION'],['Houthi tanker was attacked in Red Sea','MARITIME_DISRUPTION']])assert.equal(event(title).rule,rule,title);
  assert.equal(event('Houthis fired missiles at Aden airport').eventDate,null);
