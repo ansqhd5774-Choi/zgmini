@@ -62,3 +62,18 @@ test('methodology education does not alter scoring, storage or shared beginner c
  assert.doesNotMatch(guide,/fetch\(.*\/api\/.*\{method:"POST"/);
  assert.doesNotMatch(guide,/\bE1_R5_WEIGHTS\b|\bINFLATION_R2_AXES\b/);
 });
+
+test('methodology history has an accessible bottom collapse control without scrolling upward',()=>{
+ const css=readFileSync('app/beginner-methodology-accordion.css','utf8');
+ assert.match(guide,/ref=\{historyDetailsRef\} className="zg-method-history/);
+ assert.match(guide,/<summary className="zg-method-history-summary/);
+ assert.match(guide,/aria-label="산출식 개선 이력 접기"/);
+ assert.match(guide,/onClick=\{\(\)=>\{if\(historyDetailsRef\.current\)historyDetailsRef\.current\.open=false;\}\}/);
+ assert.match(guide,/<ChevronUp aria-hidden="true" size=\{16\}\/>/);
+ assert.match(css,/\.zg-method-history::details-content/);
+ assert.match(css,/\.zg-method-history\[open\]::details-content/);
+ assert.match(css,/interpolate-size:allow-keywords/);
+ assert.match(css,/content-visibility 420ms allow-discrete/);
+ assert.match(css,/prefers-reduced-motion:reduce/);
+ assert.doesNotMatch(guide,/scrollTo\(|scrollIntoView\(/);
+});
