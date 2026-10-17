@@ -86,3 +86,80 @@
  .inflation-r2-mobile-metrics>div:last-child small{color:#f4c34e;font-weight:900;font-size:9.5px}
  .inflation-r2-mobile-metrics .is-soon small{color:#f4c34e;font-weight:900}
 }
+
+/* Mobile density R2 — match the compact dashboard fear/greed card proportions.
+   Keep desktop untouched; only tighten the <=767px inflation hero. */
+@media(max-width:767px){
+ .fg-card.fg-shared-shell.inflation-target-card{
+  grid-template-columns:10px minmax(0,40%) 6px minmax(0,1fr) 10px;
+  grid-template-rows:auto 132px auto;
+  align-items:stretch;
+ }
+ .fg-card.fg-shared-shell.inflation-target-card .fg-header-slot{
+  grid-column:2 / 5;
+  grid-row:1;
+  width:100%;
+  height:48px;
+  min-height:48px;
+ }
+ .fg-card.fg-shared-shell.inflation-target-card .fg-header-slot .cnn-panel-heading{
+  min-height:48px;
+  padding:5px 0 4px;
+  align-items:start;
+ }
+ .fg-card.fg-shared-shell.inflation-target-card .cnn-market-title{gap:6px}
+ .fg-card.fg-shared-shell.inflation-target-card .cnn-market-title img{width:28px;height:19px}
+ .fg-card.fg-shared-shell.inflation-target-card .cnn-market-title h2{font-size:18px;line-height:1.15}
+ .fg-card.fg-shared-shell.inflation-target-card .cnn-market-title p:last-child{margin-top:1px;font-size:10px;line-height:1.2}
+ .fg-card.fg-shared-shell.inflation-target-card .cnn-source{font-size:10px;line-height:1.1}
+ .fg-card.fg-shared-shell.inflation-target-card .cnn-source strong{font-size:11px;line-height:1.1}
+
+ .fg-card.fg-shared-shell.inflation-target-card .fg-score-slot{
+  grid-column:2;
+  grid-row:2;
+  width:100%;
+  height:132px;
+  min-height:0;
+  padding:0;
+ }
+ .fg-card.fg-shared-shell.inflation-target-card .fg-score-slot .cnn-score-orb{
+  width:100%;
+  height:132px;
+  min-height:0;
+  max-height:132px;
+  row-gap:2px;
+ }
+ .fg-card.fg-shared-shell.inflation-target-card .cnn-spectrum-gauge{width:min(100%,112px);max-width:112px}
+ .fg-card.fg-shared-shell.inflation-target-card .cnn-score-whole{font-size:36px}
+ .fg-card.fg-shared-shell.inflation-target-card .cnn-score-fraction{font-size:18px;margin-left:1px}
+ .fg-card.fg-shared-shell.inflation-target-card .cnn-spectrum-center>span{margin-top:1px;font-size:12px;line-height:1.1}
+ .fg-card.fg-shared-shell.inflation-target-card .cnn-score-comparisons{height:28px;min-height:28px;max-height:28px}
+ .fg-card.fg-shared-shell.inflation-target-card .cnn-score-comparison{gap:2px}
+ .fg-card.fg-shared-shell.inflation-target-card .cnn-score-comparison>span{font-size:10px;line-height:1.1}
+ .fg-card.fg-shared-shell.inflation-target-card .cnn-score-comparison>strong{font-size:11px;line-height:1.1}
+
+ .fg-card.fg-shared-shell.inflation-target-card .fg-analysis-slot{
+  grid-column:4;
+  grid-row:2;
+  width:100%;
+  height:132px;
+  min-height:0;
+  padding:0;
+ }
+ .fg-card.fg-shared-shell.inflation-target-card .fg-analysis-slot .fg-chart-slot,
+ .fg-card.fg-shared-shell.inflation-target-card .fg-analysis-slot .fg-renderer,
+ .fg-card.fg-shared-shell.inflation-target-card .fg-analysis-slot .cnn-chart{width:100%;height:132px;min-height:0}
+ .fg-card.fg-shared-shell.inflation-target-card .recharts-cartesian-axis-tick-value{font-size:10px}
+
+ .fg-card.fg-shared-shell.inflation-target-card .fg-footer-slot{grid-column:1 / -1;grid-row:3}
+ .fg-card.fg-shared-shell.inflation-target-card .cnn-panel-note{
+  min-height:28px;
+  padding:5px 10px;
+  gap:6px;
+  font-size:10px;
+  line-height:1.2;
+  flex-wrap:nowrap;
+  justify-content:center;
+ }
+ .fg-card.fg-shared-shell.inflation-target-card .cnn-panel-note strong{font-size:10px;white-space:nowrap}
+}

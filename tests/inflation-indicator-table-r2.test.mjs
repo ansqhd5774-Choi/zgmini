@@ -33,12 +33,14 @@ test("inflation indicator R2 shows previous/current/release and mobile no-overfl
   assert.match(css,/\.inflation-target-card \.cnn-source\{align-self:start;align-items:flex-end;max-width:none;text-align:right;white-space:nowrap\}/);
 
   assert.match(css,/@media\(max-width:767px\)/);
-  assert.match(css,/\.inflation-target-card\{[\s\S]*grid-template-columns:12px minmax\(0,42%\) 8px minmax\(0,1fr\) 12px;[\s\S]*grid-template-rows:auto 156px auto/);
-  assert.match(css,/\.inflation-target-card \.fg-score-slot\{grid-column:2;grid-row:2;[^}]*height:156px/);
-  assert.match(css,/\.inflation-target-card \.fg-analysis-slot\{grid-column:4;grid-row:2;[^}]*height:156px/);
-  assert.match(css,/\.inflation-target-card \.cnn-spectrum-gauge\{width:min\(100%,150px\);max-width:150px\}/);
-  assert.match(css,/\.inflation-target-card \.cnn-score-comparisons\{height:32px;min-height:32px;max-height:32px\}/);
-  assert.match(css,/\.inflation-target-card \.cnn-panel-note\{min-height:32px;padding:7px 12px;font-size:10px/);
+  assert.match(css,/\.fg-card\.fg-shared-shell\.inflation-target-card\{[\s\S]*grid-template-columns:10px minmax\(0,40%\) 6px minmax\(0,1fr\) 10px;[\s\S]*grid-template-rows:auto 132px auto/);
+  assert.match(css,/\.fg-card\.fg-shared-shell\.inflation-target-card \.fg-header-slot\{[\s\S]*height:48px;[\s\S]*min-height:48px/);
+  assert.match(css,/\.fg-card\.fg-shared-shell\.inflation-target-card \.fg-score-slot\{[\s\S]*height:132px/);
+  assert.match(css,/\.fg-card\.fg-shared-shell\.inflation-target-card \.fg-analysis-slot\{[\s\S]*height:132px/);
+  assert.match(css,/\.fg-card\.fg-shared-shell\.inflation-target-card \.cnn-spectrum-gauge\{width:min\(100%,112px\);max-width:112px\}/);
+  assert.match(css,/\.fg-card\.fg-shared-shell\.inflation-target-card \.cnn-score-whole\{font-size:36px\}/);
+  assert.match(css,/\.fg-card\.fg-shared-shell\.inflation-target-card \.cnn-score-comparisons\{height:28px;min-height:28px;max-height:28px\}/);
+  assert.match(css,/\.fg-card\.fg-shared-shell\.inflation-target-card \.cnn-panel-note\{[\s\S]*min-height:28px;[\s\S]*padding:5px 10px/);
   assert.match(css,/\.inflation-r2-indicators \.inflation-r2-table-wrap\{display:none\}/);
   assert.match(css,/\.inflation-r2-mobile-list\{display:grid/);
 
