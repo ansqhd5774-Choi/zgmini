@@ -57,6 +57,92 @@ const configs:Record<Topic,Config>={
  }
 };
 
+type MethodologyExplanation={inputs:string;interpretation:string;marketUse:string;limitation:string};
+type VerifiedImprovement={version:string;date:string;category:"산출 방식"|"저장·검증";change:string;marketUse:string;caveat?:string};
+
+// Public educational descriptions only; approved formulas, weights and internal normalization are not disclosed.
+const methodologyExplanations:Record<Topic,MethodologyExplanation>={
+ inflation:{
+  inputs:"소비자·생산자물가, 기대인플레이션, 에너지 가격, 임금과 생산활동 등 16개 지표를 7개 평가 영역으로 살펴봅니다.",
+  interpretation:"물가 목표와 과거의 정상 범위를 기준으로 각 지표의 안정 방향을 평가한 다음, 저장된 결과를 종합합니다.",
+  marketUse:"기조 물가가 둔화하면 금리 부담 완화에 우호적일 수 있지만, 임금·원가가 재상승하면 판단이 달라집니다.",
+  limitation:"점수는 물가상승률 자체나 향후 인플레이션 확률이 아닙니다.",
+ },
+ recession:{
+  inputs:"고용·실질 GDP·산업생산·실질 소비와 소득·신용여건 등 여러 경기 활동 자료를 확인합니다.",
+  interpretation:"각 활동 지표가 경기 방어에 우호적인지 확인한 뒤 저장된 구성 점수를 종합합니다. 한 지표만으로 침체 여부를 결정하지 않습니다.",
+  marketUse:"고용·소비·생산이 함께 약해지면 기업 매출과 이익에 부담이 될 수 있으므로 움직임을 함께 확인합니다.",
+  limitation:"점수는 공식 경기침체 판정이나 향후 경기침체 발생 확률이 아닙니다.",
+ },
+ "liquidity-crisis":{
+  inputs:"단기자금시장 금리 차이, 은행 준비금과 비상대출, 통화량, 국채시장 변동성 등을 관찰합니다.",
+  interpretation:"자금조달이 원활한지, 유동성 압력이 쌓이는지를 각 구성 지표의 저장 점수로 종합합니다.",
+  marketUse:"여러 자금시장 신호가 동시에 악화하면 위험자산의 변동성이 커질 가능성을 경계합니다.",
+  limitation:"일부 자금시장 지표가 일시적으로 출렁였다고 금융위기 발생을 확정할 수는 없습니다.",
+ },
+ "credit-risk":{
+  inputs:"회사채 신용 스트레스와 금융여건, 채권시장 변동성 등 신용 관련 지표를 봅니다.",
+  interpretation:"기업이 돈을 빌리기 얼마나 어려운지 나타내는 신호를 안정성 방향의 점수로 종합합니다.",
+  marketUse:"신용 여건이 나빠지면 자금 조달 의존도가 높은 기업과 경기민감주의 부담을 함께 점검합니다.",
+  limitation:"점수는 개별 기업의 부도 확률이나 채권의 투자등급 판정이 아닙니다.",
+ },
+ "debt-risk":{
+  inputs:"가계·기업의 부채 규모, 원리금 상환 부담, 금리 부담, 신용 스트레스와 상환 여력 등을 확인합니다.",
+  interpretation:"부채의 절대 규모뿐 아니라 소득·현금흐름으로 버틸 수 있는지를 구성 점수로 평가합니다.",
+  marketUse:"높은 금리와 상환 부담이 겹치면 소비·설비투자·기업이익에 부담이 될 수 있습니다.",
+  limitation:"점수는 특정 국가·기업의 파산 확률을 직접 의미하지 않습니다.",
+ },
+ "asset-bubble":{
+  inputs:"가격 수준과 상승 가속도, 위험자산 참여, 투기성 자금, 시장폭과 유동성의 과열 신호를 살펴봅니다.",
+  interpretation:"가격 상승 자체가 아니라 과열 신호가 여러 영역에 동시에 나타나는지를 종합합니다.",
+  marketUse:"과열이 확산되면 주가 상승 중에도 작은 충격에 취약해질 수 있어 위험 노출을 함께 점검합니다.",
+  limitation:"연구 후보 버전은 검증 상태를 별도로 표시하며, 높은 주가 자체를 버블로 확정하지 않습니다.",
+ },
+ "supply-shock":{
+  inputs:"글로벌 공급망, 석유 공급, 에너지 가격, 공급 주도 물가 압력과 산업생산 신호를 봅니다.",
+  interpretation:"공급 제약과 비용 상승이 경기 활동에 부담을 주는 정도를 5개 평가 영역으로 종합합니다.",
+  marketUse:"공급 비용이 급등하면 물가와 기업 마진이 동시에 압박받을 수 있다는 점을 살펴봅니다.",
+  limitation:"과거 차트가 현재 수정 자료 기반이면 당시 투자자가 알 수 있었던 값과 다를 수 있습니다.",
+ },
+ "earnings-recession":{
+  inputs:"기업의 매출·주당이익(EPS)·이익률과 현금흐름, 이익 개선 기업의 폭, 비용 압력 등을 확인합니다.",
+  interpretation:"기업 이익의 수준과 개선의 확산 정도를 점수로 종합합니다. 사용할 수 있는 실적 버전에 따라 분석 항목이 달라집니다.",
+  marketUse:"소수 대형주의 이익만 좋아지는지, 여러 기업과 업종으로 실적 개선이 확산되는지 비교합니다.",
+  limitation:"기업 실적 점수와 메인 경기 진단 점수는 서로 다를 수 있으며, 주가 상승 확률이 아닙니다.",
+ },
+};
+
+// Curated from merged PR #207 (2026-10-09), #204 (2026-10-09), #309 (2026-10-15).
+// These entries describe confirmed changes, not proof of better forecasting performance.
+const verifiedImprovements:Partial<Record<Topic,VerifiedImprovement[]>>={
+ "supply-shock":[{
+  version:"SUPPLY_SHOCK_R10",date:"2026-10-09",category:"산출 방식",
+  change:"기존 가격 중심 평가를 공급망·석유 공급·에너지 비용·공급 주도 물가·산업생산의 5개 영역 평가로 확대했습니다.",
+  marketUse:"가격 상승이 공급 측 부담과 함께 나타나는지 더 세분화해 읽을 수 있습니다.",
+  caveat:"과거 점수는 현재 수정 자료 기반이며 발표 당시 자료로 검증한 백테스트는 아닙니다.",
+ }],
+ "earnings-recession":[{
+  version:"E1-R5",date:"2026-10-15",category:"산출 방식",
+  change:"실적 평가를 13개 구성 요소로 확장하고, 저장 자료 기반 계산과 결측 시 이전 E1-R4 유지 경로를 연결했습니다.",
+  marketUse:"이익 성장뿐 아니라 원가 압력과 개선 기업의 확산을 함께 해석할 수 있습니다.",
+  caveat:"새 버전 도입은 예측 정확도 향상을 뜻하지 않으며, 저장된 R5가 활성화된 경우에만 해당합니다.",
+ }],
+ "asset-bubble":[{
+  version:"ASSET_BUBBLE_R10_CANDIDATE",date:"2026-10-09",category:"저장·검증",
+  change:"R10 연구 후보의 저장 결과를 상세페이지와 게시 경로에 연결했습니다. 기존 R9 산출 방식은 변경하지 않았습니다.",
+  marketUse:"연구 후보 점수와 기존 점수를 혼동하지 않고 평가 시점을 확인할 수 있습니다.",
+  caveat:"R10은 연구 후보이며 과거 자료 검증과 일부 외부 근거 확인이 아직 완료되지 않았습니다.",
+ }],
+};
+
+function reportedMethodologyVersion(topic:Topic,payload:any):string|null{
+ // E1: the stored earnings component version and the main diagnostic may differ.
+ const version=topic==="earnings-recession"&&payload?.storedE1?.status==="READY"
+  ?payload?.storedE1?.methodologyVersion
+  :payload?.methodologyVersion;
+ return typeof version==="string"&&version.trim()?version.trim():null;
+}
+
 function finiteScore(value:unknown){return typeof value==="number"&&Number.isFinite(value)?value:null;}
 function validBeginnerCopy(value:any):value is BeginnerCopy{
  const expected=["generatedAt","marketMeaning","sourceHash","sourceStoredAt","sourceVersion","status","summary","whyItMatters"];
@@ -99,6 +185,10 @@ export default function BeginnerRiskGuide({topic}:{topic:Topic}){
  const positive=useMemo(()=>factors.filter(x=>x.score>=60).sort((a,b)=>b.score-a.score).slice(0,3),[factors]);
  const negative=useMemo(()=>factors.filter(x=>x.score<45).sort((a,b)=>a.score-b.score).slice(0,3),[factors]);
  const stage=score===null?"확인 필요":config.stage(score);
+ const methodology=methodologyExplanations[topic];
+ const currentVersion=reportedMethodologyVersion(topic,payload);
+ const applicableImprovements=(verifiedImprovements[topic]??[]).filter(item=>item.version===currentVersion);
+ const isCandidateVersion=currentVersion?.includes("CANDIDATE")??false;
  const storedCopy=validBeginnerCopy(payload?.beginnerCopy)?payload.beginnerCopy:null;
  const currentText=storedCopy?.summary??(loading?"저장된 최신 결과를 확인하고 있습니다.":score===null?"현재 저장 결과만으로 종합 점수를 확인할 수 없습니다.":`현재 ${config.title} 점수는 ${score.toFixed(1)}점이며 ${stage} 구간입니다. ${config.highMeaning}`);
  const importanceText=storedCopy?.whyItMatters??config.importance;
@@ -123,7 +213,30 @@ export default function BeginnerRiskGuide({topic}:{topic:Topic}){
   </div>
   <details className="rounded-lg bg-[#071c2a] p-4 sm:p-5">
    <summary className="cursor-pointer font-bold text-white">이 점수는 어떻게 계산하나요?</summary>
-   <p className="mt-3 text-sm leading-6 text-slate-300">ZGmini의 기존 승인 산식이 저장한 종합점수와 구성 지표 점수를 사용합니다. 이 초보자 설명 영역은 점수·가중치·판정을 새로 계산하지 않고, 저장 결과를 이해하기 쉬운 순서로 재배열합니다. {config.highMeaning} {config.lowMeaning}</p>
+   <div className="mt-3 space-y-2 text-sm leading-6 text-slate-300">
+    <p><strong className="text-slate-100">① 사용하는 지표</strong> {methodology.inputs}</p>
+    <p><strong className="text-slate-100">② 평가 방법</strong> {methodology.interpretation}</p>
+    <p><strong className="text-slate-100">③ 점수 읽는 법</strong> 75점 이상 {config.stage(75)}, 60~74점 {config.stage(60)}, 45~59점 중립, 25~44점 {config.stage(25)}, 25점 미만 {config.stage(0)}. {config.highMeaning} {config.lowMeaning}</p>
+    <p><strong className="text-slate-100">④ 주식시장에서</strong> {methodology.marketUse}</p>
+    <p><strong className="text-slate-100">⑤ 결측·한계</strong> 필요한 자료가 없으면 임의의 0점으로 채우지 않고 미산출 상태로 남길 수 있습니다. {methodology.limitation}</p>
+   </div>
+  </details>
+  <details className="rounded-lg bg-[#071c2a] p-4 sm:p-5" data-testid={`beginner-methodology-history-${topic}`}>
+   <summary className="cursor-pointer font-bold text-white">
+    산출식 개선 이력
+    <span className="ml-2 inline-block max-w-full break-all text-xs font-normal text-slate-300" data-testid="current-methodology-version">현재 {loading?"확인 중":currentVersion??"버전 미확인"}{isCandidateVersion?" · 연구 후보":""}</span>
+   </summary>
+   <div className="mt-3 space-y-3 text-sm leading-6 text-slate-300">
+    <p>위 버전은 현재 공개된 저장 결과가 알려주는 산출식 식별자입니다. 페이지 버전·배포 버전과 다르며, 점수 변화가 모두 경제 상황 때문인 것은 아닙니다.</p>
+    {topic==="earnings-recession"&&currentVersion&&payload?.methodologyVersion!==currentVersion?<p>실적 구성지표 버전과 메인 진단 버전은 별개입니다. 메인 진단: {payload?.methodologyVersion??"미확인"}</p>:null}
+    {applicableImprovements.length?applicableImprovements.map(item=><div key={item.version+item.date} className="border-t border-slate-700/50 pt-3">
+     <p className="font-semibold text-slate-100">{item.version} · {item.date} · {item.category}</p>
+     <p className="mt-1">{item.change}</p>
+     <p className="mt-1">시장 해석: {item.marketUse}</p>
+     {item.caveat?<p className="mt-1 text-xs text-slate-400">{item.caveat}</p>:null}
+    </div>):<p className="border-t border-slate-700/50 pt-3 text-slate-400">이 버전에 대해 공개 검증된 산출식 변경 이력은 정리 중입니다. 근거 없는 개선 효과나 날짜는 표시하지 않습니다.</p>}
+    <p className="text-xs text-slate-400">이력은 확인된 변경 내용만 표시하며, 산출식 변경과 자료·화면 개선을 구분합니다. 최신 버전이 항상 더 정확한 예측을 의미하지는 않습니다.</p>
+   </div>
   </details>
  </section>;
 }
