@@ -37,6 +37,31 @@
 }
 
 @media(max-width:767px){
+ /* Match the dashboard card density on mobile: score on the left, chart on the right. */
+ .inflation-target-card{
+  grid-template-columns:12px minmax(0,42%) 8px minmax(0,1fr) 12px;
+  grid-template-rows:auto 156px auto;
+  align-items:stretch;
+ }
+ .inflation-target-card .fg-header-slot{grid-column:2 / 5;grid-row:1;width:100%;height:auto;min-height:56px}
+ .inflation-target-card .fg-header-slot .cnn-panel-heading{padding:8px 0 6px}
+ .inflation-target-card .fg-content-slot{display:contents}
+ .inflation-target-card .fg-score-slot{grid-column:2;grid-row:2;width:100%;height:156px;min-height:0;padding:0;align-self:stretch;justify-self:stretch}
+ .inflation-target-card .fg-score-slot .cnn-score-orb{width:100%;height:156px;min-height:0;max-height:156px;row-gap:4px;align-self:stretch;justify-self:stretch}
+ .inflation-target-card .cnn-spectrum-gauge{width:min(100%,150px);max-width:150px}
+ .inflation-target-card .cnn-score-comparisons{height:32px;min-height:32px;max-height:32px}
+ .inflation-target-card .cnn-score-comparison{gap:3px}
+ .inflation-target-card .cnn-score-comparison>span{font-size:10px;line-height:1.15}
+ .inflation-target-card .cnn-score-comparison>strong{font-size:12px;line-height:1.15}
+ .inflation-target-card .fg-analysis-slot{grid-column:4;grid-row:2;width:100%;height:156px;min-height:0;padding:0;align-self:stretch;justify-self:stretch}
+ .inflation-target-card .fg-analysis-slot .fg-chart-slot,
+ .inflation-target-card .fg-analysis-slot .fg-renderer,
+ .inflation-target-card .fg-analysis-slot .cnn-chart{width:100%;height:100%;min-height:0}
+ .inflation-target-card .fg-analysis-slot .recharts-responsive-container{height:100%!important;min-height:0!important}
+ .inflation-target-card .fg-footer-slot{grid-column:1 / -1;grid-row:3}
+ .inflation-target-card .cnn-panel-note{min-height:32px;padding:7px 12px;font-size:10px;line-height:1.3;flex-wrap:nowrap}
+ .inflation-target-card .cnn-panel-note strong{font-size:10px;white-space:nowrap}
+
  .inflation-r2-indicators{padding:14px}
  .inflation-r2-indicators .inflation-r2-table-wrap{display:none}
  .inflation-r2-mobile-list{display:grid;gap:8px}
