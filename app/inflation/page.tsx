@@ -21,7 +21,10 @@ export const metadata:Metadata={
 export default function InflationPage(){
  return <main className="min-h-screen bg-[#03121d] px-4 py-8 text-slate-100 sm:px-8 sm:py-12">
   <div className="mx-auto max-w-6xl">
-   <a className="inline-flex min-h-11 items-center text-sm text-blue-200" href="/">← ZGmini 메인 대시보드</a>
+   <a className="group inline-flex min-h-11 items-center gap-2.5 text-sm font-semibold text-blue-200 transition-colors duration-200 hover:text-blue-100 active:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-300/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#03121d]" href="/">
+    <span aria-hidden="true" className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-blue-300/35 bg-blue-300/5 text-base font-bold leading-none shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] transition-all duration-200 group-hover:-translate-x-0.5 group-hover:border-blue-200/70 group-hover:bg-blue-300/15 group-active:scale-90 group-active:border-blue-100 group-active:bg-blue-200/20 motion-reduce:transform-none motion-reduce:transition-none">←</span>
+    <span className="transition-transform duration-200 group-hover:translate-x-0.5 group-active:translate-x-0 motion-reduce:transform-none motion-reduce:transition-none">ZGmini 메인 대시보드</span>
+   </a>
    <SearchIntentIntro topic="inflation"/>
    <RiskDetailBeginnerLayout><InflationPanel/><BeginnerRiskGuide topic="inflation"/></RiskDetailBeginnerLayout>
    <DetailReadingGuide title="미국 인플레이션 점수를 읽는 방법"
