@@ -11,6 +11,11 @@ test('later official stock batches accept corrected volume and advance to the ne
  assert.throws(()=>mergeSectorFearGreedR3StockRows([[...first,next[0]]],{allowProviderRevisions:true}),/STOCK_CONFLICT/);
  assert.throws(()=>mergeSectorFearGreedR3StockRows([first,[{...next[0],feed:'sip'}]],{allowProviderRevisions:true}),/STOCK_CONFLICT/);
 });
+test('three successive stock revisions advance without losing earlier sessions',()=>{
+ const sets=[['2026-10-14',10],['2026-10-15',20],['2026-10-16',30]].map(([date,volume],i)=>[bar('2026-10-13',100+i),bar(date,volume)]);
+ const out=mergeSectorFearGreedR3StockRows(sets,{allowProviderRevisions:true});
+ assert.deepEqual(out.map(r=>r.tradeDate),['2026-10-13','2026-10-14','2026-10-15','2026-10-16']);assert.equal(out[0].currentVolume,102);
+});
 test('ETF overlap revisions are archived, next session is retained and duplicate conflicts preserve output',async t=>{
  const base=fs.mkdtempSync(path.join(os.tmpdir(),'sector-revisions-'));t.after(()=>fs.rmSync(base,{recursive:true,force:true}));
  const save=(name,v)=>fs.writeFileSync(path.join(base,name),JSON.stringify(v));
@@ -27,4 +32,11 @@ test('ETF overlap revisions are archived, next session is retained and duplicate
  const before=fs.readFileSync(path.join(base,file),'utf8');bars.SPY.push({t:'2026-10-16T04:00:00Z',c:999,v:20});
  await assert.rejects(collectSectorFearGreedR3EtfIncremental(base,{now:now+21*3600000,fetchImpl:async()=>Response.json({bars})}),/DUPLICATE_CONFLICT/);
  assert.equal(fs.readFileSync(path.join(base,file),'utf8'),before);
+ bars.SPY.pop();bars.XLK.pop();
+ await assert.rejects(collectSectorFearGreedR3EtfIncremental(base,{now:now+21*3600000,fetchImpl:async()=>Response.json({bars})}),/INCOMPLETE_SESSION/);
+ assert.equal(fs.readFileSync(path.join(base,file),'utf8'),before);
+ assert.equal(JSON.parse(fs.readFileSync(path.join(base,'local-sector-fear-greed-r3-etf-incremental-last-run.json'))).storageVerified,false);
+ bars.XLK.push({t:'2026-10-16T04:00:00Z',c:102,v:20});
+ const retry=await collectSectorFearGreedR3EtfIncremental(base,{now:now+21*3600000+1000,fetchImpl:async()=>Response.json({bars})});
+ assert.equal(retry.status,'COLLECTED');assert.equal(retry.commonLatest,'2026-10-16');assert.equal(retry.providerRequests,1);
 });
