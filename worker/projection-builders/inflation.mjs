@@ -16,6 +16,17 @@ function monthEnds(asOf,count=12){
   }
   return out;
 }
+function oneYearStart(asOf){
+  const end=new Date(`${asOf}T00:00:00Z`);
+  return new Date(Date.UTC(end.getUTCFullYear()-1,end.getUTCMonth(),end.getUTCDate())).toISOString().slice(0,10);
+}
+export function buildFeatureTrend1Y(rows=[],asOf){
+  if(!validDate(asOf))return [];
+  const start=oneYearStart(asOf);
+  return (Array.isArray(rows)?rows:[])
+    .filter(row=>validDate(row?.availableAt)&&row.availableAt>=start&&row.availableAt<=asOf&&finite(row?.value))
+    .map(row=>({date:validDate(row?.observationDate)?row.observationDate:row.availableAt,value:row.value}));
+}
 function partial(reason,extra={}){
   return {
     status:"PARTIAL",
@@ -51,12 +62,14 @@ function previousFeatureRow(rows=[],asOf,current){
 function withPreviousFeatures(history,features,asOf){
   return Object.fromEntries(Object.entries(features).map(([feature,row])=>{
     if(!row)return [feature,row];
-    const previous=previousFeatureRow(history?.[feature]??[],asOf,row);
+    const rows=history?.[feature]??[];
+    const previous=previousFeatureRow(rows,asOf,row);
     return [feature,{
       ...row,
       previousObservationDate:previous?.observationDate??null,
       previousAvailableAt:previous?.availableAt??null,
       previousValue:finite(previous?.value)?previous.value:null,
+      trend:buildFeatureTrend1Y(rows,asOf),
     }];
   }));
 }

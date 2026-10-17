@@ -14,11 +14,11 @@ test('non-KFG projection checkpoint reads CORE only',async()=>{
  assert.deepEqual(calls.map(x=>x.label),['core']);
 });
 
-test('inflation checkpoint carries indicator table R2 build version',async()=>{
+test('inflation checkpoint carries indicator table mini chart build version',async()=>{
  const calls=[];
  const env={DB_CORE:db({stored_at:123},calls,'core'),DB_HISTORY:db({date:'20261003',calculated_at:'2026-10-03T00:00:00Z'},calls,'history')};
  const out=await readProjectionCheckpoint(env,'inflation');
- assert.deepEqual(out,{sourceVersion:'core:123:inflation-indicator-table-r2',sourceStoredAt:123});
+ assert.deepEqual(out,{sourceVersion:'core:123:inflation-indicator-table-r2-mini-chart-1y',sourceStoredAt:123});
  assert.deepEqual(calls.map(x=>x.label),['core']);
 });
 
@@ -42,7 +42,7 @@ test('batch checkpoint reads each needed shard once and versions selected builde
  const calls=[];
  const env={DB_CORE:db({stored_at:123},calls,'core'),DB_HISTORY:db({date:'20261003',calculated_at:'2026-10-03T00:00:00Z'},calls,'history')};
  const out=await readProjectionCheckpoints(env,['inflation','recession','earningsRecession','koreaFearGreed']);
- assert.equal(out.inflation.sourceVersion,'core:123:inflation-indicator-table-r2');
+ assert.equal(out.inflation.sourceVersion,'core:123:inflation-indicator-table-r2-mini-chart-1y');
  assert.equal(out.recession.sourceVersion,'core:123');
  assert.equal(out.earningsRecession.sourceVersion,'core:123:earnings-e1-r5-detail-r1');
  assert.match(out.koreaFearGreed.sourceVersion,/^kfg:/);
