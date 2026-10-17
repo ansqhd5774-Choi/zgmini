@@ -12,6 +12,8 @@ test("recession detail mirrors completed inflation shell and mobile layout",()=>
  const judgement=read("app/recession/recession-mobile-judgement.css");
 
  assert.match(page,/aria-label="메인 대시보드로 돌아가기"/);
+ assert.match(page,/className="[^"]*fixed left-4 top-4 z-50[^"]*bg-\[#0b2233\][^"]*" href="\/"/);
+ assert.doesNotMatch(page,/aria-label="메인 대시보드로 돌아가기"[^>]*backdrop-blur/);
  assert.match(page,/import "\.\/recession-mobile-header\.css";/);
  assert.match(page,/import "\.\/recession-mobile-judgement\.css";/);
  assert.match(panel,/import "\.\/recession-indicator-r2\.css";/);
