@@ -334,7 +334,7 @@ export function CompositeMarketSection({items,points,demo,loading}:{items:Summar
        <LiveScoreValue value={overallScore} style={{color:overallScore===null?'#94a3b8':scoreColor(overallScore)}}>{overallScore===null?'—':<>{overallScore.toFixed(1).split('.')[0]}<span className="zg-composite-fraction">.{overallScore.toFixed(1).split('.')[1]}</span></>}</LiveScoreValue>
        <div className="zg-composite-comparisons" aria-label="종합 시장 점수 변화량">
         {overallComparisons.map(({label,change})=><div key={label} className="zg-composite-day-comparison" title={change?`${change.previousDate} 대비 · 점수 차이`:'비교할 저장 점수 없음'}>
-         <span>{label}</span><b data-direction={change?(change.delta>0?'up':change.delta<0?'down':'flat'):'unknown'}>{change?`${change.delta>0?'+':''}${change.delta.toFixed(1)}`:'—'}{overallArrows&&change&&change.delta!==0?<i aria-hidden="true">{change.delta>0?'▲':'▼'}</i>:null}</b>
+         <span>{label}{label!=='전일'?<span className="zg-composite-pc-only">전</span>:null}</span><b data-direction={change?(change.delta>0?'up':change.delta<0?'down':'flat'):'unknown'}>{change?`${change.delta>0?'+':''}${change.delta.toFixed(1)}`:'—'}{change?.delta===0?<i className="zg-composite-pc-only" aria-hidden="true">−</i>:null}{overallArrows&&change&&change.delta!==0?<i aria-hidden="true">{change.delta>0?'▲':'▼'}</i>:null}</b>
         </div>)}
        </div>
       </div>
