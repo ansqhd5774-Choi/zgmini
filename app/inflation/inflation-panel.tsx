@@ -11,6 +11,7 @@ import {MarketFearGreedChart,type MarketFearGreedChartPoint,type MarketFearGreed
 import {InflationFavoriteButton,InflationFavoriteHeaderIcon} from "./inflation-favorite-button";
 import {InflationMiniChart,type InflationMiniTrendPoint} from "./inflation-mini-chart";
 import "./inflation-indicator-r2.css";
+import "./inflation-score-comparisons-r1.css";
 
 type FeatureRow={
   observationDate:string|null;
@@ -25,6 +26,13 @@ type FeatureRow={
   previousValue?:number|null;
   trend?:InflationMiniTrendPoint[];
 };
+type InflationScoreComparisons={
+  week?:number|null;
+  month?:number|null;
+  threeMonth?:number|null;
+  sixMonth?:number|null;
+  year?:number|null;
+};
 type InflationPayload={
   status:string;
   score:number|null;
@@ -35,6 +43,7 @@ type InflationPayload={
   axes?:Record<string,number|null>;
   features?:Record<string,FeatureRow|null>;
   trend?:Array<{label:string;value:number}>;
+  scoreComparisons?:InflationScoreComparisons;
 };
 
 type ReleaseScheduleKey="PCE"|"CPI"|"PPI"|"IMPORT"|"EMPLOYMENT"|"ECI"|"PRODUCTIVITY"|"INDPRO"|null;
@@ -93,7 +102,7 @@ const developmentCandidates=[
  {label:"Core Services ex-Housing",content:"주거비 제외 핵심 서비스 물가",criterion:"지속 둔화",help:"서비스 부문의 끈적한 물가 압력을 확인하기 위한 지표입니다."},
  {label:"Supercore Services",content:"연준이 주목하는 서비스 기조 물가",criterion:"지속 둔화",help:"노동집약적 서비스 물가의 지속성을 확인하기 위한 보조 지표입니다."},
  {label:"Michigan 기대인플레",content:"소비자 장단기 기대물가",criterion:"안정",help:"소비자의 기대가 높아지면 임금·가격 결정에 영향을 줄 수 있어 기대의 안정 여부를 봅니다."},
- {label:"NY Fed 기대인플레",content:"가계가 예상하는 향후 물가",criterion:"안정",help:"가계의 1년·3년 등 기대 인플레이션이 재상승하는지 확인하기 위한 지표입니다."},
+ {label:"NY Fed 기대인플레",content:"가계가 예상하는 향후 물가",criterion:"안정",help:"가계의 1년·3년 등 기대 인플레이션이 재상승하는지 확인하기 위한 보조 지표입니다."},
  {label:"ISM Prices Paid",content:"기업 구매단계 가격 압력",criterion:"50 부근 안정",help:"기업이 체감하는 투입가격 압력을 보여주며 급등하면 선행 물가 압력으로 볼 수 있습니다."},
 ];
 
@@ -177,9 +186,13 @@ export default function InflationPanel(){
  const latestPoint:MarketFearGreedChartValidPoint|null=latest&&typeof latest.score==="number"?{date:latest.date,score:latest.score}:null;
  const axisLabels=new Map(trend.map(p=>[p.date,p.date.slice(5,7)]));
  const axisTicks=trend.filter((_,i)=>i===0||i===trend.length-1||i%2===0).map(p=>p.date);
- const previous=allTrend.at(-2)?.value,threeMonth=allTrend.at(-4)?.value;
- const previousDelta=score!==null&&typeof previous==="number"?score-previous:null;
- const threeMonthDelta=score!==null&&typeof threeMonth==="number"?score-threeMonth:null;
+ const scoreComparisonItems=[
+  {label:"1주",value:payload?.scoreComparisons?.week??null},
+  {label:"1개월",value:payload?.scoreComparisons?.month??null},
+  {label:"3개월",value:payload?.scoreComparisons?.threeMonth??null},
+  {label:"6개월",value:payload?.scoreComparisons?.sixMonth??null},
+  {label:"1년",value:payload?.scoreComparisons?.year??null},
+ ] as const;
  const features=payload?.features??{};
  const today=kstTodayKey();
 
@@ -190,7 +203,7 @@ export default function InflationPanel(){
    </div>
    <div className="fg-content-slot">
     <div className="fg-score-slot">
-     <MarketScoreOrb score={loading||score===null?"—":score.toFixed(1)} state={loading?"확인 중":stage(score)} variant="hero" dayDelta={previousDelta} periodDelta={threeMonthDelta} periodLabel="3개월 대비" dayLabel="전월 대비" comparisonAriaLabel="인플레이션 안정성 점수 변화" metaDate={dateLabel(payload?.asOfDate)}/>
+     <MarketScoreOrb score={loading||score===null?"—":score.toFixed(1)} state={loading?"확인 중":stage(score)} variant="hero" comparisonItems={scoreComparisonItems} comparisonAriaLabel="인플레이션 안정성 점수 변화" metaDate={dateLabel(payload?.asOfDate)}/>
     </div>
     <MarketTrendFrame className="fg-analysis-slot">
      <div className="fg-chart-slot"><div className="fg-renderer"><MarketFearGreedChart data={trend} axisTicks={axisTicks} axisLabels={axisLabels} latestPoint={latestPoint} instanceKey="1Y" gradientId="inflation-fill" formatTooltipLabel={dateLabel} emptyLabel={loading?"확인 중":"이력 없음"}/></div></div>
