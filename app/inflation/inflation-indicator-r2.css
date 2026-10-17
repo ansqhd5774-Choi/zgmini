@@ -27,6 +27,15 @@
 .inflation-r2-indicators .inflation-indicator-table-r2 td.inflation-r2-release.is-soon small{color:#f4c34e;font-weight:900}
 .inflation-r2-mobile-list{display:none}
 
+/* Keep the compact inflation header identical to the desktop hierarchy:
+   title/description on the left, data basis date on the upper right. */
+@container fg-shared (max-width:500px){
+ .inflation-target-card .fg-header-slot .cnn-panel-heading{grid-template-columns:minmax(0,1fr) auto;align-items:start;column-gap:10px}
+ .inflation-target-card .cnn-market-title{min-width:0}
+ .inflation-target-card .cnn-market-title>div{min-width:0}
+ .inflation-target-card .cnn-source{align-self:start;align-items:flex-end;max-width:none;text-align:right;white-space:nowrap}
+}
+
 @media(max-width:767px){
  .inflation-r2-indicators{padding:14px}
  .inflation-r2-indicators .inflation-r2-table-wrap{display:none}
