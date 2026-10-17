@@ -29,7 +29,7 @@ test('duplicate page-level related navs are suppressed for R1 pages',()=>{
     '한국 지수의 출처와 관측일',
     '미국 공포탐욕지수 확인 순서',
     '미국 인플레이션 점수를 읽는 방법',
-    '경기침체 방어점수의 의미와 한계',
+    '미국 경기침체 지표와 방어점수를 읽는 방법',
   ]){
     assert.ok(guide.includes(`"${title}":[]`),title);
   }

@@ -5,7 +5,7 @@ const seoRelatedOverrides:Record<string,GuideLink[]|undefined>={
   "한국 지수의 출처와 관측일":[],
   "미국 공포탐욕지수 확인 순서":[],
   "미국 인플레이션 점수를 읽는 방법":[],
-  "경기침체 방어점수의 의미와 한계":[],
+  "미국 경기침체 지표와 방어점수를 읽는 방법":[],
   "한국 시장심리와 다른 지표를 함께 읽기":[
     {href:"/fear-greed/usa/",label:"미국 CNN 공포탐욕지수"},
     {href:"/sector-fear-greed/",label:"미국 섹터별 공포·탐욕 지수"},
