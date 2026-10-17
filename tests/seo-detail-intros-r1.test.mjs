@@ -10,7 +10,7 @@ test('R2 detail pages expose search-intent intro copy without changing data logi
   assert.match(intro,/미국 금융시장의 현금 부족과 유동성 위기 위험/);
   assert.match(intro,/미국 가계와 기업의 부채 부담을 DSR, 부채\/GDP/);
   assert.match(intro,/미국 CPI·근원 CPI·PCE·근원 PCE와 기대물가/);
-  assert.match(intro,/미국 경기침체 위험을 고용, 실질 GDP, 산업생산/);
+  assert.match(intro,/미국 경기침체 지표를 실업률 기반 Sahm Rule, 비농업고용, 실질 GDP, 산업생산/);
   assert.match(intro,/미국 기업 실적의 둔화와 침체 위험을 EPS 성장, 매출 성장/);
   assert.match(intro,/미국 자산시장의 버블 위험을 밸류에이션 압력, 가격가속/);
   assert.match(intro,/미국 공급 충격 위험을 공급망 압력과 유가·원자재 변화/);
