@@ -1,0 +1,30 @@
+import test from 'node:test';import assert from 'node:assert/strict';
+import fs from 'node:fs';import os from 'node:os';import path from 'node:path';
+import {mergeSectorFearGreedR3StockRows,SECTOR_FEAR_GREED_R3_BENCHMARKS as tickers} from '../lib/market-score/sector-fear-greed-r3-rolling.mjs';
+import {collectSectorFearGreedR3EtfIncremental} from '../scripts/pc-writer/sector-fear-greed-r3-etf-incremental.mjs';
+const bar=(date,volume)=>({ticker:'AAL',tradeDate:date,currentClose:12.29,currentVolume:volume,source:'ALPACA',feed:'iex',adjustmentStatus:'split'});
+test('later official stock batches accept corrected volume and advance to the next session',()=>{
+ const first=[bar('2026-10-15',2370556)],next=[bar('2026-10-15',2893589),bar('2026-10-16',3000000)];
+ const merged=mergeSectorFearGreedR3StockRows([first,next],{allowProviderRevisions:true});
+ assert.equal(merged.length,2);assert.equal(merged[0].currentVolume,2893589);assert.equal(first[0].currentVolume,2370556);
+ assert.throws(()=>mergeSectorFearGreedR3StockRows([first,next]),/STOCK_CONFLICT/);
+ assert.throws(()=>mergeSectorFearGreedR3StockRows([[...first,next[0]]],{allowProviderRevisions:true}),/STOCK_CONFLICT/);
+ assert.throws(()=>mergeSectorFearGreedR3StockRows([first,[{...next[0],feed:'sip'}]],{allowProviderRevisions:true}),/STOCK_CONFLICT/);
+});
+test('ETF overlap revisions are archived, next session is retained and duplicate conflicts preserve output',async t=>{
+ const base=fs.mkdtempSync(path.join(os.tmpdir(),'sector-revisions-'));t.after(()=>fs.rmSync(base,{recursive:true,force:true}));
+ const save=(name,v)=>fs.writeFileSync(path.join(base,name),JSON.stringify(v));
+ fs.writeFileSync(path.join(base,'providers.env'),'APCA_API_KEY_ID=fixture\nAPCA_API_SECRET_KEY=fixture\n');
+ save('local-sector-fear-greed-r1-iex-price-history.json',{series:Object.fromEntries(tickers.map(t=>[t,[{date:'2026-10-09',close:100,volume:10}]]))});
+ const file='local-sector-fear-greed-r3-etf-incremental.json';
+ save(file,{source:'ALPACA_IEX',feed:'iex',adjustment:'split',series:Object.fromEntries(tickers.map(t=>[t,[{date:'2026-10-15',close:101,volume:12}]]))});
+ const now=Date.parse('2026-10-17T04:00:00Z');
+ const bars=Object.fromEntries(tickers.map(t=>[t,[{t:'2026-10-09T04:00:00Z',c:100,v:10},{t:'2026-10-15T04:00:00Z',c:101,v:15},{t:'2026-10-16T04:00:00Z',c:102,v:20}]]));
+ const out=await collectSectorFearGreedR3EtfIncremental(base,{now,fetchImpl:async()=>Response.json({bars})});
+ assert.equal(out.commonLatest,'2026-10-16');assert.equal(out.revisedRows,12);
+ const audit=JSON.parse(fs.readFileSync(path.join(base,'sector-etf-revisions',`${now}.json`)));
+ assert.equal(audit.revisions[0].previous.volume,12);assert.equal(audit.revisions[0].replacement.volume,15);
+ const before=fs.readFileSync(path.join(base,file),'utf8');bars.SPY.push({t:'2026-10-16T04:00:00Z',c:999,v:20});
+ await assert.rejects(collectSectorFearGreedR3EtfIncremental(base,{now:now+21*3600000,fetchImpl:async()=>Response.json({bars})}),/DUPLICATE_CONFLICT/);
+ assert.equal(fs.readFileSync(path.join(base,file),'utf8'),before);
+});
