@@ -11,7 +11,7 @@ import BeginnerRiskGuide from "../beginner-risk-guide";
 import RiskDetailBeginnerLayout from "../risk-detail-beginner-layout";
 
 const title="미국 인플레이션 지수 | CPI·PCE·기대물가·물가 추이 - ZGmini";
-const description="미국 Core CPI·Core PCE·Headline PCE와 기대인플레이션, 생산자물가·임금·에너지 지표를 종합해 물가 안정 점수와 추이를 확인하세요. 현재값·관측일·판단도 함께 제공합니다.";
+const description="미국 인플레이션 지수와 물가 안정 점수를 확인하세요. CPI·PCE, 임금·에너지 등 16개 물가 지표의 현재값과 최근 1년 추이, 주식시장과의 관계를 초보자도 쉽게 이해할 수 있습니다.";
 const url="https://zgmini.kr/inflation/";
 
 export const metadata:Metadata={
