@@ -40,7 +40,7 @@ export function buildProjection({inputs,publicSnapshot,nowIso}:any){
  const latestDate=(recession.rows??[]).map((r:any)=>r?.observationDate).filter((x:any)=>typeof x==="string").sort().at(-1)??nowIso.slice(0,10);
  const current=snapshot(recession.rows,latestDate);
  const oneYearStart=recessionOneYearStart(latestDate);
- const months=[...new Set((recession.rows??[]).map((r:any)=>r?.observationDate).filter((x:any)=>typeof x==="string"&&x>=oneYearStart&&x<=latestDate))].sort();
+ const months=[...new Set((recession.rows??[]).map((r:any)=>r?.observationDate).filter((x:any)=>typeof x==="string"&&oneYearStart!==null&&x>=oneYearStart&&x<=latestDate))].sort();
  const trend=months.map((date:any)=>{const s=snapshot(recession.rows,date);return s.status==="READY"&&finite(s.score)?{label:date,value:s.score}:null}).filter(Boolean);
  const scoreComparisons=recessionStoredScoreComparisons(trend,latestDate,current.score);
  const components=enrichRecessionCoreComponents(recession.rows,current.components,latestDate);
