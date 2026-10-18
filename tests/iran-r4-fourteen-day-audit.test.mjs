@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {openStore} from '../scripts/iran-progress/store.mjs';
-import {IRAN_R4_14D_CASEBOOK,IRAN_R4_14D_SOURCES,auditR4FourteenDayResearch}
+import {IRAN_R4_14D_CASEBOOK,IRAN_R4_14D_SOURCES,IRAN_R4_14D_CROSS_DOMAIN_CONTEXT,auditR4FourteenDayResearch}
  from '../lib/iran-progress/fourteen-day-evidence-r4.mjs';
 import {auditIranR4FourteenDayLocal}
  from '../scripts/iran-progress/fourteen-day-local-audit-r4.mjs';
@@ -54,6 +54,16 @@ test('6th research record reports the prior day; it is not a verified 6th Octobe
  assert.equal(row.publishedDate,'2026-10-06');
  assert.equal(row.eventDate,'2026-10-05');
  assert.equal(row.kind,'PRIOR_DAY_REPORT');
+});
+test('cross-domain official advisories are continuous warnings, never fabricated daily attacks',()=>{
+ const all=auditR4FourteenDayResearch();
+ assert.equal(IRAN_R4_14D_CROSS_DOMAIN_CONTEXT.length,4);
+ assert.equal(all.independentContextReports.length,4);
+ const earlier=auditR4FourteenDayResearch({asOfDate:'2026-10-10'});
+ assert.equal(earlier.independentContextReports.length,2);
+ assert.ok(earlier.independentContextReports.every(s=>s.kind==='PERSISTING_SECURITY_ADVISORY_NOT_DAILY_ATTACK'));
+ assert.equal(all.crossDomainFullVerification,'NOT_PROVEN_BY_REPORTS');
+ assert.equal(all.days[13].nuclearVerified,false);
 });
 test('PC read-only audit returns all 14 dates, with missing raw verification expressed as null',()=>{
  const db=openStore(':memory:');
