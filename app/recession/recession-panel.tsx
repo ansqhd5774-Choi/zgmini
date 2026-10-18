@@ -13,9 +13,10 @@ import "./recession-indicator-parity-r2.css";
 import "../shared-risk-indicator-width-r1.css";
 import {RecessionFavoriteButton,RecessionFavoriteHeaderIcon} from "./recession-favorite-button";
 import {InflationMiniChart,type InflationMiniTrendPoint} from "../inflation/inflation-mini-chart";
+import {recessionReleaseInfo} from '../../lib/release-calendar.mjs';
 
 type ComponentRow={id:string;value:number|null;score:number|null;observationDate:string|null;weight:number;previousValue?:number|null;previousObservationDate?:string|null;trend?:InflationMiniTrendPoint[];nextReleaseDate?:string|null};
-type SupplementalRow={id:string;name:string|null;status:string;score:number|null;value:number|null;displayValue:string|null;unit:string|null;observationDate:string|null;source:string|null;previousValue?:number|null;previousObservationDate?:string|null;trend?:InflationMiniTrendPoint[];nextReleaseDate?:string|null};
+type SupplementalRow={id:string;name:string|null;status:string;score:number|null;value:number|null;displayValue:string|null;unit:string|null;observationDate:string|null;source:string|null;previousValue?:number|null;previousObservationDate?:string|null;trend?:InflationMiniTrendPoint[];nextReleaseDate?:string|null;historyStatus?:string};
 type Payload={
  status:string;score:number|null;asOfDate?:string|null;methodologyVersion?:string;historyMode?:string;lookAheadSafe?:boolean;
  trend?:Array<{label:string;value:number}>;scoreComparisons?:{week?:number|null;month?:number|null;threeMonth?:number|null;sixMonth?:number|null;year?:number|null};components?:ComponentRow[];supplementals?:SupplementalRow[];
@@ -34,7 +35,7 @@ const componentMeta:Record<string,{label:string;content:string;unit:string;crite
 const supplementalMeta:Record<string,{label:string;content:string;criterion:string;help:string;cadence:string}>={
  initialClaims:{label:"신규 실업수당 4W",content:"해고 증가를 빠르게 포착하는 고용 선행지표",criterion:"청구 감소·안정",cadence:"주간",help:"청구건수가 낮고 안정적일수록 긍정적입니다. 시장 판단은 저장된 평가 점수를 사용합니다."},
  yieldCurve:{label:"장단기 금리차",content:"금리곡선이 보내는 경기 선행 신호",criterion:"금리 역전 완화",cadence:"거래일",help:"금리곡선은 단순 양·음만으로 판단하지 않고 ZGmini 금리환경 정규화 점수로 봅니다. 낮은 점수는 경기 선행 신호가 불리한 상태를 의미합니다."},
- hyCreditStress:{label:"HY 신용 스트레스",content:"고위험 회사채 시장의 자금경색 정도",criterion:"신용 스트레스 완화",cadence:"비정기",help:"하이일드 시장 스트레스가 낮을수록 기업 자금조달 환경이 양호합니다. 정규화 점수가 높을수록 긍정적입니다."},
+ hyCreditStress:{label:"HY 신용 스트레스",content:"고위험 회사채 시장의 자금경색 정도",criterion:"신용 스트레스 완화",cadence:"월간",help:"하이일드 시장 스트레스가 낮을수록 기업 자금조달 환경이 양호합니다. 정규화 점수가 높을수록 긍정적입니다."},
  creditConditions:{label:"신용여건",content:"금융시장의 전반적인 신용 긴축 정도",criterion:"신용 긴축 완화",cadence:"주간",help:"신용이 급격히 긴축되면 기업과 가계 활동이 위축될 수 있습니다. 정규화 점수가 높을수록 경기 방어에 유리합니다."},
 };
 
@@ -73,14 +74,23 @@ function fmt(value:number|null|undefined,unit=""){
 function previousLabel(row?:{previousValue?:number|null;previousObservationDate?:string|null},unit=""){
  return fmt(row?.previousValue,unit);
 }
-function releaseLabel(row:{nextReleaseDate?:string|null},cadence:string){
- // Do not synthesize a release date from frequency.
- return {cadence,date:row.nextReleaseDate?dateLabel(row.nextReleaseDate):"일정 미정"};
+function ReleaseDate({release}:{release:ReturnType<typeof recessionReleaseInfo>}){
+ return release.sourceUrl?<a href={release.sourceUrl} target="_blank" rel="noreferrer" title="공식 발표 일정 · 미국 현지 날짜 기준">{release.text}</a>:<>{release.text}</>;
+}
+function HistoryChart({row,label}:{row?:{trend?:InflationMiniTrendPoint[];historyStatus?:string};label:string}){
+ if((row?.trend?.length??0)<2)return <small title={row?.historyStatus==='SOURCE_MISMATCH'?'현재값과 저장 이력의 출처·값이 일치하는지 확인 중입니다. 임의로 연결하지 않습니다.':'검증된 최근 1년 관측값이 2개 미만입니다.'}>{row?.historyStatus==='SOURCE_MISMATCH'?'출처 확인':row?.historyStatus==='NOT_CONNECTED'?'이력 미연결':'자료 부족'}</small>;
+ return <InflationMiniChart label={label} points={row?.trend}/>;
+}
+function ObservationDate({date,asOf}:{date?:string|null;asOf?:string|null}){
+ const lag=date&&asOf?(Date.parse(asOf)-Date.parse(date))/86400000:0;
+ return <small>{dateLabel(date)}{lag>240?<span title="최신 페이지 기준일보다 240일 이상 오래된 저장 관측입니다. 새 값으로 대체하지 않았습니다."> · 관측 지연</span>:null}</small>;
 }
 function HelpTip({label,text}:{label:string;text:string}){return <ContentHelp label={label+' 도움말'}><HelpText copy={{meaning:text,reading:'원자료의 단위와 기준선, 관측일을 함께 확인하세요. 원자료의 상승·하락과 시장 평가 점수의 상승·하락은 서로 다를 수 있습니다.',note:'자료가 없거나 개발 중인 항목은 숫자를 표시하지 않습니다. 「—」는 0이 아닙니다.'}}/></ContentHelp>;}
 
 export default function RecessionPanel(){
  const {payload,loading}=useStoredIndex<Payload>('/api/recession-detail');
+ const {payload:calendar}=useStoredIndex<any>('/api/release-calendar');
+ const today=new Intl.DateTimeFormat('en-CA',{timeZone:'America/New_York',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
  const score=typeof payload?.score==="number"&&Number.isFinite(payload.score)?payload.score:null;
  const trend=useMemo(()=>(payload?.trend??[]).filter(p=>typeof p.value==="number"&&Number.isFinite(p.value)).slice(-13).map(p=>({date:p.label,score:p.value} satisfies MarketFearGreedChartPoint)),[payload?.trend]);
  const latest=trend.at(-1),latestPoint:MarketFearGreedChartValidPoint|null=latest?{date:latest.date,score:latest.score as number}:null;
@@ -119,26 +129,26 @@ export default function RecessionPanel(){
     <colgroup>{Array.from({length:10},(_,i)=><col key={i}/>)}</colgroup>
     <thead><tr><th className="recession-r2-favorite-head"><span className="sr-only">즐겨찾기</span><RecessionFavoriteHeaderIcon/></th><th>지표</th><th>내용</th><th>기준</th><th>이전</th><th>현재</th><th>발표</th><th>판단</th><th>미니차트(1Y)</th><th><span className="sr-only">도움말</span>ⓘ</th></tr></thead>
     <tbody>
-     {Object.entries(componentMeta).map(([id,meta])=>{const row=components.get(id),j=judgement(row?.score),release=releaseLabel(row??{},meta.cadence);return <tr key={id} data-judgement={j.tone}>
+     {Object.entries(componentMeta).map(([id,meta])=>{const row=components.get(id),j=judgement(row?.score),release=recessionReleaseInfo(id,calendar,today);return <tr key={id} data-judgement={j.tone}>
       <td className="recession-r2-favorite-cell"><RecessionFavoriteButton id={id} label={meta.label}/></td>
       <th scope="row"><strong>{meta.label}</strong><small>핵심지표 · 방어점수 구성</small></th>
       <td>{meta.content}</td><td className="recession-r2-criterion">{meta.criterion}</td>
       <td className="recession-r2-value"><strong>{previousLabel(row,meta.unit)}</strong><small>{dateLabel(row?.previousObservationDate)}</small></td>
-      <td className="recession-r2-value"><strong>{fmt(row?.value,meta.unit)}</strong><small>{dateLabel(row?.observationDate)}</small></td>
-      <td className="recession-r2-release"><strong>{release.cadence}</strong><small>{release.date}</small></td>
+      <td className="recession-r2-value"><strong>{fmt(row?.value,meta.unit)}</strong><ObservationDate date={row?.observationDate} asOf={payload?.asOfDate}/></td>
+      <td className="recession-r2-release"><strong>{release.cadence}</strong><small><ReleaseDate release={release}/></small></td>
       <td><span className="inflation-judgement">{j.label}</span></td>
-      <td className="recession-r2-spark-cell"><InflationMiniChart label={meta.label} points={row?.trend}/></td>
+      <td className="recession-r2-spark-cell"><HistoryChart label={meta.label} row={row}/></td>
       <td><HelpTip label={meta.label} text={meta.help}/></td>
      </tr>})}
-     {supplementals.map(row=>{const meta=supplementalMeta[row.id];if(!meta)return null;const j=judgement(row.score),release=releaseLabel(row,meta.cadence);return <tr key={row.id} data-judgement={j.tone}>
+     {supplementals.map(row=>{const meta=supplementalMeta[row.id];if(!meta)return null;const j=judgement(row.score),release=recessionReleaseInfo(row.id,calendar,today);return <tr key={row.id} data-judgement={j.tone}>
       <td className="recession-r2-favorite-cell"><RecessionFavoriteButton id={row.id} label={meta.label}/></td>
       <th scope="row"><strong>{meta.label}</strong><small>보조지표 · 교차 확인</small></th>
       <td>{meta.content}</td><td className="recession-r2-criterion">{meta.criterion}</td>
       <td className="recession-r2-value"><strong>{previousLabel(row,row.unit??"")}</strong><small>{dateLabel(row.previousObservationDate)}</small></td>
       <td className="recession-r2-value"><strong>{row.displayValue??fmt(row.value,row.unit??"")}</strong><small>{dateLabel(row.observationDate)}</small></td>
-      <td className="recession-r2-release"><strong>{release.cadence}</strong><small>{release.date}</small></td>
+      <td className="recession-r2-release"><strong>{release.cadence}</strong><small><ReleaseDate release={release}/></small></td>
       <td><span className="inflation-judgement">{j.label}</span></td>
-      <td className="recession-r2-spark-cell"><InflationMiniChart label={meta.label} points={row.trend}/></td>
+      <td className="recession-r2-spark-cell"><HistoryChart label={meta.label} row={row}/></td>
       <td><HelpTip label={meta.label} text={meta.help}/></td>
      </tr>})}
      {developmentCandidates.map(item=><tr key={item.label} data-development="true">
@@ -151,32 +161,32 @@ export default function RecessionPanel(){
    </table></div>
 
    <div className="recession-r2-mobile-list">
-    {Object.entries(componentMeta).map(([id,meta])=>{const row=components.get(id),j=judgement(row?.score),release=releaseLabel(row??{},meta.cadence);return <article className="recession-r2-mobile-card" key={id} data-judgement={j.tone}>
+    {Object.entries(componentMeta).map(([id,meta])=>{const row=components.get(id),j=judgement(row?.score),release=recessionReleaseInfo(id,calendar,today);return <article className="recession-r2-mobile-card" key={id} data-judgement={j.tone}>
      <div className="recession-r2-mobile-head">
       <div className="recession-r2-mobile-title"><RecessionFavoriteButton id={id} label={meta.label}/><div><strong>{meta.label}</strong><small>핵심지표 · 방어점수 구성</small></div></div>
       <div className="recession-r2-mobile-actions"><span className="inflation-judgement">{j.label}</span><HelpTip label={meta.label} text={meta.help}/></div>
      </div>
      <p className="recession-r2-mobile-content">{meta.content}</p>
      <p className="recession-r2-mobile-criterion"><span>기준</span>{meta.criterion}</p>
-     <div className="recession-r2-mobile-spark"><span>미니차트(1Y)</span><InflationMiniChart label={meta.label} points={row?.trend}/></div>
+     <div className="recession-r2-mobile-spark"><span>미니차트(1Y)</span><HistoryChart label={meta.label} row={row}/></div>
      <div className="recession-r2-mobile-metrics">
       <div><span>이전</span><strong>{previousLabel(row,meta.unit)}</strong><small>{dateLabel(row?.previousObservationDate)}</small></div>
-      <div><span>현재</span><strong>{fmt(row?.value,meta.unit)}</strong><small>{dateLabel(row?.observationDate)}</small></div>
-      <div><span>발표</span><strong>{release.cadence}</strong><small>{release.date}</small></div>
+      <div><span>현재</span><strong>{fmt(row?.value,meta.unit)}</strong><ObservationDate date={row?.observationDate} asOf={payload?.asOfDate}/></div>
+      <div><span>발표</span><strong>{release.cadence}</strong><small><ReleaseDate release={release}/></small></div>
      </div>
     </article>})}
-    {supplementals.map(row=>{const meta=supplementalMeta[row.id];if(!meta)return null;const j=judgement(row.score),release=releaseLabel(row,meta.cadence);return <article className="recession-r2-mobile-card" key={row.id} data-judgement={j.tone}>
+    {supplementals.map(row=>{const meta=supplementalMeta[row.id];if(!meta)return null;const j=judgement(row.score),release=recessionReleaseInfo(row.id,calendar,today);return <article className="recession-r2-mobile-card" key={row.id} data-judgement={j.tone}>
      <div className="recession-r2-mobile-head">
       <div className="recession-r2-mobile-title"><RecessionFavoriteButton id={row.id} label={meta.label}/><div><strong>{meta.label}</strong><small>보조지표 · 교차 확인</small></div></div>
       <div className="recession-r2-mobile-actions"><span className="inflation-judgement">{j.label}</span><HelpTip label={meta.label} text={meta.help}/></div>
      </div>
      <p className="recession-r2-mobile-content">{meta.content}</p>
      <p className="recession-r2-mobile-criterion"><span>기준</span>{meta.criterion}</p>
-     <div className="recession-r2-mobile-spark"><span>미니차트(1Y)</span><InflationMiniChart label={meta.label} points={row.trend}/></div>
+     <div className="recession-r2-mobile-spark"><span>미니차트(1Y)</span><HistoryChart label={meta.label} row={row}/></div>
      <div className="recession-r2-mobile-metrics">
       <div><span>이전</span><strong>{previousLabel(row,row.unit??"")}</strong><small>{dateLabel(row.previousObservationDate)}</small></div>
       <div><span>현재</span><strong>{row.displayValue??fmt(row.value,row.unit??"")}</strong><small>{dateLabel(row.observationDate)}</small></div>
-      <div><span>발표</span><strong>{release.cadence}</strong><small>{release.date}</small></div>
+      <div><span>발표</span><strong>{release.cadence}</strong><small><ReleaseDate release={release}/></small></div>
      </div>
     </article>})}
     {developmentCandidates.map(item=><article className="recession-r2-mobile-card is-development" key={item.label}>

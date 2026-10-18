@@ -1,6 +1,7 @@
 import {buildRecessionDefenseR13} from "../../lib/diagnostic-layer/recession-r13-components.mjs";
 import {recessionDefense} from "../../lib/diagnostic-layer/model.mjs";
 import {enrichRecessionCoreComponents,recessionStoredScoreComparisons,recessionOneYearStart} from "./recession-stored-history.mjs";
+import {buildRecessionSupplementalSources,enrichRecessionSupplementals} from './recession-supplemental-history.mjs';
 
 const finite=(v:unknown):v is number=>typeof v==="number"&&Number.isFinite(v);
 const fields=[
@@ -31,7 +32,7 @@ function findIndicator(snapshot:any,domainId:string,name:string){
  return (domain?.indicators??[]).find((x:any)=>x?.name===name||x?.label===name)??null;
 }
 
-export function buildProjection({inputs,publicSnapshot,nowIso}:any){
+export function buildProjection({inputs,publicSnapshot,nowIso,claimsHistory=[]}:any){
  const series=inputs?.series??{};
  const recession=buildRecessionDefenseR13({
   payems:series.PAYEMS??[],gdpc1:series.GDPC1??[],indpro:series.INDPRO??[],realPce:series.DPCERA3M086SBEA??[],
@@ -50,10 +51,12 @@ export function buildProjection({inputs,publicSnapshot,nowIso}:any){
   ["hyCreditStress","credit","HY 신용 스트레스"],
   ["creditConditions","credit","신용여건"],
  ] as const;
- const supplementals=supplementalSpecs.map(([id,domainId,name])=>{
+ const supplementalCurrent=supplementalSpecs.map(([id,domainId,name])=>{
   const x:any=findIndicator(publicSnapshot,domainId,name)??{};
   return {id,name:x.name??x.label??name,status:x.status??"UNAVAILABLE",score:finite(x.score)?x.score:null,value:finite(x.value)?x.value:null,displayValue:x.displayValue??null,unit:x.unit??null,observationDate:x.observationDate??x.asOfDate??null,source:x.source??null};
  });
+ const supplementalSources=buildRecessionSupplementalSources({DGS10:inputs?.rateR2?.series?.DGS10??[],DGS3MO:inputs?.rateR2?.series?.DGS3MO??[],NFCICREDIT:series.NFCICREDIT??[]},inputs?.external??{},claimsHistory);
+ const supplementals=enrichRecessionSupplementals(supplementalCurrent,supplementalSources,nowIso.slice(0,10));
  return {
   status:current.status,score:current.score,asOfDate:latestDate,methodologyVersion:"RECESSION_R13_CURRENT_VINTAGE",
   historyMode:"STORED_INPUTS_CURRENT_VINTAGE",lookAheadSafe:false,trend,scoreComparisons,components,supplementals,

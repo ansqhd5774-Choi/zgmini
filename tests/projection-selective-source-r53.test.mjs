@@ -16,7 +16,7 @@ const r5Domain=()=>({
 });
 
 test('projection batch map is minimal and deterministic',()=>{
- assert.deepEqual(PROJECTION_INPUT_BATCHES.recession,['macro']);
+ assert.deepEqual(PROJECTION_INPUT_BATCHES.recession,['macro','credit','rates']);
  assert.deepEqual(PROJECTION_INPUT_BATCHES.liquidityCrisis,['macro','credit']);
  assert.deepEqual(PROJECTION_INPUT_BATCHES.creditRisk,['macro','credit']);
  assert.deepEqual(PROJECTION_INPUT_BATCHES.earningsRecession,[]);
