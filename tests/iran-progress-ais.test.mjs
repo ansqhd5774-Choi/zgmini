@@ -20,7 +20,7 @@ test('upstream rights unresolved cannot produce active commercial score',()=>{co
 test('retired AIS parser is physically absent and not referenced by the active runner',()=>{
  assert.equal(fs.existsSync(new URL('../scripts/iran-progress/ais.mjs',import.meta.url)),false);
  const runner=fs.readFileSync(new URL('../scripts/iran-progress/run.mjs',import.meta.url),'utf8');
- assert.doesNotMatch(runner,/sources\\.ais|aisRows|H_TRANSIT_METHOD|transit-ais/);
+ assert.doesNotMatch(runner,/sources\.ais|aisRows|H_TRANSIT_METHOD|transit-ais/);
 });
 test('active collector never requests retired AIS and retains official sources',async()=>{const urls=[];const sources=await collectSources({now,fetcher:async url=>{urls.push(url);return new Response('official source');}});assert.ok(urls.every(url=>!url.includes('hormuz.now')&&!url.includes('imf')&&!url.includes('arcgis')));assert.ok(urls.some(url=>url.includes('maritime.dot.gov')));assert.ok(urls.some(url=>url.includes('ukmto.org')));assert.equal(sources.ais,undefined);assert.equal(sources.aisHealth,undefined);});
 test('AIS version pending status can publish and read back without obsolete version guard',async()=>{let stored=null;const remote={query:async()=>({results:stored?[stored]:[]}),request:async(_db,[q])=>{stored={body:q.params[1],stored_at:q.params[2]};}};const r=await publishIranStatus(remote,'fixture',{version:IRAN_PROGRESS_VERSION,status:'PENDING',calculatedAt:now,missing:['H']});assert.equal(r.status,'VERIFIED');assert.equal(JSON.parse(stored.body).version,IRAN_PROGRESS_VERSION);});
