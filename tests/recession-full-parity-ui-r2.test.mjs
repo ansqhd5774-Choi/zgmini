@@ -21,6 +21,7 @@ test("recession five periods use published stored R13 history and do not invent 
  assert.match(builder,/historyMode:"STORED_INPUTS_CURRENT_VINTAGE",lookAheadSafe:false,trend,scoreComparisons,components,supplementals/);
  assert.match(helper,/return \{week:null,month:difference\(1\),threeMonth:difference\(3\),sixMonth:difference\(6\),year:difference\(12\)\}/);
  assert.match(panel,/comparisonItems=\{scoreComparisonItems\}/);
+ assert.doesNotMatch(panel,/<MarketScoreOrb[^\n]*metaDate=/,"recession score widget must not render a duplicate observation date");
  assert.doesNotMatch(panel,/dayDelta=\{/);
  assert.match(panel,/MarketFearGreedChart showExtrema data=\{trend\}/);
  assert.match(hero,/grid-template-columns:repeat\(5,minmax\(0,1fr\)\)/);
