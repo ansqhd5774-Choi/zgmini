@@ -37,7 +37,7 @@ function phaseOf(s,id,phase){
 function verifiedTruce(s,id,days,{ended=false,peaceFramework=false}={}){
  const f=s.fronts[id];
  f.phase=ended?'ENDED':peaceFramework?'PEACE_IMPLEMENTATION':days>=14?'CEASEFIRE_SUSTAINED':'CEASEFIRE_EARLY';
- f.mutualCeasefireVerified=true;f.ceasefireStatus=ended?'ENDED':'EFFECTIVE';
+ f.mutualCeasefireVerified=true;f.postCeasefireObservationVerified=true;f.postCeasefireViolationVerified=false;f.ceasefireStatus=ended?'ENDED':'EFFECTIVE';
  f.ceasefireEffectiveAt=now-(days+1)*DAY;f.ceasefireVerifiedDays=days;
  f.peaceFrameworkVerified=peaceFramework;f.endedVerified=ended;f.implementationVerified=ended;
  f.diplomacyStage=ended?5:4;
@@ -127,6 +127,20 @@ test('sustained ceasefire conflicts with any new verified event in the same scop
  const s=snapshot();verifiedTruce(s,'IRN_USA',20);
  s.fronts.IRN_USA.military.recentSeverity=10;
  assert.equal(verifyR4Front(s.fronts.IRN_USA,now),'SUSTAINED_CEASEFIRE_CONTRADICTED_BY_VERIFIED_ATTACKS');
+});
+test('one verified ceasefire violation invalidates the claimed 80-range',()=>{
+ const s=snapshot();for(const id of IRAN_R4_FRONT_IDS)verifiedTruce(s,id,20);
+ s.fronts.IRN_USA.postCeasefireViolationVerified=true;
+ const r=calculateIranR4RealityShadow(s,now);
+ assert.equal(r.status,'SHADOW_PENDING');
+ assert.equal(assessR4ScoreAgainstReality(80,s,now).status,'UNASSESSABLE');
+});
+test('an unverified unilateral promise does not justify a 50-point phase',()=>{
+ const s=snapshot();const f=s.fronts.IRN_USA;
+ f.phase='FRAGILE_TRUCE';f.ceasefireStatus='UNILATERAL';
+ assert.equal(verifyR4Front(f,now),'FRAGILE_TRUCE_NOT_VERIFIED');
+ f.partialCessationVerified=true;
+ assert.equal(verifyR4Front(f,now),null);
 });
 test('missing 28-day military coverage cannot falsely imply peace',()=>{
  const s=snapshot();s.fronts.IRN_ISR.military.fullCoverageVerified=false;
