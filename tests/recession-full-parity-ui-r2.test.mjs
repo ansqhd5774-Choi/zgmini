@@ -48,8 +48,8 @@ test("recession desktop table fits available width and keeps mini charts inside 
  assert.match(favoriteCss,/min-width:1090px!important/);
  assert.doesNotMatch(css,/min-width:1280px/);
  assert.doesNotMatch(favoriteCss,/min-width:1152px/);
- assert.match(css,/recession-r2-spark-cell \\.inflation-mini-chart\\{width:112px;max-width:100%;height:32px\\}/);
- assert.match(css,/recession-r2-spark-cell \\.inflation-mini-chart-empty\\{min-width:0;max-width:100%\\}/);
+ assert.ok(css.includes(".recession-r2-spark-cell .inflation-mini-chart{width:112px;max-width:100%;height:32px}"));
+ assert.ok(css.includes(".recession-r2-spark-cell .inflation-mini-chart-empty{min-width:0;max-width:100%}"));
 });
 test("favorite UI is isolated from inflation, with mobile and desktop accessibility",()=>{
  assert.match(panel,/RecessionFavoriteHeaderIcon/);
