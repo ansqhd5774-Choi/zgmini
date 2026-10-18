@@ -12,7 +12,9 @@ test('R2 detail pages expose search-intent intro copy without changing data logi
   assert.match(intro,/미국 물가, <span className="text-sky-300">안정되고 있을까\?<\/span>/);
   assert.match(intro,/물가 안정 점수와 최근 1년 추세, 한눈에/);
   assert.match(read("app/inflation/page.tsx"),/CPI·PCE, 임금·에너지 등 16개 물가 지표/);
-  assert.match(intro,/미국 경기침체 지표를 실업률 기반 Sahm Rule, 비농업고용, 실질 GDP, 산업생산/);
+  assert.match(intro,/미국 경기, <span className="text-sky-300">침체 신호는\?<\/span>/);
+  assert.match(intro,/경기 방어점수와 최근 1년 추세 · 경기침체 확률 아님/);
+  assert.match(read("app/recession/page.tsx"),/실업률·Sahm Rule, 비농업고용, 실질 GDP, 산업생산/);
   assert.match(intro,/미국 기업 실적의 둔화와 침체 위험을 EPS 성장, 매출 성장/);
   assert.match(intro,/미국 자산시장의 버블 위험을 밸류에이션 압력, 가격가속/);
   assert.match(intro,/미국 공급 충격 위험을 공급망 압력과 유가·원자재 변화/);
@@ -40,7 +42,7 @@ test('R2 detail page lastmod stays truthful per content update date',()=>{
     assert.ok(sitemap.includes(`<loc>https://zgmini.kr${path}</loc><lastmod>2026-10-16</lastmod>`),path);
   }
   assert.ok(sitemap.includes('<loc>https://zgmini.kr/inflation/</loc><lastmod>2026-10-18</lastmod>'),'inflation');
-  assert.ok(sitemap.includes('<loc>https://zgmini.kr/recession/</loc><lastmod>2026-10-17</lastmod>'),'recession');
+  assert.ok(sitemap.includes('<loc>https://zgmini.kr/recession/</loc><lastmod>2026-10-18</lastmod>'),'recession');
 });
 
 test('inflation search snippet, semantic heading and production freshness marker agree with live intent',()=>{
