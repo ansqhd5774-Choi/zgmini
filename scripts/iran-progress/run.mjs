@@ -23,7 +23,7 @@ try{
   if(process.exitCode===0){store.release(owner);store.close();process.exit(0);}
  }
  const verified=store.getCheckpoint('verified-input')??{};
- // Older IMF transit checkpoints are never reused for the AIS method.
+ // Retired transit observations are not promoted into current scoring inputs.
  const sources=await collectSources({now});
  for(const [id,body] of Object.entries(sources)){
   // Unconfirmed reuse terms: preserve provenance/structured measurements, not whole articles.
