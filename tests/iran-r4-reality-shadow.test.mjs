@@ -86,10 +86,18 @@ test('a single ongoing front cannot be hidden behind other fronts marking a peac
 });
 test('official end in all three fronts is required for 100',()=>{
  const s=snapshot();for(const id of IRAN_R4_FRONT_IDS)verifiedTruce(s,id,40,{ended:true});
+ for(const route of Object.values(s.maritime.routes)){route.incidentCoverage.recentSeverity=0;route.incidentCoverage.priorSeverity=0;}
  const good=calculateIranR4RealityShadow(s,now);
  assert.equal(good.score,100);assert.equal(good.phase,'ENDED');
  const f=s.fronts.YEMEN_HOUTHI;f.endedVerified=false;
  assert.equal(calculateIranR4RealityShadow(s,now).status,'SHADOW_PENDING');
+});
+test('all fronts formally ended cannot produce 100 while verified shipping attacks continue',()=>{
+ const s=snapshot();for(const id of IRAN_R4_FRONT_IDS)verifiedTruce(s,id,40,{ended:true});
+ const r=calculateIranR4RealityShadow(s,now);
+ assert.equal(r.status,'SHADOW_PENDING');
+ assert.equal(r.reason,'OFFICIAL_END_CONTRADICTED_BY_MARITIME_ATTACKS');
+ assert.equal(r.score,null);
 });
 test('missing a single front never imputes 50 points',()=>{
  const s=snapshot();delete s.fronts.YEMEN_HOUTHI;
