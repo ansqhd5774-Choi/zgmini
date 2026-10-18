@@ -1,6 +1,8 @@
 /* Earnings R2 presentation only: do not synthesize prior observations, releases, history, or comparisons. */
-.earnings-recession-target-card .cnn-score-observed-date,
-.earnings-recession-target-card .cnn-score-comparisons{display:none}
+.fg-card.fg-shared-shell.earnings-recession-target-card .cnn-score-observed-date,
+.fg-card.fg-shared-shell.earnings-recession-target-card .cnn-score-comparisons{display:none!important}
+.fg-card.fg-shared-shell.earnings-recession-target-card .fg-chart-slot{position:relative}
+.earnings-recession-target-card .earnings-r2-chart-identity{position:absolute;right:15px;top:6px;z-index:2;pointer-events:none;font-size:10px;line-height:1.2;color:#c6dae6;background:rgba(5,20,34,.75);padding:2px 4px}
 .earnings-r2-indicators .earnings-r2-data-caption{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:0 0 12px;color:#94aabe;font-size:11px}
 .earnings-r2-data-caption strong{color:#dbe8f2;font-size:11px}
 .earnings-r2-indicators .earnings-r2-table-wrap{min-width:0;max-width:100%;overflow-x:auto}

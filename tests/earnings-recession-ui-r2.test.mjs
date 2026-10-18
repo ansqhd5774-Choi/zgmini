@@ -18,7 +18,7 @@ test("earnings R2 uses saved observations and explicit missing instead of fabric
  assert.match(panel,/fmt\(r\)/);
  assert.match(panel,/dateLabel\(r\?\.observationDate\)/);
  assert.doesNotMatch(panel,/scoreComparisons/);
- assert.match(css,/cnn-score-comparisons\{display:none\}/);
+ assert.match(css,/cnn-score-comparisons\{display:none!important\}/);
 });
 test("earnings R2 renders desktop and mobile from identical source row IDs",()=>{
  assert.match(panel,/earnings-r2-table-wrap/);
@@ -32,4 +32,10 @@ test("favorite reorder is earnings-only and development candidates stay below ac
  assert.match(fav,/earnings-r2-mobile-list/);
  assert.match(fav,/leftDevelopment!==rightDevelopment/);
  assert.doesNotMatch(fav,/zgmini:credit:favorites/);
+});
+test("earnings R2 suppresses unavailable comparison placeholders despite shared hero CSS",()=>{
+ assert.match(css,/\.fg-card\.fg-shared-shell\.earnings-recession-target-card \.cnn-score-comparisons\{display:none!important\}/);
+ assert.match(panel,/earnings-r2-chart-identity/);
+ assert.match(panel,/\{stored\?\.financialPeriodEnd\?<span>/);
+ assert.match(css,/earnings-r2-chart-identity/);
 });
