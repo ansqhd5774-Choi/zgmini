@@ -193,6 +193,22 @@ const verifiedImprovements:Partial<Record<Topic,VerifiedImprovement[]>>={
    caveat:"운영 R2 활성화 이전의 입력 준비 이력입니다. 근거: GitHub 커밋 ccef172d·6bb180c2.",
   },
  ],
+ recession:[
+  {
+   version:"RECESSION_R13_CURRENT_VINTAGE",date:"2026-10-18",category:"화면·해석",
+   title:"경기침체 요인과 읽는 방법 보강",
+   change:"경기 방어에 기여하거나 부담을 주는 구성지표에 짧은 쉬운 설명을 붙이고, 첫 화면의 소개 문구를 간결하게 정리했어요.",
+   marketUse:"일자리·GDP·신용여건 중 어느 쪽의 신호가 강한지 이름만 보지 않고 확인할 수 있어요.",
+   caveat:"점수·가중치·저장 원자료는 바꾸지 않은 화면 개선입니다. 근거: GitHub PR #395.",
+  },
+  {
+   version:"RECESSION_R13_CURRENT_VINTAGE",date:"2026-10-17",category:"화면·해석",
+   title:"경기침체 상세 화면의 비교 구조 정리",
+   change:"종합점수와 1년 추이, 핵심·보조 지표의 판단을 PC 표와 모바일 카드로 확인하는 화면을 정리했어요.",
+   marketUse:"종합점수뿐 아니라 고용·소비·생산과 보조 신호를 나눠 살펴볼 수 있어요.",
+   caveat:"현재 개정 통계(Current Vintage) 기반이며 최초 발표 당시 백테스트를 의미하지 않습니다. 근거: GitHub 커밋 e969c6a7.",
+  },
+ ],
  "supply-shock":[{
   version:"SUPPLY_SHOCK_R10",date:"2026-10-09",category:"산출 방식",
   change:"기존 가격 중심 평가를 공급망·석유 공급·에너지 비용·공급 주도 물가·산업생산의 5개 영역 평가로 확대했습니다.",
