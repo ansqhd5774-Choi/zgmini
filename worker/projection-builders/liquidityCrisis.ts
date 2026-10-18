@@ -1,5 +1,6 @@
 import {buildBankEmergencyR7,buildFundingStressR7,buildBankReservesR1,buildTgaR1,buildOnRrpR1,buildM2R1,buildBondVolatilityR6} from "./liquidity-optimized-components.mjs";
 import {liquidityCrisisDefense} from "../../lib/diagnostic-layer/model.mjs";
+import {enrichLiquidityDisplayRows,liquidityStoredScoreComparisons} from "./liquidity-stored-history.mjs";
 
 const finite=(v:unknown):v is number=>typeof v==="number"&&Number.isFinite(v);
 const validDate=(v:unknown):v is string=>typeof v==="string"&&/^\d{4}-\d{2}-\d{2}$/.test(v);
@@ -100,6 +101,24 @@ export function buildProjection({inputs,snapshot,publicSnapshot,e1,nowIso}:any){
   .filter((x:any)=>validDate(x?.label)&&finite(x?.value))
   .slice(-366);
 
+ const displaySources=[
+  [funding.components?.aScore??[],(r:any)=>bp(r.rawValue)],
+  [funding.components?.bScore??[],(r:any)=>bp(r.rawValue)],
+  [funding.components?.cScore??[],(r:any)=>bp(r.rawValue)],
+  [funding.components?.dScore??[],(r:any)=>bp(r.rawValue)],
+  [bankEmergency.rows??[],(r:any)=>percent(r.emergencyRatio)],
+  [reserves.rows??[],(r:any)=>r.value],
+  [tga.rows??[],(r:any)=>r.value],
+  [onRrp.rows??[],(r:any)=>r.value],
+  [m2.rows??[],(r:any)=>r.value],
+  [bond.legs?.y2??[],(r:any)=>r.rv20],
+  [bond.legs?.y5??[],(r:any)=>r.rv20],
+  [bond.legs?.y10??[],(r:any)=>r.rv20],
+  [bond.legs?.y30??[],(r:any)=>r.rv20],
+ ];
+ const displayIndicators=enrichLiquidityDisplayRows(indicators,displaySources,asOf);
+ const scoreComparisons=liquidityStoredScoreComparisons(trend,asOf,publicScore);
+
  return {
   status:publicScore===null?"PARTIAL":"READY",
   score:publicScore,
@@ -110,7 +129,8 @@ export function buildProjection({inputs,snapshot,publicSnapshot,e1,nowIso}:any){
   historyMode:"STORED_PUBLIC_SCORE_HISTORY_NO_INTERPOLATION",
   lookAheadSafe:false,
   core,
-  indicators,
+  indicators:displayIndicators,
   trend,
+  scoreComparisons,
  };
 }
