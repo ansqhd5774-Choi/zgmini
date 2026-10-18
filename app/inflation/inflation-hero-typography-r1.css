@@ -42,3 +42,20 @@
   letter-spacing:-.035em;
  }
 }
+
+/* Inflation high/low point labels: value above date; leave shared dashboard labels unchanged.
+   SVG CSS overrides the 10px presentation attribute only for this detail hero. */
+.fg-card.fg-shared-shell.inflation-target-card .zg-chart-extremum text{
+ font-size:12px;
+}
+.fg-card.fg-shared-shell.inflation-target-card .zg-chart-extremum text tspan:nth-child(2){
+ font-size:10px;
+}
+@media(max-width:767px){
+ .fg-card.fg-shared-shell.inflation-target-card .zg-chart-extremum text{
+  font-size:11px;
+ }
+ .fg-card.fg-shared-shell.inflation-target-card .zg-chart-extremum text tspan:nth-child(2){
+  font-size:10px;
+ }
+}
