@@ -4,7 +4,9 @@ import {Flag,MessageCircle,Send,X} from "lucide-react";
 import "./community-chat.css";
 
 type ChatMessage={id:string;nickname:string;body:string;created_at:string};
-type ChatResponse={messages?:ChatMessage[];writeEnabled?:boolean;error?:string};
+type ChatResponse={messages?:ChatMessage[];writeEnabled?:boolean;siteKey?:string|null;error?:string};
+type TurnstileApi={render:(element:HTMLElement,options:Record<string,unknown>)=>string;reset:(id:string)=>void;remove:(id:string)=>void};
+declare global {interface Window {turnstile?:TurnstileApi}}
 const REFRESH_MS=5000;
 function displayTime(iso:string){const date=new Date(iso);return Number.isNaN(date.getTime())?"":new Intl.DateTimeFormat("ko-KR",{timeZone:"Asia/Seoul",hour:"2-digit",minute:"2-digit"}).format(date);}
 export default function CommunityChat({enabled}:{enabled:boolean}){
@@ -15,6 +17,10 @@ export default function CommunityChat({enabled}:{enabled:boolean}){
  const [messages,setMessages]=useState<ChatMessage[]>([]);
  const [status,setStatus]=useState<"loading"|"ready"|"offline">("loading");
  const [writeEnabled,setWriteEnabled]=useState(false);
+ const [siteKey,setSiteKey]=useState<string|null>(null);
+ const [captchaToken,setCaptchaToken]=useState("");
+ const captchaMount=useRef<HTMLDivElement>(null);
+ const captchaWidget=useRef<string|null>(null);
  const [sending,setSending]=useState(false);
  const [error,setError]=useState("");
  const [reported,setReported]=useState<string[]>([]);
@@ -42,6 +48,7 @@ export default function CommunityChat({enabled}:{enabled:boolean}){
     if(!stopped){
      setMessages(Array.isArray(payload.messages)?payload.messages:[]);
      setWriteEnabled(payload.writeEnabled===true);
+     setSiteKey(typeof payload.siteKey==="string"?payload.siteKey:null);
      setStatus("ready");
      setError("");
      const last=payload.messages?.at(-1)?.id??null;
@@ -53,6 +60,22 @@ export default function CommunityChat({enabled}:{enabled:boolean}){
   void load();const timer=window.setInterval(()=>void load(),REFRESH_MS);
   return()=>{stopped=true;window.clearInterval(timer);};
  },[enabled,open]);
+
+ useEffect(()=>{
+  if(!open||!writeEnabled||!siteKey)return;
+  let active=true;
+  function mount(){
+   const api=window.turnstile;
+   if(!active||!api||!captchaMount.current||captchaWidget.current)return;
+   captchaWidget.current=api.render(captchaMount.current,{sitekey:siteKey,theme:"dark",callback:(token:unknown)=>setCaptchaToken(typeof token==="string"?token:""),"expired-callback":()=>setCaptchaToken(""),"error-callback":()=>setCaptchaToken("")});
+  }
+  let script=document.querySelector<HTMLScriptElement>("#zg-community-turnstile");
+  if(!script){script=document.createElement("script");script.id="zg-community-turnstile";script.src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit";script.async=true;script.defer=true;document.head.appendChild(script);}
+  script.addEventListener("load",mount);
+  mount();
+  return()=>{active=false;script?.removeEventListener("load",mount);if(captchaWidget.current&&window.turnstile)window.turnstile.remove(captchaWidget.current);captchaWidget.current=null;};
+ },[open,writeEnabled,siteKey]);
+
  async function report(messageId:string){
   if(reported.includes(messageId))return;
   try{const response=await fetch("/api/community/reports",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({messageId,reason:"inappropriate"})});
@@ -61,16 +84,16 @@ export default function CommunityChat({enabled}:{enabled:boolean}){
  }
  async function submit(event:FormEvent<HTMLFormElement>){
   event.preventDefault();const body=draft.trim();
-  if(!body||[...body].length>300||sending||status!=="ready"||!writeEnabled)return;
+  if(!body||[...body].length>300||sending||status!=="ready"||!writeEnabled||!captchaToken)return;
   setSending(true);setError("");
   try{
-   const response=await fetch("/api/community/messages",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({nickname,body})});
+   const response=await fetch("/api/community/messages",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({nickname,body,turnstileToken:captchaToken})});
    if(!response.ok){setError(response.status===429?"잠시 후 다시 작성해 주세요.":"메시지 전송에 실패했어요.");return;}
    setDraft("");
    const result=await fetch("/api/community/messages",{cache:"no-store"});
    if(result.ok){const payload=(await result.json()) as ChatResponse;setMessages(payload.messages??[]);requestAnimationFrame(()=>{if(listRef.current)listRef.current.scrollTop=listRef.current.scrollHeight;});}
   }catch{setError("연결을 확인하고 다시 시도해 주세요.");}
-  finally{setSending(false);}
+  finally{setSending(false);setCaptchaToken("");if(captchaWidget.current&&window.turnstile)window.turnstile.reset(captchaWidget.current);}
  }
  if(!enabled)return null;
  return <div className="zg-community-root">
@@ -82,7 +105,8 @@ export default function CommunityChat({enabled}:{enabled:boolean}){
    </div>
    <form className="zg-community-compose" onSubmit={submit}>
     <label htmlFor="zg-community-input">{nickname||"익명"} · 공개 채팅</label>
-    <div><input id="zg-community-input" ref={inputRef} value={draft} onChange={event=>setDraft(event.target.value)} placeholder={writeEnabled?"시장에 대한 의견 입력":"채팅 연결 후 입력 가능"} maxLength={300} disabled={status!=="ready"||!writeEnabled||sending} autoComplete="off"/><button type="submit" aria-label="메시지 전송" disabled={status!=="ready"||!writeEnabled||sending||!draft.trim()}><Send size={16}/></button></div>
+    {writeEnabled&&siteKey&&<div className="zg-community-captcha" ref={captchaMount} aria-label="봇 방지 인증"/>}
+    <div><input id="zg-community-input" ref={inputRef} value={draft} onChange={event=>setDraft(event.target.value)} placeholder={writeEnabled?"시장에 대한 의견 입력":"채팅 연결 후 입력 가능"} maxLength={300} disabled={status!=="ready"||!writeEnabled||sending} autoComplete="off"/><button type="submit" aria-label="메시지 전송" disabled={status!=="ready"||!writeEnabled||sending||!captchaToken||!draft.trim()}><Send size={16}/></button></div>
     <small role="status">{error||"누구나 볼 수 있는 공개 채팅입니다. 개인정보를 공유하지 마세요."}</small>
    </form>
   </div>
