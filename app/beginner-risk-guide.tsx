@@ -113,7 +113,25 @@ const configs:Record<Topic,Config>={
   endpoint:"/api/supply-shock-detail",title:"공급 충격 방어",importance:"공급망이나 에너지 공급이 흔들리면 생산비와 물가가 동시에 올라 경기와 기업이익에 부담을 줄 수 있습니다.",marketImpact:"공급 충격 확대는 원가 부담과 인플레이션을 동시에 높여 주식시장에 불리할 수 있습니다. 공급 여건 안정은 비용 압력을 완화하는 데 도움이 됩니다.",highMeaning:"높을수록 공급망·에너지 충격 위험이 낮은 방향입니다.",lowMeaning:"낮을수록 공급 충격 압력이 높은 방향입니다.",positiveHeading:"공급 안정에 기여한 요인",negativeHeading:"공급 충격 부담 요인",stage:score=>safetyStage(score,"공급 주의","공급 충격 위험"),factorIds:["G","E","O","P","I"],factorNames:{G:"글로벌 공급망 압력",E:"미국 석유 공급 제약",O:"에너지 가격 충격",P:"공급 주도 물가 압력",I:"산업생산 충격"}
  },
  "earnings-recession":{
-  endpoint:"/api/earnings-recession-detail",title:"기업 실적 방어",importance:"주가는 장기적으로 기업이 벌어들이는 이익과 현금흐름의 영향을 크게 받습니다. 매출·마진·이익 개선이 시장 전반으로 퍼지는지 함께 봐야 합니다.",marketImpact:"실적 방어가 약해지면 주가 밸류에이션을 지지하기 어려워질 수 있습니다. 반대로 이익과 매출 개선이 넓게 확산되면 주식시장의 펀더멘털 기반이 강해집니다.",highMeaning:"높을수록 미국 기업 실적이 양호한 방향입니다.",lowMeaning:"낮을수록 실적 침체 위험이 강한 방향입니다.",positiveHeading:"E1 평가가 높은 지표",negativeHeading:"E1 평가가 낮은 지표",stage:score=>safetyStage(score,"실적 주의","실적 침체 위험"),factorNames:{epsGrowth:"EPS 성장률",margin:"영업이익률",revenueGrowth:"매출 성장률",earningsGrowthBreadth:"이익 성장 종목 비율",S1:"EPS 성장 강도",S2:"매출 성장률",S3:"영업이익률 수준",S4:"영업이익률 변화",S5:"FCF 마진",S6:"BEA 기업이익",S7:"EPS 개선 기업 비율",S8:"흑자 기업 비율",S9:"이익 개선 업종 비율",S10:"생산자 원가 압력",S11:"단위노동비용 압력",S12:"미래 전망 수정",S13:"기업 가이던스 방향"}
+  endpoint:"/api/earnings-recession-detail",title:"기업 실적 방어",importance:"주가는 장기적으로 기업이 벌어들이는 이익과 현금흐름의 영향을 크게 받습니다. 매출·마진·이익 개선이 시장 전반으로 퍼지는지 함께 봐야 합니다.",marketImpact:"실적 방어가 약해지면 주가 밸류에이션을 지지하기 어려워질 수 있습니다. 반대로 이익과 매출 개선이 넓게 확산되면 주식시장의 펀더멘털 기반이 강해집니다.",highMeaning:"높을수록 미국 기업 실적이 양호한 방향입니다.",lowMeaning:"낮을수록 실적 침체 위험이 강한 방향입니다.",positiveHeading:"E1 평가가 높은 지표",negativeHeading:"E1 평가가 낮은 지표",stage:score=>safetyStage(score,"실적 주의","실적 침체 위험"),factorDescriptions:{
+    epsGrowth:"기업별 주당순이익 증가율이 전년보다 강해지는지 확인합니다.",
+    margin:"영업이익률이 유지되거나 개선되는지 살펴봅니다.",
+    revenueGrowth:"매출이 전년 동기보다 얼마나 성장했는지 확인합니다.",
+    earningsGrowthBreadth:"EPS 개선이 소수 기업에 그치지 않고 확산되는지 봅니다.",
+    S1:"기업별 주당순이익의 전년 동기 성장 강도를 봅니다.",
+    S2:"기업 매출이 전년 같은 기간보다 늘었는지 확인합니다.",
+    S3:"비금융기업의 현재 영업 수익성 수준을 봅니다.",
+    S4:"영업이익률이 전년 동기보다 얼마나 바뀌었는지 확인합니다.",
+    S5:"매출 중 잉여현금흐름이 차지하는 비율을 봅니다.",
+    S6:"미국 경제 전체 기업이익의 변화 방향을 교차 확인합니다.",
+    S7:"EPS가 전년보다 개선된 기업의 폭을 봅니다.",
+    S8:"당기 순이익이 흑자인 기업이 얼마나 넓게 분포하는지 봅니다.",
+    S9:"이익 개선이 여러 업종으로 퍼지는지 확인합니다.",
+    S10:"투입 원가가 산출가격보다 빠르게 오르는 부담을 봅니다.",
+    S11:"생산 한 단위당 노동비용 압력이 어느 정도인지 봅니다.",
+    S12:"경영진 EPS·CFO 매출 전망의 수정 방향을 봅니다.",
+    S13:"기업 가이던스에서 상향과 하향의 상대적 방향을 봅니다."
+   },factorNames:{epsGrowth:"EPS 성장률",margin:"영업이익률",revenueGrowth:"매출 성장률",earningsGrowthBreadth:"이익 성장 종목 비율",S1:"EPS 성장 강도",S2:"매출 성장률",S3:"영업이익률 수준",S4:"영업이익률 변화",S5:"FCF 마진",S6:"BEA 기업이익",S7:"EPS 개선 기업 비율",S8:"흑자 기업 비율",S9:"이익 개선 업종 비율",S10:"생산자 원가 압력",S11:"단위노동비용 압력",S12:"미래 전망 수정",S13:"기업 가이던스 방향"}
  }
 };
 
