@@ -85,7 +85,7 @@ export default function RecessionPanel(){
     <div className="fg-score-slot"><MarketScoreOrb score={loading||score===null?"—":score.toFixed(1)} state={loading?"확인 중":stage(score)} variant="hero" dayDelta={score!==null&&typeof previous==="number"?score-previous:null} periodDelta={score!==null&&typeof threeMonth==="number"?score-threeMonth:null} periodLabel="3개월 대비" dayLabel="전월 대비" comparisonAriaLabel="경기침체 방어점수 변화" metaDate={dateLabel(payload?.asOfDate)}/></div>
     <MarketTrendFrame className="fg-analysis-slot"><div className="fg-chart-slot"><div className="fg-renderer"><MarketFearGreedChart data={trend} axisTicks={axisTicks} axisLabels={axisLabels} latestPoint={latestPoint} instanceKey="1Y" gradientId="recession-fill" formatTooltipLabel={dateLabel} emptyLabel={loading?"확인 중":"이력 없음"}/></div></div></MarketTrendFrame>
    </div>
-   <div className="fg-footer-slot"><div className="cnn-panel-note"><span>점수 해석</span><strong>0~100 경기 방어점수 · 높을수록 양호 · 경기침체 확률 아님</strong></div></div>
+   <div className="fg-footer-slot"><div className="cnn-panel-note"><span>점수 해석</span><strong>0~100점 · 높을수록 양호 · 경기침체 확률 아님</strong></div></div>
   </section>
 
   <section className="inflation-explainer" aria-labelledby="recession-what-title">
