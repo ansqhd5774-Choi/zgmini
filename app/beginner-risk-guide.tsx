@@ -90,7 +90,18 @@ const configs:Record<Topic,Config>={
   }
  },
  "credit-risk":{
-  endpoint:"/api/credit-risk-detail",title:"신용시장 방어",importance:"신용위험은 기업이 돈을 빌리는 비용과 직결됩니다. 회사채 스트레스와 채권 변동성이 커지면 기업의 자금조달이 어려워질 수 있습니다.",marketImpact:"신용 스트레스 확대는 특히 재무구조가 약한 기업과 경기민감주에 부담이 될 수 있습니다. 신용시장이 안정되면 위험자산의 자금조달 환경이 개선됩니다.",highMeaning:"높을수록 회사채와 신용시장이 안정적인 방향입니다.",lowMeaning:"낮을수록 신용 스트레스가 높은 방향입니다.",positiveHeading:"신용 안정에 기여한 요인",negativeHeading:"신용 부담 요인",stage:score=>safetyStage(score,"신용 주의","신용 위험"),factorNames:{hyCmdi:"HY CMDI",igCmdi:"IG CMDI",totalCmdi:"Total CMDI",bondVolatility:"채권 변동성",nfciCredit:"NFCI Credit",bond2y:"미국 2년물 변동성",bond5y:"미국 5년물 변동성",bond10y:"미국 10년물 변동성",bond30y:"미국 30년물 변동성"}
+  endpoint:"/api/credit-risk-detail",title:"신용시장 방어",importance:"신용위험은 기업이 돈을 빌리는 비용과 직결됩니다. 회사채 스트레스와 채권 변동성이 커지면 기업의 자금조달이 어려워질 수 있습니다.",marketImpact:"신용 스트레스 확대는 특히 재무구조가 약한 기업과 경기민감주에 부담이 될 수 있습니다. 신용시장이 안정되면 위험자산의 자금조달 환경이 개선됩니다.",highMeaning:"높을수록 회사채와 신용시장이 안정적인 방향입니다.",lowMeaning:"낮을수록 신용 스트레스가 높은 방향입니다.",positiveHeading:"신용 안정에 기여한 요인",negativeHeading:"신용 부담 요인",stage:score=>safetyStage(score,"신용 주의","신용 위험"),factorNames:{hyCmdi:"HY CMDI",igCmdi:"IG CMDI",totalCmdi:"Total CMDI",bondVolatility:"채권 변동성",nfciCredit:"NFCI Credit",bond2y:"미국 2년물 변동성",bond5y:"미국 5년물 변동성",bond10y:"미국 10년물 변동성",bond30y:"미국 30년물 변동성"},
+  factorDescriptions:{
+   hyCmdi:"고위험 회사채 시장의 신용 스트레스",
+   igCmdi:"투자등급 회사채 시장의 신용 스트레스",
+   totalCmdi:"회사채 시장 전체의 종합 스트레스",
+   bondVolatility:"미 국채 금리 전반의 20일 변동성",
+   nfciCredit:"시카고 연은의 신용여건 세부지수",
+   bond2y:"단기 국채금리의 20일 실현변동성",
+   bond5y:"중단기 국채금리의 20일 실현변동성",
+   bond10y:"장기 기준금리의 20일 실현변동성",
+   bond30y:"초장기 국채금리의 20일 실현변동성",
+  }
  },
  "debt-risk":{
   endpoint:"/api/debt-risk-detail",title:"부채 안전성",importance:"부채가 많아도 소득과 이익이 충분하면 버틸 수 있지만, 금리와 원리금 부담이 동시에 커지면 경기 충격에 취약해집니다.",marketImpact:"부채 부담 확대는 소비와 기업투자를 줄이고 신용손실 위험을 높일 수 있습니다. 상환여력이 개선되면 금융시장 충격에 대한 완충력이 커집니다.",highMeaning:"높을수록 가계·기업의 부채 부담을 감당하기 쉬운 방향입니다.",lowMeaning:"낮을수록 부채와 상환 부담이 위험한 방향입니다.",positiveHeading:"부채 안정에 기여한 요인",negativeHeading:"부채 부담 요인",stage:score=>safetyStage(score,"부채 주의","부채 위험"),factorNames:{dsr:"Debt Service Ratio",debtGdp:"민간부채/GDP",rateBurden:"금리부담",creditStress:"신용스트레스",debtServiceCapacity:"부채상환능력"}
