@@ -1,0 +1,51 @@
+/* Earnings R2 presentation only: do not synthesize prior observations, releases, history, or comparisons. */
+.earnings-recession-target-card .cnn-score-observed-date,
+.earnings-recession-target-card .cnn-score-comparisons{display:none}
+.earnings-r2-indicators .earnings-r2-data-caption{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:0 0 12px;color:#94aabe;font-size:11px}
+.earnings-r2-data-caption strong{color:#dbe8f2;font-size:11px}
+.earnings-r2-indicators .earnings-r2-table-wrap{min-width:0;max-width:100%;overflow-x:auto}
+.earnings-r2-indicators .earnings-r2-table{width:100%;min-width:1090px;table-layout:fixed}
+.earnings-r2-table .earnings-col-favorite{width:4%}
+.earnings-r2-table .earnings-col-name{width:18%}
+.earnings-r2-table .earnings-col-content{width:24%}
+.earnings-r2-table .earnings-col-criterion{width:17%}
+.earnings-r2-table .earnings-col-current{width:14%}
+.earnings-r2-table .earnings-col-observed{width:11%}
+.earnings-r2-table .earnings-col-judgement{width:8%}
+.earnings-r2-table .earnings-col-help{width:4%}
+.earnings-r2-indicators .earnings-r2-table :is(th,td){width:auto!important;box-sizing:border-box;text-align:center;padding:11px 7px;overflow-wrap:anywhere}
+.earnings-r2-table .earnings-r2-value strong{display:block;color:#f2f7fa;font-size:12px}
+.earnings-r2-table .earnings-r2-value small{display:block;white-space:nowrap}
+.earnings-r2-table .earnings-r2-observed{color:#d4e0e9;font-size:11px;white-space:nowrap}
+.earnings-r2-table tr[data-development="true"]{opacity:.82}
+.earnings-r2-mobile-list{display:none}
+.earnings-r2-mobile-card[data-judgement="positive"] .inflation-judgement{border-color:rgba(34,197,94,.48);background:rgba(34,197,94,.12);color:#77e59c}
+.earnings-r2-mobile-card[data-judgement="negative"] .inflation-judgement{border-color:rgba(248,113,113,.48);background:rgba(248,113,113,.12);color:#ff9a9a}
+.earnings-r2-mobile-card[data-judgement="neutral"] .inflation-judgement{border-color:rgba(148,163,184,.4);background:rgba(148,163,184,.1);color:#cbd5e1}
+.earnings-r2-mobile-card .inflation-judgement.is-development{border-color:rgba(244,195,78,.4);background:rgba(244,195,78,.1);color:#f3cf72}
+@media(max-width:767px){
+ .earnings-r2-indicators{padding:14px}
+ .earnings-r2-indicators .earnings-r2-table-wrap{display:none}
+ .earnings-r2-mobile-list{display:grid;gap:8px;min-width:0}
+ .earnings-r2-mobile-card{min-width:0;padding:12px;border:1px solid rgba(68,103,133,.3);background:rgba(4,18,31,.5)}
+ .earnings-r2-mobile-card.is-development{opacity:.82}
+ .earnings-r2-mobile-head{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;min-width:0}
+ .earnings-r2-mobile-title{display:flex;align-items:flex-start;gap:6px;min-width:0}
+ .earnings-r2-mobile-title>div{min-width:0}
+ .earnings-r2-mobile-title strong{display:block;color:#eef5fa;font-size:12px;line-height:1.35;overflow-wrap:anywhere}
+ .earnings-r2-mobile-title small{display:block;margin-top:2px;color:#7891a6;font-size:9px}
+ .earnings-r2-mobile-actions{display:flex;align-items:center;gap:3px;flex:0 0 auto}
+ .earnings-r2-mobile-actions .inflation-judgement{min-width:52px;height:22px;padding:0 6px;font-size:10px}
+ .earnings-r2-mobile-content{margin:8px 0 0;color:#b9cad8;font-size:11px;line-height:1.45;overflow-wrap:anywhere}
+ .earnings-r2-mobile-criterion{display:flex;gap:7px;margin:6px 0 0;color:#d4e0e9;font-size:10px;overflow-wrap:anywhere}
+ .earnings-r2-mobile-criterion span{flex:0 0 auto;color:#7891a6;font-weight:700}
+ .earnings-r2-mobile-metrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));margin-top:10px;border-top:1px solid rgba(68,103,133,.24)}
+ .earnings-r2-mobile-metrics>div{min-width:0;padding:8px 5px 0;text-align:center}
+ .earnings-r2-mobile-metrics>div+div{border-left:1px solid rgba(68,103,133,.24)}
+ .earnings-r2-mobile-metrics span,.earnings-r2-mobile-metrics strong,.earnings-r2-mobile-metrics small{display:block;min-width:0}
+ .earnings-r2-mobile-metrics span{color:#7891a6;font-size:9px;font-weight:700}
+ .earnings-r2-mobile-metrics strong{margin-top:3px;color:#f2f7fa;font-size:11px;overflow-wrap:anywhere}
+ .earnings-r2-mobile-metrics small{margin-top:2px;color:#7891a6;font-size:9px}
+ .earnings-recession-target-card .earnings-r2-source-note{min-width:0}
+ .earnings-recession-target-card .earnings-r2-source-note strong{white-space:normal;overflow-wrap:anywhere}
+}

@@ -7,6 +7,8 @@ import {MarketCardHeader} from "../market-card-header";
 import {MarketScoreOrb} from "../market-score-orb";
 import {MarketTrendFrame} from "../market-trend-frame";
 import {MarketFearGreedChart,type MarketFearGreedChartPoint,type MarketFearGreedChartValidPoint} from "../market-fear-greed-chart";
+import {EarningsFavoriteButton,EarningsFavoriteHeaderIcon} from "./earnings-favorite-button";
+import "./earnings-indicator-r2.css";
 
 type Indicator={id:string;name:string|null;status:string;score:number|null;value:number|null;unit:string;observationDate:string|null;source:string};
 type StoredE1={status:string;score:number|null;methodologyVersion:string;financialPeriodEnd:string|null;updatedAt:string|null;issuerCount:number|null;indicators:Indicator[];components:Record<string,{weight:number|null;coverage:number|null}>;trend:Array<{label:string;value:number}>;persistence:any;missing:string[]};
@@ -56,17 +58,54 @@ export default function EarningsRecessionPanel(){
  const trend=useMemo(()=>(stored?.trend??[]).filter(p=>typeof p.value==="number"&&Number.isFinite(p.value)).slice(-8).map(p=>({date:p.label,score:p.value} satisfies MarketFearGreedChartPoint)),[stored?.trend]);
  const latest=trend.at(-1),latestPoint:MarketFearGreedChartValidPoint|null=latest?{date:latest.date,score:latest.score as number}:null,axisTicks=trend.map(p=>p.date),axisLabels=new Map(trend.map(p=>[p.date,p.date.slice(2,7).replace("-","/")])),rows=new Map((stored?.indicators??[]).map(x=>[x.id,x])),storedScore=typeof stored?.score==="number"&&Number.isFinite(stored.score)?stored.score:null;
  return <>
-  <section className="cnn-reference-panel fg-card fg-shared-shell earnings-recession-target-card" data-testid="earnings-recession-detail-hero" data-market-state={loading?"loading":payload?.status==="READY"?"ready":"unavailable"} aria-busy={loading}>
-   <div className="fg-header-slot"><MarketCardHeader flag="/flags/us.svg" eyebrow="ZGMINI EARNINGS RECESSION" title="미국 실적 침체" description={`Main diagnostic + stored ${stored?.methodologyVersion??"E1"}`} dateLabel="데이터 기준일" date={dateLabel(payload?.asOfDate)} source={payload?.methodologyVersion??"EARNINGS_RECESSION_R1"}/></div>
+  <section className="cnn-reference-panel fg-card fg-shared-shell earnings-recession-target-card" data-testid="earnings-recession-detail-hero" data-market-state={loading?"loading":payload?.status==="READY"&&diagnosticScore!==null?"ready":"unavailable"} aria-busy={loading}>
+   <div className="fg-header-slot"><MarketCardHeader flag="/flags/us.svg" eyebrow="ZGMINI EARNINGS RECESSION" title="미국 실적 침체" description="기업 실적 방어 진단 · E1 저장 실적 추이는 별도" dateLabel="진단 기준일" date={dateLabel(payload?.asOfDate)} source=""/></div>
    <div className="fg-content-slot"><div className="fg-score-slot"><MarketScoreOrb score={loading||diagnosticScore===null?"—":diagnosticScore.toFixed(1)} state={loading?"확인 중":stage(diagnosticScore,payload?.status)} variant="hero" dayDelta={null} periodDelta={null} periodLabel="진단 추이" dayLabel="이전 대비" comparisonAriaLabel="실적 침체 방어점수 상태" metaDate={dateLabel(payload?.asOfDate)}/></div><MarketTrendFrame className="fg-analysis-slot"><div className="fg-chart-slot"><div className="fg-renderer"><MarketFearGreedChart data={trend} axisTicks={axisTicks} axisLabels={axisLabels} latestPoint={latestPoint} instanceKey="earnings-stored" gradientId="earnings-recession-fill" formatTooltipLabel={dateLabel} emptyLabel={loading?"확인 중":"E1 저장이력 없음"}/></div></div></MarketTrendFrame></div>
-   <div className="fg-footer-slot"><div className="cnn-panel-note"><span>E1 저장점수</span><strong>{storedScore===null?"데이터 준비 중":storedScore.toFixed(1)+"점"} · 메인 진단점수 대체 아님 · 저장 점수만 표시</strong></div></div>
+   <div className="fg-footer-slot"><div className="cnn-panel-note earnings-r2-source-note"><span>E1 저장 추이</span><strong>{storedScore===null?"점수 —":storedScore.toFixed(1)+"점"} · {stored?.methodologyVersion??"E1"} · 진단점수와 별도</strong></div></div>
   </section>
   <section className="inflation-explainer" aria-labelledby="earnings-what-title"><p className="cnn-eyebrow">WHAT IS AN EARNINGS RECESSION?</p><h1 id="earnings-what-title">실적 침체란?</h1><p>{isR5?"E1-R5는 실제 이익·매출·마진·현금흐름뿐 아니라 개선의 확산도, 생산·노동 비용 압력, 경영진과 CFO의 향후 전망까지 함께 봅니다.":"실적 침체는 기업들의 이익이 전반적으로 둔화하거나 감소하는 상태입니다. 주가가 오르더라도 EPS 성장, 매출 성장, 이익률, 이익 성장 기업의 폭이 함께 약해지면 기업 펀더멘털이 악화되고 있다는 신호가 될 수 있습니다."}</p><div className="inflation-direction-strip"><span><b>침체 방향</b>EPS·매출·마진↓ · 비용압력↑ · 전망↓</span><span><b>안정 방향</b>실적 개선 · 확산 확대 · 비용압력 완화 · 전망↑</span></div></section>
-  <section className="inflation-indicator-section" aria-labelledby="earnings-indicator-title"><header><div><p className="cnn-eyebrow">EARNINGS RECESSION INDICATORS</p><h2 id="earnings-indicator-title">실적 침체 분석 지표</h2></div><p>{isR5?"E1-R5 저장 데이터의 13개 구성 지표를 표시합니다. 각 내부점수는 해당 지표의 역사적 상대 위치입니다.":"E1-R4 저장 데이터가 있으면 실제값을 표시합니다. 메인 진단 미연결 상태와 저장 데이터 존재 여부를 구분합니다."}</p></header>
-   <div className="inflation-table-wrap"><table className="inflation-indicator-table"><thead><tr><th>지표</th><th>내용</th><th>기준</th><th>현재</th><th>판단</th><th><span className="sr-only">도움말</span>ⓘ</th></tr></thead><tbody>
-    {activeOrder.map(id=>{const r=rows.get(id),m=activeMeta[id],j=judge(r?.score,r?.status);return <tr key={id} data-judgement={j.tone}><th scope="row"><strong>{m.label}</strong><small>저장 데이터</small></th><td>{m.content}</td><td>{m.criterion}</td><td><strong>{fmt(r)}</strong><small>{r?.status==="READY"?"내부점수 "+(r.score?.toFixed(1)??"—")+" · "+dateLabel(r.observationDate):"저장 데이터 준비 중"}</small></td><td><span className="inflation-judgement">{j.label}</span></td><td><HelpTip label={m.label} text={m.help}/></td></tr>})}
-    {!isR5&&dev.map(item=><tr key={item[0]} data-development="true"><th scope="row"><strong>{item[0]}</strong></th><td>{item[1]}</td><td>{item[2]}</td><td>—</td><td><span className="inflation-judgement is-development">개발중</span></td><td><HelpTip label={item[0]} text={item[3]+" 현재 ZGmini 데이터 연결 개발 중입니다."}/></td></tr>)}
-   </tbody></table></div>
-  </section><a className="cnn-return-cta" href="/">← 메인 대시보드로 돌아가기</a>
+  <section className="inflation-indicator-section earnings-r2-indicators" aria-labelledby="earnings-indicator-title">
+   <header><div><p className="cnn-eyebrow">EARNINGS RECESSION INDICATORS</p><h2 id="earnings-indicator-title">실적 침체 분석 지표</h2></div><p>{isR5?"E1-R5 저장 지표 13개입니다. 관측값과 내부 평가점수의 준비 상태를 구분합니다.":"E1-R4 저장 지표 4개와 개발 후보 5개입니다. 현재 제공된 자료만 표시합니다."}</p></header>
+   <div className="earnings-r2-data-caption"><span>{stored?.methodologyVersion??"E1"} 저장 자료</span><strong>{stored?.status??"PARTIAL"}</strong><span>실적 기준 {dateLabel(stored?.financialPeriodEnd)}</span>{typeof stored?.issuerCount==="number"?<span>대상 기업 {stored.issuerCount.toLocaleString("ko-KR")}개</span>:null}</div>
+   <div className="inflation-table-wrap earnings-r2-table-wrap"><table className="inflation-indicator-table earnings-r2-table">
+    <colgroup><col className="earnings-col-favorite"/><col className="earnings-col-name"/><col className="earnings-col-content"/><col className="earnings-col-criterion"/><col className="earnings-col-current"/><col className="earnings-col-observed"/><col className="earnings-col-judgement"/><col className="earnings-col-help"/></colgroup>
+    <thead><tr><th><EarningsFavoriteHeaderIcon/><span className="sr-only">즐겨찾기</span></th><th>지표</th><th>내용</th><th>기준</th><th>현재</th><th>관측일</th><th>판단</th><th><span className="sr-only">도움말</span>ⓘ</th></tr></thead>
+    <tbody>
+     {activeOrder.map(id=>{const r=rows.get(id),m=activeMeta[id],j=judge(r?.score,r?.status);return <tr key={id} data-judgement={j.tone}>
+      <td><EarningsFavoriteButton id={id} label={m.label}/></td>
+      <th scope="row"><strong>{m.label}</strong><small>{isR5?"E1-R5":"E1-R4"} 저장 지표</small></th>
+      <td>{m.content}</td><td>{m.criterion}</td>
+      <td className="earnings-r2-value"><strong>{fmt(r)}</strong><small>{r?.status==="READY"&&typeof r.score==="number"?"내부점수 "+r.score.toFixed(1):"점수 —"}</small></td>
+      <td className="earnings-r2-observed">{dateLabel(r?.observationDate)}</td>
+      <td><span className="inflation-judgement">{j.label}</span></td>
+      <td><HelpTip label={m.label} text={m.help}/></td>
+     </tr>})}
+     {!isR5&&dev.map(item=><tr key={item[0]} data-development="true">
+      <td><EarningsFavoriteButton id={"development:"+item[0]} label={item[0]}/></td>
+      <th scope="row"><strong>{item[0]}</strong><small>개발 후보 · 점수 미반영</small></th>
+      <td>{item[1]}</td><td>{item[2]}</td><td>—</td><td>—</td>
+      <td><span className="inflation-judgement is-development">개발중</span></td>
+      <td><HelpTip label={item[0]} text={item[3]+" 현재 데이터 연결 개발 중이며 점수에 추가하지 않습니다."}/></td>
+     </tr>)}
+    </tbody>
+   </table></div>
+   <div className="earnings-r2-mobile-list">
+    {activeOrder.map(id=>{const r=rows.get(id),m=activeMeta[id],j=judge(r?.score,r?.status);return <article className="earnings-r2-mobile-card" key={id} data-judgement={j.tone}>
+     <div className="earnings-r2-mobile-head"><div className="earnings-r2-mobile-title"><EarningsFavoriteButton id={id} label={m.label}/><div><strong>{m.label}</strong><small>{isR5?"E1-R5":"E1-R4"} 저장 지표</small></div></div><div className="earnings-r2-mobile-actions"><span className="inflation-judgement">{j.label}</span><HelpTip label={m.label} text={m.help}/></div></div>
+     <p className="earnings-r2-mobile-content">{m.content}</p>
+     <p className="earnings-r2-mobile-criterion"><span>기준</span>{m.criterion}</p>
+     <div className="earnings-r2-mobile-metrics">
+      <div><span>현재</span><strong>{fmt(r)}</strong><small>{r?.status==="READY"&&typeof r.score==="number"?"내부점수 "+r.score.toFixed(1):"점수 —"}</small></div>
+      <div><span>관측일</span><strong>{dateLabel(r?.observationDate)}</strong></div>
+     </div>
+    </article>})}
+    {!isR5&&dev.map(item=><article className="earnings-r2-mobile-card is-development" key={item[0]}>
+     <div className="earnings-r2-mobile-head"><div className="earnings-r2-mobile-title"><EarningsFavoriteButton id={"development:"+item[0]} label={item[0]}/><div><strong>{item[0]}</strong><small>개발 후보 · 점수 미반영</small></div></div><div className="earnings-r2-mobile-actions"><span className="inflation-judgement is-development">개발중</span><HelpTip label={item[0]} text={item[3]+" 현재 데이터 연결 개발 중이며 점수에 추가하지 않습니다."}/></div></div>
+     <p className="earnings-r2-mobile-content">{item[1]}</p><p className="earnings-r2-mobile-criterion"><span>기준</span>{item[2]}</p>
+     <div className="earnings-r2-mobile-metrics"><div><span>현재</span><strong>—</strong></div><div><span>관측일</span><strong>—</strong></div></div>
+    </article>)}
+   </div>
+  </section>
+  <a className="cnn-return-cta" href="/">← 메인 대시보드로 돌아가기</a>
  </>;
 }
