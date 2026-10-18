@@ -5,7 +5,7 @@ import os from 'node:os';
 import path from 'node:path';
 import {openStore} from '../scripts/iran-progress/store.mjs';
 import {analyzeCandidateBatch} from '../scripts/iran-progress/candidate-batch.mjs';
-import {PROMPT_VERSION} from '../scripts/iran-progress/ai.mjs';
+import {PROMPT_VERSION,CANDIDATE_SCHEMA,interpretSource} from '../scripts/iran-progress/ai.mjs';
 
 const now=Date.parse('2026-10-18T03:00:00Z');
 function fixture(n){
@@ -66,4 +66,18 @@ test('unavailable Ollama model does not consume the queue or fabricate verified 
   assert.equal(r.factVerification,'NOT_PERFORMED');
   assert.equal(x.store.db.prepare('SELECT COUNT(*) AS n FROM decisions').get().n,0);
  }finally{x.close();}
+});
+
+test('Ollama interpretation uses the structured schema but never auto-verifies events',async()=>{
+ const text='Officials held mediation talks in Muscat.';
+ const result=await interpretSource(text,{modelDigest:'fixture-digest',now,fetcher:async (url,init)=>{
+  assert.equal(url,'http://127.0.0.1:11434/api/generate');
+  const body=JSON.parse(init.body);
+  assert.deepEqual(body.format,CANDIDATE_SCHEMA);
+  assert.equal(body.options.temperature,0);
+  return {ok:true,json:async()=>({response:JSON.stringify({candidates:[{quote:text,eventAt:null,actors:['Iran'],type:'DIPLOMACY'}]})})};
+ }});
+ assert.equal(result.status,'CANDIDATE_ONLY');
+ assert.equal(result.candidates[0].verified,false);
+ assert.equal(result.candidates[0].status,'PENDING_REVIEW');
 });
