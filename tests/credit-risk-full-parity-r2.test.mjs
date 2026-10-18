@@ -107,7 +107,7 @@ test("existing R1 four-axis weights, scores and credit method remain unchanged",
  }
  assert.match(builder,/const score=publicDiag\?\.status==="READY"/);
  assert.match(builder,/const display=enrichLiquidityDisplayRows\(\[\.\.\.core,\.\.\.supplementals\],sources,asOf\)/);
- assert.match(builder,/core:display\.slice\(0,4\),supplementals:display\.slice\(4\),trend,scoreComparisons/);
+ assert.match(builder,/core:display\.slice\(0,4\),supplementals:display\.slice\(4\),trend:displayTrend,scoreComparisons/);
  assert.doesNotMatch(builder,/\bfetch\(/);
 });
 test("one-time saved-input refresh only when a READY projection lacks new display fields",()=>{
