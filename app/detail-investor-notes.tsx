@@ -24,10 +24,12 @@ const guides:Record<Topic,Guide> = {
     {title:"같은 50점도 같은 시장 상황은 아닙니다",text:"한국 자체 지표와 CNN 미국 지수는 대상 시장과 입력 자료가 다릅니다. 한 시장의 점수가 더 높다는 이유만으로 수익률이 더 좋거나 위험이 더 낮다고 판단할 수 없습니다."},
   ],related:["usa","recession","inflation"]},
   inflation:{title:"CPI·PCE 현재값과 물가 점수를 구분하기",sections:[
-    {title:"헤드라인·근원, 전년·전월 대비를 구별하세요",text:"CPI는 소비자물가, PCE는 개인소비지출 물가입니다. 근원(Core)은 식품·에너지를 제외한 값이며 전체(Headline)와 다릅니다. 표의 전년 대비(YoY), 최근 3개월 연율, 변화율은 서로 다른 계산 기간입니다. 현재 제공된 행만 확인하고 없는 헤드라인 CPI·전월 대비 수치를 근원 값으로 대신 읽지 마세요."},
-    {title:"기준 문구만으로 판단 색상을 계산하지 마세요",text:"표의 긍정·중립·부정은 저장된 정규화 점수를 구간으로 나눈 판단입니다. ‘2% 근처’, ‘과거 중앙값’은 해석 방향을 요약한 말로, 원자료 하나와 단순 비교해 색상을 정하는 규칙이 아닙니다. 긍정은 해당 모델의 물가 안정 방향이며 주가 상승 보장이 아닙니다."},
-    {title:"홈페이지의 다른 물가 점수와 비교할 때",text:"홈페이지의 12대 지표 중 물가는 이 상세의 안정성 점수를 정수로 표시합니다. 별도의 8개 위험 진단에 표시되는 인플레이션은 다른 진단 경로입니다. 두 값을 동일한 통계 수치로 해석하지 마세요."},
-    {title:"발표시간·예상치가 필요할 때",text:"이 페이지는 저장된 관측값과 분석 점수를 제공합니다. 발표 예정 시각, 시장 예상치, 예상치 대비 결과를 제공하는 경제 캘린더는 아닙니다. 공식 CPI·PCE 발표 일정과 원문은 아래 출처에서 별도로 확인하세요."},
+    {title:"CPI와 PCE는 어떤 숫자인가요?",text:"둘 다 미국의 물가 변화를 보여주는 통계예요. CPI는 사람들이 구입하는 상품·서비스의 가격을, PCE는 가계 소비를 더 폭넓게 살펴봐요. 두 숫자는 조사 범위와 계산 방식이 달라서 같지 않을 수 있어요."},
+    {title:"전체 물가와 근원 물가는 뭐가 다른가요?",text:"전체(Headline)는 식품과 에너지 가격까지 포함해요. 근원(Core)은 가격이 크게 출렁이기 쉬운 식품·에너지를 제외하고 물가의 기본 흐름을 살펴봐요. 둘 다 중요한 숫자예요."},
+    {title:"전년 대비와 3개월 연율은 어떻게 읽나요?",text:"전년 대비(YoY)는 1년 전과 비교해 얼마나 변했는지예요. '3개월 연율'은 최근 3개월의 변화 속도가 1년 내내 이어진다고 가정해 계산한 숫자예요. 비교하는 기간이 달라서 단순히 더하고 빼면 안 돼요."},
+    {title:"긍정·중립·부정 색은 어떻게 보나요?",text:"각 항목이 물가 안정에 유리한 방향인지 표시한 거예요. 화면의 '목표 2%'나 '과거 중앙값'은 참고 기준이고, 색은 저장된 평가 점수로 결정돼요. 긍정이라고 주가 상승이 보장되는 건 아니에요."},
+    {title:"발표일과 '—'는 무엇을 뜻하나요?",text:"물가 통계는 정해진 날짜에 새로 발표돼요. 발표 일정은 아래 공식 사이트에서 확인하세요. '—'는 0이 아니라 아직 이용할 수 있는 값이 없다는 뜻이고, '개발중' 항목은 현재 점수 판단에 사용하지 마세요."},
+    {title:"홈페이지에도 물가 점수가 있는데 같은 건가요?",text:"홈페이지 12개 주요 지표의 '물가'는 이 상세 안정성 점수를 정수로 보여줘요. 별도 위험 진단의 '인플레이션' 점수는 분석 목적이 다르므로 같은 숫자로 비교하면 안 돼요."},
   ],related:["recession","supply-shock","usa"]},
   recession:{title:"경기침체 점수와 고용·소비 신호 읽기",sections:[
     {title:"경기 점수와 침체 방어점수는 구별합니다",text:"홈페이지의 12대 지표 중 경기는 성장 관련 지표입니다. 8개 위험 진단의 경기 침체와 이 상세는 경기침체 방어를 살펴보는 별도 진단입니다. 비슷한 이름이어도 입력과 목적이 같다는 뜻은 아닙니다."},
@@ -65,15 +67,18 @@ export default function DetailInvestorNotes({topic}:{topic:Topic}) {
   return <>
     <WebPageJsonLd name={labels[topic]} description={`${guide.title}. 현재값·관측일·관련 지표를 함께 확인하세요.`} path={paths[topic]}/>
     <DetailReadingGuide title={guide.title}
+      variant={topic==="inflation"?"beginner":"default"}
+      displayTitle={topic==="inflation"?"물가 표에 나오는 말, 쉽게 알아보기":undefined}
+      intro={topic==="inflation"?"CPI·PCE부터 기간·판단 색깔까지 하나씩 알려드릴게요.":undefined}
       sections={[...guide.sections,
-        {title:"날짜와 현재 제공 범위 확인",text:"관측일은 데이터가 설명하는 기간이며 화면 갱신일이나 공식 발표 시각과 다를 수 있습니다. 월별·분기별 자료의 월·분기 시작일 표기는 매일 갱신되는 시세가 아닙니다. ‘—’, ‘확인 필요’, ‘개발중’은 실제 값 0이 아니며, 개발중 항목은 현재 이용 가능한 관측값으로 해석하지 마세요."},
+        ...((topic==="inflation")?[]:[{title:"날짜와 현재 제공 범위 확인",text:"관측일은 데이터가 설명하는 기간이며 화면 갱신일이나 공식 발표 시각과 다를 수 있습니다. 월별·분기별 자료의 월·분기 시작일 표기는 매일 갱신되는 시세가 아닙니다. ‘—’, ‘확인 필요’, ‘개발중’은 실제 값 0이 아니며, 개발중 항목은 현재 이용 가능한 관측값으로 해석하지 마세요."}]),
         ...(!["usa","korea","inflation","recession"].includes(topic)?[
           {title:"과거 차트와 판정의 의미",text:"현재 개정 자료(Current Vintage)는 나중에 수정된 통계를 포함할 수 있습니다. 과거 차트를 당시 투자자가 알던 자료만으로 검증한 예측 성과로 해석하지 마세요. 긍정·중립·부정은 각 지표의 평가 방향이며 투자 수익률을 보장하지 않습니다."},
         ]:[]),
       ]}
       sources={topic==="inflation"?[
-        {href:"https://www.bls.gov/schedule/news_release/cpi.htm",label:"CPI 공식 발표 일정"},
-        {href:"https://www.bea.gov/news/schedule",label:"BEA 공식 발표 일정"},
+        {href:"https://www.bls.gov/schedule/news_release/cpi.htm",label:"CPI 공식 발표 일정",description:"미국 소비자물가 발표 날짜 확인"},
+        {href:"https://www.bea.gov/news/schedule",label:"PCE 공식 발표 일정",description:"미국 경제분석국 발표 날짜 확인"},
       ]:[]}
       related={[...guide.related.map(id=>({href:paths[id],label:labels[id]})),
         ...((topic==="usa"||topic==="korea")?[{href:"/guides/fear-greed-buying/",label:"공포탐욕지수 매수 기준과 한계"}]:[]),
