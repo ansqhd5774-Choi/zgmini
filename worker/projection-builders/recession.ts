@@ -1,6 +1,6 @@
 import {buildRecessionDefenseR13} from "../../lib/diagnostic-layer/recession-r13-components.mjs";
 import {recessionDefense} from "../../lib/diagnostic-layer/model.mjs";
-import {enrichRecessionCoreComponents,recessionStoredScoreComparisons} from "./recession-stored-history.mjs";
+import {enrichRecessionCoreComponents,recessionStoredScoreComparisons,recessionOneYearStart} from "./recession-stored-history.mjs";
 
 const finite=(v:unknown):v is number=>typeof v==="number"&&Number.isFinite(v);
 const fields=[
