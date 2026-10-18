@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
 import {openStore} from '../scripts/iran-progress/store.mjs';
 import {auditIranLocalReadOnly} from '../scripts/iran-progress/reality-audit-r4.mjs';
 const now=Date.parse('2026-10-18T04:00:00Z');
@@ -60,4 +61,14 @@ test('real event revision inventory excludes superseded revisions and separates 
   assert.equal(a.r4InputInventory.r13LinkedIsNotYemenProof,true);
   assert.equal(a.r4InputInventory.exactRealityScoreStatus,'NOT_CALCULATED');
  }finally{store.close();}
+});
+
+test('CMD audit uses approved E drive, writes only one TEMP log and performs no scheduler or deployment action',()=>{
+ const cmd=fs.readFileSync(new URL('../scripts/iran-progress/r4-readonly-audit.cmd',import.meta.url),'utf8');
+ assert.ok(cmd.includes(String.raw`E:\\ZGmini\\runtime\\node.exe`));
+ assert.ok(cmd.includes(String.raw`E:\\ZGmini\\data\\iran-progress-r13\\iran.sqlite`));
+ assert.ok(cmd.includes(String.raw`%TEMP%\\ZGMINI_IRAN_R4_READONLY_AUDIT.txt`));
+ assert.doesNotMatch(cmd,/powershell|wsl|rdc|wrangler|git push|curl|schtasks|delete\s+from/i);
+ const auditSource=fs.readFileSync(new URL('../scripts/iran-progress/reality-audit-r4.mjs',import.meta.url),'utf8');
+ assert.match(auditSource,/readOnly:true/);
 });
