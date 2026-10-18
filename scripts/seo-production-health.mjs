@@ -15,7 +15,7 @@ export const SEO_RUNTIME_MARKERS=new Map([
   [`${SITE_ORIGIN}/fear-greed/usa/`,{descriptionIncludes:'원시값과 환산점수의 차이'}],
   [`${SITE_ORIGIN}/sector-fear-greed/`,{descriptionIncludes:'5개 핵심 신호와 252거래일 데이터'}],
   [`${SITE_ORIGIN}/inflation/`,{descriptionIncludes:'미국 인플레이션 지수와 물가 안정 점수를 확인하세요.',htmlIncludes:['미국 물가가 얼마나 빠르게 오르고 있는지','소비자물가(CPI)와 개인소비지출 물가(PCE)']}],
-  [`${SITE_ORIGIN}/recession/`,{htmlIncludes:['미국 경기침체 지표를 실업률 기반 Sahm Rule, 비농업고용, 실질 GDP, 산업생산, 소비·소득, 장단기 금리차와 신용여건으로 분석합니다.']}],
+  [`${SITE_ORIGIN}/recession/`,{htmlIncludes:['침체 신호는?','경기침체 확률 아님']}],
   [`${SITE_ORIGIN}/liquidity-crisis/`,{htmlIncludes:['미국 금융시장의 현금 부족과 유동성 위기 위험을 분석합니다.']}],
   [`${SITE_ORIGIN}/credit-risk/`,{htmlIncludes:['미국 회사채 시장의 신용 위험과 기업 자금조달 환경을 확인하세요.']}],
   [`${SITE_ORIGIN}/earnings-recession/`,{descriptionIncludes:'현재 실적 안전점수와 관측일, 기간별 흐름',htmlIncludes:['미국 기업 실적의 둔화와 침체 위험을 EPS 성장']}],
