@@ -57,3 +57,12 @@ test('earnings beginner guide never misattributes E1 factor rankings to separate
  assert.match(guide,/else if\(topic==="earnings-recession"\)rows=payload\?\.storedE1\?\.indicators\?\?\[\]/);
  assert.match(guide,/topic==="earnings-recession"\?/);
 });
+
+test('earnings guide has short, verified factor descriptions for all 13 E1-R5 indicators while leaving other topics unchanged',()=>{
+ const start=guide.indexOf('"earnings-recession":{');
+ const end=guide.indexOf('};\n\ntype MethodologyExplanation',start);
+ const earnings=guide.slice(start,end);
+ assert.match(earnings,/factorDescriptions:\{/);
+ for(let i=1;i<=13;i++)assert.ok(earnings.includes('S'+i+':"'),'S'+i);
+ assert.match(guide,/function FactorListItem/);
+});
