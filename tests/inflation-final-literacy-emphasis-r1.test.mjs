@@ -41,7 +41,9 @@ test("inflation terminology explains real percentages, annualization, and missin
  assert.match(panel,/zg-inflation-keymark/);
  assert.match(panel,/물건과 서비스의 가격이 전반적으로 계속 오르는 현상/);
  assert.match(panel,/여러 자료를 종합해 저장된 평가 점수/);
- assert.match(intro,/물가가 얼마나 빠르게 오르고 있는지/);
+ assert.match(intro,/미국 물가, <span className="text-sky-300">안정되고 있을까\?<\/span>/);
+ assert.match(intro,/물가 안정 점수와 최근 1년 추세, 한눈에/);
+ assert.match(page,/CPI·PCE, 임금·에너지 등 16개 물가 지표/);
 });
 
 test("highlights stay scoped, sparse, and readable on wrapped mobile lines",()=>{
