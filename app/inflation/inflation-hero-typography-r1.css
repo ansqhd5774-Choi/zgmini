@@ -1,0 +1,44 @@
+/* Inflation detail hero typography only.
+   Keep the main score as the visual focal point; align supporting text by role. */
+.fg-card.fg-shared-shell.inflation-target-card{
+ --fg-title-size:20px;
+ --fg-subtitle-size:12px;
+ --fg-meta-size:11px;
+ --fg-meta-strong-size:13px;
+ --fg-footer-size:10px;
+}
+.fg-card.fg-shared-shell.inflation-target-card .cnn-market-title h2{
+ font-size:var(--fg-title-size);
+ line-height:1.15;
+}
+.fg-card.fg-shared-shell.inflation-target-card .cnn-market-title p:last-child{
+ font-size:var(--fg-subtitle-size);
+ line-height:1.25;
+}
+.fg-card.fg-shared-shell.inflation-target-card .cnn-score-comparison>span{
+ font-size:11px;
+ line-height:1.2;
+}
+.fg-card.fg-shared-shell.inflation-target-card .cnn-score-comparison>strong{
+ font-size:13px;
+ line-height:1.1;
+}
+@media(max-width:767px){
+ .fg-card.fg-shared-shell.inflation-target-card{
+  --fg-title-size:16px;
+  --fg-subtitle-size:11px;
+  --fg-meta-size:10px;
+  --fg-meta-strong-size:11px;
+  --fg-footer-size:9px;
+ }
+ /* Five comparison columns occupy the gauge column, so size text to fit,
+    without changing the approved gauge/chart geometry or allowing overlap. */
+ .fg-card.fg-shared-shell.inflation-target-card .cnn-score-comparison>span{
+  font-size:clamp(8px,2.45vw,10px);
+  letter-spacing:-.02em;
+ }
+ .fg-card.fg-shared-shell.inflation-target-card .cnn-score-comparison>strong{
+  font-size:clamp(9.5px,2.8vw,11px);
+  letter-spacing:-.035em;
+ }
+}
