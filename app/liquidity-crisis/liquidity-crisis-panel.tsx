@@ -14,6 +14,7 @@ import {LiquidityFavoriteButton,LiquidityFavoriteHeaderIcon} from "./liquidity-f
 import {liquidityReleaseInfo} from "./liquidity-release-calendar.mjs";
 import "./liquidity-indicator-r2.css";
 import "./liquidity-hero-typography-r1.css";
+import "../shared-risk-indicator-width-r1.css";
 
 type Indicator={id:string;name:string;status:string;score:number|null;value:number|null;unit:string;observationDate:string|null;source:string;previousValue?:number|null;previousObservationDate?:string|null;trend?:InflationMiniTrendPoint[];nextReleaseDate?:string|null};
 type Payload={status:string;score:number|null;asOfDate?:string|null;methodologyVersion?:string;indicators?:Indicator[];trend?:Array<{label:string;value:number}>;scoreComparisons?:{week?:number|null;month?:number|null;threeMonth?:number|null;sixMonth?:number|null;year?:number|null}};

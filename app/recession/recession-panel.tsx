@@ -10,6 +10,7 @@ import {MarketFearGreedChart,type MarketFearGreedChartPoint,type MarketFearGreed
 import "./recession-indicator-r2.css";
 import "./recession-hero-parity-r2.css";
 import "./recession-indicator-parity-r2.css";
+import "../shared-risk-indicator-width-r1.css";
 import {RecessionFavoriteButton,RecessionFavoriteHeaderIcon} from "./recession-favorite-button";
 import {InflationMiniChart,type InflationMiniTrendPoint} from "../inflation/inflation-mini-chart";
 
@@ -114,8 +115,8 @@ export default function RecessionPanel(){
 
   <section className="inflation-indicator-section recession-r2-indicators" aria-labelledby="recession-indicator-title">
    <header><div><p className="cnn-eyebrow">RECESSION INDICATORS</p><h2 id="recession-indicator-title">미국 경기침체 분석 지표</h2></div><p>고용·생산·소비·금리·신용여건을 함께 살펴봐요. 판단 색깔은 <b>저장된 평가 점수</b>에 따라 <b>긍정 / 중립 / 부정</b>으로 표시해요.</p></header>
-   <p className="recession-data-availability">이전 값·1년 추이·발표 예정일은 저장된 자료가 있을 때만 표시합니다. ‘—’는 0이 아니며, 보조지표와 개발 후보는 경기 방어점수 구성에서 구분합니다.</p>
    <div className="inflation-table-wrap recession-r2-table-wrap"><table className="inflation-indicator-table recession-indicator-table-r2">
+    <colgroup>{Array.from({length:10},(_,i)=><col key={i}/>)}</colgroup>
     <thead><tr><th className="recession-r2-favorite-head"><span className="sr-only">즐겨찾기</span><RecessionFavoriteHeaderIcon/></th><th>지표</th><th>내용</th><th>기준</th><th>이전</th><th>현재</th><th>발표</th><th>판단</th><th>미니차트(1Y)</th><th><span className="sr-only">도움말</span>ⓘ</th></tr></thead>
     <tbody>
      {Object.entries(componentMeta).map(([id,meta])=>{const row=components.get(id),j=judgement(row?.score),release=releaseLabel(row??{},meta.cadence);return <tr key={id} data-judgement={j.tone}>
