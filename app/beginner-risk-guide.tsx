@@ -113,7 +113,7 @@ const configs:Record<Topic,Config>={
   endpoint:"/api/supply-shock-detail",title:"공급 충격 방어",importance:"공급망이나 에너지 공급이 흔들리면 생산비와 물가가 동시에 올라 경기와 기업이익에 부담을 줄 수 있습니다.",marketImpact:"공급 충격 확대는 원가 부담과 인플레이션을 동시에 높여 주식시장에 불리할 수 있습니다. 공급 여건 안정은 비용 압력을 완화하는 데 도움이 됩니다.",highMeaning:"높을수록 공급망·에너지 충격 위험이 낮은 방향입니다.",lowMeaning:"낮을수록 공급 충격 압력이 높은 방향입니다.",positiveHeading:"공급 안정에 기여한 요인",negativeHeading:"공급 충격 부담 요인",stage:score=>safetyStage(score,"공급 주의","공급 충격 위험"),factorIds:["G","E","O","P","I"],factorNames:{G:"글로벌 공급망 압력",E:"미국 석유 공급 제약",O:"에너지 가격 충격",P:"공급 주도 물가 압력",I:"산업생산 충격"}
  },
  "earnings-recession":{
-  endpoint:"/api/earnings-recession-detail",title:"기업 실적 방어",importance:"주가는 장기적으로 기업이 벌어들이는 이익과 현금흐름의 영향을 크게 받습니다. 매출·마진·이익 개선이 시장 전반으로 퍼지는지 함께 봐야 합니다.",marketImpact:"실적 방어가 약해지면 주가 밸류에이션을 지지하기 어려워질 수 있습니다. 반대로 이익과 매출 개선이 넓게 확산되면 주식시장의 펀더멘털 기반이 강해집니다.",highMeaning:"높을수록 미국 기업 실적이 양호한 방향입니다.",lowMeaning:"낮을수록 실적 침체 위험이 강한 방향입니다.",positiveHeading:"실적 방어에 기여한 요인",negativeHeading:"실적 부담 요인",stage:score=>safetyStage(score,"실적 주의","실적 침체 위험"),factorNames:{epsGrowth:"EPS 성장률",margin:"영업이익률",revenueGrowth:"매출 성장률",earningsGrowthBreadth:"이익 성장 종목 비율",S1:"EPS 성장 강도",S2:"매출 성장률",S3:"영업이익률 수준",S4:"영업이익률 변화",S5:"FCF 마진",S6:"BEA 기업이익",S7:"EPS 개선 기업 비율",S8:"흑자 기업 비율",S9:"이익 개선 업종 비율",S10:"생산자 원가 압력",S11:"단위노동비용 압력",S12:"미래 전망 수정",S13:"기업 가이던스 방향"}
+  endpoint:"/api/earnings-recession-detail",title:"기업 실적 방어",importance:"주가는 장기적으로 기업이 벌어들이는 이익과 현금흐름의 영향을 크게 받습니다. 매출·마진·이익 개선이 시장 전반으로 퍼지는지 함께 봐야 합니다.",marketImpact:"실적 방어가 약해지면 주가 밸류에이션을 지지하기 어려워질 수 있습니다. 반대로 이익과 매출 개선이 넓게 확산되면 주식시장의 펀더멘털 기반이 강해집니다.",highMeaning:"높을수록 미국 기업 실적이 양호한 방향입니다.",lowMeaning:"낮을수록 실적 침체 위험이 강한 방향입니다.",positiveHeading:"E1 평가가 높은 지표",negativeHeading:"E1 평가가 낮은 지표",stage:score=>safetyStage(score,"실적 주의","실적 침체 위험"),factorNames:{epsGrowth:"EPS 성장률",margin:"영업이익률",revenueGrowth:"매출 성장률",earningsGrowthBreadth:"이익 성장 종목 비율",S1:"EPS 성장 강도",S2:"매출 성장률",S3:"영업이익률 수준",S4:"영업이익률 변화",S5:"FCF 마진",S6:"BEA 기업이익",S7:"EPS 개선 기업 비율",S8:"흑자 기업 비율",S9:"이익 개선 업종 비율",S10:"생산자 원가 압력",S11:"단위노동비용 압력",S12:"미래 전망 수정",S13:"기업 가이던스 방향"}
  }
 };
 
@@ -347,6 +347,7 @@ export default function BeginnerRiskGuide({topic}:{topic:Topic}){
   return()=>controller.abort();
  },[config.endpoint]);
  const score=finiteScore(payload?.score);
+ const earningsStoredScore=topic==="earnings-recession"?finiteScore(payload?.storedE1?.score):null;
  const factors=useMemo(()=>extractFactors(topic,payload,config),[topic,payload,config]);
  const positive=useMemo(()=>factors.filter(x=>x.score>=60).sort((a,b)=>b.score-a.score).slice(0,3),[factors]);
  const negative=useMemo(()=>factors.filter(x=>x.score<45).sort((a,b)=>a.score-b.score).slice(0,3),[factors]);
@@ -370,8 +371,8 @@ export default function BeginnerRiskGuide({topic}:{topic:Topic}){
    </div>
   </div>
   <div className="rounded-lg bg-[#071c2a] p-4 sm:p-5">
-   <h2 className="text-lg font-bold text-white">왜 {score===null?"이 점수":score.toFixed(1)+"점"}인가요?</h2>
-   <p className="mt-1 text-sm text-slate-400">현재 저장된 구성 점수를 기준으로 강한 방향의 요인을 최대 3개씩 보여줍니다.</p>
+   <h2 className="text-lg font-bold text-white">{topic==="earnings-recession"?`E1 저장 지표 평가${earningsStoredScore===null?"":" · "+earningsStoredScore.toFixed(1)+"점"}`:<>왜 {score===null?"이 점수":score.toFixed(1)+"점"}인가요?</>}</h2>
+   <p className="mt-1 text-sm text-slate-400">{topic==="earnings-recession"?"E1 저장 지표별 평가입니다. 메인 진단 점수의 구성요인과는 별개입니다.":"현재 저장된 구성 점수를 기준으로 강한 방향의 요인을 최대 3개씩 보여줍니다."}</p>
    <div className="mt-4 grid gap-3 md:grid-cols-2">
     <div className="bg-emerald-950/25 p-4"><h3 className="font-bold text-emerald-300">{config.positiveHeading}</h3>{positive.length?<ul className="mt-3 space-y-2 text-sm text-slate-200">{positive.map(item=><FactorListItem key={item.id} item={item} config={config}/>)}</ul>:<p className="mt-3 text-sm text-slate-400">현재 뚜렷한 기여 요인을 확인하지 못했습니다.</p>}</div>
     <div className="bg-rose-950/20 p-4"><h3 className="font-bold text-rose-300">{config.negativeHeading}</h3>{negative.length?<ul className="mt-3 space-y-2 text-sm text-slate-200">{negative.map(item=><FactorListItem key={item.id} item={item} config={config}/>)}</ul>:<p className="mt-3 text-sm text-slate-400">현재 뚜렷한 부담 요인을 확인하지 못했습니다.</p>}</div>
@@ -379,18 +380,18 @@ export default function BeginnerRiskGuide({topic}:{topic:Topic}){
   </div>
   <details ref={calculationDetailsRef} className="zg-method-history rounded-lg bg-[#071c2a] p-4 sm:p-5" data-testid={`beginner-methodology-explanation-${topic}`}>
    <summary className="zg-method-history-summary cursor-pointer font-bold text-white" onClick={event=>preserveAccordionSummaryOnOpen(event.currentTarget)}>
-    <span className="zg-method-history-title"><span>이 점수는 어떻게 계산하나요?</span></span>
+    <span className="zg-method-history-title"><span>{topic==="earnings-recession"?"E1 저장 점수는 어떻게 계산하나요?":"이 점수는 어떻게 계산하나요?"}</span></span>
     <ChevronDown aria-hidden="true" className="zg-method-history-chevron"/>
    </summary>
    <div className="mt-3 space-y-2 text-sm leading-6 text-slate-300">
-    <p className="text-xs text-slate-400">이 설명 영역은 점수·가중치·판정을 새로 계산하지 않고, 승인된 저장 결과를 해석합니다.</p>
+    <p className="text-xs text-slate-400">{topic==="earnings-recession"?"이 설명은 E1 저장 실적 점수에 관한 것이며 메인 진단과 별도입니다. ":""}이 설명 영역은 점수·가중치·판정을 새로 계산하지 않고, 승인된 저장 결과를 해석합니다.</p>
     <p><strong className="text-slate-100">① 사용하는 지표</strong> {methodology.inputs}</p>
     <p><strong className="text-slate-100">② 평가 방법</strong> {methodology.interpretation}</p>
     <p><strong className="text-slate-100">③ 점수 읽는 법</strong> 75점 이상 {config.stage(75)}, 60~74점 {config.stage(60)}, 45~59점 중립, 25~44점 {config.stage(25)}, 25점 미만 {config.stage(0)}. {config.highMeaning} {config.lowMeaning}</p>
     <p><strong className="text-slate-100">④ 주식시장에서</strong> {methodology.marketUse}</p>
     <p><strong className="text-slate-100">⑤ 결측·한계</strong> 필요한 자료가 없으면 임의의 0점으로 채우지 않고 미산출 상태로 남길 수 있습니다. {methodology.limitation}</p>
     <div className="zg-method-history-close-row">
-     <button type="button" className="zg-method-history-close" aria-label="이 점수는 어떻게 계산하나요? 접기" onClick={()=>{if(calculationDetailsRef.current)calculationDetailsRef.current.open=false;}}>
+     <button type="button" className="zg-method-history-close" aria-label={topic==="earnings-recession"?"E1 저장 점수는 어떻게 계산하나요? 접기":"이 점수는 어떻게 계산하나요? 접기"} onClick={()=>{if(calculationDetailsRef.current)calculationDetailsRef.current.open=false;}}>
       <ChevronUp aria-hidden="true" size={16}/>
       <span>접기</span>
      </button>
