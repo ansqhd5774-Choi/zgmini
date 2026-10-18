@@ -1,6 +1,26 @@
 
 const finite=(v:unknown):v is number=>typeof v==="number"&&Number.isFinite(v);
 const validDate=(v:unknown):v is string=>typeof v==="string"&&/^\d{4}-\d{2}-\d{2}$/.test(v);
+
+const sourcePeriodBasis="CURRENT_VINTAGE_SOURCE_PERIOD_END";
+function checkedSourceObservation(x:any){
+ if((x?.id!=="S6"&&x?.id!=="S11")||x?.historyKind!==sourcePeriodBasis||!finite(x?.value)||!validDate(x?.sourcePeriodEnd))return null;
+ const rows=Array.isArray(x?.sourceHistory1Y)?x.sourceHistory1Y:[];
+ if(rows.length<2||rows.length>8)return null;
+ if(!rows.every((p:any)=>validDate(p?.date)&&finite(p?.value)&&p.date<=x.sourcePeriodEnd))return null;
+ if(rows.some((p:any,i:number)=>i>0&&rows[i-1].date>=p.date))return null;
+ const last=rows.at(-1);
+ if(last.date!==x.sourcePeriodEnd||Math.abs(last.value-x.value)>1e-8)return null;
+ const previous=rows.at(-2);
+ if(!finite(x?.previousValue)||!validDate(x?.previousPeriodEnd)||x.previousPeriodEnd>=x.sourcePeriodEnd)return null;
+ // The previous source observation may be outside one year; validate when present in 1Y series.
+ const included=rows.find((p:any)=>p.date===x.previousPeriodEnd);
+ if(included&&Math.abs(included.value-x.previousValue)>1e-8)return null;
+ if(previous&&previous.date>x.previousPeriodEnd)return null;
+ return {historyKind:sourcePeriodBasis,sourcePeriodEnd:x.sourcePeriodEnd,
+   previousValue:x.previousValue,previousPeriodEnd:x.previousPeriodEnd,
+   sourceHistory1Y:rows.map((p:any)=>({date:p.date,value:p.value}))};
+}
 const R4_IDS=["epsGrowth","margin","revenueGrowth","earningsGrowthBreadth"] as const;
 const R5_IDS=["S1","S2","S3","S4","S5","S6","S7","S8","S9","S10","S11","S12","S13"] as const;
 
@@ -19,6 +39,7 @@ export function buildProjection({inputs,snapshot,publicSnapshot,e1,nowIso}:any){
   unit:x?.unit??"",
   observationDate:x?.asOfDate??e1?.financialPeriodEnd??e1?.asOfDate??null,
   source:x?.source??"SEC EDGAR XBRL Frames",
+  ...(isR5?checkedSourceObservation(x)??{}:{}),
  })):[];
  const components=isR5
   ? Object.fromEntries(R5_IDS.map(id=>[id,{weight:finite(e1?.weights?.[id])?e1.weights[id]:null,coverage:finite(e1?.quality?.componentCoverage?.[id])?e1.quality.componentCoverage[id]:null}]))
