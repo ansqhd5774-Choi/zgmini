@@ -118,7 +118,19 @@
  .fg-card.fg-shared-shell.recession-target-card .recharts-responsive-container{height:100%!important;min-height:0!important}
  .fg-card.fg-shared-shell.recession-target-card .recharts-cartesian-axis-tick-value{font-size:10px}
 
- .fg-card.fg-shared-shell.recession-target-card .fg-footer-slot{grid-column:1 / -1;grid-row:3}
+ /* Match inflation's compact 28px provenance footer; leave the shared styles unchanged. */
+ .fg-card.fg-shared-shell.recession-target-card .fg-footer-slot{
+  grid-column:1 / -1;
+  grid-row:3;
+  height:28px;
+  min-height:28px;
+  flex:0 0 28px;
+ }
+ .fg-card.fg-shared-shell.recession-target-card .fg-footer-slot .cnn-panel-note{
+  height:28px;
+  min-height:28px;
+  box-sizing:border-box;
+ }
  .fg-card.fg-shared-shell.recession-target-card .cnn-panel-note{
   min-height:28px;
   padding:5px 10px;
