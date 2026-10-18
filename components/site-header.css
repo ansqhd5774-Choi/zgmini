@@ -1,4 +1,5 @@
 /* Dashboard and analysis pages share the same sticky, responsive header. */
+html:has(.zg-site-header),body:has(.zg-site-header){overflow-x:clip}
 .zg-site-header{
  position:sticky;
  top:0;
@@ -30,7 +31,16 @@
 .zg-site-header nav a:hover,
 .zg-site-header nav a:focus-visible{color:#fff}
 .zg-site-header nav a:hover::after,
-.zg-site-header nav a:focus-visible::after{transform:scaleX(1)}
+.zg-site-header nav a:focus-visible::after,
+.zg-site-header nav a[aria-current="page"]::after{transform:scaleX(1)}
+.zg-site-header nav a[aria-current="page"]{color:#fabc42}
+.zg-site-header .zg-header-inner>nav{min-width:0;overflow-x:auto;gap:22px;scrollbar-width:thin;scrollbar-color:#31506d transparent}
+.zg-site-header .zg-header-inner>nav>*{flex-shrink:0}
+.zg-site-header .zg-header-inner>a,.zg-site-header .zg-header-tools{flex-shrink:0}
+@media(max-width:1023px){
+ .zg-site-header .zg-header-inner>nav,.zg-dashboard .zg-site-header .zg-header-inner>nav{flex-basis:100%;width:100%;order:3;overflow-x:auto;justify-content:flex-start;gap:20px;height:44px;min-height:44px;padding-bottom:2px}
+ .zg-site-header .zg-header-inner>nav>a,.zg-site-header .zg-header-inner>nav>button{min-height:40px;font-size:13px}
+}
 .zg-site-header nav a:focus-visible{outline:2px solid #fabc42;outline-offset:3px}
 .zg-dashboard .sticky-summary{top:var(--zg-site-header-height,64px)}
 html:has(.zg-site-header){scroll-padding-top:calc(var(--zg-site-header-height,64px) + 8px)}

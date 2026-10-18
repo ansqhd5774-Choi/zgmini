@@ -1,4 +1,5 @@
 import type {Metadata} from 'next';
+import SiteHeader from '../../components/site-header';
 import {WebPageJsonLd} from '../seo-jsonld';
 import SectorDetailCharts from './sector-detail-charts';
 import './sector-detail.css';
@@ -18,7 +19,7 @@ export const metadata:Metadata={
 };
 
 export default function SectorFearGreedPage(){
- return <main className="zg-sector-detail">
+ return <><SiteHeader/><main className="zg-sector-detail">
   <WebPageJsonLd name={title} description={description} path="/sector-fear-greed/"/>
   <div className="zg-sector-detail-inner">
    <a className="zg-sector-detail-back" href="/#strength">← 대시보드로 돌아가기</a>
@@ -43,5 +44,5 @@ export default function SectorFearGreedPage(){
     <a className="underline" href="/asset-bubble/">미국 자산 버블 지표 →</a>
    </nav>
   </div>
- </main>;
+ </main></>;
 }
