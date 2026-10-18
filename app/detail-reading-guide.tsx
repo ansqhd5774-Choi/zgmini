@@ -1,5 +1,6 @@
+import {ArrowUpRight,BookOpen,ExternalLink} from "lucide-react";
 type GuideSection = { title: string; text: string };
-type GuideLink = { href: string; label: string };
+type GuideLink = { href: string; label: string; description?: string };
 
 const seoRelatedOverrides:Record<string,GuideLink[]|undefined>={
   "한국 지수의 출처와 관측일":[],
@@ -36,13 +37,51 @@ const seoRelatedOverrides:Record<string,GuideLink[]|undefined>={
   ],
 };
 
-export default function DetailReadingGuide({ title, sections, sources, related }: {
+export default function DetailReadingGuide({ title, sections, sources, related, variant="default", displayTitle, intro }: {
   title: string;
   sections: GuideSection[];
   sources: GuideLink[];
   related: GuideLink[];
+  variant?:"default"|"beginner";
+  displayTitle?:string;
+  intro?:string;
 }) {
   const relatedLinks=seoRelatedOverrides[title]?.slice(0,4)??related.slice(0,4);
+  if(variant==="beginner")return <section className="zg-beginner-reading" aria-label={title}>
+    <header className="zg-beginner-reading-head">
+      <span className="zg-beginner-reading-eyebrow"><BookOpen size={14} aria-hidden="true"/> 쉽게 알아보기</span>
+      <h2>{displayTitle??title}</h2>
+      {intro?<p>{intro}</p>:null}
+    </header>
+    <div className="zg-beginner-reading-grid">
+      {sections.map((section,index)=><article className="zg-beginner-reading-item" key={section.title}>
+        <span className="zg-beginner-reading-number" aria-hidden="true">{String(index+1).padStart(2,"0")}</span>
+        <h3>{section.title}</h3>
+        <p>{section.text}</p>
+      </article>)}
+    </div>
+    {sources.length>0?<div className="zg-beginner-reading-resources">
+      <h3>공식 자료 확인하기</h3>
+      <p>숫자와 발표 날짜는 자료를 발표하는 기관에서 직접 확인할 수 있어요.</p>
+      <ul className="zg-beginner-reading-links">
+        {sources.map(link=><li key={link.href}><a className="zg-beginner-reading-link" href={link.href} target="_blank" rel="noopener noreferrer">
+          <ExternalLink size={16} aria-hidden="true" className="zg-beginner-reading-link-icon"/>
+          <span className="zg-beginner-reading-link-body"><strong>{link.label}</strong><small>{link.description??"공식 홈페이지에서 확인하기"}</small></span>
+          <ArrowUpRight size={17} aria-hidden="true" className="zg-beginner-reading-arrow"/>
+        </a></li>)}
+      </ul>
+    </div>:null}
+    {relatedLinks.length>0?<nav className="zg-beginner-reading-resources" aria-label="함께 읽을 지표">
+      <h3>이어서 알아보기</h3>
+      <ul className="zg-beginner-reading-links">
+        {relatedLinks.map(link=><li key={link.href}><a className="zg-beginner-reading-link" href={link.href}>
+          <BookOpen size={16} aria-hidden="true" className="zg-beginner-reading-link-icon"/>
+          <span className="zg-beginner-reading-link-body"><strong>{link.label}</strong><small>{link.description??"쉽게 이어서 읽기"}</small></span>
+          <ArrowUpRight size={17} aria-hidden="true" className="zg-beginner-reading-arrow"/>
+        </a></li>)}
+      </ul>
+    </nav>:null}
+  </section>;
   return <section className="mt-12 space-y-6 text-sm leading-7 text-slate-300 sm:text-base" aria-label={title}>
     <h2 className="text-xl font-bold text-white">{title}</h2>
     {sections.map(section => <div key={section.title}>
