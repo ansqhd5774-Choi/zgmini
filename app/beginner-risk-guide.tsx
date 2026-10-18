@@ -56,7 +56,20 @@ const configs:Record<Topic,Config>={
   }
  },
  recession:{
-  endpoint:"/api/recession-detail",title:"경기 방어",importance:"경기침체는 기업 매출과 이익, 고용, 소비를 동시에 약화시킬 수 있습니다. 한 지표보다 여러 경제활동 지표가 함께 약해지는지를 보는 것이 중요합니다.",marketImpact:"경기 방어가 약해지면 경기민감주와 신용자산에 부담이 될 수 있습니다. 반대로 방어력이 유지되면 실적과 소비가 버틸 가능성이 커집니다.",highMeaning:"높을수록 경기 방어력이 양호한 방향입니다.",lowMeaning:"낮을수록 경기침체 위험 신호가 강한 방향입니다.",positiveHeading:"경기 방어에 기여한 요인",negativeHeading:"경기 부담 요인",stage:score=>safetyStage(score,"침체 주의","침체 위험"),factorNames:{nfp:"비농업고용",realGdp:"실질 GDP",industrialProduction:"산업생산",realPce:"실질 PCE",sahmGap:"Sahm Gap",retailSales:"실질 소매판매",disposableIncome:"실질 가처분소득",initialClaims:"신규 실업수당 4W",yieldCurve:"장단기 금리차",hyCreditStress:"HY 신용 스트레스",creditConditions:"신용여건"}
+  endpoint:"/api/recession-detail",title:"경기 방어",importance:"경기침체는 기업 매출과 이익, 고용, 소비를 동시에 약화시킬 수 있습니다. 한 지표보다 여러 경제활동 지표가 함께 약해지는지를 보는 것이 중요합니다.",marketImpact:"경기 방어가 약해지면 경기민감주와 신용자산에 부담이 될 수 있습니다. 반대로 방어력이 유지되면 실적과 소비가 버틸 가능성이 커집니다.",highMeaning:"높을수록 경기 방어력이 양호한 방향입니다.",lowMeaning:"낮을수록 경기침체 위험 신호가 강한 방향입니다.",positiveHeading:"경기 방어에 기여한 요인",negativeHeading:"경기 부담 요인",stage:score=>safetyStage(score,"침체 주의","침체 위험"),factorNames:{nfp:"비농업고용",realGdp:"실질 GDP",industrialProduction:"산업생산",realPce:"실질 PCE",sahmGap:"Sahm Gap",retailSales:"실질 소매판매",disposableIncome:"실질 가처분소득",initialClaims:"신규 실업수당 4W",yieldCurve:"장단기 금리차",hyCreditStress:"HY 신용 스트레스",creditConditions:"신용여건"},
+  factorDescriptions:{
+   nfp:"농업을 제외한 미국 일자리의 변화",
+   realGdp:"물가 영향을 뺀 미국 경제 생산량",
+   industrialProduction:"공장·광산·전력 생산 활동",
+   realPce:"물가 영향을 제외한 가계 소비지출",
+   sahmGap:"실업률 급등을 살펴보는 침체 경보",
+   retailSales:"물가를 제외한 소매상품 판매 변화",
+   disposableIncome:"세금·물가를 반영한 가계의 사용 가능 소득",
+   initialClaims:"신규 실업수당 신청의 최근 4주 평균",
+   yieldCurve:"장기와 단기 국채의 금리 차이",
+   hyCreditStress:"신용도가 낮은 회사채 시장의 불안",
+   creditConditions:"기업·가계의 자금조달 환경",
+  }
  },
  "liquidity-crisis":{
   endpoint:"/api/liquidity-crisis-detail",title:"유동성 방어",importance:"금융시장은 현금과 담보가 원활하게 돌 때 정상적으로 작동합니다. 단기자금시장이나 은행 준비금이 급격히 경색되면 자산가격 변동성이 커질 수 있습니다.",marketImpact:"유동성 경색은 주식·회사채 등 위험자산 전반에 빠르게 부담을 줄 수 있습니다. 자금시장이 안정되면 급격한 금융 스트레스 가능성이 낮아집니다.",highMeaning:"높을수록 자금시장과 유동성 환경이 안정적인 방향입니다.",lowMeaning:"낮을수록 유동성 경색 위험이 커지는 방향입니다.",positiveHeading:"유동성 안정에 기여한 요인",negativeHeading:"유동성 부담 요인",stage:score=>safetyStage(score,"유동성 주의","위기 위험"),factorNames:{sofrIorb:"SOFR−IORB 스프레드",obfrIorb:"OBFR−IORB 스프레드",repoGap:"DVP−Tri-Party Repo 격차",sofrIorbRv20:"SOFR−IORB 20일 변동성",bankEmergency:"은행 비상대출 비율",bankReserves:"은행 준비금",tga:"TGA 4주 변화",onRrp:"ON RRP 20영업일 변화",m2:"M2 YoY",bond2y:"미국 2년물 변동성",bond5y:"미국 5년물 변동성",bond10y:"미국 10년물 변동성",bond30y:"미국 30년물 변동성"}
