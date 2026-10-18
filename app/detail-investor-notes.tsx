@@ -67,9 +67,9 @@ export default function DetailInvestorNotes({topic}:{topic:Topic}) {
   return <>
     <WebPageJsonLd name={labels[topic]} description={`${guide.title}. 현재값·관측일·관련 지표를 함께 확인하세요.`} path={paths[topic]}/>
     <DetailReadingGuide title={guide.title}
-      variant={topic==="inflation"||topic==="recession"?"beginner":"default"}
-      displayTitle={topic==="inflation"?"물가 표에 나오는 말, 쉽게 알아보기":topic==="recession"?"경기침체 표에 나오는 말, 쉽게 알아보기":undefined}
-      intro={topic==="inflation"?"CPI·PCE부터 기간·판단 색깔까지 하나씩 알려드릴게요.":topic==="recession"?"고용·GDP·경기 신호를 이해하기 쉽게 풀어볼게요.":undefined}
+      variant={topic==="inflation"||topic==="recession"||topic==="liquidity-crisis"?"beginner":"default"}
+      displayTitle={topic==="inflation"?"물가 표에 나오는 말, 쉽게 알아보기":topic==="recession"?"경기침체 표에 나오는 말, 쉽게 알아보기":topic==="liquidity-crisis"?"유동성 위기 표, 쉽게 알아보기":undefined}
+      intro={topic==="inflation"?"CPI·PCE부터 기간·판단 색깔까지 하나씩 알려드릴게요.":topic==="recession"?"고용·GDP·경기 신호를 이해하기 쉽게 풀어볼게요.":topic==="liquidity-crisis"?"유동성 점수와 단기자금·은행 지표를 구분해 읽어보세요.":undefined}
       sections={[...guide.sections,
         ...((topic==="inflation")?[]:[{title:"날짜와 현재 제공 범위 확인",text:"관측일은 데이터가 설명하는 기간이며 화면 갱신일이나 공식 발표 시각과 다를 수 있습니다. 월별·분기별 자료의 월·분기 시작일 표기는 매일 갱신되는 시세가 아닙니다. ‘—’, ‘확인 필요’, ‘개발중’은 실제 값 0이 아니며, 개발중 항목은 현재 이용 가능한 관측값으로 해석하지 마세요."}]),
         ...(!["usa","korea","inflation","recession"].includes(topic)?[
