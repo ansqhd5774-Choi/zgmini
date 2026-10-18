@@ -2,6 +2,7 @@ import {scoreCmdiComponentsR1} from "../../lib/diagnostic-layer/r1-diagnostic-pi
 import {buildBondVolatilityR6} from "./liquidity-optimized-components.mjs";
 import {creditRiskDefense} from "../../lib/diagnostic-layer/model.mjs";
 import {enrichLiquidityDisplayRows,liquidityStoredScoreComparisons} from "./liquidity-stored-history.mjs";
+import {withVerifiedCurrentCreditPoint} from "./credit-current-score-anchor.mjs";
 
 const finite=(v:unknown):v is number=>typeof v==="number"&&Number.isFinite(v);
 const validDate=(v:unknown):v is string=>typeof v==="string"&&/^\d{4}-\d{2}-\d{2}$/.test(v);
@@ -92,17 +93,21 @@ export function buildProjection({inputs,snapshot,publicSnapshot,e1,nowIso}:any){
   [bond.legs?.y30??[],(row:any)=>row.rv20],
  ];
  const display=enrichLiquidityDisplayRows([...core,...supplementals],sources,asOf);
- const scoreComparisons=liquidityStoredScoreComparisons(trend,asOf,score);
+ const scoreMatch=score!==null&&recalculated?.status==="READY"&&finite(recalculated.score)&&Math.abs(score-recalculated.score)<1e-9;
+ // Append only the verified published current score as an actual as-of snapshot.
+ // Older stored observations, component weights and score calculation are unchanged.
+ const displayTrend=withVerifiedCurrentCreditPoint(trend,asOf,score,scoreMatch);
+ const scoreComparisons=liquidityStoredScoreComparisons(displayTrend,asOf,score);
 
  return {
   status:score===null?"PARTIAL":"READY",
   score,
   recalculatedScore:recalculated?.status==="READY"?recalculated.score:null,
-  scoreMatch:score!==null&&recalculated?.status==="READY"&&finite(recalculated.score)?Math.abs(score-recalculated.score)<1e-9:false,
+  scoreMatch,
   asOfDate:asOf,
   methodologyVersion:"CREDIT_RISK_DIAGNOSTIC_R1",
   historyMode:"CURRENT_VINTAGE_DERIVED_1Y",
   lookAheadSafe:false,
-  core:display.slice(0,4),supplementals:display.slice(4),trend,scoreComparisons,
+  core:display.slice(0,4),supplementals:display.slice(4),trend:displayTrend,scoreComparisons,
  };
 }
