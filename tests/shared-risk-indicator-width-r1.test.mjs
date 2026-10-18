@@ -26,7 +26,7 @@ test("recession table header leads directly into table without extra explanation
  for(const p of panels)assert.match(p,/<section className="inflation-indicator-section/);
 });
 test("formula and published-value connectors remain unchanged",()=>{
- assert.match(panels[0],/useStoredIndex<Payload>\('\/api\/inflation-detail'\)/);
+ assert.match(panels[0],/useStoredIndex<InflationPayload>\('\/api\/inflation-detail'\)/);
  assert.match(panels[1],/useStoredIndex<Payload>\('\/api\/recession-detail'\)/);
  assert.match(panels[2],/useStoredIndex<Payload>\('\/api\/liquidity-crisis-detail'\)/);
 });
