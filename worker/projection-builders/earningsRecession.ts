@@ -27,6 +27,20 @@ function checkedSourceObservation(x:any,asOfDate:unknown){
    previousValue:x.previousValue,previousPeriodEnd:x.previousPeriodEnd,
    sourceHistory1Y:rows.map((p:any)=>({date:p.date,value:p.value}))};
 }
+// Official source-specific announcements validated on the BEA/BLS release calendars.
+// Presentation metadata only, never used by the E1 scoring calculation or PC writer.
+// Automatic expiry at the announced release instant prevents silently stale "next" dates.
+const approvedSourceReleases:Record<string,{source:string;date:string;releaseAt:string;url:string}>={
+ S6:{source:"BEA NIPA A051RC",date:"2026-11-25",releaseAt:"2026-11-25T13:30:00Z",url:"https://www.bea.gov/news/schedule/"},
+ S11:{source:"BLS PRS85006111",date:"2026-11-05",releaseAt:"2026-11-05T13:30:00Z",url:"https://www.bls.gov/schedule/news_release/prod2.htm"},
+};
+function verifiedUpcomingSourceRelease(x:any,nowIso:unknown){
+ const matched=approvedSourceReleases[x?.id];
+ if(!matched||x?.source!==matched.source||x?.status!=="READY"||typeof nowIso!=="string")return null;
+ const now=Date.parse(nowIso);
+ if(!Number.isFinite(now)||now>=Date.parse(matched.releaseAt))return null;
+ return {nextReleaseDate:matched.date,nextReleaseSourceUrl:matched.url,releaseBasis:"OFFICIAL_SOURCE_SPECIFIC_SCHEDULE"};
+}
 const R4_IDS=["epsGrowth","margin","revenueGrowth","earningsGrowthBreadth"] as const;
 const R5_IDS=["S1","S2","S3","S4","S5","S6","S7","S8","S9","S10","S11","S12","S13"] as const;
 
@@ -46,6 +60,7 @@ export function buildProjection({inputs,snapshot,publicSnapshot,e1,nowIso}:any){
   observationDate:x?.asOfDate??e1?.financialPeriodEnd??e1?.asOfDate??null,
   source:x?.source??"SEC EDGAR XBRL Frames",
   ...(isR5?checkedSourceObservation(x,e1?.asOfDate)??{}:{}),
+  ...(isR5?verifiedUpcomingSourceRelease(x,nowIso)??{}:{}),
  })):[];
  const components=isR5
   ? Object.fromEntries(R5_IDS.map(id=>[id,{weight:finite(e1?.weights?.[id])?e1.weights[id]:null,coverage:finite(e1?.quality?.componentCoverage?.[id])?e1.quality.componentCoverage[id]:null}]))
