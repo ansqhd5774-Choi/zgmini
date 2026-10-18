@@ -4,12 +4,13 @@ import {INFLATION_PIT_SERIES} from './inflation-pit-backfill.mjs';
 import {loadPc1Series} from './projection-inflation-inputs.mjs';
 import {readEarningsE1R4StoredScore} from '../lib/market-score/sec-earnings-e1-r4-provider.mjs';
 import {defaultLoadProgress,defaultLoadRows} from './korea-funds.mjs';
+import {readRecessionClaimsHistory} from './projection-builders/recession-supplemental-history.mjs';
 
 const finiteScore=value=>typeof value==='number'&&Number.isFinite(value)&&value>=0&&value<=100;
 const EARNINGS_E1_R5_IDS=Object.freeze(['S1','S2','S3','S4','S5','S6','S7','S8','S9','S10','S11','S12','S13']);
 
 export const PROJECTION_INPUT_BATCHES=Object.freeze({
- recession:Object.freeze(['macro']),
+ recession:Object.freeze(['macro','credit','rates']),
  liquidityCrisis:Object.freeze(['macro','credit']),
  creditRisk:Object.freeze(['macro','credit']),
  earningsRecession:Object.freeze([]),
@@ -64,5 +65,9 @@ export async function loadProjectionSource(id,env,{now=Date.now(),onPhase,onMeta
  const keys=PROJECTION_INPUT_BATCHES[id];
  if(!keys)throw Error('INVALID_PROJECTION_ID');
  const inputStarted=performance.now(),inputs=await readStoredMarketInputsSelected(store,keys,now,{anchorToLatestBatch:id==='liquidityCrisis'||id==='creditRisk',projectionId:id,onMetadata});mark('source:inputs',inputStarted);
- return {inputs,snapshot,publicSnapshot:snapshot,nowIso};
+ let claimsHistory=[];
+ if(id==='recession'){
+  try{claimsHistory=await readRecessionClaimsHistory(env.DB_CORE,asOf);}catch{}
+ }
+ return {inputs,snapshot,publicSnapshot:snapshot,nowIso,claimsHistory};
 }

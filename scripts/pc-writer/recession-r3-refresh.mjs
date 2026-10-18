@@ -11,5 +11,6 @@ export function requiresRecessionR3DisplayRefresh(envelope){
  const components=payload?.components;
  // Check shape only; valid missing values (null/[]) must NOT trigger repeat compute.
  if(!Array.isArray(components)||components.length!==7)return true;
- return components.some(row=>!row||!own(row,"previousValue")||!own(row,"previousObservationDate")||!Array.isArray(row.trend));
+ if(components.some(row=>!row||!own(row,"previousValue")||!own(row,"previousObservationDate")||!Array.isArray(row.trend)))return true;
+ return !Array.isArray(payload.supplementals)||payload.supplementals.some(row=>!own(row,'historyStatus')||!Array.isArray(row.trend));
 }

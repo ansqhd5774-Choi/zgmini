@@ -7,7 +7,7 @@ const core7=Array.from({length:7},(_,i)=>({id:`core-${i}`,score:50,weight:i===0?
 const shell=payload=>({payload,projection:{status:'READY',sourceStoredAt:1792290000000,sourceVersion:'unchanged'}});
 const valid={status:'READY',methodologyVersion:'RECESSION_R13_CURRENT_VINTAGE',
  scoreComparisons:{week:null,month:null,threeMonth:null,sixMonth:null,year:null},
- trend:[],components:core7};
+ trend:[],components:core7,supplementals:[]};
 
 test('recession R3 refreshes old published READY R13 only once, even when input checkpoint is unchanged',()=>{
  const old=shell({status:'READY',methodologyVersion:'RECESSION_R13_CURRENT_VINTAGE',trend:[],components:core7.map(({previousValue,previousObservationDate,trend,...rest})=>rest)});

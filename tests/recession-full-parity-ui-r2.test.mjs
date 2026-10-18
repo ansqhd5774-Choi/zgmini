@@ -35,9 +35,11 @@ test("no source contract or missing value is fabricated while rendering parity i
  assert.match(panel,/const supplementalMeta:Record/);
  assert.match(panel,/const developmentCandidates=/);
  assert.match(panel,/return fmt\(row\?\.previousValue,unit\)/);
- assert.match(panel,/date:row\.nextReleaseDate\?dateLabel\(row\.nextReleaseDate\):"일정 미정"/);
+ assert.match(panel,/useStoredIndex<any>\('\/api\/release-calendar'\)/);
+ assert.match(panel,/recessionReleaseInfo\(id,calendar,today\)/);
+ assert.match(panel,/recessionReleaseInfo\(row.id,calendar,today\)/);
  assert.match(panel,/points=\{row\?\.trend\}/);
- assert.match(panel,/points=\{row\.trend\}/);
+ assert.match(panel,/<HistoryChart label=\{meta.label\} row=\{row\}\/>/);
  assert.doesNotMatch(panel,/recession-data-availability/);
  assert.match(panel,/「—」는 0이 아닙니다/); // The existing ⓘ tooltip keeps the missing-value explanation.
  assert.match(panel,/현재 개정 통계 · 경기침체 확률 아님/);

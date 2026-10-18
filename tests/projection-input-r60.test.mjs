@@ -33,20 +33,20 @@ test('all six builders produce exactly equal output for full and sliced fixtures
   }
  }
 });
-function fakeDb({slice=true,changed=false}={}){
+function fakeDb({slice=true,changed=false,oldShape=false}={}){
  const trace=[];
  return {trace,prepare(sql){return {bind(...args){
   trace.push({sql,args});
   return {async first(){
    if(sql.startsWith('SELECT stored_at'))return {stored_at:changed?now+1:now};
-   if(args[0].startsWith('projection-macro:'))return slice?{body:JSON.stringify({series:{PAYEMS:[{value:0}]}}),stored_at:now}:null;
+   if(args[0].startsWith('projection-macro:'))return slice?{body:JSON.stringify({series:{PAYEMS:[{value:0}],...(oldShape?{}:{NFCICREDIT:[]})}}),stored_at:now}:null;
    if(sql.includes('stored_at <'))return null;
    return {body:JSON.stringify({series:{PAYEMS:[{value:0}]}}),stored_at:now};
   }};
  }}}};
 }
 test('slice read never reads full macro body; absent/mismatched slice has one legacy read path',async()=>{
- for(const options of [{slice:true},{slice:false},{slice:true,changed:true}]){const db=fakeDb(options),metadata=[];await readStoredMarketInputsSelected(marketOperationalStore(db),['macro'],now,{projectionId:'recession',onMetadata:x=>metadata.push(x)});const fullReads=db.trace.filter(x=>x.sql.startsWith('SELECT body')&&x.args[0]==='macro:%');assert.equal(fullReads.length,options.slice&&!options.changed?0:2);assert.equal(metadata[0].sourcePath,options.slice&&!options.changed?'SLICE':'LEGACY_FULL_MACRO');assert(db.trace.every(x=>x.sql.startsWith('SELECT')));}
+ for(const options of [{slice:true},{slice:false},{slice:true,changed:true},{slice:true,oldShape:true}]){const db=fakeDb(options),metadata=[];await readStoredMarketInputsSelected(marketOperationalStore(db),['macro'],now,{projectionId:'recession',onMetadata:x=>metadata.push(x)});const fullReads=db.trace.filter(x=>x.sql.startsWith('SELECT body')&&x.args[0]==='macro:%');const usesSlice=options.slice&&!options.changed&&!options.oldShape;assert.equal(fullReads.length,usesSlice?0:2);assert.equal(metadata[0].sourcePath,usesSlice?'SLICE':'LEGACY_FULL_MACRO');assert(db.trace.every(x=>x.sql.startsWith('SELECT')));}
 });
 test('writer derives six slices from read-back and rejects changed authority',async()=>{
  const db=fakeDb(),writes=[];await writeProjectionMacroSlices({db,store:{writeInput:async(...args)=>writes.push(args)},storedAt:now});assert.equal(writes.length,6);assert(writes.every(([key,,at])=>key.startsWith('projection-macro:')&&at===now));

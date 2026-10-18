@@ -47,9 +47,11 @@ export function marketOperationalStore(db){
    const prefix=projectionMacroKey(id);
    const row=await db.prepare('SELECT body,stored_at FROM market_input_batches_v1 WHERE batch_key LIKE ? ORDER BY stored_at DESC LIMIT 1').bind(prefix+':%').first();
    const latest=await db.prepare('SELECT stored_at FROM market_input_batches_v1 WHERE batch_key LIKE ? ORDER BY stored_at DESC LIMIT 1').bind('macro:%').first();
-   if(row&&row.stored_at===latest?.stored_at){
+   const decoded=row?decodeInput(row.body):null;
+   const completeSlice=id!=='recession'||Object.hasOwn(decoded?.series??{},'NFCICREDIT');
+   if(row&&row.stored_at===latest?.stored_at&&completeSlice){
     onMetadata?.({sourcePath:'SLICE',batch:prefix,encodedBytes:Buffer.byteLength(row.body)});
-    return {body:decodeInput(row.body),storedAt:row.stored_at};
+    return {body:decoded,storedAt:row.stored_at};
    }
    onMetadata?.({sourcePath:'LEGACY_FULL_MACRO',batch:'macro',reason:row?'SLICE_SOURCE_CHANGED':'SLICE_MISSING'});
    return this.readInput('macro');
