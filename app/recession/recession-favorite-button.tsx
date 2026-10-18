@@ -30,7 +30,12 @@ function reorderFavoriteContainer(container:HTMLElement,favorites:string[]){
   const favoriteIndex=id?favorites.indexOf(id):-1;
   return favoriteIndex>=0?favoriteIndex:Number.MAX_SAFE_INTEGER;
  };
+ const isDevelopment=(node:HTMLElement)=>node.dataset.development==="true"||node.classList.contains("is-development");
  const sorted=[...nodes].sort((left,right)=>{
+  // Keep unavailable development candidates below all published indicators,
+  // even when a development candidate is starred or had a cached base order.
+  const leftDevelopment=isDevelopment(left),rightDevelopment=isDevelopment(right);
+  if(leftDevelopment!==rightDevelopment)return Number(leftDevelopment)-Number(rightDevelopment);
   const leftRank=rank(left),rightRank=rank(right);
   if(leftRank!==rightRank)return leftRank-rightRank;
   return Number(left.dataset.favoriteBaseOrder??0)-Number(right.dataset.favoriteBaseOrder??0);
