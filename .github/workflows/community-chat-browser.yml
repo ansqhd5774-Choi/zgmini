@@ -47,6 +47,13 @@ jobs:
           exit 1
       - name: Validate chat UI at 390, 768, 1440 and 1920 px with mocked backend
         run: node tests/community-chat-browser-r1.mjs
+      - name: Upload browser UI evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: community-chat-browser-r1
+          path: artifacts/community-chat-browser/
+          if-no-files-found: warn
       - name: Show local dev errors on failure
         if: failure()
         run: tail -n 120 /tmp/zgmini-chat-vite.log || true
