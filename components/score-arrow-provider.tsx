@@ -23,6 +23,7 @@ export function useScoreArrowDelta(){
 }
 export function StoredScoreDirection({id,score}:{id:string;score:number|null}){
  const {entries,now}=useContext(ArrowContext),delta=storedArrowDelta(entries[id],score,now);
- if(delta===null)return null;
+ if(score===null||!Number.isFinite(score))return null;
+ if(delta===null||delta===0)return <span className="zg-diagnostic-arrow" data-direction="flat" aria-label="표시할 상승·하락 변동 없음" title="최근 24시간 내 표시할 상승·하락 변동 없음">−</span>;
  return <span className="zg-diagnostic-arrow" data-direction={delta>0?'up':'down'} aria-label={`직전 공개 점수 대비 ${delta>0?'+':''}${delta.toFixed(1)}점`} title={`직전 공개 점수 대비 ${delta>0?'+':''}${delta.toFixed(1)}점 · 변동 후 24시간 표시`}>{delta>0?'▲':'▼'}</span>;
 }
