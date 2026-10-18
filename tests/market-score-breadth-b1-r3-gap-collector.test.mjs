@@ -8,7 +8,7 @@ const primaryPairs=symbols.map(ticker=>({
   source:"MarketParquet Free Sample",feed:"stock_daily",
   provenance:{provider:"MARKETPARQUET_FREE_SAMPLE"}
 }));
-async function run({trend,trendFailure=false,hasTrend=true,count=500}={}){
+async function run({trend,trendFailure=false,hasTrend=true,count=500,completedAt="2026-10-16T12:00:00Z"}={}){
   let runRecord=null,trendCalls=0;
   const store={
     initialize:async()=>{},
@@ -23,7 +23,7 @@ async function run({trend,trendFailure=false,hasTrend=true,count=500}={}){
   };
   const result=await collectBreadthB1R3ToStore({
     store,asOfDate:"2026-10-16",maxAttemptsPerCall:1,
-    now:()=>new Date("2026-10-16T12:00:00Z"),
+    now:()=>new Date(completedAt),
     universeFetcher:async()=>({symbols,sourceUrl:"sp500"}),
     recoveryFetcher:async()=>({tradeDate:"2026-10-15",previousDate:"2026-10-14",pairs:primaryPairs,missing:[],coverage:1,provider:"MARKETPARQUET_FREE_SAMPLE"}),
     catalogueFetcher:async()=>{throw Error("FALLBACK_FORBIDDEN")},
@@ -37,6 +37,7 @@ test("successful collection retains status and writes missing gap into run detai
   assert.equal(x.result.providerRequests,3);
   assert.equal(x.trendCalls,1);
   assert.equal(x.runRecord.status,"SUCCESS");
+  assert.equal(x.runRecord.detail.freshnessAudit.status,"LATEST_COMPLETED_SESSION");
   assert.deepEqual(x.runRecord.detail.gapAudit.missingDates,["2026-10-14"]);
   assert.equal(x.runRecord.detail.gapAudit.missingCount,1);
 });
@@ -57,4 +58,15 @@ test("partial batch does not perform costly gap query and retains backlog",async
   assert.equal(x.result.status,"PARTIAL_BATCH");
   assert.equal(x.trendCalls,0);
   assert.deepEqual(x.runRecord.detail.gapAudit,{status:"DEFERRED_INCOMPLETE_COVERAGE"});
+});
+
+test("R88 delayed provider date is reported while collector remains SUCCESS",async()=>{
+  const x=await run({completedAt:"2026-10-17T00:10:06.485Z"});
+  assert.equal(x.result.status,"SUCCESS");
+  assert.equal(x.runRecord.status,"SUCCESS");
+  assert.deepEqual(x.runRecord.detail.freshnessAudit,{
+    status:"SOURCE_SESSION_BEHIND",selectedSession:"2026-10-15",
+    expectedSession:"2026-10-16",lagCompletedSessions:1,
+  });
+  assert.equal(x.result.providerRequests,3);
 });
