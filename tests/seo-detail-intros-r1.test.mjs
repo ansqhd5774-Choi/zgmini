@@ -35,8 +35,9 @@ test('R2 detail pages expose search-intent intro copy without changing data logi
 
 test('R2 detail page lastmod stays truthful per content update date',()=>{
   const sitemap=read('public/sitemap.xml');
-  for(const path of ['/credit-risk/','/liquidity-crisis/','/debt-risk/','/inflation/','/earnings-recession/','/asset-bubble/','/supply-shock/']){
+  for(const path of ['/credit-risk/','/liquidity-crisis/','/debt-risk/','/earnings-recession/','/asset-bubble/','/supply-shock/']){
     assert.ok(sitemap.includes(`<loc>https://zgmini.kr${path}</loc><lastmod>2026-10-16</lastmod>`),path);
   }
+  assert.ok(sitemap.includes('<loc>https://zgmini.kr/inflation/</loc><lastmod>2026-10-18</lastmod>'),'inflation');
   assert.ok(sitemap.includes('<loc>https://zgmini.kr/recession/</loc><lastmod>2026-10-17</lastmod>'),'recession');
 });
