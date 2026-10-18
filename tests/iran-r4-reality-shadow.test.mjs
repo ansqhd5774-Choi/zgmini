@@ -86,11 +86,21 @@ test('a single ongoing front cannot be hidden behind other fronts marking a peac
 });
 test('official end in all three fronts is required for 100',()=>{
  const s=snapshot();for(const id of IRAN_R4_FRONT_IDS)verifiedTruce(s,id,40,{ended:true});
- for(const route of Object.values(s.maritime.routes)){route.incidentCoverage.recentSeverity=0;route.incidentCoverage.priorSeverity=0;}
+ for(const route of Object.values(s.maritime.routes)){route.incidentCoverage.recentSeverity=0;route.incidentCoverage.priorSeverity=0;route.restriction.state='NORMAL_CONFIRMED';route.restriction.restrictionsLiftedVerified=true;route.restriction.normalOperationVerified=true;}
  const good=calculateIranR4RealityShadow(s,now);
  assert.equal(good.score,100);assert.equal(good.phase,'ENDED');
  const f=s.fronts.YEMEN_HOUTHI;f.endedVerified=false;
  assert.equal(calculateIranR4RealityShadow(s,now).status,'SHADOW_PENDING');
+});
+test('end 100 is blocked when there is no new shipping attack but verified restrictions remain',()=>{
+ const s=snapshot();for(const id of IRAN_R4_FRONT_IDS)verifiedTruce(s,id,40,{ended:true});
+ for(const route of Object.values(s.maritime.routes)){
+  route.incidentCoverage.recentSeverity=0;route.incidentCoverage.priorSeverity=0;
+ }
+ const r=calculateIranR4RealityShadow(s,now);
+ assert.equal(r.status,'SHADOW_PENDING');
+ assert.equal(r.reason,'OFFICIAL_END_MARITIME_REOPENING_NOT_VERIFIED');
+ assert.equal(r.score,null);
 });
 test('all fronts formally ended cannot produce 100 while verified shipping attacks continue',()=>{
  const s=snapshot();for(const id of IRAN_R4_FRONT_IDS)verifiedTruce(s,id,40,{ended:true});
