@@ -71,14 +71,14 @@ R3의 각 영역 50점 임시 시작점과 고정 기사 가감점은 신규 R4�
 
 ## 5. 실제 사건 기반 검증 후보 (원문 재확인 후 로컬 검증 원장 등록)
 
-| 사건 날짜 | 근거 | 확인 가능한 사실 | 반드시 피할 오판 |
+| 보도·발표일 | 근거 | 확인 가능한 사실 | 반드시 피할 오판 |
 | --- | --- | --- | --- |
 | 2026-10-09 | UN 특사, https://www.unmissions.org/en/dppa/press-releases/special-envoy-for-yemens-remarks-to-the-security-council-as-delivered | 예멘 전면전으로 복귀, 여러 전선 교전 확대 공식 발표 | 이 발표 당시 예멘 전선을 80점 종전 단계로 처리 금지 |
 | 2026-10-10/11 | UN OSESGY, https://osesgy.unmissions.org/en/news | 리야드 공항 후티 공격·민간인 피해에 대한 공식 반응 | 단순 경고로 분류 금지, 다른 지역 공격과 합산/중복 확인 |
 | 2026-10-11 | Reuters, https://www.reuters.com/world/middle-east/iran-says-us-response-its-proposal-reopen-hormuz-was-insufficient-2026-10-11/ | 미국 응답 불충분이라는 이란 측 발표·이견 지속 | 협상 중이라는 이유로 휴전 이행점수 부여 금지 |
 | 2026-10-14 | Reuters, https://www.reuters.com/world/middle-east/iran-shifting-tactics-step-up-attacks-shipping-before-us-vote-officials-say-2026-10-14/ | 선박 공격 방식·강도 확대 보도 | 모든 선박 통행 중단으로 확대 추정하거나 AIS 데이터를 요구하지 말 것 |
 | 2026-10-17 | Reuters, https://www.reuters.com/world/middle-east/egypts-sisi-seeks-parliaments-backing-help-defend-saudi-arabia-if-asked-2026-10-17/ | 이집트의 조건부 사우디 방어 지원 의사 | 실제 참전으로 분류 금지 |
-| 2026-10-18 | AP, https://apnews.com/article/27173d5eaf4e27e5d5d41d0e6a98768b | 사우디 시설에 대한 지속적인 후티 공격의 영향 보도 | 새 독립 사건인지 과거 사건 재보도인지 판정 없이 중복 가감 금지 |
+| 2026-10-17 | AP, https://apnews.com/article/27173d5eaf4e27e5d5d41d0e6a98768b | 사우디 시설에 대한 지속적인 후티 공격의 영향 보도 | 새 독립 사건인지 과거 사건 재보도인지 판정 없이 중복 가감 금지 |
 
 **중요:** 위 표는 사건 리플레이용 *외부 근거 링크*이며 PC 로컬 원장의 최신 `verified` 계약이 아니다. 10월 9일 UN 발표만으로 10월 18일 점수를 최신 검증했다고 주장할 수 없다. 현재 실제 점수는 **미계산**이다.
 
@@ -108,6 +108,13 @@ R3의 각 영역 50점 임시 시작점과 고정 기사 가감점은 신규 R4�
 - `tests/iran-r4-observed-anchors.test.mjs`, `tests/iran-r4-reality-crosscheck.test.mjs`: 실제 공개 기사 **메타정보/시각**에 근거한 판정·가상 내부 입력의 교차 검증. 기사 원문/원시 공급자 DB는 GitHub 저장 금지.
 
 **판정:** 종전 기대 50~80점과 10월 17일 예멘 전황은 양립하기 어렵다. 그러나 독립 기사 한두 건으로 정확한 18점을 산출하거나 실제 전체 28일 관측 완전성을 증명할 수 없다. 기존 18점 추정치에 맞춰 감쇠계수·구간·가중치를 튜닝하지 않는다. `R4_REALITY_SCORE=UNCOMPUTED` 유지.
+
+### PC 실제 데이터 진단 준비
+
+- `scripts/iran-progress/reality-audit-r4.mjs`: PC SQLite **readOnly** 조회, R3 뉴스분류 50건·4건 수락 실측, Ollama 결정/미처리 건수, 검증 사건 최신 revision, `YEMEN_HOUTHI` coverage 누락 유무 확인. 원문·키·DB 전체내용 출력 금지.
+- `scripts/iran-progress/r4-readonly-audit.cmd`: E: 승인 경로의 DB와 Node를 확인하고 환경변수로 지정하여 **읽기만 실행**, 집계 로그를 `%TEMP%\\ZGMINI_IRAN_R4_READONLY_AUDIT.txt` 하나로 덮어쓴다. PowerShell/WSL/RDC 사용 없음. **아직 실제 사용자 PC에서 실행하지 않았음**.
+- 기존 R1.3 `LINKED` 사건 개수는 후티 전선 `YEMEN_HOUTHI` 전체 관측 검증으로 간주하지 않는다.
+- 이 도구는 PC 로컬에서 해당 PR 소스를 확보했을 때에만 실행 가능하며 운영 승인 SHA 변경이나 등록 작업 갱신을 수반하지 않는다.
 
 ## 8. 다음 Gate
 
