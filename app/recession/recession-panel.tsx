@@ -130,66 +130,81 @@ export default function RecessionPanel(){
 
   <section className="inflation-indicator-section recession-r2-indicators" aria-labelledby="recession-indicator-title">
    <header><div><p className="cnn-eyebrow">RECESSION INDICATORS</p><h2 id="recession-indicator-title">미국 경기침체 분석 지표</h2></div><p>실업률 기반 Sahm Rule, GDP, 고용, 생산, 소비와 장단기 금리차·신용여건을 함께 보고 <b>긍정 / 중립 / 부정</b>으로 단순화했습니다.</p></header>
+   <p className="recession-data-availability">이전 값·1년 추이·발표 예정일은 저장된 자료가 있을 때만 표시합니다. ‘—’는 0이 아니며, 보조지표와 개발 후보는 경기 방어점수 구성에서 구분합니다.</p>
    <div className="inflation-table-wrap recession-r2-table-wrap"><table className="inflation-indicator-table recession-indicator-table-r2">
-    <thead><tr><th>지표</th><th>내용</th><th>기준</th><th>현재</th><th>판단</th><th><span className="sr-only">도움말</span>ⓘ</th></tr></thead>
+    <thead><tr><th className="recession-r2-favorite-head"><span className="sr-only">즐겨찾기</span><RecessionFavoriteHeaderIcon/></th><th>지표</th><th>내용</th><th>기준</th><th>이전</th><th>현재</th><th>발표</th><th>판단</th><th>미니차트(1Y)</th><th><span className="sr-only">도움말</span>ⓘ</th></tr></thead>
     <tbody>
-     {Object.entries(componentMeta).map(([id,meta])=>{const row=components.get(id),j=judgement(row?.score);return <tr key={id} data-judgement={j.tone}>
-      <th scope="row"><strong>{meta.label}</strong><small>핵심지표 · 저장 데이터</small></th>
+     {Object.entries(componentMeta).map(([id,meta])=>{const row=components.get(id),j=judgement(row?.score),release=releaseLabel(row??{},meta.cadence);return <tr key={id} data-judgement={j.tone}>
+      <td className="recession-r2-favorite-cell"><RecessionFavoriteButton id={id} label={meta.label}/></td>
+      <th scope="row"><strong>{meta.label}</strong><small>핵심지표 · 방어점수 구성</small></th>
       <td>{meta.content}</td><td className="recession-r2-criterion">{meta.criterion}</td>
+      <td className="recession-r2-value"><strong>{previousLabel(row,meta.unit)}</strong><small>{dateLabel(row?.previousObservationDate)}</small></td>
       <td className="recession-r2-value"><strong>{fmt(row?.value,meta.unit)}</strong><small>내부점수 {scoreLabel(row?.score)} · {dateLabel(row?.observationDate)}</small></td>
-      <td><span className="inflation-judgement">{j.label}</span></td><td><HelpTip label={meta.label} text={meta.help}/></td>
+      <td className="recession-r2-release"><strong>{release.cadence}</strong><small>{release.date}</small></td>
+      <td><span className="inflation-judgement">{j.label}</span></td>
+      <td className="recession-r2-spark-cell"><InflationMiniChart label={meta.label} points={row?.trend}/></td>
+      <td><HelpTip label={meta.label} text={meta.help}/></td>
      </tr>})}
-     {supplementals.map(row=>{const meta=supplementalMeta[row.id];if(!meta)return null;const j=judgement(row.score);return <tr key={row.id} data-judgement={j.tone}>
-      <th scope="row"><strong>{meta.label}</strong><small>보조지표 · {row.source??"저장 데이터"}</small></th>
+     {supplementals.map(row=>{const meta=supplementalMeta[row.id];if(!meta)return null;const j=judgement(row.score),release=releaseLabel(row,meta.cadence);return <tr key={row.id} data-judgement={j.tone}>
+      <td className="recession-r2-favorite-cell"><RecessionFavoriteButton id={row.id} label={meta.label}/></td>
+      <th scope="row"><strong>{meta.label}</strong><small>보조지표 · 교차 확인</small></th>
       <td>{meta.content}</td><td className="recession-r2-criterion">{meta.criterion}</td>
+      <td className="recession-r2-value"><strong>{previousLabel(row,row.unit??"")}</strong><small>{dateLabel(row.previousObservationDate)}</small></td>
       <td className="recession-r2-value"><strong>{row.displayValue??fmt(row.value,row.unit??"")}</strong><small>내부점수 {scoreLabel(row.score)} · {dateLabel(row.observationDate)}</small></td>
-      <td><span className="inflation-judgement">{j.label}</span></td><td><HelpTip label={meta.label} text={meta.help}/></td>
+      <td className="recession-r2-release"><strong>{release.cadence}</strong><small>{release.date}</small></td>
+      <td><span className="inflation-judgement">{j.label}</span></td>
+      <td className="recession-r2-spark-cell"><InflationMiniChart label={meta.label} points={row.trend}/></td>
+      <td><HelpTip label={meta.label} text={meta.help}/></td>
      </tr>})}
      {developmentCandidates.map(item=><tr key={item.label} data-development="true">
-      <th scope="row"><strong>{item.label}</strong><small>개발 후보</small></th><td>{item.content}</td><td className="recession-r2-criterion">{item.criterion}</td><td className="recession-r2-value"><strong>—</strong><small>데이터 연결 전</small></td>
-      <td><span className="inflation-judgement is-development">개발중</span></td><td><HelpTip label={item.label} text={`${item.help} 현재 ZGmini 데이터 연결 개발 중입니다.`}/></td>
+      <td className="recession-r2-favorite-cell"><RecessionFavoriteButton id={`development:${item.label}`} label={item.label}/></td>
+      <th scope="row"><strong>{item.label}</strong><small>개발 후보 · 점수 미반영</small></th><td>{item.content}</td><td>{item.criterion}</td>
+      <td>—</td><td>—</td><td>—</td><td><span className="inflation-judgement is-development">개발중</span></td>
+      <td className="recession-r2-spark-cell">—</td><td><HelpTip label={item.label} text={`${item.help} 데이터 연결 전입니다. 현재 경기침체 점수에 포함하지 않습니다.`}/></td>
      </tr>)}
     </tbody>
    </table></div>
 
    <div className="recession-r2-mobile-list">
-    {Object.entries(componentMeta).map(([id,meta])=>{const row=components.get(id),j=judgement(row?.score);return <article className="recession-r2-mobile-card" key={id} data-judgement={j.tone}>
+    {Object.entries(componentMeta).map(([id,meta])=>{const row=components.get(id),j=judgement(row?.score),release=releaseLabel(row??{},meta.cadence);return <article className="recession-r2-mobile-card" key={id} data-judgement={j.tone}>
      <div className="recession-r2-mobile-head">
-      <div><strong>{meta.label}</strong><small>핵심지표 · 저장 데이터</small></div>
+      <div className="recession-r2-mobile-title"><RecessionFavoriteButton id={id} label={meta.label}/><div><strong>{meta.label}</strong><small>핵심지표 · 방어점수 구성</small></div></div>
       <div className="recession-r2-mobile-actions"><span className="inflation-judgement">{j.label}</span><HelpTip label={meta.label} text={meta.help}/></div>
      </div>
      <p className="recession-r2-mobile-content">{meta.content}</p>
      <p className="recession-r2-mobile-criterion"><span>기준</span>{meta.criterion}</p>
+     <div className="recession-r2-mobile-spark"><span>미니차트(1Y)</span><InflationMiniChart label={meta.label} points={row?.trend}/></div>
      <div className="recession-r2-mobile-metrics">
-      <div><span>현재</span><strong>{fmt(row?.value,meta.unit)}</strong><small>{dateLabel(row?.observationDate)}</small></div>
-      <div><span>내부점수</span><strong>{scoreLabel(row?.score)}</strong><small>0~100</small></div>
-      <div><span>구분</span><strong>핵심지표</strong><small>방어점수 구성</small></div>
+      <div><span>이전</span><strong>{previousLabel(row,meta.unit)}</strong><small>{dateLabel(row?.previousObservationDate)}</small></div>
+      <div><span>현재</span><strong>{fmt(row?.value,meta.unit)}</strong><small>{dateLabel(row?.observationDate)} · 점수 {scoreLabel(row?.score)}</small></div>
+      <div><span>발표</span><strong>{release.cadence}</strong><small>{release.date}</small></div>
      </div>
     </article>})}
-    {supplementals.map(row=>{const meta=supplementalMeta[row.id];if(!meta)return null;const j=judgement(row.score);return <article className="recession-r2-mobile-card" key={row.id} data-judgement={j.tone}>
+    {supplementals.map(row=>{const meta=supplementalMeta[row.id];if(!meta)return null;const j=judgement(row.score),release=releaseLabel(row,meta.cadence);return <article className="recession-r2-mobile-card" key={row.id} data-judgement={j.tone}>
      <div className="recession-r2-mobile-head">
-      <div><strong>{meta.label}</strong><small>보조지표 · {row.source??"저장 데이터"}</small></div>
+      <div className="recession-r2-mobile-title"><RecessionFavoriteButton id={row.id} label={meta.label}/><div><strong>{meta.label}</strong><small>보조지표 · 교차 확인</small></div></div>
       <div className="recession-r2-mobile-actions"><span className="inflation-judgement">{j.label}</span><HelpTip label={meta.label} text={meta.help}/></div>
      </div>
      <p className="recession-r2-mobile-content">{meta.content}</p>
      <p className="recession-r2-mobile-criterion"><span>기준</span>{meta.criterion}</p>
+     <div className="recession-r2-mobile-spark"><span>미니차트(1Y)</span><InflationMiniChart label={meta.label} points={row.trend}/></div>
      <div className="recession-r2-mobile-metrics">
-      <div><span>현재</span><strong>{row.displayValue??fmt(row.value,row.unit??"")}</strong><small>{dateLabel(row.observationDate)}</small></div>
-      <div><span>내부점수</span><strong>{scoreLabel(row.score)}</strong><small>0~100</small></div>
-      <div><span>구분</span><strong>보조지표</strong><small>교차 확인</small></div>
+      <div><span>이전</span><strong>{previousLabel(row,row.unit??"")}</strong><small>{dateLabel(row.previousObservationDate)}</small></div>
+      <div><span>현재</span><strong>{row.displayValue??fmt(row.value,row.unit??"")}</strong><small>{dateLabel(row.observationDate)} · 점수 {scoreLabel(row.score)}</small></div>
+      <div><span>발표</span><strong>{release.cadence}</strong><small>{release.date}</small></div>
      </div>
     </article>})}
     {developmentCandidates.map(item=><article className="recession-r2-mobile-card is-development" key={item.label}>
      <div className="recession-r2-mobile-head">
-      <div><strong>{item.label}</strong><small>개발 후보</small></div>
-      <div className="recession-r2-mobile-actions"><span className="inflation-judgement is-development">개발중</span><HelpTip label={item.label} text={`${item.help} 현재 ZGmini 데이터 연결 개발 중입니다.`}/></div>
+      <div className="recession-r2-mobile-title"><RecessionFavoriteButton id={`development:${item.label}`} label={item.label}/><div><strong>{item.label}</strong><small>개발 후보 · 점수 미반영</small></div></div>
+      <div className="recession-r2-mobile-actions"><span className="inflation-judgement is-development">개발중</span><HelpTip label={item.label} text={`${item.help} 데이터 연결 전입니다. 현재 경기침체 점수에 포함하지 않습니다.`}/></div>
      </div>
      <p className="recession-r2-mobile-content">{item.content}</p>
      <p className="recession-r2-mobile-criterion"><span>기준</span>{item.criterion}</p>
      <div className="recession-r2-mobile-metrics">
-      <div><span>현재</span><strong>—</strong><small>데이터 연결 전</small></div>
-      <div><span>내부점수</span><strong>—</strong><small>미산출</small></div>
-      <div><span>구분</span><strong>개발중</strong><small>후보지표</small></div>
+      <div><span>이전</span><strong>—</strong><small>미산출</small></div>
+      <div><span>현재</span><strong>—</strong><small>미산출</small></div>
+      <div><span>발표</span><strong>—</strong><small>데이터 연결 전</small></div>
      </div>
     </article>)}
    </div>
