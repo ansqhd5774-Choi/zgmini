@@ -62,7 +62,11 @@ test("R14 four beginner questions have real emphasis spans and official source l
 test("R14 cannot treat composite reconstruction as individual observation history or release metadata",()=>{
  assert.match(projection,/observationDate:x\?\.asOfDate/);
  assert.match(projection,/trend:Array\.isArray\(e1\?\.trend\)/);
- assert.doesNotMatch(projection,/previousValue:|nextReleaseDate:|trend1Y:/);
+ assert.match(projection,/checkedSourceObservation/);
+ assert.match(projection,/x\?\.id!=="S6"&&x\?\.id!=="S11"/);
+ assert.match(projection,/verifiedUpcomingSourceRelease/);
+ assert.match(projection,/OFFICIAL_SOURCE_SPECIFIC_SCHEDULE/);
+ assert.doesNotMatch(projection,/trend1Y:/);
  assert.doesNotMatch(panel,/new Date\(\).*nextReleaseDate|fakeMiniTrend|synthesizedPrior/);
  assert.match(panel,/사후 재구성 추이/);
 });

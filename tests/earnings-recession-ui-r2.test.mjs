@@ -81,7 +81,8 @@ test("earnings parity: absent source-derived per-indicator prior, next release o
  assert.match(projection,/observationDate:x\?\.asOfDate/);
  assert.match(projection,/trend:/);
  assert.doesNotMatch(panel,/new Date\(\).*nextReleaseDate|fakeMiniTrend|synthesizedPrior/);
- assert.doesNotMatch(panel,/InflationMiniChart/);
+ assert.match(panel,/InflationMiniChart/);
+ assert.match(panel,/r\?\.historyKind==="CURRENT_VINTAGE_SOURCE_PERIOD_END"/);
  assert.match(panel,/dateLabel\(r\?\.observationDate\)/);
 });
 
