@@ -5,6 +5,7 @@ import type {Metadata} from "next";
 import RecessionPanel from "./recession-panel";
 import "./recession-mobile-judgement.css";
 import "./recession-mobile-header.css";
+import "../inflation/inflation-beginner-reading-r1.css";
 import DetailReadingGuide from "../detail-reading-guide";
 import BeginnerRiskGuide from "../beginner-risk-guide";
 import RiskDetailBeginnerLayout from "../risk-detail-beginner-layout";
@@ -26,10 +27,14 @@ export default function RecessionPage(){
    <SearchIntentIntro topic="recession"/>
    <RiskDetailBeginnerLayout><RecessionPanel/><BeginnerRiskGuide topic="recession"/></RiskDetailBeginnerLayout>
    <DetailReadingGuide title="미국 경기침체 지표와 방어점수를 읽는 방법"
+    variant="beginner"
+    displayTitle="미국 경기침체 점수, 처음이라면 이렇게 보세요"
+    intro="점수는 경기침체 확률이 아니에요. 경제가 얼마나 버티고 있는지 네 가지 질문으로 알아보세요."
     sections={[
-     {title:"방어점수는 경기침체 확률이 아닙니다",text:"ZGmini의 0~100 점수는 고용·실질 GDP·산업생산·소비·소득 등 여러 지표를 종합한 경기 방어점수입니다. 예를 들어 54점이 경기침체 발생 확률 54%라는 뜻은 아닙니다. 점수가 높을수록 경기 방어가 양호한 방향이며, 각 지표의 현재값과 판단을 함께 확인하세요."},
-     {title:"실질 GDP 2개 분기만으로 침체를 확정하지 않습니다",text:"미국 경기침체 판단은 실질 GDP뿐 아니라 비농업고용, 실업률, 실질소득, 소비, 산업생산처럼 경제 전반의 약화를 함께 봐야 합니다. Sahm Rule과 장단기 금리차도 유용한 선행·확인 지표지만 하나의 신호만으로 침체를 확정하지 마세요."},
-     {title:"현재 개정 자료와 보조지표를 구분하세요",text:"화면의 Current Vintage 이력은 현재 확보한 개정 통계로 과거 구간을 계산한 자료입니다. 당시 발표본만 사용한 실시간 백테스트와는 다를 수 있습니다. 표의 보조지표는 종합점수 구성요소와 구분해 읽고, 월별·분기별 자료의 관측일과 데이터 기준일을 함께 확인하세요."},
+     {title:"45점이면 경기침체 확률이 45%인가요?",text:"아니요. 경기 방어점수는 고용·생산·소비 등 경제활동이 얼마나 잘 버티고 있는지 나타내는 평가점수예요. 0~100점 중 높은 쪽이 경기 방어에 유리하고, 실제로 침체가 일어날 확률을 뜻하지는 않아요.",highlight:"높은 쪽이 경기 방어에 유리",bold:"경기 방어점수"},
+     {title:"경기침체는 어떻게 판단하나요?",text:"미국 경기침체는 GDP만으로 확정하지 않아요. 미국의 경기순환을 판정하는 NBER은 일자리·소득·생산·소비 등 여러 경제활동이 넓은 범위에서 상당 기간 줄었는지를 함께 살펴봐요. 한 지표만 나빠졌다고 침체가 확정되는 건 아니에요.",highlight:"여러 경제활동이 넓은 범위에서 상당 기간 줄었는지",bold:"일자리·소득·생산·소비"},
+     {title:"점수가 내려가면 주식은 떨어지나요?",text:"점수가 내려가면 경기 방어 신호가 약해진 거예요. 고용과 소비가 함께 나빠지면 기업의 매출·이익에 부담을 줄 수 있지만, 점수 하나만으로 주가 방향이나 매매 시점을 확정할 수는 없어요. 여러 지표의 움직임을 함께 보세요.",highlight:"여러 지표의 움직임을 함께 보세요",bold:"경기 방어 신호가 약해진"},
+     {title:"과거 차트와 오늘 발표한 통계가 왜 다를까요?",text:"이 페이지의 경기침체 R13은 현재 확보한 개정 통계(Current Vintage)로 과거도 다시 계산해요. 당시 처음 발표됐던 값만으로 만든 실시간 백테스트가 아니므로, 예전 날짜에 표시된 점수를 그날 이미 알 수 있었던 점수처럼 해석하면 안 돼요.",highlight:"현재 확보한 개정 통계(Current Vintage)",bold:"실시간 백테스트가 아니므로"},
     ]}
     sources={[{href:"https://www.nber.org/research/business-cycle-dating",label:"NBER 미국 경기순환·경기침체 판정"},{href:"https://fred.stlouisfed.org/release?rid=456",label:"FRED Sahm Rule Recession Indicator"},{href:"https://www.bls.gov/cps/",label:"미국 노동통계국 고용·실업 통계"},{href:"https://www.bea.gov/data/gdp/gross-domestic-product",label:"미국 경제분석국 GDP"}]}
     related={[{href:"/inflation/",label:"미국 인플레이션 지표"},{href:"/fear-greed/usa/",label:"미국 공포탐욕지수"}]}

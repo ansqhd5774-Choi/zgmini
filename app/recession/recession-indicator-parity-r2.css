@@ -1,0 +1,29 @@
+/* Recession-only parity of indicator layout. No calculation or other topic styles. */
+.recession-r2-indicators .recession-indicator-table-r2{min-width:1280px;table-layout:fixed}
+.recession-r2-indicators .recession-indicator-table-r2 th:nth-child(2){width:157px}
+.recession-r2-indicators .recession-indicator-table-r2 td:nth-child(3){width:194px}
+.recession-r2-indicators .recession-indicator-table-r2 td:nth-child(4){width:118px}
+.recession-r2-indicators .recession-indicator-table-r2 td:nth-child(5){width:110px;color:#f2f7fa}
+.recession-r2-indicators .recession-indicator-table-r2 td:nth-child(6){width:176px;color:#f2f7fa}
+.recession-r2-indicators .recession-indicator-table-r2 td:nth-child(7){width:116px}
+.recession-r2-indicators .recession-indicator-table-r2 td:nth-child(8){width:80px}
+.recession-r2-indicators .recession-indicator-table-r2 td:nth-child(9){width:134px}
+.recession-r2-indicators .recession-indicator-table-r2 td:nth-child(10){width:50px}
+.recession-r2-indicators .recession-indicator-table-r2 .recession-r2-favorite-head,
+.recession-r2-indicators .recession-indicator-table-r2 .recession-r2-favorite-cell{width:42px;text-align:center}
+.recession-r2-spark-cell{padding-left:8px!important;padding-right:8px!important}
+.recession-r2-spark-cell .inflation-mini-chart{width:112px;height:32px}
+.recession-r2-indicators [data-judgement="positive"] .inflation-mini-chart-line{stroke:#77e59c}
+.recession-r2-indicators [data-judgement="neutral"] .inflation-mini-chart-line{stroke:#cbd5e1}
+.recession-r2-indicators [data-judgement="negative"] .inflation-mini-chart-line{stroke:#ff9a9a}
+.recession-r2-release strong{display:block;color:#f2f7fa;font-size:12px}
+.recession-r2-release small{display:block;margin-top:3px;font-size:10px;color:#8ea9bb;white-space:nowrap}
+.recession-data-availability{margin:7px 0 10px;color:#94aebb;font-size:11px;line-height:1.5}
+.recession-r2-mobile-spark{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:8px;padding-top:8px;border-top:1px solid rgba(68,103,133,.24)}
+.recession-r2-mobile-spark>span{color:#7891a6;font-size:9px;font-weight:700}
+.recession-r2-mobile-spark .inflation-mini-chart{width:148px;max-width:56vw;height:30px;margin:0}
+.recession-r2-mobile-spark .inflation-mini-chart-empty{min-width:148px;max-width:56vw;height:30px}
+@media(max-width:767px){
+ .recession-r2-mobile-metrics small{white-space:normal;overflow:visible;text-overflow:clip;overflow-wrap:anywhere}
+ .recession-r2-mobile-metrics>div{padding:8px 4px 0}
+}
