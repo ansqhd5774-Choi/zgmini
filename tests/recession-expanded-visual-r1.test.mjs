@@ -13,7 +13,8 @@ test("recession introduction matches compact inflation layout without altering o
  assert.match(intro,/if\(topic==="recession"\)/);
  assert.match(intro,/미국 경기, <span className="text-sky-300">침체 신호는\?<\/span>/);
  assert.match(intro,/경기 방어점수와 최근 1년 추세 · 경기침체 확률 아님/);
- assert.equal((intro.match(/className="mb-4 max-w-4xl border-l-\[3px\] border-sky-400\/80 pl-3 sm:mb-5 sm:pl-4"/g)||[]).length,4);
+ assert.equal((intro.match(/className="mb-4 max-w-4xl border-l-\[3px\] border-sky-400\/80 pl-3 sm:mb-5 sm:pl-4"/g)||[]).length,5);
+ assert.match(intro,/if\(topic==="earnings-recession"\)/);
  assert.match(intro,/if\(topic==="liquidity-crisis"\)/);
  assert.match(intro,/if\(topic==="credit-risk"\)/);
  assert.match(intro,/미국 회사채, <span className="text-sky-300">신용 위험은\?<\/span>/);
