@@ -8,6 +8,8 @@ import {MarketScoreOrb} from "../market-score-orb";
 import {MarketTrendFrame} from "../market-trend-frame";
 import {MarketFearGreedChart,type MarketFearGreedChartPoint,type MarketFearGreedChartValidPoint} from "../market-fear-greed-chart";
 import "./recession-indicator-r2.css";
+import "./recession-hero-parity-r2.css";
+import {RecessionFavoriteButton,RecessionFavoriteHeaderIcon} from "./recession-favorite-button";
 
 type ComponentRow={id:string;value:number|null;score:number|null;observationDate:string|null;weight:number};
 type SupplementalRow={id:string;name:string|null;status:string;score:number|null;value:number|null;displayValue:string|null;unit:string|null;observationDate:string|null;source:string|null};
@@ -74,24 +76,47 @@ export default function RecessionPanel(){
  const trend=useMemo(()=>(payload?.trend??[]).filter(p=>typeof p.value==="number"&&Number.isFinite(p.value)).slice(-12).map(p=>({date:p.label,score:p.value} satisfies MarketFearGreedChartPoint)),[payload?.trend]);
  const latest=trend.at(-1),latestPoint:MarketFearGreedChartValidPoint|null=latest?{date:latest.date,score:latest.score as number}:null;
  const axisLabels=new Map(trend.map(p=>[p.date,p.date.slice(5,7)])),axisTicks=trend.filter((_,i)=>i===0||i===trend.length-1||i%2===0).map(p=>p.date);
- const previous=trend.at(-2)?.score,threeMonth=trend.at(-4)?.score;
+ // Only compare matching calendar anchors in stored Current Vintage history.
+ // Unavailable week/year observations must remain null, never estimated.
+ const scoreComparisonItems=useMemo(()=>{
+  const byDate=new Map(trend.map(point=>[point.date,point.score]));
+  const anchor=payload?.asOfDate?.slice(0,10);
+  const anchorScore=anchor?byDate.get(anchor):null;
+  const subtract=(days=0,months=0,years=0)=>{
+   if(!anchor||typeof anchorScore!=="number")return null;
+   const [year,month,day]=anchor.split("-").map(Number);
+   const total=(year-years)*12+(month-1)-months;
+   const targetYear=Math.floor(total/12),targetMonth=((total%12)+12)%12;
+   const maxDay=new Date(Date.UTC(targetYear,targetMonth+1,0)).getUTCDate();
+   const date=new Date(Date.UTC(targetYear,targetMonth,Math.min(day,maxDay)-days)).toISOString().slice(0,10);
+   const past=byDate.get(date);
+   return typeof past==="number"?anchorScore-past:null;
+  };
+  return [
+   {label:"1주",value:subtract(7)},
+   {label:"1개월",value:subtract(0,1)},
+   {label:"3개월",value:subtract(0,3)},
+   {label:"6개월",value:subtract(0,6)},
+   {label:"1년",value:subtract(0,0,1)},
+  ];
+ },[trend,payload?.asOfDate]);
  const components=new Map((payload?.components??[]).map(x=>[x.id,x]));
  const supplementals=payload?.supplementals??[];
 
  return <>
   <section className="cnn-reference-panel fg-card fg-shared-shell recession-target-card" data-testid="recession-detail-hero" data-market-state={loading?"loading":score===null?"unavailable":"ready"} aria-busy={loading}>
-   <div className="fg-header-slot"><MarketCardHeader flag="/flags/us.svg" eyebrow="ZGMINI RECESSION R13" title="미국 경기침체" description="고용·GDP·생산·소비·신용 종합" dateLabel="데이터 기준일" date={dateLabel(payload?.asOfDate)} source={payload?.methodologyVersion??"RECESSION_R13"}/></div>
+   <div className="fg-header-slot"><MarketCardHeader flag="/flags/us.svg" eyebrow="ZGMINI RECESSION R13" title="미국 경기침체" description="현재 개정 통계 기반 · 초기발표 자료 아님" dateLabel="데이터 기준일" date={dateLabel(payload?.asOfDate)} source={payload?.methodologyVersion??"RECESSION_R13"}/></div>
    <div className="fg-content-slot">
-    <div className="fg-score-slot"><MarketScoreOrb score={loading||score===null?"—":score.toFixed(1)} state={loading?"확인 중":stage(score)} variant="hero" dayDelta={score!==null&&typeof previous==="number"?score-previous:null} periodDelta={score!==null&&typeof threeMonth==="number"?score-threeMonth:null} periodLabel="3개월 대비" dayLabel="전월 대비" comparisonAriaLabel="경기침체 방어점수 변화" metaDate={dateLabel(payload?.asOfDate)}/></div>
-    <MarketTrendFrame className="fg-analysis-slot"><div className="fg-chart-slot"><div className="fg-renderer"><MarketFearGreedChart data={trend} axisTicks={axisTicks} axisLabels={axisLabels} latestPoint={latestPoint} instanceKey="1Y" gradientId="recession-fill" formatTooltipLabel={dateLabel} emptyLabel={loading?"확인 중":"이력 없음"}/></div></div></MarketTrendFrame>
+    <div className="fg-score-slot"><MarketScoreOrb score={loading||score===null?"—":score.toFixed(1)} state={loading?"확인 중":stage(score)} variant="hero" comparisonItems={scoreComparisonItems} comparisonAriaLabel="경기침체 방어점수 변화" metaDate={dateLabel(payload?.asOfDate)}/></div>
+    <MarketTrendFrame className="fg-analysis-slot"><div className="fg-chart-slot"><div className="fg-renderer"><MarketFearGreedChart showExtrema data={trend} axisTicks={axisTicks} axisLabels={axisLabels} latestPoint={latestPoint} instanceKey="1Y" gradientId="recession-fill" formatTooltipLabel={dateLabel} emptyLabel={loading?"확인 중":"이력 없음"}/></div></div></MarketTrendFrame>
    </div>
-   <div className="fg-footer-slot"><div className="cnn-panel-note"><span>점수 해석</span><strong>0~100점 · 높을수록 양호 · 경기침체 확률 아님</strong></div></div>
+   <div className="fg-footer-slot"><div className="cnn-panel-note"><span>데이터 출처</span><strong>현재 개정 통계 기반 · 침체 확률 아님</strong></div></div>
   </section>
 
   <section className="inflation-explainer" aria-labelledby="recession-what-title">
    <p className="cnn-eyebrow">WHAT IS A RECESSION?</p>
    <h1 id="recession-what-title">미국 경기침체란?</h1>
-   <p>경기침체는 경제활동이 넓은 범위에서 상당 기간 감소하는 상태입니다. 실질 GDP 2개 분기만 보지 않고 비농업고용, 실업률과 Sahm Rule, 산업생산, 실질 소비·소득, 신용환경이 함께 약해지는지를 확인해야 합니다.</p>
+   <p>경기침체는 <mark className="zg-recession-keymark">고용·생산·소비 등 경제활동이 여러 분야에서 상당 기간 약해지는 상태</mark>예요. GDP가 2개 분기 연속 감소했는지만 보는 대신 <strong>일자리·소비·소득·산업생산</strong> 등 여러 신호를 함께 살펴봐요.</p>
    <div className="inflation-direction-strip"><span><b>침체 위험</b>고용↓ · 생산↓ · 소비↓ · 소득↓ · 신용긴축↑</span><span><b>경기 방어</b>고용 유지 · 실질성장 지속 · 소비·소득 견조</span></div>
   </section>
 
