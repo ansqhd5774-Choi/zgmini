@@ -20,4 +20,12 @@ Nasdaq Data Link terms: https://data.nasdaq.com/terms and Nasdaq index historica
 
 Before approving additions, check CIK/series/class epoch continuity; ≥628 correct same-identity ETF price dates; public rights, issuer exposure, and all specified sector R3 five-axis input requirements. The existing 2–5 ETF rule, 252 history and approved 756 observation constraints remain unchanged.
 
+
+## Additional validated source alternatives
+- IEX HIST is a free T+1 direct market-data download with attribution rules: https://www.iex.io/legal/hist-data-terms . But only last 12 months and approximately 10GB daily exchange-wide PCAP, not a viable 628+ trading-day reference source: https://www.iex.io/products/equities/market-data-connectivity . Third-party IEX API has different prohibitions: https://iextrading.com/apiexhibita/ .
+- FMP requires external display/redistribution licensing: https://site.financialmodelingprep.com/pricing-plans?planType=commercial .
+- Twelve Data personal plans are not for commercial public distribution: https://support.twelvedata.com/en/articles/5332349-commercial-and-personal-usage .
+- Business Quant commercial data redistribution licensing excludes market-price data: https://businessquant.com/pricing .
+- No validated free, scalable, licence-cleared external historical ETF price series for all ZGMINI themes yet. Do not assume nonexistence beyond researched sources.
+
 No API calls, PC stored data edits, D1, deployment, config, weights, schedule, DNS, or publication from R22/R23. Next step: source rights and candidate ETF quality gates before further Alpaca backfill; if no legally reusable full historical PIT/market data, prepare a versioned alternative formula proposal for explicit approval instead of silently weakening readiness.
