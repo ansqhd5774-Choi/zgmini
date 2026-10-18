@@ -133,3 +133,19 @@
 @media(prefers-reduced-motion:reduce){
  .zg-beginner-reading-link{transition:none}
 }
+
+/* Final literacy pass: limited emphasis, not fluorescent blocks of prose.
+   Keep the highlight readable when a phrase wraps onto a second line. */
+.zg-beginner-reading-strong{
+ color:#f2f9fc;
+ font-weight:800;
+}
+.zg-beginner-reading-mark,
+.inflation-explainer .zg-inflation-keymark{
+ background:linear-gradient(transparent 54%,rgba(244,195,78,.28) 54%);
+ color:inherit;
+ font-weight:750;
+ padding:0 1px;
+ box-decoration-break:clone;
+ -webkit-box-decoration-break:clone;
+}

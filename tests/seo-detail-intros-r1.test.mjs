@@ -9,7 +9,8 @@ test('R2 detail pages expose search-intent intro copy without changing data logi
   assert.match(intro,/미국 회사채 시장의 신용 위험과 기업 자금조달 환경/);
   assert.match(intro,/미국 금융시장의 현금 부족과 유동성 위기 위험/);
   assert.match(intro,/미국 가계와 기업의 부채 부담을 DSR, 부채\/GDP/);
-  assert.match(intro,/미국 CPI·근원 CPI·PCE·근원 PCE와 기대물가/);
+  assert.match(intro,/미국 물가가 얼마나 빠르게 오르고 있는지/);
+  assert.match(intro,/소비자물가\(CPI\)와 개인소비지출 물가\(PCE\)/);
   assert.match(intro,/미국 경기침체 지표를 실업률 기반 Sahm Rule, 비농업고용, 실질 GDP, 산업생산/);
   assert.match(intro,/미국 기업 실적의 둔화와 침체 위험을 EPS 성장, 매출 성장/);
   assert.match(intro,/미국 자산시장의 버블 위험을 밸류에이션 압력, 가격가속/);
