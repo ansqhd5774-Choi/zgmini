@@ -42,3 +42,22 @@ test('empty ledger audit does not create scores, rewrite checkpoints or claim su
   assert.equal(store.db.prepare('SELECT COUNT(*) AS n FROM checkpoints').get().n,0);
  }finally{store.close();}
 });
+
+test('real event revision inventory excludes superseded revisions and separates Yemen from LINKED',()=>{
+ const store=openStore(':memory:');
+ try{
+  const previous={eventId:'conflict-A',revision:1,axis:'LINKED',status:'VERIFIED',verifiedAt:now};
+  store.putEvent(previous);
+  store.putEvent({...previous,revision:2,status:'RETRACTED'});
+  store.putEvent({eventId:'conflict-B',revision:1,axis:'IRN_USA',status:'VERIFIED',verifiedAt:now});
+  store.checkpoint('verified-input',{coverage:{LINKED:{status:'VERIFIED',coverageThrough:now}},relations:{IRN_USA:{verified:true}}});
+  const a=auditIranLocalReadOnly(store.db);
+  assert.equal(a.r4InputInventory.latestEventCount,2);
+  assert.equal(a.r4InputInventory.latestEventRevisions.find(e=>e.axis==='LINKED').status,'RETRACTED');
+  assert.equal(a.r4InputInventory.coverage.LINKED.verified,true);
+  assert.equal(a.r4InputInventory.coverage.YEMEN_HOUTHI.present,false);
+  assert.ok(a.r4InputInventory.missingR4IndependentInputs.includes('YEMEN_HOUTHI_COVERAGE'));
+  assert.equal(a.r4InputInventory.r13LinkedIsNotYemenProof,true);
+  assert.equal(a.r4InputInventory.exactRealityScoreStatus,'NOT_CALCULATED');
+ }finally{store.close();}
+});
