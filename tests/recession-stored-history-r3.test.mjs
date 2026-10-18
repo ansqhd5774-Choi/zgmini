@@ -65,7 +65,7 @@ test("read-only R13 builder publishes enhanced display only; no formula, weights
  assert.match(builder,/const scoreComparisons=recessionStoredScoreComparisons\(trend,latestDate,current\.score\)/);
  assert.match(builder,/const components=enrichRecessionCoreComponents\(recession\.rows,current\.components,latestDate\)/);
  assert.match(builder,/const oneYearStart=recessionOneYearStart\(latestDate\)/);
- assert.match(builder,/x>=oneYearStart&&x<=latestDate/);
+ assert.match(builder,/oneYearStart!==null&&x>=oneYearStart&&x<=latestDate/);
  assert.match(builder,/lookAheadSafe:false,trend,scoreComparisons,components,supplementals/);
  assert.match(builder,/\["nfp","nfpScore",0\.25\]/);
  assert.match(builder,/\["realGdp","realGdpScore",0\.15\]/);
