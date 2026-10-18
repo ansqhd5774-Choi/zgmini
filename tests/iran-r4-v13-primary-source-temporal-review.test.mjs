@@ -14,7 +14,7 @@ test('two Oct 8 GACA airport attacks are separate claims and published Oct 9',()
  const r=buildR4PrimarySourceReview();
  const c=day(r,'2026-10-08').incidentCandidates;
  assert.equal(c.length,2);assert.ok(c.every(x=>x.latePublication&&x.publicationDate==='2026-10-09'));
- assert.equal(day(r,'2026-10-09').sourceReportsPublished,2);
+ assert.equal(day(r,'2026-10-09').sourceReportsPublished,3); // Two GACA incidents plus UN war-phase assessment.
 });
 test('Oct 9 Yemen full-war assessment is not falsely counted as new incident',()=>{
  const x=buildR4PrimarySourceReview();
