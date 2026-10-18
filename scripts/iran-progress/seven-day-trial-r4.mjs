@@ -9,7 +9,7 @@ import {fileURLToPath} from 'node:url';
 import {DatabaseSync} from 'node:sqlite';
 import {calculateIranR4RealityShadow} from '../../lib/iran-progress/reality-shadow-r4.mjs';
 import {auditR4ScoreAgainstAnchors} from '../../lib/iran-progress/observed-anchors-r4.mjs';
-import {R4_TRIAL_DEFAULT,tuneR4ShadowCandidate,validateR4TrialTuning} from '../../lib/iran-progress/seven-day-tuning-r4.mjs';
+import {R4_TRIAL_DEFAULT,tuneR4ShadowCandidate,validateR4TrialTuning,compareR4TrialCandidates} from '../../lib/iran-progress/seven-day-tuning-r4.mjs';
 const DAY=86400000,KST=9*3600000,DAYS=7;
 const ROOT=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../..');
 const DEFAULT_DB='E:\\ZGmini\\data\\iran-progress-r13\\iran.sqlite';
@@ -38,6 +38,7 @@ export function summarizeR4Trial(record,now){
  return {version:record.version,status:complete?'SEVEN_DAYS_RECORDED':expired?'INCOMPLETE':'RUNNING',
   startDate:record.startDate,endDate:days.at(-1),elapsedDays:Math.min(Math.max(dayIndex,0),DAYS),
   samples:record.samples.length,missingDays,
+  daily:record.samples.map(x=>({date:x.date,phase:x.phase,candidateScore:x.candidateScore,allowedRange:x.allowedRange,independentCheck:x.independentCheck})), 
   contradictoryOrUnassessed:invalidCount,configHash:record.configHash,
   sourceHash:record.sourceHash,productionReady:false,
   exactScoreAccuracy:'NOT_VERIFIED',autoTuned:false};
@@ -82,7 +83,7 @@ export function sampleR4Trial({verifiedInput,observations=[],now,existing=null,s
    return {status:'SAMPLE_ALREADY_RECORDED',write:false,record:existing};
  }
  const one={date,asOf:now,inputHash:hash(verifiedInput),phase:shadow.phase,
-  candidateScore:candidate.score,weightedScore:candidate.weighted,
+  candidateScore:candidate.score,weightedScore:candidate.weighted,domains:{...shadow.domains},
   baselineScore:shadow.score,allowedRange:candidate.allowedRange,
   independentCheck:assessment.status,independentMaximum:assessment.evidence?.maximumCompatibleScore??null,
   sourceCoverage:'VERIFIED_INPUT_CONTRACT_ONLY',publicScore:null,productionReady:false};
@@ -92,10 +93,24 @@ export function sampleR4Trial({verifiedInput,observations=[],now,existing=null,s
  return {status:'SAMPLE_RECORDED',write:true,record,summary:summarizeR4Trial(record,now)};
 }
 function safeCheckpoint(db,name){const r=db.prepare('SELECT body FROM checkpoints WHERE name=?').get(name);return r?JSON.parse(r.body):null;}
+export function previewR4TrialReweight(record,variants,now){
+ const state=summarizeR4Trial(record,now);
+ if(state.status!=='SEVEN_DAYS_RECORDED')return {status:'INSUFFICIENT_SEVEN_DAY_HISTORY',samples:state.samples??0,productionReady:false};
+ const snapshots=record.samples.map(s=>({status:'SHADOW_READY',domains:s.domains,phase:s.phase,allowedRange:s.allowedRange,score:s.baselineScore}));
+ return {status:'TUNING_CANDIDATES_ONLY',period:{startDate:state.startDate,endDate:state.endDate},
+  autoApplied:false,productionReady:false,exactScoreAccuracy:'NOT_VERIFIED',
+  variants:compareR4TrialCandidates(snapshots,variants)};
+}
 export function runR4TrialLocal({mode,dbFile=DEFAULT_DB,dir=DEFAULT_HOME,now=Date.now()}){
- if(!['--sample','--report','--preflight'].includes(mode))throw Error('R4_TRIAL_MODE_INVALID');
+ if(!['--sample','--report','--preflight','--compare'].includes(mode))throw Error('R4_TRIAL_MODE_INVALID');
  const file=recordFile(dir);
  if(mode==='--report')return {status:'READ_ONLY_REPORT',...summarizeR4Trial(guardedRead(file),now)};
+ if(mode==='--compare'){
+  const existing=guardedRead(file),variantFile=path.join(dir,'seven-day-variants.json');
+  if(!existing)return {status:'TRIAL_NOT_STARTED',productionReady:false};
+  if(!fs.existsSync(variantFile))return {status:'TRIAL_VARIANTS_NOT_PROVIDED',productionReady:false};
+  return previewR4TrialReweight(existing,readJSON(variantFile),now);
+ }
  if(!fs.existsSync(dbFile))return {status:'AUTOMATION_BLOCKED',reason:'APPROVED_LOCAL_SQLITE_NOT_FOUND'};
  let db;
  try{
