@@ -8,10 +8,10 @@ const notes=read("app/detail-investor-notes.tsx");
 const guide=read("app/detail-reading-guide.tsx");
 const css=read("app/inflation/inflation-beginner-reading-r1.css");
 
-test("inflation uses a scoped beginner reading design without changing other guide pages",()=>{
+test("inflation, recession and liquidity retain scoped beginner card design without affecting other pages",()=>{
  assert.match(page,/import "\.\/inflation-beginner-reading-r1\.css";/);
  assert.match(page,/variant="beginner"/);
- assert.match(notes,/variant=\{topic==="inflation"\|\|topic==="recession"\?"beginner":"default"\}/);
+ assert.match(notes,/variant=\{topic==="inflation"\|\|topic==="recession"\|\|topic==="liquidity-crisis"\?"beginner":"default"\}/);
  assert.match(guide,/variant\?:"default"\|"beginner"/);
  assert.match(guide,/if\(variant==="beginner"\)/);
  assert.match(guide,/return <section className="mt-12 space-y-6/);
