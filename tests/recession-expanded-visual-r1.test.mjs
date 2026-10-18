@@ -38,7 +38,7 @@ test("recession hero keeps stored 7+4 analysis and compact mobile footer without
  assert.match(panel,/const supplementalMeta:Record/);
  assert.match(panel,/const developmentCandidates=/);
  assert.match(panel,/useStoredIndex<Payload>\('\/api\/recession-detail'\)/);
- assert.match(panel,/grid/); // chart remains rendered from stored trend
+ assert.match(panel,/MarketFearGreedChart data=\{trend\}/); // chart remains rendered from stored trend
  assert.match(panel,/경기침체 확률 아님/);
  assert.match(css,/\.fg-card\.fg-shared-shell\.recession-target-card \.fg-footer-slot\{\s*grid-column:1 \/ -1;\s*grid-row:3;\s*height:28px;\s*min-height:28px;\s*flex:0 0 28px;/);
  assert.match(css,/\.fg-card\.fg-shared-shell\.recession-target-card \.fg-footer-slot \.cnn-panel-note\{\s*height:28px;\s*min-height:28px;\s*box-sizing:border-box;/);
