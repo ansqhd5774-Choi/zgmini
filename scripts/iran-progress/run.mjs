@@ -6,10 +6,10 @@ import {openStore,hash} from './store.mjs';
 import {collectSources} from './sources.mjs';
 import {buildIranProgress} from '../../lib/iran-progress/r13.mjs';
 import {interpretSource} from './ai.mjs';
+import {analyzeCandidateBatch} from './candidate-batch.mjs';
 import {publicBody,publishIran,publishIranStatus} from './publication.mjs';
 import {client,credential} from '../pc-writer/d1.mjs';
 import {fileURLToPath} from 'node:url';
-import {H_TRANSIT_METHOD} from '../../lib/iran-progress/transit-ais.mjs';
 import {collectDiscovery} from './discovery.mjs';
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../..');
 const base=process.env.ZGMINI_IRAN_HOME??path.join(os.homedir(),'.zgmini','iran-progress-r13');
@@ -40,12 +40,6 @@ try{
  }
  // Never infer verified relations or zero attacks from successful downloads.
  const input={...verified,events:store.events()};
- const ais=sources.ais;
- const policy=store.getCheckpoint('ais-verification')??{};
- input.transit={method:H_TRANSIT_METHOD,source:'hormuz.now',termsApproved:true,
-  upstreamTermsVerified:policy.upstreamTermsVerified===true,restriction:verified.aisRestriction,
-  rows:(ais.rows??[]).map(r=>({...r,qualityVerified:policy.days?.[r.date]?.verified===true&&policy.days[r.date].rowHash===hash(r)})),
-  observationDate:ais.observationDate,sourceStoredAt:ais.sourceStoredAt};
  // Existing coverage is retained, never advanced by mere fetch/compute success.
  for(const c of [...Object.values(input.coverage??{}),input.hormuzCoverage].filter(Boolean)){
   c.requiredSources=c.requiredSources?.map(s=>({...s,status:sources[s.id]?.status==='COLLECTED'?s.status:'SOURCE_FAILED'}));
@@ -66,16 +60,14 @@ try{
   }
  }
  if(process.argv.includes('--ai')){
-  const article=store.candidates(1)[0];
-  if(article){
-   try{
-    const tags=await fetch('http://127.0.0.1:11434/api/tags',{signal:AbortSignal.timeout(5000)}).then(r=>r.json());
-    const model=tags.models?.find(m=>m.name==='gemma3:4b');
-    const interpreted=await interpretSource(article.title,{modelDigest:model?.digest,now:Date.now()});
-    store.putDecision('discovery:'+article.id+':'+interpreted.modelDigest+':'+interpreted.promptVersion,{...interpreted,articleId:article.id,url:article.url,sourceLevel:'HEADLINE_ONLY',eventVerification:'PENDING'},interpreted.interpretedAt);
-    store.finishCandidate(article.id,'REVIEW_PENDING');ai={status:'CANDIDATE_ONLY',candidateCount:interpreted.candidates.length,sourceLevel:'HEADLINE_ONLY'};
-   }catch{ai={status:'PENDING',reason:'AI_DISCOVERY_VALIDATION_FAILED'};}
-  }
+  const rss=ai;
+  try{
+   const response=await fetch('http://127.0.0.1:11434/api/tags',{signal:AbortSignal.timeout(5000)});
+   if(!response.ok)throw Error('OLLAMA_TAGS_FAILED');
+   const tags=await response.json();
+   const model=tags.models?.find(m=>m.name==='gemma3:4b');
+   ai={rss,discovery:await analyzeCandidateBatch(store,{modelDigest:model?.digest,now:Date.now(),limit:20})};
+  }catch{ai={rss,discovery:{status:'PENDING',reason:'OLLAMA_UNAVAILABLE',factVerification:'NOT_PERFORMED'}};}
  }
  // Candidate interpretation never advances the verified-input checkpoint.
  // Calculate only after collection/interpretation has completed.
@@ -94,7 +86,7 @@ try{
   await publishIranStatus(remote,config.core,result);
   }
  }
- const report={id,version:result.version,status:result.status,score:result.score,missing:result.missing,sources:store.getCheckpoint('sources'),hormuzReason:result.hormuz.reason??null,aisRows:input.transit.rows.length,discovery,ai,calculatedAt,publication,reason:result.status==='READY'?null:'VERIFIED_INPUT_CONTRACT_PENDING'};
+ const report={id,version:result.version,status:result.status,score:result.score,missing:result.missing,sources:store.getCheckpoint('sources'),hormuzReason:result.hormuz.reason??null,discovery,ai,calculatedAt,publication,reason:result.status==='READY'?null:'VERIFIED_INPUT_CONTRACT_PENDING'};
  fs.writeFileSync(path.join(base,'last-run.json'),JSON.stringify(report,null,2));
  console.log(JSON.stringify(report));
 }finally{store.release(owner);store.close();}
