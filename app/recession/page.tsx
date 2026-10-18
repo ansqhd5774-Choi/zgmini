@@ -1,3 +1,4 @@
+import SiteHeader from "@/components/site-header";
 import DetailInvestorNotes from "../detail-investor-notes";
 import SearchIntentIntro from "../search-intent-intro";
 import type {Metadata} from "next";
@@ -19,11 +20,9 @@ export const metadata:Metadata={
 };
 
 export default function RecessionPage(){
- return <main className="min-h-screen bg-[#03121d] px-4 py-8 text-slate-100 sm:px-8 sm:py-12">
+ return <><SiteHeader/><main className="min-h-screen bg-[#03121d] px-4 py-8 text-slate-100 sm:px-8 sm:py-12">
   <div className="mx-auto max-w-6xl">
-   <a aria-label="메인 대시보드로 돌아가기" title="메인 대시보드로 돌아가기" className="group fixed left-4 top-4 z-50 inline-flex h-11 w-11 items-center justify-center rounded-full border border-blue-300/45 bg-[#0b2233] text-blue-100 shadow-[0_4px_16px_rgba(0,0,0,0.38)] transition-all duration-200 sm:left-8 sm:top-8 hover:-translate-x-0.5 hover:border-blue-200/75 hover:bg-[#12344d] hover:text-white hover:shadow-[0_0_16px_rgba(96,165,250,0.28),0_4px_16px_rgba(0,0,0,0.38)] active:translate-x-0 active:scale-90 active:border-blue-100 active:bg-[#183f59] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-300/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#03121d] motion-reduce:transform-none motion-reduce:transition-none" href="/">
-    <span aria-hidden="true" className="text-xl font-bold leading-none">←</span>
-   </a>
+   
    <SearchIntentIntro topic="recession"/>
    <RiskDetailBeginnerLayout><RecessionPanel/><BeginnerRiskGuide topic="recession"/></RiskDetailBeginnerLayout>
    <DetailReadingGuide title="미국 경기침체 지표와 방어점수를 읽는 방법"
@@ -37,5 +36,5 @@ export default function RecessionPage(){
    />
   <DetailInvestorNotes topic="recession"/>
 </div>
- </main>;
+ </main></>;
 }

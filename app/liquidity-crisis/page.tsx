@@ -1,3 +1,4 @@
+import SiteHeader from "@/components/site-header";
 import DetailInvestorNotes from "../detail-investor-notes";
 import SearchIntentIntro from "../search-intent-intro";
 import type {Metadata} from "next";
@@ -16,12 +17,12 @@ export const metadata:Metadata={
 };
 
 export default function LiquidityCrisisPage(){
- return <main className="min-h-screen bg-[#03121d] px-4 py-8 text-slate-100 sm:px-8 sm:py-12">
+ return <><SiteHeader/><main className="min-h-screen bg-[#03121d] px-4 py-8 text-slate-100 sm:px-8 sm:py-12">
   <div className="mx-auto max-w-6xl">
-   <a className="inline-flex min-h-11 items-center text-sm text-blue-200" href="/">← ZGmini 메인 대시보드</a>
+   
    <SearchIntentIntro topic="liquidity-crisis"/>
    <RiskDetailBeginnerLayout><LiquidityCrisisPanel/><BeginnerRiskGuide topic="liquidity-crisis"/></RiskDetailBeginnerLayout>
   <DetailInvestorNotes topic="liquidity-crisis"/>
 </div>
- </main>;
+ </main></>;
 }

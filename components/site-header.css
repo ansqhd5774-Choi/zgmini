@@ -1,0 +1,42 @@
+/* Dashboard and analysis pages share the same sticky, responsive header. */
+.zg-site-header{
+ position:sticky;
+ top:0;
+ z-index:110;
+ isolation:isolate;
+ box-shadow:0 5px 12px rgba(0,0,0,.18);
+}
+.zg-site-header nav a{
+ position:relative;
+ display:inline-flex;
+ align-items:center;
+ white-space:nowrap;
+ color:#cbd2dc;
+ font-size:14px;
+ min-height:44px;
+}
+.zg-site-header nav a::after{
+ position:absolute;
+ bottom:0;
+ left:0;
+ width:100%;
+ height:2px;
+ background:var(--zg-brand,#fabc42);
+ content:"";
+ transform:scaleX(0);
+ transform-origin:left;
+ transition:transform 140ms ease-out;
+}
+.zg-site-header nav a:hover,
+.zg-site-header nav a:focus-visible{color:#fff}
+.zg-site-header nav a:hover::after,
+.zg-site-header nav a:focus-visible::after{transform:scaleX(1)}
+.zg-site-header nav a:focus-visible{outline:2px solid #fabc42;outline-offset:3px}
+.zg-dashboard .sticky-summary{top:var(--zg-site-header-height,64px)}
+html:has(.zg-site-header){scroll-padding-top:calc(var(--zg-site-header-height,64px) + 8px)}
+@media(max-width:959px){
+ .zg-site-header nav a{font-size:clamp(.875rem,.75rem + .3vw,1rem);min-height:2.5rem}
+}
+@media(prefers-reduced-motion:reduce){
+ .zg-site-header nav a::after{transition:none}
+}
