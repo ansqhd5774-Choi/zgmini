@@ -1,6 +1,5 @@
 import test from 'node:test';import assert from 'node:assert/strict';
 import fs from 'node:fs';import os from 'node:os';import path from 'node:path';
-import {parseAisDaily} from '../scripts/iran-progress/ais.mjs';
 import {transitContinuity,H_TRANSIT_METHOD} from '../lib/iran-progress/transit-ais.mjs';
 import {openStore} from '../scripts/iran-progress/store.mjs';
 import {collectSources} from '../scripts/iran-progress/sources.mjs';
@@ -18,10 +17,10 @@ test('partial, reconstructed, unverified and duplicate days cannot produce Q',()
 test('conflict, expiry alone, missing official source and unmatched time cannot release R',()=>{for(const patch of [{conflicting:true},{state:'EXPIRED'},{evidence:[]},{effectiveAt:now+DAY},{coverageThrough:now-2*DAY}]){const x=input();Object.assign(x.restriction,patch);assert.equal(transitContinuity(x,now).score,null);}});
 test('100 requires both verified restriction removal and normal operation',()=>{const x=input();x.restriction.state='NORMAL_CONFIRMED';assert.equal(transitContinuity(x,now).score,null);x.restriction.restrictionsLiftedVerified=true;assert.equal(transitContinuity(x,now).score,null);x.restriction.normalOperationVerified=true;assert.equal(transitContinuity(x,now).score,100);});
 test('upstream rights unresolved cannot produce active commercial score',()=>{const x=input();x.upstreamTermsVerified=false;assert.equal(transitContinuity(x,now).score,null);});
-const daily=days=>JSON.stringify({generatedAt:now,days,baseline:84.8,status:{pct:999},portwatch:{value:999}});
-const row={date:'2026-10-07',in:1,out:2,total:3,source:'live',portwatch:999,avg7:999};
-test('allowlisted JSON discards all IMF and derived fields, legacy and partial',()=>{const r=parseAisDaily(daily([row,{...row,date:'2026-10-06',source:'mixed'},{...row,date:'2026-10-05',source:'legacy'},{...row,date:'2026-10-08',partial:true}]),{now});assert.equal(r.rows.length,1);assert.equal(r.rows[0].value,3);assert.ok(!JSON.stringify(r).includes('portwatch'));assert.equal(r.rows[0].qualityVerified,false);});
-test('invalid dates, duplicate dates and inconsistent direction counts fail parser',()=>{for(const rows of [[{...row,date:'2026-02-30'}],[row,row],[{...row,total:4}]])assert.throws(()=>parseAisDaily(daily(rows),{now}));});
-test('sanitized AIS checkpoint survives SQLite reopen without prohibited fields',()=>{const dir=fs.mkdtempSync(path.join(os.tmpdir(),'iran-ais-'));let store;try{const file=path.join(dir,'test.sqlite');const r=parseAisDaily(daily([row]),{now});store=openStore(file);store.checkpoint('ais',r);store.close();store=openStore(file);assert.deepEqual(store.getCheckpoint('ais'),r);assert.ok(!JSON.stringify(store.getCheckpoint('ais')).includes('portwatch'));}finally{store?.close();fs.rmSync(dir,{recursive:true,force:true});}});
+test('retired AIS parser is physically absent and not referenced by the active runner',()=>{
+ assert.equal(fs.existsSync(new URL('../scripts/iran-progress/ais.mjs',import.meta.url)),false);
+ const runner=fs.readFileSync(new URL('../scripts/iran-progress/run.mjs',import.meta.url),'utf8');
+ assert.doesNotMatch(runner,/sources\.ais|aisRows|H_TRANSIT_METHOD|transit-ais/);
+});
 test('active collector never requests retired AIS and retains official sources',async()=>{const urls=[];const sources=await collectSources({now,fetcher:async url=>{urls.push(url);return new Response('official source');}});assert.ok(urls.every(url=>!url.includes('hormuz.now')&&!url.includes('imf')&&!url.includes('arcgis')));assert.ok(urls.some(url=>url.includes('maritime.dot.gov')));assert.ok(urls.some(url=>url.includes('ukmto.org')));assert.equal(sources.ais,undefined);assert.equal(sources.aisHealth,undefined);});
 test('AIS version pending status can publish and read back without obsolete version guard',async()=>{let stored=null;const remote={query:async()=>({results:stored?[stored]:[]}),request:async(_db,[q])=>{stored={body:q.params[1],stored_at:q.params[2]};}};const r=await publishIranStatus(remote,'fixture',{version:IRAN_PROGRESS_VERSION,status:'PENDING',calculatedAt:now,missing:['H']});assert.equal(r.status,'VERIFIED');assert.equal(JSON.parse(stored.body).version,IRAN_PROGRESS_VERSION);});
