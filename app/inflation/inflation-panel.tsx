@@ -12,6 +12,7 @@ import {InflationFavoriteButton,InflationFavoriteHeaderIcon} from "./inflation-f
 import {InflationMiniChart,type InflationMiniTrendPoint} from "./inflation-mini-chart";
 import "./inflation-indicator-r2.css";
 import "./inflation-score-comparisons-r1.css";
+import "./inflation-hero-typography-r1.css";
 
 type FeatureRow={
   observationDate:string|null;
