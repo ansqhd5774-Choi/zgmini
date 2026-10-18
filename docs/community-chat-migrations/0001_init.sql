@@ -1,3 +1,4 @@
+-- Isolated chat DB only: DB_COMMUNITY. Never apply to DB_CORE or DB_HISTORY.
 -- BRANCH-ONLY proposal. Do not execute against production without explicit approval.
 CREATE TABLE IF NOT EXISTS community_chat_messages (
  id TEXT PRIMARY KEY NOT NULL,
