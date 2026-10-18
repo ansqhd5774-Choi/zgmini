@@ -15,7 +15,8 @@ test('R2 detail pages expose search-intent intro copy without changing data logi
   assert.match(intro,/미국 경기, <span className="text-sky-300">침체 신호는\?<\/span>/);
   assert.match(intro,/경기 방어점수와 최근 1년 추세 · 경기침체 확률 아님/);
   assert.match(read("app/recession/page.tsx"),/실업률·Sahm Rule, 비농업고용, 실질 GDP, 산업생산/);
-  assert.match(intro,/미국 기업 실적의 둔화와 침체 위험을 EPS 성장, 매출 성장/);
+  assert.match(intro,/미국 기업 실적, <span className="text-sky-300">침체 신호는\?<\/span>/);
+  assert.match(intro,/메인 기업 실적 방어 진단과 E1 저장 점수 추이를 구분해 확인하세요/);
   assert.match(intro,/미국 자산시장의 버블 위험을 밸류에이션 압력, 가격가속/);
   assert.match(intro,/미국 공급 충격 위험을 공급망 압력과 유가·원자재 변화/);
 
