@@ -11,3 +11,9 @@ test("CFO seed extracts ordered historical revisions",()=>{const rows=Array.from
 test("local market calculation guards and merges R5 without removing R4 diagnostic compatibility",()=>{const source=fs.readFileSync(new URL('../scripts/pc-writer/market.mjs',import.meta.url),'utf8');assert.match(source,/runEarningsR5ProductionCycle/);assert.match(source,/mergeEarningsProductionCandidate/);assert.match(source,/preserveEarningsDiagnosticCompatibility/);assert.match(source,/methodologyVersion!=="E1-R4"/);});
 
 test("earnings detail projection and UI support R5 while retaining R4",()=>{const projection=fs.readFileSync(new URL('../worker/projection-builders/earningsRecession.ts',import.meta.url),'utf8'),ui=fs.readFileSync(new URL('../app/earnings-recession/earnings-recession-panel.tsx',import.meta.url),'utf8');assert.match(projection,/R5_IDS=\["S1"[\s\S]*"S13"\]/);assert.match(projection,/methodologyVersion==="E1-R5"/);assert.match(ui,/r5Order=\["S1"[\s\S]*"S13"\]/);assert.match(ui,/!isR5&&dev\.map/);assert.doesNotMatch(ui,/description="Main diagnostic \+ stored E1-R4"/);});
+
+test("E1-R5 detail builder uses the established storedE1.issuerCount slot",()=>{
+ const projection=fs.readFileSync(new URL('../worker/projection-builders/earningsRecession.ts',import.meta.url),'utf8');
+ assert.match(projection,/issuerCount:finitePositiveCount\(e1\?\.quality\?\.issuerCount\)/);
+ assert.match(projection,/\?\?\(isR5\?finitePositiveCount\(e1\?\.issuerCount\):null\)/);
+});
