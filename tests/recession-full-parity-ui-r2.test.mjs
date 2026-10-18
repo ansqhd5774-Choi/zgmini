@@ -4,6 +4,7 @@ import {readFileSync} from "node:fs";
 const read=path=>readFileSync(path,"utf8");
 const panel=read("app/recession/recession-panel.tsx");
 const css=read("app/recession/recession-indicator-parity-r2.css");
+const favoriteCss=read("app/recession/recession-favorite-r2.css");
 const hero=read("app/recession/recession-hero-parity-r2.css");
 const page=read("app/recession/page.tsx");
 const notes=read("app/detail-investor-notes.tsx");
@@ -38,9 +39,17 @@ test("no source contract or missing value is fabricated while rendering parity i
  assert.match(panel,/points=\{row\.trend\}/);
  assert.match(panel,/‘—’는 0이 아니며/);
  assert.match(panel,/현재 개정 통계 · 경기침체 확률 아님/);
- assert.match(css,/min-width:1280px/);
+
  assert.match(css,/recession-r2-mobile-spark/);
  assert.match(css,/text-overflow:clip/);
+});
+test("recession desktop table fits available width and keeps mini charts inside their cells",()=>{
+ assert.match(css,/min-width:1090px;table-layout:fixed/);
+ assert.match(favoriteCss,/min-width:1090px!important/);
+ assert.doesNotMatch(css,/min-width:1280px/);
+ assert.doesNotMatch(favoriteCss,/min-width:1152px/);
+ assert.match(css,/recession-r2-spark-cell \\.inflation-mini-chart\\{width:112px;max-width:100%;height:32px\\}/);
+ assert.match(css,/recession-r2-spark-cell \\.inflation-mini-chart-empty\\{min-width:0;max-width:100%\\}/);
 });
 test("favorite UI is isolated from inflation, with mobile and desktop accessibility",()=>{
  assert.match(panel,/RecessionFavoriteHeaderIcon/);
