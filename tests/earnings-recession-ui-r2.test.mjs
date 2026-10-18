@@ -1,0 +1,35 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import {readFileSync} from "node:fs";
+const panel=readFileSync("app/earnings-recession/earnings-recession-panel.tsx","utf8");
+const css=readFileSync("app/earnings-recession/earnings-indicator-r2.css","utf8");
+const fav=readFileSync("app/earnings-recession/earnings-favorite-button.tsx","utf8");
+test("earnings R2 keeps main diagnostic and stored E1 histories separate",()=>{
+ assert.match(panel,/diagnosticScore=typeof payload\?\.score/);
+ assert.match(panel,/storedScore=typeof stored\?\.score/);
+ assert.match(panel,/진단점수와 별도/);
+});
+test("earnings R2 supports all approved R4 and R5 stored component IDs",()=>{
+ assert.match(panel,/const r4Order=\["epsGrowth","margin","revenueGrowth","earningsGrowthBreadth"\]/);
+ assert.match(panel,/const r5Order=\["S1","S2","S3","S4","S5","S6","S7","S8","S9","S10","S11","S12","S13"\]/);
+ assert.match(panel,/activeMeta=isR5\?r5Meta:r4Meta/);
+});
+test("earnings R2 uses saved observations and explicit missing instead of fabricated history",()=>{
+ assert.match(panel,/fmt\(r\)/);
+ assert.match(panel,/dateLabel\(r\?\.observationDate\)/);
+ assert.doesNotMatch(panel,/scoreComparisons/);
+ assert.match(css,/cnn-score-comparisons\{display:none\}/);
+});
+test("earnings R2 renders desktop and mobile from identical source row IDs",()=>{
+ assert.match(panel,/earnings-r2-table-wrap/);
+ assert.match(panel,/earnings-r2-mobile-list/);
+ assert.equal((panel.match(/activeOrder\.map\(id=>/g)||[]).length,2);
+ assert.match(css,/overflow-x:auto/);
+ assert.match(css,/@media\(max-width:767px\)/);
+});
+test("favorite reorder is earnings-only and development candidates stay below active",()=>{
+ assert.match(fav,/zgmini:earnings:favorites:v1/);
+ assert.match(fav,/earnings-r2-mobile-list/);
+ assert.match(fav,/leftDevelopment!==rightDevelopment/);
+ assert.doesNotMatch(fav,/zgmini:credit:favorites/);
+});
