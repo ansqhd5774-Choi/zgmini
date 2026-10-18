@@ -88,7 +88,7 @@ test("earnings parity: absent source-derived per-indicator prior, next release o
 test("Earnings guide never hardcodes live score or universe count into evergreen descriptions",()=>{
  const page=readFileSync("app/earnings-recession/page.tsx","utf8");
  for(const value of ["84.7점은","73.5점은","500개는"])assert.ok(!page.includes(value),value);
- assert.match(page,/실적 버전에 따라 구성지표가 달라질 수 있으며/);
+ assert.match(page,/실적 버전에 따라 구성지표가 달라질 수 있어요/);
 });
 
 
