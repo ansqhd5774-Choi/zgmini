@@ -28,3 +28,5 @@
 .zg-community-compose small{display:block;margin-top:6px;color:#adb7c2;font-size:11px;min-height:15px}
 @media(max-width:430px){.zg-community-toggle{right:10px;bottom:10px}.zg-community-panel{right:0;bottom:58px;width:100vw;height:min(540px,calc(100dvh - 90px))}}
 @media(prefers-reduced-motion:reduce){.zg-community-panel.is-open,.zg-community-panel.is-closed.was-open{animation:none}.zg-community-panel.is-closed.was-open{visibility:hidden;opacity:0}}
+
+.zg-community-report{margin-top:3px;display:inline-flex;align-items:center;gap:3px;border:0;background:transparent;padding:2px 0;color:#a8b4c0;font-size:11px;cursor:pointer}.zg-community-report:disabled{opacity:.5;cursor:default}

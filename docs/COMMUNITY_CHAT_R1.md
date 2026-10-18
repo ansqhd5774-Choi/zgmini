@@ -23,3 +23,8 @@ Date: 2026-10-19. Branch: feat/dashboard-live-chat-r1-20261019.
 - No online count, notifications, threading or WebSocket/Durable Objects.
 - D1 and other app score data must remain isolated by separate chat tables.
 - Must not label the R1 polling version as instant WebSocket chat.
+
+## R1.1 Moderation proposal
+- Reports: authenticated by same-origin plus hashed Cloudflare-IP limit (20 per day). Each visitor may report a particular message once.
+- Admin: secret-protected `GET/POST /api/internal/community/moderation` review, hide/restore, or manual purge of messages older than 30 days.
+- Provision `COMMUNITY_CHAT_ADMIN_SECRET` via Cloudflare secret store before enabling writes; do not commit secrets. UI report and moderation must be runtime tested.

@@ -1,6 +1,6 @@
 "use client";
 import {useEffect,useRef,useState,type FormEvent} from "react";
-import {MessageCircle,Send,X} from "lucide-react";
+import {Flag,MessageCircle,Send,X} from "lucide-react";
 import "./community-chat.css";
 
 type ChatMessage={id:string;nickname:string;body:string;created_at:string};
@@ -17,6 +17,7 @@ export default function CommunityChat({enabled}:{enabled:boolean}){
  const [writeEnabled,setWriteEnabled]=useState(false);
  const [sending,setSending]=useState(false);
  const [error,setError]=useState("");
+ const [reported,setReported]=useState<string[]>([]);
  const listRef=useRef<HTMLDivElement>(null);
  const inputRef=useRef<HTMLInputElement>(null);
  const inFlight=useRef(false);
@@ -52,6 +53,12 @@ export default function CommunityChat({enabled}:{enabled:boolean}){
   void load();const timer=window.setInterval(()=>void load(),REFRESH_MS);
   return()=>{stopped=true;window.clearInterval(timer);};
  },[enabled,open]);
+ async function report(messageId:string){
+  if(reported.includes(messageId))return;
+  try{const response=await fetch("/api/community/reports",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({messageId,reason:"inappropriate"})});
+   if(response.ok)setReported(current=>[...current,messageId]);else setError("신고 접수에 실패했습니다.");
+  }catch{setError("신고 접수에 실패했습니다.");}
+ }
  async function submit(event:FormEvent<HTMLFormElement>){
   event.preventDefault();const body=draft.trim();
   if(!body||[...body].length>300||sending||status!=="ready"||!writeEnabled)return;
@@ -71,7 +78,7 @@ export default function CommunityChat({enabled}:{enabled:boolean}){
    <div className="zg-community-head"><strong>시장 채팅</strong><span>{status==="ready"?(writeEnabled?"대화 가능":"읽기 전용"):"연결 대기"}</span><button type="button" aria-label="채팅창 닫기" onClick={()=>setOpen(false)}><X size={17}/></button></div>
    <div className="zg-community-messages" ref={listRef} role="log" aria-label="시장 채팅 메시지">
     {messages.length===0&&<p className="zg-community-empty">{status==="ready"?"아직 대화가 없어요. 시장에 대한 생각을 남겨 보세요.":"현재 채팅 서비스를 준비하고 있습니다."}</p>}
-    {messages.map(m=><article className="zg-community-item" key={m.id}><div><b>{m.nickname}</b><time dateTime={m.created_at}>{displayTime(m.created_at)}</time></div><p>{m.body}</p></article>)}
+    {messages.map(m=><article className="zg-community-item" key={m.id}><div><b>{m.nickname}</b><time dateTime={m.created_at}>{displayTime(m.created_at)}</time></div><p>{m.body}</p><button type="button" className="zg-community-report" aria-label="메시지 신고" disabled={reported.includes(m.id)} onClick={()=>void report(m.id)}><Flag size={12}/>{reported.includes(m.id)?"신고됨":"신고"}</button></article>)}
    </div>
    <form className="zg-community-compose" onSubmit={submit}>
     <label htmlFor="zg-community-input">{nickname||"익명"} · 공개 채팅</label>

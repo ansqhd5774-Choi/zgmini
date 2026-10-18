@@ -14,3 +14,5 @@ CREATE TABLE IF NOT EXISTS community_chat_rate_limits (
  day_bucket INTEGER NOT NULL,
  day_count INTEGER NOT NULL
 );
+CREATE TABLE IF NOT EXISTS community_chat_reports (id INTEGER PRIMARY KEY AUTOINCREMENT, message_id TEXT NOT NULL, actor_hash TEXT NOT NULL, reason TEXT NOT NULL, created_at TEXT NOT NULL, UNIQUE(message_id,actor_hash));
+CREATE INDEX IF NOT EXISTS idx_community_chat_reports_actor_date ON community_chat_reports(actor_hash,created_at);
