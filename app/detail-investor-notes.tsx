@@ -71,7 +71,7 @@ export default function DetailInvestorNotes({topic}:{topic:Topic}) {
       displayTitle={topic==="inflation"?"물가 표에 나오는 말, 쉽게 알아보기":topic==="recession"?"경기침체 표에 나오는 말, 쉽게 알아보기":topic==="liquidity-crisis"?"유동성 위기 표, 쉽게 알아보기":topic==="credit-risk"?"신용 위험 표, 쉽게 알아보기":undefined}
       intro={topic==="inflation"?"CPI·PCE부터 기간·판단 색깔까지 하나씩 알려드릴게요.":topic==="recession"?"고용·GDP·경기 신호를 이해하기 쉽게 풀어볼게요.":topic==="liquidity-crisis"?"유동성 점수와 단기자금·은행 지표를 구분해 읽어보세요.":topic==="credit-risk"?"회사채 신용 스트레스와 국채 변동성을 구분해 읽어보세요.":undefined}
       sections={[...guide.sections,
-        ...((topic==="inflation")?[]:[{title:"날짜와 현재 제공 범위 확인",text:"관측일은 데이터가 설명하는 기간이며 화면 갱신일이나 공식 발표 시각과 다를 수 있습니다. 월별·분기별 자료의 월·분기 시작일 표기는 매일 갱신되는 시세가 아닙니다. ‘—’, ‘확인 필요’, ‘개발중’은 실제 값 0이 아니며, 개발중 항목은 현재 이용 가능한 관측값으로 해석하지 마세요."}]),
+        ...((topic==="inflation")?[]:[{title:"날짜와 현재 제공 범위 확인",text:topic==="earnings-recession"?"E1-R5 표의 평가 기준일은 저장된 실적 자료를 종합 평가한 날짜입니다. 기업 공시·BEA·BLS·CFO 자료 각각의 관측 기간이나 공식 발표일이 아닙니다. 서로 다른 주기의 자료를 결합하므로 같은 날짜에 발표된 수치로 해석하지 마세요. ‘—’는 실제 값 0이 아닙니다.":"관측일은 데이터가 설명하는 기간이며 화면 갱신일이나 공식 발표 시각과 다를 수 있습니다. 월별·분기별 자료의 월·분기 시작일 표기는 매일 갱신되는 시세가 아닙니다. ‘—’, ‘확인 필요’, ‘개발중’은 실제 값 0이 아니며, 개발중 항목은 현재 이용 가능한 관측값으로 해석하지 마세요."}]),
         ...(!["usa","korea","inflation","recession"].includes(topic)?[
           {title:"과거 차트와 판정의 의미",text:"현재 개정 자료(Current Vintage)는 나중에 수정된 통계를 포함할 수 있습니다. 과거 차트를 당시 투자자가 알던 자료만으로 검증한 예측 성과로 해석하지 마세요. 긍정·중립·부정은 각 지표의 평가 방향이며 투자 수익률을 보장하지 않습니다."},
         ]:[]),
