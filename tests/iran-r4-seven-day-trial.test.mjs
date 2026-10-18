@@ -171,6 +171,19 @@ test('seven daily samples can be reweighted after the week without modifying rec
  assert.equal(comparison.autoApplied,false);
  assert.equal(JSON.stringify(trial),before);
 });
+test('post-trial variants count contradictions independently, without declaring a best or true 18-point score',()=>{
+ let trial=null;
+ for(let i=0;i<7;i++)trial=sampleR4Trial({verifiedInput:input(BASE+i*DAY),now:BASE+i*DAY,
+   existing:trial,sourceHash:'fixed'}).record;
+ trial.samples[3].independentMaximum=24; // synthetic independent conflict observation
+ const result=previewR4TrialReweight(trial,[{name:'unchanged',config:R4_TRIAL_DEFAULT}],BASE+6*DAY);
+ assert.equal(result.status,'TUNING_CANDIDATES_ONLY');
+ assert.equal(result.variants[0].contradictionDays,1);
+ assert.equal(result.variants[0].unassessedDays,6);
+ assert.equal(result.variants[0].observations[3].independentCheck,'CONTRADICTED_BY_OBSERVATION');
+ assert.equal(result.exactScoreAccuracy,'NOT_VERIFIED');
+ assert.equal(result.autoApplied,false);
+});
 test('comparison requires seven distinct days; no auto adjustment after only six days',()=>{
  let trial=null;
  for(let i=0;i<6;i++)trial=sampleR4Trial({verifiedInput:input(BASE+i*DAY),now:BASE+i*DAY,
