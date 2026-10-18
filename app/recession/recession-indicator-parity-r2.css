@@ -1,5 +1,6 @@
 /* Recession-only parity of indicator layout. No calculation or other topic styles. */
-.recession-r2-indicators .recession-indicator-table-r2{min-width:1280px;table-layout:fixed}
+/* A 1152px floor overflowed the ~1110px desktop table container (1171px viewport). */
+.recession-r2-indicators .recession-indicator-table-r2{min-width:1090px;table-layout:fixed}
 .recession-r2-indicators .recession-indicator-table-r2 th:nth-child(2){width:157px}
 .recession-r2-indicators .recession-indicator-table-r2 td:nth-child(3){width:194px}
 .recession-r2-indicators .recession-indicator-table-r2 td:nth-child(4){width:118px}
@@ -12,7 +13,8 @@
 .recession-r2-indicators .recession-indicator-table-r2 .recession-r2-favorite-head,
 .recession-r2-indicators .recession-indicator-table-r2 .recession-r2-favorite-cell{width:42px;text-align:center}
 .recession-r2-spark-cell{padding-left:8px!important;padding-right:8px!important}
-.recession-r2-spark-cell .inflation-mini-chart{width:112px;height:32px}
+.recession-r2-spark-cell .inflation-mini-chart{width:112px;max-width:100%;height:32px}
+.recession-r2-spark-cell .inflation-mini-chart-empty{min-width:0;max-width:100%}
 .recession-r2-indicators [data-judgement="positive"] .inflation-mini-chart-line{stroke:#77e59c}
 .recession-r2-indicators [data-judgement="neutral"] .inflation-mini-chart-line{stroke:#cbd5e1}
 .recession-r2-indicators [data-judgement="negative"] .inflation-mini-chart-line{stroke:#ff9a9a}
