@@ -11,6 +11,7 @@ import {MarketTrendFrame} from "../market-trend-frame";
 import {MarketFearGreedChart,type MarketFearGreedChartPoint,type MarketFearGreedChartValidPoint} from "../market-fear-greed-chart";
 import {InflationMiniChart,type InflationMiniTrendPoint} from "../inflation/inflation-mini-chart";
 import {LiquidityFavoriteButton,LiquidityFavoriteHeaderIcon} from "./liquidity-favorite-button";
+import {liquidityReleaseInfo} from "./liquidity-release-calendar.mjs";
 import "./liquidity-indicator-r2.css";
 
 type Indicator={id:string;name:string;status:string;score:number|null;value:number|null;unit:string;observationDate:string|null;source:string;previousValue?:number|null;previousObservationDate?:string|null;trend?:InflationMiniTrendPoint[];nextReleaseDate?:string|null};
@@ -32,11 +33,6 @@ const meta:Record<string,{label:string;content:string;criterion:string;help:stri
  bond30y:{label:"미국 30년물 변동성",content:"초장기 국채금리의 20일 실현변동성",criterion:"낮을수록 양호",help:"30년물의 급격한 변동은 장기채 시장의 유동성 스트레스를 보여줄 수 있습니다."}
 };
 const order=["sofrIorb","obfrIorb","repoGap","sofrIorbRv20","bankEmergency","bankReserves","tga","onRrp","m2","bond2y","bond5y","bond10y","bond30y"] as const;
-const cadence:Record<string,string>={
- sofrIorb:"거래일",obfrIorb:"거래일",repoGap:"거래일",sofrIorbRv20:"거래일",
- bankEmergency:"주간",bankReserves:"주간",tga:"주간",onRrp:"거래일",m2:"월간",
- bond2y:"거래일",bond5y:"거래일",bond10y:"거래일",bond30y:"거래일"
-};
 const dev=[
  ["NFCI Funding Risk","금융시장의 자금조달 여건","스트레스 완화","자금조달 스트레스에 초점을 둔 세부지표를 추가할 예정입니다."],
  ["Commercial Paper Spread","기업 단기자금 조달 프리미엄","스프레드 축소","기업어음 금리가 안전자산 대비 급등하면 단기자금 경색을 의미할 수 있습니다."],
@@ -72,6 +68,7 @@ export default function LiquidityCrisisPanel(){
   {label:"1년",value:payload?.scoreComparisons?.year??null},
  ];
  const indicators=new Map((payload?.indicators??[]).map(x=>[x.id,x]));
+ const today=new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Seoul",year:"numeric",month:"2-digit",day:"2-digit"}).format(new Date());
 
  return <>
   <section className="cnn-reference-panel fg-card fg-shared-shell liquidity-crisis-target-card" data-testid="liquidity-crisis-detail-hero" data-market-state={loading?"loading":score===null?"unavailable":"ready"} aria-busy={loading}>
@@ -96,13 +93,13 @@ export default function LiquidityCrisisPanel(){
     <colgroup><col className="liquidity-col-favorite"/><col className="liquidity-col-name"/><col className="liquidity-col-content"/><col className="liquidity-col-criterion"/><col className="liquidity-col-previous"/><col className="liquidity-col-current"/><col className="liquidity-col-release"/><col className="liquidity-col-judgement"/><col className="liquidity-col-spark"/><col className="liquidity-col-help"/></colgroup>
     <thead><tr><th><LiquidityFavoriteHeaderIcon/><span className="sr-only">즐겨찾기</span></th><th>지표</th><th>내용</th><th>기준</th><th>이전</th><th>현재</th><th>발표</th><th>판단</th><th>미니차트(1Y)</th><th><span className="sr-only">도움말</span>ⓘ</th></tr></thead>
     <tbody>
-     {order.map(id=>{const row=indicators.get(id),m=meta[id],j=judge(row?.score);return <tr key={id} data-judgement={j.tone}>
+     {order.map(id=>{const row=indicators.get(id),m=meta[id],j=judge(row?.score),release=liquidityReleaseInfo(id,today,row?.nextReleaseDate);return <tr key={id} data-judgement={j.tone}>
       <td><LiquidityFavoriteButton id={id} label={m.label}/></td>
       <th scope="row"><strong>{m.label}</strong><small>{row?.unit||"관측지표"}</small></th>
       <td>{m.content}</td><td className="liquidity-r2-criterion">{m.criterion}</td>
       <td className="liquidity-r2-value"><strong>{fmtValue(row?.previousValue,row?.unit)}</strong><small>{dateLabel(row?.previousObservationDate)}</small></td>
       <td className="liquidity-r2-value"><strong>{fmt(row)}</strong><small>{dateLabel(row?.observationDate)}</small></td>
-      <td className="liquidity-r2-release"><strong>{cadence[id]}</strong><small>{dateLabel(row?.nextReleaseDate)=== "—"?"일정 미정":dateLabel(row?.nextReleaseDate)}</small></td>
+      <td className="liquidity-r2-release"><strong>{release.cadence}</strong><small>{release.text}</small></td>
       <td><span className="inflation-judgement">{j.label}</span></td>
       <td className="liquidity-r2-spark-cell"><InflationMiniChart label={m.label} points={row?.trend}/></td>
       <td><HelpTip label={m.label} text={m.help}/></td>
@@ -116,7 +113,7 @@ export default function LiquidityCrisisPanel(){
     </tbody>
    </table></div>
    <div className="liquidity-r2-mobile-list">
-    {order.map(id=>{const row=indicators.get(id),m=meta[id],j=judge(row?.score);return <article className="liquidity-r2-mobile-card" key={id} data-judgement={j.tone}>
+    {order.map(id=>{const row=indicators.get(id),m=meta[id],j=judge(row?.score),release=liquidityReleaseInfo(id,today,row?.nextReleaseDate);return <article className="liquidity-r2-mobile-card" key={id} data-judgement={j.tone}>
      <div className="liquidity-r2-mobile-head"><div className="liquidity-r2-mobile-title"><LiquidityFavoriteButton id={id} label={m.label}/><div><strong>{m.label}</strong><small>{row?.unit||"관측지표"}</small></div></div><div className="liquidity-r2-mobile-actions"><span className="inflation-judgement">{j.label}</span><HelpTip label={m.label} text={m.help}/></div></div>
      <p className="liquidity-r2-mobile-content">{m.content}</p>
      <p className="liquidity-r2-mobile-criterion"><span>기준</span>{m.criterion}</p>
@@ -124,7 +121,7 @@ export default function LiquidityCrisisPanel(){
      <div className="liquidity-r2-mobile-metrics">
       <div><span>이전</span><strong>{fmtValue(row?.previousValue,row?.unit)}</strong><small>{dateLabel(row?.previousObservationDate)}</small></div>
       <div><span>현재</span><strong>{fmt(row)}</strong><small>{dateLabel(row?.observationDate)}</small></div>
-      <div><span>발표</span><strong>{cadence[id]}</strong><small>{row?.nextReleaseDate?dateLabel(row.nextReleaseDate):"일정 미정"}</small></div>
+      <div><span>발표</span><strong>{release.cadence}</strong><small>{release.text}</small></div>
      </div>
     </article>})}
     {dev.map(item=><article className="liquidity-r2-mobile-card is-development" key={item[0]}>
