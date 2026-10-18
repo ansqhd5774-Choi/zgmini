@@ -119,7 +119,7 @@ export default function RecessionPanel(){
     <div className="fg-score-slot"><MarketScoreOrb score={loading||score===null?"—":score.toFixed(1)} state={loading?"확인 중":stage(score)} variant="hero" comparisonItems={scoreComparisonItems} comparisonAriaLabel="경기침체 방어점수 변화" metaDate={dateLabel(payload?.asOfDate)}/></div>
     <MarketTrendFrame className="fg-analysis-slot"><div className="fg-chart-slot"><div className="fg-renderer"><MarketFearGreedChart showExtrema data={trend} axisTicks={axisTicks} axisLabels={axisLabels} latestPoint={latestPoint} instanceKey="1Y" gradientId="recession-fill" formatTooltipLabel={dateLabel} emptyLabel={loading?"확인 중":"이력 없음"}/></div></div></MarketTrendFrame>
    </div>
-   <div className="fg-footer-slot"><div className="cnn-panel-note"><span>데이터 출처</span><strong>현재 개정 통계 기반 · 침체 확률 아님</strong></div></div>
+   <div className="fg-footer-slot"><div className="cnn-panel-note"><span>데이터 출처</span><strong>현재 개정 통계 · 경기침체 확률 아님</strong></div></div>
   </section>
 
   <section className="inflation-explainer" aria-labelledby="recession-what-title">
