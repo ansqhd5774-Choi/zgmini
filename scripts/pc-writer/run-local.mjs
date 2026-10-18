@@ -13,6 +13,7 @@ import {readAssetR10Projection} from './asset-r10-projection.mjs';
 import {buildSupplyR10} from './supply-r10.mjs';
 import {acceptsStoredUpdate} from '../../lib/market-score/live-refresh.mjs';
 import {publishCoreArrowState} from './score-arrow-publication.mjs';
+import {requiresRecessionR3DisplayRefresh} from './recession-r3-refresh.mjs';
 
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../..');
 const base=process.env.ZGMINI_PC_HOME??path.join(os.homedir(),'.zgmini','pc-writer');
@@ -127,8 +128,10 @@ try{
   // its separate input timestamps; the hash invalidates changed R10 results.
   const checkpoint=r10?.status==='READY'?{...coreCheckpoint,sourceVersion:coreCheckpoint.sourceVersion+':'+r10.checkpoint.sourceVersion}:coreCheckpoint;
   const existing=await core.prepare('SELECT body FROM market_public_snapshots_v1 WHERE snapshot_key=?').bind(PUBLIC_PROJECTION_KEYS[id]).first('body');
-  const p=existing?JSON.parse(existing).projection:null;
-  if(p?.status!=='READY'||p.sourceVersion!==checkpoint.sourceVersion||p.sourceStoredAt!==checkpoint.sourceStoredAt){
+  const envelope=existing?JSON.parse(existing):null;
+  const p=envelope?.projection;
+  const recessionR3Refresh=id==='recession'&&requiresRecessionR3DisplayRefresh(envelope);
+  if(p?.status!=='READY'||p.sourceVersion!==checkpoint.sourceVersion||p.sourceStoredAt!==checkpoint.sourceStoredAt||recessionR3Refresh){
    const input=r10?.status==='READY'?null:await loadProjectionSource(id,scope,{now:checkpoint.sourceStoredAt});
    const payload=r10?.status==='READY'?r10.payload:await builders[id](input);
    await projectionWriter(core).write(id,payload,Date.now(),checkpoint);
