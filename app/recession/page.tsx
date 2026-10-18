@@ -5,6 +5,7 @@ import type {Metadata} from "next";
 import RecessionPanel from "./recession-panel";
 import "./recession-mobile-judgement.css";
 import "./recession-mobile-header.css";
+import "../inflation/inflation-beginner-reading-r1.css";
 import DetailReadingGuide from "../detail-reading-guide";
 import BeginnerRiskGuide from "../beginner-risk-guide";
 import RiskDetailBeginnerLayout from "../risk-detail-beginner-layout";
