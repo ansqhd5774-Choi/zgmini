@@ -1,0 +1,135 @@
+/* Inflation beginner reading blocks only. Other detail pages retain their layout. */
+.zg-beginner-reading{
+ margin-top:36px;
+ font-family:Pretendard,"Noto Sans KR","Apple SD Gothic Neo","Malgun Gothic",Arial,sans-serif;
+ color:#c2d4df;
+}
+.zg-beginner-reading-head{margin-bottom:15px}
+.zg-beginner-reading-eyebrow{
+ display:inline-flex;
+ align-items:center;
+ gap:7px;
+ color:#79d3d9;
+ font-size:11px;
+ font-weight:700;
+ line-height:1.25;
+}
+.zg-beginner-reading-head h2{
+ margin:7px 0 5px;
+ color:#f1f8fc;
+ font-size:19px;
+ font-weight:750;
+ line-height:1.35;
+ letter-spacing:-.02em;
+}
+.zg-beginner-reading-head>p{
+ color:#a8c1d0;
+ font-size:13px;
+ line-height:1.65;
+}
+.zg-beginner-reading-grid{
+ display:grid;
+ grid-template-columns:repeat(2,minmax(0,1fr));
+ gap:10px;
+}
+.zg-beginner-reading-item{
+ min-width:0;
+ background:#0a2333;
+ padding:18px 18px 17px;
+ box-shadow:inset 3px 0 0 rgba(71,179,189,.62);
+}
+.zg-beginner-reading-number{
+ display:block;
+ color:#6caebe;
+ font-size:11px;
+ line-height:1.2;
+ font-weight:750;
+ font-variant-numeric:tabular-nums;
+}
+.zg-beginner-reading-item h3{
+ margin:7px 0 8px;
+ color:#f0f6f9;
+ font-size:14px;
+ font-weight:750;
+ line-height:1.45;
+ word-break:keep-all;
+}
+.zg-beginner-reading-item p{
+ margin:0;
+ color:#c0d0da;
+ font-size:13px;
+ line-height:1.72;
+ word-break:keep-all;
+ overflow-wrap:anywhere;
+}
+.zg-beginner-reading-resources{margin-top:18px}
+.zg-beginner-reading-resources h3{
+ margin:0 0 6px;
+ color:#e6f2f7;
+ font-size:14px;
+ font-weight:750;
+ line-height:1.35;
+}
+.zg-beginner-reading-resources>p{
+ margin:0 0 10px;
+ font-size:12px;
+ line-height:1.6;
+ color:#9fb8c7;
+}
+.zg-beginner-reading-links{
+ display:grid;
+ grid-template-columns:repeat(2,minmax(0,1fr));
+ gap:8px;
+ margin:0;
+ padding:0;
+ list-style:none;
+}
+.zg-beginner-reading-links li{min-width:0}
+.zg-beginner-reading-link{
+ display:flex;
+ align-items:center;
+ gap:11px;
+ min-height:62px;
+ padding:11px 13px;
+ background:#102e40;
+ color:#e6f3fb;
+ text-decoration:none;
+ transition:background-color .2s ease;
+}
+.zg-beginner-reading-link:hover{background:#183a4f}
+.zg-beginner-reading-link:focus-visible{
+ outline:2px solid #75d9e5;
+ outline-offset:2px;
+}
+.zg-beginner-reading-link-icon{flex:0 0 16px;color:#77cfda}
+.zg-beginner-reading-link-body{
+ display:flex;
+ min-width:0;
+ flex:1 1 auto;
+ flex-direction:column;
+ gap:4px;
+}
+.zg-beginner-reading-link-body strong{
+ font-size:12px;
+ font-weight:750;
+ line-height:1.35;
+ overflow-wrap:anywhere;
+}
+.zg-beginner-reading-link-body small{
+ color:#9bb4c4;
+ font-size:11px;
+ font-weight:400;
+ line-height:1.4;
+}
+.zg-beginner-reading-arrow{flex:0 0 17px;color:#8caaba}
+@media(max-width:650px){
+ .zg-beginner-reading{margin-top:29px}
+ .zg-beginner-reading-head h2{font-size:17px}
+ .zg-beginner-reading-grid,.zg-beginner-reading-links{grid-template-columns:minmax(0,1fr)}
+ .zg-beginner-reading-item{padding:15px 15px 16px}
+ .zg-beginner-reading-item h3{font-size:14px}
+ .zg-beginner-reading-item p{font-size:13px;line-height:1.65}
+}
+@media(prefers-reduced-motion:reduce){
+ .zg-beginner-reading-link{transition:none}
+}
