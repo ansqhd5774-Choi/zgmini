@@ -72,7 +72,22 @@ const configs:Record<Topic,Config>={
   }
  },
  "liquidity-crisis":{
-  endpoint:"/api/liquidity-crisis-detail",title:"유동성 방어",importance:"금융시장은 현금과 담보가 원활하게 돌 때 정상적으로 작동합니다. 단기자금시장이나 은행 준비금이 급격히 경색되면 자산가격 변동성이 커질 수 있습니다.",marketImpact:"유동성 경색은 주식·회사채 등 위험자산 전반에 빠르게 부담을 줄 수 있습니다. 자금시장이 안정되면 급격한 금융 스트레스 가능성이 낮아집니다.",highMeaning:"높을수록 자금시장과 유동성 환경이 안정적인 방향입니다.",lowMeaning:"낮을수록 유동성 경색 위험이 커지는 방향입니다.",positiveHeading:"유동성 안정에 기여한 요인",negativeHeading:"유동성 부담 요인",stage:score=>safetyStage(score,"유동성 주의","위기 위험"),factorNames:{sofrIorb:"SOFR−IORB 스프레드",obfrIorb:"OBFR−IORB 스프레드",repoGap:"DVP−Tri-Party Repo 격차",sofrIorbRv20:"SOFR−IORB 20일 변동성",bankEmergency:"은행 비상대출 비율",bankReserves:"은행 준비금",tga:"TGA 4주 변화",onRrp:"ON RRP 20영업일 변화",m2:"M2 YoY",bond2y:"미국 2년물 변동성",bond5y:"미국 5년물 변동성",bond10y:"미국 10년물 변동성",bond30y:"미국 30년물 변동성"}
+  endpoint:"/api/liquidity-crisis-detail",title:"유동성 방어",importance:"금융시장은 현금과 담보가 원활하게 돌 때 정상적으로 작동합니다. 단기자금시장이나 은행 준비금이 급격히 경색되면 자산가격 변동성이 커질 수 있습니다.",marketImpact:"유동성 경색은 주식·회사채 등 위험자산 전반에 빠르게 부담을 줄 수 있습니다. 자금시장이 안정되면 급격한 금융 스트레스 가능성이 낮아집니다.",highMeaning:"높을수록 자금시장과 유동성 환경이 안정적인 방향입니다.",lowMeaning:"낮을수록 유동성 경색 위험이 커지는 방향입니다.",positiveHeading:"유동성 안정에 기여한 요인",negativeHeading:"유동성 부담 요인",stage:score=>safetyStage(score,"유동성 주의","위기 위험"),factorNames:{sofrIorb:"SOFR−IORB 스프레드",obfrIorb:"OBFR−IORB 스프레드",repoGap:"DVP−Tri-Party Repo 격차",sofrIorbRv20:"SOFR−IORB 20일 변동성",bankEmergency:"은행 비상대출 비율",bankReserves:"은행 준비금",tga:"TGA 4주 변화",onRrp:"ON RRP 20영업일 변화",m2:"M2 YoY",bond2y:"미국 2년물 변동성",bond5y:"미국 5년물 변동성",bond10y:"미국 10년물 변동성",bond30y:"미국 30년물 변동성"},
+  factorDescriptions:{
+   sofrIorb:"담보부 익일자금 금리와 연준 지급금리의 차이",
+   obfrIorb:"은행 익일자금 금리와 연준 지급금리의 차이",
+   repoGap:"두 주요 Repo 시장 금리의 괴리",
+   sofrIorbRv20:"단기자금 스프레드의 최근 불안정성",
+   bankEmergency:"연준 비상대출이 은행자산에서 차지하는 비중",
+   bankReserves:"은행 시스템이 보유한 연준 준비금 규모",
+   tga:"미 재무부 일반계정의 4주 유동성 흡수 변화",
+   onRrp:"연준 역레포에 묶이는 자금의 최근 변화",
+   m2:"광의 통화량의 전년 대비 증가율",
+   bond2y:"단기 국채금리의 20일 실현변동성",
+   bond5y:"중단기 국채금리의 20일 실현변동성",
+   bond10y:"장기 기준금리의 20일 실현변동성",
+   bond30y:"초장기 국채금리의 20일 실현변동성",
+  }
  },
  "credit-risk":{
   endpoint:"/api/credit-risk-detail",title:"신용시장 방어",importance:"신용위험은 기업이 돈을 빌리는 비용과 직결됩니다. 회사채 스트레스와 채권 변동성이 커지면 기업의 자금조달이 어려워질 수 있습니다.",marketImpact:"신용 스트레스 확대는 특히 재무구조가 약한 기업과 경기민감주에 부담이 될 수 있습니다. 신용시장이 안정되면 위험자산의 자금조달 환경이 개선됩니다.",highMeaning:"높을수록 회사채와 신용시장이 안정적인 방향입니다.",lowMeaning:"낮을수록 신용 스트레스가 높은 방향입니다.",positiveHeading:"신용 안정에 기여한 요인",negativeHeading:"신용 부담 요인",stage:score=>safetyStage(score,"신용 주의","신용 위험"),factorNames:{hyCmdi:"HY CMDI",igCmdi:"IG CMDI",totalCmdi:"Total CMDI",bondVolatility:"채권 변동성",nfciCredit:"NFCI Credit",bond2y:"미국 2년물 변동성",bond5y:"미국 5년물 변동성",bond10y:"미국 10년물 변동성",bond30y:"미국 30년물 변동성"}
