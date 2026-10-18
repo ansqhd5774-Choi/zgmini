@@ -9,6 +9,7 @@ import {MarketTrendFrame} from "../market-trend-frame";
 import {MarketFearGreedChart,type MarketFearGreedChartPoint,type MarketFearGreedChartValidPoint} from "../market-fear-greed-chart";
 import "./recession-indicator-r2.css";
 import "./recession-hero-parity-r2.css";
+import "./recession-indicator-parity-r2.css";
 import {RecessionFavoriteButton,RecessionFavoriteHeaderIcon} from "./recession-favorite-button";
 import {InflationMiniChart,type InflationMiniTrendPoint} from "../inflation/inflation-mini-chart";
 
