@@ -64,7 +64,8 @@ test("read-only R13 builder publishes enhanced display only; no formula, weights
  const helper=read("worker/projection-builders/recession-stored-history.mjs");
  assert.match(builder,/const scoreComparisons=recessionStoredScoreComparisons\(trend,latestDate,current\.score\)/);
  assert.match(builder,/const components=enrichRecessionCoreComponents\(recession\.rows,current\.components,latestDate\)/);
- assert.match(builder,/\.sort\(\)\.slice\(-13\)/);
+ assert.match(builder,/const oneYearStart=recessionOneYearStart\(latestDate\)/);
+ assert.match(builder,/x>=oneYearStart&&x<=latestDate/);
  assert.match(builder,/lookAheadSafe:false,trend,scoreComparisons,components,supplementals/);
  assert.match(builder,/\["nfp","nfpScore",0\.25\]/);
  assert.match(builder,/\["realGdp","realGdpScore",0\.15\]/);
