@@ -1,5 +1,28 @@
 import {ArrowUpRight,BookOpen,ExternalLink} from "lucide-react";
-type GuideSection = { title: string; text: string };
+import type {ReactNode} from "react";
+type GuideSection = { title: string; text: string; bold?: string; highlight?: string };
+
+// Highlight only the exact, editor-approved phrases; never mark arbitrary API text.
+function BeginnerEmphasis({text,bold,highlight}:{text:string;bold?:string;highlight?:string}){
+  const phrases=[
+    ...(highlight?[{value:highlight,kind:"mark" as const}]:[]),
+    ...(bold?[{value:bold,kind:"strong" as const}]:[]),
+  ].filter(item=>item.value&&text.includes(item.value));
+  if(!phrases.length)return <>{text}</>;
+  const parts:ReactNode[]=[];
+  let start=0;
+  while(start<text.length){
+    const next=phrases.map(item=>({...item,index:text.indexOf(item.value,start)}))
+      .filter(item=>item.index>=0).sort((a,b)=>a.index-b.index||Number(a.kind==="strong")-Number(b.kind==="strong"))[0];
+    if(!next){parts.push(text.slice(start));break;}
+    if(next.index>start)parts.push(text.slice(start,next.index));
+    parts.push(next.kind==="mark"
+      ?<mark key={parts.length} className="zg-beginner-reading-mark">{next.value}</mark>
+      :<strong key={parts.length} className="zg-beginner-reading-strong">{next.value}</strong>);
+    start=next.index+next.value.length;
+  }
+  return <>{parts}</>;
+}
 type GuideLink = { href: string; label: string; description?: string };
 
 const seoRelatedOverrides:Record<string,GuideLink[]|undefined>={
@@ -57,7 +80,7 @@ export default function DetailReadingGuide({ title, sections, sources, related, 
       {sections.map((section,index)=><article className="zg-beginner-reading-item" key={section.title}>
         <span className="zg-beginner-reading-number" aria-hidden="true">{String(index+1).padStart(2,"0")}</span>
         <h3>{section.title}</h3>
-        <p>{section.text}</p>
+        <p><BeginnerEmphasis text={section.text} bold={section.bold} highlight={section.highlight}/></p>
       </article>)}
     </div>
     {sources.length>0?<div className="zg-beginner-reading-resources">
