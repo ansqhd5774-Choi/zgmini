@@ -10,6 +10,7 @@ function shiftMonth(date,offset){
  const lastDay=new Date(Date.UTC(y,m+1,0)).getUTCDate();
  return new Date(Date.UTC(y,m,Math.min(day,lastDay))).toISOString().slice(0,10);
 }
+export const recessionOneYearStart=asOf=>shiftMonth(asOf,-12);
 function sourcePeriodDate(date,id){
  if(id!=="realGdp")return date;
  const [year,month]=date.split("-").map(Number);
