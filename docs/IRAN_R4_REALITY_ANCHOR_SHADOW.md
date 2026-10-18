@@ -95,7 +95,21 @@ R3의 각 영역 50점 임시 시작점과 고정 기사 가감점은 신규 R4�
 - I. R3와 R4가 숫자가 비슷하더라도 R3 결과를 정답으로 사용하는 검증 금지.
 - J. 소스 수정 후 shadow에서 지난 사건을 다시 계산하되 기존 공개 history 변경 금지.
 
-## 7. 다음 Gate
+## 7. 2026-10-18 교전 현황 독립 교차검증 (후보 숫자 추정과 분리)
+
+1. 유엔 DPPA **2026-10-09** 예멘 특별대표 발표: 다수 전선 전투 심화와 전면전 재개. 해당 발표일에 적용되는 `FULL_SCALE_WAR` 상한 구간(24점) 검토 사례. 10월 18일에는 9일 전 발표이므로 **오늘의 최신 사건 관측으로 재사용 금지**. https://dppa.un.org/en/news/yemen-has-returned-to-full-scale-war-special-envoy-warns
+2. Reuters **2026-10-17 14:23 UTC**: 후티의 사우디 공항·아람코 공격과 예멘 휴전 붕괴 후 교전 지속 보도. `YEMEN_HOUTHI / ACTIVE_COMBAT` 독립 **상한 ≤39 후보 근거**. 개별 공격의 발생일·공격 건수·확전 등급까지 자동 검증하지 않는다. https://www.reuters.com/world/middle-east/egypts-sisi-seeks-parliaments-backing-help-defend-saudi-arabia-if-asked-2026-10-17/
+3. 동일 Reuters 기사에 등장한 이집트의 방위 지원 의사는 조건부로서 **실제 참전 판정 불가**. 2026-10-18 시점 행동 여부를 재조회하지 않았으면 상태변경 금지.
+4. 미국 MARAD `2026-011` 및 `2026-013` 경보는 위험 및 공식 주의 근거이지만 **통항 전면 중단·실제 피해 발생의 직접 증거가 아니다**. https://www.maritime.dot.gov/msci-advisories
+
+추가 코드:
+- `lib/iran-progress/observed-anchors-r4.mjs`: 발행일/관측 시점 분리, 72시간 최신 관측 제약, 출처 중복 제거, 특정 전선의 교전 지속이 50점·80점과 모순되는지만 평가
+- `lib/iran-progress/reality-crosscheck-r4.mjs`: 독립 근거가 신규 후보점수와 충돌하면 `SHADOW_CONTRADICTED`. 충돌하지 않아도 `SHADOW_UNCALIBRATED`, 외부 검증 없으면 점수 공개 불가
+- `tests/iran-r4-observed-anchors.test.mjs`, `tests/iran-r4-reality-crosscheck.test.mjs`: 실제 공개 기사 **메타정보/시각**에 근거한 판정·가상 내부 입력의 교차 검증. 기사 원문/원시 공급자 DB는 GitHub 저장 금지.
+
+**판정:** 종전 기대 50~80점과 10월 17일 예멘 전황은 양립하기 어렵다. 그러나 독립 기사 한두 건으로 정확한 18점을 산출하거나 실제 전체 28일 관측 완전성을 증명할 수 없다. 기존 18점 추정치에 맞춰 감쇠계수·구간·가중치를 튜닝하지 않는다. `R4_REALITY_SCORE=UNCOMPUTED` 유지.
+
+## 8. 다음 Gate
 
 1. R4 사건 스키마와 기존 저장된 검증자료 매핑 계약을 승인 범위에서 확정.
 2. 2026-10-09 및 10/10, 10/11, 10/14, 10/17, 10/18 주요 발표를 실제 PC 저장자료와 대조하고 사건일 및 관계를 검증.
