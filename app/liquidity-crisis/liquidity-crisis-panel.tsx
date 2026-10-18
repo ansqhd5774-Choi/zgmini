@@ -13,6 +13,7 @@ import {InflationMiniChart,type InflationMiniTrendPoint} from "../inflation/infl
 import {LiquidityFavoriteButton,LiquidityFavoriteHeaderIcon} from "./liquidity-favorite-button";
 import {liquidityReleaseInfo} from "./liquidity-release-calendar.mjs";
 import "./liquidity-indicator-r2.css";
+import "./liquidity-hero-typography-r1.css";
 
 type Indicator={id:string;name:string;status:string;score:number|null;value:number|null;unit:string;observationDate:string|null;source:string;previousValue?:number|null;previousObservationDate?:string|null;trend?:InflationMiniTrendPoint[];nextReleaseDate?:string|null};
 type Payload={status:string;score:number|null;asOfDate?:string|null;methodologyVersion?:string;indicators?:Indicator[];trend?:Array<{label:string;value:number}>;scoreComparisons?:{week?:number|null;month?:number|null;threeMonth?:number|null;sixMonth?:number|null;year?:number|null}};
@@ -77,7 +78,7 @@ export default function LiquidityCrisisPanel(){
 
  return <>
   <section className="cnn-reference-panel fg-card fg-shared-shell liquidity-crisis-target-card" data-testid="liquidity-crisis-detail-hero" data-market-state={loading?"loading":score===null?"unavailable":"ready"} aria-busy={loading}>
-   <div className="fg-header-slot"><MarketCardHeader flag="/flags/us.svg" eyebrow="ZGMINI LIQUIDITY CRISIS" title="미국 유동성 위기" description="저장 점수 이력 · 누락 구간 보간 없음" dateLabel="데이터 기준일" date={dateLabel(payload?.asOfDate)} source={payload?.methodologyVersion??"DIAGNOSTIC_R1"}/></div>
+   <div className="fg-header-slot"><MarketCardHeader flag="/flags/us.svg" eyebrow="ZGMINI LIQUIDITY CRISIS" title="미국 유동성 위기" description="저장 점수 이력 · 누락 구간 보간 없음" dateLabel="데이터 기준일" date={dateLabel(payload?.asOfDate)} source=""/></div>
    <div className="fg-content-slot">
     <div className="fg-score-slot"><MarketScoreOrb score={loading||score===null?"—":score.toFixed(1)} state={loading?"확인 중":stage(score)} variant="hero" comparisonItems={scoreComparisonItems} comparisonAriaLabel="유동성 위기 방어점수 변화"/></div>
     <MarketTrendFrame className="fg-analysis-slot"><div className="fg-chart-slot"><div className="fg-renderer"><MarketFearGreedChart showExtrema data={trend} axisTicks={axisTicks} axisLabels={axisLabels} latestPoint={latestPoint} instanceKey="stored-1y" gradientId="liquidity-crisis-fill" formatTooltipLabel={dateLabel} emptyLabel={loading?"확인 중":"저장이력 없음"}/></div></div></MarketTrendFrame>
