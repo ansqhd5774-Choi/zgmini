@@ -16,8 +16,8 @@ test('Houthi attack against Saudi target is independently scoped, not attributed
 });
 test('Iran-backed does not imply a directly executed Iran-US or Iran-Israel attack',()=>{
  assert.equal(classifyR4Actors(['IRAN','HOUTHI']),'LINKED_UNVERIFIED');
- assert.equal(classifyR4Actors(['IRAN','HOUTHI','USA']),'YEMEN_HOUTHI');
- assert.equal(classifyR4Actors(['IRAN','HOUTHI','ISRAEL']),'YEMEN_HOUTHI');
+ assert.equal(classifyR4Actors(['IRAN','HOUTHI','USA']),'LINKED_UNVERIFIED');
+ assert.equal(classifyR4Actors(['IRAN','HOUTHI','ISRAEL']),'LINKED_UNVERIFIED');
  assert.equal(classifyR4Actors(['HOUTHI','USA']),'YEMEN_HOUTHI');
  assert.equal(classifyR4Actors(['IRAN','USA']),'IRN_USA');
  assert.equal(classifyR4Actors(['IRAN','ISRAEL']),'IRN_ISR');
