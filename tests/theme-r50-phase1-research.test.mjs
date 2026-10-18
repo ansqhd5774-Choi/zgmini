@@ -14,7 +14,7 @@ test('research scope: 30 canonical names and only 12 phase-1 candidates',()=>{
  assert.equal(out.researchCandidates,12);
  assert.equal(out.status,'RESEARCH_ONLY_NO_PUBLICATION');
  assert.equal(out.liveReadinessChecked,false);
- assert.equal(out.productionFiveAxisReady,0);
+ assert.equal(out.r21FiveAxisCompletedAtSnapshot,0);
 });
 test('prioritized candidates match approved R21 paired-ETF universe without approving ETFs',()=>{
  assert.deepEqual(THEME_R50_PHASE1_RESEARCH.map(r=>r.theme),[
