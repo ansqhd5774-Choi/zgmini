@@ -1,6 +1,6 @@
 "use client";
 
-import {useEffect,useRef,type ReactNode} from "react";
+import {useEffect,useRef,useState,type ReactNode} from "react";
 import CollectionHealthIndicator from "@/components/collection-health-indicator";
 import "./site-header.css";
 
@@ -12,6 +12,9 @@ export default function SiteHeader({activeView=null,onSelectView,accountTools}:{
  accountTools?:ReactNode;
 }){
  const headerRef=useRef<HTMLElement>(null);
+ const [pathname,setPathname]=useState('');
+ useEffect(()=>{setPathname(window.location.pathname)},[]);
+ const pageLinks=[['/risk-indicators/','위험 지표'],['/economic-indicators/','경제 지표'],['/sector-fear-greed/','섹터 공포·탐욕'],['/theme-fear-greed/','테마 공포·탐욕']] as const;
  useEffect(()=>{
   const header=headerRef.current;
   if(!header)return;
@@ -35,12 +38,12 @@ export default function SiteHeader({activeView=null,onSelectView,accountTools}:{
     {onSelectView
      ? <>
        <button type="button" aria-current={activeView==="dashboard"?"page":undefined} onClick={()=>onSelectView("dashboard")}>대시보드</button>
-       <button type="button" aria-current={activeView==="scenarios"?"page":undefined} onClick={()=>onSelectView("scenarios")}>아웃브레이크</button>
       </>
      : <>
        <a href="/">대시보드</a>
-       <a href="/?view=scenarios">아웃브레이크</a>
       </>}
+    {pageLinks.map(([href,label])=><a key={href} href={href} aria-current={pathname===href?'page':undefined}>{label}</a>)}
+    {onSelectView?<button type="button" aria-current={activeView==="scenarios"?"page":undefined} onClick={()=>onSelectView("scenarios")}>아웃브레이크</button>:<a href="/?view=scenarios">아웃브레이크</a>}
    </nav>
    <div className="zg-header-tools">
     <div className="zg-toolbar zg-toolbar-header">
