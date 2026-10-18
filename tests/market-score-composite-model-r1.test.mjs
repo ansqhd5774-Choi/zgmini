@@ -158,3 +158,18 @@ test("CM-R1 union-date history still skips dates until all 12 domains have a pri
   assert.equal(trend.some(point=>point.label==="2026-09-24"),true);
   assert.deepEqual(trend.at(-1),{label:"2026-09-25",value:70});
 });
+
+test("CM-R1 preserves only the E1-R5 issuer count without changing scores or domain weights",()=>{
+ const input=ready(60);
+ const earnings=input.find(x=>x.id==="earnings");
+ earnings.score=73.51207667731629;
+ earnings.methodologyVersion="E1-R5";
+ earnings.issuerCount=500;
+ const out=buildCompositeMarketScore(input);
+ assert.equal(out.domains.find(x=>x.id==="earnings").issuerCount,500);
+ assert.equal(out.domains.find(x=>x.id==="earnings").score,earnings.score);
+ assert.equal(out.domains.find(x=>x.id==="earnings").weight,13);
+ assert.equal(out.domains.find(x=>x.id==="earnings").quality,undefined);
+ const without=ready(60);
+ assert.equal(Object.hasOwn(buildCompositeMarketScore(without).domains.find(x=>x.id==="earnings"),"issuerCount"),false);
+});
