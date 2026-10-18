@@ -1,0 +1,52 @@
+name: Community Chat Browser UI (Mocked API)
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'components/community-chat.*'
+      - 'app/page.tsx'
+      - 'tests/community-chat-browser-r1.mjs'
+      - '.github/workflows/community-chat-browser.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  ui:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      CI: 'true'
+      NEXT_TELEMETRY_DISABLED: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - name: Install locked repository dependencies
+        run: npm ci
+      - name: Install test-only Playwright without changing lockfile
+        run: npm install --no-save --package-lock=false --ignore-scripts playwright@1.56.1
+      - name: Install browser for offline UI interactions
+        run: npx playwright install --with-deps chromium
+      - name: Start local dev UI (no remote bindings and no deployment)
+        run: |
+          npm run dev > /tmp/zgmini-chat-vite.log 2>&1 &
+          echo $! > /tmp/zgmini-chat-vite.pid
+          for i in $(seq 1 60); do
+            if curl -fsS --max-time 3 http://127.0.0.1:5173/ >/dev/null 2>&1; then
+              echo 'Local dev UI reachable'
+              exit 0
+            fi
+            sleep 2
+          done
+          tail -n 120 /tmp/zgmini-chat-vite.log
+          exit 1
+      - name: Validate chat UI at 390, 768, 1440 and 1920 px with mocked backend
+        run: node tests/community-chat-browser-r1.mjs
+      - name: Show local dev errors on failure
+        if: failure()
+        run: tail -n 120 /tmp/zgmini-chat-vite.log || true
