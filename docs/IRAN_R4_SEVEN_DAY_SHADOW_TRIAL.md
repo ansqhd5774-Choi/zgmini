@@ -29,11 +29,13 @@ scripts\iran-progress\r4-seven-day-shadow.cmd --sample
 scripts\iran-progress\r4-seven-day-shadow.cmd --report
 ```
 
-- `--preflight`: 검증 완료 입력 유무·coverage 확인. 파일 생성 없음.
+- `--preflight`: 검증 완료 입력 유무·coverage 확인. 입력 checkpoint가 없다면 **기존 PC SQLite의 실제 저장 건수·후티 전선 누락·군사 7/21일 자료·Ollama 처리 현황을 집계**해 보여준다. 이 단계에서 결과 파일을 생성하지 않는다.
 - `--sample`: 매일 한 번 실행할 때만 7일 결과 원장을 별도 저장. 자동 스케줄 미설치.
 - `--report`: 진행·누락 날짜·후보 점수/반증 상태·정확도 미검증 여부 확인.
 - `--compare`: 7개 관측 완료 후 `shadow-r4-trial\seven-day-variants.json`에 입력된 최대 12개의 **사용자가 명시한** 가중치/민감도 후보를 순수 재계산해 비교. 원본 `week.json` 변경 불가. 형식 예:
   `[{"name":"baseline","config":{"weights":{"D":0.20,"C":0.35,"M":0.25,"H":0.10,"N":0.10},"sensitivity":1}}]`
+
+사후 비교 결과는 후보별 7일 점수뿐 아니라 **독립 교전 근거와 모순된 날짜 수**, **검증 불가 날짜 수**를 표시한다. 이를 근거로 자동 최적값을 선택하지 않으며, 임의의 18점을 정답 데이터로 넣지 않는다.
 
 ## 정확도 판정의 제한
 
