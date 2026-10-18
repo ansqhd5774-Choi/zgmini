@@ -10,18 +10,22 @@ const notes=read("app/detail-investor-notes.tsx");
 const favorite=read("app/recession/recession-favorite-button.tsx");
 const history=read("app/beginner-risk-guide.tsx");
 
-test("recession five periods never invent unavailable history",()=>{
- for(const [label,anchor] of [["1주","subtract(7)"],["1개월","subtract(0,1)"],["3개월","subtract(0,3)"],["6개월","subtract(0,6)"],["1년","subtract(0,0,1)"]]){
-  assert.ok(panel.includes('{label:"'+label+'",value:'+anchor+'}'),label);
+test("recession five periods use published stored R13 history and do not invent missing data",()=>{
+ const builder=read("worker/projection-builders/recession.ts");
+ const helper=read("worker/projection-builders/recession-stored-history.mjs");
+ for(const [label,field] of [["1주","week"],["1개월","month"],["3개월","threeMonth"],["6개월","sixMonth"],["1년","year"]]){
+  assert.ok(panel.includes('{label:"'+label+'",value:payload?.scoreComparisons?.'+field+'??null}'),label);
  }
- assert.match(panel,/const byDate=new Map\(trend\.map\(point=>\[point\.date,point\.score\]\)\)/);
- assert.match(panel,/return typeof past==="number"\?anchorScore-past:null/);
+ assert.match(builder,/const scoreComparisons=recessionStoredScoreComparisons\(trend,latestDate,current\.score\)/);
+ assert.match(builder,/historyMode:"STORED_INPUTS_CURRENT_VINTAGE",lookAheadSafe:false,trend,scoreComparisons,components,supplementals/);
+ assert.match(helper,/return \{week:null,month:difference\(1\),threeMonth:difference\(3\),sixMonth:difference\(6\),year:difference\(12\)\}/);
  assert.match(panel,/comparisonItems=\{scoreComparisonItems\}/);
  assert.doesNotMatch(panel,/dayDelta=\{/);
  assert.match(panel,/MarketFearGreedChart showExtrema data=\{trend\}/);
  assert.match(hero,/grid-template-columns:repeat\(5,minmax\(0,1fr\)\)/);
  assert.match(hero,/\.recession-target-card \.zg-chart-extremum text/);
 });
+
 test("no source contract or missing value is fabricated while rendering parity indicator table",()=>{
  for(const label of ["즐겨찾기","이전","현재","발표","판단","미니차트(1Y)"])assert.ok(panel.includes(label),label);
  assert.match(panel,/useStoredIndex<Payload>\('\/api\/recession-detail'\)/);
