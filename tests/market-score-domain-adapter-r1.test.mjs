@@ -79,3 +79,19 @@ test("Employment R54 PARTIAL never falls back to legacy current score",()=>{
   assert.equal(domain.score,null);
   assert.deepEqual(domain.missingFactors,["employment-43"]);
 });
+
+test("E1-R5 forwards only validated issuer population metadata, never raw quality",()=>{
+ const original={status:"READY",score:73.51207667731629,methodologyVersion:"E1-R5",
+  quality:{universeCount:500,companyFactsCount:500,submissionsCount:500,componentCoverage:{S1:.99}},
+  indicators:[{id:"S1",status:"READY",score:80}],trend:[{label:"2026-10-17",value:73.51207667731629}]};
+ const earnings=buildCmR1DomainResults({publicDomains:{earnings:original}}).find(x=>x.id==="earnings");
+ assert.equal(earnings.issuerCount,500);
+ assert.equal(earnings.score,original.score);
+ assert.equal(earnings.methodologyVersion,"E1-R5");
+ assert.equal(Object.hasOwn(earnings,"quality"),false);
+ assert.equal(Object.hasOwn(earnings,"companyFactsCount"),false);
+ const invalid=buildCmR1DomainResults({publicDomains:{earnings:{...original,quality:{universeCount:"500"}}}}).find(x=>x.id==="earnings");
+ assert.equal(invalid.issuerCount,null);
+ const legacy=buildCmR1DomainResults({publicDomains:{earnings:{...original,methodologyVersion:"E1-R4"}}}).find(x=>x.id==="earnings");
+ assert.equal(Object.hasOwn(legacy,"issuerCount"),false);
+});
