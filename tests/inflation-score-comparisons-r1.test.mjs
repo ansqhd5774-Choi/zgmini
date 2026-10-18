@@ -37,3 +37,24 @@ test('inflation hero renders five centered stored-history score deltas',()=>{
  assert.match(css,/justify-content:center/);
  assert.match(css,/\.cnn-score-comparison\+\.cnn-score-comparison\{[\s\S]*border-left:1px solid/);
 });
+
+test('inflation top hero typography uses a scoped, stable hierarchy without resizing the score or chart',()=>{
+ const panel=read('app/inflation/inflation-panel.tsx');
+ const css=read('app/inflation/inflation-hero-typography-r1.css');
+ assert.match(panel,/import "\.\/inflation-hero-typography-r1\.css";/);
+ assert.match(css,/\.fg-card\.fg-shared-shell\.inflation-target-card\{/);
+ for(const token of ['--fg-title-size:20px','--fg-subtitle-size:12px','--fg-meta-size:11px','--fg-meta-strong-size:13px','--fg-footer-size:10px']){
+  assert.ok(css.includes(token),token);
+ }
+ assert.match(css,/\.cnn-market-title h2\{/);
+ assert.match(css,/\.cnn-market-title p:last-child\{/);
+ assert.match(css,/\.cnn-score-comparison>span\{/);
+ assert.match(css,/\.cnn-score-comparison>strong\{/);
+ assert.match(css,/@media\(max-width:767px\)/);
+ assert.match(css,/--fg-title-size:16px/);
+ assert.match(css,/--fg-subtitle-size:11px/);
+ assert.match(css,/font-size:clamp\(8px,2\.45vw,10px\)/);
+ assert.match(css,/font-size:clamp\(9\.5px,2\.8vw,11px\)/);
+ assert.doesNotMatch(css,/--fg-score-size|--fg-shared-(?:gauge|content|header|comparison)|\.fg-chart-slot|\.fg-analysis-slot/);
+ assert.doesNotMatch(css,/!important/);
+});
