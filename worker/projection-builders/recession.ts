@@ -1,5 +1,6 @@
 import {buildRecessionDefenseR13} from "../../lib/diagnostic-layer/recession-r13-components.mjs";
 import {recessionDefense} from "../../lib/diagnostic-layer/model.mjs";
+import {enrichRecessionCoreComponents,recessionStoredScoreComparisons,recessionOneYearStart} from "./recession-stored-history.mjs";
 
 const finite=(v:unknown):v is number=>typeof v==="number"&&Number.isFinite(v);
 const fields=[
@@ -38,8 +39,11 @@ export function buildProjection({inputs,publicSnapshot,nowIso}:any){
  });
  const latestDate=(recession.rows??[]).map((r:any)=>r?.observationDate).filter((x:any)=>typeof x==="string").sort().at(-1)??nowIso.slice(0,10);
  const current=snapshot(recession.rows,latestDate);
- const months=[...new Set((recession.rows??[]).map((r:any)=>r?.observationDate).filter((x:any)=>typeof x==="string"))].sort().slice(-12);
+ const oneYearStart=recessionOneYearStart(latestDate);
+ const months=[...new Set((recession.rows??[]).map((r:any)=>r?.observationDate).filter((x:any)=>typeof x==="string"&&oneYearStart!==null&&x>=oneYearStart&&x<=latestDate))].sort();
  const trend=months.map((date:any)=>{const s=snapshot(recession.rows,date);return s.status==="READY"&&finite(s.score)?{label:date,value:s.score}:null}).filter(Boolean);
+ const scoreComparisons=recessionStoredScoreComparisons(trend,latestDate,current.score);
+ const components=enrichRecessionCoreComponents(recession.rows,current.components,latestDate);
  const supplementalSpecs=[
   ["initialClaims","employment","신규 실업수당 4W 평균"],
   ["yieldCurve","rates","장단기 금리차"],
@@ -52,6 +56,6 @@ export function buildProjection({inputs,publicSnapshot,nowIso}:any){
  });
  return {
   status:current.status,score:current.score,asOfDate:latestDate,methodologyVersion:"RECESSION_R13_CURRENT_VINTAGE",
-  historyMode:"STORED_INPUTS_CURRENT_VINTAGE",lookAheadSafe:false,trend,components:current.components,supplementals,
+  historyMode:"STORED_INPUTS_CURRENT_VINTAGE",lookAheadSafe:false,trend,scoreComparisons,components,supplementals,
  };
 }

@@ -17,7 +17,7 @@ type ComponentRow={id:string;value:number|null;score:number|null;observationDate
 type SupplementalRow={id:string;name:string|null;status:string;score:number|null;value:number|null;displayValue:string|null;unit:string|null;observationDate:string|null;source:string|null;previousValue?:number|null;previousObservationDate?:string|null;trend?:InflationMiniTrendPoint[];nextReleaseDate?:string|null};
 type Payload={
  status:string;score:number|null;asOfDate?:string|null;methodologyVersion?:string;historyMode?:string;lookAheadSafe?:boolean;
- trend?:Array<{label:string;value:number}>;components?:ComponentRow[];supplementals?:SupplementalRow[];
+ trend?:Array<{label:string;value:number}>;scoreComparisons?:{week?:number|null;month?:number|null;threeMonth?:number|null;sixMonth?:number|null;year?:number|null};components?:ComponentRow[];supplementals?:SupplementalRow[];
 };
 
 const componentMeta:Record<string,{label:string;content:string;unit:string;criterion:string;help:string;cadence:string}>={
@@ -82,33 +82,17 @@ function HelpTip({label,text}:{label:string;text:string}){return <ContentHelp la
 export default function RecessionPanel(){
  const {payload,loading}=useStoredIndex<Payload>('/api/recession-detail');
  const score=typeof payload?.score==="number"&&Number.isFinite(payload.score)?payload.score:null;
- const trend=useMemo(()=>(payload?.trend??[]).filter(p=>typeof p.value==="number"&&Number.isFinite(p.value)).slice(-12).map(p=>({date:p.label,score:p.value} satisfies MarketFearGreedChartPoint)),[payload?.trend]);
+ const trend=useMemo(()=>(payload?.trend??[]).filter(p=>typeof p.value==="number"&&Number.isFinite(p.value)).slice(-13).map(p=>({date:p.label,score:p.value} satisfies MarketFearGreedChartPoint)),[payload?.trend]);
  const latest=trend.at(-1),latestPoint:MarketFearGreedChartValidPoint|null=latest?{date:latest.date,score:latest.score as number}:null;
  const axisLabels=new Map(trend.map(p=>[p.date,p.date.slice(5,7)])),axisTicks=trend.filter((_,i)=>i===0||i===trend.length-1||i%2===0).map(p=>p.date);
- // Only compare matching calendar anchors in stored Current Vintage history.
- // Unavailable week/year observations must remain null, never estimated.
- const scoreComparisonItems=useMemo(()=>{
-  const byDate=new Map(trend.map(point=>[point.date,point.score]));
-  const anchor=payload?.asOfDate?.slice(0,10);
-  const anchorScore=anchor?byDate.get(anchor):null;
-  const subtract=(days=0,months=0,years=0)=>{
-   if(!anchor||typeof anchorScore!=="number")return null;
-   const [year,month,day]=anchor.split("-").map(Number);
-   const total=(year-years)*12+(month-1)-months;
-   const targetYear=Math.floor(total/12),targetMonth=((total%12)+12)%12;
-   const maxDay=new Date(Date.UTC(targetYear,targetMonth+1,0)).getUTCDate();
-   const date=new Date(Date.UTC(targetYear,targetMonth,Math.min(day,maxDay)-days)).toISOString().slice(0,10);
-   const past=byDate.get(date);
-   return typeof past==="number"?anchorScore-past:null;
-  };
-  return [
-   {label:"1주",value:subtract(7)},
-   {label:"1개월",value:subtract(0,1)},
-   {label:"3개월",value:subtract(0,3)},
-   {label:"6개월",value:subtract(0,6)},
-   {label:"1년",value:subtract(0,0,1)},
-  ];
- },[trend,payload?.asOfDate]);
+ // Server-published, saved R13 comparisons only; no display-time recomputation.
+ const scoreComparisonItems=[
+  {label:"1주",value:payload?.scoreComparisons?.week??null},
+  {label:"1개월",value:payload?.scoreComparisons?.month??null},
+  {label:"3개월",value:payload?.scoreComparisons?.threeMonth??null},
+  {label:"6개월",value:payload?.scoreComparisons?.sixMonth??null},
+  {label:"1년",value:payload?.scoreComparisons?.year??null},
+ ] as const;
  const components=new Map((payload?.components??[]).map(x=>[x.id,x]));
  const supplementals=payload?.supplementals??[];
 
