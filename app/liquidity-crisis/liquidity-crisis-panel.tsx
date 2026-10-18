@@ -41,6 +41,11 @@ const dev=[
  ["Primary Dealer Financing","프라이머리딜러의 자금중개 여력","안정","국채·Repo 시장의 핵심 중개기관 여력을 확인할 예정입니다."]
 ] as const;
 
+function kstTodayKey(){
+ const parts=new Intl.DateTimeFormat("en-US",{timeZone:"Asia/Seoul",year:"numeric",month:"2-digit",day:"2-digit"}).formatToParts(new Date());
+ const get=(type:string)=>parts.find(part=>part.type===type)?.value??"";
+ return `${get("year")}-${get("month")}-${get("day")}`;
+}
 function dateLabel(v?:string|null){if(!v)return "—";const d=new Date(v.length===10?v+"T00:00:00Z":v);return Number.isFinite(d.getTime())?new Intl.DateTimeFormat("ko-KR",{dateStyle:"medium",timeZone:"Asia/Seoul"}).format(d):v}
 function stage(s:number|null|undefined){if(typeof s!=="number"||!Number.isFinite(s))return "확인 필요";if(s>=75)return "매우 양호";if(s>=60)return "양호";if(s>=45)return "중립";if(s>=25)return "유동성 주의";return "위기 위험"}
 function judge(s:number|null|undefined){if(typeof s!=="number"||!Number.isFinite(s))return {label:"확인 필요",tone:"neutral"};if(s>=60)return {label:"긍정",tone:"positive"};if(s>=45)return {label:"중립",tone:"neutral"};return {label:"부정",tone:"negative"}}
@@ -68,7 +73,7 @@ export default function LiquidityCrisisPanel(){
   {label:"1년",value:payload?.scoreComparisons?.year??null},
  ];
  const indicators=new Map((payload?.indicators??[]).map(x=>[x.id,x]));
- const today=new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Seoul",year:"numeric",month:"2-digit",day:"2-digit"}).format(new Date());
+ const today=kstTodayKey();
 
  return <>
   <section className="cnn-reference-panel fg-card fg-shared-shell liquidity-crisis-target-card" data-testid="liquidity-crisis-detail-hero" data-market-state={loading?"loading":score===null?"unavailable":"ready"} aria-busy={loading}>
