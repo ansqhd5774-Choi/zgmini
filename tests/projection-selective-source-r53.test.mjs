@@ -75,3 +75,10 @@ test('earnings projection source uses stored E1-R5 snapshot without reading lega
  assert.equal(out.e1?.indicators?.length,13);
  assert.equal(sql.length,1);
 });
+
+test('stored E1-R5 detail reader retains the public issuer count without requiring quality internals',()=>{
+ const domain={...r5Domain(),issuerCount:500};
+ const selected=selectStoredEarningsProjection({body:{domains:[domain]}});
+ assert.equal(selected.issuerCount,500);
+ assert.equal(selected.quality,undefined);
+});
