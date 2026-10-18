@@ -13,6 +13,7 @@ import {InflationMiniChart,type InflationMiniTrendPoint} from "./inflation-mini-
 import "./inflation-indicator-r2.css";
 import "./inflation-score-comparisons-r1.css";
 import "./inflation-hero-typography-r1.css";
+import "../shared-risk-indicator-width-r1.css";
 
 type FeatureRow={
   observationDate:string|null;
@@ -231,6 +232,7 @@ export default function InflationPanel(){
 
    <div className="inflation-table-wrap inflation-r2-table-wrap">
     <table className="inflation-indicator-table inflation-indicator-table-r2">
+    <colgroup>{Array.from({length:10},(_,i)=><col key={i}/>)}</colgroup>
      <thead><tr><th className="inflation-r2-favorite-head"><span className="sr-only">즐겨찾기</span><InflationFavoriteHeaderIcon/></th><th>지표</th><th>내용</th><th>기준</th><th>이전</th><th>현재</th><th>발표</th><th>판단</th><th>미니차트(1Y)</th><th><span className="sr-only">도움말</span>ⓘ</th></tr></thead>
      <tbody>
       {featureOrder.map(feature=>{
