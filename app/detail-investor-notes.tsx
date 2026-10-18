@@ -2,7 +2,7 @@ import DetailReadingGuide from "./detail-reading-guide";
 import {WebPageJsonLd} from "./seo-jsonld";
 
 type Topic = "usa" | "korea" | "inflation" | "recession" | "liquidity-crisis" | "credit-risk" | "earnings-recession" | "asset-bubble" | "debt-risk" | "supply-shock";
-type Guide = {title:string; sections:{title:string;text:string}[]; related:Topic[]};
+type Guide = {title:string; sections:{title:string;text:string;bold?:string;highlight?:string}[]; related:Topic[]};
 const paths:Record<Topic,string> = {
   usa:"/fear-greed/usa/", korea:"/fear-greed/korea/", inflation:"/inflation/", recession:"/recession/",
   "liquidity-crisis":"/liquidity-crisis/", "credit-risk":"/credit-risk/", "earnings-recession":"/earnings-recession/",
