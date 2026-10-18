@@ -112,9 +112,19 @@ export function previewR4TrialReweight(record,variants,now){
  const state=summarizeR4Trial(record,now);
  if(state.status!=='SEVEN_DAYS_RECORDED')return {status:'INSUFFICIENT_SEVEN_DAY_HISTORY',samples:state.samples??0,productionReady:false};
  const snapshots=record.samples.map(s=>({status:'SHADOW_READY',domains:s.domains,phase:s.phase,allowedRange:s.allowedRange,score:s.baselineScore}));
+ const candidates=compareR4TrialCandidates(snapshots,variants);
  return {status:'TUNING_CANDIDATES_ONLY',period:{startDate:state.startDate,endDate:state.endDate},
   autoApplied:false,productionReady:false,exactScoreAccuracy:'NOT_VERIFIED',
-  variants:compareR4TrialCandidates(snapshots,variants)};
+  variants:candidates.map(candidate=>{
+   const observations=candidate.observations.map((v,i)=>{
+    const cap=record.samples[i].independentMaximum;
+    const independentCheck=cap==null?'UNASSESSED':v.score>cap?'CONTRADICTED_BY_OBSERVATION':'NOT_CONTRADICTED_UNCALIBRATED';
+    return {...v,independentUpperBound:cap,independentCheck};
+   });
+   return {...candidate,observations,
+    contradictionDays:observations.filter(x=>x.independentCheck==='CONTRADICTED_BY_OBSERVATION').length,
+    unassessedDays:observations.filter(x=>x.independentCheck==='UNASSESSED').length};
+  })};
 }
 export function runR4TrialLocal({mode,dbFile=DEFAULT_DB,dir=DEFAULT_HOME,now=Date.now()}){
  if(!['--sample','--report','--preflight','--compare'].includes(mode))throw Error('R4_TRIAL_MODE_INVALID');
