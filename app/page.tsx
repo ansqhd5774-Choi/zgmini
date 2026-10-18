@@ -33,7 +33,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { toast } from "sonner";
 import CountryFearGreed from "./country-fear-greed";
 import CorePceRow from "./core-pce-row";
-import CollectionHealthIndicator from "@/components/collection-health-indicator";
+import SiteHeader from "@/components/site-header";
 
 type Direction = "up" | "down" | "flat";
 type Signal = "positive" | "negative" | "neutral";
@@ -779,6 +779,20 @@ function SummaryMiniChart({ data, period, score, label }: { data: ChartPoint[]; 
 
 export default function Home() {
   const [view,setView]=useState("dashboard");
+  // Deep-link to the outbreak tab from detailed analysis pages.
+  useEffect(()=>{
+    const sync=()=>setView(new URLSearchParams(window.location.search).get("view")==="scenarios"?"scenarios":"dashboard");
+    sync();
+    window.addEventListener("popstate",sync);
+    return()=>window.removeEventListener("popstate",sync);
+  },[]);
+  const selectHeaderView=(next:"dashboard"|"scenarios")=>{
+    setView(next);
+    const url=new URL(window.location.href);
+    if(next==="scenarios")url.searchParams.set("view","scenarios");
+    else url.searchParams.delete("view");
+    window.history.replaceState(window.history.state,"",url.pathname+url.search+url.hash);
+  };
   const [outbreakEvent,setOutbreakEvent]=useState('fed');
   const [category, setCategory] = useState<(typeof categories)[number]>("전체");
   const [countryFilter, setCountryFilter] = useState<Set<"ALL" | CountryCode>>(new Set(["ALL"]));
@@ -924,22 +938,7 @@ export default function Home() {
   return (
     <main className="zg-app zg-dashboard min-h-screen" data-testid="dashboard-root" data-view={view}>
       <script type="application/ld+json" dangerouslySetInnerHTML={{__html: JSON.stringify({ "@context": "https://schema.org",        "@type": "WebPage",       "@id": "https://zgmini.kr/#webpage",       url: "https://zgmini.kr/",       name: "ZGmini 지그미니 | 미국·한국 공포탐욕지수와 경제지표",       description: "미국·한국 공포탐욕지수의 최근 점수와 기간별 차트를 확인하세요. 물가·고용·금리 등 주요 경제지표와 데이터 관측일을 함께 제공합니다.",       isPartOf: { "@id": "https://zgmini.kr/#website" },       about: { "@id": "https://zgmini.kr/#organization" },       inLanguage: "ko-KR",      }).replace(/</g, "\\u003c")}}/>
-      <header className="zg-header text-white">
-        <div className="zg-header-inner">
-          {/* Full document navigation resets the dashboard view. */}
-          {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
-          <a href="/" aria-label="ZGmini 대시보드로 이동" className="flex min-w-0 items-center gap-3 rounded-xl focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white">
-            <div className="min-w-0"><img src="/zgmini-name.png" alt="ZGmini" width={1920} height={540} className="h-auto w-36 max-w-full rounded mix-blend-lighten sm:w-44" /></div>
-          </a>
-          <nav aria-label="주 메뉴"><button aria-current={view==='dashboard'?'page':undefined} onClick={()=>setView('dashboard')}>대시보드</button><button aria-current={view==='scenarios'?'page':undefined} onClick={()=>setView('scenarios')}>아웃브레이크</button></nav>
-          <div className="zg-header-tools">
-            <div className="zg-toolbar zg-toolbar-header">
-              <div className="header-update">
-                <CollectionHealthIndicator/>
-              </div>
-            </div>
-            <div className="zg-account-tools">
-              {sessionLoading ? (
+      <SiteHeader activeView={view==="scenarios"?"scenarios":"dashboard"} onSelectView={(next)=>selectHeaderView(next)} accountTools={sessionLoading ? (
                 <span className="hidden text-xs text-slate-400 sm:inline">계정 확인 중</span>
               ) : user ? (
                 <Sheet>
@@ -973,11 +972,7 @@ export default function Home() {
                     </SheetFooter>
                   </SheetContent>
                 </Sheet>
-              ) : null}
-            </div>
-          </div>
-        </div>
-      </header>
+              ) : null}/>
 
       <div className="zg-container">
         {view!=='dashboard'&&<div className="zg-data-notice zg-data-notice-compact" role="status"><Info size={16}/><span>{marketDataLoading?'경제지표를 불러오고 있습니다.':marketData?.status==='live'?'공식 자료와 ZGmini 자체 계산값을 표시합니다.':marketDataError?'데이터 연결 지연 · 마지막 정상 수신값을 표시합니다.':'일부 지표 갱신 지연 · 마지막 정상 수신값을 유지합니다.'}</span></div>}
