@@ -26,6 +26,7 @@ type Config={
  positiveHeading:string;
  negativeHeading:string;
  factorNames:Record<string,string>;
+ factorDescriptions?:Record<string,string>;
  factorIds?:string[];
  stage:(score:number)=>string;
 };
@@ -34,7 +35,25 @@ const safetyStage=(score:number,watch:string,risk:string)=>score>=75?"매우 양
 
 const configs:Record<Topic,Config>={
  inflation:{
-  endpoint:"/api/inflation-detail",title:"물가 안정성",importance:"물가가 높으면 연준이 금리를 오래 높게 유지할 가능성이 커집니다. 반대로 물가가 안정되면 금리 부담이 완화될 여지가 생깁니다.",marketImpact:"물가 안정은 성장주·장기채 등 금리에 민감한 자산에 우호적일 수 있습니다. 반대로 물가 재상승은 금리 인하 기대를 약화시킬 수 있습니다.",highMeaning:"높을수록 물가가 안정 방향에 가깝다는 뜻입니다.",lowMeaning:"낮을수록 물가 압력이 강하다는 뜻입니다.",positiveHeading:"물가 안정에 기여한 요인",negativeHeading:"아직 부담이 남은 요인",stage:score=>score>=75?"매우 안정":score>=60?"안정":score>=45?"중립":score>=25?"물가 압력":"강한 물가 압력",factorNames:{CORE_PCE:"Core PCE",CORE_CPI:"Core CPI",CORE_CPI_3M:"Core CPI 3M",MEDIAN_CPI:"Median CPI",TRIM16_CPI:"16% Trimmed Mean CPI",HEADLINE_PCE:"Headline PCE",INF_EXPECT:"5Y 기대 인플레이션",PPI_FINAL:"PPI Final Demand",PPI_CORE_FD:"Core PPI Final Demand",IMPORT_EX_FUEL:"수입물가 ex Fuel",WTI:"WTI",GASOLINE:"미국 휘발유",WAGE_YOY:"평균 시간당 임금",ECI_COST:"Employment Cost Index",UNIT_LABOR_COST:"Unit Labor Cost",INDPRO:"산업생산"}
+  endpoint:"/api/inflation-detail",title:"물가 안정성",importance:"물가가 높으면 연준이 금리를 오래 높게 유지할 가능성이 커집니다. 반대로 물가가 안정되면 금리 부담이 완화될 여지가 생깁니다.",marketImpact:"물가 안정은 성장주·장기채 등 금리에 민감한 자산에 우호적일 수 있습니다. 반대로 물가 재상승은 금리 인하 기대를 약화시킬 수 있습니다.",highMeaning:"높을수록 물가가 안정 방향에 가깝다는 뜻입니다.",lowMeaning:"낮을수록 물가 압력이 강하다는 뜻입니다.",positiveHeading:"물가 안정에 기여한 요인",negativeHeading:"아직 부담이 남은 요인",stage:score=>score>=75?"매우 안정":score>=60?"안정":score>=45?"중립":score>=25?"물가 압력":"강한 물가 압력",factorNames:{CORE_PCE:"Core PCE",CORE_CPI:"Core CPI",CORE_CPI_3M:"Core CPI 3M",MEDIAN_CPI:"Median CPI",TRIM16_CPI:"16% Trimmed Mean CPI",HEADLINE_PCE:"Headline PCE",INF_EXPECT:"5Y 기대 인플레이션",PPI_FINAL:"PPI Final Demand",PPI_CORE_FD:"Core PPI Final Demand",IMPORT_EX_FUEL:"수입물가 ex Fuel",WTI:"WTI",GASOLINE:"미국 휘발유",WAGE_YOY:"평균 시간당 임금",ECI_COST:"Employment Cost Index",UNIT_LABOR_COST:"Unit Labor Cost",INDPRO:"산업생산"},
+  factorDescriptions:{
+   CORE_PCE:"식품·에너지를 뺀 개인소비지출 물가",
+   CORE_CPI:"식품·에너지를 뺀 소비자물가",
+   CORE_CPI_3M:"최근 3개월 물가 상승을 연율로 환산",
+   MEDIAN_CPI:"품목별 가격 변화의 중간값",
+   TRIM16_CPI:"가격 변동이 큰 품목을 일부 제외한 물가",
+   HEADLINE_PCE:"식품·에너지까지 포함한 소비지출 물가",
+   INF_EXPECT:"향후 5년간의 예상 물가상승률",
+   PPI_FINAL:"미국 기업이 최종 수요처에 판매하는 가격",
+   PPI_CORE_FD:"식품·에너지 등을 제외한 기업 판매가격",
+   IMPORT_EX_FUEL:"연료를 제외한 미국 수입품 가격",
+   WTI:"미국산 원유의 기준 가격",
+   GASOLINE:"미국 휘발유 가격의 변화",
+   WAGE_YOY:"한 시간당 평균 임금의 연간 변화",
+   ECI_COST:"임금과 복지비를 포함한 고용비용",
+   UNIT_LABOR_COST:"생산물 한 단위에 들어가는 인건비",
+   INDPRO:"공장·광산·전력 생산량의 변화",
+  }
  },
  recession:{
   endpoint:"/api/recession-detail",title:"경기 방어",importance:"경기침체는 기업 매출과 이익, 고용, 소비를 동시에 약화시킬 수 있습니다. 한 지표보다 여러 경제활동 지표가 함께 약해지는지를 보는 것이 중요합니다.",marketImpact:"경기 방어가 약해지면 경기민감주와 신용자산에 부담이 될 수 있습니다. 반대로 방어력이 유지되면 실적과 소비가 버틸 가능성이 커집니다.",highMeaning:"높을수록 경기 방어력이 양호한 방향입니다.",lowMeaning:"낮을수록 경기침체 위험 신호가 강한 방향입니다.",positiveHeading:"경기 방어에 기여한 요인",negativeHeading:"경기 부담 요인",stage:score=>safetyStage(score,"침체 주의","침체 위험"),factorNames:{nfp:"비농업고용",realGdp:"실질 GDP",industrialProduction:"산업생산",realPce:"실질 PCE",sahmGap:"Sahm Gap",retailSales:"실질 소매판매",disposableIncome:"실질 가처분소득",initialClaims:"신규 실업수당 4W",yieldCurve:"장단기 금리차",hyCreditStress:"HY 신용 스트레스",creditConditions:"신용여건"}
@@ -218,6 +237,12 @@ function extractFactors(topic:Topic,payload:any,config:Config):Factor[]{
  });
 }
 
+function FactorListItem({item,config}:{item:Factor;config:Config}){
+ const description=config.factorDescriptions?.[item.id];
+ if(!description)return <li>• {config.factorNames[item.id]}</li>;
+ return <li><span>• {config.factorNames[item.id]}</span><span className="block pl-3 text-xs leading-5 text-slate-400">{description}</span></li>;
+}
+
 export default function BeginnerRiskGuide({topic}:{topic:Topic}){
  const config=configs[topic];
  const historyDetailsRef=useRef<HTMLDetailsElement>(null);
@@ -259,8 +284,8 @@ export default function BeginnerRiskGuide({topic}:{topic:Topic}){
    <h2 className="text-lg font-bold text-white">왜 {score===null?"이 점수":score.toFixed(1)+"점"}인가요?</h2>
    <p className="mt-1 text-sm text-slate-400">현재 저장된 구성 점수를 기준으로 강한 방향의 요인을 최대 3개씩 보여줍니다.</p>
    <div className="mt-4 grid gap-3 md:grid-cols-2">
-    <div className="bg-emerald-950/25 p-4"><h3 className="font-bold text-emerald-300">{config.positiveHeading}</h3>{positive.length?<ul className="mt-3 space-y-2 text-sm text-slate-200">{positive.map(item=><li key={item.id}>• {config.factorNames[item.id]}</li>)}</ul>:<p className="mt-3 text-sm text-slate-400">현재 뚜렷한 기여 요인을 확인하지 못했습니다.</p>}</div>
-    <div className="bg-rose-950/20 p-4"><h3 className="font-bold text-rose-300">{config.negativeHeading}</h3>{negative.length?<ul className="mt-3 space-y-2 text-sm text-slate-200">{negative.map(item=><li key={item.id}>• {config.factorNames[item.id]}</li>)}</ul>:<p className="mt-3 text-sm text-slate-400">현재 뚜렷한 부담 요인을 확인하지 못했습니다.</p>}</div>
+    <div className="bg-emerald-950/25 p-4"><h3 className="font-bold text-emerald-300">{config.positiveHeading}</h3>{positive.length?<ul className="mt-3 space-y-2 text-sm text-slate-200">{positive.map(item=><FactorListItem key={item.id} item={item} config={config}/>)}</ul>:<p className="mt-3 text-sm text-slate-400">현재 뚜렷한 기여 요인을 확인하지 못했습니다.</p>}</div>
+    <div className="bg-rose-950/20 p-4"><h3 className="font-bold text-rose-300">{config.negativeHeading}</h3>{negative.length?<ul className="mt-3 space-y-2 text-sm text-slate-200">{negative.map(item=><FactorListItem key={item.id} item={item} config={config}/>)}</ul>:<p className="mt-3 text-sm text-slate-400">현재 뚜렷한 부담 요인을 확인하지 못했습니다.</p>}</div>
    </div>
   </div>
   <details className="rounded-lg bg-[#071c2a] p-4 sm:p-5">
