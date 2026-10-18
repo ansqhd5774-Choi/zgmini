@@ -46,3 +46,14 @@ test('beginner guide explains score direction and stock-market caveat',()=>{
  assert.ok(guide.includes('이 지표 하나만으로 주가 방향을 확정하지 않습니다.'));
  assert.ok(guide.includes('왜 {score===null?"이 점수":score.toFixed(1)+"점"}인가요?'));
 });
+
+test('earnings beginner guide never misattributes E1 factor rankings to separate diagnostic score',()=>{
+ assert.match(guide,/const earningsStoredScore=topic==="earnings-recession"\?finiteScore\(payload\?\.storedE1\?\.score\):null/);
+ assert.match(guide,/E1 저장 지표 평가/);
+ assert.match(guide,/메인 진단 점수의 구성요인과는 별개입니다/);
+ assert.match(guide,/E1 평가가 높은 지표/);
+ assert.match(guide,/E1 평가가 낮은 지표/);
+ assert.match(guide,/E1 저장 점수는 어떻게 계산하나요\?/);
+ assert.match(guide,/else if\(topic==="earnings-recession"\)rows=payload\?\.storedE1\?\.indicators\?\?\[\]/);
+ assert.match(guide,/topic==="earnings-recession"\?/);
+});
