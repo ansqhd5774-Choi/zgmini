@@ -59,7 +59,7 @@ test('R3 reports rule acceptance separately from actually invoking Ollama',async
   assert.equal(report.classifiedUnique,2);
   assert.equal(report.matchedRuleUnique,1);
   assert.equal(report.unmatchedRuleUnique,1);
-  assert.equal(report.nonMatchReasons.NO_EXPLICIT_CHANGE_RULE,1);
+  assert.equal(report.nonMatchReasons.OUT_OF_SCOPE,1);
  }finally{store.close();}
 });
 test('R3 reader/view and timestamp readback are independent of R2; invalid R3 fails closed',async()=>{
