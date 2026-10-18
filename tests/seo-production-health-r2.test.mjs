@@ -67,6 +67,20 @@ test('runtime freshness contracts cover every public sitemap URL',()=>{
   for(const url of entries.keys()) assert.ok(SEO_RUNTIME_MARKERS.has(url),`missing runtime contract for ${url}`);
 });
 
+test('inflation freshness contract follows approved introduction and preserves official-source checks',()=>{
+  const contract=SEO_RUNTIME_MARKERS.get('https://zgmini.kr/inflation/');
+  const intro=readFileSync('app/search-intent-intro.tsx','utf8');
+  const page=readFileSync('app/inflation/page.tsx','utf8');
+  assert.ok(intro.includes(contract.htmlIncludes[0]));
+  assert.ok(page.includes(contract.htmlIncludes[1]));
+  assert.ok(page.includes(contract.htmlIncludes[2]));
+  const html=detailHtml.replaceAll(detailUrl,'https://zgmini.kr/inflation/').replaceAll(detailDescription,contract.descriptionIncludes).replace('</body>',`<p>${contract.htmlIncludes[0]}</p><a>${contract.htmlIncludes[1]}</a><a>${contract.htmlIncludes[2]}</a></body>`);
+  assert.deepEqual(inspectHtml(html,'https://zgmini.kr/inflation/').errors,[]);
+  for(const marker of contract.htmlIncludes){
+    assert.ok(inspectHtml(html.replace(marker,''),'https://zgmini.kr/inflation/').errors.includes('html_stale:'+marker));
+  }
+});
+
 test('JSON-LD type parser reads graph and standalone nodes',()=>{
   const html='<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"WebSite"},{"@type":"Organization"}]}</script><script type="application/ld+json">{"@type":"BreadcrumbList"}</script>';
   const types=jsonLdTypes(html);

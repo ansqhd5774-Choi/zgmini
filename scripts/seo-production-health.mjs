@@ -14,7 +14,7 @@ export const SEO_RUNTIME_MARKERS=new Map([
   [`${SITE_ORIGIN}/fear-greed/korea/`,{descriptionIncludes:'504개 유효 관측치 기준창'}],
   [`${SITE_ORIGIN}/fear-greed/usa/`,{descriptionIncludes:'원시값과 환산점수의 차이'}],
   [`${SITE_ORIGIN}/sector-fear-greed/`,{descriptionIncludes:'5개 핵심 신호와 252거래일 데이터'}],
-  [`${SITE_ORIGIN}/inflation/`,{descriptionIncludes:'미국 인플레이션 지수와 물가 안정 점수를 확인하세요.',htmlIncludes:['미국 물가가 얼마나 빠르게 오르고 있는지','소비자물가(CPI)와 개인소비지출 물가(PCE)']}],
+  [`${SITE_ORIGIN}/inflation/`,{descriptionIncludes:'미국 인플레이션 지수와 물가 안정 점수를 확인하세요.',htmlIncludes:['물가 안정 점수와 최근 1년 추세, 한눈에.','미국 소비자물가(CPI) 원문','미국 PCE 물가 원문']}],
   [`${SITE_ORIGIN}/recession/`,{htmlIncludes:['침체 신호는?','경기침체 확률 아님']}],
   [`${SITE_ORIGIN}/liquidity-crisis/`,{htmlIncludes:['미국 금융시장의 현금 부족과 유동성 위기 위험을 분석합니다.']}],
   [`${SITE_ORIGIN}/credit-risk/`,{htmlIncludes:['미국 회사채 시장의 신용 위험과 기업 자금조달 환경을 확인하세요.']}],
