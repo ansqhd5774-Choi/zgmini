@@ -6,7 +6,8 @@ const style=readFileSync("app/liquidity-crisis/liquidity-indicator-r2.css","utf8
 const favorite=readFileSync("app/liquidity-crisis/liquidity-favorite-button.tsx","utf8");
 const builder=readFileSync("worker/projection-builders/liquidityCrisis.ts","utf8");
 test("all thirteen saved liquidity indicators and five pending candidates retained",()=>{
- assert.equal((panel.match(/\{label:"/g)||[]).length,0); // names come from the existing meta map
+ assert.match(panel,/Primary Dealer Financing/);
+ assert.match(panel,/bond30y/);
  assert.match(panel,/const order=\["sofrIorb","obfrIorb","repoGap"/);
  assert.match(panel,/const dev=\[/);
  assert.match(panel,/\{order\.map\(id=>/);
