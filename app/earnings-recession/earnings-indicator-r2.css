@@ -19,6 +19,10 @@
 .earnings-r2-table .earnings-r2-observed{color:#d4e0e9;font-size:11px;white-space:nowrap}
 .earnings-r2-table tr[data-development="true"]{opacity:.82}
 .earnings-r2-mobile-list{display:none}
+.earnings-r2-mobile-card[data-judgement="positive"] .inflation-judgement{border-color:rgba(34,197,94,.48);background:rgba(34,197,94,.12);color:#77e59c}
+.earnings-r2-mobile-card[data-judgement="negative"] .inflation-judgement{border-color:rgba(248,113,113,.48);background:rgba(248,113,113,.12);color:#ff9a9a}
+.earnings-r2-mobile-card[data-judgement="neutral"] .inflation-judgement{border-color:rgba(148,163,184,.4);background:rgba(148,163,184,.1);color:#cbd5e1}
+.earnings-r2-mobile-card .inflation-judgement.is-development{border-color:rgba(244,195,78,.4);background:rgba(244,195,78,.1);color:#f3cf72}
 @media(max-width:767px){
  .earnings-r2-indicators{padding:14px}
  .earnings-r2-indicators .earnings-r2-table-wrap{display:none}
