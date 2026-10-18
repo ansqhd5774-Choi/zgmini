@@ -40,6 +40,7 @@ function nextLastWed(date){
  }
  return null;
 }
+/** @param {string} id @param {string} today @param {string|null|undefined} [fromApi] */
 export function creditReleaseInfo(id,today,fromApi=null){
  const cadence=monthly.has(id)?"월간":weekly.has(id)?"주간":daily.has(id)?"거래일":"—";
  if(!valid(today)||cadence==="—")return {cadence,next:null,basis:"unknown",text:"일정 미정"};
