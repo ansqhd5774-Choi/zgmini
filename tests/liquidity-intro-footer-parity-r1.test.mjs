@@ -17,7 +17,7 @@ test("liquidity intro follows the same concise heading pattern as inflation and 
  assert.match(recession,/<SearchIntentIntro topic="recession"\/>/);
 });
 test("liquidity lower guide uses approved beginner card presentation without losing SEO and related links",()=>{
- assert.match(notes,/topic==="liquidity-crisis"\?"beginner":"default"/);
+ assert.match(notes,/topic==="liquidity-crisis"\|\|topic==="credit-risk"\?"beginner":"default"/);
  assert.match(notes,/유동성 위기 표, 쉽게 알아보기/);
  assert.match(notes,/WebPageJsonLd/);
  assert.match(notes,/"liquidity-crisis":\{title:"시장 유동성과 유동성 위기 점수 읽기"/);
