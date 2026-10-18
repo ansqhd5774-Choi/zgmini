@@ -24,15 +24,35 @@ test("liquidity lower guide uses approved beginner card presentation without los
  assert.match(page,/import "\.\.\/inflation\/inflation-beginner-reading-r1\.css"/);
  assert.match(page,/<DetailInvestorNotes topic="liquidity-crisis"\/>/);
 });
-test("single subdued navigation link comes after the notes rather than as full-width CTA before them",()=>{
- assert.doesNotMatch(panel,/cnn-return-cta/);
- assert.ok(page.indexOf('<DetailInvestorNotes topic="liquidity-crisis"/>')<page.indexOf('href="/">← 메인 대시보드로 돌아가기</a>'));
- assert.equal((page.match(/메인 대시보드로 돌아가기/g)||[]).length,1);
- assert.doesNotMatch(page,/cnn-return-cta/);
+test("liquidity lower-page order matches inflation and recession: table, return CTA, 4-card introduction, sources, topic notes",()=>{
+ assert.match(panel,/<a className="cnn-return-cta" href="\/">← 메인 대시보드로 돌아가기<\/a>/);
+ assert.ok(panel.indexOf('liquidity-r2-mobile-list')<panel.indexOf('className="cnn-return-cta"'));
+ assert.match(page,/import DetailReadingGuide from "\.\.\/detail-reading-guide"/);
+ assert.ok(page.indexOf('<RiskDetailBeginnerLayout>')<page.indexOf('<DetailReadingGuide title="미국 유동성 위기 방어점수를 읽는 방법"'));
+ assert.ok(page.indexOf('<DetailReadingGuide title="미국 유동성 위기 방어점수를 읽는 방법"')<page.indexOf('<DetailInvestorNotes topic="liquidity-crisis"/>'));
+ assert.match(page,/displayTitle="미국 유동성 위기 점수, 처음이라면 이렇게 보세요"/);
+ assert.match(page,/variant="beginner"/);
+ assert.equal((page.match(/\{title:"[^"]+\?",text:/g)||[]).length,4);
+ for(const target of ["https://www.newyorkfed.org/markets/reference-rates/additional-information-about-reference-rates","https://www.federalreserve.gov/releases/h41/default.htm","https://www.financialresearch.gov/short-term-funding-monitor/datasets/repo/"])assert.ok(page.includes(target),target);
+ assert.equal((page.match(/메인 대시보드로 돌아가기/g)||[]).length,0);
+ assert.equal((panel.match(/메인 대시보드로 돌아가기/g)||[]).length,1);
+ const inflation=read("app/inflation/inflation-panel.tsx"),recession=read("app/recession/recession-panel.tsx");
+ assert.match(inflation,/className="cnn-return-cta"/);
+ assert.match(recession,/className="cnn-return-cta"/);
+ assert.match(read("app/inflation/page.tsx"),/displayTitle="미국 물가 점수, 처음이라면 이렇게 보세요"/);
+ assert.match(read("app/recession/page.tsx"),/displayTitle="미국 경기침체 점수, 처음이라면 이렇게 보세요"/);
 });
 test("saved liquidity score, 13 indicators and 5 candidates remain intact",()=>{
  assert.match(panel,/useStoredIndex<Payload>\('\/api\/liquidity-crisis-detail'\)/);
  assert.match(panel,/const order=\["sofrIorb","obfrIorb","repoGap"/);
  assert.match(panel,/const dev=\[/);
  assert.match(panel,/comparisonItems=\{scoreComparisonItems\}/);
+});
+
+test("liquidity explanatory content stays scoped to existing approved score and inputs",()=>{
+ for(const phrase of ["방어점수","Repo","은행 준비금","예상 일정은 실제 공표일과 달라질 수 있고","‘—’는 0이 아니라"])assert.ok(page.includes(phrase),phrase);
+ assert.match(page,/<DetailInvestorNotes topic="liquidity-crisis"\/>/);
+ assert.match(panel,/useStoredIndex<Payload>\('\/api\/liquidity-crisis-detail'\)/);
+ assert.match(panel,/const order=\["sofrIorb","obfrIorb","repoGap"/);
+ assert.match(panel,/const dev=\[/);
 });
