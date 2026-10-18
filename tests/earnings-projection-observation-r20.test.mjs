@@ -25,3 +25,19 @@ test('arbitrary evaluation-anchor series, inconsistent current, and synthetic ne
  assert.equal(rows[5].sourceHistory1Y,undefined);
  assert.equal(rows[5].nextReleaseDate,undefined);
 });
+
+test('source-specific official S6/S11 dates appear only before scheduled release, without assigning the PPI date to S10',()=>{
+ const e1={...base,indicators:base.indicators.map(x=>({
+  ...x,source:x.id==='S6'?'BEA NIPA A051RC':x.id==='S11'?'BLS PRS85006111':'BLS Satellite Input + PPI Net Output',
+ }))};
+ const early=build({snapshot,e1,nowIso:'2026-10-19T00:00:00Z'}).storedE1.indicators;
+ assert.equal(early[5].nextReleaseDate,'2026-11-25');
+ assert.equal(early[10].nextReleaseDate,'2026-11-05');
+ assert.equal(early[9].nextReleaseDate,undefined);
+ assert.equal(early[5].releaseBasis,'OFFICIAL_SOURCE_SPECIFIC_SCHEDULE');
+ const expired=build({snapshot,e1,nowIso:'2026-11-26T00:00:00Z'}).storedE1.indicators;
+ assert.equal(expired[5].nextReleaseDate,undefined);
+ assert.equal(expired[10].nextReleaseDate,undefined);
+ const wrongSource=build({snapshot,e1:{...base,indicators:base.indicators.map(x=>({...x,source:'UNVERIFIED'}))},nowIso:'2026-10-19T00:00:00Z'}).storedE1.indicators;
+ assert.equal(wrongSource[5].nextReleaseDate,undefined);
+});
