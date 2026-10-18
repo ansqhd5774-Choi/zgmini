@@ -60,3 +60,15 @@ test("inflation indicator R2 shows previous/current/release and mobile no-overfl
   assert.match(builder,/previousAvailableAt/);
   assert.match(builder,/previousValue/);
 });
+
+test("inflation mobile provenance footer is 28px instead of the shared 40px minimum",()=>{
+  const global=read("app/responsive.css");
+  const css=read("app/inflation/inflation-indicator-r2.css");
+  const mobile=css.slice(css.lastIndexOf("@media(max-width:767px){"));
+  assert.match(global,/\.fg-card\.fg-shared-shell \.fg-footer-slot\{height:auto;min-height:2\.5rem\}/);
+  assert.match(global,/\.fg-card\.fg-shared-shell \.fg-footer-slot \.cnn-panel-note\{height:auto;min-height:2\.5rem/);
+  assert.match(mobile,/\.fg-card\.fg-shared-shell\.inflation-target-card \.fg-footer-slot\{\s*grid-column:1 \/ -1;\s*grid-row:3;\s*height:28px;\s*min-height:28px;\s*flex:0 0 28px;/);
+  assert.match(mobile,/\.fg-card\.fg-shared-shell\.inflation-target-card \.fg-footer-slot \.cnn-panel-note\{\s*height:28px;\s*min-height:28px;\s*box-sizing:border-box;/);
+  assert.match(mobile,/\.fg-card\.fg-shared-shell\.inflation-target-card \.cnn-panel-note\{\s*min-height:28px;\s*padding:5px 10px/);
+  assert.doesNotMatch(css,/\.zg-dashboard\[/);
+});

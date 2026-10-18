@@ -157,7 +157,19 @@
  .fg-card.fg-shared-shell.inflation-target-card .fg-analysis-slot .cnn-chart{width:100%;height:132px;min-height:0}
  .fg-card.fg-shared-shell.inflation-target-card .recharts-cartesian-axis-tick-value{font-size:10px}
 
- .fg-card.fg-shared-shell.inflation-target-card .fg-footer-slot{grid-column:1 / -1;grid-row:3}
+ /* Override the shared 2.5rem (40px) footer floor only in this mobile hero. */
+ .fg-card.fg-shared-shell.inflation-target-card .fg-footer-slot{
+  grid-column:1 / -1;
+  grid-row:3;
+  height:28px;
+  min-height:28px;
+  flex:0 0 28px;
+ }
+ .fg-card.fg-shared-shell.inflation-target-card .fg-footer-slot .cnn-panel-note{
+  height:28px;
+  min-height:28px;
+  box-sizing:border-box;
+ }
  .fg-card.fg-shared-shell.inflation-target-card .cnn-panel-note{
   min-height:28px;
   padding:5px 10px;
