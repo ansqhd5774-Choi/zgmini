@@ -13,7 +13,7 @@ const copy:Record<Topic,string>={
 
 export default function SearchIntentIntro({topic}:{topic:Topic}){
   if(topic==="inflation"){
-    return <div className="mt-2 max-w-4xl border-l-[3px] border-sky-400/80 pl-3 sm:mt-3 sm:pl-4" data-testid={`search-intent-intro-${topic}`}>
+    return <div className="mb-4 max-w-4xl border-l-[3px] border-sky-400/80 pl-3 sm:mb-5 sm:pl-4" data-testid={`search-intent-intro-${topic}`}>
       <p className="text-[18px] font-extrabold leading-[1.3] tracking-[-0.025em] text-slate-50 sm:text-[22px]">미국 물가, <span className="text-sky-300">안정되고 있을까?</span></p>
       <p className="mt-1 text-[12px] leading-[1.45] text-slate-300 sm:text-[13px]">{copy[topic]}</p>
     </div>;
