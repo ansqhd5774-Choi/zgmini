@@ -10,29 +10,30 @@ import {MarketFearGreedChart,type MarketFearGreedChartPoint,type MarketFearGreed
 import "./recession-indicator-r2.css";
 import "./recession-hero-parity-r2.css";
 import {RecessionFavoriteButton,RecessionFavoriteHeaderIcon} from "./recession-favorite-button";
+import {InflationMiniChart,type InflationMiniTrendPoint} from "../inflation/inflation-mini-chart";
 
-type ComponentRow={id:string;value:number|null;score:number|null;observationDate:string|null;weight:number};
-type SupplementalRow={id:string;name:string|null;status:string;score:number|null;value:number|null;displayValue:string|null;unit:string|null;observationDate:string|null;source:string|null};
+type ComponentRow={id:string;value:number|null;score:number|null;observationDate:string|null;weight:number;previousValue?:number|null;previousObservationDate?:string|null;trend?:InflationMiniTrendPoint[];nextReleaseDate?:string|null};
+type SupplementalRow={id:string;name:string|null;status:string;score:number|null;value:number|null;displayValue:string|null;unit:string|null;observationDate:string|null;source:string|null;previousValue?:number|null;previousObservationDate?:string|null;trend?:InflationMiniTrendPoint[];nextReleaseDate?:string|null};
 type Payload={
  status:string;score:number|null;asOfDate?:string|null;methodologyVersion?:string;historyMode?:string;lookAheadSafe?:boolean;
  trend?:Array<{label:string;value:number}>;components?:ComponentRow[];supplementals?:SupplementalRow[];
 };
 
-const componentMeta:Record<string,{label:string;content:string;unit:string;criterion:string;help:string}>={
- nfp:{label:"비농업고용",content:"고용자 수의 최근 3개월 성장 속도",unit:"%",criterion:"정규화 60점↑",help:"고용 성장률이 장기 분포에서 높을수록 경기 방어에 긍정적입니다. 지속적인 고용 감소는 침체 위험을 높입니다."},
- realGdp:{label:"실질 GDP",content:"물가효과를 제거한 경제 전체 생산",unit:"%",criterion:"정규화 60점↑",help:"2개 분기의 실질 GDP 성장 속도를 봅니다. 장기 분포보다 강하면 긍정적이고 수축하면 부정적입니다."},
- industrialProduction:{label:"산업생산",content:"광공업·제조업 생산 활동",unit:"%",criterion:"정규화 60점↑",help:"최근 3개월 생산 속도가 장기 분포에서 높을수록 긍정적입니다. 생산 감소가 이어지면 침체 신호로 봅니다."},
- realPce:{label:"실질 PCE",content:"물가효과를 제거한 개인소비지출",unit:"%",criterion:"정규화 60점↑",help:"미국 경제의 핵심인 소비가 실제 구매력 기준으로 증가하는지 봅니다. 실질 소비 둔화·감소는 부정적입니다."},
- sahmGap:{label:"Sahm Gap",content:"실업률 급등 여부를 보는 침체 경보",unit:"%p",criterion:"0.50%p 미만",help:"3개월 평균 실업률이 최근 12개월 최저점보다 0.50%p 이상 높아지면 Sahm Rule 침체 신호로 알려져 있습니다. 낮을수록 안전합니다."},
- retailSales:{label:"실질 소매판매",content:"물가를 제거한 가계 상품소비",unit:"%",criterion:"정규화 60점↑",help:"최근 실질 소매판매 성장률이 장기 분포에서 높을수록 경기 방어에 긍정적입니다."},
- disposableIncome:{label:"실질 가처분소득",content:"가계가 실제로 쓸 수 있는 소득",unit:"%",criterion:"정규화 60점↑",help:"세후·물가조정 소득이 증가하면 소비 지속력이 높아집니다. 둔화나 감소는 경기 방어력을 약화시킵니다."},
+const componentMeta:Record<string,{label:string;content:string;unit:string;criterion:string;help:string;cadence:string}>={
+ nfp:{label:"비농업고용",content:"고용자 수의 최근 3개월 성장 속도",unit:"%",criterion:"정규화 60점↑",cadence:"월간",help:"고용 성장률이 장기 분포에서 높을수록 경기 방어에 긍정적입니다. 지속적인 고용 감소는 침체 위험을 높입니다."},
+ realGdp:{label:"실질 GDP",content:"물가효과를 제거한 경제 전체 생산",unit:"%",criterion:"정규화 60점↑",cadence:"분기",help:"2개 분기의 실질 GDP 성장 속도를 봅니다. 장기 분포보다 강하면 긍정적이고 수축하면 부정적입니다."},
+ industrialProduction:{label:"산업생산",content:"광공업·제조업 생산 활동",unit:"%",criterion:"정규화 60점↑",cadence:"월간",help:"최근 3개월 생산 속도가 장기 분포에서 높을수록 긍정적입니다. 생산 감소가 이어지면 침체 신호로 봅니다."},
+ realPce:{label:"실질 PCE",content:"물가효과를 제거한 개인소비지출",unit:"%",criterion:"정규화 60점↑",cadence:"월간",help:"미국 경제의 핵심인 소비가 실제 구매력 기준으로 증가하는지 봅니다. 실질 소비 둔화·감소는 부정적입니다."},
+ sahmGap:{label:"Sahm Gap",content:"실업률 급등 여부를 보는 침체 경보",unit:"%p",criterion:"0.50%p 미만",cadence:"월간",help:"3개월 평균 실업률이 최근 12개월 최저점보다 0.50%p 이상 높아지면 Sahm Rule 침체 신호로 알려져 있습니다. 낮을수록 안전합니다."},
+ retailSales:{label:"실질 소매판매",content:"물가를 제거한 가계 상품소비",unit:"%",criterion:"정규화 60점↑",cadence:"월간",help:"최근 실질 소매판매 성장률이 장기 분포에서 높을수록 경기 방어에 긍정적입니다."},
+ disposableIncome:{label:"실질 가처분소득",content:"가계가 실제로 쓸 수 있는 소득",unit:"%",criterion:"정규화 60점↑",cadence:"월간",help:"세후·물가조정 소득이 증가하면 소비 지속력이 높아집니다. 둔화나 감소는 경기 방어력을 약화시킵니다."},
 };
 
-const supplementalMeta:Record<string,{label:string;content:string;criterion:string;help:string}>={
- initialClaims:{label:"신규 실업수당 4W",content:"해고 증가를 빠르게 포착하는 고용 선행지표",criterion:"정규화 60점↑",help:"청구건수가 낮고 안정적일수록 긍정적입니다. ZGmini의 저장 이력 정규화 점수 60점 이상을 양호 기준으로 봅니다."},
- yieldCurve:{label:"장단기 금리차",content:"금리곡선이 보내는 경기 선행 신호",criterion:"정규화 60점↑",help:"금리곡선은 단순 양·음만으로 판단하지 않고 ZGmini 금리환경 정규화 점수로 봅니다. 낮은 점수는 경기 선행 신호가 불리한 상태를 의미합니다."},
- hyCreditStress:{label:"HY 신용 스트레스",content:"고위험 회사채 시장의 자금경색 정도",criterion:"정규화 60점↑",help:"하이일드 시장 스트레스가 낮을수록 기업 자금조달 환경이 양호합니다. 정규화 점수가 높을수록 긍정적입니다."},
- creditConditions:{label:"신용여건",content:"금융시장의 전반적인 신용 긴축 정도",criterion:"정규화 60점↑",help:"신용이 급격히 긴축되면 기업과 가계 활동이 위축될 수 있습니다. 정규화 점수가 높을수록 경기 방어에 유리합니다."},
+const supplementalMeta:Record<string,{label:string;content:string;criterion:string;help:string;cadence:string}>={
+ initialClaims:{label:"신규 실업수당 4W",content:"해고 증가를 빠르게 포착하는 고용 선행지표",criterion:"정규화 60점↑",cadence:"주간",help:"청구건수가 낮고 안정적일수록 긍정적입니다. ZGmini의 저장 이력 정규화 점수 60점 이상을 양호 기준으로 봅니다."},
+ yieldCurve:{label:"장단기 금리차",content:"금리곡선이 보내는 경기 선행 신호",criterion:"정규화 60점↑",cadence:"거래일",help:"금리곡선은 단순 양·음만으로 판단하지 않고 ZGmini 금리환경 정규화 점수로 봅니다. 낮은 점수는 경기 선행 신호가 불리한 상태를 의미합니다."},
+ hyCreditStress:{label:"HY 신용 스트레스",content:"고위험 회사채 시장의 자금경색 정도",criterion:"정규화 60점↑",cadence:"비정기",help:"하이일드 시장 스트레스가 낮을수록 기업 자금조달 환경이 양호합니다. 정규화 점수가 높을수록 긍정적입니다."},
+ creditConditions:{label:"신용여건",content:"금융시장의 전반적인 신용 긴축 정도",criterion:"정규화 60점↑",cadence:"주간",help:"신용이 급격히 긴축되면 기업과 가계 활동이 위축될 수 있습니다. 정규화 점수가 높을수록 경기 방어에 유리합니다."},
 };
 
 const developmentCandidates=[
@@ -68,6 +69,13 @@ function fmt(value:number|null|undefined,unit=""){
  return `${value.toFixed(digits)}${unit}`;
 }
 function scoreLabel(value:number|null|undefined){return typeof value==="number"&&Number.isFinite(value)?value.toFixed(1):"—";}
+function previousLabel(row?:{previousValue?:number|null;previousObservationDate?:string|null},unit=""){
+ return fmt(row?.previousValue,unit);
+}
+function releaseLabel(row:{nextReleaseDate?:string|null},cadence:string){
+ // Do not synthesize a release date from frequency.
+ return {cadence,date:row.nextReleaseDate?dateLabel(row.nextReleaseDate):"일정 미정"};
+}
 function HelpTip({label,text}:{label:string;text:string}){return <ContentHelp label={label+' 도움말'}><HelpText copy={{meaning:text,reading:'원자료의 단위와 기준선, 관측일을 함께 확인하세요. 원자료의 상승·하락과 시장 평가 점수의 상승·하락은 서로 다를 수 있습니다.',note:'자료가 없거나 개발 중인 항목은 숫자를 표시하지 않습니다. 「—」는 0이 아닙니다.'}}/></ContentHelp>;}
 
 export default function RecessionPanel(){
