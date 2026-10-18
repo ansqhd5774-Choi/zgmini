@@ -8,7 +8,6 @@ const cases=[
   ['app/credit-risk/page.tsx','미국 신용위험 지수 | 회사채 스트레스·신용시장 위험 - ZGmini',['회사채 시장의 신용위험','기업 자금조달 스트레스','HY·IG·Total CMDI']],
   ['app/liquidity-crisis/page.tsx','미국 유동성 위기 지표 | Repo·은행 준비금·TGA·M2 - ZGmini',['현금 부족','단기자금시장','ON RRP']],
   ['app/debt-risk/page.tsx','미국 부채위험 지수 | 가계·기업 부채·DSR·금리부담 - ZGmini',['가계와 기업의 부채 부담','민간부채/GDP','부채상환능력']],
-  ['app/inflation/page.tsx','미국 인플레이션 지수 | CPI·PCE·기대물가·물가 추이 - ZGmini',['Core CPI·Core PCE·Headline PCE','기대인플레이션','생산자물가·임금·에너지']],
   ['app/recession/page.tsx','미국 경기침체 지표 | 실업률·GDP·Sahm Rule·장단기 금리차 - ZGmini',['실업률·Sahm Rule','실질 GDP','장단기 금리차','경기침체 확률이 아니']],
 ];
 
@@ -23,4 +22,22 @@ test('high-priority detail pages expose specific search titles and descriptions'
     assert.match(page,/twitter:\{card:"summary_large_image",title,description/,file);
     assert.doesNotMatch(page,/\bkeywords\s*:/i,file);
   }
+});
+
+test('inflation keeps specific Core/Headline CPI-PCE coverage alongside the accessible meta description',()=>{
+  const file='app/inflation/page.tsx';
+  const page=read(file);
+  const panel=read('app/inflation/inflation-panel.tsx');
+  assert.ok(page.includes('const title="미국 인플레이션 지수 | CPI·PCE·기대물가·물가 추이 - ZGmini";'));
+  assert.ok(page.includes('미국 인플레이션 지수와 물가 안정 점수를 확인하세요.'));
+  assert.ok(page.includes('16개 물가 지표의 현재값과 최근 1년 추이'));
+  for(const name of ['Core CPI','Core PCE','Headline PCE'])assert.ok(panel.includes('label:"'+name+'"'),name);
+  assert.ok(panel.includes('생산자물가'));
+  assert.ok(panel.includes('임금'));
+  assert.ok(panel.includes('에너지'));
+  assert.match(page,/alternates:\{canonical:url\}/);
+  assert.match(page,/robots:\{index:true,follow:true\}/);
+  assert.match(page,/openGraph:\{title,description,url,type:"website",siteName:"ZGmini"/);
+  assert.match(page,/twitter:\{card:"summary_large_image",title,description/);
+  assert.doesNotMatch(page,/\bkeywords\s*:/i);
 });

@@ -215,7 +215,7 @@ export default function InflationPanel(){
 
   <section className="inflation-explainer" aria-labelledby="inflation-what-title">
    <p className="cnn-eyebrow">WHAT IS INFLATION?</p>
-   <h1 id="inflation-what-title">인플레이션이란?</h1>
+   <h1 id="inflation-what-title">미국 인플레이션 지수와 물가 안정 점수</h1>
    <p>인플레이션은 <mark className="zg-inflation-keymark">물건과 서비스의 가격이 전반적으로 계속 오르는 현상</mark>이에요. 예를 들어 장보기와 외식에 드는 돈이 계속 늘어나는 상황을 떠올리면 쉬워요. 한두 가지 물건의 값만 보지 않고 <strong>소비자물가·기업 비용·임금·에너지 가격</strong>이 함께 어떻게 움직이는지 살펴봐요.</p>
    <div className="inflation-direction-strip">
     <span><b>물가 압력</b>물가 상승 속도↑ · 기업 비용↑ · 임금↑</span>
