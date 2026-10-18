@@ -69,7 +69,7 @@ export default function EarningsRecessionPanel(){
    <div className="earnings-r2-data-caption"><span>{stored?.methodologyVersion??"E1"} 저장 자료</span><strong>{stored?.status??"PARTIAL"}</strong>{stored?.financialPeriodEnd?<span>실적 기준 {dateLabel(stored.financialPeriodEnd)}</span>:null}{typeof stored?.universeCount==="number"?<span>분석 모집단 {stored.universeCount.toLocaleString("ko-KR")}개</span>:null}{typeof stored?.issuerCount==="number"?<span>유효 기업 {stored.issuerCount.toLocaleString("ko-KR")}개</span>:null}</div>
    <div className="inflation-table-wrap earnings-r2-table-wrap"><table className="inflation-indicator-table earnings-r2-table">
     <colgroup><col className="earnings-col-favorite"/><col className="earnings-col-name"/><col className="earnings-col-content"/><col className="earnings-col-criterion"/><col className="earnings-col-current"/><col className="earnings-col-observed"/><col className="earnings-col-judgement"/><col className="earnings-col-help"/></colgroup>
-    <thead><tr><th><EarningsFavoriteHeaderIcon/><span className="sr-only">즐겨찾기</span></th><th>지표</th><th>내용</th><th>기준</th><th>현재</th><th>관측일</th><th>판단</th><th><span className="sr-only">도움말</span>ⓘ</th></tr></thead>
+    <thead><tr><th><EarningsFavoriteHeaderIcon/><span className="sr-only">즐겨찾기</span></th><th>지표</th><th>내용</th><th>기준</th><th>현재</th><th>{isR5?"평가 기준일":"관측일"}</th><th>판단</th><th><span className="sr-only">도움말</span>ⓘ</th></tr></thead>
     <tbody>
      {activeOrder.map(id=>{const r=rows.get(id),m=activeMeta[id],j=judge(r?.score,r?.status);return <tr key={id} data-judgement={j.tone}>
       <td><EarningsFavoriteButton id={id} label={m.label}/></td>
@@ -96,7 +96,7 @@ export default function EarningsRecessionPanel(){
      <p className="earnings-r2-mobile-criterion"><span>기준</span>{m.criterion}</p>
      <div className="earnings-r2-mobile-metrics">
       <div><span>현재</span><strong>{fmt(r)}</strong><small>{r?.status==="READY"&&typeof r.score==="number"?"내부점수 "+r.score.toFixed(1):"점수 —"}</small></div>
-      <div><span>관측일</span><strong>{dateLabel(r?.observationDate)}</strong></div>
+      <div><span>{isR5?"평가 기준일":"관측일"}</span><strong>{dateLabel(r?.observationDate)}</strong></div>
      </div>
     </article>})}
     {!isR5&&dev.map(item=><article className="earnings-r2-mobile-card is-development" key={item[0]}>
