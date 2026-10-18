@@ -43,6 +43,12 @@ test('dated discovery does not allow Saudiâ€“Iran contacts to pass as direct USâ
  assert.equal(r.front,'SAUDI_IRAN');
  assert.equal(r.kind,'REGIONAL_DIPLOMACY_ONLY');
 });
+test('maritime tactic coverage cannot be mistaken for direct Iran-US military attack',()=>{
+ const r=IRAN_R4_14D_SOURCES.find(s=>s.id==='REUTERS_SHIPPING_TACTICS_1014');
+ assert.equal(r.front,'HORMUZ_MARITIME');
+ assert.equal(r.eventDate,null);
+ assert.equal(r.kind,'MARITIME_TREND_REPORT');
+});
 test('6th research record reports the prior day; it is not a verified 6th October attack',()=>{
  const row=IRAN_R4_14D_SOURCES.find(x=>x.id==='SAUDI_GAZETTE_HODEIDAH_1006');
  assert.equal(row.publishedDate,'2026-10-06');
