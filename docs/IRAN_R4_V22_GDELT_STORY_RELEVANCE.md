@@ -8,7 +8,7 @@
 
 ## V22 외부 공개기사 원문 검토
 
-원문 링크 19개 중 11개 유형을 재검토했다. 실제 전투사실의 추가 확인 가치가 있는 링크는 3개, 서로 다른 작전으로 취급 가능한 잠정 검토 클러스터는 **최대 2개(9/7 예멘 보도, 10/5 정부군 공세)**. 이 숫자는 검증된 사건 수가 아니다.
+원문 링크 19개 중 14개 유형을 재검토했다. 실제 전투사실의 추가 확인 가치가 있는 링크는 4개, 임시 검토 단위는 **최대 3개(9/7 2개 보도의 동일 사건 여부 미확인, 10/5 정부군 공세 1개)**. 9/7 Anadolu의 9/7 게재 기사에서 작전이 전날 일요일이라고 기술되어 있어 게시일을 곧바로 사건일로 사용할 수 없다. 이 숫자는 검증된 사건 수가 아니다.
 
 | 보도 | 성격 | R4 처리 |
 |---|---|---|
@@ -23,7 +23,7 @@
 | [JPost: 이란 지도부 미국 재공격 우려](https://www.jpost.com/middle-east/article-911729) (10/14) | 향후 공격 예측 | 발생 확정 안 됨 |
 | [Arab News: 사우디 국민 정신 칼럼](https://www.arabnews.com/opinion/saudi-arabias-national-spirit-in-the-face-of-houthi-attacks-3006284) (10/14) | 과거 공격 논평 | 신규 공격 아님 |
 
-나머지 8개 표본은 **UNREVIEWED**. GDELT 데이터가 갖는 `sqlDate`와 `gdeltFirstSeenDate` 및 10/19 기사 원문 검토 시점을 구분. 특히 9/7 게재된 예멘 공습 보도에 등장하는 이전 일자 사건을 임의로 9/7 신규 공격으로 기록하지 않는다.
+나머지 5개 표본은 **UNREVIEWED**. GDELT 데이터가 갖는 `sqlDate`와 `gdeltFirstSeenDate` 및 10/19 기사 원문 검토 시점을 구분. 특히 9/7 게재된 예멘 공습 보도에 등장하는 이전 일자 사건을 임의로 9/7 신규 공격으로 기록하지 않는다.
 
 [GDELT 원본 데이터 설명](https://gdeltproject.org/data.html): 2013년 이후 1.0 일별 파일은 실제 발생일이 아니라 뉴스에서 처음 확인된 날짜 기준; [이벤트 코드북](https://data.gdeltproject.org/documentation/GDELT-Event_Codebook-V2.0.pdf)도 사건 날짜, 수집 시각, URL을 구별한다.
 
@@ -36,3 +36,12 @@
 ## 다음 필수 작업
 
 외부 조사에서 구체적 사건 단위를 검증한 후 PC 원장에 허가된 source receipt로 연결해야 한다. 먼저 10/5 예멘 작전과 9/7 공습 주장 발생일·중복을 대조하고 UKMTO/MPA 해상 사건을 별도로 유지. **9/7~10/18 전체 관측과 IRN_USA/IRN_ISR/YEMEN_HOUTHI/N/H 증거가 확보되지 않으면 일별 R4 점수를 계산하지 않는다.**
+
+## V23 병렬 연구 — 10월 5일 Al Jazeera 실시간 보도 다중 주장 분리
+
+- [원문](https://www.aljazeera.com/news/liveblog/2026/10/5/iran-war-live-fighting-in-yemen-intensifies-tehran-says-ready-for-us-war) 내 7개 주장 단위 분리: 사우디 연합군의 호데이다 작전, 후티의 리야드 공항·라비그 정유시설 각각에 대한 공격 주장 2개, 예멘 정부군의 모카 탈환, UKMTO 호르무즈 유조선 피격 신고, 이란 협상 담당자의 외교 발언, 터키·파키스탄 사우디 방위 배치 합의.
+- 7개는 **독립 검증 공격 7건이 아니다**. 공격 주체·시점·목표별 원문 검증, 공식 번호 #156/#157와의 중복 가능성, 동일 후티 발표 내 목표별 실제 피해 확인이 남았다.
+- `sourceClaimAt`(기사 게시 시각)을 `eventOccurrenceDay`(사건일)로 복사하지 않는다. 10월 5일 당시 PC 저장 원문이 있었다는 주장도 금지.
+- [Anadolu 9월 7일 보도](https://www.aa.com.tr/en/middle-east/yemeni-army-says-it-recaptured-positions-in-taiz-and-al-hudaydah-amid-clashes-with-houthis/4049183): 예멘 정부군 성명을 9/7 게재했으나 본문은 작전 시점을 일요일로 기재. 9/7 별개 공습 기사와 사건 단위 중복 미확정.
+- [Arab News 10월 14일 보도](https://www.arabnews.com/saudi-arabia/iraq-will-not-become-a-launchpad-for-attacks-on-saudi-arabia-vows-prime-minister-3006298): 이라크 지도자의 기존 사우디 공항 공격 규탄과 외교 협력 발표로, 10/14 신규 후티 공격으로 세지 않음.
+- `lib/iran-progress/gdelt-liveblog-claims-v23.mjs` + `tests/iran-r4-v23-gdelt-liveblog-claims.test.mjs`: 연구 메타데이터·순수 함수와 9개 회귀 테스트. **DB/API/Ollama/운영 산식/실제 점수 변경 없음.**
