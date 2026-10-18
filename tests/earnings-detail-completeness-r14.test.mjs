@@ -27,8 +27,8 @@ test("R14 detail page uses the same compact intro treatment as four completed pe
 });
 
 test("R14 earnings approved source IDs are identical in writer, projection and desktop/mobile rows",()=>{
- const fromPanel=panel.match(/const r5Order=\[([^\]]+)\] as const/)?.[1]?.match(/"S\\d+"/g)?.map(x=>x.slice(1,-1))??[];
- const fromProjection=projection.match(/const R5_IDS=\[([^\]]+)\] as const/)?.[1]?.match(/"S\\d+"/g)?.map(x=>x.slice(1,-1))??[];
+ const fromPanel=panel.match(/const r5Order=\[([^\]]+)\] as const/)?.[1]?.match(/"S\d+"/g)?.map(x=>x.slice(1,-1))??[];
+ const fromProjection=projection.match(/const R5_IDS=\[([^\]]+)\] as const/)?.[1]?.match(/"S\d+"/g)?.map(x=>x.slice(1,-1))??[];
  const fromWriter=[...writer.matchAll(/ready\('S(\d+)'/g)].map(x=>"S"+x[1]);
  const expected=Array.from({length:13},(_,i)=>"S"+(i+1));
  assert.deepEqual(fromPanel,expected);
