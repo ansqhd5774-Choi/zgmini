@@ -39,3 +39,16 @@ test('extrema use only displayed dated finite score points and latest ties',()=>
   {date:'2026-10-16',value:0,index:0,kind:'flat'},
  ]);
 });
+
+test('inflation chart extrema value labels are legible without altering shared extrema labels',()=>{
+ const css=read('app/inflation/inflation-hero-typography-r1.css');
+ const panel=read('app/inflation/inflation-panel.tsx');
+ const overlay=read('components/chart-extremum-point.tsx');
+ assert.match(panel,/import "\.\/inflation-hero-typography-r1\.css"/);
+ assert.match(css,/\.fg-card\.fg-shared-shell\.inflation-target-card \.zg-chart-extremum text\{\s*font-size:12px/);
+ assert.match(css,/\.zg-chart-extremum text tspan:nth-child\(2\)\{\s*font-size:10px/);
+ assert.match(css,/@media\(max-width:767px\)\{[\s\S]*?\.zg-chart-extremum text\{\s*font-size:11px/);
+ assert.match(overlay,/fontSize=\{10\}/);
+ assert.doesNotMatch(css,/\.zg-chart-extremum\s+text\s*\{|\.recharts-surface\s+text\s*\{/);
+ assert.doesNotMatch(css,/--fg-shared-|\.fg-chart-slot\{|\.fg-renderer\{|transform:|overflow:/);
+});
