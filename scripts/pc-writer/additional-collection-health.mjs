@@ -1,7 +1,9 @@
 import fs from 'node:fs';import path from 'node:path';import os from 'node:os';
 const failed=status=>/FAILED|ERROR|BLOCKED/.test(status??'');
 export function additionalCollectionEntries({iran=null,alpaca=null,supply=null}={}){
- const sources=Object.values(iran?.sources??{});
+ // AIS was retired from scheduled collection. Historical receipts remain intact,
+ // but cannot keep the active news/official-source job permanently failed.
+ const sources=Object.entries(iran?.sources??{}).filter(([id])=>!['ais','aisHealth'].includes(id)).map(([,source])=>source);
  const feeds=iran?.articleAnalysis?.feeds??[];
  const iranFailed=sources.some(s=>failed(s.status))||failed(iran?.marad?.status)||failed(iran?.backfill?.status)||feeds.some(s=>failed(s.status));
  const iranSuccess=iran?.storageVerified===true&&sources.length>0&&sources.every(s=>s.status==='COLLECTED')&&['RUNNING','CAUGHT_UP'].includes(iran?.backfill?.status)&&feeds.every(s=>s.status==='COLLECTED');

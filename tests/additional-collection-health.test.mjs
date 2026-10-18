@@ -19,3 +19,10 @@ test('no-request replay and incomplete groups never turn green',()=>{
  assert.equal(collectionHealthSummary(additionalCollectionEntries({alpaca:{...alpaca,runRequests:0}}),now).normal,0);
  assert.equal(collectionHealthSummary(additionalCollectionEntries({alpaca:{...alpaca,completedGroups:54}}),now).normal,0);
 });
+
+test('retired AIS failures are excluded without hiding active source failures',()=>{
+ const legacy={...iran,sources:{...iran.sources,ais:{status:'SOURCE_FAILED'},aisHealth:{status:'SOURCE_FAILED'}}};
+ assert.equal(additionalCollectionEntries({iran:legacy})[0].outcome,'success');
+ assert.equal(additionalCollectionEntries({iran:{...legacy,sources:{...legacy.sources,gdelt:{status:'SOURCE_FAILED'}}}})[0].outcome,'failure');
+ assert.equal(additionalCollectionEntries({iran:{...legacy,sources:{ais:{status:'SOURCE_FAILED'}}}})[0].outcome,'unknown');
+});
