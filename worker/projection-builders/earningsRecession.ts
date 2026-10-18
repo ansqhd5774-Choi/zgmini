@@ -1,5 +1,6 @@
 
 const finite=(v:unknown):v is number=>typeof v==="number"&&Number.isFinite(v);
+const finitePositiveCount=(v:unknown):number|null=>typeof v==="number"&&Number.isSafeInteger(v)&&v>0?v:null;
 const validDate=(v:unknown):v is string=>typeof v==="string"&&/^\d{4}-\d{2}-\d{2}$/.test(v);
 const R4_IDS=["epsGrowth","margin","revenueGrowth","earningsGrowthBreadth"] as const;
 const R5_IDS=["S1","S2","S3","S4","S5","S6","S7","S8","S9","S10","S11","S12","S13"] as const;
@@ -41,7 +42,9 @@ export function buildProjection({inputs,snapshot,publicSnapshot,e1,nowIso}:any){
    methodologyVersion:e1?.methodologyVersion??"E1-R4",
    financialPeriodEnd:e1?.financialPeriodEnd??e1?.asOfDate??null,
    updatedAt:e1?.updatedAt??e1?.retrievedAt??null,
-   issuerCount:e1?.quality?.issuerCount??e1?.quality?.universeCount??null,
+   issuerCount:finitePositiveCount(e1?.quality?.issuerCount)
+     ??finitePositiveCount(e1?.quality?.universeCount)
+     ??(isR5?finitePositiveCount(e1?.issuerCount):null),
    indicators,
    components,
    trend:Array.isArray(e1?.trend)?e1.trend.filter((x:any)=>validDate(x?.label)&&finite(x?.value)).slice(-8):[],
