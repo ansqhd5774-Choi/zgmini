@@ -4,6 +4,7 @@ import type {Metadata} from "next";
 import InflationPanel from "./inflation-panel";
 import "./inflation-mobile-judgement.css";
 import "./inflation-mobile-header.css";
+import "./inflation-beginner-reading-r1.css";
 import DetailReadingGuide from "../detail-reading-guide";
 import BeginnerRiskGuide from "../beginner-risk-guide";
 import RiskDetailBeginnerLayout from "../risk-detail-beginner-layout";
@@ -27,12 +28,19 @@ export default function InflationPage(){
    <SearchIntentIntro topic="inflation"/>
    <RiskDetailBeginnerLayout><InflationPanel/><BeginnerRiskGuide topic="inflation"/></RiskDetailBeginnerLayout>
    <DetailReadingGuide title="미국 인플레이션 점수를 읽는 방법"
+    variant="beginner"
+    displayTitle="미국 물가 점수, 처음이라면 이렇게 보세요"
+    intro="점수와 물가상승률은 다른 숫자예요. 아래 네 가지만 알면 차트와 표를 쉽게 읽을 수 있어요."
     sections={[
-     {title:"점수는 물가 상승률이 아닙니다",text:"ZGmini의 0~100 점수는 물가 안정 방향을 종합한 지표입니다. 71점이 물가 상승률 71%라는 뜻은 아닙니다. 실제 상승률은 구성 지표 표의 현재값과 단위에서 확인하세요. 점수가 높을수록 안정 방향이며, 각 지표의 긍정·중립·부정은 저장된 정규화 점수의 판단이며, 표의 기준 문구는 해석 방향을 설명합니다."},
-     {title:"서로 다른 단위와 관측일을 비교하세요",text:"전년 대비 상승률, 최근 3개월 연율, 3개월 변화율은 비교 기간이 다릅니다. 같은 % 단위여도 숫자를 그대로 비교하지 말고 지표명 아래의 계산 기간과 행별 관측일을 확인하세요. 개발중 항목의 —는 실제 값 0이나 판단에 사용할 수 있는 관측값이 아닙니다."},
-     {title:"초기발표 이력을 사용하는 이유",text:"이 페이지는 저장된 초기발표 이력을 사용합니다. 뒤늦게 수정된 통계의 최신 이력과 차이가 날 수 있으므로, 과거 시점의 자료와 현재 개정 자료를 구분해야 합니다. 데이터 기준일과 방법론 표기를 함께 확인하고, 과거 차트만으로 미래 물가나 수익률을 확정하지 마세요."},
+     {title:"70점이면 물가가 70% 오른 건가요?",text:"아니요. ZGmini의 0~100점은 미국 물가가 얼마나 안정적인 방향인지 보여주는 점수예요. 점수가 높을수록 안정적인 쪽에 가깝다는 뜻이고, 실제 물가상승률은 아래 지표 표에서 확인해야 해요."},
+     {title:"미국 물가가 주식과 무슨 관계가 있나요?",text:"물가가 너무 빠르게 오르면 금리가 높게 유지될 수 있고, 기업 비용도 늘 수 있어요. 물가가 안정되면 부담이 줄 수 있지만, 주가가 반드시 오르는 건 아니에요."},
+     {title:"차트가 내려가면 주식을 팔아야 하나요?",text:"점수가 내려가면 물가 안정 신호가 약해졌다는 뜻이에요. 하지만 그 자체가 매도 신호는 아니에요. 며칠 또는 몇 달의 흐름과 다른 경제지표를 함께 보세요."},
+     {title:"지난달 숫자와 오늘 숫자는 왜 다를까요?",text:"물가 통계는 매일 나오는 주가와 달리 보통 한 달이나 분기마다 발표돼요. 이 페이지는 처음 발표됐을 때 저장한 자료를 사용하므로 나중에 수정된 공식 통계와 차이가 날 수 있어요. 표의 관측일은 그 숫자가 설명하는 시점이에요."},
     ]}
-    sources={[{href:"https://www.bls.gov/cpi/",label:"미국 노동통계국 CPI"},{href:"https://www.bea.gov/data/personal-consumption-expenditures-price-index",label:"미국 경제분석국 PCE 물가지수"}]}
+    sources={[
+     {href:"https://www.bls.gov/cpi/",label:"미국 소비자물가(CPI) 원문",description:"미국 정부가 발표한 소비자물가 수치 보기"},
+     {href:"https://www.bea.gov/data/personal-consumption-expenditures-price-index",label:"미국 PCE 물가 원문",description:"미국 경제분석국의 물가 자료 보기"},
+    ]}
     related={[{href:"/recession/",label:"미국 경기침체 지표"},{href:"/fear-greed/usa/",label:"미국 공포탐욕지수"}]}
    />
   <DetailInvestorNotes topic="inflation"/>
