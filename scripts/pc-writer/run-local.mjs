@@ -14,6 +14,7 @@ import {buildSupplyR10} from './supply-r10.mjs';
 import {acceptsStoredUpdate} from '../../lib/market-score/live-refresh.mjs';
 import {publishCoreArrowState} from './score-arrow-publication.mjs';
 import {requiresRecessionR3DisplayRefresh} from './recession-r3-refresh.mjs';
+import {requiresLiquidityR2DisplayRefresh} from './liquidity-r2-refresh.mjs';
 
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../..');
 const base=process.env.ZGMINI_PC_HOME??path.join(os.homedir(),'.zgmini','pc-writer');
@@ -131,7 +132,8 @@ try{
   const envelope=existing?JSON.parse(existing):null;
   const p=envelope?.projection;
   const recessionR3Refresh=id==='recession'&&requiresRecessionR3DisplayRefresh(envelope);
-  if(p?.status!=='READY'||p.sourceVersion!==checkpoint.sourceVersion||p.sourceStoredAt!==checkpoint.sourceStoredAt||recessionR3Refresh){
+  const liquidityR2Refresh=id==='liquidityCrisis'&&requiresLiquidityR2DisplayRefresh(envelope);
+  if(p?.status!=='READY'||p.sourceVersion!==checkpoint.sourceVersion||p.sourceStoredAt!==checkpoint.sourceStoredAt||recessionR3Refresh||liquidityR2Refresh){
    const input=r10?.status==='READY'?null:await loadProjectionSource(id,scope,{now:checkpoint.sourceStoredAt});
    const payload=r10?.status==='READY'?r10.payload:await builders[id](input);
    await projectionWriter(core).write(id,payload,Date.now(),checkpoint);
