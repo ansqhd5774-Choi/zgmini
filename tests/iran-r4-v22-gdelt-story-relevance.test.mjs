@@ -30,6 +30,10 @@ const make=(part,disposition,note,opt={})=>{
  return {url:row.articleUrl,disposition,note,reviewedOn:'20261019',...opt};
 };
 const reviews=[
+make('yemeni-army-says-it-recaptured-positions','REPORTED_COMBAT_NEEDS_PROOF','Army statement reports Taiz and Hudaydah fighting; source says Sunday before Monday publication, event date needs separate checking.'),
+make('iran-war-live-fighting-in-yemen','MULTI_EVENT_LIVEBLOG','Live article contains Houthi claims, government operations, naval reports and diplomacy; one URL is not one attack.'),
+make('iraq-will-not-become-a-launchpad','DIPLOMATIC_STATEMENT','Iraqi leader condemned earlier airport attacks and discussed non-use of Iraqi territory; no new October 14 attack.'),
+
 make('russia-calls-for-iran-to-be-included','DIPLOMATIC_STATEMENT','Gulf security initiative, not direct US-Iran attack.'),
 make('yemen-govt-forces-launch-air-strikes','REPORTED_COMBAT_NEEDS_PROOF','Yemen government forces report strikes on Houthis; occurrence day unconfirmed.'),
 make('mecca-alliance-agrees','DEFENCE_POSTURE','Defence pact deployment is not a new attack incident.'),
@@ -46,12 +50,12 @@ make('/opinion/saudi-arabias','EDITORIAL_RETROSPECTIVE','Commentary about prior 
 ];
 const run=()=>auditR4GdeltStoryV22(rows,reviews);
 test('nineteen V21 public links remain unverified and R4 null',()=>{
- const r=run();assert.equal(r.distinctNewsStories,19);assert.equal(r.manuallyReviewedStories,11);
+ const r=run();assert.equal(r.distinctNewsStories,19);assert.equal(r.manuallyReviewedStories,14);
  assert.equal(r.verifiedR4Events,0);assert.equal(r.r4ComputedDays,0);assert.equal(r.r4Score,null);
  assert.ok(r.stories.every(x=>!x.pcReceiptVerified&&!x.actorVerified&&!x.scoreEligible));
 });
 test('two October 5 articles are one possible campaign, not two verified attacks',()=>{
- const r=run();assert.equal(r.combatReportReviewLinks,3);assert.equal(r.possibleDistinctCampaignClusters,2);
+ const r=run();assert.equal(r.combatReportReviewLinks,4);assert.equal(r.possibleDistinctCampaignClusters,3);
  assert.equal(r.stories.filter(x=>x.duplicateCluster==='YEMEN_20261005_GOV_OFFENSIVE').length,2);
 });
 test('Reuters/JPost missile development does not become direct Iran-US attack',()=>{
