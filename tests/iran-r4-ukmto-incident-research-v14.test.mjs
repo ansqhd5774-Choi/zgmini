@@ -6,7 +6,7 @@ const day=d=>index().listing.find(x=>x.day===d);
 test('14 days and prior 28-day examples are not full verified event coverage',()=>{
  const r=index();assert.equal(r.listing.length,14);assert.equal(r.noticeCount,23);
  assert.equal(r.attackNotices,20);assert.equal(r.nonAttackNotices,3);
- assert.equal(r.explicitlyDatedAttackNotices,6);assert.equal(r.withoutExplicitOccurrenceDay,17);
+ assert.equal(r.explicitlyDatedAttackNotices,6);assert.equal(r.withoutExplicitOccurrenceDay,16); // 7 explicit dates include nonattack #152, 6 attacks.
  assert.equal(r.priorWindowExamples.length,8);
  assert.equal(r.dailyR4Computed,0);assert.equal(r.independentR4EventCount,0);
  assert.ok(r.listing.every(x=>x.r4Score===null&&!x.fullPrior28DaysVerified&&!x.asOfDayPcKnown));
