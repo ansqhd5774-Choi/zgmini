@@ -9,13 +9,13 @@
 .earnings-r2-indicators .earnings-r2-table{width:100%;min-width:1370px;table-layout:fixed}
 .earnings-r2-table .earnings-col-favorite{width:4%}
 .earnings-r2-table .earnings-col-name{width:13%}
-.earnings-r2-table .earnings-col-content{width:19%}
-.earnings-r2-table .earnings-col-criterion{width:13%}
-.earnings-r2-table .earnings-col-current{width:12%}
+.earnings-r2-table .earnings-col-content{width:18%}
+.earnings-r2-table .earnings-col-criterion{width:12%}
+.earnings-r2-table .earnings-col-current{width:11%}
 .earnings-r2-table .earnings-col-observed{width:9%}
 .earnings-r2-table .earnings-col-prior{width:9%}
-.earnings-r2-table .earnings-col-spark{width:10%}
-.earnings-r2-table .earnings-col-release{width:7%}
+.earnings-r2-table .earnings-col-spark{width:9%}
+.earnings-r2-table .earnings-col-release{width:6%}
 .earnings-r2-table .earnings-col-judgement{width:6%}
 .earnings-r2-table .earnings-col-help{width:3%}
 .earnings-r2-indicators .earnings-r2-table :is(th,td){width:auto!important;box-sizing:border-box;text-align:center;padding:11px 7px;overflow-wrap:anywhere}
