@@ -73,7 +73,7 @@ test("earnings UI parity: hero typography, compact question intro and four-quest
  assert.match(css,/--fg-title-size:16px/);
  assert.match(page,/DetailReadingGuide/);
  assert.match(page,/inflation-beginner-reading-r1\.css/);
- for(const question of ["84.7점과 73.5점은 왜 다른가요?","점수가 높으면 실적 침체가 없다는 뜻인가요?","분석 모집단 500개는 모두 유효하다는 뜻인가요?","평가 기준일과 1년 차트는 어떻게 읽나요?"])assert.ok(page.includes(question),question);
+ for(const question of ["메인 진단과 E1 저장 점수는 왜 다른가요?","점수가 높으면 실적 침체가 없다는 뜻인가요?","분석 모집단은 모두 유효한 기업인가요?","평가 기준일과 1년 차트는 어떻게 읽나요?"])assert.ok(page.includes(question),question);
  for(const source of ["https://www.sec.gov/edgar/search/","https://www.bea.gov/data/income-saving/corporate-profits","https://www.bls.gov/ppi/"])assert.ok(page.includes(source),source);
 });
 test("earnings parity: absent source-derived per-indicator prior, next release or one-year sparkline remain missing, never synthesized",()=>{
@@ -83,4 +83,10 @@ test("earnings parity: absent source-derived per-indicator prior, next release o
  assert.doesNotMatch(panel,/new Date\(\).*nextReleaseDate|fakeMiniTrend|synthesizedPrior/);
  assert.doesNotMatch(panel,/InflationMiniChart/);
  assert.match(panel,/dateLabel\(r\?\.observationDate\)/);
+});
+
+test("Earnings guide never hardcodes live score or universe count into evergreen descriptions",()=>{
+ const page=readFileSync("app/earnings-recession/page.tsx","utf8");
+ for(const value of ["84.7점은","73.5점은","500개는"])assert.ok(!page.includes(value),value);
+ assert.match(page,/실적 버전에 따라 구성지표가 달라질 수 있으며/);
 });
