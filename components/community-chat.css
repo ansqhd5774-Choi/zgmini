@@ -30,3 +30,5 @@
 @media(prefers-reduced-motion:reduce){.zg-community-panel.is-open,.zg-community-panel.is-closed.was-open{animation:none}.zg-community-panel.is-closed.was-open{visibility:hidden;opacity:0}}
 
 .zg-community-report{margin-top:3px;display:inline-flex;align-items:center;gap:3px;border:0;background:transparent;padding:2px 0;color:#a8b4c0;font-size:11px;cursor:pointer}.zg-community-report:disabled{opacity:.5;cursor:default}
+
+.zg-community-captcha{min-height:67px;margin-bottom:8px;overflow:hidden}

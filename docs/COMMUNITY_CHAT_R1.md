@@ -28,3 +28,8 @@ Date: 2026-10-19. Branch: feat/dashboard-live-chat-r1-20261019.
 - Reports: authenticated by same-origin plus hashed Cloudflare-IP limit (20 per day). Each visitor may report a particular message once.
 - Admin: secret-protected `GET/POST /api/internal/community/moderation` review, hide/restore, or manual purge of messages older than 30 days.
 - Provision `COMMUNITY_CHAT_ADMIN_SECRET` via Cloudflare secret store before enabling writes; do not commit secrets. UI report and moderation must be runtime tested.
+
+## R1.2 Turnstile write gate
+- Turnstile sitekey (non-secret): `COMMUNITY_CHAT_SITE_KEY`; private Cloudflare binding: `COMMUNITY_CHAT_TURNSTILE_SECRET`. Both plus `COMMUNITY_CHAT_HASH_SECRET` and D1 must be configured to enable posting.
+- Each message POST redeems a single-use token with Cloudflare Siteverify. Responses must be `success=true` and the hostname must match the current request hostname. Five-second timeout fails closed.
+- Browser widget resets after a send attempt. Use the exact public hostname to register the Turnstile sitekey. Reference: https://developers.cloudflare.com/turnstile/get-started/server-side-validation/
