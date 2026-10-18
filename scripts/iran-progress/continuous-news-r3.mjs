@@ -102,6 +102,14 @@ export async function collectNewsR3(store,{now=Date.now(),fetcher=fetch,maxArtic
   store.checkpoint('continuous-news-queue-r3',{items:queue});
  }
  report.pending=queue.filter(i=>!i.analyzedAt||i.classifierVersion!==CLASSIFIER_VERSION||i.contentHash!==hash(i.article)).length;
+ // Classification coverage is distinct from LLM processing and event acceptance.
+ const classified=queue.filter(i=>i.analyzedAt&&i.classifierVersion===CLASSIFIER_VERSION&&(i.article?.date??i.date)>=start&&(i.article?.date??i.date)<=end);
+ report.classifierMethod='HEADLINE_RULES_R3_NOT_OLLAMA';
+ report.classifiedUnique=classified.length;
+ report.matchedRuleUnique=classified.filter(i=>events.has(i.url)).length;
+ report.unmatchedRuleUnique=report.classifiedUnique-report.matchedRuleUnique;
+ report.nonMatchReasons={};
+ for(const item of classified)if(!events.has(item.url)){const reason=item.reason??'UNKNOWN';report.nonMatchReasons[reason]=(report.nonMatchReasons[reason]??0)+1;}
  store.checkpoint('continuous-news-queue-r3',{items:queue});
  const successes=report.feeds.filter(f=>f.status==='COLLECTED');
  report.lastDiscoverySuccessAt=successes.length?now:previous?.lastDiscoverySuccessAt??null;
