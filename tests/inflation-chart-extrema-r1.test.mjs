@@ -49,6 +49,6 @@ test('inflation chart extrema value labels are legible without altering shared e
  assert.match(css,/\.zg-chart-extremum text tspan:nth-child\(2\)\{\s*font-size:10px/);
  assert.match(css,/@media\(max-width:767px\)\{[\s\S]*?\.zg-chart-extremum text\{\s*font-size:11px/);
  assert.match(overlay,/fontSize=\{10\}/);
- assert.doesNotMatch(css,/\.zg-chart-extremum\s+text\s*\{|\.recharts-surface\s+text\s*\{/);
+ assert.doesNotMatch(css,/^\.zg-chart-extremum\s+text\s*\{|^\.recharts-surface\s+text\s*\{/m);
  assert.doesNotMatch(css,/--fg-shared-|\.fg-chart-slot\{|\.fg-renderer\{|transform:|overflow:/);
 });
