@@ -33,6 +33,9 @@ test("actual verified API date outranks expected; missing/out-of-range stays abs
 });
 test("same release helper powers desktop and mobile without score or writer edits",()=>{
  assert.equal((panel.match(/liquidityReleaseInfo\(id,today,row\?\.nextReleaseDate\)/g)||[]).length,2);
+ assert.match(panel,/function kstTodayKey\(\)/);
+ assert.match(panel,/\.formatToParts\(new Date\(\)\)/);
+ assert.match(panel,/const today=kstTodayKey\(\)/);
  assert.equal((panel.match(/\{release\.text\}/g)||[]).length,2);
  assert.match(panel,/useStoredIndex<Payload>\('\/api\/liquidity-crisis-detail'\)/);
  assert.doesNotMatch(panel,/\bfetch\s*\(/);
