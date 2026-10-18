@@ -39,3 +39,11 @@ test("earnings R2 suppresses unavailable comparison placeholders despite shared 
  assert.match(panel,/\{stored\?\.financialPeriodEnd\?<span>/);
  assert.match(css,/earnings-r2-chart-identity/);
 });
+
+test("earnings 1Y chart preserves all stored observations but labels each month only once",()=>{
+ assert.match(panel,/axisTicks=\\[\\.\\.\\.new Map\\(trend\\.map\\(p=>\\[p\\.date\\.slice\\(0,7\\),p\\.date\\]\\)\\)\\.values\\(\\)\\]/);
+ const data=["2025-09-30","2025-12-31","2026-03-31","2026-06-30","2026-10-16","2026-10-17"];
+ const ticks=[...new Map(data.map(date=>[date.slice(0,7),date])).values()];
+ assert.equal(data.length,6);
+ assert.deepEqual(ticks,["2025-09-30","2025-12-31","2026-03-31","2026-06-30","2026-10-17"]);
+});
