@@ -50,7 +50,7 @@ function dateLabel(v?:string|null){if(!v)return "—";const d=new Date(v.length=
 function stage(s:number|null|undefined,status?:string){if(status!=="READY"||typeof s!=="number"||!Number.isFinite(s))return "데이터 준비 중";if(s>=75)return "매우 양호";if(s>=60)return "양호";if(s>=45)return "중립";if(s>=25)return "실적 주의";return "실적 침체 위험"}
 function judge(s:number|null|undefined,status?:string){if(status!=="READY"||typeof s!=="number"||!Number.isFinite(s))return {label:"데이터 준비 중",tone:"neutral"};if(s>=60)return {label:"긍정",tone:"positive"};if(s>=45)return {label:"중립",tone:"neutral"};return {label:"부정",tone:"negative"}}
 function fmt(r:Indicator|null|undefined){if(!r||typeof r.value!=="number"||!Number.isFinite(r.value))return "—";return r.value.toFixed(2)+(r.unit?" "+r.unit:"")}
-function HelpTip({label,text}:{label:string;text:string}){return <ContentHelp label={label+' 도움말'}><HelpText copy={{meaning:text,reading:'원자료의 단위와 기준선, 관측일을 함께 확인하세요. 원자료의 상승·하락과 시장 평가 점수의 상승·하락은 서로 다를 수 있습니다.',note:'자료가 없거나 개발 중인 항목은 숫자를 표시하지 않습니다. 「—」는 0이 아닙니다.'}}/></ContentHelp>;}
+function HelpTip({label,text,isR5=false}:{label:string;text:string;isR5?:boolean}){return <ContentHelp label={label+' 도움말'}><HelpText copy={{meaning:text,reading:isR5?'현재값·내부점수와 평가 기준일을 구분하세요. E1 평가 기준일은 개별 기업의 공시일이나 원자료의 공식 발표일이 아닙니다.':'원자료의 단위와 기준선, 관측일을 함께 확인하세요. 원자료의 상승·하락과 시장 평가 점수의 상승·하락은 서로 다를 수 있습니다.',note:'자료가 없거나 개발 중인 항목은 숫자를 표시하지 않습니다. 「—」는 0이 아닙니다.'}}/></ContentHelp>;}
 
 export default function EarningsRecessionPanel(){
  const {payload,loading}=useStoredIndex<Payload>('/api/earnings-recession-detail');
@@ -60,7 +60,7 @@ export default function EarningsRecessionPanel(){
  return <>
   <section className="cnn-reference-panel fg-card fg-shared-shell earnings-recession-target-card" data-testid="earnings-recession-detail-hero" data-market-state={loading?"loading":payload?.status==="READY"&&diagnosticScore!==null?"ready":"unavailable"} aria-busy={loading}>
    <div className="fg-header-slot"><MarketCardHeader flag="/flags/us.svg" eyebrow="ZGMINI EARNINGS RECESSION" title="미국 실적 침체" description="기업 실적 방어 진단 · E1 저장 실적 추이는 별도" dateLabel="진단 기준일" date={dateLabel(payload?.asOfDate)} source=""/></div>
-   <div className="fg-content-slot"><div className="fg-score-slot"><MarketScoreOrb score={loading||diagnosticScore===null?"—":diagnosticScore.toFixed(1)} state={loading?"확인 중":stage(diagnosticScore,payload?.status)} variant="hero" dayDelta={null} periodDelta={null} periodLabel="진단 추이" dayLabel="이전 대비" comparisonAriaLabel="실적 침체 방어점수 상태" metaDate={dateLabel(payload?.asOfDate)}/></div><MarketTrendFrame className="fg-analysis-slot"><div className="fg-chart-slot"><span className="earnings-r2-chart-identity">{stored?.methodologyVersion??"E1"} 저장 점수 추이</span><div className="fg-renderer"><MarketFearGreedChart data={trend} axisTicks={axisTicks} axisLabels={axisLabels} latestPoint={latestPoint} instanceKey="earnings-stored" gradientId="earnings-recession-fill" formatTooltipLabel={dateLabel} emptyLabel={loading?"확인 중":"E1 저장이력 없음"}/></div></div></MarketTrendFrame></div>
+   <div className="fg-content-slot"><div className="fg-score-slot"><MarketScoreOrb score={loading||diagnosticScore===null?"—":diagnosticScore.toFixed(1)} state={loading?"확인 중":stage(diagnosticScore,payload?.status)} variant="hero" dayDelta={null} periodDelta={null} periodLabel="진단 추이" dayLabel="이전 대비" comparisonAriaLabel="실적 침체 방어점수 상태" metaDate={dateLabel(payload?.asOfDate)}/></div><MarketTrendFrame className="fg-analysis-slot"><div className="fg-chart-slot"><span className="earnings-r2-chart-identity">{isR5?`${stored?.methodologyVersion??"E1"} 사후 재구성 추이`:`${stored?.methodologyVersion??"E1"} 저장 점수 추이`}</span><div className="fg-renderer"><MarketFearGreedChart data={trend} axisTicks={axisTicks} axisLabels={axisLabels} latestPoint={latestPoint} instanceKey="earnings-stored" gradientId="earnings-recession-fill" formatTooltipLabel={value=>isR5?`재구성 평가 기준일 ${dateLabel(value)}`:dateLabel(value)} emptyLabel={loading?"확인 중":"E1 저장이력 없음"}/></div></div></MarketTrendFrame></div>
    <div className="fg-footer-slot"><div className="cnn-panel-note earnings-r2-source-note"><span>E1 저장 추이</span><strong>{storedScore===null?"점수 —":storedScore.toFixed(1)+"점"} · {stored?.methodologyVersion??"E1"} · 진단점수와 별도</strong></div></div>
   </section>
   <section className="inflation-explainer" aria-labelledby="earnings-what-title"><p className="cnn-eyebrow">WHAT IS AN EARNINGS RECESSION?</p><h1 id="earnings-what-title">실적 침체란?</h1><p>{isR5?"E1-R5는 실제 이익·매출·마진·현금흐름뿐 아니라 개선의 확산도, 생산·노동 비용 압력, 경영진과 CFO의 향후 전망까지 함께 봅니다.":"실적 침체는 기업들의 이익이 전반적으로 둔화하거나 감소하는 상태입니다. 주가가 오르더라도 EPS 성장, 매출 성장, 이익률, 이익 성장 기업의 폭이 함께 약해지면 기업 펀더멘털이 악화되고 있다는 신호가 될 수 있습니다."}</p><div className="inflation-direction-strip"><span><b>침체 방향</b>EPS·매출·마진↓ · 비용압력↑ · 전망↓</span><span><b>안정 방향</b>실적 개선 · 확산 확대 · 비용압력 완화 · 전망↑</span></div></section>
@@ -78,7 +78,7 @@ export default function EarningsRecessionPanel(){
       <td className="earnings-r2-value"><strong>{fmt(r)}</strong><small>{r?.status==="READY"&&typeof r.score==="number"?"내부점수 "+r.score.toFixed(1):"점수 —"}</small></td>
       <td className="earnings-r2-observed">{dateLabel(r?.observationDate)}</td>
       <td><span className="inflation-judgement">{j.label}</span></td>
-      <td><HelpTip label={m.label} text={m.help}/></td>
+      <td><HelpTip label={m.label} text={m.help} isR5={isR5}/></td>
      </tr>})}
      {!isR5&&dev.map(item=><tr key={item[0]} data-development="true">
       <td><EarningsFavoriteButton id={"development:"+item[0]} label={item[0]}/></td>
@@ -91,7 +91,7 @@ export default function EarningsRecessionPanel(){
    </table></div>
    <div className="earnings-r2-mobile-list">
     {activeOrder.map(id=>{const r=rows.get(id),m=activeMeta[id],j=judge(r?.score,r?.status);return <article className="earnings-r2-mobile-card" key={id} data-judgement={j.tone}>
-     <div className="earnings-r2-mobile-head"><div className="earnings-r2-mobile-title"><EarningsFavoriteButton id={id} label={m.label}/><div><strong>{m.label}</strong><small>{isR5?"E1-R5":"E1-R4"} 저장 지표</small></div></div><div className="earnings-r2-mobile-actions"><span className="inflation-judgement">{j.label}</span><HelpTip label={m.label} text={m.help}/></div></div>
+     <div className="earnings-r2-mobile-head"><div className="earnings-r2-mobile-title"><EarningsFavoriteButton id={id} label={m.label}/><div><strong>{m.label}</strong><small>{isR5?"E1-R5":"E1-R4"} 저장 지표</small></div></div><div className="earnings-r2-mobile-actions"><span className="inflation-judgement">{j.label}</span><HelpTip label={m.label} text={m.help} isR5={isR5}/></div></div>
      <p className="earnings-r2-mobile-content">{m.content}</p>
      <p className="earnings-r2-mobile-criterion"><span>기준</span>{m.criterion}</p>
      <div className="earnings-r2-mobile-metrics">
