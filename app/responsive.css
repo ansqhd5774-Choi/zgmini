@@ -465,3 +465,10 @@
  .zg-composite-day-comparison+.zg-composite-day-comparison{border-left:1px solid #31506d}
  .zg-composite-pc-only,.zg-composite-day-comparison i.zg-composite-pc-only{display:inline}
 }
+/* Dashboard detail links share the brand accent, independently of score direction. */
+.zg-dashboard[data-view="dashboard"] .fg-card.fg-shared-shell a.fg-market-detail-link,
+.zg-dashboard[data-view="dashboard"] .zg-r55-subscore-head a.zg-info{color:#fabc42;font-weight:800}
+.zg-dashboard[data-view="dashboard"] a.fg-market-detail-link svg,
+.zg-dashboard[data-view="dashboard"] .zg-r55-subscore-info a.zg-info svg{stroke-width:3}
+.zg-dashboard[data-view="dashboard"] .zg-diagnostic-arrow[data-direction="flat"]{color:#94a3b8;animation:none}
+@media(max-width:767px){.zg-dashboard[data-view="dashboard"] .zg-r55-heading .zg-brand-tag{display:none}}
