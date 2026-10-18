@@ -20,7 +20,7 @@ export default function SearchIntentIntro({topic}:{topic:Topic}){
   }
   if(topic==="recession"){
     return <div className="mb-4 max-w-4xl border-l-[3px] border-sky-400/80 pl-3 sm:mb-5 sm:pl-4" data-testid={`search-intent-intro-${topic}`}>
-      <p className="text-[18px] font-extrabold leading-[1.3] tracking-[-0.025em] text-slate-50 sm:text-[22px]">미국 경기, <span className="text-sky-300">침체 위험이 커지고 있을까?</span></p>
+      <p className="text-[18px] font-extrabold leading-[1.3] tracking-[-0.025em] text-slate-50 sm:text-[22px]">미국 경기, <span className="text-sky-300">침체 신호는?</span></p>
       <p className="mt-1 text-[12px] leading-[1.45] text-slate-300 sm:text-[13px]">{copy[topic]}</p>
     </div>;
   }
