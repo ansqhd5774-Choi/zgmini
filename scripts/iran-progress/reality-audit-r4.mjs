@@ -4,6 +4,7 @@ import os from 'node:os';
 import path from 'node:path';
 import {DatabaseSync} from 'node:sqlite';
 import {fileURLToPath} from 'node:url';
+import {auditR4MilitaryWindow} from './reality-event-window-r4.mjs';
 const safeCheckpoint=(db,key)=>{try{const x=db.prepare('SELECT body FROM checkpoints WHERE name=?').get(key);return x?JSON.parse(x.body):null;}catch{return null;}};
 const safeCount=(db,sql)=>{try{return Number(db.prepare(sql).get().n);}catch{return null;}};
 const safeGroup=(db,sql)=>{try{return db.prepare(sql).all().map(({label,count})=>({label,count:Number(count)}));}catch{return [];}};
@@ -22,7 +23,7 @@ const limitedCoverage=input=>Object.fromEntries(['IRN_USA','IRN_ISR','LINKED','Y
  return [id,{present:!!c,verified:c?.status==='VERIFIED',coverageThrough:c?.coverageThrough??null,materialPending:c?.materialPending??null}];
 }));
 const reasons=items=>{const result={};for(const x of items){if(x.reason&&x.reason!=='ACCEPTED')result[x.reason]=(result[x.reason]??0)+1;}return result;};
-export function auditIranLocalReadOnly(db){
+export function auditIranLocalReadOnly(db,now=Date.now()){
  const report=safeCheckpoint(db,'continuous-news-last-run-r3');
  const queue=safeCheckpoint(db,'continuous-news-queue-r3')?.items??[];
  const events=safeCheckpoint(db,'reference-flow-continuous-news-r3');
@@ -30,6 +31,7 @@ export function auditIranLocalReadOnly(db){
  const evalR14=safeCheckpoint(db,'article-ai-evaluation-r14');
  const verifiedInput=safeCheckpoint(db,'verified-input');
  const latestEventRevisions=eventOverview(db);
+ const militaryWindow=auditR4MilitaryWindow(db,now);
  const coverage=limitedCoverage(verifiedInput);
  const candidates=safeGroup(db,'SELECT state AS label, COUNT(*) AS count FROM discovery_candidates GROUP BY state ORDER BY state');
  const seen=new Map();
@@ -66,6 +68,7 @@ export function auditIranLocalReadOnly(db){
   r4InputInventory:{
    verifiedInputCheckpointPresent:verifiedInput!==null,
    latestEventRevisions,
+   militaryWindow,
    latestEventCount:latestEventRevisions.reduce((a,v)=>a+v.count,0),
    coverage,
    relations:Object.fromEntries(['IRN_USA','IRN_ISR','YEMEN_HOUTHI'].map(id=>[id,{
