@@ -21,20 +21,20 @@ type Payload={
 };
 
 const componentMeta:Record<string,{label:string;content:string;unit:string;criterion:string;help:string;cadence:string}>={
- nfp:{label:"비농업고용",content:"고용자 수의 최근 3개월 성장 속도",unit:"%",criterion:"정규화 60점↑",cadence:"월간",help:"고용 성장률이 장기 분포에서 높을수록 경기 방어에 긍정적입니다. 지속적인 고용 감소는 침체 위험을 높입니다."},
- realGdp:{label:"실질 GDP",content:"물가효과를 제거한 경제 전체 생산",unit:"%",criterion:"정규화 60점↑",cadence:"분기",help:"2개 분기의 실질 GDP 성장 속도를 봅니다. 장기 분포보다 강하면 긍정적이고 수축하면 부정적입니다."},
- industrialProduction:{label:"산업생산",content:"광공업·제조업 생산 활동",unit:"%",criterion:"정규화 60점↑",cadence:"월간",help:"최근 3개월 생산 속도가 장기 분포에서 높을수록 긍정적입니다. 생산 감소가 이어지면 침체 신호로 봅니다."},
- realPce:{label:"실질 PCE",content:"물가효과를 제거한 개인소비지출",unit:"%",criterion:"정규화 60점↑",cadence:"월간",help:"미국 경제의 핵심인 소비가 실제 구매력 기준으로 증가하는지 봅니다. 실질 소비 둔화·감소는 부정적입니다."},
+ nfp:{label:"비농업고용",content:"고용자 수의 최근 3개월 성장 속도",unit:"%",criterion:"고용 증가세 유지",cadence:"월간",help:"고용 성장률이 장기 분포에서 높을수록 경기 방어에 긍정적입니다. 지속적인 고용 감소는 침체 위험을 높입니다."},
+ realGdp:{label:"실질 GDP",content:"물가효과를 제거한 경제 전체 생산",unit:"%",criterion:"실질 성장 지속",cadence:"분기",help:"2개 분기의 실질 GDP 성장 속도를 봅니다. 장기 분포보다 강하면 긍정적이고 수축하면 부정적입니다."},
+ industrialProduction:{label:"산업생산",content:"광공업·제조업 생산 활동",unit:"%",criterion:"생산 증가세 유지",cadence:"월간",help:"최근 3개월 생산 속도가 장기 분포에서 높을수록 긍정적입니다. 생산 감소가 이어지면 침체 신호로 봅니다."},
+ realPce:{label:"실질 PCE",content:"물가효과를 제거한 개인소비지출",unit:"%",criterion:"실질 소비 증가",cadence:"월간",help:"미국 경제의 핵심인 소비가 실제 구매력 기준으로 증가하는지 봅니다. 실질 소비 둔화·감소는 부정적입니다."},
  sahmGap:{label:"Sahm Gap",content:"실업률 급등 여부를 보는 침체 경보",unit:"%p",criterion:"0.50%p 미만",cadence:"월간",help:"3개월 평균 실업률이 최근 12개월 최저점보다 0.50%p 이상 높아지면 Sahm Rule 침체 신호로 알려져 있습니다. 낮을수록 안전합니다."},
- retailSales:{label:"실질 소매판매",content:"물가를 제거한 가계 상품소비",unit:"%",criterion:"정규화 60점↑",cadence:"월간",help:"최근 실질 소매판매 성장률이 장기 분포에서 높을수록 경기 방어에 긍정적입니다."},
- disposableIncome:{label:"실질 가처분소득",content:"가계가 실제로 쓸 수 있는 소득",unit:"%",criterion:"정규화 60점↑",cadence:"월간",help:"세후·물가조정 소득이 증가하면 소비 지속력이 높아집니다. 둔화나 감소는 경기 방어력을 약화시킵니다."},
+ retailSales:{label:"실질 소매판매",content:"물가를 제거한 가계 상품소비",unit:"%",criterion:"실질 판매 증가",cadence:"월간",help:"최근 실질 소매판매 성장률이 장기 분포에서 높을수록 경기 방어에 긍정적입니다."},
+ disposableIncome:{label:"실질 가처분소득",content:"가계가 실제로 쓸 수 있는 소득",unit:"%",criterion:"실질 소득 증가",cadence:"월간",help:"세후·물가조정 소득이 증가하면 소비 지속력이 높아집니다. 둔화나 감소는 경기 방어력을 약화시킵니다."},
 };
 
 const supplementalMeta:Record<string,{label:string;content:string;criterion:string;help:string;cadence:string}>={
- initialClaims:{label:"신규 실업수당 4W",content:"해고 증가를 빠르게 포착하는 고용 선행지표",criterion:"정규화 60점↑",cadence:"주간",help:"청구건수가 낮고 안정적일수록 긍정적입니다. ZGmini의 저장 이력 정규화 점수 60점 이상을 양호 기준으로 봅니다."},
- yieldCurve:{label:"장단기 금리차",content:"금리곡선이 보내는 경기 선행 신호",criterion:"정규화 60점↑",cadence:"거래일",help:"금리곡선은 단순 양·음만으로 판단하지 않고 ZGmini 금리환경 정규화 점수로 봅니다. 낮은 점수는 경기 선행 신호가 불리한 상태를 의미합니다."},
- hyCreditStress:{label:"HY 신용 스트레스",content:"고위험 회사채 시장의 자금경색 정도",criterion:"정규화 60점↑",cadence:"비정기",help:"하이일드 시장 스트레스가 낮을수록 기업 자금조달 환경이 양호합니다. 정규화 점수가 높을수록 긍정적입니다."},
- creditConditions:{label:"신용여건",content:"금융시장의 전반적인 신용 긴축 정도",criterion:"정규화 60점↑",cadence:"주간",help:"신용이 급격히 긴축되면 기업과 가계 활동이 위축될 수 있습니다. 정규화 점수가 높을수록 경기 방어에 유리합니다."},
+ initialClaims:{label:"신규 실업수당 4W",content:"해고 증가를 빠르게 포착하는 고용 선행지표",criterion:"청구 감소·안정",cadence:"주간",help:"청구건수가 낮고 안정적일수록 긍정적입니다. 시장 판단은 저장된 평가 점수를 사용합니다."},
+ yieldCurve:{label:"장단기 금리차",content:"금리곡선이 보내는 경기 선행 신호",criterion:"금리 역전 완화",cadence:"거래일",help:"금리곡선은 단순 양·음만으로 판단하지 않고 ZGmini 금리환경 정규화 점수로 봅니다. 낮은 점수는 경기 선행 신호가 불리한 상태를 의미합니다."},
+ hyCreditStress:{label:"HY 신용 스트레스",content:"고위험 회사채 시장의 자금경색 정도",criterion:"신용 스트레스 완화",cadence:"비정기",help:"하이일드 시장 스트레스가 낮을수록 기업 자금조달 환경이 양호합니다. 정규화 점수가 높을수록 긍정적입니다."},
+ creditConditions:{label:"신용여건",content:"금융시장의 전반적인 신용 긴축 정도",criterion:"신용 긴축 완화",cadence:"주간",help:"신용이 급격히 긴축되면 기업과 가계 활동이 위축될 수 있습니다. 정규화 점수가 높을수록 경기 방어에 유리합니다."},
 };
 
 const developmentCandidates=[
@@ -69,7 +69,6 @@ function fmt(value:number|null|undefined,unit=""){
  const digits=Math.abs(value)>=100?0:2;
  return `${value.toFixed(digits)}${unit}`;
 }
-function scoreLabel(value:number|null|undefined){return typeof value==="number"&&Number.isFinite(value)?value.toFixed(1):"—";}
 function previousLabel(row?:{previousValue?:number|null;previousObservationDate?:string|null},unit=""){
  return fmt(row?.previousValue,unit);
 }
@@ -114,7 +113,7 @@ export default function RecessionPanel(){
   </section>
 
   <section className="inflation-indicator-section recession-r2-indicators" aria-labelledby="recession-indicator-title">
-   <header><div><p className="cnn-eyebrow">RECESSION INDICATORS</p><h2 id="recession-indicator-title">미국 경기침체 분석 지표</h2></div><p>실업률 기반 Sahm Rule, GDP, 고용, 생산, 소비와 장단기 금리차·신용여건을 함께 보고 <b>긍정 / 중립 / 부정</b>으로 단순화했습니다.</p></header>
+   <header><div><p className="cnn-eyebrow">RECESSION INDICATORS</p><h2 id="recession-indicator-title">미국 경기침체 분석 지표</h2></div><p>고용·생산·소비·금리·신용여건을 함께 살펴봐요. 판단 색깔은 <b>저장된 평가 점수</b>에 따라 <b>긍정 / 중립 / 부정</b>으로 표시해요.</p></header>
    <p className="recession-data-availability">이전 값·1년 추이·발표 예정일은 저장된 자료가 있을 때만 표시합니다. ‘—’는 0이 아니며, 보조지표와 개발 후보는 경기 방어점수 구성에서 구분합니다.</p>
    <div className="inflation-table-wrap recession-r2-table-wrap"><table className="inflation-indicator-table recession-indicator-table-r2">
     <thead><tr><th className="recession-r2-favorite-head"><span className="sr-only">즐겨찾기</span><RecessionFavoriteHeaderIcon/></th><th>지표</th><th>내용</th><th>기준</th><th>이전</th><th>현재</th><th>발표</th><th>판단</th><th>미니차트(1Y)</th><th><span className="sr-only">도움말</span>ⓘ</th></tr></thead>
@@ -124,7 +123,7 @@ export default function RecessionPanel(){
       <th scope="row"><strong>{meta.label}</strong><small>핵심지표 · 방어점수 구성</small></th>
       <td>{meta.content}</td><td className="recession-r2-criterion">{meta.criterion}</td>
       <td className="recession-r2-value"><strong>{previousLabel(row,meta.unit)}</strong><small>{dateLabel(row?.previousObservationDate)}</small></td>
-      <td className="recession-r2-value"><strong>{fmt(row?.value,meta.unit)}</strong><small>내부점수 {scoreLabel(row?.score)} · {dateLabel(row?.observationDate)}</small></td>
+      <td className="recession-r2-value"><strong>{fmt(row?.value,meta.unit)}</strong><small>{dateLabel(row?.observationDate)}</small></td>
       <td className="recession-r2-release"><strong>{release.cadence}</strong><small>{release.date}</small></td>
       <td><span className="inflation-judgement">{j.label}</span></td>
       <td className="recession-r2-spark-cell"><InflationMiniChart label={meta.label} points={row?.trend}/></td>
@@ -135,7 +134,7 @@ export default function RecessionPanel(){
       <th scope="row"><strong>{meta.label}</strong><small>보조지표 · 교차 확인</small></th>
       <td>{meta.content}</td><td className="recession-r2-criterion">{meta.criterion}</td>
       <td className="recession-r2-value"><strong>{previousLabel(row,row.unit??"")}</strong><small>{dateLabel(row.previousObservationDate)}</small></td>
-      <td className="recession-r2-value"><strong>{row.displayValue??fmt(row.value,row.unit??"")}</strong><small>내부점수 {scoreLabel(row.score)} · {dateLabel(row.observationDate)}</small></td>
+      <td className="recession-r2-value"><strong>{row.displayValue??fmt(row.value,row.unit??"")}</strong><small>{dateLabel(row.observationDate)}</small></td>
       <td className="recession-r2-release"><strong>{release.cadence}</strong><small>{release.date}</small></td>
       <td><span className="inflation-judgement">{j.label}</span></td>
       <td className="recession-r2-spark-cell"><InflationMiniChart label={meta.label} points={row.trend}/></td>
@@ -161,7 +160,7 @@ export default function RecessionPanel(){
      <div className="recession-r2-mobile-spark"><span>미니차트(1Y)</span><InflationMiniChart label={meta.label} points={row?.trend}/></div>
      <div className="recession-r2-mobile-metrics">
       <div><span>이전</span><strong>{previousLabel(row,meta.unit)}</strong><small>{dateLabel(row?.previousObservationDate)}</small></div>
-      <div><span>현재</span><strong>{fmt(row?.value,meta.unit)}</strong><small>{dateLabel(row?.observationDate)} · 점수 {scoreLabel(row?.score)}</small></div>
+      <div><span>현재</span><strong>{fmt(row?.value,meta.unit)}</strong><small>{dateLabel(row?.observationDate)}</small></div>
       <div><span>발표</span><strong>{release.cadence}</strong><small>{release.date}</small></div>
      </div>
     </article>})}
@@ -175,7 +174,7 @@ export default function RecessionPanel(){
      <div className="recession-r2-mobile-spark"><span>미니차트(1Y)</span><InflationMiniChart label={meta.label} points={row.trend}/></div>
      <div className="recession-r2-mobile-metrics">
       <div><span>이전</span><strong>{previousLabel(row,row.unit??"")}</strong><small>{dateLabel(row.previousObservationDate)}</small></div>
-      <div><span>현재</span><strong>{row.displayValue??fmt(row.value,row.unit??"")}</strong><small>{dateLabel(row.observationDate)} · 점수 {scoreLabel(row.score)}</small></div>
+      <div><span>현재</span><strong>{row.displayValue??fmt(row.value,row.unit??"")}</strong><small>{dateLabel(row.observationDate)}</small></div>
       <div><span>발표</span><strong>{release.cadence}</strong><small>{release.date}</small></div>
      </div>
     </article>})}
