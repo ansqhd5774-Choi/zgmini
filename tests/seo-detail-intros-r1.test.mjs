@@ -41,3 +41,20 @@ test('R2 detail page lastmod stays truthful per content update date',()=>{
   assert.ok(sitemap.includes('<loc>https://zgmini.kr/inflation/</loc><lastmod>2026-10-18</lastmod>'),'inflation');
   assert.ok(sitemap.includes('<loc>https://zgmini.kr/recession/</loc><lastmod>2026-10-17</lastmod>'),'recession');
 });
+
+test('inflation search snippet, semantic heading and production freshness marker agree with live intent',()=>{
+  const page=read('app/inflation/page.tsx');
+  const panel=read('app/inflation/inflation-panel.tsx');
+  const health=read('scripts/seo-production-health.mjs');
+  const phrase='미국 인플레이션 지수와 물가 안정 점수를 확인하세요.';
+  const desc='CPI·PCE, 임금·에너지 등 16개 물가 지표의 현재값과 최근 1년 추이, 주식시장과의 관계를 초보자도 쉽게 이해할 수 있습니다.';
+  assert.ok(page.includes(phrase), 'beginner-facing meta description topic');
+  assert.ok(page.includes(desc), 'description must match actual page contents');
+  assert.match(page,/openGraph:\{title,description,url,type:"website"/);
+  assert.match(page,/twitter:\{card:"summary_large_image",title,description/);
+  assert.match(page,/alternates:\{canonical:url\},robots:\{index:true,follow:true\}/);
+  assert.match(panel,/<h1 id="inflation-what-title">미국 인플레이션 지수와 물가 안정 점수<\/h1>/);
+  assert.equal((panel.match(/<h1\b/g)||[]).length,1,'one primary heading');
+  assert.ok(health.includes("descriptionIncludes:'미국 인플레이션 지수와 물가 안정 점수를 확인하세요.'"));
+  assert.doesNotMatch(page,/\bkeywords\s*:/i);
+});
