@@ -243,6 +243,39 @@ function FactorListItem({item,config}:{item:Factor;config:Config}){
  return <li><span>• {config.factorNames[item.id]}</span><span className="block pl-3 text-xs leading-5 text-slate-400">{description}</span></li>;
 }
 
+// Maintain the clicked summary's viewport position while <details> expands.
+// Native scroll anchoring can otherwise pin content below a growing accordion.
+function preserveAccordionSummaryOnOpen(summary:HTMLElement){
+ const details=summary.parentElement;
+ if(!(details instanceof HTMLDetailsElement)||details.open)return;
+ const initialTop=summary.getBoundingClientRect().top;
+ const start=performance.now();
+ let frame=0;
+ let cancelled=false;
+ const stop=()=>{
+  if(cancelled)return;
+  cancelled=true;
+  cancelAnimationFrame(frame);
+  window.removeEventListener("wheel",stop);
+  window.removeEventListener("touchmove",stop);
+  window.removeEventListener("keydown",stop);
+ };
+ const stabilize=()=>{
+  if(cancelled||!details.isConnected){stop();return;}
+  if(details.open){
+   const shift=summary.getBoundingClientRect().top-initialTop;
+   if(Math.abs(shift)>0.5)window.scrollBy({top:shift,behavior:"instant"});
+  }
+  if(performance.now()-start<480)frame=requestAnimationFrame(stabilize);
+  else stop();
+ };
+ // Stop correcting as soon as the reader intentionally scrolls.
+ window.addEventListener("wheel",stop,{passive:true});
+ window.addEventListener("touchmove",stop,{passive:true});
+ window.addEventListener("keydown",stop);
+ frame=requestAnimationFrame(stabilize);
+}
+
 export default function BeginnerRiskGuide({topic}:{topic:Topic}){
  const config=configs[topic];
  const calculationDetailsRef=useRef<HTMLDetailsElement>(null);
@@ -290,7 +323,7 @@ export default function BeginnerRiskGuide({topic}:{topic:Topic}){
    </div>
   </div>
   <details ref={calculationDetailsRef} className="zg-method-history rounded-lg bg-[#071c2a] p-4 sm:p-5" data-testid={`beginner-methodology-explanation-${topic}`}>
-   <summary className="zg-method-history-summary cursor-pointer font-bold text-white">
+   <summary className="zg-method-history-summary cursor-pointer font-bold text-white" onClick={event=>preserveAccordionSummaryOnOpen(event.currentTarget)}>
     <span className="zg-method-history-title"><span>이 점수는 어떻게 계산하나요?</span></span>
     <ChevronDown aria-hidden="true" className="zg-method-history-chevron"/>
    </summary>
@@ -310,7 +343,7 @@ export default function BeginnerRiskGuide({topic}:{topic:Topic}){
    </div>
   </details>
   <details ref={historyDetailsRef} className="zg-method-history rounded-lg bg-[#071c2a] p-4 sm:p-5" data-testid={`beginner-methodology-history-${topic}`}>
-   <summary className="zg-method-history-summary cursor-pointer font-bold text-white">
+   <summary className="zg-method-history-summary cursor-pointer font-bold text-white" onClick={event=>preserveAccordionSummaryOnOpen(event.currentTarget)}>
     <span className="zg-method-history-title">
      <span>산출식 개선 이력</span>
      <span className="text-xs font-normal text-slate-300" data-testid="current-methodology-version">현재 {loading?"확인 중":currentVersion??"버전 미확인"}{isCandidateVersion?" · 연구 후보":""}</span>
