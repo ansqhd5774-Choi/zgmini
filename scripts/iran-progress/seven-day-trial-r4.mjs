@@ -7,6 +7,7 @@ import path from 'node:path';
 import {createHash,randomUUID} from 'node:crypto';
 import {fileURLToPath} from 'node:url';
 import {DatabaseSync} from 'node:sqlite';
+import {auditIranLocalReadOnly} from './reality-audit-r4.mjs';
 import {calculateIranR4RealityShadow} from '../../lib/iran-progress/reality-shadow-r4.mjs';
 import {auditR4ScoreAgainstAnchors} from '../../lib/iran-progress/observed-anchors-r4.mjs';
 import {R4_TRIAL_DEFAULT,tuneR4ShadowCandidate,validateR4TrialTuning,compareR4TrialCandidates} from '../../lib/iran-progress/seven-day-tuning-r4.mjs';
@@ -130,8 +131,20 @@ export function runR4TrialLocal({mode,dbFile=DEFAULT_DB,dir=DEFAULT_HOME,now=Dat
  try{
   db=new DatabaseSync(dbFile,{readOnly:true});
   const input=safeCheckpoint(db,CHECKPOINT);
-  if(!input)return {status:'R4_INPUT_PENDING',reason:'INDEPENDENT_VERIFIED_R4_CHECKPOINT_MISSING',
-   source:'LOCAL_SQLITE_READ_ONLY',sampled:false};
+  if(!input){
+   const inv=auditIranLocalReadOnly(db,now);
+   return {status:'R4_INPUT_PENDING',reason:'INDEPENDENT_VERIFIED_R4_CHECKPOINT_MISSING',
+    readiness:{
+     storedEventCount:inv.r4InputInventory.latestEventCount,
+     militaryWindow:inv.r4InputInventory.militaryWindow,
+     missingR4IndependentInputs:inv.r4InputInventory.missingR4IndependentInputs,
+     r3DiscoveryStatus:inv.r3.latestRunStatus,
+     r3QueueCount:inv.r3.queueTotal,
+     ollamaDiscovered:inv.candidateDiscovery.total,
+     ollamaDecisions:inv.candidateDiscovery.decisions
+    },
+    source:'LOCAL_SQLITE_READ_ONLY',sampled:false,providerCalls:0,published:false};
+  }
   const observations=safeCheckpoint(db,'r4-shadow-observed-anchors-v1')??[];
   if(mode==='--preflight'){
    const result=sampleR4Trial({verifiedInput:input,observations,now,sourceHash:codeHash()});
