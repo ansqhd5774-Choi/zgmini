@@ -5,8 +5,8 @@
 .zg-community-panel.is-closed{visibility:hidden;pointer-events:none;opacity:0}
 .zg-community-panel.is-open{visibility:visible;pointer-events:auto;animation:zg-community-enter .3s ease-out both}
 .zg-community-panel.is-closed.was-open{visibility:visible;animation:zg-community-exit .3s ease-in both}
-@keyframes zg-community-enter{from{transform:translateX(-28px);opacity:0}to{transform:translateX(0);opacity:1}}
-@keyframes zg-community-exit{from{transform:translateX(0);opacity:1;visibility:visible}to{transform:translateX(28px);opacity:0;visibility:hidden}}
+@keyframes zg-community-enter{from{transform:translateX(-100%);opacity:0}to{transform:translateX(0);opacity:1}}
+@keyframes zg-community-exit{from{transform:translateX(0);opacity:1;visibility:visible}to{transform:translateX(100%);opacity:0;visibility:hidden}}
 .zg-community-head{display:flex;gap:8px;align-items:center;height:45px;padding:0 11px;background:#242b33;flex-shrink:0}
 .zg-community-head strong{font-size:14px;font-weight:800}
 .zg-community-head span{margin-left:auto;color:#a8b9c9;font-size:11px}
