@@ -6,7 +6,7 @@
 .earnings-r2-indicators .earnings-r2-data-caption{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:0 0 12px;color:#94aabe;font-size:11px}
 .earnings-r2-data-caption strong{color:#dbe8f2;font-size:11px}
 .earnings-r2-indicators .earnings-r2-table-wrap{min-width:0;max-width:100%;overflow-x:auto}
-.earnings-r2-indicators .earnings-r2-table{width:100%;min-width:1370px;table-layout:fixed}
+.earnings-r2-indicators .earnings-r2-table{width:100%;min-width:1100px;table-layout:fixed}
 .earnings-r2-table .earnings-col-favorite{width:4%}
 .earnings-r2-table .earnings-col-name{width:13%}
 .earnings-r2-table .earnings-col-content{width:18%}
