@@ -86,7 +86,7 @@ test('calculation and history accordions share the same accessible expand/collap
  assert.equal((guide.match(/<ChevronDown aria-hidden="true" className="zg-method-history-chevron"\/>/g)||[]).length,2);
  assert.equal((guide.match(/className="zg-method-history-close-row"/g)||[]).length,2);
  assert.equal((guide.match(/className="zg-method-history-close"/g)||[]).length,2);
- assert.match(guide,/aria-label="이 점수는 어떻게 계산하나요\? 접기"/);
+ assert.ok(guide.includes('aria-label={topic==="earnings-recession"?"E1 저장 점수는 어떻게 계산하나요? 접기":"이 점수는 어떻게 계산하나요? 접기"}'));
  assert.match(guide,/onClick=\{\(\)=>\{if\(calculationDetailsRef\.current\)calculationDetailsRef\.current\.open=false;\}\}/);
  assert.match(guide,/aria-label="산출식 개선 이력 접기"/);
  assert.match(guide,/onClick=\{\(\)=>\{if\(historyDetailsRef\.current\)historyDetailsRef\.current\.open=false;\}\}/);
