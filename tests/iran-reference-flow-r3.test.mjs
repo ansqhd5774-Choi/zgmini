@@ -50,6 +50,18 @@ test('one failed source does not stop healthy discovery and R2 checkpoint stays 
  assert.equal(store.getCheckpoint('reference-flow-continuous-news-r3').events.length,1);
  }finally{store.close();}
 });
+test('R3 reports rule acceptance separately from actually invoking Ollama',async()=>{
+ const store=openStore(':memory:'),now=Date.parse('2026-10-18T01:00:00Z');
+ try{
+  const feed='<rss><channel><item><title>Houthis fired missiles at Aden airport</title><link>https://www.bbc.com/news/articles/test-attack</link><pubDate>Sat, 17 Oct 2026 12:00:00 GMT</pubDate></item><item><title>Iran considers next steps</title><link>https://www.bbc.com/news/articles/test-opinion</link><pubDate>Sat, 17 Oct 2026 12:00:00 GMT</pubDate></item></channel></rss>';
+  const report=await collectNewsR3(store,{now,feeds:[{id:'bbc',url:'https://feeds.bbci.co.uk/rss',kind:'xml'}],fetcher:async()=>new Response(feed)});
+  assert.equal(report.classifierMethod,'HEADLINE_RULES_R3_NOT_OLLAMA');
+  assert.equal(report.classifiedUnique,2);
+  assert.equal(report.matchedRuleUnique,1);
+  assert.equal(report.unmatchedRuleUnique,1);
+  assert.equal(report.nonMatchReasons.OUT_OF_SCOPE,1);
+ }finally{store.close();}
+});
 test('R3 reader/view and timestamp readback are independent of R2; invalid R3 fails closed',async()=>{
  const now=Date.parse('2026-10-18T01:00:00Z'),flow=buildReferenceFlowR3([event('Houthis fired missiles at Aden airport')],{asOfDate:'2026-10-18'});
  const {ledger,...fields}=flow;const body={...fields,publishedAt:now,collectionCheckedAt:now,newsCollection:{status:'UPDATED'},events:ledger};

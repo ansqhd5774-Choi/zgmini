@@ -6,7 +6,6 @@ import path from 'node:path';
 import {DAY,absoluteCap,attackAxis,military,hormuz,ceasefire,buildIranProgress,relationStatus} from '../lib/iran-progress/r13.mjs';
 import {openStore} from '../scripts/iran-progress/store.mjs';
 import {collectSources} from '../scripts/iran-progress/sources.mjs';
-import {parseAisDaily} from '../scripts/iran-progress/ais.mjs';
 import {H_TRANSIT_METHOD} from '../lib/iran-progress/transit-ais.mjs';
 import {validateCandidates} from '../scripts/iran-progress/ai.mjs';
 const now=Date.parse('2026-10-08T12:00:00Z');
@@ -37,7 +36,7 @@ test('missing AIS day differs from observed zero',()=>{const t=transit();t.rows.
 test('missing nuclear input never reweights remaining domains',()=>{const input=full();delete input.nuclear;assert.equal(buildIranProgress(input,now).score,null);});
 test('expired verification cannot be refreshed by calculation timestamp',()=>{const input=full();input.nuclear.lastVerifiedAt=now-2*DAY;assert.equal(buildIranProgress(input,now).domains.N,null);});
 test('future supposedly verified attack is held, never converted to observed zero',()=>{const r=military({events:[event('future',now+DAY,10)],coverage:allCoverage(),asOf:now});assert.equal(r.axes.IRN_ISR.recentCount,0);assert.equal(r.score,null);});
-test('AIS parser excludes IMF fields and unverified reconstruction',()=>{const r=parseAisDaily(JSON.stringify({generatedAt:now,days:[{date:'2026-10-07',in:0,out:0,total:0,source:'live',portwatch:999}]}),{now});assert.equal(r.rows[0].value,0);assert.equal(r.rows[0].portwatch,undefined);assert.equal(r.rows[0].qualityVerified,false);});
+test('retired AIS collector parser cannot accidentally be reactivated',()=>{assert.equal(fs.existsSync(new URL('../scripts/iran-progress/ais.mjs',import.meta.url)),false);});
 test('collection is not verification even when every request succeeds',async()=>{const sources=await collectSources({now,fetcher:async url=>new Response(url.includes('daily.json')?JSON.stringify({generatedAt:now,days:[]}):'news')});assert.equal(sources.gdelt.status,'COLLECTED');assert.equal(sources.gdelt.coverageThrough,undefined);});
 test('AI quotation validation rejects hallucination and scoring authority',()=>{const text='The representatives met in Geneva.';assert.equal(validateCandidates({candidates:[{quote:text,eventAt:null,actors:['IRN'],type:'talks'}]},text)[0].verified,false);assert.throws(()=>validateCandidates({candidates:[{quote:'Peace has been achieved',eventAt:null,actors:[],type:'peace'}]},text));assert.throws(()=>validateCandidates({candidates:[{quote:text,eventAt:null,actors:[],type:'talks',score:100}]},text));});
 test('SQLite revisions immutable, lease excludes overlap and checkpoint survives restart',()=>{const dir=fs.mkdtempSync(path.join(os.tmpdir(),'iran-r13-'));let store;try{const file=path.join(dir,'test.sqlite');store=openStore(file);assert.equal(store.claim('a',now),true);assert.equal(store.claim('b',now),false);store.putEvent(event('e',now-DAY));assert.throws(()=>store.putEvent({...event('e',now-DAY),severity:3}));store.checkpoint('queue',{offset:7});store.close();store=openStore(file);assert.equal(store.getCheckpoint('queue').offset,7);assert.equal(store.events().length,1);store.release('a');assert.equal(store.claim('b',now),true);}finally{store?.close();fs.rmSync(dir,{recursive:true,force:true});}});
