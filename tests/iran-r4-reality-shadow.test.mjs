@@ -18,9 +18,15 @@ function front(id,at=now){
    coverageThrough:at-HOUR,coverageEvidence:evidence(at),recentSeverity:14,priorSeverity:21},
   diplomacyStage:1,ceasefireStatus:'ACTIVE_COMBAT'};
 }
+function maritimeRoute(id,at=now){
+ return {id,incidentCoverage:{verified:true,eventsDeduplicated:true,complete28Days:true,from:at-28*DAY,through:at-HOUR,
+  recentSeverity:6,priorSeverity:10,recentMajorIncidentVerified:false,evidence:evidence(at)},
+  restriction:{verified:true,state:'MAJOR_RESTRICTIONS',officialStateVerified:true,
+   observedAt:at-2*HOUR,verifiedAt:at-HOUR,evidence:evidence(at)}};
+}
 function snapshot(at=now){
  return {fronts:Object.fromEntries(IRAN_R4_FRONT_IDS.map(id=>[id,front(id,at)])),
-  maritime:{verified:true,score:25,observedAt:at-2*HOUR,verifiedAt:at-HOUR,evidence:evidence(at)},
+  maritime:{routes:Object.fromEntries(['HORMUZ','RED_SEA'].map(id=>[id,maritimeRoute(id,at)]))},
   nuclear:{verified:true,score:20,observedAt:at-2*HOUR,verifiedAt:at-HOUR,evidence:evidence(at)}};
 }
 function phaseOf(s,id,phase){
@@ -45,7 +51,7 @@ test('R4 shadow is a separate version with fixed explicit front membership and p
 });
 test('a verified full-scale Yemen front prevents a synthetic 50 or 80 despite favorable other axes',()=>{
  const s=snapshot();phaseOf(s,'YEMEN_HOUTHI','FULL_SCALE_WAR');
- s.fronts.IRN_USA.diplomacyStage=5;s.maritime.score=90;s.nuclear.score=100;
+ s.fronts.IRN_USA.diplomacyStage=5;s.nuclear.score=100;
  const r=calculateIranR4RealityShadow(s,now);
  assert.equal(r.status,'SHADOW_READY');assert.equal(r.productionReady,false);
  assert.equal(r.phase,'FULL_SCALE_WAR');
@@ -64,7 +70,7 @@ test('active military operations cannot be described as a 50- or 80-point truce'
 test('14-30 days of verified ceasefire on ALL fronts supports 80-range, not automatic 100',()=>{
  const s=snapshot();
  for(const id of IRAN_R4_FRONT_IDS)verifiedTruce(s,id,20);
- s.maritime.score=80;s.nuclear.score=80;
+ s.nuclear.score=80;
  const r=calculateIranR4RealityShadow(s,now);
  assert.equal(r.phase,'CEASEFIRE_SUSTAINED');
  assert.ok(r.score>=75&&r.score<=89);
