@@ -72,3 +72,30 @@ test('CMD audit uses approved E drive, writes only one TEMP log and performs no 
  const auditSource=fs.readFileSync(new URL('../scripts/iran-progress/reality-audit-r4.mjs',import.meta.url),'utf8');
  assert.match(auditSource,/readOnly:true/);
 });
+
+test('the 7/21-day event inventory never presents sparse articles as complete observed peace',()=>{
+ const store=openStore(':memory:');
+ try{
+  const day=86400000;
+  const e=(id,axis,at,severity,status='VERIFIED')=>({eventId:id,revision:1,axis,eventAt:at,
+   verifiedAt:now,status,severity,occurrenceVerified:true,actorVerified:true,connectionVerified:true,severityVerified:true});
+  store.putEvent(e('A','IRN_USA',now-day,3));
+  store.putEvent(e('B','YEMEN_HOUTHI',now-15*day,10));
+  store.putEvent(e('C','IRN_ISR',null,1,'PENDING_REVIEW'));
+  store.putEvent(e('D','IRN_USA',now-2*day,1));
+  store.putEvent({...e('D','IRN_USA',now-2*day,1),revision:2,status:'RETRACTED'});
+  store.putEvent(e('E','IRN_USA',now-day,7));
+  const snapshot=auditIranLocalReadOnly(store.db,now);
+  const win=snapshot.r4InputInventory.militaryWindow;
+  assert.equal(win.status,'EVENT_COUNTS_ONLY');
+  assert.equal(win.latestRevisionCount,5);
+  assert.equal(win.axes.IRN_USA.verifiedRecentCount,1);
+  assert.equal(win.axes.IRN_USA.verifiedRecentSeverity,3);
+  assert.equal(win.axes.IRN_USA.retractedCount,1);
+  assert.equal(win.axes.IRN_USA.invalidVerifiedCount,1);
+  assert.equal(win.axes.YEMEN_HOUTHI.verifiedPreviousSeverity,10);
+  assert.equal(win.axes.IRN_ISR.pendingReviewCount,1);
+  assert.equal(win.completeCoverageProven,false);
+  assert.equal(win.zeroEventsDoNotProvePeace,true);
+ }finally{store.close();}
+});
