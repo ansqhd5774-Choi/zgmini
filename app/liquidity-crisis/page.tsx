@@ -5,6 +5,7 @@ import type {Metadata} from "next";
 import LiquidityCrisisPanel from "./liquidity-crisis-panel";
 import BeginnerRiskGuide from "../beginner-risk-guide";
 import RiskDetailBeginnerLayout from "../risk-detail-beginner-layout";
+import "../inflation/inflation-beginner-reading-r1.css";
 
 const title="미국 유동성 위기 지표 | Repo·은행 준비금·TGA·M2 - ZGmini";
 const description="미국 금융시장의 현금 부족과 유동성 위기 위험을 확인하세요. 단기자금시장, Repo, 은행 준비금, TGA, ON RRP, M2, 국채 변동성을 종합해 현재 유동성 방어점수와 흐름을 보여줍니다.";
@@ -23,6 +24,7 @@ export default function LiquidityCrisisPage(){
    <SearchIntentIntro topic="liquidity-crisis"/>
    <RiskDetailBeginnerLayout><LiquidityCrisisPanel/><BeginnerRiskGuide topic="liquidity-crisis"/></RiskDetailBeginnerLayout>
   <DetailInvestorNotes topic="liquidity-crisis"/>
+  <a className="mt-8 inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-sky-200 underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-300" href="/">← 메인 대시보드로 돌아가기</a>
 </div>
  </main></>;
 }

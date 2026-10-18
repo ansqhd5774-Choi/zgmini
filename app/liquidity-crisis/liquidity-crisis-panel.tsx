@@ -137,6 +137,5 @@ export default function LiquidityCrisisPanel(){
     </article>)}
    </div>
   </section>
-  <a className="cnn-return-cta" href="/">← 메인 대시보드로 돌아가기</a>
  </>;
 }
