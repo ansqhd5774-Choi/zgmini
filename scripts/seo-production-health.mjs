@@ -3,9 +3,12 @@ import {parseSitemap,waitForCloudflare} from './indexnow-notify.mjs';
 
 const SITE_ORIGIN='https://zgmini.kr';
 const REQUEST_TIMEOUT_MS=20_000;
-const EXPECTED_PUBLIC_URLS=16;
+const EXPECTED_PUBLIC_URLS=19;
 
 export const SEO_RUNTIME_MARKERS=new Map([
+  [`${SITE_ORIGIN}/risk-indicators/`,{descriptionIncludes:'공급 충격의 저장 점수를 비교'}],
+  [`${SITE_ORIGIN}/economic-indicators/`,{descriptionIncludes:'12개 시장 평가 점수와 저장 추이'}],
+  [`${SITE_ORIGIN}/theme-fear-greed/`,{descriptionIncludes:'30개 투자 테마를 탐색'}],
   [`${SITE_ORIGIN}/`,{titleIncludes:'미국·한국 공포탐욕지수와 경제지표'}],
   [`${SITE_ORIGIN}/about/`,{descriptionIncludes:'ZGMINI를 소개합니다'}],
   [`${SITE_ORIGIN}/fear-greed/korea/`,{descriptionIncludes:'504개 유효 관측치 기준창'}],

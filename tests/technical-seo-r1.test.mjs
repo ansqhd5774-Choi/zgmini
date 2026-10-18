@@ -6,7 +6,10 @@ const read=path=>readFileSync(path,'utf8');
 
 test('technical SEO sitemap includes every public route with truthful lastmod values',()=>{
   const sitemap=read('public/sitemap.xml');
-  assert.equal((sitemap.match(/<url>/g)||[]).length,16);
+  assert.equal((sitemap.match(/<url>/g)||[]).length,19);
+  for(const route of ['/risk-indicators/','/economic-indicators/','/theme-fear-greed/']){
+    assert.ok(sitemap.includes(`<loc>https://zgmini.kr${route}</loc><lastmod>2026-10-18</lastmod>`),route);
+  }
   for(const route of ['/fear-greed/korea/','/sector-fear-greed/','/liquidity-crisis/','/credit-risk/','/earnings-recession/','/asset-bubble/','/debt-risk/','/supply-shock/','/guides/cpi-pce-release/','/guides/fomc/'])
     assert.ok(sitemap.includes(`<loc>https://zgmini.kr${route}</loc><lastmod>2026-10-16</lastmod>`),route);
   assert.ok(sitemap.includes('<loc>https://zgmini.kr/inflation/</loc><lastmod>2026-10-18</lastmod>'),'/inflation/');
