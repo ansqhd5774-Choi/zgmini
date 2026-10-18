@@ -20,7 +20,7 @@ export const dayKst=ms=>new Date(ms+KST).toISOString().slice(0,10);
 const hash=x=>createHash('sha256').update(typeof x==='string'?x:JSON.stringify(x)).digest('hex');
 const dayNumber=(date,first)=>Math.floor((Date.parse(date+'T00:00:00Z')-Date.parse(first+'T00:00:00Z'))/DAY)+1;
 const codeHash=()=>hash(['lib/iran-progress/reality-shadow-r4.mjs','lib/iran-progress/maritime-official-r4.mjs',
- 'lib/iran-progress/seven-day-tuning-r4.mjs'].map(p=>fs.readFileSync(path.join(ROOT,p),'utf8')).join('\n'));
+ 'lib/iran-progress/seven-day-tuning-r4.mjs','lib/iran-progress/observed-anchors-r4.mjs'].map(p=>fs.readFileSync(path.join(ROOT,p),'utf8')).join('\n'));
 const readJSON=file=>JSON.parse(fs.readFileSync(file,'utf8'));
 const recordFile=dir=>path.join(dir,'week.json');
 export function summarizeR4Trial(record,now){
@@ -57,6 +57,20 @@ function saveAtomic(file,body){
   if(fs.existsSync(file)&&fs.lstatSync(file).isSymbolicLink())throw Error('R4_TRIAL_LEDGER_SYMLINK');
   fs.renameSync(tmp,file);
  }finally{if(fs.existsSync(tmp))fs.unlinkSync(tmp);}
+}
+function withTrialLock(dir,work){
+ fs.mkdirSync(dir,{recursive:true});
+ const lockFile=path.join(dir,'week.lock');
+ let handle;
+ try{
+  try{handle=fs.openSync(lockFile,'wx');}catch(e){
+   if(e?.code==='EEXIST')throw Error('R4_TRIAL_LEASE_HELD');
+   throw e;
+  }
+  return work();
+ }finally{
+  if(handle!==undefined){fs.closeSync(handle);fs.unlinkSync(lockFile);}
+ }
 }
 /** Audit inputs are user-approved, independently verified local checkpoint content only.
  * No fallback to the old R1.3 verified-input checkpoint: no Yemen coverage.
@@ -123,12 +137,18 @@ export function runR4TrialLocal({mode,dbFile=DEFAULT_DB,dir=DEFAULT_HOME,now=Dat
    const result=sampleR4Trial({verifiedInput:input,observations,now,sourceHash:codeHash()});
    return {status:result.status,reason:result.reason??null,missing:result.missing??[],sampled:false};
   }
-  const existing=guardedRead(file);
-  const result=sampleR4Trial({verifiedInput:input,observations,now,existing,sourceHash:codeHash()});
-  if(result.write)saveAtomic(file,result.record);
-  return {status:result.status,reason:result.reason??null,missing:result.missing??[],
-   ...(result.record?{summary:summarizeR4Trial(result.record,now)}:{}),
-   sampled:result.write===true,source:'LOCAL_SQLITE_READ_ONLY',providerCalls:0,ollamaCalls:0,published:false};
+  const method=codeHash();
+  const precheck=sampleR4Trial({verifiedInput:input,observations,now,sourceHash:method});
+  if(precheck.status==='R4_INPUT_PENDING')return {status:precheck.status,reason:precheck.reason,
+   missing:precheck.missing??[],sampled:false};
+  return withTrialLock(dir,()=>{
+   const existing=guardedRead(file);
+   const result=sampleR4Trial({verifiedInput:input,observations,now,existing,sourceHash:method});
+   if(result.write)saveAtomic(file,result.record);
+   return {status:result.status,reason:result.reason??null,missing:result.missing??[],
+    ...(result.record?{summary:summarizeR4Trial(result.record,now)}:{}),
+    sampled:result.write===true,source:'LOCAL_SQLITE_READ_ONLY',providerCalls:0,ollamaCalls:0,published:false};
+  });
  }finally{db?.close();}
 }
 if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.url)){
