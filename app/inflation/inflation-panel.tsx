@@ -66,22 +66,22 @@ const featureOrder=[
 ] as const;
 
 const featureMeta:Record<string,FeatureMeta>={
- CORE_PCE:{label:"Core PCE",content:"연준이 중시하는 기조 소비물가",unit:"%",note:"YoY · 초기발표",criterion:"TWO",cadence:"월간",schedule:"PCE",help:"2%에 가까울수록 물가 안정에 긍정적입니다. 2%에서 멀어질수록 기조 물가 압력이 남아 있는 것으로 봅니다."},
+ CORE_PCE:{label:"Core PCE",content:"미국 중앙은행이 특히 살피는 식품·에너지 제외 물가",unit:"%",note:"YoY · 초기발표",criterion:"TWO",cadence:"월간",schedule:"PCE",help:"2%에 가까울수록 물가 안정에 긍정적입니다. 2%에서 멀어질수록 기조 물가 압력이 남아 있는 것으로 봅니다."},
  CORE_CPI:{label:"Core CPI",content:"식품·에너지를 제외한 소비자물가",unit:"%",note:"YoY",criterion:"TWO",cadence:"월간",schedule:"CPI",help:"2% 근처가 안정 방향입니다. 현재 수준이 높더라도 최근 값이 둔화하면 개선 방향으로 해석할 수 있습니다."},
  CORE_CPI_3M:{label:"Core CPI 3M",content:"최근 3개월의 기조 물가 속도",unit:"%",note:"3개월 연율",criterion:"TWO",cadence:"월간",schedule:"CPI",help:"최근 물가 속도를 빠르게 확인하는 지표입니다. 2% 부근으로 낮아질수록 긍정적이고 재가속하면 부정적입니다."},
- MEDIAN_CPI:{label:"Median CPI",content:"품목별 중간값으로 본 끈적한 물가",unit:"%",note:"3개월 연율",criterion:"TWO",cadence:"월간",schedule:"CPI",help:"극단적인 가격 변동 영향을 줄여 기조 물가를 봅니다. Cleveland Fed가 BLS 월간 CPI 세부자료를 바탕으로 계산하며 2% 근처로 둔화할수록 긍정적입니다."},
- TRIM16_CPI:{label:"16% Trimmed Mean CPI",content:"가격 급등락 품목을 제거한 기조 물가",unit:"%",note:"3개월 연율",criterion:"TWO",cadence:"월간",schedule:"CPI",help:"이상치 영향을 줄인 물가입니다. Cleveland Fed가 BLS 월간 CPI 세부자료를 바탕으로 계산하며 2%에 가까워질수록 광범위한 물가 압력이 완화되는 방향입니다."},
+ MEDIAN_CPI:{label:"Median CPI",content:"가격이 크게 튀는 품목의 영향을 줄여 본 물가",unit:"%",note:"3개월 연율",criterion:"TWO",cadence:"월간",schedule:"CPI",help:"일부 품목의 큰 가격 변화에 덜 흔들리는 물가 지표예요. 미국 클리블랜드 연방준비은행이 소비자물가 자료로 계산하며, 상승 속도가 2% 근처로 낮아지면 안정에 유리해요."},
+ TRIM16_CPI:{label:"16% Trimmed Mean CPI",content:"가격이 크게 오르내린 일부 품목을 뺀 물가",unit:"%",note:"3개월 연율",criterion:"TWO",cadence:"월간",schedule:"CPI",help:"가격이 유난히 많이 오르거나 내린 품목을 일부 빼고 물가 흐름을 봐요. 미국 클리블랜드 연방준비은행이 계산하며, 2%에 가까워지면 여러 품목의 물가 부담이 줄어드는 방향이에요."},
  HEADLINE_PCE:{label:"Headline PCE",content:"전체 개인소비지출 물가",unit:"%",note:"YoY · 초기발표",criterion:"TWO",cadence:"월간",schedule:"PCE",help:"식품·에너지를 포함한 전체 소비물가입니다. 2% 부근이 안정 방향이며 크게 높으면 부정적입니다."},
- INF_EXPECT:{label:"5Y 기대 인플레이션",content:"시장이 예상하는 중기 물가 수준",unit:"%",note:"수준",criterion:"TWO",cadence:"월간",schedule:null,help:"Cleveland Fed의 월간 기대 인플레이션 추정치입니다. 2% 근처에서 안정되면 긍정적이며 공식 다음 공개일이 없으면 일정 미정으로 표시합니다."},
- PPI_FINAL:{label:"PPI Final Demand",content:"최종수요 생산자 가격 압력",unit:"%",note:"3개월 연율",criterion:"PAST_MEDIAN",cadence:"월간",schedule:"PPI",help:"생산단계 가격 상승률이 과거 정상 범위보다 높아질수록 향후 소비자물가 압력에 부정적입니다."},
- PPI_CORE_FD:{label:"Core PPI Final Demand",content:"식품·에너지 등을 제외한 생산자물가",unit:"%",note:"3개월 연율",criterion:"PAST_MEDIAN",cadence:"월간",schedule:"PPI",help:"기조 생산비용 압력을 봅니다. 과거 중앙값보다 크게 높으면 부정적이고 낮아지면 긍정적입니다."},
+ INF_EXPECT:{label:"5Y 기대 인플레이션",content:"시장이 예상하는 앞으로 5년간의 물가 상승률",unit:"%",note:"수준",criterion:"TWO",cadence:"월간",schedule:null,help:"Cleveland Fed의 월간 기대 인플레이션 추정치입니다. 2% 근처에서 안정되면 긍정적이며 공식 다음 공개일이 없으면 일정 미정으로 표시합니다."},
+ PPI_FINAL:{label:"PPI Final Demand",content:"기업이 파는 상품·서비스 가격의 변화",unit:"%",note:"3개월 연율",criterion:"PAST_MEDIAN",cadence:"월간",schedule:"PPI",help:"생산단계 가격 상승률이 과거 정상 범위보다 높아질수록 향후 소비자물가 압력에 부정적입니다."},
+ PPI_CORE_FD:{label:"Core PPI Final Demand",content:"식품·에너지 등을 제외한 생산자물가",unit:"%",note:"3개월 연율",criterion:"PAST_MEDIAN",cadence:"월간",schedule:"PPI",help:"식품·에너지 등의 가격 변동을 일부 제외한 기업 판매가격을 봐요. 과거의 가운데 수준보다 많이 오르면 물가에 부담이 될 수 있어요."},
  IMPORT_EX_FUEL:{label:"수입물가 ex Fuel",content:"연료를 제외한 수입 가격 압력",unit:"%",note:"YoY",criterion:"PAST_MEDIAN",cadence:"월간",schedule:"IMPORT",help:"수입가격이 과거 정상 범위보다 높아지면 국내 물가로 전가될 가능성이 있어 부정적으로 해석합니다."},
  WTI:{label:"WTI",content:"국제유가의 단기 비용 압력",unit:"%",note:"3개월 변화",criterion:"ZERO",cadence:"월간",schedule:null,help:"저장된 EIA/FRED 월간 WTI를 사용합니다. 3개월 변화가 0% 근처면 안정적이며 공식 다음 공개일을 확인할 수 없으면 일정 미정으로 표시합니다."},
  GASOLINE:{label:"미국 휘발유",content:"소비자가 체감하는 에너지 가격",unit:"%",note:"3개월 변화",criterion:"ZERO",cadence:"월간",schedule:null,help:"저장된 EIA/FRED 월간 휘발유 가격을 사용합니다. 3개월 변화율이 0% 근처면 안정 방향이며 공식 다음 공개일을 확인할 수 없으면 일정 미정으로 표시합니다."},
  WAGE_YOY:{label:"평균 시간당 임금",content:"임금에서 오는 서비스 물가 압력",unit:"%",note:"YoY",criterion:"PAST_MEDIAN",cadence:"월간",schedule:"EMPLOYMENT",help:"임금 상승률이 과거 정상 범위를 크게 웃돌면 서비스 물가가 오래 유지될 수 있어 부정적입니다."},
- ECI_COST:{label:"Employment Cost Index",content:"임금·복리후생을 포함한 고용비용",unit:"%",note:"YoY",criterion:"PAST_MEDIAN",cadence:"분기",schedule:"ECI",help:"기업의 전체 노동비용을 봅니다. 과거 중앙값을 크게 웃도는 상승률은 지속적인 물가 압력으로 해석합니다."},
- UNIT_LABOR_COST:{label:"Unit Labor Cost",content:"생산 한 단위당 노동비용",unit:"",note:"저장값",criterion:"PAST_MEDIAN",cadence:"분기",schedule:"PRODUCTIVITY",help:"단위노동비용이 과거 정상 범위보다 높아지면 기업의 가격 전가 압력이 커질 수 있습니다."},
- INDPRO:{label:"산업생산",content:"수요·생산 활동의 물가 배경",unit:"%",note:"3개월 연율",criterion:"PAST_MEDIAN_ABS",cadence:"월간",schedule:"INDPRO",help:"수요 환경은 너무 강하거나 너무 약한 극단 모두 위험으로 봅니다. 과거 중앙 수준에 가까울수록 안정적으로 평가합니다."},
+ ECI_COST:{label:"Employment Cost Index",content:"월급과 복지비를 포함한 기업의 인건비",unit:"%",note:"YoY",criterion:"PAST_MEDIAN",cadence:"분기",schedule:"ECI",help:"기업이 직원에게 쓰는 임금과 복지비를 함께 살펴봐요. 이 비용이 과거에 비해 지나치게 빨리 늘면 물가 상승 부담이 이어질 수 있어요."},
+ UNIT_LABOR_COST:{label:"Unit Labor Cost",content:"상품·서비스 한 단위를 만드는 데 드는 인건비",unit:"",note:"저장값",criterion:"PAST_MEDIAN",cadence:"분기",schedule:"PRODUCTIVITY",help:"단위노동비용이 과거 정상 범위보다 높아지면 기업의 가격 전가 압력이 커질 수 있습니다."},
+ INDPRO:{label:"산업생산",content:"공장 등에서 생산 활동이 얼마나 변했는지",unit:"%",note:"3개월 연율",criterion:"PAST_MEDIAN_ABS",cadence:"월간",schedule:"INDPRO",help:"수요 환경은 너무 강하거나 너무 약한 극단 모두 위험으로 봅니다. 과거 중앙 수준에 가까울수록 안정적으로 평가합니다."},
 };
 
 // Official calendars verified 2026-10-16:
@@ -216,17 +216,17 @@ export default function InflationPanel(){
   <section className="inflation-explainer" aria-labelledby="inflation-what-title">
    <p className="cnn-eyebrow">WHAT IS INFLATION?</p>
    <h1 id="inflation-what-title">인플레이션이란?</h1>
-   <p>인플레이션은 상품과 서비스의 전반적인 가격 수준이 지속적으로 오르는 현상입니다. 한두 품목의 가격만 보는 것이 아니라 소비자물가, 생산자물가, 임금, 에너지, 기대인플레이션처럼 서로 다른 지표가 같은 방향으로 움직이는지 함께 확인해야 합니다.</p>
+   <p>인플레이션은 <mark className="zg-inflation-keymark">물건과 서비스의 가격이 전반적으로 계속 오르는 현상</mark>이에요. 예를 들어 장보기와 외식에 드는 돈이 계속 늘어나는 상황을 떠올리면 쉬워요. 한두 가지 물건의 값만 보지 않고 <strong>소비자물가·기업 비용·임금·에너지 가격</strong>이 함께 어떻게 움직이는지 살펴봐요.</p>
    <div className="inflation-direction-strip">
-    <span><b>물가 압력</b>기조 물가↑ · 비용↑ · 임금↑ · 기대물가↑</span>
-    <span><b>물가 안정</b>2% 목표 접근 · 비용 안정 · 기대물가 안정</span>
+    <span><b>물가 압력</b>물가 상승 속도↑ · 기업 비용↑ · 임금↑</span>
+    <span><b>물가 안정</b>물가 상승 속도 둔화 · 기업 비용 안정</span>
    </div>
   </section>
 
   <section className="inflation-indicator-section inflation-r2-indicators" aria-labelledby="inflation-indicator-title">
    <header>
     <div><p className="cnn-eyebrow">INFLATION INDICATORS</p><h2 id="inflation-indicator-title">인플레이션 분석 지표</h2></div>
-    <p>이전·현재값과 공식 발표 일정을 함께 표시합니다. 저장된 정규화 점수는 <b>긍정 / 중립 / 부정</b>으로 단순화했습니다.</p>
+    <p>각 지표의 이전 값과 현재 값, 다음 발표 예정일을 볼 수 있어요. 판단 색깔은 <b>여러 자료를 종합해 저장된 평가 점수</b>에 따라 <b>긍정 / 중립 / 부정</b>으로 표시해요.</p>
    </header>
 
    <div className="inflation-table-wrap inflation-r2-table-wrap">
