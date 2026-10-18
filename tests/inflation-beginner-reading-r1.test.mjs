@@ -11,7 +11,7 @@ const css=read("app/inflation/inflation-beginner-reading-r1.css");
 test("inflation uses a scoped beginner reading design without changing other guide pages",()=>{
  assert.match(page,/import "\.\/inflation-beginner-reading-r1\.css";/);
  assert.match(page,/variant="beginner"/);
- assert.match(notes,/variant=\{topic==="inflation"\?"beginner":"default"\}/);
+ assert.match(notes,/variant=\{topic==="inflation"\|\|topic==="recession"\?"beginner":"default"\}/);
  assert.match(guide,/variant\?:"default"\|"beginner"/);
  assert.match(guide,/if\(variant==="beginner"\)/);
  assert.match(guide,/return <section className="mt-12 space-y-6/);
