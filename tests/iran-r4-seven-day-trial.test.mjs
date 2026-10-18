@@ -116,6 +116,11 @@ test('read-only preflight with no R4 input neither creates weekly ledger nor cha
   const result=runR4TrialLocal({mode:'--preflight',dbFile:dbfile,dir:home,now:BASE});
   assert.equal(result.status,'R4_INPUT_PENDING');
   assert.equal(result.sampled,false);
+  assert.ok(result.readiness.missingR4IndependentInputs.includes('YEMEN_HOUTHI_COVERAGE'));
+  assert.ok(result.readiness.missingR4IndependentInputs.includes('YEMEN_HOUTHI_RELATION'));
+  assert.equal(result.readiness.militaryWindow.completeCoverageProven,false);
+  assert.equal(result.providerCalls,0);
+  assert.equal(result.published,false);
   assert.equal(fs.existsSync(home),false);
   const report=runR4TrialLocal({mode:'--report',dbFile:dbfile,dir:home,now:BASE});
   assert.equal(report.status,'NOT_STARTED');
