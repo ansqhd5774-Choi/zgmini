@@ -7,7 +7,7 @@ import {openStore} from '../scripts/iran-progress/store.mjs';
 import {IRAN_R4_WEIGHTS,calculateIranR4RealityShadow} from '../lib/iran-progress/reality-shadow-r4.mjs';
 import {R4_TRIAL_DEFAULT,tuneR4ShadowCandidate,validateR4TrialTuning,compareR4TrialCandidates}
  from '../lib/iran-progress/seven-day-tuning-r4.mjs';
-import {dayKst,sampleR4Trial,summarizeR4Trial,runR4TrialLocal}
+import {dayKst,sampleR4Trial,summarizeR4Trial,previewR4TrialReweight,runR4TrialLocal}
  from '../scripts/iran-progress/seven-day-trial-r4.mjs';
 const DAY=86400000,HOUR=3600000,BASE=Date.parse('2026-10-18T03:00:00Z');
 const refs=at=>[{sourceId:'TEST_VERIFIED_SOURCE',sourceKind:'OFFICIAL',url:'https://example.invalid/fixture',
@@ -147,4 +147,49 @@ test('local shadow run saves only small result ledger and never changes source D
   try{assert.equal(db.getCheckpoint('r4-shadow-verified-input-v1').fronts.IRN_USA.id,'IRN_USA');
   }finally{db.close();}
  }finally{fs.rmSync(dir,{recursive:true,force:true});}
+});
+
+test('seven daily samples can be reweighted after the week without modifying recorded baseline',()=>{
+ let trial=null;
+ for(let i=0;i<7;i++){
+  const at=BASE+i*DAY;
+  trial=sampleR4Trial({verifiedInput:input(at),observations:[],now:at,existing:trial,sourceHash:'fixed'}).record;
+ }
+ const before=JSON.stringify(trial);
+ const variants=[{name:'baseline',config:R4_TRIAL_DEFAULT},
+  {name:'lower_military',config:{weights:{D:.25,C:.35,M:.20,H:.10,N:.10},sensitivity:.8}}];
+ const comparison=previewR4TrialReweight(trial,variants,BASE+6*DAY);
+ assert.equal(comparison.status,'TUNING_CANDIDATES_ONLY');
+ assert.equal(comparison.variants.length,2);
+ assert.equal(comparison.variants[0].observations.length,7);
+ assert.deepEqual(comparison.variants[0].observations.map(x=>x.score),trial.samples.map(x=>x.candidateScore));
+ assert.equal(comparison.autoApplied,false);
+ assert.equal(JSON.stringify(trial),before);
+});
+test('comparison requires seven distinct days; no auto adjustment after only six days',()=>{
+ let trial=null;
+ for(let i=0;i<6;i++)trial=sampleR4Trial({verifiedInput:input(BASE+i*DAY),now:BASE+i*DAY,
+  existing:trial,sourceHash:'fixed'}).record;
+ assert.equal(previewR4TrialReweight(trial,[{name:'baseline',config:R4_TRIAL_DEFAULT}],BASE+6*DAY).status,
+  'INSUFFICIENT_SEVEN_DAY_HISTORY');
+});
+test('completed local trial compare reads variants separately and never rewrites ledger',()=>{
+ const dir=fs.mkdtempSync(path.join(os.tmpdir(),'iran-r4-compare-')),dbfile=path.join(dir,'input.sqlite'),home=path.join(dir,'trial');
+ const store=openStore(dbfile);
+ try{
+  for(let i=0;i<7;i++) {
+   const at=BASE+i*DAY;
+   store.checkpoint('r4-shadow-verified-input-v1',input(at));
+   const result=runR4TrialLocal({mode:'--sample',dbFile:dbfile,dir:home,now:at});
+   assert.equal(result.status,'SAMPLE_RECORDED');
+  }
+  const main=path.join(home,'week.json'),original=fs.readFileSync(main,'utf8');
+  const variantFile=path.join(home,'seven-day-variants.json');
+  fs.writeFileSync(variantFile,JSON.stringify([{name:'frozen',config:R4_TRIAL_DEFAULT}]));
+  const result=runR4TrialLocal({mode:'--compare',dbFile:dbfile,dir:home,now:BASE+6*DAY});
+  assert.equal(result.status,'TUNING_CANDIDATES_ONLY');
+  assert.deepEqual(result.variants[0].observations.map(x=>x.score),
+   JSON.parse(original).samples.map(x=>x.candidateScore));
+  assert.equal(fs.readFileSync(main,'utf8'),original);
+ }finally{store.close();fs.rmSync(dir,{recursive:true,force:true});}
 });
