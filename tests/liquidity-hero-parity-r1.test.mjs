@@ -7,12 +7,12 @@ const recession=read("app/recession/recession-panel.tsx");
 const inflation=read("app/inflation/inflation-hero-typography-r1.css");
 const parity=read("app/liquidity-crisis/liquidity-hero-typography-r1.css");
 test("liquidity and recession headers never reveal internal methodology text",()=>{
- assert.match(liquidity,/<MarketCardHeader[^\\n]*title="미국 유동성 위기"[^\\n]*source=""/);
- assert.match(recession,/<MarketCardHeader[^\\n]*title="미국 경기침체"[^\\n]*source=""/);
+ assert.match(liquidity,/<MarketCardHeader.*title="미국 유동성 위기".*source=""/);
+ assert.match(recession,/<MarketCardHeader.*title="미국 경기침체".*source=""/);
  assert.match(liquidity,/date=\{dateLabel\(payload\?\.asOfDate\)\} source=""/);
  assert.match(recession,/date=\{dateLabel\(payload\?\.asOfDate\)\} source=""/);
- assert.doesNotMatch(liquidity,/<MarketCardHeader[^\\n]*source=\{payload/);
- assert.doesNotMatch(recession,/<MarketCardHeader[^\\n]*source=\{payload/);
+ assert.doesNotMatch(liquidity,/<MarketCardHeader.*source=\{payload/);
+ assert.doesNotMatch(recession,/<MarketCardHeader.*source=\{payload/);
 });
 test("liquidity hero exactly adopts inflation typography without shared changes",()=>{
  assert.match(liquidity,/import "\.\/liquidity-hero-typography-r1\.css"/);
