@@ -245,6 +245,7 @@ function FactorListItem({item,config}:{item:Factor;config:Config}){
 
 export default function BeginnerRiskGuide({topic}:{topic:Topic}){
  const config=configs[topic];
+ const calculationDetailsRef=useRef<HTMLDetailsElement>(null);
  const historyDetailsRef=useRef<HTMLDetailsElement>(null);
  const [payload,setPayload]=useState<any>(null);
  const [loading,setLoading]=useState(true);
@@ -288,8 +289,11 @@ export default function BeginnerRiskGuide({topic}:{topic:Topic}){
     <div className="bg-rose-950/20 p-4"><h3 className="font-bold text-rose-300">{config.negativeHeading}</h3>{negative.length?<ul className="mt-3 space-y-2 text-sm text-slate-200">{negative.map(item=><FactorListItem key={item.id} item={item} config={config}/>)}</ul>:<p className="mt-3 text-sm text-slate-400">현재 뚜렷한 부담 요인을 확인하지 못했습니다.</p>}</div>
    </div>
   </div>
-  <details className="rounded-lg bg-[#071c2a] p-4 sm:p-5">
-   <summary className="cursor-pointer font-bold text-white">이 점수는 어떻게 계산하나요?</summary>
+  <details ref={calculationDetailsRef} className="zg-method-history rounded-lg bg-[#071c2a] p-4 sm:p-5" data-testid={`beginner-methodology-explanation-${topic}`}>
+   <summary className="zg-method-history-summary cursor-pointer font-bold text-white">
+    <span className="zg-method-history-title"><span>이 점수는 어떻게 계산하나요?</span></span>
+    <ChevronDown aria-hidden="true" className="zg-method-history-chevron"/>
+   </summary>
    <div className="mt-3 space-y-2 text-sm leading-6 text-slate-300">
     <p className="text-xs text-slate-400">이 설명 영역은 점수·가중치·판정을 새로 계산하지 않고, 승인된 저장 결과를 해석합니다.</p>
     <p><strong className="text-slate-100">① 사용하는 지표</strong> {methodology.inputs}</p>
@@ -297,6 +301,12 @@ export default function BeginnerRiskGuide({topic}:{topic:Topic}){
     <p><strong className="text-slate-100">③ 점수 읽는 법</strong> 75점 이상 {config.stage(75)}, 60~74점 {config.stage(60)}, 45~59점 중립, 25~44점 {config.stage(25)}, 25점 미만 {config.stage(0)}. {config.highMeaning} {config.lowMeaning}</p>
     <p><strong className="text-slate-100">④ 주식시장에서</strong> {methodology.marketUse}</p>
     <p><strong className="text-slate-100">⑤ 결측·한계</strong> 필요한 자료가 없으면 임의의 0점으로 채우지 않고 미산출 상태로 남길 수 있습니다. {methodology.limitation}</p>
+    <div className="zg-method-history-close-row">
+     <button type="button" className="zg-method-history-close" aria-label="이 점수는 어떻게 계산하나요? 접기" onClick={()=>{if(calculationDetailsRef.current)calculationDetailsRef.current.open=false;}}>
+      <ChevronUp aria-hidden="true" size={16}/>
+      <span>접기</span>
+     </button>
+    </div>
    </div>
   </details>
   <details ref={historyDetailsRef} className="zg-method-history rounded-lg bg-[#071c2a] p-4 sm:p-5" data-testid={`beginner-methodology-history-${topic}`}>
