@@ -65,7 +65,8 @@ export function auditIranR4FourteenDayLocal(db,{now=Date.now(),through='2026-10-
    publicEvidenceSourceCount:day.knownOnDateSourceCount,
    pcEventRevisionStatus:exactSource,
    localVerifiedThatDay:exactSource==='EVENT_REVISIONS_AS_OF_DATE'?observed:null,
-   military28DayCoverageProven:military.completeCoverageProven===true,
+   military28DayCoverageProven:scoreStatus==='SHADOW_READY',
+   storedEventWindowComplete:military.completeCoverageProven===true,
    r4Score:score,r4ScoreStatus:scoreStatus,phase,
    analystAnchorApplied:false,legacyR3SeedApplied:false,productionReady:false});
  }
