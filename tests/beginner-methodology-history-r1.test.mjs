@@ -77,3 +77,21 @@ test('methodology history has an accessible bottom collapse control without scro
  assert.match(css,/prefers-reduced-motion:reduce/);
  assert.doesNotMatch(guide,/scrollTo\(|scrollIntoView\(/);
 });
+
+test('calculation and history accordions share the same accessible expand/collapse UI on all eight pages',()=>{
+ const css=readFileSync('app/beginner-methodology-accordion.css','utf8');
+ assert.match(guide,/ref=\{calculationDetailsRef\} className="zg-method-history rounded-lg/);
+ assert.match(guide,/data-testid=\{`beginner-methodology-explanation-\$\{topic\}`\}/);
+ assert.equal((guide.match(/<summary className="zg-method-history-summary/g)||[]).length,2);
+ assert.equal((guide.match(/<ChevronDown aria-hidden="true" className="zg-method-history-chevron"\/>/g)||[]).length,2);
+ assert.equal((guide.match(/className="zg-method-history-close-row"/g)||[]).length,2);
+ assert.equal((guide.match(/className="zg-method-history-close"/g)||[]).length,2);
+ assert.match(guide,/aria-label="이 점수는 어떻게 계산하나요\? 접기"/);
+ assert.match(guide,/onClick=\{\(\)=>\{if\(calculationDetailsRef\.current\)calculationDetailsRef\.current\.open=false;\}\}/);
+ assert.match(guide,/aria-label="산출식 개선 이력 접기"/);
+ assert.match(guide,/onClick=\{\(\)=>\{if\(historyDetailsRef\.current\)historyDetailsRef\.current\.open=false;\}\}/);
+ assert.match(css,/\.zg-method-history\[open\] \.zg-method-history-chevron\{transform:rotate\(180deg\)\}/);
+ assert.match(css,/\.zg-method-history-close:focus-visible/);
+ assert.match(css,/prefers-reduced-motion:reduce/);
+ assert.doesNotMatch(guide,/scrollTo\(|scrollIntoView\(/);
+});
