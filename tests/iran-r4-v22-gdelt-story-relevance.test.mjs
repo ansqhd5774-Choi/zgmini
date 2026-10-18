@@ -85,7 +85,7 @@ test('different CAMEO country pair on same URL cannot promote actor confidence',
 });
 test('reject fabricated review verification and invalid incident timestamp',()=>{
  assert.throws(()=>auditR4GdeltStoryV22(rows,[{...reviews[0],scoreEligible:true}]),/V22_REVIEW_INVALID/);
- assert.throws(()=>auditR4GdeltStoryV22(rows,[{...reviews[0],incidentDateCandidate:'20260907'}]),/V22_EVENT_DAY_NOT_PROVEN/);
+ assert.throws(()=>auditR4GdeltStoryV22(rows,[{...reviews.find(r=>r.disposition==='DIPLOMATIC_STATEMENT'),incidentDateCandidate:'20260907'}]),/V22_EVENT_DAY_NOT_PROVEN/);
 });
 test('reject unsupported event code front and future SQL day',()=>{
  assert.throws(()=>auditR4GdeltStoryV22([{...rows[0],front:'VERIFIED_ATTACK'}],reviews),/V22_GDELT_ROW_INVALID/);
