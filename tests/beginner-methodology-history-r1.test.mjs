@@ -95,3 +95,21 @@ test('calculation and history accordions share the same accessible expand/collap
  assert.match(css,/prefers-reduced-motion:reduce/);
  assert.doesNotMatch(guide,/scrollTo\(|scrollIntoView\(/);
 });
+
+test('opening either accordion preserves the clicked header while content expands downward',()=>{
+ const css=readFileSync('app/beginner-methodology-accordion.css','utf8');
+ assert.equal((guide.match(/onClick=\{event=>preserveAccordionSummaryOnOpen\(event\.currentTarget\)\}/g)||[]).length,2);
+ assert.match(guide,/function preserveAccordionSummaryOnOpen\(summary:HTMLElement\)/);
+ assert.match(guide,/if\(!\(details instanceof HTMLDetailsElement\)\|\|details\.open\)return/);
+ assert.match(guide,/const initialTop=summary\.getBoundingClientRect\(\)\.top/);
+ assert.match(guide,/summary\.getBoundingClientRect\(\)\.top-initialTop/);
+ assert.match(guide,/window\.scrollBy\(\{top:shift,behavior:"instant"\}\)/);
+ assert.match(guide,/performance\.now\(\)-start<480/);
+ for(const name of ['wheel','touchmove','keydown']){
+  assert.ok(guide.includes(`window.addEventListener("${name}",stop`));
+  assert.ok(guide.includes(`window.removeEventListener("${name}",stop)`));
+ }
+ assert.match(css,/transition:block-size 420ms/);
+ assert.match(css,/prefers-reduced-motion:reduce/);
+ assert.doesNotMatch(guide,/scrollIntoView\(|window\.scrollTo\(/);
+});
