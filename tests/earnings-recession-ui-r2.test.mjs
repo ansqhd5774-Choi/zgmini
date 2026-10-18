@@ -47,3 +47,10 @@ test("earnings 1Y chart preserves all stored observations but labels each month 
  assert.equal(data.length,6);
  assert.deepEqual(ticks,["2025-09-30","2025-12-31","2026-03-31","2026-06-30","2026-10-17"]);
 });
+
+test("earnings R3 labels separately verified universe and eligible issuer counts",()=>{
+ assert.match(panel,/universeCount\?:number\|null/);
+ assert.match(panel,/분석 모집단 \{stored\.universeCount\.toLocaleString/);
+ assert.match(panel,/유효 기업 \{stored\.issuerCount\.toLocaleString/);
+ assert.doesNotMatch(panel,/대상 기업 \{stored\.issuerCount/);
+});
