@@ -40,7 +40,8 @@ test("recession SEO covers high-intent indicators without presenting score as pr
 
  for(const keyword of ["실업률","GDP","Sahm Rule","장단기 금리차"])assert.match(page,new RegExp(keyword.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")));
  assert.match(page,/경기침체 확률이 아니/);
- assert.match(intro,/Sahm Rule[\s\S]*장단기 금리차[\s\S]*경기침체 확률이 아니/);
+ assert.match(intro,/미국 경기, <span className="text-sky-300">침체 신호는\?<\/span>/);
+ assert.match(intro,/경기 방어점수와 최근 1년 추세 · 경기침체 확률 아님/);
  assert.match(panel,/경기침체 확률 아님/);
  assert.match(page,/nber\.org\/research\/business-cycle-dating/);
  assert.match(page,/fred\.stlouisfed\.org\/release\?rid=456/);
