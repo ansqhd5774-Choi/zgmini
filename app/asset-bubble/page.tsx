@@ -21,6 +21,7 @@ export default function AssetBubblePage(){return <><SiteHeader/><main className=
   {title:"연구 후보와 공개 참고 지표는 무엇이 다른가요?",text:"R9 및 R10의 방법론·출처 상태가 다를 수 있습니다. 화면에 표시된 연구 후보·참고 지표·검증 상태를 확인해야 하며, 공개 참고 지표라고 해서 과거의 출처 권리·시점 검증이 모두 완료됐다는 뜻은 아닙니다.",highlight:"출처 상태가 다를 수 있습니다",bold:"검증이 모두 완료됐다는 뜻은 아닙니다"},
   {title:"이전 값과 발표일에 ‘—’가 표시되는 이유는?",text:"‘—’는 0이 아니라 확인된 저장 자료가 없다는 뜻입니다. 분기 관측일, 실제 저장일과 공식 발표일은 서로 다르며, 현재 개정 자료로 재구성한 1년 차트는 당시 투자자에게 제공됐던 백테스트가 아닙니다.",highlight:"‘—’는 0이 아니라 확인된 저장 자료가 없다는 뜻",bold:"분기 관측일, 실제 저장일과 공식 발표일은 서로 다르며"},
  ]}
+ sources={[]}
  related={[{href:"/earnings-recession/",label:"기업 실적 침체 지표"},{href:"/credit-risk/",label:"미국 신용 위험 지표"}]}
  />
  <DetailInvestorNotes topic="asset-bubble"/>
