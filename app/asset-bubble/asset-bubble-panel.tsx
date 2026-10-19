@@ -4,15 +4,18 @@ import {ContentHelp} from '../content-help';
 import {HelpText} from '../help-copy';
 
 
-import {useMemo,useRef,useState,type FocusEvent} from "react";
-import {Info} from "lucide-react";
+import {useMemo} from "react";
 import {MarketCardHeader} from "../market-card-header";
 import {MarketScoreOrb} from "../market-score-orb";
 import {MarketTrendFrame} from "../market-trend-frame";
 import {MarketFearGreedChart,type MarketFearGreedChartPoint,type MarketFearGreedChartValidPoint} from "../market-fear-greed-chart";
+import {InflationMiniChart} from "../inflation/inflation-mini-chart";
+import {AssetFavoriteButton,AssetFavoriteHeaderIcon} from "./asset-favorite-button";
+import "./asset-indicator-r2.css";
+import "../shared-risk-indicator-width-r1.css";
 
-type Row={id:string;name:string;status:string;score:number|null;value:number|null;unit:string;observationDate:string|null;source:string;weight:number};
-export type Payload={status:string;score:number|null;asOfDate?:string|null;methodologyVersion?:string;missingFactors?:string[];indicators?:Row[];trend?:Array<{label:string;value:number}>;diagnosticQuarter?:string|null;scoreObservationQuarter?:string|null;sourceStoredAt?:number|null;historyMode?:string;rightsStatus?:string;publicationPolicy?:string;notes?:string[]};
+type Row={id:string;name:string;status:string;score:number|null;value:number|null;unit:string;observationDate:string|null;source:string;weight:number;previousValue?:number|null;previousObservationDate?:string|null;trend?:Array<{date:string;value:number}>;nextReleaseDate?:string|null};
+export type Payload={status:string;score:number|null;asOfDate?:string|null;methodologyVersion?:string;missingFactors?:string[];indicators?:Row[];trend?:Array<{label:string;value:number}>;diagnosticQuarter?:string|null;scoreObservationQuarter?:string|null;sourceStoredAt?:number|null;historyMode?:string;rightsStatus?:string;publicationPolicy?:string;notes?:string[];scoreComparisons?:{week?:number|null;month?:number|null;threeMonth?:number|null;sixMonth?:number|null;year?:number|null}};
 const meta:Record<string,{label:string;content:string;criterion:string;help:string}>={
  valuationPressure:{label:"밸류에이션 압력",content:"주식시장 가치가 명목 GDP 대비 얼마나 높은지 측정",criterion:"장기분포 대비 낮을수록 양호",help:"금융·비금융 상장주식 가치 합계를 명목 GDP와 비교합니다. 장기 분포에서 밸류에이션 압력이 높을수록 버블 위험이 커져 안전점수는 낮아집니다."},
  priceAcceleration:{label:"가격가속",content:"최근 3개월 상승속도가 12개월 추세보다 얼마나 빨라졌는지 측정",criterion:"급격한 가속이 없을수록 양호",help:"단순 수익률이 아니라 단기 가격 상승속도의 가속을 봅니다. 짧은 기간 가격이 장기 추세보다 빠르게 치솟으면 버블 위험 신호가 강해집니다."},
@@ -33,6 +36,8 @@ function dateLabel(v?:string|null){if(!v)return "—";const d=new Date(v.length=
 function stage(s:number|null|undefined){if(typeof s!=="number"||!Number.isFinite(s))return "데이터 준비 중";if(s>=75)return "매우 양호";if(s>=60)return "양호";if(s>=45)return "중립";if(s>=25)return "버블 주의";return "버블 위험"}
 function judge(s:number|null|undefined,status?:string){if(status!=="READY"||typeof s!=="number"||!Number.isFinite(s))return {label:"데이터 준비 중",tone:"neutral"};if(s>=60)return {label:"긍정",tone:"positive"};if(s>=45)return {label:"중립",tone:"neutral"};return {label:"부정",tone:"negative"}}
 function fmt(r:Row|null|undefined){if(!r||typeof r.value!=="number"||!Number.isFinite(r.value))return "—";const n=Math.abs(r.value)>=100?1:3;return r.value.toFixed(n)+(r.unit?" "+r.unit:"")}
+function fmtValue(value:number|null|undefined,unit?:string|null){if(typeof value!=="number"||!Number.isFinite(value))return "—";const n=Math.abs(value)>=100?1:3;return value.toFixed(n)+(unit?" "+unit:"")}
+function releaseLabel(value?:string|null){return value&&Number.isFinite(Date.parse(value))?dateLabel(value):"—"}
 function HelpTip({label,text}:{label:string;text:string}){return <ContentHelp label={label+' 도움말'}><HelpText copy={{meaning:text,reading:'원자료의 단위와 기준선, 관측일을 함께 확인하세요. 원자료의 상승·하락과 시장 평가 점수의 상승·하락은 서로 다를 수 있습니다.',note:'자료가 없거나 개발 중인 항목은 숫자를 표시하지 않습니다. 「—」는 0이 아닙니다.'}}/></ContentHelp>;}
 
 export default function AssetBubblePanel({initialPayload}:{initialPayload?:Payload}={}){
@@ -43,14 +48,20 @@ export default function AssetBubblePanel({initialPayload}:{initialPayload?:Paylo
  const trend=useMemo(()=>(payload?.trend??[]).filter(p=>typeof p.value==="number"&&Number.isFinite(p.value)).map(p=>({date:p.label,score:p.value} satisfies MarketFearGreedChartPoint)),[payload?.trend]);
  const latest=trend.at(-1),latestPoint:MarketFearGreedChartValidPoint|null=latest?{date:latest.date,score:latest.score as number}:null;
  const axisTicks=trend.map(p=>p.date),axisLabels=new Map(trend.map(p=>[p.date,p.date.slice(2,7).replace("-","/")]));
- const previous=trend.at(-2)?.score,first=trend.at(0)?.score;
+ const scoreComparisonItems=[
+  {label:"1주",value:payload?.scoreComparisons?.week??null},
+  {label:"1개월",value:payload?.scoreComparisons?.month??null},
+  {label:"3개월",value:payload?.scoreComparisons?.threeMonth??null},
+  {label:"6개월",value:payload?.scoreComparisons?.sixMonth??null},
+  {label:"1년",value:payload?.scoreComparisons?.year??null},
+ ];
  const rows=new Map((payload?.indicators??[]).map(x=>[x.id,x]));
  return <>
   <section className="cnn-reference-panel fg-card fg-shared-shell asset-bubble-target-card" data-testid="asset-bubble-detail-hero" data-market-state={loading?"loading":score===null?"unavailable":"ready"} aria-busy={loading}>
    <div className="fg-header-slot"><MarketCardHeader flag="/flags/us.svg" eyebrow={candidate?(publishedCurrentVintage?'ZGMINI ASSET BUBBLE R10 · 참고 지표':'ZGMINI ASSET BUBBLE R10 · 연구 후보'):'ZGMINI ASSET BUBBLE R9'} title="미국 자산 버블" description="저장된 현재 개정 자료 기반" dateLabel="데이터 기준일" date={dateLabel(payload?.asOfDate)} source={payload?.methodologyVersion??"ASSET_BUBBLE_R9"}/></div>
    <div className="fg-content-slot">
-    <div className="fg-score-slot"><MarketScoreOrb score={loading||score===null?"—":score.toFixed(1)} state={loading?"확인 중":stage(score)} variant="hero" dayDelta={score!==null&&typeof previous==="number"?score-previous:null} periodDelta={score!==null&&typeof first==="number"&&trend.length>1?score-first:null} periodLabel="1년 내 첫 점 대비" dayLabel="이전 분기 대비" comparisonAriaLabel="자산 버블 안전점수 변화" metaDate={dateLabel(payload?.asOfDate)}/></div>
-    <MarketTrendFrame className="fg-analysis-slot"><div className="fg-chart-slot"><div className="fg-renderer"><MarketFearGreedChart data={trend} axisTicks={axisTicks} axisLabels={axisLabels} latestPoint={latestPoint} instanceKey="asset-bubble-1y" gradientId="asset-bubble-fill" formatTooltipLabel={dateLabel} emptyLabel={loading?"확인 중":"계산 가능한 최근 1년 이력 없음"}/></div></div></MarketTrendFrame>
+    <div className="fg-score-slot"><MarketScoreOrb score={loading||score===null?"—":score.toFixed(1)} state={loading?"확인 중":stage(score)} variant="hero" comparisonItems={scoreComparisonItems} comparisonAriaLabel="자산 버블 안전점수 변화" metaDate={dateLabel(payload?.asOfDate)}/></div>
+    <MarketTrendFrame className="fg-analysis-slot"><div className="fg-chart-slot"><div className="fg-renderer"><MarketFearGreedChart showExtrema data={trend} axisTicks={axisTicks} axisLabels={axisLabels} latestPoint={latestPoint} instanceKey="asset-bubble-1y" gradientId="asset-bubble-fill" formatTooltipLabel={dateLabel} emptyLabel={loading?"확인 중":"계산 가능한 최근 1년 이력 없음"}/></div></div></MarketTrendFrame>
    </div>
    <div className="fg-footer-slot"><div className="cnn-panel-note"><span>차트 원칙</span><strong>최근 1년 · 계산 가능한 실제 분기점수만 표시 · 임의 보간 없음</strong></div></div>
   </section>
@@ -60,12 +71,50 @@ export default function AssetBubblePanel({initialPayload}:{initialPayload?:Paylo
    <p>자산 버블은 주식·부동산 같은 자산가격이 펀더멘털과 장기 추세에 비해 과도하게 상승하고, 그 과정에서 레버리지와 투기적 자금이 몰리는 상태입니다. 단순히 가격이 높다는 이유만으로 버블이라 판단하지 않고 밸류에이션, 가격가속, 위험선호, 자금흐름, 시장폭, 유동성이 함께 과열되는지를 봐야 합니다.</p>
    <div className="inflation-direction-strip"><span><b>버블 위험</b>고평가↑ · 가격가속↑ · 위험자산 쏠림↑ · 투기자금↑</span><span><b>안정 방향</b>밸류에이션 안정 · 폭넓은 상승 · 유동성 과잉 완화</span></div>
   </section>
-  <section className="inflation-indicator-section" aria-labelledby="asset-bubble-indicator-title">
-   <header><div><p className="cnn-eyebrow">ASSET BUBBLE INDICATORS</p><h2 id="asset-bubble-indicator-title">자산 버블 분석 지표</h2></div><p>실제 저장 입력으로 계산 가능한 값만 표시합니다. <b>긍정 / 중립 / 부정</b>은 각 구성 안전점수 기준이며, ⓘ에서 해석 방향을 확인하세요.</p></header>
-   <div className="inflation-table-wrap"><table className="inflation-indicator-table"><thead><tr><th>지표</th><th>내용</th><th>기준</th><th>현재</th><th>판단</th><th><span className="sr-only">도움말</span>ⓘ</th></tr></thead><tbody>
-    {order.map(id=>{const r=rows.get(id),m=meta[id],j=judge(r?.score,r?.status);return <tr key={id} data-judgement={j.tone}><th scope="row"><strong>{m.label}</strong><small>저장 데이터</small></th><td>{m.content}</td><td>{m.criterion}</td><td><strong>{fmt(r)}</strong><small>{r?.status==="READY"?"내부점수 "+(r.score?.toFixed(1)??"—")+" · "+dateLabel(r.observationDate):"저장 입력 또는 이력 준비 중"}</small></td><td><span className="inflation-judgement">{j.label}</span></td><td><HelpTip label={m.label} text={candidate&&id==='breadthDivergence'?'12개월 지수 수익률과 200일 이동평균 위에 있는 종목 비율의 순위를 비교합니다. 최소 252개 관측을 사용하며, 분기 점수는 세 월말 점수의 평균입니다. 확인되지 않은 가격 불연속 구간은 보류합니다.':m.help}/></td></tr>})}
-    {dev.map(item=><tr key={item[0]} data-development="true"><th scope="row"><strong>{item[0]}</strong></th><td>{item[1]}</td><td>{item[2]}</td><td>—</td><td><span className="inflation-judgement is-development">개발중</span></td><td><HelpTip label={item[0]} text={item[3]+" 현재 ZGmini 데이터 연결 개발 중입니다."}/></td></tr>)}
-   </tbody></table></div>
+  <section className="inflation-indicator-section asset-r2-indicators" aria-labelledby="asset-bubble-indicator-title">
+   <header><div><p className="cnn-eyebrow">ASSET BUBBLE INDICATORS</p><h2 id="asset-bubble-indicator-title">자산 버블 분석 지표</h2></div><p>이전 값·발표일·1년 미니차트는 실제 저장 근거가 있을 때만 표시합니다. 자료가 없는 칸의 <b>—</b>는 0이 아닙니다. 판단은 구성 안전점수 기준입니다.</p></header>
+
+   <div className="inflation-table-wrap asset-r2-table-wrap"><table className="inflation-indicator-table asset-indicator-table-r2">
+    <colgroup><col className="asset-col-favorite"/><col className="asset-col-name"/><col className="asset-col-content"/><col className="asset-col-criterion"/><col className="asset-col-previous"/><col className="asset-col-current"/><col className="asset-col-release"/><col className="asset-col-judgement"/><col className="asset-col-spark"/><col className="asset-col-help"/></colgroup>
+    <thead><tr><th><AssetFavoriteHeaderIcon/><span className="sr-only">즐겨찾기</span></th><th>지표</th><th>내용</th><th>기준</th><th>이전</th><th>현재</th><th>발표</th><th>판단</th><th>미니차트(1Y)</th><th><span className="sr-only">도움말</span>ⓘ</th></tr></thead>
+    <tbody>
+     {order.map(id=>{const row=rows.get(id),m=meta[id],j=judge(row?.score,row?.status);return <tr key={id} data-judgement={j.tone}>
+      <td><AssetFavoriteButton id={id} label={m.label}/></td>
+      <th scope="row"><strong>{m.label}</strong><small>{row?.status==="READY"?"저장 데이터":"자료 확인 중"}</small></th>
+      <td>{m.content}</td><td className="asset-r2-criterion">{m.criterion}</td>
+      <td className="asset-r2-value"><strong>{fmtValue(row?.previousValue,row?.unit)}</strong><small>{dateLabel(row?.previousObservationDate)}</small></td>
+      <td className="asset-r2-value"><strong>{fmt(row)}</strong><small>{dateLabel(row?.observationDate)}</small></td>
+      <td className="asset-r2-release"><strong>{releaseLabel(row?.nextReleaseDate)}</strong><small>확인된 일정만</small></td>
+      <td><span className="inflation-judgement">{j.label}</span></td>
+      <td className="asset-r2-spark-cell"><InflationMiniChart label={m.label} points={row?.trend}/></td>
+      <td><HelpTip label={m.label} text={candidate&&id==='breadthDivergence'?'12개월 지수 수익률과 200일 이동평균 위에 있는 종목 비율의 순위를 비교합니다. 최소 252개 관측을 사용하며, 분기 점수는 세 월말 점수의 평균입니다. 확인되지 않은 가격 불연속 구간은 보류합니다.':m.help}/></td>
+     </tr>})}
+     {dev.map(item=><tr key={item[0]} data-development="true">
+      <td><AssetFavoriteButton id={`development:${item[0]}`} label={item[0]}/></td>
+      <th scope="row"><strong>{item[0]}</strong><small>개발중</small></th><td>{item[1]}</td><td>{item[2]}</td>
+      <td>—</td><td>—</td><td>—</td><td><span className="inflation-judgement is-development">개발중</span></td>
+      <td className="asset-r2-spark-cell">—</td><td><HelpTip label={item[0]} text={item[3]+" 현재 ZGmini 데이터 연결 개발 중입니다."}/></td>
+     </tr>)}
+    </tbody>
+   </table></div>
+   <div className="asset-r2-mobile-list">
+    {order.map(id=>{const row=rows.get(id),m=meta[id],j=judge(row?.score,row?.status);return <article className="asset-r2-mobile-card" key={id} data-judgement={j.tone}>
+     <div className="asset-r2-mobile-head"><div className="asset-r2-mobile-title"><AssetFavoriteButton id={id} label={m.label}/><div><strong>{m.label}</strong><small>{row?.status==="READY"?"저장 데이터":"자료 확인 중"}</small></div></div><div className="asset-r2-mobile-actions"><span className="inflation-judgement">{j.label}</span><HelpTip label={m.label} text={candidate&&id==='breadthDivergence'?'12개월 지수 수익률과 200일 이동평균 위에 있는 종목 비율의 순위를 비교합니다. 최소 252개 관측을 사용하며, 분기 점수는 세 월말 점수의 평균입니다. 확인되지 않은 가격 불연속 구간은 보류합니다.':m.help}/></div></div>
+     <p className="asset-r2-mobile-content">{m.content}</p>
+     <p className="asset-r2-mobile-criterion"><span>기준</span>{m.criterion}</p>
+     <div className="asset-r2-mobile-spark"><span>미니차트(1Y)</span><InflationMiniChart label={m.label} points={row?.trend}/></div>
+     <div className="asset-r2-mobile-metrics">
+      <div><span>이전</span><strong>{fmtValue(row?.previousValue,row?.unit)}</strong><small>{dateLabel(row?.previousObservationDate)}</small></div>
+      <div><span>현재</span><strong>{fmt(row)}</strong><small>{dateLabel(row?.observationDate)}</small></div>
+      <div><span>발표</span><strong>{releaseLabel(row?.nextReleaseDate)}</strong><small>확인된 일정만</small></div>
+     </div>
+    </article>})}
+    {dev.map(item=><article className="asset-r2-mobile-card is-development" key={item[0]}>
+     <div className="asset-r2-mobile-head"><div className="asset-r2-mobile-title"><AssetFavoriteButton id={`development:${item[0]}`} label={item[0]}/><div><strong>{item[0]}</strong><small>개발중</small></div></div><div className="asset-r2-mobile-actions"><span className="inflation-judgement is-development">개발중</span><HelpTip label={item[0]} text={item[3]+" 현재 ZGmini 데이터 연결 개발 중입니다."}/></div></div>
+     <p className="asset-r2-mobile-content">{item[1]}</p><p className="asset-r2-mobile-criterion"><span>기준</span>{item[2]}</p>
+     <div className="asset-r2-mobile-metrics"><div><span>이전</span><strong>—</strong></div><div><span>현재</span><strong>—</strong></div><div><span>발표</span><strong>—</strong></div></div>
+    </article>)}
+   </div>
   </section>
   <a className="cnn-return-cta" href="/">← 메인 대시보드로 돌아가기</a>
  </>;
