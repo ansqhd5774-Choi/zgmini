@@ -152,3 +152,90 @@
  .fg-r2-factor-facts{grid-template-columns:minmax(0,1fr)}
  .fg-r2-factor-facts>div{padding:11px}
 }
+
+/* R3: Bottom-of-page parity with the R2 terminal; US/Korea only.
+   Shared DetailInvestorNotes content and risk page layouts are unchanged. */
+.zg-fg-bottom-r3{margin-top:24px;min-width:0}
+.zg-fg-bottom-r3>section:first-of-type{
+ display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;
+ align-items:stretch;margin-top:0;
+}
+.zg-fg-bottom-r3>section:first-of-type>h2{
+ grid-column:1/-1;min-width:0;margin:0 0 1px;padding:19px 20px 17px;
+ background:#0a2535;color:#eff8fb;font-size:18px;font-weight:850;line-height:1.4;
+}
+.zg-fg-bottom-r3>section:first-of-type>h2:before{
+ content:"MARKET READING GUIDE";display:block;margin-bottom:8px;
+ color:#76bec9;font-size:10px;font-weight:850;letter-spacing:.1em;
+}
+.zg-fg-bottom-r3>section:first-of-type>div{
+ min-width:0;margin:0;padding:17px 19px;background:#0c2939;
+ border-top:2px solid #356982;
+}
+.zg-fg-bottom-r3>section:first-of-type>div>h3{
+ margin:0 0 9px;color:#f0f8fc;font-size:13px;font-weight:800;line-height:1.5;
+}
+.zg-fg-bottom-r3>section:first-of-type>div>p{
+ margin:0;color:#adc6d4;font-size:12px;line-height:1.75;
+ word-break:keep-all;overflow-wrap:anywhere;
+}
+.zg-fg-bottom-r3>section:first-of-type>nav{
+ grid-column:1/-1;display:flex;flex-wrap:wrap;gap:7px;margin:0;padding:12px;
+ background:#0a2535;
+}
+.zg-fg-bottom-r3>section:first-of-type>nav>a{
+ display:inline-flex;align-items:center;min-height:37px;margin:0;padding:7px 12px;
+ color:#aee4eb;background:#123a4c;font-size:11px;font-weight:700;
+ line-height:1.45;text-decoration:none;overflow-wrap:anywhere;
+}
+.zg-fg-bottom-r3>section:first-of-type>nav>a:hover{background:#1b4a5e;color:#f5fcff}
+.zg-fg-bottom-r3>section:first-of-type>nav>a:focus-visible{outline:2px solid #83dce3;outline-offset:2px}
+.zg-fg-bottom-r3>section[aria-label="한국·미국 공포탐욕지수 비교"]{
+ margin-top:12px;padding:19px 20px 17px;background:#0b2535;color:#c6d9e5;
+}
+.zg-fg-bottom-r3>section[aria-label="한국·미국 공포탐욕지수 비교"]>h2{
+ margin:0 0 11px;color:#f0f8fc;font-size:18px;line-height:1.4;font-weight:850;
+}
+.zg-fg-bottom-r3>section[aria-label="한국·미국 공포탐욕지수 비교"]>h2:before{
+ content:"MARKET COMPARISON";display:block;margin-bottom:8px;
+ color:#76bec9;font-size:10px;font-weight:850;letter-spacing:.1em;
+}
+.zg-fg-bottom-r3>section[aria-label="한국·미국 공포탐욕지수 비교"]>div{
+ min-width:0;overflow-x:auto;margin-top:0;
+}
+.zg-fg-bottom-r3>section[aria-label="한국·미국 공포탐욕지수 비교"] table{
+ width:100%;table-layout:fixed;border-collapse:collapse;
+ color:#dae8ef;font-size:12px;line-height:1.6;
+}
+.zg-fg-bottom-r3>section[aria-label="한국·미국 공포탐욕지수 비교"] caption{
+ margin:0;padding:0 0 11px;color:#9cb8c8;font-size:11px;text-align:left;
+}
+.zg-fg-bottom-r3>section[aria-label="한국·미국 공포탐욕지수 비교"] thead{
+ background:#123447;color:#b2cfdd;
+}
+.zg-fg-bottom-r3>section[aria-label="한국·미국 공포탐욕지수 비교"] th,
+.zg-fg-bottom-r3>section[aria-label="한국·미국 공포탐욕지수 비교"] td{
+ padding:13px 12px;border:0;border-bottom:1px solid #2c4b5d;
+ text-align:left;vertical-align:top;overflow-wrap:anywhere;
+}
+.zg-fg-bottom-r3>section[aria-label="한국·미국 공포탐욕지수 비교"] thead th:first-child{width:22%}
+.zg-fg-bottom-r3>section[aria-label="한국·미국 공포탐욕지수 비교"] tbody th{
+ color:#eaf5f9;font-weight:750;
+}
+.zg-fg-bottom-r3>section[aria-label="한국·미국 공포탐욕지수 비교"] tbody tr:nth-child(even){background:#102d3e}
+@media(max-width:700px){
+ .zg-fg-bottom-r3{margin-top:18px}
+ .zg-fg-bottom-r3>section:first-of-type{grid-template-columns:minmax(0,1fr);gap:7px}
+ .zg-fg-bottom-r3>section:first-of-type>h2{padding:15px 13px;font-size:16px}
+ .zg-fg-bottom-r3>section:first-of-type>div{padding:14px 13px}
+ .zg-fg-bottom-r3>section:first-of-type>div>p{font-size:12px}
+ .zg-fg-bottom-r3>section:first-of-type>nav{padding:10px}
+ .zg-fg-bottom-r3>section:first-of-type>nav>a{flex:1 1 100%;justify-content:flex-start}
+ .zg-fg-bottom-r3>section[aria-label="한국·미국 공포탐욕지수 비교"]{padding:15px 10px}
+ .zg-fg-bottom-r3>section[aria-label="한국·미국 공포탐욕지수 비교"]>h2{font-size:16px}
+ .zg-fg-bottom-r3>section[aria-label="한국·미국 공포탐욕지수 비교"] th,
+ .zg-fg-bottom-r3>section[aria-label="한국·미국 공포탐욕지수 비교"] td{
+  padding:10px 6px;font-size:11px;line-height:1.5;
+ }
+ .zg-fg-bottom-r3>section[aria-label="한국·미국 공포탐욕지수 비교"] thead th:first-child{width:25%}
+}
