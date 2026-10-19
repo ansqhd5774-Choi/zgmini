@@ -126,7 +126,8 @@ test("R46 earnings hero uses real score polarity and dated extrema without inven
  assert.match(css,/earnings-recession-target-card\[data-score-tone="positive"\] \.cnn-spectrum-center \.cnn-score-value/);
  assert.match(css,/earnings-recession-target-card\[data-score-tone="neutral"\] \.cnn-spectrum-center \.cnn-score-value/);
  assert.match(css,/earnings-recession-target-card\[data-score-tone="negative"\] \.cnn-spectrum-center \.cnn-score-value/);
- assert.match(css,/\.cnn-score-comparisons\{display:none!important\}/);
+ assert.match(panel,/earningsDiagnosticComparisons/);
+ assert.match(css,/\.earnings-recession-target-card \.cnn-score-comparisons\.is-multi\{/);
  assert.doesNotMatch(panel,/scoreComparisons\?\.|fakeMiniTrend|synthesizedPrior|new Date\(\)\.getTime\(\).*score/);
  assert.match(panel,/진단점수와 별도/);
  assert.match(panel,/score=\{loading\|\|diagnosticScore===null\?"—":diagnosticScore\.toFixed\(1\)\}/);
