@@ -1,0 +1,69 @@
+/* Approved /inflation/ presentation, scoped to earnings only.
+   Keep the diagnostic gauge and the separately labelled E1 trend independent. */
+.earnings-r2-indicators .earnings-r2-table :is(th,td){padding:12px}
+.earnings-r2-indicators .earnings-r2-table :is(th,td):first-child{padding-inline:6px}
+.earnings-r2-indicators .earnings-r2-spark{padding-inline:8px!important}
+.earnings-r2-indicators .earnings-r2-table td.earnings-r2-release small{font-size:11px}
+.fg-card.fg-shared-shell.earnings-recession-target-card .cnn-score-comparison>span{font-size:11px;line-height:1.2}
+.fg-card.fg-shared-shell.earnings-recession-target-card .cnn-score-comparison>strong{font-size:13px;line-height:1.1}
+
+@media(max-width:767px){
+ .fg-card.fg-shared-shell.earnings-recession-target-card{
+  grid-template-columns:10px minmax(0,40%) 6px minmax(0,1fr) 10px;
+  grid-template-rows:auto 132px auto;
+  align-items:stretch;
+ }
+ .fg-card.fg-shared-shell.earnings-recession-target-card .fg-header-slot{
+  grid-column:2 / 5;grid-row:1;width:100%;height:48px;min-height:48px;
+ }
+ .fg-card.fg-shared-shell.earnings-recession-target-card .fg-header-slot .cnn-panel-heading{
+  min-height:48px;padding:5px 0 4px;align-items:start;
+  grid-template-columns:minmax(0,1fr) auto;column-gap:10px;
+ }
+ .fg-card.fg-shared-shell.earnings-recession-target-card .cnn-market-title{grid-column:1;grid-row:1;min-width:0;gap:6px}
+ .fg-card.fg-shared-shell.earnings-recession-target-card .cnn-market-title>div{min-width:0}
+ .fg-card.fg-shared-shell.earnings-recession-target-card .cnn-market-title img{width:28px;height:19px}
+ .fg-card.fg-shared-shell.earnings-recession-target-card .cnn-market-title h2{font-size:18px;line-height:1.15}
+ .fg-card.fg-shared-shell.earnings-recession-target-card .cnn-market-title p:last-child{margin-top:1px;font-size:10px;line-height:1.2}
+ .fg-card.fg-shared-shell.earnings-recession-target-card .cnn-source{
+  grid-column:2;grid-row:1;align-self:start;justify-self:end;align-items:flex-end;
+  margin:0;padding:0;max-width:none;text-align:right;white-space:nowrap;font-size:10px;line-height:1.1;
+ }
+ .fg-card.fg-shared-shell.earnings-recession-target-card .cnn-source strong{font-size:11px;line-height:1.1}
+ .fg-card.fg-shared-shell.earnings-recession-target-card .fg-content-slot{display:contents}
+ .fg-card.fg-shared-shell.earnings-recession-target-card .fg-score-slot{
+  grid-column:2;grid-row:2;width:100%;height:132px;min-height:0;padding:0;align-self:stretch;justify-self:stretch;
+ }
+ .fg-card.fg-shared-shell.earnings-recession-target-card .fg-score-slot .cnn-score-orb{
+  width:100%;height:132px;min-height:0;max-height:132px;row-gap:2px;align-self:stretch;justify-self:stretch;
+ }
+ .fg-card.fg-shared-shell.earnings-recession-target-card .cnn-spectrum-gauge{width:min(100%,112px);max-width:112px}
+ .fg-card.fg-shared-shell.earnings-recession-target-card .cnn-score-whole{font-size:36px}
+ .fg-card.fg-shared-shell.earnings-recession-target-card .cnn-score-fraction{font-size:18px;margin-left:1px}
+ .fg-card.fg-shared-shell.earnings-recession-target-card .cnn-spectrum-center>span{margin-top:1px;font-size:12px;line-height:1.1}
+ .fg-card.fg-shared-shell.earnings-recession-target-card .cnn-score-comparisons{height:28px;min-height:28px;max-height:28px}
+ .fg-card.fg-shared-shell.earnings-recession-target-card .cnn-score-comparisons.is-multi .cnn-score-comparison{gap:1px;padding:0 1px}
+ .fg-card.fg-shared-shell.earnings-recession-target-card .cnn-score-comparisons.is-multi .cnn-score-comparison>span{font-size:8px;line-height:1;letter-spacing:-.02em}
+ .fg-card.fg-shared-shell.earnings-recession-target-card .cnn-score-comparisons.is-multi .cnn-score-comparison>strong{font-size:9.5px;line-height:1;letter-spacing:-.035em}
+ .fg-card.fg-shared-shell.earnings-recession-target-card .fg-analysis-slot{
+  grid-column:4;grid-row:2;width:100%;height:132px;min-height:0;padding:0;align-self:stretch;justify-self:stretch;
+ }
+ .fg-card.fg-shared-shell.earnings-recession-target-card .fg-analysis-slot :is(.fg-chart-slot,.fg-renderer,.cnn-chart){width:100%;height:132px;min-height:0}
+ .fg-card.fg-shared-shell.earnings-recession-target-card .fg-analysis-slot .recharts-responsive-container{height:100%!important;min-height:0!important}
+ .fg-card.fg-shared-shell.earnings-recession-target-card .recharts-cartesian-axis-tick-value{font-size:10px}
+ .fg-card.fg-shared-shell.earnings-recession-target-card .fg-footer-slot{grid-column:1 / -1;grid-row:3;height:28px;min-height:28px;flex:0 0 28px}
+ .fg-card.fg-shared-shell.earnings-recession-target-card .fg-footer-slot .cnn-panel-note{height:28px;min-height:28px;box-sizing:border-box}
+ .fg-card.fg-shared-shell.earnings-recession-target-card .cnn-panel-note{padding:5px 10px;gap:6px;font-size:10px;line-height:1.2;flex-wrap:nowrap;justify-content:center}
+ .fg-card.fg-shared-shell.earnings-recession-target-card .cnn-panel-note strong{font-size:10px;white-space:nowrap}
+ .earnings-recession-target-card .earnings-r2-chart-identity{right:0;top:0;padding:0;background:transparent;font-size:8px}
+ .earnings-r2-mobile-head{gap:10px}
+ .earnings-r2-mobile-actions{gap:2px}
+ .earnings-r2-mobile-actions .inflation-judgement{padding:0 7px}
+ .earnings-r2-mobile-metrics>div{padding:8px 6px 0}
+ .earnings-r2-mobile-metrics small{font-size:8.5px;line-height:1.25}
+ .earnings-r2-mobile-metrics>div:last-child small{font-size:9.5px}
+ .earnings-r2-mobile-spark{gap:10px;padding:8px 0 0}
+ .earnings-r2-mobile-spark>span{flex:0 0 auto;color:#7891a6;font-weight:700}
+ .earnings-r2-mobile-spark .inflation-mini-chart{margin:0}
+ .earnings-r2-mobile-spark .inflation-mini-chart-empty{min-width:148px;max-width:56vw;height:30px}
+}

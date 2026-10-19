@@ -54,6 +54,7 @@ export function MarketFearGreedChart({
   compact = false,
   color = '#ff7076',
   showExtrema = false,
+  axisTickInterval = 0,
 }: {
   data: MarketFearGreedChartPoint[];
   axisTicks: string[];
@@ -66,6 +67,7 @@ export function MarketFearGreedChart({
   compact?: boolean;
   color?: string;
   showExtrema?: boolean;
+  axisTickInterval?: 0 | 'preserveStartEnd';
 }) {
   const prefersReducedMotion = usePrefersReducedMotion();
   const extrema=compact||!showExtrema?[]:chartExtrema(data.map(p=>({date:/^\d{8}$/.test(p.date)?`${p.date.slice(0,4)}-${p.date.slice(4,6)}-${p.date.slice(6,8)}`:p.date.slice(0,10),value:p.score})));
@@ -90,7 +92,7 @@ export function MarketFearGreedChart({
         hide={compact}
         dataKey="date"
         ticks={axisTicks}
-        interval={0}
+        interval={axisTickInterval}
         axisLine={false}
         tickLine={false}
         tickMargin={5}
