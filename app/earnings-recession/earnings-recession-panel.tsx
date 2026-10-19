@@ -62,7 +62,7 @@ function earningsKstToday(){
 }
 function earningsReleaseInfo(r:Indicator|null|undefined,id:string,today:string){
  const date=(id==="S6"||id==="S11")?r?.nextReleaseDate:null;
- if(!date||!/^\\d{4}-\\d{2}-\\d{2}$/.test(date)||!Number.isFinite(Date.parse(date+"T00:00:00Z"))||new Date(date+"T00:00:00Z").toISOString().slice(0,10)!==date)
+ if(!date||!/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(date)||!Number.isFinite(Date.parse(date+"T00:00:00Z"))||new Date(date+"T00:00:00Z").toISOString().slice(0,10)!==date)
   return {cadence:"—",label:"일정 미정",urgency:"unknown"};
  const days=Math.round((Date.parse(date+"T00:00:00Z")-Date.parse(today+"T00:00:00Z"))/86400000);
  const urgency=days<0?"unknown":days<=3?"imminent":days<=7?"week":days<=14?"fortnight":days<=30?"month":"distant";
