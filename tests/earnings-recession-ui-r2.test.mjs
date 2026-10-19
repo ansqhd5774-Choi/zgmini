@@ -81,12 +81,38 @@ test("earnings parity: absent source-derived per-indicator prior, next release o
  assert.match(projection,/observationDate:x\?\.asOfDate/);
  assert.match(projection,/trend:/);
  assert.doesNotMatch(panel,/new Date\(\).*nextReleaseDate|fakeMiniTrend|synthesizedPrior/);
- assert.doesNotMatch(panel,/InflationMiniChart/);
+ assert.match(panel,/InflationMiniChart/);
+ assert.match(panel,/r\?\.historyKind==="CURRENT_VINTAGE_SOURCE_PERIOD_END"/);
  assert.match(panel,/dateLabel\(r\?\.observationDate\)/);
 });
 
 test("Earnings guide never hardcodes live score or universe count into evergreen descriptions",()=>{
  const page=readFileSync("app/earnings-recession/page.tsx","utf8");
  for(const value of ["84.7점은","73.5점은","500개는"])assert.ok(!page.includes(value),value);
- assert.match(page,/실적 버전에 따라 구성지표가 달라질 수 있으며/);
+ assert.match(page,/실적 버전에 따라 구성지표가 달라질 수 있어요/);
+});
+
+
+test("R12: E1-R5 reconstructed history is never presented as contemporaneously published trend",()=>{
+ const page=readFileSync("app/earnings-recession/page.tsx","utf8");
+ assert.match(panel,/사후 재구성 추이/);
+ assert.match(panel,/재구성 평가 기준일 \$\{dateLabel\(value\)\}/);
+ assert.match(panel,/formatTooltipLabel=\{value=>isR5\?/);
+ assert.match(panel,/원자료의 공식 발표일이 아닙니다/);
+ assert.equal((panel.match(/isR5=\{isR5\}/g)||[]).length,2);
+ assert.match(page,/현재 보유 자료를 과거 평가 시점에 맞춰 사후 재구성한 결과예요/);
+ assert.match(page,/당시 투자자가 알 수 있었던 신호로 해석하면 안 돼요/);
+ assert.doesNotMatch(page,/차트는 저장된 실제 점만 표시하므로/);
+});
+
+test("all four earnings beginner emphasis phrases actually appear in their corresponding section text",()=>{
+ const page=readFileSync("app/earnings-recession/page.tsx","utf8");
+ const sections=[...page.matchAll(/\{title:"([^"]+)",text:"([^"]+)",highlight:"([^"]+)",bold:"([^"]+)"\}/g)];
+ assert.equal(sections.length,4);
+ for(const [,title,body,highlight,bold] of sections){
+  assert.ok(body.includes(highlight),title+" highlight not in body");
+  assert.ok(body.includes(bold),title+" bold not in body");
+ }
+ const health=readFileSync("scripts/seo-production-health.mjs","utf8");
+ assert.match(health,/평가 기준일·사후 재구성 추이/);
 });
