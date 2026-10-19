@@ -9,6 +9,7 @@ import { MarketFearGreedChart } from "../../market-fear-greed-chart";
 import {fearGreedStateColor} from '../../../lib/fear-greed-state-color.mjs';
 
 import {useStoredIndex} from '../../../components/use-stored-index';
+import FactorAnalysisR2,{type FactorR2} from '../factor-analysis-r2';
 
 type HistoryPoint = {
   date?: string;
@@ -499,6 +500,23 @@ export default function CnnPanel({ showEducation = false }: { showEducation?: bo
     ? null
     : componentScoreSum / componentDefinitions.length;
 
+  // R2 reuses the already-fetched CNN payload; no new API request or scoring rule.
+  const factorRows:FactorR2[]=componentDefinitions.map(definition=>{
+    const component=componentMap.get(definition.id);
+    const hasScore=component&&Number.isFinite(component.score)&&component.score>=0&&component.score<=100;
+    const hasRaw=component&&Number.isFinite(component.rawValue);
+    return {id:definition.id,name:definition.title,metric:definition.metricLabel,
+      score:hasScore?component.score:null,
+      raw:hasRaw?componentValue(definition.id,component.rawValue):null,
+      reference:definition.referenceLabel&&component&&typeof component.referenceValue==="number"&&Number.isFinite(component.referenceValue)
+        ?`${definition.referenceLabel}: ${componentValue(definition.id,component.referenceValue!)}`:null,
+      state:hasScore?component.rating:"미확인",
+      observedAt:component?.rawObservedAt??null,
+      meaning:definition.meaning,
+      direction:`공포 방향: ${definition.fearDirection} · 탐욕 방향: ${definition.greedDirection}`,
+    };
+  });
+
   return <>
     <FearGreedCardShell
       className="usa-target-card"
@@ -551,11 +569,13 @@ export default function CnnPanel({ showEducation = false }: { showEducation?: bo
       }}
     />
 
-    {showEducation ? <section className="cnn-education-panel" aria-labelledby="cnn-education-title">
+    {showEducation ? <FactorAnalysisR2 market="usa" factors={factorRows} source="CNN Business"
+      observedAt={payload?.observedAt} sourceNote="원시값과 환산점수의 기준·갱신 시각이 다를 수 있습니다. 확인되지 않은 값은 0으로 대체하지 않습니다."/> : null}
+    {showEducation ? <details className="fg-r2-extended"><summary>7개 구성요소의 원시값·비교 기준·산출 원리 자세히 보기</summary><section className="cnn-education-panel" aria-labelledby="cnn-education-title">
       <header className="cnn-education-header">
         <div>
           <p className="cnn-eyebrow">LEARN THE 7 COMPONENTS</p>
-          <h1 id="cnn-education-title">공포·탐욕지수를 숫자로 이해하기</h1>
+          <h2 id="cnn-education-title">공포·탐욕지수를 숫자로 이해하기</h2>
           <p>종합점수만 보지 않고, 어떤 시장 데이터가 공포와 탐욕을 만들었는지 7개 구성요소로 확인합니다.</p>
         </div>
         <div className="cnn-education-status" aria-label="검증된 구성요소 수">
@@ -714,6 +734,6 @@ export default function CnnPanel({ showEducation = false }: { showEducation?: bo
       </aside>
 
       <a className="cnn-return-cta" href="/">← 메인 대시보드로 돌아가기</a>
-    </section> : null}
+    </section></details> : null}
   </>;
 }
