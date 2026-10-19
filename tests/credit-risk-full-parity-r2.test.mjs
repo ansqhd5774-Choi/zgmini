@@ -30,7 +30,7 @@ test("credit detail matches the full inflation/recession structure from hero to 
  assert.match(page,/<BeginnerRiskGuide topic="credit-risk"\/>/);
  assert.match(page,/displayTitle="미국 신용 위험 점수, 처음이라면 이렇게 보세요"/);
  assert.match(page,/<DetailInvestorNotes topic="credit-risk"\/>/);
- assert.match(notes,/topic==="credit-risk"\?"beginner":"default"/);
+ assert.match(notes,/topic==="credit-risk"\|\|topic==="earnings-recession"\?"beginner":"default"/);
  assert.match(notes,/신용 위험 표, 쉽게 알아보기/);
  assert.ok(page.indexOf('<BeginnerRiskGuide topic="credit-risk"/>')<page.indexOf('displayTitle="미국 신용 위험 점수, 처음이라면 이렇게 보세요"'));
  assert.ok(page.indexOf('displayTitle="미국 신용 위험 점수, 처음이라면 이렇게 보세요"')<page.indexOf('<DetailInvestorNotes topic="credit-risk"/>'));
