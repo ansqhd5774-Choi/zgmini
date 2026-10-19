@@ -57,7 +57,7 @@ export default function DebtRiskPanel(){
  return <>
   <section className="cnn-reference-panel fg-card fg-shared-shell debt-risk-target-card" data-testid="debt-risk-detail-hero" data-market-state={loading?"loading":score===null?"unavailable":"ready"} aria-busy={loading}>
    <div className="fg-header-slot"><MarketCardHeader flag="/flags/us.svg" eyebrow="ZGMINI DEBT RISK R7" title="미국 부채 위험" description="저장된 현재 개정 자료 기반" dateLabel="데이터 기준일" date={dateLabel(payload?.asOfDate)} source={payload?.methodologyVersion??"DEBT_RISK_R7"}/></div>
-   <div className="fg-content-slot"><div className="fg-score-slot"><MarketScoreOrb score={loading||score===null?"—":score.toFixed(1)} state={loading?"확인 중":stage(score)} variant="hero" comparisonItems={scoreComparisonItems} comparisonAriaLabel="부채 위험 안전점수 변화" metaDate={dateLabel(payload?.asOfDate)}/></div>
+   <div className="fg-content-slot"><div className="fg-score-slot"><MarketScoreOrb score={loading||score===null?"—":score.toFixed(1)} state={loading?"확인 중":stage(score)} variant="hero" comparisonItems={scoreComparisonItems} comparisonAriaLabel="부채 위험 안전점수 변화"/></div>
     <MarketTrendFrame className="fg-analysis-slot"><div className="fg-chart-slot"><div className="fg-renderer"><MarketFearGreedChart showExtrema data={trend} axisTicks={axisTicks} axisLabels={axisLabels} latestPoint={latestPoint} instanceKey="debt-risk" gradientId="debt-risk-fill" formatTooltipLabel={dateLabel} emptyLabel={loading?"확인 중":"완성 점수 저장이력 없음"}/></div></div></MarketTrendFrame></div>
    <div className="fg-footer-slot"><div className="cnn-panel-note"><span>점수 원칙</span><strong>5개 구성요소 완전 입력 시만 계산 · 결측 재가중 없음</strong></div></div>
   </section>

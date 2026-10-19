@@ -13,6 +13,7 @@ import {InflationMiniChart,type InflationMiniTrendPoint} from "../inflation/infl
 import {LiquidityFavoriteButton,LiquidityFavoriteHeaderIcon} from "./liquidity-favorite-button";
 import {liquidityReleaseInfo} from "./liquidity-release-calendar.mjs";
 import "./liquidity-indicator-r2.css";
+import "../risk-liquidity-credit-mobile-parity-r3.css";
 import "./liquidity-hero-typography-r1.css";
 import "../shared-risk-indicator-width-r1.css";
 
