@@ -1,0 +1,95 @@
+/* Asset detail: inflation/recession table parity, limited to this page. */
+.asset-r2-indicators .asset-indicator-table-r2{width:100%;min-width:1080px!important;table-layout:fixed}
+.asset-r2-indicators .asset-indicator-table-r2 th,
+.asset-r2-indicators .asset-indicator-table-r2 td{text-align:center;padding:11px 7px;overflow-wrap:normal}
+.asset-r2-indicators .asset-indicator-table-r2 col.asset-col-favorite{width:4%}
+.asset-r2-indicators .asset-indicator-table-r2 col.asset-col-name{width:14%}
+.asset-r2-indicators .asset-indicator-table-r2 col.asset-col-content{width:17%}
+.asset-r2-indicators .asset-indicator-table-r2 col.asset-col-criterion{width:12%}
+.asset-r2-indicators .asset-indicator-table-r2 col.asset-col-previous{width:9%}
+.asset-r2-indicators .asset-indicator-table-r2 col.asset-col-current{width:9%}
+.asset-r2-indicators .asset-indicator-table-r2 col.asset-col-release{width:10%}
+.asset-r2-indicators .asset-indicator-table-r2 col.asset-col-judgement{width:7%}
+.asset-r2-indicators .asset-indicator-table-r2 col.asset-col-spark{width:13%}
+.asset-r2-indicators .asset-indicator-table-r2 col.asset-col-help{width:5%}
+.asset-r2-indicators .asset-indicator-table-r2 tbody th{width:auto;overflow-wrap:anywhere}
+.asset-r2-indicators .asset-indicator-table-r2 td:nth-child(2),
+.asset-r2-indicators .asset-indicator-table-r2 td:nth-child(3),
+.asset-r2-indicators .asset-indicator-table-r2 td:nth-child(4),
+.asset-r2-indicators .asset-indicator-table-r2 td:nth-child(5),
+.asset-r2-indicators .asset-indicator-table-r2 td:last-child{width:auto}
+.asset-r2-criterion{color:#f2f7fa;line-height:1.4}
+.asset-r2-value strong,.asset-r2-release strong{display:block;color:#f2f7fa;font-size:12px}
+.asset-r2-value small,.asset-r2-release small{display:block;margin-top:3px;white-space:nowrap}
+.asset-r2-spark-cell{padding-left:7px!important;padding-right:7px!important}
+.asset-r2-spark-cell .inflation-mini-chart{width:112px;max-width:100%;height:32px}
+.asset-r2-spark-cell .inflation-mini-chart-empty{min-width:0;max-width:100%}
+.asset-r2-indicators [data-judgement="positive"] .inflation-mini-chart-line{stroke:#77e59c}
+.asset-r2-indicators [data-judgement="neutral"] .inflation-mini-chart-line{stroke:#cbd5e1}
+.asset-r2-indicators [data-judgement="negative"] .inflation-mini-chart-line{stroke:#ff9a9a}
+.asset-r2-mobile-list{display:none}
+.asset-r2-indicators .asset-indicator-table-r2 tr[data-development="true"]{opacity:.82}
+.asset-bubble-target-card .cnn-score-observed-date{display:none}
+.asset-bubble-target-card .cnn-score-comparisons.is-multi{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));width:100%;max-width:360px;margin-inline:auto}
+.asset-bubble-target-card .cnn-score-comparisons.is-multi .cnn-score-comparison{display:grid;grid-template-columns:minmax(0,1fr);grid-template-rows:auto auto;place-items:center;min-width:0;gap:2px;padding:0 4px;text-align:center}
+.asset-bubble-target-card .cnn-score-comparisons.is-multi .cnn-score-comparison+.cnn-score-comparison{border-left:1px solid rgba(80,112,137,.55)}
+.asset-bubble-target-card .cnn-score-comparisons.is-multi .cnn-score-comparison>span,
+.asset-bubble-target-card .cnn-score-comparisons.is-multi .cnn-score-comparison>strong{display:block;min-width:0;width:100%;white-space:nowrap;text-align:center}
+@media(max-width:767px){
+ .asset-r2-indicators{padding:14px}
+ .asset-r2-indicators .asset-r2-table-wrap{display:none}
+ .asset-r2-mobile-list{display:grid;gap:8px}
+ .asset-r2-mobile-card{min-width:0;padding:12px;border:1px solid rgba(68,103,133,.3);background:rgba(4,18,31,.5)}
+ .asset-r2-mobile-card.is-development{opacity:.82}
+ .asset-r2-mobile-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+ .asset-r2-mobile-head>div:first-child{min-width:0}
+ .asset-r2-mobile-title{display:flex;align-items:flex-start;gap:6px;min-width:0}
+ .asset-r2-mobile-title>div{min-width:0}
+ .asset-r2-mobile-title strong{display:block;color:#eef5fa;font-size:12px;line-height:1.35;overflow-wrap:anywhere}
+ .asset-r2-mobile-title small{display:block;margin-top:2px;color:#7891a6;font-size:9px}
+ .asset-r2-mobile-actions{display:flex;align-items:center;gap:3px;flex:0 0 auto}
+ .asset-r2-mobile-actions .inflation-judgement{min-width:52px;height:22px;padding:0 7px;font-size:10px}
+ .asset-r2-mobile-content{margin:8px 0 0;color:#b9cad8;font-size:11px;line-height:1.45}
+ .asset-r2-mobile-criterion{display:flex;align-items:center;gap:7px;margin:6px 0 0;color:#d4e0e9;font-size:10px}
+ .asset-r2-mobile-criterion span{color:#7891a6;font-weight:700}
+ .asset-r2-mobile-spark{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:8px;padding-top:8px;border-top:1px solid rgba(68,103,133,.24)}
+ .asset-r2-mobile-spark>span{color:#7891a6;font-size:9px;font-weight:700;flex:0 0 auto}
+ .asset-r2-mobile-spark .inflation-mini-chart{width:148px;max-width:56vw;height:30px;margin:0}
+ .asset-r2-mobile-metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));margin-top:10px;border-top:1px solid rgba(68,103,133,.24)}
+ .asset-r2-mobile-metrics>div{min-width:0;padding:8px 4px 0;text-align:center}
+ .asset-r2-mobile-metrics>div+div{border-left:1px solid rgba(68,103,133,.24)}
+ .asset-r2-mobile-metrics span,.asset-r2-mobile-metrics strong,.asset-r2-mobile-metrics small{display:block;min-width:0}
+ .asset-r2-mobile-metrics span{color:#7891a6;font-size:9px;font-weight:700}
+ .asset-r2-mobile-metrics strong{margin-top:3px;color:#f2f7fa;font-size:11px;white-space:nowrap}
+ .asset-r2-mobile-metrics small{margin-top:2px;color:#7891a6;font-size:9px;overflow-wrap:anywhere}
+ .fg-card.fg-shared-shell.asset-bubble-target-card .cnn-score-comparisons.is-multi{width:100%;max-width:none}
+ .fg-card.fg-shared-shell.asset-bubble-target-card .cnn-score-comparisons.is-multi .cnn-score-comparison{padding:0 1px;gap:1px}
+ .fg-card.fg-shared-shell.asset-bubble-target-card .cnn-score-comparisons.is-multi .cnn-score-comparison>span{font-size:8px;line-height:1}
+ .fg-card.fg-shared-shell.asset-bubble-target-card .cnn-score-comparisons.is-multi .cnn-score-comparison>strong{font-size:9.5px;line-height:1}
+}
+
+/* Match the existing three detail tables without changing their shared CSS. */
+.asset-r2-indicators .asset-indicator-table-r2{width:100%;min-width:1090px!important;table-layout:fixed}
+.asset-r2-indicators .asset-indicator-table-r2 :is(th,td){width:auto!important;box-sizing:border-box}
+.asset-r2-indicators .asset-indicator-table-r2 col:nth-child(1){width:4%!important}
+.asset-r2-indicators .asset-indicator-table-r2 col:nth-child(2){width:15%!important}
+.asset-r2-indicators .asset-indicator-table-r2 col:nth-child(3){width:17%!important}
+.asset-r2-indicators .asset-indicator-table-r2 col:nth-child(4){width:11%!important}
+.asset-r2-indicators .asset-indicator-table-r2 col:nth-child(5){width:10%!important}
+.asset-r2-indicators .asset-indicator-table-r2 col:nth-child(6){width:10%!important}
+.asset-r2-indicators .asset-indicator-table-r2 col:nth-child(7){width:10%!important}
+.asset-r2-indicators .asset-indicator-table-r2 col:nth-child(8){width:7%!important}
+.asset-r2-indicators .asset-indicator-table-r2 col:nth-child(9){width:12%!important}
+.asset-r2-indicators .asset-indicator-table-r2 col:nth-child(10){width:4%!important}
+
+/* Asset-only status colors and verified comparisons; no shared styles changed. */
+.asset-bubble-target-card:has(.cnn-score-orb[aria-label*="양호"]){--asset-score-color:#45d99f}
+.asset-bubble-target-card:has(.cnn-score-orb[aria-label*="중립"]){--asset-score-color:#94a3b8}
+.asset-bubble-target-card:has(.cnn-score-orb[aria-label*="주의"]),
+.asset-bubble-target-card:has(.cnn-score-orb[aria-label*="위험"]){--asset-score-color:#ff7076}
+.asset-bubble-target-card .cnn-spectrum-center .cnn-score-value,
+.asset-bubble-target-card .cnn-spectrum-center>span{color:var(--asset-score-color,#94a3b8)!important}
+.asset-bubble-target-card .recharts-area-curve{stroke:var(--asset-score-color,#94a3b8)}
+.asset-bubble-target-card #asset-bubble-fill stop:first-child{stop-color:var(--asset-score-color,#94a3b8)}
+.asset-bubble-target-card .cnn-latest-point circle,
+.asset-bubble-target-card .recharts-active-dot circle{fill:var(--asset-score-color,#94a3b8)}

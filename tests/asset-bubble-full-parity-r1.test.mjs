@@ -1,0 +1,46 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import {readFileSync} from "node:fs";
+const read=path=>readFileSync(path,"utf8");
+const panel=read("app/asset-bubble/asset-bubble-panel.tsx");
+const page=read("app/asset-bubble/page.tsx");
+const css=read("app/asset-bubble/asset-indicator-r2.css");
+const favorite=read("app/asset-bubble/asset-favorite-button.tsx");
+const notes=read("app/detail-investor-notes.tsx");
+const ids=["valuationPressure","priceAcceleration","riskAssetShare","speculativeFlows","breadthDivergence","excessLiquidity"];
+test("R9/R10 source and candidate publication metadata remain isolated from display",()=>{
+ assert.match(panel,/ASSET_BUBBLE_R10_CANDIDATE/);
+ assert.match(panel,/USER_APPROVED_CURRENT_VINTAGE_UNVERIFIED_SOURCES/);
+ for(const x of ["sourceStoredAt","historyMode","scoreObservationQuarter","diagnosticQuarter","rightsStatus","publicationPolicy"])assert.ok(panel.includes(x),x);
+ assert.match(panel,/!candidate\|\|payload\?\.status==='READY'/);
+ assert.match(panel,/공개 전환 전 검증 중입니다/);
+ assert.equal((panel.match(/메인 대시보드로 돌아가기/g)||[]).length,1);
+});
+test("asset full page parity from gauge through reading guide",()=>{
+ assert.match(panel,/<MarketScoreOrb[^\n]*comparisonItems=\{scoreComparisonItems\}/);
+ assert.match(panel,/<MarketFearGreedChart showExtrema/);
+ assert.doesNotMatch(panel,/dayDelta=|periodDelta=/);
+ for(const x of ["1주","1개월","3개월","6개월","1년"])assert.ok(panel.includes('label:"'+x+'"'),x);
+ assert.match(page,/displayTitle="미국 자산 버블 점수, 처음이라면 이렇게 보세요"/);
+ assert.equal((page.match(/\{title:"[^"]+\?",text:/g)||[]).length,4);
+ assert.match(page,/<DetailInvestorNotes topic="asset-bubble"\/>/);
+ assert.match(notes,/topic==="asset-bubble"\|\|topic==="debt-risk"\|\|topic==="supply-shock"\?"beginner"/);
+});
+test("ten-column table and mobile cards preserve six live identifiers, four pending entries and absent data",()=>{
+ const found=panel.match(/const order=\[([^\]]+)\] as const;/)?.[1];
+ assert.deepEqual([...found.matchAll(/"([^"]+)"/g)].map(x=>x[1]),ids);
+ for(const x of ["주택가격 밸류에이션","마진대출·레버리지","IPO·신규발행 과열","옵션 투기수요"])assert.ok(panel.includes(x));
+ assert.equal((panel.match(/<col className="asset-col-/g)||[]).length,10);
+ assert.equal((panel.match(/order\.map\(/g)||[]).length,2);
+ assert.equal((panel.match(/dev\.map\(/g)||[]).length,2);
+ assert.equal((panel.match(/points=\{row\?\.trend\}/g)||[]).length,2);
+ assert.equal((panel.match(/fmtValue\(row\?\.previousValue,row\?\.unit\)/g)||[]).length,2);
+ assert.match(panel,/data-development="true"/);
+ assert.match(css,/min-width:1090px!important/);
+ assert.match(css,/@media\(max-width:767px\)/);
+ assert.match(css,/asset-r2-mobile-list\{display:grid/);
+ assert.match(favorite,/zgmini:asset:favorites:v1/);
+ assert.match(favorite,/leftDevelopment!==rightDevelopment/);
+ assert.match(panel,/value:payload\?\.scoreComparisons\?\.week\?\?null/);
+ assert.match(panel,/typeof value!=="number"\|\|!Number.isFinite\(value\)/);
+});
