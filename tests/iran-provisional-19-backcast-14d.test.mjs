@@ -31,7 +31,7 @@ test('source R3 records and 50-point model baseline are not mutated or used as t
  const before=input(),snapshot=structuredClone(before);
  const result=provisionalIran19Backcast(before);
  assert.deepEqual(before,snapshot);assert.notEqual(result.history[0].value,50);
- assert.equal(result.anchorR3Score,38.7);assert.equal(result.anchorScore,19);
+ assert.equal(result.anchorR3Score,37.9);assert.equal(result.anchorScore,19);
 });
 test('future source changes relative to fixed approved 2026-10-19 anchor, not frozen at 19',()=>{
  const x=input();x.asOfDate='2026-10-20';x.score=40;
@@ -79,4 +79,45 @@ test('invalid R3 transport input fails closed before applying 19 anchor',()=>{
  const invalid={...body(),score:79};
  const view=iranView(invalid,stamp('2026-10-19')+3*3600000);
  assert.equal(view.score,null);
+});
+
+test('V58 real 2026-10-19 R3_3 raw 37.9 / 12 events anchors at 19.0 (no stale 38.7 offset)',()=>{
+ const x=input();
+ x.score=37.9;
+ x.history=[...observed,{date:'2026-10-19',value:37.9,delta:-0.8}];
+ const before=structuredClone(x),result=provisionalIran19Backcast(x);
+ assert.equal(result.anchorInWindow,true);
+ assert.equal(result.score,19);
+ assert.equal(result.history.length,14);
+ assert.equal(result.history.at(-1).date,'2026-10-19');
+ assert.equal(result.history.at(-1).value,19);
+ assert.equal(result.history.at(-2).date,'2026-10-18');
+ assert.equal(result.history.at(-2).value,19.8);
+ assert.equal(result.history[0].date,'2026-10-06');
+ assert.equal(result.history[0].phase,'EARLY_WINDOW_NO_DATED_REPORT');
+ assert.deepEqual(x,before);
+});
+test('late same-day R3 reports do not shift approved Oct 19 anchor, subsequent dated events still move it',()=>{
+ const a=input(),b=input();
+ a.score=37.9;a.history=[...observed,{date:'2026-10-19',value:37.9,delta:-0.8}];
+ b.asOfDate='2026-10-20';b.score=37.1;
+ b.history=[...a.history,{date:'2026-10-20',value:37.1,delta:-0.8}];
+ const anchored=provisionalIran19Backcast(a),updated=provisionalIran19Backcast(b);
+ assert.equal(anchored.score,19);
+ assert.equal(updated.score,18.2);
+ assert.equal(updated.history.find(x=>x.date==='2026-10-19').value,19);
+ assert.equal(updated.history.at(-1).value,18.2);
+});
+test('validated V58 37.9 input keeps API raw 37.9 and renders provisional 19 endpoint',()=>{
+ const raw=body();
+ raw.score=37.9;raw.eventCount=12;raw.domains.MILITARY=12;
+ raw.history=[...observed,{date:'2026-10-19',value:37.9,delta:-0.8}];
+ const before=structuredClone(raw),view=iranView(raw,stamp('2026-10-19')+3*3600000);
+ assert.equal(view.rawScore,37.9);
+ assert.equal(view.score,19);
+ assert.equal(view.chartHistory.length,14);
+ assert.equal(view.chartHistory.at(-1).value,19);
+ assert.equal(view.chartHistory.at(-2).value,19.8);
+ assert.equal(view.history.at(-1).value,19);
+ assert.deepEqual(raw,before);
 });
