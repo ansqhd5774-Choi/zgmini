@@ -1,0 +1,14 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {R81_MISSING_SYMBOLS,R81_VERIFIED_FIRST_US_TRADES,upperBoundWeekdaysInclusive,auditR81ShortListedEquities,isR81PossiblePostListingTradeDate} from '../lib/market-score/theme-r81-ipo-history-bound.mjs';
+
+test('R78 missing 13 exact stable inventory',()=>{assert.equal(R81_MISSING_SYMBOLS.length,13);assert.equal(new Set(R81_MISSING_SYMBOLS).size,13);});
+test('Nasdaq SKHY July 10 2026 has at most 71 weekdays',()=>assert.equal(upperBoundWeekdaysInclusive('2026-07-10'),71));
+test('Cerebras CBRS May 14 2026 has at most 112 weekdays',()=>assert.equal(upperBoundWeekdaysInclusive('2026-05-14'),112));
+test('ALAB March 20 2024 has at most 673 weekdays',()=>assert.equal(upperBoundWeekdaysInclusive('2024-03-20'),673));
+test('only 2 are provably shorter than 252 and 3 than 756',()=>{const x=auditR81ShortListedEquities();assert.equal(x.knownShortListings,3);assert.equal(x.provablyFewerThan252PossibleSessions,2);assert.equal(x.provablyFewerThan756PossibleSessions,3);assert.equal(x.remainingSymbolsWithoutVerifiedUSStart,10);});
+test('756 axis window is not incorrectly enforced on each individual stock',()=>{const x=auditR81ShortListedEquities();assert.equal(x.perMember756IsNOTTheApprovedRule,true);assert.equal(x.axisReference756Verified,false);assert.ok(x.listingChecks.every(y=>y.individual756RequiredByR3===false));});
+test('pre-listing and post-asof dates fail closed',()=>{assert.equal(isR81PossiblePostListingTradeDate('SKHY','2026-07-09'),false);assert.equal(isR81PossiblePostListingTradeDate('CBRS','2026-05-13'),false);assert.equal(isR81PossiblePostListingTradeDate('ALAB','2024-03-20'),true);assert.equal(isR81PossiblePostListingTradeDate('ALAB','2026-10-19'),false);});
+test('IPO alias is not automatic adjustment confirmation',()=>{const x=auditR81ShortListedEquities();assert.equal(x.listingChecks.find(y=>y.ticker==='SKHY').priorTickerReviewRequired,true);assert.equal(x.memberAdjustedDataVerified,false);});
+test('no invented price rows, PIT or scoring',()=>{const x=auditR81ShortListedEquities();assert.equal(x.actualMarketBarsRecovered,0);assert.equal(x.historicalPITMemberDatesVerified,false);assert.equal(x.publicScoreComputed,false);});
+test('scope drift and invalid dates fail closed',()=>{assert.throws(()=>auditR81ShortListedEquities({asof:'2026-10-19'}),/R81_RESEARCH_ASOF_DRIFT/);assert.throws(()=>auditR81ShortListedEquities({missing:['SKHY']}),/R81_R78_MISSING_UNIVERSE_DRIFT/);assert.throws(()=>upperBoundWeekdaysInclusive('2026-02-30'),/R81_INVALID_DATE_RANGE/);assert.throws(()=>isR81PossiblePostListingTradeDate('TSM','2026-10-16'),/R81_UNKNOWN_SYMBOL_OR_DATE/);});
