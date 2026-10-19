@@ -12,13 +12,13 @@ const THREE_PRICE_AXIS_READY_THEMES=new Set([
 ]);
 // R105 approved staging: keep nine researched themes moving while three known
 // problem cases are deferred. These are *not* public five-axis score approvals.
-const FIRST_NINE_THEMES=[
+const FIRST_NINE_THEMES: string[]=[
  '로봇·자동화','클라우드·SaaS','자율주행','바이오테크',
  '게임·e스포츠','원전·SMR','방산','핀테크','사이버보안',
 ];
-const FIRST_NINE_ORDER=new Map(FIRST_NINE_THEMES.map((name,index)=>[name,index]));
+const FIRST_NINE_ORDER=new Map<string,number>(FIRST_NINE_THEMES.map((name,index)=>[name,index]));
 const DEFERRED_THREE_THEMES=new Set(['AI 반도체','AI 신약개발','블록체인·디지털자산']);
-const priorityOf=name=>FIRST_NINE_ORDER.has(name)?FIRST_NINE_ORDER.get(name):DEFERRED_THREE_THEMES.has(name)?1000:100;
+const priorityOf=(name:string):number=>FIRST_NINE_ORDER.get(name)??(DEFERRED_THREE_THEMES.has(name)?1000:100);
 export default function ThemeExplorer(){
  const [group,setGroup]=useState('전체'),[query,setQuery]=useState('');
  const themes=THEME_GROUPS.flatMap(g=>g.items.map(name=>({name,group:g.name,priceAxesReady:THREE_PRICE_AXIS_READY_THEMES.has(name)}))).filter(t=>(group==='전체'||t.group===group)&&t.name.includes(query.trim())).sort((a,b)=>priorityOf(a.name)-priorityOf(b.name));
