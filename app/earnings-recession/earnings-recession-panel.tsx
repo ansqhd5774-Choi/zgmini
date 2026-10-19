@@ -51,8 +51,11 @@ function dateLabel(v?:string|null){if(!v)return "—";const d=new Date(v.length=
 function stage(s:number|null|undefined,status?:string){if(status!=="READY"||typeof s!=="number"||!Number.isFinite(s))return "데이터 준비 중";if(s>=75)return "매우 양호";if(s>=60)return "양호";if(s>=45)return "중립";if(s>=25)return "실적 주의";return "실적 침체 위험"}
 function judge(s:number|null|undefined,status?:string){if(status!=="READY"||typeof s!=="number"||!Number.isFinite(s))return {label:"데이터 준비 중",tone:"neutral"};if(s>=60)return {label:"긍정",tone:"positive"};if(s>=45)return {label:"중립",tone:"neutral"};return {label:"부정",tone:"negative"}}
 function fmt(r:Indicator|null|undefined){if(!r||typeof r.value!=="number"||!Number.isFinite(r.value))return "—";return r.value.toFixed(2)+(r.unit?" "+r.unit:"")}
-function priorFmt(r:Indicator|null|undefined){return r?.historyKind==="CURRENT_VINTAGE_SOURCE_PERIOD_END"&&typeof r?.previousValue==="number"&&Number.isFinite(r.previousValue)?r.previousValue.toFixed(2)+(r.unit?" "+r.unit:""):"—"}
-function HelpTip({label,text,isR5=false}:{label:string;text:string;isR5?:boolean}){return <ContentHelp label={label+' 도움말'}><HelpText copy={{meaning:text,reading:isR5?'현재값·내부점수·평가 기준일을 구분하세요. E1 평가 기준일은 개별 기업의 공시일이나 원자료의 공식 발표일이 아닙니다. S6·S11의 이전 관측과 1년 추이는 현재 보유한 분기 원자료 기준이며 발표 당시 검증된 PIT 이력이 아닙니다. 원자료 기간 종료일은 공식 발표일이 아닙니다.':'원자료의 단위와 기준선, 관측일을 함께 확인하세요. 원자료의 상승·하락과 시장 평가 점수의 상승·하락은 서로 다를 수 있습니다.',note:'자료가 없거나 개발 중인 항목은 숫자를 표시하지 않습니다. 「—」는 0이 아닙니다.'}}/></ContentHelp>;}
+function hasIndicatorHistory(r:Indicator|null|undefined){return r?.historyKind==="CURRENT_VINTAGE_SOURCE_PERIOD_END"||r?.historyKind==="ASOF_RECONSTRUCTED_NOT_OFFICIAL_PERIOD_END"}
+function priorFmt(r:Indicator|null|undefined){return hasIndicatorHistory(r)&&typeof r?.previousValue==="number"&&Number.isFinite(r.previousValue)?r.previousValue.toFixed(2)+(r.unit?" "+r.unit:""):"—"}
+function historyChartLabel(r:Indicator|null|undefined,label:string){return label+(r?.historyKind==="ASOF_RECONSTRUCTED_NOT_OFFICIAL_PERIOD_END"?" 사후 재구성 평가 추이":" 원자료 관측 분기")}
+function priorDateLabel(r:Indicator|null|undefined){return hasIndicatorHistory(r)&&r?.previousPeriodEnd?(r.historyKind==="ASOF_RECONSTRUCTED_NOT_OFFICIAL_PERIOD_END"?"평가 ":"관측 ")+dateLabel(r.previousPeriodEnd):"—"}
+function HelpTip({label,text,isR5=false}:{label:string;text:string;isR5?:boolean}){return <ContentHelp label={label+' 도움말'}><HelpText copy={{meaning:text,reading:isR5?'현재값·내부점수·평가 기준일을 구분하세요. E1 평가 기준일은 개별 기업의 공시일이나 원자료의 공식 발표일이 아닙니다. S6·S11의 추이는 분기 원자료 기간 종료일 기준입니다. 나머지 지표는 저장된 입력으로 사후 재구성한 모델 평가일 기준이며, 개별 공시일·공식 발표일·발표 당시 PIT 관측은 아닙니다.':'원자료의 단위와 기준선, 관측일을 함께 확인하세요. 원자료의 상승·하락과 시장 평가 점수의 상승·하락은 서로 다를 수 있습니다.',note:'자료가 없거나 개발 중인 항목은 숫자를 표시하지 않습니다. 「—」는 0이 아닙니다.'}}/></ContentHelp>;}
 
 export default function EarningsRecessionPanel(){
  const {payload,loading}=useStoredIndex<Payload>('/api/earnings-recession-detail');
@@ -77,11 +80,11 @@ export default function EarningsRecessionPanel(){
       <td><EarningsFavoriteButton id={id} label={m.label}/></td>
       <th scope="row"><strong>{m.label}</strong><small>{r?.unit||"관측 지표"}</small></th>
       <td>{m.content}</td><td>{m.criterion}</td>
-      <td className="earnings-r2-value"><strong>{priorFmt(r)}</strong><small>{r?.previousPeriodEnd&&r?.historyKind==="CURRENT_VINTAGE_SOURCE_PERIOD_END"?dateLabel(r.previousPeriodEnd):"—"}</small></td>
+      <td className="earnings-r2-value"><strong>{priorFmt(r)}</strong><small>{priorDateLabel(r)}</small></td>
       <td className="earnings-r2-value"><strong>{fmt(r)}</strong><small>{isR5?"평가 ":"관측 "}{dateLabel(r?.observationDate)}</small></td>
       <td className="earnings-r2-release"><strong>{r?.nextReleaseDate&&(id==="S6"||id==="S11")?"분기":"—"}</strong><small>{r?.nextReleaseDate?dateLabel(r.nextReleaseDate):""}</small></td>
       <td><span className="inflation-judgement">{j.label}</span></td>
-      <td className="earnings-r2-spark"><InflationMiniChart label={m.label+" 원자료 관측 분기"} points={r?.historyKind==="CURRENT_VINTAGE_SOURCE_PERIOD_END"?r.sourceHistory1Y:undefined}/></td>
+      <td className="earnings-r2-spark"><InflationMiniChart label={historyChartLabel(r,m.label)} points={hasIndicatorHistory(r)?r?.sourceHistory1Y:undefined}/></td>
       <td><HelpTip label={m.label} text={m.help} isR5={isR5}/></td>
      </tr>})}
      {!isR5&&dev.map(item=><tr key={item[0]} data-development="true">
@@ -98,9 +101,9 @@ export default function EarningsRecessionPanel(){
      <div className="earnings-r2-mobile-head"><div className="earnings-r2-mobile-title"><EarningsFavoriteButton id={id} label={m.label}/><div><strong>{m.label}</strong><small>{r?.unit||"관측 지표"}</small></div></div><div className="earnings-r2-mobile-actions"><span className="inflation-judgement">{j.label}</span><HelpTip label={m.label} text={m.help} isR5={isR5}/></div></div>
      <p className="earnings-r2-mobile-content">{m.content}</p>
      <p className="earnings-r2-mobile-criterion"><span>기준</span>{m.criterion}</p>
-     <div className="earnings-r2-mobile-spark"><span>미니차트(1Y)</span><InflationMiniChart label={m.label+" 원자료 관측 분기"} points={r?.historyKind==="CURRENT_VINTAGE_SOURCE_PERIOD_END"?r.sourceHistory1Y:undefined}/></div>
+     <div className="earnings-r2-mobile-spark"><span>미니차트(1Y)</span><InflationMiniChart label={historyChartLabel(r,m.label)} points={hasIndicatorHistory(r)?r?.sourceHistory1Y:undefined}/></div>
      <div className="earnings-r2-mobile-metrics">
-      <div><span>이전</span><strong>{priorFmt(r)}</strong><small>{r?.previousPeriodEnd&&r?.historyKind==="CURRENT_VINTAGE_SOURCE_PERIOD_END"?dateLabel(r.previousPeriodEnd):"—"}</small></div>
+      <div><span>이전</span><strong>{priorFmt(r)}</strong><small>{priorDateLabel(r)}</small></div>
       <div><span>현재</span><strong>{fmt(r)}</strong><small>{isR5?"평가 ":"관측 "}{dateLabel(r?.observationDate)}</small></div>
       <div><span>발표</span><strong>{r?.nextReleaseDate&&(id==="S6"||id==="S11")?"분기":"—"}</strong><small>{r?.nextReleaseDate?dateLabel(r.nextReleaseDate):""}</small></div>
      </div>
