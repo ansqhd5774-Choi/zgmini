@@ -147,7 +147,9 @@ test("R47 earnings detail shares five period cell geometry but has no synthetic 
 });
 test("R47 earnings factor ranks balance factual E1 top/bottom without affecting other topics",()=>{
  const guide=readFileSync("app/beginner-risk-guide.tsx","utf8");
- assert.match(guide,/if\(topic!=="earnings-recession"\)return factors\.filter\(x=>x\.score<45\)/);
+ assert.match(guide,/const negative=useMemo\(\(\)=>factors\.filter\(x=>x\.score<45\)/);
+ assert.match(guide,/const earningsRelativeBottom=useMemo\(\(\)=>\{/);
+ assert.match(guide,/const displayedLower=topic==="earnings-recession"\?earningsRelativeBottom:negative/);
  assert.match(guide,/const highlighted=new Set\(positive\.map\(row=>row\.id\)\)/);
  assert.match(guide,/factors\.filter\(row=>!highlighted\.has\(row\.id\)\)\.sort\(\(a,b\)=>a\.score-b\.score\)\.slice\(0,3\)/);
  assert.match(guide,/negativeHeading:"E1 상대적 하위 지표"/);
