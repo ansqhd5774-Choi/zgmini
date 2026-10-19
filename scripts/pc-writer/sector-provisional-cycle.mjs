@@ -26,7 +26,7 @@ export function calculateSectorProvisional(inputs,snapshot){
  const source=buildSectorFearGreedR3RollingSource({stockRows,pitCsv:inputs.pitCsv,series,generatedAt:snapshot.retrievedAt,cutoffDate:date});
  const result=buildSectorFearGreedR3Public(source,{now:Date.parse(snapshot.retrievedAt)});
  if(result.observationDate!==date)throw Error('SECTOR_PROVISIONAL_AXES_NOT_ALIGNED');
- return {status:'READY',phase:'PROVISIONAL',source:'ALPACA_IEX_SPLIT',delayMinutes:15,asOf,updatedAt:snapshot.retrievedAt,observationDate:date,point:result.history.at(-1),coverage:{expected:members.length,observed:members.length},methodologyVersion:result.methodologyVersion};
+ return {status:'READY',phase:'PROVISIONAL',source:'ALPACA_IEX_SPLIT',delayMinutes:null,asOf,updatedAt:snapshot.retrievedAt,observationDate:date,point:result.history.at(-1),coverage:{expected:members.length,observed:members.length},methodologyVersion:result.methodologyVersion};
 }
 export async function runSectorProvisional(base,{now=Date.now(),fetchImpl=fetch,snapshot=null,write=false}={}){
  const reportFile=path.join(base,'local-sector-provisional-last-run.json');const report={at:new Date(now).toISOString(),status:'SKIPPED',providerCalls:0};
@@ -40,7 +40,7 @@ export async function runSectorProvisional(base,{now=Date.now(),fetchImpl=fetch,
    const pit=parseSectorFearGreedR3PitCsv(inputs.pitCsv),members=pit.entries.filter(x=>x.dateAdded<=date&&(!x.dateRemoved||date<x.dateRemoved)).map(x=>x.ticker);
    const symbols=[...new Set([...members,...SECTOR_FEAR_GREED_R3_BENCHMARKS])];
    const env=loadLocalProviders(base);if(!env.APCA_API_KEY_ID||!env.APCA_API_SECRET_KEY)throw Error('SECTOR_PROVISIONAL_CREDENTIALS_MISSING');
-   const asOf=new Date(now-15*60000).toISOString(),url=new URL('https://data.alpaca.markets/v2/stocks/bars');
+   const asOf=new Date(now).toISOString(),url=new URL('https://data.alpaca.markets/v2/stocks/bars');
    // Midnight UTC is before the US regular session in both DST regimes.
    const anchorDate=inputs.diagnostics.stockLastDate;
    url.search=new URLSearchParams({symbols:symbols.join(','),timeframe:'1Day',start:anchorDate+'T00:00:00Z',end:asOf,feed:'iex',adjustment:'split',limit:'10000'});

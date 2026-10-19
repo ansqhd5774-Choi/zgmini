@@ -4,7 +4,7 @@ import {readSectorFearGreedR3,SECTOR_FEAR_GREED_R3_FEED_KEY} from '../worker/sec
 import {SECTOR_FEAR_GREED_R3_PUBLIC_VERSION,SECTOR_FEAR_GREED_R3_SECTORS} from '../lib/market-score/sector-fear-greed-r3-public.mjs';
 const now=Date.parse('2026-10-19T18:00:00Z');
 const point={date:'2026-10-19',...Object.fromEntries(SECTOR_FEAR_GREED_R3_SECTORS.map(s=>[s.id,55]))};
-const provisional={status:'READY',phase:'PROVISIONAL',source:'ALPACA_IEX_SPLIT',delayMinutes:15,observationDate:'2026-10-19',asOf:'2026-10-19T17:45:00Z',updatedAt:'2026-10-19T18:00:00Z',point};
+const provisional={status:'READY',phase:'PROVISIONAL',source:'ALPACA_IEX_SPLIT',delayMinutes:null,observationDate:'2026-10-19',asOf:'2026-10-19T17:45:00Z',updatedAt:'2026-10-19T18:00:00Z',point};
 const body={version:SECTOR_FEAR_GREED_R3_PUBLIC_VERSION,status:'READY',updatedAt:'2026-10-17T04:00:00Z',observationDate:'2026-10-16',sectors:SECTOR_FEAR_GREED_R3_SECTORS.map(s=>({...s,score:50})),history:Array.from({length:252},()=>({...point,date:'2026-10-16'}))};
 test('regular collection uses New York date in DST and standard time; skips weekends and overnight',()=>{
  assert.equal(newYorkClock(now).date,'2026-10-19');assert.equal(provisionalCollectionWindow(now),true);
