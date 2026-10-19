@@ -1,0 +1,52 @@
+/* Scopes only 12 economic details; approved inflation hero/table mobile geometry remains unchanged. */
+.economic-detail-page{min-width:0}
+.economic-target-card{--inflation-r2-score-color:var(--econ-accent,#94a3b8)}
+.economic-target-card .cnn-spectrum-center .cnn-score-value,.economic-target-card .cnn-spectrum-center>span{color:var(--econ-accent,#94a3b8)!important}
+.economic-target-card .cnn-source small,.economic-target-card .cnn-score-observed-date{display:none}
+.economic-indicators .inflation-r2-table-wrap{max-width:100%;min-width:0;overflow-x:auto}
+.economic-indicators .economic-table{min-width:1090px;table-layout:fixed;width:100%}
+.economic-indicators .economic-table th,.economic-indicators .economic-table td{overflow-wrap:anywhere}
+.economic-indicators .economic-table th small{display:block;font-weight:400;font-size:10px;color:#91a9bc;margin-top:4px;line-height:1.35}
+.economic-indicators .inflation-judgement{white-space:nowrap}
+.economic-favorite{display:inline-flex;align-items:center;justify-content:center;min-width:26px;min-height:26px;color:#759ab3;cursor:pointer}
+.economic-favorite[aria-pressed=true]{color:#f5bc45}
+.economic-mobile-name{display:flex;gap:7px;align-items:flex-start;min-width:0}
+.economic-mobile-name>div{min-width:0}
+.economic-reason{padding:18px 20px;margin:18px 0;background:#071e2c;color:#e9f2f8}
+.economic-reason>h2,.economic-beginner>h2{font-size:17px;font-weight:800;color:#f4f8fb;line-height:1.4}
+.economic-reason>p{font-size:12px;line-height:1.7;color:#99b4c9;margin:7px 0 12px}
+.economic-reason-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.economic-reason-grid>div{background:#05252b;padding:14px 16px;min-width:0}
+.economic-reason-grid>div+div{background:#191728}
+.economic-reason-grid h3{color:#42dab6;font-weight:800;font-size:13px;margin:0 0 12px}
+.economic-reason-grid>div+div h3{color:#ff8295}
+.economic-reason-grid li{margin:7px 0;font-size:12px;list-style:none}
+.economic-reason-grid ul{padding:0}
+.economic-reason-grid li strong,.economic-reason-grid li span{display:block}
+.economic-reason-grid li span{color:#8ea7ba;font-size:10px;line-height:1.6;margin:3px 0 0}
+.economic-reason-grid>div>p{color:#94aabe;font-size:11px}
+.economic-reason-note{font-size:10px!important}
+.economic-explainer{margin-top:18px}
+.economic-reading-strips{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.economic-reading-strips span{display:block;background:#0d2936;color:#a9c4d6;padding:13px 15px;font-size:12px;line-height:1.7}
+.economic-reading-strips b{display:block;color:#49d9ac;font-size:13px;margin-bottom:5px}
+.economic-beginner{margin:18px 0;padding:20px;background:#071e2c}
+.economic-beginner-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:12px}
+.economic-beginner-grid article{padding:14px;background:#0c2737;min-width:0}
+.economic-beginner-grid h3{color:#b0d9ea;font-size:13px;font-weight:800;margin-bottom:9px}
+.economic-beginner-grid p{font-size:12px;line-height:1.8;color:#9db6c6}
+.economic-data-notice{margin:14px 0;padding:12px;color:#adc4d5;background:#0c2737;font-size:12px}
+.economic-links{display:flex;gap:18px;flex-wrap:wrap;padding:18px 0 22px;font-size:12px;color:#89cbea}
+@media(max-width:767px){
+ .economic-reason{padding:12px;margin:14px 0}
+ .economic-reason-grid,.economic-reading-strips,.economic-beginner-grid{grid-template-columns:minmax(0,1fr)}
+ .economic-reason-grid>div{padding:12px}
+ .economic-beginner{padding:12px}
+ .economic-beginner-grid article{padding:11px}
+ .economic-target-card .fg-content-slot{display:contents}
+ .economic-target-card .cnn-market-title{min-width:0}
+ .economic-target-card .cnn-market-title>div{min-width:0}
+ .economic-target-card .cnn-market-title .cnn-eyebrow{max-width:100%;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;font-size:9px}
+ .economic-indicators .inflation-r2-table-wrap{display:none}
+ .economic-indicators .inflation-r2-mobile-list{display:grid}
+}
