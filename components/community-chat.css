@@ -20,13 +20,13 @@
 .zg-community-head button:hover{color:var(--zg-chat-text);border-color:var(--zg-chat-line)}
 .zg-community-messages{min-height:0;flex:1;overflow-y:auto;overscroll-behavior:contain;padding:11px 10px;background:var(--zg-chat-panel);scrollbar-width:thin;scrollbar-color:#33566e transparent}
 .zg-community-empty{margin:28px 10px;text-align:center;color:var(--zg-chat-muted);font-size:12px;line-height:1.65}
-.zg-community-item{margin-bottom:8px;padding:8px 9px;border:1px solid var(--zg-chat-line-soft);border-radius:4px;background:var(--zg-chat-card);overflow-wrap:anywhere}
-.zg-community-line{display:flex;align-items:flex-start;gap:6px;min-width:0}
-.zg-community-copy{min-width:0;flex:1;color:var(--zg-chat-text);font-size:12px;line-height:1.65;overflow-wrap:anywhere;white-space:pre-wrap}
-.zg-community-copy b{font-weight:800;color:var(--zg-chat-accent)}
-.zg-community-separator{color:var(--zg-chat-muted)}
-.zg-community-body{color:var(--zg-chat-text)}
-.zg-community-copy time{color:var(--zg-chat-muted);font-size:11px;font-variant-numeric:tabular-nums}
+.zg-community-item{margin-bottom:8px;padding:8px 9px;border:1px solid var(--zg-chat-line-soft);border-radius:4px;background:var(--zg-chat-card);overflow:hidden}
+.zg-community-line{display:flex;align-items:center;gap:6px;min-width:0;flex-wrap:nowrap}
+.zg-community-copy{display:flex;align-items:baseline;gap:4px;min-width:0;flex:1;overflow:hidden;white-space:nowrap;color:var(--zg-chat-text);font-size:12px;line-height:1.5}
+.zg-community-copy b{flex:0 1 auto;min-width:0;max-width:35%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:800;color:var(--zg-chat-accent)}
+.zg-community-separator{flex:none;white-space:nowrap;color:var(--zg-chat-muted)}
+.zg-community-body{flex:0 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--zg-chat-text)}
+.zg-community-copy time{flex:none;color:var(--zg-chat-muted);font-size:10px;line-height:1.5;white-space:nowrap;font-variant-numeric:tabular-nums}
 .zg-community-report{display:inline-grid;align-self:flex-start;place-items:center;flex:none;width:25px;height:25px;margin:-3px -4px -3px 0;padding:0;border:1px solid transparent;border-radius:3px;background:transparent;color:var(--zg-chat-muted);opacity:0;pointer-events:none;cursor:pointer;transition:opacity .12s ease,color .12s ease,background .12s ease}
 .zg-community-item:hover .zg-community-report,.zg-community-item:focus-within .zg-community-report{opacity:1;pointer-events:auto}
 .zg-community-report:hover,.zg-community-report:focus-visible{color:var(--zg-chat-accent);background:var(--zg-chat-card-hover)}

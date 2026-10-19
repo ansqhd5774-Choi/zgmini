@@ -45,7 +45,26 @@ try{
   const messageItem=page.locator(".zg-community-item").first();
   const messageLine=messageItem.locator(".zg-community-copy");
   const lineText=await messageLine.textContent();
-  assert.match(lineText??"",/^익명(?:[0-9]{4}|방문자) : 오늘 시장 전망이 궁금해요 \(.+\)$/,"Nickname : message (time) is inline");
+  assert.match(lineText??"",/^익명(?:[0-9]{4}|방문자) : 오늘 시장 전망이 궁금해요 \d{2}:\d{2}$/,"Nickname : message time is inline without parentheses");
+  const singleLine=await messageItem.evaluate(item=>{
+    const copy=item.querySelector(".zg-community-copy");
+    const body=item.querySelector(".zg-community-body");
+    const nick=copy.querySelector("b");
+    const time=copy.querySelector("time");
+    const before=copy.clientHeight;
+    const original=body.textContent;
+    const title=body.getAttribute("title");
+    const timeFont=getComputedStyle(time).fontSize;
+    const noWrap=[copy,body,time].every(el=>getComputedStyle(el).whiteSpace==="nowrap");
+    const compactTime=Number.parseFloat(timeFont)<=10;
+    body.textContent="증시 흐름을 긴 문장으로 설명한 내용입니다 ".repeat(30);
+    const lineStillOne=copy.clientHeight===before;
+    const ellipsis=getComputedStyle(body).textOverflow==="ellipsis"&&body.scrollWidth>body.clientWidth;
+    const sameRow=Math.abs(nick.getBoundingClientRect().top-time.getBoundingClientRect().top)<12;
+    body.textContent=original;
+    return {noWrap,compactTime,lineStillOne,ellipsis,sameRow,titlePreserved:title===original};
+  });
+  assert.deepEqual(singleLine,{noWrap:true,compactTime:true,lineStillOne:true,ellipsis:true,sameRow:true,titlePreserved:true},"Every message stays one row, even when long");
   const report=messageItem.getByRole("button",{name:"메시지 신고"});
   assert.equal((await report.textContent())?.trim(),"","Report button must display only the icon");
   if(width>430){
