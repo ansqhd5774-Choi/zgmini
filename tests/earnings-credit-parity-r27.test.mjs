@@ -10,9 +10,11 @@ test('R27 matches credit table 10-column order, including dev rows and accessibl
  const e=earnings.match(/<thead><tr>(.*?)<\/tr><\/thead>/s)?.[1];
  const c=credit.match(/<thead><tr>(.*?)<\/tr><\/thead>/s)?.[1];
  assert.ok(e&&c);
- const headers=x=>[...x.matchAll(/<th>(.*?)<\/th>/g)].map(y=>y[1]);
+ const headers=x=>[...x.matchAll(/<th>(.*?)<\/th>/g)].map(y=>y[1]).filter(y=>!y.includes('<'));
  assert.deepEqual(headers(e),['지표','내용','기준','이전','현재','발표','판단','미니차트(1Y)']);
  assert.deepEqual(headers(e),headers(c));
+ assert.match(e,/EarningsFavoriteHeaderIcon/);
+ assert.match(e,/도움말/);
  assert.equal((earnings.match(/<col className="earnings-col-/g)||[]).length,10);
  assert.equal((credit.match(/<col className="credit-col-/g)||[]).length,10);
  assert.equal((earnings.match(/activeOrder\.map\(id=>/g)||[]).length,2);
