@@ -34,6 +34,7 @@ import { toast } from "sonner";
 import CountryFearGreed from "./country-fear-greed";
 import CorePceRow from "./core-pce-row";
 import SiteHeader from "@/components/site-header";
+import CommunityChat from "@/components/community-chat";
 
 type Direction = "up" | "down" | "flat";
 type Signal = "positive" | "negative" | "neutral";
@@ -1047,6 +1048,7 @@ export default function Home() {
       </div>
       {view==='dashboard'&&<footer className="zg-footer" style={{display:'flex',justifyContent:'center',alignItems:'center',flexWrap:'wrap',gap:16}}><a href="/about/">ZGMINI 소개</a><a href="https://twelve.tools" target="_blank" rel="noopener"><img src="https://twelve.tools/badge0-white.svg" alt="Twelve Tools 등록 배지" width={148} height={40}/></a></footer>}
       {view!=='dashboard'&&<footer className="zg-footer">ZGmini · 공식 자료와 독자 모델을 연결합니다. 투자 권유가 아니며, 예시 데이터는 별도로 표시합니다.</footer>}
+      {view==="dashboard"&&<CommunityChat enabled/>}
       <Toaster richColors position="bottom-right"/>
     </main>
   );
