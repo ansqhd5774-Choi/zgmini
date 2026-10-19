@@ -203,7 +203,14 @@ test('V48 public R3 reader and UI adapter accept real R3_3 candidate projection'
   const json=await response.json();
   const view=iranView(json,NOW);
   assert.equal(view.methodVersion,'R3');
-  assert.equal(view.score,38.7);
+  // Source/API score stays intact; 19 is a separate user-requested provisional display.
+  assert.equal(json.score,38.7);
+  assert.equal(view.rawScore,38.7);
+  assert.equal(view.score,19);
+  assert.equal(view.displayEstimate?.anchorScore,19);
+  assert.equal(view.displayEstimate?.anchorR3Score,38.7);
+  assert.equal(view.chartHistory.length,14);
+  assert.equal(view.chartHistory.at(-1)?.value,19);
   assert.equal(view.observedDomains.includes('MILITARY'),true);
   assert.equal(view.observedDomains.includes('MARITIME'),true);
   assert.equal(view.saturatedDomains.length,0);
