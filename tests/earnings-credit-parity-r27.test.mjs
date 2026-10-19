@@ -37,6 +37,9 @@ test('R27 has exactly the same column proportions as credit risk and retains 390
 
 test('R45 aligns earnings table with inflation while keeping all 13 source-backed histories untouched',()=>{
  assert.doesNotMatch(earnings,/earnings-r2-data-caption/);
+ assert.match(earnings,/<ContentHelp label="실적 지표 저장 자료 안내">/);
+ assert.match(earnings,/분석 모집단 \{stored\.universeCount\.toLocaleString/);
+ assert.match(earnings,/유효 기업 \{stored\.issuerCount\.toLocaleString/);
  assert.doesNotMatch(css,/earnings-r2-data-caption/);
  assert.doesNotMatch(earnings,/1년 원자료 추이/);
  assert.match(earnings,/S6·S11은 원자료 관측기간, 나머지는 저장 자료로 재구성한 평가 시점 기준/);
