@@ -3,7 +3,7 @@ import {parseSitemap,waitForCloudflare} from './indexnow-notify.mjs';
 
 const SITE_ORIGIN='https://zgmini.kr';
 const REQUEST_TIMEOUT_MS=20_000;
-const EXPECTED_PUBLIC_URLS=19;
+const EXPECTED_PUBLIC_URLS=31;
 
 export const SEO_RUNTIME_MARKERS=new Map([
   [`${SITE_ORIGIN}/risk-indicators/`,{descriptionIncludes:'공급 충격의 저장 점수를 비교'}],
@@ -22,6 +22,18 @@ export const SEO_RUNTIME_MARKERS=new Map([
   [`${SITE_ORIGIN}/asset-bubble/`,{htmlIncludes:['미국 자산시장의 버블 위험을 밸류에이션 압력']}],
   [`${SITE_ORIGIN}/debt-risk/`,{htmlIncludes:['미국 가계와 기업의 부채 부담을 DSR, 부채/GDP']}],
   [`${SITE_ORIGIN}/supply-shock/`,{htmlIncludes:['미국 공급 충격 위험을 공급망 압력과 유가·원자재 변화로 살펴봅니다.']}],
+  [`${SITE_ORIGIN}/economic-indicators/inflation/`,{titleIncludes:"미국 물가 시장지표",descriptionIncludes:"저장된 0~100점과 과거 추이"}],
+  [`${SITE_ORIGIN}/economic-indicators/employment/`,{titleIncludes:"미국 고용 시장지표",descriptionIncludes:"저장된 0~100점과 과거 추이"}],
+  [`${SITE_ORIGIN}/economic-indicators/rates/`,{titleIncludes:"미국 금리 시장지표",descriptionIncludes:"저장된 0~100점과 과거 추이"}],
+  [`${SITE_ORIGIN}/economic-indicators/credit/`,{titleIncludes:"미국 채권신용 시장지표",descriptionIncludes:"저장된 0~100점과 과거 추이"}],
+  [`${SITE_ORIGIN}/economic-indicators/growth/`,{titleIncludes:"미국 경기 시장지표",descriptionIncludes:"저장된 0~100점과 과거 추이"}],
+  [`${SITE_ORIGIN}/economic-indicators/consumption/`,{titleIncludes:"미국 소비 시장지표",descriptionIncludes:"저장된 0~100점과 과거 추이"}],
+  [`${SITE_ORIGIN}/economic-indicators/earnings/`,{titleIncludes:"미국 기업실적 시장지표",descriptionIncludes:"저장된 0~100점과 과거 추이"}],
+  [`${SITE_ORIGIN}/economic-indicators/liquidity/`,{titleIncludes:"미국 유동성 시장지표",descriptionIncludes:"저장된 0~100점과 과거 추이"}],
+  [`${SITE_ORIGIN}/economic-indicators/fund-flows/`,{titleIncludes:"미국 자금흐름 시장지표",descriptionIncludes:"저장된 0~100점과 과거 추이"}],
+  [`${SITE_ORIGIN}/economic-indicators/breadth/`,{titleIncludes:"미국 수급·폭 시장지표",descriptionIncludes:"저장된 0~100점과 과거 추이"}],
+  [`${SITE_ORIGIN}/economic-indicators/dollar-fx/`,{titleIncludes:"미국 달러환율 시장지표",descriptionIncludes:"저장된 0~100점과 과거 추이"}],
+  [`${SITE_ORIGIN}/economic-indicators/commodities/`,{titleIncludes:"미국 유가원자재 시장지표",descriptionIncludes:"저장된 0~100점과 과거 추이"}],
   [`${SITE_ORIGIN}/guides/fear-greed-buying/`,{descriptionIncludes:'매수 신호로 사용할 때의 한계'}],
   [`${SITE_ORIGIN}/guides/cpi-pce-release/`,{descriptionIncludes:'CPI·PCE 공식 발표 일정의 한국시간',htmlIncludes:['확인 당시 다음 공식 일정']}],
   [`${SITE_ORIGIN}/guides/fomc/`,{descriptionIncludes:'FOMC 공식 일정과 한국시간 발표 시각',htmlIncludes:['확인 당시 다음 공식 일정']}],
