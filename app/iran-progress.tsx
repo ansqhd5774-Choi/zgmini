@@ -35,7 +35,7 @@ function IranChart({view,compact=false}:{view:View;compact?:boolean}){
  const dateLabel=(at:number)=>new Date(at).toISOString().slice(5,10).replace('-','/');
  const startText=history.length&&'chartEndAt' in view?dateLabel(view.chartEndAt-13*86400000):'0';
  const endText=history.length&&'chartEndAt' in view?dateLabel(view.chartEndAt):'14';
- return <div className={compact?'ob-summary-chart ob-summary-chart-frame':'ob-iran-chart'}>{compact&&<ChartAxisLabels dates/>}
+ return <div className={compact?'ob-summary-chart ob-summary-chart-frame':'ob-iran-chart'}>{compact&&<ChartAxisLabels dates startLabel={startText} endLabel={endText}/>}
   <svg viewBox="0 0 170 68" preserveAspectRatio={compact?"none":"xMidYMid meet"} role="img" aria-label={provisional?'이란 전쟁 잠정 19점 기준 최근 14일 역산 차트':'이란 전쟁 최근 14일 일별 참고 흐름'}>
    <title>{provisional?'잠정 19점 기준 역산 · 점선은 날짜별 근거 없는 추정 연장 구간':'기사 발표일 기준 재구성 · 마지막 계산값 유지 구간 포함'}</title>
    <defs><linearGradient id={fillId} x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={color} stopOpacity=".25"/><stop offset="100%" stopColor={color} stopOpacity="0"/></linearGradient></defs>
