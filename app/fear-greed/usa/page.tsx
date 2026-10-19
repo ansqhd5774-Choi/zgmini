@@ -2,9 +2,10 @@ import DetailInvestorNotes from "../../detail-investor-notes";
 import type { Metadata } from "next";
 import CnnPanel from "./cnn-panel";
 import DetailReadingGuide from "../../detail-reading-guide";
+import InvestorIntentGuide from "../investor-intent-guide";
 
-const title = "미국 공포탐욕지수 | CNN 점수·차트·7개 구성요소 - ZGmini";
-const description = "미국 CNN 공포탐욕지수의 최근 점수·관측일·기간별 차트와 7개 구성요소를 확인하세요. 원시값과 환산점수의 차이, 해석 기준과 CNN 출처를 함께 안내합니다.";
+const title = "미국 공포탐욕지수 | CNN 지수·S&P500 투자심리 - ZGmini";
+const description = "미국 CNN 공포탐욕지수의 점수·관측일·기간별 차트와 7개 구성요소를 확인하세요. S&P500 모멘텀·VIX 변동성·풋콜비율과 미국 주식시장 투자심리를 함께 분석합니다.";
 const url = "https://zgmini.kr/fear-greed/usa/";
 export const metadata: Metadata = {
   title, description, alternates:{canonical:url},
@@ -29,6 +30,7 @@ export default function UsaFearGreedPage() {
         sources={[{href:"https://www.cnn.com/markets/fear-and-greed",label:"CNN Fear & Greed 원본"}]}
         related={[{href:"/fear-greed/korea/",label:"한국 공포탐욕지수"},{href:"/inflation/",label:"미국 인플레이션 지표"},{href:"/recession/",label:"미국 경기침체 지표"}]}
       />
+    <InvestorIntentGuide market="usa"/>
     <DetailInvestorNotes topic="usa"/>
 </div>
   </main>;
