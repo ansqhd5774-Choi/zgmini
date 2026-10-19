@@ -1,0 +1,26 @@
+/* Width is provided by supply-indicator-r2.css. */
+
+.supply-favorite-header-icon,
+.supply-favorite-button{color:#f4c34e}
+.supply-favorite-header-icon{display:inline-grid;width:26px;height:26px;place-items:center;opacity:.9}
+.supply-favorite-header-icon svg{width:15px;height:15px;fill:transparent;stroke:currentColor;stroke-width:2}
+.supply-favorite-button{display:inline-grid;width:28px;height:28px;place-items:center;padding:0;border:0;border-radius:50%;background:transparent;opacity:.56;cursor:pointer;transition:transform .18s ease,opacity .18s ease,background .18s ease,filter .18s ease}
+.supply-favorite-button:hover{opacity:.9;background:rgba(244,195,78,.08);transform:scale(1.08)}
+.supply-favorite-button:active{transform:scale(.82)}
+.supply-favorite-button:focus-visible{outline:2px solid rgba(244,195,78,.8);outline-offset:2px}
+.supply-favorite-icon{width:17px;height:17px;fill:transparent;stroke:currentColor;stroke-width:2;transition:fill .18s ease,transform .18s ease,filter .18s ease}
+.supply-favorite-button.is-active{opacity:1;background:rgba(244,195,78,.08);filter:drop-shadow(0 0 5px rgba(244,195,78,.24))}
+.supply-favorite-button.is-active .supply-favorite-icon{fill:currentColor;animation:supply-favorite-pop .28s cubic-bezier(.2,.8,.2,1)}
+@keyframes supply-favorite-pop{0%{transform:scale(.72) rotate(-10deg)}65%{transform:scale(1.24) rotate(7deg)}100%{transform:scale(1) rotate(0)}}
+
+@media(max-width:767px){
+ .supply-r2-mobile-title{display:flex;min-width:0;align-items:flex-start;gap:6px}
+ .supply-r2-mobile-title>div{min-width:0}
+ .supply-r2-mobile-title .supply-favorite-button{flex:0 0 26px;width:26px;height:26px;margin:-3px 0 0 -4px}
+ .supply-r2-mobile-title .supply-favorite-icon{width:16px;height:16px}
+}
+
+@media(prefers-reduced-motion:reduce){
+ .supply-favorite-button,.supply-favorite-icon{transition:none!important;animation:none!important}
+ .supply-favorite-button:hover,.supply-favorite-button:active{transform:none}
+}
