@@ -116,3 +116,19 @@ test("all four earnings beginner emphasis phrases actually appear in their corre
  const health=readFileSync("scripts/seo-production-health.mjs","utf8");
  assert.match(health,/평가 기준일·사후 재구성 추이/);
 });
+
+test("R46 earnings hero uses real score polarity and dated extrema without inventing period comparisons",()=>{
+ assert.match(panel,/data-score-tone=\{scoreTone\}/);
+ assert.match(panel,/const scoreTone=judge\(diagnosticScore,payload\?\.status\)\.tone/);
+ assert.match(panel,/const storedTrendColor=heroToneColor\(judge\(storedScore,stored\?\.status\)\.tone\)/);
+ assert.match(panel,/MarketFearGreedChart showExtrema=\{trend\.length>=3\} color=\{storedTrendColor\} data=\{trend\}/);
+ assert.match(panel,/return tone==="positive"\?"#45d99f":tone==="negative"\?"#ff7076":"#94a3b8"/);
+ assert.match(css,/earnings-recession-target-card\[data-score-tone="positive"\] \.cnn-spectrum-center \.cnn-score-value/);
+ assert.match(css,/earnings-recession-target-card\[data-score-tone="neutral"\] \.cnn-spectrum-center \.cnn-score-value/);
+ assert.match(css,/earnings-recession-target-card\[data-score-tone="negative"\] \.cnn-spectrum-center \.cnn-score-value/);
+ assert.match(css,/\.cnn-score-comparisons\{display:none!important\}/);
+ assert.doesNotMatch(panel,/scoreComparisons\?\.|fakeMiniTrend|synthesizedPrior|new Date\(\)\.getTime\(\).*score/);
+ assert.match(panel,/진단점수와 별도/);
+ assert.match(panel,/score=\{loading\|\|diagnosticScore===null\?"—":diagnosticScore\.toFixed\(1\)\}/);
+ assert.match(panel,/storedScore\.toFixed\(1\)/);
+});
