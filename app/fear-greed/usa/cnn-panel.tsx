@@ -508,7 +508,7 @@ export default function CnnPanel({ showEducation = false }: { showEducation?: bo
     return {id:definition.id,name:definition.title,metric:definition.metricLabel,
       score:hasScore?component.score:null,
       raw:hasRaw?componentValue(definition.id,component.rawValue):null,
-      reference:definition.referenceLabel&&component&&Number.isFinite(component.referenceValue)
+      reference:definition.referenceLabel&&component&&typeof component.referenceValue==="number"&&Number.isFinite(component.referenceValue)
         ?`${definition.referenceLabel}: ${componentValue(definition.id,component.referenceValue!)}`:null,
       state:hasScore?component.rating:"미확인",
       observedAt:component?.rawObservedAt??null,
@@ -571,7 +571,7 @@ export default function CnnPanel({ showEducation = false }: { showEducation?: bo
 
     {showEducation ? <FactorAnalysisR2 market="usa" factors={factorRows} source="CNN Business"
       observedAt={payload?.observedAt} sourceNote="원시값과 환산점수의 기준·갱신 시각이 다를 수 있습니다. 확인되지 않은 값은 0으로 대체하지 않습니다."/> : null}
-    {showEducation ? <section className="cnn-education-panel" aria-labelledby="cnn-education-title">
+    {showEducation ? <details className="fg-r2-extended"><summary>7개 구성요소의 원시값·비교 기준·산출 원리 자세히 보기</summary><section className="cnn-education-panel" aria-labelledby="cnn-education-title">
       <header className="cnn-education-header">
         <div>
           <p className="cnn-eyebrow">LEARN THE 7 COMPONENTS</p>
@@ -734,6 +734,6 @@ export default function CnnPanel({ showEducation = false }: { showEducation?: bo
       </aside>
 
       <a className="cnn-return-cta" href="/">← 메인 대시보드로 돌아가기</a>
-    </section> : null}
+    </section></details> : null}
   </>;
 }
