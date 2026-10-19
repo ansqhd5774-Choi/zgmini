@@ -14,3 +14,8 @@ test('mismatched tag, truncation and unquoted attributes are rejected',()=>{asse
 test('unknown entity names are rejected',()=>{assert.throws(()=>parseR73Xml(xml.replace('Fortinet &amp; Inc','Fortinet &file; Inc')),/UNSUPPORTED_XML_ENTITY/);});
 test('local file read is nonmutating',async()=>{const dir=fs.mkdtempSync(path.join(os.tmpdir(),'r73-')),p=path.join(dir,'primary_doc.xml');try{fs.writeFileSync(p,xml);const b=fs.readFileSync(p);const x=await readR73LocalFile({...fixture(),filePath:p});assert.equal(x.holdingsCount,2);assert.deepEqual(fs.readFileSync(p),b);}finally{fs.rmSync(dir,{recursive:true,force:true});}});
 test('no fake 756 reference, 5-axis, licensed publication',()=>{const r=readR73NportXml(fixture());assert.equal(r.reference756Verified,false);assert.equal(r.pricesAndVolumeAvailable,false);assert.equal(r.fiveAxisScoreReady,false);assert.equal(r.commercialRedistributionApproved,false);});
+
+test('legitimate escaped ampersand inside an SEC issuer name remains valid',()=>{
+ const altered=xml.replace('Fortinet &amp; Inc','AT&amp;T');
+ assert.equal(readR73NportXml({...fixture(),xml:altered}).holdingsPrivate[0].issuerName,'AT&T');
+});
