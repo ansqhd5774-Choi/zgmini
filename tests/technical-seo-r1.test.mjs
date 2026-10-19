@@ -10,8 +10,10 @@ test('technical SEO sitemap includes every public route with truthful lastmod va
   for(const route of ['/risk-indicators/','/economic-indicators/','/theme-fear-greed/']){
     assert.ok(sitemap.includes(`<loc>https://zgmini.kr${route}</loc><lastmod>2026-10-18</lastmod>`),route);
   }
-  for(const route of ['/fear-greed/korea/','/sector-fear-greed/','/liquidity-crisis/','/credit-risk/','/earnings-recession/','/asset-bubble/','/debt-risk/','/supply-shock/','/guides/cpi-pce-release/','/guides/fomc/'])
+  for(const route of ['/fear-greed/korea/','/sector-fear-greed/','/guides/cpi-pce-release/','/guides/fomc/'])
     assert.ok(sitemap.includes(`<loc>https://zgmini.kr${route}</loc><lastmod>2026-10-16</lastmod>`),route);
+  for(const route of ['/liquidity-crisis/','/credit-risk/','/earnings-recession/','/asset-bubble/','/debt-risk/','/supply-shock/'])
+    assert.ok(sitemap.includes(`<loc>https://zgmini.kr${route}</loc><lastmod>2026-10-20</lastmod>`),route);
   assert.ok(sitemap.includes('<loc>https://zgmini.kr/inflation/</loc><lastmod>2026-10-18</lastmod>'),'/inflation/');
   assert.ok(sitemap.includes('<loc>https://zgmini.kr/recession/</loc><lastmod>2026-10-18</lastmod>'),'/recession/');
   for(const route of ['/fear-greed/usa/','/guides/fear-greed-buying/'])
