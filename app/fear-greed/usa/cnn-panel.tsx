@@ -555,7 +555,7 @@ export default function CnnPanel({ showEducation = false }: { showEducation?: bo
       <header className="cnn-education-header">
         <div>
           <p className="cnn-eyebrow">LEARN THE 7 COMPONENTS</p>
-          <h1 id="cnn-education-title">공포·탐욕지수를 숫자로 이해하기</h1>
+          <h2 id="cnn-education-title">공포·탐욕지수를 숫자로 이해하기</h2>
           <p>종합점수만 보지 않고, 어떤 시장 데이터가 공포와 탐욕을 만들었는지 7개 구성요소로 확인합니다.</p>
         </div>
         <div className="cnn-education-status" aria-label="검증된 구성요소 수">
