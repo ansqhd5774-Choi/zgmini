@@ -1,6 +1,13 @@
 /* Earnings R2 presentation only: do not synthesize prior observations, releases, history, or comparisons. */
 .fg-card.fg-shared-shell.earnings-recession-target-card .cnn-score-observed-date,
 .fg-card.fg-shared-shell.earnings-recession-target-card .cnn-score-comparisons{display:none!important}
+/* E1 and diagnostic score colors follow their own existing polarity without merging scores. */
+.fg-card.fg-shared-shell.earnings-recession-target-card[data-score-tone="positive"] .cnn-spectrum-center .cnn-score-value,
+.fg-card.fg-shared-shell.earnings-recession-target-card[data-score-tone="positive"] .cnn-spectrum-center>span{color:#45d99f!important}
+.fg-card.fg-shared-shell.earnings-recession-target-card[data-score-tone="neutral"] .cnn-spectrum-center .cnn-score-value,
+.fg-card.fg-shared-shell.earnings-recession-target-card[data-score-tone="neutral"] .cnn-spectrum-center>span{color:#94a3b8!important}
+.fg-card.fg-shared-shell.earnings-recession-target-card[data-score-tone="negative"] .cnn-spectrum-center .cnn-score-value,
+.fg-card.fg-shared-shell.earnings-recession-target-card[data-score-tone="negative"] .cnn-spectrum-center>span{color:#ff7076!important}
 .fg-card.fg-shared-shell.earnings-recession-target-card .fg-chart-slot{position:relative}
 .earnings-recession-target-card .earnings-r2-chart-identity{position:absolute;right:15px;top:6px;z-index:2;pointer-events:none;font-size:10px;line-height:1.2;color:#c6dae6;background:rgba(5,20,34,.75);padding:2px 4px}
 .earnings-r2-indicators .earnings-r2-table-wrap{min-width:0;max-width:100%;overflow-x:auto}
