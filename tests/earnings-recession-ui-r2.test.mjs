@@ -56,8 +56,8 @@ test("earnings R3 labels separately verified universe and eligible issuer counts
 });
 
 test("R5 table and mobile show evaluation date instead of claiming a source observation date",()=>{
- assert.match(panel,/<th>\{isR5\?"평가 기준일":"관측일"\}<\/th>/);
- assert.match(panel,/<div><span>\{isR5\?"평가 기준일":"관측일"\}<\/span><strong>\{dateLabel\(r\?\.observationDate\)\}<\/strong><\/div>/);
+ assert.match(panel,/<th>이전<\/th><th>현재<\/th><th>발표<\/th><th>판단<\/th><th>미니차트\(1Y\)<\/th>/);
+ assert.match(panel,/<small>\{isR5\?"평가 ":"관측 "\}\{dateLabel\(r\?\.observationDate\)\}<\/small>/);
  const notes=readFileSync("app/detail-investor-notes.tsx","utf8");
  assert.match(notes,/topic==="earnings-recession"\?"E1-R5 표의 평가 기준일은 저장된 실적 자료를 종합 평가한 날짜입니다/);
  assert.match(notes,/각각의 관측 기간이나 공식 발표일이 아닙니다/);
