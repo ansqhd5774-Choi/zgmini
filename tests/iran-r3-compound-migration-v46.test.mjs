@@ -5,6 +5,8 @@ import {classifyR3Article,buildReferenceFlowR3,CLASSIFIER_VERSION} from '../lib/
 import {collectNewsR3,storedR3Signals} from '../scripts/iran-progress/continuous-news-r3.mjs';
 import {resolveR3Events,storedR3Candidates,calculateOperationalR3} from '../scripts/iran-progress/operate-r3.mjs';
 import {publishReferenceFlowR3} from '../scripts/iran-progress/publication.mjs';
+import {storedIranProgressResponse} from '../worker/iran-progress-public.mjs';
+import {iranView} from '../lib/iran-progress/view.mjs';
 
 const NOW=Date.parse('2026-10-19T01:00:00Z');
 const OLD='IRAN_EVENT_RULES_R3_2';
@@ -180,6 +182,46 @@ test('V47 newer D1 timestamp preserves newer remote snapshot, no overwrite or au
   const r=await publishReferenceFlowR3(remote,'TEST_D1',body,{now:NOW});
   assert.equal(r.status,'REMOTE_NEWER_PRESERVED');
   assert.equal(writes,0);
+  assert.equal(store.getCheckpoint('reference-flow-last-valid-r3').score,36.3);
+ }finally{store.close();}
+});
+
+test('V48 public R3 reader and UI adapter accept real R3_3 candidate projection',async()=>{
+ const {store}=setup();
+ try{
+  await collectNewsR3(store,args);
+  const body=calculateOperationalR3(store,NOW);
+  const row={body:JSON.stringify(body),stored_at:NOW};
+  let reads=0;
+  const db={prepare:sql=>{
+   assert.match(sql,/market_public_snapshots_v1/);
+   return {bind:key=>({first:async()=>{reads++;return key==='public:iran-progress:reference-flow:r3'?row:null;}})};
+  }};
+  const response=await storedIranProgressResponse(new Request('https://example.test/api/iran-progress'),{db,now:NOW});
+  assert.equal(response.status,200);
+  assert.equal(response.headers.get('x-iran-flow-reader'),'R3');
+  const json=await response.json();
+  const view=iranView(json,NOW);
+  assert.equal(view.methodVersion,'R3');
+  assert.equal(view.score,38.7);
+  assert.equal(view.observedDomains.includes('MILITARY'),true);
+  assert.equal(view.observedDomains.includes('MARITIME'),true);
+  assert.equal(view.saturatedDomains.length,0);
+  assert.equal(view.events.length,10);
+  assert.equal(reads>0,true);
+ }finally{store.close();}
+});
+test('V48 public R3 reader fails closed on altered candidate score instead of rendering fabricated UI value',async()=>{
+ const {store}=setup();
+ try{
+  await collectNewsR3(store,args);
+  const body=calculateOperationalR3(store,NOW);
+  const row={body:JSON.stringify({...body,score:90}),stored_at:NOW};
+  const db={prepare:()=>({bind:()=>({first:async()=>row})})};
+  const response=await storedIranProgressResponse(new Request('https://example.test/api/iran-progress'),{db,now:NOW});
+  assert.equal(response.status,503);
+  const payload=await response.json();
+  assert.equal(payload.reason,'FLOW_R3_INVALID');
   assert.equal(store.getCheckpoint('reference-flow-last-valid-r3').score,36.3);
  }finally{store.close();}
 });
