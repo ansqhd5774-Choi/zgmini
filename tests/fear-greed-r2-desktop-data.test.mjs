@@ -1,0 +1,51 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+const read=path=>readFileSync(new URL('../'+path,import.meta.url),'utf8');
+
+test('R2 desktop data terminal reads seven real CNN component values without second fetch',()=>{
+ const cnn=read('app/fear-greed/usa/cnn-panel.tsx');
+ const factor=read('app/fear-greed/factor-analysis-r2.tsx');
+ assert.ok(cnn.includes('factorRows:FactorR2[]=componentDefinitions.map'));
+ assert.ok(cnn.includes('componentMap.get(definition.id)'));
+ assert.ok(cnn.includes('component.rawValue'));
+ assert.ok(cnn.includes('component.score'));
+ assert.ok(cnn.includes('component?.rawObservedAt'));
+ assert.ok(cnn.includes('<FactorAnalysisR2 market="usa"'));
+ assert.ok(cnn.includes('showEducation ? <details className="fg-r2-extended"'));
+ assert.ok(factor.includes('aria-pressed={selected?.id===f.id}'));
+ assert.ok(factor.includes('selected.meaning'));
+ assert.ok(factor.includes('공포 방향 주요 신호'));
+ assert.ok(factor.includes('data-missing={!finite(f.score)'));
+ assert.ok(!factor.includes('fetch('));
+});
+test('R2 Korea shows only public Revision 7 score and never exposes private weights',()=>{
+ const korea=read('app/fear-greed/korea-factor-analysis-r2.tsx');
+ const data=read('app/fear-greed/korea/data-panel.tsx');
+ const factor=read('app/fear-greed/factor-analysis-r2.tsx');
+ for(const id of ['momentum','strength','breadth','putCall','volatility','safeHaven','junkBond'])assert.ok(korea.includes('id:"'+id+'"'));
+ assert.ok(korea.includes('useKoreaFunds()'));
+ assert.ok(korea.includes('c?.components??[]'));
+ assert.ok(korea.includes('score:'));
+ assert.ok(korea.includes('raw:null'));
+ assert.ok(data.includes('<KoreanCountryCard/>'));
+ assert.ok(data.includes('<KoreaFactorAnalysisR2/>'));
+ assert.ok(!korea.includes('weightedContribution'));
+ assert.ok(!factor.includes('weightedContribution'));
+ assert.ok(!factor.includes('weight:'));
+ assert.ok(!korea.includes('fetch('));
+});
+test('R2 responsive CSS only styles two detail pages and prevents overflow',()=>{
+ const css=read('app/fear-greed/fear-greed-detail-r1.css');
+ const us=read('app/fear-greed/usa/page.tsx');
+ const kr=read('app/fear-greed/korea/page.tsx');
+ assert.ok(css.includes('max-width:1360px'));
+ assert.ok(css.includes('.fg-r2-analysis-grid'));
+ assert.ok(css.includes('@media(max-width:700px)'));
+ assert.ok(css.includes('.fg-r2-table tr{display:grid'));
+ assert.ok(css.includes('.fg-r2-factor-detail'));
+ assert.ok(us.includes('InvestorIntentGuide market="usa"'));
+ assert.ok(kr.includes('InvestorIntentGuide market="korea"'));
+ assert.equal((us.match(/<h1\b/g)||[]).length,1);
+ assert.equal((kr.match(/<h1\b/g)||[]).length,1);
+});
