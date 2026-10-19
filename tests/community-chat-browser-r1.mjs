@@ -41,7 +41,7 @@ try{
     return animation?.effect?.getKeyframes().map(k=>String(k.transform??""))??[];
    });
    assert.equal(enterDirection[0],"translateX(100%)","Chat must enter from right (positive X)");
-   assert.equal(enterDirection.at(-1),"translateX(0)","Chat must settle at its fixed right position");
+   assert.match(enterDirection.at(-1)??"",/^translateX\(0(?:px)?\)$/,"Chat must settle at its fixed right position");
   }
   const bounds=await panel.boundingBox(); assert(bounds&&bounds.x>=-1&&bounds.x+bounds.width<=width+1,"Panel must fit viewport "+width);
   assert.equal(await page.getByRole("heading",{name:"시장 채팅"}).count(),0,"chat header uses compact text, not heading");
