@@ -184,3 +184,15 @@
  }
  .fg-card.fg-shared-shell:is(.asset-bubble-target-card,.debt-risk-target-card,.supply-shock-target-card) .cnn-panel-note strong{font-size:10px;white-space:nowrap}
 }
+
+/* Keep candidate diagnostics legible and distinct without removing the R10 rights/quality notice. */
+.asset-r2-candidate-status{
+ margin:8px 0;
+ padding:11px 14px;
+ border-left:3px solid rgba(71,179,189,.62);
+ background:rgba(10,35,51,.8);
+ color:#a8c1d0;
+ font-size:11px;
+ line-height:1.65;
+ overflow-wrap:anywhere;
+}

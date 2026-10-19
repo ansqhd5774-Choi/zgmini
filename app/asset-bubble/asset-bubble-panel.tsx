@@ -66,7 +66,7 @@ export default function AssetBubblePanel({initialPayload}:{initialPayload?:Paylo
    </div>
    <div className="fg-footer-slot"><div className="cnn-panel-note"><span>차트 원칙</span><strong>최근 1년 · 계산 가능한 실제 분기점수만 표시 · 임의 보간 없음</strong></div></div>
   </section>
-  {candidate&&<p role="status">종합 상태: {payload?.status} · 평가 분기: {payload?.scoreObservationQuarter??'—'} · 구성요소 진단 분기: {payload?.diagnosticQuarter??'—'} · 최근 저장: {dateLabel(payload?.sourceStoredAt?new Date(payload.sourceStoredAt).toISOString():null)}<br/>{payload?.notes?.join(' ')} {!publishedCurrentVintage&&'공개 전환 전 검증 중입니다.'}</p>}
+  {candidate&&<p className="asset-r2-candidate-status" role="status">종합 상태: {payload?.status} · 평가 분기: {payload?.scoreObservationQuarter??'—'} · 구성요소 진단 분기: {payload?.diagnosticQuarter??'—'} · 최근 저장: {dateLabel(payload?.sourceStoredAt?new Date(payload.sourceStoredAt).toISOString():null)}<br/>{payload?.notes?.join(' ')} {!publishedCurrentVintage&&'공개 전환 전 검증 중입니다.'}</p>}
   <section className="inflation-explainer" aria-labelledby="asset-bubble-what-title">
    <p className="cnn-eyebrow">WHAT IS AN ASSET BUBBLE?</p><h1 id="asset-bubble-what-title">자산 버블이란?</h1>
    <p>자산 버블은 주식·부동산 같은 자산가격이 펀더멘털과 장기 추세에 비해 과도하게 상승하고, 그 과정에서 레버리지와 투기적 자금이 몰리는 상태입니다. 단순히 가격이 높다는 이유만으로 버블이라 판단하지 않고 밸류에이션, 가격가속, 위험선호, 자금흐름, 시장폭, 유동성이 함께 과열되는지를 봐야 합니다.</p>
