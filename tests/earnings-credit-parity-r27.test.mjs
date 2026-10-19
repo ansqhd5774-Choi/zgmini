@@ -33,3 +33,20 @@ test('R27 has exactly the same column proportions as credit risk and retains 390
  assert.match(earnings,/earnings-r2-mobile-spark/);
  assert.doesNotMatch(earnings,/fakeMiniTrend|synthesizedPrior/);
 });
+
+test('R45 aligns earnings table with inflation while keeping all 13 source-backed histories untouched',()=>{
+ assert.doesNotMatch(earnings,/earnings-r2-data-caption/);
+ assert.doesNotMatch(css,/earnings-r2-data-caption/);
+ assert.doesNotMatch(earnings,/1년 원자료 추이/);
+ assert.match(earnings,/S6·S11은 원자료 관측기간, 나머지는 저장 자료로 재구성한 평가 시점 기준/);
+ assert.match(earnings,/earningsKstToday\(\)/);
+ assert.match(earnings,/earningsReleaseInfo\(r,id,today\)/);
+ assert.match(earnings,/const date=\(id==="S6"\|\|id==="S11"\)\?r\?\.nextReleaseDate:null/);
+ assert.match(earnings,/일정 미정/);
+ assert.match(earnings,/일정 재확인/);
+ assert.match(earnings,/release-\$\{release\.urgency\}/);
+ assert.match(css,/\.earnings-r2-indicators \.earnings-r2-table td\.earnings-r2-release\.release-imminent small/);
+ assert.equal((earnings.match(/earningsReleaseInfo\(r,id,today\)/g)||[]).length,2);
+ assert.equal((earnings.match(/points=\{hasIndicatorHistory\(r\)\?r\?\.sourceHistory1Y:undefined\}/g)||[]).length,2);
+ assert.deepEqual((earnings.match(/<th>미니차트\(1Y\)<\/th>/g)||[]).length,1);
+});
