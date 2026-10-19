@@ -44,10 +44,17 @@ test('theme exploration exposes thirty unique themes and explicitly withholds un
  const Theme=load('../app/theme-fear-greed/theme-explorer.tsx',{'../../components/market-explorer-catalog':catalog}).default;
  const html=renderToStaticMarkup(React.createElement(Theme));
  assert.equal((html.match(/<article /g)??[]).length,30);
- assert.match(html,/3축 이력 12\/30/);
+ assert.match(html,/우선 9 · 보류 3/);
  assert.match(html,/5축 종합 점수는 검증 전/);
- assert.equal((html.match(/가격 3축 확보 · 2026\.10\.16/g)??[]).length,12);
+ assert.equal((html.match(/가격 3축 확보 · 2026\.10\.16/g)??[]).length,9);
+ assert.equal((html.match(/3축 연구 이력 확보 · 검증 보류/g)??[]).length,3);
  assert.equal((html.match(/데이터 준비 중/g)??[]).length,18);
+ // Prioritization is not score publication: only the nine eligible-for-triage
+ // cards appear at the top, and all 30 cards retain the null-score marker.
+ const ordered=html.match(/<article [\s\S]*?<\/article>/g)??[];
+ const firstNine=['로봇·자동화','클라우드·SaaS','자율주행','바이오테크','게임·e스포츠','원전·SMR','방산','핀테크','사이버보안'];
+ assert.equal(ordered.length,30);
+ for(let i=0;i<firstNine.length;i++)assert.ok(ordered[i].includes(firstNine[i]),firstNine[i]);
  assert.doesNotMatch(html,/<strong>\d+(?:\.\d+)?<\/strong>/);
 });
 test('shared header provides the agreed menu order on both dashboard and detail pages',()=>{
