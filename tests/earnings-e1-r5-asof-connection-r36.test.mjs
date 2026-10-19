@@ -89,10 +89,47 @@ test('projection permits verified 11 AS-OF rows plus S6/S11 and rejects tampered
 test('writer and mobile/desktop render are wired with no E1 scoring/weights edits',()=>{
  const writer=fs.readFileSync('scripts/pc-writer/earnings-r5-production-cycle-r1.mjs','utf8');
  const ui=fs.readFileSync('app/earnings-recession/earnings-recession-panel.tsx','utf8');
- assert.match(writer,/E1_R5_SOURCE_OBSERVATION_PRESENTATION_VERSION='E1-R5-SOURCE-OBSERVATION-R36'/);
+ assert.match(writer,/E1_R5_SOURCE_OBSERVATION_PRESENTATION_VERSION='E1-R5-SOURCE-OBSERVATION-R43'/);
  assert.match(writer,/for\(const id of E1_R5_ASOF_IDS\)/);
  assert.match(writer,/asOfById\.set\('S12',s12Observations\)/);
  assert.match(writer,/asOfById\.set\('S13'/);
  assert.match(ui,/hasIndicatorHistory\(r\)/);
  assert.equal((ui.match(/points=\{hasIndicatorHistory\(r\)\?r\?\.sourceHistory1Y:undefined\}/g)||[]).length,2);
+});
+
+test('S12 1Y history uses existing R2 guidance anchors while current score remains R1 production basis',()=>{
+ const writer=fs.readFileSync('scripts/pc-writer/earnings-r5-production-cycle-r1.mjs','utf8');
+ assert.match(writer,/forward=trendForwardHistory\.find\(row=>row\.date===item\.date\)/);
+ assert.match(writer,/priorA=trendForwardHistory\.filter\(row=>row\.date<item\.date&&finite\(row\.s12aRaw\)\)/);
+ assert.match(writer,/const currentForward=guidanceAsOf\(productionTimeline,currentDate\)/);
+ assert.match(writer,/if\(finite\(row\.s12aRaw\)\)histories\.S12A\.push\(row\.s12aRaw\)/);
+ const dates=['2025-12-01','2026-03-05','2026-06-05','2026-09-04'];
+ const grid=dates.map((date,i)=>({date,s12b:2+i*.25}));
+ const productionGuidance=[{date:dates[3],s12aRaw:.6}];
+ const trendGuidance=dates.map((date,i)=>({date,s12aRaw:.2+i*.1}));
+ const history=grid.map((item,index)=>{
+  const forward=trendGuidance.find(row=>row.date===item.date);
+  const priorA=trendGuidance.filter(row=>row.date<item.date).map(row=>row.s12aRaw);
+  const priorB=grid.slice(0,index).map(row=>row.s12b);
+  return {date:item.date,value:scoreEarningsE1R5Raw({
+   raw:{S12A:forward.s12aRaw,S12B:item.s12b},
+   histories:{S12A:priorA,S12B:priorB},asOfDate:item.date,
+  }).components.S12};
+ }).filter(row=>Number.isFinite(row.value));
+ assert.equal(productionGuidance.length,1,'production history is too sparse for historical display');
+ assert.equal(history.length,3,'R2 saved history provides prior normalized composite points');
+ const currentRaw={S12A:.8,S12B:3.1};
+ const productionScore=scoreEarningsE1R5Raw({
+  raw:currentRaw,histories:{S12A:productionGuidance.map(x=>x.s12aRaw),S12B:grid.map(x=>x.s12b)},
+  asOfDate:'2026-10-19',
+ }).components.S12;
+ assert.equal(typeof productionScore,'number');
+ const display=buildEarningsAsOfComparison({
+  id:'S12',observations:[...history,{date:'2026-10-19',value:productionScore}],
+  asOfDate:'2026-10-19',currentValue:productionScore,
+  sourceVersion:'E1-R5-PRODUCTION-CYCLE-R1',sourceStoredAt:iso,
+ });
+ assert.ok(display);
+ assert.equal(display.sourceHistory1Y.length,4);
+ assert.equal(display.sourceHistory1Y.at(-1).value,productionScore);
 });
