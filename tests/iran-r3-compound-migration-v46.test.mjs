@@ -208,7 +208,8 @@ test('V48 public R3 reader and UI adapter accept real R3_3 candidate projection'
   assert.equal(view.rawScore,38.7);
   assert.equal(view.score,19);
   assert.equal(view.displayEstimate?.anchorScore,19);
-  assert.equal(view.displayEstimate?.anchorR3Score,38.7);
+  // V58 verified historical source reference is 37.9; this fixture's raw 38.7 stays independently asserted above.
+  assert.equal(view.displayEstimate?.anchorR3Score,37.9);
   assert.equal(view.chartHistory.length,14);
   assert.equal(view.chartHistory.at(-1)?.value,19);
   assert.equal(view.observedDomains.includes('MILITARY'),true);
