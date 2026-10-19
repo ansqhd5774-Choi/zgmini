@@ -1,3 +1,6 @@
+import {buildCmR1DomainResults} from '../lib/market-score/domain-adapter-r1.mjs';
+import {buildCompositeMarketScore} from '../lib/market-score/composite-model-r1.mjs';
+import {selectStoredEarningsProjection} from '../worker/projection-source-r52.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -40,4 +43,22 @@ test('source-specific official S6/S11 dates appear only before scheduled release
  assert.equal(expired[10].nextReleaseDate,undefined);
  const wrongSource=build({snapshot,e1:{...base,indicators:base.indicators.map(x=>({...x,source:'UNVERIFIED'}))},nowIso:'2026-10-19T00:00:00Z'}).storedE1.indicators;
  assert.equal(wrongSource[5].nextReleaseDate,undefined);
+});
+
+test('real CM-R1 storage projection retains S6 quarterly provenance despite domain asOfDate omission',()=>{
+ const quarterly=[{date:'2025-12-31',value:4},{date:'2026-03-31',value:5},{date:'2026-06-30',value:6}];
+ const producer={...base,quality:{universeCount:500},indicators:base.indicators.map(x=>x.id==='S6'
+   ? {...x,value:6,asOfDate:'2026-10-17',source:'BEA NIPA A051RC',historyKind:basis,sourcePeriodEnd:'2026-06-30',previousValue:5,previousPeriodEnd:'2026-03-31',sourceHistory1Y:quarterly}
+   : {...x,asOfDate:'2026-10-17'})};
+ const domains=buildCompositeMarketScore(buildCmR1DomainResults({publicDomains:{earnings:producer}})).domains;
+ const earn=domains.find(x=>x.id==='earnings');
+ assert.equal(earn.asOfDate,undefined,'real CM-R1 earnings domain does not expose parent evaluation anchor');
+ const stored=selectStoredEarningsProjection({body:{domains}});
+ assert.ok(stored);
+ const display=build({snapshot,e1:stored,nowIso:'2026-10-19T00:00:00Z'}).storedE1.indicators;
+ assert.equal(display[5].previousValue,5);
+ assert.equal(display[5].sourceHistory1Y.length,3);
+ assert.equal(display[5].sourcePeriodEnd,'2026-06-30');
+ assert.equal(display[5].nextReleaseDate,'2026-11-25');
+ assert.equal(display[4].sourceHistory1Y,undefined);
 });

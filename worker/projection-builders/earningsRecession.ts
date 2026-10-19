@@ -59,7 +59,7 @@ export function buildProjection({inputs,snapshot,publicSnapshot,e1,nowIso}:any){
   unit:x?.unit??"",
   observationDate:x?.asOfDate??e1?.financialPeriodEnd??e1?.asOfDate??null,
   source:x?.source??"SEC EDGAR XBRL Frames",
-  ...(isR5?checkedSourceObservation(x,e1?.asOfDate)??{}:{}),
+  ...(isR5?checkedSourceObservation(x,x?.asOfDate??e1?.asOfDate)??{}:{}),
   ...(isR5?verifiedUpcomingSourceRelease(x,nowIso)??{}:{}),
  })):[];
  const components=isR5
