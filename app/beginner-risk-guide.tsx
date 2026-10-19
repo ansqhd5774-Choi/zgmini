@@ -104,13 +104,35 @@ const configs:Record<Topic,Config>={
   }
  },
  "debt-risk":{
-  endpoint:"/api/debt-risk-detail",title:"부채 안전성",importance:"부채가 많아도 소득과 이익이 충분하면 버틸 수 있지만, 금리와 원리금 부담이 동시에 커지면 경기 충격에 취약해집니다.",marketImpact:"부채 부담 확대는 소비와 기업투자를 줄이고 신용손실 위험을 높일 수 있습니다. 상환여력이 개선되면 금융시장 충격에 대한 완충력이 커집니다.",highMeaning:"높을수록 가계·기업의 부채 부담을 감당하기 쉬운 방향입니다.",lowMeaning:"낮을수록 부채와 상환 부담이 위험한 방향입니다.",positiveHeading:"부채 안정에 기여한 요인",negativeHeading:"부채 부담 요인",stage:score=>safetyStage(score,"부채 주의","부채 위험"),factorNames:{dsr:"Debt Service Ratio",debtGdp:"민간부채/GDP",rateBurden:"금리부담",creditStress:"신용스트레스",debtServiceCapacity:"부채상환능력"}
+  endpoint:"/api/debt-risk-detail",title:"부채 안전성",importance:"부채가 많아도 소득과 이익이 충분하면 버틸 수 있지만, 금리와 원리금 부담이 동시에 커지면 경기 충격에 취약해집니다.",marketImpact:"부채 부담 확대는 소비와 기업투자를 줄이고 신용손실 위험을 높일 수 있습니다. 상환여력이 개선되면 금융시장 충격에 대한 완충력이 커집니다.",highMeaning:"높을수록 가계·기업의 부채 부담을 감당하기 쉬운 방향입니다.",lowMeaning:"낮을수록 부채와 상환 부담이 위험한 방향입니다.",positiveHeading:"부채 안정에 기여한 요인",negativeHeading:"부채 부담 요인",stage:score=>safetyStage(score,"부채 주의","부채 위험"),factorNames:{dsr:"부채상환비율(DSR)",debtGdp:"민간부채/GDP",rateBurden:"금리부담",creditStress:"신용스트레스",debtServiceCapacity:"부채상환능력"},
+  factorDescriptions:{
+   dsr:"소득 대비 원리금 상환에 필요한 부담이 어느 정도인지 봅니다.",
+   debtGdp:"경제 규모에 비해 민간부채가 얼마나 누적됐는지 봅니다.",
+   rateBurden:"기업이 창출한 부가가치 대비 순이자비용 부담을 봅니다.",
+   creditStress:"회사채 시장의 신용 스트레스와 자금조달 압력을 봅니다.",
+   debtServiceCapacity:"기업이 벌어들이는 이익으로 이자비용을 감당할 수 있는지 봅니다."
+  }
  },
  "asset-bubble":{
-  endpoint:"/api/asset-bubble-detail",title:"버블 방어",importance:"가격이 오르는 것 자체가 버블은 아닙니다. 밸류에이션, 가격가속, 투기성 자금, 시장 참여 폭과 유동성이 함께 과열되는지 봐야 합니다.",marketImpact:"버블 위험이 커지면 작은 충격에도 가격 조정 폭이 커질 수 있습니다. 과열이 완화되면 시장의 상승 기반이 더 건강해질 수 있습니다.",highMeaning:"높을수록 과열과 버블 위험이 낮은 방향입니다.",lowMeaning:"낮을수록 자산가격 과열 신호가 강한 방향입니다.",positiveHeading:"버블 위험을 낮추는 요인",negativeHeading:"과열 부담 요인",stage:score=>safetyStage(score,"버블 주의","버블 위험"),factorNames:{valuationPressure:"밸류에이션 압력",priceAcceleration:"가격가속",riskAssetShare:"위험자산 비중",speculativeFlows:"투기성 자금흐름",breadthDivergence:"시장폭 괴리",excessLiquidity:"과잉유동성"}
+  endpoint:"/api/asset-bubble-detail",title:"버블 방어",importance:"가격이 오르는 것 자체가 버블은 아닙니다. 밸류에이션, 가격가속, 투기성 자금, 시장 참여 폭과 유동성이 함께 과열되는지 봐야 합니다.",marketImpact:"버블 위험이 커지면 작은 충격에도 가격 조정 폭이 커질 수 있습니다. 과열이 완화되면 시장의 상승 기반이 더 건강해질 수 있습니다.",highMeaning:"높을수록 과열과 버블 위험이 낮은 방향입니다.",lowMeaning:"낮을수록 자산가격 과열 신호가 강한 방향입니다.",positiveHeading:"버블 위험을 낮추는 요인",negativeHeading:"과열 부담 요인",stage:score=>safetyStage(score,"버블 주의","버블 위험"),factorNames:{valuationPressure:"밸류에이션 압력",priceAcceleration:"가격가속",riskAssetShare:"위험자산 비중",speculativeFlows:"투기성 자금흐름",breadthDivergence:"시장폭 괴리",excessLiquidity:"과잉유동성"},
+  factorDescriptions:{
+   valuationPressure:"자산 가격이 경제 규모와 비교해 얼마나 높아졌는지 봅니다.",
+   priceAcceleration:"최근 가격 상승 속도가 장기 추세보다 빨라졌는지 봅니다.",
+   riskAssetShare:"위험자산 비중이 최근 얼마나 빠르게 늘어나는지 봅니다.",
+   speculativeFlows:"가격 상승기에 투기성 자금이 얼마나 강하게 유입되는지 봅니다.",
+   breadthDivergence:"지수 상승에 비해 실제 상승 종목의 참여 폭이 좁은지 봅니다.",
+   excessLiquidity:"통화량 증가가 명목 경제성장보다 얼마나 빠른지 봅니다."
+  }
  },
  "supply-shock":{
-  endpoint:"/api/supply-shock-detail",title:"공급 충격 방어",importance:"공급망이나 에너지 공급이 흔들리면 생산비와 물가가 동시에 올라 경기와 기업이익에 부담을 줄 수 있습니다.",marketImpact:"공급 충격 확대는 원가 부담과 인플레이션을 동시에 높여 주식시장에 불리할 수 있습니다. 공급 여건 안정은 비용 압력을 완화하는 데 도움이 됩니다.",highMeaning:"높을수록 공급망·에너지 충격 위험이 낮은 방향입니다.",lowMeaning:"낮을수록 공급 충격 압력이 높은 방향입니다.",positiveHeading:"공급 안정에 기여한 요인",negativeHeading:"공급 충격 부담 요인",stage:score=>safetyStage(score,"공급 주의","공급 충격 위험"),factorIds:["G","E","O","P","I"],factorNames:{G:"글로벌 공급망 압력",E:"미국 석유 공급 제약",O:"에너지 가격 충격",P:"공급 주도 물가 압력",I:"산업생산 충격"}
+  endpoint:"/api/supply-shock-detail",title:"공급 충격 방어",importance:"공급망이나 에너지 공급이 흔들리면 생산비와 물가가 동시에 올라 경기와 기업이익에 부담을 줄 수 있습니다.",marketImpact:"공급 충격 확대는 원가 부담과 인플레이션을 동시에 높여 주식시장에 불리할 수 있습니다. 공급 여건 안정은 비용 압력을 완화하는 데 도움이 됩니다.",highMeaning:"높을수록 공급망·에너지 충격 위험이 낮은 방향입니다.",lowMeaning:"낮을수록 공급 충격 압력이 높은 방향입니다.",positiveHeading:"공급 안정에 기여한 요인",negativeHeading:"공급 충격 부담 요인",stage:score=>safetyStage(score,"공급 주의","공급 충격 위험"),factorIds:["G","E","O","P","I"],factorNames:{G:"글로벌 공급망 압력",E:"미국 석유 공급 제약",O:"에너지 가격 충격",P:"공급 주도 물가 압력",I:"산업생산 충격"},
+  factorDescriptions:{
+   G:"세계 운송·조달 과정에서 공급망 병목이 얼마나 심한지 봅니다.",
+   E:"미국 내 석유 공급 차질이나 제약 압력을 살펴봅니다.",
+   O:"유가 등 에너지 가격 변화가 비용에 주는 충격을 봅니다.",
+   P:"수요 이외의 공급 비용 때문에 물가가 받는 압력을 봅니다.",
+   I:"산업 생산 활동에 공급 측 차질이 나타나는지 봅니다."
+  }
  },
  "earnings-recession":{
   endpoint:"/api/earnings-recession-detail",title:"기업 실적 방어",importance:"주가는 장기적으로 기업이 벌어들이는 이익과 현금흐름의 영향을 크게 받습니다. 매출·마진·이익 개선이 시장 전반으로 퍼지는지 함께 봐야 합니다.",marketImpact:"실적 방어가 약해지면 주가 밸류에이션을 지지하기 어려워질 수 있습니다. 반대로 이익과 매출 개선이 넓게 확산되면 주식시장의 펀더멘털 기반이 강해집니다.",highMeaning:"높을수록 미국 기업 실적이 양호한 방향입니다.",lowMeaning:"낮을수록 실적 침체 위험이 강한 방향입니다.",positiveHeading:"E1 평가가 높은 지표",negativeHeading:"E1 상대적 하위 지표",stage:score=>safetyStage(score,"실적 주의","실적 침체 위험"),factorDescriptions:{
