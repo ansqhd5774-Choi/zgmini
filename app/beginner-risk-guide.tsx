@@ -400,7 +400,7 @@ export default function BeginnerRiskGuide({topic}:{topic:Topic}){
    <p className="mt-1 text-sm text-slate-400">{topic==="earnings-recession"?"E1 저장 지표별 평가입니다. 메인 진단 점수의 구성요인과는 별개입니다.":"현재 저장된 구성 점수를 기준으로 강한 방향의 요인을 최대 3개씩 보여줍니다."}</p>
    <div className="mt-4 grid gap-3 md:grid-cols-2">
     <div className="bg-emerald-950/25 p-4"><h3 className="font-bold text-emerald-300">{config.positiveHeading}</h3>{positive.length?<ul className="mt-3 space-y-2 text-sm text-slate-200">{positive.map(item=><FactorListItem key={item.id} item={item} config={config}/>)}</ul>:<p className="mt-3 text-sm text-slate-400">현재 뚜렷한 기여 요인을 확인하지 못했습니다.</p>}</div>
-    <div className={topic==="earnings-recession"?"bg-slate-800/30 p-4":"bg-rose-950/20 p-4"}><h3 className={topic==="earnings-recession"?"font-bold text-slate-200":"font-bold text-rose-300"}>{config.negativeHeading}</h3>{displayedLower.length?<ul className="mt-3 space-y-2 text-sm text-slate-200">{displayedLower.map(item=><FactorListItem key={item.id} item={item} config={config}/>)}</ul>:<p className="mt-3 text-sm text-slate-400">{topic==="earnings-recession"?"비교할 저장 지표가 부족합니다.":"현재 뚜렷한 부담 요인을 확인하지 못했습니다."}</p>}</div>
+    <div className="bg-rose-950/20 p-4"><h3 className="font-bold text-rose-300">{config.negativeHeading}</h3>{displayedLower.length?<ul className="mt-3 space-y-2 text-sm text-slate-200">{displayedLower.map(item=><FactorListItem key={item.id} item={item} config={config}/>)}</ul>:<p className="mt-3 text-sm text-slate-400">{topic==="earnings-recession"?"비교할 저장 지표가 부족합니다.":"현재 뚜렷한 부담 요인을 확인하지 못했습니다."}</p>}</div>
    </div>
   </div>
   <details ref={calculationDetailsRef} className="zg-method-history rounded-lg bg-[#071c2a] p-4 sm:p-5" data-testid={`beginner-methodology-explanation-${topic}`}>
