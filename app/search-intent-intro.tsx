@@ -3,7 +3,7 @@ type Topic="credit-risk"|"liquidity-crisis"|"debt-risk"|"inflation"|"recession"|
 const copy:Record<Topic,string>={
   "credit-risk":"미국 회사채 시장의 신용 위험과 기업 자금조달 환경을 확인하세요. HY·IG·Total CMDI, 금융여건과 국채 변동성을 종합해 현재 신용시장 스트레스와 기간별 변화를 분석합니다.",
   "liquidity-crisis":"미국 금융시장의 현금 부족과 유동성 위기 위험을 분석합니다. 단기자금시장, Repo, 은행 준비금, TGA, ON RRP, M2와 국채 변동성을 함께 확인하세요.",
-  "debt-risk":"미국 가계와 기업의 부채 부담을 DSR, 부채/GDP, 금리 부담, 신용 스트레스와 상환능력으로 분석합니다. 부채가 경기와 금융시장에 주는 위험을 현재 점수와 추이로 확인하세요.",
+  "debt-risk":"미국 가계와 기업의 부채 부담을 DSR, 부채/GDP, 금리 부담, 신용 스트레스와 상환능력으로 분석합니다. 부채가 경기와 금융시장에 주는 위험을 현재 점수, 구성지표와 관측일로 확인하세요.",
   "inflation":"물가 안정 점수와 최근 1년 추세, 한눈에.",
   "recession":"경기 방어점수와 최근 1년 추세 · 경기침체 확률 아님.",
   "earnings-recession":"메인 기업 실적 방어 진단과 E1 저장 점수 추이를 구분해 확인하세요.",

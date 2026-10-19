@@ -109,9 +109,9 @@ test('local public sitemap has all 19 URLs with truthful ISO lastmod values',()=
     assert.match(url,/^https:\/\/zgmini\.kr\//);
     assert.match(lastmod,/^\d{4}-\d{2}-\d{2}$/);
   }
-  assert.equal(entries.get('https://zgmini.kr/earnings-recession/'),'2026-10-16');
-  assert.equal(entries.get('https://zgmini.kr/asset-bubble/'),'2026-10-16');
-  assert.equal(entries.get('https://zgmini.kr/supply-shock/'),'2026-10-16');
+  assert.equal(entries.get('https://zgmini.kr/earnings-recession/'),'2026-10-20');
+  assert.equal(entries.get('https://zgmini.kr/asset-bubble/'),'2026-10-20');
+  assert.equal(entries.get('https://zgmini.kr/supply-shock/'),'2026-10-20');
 });
 
 test('production SEO workflow is push-only, deployment-gated, and verifies canonical HTTP redirects',()=>{
