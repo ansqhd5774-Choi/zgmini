@@ -103,7 +103,7 @@ export default function CommunityChat({enabled}:{enabled:boolean}){
     {messages.length===0&&<p className="zg-community-empty">{status==="ready"?"아직 대화가 없어요. 시장에 대한 생각을 남겨 보세요.":"현재 채팅 서비스를 준비하고 있습니다."}</p>}
     {messages.map(m=><article className="zg-community-item" key={m.id}>
      <div className="zg-community-line">
-      <div className="zg-community-copy"><b>{m.nickname}</b><span className="zg-community-separator">{" : "}</span><span className="zg-community-body" title={m.body}>{m.body}</span><time dateTime={m.created_at}>{displayTime(m.created_at)}</time></div>
+      <div className="zg-community-copy"><b>{m.nickname}</b><span className="zg-community-separator">{" : "}</span><span className="zg-community-body" title={m.body}>{m.body}</span><time dateTime={m.created_at}>{` ${displayTime(m.created_at)}`}</time></div>
       <button type="button" className="zg-community-report" aria-label={reported.includes(m.id)?"신고 완료":"메시지 신고"} disabled={reported.includes(m.id)} onClick={()=>void report(m.id)}><Flag size={13} aria-hidden="true"/></button>
      </div>
     </article>)}
