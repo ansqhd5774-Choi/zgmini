@@ -35,6 +35,14 @@ try{
   assert.equal(await panel.getAttribute("aria-hidden"),"false");
   const animation=await panel.evaluate(el=>getComputedStyle(el).animationName);
   assert.equal(animation,width===390?"none":"zg-community-enter","Opening animation at viewport "+width);
+  if(width>390){
+   const enterDirection=await panel.evaluate(el=>{
+    const animation=el.getAnimations().find(a=>a.animationName==="zg-community-enter");
+    return animation?.effect?.getKeyframes().map(k=>String(k.transform??""))??[];
+   });
+   assert.equal(enterDirection[0],"translateX(100%)","Chat must enter from right (positive X)");
+   assert.equal(enterDirection.at(-1),"translateX(0)","Chat must settle at its fixed right position");
+  }
   const bounds=await panel.boundingBox(); assert(bounds&&bounds.x>=-1&&bounds.x+bounds.width<=width+1,"Panel must fit viewport "+width);
   assert.equal(await page.getByRole("heading",{name:"시장 채팅"}).count(),0,"chat header uses compact text, not heading");
   await page.locator("#zg-community-input").fill("오늘 시장 전망이 궁금해요");
