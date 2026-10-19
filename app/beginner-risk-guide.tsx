@@ -113,7 +113,7 @@ const configs:Record<Topic,Config>={
   endpoint:"/api/supply-shock-detail",title:"공급 충격 방어",importance:"공급망이나 에너지 공급이 흔들리면 생산비와 물가가 동시에 올라 경기와 기업이익에 부담을 줄 수 있습니다.",marketImpact:"공급 충격 확대는 원가 부담과 인플레이션을 동시에 높여 주식시장에 불리할 수 있습니다. 공급 여건 안정은 비용 압력을 완화하는 데 도움이 됩니다.",highMeaning:"높을수록 공급망·에너지 충격 위험이 낮은 방향입니다.",lowMeaning:"낮을수록 공급 충격 압력이 높은 방향입니다.",positiveHeading:"공급 안정에 기여한 요인",negativeHeading:"공급 충격 부담 요인",stage:score=>safetyStage(score,"공급 주의","공급 충격 위험"),factorIds:["G","E","O","P","I"],factorNames:{G:"글로벌 공급망 압력",E:"미국 석유 공급 제약",O:"에너지 가격 충격",P:"공급 주도 물가 압력",I:"산업생산 충격"}
  },
  "earnings-recession":{
-  endpoint:"/api/earnings-recession-detail",title:"기업 실적 방어",importance:"주가는 장기적으로 기업이 벌어들이는 이익과 현금흐름의 영향을 크게 받습니다. 매출·마진·이익 개선이 시장 전반으로 퍼지는지 함께 봐야 합니다.",marketImpact:"실적 방어가 약해지면 주가 밸류에이션을 지지하기 어려워질 수 있습니다. 반대로 이익과 매출 개선이 넓게 확산되면 주식시장의 펀더멘털 기반이 강해집니다.",highMeaning:"높을수록 미국 기업 실적이 양호한 방향입니다.",lowMeaning:"낮을수록 실적 침체 위험이 강한 방향입니다.",positiveHeading:"E1 평가 상위 지표",negativeHeading:"E1 상대적 하위 지표",stage:score=>safetyStage(score,"실적 주의","실적 침체 위험"),factorDescriptions:{
+  endpoint:"/api/earnings-recession-detail",title:"기업 실적 방어",importance:"주가는 장기적으로 기업이 벌어들이는 이익과 현금흐름의 영향을 크게 받습니다. 매출·마진·이익 개선이 시장 전반으로 퍼지는지 함께 봐야 합니다.",marketImpact:"실적 방어가 약해지면 주가 밸류에이션을 지지하기 어려워질 수 있습니다. 반대로 이익과 매출 개선이 넓게 확산되면 주식시장의 펀더멘털 기반이 강해집니다.",highMeaning:"높을수록 미국 기업 실적이 양호한 방향입니다.",lowMeaning:"낮을수록 실적 침체 위험이 강한 방향입니다.",positiveHeading:"E1 평가가 높은 지표",negativeHeading:"E1 상대적 하위 지표",stage:score=>safetyStage(score,"실적 주의","실적 침체 위험"),factorDescriptions:{
     epsGrowth:"기업별 주당순이익 증가율이 전년보다 강해지는지 확인합니다.",
     margin:"영업이익률이 유지되거나 개선되는지 살펴봅니다.",
     revenueGrowth:"매출이 전년 동기보다 얼마나 성장했는지 확인합니다.",
@@ -368,12 +368,14 @@ export default function BeginnerRiskGuide({topic}:{topic:Topic}){
  const earningsStoredScore=topic==="earnings-recession"?finiteScore(payload?.storedE1?.score):null;
  const factors=useMemo(()=>extractFactors(topic,payload,config),[topic,payload,config]);
  const positive=useMemo(()=>factors.filter(x=>x.score>=60).sort((a,b)=>b.score-a.score).slice(0,3),[factors]);
- const negative=useMemo(()=>{
-  if(topic!=="earnings-recession")return factors.filter(x=>x.score<45).sort((a,b)=>a.score-b.score).slice(0,3);
-  // Show factual relative bottom three, not three falsely "negative" factors.
+ const negative=useMemo(()=>factors.filter(x=>x.score<45).sort((a,b)=>a.score-b.score).slice(0,3),[factors]);
+ const earningsRelativeBottom=useMemo(()=>{
+  if(topic!=="earnings-recession")return [];
+  // Relative E1 ranks are display-only, distinct from absolute <45 negative factors.
   const highlighted=new Set(positive.map(row=>row.id));
   return factors.filter(row=>!highlighted.has(row.id)).sort((a,b)=>a.score-b.score).slice(0,3);
  },[factors,positive,topic]);
+ const displayedLower=topic==="earnings-recession"?earningsRelativeBottom:negative;
  const stage=score===null?"확인 필요":config.stage(score);
  const methodology=methodologyExplanations[topic];
  const currentVersion=reportedMethodologyVersion(topic,payload);
@@ -398,7 +400,7 @@ export default function BeginnerRiskGuide({topic}:{topic:Topic}){
    <p className="mt-1 text-sm text-slate-400">{topic==="earnings-recession"?"E1 저장 지표별 평가입니다. 메인 진단 점수의 구성요인과는 별개입니다.":"현재 저장된 구성 점수를 기준으로 강한 방향의 요인을 최대 3개씩 보여줍니다."}</p>
    <div className="mt-4 grid gap-3 md:grid-cols-2">
     <div className="bg-emerald-950/25 p-4"><h3 className="font-bold text-emerald-300">{config.positiveHeading}</h3>{positive.length?<ul className="mt-3 space-y-2 text-sm text-slate-200">{positive.map(item=><FactorListItem key={item.id} item={item} config={config}/>)}</ul>:<p className="mt-3 text-sm text-slate-400">현재 뚜렷한 기여 요인을 확인하지 못했습니다.</p>}</div>
-    <div className={topic==="earnings-recession"?"bg-slate-800/30 p-4":"bg-rose-950/20 p-4"}><h3 className={topic==="earnings-recession"?"font-bold text-slate-200":"font-bold text-rose-300"}>{config.negativeHeading}</h3>{negative.length?<ul className="mt-3 space-y-2 text-sm text-slate-200">{negative.map(item=><FactorListItem key={item.id} item={item} config={config}/>)}</ul>:<p className="mt-3 text-sm text-slate-400">{topic==="earnings-recession"?"비교할 저장 지표가 부족합니다.":"현재 뚜렷한 부담 요인을 확인하지 못했습니다."}</p>}</div>
+    <div className={topic==="earnings-recession"?"bg-slate-800/30 p-4":"bg-rose-950/20 p-4"}><h3 className={topic==="earnings-recession"?"font-bold text-slate-200":"font-bold text-rose-300"}>{config.negativeHeading}</h3>{displayedLower.length?<ul className="mt-3 space-y-2 text-sm text-slate-200">{displayedLower.map(item=><FactorListItem key={item.id} item={item} config={config}/>)}</ul>:<p className="mt-3 text-sm text-slate-400">{topic==="earnings-recession"?"비교할 저장 지표가 부족합니다.":"현재 뚜렷한 부담 요인을 확인하지 못했습니다."}</p>}</div>
    </div>
   </div>
   <details ref={calculationDetailsRef} className="zg-method-history rounded-lg bg-[#071c2a] p-4 sm:p-5" data-testid={`beginner-methodology-explanation-${topic}`}>
