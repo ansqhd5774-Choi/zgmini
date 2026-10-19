@@ -403,7 +403,7 @@ export function CompositeMarketSection({items,points,demo,loading}:{items:Summar
        >
         <div className="zg-r55-card-head">
          <span className="zg-r55-card-icon"><Icon size={18} aria-hidden="true"/></span>
-         <h3>{m.label}</h3>
+         <h3><a href={"/economic-indicators/"+({inflation:"inflation",employment:"employment",rates:"rates",credit:"credit",growth:"growth",consumption:"consumption",earnings:"earnings",liquidity:"liquidity",fundFlows:"fund-flows",breadth:"breadth",dollarFx:"dollar-fx",commodities:"commodities"}[r55DomainIds[index]])+"/"} onClick={e=>e.stopPropagation()} onKeyDown={e=>e.stopPropagation()} aria-label={m.label+" 상세페이지 열기"}>{m.label}</a></h3>
          <span onClick={e=>e.stopPropagation()}><DashboardTip label={`${m.label} 도움말`}><HelpText copy={HELP[m.label]}/></DashboardTip></span>
         </div>
         {notice&&<p data-testid="breadth-unavailable-reason" style={{margin:'6px 0',fontSize:12,lineHeight:1.5,color:'#cbd5e1'}}>{notice.message}</p>}
