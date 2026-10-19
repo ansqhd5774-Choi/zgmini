@@ -42,3 +42,13 @@ R3 공개 `historyMode=RETROSPECTIVE_PUBLICATION_DATE` 및 차트 `dailyReferenc
 - **3차 이후:** 공식 해상/군사/핵/휴전 근거를 보강하여 R4를 독립 후보 비교. 승인 없이 기존 R3 가중치를 R4 후보 가중치로 바꾸지 않는다.
 
 기존 GitHub main/D1/PC SQLite/산식/TTL/DNS/Cloudflare/scheduler 변경 없음. V33의 사용자 PC 검증과 연구 코드 통과는 Production 소스 전체 SHA나 모바일 UI 스크린샷 PASS를 뜻하지 않는다.
+
+## 2026-10-19 V49 정확 소스 가상값과 공개 관측 분리
+
+- V49 사용자 PC 읽기 전용 실행 `V49_EXACT_R3_3_PC_SHADOW_PASS`: GitHub 후보 SHA `99af2b9e5df4e7cc7e4f3aa86d2d0cefc7c9ca27`의 진짜 R3_3 분류기를 검증해 원문 110건/최신 URL 108건에서 **L10만 분류 변경** 확인.
+- 현재 1차 R3 공개값의 과거 PC/API 실제 확인치는 **36.3**. V49 후보 **38.7(+2.4)**은 `SHADOW_ONLY`이며 **한 번도 실제 공개 발행/관측된 값이 아니다**. 이를 AS_PUBLISHED 시계열에 넣거나 과거 공개점수를 정정하지 않는다.
+- R3_3 운영 반영 시 실제 점수는 추가 뉴스에 따라 다를 수 있다. 변경 전·후의 실제 공개 GET `publishedAt`을 따로 검증하고, 게시 시각 역행/동일 게시시각 점수 변경을 차단한다.
+- 분류 버전(`classifierVersion`)과 공개 방법(`IRAN_REFERENCE_FLOW_R3`), 실제 운영 코드 SHA를 구분한다. R3_2/R3_3 전환 시 기사일 재구성 차트는 비교할 수 있지만, 실제 게시 전 가상 점수를 공개 관측값으로 승격할 수 없다.
+- 분류기 PR #445는 GitHub CI PASS와 PC exact-SHA shadow PASS를 얻었으나 **아직 Draft·미병합·미배포**이며 운영 PC 실행 소스도 그대로다.
+
+이 업데이트는 별도 observation 연구 문서만 변경한다. 예약 작업·D1·운영 소스·수집·공개 점수는 변경하지 않는다.
