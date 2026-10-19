@@ -42,9 +42,43 @@ try{
   await page.waitForFunction(()=>!document.querySelector('button[aria-label="메시지 전송"]')?.hasAttribute("disabled"),{timeout:15000});
   await page.getByRole("button",{name:"메시지 전송"}).click();
   await page.getByText("오늘 시장 전망이 궁금해요").waitFor({state:"visible",timeout:10000});
+  const messageItem=page.locator(".zg-community-item").first();
+  const messageLine=messageItem.locator(".zg-community-copy");
+  const lineText=await messageLine.textContent();
+  assert.match(lineText??"",/^익명(?:[0-9]{4}|방문자) : 오늘 시장 전망이 궁금해요 \d{2}:\d{2}$/,"Nickname : message time is inline without parentheses");
+  const singleLine=await messageItem.evaluate(item=>{
+    const copy=item.querySelector(".zg-community-copy");
+    const body=item.querySelector(".zg-community-body");
+    const nick=copy.querySelector("b");
+    const time=copy.querySelector("time");
+    const before=copy.clientHeight;
+    const original=body.textContent;
+    const title=body.getAttribute("title");
+    const timeFont=getComputedStyle(time).fontSize;
+    const noWrap=[copy,body,time].every(el=>getComputedStyle(el).whiteSpace==="nowrap");
+    const compactTime=Number.parseFloat(timeFont)<=10;
+    body.textContent="증시 흐름을 긴 문장으로 설명한 내용입니다 ".repeat(30);
+    const lineStillOne=copy.clientHeight===before;
+    const ellipsis=getComputedStyle(body).textOverflow==="ellipsis"&&body.scrollWidth>body.clientWidth;
+    const sameRow=Math.abs(nick.getBoundingClientRect().top-time.getBoundingClientRect().top)<12;
+    body.textContent=original;
+    return {noWrap,compactTime,lineStillOne,ellipsis,sameRow,titlePreserved:title===original};
+  });
+  assert.deepEqual(singleLine,{noWrap:true,compactTime:true,lineStillOne:true,ellipsis:true,sameRow:true,titlePreserved:true},"Every message stays one row, even when long");
+  const report=messageItem.getByRole("button",{name:"메시지 신고"});
+  assert.equal((await report.textContent())?.trim(),"","Report button must display only the icon");
+  if(width>430){
+   assert.equal(await report.evaluate(el=>getComputedStyle(el).opacity),"0","Report icon hidden until hover");
+   await messageItem.hover();
+   await page.waitForFunction(()=>Number(getComputedStyle(document.querySelector(".zg-community-item .zg-community-report")).opacity)>=.99);
+  }else{
+   assert(Number(await report.evaluate(el=>getComputedStyle(el).opacity))>.5,"Mobile report icon accessible without hover");
+  }
   await page.screenshot({path:`artifacts/community-chat-browser/chat-open-${width}.png`});
-  await page.getByRole("button",{name:"메시지 신고"}).click();
-  await page.getByText("신고됨").waitFor({state:"visible"});
+  await report.click();
+  const reportedIcon=messageItem.getByRole("button",{name:"신고 완료"});
+  await reportedIcon.waitFor({state:"attached",timeout:10000});
+  assert.equal(await reportedIcon.isDisabled(),true);
   await page.keyboard.press("Escape");
   assert.equal(await panel.getAttribute("aria-hidden"),"true");
   if(width!==390) assert.equal(await panel.evaluate(el=>getComputedStyle(el).animationName),"zg-community-exit");
