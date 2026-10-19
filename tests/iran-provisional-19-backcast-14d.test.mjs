@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {provisionalIran19Backcast,IRAN_PROVISIONAL_ANCHOR_R1 as ANCHOR}
  from '../lib/iran-progress/provisional-19-backcast-r1.mjs';
 import {iranView} from '../lib/iran-progress/view.mjs';
+import {kstCalendarDate} from '../lib/iran-progress/chart-history.mjs';
 import {FLOW_WEIGHTS} from '../lib/iran-progress/reference-flow-r1.mjs';
 const DAY=86400000,stamp=d=>Date.parse(d+'T00:00:00Z');
 const observed=[
@@ -120,4 +121,46 @@ test('validated V58 37.9 input keeps API raw 37.9 and renders provisional 19 end
  assert.equal(view.chartHistory.at(-2).value,19.8);
  assert.equal(view.history.at(-1).value,19);
  assert.deepEqual(raw,before);
+});
+
+test('KST midnight advances only the 14-day view; UTC source and 19-point anchor remain intact',()=>{
+ const source=body();
+ source.score=37.9;source.eventCount=12;source.domains.MILITARY=12;
+ source.history=[...observed,{date:'2026-10-19',value:37.9,delta:-0.8}];
+ const original=structuredClone(source);
+ const before=iranView(source,Date.parse('2026-10-19T14:59:59Z'));
+ const after=iranView(source,Date.parse('2026-10-19T15:00:01Z'));
+ assert.equal(kstCalendarDate(Date.parse('2026-10-19T14:59:59Z')),'2026-10-19');
+ assert.equal(kstCalendarDate(Date.parse('2026-10-19T15:00:01Z')),'2026-10-20');
+ assert.equal(before.chartHistory[0].date,'2026-10-06');
+ assert.equal(before.chartHistory.at(-1).date,'2026-10-19');
+ assert.equal(after.chartHistory[0].date,'2026-10-07');
+ assert.equal(after.chartHistory.at(-1).date,'2026-10-20');
+ assert.equal(after.chartHistory.at(-1).phase,'NO_NEW_RECORDED_CHANGE');
+ assert.equal(after.chartHistory.at(-1).carried,true);
+ assert.equal(after.chartHistory.at(-1).measured,false);
+ assert.equal(after.chartHistory.at(-1).value,19);
+ assert.equal(after.chartHistory.length,14);
+ assert.equal(after.score,19);
+ assert.equal(after.rawScore,37.9);
+ assert.equal(source.asOfDate,'2026-10-19');
+ assert.deepEqual(source,original);
+});
+test('KST rolling horizon continues applying actual R3 publication-day changes after anchor',()=>{
+ const source=body();
+ source.asOfDate='2026-10-20';
+ source.publishedAt=Date.parse('2026-10-20T03:00:00Z');
+ source.collectionCheckedAt=source.publishedAt;
+ source.score=37.9;source.domains.MILITARY=12;
+ source.history=[...observed,{date:'2026-10-19',value:38.7,delta:0},{date:'2026-10-20',value:37.9,delta:-0.8}];
+ const original=structuredClone(source);
+ const view=iranView(source,Date.parse('2026-10-20T03:01:00Z'));
+ assert.equal(view.rawScore,37.9);
+ assert.equal(view.score,18.2);
+ assert.equal(view.chartHistory.length,14);
+ assert.equal(view.chartHistory[0].date,'2026-10-07');
+ assert.equal(view.chartHistory.at(-1).date,'2026-10-20');
+ assert.equal(view.chartHistory.at(-1).phase,'R3_PUBLICATION_DATE_DELTA');
+ assert.equal(view.chartHistory.at(-1).value,18.2);
+ assert.deepEqual(source,original);
 });
