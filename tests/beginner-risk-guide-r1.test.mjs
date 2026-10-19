@@ -52,7 +52,10 @@ test('earnings beginner guide never misattributes E1 factor rankings to separate
  assert.match(guide,/E1 저장 지표 평가/);
  assert.match(guide,/메인 진단 점수의 구성요인과는 별개입니다/);
  assert.match(guide,/E1 평가가 높은 지표/);
- assert.match(guide,/E1 평가가 낮은 지표/);
+ assert.match(guide,/E1 상대적 하위 지표/);
+ assert.match(guide,/const earningsRelativeBottom=useMemo/);
+ assert.match(guide,/const displayedLower=topic==="earnings-recession"\?earningsRelativeBottom:negative/);
+ assert.match(guide,/const negative=useMemo\(\(\)=>factors\.filter\(x=>x\.score<45\)/);
  assert.match(guide,/E1 저장 점수는 어떻게 계산하나요\?/);
  assert.match(guide,/else if\(topic==="earnings-recession"\)rows=payload\?\.storedE1\?\.indicators\?\?\[\]/);
  assert.match(guide,/topic==="earnings-recession"\?/);
