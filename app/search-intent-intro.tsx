@@ -42,5 +42,12 @@ export default function SearchIntentIntro({topic}:{topic:Topic}){
       <p className="mt-1 text-[12px] leading-[1.45] text-slate-300 sm:text-[13px]">{copy[topic]}</p>
     </div>;
   }
+  if(topic==="asset-bubble"||topic==="debt-risk"||topic==="supply-shock"){
+    const heading=topic==="asset-bubble"?["미국 자산시장,","버블 위험은?"]:topic==="debt-risk"?["미국 가계·기업,","부채 위험은?"]:["미국 공급망,","충격 위험은?"];
+    return <div className="mb-4 max-w-4xl border-l-[3px] border-sky-400/80 pl-3 sm:mb-5 sm:pl-4" data-testid={`search-intent-intro-${topic}`}>
+      <p className="text-[18px] font-extrabold leading-[1.3] tracking-[-0.025em] text-slate-50 sm:text-[22px]">{heading[0]} <span className="text-sky-300">{heading[1]}</span></p>
+      <p className="mt-1 text-[12px] leading-[1.45] text-slate-300 sm:text-[13px]">{copy[topic]}</p>
+    </div>;
+  }
   return <p className="mt-4 max-w-4xl text-sm leading-7 text-slate-300 sm:text-base" data-testid={`search-intent-intro-${topic}`}>{copy[topic]}</p>;
 }

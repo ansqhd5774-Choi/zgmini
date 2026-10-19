@@ -12,6 +12,7 @@ import {MarketFearGreedChart,type MarketFearGreedChartPoint,type MarketFearGreed
 import {InflationMiniChart} from "../inflation/inflation-mini-chart";
 import {DebtFavoriteButton,DebtFavoriteHeaderIcon} from "./debt-favorite-button";
 import "./debt-indicator-r2.css";
+import "../risk-last3-hero-parity-r2.css";
 import "../shared-risk-indicator-width-r1.css";
 
 type Row={id:string;name:string;status:string;score:number|null;value:number|null;unit:string;observationDate:string|null;source:string;weight:number;previousValue?:number|null;previousObservationDate?:string|null;trend?:Array<{date:string;value:number}>;nextReleaseDate?:string|null};
