@@ -34,7 +34,7 @@ export default function CommunityChat({enabled}:{enabled:boolean}){
    setNickname(value);
   }catch{setNickname("익명방문자");}
  },[]);
- useEffect(()=>{if(open){setEverOpened(true);requestAnimationFrame(()=>inputRef.current?.focus());}},[open]);
+ useEffect(()=>{if(open){setEverOpened(true);requestAnimationFrame(()=>inputRef.current?.focus());}else{setCaptchaToken("");}},[open]);
  useEffect(()=>{if(!open)return;const onKey=(event:KeyboardEvent)=>{if(event.key==="Escape")setOpen(false);};window.addEventListener("keydown",onKey);return()=>window.removeEventListener("keydown",onKey);},[open]);
  useEffect(()=>{
   if(!enabled||!open)return;
@@ -67,7 +67,7 @@ export default function CommunityChat({enabled}:{enabled:boolean}){
   function mount(){
    const api=window.turnstile;
    if(!active||!api||!captchaMount.current||captchaWidget.current)return;
-   captchaWidget.current=api.render(captchaMount.current,{sitekey:siteKey,theme:"dark",callback:(token:unknown)=>setCaptchaToken(typeof token==="string"?token:""),"expired-callback":()=>setCaptchaToken(""),"error-callback":()=>setCaptchaToken("")});
+   captchaWidget.current=api.render(captchaMount.current,{sitekey:siteKey,theme:"dark",callback:(token:unknown)=>{if(active)setCaptchaToken(typeof token==="string"?token:"");},"expired-callback":()=>{if(active)setCaptchaToken("");},"error-callback":()=>{if(active)setCaptchaToken("");}});
   }
   let script=document.querySelector<HTMLScriptElement>("#zg-community-turnstile");
   if(!script){script=document.createElement("script");script.id="zg-community-turnstile";script.src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit";script.async=true;script.defer=true;document.head.appendChild(script);}
@@ -110,7 +110,7 @@ export default function CommunityChat({enabled}:{enabled:boolean}){
    </div>
    <form className="zg-community-compose" onSubmit={submit}>
     <label htmlFor="zg-community-input">{nickname||"익명"} · 공개 채팅</label>
-    {writeEnabled&&siteKey&&<div className="zg-community-captcha" ref={captchaMount} aria-label="봇 방지 인증"/>}
+    {writeEnabled&&siteKey&&<div className={`zg-community-captcha${captchaToken?" is-verified":""}`} ref={captchaMount} aria-label="봇 방지 인증" aria-hidden={Boolean(captchaToken)}/>}
     <div><input id="zg-community-input" ref={inputRef} value={draft} onChange={event=>setDraft(event.target.value)} placeholder={writeEnabled?"시장에 대한 의견 입력":"채팅 연결 후 입력 가능"} maxLength={300} disabled={status!=="ready"||!writeEnabled||sending} autoComplete="off"/><button type="submit" aria-label="메시지 전송" disabled={status!=="ready"||!writeEnabled||sending||!captchaToken||!draft.trim()}><Send size={16}/></button></div>
     <small role="status">{error||"누구나 볼 수 있는 공개 채팅입니다. 개인정보를 공유하지 마세요."}</small>
    </form>
