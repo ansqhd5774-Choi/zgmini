@@ -30,3 +30,29 @@
 - 향후 source gate에서는 PC working-tree raw SHA와 GitHub LF blob SHA를 직접 비교하지 말고, line-ending 정규화 후 Git blob 또는 Git index blob과 비교할 것.
 
 이 정정은 PC DB/D1/스케줄/공개 점수/배포를 변경하지 않는다.
+
+## V49 실제 PC Exact-SHA 분류기 Shadow 검증 (2026-10-19 10:27 KST)
+
+- PC 읽기 전용 도구 상태: `V49_EXACT_R3_3_PC_SHADOW_PASS`, `FINAL_EXIT_CODE=0`.
+- 소스는 GitHub 고정 commit `99af2b9e5df4e7cc7e4f3aa86d2d0cefc7c9ca27`에서 얻어 SHA 검증한 실제 `reference-flow-r3.mjs` blob `d94f76f55d4649f5fa28ac00afa1eedeab6f60b0`와 기존 고정 weight blob `16e821911ee3951f4a403264889a80c5a336ab46`를 사용.
+- 원문 receipts 110개, 최신 고유 URL 108개, 구버전 판단 연결 108/108, **실제 분류 차이 1개(L10만)**. 현재 반영 신호 11→10, 기존 보류 중복 1 유지.
+- 기존 저장 점수 36.3 → **Shadow 후보** 38.7 (+2.4), 군사 16·해상 20; 가중치 변경 없음, 재구성 차트 7점, 기존 공개 당시 이력 보존.
+- `providerCalls=0`, `dbWrites=0`, `publishCalls=0`, `schedulerChanges=0`, `runtimeSourceChanges=0`. 실제 Production 게시 또는 PC 런타임 전환 아님.
+- 원장 관측 범위는 PC 읽기 시점 스냅샷. 후속 뉴스가 실제로 추가·수정되면 실제 게시 점수는 38.7로 고정된다고 보장할 수 없음. 결과·출처 최신성을 게시 시 다시 확인해야 함.
+
+## V47–V48 격리 통합 검증 및 배포 Gate
+
+- V46 R3_2→R3_3 기존 저장 source/decision 보존·반복 실행 무중복·실패 시 last-valid 보존을 in-memory SQLite에서 검증.
+- V47 `calculateOperationalR3`가 생성한 실제 R3_3 projection을 공개 유효성 계약으로 검사, mock D1 게시/정확한 재조회, 원격 타임아웃 후 불명확한 결과 차단, 원격 newer snapshot 보존 검증.
+- V48 `storedIranProgressResponse`와 `iranView`로 후보 38.7 수신 및 score 변조 시 HTTP 503 fail-closed를 확인. 이는 동일 코드의 **mock D1/API test**이며 실제 Production UI 검증과 구분.
+- V48 최종 GitHub CI run `39184781315` **SUCCESS**, 당시 candidate head `99af2b9e5df4e7cc7e4f3aa86d2d0cefc7c9ca27`.
+
+### 실제 다음 필수 절차 (무단 실행 금지)
+
+1. Candidate PR과 *그때*의 최신 `main`, 원격 mergeability, 실제 Production source/authorized SHA를 확인. 다른 주제 PR로 main이 전진했어도 운영 checkout을 강제 교체하거나 자동 병합하지 않음.
+2. 승인된 변경 범위에서만 필요한 소스 패치 및 공식 Git Integration deployment exact SHA 검증. 분류기 변경이 공개 Site Worker에 영향을 주지 않는다면 **데이터 갱신용 불필요한 재배포를 강제하지 않음**.
+3. PC 예약 작업의 활성 E: 런타임 경로·구버전 R3_2 SHA·등록된 launcher·실행 기록 재확인 후, 사용자 승인 방식으로 **별도 candidate worktree/test→최소 전환**. 기존 실행/저장/복구 자료 보존.
+4. 실제 운영 수집·계산·로컬 체크포인트 성공을 확인한 다음 승인된 publish를 한 번만 수행. 결과 불명확할 때 무조건 재실행하지 말고 저장 ledger/D1을 먼저 재조회.
+5. 공개 D1 결과의 `sourceVersion/sourceStoredAt`, 게시 시각, API 응답, PC·모바일 UI 값과 날짜를 각각 확인하고, 다음 정규 Scheduler 1회 성공을 별도로 확인.
+
+R4 별도 실증 연구는 2차 R3 MVP 게시의 BLOCKER가 아님. **단독 CI PASS, V49 Shadow PASS는 배포 완료가 아님**.
