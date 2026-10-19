@@ -17,7 +17,8 @@
   ],
   "vars": {
     "ZGMINI_COMPUTE_TARGET": "pc",
-    "ZGMINI_COLLECTION_TARGET": "pc"
+    "ZGMINI_COLLECTION_TARGET": "pc",
+    "COMMUNITY_CHAT_SITE_KEY": "0x4AAAAAAFazwtsIZAa_fZtP"
   },
   "triggers": {
     "crons": []
