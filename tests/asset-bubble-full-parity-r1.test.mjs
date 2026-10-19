@@ -41,6 +41,6 @@ test("ten-column table and mobile cards preserve six live identifiers, four pend
  assert.match(css,/asset-r2-mobile-list\{display:grid/);
  assert.match(favorite,/zgmini:asset:favorites:v1/);
  assert.match(favorite,/leftDevelopment!==rightDevelopment/);
- assert.match(panel,/value:payload\?\.scoreComparisons\?\.week\?\?null/);
+ assert.match(panel,/value:storedComparison\?\.week\?\?null/);
  assert.match(panel,/typeof value!=="number"\|\|!Number.isFinite\(value\)/);
 });

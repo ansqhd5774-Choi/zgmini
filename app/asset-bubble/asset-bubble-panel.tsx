@@ -7,6 +7,7 @@ import {HelpText} from '../help-copy';
 import {useMemo} from "react";
 import {MarketCardHeader} from "../market-card-header";
 import {MarketScoreOrb} from "../market-score-orb";
+import {liquidityStoredScoreComparisons} from "../../worker/projection-builders/liquidity-stored-history.mjs";
 import {MarketTrendFrame} from "../market-trend-frame";
 import {MarketFearGreedChart,type MarketFearGreedChartPoint,type MarketFearGreedChartValidPoint} from "../market-fear-greed-chart";
 import {InflationMiniChart} from "../inflation/inflation-mini-chart";
@@ -49,19 +50,23 @@ export default function AssetBubblePanel({initialPayload}:{initialPayload?:Paylo
  const trend=useMemo(()=>(payload?.trend??[]).filter(p=>typeof p.value==="number"&&Number.isFinite(p.value)).map(p=>({date:p.label,score:p.value} satisfies MarketFearGreedChartPoint)),[payload?.trend]);
  const latest=trend.at(-1),latestPoint:MarketFearGreedChartValidPoint|null=latest?{date:latest.date,score:latest.score as number}:null;
  const axisTicks=trend.map(p=>p.date),axisLabels=new Map(trend.map(p=>[p.date,p.date.slice(2,7).replace("-","/")]));
+ // The public saved comparison object takes precedence, including intentional nulls.
+ // Only if absent, reuse the existing saved-score delta reader; it rejects
+ // missing anchors, interpolated weeks, and score/trend lineage mismatch.
+ const storedComparison=payload?.scoreComparisons??liquidityStoredScoreComparisons(payload?.trend??[],payload?.asOfDate??"",score);
  const scoreComparisonItems=[
-  {label:"1주",value:payload?.scoreComparisons?.week??null},
-  {label:"1개월",value:payload?.scoreComparisons?.month??null},
-  {label:"3개월",value:payload?.scoreComparisons?.threeMonth??null},
-  {label:"6개월",value:payload?.scoreComparisons?.sixMonth??null},
-  {label:"1년",value:payload?.scoreComparisons?.year??null},
+  {label:"1주",value:storedComparison?.week??null},
+  {label:"1개월",value:storedComparison?.month??null},
+  {label:"3개월",value:storedComparison?.threeMonth??null},
+  {label:"6개월",value:storedComparison?.sixMonth??null},
+  {label:"1년",value:storedComparison?.year??null},
  ];
  const rows=new Map((payload?.indicators??[]).map(x=>[x.id,x]));
  return <>
   <section className="cnn-reference-panel fg-card fg-shared-shell asset-bubble-target-card" data-testid="asset-bubble-detail-hero" data-market-state={loading?"loading":score===null?"unavailable":"ready"} aria-busy={loading}>
    <div className="fg-header-slot"><MarketCardHeader flag="/flags/us.svg" eyebrow={candidate?(publishedCurrentVintage?'ZGMINI ASSET BUBBLE R10 · 참고 지표':'ZGMINI ASSET BUBBLE R10 · 연구 후보'):'ZGMINI ASSET BUBBLE R9'} title="미국 자산 버블" description="저장된 현재 개정 자료 기반" dateLabel="데이터 기준일" date={dateLabel(payload?.asOfDate)} source={payload?.methodologyVersion??"ASSET_BUBBLE_R9"}/></div>
    <div className="fg-content-slot">
-    <div className="fg-score-slot"><MarketScoreOrb score={loading||score===null?"—":score.toFixed(1)} state={loading?"확인 중":stage(score)} variant="hero" comparisonItems={scoreComparisonItems} comparisonAriaLabel="자산 버블 안전점수 변화" metaDate={dateLabel(payload?.asOfDate)}/></div>
+    <div className="fg-score-slot"><MarketScoreOrb score={loading||score===null?"—":score.toFixed(1)} state={loading?"확인 중":stage(score)} variant="hero" comparisonItems={scoreComparisonItems} comparisonAriaLabel="자산 버블 안전점수 변화"/></div>
     <MarketTrendFrame className="fg-analysis-slot"><div className="fg-chart-slot"><div className="fg-renderer"><MarketFearGreedChart showExtrema data={trend} axisTicks={axisTicks} axisLabels={axisLabels} latestPoint={latestPoint} instanceKey="asset-bubble-1y" gradientId="asset-bubble-fill" formatTooltipLabel={dateLabel} emptyLabel={loading?"확인 중":"계산 가능한 최근 1년 이력 없음"}/></div></div></MarketTrendFrame>
    </div>
    <div className="fg-footer-slot"><div className="cnn-panel-note"><span>차트 원칙</span><strong>최근 1년 · 계산 가능한 실제 분기점수만 표시 · 임의 보간 없음</strong></div></div>

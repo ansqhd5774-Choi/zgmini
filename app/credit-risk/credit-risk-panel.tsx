@@ -13,6 +13,7 @@ import {InflationMiniChart,type InflationMiniTrendPoint} from "../inflation/infl
 import {CreditFavoriteButton,CreditFavoriteHeaderIcon} from "./credit-favorite-button";
 import {creditReleaseInfo} from "./credit-release-calendar.mjs";
 import "./credit-indicator-r2.css";
+import "../risk-liquidity-credit-mobile-parity-r3.css";
 import "./credit-hero-typography-r1.css";
 import "../shared-risk-indicator-width-r1.css";
 

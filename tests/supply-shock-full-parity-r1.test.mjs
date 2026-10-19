@@ -16,7 +16,7 @@ test("ten-column desktop table, mobile cards and evidence-safe null comparison /
  assert.match(p,/className="supply-r2-mobile-list"/);
  assert.equal((p.match(/points=\{row\?\.trend\}/g)||[]).length,2);
  assert.equal((p.match(/fmtValue\(row\?\.previousValue,row\?\.unit\)/g)||[]).length,2);
- assert.match(p,/value:payload\?\.scoreComparisons\?\.week\?\?null/);
+ assert.match(p,/value:storedComparison\?\.week\?\?null/);
  assert.doesNotMatch(p,/dayDelta=|periodDelta=/);assert.match(p,/<MarketFearGreedChart showExtrema/);
  assert.match(css,/min-width:1090px!important/);assert.match(css,/@media\(max-width:767px\)/);assert.match(css,/supply-r2-mobile-list\{display:grid/);
  assert.match(favorite,/zgmini:supply:favorites:v1/);assert.match(favorite,/leftDevelopment!==rightDevelopment/);
