@@ -1,0 +1,95 @@
+/* Supply detail: inflation/recession table parity, limited to this page. */
+.supply-r2-indicators .supply-indicator-table-r2{width:100%;min-width:1080px!important;table-layout:fixed}
+.supply-r2-indicators .supply-indicator-table-r2 th,
+.supply-r2-indicators .supply-indicator-table-r2 td{text-align:center;padding:11px 7px;overflow-wrap:normal}
+.supply-r2-indicators .supply-indicator-table-r2 col.supply-col-favorite{width:4%}
+.supply-r2-indicators .supply-indicator-table-r2 col.supply-col-name{width:14%}
+.supply-r2-indicators .supply-indicator-table-r2 col.supply-col-content{width:17%}
+.supply-r2-indicators .supply-indicator-table-r2 col.supply-col-criterion{width:12%}
+.supply-r2-indicators .supply-indicator-table-r2 col.supply-col-previous{width:9%}
+.supply-r2-indicators .supply-indicator-table-r2 col.supply-col-current{width:9%}
+.supply-r2-indicators .supply-indicator-table-r2 col.supply-col-release{width:10%}
+.supply-r2-indicators .supply-indicator-table-r2 col.supply-col-judgement{width:7%}
+.supply-r2-indicators .supply-indicator-table-r2 col.supply-col-spark{width:13%}
+.supply-r2-indicators .supply-indicator-table-r2 col.supply-col-help{width:5%}
+.supply-r2-indicators .supply-indicator-table-r2 tbody th{width:auto;overflow-wrap:anywhere}
+.supply-r2-indicators .supply-indicator-table-r2 td:nth-child(2),
+.supply-r2-indicators .supply-indicator-table-r2 td:nth-child(3),
+.supply-r2-indicators .supply-indicator-table-r2 td:nth-child(4),
+.supply-r2-indicators .supply-indicator-table-r2 td:nth-child(5),
+.supply-r2-indicators .supply-indicator-table-r2 td:last-child{width:auto}
+.supply-r2-criterion{color:#f2f7fa;line-height:1.4}
+.supply-r2-value strong,.supply-r2-release strong{display:block;color:#f2f7fa;font-size:12px}
+.supply-r2-value small,.supply-r2-release small{display:block;margin-top:3px;white-space:nowrap}
+.supply-r2-spark-cell{padding-left:7px!important;padding-right:7px!important}
+.supply-r2-spark-cell .inflation-mini-chart{width:112px;max-width:100%;height:32px}
+.supply-r2-spark-cell .inflation-mini-chart-empty{min-width:0;max-width:100%}
+.supply-r2-indicators [data-judgement="positive"] .inflation-mini-chart-line{stroke:#77e59c}
+.supply-r2-indicators [data-judgement="neutral"] .inflation-mini-chart-line{stroke:#cbd5e1}
+.supply-r2-indicators [data-judgement="negative"] .inflation-mini-chart-line{stroke:#ff9a9a}
+.supply-r2-mobile-list{display:none}
+.supply-r2-indicators .supply-indicator-table-r2 tr[data-development="true"]{opacity:.82}
+.supply-shock-target-card .cnn-score-observed-date{display:none}
+.supply-shock-target-card .cnn-score-comparisons.is-multi{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));width:100%;max-width:360px;margin-inline:auto}
+.supply-shock-target-card .cnn-score-comparisons.is-multi .cnn-score-comparison{display:grid;grid-template-columns:minmax(0,1fr);grid-template-rows:auto auto;place-items:center;min-width:0;gap:2px;padding:0 4px;text-align:center}
+.supply-shock-target-card .cnn-score-comparisons.is-multi .cnn-score-comparison+.cnn-score-comparison{border-left:1px solid rgba(80,112,137,.55)}
+.supply-shock-target-card .cnn-score-comparisons.is-multi .cnn-score-comparison>span,
+.supply-shock-target-card .cnn-score-comparisons.is-multi .cnn-score-comparison>strong{display:block;min-width:0;width:100%;white-space:nowrap;text-align:center}
+@media(max-width:767px){
+ .supply-r2-indicators{padding:14px}
+ .supply-r2-indicators .supply-r2-table-wrap{display:none}
+ .supply-r2-mobile-list{display:grid;gap:8px}
+ .supply-r2-mobile-card{min-width:0;padding:12px;border:1px solid rgba(68,103,133,.3);background:rgba(4,18,31,.5)}
+ .supply-r2-mobile-card.is-development{opacity:.82}
+ .supply-r2-mobile-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+ .supply-r2-mobile-head>div:first-child{min-width:0}
+ .supply-r2-mobile-title{display:flex;align-items:flex-start;gap:6px;min-width:0}
+ .supply-r2-mobile-title>div{min-width:0}
+ .supply-r2-mobile-title strong{display:block;color:#eef5fa;font-size:12px;line-height:1.35;overflow-wrap:anywhere}
+ .supply-r2-mobile-title small{display:block;margin-top:2px;color:#7891a6;font-size:9px}
+ .supply-r2-mobile-actions{display:flex;align-items:center;gap:3px;flex:0 0 auto}
+ .supply-r2-mobile-actions .inflation-judgement{min-width:52px;height:22px;padding:0 7px;font-size:10px}
+ .supply-r2-mobile-content{margin:8px 0 0;color:#b9cad8;font-size:11px;line-height:1.45}
+ .supply-r2-mobile-criterion{display:flex;align-items:center;gap:7px;margin:6px 0 0;color:#d4e0e9;font-size:10px}
+ .supply-r2-mobile-criterion span{color:#7891a6;font-weight:700}
+ .supply-r2-mobile-spark{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:8px;padding-top:8px;border-top:1px solid rgba(68,103,133,.24)}
+ .supply-r2-mobile-spark>span{color:#7891a6;font-size:9px;font-weight:700;flex:0 0 auto}
+ .supply-r2-mobile-spark .inflation-mini-chart{width:148px;max-width:56vw;height:30px;margin:0}
+ .supply-r2-mobile-metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));margin-top:10px;border-top:1px solid rgba(68,103,133,.24)}
+ .supply-r2-mobile-metrics>div{min-width:0;padding:8px 4px 0;text-align:center}
+ .supply-r2-mobile-metrics>div+div{border-left:1px solid rgba(68,103,133,.24)}
+ .supply-r2-mobile-metrics span,.supply-r2-mobile-metrics strong,.supply-r2-mobile-metrics small{display:block;min-width:0}
+ .supply-r2-mobile-metrics span{color:#7891a6;font-size:9px;font-weight:700}
+ .supply-r2-mobile-metrics strong{margin-top:3px;color:#f2f7fa;font-size:11px;white-space:nowrap}
+ .supply-r2-mobile-metrics small{margin-top:2px;color:#7891a6;font-size:9px;overflow-wrap:anywhere}
+ .fg-card.fg-shared-shell.supply-shock-target-card .cnn-score-comparisons.is-multi{width:100%;max-width:none}
+ .fg-card.fg-shared-shell.supply-shock-target-card .cnn-score-comparisons.is-multi .cnn-score-comparison{padding:0 1px;gap:1px}
+ .fg-card.fg-shared-shell.supply-shock-target-card .cnn-score-comparisons.is-multi .cnn-score-comparison>span{font-size:8px;line-height:1}
+ .fg-card.fg-shared-shell.supply-shock-target-card .cnn-score-comparisons.is-multi .cnn-score-comparison>strong{font-size:9.5px;line-height:1}
+}
+
+/* Match the existing three detail tables without changing their shared CSS. */
+.supply-r2-indicators .supply-indicator-table-r2{width:100%;min-width:1090px!important;table-layout:fixed}
+.supply-r2-indicators .supply-indicator-table-r2 :is(th,td){width:auto!important;box-sizing:border-box}
+.supply-r2-indicators .supply-indicator-table-r2 col:nth-child(1){width:4%!important}
+.supply-r2-indicators .supply-indicator-table-r2 col:nth-child(2){width:15%!important}
+.supply-r2-indicators .supply-indicator-table-r2 col:nth-child(3){width:17%!important}
+.supply-r2-indicators .supply-indicator-table-r2 col:nth-child(4){width:11%!important}
+.supply-r2-indicators .supply-indicator-table-r2 col:nth-child(5){width:10%!important}
+.supply-r2-indicators .supply-indicator-table-r2 col:nth-child(6){width:10%!important}
+.supply-r2-indicators .supply-indicator-table-r2 col:nth-child(7){width:10%!important}
+.supply-r2-indicators .supply-indicator-table-r2 col:nth-child(8){width:7%!important}
+.supply-r2-indicators .supply-indicator-table-r2 col:nth-child(9){width:12%!important}
+.supply-r2-indicators .supply-indicator-table-r2 col:nth-child(10){width:4%!important}
+
+/* Asset-only status colors and verified comparisons; no shared styles changed. */
+.supply-shock-target-card:has(.cnn-score-orb[aria-label*="양호"]){--supply-score-color:#45d99f}
+.supply-shock-target-card:has(.cnn-score-orb[aria-label*="중립"]){--supply-score-color:#94a3b8}
+.supply-shock-target-card:has(.cnn-score-orb[aria-label*="주의"]),
+.supply-shock-target-card:has(.cnn-score-orb[aria-label*="위험"]){--supply-score-color:#ff7076}
+.supply-shock-target-card .cnn-spectrum-center .cnn-score-value,
+.supply-shock-target-card .cnn-spectrum-center>span{color:var(--supply-score-color,#94a3b8)!important}
+.supply-shock-target-card .recharts-area-curve{stroke:var(--supply-score-color,#94a3b8)}
+.supply-shock-target-card #supply-shock-fill stop:first-child{stop-color:var(--supply-score-color,#94a3b8)}
+.supply-shock-target-card .cnn-latest-point circle,
+.supply-shock-target-card .recharts-active-dot circle{fill:var(--supply-score-color,#94a3b8)}
