@@ -82,8 +82,10 @@ export default function EconomicDetailPanel({id}:{id:EconomicDomainId}){
  const comparisons=[{label:"1주",value:periods.week??null},{label:"1개월",value:periods.month??null},{label:"3개월",value:periods.threeMonth??null},{label:"6개월",value:periods.sixMonth??null},{label:"1년",value:periods.year??null}];
  const observations=(domain?.indicators??[]).filter((row):row is Indicator=>Boolean(row&&typeof row==="object"));
  const scored=observations.filter(item=>item.status==="READY"&&validScore(item.score));
- const strongest=[...scored].sort((a,b)=>(b.score??0)-(a.score??0)).slice(0,3);
- const weakest=[...scored].sort((a,b)=>(a.score??0)-(b.score??0)).slice(0,3);
+ const ranked=[...scored].sort((a,b)=>(b.score??0)-(a.score??0));
+ const highCount=Math.min(3,Math.ceil(ranked.length/2)),lowCount=Math.min(3,Math.floor(ranked.length/2));
+ const strongest=ranked.slice(0,highCount);
+ const weakest=ranked.slice(ranked.length-lowCount).reverse();
  const date=dated(domain?.asOfDate)?domain.asOfDate:dated(payload?.asOfDate)?payload.asOfDate:null;
  const publicNote=domain?.methodologyVersion??"공개 저장 결과";
  const color=tone(score);
