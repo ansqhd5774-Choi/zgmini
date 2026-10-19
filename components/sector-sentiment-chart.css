@@ -31,3 +31,6 @@
 .zg-theme-next:disabled{opacity:.3;cursor:default}
 @media(max-width:600px){.zg-sector-chart{padding:12px}.zg-sector-chart h2{font-size:16px}.zg-sector-chart-legend{gap:2px}.zg-sector-chart-legend button{font-size:9px}}
 @media(max-width:420px){.zg-sector-chart h2{font-size:14px}.zg-sector-chart h2>svg{width:16px;height:16px;margin-right:4px}}
+
+.zg-sector-chart:has(.zg-sector-observation){height:auto;min-height:232px}
+.zg-sector-observation{font-size:10px;line-height:1.5;color:#9db0c2;margin:0 0 6px;overflow-wrap:anywhere}

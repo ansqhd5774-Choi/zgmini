@@ -2,6 +2,8 @@ import {PUBLIC_DISPLAY_MAX_AGE_MS} from './public-display-freshness.mjs';
 import {publicFeedStore} from './public-feed-store.mjs';
 import {SECTOR_FEAR_GREED_R3_PUBLIC_VERSION,SECTOR_FEAR_GREED_R3_SECTORS,SECTOR_FEAR_GREED_R3_REQUIRED_HISTORY} from '../lib/market-score/sector-fear-greed-r3-public.mjs';
 
+import {SECTOR_PROVISIONAL_KEY,validSectorProvisional} from '../lib/market-score/sector-provisional.mjs';
+
 export const SECTOR_FEAR_GREED_R3_FEED_KEY='sector-fear-greed-r3';
 
 const validDate=x=>typeof x==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(x)&&Number.isFinite(Date.parse(`${x}T00:00:00Z`));
@@ -26,5 +28,13 @@ export async function readSectorFearGreedR3(db,{now=Date.now(),store=publicFeedS
  if(!row||!validateSectorFearGreedR3Payload(body)||row.storedAt>now||stale){
   return Response.json({status:'unavailable',reason:!row?'STORED_DATA_PENDING':stale?'STORED_DATA_STALE':'STORED_DATA_INVALID',observationDate:validDate(body?.observationDate)?body.observationDate:null,sectors:[],history:[]},{status:503,headers});
  }
- return Response.json(body,{headers:{...headers,'cache-control':'public, max-age=60, must-revalidate','x-data-snapshot-at':new Date(row.storedAt).toISOString()}});
+ let provisionalRow;try{provisionalRow=await store.readOutput(SECTOR_PROVISIONAL_KEY)}catch{}
+ const p=provisionalRow?.body;
+ const valid=provisionalRow?.storedAt<=now&&validSectorProvisional(p,body.observationDate,now);
+ const responseBody={...body,confirmedObservationDate:body.observationDate,phase:valid?'PROVISIONAL':'CONFIRMED',
+  // Retain the publication clock when an expired provisional point is removed.
+  updatedAt:new Date(Math.max(Date.parse(body.updatedAt)||0,provisionalRow?.storedAt<=now?provisionalRow.storedAt:0)).toISOString(),
+  ...(valid?{provisional:{date:p.observationDate,asOf:p.asOf,delayMinutes:p.delayMinutes},history:[...body.history,p.point],sectors:body.sectors.map(s=>({...s,score:p.point[s.id]}))}:{}),
+ };
+ return Response.json(responseBody,{headers:{...headers,'cache-control':'public, max-age=60, must-revalidate','x-data-snapshot-at':new Date(row.storedAt).toISOString()}});
 }

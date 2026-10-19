@@ -1,7 +1,7 @@
 'use client';
 import {useEffect,useState} from 'react';
 import {CartesianGrid,Line,LineChart,ResponsiveContainer,Tooltip,XAxis,YAxis} from 'recharts';
-import SectorSentimentChart,{SECTORS,type SectorSentimentPoint} from '../../components/sector-sentiment-chart';
+import SectorSentimentChart,{SECTORS,type SectorSentimentPoint,type SectorSnapshotMeta} from '../../components/sector-sentiment-chart';
 
 const PERIODS=[['1일',0,1],['1주',0,7],['1개월',1,0],['3개월',3,0],['6개월',6,0],['1년',12,0]] as const;
 function comparisonDate(date:string,months:number,days:number){
@@ -12,19 +12,20 @@ function comparisonDate(date:string,months:number,days:number){
 }
 export default function SectorDetailCharts(){
  const [rows,setRows]=useState<SectorSentimentPoint[]|null>(null);
+ const [snapshot,setSnapshot]=useState<SectorSnapshotMeta>();
  const [failed,setFailed]=useState(false);
  useEffect(()=>{const controller=new AbortController();fetch('/api/sector-fear-greed',{cache:'no-store',signal:controller.signal}).then(async response=>{
   if(!response.ok)throw new Error('Unavailable');
-  const body=await response.json() as {status?:string;history?:SectorSentimentPoint[]};
+  const body=await response.json() as SectorSnapshotMeta&{status?:string;history?:SectorSentimentPoint[]};
   if(body.status!=='READY'||!Array.isArray(body.history)||!body.history.length)throw new Error('Unavailable');
   const history=body.history.filter((row:SectorSentimentPoint)=>/^\d{4}-\d{2}-\d{2}$/.test(row.date)&&Number.isFinite(Date.parse(row.date))).map((row:SectorSentimentPoint)=>({date:row.date,...Object.fromEntries(SECTORS.map(({id})=>{const value=row[id];return [id,typeof value==='number'&&Number.isFinite(value)&&value>=0&&value<=100?value:null]}))})).sort((a:SectorSentimentPoint,b:SectorSentimentPoint)=>a.date.localeCompare(b.date));
   if(!history.length)throw new Error('Unavailable');
-  setRows(history);
+  setRows(history);setSnapshot(body);
  }).catch(()=>{if(!controller.signal.aborted)setFailed(true)});return()=>controller.abort();},[]);
  if(!rows)return <p role="status">{failed?'저장 데이터를 불러오지 못했습니다. 잠시 후 다시 방문해 주세요.':'저장 데이터를 불러오는 중입니다.'}</p>;
  const latest=rows[rows.length-1];
  return <>
-  <SectorSentimentChart data={rows} linkToDetail={false}/>
+  <SectorSentimentChart data={rows} linkToDetail={false} snapshot={snapshot}/>
   <p className="zg-sector-change-note">기준일 {latest.date} · 변화량은 해당 기간 전 날짜 또는 직전 저장일 대비 점수 차이입니다. 비교 이력이 없으면 —로 표시합니다.</p>
   <div className="zg-sector-individual-grid">{SECTORS.map(sector=>{
    const score=latest[sector.id];

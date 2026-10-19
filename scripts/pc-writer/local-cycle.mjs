@@ -25,6 +25,8 @@ try{
  if(lane==='core')await collectAlpacaIncremental(base);
  let sectorFearGreedR3=null,sectorFearGreedR3Report=null;
  if(lane==='core'){
+  // Separate provisional inputs/output; failures never block the confirmed publisher.
+  spawnSync(process.execPath,[path.join(here,'sector-provisional-cycle.mjs'),'--write-local'],{windowsHide:true,stdio:['ignore','pipe','pipe'],timeout:5*60000});
   sectorFearGreedR3=spawnSync(process.execPath,[path.join(here,'sector-fear-greed-r3-local-cycle.mjs'),'--write-local'],{windowsHide:true,stdio:['ignore','pipe','pipe'],timeout:5*60000});
   const sectorFearGreedR3File=path.join(base,'local-sector-fear-greed-r3-last-run.json');
   sectorFearGreedR3Report=fs.existsSync(sectorFearGreedR3File)?read(sectorFearGreedR3File):null;
