@@ -3,7 +3,8 @@ import assert from 'node:assert/strict';
 import {openStore,hash} from '../scripts/iran-progress/store.mjs';
 import {classifyR3Article,buildReferenceFlowR3,CLASSIFIER_VERSION} from '../lib/iran-progress/reference-flow-r3.mjs';
 import {collectNewsR3,storedR3Signals} from '../scripts/iran-progress/continuous-news-r3.mjs';
-import {resolveR3Events,storedR3Candidates} from '../scripts/iran-progress/operate-r3.mjs';
+import {resolveR3Events,storedR3Candidates,calculateOperationalR3} from '../scripts/iran-progress/operate-r3.mjs';
+import {publishReferenceFlowR3} from '../scripts/iran-progress/publication.mjs';
 
 const NOW=Date.parse('2026-10-19T01:00:00Z');
 const OLD='IRAN_EVENT_RULES_R3_2';
@@ -100,6 +101,85 @@ test('V46 a later feed outage preserves verified receipts but cannot certify cur
   assert.equal(delayed.status,'DISCOVERY_DELAYED');
   assert.equal(delayed.lastDiscoverySuccessAt,NOW);
   assert.equal(storedR3Signals(store).length,10);
+  assert.equal(store.getCheckpoint('reference-flow-last-valid-r3').score,36.3);
+ }finally{store.close();}
+});
+
+test('V47 full staged R3_3 projection validates against published R3 contract without remote calls',async()=>{
+ const {store}=setup();
+ try{
+  await collectNewsR3(store,args);
+  const checkpoint=store.getCheckpoint('reference-flow-last-valid-r3');
+  const calculated=calculateOperationalR3(store,NOW);
+  assert.equal(calculated.version,'IRAN_REFERENCE_FLOW_R3');
+  assert.equal(calculated.classifierVersion,'IRAN_EVENT_RULES_R3_3');
+  assert.equal(calculated.score,38.7);
+  assert.equal(calculated.eventCount,10);
+  assert.equal(calculated.domains.MILITARY,16);
+  assert.equal(calculated.domains.MARITIME,20);
+  assert.equal(calculated.newsCollection.scoreChanged,true);
+  assert.equal(calculated.newsCollection.status,'UPDATED');
+  assert.equal(calculated.status,'REFERENCE');
+  assert.equal(calculated.historyMode,'RETROSPECTIVE_PUBLICATION_DATE');
+  assert.equal(calculated.collectionCoverage.completeEventCoverage,false);
+  assert.equal(store.getCheckpoint('reference-flow-last-valid-r3').score,checkpoint.score);
+  assert.equal(checkpoint.score,36.3);
+ }finally{store.close();}
+});
+test('V47 mocked D1 publication performs remote readback, then does not alter local prior score',async()=>{
+ const {store}=setup();
+ try{
+  await collectNewsR3(store,args);
+  const body=calculateOperationalR3(store,NOW);
+  let row={body:JSON.stringify({version:'IRAN_REFERENCE_FLOW_R3',score:36.3}),stored_at:NOW-3600000};
+  let writes=0,reads=0;
+  const remote={
+   query:async(db,sql,params)=>{assert.equal(db,'TEST_D1');assert.equal(params.length,1);reads++;return {results:[row]};},
+   request:async(db,batch)=>{assert.equal(db,'TEST_D1');assert.equal(batch.length,1);writes++;
+    assert.equal(batch[0].params.length,3);
+    row={body:batch[0].params[1],stored_at:batch[0].params[2]};
+   }
+  };
+  const status=await publishReferenceFlowR3(remote,'TEST_D1',body,{now:NOW});
+  assert.equal(status.status,'VERIFIED');
+  assert.equal(writes,1);
+  assert.equal(reads,2);
+  assert.equal(JSON.parse(row.body).score,38.7);
+  assert.equal(store.getCheckpoint('reference-flow-last-valid-r3').score,36.3);
+  const repeat=await publishReferenceFlowR3(remote,'TEST_D1',body,{now:NOW});
+  assert.equal(repeat.status,'UNCHANGED');
+  assert.equal(writes,1);
+ }finally{store.close();}
+});
+test('V47 D1 unknown write outcome fails closed without overwriting last local valid snapshot',async()=>{
+ const {store}=setup();
+ try{
+  await collectNewsR3(store,args);
+  const body=calculateOperationalR3(store,NOW);
+  let requests=0;
+  const remote={
+   query:async()=>({results:[{body:JSON.stringify({version:'IRAN_REFERENCE_FLOW_R3',score:36.3}),stored_at:NOW-3600000}]}),
+   request:async()=>{requests++;throw Error('TEST_NETWORK_TIMEOUT');}
+  };
+  await assert.rejects(()=>publishReferenceFlowR3(remote,'TEST_D1',body,{now:NOW}),/IRAN_PUBLICATION_OUTCOME_UNKNOWN/);
+  assert.equal(requests,1);
+  assert.equal(store.getCheckpoint('reference-flow-last-valid-r3').score,36.3);
+  assert.equal(store.getCheckpoint('reference-flow-publication-r3'),null);
+ }finally{store.close();}
+});
+test('V47 newer D1 timestamp preserves newer remote snapshot, no overwrite or auto retry',async()=>{
+ const {store}=setup();
+ try{
+  await collectNewsR3(store,args);
+  const body=calculateOperationalR3(store,NOW);
+  let writes=0;
+  const remote={
+   query:async()=>({results:[{body:JSON.stringify({version:'IRAN_REFERENCE_FLOW_R3',score:36.3}),stored_at:NOW+60000}]}),
+   request:async()=>{writes++;}
+  };
+  const r=await publishReferenceFlowR3(remote,'TEST_D1',body,{now:NOW});
+  assert.equal(r.status,'REMOTE_NEWER_PRESERVED');
+  assert.equal(writes,0);
   assert.equal(store.getCheckpoint('reference-flow-last-valid-r3').score,36.3);
  }finally{store.close();}
 });
