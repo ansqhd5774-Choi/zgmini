@@ -42,9 +42,23 @@ try{
   await page.waitForFunction(()=>!document.querySelector('button[aria-label="메시지 전송"]')?.hasAttribute("disabled"),{timeout:15000});
   await page.getByRole("button",{name:"메시지 전송"}).click();
   await page.getByText("오늘 시장 전망이 궁금해요").waitFor({state:"visible",timeout:10000});
+  const messageItem=page.locator(".zg-community-item").first();
+  const messageLine=messageItem.locator(".zg-community-copy");
+  const lineText=await messageLine.textContent();
+  assert.match(lineText??"",/^익명(?:[0-9]{4}|방문자) : 오늘 시장 전망이 궁금해요 \(.+\)$/,"Nickname : message (time) is inline");
+  const report=messageItem.getByRole("button",{name:"메시지 신고"});
+  assert.equal((await report.textContent())?.trim(),"","Report button must display only the icon");
+  if(width>430){
+   assert.equal(await report.evaluate(el=>getComputedStyle(el).opacity),"0","Report icon hidden until hover");
+   await messageItem.hover();
+   await page.waitForFunction(()=>Number(getComputedStyle(document.querySelector(".zg-community-item .zg-community-report")).opacity)>=.99);
+  }else{
+   assert(Number(await report.evaluate(el=>getComputedStyle(el).opacity))>.5,"Mobile report icon accessible without hover");
+  }
   await page.screenshot({path:`artifacts/community-chat-browser/chat-open-${width}.png`});
-  await page.getByRole("button",{name:"메시지 신고"}).click();
-  await page.getByText("신고됨").waitFor({state:"visible"});
+  await report.click();
+  assert.equal(await report.getAttribute("aria-label"),"신고 완료");
+  assert.equal(await report.isDisabled(),true);
   await page.keyboard.press("Escape");
   assert.equal(await panel.getAttribute("aria-hidden"),"true");
   if(width!==390) assert.equal(await panel.evaluate(el=>getComputedStyle(el).animationName),"zg-community-exit");
