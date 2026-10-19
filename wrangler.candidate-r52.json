@@ -17,7 +17,8 @@
   ],
   "vars": {
     "ZGMINI_COMPUTE_TARGET": "pc",
-    "ZGMINI_COLLECTION_TARGET": "pc"
+    "ZGMINI_COLLECTION_TARGET": "pc",
+    "COMMUNITY_CHAT_SITE_KEY": "0x4AAAAAAFazwtsIZAa_fZtP"
   },
   "triggers": {
     "crons": []
@@ -37,6 +38,11 @@
       "binding": "DB_HISTORY",
       "database_name": "zgmini-history-r42",
       "database_id": "55f17650-dc84-46c9-829a-d448ca1b2417"
+    },
+    {
+      "binding": "DB_COMMUNITY",
+      "database_name": "zgmini-community-chat-r1",
+      "database_id": "a38efe98-ea5d-4c57-b6ca-abe261468ba9"
     }
   ],
   "queues": {
