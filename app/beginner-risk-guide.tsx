@@ -396,8 +396,8 @@ export default function BeginnerRiskGuide({topic}:{topic:Topic}){
    </div>
   </div>
   <div className="rounded-lg bg-[#071c2a] p-4 sm:p-5">
-   <h2 className="text-lg font-bold text-white">{topic==="earnings-recession"?`E1 저장 지표 평가${earningsStoredScore===null?"":" · "+earningsStoredScore.toFixed(1)+"점"}`:<>왜 {score===null?"이 점수":score.toFixed(1)+"점"}인가요?</>}</h2>
-   <p className="mt-1 text-sm text-slate-400">{topic==="earnings-recession"?"E1 저장 지표별 평가입니다. 메인 진단 점수의 구성요인과는 별개입니다.":"현재 저장된 구성 점수를 기준으로 강한 방향의 요인을 최대 3개씩 보여줍니다."}</p>
+   <h2 className="text-lg font-bold text-white">{topic==="earnings-recession"?<>왜 {earningsStoredScore===null?"이 점수":earningsStoredScore.toFixed(1)+"점"}인가요?</>:<>왜 {score===null?"이 점수":score.toFixed(1)+"점"}인가요?</>}</h2>
+   <p className="mt-1 text-sm text-slate-400">{topic==="earnings-recession"?"E1 저장 지표 평가입니다. 메인 진단 점수의 구성요인과는 별개입니다.":"현재 저장된 구성 점수를 기준으로 강한 방향의 요인을 최대 3개씩 보여줍니다."}</p>
    <div className="mt-4 grid gap-3 md:grid-cols-2">
     <div className="bg-emerald-950/25 p-4"><h3 className="font-bold text-emerald-300">{config.positiveHeading}</h3>{positive.length?<ul className="mt-3 space-y-2 text-sm text-slate-200">{positive.map(item=><FactorListItem key={item.id} item={item} config={config}/>)}</ul>:<p className="mt-3 text-sm text-slate-400">현재 뚜렷한 기여 요인을 확인하지 못했습니다.</p>}</div>
     <div className="bg-rose-950/20 p-4"><h3 className="font-bold text-rose-300">{config.negativeHeading}</h3>{displayedLower.length?<ul className="mt-3 space-y-2 text-sm text-slate-200">{displayedLower.map(item=><FactorListItem key={item.id} item={item} config={config}/>)}</ul>:<p className="mt-3 text-sm text-slate-400">{topic==="earnings-recession"?"비교할 저장 지표가 부족합니다.":"현재 뚜렷한 부담 요인을 확인하지 못했습니다."}</p>}</div>
@@ -405,7 +405,7 @@ export default function BeginnerRiskGuide({topic}:{topic:Topic}){
   </div>
   <details ref={calculationDetailsRef} className="zg-method-history rounded-lg bg-[#071c2a] p-4 sm:p-5" data-testid={`beginner-methodology-explanation-${topic}`}>
    <summary className="zg-method-history-summary cursor-pointer font-bold text-white" onClick={event=>preserveAccordionSummaryOnOpen(event.currentTarget)}>
-    <span className="zg-method-history-title"><span>{topic==="earnings-recession"?"E1 저장 점수는 어떻게 계산하나요?":"이 점수는 어떻게 계산하나요?"}</span></span>
+    <span className="zg-method-history-title"><span>이 점수는 어떻게 계산하나요?</span></span>
     <ChevronDown aria-hidden="true" className="zg-method-history-chevron"/>
    </summary>
    <div className="mt-3 space-y-2 text-sm leading-6 text-slate-300">
@@ -416,7 +416,7 @@ export default function BeginnerRiskGuide({topic}:{topic:Topic}){
     <p><strong className="text-slate-100">④ 주식시장에서</strong> {methodology.marketUse}</p>
     <p><strong className="text-slate-100">⑤ 결측·한계</strong> 필요한 자료가 없으면 임의의 0점으로 채우지 않고 미산출 상태로 남길 수 있습니다. {methodology.limitation}</p>
     <div className="zg-method-history-close-row">
-     <button type="button" className="zg-method-history-close" aria-label={topic==="earnings-recession"?"E1 저장 점수는 어떻게 계산하나요? 접기":"이 점수는 어떻게 계산하나요? 접기"} onClick={()=>{if(calculationDetailsRef.current)calculationDetailsRef.current.open=false;}}>
+     <button type="button" className="zg-method-history-close" aria-label="이 점수는 어떻게 계산하나요? 접기" onClick={()=>{if(calculationDetailsRef.current)calculationDetailsRef.current.open=false;}}>
       <ChevronUp aria-hidden="true" size={16}/>
       <span>접기</span>
      </button>
