@@ -136,3 +136,8 @@
  .earnings-r2-mobile-metrics .release-week small{color:#f4c34e;font-weight:900}
  .earnings-r2-mobile-metrics .release-imminent small{color:#fb7185;font-weight:900}
 }
+
+/* Retain E1 provenance in a compact title help, not a separate table status row. */
+.earnings-r2-indicators h2 .zg-help{display:inline-flex;margin-left:4px;vertical-align:middle}
+.earnings-r2-meta-help{display:flex;flex-direction:column;gap:5px}
+.earnings-r2-meta-help span{display:block}
