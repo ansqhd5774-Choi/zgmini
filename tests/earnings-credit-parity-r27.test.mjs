@@ -1,0 +1,34 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+const read=path=>readFileSync(path,'utf8');
+const earnings=read('app/earnings-recession/earnings-recession-panel.tsx');
+const credit=read('app/credit-risk/credit-risk-panel.tsx');
+const css=read('app/earnings-recession/earnings-indicator-r2.css');
+const creditCss=read('app/credit-risk/credit-indicator-r2.css');
+test('R27 matches credit table 10-column order, including dev rows and accessible original values',()=>{
+ const e=earnings.match(/<thead><tr>(.*?)<\/tr><\/thead>/s)?.[1];
+ const c=credit.match(/<thead><tr>(.*?)<\/tr><\/thead>/s)?.[1];
+ assert.ok(e&&c);
+ const headers=x=>[...x.matchAll(/<th>(.*?)<\/th>/g)].map(y=>y[1]).filter(y=>!y.includes('<'));
+ assert.deepEqual(headers(e),['지표','내용','기준','이전','현재','발표','판단','미니차트(1Y)']);
+ assert.deepEqual(headers(e),headers(c));
+ assert.match(e,/EarningsFavoriteHeaderIcon/);
+ assert.match(e,/도움말/);
+ assert.equal((earnings.match(/<col className="earnings-col-/g)||[]).length,10);
+ assert.equal((credit.match(/<col className="credit-col-/g)||[]).length,10);
+ assert.equal((earnings.match(/activeOrder\.map\(id=>/g)||[]).length,2);
+ assert.doesNotMatch(earnings,/E1-R5":"E1-R4"\} 저장 지표/);
+ assert.match(earnings,/dateLabel\(r\?\.observationDate\)/);
+ assert.match(earnings,/priorFmt\(r\)/);
+ assert.match(earnings,/r\.sourceHistory1Y/);
+ assert.match(earnings,/r\?\.nextReleaseDate/);
+});
+test('R27 has exactly the same column proportions as credit risk and retains 390px card layout',()=>{
+ const e=[...css.matchAll(/\.earnings-r2-indicators \.earnings-r2-table col:nth-child\(\d+\)\{width:(\d+)%!important\}/g)].map(m=>Number(m[1]));
+ const c=[...creditCss.matchAll(/\.credit-r2-indicators \.credit-indicator-table-r2 col:nth-child\(\d+\)\{width:(\d+)%!important\}/g)].map(m=>Number(m[1]));
+ assert.deepEqual(e,c);assert.equal(e.reduce((a,b)=>a+b,0),100);
+ assert.match(css,/\.earnings-r2-mobile-metrics\{grid-template-columns:repeat\(3,minmax\(0,1fr\)\)\}/);
+ assert.match(earnings,/earnings-r2-mobile-spark/);
+ assert.doesNotMatch(earnings,/fakeMiniTrend|synthesizedPrior/);
+});
