@@ -27,6 +27,32 @@ function checkedSourceObservation(x:any,asOfDate:unknown){
    previousValue:x.previousValue,previousPeriodEnd:x.previousPeriodEnd,
    sourceHistory1Y:rows.map((p:any)=>({date:p.date,value:p.value}))};
 }
+// Reconstructed stored-input evaluation histories are separate from S6/S11 source periods.
+// Sanitize independently: never expose filings, keys, arbitrary producer fields or fake dates.
+const asOfBasis="ASOF_RECONSTRUCTED_NOT_OFFICIAL_PERIOD_END";
+const allowedAsOf=new Set(["S1","S2","S3","S4","S5","S7","S8","S9","S10","S12","S13"]);
+function checkedAsOfReconstruction(x:any,asOfDate:unknown){
+ if(!allowedAsOf.has(x?.id)||x?.historyKind!==asOfBasis||!finite(x?.value)||
+    !validDate(asOfDate)||x?.historySourceVersion!=="E1-R5-PRODUCTION-CYCLE-R1"||
+    typeof x?.historySourceStoredAt!=="string"||!Number.isFinite(Date.parse(x.historySourceStoredAt)))return null;
+ const rows=Array.isArray(x?.sourceHistory1Y)?x.sourceHistory1Y:[];
+ if(rows.length<2||rows.length>8)return null;
+ const cutoff=new Date(Date.parse(asOfDate+"T00:00:00Z")-366*86400000).toISOString().slice(0,10);
+ if(!rows.every((p:any)=>validDate(p?.date)&&!Number.isNaN(Date.parse(p.date+"T00:00:00Z"))&&
+      new Date(p.date+"T00:00:00Z").toISOString().slice(0,10)===p.date&&
+      p.date>=cutoff&&p.date<=asOfDate&&finite(p.value)&&
+      (x.id!=="S12"||(p.value>=0&&p.value<=100))))return null;
+ if(rows.some((p:any,i:number)=>i>0&&rows[i-1].date>=p.date))return null;
+ const last=rows.at(-1),previous=rows.at(-2);
+ if(last.date!==asOfDate||Math.abs(last.value-x.value)>1e-8||
+    x.previousPeriodEnd!==previous.date||!finite(x.previousValue)||
+    Math.abs(previous.value-x.previousValue)>1e-8)return null;
+ return {
+  historyKind:asOfBasis,previousValue:previous.value,previousPeriodEnd:previous.date,
+  sourceHistory1Y:rows.map((p:any)=>({date:p.date,value:p.value})),
+  historySourceVersion:x.historySourceVersion,historySourceStoredAt:x.historySourceStoredAt,
+ };
+}
 // Official source-specific announcements validated on the BEA/BLS release calendars.
 // Presentation metadata only, never used by the E1 scoring calculation or PC writer.
 // Automatic expiry at the announced release instant prevents silently stale "next" dates.
@@ -59,7 +85,7 @@ export function buildProjection({inputs,snapshot,publicSnapshot,e1,nowIso}:any){
   unit:x?.unit??"",
   observationDate:x?.asOfDate??e1?.financialPeriodEnd??e1?.asOfDate??null,
   source:x?.source??"SEC EDGAR XBRL Frames",
-  ...(isR5?checkedSourceObservation(x,x?.asOfDate??e1?.asOfDate)??{}:{}),
+  ...(isR5?(checkedSourceObservation(x,x?.asOfDate??e1?.asOfDate)??checkedAsOfReconstruction(x,x?.asOfDate??e1?.asOfDate)??{}):{}),
   ...(isR5?verifiedUpcomingSourceRelease(x,nowIso)??{}:{}),
  })):[];
  const components=isR5

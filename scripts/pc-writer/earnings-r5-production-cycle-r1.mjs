@@ -4,7 +4,7 @@ import path from 'node:path';
 import {createHash} from 'node:crypto';
 import {fileURLToPath} from 'node:url';
 import {buildEarningsE1R5RawActual} from '../../lib/market-score/earnings-e1-r5-raw.mjs';
-import {buildEarningsDatedSourceComparison} from '../../lib/market-score/earnings-e1-r5-observation-series.mjs';
+import {buildEarningsDatedSourceComparison,buildEarningsAsOfComparison,E1_R5_ASOF_IDS} from '../../lib/market-score/earnings-e1-r5-observation-series.mjs';
 import {scoreEarningsE1R5Raw} from '../../lib/market-score/earnings-e1-r5.mjs';
 import {buildEarningsE1R5HistoricalTrend,mergeEarningsE1R5Trend} from '../../lib/market-score/earnings-e1-r5-trend.mjs';
 import {buildFiscalSecIssuerInputs} from '../../lib/market-score/earnings-e1-r5-fiscal-inputs.mjs';
@@ -14,7 +14,7 @@ import {E1_R5_CFO_PRODUCTION_HISTORY_VERSION,periodOrdinal,readCfoProductionHist
 export const E1_R5_PRODUCTION_CYCLE_VERSION='E1-R5-PRODUCTION-CYCLE-R1';
 export const E1_R5_TREND_HISTORY_VERSION='E1-R5-TREND-HISTORY-R2';
 // Presentation metadata only: refresh the local candidate once after this approved cutover.
-export const E1_R5_SOURCE_OBSERVATION_PRESENTATION_VERSION='E1-R5-SOURCE-OBSERVATION-R20';
+export const E1_R5_SOURCE_OBSERVATION_PRESENTATION_VERSION='E1-R5-SOURCE-OBSERVATION-R36';
 const DEFAULT_BASE=process.env.ZGMINI_PC_HOME??path.join(os.homedir(),'.zgmini','pc-writer');
 const finite=value=>typeof value==='number'&&Number.isFinite(value);
 const readJson=file=>JSON.parse(fs.readFileSync(file,'utf8'));
@@ -49,7 +49,46 @@ export async function buildEarningsR5ProductionCandidate({base=DEFAULT_BASE,now=
  const coverage={S1:componentCoverage(currentBase.components,'S1'),S2:componentCoverage(currentBase.components,'S2'),S3:componentCoverage(currentBase.components,'S3'),S4:componentCoverage(currentBase.components,'S4'),S5:componentCoverage(currentBase.components,'S5'),S6:1,S7:componentCoverage(currentBase.components,'S7'),S8:componentCoverage(currentBase.components,'S8'),S9:componentCoverage(currentBase.components,'S9'),S10:currentS10Coverage,S11:1,S12:currentForward.comparableCount/universe.memberCount,S13:currentForward.comparableCount/universe.memberCount},decorated={...candidate,productionVersion:E1_R5_PRODUCTION_CYCLE_VERSION,source:'SEC EDGAR + BEA + BLS + CFO Survey',sourceAttribution:'SEC EDGAR; U.S. Bureau of Economic Analysis; U.S. Bureau of Labor Statistics; CFO Survey',interpretation:'기업의 실제 실적, 실적 확산도, 생산·노동 비용 압력, 경영진·CFO의 향후 전망을 저장된 공식 자료의 역사 분포와 비교합니다.',freshness:'LOCAL_STORED_OFFICIAL_INPUTS',quality:{...(candidate.quality??{}),componentCoverage:coverage,s10RevenueCoverage:currentS10Coverage,universeCount:universe.memberCount,companyFactsCount,submissionsCount,currentGuidanceComparableCount:currentForward.comparableCount,currentCfoPeriod:currentCfo.period},sourceStoredFile:source.sourceStoredFile};const sourceComparisons={
   S6:buildEarningsDatedSourceComparison({observations:beaRaw,asOfDate:currentDate,currentValue:raw.S6*100,scale:100}),
   S11:buildEarningsDatedSourceComparison({observations:ulcRows,asOfDate:currentDate,currentValue:raw.S11}),
- };const outputIndicators=indicators(decorated,raw,currentDate).map(row=>sourceComparisons[row.id]?{...row,...sourceComparisons[row.id]}:row);return {...decorated,historicalTrend,indicators:outputIndicators,cfoHistoryUpdate:cfoHistory.some(row=>row.period===currentCfo.period)?null:currentCfo};
+ };
+  // Reuse the already-computed stored-input anchors; do not rescore or alter E1 weights.
+  // These AS-OF reconstruction dates are not SEC filing/release dates or source period ends.
+  const sourceAt=source.sourceStoredAt;
+  const asOfById=new Map();
+  for(const id of E1_R5_ASOF_IDS){
+   if(id==='S12'||id==='S13')continue;
+   const scale=id==='S1'?100:1;
+   const observations=baseRows.filter(row=>finite(row.raw?.[id])).map(row=>({date:row.date,value:row.raw[id]*scale}));
+   const value=finite(raw[id])?raw[id]*scale:null;
+   if(finite(value))observations.push({date:currentDate,value});
+   asOfById.set(id,observations);
+  }
+  // S12 is a normalized 0-100 4:3 composite, not a raw CFO or guidance change.
+  // Reconstruct it with the EXISTING approved scorer using only preceding-period inputs.
+  const s12Observations=[];
+  for(let index=0;index<historyGrid.length;index++){
+   const item=historyGrid[index],forward=forwardHistory.find(row=>row.date===item.date);
+   if(!forward||!finite(forward.s12aRaw)||!finite(item.s12b))continue;
+   const priorA=forwardHistory.filter(row=>row.date<item.date&&finite(row.s12aRaw)).map(row=>row.s12aRaw);
+   const priorB=historyGrid.slice(0,index).map(row=>row.s12b).filter(finite);
+   const assessed=scoreEarningsE1R5Raw({raw:{S12A:forward.s12aRaw,S12B:item.s12b},histories:{S12A:priorA,S12B:priorB},asOfDate:item.date});
+   if(finite(assessed.components?.S12))s12Observations.push({date:item.date,value:assessed.components.S12});
+  }
+  if(finite(candidate.components?.S12))s12Observations.push({date:currentDate,value:candidate.components.S12});
+  asOfById.set('S12',s12Observations);
+  asOfById.set('S13',[
+   ...forwardHistory.filter(row=>finite(row.s13Raw)).map(row=>({date:row.date,value:row.s13Raw})),
+   ...(finite(raw.S13)?[{date:currentDate,value:raw.S13}]:[]),
+  ]);
+  const outputIndicators=indicators(decorated,raw,currentDate).map(row=>{
+   const existing=sourceComparisons[row.id];
+   if(existing)return {...row,...existing};
+   const reconstructed=buildEarningsAsOfComparison({
+    id:row.id,observations:asOfById.get(row.id)??[],asOfDate:currentDate,
+    currentValue:row.value,sourceVersion:E1_R5_PRODUCTION_CYCLE_VERSION,sourceStoredAt:sourceAt,
+   });
+   return reconstructed?{...row,...reconstructed}:row;
+  });
+  return {...decorated,historicalTrend,indicators:outputIndicators,cfoHistoryUpdate:cfoHistory.some(row=>row.period===currentCfo.period)?null:currentCfo};
 }
 
 export async function runEarningsR5ProductionCycle({base=DEFAULT_BASE,now=new Date().toISOString(),force=false}={}){
