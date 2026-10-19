@@ -7,7 +7,9 @@ test("eight risk hero cards display source/evaluation date once in header, never
  for(const slug of pages){
   const panel=read("app/"+slug+"/"+slug+"-panel.tsx");
   assert.match(panel,/<MarketCardHeader[^\n]*dateLabel=/,slug);
-  assert.doesNotMatch(panel,/metaDate=\{dateLabel\(/,slug);
+  if(slug==="inflation"){
+   assert.match(read("app/inflation/inflation-indicator-r2.css"),/\.inflation-target-card \.cnn-score-observed-date\{display:none\}/);
+  }else assert.doesNotMatch(panel,/metaDate=\{dateLabel\(/,slug);
   assert.match(panel,/<MarketScoreOrb[^\n]*comparisonItems=\{/,slug);
  }
 });
