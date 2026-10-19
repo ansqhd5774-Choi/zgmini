@@ -153,6 +153,8 @@ test("R47 earnings factor ranks balance factual E1 top/bottom without affecting 
  assert.match(guide,/const highlighted=new Set\(positive\.map\(row=>row\.id\)\)/);
  assert.match(guide,/factors\.filter\(row=>!highlighted\.has\(row\.id\)\)\.sort\(\(a,b\)=>a\.score-b\.score\)\.slice\(0,3\)/);
  assert.match(guide,/negativeHeading:"E1 상대적 하위 지표"/);
- assert.match(guide,/topic==="earnings-recession"\?"bg-slate-800\/30 p-4":"bg-rose-950\/20 p-4"/);
+ assert.match(guide,/<div className="bg-rose-950\/20 p-4"><h3 className="font-bold text-rose-300">\{config\.negativeHeading\}<\/h3>/);
+ assert.doesNotMatch(guide,/topic==="earnings-recession"\?"bg-slate-800\/30/);
+ assert.match(guide,/negativeHeading:"E1 상대적 하위 지표"/);
  assert.match(guide,/E1 저장 지표별 평가입니다\. 메인 진단 점수의 구성요인과는 별개입니다/);
 });
