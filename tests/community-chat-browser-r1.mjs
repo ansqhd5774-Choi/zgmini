@@ -22,7 +22,7 @@ try{
    return route.fulfill({status:200,contentType:"application/json",body:JSON.stringify({messages:stored,writeEnabled:true,siteKey:"test-site"})});
   });
   await page.route("**/api/community/reports",r=>r.fulfill({status:200,contentType:"application/json",body:'{"accepted":true}'}));
-  await page.route("https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit",route=>route.fulfill({status:200,contentType:"application/javascript",body:"window.turnstile={render:(el,o)=>{el.textContent='Turnstile test';window.__zgTurnstileCallbacks=o;return 'test-id';},remove:()=>{},reset:()=>{window.__zgTurnstileResets=(window.__zgTurnstileResets||0)+1;}}"}));
+  await page.route("https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit",route=>route.fulfill({status:200,contentType:"application/javascript",body:"window.turnstile={render:(el,o)=>{el.textContent='Turnstile test';window.__zgTurnstileRenderCount=(window.__zgTurnstileRenderCount||0)+1;window.__zgTurnstileCallbacks=o;return 'test-id';},remove:()=>{},reset:()=>{window.__zgTurnstileResets=(window.__zgTurnstileResets||0)+1;}}"}));
   page.on("pageerror",error=>errors.push(width+": "+error.message));
   await page.goto(base,{waitUntil:"domcontentloaded",timeout:45000});
   const toggle=page.getByRole("button",{name:"시장 채팅 열기"});
@@ -62,12 +62,13 @@ try{
   assert((await captcha.boundingBox())?.height>=67,"Expired token must restore challenge");
   await page.evaluate(()=>window.__zgTurnstileCallbacks.callback("test-browser-token"));
   await page.waitForFunction(()=>document.querySelector(".zg-community-captcha")?.classList.contains("is-verified"),null,{timeout:10000});
+  const renderCountBeforeClose=await page.evaluate(()=>window.__zgTurnstileRenderCount);
   await page.keyboard.press("Escape");
   assert.equal(await panel.getAttribute("aria-hidden"),"true");
   await page.getByRole("button",{name:"시장 채팅 열기"}).click();
   await page.waitForFunction(()=>!document.querySelector(".zg-community-captcha")?.classList.contains("is-verified"),null,{timeout:10000});
   assert((await captcha.boundingBox())?.height>=67,"Reopened chat must not retain stale verification");
-  await page.waitForFunction(()=>Boolean(window.__zgTurnstileCallbacks?.callback),null,{timeout:10000});
+  await page.waitForFunction(before=>window.__zgTurnstileRenderCount>before,renderCountBeforeClose,{timeout:10000});
   await page.evaluate(()=>window.__zgTurnstileCallbacks.callback("test-browser-token"));
   await page.waitForFunction(()=>document.querySelector(".zg-community-captcha")?.classList.contains("is-verified"),null,{timeout:10000});
   await page.locator("#zg-community-input").fill("오늘 시장 전망이 궁금해요");
