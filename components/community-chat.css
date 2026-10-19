@@ -10,7 +10,7 @@
 .zg-community-panel.is-closed{visibility:hidden;pointer-events:none;opacity:0}
 .zg-community-panel.is-open{visibility:visible;pointer-events:auto;animation:zg-community-enter .3s ease-out both}
 .zg-community-panel.is-closed.was-open{visibility:visible;animation:zg-community-exit .3s ease-in both}
-@keyframes zg-community-enter{from{transform:translateX(-100%);opacity:0}to{transform:translateX(0);opacity:1}}
+@keyframes zg-community-enter{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}
 @keyframes zg-community-exit{from{transform:translateX(0);opacity:1;visibility:visible}to{transform:translateX(100%);opacity:0;visibility:hidden}}
 .zg-community-head{display:flex;align-items:center;gap:8px;min-height:47px;padding:0 11px;border-bottom:1px solid var(--zg-chat-line);background:var(--zg-chat-card);flex-shrink:0}
 .zg-community-head::before{content:"";width:3px;height:15px;flex:none;background:var(--zg-chat-accent);border-radius:1px}
