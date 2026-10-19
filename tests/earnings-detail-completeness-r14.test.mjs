@@ -76,3 +76,24 @@ test("R14 cannot treat composite reconstruction as individual observation histor
 test.todo("DATA_GAP_1: per-indicator previous observed value with source/period provenance");
 test.todo("DATA_GAP_2: per-indicator one-year dated series with current-vintage vs PIT labeling");
 test.todo("DATA_GAP_3: per-indicator verified release schedule; unscheduled SEC events remain unknown");
+
+test("R48 earnings lower investor notes render with the same beginner cards as inflation",()=>{
+ const notes=read("app/detail-investor-notes.tsx");
+ const common=read("app/detail-reading-guide.tsx");
+ const earnings=read("app/earnings-recession/page.tsx");
+ const inflation=read("app/inflation/page.tsx");
+ const css=read("app/inflation/inflation-beginner-reading-r1.css");
+ assert.match(notes,/topic==="inflation"\|\|topic==="recession"\|\|topic==="liquidity-crisis"\|\|topic==="credit-risk"\|\|topic==="earnings-recession"\?"beginner":"default"/);
+ assert.match(notes,/topic==="earnings-recession"\?"기업 실적 지표, 쉽게 알아보기"/);
+ assert.match(notes,/topic==="earnings-recession"\?"미국 기업 전체 실적과 개별 종목 실적, 평가일과 공식 발표일을 구분해 확인하세요\."/);
+ assert.match(notes,/"earnings-recession":\{title:"기업 실적 점수와 개별 종목 실적 구별하기"/);
+ for(const title of ["시장 전체의 실적과 한 기업의 실적은 다릅니다","분기 실적과 현재 시장을 연결할 때","날짜와 현재 제공 범위 확인","과거 차트와 판정의 의미"])assert.ok(notes.includes(title),title);
+ for(const target of ['related:["recession","asset-bubble","credit-risk"]',"WebPageJsonLd", "E1-R5 표의 평가 기준일"])assert.ok(notes.includes(target),target);
+ assert.match(earnings,/import "\.\.\/inflation\/inflation-beginner-reading-r1\.css"/);
+ assert.match(earnings,/<DetailInvestorNotes topic="earnings-recession"\/>/);
+ assert.match(inflation,/<DetailInvestorNotes topic="inflation"\/>/);
+ assert.match(common,/if\(variant==="beginner"\)return <section className="zg-beginner-reading"/);
+ assert.match(common,/className="zg-beginner-reading-grid"/);
+ assert.match(css,/\.zg-beginner-reading-grid\{/);
+ assert.match(css,/@media\(max-width:650px\)/);
+});
