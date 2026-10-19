@@ -35,7 +35,7 @@ test("R14 earnings approved source IDs are identical in writer, projection and d
  assert.deepEqual(fromProjection,expected);
  assert.deepEqual(fromWriter,expected);
  assert.equal((panel.match(/activeOrder\.map\(id=>/g)??[]).length,2,"desktop and mobile must render the identical saved ID set");
- assert.match(panel,/<th>\{isR5\?"평가 기준일":"관측일"\}<\/th>/);
+ assert.match(panel,/<th>이전<\/th><th>현재<\/th><th>발표<\/th><th>판단<\/th><th>미니차트\(1Y\)<\/th>/);
  assert.match(panel,/formatTooltipLabel=\{value=>isR5\?/);
 });
 
