@@ -21,7 +21,7 @@ test('R27 matches credit table 10-column order, including dev rows and accessibl
  assert.doesNotMatch(earnings,/E1-R5":"E1-R4"\} 저장 지표/);
  assert.match(earnings,/dateLabel\(r\?\.observationDate\)/);
  assert.match(earnings,/priorFmt\(r\)/);
- assert.match(earnings,/r\?\.sourceHistory1Y/);
+ assert.match(earnings,/r\.sourceHistory1Y/);
  assert.match(earnings,/r\?\.nextReleaseDate/);
 });
 test('R27 has exactly the same column proportions as credit risk and retains 390px card layout',()=>{
