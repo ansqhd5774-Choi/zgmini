@@ -96,3 +96,32 @@
  .fg-card.fg-shared-shell.earnings-recession-target-card .zg-chart-extremum text{font-size:11px}
  .fg-card.fg-shared-shell.earnings-recession-target-card .zg-chart-extremum text tspan:nth-child(2){font-size:10px}
 }
+
+/* R27: exact 10-column layout parity with credit-risk, without changing indicators or scores. */
+.earnings-r2-indicators .earnings-r2-table{width:100%;min-width:1090px!important;table-layout:fixed}
+.earnings-r2-indicators .earnings-r2-table :is(th,td){width:auto!important;box-sizing:border-box;overflow-wrap:normal}
+.earnings-r2-indicators .earnings-r2-table tbody th{overflow-wrap:anywhere}
+.earnings-r2-indicators .earnings-r2-table col:nth-child(1){width:4%!important}
+.earnings-r2-indicators .earnings-r2-table col:nth-child(2){width:15%!important}
+.earnings-r2-indicators .earnings-r2-table col:nth-child(3){width:17%!important}
+.earnings-r2-indicators .earnings-r2-table col:nth-child(4){width:11%!important}
+.earnings-r2-indicators .earnings-r2-table col:nth-child(5){width:10%!important}
+.earnings-r2-indicators .earnings-r2-table col:nth-child(6){width:10%!important}
+.earnings-r2-indicators .earnings-r2-table col:nth-child(7){width:10%!important}
+.earnings-r2-indicators .earnings-r2-table col:nth-child(8){width:7%!important}
+.earnings-r2-indicators .earnings-r2-table col:nth-child(9){width:12%!important}
+.earnings-r2-indicators .earnings-r2-table col:nth-child(10){width:4%!important}
+.earnings-r2-indicators .earnings-r2-value strong,.earnings-r2-indicators .earnings-r2-release strong{display:block;color:#f2f7fa;font-size:12px}
+.earnings-r2-indicators .earnings-r2-value small,.earnings-r2-indicators .earnings-r2-release small{display:block;margin-top:3px;font-size:10px;white-space:nowrap}
+.earnings-r2-indicators .earnings-r2-spark{padding-left:7px!important;padding-right:7px!important}
+.earnings-r2-indicators .earnings-r2-spark .inflation-mini-chart{width:112px;max-width:100%;height:32px}
+.earnings-r2-indicators [data-judgement="positive"] .inflation-mini-chart-line{stroke:#77e59c}
+.earnings-r2-indicators [data-judgement="neutral"] .inflation-mini-chart-line{stroke:#cbd5e1}
+.earnings-r2-indicators [data-judgement="negative"] .inflation-mini-chart-line{stroke:#ff9a9a}
+@media(max-width:767px){
+ .earnings-r2-mobile-metrics{grid-template-columns:repeat(3,minmax(0,1fr))}
+ .earnings-r2-mobile-spark{margin-top:8px;padding-top:8px}
+ .earnings-r2-mobile-spark span{font-size:9px}
+ .earnings-r2-mobile-spark .inflation-mini-chart{width:148px;max-width:56vw;height:30px}
+ .earnings-r2-mobile-metrics small{overflow-wrap:anywhere;white-space:normal}
+}
