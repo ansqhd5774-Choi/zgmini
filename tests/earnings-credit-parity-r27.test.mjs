@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
+import ts from 'typescript';
 const read=path=>readFileSync(path,'utf8');
 const earnings=read('app/earnings-recession/earnings-recession-panel.tsx');
 const credit=read('app/credit-risk/credit-risk-panel.tsx');
@@ -49,4 +50,27 @@ test('R45 aligns earnings table with inflation while keeping all 13 source-backe
  assert.equal((earnings.match(/earningsReleaseInfo\(r,id,today\)/g)||[]).length,2);
  assert.equal((earnings.match(/points=\{hasIndicatorHistory\(r\)\?r\?\.sourceHistory1Y:undefined\}/g)||[]).length,2);
  assert.deepEqual((earnings.match(/<th>미니차트\(1Y\)<\/th>/g)||[]).length,1);
+});
+
+test('R45 renders countdown only for verified stored S6/S11 dates, including past and absent dates',()=>{
+ const from=earnings.indexOf('function earningsReleaseInfo(');
+ const to=earnings.indexOf('function HelpTip(',from);
+ assert.ok(from>=0&&to>from);
+ const code=ts.transpileModule(earnings.slice(from,to)+'\nexports.earningsReleaseInfo=earningsReleaseInfo;',{
+  compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022},
+ }).outputText;
+ const m={exports:{}};
+ new Function('exports',code)(m.exports);
+ const release=m.exports.earningsReleaseInfo;
+ assert.deepEqual(release({nextReleaseDate:'2026-11-25'},'S6','2026-10-20'),{
+  cadence:'분기',label:'11.25 · D-36',urgency:'distant',
+ });
+ assert.deepEqual(release({nextReleaseDate:'2026-10-21'},'S11','2026-10-20'),{
+  cadence:'분기',label:'10.21 · D-1',urgency:'imminent',
+ });
+ assert.equal(release({nextReleaseDate:'2026-10-19'},'S6','2026-10-20').label,'10.19 · 일정 재확인');
+ for(const date of [null,'2026-02-30','not-a-date']){
+  assert.deepEqual(release({nextReleaseDate:date},'S11','2026-10-20'),{cadence:'—',label:'일정 미정',urgency:'unknown'});
+ }
+ assert.deepEqual(release({nextReleaseDate:'2026-11-25'},'S1','2026-10-20'),{cadence:'—',label:'일정 미정',urgency:'unknown'});
 });
