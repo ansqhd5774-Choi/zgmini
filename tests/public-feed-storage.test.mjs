@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {DatabaseSync} from 'node:sqlite';
-import {readFileSync} from 'node:fs';
+import {readFileSync,existsSync} from 'node:fs';
 import {publicFeedStore,readPublicFeed,savedJson,FEED_POLICY} from '../worker/public-feed-store.mjs';
 import {refreshPublicFeeds} from '../worker/public-feed-refresh.mjs';
 import {marketOperationalStore} from '../worker/market-operational-store.mjs';
@@ -42,17 +42,17 @@ test('normalization consumes read-back input; persistence failure prevents outpu
 test('scheduler stores output, retains last good data on failure, and honors durable retry cooldown',async()=>{
  const {sql,db,store,locks}=fixture();let calls=0;
  const collectors=Object.fromEntries(Object.keys(FEED_POLICY).map(key=>[key,async(s,t)=>{calls++;await s.writeInput(key,{score:0},t);return Response.json({status:'verified',score:(await s.readInput(key)).body.score})}]));
- let r=await refreshPublicFeeds({env:{DB:db},store,locks,collectors,now});assert.equal(r.status,'COMPLETE');assert.equal(calls,7);
- await refreshPublicFeeds({env:{DB:db},store,locks,collectors,now:now+60000});assert.equal(calls,7);
+ let r=await refreshPublicFeeds({env:{DB:db},store,locks,collectors,now});assert.equal(r.status,'COMPLETE');assert.equal(calls,3);
+ await refreshPublicFeeds({env:{DB:db},store,locks,collectors,now:now+60000});assert.equal(calls,3);
  collectors['fear-greed']=async()=>{calls++;throw Error('redacted')};
  r=await refreshPublicFeeds({env:{DB:db},store,locks,collectors,now:now+15*60000});assert.equal(r.status,'PARTIAL');assert.equal((await store.readOutput('fear-greed')).storedAt,now);
- await refreshPublicFeeds({env:{DB:db},store,locks,collectors,now:now+16*60000});assert.equal(calls,8);sql.close();
+ await refreshPublicFeeds({env:{DB:db},store,locks,collectors,now:now+16*60000});assert.equal(calls,4);sql.close();
 });
 test('bounded scheduler attempts at most one due public feed per run and defers the rest',async()=>{
  const {sql,db,store,locks}=fixture();let calls=0;
  const collectors=Object.fromEntries(Object.keys(FEED_POLICY).map(key=>[key,async(s,t)=>{calls++;await s.writeInput(key,{score:0},t);return Response.json({status:'verified',score:0})}]));
  const first=await refreshPublicFeeds({env:{DB:db},store,locks,collectors,now,maxFeedsPerRun:1});
- assert.equal(calls,1);assert.equal(first.attempted,1);assert.equal(first.status,'BACKLOG');assert.equal(first.feeds.filter(x=>x.status==='DEFERRED').length,6);
+ assert.equal(calls,1);assert.equal(first.attempted,1);assert.equal(first.status,'BACKLOG');assert.equal(first.feeds.filter(x=>x.status==='DEFERRED').length,2);
  const second=await refreshPublicFeeds({env:{DB:db},store,locks,collectors,now,maxFeedsPerRun:1});
  assert.equal(calls,2);assert.equal(second.attempted,1);assert.equal(second.status,'BACKLOG');
  sql.close();
@@ -62,4 +62,19 @@ test('public feed routes contain no collector or live provider calls',()=>{
   const source=readFileSync(new URL(`../app/api/${key}/route.ts`,import.meta.url),'utf8');
   assert.match(source,/readPublicFeed/);assert.doesNotMatch(source,/\bfetch\s*\(|collect|refresh|waitUntil/);
  }
+});
+
+test('removed regional feeds have no polling or public routes while CNN and Korea R7 remain',()=>{
+ assert.deepEqual(Object.keys(FEED_POLICY),['fear-greed','market-data','core-pce']);
+ for(const key of ['ftse-fear-greed','nikkei-fear-greed','kospi-fear-greed','kospi-history']){
+  assert.equal(existsSync(new URL(`../app/api/${key}/route.ts`,import.meta.url)),false,key+' public route');
+  assert.equal(existsSync(new URL(`../worker/feed-collectors/${key}.ts`,import.meta.url)),false,key+' collector');
+ }
+ const wiring=readFileSync(new URL('../worker/public-feed-collectors.ts',import.meta.url),'utf8');
+ assert.match(wiring,/'fear-greed':cnn/);
+ assert.doesNotMatch(wiring,/ftse-fear-greed|nikkei-fear-greed|kospi-fear-greed|kospi-history/);
+ const ui=readFileSync(new URL('../app/country-fear-greed.tsx',import.meta.url),'utf8');
+ assert.match(ui,/<CnnPanel\s*\/>/);
+ assert.match(ui,/<KoreanCountryCard\s*\/>/);
+ assert.doesNotMatch(ui,/ftse-fear-greed|nikkei-fear-greed|kospi-fear-greed|kospi-history/);
 });

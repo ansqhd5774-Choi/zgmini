@@ -35,7 +35,7 @@ test("R14 earnings approved source IDs are identical in writer, projection and d
  assert.deepEqual(fromProjection,expected);
  assert.deepEqual(fromWriter,expected);
  assert.equal((panel.match(/activeOrder\.map\(id=>/g)??[]).length,2,"desktop and mobile must render the identical saved ID set");
- assert.match(panel,/<th>\{isR5\?"평가 기준일":"관측일"\}<\/th>/);
+ assert.match(panel,/<th>이전<\/th><th>현재<\/th><th>발표<\/th><th>판단<\/th><th>미니차트\(1Y\)<\/th>/);
  assert.match(panel,/formatTooltipLabel=\{value=>isR5\?/);
 });
 
@@ -62,7 +62,11 @@ test("R14 four beginner questions have real emphasis spans and official source l
 test("R14 cannot treat composite reconstruction as individual observation history or release metadata",()=>{
  assert.match(projection,/observationDate:x\?\.asOfDate/);
  assert.match(projection,/trend:Array\.isArray\(e1\?\.trend\)/);
- assert.doesNotMatch(projection,/previousValue:|nextReleaseDate:|trend1Y:/);
+ assert.match(projection,/checkedSourceObservation/);
+ assert.match(projection,/x\?\.id!=="S6"&&x\?\.id!=="S11"/);
+ assert.match(projection,/verifiedUpcomingSourceRelease/);
+ assert.match(projection,/OFFICIAL_SOURCE_SPECIFIC_SCHEDULE/);
+ assert.doesNotMatch(projection,/trend1Y:/);
  assert.doesNotMatch(panel,/new Date\(\).*nextReleaseDate|fakeMiniTrend|synthesizedPrior/);
  assert.match(panel,/사후 재구성 추이/);
 });

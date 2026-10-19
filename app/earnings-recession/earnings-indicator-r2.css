@@ -6,19 +6,26 @@
 .earnings-r2-indicators .earnings-r2-data-caption{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:0 0 12px;color:#94aabe;font-size:11px}
 .earnings-r2-data-caption strong{color:#dbe8f2;font-size:11px}
 .earnings-r2-indicators .earnings-r2-table-wrap{min-width:0;max-width:100%;overflow-x:auto}
-.earnings-r2-indicators .earnings-r2-table{width:100%;min-width:1090px;table-layout:fixed}
+.earnings-r2-indicators .earnings-r2-table{width:100%;min-width:1100px;table-layout:fixed}
 .earnings-r2-table .earnings-col-favorite{width:4%}
-.earnings-r2-table .earnings-col-name{width:18%}
-.earnings-r2-table .earnings-col-content{width:24%}
-.earnings-r2-table .earnings-col-criterion{width:17%}
-.earnings-r2-table .earnings-col-current{width:14%}
-.earnings-r2-table .earnings-col-observed{width:11%}
-.earnings-r2-table .earnings-col-judgement{width:8%}
-.earnings-r2-table .earnings-col-help{width:4%}
+.earnings-r2-table .earnings-col-name{width:13%}
+.earnings-r2-table .earnings-col-content{width:18%}
+.earnings-r2-table .earnings-col-criterion{width:12%}
+.earnings-r2-table .earnings-col-current{width:11%}
+.earnings-r2-table .earnings-col-observed{width:9%}
+.earnings-r2-table .earnings-col-prior{width:9%}
+.earnings-r2-table .earnings-col-spark{width:9%}
+.earnings-r2-table .earnings-col-release{width:6%}
+.earnings-r2-table .earnings-col-judgement{width:6%}
+.earnings-r2-table .earnings-col-help{width:3%}
 .earnings-r2-indicators .earnings-r2-table :is(th,td){width:auto!important;box-sizing:border-box;text-align:center;padding:11px 7px;overflow-wrap:anywhere}
 .earnings-r2-table .earnings-r2-value strong{display:block;color:#f2f7fa;font-size:12px}
 .earnings-r2-table .earnings-r2-value small{display:block;white-space:nowrap}
 .earnings-r2-table .earnings-r2-observed{color:#d4e0e9;font-size:11px;white-space:nowrap}
+.earnings-r2-table .earnings-r2-prior strong{display:block;font-size:11px;color:#f2f7fa}
+.earnings-r2-table .earnings-r2-prior small{display:block;margin-top:3px;font-size:10px;color:#8fa6bb}
+.earnings-r2-table .earnings-r2-spark .inflation-mini-chart{width:112px;max-width:100%;height:32px}
+.earnings-r2-table .earnings-r2-release{font-size:11px;white-space:nowrap}
 .earnings-r2-table tr[data-development="true"]{opacity:.82}
 .earnings-r2-mobile-list{display:none}
 .earnings-r2-mobile-card[data-judgement="positive"] .inflation-judgement{border-color:rgba(34,197,94,.48);background:rgba(34,197,94,.12);color:#77e59c}
@@ -48,6 +55,9 @@
  .earnings-r2-mobile-metrics span{color:#7891a6;font-size:9px;font-weight:700}
  .earnings-r2-mobile-metrics strong{margin-top:3px;color:#f2f7fa;font-size:11px;overflow-wrap:anywhere}
  .earnings-r2-mobile-metrics small{margin-top:2px;color:#7891a6;font-size:9px}
+ .earnings-r2-mobile-spark{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:9px 5px 0;border-top:1px solid rgba(68,103,133,.24)}
+ .earnings-r2-mobile-spark span{font-size:10px;color:#93aabd;font-weight:600}
+ .earnings-r2-mobile-spark .inflation-mini-chart{width:112px;height:32px;max-width:45%}
  .earnings-recession-target-card .earnings-r2-source-note{min-width:0}
  .earnings-recession-target-card .earnings-r2-source-note strong{white-space:normal;overflow-wrap:anywhere}
 }
@@ -85,4 +95,33 @@
  }
  .fg-card.fg-shared-shell.earnings-recession-target-card .zg-chart-extremum text{font-size:11px}
  .fg-card.fg-shared-shell.earnings-recession-target-card .zg-chart-extremum text tspan:nth-child(2){font-size:10px}
+}
+
+/* R27: exact 10-column layout parity with credit-risk, without changing indicators or scores. */
+.earnings-r2-indicators .earnings-r2-table{width:100%;min-width:1090px!important;table-layout:fixed}
+.earnings-r2-indicators .earnings-r2-table :is(th,td){width:auto!important;box-sizing:border-box;overflow-wrap:normal}
+.earnings-r2-indicators .earnings-r2-table tbody th{overflow-wrap:anywhere}
+.earnings-r2-indicators .earnings-r2-table col:nth-child(1){width:4%!important}
+.earnings-r2-indicators .earnings-r2-table col:nth-child(2){width:15%!important}
+.earnings-r2-indicators .earnings-r2-table col:nth-child(3){width:17%!important}
+.earnings-r2-indicators .earnings-r2-table col:nth-child(4){width:11%!important}
+.earnings-r2-indicators .earnings-r2-table col:nth-child(5){width:10%!important}
+.earnings-r2-indicators .earnings-r2-table col:nth-child(6){width:10%!important}
+.earnings-r2-indicators .earnings-r2-table col:nth-child(7){width:10%!important}
+.earnings-r2-indicators .earnings-r2-table col:nth-child(8){width:7%!important}
+.earnings-r2-indicators .earnings-r2-table col:nth-child(9){width:12%!important}
+.earnings-r2-indicators .earnings-r2-table col:nth-child(10){width:4%!important}
+.earnings-r2-indicators .earnings-r2-value strong,.earnings-r2-indicators .earnings-r2-release strong{display:block;color:#f2f7fa;font-size:12px}
+.earnings-r2-indicators .earnings-r2-value small,.earnings-r2-indicators .earnings-r2-release small{display:block;margin-top:3px;font-size:10px;white-space:nowrap}
+.earnings-r2-indicators .earnings-r2-spark{padding-left:7px!important;padding-right:7px!important}
+.earnings-r2-indicators .earnings-r2-spark .inflation-mini-chart{width:112px;max-width:100%;height:32px}
+.earnings-r2-indicators [data-judgement="positive"] .inflation-mini-chart-line{stroke:#77e59c}
+.earnings-r2-indicators [data-judgement="neutral"] .inflation-mini-chart-line{stroke:#cbd5e1}
+.earnings-r2-indicators [data-judgement="negative"] .inflation-mini-chart-line{stroke:#ff9a9a}
+@media(max-width:767px){
+ .earnings-r2-mobile-metrics{grid-template-columns:repeat(3,minmax(0,1fr))}
+ .earnings-r2-mobile-spark{margin-top:8px;padding-top:8px}
+ .earnings-r2-mobile-spark span{font-size:9px}
+ .earnings-r2-mobile-spark .inflation-mini-chart{width:148px;max-width:56vw;height:30px}
+ .earnings-r2-mobile-metrics small{overflow-wrap:anywhere;white-space:normal}
 }
