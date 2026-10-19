@@ -6,7 +6,7 @@ const read=path=>readFileSync(path,'utf8');
 
 test('technical SEO sitemap includes every public route with truthful lastmod values',()=>{
   const sitemap=read('public/sitemap.xml');
-  assert.equal((sitemap.match(/<url>/g)||[]).length,19);
+  assert.equal((sitemap.match(/<url>/g)||[]).length,31);
   for(const route of ['/risk-indicators/','/economic-indicators/','/theme-fear-greed/']){
     assert.ok(sitemap.includes(`<loc>https://zgmini.kr${route}</loc><lastmod>2026-10-18</lastmod>`),route);
   }
