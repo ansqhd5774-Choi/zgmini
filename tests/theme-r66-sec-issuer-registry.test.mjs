@@ -1,0 +1,11 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {auditR66IdentityBatch,R66_SEC_IDENTITIES,R66_THEME_PAIRS} from '../lib/market-score/theme-r66-sec-issuer-registry.mjs';
+const fixture=()=>({version:'THEME-R64-12-THEME-OFFLINE-MVP-READINESS-V1',items:R66_THEME_PAIRS.map(x=>({theme:x.theme,etfs:[...x.etfs]})),validatedFiveAxisScores:0,publishedThemes:0});
+test('all 21 unique ETFs have 7 grouped SEC issuers',()=>{const x=auditR66IdentityBatch();assert.equal(x.registeredEtfs,21);assert.equal(x.registrants,7);assert.equal(x.themePairs,12);assert.equal(x.issuerGroups.reduce((n,g)=>n+g.count,0),21);});
+test('official CIBR BUG SKYY URA and ARKF identity examples',()=>{assert.equal(R66_SEC_IDENTITIES.CIBR.seriesId,'S000050385');assert.equal(R66_SEC_IDENTITIES.BUG.classId,'C000214985');assert.equal(R66_SEC_IDENTITIES.SKYY.seriesId,'S000033237');assert.equal(R66_SEC_IDENTITIES.URA.cik,'0001432353');assert.equal(R66_SEC_IDENTITIES.ARKF.seriesId,'S000064752');});
+test('all 12 pairs match offline R64 readiness structure',()=>{const x=auditR66IdentityBatch({r64:fixture()});assert.equal(x.registeredThemes,12);assert.equal(x.calculatedFiveAxisThemes,0);});
+test('identifiers never imply historical PIT or new scores',()=>{const x=auditR66IdentityBatch();assert.equal(x.holdingsSnapshotRowsParsed,0);assert.equal(x.dailyPITVerified,0);assert.equal(x.publishedThemes,0);});
+test('reject premature R64 publication',()=>{assert.throws(()=>auditR66IdentityBatch({r64:{...fixture(),publishedThemes:1}}),/PREMATURE_PUBLISH/);});
+test('reject unexpected R64 ETF pair',()=>{const x=fixture();x.items[0].etfs=['CIBR','ARKG'];assert.throws(()=>auditR66IdentityBatch({r64:x}),/R64_PAIR_MISMATCH/);});
+test('data is frozen and unique across 21 SEC series',()=>{assert.equal(Object.isFrozen(R66_SEC_IDENTITIES),true);assert.equal(new Set(Object.values(R66_SEC_IDENTITIES).map(x=>x.seriesId)).size,21);assert.equal(new Set(R66_THEME_PAIRS.map(x=>x.theme)).size,12);});
