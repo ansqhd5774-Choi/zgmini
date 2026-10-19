@@ -18,3 +18,15 @@
 - 새로운 기준은 과거 공개 점수 `AS_PUBLISHED` 이력을 소급 수정하지 않으며, `0`/null/미관측을 바꿔치기하지 않는다.
 
 **승인 없는 Production 배포 또는 정식 score overwrite 금지.** 1차 R3 36.3점은 그대로 유지.
+
+## V45 Source Gate 정정 — Windows CRLF에 의한 false source drift
+
+- PC read-only 진단: 활성 E: 런타임 HEAD `016c6c19ef0b764a280e416f0d579cfc925d839a`, detached, tracked dirty 0, 공식 repo remote 일치, 분류기 R3_2.
+- V45 PC raw working-tree Git blob hash: `27f003e2b8e0bad72209c62b9706070e900ddf71`.
+- GitHub에서 **정확한 활성 HEAD**의 원본 LF 분류기를 재조회: Git blob `f63b8d63c3383c6b7e33788345d68da378f61bd9`. 현재 main 원본 분류기와 완전 일치.
+- 동일 원본을 LF→CRLF로만 변환해 Git Blob SHA-1을 독립 재계산하면 `27f003e2b8e0bad72209c62b9706070e900ddf71`로 **PC 측정값 40자리 완전 일치**. V45의 `SOURCE_DRIFT_REVIEW_REQUIRED`는 정규화 누락으로 인한 **diagnostic false positive**이며, 현재 운영 분류기의 실제 본문 드리프트 증거가 아니다.
+- 활성 HEAD 대비 최신 main의 R3 핵심 8개 파일 비교: 7개 완전 동일(분류기, 계산기, R3 wrapper, 게시기, 검증기, 저장소, 기존 runner); 1개 `continuous-news-r3.mjs`는 main에 분류 기사 수/미분류 사유를 보고하는 **8줄 telemetry만 추가**. 점수/분류/수집 주기 변경은 아니다.
+- 이전 HEAD라는 이유로 운영 소스를 최신 main으로 pull/overwrite하지 않는다. 새 V43 후보는 별도 Draft SHA `302393b7d1669b49cc2175931c45fc54c8bd5e77`로 여전히 미병합·미배포.
+- 향후 source gate에서는 PC working-tree raw SHA와 GitHub LF blob SHA를 직접 비교하지 말고, line-ending 정규화 후 Git blob 또는 Git index blob과 비교할 것.
+
+이 정정은 PC DB/D1/스케줄/공개 점수/배포를 변경하지 않는다.
