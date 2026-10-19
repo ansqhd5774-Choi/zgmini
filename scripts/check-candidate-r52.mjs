@@ -9,7 +9,7 @@ const c=JSON.parse(readFileSync('dist/server/wrangler.json'));
 assert.equal(c.name,'zgmini-migration-candidate-r5');
 assert.equal(c.account_id,'6e9b57e718b247330a6efa42a9516e95');
 assert.equal(c.workers_dev,true);
-assert.deepEqual(c.routes,[{pattern:'zgmini.kr',custom_domain:true}]);assert.deepEqual(c.triggers.crons,[]);assert.deepEqual(c.d1_databases.map(({binding,database_id})=>({binding,database_id})),[{binding:'DB_CORE',database_id:'d7a25e98-8d52-47a4-9e37-695e4d84d18b'},{binding:'DB_HISTORY',database_id:'55f17650-dc84-46c9-829a-d448ca1b2417'}]);assert.deepEqual(c.vars,{ZGMINI_COMPUTE_TARGET:'pc',ZGMINI_COLLECTION_TARGET:'pc'});
+assert.deepEqual(c.routes,[{pattern:'zgmini.kr',custom_domain:true}]);assert.deepEqual(c.triggers.crons,[]);assert.deepEqual(c.d1_databases.map(({binding,database_id})=>({binding,database_id})),[{binding:'DB_CORE',database_id:'d7a25e98-8d52-47a4-9e37-695e4d84d18b'},{binding:'DB_HISTORY',database_id:'55f17650-dc84-46c9-829a-d448ca1b2417'},{binding:'DB_COMMUNITY',database_id:'a38efe98-ea5d-4c57-b6ca-abe261468ba9'}]);assert.deepEqual(c.vars,{ZGMINI_COMPUTE_TARGET:'pc',ZGMINI_COLLECTION_TARGET:'pc',COMMUNITY_CHAT_SITE_KEY:'0x4AAAAAAFazwtsIZAa_fZtP'});
 assert.equal(c.images,undefined);assert.deepEqual(c.services,[]);
 const bundle=readFileSync('dist/server/index.js','utf8');
 assert(bundle.includes('CANDIDATE_WRITE_DISABLED')&&bundle.includes('DB_HISTORY')&&bundle.includes('DB_CORE'));
