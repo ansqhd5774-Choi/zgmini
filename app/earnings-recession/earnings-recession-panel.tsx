@@ -55,11 +55,25 @@ function hasIndicatorHistory(r:Indicator|null|undefined){return r?.historyKind==
 function priorFmt(r:Indicator|null|undefined){return hasIndicatorHistory(r)&&typeof r?.previousValue==="number"&&Number.isFinite(r.previousValue)?r.previousValue.toFixed(2)+(r.unit?" "+r.unit:""):"—"}
 function historyChartLabel(r:Indicator|null|undefined,label:string){return label+(r?.historyKind==="ASOF_RECONSTRUCTED_NOT_OFFICIAL_PERIOD_END"?" 사후 재구성 평가 추이":" 원자료 관측 분기")}
 function priorDateLabel(r:Indicator|null|undefined){return hasIndicatorHistory(r)&&r?.previousPeriodEnd?(r.historyKind==="ASOF_RECONSTRUCTED_NOT_OFFICIAL_PERIOD_END"?"평가 ":"관측 ")+dateLabel(r.previousPeriodEnd):"—"}
+function earningsKstToday(){
+ const parts=new Intl.DateTimeFormat("en-US",{timeZone:"Asia/Seoul",year:"numeric",month:"2-digit",day:"2-digit"}).formatToParts(new Date());
+ const get=(type:string)=>parts.find(part=>part.type===type)?.value??"";
+ return `${get("year")}-${get("month")}-${get("day")}`;
+}
+function earningsReleaseInfo(r:Indicator|null|undefined,id:string,today:string){
+ const date=(id==="S6"||id==="S11")?r?.nextReleaseDate:null;
+ if(!date||!/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(date)||!Number.isFinite(Date.parse(date+"T00:00:00Z"))||new Date(date+"T00:00:00Z").toISOString().slice(0,10)!==date)
+  return {cadence:"—",label:"일정 미정",urgency:"unknown"};
+ const days=Math.round((Date.parse(date+"T00:00:00Z")-Date.parse(today+"T00:00:00Z"))/86400000);
+ const urgency=days<0?"unknown":days<=3?"imminent":days<=7?"week":days<=14?"fortnight":days<=30?"month":"distant";
+ return {cadence:"분기",label:date.slice(5).replace("-",".")+" · "+(days<0?"일정 재확인":days===0?"오늘":`D-${days}`),urgency};
+}
 function HelpTip({label,text,isR5=false}:{label:string;text:string;isR5?:boolean}){return <ContentHelp label={label+' 도움말'}><HelpText copy={{meaning:text,reading:isR5?'현재값·내부점수·평가 기준일을 구분하세요. E1 평가 기준일은 개별 기업의 공시일이나 원자료의 공식 발표일이 아닙니다. S6·S11의 추이는 분기 원자료 기간 종료일 기준입니다. 나머지 지표는 저장된 입력으로 사후 재구성한 모델 평가일 기준이며, 개별 공시일·공식 발표일·발표 당시 PIT 관측은 아닙니다.':'원자료의 단위와 기준선, 관측일을 함께 확인하세요. 원자료의 상승·하락과 시장 평가 점수의 상승·하락은 서로 다를 수 있습니다.',note:'자료가 없거나 개발 중인 항목은 숫자를 표시하지 않습니다. 「—」는 0이 아닙니다.'}}/></ContentHelp>;}
 
 export default function EarningsRecessionPanel(){
  const {payload,loading}=useStoredIndex<Payload>('/api/earnings-recession-detail');
  const diagnosticScore=typeof payload?.score==="number"&&Number.isFinite(payload.score)?payload.score:null,stored=payload?.storedE1,isR5=stored?.methodologyVersion==="E1-R5",activeMeta=isR5?r5Meta:r4Meta,activeOrder=isR5?r5Order:r4Order;
+ const today=earningsKstToday();
  const trend=useMemo(()=>(stored?.trend??[]).filter(p=>typeof p.value==="number"&&Number.isFinite(p.value)).slice(-8).map(p=>({date:p.label,score:p.value} satisfies MarketFearGreedChartPoint)),[stored?.trend]);
  const latest=trend.at(-1),latestPoint:MarketFearGreedChartValidPoint|null=latest?{date:latest.date,score:latest.score as number}:null,axisTicks=[...new Map(trend.map(p=>[p.date.slice(0,7),p.date])).values()],axisLabels=new Map(trend.map(p=>[p.date,p.date.slice(2,7).replace("-","/")])),rows=new Map((stored?.indicators??[]).map(x=>[x.id,x])),storedScore=typeof stored?.score==="number"&&Number.isFinite(stored.score)?stored.score:null;
  return <>
@@ -70,19 +84,18 @@ export default function EarningsRecessionPanel(){
   </section>
   <section className="inflation-explainer" aria-labelledby="earnings-what-title"><p className="cnn-eyebrow">WHAT IS AN EARNINGS RECESSION?</p><h1 id="earnings-what-title">실적 침체란?</h1><p>{isR5?"E1-R5는 실제 이익·매출·마진·현금흐름뿐 아니라 개선의 확산도, 생산·노동 비용 압력, 경영진과 CFO의 향후 전망까지 함께 봅니다.":"실적 침체는 기업들의 이익이 전반적으로 둔화하거나 감소하는 상태입니다. 주가가 오르더라도 EPS 성장, 매출 성장, 이익률, 이익 성장 기업의 폭이 함께 약해지면 기업 펀더멘털이 악화되고 있다는 신호가 될 수 있습니다."}</p><div className="inflation-direction-strip"><span><b>침체 방향</b>EPS·매출·마진↓ · 비용압력↑ · 전망↓</span><span><b>안정 방향</b>실적 개선 · 확산 확대 · 비용압력 완화 · 전망↑</span></div></section>
   <section className="inflation-indicator-section earnings-r2-indicators" aria-labelledby="earnings-indicator-title">
-   <header><div><p className="cnn-eyebrow">EARNINGS RECESSION INDICATORS</p><h2 id="earnings-indicator-title">실적 침체 분석 지표</h2></div><p>이전·현재값과 1년 원자료 추이를 함께 봅니다. 확인되지 않은 값은 표시하지 않습니다.</p></header>
-   <div className="earnings-r2-data-caption"><span>{stored?.methodologyVersion??"E1"} 저장 자료</span><strong>{stored?.status??"PARTIAL"}</strong>{stored?.financialPeriodEnd?<span>실적 기준 {dateLabel(stored.financialPeriodEnd)}</span>:null}{typeof stored?.universeCount==="number"?<span>분석 모집단 {stored.universeCount.toLocaleString("ko-KR")}개</span>:null}{typeof stored?.issuerCount==="number"?<span>유효 기업 {stored.issuerCount.toLocaleString("ko-KR")}개</span>:null}</div>
+   <header><div><p className="cnn-eyebrow">EARNINGS RECESSION INDICATORS</p><h2 id="earnings-indicator-title">실적 침체 분석 지표 <ContentHelp label="실적 지표 저장 자료 안내"><div className="earnings-r2-meta-help"><span>{stored?.methodologyVersion??"E1"} 저장 자료</span><span>상태 {stored?.status??"PARTIAL"}</span>{stored?.financialPeriodEnd?<span>실적 기준 {dateLabel(stored.financialPeriodEnd)}</span>:null}{typeof stored?.universeCount==="number"?<span>분석 모집단 {stored.universeCount.toLocaleString("ko-KR")}개</span>:null}{typeof stored?.issuerCount==="number"?<span>유효 기업 {stored.issuerCount.toLocaleString("ko-KR")}개</span>:null}</div></ContentHelp></h2></div><p>이전·현재값과 1년 추이를 보여줍니다. S6·S11은 원자료 관측기간, 나머지는 저장 자료로 재구성한 평가 시점 기준입니다.</p></header>
    <div className="inflation-table-wrap earnings-r2-table-wrap"><table className="inflation-indicator-table earnings-r2-table">
     <colgroup><col className="earnings-col-favorite"/><col className="earnings-col-name"/><col className="earnings-col-content"/><col className="earnings-col-criterion"/><col className="earnings-col-prior"/><col className="earnings-col-current"/><col className="earnings-col-release"/><col className="earnings-col-judgement"/><col className="earnings-col-spark"/><col className="earnings-col-help"/></colgroup>
     <thead><tr><th><EarningsFavoriteHeaderIcon/><span className="sr-only">즐겨찾기</span></th><th>지표</th><th>내용</th><th>기준</th><th>이전</th><th>현재</th><th>발표</th><th>판단</th><th>미니차트(1Y)</th><th><span className="sr-only">도움말</span>ⓘ</th></tr></thead>
     <tbody>
-     {activeOrder.map(id=>{const r=rows.get(id),m=activeMeta[id],j=judge(r?.score,r?.status);return <tr key={id} data-judgement={j.tone}>
+     {activeOrder.map(id=>{const r=rows.get(id),m=activeMeta[id],j=judge(r?.score,r?.status),release=earningsReleaseInfo(r,id,today);return <tr key={id} data-judgement={j.tone}>
       <td><EarningsFavoriteButton id={id} label={m.label}/></td>
       <th scope="row"><strong>{m.label}</strong><small>{r?.unit||"관측 지표"}</small></th>
       <td>{m.content}</td><td>{m.criterion}</td>
       <td className="earnings-r2-value"><strong>{priorFmt(r)}</strong><small>{priorDateLabel(r)}</small></td>
       <td className="earnings-r2-value"><strong>{fmt(r)}</strong><small>{isR5?"평가 ":"관측 "}{dateLabel(r?.observationDate)}</small></td>
-      <td className="earnings-r2-release"><strong>{r?.nextReleaseDate&&(id==="S6"||id==="S11")?"분기":"—"}</strong><small>{r?.nextReleaseDate?dateLabel(r.nextReleaseDate):""}</small></td>
+      <td className={`earnings-r2-release release-${release.urgency}`}><strong>{release.cadence}</strong><small>{release.label}</small></td>
       <td><span className="inflation-judgement">{j.label}</span></td>
       <td className="earnings-r2-spark"><InflationMiniChart label={historyChartLabel(r,m.label)} points={hasIndicatorHistory(r)?r?.sourceHistory1Y:undefined}/></td>
       <td><HelpTip label={m.label} text={m.help} isR5={isR5}/></td>
@@ -97,7 +110,7 @@ export default function EarningsRecessionPanel(){
     </tbody>
    </table></div>
    <div className="earnings-r2-mobile-list">
-    {activeOrder.map(id=>{const r=rows.get(id),m=activeMeta[id],j=judge(r?.score,r?.status);return <article className="earnings-r2-mobile-card" key={id} data-judgement={j.tone}>
+    {activeOrder.map(id=>{const r=rows.get(id),m=activeMeta[id],j=judge(r?.score,r?.status),release=earningsReleaseInfo(r,id,today);return <article className="earnings-r2-mobile-card" key={id} data-judgement={j.tone}>
      <div className="earnings-r2-mobile-head"><div className="earnings-r2-mobile-title"><EarningsFavoriteButton id={id} label={m.label}/><div><strong>{m.label}</strong><small>{r?.unit||"관측 지표"}</small></div></div><div className="earnings-r2-mobile-actions"><span className="inflation-judgement">{j.label}</span><HelpTip label={m.label} text={m.help} isR5={isR5}/></div></div>
      <p className="earnings-r2-mobile-content">{m.content}</p>
      <p className="earnings-r2-mobile-criterion"><span>기준</span>{m.criterion}</p>
@@ -105,7 +118,7 @@ export default function EarningsRecessionPanel(){
      <div className="earnings-r2-mobile-metrics">
       <div><span>이전</span><strong>{priorFmt(r)}</strong><small>{priorDateLabel(r)}</small></div>
       <div><span>현재</span><strong>{fmt(r)}</strong><small>{isR5?"평가 ":"관측 "}{dateLabel(r?.observationDate)}</small></div>
-      <div><span>발표</span><strong>{r?.nextReleaseDate&&(id==="S6"||id==="S11")?"분기":"—"}</strong><small>{r?.nextReleaseDate?dateLabel(r.nextReleaseDate):""}</small></div>
+      <div className={`release-${release.urgency}`}><span>발표</span><strong>{release.cadence}</strong><small>{release.label}</small></div>
      </div>
     </article>})}
     {!isR5&&dev.map(item=><article className="earnings-r2-mobile-card is-development" key={item[0]}>

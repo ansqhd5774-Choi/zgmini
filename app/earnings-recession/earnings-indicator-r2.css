@@ -3,8 +3,6 @@
 .fg-card.fg-shared-shell.earnings-recession-target-card .cnn-score-comparisons{display:none!important}
 .fg-card.fg-shared-shell.earnings-recession-target-card .fg-chart-slot{position:relative}
 .earnings-recession-target-card .earnings-r2-chart-identity{position:absolute;right:15px;top:6px;z-index:2;pointer-events:none;font-size:10px;line-height:1.2;color:#c6dae6;background:rgba(5,20,34,.75);padding:2px 4px}
-.earnings-r2-indicators .earnings-r2-data-caption{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:0 0 12px;color:#94aabe;font-size:11px}
-.earnings-r2-data-caption strong{color:#dbe8f2;font-size:11px}
 .earnings-r2-indicators .earnings-r2-table-wrap{min-width:0;max-width:100%;overflow-x:auto}
 .earnings-r2-indicators .earnings-r2-table{width:100%;min-width:1100px;table-layout:fixed}
 .earnings-r2-table .earnings-col-favorite{width:4%}
@@ -125,3 +123,21 @@
  .earnings-r2-mobile-spark .inflation-mini-chart{width:148px;max-width:56vw;height:30px}
  .earnings-r2-mobile-metrics small{overflow-wrap:anywhere;white-space:normal}
 }
+
+/* Mirror inflation's release countdown presentation without inventing missing dates. */
+.earnings-r2-indicators .earnings-r2-table td.earnings-r2-release small{color:#7891a6;font-weight:700;font-size:10px;white-space:nowrap}
+.earnings-r2-indicators .earnings-r2-table td.earnings-r2-release.release-month small{color:#60a5fa;font-weight:800}
+.earnings-r2-indicators .earnings-r2-table td.earnings-r2-release.release-fortnight small{color:#22d3ee;font-weight:800}
+.earnings-r2-indicators .earnings-r2-table td.earnings-r2-release.release-week small{color:#f4c34e;font-weight:900}
+.earnings-r2-indicators .earnings-r2-table td.earnings-r2-release.release-imminent small{color:#fb7185;font-weight:900}
+@media(max-width:767px){
+ .earnings-r2-mobile-metrics .release-month small{color:#60a5fa;font-weight:800}
+ .earnings-r2-mobile-metrics .release-fortnight small{color:#22d3ee;font-weight:800}
+ .earnings-r2-mobile-metrics .release-week small{color:#f4c34e;font-weight:900}
+ .earnings-r2-mobile-metrics .release-imminent small{color:#fb7185;font-weight:900}
+}
+
+/* Retain E1 provenance in a compact title help, not a separate table status row. */
+.earnings-r2-indicators h2 .zg-help{display:inline-flex;margin-left:4px;vertical-align:middle}
+.earnings-r2-meta-help{display:flex;flex-direction:column;gap:5px}
+.earnings-r2-meta-help span{display:block}
