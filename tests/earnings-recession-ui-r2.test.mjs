@@ -18,7 +18,7 @@ test("earnings R2 uses saved observations and explicit missing instead of fabric
  assert.match(panel,/fmt\(r\)/);
  assert.match(panel,/dateLabel\(r\?\.observationDate\)/);
  assert.doesNotMatch(panel,/scoreComparisons/);
- assert.match(css,/cnn-score-comparisons\{display:none!important\}/);
+ assert.match(css,/\.cnn-score-comparisons\.is-multi\{/);
 });
 test("earnings R2 renders desktop and mobile from identical source row IDs",()=>{
  assert.match(panel,/earnings-r2-table-wrap/);
@@ -33,8 +33,8 @@ test("favorite reorder is earnings-only and development candidates stay below ac
  assert.match(fav,/leftDevelopment!==rightDevelopment/);
  assert.doesNotMatch(fav,/zgmini:credit:favorites/);
 });
-test("earnings R2 suppresses unavailable comparison placeholders despite shared hero CSS",()=>{
- assert.match(css,/\.fg-card\.fg-shared-shell\.earnings-recession-target-card \.cnn-score-comparisons\{display:none!important\}/);
+test("earnings R47 shows explicit missing periods without manufacturing historical comparison values",()=>{
+ assert.match(css,/\.earnings-recession-target-card \.cnn-score-comparisons\.is-multi\{/);
  assert.match(panel,/earnings-r2-chart-identity/);
  assert.match(panel,/\{stored\?\.financialPeriodEnd\?<span>/);
  assert.match(css,/earnings-r2-chart-identity/);
@@ -126,9 +126,33 @@ test("R46 earnings hero uses real score polarity and dated extrema without inven
  assert.match(css,/earnings-recession-target-card\[data-score-tone="positive"\] \.cnn-spectrum-center \.cnn-score-value/);
  assert.match(css,/earnings-recession-target-card\[data-score-tone="neutral"\] \.cnn-spectrum-center \.cnn-score-value/);
  assert.match(css,/earnings-recession-target-card\[data-score-tone="negative"\] \.cnn-spectrum-center \.cnn-score-value/);
- assert.match(css,/\.cnn-score-comparisons\{display:none!important\}/);
+ assert.match(panel,/earningsDiagnosticComparisons/);
+ assert.match(css,/\.earnings-recession-target-card \.cnn-score-comparisons\.is-multi\{/);
  assert.doesNotMatch(panel,/scoreComparisons\?\.|fakeMiniTrend|synthesizedPrior|new Date\(\)\.getTime\(\).*score/);
  assert.match(panel,/진단점수와 별도/);
  assert.match(panel,/score=\{loading\|\|diagnosticScore===null\?"—":diagnosticScore\.toFixed\(1\)\}/);
  assert.match(panel,/storedScore\.toFixed\(1\)/);
+});
+
+test("R47 earnings detail shares five period cell geometry but has no synthetic diagnostic deltas",()=>{
+ const items=panel.match(/const earningsDiagnosticComparisons=\[([\s\S]*?)\] as const;/)?.[1];
+ assert.ok(items);
+ const labels=[...items.matchAll(/\{label:"([^"]+)",value:null\}/g)].map(m=>m[1]);
+ assert.deepEqual(labels,["1주","1개월","3개월","6개월","1년"]);
+ assert.match(panel,/comparisonItems=\{earningsDiagnosticComparisons\}/);
+ assert.doesNotMatch(panel,/dayDelta=\{|periodDelta=\{|scoreComparisons\?/);
+ assert.match(css,/\.earnings-recession-target-card \.cnn-score-comparisons\.is-multi\{[\s\S]*?grid-template-columns:repeat\(5,minmax\(0,1fr\)\)/);
+ assert.match(css,/@media\(max-width:767px\)\{[\s\S]*?\.earnings-recession-target-card \.cnn-score-comparisons\.is-multi/);
+ assert.match(panel,/진단점수와 별도/);
+});
+test("R47 earnings factor ranks balance factual E1 top/bottom without affecting other topics",()=>{
+ const guide=readFileSync("app/beginner-risk-guide.tsx","utf8");
+ assert.match(guide,/const negative=useMemo\(\(\)=>factors\.filter\(x=>x\.score<45\)/);
+ assert.match(guide,/const earningsRelativeBottom=useMemo\(\(\)=>\{/);
+ assert.match(guide,/const displayedLower=topic==="earnings-recession"\?earningsRelativeBottom:negative/);
+ assert.match(guide,/const highlighted=new Set\(positive\.map\(row=>row\.id\)\)/);
+ assert.match(guide,/factors\.filter\(row=>!highlighted\.has\(row\.id\)\)\.sort\(\(a,b\)=>a\.score-b\.score\)\.slice\(0,3\)/);
+ assert.match(guide,/negativeHeading:"E1 상대적 하위 지표"/);
+ assert.match(guide,/topic==="earnings-recession"\?"bg-slate-800\/30 p-4":"bg-rose-950\/20 p-4"/);
+ assert.match(guide,/E1 저장 지표별 평가입니다\. 메인 진단 점수의 구성요인과는 별개입니다/);
 });
