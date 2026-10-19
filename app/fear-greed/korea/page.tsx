@@ -2,9 +2,10 @@ import DetailInvestorNotes from "../../detail-investor-notes";
 import type { Metadata } from "next";
 import DataPanel from "./data-panel";
 import DetailReadingGuide from "../../detail-reading-guide";
+import InvestorIntentGuide from "../investor-intent-guide";
 
-const title = "한국 공포탐욕지수 - 오늘의 코스피 투자심리 | ZGmini";
-const description = "한국 공포탐욕지수의 최근 점수·관측일·기간별 차트와 7개 핵심 신호를 확인하세요. 504개 유효 관측치 기준창으로 국내 주식시장 투자심리를 0~100으로 보여주는 ZGmini 자체 지표입니다.";
+const title = "한국 공포탐욕지수 - 코스피 투자심리·변동성 추이 | ZGmini";
+const description = "한국 공포탐욕지수의 최근 점수·관측일·기간별 차트와 7개 핵심 신호를 확인하세요. 504개 유효 관측치 기준창으로 코스피 투자심리와 시장 폭·풋콜비율·변동성 신호를 보여주는 ZGmini 자체 지표입니다.";
 const url = "https://zgmini.kr/fear-greed/korea/";
 export const metadata: Metadata = {
   title, description, alternates: { canonical:url }, robots:{index:true,follow:true},
@@ -37,6 +38,7 @@ export default async function KoreaPage() {
       sources={[{href:"https://data.krx.co.kr/",label:"한국거래소 정보데이터시스템"},{href:"https://ecos.bok.or.kr/",label:"한국은행 ECOS"}]}
       related={[{href:"/fear-greed/usa/",label:"미국 CNN 공포탐욕지수"}]}
     />
+    <InvestorIntentGuide market="korea"/>
     <DetailInvestorNotes topic="korea"/>
     <div className="mt-12 space-y-8 text-sm leading-7 text-slate-300 sm:text-base">
       <section><h2 className="mb-3 text-xl font-bold text-white">점수와 단계는 어떻게 읽나요?</h2><p>점수가 높을수록 위험을 감수하려는 심리가, 낮을수록 위험을 피하려는 심리가 강한 방향으로 해석합니다. 단계는 서버가 소수점 1자리로 반올림한 표시점수 기준입니다: 25 미만 극단적 공포, 25 이상 45 미만 공포, 45~55 중립, 55 초과 75 이하 탐욕, 75 초과 극단적 탐욕. 현재값과 과거값에 같은 규칙을 적용합니다.</p><dl className="mt-4 grid gap-4 sm:grid-cols-2">{[["극단적 공포","위험 회피가 매우 강한 상태입니다. 반등 가능성만 보고 하락 위험을 무시하지 않아야 합니다."],["공포","투자자들의 경계심이 높은 상태입니다. 수급과 변동성의 안정 여부를 함께 확인합니다."],["중립","위험 선호와 회피 중 어느 한쪽으로 뚜렷하게 기울지 않은 상태입니다."],["탐욕","위험을 감수하려는 심리가 강해진 상태입니다. 상승 추세와 가격 부담을 함께 살펴봅니다."],["극단적 탐욕","낙관이 매우 강한 상태입니다. 추세가 이어질 수도 있지만 과열과 급격한 변동에 유의합니다."]].map(([name,text])=><div key={name} className="border-l-2 border-blue-500 pl-4"><dt className="font-bold text-white">{name}</dt><dd>{text}</dd></div>)}</dl></section>
