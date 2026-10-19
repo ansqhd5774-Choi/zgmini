@@ -43,6 +43,10 @@ try{
    assert.equal(enterDirection[0],"translateX(100%)","Chat must enter from right (positive X)");
    assert.match(enterDirection.at(-1)??"",/^translateX\(0(?:px)?\)$/,"Chat must settle at its fixed right position");
   }
+  await page.waitForFunction(viewport=>{
+    const rect=document.querySelector("#zg-community-chat-panel")?.getBoundingClientRect();
+    return Boolean(rect&&rect.x>=-1&&rect.right<=viewport+1);
+   },width,{timeout:5000});
   const bounds=await panel.boundingBox(); assert(bounds&&bounds.x>=-1&&bounds.x+bounds.width<=width+1,"Panel must fit viewport "+width);
   assert.equal(await page.getByRole("heading",{name:"시장 채팅"}).count(),0,"chat header uses compact text, not heading");
   await page.locator("#zg-community-input").fill("오늘 시장 전망이 궁금해요");
