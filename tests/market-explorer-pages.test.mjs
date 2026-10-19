@@ -43,7 +43,12 @@ test('theme exploration exposes thirty unique themes and explicitly withholds un
  assert.equal(new Set(catalog.THEME_GROUPS.flatMap(g=>g.items)).size,30);
  const Theme=load('../app/theme-fear-greed/theme-explorer.tsx',{'../../components/market-explorer-catalog':catalog}).default;
  const html=renderToStaticMarkup(React.createElement(Theme));
- assert.equal((html.match(/<article /g)??[]).length,30);assert.match(html,/점수 미제공/);assert.doesNotMatch(html,/<strong>\d+(?:\.\d+)?<\/strong>/);
+ assert.equal((html.match(/<article /g)??[]).length,30);
+ assert.match(html,/3축 이력 12\/30/);
+ assert.match(html,/5축 종합 점수는 검증 전/);
+ assert.equal((html.match(/가격 3축 확보 · 2026\.10\.16/g)??[]).length,12);
+ assert.equal((html.match(/데이터 준비 중/g)??[]).length,18);
+ assert.doesNotMatch(html,/<strong>\d+(?:\.\d+)?<\/strong>/);
 });
 test('shared header provides the agreed menu order on both dashboard and detail pages',()=>{
  const Header=load('../components/site-header.tsx',{'@/components/collection-health-indicator':{default:()=>null}}).default;
