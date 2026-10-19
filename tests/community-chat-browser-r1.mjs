@@ -57,8 +57,9 @@ try{
   }
   await page.screenshot({path:`artifacts/community-chat-browser/chat-open-${width}.png`});
   await report.click();
-  assert.equal(await report.getAttribute("aria-label"),"신고 완료");
-  assert.equal(await report.isDisabled(),true);
+  const reportedIcon=messageItem.getByRole("button",{name:"신고 완료"});
+  await reportedIcon.waitFor({state:"attached",timeout:10000});
+  assert.equal(await reportedIcon.isDisabled(),true);
   await page.keyboard.press("Escape");
   assert.equal(await panel.getAttribute("aria-hidden"),"true");
   if(width!==390) assert.equal(await panel.evaluate(el=>getComputedStyle(el).animationName),"zg-community-exit");
