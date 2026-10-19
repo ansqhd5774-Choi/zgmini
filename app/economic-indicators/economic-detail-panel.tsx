@@ -32,7 +32,7 @@ type Snapshot={status:string;asOfDate?:string|null;domains?:Domain[]};
 const dated=(s:unknown):s is string=>typeof s==="string"&&/^\d{4}-\d{2}-\d{2}$/.test(s)&&!Number.isNaN(Date.parse(s+"T00:00:00Z"));
 const finite=(n:unknown):n is number=>typeof n==="number"&&Number.isFinite(n);
 const validScore=(n:unknown):n is number=>finite(n)&&n>=0&&n<=100;
-const dateLabel=(s?:string|null)=>dated(s)?s.replaceAll("-",". ")+".":s&&/^\d{4}-\d{2}-\d{2}T/.test(s)?s.slice(0,10).replaceAll("-",". ")+".":"—";
+const dateLabel=(s?:string|null)=>dated(s)?s.replaceAll("-",". ")+".":typeof s==="string"&&/^\d{4}-\d{2}-\d{2}T/.test(s)?s.slice(0,10).replaceAll("-",". ")+".":"—";
 const tone=(score:number|null)=>score===null?"#94a3b8":score<25?"#ff7076":score<45?"#ffba4b":score<=55?"#94a3b8":"#45d99f";
 const stage=(score:number|null)=>score===null?"확인 필요":score<25?"위험":score<45?"주의":score<=55?"중립":score<75?"양호":"안정";
 const judgement=(score:number|null)=>score===null?{name:"미확인",tone:"neutral"}:score>=60?{name:"긍정",tone:"positive"}:score>=45?{name:"중립",tone:"neutral"}:{name:"부정",tone:"negative"};
