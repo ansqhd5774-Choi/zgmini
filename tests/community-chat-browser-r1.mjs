@@ -55,7 +55,7 @@ try{
   await page.waitForFunction(()=>Boolean(window.__zgTurnstileCallbacks?.callback),null,{timeout:15000});
   await page.evaluate(()=>window.__zgTurnstileCallbacks.callback("test-browser-token"));
   await page.waitForFunction(()=>document.querySelector(".zg-community-captcha")?.classList.contains("is-verified"),null,{timeout:10000});
-  assert.equal((await captcha.boundingBox())?.height,0,"Successful verification must reclaim challenge height");
+  assert.equal(await captcha.evaluate(el=>el.getBoundingClientRect().height),0,"Successful verification must reclaim challenge height");
   assert.equal(await captcha.evaluate(el=>el.textContent?.includes("Turnstile test")),true,"Challenge remains mounted for expiry/reset");
   await page.evaluate(()=>window.__zgTurnstileCallbacks["expired-callback"]());
   await page.waitForFunction(()=>!document.querySelector(".zg-community-captcha")?.classList.contains("is-verified"),null,{timeout:10000});
