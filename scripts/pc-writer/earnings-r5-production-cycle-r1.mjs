@@ -14,7 +14,7 @@ import {E1_R5_CFO_PRODUCTION_HISTORY_VERSION,periodOrdinal,readCfoProductionHist
 export const E1_R5_PRODUCTION_CYCLE_VERSION='E1-R5-PRODUCTION-CYCLE-R1';
 export const E1_R5_TREND_HISTORY_VERSION='E1-R5-TREND-HISTORY-R2';
 // Presentation metadata only: refresh the local candidate once after this approved cutover.
-export const E1_R5_SOURCE_OBSERVATION_PRESENTATION_VERSION='E1-R5-SOURCE-OBSERVATION-R36';
+export const E1_R5_SOURCE_OBSERVATION_PRESENTATION_VERSION='E1-R5-SOURCE-OBSERVATION-R43';
 const DEFAULT_BASE=process.env.ZGMINI_PC_HOME??path.join(os.homedir(),'.zgmini','pc-writer');
 const finite=value=>typeof value==='number'&&Number.isFinite(value);
 const readJson=file=>JSON.parse(fs.readFileSync(file,'utf8'));
@@ -64,11 +64,14 @@ export async function buildEarningsR5ProductionCandidate({base=DEFAULT_BASE,now=
   }
   // S12 is a normalized 0-100 4:3 composite, not a raw CFO or guidance change.
   // Reconstruct it with the EXISTING approved scorer using only preceding-period inputs.
+  // Display-only S12 history uses the existing R2 historical-guidance backfill.
+  // The R1 production timeline remains unchanged for the current approved score.
+  // Never treat evaluation anchors as official publication dates.
   const s12Observations=[];
   for(let index=0;index<historyGrid.length;index++){
-   const item=historyGrid[index],forward=forwardHistory.find(row=>row.date===item.date);
+   const item=historyGrid[index],forward=trendForwardHistory.find(row=>row.date===item.date);
    if(!forward||!finite(forward.s12aRaw)||!finite(item.s12b))continue;
-   const priorA=forwardHistory.filter(row=>row.date<item.date&&finite(row.s12aRaw)).map(row=>row.s12aRaw);
+   const priorA=trendForwardHistory.filter(row=>row.date<item.date&&finite(row.s12aRaw)).map(row=>row.s12aRaw);
    const priorB=historyGrid.slice(0,index).map(row=>row.s12b).filter(finite);
    const assessed=scoreEarningsE1R5Raw({raw:{S12A:forward.s12aRaw,S12B:item.s12b},histories:{S12A:priorA,S12B:priorB},asOfDate:item.date});
    if(finite(assessed.components?.S12))s12Observations.push({date:item.date,value:assessed.components.S12});
