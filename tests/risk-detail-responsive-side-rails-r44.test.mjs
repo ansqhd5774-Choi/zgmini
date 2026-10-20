@@ -47,7 +47,7 @@ test("narrow screen has thumb-reachable independent ON-OFF buttons, opposite sli
 
 test("desktop side rails keep full content visible and embed the existing public chat, not an invented AI API",()=>{
  assert.match(css,/@media\(min-width:1650px\)/);
- assert.match(css,/\.zg-risk-side-rails-root\+main\{width:calc\(100% - 640px\)/);
+ assert.match(css,/\.zg-risk-side-rails-root\+main\{width:calc\(100% - 670px\)/);
  assert.match(rails,/<CommunityChat enabled sidebarMode sidebarOpen=\{rightVisible\}/);
  assert.match(chat,/sidebarMode\?sidebarOpen:internalOpen/);
  assert.match(chat,/!sidebarMode&&<button type="button" className="zg-community-toggle"/);
