@@ -47,6 +47,7 @@ export function MarketFearGreedChart({
   axisTicks,
   axisLabels,
   latestPoint,
+  gapGuides = [],
   instanceKey,
   gradientId,
   formatTooltipLabel,
@@ -61,6 +62,7 @@ export function MarketFearGreedChart({
   axisTicks: string[];
   axisLabels: ReadonlyMap<string, string>;
   latestPoint: MarketFearGreedChartValidPoint | null;
+  gapGuides?: Array<{from:MarketFearGreedChartValidPoint;to:MarketFearGreedChartValidPoint}>;
   instanceKey: string;
   gradientId: string;
   formatTooltipLabel: (value: string) => string;
@@ -171,6 +173,7 @@ export function MarketFearGreedChart({
         animationDuration={950}
         animationEasing="ease-out"
       />
+      {gapGuides.map(guide=><ReferenceLine key={`missing-guide-${guide.from.date}-${guide.to.date}`} segment={[{x:guide.from.date,y:guide.from.score},{x:guide.to.date,y:guide.to.score}]} stroke={color} strokeWidth={1.6} strokeDasharray="4 5" strokeOpacity={0.65} ifOverflow="hidden"/>)}
       {extrema.map(point=><ReferenceDot key={'extreme-'+point.kind} x={data[point.index].date} y={point.value} ifOverflow="visible" shape={<ChartExtremumPoint point={point} peerIndex={extrema.find(p=>p.kind!==point.kind)?.index} samples={data.map(p=>({x:p.date,value:p.score}))} count={data.length} color={color}/>}/>)}
     </AreaChart>
     </ResponsiveContainer>
