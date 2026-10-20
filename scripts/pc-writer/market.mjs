@@ -7,6 +7,7 @@ import {buildStoredDiagnostic} from '../../worker/stored-diagnostic-r61.mjs';
 import {readBreadthB1R5StoredPublicDomainR1} from '../../lib/market-score/breadth-b1-r5-worker-domain.mjs';
 import {mergeEarningsProductionCandidate} from '../../lib/market-score/earnings-e1-r5-production-domain.mjs';
 import {runEarningsR5ProductionCycle} from './earnings-r5-production-cycle-r1.mjs';
+import {readStoredEarningsRiskFourFactor} from '../../lib/market-score/earnings-recession-stored-r4-pc-r1.mjs';
 import {candidate2dbImportBoundary} from '../candidate-2db-import-boundary.mjs';
 
 function preserveEarningsDiagnosticCompatibility(candidate,current){
@@ -26,11 +27,22 @@ export async function calculateMarket(root,db,now){
  const store=marketOperationalStore(db),base=process.env.ZGMINI_PC_HOME??path.join(os.homedir(),'.zgmini','pc-writer');
  const collectInputs=async()=>{
   const collected=await readStoredMarketInputs(store,now),current=collected?.external?.publicDomainScores?.earnings??null;
+  // The four-factor earnings-risk evidence comes solely from PC-stored SEC
+  // issuer metrics. It is not the independent E1-R5 domain score/history.
+  let risk=null;
+  try{
+   risk=await readStoredEarningsRiskFourFactor({
+    db,asOf:new Date(now).toISOString().slice(0,10),
+   });
+  }catch{}
+  const riskInput=risk?.status==='READY'
+   ?{...collected,external:{...(collected?.external??{}),earningsRiskEvidence:risk}}
+   :collected;
   try{
    const result=await runEarningsR5ProductionCycle({base,now:new Date(now).toISOString()});
    const candidate=preserveEarningsDiagnosticCompatibility(result?.candidate,current);
-   return mergeEarningsProductionCandidate(collected,candidate);
-  }catch{return collected;}
+   return mergeEarningsProductionCandidate(riskInput,candidate);
+  }catch{return riskInput;}
  };
  const handler=createMarketScoreR1Handler({env:{DB:db},fetchImpl:async()=>{throw Error('PROVIDER_NETWORK_FORBIDDEN')},collectInputs,orchestrate:buildStoredDiagnostic,collectBreadthDomain:readBreadthB1R5StoredPublicDomainR1,now:()=>new Date(now)});
  const response=await handler(new Request('https://zgmini.kr/api/market-score'));
