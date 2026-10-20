@@ -1,5 +1,6 @@
 import {createProgressiveComputationCache} from './market-score-computation-cache.mjs';
 import {buildCompositeMarketScore} from "../lib/market-score/composite-model-r1.mjs";
+import {buildLegacyMarketInflationDomain} from "../lib/market-score/inflation-legacy-public-domain.mjs";
 import {buildCmR1DomainResults} from "../lib/market-score/domain-adapter-r1.mjs";
 import {buildConsumptionC1} from "../lib/market-score/public-domain-producers-r1.mjs";
 import {buildCommoditiesK1R2} from "../lib/market-score/public-domain-producers-r2.mjs";
@@ -242,7 +243,7 @@ function composeMarketSnapshot({liquidityHistory,collected,storedInflation,infla
 
       const approvedPublicDomains={
         ...(collected?.external?.publicDomainScores??{}),
-        inflation:inflationR2Domain,
+        inflation:buildLegacyMarketInflationDomain(diagnostic,asOf),
         consumption:consumptionDomain,
         growth:growthDomain,
         commodities:compute(buildCommoditiesK1R2,{

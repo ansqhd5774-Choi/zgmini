@@ -11,7 +11,7 @@ const lineage=d=>d&&[
  identifier(d.source),
  identifier(d.methodologyVersion??d.modelVersion),
 ];
-const sameVerifiedLineage=(a,b)=>{
+export const sameVerifiedLineage=(a,b)=>{
  if(!a||!b)return false;
  const first=lineage(a),second=lineage(b);
  if(!first||!second)return false;
