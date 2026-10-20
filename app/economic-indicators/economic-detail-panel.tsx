@@ -156,7 +156,7 @@ export default function EconomicDetailPanel({id}:{id:EconomicDomainId}){
    <div className="economic-reading-strips"><span><b>점수 읽기</b>{config.reading}</span><span><b>시장과의 관계</b>{config.impact}</span></div>
   </section>
   <section className="inflation-indicator-section inflation-r2-indicators economic-indicators" aria-labelledby={"economic-"+id+"-indicators"}>
-   <header><div><p className="cnn-eyebrow">ECONOMIC INDICATORS</p><h2 id={"economic-"+id+"-indicators"}>{config.name} {id==="growth"?"대표 구성지표":"구성 지표"} ({observations.length}개)</h2></div><p>승인된 저장 지표만 표시합니다. 이전 원자료·공식 다음 발표일·미니차트가 없으면 <b>—</b>로 구분하며 임의로 보완하지 않습니다.{id==="growth"?" 성장 점수의 24개 전체 가중요인이 아닌 공개된 대표 4개만 표시합니다.":""}</p></header>
+   <header><div><p className="cnn-eyebrow">ECONOMIC INDICATORS</p><h2 id={"economic-"+id+"-indicators"}>{config.name} 구성 지표 ({id==="growth"?observations.length+"/24":observations.length}개)</h2></div><p>승인된 저장 지표만 표시합니다. 이전 원자료·공식 다음 발표일·미니차트가 없으면 <b>—</b>로 구분하며 임의로 보완하지 않습니다.{id==="growth"&&observations.length!==24?" 산출요인 24개 중 아직 공개되지 않은 항목이 있습니다.":""}</p></header>
    {error&&<p className="economic-data-notice" role="status">최근 데이터 조회가 지연되고 있습니다. 저장 자료는 갱신 확인 후 표시됩니다.</p>}
    <div className="inflation-table-wrap inflation-r2-table-wrap">
     <table className="inflation-indicator-table inflation-indicator-table-r2 economic-table">
