@@ -15,6 +15,9 @@ test("history mismatch explicitly shows last score and date, not a guessed chang
  assert.ok(s.includes("lastSavedHistory.value.toFixed(1)"));
  assert.ok(s.includes("dateLabel(lastSavedHistory.label)"));
  assert.ok(s.includes("기간별 비교 보류"));
+ assert.ok(s.includes('hasVerifiedPeriodComparisons=Object.values(periods).some'));
+ assert.ok(s.includes('기간 비교는 검증된 별도 저장 점수 기준'));
+ assert.ok(s.includes('hasVerifiedPeriodComparisons?"기간 비교는 검증된 별도 저장 점수 기준":"서로 달라 기간별 비교 보류"'));
  assert.ok(s.includes('liquidityStoredScoreComparisons(history,lastSavedHistory?.label??"",score)'));
 });
 test("API missing period fields and UI computed periods remain distinct concepts",()=>{
