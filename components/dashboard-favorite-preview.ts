@@ -21,8 +21,8 @@ export const RISK_FAVORITE_ENDPOINTS:Record<string,string>={
 };
 const numeric=(x:unknown):x is number=>typeof x==="number"&&Number.isFinite(x);
 const score=(x:unknown)=>numeric(x)&&x>=0&&x<=100?x:null;
-const presentDate=(x:unknown)=>typeof x==="string"&&/^\d{4}-\d{2}-\d{2}$/.test(x)&&Number.isFinite(Date.parse(x+"T00:00:00Z"))?x.slice(5).replace("-","."):"";
-function displayNumber(x:number){const a=Math.abs(x);return Number(x.toFixed(a>=100?1:a>=10?2:3)).toLocaleString("ko-KR",{maximumFractionDigits:3});}
+const presentDate=(x:unknown)=>typeof x==="string"&&/^\d{4}-\d{2}-\d{2}$/.test(x)&&Number.isFinite(Date.parse(x+"T00:00:00Z"))?x.slice(2).replaceAll("-","."):"";
+function displayNumber(x:number){const a=Math.abs(x);const digits=a>=100?1:a>=10?2:a>=1?3:a>=0.01?4:a>=0.0001?5:6;return x.toLocaleString("ko-KR",{maximumFractionDigits:digits});}
 function judge(value:number|null,economic:boolean):Pick<DashboardFavoritePreview,"judgement"|"tone">{
  if(value===null)return {judgement:"평가 없음",tone:"missing"};
  if(value>=60)return {judgement:"긍정",tone:"positive"};
@@ -66,5 +66,6 @@ export function getEconomicFavoritePreview(domainId:string,indicatorId:string,pa
  if(!payload||typeof payload!=="object")return null;
  const s=payload as Snapshot;
  const domain=s.domains?.find(x=>x?.id===domainId);
- return preview(domain?.indicators?.find(x=>x?.id===indicatorId),domain?.asOfDate,true);
+ const item=domain?.indicators?.find(x=>x?.id===indicatorId);
+ return item?.status==="READY"?preview(item,domain?.asOfDate,true):null;
 }
