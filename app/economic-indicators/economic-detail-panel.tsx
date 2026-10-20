@@ -115,11 +115,12 @@ export default function EconomicDetailPanel({id}:{id:EconomicDomainId}){
  const strongest=ranked.slice(0,highCount);
  const weakest=ranked.slice(ranked.length-lowCount).reverse();
  const date=dated(domain?.asOfDate)?domain.asOfDate:dated(payload?.asOfDate)?payload.asOfDate:null;
- const v9=id==="breadth"&&domain?.methodologyVersion==="BREADTH_R10_V9_FIXED_5F_VALID_OBSERVATION_SHADOW";
+ const v11=id==="breadth"&&domain?.methodologyVersion==="BREADTH_V11_FIXED_5F_OBSERVED_EMA3_CONTINUITY";
+ const v9=v11||(id==="breadth"&&domain?.methodologyVersion==="BREADTH_R10_V9_FIXED_5F_VALID_OBSERVATION_SHADOW");
  const v9Pending=v9&&domain?.dataPhase==="CARRY_FORWARD";
  const observed=dated(domain?.observationDate)?domain.observationDate:null;
  const v9Delta=v9&&finite(domain?.scoreChange)?domain.scoreChange:null;
- const publicNote=v9?"저장 평가 · V9":domain?.methodologyVersion??"공개 저장 결과";
+ const publicNote=v11?"저장 평가 · V11":v9?"저장 평가 · V9":domain?.methodologyVersion??"공개 저장 결과";
  const color=tone(score);
  return <div className="economic-detail-page" data-economic-domain={id} style={{"--econ-accent":color} as CSSProperties}>
   <section className="cnn-reference-panel fg-card fg-shared-shell inflation-target-card economic-target-card" data-testid={"economic-"+id+"-hero"} aria-busy={loading} data-market-state={loading?"loading":score===null?"unavailable":"ready"} data-history-alignment={score===null?"unavailable":!lastSavedHistory?"missing":periodSourceMismatch?"mismatch":"matched"}>
