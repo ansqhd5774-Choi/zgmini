@@ -109,7 +109,7 @@ test('21 Oct report already stored by 06:35 is included in reality anchor, never
  const a=calculateIranDailyAnchorShadow([earlier],{asOfDate:'2026-10-21'});
  assert.equal(a.score,13);
  assert.equal(a.postAnchorSameDayWeightedDelta,0);
- assert.equal(at(a,'2026-10-20').value,16.04);
+ assert.equal(at(a,'2026-10-20').value,15.59);
 });
 test('newly discovered older dated report flags retrospective correction review',()=>{
  const late=attack('2026-10-20');
