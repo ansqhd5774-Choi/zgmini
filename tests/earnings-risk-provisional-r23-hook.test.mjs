@@ -28,6 +28,11 @@ test("R23 dispatches only with exact approved runtime SHA and all three installe
   let calls=0,options=null;
   const gitImpl=(_cmd,args)=>args[0]==="rev-parse"?sha:"";
   const spawnImpl=(_exe,_args,opts)=>{calls++;options=opts;return {pid:321,on:()=>{},unref:()=>{}};};
+  fs.writeFileSync(path.join(base,"local-earnings-risk-provisional-r22.lock"),'{"pid":123}');
+  const busy=dispatchEarningsRiskProvisionalR23({base,here,platform:"win32",gitImpl,spawnImpl});
+  assert.equal(busy.status,"PREVIOUS_OBSERVATION_RUNNING_OR_UNKNOWN");
+  assert.equal(calls,0);
+  fs.unlinkSync(path.join(base,"local-earnings-risk-provisional-r22.lock"));
   const result=dispatchEarningsRiskProvisionalR23({base,here,platform:"win32",gitImpl,spawnImpl});
   assert.equal(result.status,"DISPATCHED_UNVERIFIED");
   assert.equal(calls,1);
