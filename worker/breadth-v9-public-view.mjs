@@ -5,7 +5,7 @@
  */
 export const V9_PUBLIC_KEY='public:breadth-r10-v9:v1';
 export const V9_METHOD='BREADTH_R10_V9_FIXED_5F_VALID_OBSERVATION_SHADOW';
-const date=s=>typeof s==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(s)&&new Date(s+'T00:00:00Z').toISOString().slice(0,10)===s;
+const date=s=>typeof s==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(s)&&Number.isFinite(Date.parse(s+'T00:00:00Z'))&&new Date(s+'T00:00:00Z').toISOString().slice(0,10)===s;
 const score=x=>typeof x==='number'&&Number.isFinite(x)&&x>=0&&x<=100;
 const round=x=>Math.round(x*1e9)/1e9;
 const factors=Object.freeze([
