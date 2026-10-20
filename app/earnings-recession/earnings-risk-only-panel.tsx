@@ -20,6 +20,7 @@ type RiskPayload={
  status:string;score:number|null;asOfDate?:string|null;methodologyVersion?:string|null;
  riskFactors?:RiskFactor[];riskFactorsMethodologyVersion?:string|null;
  riskTrend?:RiskPoint[];riskHistoryKind?:string|null;
+ riskFinancialPeriodEnd?:string|null;riskHistoryMode?:string|null;
 };
 const ids=["epsGrowth","margin","revenueGrowth","earningsGrowthBreadth"] as const;
 const labels:Record<string,{name:string;description:string;direction:string}>={
@@ -41,17 +42,23 @@ export default function EarningsRiskOnlyPanel(){
  const factors=new Map((allowedFactors&&Array.isArray(payload?.riskFactors)?payload.riskFactors:[])
    .filter(x=>ids.includes(x?.id as typeof ids[number])&&x?.status==="READY"&&validScore(x?.score))
    .map(x=>[x.id,x]));
+ const fiscalReconstruction=payload?.riskHistoryKind==="E1_R4_STORED_PERIOD_CURRENT_VINTAGE_NOT_PIT"&&
+   payload?.riskHistoryMode==="CURRENT_VINTAGE_NOT_PIT"&&validDate(payload?.riskFinancialPeriodEnd);
  const trend=useMemo(()=>{
-  if(payload?.riskHistoryKind!==EARNINGS_RISK_HISTORY_KIND||score===null||!validDate(payload?.asOfDate))return [];
+  if(!fiscalReconstruction&&payload?.riskHistoryKind!==EARNINGS_RISK_HISTORY_KIND)return [];
+  if(score===null||!validDate(payload?.asOfDate))return [];
   const rows=(Array.isArray(payload?.riskTrend)?payload.riskTrend:[]).filter(x=>validDate(x?.date)&&validScore(x?.score))
     .sort((a,b)=>a.date.localeCompare(b.date));
   const last=rows.at(-1);
-  if(!last||last.date!==payload.asOfDate||Math.abs(last.score-score)>1e-8)return [];
+  const ending=fiscalReconstruction?payload.riskFinancialPeriodEnd:payload.asOfDate;
+  if(!last||last.date!==ending||Math.abs(last.score-score)>1e-8)return [];
   return rows.map(x=>({date:x.date,score:x.score} satisfies MarketFearGreedChartPoint));
- },[payload,score]);
- const deltas=useMemo(()=>liquidityStoredScoreComparisons(
-  trend.map(x=>({label:x.date,value:x.score})),payload?.asOfDate??"",score
- ),[trend,payload?.asOfDate,score]);
+ },[payload,score,fiscalReconstruction]);
+ const deltas=useMemo(()=>fiscalReconstruction
+  ?{week:null,month:null,threeMonth:null,sixMonth:null,year:null}
+  :liquidityStoredScoreComparisons(
+    trend.map(x=>({label:x.date,value:x.score})),payload?.asOfDate??"",score
+  ),[trend,payload?.asOfDate,score,fiscalReconstruction]);
  const comparisons=[{label:"1주",value:deltas.week??null},{label:"1개월",value:deltas.month??null},
   {label:"3개월",value:deltas.threeMonth??null},{label:"6개월",value:deltas.sixMonth??null},{label:"1년",value:deltas.year??null}];
  const last=trend.at(-1);
@@ -66,14 +73,16 @@ export default function EarningsRiskOnlyPanel(){
    <div className="fg-content-slot">
     <div className="fg-score-slot"><MarketScoreOrb score={loading||score===null?"—":score.toFixed(1)} state={loading?"확인 중":stage(score)} variant="hero" comparisonItems={comparisons} comparisonAriaLabel="실적 침체 방어 진단 검증된 이력 기준 기간별 비교"/></div>
     <MarketTrendFrame className="fg-analysis-slot"><div className="fg-chart-slot">
-     <span className="earnings-r2-chart-identity">실적 침체 방어 진단 추이</span>
+     <span className="earnings-r2-chart-identity">{fiscalReconstruction?"실적 침체 방어 · 결산 분기 추이 (사후 재구성)":"실적 침체 방어 진단 추이"}</span>
      <div className="fg-renderer"><MarketFearGreedChart data={trend} axisTicks={axisTicks} axisLabels={axisLabels}
        latestPoint={latestPoint} showExtrema={trend.length>=3} instanceKey="earnings-risk-diagnostic"
        gradientId="earnings-risk-only-fill" color={tone(score)} formatTooltipLabel={dateLabel}
-       emptyLabel={loading?"확인 중":"동일 산식의 검증된 과거 진단 이력 없음"}/></div>
+       emptyLabel={loading?"확인 중":"저장된 동일 산식의 과거 점수 미확보"}/></div>
     </div></MarketTrendFrame>
    </div>
-   <div className="fg-footer-slot"><div className="cnn-panel-note"><span>실적 침체 진단</span><strong>{score===null?"점수 —":score.toFixed(1)+"점"} · {trend.length>=2?"검증된 위험 진단 이력":"동일 산식 이력 확인 필요"}</strong></div></div>
+   <div className="fg-footer-slot"><div className="cnn-panel-note"><span>실적 침체 진단</span><strong>{score===null?"점수 —":score.toFixed(1)+"점"} · {fiscalReconstruction
+ ?`저장 분기 ${trend.length}개 · 사후 재구성(PIT 아님)`
+ :trend.length>=2?"검증된 위험 진단 이력":"동일 산식 이력 확인 필요"}</strong></div></div>
   </section>
   <section className="inflation-explainer" aria-labelledby="earnings-risk-explanation">
    <p className="cnn-eyebrow">WHAT IS AN EARNINGS RECESSION?</p>
@@ -92,7 +101,7 @@ export default function EarningsRiskOnlyPanel(){
     <tbody>{ids.map(id=>{const factor=factors.get(id),meta=labels[id],value=factor?.score??null;return <tr key={id}>
      <td><EarningsFavoriteButton id={id} label={meta.name}/></td><th scope="row">{meta.name}</th>
      <td>{meta.description}</td><td>{meta.direction}</td><td>—</td>
-     <td>{validScore(value)?value.toFixed(1)+"점":"—"}<small>평가 {dateLabel(factor?.observationDate)}</small></td>
+     <td>{validScore(value)?value.toFixed(1)+"점":"—"}<small>결산 {dateLabel(factor?.observationDate)}</small></td>
      <td>—</td><td>{value===null?"확인 대기":value>=60?"긍정":value>=45?"중립":"부정"}</td><td>—</td>
      <td><ContentHelp label={meta.name+" 도움말"}><p>{meta.description}. 해당 지표의 원자료와 진단 점수는 구분합니다. 현재 입력은 기존 E1-R4 호환 점수이며 개별 관측일이 확인되지 않은 항목은 —로 표시합니다.</p></ContentHelp></td>
     </tr>})}</tbody>
@@ -100,7 +109,7 @@ export default function EarningsRiskOnlyPanel(){
    <div className="earnings-r2-mobile-list">{ids.map(id=>{const factor=factors.get(id),meta=labels[id],value=factor?.score??null;return <article className="earnings-r2-mobile-card" key={id}>
      <div className="earnings-r2-mobile-head"><div className="earnings-r2-mobile-title"><EarningsFavoriteButton id={id} label={meta.name}/><div><strong>{meta.name}</strong><small>진단 구성지표</small></div></div></div>
      <p className="earnings-r2-mobile-content">{meta.description}</p>
-     <div className="earnings-r2-mobile-metrics"><div><span>이전</span><strong>—</strong></div><div><span>현재 점수</span><strong>{validScore(value)?value.toFixed(1)+"점":"—"}</strong></div><div><span>평가 기준일</span><strong>{dateLabel(factor?.observationDate)}</strong></div></div>
+     <div className="earnings-r2-mobile-metrics"><div><span>이전</span><strong>—</strong></div><div><span>현재 점수</span><strong>{validScore(value)?value.toFixed(1)+"점":"—"}</strong></div><div><span>결산 분기</span><strong>{dateLabel(factor?.observationDate)}</strong></div></div>
     </article>})}</div>
   </section>
   <a className="cnn-return-cta" href="/">← 메인 대시보드로 돌아가기</a>
