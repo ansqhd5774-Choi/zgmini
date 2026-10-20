@@ -31,6 +31,18 @@ try{
   const sectorFearGreedR3File=path.join(base,'local-sector-fear-greed-r3-last-run.json');
   sectorFearGreedR3Report=fs.existsSync(sectorFearGreedR3File)?read(sectorFearGreedR3File):null;
  }
+ // R150 ETF-only private research candidate: OFF unless explicitly enabled.
+ // This stage never publishes, collects, writes D1 or changes production scores.
+ // Run after confirmed sector cycle and before the existing writer; non-blocking.
+ let themeEtfPrivateStage={nonBlocking:true,status:'DISABLED'};
+ if(lane==='core'&&process.env.ZGMINI_THEME_ETF_PRIVATE_STAGE_ENABLED==='1'){
+  const stage=spawnSync(process.execPath,[path.join(here,'theme-etf-only-r150-local-stage.mjs'),'--write-local'],{windowsHide:true,stdio:['ignore','pipe','pipe'],timeout:2*60000});
+  let stageReport=null;
+  try{stageReport=JSON.parse(String(stage.stdout??'').trim().split(/\\r?\\n/).at(-1))}catch{}
+  themeEtfPrivateStage={nonBlocking:true,status:stage.status===0?(stageReport?.status??'REPORT_MISSING'):'EXECUTION_FAILED',
+   observationDate:stageReport?.observationDate??null,points:stageReport?.points??null,
+   localPrivateOnly:true,providerCalls:0,remoteWrites:0};
+ }
  const quotaGuarded=process.env.ZGMINI_QUOTA_MODE==='enforce'&&(collectionReport?.quota?.guarded??0)>0;
  const collectionFailed=collection.status!==0||['ERROR','FAILED','SOURCE_FAILED'].includes(collectionReport?.status);
  const publishRequested=process.argv.includes('--publish');
@@ -153,7 +165,7 @@ try{
   sectors:sectorFearGreedR3Report?.sectors??null,
   error:sectorFearGreedR3Report?.error??(sectorFearGreedR3?.error?.code??null),
  }:{nonBlocking:true,status:'SKIPPED_KOREA_LANE'};
- const report={at:new Date().toISOString(),lane,collectionExit:collection.status,collectionStatus:collectionReport?.status??null,supplyR10,sectorFearGreed,researchBreadthR10V9Shadow,publicationExit:publication.status,publishRequested,publishSkipped,researchProspective,researchFundFlowProspective,researchBreadthProspective,researchEarningsR5OfficialRefresh,researchEarningsR5Prospective,status:publication.status===0?(publishSkipped==='QUOTA_GUARD'?'QUOTA_GUARDED':publishSkipped==='COLLECTION_FAILED'?'COLLECTION_FAILED_PUBLISH_BLOCKED':'COMPLETE'):'PUBLICATION_NOT_VERIFIED'};
+ const report={at:new Date().toISOString(),themeEtfPrivateStage,lane,collectionExit:collection.status,collectionStatus:collectionReport?.status??null,supplyR10,sectorFearGreed,researchBreadthR10V9Shadow,publicationExit:publication.status,publishRequested,publishSkipped,researchProspective,researchFundFlowProspective,researchBreadthProspective,researchEarningsR5OfficialRefresh,researchEarningsR5Prospective,status:publication.status===0?(publishSkipped==='QUOTA_GUARD'?'QUOTA_GUARDED':publishSkipped==='COLLECTION_FAILED'?'COLLECTION_FAILED_PUBLISH_BLOCKED':'COMPLETE'):'PUBLICATION_NOT_VERIFIED'};
  save(path.join(base,'local-cycle-last-run.json'),report);console.log(JSON.stringify(report));
  if(publication.status!==0)process.exitCode=1;
 }finally{fs.unlinkSync(file);}
