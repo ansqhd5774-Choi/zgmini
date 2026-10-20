@@ -17,7 +17,8 @@ const comparable=(a,b)=>a?.observationDate===b?.observationDate&&a?.score===b?.s
  &&a?.sourceStoredAt===b?.sourceStoredAt&&a?.asOfDate===b?.asOfDate&&a?.phase===b?.phase
  &&JSON.stringify(a?.trend)===JSON.stringify(b?.trend)
  &&JSON.stringify(a?.factors)===JSON.stringify(b?.factors)
- &&JSON.stringify(a?.annualValidation)===JSON.stringify(b?.annualValidation);
+ &&JSON.stringify(a?.annualValidation)===JSON.stringify(b?.annualValidation)
+ &&JSON.stringify(a?.factorHistory)===JSON.stringify(b?.factorHistory);
 export function publicationDecisionV11(next,previous){
  if(!projectV11PublicDomain(next))return 'INVALID_CANDIDATE';
  if(previous!==null&&!projectV11PublicDomain(previous))return 'EXISTING_OUTPUT_UNRECOGNIZED';
@@ -59,7 +60,7 @@ export async function main(args=process.argv.slice(2),now=new Date()){
    lock=path.join(BASE,'local-breadth-r10-v9-publication.lock'); // same lane as existing V9
    try{lockFd=fs.openSync(lock,'wx');}catch{throw Error('V11_PUBLICATION_ALREADY_RUNNING_OR_LOCK_PRESENT')}
   }
-  const latest=runShadow({base:BASE,now,writeLocal:false,historySessions:311});
+  const latest=runShadow({base:BASE,now,writeLocal:false,historySessions:311,includeFactorHistory:true});
   const last=latest.evaluation?.perDay?.findLast(x=>x.status==='CANDIDATE_READY'&&Number.isFinite(x.ema3));
   if(!last)throw Error('V11_NO_LOCAL_VERIFIED_OBSERVATION');
   const verified=runShadow({base:BASE,now,asOf:last.date,writeLocal:false});
