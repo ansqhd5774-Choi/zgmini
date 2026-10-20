@@ -8,6 +8,28 @@ type ChatResponse={messages?:ChatMessage[];writeEnabled?:boolean;siteKey?:string
 type TurnstileApi={render:(element:HTMLElement,options:Record<string,unknown>)=>string;reset:(id:string)=>void;remove:(id:string)=>void};
 declare global {interface Window {turnstile?:TurnstileApi}}
 const REFRESH_MS=5000;
+const CAPTCHA_CACHE_KEY="zgmini-community-chat-turnstile-r2";
+// Turnstile tokens expire after five minutes and can only be used once.
+// Keep unused tokens for less than five minutes; this is not an authenticated session.
+const CAPTCHA_CACHE_MAX_AGE_MS=270_000;
+type CachedCaptcha={siteKey:string;token:string;issuedAt:number};
+function readCachedCaptcha(siteKey:string):CachedCaptcha|null{
+ try{
+  const value=sessionStorage.getItem(CAPTCHA_CACHE_KEY);
+  if(!value)return null;
+  const entry=JSON.parse(value) as Partial<CachedCaptcha>;
+  if(entry.siteKey===siteKey&&typeof entry.token==="string"&&entry.token.length>0&&entry.token.length<=2048&&
+   typeof entry.issuedAt==="number"&&Number.isFinite(entry.issuedAt)&&Date.now()>=entry.issuedAt&&Date.now()-entry.issuedAt<CAPTCHA_CACHE_MAX_AGE_MS)
+   return entry as CachedCaptcha;
+  sessionStorage.removeItem(CAPTCHA_CACHE_KEY);
+ }catch{/* Private browsing/storage-disabled mode uses only in-memory state. */}
+ return null;
+}
+function rememberCaptcha(siteKey:string,token:string,issuedAt:number){
+ try{sessionStorage.setItem(CAPTCHA_CACHE_KEY,JSON.stringify({siteKey,token,issuedAt}));}catch{/* In-memory fallback. */}
+}
+function forgetCaptcha(){try{sessionStorage.removeItem(CAPTCHA_CACHE_KEY);}catch{/* Storage unavailable. */}}
+
 function displayTime(iso:string){const date=new Date(iso);return Number.isNaN(date.getTime())?"":new Intl.DateTimeFormat("ko-KR",{timeZone:"Asia/Seoul",hour:"2-digit",minute:"2-digit",hour12:false}).format(date);}
 export default function CommunityChat({enabled,sidebarMode=false,sidebarOpen=false,onSidebarClose}:{enabled:boolean;sidebarMode?:boolean;sidebarOpen?:boolean;onSidebarClose?:()=>void}){
  const [internalOpen,setOpen]=useState(false);
@@ -21,6 +43,9 @@ export default function CommunityChat({enabled,sidebarMode=false,sidebarOpen=fal
  const [writeEnabled,setWriteEnabled]=useState(false);
  const [siteKey,setSiteKey]=useState<string|null>(null);
  const [captchaToken,setCaptchaToken]=useState("");
+ const [captchaEpoch,setCaptchaEpoch]=useState(0);
+ const captchaIssuedAt=useRef(0);
+ const captchaSiteKey=useRef<string|null>(null);
  const captchaMount=useRef<HTMLDivElement>(null);
  const captchaWidget=useRef<string|null>(null);
  const [sending,setSending]=useState(false);
@@ -36,7 +61,7 @@ export default function CommunityChat({enabled,sidebarMode=false,sidebarOpen=fal
    setNickname(value);
   }catch{setNickname("익명방문자");}
  },[]);
- useEffect(()=>{if(open){setEverOpened(true);requestAnimationFrame(()=>inputRef.current?.focus());}else{setCaptchaToken("");}},[open]);
+ useEffect(()=>{if(open){setEverOpened(true);requestAnimationFrame(()=>inputRef.current?.focus());}},[open]);
  useEffect(()=>{if(!open)return;const onKey=(event:KeyboardEvent)=>{if(event.key==="Escape"){if(sidebarMode)onSidebarClose?.();else setOpen(false);}};window.addEventListener("keydown",onKey);return()=>window.removeEventListener("keydown",onKey);},[open,sidebarMode,onSidebarClose]);
  useEffect(()=>{
   if(!enabled||!open)return;
@@ -64,19 +89,57 @@ export default function CommunityChat({enabled,sidebarMode=false,sidebarOpen=fal
  },[enabled,open]);
 
  useEffect(()=>{
+  if(!captchaToken)return;
+  const remaining=CAPTCHA_CACHE_MAX_AGE_MS-(Date.now()-captchaIssuedAt.current);
+  if(remaining<=0){
+   forgetCaptcha();captchaIssuedAt.current=0;captchaSiteKey.current=null;
+   setCaptchaToken("");setCaptchaEpoch(v=>v+1);
+   return;
+  }
+  const timer=window.setTimeout(()=>{
+   forgetCaptcha();captchaIssuedAt.current=0;captchaSiteKey.current=null;
+   setCaptchaToken("");setCaptchaEpoch(v=>v+1);
+  },remaining);
+  return()=>window.clearTimeout(timer);
+ },[captchaToken]);
+
+ useEffect(()=>{
   if(!open||!writeEnabled||!siteKey)return;
+  // Keep a still-unused, unexpired challenge across panel toggles and page navigation.
+  if(captchaToken&&captchaSiteKey.current===siteKey&&
+    Date.now()-captchaIssuedAt.current<CAPTCHA_CACHE_MAX_AGE_MS)return;
+  const cached=readCachedCaptcha(siteKey);
+  if(cached){
+   captchaIssuedAt.current=cached.issuedAt;captchaSiteKey.current=siteKey;
+   setCaptchaToken(cached.token);
+   return;
+  }
+  if(captchaToken)setCaptchaToken("");
   let active=true;
   function mount(){
    const api=window.turnstile;
    if(!active||!api||!captchaMount.current||captchaWidget.current)return;
-   captchaWidget.current=api.render(captchaMount.current,{sitekey:siteKey,theme:"dark",callback:(token:unknown)=>{if(active)setCaptchaToken(typeof token==="string"?token:"");},"expired-callback":()=>{if(active)setCaptchaToken("");},"error-callback":()=>{if(active)setCaptchaToken("");}});
+   captchaWidget.current=api.render(captchaMount.current,{sitekey:siteKey,theme:"dark",
+    callback:(token:unknown)=>{
+     if(!active)return;
+     const value=typeof token==="string"?token:"";
+     if(value){const now=Date.now();captchaIssuedAt.current=now;captchaSiteKey.current=siteKey;rememberCaptcha(siteKey!,value,now);}
+     else{forgetCaptcha();captchaIssuedAt.current=0;captchaSiteKey.current=null;}
+     setCaptchaToken(value);
+    },
+    "expired-callback":()=>{
+     if(active){forgetCaptcha();captchaIssuedAt.current=0;captchaSiteKey.current=null;setCaptchaToken("");}
+    },
+    "error-callback":()=>{
+     if(active){forgetCaptcha();captchaIssuedAt.current=0;captchaSiteKey.current=null;setCaptchaToken("");}
+    }});
   }
   let script=document.querySelector<HTMLScriptElement>("#zg-community-turnstile");
   if(!script){script=document.createElement("script");script.id="zg-community-turnstile";script.src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit";script.async=true;script.defer=true;document.head.appendChild(script);}
   script.addEventListener("load",mount);
   mount();
   return()=>{active=false;script?.removeEventListener("load",mount);if(captchaWidget.current&&window.turnstile)window.turnstile.remove(captchaWidget.current);captchaWidget.current=null;};
- },[open,writeEnabled,siteKey]);
+ },[open,writeEnabled,siteKey,captchaEpoch]);
 
  async function report(messageId:string){
   if(reported.includes(messageId))return;
@@ -87,7 +150,14 @@ export default function CommunityChat({enabled,sidebarMode=false,sidebarOpen=fal
  async function submit(event:FormEvent<HTMLFormElement>){
   event.preventDefault();const body=draft.trim();
   if(!body||[...body].length>300||sending||status!=="ready"||!writeEnabled||!captchaToken)return;
+  if(captchaSiteKey.current!==siteKey||!captchaIssuedAt.current||
+     Date.now()-captchaIssuedAt.current>=CAPTCHA_CACHE_MAX_AGE_MS){
+   forgetCaptcha();captchaIssuedAt.current=0;captchaSiteKey.current=null;setCaptchaToken("");setCaptchaEpoch(v=>v+1);
+   return;
+  }
   setSending(true);setError("");
+  // A token is single-use: discard its saved copy before the POST is attempted.
+  forgetCaptcha();
   try{
    const response=await fetch("/api/community/messages",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({nickname,body,turnstileToken:captchaToken})});
    if(!response.ok){setError(response.status===429?"잠시 후 다시 작성해 주세요.":"메시지 전송에 실패했어요.");return;}
@@ -95,7 +165,11 @@ export default function CommunityChat({enabled,sidebarMode=false,sidebarOpen=fal
    const result=await fetch("/api/community/messages",{cache:"no-store"});
    if(result.ok){const payload=(await result.json()) as ChatResponse;setMessages(payload.messages??[]);requestAnimationFrame(()=>{if(listRef.current)listRef.current.scrollTop=listRef.current.scrollHeight;});}
   }catch{setError("연결을 확인하고 다시 시도해 주세요.");}
-  finally{setSending(false);setCaptchaToken("");if(captchaWidget.current&&window.turnstile)window.turnstile.reset(captchaWidget.current);}
+  finally{
+   setSending(false);setCaptchaToken("");captchaIssuedAt.current=0;captchaSiteKey.current=null;
+   if(captchaWidget.current&&window.turnstile)window.turnstile.reset(captchaWidget.current);
+   else setCaptchaEpoch(v=>v+1);
+  }
  }
  if(!enabled)return null;
  return <div className={`zg-community-root${sidebarMode?" zg-community-embedded":""}`}>
