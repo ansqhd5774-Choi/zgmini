@@ -27,7 +27,7 @@ body:has(.zg-risk-side-rails-root){background:#03121d}
 .zg-risk-side-right .zg-community-item{background:rgba(17,53,74,.78)}
 .zg-risk-side-right .zg-community-toggle{display:none}
 @media(min-width:1650px){
- .zg-risk-side-rails-root+main{width:calc(100% - 620px);max-width:1152px;margin-left:auto;margin-right:auto;min-width:0}
+ .zg-risk-side-rails-root+main{width:calc(100% - 640px);max-width:1152px;margin-left:auto;margin-right:auto;min-width:0}
  .zg-risk-side-rails-root+main>div{width:100%;max-width:none}
 }
 @media(max-width:1649px){
