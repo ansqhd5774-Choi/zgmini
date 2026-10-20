@@ -11,7 +11,7 @@ import {InflationMiniChart,type InflationMiniTrendPoint} from "../inflation/infl
 import {ContentHelp} from "../content-help";
 import {EconomicFavoriteButton} from "./economic-favorite-button";
 
-type Point={date?:string;label?:string;score?:number|null;value?:number|null};
+type Point={date?:string;label?:string;score?:number|null;value?:number|null;breakBefore?:boolean};
 type Indicator={
  id?:string;name?:string;label?:string;status?:string;score?:number|null;
  value?:number|null;unit?:string;displayValue?:string|null;formattedValue?:string|null;
@@ -65,7 +65,7 @@ function indicatorTrend(item:Indicator):InflationMiniTrendPoint[]{
  const rows=Array.isArray(item.trend)?item.trend:Array.isArray(item.history)?item.history:[];
  return rows.flatMap(p=>{
   const date=p?.date??p?.label,value=p?.value??p?.score;
-  return dated(date)&&finite(value)?[{date,value}]:[];
+  return dated(date)&&finite(value)?[{date,value,breakBefore:p.breakBefore===true}]:[];
  });
 }
 function IndicatorHelp({item,title}:{item:Indicator;title:string}){
