@@ -39,7 +39,7 @@ test("liquidity lower-page order matches inflation and recession: table, return 
  const inflation=read("app/inflation/inflation-panel.tsx"),recession=read("app/recession/recession-panel.tsx");
  assert.match(inflation,/className="cnn-return-cta"/);
  assert.match(recession,/className="cnn-return-cta"/);
- assert.match(read("app/inflation/page.tsx"),/displayTitle="미국 물가 점수, 처음이라면 이렇게 보세요"/);
+ assert.match(read("app/inflation/page.tsx"),/displayTitle="인플레이션 위험 점수, 이렇게 읽으세요"/);
  assert.match(read("app/recession/page.tsx"),/displayTitle="미국 경기침체 점수, 처음이라면 이렇게 보세요"/);
 });
 test("saved liquidity score, 13 indicators and 5 candidates remain intact",()=>{
