@@ -77,3 +77,21 @@ test('published R2 history does not qualify as original four-factor history',asy
  assert.ok(writer.includes('sameVerifiedLineage(currentInflation,snapshot?.body?.domains?.find(d=>d.id===\'inflation\'))'));
  assert.ok(writer.includes('sameVerifiedLineage(domain,old)'));
 });
+
+test('one-year chart rebuilds only original four-factor current-vintage points',()=>{
+ const source=fixture();
+ const older={observationDate:'2025-09-01',value:50};
+ for(const field of ['corePce','coreCpi','headlineCpi'])
+   source.artifacts.inflationBatchA[field].score.unshift(older);
+ source.artifacts.inflationExpectations.score.unshift(older);
+ const out=buildLegacyMarketInflationDomain(source,date);
+ assert.equal(out.status,'READY');
+ assert.equal(out.trend.length,13);
+ assert.ok(out.trend[0].label>='2025-10-20');
+ assert.equal(out.trend.at(-1).label,date);
+ assert.equal(out.trend.at(-1).value,out.score);
+ assert.ok(out.trend.every(point=>point.value>=0&&point.value<=100));
+ assert.ok(out.interpretation.includes('PIT'));
+ const risk=readFileSync('worker/projection-builders/inflation.mjs','utf8');
+ assert.ok(risk.includes('calculateInflationR2At'));
+});
