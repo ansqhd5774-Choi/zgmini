@@ -31,6 +31,7 @@ try{
    const right=page.getByRole("button",{name:"시장 채팅 열기"});
    await left.click();
    assert.equal(await list.getAttribute("aria-hidden"),"false");
+   await page.waitForFunction(()=>{const b=document.querySelector("#zg-risk-side-nav-panel")?.getBoundingClientRect();return Boolean(b&&b.left>=0&&b.right<innerWidth);},null,{timeout:5000});
    let b=await list.boundingBox();
    assert(b&&b.x>=0&&b.x+b.width<width&&b.height<900*.8,"left partial overlay fits viewport");
    assert(Number(await list.evaluate(e=>getComputedStyle(e).backgroundColor.match(/[\d.]+\)$/)?.[0].replace(')','')??1))<1,"nav rail background is translucent");
@@ -38,6 +39,7 @@ try{
    assert.equal(await list.getAttribute("aria-hidden"),"true","second press closes left");
    await right.click();
    assert.equal(await chat.getAttribute("aria-hidden"),"false");
+   await page.waitForFunction(()=>{const b=document.querySelector(".zg-risk-side-right")?.getBoundingClientRect();return Boolean(b&&b.left>0&&b.right<=innerWidth+1);},null,{timeout:5000});
    b=await chat.boundingBox();assert(b&&b.x>0&&b.x+b.width<=width+1&&b.height<900*.8,"right partial overlay fits viewport");
    await page.getByRole("button",{name:"시장 채팅 닫기"}).last().click();
    assert.equal(await chat.getAttribute("aria-hidden"),"true","second press closes right");
