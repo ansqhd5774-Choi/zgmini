@@ -281,13 +281,30 @@ function composeMarketSnapshot({liquidityHistory,collected,storedInflation,infla
         ? {...domain,methodologyVersion:consumptionDomain?.methodologyVersion??'CONSUMPTION_R5',asOfDate:asOf,historyMode:'CURRENT_VINTAGE_ONLY',lookAheadSafe:false}
         : domain);
 
+      // Eight-risk earnings diagnostic: preserve the original four scorer inputs
+      // separately from the thirteen-factor E1-R5 economic domain. The input
+      // components are legacy E1-R4 compatibility scores; never assign E1-R5's
+      // evaluation date to these individual observations.
+      const publicDiagnostics=diagnostics8(diagnostic?.snapshot);
+      const risk=publicDiagnostics.earningsRecessionDefense;
+      if(risk&&risk.status==="READY"){
+        const ids=["epsGrowth","margin","revenueGrowth","earningsGrowthBreadth"];
+        const inputs=scoringExternal?.earningsScores??{};
+        risk.methodologyVersion="EARNINGS_RECESSION_DIAGNOSTIC_R1";
+        risk.riskFactorsSource="E1_R4_LEGACY_COMPATIBILITY";
+        risk.riskFactors=ids.map(id=>{
+          const value=inputs[id];
+          return {id,status:finite(value)&&value>=0&&value<=100?"READY":"PARTIAL",
+            score:finite(value)&&value>=0&&value<=100?value:null,observationDate:null};
+        });
+      }
       return {
         status:"SUCCESS",
         modelVersion:composite.modelVersion,
         asOfDate:asOf,
         overall:composite.overall,
         domains:publicCompositeDomains,
-        diagnostics8:diagnostics8(diagnostic?.snapshot),
+        diagnostics8:publicDiagnostics,
         updatedAt:composite.updatedAt,
         dataQuality:{
           ...composite.dataQuality,
