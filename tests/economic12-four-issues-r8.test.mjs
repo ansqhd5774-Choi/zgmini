@@ -27,7 +27,7 @@ test("economic detail shows all stored indicators, Growth 24/24, and no invented
  assert.ok(panel.includes("currentPresentation(item)"));
  assert.ok(page.includes('<EconomicDetailPanel id={id}/>'));
  assert.doesNotMatch(page,/<InflationPanel/);
- const orbCall=panel.match(/<MarketScoreOrb\\b[^>]*\\/>/)?.[0]??"";
+ const orbCall=panel.match(/<MarketScoreOrb\b[^>]*\/>/)?.[0]??"";
  assert.ok(orbCall.includes("comparisonItems={comparisons}"),"shared original gauge exists");
  assert.doesNotMatch(orbCall,/marketScoreBands=/,"all twelve economic gauges use the original CNN bands");
  assert.ok(panel.includes('marketScoreBands={id!=="inflation"} emptyLabel='),"the chart palette is outside this gauge-only change");
