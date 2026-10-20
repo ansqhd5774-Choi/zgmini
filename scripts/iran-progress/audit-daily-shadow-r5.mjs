@@ -28,13 +28,21 @@ export function auditR5ReadOnly(file,{now=Date.now()}={}){
   const age=Number.isSafeInteger(checkedAt)?now-checkedAt:null;
   const fresh=age!==null&&age>=0&&age<=86400000;
   const {accepted,held}=resolveR3Events(storedR3Candidates(store));
-  const storedAt=new Map();
-  // Source receipt first/updated storage time allows intraday anchor replay.
-  // Read only; do not expose saved original article metadata.
+  const storedAt=new Map(),revisionCount=new Map();
+  // source URL can have several immutable versions. The latest receipt time
+  // must NOT masquerade as a newly discovered independent incident.
+  // Select the earliest immutable stored_at, and hold revised URLs for review.
   for(const row of db.prepare("SELECT body,stored_at FROM sources WHERE id LIKE 'news-metadata:%' ORDER BY stored_at,id").all()){
    const saved=JSON.parse(row.body);
-   storedAt.set(saved.sourceUrl,Number(row.stored_at));
+   if(typeof saved.sourceUrl!=='string')continue;
+   const seen=storedAt.get(saved.sourceUrl);
+   const at=Number(row.stored_at);
+   if(Number.isSafeInteger(at)&&at>0&&(seen===undefined||at<seen))
+    storedAt.set(saved.sourceUrl,at);
+   revisionCount.set(saved.sourceUrl,(revisionCount.get(saved.sourceUrl)??0)+1);
   }
+  const revisedSourceUrls=accepted.filter(e=>(revisionCount.get(e.sourceUrl)??0)>1).length;
+  const sourceReceiptTimeMissing=accepted.filter(e=>!storedAt.has(e.sourceUrl)).length;
   const datedAccepted=accepted.map(e=>({...e,sourceStoredAt:storedAt.get(e.sourceUrl)}));
   const shadow=calculateIranDailyAnchorShadow(datedAccepted,{
    asOfDate,collectionCheckedAt:checkedAt,
@@ -44,19 +52,24 @@ export function auditR5ReadOnly(file,{now=Date.now()}={}){
   return {
    mode:'PC_LOCAL_READ_ONLY_SHADOW',
    version:shadow.version,asOfDate,
-   preliminaryScore:fresh&&shadow.status==='SHADOW_UNCALIBRATED'&&shadow.latePriorPublicationDateCount===0?shadow.score:null,
+   preliminaryScore:fresh&&shadow.status==='SHADOW_UNCALIBRATED'&&shadow.latePriorPublicationDateCount===0&&revisedSourceUrls===0&&sourceReceiptTimeMissing===0?shadow.score:null,
    shadowScoreAwaitingReview:shadow.latePriorPublicationDateCount>0?shadow.score:null,
    shadowScoreWhenDataStale:!fresh?shadow.score:null,
    anchorScore:shadow.anchorScore,anchorDate:shadow.anchorDate,
    realityAssessmentStatus:shadow.anchorEvidenceStatus,
-   outcome:!fresh?'SHADOW_INPUT_STALE_OR_MISSING':shadow.latePriorPublicationDateCount||shadow.potentialCasualtyRevisionCount?'INDEPENDENT_INCIDENT_REVIEW_REQUIRED':'SHADOW_UNCALIBRATED',
+   outcome:!fresh?'SHADOW_INPUT_STALE_OR_MISSING':shadow.latePriorPublicationDateCount||shadow.potentialCasualtyRevisionCount||revisedSourceUrls||sourceReceiptTimeMissing?'INDEPENDENT_INCIDENT_REVIEW_REQUIRED':'SHADOW_UNCALIBRATED',
    classifierVersion:lastValid?.classifierVersion??null,
    previousOperationalRawScore:lastValid?.score??null,
    lastPublicationStatus:publication?.status??null,
    lastR3AsOf:lastValid?.asOfDate??null,
    collectionStatus:collection?.status??null,
    checkedAt,collectionAgeMinutes:age!==null?Math.floor(age/60000):null,
+   r3LifetimeEventCount:lastValid?.eventCount??null,
+   r3PublishedProjectionCount:lastValid?.events?.length??null,
+   r5BackcastWindowEventCount:shadow.history.reduce((n,p)=>n+p.reportedEvents,0),
+   r5AvailableUniqueEventCount:shadow.eventCount,
    acceptedUnique:shadow.eventCount,heldPotentialDuplicates:held.length,
+   revisedSourceUrls,sourceReceiptTimeMissing,
    anchorAssessedAt:shadow.anchorAssessedAt,postAnchorSameDayWeightedDelta:shadow.postAnchorSameDayWeightedDelta,
    latePriorPublicationDateCount:shadow.latePriorPublicationDateCount,
    potentialCasualtyRevisionCount:shadow.potentialCasualtyRevisionCount,
