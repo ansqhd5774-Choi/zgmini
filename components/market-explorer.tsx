@@ -29,11 +29,12 @@ export default function MarketExplorer({kind}:{kind:'risk'|'economic'}){
  const {payload,loading,error}=useStoredIndex<Snapshot>('/api/market-score');
  const {payload:asset}=useStoredIndex<{status:string;score:number|null}>('/api/asset-bubble-detail',null,kind==='risk');
  const {payload:supply}=useStoredIndex<{status:string;score:number|null}>('/api/supply-shock-detail',null,kind==='risk');
+ const {payload:stagflation,error:stagflationError}=useStoredIndex<{status:string;score:number|null}>('/api/stagflation-risk-detail',null,kind==='risk');
  const [query,setQuery]=useState(''),[sort,setSort]=useState('default');
  const catalog=kind==='risk'?RISK_CARDS:ECONOMIC_CARDS;
  const cards=catalog.map((card,index)=>{
   const domain=kind==='economic'?payload?.domains?.find(d=>d.id===card.id):undefined;
-  const datum=kind==='economic'?domain:card.id==='assetBubbleSafety'?asset:card.id==='supplyShockSafety'?supply:payload?.diagnostics8?.[card.id];
+  const datum=kind==='economic'?domain:card.id==='stagflationSafety'?(stagflationError?null:stagflation):card.id==='assetBubbleSafety'?asset:card.id==='supplyShockSafety'?supply:payload?.diagnostics8?.[card.id];
   return {...card,index,domain,score:scoreOf(datum)};
  });
  const ready=cards.filter(c=>c.score!==null).length;

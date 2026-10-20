@@ -11,7 +11,7 @@ const publicRoutes=[
   '/sector-fear-greed/',
   '/inflation/',
   '/recession/',
-  '/liquidity-crisis/',
+  '/stagflation-risk/',
   '/credit-risk/',
   '/earnings-recession/',
   '/asset-bubble/',
@@ -75,6 +75,8 @@ test("renders SEO metadata for all 16 public pages in the Workers runtime", asyn
       assert.ok(head.includes(`href="https://zgmini.kr${route}"`),`${route}: canonical href`);
       assert.ok(!head.includes('seo=audit'),`${route}: query leaked into metadata`);
     }
+    const legacy=await mf.dispatchFetch('http://localhost/liquidity-crisis/',{redirect:'manual'});
+    assert.equal(legacy.status,308);assert.ok(legacy.headers.get('location')?.endsWith('/stagflation-risk/'));
     assert.equal(outboundCalls,0);
   } finally { await mf.dispose(); }
 });

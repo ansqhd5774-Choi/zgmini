@@ -22,7 +22,7 @@ test('R2 detail pages expose search-intent intro copy without changing data logi
 
   const pages={
     'credit-risk':'app/credit-risk/page.tsx',
-    'liquidity-crisis':'app/liquidity-crisis/page.tsx',
+    'stagflation-risk':'app/stagflation-risk/page.tsx',
     'debt-risk':'app/debt-risk/page.tsx',
     inflation:'app/inflation/page.tsx',
     recession:'app/recession/page.tsx',
@@ -39,9 +39,10 @@ test('R2 detail pages expose search-intent intro copy without changing data logi
 
 test('R2 detail page lastmod stays truthful per content update date',()=>{
   const sitemap=read('public/sitemap.xml');
-  for(const path of ['/credit-risk/','/liquidity-crisis/','/debt-risk/','/earnings-recession/','/asset-bubble/','/supply-shock/']){
+  for(const path of ['/credit-risk/','/debt-risk/','/earnings-recession/','/asset-bubble/','/supply-shock/']){
     assert.ok(sitemap.includes(`<loc>https://zgmini.kr${path}</loc><lastmod>2026-10-20</lastmod>`),path);
   }
+  assert.ok(sitemap.includes('<loc>https://zgmini.kr/stagflation-risk/</loc><lastmod>2026-10-21</lastmod>'));
   assert.ok(sitemap.includes('<loc>https://zgmini.kr/inflation/</loc><lastmod>2026-10-18</lastmod>'),'inflation');
   assert.ok(sitemap.includes('<loc>https://zgmini.kr/recession/</loc><lastmod>2026-10-18</lastmod>'),'recession');
 });

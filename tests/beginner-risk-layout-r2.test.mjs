@@ -6,7 +6,7 @@ const read=path=>readFileSync(path,'utf8');
 const pages=[
  ['inflation','app/inflation/page.tsx'],
  ['recession','app/recession/page.tsx'],
- ['liquidity-crisis','app/liquidity-crisis/page.tsx'],
+ ['stagflation-risk','app/stagflation-risk/page.tsx'],
  ['credit-risk','app/credit-risk/page.tsx'],
  ['debt-risk','app/debt-risk/page.tsx'],
  ['asset-bubble','app/asset-bubble/page.tsx'],

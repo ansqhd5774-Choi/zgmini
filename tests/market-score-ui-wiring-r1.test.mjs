@@ -52,7 +52,7 @@ test("commodities card does not use supplyShockSafety as its public domain score
 
 test("top eight diagnostics link to dedicated detail pages",()=>{
   const routes=[
-    "/inflation/","/recession/","/liquidity-crisis/","/credit-risk/",
+    "/inflation/","/recession/","/stagflation-risk/","/credit-risk/",
     "/earnings-recession/","/asset-bubble/","/debt-risk/","/supply-shock/"
   ];
   for(const route of routes)assert.match(src,new RegExp(`href:['"]${route.replaceAll("/","\\/")}['"]|href:\\s*['"]${route.replaceAll("/","\\/")}['"]`));

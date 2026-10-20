@@ -1,7 +1,7 @@
 export const RISK_CARDS=[
  {id:'inflationStability',name:'인플레이션',href:'/inflation/',description:'물가와 기대인플레이션이 시장에 주는 부담',tags:['CPI·PCE','기대물가']},
  {id:'recessionDefense',name:'경기 침체',href:'/recession/',description:'고용·생산·소비에서 나타나는 경기 둔화 신호',tags:['실물경기','고용']},
- {id:'liquidityCrisisDefense',name:'유동성 위기',href:'/liquidity-crisis/',description:'은행 준비금과 단기 자금시장의 긴장',tags:['자금시장','은행 준비금']},
+ {id:'stagflationSafety',name:'스태그플레이션 위험',href:'/stagflation-risk/',description:'고물가와 성장·고용 둔화가 동시에 나타나는 위험',tags:['물가 고착','성장 둔화']},
  {id:'creditRiskDefense',name:'신용 위험',href:'/credit-risk/',description:'회사채 시장에서 드러나는 신용 스트레스',tags:['회사채','신용 여건']},
  {id:'earningsRecessionDefense',name:'실적 침체',href:'/earnings-recession/',description:'기업의 이익·매출·수익성 변화',tags:['기업 이익','수익성']},
  {id:'assetBubbleSafety',name:'자산 버블',href:'/asset-bubble/',description:'밸류에이션과 가격 과열의 부담',tags:['밸류에이션','과열']},

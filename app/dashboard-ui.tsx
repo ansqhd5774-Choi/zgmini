@@ -210,7 +210,7 @@ type MarketScoreResponse={
  };
 };
 const r55DomainIds=["inflation","employment","rates","credit","growth","consumption","earnings","liquidity","fundFlows","breadth","dollarFx","commodities"] as const;
-const diagnosticKeys=["inflationStability","recessionDefense","liquidityCrisisDefense","creditRiskDefense","earningsRecessionDefense","assetBubbleSafety","debtRiskSafety","supplyShockSafety"] as const;
+const diagnosticKeys=["inflationStability","recessionDefense","stagflationSafety","creditRiskDefense","earningsRecessionDefense","assetBubbleSafety","debtRiskSafety","supplyShockSafety"] as const;
 const validPublicScore=(value:unknown):value is number=>typeof value==="number"&&Number.isFinite(value)&&value>=0&&value<=100;
 const marketPeriods=[{label:'1D',days:1},{label:'1W',days:7},{label:'1M',days:30},{label:'3M',days:90},{label:'6M',days:180},{label:'1Y',days:365}] as const;
 function marketTrendWindow(data:DashboardPoint[]|undefined,days:number){
@@ -236,7 +236,7 @@ const r55Cards=[
 const diagnosticSubscores=[
  {name:'인플레이션',href:'/inflation/',components:'근원물가·기대물가·생산자물가·임금·에너지 등 16개 지표'},
  {name:'경기 침체',href:'/recession/',components:'비농업고용, 실질 GDP, 산업생산, 실질 소비지출, 실업률, 소매판매, 가처분소득'},
- {name:'유동성 위기',href:'/liquidity-crisis/',components:'단기자금시장 위험, 은행 준비금, 재무부 현금, 연준 단기자금, 시중 통화량, 채권 변동성'},
+ {name:'스태그플레이션 위험',href:'/stagflation-risk/',components:'전체·근원 물가, 실질소비·소득, 생산, 고용, 기대인플레이션, 에너지'},
  {name:'신용 위험',href:'/credit-risk/',components:'고위험 회사채, 우량 회사채, 전체 회사채, 채권 변동성'},
  {name:'실적 침체',href:'/earnings-recession/',components:'주당이익 성장, 영업·순이익률, 매출 성장, 이익 증가 종목'},
  {name:'자산 버블',href:'/asset-bubble/',components:'밸류에이션 압력, 가격가속, 위험자산비중, 투기성 자금흐름, 시장폭 괴리, 과잉유동성'},
@@ -257,6 +257,7 @@ export function CompositeMarketSection({items,points,demo,loading}:{items:Summar
  const {payload:inflationRisk}=useStoredIndex<{status:string;score:number|null;methodologyVersion?:string}>('/api/inflation-detail');
  const {payload:assetBubble}=useStoredIndex<{status:string;score:number|null;scoreObservationQuarter?:string}>('/api/asset-bubble-detail');
  const {payload:supplyShock}=useStoredIndex<{status:string;score:number|null;scoreObservationMonth?:string}>('/api/supply-shock-detail');
+ const {payload:stagflation,error:stagflationError}=useStoredIndex<{status:string;score:number|null;observationMonth?:string}>('/api/stagflation-risk-detail');
 
  useEffect(()=>{
   let alive=true;
@@ -358,7 +359,7 @@ export function CompositeMarketSection({items,points,demo,loading}:{items:Summar
        <div className="zg-r55-subscore-grid">
        {diagnosticSubscores.map((s,index)=>{
         // Risk Inflation must use the R2 detail producer, not the separate market Price diagnostic.
-        const diag=diagnosticKeys[index]==='inflationStability'?inflationRisk:diagnosticKeys[index]==='assetBubbleSafety'?assetBubble:diagnosticKeys[index]==='supplyShockSafety'?supplyShock:market?.diagnostics8?.[diagnosticKeys[index]];
+        const diag=diagnosticKeys[index]==='inflationStability'?inflationRisk:diagnosticKeys[index]==='stagflationSafety'?(stagflationError?null:stagflation):diagnosticKeys[index]==='assetBubbleSafety'?assetBubble:diagnosticKeys[index]==='supplyShockSafety'?supplyShock:market?.diagnostics8?.[diagnosticKeys[index]];
         const score=diag?.status==='READY'&&validPublicScore(diag.score)?diag.score:null;
         return <div key={s.name} className="zg-r55-subscore" data-index={index} title={diagnosticKeys[index]==='assetBubbleSafety'&&assetBubble?.scoreObservationQuarter?`평가 분기 ${assetBubble.scoreObservationQuarter} · 상세 페이지와 동일한 R10 저장 점수`:undefined}>
          <div className="zg-r55-subscore-head">

@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {readFileSync} from "node:fs";
 const read=p=>readFileSync(p,"utf8");
-const keys=["inflation","recession","liquidity-crisis","credit-risk","earnings-recession","asset-bubble","debt-risk","supply-shock"];
+const keys=["inflation","recession","stagflation-risk","credit-risk","earnings-recession","asset-bubble","debt-risk","supply-shock"];
 test("all eight public risk pages provide search titles, canonical, robots, OpenGraph and social descriptions",()=>{
  for(const key of keys){
   const s=read("app/"+key+"/page.tsx");
@@ -26,7 +26,7 @@ test("sitemap lastmod reflects the verified Oct 20 KST content changes without f
  const sitemap=read("public/sitemap.xml");
  assert.equal((sitemap.match(/<url>/g)||[]).length,31);
  for(const key of keys){
-  const expected=["inflation","recession"].includes(key)?"2026-10-18":"2026-10-20";
+  const expected=key==="stagflation-risk"?"2026-10-21":["inflation","recession"].includes(key)?"2026-10-18":"2026-10-20";
   assert.ok(sitemap.includes("<loc>https://zgmini.kr/"+key+"/</loc><lastmod>"+expected+"</lastmod>"),key);
  }
  const robots=read("public/robots.txt");
