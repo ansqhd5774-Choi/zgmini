@@ -19,7 +19,7 @@ const summarizeRows=rows=>rows.map(r=>({date:r.date,status:r.status,eligible:r.e
 const validMembers=x=>Array.isArray(x)&&x.length>=490&&x.length<=520&&x.every(t=>typeof t==='string'&&t.trim()===t&&t.length>0)&&new Set(x).size===x.length;
 function parseMembers(s){try{return JSON.parse(s)}catch{return null}}
 export function evaluateDirect(db,dates,{onStage=()=>{}}={}){
- if(!Array.isArray(dates)||dates.length!==120||dates.some((d,i)=>!isDate(d)||(i>0&&d<=dates[i-1])))throw Error('PINNED_120_CALENDAR_INVALID');
+ if(!Array.isArray(dates)||dates.length<120||dates.length>370||dates.some((d,i)=>!isDate(d)||(i>0&&d<=dates[i-1])))throw Error('BOUNDED_CALENDAR_INVALID');
  const tables=new Set(db.prepare("SELECT name FROM sqlite_master WHERE type='table'").all().map(x=>x.name));
  for(const t of ['market_score_breadth_b1_r3_universe_v1','market_score_breadth_b1_r3_current_v1','market_score_breadth_b1_r3_history_v1'])
   if(!tables.has(t))throw Error('TABLE_MISSING:'+t);
@@ -60,7 +60,7 @@ export function evaluateDirect(db,dates,{onStage=()=>{}}={}){
   if(smooth[i-1].status==='CANDIDATE_READY'&&smooth[i].status==='CANDIDATE_READY')goodDiff.push(Math.abs(smooth[i].ema3-smooth[i-1].ema3));
  }
  return {
-  inputs:{datesChecked:120,first:dates[0],last:dates.at(-1),nativePerDateUniverseCount:membersDigest.length,universeProvenanceNotPITVerified:true},
+  inputs:{datesChecked:dates.length,first:dates[0],last:dates.at(-1),nativePerDateUniverseCount:membersDigest.length,universeProvenanceNotPITVerified:true},
   last60QualifiedPriceDays:auditLast60.filter(x=>x?.pass).length,
   last60QualifiedPriceFailed:summarizeRows(auditLast60.filter(x=>!x?.pass)),
   all120QualifyReasons:count([...auditByDate.values()]),
@@ -102,12 +102,16 @@ export function projectDirect(evaluation,asOf){
  };
 }
 const scoreDate=(evaluation,asOf)=>evaluation.perDay.findLast(r=>r.date<=asOf&&r.status==='CANDIDATE_READY')?.date??asOf;
-export function runShadow({base=DEFAULT_BASE,now=new Date(),writeLocal=false,asOf=null}={}){
+export function runShadow({base=DEFAULT_BASE,now=new Date(),writeLocal=false,asOf=null,historySessions=120}={}){
  const expected=latestCompletedSession(now);
  if(asOf!==null&&(!isDate(asOf)||asOf>expected||!isMarketSession(asOf)))throw Error('ASOF_NOT_COMPLETED_MARKET_SESSION');
  if(writeLocal&&asOf!==null&&asOf!==expected)throw Error('HISTORICAL_WRITE_FORBIDDEN');
  const date=asOf??expected;
- const dates=marketWindow(date);
+ // Keep the scheduled Shadow's approved 120-session behavior. The publisher may
+ // explicitly request 312 stored trading sessions to cover ~252 one-year observations
+ // after the unchanged 60-session indicator warm-up. No provider/DB writes.
+ if(!Number.isInteger(historySessions)||historySessions<120||historySessions>370)throw Error('HISTORY_SESSION_COUNT_INVALID');
+ const dates=marketWindow(date,historySessions);
  const core=path.join(base,'storage','core.sqlite');
  if(!fs.existsSync(core))throw Error('CORE_SQLITE_MISSING');
  const db=new DatabaseSync(core,{readOnly:true});
