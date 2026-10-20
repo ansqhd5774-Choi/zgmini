@@ -42,6 +42,47 @@ test('existing explicit producer deltas are not overwritten by stored-history fa
  assert.equal(current.domains[0].scoreComparisons.threeMonth,null);
 });
 
+
+test('real PC contract: source is absent but explicit matching method can still compare',()=>{
+ const current={status:'SUCCESS',asOfDate:'2026-10-20',domains:[
+  {id:'rates',status:'READY',score:15.4,methodologyVersion:'RATE_R3'},
+  {id:'credit',status:'READY',score:70.1,methodologyVersion:'CREDIT_R2_NFCI_4FACTOR_R1'},
+  {id:'liquidity',status:'READY',score:51.2},
+ ]};
+ attachStoredDomainScoreComparisons(current,[
+  snapshot('2026-10-13',[
+   {id:'rates',status:'READY',score:14.2,methodologyVersion:'RATE_R3'},
+   {id:'credit',status:'READY',score:66.1,methodologyVersion:'CREDIT_R2_NFCI_4FACTOR_R1'},
+   {id:'liquidity',status:'READY',score:42.3},
+  ]),
+ ]);
+ assert.equal(current.domains[0].scoreComparisons.week,1.2);
+ assert.equal(current.domains[1].scoreComparisons.week,4);
+ assert.equal(current.domains[2].scoreComparisons,undefined,'unversioned snapshots cannot prove model identity');
+});
+
+test('absent source is not equated with a present source, nor with different methodology',()=>{
+ const current={status:'SUCCESS',asOfDate:'2026-10-20',domains:[
+  {id:'employment',status:'READY',score:41,methodologyVersion:'EMPLOYMENT_R54'},
+ ]};
+ attachStoredDomainScoreComparisons(current,[
+  snapshot('2026-09-20',[{id:'employment',status:'READY',score:20,methodologyVersion:'EMPLOYMENT_R54',source:'NEW_SOURCE'}]),
+  snapshot('2026-10-13',[{id:'employment',status:'READY',score:30,methodologyVersion:'EMPLOYMENT_R53'}]),
+ ]);
+ assert.deepEqual(current.domains[0].scoreComparisons,{week:null,month:null,threeMonth:null,sixMonth:null,year:null});
+});
+
+test('20 days of real snapshots cannot manufacture month, quarter, half-year or year',()=>{
+ const current={status:'SUCCESS',asOfDate:'2026-10-20',domains:[
+  {id:'inflation',status:'READY',score:61,methodologyVersion:'INFLATION_R2_R29_56'},
+ ]};
+ attachStoredDomainScoreComparisons(current,[
+  snapshot('2026-09-30',[{id:'inflation',status:'READY',score:54,methodologyVersion:'INFLATION_R2_R29_56'}]),
+  snapshot('2026-10-13',[{id:'inflation',status:'READY',score:60,methodologyVersion:'INFLATION_R2_R29_56'}]),
+ ]);
+ assert.deepEqual(current.domains[0].scoreComparisons,{week:1,month:null,threeMonth:null,sixMonth:null,year:null});
+});
+
 test('PC read-only history is reused before local persistence; no new provider, D1 or schema path',()=>{
  const source=readFileSync('scripts/pc-writer/run-local.mjs','utf8');
  assert.match(source,/const storedHistory=await marketOperationalStore\(core\)\.readScoreHistory/);
