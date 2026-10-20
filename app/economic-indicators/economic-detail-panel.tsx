@@ -106,6 +106,7 @@ export default function EconomicDetailPanel({id}:{id:EconomicDomainId}){
   sixMonth:producer?.sixMonth??computed.sixMonth,
   year:producer?.year??computed.year,
  };
+ const hasVerifiedPeriodComparisons=Object.values(periods).some(value=>typeof value==="number"&&Number.isFinite(value));
  const comparisons=[{label:"1주",value:periods.week??null},{label:"1개월",value:periods.month??null},{label:"3개월",value:periods.threeMonth??null},{label:"6개월",value:periods.sixMonth??null},{label:"1년",value:periods.year??null}];
  const observations=(domain?.indicators??[]).filter((row):row is Indicator=>Boolean(row&&typeof row==="object"));
  const scored=observations.filter(item=>item.status==="READY"&&validScore(item.score));
@@ -127,7 +128,7 @@ export default function EconomicDetailPanel({id}:{id:EconomicDomainId}){
     <div className="fg-score-slot"><MarketScoreOrb score={loading||score===null?"—":score.toFixed(1)} state={loading?"확인 중":stage(score)} variant="hero" comparisonItems={comparisons} comparisonAriaLabel={config.name+" 시장 우호점수 기간별 변화"} marketScoreBands/>{v9&&score!==null&&<div className="economic-v9-status" data-testid="breadth-v9-update"><span>{v9Pending?"집계 중":"자료 반영"} · 관측 {dateLabel(observed)}</span>{v9Delta!==null&&Math.abs(v9Delta)>0.0000001&&<strong data-move={v9Delta>0?"up":"down"}>{v9Delta>0?"▲":"▽"}{Math.abs(v9Delta).toFixed(1)}</strong>}</div>}</div>
     <MarketTrendFrame className="fg-analysis-slot"><div className="fg-chart-slot"><div className="fg-renderer"><MarketFearGreedChart data={chart} axisTicks={axisTicks} axisLabels={axisLabels} latestPoint={latestPoint} showExtrema={chart.length>=3} instanceKey={"economic-"+id} gradientId={"economic-"+id+"-fill"} color={color} formatTooltipLabel={dateLabel} marketScoreBands emptyLabel={loading?"불러오는 중":"저장된 점수 이력 없음"}/></div></div></MarketTrendFrame>
    </div>
-   <div className="fg-footer-slot"><div className="cnn-panel-note"><span>{v9?"관측 기준":"차트 원칙"}</span><strong>{v9?`${dateLabel(date)} 기준 · ${dateLabel(observed)} 관측 점수${v9Pending?" 유지 · 신규 자료 반영 시 갱신":""}`:periodSourceMismatch&&lastSavedHistory&&score!==null?`현재 ${score.toFixed(1)}점(${dateLabel(date)}) · 이력 마지막 ${lastSavedHistory.value.toFixed(1)}점(${dateLabel(lastSavedHistory.label)}) · 서로 달라 기간별 비교 보류`:lastSavedHistory?`저장 이력 마지막 ${dateLabel(lastSavedHistory.label)} · 확인된 비교기간만 표시`:"저장 점수 이력 없음 · 비교 불가 기간은 —"}</strong></div></div>
+   <div className="fg-footer-slot"><div className="cnn-panel-note"><span>{v9?"관측 기준":"차트 원칙"}</span><strong>{v9?`${dateLabel(date)} 기준 · ${dateLabel(observed)} 관측 점수${v9Pending?" 유지 · 신규 자료 반영 시 갱신":""}`:periodSourceMismatch&&lastSavedHistory&&score!==null?`현재 ${score.toFixed(1)}점(${dateLabel(date)}) · 이력 마지막 ${lastSavedHistory.value.toFixed(1)}점(${dateLabel(lastSavedHistory.label)}) · ${hasVerifiedPeriodComparisons?"기간 비교는 검증된 별도 저장 점수 기준":"서로 달라 기간별 비교 보류"}`:lastSavedHistory?`저장 이력 마지막 ${dateLabel(lastSavedHistory.label)} · 확인된 비교기간만 표시`:"저장 점수 이력 없음 · 비교 불가 기간은 —"}</strong></div></div>
   </section>
   <section className="economic-beginner" data-testid={"economic-"+id+"-guide"}>
    <p className="cnn-eyebrow">BEGINNER GUIDE</p>
