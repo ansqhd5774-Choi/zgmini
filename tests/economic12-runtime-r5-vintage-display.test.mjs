@@ -18,7 +18,8 @@ test("history mismatch explicitly shows last score and date, not a guessed chang
  assert.ok(s.includes('liquidityStoredScoreComparisons(history,lastSavedHistory?.label??"",score)'));
 });
 test("API missing period fields and UI computed periods remain distinct concepts",()=>{
- assert.ok(s.includes("domain?.scoreComparisons??computed"));
+ assert.ok(s.includes("const producer=domain?.scoreComparisons"));
+ for(const key of ["week","month","threeMonth","sixMonth","year"])assert.ok(s.includes(key+":producer?."+key+"??computed."+key),"published override / verified stored history fallback for "+key);
  assert.ok(s.includes("const computed=liquidityStoredScoreComparisons"));
  assert.ok(s.includes("history=useMemo(()=>normalizeTrend(domain?.trend)"));
 });

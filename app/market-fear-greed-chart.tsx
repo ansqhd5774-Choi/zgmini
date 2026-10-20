@@ -55,6 +55,7 @@ export function MarketFearGreedChart({
   color = '#ff7076',
   showExtrema = false,
   axisTickInterval = 0,
+  marketScoreBands = false,
 }: {
   data: MarketFearGreedChartPoint[];
   axisTicks: string[];
@@ -68,6 +69,7 @@ export function MarketFearGreedChart({
   color?: string;
   showExtrema?: boolean;
   axisTickInterval?: 0 | 'preserveStartEnd';
+  marketScoreBands?: boolean;
 }) {
   const prefersReducedMotion = usePrefersReducedMotion();
   const extrema=compact||!showExtrema?[]:chartExtrema(data.map(p=>({date:/^\d{8}$/.test(p.date)?`${p.date.slice(0,4)}-${p.date.slice(4,6)}-${p.date.slice(6,8)}`:p.date.slice(0,10),value:p.score})));
@@ -108,15 +110,27 @@ export function MarketFearGreedChart({
         width={28}
         tick={{ fill: 'var(--zg-text-meta,#a8bcd0)', fontSize: 9 }}
       />
-      <ReferenceArea y1={0} y2={25} fill="#8f1f2f" fillOpacity={0.055} ifOverflow="hidden"/>
-      <ReferenceArea y1={25} y2={45} fill="#f2555a" fillOpacity={0.035} ifOverflow="hidden"/>
-      <ReferenceArea y1={45} y2={55} fill="#9aa8b6" fillOpacity={0.045} ifOverflow="hidden"/>
-      <ReferenceArea y1={55} y2={75} fill="#58c88a" fillOpacity={0.03} ifOverflow="hidden"/>
-      <ReferenceArea y1={75} y2={100} fill="#15865e" fillOpacity={0.04} ifOverflow="hidden"/>
-      <ReferenceLine y={25} stroke="rgba(255,98,107,.40)" strokeDasharray="3 5" strokeWidth={1}/>
-      <ReferenceLine y={45} stroke="rgba(240,163,74,.80)" strokeDasharray="3 5" strokeWidth={1}/>
-      <ReferenceLine y={55} stroke="rgba(168,188,208,.80)" strokeDasharray="3 5" strokeWidth={1}/>
-      <ReferenceLine y={75} stroke="rgba(35,201,143,.40)" strokeDasharray="3 5" strokeWidth={1}/>
+      {marketScoreBands?<>
+        <ReferenceArea y1={0} y2={25} fill="#ef4444" fillOpacity={0.055} ifOverflow="hidden"/>
+        <ReferenceArea y1={25} y2={40} fill="#f59e0b" fillOpacity={0.04} ifOverflow="hidden"/>
+        <ReferenceArea y1={40} y2={60} fill="#94a3b8" fillOpacity={0.04} ifOverflow="hidden"/>
+        <ReferenceArea y1={60} y2={75} fill="#22c55e" fillOpacity={0.04} ifOverflow="hidden"/>
+        <ReferenceArea y1={75} y2={100} fill="#10b981" fillOpacity={0.045} ifOverflow="hidden"/>
+        <ReferenceLine y={25} stroke="rgba(239,68,68,.45)" strokeDasharray="3 5" strokeWidth={1}/>
+        <ReferenceLine y={40} stroke="rgba(245,158,11,.7)" strokeDasharray="3 5" strokeWidth={1}/>
+        <ReferenceLine y={60} stroke="rgba(148,163,184,.7)" strokeDasharray="3 5" strokeWidth={1}/>
+        <ReferenceLine y={75} stroke="rgba(34,197,94,.45)" strokeDasharray="3 5" strokeWidth={1}/>
+      </>:<>
+        <ReferenceArea y1={0} y2={25} fill="#8f1f2f" fillOpacity={0.055} ifOverflow="hidden"/>
+        <ReferenceArea y1={25} y2={45} fill="#f2555a" fillOpacity={0.035} ifOverflow="hidden"/>
+        <ReferenceArea y1={45} y2={55} fill="#9aa8b6" fillOpacity={0.045} ifOverflow="hidden"/>
+        <ReferenceArea y1={55} y2={75} fill="#58c88a" fillOpacity={0.03} ifOverflow="hidden"/>
+        <ReferenceArea y1={75} y2={100} fill="#15865e" fillOpacity={0.04} ifOverflow="hidden"/>
+        <ReferenceLine y={25} stroke="rgba(255,98,107,.40)" strokeDasharray="3 5" strokeWidth={1}/>
+        <ReferenceLine y={45} stroke="rgba(240,163,74,.80)" strokeDasharray="3 5" strokeWidth={1}/>
+        <ReferenceLine y={55} stroke="rgba(168,188,208,.80)" strokeDasharray="3 5" strokeWidth={1}/>
+        <ReferenceLine y={75} stroke="rgba(35,201,143,.40)" strokeDasharray="3 5" strokeWidth={1}/>
+      </>}
       {latestPoint ? <ReferenceDot
         key={`latest-${instanceKey}-${latestPoint.date}-${latestPoint.score}`}
         className="cnn-latest-point"
@@ -139,7 +153,7 @@ export function MarketFearGreedChart({
             : null;
           return <div className="cnn-history-tooltip">
             <span>{formatTooltipLabel(String(tooltipLabel))}</span>
-            <strong style={{color:fearGreedStateColor(tooltipValue===null?'확인 불가':tooltipValue<45?'공포':tooltipValue<=55?'중립':'탐욕')}}>{tooltipValue === null ? '—' : tooltipValue.toFixed(1)}</strong>
+            <strong style={{color:marketScoreBands?(tooltipValue===null?'#94a3b8':tooltipValue<25?'#ef4444':tooltipValue<40?'#f59e0b':tooltipValue<60?'#94a3b8':tooltipValue<75?'#22c55e':'#10b981'):fearGreedStateColor(tooltipValue===null?'확인 불가':tooltipValue<45?'공포':tooltipValue<=55?'중립':'탐욕')}}>{tooltipValue === null ? '—' : tooltipValue.toFixed(1)}</strong>
           </div>;
         }}
       />

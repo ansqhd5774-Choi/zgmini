@@ -21,7 +21,9 @@ test("score-only saved constituents show evaluation score and disclose missing s
  assert.doesNotMatch(panel,/item\.content\?\?item\.description\?\?"저장된 구성지표"/);
 });
 test("return link uses same CTA as original inflation, no development/design reference link",()=>{
- assert.ok(panel.includes('className="cnn-return-cta" href="/"'));
+ assert.ok(panel.includes('className="cnn-return-cta economic-back-button" href="/"'));
+ assert.equal((panel.match(/cnn-return-cta economic-back-button/g)||[]).length,1,"one standard return button");
+ assert.doesNotMatch(panel,/economic-links/,"remove additional unrelated footer links");
  assert.ok(!panel.includes("인플레이션 상세 디자인 기준 ↗"));
  assert.ok(css.includes("ECONOMIC12 R4"));
 });
