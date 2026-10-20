@@ -22,5 +22,7 @@ test("Growth R2 READY exposes multi-point stored trend and preserves current sco
   assert.ok(r.trend.length>1,"chart must have more than one point");
   assert.equal(r.trend.at(-1).label,"2026-07-01");
   assert.equal(r.trend.at(-1).value,r.score);
-  assert.deepEqual(r.indicators.map(x=>x.id),["G010","G019","G035","G060"]);
+  assert.deepEqual(r.indicators.map(x=>x.id),GROWTH_R2_FEATURE_IDS);
+  assert.equal(r.indicators.length,24);
+  assert.ok(r.indicators.every(x=>x.status==="READY"&&Number.isFinite(x.score)&&x.observationDate&&x.source));
 });
