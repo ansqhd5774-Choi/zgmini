@@ -63,6 +63,9 @@ test('strictly reject forged annual completeness, scores, source and method',()=
  assert.equal(projectV11PublicDomain({...x,factorHistory:{...x.factorHistory,F1:x.factorHistory.F1.slice(1)}}),null);
  assert.equal(projectV11PublicDomain({...x,factorHistory:{...x.factorHistory,F3:x.factorHistory.F3.map((v,i)=>i===25?{...v,value:101}:v)}}),null);
  assert.equal(projectV11PublicDomain({...x,methodologyVersion:V9_METHOD}),null);
+ const {factorHistory,...legacy}=x;
+ assert.equal(projectV11PublicDomain(legacy).methodologyVersion,V11_METHOD);
+ assert.equal(projectV11PublicDomain({...x,factorHistory:null}),null);
  assert.equal(projectV11PublicDomain({...x,trend:[...x.trend,{label:dates[248],value:70}]}),null);
 });
 test('V11 publisher rejects stale, alien or invalid output; distinct D1 key',async()=>{
