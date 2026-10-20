@@ -32,6 +32,10 @@ export function dispatchEarningsRiskProvisionalR23({
   // worktree fallback or automatic task/config source switch.
   if(!fsImpl.existsSync(directory)||!SIDECAR_FILES.every(name=>fsImpl.existsSync(path.join(directory,name))))
    return {status:"NOT_INSTALLED"};
+  // Never start a second heavy scan while R22 holds the observation lock.
+  // A possibly stale lock must be investigated, not bypassed automatically.
+  if(fsImpl.existsSync(path.join(base,"local-earnings-risk-provisional-r22.lock")))
+   return {status:"PREVIOUS_OBSERVATION_RUNNING_OR_UNKNOWN"};
   for(const name of SIDECAR_FILES){
    const stat=fsImpl.lstatSync(path.join(directory,name));
    if(!stat.isFile()||stat.isSymbolicLink())return {status:"BLOCKED_SIDECAR_FILE_UNSAFE"};
