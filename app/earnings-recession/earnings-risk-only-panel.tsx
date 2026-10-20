@@ -82,13 +82,14 @@ export default function EarningsRiskOnlyPanel(){
     <p>8대 위험 지표 전용 진단 구성요소입니다. 확인되지 않은 값과 과거 비교는 —로 표시합니다.</p>
    </header>
    <div className="inflation-table-wrap earnings-r2-table-wrap"><table className="inflation-indicator-table earnings-r2-table">
+    <colgroup><col className="earnings-col-favorite"/><col className="earnings-col-name"/><col className="earnings-col-content"/><col className="earnings-col-criterion"/><col className="earnings-col-prior"/><col className="earnings-col-current"/><col className="earnings-col-release"/><col className="earnings-col-judgement"/><col className="earnings-col-spark"/><col className="earnings-col-help"/></colgroup>
     <thead><tr><th><EarningsFavoriteHeaderIcon/><span className="sr-only">즐겨찾기</span></th><th>지표</th><th>내용</th><th>기준</th><th>이전</th><th>현재</th><th>발표</th><th>판단</th><th>미니차트(1Y)</th><th>ⓘ</th></tr></thead>
     <tbody>{ids.map(id=>{const factor=factors.get(id),meta=labels[id],value=factor?.score??null;return <tr key={id}>
      <td><EarningsFavoriteButton id={id} label={meta.name}/></td><th scope="row">{meta.name}</th>
      <td>{meta.description}</td><td>{meta.direction}</td><td>—</td>
      <td>{validScore(value)?value.toFixed(1)+"점":"—"}<small>평가 {dateLabel(factor?.observationDate)}</small></td>
      <td>—</td><td>{value===null?"확인 대기":value>=60?"긍정":value>=45?"중립":"부정"}</td><td>—</td>
-     <td><ContentHelp label={meta.name+" 도움말"}><p>{meta.description}. 해당 지표의 원자료와 진단 점수는 구분합니다.</p></ContentHelp></td>
+     <td><ContentHelp label={meta.name+" 도움말"}><p>{meta.description}. 해당 지표의 원자료와 진단 점수는 구분합니다. 현재 입력은 기존 E1-R4 호환 점수이며 개별 관측일이 확인되지 않은 항목은 —로 표시합니다.</p></ContentHelp></td>
     </tr>})}</tbody>
    </table></div>
    <div className="earnings-r2-mobile-list">{ids.map(id=>{const factor=factors.get(id),meta=labels[id],value=factor?.score??null;return <article className="earnings-r2-mobile-card" key={id}>
