@@ -9,8 +9,10 @@ type TurnstileApi={render:(element:HTMLElement,options:Record<string,unknown>)=>
 declare global {interface Window {turnstile?:TurnstileApi}}
 const REFRESH_MS=5000;
 function displayTime(iso:string){const date=new Date(iso);return Number.isNaN(date.getTime())?"":new Intl.DateTimeFormat("ko-KR",{timeZone:"Asia/Seoul",hour:"2-digit",minute:"2-digit",hour12:false}).format(date);}
-export default function CommunityChat({enabled}:{enabled:boolean}){
- const [open,setOpen]=useState(false);
+export default function CommunityChat({enabled,sidebarMode=false,sidebarOpen=false,onSidebarClose}:{enabled:boolean;sidebarMode?:boolean;sidebarOpen?:boolean;onSidebarClose?:()=>void}){
+ const [internalOpen,setOpen]=useState(false);
+ const open=sidebarMode?sidebarOpen:internalOpen;
+ const close=()=>{if(sidebarMode)onSidebarClose?.();else setOpen(false);};
  const [everOpened,setEverOpened]=useState(false);
  const [nickname,setNickname]=useState("");
  const [draft,setDraft]=useState("");
@@ -35,7 +37,7 @@ export default function CommunityChat({enabled}:{enabled:boolean}){
   }catch{setNickname("익명방문자");}
  },[]);
  useEffect(()=>{if(open){setEverOpened(true);requestAnimationFrame(()=>inputRef.current?.focus());}else{setCaptchaToken("");}},[open]);
- useEffect(()=>{if(!open)return;const onKey=(event:KeyboardEvent)=>{if(event.key==="Escape")setOpen(false);};window.addEventListener("keydown",onKey);return()=>window.removeEventListener("keydown",onKey);},[open]);
+ useEffect(()=>{if(!open)return;const onKey=(event:KeyboardEvent)=>{if(event.key==="Escape"){if(sidebarMode)onSidebarClose?.();else setOpen(false);}};window.addEventListener("keydown",onKey);return()=>window.removeEventListener("keydown",onKey);},[open,sidebarMode,onSidebarClose]);
  useEffect(()=>{
   if(!enabled||!open)return;
   let stopped=false;
@@ -96,9 +98,9 @@ export default function CommunityChat({enabled}:{enabled:boolean}){
   finally{setSending(false);setCaptchaToken("");if(captchaWidget.current&&window.turnstile)window.turnstile.reset(captchaWidget.current);}
  }
  if(!enabled)return null;
- return <div className="zg-community-root">
+ return <div className={`zg-community-root${sidebarMode?" zg-community-embedded":""}`}>
   <div id="zg-community-chat-panel" className={`zg-community-panel ${open?"is-open":everOpened?"is-closed was-open":"is-closed"}`} aria-label="ZGMINI 시장 채팅" aria-hidden={!open} inert={!open}>
-   <div className="zg-community-head"><strong>시장 채팅</strong><span>{status==="ready"?(writeEnabled?"대화 가능":"읽기 전용"):"연결 대기"}</span><button type="button" aria-label="채팅창 닫기" onClick={()=>setOpen(false)}><X size={17}/></button></div>
+   <div className="zg-community-head"><strong>시장 채팅</strong><span>{status==="ready"?(writeEnabled?"대화 가능":"읽기 전용"):"연결 대기"}</span><button type="button" aria-label="채팅창 닫기" onClick={close}><X size={17}/></button></div>
    <div className="zg-community-messages" ref={listRef} role="log" aria-label="시장 채팅 메시지">
     {messages.length===0&&<p className="zg-community-empty">{status==="ready"?"아직 대화가 없어요. 시장에 대한 생각을 남겨 보세요.":"현재 채팅 서비스를 준비하고 있습니다."}</p>}
     {messages.map(m=><article className="zg-community-item" key={m.id}>
@@ -115,6 +117,6 @@ export default function CommunityChat({enabled}:{enabled:boolean}){
     <small role="status">{error||"누구나 볼 수 있는 공개 채팅입니다. 개인정보를 공유하지 마세요."}</small>
    </form>
   </div>
-  <button type="button" className="zg-community-toggle" aria-controls="zg-community-chat-panel" aria-expanded={open} aria-label={open?"시장 채팅 닫기":"시장 채팅 열기"} onClick={()=>setOpen(v=>!v)}><MessageCircle size={21}/><span aria-hidden="true">채팅</span></button>
+  {!sidebarMode&&<button type="button" className="zg-community-toggle" aria-controls="zg-community-chat-panel" aria-expanded={open} aria-label={open?"시장 채팅 닫기":"시장 채팅 열기"} onClick={()=>setOpen(v=>!v)}><MessageCircle size={21}/><span aria-hidden="true">채팅</span></button>}
  </div>;
 }
