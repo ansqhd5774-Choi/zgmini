@@ -8,8 +8,8 @@ const guide=readFileSync("app/beginner-risk-guide.tsx","utf8");
 test("inflation intro leaves breathing room below the headline without changing other topics",()=>{
  assert.match(intro,/if\(topic==="inflation"\)/);
  assert.match(intro,/className="mb-4 max-w-4xl border-l-\[3px\] border-sky-400\/80 pl-3 sm:mb-5 sm:pl-4"/);
- assert.match(intro,/미국 물가, /);
- assert.match(intro,/안정되고 있을까\?/);
+ assert.match(intro,/미국 인플레이션, /);
+ assert.match(intro,/압력이 커지고 있을까\?/);
  assert.match(intro,/return <p className="mt-4 max-w-4xl text-sm leading-7/);
 });
 
