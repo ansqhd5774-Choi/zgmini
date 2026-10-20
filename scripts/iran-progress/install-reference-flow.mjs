@@ -2,7 +2,7 @@ import fs from 'node:fs';import path from 'node:path';import os from 'node:os';i
 const arg=process.argv[2];if(!arg?.startsWith('--collector='))throw Error('FLOW_COLLECTOR_REQUIRED');const collector=path.resolve(arg.slice(12));if(path.basename(collector)!=='collect-r14.mjs'||!fs.existsSync(collector))throw Error('FLOW_COLLECTOR_INVALID');
 const r2=process.argv.includes('--r2'),r3=process.argv.includes('--r3');if(r2&&r3)throw Error('FLOW_MODE_CONFLICT');
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../..'),base=process.env.ZGMINI_IRAN_HOME??path.join(os.homedir(),'.zgmini','iran-progress-r13');
-const store=openStore(path.join(base,'iran.sqlite'));try{if(store.getCheckpoint('reference-flow-publication-'+(r3?'r3':r2?'r2':'r1'))?.status!=='VERIFIED')throw Error('FLOW_VERIFIED_PUBLICATION_REQUIRED');}finally{store.close();}
+const store=openStore(path.join(base,'iran.sqlite'));try{const state=store.getCheckpoint('reference-flow-publication-'+(r3?'r3':r2?'r2':'r1'))?.status;if(r3?!['VERIFIED','UNCHANGED'].includes(state):state!=='VERIFIED')throw Error('FLOW_VERIFIED_PUBLICATION_REQUIRED');}finally{store.close();}
 const task='ZGMINI-PC-Iran-Progress-R13';
 const xml=execFileSync('schtasks.exe',['/Query','/TN',task,'/XML'],{encoding:'utf8',windowsHide:true});
 const launcher=['run-articles.vbs','run.vbs'].map(name=>path.join(base,name)).find(file=>xml.includes(file));if(!launcher)throw Error('FLOW_EXISTING_TASK_MISMATCH');
