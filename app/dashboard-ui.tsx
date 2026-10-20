@@ -294,10 +294,7 @@ export function CompositeMarketSection({items,points,demo,loading}:{items:Summar
  },[]);
 
  const toggle=()=>setExpanded(v=>!v);
- const keyToggle=(e:React.KeyboardEvent<HTMLElement>)=>{
-  if(e.currentTarget!==e.target)return;
-  if(e.key==='Enter'||e.key===' '){e.preventDefault();toggle()}
- };
+
  const busy=marketLoading;
  const overallRawScore=market?.overall?.status==='READY'&&validPublicScore(market.overall.score)?market.overall.score:null;
  const overallScore=overallRawScore===null?null:amplifyCompositeDisplayScore(overallRawScore);
@@ -394,16 +391,16 @@ export function CompositeMarketSection({items,points,demo,loading}:{items:Summar
         className={`zg-r55-card band-${band}`}
         style={{'--r55-card-accent':score===null?'#94a3b8':scoreColor(score)} as CSSProperties}
         data-status={(domain?.status??'unavailable').toLowerCase()}
-        tabIndex={0}
-        role="button"
-        aria-expanded={expanded}
-        aria-label={`${m.label} ${score===null?publicStatusLabel(domain?.status):`${Math.round(score)}점`}`}
-        onClick={toggle}
-        onKeyDown={keyToggle}
+        data-expanded={expanded?"true":"false"}
+        onClick={event=>{
+         // Card background expands, but native title/help links retain their own actions.
+         if((event.target as HTMLElement).closest("a,button,[role=button]"))return;
+         toggle();
+        }}
        >
         <div className="zg-r55-card-head">
          <span className="zg-r55-card-icon"><Icon size={18} aria-hidden="true"/></span>
-         <h3><a href={"/economic-indicators/"+({inflation:"inflation",employment:"employment",rates:"rates",credit:"credit",growth:"growth",consumption:"consumption",earnings:"earnings",liquidity:"liquidity",fundFlows:"fund-flows",breadth:"breadth",dollarFx:"dollar-fx",commodities:"commodities"}[r55DomainIds[index]])+"/"} onClick={e=>e.stopPropagation()} onKeyDown={e=>e.stopPropagation()} aria-label={m.label+" 상세페이지 열기"}>{m.label}</a></h3>
+         <h3><a className="zg-r55-card-title-link" href={"/economic-indicators/"+({inflation:"inflation",employment:"employment",rates:"rates",credit:"credit",growth:"growth",consumption:"consumption",earnings:"earnings",liquidity:"liquidity",fundFlows:"fund-flows",breadth:"breadth",dollarFx:"dollar-fx",commodities:"commodities"}[r55DomainIds[index]])+"/"} onClick={event=>event.stopPropagation()} aria-label={m.label+" 상세페이지 열기"} title={m.label+" 상세페이지"}>{m.label}<ArrowUpRight size={13} aria-hidden="true"/></a></h3>
          <span onClick={e=>e.stopPropagation()}><DashboardTip label={`${m.label} 도움말`}><HelpText copy={HELP[m.label]}/></DashboardTip></span>
         </div>
         {notice&&<p data-testid="breadth-unavailable-reason" style={{margin:'6px 0',fontSize:12,lineHeight:1.5,color:'#cbd5e1'}}>{notice.message}</p>}
