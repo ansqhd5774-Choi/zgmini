@@ -49,3 +49,23 @@ Public independent news reports support a **continued severe combat / no verifie
 - Reuters, October 20, Iran says Saudi Arabia and Houthis have not responded to its mediation offer: https://theprint.in/world/iran-says-saudi-arabia-houthis-have-not-answered-mediation-offer/3077310/ — a proposal is NOT a mutual ceasefire.
 
 **Verification outcome:** A model that raises the 20→21 score solely from mediation headlines despite sustained fighting FAILS directionality. A model counting Shabwa's 53→73 death toll update as another strike FAILS independent-incident deduplication. The candidate 13 is NOT independently proven by these articles. Reuters/AP articles are external cross-checks only, NOT newly approved stored/commercial API providers. Recheck source date versus event date and 06:35 KST baseline before attributing a change to Oct 21.
+
+## PC read-only evidence and historical reality rejection — 2026-10-21
+
+Actual user-PC audit at 2026-10-21 07:43 KST (READ ONLY) reported:
+- R3 stored raw score 35.5 with MILITARY 0; R5 provisional anchor 2026-10-21 06:35 KST, 13.00.
+- The R3 *lifetime* event count previously reported 17; the R3 **last-valid.public events projection** used by the stand-alone CMD contained 16 because the R3 publisher retains its recent-14-day slice only. Of those 16, **15** were dated in the Oct 08-21 chart window; one was before Oct 08. This is windowing, not proof of dropped raw source reports.
+- Oct 08/09/10/11 36.63 (later three marked carried); Oct 12 32.82; Oct 13 31.28; Oct 14 24.38; Oct 15 20.69; Oct 16 18.59; Oct 17 18.07; Oct 18 17.55; Oct 19 16.55; Oct 20/21 13.00.
+- Fresh discovery true; no newly ingested pre-anchor older reports, missing source timestamps, invalid events or suspected casualty revisions in the reported projection. The result was `SHADOW_UNCALIBRATED`, not verified reality.
+- The stand-alone CMD reads `reference-flow-last-valid-r3.events`; the new branch CLI independently reclassifies stored receipts. Do not call them the same full-ledger operation without an explicit parity check. No D1 remote readback or R5 Production cutover was performed.
+
+**Reality contradiction identified:** UN DPPA published on **2026-10-09** that Yemen had already returned to *full-scale war*, with fighting across multiple fronts.
+https://dppa.un.org/en/news/yemen-has-returned-to-full-scale-war-special-envoy-warns
+
+But R5's **Oct 09 backcast = 36.63**, outside the existing, **unapproved R4** research range `FULL_SCALE_WAR = 10..24`. Under that independent historical upper-bound candidate, the currently chosen R5 scale **11.31 FAILS**. This is not proof that the independently unverified 13 is a ground-truth score or that the R4 stage thresholds are final.
+
+The isolated `daily-reality-check-r5.mjs` implements fail-closed dated official/reviewed-source constraints, marks `REALITY_CONTRADICTED`, and compares sensitivity values 11.31/16/21/24 without auto-selecting them. With the same Oct09/Oct21 historical endpoints, **21** yields roughly **23.64 on Oct 09**, eliminating that *one* candidate-stage contradiction; it is **NOT calibrated** and is not approved for operations. Next gate: replay independently verified Oct 08–21 front states, including attack, de-escalation and inactive periods, to avoid tuning to a single 2026-10-09 constraint.
+
+R5 audit source now preserves **earliest** immutable source-receipt timestamps per URL, reports R3-lifetime / recent-publication / R5-window counts separately, and holds revised URLs or missing first-seen timestamps for independent review. Neither this script nor the independent reality checker writes local DB, calls providers, changes a scheduler or publishes.
+
+**Operational decision: NOT READY TO PUBLISH.** The user expressly requires reality consistency before R5 automatic public scoring. Source unit tests and a 14-day replay do not supersede the historical contradiction or missing 2026-10-21 independent 13-point calibration.
