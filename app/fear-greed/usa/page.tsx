@@ -1,4 +1,5 @@
 import DetailInvestorNotes from "../../detail-investor-notes";
+import SiteHeader from "@/components/site-header";
 import type { Metadata } from "next";
 import CnnPanel from "./cnn-panel";
 import DetailReadingGuide from "../../detail-reading-guide";
@@ -15,9 +16,8 @@ export const metadata: Metadata = {
 };
 
 export default function UsaFearGreedPage() {
- return <main className="zg-fg-detail zg-fg-us">
+ return <><SiteHeader/><main className="zg-fg-detail zg-fg-us">
   <div className="zg-fg-detail-body">
-   <a className="zg-fg-back" href="/">← ZGmini 메인 대시보드</a>
    <header className="zg-fg-page-header" aria-label="미국 공포탐욕지수 소개">
     <p className="zg-fg-eyebrow">CNN FEAR &amp; GREED · US STOCK MARKET</p>
     <h1>미국 공포탐욕지수</h1>
@@ -45,5 +45,5 @@ export default function UsaFearGreedPage() {
     <InvestorIntentGuide market="usa"/>
     <div className="zg-fg-bottom-r3"><DetailInvestorNotes topic="usa"/></div>
 </div>
-  </main>;
+  </main></>;
 }

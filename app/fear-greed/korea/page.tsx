@@ -1,4 +1,5 @@
 import DetailInvestorNotes from "../../detail-investor-notes";
+import SiteHeader from "@/components/site-header";
 import type { Metadata } from "next";
 import DataPanel from "./data-panel";
 import DetailReadingGuide from "../../detail-reading-guide";
@@ -14,8 +15,7 @@ export const metadata: Metadata = {
   twitter:{images:["https://zgmini.kr/zgmini-share.png"],card:"summary_large_image",title,description},
 };
 export default async function KoreaPage() {
-  return <div className="zg-fg-detail zg-fg-korea"><main className="zg-fg-detail-body">
-    <a href="/" className="zg-fg-back">← ZGmini 메인 대시보드</a>
+  return <><SiteHeader/><div className="zg-fg-detail zg-fg-korea"><main className="zg-fg-detail-body">
     <header className="zg-fg-page-header" aria-label="한국 공포탐욕지수 소개">
       <p className="zg-fg-eyebrow">DATA-DRIVEN KOREA MARKET SENTIMENT</p>
       <h1>한국 공포탐욕지수</h1>
@@ -50,5 +50,5 @@ export default async function KoreaPage() {
       <section><h2 className="mb-3 text-xl font-bold text-white">투자 판단에 참고하는 방법</h2><p>하루 점수보다 여러 거래일 동안의 변화와 가격 흐름이 일치하는지 살펴보세요. 공포가 커졌다고 반드시 저점인 것은 아니며, 탐욕이 높다고 즉시 하락하는 것도 아닙니다. 지수는 미래 수익률을 보장하거나 매수·매도 시점을 확정하는 신호가 아닙니다.</p></section>
       <section><h2 className="mb-3 text-xl font-bold text-white">어떤 시장 데이터를 함께 보면 좋을까요?</h2><p>코스피·코스닥 등락, 외국인·기관 수급, 원/달러 환율, 거래량과 변동성, 금리와 기업 실적을 함께 확인하면 투자심리 변화의 배경을 이해하는 데 도움이 됩니다. 자신의 투자 기간과 손실 감내 범위도 함께 고려하세요.</p><a className="mt-3 inline-flex min-h-11 items-center text-blue-200 underline" href="https://zgmini.kr/">ZGmini에서 주요 경제지표 함께 보기 →</a></section>
     </div>
-  </main></div>;
+  </main></div></>;
 }
