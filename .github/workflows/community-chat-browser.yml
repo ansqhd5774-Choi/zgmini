@@ -9,6 +9,9 @@ on:
       - 'tests/community-chat-browser-r1.mjs'
       - 'components/risk-detail-side-rails.*'
       - 'tests/risk-detail-side-rails-browser-r44.mjs'
+      - 'app/outbreak-events.tsx'
+      - 'app/outbreak-scenarios-r51.css'
+      - 'tests/outbreak-scenarios-browser-r51.mjs'
       - '.github/workflows/community-chat-browser.yml'
   workflow_dispatch:
 
@@ -51,6 +54,8 @@ jobs:
         run: node tests/community-chat-browser-r1.mjs
       - name: Validate eight-risk navigation and chat overlays at 390, 768, 1440, 1650 and 1920 px
         run: node tests/risk-detail-side-rails-browser-r44.mjs
+      - name: Validate scenarios at 390, 768, 1440 and 1920 px with mocked stored snapshots
+        run: node tests/outbreak-scenarios-browser-r51.mjs
       - name: Upload browser UI evidence
         if: always()
         uses: actions/upload-artifact@v4
@@ -59,6 +64,7 @@ jobs:
           path: |
             artifacts/community-chat-browser/
             artifacts/risk-detail-side-rails/
+            artifacts/outbreak-scenarios/
           if-no-files-found: warn
       - name: Show local dev errors on failure
         if: failure()
