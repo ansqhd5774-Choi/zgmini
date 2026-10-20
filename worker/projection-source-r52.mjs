@@ -3,7 +3,6 @@ import {marketOperationalStore,readStoredMarketInputsSelected} from './candidate
 import {loadStoredInflationPitSeries} from './inflation-pit-reader.mjs';
 import {INFLATION_PIT_SERIES} from './inflation-pit-backfill.mjs';
 import {loadPc1Series} from './projection-inflation-inputs.mjs';
-import {readEarningsE1R4StoredScore} from '../lib/market-score/sec-earnings-e1-r4-provider.mjs';
 import {defaultLoadProgress,defaultLoadRows} from './korea-funds.mjs';
 import {readRecessionClaimsHistory} from './projection-builders/recession-supplemental-history.mjs';
 
@@ -59,7 +58,9 @@ export async function loadProjectionSource(id,env,{now=Date.now(),onPhase,onMeta
  if(id==='earningsRecession'){
   const date=/^\d{4}-\d{2}-\d{2}$/.test(snapshot?.body?.asOfDate??'')?snapshot.body.asOfDate:asOf;
   const e1Started=performance.now();
-  const e1=selectStoredEarningsProjection(snapshot)??await readEarningsE1R4StoredScore({asOf:date,db:env.DB_CORE});
+  // Visitor GET reads only a stored economic-domain projection. The four-
+  // factor scorer runs on the PC writer, never inside this public GET.
+  const e1=selectStoredEarningsProjection(snapshot)??null;
   mark('source:earnings',e1Started);
   // The existing dated snapshots are the only eligible risk history source.
   // No provider access, DB write or E1 economic-domain trend is permitted.
