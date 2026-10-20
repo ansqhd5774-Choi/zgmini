@@ -18,7 +18,9 @@ export function projectV11PublicDomain(record){
    a.missingSessions!==252-a.observedSessions||a.completeYear!==(a.observedSessions===252)||
    a.observedSessions!==record.trend?.length)return null;
  const history=record.factorHistory;
- if(!history||typeof history!=='object')return null;
+ const enriched=Object.prototype.hasOwnProperty.call(record,'factorHistory');
+ if(enriched&&(!history||typeof history!=='object'))return null;
+ if(enriched){
  const dates=record.trend.map(p=>p.label);
  const first=history.F1;
  if(!Array.isArray(first)||first.length!==a.observedSessions)return null;
@@ -33,12 +35,13 @@ export function projectV11PublicDomain(record){
   }
   if(Math.abs(rows.at(-1).value-record.factors?.[key])>1e-6)return null;
  }
+ }
  // Reuse the frozen V9 numeric/date/source validator without altering V9 data.
  const projection=projectV9PublicDomain({...record,methodologyVersion:V9_METHOD});
  if(!projection)return null;
  return {...projection,methodologyVersion:V11_METHOD,source:'PC_LOCAL_STORED_V11',
   annualValidation:{...a},
-  indicators:projection.indicators.map((x,i)=>{
+  indicators:!enriched?projection.indicators.map((x,i)=>({...x,id:'breadth-v11-f'+(i+1),source:'STORED_V11_FACTOR'})):projection.indicators.map((x,i)=>{
    const [key,description,criterionLabel]=FACTORS[i],rows=history[key],previous=rows.at(-2);
    return {...x,id:'breadth-v11-f'+(i+1),
     source:'MarketParquet · 저장 산출',sourceKey:key,description,criterionLabel,
