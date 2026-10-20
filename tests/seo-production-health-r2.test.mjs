@@ -54,6 +54,16 @@ test('production SEO inspector requires social metadata to match the primary tit
   assert.ok(result.errors.includes('og_description_mismatch'));
 });
 
+test('USA SEO inspector accepts approved description and rejects the obsolete description',()=>{
+  const url='https://zgmini.kr/fear-greed/usa/';
+  const page=readFileSync('app/fear-greed/usa/page.tsx','utf8');
+  const description=page.match(/const description = "([^"]+)";/)[1];
+  const html=detailHtml.replaceAll(detailUrl,url).replaceAll(detailDescription,description);
+  assert.deepEqual(inspectHtml(html,url).errors,[]);
+  const obsolete=html.replaceAll(description,'원시값과 환산점수의 차이');
+  assert.ok(inspectHtml(obsolete,url).errors.some(error=>error.startsWith('description_stale:')));
+});
+
 test('production SEO inspector requires guide Article JSON-LD',()=>{
   const guideUrl='https://zgmini.kr/guides/fomc/';
   const html=detailHtml.replaceAll(detailUrl,guideUrl);
