@@ -25,7 +25,8 @@ test("twelve detail pages use saved market-score, approved inflation components,
  for(const marker of ["/api/market-score","MarketScoreOrb","MarketTrendFrame","MarketFearGreedChart","MarketCardHeader","InflationMiniChart","economic-reason","inflation-r2-mobile-list","inflation-indicator-table-r2","comparisonItems={comparisons}","EconomicFavoriteButton","ContentHelp"])assert.ok(panel.includes(marker),marker);
  assert.ok(panel.includes('domain?.status==="READY"&&validScore(domain.score)'));
  assert.ok(panel.includes("liquidityStoredScoreComparisons"));
- assert.ok(panel.includes("domain?.scoreComparisons??computed"));
+ assert.ok(panel.includes("const producer=domain?.scoreComparisons"));
+ for(const key of ["week","month","threeMonth","sixMonth","year"])assert.ok(panel.includes(key+":producer?."+key+"??computed."+key),key);
  assert.ok(panel.includes('"—"'));
  assert.doesNotMatch(panel,/Math\.random|fakeData|mockData|fetch\(['"]https:\/\/|axios/);
  for(const src of ["inflation-indicator-r2.css","inflation-score-comparisons-r1.css","inflation-hero-typography-r1.css","inflation-mobile-judgement.css","inflation-beginner-reading-r1.css"])assert.ok(page.includes(src));
