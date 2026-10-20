@@ -1,7 +1,7 @@
 "use client";
 import {useEffect,useRef,useState} from 'react';
 import {useStoredIndex} from './use-stored-index';
-import {ChevronRight,Layers3,Sparkles} from 'lucide-react';
+import {ChevronRight,ChevronUp,ChevronDown,Layers3,Sparkles} from 'lucide-react';
 import {Line,LineChart,ResponsiveContainer,CartesianGrid,XAxis,YAxis,Tooltip,ReferenceLine,ReferenceDot} from 'recharts';
 import {chartExtrema,clampedChartIndex} from '../lib/chart-extrema.mjs';
 import ChartExtremumPoint from './chart-extremum-point';
@@ -30,11 +30,27 @@ export type SentimentSeries={id:string;name:string;color:string;shortName?:strin
 type ChartInputRow={date:string}&Record<string,string|number|null|undefined>;
 export type SectorSnapshotMeta={confirmedObservationDate?:string;phase?:string;provisional?:{date:string;asOf:string;delayMinutes:number|null}};
 type SectorFearGreedStoredPayload=SectorSnapshotMeta&{status?:string;history?:ChartInputRow[]};
-export default function SectorSentimentChart({data=[],series=SECTORS,title='섹터별 공포·탐욕',draggable=false,linkToDetail=true,snapshot}:{data?:ChartInputRow[];series?:readonly SentimentSeries[];title?:string;draggable?:boolean;linkToDetail?:boolean;snapshot?:SectorSnapshotMeta}){
+export default function SectorSentimentChart({data=[],series=SECTORS,title='섹터별 공포·탐욕',draggable=false,themePicker=false,linkToDetail=true,snapshot}:{data?:ChartInputRow[];series?:readonly SentimentSeries[];title?:string;draggable?:boolean;themePicker?:boolean;linkToDetail?:boolean;snapshot?:SectorSnapshotMeta}){
  const [hidden,setHidden]=useState<Set<string>>(()=>new Set(series===SECTORS?SECTORS.slice(6).map(sector=>sector.id):[]));
  const drag=useRef<{x:number;left:number;active:boolean;moved:boolean}>({x:0,left:0,active:false,moved:false});
  const legendRef=useRef<HTMLDivElement>(null);
  const [atEnd,setAtEnd]=useState(false);
+ const [pickerOpen,setPickerOpen]=useState(false);
+ const [draftHidden,setDraftHidden]=useState<Set<string>>(()=>new Set());
+ const toggleThemePicker=()=>{
+  if(pickerOpen){setPickerOpen(false);return;}
+  setDraftHidden(new Set(hidden));setPickerOpen(true);
+ };
+ const toggleDraftTheme=(id:string)=>setDraftHidden(previous=>{
+  const next=new Set(previous);
+  if(next.has(id))next.delete(id);else next.add(id);
+  return next;
+ });
+ const applyThemePicker=()=>{
+  if(!series.some(item=>!draftHidden.has(item.id)))return;
+  setHidden(new Set(draftHidden));setPickerOpen(false);
+ };
+
  const [touchTooltip,setTouchTooltip]=useState<boolean|null>(null);
  const heldPointer=useRef<number|null>(null);
  const [heldIndex,setHeldIndex]=useState<number|null>(null);
@@ -54,7 +70,7 @@ export default function SectorSentimentChart({data=[],series=SECTORS,title='섹�
  const extrema=shownSeries.length===1?chartExtrema(visibleRows.map(row=>({date:row.date,value:row[shownSeries[0].id]}))):[];
  const heldRow=heldIndex===null?null:visibleRows[heldIndex];
  const moveHeld=(clientX:number,element:HTMLDivElement)=>{const rect=element.getBoundingClientRect();setHeldIndex(clampedChartIndex(clientX,rect.left+32,rect.width-44,visibleRows.length))};
- return <section className="zg-sector-chart" aria-label={`${series.length}개 ${title} 비교 차트`}>
+ return <section className={`zg-sector-chart${themePicker?" zg-theme-picker-enabled":""}`} aria-label={`${series.length}개 ${title} 비교 차트`}>
   <div className="zg-sector-chart-heading"><h2>{draggable?<Sparkles size={18} aria-hidden="true"/>:<Layers3 size={18} aria-hidden="true"/>}{autoStored&&linkToDetail?<a href="/sector-fear-greed/">{title}</a>:title}</h2><div className="zg-sector-period" aria-label={`${title} 기간`}>{[[7,'1W'],[30,'1M'],[90,'3M'],[180,'6M'],[365,'1Y']].map(([days,label])=><button key={days} type="button" aria-pressed={period===days} onClick={()=>setPeriod(Number(days))}>{label}</button>)}</div></div>
   <div className="zg-sector-chart-plot" onPointerDownCapture={event=>{if(event.pointerType==='mouse'&&event.button===0){heldPointer.current=event.pointerId;event.currentTarget.setPointerCapture(event.pointerId);moveHeld(event.clientX,event.currentTarget);setTouchTooltip(false);event.preventDefault()}else if(event.pointerType!=='mouse')setTouchTooltip(true)}} onPointerUpCapture={releasePlot} onPointerCancelCapture={releasePlot} onLostPointerCapture={releasePlot} onPointerMoveCapture={event=>{if(heldPointer.current===event.pointerId){moveHeld(event.clientX,event.currentTarget)}else if(event.pointerType==='mouse')setTouchTooltip(null)}}>
    {heldRow&&<div className="zg-sector-held-tooltip zg-sector-tooltip" role="status"><p>{heldRow.date}</p><ul>{shownSeries.map(s=>typeof heldRow[s.id]==='number'?<li key={s.id} style={{color:s.color}}><span>{s.name}</span><strong>{Number(heldRow[s.id]).toFixed(1)}</strong></li>:null)}</ul></div>}
@@ -73,6 +89,22 @@ export default function SectorSentimentChart({data=[],series=SECTORS,title='섹�
     </LineChart>
    </ResponsiveContainer>}
   </div>
-  <div className={`zg-legend-row${draggable?' has-next':''}`}><div ref={legendRef} className={`zg-sector-chart-legend${draggable?' is-draggable':''}`} aria-label={draggable?'표시할 테마 선택':'표시할 섹터 선택'} onScroll={event=>{const list=event.currentTarget;setAtEnd(list.scrollLeft+list.clientWidth>=list.scrollWidth-2)}} onPointerDown={event=>{if(!draggable||event.pointerType!=='mouse'||event.button!==0)return;drag.current={x:event.clientX,left:event.currentTarget.scrollLeft,active:true,moved:false}}} onPointerMove={event=>{if(!drag.current.active)return;const dx=event.clientX-drag.current.x;if(Math.abs(dx)>5){drag.current.moved=true;event.currentTarget.setPointerCapture(event.pointerId);event.currentTarget.scrollLeft=drag.current.left-dx;event.preventDefault()}}} onPointerUp={()=>{drag.current.active=false}} onPointerCancel={()=>{drag.current.active=false}} onLostPointerCapture={()=>{drag.current.active=false}} onClickCapture={event=>{if(drag.current.moved){event.preventDefault();event.stopPropagation();drag.current.moved=false}}}>{series.map(sector=><button key={sector.id} type="button" title={sector.name} aria-label={sector.name} aria-pressed={!hidden.has(sector.id)} onClick={()=>toggle(sector.id)} style={{borderBottomColor:sector.color}}>{sector.shortName??SHORT_NAMES[sector.id as SectorId]??sector.name}</button>)}</div>{draggable&&<button type="button" className="zg-theme-next" aria-label="다음 테마로 이동" onClick={nextKeyword} disabled={atEnd}><ChevronRight size={16} aria-hidden="true"/></button>}</div>
+  {themePicker?<>
+   {pickerOpen&&<div id="zg-theme-picker-options" className="zg-theme-picker-panel" role="region" aria-label="테마 선택" onKeyDown={event=>{if(event.key==='Escape'){event.stopPropagation();setPickerOpen(false);}}}>
+    <div className="zg-theme-picker-options">
+     {series.map(item=><button key={item.id} type="button" aria-pressed={!draftHidden.has(item.id)} onClick={()=>toggleDraftTheme(item.id)} title={item.name}><span aria-hidden="true" style={{background:item.color}}/>{item.name}</button>)}
+    </div>
+    <button className="zg-theme-picker-apply" type="button" disabled={!series.some(item=>!draftHidden.has(item.id))} onClick={applyThemePicker}>차트 보기</button>
+   </div>}
+   <div className="zg-legend-row zg-theme-picker-legend">
+    <div className="zg-sector-chart-legend is-draggable" aria-label="차트에 표시 중인 테마">
+     {shownSeries.map(item=><span key={item.id} className="zg-theme-selected-label" title={item.name} style={{borderBottomColor:item.color}}>{item.shortName??item.name}</span>)}
+     {!shownSeries.length&&<span className="zg-theme-picker-empty">표시 가능한 테마 없음</span>}
+    </div>
+    <button type="button" className="zg-theme-next" aria-label={pickerOpen?'테마 목록 닫기':'테마 목록 펼치기'} aria-controls="zg-theme-picker-options" aria-expanded={pickerOpen} onClick={toggleThemePicker} disabled={!rows.length||!series.length}>
+     {pickerOpen?<ChevronDown size={16} aria-hidden="true"/>:<ChevronUp size={16} aria-hidden="true"/>}
+    </button>
+   </div>
+  </>:  <div className={`zg-legend-row${draggable?' has-next':''}`}><div ref={legendRef} className={`zg-sector-chart-legend${draggable?' is-draggable':''}`} aria-label={draggable?'표시할 테마 선택':'표시할 섹터 선택'} onScroll={event=>{const list=event.currentTarget;setAtEnd(list.scrollLeft+list.clientWidth>=list.scrollWidth-2)}} onPointerDown={event=>{if(!draggable||event.pointerType!=='mouse'||event.button!==0)return;drag.current={x:event.clientX,left:event.currentTarget.scrollLeft,active:true,moved:false}}} onPointerMove={event=>{if(!drag.current.active)return;const dx=event.clientX-drag.current.x;if(Math.abs(dx)>5){drag.current.moved=true;event.currentTarget.setPointerCapture(event.pointerId);event.currentTarget.scrollLeft=drag.current.left-dx;event.preventDefault()}}} onPointerUp={()=>{drag.current.active=false}} onPointerCancel={()=>{drag.current.active=false}} onLostPointerCapture={()=>{drag.current.active=false}} onClickCapture={event=>{if(drag.current.moved){event.preventDefault();event.stopPropagation();drag.current.moved=false}}}>{series.map(sector=><button key={sector.id} type="button" title={sector.name} aria-label={sector.name} aria-pressed={!hidden.has(sector.id)} onClick={()=>toggle(sector.id)} style={{borderBottomColor:sector.color}}>{sector.shortName??SHORT_NAMES[sector.id as SectorId]??sector.name}</button>)}</div>{draggable&&<button type="button" className="zg-theme-next" aria-label="다음 테마로 이동" onClick={nextKeyword} disabled={atEnd}><ChevronRight size={16} aria-hidden="true"/></button>}</div>}
  </section>;
 }
