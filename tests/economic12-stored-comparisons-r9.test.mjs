@@ -7,14 +7,18 @@ const domain=(id,score,method='R1')=>({id,source:'APPROVED_STORED_SCORE',methodo
 const snapshot=(date,domains)=>({date,body:{status:'SUCCESS',domains}});
 const body=()=>({status:'SUCCESS',asOfDate:'2026-10-20',domains:[domain('employment',41.1),domain('credit',53.6)]});
 
-test('12-market hero uses dashboard bands; legacy risk/CNN gauges are unchanged',()=>{
+test('economic12 hero uses original CNN gauge bands; charts and unrelated gauges are unchanged',()=>{
  const orb=readFileSync('app/market-score-orb.tsx','utf8');
  const panel=readFileSync('app/economic-indicators/economic-detail-panel.tsx','utf8');
  assert.ok(orb.includes('marketScoreBands = false'));
  assert.ok(orb.includes('marketScoreBands?: boolean'));
  assert.ok(orb.includes('marketScoreBands ? MARKET_SCORE_GAUGE_BANDS : CNN_GAUGE_BANDS'));
  assert.ok(orb.includes('[0, 25, 40, 50, 60, 75, 100]'));
- assert.ok(panel.includes('comparisonAriaLabel={config.name+" 시장 우호점수 기간별 변화"} marketScoreBands={id!=="inflation"}'));
+ const hero=panel.match(/<MarketScoreOrb\b[^>]*\/>/)?.[0]??"";
+ assert.ok(hero.includes('comparisonAriaLabel={config.name+" 시장 우호점수 기간별 변화"}'));
+ assert.doesNotMatch(hero,/marketScoreBands=/,"all twelve hero gauges use the original default CNN bands");
+ assert.ok(panel.includes('marketScoreBands={id!=="inflation"} emptyLabel='),"chart appearance is not part of this change");
+ for(const color of ['#9f2233','#f2555a','#9aa8b6','#58c88a','#15865e'])assert.ok(orb.includes("color: '"+color+"'"));
  for(const color of ['#ef4444','#f59e0b','#94a3b8','#22c55e','#10b981'])assert.ok(orb.includes("color: '"+color+"'"));
 });
 
