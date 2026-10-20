@@ -11,7 +11,7 @@ import {kstCalendarDate} from '../../lib/iran-progress/chart-history.mjs';
 import {calculateIranDailyAnchorShadow} from '../../lib/iran-progress/daily-anchored-shadow-r5.mjs';
 import {storedR3Candidates,resolveR3Events} from './operate-r3.mjs';
 
-export function auditR5ReadOnly(file,{now=Date.now()}={}){
+export function auditR5ReadOnly(file,{now=Date.now(),sensitivityScale=null}={}){
  if(!fs.existsSync(file))throw Error('R5_OPERATIONAL_DB_MISSING');
  const db=new DatabaseSync(file,{readOnly:true});
  try{
@@ -45,13 +45,13 @@ export function auditR5ReadOnly(file,{now=Date.now()}={}){
   const sourceReceiptTimeMissing=accepted.filter(e=>!storedAt.has(e.sourceUrl)).length;
   const datedAccepted=accepted.map(e=>({...e,sourceStoredAt:storedAt.get(e.sourceUrl)}));
   const shadow=calculateIranDailyAnchorShadow(datedAccepted,{
-   asOfDate,collectionCheckedAt:checkedAt,
+   asOfDate,sensitivityScale,collectionCheckedAt:checkedAt,
    collectionStatus:collection?.status??'NOT_OBSERVED',
   });
   // Pure numeric summary, never print URLs, headlines, secrets or source bodies.
   return {
    mode:'PC_LOCAL_READ_ONLY_SHADOW',
-   version:shadow.version,asOfDate,
+   version:shadow.version,asOfDate,sensitivityScale:shadow.weightedPointScale,
    preliminaryScore:fresh&&shadow.status==='SHADOW_UNCALIBRATED'&&shadow.latePriorPublicationDateCount===0&&revisedSourceUrls===0&&sourceReceiptTimeMissing===0?shadow.score:null,
    shadowScoreAwaitingReview:shadow.latePriorPublicationDateCount>0?shadow.score:null,
    shadowScoreWhenDataStale:!fresh?shadow.score:null,
@@ -85,8 +85,10 @@ export function auditR5ReadOnly(file,{now=Date.now()}={}){
 const invoked=process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.url);
 if(invoked){
  const args=process.argv.slice(2);
- if(args.length>1||args.length===1&&!args[0].startsWith('--db='))
+ if(args.length>2||args.some(a=>a!=='--candidate-k21'&&!a.startsWith('--db='))||
+    args.filter(a=>a.startsWith('--db=')).length>1||
+    args.filter(a=>a==='--candidate-k21').length>1)
   throw Error('R5_ARGS_INVALID');
- const dbFile=args[0]?.slice(5)??path.join(process.env.ZGMINI_IRAN_HOME??path.join(os.homedir(),'.zgmini','iran-progress-r13'),'iran.sqlite');
- console.log(JSON.stringify(auditR5ReadOnly(dbFile),null,2));
+ const dbFile=args.find(a=>a.startsWith('--db='))?.slice(5)??path.join(process.env.ZGMINI_IRAN_HOME??path.join(os.homedir(),'.zgmini','iran-progress-r13'),'iran.sqlite');
+ console.log(JSON.stringify(auditR5ReadOnly(dbFile,{sensitivityScale:args.includes('--candidate-k21')?21:null}),null,2));
 }
