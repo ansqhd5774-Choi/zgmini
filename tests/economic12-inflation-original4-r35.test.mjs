@@ -63,3 +63,17 @@ test('legacy R2 trend cannot be relabeled as valid four-factor history',()=>{
  assert.equal(out.trend.length,1);
  assert.equal(out.trend[0].value,out.score);
 });
+
+test('published R2 history does not qualify as original four-factor history',async()=>{
+ const {sameVerifiedLineage}=await import('../scripts/pc-writer/market-snapshot-comparisons.mjs');
+ const old4={status:'READY',score:58,methodologyVersion:LEGACY_MARKET_INFLATION_METHOD};
+ const r2={status:'READY',score:61,methodologyVersion:'INFLATION_R2_R29_56'};
+ assert.equal(sameVerifiedLineage(old4,r2),false);
+ assert.equal(sameVerifiedLineage(old4,{...old4,score:57}),true);
+ assert.equal(sameVerifiedLineage(old4,{status:'READY',score:58}),false);
+ assert.equal(sameVerifiedLineage({...old4,source:'DIAGNOSTIC'},old4),false);
+ const writer=readFileSync('scripts/pc-writer/run-local.mjs','utf8');
+ assert.ok(writer.includes('storedSnapshots:comparableCompositeHistory'));
+ assert.ok(writer.includes('sameVerifiedLineage(currentInflation,snapshot?.body?.domains?.find(d=>d.id===\'inflation\'))'));
+ assert.ok(writer.includes('sameVerifiedLineage(domain,old)'));
+});
