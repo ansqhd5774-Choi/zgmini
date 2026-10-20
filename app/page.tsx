@@ -976,7 +976,7 @@ export default function Home() {
                 </Sheet>
               ) : null}/>
 
-      {view==="dashboard"&&<DashboardSideRails accountFavorites={favoriteItems.map(({kind,item})=>({key:sentimentKey(kind,item.name),label:item.name,group:kind==="sector"?"섹터 · 예시":"테마 · 예시",href:kind==="sector"?"/sector-fear-greed/":"/theme-fear-greed/"}))}/>}
+      {view==="dashboard"&&<DashboardSideRails accountFavorites={favoriteItems.map(({kind,item})=>({key:sentimentKey(kind,item.name),label:item.name,group:kind==="sector"?"섹터 · 예시":"테마 · 예시",href:kind==="sector"?"/sector-fear-greed/":"/theme-fear-greed/",exampleScore:item.score}))}/>}
       <div className="zg-container">
         {view!=='dashboard'&&<div className="zg-data-notice zg-data-notice-compact" role="status"><Info size={16}/><span>{marketDataLoading?'경제지표를 불러오고 있습니다.':marketData?.status==='live'?'공식 자료와 ZGmini 자체 계산값을 표시합니다.':marketDataError?'데이터 연결 지연 · 마지막 정상 수신값을 표시합니다.':'일부 지표 갱신 지연 · 마지막 정상 수신값을 유지합니다.'}</span></div>}
         {(view==='dashboard'||view==='countries')&&<CountryFearGreed/>}
