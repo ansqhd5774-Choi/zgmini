@@ -28,22 +28,22 @@ test("all chosen bold/highlight phrases occur verbatim in their own displayed se
  assert.match(renderer,/<p>\{section.text\}<\/p>/); // other details remain untouched
 });
 
-test("inflation terminology explains real percentages, annualization, and missing values",()=>{
+test("inflation risk terminology separates R2 scoring, annualization, and missing observations",()=>{
  for(const term of [
-  "70점이면 물가가 70% 오른 건가요?",
-  "실제 물가상승률",
-  "금리(돈을 빌릴 때 내는 이자율)",
+  "점수 60이면 인플레이션 위험이 60%인가요?",
+  "물가상승률이나 위험 발생 확률이 아닙니다.",
+  "기조 물가가 재가속",
   "3개월 동안 1% 올랐다면 연율로는 약 4%",
-  "'—'는 0이 아니라",
+  "'—'는 결측이며 0이 아닙니다",
   "과거 중앙값",
-  "처음 발표됐을 때 저장한 자료",
+  "저장된 초기발표 자료",
  ])assert.ok((page+notes).includes(term),term);
  assert.match(panel,/zg-inflation-keymark/);
- assert.match(panel,/물건과 서비스의 가격이 전반적으로 계속 오르는 현상/);
- assert.match(panel,/여러 자료를 종합해 저장된 평가 점수/);
- assert.match(intro,/미국 물가, <span className="text-sky-300">안정되고 있을까\?<\/span>/);
- assert.match(intro,/물가 안정 점수와 최근 1년 추세, 한눈에/);
- assert.match(page,/CPI·PCE, 임금·에너지 등 16개 물가 지표/);
+ assert.match(panel,/기조 물가의 재가속과 압력이 오래 지속될 신호/);
+ assert.match(panel,/16개 입력지표를 7개 영역/);
+ assert.match(intro,/미국 인플레이션, <span className="text-sky-300">압력이 커지고 있을까\?<\/span>/);
+ assert.match(intro,/기조 물가의 재가속·지속 압력을 7개 위험 평가 축/);
+ assert.match(page,/인플레이션 압력과 재가속·지속성 위험을 7개 평가 축/);
 });
 
 test("highlights stay scoped, sparse, and readable on wrapped mobile lines",()=>{

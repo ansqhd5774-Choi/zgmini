@@ -28,9 +28,9 @@ test('inflation keeps specific Core/Headline CPI-PCE coverage alongside the acce
   const file='app/inflation/page.tsx';
   const page=read(file);
   const panel=read('app/inflation/inflation-panel.tsx');
-  assert.ok(page.includes('const title="미국 인플레이션 지수 | CPI·PCE·기대물가·물가 추이 - ZGmini";'));
-  assert.ok(page.includes('미국 인플레이션 지수와 물가 안정 점수를 확인하세요.'));
-  assert.ok(page.includes('16개 물가 지표의 현재값과 최근 1년 추이'));
+  assert.ok(page.includes('const title="미국 인플레이션 위험 지표 | 재가속·지속성·7개 평가 축 - ZGmini";'));
+  assert.ok(page.includes('미국 인플레이션 압력과 재가속·지속성 위험'));
+  assert.ok(page.includes('16개 입력지표와 저장된 1년 추이'));
   for(const name of ['Core CPI','Core PCE','Headline PCE'])assert.ok(panel.includes('label:"'+name+'"'),name);
   assert.ok(panel.includes('생산자물가'));
   assert.ok(panel.includes('임금'));
