@@ -62,6 +62,20 @@ try{
    earningsR5ProspectiveReportStale=!fresh;
   }
  }
+ let breadthV9ShadowRun=null,breadthV9ShadowReport=null,breadthV9ShadowFresh=false;
+ const breadthV9OptIn=lane==='core'&&process.env.ZGMINI_R10_V9_SHADOW_ENABLED==='1';
+ if(breadthV9OptIn){
+  const startedAt=Date.now();
+  breadthV9ShadowRun=spawnSync(process.execPath,[path.join(here,'breadth-r10-v9-shadow-r1.mjs'),'--write-local'],{windowsHide:true,stdio:['ignore','pipe','pipe'],timeout:2*60000});
+  const resultPath=path.join(base,'local-breadth-r10-v9-shadow-last-run.json');
+  if(fs.existsSync(resultPath)){
+   try{
+    const candidate=read(resultPath),timestamp=Date.parse(candidate?.at??'');
+    breadthV9ShadowFresh=breadthV9ShadowRun.status===0&&Number.isFinite(timestamp)&&timestamp>=startedAt-1000;
+    if(breadthV9ShadowFresh)breadthV9ShadowReport=candidate;
+   }catch{breadthV9ShadowFresh=false;}
+  }
+ }
  const researchProspective=lane==='core'?{
   nonBlocking:true,
   exit:prospective?.status??null,
@@ -120,6 +134,16 @@ try{
   staleReportIgnored:earningsR5ProspectiveReportStale,
   error:earningsR5ProspectiveReport?.code??(earningsR5Prospective?.error?.code??null),
  }:{nonBlocking:true,status:'SKIPPED_KOREA_LANE'};
+ const researchBreadthR10V9Shadow=lane!=='core'?{nonBlocking:true,status:'SKIPPED_KOREA_LANE'}:
+  !breadthV9OptIn?{nonBlocking:true,status:'DISABLED'}:{
+  nonBlocking:true,
+  enabled:true,
+  status:breadthV9ShadowFresh?breadthV9ShadowReport?.status??'REPORT_MISSING':breadthV9ShadowRun?.status===0?'REPORT_MISSING':'EXECUTION_FAILED',
+  observationDate:breadthV9ShadowReport?.display?.observationDate??null,
+  asOf:breadthV9ShadowReport?.asOf??null,
+  latestStored:breadthV9ShadowReport?.latestStored??null,
+  error:breadthV9ShadowRun?.error?.code??null,
+ };
  const sectorFearGreed=lane==='core'?{
   nonBlocking:true,
   exit:sectorFearGreedR3?.status??null,
@@ -129,7 +153,7 @@ try{
   sectors:sectorFearGreedR3Report?.sectors??null,
   error:sectorFearGreedR3Report?.error??(sectorFearGreedR3?.error?.code??null),
  }:{nonBlocking:true,status:'SKIPPED_KOREA_LANE'};
- const report={at:new Date().toISOString(),lane,collectionExit:collection.status,collectionStatus:collectionReport?.status??null,supplyR10,sectorFearGreed,publicationExit:publication.status,publishRequested,publishSkipped,researchProspective,researchFundFlowProspective,researchBreadthProspective,researchEarningsR5OfficialRefresh,researchEarningsR5Prospective,status:publication.status===0?(publishSkipped==='QUOTA_GUARD'?'QUOTA_GUARDED':publishSkipped==='COLLECTION_FAILED'?'COLLECTION_FAILED_PUBLISH_BLOCKED':'COMPLETE'):'PUBLICATION_NOT_VERIFIED'};
+ const report={at:new Date().toISOString(),lane,collectionExit:collection.status,collectionStatus:collectionReport?.status??null,supplyR10,sectorFearGreed,researchBreadthR10V9Shadow,publicationExit:publication.status,publishRequested,publishSkipped,researchProspective,researchFundFlowProspective,researchBreadthProspective,researchEarningsR5OfficialRefresh,researchEarningsR5Prospective,status:publication.status===0?(publishSkipped==='QUOTA_GUARD'?'QUOTA_GUARDED':publishSkipped==='COLLECTION_FAILED'?'COLLECTION_FAILED_PUBLISH_BLOCKED':'COMPLETE'):'PUBLICATION_NOT_VERIFIED'};
  save(path.join(base,'local-cycle-last-run.json'),report);console.log(JSON.stringify(report));
  if(publication.status!==0)process.exitCode=1;
 }finally{fs.unlinkSync(file);}
