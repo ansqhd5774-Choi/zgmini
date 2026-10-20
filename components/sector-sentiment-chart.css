@@ -31,3 +31,19 @@
 .zg-theme-next:disabled{opacity:.3;cursor:default}
 @media(max-width:600px){.zg-sector-chart{padding:12px}.zg-sector-chart h2{font-size:16px}.zg-sector-chart-legend{gap:2px}.zg-sector-chart-legend button{font-size:9px}}
 @media(max-width:420px){.zg-sector-chart h2{font-size:14px}.zg-sector-chart h2>svg{width:16px;height:16px;margin-right:4px}}
+
+/* R155: theme-only overlay selector; leaves sector chart appearance untouched. */
+.zg-sector-chart.zg-theme-picker-enabled{position:relative;overflow:hidden}
+.zg-theme-picker-panel{position:absolute;z-index:25;top:8px;bottom:55px;left:16px;right:16px;display:flex;flex-direction:column;gap:7px;padding:8px;background:#0d2737;border:1px solid #426176;border-radius:4px;box-shadow:0 4px 14px #0008;transform:translateY(calc(100% + 70px));opacity:0;visibility:hidden;pointer-events:none;transition:transform 300ms cubic-bezier(.22,1,.36,1),opacity 220ms ease,visibility 0s linear 300ms}
+.zg-theme-picker-panel.is-open{transform:translateY(0);opacity:1;visibility:visible;pointer-events:auto;transition:transform 300ms cubic-bezier(.22,1,.36,1),opacity 220ms ease,visibility 0s}
+@media(prefers-reduced-motion:reduce){.zg-theme-picker-panel,.zg-theme-picker-panel.is-open{transition:none}}
+.zg-theme-picker-options{display:grid;flex:1;grid-template-columns:repeat(3,minmax(0,1fr));grid-auto-rows:25px;align-content:start;gap:4px;overflow-y:auto;min-height:0;scrollbar-width:thin}
+.zg-theme-picker-options button{min-width:0;height:25px;display:flex;align-items:center;gap:5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:2px 5px;border:1px solid #27485d;border-radius:3px;background:#102b3b;color:#c4d3df;font-size:10px;font-weight:700;cursor:pointer}
+.zg-theme-picker-options button>span{width:6px;height:6px;flex:none;border-radius:50%}
+.zg-theme-picker-options button[aria-pressed=true]{background:#23495b;border-color:#729cb7;color:#fff}
+.zg-theme-picker-options button[aria-pressed=false]{opacity:.68}
+.zg-theme-picker-legend{display:flex;align-items:center;gap:6px;min-width:0;margin-top:8px}
+.zg-theme-picker-legend .zg-sector-chart-legend{flex:1;min-width:0;margin-top:0}
+.zg-theme-selected-label{flex:0 0 auto;display:flex;align-items:center;justify-content:center;height:32px;min-width:0;padding:0 8px;border-bottom:2px solid;border-radius:3px 3px 0 0;background:#102b3b;color:#e2e8f0;font-size:10px;font-weight:600;white-space:nowrap}
+.zg-theme-picker-empty{display:flex;align-items:center;height:32px;color:#aebfd0;font-size:11px}
+@media(max-width:600px){.zg-theme-picker-panel{top:6px;bottom:51px;left:12px;right:12px}.zg-theme-picker-options{grid-template-columns:repeat(2,minmax(0,1fr))}.zg-theme-selected-label{font-size:9px}}

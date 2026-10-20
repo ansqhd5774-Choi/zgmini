@@ -1,4 +1,6 @@
 import {PUBLIC_DISPLAY_MAX_AGE_MS} from './public-display-freshness.mjs';
+import {publicFeedStore} from './public-feed-store.mjs';
+import {THEME_ETF_PROVISIONAL_KEY,validThemeEtfProvisional} from '../lib/market-score/theme-etf-provisional.mjs';
 
 // ETF-only stored projection reader. Visitor GET never collects, computes or writes.
 export const THEME_ETF_ONLY_PUBLIC_KEY='public:theme-etf-only:r1';
@@ -37,7 +39,7 @@ export function validateThemeEtfOnlyPublic(record){
  }
  return true;
 }
-export async function readThemeEtfOnly(db,{now=Date.now()}={}){
+export async function readThemeEtfOnly(db,{now=Date.now(),store=publicFeedStore(db)}={}){
  const headers={'cache-control':'no-store','x-robots-tag':'noindex, nofollow','x-content-type-options':'nosniff','x-data-source':'STORED'};
  let row=null;
  try{row=await db.prepare('SELECT body,stored_at FROM market_public_snapshots_v1 WHERE snapshot_key=?').bind(THEME_ETF_ONLY_PUBLIC_KEY).first()}
@@ -52,9 +54,18 @@ export async function readThemeEtfOnly(db,{now=Date.now()}={}){
  if(!Number.isFinite(storedAt)||storedAt>now||sourceAt>now||observedAt>now||now-observedAt>=PUBLIC_DISPLAY_MAX_AGE_MS)
   return Response.json({status:'UNAVAILABLE',reason:'STORED_DATA_STALE',themes:[]},{status:503,headers});
  // Whitelist public derived score points: never return raw price/volume or internal audit rows.
+ // Keep the confirmed 252 sessions immutable; read optional derived two-day output.
+ // A missing/invalid provisional record never blocks the last good confirmed result.
+ let provisionalRow=null;
+ try{provisionalRow=await store.readOutput(THEME_ETF_PROVISIONAL_KEY)}catch{}
+ const provisional=provisionalRow?.storedAt<=now&&validThemeEtfProvisional(provisionalRow.body,record.observationDate,{now,themes:record.themes})?provisionalRow.body:null;
  const result={status:'READY',version:record.version,methodologyVersion:record.methodologyVersion,
-  observationDate:record.observationDate,sourceVersion:record.sourceVersion,sourceStoredAt:record.sourceStoredAt,
+  observationDate:record.observationDate,confirmedObservationDate:record.observationDate,
+  phase:provisional?'PROVISIONAL':'CONFIRMED',
+  sourceVersion:record.sourceVersion,sourceStoredAt:record.sourceStoredAt,
   themes:record.themes.map(t=>({theme:t.theme,etfs:[...t.etfs],score:t.latestScore,
-   history:t.history.map(p=>({date:p.date,score:p.score}))}))};
+   history:t.history.map(p=>({date:p.date,score:p.score}))})),
+  ...(provisional?{provisional:{asOf:provisional.asOf,
+   points:provisional.points.map(point=>({date:point.date,scores:Object.fromEntries(record.themes.map(t=>[t.theme,point.scores[t.theme]]))}))}}:{})};
  return Response.json(result,{headers:{...headers,'cache-control':'public, max-age=60, must-revalidate','x-data-snapshot-at':new Date(storedAt).toISOString()}});
 }

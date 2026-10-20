@@ -91,3 +91,26 @@ test('Employment R54 detail rows map by stable factor id',()=>{
  assert.deepEqual(rows.map(r=>r.score),[70,75,68,80]);
  assert.deepEqual(rows.map(r=>r.value),[4.2,145,220000,80]);
 });
+
+test('original four-factor inflation dashboard rows use approved stable IDs, not obsolete R2 labels',()=>{
+ const indicators=[
+  {id:'inflationExpectations',name:'다른 이름',status:'READY',score:43.0297,observationDate:'2026-10-01'},
+  {id:'cpi',name:'다른 이름',status:'READY',score:55.8784,observationDate:'2026-08-01'},
+  {id:'corePce',name:'다른 이름',status:'READY',score:43.5625,observationDate:'2026-08-01'},
+  {id:'coreCpi',name:'다른 이름',status:'READY',score:97.9054,observationDate:'2026-08-01'},
+ ];
+ const result=marketDetailRows('inflation',indicators);
+ assert.deepEqual(result.map(r=>r.label),['근원 PCE','근원 CPI','소비자물가','기대 인플레이션']);
+ assert.deepEqual(result.map(r=>r.score),[43.5625,97.9054,55.8784,43.0297]);
+ assert.deepEqual(result.map(r=>r.asOfDate),['2026-08-01','2026-08-01','2026-08-01','2026-10-01']);
+ assert.ok(result.every(r=>r.raw===false));
+});
+test('missing or duplicate original inflation IDs never reuse a different factor',()=>{
+ const rows=marketDetailRows('inflation',[
+  {id:'corePce',status:'READY',score:0},
+  {id:'coreCpi',status:'READY',score:70},
+  {id:'coreCpi',status:'READY',score:75},
+  {id:'inflationExpectations',status:'PARTIAL',score:55},
+ ]);
+ assert.deepEqual(rows.map(r=>r.score),[0,null,null,null]);
+});

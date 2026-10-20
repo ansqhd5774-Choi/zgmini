@@ -234,7 +234,7 @@ const r55Cards=[
 ] as const;
 
 const diagnosticSubscores=[
- {name:'인플레이션',href:'/inflation/',components:'근원 PCE, 근원 CPI, CPI, 기대물가'},
+ {name:'인플레이션',href:'/inflation/',components:'근원물가·기대물가·생산자물가·임금·에너지 등 16개 지표'},
  {name:'경기 침체',href:'/recession/',components:'비농업고용, 실질 GDP, 산업생산, 실질 소비지출, 실업률, 소매판매, 가처분소득'},
  {name:'유동성 위기',href:'/liquidity-crisis/',components:'단기자금시장 위험, 은행 준비금, 재무부 현금, 연준 단기자금, 시중 통화량, 채권 변동성'},
  {name:'신용 위험',href:'/credit-risk/',components:'고위험 회사채, 우량 회사채, 전체 회사채, 채권 변동성'},
@@ -254,6 +254,7 @@ export function CompositeMarketSection({items,points,demo,loading}:{items:Summar
  const [market,setMarket]=useState<MarketScoreResponse|null>(null);
  const [marketLoading,setMarketLoading]=useState(true);
  const [marketError,setMarketError]=useState<string|null>(null);
+ const {payload:inflationRisk}=useStoredIndex<{status:string;score:number|null;methodologyVersion?:string}>('/api/inflation-detail');
  const {payload:assetBubble}=useStoredIndex<{status:string;score:number|null;scoreObservationQuarter?:string}>('/api/asset-bubble-detail');
  const {payload:supplyShock}=useStoredIndex<{status:string;score:number|null;scoreObservationMonth?:string}>('/api/supply-shock-detail');
 
@@ -356,7 +357,8 @@ export function CompositeMarketSection({items,points,demo,loading}:{items:Summar
       <div className="zg-r55-subscore-area" aria-label="8개 위험 지표">
        <div className="zg-r55-subscore-grid">
        {diagnosticSubscores.map((s,index)=>{
-        const diag=diagnosticKeys[index]==='assetBubbleSafety'?assetBubble:diagnosticKeys[index]==='supplyShockSafety'?supplyShock:market?.diagnostics8?.[diagnosticKeys[index]];
+        // Risk Inflation must use the R2 detail producer, not the separate market Price diagnostic.
+        const diag=diagnosticKeys[index]==='inflationStability'?inflationRisk:diagnosticKeys[index]==='assetBubbleSafety'?assetBubble:diagnosticKeys[index]==='supplyShockSafety'?supplyShock:market?.diagnostics8?.[diagnosticKeys[index]];
         const score=diag?.status==='READY'&&validPublicScore(diag.score)?diag.score:null;
         return <div key={s.name} className="zg-r55-subscore" data-index={index} title={diagnosticKeys[index]==='assetBubbleSafety'&&assetBubble?.scoreObservationQuarter?`평가 분기 ${assetBubble.scoreObservationQuarter} · 상세 페이지와 동일한 R10 저장 점수`:undefined}>
          <div className="zg-r55-subscore-head">
@@ -365,7 +367,7 @@ export function CompositeMarketSection({items,points,demo,loading}:{items:Summar
          </div>
          <div className="zg-r55-subscore-foot">
           <span className="zg-r55-subscore-meter" aria-hidden="true"><i style={{width:`${score??0}%`,background:score===null?'transparent':scoreColor(score)}}/></span>
-          <LiveScoreValue value={score===null?null:Math.round(score)} className="zg-r55-subscore-value">{score===null?'—':Math.round(score)}<StoredScoreDirection id={'diagnostic:'+diagnosticKeys[index]} score={score}/></LiveScoreValue>
+          <LiveScoreValue value={score===null?null:Math.round(score)} className="zg-r55-subscore-value">{score===null?'—':Math.round(score)}{diagnosticKeys[index]==='inflationStability'?null:<StoredScoreDirection id={'diagnostic:'+diagnosticKeys[index]} score={score}/>}</LiveScoreValue>
          </div>
         </div>
        })}
