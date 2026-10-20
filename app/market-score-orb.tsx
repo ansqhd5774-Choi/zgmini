@@ -38,6 +38,15 @@ const CNN_GAUGE_BANDS = [
   { key: 'extreme-greed', start: 75, end: 100, color: '#15865e' },
 ] as const;
 
+// Presentation-only dashboard bands; the CNN gauge remains the default for existing risk pages.
+const MARKET_SCORE_GAUGE_BANDS = [
+  { key: 'market-danger', start: 0, end: 25, color: '#ef4444' },
+  { key: 'market-caution', start: 25, end: 40, color: '#f59e0b' },
+  { key: 'market-neutral', start: 40, end: 60, color: '#94a3b8' },
+  { key: 'market-positive', start: 60, end: 75, color: '#22c55e' },
+  { key: 'market-stable', start: 75, end: 100, color: '#10b981' },
+] as const;
+
 
 function formatDelta(value?: number | null) {
   if (typeof value !== 'number' || !Number.isFinite(value)) return '—';
@@ -156,6 +165,7 @@ export function MarketScoreOrb({
   comparisonAriaLabel = 'CNN 공포탐욕 변화량',
   comparisonItems,
   arrowId,
+  marketScoreBands = false,
 }: {
   score: string;
   state: string;
@@ -169,6 +179,7 @@ export function MarketScoreOrb({
   comparisonAriaLabel?: string;
   comparisonItems?: readonly ScoreComparisonItem[];
   arrowId?: string;
+  marketScoreBands?: boolean;
 }) {
   const arrows=useScoreArrows(),showArrows=arrowId?arrows(arrowId,numericScore(score)):false;
   const tone = state.includes('공포') ? 'is-fear' : state.includes('탐욕') ? 'is-greed' : '';
@@ -199,7 +210,8 @@ export function MarketScoreOrb({
     const value = animatedScore;
     const marker = value === null ? null : gaugePoint(value, 84);
 
-    const ticks = [0, 25, 45, 50, 55, 75, 100].map((tick) => ({
+    const gaugeBands = marketScoreBands ? MARKET_SCORE_GAUGE_BANDS : CNN_GAUGE_BANDS;
+    const ticks = (marketScoreBands ? [0, 25, 40, 50, 60, 75, 100] : [0, 25, 45, 50, 55, 75, 100]).map((tick) => ({
       tick,
       inner: gaugePoint(tick, tick === 50 ? 70 : 72),
       outer: gaugePoint(tick, 96),
@@ -210,7 +222,7 @@ export function MarketScoreOrb({
       <div className={`cnn-score-orb cnn-score-orb-hero ${tone}`} role="group" aria-live="polite" aria-label={ariaLabel}>
         <div className="cnn-spectrum-gauge">
           <div className="cnn-linear-gauge" aria-hidden="true">
-            {CNN_GAUGE_BANDS.map((band) => <div key={band.key} className="cnn-linear-band" style={{width:`${band.end-band.start}%`,background:band.color}}/>)}
+            {gaugeBands.map((band) => <div key={band.key} className="cnn-linear-band" style={{width:`${band.end-band.start}%`,background:band.color}}/>)}
             {value !== null ? <div className="cnn-linear-marker" style={{left:`${Math.max(0,Math.min(100,value))}%`}}/> : null}
           </div>
           <svg viewBox="0 0 220 142" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
@@ -230,7 +242,7 @@ export function MarketScoreOrb({
             </defs>
 
             <path className="cnn-spectrum-backdrop" d="M 26 112 A 84 84 0 0 1 194 112"/>
-            {CNN_GAUGE_BANDS.map((band) => (
+            {gaugeBands.map((band) => (
               <path
                 key={band.key}
                 className={`cnn-spectrum-band is-${band.key}`}
