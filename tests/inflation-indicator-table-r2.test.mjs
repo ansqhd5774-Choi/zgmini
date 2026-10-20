@@ -78,9 +78,9 @@ test("inflation landing intro uses compact emphasis without changing other topic
   assert.match(intro,/if\(topic==="inflation"\)/);
   assert.match(intro,/border-l-\[3px\] border-sky-400\/80/);
   assert.match(intro,/text-\[18px\].*sm:text-\[22px\]/);
-  assert.match(intro,/미국 물가, /);
-  assert.match(intro,/안정되고 있을까\?/);
-  assert.match(intro,/물가 안정 점수와 최근 1년 추세, 한눈에\./);
+  assert.match(intro,/미국 인플레이션, /);
+  assert.match(intro,/압력이 커지고 있을까\?/);
+  assert.match(intro,/기조 물가의 재가속·지속 압력을 7개 위험 평가 축/);
   assert.match(intro,/return <p className="mt-4 max-w-4xl text-sm leading-7 text-slate-300 sm:text-base"/);
   assert.match(intro,/data-testid=\{`search-intent-intro-\$\{topic\}`\}/);
 });

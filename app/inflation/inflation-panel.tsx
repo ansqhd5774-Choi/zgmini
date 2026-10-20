@@ -144,13 +144,23 @@ function releaseInfo(feature:string,today:string){
   urgency:releaseUrgency(days),
  };
 }
+// Higher scores mean lower observed inflation pressure, not a probability.
+const inflationRiskAxes=[
+ {id:"TARGET_STABILITY",label:"목표 대비 안정성",meaning:"근원 PCE·근원 CPI의 목표 대비 괴리"},
+ {id:"UNDERLYING_MOMENTUM",label:"기조 물가의 지속성",meaning:"최근 근원 물가 속도와 폭넓은 기조 변화"},
+ {id:"HEADLINE_PRESSURE",label:"전체 물가 압력",meaning:"식품·에너지 포함 PCE 상승 압력"},
+ {id:"EXPECTATIONS",label:"기대 인플레이션",meaning:"앞으로의 물가 상승 기대가 안정적인지"},
+ {id:"SUPPLY_PIPELINE",label:"공급·원가 압력",meaning:"생산자·수입·에너지 비용의 부담"},
+ {id:"LABOR_COST_PERSISTENCE",label:"노동비용 지속성",meaning:"임금·고용비용·단위노동비용 압력"},
+ {id:"DEMAND_CONTEXT",label:"수요 환경",meaning:"산업생산을 통한 수요 여건의 극단 신호"},
+] as const;
 function stage(score:number|null|undefined){
  if(typeof score!=="number"||!Number.isFinite(score))return "확인 필요";
  if(score>=75)return "매우 안정";
  if(score>=60)return "안정";
  if(score>=45)return "중립";
- if(score>=25)return "물가 압력";
- return "강한 물가 압력";
+ if(score>=25)return "인플레이션 압력";
+ return "높은 인플레이션 압력";
 }
 function judgement(score:number|null|undefined){
  if(typeof score!=="number"||!Number.isFinite(score))return {label:"확인 필요",tone:"neutral"};
@@ -201,11 +211,11 @@ export default function InflationPanel(){
  return <>
   <section className="cnn-reference-panel fg-card fg-shared-shell inflation-target-card" data-testid="inflation-detail-hero" data-market-state={loading?"loading":score===null?"unavailable":"ready"} aria-busy={loading}>
    <div className="fg-header-slot">
-    <MarketCardHeader flag="/flags/us.svg" eyebrow="ZGMINI INFLATION R2" title="미국 인플레이션" description="초기발표 당시 자료 기반" dateLabel="데이터 기준일" date={dateLabel(payload?.asOfDate)} source={payload?.methodologyVersion??"INFLATION_R2"}/>
+    <MarketCardHeader flag="/flags/us.svg" eyebrow="ZGMINI INFLATION R2" title="미국 인플레이션 위험" description="위험 신호의 안정성 · 초기발표 저장 자료" dateLabel="데이터 기준일" date={dateLabel(payload?.asOfDate)} source={payload?.methodologyVersion??"INFLATION_R2"}/>
    </div>
    <div className="fg-content-slot">
     <div className="fg-score-slot">
-     <MarketScoreOrb score={loading||score===null?"—":score.toFixed(1)} state={loading?"확인 중":stage(score)} variant="hero" comparisonItems={scoreComparisonItems} comparisonAriaLabel="인플레이션 안정성 점수 변화" metaDate={dateLabel(payload?.asOfDate)}/>
+     <MarketScoreOrb score={loading||score===null?"—":score.toFixed(1)} state={loading?"확인 중":stage(score)} variant="hero" comparisonItems={scoreComparisonItems} comparisonAriaLabel="인플레이션 압력 완화 점수 변화" metaDate={dateLabel(payload?.asOfDate)}/>
     </div>
     <MarketTrendFrame className="fg-analysis-slot">
      <div className="fg-chart-slot"><div className="fg-renderer"><MarketFearGreedChart showExtrema data={trend} axisTicks={axisTicks} axisLabels={axisLabels} latestPoint={latestPoint} instanceKey="1Y" gradientId="inflation-fill" formatTooltipLabel={dateLabel} emptyLabel={loading?"확인 중":"이력 없음"}/></div></div>
@@ -215,19 +225,37 @@ export default function InflationPanel(){
   </section>
 
   <section className="inflation-explainer" aria-labelledby="inflation-what-title">
-   <p className="cnn-eyebrow">WHAT IS INFLATION?</p>
-   <h1 id="inflation-what-title">미국 인플레이션 지수와 물가 안정 점수</h1>
-   <p>인플레이션은 <mark className="zg-inflation-keymark">물건과 서비스의 가격이 전반적으로 계속 오르는 현상</mark>이에요. 예를 들어 장보기와 외식에 드는 돈이 계속 늘어나는 상황을 떠올리면 쉬워요. 한두 가지 물건의 값만 보지 않고 <strong>소비자물가·기업 비용·임금·에너지 가격</strong>이 함께 어떻게 움직이는지 살펴봐요.</p>
+   <p className="cnn-eyebrow">INFLATION RISK</p>
+   <h1 id="inflation-what-title">인플레이션 압력은 다시 커지고 있을까?</h1>
+   <p>이 진단은 물가상승률 하나를 보여주는 페이지가 아닙니다. <mark className="zg-inflation-keymark">기조 물가의 재가속과 압력이 오래 지속될 신호</mark>를 생산자 가격·기대 인플레이션·임금·에너지·수요 환경까지 살펴 평가합니다. <strong>점수가 높으면 관측된 압력 신호가 비교적 안정적</strong>이고, 낮으면 여러 영역에서 부담이 크다는 뜻입니다. 발생 확률이나 매매 신호는 아닙니다.</p>
    <div className="inflation-direction-strip">
-    <span><b>물가 압력</b>물가 상승 속도↑ · 기업 비용↑ · 임금↑</span>
-    <span><b>물가 안정</b>물가 상승 속도 둔화 · 기업 비용 안정</span>
+    <span><b>압력 확대 신호</b>기조 재가속 · 기대 상승 · 원가·임금 부담</span>
+    <span><b>압력 완화 신호</b>목표 근접 · 기대 안정 · 비용 압력 둔화</span>
    </div>
+  </section>
+
+  <section className="inflation-r2-axis-section" aria-labelledby="inflation-r2-axis-title">
+   <header>
+    <div><p className="cnn-eyebrow">R2 RISK AXES</p><h2 id="inflation-r2-axis-title">인플레이션 위험 평가 · 7개 축</h2></div>
+    <p>16개 입력지표를 7개 영역으로 종합한 저장 평가점수입니다. 높은 점수는 해당 영역의 압력 신호가 상대적으로 낮은 방향입니다.</p>
+   </header>
+   <div className="inflation-r2-axis-grid">
+    {inflationRiskAxes.map(axis=>{
+     const value=payload?.axes?.[axis.id];
+     const ready=payload?.status==="READY"&&typeof value==="number"&&Number.isFinite(value)&&value>=0&&value<=100;
+     return <article key={axis.id} className="inflation-r2-axis-item">
+      <div className="inflation-r2-axis-top"><h3>{axis.label}</h3><strong aria-label={axis.label+" 평가점수 "+(ready?value.toFixed(1)+"점":"미확인")}>{ready?value.toFixed(1):"—"}</strong></div>
+      <p>{axis.meaning}</p>
+     </article>;
+    })}
+   </div>
+   <p className="inflation-r2-axis-note">이 점수는 12대 경제지표의 <a href="/economic-indicators/inflation/">물가</a>(별도 4요소 산식)와 다릅니다. 0~100점은 상승률이나 향후 위험 발생 확률이 아닙니다.</p>
   </section>
 
   <section className="inflation-indicator-section inflation-r2-indicators" aria-labelledby="inflation-indicator-title">
    <header>
-    <div><p className="cnn-eyebrow">INFLATION INDICATORS</p><h2 id="inflation-indicator-title">인플레이션 분석 지표</h2></div>
-    <p>각 지표의 이전 값과 현재 값, 다음 발표 예정일을 볼 수 있어요. 판단 색깔은 <b>여러 자료를 종합해 저장된 평가 점수</b>에 따라 <b>긍정 / 중립 / 부정</b>으로 표시해요.</p>
+    <div><p className="cnn-eyebrow">INFLATION R2 INPUTS</p><h2 id="inflation-indicator-title">위험 신호의 근거 · 16개 입력지표</h2></div>
+    <p>위 7개 평가 축에 실제 반영되는 원자료입니다. 이전·현재 값과 발표일을 비교해 <b>압력의 원인</b>을 확인하세요. 지표별 판단은 저장 평가점수이며 숫자 자체는 물가상승률·가격·비용 등 각기 다른 단위입니다.</p>
    </header>
 
    <div className="inflation-table-wrap inflation-r2-table-wrap">
