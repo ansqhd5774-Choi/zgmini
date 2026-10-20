@@ -38,3 +38,14 @@ JSON stdout: 14 KST calendar days, accepted counts, score, carried/freshness and
 3. Optimistic unverified negotiations produce no upward move. Same-day actual worsening + verified good news cannot produce a net increase.
 4. Collector failure is not a peace signal; preserve last valid published number without claiming freshness.
 5. Test same-PC stored SQLite *shadow*; independently re-evaluate actual contemporary war state before treating numeric outputs as reality, then user approval of scoring contract, then scoped operational cutover and D1/API/UI readback. CI PASS never means PC/Production PASS.
+
+## Independent October 19-21 reality-direction cross-check (2026-10-21, not provider ingestion)
+
+Public independent news reports support a **continued severe combat / no verified ceasefire** direction, not an exact numerical score:
+- AP, October 19, Shabwa training camp strike: https://apnews.com/article/6afad4ec4c22dcccd379152ea87cb0e2
+- AP, October 20, same Shabwa strike death toll revised to 73: https://apnews.com/article/6f69abd6470c9b43b75de7b223011486 — **count revision, NOT a second confirmed strike**.
+- AP, October 20, Taiz residential-area attack: https://apnews.com/article/8a036054a8f0cd38ff8ee0101947f708 — distinct locality/date, candidate separate incident once source evidence is matched.
+- Reuters, October 20, Pakistan mediation alongside Houthi attacks and vessel risk: https://www.reuters.com/business/energy/oil-eases-markets-assess-potential-waiver-russian-energy-middle-east-supply-2026-10-20/ — a mediation meeting does NOT prove ceasefire implementation; allegations about other Saudi targets require verification.
+- Reuters, October 20, Iran says Saudi Arabia and Houthis have not responded to its mediation offer: https://theprint.in/world/iran-says-saudi-arabia-houthis-have-not-answered-mediation-offer/3077310/ — a proposal is NOT a mutual ceasefire.
+
+**Verification outcome:** A model that raises the 20→21 score solely from mediation headlines despite sustained fighting FAILS directionality. A model counting Shabwa's 53→73 death toll update as another strike FAILS independent-incident deduplication. The candidate 13 is NOT independently proven by these articles. Reuters/AP articles are external cross-checks only, NOT newly approved stored/commercial API providers. Recheck source date versus event date and 06:35 KST baseline before attributing a change to Oct 21.
