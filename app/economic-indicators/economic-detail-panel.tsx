@@ -87,13 +87,14 @@ export default function EconomicDetailPanel({id}:{id:EconomicDomainId}){
  const history=useMemo(()=>normalizeTrend(domain?.trend),[domain?.trend]);
  const dailyDisplay=useMemo(()=>{
   if(id!=="employment"&&id!=="credit")return null;
-  if(publishedDaily?.status!=="READY"||!validScore(score)||!dated(payload?.asOfDate)||!payload?.modelVersion)return null;
+  const currentDate=payload?.asOfDate??null;
+  if(publishedDaily?.status!=="READY"||!validScore(score)||!dated(currentDate)||!payload?.modelVersion)return null;
   const rows=id==="employment"?publishedDaily.series?.employment:publishedDaily.series?.credit;
   if(!Array.isArray(rows))return null;
-  const valid=rows.filter(point=>dated(point?.date)&&validScore(point.score)&&point.date<=payload.asOfDate&&point.modelVersion===payload.modelVersion)
+  const valid=rows.filter(point=>dated(point?.date)&&validScore(point.score)&&point.date<=currentDate&&point.modelVersion===payload.modelVersion)
     .sort((a,b)=>a.date.localeCompare(b.date));
   const latest=valid.at(-1);
-  if(!latest||latest.date!==payload.asOfDate||Math.abs(latest.score-score)>1e-6)return null;
+  if(!latest||latest.date!==currentDate||Math.abs(latest.score-score)>1e-6)return null;
   const method=domain?.methodologyVersion??null;
   const sameMethod=Boolean(method&&latest.methodologyVersion===method);
   const accepted=sameMethod?valid.filter(point=>point.methodologyVersion===method):valid;
