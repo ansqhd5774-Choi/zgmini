@@ -28,7 +28,9 @@ type Domain={
  indicators?:Indicator[];trend?:Point[];
  scoreComparisons?:{week?:number|null;month?:number|null;threeMonth?:number|null;sixMonth?:number|null;year?:number|null};
 };
-type Snapshot={status:string;asOfDate?:string|null;domains?:Domain[]};
+type Snapshot={status:string;asOfDate?:string|null;modelVersion?:string|null;domains?:Domain[]};
+type DailyPoint={date:string;score:number;methodologyVersion:string|null;modelVersion:string|null};
+type PublishedDailyHistory={status:string;series?:{employment?:DailyPoint[];credit?:DailyPoint[]}};
 const dated=(s:unknown):s is string=>typeof s==="string"&&/^\d{4}-\d{2}-\d{2}$/.test(s)&&!Number.isNaN(Date.parse(s+"T00:00:00Z"));
 const finite=(n:unknown):n is number=>typeof n==="number"&&Number.isFinite(n);
 const validScore=(n:unknown):n is number=>finite(n)&&n>=0&&n<=100;
@@ -78,15 +80,37 @@ function IndicatorHelp({item,title}:{item:Indicator;title:string}){
 export default function EconomicDetailPanel({id}:{id:EconomicDomainId}){
  const config=economicDetailById(id)!;
  const {payload,loading,error}=useStoredIndex<Snapshot>("/api/market-score");
+ // Candidate additive public GET reads already-published D1 scores, never local files.
+ const {payload:publishedDaily}=useStoredIndex<PublishedDailyHistory>("/api/market-score-daily-history",null,id==="employment"||id==="credit");
  const domain=payload?.domains?.find(item=>item.id===id);
  const score=domain?.status==="READY"&&validScore(domain.score)?domain.score:null;
  const history=useMemo(()=>normalizeTrend(domain?.trend),[domain?.trend]);
+ const dailyDisplay=useMemo(()=>{
+  if(id!=="employment"&&id!=="credit")return null;
+  if(publishedDaily?.status!=="READY"||!validScore(score)||!dated(payload?.asOfDate)||!payload?.modelVersion)return null;
+  const rows=id==="employment"?publishedDaily.series?.employment:publishedDaily.series?.credit;
+  if(!Array.isArray(rows))return null;
+  const valid=rows.filter(point=>dated(point?.date)&&validScore(point.score)&&point.date<=payload.asOfDate&&point.modelVersion===payload.modelVersion)
+    .sort((a,b)=>a.date.localeCompare(b.date));
+  const latest=valid.at(-1);
+  if(!latest||latest.date!==payload.asOfDate||Math.abs(latest.score-score)>1e-6)return null;
+  const method=domain?.methodologyVersion??null;
+  const sameMethod=Boolean(method&&latest.methodologyVersion===method);
+  const accepted=sameMethod?valid.filter(point=>point.methodologyVersion===method):valid;
+  return {
+   points:accepted.map(point=>({label:point.date,value:point.score})),
+   comparable:sameMethod,
+   source:"PUBLISHED_DAILY_SNAPSHOTS_ONLY" as const,
+   // Null method is an observable provenance gap, not proof two algorithms match.
+  };
+ },[id,publishedDaily,score,payload?.asOfDate,payload?.modelVersion,domain?.methodologyVersion]);
+ const displayedHistory=dailyDisplay?.points??history;
  const oneYear=useMemo(()=>{
-  const latest=history.at(-1)?.label;
+  const latest=displayedHistory.at(-1)?.label;
   if(!latest)return [];
   const start=new Date(latest+"T00:00:00Z");start.setUTCFullYear(start.getUTCFullYear()-1);
-  return history.filter(p=>p.label>=start.toISOString().slice(0,10));
- },[history]);
+  return displayedHistory.filter(p=>p.label>=start.toISOString().slice(0,10));
+ },[displayedHistory]);
  const chart=oneYear.map(p=>({date:p.label,score:p.value} satisfies MarketFearGreedChartPoint));
  const last=chart.at(-1);
  const latestPoint:MarketFearGreedChartValidPoint|null=last&&finite(last.score)?{date:last.date,score:last.score}:null;
@@ -96,7 +120,11 @@ export default function EconomicDetailPanel({id}:{id:EconomicDomainId}){
  const periodSourceMismatch=Boolean(score!==null&&lastSavedHistory&&Math.abs(lastSavedHistory.value-score)>1e-6);
  const computed=liquidityStoredScoreComparisons(history,lastSavedHistory?.label??"",score);
  const periods=domain?.scoreComparisons??computed;
- const comparisons=[{label:"1주",value:periods.week??null},{label:"1개월",value:periods.month??null},{label:"3개월",value:periods.threeMonth??null},{label:"6개월",value:periods.sixMonth??null},{label:"1년",value:periods.year??null}];
+ const storedDailyComputed=dailyDisplay?.comparable
+  ?liquidityStoredScoreComparisons(dailyDisplay.points,dailyDisplay.points.at(-1)?.label??"",score)
+  :{week:null,month:null,threeMonth:null,sixMonth:null,year:null};
+ const displayPeriods=dailyDisplay?(domain?.scoreComparisons??storedDailyComputed):periods;
+ const comparisons=[{label:"1주",value:displayPeriods.week??null},{label:"1개월",value:displayPeriods.month??null},{label:"3개월",value:displayPeriods.threeMonth??null},{label:"6개월",value:displayPeriods.sixMonth??null},{label:"1년",value:displayPeriods.year??null}];
  const observations=(domain?.indicators??[]).filter((row):row is Indicator=>Boolean(row&&typeof row==="object"));
  const scored=observations.filter(item=>item.status==="READY"&&validScore(item.score));
  const ranked=[...scored].sort((a,b)=>(b.score??0)-(a.score??0));
@@ -107,13 +135,13 @@ export default function EconomicDetailPanel({id}:{id:EconomicDomainId}){
  const publicNote=domain?.methodologyVersion??"공개 저장 결과";
  const color=tone(score);
  return <div className="economic-detail-page" data-economic-domain={id} style={{"--econ-accent":color} as CSSProperties}>
-  <section className="cnn-reference-panel fg-card fg-shared-shell inflation-target-card economic-target-card" data-testid={"economic-"+id+"-hero"} aria-busy={loading} data-market-state={loading?"loading":score===null?"unavailable":"ready"} data-history-alignment={score===null?"unavailable":!lastSavedHistory?"missing":periodSourceMismatch?"mismatch":"matched"}>
+  <section className="cnn-reference-panel fg-card fg-shared-shell inflation-target-card economic-target-card" data-testid={"economic-"+id+"-hero"} aria-busy={loading} data-market-state={loading?"loading":score===null?"unavailable":"ready"} data-history-alignment={dailyDisplay?"published-daily":score===null?"unavailable":!lastSavedHistory?"missing":periodSourceMismatch?"mismatch":"matched"} data-history-source={dailyDisplay?"published-daily":"domain-observation"}>
    <div className="fg-header-slot"><MarketCardHeader flag="/flags/us.svg" eyebrow="ZGMINI ECONOMIC DETAIL" title={"미국 "+config.name} description="저장된 시장 점수 기준" dateLabel="데이터 기준일" date={dateLabel(date)} source={publicNote}/></div>
    <div className="fg-content-slot">
     <div className="fg-score-slot"><MarketScoreOrb score={loading||score===null?"—":score.toFixed(1)} state={loading?"확인 중":stage(score)} variant="hero" comparisonItems={comparisons} comparisonAriaLabel={config.name+" 시장 우호점수 기간별 변화"}/></div>
     <MarketTrendFrame className="fg-analysis-slot"><div className="fg-chart-slot"><div className="fg-renderer"><MarketFearGreedChart data={chart} axisTicks={axisTicks} axisLabels={axisLabels} latestPoint={latestPoint} showExtrema={chart.length>=3} instanceKey={"economic-"+id} gradientId={"economic-"+id+"-fill"} color={color} formatTooltipLabel={dateLabel} emptyLabel={loading?"불러오는 중":"저장된 점수 이력 없음"}/></div></div></MarketTrendFrame>
    </div>
-   <div className="fg-footer-slot"><div className="cnn-panel-note"><span>차트 원칙</span><strong>{periodSourceMismatch&&lastSavedHistory&&score!==null?`현재 ${score.toFixed(1)}점(${dateLabel(date)}) · 이력 마지막 ${lastSavedHistory.value.toFixed(1)}점(${dateLabel(lastSavedHistory.label)}) · 서로 달라 기간별 비교 보류`:lastSavedHistory?`저장 이력 마지막 ${dateLabel(lastSavedHistory.label)} · 확인된 비교기간만 표시`:"저장 점수 이력 없음 · 비교 불가 기간은 —"}</strong></div></div>
+   <div className="fg-footer-slot"><div className="cnn-panel-note"><span>차트 원칙</span><strong>{dailyDisplay?dailyDisplay.comparable?"발행일 기준 공개 점수 이력 · 같은 산식 버전만 비교 · 오래된 기간은 —":"발행일 기준 공개 점수 이력 · 산식 버전 미제공으로 기간 변화량 보류":periodSourceMismatch&&lastSavedHistory&&score!==null?`현재 ${score.toFixed(1)}점(${dateLabel(date)}) · 이력 마지막 ${lastSavedHistory.value.toFixed(1)}점(${dateLabel(lastSavedHistory.label)}) · 서로 달라 기간별 비교 보류`:lastSavedHistory?`저장 이력 마지막 ${dateLabel(lastSavedHistory.label)} · 확인된 비교기간만 표시`:"저장 점수 이력 없음 · 비교 불가 기간은 —"}</strong></div></div>
   </section>
   <section className="economic-beginner" data-testid={"economic-"+id+"-guide"}>
    <p className="cnn-eyebrow">BEGINNER GUIDE</p>
