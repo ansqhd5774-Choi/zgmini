@@ -65,7 +65,18 @@ export async function loadProjectionSource(id,env,{now=Date.now(),onPhase,onMeta
   // No provider access, DB write or E1 economic-domain trend is permitted.
   let riskHistory={kind:'UNVERIFIED',points:[]};
   const diag=snapshot?.body?.diagnostics8?.earningsRecessionDefense;
-  if(diag?.status==='READY'&&typeof diag?.score==='number'&&
+  // PC publishes only aggregate scores and source-quarter labels; never
+  // the raw issuer facts. Current-vintage reconstruction is not PIT.
+  if(diag?.status==='READY'&&
+    diag?.riskFactorsSource==='E1_R4_STORED_PC_REPLAY'&&
+    diag?.riskHistoryKind==='E1_R4_STORED_PERIOD_CURRENT_VINTAGE_NOT_PIT'&&
+    Array.isArray(diag?.riskTrend)){
+    riskHistory={
+      kind:diag.riskHistoryKind,points:diag.riskTrend,
+      financialPeriodEnd:diag.financialPeriodEnd,
+      historyMode:diag.historyMode,
+    };
+  }else if(diag?.status==='READY'&&typeof diag?.score==='number'&&
     diag?.methodologyVersion==='EARNINGS_RECESSION_DIAGNOSTIC_R1'){
     try{
       const from=new Date(Date.parse(date+'T00:00:00Z'));from.setUTCFullYear(from.getUTCFullYear()-1);
