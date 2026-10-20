@@ -123,7 +123,7 @@ export default function CommunityChat({enabled,sidebarMode=false,sidebarOpen=fal
     callback:(token:unknown)=>{
      if(!active)return;
      const value=typeof token==="string"?token:"";
-     if(value){const now=Date.now();captchaIssuedAt.current=now;captchaSiteKey.current=siteKey;rememberCaptcha(siteKey,value,now);}
+     if(value){const now=Date.now();captchaIssuedAt.current=now;captchaSiteKey.current=siteKey;rememberCaptcha(siteKey!,value,now);}
      else{forgetCaptcha();captchaIssuedAt.current=0;captchaSiteKey.current=null;}
      setCaptchaToken(value);
     },
