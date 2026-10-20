@@ -11,10 +11,10 @@ const factors={F1:50,F2:50,F3:50,F4:50,F5:50};
 function fixture(){
  let b=null;
  const perDay=dates.map((date,i)=>{
-  if(i===248){b=null;return {date,status:'NOT_READY',score:null,ema3:null,reason:'SOURCE_MISSING'}}
+  if(i===248){b=null;return {date,status:'NOT_READY',score:null,ema3:null,reason:'SOURCE_MISSING',factors:null}}
   const score=i<248?50:70;
   b=round(b===null?score:b+.5*(score-b));
-  return {date,status:'CANDIDATE_READY',score,ema3:b,reason:null};
+  return {date,status:'CANDIDATE_READY',score,ema3:b,reason:null,factors:{...factors}};
  });
  const latest={methodologyVersion:V9_METHOD,quality:{noImputation:true,pitOfficialIndependentlyVerified:false},
   asOf:dates.at(-1),sourceStoredAt:'2026-10-18T02:05:12.863Z',evaluation:{perDay}};
@@ -37,6 +37,13 @@ test('V11 computes last verified score with EMA continuity, not synthesized gap'
  assert.equal(d.score,67.5);
  assert.equal(d.methodologyVersion,V11_METHOD);
  assert.equal(d.indicators.length,5);
+ assert.deepEqual(d.indicators.map(x=>x.releaseCadence),Array(5).fill('매 거래일'));
+ assert.equal(d.indicators[0].previousValue,50);
+ assert.equal(d.indicators[0].previousObservationDate,dates.at(-2));
+ assert.equal(d.indicators[0].trend.length,251);
+ assert.equal(d.indicators[0].trend[248].breakBefore,true);
+ assert.ok(d.indicators[0].description.length>0);
+ assert.ok(!d.indicators[0].source.includes('STORED_V11_FACTOR'));
  assert.equal(d.annualValidation.completeYear,false);
 });
 test('preserve all other market domains and B1-R5 fallback on bad V11',()=>{
@@ -53,6 +60,8 @@ test('strictly reject forged annual completeness, scores, source and method',()=
  assert.equal(projectV11PublicDomain({...x,annualValidation:{...x.annualValidation,completeYear:true}}),null);
  assert.equal(projectV11PublicDomain({...x,annualValidation:{...x.annualValidation,observedSessions:252}}),null);
  assert.equal(projectV11PublicDomain({...x,source:'IEX HIST'}),null);
+ assert.equal(projectV11PublicDomain({...x,factorHistory:{...x.factorHistory,F1:x.factorHistory.F1.slice(1)}}),null);
+ assert.equal(projectV11PublicDomain({...x,factorHistory:{...x.factorHistory,F3:x.factorHistory.F3.map((v,i)=>i===25?{...v,value:101}:v)}}),null);
  assert.equal(projectV11PublicDomain({...x,methodologyVersion:V9_METHOD}),null);
  assert.equal(projectV11PublicDomain({...x,trend:[...x.trend,{label:dates[248],value:70}]}),null);
 });
