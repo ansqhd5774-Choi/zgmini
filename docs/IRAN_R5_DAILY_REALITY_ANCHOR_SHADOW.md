@@ -80,3 +80,25 @@ Some approved RSS metadata contains only an article **UTC date**, not a verified
 - With no new reports, the displayed score can carry with `carried=true`, but this never establishes absence of fighting or confirms reality accuracy.
 
 The retrospective publication-date chart and the post-anchor first-discovery-date stream thus have **different declared meanings**, both explicitly marked in source fields. This is a proposed candidate contract only; it has not been installed or published.
+
+## 2026-10-21 calibration investigation and deployment gate
+
+### Verified public historical context (not provider ingestion)
+- Oct 08: UN DPPA confirmed cross-border Houthi attacks against Saudi civilian infrastructure and continuing multi-front fighting. https://dppa.un.org/en/news/todays-top-news-yemen-libya-central-africa-afghanistan
+- Oct 09: UN Special Envoy explicitly described Yemen as returned to FULL-SCALE WAR. https://osesgy.unmissions.org/en/news/briefing-by-the-un-special-envoy-for-yemen-hans-grundberg-to-the-security-council-3
+- Oct 11: UN envoy condemned ongoing attacks on Saudi civilian infrastructure. https://osesgy.unmissions.org/en/news/statement-by-un-special-envoy-for-yemen-hans-grundberg-on-latest-attacks-against-saudi
+- Oct 14 Reuters humanitarian coverage; Oct 15 reported Aden strike; Oct 16 Taiz siege, Oct 20 Shabwa casualty UPDATE. Distinct incident identity and publication date still require review. These are historical **context constraints**, NOT newly approved operational provider sources.
+
+### Candidate sensitivity
+The real local shadow read-only audit produced K=11.31: Oct09 36.63, Oct21 13.00. The unapproved R4 FULL_SCALE_WAR stage cap 24 gives a **mathematical minimum K ≈ 20.45** if retaining the 13 reference and the same weighted saved 14-day events. The least integral candidate K=21 is a *feasible choice*, not a statistically measured optimal coefficient.
+
+Applying this single K transformation to the previous local K11.31 output (not a fresh 17-event-PC full replay) produces:
+- Oct08 23.64; 09 23.64; 10 23.64; 11 23.64
+- Oct12 22.05; 13 21.40; 14 18.44; 15 16.79; 16 15.81
+- Oct17 15.56; 18 15.31; 19 14.82; 20 13.00; 21 13.00.
+The daily direction is non-improving on these reported worsening dates and Oct09 no longer contradicts the **research** cap. Source-point rounding means these are approximate candidate estimates, not PC full-ledger final published values.
+
+**Current blocker for public publication:** multi-date compatibility does not prove that the chosen 13-point baseline is an independently reproducible reality score. Three front-state inputs (IRN_USA, IRN_ISR, YEMEN_HOUTHI), two maritime regions, and nuclear status are not all independently current/verified in the R4 reality ledger. This limitation is present in the approved project data-contract rules; the source list does not establish complete war observations. If source verification is incomplete, `REALITY_INPUT_INCOMPLETE` and `productionReady=false`; do not claim today's R5 is empirically calibrated by picking K=21.
+Further, GitHub main is advancing independently and both R3_4 classifier/KST PR #528 and R5 PR #531 remain unmerged. The operating PC SHA and Git deployment/Production SHA must be verified separately. The R3 PC scheduler remains active; the R5 score pipeline is NOT live, and no D1/public UI R5 readback is available.
+
+Any scope-authorized future production cutover must first reproduce the K21 result in the **same live PC SQLite / approved source**, replay seven dated evidence constraints against full R3_4 deduplicated receipts, pass the actual three-front reality gate, then commit a versioned local result, publish and read back the dedicated D1 result, verify API, and verify desktop/mobile UI with the same exact release. Do not deploy an R5 number while these tests fail; main source CI and a GitHub push are not live runtime proof.
