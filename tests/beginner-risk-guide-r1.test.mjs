@@ -63,11 +63,16 @@ test('earnings beginner guide uses only the independent four-factor risk contrac
  assert.match(guide,/8대 위험 지표 전용 4개 진단 점수입니다/);
 });
 
-test('earnings guide has short, verified factor descriptions for all 13 E1-R5 indicators while leaving other topics unchanged',()=>{
+test('earnings beginner guide exposes exactly four risk factor labels and no 12-domain factor catalogue',()=>{
  const start=guide.indexOf('"earnings-recession":{');
  const end=guide.indexOf('};\n\ntype MethodologyExplanation',start);
- const earnings=guide.slice(start,end);
- assert.match(earnings,/factorDescriptions:\{/);
- for(let i=1;i<=13;i++)assert.ok(earnings.includes('S'+i+':"'),'S'+i);
+ const risk=guide.slice(start,end);
+ assert.match(risk,/factorIds:\["epsGrowth","margin","revenueGrowth","earningsGrowthBreadth"\]/);
+ for(const id of ["epsGrowth","margin","revenueGrowth","earningsGrowthBreadth"]){
+  assert.ok(risk.includes(id+':"'),id);
+ }
+ assert.doesNotMatch(risk,/\bS(?:[1-9]|1[0-3]):"/);
  assert.match(guide,/function FactorListItem/);
+ const economic=read('app/economic-indicators/earnings/page.tsx');
+ assert.match(economic,/EconomicDetailPage id="earnings"/);
 });
