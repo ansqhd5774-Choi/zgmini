@@ -26,8 +26,9 @@ function InlineHistory({points,label}:{points:Point[];label:string}){
 }
 export default function ThemeExplorer(){
  const [group,setGroup]=useState('전체'),[query,setQuery]=useState('');
- const {payload}=useStoredIndex<PublicThemeFeed>('/api/theme-fear-greed');
- const ready=payload?.status==='READY'&&Array.isArray(payload.themes)?new Map(payload.themes.map(x=>[x.theme,x])):new Map<string,ThemeScore>();
+ const {payload,error}=useStoredIndex<PublicThemeFeed>('/api/theme-fear-greed');
+ // Hide even previously cached scores when the stored-only API becomes unavailable.
+ const ready=!error&&payload?.status==='READY'&&Array.isArray(payload.themes)?new Map(payload.themes.map(x=>[x.theme,x])):new Map<string,ThemeScore>();
  const themes=THEME_GROUPS.flatMap(g=>g.items.map(name=>({name,group:g.name}))).filter(t=>(group==='전체'||t.group===group)&&t.name.includes(query.trim())).sort((a,b)=>priorityOf(a.name)-priorityOf(b.name));
  return <><div className="zg-explorer-guide"><div><Layers3 size={22}/><p><strong>ETF 전용 3축 연구 · 7개 테마</strong><span>{RESEARCH_ASOF} 기준 252거래일 Shadow 검증 완료 · 승인된 공개 저장 데이터가 있을 때만 점수를 표시합니다.</span></p></div><span className="zg-explorer-ready">{ready.size?'ETF '+ready.size+' · 저장 점수':'ETF 7 · 공개 대기'}</span></div>
  <div className="zg-explorer-toolbar"><div className="zg-explorer-filters" role="group" aria-label="테마 분류">{['전체',...THEME_GROUPS.map(g=>g.name)].map(name=><button key={name} aria-pressed={group===name} onClick={()=>setGroup(name)}>{name}</button>)}</div><label className="zg-explorer-search"><Search size={17}/><input aria-label="테마 검색" type="search" value={query} onChange={e=>setQuery(e.target.value)} placeholder="관심 테마 찾기"/></label></div>
