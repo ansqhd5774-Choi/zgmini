@@ -69,7 +69,9 @@ try{
   await page.waitForFunction(()=>document.querySelector(".zg-community-captcha")?.classList.contains("is-verified"),null,{timeout:10000});
   assert.equal(await page.evaluate(()=>window.__zgTurnstileRenderCount),renderCountBeforeClose,"Reopening must reuse a fresh unused token");
   // Full-page navigation must retain the unused verification within the same tab.
+  await page.evaluate(()=>sessionStorage.removeItem("zgmini-community-chat-nick-r1"));
   await page.reload({waitUntil:"domcontentloaded"});
+  await page.waitForFunction(()=>Boolean(sessionStorage.getItem("zgmini-community-chat-nick-r1")),null,{timeout:15000});
   await page.getByRole("button",{name:"시장 채팅 열기"}).click();
   await page.waitForFunction(()=>document.querySelector(".zg-community-captcha")?.classList.contains("is-verified"),null,{timeout:10000});
   assert.equal(await page.evaluate(()=>window.__zgTurnstileRenderCount??0),0,"Navigation must not issue another verification");
