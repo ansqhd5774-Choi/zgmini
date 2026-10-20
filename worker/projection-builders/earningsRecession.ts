@@ -90,7 +90,7 @@ export function buildProjection({inputs,snapshot,publicSnapshot,e1,nowIso,riskHi
  // recomputation, normalization or weighting change.
  const riskFactorScore=factorsOk
   ?[0.35,0.25,0.20,0.20].reduce((sum,weight,i)=>sum+weight*candidates[i].score,0):null;
- const scoreMatched=factorsOk&&riskFactorScore!==null&&Math.abs(riskFactorScore-mainScore)<1e-7;
+ const scoreMatched=mainScore!==null&&factorsOk&&riskFactorScore!==null&&Math.abs(riskFactorScore-mainScore)<1e-7;
  const riskFactors=scoreMatched?candidates.map((row:any)=>({
   id:row.id,status:"READY",score:row.score,observationDate:null,
  })): [];
