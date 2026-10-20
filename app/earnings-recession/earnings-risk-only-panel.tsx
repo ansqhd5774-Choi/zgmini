@@ -12,7 +12,7 @@ import "./earnings-indicator-r2.css";
 import "./earnings-inflation-layout.css";
 
 // This component must only use the eight-risk diagnostic contract.
-// Twelve-domain E1-R5 data is intentionally not a prop or input.
+// The separate economic-domain data is intentionally not a prop or input.
 type RiskFactor={id:string;score:number|null;status:string;observationDate?:string|null};
 type RiskPoint={date:string;score:number};
 type RiskPayload={
