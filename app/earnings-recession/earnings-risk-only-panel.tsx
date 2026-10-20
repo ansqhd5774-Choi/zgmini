@@ -52,8 +52,32 @@ export default function EarningsRiskOnlyPanel(){
   const last=rows.at(-1);
   const ending=fiscalReconstruction?payload.riskFinancialPeriodEnd:payload.asOfDate;
   if(!last||last.date!==ending||Math.abs(last.score-score)>1e-8)return [];
-  return rows.map(x=>({date:x.date,score:x.score} satisfies MarketFearGreedChartPoint));
+  if(!fiscalReconstruction)return rows.map(x=>({date:x.date,score:x.score} satisfies MarketFearGreedChartPoint));
+  // The mature fiscal quarter anchors the displayed year. Null quarters are
+  // slots, not synthetic estimates, and must never enter a published score.
+  const end=new Date(ending+"T00:00:00Z");
+  if(![2,5,8,11].includes(end.getUTCMonth()))return [];
+  const present=new Map(rows.map(row=>[row.date,row.score]));
+  return Array.from({length:5},(_,index)=>{
+   const date=new Date(Date.UTC(end.getUTCFullYear(),end.getUTCMonth()+1-3*(4-index),0)).toISOString().slice(0,10);
+   return {date,score:present.get(date)??null} satisfies MarketFearGreedChartPoint;
+  });
  },[payload,score,fiscalReconstruction]);
+ const gapGuides=useMemo(()=>{
+  if(!fiscalReconstruction)return [];
+  const guides:Array<{from:MarketFearGreedChartValidPoint;to:MarketFearGreedChartValidPoint}>=[];
+  for(let i=1;i<trend.length-1;i++){
+   if(trend[i].score!==null)continue;
+   const left=trend[i-1];let rightIndex=i+1;
+   while(rightIndex<trend.length&&trend[rightIndex].score===null)rightIndex++;
+   const right=trend[rightIndex];
+   if(left&&right&&validScore(left.score)&&validScore(right.score)){
+    guides.push({from:{date:left.date,score:left.score},to:{date:right.date,score:right.score}});
+   }
+   i=rightIndex;
+  }
+  return guides;
+ },[trend,fiscalReconstruction]);
  const deltas=useMemo(()=>fiscalReconstruction
   ?{week:null,month:null,threeMonth:null,sixMonth:null,year:null}
   :liquidityStoredScoreComparisons(
@@ -73,15 +97,15 @@ export default function EarningsRiskOnlyPanel(){
    <div className="fg-content-slot">
     <div className="fg-score-slot"><MarketScoreOrb score={loading||score===null?"—":score.toFixed(1)} state={loading?"확인 중":stage(score)} variant="hero" comparisonItems={comparisons} comparisonAriaLabel="실적 침체 방어 진단 검증된 이력 기준 기간별 비교"/></div>
     <MarketTrendFrame className="fg-analysis-slot"><div className="fg-chart-slot">
-     <span className="earnings-r2-chart-identity">{fiscalReconstruction?"실적 침체 방어 · 결산 분기 추이 (사후 재구성)":"실적 침체 방어 진단 추이"}</span>
-     <div className="fg-renderer"><MarketFearGreedChart data={trend} axisTicks={axisTicks} axisLabels={axisLabels}
+     <span className="earnings-r2-chart-identity">{fiscalReconstruction?"실적 침체 방어 · 최신 유효 결산 분기 기준 1년 (사후 재구성)":"실적 침체 방어 진단 추이"}{gapGuides.length>0?" · 점선은 결측 연결":""}</span>
+     <div className="fg-renderer"><MarketFearGreedChart data={trend} gapGuides={gapGuides} axisTicks={axisTicks} axisLabels={axisLabels}
        latestPoint={latestPoint} showExtrema={trend.length>=3} instanceKey="earnings-risk-diagnostic"
        gradientId="earnings-risk-only-fill" color={tone(score)} formatTooltipLabel={dateLabel}
        emptyLabel={loading?"확인 중":"저장된 동일 산식의 과거 점수 미확보"}/></div>
     </div></MarketTrendFrame>
    </div>
    <div className="fg-footer-slot"><div className="cnn-panel-note"><span>실적 침체 진단</span><strong>{score===null?"점수 —":score.toFixed(1)+"점"} · {fiscalReconstruction
- ?`저장 분기 ${trend.length}개 · 사후 재구성(PIT 아님)`
+ ?`저장 분기 ${trend.filter(point=>validScore(point.score)).length}개 · 사후 재구성(PIT 아님)`
  :trend.length>=2?"검증된 위험 진단 이력":"동일 산식 이력 확인 필요"}</strong></div></div>
   </section>
   <section className="inflation-explainer" aria-labelledby="earnings-risk-explanation">
