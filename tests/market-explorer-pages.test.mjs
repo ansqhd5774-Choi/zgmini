@@ -60,6 +60,22 @@ test('theme overview retains 30 cards, prioritizes 7 ETF-only research themes an
  assert.doesNotMatch(html,/<strong>\d+(?:\.\d+)?<\/strong>/);
 });
 
+test('theme screen withdraws previous ETF scores immediately when stored feed fails',()=>{
+ const ThemeFile='../app/theme-fear-greed/theme-explorer.tsx';
+ const payload={status:'READY',observationDate:'2026-10-16',themes:[{theme:'로봇·자동화',etfs:['BOTZ','ROBO'],score:25.09,
+  history:Array.from({length:252},(_,i)=>({date:new Date(Date.UTC(2025,9,16)+i*86400000).toISOString().slice(0,10),score:25.09}))}]};
+ const mocks=(error)=>({
+  '../../components/market-explorer-catalog':catalog,
+  '../../components/use-stored-index':{useStoredIndex:()=>({payload,error,loading:false})},
+ });
+ const visible=renderToStaticMarkup(React.createElement(load(ThemeFile,mocks(null)).default));
+ assert.match(visible,/ETF 1 · 저장 점수/);
+ assert.match(visible,/25\.1<\/strong>/);
+ const withdrawn=renderToStaticMarkup(React.createElement(load(ThemeFile,mocks('UPDATE_FAILED')).default));
+ assert.match(withdrawn,/ETF 7 · 공개 대기/);
+ assert.doesNotMatch(withdrawn,/25\.1<\/strong>/);
+});
+
 test('shared header provides the agreed menu order on both dashboard and detail pages',()=>{
  const Header=load('../components/site-header.tsx',{'@/components/collection-health-indicator':{default:()=>null}}).default;
  for(const props of [{},{activeView:'dashboard',onSelectView:()=>{}}]){
