@@ -2,6 +2,9 @@ import SiteHeader from "@/components/site-header";
 import {WebPageJsonLd} from "../seo-jsonld";
 import {economicDetailById,type EconomicDomainId} from "../../lib/economic-detail-catalog";
 import EconomicDetailPanel from "./economic-detail-panel";
+import InflationPanel from "../inflation/inflation-panel";
+import BeginnerRiskGuide from "../beginner-risk-guide";
+import RiskDetailBeginnerLayout from "../risk-detail-beginner-layout";
 import "../inflation/inflation-indicator-r2.css";
 import "../inflation/inflation-score-comparisons-r1.css";
 import "../inflation/inflation-hero-typography-r1.css";
@@ -22,7 +25,7 @@ export default function EconomicDetailPage({id}:{id:EconomicDomainId}){
     <p className="mt-1 text-[12px] leading-[1.45] text-slate-300 sm:text-[13px]">{detail.description}</p>
    </div>
    <WebPageJsonLd name={title} description={description} path={path}/>
-   <EconomicDetailPanel id={id}/>
+   {id==="inflation"?<RiskDetailBeginnerLayout><InflationPanel/><BeginnerRiskGuide topic="inflation"/></RiskDetailBeginnerLayout>:<EconomicDetailPanel id={id}/>}
   </div>
  </main></>;
 }
