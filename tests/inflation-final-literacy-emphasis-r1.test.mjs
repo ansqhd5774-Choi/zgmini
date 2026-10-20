@@ -32,7 +32,7 @@ test("inflation risk terminology separates R2 scoring, annualization, and missin
  for(const term of [
   "점수 60이면 인플레이션 위험이 60%인가요?",
   "물가상승률이나 위험 발생 확률이 아닙니다.",
-  "기조 물가가 재가속",
+  "기조 물가의 재가속",
   "3개월 동안 1% 올랐다면 연율로는 약 4%",
   "'—'는 결측이며 0이 아닙니다",
   "과거 중앙값",
