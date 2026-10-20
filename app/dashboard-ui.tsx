@@ -181,6 +181,10 @@ type MarketScoreDomain={
  status:"READY"|"PARTIAL"|"UNAVAILABLE"|string;
  state?:string|null;
  interpretation?:string|null;
+ methodologyVersion?:string|null;
+ observationDate?:string|null;
+ dataPhase?:'OBSERVED'|'CARRY_FORWARD';
+ scoreChange?:number|null;
  trend?:MarketTrendPoint[];
  previousObservation?:{date:string;currentDate:string;score:number};
  indicators?:Array<{name?:string;label?:string;score?:number|null;status?:string;value?:number|null;unit?:string}>;
@@ -378,10 +382,12 @@ export function CompositeMarketSection({items,points,demo,loading}:{items:Summar
        const score=domain?.status==='READY'&&validPublicScore(domain.score)?domain.score:null;
        const normalizedTrend=normalizeMarketTrendPoints(domain?.trend);
        const trend=marketTrendWindow(normalizedTrend,periodDays);
+       const v9Breadth=r55DomainIds[index]==='breadth'&&domain?.methodologyVersion==='BREADTH_R10_V9_FIXED_5F_VALID_OBSERVATION_SHADOW';
+       const v9Movement=v9Breadth&&typeof domain?.scoreChange==='number'&&Number.isFinite(domain.scoreChange)?domain.scoreChange:null;
        const breadthDelta=r55DomainIds[index]==='breadth'?breadthPreviousSessionDelta(domain?.trend):domainObservationDelta(domain?.trend,score,domain?.previousObservation);
        const comparison=r55DomainIds[index]==='breadth'?'전 거래일':'직전 관측일';
        const publishedDelta=arrowDelta('domain:'+r55DomainIds[index],score);
-       const directionDelta=publishedDelta??breadthDelta?.delta??null;
+       const directionDelta=v9Breadth?v9Movement:(publishedDelta??breadthDelta?.delta??null);
 
        const band=score===null?'unknown':score<25?'danger':score<40?'caution':score<60?'neutral':score<75?'positive':'strong';
        const detailRows=marketDetailRows(r55DomainIds[index],domain?.indicators) as Array<{label:string;score:number|null;raw:boolean;value:number|null;displayValue?:string|null;unit:string;asOfDate?:string|null;source?:string|null;area?:string;areaHeading?:string|null;weight?:number|null;referenceCount?:number;referenceExpected?:number}>;
@@ -401,7 +407,7 @@ export function CompositeMarketSection({items,points,demo,loading}:{items:Summar
         <div className="zg-r55-card-head">
          <span className="zg-r55-card-icon"><Icon size={18} aria-hidden="true"/></span>
          <h3><a className="zg-r55-card-title-link" href={"/economic-indicators/"+({inflation:"inflation",employment:"employment",rates:"rates",credit:"credit",growth:"growth",consumption:"consumption",earnings:"earnings",liquidity:"liquidity",fundFlows:"fund-flows",breadth:"breadth",dollarFx:"dollar-fx",commodities:"commodities"}[r55DomainIds[index]])+"/"} onClick={event=>event.stopPropagation()} aria-label={m.label+" 상세페이지 열기"} title={m.label+" 상세페이지"}>{m.label}<ArrowUpRight size={13} aria-hidden="true"/></a></h3>
-         <span onClick={e=>e.stopPropagation()}><DashboardTip label={`${m.label} 도움말`}><HelpText copy={HELP[m.label]}/></DashboardTip></span>
+         <span onClick={e=>e.stopPropagation()}><DashboardTip label={`${m.label} 도움말`}><HelpText copy={v9Breadth?{...HELP[m.label],note:'※ V9는 검증된 5개 구성 지표를 사용합니다. 최신 거래일 자료가 부족하면 마지막 유효 관측 점수를 유지합니다.'}:HELP[m.label]}/></DashboardTip></span>
         </div>
         {notice&&<p data-testid="breadth-unavailable-reason" style={{margin:'6px 0',fontSize:12,lineHeight:1.5,color:'#cbd5e1'}}>{notice.message}</p>}
         <div className="zg-r55-card-mid">
@@ -410,10 +416,10 @@ export function CompositeMarketSection({items,points,demo,loading}:{items:Summar
           <LiveScoreValue value={score===null?null:Math.round(score)} style={{color:score===null?'#94a3b8':scoreColor(score)}}>{score===null?'—':Math.round(score)}</LiveScoreValue>
           <span
             className="zg-r55-day-change"
-            data-arrow-active={arrows('domain:'+r55DomainIds[index],score)}
+            data-arrow-active={v9Breadth?false:arrows('domain:'+r55DomainIds[index],score)}
             data-direction={directionDelta===null?'unknown':directionDelta>0?'up':directionDelta<0?'down':'flat'}
-            aria-label={publishedDelta!==null?`직전 공개 점수 대비 ${publishedDelta>0?'+':''}${publishedDelta.toFixed(1)}점`:breadthDelta?`${comparison} ${breadthDelta.previousDate} 대비 ${breadthDelta.delta>=0?'+':''}${breadthDelta.delta.toFixed(1)}점`:'직전 관측 대비 확인 불가'}
-            title={publishedDelta!==null?'직전 공개 점수 대비 · 변동 후 24시간 표시':breadthDelta?`${breadthDelta.previousDate} 대비`:'검증된 직전 관측 비교 점수 없음'}
+            aria-label={v9Breadth?(v9Movement===null?'직전 유효 V9 관측 비교 불가':`직전 유효 V9 관측 대비 ${v9Movement>=0?'+':''}${v9Movement.toFixed(1)}점 · 관측 ${domain?.observationDate??'미확인'}`):publishedDelta!==null?`직전 공개 점수 대비 ${publishedDelta>0?'+':''}${publishedDelta.toFixed(1)}점`:breadthDelta?`${comparison} ${breadthDelta.previousDate} 대비 ${breadthDelta.delta>=0?'+':''}${breadthDelta.delta.toFixed(1)}점`:'직전 관측 대비 확인 불가'}
+            title={v9Breadth?'직전 유효 V9 관측 점수 대비':publishedDelta!==null?'직전 공개 점수 대비 · 변동 후 24시간 표시':breadthDelta?`${breadthDelta.previousDate} 대비`:'검증된 직전 관측 비교 점수 없음'}
            >{directionDelta===null?'—':directionDelta>0?'▲':directionDelta<0?'▼':'-'}</span>
           <div className="zg-r55-card-compact-scale"><ScoreScale score={score} label={`${m.label} 점수`} color={score===null?'#64748b':scoreColor(score)}/></div>
          </div>
