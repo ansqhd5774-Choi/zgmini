@@ -5,7 +5,7 @@ import {readStoredEarningsRiskFourFactor,RISK_R4_PERIOD_RECONSTRUCTION} from "..
 import {buildEarningsE1R4} from "../lib/market-score/earnings-e1-r4.mjs";
 
 const issuerIds=Array.from({length:500},(_,i)=>String(i+1).padStart(10,"0"));
-const periods=["2025-09-30","2025-12-31","2026-03-31","2026-06-30"];
+const periods=["2025-06-30","2025-09-30","2025-12-31","2026-03-31","2026-06-30"];
 const validRows=period=>issuerIds.flatMap((cik,i)=>[
  {cik,metric:"epsGrowth",value:0.06+(period==="2026-06-30"?0.01:0)+(i%5)*0.003},
  {cik,metric:"revenueGrowth",value:0.04+(period==="2026-03-31"?0.005:0)+(i%5)*0.002},
@@ -47,7 +47,7 @@ test("PC-only bridge reuses original R4 scorer, emits aggregate four factors and
  assert.equal(replay.factors.length,4);
  assert.equal(replay.historyKind,RISK_R4_PERIOD_RECONSTRUCTION);
  assert.equal(replay.historyMode,"CURRENT_VINTAGE_NOT_PIT");
- assert.deepEqual(replay.periodTrend.map(x=>x.date),["2026-03-31","2026-06-30"],"no artificial December point or out-of-range September point");
+ assert.deepEqual(replay.periodTrend.map(x=>x.date),["2025-06-30","2025-09-30","2026-03-31","2026-06-30"],"one year ending at mature frame includes valid points and excludes the coverage-failed Q4");
  const expected=buildEarningsE1R4({
   asOfDate:"2026-10-20",financialPeriodEnd:"2026-06-30",
   issuerRows:issuerIds.map((cik,i)=>({
@@ -85,4 +85,19 @@ test("actual eight-risk PC bridge is used before diagnostics without affecting t
  assert.match(panel,/사후 재구성/);
  assert.match(panel,/week:null,month:null/);
  assert.doesNotMatch(panel,/storedE1/);
+});
+
+test("mature quarter chart makes missing Q4 explicit without inventing a score",()=>{
+ const panel=readFileSync("app/earnings-recession/earnings-risk-only-panel.tsx","utf8");
+ const chart=readFileSync("app/market-fear-greed-chart.tsx","utf8");
+ const bridge=readFileSync("lib/market-score/earnings-recession-stored-r4-pc-r1.mjs","utf8");
+ assert.match(bridge,/Date\.parse\(frame\.end\+"T00:00:00Z"\)/);
+ assert.match(bridge,/periodEnd<=frame\.end/);
+ assert.match(panel,/present\.get\(date\)\?\?null/);
+ assert.match(panel,/gapGuides=\{gapGuides\}/);
+ assert.match(panel,/점선은 결측 연결/);
+ assert.match(panel,/trend\.filter\(point=>validScore\(point\.score\)\)\.length/);
+ assert.match(chart,/gapGuides\.map\(guide=>/);
+ assert.match(chart,/strokeDasharray="4 5"/);
+ assert.match(chart,/connectNulls=\{false\}/);
 });
