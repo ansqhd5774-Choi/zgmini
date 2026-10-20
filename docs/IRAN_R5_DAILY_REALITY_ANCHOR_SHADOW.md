@@ -102,3 +102,15 @@ The daily direction is non-improving on these reported worsening dates and Oct09
 Further, GitHub main is advancing independently and both R3_4 classifier/KST PR #528 and R5 PR #531 remain unmerged. The operating PC SHA and Git deployment/Production SHA must be verified separately. The R3 PC scheduler remains active; the R5 score pipeline is NOT live, and no D1/public UI R5 readback is available.
 
 Any scope-authorized future production cutover must first reproduce the K21 result in the **same live PC SQLite / approved source**, replay seven dated evidence constraints against full R3_4 deduplicated receipts, pass the actual three-front reality gate, then commit a versioned local result, publish and read back the dedicated D1 result, verify API, and verify desktop/mobile UI with the same exact release. Do not deploy an R5 number while these tests fail; main source CI and a GitHub push are not live runtime proof.
+
+## Exact source replay path (after K21 investigation)
+
+Candidate source calculation now accepts `sensitivityScale:21` directly in `calculateIranDailyAnchorShadow`. This recomputes each dated event delta *before numerical rounding*, rather than multiplying a rounded K=11.31 score series.
+
+Same-PC read-only (only when exact candidate branch source is present and independently checked):
+
+`E:\\ZGmini\\runtime\\node.exe scripts\\iran-progress\\audit-daily-shadow-r5.mjs --candidate-k21 --db=E:\\ZGmini\\data\\iran-progress-r13\\iran.sqlite`
+
+The separate single-file `ZGMINI_IRAN_R5_K21_REALITY_AUDIT.cmd` reproduces K21 from the existing last-valid R3 projected events and intentionally **does not** prove parity with reclassification of all stored immutable receipts. A repeatable full-source audit must compare the R3_4 reclassifier's accepted event set with this projection before altering actual PC computing or public D1 output.
+
+No automatic backfill/provider/API work and no publication is enabled by the read-only option. The value 21 is still a phase-constraint-feasible candidate; one UN historical upper bound is not a statistically identified exact scale.
