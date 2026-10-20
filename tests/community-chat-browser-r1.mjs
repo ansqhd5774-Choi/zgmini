@@ -80,6 +80,13 @@ try{
    await star.click();
    await favorites.waitFor({state:"visible"});
    assert.equal(await favorites.getAttribute("data-open"),"true");
+   // Wait until the slide transition has reached its final on-screen position.
+   await page.waitForFunction(()=>{
+    const rail=document.querySelector("#zg-dashboard-favorites-panel");
+    if(!rail)return false;
+    const box=rail.getBoundingClientRect();
+    return box.left>=-0.5&&box.right<=window.innerWidth+0.5;
+   },null,{timeout:5000});
    const firstCard=favorites.locator(".zg-dashboard-favorite-link").first();
    const mobileLayout=await firstCard.evaluate(el=>{
     const bounds=el.getBoundingClientRect(),head=el.querySelector(".zg-dashboard-favorite-card-head").getBoundingClientRect();
