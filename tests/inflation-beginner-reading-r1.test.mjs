@@ -23,23 +23,23 @@ test("inflation, recession, liquidity and credit retain scoped beginner card des
 
 test("reading text explains scoring, rates, dates, labels and stock-market limits for first-time investors",()=>{
  for(const phrase of [
-  "70점이면 물가가 70% 오른 건가요?",
-  "점수가 높을수록 안정적인 쪽",
-  "미국 물가가 주식과 무슨 관계가 있나요?",
-  "그 자체가 매도 신호는 아니에요",
-  "처음 발표됐을 때 저장한 자료",
+  "점수 60이면 인플레이션 위험이 60%인가요?",
+  "점수가 높으면 안정적인 쪽",
+  "이 신호가 주식시장에 주는 영향은?",
+  "점수 하나로 매매를 결정하지 마세요",
+  "이력은 처음 발표되어 저장된 자료",
  ]){
   assert.ok(page.includes(phrase),phrase);
  }
  for(const phrase of [
-  "CPI와 PCE는 어떤 숫자인가요?",
-  "전체 물가와 근원 물가는 뭐가 다른가요?",
-  "전년 대비(YoY)는 1년 전",
+  "압력의 재가속과 지속성은 다른 신호입니다",
+  "7개 평가 축과 16개 입력지표를 구별하세요",
+  "전년 대비(YoY)는 1년 전과의 변화",
   "3개월 연율",
-  "긍정·중립·부정 색",
-  "저장된 평가 점수로 결정돼요",
-  "'—'는 0이 아니라",
-  "홈페이지 12개 주요 지표",
+  "금리와 기업이익에 어떤 경로로 이어지나요?",
+  "점수가 높은 영역은 압력 신호가 상대적으로 낮은 방향",
+  "'—'는 결측이며 0이 아닙니다",
+  "12대 경제지표의 '물가'는",
  ]){
   assert.ok(notes.includes(phrase),phrase);
  }
