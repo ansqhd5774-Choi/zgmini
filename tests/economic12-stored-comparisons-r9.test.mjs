@@ -14,7 +14,7 @@ test('12-market hero uses dashboard bands; legacy risk/CNN gauges are unchanged'
  assert.ok(orb.includes('marketScoreBands?: boolean'));
  assert.ok(orb.includes('marketScoreBands ? MARKET_SCORE_GAUGE_BANDS : CNN_GAUGE_BANDS'));
  assert.ok(orb.includes('[0, 25, 40, 50, 60, 75, 100]'));
- assert.ok(panel.includes('comparisonAriaLabel={config.name+" 시장 우호점수 기간별 변화"} marketScoreBands'));
+ assert.ok(panel.includes('comparisonAriaLabel={config.name+" 시장 우호점수 기간별 변화"} marketScoreBands={id!=="inflation"}'));
  for(const color of ['#ef4444','#f59e0b','#94a3b8','#22c55e','#10b981'])assert.ok(orb.includes("color: '"+color+"'"));
 });
 
