@@ -12,7 +12,8 @@
 ## Precisely staged changes
 - `lib/market-score/theme-iex-hist-r127-contract.mjs`: direct-source identity, attribution, unchanged 17 ETF universe and 756-session requirement; fail-closed observed-date coverage checker.
 - `tests/theme-iex-hist-r127-contract.test.mjs`: tests for IEX-only lineage, date uniqueness, missing/zero trade rejection, publication denial.
-- Separate **sandbox R127 research ZIP** contains an offline streaming Node.js TOPS1.6 PCAP/PCAPNG (+gzip) parser and local CMD pilot, with 13 synthetic tests passing. It is **not installed as a scheduled PC collector by this PR**.
+- `lib/market-score/theme-iex-hist-r127-direct.mjs` is the offline streaming Node.js TOPS1.6 PCAP/PCAPNG (+gzip) parser for one local file, with trade-break handling and per-ETF missing-trade reporting.
+- `tests/theme-iex-hist-r127-direct.test.mjs` adds synthetic capture/quality tests. The separate R127 research ZIP additionally has an optional local CMD pilot. **Neither is installed as a scheduled PC collector.**
 
 ## Fail-closed criteria before cutover
 1. Obtain a genuine official direct IEX TOPS HIST file with verified source URL, size, version, SHA and successful decoding; synthetic PCAP tests are **not** actual-provider verification.
