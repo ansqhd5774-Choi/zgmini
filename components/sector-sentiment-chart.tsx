@@ -27,7 +27,7 @@ const SHORT_NAMES:Record<SectorId,string>={technology:'기술',communication:'�
 // Connect dated formula outputs here. Missing values stay null; no synthetic scores.
 export type SectorSentimentPoint={date:string}&Partial<Record<SectorId,number|null>>;
 export type SentimentSeries={id:string;name:string;color:string;shortName?:string};
-type ChartInputRow={date:string}&Record<string,string|number|null|undefined>;
+type ChartInputRow={date:string;provisional?:boolean}&Record<string,string|number|boolean|null|undefined>;
 export type SectorSnapshotMeta={confirmedObservationDate?:string;phase?:string;provisional?:{date:string;asOf:string;delayMinutes:number|null}};
 type SectorFearGreedStoredPayload=SectorSnapshotMeta&{status?:string;history?:ChartInputRow[]};
 export default function SectorSentimentChart({data=[],series=SECTORS,title='섹터별 공포·탐욕',draggable=false,themePicker=false,linkToDetail=true,snapshot}:{data?:ChartInputRow[];series?:readonly SentimentSeries[];title?:string;draggable?:boolean;themePicker?:boolean;linkToDetail?:boolean;snapshot?:SectorSnapshotMeta}){
@@ -56,7 +56,16 @@ export default function SectorSentimentChart({data=[],series=SECTORS,title='섹�
  const nextKeyword=()=>{const list=legendRef.current;if(!list)return;const next=Array.from(list.children).find(child=>(child as HTMLElement).offsetLeft>list.scrollLeft+2) as HTMLElement|undefined;const reduce=window.matchMedia('(prefers-reduced-motion: reduce)').matches;list.scrollTo({left:next?next.offsetLeft:list.scrollWidth-list.clientWidth,behavior:reduce?'auto':'smooth'});};
  const [period,setPeriod]=useState(90);
  const sourceData:ChartInputRow[]=data.length?data:storedData;
- const rows:ChartInputRow[]=sourceData.filter(row=>/^\d{4}-\d{2}-\d{2}$/.test(row.date)&&Number.isFinite(Date.parse(row.date))).map(row=>({date:row.date,...Object.fromEntries(series.map(({id})=>{const value=row[id];return [id,typeof value==='number'&&Number.isFinite(value)&&value>=0&&value<=100?value:null]}))})).sort((a,b)=>a.date.localeCompare(b.date));
+ const datedRows=sourceData.filter(row=>/^\d{4}-\d{2}-\d{2}$/.test(row.date)&&Number.isFinite(Date.parse(row.date))).sort((a,b)=>a.date.localeCompare(b.date));
+ const firstProvisional=themePicker?datedRows.findIndex(row=>row.provisional===true):-1;
+ const hasProvisional=firstProvisional>0;
+ const rows:ChartInputRow[]=datedRows.map((row,i)=>({
+  date:row.date,
+  ...Object.fromEntries(series.flatMap(({id})=>{
+   const value=row[id],v=typeof value==='number'&&Number.isFinite(value)&&value>=0&&value<=100?value:null;
+   return hasProvisional?[[id,v],[id+'__solid',i<firstProvisional?v:null],[id+'__dash',i>=firstProvisional-1?v:null]]:[[id,v]];
+  })),
+ }));
  const toggle=(id:string)=>setHidden(previous=>{const next=new Set(previous);if(next.has(id))next.delete(id);else next.add(id);return next});
  const end=rows.length?Date.parse(rows[rows.length-1].date):0;
  const visibleRows=rows.filter(row=>Date.parse(row.date)>=end-period*86400000);
@@ -76,7 +85,10 @@ export default function SectorSentimentChart({data=[],series=SECTORS,title='섹�
      <YAxis domain={[0,100]} ticks={[0,25,50,75,100]} interval={0} axisLine={false} tickLine={false} stroke="#9db0c2" fontSize={11} width={32}/>
      <ReferenceLine y={50} stroke="#64748b" strokeDasharray="3 5"/>
      <Tooltip active={touchTooltip??undefined} position={{x:0,y:0}} allowEscapeViewBox={{x:true,y:true}} wrapperStyle={{transform:'translateY(calc(-100% - 8px))',zIndex:20}} isAnimationActive={false} cursor={{stroke:'#cbd5e1',strokeWidth:1,strokeDasharray:'3 3'}} content={({active,payload,label})=>!active||!payload?.length?null:<div className="zg-sector-tooltip" role="status"><p>{String(label)}</p><ul>{payload.filter(entry=>typeof entry.value==='number'&&Number.isFinite(entry.value)).map(entry=><li key={String(entry.dataKey)} style={{color:entry.color}}><span>{entry.name}</span><strong>{Number(entry.value).toFixed(1)}</strong></li>)}</ul></div>}/>
-     {series.map(sector=><Line key={sector.id} dataKey={sector.id} name={sector.name} stroke={sector.color} hide={hidden.has(sector.id)} strokeWidth={2} dot={false} activeDot={{r:4}} connectNulls={false} isAnimationActive={false}/>)}
+     {series.map(sector=>hasProvisional?[
+      <Line key={sector.id+'-solid'} dataKey={sector.id+'__solid'} name={sector.name} stroke={sector.color} hide={hidden.has(sector.id)} strokeWidth={2} dot={false} activeDot={{r:4}} connectNulls={false} isAnimationActive={false}/>,
+      <Line key={sector.id+'-dash'} dataKey={sector.id+'__dash'} name={sector.name} stroke={sector.color} strokeDasharray="4 5" hide={hidden.has(sector.id)} strokeWidth={2} dot={false} activeDot={{r:4}} connectNulls={false} isAnimationActive={false}/>
+     ]:<Line key={sector.id} dataKey={sector.id} name={sector.name} stroke={sector.color} hide={hidden.has(sector.id)} strokeWidth={2} dot={false} activeDot={{r:4}} connectNulls={false} isAnimationActive={false}/>)}
      {extrema.map(point=><ReferenceDot key={'extreme-'+point.kind} x={point.date} y={point.value} ifOverflow="visible" shape={<ChartExtremumPoint point={point} peerIndex={extrema.find(p=>p.kind!==point.kind)?.index} samples={visibleRows.map(p=>({x:p.date,value:typeof p[shownSeries[0].id]==='number'?Number(p[shownSeries[0].id]):null}))} count={visibleRows.length} color={shownSeries[0].color}/>}/>)}
      {heldRow&&<ReferenceLine x={heldRow.date} stroke="#cbd5e1" strokeDasharray="3 3"/>}
      {heldRow&&shownSeries.map(s=>typeof heldRow[s.id]==='number'?<ReferenceDot key={'held-'+s.id} x={heldRow.date} y={Number(heldRow[s.id])} r={4} fill={s.color} stroke="#fff" ifOverflow="visible"/>:null)}
