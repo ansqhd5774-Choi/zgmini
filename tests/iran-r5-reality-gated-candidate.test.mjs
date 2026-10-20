@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
- R5_EVIDENCE_BENCHMARKS,makeReviewedR5Benchmarks,evaluateR5Candidate21
+ R5_EVIDENCE_BENCHMARKS,makeReviewedR5Benchmarks,evaluateR5Candidate21,minimumScaleForHistoricalCap
 } from '../lib/iran-progress/reality-gated-candidate-r5.mjs';
 import {compareR5SensitivityShadows} from '../lib/iran-progress/daily-reality-check-r5.mjs';
 
@@ -33,8 +33,9 @@ test('R5 K=21 fixes 9 Oct UN contradiction but remains blocked without independe
  assert.equal(next.candidateHistory.length,14);
  assert.equal(next.candidateHistory[1].value,23.64);
  assert.equal(next.candidateHistory.at(-1).value,13);
- assert.equal(next.independentSourceDateCount,3);
+ assert.equal(next.independentSourceDateCount,7);
  assert.equal(next.contradictions.length,0);
+ assert.ok(next.candidateHistory.every((point,i,arr)=>i===0||point.value<=arr[i-1].value));
  assert.equal(next.productionReady,false);
  assert.equal(next.selectedForProduction,false);
  assert.equal(next.realityReferenceScoreVerified,false);
@@ -50,4 +51,13 @@ test('multiple independent source days can refute too optimistic score, never pr
  const blocked=evaluateR5Candidate21(original,{anchors:newContradiction,reviewNow:now});
  assert.equal(blocked.status,'REALITY_CONTRADICTED');
  assert.equal(blocked.contradictions[0].date,'2026-10-20');
+});
+
+test('9 Oct UN war cap yields mathematical lower bound ~20.45: whole-number candidate 21, not a tuned optimum',()=>{
+ const b=minimumScaleForHistoricalCap(original,{date:'2026-10-09',maxScore:24});
+ assert.ok(b.minimumAllowedScale>20.4&&b.minimumAllowedScale<20.5);
+ assert.equal(b.smallestWholeNumberCandidate,21);
+ assert.equal(b.empiricallyCalibrated,false);
+ assert.equal(b.autoSelected,false);
+ assert.throws(()=>minimumScaleForHistoricalCap(original,{date:'2026-10-09',maxScore:13}),/R5_SCALE_LIMIT_INPUT_INVALID/);
 });
