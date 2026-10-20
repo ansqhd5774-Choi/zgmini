@@ -85,7 +85,13 @@ export function buildProjection({inputs,snapshot,publicSnapshot,e1,nowIso,riskHi
   candidates.length===ids.length&&ids.every((id,index)=>
    candidates[index]?.id===id&&candidates[index]?.status==="READY"&&
    finite(candidates[index]?.score)&&candidates[index].score>=0&&candidates[index].score<=100);
- const riskFactors=factorsOk?candidates.map((row:any)=>({
+ // The published factor row must reproduce the separately stored headline
+ // under the existing approved diagnostic weights. Validation only; no score
+ // recomputation, normalization or weighting change.
+ const riskFactorScore=factorsOk
+  ?[0.35,0.25,0.20,0.20].reduce((sum,weight,i)=>sum+weight*candidates[i].score,0):null;
+ const scoreMatched=factorsOk&&riskFactorScore!==null&&Math.abs(riskFactorScore-mainScore)<1e-7;
+ const riskFactors=scoreMatched?candidates.map((row:any)=>({
   id:row.id,status:"READY",score:row.score,observationDate:null,
  })): [];
  const points=Array.isArray(riskHistory?.points)?riskHistory.points:[];
@@ -122,8 +128,8 @@ export function buildProjection({inputs,snapshot,publicSnapshot,e1,nowIso,riskHi
   missingFactors:Array.isArray(diagnostic?.missingFactors)?diagnostic.missingFactors:[],
   asOfDate:asOf,
   methodologyVersion:"EARNINGS_RECESSION_DIAGNOSTIC_R1",
-  riskFactorsMethodologyVersion:factorsOk?riskMethod:null,
-  riskFactorsSource:factorsOk?"E1_R4_LEGACY_COMPATIBILITY":null,
+  riskFactorsMethodologyVersion:scoreMatched?riskMethod:null,
+  riskFactorsSource:scoreMatched?"E1_R4_LEGACY_COMPATIBILITY":null,
   riskFactors,
   riskTrend,
   riskHistoryKind,
