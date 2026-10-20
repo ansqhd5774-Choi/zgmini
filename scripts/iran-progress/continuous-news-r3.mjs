@@ -1,6 +1,7 @@
 import {hash} from './store.mjs';
 import {boundedRead} from './sources.mjs';
 import {parseNews} from './continuous-news.mjs';
+import {kstCalendarDate} from '../../lib/iran-progress/chart-history.mjs';
 import {CLASSIFIER_VERSION,classifyR3Article,buildReferenceFlowR3,trustedR3Url,validDate} from '../../lib/iran-progress/reference-flow-r3.mjs';
 
 export const R3_NEWS_KEY='reference-flow-continuous-news-r3';
@@ -49,7 +50,8 @@ export async function collectNewsR3(store,{now=Date.now(),fetcher=fetch,maxArtic
  const previous=store.getCheckpoint(R3_NEWS_KEY),queue=store.getCheckpoint('continuous-news-queue-r3')?.items??[];
  const report={classifierVersion:CLASSIFIER_VERSION,checkedAt:now,feeds:[],discovered:0,analyzed:0,accepted:0,failed:0,storageVerified:false};
  const byUrl=new Map(queue.map(i=>[i.url,i]));
- const start=new Date(now-13*86400000).toISOString().slice(0,10),end=new Date(now).toISOString().slice(0,10);
+ // The provisional 14-day window advances at KST midnight, never at UTC midnight.
+ const end=kstCalendarDate(now),start=kstCalendarDate(now-13*86400000);
  const enqueue=a=>{if(a.date<start||a.date>end||!trustedR3Url(a.sourceUrl)||!/\b(?:Iran|Iranian|IRGC|Hormuz|Houthis?|Ansar Allah|Saudi|Yemen|Red Sea|Bab.el.Mandeb)\b/i.test(a.title+' '+(a.summary??'')))return;const old=byUrl.get(a.sourceUrl);if(!old){const i={url:a.sourceUrl,article:a};queue.push(i);byUrl.set(i.url,i);report.discovered++;}else old.article=a;};
  // Re-evaluate saved exclusions on a new classifier even if the original feed has rolled over.
  for(const row of store.db.prepare("SELECT id,body FROM sources WHERE id LIKE 'news-metadata:%' ORDER BY stored_at,id").all()){
@@ -101,7 +103,7 @@ export async function collectNewsR3(store,{now=Date.now(),fetcher=fetch,maxArtic
   }catch{item.retryAt=now+3600000;item.reason='ANALYSIS_FAILED';report.failed++;}
   store.checkpoint('continuous-news-queue-r3',{items:queue});
  }
- report.pending=queue.filter(i=>!i.analyzedAt||i.classifierVersion!==CLASSIFIER_VERSION||i.contentHash!==hash(i.article)).length;
+ report.pending=queue.filter(i=>(i.article?.date??i.date)>=start&&(i.article?.date??i.date)<=end&&(!i.analyzedAt||i.classifierVersion!==CLASSIFIER_VERSION||i.contentHash!==hash(i.article))).length;
  // Classification coverage is distinct from LLM processing and event acceptance.
  const classified=queue.filter(i=>i.analyzedAt&&i.classifierVersion===CLASSIFIER_VERSION&&(i.article?.date??i.date)>=start&&(i.article?.date??i.date)<=end);
  report.classifierMethod='HEADLINE_RULES_R3_NOT_OLLAMA';
