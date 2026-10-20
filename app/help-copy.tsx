@@ -1,5 +1,6 @@
 export type HelpCopy={meaning:string;reading:string;note:string};
 export const HELP:Record<string,HelpCopy>={
+  "스태그플레이션 위험": {meaning:"물가 압력과 실물·고용 둔화의 동시 위험을 평가합니다. 높은 안전 점수는 이 동시 위험이 낮다는 뜻이며 위기 확률이나 시장 전체의 안전도는 아닙니다.",reading:"8종 원자료의 10개 신호와 최근 3개월 지속성을 사용합니다.",note:"현재 개정치 기준 월별 재구성입니다. 관측월과 갱신 시각은 다릅니다."},
   "fear": {
     "meaning": "주식시장에서 투자자들이 느끼는 공포와 탐욕을 보여주는 지표입니다. 낮을수록 공포, 높을수록 탐욕입니다. 회색은 중립이며, 높은 점수가 반드시 좋은 매수 기회라는 뜻은 아닙니다.",
     "reading": "",

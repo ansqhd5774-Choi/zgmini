@@ -17,6 +17,7 @@ const snapshots={
  '/api/market-score':{status:'SUCCESS',domains:[{id:'inflation',status:'READY',score:0},{id:'employment',status:'PARTIAL',score:80}],diagnostics8:{inflationStability:{status:'READY',score:0},assetBubbleSafety:{status:'READY',score:99}}},
  '/api/asset-bubble-detail':{status:'UNAVAILABLE',score:null},
  '/api/supply-shock-detail':{status:'READY',score:36},
+ '/api/stagflation-risk-detail':{status:'READY',score:0},
 };
 const Explorer=load('../components/market-explorer.tsx',{
  './use-stored-index':{useStoredIndex:url=>({payload:snapshots[url],loading:false,error:null})},
@@ -38,6 +39,17 @@ test('economic overview retains all twelve domains and does not present a PARTIA
  assert.equal((html.match(/<article /g)??[]).length,12);
  assert.match(html.split('id="employment"')[1].split('</article>')[0],/<strong>—<\/strong>/);
  assert.doesNotMatch(html,/>80\.0</);
+});
+
+test('stagflation uses its own stored score; legacy liquidity cannot fill its missing value',()=>{
+ const html=()=>renderToStaticMarkup(React.createElement(Explorer,{kind:'risk'}));
+ const card=()=>html().split('id="stagflationSafety"')[1].split('</article>')[0];
+ assert.match(card(),/<strong>0\.0<\/strong>/);assert.match(card(),/href="\/stagflation-risk\/"/);
+ snapshots['/api/market-score'].diagnostics8.liquidityCrisisDefense={status:'READY',score:99};
+ const saved=snapshots['/api/stagflation-risk-detail'];
+ try{snapshots['/api/stagflation-risk-detail']={status:'UNAVAILABLE',score:null};assert.match(card(),/<strong>—<\/strong>/);assert.doesNotMatch(card(),/>99\.0</);}finally{snapshots['/api/stagflation-risk-detail']=saved;}
+ const economic=html();assert.ok(economic.includes('스태그플레이션 위험'));
+ assert.ok(catalog.ECONOMIC_CARDS.some(c=>c.id==='liquidity'&&c.href==='/economic-indicators/liquidity/'));
 });
 test('theme overview retains 30 cards, prioritizes 7 ETF-only research themes and withholds unpublished scores',()=>{
  assert.equal(new Set(catalog.THEME_GROUPS.flatMap(g=>g.items)).size,30);
