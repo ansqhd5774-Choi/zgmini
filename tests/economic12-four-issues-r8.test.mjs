@@ -18,10 +18,11 @@ test("five displayed comparison slots fallback only to validated same-lineage sa
  assert.ok(guard.includes("Math.abs(current.value-score)>1e-6"),"no mismatched history interpolation");
  assert.ok(panel.includes("periodSourceMismatch"));
 });
-test("real stored domain rows, all indicators for earnings/consumption, representative-only growth correctly identified",()=>{
+test("economic detail shows all stored indicators, Growth 24/24, and no invented raw values",()=>{
  assert.ok(panel.includes("const observations=(domain?.indicators??[])"));
- assert.ok(panel.includes('id==="growth"?"대표 구성지표":"구성 지표"'));
- assert.ok(panel.includes("24개 전체 가중요인이 아닌 공개된 대표 4개"));
+ assert.ok(panel.includes('{id==="growth"?observations.length+"/24":observations.length}개'));
+ assert.ok(panel.includes('observations.length!==24'),"incomplete 24-factor release is visible, not misreported as complete");
+ assert.ok(!panel.includes("24개 전체 가중요인이 아닌 공개된 대표 4개"));
  assert.ok(panel.includes("indicatorLabel(item,id,i)"));
  assert.ok(panel.includes("currentPresentation(item)"));
  assert.ok(page.includes('<EconomicDetailPanel id={id}/>'));
