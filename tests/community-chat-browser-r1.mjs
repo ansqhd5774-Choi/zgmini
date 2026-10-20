@@ -24,12 +24,37 @@ try{
   await page.route("**/api/community/reports",r=>r.fulfill({status:200,contentType:"application/json",body:'{"accepted":true}'}));
   await page.route("https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit",route=>route.fulfill({status:200,contentType:"application/javascript",body:"window.turnstile={render:(el,o)=>{el.textContent='Turnstile test';window.__zgTurnstileRenderCount=(window.__zgTurnstileRenderCount||0)+1;window.__zgTurnstileCallbacks=o;return 'test-id';},remove:()=>{},reset:()=>{window.__zgTurnstileResets=(window.__zgTurnstileResets||0)+1;}}"}));
   page.on("pageerror",error=>errors.push(width+": "+error.message));
+  await page.addInitScript(()=>{
+   localStorage.setItem("zgmini:inflation:favorites:v1",JSON.stringify(["CORE_PCE"]));
+   localStorage.setItem("zgmini:debt:favorites:v1",JSON.stringify(["dsr"]));
+   localStorage.setItem("zgmini:economic:favorites:v1",JSON.stringify(["growth:G010"]));
+  });
+  await page.route("**/api/market-score",r=>r.fulfill({status:200,contentType:"application/json",body:JSON.stringify({status:"SUCCESS",domains:[{id:"growth",indicators:[{id:"G010",label:"제조업 신규주문"}]}]})}));
   await page.goto(base,{waitUntil:"domcontentloaded",timeout:45000});
+  const wide=width>=1650;
   const toggle=page.getByRole("button",{name:"시장 채팅 열기"});
-  await toggle.waitFor({state:"visible",timeout:45000});
   await page.waitForFunction(()=>Boolean(sessionStorage.getItem("zgmini-community-chat-nick-r1")),null,{timeout:30000}).catch(error=>{throw new Error("React client hydration not confirmed; browser errors: "+errors.join(" | ")+"; "+error.message);});
-  assert.equal(await page.locator("#zg-community-chat-panel").getAttribute("aria-hidden"),"true");
-  await toggle.click();
+  await page.waitForFunction(wide=>document.querySelector(".zg-dashboard-side-rails-root")?.getAttribute("data-wide")===(wide?"true":"false"),wide,{timeout:15000});
+  const favorites=page.locator("#zg-dashboard-favorites-panel");
+  await favorites.locator('a[href="/inflation/"]').waitFor({state:"attached"});
+  await favorites.locator('a[href="/debt-risk/"]').waitFor({state:"attached"});
+  await favorites.getByText("제조업 신규주문").waitFor({state:"attached"});
+  if(wide){
+   assert.equal(await favorites.getAttribute("data-open"),"true");
+   assert.equal(await toggle.count(),0,"Desktop chat is persistent; no second floating toggle");
+   assert.equal(await page.locator(".zg-container").evaluate(el=>getComputedStyle(el).width!=="0px"),true);
+  }else{
+   const star=page.getByRole("button",{name:"즐겨찾기 열기"});
+   await star.click();
+   await favorites.waitFor({state:"visible"});
+   assert.equal(await favorites.getAttribute("data-open"),"true");
+   await page.getByRole("button",{name:"즐겨찾기 닫기"}).first().click();
+   assert.equal(await favorites.getAttribute("data-open"),"false");
+   await toggle.waitFor({state:"visible"});
+   assert.equal(await page.locator("#zg-community-chat-panel").getAttribute("aria-hidden"),"true");
+   await toggle.click();
+   assert.equal(await favorites.getAttribute("data-open"),"false","Only one narrow overlay is open");
+  }
   const panel=page.locator("#zg-community-chat-panel");
   await panel.waitFor({state:"visible",timeout:15000});
   assert.equal(await panel.getAttribute("aria-hidden"),"false");
@@ -63,16 +88,21 @@ try{
   await page.evaluate(()=>window.__zgTurnstileCallbacks.callback("test-browser-token"));
   await page.waitForFunction(()=>document.querySelector(".zg-community-captcha")?.classList.contains("is-verified"),null,{timeout:10000});
   const renderCountBeforeClose=await page.evaluate(()=>window.__zgTurnstileRenderCount);
-  await page.keyboard.press("Escape");
-  assert.equal(await panel.getAttribute("aria-hidden"),"true");
-  await page.getByRole("button",{name:"시장 채팅 열기"}).click();
+  if(!wide){
+   await page.keyboard.press("Escape");
+   assert.equal(await panel.getAttribute("aria-hidden"),"true");
+   await page.getByRole("button",{name:"시장 채팅 열기"}).click();
+  }else{
+   assert.equal(await panel.getAttribute("aria-hidden"),"false");
+  }
   await page.waitForFunction(()=>document.querySelector(".zg-community-captcha")?.classList.contains("is-verified"),null,{timeout:10000});
   assert.equal(await page.evaluate(()=>window.__zgTurnstileRenderCount),renderCountBeforeClose,"Reopening must reuse a fresh unused token");
   // Full-page navigation must retain the unused verification within the same tab.
   await page.evaluate(()=>sessionStorage.removeItem("zgmini-community-chat-nick-r1"));
   await page.reload({waitUntil:"domcontentloaded"});
   await page.waitForFunction(()=>Boolean(sessionStorage.getItem("zgmini-community-chat-nick-r1")),null,{timeout:15000});
-  await page.getByRole("button",{name:"시장 채팅 열기"}).click();
+  if(!wide)await page.getByRole("button",{name:"시장 채팅 열기"}).click();
+  else await page.waitForFunction(()=>document.querySelector(".zg-dashboard-side-rails-root")?.getAttribute("data-wide")==="true",null,{timeout:15000});
   await page.waitForFunction(()=>document.querySelector(".zg-community-captcha")?.classList.contains("is-verified"),null,{timeout:10000});
   assert.equal(await page.evaluate(()=>window.__zgTurnstileRenderCount??0),0,"Navigation must not issue another verification");
   assert.equal(await page.evaluate(()=>Boolean(sessionStorage.getItem("zgmini-community-chat-turnstile-r2"))),true,"A verified unused challenge is preserved for navigation");
@@ -121,10 +151,14 @@ try{
   const reportedIcon=messageItem.getByRole("button",{name:"신고 완료"});
   await reportedIcon.waitFor({state:"attached",timeout:10000});
   assert.equal(await reportedIcon.isDisabled(),true);
-  await page.keyboard.press("Escape");
-  assert.equal(await panel.getAttribute("aria-hidden"),"true");
-  if(width!==390) assert.equal(await panel.evaluate(el=>getComputedStyle(el).animationName),"zg-community-exit");
-  assert.equal(await page.getByRole("button",{name:"시장 채팅 열기"}).getAttribute("aria-expanded"),"false");
+  if(!wide){
+   await page.keyboard.press("Escape");
+   assert.equal(await panel.getAttribute("aria-hidden"),"true");
+   if(width!==390) assert.equal(await panel.evaluate(el=>getComputedStyle(el).animationName),"zg-community-exit");
+   assert.equal(await page.getByRole("button",{name:"시장 채팅 열기"}).getAttribute("aria-expanded"),"false");
+  }else{
+   assert.equal(await panel.getAttribute("aria-hidden"),"false","Desktop chat stays visible");
+  }
   await page.close();
   console.log("PASS: chat browser width="+width+" with mocked API, captcha, report and Escape");
  }

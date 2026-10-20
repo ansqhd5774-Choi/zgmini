@@ -1,0 +1,18 @@
+/* Dashboard-only rails reuse approved R44 risk-panel behavior without changing its pages. */
+.zg-dashboard-side-rails-root .zg-dashboard-favorite-link{min-height:52px;align-items:center}
+.zg-dashboard-side-rails-root .zg-dashboard-favorite-link>span{display:flex;flex:1;min-width:0;flex-direction:column;gap:2px}
+.zg-dashboard-side-rails-root .zg-dashboard-favorite-link strong{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px;font-weight:700}
+.zg-dashboard-side-rails-root .zg-dashboard-favorite-link small{color:#9bb8c9;font-size:10px;font-weight:450;line-height:1.4}
+.zg-dashboard-side-rails-root .zg-dashboard-favorites-empty{padding:16px 7px;color:#aec5d6;font-size:12px;line-height:1.65}
+@media(min-width:1650px){
+ .zg-dashboard[data-view="dashboard"]>.zg-container{
+  width:calc(100% - 670px);
+  max-width:1152px;
+  margin-left:auto;margin-right:auto;
+  transform:translateX(-30px);
+  min-width:0;
+ }
+}
+@media(max-width:1649px){
+ .zg-dashboard-side-rails-root .zg-dashboard-favorite-link{min-height:48px}
+}
