@@ -43,7 +43,7 @@ export default function UsaFearGreedPage() {
         related={[{href:"/fear-greed/korea/",label:"한국 공포탐욕지수"},{href:"/inflation/",label:"미국 인플레이션 지표"},{href:"/recession/",label:"미국 경기침체 지표"}]}
       />
     <InvestorIntentGuide market="usa"/>
-    <DetailInvestorNotes topic="usa"/>
+    <div className="zg-fg-bottom-r3"><DetailInvestorNotes topic="usa"/></div>
 </div>
   </main>;
 }
