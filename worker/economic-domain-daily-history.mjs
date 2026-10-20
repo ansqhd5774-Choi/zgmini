@@ -17,6 +17,7 @@ export function selectApprovedDailyScores(rows,{from,to}={}){
  }
  return Object.fromEntries(Object.entries(source).map(([id,days])=>[id,[...days.values()].sort((a,b)=>a.date.localeCompare(b.date))]));
 }
+/** @param {{db:any,now?:number}} [options] */
 export async function readPublicDailyDomainScores({db,now=Date.now()}={}){
  if(!db?.prepare||!Number.isSafeInteger(now))throw Error("DAILY_PUBLIC_STORAGE_UNAVAILABLE");
  const to=new Date(now).toISOString().slice(0,10),start=new Date(now);
@@ -25,6 +26,7 @@ export async function readPublicDailyDomainScores({db,now=Date.now()}={}){
  const result=await db.prepare(SQL).bind(from,to).all();
  return {status:"READY",source:"PUBLISHED_DAILY_SNAPSHOTS_ONLY",from,to,series:selectApprovedDailyScores(result?.results??[],{from,to})};
 }
+/** @param {Request} request @param {{db:any,now?:number}} [options] */
 export async function storedPublicDailyHistoryResponse(request,{db,now=Date.now()}={}){
  const headers={"cache-control":"no-store","x-robots-tag":"noindex","x-content-type-options":"nosniff"};
  if(request.method!=="GET")return Response.json({status:"FAILED",reason:"METHOD_NOT_ALLOWED"},{status:405,headers:{...headers,allow:"GET"}});
