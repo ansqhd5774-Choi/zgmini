@@ -4569,3 +4569,15 @@ body .zg-r55-market .zg-r55-shell[data-expanded="false"] article.zg-r55-card>.zg
   outline:0!important;
   box-shadow:none!important;
 }
+
+/* EC12 NAV R1 — make all 12 economic labels clearly clickable and unobstructed.
+   Existing card background expansion and separate risk-title links are preserved. */
+.zg-dashboard[data-view="dashboard"] .zg-r55-card-head h3{position:relative;z-index:2}
+.zg-dashboard[data-view="dashboard"] .zg-r55-card-title-link{
+ display:inline-flex;align-items:center;gap:2px;max-width:100%;min-height:20px;
+ color:inherit;text-decoration:none;cursor:pointer;pointer-events:auto;
+ touch-action:manipulation;position:relative;z-index:3;white-space:nowrap
+}
+.zg-dashboard[data-view="dashboard"] .zg-r55-card-title-link svg{flex:none;color:#fabc42;opacity:.85}
+.zg-dashboard[data-view="dashboard"] .zg-r55-card-title-link:hover{text-decoration:underline;text-underline-offset:2px}
+.zg-dashboard[data-view="dashboard"] .zg-r55-card-title-link:focus-visible{outline:2px solid #fabc42;outline-offset:2px}
