@@ -1,3 +1,4 @@
+import {verifiedEarningsRiskTrend} from '../lib/market-score/earnings-recession-history-r1.mjs';
 import {marketOperationalStore,readStoredMarketInputsSelected} from './candidate-market-operational-store.mjs';
 import {loadStoredInflationPitSeries} from './inflation-pit-reader.mjs';
 import {INFLATION_PIT_SERIES} from './inflation-pit-backfill.mjs';
@@ -60,7 +61,27 @@ export async function loadProjectionSource(id,env,{now=Date.now(),onPhase,onMeta
   const e1Started=performance.now();
   const e1=selectStoredEarningsProjection(snapshot)??await readEarningsE1R4StoredScore({asOf:date,db:env.DB_CORE});
   mark('source:earnings',e1Started);
-  return {snapshot,e1,nowIso};
+  // The existing dated snapshots are the only eligible risk history source.
+  // No provider access, DB write or E1 economic-domain trend is permitted.
+  let riskHistory={kind:'UNVERIFIED',points:[]};
+  const diag=snapshot?.body?.diagnostics8?.earningsRecessionDefense;
+  if(diag?.status==='READY'&&typeof diag?.score==='number'&&
+    diag?.methodologyVersion==='EARNINGS_RECESSION_DIAGNOSTIC_R1'){
+    try{
+      const from=new Date(Date.parse(date+'T00:00:00Z'));from.setUTCFullYear(from.getUTCFullYear()-1);
+      const since=from.toISOString().slice(0,10);
+      const query=await env.DB_CORE.prepare(
+        'SELECT snapshot_key,body FROM market_public_snapshots_v1 WHERE snapshot_key>=? AND snapshot_key<=? AND length(snapshot_key)=10 ORDER BY snapshot_key ASC LIMIT 400'
+      ).bind(since,date).all();
+      const snapshots=(query?.results??[]).flatMap(row=>{
+        try{return [{snapshotKey:row.snapshot_key,body:JSON.parse(row.body)}];}catch{return [];}
+      });
+      riskHistory=verifiedEarningsRiskTrend({
+        snapshots,current:{asOfDate:date,score:diag.score,methodologyVersion:diag.methodologyVersion},
+      });
+    }catch{} // Retrieval failure is history-unavailable; never fabricate a trend.
+  }
+  return {snapshot,e1,nowIso,riskHistory};
  }
  const keys=PROJECTION_INPUT_BATCHES[id];
  if(!keys)throw Error('INVALID_PROJECTION_ID');
