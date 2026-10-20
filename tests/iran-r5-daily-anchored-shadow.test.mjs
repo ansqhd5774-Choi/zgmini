@@ -88,3 +88,33 @@ test('future dates and unapproved zero-bound anchor rejected',()=>{
  assert.throws(()=>calculateIranDailyAnchorShadow([],{asOfDate:'2026-10-20'}),/REFERENCE_OR_ASOF_INVALID/);
  assert.throws(()=>calculateIranDailyAnchorShadow([],{asOfDate:'2026-10-21',anchorScore:0}),/REFERENCE_OR_ASOF_INVALID/);
 });
+
+test('new 21 Oct article after 06:35 KST changes 21 provisional, not its pre-anchor 13',()=>{
+ const later=attack('2026-10-21');
+ later.sourceStoredAt=Date.parse('2026-10-21T00:00:00Z'); // 09:00 KST
+ const a=calculateIranDailyAnchorShadow([later],{asOfDate:'2026-10-21'});
+ assert.equal(a.anchorScore,13);
+ assert.equal(a.score,10.78);
+ assert.equal(a.postAnchorSameDayWeightedDelta,-2.4);
+ assert.equal(at(a,'2026-10-20').value,13);
+ assert.equal(a.latePriorPublicationDateCount,0);
+ const next=calculateIranDailyAnchorShadow([later],{asOfDate:'2026-10-22'});
+ assert.equal(next.score,10.78);
+ assert.equal(at(next,'2026-10-21').value,10.78);
+ assert.equal(at(next,'2026-10-22').carried,true);
+});
+test('21 Oct report already stored by 06:35 is included in reality anchor, never added twice',()=>{
+ const earlier=attack('2026-10-21');
+ earlier.sourceStoredAt=Date.parse('2026-10-20T21:00:00Z'); // 06:00 KST
+ const a=calculateIranDailyAnchorShadow([earlier],{asOfDate:'2026-10-21'});
+ assert.equal(a.score,13);
+ assert.equal(a.postAnchorSameDayWeightedDelta,0);
+ assert.equal(at(a,'2026-10-20').value,16.04);
+});
+test('newly discovered older dated report flags retrospective correction review',()=>{
+ const late=attack('2026-10-20');
+ late.sourceStoredAt=Date.parse('2026-10-21T00:00:00Z');
+ const a=calculateIranDailyAnchorShadow([late],{asOfDate:'2026-10-22'});
+ assert.equal(a.latePriorPublicationDateCount,1);
+ assert.equal(a.score,13);
+});
