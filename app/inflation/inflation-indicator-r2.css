@@ -181,3 +181,26 @@
  }
  .fg-card.fg-shared-shell.inflation-target-card .cnn-panel-note strong{font-size:10px;white-space:nowrap}
 }
+
+/* R43 — R2 risk axes, scoped only to /inflation/. No chart or score styles changed. */
+.inflation-r2-axis-section{margin-top:12px;margin-bottom:16px;padding:18px;background:rgba(4,18,31,.45)}
+.inflation-r2-axis-section>header{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:12px}
+.inflation-r2-axis-section>header h2{margin:3px 0 0;color:#f1f6fb;font-size:17px;font-weight:750}
+.inflation-r2-axis-section>header>p{max-width:440px;margin:0;color:#b9cad8;font-size:12px;line-height:1.5}
+.inflation-r2-axis-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.inflation-r2-axis-item{min-width:0;padding:12px;background:rgba(26,48,66,.55)}
+.inflation-r2-axis-top{display:flex;align-items:flex-start;justify-content:space-between;gap:8px}
+.inflation-r2-axis-top h3{margin:0;color:#e6f0f7;font-size:13px;line-height:1.4;font-weight:700}
+.inflation-r2-axis-top strong{flex:0 0 auto;color:#e6f0f7;font-size:16px;font-variant-numeric:tabular-nums}
+.inflation-r2-axis-item>p{margin:7px 0 0;color:#a7bdce;font-size:11px;line-height:1.5}
+.inflation-r2-axis-note{margin:12px 0 0;color:#a7bdce;font-size:11px;line-height:1.5}
+.inflation-r2-axis-note a{color:#8bcaf5;text-decoration:underline;text-underline-offset:2px}
+@media(max-width:767px){
+ .inflation-r2-axis-section{padding:14px}
+ .inflation-r2-axis-section>header{display:block}
+ .inflation-r2-axis-section>header>p{margin-top:7px;font-size:11px}
+ .inflation-r2-axis-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .inflation-r2-axis-item{padding:10px}
+ .inflation-r2-axis-top h3{font-size:12px}
+ .inflation-r2-axis-top strong{font-size:14px}
+}
