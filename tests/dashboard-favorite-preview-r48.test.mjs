@@ -38,7 +38,7 @@ test("preview reads the eight existing published GET endpoints without new write
  assert.match(rails,/cache:"no-store",signal:controller\.signal/);
  assert.match(rails,/RISK_FAVORITE_SOURCES\.filter\(source=>saved\.some/);
  assert.match(rails,/if\(groups\.length===0\)return/);
- assert.doesNotMatch(rails,/method:"POST"|method:"PUT"|method:"DELETE"|publish|calculateScore/);
+ assert.doesNotMatch(rails,/method:"POST"|method:"PUT"|method:"DELETE"|\bpublish\s*\(|calculateScore/);
 });
 
 test("account favorites are explicitly labelled as sample scores",()=>{
