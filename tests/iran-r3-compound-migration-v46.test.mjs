@@ -114,7 +114,7 @@ test('V47 full staged R3_3 projection validates against published R3 contract wi
   const checkpoint=store.getCheckpoint('reference-flow-last-valid-r3');
   const calculated=calculateOperationalR3(store,NOW);
   assert.equal(calculated.version,'IRAN_REFERENCE_FLOW_R3');
-  assert.equal(calculated.classifierVersion,'IRAN_EVENT_RULES_R3_3');
+  assert.equal(calculated.classifierVersion,'IRAN_EVENT_RULES_R3_4');
   assert.equal(calculated.score,38.7);
   assert.equal(calculated.eventCount,10);
   assert.equal(calculated.domains.MILITARY,16);
