@@ -4,6 +4,7 @@ import {buildReferenceFlowR3,classifyR3Article,CLASSIFIER_VERSION} from '../../l
 import {validateReferenceFlowR3} from '../../lib/iran-progress/reference-public-r3.mjs';
 import {publishReferenceFlowR3} from './publication.mjs';import {client,credential} from '../pc-writer/d1.mjs';
 import {publishArrowState} from '../pc-writer/score-arrow-publication.mjs';
+import {kstCalendarDate} from '../../lib/iran-progress/chart-history.mjs';
 
 const tokens=e=>new Set((e.evidence??'').toLowerCase().replace(/iranian|iran|navy|says|another|the |of |in |after |chief|spokesman/gi,' ').match(/[a-z]{3,}/g)??[]);
 export function resolveR3Events(input){
@@ -52,7 +53,7 @@ export function calculateOperationalR3(store,now=Date.now()){
   return {...previous,status:'UPDATE_DELAYED',publishedAt:now,newsCollection:{...previous.newsCollection,status:'DISCOVERY_DELAYED'}};
  }
  const resolved=resolveR3Events(storedR3Candidates(store));
- const result=buildReferenceFlowR3(resolved.accepted,{asOfDate:new Date(now).toISOString().slice(0,10)});
+ const result=buildReferenceFlowR3(resolved.accepted,{asOfDate:kstCalendarDate(now)});
  if(!result.eventCount)throw Error('R3_NO_SUPPORTED_EVENTS');
  const partial=report.feeds.some(f=>f.status!=='COLLECTED')||['DISCOVERY_DELAYED','ANALYSIS_FAILED','ANALYSIS_PENDING'].includes(report.status);
  const {ledger,...body}=result;
