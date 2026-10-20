@@ -198,3 +198,8 @@
   line-height:1;
  }
 }
+
+/* Secondary E1-R5 research chart stays outside the four-factor diagnostic hero. */
+.earnings-r2-stored-history .earnings-r2-stored-chart{height:220px;min-width:0;position:relative}
+.earnings-r2-stored-history .earnings-r2-stored-chart .cnn-history-chart-hitbox{height:100%;width:100%}
+.earnings-r2-stored-history .earnings-r2-stored-summary{margin-top:8px;font-size:11px;color:#b9cad8}
