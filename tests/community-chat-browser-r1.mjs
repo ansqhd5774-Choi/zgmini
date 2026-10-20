@@ -28,8 +28,16 @@ try{
    localStorage.setItem("zgmini:inflation:favorites:v1",JSON.stringify(["CORE_PCE"]));
    localStorage.setItem("zgmini:debt:favorites:v1",JSON.stringify(["dsr"]));
    localStorage.setItem("zgmini:economic:favorites:v1",JSON.stringify(["growth:G010"]));
+   localStorage.setItem("zgmini:liquidity:favorites:v1",JSON.stringify(["sofrIorb","sofrIorbRv20","bankEmergency"]));
   });
-  await page.route("**/api/market-score",r=>r.fulfill({status:200,contentType:"application/json",body:JSON.stringify({status:"SUCCESS",domains:[{id:"growth",indicators:[{id:"G010",label:"제조업 신규주문"}]}]})}));
+  await page.route("**/api/market-score",r=>r.fulfill({status:200,contentType:"application/json",body:JSON.stringify({status:"SUCCESS",domains:[{id:"growth",asOfDate:"2026-10-20",indicators:[{id:"G010",label:"제조업 신규주문",score:44.3,status:"READY",observationDate:"2026-10-19"}]}]})}));
+  await page.route("**/api/liquidity-crisis-detail",r=>r.fulfill({status:200,contentType:"application/json",body:JSON.stringify({status:"READY",asOfDate:"2026-10-20",indicators:[
+   {id:"sofrIorb",status:"READY",score:52,value:0.031,unit:"bp",observationDate:"2026-10-20"},
+   {id:"sofrIorbRv20",status:"READY",score:67,value:0.001,unit:"bp",observationDate:"2026-10-17"},
+   {id:"bankEmergency",status:"MISSING",score:null,value:null,unit:"%",observationDate:null}
+  ]})}));
+  await page.route("**/api/inflation-detail",r=>r.fulfill({status:200,contentType:"application/json",body:JSON.stringify({status:"READY",asOfDate:"2026-10-20",features:{CORE_PCE:{value:2.31,score:63,observationDate:"2026-10-18"}}})}));
+  await page.route("**/api/debt-risk-detail",r=>r.fulfill({status:200,contentType:"application/json",body:JSON.stringify({status:"READY",asOfDate:"2026-10-20",indicators:[{id:"dsr",status:"READY",value:10.5,score:58,unit:"%",observationDate:"2026-10-17"}]})}));
   await page.goto(base,{waitUntil:"domcontentloaded",timeout:45000});
   const wide=width>=1650;
   const toggle=page.getByRole("button",{name:"시장 채팅 열기"});
@@ -39,6 +47,17 @@ try{
   await favorites.locator('a[href="/inflation/"]').waitFor({state:"attached"});
   await favorites.locator('a[href="/debt-risk/"]').waitFor({state:"attached"});
   await favorites.getByText("제조업 신규주문").waitFor({state:"attached"});
+  await favorites.getByLabel("즐겨찾기 6개").waitFor({state:"attached"});
+  assert.equal(await favorites.locator(".zg-risk-side-intro").count(),0,"Remove redundant saved-count line");
+  assert.equal(await favorites.locator(".zg-dashboard-favorite-count").evaluate(el=>getComputedStyle(el).backgroundColor),"rgb(245, 188, 69)","Count badge is yellow");
+  await favorites.locator('a[href="/liquidity-crisis/"]').first().getByText("현재 0.031 bp").waitFor({state:"visible",timeout:12000}).catch(async ()=>{
+   // On narrow screens the rail starts hidden; attached DOM retains the exact stored preview.
+   await favorites.locator('a[href="/liquidity-crisis/"]').first().getByText("현재 0.031 bp").waitFor({state:"attached",timeout:12000});
+  });
+  assert.equal(await favorites.getByText("현재 0.001 bp").count(),1);
+  assert.equal(await favorites.getByText("평가 44.3점").count(),1);
+  assert.equal(await favorites.locator(".zg-dashboard-favorite-link svg.lucide-chevron-right").count(),0,"Replace shortcut arrows with data");
+  assert.equal(await favorites.getByText("자료 미제공").count(),1,"Missing observation does not become zero");
   if(wide){
    assert.equal(await favorites.getAttribute("data-open"),"true");
    assert.equal(await toggle.count(),0,"Desktop chat is persistent; no second floating toggle");
