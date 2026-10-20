@@ -60,16 +60,19 @@ test('R154 chart passes published API dataset, not the old 30-theme placeholder'
  assert.match(wrapper,/<SectorSentimentChart title="테마별 공포·탐욕" draggable themePicker series=\{series\} data=\{data\}\/>/);
  assert.doesNotMatch(wrapper,/\bfetch\s*\(/);
 });
-test('R155 picker has upward resting arrow, chart overlay and apply action',()=>{
+test('R156 picker applies selections immediately without a chart-view button',()=>{
  const shared=fs.readFileSync('components/sector-sentiment-chart.tsx','utf8');
  const css=fs.readFileSync('components/sector-sentiment-chart.css','utf8');
  assert.match(shared,/themePicker=false/);
  assert.match(shared,/pickerOpen\?<ChevronDown size=\{16\} aria-hidden="true"\/>:<ChevronUp size=\{16\} aria-hidden="true"\/>/);
  assert.match(shared,/className="zg-theme-picker-panel"/);
  assert.match(shared,/className="zg-theme-picker-options"/);
- assert.match(shared,/className="zg-theme-picker-apply"/);
- assert.match(shared,/>차트 보기<\/button>/);
- assert.match(shared,/setHidden\(new Set\(draftHidden\)\);setPickerOpen\(false\)/);
+ assert.match(shared,/onClick=\{\(\)=>toggleThemePickerItem\(item.id\)\}/);
+ assert.match(shared,/const toggleThemePickerItem=\(id:string\)=>setHidden\(previous=>\{/);
+ assert.match(shared,/series.every\(item=>next.has\(item.id\)\)/);
+ assert.doesNotMatch(shared,/draftHidden|applyThemePicker|zg-theme-picker-apply|차트 보기/);
+ assert.doesNotMatch(css,/zg-theme-picker-apply/);
+ assert.match(css,/\.zg-theme-picker-options\{display:grid;flex:1;/);
  assert.match(shared,/series\.map\(item=><button key=\{item.id\}/);
  assert.match(css,/\.zg-theme-picker-panel\{position:absolute/);
  assert.match(css,/overflow-y:auto/);
