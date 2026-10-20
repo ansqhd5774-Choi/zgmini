@@ -1,7 +1,7 @@
 "use client";
 import "./inflation-mini-chart-r1.css";
 
-export type InflationMiniTrendPoint={date:string;value:number};
+export type InflationMiniTrendPoint={date:string;value:number;breakBefore?:boolean};
 
 const WIDTH=112;
 const HEIGHT=32;
@@ -27,7 +27,7 @@ function pathFor(points:InflationMiniTrendPoint[]){
  return points.map((point,index)=>{
   const x=PAD_X+(WIDTH-PAD_X*2)*(times[index]-minX)/rangeX;
   const y=PAD_Y+(HEIGHT-PAD_Y*2)*(1-(point.value-minY)/rangeY);
-  return `${index===0?"M":"L"}${x.toFixed(2)} ${y.toFixed(2)}`;
+  return `${index===0||point.breakBefore?"M":"L"}${x.toFixed(2)} ${y.toFixed(2)}`;
  }).join(" ");
 }
 
