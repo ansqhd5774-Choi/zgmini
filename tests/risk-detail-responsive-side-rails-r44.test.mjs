@@ -20,11 +20,12 @@ test("risk rail uses exactly the existing eight real deep links, with current-pa
  assert.match(rails,/href=\{card\.href\}/);
 });
 
-test("eight risk routes mount rails through header; dashboard and other domains stay unchanged",()=>{
+test("eight risk routes remain mounted through header independently of dashboard rails",()=>{
  assert.match(header,/RISK_CARDS\.some\(card=>card\.href===pathname\)/);
  assert.match(header,/showRiskSideRails&&<RiskDetailSideRails pathname=\{pathname\}\/>/);
  for(const path of paths)assert.ok(catalog.includes("href:'"+path+"'"));
- assert.match(home,/<CommunityChat enabled\/>/);
+ assert.match(home,/<DashboardSideRails accountFavorites=/);
+ assert.doesNotMatch(home,/<CommunityChat enabled\/>/);
  assert.match(chat,/if\(!enabled\)return null;/);
 });
 
