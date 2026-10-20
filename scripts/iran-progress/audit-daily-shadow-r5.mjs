@@ -44,12 +44,12 @@ export function auditR5ReadOnly(file,{now=Date.now()}={}){
   return {
    mode:'PC_LOCAL_READ_ONLY_SHADOW',
    version:shadow.version,asOfDate,
-   preliminaryScore:fresh&&shadow.latePriorPublicationDateCount===0?shadow.score:null,
+   preliminaryScore:fresh&&shadow.status==='SHADOW_UNCALIBRATED'&&shadow.latePriorPublicationDateCount===0?shadow.score:null,
    shadowScoreAwaitingReview:shadow.latePriorPublicationDateCount>0?shadow.score:null,
    shadowScoreWhenDataStale:!fresh?shadow.score:null,
    anchorScore:shadow.anchorScore,anchorDate:shadow.anchorDate,
    realityAssessmentStatus:shadow.anchorEvidenceStatus,
-   outcome:!fresh?'SHADOW_INPUT_STALE_OR_MISSING':shadow.latePriorPublicationDateCount?'LATE_PRIOR_REPORTS_REVIEW_REQUIRED':'SHADOW_UNCALIBRATED',
+   outcome:!fresh?'SHADOW_INPUT_STALE_OR_MISSING':shadow.latePriorPublicationDateCount||shadow.potentialCasualtyRevisionCount?'INDEPENDENT_INCIDENT_REVIEW_REQUIRED':'SHADOW_UNCALIBRATED',
    classifierVersion:lastValid?.classifierVersion??null,
    previousOperationalRawScore:lastValid?.score??null,
    lastPublicationStatus:publication?.status??null,
@@ -59,6 +59,7 @@ export function auditR5ReadOnly(file,{now=Date.now()}={}){
    acceptedUnique:shadow.eventCount,heldPotentialDuplicates:held.length,
    anchorAssessedAt:shadow.anchorAssessedAt,postAnchorSameDayWeightedDelta:shadow.postAnchorSameDayWeightedDelta,
    latePriorPublicationDateCount:shadow.latePriorPublicationDateCount,
+   potentialCasualtyRevisionCount:shadow.potentialCasualtyRevisionCount,
    dailyHistory:shadow.history.map(({date,value,reportedEvents,verifiedEvents,carried,adverseVeto,suppressedPositivePoints})=>({
     date,value,reportedEvents,verifiedEvents,carried,adverseVeto,suppressedPositivePoints,
    })),
