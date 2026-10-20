@@ -10,14 +10,14 @@ export function affectsPublication(file){
  return /^(worker\/|lib\/)/.test(file)||/^package(?:-lock)?\.json$/.test(file)||
   (file.startsWith('scripts/pc-writer/')&&!/(?:^|\/)(?:backfill-|backtest-|inspect-|probe-|check-|verify-|read-)/.test(file)&&!file.endsWith('.test.mjs'));
 }
-export function publicationCompatibility(root,approved,source,main){
+export function publicationCompatibility(root,approved,source,_developmentMain){
  if(!/^[a-f0-9]{40}$/.test(approved??''))return {status:'SOURCE_APPROVAL_MISSING'};
- const changes=new Set();
- for(const ref of [approved,main]){
-  const files=execFileSync('git',['diff','--name-only',ref,source,'--'],{cwd:root,encoding:'utf8',windowsHide:true}).trim().split(/\r?\n/).filter(Boolean);
-  for(const file of files.filter(affectsPublication))changes.add(file);
- }
- return changes.size?{status:'PUBLICATION_CONTRACT_CHANGED',files:[...changes].sort()}:null;
+ // Compare ONLY the actual executing source with the explicitly approved PC source.
+ // The development main is not the installed runtime: its unrelated changes must
+ // never stop an unchanged, approved writer. Any source drift remains fail-closed.
+ const files=execFileSync('git',['diff','--name-only',approved,source,'--'],{cwd:root,encoding:'utf8',windowsHide:true}).trim().split(/\r?\n/).filter(Boolean);
+ const changes=files.filter(affectsPublication).sort();
+ return changes.length?{status:'PUBLICATION_CONTRACT_CHANGED',files:changes}:null;
 }
 
 export async function recoverPublication(remote,db,base,now=Date.now()){

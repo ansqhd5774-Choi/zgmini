@@ -13,7 +13,7 @@ test('UI/content/research changes do not block; publisher/formula/dependencies d
  for(const f of ['app/dashboard-ui.tsx','app/responsive.css','docs/guide.md','scripts/pc-writer/backtest-sec.mjs'])assert.equal(affectsPublication(f),false,f);
  for(const f of ['worker/projection-runtime-r52.mjs','lib/score.mjs','scripts/pc-writer/run-local.mjs','package-lock.json'])assert.equal(affectsPublication(f),true,f);
 });
-test('real Git comparison permits UI commits and rejects a formula change',()=>{
+test('actual approved writer is not blocked by development-main drift; changed runtime still blocked',()=>{
  const dir=fs.mkdtempSync(path.join(os.tmpdir(),'publication-git-'));
  const git=(...a)=>execFileSync('git',a,{cwd:dir,encoding:'utf8',windowsHide:true}).trim();
  try{
@@ -23,7 +23,11 @@ test('real Git comparison permits UI commits and rejects a formula change',()=>{
   fs.writeFileSync(path.join(dir,'app','ui.css'),'body{}');git('add','app/ui.css');git('commit','-m','ui');const ui=git('rev-parse','HEAD');
   assert.equal(publicationCompatibility(dir,approved,ui,ui),null);
   fs.writeFileSync(path.join(dir,'worker','score.mjs'),'export const score=2;');git('add','worker/score.mjs');git('commit','-m','formula');const changed=git('rev-parse','HEAD');
-  assert.equal(publicationCompatibility(dir,approved,ui,changed).status,'PUBLICATION_CONTRACT_CHANGED');
+  assert.equal(publicationCompatibility(dir,approved,approved,changed),null,'same approved runtime must survive main drift');
+  assert.equal(publicationCompatibility(dir,approved,ui,changed),null,'UI-only runtime difference allowed');
+  assert.deepEqual(publicationCompatibility(dir,approved,changed,changed),{status:'PUBLICATION_CONTRACT_CHANGED',files:['worker/score.mjs']},'changed runtime formula blocked');
+  assert.deepEqual(publicationCompatibility(dir,approved,changed,approved),{status:'PUBLICATION_CONTRACT_CHANGED',files:['worker/score.mjs']},'repointing cached main cannot bypass approval');
+  assert.deepEqual(publicationCompatibility(dir,null,approved,approved),{status:'SOURCE_APPROVAL_MISSING'},'missing approval blocked');
  }finally{fs.rmSync(dir,{recursive:true,force:true});}
 });
 for(const scenario of ['applied','missing','running','network','conflict'])test(`pending readback ${scenario}`,async()=>{
