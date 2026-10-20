@@ -35,7 +35,7 @@ const safetyStage=(score:number,watch:string,risk:string)=>score>=75?"매우 양
 
 const configs:Record<Topic,Config>={
  inflation:{
-  endpoint:"/api/inflation-detail",title:"물가 안정성",importance:"물가가 높으면 연준이 금리를 오래 높게 유지할 가능성이 커집니다. 반대로 물가가 안정되면 금리 부담이 완화될 여지가 생깁니다.",marketImpact:"물가 안정은 성장주·장기채 등 금리에 민감한 자산에 우호적일 수 있습니다. 반대로 물가 재상승은 금리 인하 기대를 약화시킬 수 있습니다.",highMeaning:"높을수록 물가가 안정 방향에 가깝다는 뜻입니다.",lowMeaning:"낮을수록 물가 압력이 강하다는 뜻입니다.",positiveHeading:"물가 안정에 기여한 요인",negativeHeading:"아직 부담이 남은 요인",stage:score=>score>=75?"매우 안정":score>=60?"안정":score>=45?"중립":score>=25?"물가 압력":"강한 물가 압력",factorNames:{CORE_PCE:"Core PCE",CORE_CPI:"Core CPI",CORE_CPI_3M:"Core CPI 3M",MEDIAN_CPI:"Median CPI",TRIM16_CPI:"16% Trimmed Mean CPI",HEADLINE_PCE:"Headline PCE",INF_EXPECT:"5Y 기대 인플레이션",PPI_FINAL:"PPI Final Demand",PPI_CORE_FD:"Core PPI Final Demand",IMPORT_EX_FUEL:"수입물가 ex Fuel",WTI:"WTI",GASOLINE:"미국 휘발유",WAGE_YOY:"평균 시간당 임금",ECI_COST:"Employment Cost Index",UNIT_LABOR_COST:"Unit Labor Cost",INDPRO:"산업생산"},
+  endpoint:"/api/inflation-detail",title:"인플레이션 압력 안정성",importance:"기조 물가의 재가속, 기대 인플레이션, 생산비와 임금의 지속적 압력이 함께 커지는지 살펴봅니다. 단일 물가상승률만 보는 진단이 아닙니다.",marketImpact:"압력의 지속성은 연준의 금리 경로, 기업의 조달비용과 마진에 영향을 줄 수 있습니다. 하나의 점수만으로 주가 방향을 확정하지 않습니다.",highMeaning:"높을수록 관측된 인플레이션 압력 신호가 상대적으로 안정적입니다.",lowMeaning:"낮을수록 여러 영역에서 압력 신호가 강한 방향입니다.",positiveHeading:"압력을 낮추는 방향의 신호",negativeHeading:"지속·재가속 우려 요인",stage:score=>score>=75?"매우 안정":score>=60?"안정":score>=45?"중립":score>=25?"인플레이션 압력":"높은 인플레이션 압력",factorNames:{CORE_PCE:"Core PCE",CORE_CPI:"Core CPI",CORE_CPI_3M:"Core CPI 3M",MEDIAN_CPI:"Median CPI",TRIM16_CPI:"16% Trimmed Mean CPI",HEADLINE_PCE:"Headline PCE",INF_EXPECT:"5Y 기대 인플레이션",PPI_FINAL:"PPI Final Demand",PPI_CORE_FD:"Core PPI Final Demand",IMPORT_EX_FUEL:"수입물가 ex Fuel",WTI:"WTI",GASOLINE:"미국 휘발유",WAGE_YOY:"평균 시간당 임금",ECI_COST:"Employment Cost Index",UNIT_LABOR_COST:"Unit Labor Cost",INDPRO:"산업생산"},
   factorDescriptions:{
    CORE_PCE:"식품·에너지를 뺀 개인소비지출 물가",
    CORE_CPI:"식품·에너지를 뺀 소비자물가",
@@ -163,10 +163,10 @@ type VerifiedImprovement={version:string;date:string;category:"산출 방식"|"�
 // Public educational descriptions only; approved formulas, weights and internal normalization are not disclosed.
 const methodologyExplanations:Record<Topic,MethodologyExplanation>={
  inflation:{
-  inputs:"마트·외식 등에서 체감하는 물가, 기업이 받는 가격, 임금·에너지 비용, 앞으로의 물가 예상 등 16개 지표를 7개 영역으로 나눠 살펴봅니다.",
-  interpretation:"각 지표를 물가 목표나 과거의 일반적인 수준과 비교해 물가 안정에 도움이 되는 방향인지 평가하고, 그 결과를 하나의 점수로 종합합니다.",
-  marketUse:"물가 상승 속도가 느려지면 금리가 오래 높게 유지될 부담이 줄어들 수 있어요. 반대로 임금과 기업 비용이 다시 빠르게 오르면 주의해서 살펴봐야 해요.",
-  limitation:"점수 60점은 물가가 60% 올랐다는 뜻도, 앞으로 물가가 오를 확률이 60%라는 뜻도 아니에요.",
+  inputs:"근원·전체 물가, 기조 모멘텀, 기대 인플레이션, 기업 투입가격·에너지, 임금·노동비용, 산업생산 등 16개 입력지표를 7개 위험 평가 축으로 묶어 살펴봅니다.",
+  interpretation:"각 축은 관측된 압력 신호의 상대적 안정성입니다. 점수가 높을수록 해당 신호가 비교적 안정적이고 낮을수록 부담이 높은 방향이며 7개 축을 종합합니다.",
+  marketUse:"기조 물가가 재가속되거나 기대·노동비용이 장기간 높게 유지되면 금리 인하 기대와 기업 마진에 부담이 생길 수 있습니다. 반대로 압력이 누그러져도 주가 상승을 보장하지 않습니다.",
+  limitation:"R2 점수는 물가상승률이나 위험 발생 확률이 아닙니다. 12대 경제지표 물가(별도 4요소 산식)와도 다른 진단이며, 저장된 초기발표 이력을 사용합니다.",
  },
  recession:{
   inputs:"고용·실질 GDP·산업생산·실질 소비와 소득·신용여건 등 여러 경기 활동 자료를 확인합니다.",
