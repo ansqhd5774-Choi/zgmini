@@ -7,6 +7,7 @@ import path from 'node:path';
 import os from 'node:os';
 import {fileURLToPath} from 'node:url';
 import {runShadow} from './breadth-r10-v9-shadow/engine.mjs';
+import {runShadow as runV11FactorShadow} from './breadth-v11-factor-engine.mjs';
 import {buildV11PublicRecord} from './breadth-v11-public-record.mjs';
 import {V11_PUBLIC_KEY,projectV11PublicDomain} from '../../worker/breadth-v11-public-view.mjs';
 import {client,credential,read,save} from './d1.mjs';
@@ -60,7 +61,7 @@ export async function main(args=process.argv.slice(2),now=new Date()){
    lock=path.join(BASE,'local-breadth-r10-v9-publication.lock'); // same lane as existing V9
    try{lockFd=fs.openSync(lock,'wx');}catch{throw Error('V11_PUBLICATION_ALREADY_RUNNING_OR_LOCK_PRESENT')}
   }
-  const latest=runShadow({base:BASE,now,writeLocal:false,historySessions:311,includeFactorHistory:true});
+  const latest=runV11FactorShadow({base:BASE,now,writeLocal:false,historySessions:311,includeFactorHistory:true});
   const last=latest.evaluation?.perDay?.findLast(x=>x.status==='CANDIDATE_READY'&&Number.isFinite(x.ema3));
   if(!last)throw Error('V11_NO_LOCAL_VERIFIED_OBSERVATION');
   const verified=runShadow({base:BASE,now,asOf:last.date,writeLocal:false});
