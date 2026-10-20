@@ -22,7 +22,7 @@ const other=[
  ['2026-10-18','Iran Warns of More Devastating Response to Any US-Israeli Aggression','https://www.tasnimnews.ir/en/news/2026/10/18/105/iran-warning']
 ].map(([date,title,sourceUrl])=>({date,title,sourceUrl,summary:''}));
 test('V43 classifier version increments only to isolate new immutable rule decisions',()=>{
- assert.equal(CLASSIFIER_VERSION,'IRAN_EVENT_RULES_R3_3');
+ assert.equal(CLASSIFIER_VERSION,'IRAN_EVENT_RULES_R3_4');
 });
 test('V40 real L10 multi-incident liveblog no longer becomes Iranian attack',()=>{
  const x=classifyR3Article(live());
@@ -81,7 +81,7 @@ test('previous R3_2 saved receipt is re-evaluated with version-scoped immutable 
   assert.equal(report.storageVerified,true);
   assert.equal(current.classifierVersion,CLASSIFIER_VERSION);
   assert.equal(current.events.length,0);
-  const decisions=store.db.prepare("SELECT body FROM decisions WHERE id LIKE 'news-flow-r3:IRAN_EVENT_RULES_R3_3:%'").all();
+  const decisions=store.db.prepare("SELECT body FROM decisions WHERE id LIKE 'news-flow-r3:IRAN_EVENT_RULES_R3_4:%'").all();
   assert.equal(decisions.length,1);
   assert.equal(JSON.parse(decisions[0].body).reason,'COMPOUND_LIVEBLOG_REQUIRES_EVENT_REVIEW');
   assert.equal(store.db.prepare("SELECT COUNT(*) AS n FROM sources").get().n,1);

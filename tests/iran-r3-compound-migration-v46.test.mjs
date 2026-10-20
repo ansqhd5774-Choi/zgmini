@@ -53,7 +53,7 @@ test('V46 R3_2 to R3_3 rollover keeps 11 receipt bodies and immutable earlier 11
  try{
   const originals=store.db.prepare('SELECT id,body,stored_at FROM sources ORDER BY id').all();
   const oldDecisions=store.db.prepare("SELECT id,body,stored_at FROM decisions WHERE id LIKE 'news-flow-r3:IRAN_EVENT_RULES_R3_2:%' ORDER BY id").all();
-  assert.equal(legacy.length,11);assert.equal(CLASSIFIER_VERSION,'IRAN_EVENT_RULES_R3_3');
+  assert.equal(legacy.length,11);assert.equal(CLASSIFIER_VERSION,'IRAN_EVENT_RULES_R3_4');
   const report=await collectNewsR3(store,args);
   const current=storedR3Signals(store);
   assert.equal(report.storageVerified,true);
@@ -64,7 +64,7 @@ test('V46 R3_2 to R3_3 rollover keeps 11 receipt bodies and immutable earlier 11
   assert.equal(current.filter(e=>e.rule==='MILITARY_ATTACK').length,2);
   assert.deepEqual(store.db.prepare('SELECT id,body,stored_at FROM sources ORDER BY id').all(),originals);
   assert.deepEqual(store.db.prepare("SELECT id,body,stored_at FROM decisions WHERE id LIKE 'news-flow-r3:IRAN_EVENT_RULES_R3_2:%' ORDER BY id").all(),oldDecisions);
-  const decisions=store.db.prepare("SELECT id,body FROM decisions WHERE id LIKE 'news-flow-r3:IRAN_EVENT_RULES_R3_3:%'").all();
+  const decisions=store.db.prepare("SELECT id,body FROM decisions WHERE id LIKE 'news-flow-r3:IRAN_EVENT_RULES_R3_4:%'").all();
   assert.equal(decisions.length,11);
   const dropped=decisions.map(d=>JSON.parse(d.body)).find(d=>d.reason==='COMPOUND_LIVEBLOG_REQUIRES_EVENT_REVIEW');
   assert.equal(dropped.accepted,false);
@@ -114,7 +114,7 @@ test('V47 full staged R3_3 projection validates against published R3 contract wi
   const checkpoint=store.getCheckpoint('reference-flow-last-valid-r3');
   const calculated=calculateOperationalR3(store,NOW);
   assert.equal(calculated.version,'IRAN_REFERENCE_FLOW_R3');
-  assert.equal(calculated.classifierVersion,'IRAN_EVENT_RULES_R3_3');
+  assert.equal(calculated.classifierVersion,'IRAN_EVENT_RULES_R3_4');
   assert.equal(calculated.score,38.7);
   assert.equal(calculated.eventCount,10);
   assert.equal(calculated.domains.MILITARY,16);
