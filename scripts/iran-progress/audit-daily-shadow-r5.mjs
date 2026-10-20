@@ -71,6 +71,7 @@ export function auditR5ReadOnly(file,{now=Date.now()}={}){
    acceptedUnique:shadow.eventCount,heldPotentialDuplicates:held.length,
    revisedSourceUrls,sourceReceiptTimeMissing,
    anchorAssessedAt:shadow.anchorAssessedAt,postAnchorSameDayWeightedDelta:shadow.postAnchorSameDayWeightedDelta,
+   observedKstDateShiftCount:shadow.observedKstDateShiftCount,
    latePriorPublicationDateCount:shadow.latePriorPublicationDateCount,
    potentialCasualtyRevisionCount:shadow.potentialCasualtyRevisionCount,
    dailyHistory:shadow.history.map(({date,value,reportedEvents,verifiedEvents,carried,adverseVeto,suppressedPositivePoints})=>({
