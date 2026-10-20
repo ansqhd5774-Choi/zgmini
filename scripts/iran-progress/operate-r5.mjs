@@ -5,6 +5,7 @@ import {fileURLToPath} from 'node:url';
 import {randomUUID} from 'node:crypto';
 import {openStore} from './store.mjs';
 import {storedR3Candidates,resolveR3Events} from './operate-r3.mjs';
+import {R3_FEEDS} from './continuous-news-r3.mjs';
 import {CLASSIFIER_VERSION} from '../../lib/iran-progress/reference-flow-r3.mjs';
 import {kstCalendarDate} from '../../lib/iran-progress/chart-history.mjs';
 import {calculateIranDailyAnchorShadow} from '../../lib/iran-progress/daily-anchored-shadow-r5.mjs';
@@ -18,8 +19,9 @@ export function calculateOperationalR5(store,{now=Date.now()}={}){
  const checked=checkpoint?.lastDiscoverySuccessAt;
  if(!Number.isSafeInteger(checked)||checked>now||now-checked>86400000||
   checkpoint.classifierVersion!==CLASSIFIER_VERSION||
-  !Array.isArray(checkpoint.feeds)||checkpoint.feeds.length!==7||
-  checkpoint.feeds.some(f=>f.status!=='COLLECTED')||
+  !Array.isArray(checkpoint.feeds)||checkpoint.feeds.length!==R3_FEEDS.length||
+  checkpoint.feeds.some(f=>f.status!=='COLLECTED'||!R3_FEEDS.some(x=>x.id===f.id))||
+  new Set(checkpoint.feeds.map(f=>f.id)).size!==R3_FEEDS.length||
   !['UPDATED','ANALYZED_NO_CHANGE','NO_NEW_ARTICLES'].includes(checkpoint.status))
   throw Error('R5_SOURCE_COLLECTION_UNREADY');
  const articles=storedR3Candidates(store),resolution=resolveR3Events(articles);
