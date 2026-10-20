@@ -153,13 +153,26 @@ export default function DashboardSideRails({accountFavorites}:{accountFavorites:
      const example=typeof item.exampleScore==="number"&&Number.isFinite(item.exampleScore)?item.exampleScore:null;
      const value=detail?.value??(example!==null?"예시 "+example.toFixed(1)+"점":"—");
      const judgement=detail?.judgement??(example!==null?"예시 데이터":"자료 미제공");
+     const tone=detail?.tone??"missing";
+     // Keep the precise saved value unchanged. Only move its label into a separate visual slot.
+     const metricKind=value.startsWith("현재 ")?"현재":value.startsWith("평가 ")?"평가":value.startsWith("예시 ")?"예시":"현재";
+     const metricValue=value==="—"?value:value.slice(metricKind.length+1);
      const date=detail?.date?(detail.dateKind+" "+detail.date):"";
-     return <a key={item.key} href={item.href} className="zg-risk-side-link zg-dashboard-favorite-link" aria-label={item.label+" 상세 보기"} onClick={()=>setLeftOpen(false)}>
-      <Star size={15} aria-hidden="true"/>
-      <span className="zg-dashboard-favorite-info">
+     return <a key={item.key} href={item.href} className="zg-risk-side-link zg-dashboard-favorite-link" data-tone={tone} aria-label={item.label+" 상세 보기"} onClick={()=>setLeftOpen(false)}>
+      <span className="zg-dashboard-favorite-card-head">
+       <Star size={14} aria-hidden="true"/>
        <strong>{item.label}</strong>
-       <span className="zg-dashboard-favorite-reading"><b>{value}</b><small data-tone={detail?.tone??"missing"}>{judgement}</small></span>
-       <small className="zg-dashboard-favorite-context">{item.group}{date?" · "+date:""}</small>
+      </span>
+      <span className="zg-dashboard-favorite-reading">
+       <span className="zg-dashboard-favorite-metric">
+        <small>{metricKind}</small>
+        <b>{metricValue}</b>
+       </span>
+       <span className="zg-dashboard-favorite-status" data-tone={tone}><span aria-hidden="true" className="zg-dashboard-favorite-status-dot"/>{judgement}</span>
+      </span>
+      <span className="zg-dashboard-favorite-context">
+       <span>{item.group}</span>
+       {date&&<time>{date}</time>}
       </span>
      </a>;
     })}
