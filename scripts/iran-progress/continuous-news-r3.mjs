@@ -103,7 +103,7 @@ export async function collectNewsR3(store,{now=Date.now(),fetcher=fetch,maxArtic
   }catch{item.retryAt=now+3600000;item.reason='ANALYSIS_FAILED';report.failed++;}
   store.checkpoint('continuous-news-queue-r3',{items:queue});
  }
- report.pending=queue.filter(i=>!i.analyzedAt||i.classifierVersion!==CLASSIFIER_VERSION||i.contentHash!==hash(i.article)).length;
+ report.pending=queue.filter(i=>(i.article?.date??i.date)>=start&&(i.article?.date??i.date)<=end&&(!i.analyzedAt||i.classifierVersion!==CLASSIFIER_VERSION||i.contentHash!==hash(i.article))).length;
  // Classification coverage is distinct from LLM processing and event acceptance.
  const classified=queue.filter(i=>i.analyzedAt&&i.classifierVersion===CLASSIFIER_VERSION&&(i.article?.date??i.date)>=start&&(i.article?.date??i.date)<=end);
  report.classifierMethod='HEADLINE_RULES_R3_NOT_OLLAMA';
