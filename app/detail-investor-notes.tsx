@@ -10,7 +10,7 @@ const paths:Record<Topic,string> = {
 };
 const labels:Record<Topic,string> = {
   usa:"미국 CNN 공포탐욕지수", korea:"한국 공포탐욕지수", inflation:"미국 CPI·PCE와 물가 지표", recession:"미국 경기침체 지표",
-  "liquidity-crisis":"유동성 위기 지표", "credit-risk":"회사채·신용 위험 지표", "earnings-recession":"기업 실적 지표",
+  "liquidity-crisis":"유동성 위기 지표", "credit-risk":"회사채·신용 위험 지표", "earnings-recession":"실적 침체 위험 진단",
   "asset-bubble":"자산 버블 지표", "debt-risk":"부채 위험 지표", "supply-shock":"공급 충격 지표",
 };
 const guides:Record<Topic,Guide> = {
@@ -44,9 +44,9 @@ const guides:Record<Topic,Guide> = {
     {title:"고위험·우량 회사채를 구별하세요",text:"HY는 고위험 회사채, IG는 투자등급 회사채를 가리킵니다. 신용 관련 원자료와 0~100 평가점수는 다른 척도입니다. 현재값의 단위와 해당 행의 판단 근거를 함께 확인하세요."},
     {title:"신용 악화와 주가 하락은 같은 사건이 아닙니다",text:"해석 예시: 주가가 오르는 동안 신용 여건은 약해질 수 있습니다. 회사채·금융여건·채권 변동성의 관측일과 흐름을 함께 읽어 한 지표만으로 시장 방향을 단정하지 않습니다."},
   ],related:["liquidity-crisis","debt-risk","recession"]},
-  "earnings-recession":{title:"기업 실적 점수와 개별 종목 실적 구별하기",sections:[
-    {title:"시장 전체의 실적과 한 기업의 실적은 다릅니다",text:"이 페이지의 실적 지표는 개별 종목의 목표주가나 실적 발표 일정이 아닙니다. 화면의 대상 기업 범위와 회계 기간을 확인하고 종목을 판단할 때는 해당 기업의 공시를 별도로 살펴보세요."},
-    {title:"분기 실적과 현재 시장을 연결할 때",text:"분기 회계 기간과 실제 공시 시점은 다릅니다. 과거 실적이 양호해도 현재 주가가 상승한다는 뜻은 아니므로 가격 수준·물가·신용 여건을 함께 확인하세요."},
+  "earnings-recession":{title:"실적 침체 위험 방어 진단 읽기",sections:[
+    {title:"12대 기업 실적과 8대 실적 침체 위험은 별개입니다",text:"기업 실적은 12대 대표 지표에 속합니다. 이 페이지는 8대 위험 지표의 실적 침체 진단만 보여줍니다. 서로 다른 점수와 이력을 하나의 차트에 연결하지 않습니다."},
+    {title:"분기 실적과 현재 위험 평가를 구분합니다",text:"원자료의 회계 기간과 수집·평가일은 같지 않습니다. 과거 차트에는 현재 승인 산식으로 확인된 저장 점수만 표시합니다. 점수 하나로 주가 방향이나 실적 침체 확률을 확정하지 않습니다."},
   ],related:["recession","asset-bubble","credit-risk"]},
   "asset-bubble":{title:"자산 버블 안전점수를 읽는 방법",sections:[
     {title:"가격 부담과 붕괴 시점을 구별하세요",text:"밸류에이션·가격가속·투기성 자금 등은 과열을 살펴보는 자료입니다. 안전점수는 버블 붕괴 날짜나 발생 확률을 예측하는 값이 아닙니다. 원자료와 판단을 함께 확인하세요."},
@@ -68,10 +68,10 @@ export default function DetailInvestorNotes({topic}:{topic:Topic}) {
     <WebPageJsonLd name={labels[topic]} description={`${guide.title}. 현재값·관측일·관련 지표를 함께 확인하세요.`} path={paths[topic]}/>
     <DetailReadingGuide title={guide.title}
       variant={topic==="asset-bubble"||topic==="debt-risk"||topic==="supply-shock"?"beginner":topic==="inflation"||topic==="recession"||topic==="liquidity-crisis"||topic==="credit-risk"||topic==="earnings-recession"?"beginner":"default"}
-      displayTitle={topic==="inflation"?"물가 표에 나오는 말, 쉽게 알아보기":topic==="recession"?"경기침체 표에 나오는 말, 쉽게 알아보기":topic==="liquidity-crisis"?"유동성 위기 표, 쉽게 알아보기":topic==="credit-risk"?"신용 위험 표, 쉽게 알아보기":topic==="earnings-recession"?"기업 실적 지표, 쉽게 알아보기":topic==="asset-bubble"?"자산 버블 표, 쉽게 알아보기":topic==="debt-risk"?"부채 위험 표, 쉽게 알아보기":topic==="supply-shock"?"공급 충격 표, 쉽게 알아보기":undefined}
-      intro={topic==="inflation"?"CPI·PCE부터 기간·판단 색깔까지 하나씩 알려드릴게요.":topic==="recession"?"고용·GDP·경기 신호를 이해하기 쉽게 풀어볼게요.":topic==="liquidity-crisis"?"유동성 점수와 단기자금·은행 지표를 구분해 읽어보세요.":topic==="credit-risk"?"회사채 신용 스트레스와 국채 변동성을 구분해 읽어보세요.":topic==="earnings-recession"?"미국 기업 전체 실적과 개별 종목 실적, 평가일과 공식 발표일을 구분해 확인하세요.":topic==="asset-bubble"?"밸류에이션과 주가 흐름을 구분하고 평가 분기·출처 상태를 확인하세요.":topic==="debt-risk"?"부채 크기와 상환 부담, 관측 기간을 구분해 읽어보세요.":topic==="supply-shock"?"에너지 가격과 공급 제약, 물가 충격을 구분해 읽어보세요.":undefined}
+      displayTitle={topic==="inflation"?"물가 표에 나오는 말, 쉽게 알아보기":topic==="recession"?"경기침체 표에 나오는 말, 쉽게 알아보기":topic==="liquidity-crisis"?"유동성 위기 표, 쉽게 알아보기":topic==="credit-risk"?"신용 위험 표, 쉽게 알아보기":topic==="earnings-recession"?"실적 침체 위험 지표, 쉽게 알아보기":topic==="asset-bubble"?"자산 버블 표, 쉽게 알아보기":topic==="debt-risk"?"부채 위험 표, 쉽게 알아보기":topic==="supply-shock"?"공급 충격 표, 쉽게 알아보기":undefined}
+      intro={topic==="inflation"?"CPI·PCE부터 기간·판단 색깔까지 하나씩 알려드릴게요.":topic==="recession"?"고용·GDP·경기 신호를 이해하기 쉽게 풀어볼게요.":topic==="liquidity-crisis"?"유동성 점수와 단기자금·은행 지표를 구분해 읽어보세요.":topic==="credit-risk"?"회사채 신용 스트레스와 국채 변동성을 구분해 읽어보세요.":topic==="earnings-recession"?"실적 침체 위험 진단 점수와 기업 실적 종합 점수를 구분해 확인하세요.":topic==="asset-bubble"?"밸류에이션과 주가 흐름을 구분하고 평가 분기·출처 상태를 확인하세요.":topic==="debt-risk"?"부채 크기와 상환 부담, 관측 기간을 구분해 읽어보세요.":topic==="supply-shock"?"에너지 가격과 공급 제약, 물가 충격을 구분해 읽어보세요.":undefined}
       sections={[...guide.sections,
-        ...((topic==="inflation")?[]:[{title:"날짜와 현재 제공 범위 확인",text:topic==="earnings-recession"?"E1-R5 표의 평가 기준일은 저장된 실적 자료를 종합 평가한 날짜입니다. 기업 공시·BEA·BLS·CFO 자료 각각의 관측 기간이나 공식 발표일이 아닙니다. 서로 다른 주기의 자료를 결합하므로 같은 날짜에 발표된 수치로 해석하지 마세요. ‘—’는 실제 값 0이 아닙니다.":"관측일은 데이터가 설명하는 기간이며 화면 갱신일이나 공식 발표 시각과 다를 수 있습니다. 월별·분기별 자료의 월·분기 시작일 표기는 매일 갱신되는 시세가 아닙니다. ‘—’, ‘확인 필요’, ‘개발중’은 실제 값 0이 아니며, 개발중 항목은 현재 이용 가능한 관측값으로 해석하지 마세요."}]),
+        ...((topic==="inflation")?[]:[{title:"날짜와 현재 제공 범위 확인",text:topic==="earnings-recession"?"실적 침체 진단 기준일은 저장 점수를 평가한 날짜로, 네 가지 구성 원자료의 관측일이나 공식 발표일과 같지 않을 수 있습니다. 과거 차트는 동일 산식이 검증된 이력만 표시하며, ‘—’는 실제 값 0이 아닙니다.":"관측일은 데이터가 설명하는 기간이며 화면 갱신일이나 공식 발표 시각과 다를 수 있습니다. 월별·분기별 자료의 월·분기 시작일 표기는 매일 갱신되는 시세가 아닙니다. ‘—’, ‘확인 필요’, ‘개발중’은 실제 값 0이 아니며, 개발중 항목은 현재 이용 가능한 관측값으로 해석하지 마세요."}]),
         ...(!["usa","korea","inflation","recession"].includes(topic)?[
           {title:"과거 차트와 판정의 의미",text:"현재 개정 자료(Current Vintage)는 나중에 수정된 통계를 포함할 수 있습니다. 과거 차트를 당시 투자자가 알던 자료만으로 검증한 예측 성과로 해석하지 마세요. 긍정·중립·부정은 각 지표의 평가 방향이며 투자 수익률을 보장하지 않습니다."},
         ]:[]),
