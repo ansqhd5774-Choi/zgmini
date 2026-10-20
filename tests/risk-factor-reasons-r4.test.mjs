@@ -37,14 +37,18 @@ test("debt beginner card uses DSR Korean label while leaving stored factor IDs i
  assert.doesNotMatch(configs["debt-risk"],/Debt Service Ratio/);
  assert.ok(guide.includes("return [{id,score}];"));
 });
-test("shared card markup still displays descriptions without altering E1 relative-ranked factors",()=>{
+test("shared explanation card shows the same independent four earnings risk factors as the hero",()=>{
  assert.ok(guide.includes("const description=config.factorDescriptions?.[item.id]"));
  assert.ok(guide.includes('<span className="block pl-3 text-xs leading-5 text-slate-400">{description}</span>'));
- assert.ok(configs["earnings-recession"].includes("factorDescriptions:{"));
- for(let i=1;i<=13;i++)assert.ok(configs["earnings-recession"].includes("S"+i+':"'));
- assert.ok(guide.includes('const earningsStoredScore=topic==="earnings-recession"?finiteScore(payload?.storedE1?.score):null'));
+ const risk=configs["earnings-recession"];
+ assert.ok(risk.includes('factorDescriptions:{'));
+ assert.ok(risk.includes('factorIds:["epsGrowth","margin","revenueGrowth","earningsGrowthBreadth"]'));
+ for(const id of ["epsGrowth","margin","revenueGrowth","earningsGrowthBreadth"]){
+  assert.ok(risk.includes(id+':"'),id+" risk input description");
+ }
+ assert.ok(guide.includes('else if(topic==="earnings-recession")rows=payload?.riskFactorsMethodologyVersion===payload?.methodologyVersion?(payload?.riskFactors??[]):[]'));
+ assert.ok(!guide.includes("earningsStoredScore"));
  assert.ok(guide.includes('const displayedLower=topic==="earnings-recession"?earningsRelativeBottom:negative'));
- assert.ok(guide.includes("E1 저장 지표 평가입니다. 메인 진단 점수의 구성요인과는 별개입니다."));
  assert.ok(guide.includes("const positive=useMemo(()=>factors.filter(x=>x.score>=60)"));
  assert.ok(guide.includes("const negative=useMemo(()=>factors.filter(x=>x.score<45)"));
 });

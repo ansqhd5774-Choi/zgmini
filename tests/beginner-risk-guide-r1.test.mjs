@@ -47,29 +47,32 @@ test('beginner guide explains score direction and stock-market caveat',()=>{
  assert.ok(guide.includes('왜 {score===null?"이 점수":score.toFixed(1)+"점"}인가요?'));
 });
 
-test('earnings beginner guide never misattributes E1 factor rankings to separate diagnostic score',()=>{
- assert.match(guide,/const earningsStoredScore=topic==="earnings-recession"\?finiteScore\(payload\?\.storedE1\?\.score\):null/);
- assert.match(guide,/E1 저장 지표 평가/);
- assert.match(guide,/메인 진단 점수의 구성요인과는 별개입니다/);
- assert.match(guide,/E1 평가가 높은 지표/);
- assert.match(guide,/E1 상대적 하위 지표/);
+test('earnings beginner guide uses only the independent four-factor risk contract and headline score',()=>{
+ assert.match(guide,/factorIds:\["epsGrowth","margin","revenueGrowth","earningsGrowthBreadth"\]/);
+ assert.match(guide,/payload\?\.riskFactorsMethodologyVersion===payload\?\.methodologyVersion/);
+ assert.match(guide,/payload\?\.riskFactors\?\?\[\]/);
+ assert.doesNotMatch(guide,/earningsStoredScore|payload\?\.storedE1\?\.indicators/);
+ assert.match(guide,/침체 방어력이 높은 지표/);
+ assert.match(guide,/상대적으로 취약한 진단 지표/);
  assert.match(guide,/const earningsRelativeBottom=useMemo/);
  assert.match(guide,/const displayedLower=topic==="earnings-recession"\?earningsRelativeBottom:negative/);
  assert.match(guide,/const negative=useMemo\(\(\)=>factors\.filter\(x=>x\.score<45\)/);
  assert.match(guide,/<span>이 점수는 어떻게 계산하나요\?<\/span>/);
  assert.match(guide,/aria-label="이 점수는 어떻게 계산하나요\? 접기"/);
- assert.match(guide,/topic==="earnings-recession"\?<>왜 \{earningsStoredScore===null\?"이 점수":earningsStoredScore\.toFixed\(1\)\+"점"\}인가요\?<\/>/);
- assert.match(guide,/E1 저장 지표 평가입니다\. 메인 진단 점수의 구성요인과는 별개입니다/);
- assert.match(guide,/이 설명은 E1 저장 실적 점수에 관한 것이며 메인 진단과 별도입니다/);
- assert.match(guide,/else if\(topic==="earnings-recession"\)rows=payload\?\.storedE1\?\.indicators\?\?\[\]/);
- assert.match(guide,/topic==="earnings-recession"\?/);
+ assert.match(guide,/왜 \{score===null\?"이 점수":score\.toFixed\(1\)\+"점"\}인가요/);
+ assert.match(guide,/8대 위험 지표 전용 4개 진단 점수입니다/);
 });
 
-test('earnings guide has short, verified factor descriptions for all 13 E1-R5 indicators while leaving other topics unchanged',()=>{
+test('earnings beginner guide exposes exactly four risk factor labels and no 12-domain factor catalogue',()=>{
  const start=guide.indexOf('"earnings-recession":{');
  const end=guide.indexOf('};\n\ntype MethodologyExplanation',start);
- const earnings=guide.slice(start,end);
- assert.match(earnings,/factorDescriptions:\{/);
- for(let i=1;i<=13;i++)assert.ok(earnings.includes('S'+i+':"'),'S'+i);
+ const risk=guide.slice(start,end);
+ assert.match(risk,/factorIds:\["epsGrowth","margin","revenueGrowth","earningsGrowthBreadth"\]/);
+ for(const id of ["epsGrowth","margin","revenueGrowth","earningsGrowthBreadth"]){
+  assert.ok(risk.includes(id+':"'),id);
+ }
+ assert.doesNotMatch(risk,/\bS(?:[1-9]|1[0-3]):"/);
  assert.match(guide,/function FactorListItem/);
+ const economic=read('app/economic-indicators/earnings/page.tsx');
+ assert.match(economic,/EconomicDetailPage id="earnings"/);
 });

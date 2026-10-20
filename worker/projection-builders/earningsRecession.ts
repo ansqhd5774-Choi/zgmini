@@ -70,11 +70,52 @@ function verifiedUpcomingSourceRelease(x:any,nowIso:unknown){
 const R4_IDS=["epsGrowth","margin","revenueGrowth","earningsGrowthBreadth"] as const;
 const R5_IDS=["S1","S2","S3","S4","S5","S6","S7","S8","S9","S10","S11","S12","S13"] as const;
 
-export function buildProjection({inputs,snapshot,publicSnapshot,e1,nowIso}:any){
+export function buildProjection({inputs,snapshot,publicSnapshot,e1,nowIso,riskHistory}:any){
  const body=snapshot?.body??{};
  const asOf=validDate(body?.asOfDate)?body.asOfDate:nowIso.slice(0,10);
  const diagnostic=body?.diagnostics8?.earningsRecessionDefense??null;
  const mainScore=diagnostic?.status==="READY"&&finite(diagnostic?.score)?diagnostic.score:null;
+ // Risk factors are supplied by the four-input diagnostic scorer itself, not
+ // by the economic-domain E1-R5's 13 factor array.
+ const riskMethod="EARNINGS_RECESSION_DIAGNOSTIC_R1";
+ const ids=["epsGrowth","margin","revenueGrowth","earningsGrowthBreadth"];
+ const candidates=Array.isArray(diagnostic?.riskFactors)?diagnostic.riskFactors:[];
+ const riskFactorSource=diagnostic?.riskFactorsSource;
+ const riskFactorKnownSource=riskFactorSource==="E1_R4_LEGACY_COMPATIBILITY"||
+  riskFactorSource==="E1_R4_STORED_PC_REPLAY";
+ const factorsOk=mainScore!==null&&diagnostic?.methodologyVersion===riskMethod&&
+  riskFactorKnownSource&&
+  candidates.length===ids.length&&ids.every((id,index)=>
+   candidates[index]?.id===id&&candidates[index]?.status==="READY"&&
+   finite(candidates[index]?.score)&&candidates[index].score>=0&&candidates[index].score<=100);
+ // The published factor row must reproduce the separately stored headline
+ // under the existing approved diagnostic weights. Validation only; no score
+ // recomputation, normalization or weighting change.
+ const riskFactorScore=factorsOk
+  ?[0.35,0.25,0.20,0.20].reduce((sum,weight,i)=>sum+weight*candidates[i].score,0):null;
+ const scoreMatched=mainScore!==null&&factorsOk&&riskFactorScore!==null&&Math.abs(riskFactorScore-mainScore)<1e-7;
+ const riskFactors=scoreMatched?candidates.map((row:any)=>({
+  id:row.id,status:"READY",score:row.score,
+  observationDate:riskFactorSource==="E1_R4_STORED_PC_REPLAY"&&
+    validDate(row?.observationDate)&&row.observationDate===diagnostic?.financialPeriodEnd
+    ?row.observationDate:null,
+ })): [];
+ const fiscalHistoryKind="E1_R4_STORED_PERIOD_CURRENT_VINTAGE_NOT_PIT";
+ const points=Array.isArray(riskHistory?.points)?riskHistory.points:[];
+ const lastRisk=points.at(-1);
+ const isFiscalRisk=scoreMatched&&riskFactorSource==="E1_R4_STORED_PC_REPLAY"&&
+  riskHistory?.kind===fiscalHistoryKind&&
+  validDate(diagnostic?.financialPeriodEnd)&&
+  riskHistory?.financialPeriodEnd===diagnostic.financialPeriodEnd;
+ const historyMatched=mainScore!==null&&
+  (isFiscalRisk?
+   lastRisk?.date===diagnostic.financialPeriodEnd:
+   riskHistory?.kind==="MATCHED_DIAGNOSTIC_METHOD_STORED_DATES"&&lastRisk?.date===asOf)&&
+  finite(lastRisk?.score)&&Math.abs(lastRisk.score-mainScore)<1e-8&&
+  points.every((p:any)=>validDate(p?.date)&&finite(p?.score)&&p.score>=0&&p.score<=100)&&
+  points.every((p:any,i:number)=>i===0||p.date>points[i-1].date);
+ const riskTrend=historyMatched?points.map((row:any)=>({date:row.date,score:row.score})):[];
+ const riskHistoryKind=historyMatched?riskHistory.kind:null;
  const isR5=e1?.methodologyVersion==="E1-R5";
  const indicators=Array.isArray(e1?.indicators)?e1.indicators.map((x:any,index:number)=>({
   id:isR5?(x?.id??R5_IDS[index]??String(index)):(R4_IDS[index]??x?.id??String(index)),
@@ -103,6 +144,13 @@ export function buildProjection({inputs,snapshot,publicSnapshot,e1,nowIso}:any){
   missingFactors:Array.isArray(diagnostic?.missingFactors)?diagnostic.missingFactors:[],
   asOfDate:asOf,
   methodologyVersion:"EARNINGS_RECESSION_DIAGNOSTIC_R1",
+  riskFactorsMethodologyVersion:scoreMatched?riskMethod:null,
+  riskFactorsSource:scoreMatched?riskFactorSource:null,
+  riskFactors,
+  riskTrend,
+  riskHistoryKind,
+  riskFinancialPeriodEnd:isFiscalRisk?diagnostic.financialPeriodEnd:null,
+  riskHistoryMode:isFiscalRisk?"CURRENT_VINTAGE_NOT_PIT":null,
   storedE1:{
    status:e1?.status??"PARTIAL",
    score:finite(e1?.score)?e1.score:null,

@@ -35,7 +35,7 @@ import { toast } from "sonner";
 import CountryFearGreed from "./country-fear-greed";
 import CorePceRow from "./core-pce-row";
 import SiteHeader from "@/components/site-header";
-import CommunityChat from "@/components/community-chat";
+import DashboardSideRails from "@/components/dashboard-side-rails";
 
 type Direction = "up" | "down" | "flat";
 type Signal = "positive" | "negative" | "neutral";
@@ -976,6 +976,7 @@ export default function Home() {
                 </Sheet>
               ) : null}/>
 
+      {view==="dashboard"&&<DashboardSideRails accountFavorites={favoriteItems.map(({kind,item})=>({key:sentimentKey(kind,item.name),label:item.name,group:kind==="sector"?"섹터 · 예시":"테마 · 예시",href:kind==="sector"?"/sector-fear-greed/":"/theme-fear-greed/",exampleScore:item.score}))}/>}
       <div className="zg-container">
         {view!=='dashboard'&&<div className="zg-data-notice zg-data-notice-compact" role="status"><Info size={16}/><span>{marketDataLoading?'경제지표를 불러오고 있습니다.':marketData?.status==='live'?'공식 자료와 ZGmini 자체 계산값을 표시합니다.':marketDataError?'데이터 연결 지연 · 마지막 정상 수신값을 표시합니다.':'일부 지표 갱신 지연 · 마지막 정상 수신값을 유지합니다.'}</span></div>}
         {(view==='dashboard'||view==='countries')&&<CountryFearGreed/>}
@@ -1049,7 +1050,6 @@ export default function Home() {
       </div>
       {view==='dashboard'&&<footer className="zg-footer" style={{display:'flex',justifyContent:'center',alignItems:'center',flexWrap:'wrap',gap:16}}><a href="/about/">ZGMINI 소개</a><a href="https://twelve.tools" target="_blank" rel="noopener"><img src="https://twelve.tools/badge0-white.svg" alt="Twelve Tools 등록 배지" width={148} height={40}/></a></footer>}
       {view!=='dashboard'&&<footer className="zg-footer">ZGmini · 공식 자료와 독자 모델을 연결합니다. 투자 권유가 아니며, 예시 데이터는 별도로 표시합니다.</footer>}
-      {view==="dashboard"&&<CommunityChat enabled/>}
       <Toaster richColors position="bottom-right"/>
     </main>
   );

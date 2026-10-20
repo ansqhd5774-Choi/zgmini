@@ -2,6 +2,8 @@
 
 import {useEffect,useRef,useState,type ReactNode} from "react";
 import CollectionHealthIndicator from "@/components/collection-health-indicator";
+import RiskDetailSideRails from "@/components/risk-detail-side-rails";
+import {RISK_CARDS} from "@/components/market-explorer-catalog";
 import "./site-header.css";
 
 type HeaderView="dashboard"|"scenarios";
@@ -28,7 +30,8 @@ export default function SiteHeader({activeView=null,onSelectView,accountTools}:{
   observer.observe(header);
   return()=>{observer.disconnect();document.documentElement.style.removeProperty("--zg-site-header-height");};
  },[]);
- return <header ref={headerRef} className="zg-header zg-site-header text-white">
+ const showRiskSideRails=RISK_CARDS.some(card=>card.href===pathname);
+ return <><header ref={headerRef} className="zg-header zg-site-header text-white">
   <div className="zg-header-inner">
    {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
    <a href="/" aria-label="ZGmini 대시보드로 이동" className="flex min-w-0 items-center gap-3 rounded-xl focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white">
@@ -52,5 +55,5 @@ export default function SiteHeader({activeView=null,onSelectView,accountTools}:{
     <div className="zg-account-tools">{accountTools}</div>
    </div>
   </div>
- </header>;
+ </header>{showRiskSideRails&&<RiskDetailSideRails pathname={pathname}/>}</>;
 }

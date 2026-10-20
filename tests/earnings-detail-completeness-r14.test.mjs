@@ -21,7 +21,8 @@ test("R14 detail page uses the same compact intro treatment as four completed pe
  });
  assert.equal(new Set(classes).size,1,"earnings intro drifted from the four peer pages");
  assert.match(page,/SearchIntentIntro topic="earnings-recession"/);
- assert.match(page,/RiskDetailBeginnerLayout><EarningsRecessionPanel\/><BeginnerRiskGuide topic="earnings-recession"/);
+ assert.match(page,/RiskDetailBeginnerLayout><EarningsRiskOnlyPanel\/><BeginnerRiskGuide topic="earnings-recession"/);
+ assert.doesNotMatch(page,/EarningsRecessionPanel|earnings-recession-panel/);
  assert.match(css,/--fg-title-size:20px/);
  assert.match(css,/--fg-title-size:16px/);
 });
@@ -51,11 +52,13 @@ test("R14 four beginner questions have real emphasis spans and official source l
   assert.ok(body.includes(highlight),title+": highlight silently dropped");
   assert.ok(body.includes(bold),title+": bold silently dropped");
  }
- for(const domain of ["www.sec.gov/edgar/search/","www.bea.gov/data/income-saving/corporate-profits","www.bls.gov/ppi/"]){
+ for(const domain of ["www.sec.gov/edgar/search/"]){
   assert.ok(page.includes(domain),"Missing official source "+domain);
  }
- assert.match(page,/사후 재구성한 결과예요/);
- assert.match(page,/당시 투자자가 알 수 있었던 신호로 해석하면 안 돼요/);
+ assert.match(page,/서로 다른 산식을 사용하므로 혼합하면 안 됩니다/);
+ assert.match(page,/동일 산식과 저장 출처가 검증된 진단 점수만 사용합니다/);
+ assert.match(page,/economic-indicators\/earnings/);
+ assert.doesNotMatch(page,/E1-R5 과거 차트|사후 재구성한 결과/);
  assert.doesNotMatch(page,/현재 실적 안전점수와 관측일/);
 });
 
@@ -84,11 +87,11 @@ test("R48 earnings lower investor notes render with the same beginner cards as i
  const inflation=read("app/inflation/page.tsx");
  const css=read("app/inflation/inflation-beginner-reading-r1.css");
  assert.match(notes,/topic==="inflation"\|\|topic==="recession"\|\|topic==="liquidity-crisis"\|\|topic==="credit-risk"\|\|topic==="earnings-recession"\?"beginner":"default"/);
- assert.match(notes,/topic==="earnings-recession"\?"기업 실적 지표, 쉽게 알아보기"/);
- assert.match(notes,/topic==="earnings-recession"\?"미국 기업 전체 실적과 개별 종목 실적, 평가일과 공식 발표일을 구분해 확인하세요\."/);
- assert.match(notes,/"earnings-recession":\{title:"기업 실적 점수와 개별 종목 실적 구별하기"/);
- for(const title of ["시장 전체의 실적과 한 기업의 실적은 다릅니다","분기 실적과 현재 시장을 연결할 때","날짜와 현재 제공 범위 확인","과거 차트와 판정의 의미"])assert.ok(notes.includes(title),title);
- for(const target of ['related:["recession","asset-bubble","credit-risk"]',"WebPageJsonLd", "E1-R5 표의 평가 기준일"])assert.ok(notes.includes(target),target);
+ assert.match(notes,/topic==="earnings-recession"\?"실적 침체 위험 지표, 쉽게 알아보기"/);
+ assert.match(notes,/topic==="earnings-recession"\?"실적 침체 위험 진단 점수와 기업 실적 종합 점수를 구분해 확인하세요\."/);
+ assert.match(notes,/"earnings-recession":\{title:"실적 침체 위험 방어 진단 읽기"/);
+ for(const title of ["12대 기업 실적과 8대 실적 침체 위험은 별개입니다","분기 실적과 현재 위험 평가를 구분합니다","날짜와 현재 제공 범위 확인","과거 차트와 판정의 의미"])assert.ok(notes.includes(title),title);
+ for(const target of ['related:["recession","asset-bubble","credit-risk"]',"WebPageJsonLd", "과거 차트는 동일 산식이 검증된 이력만 표시"])assert.ok(notes.includes(target),target);
  assert.match(earnings,/import "\.\.\/inflation\/inflation-beginner-reading-r1\.css"/);
  assert.match(earnings,/<DetailInvestorNotes topic="earnings-recession"\/>/);
  assert.match(inflation,/<DetailInvestorNotes topic="inflation"\/>/);

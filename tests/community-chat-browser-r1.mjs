@@ -24,12 +24,87 @@ try{
   await page.route("**/api/community/reports",r=>r.fulfill({status:200,contentType:"application/json",body:'{"accepted":true}'}));
   await page.route("https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit",route=>route.fulfill({status:200,contentType:"application/javascript",body:"window.turnstile={render:(el,o)=>{el.textContent='Turnstile test';window.__zgTurnstileRenderCount=(window.__zgTurnstileRenderCount||0)+1;window.__zgTurnstileCallbacks=o;return 'test-id';},remove:()=>{},reset:()=>{window.__zgTurnstileResets=(window.__zgTurnstileResets||0)+1;}}"}));
   page.on("pageerror",error=>errors.push(width+": "+error.message));
+  await page.addInitScript(()=>{
+   localStorage.setItem("zgmini:inflation:favorites:v1",JSON.stringify(["CORE_PCE"]));
+   localStorage.setItem("zgmini:debt:favorites:v1",JSON.stringify(["dsr"]));
+   localStorage.setItem("zgmini:economic:favorites:v1",JSON.stringify(["growth:G010"]));
+   localStorage.setItem("zgmini:liquidity:favorites:v1",JSON.stringify(["sofrIorb","sofrIorbRv20","bankEmergency"]));
+  });
+  await page.route("**/api/market-score",r=>r.fulfill({status:200,contentType:"application/json",body:JSON.stringify({status:"SUCCESS",domains:[{id:"growth",asOfDate:"2026-10-20",indicators:[{id:"G010",label:"제조업 신규주문",score:44.3,status:"READY",observationDate:"2026-10-19"}]}]})}));
+  await page.route("**/api/liquidity-crisis-detail",r=>r.fulfill({status:200,contentType:"application/json",body:JSON.stringify({status:"READY",asOfDate:"2026-10-20",indicators:[
+   {id:"sofrIorb",status:"READY",score:52,value:0.031,unit:"bp",observationDate:"2026-10-20"},
+   {id:"sofrIorbRv20",status:"READY",score:67,value:0.001,unit:"bp",observationDate:"2026-10-17"},
+   {id:"bankEmergency",status:"MISSING",score:null,value:null,unit:"%",observationDate:null}
+  ]})}));
+  await page.route("**/api/inflation-detail",r=>r.fulfill({status:200,contentType:"application/json",body:JSON.stringify({status:"READY",asOfDate:"2026-10-20",features:{CORE_PCE:{value:2.31,score:63,observationDate:"2026-10-18"}}})}));
+  await page.route("**/api/debt-risk-detail",r=>r.fulfill({status:200,contentType:"application/json",body:JSON.stringify({status:"READY",asOfDate:"2026-10-20",indicators:[{id:"dsr",status:"READY",value:10.5,score:58,unit:"%",observationDate:"2026-10-17"}]})}));
   await page.goto(base,{waitUntil:"domcontentloaded",timeout:45000});
+  const wide=width>=1650;
   const toggle=page.getByRole("button",{name:"시장 채팅 열기"});
-  await toggle.waitFor({state:"visible",timeout:45000});
   await page.waitForFunction(()=>Boolean(sessionStorage.getItem("zgmini-community-chat-nick-r1")),null,{timeout:30000}).catch(error=>{throw new Error("React client hydration not confirmed; browser errors: "+errors.join(" | ")+"; "+error.message);});
-  assert.equal(await page.locator("#zg-community-chat-panel").getAttribute("aria-hidden"),"true");
-  await toggle.click();
+  await page.waitForFunction(wide=>document.querySelector(".zg-dashboard-side-rails-root")?.getAttribute("data-wide")===(wide?"true":"false"),wide,{timeout:15000});
+  const favorites=page.locator("#zg-dashboard-favorites-panel");
+  await favorites.locator('a[href="/inflation/"]').waitFor({state:"attached"});
+  await favorites.locator('a[href="/debt-risk/"]').waitFor({state:"attached"});
+  await favorites.getByText("제조업 신규주문").waitFor({state:"attached"});
+  await favorites.getByLabel("즐겨찾기 6개").waitFor({state:"attached"});
+  assert.equal(await favorites.locator(".zg-risk-side-intro").count(),0,"Remove redundant saved-count line");
+  assert.equal(await favorites.locator(".zg-dashboard-favorite-count").evaluate(el=>getComputedStyle(el).backgroundColor),"rgb(245, 188, 69)","Count badge is yellow");
+  await favorites.locator('a[href="/liquidity-crisis/"]').first().getByText("0.031 bp").waitFor({state:"visible",timeout:12000}).catch(async ()=>{
+   // On narrow screens the rail starts hidden; attached DOM retains the exact stored preview.
+   await favorites.locator('a[href="/liquidity-crisis/"]').first().getByText("0.031 bp").waitFor({state:"attached",timeout:12000});
+  });
+  assert.equal(await favorites.getByText("0.001 bp").count(),1);
+  assert.equal(await favorites.getByText("44.3점").count(),1);
+  assert.equal(await favorites.locator(".zg-dashboard-favorite-link svg.lucide-chevron-right").count(),0,"Replace shortcut arrows with data");
+  assert.equal(await favorites.getByText("자료 미제공").count(),1,"Missing observation does not become zero");
+  assert.equal(await favorites.locator(".zg-dashboard-favorite-card-head").count(),6,"Every favorite has its own titled card");
+  assert.equal(await favorites.locator(".zg-dashboard-favorite-status").count(),6,"Every card has a distinct status slot");
+  assert.equal(await favorites.getByText("관측 26.10.20").count(),1,"Actual observation date is shown");
+  assert.equal(await favorites.locator('a[href="/liquidity-crisis/"]').first().getByText("중립").count(),1);
+  assert.equal(await favorites.locator('a[href="/liquidity-crisis/"]').first().locator(".zg-dashboard-favorite-metric small").textContent(),"현재");
+
+  if(wide){
+   assert.equal(await favorites.getAttribute("data-open"),"true");
+   assert.equal(await toggle.count(),0,"Desktop chat is persistent; no second floating toggle");
+   const card=favorites.locator(".zg-dashboard-favorite-link").first();
+   const visible=await card.evaluate(el=>{
+    const rect=el.getBoundingClientRect(),metric=el.querySelector(".zg-dashboard-favorite-reading").getBoundingClientRect();
+    return {cardWidth:Math.round(rect.width),metricInside:metric.right<=rect.right+1};
+   });
+   assert(visible.cardWidth>=180&&visible.cardWidth<=240&&visible.metricInside,"Desktop mini card is readable within sidebar");
+
+   assert.equal(await page.locator(".zg-container").evaluate(el=>getComputedStyle(el).width!=="0px"),true);
+  }else{
+   const star=page.getByRole("button",{name:"즐겨찾기 열기"});
+   await star.click();
+   await favorites.waitFor({state:"visible"});
+   assert.equal(await favorites.getAttribute("data-open"),"true");
+   // Wait until the slide transition has reached its final on-screen position.
+   await page.waitForFunction(()=>{
+    const rail=document.querySelector("#zg-dashboard-favorites-panel");
+    if(!rail)return false;
+    const box=rail.getBoundingClientRect();
+    return box.left>=-0.5&&box.right<=window.innerWidth+0.5;
+   },null,{timeout:5000});
+   const firstCard=favorites.locator(".zg-dashboard-favorite-link").first();
+   const mobileLayout=await firstCard.evaluate(el=>{
+    const bounds=el.getBoundingClientRect(),head=el.querySelector(".zg-dashboard-favorite-card-head").getBoundingClientRect();
+    const metric=el.querySelector(".zg-dashboard-favorite-reading").getBoundingClientRect();
+    const foot=el.querySelector(".zg-dashboard-favorite-context").getBoundingClientRect();
+    return {inside:bounds.left>=0&&bounds.right<=window.innerWidth,
+     order:head.top<metric.top&&metric.top<foot.top,
+     metricFits:metric.right<=bounds.right+1};
+   });
+   assert.deepEqual(mobileLayout,{inside:true,order:true,metricFits:true},"Mobile favorite card visual hierarchy fits viewport");
+
+   await page.getByRole("button",{name:"즐겨찾기 닫기"}).first().click();
+   assert.equal(await favorites.getAttribute("data-open"),"false");
+   await toggle.waitFor({state:"visible"});
+   assert.equal(await page.locator("#zg-community-chat-panel").getAttribute("aria-hidden"),"true");
+   await toggle.click();
+   assert.equal(await favorites.getAttribute("data-open"),"false","Only one narrow overlay is open");
+  }
   const panel=page.locator("#zg-community-chat-panel");
   await panel.waitFor({state:"visible",timeout:15000});
   assert.equal(await panel.getAttribute("aria-hidden"),"false");
@@ -63,21 +138,32 @@ try{
   await page.evaluate(()=>window.__zgTurnstileCallbacks.callback("test-browser-token"));
   await page.waitForFunction(()=>document.querySelector(".zg-community-captcha")?.classList.contains("is-verified"),null,{timeout:10000});
   const renderCountBeforeClose=await page.evaluate(()=>window.__zgTurnstileRenderCount);
-  await page.keyboard.press("Escape");
-  assert.equal(await panel.getAttribute("aria-hidden"),"true");
-  await page.getByRole("button",{name:"시장 채팅 열기"}).click();
-  await page.waitForFunction(()=>!document.querySelector(".zg-community-captcha")?.classList.contains("is-verified"),null,{timeout:10000});
-  assert((await captcha.boundingBox())?.height>=67,"Reopened chat must not retain stale verification");
-  await page.waitForFunction(before=>window.__zgTurnstileRenderCount>before,renderCountBeforeClose,{timeout:10000});
-  await page.evaluate(()=>window.__zgTurnstileCallbacks.callback("test-browser-token"));
+  if(!wide){
+   await page.keyboard.press("Escape");
+   assert.equal(await panel.getAttribute("aria-hidden"),"true");
+   await page.getByRole("button",{name:"시장 채팅 열기"}).click();
+  }else{
+   assert.equal(await panel.getAttribute("aria-hidden"),"false");
+  }
   await page.waitForFunction(()=>document.querySelector(".zg-community-captcha")?.classList.contains("is-verified"),null,{timeout:10000});
+  assert.equal(await page.evaluate(()=>window.__zgTurnstileRenderCount),renderCountBeforeClose,"Reopening must reuse a fresh unused token");
+  // Full-page navigation must retain the unused verification within the same tab.
+  await page.evaluate(()=>sessionStorage.removeItem("zgmini-community-chat-nick-r1"));
+  await page.reload({waitUntil:"domcontentloaded"});
+  await page.waitForFunction(()=>Boolean(sessionStorage.getItem("zgmini-community-chat-nick-r1")),null,{timeout:15000});
+  if(!wide)await page.getByRole("button",{name:"시장 채팅 열기"}).click();
+  else await page.waitForFunction(()=>document.querySelector(".zg-dashboard-side-rails-root")?.getAttribute("data-wide")==="true",null,{timeout:15000});
+  await page.waitForFunction(()=>document.querySelector(".zg-community-captcha")?.classList.contains("is-verified"),null,{timeout:10000});
+  assert.equal(await page.evaluate(()=>window.__zgTurnstileRenderCount??0),0,"Navigation must not issue another verification");
+  assert.equal(await page.evaluate(()=>Boolean(sessionStorage.getItem("zgmini-community-chat-turnstile-r2"))),true,"A verified unused challenge is preserved for navigation");
   await page.locator("#zg-community-input").fill("오늘 시장 전망이 궁금해요");
   await page.getByRole("button",{name:"메시지 전송"}).waitFor({state:"visible"});
   await page.waitForFunction(()=>!document.querySelector('button[aria-label="메시지 전송"]')?.hasAttribute("disabled"),{timeout:15000});
   await page.getByRole("button",{name:"메시지 전송"}).click();
   await page.getByText("오늘 시장 전망이 궁금해요").waitFor({state:"visible",timeout:10000});
-  await page.waitForFunction(()=>window.__zgTurnstileResets>0&&!document.querySelector(".zg-community-captcha")?.classList.contains("is-verified"),null,{timeout:10000});
-  assert((await captcha.boundingBox())?.height>=67,"Sending must reset token and show challenge for the next message");
+  await page.waitForFunction(()=>Boolean(window.__zgTurnstileRenderCount)&&!document.querySelector(".zg-community-captcha")?.classList.contains("is-verified"),null,{timeout:10000});
+  assert((await captcha.boundingBox())?.height>=67,"Sending must consume token and show a new challenge for the next message");
+  assert.equal(await page.evaluate(()=>sessionStorage.getItem("zgmini-community-chat-turnstile-r2")),null,"A used Turnstile token cannot survive another navigation");
   const messageItem=page.locator(".zg-community-item").first();
   const messageLine=messageItem.locator(".zg-community-copy");
   const lineText=await messageLine.textContent();
@@ -115,10 +201,14 @@ try{
   const reportedIcon=messageItem.getByRole("button",{name:"신고 완료"});
   await reportedIcon.waitFor({state:"attached",timeout:10000});
   assert.equal(await reportedIcon.isDisabled(),true);
-  await page.keyboard.press("Escape");
-  assert.equal(await panel.getAttribute("aria-hidden"),"true");
-  if(width!==390) assert.equal(await panel.evaluate(el=>getComputedStyle(el).animationName),"zg-community-exit");
-  assert.equal(await page.getByRole("button",{name:"시장 채팅 열기"}).getAttribute("aria-expanded"),"false");
+  if(!wide){
+   await page.keyboard.press("Escape");
+   assert.equal(await panel.getAttribute("aria-hidden"),"true");
+   if(width!==390) assert.equal(await panel.evaluate(el=>getComputedStyle(el).animationName),"zg-community-exit");
+   assert.equal(await page.getByRole("button",{name:"시장 채팅 열기"}).getAttribute("aria-expanded"),"false");
+  }else{
+   assert.equal(await panel.getAttribute("aria-hidden"),"false","Desktop chat stays visible");
+  }
   await page.close();
   console.log("PASS: chat browser width="+width+" with mocked API, captcha, report and Escape");
  }

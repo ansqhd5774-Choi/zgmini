@@ -89,7 +89,7 @@ test('theme screen withdraws previous ETF scores immediately when stored feed fa
 });
 
 test('shared header provides the agreed menu order on both dashboard and detail pages',()=>{
- const Header=load('../components/site-header.tsx',{'@/components/collection-health-indicator':{default:()=>null}}).default;
+ const Header=load('../components/site-header.tsx',{'@/components/collection-health-indicator':{default:()=>null},'@/components/risk-detail-side-rails':{default:()=>null},'@/components/market-explorer-catalog':{RISK_CARDS:catalog.RISK_CARDS??[]}}).default;
  for(const props of [{},{activeView:'dashboard',onSelectView:()=>{}}]){
   const html=renderToStaticMarkup(React.createElement(Header,props));
   const nav=html.split('<nav aria-label="주 메뉴">')[1].split('</nav>')[0];

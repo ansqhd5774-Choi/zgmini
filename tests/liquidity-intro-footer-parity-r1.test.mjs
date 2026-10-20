@@ -20,6 +20,8 @@ test('replacement retains a return CTA, four questions and official sources in t
  for(const id of ['PCEPI','INDPRO','PAYEMS'])assert.ok(page.includes('https://fred.stlouisfed.org/series/'+id));
  assert.equal((page.match(/메인 대시보드로 돌아가기/g)||[]).length,0);assert.equal((panel.match(/메인 대시보드로 돌아가기/g)||[]).length,1);
  for(const topic of ['inflation','recession'])assert.match(read(`app/${topic}/${topic}-panel.tsx`),/className="cnn-return-cta"/);
+ assert.match(read("app/inflation/page.tsx"),/displayTitle="인플레이션 위험 점수, 이렇게 읽으세요"/);
+ assert.match(read("app/recession/page.tsx"),/displayTitle="미국 경기침체 점수, 처음이라면 이렇게 보세요"/);
 });
 test('legacy liquidity input component and old saved API remain preserved separately',()=>{
  assert.match(legacy,/useStoredIndex<Payload>\('\/api\/liquidity-crisis-detail'\)/);assert.match(legacy,/const order=\["sofrIorb","obfrIorb","repoGap"/);assert.match(legacy,/const dev=\[/);assert.match(legacy,/comparisonItems=\{scoreComparisonItems\}/);

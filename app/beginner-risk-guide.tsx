@@ -39,7 +39,7 @@ const configs:Record<Topic,Config>={
   endpoint:"/api/stagflation-risk-detail",title:"스태그플레이션 안전",importance:"고물가와 성장·고용 둔화가 겹치면 가계 구매력과 기업 수익성에 동시에 부담을 줄 수 있습니다.",marketImpact:"물가 압력과 실질소비·생산·고용을 함께 확인하세요. 성장률이 양수여도 증가세는 둔화될 수 있습니다.",highMeaning:"높을수록 고물가와 둔화의 동시 위험이 낮은 방향입니다.",lowMeaning:"낮을수록 동시 위험이 큰 방향입니다.",positiveHeading:"부담이 상대적으로 적은 영역",negativeHeading:"부담이 큰 영역",stage:score=>score>=75?"안정":score>=60?"양호":score>=40?"중립":score>=25?"주의":"위험",factorNames:{inflation:"물가 압력",realEconomy:"실물 둔화",labor:"고용 둔화",expectationsEnergy:"기대·에너지"},factorDescriptions:{inflation:"전체·근원 PCE의 수준과 최근 상승 속도",realEconomy:"생산·실질소비·소득의 증가세",labor:"고용 증가 속도와 감속",expectationsEnergy:"기대물가와 에너지 비용 압력"}
  },
  inflation:{
-  endpoint:"/api/inflation-detail",title:"물가 안정성",importance:"물가가 높으면 연준이 금리를 오래 높게 유지할 가능성이 커집니다. 반대로 물가가 안정되면 금리 부담이 완화될 여지가 생깁니다.",marketImpact:"물가 안정은 성장주·장기채 등 금리에 민감한 자산에 우호적일 수 있습니다. 반대로 물가 재상승은 금리 인하 기대를 약화시킬 수 있습니다.",highMeaning:"높을수록 물가가 안정 방향에 가깝다는 뜻입니다.",lowMeaning:"낮을수록 물가 압력이 강하다는 뜻입니다.",positiveHeading:"물가 안정에 기여한 요인",negativeHeading:"아직 부담이 남은 요인",stage:score=>score>=75?"매우 안정":score>=60?"안정":score>=45?"중립":score>=25?"물가 압력":"강한 물가 압력",factorNames:{CORE_PCE:"Core PCE",CORE_CPI:"Core CPI",CORE_CPI_3M:"Core CPI 3M",MEDIAN_CPI:"Median CPI",TRIM16_CPI:"16% Trimmed Mean CPI",HEADLINE_PCE:"Headline PCE",INF_EXPECT:"5Y 기대 인플레이션",PPI_FINAL:"PPI Final Demand",PPI_CORE_FD:"Core PPI Final Demand",IMPORT_EX_FUEL:"수입물가 ex Fuel",WTI:"WTI",GASOLINE:"미국 휘발유",WAGE_YOY:"평균 시간당 임금",ECI_COST:"Employment Cost Index",UNIT_LABOR_COST:"Unit Labor Cost",INDPRO:"산업생산"},
+  endpoint:"/api/inflation-detail",title:"인플레이션 압력 안정성",importance:"기조 물가의 재가속, 기대 인플레이션, 생산비와 임금의 지속적 압력이 함께 커지는지 살펴봅니다. 단일 물가상승률만 보는 진단이 아닙니다.",marketImpact:"압력의 지속성은 연준의 금리 경로, 기업의 조달비용과 마진에 영향을 줄 수 있습니다. 하나의 점수만으로 주가 방향을 확정하지 않습니다.",highMeaning:"높을수록 관측된 인플레이션 압력 신호가 상대적으로 안정적입니다.",lowMeaning:"낮을수록 여러 영역에서 압력 신호가 강한 방향입니다.",positiveHeading:"압력을 낮추는 방향의 신호",negativeHeading:"지속·재가속 우려 요인",stage:score=>score>=75?"매우 안정":score>=60?"안정":score>=45?"중립":score>=25?"인플레이션 압력":"높은 인플레이션 압력",factorNames:{CORE_PCE:"Core PCE",CORE_CPI:"Core CPI",CORE_CPI_3M:"Core CPI 3M",MEDIAN_CPI:"Median CPI",TRIM16_CPI:"16% Trimmed Mean CPI",HEADLINE_PCE:"Headline PCE",INF_EXPECT:"5Y 기대 인플레이션",PPI_FINAL:"PPI Final Demand",PPI_CORE_FD:"Core PPI Final Demand",IMPORT_EX_FUEL:"수입물가 ex Fuel",WTI:"WTI",GASOLINE:"미국 휘발유",WAGE_YOY:"평균 시간당 임금",ECI_COST:"Employment Cost Index",UNIT_LABOR_COST:"Unit Labor Cost",INDPRO:"산업생산"},
   factorDescriptions:{
    CORE_PCE:"식품·에너지를 뺀 개인소비지출 물가",
    CORE_CPI:"식품·에너지를 뺀 소비자물가",
@@ -139,25 +139,12 @@ const configs:Record<Topic,Config>={
   }
  },
  "earnings-recession":{
-  endpoint:"/api/earnings-recession-detail",title:"기업 실적 방어",importance:"주가는 장기적으로 기업이 벌어들이는 이익과 현금흐름의 영향을 크게 받습니다. 매출·마진·이익 개선이 시장 전반으로 퍼지는지 함께 봐야 합니다.",marketImpact:"실적 방어가 약해지면 주가 밸류에이션을 지지하기 어려워질 수 있습니다. 반대로 이익과 매출 개선이 넓게 확산되면 주식시장의 펀더멘털 기반이 강해집니다.",highMeaning:"높을수록 미국 기업 실적이 양호한 방향입니다.",lowMeaning:"낮을수록 실적 침체 위험이 강한 방향입니다.",positiveHeading:"E1 평가가 높은 지표",negativeHeading:"E1 상대적 하위 지표",stage:score=>safetyStage(score,"실적 주의","실적 침체 위험"),factorDescriptions:{
+  endpoint:"/api/earnings-recession-detail",title:"기업 실적 방어",importance:"주가는 장기적으로 기업이 벌어들이는 이익과 현금흐름의 영향을 크게 받습니다. 매출·마진·이익 개선이 시장 전반으로 퍼지는지 함께 봐야 합니다.",marketImpact:"실적 방어가 약해지면 주가 밸류에이션을 지지하기 어려워질 수 있습니다. 반대로 이익과 매출 개선이 넓게 확산되면 주식시장의 펀더멘털 기반이 강해집니다.",highMeaning:"높을수록 미국 기업 실적이 양호한 방향입니다.",lowMeaning:"낮을수록 실적 침체 위험이 강한 방향입니다.",positiveHeading:"침체 방어력이 높은 지표",negativeHeading:"상대적으로 취약한 진단 지표",factorIds:["epsGrowth","margin","revenueGrowth","earningsGrowthBreadth"],stage:score=>safetyStage(score,"실적 주의","실적 침체 위험"),factorDescriptions:{
     epsGrowth:"기업별 주당순이익 증가율이 전년보다 강해지는지 확인합니다.",
     margin:"영업이익률이 유지되거나 개선되는지 살펴봅니다.",
     revenueGrowth:"매출이 전년 동기보다 얼마나 성장했는지 확인합니다.",
     earningsGrowthBreadth:"EPS 개선이 소수 기업에 그치지 않고 확산되는지 봅니다.",
-    S1:"기업별 주당순이익의 전년 동기 성장 강도를 봅니다.",
-    S2:"기업 매출이 전년 같은 기간보다 늘었는지 확인합니다.",
-    S3:"비금융기업의 현재 영업 수익성 수준을 봅니다.",
-    S4:"영업이익률이 전년 동기보다 얼마나 바뀌었는지 확인합니다.",
-    S5:"매출 중 잉여현금흐름이 차지하는 비율을 봅니다.",
-    S6:"미국 경제 전체 기업이익의 변화 방향을 교차 확인합니다.",
-    S7:"EPS가 전년보다 개선된 기업의 폭을 봅니다.",
-    S8:"당기 순이익이 흑자인 기업이 얼마나 넓게 분포하는지 봅니다.",
-    S9:"이익 개선이 여러 업종으로 퍼지는지 확인합니다.",
-    S10:"투입 원가가 산출가격보다 빠르게 오르는 부담을 봅니다.",
-    S11:"생산 한 단위당 노동비용 압력이 어느 정도인지 봅니다.",
-    S12:"경영진 EPS·CFO 매출 전망의 수정 방향을 봅니다.",
-    S13:"기업 가이던스에서 상향과 하향의 상대적 방향을 봅니다."
-   },factorNames:{epsGrowth:"EPS 성장률",margin:"영업이익률",revenueGrowth:"매출 성장률",earningsGrowthBreadth:"이익 성장 종목 비율",S1:"EPS 성장 강도",S2:"매출 성장률",S3:"영업이익률 수준",S4:"영업이익률 변화",S5:"FCF 마진",S6:"BEA 기업이익",S7:"EPS 개선 기업 비율",S8:"흑자 기업 비율",S9:"이익 개선 업종 비율",S10:"생산자 원가 압력",S11:"단위노동비용 압력",S12:"미래 전망 수정",S13:"기업 가이던스 방향"}
+   },factorNames:{epsGrowth:"EPS 성장률",margin:"영업이익률",revenueGrowth:"매출 성장률",earningsGrowthBreadth:"이익 성장 종목 비율"}
  }
 };
 
@@ -168,10 +155,10 @@ type VerifiedImprovement={version:string;date:string;category:"산출 방식"|"�
 const methodologyExplanations:Record<Topic,MethodologyExplanation>={
  "stagflation-risk":{inputs:"전체·근원 PCE, 산업생산, 실질소비·소득, 비농업고용, 기대인플레이션과 WTI의 8종 원자료를 사용합니다.",interpretation:"고물가와 실물·고용 둔화가 함께 나타나는 정도와 최근 3개월 지속성을 독립 계산한 저장 점수를 읽습니다.",marketUse:"물가만 상승하거나 경기만 약해지는 상황과 구분해 확인합니다.",limitation:"현재 개정치로 월별 재구성한 이력이며 발표 당시 점수·위기 확률이 아닙니다. 영역별 부담은 최종 점수에 대한 단순 기여율이 아닙니다."},
  inflation:{
-  inputs:"마트·외식 등에서 체감하는 물가, 기업이 받는 가격, 임금·에너지 비용, 앞으로의 물가 예상 등 16개 지표를 7개 영역으로 나눠 살펴봅니다.",
-  interpretation:"각 지표를 물가 목표나 과거의 일반적인 수준과 비교해 물가 안정에 도움이 되는 방향인지 평가하고, 그 결과를 하나의 점수로 종합합니다.",
-  marketUse:"물가 상승 속도가 느려지면 금리가 오래 높게 유지될 부담이 줄어들 수 있어요. 반대로 임금과 기업 비용이 다시 빠르게 오르면 주의해서 살펴봐야 해요.",
-  limitation:"점수 60점은 물가가 60% 올랐다는 뜻도, 앞으로 물가가 오를 확률이 60%라는 뜻도 아니에요.",
+  inputs:"근원·전체 물가, 기조 모멘텀, 기대 인플레이션, 기업 투입가격·에너지, 임금·노동비용, 산업생산 등 16개 입력지표를 7개 위험 평가 축으로 묶어 살펴봅니다.",
+  interpretation:"각 축은 관측된 압력 신호의 상대적 안정성입니다. 점수가 높을수록 해당 신호가 비교적 안정적이고 낮을수록 부담이 높은 방향이며 7개 축을 종합합니다.",
+  marketUse:"기조 물가가 재가속되거나 기대·노동비용이 장기간 높게 유지되면 금리 인하 기대와 기업 마진에 부담이 생길 수 있습니다. 반대로 압력이 누그러져도 주가 상승을 보장하지 않습니다.",
+  limitation:"R2 점수는 물가상승률이나 위험 발생 확률이 아닙니다. 12대 경제지표 물가(별도 4요소 산식)와도 다른 진단이며, 저장된 초기발표 이력을 사용합니다.",
  },
  recession:{
   inputs:"고용·실질 GDP·산업생산·실질 소비와 소득·신용여건 등 여러 경기 활동 자료를 확인합니다.",
@@ -210,10 +197,10 @@ const methodologyExplanations:Record<Topic,MethodologyExplanation>={
   limitation:"과거 차트가 현재 수정 자료 기반이면 당시 투자자가 알 수 있었던 값과 다를 수 있습니다.",
  },
  "earnings-recession":{
-  inputs:"기업의 매출·주당이익(EPS)·이익률과 현금흐름, 이익 개선 기업의 폭, 비용 압력 등을 확인합니다.",
-  interpretation:"기업 이익의 수준과 개선의 확산 정도를 점수로 종합합니다. 사용할 수 있는 실적 버전에 따라 분석 항목이 달라집니다.",
-  marketUse:"소수 대형주의 이익만 좋아지는지, 여러 기업과 업종으로 실적 개선이 확산되는지 비교합니다.",
-  limitation:"기업 실적 점수와 메인 경기 진단 점수는 서로 다를 수 있으며, 주가 상승 확률이 아닙니다.",
+  inputs:"기업 EPS 성장·매출 성장·영업이익률·이익 성장 기업의 비율 등 네 가지 방어 진단을 확인합니다.",
+  interpretation:"8대 위험 지표 전용 실적 침체 방어 점수입니다. 12대 대표 기업 실적의 13지표 평가와는 독립된 계산입니다.",
+  marketUse:"기업의 실적 약화가 확산될 때 위험 방어력이 둔화되는지 살펴봅니다.",
+  limitation:"분기 원자료와 평가 날짜는 다를 수 있으며, 침체 발생 확률이나 주가 상승 확률이 아닙니다.",
  },
 };
 
@@ -306,10 +293,9 @@ const verifiedImprovements:Partial<Record<Topic,VerifiedImprovement[]>>={
 };
 
 function reportedMethodologyVersion(topic:Topic,payload:any):string|null{
- // E1: the stored earnings component version and the main diagnostic may differ.
- const version=topic==="earnings-recession"&&payload?.storedE1?.status==="READY"
-  ?payload?.storedE1?.methodologyVersion
-  :payload?.methodologyVersion;
+ // The eight-risk diagnostic has its own methodology, independent of the
+ // twelve-domain earnings score.
+ const version=payload?.methodologyVersion;
  return typeof version==="string"&&version.trim()?version.trim():null;
 }
 
@@ -325,7 +311,7 @@ function extractFactors(topic:Topic,payload:any,config:Config):Factor[]{
  if(topic==="inflation")rows=Object.entries(payload?.features??{}).map(([id,row])=>({id,...(row as object)}));
  else if(topic==="recession")rows=[...(payload?.components??[]),...(payload?.supplementals??[])];
  else if(topic==="credit-risk")rows=[...(payload?.core??[]),...(payload?.supplementals??[])];
- else if(topic==="earnings-recession")rows=payload?.storedE1?.indicators??[];
+ else if(topic==="earnings-recession")rows=payload?.riskFactorsMethodologyVersion===payload?.methodologyVersion?(payload?.riskFactors??[]):[];
  else if(topic==="stagflation-risk")rows=Object.entries(payload?.axes??{}).flatMap(([id,risk])=>typeof risk==="number"&&risk>=0&&risk<=100?[{id,score:100-risk}]:[]);
  else rows=payload?.indicators??[];
  const allowed=config.factorIds?new Set(config.factorIds):null;
@@ -393,13 +379,12 @@ export default function BeginnerRiskGuide({topic}:{topic:Topic}){
   return()=>controller.abort();
  },[config.endpoint]);
  const score=finiteScore(payload?.score);
- const earningsStoredScore=topic==="earnings-recession"?finiteScore(payload?.storedE1?.score):null;
  const factors=useMemo(()=>extractFactors(topic,payload,config),[topic,payload,config]);
  const positive=useMemo(()=>factors.filter(x=>x.score>=60).sort((a,b)=>b.score-a.score).slice(0,3),[factors]);
  const negative=useMemo(()=>factors.filter(x=>x.score<45).sort((a,b)=>a.score-b.score).slice(0,3),[factors]);
  const earningsRelativeBottom=useMemo(()=>{
   if(topic!=="earnings-recession")return [];
-  // Relative E1 ranks are display-only, distinct from absolute <45 negative factors.
+  // Rank the weaker of the four independent risk factors; do not imply a negative absolute threshold.
   const highlighted=new Set(positive.map(row=>row.id));
   return factors.filter(row=>!highlighted.has(row.id)).sort((a,b)=>a.score-b.score).slice(0,3);
  },[factors,positive,topic]);
@@ -424,8 +409,8 @@ export default function BeginnerRiskGuide({topic}:{topic:Topic}){
    </div>
   </div>
   <div className="rounded-lg bg-[#071c2a] p-4 sm:p-5">
-   <h2 className="text-lg font-bold text-white">{topic==="earnings-recession"?<>왜 {earningsStoredScore===null?"이 점수":earningsStoredScore.toFixed(1)+"점"}인가요?</>:<>왜 {score===null?"이 점수":score.toFixed(1)+"점"}인가요?</>}</h2>
-   <p className="mt-1 text-sm text-slate-400">{topic==="earnings-recession"?"E1 저장 지표 평가입니다. 메인 진단 점수의 구성요인과는 별개입니다.":topic==="stagflation-risk"?"저장된 영역별 위험 강도를 부담이 적은 방향과 큰 방향으로 나눠 보여줍니다. 최종 점수의 기여율이나 단순 가중합은 아닙니다.":"현재 저장된 구성 점수를 기준으로 강한 방향의 요인을 최대 3개씩 보여줍니다."}</p>
+   <h2 className="text-lg font-bold text-white"><>왜 {score===null?"이 점수":score.toFixed(1)+"점"}인가요?</></h2>
+   <p className="mt-1 text-sm text-slate-400">{topic==="earnings-recession"?"8대 위험 지표 전용 4개 진단 점수입니다. 관측일 미확인 항목은 별도로 표시합니다.":topic==="stagflation-risk"?"저장된 영역별 위험 강도를 부담이 적은 방향과 큰 방향으로 나눠 보여줍니다. 최종 점수의 기여율이나 단순 가중합은 아닙니다.":"현재 저장된 구성 점수를 기준으로 강한 방향의 요인을 최대 3개씩 보여줍니다."}</p>
    <div className="mt-4 grid gap-3 md:grid-cols-2">
     <div className="bg-emerald-950/25 p-4"><h3 className="font-bold text-emerald-300">{config.positiveHeading}</h3>{positive.length?<ul className="mt-3 space-y-2 text-sm text-slate-200">{positive.map(item=><FactorListItem key={item.id} item={item} config={config}/>)}</ul>:<p className="mt-3 text-sm text-slate-400">현재 뚜렷한 기여 요인을 확인하지 못했습니다.</p>}</div>
     <div className="bg-rose-950/20 p-4"><h3 className="font-bold text-rose-300">{config.negativeHeading}</h3>{displayedLower.length?<ul className="mt-3 space-y-2 text-sm text-slate-200">{displayedLower.map(item=><FactorListItem key={item.id} item={item} config={config}/>)}</ul>:<p className="mt-3 text-sm text-slate-400">{topic==="earnings-recession"?"비교할 저장 지표가 부족합니다.":"현재 뚜렷한 부담 요인을 확인하지 못했습니다."}</p>}</div>
