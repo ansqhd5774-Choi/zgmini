@@ -1,3 +1,4 @@
+import {inflationR2PublicAxisIndicators} from "../lib/market-score/inflation-r2-axis-display-r1.mjs";
 import {INFLATION_PIT_SERIES} from "./inflation-pit-backfill.mjs";
 import {loadStoredInflationPitSeries} from "./inflation-pit-reader.mjs";
 import {INFLATION_PCE_PC1_MODE,INFLATION_PCE_PC1_SERIES} from "./inflation-pce-pc1-store.mjs";
@@ -164,12 +165,6 @@ export async function loadStoredInflationR2Domain(db,{asOf}={}){
   if(current.status!=="READY"){
     return partial("INFLATION_R2_COMPONENT_MISSING",{missingFactors:current.missing,axes:current.axes});
   }
-  const labels=[
-    ["목표안정","TARGET_STABILITY"],
-    ["기조모멘텀","UNDERLYING_MOMENTUM"],
-    ["기대인플레","EXPECTATIONS"],
-    ["공급압력","SUPPLY_PIPELINE"],
-  ];
   const trend=completedMonthEnds(asOf,13)
     .map(date=>({date,result:calculateInflationR2At(history,date)}))
     .filter(item=>item.result.status==="READY")
@@ -188,14 +183,7 @@ export async function loadStoredInflationR2Domain(db,{asOf}={}){
     status:"READY",
     score:current.score,
     missingFactors:[],
-    indicators:labels.map(([name,axis])=>({
-      name,
-      status:"READY",
-      score:current.axes[axis],
-      asOfDate:asOf,
-      source:"STORED_PIT_HISTORY",
-      freshness:"INITIAL_RELEASE_ONLY",
-    })),
+    indicators:inflationR2PublicAxisIndicators(current.axes,asOf),
     trend,
     freshness:"STORED_INITIAL_RELEASE_HISTORY_ONLY",
     updatedAt:retrievedAts.at(-1)??null,
