@@ -1,8 +1,8 @@
+import {verifiedEarningsRiskTrend} from '../lib/market-score/earnings-recession-history-r1.mjs';
 import {marketOperationalStore,readStoredMarketInputsSelected} from './candidate-market-operational-store.mjs';
 import {loadStoredInflationPitSeries} from './inflation-pit-reader.mjs';
 import {INFLATION_PIT_SERIES} from './inflation-pit-backfill.mjs';
 import {loadPc1Series} from './projection-inflation-inputs.mjs';
-import {readEarningsE1R4StoredScore} from '../lib/market-score/sec-earnings-e1-r4-provider.mjs';
 import {defaultLoadProgress,defaultLoadRows} from './korea-funds.mjs';
 import {readRecessionClaimsHistory} from './projection-builders/recession-supplemental-history.mjs';
 
@@ -58,9 +58,42 @@ export async function loadProjectionSource(id,env,{now=Date.now(),onPhase,onMeta
  if(id==='earningsRecession'){
   const date=/^\d{4}-\d{2}-\d{2}$/.test(snapshot?.body?.asOfDate??'')?snapshot.body.asOfDate:asOf;
   const e1Started=performance.now();
-  const e1=selectStoredEarningsProjection(snapshot)??await readEarningsE1R4StoredScore({asOf:date,db:env.DB_CORE});
+  // Visitor GET reads only a stored economic-domain projection. The four-
+  // factor scorer runs on the PC writer, never inside this public GET.
+  const e1=selectStoredEarningsProjection(snapshot)??null;
   mark('source:earnings',e1Started);
-  return {snapshot,e1,nowIso};
+  // The existing dated snapshots are the only eligible risk history source.
+  // No provider access, DB write or E1 economic-domain trend is permitted.
+  let riskHistory={kind:'UNVERIFIED',points:[]};
+  const diag=snapshot?.body?.diagnostics8?.earningsRecessionDefense;
+  // PC publishes only aggregate scores and source-quarter labels; never
+  // the raw issuer facts. Current-vintage reconstruction is not PIT.
+  if(diag?.status==='READY'&&
+    diag?.riskFactorsSource==='E1_R4_STORED_PC_REPLAY'&&
+    diag?.riskHistoryKind==='E1_R4_STORED_PERIOD_CURRENT_VINTAGE_NOT_PIT'&&
+    Array.isArray(diag?.riskTrend)){
+    riskHistory={
+      kind:diag.riskHistoryKind,points:diag.riskTrend,
+      financialPeriodEnd:diag.financialPeriodEnd,
+      historyMode:diag.historyMode,
+    };
+  }else if(diag?.status==='READY'&&typeof diag?.score==='number'&&
+    diag?.methodologyVersion==='EARNINGS_RECESSION_DIAGNOSTIC_R1'){
+    try{
+      const from=new Date(Date.parse(date+'T00:00:00Z'));from.setUTCFullYear(from.getUTCFullYear()-1);
+      const since=from.toISOString().slice(0,10);
+      const query=await env.DB_CORE.prepare(
+        'SELECT snapshot_key,body FROM market_public_snapshots_v1 WHERE snapshot_key>=? AND snapshot_key<=? AND length(snapshot_key)=10 ORDER BY snapshot_key ASC LIMIT 400'
+      ).bind(since,date).all();
+      const snapshots=(query?.results??[]).flatMap(row=>{
+        try{return [{snapshotKey:row.snapshot_key,body:JSON.parse(row.body)}];}catch{return [];}
+      });
+      riskHistory=verifiedEarningsRiskTrend({
+        snapshots,current:{asOfDate:date,score:diag.score,methodologyVersion:diag.methodologyVersion},
+      });
+    }catch{} // Retrieval failure is history-unavailable; never fabricate a trend.
+  }
+  return {snapshot,e1,nowIso,riskHistory};
  }
  const keys=PROJECTION_INPUT_BATCHES[id];
  if(!keys)throw Error('INVALID_PROJECTION_ID');

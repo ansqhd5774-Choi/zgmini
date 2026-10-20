@@ -59,8 +59,8 @@ test("R5 table and mobile show evaluation date instead of claiming a source obse
  assert.match(panel,/<th>이전<\/th><th>현재<\/th><th>발표<\/th><th>판단<\/th><th>미니차트\(1Y\)<\/th>/);
  assert.match(panel,/<small>\{isR5\?"평가 ":"관측 "\}\{dateLabel\(r\?\.observationDate\)\}<\/small>/);
  const notes=readFileSync("app/detail-investor-notes.tsx","utf8");
- assert.match(notes,/topic==="earnings-recession"\?"E1-R5 표의 평가 기준일은 저장된 실적 자료를 종합 평가한 날짜입니다/);
- assert.match(notes,/각각의 관측 기간이나 공식 발표일이 아닙니다/);
+ assert.match(notes,/topic==="earnings-recession"\?"실적 침체 진단 기준일은 저장 점수를 평가한 날짜로/);
+ assert.match(notes,/네 가지 구성 원자료의 관측일이나 공식 발표일과 같지 않을 수 있습니다/);
 });
 
 test("earnings UI parity: hero typography, compact question intro and four-question official-source guide are present",()=>{
@@ -73,8 +73,8 @@ test("earnings UI parity: hero typography, compact question intro and four-quest
  assert.match(css,/--fg-title-size:16px/);
  assert.match(page,/DetailReadingGuide/);
  assert.match(page,/inflation-beginner-reading-r1\.css/);
- for(const question of ["메인 진단과 E1 저장 점수는 왜 다른가요?","점수가 높으면 실적 침체가 없다는 뜻인가요?","분석 모집단은 모두 유효한 기업인가요?","평가 기준일과 1년 차트는 어떻게 읽나요?"])assert.ok(page.includes(question),question);
- for(const source of ["https://www.sec.gov/edgar/search/","https://www.bea.gov/data/income-saving/corporate-profits","https://www.bls.gov/ppi/"])assert.ok(page.includes(source),source);
+ for(const question of ["기업 실적과 실적 침체 위험은 다른가요?","점수가 높으면 실적 침체가 없다는 뜻인가요?","네 가지 구성지표는 무엇인가요?","평가 기준일과 1년 차트는 어떻게 읽나요?"])assert.ok(page.includes(question),question);
+ for(const source of ["https://www.sec.gov/edgar/search/"])assert.ok(page.includes(source),source);
 });
 test("earnings parity: absent source-derived per-indicator prior, next release or one-year sparkline remain missing, never synthesized",()=>{
  const projection=readFileSync("worker/projection-builders/earningsRecession.ts","utf8");
@@ -89,7 +89,8 @@ test("earnings parity: absent source-derived per-indicator prior, next release o
 test("Earnings guide never hardcodes live score or universe count into evergreen descriptions",()=>{
  const page=readFileSync("app/earnings-recession/page.tsx","utf8");
  for(const value of ["84.7점은","73.5점은","500개는"])assert.ok(!page.includes(value),value);
- assert.match(page,/실적 버전에 따라 구성지표가 달라질 수 있어요/);
+ assert.match(page,/12대 대표 지표의 기업 실적은 별도의 종합 평가입니다/);
+ assert.doesNotMatch(page,/E1-R5 과거 차트|13개 실적 침체 분석 지표/);
 });
 
 
@@ -100,8 +101,10 @@ test("R12: E1-R5 reconstructed history is never presented as contemporaneously p
  assert.match(panel,/formatTooltipLabel=\{value=>isR5\?/);
  assert.match(panel,/원자료의 공식 발표일이 아닙니다/);
  assert.equal((panel.match(/isR5=\{isR5\}/g)||[]).length,2);
- assert.match(page,/현재 보유 자료를 과거 평가 시점에 맞춰 사후 재구성한 결과예요/);
- assert.match(page,/당시 투자자가 알 수 있었던 신호로 해석하면 안 돼요/);
+ assert.match(page,/과거 차트에는 동일 산식과 저장 출처가 검증된 진단 점수만 사용합니다/);
+ assert.match(page,/검증되지 않은 날짜의 점수는 연결하지 않습니다/);
+ assert.match(page,/economic-indicators\/earnings/);
+ assert.doesNotMatch(page,/E1-R5 과거 차트|사후 재구성한 결과예요/);
  assert.doesNotMatch(page,/차트는 저장된 실제 점만 표시하므로/);
 });
 
@@ -114,7 +117,7 @@ test("all four earnings beginner emphasis phrases actually appear in their corre
   assert.ok(body.includes(bold),title+" bold not in body");
  }
  const health=readFileSync("scripts/seo-production-health.mjs","utf8");
- assert.match(health,/평가 기준일·사후 재구성 추이/);
+ assert.match(health,/12대 기업 실적 지표와 점수·차트를 구분합니다/);
 });
 
 test("R46 earnings hero uses real score polarity and dated extrema without inventing period comparisons",()=>{
@@ -152,9 +155,9 @@ test("R47 earnings factor ranks balance factual E1 top/bottom without affecting 
  assert.match(guide,/const displayedLower=topic==="earnings-recession"\?earningsRelativeBottom:negative/);
  assert.match(guide,/const highlighted=new Set\(positive\.map\(row=>row\.id\)\)/);
  assert.match(guide,/factors\.filter\(row=>!highlighted\.has\(row\.id\)\)\.sort\(\(a,b\)=>a\.score-b\.score\)\.slice\(0,3\)/);
- assert.match(guide,/negativeHeading:"E1 상대적 하위 지표"/);
+ assert.match(guide,/negativeHeading:"상대적으로 취약한 진단 지표"/);
  assert.match(guide,/<div className="bg-rose-950\/20 p-4"><h3 className="font-bold text-rose-300">\{config\.negativeHeading\}<\/h3>/);
  assert.doesNotMatch(guide,/topic==="earnings-recession"\?"bg-slate-800\/30/);
- assert.match(guide,/negativeHeading:"E1 상대적 하위 지표"/);
- assert.match(guide,/E1 저장 지표 평가입니다\. 메인 진단 점수의 구성요인과는 별개입니다/);
+ assert.match(guide,/negativeHeading:"상대적으로 취약한 진단 지표"/);
+ assert.match(guide,/8대 위험 지표 전용 4개 진단 점수입니다/);
 });

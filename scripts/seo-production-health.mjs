@@ -18,7 +18,7 @@ export const SEO_RUNTIME_MARKERS=new Map([
   [`${SITE_ORIGIN}/recession/`,{htmlIncludes:['침체 신호는?','경기침체 확률 아님']}],
   [`${SITE_ORIGIN}/liquidity-crisis/`,{htmlIncludes:['미국 금융시장의 현금 부족과 유동성 위기 위험을 분석합니다.']}],
   [`${SITE_ORIGIN}/credit-risk/`,{htmlIncludes:['미국 회사채 시장의 신용 위험과 기업 자금조달 환경을 확인하세요.']}],
-  [`${SITE_ORIGIN}/earnings-recession/`,{descriptionIncludes:'현재 진단 점수와 별도 저장 실적 평가점수, 평가 기준일·사후 재구성 추이',htmlIncludes:['미국 기업 실적,','침체 신호는?','메인 기업 실적 방어 진단과 E1 저장 점수 추이를 구분해 확인하세요.']}],
+  [`${SITE_ORIGIN}/earnings-recession/`,{descriptionIncludes:'12대 기업 실적 지표와 점수·차트를 구분합니다.',htmlIncludes:['미국 기업 실적,','침체 신호는?','8대 위험 지표의 실적 침체 방어 진단입니다. 12대 기업 실적 점수·차트와 구분해 확인하세요.']}],
   [`${SITE_ORIGIN}/asset-bubble/`,{htmlIncludes:['미국 자산시장의 버블 위험을 밸류에이션 압력']}],
   [`${SITE_ORIGIN}/debt-risk/`,{htmlIncludes:['미국 가계와 기업의 부채 부담을 DSR, 부채/GDP']}],
   [`${SITE_ORIGIN}/supply-shock/`,{htmlIncludes:['미국 공급 충격 위험을 공급망 압력과 유가·원자재 변화로 살펴봅니다.']}],
