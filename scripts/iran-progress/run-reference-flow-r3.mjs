@@ -6,5 +6,5 @@ const run=args=>new Promise(resolve=>{const p=spawn(process.execPath,args,{windo
 // Publish news independently before the legacy AIS/formal collection. Keep its
 // existing implementation and checkpoint paths, without publishing R2 arrows.
 const r3=await run([path.join(path.dirname(fileURLToPath(import.meta.url)),'operate-r3.mjs'),'--collect-publish']);
-const original=await run([legacy,`--collector=${collector}`,...(process.argv.includes('--legacy-r2')?['--r2']:[])]);
+const original=await run([legacy,`--collector=${collector}`]);
 if(r3!==0||original!==0)process.exitCode=1;
