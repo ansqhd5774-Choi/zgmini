@@ -36,6 +36,7 @@ export function calculateOperationalR5(store,{now=Date.now()}={}){
  }
  if(unique.some(e=>!firstSeen.has(e.sourceUrl)||revisionCount.get(e.sourceUrl)!==1))
   throw Error('R5_FIRST_SEEN_OR_REVISIONS_REVIEW_REQUIRED');
+ if(unique.length===0)throw Error('R5_NO_STORED_ACCEPTED_EVENTS');
  const input=unique.map(e=>({...e,sourceStoredAt:firstSeen.get(e.sourceUrl)}));
  const shadow=calculateIranDailyAnchorShadow(input,{
   asOfDate:kstCalendarDate(now),sensitivityScale:21,
@@ -45,6 +46,7 @@ export function calculateOperationalR5(store,{now=Date.now()}={}){
   shadow.potentialCasualtyRevisionCount!==0)throw Error('R5_SOURCE_REVIEW_REQUIRED');
  const body=buildIranR5Public(shadow,{
   now,possibleDuplicateCount:resolution.held.length,collectionCheckedAt:checked,
+  sourceStoredAt:Math.max(...input.map(e=>e.sourceStoredAt)),
  });
  return {body,shadow};
 }
