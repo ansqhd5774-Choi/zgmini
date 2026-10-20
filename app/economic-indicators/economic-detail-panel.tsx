@@ -98,6 +98,16 @@ export default function EconomicDetailPanel({id}:{id:EconomicDomainId}){
    </div>
    <div className="fg-footer-slot"><div className="cnn-panel-note"><span>차트 원칙</span><strong>저장된 공개 점수 이력만 표시 · 비교 불가 기간은 —</strong></div></div>
   </section>
+  <section className="economic-beginner" data-testid={"economic-"+id+"-guide"}>
+   <p className="cnn-eyebrow">BEGINNER GUIDE</p>
+   <h2>{config.name} 점수, 처음이라면 이렇게 보세요</h2>
+   <div className="economic-beginner-grid">
+    <article><h3>01 · 점수가 높으면 무조건 주가가 오르나요?</h3><p>아니요. {config.reading} 시장 점수는 확률이나 매매 신호가 아닙니다.</p></article>
+    <article><h3>02 · 어떤 지표를 함께 확인해야 하나요?</h3><p>{config.description} 서로 다른 지표의 관측 주기와 결측 상태도 확인하세요.</p></article>
+    <article><h3>03 · 과거 점수와 오늘 점수가 다른 이유는?</h3><p>과거 차트는 실제로 저장된 관측 점수만 표시합니다. 관측일·저장일·현재 평가일은 서로 다르며, 과거 자료가 개정될 수 있습니다.</p></article>
+    <article><h3>04 · 숫자 대신 ‘—’가 표시되는 이유는?</h3><p>검증된 비교 기간의 점수나 공식 발표일이 확보되지 않았다는 뜻입니다. 0점이나 변동 없음으로 해석하지 마세요.</p></article>
+   </div>
+  </section>
   <section className="economic-reason" data-testid={"economic-"+id+"-reasons"} aria-labelledby={"economic-"+id+"-reasons-title"}>
    <h2 id={"economic-"+id+"-reasons-title"}>왜 {score===null?"—":score.toFixed(1)}점인가요?</h2>
    <p>구성 지표의 저장 평가를 상대적으로 비교합니다. 점수의 실제 산식·가중치를 이 화면에서 재계산하지 않습니다.</p>
@@ -151,15 +161,6 @@ export default function EconomicDetailPanel({id}:{id:EconomicDomainId}){
     })}
    </div>
    {!loading&&!observations.length&&<p className="economic-data-notice">구성 지표가 아직 저장되지 않았습니다. 없는 항목을 가상의 지표로 채우지 않습니다.</p>}
-  </section>
-  <section className="economic-beginner" data-testid={"economic-"+id+"-guide"}>
-   <h2>{config.name} 점수, 처음이라면 이렇게 보세요</h2>
-   <div className="economic-beginner-grid">
-    <article><h3>01 · 점수가 높으면 무조건 주가가 오르나요?</h3><p>아니요. {config.reading} 시장 점수는 확률이나 매매 신호가 아닙니다.</p></article>
-    <article><h3>02 · 어떤 지표를 함께 확인해야 하나요?</h3><p>{config.description} 서로 다른 지표의 관측 주기와 결측 상태도 확인하세요.</p></article>
-    <article><h3>03 · 과거 점수와 오늘 점수가 다른 이유는?</h3><p>과거 차트는 실제로 저장된 관측 점수만 표시합니다. 관측일·저장일·현재 평가일은 서로 다르며, 과거 자료가 개정될 수 있습니다.</p></article>
-    <article><h3>04 · 숫자 대신 ‘—’가 표시되는 이유는?</h3><p>검증된 비교 기간의 점수나 공식 발표일이 확보되지 않았다는 뜻입니다. 0점이나 변동 없음으로 해석하지 마세요.</p></article>
-   </div>
   </section>
   <nav className="economic-links" aria-label="관련 시장 지표"><a href="/economic-indicators/">← 12대 시장 지표 목록</a><a href="/inflation/">인플레이션 상세 디자인 기준 ↗</a><a href="/">메인 대시보드로 ↗</a></nav>
  </div>;
