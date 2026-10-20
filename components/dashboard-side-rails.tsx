@@ -1,14 +1,15 @@
 "use client";
 
 import {useEffect,useRef,useState} from "react";
-import {ChevronRight,MessageCircle,Star,X} from "lucide-react";
+import {MessageCircle,Star,X} from "lucide-react";
 import CommunityChat from "./community-chat";
 import {RISK_FAVORITE_SOURCES} from "./dashboard-favorite-sources";
 import {ECONOMIC_DETAIL_CATALOG} from "../lib/economic-detail-catalog";
+import {getEconomicFavoritePreview,getRiskFavoritePreview,RISK_FAVORITE_ENDPOINTS,type DashboardFavoritePreview} from "./dashboard-favorite-preview";
 import "./risk-detail-side-rails.css";
 import "./dashboard-side-rails.css";
 
-export type DashboardFavoriteLink={key:string;label:string;group:string;href:string};
+export type DashboardFavoriteLink={key:string;label:string;group:string;href:string;exampleScore?:number};
 type FavoriteRow=DashboardFavoriteLink;
 const WIDE_QUERY="(min-width: 1650px)";
 const ECONOMIC_KEY="zgmini:economic:favorites:v1";
@@ -50,6 +51,7 @@ export default function DashboardSideRails({accountFavorites}:{accountFavorites:
  const [leftOpen,setLeftOpen]=useState(false);
  const [rightOpen,setRightOpen]=useState(false);
  const [saved,setSaved]=useState<FavoriteRow[]>([]);
+ const [previews,setPreviews]=useState<Record<string,DashboardFavoritePreview|null>>({});
  const leftButton=useRef<HTMLButtonElement>(null);
  const rightButton=useRef<HTMLButtonElement>(null);
  useEffect(()=>{
@@ -80,6 +82,14 @@ export default function DashboardSideRails({accountFavorites}:{accountFavorites:
    .then((payload:unknown)=>{
     if(!payload||typeof payload!=="object")return;
     const domains=(payload as {domains?:Array<{id?:string;indicators?:Array<{id?:string;label?:string;name?:string}>}>}).domains;
+    const resolved:Record<string,DashboardFavoritePreview|null>={};
+    for(const selected of saved){
+     if(!selected.key.startsWith(ECONOMIC_KEY+":"))continue;
+     const id=selected.key.slice(ECONOMIC_KEY.length+1),at=id.indexOf(":");
+     if(at<1)continue;
+     resolved[selected.key]=getEconomicFavoritePreview(id.slice(0,at),id.slice(at+1),payload);
+    }
+    setPreviews(previous=>({...previous,...resolved}));
     if(!Array.isArray(domains))return;
     const labels=savedEconomicLabels();
     let changed=false;
@@ -101,6 +111,28 @@ export default function DashboardSideRails({accountFavorites}:{accountFavorites:
  // Fetch only when the set of starred economic IDs changes, not on label refresh.
  },[saved.map(x=>x.key.startsWith(ECONOMIC_KEY+":")?x.key:"").filter(Boolean).join("|")]);
  useEffect(()=>{
+  // Fetch only stored public results for risk groups containing actual bookmarks.
+  // No request is made for a group without saved favorites.
+  const groups=RISK_FAVORITE_SOURCES.filter(source=>saved.some(row=>row.key.startsWith(source.storageKey+":")));
+  if(groups.length===0)return;
+  const controller=new AbortController();
+  void Promise.all(groups.map(async source=>{
+   let snapshot:unknown=null;
+   try{
+    const response=await fetch(RISK_FAVORITE_ENDPOINTS[source.storageKey],{cache:"no-store",signal:controller.signal});
+    if(response.ok)snapshot=await response.json();
+   }catch{/* Unavailable saved results are not replaced with synthetic numbers. */}
+   if(controller.signal.aborted)return [];
+   return saved.filter(row=>row.key.startsWith(source.storageKey+":"))
+    .map(row=>[row.key,getRiskFavoritePreview(source.storageKey,row.key.slice(source.storageKey.length+1),snapshot)] as const);
+  })).then(parts=>{
+   if(controller.signal.aborted)return;
+   setPreviews(previous=>({...previous,...Object.fromEntries(parts.flat())}));
+  }).catch(()=>{});
+  return()=>controller.abort();
+ // Refresh only when the starred risk indicator ID list changes.
+ },[saved.filter(row=>!row.key.startsWith(ECONOMIC_KEY+":")).map(row=>row.key).join("|")]);
+ useEffect(()=>{
   const onKey=(e:KeyboardEvent)=>{
    if(e.key!=="Escape"||wide)return;
    if(leftOpen){setLeftOpen(false);leftButton.current?.focus();}
@@ -114,12 +146,23 @@ export default function DashboardSideRails({accountFavorites}:{accountFavorites:
  return <div className="zg-risk-side-rails-root zg-dashboard-side-rails-root" data-wide={wide?"true":"false"}>
   {!wide&&(leftOpen||rightOpen)&&<button type="button" className="zg-risk-side-veil" aria-label="열린 패널 닫기" tabIndex={-1} onClick={()=>{setLeftOpen(false);setRightOpen(false);}}/>}
   <aside id="zg-dashboard-favorites-panel" className="zg-risk-side-rail zg-risk-side-left" data-open={leftVisible?"true":"false"} aria-label="내 즐겨찾기 지표" aria-hidden={!leftVisible} inert={!leftVisible}>
-   <div className="zg-risk-side-head"><Star size={19} aria-hidden="true"/><strong>즐겨찾기</strong><button type="button" className="zg-risk-rail-close" aria-label="즐겨찾기 닫기" onClick={()=>setLeftOpen(false)}><X size={18}/></button></div>
-   <p className="zg-risk-side-intro">저장한 지표 {all.length}개</p>
+   <div className="zg-risk-side-head"><Star size={19} aria-hidden="true"/><strong>즐겨찾기</strong><span className="zg-dashboard-favorite-count" aria-label={"즐겨찾기 "+all.length+"개"}>{all.length}</span><button type="button" className="zg-risk-rail-close" aria-label="즐겨찾기 닫기" onClick={()=>setLeftOpen(false)}><X size={18}/></button></div>
    {all.length?<nav aria-label="즐겨찾기한 지표 이동">
-    {all.map(item=><a key={item.key} href={item.href} className="zg-risk-side-link zg-dashboard-favorite-link" onClick={()=>setLeftOpen(false)}>
-     <Star size={15} aria-hidden="true"/><span><strong>{item.label}</strong><small>{item.group}</small></span><ChevronRight size={16} aria-hidden="true"/>
-    </a>)}
+    {all.map(item=>{
+     const detail=previews[item.key];
+     const example=typeof item.exampleScore==="number"&&Number.isFinite(item.exampleScore)?item.exampleScore:null;
+     const value=detail?.value??(example!==null?"예시 "+example.toFixed(1)+"점":"—");
+     const judgement=detail?.judgement??(example!==null?"예시 데이터":"자료 미제공");
+     const date=detail?.date?(detail.dateKind+" "+detail.date):"";
+     return <a key={item.key} href={item.href} className="zg-risk-side-link zg-dashboard-favorite-link" aria-label={item.label+" 상세 보기"} onClick={()=>setLeftOpen(false)}>
+      <Star size={15} aria-hidden="true"/>
+      <span className="zg-dashboard-favorite-info">
+       <strong>{item.label}</strong>
+       <span className="zg-dashboard-favorite-reading"><b>{value}</b><small data-tone={detail?.tone??"missing"}>{judgement}</small></span>
+       <small className="zg-dashboard-favorite-context">{item.group}{date?" · "+date:""}</small>
+      </span>
+     </a>;
+    })}
    </nav>:<p className="zg-dashboard-favorites-empty">즐겨찾기한 지표가 없습니다. 지표 상세페이지의 별표(☆)로 추가할 수 있습니다.</p>}
   </aside>
   <aside className="zg-risk-side-rail zg-risk-side-right" data-open={rightVisible?"true":"false"} aria-label="시장 채팅" aria-hidden={!rightVisible} inert={!rightVisible}>
