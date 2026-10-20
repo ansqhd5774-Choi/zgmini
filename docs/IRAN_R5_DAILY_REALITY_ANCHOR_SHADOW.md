@@ -3,18 +3,19 @@
 Status: CANDIDATE / NO PRODUCTION CHANGE / NO D1 WRITES
 
 ## Goal
-1. User's October 21 **13-point provisional assessment** is the reference, not the older 19 and not independently verified ground truth.
+1. User's **2026-10-21 06:35 KST** 13-point provisional assessment is the reference (2026-10-20T21:35:00Z), not the older 19 and not independently verified ground truth. **It is not an end-of-day final.**
 2. Back-calculate 14 KST calendar days using deduplicated actual stored report-date deltas. With no accepted October 21 reports, **October 20 is also 13**; the October 20 attack/interception changes October 19 to October 20, not October 20 to October 21. Do not shift publication dates.
-3. October 22 onward uses each uniquely dated incremental event and recomputes deterministically from the October 21 anchor. Do not reset every day, double-add within 00/06/12/18 scheduler cycles, or infer absence of fighting from silence.
+3. New **Oct 21 same-day articles stored after 06:35** update that day's provisional value; Oct 21 articles already stored by 06:35 are included in the baseline and are not double-applied. From Oct 22 onward, use uniquely dated incremental events and deterministically rebuild. Do not reset every day, double-add across 00/06/12/18 cycles, or infer absence of fighting from silence. Any newly discovered article published **before** Oct 21 is held for retroactive-correction review instead of silently changing the baseline.
 4. An article's publication date is not asserted to be its occurrence date.
 
 ## Unapproved numerical candidate
-Use the existing R3 event stage deltas and five weights 30/25/20/15/10. The daily change is the sum of negative weighted independently deduplicated reports plus **only independently verified** substantial implementation improvements (actual effective ceasefire, withdrawal, maritime reopening, nuclear agreement, restored inspections). Talks or proposed agreements are not proof of peace. A day with adverse and positive evidence cannot yield a positive net change.
+Use the existing R3 event stage deltas and five weights 30/25/20/15/10. The daily change is the sum of negative weighted independently deduplicated reports plus **only independently verified** substantial implementation improvements (actual effective ceasefire, withdrawal, maritime reopening, nuclear agreement, restored inspections). Talks or proposed agreements are not proof of peace. A day with adverse and positive evidence cannot yield a positive net change. Newly stored **prior-date** publications require separate correction review.
 
 Apply the signed event changes on a bounded log-odds scale to avoid the existing R3 domain's hard military floor:
 - p = 0.13, z0 = ln(p/(1-p)).
 - k = 100*p*(1-p) = 11.31, selected to give unit local derivative at the anchor; this is a candidate mathematical normalization, NOT validated reality calibration.
-- For d after Oct 21: z(d) = z0 + sum(weightedDelta on days Oct22 through d) / k.
+- For Oct 21 after 06:35: z(Oct21 current) = z0 + sum(new Oct21 receipts stored AFTER 06:35) / k; same-day worsening blocks net-positive escalation.
+- For d after Oct 21: z(d) = z(Oct21 current) + sum(weightedDelta on days Oct22 through d) / k.
 - For d before Oct 21: z(d) = z0 - sum(weightedDelta on days d+1 through Oct21) / k.
 - score(d) = round(100*logistic(z(d)), 2).
 
@@ -23,7 +24,7 @@ This is a *shadow algorithm*, not evidence that 13 or its past points are object
 ## Source and failure policy
 Existing local SQLite (sources, decisions, checkpoints) read **ONLY** with the current R3 acceptance, migration and possible-duplicate resolution. Do not add any new provider, copy raw reports into GitHub, change PC/D1 schema/weights/scheduler, or publish. Negative headlines remain *single-source reported* events, not confirmed independent attacks.
 
-Unobserved days use the last model value with a 'carried' flag and are not observed peaceful days. R3 collection checkpoint older than 24 hours or missing -> preview returns null preliminaryScore and explicit SHADOW_INPUT_STALE_OR_MISSING. Independently unverified positive headlines never raise the estimate, and adverse events prevent simultaneous optimistic upward movement.
+Unobserved days use the last model value with a 'carried' flag and are not observed peaceful days. Where the baseline's own day has fresh receipts, its provisional score updates that same day, and the 14-day earlier dates retain their event-based backcast. R3 collection checkpoint older than 24 hours or missing -> preview returns null preliminaryScore and explicit SHADOW_INPUT_STALE_OR_MISSING. Independently unverified positive headlines never raise the estimate, and adverse events prevent simultaneous optimistic upward movement.
 
 ## How to execute (only after a source checkout containing this branch exists)
 From checkout root:
