@@ -1,6 +1,7 @@
-type Topic="credit-risk"|"liquidity-crisis"|"debt-risk"|"inflation"|"recession"|"earnings-recession"|"asset-bubble"|"supply-shock";
+type Topic="credit-risk"|"liquidity-crisis"|"stagflation-risk"|"debt-risk"|"inflation"|"recession"|"earnings-recession"|"asset-bubble"|"supply-shock";
 
 const copy:Record<Topic,string>={
+  "stagflation-risk":"미국의 고물가와 성장·고용 둔화가 겹치는 위험을 확인하세요. 물가 압력, 실물·고용 둔화와 최근 1년 월별 재구성 흐름을 함께 봅니다.",
   "credit-risk":"미국 회사채 시장의 신용 위험과 기업 자금조달 환경을 확인하세요. HY·IG·Total CMDI, 금융여건과 국채 변동성을 종합해 현재 신용시장 스트레스와 기간별 변화를 분석합니다.",
   "liquidity-crisis":"미국 금융시장의 현금 부족과 유동성 위기 위험을 분석합니다. 단기자금시장, Repo, 은행 준비금, TGA, ON RRP, M2와 국채 변동성을 함께 확인하세요.",
   "debt-risk":"미국 가계와 기업의 부채 부담을 DSR, 부채/GDP, 금리 부담, 신용 스트레스와 상환능력으로 분석합니다. 부채가 경기와 금융시장에 주는 위험을 현재 점수, 구성지표와 관측일로 확인하세요.",

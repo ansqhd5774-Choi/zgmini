@@ -8,6 +8,7 @@ type Topic=
  |"inflation"
  |"recession"
  |"liquidity-crisis"
+ |"stagflation-risk"
  |"credit-risk"
  |"debt-risk"
  |"asset-bubble"
@@ -34,6 +35,9 @@ type Config={
 const safetyStage=(score:number,watch:string,risk:string)=>score>=75?"매우 양호":score>=60?"양호":score>=45?"중립":score>=25?watch:risk;
 
 const configs:Record<Topic,Config>={
+ "stagflation-risk":{
+  endpoint:"/api/stagflation-risk-detail",title:"스태그플레이션 안전",importance:"고물가와 성장·고용 둔화가 겹치면 가계 구매력과 기업 수익성에 동시에 부담을 줄 수 있습니다.",marketImpact:"물가 압력과 실질소비·생산·고용을 함께 확인하세요. 성장률이 양수여도 증가세는 둔화될 수 있습니다.",highMeaning:"높을수록 고물가와 둔화의 동시 위험이 낮은 방향입니다.",lowMeaning:"낮을수록 동시 위험이 큰 방향입니다.",positiveHeading:"부담이 상대적으로 적은 영역",negativeHeading:"부담이 큰 영역",stage:score=>score>=75?"안정":score>=60?"양호":score>=40?"중립":score>=25?"주의":"위험",factorNames:{inflation:"물가 압력",realEconomy:"실물 둔화",labor:"고용 둔화",expectationsEnergy:"기대·에너지"},factorDescriptions:{inflation:"전체·근원 PCE의 수준과 최근 상승 속도",realEconomy:"생산·실질소비·소득의 증가세",labor:"고용 증가 속도와 감속",expectationsEnergy:"기대물가와 에너지 비용 압력"}
+ },
  inflation:{
   endpoint:"/api/inflation-detail",title:"물가 안정성",importance:"물가가 높으면 연준이 금리를 오래 높게 유지할 가능성이 커집니다. 반대로 물가가 안정되면 금리 부담이 완화될 여지가 생깁니다.",marketImpact:"물가 안정은 성장주·장기채 등 금리에 민감한 자산에 우호적일 수 있습니다. 반대로 물가 재상승은 금리 인하 기대를 약화시킬 수 있습니다.",highMeaning:"높을수록 물가가 안정 방향에 가깝다는 뜻입니다.",lowMeaning:"낮을수록 물가 압력이 강하다는 뜻입니다.",positiveHeading:"물가 안정에 기여한 요인",negativeHeading:"아직 부담이 남은 요인",stage:score=>score>=75?"매우 안정":score>=60?"안정":score>=45?"중립":score>=25?"물가 압력":"강한 물가 압력",factorNames:{CORE_PCE:"Core PCE",CORE_CPI:"Core CPI",CORE_CPI_3M:"Core CPI 3M",MEDIAN_CPI:"Median CPI",TRIM16_CPI:"16% Trimmed Mean CPI",HEADLINE_PCE:"Headline PCE",INF_EXPECT:"5Y 기대 인플레이션",PPI_FINAL:"PPI Final Demand",PPI_CORE_FD:"Core PPI Final Demand",IMPORT_EX_FUEL:"수입물가 ex Fuel",WTI:"WTI",GASOLINE:"미국 휘발유",WAGE_YOY:"평균 시간당 임금",ECI_COST:"Employment Cost Index",UNIT_LABOR_COST:"Unit Labor Cost",INDPRO:"산업생산"},
   factorDescriptions:{
@@ -162,6 +166,7 @@ type VerifiedImprovement={version:string;date:string;category:"산출 방식"|"�
 
 // Public educational descriptions only; approved formulas, weights and internal normalization are not disclosed.
 const methodologyExplanations:Record<Topic,MethodologyExplanation>={
+ "stagflation-risk":{inputs:"전체·근원 PCE, 산업생산, 실질소비·소득, 비농업고용, 기대인플레이션과 WTI의 8종 원자료를 사용합니다.",interpretation:"고물가와 실물·고용 둔화가 함께 나타나는 정도와 최근 3개월 지속성을 독립 계산한 저장 점수를 읽습니다.",marketUse:"물가만 상승하거나 경기만 약해지는 상황과 구분해 확인합니다.",limitation:"현재 개정치로 월별 재구성한 이력이며 발표 당시 점수·위기 확률이 아닙니다. 영역별 부담은 최종 점수에 대한 단순 기여율이 아닙니다."},
  inflation:{
   inputs:"마트·외식 등에서 체감하는 물가, 기업이 받는 가격, 임금·에너지 비용, 앞으로의 물가 예상 등 16개 지표를 7개 영역으로 나눠 살펴봅니다.",
   interpretation:"각 지표를 물가 목표나 과거의 일반적인 수준과 비교해 물가 안정에 도움이 되는 방향인지 평가하고, 그 결과를 하나의 점수로 종합합니다.",
@@ -321,6 +326,7 @@ function extractFactors(topic:Topic,payload:any,config:Config):Factor[]{
  else if(topic==="recession")rows=[...(payload?.components??[]),...(payload?.supplementals??[])];
  else if(topic==="credit-risk")rows=[...(payload?.core??[]),...(payload?.supplementals??[])];
  else if(topic==="earnings-recession")rows=payload?.storedE1?.indicators??[];
+ else if(topic==="stagflation-risk")rows=Object.entries(payload?.axes??{}).flatMap(([id,risk])=>typeof risk==="number"&&risk>=0&&risk<=100?[{id,score:100-risk}]:[]);
  else rows=payload?.indicators??[];
  const allowed=config.factorIds?new Set(config.factorIds):null;
  return rows.flatMap(row=>{
@@ -419,7 +425,7 @@ export default function BeginnerRiskGuide({topic}:{topic:Topic}){
   </div>
   <div className="rounded-lg bg-[#071c2a] p-4 sm:p-5">
    <h2 className="text-lg font-bold text-white">{topic==="earnings-recession"?<>왜 {earningsStoredScore===null?"이 점수":earningsStoredScore.toFixed(1)+"점"}인가요?</>:<>왜 {score===null?"이 점수":score.toFixed(1)+"점"}인가요?</>}</h2>
-   <p className="mt-1 text-sm text-slate-400">{topic==="earnings-recession"?"E1 저장 지표 평가입니다. 메인 진단 점수의 구성요인과는 별개입니다.":"현재 저장된 구성 점수를 기준으로 강한 방향의 요인을 최대 3개씩 보여줍니다."}</p>
+   <p className="mt-1 text-sm text-slate-400">{topic==="earnings-recession"?"E1 저장 지표 평가입니다. 메인 진단 점수의 구성요인과는 별개입니다.":topic==="stagflation-risk"?"저장된 영역별 위험 강도를 부담이 적은 방향과 큰 방향으로 나눠 보여줍니다. 최종 점수의 기여율이나 단순 가중합은 아닙니다.":"현재 저장된 구성 점수를 기준으로 강한 방향의 요인을 최대 3개씩 보여줍니다."}</p>
    <div className="mt-4 grid gap-3 md:grid-cols-2">
     <div className="bg-emerald-950/25 p-4"><h3 className="font-bold text-emerald-300">{config.positiveHeading}</h3>{positive.length?<ul className="mt-3 space-y-2 text-sm text-slate-200">{positive.map(item=><FactorListItem key={item.id} item={item} config={config}/>)}</ul>:<p className="mt-3 text-sm text-slate-400">현재 뚜렷한 기여 요인을 확인하지 못했습니다.</p>}</div>
     <div className="bg-rose-950/20 p-4"><h3 className="font-bold text-rose-300">{config.negativeHeading}</h3>{displayedLower.length?<ul className="mt-3 space-y-2 text-sm text-slate-200">{displayedLower.map(item=><FactorListItem key={item.id} item={item} config={config}/>)}</ul>:<p className="mt-3 text-sm text-slate-400">{topic==="earnings-recession"?"비교할 저장 지표가 부족합니다.":"현재 뚜렷한 부담 요인을 확인하지 못했습니다."}</p>}</div>
@@ -434,7 +440,7 @@ export default function BeginnerRiskGuide({topic}:{topic:Topic}){
     <p className="text-xs text-slate-400">{topic==="earnings-recession"?"이 설명은 E1 저장 실적 점수에 관한 것이며 메인 진단과 별도입니다. ":""}이 설명 영역은 점수·가중치·판정을 새로 계산하지 않고, 승인된 저장 결과를 해석합니다.</p>
     <p><strong className="text-slate-100">① 사용하는 지표</strong> {methodology.inputs}</p>
     <p><strong className="text-slate-100">② 평가 방법</strong> {methodology.interpretation}</p>
-    <p><strong className="text-slate-100">③ 점수 읽는 법</strong> 75점 이상 {config.stage(75)}, 60~74점 {config.stage(60)}, 45~59점 중립, 25~44점 {config.stage(25)}, 25점 미만 {config.stage(0)}. {config.highMeaning} {config.lowMeaning}</p>
+    <p><strong className="text-slate-100">③ 점수 읽는 법</strong> 75점 이상 {config.stage(75)}, 60~74점 {config.stage(60)}, {topic==="stagflation-risk"?"40~59점 중립, 25~39점":"45~59점 중립, 25~44점"} {config.stage(25)}, 25점 미만 {config.stage(0)}. {config.highMeaning} {config.lowMeaning}</p>
     <p><strong className="text-slate-100">④ 주식시장에서</strong> {methodology.marketUse}</p>
     <p><strong className="text-slate-100">⑤ 결측·한계</strong> 필요한 자료가 없으면 임의의 0점으로 채우지 않고 미산출 상태로 남길 수 있습니다. {methodology.limitation}</p>
     <div className="zg-method-history-close-row">

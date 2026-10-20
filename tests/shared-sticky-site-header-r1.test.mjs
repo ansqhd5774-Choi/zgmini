@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import {readFileSync} from "node:fs";
 
 const read=path=>readFileSync(path,"utf8");
-const routes=["inflation","recession","liquidity-crisis","credit-risk","debt-risk","asset-bubble","supply-shock","earnings-recession"];
+const routes=["inflation","recession","stagflation-risk","credit-risk","debt-risk","asset-bubble","supply-shock","earnings-recession"];
 const shared=read("components/site-header.tsx");
 const css=read("components/site-header.css");
 const home=read("app/page.tsx");

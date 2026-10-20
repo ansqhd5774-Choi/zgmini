@@ -7,7 +7,7 @@ const guide=read('app/beginner-risk-guide.tsx');
 const topics=[
  ['inflation','app/inflation/page.tsx','/api/inflation-detail'],
  ['recession','app/recession/page.tsx','/api/recession-detail'],
- ['liquidity-crisis','app/liquidity-crisis/page.tsx','/api/liquidity-crisis-detail'],
+ ['stagflation-risk','app/stagflation-risk/page.tsx','/api/stagflation-risk-detail'],
  ['credit-risk','app/credit-risk/page.tsx','/api/credit-risk-detail'],
  ['debt-risk','app/debt-risk/page.tsx','/api/debt-risk-detail'],
  ['asset-bubble','app/asset-bubble/page.tsx','/api/asset-bubble-detail'],
