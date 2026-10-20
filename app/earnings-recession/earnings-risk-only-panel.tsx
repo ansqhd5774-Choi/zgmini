@@ -1,6 +1,7 @@
 "use client";
 import {useMemo} from "react";
 import {useStoredIndex} from "../../components/use-stored-index";
+import {liquidityStoredScoreComparisons} from "../../worker/projection-builders/liquidity-stored-history.mjs";
 import {MarketCardHeader} from "../market-card-header";
 import {MarketScoreOrb} from "../market-score-orb";
 import {MarketTrendFrame} from "../market-trend-frame";
@@ -32,7 +33,6 @@ const validDate=(value:unknown):value is string=>typeof value==="string"&&/^\d{4
 const dateLabel=(value:unknown)=>validDate(value)?value.replaceAll("-",". ")+".":"—";
 const stage=(score:number|null)=>score===null?"데이터 준비 중":score>=75?"매우 양호":score>=60?"양호":score>=45?"중립":score>=25?"실적 주의":"실적 침체 위험";
 const tone=(score:number|null)=>score===null?"#94a3b8":score>=60?"#45d99f":score>=45?"#94a3b8":"#ff7076";
-const periods=[{label:"1주",value:null},{label:"1개월",value:null},{label:"3개월",value:null},{label:"6개월",value:null},{label:"1년",value:null}];
 
 export default function EarningsRiskOnlyPanel(){
  const {payload,loading}=useStoredIndex<RiskPayload>("/api/earnings-recession-detail");
@@ -49,6 +49,11 @@ export default function EarningsRiskOnlyPanel(){
   if(!last||last.date!==payload.asOfDate||Math.abs(last.score-score)>1e-8)return [];
   return rows.map(x=>({date:x.date,score:x.score} satisfies MarketFearGreedChartPoint));
  },[payload,score]);
+ const deltas=useMemo(()=>liquidityStoredScoreComparisons(
+  trend.map(x=>({label:x.date,value:x.score})),payload?.asOfDate??"",score
+ ),[trend,payload?.asOfDate,score]);
+ const comparisons=[{label:"1주",value:deltas.week??null},{label:"1개월",value:deltas.month??null},
+  {label:"3개월",value:deltas.threeMonth??null},{label:"6개월",value:deltas.sixMonth??null},{label:"1년",value:deltas.year??null}];
  const last=trend.at(-1);
  const latestPoint:MarketFearGreedChartValidPoint|null=last&&validScore(last.score)?{date:last.date,score:last.score}:null;
  const axisTicks=[...new Map(trend.map(x=>[x.date.slice(0,7),x.date])).values()];
@@ -57,9 +62,9 @@ export default function EarningsRiskOnlyPanel(){
   <section className="cnn-reference-panel fg-card fg-shared-shell earnings-recession-target-card"
     data-testid="earnings-risk-only-hero" data-score-tone={score===null?"neutral":score>=60?"positive":score>=45?"neutral":"negative"}
     data-market-state={loading?"loading":score===null?"unavailable":"ready"} aria-busy={loading}>
-   <div className="fg-header-slot"><MarketCardHeader flag="/flags/us.svg" eyebrow="ZGMINI EARNINGS RECESSION" title="미국 실적 침체" description="실적 침체 위험 방어 진단" dateLabel="진단 기준일" date={dateLabel(payload?.asOfDate)} source=""/></div>
+   <div className="fg-header-slot"><MarketCardHeader flag="/flags/us.svg" eyebrow="ZGMINI EARNINGS RECESSION" title="미국 실적 침체" description="실적 침체 위험 방어 진단" dateLabel="진단 평가일" date={dateLabel(payload?.asOfDate)} source=""/></div>
    <div className="fg-content-slot">
-    <div className="fg-score-slot"><MarketScoreOrb score={loading||score===null?"—":score.toFixed(1)} state={loading?"확인 중":stage(score)} variant="hero" comparisonItems={periods} comparisonAriaLabel="실적 침체 방어 진단 기간별 비교 자료 미확보"/></div>
+    <div className="fg-score-slot"><MarketScoreOrb score={loading||score===null?"—":score.toFixed(1)} state={loading?"확인 중":stage(score)} variant="hero" comparisonItems={comparisons} comparisonAriaLabel="실적 침체 방어 진단 검증된 이력 기준 기간별 비교"/></div>
     <MarketTrendFrame className="fg-analysis-slot"><div className="fg-chart-slot">
      <span className="earnings-r2-chart-identity">실적 침체 방어 진단 추이</span>
      <div className="fg-renderer"><MarketFearGreedChart data={trend} axisTicks={axisTicks} axisLabels={axisLabels}
