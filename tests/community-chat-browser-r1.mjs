@@ -50,23 +50,54 @@ try{
   await favorites.getByLabel("즐겨찾기 6개").waitFor({state:"attached"});
   assert.equal(await favorites.locator(".zg-risk-side-intro").count(),0,"Remove redundant saved-count line");
   assert.equal(await favorites.locator(".zg-dashboard-favorite-count").evaluate(el=>getComputedStyle(el).backgroundColor),"rgb(245, 188, 69)","Count badge is yellow");
-  await favorites.locator('a[href="/liquidity-crisis/"]').first().getByText("현재 0.031 bp").waitFor({state:"visible",timeout:12000}).catch(async ()=>{
+  await favorites.locator('a[href="/liquidity-crisis/"]').first().getByText("0.031 bp").waitFor({state:"visible",timeout:12000}).catch(async ()=>{
    // On narrow screens the rail starts hidden; attached DOM retains the exact stored preview.
-   await favorites.locator('a[href="/liquidity-crisis/"]').first().getByText("현재 0.031 bp").waitFor({state:"attached",timeout:12000});
+   await favorites.locator('a[href="/liquidity-crisis/"]').first().getByText("0.031 bp").waitFor({state:"attached",timeout:12000});
   });
-  assert.equal(await favorites.getByText("현재 0.001 bp").count(),1);
-  assert.equal(await favorites.getByText("평가 44.3점").count(),1);
+  assert.equal(await favorites.getByText("0.001 bp").count(),1);
+  assert.equal(await favorites.getByText("44.3점").count(),1);
   assert.equal(await favorites.locator(".zg-dashboard-favorite-link svg.lucide-chevron-right").count(),0,"Replace shortcut arrows with data");
   assert.equal(await favorites.getByText("자료 미제공").count(),1,"Missing observation does not become zero");
+  assert.equal(await favorites.locator(".zg-dashboard-favorite-card-head").count(),6,"Every favorite has its own titled card");
+  assert.equal(await favorites.locator(".zg-dashboard-favorite-status").count(),6,"Every card has a distinct status slot");
+  assert.equal(await favorites.getByText("관측 26.10.20").count(),1,"Actual observation date is shown");
+  assert.equal(await favorites.locator('a[href="/liquidity-crisis/"]').first().getByText("중립").count(),1);
+  assert.equal(await favorites.locator('a[href="/liquidity-crisis/"]').first().locator(".zg-dashboard-favorite-metric small").textContent(),"현재");
+
   if(wide){
    assert.equal(await favorites.getAttribute("data-open"),"true");
    assert.equal(await toggle.count(),0,"Desktop chat is persistent; no second floating toggle");
+   const card=favorites.locator(".zg-dashboard-favorite-link").first();
+   const visible=await card.evaluate(el=>{
+    const rect=el.getBoundingClientRect(),metric=el.querySelector(".zg-dashboard-favorite-reading").getBoundingClientRect();
+    return {cardWidth:Math.round(rect.width),metricInside:metric.right<=rect.right+1};
+   });
+   assert(visible.cardWidth>=180&&visible.cardWidth<=240&&visible.metricInside,"Desktop mini card is readable within sidebar");
+
    assert.equal(await page.locator(".zg-container").evaluate(el=>getComputedStyle(el).width!=="0px"),true);
   }else{
    const star=page.getByRole("button",{name:"즐겨찾기 열기"});
    await star.click();
    await favorites.waitFor({state:"visible"});
    assert.equal(await favorites.getAttribute("data-open"),"true");
+   // Wait until the slide transition has reached its final on-screen position.
+   await page.waitForFunction(()=>{
+    const rail=document.querySelector("#zg-dashboard-favorites-panel");
+    if(!rail)return false;
+    const box=rail.getBoundingClientRect();
+    return box.left>=-0.5&&box.right<=window.innerWidth+0.5;
+   },null,{timeout:5000});
+   const firstCard=favorites.locator(".zg-dashboard-favorite-link").first();
+   const mobileLayout=await firstCard.evaluate(el=>{
+    const bounds=el.getBoundingClientRect(),head=el.querySelector(".zg-dashboard-favorite-card-head").getBoundingClientRect();
+    const metric=el.querySelector(".zg-dashboard-favorite-reading").getBoundingClientRect();
+    const foot=el.querySelector(".zg-dashboard-favorite-context").getBoundingClientRect();
+    return {inside:bounds.left>=0&&bounds.right<=window.innerWidth,
+     order:head.top<metric.top&&metric.top<foot.top,
+     metricFits:metric.right<=bounds.right+1};
+   });
+   assert.deepEqual(mobileLayout,{inside:true,order:true,metricFits:true},"Mobile favorite card visual hierarchy fits viewport");
+
    await page.getByRole("button",{name:"즐겨찾기 닫기"}).first().click();
    assert.equal(await favorites.getAttribute("data-open"),"false");
    await toggle.waitFor({state:"visible"});
