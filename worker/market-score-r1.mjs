@@ -288,12 +288,26 @@ function composeMarketSnapshot({liquidityHistory,collected,storedInflation,infla
         ? {...domain,methodologyVersion:consumptionDomain?.methodologyVersion??'CONSUMPTION_R5',asOfDate:asOf,historyMode:'CURRENT_VINTAGE_ONLY',lookAheadSafe:false}
         : domain);
 
+      const publicResult={
+        status:"SUCCESS",
+        modelVersion:composite.modelVersion,
+        asOfDate:asOf,
+        overall:composite.overall,
+        domains:publicCompositeDomains,
+        diagnostics8:diagnostics8(diagnostic?.snapshot),
+        updatedAt:composite.updatedAt,
+        dataQuality:{
+          ...composite.dataQuality,
+          historyMode:diagnostic?.historyMode??"CURRENT_VINTAGE_ONLY",
+          lookAheadSafe:diagnostic?.lookAheadSafe??false,
+          limitations:diagnostic?.limitations??{},
+        },
+      };
       // Eight-risk earnings diagnostic: preserve the original four scorer inputs
       // separately from the thirteen-factor E1-R5 economic domain. The input
       // components are legacy E1-R4 compatibility scores; never assign E1-R5's
       // evaluation date to these individual observations.
-      const publicDiagnostics=diagnostics8(diagnostic?.snapshot);
-      const risk=publicDiagnostics.earningsRecessionDefense;
+      const risk=publicResult.diagnostics8.earningsRecessionDefense;
       if(risk&&risk.status==="READY"){
         const ids=["epsGrowth","margin","revenueGrowth","earningsGrowthBreadth"];
         const inputs=scoringExternal?.earningsScores??{};
@@ -319,19 +333,6 @@ function composeMarketSnapshot({liquidityHistory,collected,storedInflation,infla
           risk.riskTrend=riskEvidence.periodTrend;
         }
       }
-      return {
-        status:"SUCCESS",
-        modelVersion:composite.modelVersion,
-        asOfDate:asOf,
-        overall:composite.overall,
-        domains:publicCompositeDomains,
-        diagnostics8:publicDiagnostics,
-        updatedAt:composite.updatedAt,
-        dataQuality:{
-          ...composite.dataQuality,
-          historyMode:diagnostic?.historyMode??"CURRENT_VINTAGE_ONLY",
-          lookAheadSafe:diagnostic?.lookAheadSafe??false,
-          limitations:diagnostic?.limitations??{},
-        },
-      };
+      return publicResult;
+
 }
