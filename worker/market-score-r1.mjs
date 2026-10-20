@@ -181,7 +181,13 @@ function composeMarketSnapshot({liquidityHistory,collected,storedInflation,infla
       const scoringExternal={...(collected?.external??{})};
       delete scoringExternal.inflationExpectationsRows;
       const storedEarnings=scoringExternal?.publicDomainScores?.earnings;
-      scoringExternal.earningsScores=storedEarnings?.status==="READY"?{
+      const riskEvidence=scoringExternal?.earningsRiskEvidence?.status==="READY"
+        ?scoringExternal.earningsRiskEvidence:null;
+      // Independent stored 4-factor scorer (PC only) takes precedence over
+      // leftover legacy compatibility fields in the E1-R5 economic domain.
+      scoringExternal.earningsScores=riskEvidence?Object.fromEntries(
+        riskEvidence.factors.map(row=>[row.id,row.score])
+      ):storedEarnings?.status==="READY"?{
         epsGrowth:finite(storedEarnings?.components?.epsGrowth?.score)?storedEarnings.components.epsGrowth.score:null,
         margin:finite(storedEarnings?.components?.margin?.score)?storedEarnings.components.margin.score:null,
         revenueGrowth:finite(storedEarnings?.components?.revenueGrowth?.score)?storedEarnings.components.revenueGrowth.score:null,
@@ -291,12 +297,26 @@ function composeMarketSnapshot({liquidityHistory,collected,storedInflation,infla
         const ids=["epsGrowth","margin","revenueGrowth","earningsGrowthBreadth"];
         const inputs=scoringExternal?.earningsScores??{};
         risk.methodologyVersion="EARNINGS_RECESSION_DIAGNOSTIC_R1";
-        risk.riskFactorsSource="E1_R4_LEGACY_COMPATIBILITY";
+        // R3 FIX1 source replay verified the latest 2026-06-30
+        // four-factor score as 84.6875; this runtime check prevents a later
+        // mismatched source period from silently labeling stale inputs.
+        const validEvidence=riskEvidence?.methodologyVersion==="E1-R4"&&
+          ids.every(id=>finite(inputs[id])&&inputs[id]>=0&&inputs[id]<=100)&&
+          finite(riskEvidence?.score)&&Math.abs(riskEvidence.score-risk.score)<1e-7;
+        risk.riskFactorsSource=validEvidence?"E1_R4_STORED_PC_REPLAY":"E1_R4_LEGACY_COMPATIBILITY";
         risk.riskFactors=ids.map(id=>{
           const value=inputs[id];
           return {id,status:finite(value)&&value>=0&&value<=100?"READY":"PARTIAL",
-            score:finite(value)&&value>=0&&value<=100?value:null,observationDate:null};
+            score:finite(value)&&value>=0&&value<=100?value:null,
+            observationDate:validEvidence?riskEvidence.financialPeriodEnd:null};
         });
+        if(validEvidence){
+          risk.financialPeriodEnd=riskEvidence.financialPeriodEnd;
+          risk.sourceStoredAt=riskEvidence.sourceStoredAt??null;
+          risk.historyMode="CURRENT_VINTAGE_NOT_PIT";
+          risk.riskHistoryKind=riskEvidence.historyKind;
+          risk.riskTrend=riskEvidence.periodTrend;
+        }
       }
       return {
         status:"SUCCESS",
