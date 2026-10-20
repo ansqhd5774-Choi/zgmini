@@ -11,7 +11,9 @@ test('new eight-risk candidate renders independent diagnostic score, chart and e
  assert.match(risk,/riskFactorsMethodologyVersion===payload\?\.methodologyVersion/);
  for(const id of ['epsGrowth','margin','revenueGrowth','earningsGrowthBreadth'])assert.ok(risk.includes(id),id);
  assert.doesNotMatch(risk,/storedE1|E1-R5|r5Order|S1.*S13/);
- assert.match(risk,/동일 산식의 검증된 과거 진단 이력 없음/);
+ assert.match(risk,/저장된 동일 산식의 과거 점수 미확보/);
+ assert.match(risk,/fiscalReconstruction/);
+ assert.match(risk,/사후 재구성/);
  assert.match(legacy,/storedE1/); // Legacy stays unmodified until validated cutover; not a production assertion.
 });
 test('risk-only candidate never fabricates one-year points, deltas or source scores',()=>{
