@@ -12,7 +12,7 @@ import "./risk-detail-side-rails.css";
 const RISK_ICON={
  inflationStability:Activity,
  recessionDefense:TrendingDown,
- liquidityCrisisDefense:Layers3,
+ stagflationSafety:Layers3,
  creditRiskDefense:WalletCards,
  earningsRecessionDefense:ChartNoAxesCombined,
  assetBubbleSafety:BarChart3,

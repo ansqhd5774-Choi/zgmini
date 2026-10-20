@@ -8,7 +8,7 @@ const header=read("components/site-header.tsx");
 const chat=read("components/community-chat.tsx");
 const home=read("app/page.tsx");
 const catalog=read("components/market-explorer-catalog.ts");
-const paths=["/inflation/","/recession/","/liquidity-crisis/","/credit-risk/","/asset-bubble/","/debt-risk/","/supply-shock/","/earnings-recession/"];
+const paths=["/inflation/","/recession/","/stagflation-risk/","/credit-risk/","/asset-bubble/","/debt-risk/","/supply-shock/","/earnings-recession/"];
 
 test("risk rail uses exactly the existing eight real deep links, with current-page status",()=>{
  const source=catalog.split("export const RISK_CARDS=[")[1].split("] as const;")[0];
