@@ -20,7 +20,8 @@ test('method explanation and history are shared by all eight beginner pages',()=
 test('displayed current methodology version comes from stored API, never a hard-coded active version',()=>{
  assert.match(guide,/reportedMethodologyVersion\(topic,payload\)/);
  assert.match(guide,/payload\?\.methodologyVersion/);
- assert.match(guide,/payload\?\.storedE1\?\.status==="READY"/);
+ assert.match(guide,/const version=payload\?\.methodologyVersion/);
+ assert.doesNotMatch(guide,/payload\?\.storedE1\?\.status==="READY"/);
  assert.match(guide,/currentVersion\?\?"버전 미확인"/);
  assert.match(guide,/isCandidateVersion\?" · 연구 후보"/);
  assert.match(guide,/data-testid="current-methodology-version"/);
