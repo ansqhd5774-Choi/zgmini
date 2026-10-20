@@ -95,7 +95,16 @@ export default function EconomicDetailPanel({id}:{id:EconomicDomainId}){
  const lastSavedHistory=history.at(-1)??null;
  const periodSourceMismatch=Boolean(score!==null&&lastSavedHistory&&Math.abs(lastSavedHistory.value-score)>1e-6);
  const computed=liquidityStoredScoreComparisons(history,lastSavedHistory?.label??"",score);
- const periods=domain?.scoreComparisons??computed;
+ // Explicit stored comparisons take priority; derive missing slots ONLY from an
+ // actually matching current score and saved historical observations.
+ const producer=domain?.scoreComparisons;
+ const periods={
+  week:producer?.week??computed.week,
+  month:producer?.month??computed.month,
+  threeMonth:producer?.threeMonth??computed.threeMonth,
+  sixMonth:producer?.sixMonth??computed.sixMonth,
+  year:producer?.year??computed.year,
+ };
  const comparisons=[{label:"1주",value:periods.week??null},{label:"1개월",value:periods.month??null},{label:"3개월",value:periods.threeMonth??null},{label:"6개월",value:periods.sixMonth??null},{label:"1년",value:periods.year??null}];
  const observations=(domain?.indicators??[]).filter((row):row is Indicator=>Boolean(row&&typeof row==="object"));
  const scored=observations.filter(item=>item.status==="READY"&&validScore(item.score));
@@ -111,7 +120,7 @@ export default function EconomicDetailPanel({id}:{id:EconomicDomainId}){
    <div className="fg-header-slot"><MarketCardHeader flag="/flags/us.svg" eyebrow="ZGMINI ECONOMIC DETAIL" title={"미국 "+config.name} description="저장된 시장 점수 기준" dateLabel="데이터 기준일" date={dateLabel(date)} source={publicNote}/></div>
    <div className="fg-content-slot">
     <div className="fg-score-slot"><MarketScoreOrb score={loading||score===null?"—":score.toFixed(1)} state={loading?"확인 중":stage(score)} variant="hero" comparisonItems={comparisons} comparisonAriaLabel={config.name+" 시장 우호점수 기간별 변화"}/></div>
-    <MarketTrendFrame className="fg-analysis-slot"><div className="fg-chart-slot"><div className="fg-renderer"><MarketFearGreedChart data={chart} axisTicks={axisTicks} axisLabels={axisLabels} latestPoint={latestPoint} showExtrema={chart.length>=3} instanceKey={"economic-"+id} gradientId={"economic-"+id+"-fill"} color={color} formatTooltipLabel={dateLabel} emptyLabel={loading?"불러오는 중":"저장된 점수 이력 없음"}/></div></div></MarketTrendFrame>
+    <MarketTrendFrame className="fg-analysis-slot"><div className="fg-chart-slot"><div className="fg-renderer"><MarketFearGreedChart data={chart} axisTicks={axisTicks} axisLabels={axisLabels} latestPoint={latestPoint} showExtrema={chart.length>=3} instanceKey={"economic-"+id} gradientId={"economic-"+id+"-fill"} color={color} formatTooltipLabel={dateLabel} marketScoreBands emptyLabel={loading?"불러오는 중":"저장된 점수 이력 없음"}/></div></div></MarketTrendFrame>
    </div>
    <div className="fg-footer-slot"><div className="cnn-panel-note"><span>차트 원칙</span><strong>{periodSourceMismatch&&lastSavedHistory&&score!==null?`현재 ${score.toFixed(1)}점(${dateLabel(date)}) · 이력 마지막 ${lastSavedHistory.value.toFixed(1)}점(${dateLabel(lastSavedHistory.label)}) · 서로 달라 기간별 비교 보류`:lastSavedHistory?`저장 이력 마지막 ${dateLabel(lastSavedHistory.label)} · 확인된 비교기간만 표시`:"저장 점수 이력 없음 · 비교 불가 기간은 —"}</strong></div></div>
   </section>
@@ -141,7 +150,7 @@ export default function EconomicDetailPanel({id}:{id:EconomicDomainId}){
    <div className="economic-reading-strips"><span><b>점수 읽기</b>{config.reading}</span><span><b>시장과의 관계</b>{config.impact}</span></div>
   </section>
   <section className="inflation-indicator-section inflation-r2-indicators economic-indicators" aria-labelledby={"economic-"+id+"-indicators"}>
-   <header><div><p className="cnn-eyebrow">ECONOMIC INDICATORS</p><h2 id={"economic-"+id+"-indicators"}>{config.name} 구성 지표</h2></div><p>저장된 지표만 표시합니다. 이전 값·공식 다음 발표일·미니차트가 없으면 <b>—</b>로 구분하며 임의로 보완하지 않습니다.</p></header>
+   <header><div><p className="cnn-eyebrow">ECONOMIC INDICATORS</p><h2 id={"economic-"+id+"-indicators"}>{config.name} {id==="growth"?"대표 구성지표":"구성 지표"} ({observations.length}개)</h2></div><p>승인된 저장 지표만 표시합니다. 이전 원자료·공식 다음 발표일·미니차트가 없으면 <b>—</b>로 구분하며 임의로 보완하지 않습니다.{id==="growth"?" 성장 점수의 24개 전체 가중요인이 아닌 공개된 대표 4개만 표시합니다.":""}</p></header>
    {error&&<p className="economic-data-notice" role="status">최근 데이터 조회가 지연되고 있습니다. 저장 자료는 갱신 확인 후 표시됩니다.</p>}
    <div className="inflation-table-wrap inflation-r2-table-wrap">
     <table className="inflation-indicator-table inflation-indicator-table-r2 economic-table">
@@ -179,6 +188,6 @@ export default function EconomicDetailPanel({id}:{id:EconomicDomainId}){
    </div>
    {!loading&&!observations.length&&<p className="economic-data-notice">구성 지표가 아직 저장되지 않았습니다. 없는 항목을 가상의 지표로 채우지 않습니다.</p>}
   </section>
-  <nav className="economic-links" aria-label="관련 시장 지표"><a className="economic-all-link" href="/economic-indicators/">← 12대 시장 지표 목록</a><a className="cnn-return-cta" href="/">← 메인 대시보드로 돌아가기</a></nav>
+  <a className="cnn-return-cta economic-back-button" href="/">← 메인 대시보드로 돌아가기</a>
  </div>;
 }
