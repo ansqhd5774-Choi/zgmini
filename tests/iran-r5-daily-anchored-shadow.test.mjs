@@ -127,3 +127,38 @@ test('a revised casualty count is NOT automatically a distinct newly occurring a
  assert.equal(p.potentialCasualtyRevisionCount,1);
  assert.equal(p.productionReady,false);
 });
+
+test('PC read-only audit never treats later revisions of one URL as a newly discovered attack',async()=>{
+ const fs=await import('node:fs');
+ const path=await import('node:path');
+ const os=await import('node:os');
+ const {openStore,hash}=await import('../scripts/iran-progress/store.mjs');
+ const {auditR5ReadOnly}=await import('../scripts/iran-progress/audit-daily-shadow-r5.mjs');
+ const dir=fs.mkdtempSync(path.join(os.tmpdir(),'r5-first-seen-'));
+ const file=path.join(dir,'iran.sqlite');
+ const now=Date.parse('2026-10-22T01:00:00Z');
+ const first=Date.parse('2026-10-20T15:00:00Z'),revised=Date.parse('2026-10-21T00:00:00Z');
+ const store=openStore(file);
+ try{
+  const original={title:'Houthis fired missiles at Aden airport in Yemen',
+   date:'2026-10-20',summary:'',sourceUrl:'https://www.bbc.com/news/articles/r5-revision-1'};
+  const changed={...original,title:'Houthis fired missiles at Aden airport in Yemen on Tuesday'};
+  store.putSource('news-metadata:'+hash(original),original,first);
+  store.putSource('news-metadata:'+hash(changed),changed,revised);
+  store.checkpoint('continuous-news-last-run-r3',{status:'NO_NEW_ARTICLES',lastDiscoverySuccessAt:now});
+  store.checkpoint('reference-flow-last-valid-r3',{eventCount:17,events:[],score:35.5,asOfDate:'2026-10-20'});
+ }finally{store.close();}
+ try{
+  const report=auditR5ReadOnly(file,{now});
+  assert.equal(report.revisedSourceUrls,1);
+  assert.equal(report.sourceReceiptTimeMissing,0);
+  assert.equal(report.outcome,'INDEPENDENT_INCIDENT_REVIEW_REQUIRED');
+  assert.equal(report.preliminaryScore,null);
+  assert.equal(report.r3LifetimeEventCount,17);
+  assert.equal(report.r3PublishedProjectionCount,0);
+  assert.equal(report.r5BackcastWindowEventCount,1);
+  assert.equal(report.r5AvailableUniqueEventCount,1);
+  assert.equal(report.acceptedUnique,1);
+  assert.equal(report.dbWrite,'DISABLED');
+ }finally{fs.rmSync(dir,{recursive:true,force:true});}
+});
