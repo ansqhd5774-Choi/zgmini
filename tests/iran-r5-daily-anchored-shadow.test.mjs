@@ -112,7 +112,7 @@ test('21 Oct report already stored by 06:35 is included in reality anchor, never
  assert.equal(at(a,'2026-10-20').value,15.59);
 });
 test('newly discovered older dated report flags retrospective correction review',()=>{
- const late=attack('2026-10-20');
+ const late=attack('2026-10-19');
  late.sourceStoredAt=Date.parse('2026-10-21T00:00:00Z');
  const a=calculateIranDailyAnchorShadow([late],{asOfDate:'2026-10-22'});
  assert.equal(a.latePriorPublicationDateCount,1);
@@ -161,4 +161,37 @@ test('PC read-only audit never treats later revisions of one URL as a newly disc
   assert.equal(report.acceptedUnique,1);
   assert.equal(report.dbWrite,'DISABLED');
  }finally{fs.rmSync(dir,{recursive:true,force:true});}
+});
+
+test('a post-anchor UTC Oct20 article first discovered on KST Oct21 is a new Oct21 observation',()=>{
+ const fresh=attack('2026-10-20');
+ fresh.sourceStoredAt=Date.parse('2026-10-21T00:00:00Z'); // KST Oct21 09:00
+ const r=calculateIranDailyAnchorShadow([fresh],{asOfDate:'2026-10-21'});
+ assert.equal(r.score,10.78);
+ assert.equal(r.latePriorPublicationDateCount,0);
+ assert.equal(r.observedKstDateShiftCount,1);
+ assert.equal(at(r,'2026-10-20').value,13);
+ assert.equal(at(r,'2026-10-21').reportedEvents,1);
+});
+test('UTC previous-day publication first discovered KST Oct22 affects Oct22, not Oct21',()=>{
+ const fresh=attack('2026-10-21');
+ fresh.sourceStoredAt=Date.parse('2026-10-21T16:00:00Z'); // KST Oct22 01:00
+ const r=calculateIranDailyAnchorShadow([fresh],{asOfDate:'2026-10-22'});
+ assert.equal(r.latePriorPublicationDateCount,0);
+ assert.equal(r.observedKstDateShiftCount,1);
+ assert.equal(at(r,'2026-10-21').value,13);
+ assert.equal(at(r,'2026-10-22').value,10.78);
+});
+test('UTC older than one date, first discovered after anchor, is held rather than silently treated as current combat',()=>{
+ const old=attack('2026-10-18');
+ old.sourceStoredAt=Date.parse('2026-10-21T00:00:00Z');
+ const r=calculateIranDailyAnchorShadow([old],{asOfDate:'2026-10-21'});
+ assert.equal(r.latePriorPublicationDateCount,1);
+ assert.equal(r.score,13);
+ assert.equal(at(r,'2026-10-18').value,13);
+});
+test('future first-seen receipt time relative to requested KST report day rejects shadow input',()=>{
+ const e=attack('2026-10-21');
+ e.sourceStoredAt=Date.parse('2026-10-22T16:00:00Z'); // KST Oct23
+ assert.throws(()=>calculateIranDailyAnchorShadow([e],{asOfDate:'2026-10-22'}),/R5_ACCEPTED_EVENT_CONTRACT_INVALID/);
 });
