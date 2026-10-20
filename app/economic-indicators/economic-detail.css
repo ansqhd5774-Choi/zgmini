@@ -63,3 +63,9 @@
 .economic-detail-page>.economic-back-button:hover{filter:brightness(1.08)}
 .economic-detail-page>.economic-back-button:focus-visible{outline:2px solid #7acde0;outline-offset:3px}
 @media(max-width:767px){.economic-detail-page>.economic-back-button{max-width:100%;justify-content:center}}
+
+/* Only the V9 breadth hero: compact evidence-backed update movement, no layout shift elsewhere. */
+.economic-target-card .economic-v9-status{display:flex;align-items:center;justify-content:center;gap:7px;flex-wrap:wrap;margin-top:2px;font-size:10px;color:#9db6c6;line-height:1.3}
+.economic-target-card .economic-v9-status strong{font-size:12px;font-weight:800;white-space:nowrap}
+.economic-target-card .economic-v9-status strong[data-move="up"]{color:#4adea6}
+.economic-target-card .economic-v9-status strong[data-move="down"]{color:#fb7185}
