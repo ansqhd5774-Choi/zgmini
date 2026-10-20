@@ -116,6 +116,24 @@ export function buildProjection({inputs,snapshot,publicSnapshot,e1,nowIso,riskHi
   points.every((p:any,i:number)=>i===0||p.date>points[i-1].date);
  const riskTrend=historyMatched?points.map((row:any)=>({date:row.date,score:row.score})):[];
  const riskHistoryKind=historyMatched?riskHistory.kind:null;
+ // Keep the factor mini-chart contract separate from 12-domain E1-R5.
+ // Each fiscal-quarter factor must reproduce its verified diagnostic point;
+ // the final four components must also equal the current approved scores.
+ const factorRows=Array.isArray(riskHistory?.factorPoints)?riskHistory.factorPoints:[];
+ const factorWeights=[0.35,0.25,0.20,0.20];
+ const factorHistoryMatched=historyMatched&&isFiscalRisk&&factorRows.length===points.length&&
+  factorRows.length>=2&&factorRows.every((row:any,i:number)=>{
+   const components=row?.scores;
+   if(row?.date!==points[i]?.date||!components||typeof components!=="object")return false;
+   if(!ids.every(id=>finite(components[id])&&components[id]>=0&&components[id]<=100))return false;
+   const reconstructed=ids.reduce((sum,id,j)=>sum+factorWeights[j]*components[id],0);
+   if(Math.abs(reconstructed-points[i].score)>1e-7)return false;
+   return i!==factorRows.length-1||ids.every((id,j)=>Math.abs(components[id]-candidates[j].score)<1e-7);
+  });
+ const riskFactorTrend=factorHistoryMatched?factorRows.map((row:any)=>({
+  date:row.date,
+  scores:Object.fromEntries(ids.map(id=>[id,row.scores[id]])),
+ })):[];
  const isR5=e1?.methodologyVersion==="E1-R5";
  const indicators=Array.isArray(e1?.indicators)?e1.indicators.map((x:any,index:number)=>({
   id:isR5?(x?.id??R5_IDS[index]??String(index)):(R4_IDS[index]??x?.id??String(index)),
@@ -148,6 +166,7 @@ export function buildProjection({inputs,snapshot,publicSnapshot,e1,nowIso,riskHi
   riskFactorsSource:scoreMatched?riskFactorSource:null,
   riskFactors,
   riskTrend,
+  riskFactorTrend,
   riskHistoryKind,
   riskFinancialPeriodEnd:isFiscalRisk?diagnostic.financialPeriodEnd:null,
   riskHistoryMode:isFiscalRisk?"CURRENT_VINTAGE_NOT_PIT":null,
