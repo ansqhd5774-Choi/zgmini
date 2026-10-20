@@ -118,3 +118,12 @@ test('newly discovered older dated report flags retrospective correction review'
  assert.equal(a.latePriorPublicationDateCount,1);
  assert.equal(a.score,13);
 });
+
+test('a revised casualty count is NOT automatically a distinct newly occurring attack',()=>{
+ const revised=attack('2026-10-21');
+ revised.evidence='Death toll from Houthi attack on Shabwa camp rises to 73';
+ const p=calculateIranDailyAnchorShadow([revised],{asOfDate:'2026-10-21'});
+ assert.equal(p.status,'SHADOW_REVIEW_REQUIRED');
+ assert.equal(p.potentialCasualtyRevisionCount,1);
+ assert.equal(p.productionReady,false);
+});
