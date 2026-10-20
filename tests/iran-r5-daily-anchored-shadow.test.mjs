@@ -195,3 +195,20 @@ test('future first-seen receipt time relative to requested KST report day reject
  e.sourceStoredAt=Date.parse('2026-10-22T16:00:00Z'); // KST Oct23
  assert.throws(()=>calculateIranDailyAnchorShadow([e],{asOfDate:'2026-10-22'}),/R5_ACCEPTED_EVENT_CONTRACT_INVALID/);
 });
+
+test('exact K21 candidate recomputes unique source deltas directly rather than adjusting rounded old history',()=>{
+ const events=[
+  warning('2026-10-17'),warning('2026-10-18'),
+  warning('2026-10-19'),warning('2026-10-19'),
+  attack('2026-10-20'),interception('2026-10-20'),
+ ];
+ const r=calculateIranDailyAnchorShadow(events,{asOfDate:'2026-10-21',sensitivityScale:21});
+ assert.equal(r.score,13);
+ assert.equal(r.weightedPointScale,21);
+ assert.equal(at(r,'2026-10-19').value,14.82);
+ assert.equal(at(r,'2026-10-20').value,13);
+ const d=calculateIranDailyAnchorShadow([attack('2026-10-22')],{asOfDate:'2026-10-22',sensitivityScale:21});
+ assert.equal(d.score,11.76);
+ assert.equal(d.history.at(-2).value,13);
+ assert.throws(()=>calculateIranDailyAnchorShadow([],{asOfDate:'2026-10-21',sensitivityScale:0}),/R5_SENSITIVITY_SCALE_INVALID/);
+});
