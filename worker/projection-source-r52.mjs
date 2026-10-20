@@ -74,6 +74,7 @@ export async function loadProjectionSource(id,env,{now=Date.now(),onPhase,onMeta
     Array.isArray(diag?.riskTrend)){
     riskHistory={
       kind:diag.riskHistoryKind,points:diag.riskTrend,
+      factorPoints:Array.isArray(diag.riskFactorTrend)?diag.riskFactorTrend:[],
       financialPeriodEnd:diag.financialPeriodEnd,
       historyMode:diag.historyMode,
     };
