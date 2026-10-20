@@ -18,7 +18,7 @@ const count=rows=>rows.reduce((acc,r)=>(acc[r.status]=(acc[r.status]??0)+1,acc),
 const summarizeRows=rows=>rows.map(r=>({date:r.date,status:r.status,eligible:r.eligible??null,required:r.required??null,reason:r.reason??null,rejected:r.reject??null}));
 const validMembers=x=>Array.isArray(x)&&x.length>=490&&x.length<=520&&x.every(t=>typeof t==='string'&&t.trim()===t&&t.length>0)&&new Set(x).size===x.length;
 function parseMembers(s){try{return JSON.parse(s)}catch{return null}}
-export function evaluateDirect(db,dates,{onStage=()=>{}}={}){
+export function evaluateDirect(db,dates,{onStage=()=>{},includeFactorHistory=false}={}){
  if(!Array.isArray(dates)||dates.length<120||dates.length>370||dates.some((d,i)=>!isDate(d)||(i>0&&d<=dates[i-1])))throw Error('BOUNDED_CALENDAR_INVALID');
  const tables=new Set(db.prepare("SELECT name FROM sqlite_master WHERE type='table'").all().map(x=>x.name));
  for(const t of ['market_score_breadth_b1_r3_universe_v1','market_score_breadth_b1_r3_current_v1','market_score_breadth_b1_r3_history_v1'])
@@ -69,7 +69,7 @@ export function evaluateDirect(db,dates,{onStage=()=>{}}={}){
       referenceDate:latest.referenceDate,factors:latest.factors,contributions:latest.contributions,validDailySessions:latest.validDailySessions,
       f5Margin:latest.f5Eligible-latest.f5Required}:{date:latest?.date??null,status:latest?.status??'NOT_READY',reason:latest?.reason??'UNKNOWN'},
     ema3DailyAbsChange:goodDiff.length?{n:goodDiff.length,mean:round(goodDiff.reduce((a,b)=>a+b,0)/goodDiff.length)}:null},
-  perDay:smooth.map(x=>({date:x.date,status:x.status,score:x.score??null,ema3:x.ema3??null,reason:x.reason??null,referenceDate:x.referenceDate??null})),
+  perDay:smooth.map(x=>({date:x.date,status:x.status,score:x.score??null,ema3:x.ema3??null,reason:x.reason??null,referenceDate:x.referenceDate??null, ...(includeFactorHistory?{factors:x.status==='CANDIDATE_READY'?x.factors:null}:{} )})),
  };
 }
 
@@ -102,7 +102,7 @@ export function projectDirect(evaluation,asOf){
  };
 }
 const scoreDate=(evaluation,asOf)=>evaluation.perDay.findLast(r=>r.date<=asOf&&r.status==='CANDIDATE_READY')?.date??asOf;
-export function runShadow({base=DEFAULT_BASE,now=new Date(),writeLocal=false,asOf=null,historySessions=120}={}){
+export function runShadow({base=DEFAULT_BASE,now=new Date(),writeLocal=false,asOf=null,historySessions=120,includeFactorHistory=false}={}){
  const expected=latestCompletedSession(now);
  if(asOf!==null&&(!isDate(asOf)||asOf>expected||!isMarketSession(asOf)))throw Error('ASOF_NOT_COMPLETED_MARKET_SESSION');
  if(writeLocal&&asOf!==null&&asOf!==expected)throw Error('HISTORICAL_WRITE_FORBIDDEN');
@@ -119,7 +119,7 @@ export function runShadow({base=DEFAULT_BASE,now=new Date(),writeLocal=false,asO
  try{
   db.exec('PRAGMA query_only=ON');db.exec('PRAGMA busy_timeout=2500');
   const before=Number(db.prepare('PRAGMA data_version').get().data_version);
-  const evaluation=evaluateDirect(db,dates);
+  const evaluation=evaluateDirect(db,dates,{includeFactorHistory});
   const after=Number(db.prepare('PRAGMA data_version').get().data_version);
   if(before!==after)throw Error('SOURCE_CHANGED_DURING_READ');
   const latestUniverse=db.prepare('SELECT MAX(trade_date) date FROM market_score_breadth_b1_r3_universe_v1').get()?.date??null;

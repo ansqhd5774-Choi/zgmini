@@ -7,6 +7,7 @@ import {projectV11PublicDomain,V11_METHOD} from '../../worker/breadth-v11-public
 import {V9_METHOD} from '../../worker/breadth-v9-public-view.mjs';
 const valid=x=>typeof x==='number'&&Number.isFinite(x)&&x>=0&&x<=100;
 const round=x=>Math.round(x*1e9)/1e9;
+const FACTOR_KEYS=Object.freeze(['F1','F2','F3','F4','F5']);
 export function buildV11PublicRecord({latest,verified}={}){
  if(!latest||!verified||latest.methodologyVersion!==V9_METHOD||
     verified.methodologyVersion!==V9_METHOD||latest.quality?.noImputation!==true||
@@ -33,6 +34,22 @@ export function buildV11PublicRecord({latest,verified}={}){
   previous=round(previous===null?row.score:previous+0.5*(row.score-previous));
   trend.push({label:row.date,value:previous});
  }
+ const factorHistory=Object.fromEntries(FACTOR_KEYS.map(k=>[k,[]]));
+ let previousIndex=null;
+ for(let index=0;index<rows.length;index++){
+  const row=rows[index];
+  if(row.status!=='CANDIDATE_READY'){
+   if(row.factors!==null)return null;
+   continue;
+  }
+  if(!row.factors||FACTOR_KEYS.some(k=>!valid(row.factors[k])))return null;
+  const breakBefore=previousIndex!==null&&index-previousIndex>1;
+  for(const k of FACTOR_KEYS)factorHistory[k].push({
+   date:row.date,value:row.factors[k],breakBefore
+  });
+  previousIndex=index;
+ }
+ if(FACTOR_KEYS.some(k=>factorHistory[k].length!==trend.length))return null;
  const score=trend.at(-1)?.value;
  if(!valid(score)||trend.at(-1)?.label!==last.date||
     Math.abs(score-evaluation.changes.latest.candidate)>1e-6||
@@ -44,7 +61,7 @@ export function buildV11PublicRecord({latest,verified}={}){
   phase:latest.asOf===last.date?'OBSERVED':'CARRY_FORWARD',
   sourceStoredAt:latest.sourceStoredAt??verified.sourceStoredAt??null,
   factors:Object.fromEntries(['F1','F2','F3','F4','F5'].map(k=>[k,f[k]])),
-  trend,
+  trend,factorHistory,
   annualValidation:{requiredSessions:252,observedSessions:trend.length,
    missingSessions:252-trend.length,completeYear:trend.length===252},
  };
