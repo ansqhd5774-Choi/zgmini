@@ -37,6 +37,10 @@ test("new styles are scoped to dashboard, readable, accessible and non-animated 
  assert.match(css,/data-tone="positive"/);
  assert.match(css,/data-tone="negative"/);
  assert.match(css,/data-tone="neutral"/);
+ // Neutral follows the site's established dark-theme neutral tokens, never yellow.
+ assert.match(css,/\.zg-dashboard-favorite-status\[data-tone="neutral"\]\{color:var\(--zg-neutral-text,#C4CFDC\)\}/);
+ assert.match(css,/\.zg-dashboard-favorite-status\[data-tone="neutral"\] \.zg-dashboard-favorite-status-dot\{background:var\(--zg-neutral-fill,#93A7BE\)\}/);
+ assert.doesNotMatch(css,/data-tone="neutral"[^\n]*#e8cf90/);
  assert.match(css,/\.zg-dashboard-favorite-count/);
  assert.match(css,/background:#f5bc45;color:#071a2d/);
  assert.match(css,/\.zg-dashboard\[data-view="dashboard"\]>\.zg-container/);
