@@ -70,11 +70,30 @@ function verifiedUpcomingSourceRelease(x:any,nowIso:unknown){
 const R4_IDS=["epsGrowth","margin","revenueGrowth","earningsGrowthBreadth"] as const;
 const R5_IDS=["S1","S2","S3","S4","S5","S6","S7","S8","S9","S10","S11","S12","S13"] as const;
 
-export function buildProjection({inputs,snapshot,publicSnapshot,e1,nowIso}:any){
+export function buildProjection({inputs,snapshot,publicSnapshot,e1,nowIso,riskHistory}:any){
  const body=snapshot?.body??{};
  const asOf=validDate(body?.asOfDate)?body.asOfDate:nowIso.slice(0,10);
  const diagnostic=body?.diagnostics8?.earningsRecessionDefense??null;
  const mainScore=diagnostic?.status==="READY"&&finite(diagnostic?.score)?diagnostic.score:null;
+ // Risk factors are supplied by the four-input diagnostic scorer itself, not
+ // by the economic-domain E1-R5's 13 factor array.
+ const riskMethod="EARNINGS_RECESSION_DIAGNOSTIC_R1";
+ const ids=["epsGrowth","margin","revenueGrowth","earningsGrowthBreadth"];
+ const candidates=Array.isArray(diagnostic?.riskFactors)?diagnostic.riskFactors:[];
+ const factorsOk=mainScore!==null&&diagnostic?.methodologyVersion===riskMethod&&
+  diagnostic?.riskFactorsSource==="E1_R4_LEGACY_COMPATIBILITY"&&
+  candidates.length===ids.length&&ids.every((id,index)=>
+   candidates[index]?.id===id&&candidates[index]?.status==="READY"&&
+   finite(candidates[index]?.score)&&candidates[index].score>=0&&candidates[index].score<=100);
+ const riskFactors=factorsOk?candidates.map((row:any)=>({
+  id:row.id,status:"READY",score:row.score,observationDate:null,
+ })): [];
+ const points=Array.isArray(riskHistory?.points)?riskHistory.points:[];
+ const lastRisk=points.at(-1);
+ const historyMatched=mainScore!==null&&riskHistory?.kind==="MATCHED_DIAGNOSTIC_METHOD_STORED_DATES"&&
+  lastRisk?.date===asOf&&finite(lastRisk?.score)&&Math.abs(lastRisk.score-mainScore)<1e-8;
+ const riskTrend=historyMatched?points.map((row:any)=>({date:row.date,score:row.score})):[];
+ const riskHistoryKind=historyMatched?riskHistory.kind:null;
  const isR5=e1?.methodologyVersion==="E1-R5";
  const indicators=Array.isArray(e1?.indicators)?e1.indicators.map((x:any,index:number)=>({
   id:isR5?(x?.id??R5_IDS[index]??String(index)):(R4_IDS[index]??x?.id??String(index)),
@@ -103,6 +122,11 @@ export function buildProjection({inputs,snapshot,publicSnapshot,e1,nowIso}:any){
   missingFactors:Array.isArray(diagnostic?.missingFactors)?diagnostic.missingFactors:[],
   asOfDate:asOf,
   methodologyVersion:"EARNINGS_RECESSION_DIAGNOSTIC_R1",
+  riskFactorsMethodologyVersion:factorsOk?riskMethod:null,
+  riskFactorsSource:factorsOk?"E1_R4_LEGACY_COMPATIBILITY":null,
+  riskFactors,
+  riskTrend,
+  riskHistoryKind,
   storedE1:{
    status:e1?.status??"PARTIAL",
    score:finite(e1?.score)?e1.score:null,
