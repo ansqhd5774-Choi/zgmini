@@ -24,7 +24,9 @@ test("real stored domain rows, all indicators for earnings/consumption, represen
  assert.ok(panel.includes("24개 전체 가중요인이 아닌 공개된 대표 4개"));
  assert.ok(panel.includes("indicatorLabel(item,id,i)"));
  assert.ok(panel.includes("currentPresentation(item)"));
- assert.ok(page.includes('id==="inflation"?<RiskDetailBeginnerLayout><InflationPanel/>'));
+ assert.ok(page.includes('<EconomicDetailPanel id={id}/>'));
+ assert.doesNotMatch(page,/<InflationPanel/);
+ assert.ok(panel.includes('marketScoreBands={id!=="inflation"}'),"original inflation gauge thresholds retained; other eleven use market zones");
 });
 test("one simple return button matches original inflation detail, no extra development navigation",()=>{
  assert.ok(panel.includes('<a className="cnn-return-cta economic-back-button" href="/">'));
