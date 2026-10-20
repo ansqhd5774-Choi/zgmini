@@ -29,6 +29,7 @@ export async function GET(request: Request) {
       const headers=new Headers(response.headers);
       headers.set("x-breadth-v9","stored"); // preserve existing diagnostics clients
       headers.set("x-breadth-version",candidate.header);
+      headers.set("x-breadth-factor-history","r13");
       return new Response(ndjson?JSON.stringify({...outer,body:modified})+"\n":JSON.stringify(modified),{status:response.status,headers});
     }catch{return new Response(original,{status:response.status,headers:response.headers});}
   }
