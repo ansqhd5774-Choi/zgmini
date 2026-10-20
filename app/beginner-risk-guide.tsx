@@ -135,7 +135,7 @@ const configs:Record<Topic,Config>={
   }
  },
  "earnings-recession":{
-  endpoint:"/api/earnings-recession-detail",title:"기업 실적 방어",importance:"주가는 장기적으로 기업이 벌어들이는 이익과 현금흐름의 영향을 크게 받습니다. 매출·마진·이익 개선이 시장 전반으로 퍼지는지 함께 봐야 합니다.",marketImpact:"실적 방어가 약해지면 주가 밸류에이션을 지지하기 어려워질 수 있습니다. 반대로 이익과 매출 개선이 넓게 확산되면 주식시장의 펀더멘털 기반이 강해집니다.",highMeaning:"높을수록 미국 기업 실적이 양호한 방향입니다.",lowMeaning:"낮을수록 실적 침체 위험이 강한 방향입니다.",positiveHeading:"E1 평가가 높은 지표",negativeHeading:"E1 상대적 하위 지표",stage:score=>safetyStage(score,"실적 주의","실적 침체 위험"),factorDescriptions:{
+  endpoint:"/api/earnings-recession-detail",title:"기업 실적 방어",importance:"주가는 장기적으로 기업이 벌어들이는 이익과 현금흐름의 영향을 크게 받습니다. 매출·마진·이익 개선이 시장 전반으로 퍼지는지 함께 봐야 합니다.",marketImpact:"실적 방어가 약해지면 주가 밸류에이션을 지지하기 어려워질 수 있습니다. 반대로 이익과 매출 개선이 넓게 확산되면 주식시장의 펀더멘털 기반이 강해집니다.",highMeaning:"높을수록 미국 기업 실적이 양호한 방향입니다.",lowMeaning:"낮을수록 실적 침체 위험이 강한 방향입니다.",positiveHeading:"침체 방어력이 높은 지표",negativeHeading:"상대적으로 취약한 진단 지표",factorIds:["epsGrowth","margin","revenueGrowth","earningsGrowthBreadth"],stage:score=>safetyStage(score,"실적 주의","실적 침체 위험"),factorDescriptions:{
     epsGrowth:"기업별 주당순이익 증가율이 전년보다 강해지는지 확인합니다.",
     margin:"영업이익률이 유지되거나 개선되는지 살펴봅니다.",
     revenueGrowth:"매출이 전년 동기보다 얼마나 성장했는지 확인합니다.",
@@ -205,10 +205,10 @@ const methodologyExplanations:Record<Topic,MethodologyExplanation>={
   limitation:"과거 차트가 현재 수정 자료 기반이면 당시 투자자가 알 수 있었던 값과 다를 수 있습니다.",
  },
  "earnings-recession":{
-  inputs:"기업의 매출·주당이익(EPS)·이익률과 현금흐름, 이익 개선 기업의 폭, 비용 압력 등을 확인합니다.",
-  interpretation:"기업 이익의 수준과 개선의 확산 정도를 점수로 종합합니다. 사용할 수 있는 실적 버전에 따라 분석 항목이 달라집니다.",
-  marketUse:"소수 대형주의 이익만 좋아지는지, 여러 기업과 업종으로 실적 개선이 확산되는지 비교합니다.",
-  limitation:"기업 실적 점수와 메인 경기 진단 점수는 서로 다를 수 있으며, 주가 상승 확률이 아닙니다.",
+  inputs:"기업 EPS 성장·매출 성장·영업이익률·이익 성장 기업의 비율 등 네 가지 방어 진단을 확인합니다.",
+  interpretation:"8대 위험 지표 전용 실적 침체 방어 점수입니다. 12대 대표 기업 실적의 13지표 평가와는 독립된 계산입니다.",
+  marketUse:"기업의 실적 약화가 확산될 때 위험 방어력이 둔화되는지 살펴봅니다.",
+  limitation:"분기 원자료와 평가 날짜는 다를 수 있으며, 침체 발생 확률이나 주가 상승 확률이 아닙니다.",
  },
 };
 
@@ -301,10 +301,9 @@ const verifiedImprovements:Partial<Record<Topic,VerifiedImprovement[]>>={
 };
 
 function reportedMethodologyVersion(topic:Topic,payload:any):string|null{
- // E1: the stored earnings component version and the main diagnostic may differ.
- const version=topic==="earnings-recession"&&payload?.storedE1?.status==="READY"
-  ?payload?.storedE1?.methodologyVersion
-  :payload?.methodologyVersion;
+ // The eight-risk diagnostic has its own methodology, independent of the
+ // twelve-domain earnings score.
+ const version=payload?.methodologyVersion;
  return typeof version==="string"&&version.trim()?version.trim():null;
 }
 
@@ -320,7 +319,7 @@ function extractFactors(topic:Topic,payload:any,config:Config):Factor[]{
  if(topic==="inflation")rows=Object.entries(payload?.features??{}).map(([id,row])=>({id,...(row as object)}));
  else if(topic==="recession")rows=[...(payload?.components??[]),...(payload?.supplementals??[])];
  else if(topic==="credit-risk")rows=[...(payload?.core??[]),...(payload?.supplementals??[])];
- else if(topic==="earnings-recession")rows=payload?.storedE1?.indicators??[];
+ else if(topic==="earnings-recession")rows=payload?.riskFactorsMethodologyVersion===payload?.methodologyVersion?(payload?.riskFactors??[]):[];
  else rows=payload?.indicators??[];
  const allowed=config.factorIds?new Set(config.factorIds):null;
  return rows.flatMap(row=>{
@@ -387,13 +386,12 @@ export default function BeginnerRiskGuide({topic}:{topic:Topic}){
   return()=>controller.abort();
  },[config.endpoint]);
  const score=finiteScore(payload?.score);
- const earningsStoredScore=topic==="earnings-recession"?finiteScore(payload?.storedE1?.score):null;
  const factors=useMemo(()=>extractFactors(topic,payload,config),[topic,payload,config]);
  const positive=useMemo(()=>factors.filter(x=>x.score>=60).sort((a,b)=>b.score-a.score).slice(0,3),[factors]);
  const negative=useMemo(()=>factors.filter(x=>x.score<45).sort((a,b)=>a.score-b.score).slice(0,3),[factors]);
  const earningsRelativeBottom=useMemo(()=>{
   if(topic!=="earnings-recession")return [];
-  // Relative E1 ranks are display-only, distinct from absolute <45 negative factors.
+  // Rank the weaker of the four independent risk factors; do not imply a negative absolute threshold.
   const highlighted=new Set(positive.map(row=>row.id));
   return factors.filter(row=>!highlighted.has(row.id)).sort((a,b)=>a.score-b.score).slice(0,3);
  },[factors,positive,topic]);
@@ -418,8 +416,8 @@ export default function BeginnerRiskGuide({topic}:{topic:Topic}){
    </div>
   </div>
   <div className="rounded-lg bg-[#071c2a] p-4 sm:p-5">
-   <h2 className="text-lg font-bold text-white">{topic==="earnings-recession"?<>왜 {earningsStoredScore===null?"이 점수":earningsStoredScore.toFixed(1)+"점"}인가요?</>:<>왜 {score===null?"이 점수":score.toFixed(1)+"점"}인가요?</>}</h2>
-   <p className="mt-1 text-sm text-slate-400">{topic==="earnings-recession"?"E1 저장 지표 평가입니다. 메인 진단 점수의 구성요인과는 별개입니다.":"현재 저장된 구성 점수를 기준으로 강한 방향의 요인을 최대 3개씩 보여줍니다."}</p>
+   <h2 className="text-lg font-bold text-white"><>왜 {score===null?"이 점수":score.toFixed(1)+"점"}인가요?</></h2>
+   <p className="mt-1 text-sm text-slate-400">{topic==="earnings-recession"?"8대 위험 지표 전용 4개 진단 점수입니다. 관측일 미확인 항목은 별도로 표시합니다.":"현재 저장된 구성 점수를 기준으로 강한 방향의 요인을 최대 3개씩 보여줍니다."}</p>
    <div className="mt-4 grid gap-3 md:grid-cols-2">
     <div className="bg-emerald-950/25 p-4"><h3 className="font-bold text-emerald-300">{config.positiveHeading}</h3>{positive.length?<ul className="mt-3 space-y-2 text-sm text-slate-200">{positive.map(item=><FactorListItem key={item.id} item={item} config={config}/>)}</ul>:<p className="mt-3 text-sm text-slate-400">현재 뚜렷한 기여 요인을 확인하지 못했습니다.</p>}</div>
     <div className="bg-rose-950/20 p-4"><h3 className="font-bold text-rose-300">{config.negativeHeading}</h3>{displayedLower.length?<ul className="mt-3 space-y-2 text-sm text-slate-200">{displayedLower.map(item=><FactorListItem key={item.id} item={item} config={config}/>)}</ul>:<p className="mt-3 text-sm text-slate-400">{topic==="earnings-recession"?"비교할 저장 지표가 부족합니다.":"현재 뚜렷한 부담 요인을 확인하지 못했습니다."}</p>}</div>
