@@ -38,7 +38,7 @@ const tone=(score:number|null)=>score===null?"#94a3b8":score<25?"#ef4444":score<
 const stage=(score:number|null)=>score===null?"확인 필요":score<25?"위험":score<40?"주의":score<60?"중립":score<75?"양호":"안정";
 const judgement=(score:number|null)=>score===null?{name:"평가 없음",tone:"missing"}:score>=60?{name:"긍정",tone:"positive"}:score>=40?{name:"중립",tone:"neutral"}:{name:"부정",tone:"negative"};
 const textValue=(v:unknown,unit?:string|null)=>finite(v)?String(Number(v.toFixed(Math.abs(v)>=100?1:2)))+(unit??""):"—";
-const technicalSource=(source?:string|null)=>source==="STORED_PIT_HISTORY"||!source?"저장된 점수 이력":source;
+const technicalSource=(source?:string|null)=>source==="STORED_PIT_HISTORY"?"공개 저장 평가점수":source??"출처 미제공";
 const currentPresentation=(item:Indicator)=>{
  if(item.status==="READY"){
   const printed=[item.displayValue,item.formattedValue].find(s=>typeof s==="string"&&s.trim());
@@ -49,6 +49,8 @@ const currentPresentation=(item:Indicator)=>{
  return {value:"—",detail:"원자료·평가점수 미제공",type:"missing"};
 };
 const indicatorDescription=(item:Indicator,label:string)=>item.content??item.description??(currentPresentation(item).type==="score"?label+"의 구성 평가점수입니다. 원자료 수치가 아닙니다.":"검증된 원자료 정보가 제공되지 않았습니다.");
+const approvedGrowthLabels:Record<string,string>={G010:"제조업 신규주문",G019:"산업생산",G035:"비농업고용 증감",G060:"신규 사업체 신청"};
+const indicatorLabel=(item:Indicator,domainId:string,index:number)=>item.label??item.name??(domainId==="growth"&&item.id?approvedGrowthLabels[item.id]:undefined)??item.id??"구성 지표 "+(index+1);
 
 function normalizeTrend(points:Point[]|undefined){
  const byDay=new Map<string,number>();
@@ -105,13 +107,13 @@ export default function EconomicDetailPanel({id}:{id:EconomicDomainId}){
  const publicNote=domain?.methodologyVersion??"공개 저장 결과";
  const color=tone(score);
  return <div className="economic-detail-page" data-economic-domain={id} style={{"--econ-accent":color} as CSSProperties}>
-  <section className="cnn-reference-panel fg-card fg-shared-shell inflation-target-card economic-target-card" data-testid={"economic-"+id+"-hero"} aria-busy={loading} data-market-state={loading?"loading":score===null?"unavailable":"ready"}>
+  <section className="cnn-reference-panel fg-card fg-shared-shell inflation-target-card economic-target-card" data-testid={"economic-"+id+"-hero"} aria-busy={loading} data-market-state={loading?"loading":score===null?"unavailable":"ready"} data-history-alignment={score===null?"unavailable":!lastSavedHistory?"missing":periodSourceMismatch?"mismatch":"matched"}>
    <div className="fg-header-slot"><MarketCardHeader flag="/flags/us.svg" eyebrow="ZGMINI ECONOMIC DETAIL" title={"미국 "+config.name} description="저장된 시장 점수 기준" dateLabel="데이터 기준일" date={dateLabel(date)} source={publicNote}/></div>
    <div className="fg-content-slot">
     <div className="fg-score-slot"><MarketScoreOrb score={loading||score===null?"—":score.toFixed(1)} state={loading?"확인 중":stage(score)} variant="hero" comparisonItems={comparisons} comparisonAriaLabel={config.name+" 시장 우호점수 기간별 변화"}/></div>
     <MarketTrendFrame className="fg-analysis-slot"><div className="fg-chart-slot"><div className="fg-renderer"><MarketFearGreedChart data={chart} axisTicks={axisTicks} axisLabels={axisLabels} latestPoint={latestPoint} showExtrema={chart.length>=3} instanceKey={"economic-"+id} gradientId={"economic-"+id+"-fill"} color={color} formatTooltipLabel={dateLabel} emptyLabel={loading?"불러오는 중":"저장된 점수 이력 없음"}/></div></div></MarketTrendFrame>
    </div>
-   <div className="fg-footer-slot"><div className="cnn-panel-note"><span>차트 원칙</span><strong>{periodSourceMismatch?"현재 공개점수와 과거 마지막 점수가 달라 기간별 비교 보류":"저장된 동기화 점수만 비교 · 미확보 구간은 —"}</strong></div></div>
+   <div className="fg-footer-slot"><div className="cnn-panel-note"><span>차트 원칙</span><strong>{periodSourceMismatch&&lastSavedHistory&&score!==null?`현재 ${score.toFixed(1)}점(${dateLabel(date)}) · 이력 마지막 ${lastSavedHistory.value.toFixed(1)}점(${dateLabel(lastSavedHistory.label)}) · 서로 달라 기간별 비교 보류`:lastSavedHistory?`저장 이력 마지막 ${dateLabel(lastSavedHistory.label)} · 확인된 비교기간만 표시`:"저장 점수 이력 없음 · 비교 불가 기간은 —"}</strong></div></div>
   </section>
   <section className="economic-beginner" data-testid={"economic-"+id+"-guide"}>
    <p className="cnn-eyebrow">BEGINNER GUIDE</p>
@@ -127,8 +129,8 @@ export default function EconomicDetailPanel({id}:{id:EconomicDomainId}){
    <h2 id={"economic-"+id+"-reasons-title"}>왜 {score===null?"—":score.toFixed(1)}점인가요?</h2>
    <p>구성 지표의 저장 평가를 상대적으로 비교합니다. 점수의 실제 산식·가중치를 이 화면에서 재계산하지 않습니다.</p>
    <div className="economic-reason-grid">
-    <div><h3>상대적으로 높은 지표</h3>{strongest.length?<ul>{strongest.map((item,i)=><li key={item.id??item.name??i}><strong>{item.label??item.name??item.id??"지표"}</strong><span>저장 평가 {item.score?.toFixed(1)}점 · 관측 {dateLabel(item.observationDate??item.asOfDate)}</span></li>)}</ul>:<p>비교 가능한 저장 구성 점수가 없습니다.</p>}</div>
-    <div><h3>상대적으로 낮은 지표</h3>{weakest.length?<ul>{weakest.map((item,i)=><li key={item.id??item.name??i}><strong>{item.label??item.name??item.id??"지표"}</strong><span>저장 평가 {item.score?.toFixed(1)}점 · 관측 {dateLabel(item.observationDate??item.asOfDate)}</span></li>)}</ul>:<p>비교 가능한 저장 구성 점수가 없습니다.</p>}</div>
+    <div><h3>상대적으로 높은 지표</h3>{strongest.length?<ul>{strongest.map((item,i)=><li key={item.id??item.name??i}><strong>{indicatorLabel(item,id,i)}</strong><span>저장 평가 {item.score?.toFixed(1)}점 · 관측 {dateLabel(item.observationDate??item.asOfDate)}</span></li>)}</ul>:<p>비교 가능한 저장 구성 점수가 없습니다.</p>}</div>
+    <div><h3>상대적으로 낮은 지표</h3>{weakest.length?<ul>{weakest.map((item,i)=><li key={item.id??item.name??i}><strong>{indicatorLabel(item,id,i)}</strong><span>저장 평가 {item.score?.toFixed(1)}점 · 관측 {dateLabel(item.observationDate??item.asOfDate)}</span></li>)}</ul>:<p>비교 가능한 저장 구성 점수가 없습니다.</p>}</div>
    </div>
    <p className="economic-reason-note">각 지표의 높고 낮음은 최종 점수에 미친 가중 기여도를 뜻하지 않습니다. 원자료의 관측일과 평가일이 다를 수 있습니다.</p>
   </section>
@@ -146,7 +148,7 @@ export default function EconomicDetailPanel({id}:{id:EconomicDomainId}){
      <colgroup>{Array.from({length:10},(_,i)=><col key={i}/>)}</colgroup>
      <thead><tr><th>☆</th><th>지표</th><th>내용</th><th>평가 기준</th><th>이전 원값</th><th>현재 원값/점수</th><th>발표</th><th>판단</th><th>미니차트(1Y)</th><th>ⓘ</th></tr></thead>
      <tbody>{observations.map((item,i)=>{
-      const name=item.label??item.name??item.id??"구성 지표 "+(i+1),idKey=item.id??name,part=validScore(item.score)&&item.status==="READY"?item.score:null,j=judgement(part),mini=indicatorTrend(item);
+      const name=indicatorLabel(item,id,i),idKey=item.id??name,part=validScore(item.score)&&item.status==="READY"?item.score:null,j=judgement(part),mini=indicatorTrend(item);
       const present=currentPresentation(item),previous=item.status==="READY"?textValue(item.previousValue,item.unit):"—";
       return <tr key={idKey+"-"+i} data-judgement={j.tone}>
        <td><EconomicFavoriteButton domainId={id} indicatorId={idKey} label={name}/></td>
@@ -165,7 +167,7 @@ export default function EconomicDetailPanel({id}:{id:EconomicDomainId}){
    </div>
    <div className="inflation-r2-mobile-list">
     {observations.map((item,i)=>{
-     const name=item.label??item.name??item.id??"구성 지표 "+(i+1),idKey=item.id??name,part=validScore(item.score)&&item.status==="READY"?item.score:null,j=judgement(part),mini=indicatorTrend(item);
+     const name=indicatorLabel(item,id,i),idKey=item.id??name,part=validScore(item.score)&&item.status==="READY"?item.score:null,j=judgement(part),mini=indicatorTrend(item);
      return <article className="inflation-r2-mobile-card" key={idKey+"-"+i} data-judgement={j.tone}>
       <div className="inflation-r2-mobile-head"><div className="economic-mobile-name"><EconomicFavoriteButton domainId={id} indicatorId={idKey} label={name}/><div><strong>{name}</strong><small>{technicalSource(item.source)}</small></div></div><div className="inflation-r2-mobile-actions"><span className="inflation-judgement">{j.name}</span><IndicatorHelp item={item} title={name}/></div></div>
       <p className="inflation-r2-mobile-content">{indicatorDescription(item,name)}</p>
