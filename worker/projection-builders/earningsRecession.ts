@@ -80,8 +80,11 @@ export function buildProjection({inputs,snapshot,publicSnapshot,e1,nowIso,riskHi
  const riskMethod="EARNINGS_RECESSION_DIAGNOSTIC_R1";
  const ids=["epsGrowth","margin","revenueGrowth","earningsGrowthBreadth"];
  const candidates=Array.isArray(diagnostic?.riskFactors)?diagnostic.riskFactors:[];
+ const riskFactorSource=diagnostic?.riskFactorsSource;
+ const riskFactorKnownSource=riskFactorSource==="E1_R4_LEGACY_COMPATIBILITY"||
+  riskFactorSource==="E1_R4_STORED_PC_REPLAY";
  const factorsOk=mainScore!==null&&diagnostic?.methodologyVersion===riskMethod&&
-  diagnostic?.riskFactorsSource==="E1_R4_LEGACY_COMPATIBILITY"&&
+  riskFactorKnownSource&&
   candidates.length===ids.length&&ids.every((id,index)=>
    candidates[index]?.id===id&&candidates[index]?.status==="READY"&&
    finite(candidates[index]?.score)&&candidates[index].score>=0&&candidates[index].score<=100);
@@ -92,12 +95,25 @@ export function buildProjection({inputs,snapshot,publicSnapshot,e1,nowIso,riskHi
   ?[0.35,0.25,0.20,0.20].reduce((sum,weight,i)=>sum+weight*candidates[i].score,0):null;
  const scoreMatched=mainScore!==null&&factorsOk&&riskFactorScore!==null&&Math.abs(riskFactorScore-mainScore)<1e-7;
  const riskFactors=scoreMatched?candidates.map((row:any)=>({
-  id:row.id,status:"READY",score:row.score,observationDate:null,
+  id:row.id,status:"READY",score:row.score,
+  observationDate:riskFactorSource==="E1_R4_STORED_PC_REPLAY"&&
+    validDate(row?.observationDate)&&row.observationDate===diagnostic?.financialPeriodEnd
+    ?row.observationDate:null,
  })): [];
+ const fiscalHistoryKind="E1_R4_STORED_PERIOD_CURRENT_VINTAGE_NOT_PIT";
  const points=Array.isArray(riskHistory?.points)?riskHistory.points:[];
  const lastRisk=points.at(-1);
- const historyMatched=mainScore!==null&&riskHistory?.kind==="MATCHED_DIAGNOSTIC_METHOD_STORED_DATES"&&
-  lastRisk?.date===asOf&&finite(lastRisk?.score)&&Math.abs(lastRisk.score-mainScore)<1e-8;
+ const isFiscalRisk=scoreMatched&&riskFactorSource==="E1_R4_STORED_PC_REPLAY"&&
+  riskHistory?.kind===fiscalHistoryKind&&
+  validDate(diagnostic?.financialPeriodEnd)&&
+  riskHistory?.financialPeriodEnd===diagnostic.financialPeriodEnd;
+ const historyMatched=mainScore!==null&&
+  (isFiscalRisk?
+   lastRisk?.date===diagnostic.financialPeriodEnd:
+   riskHistory?.kind==="MATCHED_DIAGNOSTIC_METHOD_STORED_DATES"&&lastRisk?.date===asOf)&&
+  finite(lastRisk?.score)&&Math.abs(lastRisk.score-mainScore)<1e-8&&
+  points.every((p:any)=>validDate(p?.date)&&finite(p?.score)&&p.score>=0&&p.score<=100)&&
+  points.every((p:any,i:number)=>i===0||p.date>points[i-1].date);
  const riskTrend=historyMatched?points.map((row:any)=>({date:row.date,score:row.score})):[];
  const riskHistoryKind=historyMatched?riskHistory.kind:null;
  const isR5=e1?.methodologyVersion==="E1-R5";
@@ -129,10 +145,12 @@ export function buildProjection({inputs,snapshot,publicSnapshot,e1,nowIso,riskHi
   asOfDate:asOf,
   methodologyVersion:"EARNINGS_RECESSION_DIAGNOSTIC_R1",
   riskFactorsMethodologyVersion:scoreMatched?riskMethod:null,
-  riskFactorsSource:scoreMatched?"E1_R4_LEGACY_COMPATIBILITY":null,
+  riskFactorsSource:scoreMatched?riskFactorSource:null,
   riskFactors,
   riskTrend,
   riskHistoryKind,
+  riskFinancialPeriodEnd:isFiscalRisk?diagnostic.financialPeriodEnd:null,
+  riskHistoryMode:isFiscalRisk?"CURRENT_VINTAGE_NOT_PIT":null,
   storedE1:{
    status:e1?.status??"PARTIAL",
    score:finite(e1?.score)?e1.score:null,
