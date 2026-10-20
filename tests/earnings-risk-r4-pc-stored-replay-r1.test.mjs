@@ -67,7 +67,7 @@ test("PC bridge blocks absent or invalid source and never substitutes a legacy s
  assert.equal(missing.score,null);
  assert.deepEqual(missing.periodTrend,[]);
  const db=mockDb();
- const tooEarly=await readStoredEarningsRiskFourFactor({db,asOf:"2025-09-20"});
+ const tooEarly=await readStoredEarningsRiskFourFactor({db,asOf:"2025-06-20"});
  assert.equal(tooEarly.status,"PARTIAL");
  assert.equal(tooEarly.score,null);
  assert.equal(db.getWrites(),0);
