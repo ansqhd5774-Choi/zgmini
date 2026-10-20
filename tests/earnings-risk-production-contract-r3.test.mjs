@@ -72,6 +72,6 @@ test("active 8-risk page, beginner guide and source reader are independently wir
  assert.doesNotMatch(guide,/payload\?\.storedE1/);
  assert.match(source,/verifiedEarningsRiskTrend/);
  assert.match(source,/SELECT snapshot_key,body FROM market_public_snapshots_v1/);
- assert.match(composer,/riskFactorsSource="E1_R4_LEGACY_COMPATIBILITY"/);
+ assert.match(composer,/risk\.riskFactorsSource=validEvidence\?"E1_R4_STORED_PC_REPLAY":"E1_R4_LEGACY_COMPATIBILITY"/);
  assert.match(economic,/EconomicDetailPage id="earnings"/);
 });
