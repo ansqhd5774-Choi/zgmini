@@ -5,6 +5,7 @@ import {IRAN_FLOW_R2_KEY} from '../lib/iran-progress/reference-flow-r2.mjs';
 import {validateReferenceFlowR2} from '../lib/iran-progress/reference-public-r2.mjs';
 import {IRAN_FLOW_R3_KEY} from '../lib/iran-progress/reference-flow-r3.mjs';
 import {validateReferenceFlowR3} from '../lib/iran-progress/reference-public-r3.mjs';
+import {IRAN_R5_PUBLIC_KEY,validateIranR5Public} from '../lib/iran-progress/daily-public-r5.mjs';
 export const IRAN_PROGRESS_PUBLIC_KEY='public:iran-progress:r13';
 export const IRAN_PROGRESS_STATUS_KEY='public:iran-progress:r13:status';
 const finiteScore=n=>Number.isFinite(n)&&n>=0&&n<=100;
@@ -47,6 +48,17 @@ async function storedScoreResponse(request,{db,now=Date.now()}={}){
 /** @param {Request} request @param {{db?: any, now?: number}} options */
 export async function storedIranProgressResponse(request,{db,now=Date.now()}={}){
  if(request.method==='GET'&&db?.prepare){
+  // Stored computed provisional result only. Never collect or calculate on GET.
+  // Invalid/missing R5 cannot erase or override the existing valid R3.
+  let r5;try{r5=await db.prepare('SELECT body,stored_at FROM market_public_snapshots_v1 WHERE snapshot_key=?').bind(IRAN_R5_PUBLIC_KEY).first();}
+  catch{r5=null;}
+  if(r5){
+   let body;try{body=JSON.parse(r5.body);}catch{body=null;}
+   if(validateIranR5Public(body,now))
+    return Response.json(body,{headers:{'cache-control':'no-store',
+     'x-iran-progress-source':'STORED','x-iran-flow-version':'R5',
+     'x-iran-flow-reader':'R5'}});
+  }
   let r3;try{r3=await db.prepare('SELECT body,stored_at FROM market_public_snapshots_v1 WHERE snapshot_key=?').bind(IRAN_FLOW_R3_KEY).first();}
   catch{return Response.json({status:'UNAVAILABLE',score:null,reason:'FLOW_R3_READ_FAILED'},{status:503,headers:{'cache-control':'no-store'}});}
   if(r3){
