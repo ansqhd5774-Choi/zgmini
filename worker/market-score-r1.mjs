@@ -331,6 +331,9 @@ function composeMarketSnapshot({liquidityHistory,collected,storedInflation,infla
           risk.historyMode="CURRENT_VINTAGE_NOT_PIT";
           risk.riskHistoryKind=riskEvidence.historyKind;
           risk.riskTrend=riskEvidence.periodTrend;
+          // Current-vintage per-quarter factor scores, already verified by the
+          // PC scorer; no raw SEC facts or E1-R5 factor history is published.
+          risk.riskFactorTrend=riskEvidence.periodFactorTrend;
         }
       }
       return publicResult;
