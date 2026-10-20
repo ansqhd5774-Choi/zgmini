@@ -9,7 +9,7 @@ const compiled=ts.transpileModule(source,{compilerOptions:{module:ts.ModuleKind.
 const m={exports:{}};new Function("exports",compiled)(m.exports);
 const build=m.exports.buildProjection;
 const ids=["epsGrowth","margin","revenueGrowth","earningsGrowthBreadth"];
-const factors=[80,90,85,85.9375].map((score,i)=>({id:ids[i],status:"READY",score,observationDate:null}));
+const factors=[80,93.75,81.25,85].map((score,i)=>({id:ids[i],status:"READY",score,observationDate:null}));
 const date="2026-10-20";
 const base={
  snapshot:{body:{asOfDate:date,diagnostics8:{earningsRecessionDefense:{
@@ -26,7 +26,7 @@ test("risk projection uses dedicated four component scores and never replaces th
  assert.equal(r.methodologyVersion,"EARNINGS_RECESSION_DIAGNOSTIC_R1");
  assert.equal(r.riskFactorsMethodologyVersion,r.methodologyVersion);
  assert.deepEqual(r.riskFactors.map(x=>x.id),ids);
- assert.deepEqual(r.riskFactors.map(x=>x.score),[80,90,85,85.9375]);
+ assert.deepEqual(r.riskFactors.map(x=>x.score),[80,93.75,81.25,85]);
  assert.ok(r.riskFactors.every(x=>x.observationDate===null));
  assert.equal(r.riskFactorsSource,"E1_R4_LEGACY_COMPATIBILITY");
  assert.equal(r.storedE1.score,73.5,"retain prior 12-domain compatibility payload until explicit contract cutover");
@@ -74,4 +74,38 @@ test("active 8-risk page, beginner guide and source reader are independently wir
  assert.match(source,/SELECT snapshot_key,body FROM market_public_snapshots_v1/);
  assert.match(composer,/risk\.riskFactorsSource=validEvidence\?"E1_R4_STORED_PC_REPLAY":"E1_R4_LEGACY_COMPATIBILITY"/);
  assert.match(economic,/EconomicDetailPage id="earnings"/);
+});
+
+test("actual R3 FIX1 aggregate replay keeps fiscal observation distinct from October evaluation date and E1-R5",()=>{
+ // Aggregate only from PC R3 FIX1 READONLY_COMPLETE, not a live deployed API assertion.
+ const nowFrame="2026-06-30";
+ const replay=structuredClone(base);
+ replay.snapshot.body.diagnostics8.earningsRecessionDefense.riskFactorsSource="E1_R4_STORED_PC_REPLAY";
+ replay.snapshot.body.diagnostics8.earningsRecessionDefense.financialPeriodEnd=nowFrame;
+ replay.snapshot.body.diagnostics8.earningsRecessionDefense.riskFactors.forEach(x=>{x.observationDate=nowFrame});
+ const history={
+  kind:"E1_R4_STORED_PERIOD_CURRENT_VINTAGE_NOT_PIT",
+  financialPeriodEnd:nowFrame,
+  historyMode:"CURRENT_VINTAGE_NOT_PIT",
+  points:[{date:"2026-03-31",score:85.06617038875103},{date:nowFrame,score:84.6875}],
+ };
+ const result=build({...replay,riskHistory:history});
+ assert.equal(result.status,"READY");
+ assert.equal(result.score,84.6875);
+ assert.equal(result.asOfDate,"2026-10-20");
+ assert.equal(result.riskFinancialPeriodEnd,nowFrame);
+ assert.equal(result.riskHistoryMode,"CURRENT_VINTAGE_NOT_PIT");
+ assert.equal(result.riskHistoryKind,history.kind);
+ assert.equal(result.riskFactorsSource,"E1_R4_STORED_PC_REPLAY");
+ assert.deepEqual(result.riskFactors.map(x=>x.score),[80,93.75,81.25,85]);
+ assert.deepEqual(result.riskFactors.map(x=>x.observationDate),[nowFrame,nowFrame,nowFrame,nowFrame]);
+ assert.deepEqual(result.riskTrend,history.points);
+ assert.ok(result.riskTrend.every(x=>x.date!=="2025-12-31"),"coverage-failed quarter remains missing");
+ assert.ok(result.riskTrend.every(x=>x.date!==result.asOfDate),"never fake an October fiscal observation");
+ assert.equal(result.riskTrend.at(-1).score,result.score);
+ assert.equal(result.storedE1.score,73.5,"E1-R5 domain history remains independent");
+ const corrupted=structuredClone(replay);
+ corrupted.snapshot.body.diagnostics8.earningsRecessionDefense.riskFactors[1].score=75;
+ assert.deepEqual(build({...base,snapshot:corrupted.snapshot,riskHistory:history}).riskFactors,[],
+  "mismatched component weights must not leak as legitimate 4-factor values");
 });
