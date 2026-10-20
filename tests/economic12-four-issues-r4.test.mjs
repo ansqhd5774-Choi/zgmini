@@ -1,9 +1,12 @@
 import test from "node:test";import assert from "node:assert/strict";import{readFileSync}from"node:fs";
 const page=readFileSync("app/economic-indicators/economic-detail-page.tsx","utf8"),panel=readFileSync("app/economic-indicators/economic-detail-panel.tsx","utf8"),css=readFileSync("app/economic-indicators/economic-detail.css","utf8");
-test("inflation market-detail route uses original 16-feature PIT source and original guide",()=>{
- assert.match(page,/id==="inflation"\?<RiskDetailBeginnerLayout><InflationPanel\/><BeginnerRiskGuide topic="inflation"/);
- const original=readFileSync("app/inflation/inflation-panel.tsx","utf8");
- for(const token of ["/api/inflation-detail","featureOrder","CORE_PCE","CORE_CPI","formatRaw(feature,row)","scoreComparisons"])assert.ok(original.includes(token));
+test("economic inflation uses its own market domain, never the risk inflation panel",()=>{
+ assert.ok(page.includes('<EconomicDetailPanel id={id}/>'));
+ assert.doesNotMatch(page,/<InflationPanel|<BeginnerRiskGuide|<RiskDetailBeginnerLayout/);
+ assert.ok(panel.includes('useStoredIndex<Snapshot>("/api/market-score")'));
+ assert.ok(panel.includes('domain=payload?.domains?.find(item=>item.id===id)'));
+ const risk=readFileSync("app/inflation/inflation-panel.tsx","utf8");
+ assert.ok(risk.includes("useStoredIndex<InflationPayload>('/api/inflation-detail')"));
 });
 test("all remaining eleven pages share dashboard 0-25-40-60-75 score color/meaning",()=>{
  assert.ok(panel.includes('score<25?"#ef4444":score<40?"#f59e0b":score<60?"#94a3b8":score<75?"#22c55e":"#10b981"'));
