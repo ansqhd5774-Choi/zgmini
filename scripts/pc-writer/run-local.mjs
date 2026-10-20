@@ -7,7 +7,7 @@ import {localDatabase} from './local-db.mjs';
 import {installLocalRuntime} from './local-env.mjs';
 import {client,credential,read,save,hash} from './d1.mjs';
 import {mergeStoredCompositeTrend,oneYearHistoryStart} from '../../worker/composite-history.mjs';
-import {attachStoredDomainScoreComparisons} from './market-snapshot-comparisons.mjs';
+import {attachStoredDomainScoreComparisons,sameVerifiedLineage} from './market-snapshot-comparisons.mjs';
 import {publicationCompatibility,recoverPublication,appendPublicationEvent} from './publication-guard.mjs';
 import {koreaPublicationPlan} from './korea-publication.mjs';
 import {readAssetR10Projection} from './asset-r10-projection.mjs';
@@ -62,10 +62,16 @@ try{
  const body=await calculateMarket(root,core,now);
  // Reuse the published daily score history already read for the overall chart.
  const storedHistory=await marketOperationalStore(core).readScoreHistory({sinceDate:oneYearHistoryStart(now),limit:370});
+ const currentInflation=body.domains?.find(d=>d.id==='inflation')??null;
+ // An R2 inflation composite is not a valid historic value for the restored R7 four-factor model.
+ // Keep old snapshots in SQLite, but never splice them into the new-model public curve.
+ const comparableCompositeHistory=storedHistory.filter(snapshot=>
+  sameVerifiedLineage(currentInflation,snapshot?.body?.domains?.find(d=>d.id==='inflation'))
+ );
  if(body?.overall?.status==='READY'){
   body.overall.trend=mergeStoredCompositeTrend({
    legacyTrend:body.overall.trend,
-   storedSnapshots:storedHistory,
+   storedSnapshots:comparableCompositeHistory,
    currentScore:body.overall.score,
    currentDate:body.asOfDate??new Date(now).toISOString().slice(0,10),
   });
@@ -78,7 +84,9 @@ try{
   const previous=JSON.parse(priorMarket.body);
   for(const domain of body.domains){
    const old=previous.domains?.find(item=>item.id===domain.id);
-   if(old?.status==='READY'&&typeof old.score==='number'&&Number.isFinite(old.score))domain.previousObservation={date:priorMarket.snapshot_key,currentDate:body.asOfDate,score:old.score};
+   if(old?.status==='READY'&&typeof old.score==='number'&&Number.isFinite(old.score)
+     &&sameVerifiedLineage(domain,old))
+    domain.previousObservation={date:priorMarket.snapshot_key,currentDate:body.asOfDate,score:old.score};
   }
  }
  await marketOperationalStore(core).writeScore(body,now);
