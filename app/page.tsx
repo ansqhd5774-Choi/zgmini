@@ -1,6 +1,7 @@
 "use client";
 import {CompositeMarketSection,ScenarioSection} from "./dashboard-ui";
-import SectorSentimentChart,{SECTORS} from '../components/sector-sentiment-chart';
+import SectorSentimentChart from '../components/sector-sentiment-chart';
+import ThemeSentimentDashboardChart from '../components/theme-sentiment-dashboard-chart';
 import OutbreakEvents, {OutbreakSummary} from './outbreak-events';
 
 
@@ -982,7 +983,7 @@ export default function Home() {
           <CompositeMarketSection items={displaySummaryItems} points={periodPoints[period]} demo={false} loading={marketDataLoading}/>
           <div className="zg-dashboard-secondary">
             <OutbreakSummary onOpen={id=>{setOutbreakEvent(id);setView('scenarios');}}/>
-            <div id="strength" className="zg-strength-grid"><SectorSentimentChart/><SectorSentimentChart title="테마별 공포·탐욕" draggable series={themeSentiment.map((theme,index)=>({id:theme.name,name:theme.name,color:SECTORS[index%SECTORS.length].color}))}/></div>
+            <div id="strength" className="zg-strength-grid"><SectorSentimentChart/><ThemeSentimentDashboardChart/></div>
           </div>
         </>}
         {view==='scenarios'&&<OutbreakEvents initialEvent={outbreakEvent}/>}
