@@ -9,7 +9,7 @@ const compiled=ts.transpileModule(source,{compilerOptions:{module:ts.ModuleKind.
 const m={exports:{}};new Function("exports",compiled)(m.exports);
 const build=m.exports.buildProjection;
 const ids=["epsGrowth","margin","revenueGrowth","earningsGrowthBreadth"];
-const factors=[76,93,82,90].map((score,i)=>({id:ids[i],status:"READY",score,observationDate:null}));
+const factors=[80,90,85,85.9375].map((score,i)=>({id:ids[i],status:"READY",score,observationDate:null}));
 const date="2026-10-20";
 const base={
  snapshot:{body:{asOfDate:date,diagnostics8:{earningsRecessionDefense:{
@@ -26,7 +26,7 @@ test("risk projection uses dedicated four component scores and never replaces th
  assert.equal(r.methodologyVersion,"EARNINGS_RECESSION_DIAGNOSTIC_R1");
  assert.equal(r.riskFactorsMethodologyVersion,r.methodologyVersion);
  assert.deepEqual(r.riskFactors.map(x=>x.id),ids);
- assert.deepEqual(r.riskFactors.map(x=>x.score),[76,93,82,90]);
+ assert.deepEqual(r.riskFactors.map(x=>x.score),[80,90,85,85.9375]);
  assert.ok(r.riskFactors.every(x=>x.observationDate===null));
  assert.equal(r.riskFactorsSource,"E1_R4_LEGACY_COMPATIBILITY");
  assert.equal(r.storedE1.score,73.5,"retain prior 12-domain compatibility payload until explicit contract cutover");
