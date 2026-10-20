@@ -16,7 +16,9 @@ import {client,credential,read,save} from './d1.mjs';
 const BASE=process.env.ZGMINI_PC_HOME??path.join(os.homedir(),'.zgmini','pc-writer');
 const validTime=s=>typeof s==='string'&&Number.isFinite(Date.parse(s));
 const comparable=(a,b)=>a?.observationDate===b?.observationDate&&a?.score===b?.score
- &&a?.sourceStoredAt===b?.sourceStoredAt&&a?.asOfDate===b?.asOfDate&&a?.phase===b?.phase;
+ &&a?.sourceStoredAt===b?.sourceStoredAt&&a?.asOfDate===b?.asOfDate&&a?.phase===b?.phase
+ &&JSON.stringify(a?.trend)===JSON.stringify(b?.trend)
+ &&JSON.stringify(a?.factors)===JSON.stringify(b?.factors);
 const parse=x=>{try{return JSON.parse(x)}catch{return null}};
 export function publicationDecision(next,previous){
  if(!projectV9PublicDomain(next))return 'INVALID_CANDIDATE';
@@ -61,7 +63,9 @@ export async function main(args=process.argv.slice(2),now=new Date()){
    const lock=path.join(BASE,'local-breadth-r10-v9-publication.lock');
    try{lockFd=fs.openSync(lock,'wx');locked=lock;}catch{throw Error('V9_PUBLICATION_ALREADY_RUNNING_OR_LOCK_PRESENT')}
   }
-  const latest=runShadow({base:BASE,now,writeLocal:false});
+  // 312 sessions = one-year scored window (~252 US sessions) plus 59-day
+  // 5-factor qualification warm-up, based exclusively on existing PC SQLite.
+  const latest=runShadow({base:BASE,now,writeLocal:false,historySessions:312});
   const last=latest.evaluation?.perDay?.findLast(x=>x.status==='CANDIDATE_READY'&&Number.isFinite(x.ema3));
   if(!last)throw Error('V9_NO_LOCAL_VERIFIED_OBSERVATION');
   const verified=runShadow({base:BASE,now,asOf:last.date,writeLocal:false});
