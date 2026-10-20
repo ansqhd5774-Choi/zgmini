@@ -31,6 +31,7 @@
 .economic-reading-strips span{display:block;background:#0d2936;color:#a9c4d6;padding:13px 15px;font-size:12px;line-height:1.7}
 .economic-reading-strips b{display:block;color:#49d9ac;font-size:13px;margin-bottom:5px}
 .economic-beginner{margin:18px 0;padding:20px;background:#071e2c}
+.economic-beginner>.cnn-eyebrow{font-size:10px;letter-spacing:.12em;color:#d3a64f;font-weight:800;margin-bottom:7px}
 .economic-beginner-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:12px}
 .economic-beginner-grid article{padding:14px;background:#0c2737;min-width:0}
 .economic-beginner-grid h3{color:#b0d9ea;font-size:13px;font-weight:800;margin-bottom:9px}
