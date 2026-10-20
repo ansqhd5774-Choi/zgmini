@@ -7,7 +7,7 @@ type Row={id?:string;name?:string;label?:string;status?:string;score?:number|nul
 type Snapshot={
  status?:string;asOfDate?:string|null;score?:number|null;methodologyVersion?:string|null;riskFactorsMethodologyVersion?:string|null;
  features?:Record<string,Row|null>;indicators?:Row[];components?:Row[];supplementals?:Row[];core?:Row[];riskFactors?:Row[];
- domains?:Array<{id?:string;indicators?:Row[]}>;
+ domains?:Array<{id?:string;asOfDate?:string|null;indicators?:Row[]}>;
 };
 export const RISK_FAVORITE_ENDPOINTS:Record<string,string>={
  "zgmini:inflation:favorites:v1":"/api/inflation-detail",
@@ -37,7 +37,7 @@ function preview(row:Row|undefined,asOfDate:string|null|undefined,economic:boole
   const printed=[row.displayValue,row.formattedValue].find(x=>typeof x==="string"&&x.trim())?.trim();
   if(printed)value="현재 "+printed;
  }
- if(!value&&numeric(row.value))value="현재 "+displayNumber(row.value)+(unit??row.unit??"");
+ if(!value&&numeric(row.value)){const suffix=unit??row.unit??"";value="현재 "+displayNumber(row.value)+(suffix&&suffix!=="%"?" "+suffix:suffix);}
  if(!value&&assessed!==null)value="평가 "+assessed.toFixed(1)+"점";
  if(!value)return null;
  const rawDate=presentDate(row.observationDate??row.asOfDate);
@@ -66,5 +66,5 @@ export function getEconomicFavoritePreview(domainId:string,indicatorId:string,pa
  if(!payload||typeof payload!=="object")return null;
  const s=payload as Snapshot;
  const domain=s.domains?.find(x=>x?.id===domainId);
- return preview(domain?.indicators?.find(x=>x?.id===indicatorId),undefined,true);
+ return preview(domain?.indicators?.find(x=>x?.id===indicatorId),domain?.asOfDate,true);
 }
