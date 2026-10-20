@@ -36,20 +36,14 @@ export default function SectorSentimentChart({data=[],series=SECTORS,title='섹�
  const legendRef=useRef<HTMLDivElement>(null);
  const [atEnd,setAtEnd]=useState(false);
  const [pickerOpen,setPickerOpen]=useState(false);
- const [draftHidden,setDraftHidden]=useState<Set<string>>(()=>new Set());
- const toggleThemePicker=()=>{
-  if(pickerOpen){setPickerOpen(false);return;}
-  setDraftHidden(new Set(hidden));setPickerOpen(true);
- };
- const toggleDraftTheme=(id:string)=>setDraftHidden(previous=>{
+ const toggleThemePicker=()=>setPickerOpen(open=>!open);
+ // Apply immediately on selection; preserve at least one visible theme.
+ const toggleThemePickerItem=(id:string)=>setHidden(previous=>{
   const next=new Set(previous);
   if(next.has(id))next.delete(id);else next.add(id);
+  if(series.length>0&&series.every(item=>next.has(item.id)))return previous;
   return next;
  });
- const applyThemePicker=()=>{
-  if(!series.some(item=>!draftHidden.has(item.id)))return;
-  setHidden(new Set(draftHidden));setPickerOpen(false);
- };
 
  const [touchTooltip,setTouchTooltip]=useState<boolean|null>(null);
  const heldPointer=useRef<number|null>(null);
@@ -90,12 +84,11 @@ export default function SectorSentimentChart({data=[],series=SECTORS,title='섹�
    </ResponsiveContainer>}
   </div>
   {themePicker?<>
-   {pickerOpen&&<div id="zg-theme-picker-options" className="zg-theme-picker-panel" role="region" aria-label="테마 선택" onKeyDown={event=>{if(event.key==='Escape'){event.stopPropagation();setPickerOpen(false);}}}>
+   <div id="zg-theme-picker-options" className={`zg-theme-picker-panel${pickerOpen?' is-open':''}`} role="region" aria-label="테마 선택" aria-hidden={!pickerOpen} inert={!pickerOpen} onKeyDown={event=>{if(event.key==='Escape'){event.stopPropagation();setPickerOpen(false);}}}>
     <div className="zg-theme-picker-options">
-     {series.map(item=><button key={item.id} type="button" aria-pressed={!draftHidden.has(item.id)} onClick={()=>toggleDraftTheme(item.id)} title={item.name}><span aria-hidden="true" style={{background:item.color}}/>{item.name}</button>)}
+     {series.map(item=><button key={item.id} type="button" aria-pressed={!hidden.has(item.id)} onClick={()=>toggleThemePickerItem(item.id)} title={item.name}><span aria-hidden="true" style={{background:item.color}}/>{item.name}</button>)}
     </div>
-    <button className="zg-theme-picker-apply" type="button" disabled={!series.some(item=>!draftHidden.has(item.id))} onClick={applyThemePicker}>차트 보기</button>
-   </div>}
+   </div>
    <div className="zg-legend-row zg-theme-picker-legend">
     <div className="zg-sector-chart-legend is-draggable" aria-label="차트에 표시 중인 테마">
      {shownSeries.map(item=><span key={item.id} className="zg-theme-selected-label" title={item.name} style={{borderBottomColor:item.color}}>{item.shortName??item.name}</span>)}

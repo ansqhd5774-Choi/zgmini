@@ -12,7 +12,7 @@ export const SEO_RUNTIME_MARKERS=new Map([
   [`${SITE_ORIGIN}/`,{titleIncludes:'미국·한국 공포탐욕지수와 경제지표'}],
   [`${SITE_ORIGIN}/about/`,{descriptionIncludes:'ZGMINI를 소개합니다'}],
   [`${SITE_ORIGIN}/fear-greed/korea/`,{descriptionIncludes:'504개 유효 관측치 기준창'}],
-  [`${SITE_ORIGIN}/fear-greed/usa/`,{descriptionIncludes:'원시값과 환산점수의 차이'}],
+  [`${SITE_ORIGIN}/fear-greed/usa/`,{descriptionIncludes:'미국 CNN 공포탐욕지수의 점수·관측일·기간별 차트와 7개 구성요소를 확인하세요.'}],
   [`${SITE_ORIGIN}/sector-fear-greed/`,{descriptionIncludes:'5개 핵심 신호와 252거래일 데이터'}],
   [`${SITE_ORIGIN}/inflation/`,{descriptionIncludes:'미국 인플레이션 지수와 물가 안정 점수를 확인하세요.',htmlIncludes:['물가 안정 점수와 최근 1년 추세, 한눈에.','미국 소비자물가(CPI) 원문','미국 PCE 물가 원문']}],
   [`${SITE_ORIGIN}/recession/`,{htmlIncludes:['침체 신호는?','경기침체 확률 아님']}],
