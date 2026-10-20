@@ -7,6 +7,7 @@ import {localDatabase} from './local-db.mjs';
 import {installLocalRuntime} from './local-env.mjs';
 import {client,credential,read,save,hash} from './d1.mjs';
 import {mergeStoredCompositeTrend,oneYearHistoryStart} from '../../worker/composite-history.mjs';
+import {attachStoredDomainScoreComparisons} from './market-snapshot-comparisons.mjs';
 import {publicationCompatibility,recoverPublication,appendPublicationEvent} from './publication-guard.mjs';
 import {koreaPublicationPlan} from './korea-publication.mjs';
 import {readAssetR10Projection} from './asset-r10-projection.mjs';
@@ -59,8 +60,9 @@ try{
  const {PUBLIC_PROJECTION_KEYS}=await import('../../worker/market-public-projection-store.mjs');
  const now=Date.now();
  const body=await calculateMarket(root,core,now);
+ // Read the existing local published snapshots once for overall and domain comparisons.
+ const storedHistory=await marketOperationalStore(core).readScoreHistory({sinceDate:oneYearHistoryStart(now),limit:370});
  if(body?.overall?.status==='READY'){
-  const storedHistory=await marketOperationalStore(core).readScoreHistory({sinceDate:oneYearHistoryStart(now),limit:370});
   body.overall.trend=mergeStoredCompositeTrend({
    legacyTrend:body.overall.trend,
    storedSnapshots:storedHistory,
@@ -68,6 +70,7 @@ try{
    currentDate:body.asOfDate??new Date(now).toISOString().slice(0,10),
   });
  }
+ attachStoredDomainScoreComparisons(body,storedHistory);
  // Compare published-calculation snapshots from distinct dates, not reconstructed curves.
  const priorRows=(await core.prepare("SELECT snapshot_key,body FROM market_public_snapshots_v1 WHERE snapshot_key!='current' AND snapshot_key<? ORDER BY snapshot_key DESC LIMIT 30").bind(body.asOfDate).all()).results;
  const priorMarket=priorRows.find(row=>/^\d{4}-\d{2}-\d{2}$/.test(row.snapshot_key)&&JSON.parse(row.body).status==='SUCCESS');
