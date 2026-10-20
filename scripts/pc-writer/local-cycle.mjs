@@ -38,7 +38,7 @@ try{
  if(lane==='core'&&process.env.ZGMINI_THEME_ETF_PRIVATE_STAGE_ENABLED==='1'){
   const stage=spawnSync(process.execPath,[path.join(here,'theme-etf-only-r150-local-stage.mjs'),'--write-local'],{windowsHide:true,stdio:['ignore','pipe','pipe'],timeout:2*60000});
   let stageReport=null;
-  try{stageReport=JSON.parse(String(stage.stdout??'').trim().split(/\\r?\\n/).at(-1))}catch{}
+  try{stageReport=JSON.parse(String(stage.stdout??'').trim().split(String.fromCharCode(10)).at(-1))}catch{}
   themeEtfPrivateStage={nonBlocking:true,status:stage.status===0?(stageReport?.status??'REPORT_MISSING'):'EXECUTION_FAILED',
    observationDate:stageReport?.observationDate??null,points:stageReport?.points??null,
    localPrivateOnly:true,providerCalls:0,remoteWrites:0};
