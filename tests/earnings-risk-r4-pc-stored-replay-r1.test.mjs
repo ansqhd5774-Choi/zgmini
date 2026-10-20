@@ -76,13 +76,17 @@ test("actual eight-risk PC bridge is used before diagnostics without affecting t
  const pc=readFileSync("scripts/pc-writer/market.mjs","utf8");
  const build=readFileSync("worker/market-score-r1.mjs","utf8");
  const source=readFileSync("worker/projection-source-r52.mjs","utf8");
- const panel=readFileSync("app/earnings-recession/earnings-risk-only-panel.tsx","utf8");
+ const projection=readFileSync("worker/projection-builders/earningsRecession.ts","utf8");
  assert.match(pc,/readStoredEarningsRiskFourFactor/);
  assert.match(build,/scoringExternal\.earningsScores=riskEvidence/);
  assert.match(build,/risk\.riskFactorsSource=validEvidence\?"E1_R4_STORED_PC_REPLAY"/);
  assert.match(source,/diag\?\.riskHistoryKind==='E1_R4_STORED_PERIOD_CURRENT_VINTAGE_NOT_PIT'/);
- assert.match(panel,/fiscalReconstruction/);
- assert.match(panel,/사후 재구성/);
- assert.match(panel,/week:null,month:null/);
- assert.doesNotMatch(panel,/storedE1/);
+ // The approved PC operations candidate intentionally excludes site UI files.
+ // Validate original independent risk/economic projection contracts here.
+ assert.match(projection,/const R4_IDS=\["epsGrowth","margin","revenueGrowth","earningsGrowthBreadth"\]/);
+ assert.match(projection,/const R5_IDS=\["S1","S2","S3","S4","S5","S6","S7","S8","S9","S10","S11","S12","S13"\]/);
+ assert.match(projection,/riskFactors=scoreMatched\?candidates\.map/);
+ assert.match(projection,/const isR5=e1\?\.methodologyVersion==="E1-R5"/);
+ assert.match(projection,/storedE1:\{/);
+ assert.match(projection,/riskHistoryMode:isFiscalRisk\?"CURRENT_VINTAGE_NOT_PIT":null/);
 });
