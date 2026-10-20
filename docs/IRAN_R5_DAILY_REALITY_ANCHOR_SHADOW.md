@@ -69,3 +69,14 @@ The isolated `daily-reality-check-r5.mjs` implements fail-closed dated official/
 R5 audit source now preserves **earliest** immutable source-receipt timestamps per URL, reports R3-lifetime / recent-publication / R5-window counts separately, and holds revised URLs or missing first-seen timestamps for independent review. Neither this script nor the independent reality checker writes local DB, calls providers, changes a scheduler or publishes.
 
 **Operational decision: NOT READY TO PUBLISH.** The user expressly requires reality consistency before R5 automatic public scoring. Source unit tests and a 14-day replay do not supersede the historical contradiction or missing 2026-10-21 independent 13-point calibration.
+
+## October 21 / October 22 KST first-discovery alignment (research only)
+
+Some approved RSS metadata contains only an article **UTC date**, not a verified event-occurrence timestamp. The existing KST PC cycle can first ingest that UTC-previous-day article after KST midnight. To honor the user's request that **new data collected during October 22 move the October 22 provisional score**, candidate R5 records:
+- **Source publication date**: immutable article date, used for pre-anchor 14-day historical backcast and audit.
+- **First observed KST calendar date**: derived from the earliest immutable SQLite `stored_at` per source URL, used for new reports after 2026-10-21 06:35 KST. A 0/1-day UTC publication-calendar lag is permitted and logged as `observedKstDateShiftCount`.
+- **Actual event date**: unknown unless separately verified; never fabricated from receipt or publication time.
+- A report whose UTC publication date is **more than one calendar day older** than its first-observed KST date is held as `latePriorPublicationDateCount` and cannot silently move the live score; date revision or corrected casualty totals remain separately reviewable.
+- With no new reports, the displayed score can carry with `carried=true`, but this never establishes absence of fighting or confirms reality accuracy.
+
+The retrospective publication-date chart and the post-anchor first-discovery-date stream thus have **different declared meanings**, both explicitly marked in source fields. This is a proposed candidate contract only; it has not been installed or published.
