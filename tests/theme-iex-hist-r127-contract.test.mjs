@@ -1,0 +1,12 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {auditThemeIexDirectHistory,THEME_IEX_R127_ETFS,THEME_IEX_R127_ATTRIBUTION} from '../lib/market-score/theme-iex-hist-r127-contract.mjs';
+const date='2026-10-16';
+const day=(bars,dateOverride=date)=>({date:dateOverride,provider:'IEX_HIST_DIRECT',feed:'TOPS1.6',adjustment:'none',venue:'IEX_EXCHANGE_ONLY',bars});
+test('R127 source gate retains the approved 17 ETF universe and 756-session contract',()=>{const r=auditThemeIexDirectHistory();assert.equal(THEME_IEX_R127_ETFS.length,17);assert.equal(r.referenceSessions,756);assert.equal(r.completeETFs,0);assert.equal(r.readyToReplaceAlpaca,false);assert.equal(r.readyForPublicScore,false);});
+test('R127 observes but does not publish a complete day of single-venue data',()=>{const bars=Object.fromEntries(THEME_IEX_R127_ETFS.map(t=>[t,{status:'OBSERVED_IEX_ONLY',close:13,volume:150}]));const r=auditThemeIexDirectHistory({days:[day(bars)]});assert.equal(r.observedDates,1);assert.equal(r.counts.BOTZ,1);assert.equal(r.completeETFs,0);assert.equal(r.readyToReplaceAlpaca,false);});
+test('R127 refuses duplicate source dates',()=>assert.throws(()=>auditThemeIexDirectHistory({days:[day({}),day({})]}),/DAY_DUPLICATE_OR_INVALID/));
+test('R127 refuses mixing vendor IEX and Alpaca inputs',()=>assert.throws(()=>auditThemeIexDirectHistory({days:[{...day({}),provider:'ALPACA_IEX'}]}),/PROVENANCE_MISMATCH/));
+test('R127 refuses different corporate action adjustment provenance',()=>assert.throws(()=>auditThemeIexDirectHistory({days:[{...day({}),adjustment:'split'}]}),/PROVENANCE_MISMATCH/));
+test('R127 does not turn missing or zero-transaction input into fake scores',()=>{const r=auditThemeIexDirectHistory({days:[day({BOTZ:{status:'OBSERVED_IEX_ONLY',close:23,volume:0}})]});assert.equal(r.counts.BOTZ,0);assert.equal(r.missingETFs.length,17);});
+test('R127 retains mandatory source attribution',()=>assert.match(THEME_IEX_R127_ATTRIBUTION,/Data provided for free by IEX/));
