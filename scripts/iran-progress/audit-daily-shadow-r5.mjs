@@ -28,7 +28,15 @@ export function auditR5ReadOnly(file,{now=Date.now()}={}){
   const age=Number.isSafeInteger(checkedAt)?now-checkedAt:null;
   const fresh=age!==null&&age>=0&&age<=86400000;
   const {accepted,held}=resolveR3Events(storedR3Candidates(store));
-  const shadow=calculateIranDailyAnchorShadow(accepted,{
+  const storedAt=new Map();
+  // Source receipt first/updated storage time allows intraday anchor replay.
+  // Read only; do not expose saved original article metadata.
+  for(const row of db.prepare("SELECT body,stored_at FROM sources WHERE id LIKE 'news-metadata:%' ORDER BY stored_at,id").all()){
+   const saved=JSON.parse(row.body);
+   storedAt.set(saved.sourceUrl,Number(row.stored_at));
+  }
+  const datedAccepted=accepted.map(e=>({...e,sourceStoredAt:storedAt.get(e.sourceUrl)}));
+  const shadow=calculateIranDailyAnchorShadow(datedAccepted,{
    asOfDate,collectionCheckedAt:checkedAt,
    collectionStatus:collection?.status??'NOT_OBSERVED',
   });
@@ -36,11 +44,12 @@ export function auditR5ReadOnly(file,{now=Date.now()}={}){
   return {
    mode:'PC_LOCAL_READ_ONLY_SHADOW',
    version:shadow.version,asOfDate,
-   preliminaryScore:fresh?shadow.score:null,
+   preliminaryScore:fresh&&shadow.latePriorPublicationDateCount===0?shadow.score:null,
+   shadowScoreAwaitingReview:shadow.latePriorPublicationDateCount>0?shadow.score:null,
    shadowScoreWhenDataStale:!fresh?shadow.score:null,
    anchorScore:shadow.anchorScore,anchorDate:shadow.anchorDate,
    realityAssessmentStatus:shadow.anchorEvidenceStatus,
-   outcome:fresh?'SHADOW_UNCALIBRATED':'SHADOW_INPUT_STALE_OR_MISSING',
+   outcome:!fresh?'SHADOW_INPUT_STALE_OR_MISSING':shadow.latePriorPublicationDateCount?'LATE_PRIOR_REPORTS_REVIEW_REQUIRED':'SHADOW_UNCALIBRATED',
    classifierVersion:lastValid?.classifierVersion??null,
    previousOperationalRawScore:lastValid?.score??null,
    lastPublicationStatus:publication?.status??null,
@@ -48,6 +57,8 @@ export function auditR5ReadOnly(file,{now=Date.now()}={}){
    collectionStatus:collection?.status??null,
    checkedAt,collectionAgeMinutes:age!==null?Math.floor(age/60000):null,
    acceptedUnique:shadow.eventCount,heldPotentialDuplicates:held.length,
+   anchorAssessedAt:shadow.anchorAssessedAt,postAnchorSameDayWeightedDelta:shadow.postAnchorSameDayWeightedDelta,
+   latePriorPublicationDateCount:shadow.latePriorPublicationDateCount,
    dailyHistory:shadow.history.map(({date,value,reportedEvents,verifiedEvents,carried,adverseVeto,suppressedPositivePoints})=>({
     date,value,reportedEvents,verifiedEvents,carried,adverseVeto,suppressedPositivePoints,
    })),
