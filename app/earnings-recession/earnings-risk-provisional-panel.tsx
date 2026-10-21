@@ -20,8 +20,17 @@ const titles:{key:keyof NonNullable<Observation["factorScores"]>;name:string}[]=
  {key:"revenue",name:"매출 성장"},{key:"epsBreadth",name:"이익 개선 폭"}
 ];
 export default function EarningsRiskProvisionalPanel(){
- const {payload}=useStoredIndex<Provisional>("/api/earnings-risk-provisional");
- if(payload?.status!=="READY"||payload.phase!=="PROVISIONAL"||!score(payload.score)||!Array.isArray(payload.history))return null;
+ const {payload,loading,error}=useStoredIndex<Provisional>("/api/earnings-risk-provisional");
+ if(payload?.status!=="READY"||payload.phase!=="PROVISIONAL"||!score(payload.score)||!Array.isArray(payload.history)){
+  return <section className="earnings-risk-provisional" aria-label="현재 분기 실적 잠정 점수 추적"
+   data-testid="earnings-risk-provisional" data-state="unavailable">
+   <div className="earnings-risk-provisional-top">
+    <div><h2>현재 분기 실적 발표 추적</h2>
+     <p role="status">{loading?"관측 자료 확인 중":error?"잠정 관측 자료를 불러오지 못했습니다":"잠정 관측 자료 확인 대기"}</p></div>
+    <strong>—<small>점 · 잠정</small></strong>
+   </div>
+  </section>;
+ }
  const points:MarketFearGreedChartPoint[]=payload.history
   .filter(p=>typeof p.observedAt==="string"&&score(p.score))
   .map(p=>({date:p.observedAt,score:p.score}));
