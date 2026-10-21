@@ -30,7 +30,7 @@ export function assertR5RealityPublicationReady(shadow){
 // The original 19 Oct publication is retained for the publication-date chart.
 // If source content is edited again, hold R5; never guess or rewrite stored R3.
 const REVIEWED_SHABWA_REVISION=Object.freeze({
- sourceUrl:'https://www.bbc.co.uk/news/articles/cv0ld6lrr2zeo',
+ sourceUrl:'https://www.bbc.co.uk/news/articles/cv0ld6lrr2zeo?at_medium=RSS&at_campaign=rss',
  originalDate:'2026-10-19',
  originalTitle:'Houthi missile strike on Yemen camp kills 50 security recruits, local authorities say',
  revisedDate:'2026-10-20',
