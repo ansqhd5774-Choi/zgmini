@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import {createHash} from 'node:crypto';
 import {openStore,hash} from '../scripts/iran-progress/store.mjs';
 import {
  calculateOperationalR5,resolveReviewedR5SourceRevision,
@@ -10,8 +11,11 @@ import {CLASSIFIER_VERSION,classifyR3Article} from '../lib/iran-progress/referen
 import {validateIranR5Public} from '../lib/iran-progress/daily-public-r5.mjs';
 
 const now=Date.parse('2026-10-21T10:00:00Z');
+test('exact stored BBC RSS URL has independently observed immutable URL digest',()=>{
+ assert.equal(createHash('sha256').update('https://www.bbc.co.uk/news/articles/cv0ld6lrr2zeo?at_medium=RSS&at_campaign=rss').digest('hex').slice(0,12),'921087729326');
+});
 const oldSource={
- sourceUrl:'https://www.bbc.co.uk/news/articles/cv0ld6lrr2zeo',
+ sourceUrl:'https://www.bbc.co.uk/news/articles/cv0ld6lrr2zeo?at_medium=RSS&at_campaign=rss',
  title:'Houthi missile strike on Yemen camp kills 50 security recruits, local authorities say',
  date:'2026-10-19',summary:'Initial death toll of one camp strike',
 };
