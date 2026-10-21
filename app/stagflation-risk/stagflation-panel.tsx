@@ -44,7 +44,7 @@ export default function StagflationPanel(){
    <div className="inflation-direction-strip"><span>높은 점수 · 동시 위험이 낮은 방향</span><span>낮은 점수 · 고물가·둔화 부담이 큰 방향</span></div>
   </section>
   <section className="inflation-r2-axis-section stagflation-axes" aria-labelledby="stagflation-axis-title">
-   <header><div><p className="cnn-eyebrow">STAGFLATION RISK AXES</p><h2 id="stagflation-axis-title">스태그플레이션 위험 평가 · 4개 영역</h2></div><p>아래는 영역별 위험 강도입니다. <b>높을수록 부담</b>이 크며, 위 안전 점수와 방향이 반대입니다.</p></header>
+   <header><div><p className="cnn-eyebrow">STAGFLATION RISK AXES</p><h2 id="stagflation-axis-title">스태그플레이션 위험 평가 · 4개 영역</h2></div><p>아래는 월별 확정 평가의 영역별 위험 강도입니다. <b>높을수록 부담</b>이 크며, 월별 안전 점수와 방향이 반대입니다.</p></header>
    <div className="inflation-r2-axis-grid">{axes.map(([id,label,meaning])=>{const v=payload?.axes?.[id];const ready=payload?.status==='READY'&&typeof v==='number'&&Number.isFinite(v)&&v>=0&&v<=100;return <article key={id} className="inflation-r2-axis-item"><div className="inflation-r2-axis-top"><h3>{label}</h3><strong>{ready?v.toFixed(1):'—'}</strong></div><p>{meaning}</p></article>})}</div>
    <p className="inflation-r2-axis-note">영역 점수의 단순 평균이 최종 점수는 아닙니다. 성장 둔화가 곧 경제의 수축을 뜻하지는 않습니다. 관측월과 발표·갱신 시각도 다릅니다.</p>
   </section>
