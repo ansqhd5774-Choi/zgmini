@@ -86,12 +86,33 @@ test('one-year chart rebuilds only original four-factor current-vintage points',
  source.artifacts.inflationExpectations.score.unshift(older);
  const out=buildLegacyMarketInflationDomain(source,date);
  assert.equal(out.status,'READY');
- assert.equal(out.trend.length,13);
- assert.ok(out.trend[0].label>='2025-10-20');
+ assert.equal(out.trend.length,14);
+ assert.equal(out.trend[0].label,'2025-10-20');
  assert.equal(out.trend.at(-1).label,date);
  assert.equal(out.trend.at(-1).value,out.score);
  assert.ok(out.trend.every(point=>point.value>=0&&point.value<=100));
  assert.ok(out.interpretation.includes('PIT'));
  const risk=readFileSync('worker/projection-builders/inflation.mjs','utf8');
  assert.ok(risk.includes('calculateInflationR2At'));
+});
+
+test('one-year boundary requires all four stored components at or before the date',()=>{
+ const source=fixture();
+ for(const field of ['corePce','coreCpi','headlineCpi'])
+   source.artifacts.inflationBatchA[field].score.unshift({observationDate:'2025-09-01',value:50});
+ source.artifacts.inflationExpectations.score.unshift({observationDate:'2025-10-21',value:50});
+ const out=buildLegacyMarketInflationDomain(source,date);
+ assert.equal(out.trend[0].label,'2025-10-31');
+ assert.equal(out.trend.at(-1).value,weighted);
+ assert.ok(!out.trend.some(point=>point.label==='2025-10-20'));
+});
+
+test('month-end one-year boundary is not duplicated',()=>{
+ const source=fixture();
+ for(const field of ['corePce','coreCpi','headlineCpi'])
+   source.artifacts.inflationBatchA[field].score.unshift({observationDate:'2025-09-01',value:50});
+ source.artifacts.inflationExpectations.score.unshift({observationDate:'2025-09-01',value:50});
+ const out=buildLegacyMarketInflationDomain(source,'2026-10-31');
+ assert.equal(out.trend[0].label,'2025-10-31');
+ assert.equal(new Set(out.trend.map(point=>point.label)).size,out.trend.length);
 });
