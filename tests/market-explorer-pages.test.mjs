@@ -89,11 +89,15 @@ test('theme screen withdraws previous ETF scores immediately when stored feed fa
 });
 
 test('shared header provides the agreed menu order on both dashboard and detail pages',()=>{
- const Header=load('../components/site-header.tsx',{'@/components/collection-health-indicator':{default:()=>null},'@/components/risk-detail-side-rails':{default:()=>null},'@/components/market-explorer-catalog':{RISK_CARDS:catalog.RISK_CARDS??[]}}).default;
+ const Countdown=load('../components/fomc-countdown.tsx');
+ const Header=load('../components/site-header.tsx',{'@/components/fomc-countdown':Countdown,'@/components/collection-health-indicator':{default:()=>null},'@/components/risk-detail-side-rails':{default:()=>null},'@/components/market-explorer-catalog':{RISK_CARDS:catalog.RISK_CARDS??[]}}).default;
  for(const props of [{},{activeView:'dashboard',onSelectView:()=>{}}]){
   const html=renderToStaticMarkup(React.createElement(Header,props));
   const nav=html.split('<nav aria-label="주 메뉴">')[1].split('</nav>')[0];
   const labels=['대시보드','위험 지표','경제 지표','섹터 공포·탐욕','테마 공포·탐욕','아웃브레이크'];
   const positions=labels.map(label=>nav.indexOf(label));assert.ok(positions.every((p,i)=>p>=0&&(i===0||p>positions[i-1])));
+  assert.match(html,/class="zg-fomc-bar"/);
+  assert.match(html,/class="zg-fomc-flag"[^>]*src="\/flags\/us.svg"/);
+  assert.doesNotMatch(html.split('class="zg-fomc-bar"')[1],/<a /);
  }
 });
