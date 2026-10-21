@@ -33,7 +33,8 @@
 @media(max-width:420px){.zg-sector-chart h2{font-size:14px}.zg-sector-chart h2>svg{width:16px;height:16px;margin-right:4px}}
 
 /* R155: theme-only overlay selector; leaves sector chart appearance untouched. */
-.zg-sector-chart.zg-theme-picker-enabled{position:relative;overflow:hidden}
+.zg-sector-chart.zg-theme-picker-enabled{position:relative;overflow:visible}
+.zg-theme-picker-clip{position:absolute;inset:0;z-index:25;overflow:hidden;border-radius:inherit;pointer-events:none}
 .zg-theme-picker-panel{position:absolute;z-index:25;top:8px;bottom:55px;left:16px;right:16px;display:flex;flex-direction:column;gap:7px;padding:8px;background:#0d2737;border:1px solid #426176;border-radius:4px;box-shadow:0 4px 14px #0008;transform:translateY(calc(100% + 70px));opacity:0;visibility:hidden;pointer-events:none;transition:transform 300ms cubic-bezier(.22,1,.36,1),opacity 220ms ease,visibility 0s linear 300ms}
 .zg-theme-picker-panel.is-open{transform:translateY(0);opacity:1;visibility:visible;pointer-events:auto;transition:transform 300ms cubic-bezier(.22,1,.36,1),opacity 220ms ease,visibility 0s}
 @media(prefers-reduced-motion:reduce){.zg-theme-picker-panel,.zg-theme-picker-panel.is-open{transition:none}}
