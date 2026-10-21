@@ -10,6 +10,7 @@ import '../inflation/inflation-hero-typography-r1.css';
 import '../shared-risk-indicator-width-r1.css';
 import './stagflation.css';
 import StagflationInputs,{type StagflationInput} from './stagflation-inputs';
+import StagflationLatestPanel from './stagflation-latest-panel';
 type Payload={status:string;score:number|null;observationMonth?:string;trend?:Array<{label:string;value:number}>;axes?:Record<string,number>;contraction?:Record<string,boolean>;inputs?:StagflationInput[]};
 const axes=[
  ['inflation','물가 압력','전체·근원 PCE의 수준과 최근 상승 속도'],
@@ -36,6 +37,7 @@ export default function StagflationPanel(){
    <MarketTrendFrame className="fg-analysis-slot"><div className="fg-chart-slot"><div className="fg-renderer"><MarketFearGreedChart showExtrema marketScoreBands color={color} data={trend} latestPoint={latestPoint} axisTicks={ticks} axisLabels={new Map(trend.map(p=>[p.date,p.date.slice(2,7).replace('-','/')]))} instanceKey="stagflation-monthly" gradientId="stagflation-fill" formatTooltipLabel={d=>d.slice(0,7)} emptyLabel={loading?'확인 중':'승인된 저장 이력이 없습니다'}/></div></div></MarketTrendFrame></div>
    <div className="fg-footer-slot"><div className="cnn-panel-note"><span>데이터 출처</span><strong>BEA · BLS · 연준 · EIA · 현재 개정치 기준 월별 재구성</strong></div></div>
   </section>
+  <StagflationLatestPanel/>
   <section className="inflation-explainer" aria-labelledby="stagflation-what-title">
    <p className="cnn-eyebrow">STAGFLATION RISK</p><h1 id="stagflation-what-title">스태그플레이션이란?</h1>
    <p>물가가 높은 가운데 경제 성장과 고용이 함께 둔화되는 상황입니다. <mark className="zg-inflation-keymark">고물가와 실물·고용 둔화가 겹치는 위험</mark>을 살펴봅니다. <strong>안전 점수가 높을수록 이 동시 위험이 낮다는 뜻</strong>입니다. 주식시장 전체의 안전도나 위기 확률, 매수·매도 신호는 아닙니다.</p>

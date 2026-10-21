@@ -1,6 +1,7 @@
 "use client";
 import {LiveScoreValue} from '../components/live-score-value';
 import EarningsProvisionalSummary from '../components/earnings-provisional-summary';
+import StagflationLatestSummary from '../components/stagflation-latest-summary';
 import ChartExtremumPoint from '../components/chart-extremum-point';
 import {chartExtrema} from '../lib/chart-extrema.mjs';
 import {domainObservationDelta} from '../lib/market-score/domain-observation-delta.mjs';
@@ -372,6 +373,7 @@ export function CompositeMarketSection({items,points,demo,loading}:{items:Summar
           <LiveScoreValue value={score===null?null:Math.round(score)} className="zg-r55-subscore-value">{score===null?'—':Math.round(score)}{diagnosticKeys[index]==='inflationStability'?null:<StoredScoreDirection id={'diagnostic:'+diagnosticKeys[index]} score={score}/>}</LiveScoreValue>
          </div>
          {diagnosticKeys[index]==='earningsRecessionDefense'&&<EarningsProvisionalSummary/>}
+         {diagnosticKeys[index]==='stagflationSafety'&&<StagflationLatestSummary/>}
         </div>
        })}
       </div>
