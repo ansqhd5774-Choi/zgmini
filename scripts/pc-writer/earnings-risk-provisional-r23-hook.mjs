@@ -44,8 +44,14 @@ export function dispatchEarningsRiskProvisionalR23({
   const expected=cfg?.source;
   if(!SHA40.test(expected??"")||cfg.collectionTarget!=="pc"||cfg.enabled!==true)
    return {status:"BLOCKED_APPROVAL_CONFIG"};
-  const sha=String(gitImpl("git",["rev-parse","HEAD"],{cwd:root,encoding:"utf8",windowsHide:true,timeout:15000})).trim();
-  const dirty=String(gitImpl("git",["status","--porcelain","--untracked-files=no"],{cwd:root,encoding:"utf8",windowsHide:true,timeout:15000})).trim();
+  // R25 proven read-only Git status options; avoid long fsmonitor hangs.
+  // A timeout is AUTOMATION_BLOCKED for this observer only, not Core health.
+  const gitOptions={cwd:root,encoding:"utf8",windowsHide:true,timeout:6000,
+   env:{...process.env,GIT_OPTIONAL_LOCKS:"0",GIT_TERMINAL_PROMPT:"0",
+    GCM_INTERACTIVE:"Never",GIT_LFS_SKIP_SMUDGE:"1"}};
+  const sha=String(gitImpl("git",["rev-parse","HEAD"],gitOptions)).trim();
+  const dirty=String(gitImpl("git",["-c","core.fsmonitor=false","-c",
+   "core.untrackedCache=false","status","--porcelain","--untracked-files=no"],gitOptions)).trim();
   if(expected!==sha||dirty)return {status:"BLOCKED_RUNTIME_SHA_DRIFT"};
   const child=spawnImpl(node,[runner],{
    cwd:directory,windowsHide:true,detached:true,stdio:"ignore",
