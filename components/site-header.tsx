@@ -3,6 +3,7 @@
 import {useEffect,useRef,useState,type ReactNode} from "react";
 import CollectionHealthIndicator from "@/components/collection-health-indicator";
 import RiskDetailSideRails from "@/components/risk-detail-side-rails";
+import FomcCountdown from "@/components/fomc-countdown";
 import {RISK_CARDS} from "@/components/market-explorer-catalog";
 import "./site-header.css";
 
@@ -55,5 +56,6 @@ export default function SiteHeader({activeView=null,onSelectView,accountTools}:{
     <div className="zg-account-tools">{accountTools}</div>
    </div>
   </div>
+  <FomcCountdown/>
  </header>{showRiskSideRails&&<RiskDetailSideRails pathname={pathname}/>}</>;
 }
