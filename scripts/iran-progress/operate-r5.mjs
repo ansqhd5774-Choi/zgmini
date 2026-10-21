@@ -14,6 +14,18 @@ import {independentlyCorroboratedR5Positives} from '../../lib/iran-progress/veri
 import {publishIranR5Provisional} from './publication.mjs';
 import {client,credential} from '../pc-writer/d1.mjs';
 
+/**
+ * Fail closed until the same-PC R5 has a separately audited current-reality
+ * reference, multi-date historical calibration, and explicit production
+ * authority. Source-level and unit-test success must never authorize a write.
+ */
+export function assertR5RealityPublicationReady(shadow){
+ if(shadow?.productionReady!==true||
+    shadow.independentCurrentRealityVerified!==true||
+    shadow.calibrated!==true||
+    shadow.status!=='REALITY_VERIFIED')
+  throw Error('R5_REALITY_CALIBRATION_NOT_APPROVED_FOR_PUBLICATION');
+}
 export function calculateOperationalR5(store,{now=Date.now()}={}){
  const checkpoint=store.getCheckpoint('continuous-news-last-run-r3');
  const checked=checkpoint?.lastDiscoverySuccessAt;
@@ -58,12 +70,13 @@ if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.ur
  const store=openStore(path.join(base,'iran.sqlite')),owner=randomUUID();
  try{
   if(!store.claim(owner,Date.now()))throw Error('R5_EXISTING_COLLECTION_LEASE_HELD');
-  const now=Date.now(),{body}=calculateOperationalR5(store,{now});
+  const now=Date.now(),{body,shadow}=calculateOperationalR5(store,{now});
   if(mode==='--preview')console.log(JSON.stringify({status:'SHADOW_PREVIEW',
    score:body.score,asOfDate:body.asOfDate,classifierVersion:body.classifierVersion,
    collectionCheckedAt:body.collectionCheckedAt,
    eventCount:body.acceptedEventCount,publicWrite:false}));
   else{
+   assertR5RealityPublicationReady(shadow);
    const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../..');
    const cfgPath=path.join(os.homedir(),'.zgmini','pc-writer','config.json');
    const config=JSON.parse(fs.readFileSync(cfgPath,'utf8'));
