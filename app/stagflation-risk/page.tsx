@@ -22,7 +22,7 @@ export default function StagflationPage(){return <><SiteHeader/><main className=
   {title:"점수가 높으면 투자가 안전한가요?",text:"높을수록 스태그플레이션 동시 위험이 낮다는 뜻입니다. 시장 전체의 안전도나 위기 확률은 아닙니다."},
   {title:"성장률이 양수인데 왜 둔화인가요?",text:"경제가 늘어나더라도 증가 속도는 약해질 수 있습니다. 성장 둔화와 절대적인 수축은 구분합니다."},
   {title:"왜 물가와 고용을 함께 보나요?",text:"고물가만 나타나거나 저물가 침체만 나타난 상황을 고물가·둔화의 동시 위험과 구분하기 위해서입니다."},
-  {title:"오늘 점수와 관측월이 왜 다른가요?",text:"원자료 발표 주기가 달라 최근 공통 관측월로 계산합니다. 차트는 현재 개정치로 월별 재구성한 것이며 발표 당시 점수가 아닙니다. ‘—’는 0이 아니라 자료 부족입니다."},
+  {title:"월별 평가와 잠정 평가는 어떻게 다른가요?",text:"월별 확정 평가는 최근 공통 관측월로 계산합니다. 최신 발표 조합은 관측 월이 다른 새 자료를 별도로 반영한 잠정 평가입니다. 월별 차트는 현재 개정치로 재구성한 것이며 발표 당시 점수가 아닙니다. ‘—’는 0이 아니라 자료 부족입니다."},
  ]} sources={[{href:"https://fred.stlouisfed.org/series/PCEPI",label:"BEA PCE 물가",description:"물가 지수 원자료"},{href:"https://fred.stlouisfed.org/series/INDPRO",label:"연준 산업생산",description:"실물 생산 원자료"},{href:"https://fred.stlouisfed.org/series/PAYEMS",label:"BLS 비농업고용",description:"고용 원자료"}]} related={[{href:"/inflation/",label:"인플레이션 지표"},{href:"/recession/",label:"경기침체 지표"},{href:"/economic-indicators/liquidity/",label:"유동성 지표"}]}/>
  <DetailReadingGuide title="스태그플레이션 위험 신호, 쉽게 읽기" variant="beginner" intro="안전 점수와 영역별 위험 강도, 월별 관측 기준을 구분해 읽어보세요." sources={[]}
  sections={[
