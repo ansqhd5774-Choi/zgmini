@@ -31,7 +31,7 @@ const dbFor=body=>({prepare:sql=>{
  }});
 test("actual PIT-only published observations validate without any reconstructed points",()=>{
  assert.equal(validateEarningsRiskProvisionalRecord(record()),true);
- const r=record();r.history.push({...point("2026-10-20T23:40:00.000Z","b".repeat(64)),score:78});
+ const r=record();r.history.push({...point("2026-10-20T23:40:00.000Z","b".repeat(64)),score:78,factorScores:{eps:74.64285714285714,margin:100,revenue:59.375,epsBreadth:75}});
  r.latest={observedAt:r.history.at(-1).observedAt,observationId:r.history.at(-1).observationId,score:78};
  assert.equal(validateEarningsRiskProvisionalRecord(r),true);
 });
