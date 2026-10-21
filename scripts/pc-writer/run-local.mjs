@@ -1,3 +1,4 @@
+import {validDegradedMarket} from './collection-publication-policy.mjs';
 import fs from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
@@ -17,8 +18,6 @@ import {publishCoreArrowState} from './score-arrow-publication.mjs';
 import {requiresRecessionR3DisplayRefresh} from './recession-r3-refresh.mjs';
 import {requiresLiquidityR2DisplayRefresh} from './liquidity-r2-refresh.mjs';
 import {requiresCreditR2DisplayRefresh} from './credit-r2-refresh.mjs';
-import {prepareStagflation,publishStagflation} from './stagflation-publication.mjs';
-import {validDegradedMarket} from './collection-publication-policy.mjs';
 
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../..');
 const base=process.env.ZGMINI_PC_HOME??path.join(os.homedir(),'.zgmini','pc-writer');
@@ -97,10 +96,6 @@ try{
  const {preparePublicRateSentiment,publishPublicRateSentiment}=await import('./rate-sentiment-publication.mjs');
  const rateSentiment=await preparePublicRateSentiment(core,now);
  report.rateSentiment={status:rateSentiment.status,observationDate:rateSentiment.observationDate??null,reason:rateSentiment.reason??null};
- // Separate opt-in projection. Failure does not interrupt existing market/Korea publication.
- let stagflation={status:'DISABLED',prepared:false};
- try{stagflation=await prepareStagflation(core,{enabled:config.stagflationS21Publication===true,now});}catch{stagflation={status:'PARTIAL',prepared:false,reason:'STAGFLATION_PREPARATION_FAILED'};}
- report.stagflation={status:stagflation.status,observationMonth:stagflation.body?.observationMonth??null,reason:stagflation.reason??null};
  const liquidityTrend=body.domains.find(x=>x.id==='liquidity')?.trend??[];
  const liquidityDates=liquidityTrend.map(x=>x?.label??x?.date).filter(x=>typeof x==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(x)).sort();
  report.market={
@@ -191,7 +186,6 @@ try{
   }
   // Reuse the existing public snapshot table; publish only the bounded display score.
   report.rateSentiment.publication=(await publishPublicRateSentiment(remote,config.core,rateSentiment)).status;
-  try{report.stagflation.publication=(await publishStagflation(remote,config.core,stagflation)).status;}catch(error){report.stagflation.publication='UNVERIFIED';report.stagflation.reason=/^STAGFLATION_[A-Z_]+$/.test(error.message??'')?error.message:'STAGFLATION_PUBLICATION_FAILED';}
   const koreaOutput=await history.prepare('SELECT * FROM kfg_rev7_snapshots ORDER BY date DESC LIMIT 1').first();
   if(koreaOutput){
    const existing=(await remote.query(config.history,'SELECT * FROM kfg_rev7_snapshots WHERE date=?',[koreaOutput.date])).results[0];
