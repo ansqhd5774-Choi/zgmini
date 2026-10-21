@@ -12,7 +12,8 @@ import {OutbreakChange} from './outbreak-change';
 import OutbreakBeginnerFed,{rateBand} from './outbreak-beginner-fed-r53';
 import {ContentHelp} from './content-help';
 import {HELP,HelpText} from './help-copy';
-import {useIranProgress,IranSummaryCard,IranDetail} from './iran-progress';
+import {useIranProgress,IranSummaryCard} from './iran-progress';
+import IranDetail from './outbreak-beginner-iran-r54';
 import {Landmark, Swords, Target, TrendingUp, TrendingDown, Minus} from 'lucide-react';
 
 const events = [
