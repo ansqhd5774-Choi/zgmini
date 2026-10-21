@@ -13,9 +13,12 @@ export function validateStagflationRecord(r){
  return r.history.every((p,i)=>month(p.observationMonth)&&valid(p.score)&&p.status==='READY'&&(!i||next(r.history[i-1].observationMonth)===p.observationMonth))&&r.history.at(-1).observationMonth===r.observationMonth&&Math.abs(r.history.at(-1).score-r.score)<1e-9&&axisKeys.every(k=>valid(r.history.at(-1).axes?.[k]))&&contractionKeys.every(k=>typeof r.history.at(-1).contraction?.[k]==='boolean')&&validStagflationInputs(r);
 }
 export function stagflationPublicBody(r){
+ // Validated history contains 13 consecutive monthly scores. No weekly score exists.
+ const monthlyChange=months=>r.score-r.history.at(-months-1).score;
+ const scoreComparisons={week:null,month:monthlyChange(1),threeMonth:monthlyChange(3),sixMonth:monthlyChange(6),year:monthlyChange(12)};
  // Only derived points; private raw arrays, source hashes and audit errors stay private.
  return {status:'READY',score:r.score,methodologyVersion:r.methodVersion,historyPolicy:r.historyPolicy,observationMonth:r.observationMonth,
-  trend:r.history.map(p=>({label:p.observationMonth,value:p.score})),
+  trend:r.history.map(p=>({label:p.observationMonth,value:p.score})),scoreComparisons,
   axes:Object.fromEntries(axisKeys.map(k=>[k,r.history.at(-1).axes[k]])),contraction:Object.fromEntries(contractionKeys.map(k=>[k,r.history.at(-1).contraction[k]])),inputs:publicStagflationInputs(r.inputs)};
 }
 export async function readStagflation(db,{now=Date.now()}={}){
