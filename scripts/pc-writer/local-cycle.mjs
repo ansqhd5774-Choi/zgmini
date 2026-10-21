@@ -6,6 +6,8 @@ import {spawnSync} from 'node:child_process';
 import {save,read} from './d1.mjs';
 import {collectSupplyR10} from './supply-r10.mjs';
 import {collectAlpacaIncremental} from './alpaca-incremental.mjs';
+import {dispatchEarningsRiskProvisionalR23} from './earnings-risk-provisional-r23-hook.mjs';
+import {collectionPublicationPolicy} from './collection-publication-policy.mjs';
 
 const here=path.dirname(fileURLToPath(import.meta.url));
 const base=process.env.ZGMINI_PC_HOME??path.join(os.homedir(),'.zgmini','pc-writer');
@@ -32,11 +34,12 @@ try{
   sectorFearGreedR3Report=fs.existsSync(sectorFearGreedR3File)?read(sectorFearGreedR3File):null;
  }
  const quotaGuarded=process.env.ZGMINI_QUOTA_MODE==='enforce'&&(collectionReport?.quota?.guarded??0)>0;
- const collectionFailed=collection.status!==0||['ERROR','FAILED','SOURCE_FAILED'].includes(collectionReport?.status);
  const publishRequested=process.argv.includes('--publish');
- const publishAllowed=publishRequested&&!quotaGuarded&&!collectionFailed;
- const publishSkipped=publishRequested&&!publishAllowed?(quotaGuarded?'QUOTA_GUARD':collectionFailed?'COLLECTION_FAILED':null):null;
- const publication=spawnSync(process.execPath,[path.join(here,'run-local.mjs'),...(publishAllowed?['--publish']:[])],{windowsHide:true,stdio:['ignore','pipe','pipe'],timeout:30*60000});
+ const publicationPolicy=collectionPublicationPolicy({requested:publishRequested,collectionExit:collection.status,collectionStatus:collectionReport?.status,quotaGuarded});
+ const publishAllowed=publicationPolicy.publishAllowed;
+ const publishSkipped=null;
+ const publication=spawnSync(process.execPath,[path.join(here,'run-local.mjs'),...(publishAllowed?['--publish',...(publicationPolicy.collectionDegraded?['--collection-degraded']:[])]:[])],{windowsHide:true,stdio:['ignore','pipe','pipe'],timeout:30*60000});
+ let researchEarningsRiskProvisionalR23={status:'SKIPPED_KOREA_LANE'};
  let prospective=null,prospectiveReport=null,fundFlowProspective=null,fundFlowProspectiveReport=null,breadthProspective=null,breadthProspectiveReport=null,earningsR5OfficialRefresh=null,earningsR5OfficialRefreshReport=null,earningsR5Prospective=null,earningsR5ProspectiveReport=null,earningsR5ProspectiveReportStale=false;
  if(lane==='core'){
   prospective=spawnSync(process.execPath,[path.join(here,'dollar-prospective-forward-r1.mjs')],{windowsHide:true,stdio:['ignore','pipe','pipe'],timeout:5*60000});
@@ -51,6 +54,9 @@ try{
   earningsR5OfficialRefresh=spawnSync(process.execPath,[path.join(here,'earnings-r5-official-refresh-cycle-r1.mjs')],{windowsHide:true,stdio:['ignore','pipe','pipe'],timeout:30*60000});
   const earningsR5OfficialRefreshFile=path.join(base,'local-earnings-r5-official-refresh-cycle-last-run.json');
   earningsR5OfficialRefreshReport=fs.existsSync(earningsR5OfficialRefreshFile)?read(earningsR5OfficialRefreshFile):null;
+  // Research-only sidecar: independently observes changed local SEC inputs.
+  // Detached dispatch cannot block the existing Core score/publication lane.
+  researchEarningsRiskProvisionalR23=dispatchEarningsRiskProvisionalR23({base,here});
   const earningsR5ProspectiveStartedAt=Date.now();
   earningsR5Prospective=spawnSync(process.execPath,[path.join(here,'earnings-r5-forward-prospective-cycle-r1.mjs')],{windowsHide:true,stdio:['ignore','pipe','pipe'],timeout:5*60000});
   const earningsR5ProspectiveFile=path.join(base,'local-earnings-r5-forward-prospective-last-run.json');
@@ -153,7 +159,7 @@ try{
   sectors:sectorFearGreedR3Report?.sectors??null,
   error:sectorFearGreedR3Report?.error??(sectorFearGreedR3?.error?.code??null),
  }:{nonBlocking:true,status:'SKIPPED_KOREA_LANE'};
- const report={at:new Date().toISOString(),lane,collectionExit:collection.status,collectionStatus:collectionReport?.status??null,supplyR10,sectorFearGreed,researchBreadthR10V9Shadow,publicationExit:publication.status,publishRequested,publishSkipped,researchProspective,researchFundFlowProspective,researchBreadthProspective,researchEarningsR5OfficialRefresh,researchEarningsR5Prospective,status:publication.status===0?(publishSkipped==='QUOTA_GUARD'?'QUOTA_GUARDED':publishSkipped==='COLLECTION_FAILED'?'COLLECTION_FAILED_PUBLISH_BLOCKED':'COMPLETE'):'PUBLICATION_NOT_VERIFIED'};
+ const report={at:new Date().toISOString(),lane,collectionExit:collection.status,collectionStatus:collectionReport?.status??null,supplyR10,sectorFearGreed,researchBreadthR10V9Shadow,publicationExit:publication.status,publishRequested,publishSkipped,publicationPolicy,researchProspective,researchFundFlowProspective,researchBreadthProspective,researchEarningsR5OfficialRefresh,researchEarningsRiskProvisionalR23,researchEarningsR5Prospective,status:publication.status===0?(publicationPolicy.collectionDegraded?'COMPLETE_WITH_COLLECTION_GAPS':'COMPLETE'):'PUBLICATION_NOT_VERIFIED'};
  save(path.join(base,'local-cycle-last-run.json'),report);console.log(JSON.stringify(report));
  if(publication.status!==0)process.exitCode=1;
 }finally{fs.unlinkSync(file);}

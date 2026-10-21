@@ -57,11 +57,14 @@ test('local writer preserves liquidity coverage evidence through publish',()=>{
  assert.match(src,/console\.warn=originalWarn/);
 });
 
-test('local cycle blocks publication after collection error',()=>{
+test('local cycle separates collection failure from validated stored publication',()=>{
  const src=fs.readFileSync(new URL('../scripts/pc-writer/local-cycle.mjs',import.meta.url),'utf8');
- assert.match(src,/collectionFailed=collection\.status!==0/);
- assert.match(src,/COLLECTION_FAILED_PUBLISH_BLOCKED/);
- assert.match(src,/publishSkipped/);
+ assert.match(src,/collectionPublicationPolicy/);
+ assert.match(src,/COMPLETE_WITH_COLLECTION_GAPS/);
+ assert.match(src,/--collection-degraded/);
+ const writer=fs.readFileSync(new URL('../scripts/pc-writer/run-local.mjs',import.meta.url),'utf8');
+ assert.match(writer,/!validDegradedMarket\(body\)/);
+ assert.match(writer,/STORED_MARKET_NOT_READY_AFTER_COLLECTION_FAILURE/);
 });
 
 
