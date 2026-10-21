@@ -18,6 +18,7 @@ import {requiresRecessionR3DisplayRefresh} from './recession-r3-refresh.mjs';
 import {requiresLiquidityR2DisplayRefresh} from './liquidity-r2-refresh.mjs';
 import {requiresCreditR2DisplayRefresh} from './credit-r2-refresh.mjs';
 import {prepareStagflation,publishStagflation} from './stagflation-publication.mjs';
+import {validDegradedMarket} from './collection-publication-policy.mjs';
 
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../..');
 const base=process.env.ZGMINI_PC_HOME??path.join(os.homedir(),'.zgmini','pc-writer');
@@ -166,6 +167,7 @@ try{
  const health=await storeLocalCollectionHealth(core,history,now,base);
  report.collectionHealth={normal:health.normal,total:health.total,status:health.status};
  if(publish){
+  if(process.argv.includes('--collection-degraded')&&!validDegradedMarket(body))throw Error('STORED_MARKET_NOT_READY_AFTER_COLLECTION_FAILURE');
   const remote=client(config,credential(root));
   report.recovery=await recoverPublication(remote,config.core,base);
   save(path.join(base,'local-publication-ledger.json'),{status:'SUBMITTING',source,at:Date.now()});

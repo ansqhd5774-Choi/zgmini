@@ -82,12 +82,13 @@ test('R158 refuses an incomplete appended point rather than inventing a score',(
  assert.equal(p.data.length,252);
  assert.equal(p.series.length,7);
 });
-test('R158 dashed chart isolates 2-point extension and contains no provisional text label',()=>{
+test('provisional chart isolates the extension and labels only an actual provisional interval',()=>{
  const chart=fs.readFileSync('components/sector-sentiment-chart.tsx','utf8');
  assert.match(chart,/const hasProvisional=firstProvisional>0;/);
  assert.match(chart,/id\+'__solid'/);
  assert.match(chart,/id\+'__dash'/);
  assert.match(chart,/strokeDasharray="4 5"/);
  assert.match(chart,/hasProvisional\?\[/);
- assert.doesNotMatch(chart,/>잠정</);
+ assert.match(chart,/hasProvisional&&<small/);
+ assert.match(chart,/잠정 · 점선 구간/);
 });
