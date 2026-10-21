@@ -14,10 +14,10 @@ test('provisional status is visible rather than silently hidden on unavailable o
  assert.doesNotMatch(panel,/return null\s*;/);
 });
 
-test('valid actual observations still render a dashed chart separately from the confirmed R4 diagnostic',()=>{
+test('valid provisional observations remain implemented but are not mounted in the confirmed R4 page',()=>{
  assert.match(panel,/points\.length>=2/);
  assert.match(panel,/color="#e2c574" dashed/);
  assert.match(panel,/payload\.score\.toFixed\(1\)/);
- assert.match(diagnostic,/<EarningsRiskProvisionalPanel\/>/);
+ assert.doesNotMatch(diagnostic,/EarningsRiskProvisionalPanel/);
  assert.match(diagnostic,/data-testid="earnings-risk-only-hero"/);
 });
