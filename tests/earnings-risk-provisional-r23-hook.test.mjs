@@ -38,7 +38,7 @@ test("R23 dispatches only with exact approved runtime SHA and all three installe
   assert.equal(calls,1);
   assert.equal(options.detached,true);
   assert.equal(options.env.ZGMINI_EARNINGS_R23_SOURCE,sha);
-  assert.match(fs.readFileSync("scripts/pc-writer/earnings-risk-provisional-r23-hook.mjs","utf8"),/core\\.fsmonitor=false/);
+  assert.match(fs.readFileSync("scripts/pc-writer/earnings-risk-provisional-r23-hook.mjs","utf8"),/core\.fsmonitor=false/);
   const blocked=dispatchEarningsRiskProvisionalR23({base,here,platform:"win32",gitImpl:(_c,args)=>args.includes("rev-parse")?"b".repeat(40):"",spawnImpl});
   assert.equal(blocked.status,"BLOCKED_RUNTIME_SHA_DRIFT");assert.equal(calls,1);
   const dirty=dispatchEarningsRiskProvisionalR23({base,here,platform:"win32",gitImpl:(_c,args)=>args.includes("rev-parse")?sha:" M tracked.js",spawnImpl});
