@@ -46,19 +46,19 @@ function Rate14Chart({rate}:{rate:RateStoredSnapshot|null}){
   update();query.addEventListener("change",update);
   return()=>query.removeEventListener("change",update);
  },[]);
- const window=stored14DayWindow(rate);
+ const period=stored14DayWindow(rate);
  const data=window?.points??[];
  const axis=[0,25,50,75,100];
  const chartLeft=mobile?34:42,chartWidth=mobile?296:606,chartRight=chartLeft+chartWidth;
- const x=(at:number)=>chartLeft+(window?(at-window.start)/(13*86_400_000)*chartWidth:0);
+ const x=(at:number)=>chartLeft+(period?(at-period.start)/(13*86_400_000)*chartWidth:0);
  const y=(score:number)=>202-score*1.52;
  const points=data.map(row=>x(row.at).toFixed(2)+","+y(row.value).toFixed(2)).join(" ");
- const ticks=window?(mobile?[0,4,8,13]:[0,2,4,6,8,10,13]).map(day=>window.start+day*86_400_000):[];
+ const ticks=period?(mobile?[0,4,8,13]:[0,2,4,6,8,10,13]).map(day=>period.start+day*86_400_000):[];
  const hasData=data.length>=2;
  return <section className="ob53-chart ob-panel" aria-labelledby="ob53-chart-title">
    <div className="ob53-chart-heading"><h3 id="ob53-chart-title">14일 추이 <CircleHelp size={13} aria-hidden="true"/></h3>
     <span>{rate?"관측 "+data.length+"일 / 14일":"저장 데이터 대기"}</span></div>
-   {window&&hasData?<svg className="ob53-trend-svg" viewBox={mobile?"0 0 350 240":"0 0 700 240"} role="img" aria-label={"금리 심리 최근 14일, 저장된 "+data.length+"개 날짜의 관측값만 표시"}>
+   {period&&hasData?<svg className="ob53-trend-svg" viewBox={mobile?"0 0 350 240":"0 0 700 240"} role="img" aria-label={"금리 심리 최근 14일, 저장된 "+data.length+"개 날짜의 관측값만 표시"}>
     <title>금리 심리 최근 14일 저장 점수, 미관측 날짜는 점을 생성하지 않음</title>
     {axis.map(value=><g key={value}>
      <line x1={chartLeft} y1={y(value)} x2={chartRight} y2={y(value)} stroke="#365468" strokeDasharray="3 5"/>
