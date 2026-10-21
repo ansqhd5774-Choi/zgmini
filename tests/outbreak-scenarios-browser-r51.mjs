@@ -28,6 +28,21 @@ try{
   assert.equal(await cards.nth(0).getAttribute("aria-pressed"),"true");
   assert.equal(await root.locator(".ob-detail-grid").count(),1,"Stored rate chart panel available");
   assert.equal(await root.locator(".ob-standard-detail .ob-metrics strong").first().textContent(),"57.8 점");
+  assert.equal(await root.locator(".ob-live-rate-chart polyline").getAttribute("stroke"),"#94a3b8","Neutral score must render neutral, not green");
+  const firstLayout=await root.evaluate(el=>{
+   const nav=el.querySelector(".ob-cards").getBoundingClientRect();
+   const detail=el.querySelector(".ob-selected-event-panel").getBoundingClientRect();
+   const first=el.querySelector(".ob-card").getBoundingClientRect();
+   const questions=el.querySelector(".ob-definition-disclosure");
+   const summary=questions?.querySelector("summary");
+   return {sideBySide:detail.left>nav.right-1,stacked:detail.top>=nav.bottom-1,
+    compact:first.height<= (innerWidth>=1100?151:innerWidth<=700?112:180),
+    questionCollapsed:questions&&!questions.open&&!!summary};
+  });
+  assert(firstLayout.compact,"Event selector must not resemble three oversized dashboard cards");
+  assert(firstLayout.questionCollapsed,"Secondary explanations start collapsed");
+  assert(width>=1100?firstLayout.sideBySide:firstLayout.stacked,"Workspace breaks at 1100px");
+  await page.screenshot({path:"artifacts/outbreak-scenarios/analysis-fed-"+width+".png",fullPage:true});
 
   const disclosure=root.locator("details.ob-method-disclosure");
   assert.equal(await disclosure.getAttribute("open"),null,"Methodology starts collapsed");
@@ -35,6 +50,13 @@ try{
   assert.equal(await disclosure.getAttribute("open"),"","Secondary methodology expands on demand");
   await disclosure.locator("summary").click();
   assert.equal(await disclosure.getAttribute("open"),null);
+  const definitions=root.locator("details.ob-definition-disclosure");
+  assert.equal(await definitions.getAttribute("open"),null);
+  await definitions.locator("summary").click();
+  assert.equal(await definitions.getAttribute("open"),"");
+  assert.equal(await root.getByText("기존 H.15 국채금리 기반 RSI·금리차·변동성 점수").count(),1);
+  await definitions.locator("summary").click();
+  assert.equal(await definitions.getAttribute("open"),null);
 
   await cards.nth(2).click();
   assert.equal(await cards.nth(2).getAttribute("aria-pressed"),"true");
