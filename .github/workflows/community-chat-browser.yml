@@ -13,6 +13,8 @@ on:
       - 'app/outbreak-beginner-fed-r53.tsx'
       - 'app/outbreak-beginner-iran-r54.tsx'
       - 'app/outbreak-beginner-iran-r54.css'
+      - 'app/outbreak-iran-parity-r55.css'
+      - 'tests/outbreak-iran-parity-r55.test.mjs'
       - 'tests/outbreak-beginner-iran-r54.test.mjs'
       - 'app/outbreak-beginner-r53.css'
       - 'tests/outbreak-beginner-approved-r53.test.mjs'
