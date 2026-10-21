@@ -5,7 +5,7 @@ import {readStoredEarningsRiskFourFactor,RISK_R4_PERIOD_RECONSTRUCTION} from "..
 import {buildEarningsE1R4} from "../lib/market-score/earnings-e1-r4.mjs";
 
 const issuerIds=Array.from({length:500},(_,i)=>String(i+1).padStart(10,"0"));
-const periods=["2025-09-30","2025-12-31","2026-03-31","2026-06-30"];
+const periods=["2025-06-30","2025-09-30","2025-12-31","2026-03-31","2026-06-30"];
 const validRows=period=>issuerIds.flatMap((cik,i)=>[
  {cik,metric:"epsGrowth",value:0.06+(period==="2026-06-30"?0.01:0)+(i%5)*0.003},
  {cik,metric:"revenueGrowth",value:0.04+(period==="2026-03-31"?0.005:0)+(i%5)*0.002},
@@ -47,7 +47,7 @@ test("PC-only bridge reuses original R4 scorer, emits aggregate four factors and
  assert.equal(replay.factors.length,4);
  assert.equal(replay.historyKind,RISK_R4_PERIOD_RECONSTRUCTION);
  assert.equal(replay.historyMode,"CURRENT_VINTAGE_NOT_PIT");
- assert.deepEqual(replay.periodTrend.map(x=>x.date),["2026-03-31","2026-06-30"],"no artificial December point or out-of-range September point");
+ assert.deepEqual(replay.periodTrend.map(x=>x.date),["2025-06-30","2025-09-30","2026-03-31","2026-06-30"],"latest mature financial quarter anchors the year; low-coverage December stays missing");
  const expected=buildEarningsE1R4({
   asOfDate:"2026-10-20",financialPeriodEnd:"2026-06-30",
   issuerRows:issuerIds.map((cik,i)=>({
@@ -67,7 +67,7 @@ test("PC bridge blocks absent or invalid source and never substitutes a legacy s
  assert.equal(missing.score,null);
  assert.deepEqual(missing.periodTrend,[]);
  const db=mockDb();
- const tooEarly=await readStoredEarningsRiskFourFactor({db,asOf:"2025-09-20"});
+ const tooEarly=await readStoredEarningsRiskFourFactor({db,asOf:"2025-06-20"});
  assert.equal(tooEarly.status,"PARTIAL");
  assert.equal(tooEarly.score,null);
  assert.equal(db.getWrites(),0);
