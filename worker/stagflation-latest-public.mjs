@@ -12,6 +12,7 @@ export async function readLatestStagflation(db,{now=Date.now()}={}){
   if(c)confirmed=JSON.parse(c.body);
  }catch{return unavailable('STORED_READ_UNAVAILABLE');}
  if(!validLatestStagflation(r))return unavailable('STORED_DATA_NOT_APPROVED');
+ if(typeof r.supersededByObservationMonth==='string'&&r.supersededByObservationMonth>=r.newestInputMonth)return unavailable('PROVISIONAL_SUPERSEDED');
  const storedAt=Number(row.stored_at),sourceAt=Date.parse(r.sourceStoredAt),calculatedAt=Date.parse(r.calculatedAt);
  if(!Number.isSafeInteger(storedAt)||storedAt>now||calculatedAt>now||sourceAt>now||now-storedAt>=PUBLIC_DISPLAY_MAX_AGE_MS||now-sourceAt>=PUBLIC_DISPLAY_MAX_AGE_MS)return unavailable('LATEST_PUBLISHED_INPUTS_STALE');
  if(confirmed&&validateStagflationRecord(confirmed)&&confirmed.observationMonth>=r.newestInputMonth)return unavailable('PROVISIONAL_SUPERSEDED');

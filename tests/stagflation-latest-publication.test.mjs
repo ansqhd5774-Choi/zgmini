@@ -32,3 +32,12 @@ test('write timeout reads back applied result once instead of submitting another
  const r=remote(),p=await prepareLatestStagflation(local(source()),{enabled:true,now});const write=r.request;let mutations=0;r.request=async(...args)=>{mutations++;await write(...args);throw Error('TIMEOUT');};
  assert.equal((await publishLatestStagflation(r,'test',p)).status,'VERIFIED');assert.equal(mutations,1);r.db.close();
 });
+test('common-month catch-up hides the provisional result while preserving actual observations',async()=>{
+ const r=remote(),p=await prepareLatestStagflation(local(source()),{enabled:true,now});await publishLatestStagflation(r,'test',p);
+ const row=source(),input=JSON.parse(row.body);
+ for(const id of ids)if(input.series[id].at(-1).observationDate!=='2026-10-01')input.series[id].push({observationDate:'2026-10-01',value:input.series[id].at(-1).value*1.001});
+ const complete=await prepareLatestStagflation(local({...row,body:JSON.stringify(input)}),{enabled:true,now:now+1000});assert.equal(complete.status,'NO_NEWER_INPUTS');
+ assert.equal((await publishLatestStagflation(r,'test',complete)).status,'SUPERSEDED');
+ const response=await readLatestStagflation(r.adapter,{now:now+1000});assert.equal(response.status,503);assert.equal((await response.json()).reason,'PROVISIONAL_SUPERSEDED');
+ const record=JSON.parse(r.db.prepare('SELECT body FROM market_public_snapshots_v1 WHERE snapshot_key=?').get(STAGFLATION_LATEST_KEY).body);assert.equal(record.history.length,1);r.db.close();
+});
