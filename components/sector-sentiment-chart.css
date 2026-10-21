@@ -48,3 +48,4 @@
 .zg-theme-selected-label{flex:0 0 auto;display:flex;align-items:center;justify-content:center;height:32px;min-width:0;padding:0 8px;border-bottom:2px solid;border-radius:3px 3px 0 0;background:#102b3b;color:#e2e8f0;font-size:10px;font-weight:600;white-space:nowrap}
 .zg-theme-picker-empty{display:flex;align-items:center;height:32px;color:#aebfd0;font-size:11px}
 @media(max-width:600px){.zg-theme-picker-panel{top:6px;bottom:51px;left:12px;right:12px}.zg-theme-picker-options{grid-template-columns:repeat(2,minmax(0,1fr))}.zg-theme-selected-label{font-size:9px}}
+.zg-provisional-label{display:block;color:#fbbf24;font-size:10px;line-height:1.4;margin:2px 0 3px;}

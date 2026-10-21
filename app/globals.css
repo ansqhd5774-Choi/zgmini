@@ -4581,3 +4581,5 @@ body .zg-r55-market .zg-r55-shell[data-expanded="false"] article.zg-r55-card>.zg
 .zg-dashboard[data-view="dashboard"] .zg-r55-card-title-link svg{flex:none;color:#fabc42;opacity:.85}
 .zg-dashboard[data-view="dashboard"] .zg-r55-card-title-link:hover{text-decoration:underline;text-underline-offset:2px}
 .zg-dashboard[data-view="dashboard"] .zg-r55-card-title-link:focus-visible{outline:2px solid #fabc42;outline-offset:2px}
+
+.zg-earnings-provisional-summary{display:block;margin-top:4px;font-size:10px;line-height:1.4;color:#fbbf24;text-align:right;white-space:normal}.zg-earnings-provisional-summary span{color:#94a3b8}

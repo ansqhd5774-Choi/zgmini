@@ -43,6 +43,7 @@ export default function EarningsRiskProvisionalPanel(){
    <span>EPS {recent.observed.epsGrowth}/{payload.universeCount} ({ratio(recent.coverage.epsGrowth)})</span>
    <span>매출 {recent.observed.revenueGrowth}/{payload.universeCount} ({ratio(recent.coverage.revenueGrowth)})</span>
    <span>영업이익률 {recent.observed.operatingMargin}/{payload.universeCount} ({ratio(recent.coverage.operatingMargin)})</span>
+   <span>이익 개선 폭 {recent.observed.earningsGrowthBreadth}/{payload.universeCount} ({ratio(recent.coverage.earningsGrowthBreadth)})</span>
   </div>
   {points.length>=2
    ?<div className="earnings-risk-provisional-chart"><MarketFearGreedChart data={points}

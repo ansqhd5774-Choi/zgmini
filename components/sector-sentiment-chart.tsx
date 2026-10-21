@@ -57,7 +57,9 @@ export default function SectorSentimentChart({data=[],series=SECTORS,title='섹�
  const [period,setPeriod]=useState(90);
  const sourceData:ChartInputRow[]=data.length?data:storedData;
  const datedRows=sourceData.filter(row=>/^\d{4}-\d{2}-\d{2}$/.test(row.date)&&Number.isFinite(Date.parse(row.date))).sort((a,b)=>a.date.localeCompare(b.date));
- const firstProvisional=themePicker?datedRows.findIndex(row=>row.provisional===true):-1;
+ const activeSnapshot=snapshot??(autoStored?payload:undefined);
+ const provisionalDate=activeSnapshot?.phase==='PROVISIONAL'?activeSnapshot.provisional?.date:undefined;
+ const firstProvisional=datedRows.findIndex(row=>row.provisional===true||row.date===provisionalDate);
  const hasProvisional=firstProvisional>0;
  const rows:ChartInputRow[]=datedRows.map((row,i)=>({
   date:row.date,
@@ -75,6 +77,7 @@ export default function SectorSentimentChart({data=[],series=SECTORS,title='섹�
  const moveHeld=(clientX:number,element:HTMLDivElement)=>{const rect=element.getBoundingClientRect();setHeldIndex(clampedChartIndex(clientX,rect.left+32,rect.width-44,visibleRows.length))};
  return <section className={`zg-sector-chart${themePicker?" zg-theme-picker-enabled":""}`} aria-label={`${series.length}개 ${title} 비교 차트`}>
   <div className="zg-sector-chart-heading"><h2>{draggable?<Sparkles size={18} aria-hidden="true"/>:<Layers3 size={18} aria-hidden="true"/>}{autoStored&&linkToDetail?<a href="/sector-fear-greed/">{title}</a>:title}</h2><div className="zg-sector-period" aria-label={`${title} 기간`}>{[[7,'1W'],[30,'1M'],[90,'3M'],[180,'6M'],[365,'1Y']].map(([days,label])=><button key={days} type="button" aria-pressed={period===days} onClick={()=>setPeriod(Number(days))}>{label}</button>)}</div></div>
+  {hasProvisional&&<small className="zg-provisional-label" role="status">{datedRows.at(-1)?.date} 잠정 · 점선 구간</small>}
   <div className="zg-sector-chart-plot" onPointerDownCapture={event=>{if(event.pointerType==='mouse'&&event.button===0){heldPointer.current=event.pointerId;event.currentTarget.setPointerCapture(event.pointerId);moveHeld(event.clientX,event.currentTarget);setTouchTooltip(false);event.preventDefault()}else if(event.pointerType!=='mouse')setTouchTooltip(true)}} onPointerUpCapture={releasePlot} onPointerCancelCapture={releasePlot} onLostPointerCapture={releasePlot} onPointerMoveCapture={event=>{if(heldPointer.current===event.pointerId){moveHeld(event.clientX,event.currentTarget)}else if(event.pointerType==='mouse')setTouchTooltip(null)}}>
    {heldRow&&<div className="zg-sector-held-tooltip zg-sector-tooltip" role="status"><p>{heldRow.date}</p><ul>{shownSeries.map(s=>typeof heldRow[s.id]==='number'?<li key={s.id} style={{color:s.color}}><span>{s.name}</span><strong>{Number(heldRow[s.id]).toFixed(1)}</strong></li>:null)}</ul></div>}
    {!rows.length&&<ChartAxisLabels ticks={[0,25,50,75,100]} top={2.15} bottom={97.85} left={4.67}/>}
