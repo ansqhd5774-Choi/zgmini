@@ -15,7 +15,9 @@ try{
     {label:"2026-10-13",value:61.4},{label:"2026-10-14",value:60.3},
     {label:"2026-10-15",value:59.1},{label:"2026-10-16",value:58.2},{label:"2026-10-19",value:57.8}
    ],
-   oneMonth:[{label:"2026-10-13",value:61.4},{label:"2026-10-14",value:60.3},
+   oneMonth:[{label:"2026-10-06",value:60.1},{label:"2026-10-07",value:59.9},
+    {label:"2026-10-08",value:60.7},{label:"2026-10-09",value:60.4},{label:"2026-10-12",value:59.7},
+    {label:"2026-10-13",value:61.4},{label:"2026-10-14",value:60.3},
     {label:"2026-10-15",value:59.1},{label:"2026-10-16",value:58.2},{label:"2026-10-19",value:57.8}]
   })}));
   await page.route("**/api/iran-progress",r=>r.fulfill({status:200,contentType:"application/json",body:JSON.stringify({status:"PENDING"})}));
@@ -26,14 +28,23 @@ try{
   assert.equal(await cards.count(),3,"All three choices survive redesign");
   await page.waitForFunction(()=>document.querySelector(".ob-cards .ob-card .ob-probability strong")?.textContent?.includes("57.8"),null,{timeout:15000});
   assert.equal(await cards.nth(0).getAttribute("aria-pressed"),"true");
-  assert.equal(await root.locator(".ob-detail-grid").count(),1,"Stored rate chart panel available");
-  assert.equal(await root.locator(".ob-standard-detail .ob-metrics strong").first().textContent(),"57.8 점");
-  assert.equal(await root.locator(".ob-live-rate-chart polyline").getAttribute("stroke"),"#94a3b8","Neutral score must render neutral, not green");
+  assert.equal(await root.locator(".ob53-main-grid").count(),1,"Stored rate beginner analysis available");
+  assert.equal(await root.locator(".ob53-current strong").textContent(),"57.8점");
+  assert.equal(await root.locator("#ob53-chart-title").textContent().then(s=>s?.trim()),"14일 추이");
+  assert.equal(await root.locator(".ob53-trend-svg polyline").getAttribute("stroke"),"#94a3b8","Neutral score must render neutral, not green");
+  assert.equal(await root.locator(".ob53-trend-svg circle").count(),10,"14-day chart contains only saved observations");
+  assert.equal(await root.locator(".ob53-trend-svg text").last().textContent(),"10.19");
+  assert.equal(await root.locator(".ob53-chart-heading>span").textContent(),"관측 10일 / 14일");
+  assert.equal(await root.locator(".ob53-tone-pill").textContent(),"중립");
+  assert.equal(await root.locator(".ob53-scale-colors [data-band]").count(),5);
+  assert.equal(await root.locator(".ob53-week strong").getAttribute("data-change"),"down");
+  assert.equal(await root.locator(".ob53-explain").getByText("이 숫자는 무슨 뜻인가요?").count(),1);
+  assert.equal(await root.locator(".ob53-guide").getByText("금리 인하 확률이 아닙니다").count(),1);
   const firstLayout=await root.evaluate(el=>{
    const nav=el.querySelector(".ob-cards").getBoundingClientRect();
    const detail=el.querySelector(".ob-selected-event-panel").getBoundingClientRect();
    const first=el.querySelector(".ob-card").getBoundingClientRect();
-   const questions=el.querySelector(".ob-definition-disclosure");
+   const questions=el.querySelector(".ob53-details");
    const summary=questions?.querySelector("summary");
    return {sideBySide:detail.left>nav.right-1,stacked:detail.top>=nav.bottom-1,
     compact:first.height<= (innerWidth>=1100?151:innerWidth<=700?112:180),
@@ -44,25 +55,24 @@ try{
   assert(width>=1100?firstLayout.sideBySide:firstLayout.stacked,"Workspace breaks at 1100px");
   await page.screenshot({path:"artifacts/outbreak-scenarios/analysis-fed-"+width+".png",fullPage:true});
 
-  const disclosure=root.locator("details.ob-method-disclosure");
-  assert.equal(await disclosure.getAttribute("open"),null,"Methodology starts collapsed");
-  await disclosure.locator("summary").click();
-  assert.equal(await disclosure.getAttribute("open"),"","Secondary methodology expands on demand");
-  await disclosure.locator("summary").click();
-  assert.equal(await disclosure.getAttribute("open"),null);
-  const definitions=root.locator("details.ob-definition-disclosure");
-  assert.equal(await definitions.getAttribute("open"),null);
-  await definitions.locator("summary").click();
-  assert.equal(await definitions.getAttribute("open"),"");
-  assert.equal(await root.getByText("기존 H.15 국채금리 기반 RSI·금리차·변동성 점수").count(),1);
-  await definitions.locator("summary").click();
-  assert.equal(await definitions.getAttribute("open"),null);
+  const disclosures=root.locator("details.ob53-details");
+  assert.equal(await disclosures.count(),2);
+  const definition=disclosures.nth(0),method=disclosures.nth(1);
+  assert.equal(await definition.getAttribute("open"),null);
+  await definition.locator("summary").click();
+  assert.equal(await definition.getAttribute("open"),"");
+  assert.equal(await root.getByText(/기존 미국 연준 H\.15 국채금리 기반/).count(),1);
+  await definition.locator("summary").click();
+  await method.locator("summary").click();
+  assert.equal(await method.getAttribute("open"),"","Approved methodology expands on demand");
+  await method.locator("summary").click();
+  assert.equal(await method.getAttribute("open"),null);
 
   await cards.nth(2).click();
   assert.equal(await cards.nth(2).getAttribute("aria-pressed"),"true");
   assert.equal(await root.locator(".ob-standard-detail .ob-chart-empty").count(),1,"Pending event keeps its empty chart state");
   assert.equal(await cards.nth(2).locator(".ob-probability strong").textContent(),"—%","Unknown probability stays missing");
-  assert.equal(await disclosure.getAttribute("open"),null,"Event selection resets optional methodology");
+  assert.equal(await root.locator("details.ob-method-disclosure").getAttribute("open"),null,"Event selection retains a collapsed optional methodology");
 
   await cards.nth(1).click();
   assert.equal(await cards.nth(1).getAttribute("aria-pressed"),"true");
