@@ -48,6 +48,7 @@ export function MarketFearGreedChart({
   axisLabels,
   latestPoint,
   gapGuides = [],
+  dashed = false,
   instanceKey,
   gradientId,
   formatTooltipLabel,
@@ -63,6 +64,7 @@ export function MarketFearGreedChart({
   axisLabels: ReadonlyMap<string, string>;
   latestPoint: MarketFearGreedChartValidPoint | null;
   gapGuides?: Array<{from:MarketFearGreedChartValidPoint;to:MarketFearGreedChartValidPoint}>;
+  dashed?: boolean;
   instanceKey: string;
   gradientId: string;
   formatTooltipLabel: (value: string) => string;
@@ -163,6 +165,7 @@ export function MarketFearGreedChart({
         type="monotone"
         dataKey="score"
         stroke={color}
+        strokeDasharray={dashed ? '5 5' : undefined}
         fill={`url(#${gradientId})`}
         strokeWidth={2.2}
         dot={false}
