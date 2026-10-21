@@ -12,7 +12,7 @@ function seven(){return {status:'READY',observationDate:dates.at(-1),themes:THEM
 function eighth(){return {theme:'AI 반도체',score:51.25,history:dates.map(date=>({date,score:51.25}))};}
 function shadow(){return {...eighth(),status:'PRIVATE_SHADOW_NOT_PUBLIC',publicationAuthorized:false,
  etfs:['SMH','SOXX'],methodologyVersion:'ETF_ONLY_T40_R20_V40_PAIR50',scoreMethod:'ETF_ONLY_PROXY',
- individualStocksUsed:0,sourceStoredAt:'2026-10-20T12:00:00Z',sourceVersion:'FIXTURE_R185',
+ individualStocksUsed:0,observationDate:dates.at(-1),sourceStoredAt:'2026-10-20T12:00:00Z',sourceVersion:'FIXTURE_R185',
  upstreamCommercialRightsVerified:false,derivedLicenseVerified:false,localBarsVerified:false,sourcePriceReconciled:false};}
 
 test('R185: seven published themes stay unchanged; AI is not manufactured before publication',()=>{
