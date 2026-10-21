@@ -57,7 +57,7 @@ export function IranSummaryCard({view,onOpen}:{view:View;onOpen:()=>void}){
  const previous=daily.length>1?daily.at(-2)!.value:null;
  return <div className="ob-help-card"><ContentHelp label="이란 전쟁 도움말"><HelpText copy={HELP.iran}/></ContentHelp><button type="button" className="ob-summary-card ob-iran-summary" aria-label={`이란 전쟁 상세 보기 · ${view.message}`} onClick={onOpen}>
   <h3 className="ob-fit-title"><Swords aria-hidden="true"/><span>이란 전쟁</span></h3>
-  {view.score!==null&&<div className="ob-summary-value"><LiveScoreValue value={view.score} style={{color:iranScoreColor(view.score)}}><IranScore value={view.score}/></LiveScoreValue>{!('displayEstimate' in view&&view.displayEstimate)&&!('dailyAnchorEstimate' in view&&view.dailyAnchorEstimate)&&<OutbreakChange series="iran" current={view.score} previous={previous}/>}</div>}
+  {view.score!==null&&<div className="ob-summary-value"><LiveScoreValue value={view.score} style={{color:iranScoreColor(view.score)}}><IranScore value={view.score}/></LiveScoreValue>{!('displayEstimate' in view&&view.displayEstimate)&&<OutbreakChange series="iran" current={view.score} previous={previous}/>}</div>}
   {view.score===null?<div className="ob-iran-fact-preview" role="status">{view.facts.length?<><strong>미국–이란 협상 관련 발표</strong><span>{view.facts[0].publicationDate} · 카타르 외교부</span><span>현재 상태 미확인</span></>:view.message}</div>:<IranChart view={view} compact/>}
  </button></div>;
 }
