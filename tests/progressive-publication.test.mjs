@@ -36,4 +36,5 @@ test('checkpoint reads actual stored outputs and supply inputs without DB initia
  const write=new DatabaseSync(path.join(base,'storage','core.sqlite'));write.exec('UPDATE public_feed_snapshots_v1 SET stored_at=2');write.close();
  assert.notEqual(auxiliaryInputCheckpoint(base),a);
  const b=auxiliaryInputCheckpoint(base);fs.mkdirSync(path.join(base,'supply-r10'));fs.writeFileSync(path.join(base,'supply-r10','inputs.json'),'{}');assert.notEqual(auxiliaryInputCheckpoint(base),b);
+ const c=auxiliaryInputCheckpoint(base);fs.mkdirSync(path.join(base,'asset-r10-alpaca'));fs.writeFileSync(path.join(base,'asset-r10-alpaca','incremental-checkpoint.json'),'{"through":"2026-10-20"}');assert.notEqual(auxiliaryInputCheckpoint(base),c);
 });
