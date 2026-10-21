@@ -1,13 +1,2 @@
 /* Inherit the confirmed inflation hero, axis cards and indicator section styles. */
-.stagflation-input-table{width:100%;min-width:640px;table-layout:auto}
-.stagflation-input-table th,.stagflation-input-table td{padding:14px 12px;text-align:center}
-.stagflation-input-table th[scope="row"]{width:22%}
-.stagflation-input-table th[scope="row"] strong,.stagflation-input-table th[scope="row"] small{display:block}
-.stagflation-input-table th[scope="row"] small{margin-top:5px;font-size:10px;color:#8ca8ba;font-weight:400}
-.stagflation-input-table a,.stagflation-input-mobile a{color:var(--zg-gold,#fabc42);font-weight:700}
-.stagflation-input-mobile{display:none}
 .stagflation-card .cnn-panel-note strong{white-space:normal}
-@media(max-width:767px){
- .stagflation-input-table-wrap{display:none}
- .stagflation-input-mobile{display:grid;gap:10px}
-}

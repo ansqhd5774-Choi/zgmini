@@ -16,7 +16,7 @@ const source=execFileSync('git',['rev-parse','HEAD'],{cwd:root,encoding:'utf8',w
 if(config.stagflationS21Publication!==true){console.log(JSON.stringify({status:'DISABLED'}));process.exit(0);}
 if(publish){
  if(config.enabled!==true||config.collectionTarget!=='pc'||config.stagflationS21Source!==source)throw Error('STAGFLATION_SOURCE_NOT_APPROVED');
- execFileSync('git',['diff','--quiet','HEAD','--','scripts/pc-writer/publish-stagflation.mjs','scripts/pc-writer/stagflation-publication.mjs','scripts/pc-writer/d1.mjs','lib/diagnostic-layer/stagflation-s21.mjs','worker/stagflation-public.mjs','worker/public-display-freshness.mjs'],{cwd:root,windowsHide:true});
+ execFileSync('git',['diff','--quiet','HEAD','--','scripts/pc-writer/publish-stagflation.mjs','scripts/pc-writer/stagflation-publication.mjs','scripts/pc-writer/d1.mjs','lib/diagnostic-layer/stagflation-s21.mjs','lib/diagnostic-layer/stagflation-inputs.mjs','worker/stagflation-public.mjs','worker/public-display-freshness.mjs'],{cwd:root,windowsHide:true});
 }
 const lock=path.join(base,'stagflation-s21-publication.lock');
 // Never delete an unknown/stale lock automatically: it may represent an uncertain write.

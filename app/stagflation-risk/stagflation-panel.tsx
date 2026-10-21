@@ -9,23 +9,15 @@ import '../inflation/inflation-score-comparisons-r1.css';
 import '../inflation/inflation-hero-typography-r1.css';
 import '../shared-risk-indicator-width-r1.css';
 import './stagflation.css';
-type Payload={status:string;score:number|null;observationMonth?:string;trend?:Array<{label:string;value:number}>;axes?:Record<string,number>;contraction?:Record<string,boolean>};
+import StagflationInputs,{type StagflationInput} from './stagflation-inputs';
+type Payload={status:string;score:number|null;observationMonth?:string;trend?:Array<{label:string;value:number}>;axes?:Record<string,number>;contraction?:Record<string,boolean>;inputs?:StagflationInput[]};
 const axes=[
  ['inflation','물가 압력','전체·근원 PCE의 수준과 최근 상승 속도'],
  ['realEconomy','실물 둔화','산업생산·실질소비·실질소득의 증가 속도'],
  ['labor','고용 둔화','비농업고용의 증가 속도와 감속'],
  ['expectationsEnergy','기대·에너지','기대인플레이션과 유가 상승 부담'],
 ] as const;
-const inputs=[
- ['PCEPI','PCE 물가','가계가 구입하는 상품·서비스의 전반적인 물가','전년 대비 상승률','BEA'],
- ['PCEPILFE','근원 PCE 물가','식품·에너지를 제외한 기조 물가','전년 대비·최근 3개월 연율','BEA'],
- ['INDPRO','산업생산','공장·광산·공익사업의 생산 활동','최근 3개월 연율','연준'],
- ['DPCERA3M086SBEA','실질소비','물가 영향을 제거한 가계 소비','최근 3개월 연율','BEA'],
- ['DSPIC96','실질 가처분소득','가계가 실제로 쓸 수 있는 소득','최근 3개월 연율','BEA'],
- ['PAYEMS','비농업고용','농업 외 사업체의 고용 규모','최근 3개월 연율·직전 기간 대비 감속','BLS'],
- ['EXPINF5YR','5년 기대인플레이션','앞으로의 물가 상승에 대한 기대','기대 물가 수준','클리블랜드 연준'],
- ['MCOILWTICO','WTI 유가','기업·가계에 전해지는 에너지 가격 부담','전년 대비 상승률','EIA'],
-] as const;
+
 export default function StagflationPanel(){
  const {payload:storedPayload,loading,error}=useStoredIndex<Payload>('/api/stagflation-risk-detail');
  const payload=error?null:storedPayload;
@@ -54,12 +46,7 @@ export default function StagflationPanel(){
    <div className="inflation-r2-axis-grid">{axes.map(([id,label,meaning])=>{const v=payload?.axes?.[id];const ready=payload?.status==='READY'&&typeof v==='number'&&Number.isFinite(v)&&v>=0&&v<=100;return <article key={id} className="inflation-r2-axis-item"><div className="inflation-r2-axis-top"><h3>{label}</h3><strong>{ready?v.toFixed(1):'—'}</strong></div><p>{meaning}</p></article>})}</div>
    <p className="inflation-r2-axis-note">영역 점수의 단순 평균이 최종 점수는 아닙니다. 성장 둔화가 곧 경제의 수축을 뜻하지는 않습니다. 관측월과 발표·갱신 시각도 다릅니다.</p>
   </section>
-  <section className="inflation-indicator-section stagflation-inputs" aria-labelledby="stagflation-input-title">
-   <header><div><p className="cnn-eyebrow">STAGFLATION INPUTS</p><h2 id="stagflation-input-title">위험 신호의 근거 · 8개 원자료</h2></div><p>전체·근원 물가, 실물경제, 고용과 기대·에너지를 독립 계산합니다. 아래는 사용하는 자료와 해석 기준이며, 원자료 상승률과 영역별 위험 점수의 단위는 다릅니다.</p></header>
-   <div className="inflation-table-wrap stagflation-input-table-wrap"><table className="inflation-indicator-table stagflation-input-table"><thead><tr><th>지표</th><th>내용</th><th>평가에 사용하는 신호</th><th>출처</th></tr></thead><tbody>{inputs.map(([id,label,meaning,signal,provider])=><tr key={id}><th scope="row"><strong>{label}</strong><small>{id}</small></th><td>{meaning}</td><td>{signal}</td><td><a href={'https://fred.stlouisfed.org/series/'+id} target="_blank" rel="noreferrer">{provider} ↗</a></td></tr>)}</tbody></table></div>
-   <div className="stagflation-input-mobile">{inputs.map(([id,label,meaning,signal,provider])=><article key={id} className="inflation-r2-mobile-card"><div className="inflation-r2-mobile-head"><div className="inflation-r2-mobile-title"><div><strong>{label}</strong><small>{id}</small></div></div><a href={'https://fred.stlouisfed.org/series/'+id} target="_blank" rel="noreferrer">{provider} ↗</a></div><p className="inflation-r2-mobile-content">{meaning}</p><p className="inflation-r2-mobile-criterion"><span>평가 신호</span>{signal}</p></article>)}</div>
-   <p className="inflation-r2-axis-note">물가 2~6% 범위와 비중·정규화는 ZGmini의 설계 기준이며 공식 위기 경계가 아닙니다. 차트는 최근 1년의 현재 개정치 기준 월별 재구성이며 발표 당시 점수나 예측 성과가 아닙니다. 결측값을 보간하거나 기존 유동성 위기 점수와 연결하지 않습니다.</p>
-  </section>
+  <StagflationInputs inputs={payload?.inputs}/>
   <a className="cnn-return-cta" href="/">← 메인 대시보드로 돌아가기</a>
  </>;
 }
