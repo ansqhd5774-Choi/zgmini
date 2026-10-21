@@ -84,7 +84,10 @@ test('R157 picker slides upward to heading and downward on close, including on s
  assert.doesNotMatch(shared,/pickerOpen&&<div id="zg-theme-picker-options"/);
  assert.match(shared,/aria-hidden=\{!pickerOpen\} inert=\{!pickerOpen\}/);
  assert.match(shared,/aria-expanded=\{pickerOpen\}/);
- assert.match(css,/\.zg-sector-chart\.zg-theme-picker-enabled\{position:relative;overflow:hidden\}/);
+ // Only the sliding selector is clipped; chart tooltips must escape the card.
+ assert.match(css,/\.zg-sector-chart\.zg-theme-picker-enabled\{position:relative;overflow:visible\}/);
+ assert.match(shared,/<div className="zg-theme-picker-clip">\s*<div id="zg-theme-picker-options"/);
+ assert.match(css,/\.zg-theme-picker-clip\{position:absolute;inset:0;z-index:25;overflow:hidden;border-radius:inherit;pointer-events:none\}/);
  assert.match(css,/\.zg-theme-picker-panel\{[^}]*top:8px;bottom:55px;[^}]*transform:translateY\(calc\(100% \+ 70px\)\)[^}]*visibility:hidden;pointer-events:none;transition:transform 300ms/);
  assert.match(css,/\.zg-theme-picker-panel\.is-open\{transform:translateY\(0\);opacity:1;visibility:visible;pointer-events:auto;/);
  assert.match(css,/@media\(max-width:600px\)\{\.zg-theme-picker-panel\{top:6px;bottom:51px;/);
