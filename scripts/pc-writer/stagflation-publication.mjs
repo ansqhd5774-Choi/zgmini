@@ -3,6 +3,7 @@ import {createHash} from 'node:crypto';
 import {calculateStagflationS21} from '../../lib/diagnostic-layer/stagflation-s21.mjs';
 import {STAGFLATION_PUBLIC_KEY,validateStagflationRecord} from '../../worker/stagflation-public.mjs';
 import {PUBLIC_DISPLAY_MAX_AGE_MS} from '../../worker/public-display-freshness.mjs';
+import {STAGFLATION_INPUT_DETAILS_VERSION,projectStagflationInputs} from '../../lib/diagnostic-layer/stagflation-inputs.mjs';
 
 // Opt-in only. No writes and no provider fetch while preparing the derived result.
 export async function prepareStagflation(core,{enabled=false,now=Date.now()}={}){
@@ -15,7 +16,7 @@ export async function prepareStagflation(core,{enabled=false,now=Date.now()}={})
  const result=calculateStagflationS21({series:input.series,sourceHash:createHash('sha256').update(source.body).digest('hex')});
  if(result.status!=='READY')return {status:'PARTIAL',prepared:false,reason:'STAGFLATION_INPUT_INCOMPLETE'};
  const body={methodVersion:result.methodVersion,historyPolicy:result.historyPolicy,status:'READY',publicationAuthorized:true,score:result.score,sourceHash:result.sourceHash,sourceStoredAt:new Date(stamp).toISOString(),observationMonth:result.observationMonth,
-  history:result.history.map(p=>({observationMonth:p.observationMonth,score:p.score,status:p.status,axes:p.axes,contraction:p.contraction}))};
+  history:result.history.map(p=>({observationMonth:p.observationMonth,score:p.score,status:p.status,axes:p.axes,contraction:p.contraction})),inputDetailsVersion:STAGFLATION_INPUT_DETAILS_VERSION,inputs:projectStagflationInputs(result,input.series)};
  if(!validateStagflationRecord(body)||Buffer.byteLength(JSON.stringify(body))>30000)return {status:'PARTIAL',prepared:false,reason:'STAGFLATION_PROJECTION_INVALID'};
  return {status:'PREPARED',prepared:true,body,storedAt:stamp};
 }
