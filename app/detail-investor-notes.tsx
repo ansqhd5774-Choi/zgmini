@@ -1,26 +1,19 @@
 import DetailReadingGuide from "./detail-reading-guide";
 import {WebPageJsonLd} from "./seo-jsonld";
 
-type Topic = "usa" | "korea" | "inflation" | "recession" | "liquidity-crisis" | "stagflation-risk" | "credit-risk" | "earnings-recession" | "asset-bubble" | "debt-risk" | "supply-shock";
+type Topic = "usa" | "korea" | "inflation" | "recession" | "liquidity-crisis" | "credit-risk" | "earnings-recession" | "asset-bubble" | "debt-risk" | "supply-shock";
 type Guide = {title:string; sections:{title:string;text:string;bold?:string;highlight?:string}[]; related:Topic[]};
 const paths:Record<Topic,string> = {
-  "stagflation-risk":"/stagflation-risk/",
   usa:"/fear-greed/usa/", korea:"/fear-greed/korea/", inflation:"/inflation/", recession:"/recession/",
   "liquidity-crisis":"/liquidity-crisis/", "credit-risk":"/credit-risk/", "earnings-recession":"/earnings-recession/",
   "asset-bubble":"/asset-bubble/", "debt-risk":"/debt-risk/", "supply-shock":"/supply-shock/",
 };
 const labels:Record<Topic,string> = {
-  "stagflation-risk":"스태그플레이션 위험 지표",
   usa:"미국 CNN 공포탐욕지수", korea:"한국 공포탐욕지수", inflation:"미국 인플레이션 위험 지표", recession:"미국 경기침체 지표",
   "liquidity-crisis":"유동성 위기 지표", "credit-risk":"회사채·신용 위험 지표", "earnings-recession":"실적 침체 위험 진단",
   "asset-bubble":"자산 버블 지표", "debt-risk":"부채 위험 지표", "supply-shock":"공급 충격 지표",
 };
 const guides:Record<Topic,Guide> = {
-  "stagflation-risk":{title:"스태그플레이션 위험 신호, 쉽게 읽기",sections:[
-    {title:"안전 점수와 영역별 위험 강도는 반대 방향입니다",text:"맨 위 안전 점수는 높을수록 동시 위험이 낮습니다. 네 가지 영역별 위험 강도는 높을수록 부담이 큽니다. 영역 점수를 단순히 평균하거나 안전 점수와 같은 방향으로 비교하지 마세요.",highlight:"높을수록 동시 위험이 낮습니다",bold:"영역별 위험 강도"},
-    {title:"성장 둔화와 경제 수축은 다른 말입니다",text:"생산·소비·고용이 늘어나고 있어도 과거보다 증가 속도가 약하면 둔화로 평가될 수 있습니다. 증가 속도와 실제 감소 여부를 구분해서 읽으세요.",highlight:"증가 속도와 실제 감소 여부",bold:"증가 속도"},
-    {title:"월별 차트의 날짜를 확인하세요",text:"발표 주기가 다른 자료의 최근 공통 관측월로 계산합니다. 최근 1년 차트는 현재 개정치로 재구성한 월별 이력입니다. 해당 월에 투자자가 알던 점수나 위기를 미리 맞힌 성과가 아닙니다.",highlight:"최근 공통 관측월",bold:"현재 개정치"},
-  ],related:["inflation","recession"]},
   usa:{title:"공포탐욕지수를 상황별로 읽는 방법",sections:[
     {title:"공포가 이어지는 경우",text:"해석 예시: 공포 구간이 여러 날 이어지면 위험 회피가 지속되고 있다는 뜻으로 읽습니다. 낮은 점수 자체가 저점을 확정하지는 않습니다. 가격 추세, 변동성, 구성요소가 함께 안정되는지 확인하세요."},
     {title:"탐욕과 경기 신호가 엇갈리는 경우",text:"해석 예시: 투자심리는 강하지만 고용·소비가 약해질 수 있습니다. 시장 심리와 경제활동은 서로 다른 대상을 측정하므로 점수 하나로 다른 지표의 의미를 덮어쓰지 않습니다."},
@@ -74,7 +67,7 @@ export default function DetailInvestorNotes({topic}:{topic:Topic}) {
   return <>
     <WebPageJsonLd name={labels[topic]} description={`${guide.title}. 현재값·관측일·관련 지표를 함께 확인하세요.`} path={paths[topic]}/>
     <DetailReadingGuide title={guide.title}
-      variant={topic==="asset-bubble"||topic==="debt-risk"||topic==="supply-shock"||topic==="stagflation-risk"?"beginner":topic==="inflation"||topic==="recession"||topic==="liquidity-crisis"||topic==="credit-risk"||topic==="earnings-recession"?"beginner":"default"}
+      variant={topic==="asset-bubble"||topic==="debt-risk"||topic==="supply-shock"?"beginner":topic==="inflation"||topic==="recession"||topic==="liquidity-crisis"||topic==="credit-risk"||topic==="earnings-recession"?"beginner":"default"}
       displayTitle={topic==="inflation"?"인플레이션 위험 신호, 쉽게 읽기":topic==="recession"?"경기침체 표에 나오는 말, 쉽게 알아보기":topic==="liquidity-crisis"?"유동성 위기 표, 쉽게 알아보기":topic==="credit-risk"?"신용 위험 표, 쉽게 알아보기":topic==="earnings-recession"?"실적 침체 위험 지표, 쉽게 알아보기":topic==="asset-bubble"?"자산 버블 표, 쉽게 알아보기":topic==="debt-risk"?"부채 위험 표, 쉽게 알아보기":topic==="supply-shock"?"공급 충격 표, 쉽게 알아보기":undefined}
       intro={topic==="inflation"?"7개 위험 평가 축과 16개 입력지표의 차이를 살펴보세요.":topic==="recession"?"고용·GDP·경기 신호를 이해하기 쉽게 풀어볼게요.":topic==="liquidity-crisis"?"유동성 점수와 단기자금·은행 지표를 구분해 읽어보세요.":topic==="credit-risk"?"회사채 신용 스트레스와 국채 변동성을 구분해 읽어보세요.":topic==="earnings-recession"?"실적 침체 위험 진단 점수와 기업 실적 종합 점수를 구분해 확인하세요.":topic==="asset-bubble"?"밸류에이션과 주가 흐름을 구분하고 평가 분기·출처 상태를 확인하세요.":topic==="debt-risk"?"부채 크기와 상환 부담, 관측 기간을 구분해 읽어보세요.":topic==="supply-shock"?"에너지 가격과 공급 제약, 물가 충격을 구분해 읽어보세요.":undefined}
       sections={[...guide.sections,
