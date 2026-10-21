@@ -42,6 +42,7 @@ test("fail closed on mismatched identities, misleading PIT, coverage and missing
   r=>{r.history[0].observed.epsGrowth=400},
   r=>{r.history[0].coverage.epsGrowth=0.8},
   r=>{r.history[0].score=88},
+  r=>{r.history[0].factorScores.margin=0},
   r=>{r.latest.score=88},
   r=>{r.sourceStoredAt="2026-10-01T00:00:00.000Z"},
   r=>{r.history[0].filingDate="2026-10-22"},
