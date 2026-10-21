@@ -118,7 +118,7 @@ export default function OutbreakBeginnerFed({rate,deltaWeek}:{rate:RateStoredSna
     <div><p>분석 질문: 최근 미국 시장금리 움직임은 얼마나 우호적인가?</p><p>기준: 기존 미국 연준 H.15 국채금리 기반 금리차·RSI·변동성 점수입니다.</p></div>
    </details>
    <details className="ob53-details"><summary>자세한 산식·근거 보기 <ChevronDown aria-hidden="true" size={15}/></summary>
-    <div><p>0.50P + 0.20R₂ + 0.20R₁₀ + 0.10V</p><p>P: 2Y−3M 금리차 5일 변화의 완화 백분위 · R: 국채금리 RSI(14) 반전 · V: 10년물 20일 변동성 백분위 반전</p><p>입력: 미국 연준 H.15 DGS2·DGS3MO·DGS10 · R1 시범 산식 · PC 계산 및 저장된 점수 표시</p></div>
+    <div><p>미국 연준 H.15 자료의 국채금리 차이·금리 추세·변동성 변화를 기반으로 계산한 저장 점수입니다.</p><p>자료: 미국 연준 H.15 DGS2·DGS3MO·DGS10 · PC 계산 후 게시된 결과만 표시합니다.</p><p>금리 결정 확률이 아니라 시장 금리 심리를 관찰하는 지표입니다.</p></div>
    </details>
    <p className="ob53-note">시장금리 기반 심리 점수이며 FedWatch 확률이나 금리 인하 예측값이 아닙니다. 현재 표시되는 점수는 기존 저장 자료를 사용합니다.</p>
   </article>;
