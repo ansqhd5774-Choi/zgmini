@@ -2,12 +2,14 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 
-test('R3 local sector output is prepared before the existing publication writer',()=>{
+test('R3 local sector output is prepared inside the auxiliary stage before changed-input final publication',()=>{
  const cycle=fs.readFileSync('scripts/pc-writer/local-cycle.mjs','utf8');
  const sector=cycle.indexOf("sector-fear-greed-r3-local-cycle.mjs");
- const writer=cycle.indexOf("run-local.mjs");
+ const auxiliary=cycle.indexOf('collectAuxiliary:async()=>');
  assert.ok(sector>=0);
- assert.ok(writer>sector);
+ assert.ok(auxiliary>=0&&sector>auxiliary);
+ assert.match(cycle,/await progressivePublication\(/);
+ assert.match(cycle,/checkpoint:\(\)=>auxiliaryInputCheckpoint\(base\)/);
  assert.match(cycle,/sector-fear-greed-r3-local-cycle\.mjs'\),'--write-local'/);
 });
 
