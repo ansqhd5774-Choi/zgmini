@@ -17,18 +17,23 @@ test('zero is valid, missing values never become zero and integer changes stay c
  assert.deepEqual(outbreakChange(12,10),{amount:2,text:'2',direction:'up'});
  for(const pair of [[null,0],[0,null],[NaN,0],[0,Infinity]])assert.equal(outbreakChange(...pair),null);
 });
-test('the shared React card renders fractional up/down labels and arrows; flat has no arrow',()=>{
+test('the shared React card rounds only displayed deltas, including title and aria-label',()=>{
  const file=new URL('../app/outbreak-change.tsx',import.meta.url),module={exports:{}};
  const code=ts.transpileModule(fs.readFileSync(file,'utf8'),{compilerOptions:{jsx:ts.JsxEmit.ReactJSX,module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText;
  const require=createRequire(file);
  let active=true;
  new Function('require','module','exports',code)(id=>id==='../components/score-arrow-provider'?{useScoreArrows:()=>()=>active}:require(id),module,module.exports);
  const render=(current,previous)=>renderToStaticMarkup(React.createElement(module.exports.OutbreakChange,{current,previous,series:'iran'}));
- const up=render(46.6,46.2),down=render(46.2,46.6),flat=render(46.2,46.2);
- assert.match(up,/aria-label="전일 대비 0.4점 상승"/);assert.match(up,/ob-direction-up/);assert.match(up,/0\.4<svg/);
- assert.match(down,/aria-label="전일 대비 0.4점 하락"/);assert.match(down,/ob-direction-down/);assert.match(down,/0\.4<svg/);
+ const up=render(47.1,46.2),down=render(46.2,47.1),flat=render(46.2,46.2);
+ assert.match(up,/aria-label="전일 대비 1점 상승"/);assert.match(up,/title="전일 대비 1점 상승"/);assert.match(up,/ob-direction-up/);assert.match(up,/>1<svg/);
+ assert.match(down,/aria-label="전일 대비 1점 하락"/);assert.match(down,/title="전일 대비 1점 하락"/);assert.match(down,/ob-direction-down/);assert.match(down,/>1<svg/);
  assert.match(flat,/변화 없음/);assert.doesNotMatch(flat,/<svg/);assert.equal(render(null,46.2),'');
+ const small=render(46.6,46.2);
+ assert.match(small,/aria-label="전일 대비 0점 상승"/);
+ assert.match(small,/>0<svg/); // rounding affects the numeral, not direction of the original delta
+ const larger=render(48.2,46.6);
+ assert.match(larger,/aria-label="전일 대비 2점 상승"/);
  active=false;
- const expired=render(46.6,46.2);
- assert.match(expired,/0\.4/);assert.match(expired,/data-arrow-active="false"/);assert.doesNotMatch(expired,/<svg/);
+ const expired=render(47.1,46.2);
+ assert.match(expired,/>1<\/span>/);assert.match(expired,/data-arrow-active="false"/);assert.doesNotMatch(expired,/<svg/);
 });
