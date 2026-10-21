@@ -8,6 +8,13 @@ test('approved stored projection only; private audit arrays never returned',asyn
  const r=record();r.history.at(-1).axes.private='do not return';assert.equal(validateStagflationRecord(r),true);
  const response=await readStagflation(db(r),{now}),body=await response.json();assert.equal(response.status,200);assert.equal(body.trend.length,13);assert.equal(body.score,75);assert.equal(body.axes.private,undefined);assert.equal(body.raw,undefined);assert.equal(body.sourceHash,undefined);assert.ok(!JSON.stringify(body).includes('private'));
 });
+test('monthly comparison periods use only verified saved history; weekly remains unavailable',async()=>{
+ const r=record();r.history[0].score=60;r.history[6].score=66;r.history[9].score=70;r.history[11].score=72;
+ const response=await readStagflation(db(r),{now});assert.equal(response.status,200);
+ const body=await response.json();
+ assert.deepEqual(body.scoreComparisons,{week:null,month:3,threeMonth:5,sixMonth:9,year:15});
+ assert.equal(body.trend.length,13);
+});
 test('unapproved research and old method cannot be published',async()=>{for(const patch of [{publicationAuthorized:false},{methodVersion:'OLD'},{score:66},{historyPolicy:'PIT'}]){const r={...record(),...patch};assert.equal((await readStagflation(db(r),{now})).status,503);}});
 test('pending, stale, future and malformed projections fail closed',async()=>{
  assert.equal((await readStagflation(db(null),{now})).status,503);

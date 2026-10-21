@@ -11,7 +11,7 @@ import '../shared-risk-indicator-width-r1.css';
 import './stagflation.css';
 import StagflationInputs,{type StagflationInput} from './stagflation-inputs';
 import StagflationLatestPanel from './stagflation-latest-panel';
-type Payload={status:string;score:number|null;observationMonth?:string;trend?:Array<{label:string;value:number}>;axes?:Record<string,number>;contraction?:Record<string,boolean>;inputs?:StagflationInput[]};
+type Payload={status:string;score:number|null;observationMonth?:string;trend?:Array<{label:string;value:number}>;scoreComparisons?:{week?:number|null;month?:number|null;threeMonth?:number|null;sixMonth?:number|null;year?:number|null};axes?:Record<string,number>;contraction?:Record<string,boolean>;inputs?:StagflationInput[]};
 const axes=[
  ['inflation','물가 압력','전체·근원 PCE의 수준과 최근 상승 속도'],
  ['realEconomy','실물 둔화','산업생산·실질소비·실질소득의 증가 속도'],
@@ -25,8 +25,13 @@ export default function StagflationPanel(){
  const score=payload?.status==='READY'&&typeof payload.score==='number'&&Number.isFinite(payload.score)?payload.score:null;
  const trend:MarketFearGreedChartPoint[]=(payload?.trend??[]).map(p=>({date:p.label,score:p.value}));
  const last=trend.at(-1),latestPoint=last&&typeof last.score==='number'?{date:last.date,score:last.score}:null;
- const difference=(offset:number)=>score!==null&&typeof trend.at(offset)?.score==='number'?score-(trend.at(offset)!.score as number):null;
- const comparisons=[{label:'1개월',value:difference(-2)},{label:'1년',value:difference(-13)}];
+ const comparisons=[
+  {label:'1주',value:payload?.scoreComparisons?.week??null},
+  {label:'1개월',value:payload?.scoreComparisons?.month??null},
+  {label:'3개월',value:payload?.scoreComparisons?.threeMonth??null},
+  {label:'6개월',value:payload?.scoreComparisons?.sixMonth??null},
+  {label:'1년',value:payload?.scoreComparisons?.year??null},
+ ];
  const state=score===null?'자료 준비 중':score>=75?'안정':score>=60?'양호':score>=40?'중립':score>=25?'주의':'위험';
  const color=score===null?'#94a3b8':score>=75?'#10b981':score>=60?'#22c55e':score>=40?'#94a3b8':score>=25?'#f59e0b':'#ef4444';
  const ticks=trend.filter((_,i)=>i%3===0||i===trend.length-1).map(p=>p.date);
