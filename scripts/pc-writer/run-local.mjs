@@ -1,3 +1,4 @@
+import {prepareLatestStagflation,publishLatestStagflation} from './stagflation-latest-publication.mjs';
 import {validDegradedMarket} from './collection-publication-policy.mjs';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -96,6 +97,9 @@ try{
  const {preparePublicRateSentiment,publishPublicRateSentiment}=await import('./rate-sentiment-publication.mjs');
  const rateSentiment=await preparePublicRateSentiment(core,now);
  report.rateSentiment={status:rateSentiment.status,observationDate:rateSentiment.observationDate??null,reason:rateSentiment.reason??null};
+ let stagflationLatest={status:'DISABLED',prepared:false};
+ try{stagflationLatest=await prepareLatestStagflation(core,{enabled:config.latestStagflationPublication===true,now});}catch{stagflationLatest={status:'PARTIAL',prepared:false};}
+ report.stagflationLatest={status:stagflationLatest.status,score:stagflationLatest.body?.score??null};
  const liquidityTrend=body.domains.find(x=>x.id==='liquidity')?.trend??[];
  const liquidityDates=liquidityTrend.map(x=>x?.label??x?.date).filter(x=>typeof x==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(x)).sort();
  report.market={
@@ -186,6 +190,7 @@ try{
   }
   // Reuse the existing public snapshot table; publish only the bounded display score.
   report.rateSentiment.publication=(await publishPublicRateSentiment(remote,config.core,rateSentiment)).status;
+  try{report.stagflationLatest.publication=await publishLatestStagflation(remote,config.core,stagflationLatest);}catch{report.stagflationLatest.publication={status:'UNVERIFIED'};}
   const koreaOutput=await history.prepare('SELECT * FROM kfg_rev7_snapshots ORDER BY date DESC LIMIT 1').first();
   if(koreaOutput){
    const existing=(await remote.query(config.history,'SELECT * FROM kfg_rev7_snapshots WHERE date=?',[koreaOutput.date])).results[0];
