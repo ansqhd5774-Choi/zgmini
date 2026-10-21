@@ -39,7 +39,7 @@ test("beginner view explains the score without claiming policy rate or stock pre
 });
 test("existing Iranian history and pending Ukraine event are not replaced",()=>{
  assert.match(original,/event\.id==='iran'\?<IranDetail view=\{iran\}\/>/);
- assert.match(original,/event\.id==='iran'\?\s*"?"?iran\.score:null/);
+ assert.match(original,/item\.id==="iran"\?iran\.score:null/);
  assert.match(iran,/14일 추정 흐름/);
  assert.match(original,/const unit=item\.id==="ukraine"\?"%":"점"/);
  assert.match(original,/value===null\?"—":value\.toFixed\(1\)/);
