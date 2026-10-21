@@ -33,6 +33,15 @@ try{
   assert.equal(await root.locator("#ob53-chart-title").textContent().then(s=>s?.trim()),"14일 추이");
   assert.equal(await root.locator(".ob53-trend-svg polyline").getAttribute("stroke"),"#94a3b8","Neutral score must render neutral, not green");
   assert.equal(await root.locator(".ob53-trend-svg circle").count(),10,"14-day chart contains only saved observations");
+  await page.waitForFunction(expected=>document.querySelector(".ob53-trend-svg")?.getAttribute("viewBox")===expected,width<=600?"0 0 350 240":"0 0 700 240",{timeout:5000});
+  if(width<=600){
+   const mobileChart=await root.evaluate(el=>{
+    const svg=el.querySelector(".ob53-trend-svg"),assets=el.querySelector(".ob53-assets"),panel=el.querySelector(".ob53-beginner-stack");
+    return {viewBox:svg?.getAttribute("viewBox"),assetsFullWidth:Math.abs(assets.getBoundingClientRect().width-panel.getBoundingClientRect().width)<3};
+   });
+   assert.equal(mobileChart.viewBox,"0 0 350 240","Mobile chart uses legible axis geometry");
+   assert(mobileChart.assetsFullWidth,"Related assets are full width on narrow screens");
+  }
   assert.equal(await root.locator(".ob53-trend-svg text").last().textContent(),"10.19");
   assert.equal(await root.locator(".ob53-chart-heading>span").textContent(),"관측 10일 / 14일");
   assert.equal(await root.locator(".ob53-tone-pill").textContent(),"중립");
