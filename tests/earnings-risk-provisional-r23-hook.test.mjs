@@ -26,7 +26,7 @@ test("R23 dispatches only with exact approved runtime SHA and all three installe
   for(const name of ["ZGMINI_EARNINGS_R20_PROVISIONAL_SHADOW_READONLY.mjs","ZGMINI_EARNINGS_R21_OBSERVATION_LEDGER.mjs","ZGMINI_EARNINGS_R22_CHANGE_GATE.mjs"])
    fs.writeFileSync(path.join(dir,name),"// fixture\n");
   let calls=0,options=null;
-  const gitImpl=(_cmd,args)=>args[0]==="rev-parse"?sha:"";
+  const gitImpl=(_cmd,args)=>args.includes("rev-parse")?sha:"";
   const spawnImpl=(_exe,_args,opts)=>{calls++;options=opts;return {pid:321,on:()=>{},unref:()=>{}};};
   fs.writeFileSync(path.join(base,"local-earnings-risk-provisional-r22.lock"),'{"pid":123}');
   const busy=dispatchEarningsRiskProvisionalR23({base,here,platform:"win32",gitImpl,spawnImpl});
@@ -38,9 +38,10 @@ test("R23 dispatches only with exact approved runtime SHA and all three installe
   assert.equal(calls,1);
   assert.equal(options.detached,true);
   assert.equal(options.env.ZGMINI_EARNINGS_R23_SOURCE,sha);
-  const blocked=dispatchEarningsRiskProvisionalR23({base,here,platform:"win32",gitImpl:(_c,args)=>args[0]==="rev-parse"?"b".repeat(40):"",spawnImpl});
+  assert.match(fs.readFileSync("scripts/pc-writer/earnings-risk-provisional-r23-hook.mjs","utf8"),/core\\.fsmonitor=false/);
+  const blocked=dispatchEarningsRiskProvisionalR23({base,here,platform:"win32",gitImpl:(_c,args)=>args.includes("rev-parse")?"b".repeat(40):"",spawnImpl});
   assert.equal(blocked.status,"BLOCKED_RUNTIME_SHA_DRIFT");assert.equal(calls,1);
-  const dirty=dispatchEarningsRiskProvisionalR23({base,here,platform:"win32",gitImpl:(_c,args)=>args[0]==="rev-parse"?sha:" M tracked.js",spawnImpl});
+  const dirty=dispatchEarningsRiskProvisionalR23({base,here,platform:"win32",gitImpl:(_c,args)=>args.includes("rev-parse")?sha:" M tracked.js",spawnImpl});
   assert.equal(dirty.status,"BLOCKED_RUNTIME_SHA_DRIFT");assert.equal(calls,1);
  }finally{fs.rmSync(root,{recursive:true,force:true});}
 });
