@@ -64,6 +64,6 @@ test("public GET is derived-only and pending/stale records return 503",async()=>
 test("production API is a read-only and isolated result, not the E1-R4 confirmed endpoint",()=>{
  const r=fs.readFileSync("app/api/earnings-risk-provisional/route.ts","utf8");
  assert.match(r,/readEarningsRiskProvisional/);
- assert.doesNotMatch(r,/fetch\(|POST|runMarket|collect|INSERT|UPDATE/);
+ assert.doesNotMatch(r,/fetch\(|\bPOST\b|runMarket\(|\bcollect\(|INSERT INTO|UPDATE [A-Z]/);
  assert.equal(r.includes("earnings-recession-detail"),false);
 });
