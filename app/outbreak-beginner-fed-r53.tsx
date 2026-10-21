@@ -47,7 +47,7 @@ function Rate14Chart({rate}:{rate:RateStoredSnapshot|null}){
   return()=>query.removeEventListener("change",update);
  },[]);
  const period=stored14DayWindow(rate);
- const data=window?.points??[];
+ const data=period?.points??[];
  const axis=[0,25,50,75,100];
  const chartLeft=mobile?34:42,chartWidth=mobile?296:606,chartRight=chartLeft+chartWidth;
  const x=(at:number)=>chartLeft+(period?(at-period.start)/(13*86_400_000)*chartWidth:0);
