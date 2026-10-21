@@ -1,6 +1,9 @@
 import assert from "node:assert/strict";
 import {mkdirSync} from "node:fs";
 import {chromium} from "playwright";
+import {R5_REFERENCE} from "../lib/iran-progress/daily-anchored-shadow-r5.mjs";
+import {CLASSIFIER_VERSION} from "../lib/iran-progress/reference-flow-r3.mjs";
+import {kstCalendarDate} from "../lib/iran-progress/chart-history.mjs";
 mkdirSync("artifacts/outbreak-scenarios",{recursive:true});
 const base=process.env.CHAT_PREVIEW_URL??"http://127.0.0.1:5173";
 const browser=await chromium.launch({headless:true,args:["--no-sandbox"]});
@@ -20,7 +23,27 @@ try{
     {label:"2026-10-13",value:61.4},{label:"2026-10-14",value:60.3},
     {label:"2026-10-15",value:59.1},{label:"2026-10-16",value:58.2},{label:"2026-10-19",value:57.8}]
   })}));
-  await page.route("**/api/iran-progress",r=>r.fulfill({status:200,contentType:"application/json",body:JSON.stringify({status:"PENDING"})}));
+  // A contract-valid R5 *fixture*. It is not a live war observation or production score.
+  const now=Date.now(),asOfDate=kstCalendarDate(now);
+  const dateStart=Date.parse(asOfDate+"T00:00:00Z")-13*86400000;
+  const r5Fixture={
+   version:"IRAN_DAILY_PROVISIONAL_R5_1",status:"PROVISIONAL",
+   sourceMethod:"R5_21_OCT_13_K21",anchorDate:R5_REFERENCE.date,
+   anchorScore:R5_REFERENCE.score,anchorAssessedAt:R5_REFERENCE.assessedAt,
+   asOfDate,score:13,
+   history:Array.from({length:14},(_,i)=>{
+    const carried=[2,5,9,11,13].includes(i);
+    return {date:new Date(dateStart+i*86400000).toISOString().slice(0,10),
+     value:i===13?13:Number((35-i*1.65).toFixed(2)),
+     carried,reportedEvents:carried?0:1,verifiedEvents:carried?0:1};
+   }),
+   classifierVersion:CLASSIFIER_VERSION,sourceVersion:"IRAN_R5_K21_R3_4",
+   sourceStoredAt:now-15000,sensitivityScale:21,
+   acceptedEventCount:9,possibleDuplicateCount:0,
+   collectionCheckedAt:now-14000,publishedAt:now-1000,
+   probability:false,calibrated:false,verifiedWarState:false,completeEventCoverage:false
+  };
+  await page.route("**/api/iran-progress",r=>r.fulfill({status:200,contentType:"application/json",body:JSON.stringify(r5Fixture)}));
   await page.goto(base+"/?view=scenarios",{waitUntil:"domcontentloaded",timeout:45000});
   const root=page.locator(".ob-events");
   await root.waitFor({state:"visible",timeout:45000});
@@ -86,7 +109,27 @@ try{
   await cards.nth(1).click();
   assert.equal(await cards.nth(1).getAttribute("aria-pressed"),"true");
   await root.locator("#ob-iran-title").waitFor({state:"visible"});
-  assert.equal(await root.locator(".ob-iran-timeline").count(),1,"Iran official source evidence remains");
+  assert.equal(await root.locator(".ob54-kpis").count(),1,"Iran has dedicated three-part summary");
+  assert.equal(await root.locator(".ob54-kpis section").count(),3);
+  await page.waitForFunction(()=>document.querySelector(".ob54-kpis strong")?.textContent?.includes("13.0"),null,{timeout:12000});
+  assert.equal(await root.locator(".ob54-state").textContent(),"진전 매우 낮음");
+  assert.equal(await root.locator("#ob54-chart-title").textContent()," 14일 추이");
+  assert.equal(await root.locator(".ob54-trend-svg line[stroke-dasharray='5 5']").count()>0,true,"Carried days remain dashed");
+  assert.equal(await root.locator(".ob54-scale-track [data-band]").count(),5);
+  assert.equal(await root.locator(".ob54-relations strong").count(),3);
+  assert.equal(await root.locator(".ob54-relations strong").first().textContent(),"미확인");
+  assert.equal(await root.locator(".ob54-disclosure").count(),2);
+  const evidence=root.locator(".ob54-disclosure").nth(1);
+  assert.equal(await evidence.getAttribute("open"),null);
+  await evidence.locator("summary").click();
+  assert.equal(await evidence.getAttribute("open"),"","Evidence source summary can expand");
+  assert.equal(await evidence.getByText("최근 14일 확인된 공식 발표").count(),1);
+  await evidence.locator("summary").click();
+  assert.equal(await evidence.getAttribute("open"),null);
+  const expectedBox=width<=600?"0 0 350 232":"0 0 700 232";
+  await page.waitForFunction(expected=>document.querySelector(".ob54-trend-svg")?.getAttribute("viewBox")===expected,expectedBox,{timeout:5000});
+  assert.equal(await root.locator(".ob54-trend-svg circle").count(),1,"No fictitious point added to chart");
+  await page.screenshot({path:"artifacts/outbreak-scenarios/analysis-iran-"+width+".png",fullPage:true});
 
   const geometry=await root.evaluate(el=>{
    const wrap=el.getBoundingClientRect();
