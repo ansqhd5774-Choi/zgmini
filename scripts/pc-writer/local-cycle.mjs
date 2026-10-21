@@ -1,3 +1,4 @@
+import {progressivePublication,auxiliaryInputCheckpoint} from './progressive-publication.mjs';
 import {collectionPublicationPolicy} from './collection-publication-policy.mjs';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -22,9 +23,26 @@ try{
  const collection=spawnSync(process.execPath,[path.join(here,'collect-local.mjs'),...(lane==='korea'?['--korea']:[])],{windowsHide:true,stdio:['ignore','pipe','pipe'],timeout:30*60000});
  // A provider failure retains stored good data; publication still reads local storage.
  const collectionReport=fs.existsSync(path.join(base,'local-collection-last-run.json'))?read(path.join(base,'local-collection-last-run.json')):null;
- const supplyR10=lane==='core'?await collectSupplyR10(base):{status:'SKIPPED_KOREA_LANE'};
- if(lane==='core')await collectAlpacaIncremental(base);
- let sectorFearGreedR3=null,sectorFearGreedR3Report=null;
+ const quotaGuarded=process.env.ZGMINI_QUOTA_MODE==='enforce'&&(collectionReport?.quota?.guarded??0)>0;
+ const publishRequested=process.argv.includes('--publish');
+ const publicationPolicy=collectionPublicationPolicy({requested:publishRequested,collectionExit:collection.status,collectionStatus:collectionReport?.status,quotaGuarded});
+ const publishAllowed=publicationPolicy.publishAllowed;
+ const publishSkipped=null;
+ let supplyR10=null,alpacaIncremental=null,sectorFearGreedR3=null,sectorFearGreedR3Report=null;
+ const {publication,progressive}=await progressivePublication({
+  enabled:lane==='core'&&publishAllowed,
+  publish:async({early})=>{
+   const publication=spawnSync(process.execPath,[path.join(here,'run-local.mjs'),...(publishAllowed?['--publish',...((early||publicationPolicy.collectionDegraded)?['--collection-degraded']:[])]:[])],{windowsHide:true,stdio:['ignore','pipe','pipe'],timeout:30*60000});
+   return publication;
+  },
+  checkpoint:()=>auxiliaryInputCheckpoint(base),
+  collectAuxiliary:async()=>{
+  supplyR10=lane==='core'?await collectSupplyR10(base):{status:'SKIPPED_KOREA_LANE'};
+ if(lane==='core'){
+  try{const result=await collectAlpacaIncremental(base);alpacaIncremental={status:result.status,runRequests:result.runRequests??0};}
+  catch{alpacaIncremental={status:'FAILED_PREVIOUS_INPUTS_PRESERVED',runRequests:null};}
+ }
+
  if(lane==='core'){
   // Separate provisional inputs/output; failures never block the confirmed publisher.
   spawnSync(process.execPath,[path.join(here,'sector-provisional-cycle.mjs'),'--write-local'],{windowsHide:true,stdio:['ignore','pipe','pipe'],timeout:5*60000});
@@ -32,12 +50,9 @@ try{
   const sectorFearGreedR3File=path.join(base,'local-sector-fear-greed-r3-last-run.json');
   sectorFearGreedR3Report=fs.existsSync(sectorFearGreedR3File)?read(sectorFearGreedR3File):null;
  }
- const quotaGuarded=process.env.ZGMINI_QUOTA_MODE==='enforce'&&(collectionReport?.quota?.guarded??0)>0;
- const publishRequested=process.argv.includes('--publish');
- const publicationPolicy=collectionPublicationPolicy({requested:publishRequested,collectionExit:collection.status,collectionStatus:collectionReport?.status,quotaGuarded});
- const publishAllowed=publicationPolicy.publishAllowed;
- const publishSkipped=null;
- const publication=spawnSync(process.execPath,[path.join(here,'run-local.mjs'),...(publishAllowed?['--publish',...(publicationPolicy.collectionDegraded?['--collection-degraded']:[])]:[])],{windowsHide:true,stdio:['ignore','pipe','pipe'],timeout:30*60000});
+
+  },
+ });
  let prospective=null,prospectiveReport=null,fundFlowProspective=null,fundFlowProspectiveReport=null,breadthProspective=null,breadthProspectiveReport=null,earningsR5OfficialRefresh=null,earningsR5OfficialRefreshReport=null,earningsR5Prospective=null,earningsR5ProspectiveReport=null,earningsR5ProspectiveReportStale=false;
  if(lane==='core'){
   prospective=spawnSync(process.execPath,[path.join(here,'dollar-prospective-forward-r1.mjs')],{windowsHide:true,stdio:['ignore','pipe','pipe'],timeout:5*60000});
@@ -154,7 +169,7 @@ try{
   sectors:sectorFearGreedR3Report?.sectors??null,
   error:sectorFearGreedR3Report?.error??(sectorFearGreedR3?.error?.code??null),
  }:{nonBlocking:true,status:'SKIPPED_KOREA_LANE'};
- const report={at:new Date().toISOString(),lane,collectionExit:collection.status,collectionStatus:collectionReport?.status??null,supplyR10,sectorFearGreed,researchBreadthR10V9Shadow,publicationExit:publication.status,publishRequested,publishSkipped,publicationPolicy,researchProspective,researchFundFlowProspective,researchBreadthProspective,researchEarningsR5OfficialRefresh,researchEarningsR5Prospective,status:publication.status===0?(publicationPolicy.collectionDegraded?'COMPLETE_WITH_COLLECTION_GAPS':'COMPLETE'):'PUBLICATION_NOT_VERIFIED'};
+ const report={at:new Date().toISOString(),lane,collectionExit:collection.status,collectionStatus:collectionReport?.status??null,supplyR10,alpacaIncremental,sectorFearGreed,researchBreadthR10V9Shadow,publicationExit:publication.status,publishRequested,publishSkipped,publicationPolicy,progressive,researchProspective,researchFundFlowProspective,researchBreadthProspective,researchEarningsR5OfficialRefresh,researchEarningsR5Prospective,status:publication.status===0?(publicationPolicy.collectionDegraded?'COMPLETE_WITH_COLLECTION_GAPS':'COMPLETE'):'PUBLICATION_NOT_VERIFIED'};
  save(path.join(base,'local-cycle-last-run.json'),report);console.log(JSON.stringify(report));
  if(publication.status!==0)process.exitCode=1;
 }finally{fs.unlinkSync(file);}
