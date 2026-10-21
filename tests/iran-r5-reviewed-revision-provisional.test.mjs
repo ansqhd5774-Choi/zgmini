@@ -75,10 +75,10 @@ test('reviewed revision must match both immutable receipts and unchanged classif
 test('unreviewed revision of another accepted URL still blocks provisional publication',()=>{
  withStore(store=>{
   const base={sourceUrl:'https://www.bbc.com/news/articles/other-unreviewed-attack',
-   title:'Houthi missile strike on Yemen camp kills 40 security recruits, local authorities say',
+   title:'Iran missile strike hits Israeli military base and kills 5 soldiers',
    date:'2026-10-20',summary:''};
   store.putSource('news-metadata:'+hash(base),base,Date.parse('2026-10-20T11:00:00Z'));
-  const modified={...base,title:'Houthi missile strike on Yemen camp kills 41 security recruits, local authorities say'};
+  const modified={...base,title:'Iran missile strike hits Israeli military base and kills 6 soldiers'};
   store.putSource('news-metadata:'+hash(modified),modified,Date.parse('2026-10-20T12:00:00Z'));
   assert.throws(()=>calculateOperationalR5(store,{now}),/R5_UNREVIEWED_SOURCE_REVISION/);
  });
