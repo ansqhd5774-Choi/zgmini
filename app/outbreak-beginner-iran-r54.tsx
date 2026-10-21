@@ -2,6 +2,7 @@
 import {useEffect,useState} from "react";
 import {CalendarDays,ChevronDown,Info,Lightbulb,ShieldAlert,Swords,TrendingUp} from "lucide-react";
 import "./outbreak-beginner-iran-r54.css";
+import "./outbreak-iran-parity-r55.css";
 
 type Point={at:number;value:number|null;carried?:boolean;phase?:string};
 const DAY_MS=86400000;
@@ -68,30 +69,43 @@ export default function OutbreakBeginnerIran({view}:{view:any}){
  const isEstimate=view.reference===true||view.dailyAnchorEstimate===true||Boolean(view.displayEstimate);
  const relation=(key:string)=>relationLabel[view.relations?.[key]??"UNKNOWN"]??"미확인";
  const summary=score===null?"종전 진전도를 확인할 자료가 없습니다.":score<40?"저장된 근거에서 종전 진전 신호가 제한적인 구간입니다.":"저장된 근거에서 종전 진전 신호를 계속 관찰하고 있습니다.";
- return <article className="ob-detail ob54-detail" aria-labelledby="ob-iran-title">
-  <header className="ob54-heading"><div><span className="ob-eyebrow">선택한 이벤트 · 지정학</span>
-   <h2 id="ob-iran-title">이란 전쟁 <span className="ob54-state" data-tone={state.tone}>{state.name}</span></h2>
-   <p>{summary}</p></div><span className="ob-stage">{view.message}</span></header>
-  <div className="ob54-kpis">
-   <section className="ob-panel"><span>현재 종전 진전도</span><strong>{score===null?"—":score.toFixed(1)}<small>점 / 100</small></strong></section>
-   <section className="ob-panel"><span>주간 변화</span><strong>—</strong><small>확정 비교값 미제공</small></section>
-   <section className="ob-panel"><span>분석 기준일</span><strong className="ob54-date"><CalendarDays size={16} aria-hidden="true"/>{date}</strong><small>{isEstimate?"잠정 계산 기준":"저장 자료 기준"}</small></section>
+ return <article className="ob-detail ob-beginner-detail ob54-detail ob55-iran-parity" aria-labelledby="ob-iran-title">
+  <header className="ob53-title ob54-heading">
+   <div><span className="ob-eyebrow">선택한 이벤트 · 지정학</span>
+    <h2 id="ob-iran-title">이란 전쟁 <span className="ob53-tone-pill ob54-state" data-tone={state.tone}>{state.name}</span></h2>
+    <p>{summary}</p>
+   </div>
+   <span className="ob-stage">{view.message}</span>
+  </header>
+  <div className="ob53-intro-grid ob55-intro">
+   <section className="ob-panel ob53-score-card ob55-score-card" aria-label="현재 종전 진전도">
+    <div className="ob53-metric-row ob54-kpis">
+     <div className="ob53-current"><span>현재 종전 진전도</span><strong>{score===null?"—":score.toFixed(1)}<small>점 / 100</small></strong></div>
+     <div className="ob53-week"><span>주간 변화</span><strong>—</strong><small>확정 비교값 미제공</small></div>
+     <div className="ob53-asof"><span>분석 기준일</span><strong><CalendarDays size={15} aria-hidden="true"/>{date}</strong><small>{isEstimate?"잠정 계산 기준":"저장 자료 기준"}</small></div>
+    </div>
+    <Scale score={score}/>
+   </section>
+   <section className="ob-panel ob53-explain ob54-meaning" aria-labelledby="ob54-meaning">
+    <h3 id="ob54-meaning"><Lightbulb size={17} aria-hidden="true"/> 이 숫자는 무슨 뜻인가요?</h3>
+    <p>종전 진전 신호를 0~100점으로 나타낸 참고 지표입니다.</p>
+    <p>점수가 낮으면 확인된 진전이 적고, 높으면 진전 신호가 많다는 뜻입니다.</p>
+    <p>종전 확률이나 미래 종료 날짜를 뜻하지 않습니다.</p>
+   </section>
   </div>
-  <Scale score={score}/>
-  <div className="ob54-layout">
+  <div className="ob53-main-grid ob55-main">
    <Trend view={view}/>
-   <div className="ob54-right">
-    <section className="ob-panel ob54-meaning" aria-labelledby="ob54-meaning"><h3 id="ob54-meaning"><Lightbulb size={17} aria-hidden="true"/> 이 숫자는 무슨 뜻인가요?</h3>
-     <p>종전 진전 신호를 0~100점으로 나타낸 참고 지표입니다.</p>
-     <p>점수가 낮을수록 확인된 진전이 적고, 높을수록 진전 신호가 많다는 뜻입니다.</p>
-     <p>종전 확률이나 미래 종료 날짜를 뜻하지 않습니다.</p>
-    </section>
-    <section className="ob-panel ob54-guide" aria-labelledby="ob54-guide"><h3 id="ob54-guide"><ShieldAlert size={16} aria-hidden="true"/> 주식 초보자용 해석</h3>
-     <dl><div><dt>현재 상황</dt><dd>{summary}</dd></div>
+   <div className="ob53-beginner-stack ob54-right">
+    <section className="ob-panel ob53-guide ob54-guide" aria-labelledby="ob54-guide">
+     <h3 id="ob54-guide"><ShieldAlert size={16} aria-hidden="true"/> 주식 초보자용 해석</h3>
+     <dl>
+      <div><dt>현재 상황</dt><dd>{summary}</dd></div>
       <div><dt>시장 민감도</dt><dd>유가·안전자산·방산 등 관련 자산의 변동성에 영향을 줄 수 있습니다.</dd></div>
-      <div><dt>주의할 점</dt><dd>점수만으로 주가 방향이나 종전 가능성을 단정할 수 없습니다.</dd></div></dl>
+      <div><dt>주의할 점</dt><dd>점수만으로 주가 방향이나 종전 가능성을 단정할 수 없습니다.</dd></div>
+     </dl>
     </section>
-    <section className="ob-panel ob54-relations" aria-labelledby="ob54-relations"><h3 id="ob54-relations"><Swords size={16} aria-hidden="true"/> 교전 관계별 상태</h3>
+    <section className="ob-panel ob54-relations ob55-relations" aria-labelledby="ob54-relations">
+     <h3 id="ob54-relations"><Swords size={16} aria-hidden="true"/> 교전 관계별 상태</h3>
      <div><span>이란–이스라엘<strong>{relation("IRN_ISR")}</strong></span>
       <span>이란–미국<strong>{relation("IRN_USA")}</strong></span>
       <span>전체 종전<strong>{view.overallEnded?"확인":"미확인"}</strong></span></div>
