@@ -30,7 +30,9 @@ export function validateEarningsRiskProvisionalRecord(record){
   if(!p||!iso(p.observedAt)||!score(p.score)||p.quarterEnd!==record.quarterEnd||
      !date(p.filingDate)||p.filingDate>p.observedAt.slice(0,10)||
      !counts(p.observed)||!coverage(p.coverage,p.observed,record.universeCount)||
-     !factors(p.factorScores)||typeof p.observationId!=="string"||
+     !factors(p.factorScores)||!p.factorScores||
+     Math.abs(p.score-(p.factorScores.eps*.35+p.factorScores.margin*.25+p.factorScores.revenue*.20+p.factorScores.epsBreadth*.20))>1e-7||
+     typeof p.observationId!=="string"||
      !/^[a-f0-9]{64}$/.test(p.observationId)||ids.has(p.observationId)||
      !iso(p.sourceStoredAt)||Date.parse(p.sourceStoredAt)>Date.parse(p.observedAt)||
      (i>0&&points[i-1].observedAt>=p.observedAt))return false;
