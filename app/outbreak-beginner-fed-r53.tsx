@@ -1,5 +1,6 @@
 "use client";
 import {CalendarDays, ChevronDown, CircleHelp, Lightbulb, ShieldAlert, TrendingDown} from "lucide-react";
+import {useEffect,useState} from "react";
 import "./outbreak-beginner-r53.css";
 
 export type RateScorePoint={label:string;value:number};
@@ -38,22 +39,30 @@ function ScoreScale({score}:{score:number|null}){
  </div>;
 }
 function Rate14Chart({rate}:{rate:RateStoredSnapshot|null}){
+ const [mobile,setMobile]=useState(false);
+ useEffect(()=>{
+  const query=window.matchMedia("(max-width: 600px)");
+  const update=()=>setMobile(query.matches);
+  update();query.addEventListener("change",update);
+  return()=>query.removeEventListener("change",update);
+ },[]);
  const window=stored14DayWindow(rate);
  const data=window?.points??[];
  const axis=[0,25,50,75,100];
- const x=(at:number)=>42+(window?(at-window.start)/(13*86_400_000)*606:0);
+ const chartLeft=mobile?34:42,chartWidth=mobile?296:606,chartRight=chartLeft+chartWidth;
+ const x=(at:number)=>chartLeft+(window?(at-window.start)/(13*86_400_000)*chartWidth:0);
  const y=(score:number)=>202-score*1.52;
  const points=data.map(row=>x(row.at).toFixed(2)+","+y(row.value).toFixed(2)).join(" ");
- const ticks=window?[0,2,4,6,8,10,13].map(day=>window.start+day*86_400_000):[];
+ const ticks=window?(mobile?[0,4,8,13]:[0,2,4,6,8,10,13]).map(day=>window.start+day*86_400_000):[];
  const hasData=data.length>=2;
  return <section className="ob53-chart ob-panel" aria-labelledby="ob53-chart-title">
    <div className="ob53-chart-heading"><h3 id="ob53-chart-title">14일 추이 <CircleHelp size={13} aria-hidden="true"/></h3>
     <span>{rate?"관측 "+data.length+"일 / 14일":"저장 데이터 대기"}</span></div>
-   {window&&hasData?<svg className="ob53-trend-svg" viewBox="0 0 700 240" role="img" aria-label={"금리 심리 최근 14일, 저장된 "+data.length+"개 날짜의 관측값만 표시"}>
+   {window&&hasData?<svg className="ob53-trend-svg" viewBox={mobile?"0 0 350 240":"0 0 700 240"} role="img" aria-label={"금리 심리 최근 14일, 저장된 "+data.length+"개 날짜의 관측값만 표시"}>
     <title>금리 심리 최근 14일 저장 점수, 미관측 날짜는 점을 생성하지 않음</title>
     {axis.map(value=><g key={value}>
-     <line x1="42" y1={y(value)} x2="648" y2={y(value)} stroke="#365468" strokeDasharray="3 5"/>
-     <text x="32" y={y(value)+4} textAnchor="end" fill="#9db6c8" fontSize="11">{value}</text>
+     <line x1={chartLeft} y1={y(value)} x2={chartRight} y2={y(value)} stroke="#365468" strokeDasharray="3 5"/>
+     <text x={chartLeft-10} y={y(value)+4} textAnchor="end" fill="#9db6c8" fontSize="11">{value}</text>
     </g>)}
     <polyline points={points} fill="none" stroke={rateBand(rate?.score??null).color} strokeWidth="3" vectorEffect="non-scaling-stroke" strokeLinecap="round" strokeLinejoin="round"/>
     {data.map(row=><circle key={row.label} cx={x(row.at)} cy={y(row.value)} r="3.7" fill={rateBand(rate?.score??null).color}><title>{row.label+" · "+row.value.toFixed(1)+"점"}</title></circle>)}
