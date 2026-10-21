@@ -1,3 +1,4 @@
+import {prepareStagflation,publishStagflation} from './stagflation-publication.mjs';
 import {prepareLatestStagflation,publishLatestStagflation} from './stagflation-latest-publication.mjs';
 import {validDegradedMarket} from './collection-publication-policy.mjs';
 import fs from 'node:fs';
@@ -97,6 +98,9 @@ try{
  const {preparePublicRateSentiment,publishPublicRateSentiment}=await import('./rate-sentiment-publication.mjs');
  const rateSentiment=await preparePublicRateSentiment(core,now);
  report.rateSentiment={status:rateSentiment.status,observationDate:rateSentiment.observationDate??null,reason:rateSentiment.reason??null};
+ let stagflation={status:'DISABLED',prepared:false};
+ try{stagflation=await prepareStagflation(core,{enabled:config.stagflationS21Publication===true,now});}catch{stagflation={status:'PARTIAL',prepared:false};}
+ report.stagflation={status:stagflation.status,observationMonth:stagflation.body?.observationMonth??null};
  let stagflationLatest={status:'DISABLED',prepared:false};
  try{stagflationLatest=await prepareLatestStagflation(core,{enabled:config.latestStagflationPublication===true,now});}catch{stagflationLatest={status:'PARTIAL',prepared:false};}
  report.stagflationLatest={status:stagflationLatest.status,score:stagflationLatest.body?.score??null};
@@ -190,6 +194,7 @@ try{
   }
   // Reuse the existing public snapshot table; publish only the bounded display score.
   report.rateSentiment.publication=(await publishPublicRateSentiment(remote,config.core,rateSentiment)).status;
+  try{report.stagflation.publication=(await publishStagflation(remote,config.core,stagflation)).status;}catch{report.stagflation.publication='UNVERIFIED';}
   try{report.stagflationLatest.publication=await publishLatestStagflation(remote,config.core,stagflationLatest);}catch{report.stagflationLatest.publication={status:'UNVERIFIED'};}
   const koreaOutput=await history.prepare('SELECT * FROM kfg_rev7_snapshots ORDER BY date DESC LIMIT 1').first();
   if(koreaOutput){
