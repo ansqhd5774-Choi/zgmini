@@ -12,7 +12,7 @@ const metrics={epsGrowth:17,revenueGrowth:18,operatingMargin:15,earningsGrowthBr
 const point=(when="2026-10-20T23:35:51.732Z",id="a".repeat(64))=>({
  observedAt:when,observationId:id,score:77.25,quarterEnd:"2026-09-30",
  filingDate:"2026-10-19",sourceStoredAt:"2026-10-19T21:14:34.000Z",
- observed:metrics,coverage:Object.fromEntries(Object.entries(metrics).map(([k,v])=>[k,v/500])),
+ observed:{...metrics},coverage:Object.fromEntries(Object.entries(metrics).map(([k,v])=>[k,v/500])),
  factorScores:{eps:72.5,margin:100,revenue:59.375,epsBreadth:75}
 });
 const record=()=>({
