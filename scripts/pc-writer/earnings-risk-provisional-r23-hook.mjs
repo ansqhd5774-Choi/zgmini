@@ -7,6 +7,8 @@ const SIDECAR_FILES=Object.freeze([
  "ZGMINI_EARNINGS_R20_PROVISIONAL_SHADOW_READONLY.mjs",
  "ZGMINI_EARNINGS_R21_OBSERVATION_LEDGER.mjs",
  "ZGMINI_EARNINGS_R22_CHANGE_GATE.mjs",
+ "ZGMINI_EARNINGS_R31_SCOPED_PUBLICATION.mjs",
+ "ZGMINI_EARNINGS_R33_OBSERVE_PUBLISH_CYCLE.mjs",
 ]);
 
 // Runs only on the existing Core PC lane; never executes a provider call,
@@ -24,7 +26,7 @@ export function dispatchEarningsRiskProvisionalR23({
  if(!base||!here)return {status:"BLOCKED_PATH_MISSING"};
  const root=path.resolve(here,"..","..");
  const directory=path.join(base,"earnings-risk-provisional-r23");
- const runner=path.join(directory,SIDECAR_FILES[2]);
+ const runner=path.join(directory,SIDECAR_FILES[4]);
  const cfgFile=path.join(base,"config.json");
  try{
   if(!fsImpl.existsSync(cfgFile))return {status:"BLOCKED_CONFIG_MISSING"};
