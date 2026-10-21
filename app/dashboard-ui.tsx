@@ -11,6 +11,7 @@ import {Activity,ArrowRight,ArrowUpRight,ChevronLeft,ChevronRight,Info,Radar,Coi
 import {Area,AreaChart,ReferenceArea,Line,LineChart,ResponsiveContainer,XAxis,YAxis,ReferenceDot,ReferenceLine,Tooltip} from 'recharts';
 import {readProgressiveMarketResponse} from '../lib/market-score/read-progressive-response.mjs';
 import {useStoredIndex} from '../components/use-stored-index';
+import {selectDashboardRiskDisplay} from '../lib/market-score/dashboard-risk-provisional-display.mjs';
 import {useScoreArrows,useScoreArrowDelta,StoredScoreDirection} from '../components/score-arrow-provider';
 import {acceptsStoredUpdate,startStoredRefresh} from '../lib/market-score/live-refresh.mjs';
 import {readMarketSnapshot,saveMarketSnapshot} from '../lib/market-score/browser-snapshot.mjs';
@@ -258,6 +259,8 @@ export function CompositeMarketSection({items,points,demo,loading}:{items:Summar
  const {payload:assetBubble}=useStoredIndex<{status:string;score:number|null;scoreObservationQuarter?:string}>('/api/asset-bubble-detail');
  const {payload:supplyShock}=useStoredIndex<{status:string;score:number|null;scoreObservationMonth?:string}>('/api/supply-shock-detail');
  const {payload:stagflation,error:stagflationError}=useStoredIndex<{status:string;score:number|null;observationMonth?:string}>('/api/stagflation-risk-detail');
+ const {payload:stagflationProvisional,error:stagflationProvisionalError}=useStoredIndex<{status:string;phase:string;score:number;methodologyVersion:string;evaluationMode:string;inputCount:number;observedAt:string;history:{observedAt:string;score:number}[]}>('/api/stagflation-risk-provisional');
+ const {payload:earningsProvisional,error:earningsProvisionalError}=useStoredIndex<{status:string;phase:string;score:number;methodologyVersion:string;quarterEnd:string;universeCount:number;observedAt:string;history:{observedAt:string;score:number;observed:{epsGrowth:number};coverage:{epsGrowth:number}}[]}>('/api/earnings-risk-provisional');
 
  useEffect(()=>{
   let alive=true;
@@ -360,15 +363,18 @@ export function CompositeMarketSection({items,points,demo,loading}:{items:Summar
        {diagnosticSubscores.map((s,index)=>{
         // Risk Inflation must use the R2 detail producer, not the separate market Price diagnostic.
         const diag=diagnosticKeys[index]==='inflationStability'?inflationRisk:diagnosticKeys[index]==='stagflationSafety'?(stagflationError?null:stagflation):diagnosticKeys[index]==='assetBubbleSafety'?assetBubble:diagnosticKeys[index]==='supplyShockSafety'?supplyShock:market?.diagnostics8?.[diagnosticKeys[index]];
-        const score=diag?.status==='READY'&&validPublicScore(diag.score)?diag.score:null;
-        return <div key={s.name} className="zg-r55-subscore" data-index={index} title={diagnosticKeys[index]==='assetBubbleSafety'&&assetBubble?.scoreObservationQuarter?`평가 분기 ${assetBubble.scoreObservationQuarter} · 상세 페이지와 동일한 R10 저장 점수`:undefined}>
+        const confirmedScore=diag?.status==='READY'&&validPublicScore(diag.score)?diag.score:null;
+        const selected=selectDashboardRiskDisplay({key:diagnosticKeys[index],confirmed:confirmedScore,
+         stagflation:stagflationProvisionalError?null:stagflationProvisional,earnings:earningsProvisionalError?null:earningsProvisional});
+        const score=selected.score;
+        return <div key={s.name} className="zg-r55-subscore" data-index={index} data-score-source={selected.provisional?"provisional":"confirmed"} title={diagnosticKeys[index]==='assetBubbleSafety'&&assetBubble?.scoreObservationQuarter?`평가 분기 ${assetBubble.scoreObservationQuarter} · 상세 페이지와 동일한 R10 저장 점수`:undefined}>
          <div className="zg-r55-subscore-head">
           <span className="zg-r55-subscore-title"><DashboardTip label={`${s.name} 도움말`}><HelpText copy={HELP[s.name]}/></DashboardTip><a className="zg-subscore-name-link" href={s.href}><b>{s.name}</b></a></span>
           <span onClick={e=>e.stopPropagation()} className="zg-r55-subscore-info"><a className="zg-info" href={s.href} aria-label={`${s.name} 상세페이지 열기`} title={`${s.name} 상세페이지`}><ArrowUpRight size={18} aria-hidden="true"/></a></span>
          </div>
          <div className="zg-r55-subscore-foot">
           <span className="zg-r55-subscore-meter" aria-hidden="true"><i style={{width:`${score??0}%`,background:score===null?'transparent':scoreColor(score)}}/></span>
-          <LiveScoreValue value={score===null?null:Math.round(score)} className="zg-r55-subscore-value">{score===null?'—':Math.round(score)}{diagnosticKeys[index]==='inflationStability'?null:<StoredScoreDirection id={'diagnostic:'+diagnosticKeys[index]} score={score}/>}</LiveScoreValue>
+          <LiveScoreValue value={score===null?null:Math.round(score)} className="zg-r55-subscore-value">{score===null?'—':Math.round(score)}{diagnosticKeys[index]==='inflationStability'||selected.provisional?null:<StoredScoreDirection id={'diagnostic:'+diagnosticKeys[index]} score={score}/>}</LiveScoreValue>
          </div>
         </div>
        })}
