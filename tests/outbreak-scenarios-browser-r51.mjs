@@ -85,6 +85,12 @@ try{
   assert(firstLayout.compact,"Event selector must not resemble three oversized dashboard cards");
   assert(firstLayout.questionCollapsed,"Secondary explanations start collapsed");
   assert(width>=1100?firstLayout.sideBySide:firstLayout.stacked,"Workspace breaks at 1100px");
+  const fedGeometry=await root.evaluate(el=>{
+   const intro=el.querySelector(".ob53-intro-grid");
+   const main=el.querySelector(".ob53-main-grid");
+   return {introColumns:getComputedStyle(intro).gridTemplateColumns.split(" ").length,
+    mainColumns:getComputedStyle(main).gridTemplateColumns.split(" ").length};
+  });
   await page.screenshot({path:"artifacts/outbreak-scenarios/analysis-fed-"+width+".png",fullPage:true});
 
   const disclosures=root.locator("details.ob53-details");
@@ -109,13 +115,25 @@ try{
   await cards.nth(1).click();
   assert.equal(await cards.nth(1).getAttribute("aria-pressed"),"true");
   await root.locator("#ob-iran-title").waitFor({state:"visible"});
-  assert.equal(await root.locator(".ob54-kpis").count(),1,"Iran has dedicated three-part summary");
-  assert.equal(await root.locator(".ob54-kpis section").count(),3);
+  assert.equal(await root.locator(".ob55-iran-parity .ob53-intro-grid").count(),1,"Iran uses R53 intro-grid");
+  assert.equal(await root.locator(".ob55-iran-parity .ob53-main-grid").count(),1,"Iran uses R53 main-grid");
+  assert.equal(await root.locator(".ob55-score-card .ob54-kpis > div").count(),3,"Iran metrics share R53 integrated score panel");
+  assert.equal(await root.locator(".ob55-score-card .ob54-scale").count(),1,"The score scale must be inside integrated panel");
+  assert.equal(await root.locator(".ob55-intro > .ob54-meaning").count(),1,"The beginner meaning card is on the top right");
+  assert.equal(await root.locator(".ob55-main .ob54-trend").count(),1,"Iran 14-day chart occupies the left analysis panel");
+  assert.equal(await root.locator(".ob55-main .ob54-guide").count(),1,"Beginner interpretations align with R53 layout");
   await page.waitForFunction(()=>document.querySelector(".ob54-kpis strong")?.textContent?.includes("13.0"),null,{timeout:12000});
   assert.equal(await root.locator(".ob54-state").textContent(),"진전 매우 낮음");
   assert.equal(await root.locator("#ob54-chart-title").textContent()," 14일 추이");
   assert.equal(await root.locator(".ob54-trend-svg line[stroke-dasharray='5 5']").count()>0,true,"Carried days remain dashed");
   assert.equal(await root.locator(".ob54-scale-track [data-band]").count(),5);
+  const iranGeometry=await root.evaluate(el=>{
+   const intro=el.querySelector(".ob55-intro"),main=el.querySelector(".ob55-main");
+   return {introColumns:getComputedStyle(intro).gridTemplateColumns.split(" ").length,
+    mainColumns:getComputedStyle(main).gridTemplateColumns.split(" ").length,
+    scoreHasScale:!!intro.querySelector(".ob55-score-card .ob54-scale")};
+  });
+  assert.deepEqual(iranGeometry,{...fedGeometry,scoreHasScale:true},"Iran uses the same grid breakpoints as the approved rate detail");
   assert.equal(await root.locator(".ob54-relations strong").count(),3);
   assert.equal(await root.locator(".ob54-relations strong").first().textContent(),"미확인");
   assert.equal(await root.locator(".ob54-disclosure").count(),2);
