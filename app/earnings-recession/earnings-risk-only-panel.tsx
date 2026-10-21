@@ -8,7 +8,6 @@ import {MarketTrendFrame} from "../market-trend-frame";
 import {MarketFearGreedChart,type MarketFearGreedChartPoint,type MarketFearGreedChartValidPoint} from "../market-fear-greed-chart";
 import {ContentHelp} from "../content-help";
 import {EarningsFavoriteButton,EarningsFavoriteHeaderIcon} from "./earnings-favorite-button";
-import EarningsRiskProvisionalPanel from "./earnings-risk-provisional-panel";
 import {EARNINGS_RISK_HISTORY_KIND} from "../../lib/market-score/earnings-recession-history-r1.mjs";
 import "./earnings-indicator-r2.css";
 import "./earnings-inflation-layout.css";
@@ -91,7 +90,6 @@ export default function EarningsRiskOnlyPanel(){
  const axisTicks=[...new Map(trend.map(x=>[x.date.slice(0,7),x.date])).values()];
  const axisLabels=new Map(trend.map(x=>[x.date,x.date.slice(2,7).replace("-","/")]));
  return <>
-  <EarningsRiskProvisionalPanel/>
   <section className="cnn-reference-panel fg-card fg-shared-shell earnings-recession-target-card"
     data-testid="earnings-risk-only-hero" data-score-tone={score===null?"neutral":score>=60?"positive":score>=45?"neutral":"negative"}
     data-market-state={loading?"loading":score===null?"unavailable":"ready"} aria-busy={loading}>
