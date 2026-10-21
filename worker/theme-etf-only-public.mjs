@@ -1,3 +1,4 @@
+import {readRollingPublic} from './theme-etf-rolling-public.mjs';
 import {PUBLIC_DISPLAY_MAX_AGE_MS} from './public-display-freshness.mjs';
 import {publicFeedStore} from './public-feed-store.mjs';
 import {THEME_ETF_PROVISIONAL_KEY,validThemeEtfProvisional} from '../lib/market-score/theme-etf-provisional.mjs';
@@ -49,6 +50,9 @@ export async function readThemeEtfOnly(db,{now=Date.now(),store=publicFeedStore(
  try{record=JSON.parse(row.body)}
  catch{return Response.json({status:'UNAVAILABLE',reason:'STORED_DATA_INVALID',themes:[]},{status:503,headers})}
  if(!validateThemeEtfOnlyPublic(record))return Response.json({status:'UNAVAILABLE',reason:'STORED_DATA_NOT_APPROVED',themes:[]},{status:503,headers});
+ // Prefer the independently validated rolling 252+2 stored projection, while keeping the immutable seed as fallback.
+ let rolling=null;try{rolling=await readRollingPublic(db,record,{now})}catch{}
+ if(rolling)return Response.json(rolling,{headers:{...headers,'cache-control':'public, max-age=60, must-revalidate','x-data-snapshot-at':rolling.sourceStoredAt}});
  const observedAt=Date.parse(record.observationDate+'T23:59:59Z');
  const sourceAt=Date.parse(record.sourceStoredAt),storedAt=Number(row.stored_at);
  if(!Number.isFinite(storedAt)||storedAt>now||sourceAt>now||observedAt>now||now-observedAt>=PUBLIC_DISPLAY_MAX_AGE_MS)
