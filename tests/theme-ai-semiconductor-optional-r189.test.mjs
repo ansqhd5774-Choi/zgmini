@@ -30,6 +30,17 @@ test('R189 bad rights, dates, prices, source timestamp or stale scores preserve 
   assert.strictEqual(await addVerifiedAiTheme(db(bad),b,{now}),b);
  }
 });
+test('R195 accepts explicitly labeled SHA-verified R187 local file mtime, never an unlabeled or mismatched one',()=>{
+ const b=base(),p={...approved(b),sourceStoredAtKind:'LOCAL_R187_RAW_FILE_MTIME_NOT_PROVIDER_TIMESTAMP',sourceVersion:'R187_SHA256_'+('a'.repeat(64)),sourceFileSha256:'a'.repeat(64),sourceTimestampBasis:'FILE_MTIME_NOT_PROVIDER_TIMESTAMP'};
+ assert.equal(eligibleAiTheme(p,b,{now,storedAt:now-1000}),true);
+ for(const bad of [
+  {...p,sourceFileSha256:'b'.repeat(64)},
+  {...p,sourceTimestampBasis:'PROVIDER_TIMESTAMP'},
+  {...p,sourceStoredAt:'2026-10-01T00:00:00Z'},
+  {...p,derivedLicenseVerified:false},
+  {...p,sourcePriceReconciled:false},
+ ])assert.equal(eligibleAiTheme(bad,b,{now,storedAt:now-1000}),false);
+});
 test('R189 missing sidecar/read failure does not block seven',async()=>{
  const b=base();assert.strictEqual(await addVerifiedAiTheme(db(null),b,{now}),b);
  assert.strictEqual(await addVerifiedAiTheme({prepare(){throw Error('D1 inaccessible');}},b,{now}),b);
