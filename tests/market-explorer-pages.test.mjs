@@ -59,8 +59,8 @@ test('theme overview retains 30 cards, prioritizes 7 ETF-only research themes an
  }).default;
  const html=renderToStaticMarkup(React.createElement(Theme));
  assert.equal((html.match(/<article /g)??[]).length,30);
- assert.match(html,/ETF 전용 3축 연구 · 7개 테마/);
- assert.match(html,/ETF 7 · 공개 대기/);
+ assert.match(html,/ETF 전용 3축 연구 · 공개 데이터 대기/);
+ assert.match(html,/ETF · 공개 대기/);
  assert.equal((html.match(/ETF 3축 252일 검증 · 2026\.10\.16/g)??[]).length,7);
  assert.equal((html.match(/ETF 입력 보완 중/g)??[]).length,2);
  assert.equal((html.match(/ETF 연구 대상 · 데이터 준비 중/g)??[]).length,3);
@@ -82,9 +82,10 @@ test('theme screen withdraws previous ETF scores immediately when stored feed fa
  });
  const visible=renderToStaticMarkup(React.createElement(load(ThemeFile,mocks(null)).default));
  assert.match(visible,/ETF 1 · 저장 점수/);
+ assert.match(visible,/ETF 전용 3축 연구 · 1개 테마/);
  assert.match(visible,/25\.1<\/strong>/);
  const withdrawn=renderToStaticMarkup(React.createElement(load(ThemeFile,mocks('UPDATE_FAILED')).default));
- assert.match(withdrawn,/ETF 7 · 공개 대기/);
+ assert.match(withdrawn,/ETF · 공개 대기/);
  assert.doesNotMatch(withdrawn,/25\.1<\/strong>/);
 });
 
