@@ -13,7 +13,7 @@
   font-weight: 600;
   letter-spacing: .17em;
 }
-.intro h2 {
+.intro h1 {
   margin: 0;
   color: #f6f8fa;
   font-size: clamp(30px, 3.4vw, 43px);
