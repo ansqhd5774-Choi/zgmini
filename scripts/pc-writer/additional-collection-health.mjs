@@ -14,7 +14,7 @@ export function additionalCollectionEntries({iran=null,alpaca=null,supply=null}=
  return [
   {id:'job:iranArticles',storedAt:iran?.storageVerified?iranAt:null,checkedAt:iranAt,outcome:iranFailed?'failure':iranSuccess?'success':'unknown'},
   {id:'job:assetR10Alpaca',storedAt:alpacaSuccess?alpacaAt:null,checkedAt:alpacaAt,outcome:alpaca?.status==='BLOCKED'?'failure':alpacaSuccess?'success':'unknown'},
-  ...(supply?[{id:'job:supplyR10',storedAt:supply.storageVerified?supply.checkedAt:null,checkedAt:supply.checkedAt??null,outcome:supply.status==='COLLECTED'&&supply.storageVerified?'success':supply.status==='SOURCE_FAILED'?'failure':'unknown'}]:[]),
+  ...(supply?[{id:'job:supplyR10',storedAt:supply.storageVerified?supply.checkedAt:null,checkedAt:supply.checkedAt??null,outcome:supply.status==='COLLECTED'&&supply.storageVerified?'success':supply.status==='SOURCE_FAILED'?'failure':'unknown',reason:supply.reason,nextRetryAt:supply.nextRetryAt}]:[]),
  ];
 }
 export function readAdditionalCollectionEntries(base,iranBase=process.env.ZGMINI_IRAN_HOME??path.join(os.homedir(),'.zgmini','iran-progress-r13')){

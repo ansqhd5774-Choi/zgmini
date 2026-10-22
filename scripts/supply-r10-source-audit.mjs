@@ -2,6 +2,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import crypto from 'node:crypto';
 import {readXlsxWorkbook} from '../lib/diagnostic-layer/xlsx-lite.mjs';
+import {assertSourceAvailable,storeValidatedSupplySource} from './supply-source-validation.mjs';
 
 // Isolated research storage: never writes the operating database or public feeds.
 const directory = path.resolve(process.argv[2] ?? 'work/supply-r10-sources');
@@ -14,10 +15,9 @@ const sources = [
 const results = await Promise.all(sources.map(async ([id,url,extension]) => {
   try {
     const response = await fetch(url, {signal:AbortSignal.timeout(45000)});
-    if (!response.ok) throw new Error(`HTTP_${response.status}`);
     const bytes = new Uint8Array(await response.arrayBuffer());
+    assertSourceAvailable(bytes,response.status);
     const filename = `${id}.${extension}`;
-    await fs.writeFile(path.join(directory, filename), bytes);
     const record = {id,url,filename,bytes:bytes.length,sha256:crypto.createHash('sha256').update(bytes).digest('hex'),collectedAt:new Date().toISOString(),historyMode:'CURRENT_VINTAGE_ONLY'};
     if(extension === 'xlsx') {
       const workbook = await readXlsxWorkbook(bytes);
@@ -36,7 +36,8 @@ const results = await Promise.all(sources.map(async ([id,url,extension]) => {
         return [{observationDate:`${match[1]}-${match[2].padStart(2,'0')}-01`,value}];
       });
       record.parsed={count:parsed.length,first:parsed[0]?.observationDate,last:parsed.at(-1)?.observationDate,column:header[1].value};
-      await fs.writeFile(path.join(directory,`${id}.json`),JSON.stringify(parsed));
+      if(parsed.length<180)throw new Error('SUPPLY_R10_HISTORY_INCOMPLETE');
+      await storeValidatedSupplySource(directory,id,extension,bytes,parsed);
     } else {
       const html = new TextDecoder().decode(bytes);
       record.title=/<title>([^<]+)<\/title>/i.exec(html)?.[1]??null;
@@ -56,7 +57,8 @@ const results = await Promise.all(sources.map(async ([id,url,extension]) => {
       if(!parsed.length)throw new Error('EIA_SCHEMA_OR_HISTORY_MISSING');
       parsed.sort((a,b)=>a.observationDate.localeCompare(b.observationDate));
       record.parsed={count:parsed.length,first:parsed[0].observationDate,last:parsed.at(-1).observationDate};
-      await fs.writeFile(path.join(directory,`${id}.json`),JSON.stringify(parsed));
+      if(parsed.length<180)throw new Error('SUPPLY_R10_HISTORY_INCOMPLETE');
+      await storeValidatedSupplySource(directory,id,extension,bytes,parsed);
     }
     return {...record,status:'STORED'};
   } catch(error) {return {id,status:'SOURCE_FAILED',error:error.name==='TimeoutError'?'EXECUTION_TIMEOUT':error.message};}
