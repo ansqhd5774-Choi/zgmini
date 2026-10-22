@@ -1,0 +1,12 @@
+.zg-site-footer.zg-footer{display:block;padding:28px 24px 24px;text-align:center;color:#a4b7c6;background:#041722}
+.zg-footer-links{display:flex;justify-content:center;align-items:center;flex-wrap:wrap;gap:8px 0;margin:0 auto 18px;max-width:1000px}
+.zg-footer-links a{display:inline-flex;align-items:center;min-height:28px;padding:0 16px;font-size:12px;font-weight:650;line-height:1.5;color:#cbd9e4}
+.zg-footer-links a+a{border-left:1px solid #294352}
+.zg-footer-links a:hover{color:#ffc43d}
+.zg-footer-links a:focus-visible,.zg-footer-badges a:focus-visible{outline:2px solid #ffc43d;outline-offset:4px;border-radius:3px}
+.zg-footer-notice{max-width:850px;margin:0 auto;color:#91a6b7;font-size:12px;line-height:1.9;word-break:keep-all;overflow-wrap:anywhere}
+.zg-footer-copyright{margin:12px 0 0;color:#8298a9;font-size:11px;letter-spacing:.3px}
+.zg-footer-badges{display:flex;justify-content:center;align-items:center;flex-wrap:wrap;gap:16px;margin:22px auto 0;padding-top:20px;border-top:1px solid #193342;max-width:1000px}
+.zg-footer-badges a{display:inline-flex;align-items:center;justify-content:center;flex:none}
+.zg-footer-badges img{display:block;max-width:100%;height:auto}
+@media(max-width:600px){.zg-site-footer.zg-footer{padding:24px 16px}.zg-footer-links{gap:6px 0;margin-bottom:14px}.zg-footer-links a{padding:0 10px;font-size:11px;min-height:32px}.zg-footer-notice{font-size:11px;line-height:1.9}.zg-footer-badges{gap:14px;margin-top:18px;padding-top:18px}}
