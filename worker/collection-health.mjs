@@ -2,11 +2,11 @@
 export const COLLECTION_HEALTH_KEY='collection-health';
 export const COLLECTION_WINDOW_MS=8*24*60*60*1000;
 export function collectionHealthSummary(entries,now=Date.now()){
- const items=entries.map(({id,storedAt,complete,checkedAt=storedAt,outcome=complete?'success':'unknown',lastSuccessAt=outcome==='success'?checkedAt:null})=>{
+ const items=entries.map(({id,storedAt,complete,checkedAt=storedAt,outcome=complete?'success':'unknown',lastSuccessAt=outcome==='success'?checkedAt:null,reason,nextRetryAt})=>{
   const recent=Number.isFinite(checkedAt)&&checkedAt<=now&&now-checkedAt<COLLECTION_WINDOW_MS;
   const successful=Number.isFinite(lastSuccessAt)&&lastSuccessAt<=now&&now-lastSuccessAt<COLLECTION_WINDOW_MS;
   const state=successful?'normal':recent&&outcome==='failure'?'failed':'unknown';
-  return {id,storedAt:Number.isFinite(storedAt)?storedAt:null,checkedAt:Number.isFinite(checkedAt)?checkedAt:null,lastSuccessAt:Number.isFinite(lastSuccessAt)?lastSuccessAt:null,outcome,state,normal:state==='normal'};
+  return {id,storedAt:Number.isFinite(storedAt)?storedAt:null,checkedAt:Number.isFinite(checkedAt)?checkedAt:null,lastSuccessAt:Number.isFinite(lastSuccessAt)?lastSuccessAt:null,outcome,state,normal:state==='normal',...(['PROVIDER_MAINTENANCE','PROVIDER_HTTP_ERROR','SOURCE_FORMAT_ERROR','SOURCE_FAILED'].includes(reason)?{reason}:{}),...(Number.isFinite(nextRetryAt)&&nextRetryAt>checkedAt?{nextRetryAt}:{})};
  });
  const normal=items.filter(x=>x.normal).length;
  const failed=items.filter(x=>x.state==='failed').length,unknown=items.length-normal-failed;
@@ -20,7 +20,7 @@ export async function readCollectionHealth(db,now=Date.now()){
   if(![1,2,3].includes(body?.version)||body.scope!=='collection-jobs'||!Array.isArray(body.items)||body.items.length>100)throw Error('INVALID_SUMMARY');
   const at=Date.parse(body.checkedAt);
   if(!Number.isFinite(at)||at>now)throw Error('INVALID_TIMESTAMP');
-  const summary=collectionHealthSummary(body.items.map(x=>({id:x.id,storedAt:x.storedAt,checkedAt:body.version>=2?x.checkedAt:x.storedAt,outcome:body.version>=2?x.outcome:x.normal===true?'success':'unknown',...(body.version===3?{lastSuccessAt:x.lastSuccessAt}:{})})),now);
+  const summary=collectionHealthSummary(body.items.map(x=>({id:x.id,storedAt:x.storedAt,checkedAt:body.version>=2?x.checkedAt:x.storedAt,outcome:body.version>=2?x.outcome:x.normal===true?'success':'unknown',reason:x.reason,nextRetryAt:x.nextRetryAt,...(body.version===3?{lastSuccessAt:x.lastSuccessAt}:{})})),now);
   return Response.json({...summary,checkedAt:body.checkedAt,status:now-at>=COLLECTION_WINDOW_MS?'unknown':summary.status},{headers});
  }catch{return Response.json({status:'unknown',normal:null,total:null,checkedAt:null},{status:503,headers});}
 }
