@@ -31,5 +31,7 @@ test('example chart is clearly labeled non-live and layout is responsive', () =>
   assert.match(guide, /자료 주기가 긴 지표/);
   assert.match(style, /@media \(max-width: 760px\)/);
   assert.match(style, /\.stepNav \{/);
-  assert.match(style, /overflow-x: auto/);
+  assert.match(style, /justify-content: space-between/);
+  assert.match(style, /flex: 1 1 0/);
+  assert.doesNotMatch(style, /overflow-x: auto/);
 });

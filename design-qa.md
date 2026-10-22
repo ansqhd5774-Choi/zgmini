@@ -2,14 +2,14 @@
 
 ## 2026-10-22 · 이용안내 `/about/#usage` R1
 
-- **final result: partial** — 데스크톱 디자인·5단계 전환·로컬 빌드 PASS. 모바일 실제 브라우저 뷰포트와 배포 후 Production UI는 별도 확인 필요.
+- **final result: passed** (이용안내 디자인·로컬 기능 범위). Cloudflare Hosted Build·Production UI 검증과는 별개.
 - 기준: 사용자가 확정한 2번 이용안내 시안. 어두운 배경, 왼쪽 01~05 단계 목록, 오른쪽 선택 내용과 설명용 그래프, 하단 이전/다음 구조.
 - 데스크톱: 로컬 `terminal.local:4173/about/?preview=usage-r1#usage` 브라우저 화면에서 2열 배치, 민트색 선택 상태, 텍스트 위계, 그래프·버튼 배치를 시안과 육안 비교했다.
 - 상호작용: 03 구성 지표 선택 → 04 다음 단계 → 05 다음 단계 및 마지막 버튼 비활성화를 확인했다. 각 단계가 해당 설명으로 전환됨.
 - 데이터 구분: `61.2` 및 시계열은 **시안 설명만을 위한 가상 값**이며 실제 API·산식·DB에 연결하지 않는다. 화면에서 가상 데이터라고 명시한다.
-- 모바일: 760 CSS px 이하에서 세로 배치·가로 스크롤 가능한 단계 내비게이션·축소된 그래프를 CSS로 구현했으나, 정확한 390px 실측 시각 검증은 아직 실행하지 못했다. 검증 전 모바일 PASS라고 보고하지 않는다.
+- 모바일: 실제 브라우저 내 390 CSS px iframe 뷰포트에서 세로 배치·5개 단계 버튼 가로 일렬·140px 차트·이전/다음 버튼을 육안 확인했다. 최초 가로 스크롤바가 화면에 과하게 나타나 5개 버튼이 모두 보이도록 수정하고 재검증했다. 05 주의사항 클릭 시 선택 강조, 내용 전환, 마지막 다음 버튼 비활성화를 확인했다. 단계 제목의 어색한 줄바꿈도 짧은 문구로 수정했다.
 - 회귀: 신규 UI·테스트 외에 기존 앱 라우팅·데이터 처리 코드를 변경하지 않았다. 임시 미리보기 라우팅 조정은 정식 변경사항에 포함하지 않았다.
-- 검증: `npm run typecheck`, `npm run build`, 관련 About/라우팅 테스트, `git diff --check` PASS. Cloudflare Hosted Build / exact Deployment / Production 검증은 미완료.
+- 검증: `npm run typecheck`, `npm run build`, 관련 About/라우팅 테스트, `git diff --check` PASS. Cloudflare Hosted Build / exact Deployment / Production 검증은 미완료. 2026-10-22 관측한 별도 기존 `main` SHA `6cb9c5e` 빌드는 repository clone 단계에서 약 17분 후 실패했고, 이 가이드 PR 자체의 Hosted Build는 아직 실행되지 않았다.
 
 ---
 
