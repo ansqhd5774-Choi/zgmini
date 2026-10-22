@@ -3,7 +3,7 @@ import {parseSitemap,waitForCloudflare} from './indexnow-notify.mjs';
 
 const SITE_ORIGIN='https://zgmini.kr';
 const REQUEST_TIMEOUT_MS=20_000;
-const EXPECTED_PUBLIC_URLS=31;
+const EXPECTED_PUBLIC_URLS=34;
 
 export const SEO_RUNTIME_MARKERS=new Map([
   [`${SITE_ORIGIN}/risk-indicators/`,{descriptionIncludes:'공급 충격의 저장 점수를 비교'}],
@@ -11,6 +11,9 @@ export const SEO_RUNTIME_MARKERS=new Map([
   [`${SITE_ORIGIN}/theme-fear-greed/`,{descriptionIncludes:'30개 투자 테마를 탐색'}],
   [`${SITE_ORIGIN}/`,{titleIncludes:'미국·한국 공포탐욕지수와 경제지표'}],
   [`${SITE_ORIGIN}/about/`,{descriptionIncludes:'ZGMINI를 소개합니다'}],
+  [`${SITE_ORIGIN}/usage/`,{descriptionIncludes:'5단계로 알아보세요'}],
+  [`${SITE_ORIGIN}/data-sources/`,{descriptionIncludes:'관측일·발표일·갱신 및 잠정치 기준'}],
+  [`${SITE_ORIGIN}/investment-notice/`,{descriptionIncludes:'투자 판단 시 확인할 사항'}],
   [`${SITE_ORIGIN}/fear-greed/korea/`,{descriptionIncludes:'504개 유효 관측치 기준창'}],
   [`${SITE_ORIGIN}/fear-greed/usa/`,{descriptionIncludes:'미국 CNN 공포탐욕지수의 점수·관측일·기간별 차트와 7개 구성요소를 확인하세요.'}],
   [`${SITE_ORIGIN}/sector-fear-greed/`,{descriptionIncludes:'5개 핵심 신호와 252거래일 데이터'}],

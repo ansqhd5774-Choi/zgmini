@@ -10,7 +10,7 @@ const sitemap=parseSitemap(read('public/sitemap.xml'));
 test('IndexNow R1 uses the global endpoint and the public sitemap contract',()=>{
   assert.equal(INDEXNOW_ENDPOINT,'https://api.indexnow.org/indexnow');
   assert.equal(SITE_ORIGIN,'https://zgmini.kr');
-  assert.equal(sitemap.length,31);
+  assert.equal(sitemap.length,34);
   assert.ok(sitemap.every(url=>new URL(url).origin===SITE_ORIGIN));
 });
 
@@ -30,7 +30,7 @@ test('IndexNow R1 maps route-specific app changes only to the affected public UR
 });
 
 test('IndexNow R1 expands only known shared surfaces',()=>{
-  assert.equal(deriveAffectedUrls(['app/layout.tsx'],sitemap).length,31);
+  assert.equal(deriveAffectedUrls(['app/layout.tsx'],sitemap).length,34);
   assert.deepEqual(
     deriveAffectedUrls(['app/guides/guide-page.tsx'],sitemap),
     sitemap.filter(url=>new URL(url).pathname.startsWith('/guides/')),

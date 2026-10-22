@@ -24,7 +24,7 @@ test("debt meta description and visible introduction do not promise absent score
 });
 test("sitemap lastmod reflects the verified Oct 20 KST content changes without falsifying untouched routes",()=>{
  const sitemap=read("public/sitemap.xml");
- assert.equal((sitemap.match(/<url>/g)||[]).length,31);
+ assert.equal((sitemap.match(/<url>/g)||[]).length,34);
  for(const key of keys){
   const expected=key==="stagflation-risk"?"2026-10-21":["inflation","recession"].includes(key)?"2026-10-18":"2026-10-20";
   assert.ok(sitemap.includes("<loc>https://zgmini.kr/"+key+"/</loc><lastmod>"+expected+"</lastmod>"),key);

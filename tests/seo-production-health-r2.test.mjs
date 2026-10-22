@@ -73,7 +73,7 @@ test('production SEO inspector requires guide Article JSON-LD',()=>{
 
 test('runtime freshness contracts cover every public sitemap URL',()=>{
   const entries=liveSitemapEntries(readFileSync('public/sitemap.xml','utf8'));
-  assert.equal(SEO_RUNTIME_MARKERS.size,31);
+  assert.equal(SEO_RUNTIME_MARKERS.size,34);
   for(const url of entries.keys()) assert.ok(SEO_RUNTIME_MARKERS.has(url),`missing runtime contract for ${url}`);
 });
 
@@ -112,9 +112,9 @@ test('canonical redirect inspector requires a permanent redirect and exact HTTPS
   assert.deepEqual(inspectCanonicalRedirect({status:308,location:'https://zgmini.kr/'},'https://zgmini.kr/about/'),['location:https://zgmini.kr/']);
 });
 
-test('local public sitemap has all 31 URLs with truthful ISO lastmod values',()=>{
+test('local public sitemap has all 34 URLs with truthful ISO lastmod values',()=>{
   const entries=liveSitemapEntries(readFileSync('public/sitemap.xml','utf8'));
-  assert.equal(entries.size,31);
+  assert.equal(entries.size,34);
   for(const [url,lastmod] of entries){
     assert.match(url,/^https:\/\/zgmini\.kr\//);
     assert.match(lastmod,/^\d{4}-\d{2}-\d{2}$/);
@@ -133,7 +133,7 @@ test('production SEO workflow is push-only, deployment-gated, and verifies canon
   assert.match(workflow,/checks: read/);
   assert.match(workflow,/SEO_HEALTH_GITHUB_TOKEN: \$\{\{ secrets\.GITHUB_TOKEN \}\}/);
   assert.match(script,/waitForCloudflare/);
-  assert.match(script,/EXPECTED_PUBLIC_URLS=31/);
+  assert.match(script,/EXPECTED_PUBLIC_URLS=34/);
   assert.match(script,/SEO_RUNTIME_MARKERS\.size!==EXPECTED_PUBLIC_URLS/);
   assert.match(script,/function includesOrError\(errors,label,value,needle\)/);
   assert.match(script,/SEO_RUNTIME_MARKERS\.get\(expectedUrl\)/);
