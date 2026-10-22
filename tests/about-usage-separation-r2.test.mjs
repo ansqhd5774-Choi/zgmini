@@ -24,8 +24,8 @@ test('approved guide is a distinct page and footer points to that page', () => {
   assert.match(footer, /href="\/about\/">ZGMINI 소개/);
   assert.match(footer, /href="\/usage\/">이용안내/);
   assert.doesNotMatch(footer, /href="\/about\/#usage">이용안내/);
-  assert.match(footer, /href="\/about\/#data-sources">지표·데이터 출처/);
-  assert.match(footer, /href="\/about\/#investment-notice">투자 유의사항/);
+  assert.match(footer, /href="\/data-sources\/">지표·데이터 출처/);
+  assert.match(footer, /href="\/investment-notice\/">투자 유의사항/);
   assert.match(guide, /<section id="usage"/);
   assert.match(guide, /<h1 id="usage-title">ZGMINI 이용안내<\/h1>/);
 });

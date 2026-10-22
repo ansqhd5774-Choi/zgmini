@@ -69,10 +69,10 @@ export default function AboutPage() {
         <details className={styles.details}>
           <summary>데이터 이용 및 사이트 안내</summary>
           <div className={styles.detailsContent}>
-            <h2 id="data-sources">데이터와 지표</h2>
+            <h2 id="data-sources"><a href="/data-sources/">지표·데이터 출처 자세히 보기</a></h2>
             <p>지표마다 사용 자료와 계산 방식이 다릅니다. 점수의 방향과 자료 관측일은 각 도움말과 상세 화면에서 확인하세요. 공개 대시보드는 무료로 볼 수 있습니다.</p>
             <p>각 상세페이지의 입력지표·방법론·출처 안내에서 해당 지표의 기준을 확인하세요. 관측일과 발표일은 다를 수 있으며, 잠정치는 추가 자료가 반영되면 달라질 수 있습니다.</p>
-            <h2 id="investment-notice">점수는 이렇게 활용하세요</h2>
+            <h2 id="investment-notice"><a href="/investment-notice/">투자 유의사항 자세히 보기</a></h2>
             <p>점수는 시장 환경과 흐름을 비교하는 참고 정보입니다. 주가 상승이나 종전의 확률, 수익 보장을 뜻하지 않습니다. 자료가 아직 발표되지 않았거나 준비 중이면 해당 상태를 구분해 표시합니다.</p>
             <h2>사이트 등록 정보</h2>
             <p>ZGMINI를 소개하는 외부 디렉터리입니다. 디렉터리 등록은 지표의 정확성이나 투자 성과에 대한 인증을 의미하지 않습니다.</p>

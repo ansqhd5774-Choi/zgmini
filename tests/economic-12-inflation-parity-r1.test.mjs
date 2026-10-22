@@ -38,5 +38,5 @@ test("dashboard and 12-card explorer navigate to actual domain-specific detail p
  assert.match(explorer,/href=\{card\.href\}/);
  assert.ok(dashboard.includes('href={"/economic-indicators/"+'));
  assert.equal(shellRoutes.length,25);
- const sitemap=read("public/sitemap.xml");assert.equal((sitemap.match(/<url>/g)||[]).length,31);
+ const sitemap=read("public/sitemap.xml");assert.equal((sitemap.match(/<url>/g)||[]).length,34);
 });
