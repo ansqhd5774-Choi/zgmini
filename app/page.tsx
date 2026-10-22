@@ -1048,7 +1048,7 @@ export default function Home() {
         {view==='strength'&&<><SentimentSection title="섹터별 심리 점수 · 예시" description="실제 지수가 아닌 예시 점수·추세·베타 · CNN 지수와 무관" items={sectorSentiment} period={period} kind="sector" favorites={favorites} onToggle={user ? toggleFavorite : undefined}/>
         <SentimentSection title="테마별 심리 점수 · 예시" description="실제 지수가 아닌 예시 점수·추세·베타 · CNN 지수와 무관" items={themeSentiment} period={period} kind="theme" favorites={favorites} onToggle={user ? toggleFavorite : undefined}/></>}
       </div>
-      {view==='dashboard'&&<footer className="zg-footer" style={{display:'flex',justifyContent:'center',alignItems:'center',flexWrap:'wrap',gap:16}}><a href="/about/">ZGMINI 소개</a><a href="https://twelve.tools" target="_blank" rel="noopener"><img src="https://twelve.tools/badge0-white.svg" alt="Twelve Tools 등록 배지" width={148} height={40}/></a></footer>}
+      {view==='dashboard'&&<footer className="zg-footer" style={{display:'flex',justifyContent:'center',alignItems:'center',flexWrap:'wrap',gap:16}}><a href="/about/">ZGMINI 소개</a><a href="https://twelve.tools" target="_blank" rel="noopener"><img src="https://twelve.tools/badge0-white.svg" alt="Twelve Tools 등록 배지" width={148} height={40}/></a><a href="https://thesaasdir.com/product/zgmini?ref=badge" rel="dofollow"><img src="https://thesaasdir.com/badge/zgmini.svg" alt="Featured on TheSaaSDir" width={182} height={46}/></a></footer>}
       {view!=='dashboard'&&<footer className="zg-footer">ZGmini · 공식 자료와 독자 모델을 연결합니다. 투자 권유가 아니며, 예시 데이터는 별도로 표시합니다.</footer>}
       <Toaster richColors position="bottom-right"/>
     </main>
