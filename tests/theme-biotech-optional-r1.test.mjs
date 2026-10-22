@@ -48,6 +48,22 @@ test('R1 rejects unverified source, private status, changed contracts or stale d
   {...p,sourceStoredAt:'2026-10-01T00:00:00Z'}];
  for(const row of bad)assert.equal(eligibleBiotechTheme(row,b,{now,storedAt:now-1000}),false);
 });
+test('R1 owner-authorized limited validation discloses unsettled anonymous rights; no false verified flags',async()=>{
+ const b=base(),p={...approved(b),upstreamCommercialRightsVerified:false,derivedLicenseVerified:false,
+  sourcePriceReconciled:false,rightsBasis:'OFFICIAL_TERMS_DERIVED_WORKS_ANONYMOUS_SCOPE_UNCONFIRMED',
+  sourceTermsUrl:'https://getmarkethistory.com/docs/terms',anonymousScopeIndependentlyConfirmed:false,
+  licensingRiskAcceptedByPublisher:true,priceValidationBasis:'R3_703_R4_R158_EXACT_R5_ISSUER_3_OF_3',
+  issuerSpotChecksPassed:3,fullHistoryIndependentlyReconciled:false,derivedOnlyNoRaw:true};
+ assert.equal(eligibleBiotechTheme(p,b,{now,storedAt:now-1000}),true);
+ const out=await addVerifiedBiotechTheme(db(p),b,{now});
+ assert.equal(out.themes.length,9);
+ assert.deepEqual(out.themes.slice(0,8),b.themes);
+ for(const invalid of [{...p,licensingRiskAcceptedByPublisher:false},
+  {...p,rightsBasis:'UNKNOWN'},{...p,issuerSpotChecksPassed:2},
+  {...p,derivedOnlyNoRaw:false},{...p,anonymousScopeIndependentlyConfirmed:true}]){
+  assert.equal(eligibleBiotechTheme(invalid,b,{now,storedAt:now-1000}),false);
+ }
+});
 test('R1 requires all eight live themes, aligned time series, and matched provisional points',async()=>{
  const b=base(true),p=approved(b),yes=await addVerifiedBiotechTheme(db(p),b,{now});
  assert.equal(yes.themes.length,9);

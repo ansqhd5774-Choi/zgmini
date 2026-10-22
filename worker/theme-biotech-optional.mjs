@@ -6,7 +6,12 @@ export const BIOTECH_THEME_PUBLIC_KEY='theme-biotech-optional-r1';
 export const BIOTECH_THEME_PUBLIC_VERSION='THEME_BIOTECH_OPTIONAL_R1_PUBLIC_V1';
 const METHOD='ETF_ONLY_T40_R20_V40_PAIR50';
 const MODE='UNADJUSTED_15_NY_HOURLY_PROXY_WITH_OFFICIAL_EARLY_CLOSE_12';
-const RIGHTS=['publicationAuthorized','upstreamCommercialRightsVerified','derivedLicenseVerified','localBarsVerified','sourcePriceReconciled'];
+// The historical eight-theme release used a limited independent price sample.
+// Keep the fully attested path, and permit a separately disclosed owner-approved
+// terms-interpretation path. Never label the latter as independently licensed or
+// fully price-reconciled: those assertions remain false in the stored evidence.
+const TERMS_URL='https://getmarkethistory.com/docs/terms';
+const LIMITED_EVIDENCE='R3_703_R4_R158_EXACT_R5_ISSUER_3_OF_3';
 const score=x=>typeof x==='number'&&Number.isFinite(x)&&x>=0&&x<=100;
 const date=x=>typeof x==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(x)&&Number.isFinite(Date.parse(x+'T00:00:00Z'))&&new Date(x+'T00:00:00Z').toISOString().slice(0,10)===x;
 const stamp=x=>typeof x==='string'&&Number.isFinite(Date.parse(x));
@@ -19,7 +24,13 @@ export function eligibleBiotechTheme(record,base,{now=Date.now(),storedAt=now}={
  if(!Array.isArray(baseline)||baseline.length!==252||!same(base.themes[7]?.history?.map(x=>x.date),datesFrom(baseline)))return false;
  if(!record||record.status!=='READY'||record.version!==BIOTECH_THEME_PUBLIC_VERSION||record.theme!=='바이오테크'||!same(record.etfs,['IBB','XBI']))return false;
  if(record.methodologyVersion!==METHOD||record.individualStocksUsed!==0||record.scoreMethod!=='ETF_ONLY_PROXY'||record.referenceSymbol!=='SPY'||record.sourcePriceMode!==MODE)return false;
- if(RIGHTS.some(k=>record[k]!==true)||!Number.isInteger(record.priceSessions)||record.priceSessions<628)return false;
+ const fullyAttested=record.upstreamCommercialRightsVerified===true&&record.derivedLicenseVerified===true&&record.sourcePriceReconciled===true;
+ const transparentlyLimited=record.upstreamCommercialRightsVerified===false&&record.derivedLicenseVerified===false&&record.sourcePriceReconciled===false&&
+  record.rightsBasis==='OFFICIAL_TERMS_DERIVED_WORKS_ANONYMOUS_SCOPE_UNCONFIRMED'&&record.sourceTermsUrl===TERMS_URL&&
+  record.anonymousScopeIndependentlyConfirmed===false&&record.licensingRiskAcceptedByPublisher===true&&
+  record.priceValidationBasis===LIMITED_EVIDENCE&&record.issuerSpotChecksPassed===3&&record.fullHistoryIndependentlyReconciled===false&&record.derivedOnlyNoRaw===true;
+ if(record.publicationAuthorized!==true||record.localBarsVerified!==true||!(fullyAttested||transparentlyLimited)||
+   !Number.isInteger(record.priceSessions)||record.priceSessions<628)return false;
  if(record.sourceStoredAtKind!=='LOCAL_BIOTECH_RAW_FILE_MTIME_NOT_PROVIDER_TIMESTAMP'||record.sourceTimestampBasis!=='FILE_MTIME_NOT_PROVIDER_TIMESTAMP')return false;
  if(!/^BIOTECH_R1_SHA256_[a-f0-9]{64}$/.test(record.sourceVersion??'')||record.sourceFileSha256!==record.sourceVersion.slice('BIOTECH_R1_SHA256_'.length))return false;
  if(!stamp(record.sourceStoredAt)||!stamp(record.asOf)||!stamp(record.publishedAt)||!Number.isSafeInteger(Number(storedAt)))return false;
