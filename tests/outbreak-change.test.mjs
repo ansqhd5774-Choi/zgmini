@@ -35,6 +35,9 @@ test('the shared React card rounds only displayed deltas, including title and ar
  assert.match(larger,/aria-label="전일 대비 2점 상승"/);
  active=false;
  const expired=render(47.1,46.2);
- assert.match(expired,/>\+1<\/span>/);assert.match(expired,/data-arrow-active="false"/);assert.doesNotMatch(expired,/<svg/);
- assert.match(render(46.2,47.1),/>−1<\/span>/);
+ assert.match(expired,/>1<\/span>/);assert.match(expired,/data-arrow-active="false"/);assert.doesNotMatch(expired,/<svg/);
+ const inactiveDown=render(46.2,47.1);
+ assert.match(inactiveDown,/>1<\/span>/);
+ assert.doesNotMatch(inactiveDown,/[+−]/);
+ assert.doesNotMatch(expired,/[+−]/);
 });
