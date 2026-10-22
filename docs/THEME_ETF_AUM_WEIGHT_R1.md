@@ -29,7 +29,7 @@ Issuer-reported net assets, **2026-10-21**:
 | ETF | USD | ratio to largest | new allocation |
 | --- | ---: | ---: | ---: |
 | QTUM | 5,364,800,000 | 1.0000 | 94.401317% |
-| WQTM | 318,171,540 | 0.0593084 | 5.598683% |
+| WQTM | 318,171,540 | 0.0593073 | 5.598683% |
 
 Sources: https://www.defianceetfs.com/qtum/ and
 https://www.wisdomtree.com/us/products/megatrends/wqtm .
