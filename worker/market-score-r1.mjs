@@ -59,7 +59,7 @@ export function projectInflationMethodologyVersion(compositeDomains=[],sourceDom
 }
 
 function inflationR2Partial(reason="INFLATION_R2_STORAGE_PENDING"){
-  return {status:"PARTIAL",score:null,missingFactors:[reason],indicators:[],trend:[],freshness:"STORED_INITIAL_RELEASE_HISTORY_ONLY",updatedAt:null,methodologyVersion:"INFLATION_R2_R29_56",interpretation:"Inflation R2: stored PIT history only; live fallback forbidden"};
+  return {status:"PARTIAL",score:null,missingFactors:[reason],indicators:[],trend:[],freshness:"STORED_INITIAL_RELEASE_HISTORY_ONLY",updatedAt:null,methodologyVersion:"INFLATION_R2_R29_56_IA",interpretation:"Inflation R2: stored PIT history only; live fallback forbidden"};
 }
 
 function employmentR54Partial(reason="EMPLOYMENT_R54_STORAGE_PENDING",asOf=null){
