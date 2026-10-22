@@ -7,18 +7,19 @@ import {DatabaseSync} from 'node:sqlite';
 import {gunzipSync} from 'node:zlib';
 import {calculateCandidate,weights} from '../../lib/diagnostic-layer/supply-r10-candidate.mjs';
 import {save,hash} from './d1.mjs';
+import {supplyFailureReason} from '../supply-source-validation.mjs';
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../..');
 export async function collectSupplyR10(base,{now=Date.now(),force=false}={}){
  const directory=path.join(base,'supply-r10'),statusFile=path.join(base,'local-supply-r10-collection.json');
  fs.mkdirSync(directory,{recursive:true});
  const previous=fs.existsSync(statusFile)?JSON.parse(fs.readFileSync(statusFile,'utf8')):null;
  if(!force&&previous?.status==='COLLECTED'&&now-previous.checkedAt<86400000)return {status:'CACHED',checkedAt:previous.checkedAt};
- if(!force&&previous?.status==='SOURCE_FAILED'&&now-previous.checkedAt<21600000)return {status:'RETRY_DEFERRED',checkedAt:previous.checkedAt};
+ if(!force&&previous?.status==='SOURCE_FAILED'&&now-previous.checkedAt<21600000)return {status:'RETRY_DEFERRED',checkedAt:previous.checkedAt,nextRetryAt:previous.checkedAt+21600000,reason:previous.reason??'SOURCE_FAILED'};
  try{
   // Official public files only; bounded once per day, no keys or paid API.
   for(const script of ['supply-r10-source-audit.mjs','supply-r10-extra-sources.mjs'])execFileSync(process.execPath,[path.join(root,'scripts',script),directory],{cwd:root,windowsHide:true,stdio:'pipe',timeout:120000});
   const manifests=['manifest','extra-manifest'].flatMap(name=>JSON.parse(fs.readFileSync(path.join(directory,`${name}.json`),'utf8')));
-  if(manifests.some(item=>item.status!=='STORED'))throw Error('SUPPLY_R10_SOURCE_INCOMPLETE');
+  if(manifests.some(item=>item.status!=='STORED')){const error=Error('SUPPLY_R10_SOURCE_INCOMPLETE');error.failures=manifests.filter(item=>item.status!=='STORED');throw error;}
   const read=id=>JSON.parse(fs.readFileSync(path.join(directory,`${id}.json`),'utf8'));
   const sources={gscpi:read('gscpi').rows,pce:read('sf-pce'),consumption:read('DPCERA3M086SBEA'),stocks:read('eia-stocks'),production:read('WCRFPUS2'),refining:read('WCRRIUS2'),imports:read('WCRIMUS2'),exports:read('WCREXUS2'),supplied:read('WRPUPUS2')};
   if(Object.values(sources).some(rows=>!Array.isArray(rows)||rows.length<180))throw Error('SUPPLY_R10_HISTORY_INCOMPLETE');
@@ -26,7 +27,7 @@ export async function collectSupplyR10(base,{now=Date.now(),force=false}={}){
   const filename=path.join(directory,'inputs.json');save(filename+'.next',stored);fs.renameSync(filename+'.next',filename);
   const check=JSON.parse(fs.readFileSync(filename,'utf8'));if(hash(check)!==hash(stored))throw Error('SUPPLY_R10_READBACK');
   const result={status:'COLLECTED',checkedAt:now,storageVerified:true,sources:manifests.map(({id,status})=>({id,status})),providerRequests:manifests.length};save(statusFile,result);return result;
- }catch{const report={status:'SOURCE_FAILED',checkedAt:now,previousInputsPreserved:true};save(statusFile,report);return report;}
+ }catch(error){const failures=error.failures??[];const report={status:'SOURCE_FAILED',checkedAt:now,nextRetryAt:now+21600000,reason:supplyFailureReason(failures),failedSources:failures.map(x=>x.id).filter(x=>/^[A-Za-z0-9-]+$/.test(x)),previousInputsPreserved:true};save(statusFile,report);return report;}
 }
 export function buildSupplyR10(base,{now=Date.now()}={}){
  const file=path.join(base,'supply-r10','inputs.json');if(!fs.existsSync(file))return {status:'PENDING',reason:'SUPPLY_R10_INPUTS_MISSING',payload:null};
