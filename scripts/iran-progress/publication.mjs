@@ -8,9 +8,16 @@ import {validateReferenceFlowR2} from '../../lib/iran-progress/reference-public-
 import {IRAN_FLOW_R3_KEY} from '../../lib/iran-progress/reference-flow-r3.mjs';
 import {validateReferenceFlowR3} from '../../lib/iran-progress/reference-public-r3.mjs';
 import {IRAN_R5_PUBLIC_KEY,validateIranR5Public} from '../../lib/iran-progress/daily-public-r5.mjs';
+import {publishArrowState} from '../pc-writer/score-arrow-publication.mjs';
 export async function publishIranR5Provisional(remote,db,body,{now=Date.now()}={}){
  if(!validateIranR5Public(body,now))throw Error('R5_PUBLICATION_CONTRACT_INVALID');
- return publishSnapshot(remote,db,IRAN_R5_PUBLIC_KEY,body,body.publishedAt);
+ const result=await publishSnapshot(remote,db,IRAN_R5_PUBLIC_KEY,body,body.publishedAt);
+ if(!['VERIFIED','UNCHANGED'].includes(result.status))return result;
+ // Keep R5 separate from the R3 writer; never infer a change time from backcast history.
+ try{
+  const arrows=await publishArrowState(remote,db,'iran',{'iran:r5':{score:body.score,sourceAt:body.publishedAt,method:body.version}},now);
+  return {...result,scoreArrowStatus:arrows.status};
+ }catch{return {...result,scoreArrowStatus:'DEFERRED'};}
 }
 export async function publishReferenceFlowR3(remote,db,body,{now=Date.now()}={}){
  if(!validateReferenceFlowR3(body,now))throw Error('FLOW_R3_PUBLIC_CONTRACT_INVALID');

@@ -7,6 +7,7 @@ import React from 'react';
 import {renderToStaticMarkup} from 'react-dom/server';
 
 function mountCard(arrowVisible=true){
+ const arrowSeries=[];
  const compile=(url,mocks)=>{
   const file=new URL(url,import.meta.url),mod={exports:{}};
   const code=ts.transpileModule(readFileSync(file,'utf8'),{
@@ -20,7 +21,7 @@ function mountCard(arrowVisible=true){
  };
  const {OutbreakChange}=compile('../app/outbreak-change.tsx',{
   '../lib/outbreak-change.mjs':createRequire(import.meta.url)('../lib/outbreak-change.mjs'),
-  '../components/score-arrow-provider':{useScoreArrows:()=>()=>arrowVisible},
+  '../components/score-arrow-provider':{useScoreArrows:()=>series=>{arrowSeries.push(series);return arrowVisible;}},
  });
  const {IranSummaryCard}=compile('../app/iran-progress.tsx',{
   '../components/live-score-value':{LiveScoreValue:({children})=>React.createElement(React.Fragment,null,children)},
@@ -42,16 +43,17 @@ function mountCard(arrowVisible=true){
   status:'PROVISIONAL',dailyAnchorEstimate:true,chartHistory:history,history,
   chartEndAt:end,overallEnded:false};
  const render=(v=view)=>renderToStaticMarkup(React.createElement(IranSummaryCard,{view:v,onOpen:()=>{}}));
- return {render,view};
+ return {render,view,arrowSeries};
 }
 test('Iran R5 summary shows rounded day-over-day amount and arrow without changing displayed score',()=>{
- const {render}=mountCard(true);
+ const {render,arrowSeries}=mountCard(true);
  const html=render();
  assert.match(html,/13<small class="ob-score-fraction">\.0<\/small>/);
  assert.match(html,/aria-label="전일 대비 1점 상승"/);
  assert.match(html,/title="전일 대비 1점 상승"/);
  assert.match(html,/>1<svg aria-hidden="true" viewBox="0 0 6 12"/);
  assert.match(html,/data-arrow-active="true"/);
+ assert.deepEqual(arrowSeries,['iran:r5']);
 });
 test('Iran R5 without a 24-hour arrow signal still shows amount but no arrow; flat has 0',()=>{
  const {render,view}=mountCard(false);
