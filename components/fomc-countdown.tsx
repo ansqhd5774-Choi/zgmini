@@ -29,6 +29,5 @@ export default function FomcCountdown(){
       {event?<><time dateTime={event.at} aria-label={`${new Date(event.at).getUTCFullYear()}년 ${fomcKst(event.at)} 한국시간`}>{fomcKst(event.at)} <span className="zg-fomc-zone">KST</span></time>
       {event.reached?<span className="zg-fomc-reached">발표 시각 도달 · 결과 확인 중</span>:<span className="zg-fomc-clock" role="timer" aria-live="off" aria-label={`발표까지 ${event.days}일 ${event.hours}시간 ${event.minutes}분 ${event.seconds}초`}><span aria-hidden="true" className="zg-fomc-clock-inner"><Pair value={event.days}/><span className="zg-fomc-day">일</span><Pair value={event.hours}/><b>:</b><Pair value={event.minutes}/><b>:</b><Pair value={event.seconds}/></span></span>}</>:<span className="zg-fomc-pending">{now===null?'일정 확인 중':'다음 공식 일정 확인 필요'}</span>}
     </div>
-    <img className="zg-fomc-flag" src="/flags/us.svg" width="24" height="15" alt="미국"/>
   </div>;
 }
