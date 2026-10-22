@@ -1,0 +1,117 @@
+.dialog {
+  position: fixed;
+  inset: 0;
+  width: min(540px, calc(100vw - 24px), calc(72dvh - 18px));
+  max-width: none;
+  max-height: calc(100dvh - 24px);
+  margin: auto;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  overflow: hidden;
+  background: #07141c;
+  color: #f7fafb;
+  box-shadow: 0 24px 90px rgba(0, 0, 0, .75);
+}
+
+.dialog::backdrop {
+  background: rgba(3, 10, 16, .77);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+
+.posterFrame {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 986 / 1374;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.posterImage {
+  position: absolute;
+  top: -2.693%;
+  left: -4.767%;
+  width: 109.33%;
+  height: auto;
+  max-width: none;
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+.introLink, .weekLabel, .closeButton {
+  position: absolute;
+  display: block;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.introLink {
+  top: 82.25%;
+  left: 5.2%;
+  width: 89.6%;
+  height: 7.4%;
+}
+
+.weekLabel {
+  bottom: 1.3%;
+  left: 5.3%;
+  width: 53%;
+  height: 6%;
+}
+
+.weekCheckbox {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.checkmark {
+  position: absolute;
+  top: 30%;
+  left: 1%;
+  display: grid;
+  place-items: center;
+  width: 6.6%;
+  aspect-ratio: 1;
+  color: #083d30;
+  font: 900 clamp(12px, 1.4vw, 19px)/1 Arial, sans-serif;
+  pointer-events: none;
+}
+
+.closeButton {
+  right: 4.8%;
+  bottom: 1.4%;
+  width: 11%;
+  height: 5.8%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+.introLink:focus-visible, .weekLabel:focus-within, .closeButton:focus-visible {
+  outline: 2px solid #60ffcb;
+  outline-offset: -2px;
+}
+
+.screenReaderOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dialog, .dialog::backdrop { animation: none; transition: none; }
+}

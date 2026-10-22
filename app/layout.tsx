@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import NaverAnalytics from "./naver-analytics";
 import {ScoreArrowProvider} from '../components/score-arrow-provider';
+import AboutIntroPopup from './about-intro-popup';
 import "./globals.css";
 import "./responsive.css";
 import '../components/live-score-motion.css';
@@ -57,5 +58,5 @@ const structuredData = {
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  return <html lang="ko"><body className="antialiased"><script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData).replace(/</g, "\\u003c") }}/><ScoreArrowProvider>{children}</ScoreArrowProvider><NaverAnalytics /></body></html>;
+  return <html lang="ko"><body className="antialiased"><script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData).replace(/</g, "\\u003c") }}/><ScoreArrowProvider>{children}</ScoreArrowProvider><AboutIntroPopup /><NaverAnalytics /></body></html>;
 }
