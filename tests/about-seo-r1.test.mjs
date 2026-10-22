@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {readFileSync} from 'node:fs';
+import {existsSync,readFileSync} from 'node:fs';
 
 const read=path=>readFileSync(path,'utf8');
 
@@ -22,7 +22,17 @@ test('About page keeps only currently verified directory links',()=>{
   assert.doesNotMatch(page,/thesaasdir\.com/);
 });
 
+test('About uses the developer introduction route, not the legacy static HTML',()=>{
+  const page=read('app/about/page.tsx');
+  assert.equal(existsSync('public/about.html'),false);
+  assert.match(page,/2016년부터 주식 투자를 시작했습니다/);
+  assert.match(page,/제가 편하자고/);
+  assert.match(page,/여러분 모두 부자 되세요!/);
+  assert.match(page,/시장 대시보드 보기/);
+  assert.match(page,/href="\/"/);
+});
+
 test('About metadata update has a truthful sitemap lastmod',()=>{
   const sitemap=read('public/sitemap.xml');
-  assert.match(sitemap,/https:\/\/zgmini\.kr\/about\/<\/loc><lastmod>2026-10-16<\/lastmod>/);
+  assert.match(sitemap,/https:\/\/zgmini\.kr\/about\/<\/loc><lastmod>2026-10-22<\/lastmod>/);
 });
