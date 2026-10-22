@@ -41,6 +41,20 @@ and a full 252-point 1-year chart requires 628 prior daily prices per ETF.
 Also verify point-in-time daily historical ETF net assets, source rights for
 commercial derived publication, price provenance, and identical date alignment.
 
+**Explicit WisdomTree rights stop:** Its U.S. [Terms of Use](https://www.wisdomtree.com/us/terms)
+require prior written consent for reproducing information on the issuer's site
+and a license for use of WisdomTree indexes/data/information. Public derivative
+scoring based on that site's WQTM data is **not cleared**. An independently
+licensed data source or explicit written permission is needed before production.
+The issuer's `Total Market Capitalization` of underlying portfolio companies
+is **not** WQTM's ETF fund net assets and must never be used for these weights.
+
+Read-only PC audit: run `scripts/pc-writer/theme-quantum-readiness-r2.cmd` and
+submit the adjacent `QUANTUM_R2_READONLY_RESULT.json`. It reads bounded JSON
+and SQLite metadata for QTUM/WQTM/SPY price dates plus same-date ETF net-assets
+observations. This is **inventory only**: a missing result cannot prove absence
+in every PC store, nor can matching dates establish commercial data rights.
+
 `theme-etf-aum-weight-r1.mjs` is a pure computation/shadow validator, performs
 zero external requests or writes and does not connect to published readers.
 Current issuer figures permit a weight check only; there is no substantiated
