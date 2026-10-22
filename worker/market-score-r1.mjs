@@ -13,6 +13,7 @@ import {
 import {buildRateR3} from "../lib/market-score/rate-r3.mjs";
 import {buildCreditR2} from "../lib/market-score/credit-r2.mjs";
 import {loadStoredInflationR2Domain} from "./inflation-r2-reader.mjs";
+import {INFLATION_R2_METHOD_REVISION} from "../lib/diagnostic-layer/inflation-r2-stored.mjs";
 import {readBreadthB1R5StoredPublicDomainR1,buildBreadthB1R5UnavailablePublicDomain} from "../lib/market-score/breadth-b1-r5-worker-domain.mjs";
 import {
   INFLATION_SCORING_SERIES,
@@ -59,7 +60,7 @@ export function projectInflationMethodologyVersion(compositeDomains=[],sourceDom
 }
 
 function inflationR2Partial(reason="INFLATION_R2_STORAGE_PENDING"){
-  return {status:"PARTIAL",score:null,missingFactors:[reason],indicators:[],trend:[],freshness:"STORED_INITIAL_RELEASE_HISTORY_ONLY",updatedAt:null,methodologyVersion:"INFLATION_R2_R29_56",interpretation:"Inflation R2: stored PIT history only; live fallback forbidden"};
+  return {status:"PARTIAL",score:null,missingFactors:[reason],indicators:[],trend:[],freshness:"STORED_INITIAL_RELEASE_HISTORY_ONLY",updatedAt:null,methodologyVersion:INFLATION_R2_METHOD_REVISION,interpretation:"Inflation R2: stored PIT history only; live fallback forbidden"};
 }
 
 function employmentR54Partial(reason="EMPLOYMENT_R54_STORAGE_PENDING",asOf=null){
