@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { ArrowRight } from 'lucide-react';
 import {WebPageJsonLd} from '../seo-jsonld';
+import UsageGuide from './usage-guide';
 import styles from './about.module.css';
 
 const title='ZGMINI 소개 | 시장 심리와 경제지표';
@@ -36,7 +37,9 @@ export default function AboutPage() {
           </div>
         </section>
 
-        <section className={styles.questions} aria-label="개발자 이야기" id="usage">
+        <UsageGuide />
+
+        <section className={styles.questions} aria-label="개발자 이야기">
           <div className={styles.qaRow}>
             <h2 className={styles.question}><span className={styles.qmark} aria-hidden="true">Q.</span> 언제부터 투자하셨나요?</h2>
             <div className={styles.answer}>

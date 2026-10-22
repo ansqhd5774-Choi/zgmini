@@ -1,0 +1,241 @@
+.guide {
+  scroll-margin-top: 30px;
+  margin: 65px 0 72px;
+  color: #eff4f7;
+}
+
+.intro { margin-bottom: 38px; }
+.breadcrumb {
+  display: block;
+  margin-bottom: 16px;
+  color: #62cbab;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: .17em;
+}
+.intro h2 {
+  margin: 0;
+  color: #f6f8fa;
+  font-size: clamp(30px, 3.4vw, 43px);
+  font-weight: 800;
+  line-height: 1.25;
+  letter-spacing: -.045em;
+}
+.intro p {
+  margin: 12px 0 0;
+  color: #bac6cf;
+  font-size: 18px;
+  line-height: 1.55;
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: minmax(255px, 32%) minmax(0, 1fr);
+  column-gap: clamp(38px, 5vw, 65px);
+}
+.stepNav {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  padding: 2px 33px 0 0;
+  border-right: 1px solid #35424a;
+}
+.step {
+  display: grid;
+  grid-template-columns: 50px minmax(0, 1fr);
+  column-gap: 17px;
+  align-items: start;
+  width: 100%;
+  min-height: 119px;
+  padding: 9px 0 14px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: #d7e0e5;
+  text-align: left;
+  cursor: pointer;
+  font-family: inherit;
+}
+.stepNumber {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 46px;
+  height: 46px;
+  border: 1px solid #546169;
+  border-radius: 50%;
+  color: #c5d1d8;
+  font-size: 15px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  transition: background-color .18s ease, color .18s ease, border-color .18s ease;
+}
+.stepText { display: flex; flex-direction: column; padding-top: 5px; }
+.stepText strong {
+  color: #edf2f5;
+  font-size: 18px;
+  font-weight: 750;
+  line-height: 1.4;
+  letter-spacing: -.025em;
+  transition: color .18s ease;
+}
+.stepText > span {
+  margin-top: 7px;
+  color: #a1afb9;
+  font-size: 13px;
+  line-height: 1.65;
+  letter-spacing: -.016em;
+}
+.activeStep .stepNumber { background: #65dbb4; border-color: #65dbb4; color: #102621; font-weight: 800; }
+.activeStep .stepText strong { color: #65dbb4; }
+.step:hover .stepText strong { color: #85e9c7; }
+.step:hover .stepNumber { border-color: #75dabc; }
+.step:focus-visible,
+.controls button:focus-visible { outline: 2px solid #66e3ba; outline-offset: 5px; }
+
+.content {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 596px;
+  padding-top: 8px;
+}
+.stepEyebrow {
+  display: block;
+  margin-bottom: 11px;
+  color: #66dcb4;
+  font-size: 12px;
+  font-weight: 750;
+  letter-spacing: .055em;
+}
+.content h3 {
+  margin: 0;
+  color: #f4f7f9;
+  font-size: clamp(27px, 3vw, 40px);
+  font-weight: 800;
+  line-height: 1.32;
+  letter-spacing: -.043em;
+}
+.description {
+  max-width: 660px;
+  margin: 21px 0 0;
+  color: #c6d1d8;
+  font-size: 15px;
+  line-height: 1.9;
+  letter-spacing: -.016em;
+}
+.visual { margin: 34px 0 0; }
+.sampleHeader { display: flex; justify-content: space-between; align-items: flex-end; gap: 12px; }
+.sampleHeader > div { display: flex; flex-direction: column; gap: 8px; }
+.sampleLabel { color: #aab9c1; font-size: 12px; }
+.sampleHeader strong {
+  color: #f5f8fa;
+  font-size: clamp(49px, 5.3vw, 76px);
+  font-weight: 750;
+  line-height: 1;
+  letter-spacing: -.043em;
+  font-variant-numeric: tabular-nums;
+}
+.sampleDisclaimer { max-width: 170px; padding-bottom: 5px; color: #90a0aa; font-size: 11px; text-align: right; }
+.chart { width: 100%; height: 174px; margin: 10px 0 19px; }
+.exampleMetrics { display: grid; grid-template-columns: repeat(3, 1fr); padding: 16px 0 22px; }
+.exampleMetrics > div { display: flex; flex-direction: column; gap: 11px; padding: 0 16px; border-left: 1px solid #35424a; }
+.exampleMetrics > div:first-child { padding-left: 0; border-left: 0; }
+.exampleMetrics span { color: #9cabb5; font-size: 12px; }
+.exampleMetrics strong { color: #dee8ed; font-size: 14px; font-weight: 550; }
+
+.componentList { margin-top: 42px; }
+.componentList > div {
+  display: grid;
+  grid-template-columns: 120px minmax(0, 1fr);
+  gap: 16px;
+  padding: 17px 0;
+  border-bottom: 1px solid #303b42;
+}
+.componentList strong { color: #79dabb; font-size: 17px; }
+.componentList span { color: #c0cbd2; font-size: 14px; }
+.componentList p { color: #96a7b0; font-size: 12px; line-height: 1.6; }
+.noticeList { margin-top: 38px; }
+.noticeList p { display: flex; align-items: baseline; gap: 18px; margin: 0; padding: 17px 0; border-bottom: 1px solid #303b42; color: #c4d0d7; font-size: 14px; line-height: 1.7; }
+.noticeList strong { flex: 0 0 auto; color: #70d9b5; font-size: 13px; }
+
+.controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: auto;
+  padding: 23px 0 0;
+  border-top: 1px solid #364249;
+}
+.controls button {
+  display: inline-flex;
+  align-items: center;
+  gap: 13px;
+  padding: 4px 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: #cbd7df;
+  font: inherit;
+  font-size: 14px;
+  cursor: pointer;
+  transition: color .18s ease;
+}
+.controls button:last-child { color: #6be0bb; }
+.controls button:hover:not(:disabled) { color: #ffffff; }
+.controls button:disabled { opacity: .38; cursor: not-allowed; }
+
+@media (max-width: 920px) {
+  .layout { grid-template-columns: minmax(205px, 33%) minmax(0, 1fr); column-gap: 30px; }
+  .stepNav { padding-right: 17px; }
+  .step { grid-template-columns: 38px minmax(0, 1fr); column-gap: 10px; min-height: 124px; }
+  .stepNumber { width: 36px; height: 36px; font-size: 13px; }
+  .stepText strong { font-size: 16px; }
+  .stepText > span { font-size: 12px; }
+  .content h3 { font-size: 29px; }
+}
+
+@media (max-width: 760px) {
+  .guide { margin: 40px 0 56px; scroll-margin-top: 14px; }
+  .intro { margin-bottom: 25px; }
+  .intro h2 { font-size: 30px; }
+  .intro p { font-size: 14px; }
+  .layout { display: flex; flex-direction: column; gap: 25px; }
+  .stepNav {
+    flex-direction: row;
+    gap: 7px;
+    width: 100%;
+    max-width: 100%;
+    padding: 0 0 12px;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    border-right: 0;
+    border-bottom: 1px solid #35424a;
+    scrollbar-width: thin;
+  }
+  .step { display: flex; flex: 0 0 auto; flex-direction: column; min-height: 0; width: 112px; gap: 8px; padding: 5px 0 9px; }
+  .stepText { padding: 0; }
+  .stepText strong { font-size: 13px; white-space: nowrap; }
+  .stepText > span { display: none; }
+  .content { min-height: 0; padding: 0; }
+  .content h3 { font-size: 25px; }
+  .description { margin-top: 15px; font-size: 13px; line-height: 1.8; }
+  .visual { margin-top: 24px; }
+  .sampleHeader strong { font-size: 53px; }
+  .chart { height: 140px; }
+  .exampleMetrics { padding: 9px 0 26px; }
+  .exampleMetrics > div { padding: 0 9px; }
+  .exampleMetrics span { font-size: 10px; }
+  .exampleMetrics strong { font-size: 11px; }
+  .componentList { margin-top: 23px; }
+  .componentList > div { grid-template-columns: 67px 1fr; gap: 12px; }
+  .componentList strong { font-size: 14px; }
+  .componentList span { font-size: 12px; }
+  .noticeList { margin-top: 22px; }
+  .noticeList p { font-size: 12px; }
+  .controls { margin-top: 28px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stepNumber, .stepText strong, .controls button { transition: none; }
+}
