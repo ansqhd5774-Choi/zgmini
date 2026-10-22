@@ -61,7 +61,7 @@ export default function UsageGuide() {
     <section id="usage" className={styles.guide} aria-labelledby="usage-title">
       <header className={styles.intro}>
         <span className={styles.breadcrumb}>ABOUT ZGMINI / USAGE GUIDE</span>
-        <h2 id="usage-title">ZGMINI 이용안내</h2>
+        <h1 id="usage-title">ZGMINI 이용안내</h1>
         <p>숫자보다 흐름을 먼저 읽어보세요.</p>
       </header>
 
