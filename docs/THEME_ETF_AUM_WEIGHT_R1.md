@@ -55,6 +55,28 @@ and SQLite metadata for QTUM/WQTM/SPY price dates plus same-date ETF net-assets
 observations. This is **inventory only**: a missing result cannot prove absence
 in every PC store, nor can matching dates establish commercial data rights.
 
+## R2 observed PC diagnostic — 2026-10-23 KST
+
+The user executed the R2 inventory. Report check time:
+`2026-10-22T16:08:39.517Z`. Its **bounded** scan checked 86 JSON files,
+parsed 82, skipped 4 oversized files and inspected zero matching SQLite
+tables; traversal limits were reached. This is explicitly not exhaustive.
+
+| ETF | Price dates discovered | Dated ETF fund-net-assets discovered |
+| --- | ---: | ---: |
+| QTUM | 0 | 0 |
+| WQTM | 0 | 0 |
+| SPY benchmark | 1,068 (2022-07-12 to 2026-10-21) | Not required |
+
+Judgment: **NOT_READY**. Do not infer missing PC data beyond the scanned
+JSON/SQLite paths, or attempt to generate a score by filling missing dates.
+Even a complete scan or new commercial data license cannot make WQTM's ETF
+price history older than its actual 2025-10-09 inception; the existing
+628-price-observation requirement is independently unsatisfied. A production
+solution therefore requires an explicit decision to change candidate ETF(s),
+the score/one-year history contract, or defer this specific theme. None of
+those changes are authorized by this inventory.
+
 `theme-etf-aum-weight-r1.mjs` is a pure computation/shadow validator, performs
 zero external requests or writes and does not connect to published readers.
 Current issuer figures permit a weight check only; there is no substantiated
