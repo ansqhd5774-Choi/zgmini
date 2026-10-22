@@ -8,14 +8,26 @@ const date=x=>typeof x==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(x)&&Number.isFinit
 const stamp=x=>typeof x==='string'&&Number.isFinite(Date.parse(x));
 const same=(a,b)=>Array.isArray(a)&&Array.isArray(b)&&a.length===b.length&&a.every((x,i)=>x===b[i]);
 const REQUIRED_TRUE=['publicationAuthorized','upstreamCommercialRightsVerified','derivedLicenseVerified','localBarsVerified','sourcePriceReconciled'];
+const LOCAL_R187_TIME_KIND='LOCAL_R187_RAW_FILE_MTIME_NOT_PROVIDER_TIMESTAMP';
+const R187_SHA_PREFIX='R187_SHA256_';
+function validSourceProvenance(record){
+ if(record.sourceStoredAtKind==='VERIFIED_LOCAL_MARKET_BARS')return true;
+ // R190/R192 verified this immutable R187 file, not the provider fetch time.
+ // Preserve the actual local-file timestamp basis instead of fabricating one.
+ return record.sourceStoredAtKind===LOCAL_R187_TIME_KIND&&
+  record.sourceTimestampBasis==='FILE_MTIME_NOT_PROVIDER_TIMESTAMP'&&
+  typeof record.sourceVersion==='string'&&
+  /^R187_SHA256_[a-f0-9]{64}$/.test(record.sourceVersion)&&
+  record.sourceFileSha256===record.sourceVersion.slice(R187_SHA_PREFIX.length);
+}
 export function eligibleAiTheme(record,base,{now=Date.now(),storedAt=now}={}){
  if(base?.status!=='READY'||base.themes?.length!==7||!date(base.observationDate)||!Array.isArray(base.themes[0]?.history)||base.themes[0].history.length!==252)return false;
  if(!record||record.status!=='READY'||record.version!==AI_THEME_PUBLIC_VERSION||record.theme!=='AI 반도체'||!same(record.etfs,['SMH','SOXX']))return false;
  if(record.methodologyVersion!=='ETF_ONLY_T40_R20_V40_PAIR50'||base.methodologyVersion!==record.methodologyVersion||record.individualStocksUsed!==0||record.scoreMethod!=='ETF_ONLY_PROXY')return false;
  if(REQUIRED_TRUE.some(key=>record[key]!==true)||record.sourcePriceMode!=='UNADJUSTED_15_NY_HOURLY_PROXY_WITH_OFFICIAL_EARLY_CLOSE_12')return false;
- // R188's local file mtime is not a verified price-source timestamp.
- // Rights and reconciliation must be independently validated before publication.
- if(record.sourceStoredAtKind!=='VERIFIED_LOCAL_MARKET_BARS'||!stamp(record.sourceStoredAt)||!stamp(record.publishedAt)||!stamp(record.asOf)||typeof record.sourceVersion!=='string'||!record.sourceVersion.trim())return false;
+ // Keep local R187 file mtime explicitly distinct from a provider-origin timestamp.
+ // Publication rights, price checks, date alignment and freshness still gate display.
+ if(!validSourceProvenance(record)||!stamp(record.sourceStoredAt)||!stamp(record.publishedAt)||!stamp(record.asOf)||typeof record.sourceVersion!=='string'||!record.sourceVersion.trim())return false;
  const times=[storedAt,Date.parse(record.sourceStoredAt),Date.parse(record.publishedAt),Date.parse(record.asOf)];
  if(times.some(t=>!Number.isFinite(t)||t>now||now-t>=PUBLIC_DISPLAY_MAX_AGE_MS))return false;
  if(record.observationDate!==base.observationDate||!date(record.observationDate)||!score(record.score)||!Array.isArray(record.history)||record.history.length!==252)return false;
