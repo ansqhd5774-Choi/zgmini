@@ -33,7 +33,8 @@ test('R1 only an explicitly approved, reconciled, derived 252-point biotechnolog
  const out=await addVerifiedBiotechTheme(db(p),b,{now});
  assert.equal(out.themes.length,9);
  assert.deepEqual(out.themes.slice(0,8),b.themes);
- assert.equal(out.themes[8].theme,'바이오테크');
+ assert.equal(out.themes[8].theme,'바이오·신약');
+ assert.equal(p.theme,'바이오테크');
  assert.equal(out.themes[8].history.length,252);
  assert.ok(!JSON.stringify(out).includes('rawPrice'));
  assert.ok(!JSON.stringify(out).includes('privateBars'));
@@ -67,7 +68,8 @@ test('R1 owner-authorized limited validation discloses unsettled anonymous right
 test('R1 requires all eight live themes, aligned time series, and matched provisional points',async()=>{
  const b=base(true),p=approved(b),yes=await addVerifiedBiotechTheme(db(p),b,{now});
  assert.equal(yes.themes.length,9);
- assert.equal(yes.provisional.points[0].scores['바이오테크'],44);
+ assert.equal(yes.provisional.points[0].scores['바이오·신약'],44);
+ assert.equal(Object.hasOwn(yes.provisional.points[0].scores,'바이오테크'),false);
  assert.equal(eligibleBiotechTheme({...p,provisional:{points:[]}},b,{now,storedAt:now-1000}),false);
  assert.equal(eligibleBiotechTheme(p,{...b,themes:b.themes.slice(0,7)},{now,storedAt:now-1000}),false);
  assert.equal(eligibleBiotechTheme(p,{...b,observationDate:'2026-10-21'},{now,storedAt:now-1000}),false);

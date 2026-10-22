@@ -54,12 +54,14 @@ export async function addVerifiedBiotechTheme(db,base,{now=Date.now()}={}){
  if(!row)return base;
  let record;try{record=JSON.parse(row.body)}catch{return base}
  if(!eligibleBiotechTheme(record,base,{now,storedAt:Number(row.stored_at)}))return base;
- const biotech={theme:'바이오테크',etfs:['IBB','XBI'],score:record.score,
+ // The persisted record keeps its original contract key/name. Only the public
+ // presentation label changes; existing D1 data needs no rewrite or rerun.
+ const biotech={theme:'바이오·신약',etfs:['IBB','XBI'],score:record.score,
   history:record.history.map(p=>({date:p.date,score:p.score}))};
  const augmented={...base,themes:[...base.themes,biotech]};
  if(base.phase==='PROVISIONAL'&&base.provisional?.points?.length){
   augmented.provisional={...base.provisional,points:base.provisional.points.map((p,i)=>({...p,
-   scores:{...p.scores,'바이오테크':record.provisional.points[i].score}}))};
+   scores:{...p.scores,'바이오·신약':record.provisional.points[i].score}}))};
  }
  return augmented;
 }

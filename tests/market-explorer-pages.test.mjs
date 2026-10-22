@@ -66,7 +66,7 @@ test('theme overview retains 30 cards, prioritizes 7 ETF-only research themes an
  assert.equal((html.match(/ETF 연구 대상 · 데이터 준비 중/g)??[]).length,3);
  assert.equal((html.match(/데이터 준비 중<\/small>/g)??[]).length,21);
  const ordered=html.match(/<article [\s\S]*?<\/article>/g)??[];
- const firstNine=['로봇·자동화','클라우드·SaaS','자율주행','바이오테크','원전·SMR','방산','핀테크','사이버보안','게임·e스포츠'];
+ const firstNine=['로봇·자동화','클라우드·SaaS','자율주행','바이오·신약','원전·SMR','방산','핀테크','사이버보안','게임·e스포츠'];
  assert.equal(ordered.length,30);
  for(let i=0;i<firstNine.length;i++)assert.ok(ordered[i].includes(firstNine[i]),firstNine[i]);
  assert.doesNotMatch(html,/<strong>\d+(?:\.\d+)?<\/strong>/);
