@@ -1,6 +1,6 @@
 # 연준 금리 발표 카운트다운
 
-- 높이 24px, 한 줄, 전체 바 기준 중앙 정렬. 미국 국기는 우측 끝 고정. 이동 아이콘·링크 없음.
+- 웹(1024px 이상) 높이 30px, 모바일·태블릿 24px. 한 줄, 전체 바 기준 중앙 정렬. 미국 국기·이동 아이콘·링크 없음.
 - 공식 인장은 연준 서면 허가가 필요하므로 사용하지 않는다. 독자적인 일반 중앙은행 아이콘 사용.
 - 공식 예정일 스냅샷 확인: 2026-10-21. https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm
 - 2026-10-28 14:00 Eastern은 https://www.federalreserve.gov/newsevents/2026-october.htm 에서 확인. 기자회견 14:30과 구분한다.

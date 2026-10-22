@@ -97,7 +97,7 @@ test('shared header provides the agreed menu order on both dashboard and detail 
   const labels=['대시보드','위험 지표','경제 지표','섹터 공포·탐욕','테마 공포·탐욕','아웃브레이크'];
   const positions=labels.map(label=>nav.indexOf(label));assert.ok(positions.every((p,i)=>p>=0&&(i===0||p>positions[i-1])));
   assert.match(html,/class="zg-fomc-bar"/);
-  assert.match(html,/class="zg-fomc-flag"[^>]*src="\/flags\/us.svg"/);
+  assert.doesNotMatch(html,/class="zg-fomc-flag"/);
   assert.doesNotMatch(html.split('class="zg-fomc-bar"')[1],/<a /);
  }
 });
