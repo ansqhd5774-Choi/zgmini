@@ -17,6 +17,7 @@
 .zg-fomc-pending,.zg-fomc-reached{font-size:11px;font-weight:650}
 @keyframes zg-fomc-flip-top{to{transform:rotateX(-90deg)}}
 @keyframes zg-fomc-flip-bottom{from{transform:rotateX(90deg)}to{transform:rotateX(0)}}
+@media(min-width:1024px){.zg-fomc-bar{height:30px;min-height:30px;font-size:14px}.zg-fomc-center{gap:12px;padding:0 44px}.zg-fomc-center strong{font-size:14px}.zg-fomc-bank{width:22px;height:22px}.zg-fomc-center time{font-size:13px}.zg-fomc-flag{top:5px;width:30px;height:19px}.zg-fomc-clock{height:25px}.zg-fomc-digit{width:14px;height:24px;font-size:17px;line-height:24px}.zg-fomc-clock-inner>b{font-size:15px}.zg-fomc-day,.zg-fomc-pending,.zg-fomc-reached{font-size:13px}}
 @media(max-width:600px){.zg-fomc-center{gap:5px;padding:0 29px}.zg-fomc-center strong{font-size:11px}.zg-fomc-bank{width:14px;height:14px}.zg-fomc-center time{font-size:10px}.zg-fomc-zone{font-size:9px}.zg-fomc-flag{width:20px;height:13px;right:5px;top:5px}.zg-fomc-digit{width:9px;font-size:12px}.zg-fomc-clock-inner,.zg-fomc-pair{gap:1px}.zg-fomc-clock-inner>b{padding:0}.zg-fomc-day{font-size:10px;margin-right:2px}.zg-fomc-reached{max-width:125px;white-space:normal;font-size:10px;line-height:11px}}
 @media(max-width:359px){.zg-fomc-bank{display:none}.zg-fomc-center{gap:4px}.zg-fomc-zone{display:none}.zg-fomc-center strong{font-size:10px}}
 @media(prefers-reduced-motion:reduce){.zg-fomc-flip{display:none}}
