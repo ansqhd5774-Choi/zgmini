@@ -1,0 +1,145 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import {createHash} from 'node:crypto';
+import {buildAiCandidate,collectWindow,runOptionalTheme,cloudflareD1} from '../scripts/pc-writer/theme-optional-cycle.mjs';
+import {regularHour15Rows} from '../scripts/pc-writer/theme-optional-score-r188.mjs';
+
+const NOW=Date.parse('2026-10-23T05:00:00Z');
+const latest='2026-10-21';
+const dates=Array.from({length:252},(_,i)=>new Date(Date.parse(latest+'T00:00:00Z')-(251-i)*86400000).toISOString().slice(0,10));
+const history=dates.map((date,i)=>({date,score:Number((40+i*.02).toFixed(5))}));
+const common={status:'READY',methodologyVersion:'ETF_ONLY_T40_R20_V40_PAIR50',observationDate:latest,phase:'CONFIRMED'};
+const base=()=>({...common,themes:Array.from({length:7},(_,i)=>({theme:'base'+i,history,score:history.at(-1).score}))});
+const priorAi=(date='2026-10-20')=>({
+ ...common,theme:'AI 반도체',etfs:['SMH','SOXX'],observationDate:date,score:history.at(-1).score,
+ history:history.map(p=>({...p,date:new Date(Date.parse(p.date+'T00:00:00Z')+(Date.parse(date+'T00:00:00Z')-Date.parse(latest+'T00:00:00Z'))).toISOString().slice(0,10)})),
+ sourceVersion:'R187_SHA256_'+'f'.repeat(64),
+ sourcePriceMode:'UNADJUSTED_15_NY_HOURLY_PROXY_WITH_OFFICIAL_EARLY_CLOSE_12',
+ publicationAuthorized:true,upstreamCommercialRightsVerified:true,derivedLicenseVerified:true,
+ localBarsVerified:true,sourcePriceReconciled:true
+});
+const candidateResult={
+ status:'PRIVATE_CANDIDATE_PARITY_VERIFIED',themeId:'ai-semiconductor',observationDate:latest,
+ score:history.at(-1).score,history,provisional:{points:[]},audit:{maxDifference:0}
+};
+const manifest=themeId=>({
+ version:1,themeId,
+ files:(themeId==='ai-semiconductor'?['SMH','SOXX','SPY']:['IBB','XBI','SPY']).map(s=>({
+  path:'raw/'+s+'_'.padEnd(4,'_')+'a'.repeat(64)+'.jsonl',sha256:'a'.repeat(64),
+  source:'https://getmarkethistory.com',collectedAt:'2026-10-23T03:00:00Z',
+  observationFrom:'2026-10-20',observationThrough:latest,priceMode:'RAW_UNADJUSTED_1H_NOT_OFFICIAL_CLOSE',
+  schemaVersion:'GMH_NDJSON_1H_COLUMNS_V1'
+ }))
+});
+async function fixture(themeId,callback){
+ const root=fs.mkdtempSync(path.join(os.tmpdir(),'zg-theme-option-cycle-'));
+ const home=path.join(root,'themes',themeId,'raw');
+ fs.mkdirSync(home,{recursive:true});
+ const m=manifest(themeId);
+ for(const f of m.files){
+  const bytes=JSON.stringify({symbol:f.path.split('_')[0].slice(4),time:latest});
+  f.sha256=createHash('sha256').update(bytes).digest('hex');
+  f.path='raw/'+f.path.slice(4).split('_')[0]+'_'+f.sha256+'.jsonl';
+  fs.writeFileSync(path.join(root,'themes',themeId,f.path),bytes);
+ }
+ fs.writeFileSync(path.join(root,'themes',themeId,'raw-manifest.json'),JSON.stringify(m));
+ try{return await callback({root,manifest:m});}finally{fs.rmSync(root,{recursive:true,force:true})}
+}
+test('the shared API does not imply the optional tickers are in the seven-theme task',()=>{
+ const w=collectWindow(manifest('ai-semiconductor'),base(),'ai-semiconductor');
+ assert.deepEqual(w,{start:'2026-10-15',end:'2026-10-21'});
+});
+test('official 2026 NYSE early close uses 12:xx hourly bar without changing the approved score formula',()=>{
+ const rows=Array.from({length:628},(_,i)=>({timestamp:new Date(Date.UTC(2024,0,1+i,20)).toISOString(),close:100+i}));
+ rows.push({timestamp:'2026-11-27T17:00:00Z',close:350},{timestamp:'2026-11-27T20:00:00Z',close:390});
+ const selected=regularHour15Rows(rows).find(p=>p.date==='2026-11-27');
+ assert.equal(selected.close,350);
+});
+test('AI publication candidate reuses checked rights, verified source and exact 252 history',()=>{
+ const r=buildAiCandidate({audit:candidateResult,prior:priorAi(),reference:base(),
+  manifest:manifest('ai-semiconductor'),manifestBytes:Buffer.from('immutable manifest'),now:NOW});
+ assert.equal(r.status,'READY');assert.equal(r.sourceStoredAtKind,'VERIFIED_LOCAL_MARKET_BARS');
+ assert.equal(r.history.length,252);assert.equal(r.publicationAuthorized,true);
+ assert.throws(()=>buildAiCandidate({audit:candidateResult,prior:{...priorAi(),derivedLicenseVerified:false},
+  reference:base(),manifest:manifest('ai-semiconductor'),manifestBytes:Buffer.from('x'),now:NOW}),/RIGHTS_OR_PRICE_APPROVAL_REQUIRED/);
+ assert.throws(()=>buildAiCandidate({audit:{...candidateResult,status:'CONFIRMED_SCORE_REVISION_REVIEW'},
+  prior:priorAi(),reference:base(),manifest:manifest('ai-semiconductor'),manifestBytes:Buffer.from('x'),now:NOW}),/SCORE_DRIFT_REVIEW_REQUIRED/);
+});
+test('private cycle collects and audits but never posts to D1 without --publish',async()=>{
+ await fixture('ai-semiconductor',async({root})=>{
+  let writes=0,calls=0;
+  const db={read:async()=>({body:priorAi(),storedAt:NOW-86400000}),replace:async()=>{writes++}};
+  const result=await runOptionalTheme({themeId:'ai-semiconductor',dataRoot:root,now:()=>NOW,
+   storage:db,readPublic:async()=>base(),collect:async()=>{calls++;return {status:'PRIVATE_RAW_COLLECTION_COMPLETE',providerCalls:3}},
+   audit:()=>candidateResult});
+  assert.equal(result.status,'CANDIDATE_VERIFIED_NOT_PUBLISHED');
+  assert.equal(result.providerCalls,3);assert.equal(writes,0);assert.equal(calls,1);
+ });
+});
+test('unchanged re-collection does not republish or extend source freshness',async()=>{
+ await fixture('ai-semiconductor',async({root})=>{
+  let writes=0;
+  const db={read:async()=>({body:{...priorAi(latest),provisional:{points:[]}},storedAt:NOW-5000}),
+   replace:async()=>{writes++}};
+  const result=await runOptionalTheme({themeId:'ai-semiconductor',dataRoot:root,now:()=>NOW,
+   allowPublish:true,storage:db,readPublic:async()=>base(),
+   collect:async()=>({status:'PRIVATE_RAW_COLLECTION_COMPLETE',providerCalls:3}),audit:()=>candidateResult});
+  assert.equal(result.status,'UNCHANGED_NO_WRITE');assert.equal(writes,0);
+ });
+});
+test('biotech mismatch is isolated and can never replace the public score',async()=>{
+ await fixture('biotech',async({root})=>{
+  let writes=0;
+  const db={read:async()=>({body:{...priorAi(),theme:'바이오테크',etfs:['IBB','XBI']},storedAt:NOW-86400000}),replace:async()=>{writes++}};
+  const reference={...base(),themes:[...base().themes,{theme:'AI 반도체',history}]};
+  const result=await runOptionalTheme({themeId:'biotech',dataRoot:root,now:()=>NOW,allowPublish:true,
+   storage:db,readPublic:async()=>reference,collect:async()=>({status:'PRIVATE_RAW_COLLECTION_COMPLETE',providerCalls:3}),
+   audit:()=>({...candidateResult,themeId:'biotech',status:'CONFIRMED_SCORE_REVISION_REVIEW',audit:{maxDifference:2.35318}})});
+  assert.equal(result.status,'BLOCKED');assert.equal(result.reason,'SCORE_DRIFT_REVIEW_REQUIRED');assert.equal(writes,0);
+ });
+});
+test('an AI candidate is published only after D1 CAS and public readback',async()=>{
+ await fixture('ai-semiconductor',async({root})=>{
+  let written=null,calls=0;
+  const db={read:async()=>({body:priorAi(),storedAt:NOW-86400000}),
+   replace:async(key,record)=>{written={key,record};return {storedAt:NOW}}};
+  const result=await runOptionalTheme({themeId:'ai-semiconductor',dataRoot:root,now:()=>NOW,
+   allowPublish:true,storage:db,
+   readPublic:async()=>{calls++;return calls===1?base():{...base(),themes:[...base().themes,
+    {theme:'AI 반도체',score:history.at(-1).score,history}]};},
+   collect:async()=>({status:'PRIVATE_RAW_COLLECTION_COMPLETE',providerCalls:3}),audit:()=>candidateResult});
+  assert.equal(result.status,'PUBLIC_VERIFIED');assert.equal(result.d1Writes,1);
+  assert.equal(written.key,'theme-ai-semiconductor-r189');assert.equal(result.publicVerified,true);
+ });
+});
+test('D1 writer has a stale-write guard and verifies the exact written row',async()=>{
+ const root=fs.mkdtempSync(path.join(os.tmpdir(),'zg-theme-d1-cas-'));
+ const cfgDir=path.join(root,'pc-writer');fs.mkdirSync(cfgDir);
+ fs.writeFileSync(path.join(cfgDir,'config.json'),JSON.stringify({account:'a'.repeat(32),core:'11111111-1111-1111-1111-111111111111'}));
+ const old=process.env.CLOUDFLARE_API_TOKEN;process.env.CLOUDFLARE_API_TOKEN='unit-test-memory-token';
+ let current={body:JSON.stringify(priorAi()),stored_at:NOW-10000};let updates=0;
+ const fetchImpl=async(_url,opts)=>{
+  const {batch}=JSON.parse(opts.body),{sql,params}=batch[0];
+  assert.match(opts.headers.Authorization,/Bearer unit-test-memory-token/);
+  if(sql.startsWith('UPDATE')){
+   assert.match(sql,/AND stored_at=\?/);
+   assert.equal(params[3],NOW-10000);current={body:params[0],stored_at:params[1]};updates++;
+   return Response.json({success:true,result:[{success:true,meta:{changes:1}}]});
+  }
+  return Response.json({success:true,result:[{success:true,results:[current]}]});
+ };
+ try{
+  const db=cloudflareD1({dataRoot:root,fetchImpl});
+  const previous=await db.read('theme-ai-semiconductor-r189');
+  const next={...previous.body,observationDate:latest};
+  const write=await db.replace('theme-ai-semiconductor-r189',next,previous.storedAt);
+  assert.ok(write.storedAt>previous.storedAt);assert.equal(updates,1);
+ }finally{
+  if(old===undefined)delete process.env.CLOUDFLARE_API_TOKEN;
+  else process.env.CLOUDFLARE_API_TOKEN=old;
+  fs.rmSync(root,{recursive:true,force:true});
+ }
+});

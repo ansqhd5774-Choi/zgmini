@@ -73,6 +73,27 @@ AI·반도체의 R187 원자료와 R188 결과는 PC에서 확인했다. 기존 
 
 재현 검사는 `node scripts/pc-writer/theme-optional-audit.mjs <ai-semiconductor|biotech> <저장한 기준 API JSON> <저장한 기존 D1 행 JSON>`으로 수행한다. D1 행 JSON의 `body` 문자열 또는 점수 문서 자체를 받는다. 저장 원자료 manifest/해시 검증 후 기존 공개 252점 전체와 비교하며, 결측인 잠정 날짜는 `missingProvisionalDates`에 남긴다. 결과 `PRIVATE_CANDIDATE_PARITY_VERIFIED`도 자동 게시나 권리 확인 완료를 뜻하지 않는다. 감사 도구에는 네트워크·D1 쓰기·스케줄러 변경 기능이 없다.
 
+## 2026-10-23 신규 2개 독립 자동 실행 준비 (PC 미설치)
+
+원인: 기존 7개 R181/R179/R171 작업은 14개 ETF만 처리한다. AI·반도체 SMH/SOXX 및 바이오·신약 IBB/XBI는 같은 GetMarketHistory를 사용하지만 그 정규 실행 목록에 없었다. 신규 공개 기능은 의도적으로 D1 **읽기 전용**으로 개발됐고, 이전 별도 수집기는 수동 GET만 수행했으므로 같은 Provider라는 이유만으로 자동 갱신되지는 않는다.
+
+- 새 GitHub 실행 코드: `scripts/pc-writer/theme-optional-cycle.mjs` (원자료 수집 → manifest SHA 확인 → 승인 R188 252점 재계산 → 기존 D1 점수 전체 대조 → 승인된 경우에만 D1 조건부 게시 → 공개 API 확인).
+- Windows 진입점: `scripts/pc-writer/theme-optional-cycle.cmd`. PC에 체크아웃된 코드와 승인된 `E:\ZGmini\runtime\node.exe`를 사용한다. 원자료와 최신 상태 증거는 각각 `E:\ZGmini\data\themes\<theme-id>\raw/`, `state/cycle-last.json`에 둔다. Desktop·ZIP은 운영 원본이 아니다.
+- CLI 기본 실행은 공개 게시 없이 가격 GET 및 비공개 검산만 한다. `--publish`를 명시해야만 기존 D1 권리/가격 승인, 252점 일치, 관측일/잠정치 일치, 소스 해시, 비교 후 조건부 D1 update와 readback을 시도한다.
+- AI는 기존 R187/GMH 승인 출처·상업/파생 공개 승인 플래그를 그대로 확인하며, 불일치·결측·원본 변경·기존 게시 이후 새로운 원자료가 없는 경우 D1을 덮어쓰지 않는다. 동일 점수를 다시 게시해 시각을 연장하지 않는다.
+- 바이오는 별도 수집을 계속할 수 있지만 R3 원자료 미확인, 252점 불일치 및 권리 증빙 문제가 모두 해결되기 전 **게시 금지**. 이 제한을 없애기 위해 기존 값을 복사하거나 score/rights 플래그를 임의로 true로 설정하지 않는다.
+- NYSE 공식 공지에 있는 2026~2028년 1시 조기폐장 날짜를 R188 12시 가격 선택 규칙에 추가했다. 2029년 이후 날짜는 캘린더 재검증 없이는 실행 차단한다. 산식 가중치·정규화·252점 구성은 불변.
+
+PC에서 새 작업 등록 전 아래 단계가 필요하다.
+
+1. GitHub **검증된 main**을 PC 승인 SHA와 일치시킨 뒤 기존 7개의 예약 작업명·주기·승인 실행 경로를 **읽기 전용**으로 확인한다. 신규 두 작업의 제안명은 `ZGMINI-PC-Theme-AI-Semiconductor`, `ZGMINI-PC-Theme-Biotech`이다. 실제 주기, 계정, 승인 SHA는 PC 실측 전까지 등록부의 `null`을 유지한다.
+2. 사용자 CMD에서 저장소의 `scripts\pc-writer\theme-optional-cycle.cmd ai-semiconductor` 및 `... biotech`를 **한 번만** 명시 실행한다. 최대 4회 무료 API GET/테마/실행이며 E: manifest/checkpoint를 원자적으로 갱신한다. `cycle-last.json` 결과와 PC 측 252점 검산을 확인한다.
+3. AI는 `CANDIDATE_VERIFIED_NOT_PUBLISHED` 확인 및 권리 근거 재확인 이후에만 `theme-optional-cycle.cmd ai-semiconductor --publish`를 실행한다. D1 성공·readback·공개 API 반영을 각각 검사한다. HTTP 응답만으로 D1 성공을 추정하지 않는다.
+4. PC에서만 별도 Windows 작업 2개를 등록한다. **기존 7개 작업은 수정하지 않는다.** 두 테마는 서로 다른 작업으로 등록해 바이오 실패가 AI 및 기존 7개 실행을 막지 않도록 한다. 작업 이름·주기·실행 경로·승인 SHA·첫 실행/다음 정규 실행 증거를 확인한 뒤 등록부의 `tasks`와 `runtime`을 갱신한다.
+5. PC 코드 배치·수집·D1 게시·다음 정규 실행은 현재 환경에서 미실행이며 자동 갱신 완료로 보고하지 않는다.
+
+관련 권리 조건: <https://getmarkethistory.com/docs/terms> (2026-10-19 시행). 문구상 파생물 사용은 계정 정상 유지 조건과 연결된다. 기존 바이오의 익명 무료 호출 사용 권리 해석은 미확정이다.
+
 ## 일반 채팅 작업 지시문
 
 > ZGMINI 테마 작업은 GitHub 최신 main의 AGENTS.md, docs/THEME_DATA_OPERATIONS.md, config/theme-data-registry.json을 먼저 확인하고 진행하라. 원자료 수집→PC 저장→계산→확정/잠정 게시→D1 readback→공개 API/UI→다음 정규 실행까지 연결하라. 실행 코드는 GitHub에, 원자료는 승인된 E: 데이터 경로에 저장하고 manifest에 실제 상대 경로·SHA256·출처·수집 시각·관측 기간·스키마·가격 모드를 기록하라. 수집기·계산기·게시기·작업 이름/주기·PC 승인 SHA·D1 key를 등록부에 갱신하라. 첨부 ZIP·Desktop·임시 폴더만 유일한 사본으로 두지 마라. 로컬 접근이 없으면 적용했다고 보고하지 말고 GitHub 코드와 정확한 설치/검증 명세를 준비하라. 무료·상업용 조건과 기존 산식·데이터·잠금·게시 보호를 유지하고, 새 테마의 실패가 기존 테마 갱신을 막지 않게 하라. 실제 검사 명령과 결과·미완료 항목을 남기고 테스트/배포 성공만으로 자동 운영 완료라고 보고하지 마라.
