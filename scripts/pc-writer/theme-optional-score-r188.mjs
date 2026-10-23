@@ -1,8 +1,10 @@
 // Recovered pure R188 V3 scorer and historical hourly selector. No file/provider/DB writes.
 // Original source SHA256: 8dca56dabe186bbc69641ce347bc5bcbc0d0a0e30e12f13dbda8ca9e2a4524f9
-// EARLY_CLOSE is the historical source calendar, not an evergreen exchange calendar.
-// Runtime wiring and future calendar coverage must be validated separately.
-const EARLY_CLOSE=new Set(['2024-07-03','2024-11-29','2024-12-24','2025-07-03','2025-11-28','2025-12-24']);
+// Approved 12:xx selector on 1 p.m. NYSE sessions. Published through 2028:
+// https://www.nyse.com/trade/hours-calendars
+// This is not an evergreen calendar; revalidate future dates after 2028.
+const EARLY_CLOSE=new Set(['2024-07-03','2024-11-29','2024-12-24','2025-07-03','2025-11-28','2025-12-24',
+ '2026-11-27','2026-12-24','2027-11-26','2028-07-03','2028-11-24']);
 const REQUIRED=628, PUBLISHED=252;
 const sha=x=>createHash('sha256').update(x).digest('hex');
 const validNum=n=>typeof n==='number'&&Number.isFinite(n)&&n>0;

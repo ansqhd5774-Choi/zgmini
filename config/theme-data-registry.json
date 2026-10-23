@@ -303,7 +303,9 @@
         "calculator": "scripts/pc-writer/theme-optional-score-r188.mjs",
         "publisherInstaller": null,
         "reader": "worker/theme-ai-semiconductor-optional.mjs",
-        "auditor": "scripts/pc-writer/theme-optional-audit.mjs"
+        "auditor": "scripts/pc-writer/theme-optional-audit.mjs",
+        "publicationCandidate": "scripts/pc-writer/theme-optional-cycle.mjs",
+        "pcTaskEntrypoint": "scripts/pc-writer/theme-optional-cycle.cmd"
       },
       "runtime": {
         "collector": null,
@@ -311,6 +313,13 @@
         "publisher": null
       },
       "tasks": [],
+      "plannedRuntime": {
+        "taskName": "ZGMINI-PC-Theme-AI-Semiconductor",
+        "frequency": null,
+        "approvedPcSha": null,
+        "installed": false,
+        "lastRegularRun": null
+      },
       "public": {
         "table": "public_feed_snapshots_v1",
         "feedKey": "theme-ai-semiconductor-r189",
@@ -363,10 +372,12 @@
       "missingRawFilename": "BIOTECH_PC_R3_LOCAL_PRICES.json",
       "repository": {
         "collector": "scripts/pc-writer/theme-optional-collect.mjs",
-        "calculator": null,
+        "calculator": "scripts/pc-writer/theme-optional-score-r188.mjs",
         "publisherInstaller": null,
         "reader": "worker/theme-biotech-optional.mjs",
-        "auditor": "scripts/pc-writer/theme-optional-audit.mjs"
+        "auditor": "scripts/pc-writer/theme-optional-audit.mjs",
+        "publicationCandidate": "scripts/pc-writer/theme-optional-cycle.mjs",
+        "pcTaskEntrypoint": "scripts/pc-writer/theme-optional-cycle.cmd"
       },
       "runtime": {
         "collector": null,
@@ -374,6 +385,13 @@
         "publisher": null
       },
       "tasks": [],
+      "plannedRuntime": {
+        "taskName": "ZGMINI-PC-Theme-Biotech",
+        "frequency": null,
+        "approvedPcSha": null,
+        "installed": false,
+        "lastRegularRun": null
+      },
       "public": {
         "table": "public_feed_snapshots_v1",
         "feedKey": "theme-biotech-optional-r1",
