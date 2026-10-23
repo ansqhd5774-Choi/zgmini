@@ -295,7 +295,8 @@
         "collector": "scripts/pc-writer/theme-optional-collect.mjs",
         "calculator": "scripts/pc-writer/theme-optional-score-r188.mjs",
         "publisherInstaller": null,
-        "reader": "worker/theme-ai-semiconductor-optional.mjs"
+        "reader": "worker/theme-ai-semiconductor-optional.mjs",
+        "auditor": "scripts/pc-writer/theme-optional-audit.mjs"
       },
       "runtime": {
         "collector": null,
@@ -333,6 +334,11 @@
         "points": 252,
         "maxDifference": 0,
         "exact": true
+      },
+      "privateAuditArtifact": {
+        "path": "themes/ai-semiconductor/derived/private-audit-497b8869e5bcf90b.json",
+        "sha256": "497b8869e5bcf90b303a429d5358647c3418bc0e47abdf2547581ef356fad394",
+        "status": "PRIVATE_CANDIDATE_PARITY_VERIFIED"
       }
     },
     {
@@ -352,7 +358,8 @@
         "collector": "scripts/pc-writer/theme-optional-collect.mjs",
         "calculator": null,
         "publisherInstaller": null,
-        "reader": "worker/theme-biotech-optional.mjs"
+        "reader": "worker/theme-biotech-optional.mjs",
+        "auditor": "scripts/pc-writer/theme-optional-audit.mjs"
       },
       "runtime": {
         "collector": null,
@@ -384,6 +391,11 @@
         "points": 252,
         "maxDifference": 2.3531799999999947,
         "exact": false
+      },
+      "privateAuditArtifact": {
+        "path": "themes/biotech/derived/private-audit-20ac83212c235943.json",
+        "sha256": "20ac83212c235943a88b64cd0b37c3ce45d0f2b5015bc7390f121f0231646520",
+        "status": "CONFIRMED_SCORE_REVISION_REVIEW"
       }
     }
   ]
