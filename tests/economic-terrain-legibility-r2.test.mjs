@@ -37,3 +37,16 @@ test('mobile rows are not reduced to eleven-pixel names',()=>{
  assert.match(css,/@media\(max-width:750px\)\{[^\n]*\.zg-terrain-row-name\{font-size:14px\}/);
  assert.match(css,/@media\(max-width:390px\)\{\.zg-terrain-axis-bands span\{display:none\}/);
 });
+
+test('indicator heading and row labels use the same centered alignment',()=>{
+ assert.match(rule('.zg-terrain-axis-label span:first-child'),/text-align:center/);
+ assert.match(rule('.zg-terrain-row-name'),/text-align:center/);
+});
+
+test('five score bands have enlarged labels and narrow-screen unclipped names',()=>{
+ assert.match(rule('.zg-terrain-axis-bands strong'),/font-size:15px/);
+ assert.match(rule('.zg-terrain-axis-bands span'),/font-size:12px/);
+ assert.match(css,/@media\(max-width:750px\)\{\.zg-terrain-axis\{height:80px\}\.zg-terrain-axis-bands\{height:49px\}\.zg-terrain-axis-bands strong\{font-size:13px\}\.zg-terrain-axis-bands span\{font-size:11px\}\}/);
+ assert.match(css,/@media\(max-width:510px\)\{\.zg-terrain-axis-bands span\{display:none\}\}/);
+ assert.match(css,/@media\(max-width:410px\)\{\.zg-terrain-axis-bands>div:nth-child\(3\) strong\{transform:translateY\(-14px\)\}\}/);
+});

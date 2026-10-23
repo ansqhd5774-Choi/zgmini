@@ -28,12 +28,13 @@
 .zg-terrain-list{--terrain-number:42px;--terrain-name:177px;--terrain-score:160px;--terrain-arrow:28px;position:relative;border-bottom:1px solid #18384b}
 .zg-terrain-axis{display:grid;grid-template-columns:calc(var(--terrain-number) + var(--terrain-name) + var(--terrain-score)) minmax(0,1fr) var(--terrain-arrow);gap:0;height:80px;border-bottom:1px solid #245069}
 .zg-terrain-axis-label{display:grid;grid-template-columns:var(--terrain-number) var(--terrain-name) var(--terrain-score);align-items:end;padding:0 0 9px;color:#bdcedc;font-weight:650;font-size:12px}
+.zg-terrain-axis-label span:first-child{text-align:center}
 .zg-terrain-axis-label span:last-child{text-align:center}
 .zg-terrain-axis-plot{position:relative;min-width:0;padding-right:2px}
 .zg-terrain-axis-bands{height:47px;display:flex;align-items:stretch}
 .zg-terrain-axis-bands>div{position:relative;text-align:center;display:flex;align-items:center;flex-direction:column;justify-content:flex-end;gap:3px;min-width:0}
-.zg-terrain-axis-bands strong{font-size:13px;line-height:1;font-weight:760}
-.zg-terrain-axis-bands span{font-size:11px;color:#d1dfeb;white-space:nowrap}
+.zg-terrain-axis-bands strong{font-size:15px;line-height:1;font-weight:760;white-space:nowrap;flex-shrink:0}
+.zg-terrain-axis-bands span{font-size:12px;color:#d1dfeb;white-space:nowrap;flex-shrink:0}
 .zg-terrain-axis-bands i{display:block;width:100%;height:5px;border-radius:1px;margin-top:2px}
 .zg-terrain-axis-ticks{position:relative;height:33px;color:#d0dfec;font-size:12px;font-variant-numeric:tabular-nums}
 .zg-terrain-axis-ticks span{position:absolute;top:8px;transform:translateX(-50%)}
@@ -43,7 +44,7 @@
 .zg-terrain-row:hover{background:#0b2938}
 .zg-terrain-row.is-selected{z-index:1;background:color-mix(in srgb,var(--terrain-accent) 11%,#061928);box-shadow:inset 0 0 0 1px var(--terrain-accent);border-bottom:0}
 .zg-terrain-row-index{padding-left:15px;font-size:13px;color:#aec9d9;font-variant-numeric:tabular-nums}
-.zg-terrain-row-name{font-weight:760;font-size:16px;letter-spacing:-.025em;color:#f4faff}
+.zg-terrain-row-name{font-weight:760;font-size:16px;letter-spacing:-.025em;color:#f4faff;text-align:center}
 .zg-terrain-row-score{font-size:17px;font-weight:790;font-variant-numeric:tabular-nums;color:var(--terrain-accent);text-align:center}
 .zg-terrain-track{height:100%;position:relative;min-width:0;display:block}
 .zg-terrain-track::before{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(to right,transparent calc(25% - .5px),#164053 25%,transparent calc(25% + .5px),transparent calc(45% - .5px),#164053 45%,transparent calc(45% + .5px),transparent calc(55% - .5px),#164053 55%,transparent calc(55% + .5px),transparent calc(75% - .5px),#164053 75%,transparent calc(75% + .5px))}
@@ -94,3 +95,6 @@
 @media(max-width:750px){.zg-explorer.is-economic-terrain .zg-explorer-hero{padding:5px 18px 18px;margin:0 -16px;min-height:135px}.zg-explorer.is-economic-terrain .zg-explorer-hero::before{width:90%;right:2%;opacity:.14}.zg-explorer.is-economic-terrain h1{font-size:30px}.zg-explorer.is-economic-terrain .zg-explorer-lead{font-size:13px;max-width:330px}.zg-explorer.is-economic-terrain .zg-explorer-count{display:none}.zg-explorer.is-economic-terrain{padding:16px 16px}.zg-terrain{padding-top:15px}.zg-terrain-section-heading{align-items:flex-start;flex-direction:column;gap:10px}.zg-terrain-controls{width:100%;justify-content:space-between}.zg-terrain-controls>span{display:block}.zg-terrain-list{--terrain-number:28px;--terrain-name:122px;--terrain-score:66px;--terrain-arrow:20px}.zg-terrain-axis{height:75px}.zg-terrain-axis-label{font-size:11px}.zg-terrain-axis-label span:last-child{font-size:11px}.zg-terrain-axis-bands{height:44px}.zg-terrain-axis-bands strong{font-size:11px}.zg-terrain-axis-bands span{font-size:10px}.zg-terrain-axis-ticks{font-size:11px}.zg-terrain-row{height:44px}.zg-terrain-row-index{padding-left:4px;font-size:11px}.zg-terrain-row-name{font-size:14px}.zg-terrain-row-score{font-size:14px}.zg-terrain-track em{display:none}.zg-terrain-dot{width:10px;height:10px}.zg-terrain-row-chevron{margin-right:0;width:14px}.zg-terrain-detail{grid-template-columns:1fr;gap:13px;padding:14px}.zg-terrain-detail-summary{display:grid;grid-template-columns:1fr auto;gap:0 10px;border-right:0;border-bottom:1px solid #254b61;padding:0 0 10px}.zg-terrain-detail-summary h3{grid-column:1;margin:2px 0;font-size:22px}.zg-terrain-detail-summary p{grid-column:1}.zg-terrain-kicker{grid-column:1}.zg-terrain-detail-score{grid-column:2;grid-row:1/4;margin:0;align-self:center}.zg-terrain-detail-score strong{font-size:37px}.zg-terrain-detail-score span{font-size:12px}.zg-terrain-pill{grid-column:1;margin-top:6px;font-size:12px;min-width:50px;width:max-content}.zg-terrain-detail-trend{padding:0}.zg-terrain-history svg{height:175px}.zg-terrain-detail-explain{border-left:0;border-top:1px solid #254b61;padding:12px 0 0}.zg-terrain-footnote{align-items:flex-start;text-align:right;line-height:1.5}.zg-terrain-footnote svg{flex-shrink:0}}
 @media(max-width:530px){.zg-terrain-list{--terrain-number:24px;--terrain-name:95px;--terrain-score:55px;--terrain-arrow:18px}.zg-terrain-row-name{font-size:13px}.zg-terrain-axis-bands span{font-size:10px}.zg-terrain-axis-bands strong{font-size:11px}.zg-terrain-detail-score strong{font-size:34px}.zg-terrain-search input{width:90px}}
 @media(max-width:390px){.zg-terrain-axis-bands span{display:none}}
+@media(max-width:750px){.zg-terrain-axis{height:80px}.zg-terrain-axis-bands{height:49px}.zg-terrain-axis-bands strong{font-size:13px}.zg-terrain-axis-bands span{font-size:11px}}
+@media(max-width:510px){.zg-terrain-axis-bands span{display:none}}
+@media(max-width:410px){.zg-terrain-axis-bands>div:nth-child(3) strong{transform:translateY(-14px)}}
