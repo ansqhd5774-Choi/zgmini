@@ -232,6 +232,40 @@ export async function diagnoseAiReader({dataRoot,readPublic=api,storage=null,aud
  return result;
 }
 
+export async function diagnoseBiotechParity({dataRoot,readPublic=api,storage=null,audit=auditOptionalPrices}={}){
+ const result={report:'THEME_BIOTECH_PARITY_READONLY_DIAGNOSTIC_R1',themeId:'biotech',status:'STARTED',
+  providerCalls:0,d1Writes:0,schedulerWrites:0,reason:null};
+ try{
+  ensure(fs.existsSync(dataRoot),'E_DATA_ROOT_UNAVAILABLE');
+  const db=storage??cloudflareD1({dataRoot}),publicFeed=await readPublic();
+  const reference={...publicFeed,themes:publicFeed.themes?.slice(0,8)};
+  const previous=await db.read('theme-biotech-optional-r1');
+  validateStoredReference('biotech',previous.body,reference);
+  ensure(inspectManifest(dataRoot,'themes/biotech/raw-manifest.json','biotech').status==='SHA_VERIFIED','RAW_MANIFEST_INVALID');
+  const checked=audit({themeId:'biotech',dataRoot,reference,priorRecord:previous.body});
+  result.publicObservationDate=reference.observationDate;
+  result.previousObservationDate=previous.body.observationDate;
+  result.localObservationDate=checked.observationDate;
+  result.scoreDifference=checked.audit?.maxDifference??null;
+  result.commonSessions=checked.audit?.commonSessions??null;
+  result.sourceOverlapBars=checked.audit?.sourceOverlapBars??null;
+  result.missingProvisionalDates=checked.audit?.missingProvisionalDates??[];
+  const previousScores=new Map(previous.body.history.map(p=>[p.date,p.score]));
+  const matched=checked.history.filter(p=>previousScores.has(p.date));
+  const drifts=matched.map(p=>({date:p.date,difference:Number(Math.abs(p.score-previousScores.get(p.date)).toFixed(5))}))
+   .filter(p=>p.difference>0).sort((a,b)=>b.difference-a.difference);
+  result.overlappingHistoryDates=matched.length;
+  result.overlappingChangedDates=drifts.length;
+  result.largestOverlappingDifferences=drifts.slice(0,5);
+  result.localAuditStatus=checked.status;
+  ensure(checked.status==='PRIVATE_CANDIDATE_PARITY_VERIFIED','SCORE_DRIFT_REVIEW_REQUIRED');
+  // Even matching bars do not authorize biotech publication: the separate R3
+  // methodology and commercial-data rights review must be completed first.
+  fail('BIOTECH_ORIGINAL_R3_AND_RIGHTS_REVIEW_REQUIRED');
+ }catch(e){result.status='BLOCKED';result.reason=e?.code??'UNKNOWN_ERROR';}
+ return result;
+}
+
 function saveCycleResult(dataRoot,themeId,result){
  const root=fs.realpathSync(dataRoot),dir=path.join(root,'themes',themeId,'state');
  ensure(fs.existsSync(dir)&&fs.realpathSync(dir).startsWith(root+path.sep),'STATE_DIRECTORY_MISSING');
@@ -242,11 +276,12 @@ function saveCycleResult(dataRoot,themeId,result){
 }
 
 if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.url)){
- const args=process.argv.slice(2),diagnose=args.length===2&&args[0]==='--diagnose'&&args[1]==='ai-semiconductor';
+ const args=process.argv.slice(2),diagnose=args.length===2&&args[0]==='--diagnose'&&['ai-semiconductor','biotech'].includes(args[1]);
  const valid=diagnose||(args[0]==='--once'&&['ai-semiconductor','biotech','all'].includes(args[1])&&args.slice(2).every(x=>x==='--publish'));
- if(!valid){console.log('Usage: node theme-optional-cycle.mjs --once <ai-semiconductor|biotech|all> [--publish] OR --diagnose ai-semiconductor');process.exitCode=2;}
+ if(!valid){console.log('Usage: node theme-optional-cycle.mjs --once <ai-semiconductor|biotech|all> [--publish] OR --diagnose <ai-semiconductor|biotech>');process.exitCode=2;}
  else if(diagnose){
-  const result=await diagnoseAiReader({dataRoot:process.env.ZGMINI_DATA_ROOT??DATA_ROOT});
+  const dataRoot=process.env.ZGMINI_DATA_ROOT??DATA_ROOT;
+  const result=args[1]==='ai-semiconductor'?await diagnoseAiReader({dataRoot}):await diagnoseBiotechParity({dataRoot});
   console.log(JSON.stringify(result));if(result.status==='BLOCKED')process.exitCode=1;
  }
  else{
