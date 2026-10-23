@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import {createHash} from 'node:crypto';
-import {buildAiCandidate,collectWindow,runOptionalTheme,cloudflareD1} from '../scripts/pc-writer/theme-optional-cycle.mjs';
+import {buildAiCandidate,collectWindow,runOptionalTheme,cloudflareD1,cloudflareToken} from '../scripts/pc-writer/theme-optional-cycle.mjs';
 import {regularHour15Rows} from '../scripts/pc-writer/theme-optional-score-r188.mjs';
 
 const NOW=Date.parse('2026-10-23T05:00:00Z');
@@ -51,6 +51,36 @@ async function fixture(themeId,callback){
 test('the shared API does not imply the optional tickers are in the seven-theme task',()=>{
  const w=collectWindow(manifest('ai-semiconductor'),base(),'ai-semiconductor');
  assert.deepEqual(w,{start:'2026-10-15',end:'2026-10-21'});
+});
+test('optional PC auth refreshes an expired Wrangler OAuth token without logging or new installation',()=>{
+ const root=fs.mkdtempSync(path.join(os.tmpdir(),'zg-theme-oauth-'));
+ const oauthFile=path.join(root,'default.toml');
+ const script=path.join(root,'wrangler.js');
+ const expired='expiration_time = "2026-10-22T00:00:00Z"\noauth_token = "expired-secret"\n';
+ const refreshed='expiration_time = "2026-10-24T00:00:00Z"\noauth_token = "refreshed-secret"\n';
+ fs.writeFileSync(oauthFile,expired);fs.writeFileSync(script,'// locally installed test fixture');
+ let calls=0;
+ const execute=(exe,args)=>{
+  calls++;assert.equal(exe,process.execPath);assert.deepEqual(args,[script,'whoami']);
+  fs.writeFileSync(oauthFile,refreshed);return {status:0};
+ };
+ try{
+  const options={dataRoot:root,oauthFile,env:{},now:Date.parse('2026-10-23T11:00:00Z'),
+   execute,platform:'win32',wranglerCandidates:[script]};
+  assert.equal(cloudflareToken(options),'refreshed-secret');assert.equal(calls,1);
+  assert.equal(cloudflareToken(options),'refreshed-secret');assert.equal(calls,1);
+ }finally{fs.rmSync(root,{recursive:true,force:true})}
+});
+test('optional PC auth fails closed when Wrangler cannot refresh',()=>{
+ const root=fs.mkdtempSync(path.join(os.tmpdir(),'zg-theme-oauth-block-'));
+ const oauthFile=path.join(root,'default.toml');
+ fs.writeFileSync(oauthFile,'expiration_time = "2026-10-22T00:00:00Z"\noauth_token = "expired-secret"\n');
+ let calls=0;
+ try{
+  assert.throws(()=>cloudflareToken({dataRoot:root,oauthFile,env:{},now:Date.parse('2026-10-23T11:00:00Z'),
+   platform:'linux',wranglerCandidates:[],execute:()=>{calls++;return {status:0}}}),/PC_WRANGLER_REAUTH_REQUIRED/);
+  assert.equal(calls,0);
+ }finally{fs.rmSync(root,{recursive:true,force:true})}
 });
 test('official 2026 NYSE early close uses 12:xx hourly bar without changing the approved score formula',()=>{
  const rows=Array.from({length:628},(_,i)=>({timestamp:new Date(Date.UTC(2024,0,1+i,20)).toISOString(),close:100+i}));
