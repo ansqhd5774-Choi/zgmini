@@ -1,0 +1,390 @@
+{
+  "version": 1,
+  "verifiedAt": "2026-10-23",
+  "dataRootEnvironment": "ZGMINI_DATA_ROOT",
+  "defaultDataRoot": "E:/ZGmini/data",
+  "newThemeRoot": "themes/<theme-id>",
+  "rawManifestVersion": 1,
+  "publicationPolicy": "PER_THEME_CONFIRMED_AND_PROVISIONAL_NO_SYNTHETIC_VALUES",
+  "themes": [
+    {
+      "id": "robotics",
+      "label": "로봇·자동화",
+      "symbols": [
+        "BOTZ",
+        "ROBO"
+      ],
+      "benchmark": "SPY",
+      "methodologyVersion": "ETF_ONLY_T40_R20_V40_PAIR50",
+      "status": "LEGACY_PIPELINE_ACTIVE_MANIFEST_PENDING",
+      "rawManifest": null,
+      "rawAssets": [],
+      "repository": {
+        "collector": null,
+        "calculator": null,
+        "publisherInstaller": "scripts/pc-writer/theme-publication-recovery.mjs",
+        "reader": "worker/theme-etf-only-public.mjs"
+      },
+      "runtime": {
+        "collector": "theme-market-history-r131/marketparquet-r167/r181-primary-cycle.mjs",
+        "calculator": "theme-market-history-r131/marketparquet-r167/r179-publish-core.mjs",
+        "publisher": "theme-market-history-r131/marketparquet-r167/r171-publish.mjs"
+      },
+      "tasks": [
+        "ZGMINI-PC-GetMarketHistory-ETF",
+        "ZGMINI-PC-MarketParquet-ETF"
+      ],
+      "public": {
+        "table": "public_feed_snapshots_v1",
+        "feedKey": "theme-etf-only-rolling",
+        "snapshotKey": "current",
+        "api": "/api/theme-fear-greed"
+      },
+      "blockers": [
+        "LEGACY_CODE_NOT_FULLY_ARCHIVED_IN_REPOSITORY",
+        "RAW_MANIFEST_NOT_REGISTERED"
+      ]
+    },
+    {
+      "id": "cloud-saas",
+      "label": "클라우드·SaaS",
+      "symbols": [
+        "SKYY",
+        "CLOU"
+      ],
+      "benchmark": "SPY",
+      "methodologyVersion": "ETF_ONLY_T40_R20_V40_PAIR50",
+      "status": "LEGACY_PIPELINE_ACTIVE_MANIFEST_PENDING",
+      "rawManifest": null,
+      "rawAssets": [],
+      "repository": {
+        "collector": null,
+        "calculator": null,
+        "publisherInstaller": "scripts/pc-writer/theme-publication-recovery.mjs",
+        "reader": "worker/theme-etf-only-public.mjs"
+      },
+      "runtime": {
+        "collector": "theme-market-history-r131/marketparquet-r167/r181-primary-cycle.mjs",
+        "calculator": "theme-market-history-r131/marketparquet-r167/r179-publish-core.mjs",
+        "publisher": "theme-market-history-r131/marketparquet-r167/r171-publish.mjs"
+      },
+      "tasks": [
+        "ZGMINI-PC-GetMarketHistory-ETF",
+        "ZGMINI-PC-MarketParquet-ETF"
+      ],
+      "public": {
+        "table": "public_feed_snapshots_v1",
+        "feedKey": "theme-etf-only-rolling",
+        "snapshotKey": "current",
+        "api": "/api/theme-fear-greed"
+      },
+      "blockers": [
+        "LEGACY_CODE_NOT_FULLY_ARCHIVED_IN_REPOSITORY",
+        "RAW_MANIFEST_NOT_REGISTERED"
+      ]
+    },
+    {
+      "id": "autonomous-driving",
+      "label": "자율주행",
+      "symbols": [
+        "DRIV",
+        "BOTZ"
+      ],
+      "benchmark": "SPY",
+      "methodologyVersion": "ETF_ONLY_T40_R20_V40_PAIR50",
+      "status": "LEGACY_PIPELINE_ACTIVE_MANIFEST_PENDING",
+      "rawManifest": null,
+      "rawAssets": [],
+      "repository": {
+        "collector": null,
+        "calculator": null,
+        "publisherInstaller": "scripts/pc-writer/theme-publication-recovery.mjs",
+        "reader": "worker/theme-etf-only-public.mjs"
+      },
+      "runtime": {
+        "collector": "theme-market-history-r131/marketparquet-r167/r181-primary-cycle.mjs",
+        "calculator": "theme-market-history-r131/marketparquet-r167/r179-publish-core.mjs",
+        "publisher": "theme-market-history-r131/marketparquet-r167/r171-publish.mjs"
+      },
+      "tasks": [
+        "ZGMINI-PC-GetMarketHistory-ETF",
+        "ZGMINI-PC-MarketParquet-ETF"
+      ],
+      "public": {
+        "table": "public_feed_snapshots_v1",
+        "feedKey": "theme-etf-only-rolling",
+        "snapshotKey": "current",
+        "api": "/api/theme-fear-greed"
+      },
+      "blockers": [
+        "LEGACY_CODE_NOT_FULLY_ARCHIVED_IN_REPOSITORY",
+        "RAW_MANIFEST_NOT_REGISTERED"
+      ]
+    },
+    {
+      "id": "nuclear-smr",
+      "label": "원전·SMR",
+      "symbols": [
+        "NLR",
+        "URA"
+      ],
+      "benchmark": "SPY",
+      "methodologyVersion": "ETF_ONLY_T40_R20_V40_PAIR50",
+      "status": "LEGACY_PIPELINE_ACTIVE_MANIFEST_PENDING",
+      "rawManifest": null,
+      "rawAssets": [],
+      "repository": {
+        "collector": null,
+        "calculator": null,
+        "publisherInstaller": "scripts/pc-writer/theme-publication-recovery.mjs",
+        "reader": "worker/theme-etf-only-public.mjs"
+      },
+      "runtime": {
+        "collector": "theme-market-history-r131/marketparquet-r167/r181-primary-cycle.mjs",
+        "calculator": "theme-market-history-r131/marketparquet-r167/r179-publish-core.mjs",
+        "publisher": "theme-market-history-r131/marketparquet-r167/r171-publish.mjs"
+      },
+      "tasks": [
+        "ZGMINI-PC-GetMarketHistory-ETF",
+        "ZGMINI-PC-MarketParquet-ETF"
+      ],
+      "public": {
+        "table": "public_feed_snapshots_v1",
+        "feedKey": "theme-etf-only-rolling",
+        "snapshotKey": "current",
+        "api": "/api/theme-fear-greed"
+      },
+      "blockers": [
+        "LEGACY_CODE_NOT_FULLY_ARCHIVED_IN_REPOSITORY",
+        "RAW_MANIFEST_NOT_REGISTERED"
+      ]
+    },
+    {
+      "id": "defense",
+      "label": "방산",
+      "symbols": [
+        "ITA",
+        "SHLD"
+      ],
+      "benchmark": "SPY",
+      "methodologyVersion": "ETF_ONLY_T40_R20_V40_PAIR50",
+      "status": "LEGACY_PIPELINE_ACTIVE_MANIFEST_PENDING",
+      "rawManifest": null,
+      "rawAssets": [],
+      "repository": {
+        "collector": null,
+        "calculator": null,
+        "publisherInstaller": "scripts/pc-writer/theme-publication-recovery.mjs",
+        "reader": "worker/theme-etf-only-public.mjs"
+      },
+      "runtime": {
+        "collector": "theme-market-history-r131/marketparquet-r167/r181-primary-cycle.mjs",
+        "calculator": "theme-market-history-r131/marketparquet-r167/r179-publish-core.mjs",
+        "publisher": "theme-market-history-r131/marketparquet-r167/r171-publish.mjs"
+      },
+      "tasks": [
+        "ZGMINI-PC-GetMarketHistory-ETF",
+        "ZGMINI-PC-MarketParquet-ETF"
+      ],
+      "public": {
+        "table": "public_feed_snapshots_v1",
+        "feedKey": "theme-etf-only-rolling",
+        "snapshotKey": "current",
+        "api": "/api/theme-fear-greed"
+      },
+      "blockers": [
+        "LEGACY_CODE_NOT_FULLY_ARCHIVED_IN_REPOSITORY",
+        "RAW_MANIFEST_NOT_REGISTERED"
+      ]
+    },
+    {
+      "id": "fintech",
+      "label": "핀테크",
+      "symbols": [
+        "FINX",
+        "ARKF"
+      ],
+      "benchmark": "SPY",
+      "methodologyVersion": "ETF_ONLY_T40_R20_V40_PAIR50",
+      "status": "LEGACY_PIPELINE_ACTIVE_MANIFEST_PENDING",
+      "rawManifest": null,
+      "rawAssets": [],
+      "repository": {
+        "collector": null,
+        "calculator": null,
+        "publisherInstaller": "scripts/pc-writer/theme-publication-recovery.mjs",
+        "reader": "worker/theme-etf-only-public.mjs"
+      },
+      "runtime": {
+        "collector": "theme-market-history-r131/marketparquet-r167/r181-primary-cycle.mjs",
+        "calculator": "theme-market-history-r131/marketparquet-r167/r179-publish-core.mjs",
+        "publisher": "theme-market-history-r131/marketparquet-r167/r171-publish.mjs"
+      },
+      "tasks": [
+        "ZGMINI-PC-GetMarketHistory-ETF",
+        "ZGMINI-PC-MarketParquet-ETF"
+      ],
+      "public": {
+        "table": "public_feed_snapshots_v1",
+        "feedKey": "theme-etf-only-rolling",
+        "snapshotKey": "current",
+        "api": "/api/theme-fear-greed"
+      },
+      "blockers": [
+        "LEGACY_CODE_NOT_FULLY_ARCHIVED_IN_REPOSITORY",
+        "RAW_MANIFEST_NOT_REGISTERED"
+      ]
+    },
+    {
+      "id": "cybersecurity",
+      "label": "사이버보안",
+      "symbols": [
+        "CIBR",
+        "BUG"
+      ],
+      "benchmark": "SPY",
+      "methodologyVersion": "ETF_ONLY_T40_R20_V40_PAIR50",
+      "status": "LEGACY_PIPELINE_ACTIVE_MANIFEST_PENDING",
+      "rawManifest": null,
+      "rawAssets": [],
+      "repository": {
+        "collector": null,
+        "calculator": null,
+        "publisherInstaller": "scripts/pc-writer/theme-publication-recovery.mjs",
+        "reader": "worker/theme-etf-only-public.mjs"
+      },
+      "runtime": {
+        "collector": "theme-market-history-r131/marketparquet-r167/r181-primary-cycle.mjs",
+        "calculator": "theme-market-history-r131/marketparquet-r167/r179-publish-core.mjs",
+        "publisher": "theme-market-history-r131/marketparquet-r167/r171-publish.mjs"
+      },
+      "tasks": [
+        "ZGMINI-PC-GetMarketHistory-ETF",
+        "ZGMINI-PC-MarketParquet-ETF"
+      ],
+      "public": {
+        "table": "public_feed_snapshots_v1",
+        "feedKey": "theme-etf-only-rolling",
+        "snapshotKey": "current",
+        "api": "/api/theme-fear-greed"
+      },
+      "blockers": [
+        "LEGACY_CODE_NOT_FULLY_ARCHIVED_IN_REPOSITORY",
+        "RAW_MANIFEST_NOT_REGISTERED"
+      ]
+    },
+    {
+      "id": "ai-semiconductor",
+      "label": "AI·반도체",
+      "symbols": [
+        "SMH",
+        "SOXX"
+      ],
+      "benchmark": "SPY",
+      "methodologyVersion": "ETF_ONLY_T40_R20_V40_PAIR50",
+      "status": "BLOCKED_AUTOMATION_NOT_CONNECTED",
+      "rawManifest": "themes/ai-semiconductor/raw-manifest.json",
+      "rawAssets": [
+        {
+          "path": "pc-writer/local-theme-ai-semiconductor-r187-raw-b79af822c7c91a6d.json",
+          "sha256": "b79af822c7c91a6d89a79f8275abb75a90f95e6dee3bd6bfc7435395c142ec9a"
+        }
+      ],
+      "missingRawFilename": null,
+      "repository": {
+        "collector": "scripts/pc-writer/theme-optional-collect.mjs",
+        "calculator": "scripts/pc-writer/theme-optional-score-r188.mjs",
+        "publisherInstaller": null,
+        "reader": "worker/theme-ai-semiconductor-optional.mjs"
+      },
+      "runtime": {
+        "collector": null,
+        "calculator": null,
+        "publisher": null
+      },
+      "tasks": [],
+      "public": {
+        "table": "public_feed_snapshots_v1",
+        "feedKey": "theme-ai-semiconductor-r189",
+        "snapshotKey": "current",
+        "api": "/api/theme-fear-greed"
+      },
+      "blockers": [
+        "COLLECT_CALCULATE_PUBLISH_NOT_CONNECTED"
+      ],
+      "historicalEvidence": {
+        "scope": "STORED_R187_RAW_VS_R188_RESULT",
+        "date": "2026-10-16",
+        "points": 252,
+        "maxDifference": 0,
+        "sourceCodeSha256": "8dca56dabe186bbc69641ce347bc5bcbc0d0a0e30e12f13dbda8ca9e2a4524f9",
+        "productionAutomationVerified": false
+      },
+      "collectionEvidence": {
+        "checkedAt": "2026-10-23",
+        "mode": "EXPLICIT_PRIVATE_COLLECTION_NOT_SCHEDULED",
+        "latestCommonObservationDate": "2026-10-21",
+        "commonSessions": 704,
+        "providerCalls": 3,
+        "publicWrites": 0
+      },
+      "historicalComparison": {
+        "observationDate": "2026-10-19",
+        "points": 252,
+        "maxDifference": 0,
+        "exact": true
+      }
+    },
+    {
+      "id": "biotech",
+      "label": "바이오·신약",
+      "symbols": [
+        "IBB",
+        "XBI"
+      ],
+      "benchmark": "SPY",
+      "methodologyVersion": "ETF_ONLY_T40_R20_V40_PAIR50",
+      "status": "BLOCKED_HISTORICAL_PARITY_AND_AUTOMATION",
+      "rawManifest": "themes/biotech/raw-manifest.json",
+      "rawAssets": [],
+      "missingRawFilename": "BIOTECH_PC_R3_LOCAL_PRICES.json",
+      "repository": {
+        "collector": "scripts/pc-writer/theme-optional-collect.mjs",
+        "calculator": null,
+        "publisherInstaller": null,
+        "reader": "worker/theme-biotech-optional.mjs"
+      },
+      "runtime": {
+        "collector": null,
+        "calculator": null,
+        "publisher": null
+      },
+      "tasks": [],
+      "public": {
+        "table": "public_feed_snapshots_v1",
+        "feedKey": "theme-biotech-optional-r1",
+        "snapshotKey": "current",
+        "api": "/api/theme-fear-greed"
+      },
+      "blockers": [
+        "COLLECT_CALCULATE_PUBLISH_NOT_CONNECTED",
+        "ORIGINAL_R3_PRICE_SOURCE_NOT_LOCATED",
+        "RECOLLECTED_HISTORY_DIFFERS_FROM_PUBLIC_HISTORY"
+      ],
+      "collectionEvidence": {
+        "checkedAt": "2026-10-23",
+        "mode": "EXPLICIT_PRIVATE_COLLECTION_NOT_SCHEDULED",
+        "latestCommonObservationDate": "2026-10-21",
+        "commonSessions": 704,
+        "providerCalls": 8,
+        "publicWrites": 0
+      },
+      "historicalComparison": {
+        "observationDate": "2026-10-19",
+        "points": 252,
+        "maxDifference": 2.3531799999999947,
+        "exact": false
+      }
+    }
+  ]
+}
