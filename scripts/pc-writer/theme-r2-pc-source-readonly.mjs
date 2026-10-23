@@ -17,12 +17,14 @@ const HERE = path.dirname(fileURLToPath(import.meta.url));
 const REPORT = path.join(HERE, 'THEME_R2_PC_SOURCE_RESULT.json');
 const DEFAULT_ROOT = 'E:\\ZGmini\\data\\pc-writer';
 const MAX_FILES = 140;
+const MAX_CATALOG_FILES = 12_000;
 const MAX_BYTES = 24 * 1024 * 1024;
 const MAX_NODES = 75_000;
 const MAX_DEPTH = 2;
 const MAX_SQLITE_ROWS = 5_000;
 const MAX_SQLITE_TABLES = 20;
 const CANDIDATE = /etf|theme|price|histor|spy|market|sector|fund|asset|qtum|wqtm/i;
+const PRICE_LIKE = /price|raw|hour|histor|joined|closes/i;
 const CHILD_DIR = /etf|theme|price|histor|market|sector|fund|asset|raw|source/i;
 const SENSITIVE = /secret|password|token|credential|cookie|private.?key|oauth|auth|\.env/i;
 const DATE_KEY = /^(date|day|trade_date|tradedate|trading_date|tradingdate|observation_date)$/i;
@@ -47,9 +49,13 @@ function origin(rel) {
   return 'UNKNOWN_UNVERIFIED';
 }
 
-function analyzeShape(root) {
+function analyzeShape(root,{tickerFromFilename=null,allowTickerColumns=false}={}) {
   const discovered = new Map();
   let scannedNodes = 0, capped = false;
+  function record(symbol,date) {
+    if (!discovered.has(symbol)) discovered.set(symbol,new Set());
+    discovered.get(symbol).add(date);
+  }
   function walk(value, inherited, depth) {
     if (++scannedNodes > MAX_NODES) { capped = true; return; }
     if (depth > 9 || !value || typeof value !== 'object') return;
@@ -63,9 +69,15 @@ function analyzeShape(root) {
     const explicit = ticker(String(pick(value, SYMBOL_KEY) ?? '').toUpperCase());
     const symbol = explicit || inherited;
     const date = day(pick(value, DATE_KEY));
-    if (symbol && date && validPrice(pick(value, CLOSE_KEY))) {
-      if (!discovered.has(symbol)) discovered.set(symbol, new Set());
-      discovered.get(symbol).add(date);
+    if (symbol && date && validPrice(pick(value, CLOSE_KEY))) record(symbol,date);
+    // Some real PC raw files are date-first rows: {date, SPY: 500, BOTZ: 25}.
+    // Only inspect symbol columns in files named as prices/raw history. Scores
+    // with similarly named columns must never masquerade as price observations.
+    if (date && allowTickerColumns) {
+      for (const [key, val] of Object.entries(value)) {
+        if ((KNOWN_SYMBOLS.includes(key) || key === 'QTUM' || key === 'WQTM') && validPrice(val))
+          record(key,date);
+      }
     }
     for (const [key, child] of Object.entries(value)) {
       if (capped) break;
@@ -75,7 +87,7 @@ function analyzeShape(root) {
       walk(child, byKey || inherited, depth + 1);
     }
   }
-  walk(root, null, 0);
+  walk(root, tickerFromFilename, 0);
   const symbols = Object.fromEntries([...discovered].sort(([a],[b])=>a.localeCompare(b)).map(([t, set]) => {
     const dates = [...set].sort();
     return [t, {sampledUniqueDates: dates.length, firstDate: dates[0], lastDate: dates.at(-1),
@@ -95,7 +107,10 @@ function surveyJson(rootDir, rel, stats) {
       stats.largeOrEmpty++; entry.scanStatus = 'SIZE_LIMIT'; return entry;
     }
     const parsed = JSON.parse(fs.readFileSync(filename, 'utf8'));
-    const shape = analyzeShape(parsed);
+    const matches = [...new Set([...KNOWN_SYMBOLS,'QTUM','WQTM'])].filter(t =>
+      new RegExp('(^|[^A-Z0-9])'+t+'([^A-Z0-9]|$)','i').test(path.basename(rel)));
+    const shape = analyzeShape(parsed,{tickerFromFilename:matches.length===1?matches[0]:null,
+      allowTickerColumns:PRICE_LIKE.test(rel) && !/score|result|report/i.test(rel)});
     stats.jsonParsed++;
     if (shape.capped) stats.nodeCapped++;
     entry.scanStatus = shape.capped ? 'BOUNDED_PARTIAL' : 'BOUNDED_COMPLETE';
@@ -107,26 +122,48 @@ function surveyJson(rootDir, rel, stats) {
 }
 
 function inspectPaths(base, stats) {
-  const files = [];
+  const files = [],catalog=[];
+  const priority = rel => {
+    const name=path.basename(rel);
+    const theme=/theme|qtum|wqtm/i.test(name);
+    const price=PRICE_LIKE.test(name);
+    const named=[...KNOWN_SYMBOLS,'QTUM','WQTM'].some(t=>
+      new RegExp('(^|[^A-Z0-9])'+t+'([^A-Z0-9]|$)','i').test(name));
+    if (theme && price && !/score|result|report/i.test(name)) return 0;
+    if (named && price) return 1;
+    if (theme && /fund|asset|aum/i.test(name)) return 2;
+    if (theme) return 3;
+    if (!/sector/i.test(name) && price) return 4;
+    if (/sector/i.test(name)) return 6;
+    return 5;
+  };
   function visit(dir, depth) {
     let list;
     try {list = fs.readdirSync(dir, {withFileTypes:true});}
     catch {stats.unreadableDirectories++; return;}
-    // Known candidate filenames first; do not blindly walk the E: tree.
-    list.sort((a,b)=>Number(CANDIDATE.test(b.name))-Number(CANDIDATE.test(a.name)) || a.name.localeCompare(b.name));
+    // Catalog filenames first; prioritize theme PRICE data globally, instead
+    // of allowing numerous alphabetically early sector files to consume cap.
     for (const item of list) {
-      if (stats.jsonInspected >= MAX_FILES) {stats.fileCapReached = true; return;}
+      if (catalog.length >= MAX_CATALOG_FILES) {stats.catalogCapReached = true; return;}
       if (SENSITIVE.test(item.name) || item.isSymbolicLink()) continue;
       const full = path.join(dir,item.name);
       if (item.isDirectory() && depth < MAX_DEPTH && CHILD_DIR.test(item.name)) visit(full, depth+1);
       else if (item.isFile() && item.name.endsWith('.json') && CANDIDATE.test(item.name)) {
-        stats.jsonInspected++;
-        const result = surveyJson(base,path.relative(base,full),stats);
-        if (Object.keys(result.symbols ?? {}).length) files.push(result);
+        catalog.push(path.relative(base,full));
       }
     }
   }
   visit(base,0);
+  catalog.sort((a,b)=>priority(a)-priority(b)||a.localeCompare(b));
+  stats.candidateFilesFound=catalog.length;
+  stats.priorityBuckets=Object.fromEntries(Array.from({length:7},(_,i)=>[
+    'P'+i,catalog.filter(x=>priority(x)===i).length]));
+  stats.fileCapReached=catalog.length>MAX_FILES||stats.catalogCapReached;
+  for (const rel of catalog.slice(0,MAX_FILES)) {
+    stats.jsonInspected++;
+    const result=surveyJson(base,rel,stats);
+    if (Object.keys(result.symbols ?? {}).length) files.push(result);
+  }
   return files;
 }
 
@@ -170,6 +207,7 @@ async function inspectSqlite(base,stats) {
 export async function auditThemeR2Sources(rootDir = DEFAULT_ROOT) {
   const stats={jsonInspected:0,jsonParsed:0,largeOrEmpty:0,nodeCapped:0,
     invalidOrUnreadable:0,unreadableDirectories:0,fileCapReached:false,
+    catalogCapReached:false,candidateFilesFound:0,priorityBuckets:{},
     sqliteReadAvailable:false,sqliteTables:0,sqliteRowsSampled:0};
   const exists=fs.existsSync(rootDir) && fs.statSync(rootDir).isDirectory();
   const files=exists ? inspectPaths(rootDir,stats) : [];
@@ -181,14 +219,15 @@ export async function auditThemeR2Sources(rootDir = DEFAULT_ROOT) {
       sampledUniqueDates:f.symbols[t].sampledUniqueDates,firstDate:f.symbols[t].firstDate,lastDate:f.symbols[t].lastDate}))
       .sort((a,b)=>b.sampledUniqueDates-a.sampledUniqueDates).slice(0,8),
   }]));
-  return {version:'THEME_R2_PC_SOURCE_INVENTORY_V1',status:exists?'BOUNDED_DISCOVERY_NOT_VALIDATED':'SOURCE_ROOT_MISSING',
+  return {version:'THEME_R2_PC_SOURCE_INVENTORY_V2',status:exists?'BOUNDED_DISCOVERY_NOT_VALIDATED':'SOURCE_ROOT_MISSING',
     checkedAt:new Date().toISOString(),sourceRoot:rootDir,knownPublicPairs:R2_EXISTING_PUBLIC_PAIRS.map(([theme,etfs])=>({theme,etfs})),
     thresholds:{firstShortSamplePriceDays:188,firstMaturePointPriceDays:377,
       full252MatureChartPriceDays:628,absoluteEtfAdmissionRequirement:false},
     inventory:byTicker,files:files.map(({source,sourceClass,scanStatus,symbols})=>({source,sourceClass,
       scanStatus,symbols:Object.keys(symbols)})).slice(0,90),scan:stats,
     limits:'Bounded samples; date counts across separate files/providers are NOT combined or certified.',
-    blockingReasons:[...(!exists?['SOURCE_ROOT_MISSING']:[]),'SOURCE_LICENSE_NOT_VERIFIED','PRICE_ADJUSTMENT_AND_LINEAGE_NOT_RECONCILED','HISTORICAL_DATED_ETF_AUM_NOT_VERIFIED'],
+    blockingReasons:[...(!exists?['SOURCE_ROOT_MISSING']:[]),...(stats.fileCapReached?['FILE_CATALOG_SAMPLE_INCOMPLETE']:[]),
+      'SOURCE_LICENSE_NOT_VERIFIED','PRICE_ADJUSTMENT_AND_LINEAGE_NOT_RECONCILED','HISTORICAL_DATED_ETF_AUM_NOT_VERIFIED'],
     priceScoresComputed:false,providerCalls:0,databaseWrites:0,sourceWrites:0,
     productionChanged:false,published:false,
     next:'Review candidate source and its permission/lineage. Only then authorize a selected-file offline 63/126/252 numerical test.'};
