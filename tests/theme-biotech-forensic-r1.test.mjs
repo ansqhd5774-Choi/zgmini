@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import {createHash} from 'node:crypto';
-import {traceSeries,materializeBars,recompute,compareHistory} from '../scripts/pc-writer/theme-biotech-forensic-r1.mjs';
+import {traceSeries,traceR158Stages,firstStageDifference,materializeBars,recompute,compareHistory} from '../scripts/pc-writer/theme-biotech-forensic-r1.mjs';
 import {scoreAll252} from '../scripts/pc-writer/theme-optional-score-r188.mjs';
 import {r158ScorePrices} from '../lib/market-score/theme-etf-provisional-score.mjs';
 
@@ -16,7 +16,11 @@ test('R188 full traces are native R188 and R158 exact-input equal at each of las
  const {own,spy}=prices(),trace=traceSeries(own,spy),all=scoreAll252(own,spy),native=r158ScorePrices(own,spy);
  assert.equal(trace.length,252);
  for(let i=0;i<252;i++)assert.ok(Math.abs(trace[i].score-all[i])<1e-10);
- for(let i=625;i<628;i++)assert.ok(Math.abs(trace[i-376].score-native[i])<1e-10);
+ for(let i=625;i<628;i++){
+  const mirror=traceR158Stages(own,spy,i);
+  assert.ok(Math.abs(mirror.score-native[i])<1e-10);
+  assert.equal(firstStageDifference(mirror,trace[i-376]).status,'R158_R188_SAME_PRICE_STAGE_EXACT');
+ }
  const metric=trace[0].metrics.trend.m125;
  assert.equal(metric.rankWindow,252);
  assert.equal(metric.midrank,100*(metric.rankBelow+metric.rankEqual/2)/252);
