@@ -49,4 +49,5 @@ test('five score bands have enlarged labels and narrow-screen unclipped names',(
  assert.match(css,/@media\(max-width:750px\)\{\.zg-terrain-axis\{height:80px\}\.zg-terrain-axis-bands\{height:49px\}\.zg-terrain-axis-bands strong\{font-size:13px\}\.zg-terrain-axis-bands span\{font-size:11px\}\}/);
  assert.match(css,/@media\(max-width:510px\)\{\.zg-terrain-axis-bands span\{display:none\}\}/);
  assert.match(css,/@media\(max-width:410px\)\{\.zg-terrain-axis-bands>div:nth-child\(3\) strong\{transform:translateY\(-14px\)\}\}/);
+ assert.match(css,/@media\(max-width:340px\)\{\.zg-terrain-axis-bands>div:nth-child\(odd\) strong\{transform:translateY\(-14px\)\}\.zg-terrain-axis-bands>div:nth-child\(even\) strong\{font-size:12px\}\}/);
 });
