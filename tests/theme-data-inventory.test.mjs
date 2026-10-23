@@ -17,10 +17,11 @@ test('outside paths, absolute paths and manifest identity are rejected',()=>fixt
  for(const p of ['../raw.json','C:/raw.json','/raw.json','raw\\file.json'])assert.throws(()=>containedFile(root,p));
  fs.writeFileSync(path.join(root,'manifest.json'),JSON.stringify({version:1,themeId:'other',files:[]}));assert.equal(inspectManifest(root,'manifest.json','test').status,'INVALID_MANIFEST');
 }));
-test('all existing nine themes retain distinct identities and expose disconnected optional pipelines',()=>{
+test('existing nine themes and staged single-ETF quantum retain distinct isolated contracts',()=>{
  const registry=JSON.parse(fs.readFileSync(new URL('../config/theme-data-registry.json',import.meta.url)));
- assert.equal(registry.themes.length,9);assert.equal(new Set(registry.themes.map(t=>t.id)).size,9);
+ assert.equal(registry.themes.length,10);assert.equal(new Set(registry.themes.map(t=>t.id)).size,10);
  const result=inspectRegistry(registry,{dataRoot:os.tmpdir()});assert.equal(result.providerCalls,0);assert.equal(result.d1Writes,0);
  for(const id of ['ai-semiconductor','biotech']){const t=result.themes.find(t=>t.id===id);assert.equal(t.runtime.collector.status,'UNREGISTERED');assert.notEqual(t.rawManifest.status,'SHA_VERIFIED');assert.ok(t.blockers.length);assert.equal(t.publicRuntime,'NOT_QUERIED');}
+ const quantum=result.themes.find(t=>t.id==='quantum-computing');assert.deepEqual(registry.themes.find(t=>t.id==='quantum-computing').symbols,['QTUM']);assert.equal(quantum.taskRegistration,'NOT_QUERIED');assert.ok(quantum.blockers.length);assert.equal(quantum.publicRuntime,'NOT_QUERIED');
  const broken=structuredClone(registry);broken.themes[1].id=broken.themes[0].id;assert.throws(()=>inspectRegistry(broken,{dataRoot:os.tmpdir()}));
 });
