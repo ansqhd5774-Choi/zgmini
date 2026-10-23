@@ -25,6 +25,23 @@ const ymd=(d)=>new Date(d).toISOString().slice(0,10);
 const minusDays=(d,n)=>ymd(new Date(Date.parse(d+'T00:00:00Z')-n*86400000));
 const equal=(a,b)=>Array.isArray(a)&&Array.isArray(b)&&a.length===b.length&&a.every((v,i)=>v===b[i]);
 
+// Read-only diagnostic for the existing public reader predicate. This never
+// relaxes eligibility, estimates a missing score, or changes the public worker.
+export function aiReaderRejectionReason(record,reference,{now=Date.now()}={}){
+ const base={...reference,themes:reference?.themes?.slice(0,7)};
+ if(eligibleAiTheme(record,base,{now,storedAt:now}))return 'PASS';
+ if(base.status!=='READY'||base.themes?.length!==7||!date(base.observationDate)||base.themes[0]?.history?.length!==252)
+  return 'PUBLIC_READER_BASE_NOT_READY';
+ if(record.observationDate!==base.observationDate)return 'PUBLIC_READER_OBSERVATION_DATE_MISMATCH';
+ if(record.history?.length!==252)return 'PUBLIC_READER_HISTORY_LENGTH_MISMATCH';
+ if(record.history.some((p,i)=>p?.date!==base.themes[0].history[i]?.date))return 'PUBLIC_READER_HISTORY_CALENDAR_MISMATCH';
+ const pending=base.phase==='PROVISIONAL'?base.provisional?.points??[]:[];
+ const actual=record.provisional?.points??[];
+ if(!equal(pending.map(p=>p?.date),actual.map(p=>p?.date)))return 'PUBLIC_READER_PROVISIONAL_DATES_MISSING';
+ if(record.phase!==(pending.length?'PROVISIONAL':'CONFIRMED'))return 'PUBLIC_READER_PHASE_MISMATCH';
+ return 'PUBLIC_READER_OTHER_GATE_REJECTED';
+}
+
 export function collectWindow(manifest,reference,themeId){
  ensure(TARGETS.includes(themeId)&&manifest?.themeId===themeId&&Array.isArray(manifest.files),'MANIFEST_INVALID');
  ensure(reference?.status==='READY'&&date(reference.observationDate),'REFERENCE_UNAVAILABLE');
@@ -72,7 +89,8 @@ export function buildAiCandidate({audit,prior,reference,manifest,manifestBytes,n
   derivedLicenseVerified:prior.derivedLicenseVerified,localBarsVerified:true,sourcePriceReconciled:true,
   observationDate:audit.observationDate,score:audit.score,history:audit.history,
   phase:(reference.provisional?.points?.length??0)?'PROVISIONAL':'CONFIRMED',provisional:audit.provisional};
- ensure(eligibleAiTheme(record,{...reference,themes:reference.themes.slice(0,7)},{now,storedAt:now}),'PUBLIC_READER_CONTRACT_REJECTED');
+ ensure(eligibleAiTheme(record,{...reference,themes:reference.themes.slice(0,7)},{now,storedAt:now}),
+  aiReaderRejectionReason(record,reference,{now}));
  return record;
 }
 
@@ -184,6 +202,36 @@ export async function runOptionalTheme({themeId,dataRoot,readPublic=api,storage=
  }catch(e){result.status='BLOCKED';result.reason=e?.code??'UNKNOWN_ERROR';return result;}
 }
 
+// One-shot diagnostics re-evaluate existing SHA-verified local bars. There are
+// no provider requests, D1 writes, scheduler actions or E: state-file writes.
+export async function diagnoseAiReader({dataRoot,readPublic=api,storage=null,audit=auditOptionalPrices,now=Date.now}={}){
+ const result={report:'THEME_AI_READER_READONLY_DIAGNOSTIC_R1',themeId:'ai-semiconductor',status:'STARTED',
+  providerCalls:0,d1Writes:0,schedulerWrites:0,reason:null};
+ try{
+  ensure(fs.existsSync(dataRoot),'E_DATA_ROOT_UNAVAILABLE');
+  const db=storage??cloudflareD1({dataRoot}),publicFeed=await readPublic();
+  const reference={...publicFeed,themes:publicFeed.themes?.slice(0,7)};
+  const previous=await db.read(AI_THEME_PUBLIC_KEY);
+  validateStoredReference('ai-semiconductor',previous.body,reference);
+  const relative='themes/ai-semiconductor/raw-manifest.json';
+  ensure(inspectManifest(dataRoot,relative,'ai-semiconductor').status==='SHA_VERIFIED','RAW_MANIFEST_INVALID');
+  const file=containedFile(dataRoot,relative),manifestBytes=fs.readFileSync(file);
+  const checked=audit({themeId:'ai-semiconductor',dataRoot,reference,priorRecord:previous.body});
+  result.publicObservationDate=reference.observationDate;
+  result.publicHistoryLastDate=reference.themes[0]?.history?.at(-1)?.date??null;
+  result.localObservationDate=checked.observationDate;
+  result.scoreDifference=checked.audit?.maxDifference??null;
+  result.publicPhase=reference.phase;
+  result.publicProvisionalDates=reference.phase==='PROVISIONAL'?(reference.provisional?.points??[]).map(p=>p.date):[];
+  result.localProvisionalDates=(checked.provisional?.points??[]).map(p=>p.date);
+  result.localAuditStatus=checked.status;
+  ensure(checked.status==='PRIVATE_CANDIDATE_PARITY_VERIFIED','SCORE_DRIFT_REVIEW_REQUIRED');
+  buildAiCandidate({audit:checked,prior:previous.body,reference,manifest:JSON.parse(manifestBytes),manifestBytes,now:now()});
+  result.status='PUBLIC_READER_CANDIDATE_VERIFIED_NO_PUBLICATION';
+ }catch(e){result.status='BLOCKED';result.reason=e?.code??'UNKNOWN_ERROR';}
+ return result;
+}
+
 function saveCycleResult(dataRoot,themeId,result){
  const root=fs.realpathSync(dataRoot),dir=path.join(root,'themes',themeId,'state');
  ensure(fs.existsSync(dir)&&fs.realpathSync(dir).startsWith(root+path.sep),'STATE_DIRECTORY_MISSING');
@@ -194,8 +242,13 @@ function saveCycleResult(dataRoot,themeId,result){
 }
 
 if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.url)){
- const args=process.argv.slice(2),valid=(args[0]==='--once'&&['ai-semiconductor','biotech','all'].includes(args[1])&&args.slice(2).every(x=>x==='--publish'));
- if(!valid){console.log('Usage: node theme-optional-cycle.mjs --once <ai-semiconductor|biotech|all> [--publish]');process.exitCode=2;}
+ const args=process.argv.slice(2),diagnose=args.length===2&&args[0]==='--diagnose'&&args[1]==='ai-semiconductor';
+ const valid=diagnose||(args[0]==='--once'&&['ai-semiconductor','biotech','all'].includes(args[1])&&args.slice(2).every(x=>x==='--publish'));
+ if(!valid){console.log('Usage: node theme-optional-cycle.mjs --once <ai-semiconductor|biotech|all> [--publish] OR --diagnose ai-semiconductor');process.exitCode=2;}
+ else if(diagnose){
+  const result=await diagnoseAiReader({dataRoot:process.env.ZGMINI_DATA_ROOT??DATA_ROOT});
+  console.log(JSON.stringify(result));if(result.status==='BLOCKED')process.exitCode=1;
+ }
  else{
   const dataRoot=process.env.ZGMINI_DATA_ROOT??DATA_ROOT;
   const ids=args[1]==='all'?TARGETS:[args[1]];
