@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import {createHash} from 'node:crypto';
-import {buildAiCandidate,collectWindow,runOptionalTheme,cloudflareD1,cloudflareToken,aiReaderRejectionReason,diagnoseAiReader} from '../scripts/pc-writer/theme-optional-cycle.mjs';
+import {buildAiCandidate,collectWindow,runOptionalTheme,cloudflareD1,cloudflareToken,aiReaderRejectionReason,diagnoseAiReader,diagnoseBiotechParity} from '../scripts/pc-writer/theme-optional-cycle.mjs';
 import {regularHour15Rows} from '../scripts/pc-writer/theme-optional-score-r188.mjs';
 
 const NOW=Date.parse('2026-10-23T05:00:00Z');
@@ -123,6 +123,23 @@ test('read-only AI diagnostic uses existing local audit and D1 SELECT with zero 
   assert.deepEqual(result.localProvisionalDates,[]);
   assert.equal(result.providerCalls,0);assert.equal(result.d1Writes,0);assert.equal(result.schedulerWrites,0);
   assert.equal(reads,1);assert.equal(writes,0);assert.equal(audits,1);
+ });
+});
+test('read-only biotech diagnostic isolates observed history drift without D1 writes',async()=>{
+ await fixture('biotech',async({root})=>{
+  let writes=0;
+  const old={...priorAi(latest),theme:'바이오테크',etfs:['IBB','XBI']};
+  const db={read:async()=>({body:old,storedAt:NOW-5000}),replace:async()=>{writes++}};
+  const reference={...base(),themes:[...base().themes,{theme:'AI 반도체',history}]};
+  const candidateHistory=history.map((p,i)=>i===251?{...p,score:p.score+2.35318}:p);
+  const result=await diagnoseBiotechParity({dataRoot:root,storage:db,readPublic:async()=>reference,
+   audit:()=>({...candidateResult,themeId:'biotech',history:candidateHistory,
+    status:'CONFIRMED_SCORE_REVISION_REVIEW',audit:{maxDifference:2.35318,commonSessions:630,sourceOverlapBars:10,missingProvisionalDates:[]}})});
+  assert.equal(result.status,'BLOCKED');assert.equal(result.reason,'SCORE_DRIFT_REVIEW_REQUIRED');
+  assert.equal(result.scoreDifference,2.35318);assert.equal(result.overlappingChangedDates,1);
+  assert.equal(result.largestOverlappingDifferences[0].date,latest);
+  assert.equal(result.providerCalls,0);assert.equal(result.d1Writes,0);assert.equal(result.schedulerWrites,0);
+  assert.equal(writes,0);
  });
 });
 test('private cycle collects and audits but never posts to D1 without --publish',async()=>{
