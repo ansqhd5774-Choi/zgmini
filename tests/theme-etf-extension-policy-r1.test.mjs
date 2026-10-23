@@ -81,6 +81,35 @@ test('publisher acceptance is not reusable after account, source or terms eviden
  assert.ok(result.publicationProblems.includes('LICENSE_SCOPE_UNCONFIRMED'));
 });
 
+test('new daily verification evidence does not retroactively revoke previously approved contract',()=>{
+ const candidate=record();acceptRisk(candidate);
+ const originalScope=candidate.publisherRiskAcceptance.acceptedScope;
+ candidate.priceEvidence.checkedAt='2026-10-23T08:00:00Z';
+ candidate.priceEvidence.referenceSamples=9;
+ candidate.sourceEvidence[0].checkedOn='2026-10-22';
+ assert.equal(themeEtfRiskScope(candidate),originalScope);
+ const next=assessThemeEtfExtension(candidate,{now});
+ assert.equal(next.publicationReady,true);
+ assert.equal(next.publicationBasis,'OWNER_ACCEPTED_LIMITATIONS');
+});
+
+test('an actual change in ETF basket, formula, provider identity, terms or price adjustment requires a fresh decision',()=>{
+ const mutations=[
+  candidate=>{candidate.etfs=[{kind:'ETF',symbol:'QNTM',weight:1}];},
+  candidate=>{candidate.methodologyVersion='QTUM_R159_NEW_FORMULA';},
+  candidate=>{candidate.priceMethodVersion='DAILY_ADJUSTED_CLOSE';},
+  candidate=>{candidate.sourceEvidence[0].dataset='US_ETF_DAILY';},
+  candidate=>{candidate.sourceEvidence[0].evidenceId='TERMS_2026_11_01';},
+  candidate=>{candidate.priceEvidence.adjustmentBasis='SPLIT_ADJUSTED';},
+ ];
+ for(const change of mutations){
+  const candidate=record();acceptRisk(candidate);change(candidate);
+  const result=assessThemeEtfExtension(candidate,{now});
+  assert.equal(result.publicationReady,false);
+  assert.ok(result.publicationProblems.includes('LICENSE_SCOPE_UNCONFIRMED'));
+ }
+});
+
 test('missing reason, fabricated score, duplicate ETFs or total weights other than one fail independently',()=>{
  const missing=record();missing.history[0]={date:missing.history[0].date,score:null};
  assert.ok(assessThemeEtfExtension(missing,{now}).chartProblems.includes('MISSING_REASON_REQUIRED'));
@@ -122,4 +151,9 @@ test('extension validation never imports or modifies legacy seven-theme/AI/biote
  const source=readFileSync('lib/market-score/theme-etf-extension-policy-r1.mjs','utf8');
  assert.doesNotMatch(source,/\bimport\b|\bfetch\s*\(|\bprepare\s*\(/);
  assert.match(source,/standalone|Standalone/);
+ const publicReader=readFileSync('worker/theme-etf-only-public.mjs','utf8');
+ const aiReader=readFileSync('worker/theme-ai-semiconductor-optional.mjs','utf8');
+ const biotechReader=readFileSync('worker/theme-biotech-optional.mjs','utf8');
+ for(const code of [publicReader,aiReader,biotechReader])
+  assert.doesNotMatch(code,/theme-etf-extension-policy-r1|assessThemeEtfExtension/);
 });
