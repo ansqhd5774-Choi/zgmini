@@ -47,3 +47,27 @@ test('absent PC source is an explicit incomplete report with no fallback',async(
   assert.equal(result.blockingReasons.includes('SOURCE_ROOT_MISSING'),true);
   assert.equal(result.providerCalls,0);
 });
+
+test('prioritize theme raw price rows before sector JSON cap and do not mistake scores for closes',async()=>{
+  const root=fs.mkdtempSync(path.join(os.tmpdir(),'zgmini-r2-sector-cap-'));
+  try {
+    for(let i=0;i<155;i++) fs.writeFileSync(path.join(root,`local-sector-price-${String(i).padStart(3,'0')}.json`),
+      JSON.stringify({data:[{date:'2026-10-20',SPY:500}]}));
+    fs.writeFileSync(path.join(root,'zz-theme-r2-raw-daily.json'),JSON.stringify({data:[
+      {date:'2026-10-19',BOTZ:27,ROBO:42,SPY:600},
+      {date:'2026-10-20',BOTZ:28,ROBO:43,SPY:601},
+    ]}));
+    fs.writeFileSync(path.join(root,'local-theme-score-history.json'),JSON.stringify({data:[
+      {date:'2026-10-20',BOTZ:74,ROBO:58},
+    ]}));
+    const result=await auditThemeR2Sources(root);
+    assert.equal(result.version,'THEME_R2_PC_SOURCE_INVENTORY_V2');
+    assert.equal(result.scan.candidateFilesFound,157);
+    assert.equal(result.scan.fileCapReached,true);
+    assert.equal(result.blockingReasons.includes('FILE_CATALOG_SAMPLE_INCOMPLETE'),true);
+    assert.equal(result.inventory.BOTZ.candidateSources[0].sampledUniqueDates,2);
+    assert.equal(result.inventory.ROBO.candidateSources[0].sampledUniqueDates,2);
+    assert.equal(result.inventory.SPY.candidateSources.some(x=>x.source==='zz-theme-r2-raw-daily.json'),true);
+    assert.equal(result.files.some(x=>x.source==='local-theme-score-history.json'),false);
+  } finally {fs.rmSync(root,{recursive:true,force:true});}
+});
