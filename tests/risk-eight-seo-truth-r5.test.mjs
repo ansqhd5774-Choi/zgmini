@@ -20,7 +20,9 @@ test("debt meta description and visible introduction do not promise absent score
  assert.match(intro,/부채가 경기와 금융시장에 주는 위험을 현재 점수, 구성지표와 관측일로 확인하세요/);
  assert.doesNotMatch(intro,/부채가 경기와 금융시장에 주는 위험을 현재 점수와 추이로 확인하세요/);
  const projection=read("worker/projection-builders/debtRisk.ts");
- assert.ok(projection.includes("trend:[]"),"metadata caveat must remain truthful for the current published projection");
+ assert.ok(projection.includes("debtStoredHistory"),"history must come from the stored-input replay, not fabricated points");
+ const replay=read("worker/projection-builders/debt-stored-history.mjs");
+ assert.match(replay,/if\(!scoreMatch\)return \{trend:\[\]/,"incompatible or incomplete history stays unavailable");
 });
 test("sitemap lastmod reflects the verified Oct 20 KST content changes without falsifying untouched routes",()=>{
  const sitemap=read("public/sitemap.xml");
