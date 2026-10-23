@@ -27,10 +27,10 @@ export default function SectorFearGreedPage(){
     <p>미국 11개 GICS 섹터의 투자심리를 한눈에 비교합니다.</p>
    </header>
    <SectorDetailCharts/>
-   <nav aria-label="관련 분석" className="mt-8 flex flex-wrap gap-x-6 gap-y-2 text-sm">
-    <a className="underline" href="/fear-greed/usa/">미국 공포탐욕지수 →</a>
-    <a className="underline" href="/recession/">미국 경기침체 지표 →</a>
-    <a className="underline" href="/asset-bubble/">미국 자산 버블 지표 →</a>
+   <nav aria-label="관련 분석" className="zg-sector-related-nav">
+    <a className="zg-sector-related-link" href="/fear-greed/usa/"><span>미국 공포탐욕지수</span><span aria-hidden="true">→</span></a>
+    <a className="zg-sector-related-link" href="/recession/"><span>미국 경기침체 지표</span><span aria-hidden="true">→</span></a>
+    <a className="zg-sector-related-link" href="/asset-bubble/"><span>미국 자산 버블 지표</span><span aria-hidden="true">→</span></a>
    </nav>
   </div>
  </main></>;

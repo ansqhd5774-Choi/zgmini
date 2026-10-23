@@ -49,7 +49,13 @@ function ScoreBar({score}:{score:number|null}){
 function Sparkline({rows,id,provisionalDate}:{rows:SectorSentimentPoint[];id:SectorId;provisionalDate?:string}){
  const provisional=Boolean(provisionalDate&&rows.length>1&&rows.at(-1)?.date===provisionalDate);
  const points=useMemo(()=>rows.map((row,i)=>({date:row.date,value:row[id],solid:provisional&&i===rows.length-1?null:row[id],dash:provisional&&i>=rows.length-2?row[id]:null})),[rows,id,provisional]);
- return <div className="zg-sfg-sparkline" aria-hidden="true"><ResponsiveContainer width="100%" height="100%"><LineChart data={points} margin={{top:3,right:2,bottom:3,left:2}}><YAxis hide domain={[0,100]}/><Line dataKey={provisional?'solid':'value'} stroke={COLORS[id]} strokeWidth={1.7} dot={false} connectNulls={false} isAnimationActive={false}/>{provisional&&<Line dataKey="dash" stroke={COLORS[id]} strokeDasharray="4 4" strokeWidth={1.7} dot={false} connectNulls={false} isAnimationActive={false}/>}</LineChart></ResponsiveContainer></div>;
+ return <div className="zg-sfg-sparkline" aria-hidden="true"><ResponsiveContainer width="100%" height="100%"><LineChart accessibilityLayer={false} data={points} margin={{top:3,right:2,bottom:3,left:2}}>
+  <XAxis dataKey="date" hide height={0}/><YAxis hide domain={[0,100]}/>
+  <Tooltip cursor={false} isAnimationActive={false} allowEscapeViewBox={{x:true,y:true}} wrapperStyle={{pointerEvents:'none',zIndex:30}} content={({active,payload})=>{
+   const point=payload?.[0]?.payload as {date?:string;value?:number|null}|undefined;
+   return active&&point&&typeof point.value==='number'?<div className="zg-sfg-tooltip zg-sfg-spark-tooltip"><strong>{point.date}</strong><div><span style={{color:COLORS[id]}}>{nameOf(id)}</span><b>{point.value.toFixed(1)}점</b></div></div>:null;
+  }}/>
+  <Line dataKey={provisional?'solid':'value'} stroke={COLORS[id]} strokeWidth={1.7} dot={false} activeDot={{r:2.5}} connectNulls={false} isAnimationActive={false}/>{provisional&&<Line dataKey="dash" stroke={COLORS[id]} strokeDasharray="4 4" strokeWidth={1.7} dot={false} activeDot={{r:2.5}} connectNulls={false} isAnimationActive={false}/>}</LineChart></ResponsiveContainer></div>;
 }
 function Zones(){return <><ReferenceArea y1={0} y2={25} fill="#8d3048" fillOpacity={0.22}/><ReferenceArea y1={25} y2={45} fill="#9f6032" fillOpacity={0.18}/><ReferenceArea y1={45} y2={55} fill="#718092" fillOpacity={0.10}/><ReferenceArea y1={55} y2={75} fill="#348856" fillOpacity={0.17}/><ReferenceArea y1={75} y2={100} fill="#078b83" fillOpacity={0.18}/></>;}
 export default function SectorDetailCharts(){

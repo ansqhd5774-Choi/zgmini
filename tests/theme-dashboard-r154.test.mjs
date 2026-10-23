@@ -124,3 +124,18 @@ test('dashboard hides the two notices while detail page retains provisional dash
  assert.match(sectorDetail,/onClick=\{\(\)=>setSelected\(sector\.id\)\}/);
  assert.match(sectorDetail,/const \[compareDays,setCompareDays\]=useState\(365\)/);
 });
+
+test('sector detail mini charts expose stored historical date and score on hover while related links use buttons',()=>{
+ const detail=fs.readFileSync('app/sector-fear-greed/sector-detail-charts.tsx','utf8');
+ const page=fs.readFileSync('app/sector-fear-greed/page.tsx','utf8');
+ const css=fs.readFileSync('app/sector-fear-greed/sector-detail.css','utf8');
+ assert.match(detail,/<XAxis dataKey="date" hide height=\{0\}\/>/);
+ assert.match(detail,/<Tooltip cursor=\{false\} isAnimationActive=\{false\} allowEscapeViewBox=/);
+ assert.match(detail,/typeof point\.value==='number'/);
+ assert.match(detail,/point\.value\.toFixed\(1\)/);
+ assert.match(detail,/provisional&&<Line dataKey="dash"/);
+ assert.match(css,/\.zg-sfg-sparkline\{[^}]*pointer-events:auto/);
+ assert.match(css,/\.zg-sfg-rank-row:hover,\.zg-sfg-rank-row:focus-visible\{z-index:2/);
+ assert.match(page,/<nav aria-label="관련 분석" className="zg-sector-related-nav">/);
+ for(const href of ['/fear-greed/usa/','/recession/','/asset-bubble/'])assert.match(page,new RegExp(`className="zg-sector-related-link" href="${href}"`));
+});
