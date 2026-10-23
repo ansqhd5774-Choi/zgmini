@@ -41,7 +41,7 @@ export function inspectRegistry(registry,{dataRoot,sourceRoot=repoRoot}={}){
   rawManifest:inspectManifest(dataRoot,t.rawManifest,t.id),rawAssets:(t.rawAssets??[]).map(a=>resource(dataRoot,a.path,a.sha256)),
   repository:Object.fromEntries(Object.entries(t.repository).map(([role,p])=>[role,resource(sourceRoot,p)])),
   runtime:Object.fromEntries(Object.entries(t.runtime).map(([role,p])=>[role,resource(dataRoot,p)])),
-  tasks:t.tasks,taskRegistration:'NOT_QUERIED',publicRuntime:'NOT_QUERIED',blockers:t.blockers}))};
+  tasks:t.tasks,taskRegistration:'NOT_QUERIED',publicRuntime:'NOT_QUERIED',blockers:t.blockers,followUps:t.followUps??[]}))};
 }
 if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.url)){
  try{const args=process.argv.slice(2);if(args.length&&!(args.length===2&&args[0]==='--data-root'))throw Error('ARGS_INVALID');

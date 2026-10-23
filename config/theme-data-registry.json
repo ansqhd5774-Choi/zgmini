@@ -40,7 +40,8 @@
         "snapshotKey": "current",
         "api": "/api/theme-fear-greed"
       },
-      "blockers": [
+      "blockers": [],
+      "followUps": [
         "LEGACY_CODE_NOT_FULLY_ARCHIVED_IN_REPOSITORY",
         "RAW_MANIFEST_NOT_REGISTERED"
       ]
@@ -78,7 +79,8 @@
         "snapshotKey": "current",
         "api": "/api/theme-fear-greed"
       },
-      "blockers": [
+      "blockers": [],
+      "followUps": [
         "LEGACY_CODE_NOT_FULLY_ARCHIVED_IN_REPOSITORY",
         "RAW_MANIFEST_NOT_REGISTERED"
       ]
@@ -116,7 +118,8 @@
         "snapshotKey": "current",
         "api": "/api/theme-fear-greed"
       },
-      "blockers": [
+      "blockers": [],
+      "followUps": [
         "LEGACY_CODE_NOT_FULLY_ARCHIVED_IN_REPOSITORY",
         "RAW_MANIFEST_NOT_REGISTERED"
       ]
@@ -154,7 +157,8 @@
         "snapshotKey": "current",
         "api": "/api/theme-fear-greed"
       },
-      "blockers": [
+      "blockers": [],
+      "followUps": [
         "LEGACY_CODE_NOT_FULLY_ARCHIVED_IN_REPOSITORY",
         "RAW_MANIFEST_NOT_REGISTERED"
       ]
@@ -192,7 +196,8 @@
         "snapshotKey": "current",
         "api": "/api/theme-fear-greed"
       },
-      "blockers": [
+      "blockers": [],
+      "followUps": [
         "LEGACY_CODE_NOT_FULLY_ARCHIVED_IN_REPOSITORY",
         "RAW_MANIFEST_NOT_REGISTERED"
       ]
@@ -230,7 +235,8 @@
         "snapshotKey": "current",
         "api": "/api/theme-fear-greed"
       },
-      "blockers": [
+      "blockers": [],
+      "followUps": [
         "LEGACY_CODE_NOT_FULLY_ARCHIVED_IN_REPOSITORY",
         "RAW_MANIFEST_NOT_REGISTERED"
       ]
@@ -268,7 +274,8 @@
         "snapshotKey": "current",
         "api": "/api/theme-fear-greed"
       },
-      "blockers": [
+      "blockers": [],
+      "followUps": [
         "LEGACY_CODE_NOT_FULLY_ARCHIVED_IN_REPOSITORY",
         "RAW_MANIFEST_NOT_REGISTERED"
       ]
