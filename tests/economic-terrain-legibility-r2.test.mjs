@@ -47,7 +47,8 @@ test('five score bands have enlarged labels and narrow-screen unclipped names',(
  assert.match(rule('.zg-terrain-axis-bands strong'),/font-size:15px/);
  assert.match(rule('.zg-terrain-axis-bands span'),/font-size:12px/);
  assert.match(css,/@media\(max-width:750px\)\{\.zg-terrain-axis\{height:80px\}\.zg-terrain-axis-bands\{height:49px\}\.zg-terrain-axis-bands strong\{font-size:13px\}\.zg-terrain-axis-bands span\{font-size:11px\}\}/);
- assert.match(css,/@media\(max-width:510px\)\{\.zg-terrain-axis\{position:relative;height:105px;padding-top:25px\}/);
+ assert.match(css,/@media\(max-width:510px\)\{\.zg-terrain-axis\{position:relative;height:80px;padding-top:25px\}/);
+ assert.match(css,/\.zg-terrain-axis-bands\{height:22px\}\.zg-terrain-axis-bands span\{display:none\}/);
  assert.match(css,/\.zg-terrain-axis-bands span\{display:none\}\.zg-terrain-axis-bands strong\{position:absolute;top:5px;width:20%;font-size:14px;text-align:center\}/);
  for(const [n,left] of [[1,'0'],[2,'20%'],[3,'40%'],[4,'60%'],[5,'80%']]){
   assert.ok(css.includes(`.zg-terrain-axis-bands>div:nth-child(${n}) strong{left:${left}}`));
