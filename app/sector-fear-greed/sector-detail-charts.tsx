@@ -64,6 +64,7 @@ export default function SectorDetailCharts(){
  const [failed,setFailed]=useState(false);
  const [selected,setSelected]=useState<SectorId|null>(null);
  const [compareDays,setCompareDays]=useState(365);
+ const [comparisonPinned,setComparisonPinned]=useState(false);
  const [detailDays,setDetailDays]=useState(365);
  const [visible,setVisible]=useState<Set<SectorId>>(()=>new Set(INITIAL));
  useEffect(()=>{const controller=new AbortController();fetch('/api/sector-fear-greed',{cache:'no-store',signal:controller.signal}).then(async response=>{
@@ -97,12 +98,12 @@ export default function SectorDetailCharts(){
   </section>
   <div className="zg-sfg-lower">
    <section className="zg-sfg-comparison" aria-label="섹터별 심리 지수 비교">
-    <div className="zg-sfg-panel-head"><div><h2>섹터별 1년 심리 지수 비교</h2><p>선택한 섹터의 공포·탐욕 지수를 비교합니다.</p></div><PeriodButtons value={compareDays} onChange={setCompareDays} items={PERIODS} label="섹터 비교 기간"/></div>
+    <div className="zg-sfg-panel-head"><div><h2>섹터별 1년 심리 지수 비교</h2><p>선택한 섹터의 공포·탐욕 지수를 비교합니다.</p></div><PeriodButtons value={compareDays} onChange={days=>{setCompareDays(days);setComparisonPinned(false);}} items={PERIODS} label="섹터 비교 기간"/></div>
     <div className="zg-sfg-legend" role="group" aria-label="비교할 섹터 선택">{SECTORS.map(sector=><button type="button" key={sector.id} aria-pressed={visible.has(sector.id)} onClick={()=>toggle(sector.id)}><i style={{background:COLORS[sector.id]}}/>{nameOf(sector.id)}</button>)}</div>
-    <div className="zg-sfg-comparison-plot"><ResponsiveContainer width="100%" height="100%"><LineChart data={compareRows} margin={{top:8,right:10,bottom:0,left:0}}>
+    <div className="zg-sfg-comparison-plot"><ResponsiveContainer width="100%" height="100%"><LineChart data={compareRows} margin={{top:8,right:10,bottom:0,left:0}} onMouseDown={()=>setComparisonPinned(true)}>
      <Zones/><CartesianGrid stroke="#23485b" strokeDasharray="2 4" vertical={true}/>
      <XAxis dataKey="date" stroke="#a9bccd" fontSize={11} axisLine={false} tickLine={false} tickFormatter={date=>String(date).slice(5)} minTickGap={42}/><YAxis domain={[0,100]} ticks={[0,25,50,75,100]} interval={0} stroke="#a9bccd" axisLine={false} tickLine={false} fontSize={11} width={34}/><ReferenceLine y={50} stroke="#92a3b0" strokeDasharray="3 4"/>
-     <Tooltip isAnimationActive={false} content={({active:show,payload,label})=>!show||!payload?.length?null:<div className="zg-sfg-tooltip"><strong>{String(label)}</strong>{payload.filter(item=>typeof item.value==='number').map(item=><div key={String(item.dataKey)}><span style={{color:item.color}}>{item.name}</span><b>{Number(item.value).toFixed(1)}점</b></div>)}</div>}/>
+     <Tooltip active={comparisonPinned||undefined} isAnimationActive={false} content={({active:show,payload,label})=>!show||!payload?.length?null:<div className="zg-sfg-tooltip"><strong>{String(label)}</strong>{payload.filter(item=>typeof item.value==='number').map(item=><div key={String(item.dataKey)}><span style={{color:item.color}}>{item.name}</span><b>{Number(item.value).toFixed(1)}점</b></div>)}</div>}/>
      {SECTORS.map(sector=>provisional?[
       <Line key={sector.id} dataKey={sector.id+'__solid'} name={nameOf(sector.id)} stroke={COLORS[sector.id]} hide={!visible.has(sector.id)} strokeWidth={1.9} dot={false} activeDot={{r:3}} connectNulls={false} isAnimationActive={false}/>,
       <Line key={sector.id+'-dash'} dataKey={sector.id+'__dash'} name={nameOf(sector.id)} stroke={COLORS[sector.id]} hide={!visible.has(sector.id)} strokeWidth={1.9} strokeDasharray="4 4" dot={false} activeDot={{r:3}} connectNulls={false} isAnimationActive={false}/>,
