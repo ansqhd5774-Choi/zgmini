@@ -140,6 +140,8 @@ test('sector comparison defaults to the current top three and keeps rank rows an
  assert.match(css,/\.zg-sfg-rank-row\[aria-pressed=false\] \.zg-sfg-meter/);
  assert.match(css,/\.zg-sfg-rank-row\[aria-pressed=false\]\[data-selected=true\]/);
  assert.match(css,/\.zg-sfg-rank-row\[aria-pressed=true\]\[data-selected=true\]/);
+ assert.match(css,/\.zg-sfg-rank-row\[aria-pressed=false\]:hover[^\n]*background:#102d3c/);
+ assert.match(css,/\.zg-sfg-rank-row\[aria-pressed=true\]:hover[^\n]*background:#15505b/);
 });
 
 test('sector detail mini charts expose stored historical date and score on hover while related links use buttons',()=>{
