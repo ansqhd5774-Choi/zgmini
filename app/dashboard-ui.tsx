@@ -19,6 +19,7 @@ import {marketDetailRows} from '../lib/market-score/detail-catalog.mjs';
 import {breadthNotice} from '../lib/market-score/breadth-notice.mjs';
 import {breadthB1R4PreviousSessionDelta as breadthPreviousSessionDelta} from '../lib/market-score/breadth-b1-r4-ui-delta.mjs';
 import {marketTrendWindowR1} from '../lib/market-score/market-trend-window-r1.mjs';
+import {miniTrendGeometry} from '../lib/market-score/mini-trend-geometry.mjs';
 import {amplifyCompositeDisplayScore,amplifyCompositeDisplayTrend} from '../lib/market-score/composite-display-sensitivity-r1.mjs';
 import {ContentHelp} from './content-help';
 import {HELP,HelpText} from './help-copy';
@@ -56,24 +57,15 @@ function timeScaledTrend(data:DashboardPoint[],periodDays:number){
 }
 
 function CardTrend({data,label,color,periodDays,missingDates=[]}:{data:DashboardPoint[];label:string;color:string;periodDays:number;missingDates?:string[]}){
- const scaled=timeScaledTrend(data,periodDays),latest=scaled.points.at(-1);
- const chartPoints=[...scaled.points,...missingDates.map(label=>({label,ts:Date.parse(label),value:null}))].filter(point=>Number.isFinite(point.ts)&&point.ts>=scaled.start&&point.ts<=scaled.end).sort((a,b)=>a.ts-b.ts);
+ const geometry=miniTrendGeometry(data,periodDays,missingDates);
  return <div className="zg-spark zg-r55-mini-chart" aria-label={`${label} 관측 추이${missingDates.length?' · 점선은 결측 구간 연결이며 관측값이 아닙니다':''}`} title={missingDates.length?'점선: 미발표 자료가 있는 구간의 시각적 연결. 해당 월 점수는 결측입니다.':undefined} onPointerDown={event=>event.preventDefault()}>
   <div className="zg-r55-mini-y-labels" aria-hidden="true"><span>100</span><span>50</span><span>0</span></div>
-  <ResponsiveContainer width="100%" height="100%" initialDimension={{width:1,height:1}}>
-   <LineChart data={chartPoints} accessibilityLayer={false} tabIndex={-1} margin={{top:3,right:3,left:13,bottom:3}}>
-    <XAxis hide dataKey="ts" type="number" domain={[scaled.start,scaled.end]}/>
-    <YAxis hide domain={[0,100]} width={0}/>
-    <ReferenceLine className="zg-r55-boundary-line" y={0} stroke="rgba(168,188,208,.4)" strokeWidth={1}/>
-    <ReferenceLine className="zg-r55-boundary-line" y={100} stroke="rgba(168,188,208,.4)" strokeWidth={1}/>
-    <ReferenceLine y={25} stroke="rgba(111,130,149,.22)" strokeDasharray="2 3" strokeWidth={0.8}/>
-    <ReferenceLine y={50} stroke="rgba(111,130,149,.26)" strokeDasharray="2 3" strokeWidth={0.8}/>
-    <ReferenceLine y={75} stroke="rgba(111,130,149,.22)" strokeDasharray="2 3" strokeWidth={0.8}/>
-    {missingDates.length>0&&<Line type="linear" dataKey="value" stroke={color} strokeOpacity={0.65} strokeDasharray="2 3" strokeWidth={1.2} dot={false} activeDot={false} connectNulls={true} isAnimationActive={false}/>}
-    <Line type="linear" dataKey="value" stroke={color} strokeWidth={1.8} dot={false} activeDot={false} connectNulls={false} isAnimationActive={false}/>
-    {latest&&<ReferenceDot x={latest.ts} y={latest.value} r={2.5} fill={color} stroke={color}/>}
-   </LineChart>
-  </ResponsiveContainer>
+   <svg width="100%" height="100%" viewBox="0 0 220 60" preserveAspectRatio="none" role="img" aria-label={`${label} 관측 추이`} style={{display:'block',pointerEvents:'none'}}>
+    {[0,25,50,75,100].map(value=><line key={value} x1={13} x2={217} y1={57-value*.54} y2={57-value*.54} stroke={value===0||value===100?'rgba(168,188,208,.4)':`rgba(111,130,149,${value===50?'.26':'.22'})`} strokeDasharray={value===0||value===100?undefined:'2 3'} strokeWidth={value===0||value===100?1:.8} vectorEffect="non-scaling-stroke"/>)}
+    {missingDates.length>0&&<path d={geometry.bridge} fill="none" stroke={color} strokeOpacity={.65} strokeDasharray="2 3" strokeWidth={1.2} vectorEffect="non-scaling-stroke"/>}
+    <path d={geometry.path} fill="none" stroke={color} strokeWidth={1.8} vectorEffect="non-scaling-stroke"/>
+    {geometry.last&&<circle cx={geometry.last.x} cy={geometry.last.y} r={2.5} fill={color}/>}
+   </svg>
  </div>;
 }
 

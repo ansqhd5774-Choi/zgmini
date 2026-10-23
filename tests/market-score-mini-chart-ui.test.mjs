@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
+import {miniTrendGeometry} from '../lib/market-score/mini-trend-geometry.mjs';
 
 const src=fs.readFileSync(new URL("../app/dashboard-ui.tsx",import.meta.url),"utf8");
 const responsive=fs.readFileSync(new URL("../app/responsive.css",import.meta.url),"utf8");
@@ -22,17 +23,19 @@ test("market charts use numeric time axes so selected periods keep their true du
   const charts=sourceBetween("function timeScaledTrend(","// Stage 12");
   assert.match(charts,/function timeScaledTrend\(data:DashboardPoint\[\],periodDays:number\)/);
   assert.match(charts,/const start=end-Math\.max\(1,periodDays\)\*86400000/);
-  assert.equal((charts.match(/<XAxis (?:hide )?dataKey="ts" type="number" domain=\{\[scaled\.start,scaled\.end\]\}/g)??[]).length,2);
+  assert.match(charts,/<XAxis dataKey="ts" type="number" domain=\{\[scaled\.start,scaled\.end\]\}/);
+  assert.match(charts,/miniTrendGeometry\(data,periodDays,missingDates\)/);
   assert.match(src,/SummaryTrend data=\{overallTrend\}[^\n]*periodDays=\{periodDays\}/);
   assert.match(src,/CardTrend data=\{trend\}[^\n]*periodDays=\{periodDays\}/);
 });
 
 test("domain mini charts keep the fixed 0-100 score scale while time spacing is numeric",()=>{
   const card=sourceBetween("function CardTrend(","function summaryDateParts(");
-  assert.match(card,/YAxis hide domain=\{\[0,100\]\} width=\{0\}/);
-  assert.match(card,/ReferenceLine y=\{25\}/);
-  assert.match(card,/ReferenceLine y=\{50\}/);
-  assert.match(card,/ReferenceLine y=\{75\}/);
+  assert.match(card,/\[0,25,50,75,100\]\.map/);
+  assert.match(card,/viewBox="0 0 220 60"/);
+  const chart=miniTrendGeometry([{label:'2026-01-01',value:0},{label:'2026-01-03',value:100}],2);
+  assert.equal(chart.path,'M13.000,57.000L217.000,3.000');
+  assert.deepEqual(chart.last,{x:217,y:3});
   assert.match(card,/>100<\/span><span>50<\/span><span>0<\/span>/);
 });
 
@@ -55,7 +58,16 @@ test("domain charts remain compact while the composite has visible dates",()=>{
   const summary=sourceBetween("function SummaryTrend(","// Stage 12");
   assert.doesNotMatch(card,/<Tooltip/);
   assert.match(summary,/<Tooltip/);
-  assert.equal((charts.match(/<XAxis hide/g)??[]).length,1);
+  assert.doesNotMatch(card,/<XAxis|<ResponsiveContainer|<LineChart/);
+  assert.match(card,/geometry\.path/);
+});
+
+test('static mini charts preserve true date spacing, missing breaks and latest zero',()=>{
+ const chart=miniTrendGeometry([{label:'2026-01-01',value:50},{label:'2026-01-03',value:0}],4,['2026-01-02']);
+ assert.equal(chart.path,'M115.000,30.000M217.000,57.000');
+ assert.equal(chart.bridge,'M115.000,30.000L217.000,57.000');
+ assert.deepEqual(chart.last,{x:217,y:57});
+ assert.equal(miniTrendGeometry([],365).last,null);
 });
 
 test("composite uses sentiment area styling without the removed captions",()=>{

@@ -11,6 +11,9 @@ try{
   page.on("pageerror",e=>errors.push(width+":"+e.message));
   await page.route("**/api/community/messages",r=>r.fulfill({status:200,contentType:"application/json",body:JSON.stringify({messages:[],writeEnabled:false,siteKey:null})}));
   await page.goto(base+"/inflation/",{waitUntil:"domcontentloaded",timeout:60000});
+  await page.locator('dialog[aria-labelledby="zg-about-popup-title"]').waitFor({state:'visible'});
+  await page.getByRole('button',{name:'닫기',exact:true}).click();
+  await page.locator('dialog[aria-labelledby="zg-about-popup-title"]').waitFor({state:'hidden'});
   await page.locator(".zg-risk-side-rails-root").waitFor({state:"attached",timeout:45000});
   const desktop=width>=1650;
   await page.waitForFunction(expect=>document.querySelector(".zg-risk-side-rails-root")?.getAttribute("data-wide")===expect,desktop?"true":"false",{timeout:15000});

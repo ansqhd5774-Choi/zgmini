@@ -53,7 +53,11 @@ test('R155 automatically includes any newly published valid theme; no fixed coun
 test('R154 chart passes published API dataset, not the old 30-theme placeholder',()=>{
  const page=fs.readFileSync('app/page.tsx','utf8');
  const wrapper=fs.readFileSync('components/theme-sentiment-dashboard-chart.tsx','utf8');
- assert.match(page,/<ThemeSentimentDashboardChart\/>/);
+ const deferred=fs.readFileSync('components/deferred-dashboard-charts.tsx','utf8');
+ assert.match(page,/<DeferredDashboardCharts\/>/);
+ assert.match(deferred,/lazy\(\(\)=>import\('\.\/theme-sentiment-dashboard-chart'\)\)/);
+ assert.match(deferred,/<ThemeSentimentDashboardChart\/>/);
+ assert.match(deferred,/new IntersectionObserver/);
  assert.doesNotMatch(page,/<SectorSentimentChart title="테마별 공포·탐욕" draggable series=/);
  assert.match(wrapper,/useStoredIndex<ThemeStoredPayload>\('\/api\/theme-fear-greed'\)/);
  assert.match(wrapper,/themeEtfDashboardSeries\(error\?null:payload\)/);
@@ -98,5 +102,8 @@ test('R155 leaves sector chart stored data and legend behavior intact',()=>{
  const shared=fs.readFileSync('components/sector-sentiment-chart.tsx','utf8');
  const page=fs.readFileSync('app/page.tsx','utf8');
  assert.match(shared,/useStoredIndex<SectorFearGreedStoredPayload>\('\/api\/sector-fear-greed',null,autoStored\)/);
- assert.match(page,/<SectorSentimentChart\/>/);
+ assert.match(page,/<DeferredDashboardCharts\/>/);
+ const deferred=fs.readFileSync('components/deferred-dashboard-charts.tsx','utf8');
+ assert.match(deferred,/lazy\(\(\)=>import\('\.\/sector-sentiment-chart'\)\)/);
+ assert.match(deferred,/<SectorSentimentChart\/>/);
 });
