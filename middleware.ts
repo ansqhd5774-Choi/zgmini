@@ -19,7 +19,7 @@ export function middleware(request: NextRequest) {
   const forwardedProto = request.headers.get("x-forwarded-proto")?.split(",")[0]?.trim().toLowerCase();
   const protocol = cfVisitorProto || forwardedProto || request.nextUrl.protocol.replace(":", "").toLowerCase();
   // Local development must render the current worktree, not redirect to Production.
-  if (process.env.NODE_ENV === "development" && (host === "localhost" || host === "127.0.0.1")) {
+  if (process.env.NODE_ENV === "development" && (host === "localhost" || host === "127.0.0.1" || host === "terminal.local")) {
     return NextResponse.next();
   }
   if (host?.startsWith(candidateWorkerPrefix) && host.endsWith(".workers.dev")) {
