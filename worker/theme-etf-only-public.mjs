@@ -55,8 +55,8 @@ export async function readThemeEtfOnly(db,{now=Date.now(),store=publicFeedStore(
  // Prefer the independently validated rolling 252+2 stored projection, while keeping the immutable seed as fallback.
  let rolling=null;try{rolling=await readRollingPublic(db,record,{now})}catch{}
  if(rolling){
-  const withAi=await addVerifiedAiTheme(db,rolling,{now});
-  return Response.json(await addVerifiedBiotechTheme(db,withAi,{now}),{headers:{...headers,'cache-control':'public, max-age=60, must-revalidate','x-data-snapshot-at':rolling.sourceStoredAt}});
+  const withAi=await addVerifiedAiTheme(db,rolling,{now,seed:record});
+  return Response.json(await addVerifiedBiotechTheme(db,withAi,{now,seed:record}),{headers:{...headers,'cache-control':'public, max-age=60, must-revalidate','x-data-snapshot-at':rolling.sourceStoredAt}});
  }
  const observedAt=Date.parse(record.observationDate+'T23:59:59Z');
  const sourceAt=Date.parse(record.sourceStoredAt),storedAt=Number(row.stored_at);

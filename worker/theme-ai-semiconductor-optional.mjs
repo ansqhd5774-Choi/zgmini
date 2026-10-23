@@ -1,4 +1,5 @@
 import {PUBLIC_DISPLAY_MAX_AGE_MS} from './public-display-freshness.mjs';
+import {themeHistoryReference} from './theme-history-reference.mjs';
 // R189: Optional read-only AI ETF score; never changes the seven-theme seed,
 // fetches providers, computes scores, publishes, or exposes stored raw prices.
 export const AI_THEME_PUBLIC_KEY='theme-ai-semiconductor-r189';
@@ -42,16 +43,18 @@ export function eligibleAiTheme(record,base,{now=Date.now(),storedAt=now}={}){
  if(record.phase!==(pending.length?'PROVISIONAL':'CONFIRMED'))return false;
  return true;
 }
-export async function addVerifiedAiTheme(db,base,{now=Date.now()}={}){
+export async function addVerifiedAiTheme(db,base,{now=Date.now(),seed=null}={}){
  if(base?.status!=='READY'||base.themes?.length!==7)return base;
  let row;
  try{row=await db.prepare("SELECT body,stored_at FROM public_feed_snapshots_v1 WHERE kind='output' AND feed_key=? AND snapshot_key='current'").bind(AI_THEME_PUBLIC_KEY).first()}catch{return base;}
  if(!row)return base;
  let record;try{record=JSON.parse(row.body)}catch{return base;}
- if(!eligibleAiTheme(record,base,{now,storedAt:Number(row.stored_at)}))return base;
- const ai={theme:'AI 반도체',etfs:['SMH','SOXX'],score:record.score,history:record.history.map(p=>({date:p.date,score:p.score}))};
+ const reference=record.observationDate<base.observationDate?themeHistoryReference(base,seed,record.observationDate):base;
+ if(!reference||!eligibleAiTheme(record,reference,{now,storedAt:Number(row.stored_at)}))return base;
+ const delayed=reference!==base;
+ const ai={theme:'AI 반도체',etfs:['SMH','SOXX'],score:record.score,history:record.history.map(p=>({date:p.date,score:p.score})),...(delayed?{observationDate:record.observationDate,delayed:true}:{})};
  const augmented={...base,themes:[...base.themes,ai]};
- if(base.phase==='PROVISIONAL'&&base.provisional?.points?.length){
+ if(!delayed&&base.phase==='PROVISIONAL'&&base.provisional?.points?.length){
   augmented.provisional={...base.provisional,points:base.provisional.points.map((p,i)=>({...p,scores:{...p.scores,'AI 반도체':record.provisional.points[i].score}}))};
  }
  return augmented;
