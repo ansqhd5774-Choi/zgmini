@@ -75,6 +75,7 @@ export function ingestQuantum({dataRoot,symbol,inputFile,source,collectedAt,pric
   const relative='raw/'+symbol+'_'+digest+'.jsonl',dest=inside(home,relative);
   const dates=bars.map(b=>nyDay.format(new Date(b.timestamp))).sort();
   const entry={path:relative,sha256:digest,source,collectedAt,
+   collectedAtBasis:'OPERATOR_DECLARED_NOT_PROVIDER_ATTESTED',
    observationFrom:dates[0],observationThrough:dates.at(-1),priceMode,
    schemaVersion:'GMH_NDJSON_1H_COLUMNS_V1'};
   if(!date(entry.observationFrom)||!date(entry.observationThrough))fail('BAD_OBSERVATION_DATES');
@@ -128,9 +129,10 @@ export async function prepareQuantum({dataRoot,selector,scorer}={}){
   score:history.at(-1).score,sourceCommercialRightsVerified:false,sourcePriceReconciled:false,publicationAuthorized:false,
   providerCalls:0,d1Writes:0,schedulerWrites:0};
  const dir=inside(home,'derived');fs.mkdirSync(dir,{recursive:true});
- const content=Buffer.from(JSON.stringify(result));const filename='quantum-private-'+sha(content)+'.json';
+ const content=Buffer.from(JSON.stringify(result,null,2)+'\n');const filename='quantum-private-'+sha(content)+'.json';
  const output=inside(dir,filename);
- if(!fs.existsSync(output))fs.writeFileSync(output,JSON.stringify(result,null,2)+'\n',{flag:'wx'});
+ if(!fs.existsSync(output))fs.writeFileSync(output,content,{flag:'wx'});
+ if(sha(fs.readFileSync(output))!==sha(content))fail('DERIVED_READBACK_HASH');
  return {status:result.status,output:'themes/'+QUANTUM_ID+'/derived/'+filename,observationDate:result.observationDate,score:result.score,publicWrites:0};
 }
 if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.url)){
