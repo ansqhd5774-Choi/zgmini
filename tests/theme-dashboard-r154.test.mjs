@@ -140,11 +140,14 @@ test('sector detail mini charts expose stored historical date and score on hover
  for(const href of ['/fear-greed/usa/','/recession/','/asset-bubble/'])assert.match(page,new RegExp(`className="zg-sector-related-link" href="${href}"`));
 });
 
-test('sector comparison keeps the last hovered score after mouse drag and resets the pin when the period changes',()=>{
+test('sector comparison keeps score during mouse drag but releases it on mouse up or leave',()=>{
  const detail=fs.readFileSync('app/sector-fear-greed/sector-detail-charts.tsx','utf8');
  assert.match(detail,/const \[comparisonPinned,setComparisonPinned\]=useState\(false\)/);
  assert.match(detail,/onMouseDown=\{\(\)=>setComparisonPinned\(true\)\}/);
+ assert.match(detail,/onMouseUp=\{\(\)=>setComparisonPinned\(false\)\}/);
+ assert.match(detail,/onMouseLeave=\{\(\)=>setComparisonPinned\(false\)\}/);
  assert.match(detail,/<Tooltip active=\{comparisonPinned\|\|undefined\} isAnimationActive=\{false\}/);
+ assert.match(detail,/wrapperStyle=\{\{pointerEvents:'none'\}\}/);
  assert.match(detail,/setCompareDays\(days\);setComparisonPinned\(false\)/);
  assert.doesNotMatch(detail,/<Tooltip active=\{comparisonPinned\|\|undefined\}[^\n]*allowEscapeViewBox=/);
 });
