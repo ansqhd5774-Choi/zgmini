@@ -142,7 +142,9 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
     process.exitCode = 2;
   } else {
     try {
-      const result = await stageOnPc();
+      const args=process.argv.slice(2);
+      need(args.length<=1 && (args.length===0 || /^--source-sha=[a-f0-9]{40}$/.test(args[0])),'SOURCE_SHA_ARGUMENT_INVALID');
+      const result = await stageOnPc({sourceSha:args.length?args[0].slice('--source-sha='.length):null});
       for (const [key, value] of Object.entries(result)) console.log(`${key}=${value}`);
       console.log('RESULT=STAGED_ONLY_NO_SCHEDULE_NO_D1_WRITE');
     } catch (error) {
