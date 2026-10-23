@@ -45,7 +45,8 @@ export default function DebtRiskPanel(){
  const score=typeof payload?.score==="number"&&Number.isFinite(payload.score)?payload.score:null;
  const trend=useMemo(()=>(payload?.trend??[]).filter(p=>typeof p.value==="number"&&Number.isFinite(p.value)).map(p=>({date:p.label,score:p.value} satisfies MarketFearGreedChartPoint)),[payload?.trend]);
  const latest=trend.at(-1),latestPoint:MarketFearGreedChartValidPoint|null=latest?{date:latest.date,score:latest.score as number}:null;
- const axisTicks=trend.map(p=>p.date),axisLabels=new Map(trend.map(p=>[p.date,p.date.slice(2,7).replace("-","/")]));
+ const monthDates=[...new Map(trend.map(p=>[p.date.slice(0,7),p.date])).values()];
+ const axisTicks=monthDates.filter((_,i)=>i===0||i===monthDates.length-1||i%Math.max(1,Math.ceil((monthDates.length-1)/4))===0),axisLabels=new Map(trend.map(p=>[p.date,p.date.slice(2,7).replace("-","/")]));
  const scoreComparisonItems=[
   {label:"1주",value:payload?.scoreComparisons?.week??null},
   {label:"1개월",value:payload?.scoreComparisons?.month??null},
@@ -58,7 +59,7 @@ export default function DebtRiskPanel(){
   <section className="cnn-reference-panel fg-card fg-shared-shell debt-risk-target-card" data-testid="debt-risk-detail-hero" data-market-state={loading?"loading":score===null?"unavailable":"ready"} aria-busy={loading}>
    <div className="fg-header-slot"><MarketCardHeader flag="/flags/us.svg" eyebrow="ZGMINI DEBT RISK R7" title="미국 부채 위험" description="저장 원자료를 현재 기준으로 재구성 · 당시 발표본 이력 아님" dateLabel="데이터 기준일" date={dateLabel(payload?.asOfDate)} source={payload?.methodologyVersion??"DEBT_RISK_R7"}/></div>
    <div className="fg-content-slot"><div className="fg-score-slot"><MarketScoreOrb score={loading||score===null?"—":score.toFixed(1)} state={loading?"확인 중":stage(score)} variant="hero" comparisonItems={scoreComparisonItems} comparisonAriaLabel="부채 위험 안전점수 변화"/></div>
-    <MarketTrendFrame className="fg-analysis-slot"><div className="fg-chart-slot"><div className="fg-renderer"><MarketFearGreedChart showExtrema data={trend} axisTicks={axisTicks} axisLabels={axisLabels} latestPoint={latestPoint} instanceKey="debt-risk" gradientId="debt-risk-fill" formatTooltipLabel={dateLabel} emptyLabel={loading?"확인 중":"완성 점수 저장이력 없음"}/></div></div></MarketTrendFrame></div>
+    <MarketTrendFrame className="fg-analysis-slot"><div className="fg-chart-slot"><div className="fg-renderer"><MarketFearGreedChart showExtrema data={trend} axisTickInterval="preserveStartEnd" axisTicks={axisTicks} axisLabels={axisLabels} latestPoint={latestPoint} instanceKey="debt-risk" gradientId="debt-risk-fill" formatTooltipLabel={dateLabel} emptyLabel={loading?"확인 중":"완성 점수 저장이력 없음"}/></div></div></MarketTrendFrame></div>
    <div className="fg-footer-slot"><div className="cnn-panel-note"><span>점수 원칙</span><strong>5개 구성요소 완전 입력 시만 계산 · 결측 재가중 없음</strong></div></div>
   </section>
   <section className="inflation-explainer" aria-labelledby="debt-risk-what-title"><p className="cnn-eyebrow">WHAT IS DEBT RISK?</p><h1 id="debt-risk-what-title">부채 위험이란?</h1><p>부채 위험은 가계와 기업이 쌓아온 부채가 소득과 이익에 비해 과도해져 금리 상승이나 경기 둔화 때 원리금 상환이 어려워질 가능성을 뜻합니다. 부채 규모만이 아니라 실제 상환 부담, 이자비용, 신용시장 스트레스, 이익 대비 상환능력을 함께 봐야 합니다.</p><div className="inflation-direction-strip"><span><b>위험 방향</b>DSR↑ · 부채/GDP↑ · 금리부담↑ · 신용스트레스↑</span><span><b>안정 방향</b>상환부담↓ · 이익 대비 이자여력↑ · 신용여건 안정</span></div></section>
