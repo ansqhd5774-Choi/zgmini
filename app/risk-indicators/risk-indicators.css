@@ -2,10 +2,6 @@
 .zg-risk-landing *{box-sizing:border-box}
 .zg-risk-landing-inner{max-width:1470px;margin:0 auto;padding:27px 42px 42px}
 .zg-risk-landing a:focus-visible,.zg-risk-landing button:focus-visible{outline:2px solid #54e9cb;outline-offset:3px}
-.zg-risk-breadcrumb{display:flex;align-items:center;gap:15px;color:#bacbdb;font-size:12px;margin-bottom:19px}
-.zg-risk-breadcrumb a{color:#a9bbcc;text-decoration:none}
-.zg-risk-breadcrumb a:hover{color:#fff}
-.zg-risk-breadcrumb span[aria-hidden]{color:#416177}
 .zg-risk-hero{margin-bottom:24px}
 .zg-risk-hero h1{font-size:clamp(28px,2.95vw,42px);font-weight:790;line-height:1.22;margin:0 0 9px;letter-spacing:-.055em}
 .zg-risk-hero p{font-size:clamp(16px,1.55vw,22px);font-weight:380;line-height:1.4;margin:0 0 7px;color:#e3edf5}
@@ -120,7 +116,6 @@
 }
 @media(max-width:600px){
  .zg-risk-landing-inner{padding:20px 13px 29px}
- .zg-risk-breadcrumb{margin-bottom:17px}
  .zg-risk-hero{margin-bottom:16px}
  .zg-risk-hero h1{font-size:27px;letter-spacing:-.055em}
  .zg-risk-hero p{font-size:15px}

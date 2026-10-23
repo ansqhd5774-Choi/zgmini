@@ -60,6 +60,7 @@ test('risk landing lists all eight real detail links sorted by available stabili
  assert.ok(ranking.indexOf('공급 충격')<ranking.indexOf('경기 침체'));
  assert.match(html,/가장 먼저 볼 위험/);
  assert.match(html,/미국 경제 위험 지표 8가지/);
+ assert.doesNotMatch(html,/aria-label="현재 위치"|zg-risk-breadcrumb/);
  assert.match(html,/위기 발생 확률 아님/);
 });
 

@@ -1,7 +1,6 @@
 'use client';
 
 import {useRef,useState,type CSSProperties} from 'react';
-import Link from 'next/link';
 import {Activity,ArrowRight,ArrowUpRight,BarChart3,Landmark,ShieldAlert,ShieldCheck,Wallet} from 'lucide-react';
 import {RISK_CARDS} from '../../components/market-explorer-catalog';
 import {LiveScoreValue} from '../../components/live-score-value';
@@ -117,7 +116,6 @@ export default function RiskIndicatorsClient(){
  };
  return <main className="zg-risk-landing">
   <div className="zg-risk-landing-inner">
-   <nav aria-label="현재 위치" className="zg-risk-breadcrumb"><Link href="/">대시보드</Link><span aria-hidden="true">/</span><span>위험 지표</span></nav>
    <header className="zg-risk-hero">
     <h1>미국 경제 위험 지표 8가지</h1>
     <p>지금 위험 신호가 강한 영역부터 살펴보세요.</p>
