@@ -168,7 +168,7 @@ export function inventoryMarketParquet(dataRoot,{maxFiles=1500,maxDirs=120}={}){
   const absolute=path.join(dataRoot,...root.split('/'));
   if(!fs.existsSync(absolute)){result.push({root,status:'NOT_PRESENT'});continue;}
   const queue=[{dir:absolute,depth:0}];let dirs=0,files=0,truncated=false;
-  const targetNamed=[],parquetFiles=[],formatCounts={};
+  const targetNamed=[],parquetFiles=[],contentEvidence=[],formatCounts={};let inspectedTextFiles=0;
   while(queue.length){
    if(dirs>=maxDirs||files>=maxFiles){truncated=true;break;}
    const next=queue.shift();dirs++;
@@ -182,11 +182,22 @@ export function inventoryMarketParquet(dataRoot,{maxFiles=1500,maxDirs=120}={}){
     if(/\.(parquet|arrow)$/i.test(e.name)&&parquetFiles.length<35)parquetFiles.push(rel);
     if(/(^|[_./-])(IBB|XBI|SPY)([_./-]|$)/i.test(rel)&&targetNamed.length<80)
      targetNamed.push({path:rel,sizeBytes:fs.statSync(f).size,contentInspected:false});
+    if(/\.(json|jsonl|ndjson)$/i.test(e.name)&&inspectedTextFiles<40){
+     const size=fs.statSync(f).size;if(size<=4_000_000){
+      inspectedTextFiles++;
+      const source=fs.readFileSync(f,'utf8');
+      const symbols=['IBB','XBI','SPY'].filter(s=>new RegExp('"(?:symbol|ticker)"\\s*:\\s*"'+s+'"','i').test(source));
+      if(symbols.length)contentEvidence.push({path:rel,symbolKeysSeen:symbols,
+       status:'JSON_SYMBOL_KEYS_OBSERVED_PRICES_RIGHTS_DATE_UNVERIFIED'});
+     }
+    }
     if(files>=maxFiles){truncated=true;break;}
    }
   }
-  result.push({root,status:truncated?'BOUNDED_SCAN_TRUNCATED':'NAMES_INSPECTED',directories:dirs,files,formatCounts,targetNamed,parquetFiles,
-   presenceConclusion:targetNamed.length?'POSSIBLE_TICKER_FILES_REQUIRE_PRICE_AND_RIGHTS_CHECK':'UNKNOWN_CONTENTS_DAILY_PARQUET_MAY_INCLUDE_TICKERS'});
+  result.push({root,status:truncated?'BOUNDED_SCAN_TRUNCATED':'NAMES_INSPECTED',directories:dirs,files,formatCounts,targetNamed,
+   inspectedSmallJsonFiles:inspectedTextFiles,contentEvidence,parquetFiles,
+   presenceConclusion:contentEvidence.length?'SOME_JSON_SYMBOL_CONTENTS_SEEN_PROVENANCE_UNVERIFIED':
+    targetNamed.length?'POSSIBLE_TICKER_FILES_REQUIRE_PRICE_AND_RIGHTS_CHECK':'UNKNOWN_CONTENTS_DAILY_PARQUET_MAY_INCLUDE_TICKERS'});
  }
  return result;
 }
@@ -223,9 +234,13 @@ export async function runForensic({dataRoot=REGISTRY.defaultDataRoot,readPublic=
   ensure(report.sourceFiles.r158.actualSha256==='91d833bb58188b52df069ae71668b98822fa8bd9551f5a05ae999d6007cac38b','R158_REFERENCE_MODULE_SHA_CHANGED');
   report.manifests={};for(const theme of [AI,BIOTECH]){
    report.manifests[theme.id]=inspectManifest(dataRoot,theme.rawManifest,theme.id);
-   report.manifests[theme.id].privateAudit=verifyRegistryArtifact(dataRoot,theme);
-   ensure(report.manifests[theme.id].status==='SHA_VERIFIED'&&report.manifests[theme.id].privateAudit.status==='SHA_VERIFIED','LOCAL_SHA_EVIDENCE_NOT_VERIFIED_'+theme.id);
+   try{report.manifests[theme.id].privateAudit=verifyRegistryArtifact(dataRoot,theme);}catch(e){
+    report.manifests[theme.id].privateAudit={status:'NOT_SHA_VERIFIED',errorCode:e?.code??'FILE_NOT_ACCESSIBLE'};
+   }
+   if(report.manifests[theme.id].status!=='SHA_VERIFIED'||report.manifests[theme.id].privateAudit.status!=='SHA_VERIFIED')
+    report.missingVerification.push('LOCAL_SHA_EVIDENCE_NOT_VERIFIED_'+theme.id);
   }
+  ensure(report.manifests.biotech.status==='SHA_VERIFIED','BIOTECH_RAW_MANIFEST_INVALID');
   report.marketParquetSavedRaw=inventoryMarketParquet(dataRoot);
   report.scheduledTasks={originalSeven:taskInfo('ZGMINI-PC-GetMarketHistory-ETF'),
    ai:taskInfo('ZGMINI-PC-Theme-AI-Semiconductor'),biotech:taskInfo('ZGMINI-PC-Theme-Biotech')};
