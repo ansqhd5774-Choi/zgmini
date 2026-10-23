@@ -3,7 +3,12 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import {auditThemeR2Sources} from '../scripts/pc-writer/theme-r2-pc-source-readonly.mjs';
+import {auditThemeR2Sources,R2_EXISTING_PUBLIC_PAIRS} from '../scripts/pc-writer/theme-r2-pc-source-readonly.mjs';
+import {R158_PAIRS} from '../lib/market-score/theme-etf-provisional-score.mjs';
+
+test('R2 portable inventory uses the unchanged 7 public pair mappings',()=>{
+  assert.deepEqual(R2_EXISTING_PUBLIC_PAIRS,R158_PAIRS);
+});
 
 test('R2 source discovery distinguishes price history from actual verified rights',async()=>{
   const root=fs.mkdtempSync(path.join(os.tmpdir(),'zgmini-r2-source-'));
