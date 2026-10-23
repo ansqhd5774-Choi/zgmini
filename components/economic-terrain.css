@@ -1,0 +1,89 @@
+.zg-explorer.is-economic-terrain{background:#031521;color:#edf6ff;padding:23px 29px 25px}
+.zg-explorer.is-economic-terrain .zg-explorer-inner{max-width:1520px}
+.zg-explorer.is-economic-terrain .zg-explorer-hero{position:relative;isolation:isolate;min-height:162px;margin:0 -29px 0;padding:12px 46px 23px;border-bottom:1px solid #18364a;overflow:hidden;align-items:center}
+.zg-explorer.is-economic-terrain .zg-explorer-hero::before{content:"";position:absolute;z-index:-1;right:14%;top:2px;width:47%;height:160px;background:url('/economic-terrain-hero.png') center/contain no-repeat;opacity:.4;pointer-events:none}
+.zg-explorer.is-economic-terrain .zg-explorer-eyebrow{font-size:11px;letter-spacing:.26em;margin:0 0 11px;color:#f9c248}
+.zg-explorer.is-economic-terrain h1{font-size:clamp(29px,3.9vw,46px);line-height:1.15;letter-spacing:-.05em;margin:0 0 10px;color:#f2f8ff}
+.zg-explorer.is-economic-terrain h1 em{font-style:normal;color:#f5c34b}
+.zg-explorer.is-economic-terrain .zg-explorer-lead{font-size:15px;line-height:1.65;color:#b5c7d8;margin:0}
+.zg-explorer.is-economic-terrain .zg-explorer-count{position:relative;z-index:1;min-height:106px;border-left:1px solid #2b5066;padding-left:24px;gap:6px 10px;display:grid;grid-template-columns:auto 70px;align-content:center;justify-content:start}
+.zg-explorer.is-economic-terrain .zg-explorer-count strong{font-size:64px;line-height:.9;font-weight:350}
+.zg-explorer.is-economic-terrain .zg-explorer-count span{color:#a7bacb;font-size:12px;line-height:1.6}
+.zg-explorer.is-economic-terrain .zg-explorer-count small{grid-column:1/-1;max-width:190px;color:#8ea6ba;font-size:10px;line-height:1.45}
+.zg-explorer.is-economic-terrain .zg-explorer-footer{border-top-color:#173247;margin-top:26px}
+.zg-terrain{padding-top:22px}
+.zg-terrain-section-heading{display:flex;align-items:flex-end;justify-content:space-between;gap:20px;margin:0 0 18px}
+.zg-terrain-title{display:flex;align-items:center;gap:15px;min-width:0}
+.zg-terrain-title>svg{color:#30e6d0;flex-shrink:0}
+.zg-terrain-title h2{margin:0 0 3px;font-size:23px;line-height:1.2;font-weight:770;letter-spacing:-.05em;color:#edf7ff}
+.zg-terrain-title p{font-size:12px;color:#93aec1;margin:0}
+.zg-terrain-controls{display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:flex-end}
+.zg-terrain-controls>span{font-size:11px;color:#9db7c8;padding-right:9px;white-space:nowrap}
+.zg-terrain-search,.zg-terrain-sort{display:flex;align-items:center;height:34px;border:1px solid #244a61;color:#8daabc;background:#071c2b;border-radius:3px;gap:6px}
+.zg-terrain-search{padding:0 10px}.zg-terrain-search input{width:116px;min-width:0;background:transparent;color:#dceaf4;outline:0;font-size:11px}
+.zg-terrain-search input::placeholder{color:#728fa2}
+.zg-terrain-sort{position:relative;padding:0 8px 0 10px}.zg-terrain-sort select{appearance:none;padding-right:7px;color:#bed0df;font-size:11px;background:transparent;border:0;outline:0;cursor:pointer}
+.zg-terrain-sort option{background:#082134;color:#e6f1fa}
+.zg-terrain-sort svg{pointer-events:none}
+.zg-terrain-list{--terrain-number:42px;--terrain-name:177px;--terrain-score:160px;--terrain-arrow:28px;position:relative;border-bottom:1px solid #18384b}
+.zg-terrain-axis{display:grid;grid-template-columns:calc(var(--terrain-number) + var(--terrain-name) + var(--terrain-score)) minmax(0,1fr) var(--terrain-arrow);gap:0;height:105px;border-bottom:1px solid #245069}
+.zg-terrain-axis-label{display:grid;grid-template-columns:var(--terrain-number) var(--terrain-name) var(--terrain-score);align-items:end;padding:0 0 10px;color:#91adbf;font-weight:600;font-size:11px}
+.zg-terrain-axis-label span:last-child{text-align:center}
+.zg-terrain-axis-plot{position:relative;min-width:0;padding-right:2px}
+.zg-terrain-axis-bands{height:64px;display:flex;align-items:stretch}
+.zg-terrain-axis-bands>div{position:relative;text-align:center;display:flex;align-items:center;flex-direction:column;justify-content:flex-end;gap:3px;min-width:0}
+.zg-terrain-axis-bands strong{font-size:12px;line-height:1;font-weight:760}
+.zg-terrain-axis-bands span{font-size:10px;color:#aabfd1;white-space:nowrap}
+.zg-terrain-axis-bands i{display:block;width:100%;height:5px;border-radius:1px;margin-top:2px}
+.zg-terrain-axis-ticks{position:relative;height:40px;color:#bacbd8;font-size:11px;font-variant-numeric:tabular-nums}
+.zg-terrain-axis-ticks span{position:absolute;top:8px;transform:translateX(-50%)}
+.zg-terrain-axis-ticks span:first-child{transform:none}.zg-terrain-axis-ticks span:last-child{transform:translateX(-100%)}
+.zg-terrain-item{position:relative;scroll-margin-top:120px}
+.zg-terrain-row{position:relative;display:grid;align-items:center;grid-template-columns:var(--terrain-number) var(--terrain-name) var(--terrain-score) minmax(0,1fr) var(--terrain-arrow);width:100%;height:38px;padding:0;text-align:left;border:0;border-bottom:1px solid #113449;background:transparent;color:#dceaf5;cursor:pointer}
+.zg-terrain-row:hover{background:#0b2938}
+.zg-terrain-row.is-selected{z-index:1;background:color-mix(in srgb,var(--terrain-accent) 11%,#061928);box-shadow:inset 0 0 0 1px var(--terrain-accent);border-bottom:0}
+.zg-terrain-row-index{padding-left:15px;font-size:12px;color:#8ca8bc;font-variant-numeric:tabular-nums}
+.zg-terrain-row-name{font-weight:760;font-size:15px;letter-spacing:-.025em;color:#eef7ff}
+.zg-terrain-row-score{font-size:16px;font-weight:790;font-variant-numeric:tabular-nums;color:var(--terrain-accent);text-align:center}
+.zg-terrain-track{height:100%;position:relative;min-width:0;display:block}
+.zg-terrain-track::before{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(to right,transparent calc(25% - .5px),#164053 25%,transparent calc(25% + .5px),transparent calc(45% - .5px),#164053 45%,transparent calc(45% + .5px),transparent calc(55% - .5px),#164053 55%,transparent calc(55% + .5px),transparent calc(75% - .5px),#164053 75%,transparent calc(75% + .5px))}
+.zg-terrain-line{position:absolute;left:0;top:50%;border-bottom:1px dashed var(--terrain-accent);opacity:.72}
+.zg-terrain-dot{position:absolute;top:50%;height:13px;width:13px;border-radius:50%;background:var(--terrain-accent);border:1px solid #052034;transform:translate(-50%,-50%);box-shadow:0 0 0 2px color-mix(in srgb,var(--terrain-accent) 16%,transparent)}
+.zg-terrain-track em{position:absolute;top:50%;padding-left:13px;transform:translateY(-50%);font-size:11px;font-style:normal;font-weight:700;color:var(--terrain-accent);white-space:nowrap;font-variant-numeric:tabular-nums}
+.zg-terrain-row-chevron{justify-self:end;transition:transform .18s;color:#bfdae9;margin-right:8px}
+.zg-terrain-row.is-selected .zg-terrain-row-chevron{transform:rotate(180deg)}
+.zg-terrain-detail{display:grid;grid-template-columns:minmax(175px,.75fr) minmax(0,2fr) minmax(240px,1.25fr);gap:0;min-height:216px;padding:18px 27px 18px 25px;background:linear-gradient(100deg,color-mix(in srgb,var(--terrain-accent) 9%,#081a28),#071a29 34%,#071925 100%);border:1px solid var(--terrain-accent);border-top:0;overflow:hidden}
+.zg-terrain-detail-summary{padding:4px 21px 0 5px;border-right:1px solid #2c5063}
+.zg-terrain-kicker{color:#71baad;font-size:10px;font-weight:750}
+.zg-terrain-detail-summary h3{font-size:26px;line-height:1.25;margin:6px 0 3px;color:#f0f7ff;font-weight:800}
+.zg-terrain-detail-summary p{font-size:11px;color:#a5bbce;margin:0}
+.zg-terrain-detail-score{display:flex;align-items:baseline;gap:8px;margin:10px 0 7px;font-variant-numeric:tabular-nums}
+.zg-terrain-detail-score strong{font-size:51px;line-height:1;font-weight:750;letter-spacing:-.06em}
+.zg-terrain-detail-score span{color:#adbdcc;font-size:16px}
+.zg-terrain-pill{display:inline-flex;justify-content:center;min-width:82px;padding:2px 13px;border:1px solid var(--terrain-accent);border-radius:30px;color:var(--terrain-accent);font-size:11px;font-weight:750}
+.zg-terrain-detail-trend{min-width:0;padding:1px 27px 0}
+.zg-terrain-chart-heading{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.zg-terrain-chart-heading>strong{font-size:12px;letter-spacing:-.025em;color:#dcecf8}
+.zg-terrain-chart-heading>div{display:flex;align-items:center;gap:3px}
+.zg-terrain-chart-heading button{height:25px;min-width:30px;padding:0 7px;color:#a6bdcc;border:1px solid transparent;font-size:10px;border-radius:20px}
+.zg-terrain-chart-heading button:hover{color:#fff;border-color:#285a72}
+.zg-terrain-chart-heading button[aria-pressed=true]{border-color:#5aa2c9;color:#f0f8ff;background:#0a2a40}
+.zg-terrain-history{margin:5px 0 0;min-height:142px}
+.zg-terrain-history svg{display:block;width:100%;height:156px;overflow:visible}
+.zg-terrain-history figcaption{font-size:9px;line-height:1.2;text-align:right;color:#819daf}
+.zg-terrain-chart-empty{display:flex;align-items:center;justify-content:center;min-height:130px;margin:8px 0 0;border:1px dashed #21495f;color:#8ca5b7;font-size:11px;text-align:center;padding:12px}
+.zg-terrain-detail-explain{border-left:1px solid #2c5063;padding:2px 0 0 24px;min-width:0}
+.zg-terrain-detail-explain>strong{font-size:13px;color:#f1f7ff}
+.zg-terrain-detail-explain>p{font-size:11px;color:#bfd0dd;line-height:1.7;margin:8px 0;word-break:keep-all}
+.zg-terrain-components{margin:8px 0 7px}.zg-terrain-components>span{font-size:10px;color:#7bb9c5}
+.zg-terrain-components ul{display:flex;gap:5px;list-style:none;margin:5px 0 0;padding:0;flex-wrap:wrap}
+.zg-terrain-components li{display:flex;align-items:center;gap:6px;border-radius:3px;border:1px solid #225168;padding:3px 6px;background:#0a283a;font-size:9px;color:#c3d8e5;max-width:100%}
+.zg-terrain-components li b{color:#e7f6fa}
+.zg-terrain-detail-explain>a{display:inline-flex;align-items:center;gap:5px;color:var(--terrain-accent);font-size:11px;font-weight:750;margin-top:7px;border:1px solid var(--terrain-accent);border-radius:24px;padding:6px 11px}
+.zg-terrain-detail-explain>a:hover{background:color-mix(in srgb,var(--terrain-accent) 10%,transparent)}
+.zg-terrain-footnote{display:flex;justify-content:flex-end;align-items:center;gap:5px;margin:9px 0 0;color:#7e9cae;font-size:10px}
+.zg-terrain-notice{color:#b3c9d8;font-size:12px;padding:12px;border:1px dashed #37566a}
+.zg-terrain-row:focus-visible,.zg-terrain-detail a:focus-visible,.zg-terrain-chart-heading button:focus-visible{outline:2px solid #f0c34e;outline-offset:2px}
+@media(max-width:1050px){.zg-terrain-list{--terrain-name:142px;--terrain-score:95px}.zg-terrain-detail{grid-template-columns:minmax(120px,.75fr) minmax(0,1.6fr) minmax(200px,1fr);padding:15px 17px}.zg-terrain-detail-summary{padding-right:12px}.zg-terrain-detail-trend{padding:0 15px}.zg-terrain-detail-explain{padding-left:16px}.zg-terrain-detail-score strong{font-size:41px}.zg-terrain-controls>span{display:none}}
+@media(max-width:750px){.zg-explorer.is-economic-terrain .zg-explorer-hero{padding:5px 18px 20px;margin:0 -16px;min-height:142px}.zg-explorer.is-economic-terrain .zg-explorer-hero::before{width:90%;right:2%;opacity:.14}.zg-explorer.is-economic-terrain h1{font-size:30px}.zg-explorer.is-economic-terrain .zg-explorer-lead{font-size:12px;max-width:330px}.zg-explorer.is-economic-terrain .zg-explorer-count{display:none}.zg-explorer.is-economic-terrain{padding:16px 16px}.zg-terrain{padding-top:17px}.zg-terrain-section-heading{align-items:flex-start;flex-direction:column;gap:12px}.zg-terrain-controls{width:100%;justify-content:space-between}.zg-terrain-controls>span{display:block}.zg-terrain-list{--terrain-number:27px;--terrain-name:92px;--terrain-score:59px;--terrain-arrow:20px}.zg-terrain-axis{height:87px}.zg-terrain-axis-label{font-size:9px}.zg-terrain-axis-label span:last-child{font-size:9px}.zg-terrain-axis-bands{height:55px}.zg-terrain-axis-bands strong{font-size:9px}.zg-terrain-axis-bands span{font-size:8px}.zg-terrain-axis-ticks{font-size:9px}.zg-terrain-row{height:43px}.zg-terrain-row-index{padding-left:4px;font-size:10px}.zg-terrain-row-name{font-size:12px}.zg-terrain-row-score{font-size:12px}.zg-terrain-track em{display:none}.zg-terrain-dot{width:10px;height:10px}.zg-terrain-row-chevron{margin-right:0;width:14px}.zg-terrain-detail{grid-template-columns:1fr;gap:13px;padding:14px}.zg-terrain-detail-summary{display:grid;grid-template-columns:1fr auto;gap:0 10px;border-right:0;border-bottom:1px solid #254b61;padding:0 0 10px}.zg-terrain-detail-summary h3{grid-column:1;margin:2px 0;font-size:21px}.zg-terrain-detail-summary p{grid-column:1}.zg-terrain-kicker{grid-column:1}.zg-terrain-detail-score{grid-column:2;grid-row:1/4;margin:0;align-self:center}.zg-terrain-detail-score strong{font-size:36px}.zg-terrain-detail-score span{font-size:12px}.zg-terrain-pill{grid-column:1;margin-top:6px;font-size:10px;min-width:50px;width:max-content}.zg-terrain-detail-trend{padding:0}.zg-terrain-history svg{height:175px}.zg-terrain-detail-explain{border-left:0;border-top:1px solid #254b61;padding:12px 0 0}.zg-terrain-footnote{align-items:flex-start;text-align:right;line-height:1.5}.zg-terrain-footnote svg{flex-shrink:0}}
+@media(max-width:390px){.zg-terrain-list{--terrain-number:22px;--terrain-name:76px;--terrain-score:48px;--terrain-arrow:18px}.zg-terrain-row-name{font-size:11px}.zg-terrain-axis-bands span{font-size:7px}.zg-terrain-axis-bands strong{font-size:8px}.zg-terrain-detail-score strong{font-size:31px}.zg-terrain-search input{width:90px}}
