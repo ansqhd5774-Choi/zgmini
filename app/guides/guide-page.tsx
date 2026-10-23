@@ -20,9 +20,11 @@ export default function GuidePage({title,answer,path,datePublished='2026-10-07',
       </header>
       {children}
       <nav aria-label="다른 투자 지표 안내" className="mt-10 flex flex-wrap gap-x-6 gap-y-2 border-t border-slate-700 pt-4">
-        <a href="/guides/fear-greed-buying/" className="inline-flex min-h-11 items-center text-blue-200 underline">공탐 매수 기준과 한계 →</a>
-        <a href="/guides/cpi-pce-release/" className="inline-flex min-h-11 items-center text-blue-200 underline">CPI·PCE 발표 해석 →</a>
-        <a href="/guides/fomc/" className="inline-flex min-h-11 items-center text-blue-200 underline">FOMC 일정과 금리 결정 →</a>
+        {[
+          {href:'/guides/fear-greed-buying/',label:'공탐 매수 기준과 한계'},
+          {href:'/guides/cpi-pce-release/',label:'CPI·PCE 발표 해석'},
+          {href:'/guides/fomc/',label:'FOMC 일정과 금리 결정'},
+        ].filter(link=>link.href!==path).map(link=><a key={link.href} href={link.href} className="inline-flex min-h-11 items-center text-blue-200 underline">{link.label} →</a>)}
       </nav>
     </article>
   </main>;

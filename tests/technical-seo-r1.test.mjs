@@ -54,7 +54,7 @@ test('all three search guides emit Article structured data with truthful publica
   const cpi=read('app/guides/cpi-pce-release/page.tsx');
   const fomc=read('app/guides/fomc/page.tsx');
   assert.match(fear,/const path='\/guides\/fear-greed-buying\/'/);
-  assert.doesNotMatch(fear,/dateModified=/);
+  assert.match(fear,/dateModified="2026-10-23"/);
   assert.match(cpi,/const path='\/guides\/cpi-pce-release\/'/);
   assert.match(cpi,/미국 CPI·PCE 발표 일정·한국시간 \| 예상치 대비 결과 읽는 법/);
   assert.match(cpi,/dateModified="2026-10-16"/);

@@ -4,6 +4,7 @@ import type { Metadata } from "next";
 import DataPanel from "./data-panel";
 import DetailReadingGuide from "../../detail-reading-guide";
 import InvestorIntentGuide from "../investor-intent-guide";
+import {ArrowUpRight,BookOpen} from "lucide-react";
 import "../fear-greed-detail-r1.css";
 
 const title = "한국 공포탐욕지수 - 코스피 투자심리·변동성 추이 | ZGmini";
@@ -26,6 +27,9 @@ export default async function KoreaPage() {
       <a href="/fear-greed/usa/">미국 · CNN</a>
       <a href="/fear-greed/korea/" aria-current="page">한국 · ZGmini</a>
     </nav>
+    <a href="/guides/fear-greed-buying/" className="mb-4 inline-flex min-h-10 items-center gap-1.5 text-sm font-semibold text-amber-300 hover:text-amber-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber-300">
+     <BookOpen size={16} aria-hidden="true"/> 공포·탐욕 매수 판단 가이드 <ArrowUpRight size={15} aria-hidden="true"/>
+    </a>
     <div className="zg-fg-facts" aria-label="한국 공포탐욕 분석 범위">
         <span className="bg-white/5 px-3 py-3"><strong className="block text-xl text-white">7</strong><small className="text-[11px] tracking-wider text-slate-400">SIGNALS</small></span>
         <span className="bg-white/5 px-3 py-3"><strong className="block text-xl text-white">504</strong><small className="text-[11px] tracking-wider text-slate-400">WINDOW</small></span>
