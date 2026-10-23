@@ -29,9 +29,11 @@ function inside(base,relative){
  }
  return resolved;
 }
-function dataHome(dataRoot){
+function dataHome(dataRoot,{create=false}={}){
  const base=rootDir(dataRoot),home=inside(base,'themes/'+QUANTUM_ID);
- fs.mkdirSync(home,{recursive:true});
+ const themeRoot=inside(base,'themes');
+ if(create){fs.mkdirSync(themeRoot,{recursive:true});if(fs.realpathSync(themeRoot)!==themeRoot)fail('THEMES_JUNCTION_NOT_APPROVED');fs.mkdirSync(home,{recursive:true})}
+ else if(!fs.existsSync(home))fail('QUANTUM_E_STORAGE_NOT_CREATED');
  if(fs.realpathSync(home)!==home)fail('THEME_JUNCTION_NOT_APPROVED');
  return home;
 }
@@ -62,8 +64,8 @@ function readManifest(home){
  return m;
 }
 export function ingestQuantum({dataRoot,symbol,inputFile,source,collectedAt,priceMode=QUANTUM_MODE}={}){
- if(!QUANTUM_SYMBOLS.includes(symbol)||!/^https:\/\//.test(source??'')||!Number.isFinite(Date.parse(collectedAt??''))||priceMode!==QUANTUM_MODE)fail('INGEST_PROVENANCE');
- const home=dataHome(dataRoot),raw=inside(home,'raw'),state=inside(home,'state');
+ if(!QUANTUM_SYMBOLS.includes(symbol)||!/^https:\/\//.test(source??'')||!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?Z$/.test(collectedAt??'')||!Number.isFinite(Date.parse(collectedAt))||priceMode!==QUANTUM_MODE)fail('INGEST_PROVENANCE');
+ const home=dataHome(dataRoot,{create:true}),raw=inside(home,'raw'),state=inside(home,'state');
  fs.mkdirSync(raw,{recursive:true});fs.mkdirSync(state,{recursive:true});
  const lock=inside(state,'quantum-stage.lock');let fd;
  try{fd=fs.openSync(lock,'wx')}catch{fail('ANOTHER_QUANTUM_STAGE_RUNNING')}
