@@ -37,7 +37,7 @@ export const SEO_RUNTIME_MARKERS=new Map([
   [`${SITE_ORIGIN}/economic-indicators/breadth/`,{titleIncludes:"미국 수급·폭 시장지표",descriptionIncludes:"저장된 0~100점과 과거 추이"}],
   [`${SITE_ORIGIN}/economic-indicators/dollar-fx/`,{titleIncludes:"미국 달러환율 시장지표",descriptionIncludes:"저장된 0~100점과 과거 추이"}],
   [`${SITE_ORIGIN}/economic-indicators/commodities/`,{titleIncludes:"미국 유가원자재 시장지표",descriptionIncludes:"저장된 0~100점과 과거 추이"}],
-  [`${SITE_ORIGIN}/guides/fear-greed-buying/`,{descriptionIncludes:'매수 신호로 사용할 때의 한계'}],
+  [`${SITE_ORIGIN}/guides/fear-greed-buying/`,{descriptionIncludes:'공포탐욕지수로 주식 매수 타이밍을 판단하기 전에 확인할 3가지'}],
   [`${SITE_ORIGIN}/guides/cpi-pce-release/`,{descriptionIncludes:'CPI·PCE 공식 발표 일정의 한국시간',htmlIncludes:['확인 당시 다음 공식 일정']}],
   [`${SITE_ORIGIN}/guides/fomc/`,{descriptionIncludes:'FOMC 공식 일정과 한국시간 발표 시각',htmlIncludes:['확인 당시 다음 공식 일정']}],
 ]);
