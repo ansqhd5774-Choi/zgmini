@@ -1,5 +1,17 @@
 # 모바일 대시보드 디자인 검증
 
+## 2026-10-23 · 경제 지형도 글자 가독성 R2
+
+- 비교 기준: 승인 원본 `01-generated-image.png`와 공개 `/economic-indicators/` PC 캡처. 5밴드(25/20/10/20/25), 12개 행, 선택 상세 3열은 보존.
+- 문제: 실제 상세 해설 11px·구성 지표 배지 9px·차트 보조 문구 9px, 낮은 대비, 제목-점수축 상단 공간 과다. SVG 텍스트는 모바일에서 가로 비율로 축소되는 구조.
+- 변경: 해설 13px, 구성 배지 12px, 차트 제목 14px·기간 12px, 축 12~13px, 행 제목 16px(좁은 모바일 13px), 보조색 밝게 조정. 헤더·축 수직 간격 압축.
+- 모바일 대응: 530px 이하 이름·점수 고정 열 폭 축소로 그래프 공간 확보. 390px 이하 오밀조밀한 밴드 구간 텍스트만 숨기고 5밴드 이름·색상·상하한 점수 경계는 유지. SVG 차트 축 문자는 CSS 픽셀 크기를 유지하는 HTML 오버레이로 분리.
+- 로컬 데스크톱: `terminal.local:4173/economic-indicators/?preview=terrain-r2` 실제 화면에서 핵심 타이포그래피 확대와 상단 여백 축소 확인. 로컬 API가 연결되지 않아 점수는 `—`로 유지하며 임의로 채우지 않음.
+- 테스트: `npm run typecheck`, `npm run build`, `node --test tests/economic-terrain-r1.test.mjs tests/economic-terrain-legibility-r2.test.mjs` 통과. 모바일 실물 렌더링과 Cloudflare hosted build·production 검증은 별도 단계로 분리.
+- 변경 범위: `components/economic-terrain.tsx`의 SVG 축 표시 방식과 `components/economic-terrain.css`의 디자인 규칙만 수정. 점수 산식·원자료·API·DB·정렬 동작 변경 없음.
+
+---
+
 ## 2026-10-22 · 소개·이용안내 독립 페이지 R2
 
 - R1의 승인 디자인을 보존하면서 경로를 `/about/`(개발자 소개)과 `/usage/`(5단계 이용안내)로 분리한다.
