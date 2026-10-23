@@ -43,11 +43,10 @@ function TerrainHistory({domain,period}:{domain?:Domain;period:Period}){
  const start=Date.parse(rows[0].date),end=Date.parse(rows.at(-1)!.date),accent=bandOf(readyScore(domain))?.color??'#a6bdd0';
  const px=(date:string)=>42+(Date.parse(date)-start)/(end-start||1)*598;
  const ticks=[0,25,50,75,100];
- return <figure className="zg-terrain-history"><svg viewBox="0 0 680 194" role="img" aria-label={`${rows[0].date}부터 ${rows.at(-1)!.date}까지 저장된 점수 추이`} preserveAspectRatio="none">
-  {ticks.map(v=><g key={v}><line x1="42" x2="640" y1={153-v*1.25} y2={153-v*1.25} stroke="#234156" strokeDasharray="3 5"/><text x="31" y={157-v*1.25} textAnchor="end" fill="#9db6c8" fontSize="12">{v}</text></g>)}
+ return <figure className="zg-terrain-history"><div className="zg-terrain-history-chart"><svg viewBox="0 0 680 194" role="img" aria-label={`${rows[0].date}부터 ${rows.at(-1)!.date}까지 저장된 점수 추이`} preserveAspectRatio="none">
+  {ticks.map(v=><line key={v} x1="42" x2="640" y1={153-v*1.25} y2={153-v*1.25} stroke="#234156" strokeDasharray="3 5"/>)}
   <polyline points={rows.map(p=>`${px(p.date)},${153-p.value*1.25}`).join(' ')} fill="none" stroke={accent} strokeWidth="2.25" vectorEffect="non-scaling-stroke" strokeLinejoin="round" strokeLinecap="round"/>
-  <text x="42" y="183" fontSize="12" fill="#819aac">{rows[0].date.slice(0,7)}</text><text x="640" y="183" textAnchor="end" fontSize="12" fill="#819aac">{rows.at(-1)!.date.slice(0,7)}</text>
- </svg><figcaption>실제 저장 관측일 기준 · 관측 사이를 연결한 추이</figcaption></figure>;
+ </svg><div className="zg-terrain-history-labels" aria-hidden="true">{ticks.map(v=><span key={v} className="zg-terrain-history-tick" style={{top:`${(153-v*1.25)/194*100}%`}}>{v}</span>)}<span className="zg-terrain-history-date is-start">{rows[0].date.slice(0,7)}</span><span className="zg-terrain-history-date is-end">{rows.at(-1)!.date.slice(0,7)}</span></div></div><figcaption>실제 저장 관측일 기준 · 관측 사이를 연결한 추이</figcaption></figure>;
 }
 
 function SelectedDetail({name,href,description,score,domain}:{name:string;href:string;description:string;score:number|null;domain?:Domain}){
