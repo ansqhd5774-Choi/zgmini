@@ -60,6 +60,57 @@ export function traceSeries(own,spy){
  return points;
 }
 
+// Independent literal transcription of R158's input validity, raw metrics,
+// filter-based 252 midranks, inversion and axes. Its native exported function
+// is separately executed for each eligible date and checked against this.
+// A mirror match is not a substitute for having the old R3 price inputs.
+export function traceR158Stages(own,spy,index){
+ ensure(own.length===spy.length&&index>=376&&index<own.length,'R158_MIRROR_INPUT');
+ const valid=x=>typeof x==='number'&&Number.isFinite(x)&&x>0;
+ const raw=Object.fromEntries(Object.keys(specs).map(k=>[k,Array(own.length).fill(null)]));
+ for(let i=0;i<=index;i++){
+  if(i>=124&&own.slice(i-124,i+1).every(valid)){
+   const c=own[i];raw.trend[i]={m125:c/mean(own.slice(i-124,i+1))-1,r60:c/own[i-60]-1,r20:c/own[i-20]-1};
+  }
+  if(i>=125&&own.slice(i-125,i+1).every(valid)&&spy.slice(i-125,i+1).every(valid)){
+   const rel=j=>(own[i]/own[i-j]-1)-(spy[i]/spy[i-j]-1);
+   raw.relativeStrength[i]={rs20:rel(20),rs60:rel(60),rs125:rel(125)};
+  }
+  if(i>=62&&own.slice(i-62,i+1).every(valid)){
+   const ret=[];for(let j=i-19;j<=i;j++)ret.push(own[j]/own[j-1]-1);
+   const high=Math.max(...own.slice(i-62,i+1));
+   raw.volatility[i]={rv20:std(ret)*Math.sqrt(252),
+    dsv20:Math.sqrt(252*mean(ret.map(x=>Math.min(x,0)**2))),dd63:own[i]/high-1};
+  }
+ }
+ const axes={},metrics={};
+ for(const [axis,spec] of Object.entries(specs)){
+  const part=raw[axis].slice(index-251,index+1);ensure(part.length===252&&part.every(Boolean),'R158_MIRROR_RANK');
+  let sum=0;metrics[axis]={};
+  for(const [key,weight,invert] of spec){
+   const value=raw[axis][index][key],less=part.filter(row=>row[key]<value).length,
+    equal=part.filter(row=>row[key]===value).length,midrank=100*(less+0.5*equal)/252;
+   const weightedContribution=weight*(invert?100-midrank:midrank);
+   metrics[axis][key]={raw:value,rankBelow:less,rankEqual:equal,rankWindow:252,midrank,invert,weight,weightedContribution};
+   sum+=weightedContribution;
+  }
+  axes[axis]=sum;
+ }
+ return {metrics,axes,score:axes.trend*.4+axes.relativeStrength*.2+axes.volatility*.4};
+}
+
+export function firstStageDifference(a,b){
+ const mismatches=[];
+ for(const axis of Object.keys(specs))for(const [key] of specs[axis]){
+  for(const field of ['raw','rankBelow','rankEqual','midrank','weightedContribution'])
+   if(a.metrics[axis][key][field]!==b.metrics[axis][key][field])mismatches.push({stage:field==='raw'?'RAW_METRIC':field==='rankBelow'||field==='rankEqual'||field==='midrank'?'PERCENTILE':'METRIC_WEIGHT',axis,key,field,
+    r158:a.metrics[axis][key][field],r188:b.metrics[axis][key][field]});
+ }
+ for(const axis of Object.keys(specs))if(a.axes[axis]!==b.axes[axis])mismatches.push({stage:'AXIS',axis,r158:a.axes[axis],r188:b.axes[axis]});
+ if(a.score!==b.score)mismatches.push({stage:'FINAL',r158:a.score,r188:b.score});
+ return {status:mismatches.length?'CODE_STAGE_DIFFERENCE':'R158_R188_SAME_PRICE_STAGE_EXACT',firstMismatch:mismatches[0]??null,mismatches};
+}
+
 export function materializeBars(dataRoot,theme){
  const checked=inspectManifest(dataRoot,theme.rawManifest,theme.id);
  ensure(checked.status==='SHA_VERIFIED','MANIFEST_SHA_NOT_VERIFIED_'+theme.id);
@@ -135,6 +186,12 @@ export function compareHistory(previous,computed,corpus){
   const inputIndex=corpus.dates.indexOf(date),prior628Start=corpus.dates[inputIndex-627]??null,rank252Start=corpus.dates[inputIndex-251];
   const native=Object.fromEntries(['IBB','XBI'].map(s=>[s,{status:'NOT_RUN_BELOW_R158_500_MINIMUM'}]));
   const nativeInput=corpus.dates.slice(0,inputIndex+1);
+  const parity={};
+  for(const s of ['IBB','XBI']){
+   const localTrace=traceR158Stages(computed.series[s],computed.series.SPY,i+376);
+   parity[s]=firstStageDifference(localTrace,computed.trace[s][i]);
+   ensure(parity[s].status==='R158_R188_SAME_PRICE_STAGE_EXACT','R158_R188_CODE_METRIC_MISMATCH_'+s+'_'+date);
+  }
   if(nativeInput.length>=500){
    for(const s of ['IBB','XBI']){
     const ours=r158ScorePrices(nativeInput.map(d=>corpus.tables[s].get(d).close),nativeInput.map(d=>corpus.tables.SPY.get(d).close));
@@ -145,6 +202,7 @@ export function compareHistory(previous,computed,corpus){
   diffs.push({date,priorPublishedScore:prior.score,recomputedR188Score:fresh.score,signedDifference:Number((fresh.score-prior.score).toFixed(5)),
    sourcePriceComparison:'ORIGINAL_R3_PRICE_INPUT_NOT_AVAILABLE_DO_NOT_INFER',
    firstVerifiedMismatchStage:'PUBLISHED_FINAL_SCORE_VS_NEW_RAW',
+   sameInputR158R188StageParity:parity,
    normalizedDateWindows:{price628Start:prior628Start,rank252Start,through:date,
     note:prior628Start?'FULL_628_AVAILABLE':'HISTORICAL_POINT_USES_SUBWINDOW_OF_PRIOR_628'},
    chosenHourlyPrice:prices,
