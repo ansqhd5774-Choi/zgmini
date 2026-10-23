@@ -64,6 +64,19 @@ test('USA SEO inspector accepts approved description and rejects the obsolete de
   assert.ok(inspectHtml(obsolete,url).errors.some(error=>error.startsWith('description_stale:')));
 });
 
+test('risk indicators SEO contract follows actual page metadata and rejects obsolete copy',()=>{
+  const url='https://zgmini.kr/risk-indicators/';
+  const page=readFileSync('app/risk-indicators/page.tsx','utf8');
+  const match=page.match(/const description\s*=\s*'([^']+)';/);
+  assert.ok(match,'risk page must expose its approved description for the contract check');
+  const description=match[1];
+  assert.ok(description.includes(SEO_RUNTIME_MARKERS.get(url).descriptionIncludes));
+  const html=detailHtml.replaceAll(detailUrl,url).replaceAll(detailDescription,description);
+  assert.deepEqual(inspectHtml(html,url).errors,[]);
+  const obsolete=html.replaceAll(description,'경기침체, 인플레이션, 유동성 위기, 신용 위험, 실적 침체, 자산 버블, 부채 위험, 공급 충격의 저장 점수를 비교하세요.');
+  assert.ok(inspectHtml(obsolete,url).errors.some(error=>error.startsWith('description_stale:')));
+});
+
 test('production SEO inspector requires guide Article JSON-LD',()=>{
   const guideUrl='https://zgmini.kr/guides/fomc/';
   const html=detailHtml.replaceAll(detailUrl,guideUrl);
