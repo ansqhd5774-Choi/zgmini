@@ -20,11 +20,11 @@ export default function GuidePage({title,answer,path,datePublished='2026-10-07',
     <ArticleJsonLd headline={title} description={answer} path={path} datePublished={datePublished} dateModified={dateModified}/>
     <article className={market?'mx-auto max-w-[1360px] min-w-0 px-[11px] pb-12 pt-3 text-sm leading-7 sm:px-5 sm:pb-16 sm:pt-6':'mx-auto max-w-4xl text-sm leading-7 sm:text-base'}>
       {!market?<a href="/" className="inline-flex min-h-11 items-center text-blue-200">← ZGmini 대시보드</a>:null}
-      <header className={market?'bg-[#0a2232] px-4 py-5 sm:px-6 sm:py-6 border-t-2 border-[#3c8293]':'mt-5 space-y-4'}>
-        <p className={market?'text-xs font-bold tracking-wide text-[#79bbc4]':'text-sm text-slate-400'}>투자 지표 활용 안내 · 내용 확인일 {dateModified}</p>
-        <h1 className={market?'mt-2 text-[22px] font-extrabold leading-snug tracking-tight text-[#f0f7fc] sm:text-[28px]':'text-2xl font-bold text-white sm:text-3xl'}>{title}</h1>
-        <p className={market?'mt-3 max-w-4xl border-l-[3px] border-[#3c8293] pl-3 text-[14px] leading-7 text-[#c4d8e4] sm:text-[15px]':'rounded-lg border border-slate-700 p-4 text-slate-200'}>{answer}</p>
-      </header>
+      {!market?<header className="mt-5 space-y-4">
+        <p className="text-sm text-slate-400">투자 지표 활용 안내 · 내용 확인일 {dateModified}</p>
+        <h1 className="text-2xl font-bold text-white sm:text-3xl">{title}</h1>
+        <p className="rounded-lg border border-slate-700 p-4 text-slate-200">{answer}</p>
+      </header>:null}
       {children}
       <nav aria-label="다른 투자 지표 안내" className={market?'mt-8 border-t border-[#25485a] pt-5':'mt-10 flex flex-wrap gap-x-6 gap-y-2 border-t border-slate-700 pt-4'}>
         {market?<>

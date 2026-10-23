@@ -1,81 +1,153 @@
-import {ArrowUpRight,BookOpen,CheckCircle2,ExternalLink} from 'lucide-react';
+import {ArrowRight,ArrowUpRight,ChartNoAxesColumnIncreasing,ClipboardCheck,ExternalLink,FileText,Info,Landmark,ShieldAlert} from 'lucide-react';
 import SiteHeader from '@/components/site-header';
 import GuidePage,{guideMetadata} from '../guide-page';
 
 const title='공포탐욕지수 매수 기준: 지금 주식 사도 될까?';
-const answer='공포·탐욕 지수는 시장의 투자심리를 보여줍니다. 공포가 크다고 주가 바닥이 확정되는 것도, 탐욕이 크다고 곧 하락한다는 뜻도 아닙니다.';
+const answer='공포·탐욕 지수는 매수 신호가 아닌 시장 심리를 보여줍니다. 지수의 흐름과 하락 원인, 그리고 내 투자 계획을 함께 확인하세요.';
 const path='/guides/fear-greed-buying/';
 
 export const metadata=guideMetadata(title,'공포탐욕지수로 주식 매수 타이밍을 판단하기 전에 확인할 3가지, 미국·한국 지수의 차이와 상황별 해석을 쉽게 안내합니다.',path);
 
-const checks=[
-  {number:'01',title:'지수가 가리키는 시장',detail:'미국 CNN 지수인지, 한국 ZGmini 자체 지수인지 확인하고 관측일과 1개월·3개월 흐름을 함께 보세요.'},
-  {number:'02',title:'공포가 생긴 이유',detail:'신용 위험, 경기, 물가가 함께 악화되는지 확인하세요. 공포가 높아도 가격 하락이 계속될 수 있습니다.'},
-  {number:'03',title:'나의 투자 조건',detail:'투자 기간, 필요한 자금의 시점, 감당 가능한 손실을 먼저 정하세요. 점수만으로 매수 비중을 결정하지 않습니다.'},
+const bands=[
+  {label:'극도의 공포',description:'매우 부정적',color:'#bd3c51',labelColor:'text-[#ff8a9b]'},
+  {label:'공포',description:'부정적',color:'#ff8652',labelColor:'text-[#ffdad0]'},
+  {label:'중립',description:'관망적',color:'#9da2ae',labelColor:'text-[#e8ebef]'},
+  {label:'탐욕',description:'긍정적',color:'#87c881',labelColor:'text-[#d7f3d1]'},
+  {label:'극도의 탐욕',description:'매우 긍정적',color:'#14b6a1',labelColor:'text-[#38e5c6]'},
+];
+
+const steps=[
+  {number:'01',title:'흐름 확인',description:'지수가 단기적으로 하락 중인지, 바닥을 형성하고 있는지 흐름을 확인하세요.',color:'#30d9e4',icon:ChartNoAxesColumnIncreasing},
+  {number:'02',title:'원인 확인',description:'공포가 커진 원인이 일시적인지, 구조적인지 확인하세요.',color:'#37bfff',icon:FileText},
+  {number:'03',title:'투자 계획',description:'지금이 내 투자 원칙과 계획에 맞는 구간인지 점검하세요.',color:'#10dcb3',icon:ClipboardCheck},
 ];
 
 const scenarios=[
-  {tag:'공포가 심할 때',title:'점수 하락 + 신용 악화',description:'저점이라고 단정하기 어렵습니다. 하락 원인과 변동성이 진정되는지 함께 확인하세요.'},
-  {tag:'공포가 줄어들 때',title:'점수 반등 + 물가 불확실',description:'투자심리가 회복되어도 경제 여건은 다를 수 있습니다. 다른 지표와 관측일을 대조하세요.'},
-  {tag:'탐욕이 강할 때',title:'점수 상승 + 가격 부담',description:'높은 점수가 즉시 매도 신호는 아닙니다. 가격과 투자 비중을 따로 점검하세요.'},
+  {label:'공포 확대',check:'신용 위험 · 하락 원인',detail:'하락의 원인이 신용 문제, 유동성 이슈 등 구조적인지 확인하세요.',color:'#fb5378'},
+  {label:'공포 완화',check:'시장 흐름 · 경제 지표',detail:'지수가 바닥을 형성하는지, 주요 경제 지표가 안정되는지 살펴보세요.',color:'#ffcb4e'},
+  {label:'탐욕 확대',check:'가격 부담 · 투자 비중',detail:'가격이 과열 구간에 있는지, 기존 투자 비중을 점검하세요.',color:'#12dfae'},
 ];
+
+const focusClass='focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#49e2df]';
 
 export default function Page(){
   return <>
     <SiteHeader/>
     <GuidePage title={title} answer={answer} path={path} dateModified="2026-10-23" variant="market">
-      <section className="mt-5 bg-[#0a2232] px-4 py-5 sm:px-6" aria-labelledby="fg-buying-steps">
-        <div className="flex items-center gap-2 text-[#79bbc4]">
-          <CheckCircle2 size={17} aria-hidden="true"/>
-          <span className="text-xs font-extrabold tracking-[.12em]">매수 전 체크</span>
-        </div>
-        <h2 id="fg-buying-steps" className="mt-2 text-lg font-extrabold text-[#f0f7fc] sm:text-xl">점수보다 먼저 확인할 3가지</h2>
-        <p className="mt-1 text-[13px] leading-6 text-[#b4cbd8] sm:text-sm">지수에 정해진 매수 점수는 없습니다. 아래 순서대로 확인하면 숫자를 더 정확하게 해석할 수 있습니다.</p>
-        <ol className="mt-4 grid gap-2 md:grid-cols-3">
-          {checks.map(item=><li key={item.number} className="min-w-0 border-t-2 border-[#347482] bg-[#0e2b3b] px-4 py-4">
-            <span className="text-xs font-extrabold tabular-nums tracking-wider text-[#79bbc4]">{item.number}</span>
-            <h3 className="mt-1 text-[15px] font-extrabold leading-6 text-[#edf6fc]">{item.title}</h3>
-            <p className="mt-1 text-[14px] leading-6 text-[#c4d8e4]">{item.detail}</p>
-          </li>)}
-        </ol>
-      </section>
+      <div className="relative isolate overflow-hidden bg-[linear-gradient(140deg,#062333_0%,#061a29_60%,#03121d_100%)] px-4 pb-8 pt-7 sm:px-6 md:px-9 md:pb-10 md:pt-9 lg:px-12">
+        <div aria-hidden="true" className="pointer-events-none absolute left-[43%] top-3 hidden h-[260px] w-[225px] opacity-25 lg:block" style={{backgroundImage:'radial-gradient(#2382a0 1px, transparent 1px)',backgroundSize:'13px 13px',maskImage:'linear-gradient(to bottom,black,transparent)'}}/>
+        <section className="relative grid items-start gap-7 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] lg:gap-11" aria-labelledby="fg-buying-title">
+          <div className="min-w-0">
+            <p className="text-[12px] font-bold tracking-[.08em] text-[#37dfeb] sm:text-sm">투자 지표 활용 안내</p>
+            <h1 id="fg-buying-title" className="mt-3 text-[28px] font-extrabold leading-[1.22] tracking-[-.055em] text-[#f6f9ff] sm:text-[39px] lg:text-[40px] xl:text-[45px]">
+              공포·탐욕지수, 지금 사도 될까?
+              <span className="mt-2 block text-[#7deaf2]">점수만으로 매수하지 않습니다.</span>
+            </h1>
+            <div aria-hidden="true" className="mt-3 h-[2px] w-48 bg-[#37dbe1] sm:w-64"/>
+            <p className="mt-7 max-w-[660px] border-l-[4px] border-[#36dae2] py-1 pl-4 text-[15px] leading-[1.8] text-[#e0eaf2] sm:pl-5 sm:text-[17px]">
+              공포·탐욕 점수는 매수 신호가 아닌 시장 심리입니다.<br className="hidden sm:block"/>
+              지수의 흐름과 하락 원인, 그리고 내 투자 계획을 함께 확인하세요.
+            </p>
+          </div>
+          <aside className="border border-[#27506b] bg-[#052033]/80 p-4 sm:p-5 lg:p-6" aria-labelledby="fg-buying-bands">
+            <div className="flex items-center justify-between gap-2">
+              <h2 id="fg-buying-bands" className="text-[16px] font-extrabold text-[#f4f7fc] sm:text-[18px]">시장 심리 구간 읽기</h2>
+              <p className="flex items-center gap-1.5 text-[11px] text-[#c9d7e2] sm:text-xs">낮을수록 공포, 높을수록 탐욕 <Info size={15} aria-hidden="true"/></p>
+            </div>
+            <div className="mt-4 grid grid-cols-5 gap-[2px]" aria-label="공포에서 탐욕까지의 5단계 시장 심리">
+              {bands.map(band=><div key={band.label} className="min-w-0">
+                <div className="h-9 sm:h-11" style={{backgroundColor:band.color}}/>
+                <p className={`mt-3 text-center text-[11px] font-extrabold leading-5 sm:text-[13px] ${band.labelColor}`}>{band.label}</p>
+                <p className="mt-1 text-center text-[11px] leading-5 text-[#bbcdda] sm:text-xs">{band.description}<br/>심리 구간</p>
+              </div>)}
+            </div>
+            <div className="mt-4 flex items-center gap-2 border border-[#1b4b64] px-3 py-2.5 text-[12px] leading-5 text-[#d0dfeb] sm:mt-5">
+              <Info size={16} className="shrink-0" aria-hidden="true"/>
+              구간은 심리의 단계이며 매수 신호가 아닙니다.
+            </div>
+          </aside>
+        </section>
 
-      <nav aria-label="현재 공포탐욕지수 확인" className="mt-2 grid gap-2 sm:grid-cols-2">
-        <a href="/fear-greed/usa/" className="group flex min-h-16 items-center justify-between gap-3 bg-[#0e2b3b] px-5 py-4 transition-colors hover:bg-[#153a4b] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#79bbc4]">
-          <span><strong className="block text-[15px] text-[#edf6fc]">미국 공포·탐욕지수</strong><small className="mt-1 block text-xs text-[#a5c2d0]">CNN · 미국 주식시장</small></span>
-          <ArrowUpRight aria-hidden="true" size={20} className="shrink-0 text-amber-300 group-hover:text-white"/>
-        </a>
-        <a href="/fear-greed/korea/" className="group flex min-h-16 items-center justify-between gap-3 bg-[#0e2b3b] px-5 py-4 transition-colors hover:bg-[#153a4b] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#79bbc4]">
-          <span><strong className="block text-[15px] text-[#edf6fc]">한국 공포·탐욕지수</strong><small className="mt-1 block text-xs text-[#a5c2d0]">ZGmini 자체 지표 · 한국 시장</small></span>
-          <ArrowUpRight aria-hidden="true" size={20} className="shrink-0 text-amber-300 group-hover:text-white"/>
-        </a>
-      </nav>
+        <section className="relative mt-9" aria-labelledby="fg-buying-steps">
+          <div className="flex flex-wrap items-baseline gap-x-5 gap-y-1 border-b border-[#205069] pb-3 sm:border-0 sm:pb-0">
+            <h2 id="fg-buying-steps" className="text-[23px] font-extrabold leading-snug tracking-tight text-white sm:text-[25px]">매수 전 판단 3단계</h2>
+            <p className="text-[12px] leading-6 text-[#b9cbd9] sm:text-sm">점수만 보지 말고, 시장 흐름 · 하락 원인 · 내 투자 계획을 함께 점검하세요.</p>
+            <div className="hidden h-px min-w-8 flex-1 bg-[#206079] sm:block"/>
+          </div>
+          <ol className="mt-4 grid gap-3 lg:grid-cols-[minmax(0,1fr)_20px_minmax(0,1fr)_20px_minmax(0,1fr)] lg:items-center lg:gap-3">
+            {steps.map((step,index)=>{
+              const Icon=step.icon;
+              return <li key={step.number} className={`relative min-w-0 ${index===0?'lg:col-start-1':index===1?'lg:col-start-3':'lg:col-start-5'}`}>
+                <div className="border-t-[3px] bg-[#0a2a3d] px-4 pb-4 pt-3.5" style={{borderTopColor:step.color}}>
+                  <div className="flex items-center gap-3">
+                    <span className="text-[27px] font-bold tabular-nums leading-none sm:text-[29px]" style={{color:step.color}}>{step.number}</span>
+                    <span aria-hidden="true" className="h-8 w-px bg-[#365e73]"/>
+                    <Icon size={25} strokeWidth={1.6} className="shrink-0 text-[#e8f3fa]"/>
+                    <span aria-hidden="true" className="h-8 w-px bg-[#365e73]"/>
+                    <h3 className="text-[17px] font-extrabold text-[#f5f9ff]">{step.title}</h3>
+                  </div>
+                  <p className="mt-2 pl-[69px] text-[12px] leading-[1.65] text-[#cbdce8] sm:text-[13px] lg:min-h-[43px]">{step.description}</p>
+                </div>
+                {index<2?<ArrowRight size={18} aria-hidden="true" className="absolute -right-[26px] top-1/2 hidden -translate-y-1/2 text-[#e1eff6] lg:block"/>:null}
+              </li>;
+            })}
+          </ol>
+        </section>
 
-      <section className="mt-5 bg-[#0a2232] px-4 py-5 sm:px-6" aria-labelledby="fg-buying-scenarios">
-        <h2 id="fg-buying-scenarios" className="flex items-center gap-2 text-lg font-extrabold text-[#f0f7fc]"><BookOpen size={18} aria-hidden="true" className="text-[#79bbc4]"/>상황별로 읽어보기</h2>
-        <p className="mt-1 text-[13px] leading-6 text-[#a7c0ce]">이해를 돕기 위한 가상 사례이며, 과거 수익률로 검증된 매매 규칙은 아닙니다.</p>
-        <div className="mt-4 grid gap-2 md:grid-cols-3">
-          {scenarios.map(item=><article key={item.tag} className="min-w-0 border-t-2 border-[#347482] bg-[#0e2b3b] px-4 py-4">
-            <span className="text-xs font-bold text-[#79bbc4]">{item.tag}</span>
-            <h3 className="mt-1 text-[14px] font-extrabold text-[#edf6fc]">{item.title}</h3>
-            <p className="mt-1 text-[14px] leading-6 text-[#c4d8e4]">{item.description}</p>
-          </article>)}
-        </div>
-      </section>
+        <section className="mt-7" aria-labelledby="fg-buying-scenarios">
+          <div className="flex flex-wrap items-baseline gap-x-5 gap-y-1">
+            <h2 id="fg-buying-scenarios" className="text-[23px] font-extrabold leading-snug tracking-tight text-white sm:text-[25px]">상황별 확인 포인트</h2>
+            <p className="text-[12px] leading-6 text-[#b9cbd9] sm:text-sm">시장 상황에 따라, 추가로 확인해야 할 핵심 포인트를 정리했습니다.</p>
+            <div className="hidden h-px min-w-8 flex-1 bg-[#206079] sm:block"/>
+          </div>
+          <div className="mt-4 border border-[#1e4c64]">
+            <table className="w-full border-collapse text-left text-[12px] sm:text-[13px]">
+              <thead className="bg-[#0c3044] text-[#e2edf7]">
+                <tr>
+                  <th scope="col" className="w-[27%] px-3 py-2 font-extrabold sm:w-[22%] sm:px-6">시장 심리</th>
+                  <th scope="col" className="w-[40%] border-l border-[#1e4c64] px-3 py-2 font-extrabold sm:w-[28%] sm:px-6">추가로 확인할 것</th>
+                  <th scope="col" className="hidden border-l border-[#1e4c64] px-6 py-2 font-extrabold sm:table-cell">판단할 때 살펴볼 내용</th>
+                </tr>
+              </thead>
+              <tbody>
+                {scenarios.map(item=><tr key={item.label} className="border-t border-[#1e4c64] bg-[#072537] text-[#cfdeeb]">
+                  <th scope="row" className="px-3 py-2 font-extrabold text-[#f1f6fc] sm:px-6">
+                    <span className="flex items-center gap-3"><span className="h-5 w-[5px] shrink-0 rounded-[1px]" style={{backgroundColor:item.color}}/>{item.label}</span>
+                  </th>
+                  <td className="border-l border-[#1e4c64] px-3 py-2 font-bold text-[#dcecf6] sm:px-6">{item.check}</td>
+                  <td className="hidden border-l border-[#1e4c64] px-6 py-2 sm:table-cell">{item.detail}</td>
+                </tr>)}
+              </tbody>
+            </table>
+          </div>
+          <div className="mt-2 grid gap-1.5 sm:hidden">
+            {scenarios.map(item=><p key={item.label} className="border-l-2 border-[#265469] pl-3 text-[12px] leading-5 text-[#adcadb]"><strong className="mr-1 text-[#e8f2f9]">{item.label}:</strong>{item.detail}</p>)}
+          </div>
+        </section>
 
-      <section className="mt-5 bg-[#0a2232] px-4 py-5 sm:px-6" aria-labelledby="fg-buying-difference">
-        <h2 id="fg-buying-difference" className="text-lg font-extrabold text-[#f0f7fc]">미국과 한국, 같은 20점일까요?</h2>
-        <p className="mt-2 max-w-5xl text-[14px] leading-7 text-[#c4d8e4]">아닙니다. 미국은 CNN이 제공하는 지수를 표시하고, 한국은 ZGmini가 국내 시장 자료로 계산한 별도 지표입니다. 대상 시장과 산출 방식이 달라 <strong className="text-white">같은 점수를 같은 매수 조건으로 비교할 수 없습니다.</strong> 비트코인이나 나스닥 전용 지수와도 구분해서 보세요.</p>
-      </section>
+        <section className="mt-7 grid items-center gap-4 lg:grid-cols-[minmax(200px,0.95fr)_minmax(0,1.5fr)_minmax(0,1.08fr)] lg:gap-7" aria-labelledby="fg-buying-links">
+          <div className="min-w-0">
+            <h2 id="fg-buying-links" className="flex items-center gap-4 text-[22px] font-extrabold text-white sm:text-[24px]">지수 확인하기 <span className="h-px min-w-7 flex-1 bg-[#38718a]"/></h2>
+            <p className="mt-2 text-[12px] leading-6 text-[#c0d2df] sm:text-[13px]">주요 시장의 공포·탐욕 지수를 확인하고,<br className="hidden sm:block"/> 나의 투자 판단에 활용해보세요.</p>
+          </div>
+          <nav className="grid gap-3 sm:grid-cols-2" aria-label="실제 미국·한국 공포탐욕지수로 이동">
+            <a href="/fear-greed/usa/" className={`group flex min-h-[60px] items-center justify-center gap-3 rounded-[3px] bg-[#18d9ca] px-4 text-[14px] font-extrabold text-[#042332] transition-colors hover:bg-[#65f4e8] ${focusClass}`}>
+              미국 공포·탐욕 확인 <ArrowUpRight size={19} strokeWidth={1.9} aria-hidden="true" className="transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5"/>
+            </a>
+            <a href="/fear-greed/korea/" className={`group flex min-h-[60px] items-center justify-center gap-3 rounded-[3px] border border-[#25cfd2] bg-[#061d2d] px-4 text-[14px] font-extrabold text-[#f1f7fc] transition-colors hover:bg-[#0b3b4c] ${focusClass}`}>
+              한국 지수 확인 <ArrowUpRight size={19} strokeWidth={1.9} aria-hidden="true" className="transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5"/>
+            </a>
+          </nav>
+          <nav aria-label="원문 및 추가 참고 자료" className="flex flex-wrap items-center justify-start gap-x-3 gap-y-2 border-t border-[#27566b] pt-3 text-[11px] text-[#b8cbda] sm:gap-x-4 lg:justify-end lg:border-l lg:border-t-0 lg:py-2 lg:pl-5">
+            <a href="https://www.cnn.com/markets/fear-and-greed" target="_blank" rel="noopener noreferrer" className={`inline-flex min-h-8 items-center gap-1 hover:text-white ${focusClass}`}><FileText size={15} aria-hidden="true"/> CNN 원문 <ExternalLink size={12} aria-hidden="true"/></a>
+            <a href="https://www.investor.gov/additional-resources/spotlight/formerdirectorlorischock-directors-take/dont-panic-plan-it" target="_blank" rel="noopener noreferrer" className={`inline-flex min-h-8 items-center gap-1 hover:text-white ${focusClass}`}><Landmark size={15} aria-hidden="true"/> SEC 투자 참고 <ExternalLink size={12} aria-hidden="true"/></a>
+            <a href="/credit-risk/" className={`inline-flex min-h-8 items-center gap-1 hover:text-white ${focusClass}`}><ShieldAlert size={15} aria-hidden="true"/> 신용 위험 <ArrowUpRight size={12} aria-hidden="true"/></a>
+          </nav>
+        </section>
 
-      <section className="mt-5 bg-[#0a2232] px-4 py-5 sm:px-6" aria-label="출처와 함께 볼 지표">
-        <h2 className="text-lg font-extrabold text-[#f0f7fc]">출처와 함께 볼 지표</h2>
-        <div className="mt-3 grid gap-2 sm:grid-cols-3">
-          <a href="https://www.cnn.com/markets/fear-and-greed" target="_blank" rel="noopener noreferrer" className="group flex min-h-16 items-center justify-between gap-3 bg-[#0e2b3b] px-4 py-3 hover:bg-[#153a4b] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#79bbc4]"><span><strong className="block text-[14px] text-[#edf6fc]">CNN 원문</strong><small className="block text-xs text-[#a5c2d0]">미국 공포탐욕지수 원본</small></span><ExternalLink size={17} className="shrink-0 text-amber-300 group-hover:text-white" aria-hidden="true"/></a>
-          <a href="https://www.investor.gov/additional-resources/spotlight/formerdirectorlorischock-directors-take/dont-panic-plan-it" target="_blank" rel="noopener noreferrer" className="group flex min-h-16 items-center justify-between gap-3 bg-[#0e2b3b] px-4 py-3 hover:bg-[#153a4b] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#79bbc4]"><span><strong className="block text-[14px] text-[#edf6fc]">SEC 투자 위험·계획 안내</strong><small className="block text-xs text-[#a5c2d0]">미국 투자자 교육 자료</small></span><ExternalLink size={17} className="shrink-0 text-amber-300 group-hover:text-white" aria-hidden="true"/></a>
-          <a href="/credit-risk/" className="group flex min-h-16 items-center justify-between gap-3 bg-[#0e2b3b] px-4 py-3 hover:bg-[#153a4b] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#79bbc4]"><span><strong className="block text-[14px] text-[#edf6fc]">신용 위험 지표</strong><small className="block text-xs text-[#a5c2d0]">ZGmini · 함께 확인할 지표</small></span><ArrowUpRight size={17} className="shrink-0 text-amber-300 group-hover:text-white" aria-hidden="true"/></a>
-        </div>
-      </section>
+        <p className="mt-5 text-[11px] leading-5 text-[#a8bccb]">※ 본 콘텐츠는 투자 판단을 위한 교육 자료이며, 특정 종목의 매수를 권유하는 것이 아닙니다.</p>
+        <p className="mt-1 text-[11px] leading-5 text-[#91aebe]">미국 CNN 지수와 한국 ZGmini 자체 지수는 산출 방식과 대상 시장이 달라 같은 점수를 동일한 매수 조건으로 해석할 수 없습니다. · 내용 확인일 2026-10-23</p>
+      </div>
     </GuidePage>
   </>;
 }
