@@ -51,7 +51,7 @@ test('terrain sorts by real score and places unavailable domains last',()=>{
  const order=[...html.matchAll(/class="zg-terrain-item" id="([^"]+)"/g)].map(m=>m[1]);
  assert.deepEqual(order.slice(0,3),['rates','commodities','inflation']);
  assert.ok(order.indexOf('employment')>order.indexOf('inflation'));
- assert.match(html,/3 \/ 12 점수 제공/);
+ assert.doesNotMatch(html,/zg-terrain-controls|지표 검색|경제 지표 정렬|점수 제공/);
 });
 
 test('history never invents scores for missing dates; unavailable history says so',()=>{
