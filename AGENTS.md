@@ -7,6 +7,7 @@ ZGMINI PLUGIN & EXECUTION RULES — COMPACT R5 FINAL
 - 소스/GitHub/Build/Deploy/Runtime/D1/Queue/UI/DNS 검증 구분.
 - 실제 다음 작업을 막는 경우만 BLOCKER.
 - 유효 Evidence 재사용. identity/contract 변경 시 해당 Gate만 재검증.
+- ETF 테마 신규 확장은 `docs/THEME_ETF_COMPATIBILITY_STANDARD_R1_2026-10-23.md`를 따른다. 기존 7개 및 승인된 AI·바이오 선택 확장은 운영·검증 기준선이다. 신규 테마의 ETF 1종 구성이나 명시된 짧은 이력/결측만으로 기존 승인과 검증을 소급 무효화하지 않는다. 기존 검증을 재사용하고 ETF 구성·산식·가격 처리·공급원 계정/약관 계약 중 실제 변경된 부분만 추가 검증한다. 일일 가격 검증 시각/표본 갱신은 동일 계약의 승인 갱신 사유가 아니다. 새 위반 사실이 확인되면 영향 범위를 별도 감사한다.
 - 무료 우선. 유료·종량제는 무료 대안이 충분하면 사용 금지.
 - 상위 시스템·보안 제한을 준수한다. 동일 범위에서는 사용자의 최신 명시 지시·승인이 과거 프로젝트 지침보다 우선한다.
 - 지침과 최신 승인 contract 충돌 시 실행 중단 후 최신 contract 기준으로 지침 갱신.
