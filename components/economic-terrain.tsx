@@ -1,7 +1,7 @@
 'use client';
 
 import {useState,type CSSProperties} from 'react';
-import {Activity,ArrowUpRight,ChevronDown,Info,Search} from 'lucide-react';
+import {Activity,ArrowUpRight,ChevronDown,Info} from 'lucide-react';
 import {useStoredIndex} from './use-stored-index';
 import {LiveScoreValue} from './live-score-value';
 import {ECONOMIC_CARDS} from './market-explorer-catalog';
@@ -61,18 +61,15 @@ function SelectedDetail({name,href,description,score,domain}:{name:string;href:s
 }
 
 export default function EconomicTerrain(){
- const {payload,loading,error}=useStoredIndex<Snapshot>('/api/market-score');
+ const {payload,error}=useStoredIndex<Snapshot>('/api/market-score');
  const [selected,setSelected]=useState<string|null>('rates');
- const [query,setQuery]=useState('');
- const [sort,setSort]=useState<'low'|'high'|'original'>('low');
- const cards=ECONOMIC_CARDS.map((card,index)=>{
+ const cards=ECONOMIC_CARDS.map(card=>{
   const domain=payload?.domains?.find(item=>item.id===card.id);
-  return {...card,index,domain,score:readyScore(domain)};
+  return {...card,domain,score:readyScore(domain)};
  });
- const ready=cards.filter(card=>card.score!==null).length;
- const shown=cards.filter(card=>`${card.name} ${card.description}`.includes(query.trim())).sort((a,b)=>sort==='original'?a.index-b.index:sort==='high'?(b.score??-Infinity)-(a.score??-Infinity):(a.score??Infinity)-(b.score??Infinity));
+ const shown=cards.sort((a,b)=>(a.score??Infinity)-(b.score??Infinity));
  return <section className="zg-terrain" aria-labelledby="zg-terrain-heading">
-  <div className="zg-terrain-section-heading"><div className="zg-terrain-title"><Activity size={27} aria-hidden="true"/><div><h2 id="zg-terrain-heading">경제 지형도</h2><p>12개 경제 지표의 안정 점수 분포</p></div></div><div className="zg-terrain-controls"><span aria-live="polite">{loading?'불러오는 중':`${ready} / 12 점수 제공`}</span><label className="zg-terrain-search"><Search size={14} aria-hidden="true"/><input type="search" placeholder="지표 검색" aria-label="경제 지표 검색" value={query} onChange={event=>setQuery(event.target.value)}/></label><label className="zg-terrain-sort"><select aria-label="경제 지표 정렬" value={sort} onChange={event=>setSort(event.target.value as typeof sort)}><option value="low">낮은 점수 순</option><option value="high">높은 점수 순</option><option value="original">기본 순서</option></select><ChevronDown size={14} aria-hidden="true"/></label></div></div>
+  <div className="zg-terrain-section-heading"><div className="zg-terrain-title"><Activity size={27} aria-hidden="true"/><div><h2 id="zg-terrain-heading">경제 지형도</h2><p>12개 경제 지표의 안정 점수 분포</p></div></div></div>
   {error&&<p className="zg-terrain-notice" role="status">데이터 갱신이 지연되고 있습니다. 현재 제공 가능한 저장 점수만 표시합니다.</p>}
   <div className="zg-terrain-list">
    <div className="zg-terrain-axis" aria-hidden="true"><div className="zg-terrain-axis-label"># <span>지표</span><span>현재 안정 점수</span></div><div className="zg-terrain-axis-plot"><div className="zg-terrain-axis-bands">{BANDS.map(b=><div key={b.name} style={{width:`${b.width}%`}}><strong style={{color:b.color}}>{b.name}</strong><span>{b.range}</span><i style={{background:b.color}}/></div>)}</div><div className="zg-terrain-axis-ticks">{[0,25,45,55,75,100].map(v=><span key={v} style={{left:`${v}%`}}>{v}</span>)}</div></div></div>
@@ -80,12 +77,11 @@ export default function EconomicTerrain(){
     const band=bandOf(card.score),active=selected===card.id;
     return <div className="zg-terrain-item" key={card.id} id={card.id} style={{'--terrain-accent':band?.color??'#8fa4b8'} as CSSProperties}>
      <button className={`zg-terrain-row${active?' is-selected':''}`} type="button" aria-expanded={active} aria-controls={`terrain-detail-${card.id}`} onClick={()=>setSelected(active?null:card.id)}>
-      <span className="zg-terrain-row-index">{sort==='original'?card.index+1:index+1}</span><span className="zg-terrain-row-name">{card.name}</span><LiveScoreValue className="zg-terrain-row-score" value={card.score}>{card.score===null?'—':card.score.toFixed(1)}</LiveScoreValue><span className="zg-terrain-track" aria-hidden="true">{card.score!==null&&<><i className="zg-terrain-line" style={{width:`${card.score}%`}}/><i className="zg-terrain-dot" style={{left:`${card.score}%`}}/><em style={{left:`${card.score}%`}}>{card.score.toFixed(1)}</em></>}</span><ChevronDown className="zg-terrain-row-chevron" size={17} aria-hidden="true"/>
+      <span className="zg-terrain-row-index">{index+1}</span><span className="zg-terrain-row-name">{card.name}</span><LiveScoreValue className="zg-terrain-row-score" value={card.score}>{card.score===null?'—':card.score.toFixed(1)}</LiveScoreValue><span className="zg-terrain-track" aria-hidden="true">{card.score!==null&&<><i className="zg-terrain-line" style={{width:`${card.score}%`}}/><i className="zg-terrain-dot" style={{left:`${card.score}%`}}/><em style={{left:`${card.score}%`}}>{card.score.toFixed(1)}</em></>}</span><ChevronDown className="zg-terrain-row-chevron" size={17} aria-hidden="true"/>
      </button>
      {active&&<div id={`terrain-detail-${card.id}`}><SelectedDetail key={card.id} name={card.name} href={card.href} description={card.description} score={card.score} domain={card.domain}/></div>}
     </div>;
    })}
-   {!shown.length&&<p className="zg-terrain-notice" role="status">검색 결과가 없습니다. 다른 지표 이름을 입력하세요.</p>}
   </div>
   <p className="zg-terrain-footnote"><Info size={13} aria-hidden="true"/>높은 점수일수록 안정적인 상태를 의미합니다. 점수는 실제 위험 발생 확률이 아닙니다.</p>
  </section>;
