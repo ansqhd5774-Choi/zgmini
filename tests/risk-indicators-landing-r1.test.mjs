@@ -28,7 +28,7 @@ const history=[
  {label:'2026-06-30',value:22.498},
 ];
 
-function render(overrides={}){
+function render(overrides={},selectedId=null){
  const responses={
   '/api/market-score':main,
   '/api/asset-bubble-detail':{status:'READY',score:22.498,historyMode:'CURRENT_VINTAGE_ONLY',trend:history},
@@ -38,6 +38,7 @@ function render(overrides={}){
  };
  const charts=[];
  const Landing=load('../app/risk-indicators/risk-indicators-client.tsx',{
+  react:{...React,useState:initial=>[initial===null?selectedId:initial,()=>{}]},
   '../../components/market-explorer-catalog':catalog,
   '../../components/use-stored-index':{useStoredIndex:url=>({payload:responses[url]??null,loading:false,error:null})},
   '../../components/live-score-value':{LiveScoreValue:({children})=>React.createElement('strong',null,children)},
@@ -52,11 +53,29 @@ test('risk landing lists all eight real detail links sorted by available stabili
  const positions=catalog.RISK_CARDS.map(card=>html.indexOf(`href="${card.href}"`));
  assert.ok(positions.every(n=>n>=0));
  const ranking=html.split('<ol class="zg-risk-ranking-list">')[1].split('</ol>')[0];
+ assert.equal((ranking.match(/class="zg-risk-rank-select"/g)??[]).length,8);
+ assert.equal((ranking.match(/class="zg-risk-rank-detail-link"/g)??[]).length,8);
+ assert.equal((ranking.match(/aria-pressed="true"/g)??[]).length,1);
  assert.ok(ranking.indexOf('자산 버블')<ranking.indexOf('공급 충격'));
  assert.ok(ranking.indexOf('공급 충격')<ranking.indexOf('경기 침체'));
  assert.match(html,/가장 먼저 볼 위험/);
  assert.match(html,/미국 경제 위험 지표 8가지/);
  assert.match(html,/위기 발생 확률 아님/);
+});
+
+test('selecting a different risk synchronizes the left name, score, chart and detail link',()=>{
+ const trend=[{label:'2026-08-31',value:36.5},{label:'2026-09-30',value:35.983}];
+ const {html,charts}=render({'/api/supply-shock-detail':{status:'READY',score:35.983,trend}},'supplyShockSafety');
+ const feature=html.split('<section class="zg-risk-feature"')[1].split('<section class="zg-risk-ranking"')[0];
+ assert.match(feature,/선택한 위험 지표/);
+ assert.match(feature,/<h2 aria-live="polite">공급 충격<\/h2>/);
+ assert.match(feature,/36\.0/);
+ assert.match(feature,/공급 충격 상세 분석/);
+ assert.match(feature,/href="\/supply-shock\/"/);
+ assert.deepEqual(charts[0],trend.map(p=>({date:p.label,score:p.value})));
+ const ranking=html.split('<ol class="zg-risk-ranking-list">')[1].split('</ol>')[0];
+ const selectedRow=ranking.split('is-selected')[1];
+ assert.match(selectedRow,/aria-pressed="true"/);
 });
 
 test('featured asset-bubble history chart has only the three actually stored quarterly observations',()=>{
