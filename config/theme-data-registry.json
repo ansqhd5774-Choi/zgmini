@@ -377,7 +377,8 @@
         "reader": "worker/theme-biotech-optional.mjs",
         "auditor": "scripts/pc-writer/theme-optional-audit.mjs",
         "publicationCandidate": "scripts/pc-writer/theme-optional-cycle.mjs",
-        "pcTaskEntrypoint": "scripts/pc-writer/theme-optional-cycle.cmd"
+        "pcTaskEntrypoint": "scripts/pc-writer/theme-optional-cycle.cmd",
+        "forensicReadOnly": "scripts/pc-writer/theme-biotech-forensic-r1.mjs"
       },
       "runtime": {
         "collector": null,
@@ -400,9 +401,27 @@
       },
       "blockers": [
         "COLLECT_CALCULATE_PUBLISH_NOT_CONNECTED",
-        "ORIGINAL_R3_PRICE_SOURCE_NOT_LOCATED",
+        "ORIGINAL_R3_PRICES_UNAVAILABLE_SHADOW_ALTERNATIVE_PENDING",
         "RECOLLECTED_HISTORY_DIFFERS_FROM_PUBLIC_HISTORY"
       ],
+      "forensicRecovery": {
+        "baselineMainSha": "a508626adcd9bb93985ba3e3aa5733caa0cb703e",
+        "scriptSha256": "242b0c2310f0e62fd71dfff2309aaaddbb28e2cf7cdd4db0beac164111925792",
+        "sourceSearch": "TWO_PREVIOUS_LOCAL_SEARCHES_NOT_FOUND_DO_NOT_REPEAT",
+        "previousComparison": {
+          "overlapDates": 250,
+          "changedDates": 67,
+          "maximumDifference": 2.35318,
+          "firstMismatchDate": null,
+          "inputDifferenceRootCause": "UNVERIFIED"
+        },
+        "implementationStatus": "READ_ONLY_SCRIPT_TESTED_ON_SYNTHETIC_DATA_PC_NOT_EXECUTED",
+        "savedRawAndAuditShaVerifiedByCurrentRun": false,
+        "marketParquetSavedRawTickerPresence": "UNKNOWN_UNTIL_PC_FILE_CONTENT_INSPECTION",
+        "separateShadowRevision": "SUPPORTED_BY_FORENSIC_LOG_NOT_PUBLIC",
+        "newRevisionCutoverAuthorized": false,
+        "nextRegularRunVerified": false
+      },
       "collectionEvidence": {
         "checkedAt": "2026-10-23",
         "mode": "EXPLICIT_PRIVATE_COLLECTION_NOT_SCHEDULED",
