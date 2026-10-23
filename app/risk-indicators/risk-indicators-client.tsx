@@ -67,6 +67,7 @@ function ScoreHistory({card,score}:{card:RiskCard;score:number|null}){
    {loading&&!payload?<div className="zg-risk-chart-empty">저장 이력을 불러오는 중입니다.</div>
    :error&&!payload?<div className="zg-risk-chart-empty">이력 자료를 가져오지 못했습니다.</div>
    :!consistent?<div className="zg-risk-chart-empty">현재 점수와 이력 자료의 기준을 확인 중입니다.</div>
+   :history.length===0?<div className="zg-risk-chart-empty">저장된 점수 이력이 아직 제공되지 않습니다. 현재 점수만 확인할 수 있습니다.</div>
    :insufficient?<div className="zg-risk-chart-empty">선택 기간의 관측점이 {selected.length}개입니다. 차트를 그리려면 2개 이상이 필요합니다.</div>
    :<MarketFearGreedChart
      data={points}
@@ -98,11 +99,12 @@ export default function RiskIndicatorsClient(){
  const [selectedId,setSelectedId]=useState<RiskCard['id']|null>(null);
  const featureRef=useRef<HTMLElement>(null);
  const {payload,loading,error}=useStoredIndex<Snapshot>('/api/market-score');
+ const {payload:inflation}=useStoredIndex<Detail>('/api/inflation-detail');
  const {payload:asset}=useStoredIndex<Detail>('/api/asset-bubble-detail');
  const {payload:supply}=useStoredIndex<Detail>('/api/supply-shock-detail');
  const {payload:stagflation,error:stagflationError}=useStoredIndex<Detail>('/api/stagflation-risk-detail');
  const cards:RiskView[]=RISK_CARDS.map((card,index)=>{
-  const datum=card.id==='assetBubbleSafety'?asset:card.id==='supplyShockSafety'?supply:card.id==='stagflationSafety'?(stagflationError?null:stagflation):payload?.diagnostics8?.[card.id];
+  const datum=card.id==='inflationStability'?inflation:card.id==='assetBubbleSafety'?asset:card.id==='supplyShockSafety'?supply:card.id==='stagflationSafety'?(stagflationError?null:stagflation):payload?.diagnostics8?.[card.id];
   return {...card,index,score:scoreOf(datum)};
  }).sort((a,b)=>a.score===null&&b.score===null?a.index-b.index:a.score===null?1:b.score===null?-1:a.score-b.score||a.index-b.index);
  const featured=(selectedId?cards.find(card=>card.id===selectedId):null)??cards.find(card=>card.score!==null)??null;
