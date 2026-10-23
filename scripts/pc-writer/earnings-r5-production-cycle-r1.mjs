@@ -12,7 +12,7 @@ import {readLatestEarningsUniverse,parseBeaA051rcQuarterlyWorkbook,parseBlsSatel
 import {E1_R5_CFO_PRODUCTION_HISTORY_VERSION,periodOrdinal,readCfoProductionHistory,currentCfoRevision,buildGuidanceTimeline,guidanceAsOf} from './earnings-r5-production-forward.mjs';
 
 export const E1_R5_PRODUCTION_CYCLE_VERSION='E1-R5-PRODUCTION-CYCLE-R1';
-export const E1_R5_TREND_HISTORY_VERSION='E1-R5-TREND-HISTORY-R2';
+export const E1_R5_TREND_HISTORY_VERSION='E1-R5-TREND-HISTORY-R2-RETENTION-1Y';
 // Presentation metadata only: refresh the local candidate once after this approved cutover.
 export const E1_R5_SOURCE_OBSERVATION_PRESENTATION_VERSION='E1-R5-SOURCE-OBSERVATION-R43';
 const DEFAULT_BASE=process.env.ZGMINI_PC_HOME??path.join(os.homedir(),'.zgmini','pc-writer');
