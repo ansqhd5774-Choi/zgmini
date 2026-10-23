@@ -9,7 +9,8 @@ const SYMBOLS=['ARKF','BOTZ','BUG','CIBR','CLOU','DRIV','FINX','ITA','NLR','ROBO
 const stem=symbol=>`${symbol}_2025-10-20_2026-10-20_0123456789abcdef`;
 const rowDates=length=>Array.from({length},(_,i)=>{
   const day=new Date(Date.UTC(2025,9,20+i)).toISOString().slice(0,10);
-  return {sessionDate:day,close:100+i/10,netAssetsUSD:1_000_000+i};
+  return {sessionDate:day,candidateClose:100+i/10,officialCloseVerified:false,
+    adjustmentVerified:false,commerciallyPublishable:false,netAssetsUSD:1_000_000+i};
 });
 
 function fixture(root,days=252,skipSymbol=null){
@@ -17,24 +18,26 @@ function fixture(root,days=252,skipSymbol=null){
   fs.mkdirSync(path.join(root,'derived'),{recursive:true});
   for(const symbol of SYMBOLS){
     if(symbol===skipSymbol)continue;
-    const data={rows:rowDates(days)};
+    const data={rows:rowDates(days),officialCloseVerified:false,commercialRightsVerified:false};
     fs.writeFileSync(path.join(root,'raw',stem(symbol)+'.json'),JSON.stringify(data));
     fs.writeFileSync(path.join(root,'derived',stem(symbol)+'.daily-research.json'),JSON.stringify(data));
   }
 }
 
-test('R131 read-only audit counts 252 aligned session dates but does not claim 252-rank reference',()=>{
+test('R131 read-only audit counts candidate close sessions but does not claim verified official prices',()=>{
   const root=fs.mkdtempSync(path.join(os.tmpdir(),'zgmini-r131-ready-'));
   try{
     fixture(root);
     const result=auditR131PriceReadiness(root);
-    assert.equal(result.status,'PRICE_DATE_COUNTS_ONLY_NOT_LICENSED');
-    assert.equal(result.alignment.commonUniquePriceDates,252);
-    assert.equal(result.alignment.latestRank63CountGate,true);
-    assert.equal(result.alignment.latestRank126CountGate,true);
-    assert.equal(result.alignment.latestRank252CountGate,false);
-    assert.equal(result.alignment.full252Chart63CountGate,false);
+    assert.equal(result.status,'CANDIDATE_COUNTS_ONLY_NOT_PUBLISHABLE');
+    assert.equal(result.alignment.commonCandidateCloseDates,252);
+    assert.equal(result.alignment.shadowRank63CountGate,true);
+    assert.equal(result.alignment.shadowRank126CountGate,true);
+    assert.equal(result.alignment.shadowRank252CountGate,false);
+    assert.equal(result.alignment.shadowFull252Chart63CountGate,false);
+    assert.equal(result.alignment.officialPriceSeriesVerified,false);
     assert.equal(result.symbols.SPY.derived.datedNetAssetObservations.dates,252);
+    assert.equal(result.symbols.SPY.derived.candidateFlags.officialCloseVerifiedTrue,0);
     assert.equal(result.licenseRightsVerified,false);
     assert.equal(result.providerCalls,0);
     assert.equal(result.dbWrites,0);
@@ -50,8 +53,8 @@ test('R131 audit explicitly reports a missing ETF instead of assuming its data',
     fixture(root,252,'SHLD');
     const result=auditR131PriceReadiness(root);
     assert.equal(result.status,'NEEDS_SCHEMA_OR_FILE_REVIEW');
-    assert.equal(result.alignment.commonUniquePriceDates,0);
+    assert.equal(result.alignment.commonCandidateCloseDates,0);
     assert.ok(result.issues.includes('SOURCE_PAIR_NOT_UNIQUE_SHLD'));
-    assert.ok(result.issues.includes('DERIVED_PRICE_SHAPE_UNVERIFIED_SHLD'));
+    assert.ok(result.issues.includes('DERIVED_CANDIDATE_CLOSE_MISSING_SHLD'));
   }finally{fs.rmSync(root,{recursive:true,force:true});}
 });
