@@ -21,8 +21,8 @@ const DESCRIPTIONS:Record<SectorId,string>={
 const CHANGES=[['1일',0,1],['1주',0,7],['1개월',1,0],['3개월',3,0],['6개월',6,0],['1년',12,0]] as const;
 const PERIODS=[['1W',7],['1M',30],['3M',90],['6M',180],['1Y',365]] as const;
 const DETAIL_PERIODS=[['1D',0],...PERIODS] as const;
-const INITIAL:SectorId[]=['staples','healthcare','technology','materials','utilities','discretionary'];
 const nameOf=(id:SectorId)=>NAMES[id]??SECTORS.find(s=>s.id===id)?.name??id;
+const rankedSectors=(rows:SectorSentimentPoint[])=>[...SECTORS].sort((a,b)=>(rows.at(-1)?.[b.id]??-1)-(rows.at(-1)?.[a.id]??-1));
 function comparisonDate(date:string,months:number,days:number){
  const target=new Date(date+'T00:00:00Z');
  if(months){const day=target.getUTCDate();target.setUTCDate(1);target.setUTCMonth(target.getUTCMonth()-months);const last=new Date(Date.UTC(target.getUTCFullYear(),target.getUTCMonth()+1,0)).getUTCDate();target.setUTCDate(Math.min(day,last));}
@@ -66,15 +66,15 @@ export default function SectorDetailCharts(){
  const [compareDays,setCompareDays]=useState(365);
  const [comparisonPinned,setComparisonPinned]=useState(false);
  const [detailDays,setDetailDays]=useState(365);
- const [visible,setVisible]=useState<Set<SectorId>>(()=>new Set(INITIAL));
+ const [visible,setVisible]=useState<Set<SectorId>>(()=>new Set());
  useEffect(()=>{const controller=new AbortController();fetch('/api/sector-fear-greed',{cache:'no-store',signal:controller.signal}).then(async response=>{
   if(!response.ok)throw new Error('Unavailable');
   const body=await response.json() as SectorSnapshotMeta&{status?:string;history?:SectorSentimentPoint[]};
   if(body.status!=='READY'||!Array.isArray(body.history)||!body.history.length)throw new Error('Unavailable');
   const history=body.history.filter(row=>/^\d{4}-\d{2}-\d{2}$/.test(row.date)&&Number.isFinite(Date.parse(row.date))).map(row=>({date:row.date,...Object.fromEntries(SECTORS.map(({id})=>{const value=row[id];return [id,typeof value==='number'&&Number.isFinite(value)&&value>=0&&value<=100?value:null]}))})).sort((a,b)=>a.date.localeCompare(b.date));
-  if(!history.length)throw new Error('Unavailable');setRows(history);setSnapshot(body);
+  if(!history.length)throw new Error('Unavailable');setVisible(new Set(rankedSectors(history).slice(0,3).map(sector=>sector.id)));setRows(history);setSnapshot(body);
  }).catch(()=>{if(!controller.signal.aborted)setFailed(true)});return()=>controller.abort();},[]);
- const sorted=useMemo(()=>rows?[...SECTORS].sort((a,b)=>(rows.at(-1)?.[b.id]??-1)-(rows.at(-1)?.[a.id]??-1)):[],[rows]);
+ const sorted=useMemo(()=>rows?rankedSectors(rows):[],[rows]);
  if(!rows)return <p className="zg-sfg-state" role="status">{failed?'저장 데이터를 불러오지 못했습니다. 잠시 후 다시 방문해 주세요.':'저장 데이터를 불러오는 중입니다.'}</p>;
  const latest=rows[rows.length-1],active=SECTORS.find(s=>s.id===selected)??sorted[0];
  const latestValue=latest[active.id],score=typeof latestValue==='number'?latestValue:null;
@@ -82,14 +82,14 @@ export default function SectorDetailCharts(){
  const provisional=Boolean(provisionalDate&&latest.date===provisionalDate&&rows.length>1);
  const compareRows=periodRows(rows,compareDays).map((row,index,array)=>({...row,...Object.fromEntries(SECTORS.flatMap(({id})=>[[id+'__solid',provisional&&index===array.length-1?null:row[id]],[id+'__dash',provisional&&index>=array.length-2?row[id]:null]]))}));
  const detailRows=periodRows(rows,detailDays).map((row,index,array)=>({...row,solid:provisional&&index===array.length-1?null:row[active.id],dash:provisional&&index>=array.length-2?row[active.id]:null}));
- const toggle=(id:SectorId)=>setVisible(previous=>{const next=new Set(previous);if(next.has(id)){if(next.size===1)return previous;next.delete(id);}else next.add(id);return next;});
+ const toggle=(id:SectorId)=>setVisible(previous=>{const next=new Set(previous);if(next.has(id))next.delete(id);else next.add(id);return next;});
  return <div className="zg-sfg-content">
   <p className="zg-sfg-as-of">기준일&nbsp; {latest.date.replaceAll('-','.')}</p>
   <section className="zg-sfg-ranking" aria-label="11개 섹터 투자심리 순위">
    <div className="zg-sfg-rank-head" aria-hidden="true"><span>순위</span><span>섹터</span><span>현재 점수</span><div className="zg-sfg-scale"><span>극단적 공포</span><span>공포</span><span>중립</span><span>탐욕</span><span>극단적 탐욕</span></div><span>1년 추이</span><span>1개월 변동</span></div>
    <div className="zg-sfg-rank-list">{sorted.map((sector,index)=>{
     const raw=latest[sector.id],current=typeof raw==='number'?raw:null,delta=changeFor(rows,sector.id,1,0);
-    return <button type="button" className="zg-sfg-rank-row" key={sector.id} aria-pressed={active.id===sector.id} aria-label={(index+1)+'위 '+nameOf(sector.id)+', '+(current===null?'점수 없음':current.toFixed(1)+'점')+', 1개월 변화 '+deltaText(delta)+'. 상세 보기'} onClick={()=>setSelected(sector.id)}>
+    return <button type="button" className="zg-sfg-rank-row" key={sector.id} aria-pressed={visible.has(sector.id)} data-selected={active.id===sector.id} aria-label={(index+1)+'위 '+nameOf(sector.id)+', '+(current===null?'점수 없음':current.toFixed(1)+'점')+', 1개월 변화 '+deltaText(delta)+'. 비교 차트 '+(visible.has(sector.id)?'ON':'OFF')+', 클릭하면 차트 표시 전환 및 상세 보기'} onClick={()=>{setSelected(sector.id);toggle(sector.id);}}>
      <span className="zg-sfg-rank-number">{index+1}</span><span className="zg-sfg-rank-name"><i style={{background:COLORS[sector.id]}}/>{nameOf(sector.id)}</span><strong className="zg-sfg-rank-score">{current===null?'—':current.toFixed(1)}</strong>
      <ScoreBar score={current}/><Sparkline rows={rows} id={sector.id} provisionalDate={provisionalDate}/>
      <span className={'zg-sfg-rank-delta '+deltaState(delta)}>{deltaText(delta)}{delta!==null&&delta!==0&&<i aria-hidden="true">{delta>0?'▲':'▼'}</i>}</span>

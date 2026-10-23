@@ -15,9 +15,10 @@
 .zg-sfg-scale span:first-child{color:#a84961}.zg-sfg-scale span:nth-child(2){color:#ffae36}.zg-sfg-scale span:nth-child(4){color:#a3e635}.zg-sfg-scale span:nth-child(5){color:#20c0a6}
 .zg-sfg-rank-row{position:relative;width:100%;min-height:34px;padding:0;cursor:pointer;border:0;border-bottom:1px solid #28465a;background:transparent;color:inherit;font:inherit;text-align:left;transition:background 120ms ease}
 .zg-sfg-rank-row:hover,.zg-sfg-rank-row:focus-visible{z-index:2;background:#0f2c3c}
-.zg-sfg-rank-row[aria-pressed=true]{background:#0a2938}
+.zg-sfg-rank-row[data-selected=true]{background:#0a2938}
 .zg-sfg-rank-row:focus-visible{outline:2px solid #81dcda;outline-offset:-2px}
 .zg-sfg-rank-number{font-size:13px;color:#9eaec0;text-align:center;font-variant-numeric:tabular-nums}
+.zg-sfg-rank-row[aria-pressed=true] .zg-sfg-rank-number{color:#2addc6;font-weight:850}
 .zg-sfg-rank-name{display:flex;align-items:center;gap:16px;min-width:0;white-space:nowrap;font-size:14px;font-weight:800}
 .zg-sfg-rank-name i,.zg-sfg-detail-head i,.zg-sfg-legend i{width:11px;height:11px;display:inline-block;border-radius:50%;flex:none}
 .zg-sfg-rank-score{color:#dfe8f0;font-size:15px;font-weight:850;text-align:center;font-variant-numeric:tabular-nums}
