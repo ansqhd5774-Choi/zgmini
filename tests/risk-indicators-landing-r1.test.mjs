@@ -31,6 +31,7 @@ const history=[
 function render(overrides={},selectedId=null){
  const responses={
   '/api/market-score':main,
+  '/api/inflation-detail':{status:'READY',score:61.218,trend:[{label:'2026-09-30',value:71.406},{label:'2026-10-31',value:61.218}]},
   '/api/asset-bubble-detail':{status:'READY',score:22.498,historyMode:'CURRENT_VINTAGE_ONLY',trend:history},
   '/api/supply-shock-detail':{status:'READY',score:35.983},
   '/api/stagflation-risk-detail':{status:'READY',score:75.067},
@@ -94,4 +95,33 @@ test('missing observations are not converted into a fabricated chart',()=>{
  assert.match(tooSparse.html,/차트를 그리려면 2개 이상이 필요/);
  const incompatible=render({'/api/asset-bubble-detail':{status:'READY',score:22.498,trend:history.map(row=>({...row,value:row.value+7}))}});
  assert.equal(incompatible.charts.length,1,'historical points can differ from current score when provenance is consistent');
+});
+
+test('inflation uses the R2 detail score rather than the older composite diagnostic',()=>{
+ const {html,charts}=render({},'inflationStability');
+ assert.equal(charts.length,1);
+ assert.match(html,/61\.2/);
+ assert.doesNotMatch(html,/現在|현재 점수와 이력 자료의 기준을 확인 중/);
+ assert.deepEqual(charts[0],[{date:'2026-09-30',score:71.406},{date:'2026-10-31',score:61.218}]);
+});
+
+test('all eight risks render their own history or explicitly disclose absent stored history',()=>{
+ for(const card of catalog.RISK_CARDS){
+  const endpoints={inflationStability:'inflation-detail',recessionDefense:'recession-detail',stagflationSafety:'stagflation-risk-detail',creditRiskDefense:'credit-risk-detail',earningsRecessionDefense:'earnings-recession-detail',assetBubbleSafety:'asset-bubble-detail',debtRiskSafety:'debt-risk-detail',supplyShockSafety:'supply-shock-detail'};
+  const score=card.id==='inflationStability'?61.218:card.id==='assetBubbleSafety'?22.498:card.id==='supplyShockSafety'?35.983:card.id==='stagflationSafety'?75.067:main.diagnostics8[card.id].score;
+  const rows=[{date:'2026-08-01',score:score-1},{date:'2026-09-01',score}];
+  const body={status:'READY',score,...(card.id==='earningsRecessionDefense'?{riskTrend:rows}:{trend:rows})};
+  const {charts}=render({['/api/'+endpoints[card.id]]:body},card.id);
+  assert.equal(charts.length,1,card.id);
+  assert.deepEqual(charts[0],rows,card.id);
+ }
+ const {html,charts}=render({'/api/debt-risk-detail':{status:'READY',score:73.084,trend:[]}},'debtRiskSafety');
+ assert.equal(charts.length,0);
+ assert.match(html,/저장된 점수 이력이 아직 제공되지 않습니다/);
+});
+
+test('incompatible detail scores still suppress mixed-method charts',()=>{
+ const {html,charts}=render({'/api/recession-detail':{status:'READY',score:99,trend:history}},'recessionDefense');
+ assert.equal(charts.length,0);
+ assert.match(html,/현재 점수와 이력 자료의 기준을 확인 중/);
 });
