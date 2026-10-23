@@ -75,6 +75,8 @@ export default function AboutIntroPopup() {
         <img
           className={styles.posterImage}
           src="/about-intro-popup-r1.webp"
+          srcSet="/about-intro-popup-480.webp 480w, /about-intro-popup-r1.webp 1078w"
+          sizes="(max-width: 600px) calc(100vw - 32px), 480px"
           width={1078}
           height={1460}
           alt=""

@@ -36,7 +36,7 @@ export default function SiteHeader({activeView=null,onSelectView,accountTools}:{
   <div className="zg-header-inner">
    {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
    <a href="/" aria-label="ZGmini 대시보드로 이동" className="flex min-w-0 items-center gap-3 rounded-xl focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white">
-    <div className="min-w-0"><img src="/zgmini-name.png" alt="ZGmini" width={1920} height={540} className="h-auto w-36 max-w-full rounded mix-blend-lighten sm:w-44"/></div>
+     <div className="min-w-0"><img src="/zgmini-name-528.webp" alt="ZGmini" width={528} height={149} className="h-auto w-36 max-w-full rounded mix-blend-lighten sm:w-44"/></div>
    </a>
    <nav aria-label="주 메뉴">
     {onSelectView

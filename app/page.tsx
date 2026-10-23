@@ -1,7 +1,6 @@
 "use client";
 import {CompositeMarketSection,ScenarioSection} from "./dashboard-ui";
-import SectorSentimentChart from '../components/sector-sentiment-chart';
-import ThemeSentimentDashboardChart from '../components/theme-sentiment-dashboard-chart';
+import DeferredDashboardCharts from '../components/deferred-dashboard-charts';
 import OutbreakEvents, {OutbreakSummary} from './outbreak-events';
 
 
@@ -985,7 +984,7 @@ export default function Home() {
           <CompositeMarketSection items={displaySummaryItems} points={periodPoints[period]} demo={false} loading={marketDataLoading}/>
           <div className="zg-dashboard-secondary">
             <OutbreakSummary onOpen={id=>{setOutbreakEvent(id);setView('scenarios');}}/>
-            <div id="strength" className="zg-strength-grid"><SectorSentimentChart/><ThemeSentimentDashboardChart/></div>
+            <DeferredDashboardCharts/>
           </div>
         </>}
         {view==='scenarios'&&<OutbreakEvents initialEvent={outbreakEvent}/>}
