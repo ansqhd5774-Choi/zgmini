@@ -135,6 +135,11 @@ test('sector comparison defaults to the current top three and keeps rank rows an
  assert.match(detail,/aria-pressed=\{visible\.has\(sector\.id\)\} onClick=\{\(\)=>toggle\(sector\.id\)\}/);
  assert.doesNotMatch(detail,/next\.size===1/);
  assert.match(css,/\.zg-sfg-rank-row\[aria-pressed=true\] \.zg-sfg-rank-number/);
+ assert.match(css,/\.zg-sfg-rank-row\[aria-pressed=true\]\{background:#103b44;box-shadow:inset 3px 0 #2addc6\}/);
+ assert.match(css,/\.zg-sfg-rank-row\[aria-pressed=false\] \.zg-sfg-rank-name/);
+ assert.match(css,/\.zg-sfg-rank-row\[aria-pressed=false\] \.zg-sfg-meter/);
+ assert.match(css,/\.zg-sfg-rank-row\[aria-pressed=false\]\[data-selected=true\]/);
+ assert.match(css,/\.zg-sfg-rank-row\[aria-pressed=true\]\[data-selected=true\]/);
 });
 
 test('sector detail mini charts expose stored historical date and score on hover while related links use buttons',()=>{
