@@ -1,8 +1,8 @@
 'use client';
 
-import {useState,type CSSProperties} from 'react';
+import {useRef,useState,type CSSProperties} from 'react';
 import Link from 'next/link';
-import {Activity,ArrowRight,BarChart3,ChevronRight,Landmark,ShieldAlert,ShieldCheck,Wallet} from 'lucide-react';
+import {Activity,ArrowRight,ArrowUpRight,BarChart3,Landmark,ShieldAlert,ShieldCheck,Wallet} from 'lucide-react';
 import {RISK_CARDS} from '../../components/market-explorer-catalog';
 import {LiveScoreValue} from '../../components/live-score-value';
 import {useStoredIndex} from '../../components/use-stored-index';
@@ -96,6 +96,8 @@ const explainer=[
 ];
 
 export default function RiskIndicatorsClient(){
+ const [selectedId,setSelectedId]=useState<RiskCard['id']|null>(null);
+ const featureRef=useRef<HTMLElement>(null);
  const {payload,loading,error}=useStoredIndex<Snapshot>('/api/market-score');
  const {payload:asset}=useStoredIndex<Detail>('/api/asset-bubble-detail');
  const {payload:supply}=useStoredIndex<Detail>('/api/supply-shock-detail');
@@ -104,8 +106,15 @@ export default function RiskIndicatorsClient(){
   const datum=card.id==='assetBubbleSafety'?asset:card.id==='supplyShockSafety'?supply:card.id==='stagflationSafety'?(stagflationError?null:stagflation):payload?.diagnostics8?.[card.id];
   return {...card,index,score:scoreOf(datum)};
  }).sort((a,b)=>a.score===null&&b.score===null?a.index-b.index:a.score===null?1:b.score===null?-1:a.score-b.score||a.index-b.index);
- const featured=cards.find(card=>card.score!==null)??null;
+ const featured=(selectedId?cards.find(card=>card.id===selectedId):null)??cards.find(card=>card.score!==null)??null;
+ const manuallySelected=selectedId!==null;
  const ready=cards.filter(card=>card.score!==null).length;
+ const selectRisk=(id:RiskCard['id'])=>{
+  setSelectedId(id);
+  if(window.matchMedia('(max-width: 950px)').matches){
+   featureRef.current?.scrollIntoView({behavior:'smooth',block:'start'});
+  }
+ };
  return <main className="zg-risk-landing">
   <div className="zg-risk-landing-inner">
    <nav aria-label="현재 위치" className="zg-risk-breadcrumb"><Link href="/">대시보드</Link><span aria-hidden="true">/</span><span>위험 지표</span></nav>
@@ -116,10 +125,10 @@ export default function RiskIndicatorsClient(){
    </header>
    {error&&<p className="zg-risk-api-notice" role="status">최신 종합 자료의 갱신이 지연되고 있습니다. 표시 가능한 저장 점수를 기준으로 안내합니다.</p>}
    <div className="zg-risk-overview">
-    <section className="zg-risk-feature" style={{'--zg-risk-feature-color':tone(featured?.score??null)} as CSSProperties} aria-label="가장 낮은 안정 점수">
+    <section ref={featureRef} className="zg-risk-feature" style={{'--zg-risk-feature-color':tone(featured?.score??null)} as CSSProperties} aria-label="선택한 경제 위험 지표 분석">
      <header className="zg-risk-feature-head">
-      <span className="zg-risk-feature-eyebrow">가장 먼저 볼 위험</span><span className="zg-risk-feature-divider" aria-hidden="true"/>
-      <h2>{featured?.name??'점수 확인 중'}</h2>
+      <span className="zg-risk-feature-eyebrow">{manuallySelected?'선택한 위험 지표':'가장 먼저 볼 위험'}</span><span className="zg-risk-feature-divider" aria-hidden="true"/>
+      <h2 aria-live="polite">{featured?.name??'점수 확인 중'}</h2>
       <span className="zg-risk-status">{state(featured?.score??null)}</span>
      </header>
      <div className="zg-risk-feature-measure">
@@ -135,22 +144,24 @@ export default function RiskIndicatorsClient(){
      </div>
      {featured?<ScoreHistory key={featured.id} card={featured} score={featured.score}/>:<div className="zg-risk-chart zg-risk-chart-empty">이력 확인 대기</div>}
      <div className="zg-risk-feature-bottom">
-      <div><ShieldAlert size={21} aria-hidden="true"/><p><strong>8개 위험 중 현재 안정 점수가 가장 낮은 영역입니다.</strong><span>투자 자산의 손실 또는 위기 발생 확률을 의미하지 않습니다.</span></p></div>
+      <div><ShieldAlert size={21} aria-hidden="true"/><p><strong>{manuallySelected?'선택한 위험의 상태와 저장된 이력을 보여줍니다.':'8개 위험 중 현재 안정 점수가 가장 낮은 영역입니다.'}</strong><span>투자 자산의 손실 또는 위기 발생 확률을 의미하지 않습니다.</span></p></div>
       {featured?<a href={featured.href} className="zg-risk-feature-cta">{featured.name} 상세 분석 <ArrowRight size={17}/></a>:<span className="zg-risk-feature-pending">{loading?'데이터 확인 중':'제공 가능한 점수 없음'}</span>}
      </div>
     </section>
     <section className="zg-risk-ranking" aria-label="8대 경제 위험 지표 순위">
-     <header><h2>8개 위험 영역 <small>(안정 점수 낮은 순)</small></h2><p>항목을 누르면 상세 분석을 확인할 수 있습니다.</p></header>
+     <header><h2>8개 위험 영역 <small>(안정 점수 낮은 순)</small></h2><p>항목 선택 → 왼쪽 분석 · ↗ 상세 페이지</p></header>
      <ol className="zg-risk-ranking-list">
       {cards.map((card,index)=><li key={card.id}>
-       <a href={card.href} style={{'--zg-risk-row-color':tone(card.score)} as CSSProperties} aria-label={`${index+1}위 ${card.name}, 안정 점수 ${card.score===null?'미제공':card.score.toFixed(1)+'점'}, 상세 보기`}>
-        <span className="zg-risk-rank">{String(index+1).padStart(2,'0')}</span>
-        <strong>{card.name}</strong>
-        <span className="zg-risk-rank-description">{card.description}</span>
-        <span className="zg-risk-rank-score"><LiveScoreValue value={card.score}>{card.score===null?'—':card.score.toFixed(1)}</LiveScoreValue></span>
-        <span className="zg-risk-rank-status">{state(card.score)}</span>
-        <ChevronRight size={19} aria-hidden="true"/>
-       </a>
+       <div className={`zg-risk-ranking-item${featured?.id===card.id?' is-selected':''}`} style={{'--zg-risk-row-color':tone(card.score)} as CSSProperties}>
+        <button type="button" className="zg-risk-rank-select" onClick={()=>selectRisk(card.id)} aria-pressed={featured?.id===card.id} aria-label={`${index+1}위 ${card.name}, 안정 점수 ${card.score===null?'미제공':card.score.toFixed(1)+'점'}, 왼쪽 분석에 표시`}>
+         <span className="zg-risk-rank">{String(index+1).padStart(2,'0')}</span>
+         <strong>{card.name}</strong>
+         <span className="zg-risk-rank-description">{card.description}</span>
+         <span className="zg-risk-rank-score"><LiveScoreValue value={card.score}>{card.score===null?'—':card.score.toFixed(1)}</LiveScoreValue></span>
+         <span className="zg-risk-rank-status">{state(card.score)}</span>
+        </button>
+        <a href={card.href} className="zg-risk-rank-detail-link" aria-label={`${card.name} 상세 페이지로 이동`} title={`${card.name} 상세 페이지`}><ArrowUpRight size={18} aria-hidden="true"/></a>
+       </div>
       </li>)}
      </ol>
      <p className="zg-risk-ranking-footnote"><ShieldCheck size={14} aria-hidden="true"/>저장 점수 제공 {ready}/8 · 결측은 맨 아래 표시 · 지표마다 관측 시점은 다를 수 있습니다.</p>
