@@ -36,7 +36,7 @@ export function inspectManifest(root,relative,themeId){
 export function inspectRegistry(registry,{dataRoot,sourceRoot=repoRoot}={}){
  if(registry?.version!==1||!Array.isArray(registry.themes)||!registry.themes.length)throw Error('REGISTRY_INVALID');
  const ids=new Set();
- for(const t of registry.themes){if(!/^[a-z][a-z0-9-]*$/.test(t.id)||ids.has(t.id)||!Array.isArray(t.symbols)||t.symbols.length!==2||!t.public?.feedKey||!t.repository||!t.runtime||!Array.isArray(t.tasks)||!Array.isArray(t.blockers))throw Error('THEME_REGISTRY_INVALID');ids.add(t.id);}
+ for(const t of registry.themes){if(!/^[a-z][a-z0-9-]*$/.test(t.id)||ids.has(t.id)||!Array.isArray(t.symbols)||!(t.symbols.length===2||(t.id==='quantum-computing'&&t.symbols.length===1&&t.symbols[0]==='QTUM'&&t.benchmark==='SPY'))||!t.public?.feedKey||!t.repository||!t.runtime||!Array.isArray(t.tasks)||!Array.isArray(t.blockers))throw Error('THEME_REGISTRY_INVALID');ids.add(t.id);}
  return {scope:'LOCAL_LOCATION_AND_HASH_ONLY',providerCalls:0,d1Writes:0,schedulerWrites:0,themes:registry.themes.map(t=>({id:t.id,declaredStatus:t.status,
   rawManifest:inspectManifest(dataRoot,t.rawManifest,t.id),rawAssets:(t.rawAssets??[]).map(a=>resource(dataRoot,a.path,a.sha256)),
   repository:Object.fromEntries(Object.entries(t.repository).map(([role,p])=>[role,resource(sourceRoot,p)])),
