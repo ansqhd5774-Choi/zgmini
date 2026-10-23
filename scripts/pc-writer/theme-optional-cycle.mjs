@@ -4,6 +4,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
 import {createHash} from 'node:crypto';
+import {spawnSync} from 'node:child_process';
 import {fileURLToPath} from 'node:url';
 import {collectOptional} from './theme-optional-collect.mjs';
 import {auditOptionalPrices} from './theme-optional-audit.mjs';
@@ -80,16 +81,45 @@ function config(dataRoot){
  ensure(/^[a-f0-9]{32}$/.test(cfg.account)&&/^[a-f0-9-]{36}$/.test(cfg.core),'PC_D1_CONFIG_INVALID');
  return cfg;
 }
-function token(){
- if(process.env.CLOUDFLARE_API_TOKEN)return process.env.CLOUDFLARE_API_TOKEN;
- const p=path.join(os.homedir(),'AppData','Roaming','xdg.config','.wrangler','config','default.toml');
- ensure(fs.existsSync(p),'PC_CLOUDFLARE_AUTH_UNAVAILABLE');
- const body=fs.readFileSync(p,'utf8'),expiry=Date.parse(body.match(/expiration_time\s*=\s*"([^"]+)"/)?.[1]??'');
- ensure(Number.isFinite(expiry)&&expiry>Date.now()+300000,'PC_CLOUDFLARE_AUTH_EXPIRED');
- const value=body.match(/oauth_token\s*=\s*"([^"]+)"/)?.[1];ensure(value,'PC_CLOUDFLARE_TOKEN_MISSING');return value;
+const WRANGLER_EARLY_REFRESH_MS=300000;
+// The original PC D1 writer refreshes expired OAuth via `wrangler whoami`.
+// Do not treat an expired access token as terminal when the existing Wrangler
+// refresh token can be used. Never print or copy the OAuth credential.
+export function cloudflareToken({dataRoot=DATA_ROOT,
+ oauthFile=path.join(os.homedir(),'AppData','Roaming','xdg.config','.wrangler','config','default.toml'),
+ env=process.env,execute=spawnSync,now=Date.now(),platform=process.platform,
+ executable=process.execPath,wranglerCandidates=null}={}){
+ if(env.CLOUDFLARE_API_TOKEN)return env.CLOUDFLARE_API_TOKEN;
+ ensure(fs.existsSync(oauthFile),'PC_CLOUDFLARE_AUTH_UNAVAILABLE');
+ const valid=()=>{
+  const body=fs.readFileSync(oauthFile,'utf8');
+  const expiry=Date.parse(body.match(/expiration_time\s*=\s*"([^"]+)"/)?.[1]??'');
+  const value=body.match(/oauth_token\s*=\s*"([^"]+)"/)?.[1];
+  return value&&Number.isFinite(expiry)&&expiry>now+WRANGLER_EARLY_REFRESH_MS?value:null;
+ };
+ const existing=valid();if(existing)return existing;
+ const approvedRoot=path.dirname(path.resolve(dataRoot));
+ const scripts=wranglerCandidates??[
+  path.join(approvedRoot,'projects','zgmini','node_modules','wrangler','bin','wrangler.js'),
+  path.join(approvedRoot,'node_modules','wrangler','bin','wrangler.js'),
+  path.join(approvedRoot,'runtime','node_modules','wrangler','bin','wrangler.js'),
+ ];
+ const options={encoding:'utf8',timeout:60000,windowsHide:true,maxBuffer:512*1024};
+ for(const script of scripts){
+  if(!fs.existsSync(script))continue;
+  execute(executable,[script,'whoami'],options);
+  const refreshed=valid();if(refreshed)return refreshed;
+ }
+ if(platform==='win32'){
+  // Use an already-installed Wrangler on PATH. Do not run `npx`, which could
+  // download or install a new package on the user's PC.
+  execute('cmd.exe',['/d','/c','wrangler.cmd','whoami'],options);
+  const refreshed=valid();if(refreshed)return refreshed;
+ }
+ fail('PC_WRANGLER_REAUTH_REQUIRED');
 }
 export function cloudflareD1({dataRoot,fetchImpl=fetch}={}){
- const cfg=config(dataRoot),secret=token();let writeAttempted=false;
+ const cfg=config(dataRoot),secret=cloudflareToken({dataRoot});let writeAttempted=false;
  const query=async(sql,params)=>{
   let response;try{response=await fetchImpl(`https://api.cloudflare.com/client/v4/accounts/${cfg.account}/d1/database/${cfg.core}/query`,{
    method:'POST',headers:{Authorization:`Bearer ${secret}`,'content-type':'application/json'},
