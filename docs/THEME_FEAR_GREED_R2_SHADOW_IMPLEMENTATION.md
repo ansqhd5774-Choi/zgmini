@@ -79,7 +79,7 @@
 
 ## 6. 기존 PC 자료 1차 점검 — 일반화된 읽기 전용 CMD
 
-실제 현지 자료에 바로 접근할 수 없는 환경에서 **원자료 경로를 가정해 점수를 만들지 않는다**. 별도 `scripts/pc-writer/theme-r2-pc-source-readonly.cmd`를 PC에서 실행하면 기본 운영 자료 경로인 `E:\ZGmini\data\pc-writer`를 한정 탐색한다.
+실제 현지 자료에 바로 접근할 수 없는 환경에서 **원자료 경로를 가정해 점수를 만들지 않는다**. 별도 `scripts/pc-writer/theme-r2-pc-source-readonly.cmd`를 PC에서 실행하면 기본 운영 자료 경로인 `E:\ZGmini\data\pc-writer`를 한정 탐색한다. 이 CMD와 동명 `.mjs`는 **두 파일만 같은 폴더에 있으면 독립 실행**할 수 있다.
 
 - 결과 파일은 CMD와 같은 폴더의 **`THEME_R2_PC_SOURCE_RESULT.json` 1개**. E: 원자료·SQLite·운영 스케줄러·API·공개 화면에 쓰지 않는다.
 - 기존 7개 테마/14개 티커뿐 아니라 형식에 맞는 새 ETF 티커도 감지한다. 특정 테마 또는 QTUM/WQTM만을 위해 만든 검색이 아니다.
