@@ -8,23 +8,29 @@ export function guideMetadata(title:string,description:string,path:string):Metad
     openGraph:{title:fullTitle,description,url,type:'article',siteName:'ZGmini'},
     twitter:{card:'summary',title:fullTitle,description}};
 }
-export default function GuidePage({title,answer,path,datePublished='2026-10-07',dateModified='2026-10-07',children}:{title:string;answer:string;path:string;datePublished?:string;dateModified?:string;children:ReactNode}) {
-  return <main className="min-h-screen bg-[#03121d] px-4 py-8 text-slate-100 sm:px-8 sm:py-12">
+export default function GuidePage({title,answer,path,datePublished='2026-10-07',dateModified='2026-10-07',variant='default',children}:{title:string;answer:string;path:string;datePublished?:string;dateModified?:string;variant?:'default'|'market';children:ReactNode}) {
+  const market=variant==='market';
+  const relatedLinks=[
+    {href:'/guides/fear-greed-buying/',label:'공탐 매수 기준과 한계'},
+    {href:'/guides/cpi-pce-release/',label:'CPI·PCE 발표 해석'},
+    {href:'/guides/fomc/',label:'FOMC 일정과 금리 결정'},
+  ].filter(link=>link.href!==path);
+  return <main className={market?'min-h-screen bg-[#03121d] text-slate-100':'min-h-screen bg-[#03121d] px-4 py-8 text-slate-100 sm:px-8 sm:py-12'}>
     <WebPageJsonLd name={title} description={answer} path={path}/>
     <ArticleJsonLd headline={title} description={answer} path={path} datePublished={datePublished} dateModified={dateModified}/>
-    <article className="mx-auto max-w-4xl text-sm leading-7 sm:text-base">
-      <a href="/" className="inline-flex min-h-11 items-center text-blue-200">← ZGmini 대시보드</a>
-      <header className="mt-5 space-y-4"><p className="text-sm text-slate-400">투자 지표 활용 안내 · 내용 확인일 {dateModified}</p>
-        <h1 className="text-2xl font-bold text-white sm:text-3xl">{title}</h1>
-        <p className="rounded-lg border border-slate-700 p-4 text-slate-200">{answer}</p>
+    <article className={market?'mx-auto max-w-[1360px] min-w-0 px-[11px] pb-12 pt-3 text-sm leading-7 sm:px-5 sm:pb-16 sm:pt-6':'mx-auto max-w-4xl text-sm leading-7 sm:text-base'}>
+      {!market?<a href="/" className="inline-flex min-h-11 items-center text-blue-200">← ZGmini 대시보드</a>:null}
+      <header className={market?'bg-[#0a2232] px-4 py-5 sm:px-6 sm:py-6 border-t-2 border-[#3c8293]':'mt-5 space-y-4'}>
+        <p className={market?'text-xs font-bold tracking-wide text-[#79bbc4]':'text-sm text-slate-400'}>투자 지표 활용 안내 · 내용 확인일 {dateModified}</p>
+        <h1 className={market?'mt-2 text-[22px] font-extrabold leading-snug tracking-tight text-[#f0f7fc] sm:text-[28px]':'text-2xl font-bold text-white sm:text-3xl'}>{title}</h1>
+        <p className={market?'mt-3 max-w-4xl border-l-[3px] border-[#3c8293] pl-3 text-[14px] leading-7 text-[#c4d8e4] sm:text-[15px]':'rounded-lg border border-slate-700 p-4 text-slate-200'}>{answer}</p>
       </header>
       {children}
-      <nav aria-label="다른 투자 지표 안내" className="mt-10 flex flex-wrap gap-x-6 gap-y-2 border-t border-slate-700 pt-4">
-        {[
-          {href:'/guides/fear-greed-buying/',label:'공탐 매수 기준과 한계'},
-          {href:'/guides/cpi-pce-release/',label:'CPI·PCE 발표 해석'},
-          {href:'/guides/fomc/',label:'FOMC 일정과 금리 결정'},
-        ].filter(link=>link.href!==path).map(link=><a key={link.href} href={link.href} className="inline-flex min-h-11 items-center text-blue-200 underline">{link.label} →</a>)}
+      <nav aria-label="다른 투자 지표 안내" className={market?'mt-8 border-t border-[#25485a] pt-5':'mt-10 flex flex-wrap gap-x-6 gap-y-2 border-t border-slate-700 pt-4'}>
+        {market?<>
+          <h2 className="mb-3 text-base font-bold text-[#edf6fc]">다른 투자 지표 안내</h2>
+          <div className="grid gap-2 sm:grid-cols-2">{relatedLinks.map(link=><a key={link.href} href={link.href} className="group flex min-h-12 items-center justify-between gap-3 bg-[#0e2b3b] px-4 py-3 text-sm font-semibold text-[#dcebf3] hover:bg-[#153a4b] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#79bbc4]">{link.label}<span aria-hidden="true" className="text-amber-300 group-hover:text-white">↗</span></a>)}</div>
+        </>:relatedLinks.map(link=><a key={link.href} href={link.href} className="inline-flex min-h-11 items-center text-blue-200 underline">{link.label} →</a>)}
       </nav>
     </article>
   </main>;

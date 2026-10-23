@@ -24,3 +24,16 @@ test('buying guide provides a readable three-step flow and links to both source 
   assert.match(guide,/href="\/fear-greed\/korea\/"/);
   assert.match(guide,/dateModified="2026-10-23"/);
 });
+
+test('buying guide uses the market detail design and avoids a duplicate dashboard back button',()=>{
+  const guide=read('app/guides/fear-greed-buying/page.tsx');
+  const shell=read('app/guides/guide-page.tsx');
+  assert.match(guide,/<SiteHeader\/>/);
+  assert.match(guide,/variant="market"/);
+  assert.match(shell,/!market\?<a href="\/"/);
+  assert.match(shell,/border-t-2 border-\[#3c8293\]/);
+  assert.doesNotMatch(guide,/text-cyan-200 underline/);
+  assert.match(guide,/CNN 원문/);
+  assert.match(guide,/SEC 투자 위험·계획 안내/);
+  assert.match(guide,/신용 위험 지표/);
+});
