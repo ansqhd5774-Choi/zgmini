@@ -42,6 +42,9 @@ try{
   const wide=width>=1650;
   const toggle=page.getByRole("button",{name:"시장 채팅 열기"});
   await page.waitForFunction(()=>Boolean(sessionStorage.getItem("zgmini-community-chat-nick-r1")),null,{timeout:30000}).catch(error=>{throw new Error("React client hydration not confirmed; browser errors: "+errors.join(" | ")+"; "+error.message);});
+  // First-time visitors dismiss the site introduction before using the rails.
+  await page.getByRole('button',{name:'닫기',exact:true}).click();
+  await page.locator('dialog[aria-labelledby="zg-about-popup-title"]').waitFor({state:'hidden'});
   await page.waitForFunction(wide=>document.querySelector(".zg-dashboard-side-rails-root")?.getAttribute("data-wide")===(wide?"true":"false"),wide,{timeout:15000});
   const favorites=page.locator("#zg-dashboard-favorites-panel");
   await favorites.locator('a[href="/inflation/"]').waitFor({state:"attached"});

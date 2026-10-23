@@ -45,6 +45,9 @@ try{
   };
   await page.route("**/api/iran-progress",r=>r.fulfill({status:200,contentType:"application/json",body:JSON.stringify(r5Fixture)}));
   await page.goto(base+"/?view=scenarios",{waitUntil:"domcontentloaded",timeout:45000});
+  await page.locator('dialog[aria-labelledby="zg-about-popup-title"]').waitFor({state:'visible'});
+  await page.getByRole('button',{name:'닫기',exact:true}).click();
+  await page.locator('dialog[aria-labelledby="zg-about-popup-title"]').waitFor({state:'hidden'});
   const root=page.locator(".ob-events");
   await root.waitFor({state:"visible",timeout:45000});
   const cards=root.locator(".ob-card");
