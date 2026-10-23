@@ -30,6 +30,22 @@ test('buying guide has the selected three-step visual flow and source market lin
   assert.match(guide,/dateModified="2026-10-23"/);
 });
 
+test('buying guide five sentiment colors and scenario markers match the live market gauge palette',()=>{
+  const gauge=read('app/market-score-orb.tsx');
+  const guide=read('app/guides/fear-greed-buying/page.tsx');
+  const gaugeBands=gauge.split('const CNN_GAUGE_BANDS = [')[1]?.split('] as const;')[0];
+  const guideBands=guide.split('const bands=[')[1]?.split('];')[0];
+  assert.ok(gaugeBands&&guideBands,'both five-band palettes are present');
+  const gaugeColors=[...gaugeBands.matchAll(/color: '(#[0-9a-f]{6})'/g)].map(match=>match[1]);
+  const guideColors=[...guideBands.matchAll(/color:'(#[0-9a-f]{6})'/g)].map(match=>match[1]);
+  assert.equal(gaugeColors.length,5);
+  assert.deepEqual(guideColors,gaugeColors,'guide five bands use the same colors as USA/Korea CNN-style gauge');
+  const scenarios=guide.split('const scenarios=[')[1]?.split('];')[0]??'';
+  assert.deepEqual([...scenarios.matchAll(/color:'(#[0-9a-f]{6})'/g)].map(match=>match[1]),[
+    gaugeColors[0],gaugeColors[2],gaugeColors[4],
+  ],'scenario markers use extreme fear, neutral and extreme greed from the same palette');
+});
+
 test('buying guide uses the market detail design and avoids a duplicate dashboard back button',()=>{
   const guide=read('app/guides/fear-greed-buying/page.tsx');
   const shell=read('app/guides/guide-page.tsx');

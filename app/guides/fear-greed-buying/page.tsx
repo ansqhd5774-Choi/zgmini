@@ -9,11 +9,11 @@ const path='/guides/fear-greed-buying/';
 export const metadata=guideMetadata(title,'공포탐욕지수로 주식 매수 타이밍을 판단하기 전에 확인할 3가지, 미국·한국 지수의 차이와 상황별 해석을 쉽게 안내합니다.',path);
 
 const bands=[
-  {label:'극도의 공포',description:'매우 부정적',color:'#bd3c51',labelColor:'text-[#ff8a9b]'},
-  {label:'공포',description:'부정적',color:'#ff8652',labelColor:'text-[#ffdad0]'},
-  {label:'중립',description:'관망적',color:'#9da2ae',labelColor:'text-[#e8ebef]'},
-  {label:'탐욕',description:'긍정적',color:'#87c881',labelColor:'text-[#d7f3d1]'},
-  {label:'극도의 탐욕',description:'매우 긍정적',color:'#14b6a1',labelColor:'text-[#38e5c6]'},
+  {label:'극도의 공포',description:'매우 부정적',color:'#9f2233'},
+  {label:'공포',description:'부정적',color:'#f2555a'},
+  {label:'중립',description:'관망적',color:'#9aa8b6'},
+  {label:'탐욕',description:'긍정적',color:'#58c88a'},
+  {label:'극도의 탐욕',description:'매우 긍정적',color:'#15865e'},
 ];
 
 const steps=[
@@ -23,9 +23,9 @@ const steps=[
 ];
 
 const scenarios=[
-  {label:'공포 확대',check:'신용 위험 · 하락 원인',detail:'하락의 원인이 신용 문제, 유동성 이슈 등 구조적인지 확인하세요.',color:'#fb5378'},
-  {label:'공포 완화',check:'시장 흐름 · 경제 지표',detail:'지수가 바닥을 형성하는지, 주요 경제 지표가 안정되는지 살펴보세요.',color:'#ffcb4e'},
-  {label:'탐욕 확대',check:'가격 부담 · 투자 비중',detail:'가격이 과열 구간에 있는지, 기존 투자 비중을 점검하세요.',color:'#12dfae'},
+  {label:'공포 확대',check:'신용 위험 · 하락 원인',detail:'하락의 원인이 신용 문제, 유동성 이슈 등 구조적인지 확인하세요.',color:'#9f2233'},
+  {label:'공포 완화',check:'시장 흐름 · 경제 지표',detail:'지수가 바닥을 형성하는지, 주요 경제 지표가 안정되는지 살펴보세요.',color:'#9aa8b6'},
+  {label:'탐욕 확대',check:'가격 부담 · 투자 비중',detail:'가격이 과열 구간에 있는지, 기존 투자 비중을 점검하세요.',color:'#15865e'},
 ];
 
 const focusClass='focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#49e2df]';
@@ -57,7 +57,7 @@ export default function Page(){
             <div className="mt-4 grid grid-cols-5 gap-[2px]" aria-label="공포에서 탐욕까지의 5단계 시장 심리">
               {bands.map(band=><div key={band.label} className="min-w-0">
                 <div className="h-9 sm:h-11" style={{backgroundColor:band.color}}/>
-                <p className={`mt-3 text-center text-[11px] font-extrabold leading-5 sm:text-[13px] ${band.labelColor}`}>{band.label}</p>
+                <p className="mt-3 text-center text-[11px] font-extrabold leading-5 text-[#f1f6fc] sm:text-[13px]">{band.label}</p>
                 <p className="mt-1 text-center text-[11px] leading-5 text-[#bbcdda] sm:text-xs">{band.description}<br/>심리 구간</p>
               </div>)}
             </div>
