@@ -121,8 +121,20 @@ test('dashboard hides the two notices while detail page retains provisional dash
  assert.match(sectorDetail,/strokeDasharray="4 4"/);
  assert.match(sectorDetail,/dataKey=\{provisional\?'solid':active\.id\}/);
  assert.match(sectorDetail,/aria-label="11개 섹터 투자심리 순위"/);
- assert.match(sectorDetail,/onClick=\{\(\)=>setSelected\(sector\.id\)\}/);
+ assert.match(sectorDetail,/onClick=\{\(\)=>\{setSelected\(sector\.id\);toggle\(sector\.id\);\}\}/);
  assert.match(sectorDetail,/const \[compareDays,setCompareDays\]=useState\(365\)/);
+});
+
+test('sector comparison defaults to the current top three and keeps rank rows and legend toggles in sync',()=>{
+ const detail=fs.readFileSync('app/sector-fear-greed/sector-detail-charts.tsx','utf8');
+ const css=fs.readFileSync('app/sector-fear-greed/sector-detail.css','utf8');
+ assert.match(detail,/const rankedSectors=\(rows:SectorSentimentPoint\[\]\)=>/);
+ assert.match(detail,/setVisible\(new Set\(rankedSectors\(history\)\.slice\(0,3\)\.map\(sector=>sector\.id\)\)\)/);
+ assert.match(detail,/aria-pressed=\{visible\.has\(sector\.id\)\} data-selected=\{active\.id===sector\.id\}/);
+ assert.match(detail,/onClick=\{\(\)=>\{setSelected\(sector\.id\);toggle\(sector\.id\);\}\}/);
+ assert.match(detail,/aria-pressed=\{visible\.has\(sector\.id\)\} onClick=\{\(\)=>toggle\(sector\.id\)\}/);
+ assert.doesNotMatch(detail,/next\.size===1/);
+ assert.match(css,/\.zg-sfg-rank-row\[aria-pressed=true\] \.zg-sfg-rank-number/);
 });
 
 test('sector detail mini charts expose stored historical date and score on hover while related links use buttons',()=>{
