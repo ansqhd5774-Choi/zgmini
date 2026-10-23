@@ -26,10 +26,10 @@ export default function GuidePage({title,answer,path,datePublished='2026-10-07',
         <p className="rounded-lg border border-slate-700 p-4 text-slate-200">{answer}</p>
       </header>:null}
       {children}
-      <nav aria-label="다른 투자 지표 안내" className={market?'mt-8 border-t border-[#25485a] pt-5':'mt-10 flex flex-wrap gap-x-6 gap-y-2 border-t border-slate-700 pt-4'}>
+      <nav aria-label="다른 투자 지표 안내" className={market?'mt-7 flex flex-wrap items-center gap-x-5 gap-y-1 border-t border-[#25485a] py-3':'mt-10 flex flex-wrap gap-x-6 gap-y-2 border-t border-slate-700 pt-4'}>
         {market?<>
-          <h2 className="mb-3 text-base font-bold text-[#edf6fc]">다른 투자 지표 안내</h2>
-          <div className="grid gap-2 sm:grid-cols-2">{relatedLinks.map(link=><a key={link.href} href={link.href} className="group flex min-h-12 items-center justify-between gap-3 bg-[#0e2b3b] px-4 py-3 text-sm font-semibold text-[#dcebf3] hover:bg-[#153a4b] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#79bbc4]">{link.label}<span aria-hidden="true" className="text-amber-300 group-hover:text-white">↗</span></a>)}</div>
+          <h2 className="text-[12px] font-bold text-[#a8c1cf]">관련 가이드</h2>
+          {relatedLinks.map(link=><a key={link.href} href={link.href} className="inline-flex min-h-10 items-center gap-1 text-[12px] font-semibold text-[#b9e8ed] transition-colors hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#79bbc4]">{link.label}<span aria-hidden="true">↗</span></a>)}
         </>:relatedLinks.map(link=><a key={link.href} href={link.href} className="inline-flex min-h-11 items-center text-blue-200 underline">{link.label} →</a>)}
       </nav>
     </article>

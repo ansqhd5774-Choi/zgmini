@@ -40,7 +40,7 @@ export default function Page(){
           <div className="min-w-0">
             <p className="text-[12px] font-bold tracking-[.08em] text-[#37dfeb] sm:text-sm">투자 지표 활용 안내</p>
             <h1 id="fg-buying-title" className="mt-3 text-[28px] font-extrabold leading-[1.22] tracking-[-.055em] text-[#f6f9ff] sm:text-[39px] lg:text-[40px] xl:text-[45px]">
-              공포·탐욕지수, 지금 사도 될까?
+              공포·탐욕지수,<span className="block sm:inline"> 지금 사도 될까?</span>
               <span className="mt-2 block text-[#7deaf2]">점수만으로 매수하지 않습니다.</span>
             </h1>
             <div aria-hidden="true" className="mt-3 h-[2px] w-48 bg-[#37dbe1] sm:w-64"/>
