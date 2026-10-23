@@ -94,6 +94,22 @@ PC에서 새 작업 등록 전 아래 단계가 필요하다.
 
 관련 권리 조건: <https://getmarkethistory.com/docs/terms> (2026-10-19 시행). 문구상 파생물 사용은 계정 정상 유지 조건과 연결된다. 기존 바이오의 익명 무료 호출 사용 권리 해석은 미확정이다.
 
+## 2026-10-23 바이오·신약 R1 읽기 전용 원인 분해·Shadow 전환 준비
+
+**현재 상태: GitHub 코드와 합성 fixture 테스트만 완료. PC E: 실측·D1 readback·자동 실행·공개 전환은 미실행.** 전환 상태를 `PASS`로 표기하지 않는다.
+
+1. `BIOTECH_PC_R3_LOCAL_PRICES.json` 검색은 기존 `BIOTECH_R3_SOURCE_LOCATE_RESULT.txt` 및 `BIOTECH_R3_SOURCE_LOCATE_R2_RESULT.txt`의 `NOT_FOUND`로 **종료**한다. 과거 R4 검증 결과에는 R3 원가격 SHA256 `a59777c3fe8e009fc76154bcf16e135d7564e61cd9dca4366003fd9ca16b6915`, 703공통일·2026-10-20 관측 및 **R158 정확 재계산** 결과가 있다. 이 리포트와 D1 숫자는 원가격 자체가 아니다. 반복 재탐색이나 임의 가격 역산을 금한다.
+2. 최신 main 확인 후 신규 읽기 전용 `scripts/pc-writer/theme-biotech-forensic-r1.mjs`를 실행한다. SHA256 `eba8ca59e49471b215733101d8064056c34d9ac6b38e2401d47d633087cbce29` (GitHub 반영 시 변경 여부 재확인). 저장소의 `lib/market-score/theme-etf-provisional-score.mjs` SHA256 `91d833bb58188b52df069ae71668b98822fa8bd9551f5a05ae999d6007cac38b`를 R158 원본으로 고정한다. `scripts/pc-writer/theme-optional-score-r188.mjs`의 로컬 실제 SHA도 기록하고, 회수된 이전 R188 소스 SHA `8dca56dabe186bbc69641ce347bc5bcbc0d0a0e30e12f13dbda8ca9e2a4524f9`와 **별도 표기**한다.
+3. `E:\ZGmini\data\themes\{ai-semiconductor,biotech}\raw-manifest.json`의 모든 raw 파일 해시를 파일 바이트로 검사한다. 등록부의 `privateAuditArtifact` 및 AI 기존 R187 원자료도 실파일/SHA256로 검사한다. E: 접근이 없으면 이전 `SHA_VERIFIED` 로그를 현 시점 실측으로 승격시키지 않는다. 확보된 704개 공통 세션은 재수집하지 않는다.
+4. 새 원가격(IBB/XBI/SPY)에서 뉴욕 현지 날짜와 DST, 정규장 15:xx/조기 폐장 12:xx 마지막 시간봉, `is_gap===true` 제외, 기타 보간 플래그, 중복 timestamp/선택 시간, 종목별 결측·공통 거래일, 조정 여부, 628개 가격 및 252개 midrank 경계를 구분한다. R158과 R188은 **동일한 저장 가격 배열**로 직접 비교한다. 차이 67일은 일자별 가격→9개 개별 지표→백분위 동률/부동소수점→3축 점수→최종 점수 순서의 상세 로그로 남긴다. 구 R3의 3종목 가격이 없으면 **최초 원가격 차이는 미확정**이고, 새 가격과 과거 공개 점수의 첫 불일치 날짜만 확정할 수 있다.
+5. 실제 PC 진단 로그는 CMD 파일과 **같은 Desktop 폴더의 TXT**에 저장한다. 원자료·D1·공개 이력·스케줄러·Provider를 변경하지 않는다. 스크립트가 계산한 Shadow 252일 이력은 별도 `BIOTECH_GMH_R1_<manifest+code hash>`로 **TXT 안에만** 기록하고, 기존 `theme-biotech-optional-r1` D1 key를 건드리지 않는다. Shadow 후보를 공개할 때는 신구 Revision·가격 조정 모드·권리·이력 차이를 승인받고 새 key/reader 경로를 별도 PR로 검증한다. 원본 재탐색 완료를 선행 조건으로 재설정하지 않는다.
+6. 이미 PC에 저장한 MarketParquet 자료는 `E:\ZGmini\data\theme-market-history-r131\marketparquet-r167`의 **실제 원본 파일 내부 `symbol`** 기준으로 IBB/XBI/SPY를 먼저 조사한다. 파일명·기존 추출 목록에 없다고 해서 원본 부재라고 결론 내리지 않는다. Parquet의 단순 파일 목록만 확인되면 `CONTENT_UNINSPECTED`로 남긴다. 공식 문서상 MarketParquet 일봉/시간봉은 **분할 조정·배당 비조정**, GetMarketHistory 1시간봉은 **분할/배당 비조정**이므로 가격 모드가 다르다. 동일한 가격·날짜·거래소 폐장 선택 검산과 무료 사용자의 파생 공개 권리 확인 전 혼합 금지. <https://marketparquet.com/documentation>, <https://marketparquet.com/license>, <https://getmarkethistory.com/docs/terms>.
+7. GetMarketHistory 48시간 지연은 **당일 잠정치 미제공**을 뜻할 뿐 최신 제공 관측일까지의 정규 자동 갱신 불가능을 뜻하지 않는다. 공식 `stats`와 매 실행의 마지막 관측일로 수집 상한을 정하고, 없는 날의 결측은 그대로 둔다. 신규 바이오 자동 전환 승인 시 관측일·권리·가격·산식이 맞는 확정치만 게시한다. 잠정치는 별도 권리/원자료/연결 검증 후 추가한다. <https://getmarkethistory.com/docs/reliability/>.
+8. AI·반도체와 기본 7개는 독립 실행 유지. 이전 PC 리포트에서 기존 7개 작업은 `REGISTERED`, AI·바이오는 `NOT_REGISTERED`였다. 현재 설치 SHA·실행 주기는 PC `schtasks /query` 실측 없이는 `null` 유지. 공개 reader가 기본 7개의 잠정 날짜를 AI 후보의 잠정 날짜와 **같게 요구**하는 현행 게이트를 진단한다. 결측값 생성/게이트 완화·산식 변경으로 PASS 처리하지 않는다. AI 단독 정상 경로 보완은 별도 검증 및 승인된 범위에서 진행한다.
+9. 완료 증명 순서: 저장 원자료와 SHA → 기존 R158/R188 동일 입력 계산 → Shadow/기존 이력 비교 → 권리·승인 Revision 확인 → 선택된 key 조건부 D1 게시 → D1 readback → `/api/theme-fear-greed` 및 PC/모바일 UI 관측일 비교 → **다음 정규 예약 실행**의 task 결과·run timestamp·관측일 확인. 수동 성공과 정규 자동 성공을 혼동하지 않는다.
+
+신규 포렌식 상태는 `config/theme-data-registry.json`의 `forensicRecovery`에서 관리한다. `sourceSearch`만 종료하고, 가격 차이 원인/실제 스케줄/권리/Shadow 전환은 실증 전까지 미확정으로 유지한다.
+
 ## 일반 채팅 작업 지시문
 
 > ZGMINI 테마 작업은 GitHub 최신 main의 AGENTS.md, docs/THEME_DATA_OPERATIONS.md, config/theme-data-registry.json을 먼저 확인하고 진행하라. 원자료 수집→PC 저장→계산→확정/잠정 게시→D1 readback→공개 API/UI→다음 정규 실행까지 연결하라. 실행 코드는 GitHub에, 원자료는 승인된 E: 데이터 경로에 저장하고 manifest에 실제 상대 경로·SHA256·출처·수집 시각·관측 기간·스키마·가격 모드를 기록하라. 수집기·계산기·게시기·작업 이름/주기·PC 승인 SHA·D1 key를 등록부에 갱신하라. 첨부 ZIP·Desktop·임시 폴더만 유일한 사본으로 두지 마라. 로컬 접근이 없으면 적용했다고 보고하지 말고 GitHub 코드와 정확한 설치/검증 명세를 준비하라. 무료·상업용 조건과 기존 산식·데이터·잠금·게시 보호를 유지하고, 새 테마의 실패가 기존 테마 갱신을 막지 않게 하라. 실제 검사 명령과 결과·미완료 항목을 남기고 테스트/배포 성공만으로 자동 운영 완료라고 보고하지 마라.
