@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import {createHash} from 'node:crypto';
-import {buildAiCandidate,collectWindow,runOptionalTheme,cloudflareD1,cloudflareToken} from '../scripts/pc-writer/theme-optional-cycle.mjs';
+import {buildAiCandidate,collectWindow,runOptionalTheme,cloudflareD1,cloudflareToken,aiReaderRejectionReason,diagnoseAiReader} from '../scripts/pc-writer/theme-optional-cycle.mjs';
 import {regularHour15Rows} from '../scripts/pc-writer/theme-optional-score-r188.mjs';
 
 const NOW=Date.parse('2026-10-23T05:00:00Z');
@@ -97,6 +97,33 @@ test('AI publication candidate reuses checked rights, verified source and exact 
   reference:base(),manifest:manifest('ai-semiconductor'),manifestBytes:Buffer.from('x'),now:NOW}),/RIGHTS_OR_PRICE_APPROVAL_REQUIRED/);
  assert.throws(()=>buildAiCandidate({audit:{...candidateResult,status:'CONFIRMED_SCORE_REVISION_REVIEW'},
   prior:priorAi(),reference:base(),manifest:manifest('ai-semiconductor'),manifestBytes:Buffer.from('x'),now:NOW}),/SCORE_DRIFT_REVIEW_REQUIRED/);
+});
+test('private AI reader diagnostics name strict missing-date and provisional gates without relaxing them',()=>{
+ const record=buildAiCandidate({audit:candidateResult,prior:priorAi(),reference:base(),
+  manifest:manifest('ai-semiconductor'),manifestBytes:Buffer.from('immutable manifest'),now:NOW});
+ assert.equal(aiReaderRejectionReason(record,base(),{now:NOW}),'PASS');
+ const ahead={...base(),observationDate:'2026-10-22'};
+ assert.equal(aiReaderRejectionReason(record,ahead,{now:NOW}),'PUBLIC_READER_OBSERVATION_DATE_MISMATCH');
+ const calendar={...base(),themes:base().themes.map(t=>({...t,history:t.history.map((p,i)=>i===0?{...p,date:'2025-01-01'}:p)}))};
+ assert.equal(aiReaderRejectionReason(record,calendar,{now:NOW}),'PUBLIC_READER_HISTORY_CALENDAR_MISMATCH');
+ const provisional={...base(),phase:'PROVISIONAL',provisional:{points:[{date:'2026-10-22',scores:{}}]}};
+ assert.equal(aiReaderRejectionReason(record,provisional,{now:NOW}),'PUBLIC_READER_PROVISIONAL_DATES_MISSING');
+});
+test('read-only AI diagnostic uses existing local audit and D1 SELECT with zero provider calls and writes',async()=>{
+ await fixture('ai-semiconductor',async({root})=>{
+  let reads=0,writes=0,audits=0;
+  const db={read:async()=>{reads++;return {body:priorAi(),storedAt:NOW-86400000}},
+   replace:async()=>{writes++}};
+  const publicFeed={...base(),phase:'PROVISIONAL',provisional:{points:[{date:'2026-10-22',scores:{}}]}};
+  const result=await diagnoseAiReader({dataRoot:root,now:()=>NOW,storage:db,
+   readPublic:async()=>publicFeed,audit:()=>{audits++;return candidateResult}});
+  assert.equal(result.status,'BLOCKED');
+  assert.equal(result.reason,'PUBLIC_READER_PROVISIONAL_DATES_MISSING');
+  assert.deepEqual(result.publicProvisionalDates,['2026-10-22']);
+  assert.deepEqual(result.localProvisionalDates,[]);
+  assert.equal(result.providerCalls,0);assert.equal(result.d1Writes,0);assert.equal(result.schedulerWrites,0);
+  assert.equal(reads,1);assert.equal(writes,0);assert.equal(audits,1);
+ });
 });
 test('private cycle collects and audits but never posts to D1 without --publish',async()=>{
  await fixture('ai-semiconductor',async({root})=>{
