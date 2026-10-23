@@ -107,7 +107,7 @@ test('R155 leaves sector chart stored data and legend behavior intact',()=>{
  assert.match(deferred,/lazy\(\(\)=>import\('\.\/sector-sentiment-chart'\)\)/);
  assert.match(deferred,/<SectorSentimentChart showProvisionalNotice=\{false\}\/>/);
 });
-test('dashboard hides the two notices while retaining provisional dashed chart data and detail-page notice',()=>{
+test('dashboard hides the two notices while detail page retains provisional dashed chart data',()=>{
  const shared=fs.readFileSync('components/sector-sentiment-chart.tsx','utf8');
  const theme=fs.readFileSync('components/theme-sentiment-dashboard-chart.tsx','utf8');
  const deferred=fs.readFileSync('components/deferred-dashboard-charts.tsx','utf8');
@@ -117,5 +117,10 @@ test('dashboard hides the two notices while retaining provisional dashed chart d
  assert.doesNotMatch(theme,/자료 갱신 지연 · 해당 선은 마지막 관측일까지만 표시합니다/);
  assert.match(shared,/showProvisionalNotice&&hasProvisional&&<small className="zg-provisional-label"/);
  assert.match(shared,/strokeDasharray="4 5"/);
- assert.match(sectorDetail,/<SectorSentimentChart data=\{rows\} linkToDetail=\{false\} snapshot=\{snapshot\}\/>/);
+ assert.match(sectorDetail,/snapshot\?\.phase==='PROVISIONAL'/);
+ assert.match(sectorDetail,/strokeDasharray="4 4"/);
+ assert.match(sectorDetail,/dataKey=\{provisional\?'solid':active\.id\}/);
+ assert.match(sectorDetail,/aria-label="11개 섹터 투자심리 순위"/);
+ assert.match(sectorDetail,/onClick=\{\(\)=>setSelected\(sector\.id\)\}/);
+ assert.match(sectorDetail,/const \[compareDays,setCompareDays\]=useState\(365\)/);
 });
