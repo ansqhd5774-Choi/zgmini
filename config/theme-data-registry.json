@@ -404,6 +404,68 @@
         "sha256": "20ac83212c235943a88b64cd0b37c3ce45d0f2b5015bc7390f121f0231646520",
         "status": "CONFIRMED_SCORE_REVISION_REVIEW"
       }
+    },
+    {
+      "id": "quantum-computing",
+      "label": "양자컴퓨터",
+      "symbols": [
+        "QTUM"
+      ],
+      "benchmark": "SPY",
+      "methodologyVersion": "ETF_ONLY_T40_R20_V40_SINGLE_QTUM_R158",
+      "status": "BLOCKED_PRICE_RIGHTS_PC_AUTOMATION_NOT_CONNECTED",
+      "rawManifest": "themes/quantum-computing/raw-manifest.json",
+      "rawAssets": [],
+      "repository": {
+        "collector": "scripts/pc-writer/theme-quantum-stage.mjs",
+        "calculator": "scripts/pc-writer/theme-quantum-stage.mjs",
+        "publisherInstaller": null,
+        "reader": null,
+        "auditor": "scripts/pc-writer/theme-quantum-stage.mjs"
+      },
+      "runtime": {
+        "collector": null,
+        "calculator": null,
+        "publisher": null
+      },
+      "tasks": [],
+      "plannedTask": {
+        "name": "ZGMINI-PC-Theme-Quantum-ETF",
+        "interval": null,
+        "runAccount": null,
+        "status": "NOT_INSTALLED",
+        "pcApprovedSha": null,
+        "lastObservedRun": null
+      },
+      "public": {
+        "table": "public_feed_snapshots_v1",
+        "feedKey": "theme-quantum-optional-r1",
+        "snapshotKey": "current",
+        "api": "/api/theme-fear-greed",
+        "status": "RESERVED_NOT_CONNECTED"
+      },
+      "sourceContract": {
+        "candidateSource": "https://getmarkethistory.com",
+        "termsUrl": "https://getmarkethistory.com/docs/terms",
+        "sourceRightsAnonymousCommercialDerivedVerified": false,
+        "sourcePriceMode": "RAW_UNADJUSTED_1H_NOT_OFFICIAL_CLOSE",
+        "priceReconciled": false,
+        "history252MatureVerified": false,
+        "publicationAuthorized": false,
+        "licenseConfirmedAt": null
+      },
+      "failureIsolation": "INDEPENDENT_PC_JOB_PROPOSED_NOT_INSTALLED_NO_SHARED_SEVEN_THEME_MUTATION",
+      "blockers": [
+        "ANONYMOUS_COMMERCIAL_DERIVED_LICENSE_UNCONFIRMED",
+        "R10_SIX_REFERENCE_CLOSE_MISMATCH",
+        "APPROVED_FUTURE_EARLY_CLOSE_CALENDAR_NOT_VERIFIED",
+        "PC_RAW_252_MATURE_AND_MANIFEST_NOT_VERIFIED",
+        "COLLECT_CALCULATE_PUBLISH_D1_UI_NEXT_RUN_NOT_CONNECTED"
+      ],
+      "followUps": [
+        "PC_APPLY_SOURCE_SHA_TASK_INTERVAL_APPROVAL",
+        "D1_PUBLISHER_AND_OPTIONAL_READER_AFTER_GATES"
+      ]
     }
   ]
 }
