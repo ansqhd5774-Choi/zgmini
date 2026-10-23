@@ -1,4 +1,5 @@
 import {PUBLIC_DISPLAY_MAX_AGE_MS} from './public-display-freshness.mjs';
+import {themeHistoryReference} from './theme-history-reference.mjs';
 
 // Ninth theme is an optional, stored-derived-only sidecar. Neither a visitor
 // GET nor a missing/unverified candidate can calculate, backfill, or publish.
@@ -46,20 +47,22 @@ export function eligibleBiotechTheme(record,base,{now=Date.now(),storedAt=now}={
  return true;
 }
 
-export async function addVerifiedBiotechTheme(db,base,{now=Date.now()}={}){
+export async function addVerifiedBiotechTheme(db,base,{now=Date.now(),seed=null}={}){
  if(base?.status!=='READY'||base.themes?.length!==8)return base;
  let row;
  try{row=await db.prepare("SELECT body,stored_at FROM public_feed_snapshots_v1 WHERE kind='output' AND feed_key=? AND snapshot_key='current'").bind(BIOTECH_THEME_PUBLIC_KEY).first()}
  catch{return base}
  if(!row)return base;
  let record;try{record=JSON.parse(row.body)}catch{return base}
- if(!eligibleBiotechTheme(record,base,{now,storedAt:Number(row.stored_at)}))return base;
+ const reference=record.observationDate<base.observationDate?themeHistoryReference(base,seed,record.observationDate):base;
+ if(!reference||!eligibleBiotechTheme(record,reference,{now,storedAt:Number(row.stored_at)}))return base;
+ const delayed=reference!==base;
  // The persisted record keeps its original contract key/name. Only the public
  // presentation label changes; existing D1 data needs no rewrite or rerun.
  const biotech={theme:'바이오·신약',etfs:['IBB','XBI'],score:record.score,
-  history:record.history.map(p=>({date:p.date,score:p.score}))};
+  history:record.history.map(p=>({date:p.date,score:p.score})),...(delayed?{observationDate:record.observationDate,delayed:true}:{})};
  const augmented={...base,themes:[...base.themes,biotech]};
- if(base.phase==='PROVISIONAL'&&base.provisional?.points?.length){
+ if(!delayed&&base.phase==='PROVISIONAL'&&base.provisional?.points?.length){
   augmented.provisional={...base.provisional,points:base.provisional.points.map((p,i)=>({...p,
    scores:{...p.scores,'바이오·신약':record.provisional.points[i].score}}))};
  }
