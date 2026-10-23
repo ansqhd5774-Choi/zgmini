@@ -3,7 +3,15 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
-import {R158_PAIRS, R158_SYMBOLS} from '../../lib/market-score/theme-etf-provisional-score.mjs';
+
+// Self-contained to run beside the CMD on Desktop without installing an entire
+// repository. Tests compare these public pair labels to the R158 source of truth.
+export const R2_EXISTING_PUBLIC_PAIRS = Object.freeze([
+  ['로봇·자동화',['BOTZ','ROBO']], ['클라우드·SaaS',['SKYY','CLOU']],
+  ['자율주행',['DRIV','BOTZ']], ['원전·SMR',['NLR','URA']],
+  ['방산',['ITA','SHLD']], ['핀테크',['FINX','ARKF']], ['사이버보안',['CIBR','BUG']],
+]);
+const KNOWN_SYMBOLS=['SPY',...new Set(R2_EXISTING_PUBLIC_PAIRS.flatMap(x=>x[1]))];
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const REPORT = path.join(HERE, 'THEME_R2_PC_SOURCE_RESULT.json');
@@ -167,14 +175,14 @@ export async function auditThemeR2Sources(rootDir = DEFAULT_ROOT) {
   const files=exists ? inspectPaths(rootDir,stats) : [];
   if (exists) files.push(...await inspectSqlite(rootDir,stats));
   // This is file-local *inventory*, not joining across providers or point-in-time validation.
-  const tickers=[...new Set([...R158_SYMBOLS,'QTUM','WQTM',...files.flatMap(f=>Object.keys(f.symbols))])].sort();
+  const tickers=[...new Set([...KNOWN_SYMBOLS,'QTUM','WQTM',...files.flatMap(f=>Object.keys(f.symbols))])].sort();
   const byTicker=Object.fromEntries(tickers.map(t=>[t,{
     candidateSources:files.filter(f=>f.symbols[t]).map(f=>({source:f.source,sourceClass:f.sourceClass,
       sampledUniqueDates:f.symbols[t].sampledUniqueDates,firstDate:f.symbols[t].firstDate,lastDate:f.symbols[t].lastDate}))
       .sort((a,b)=>b.sampledUniqueDates-a.sampledUniqueDates).slice(0,8),
   }]));
   return {version:'THEME_R2_PC_SOURCE_INVENTORY_V1',status:exists?'BOUNDED_DISCOVERY_NOT_VALIDATED':'SOURCE_ROOT_MISSING',
-    checkedAt:new Date().toISOString(),sourceRoot:rootDir,knownPublicPairs:R158_PAIRS.map(([theme,etfs])=>({theme,etfs})),
+    checkedAt:new Date().toISOString(),sourceRoot:rootDir,knownPublicPairs:R2_EXISTING_PUBLIC_PAIRS.map(([theme,etfs])=>({theme,etfs})),
     thresholds:{firstShortSamplePriceDays:188,firstMaturePointPriceDays:377,
       full252MatureChartPriceDays:628,absoluteEtfAdmissionRequirement:false},
     inventory:byTicker,files:files.map(({source,sourceClass,scanStatus,symbols})=>({source,sourceClass,
