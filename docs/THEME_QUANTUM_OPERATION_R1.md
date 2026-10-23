@@ -22,6 +22,7 @@ R9에서 확인한 QTUM 단일 ETF(기준 SPY) 및 기존 R158의 T40/R20/V40만
 | 공개 경로 | `/api/theme-fear-greed` — **미연결** |
 
 원자료 경로는 `ZGMINI_DATA_ROOT=E:\ZGmini\data`로 전달한다. Desktop/ZIP/임시 파일은 입력 수단일 수 있으나 원자료의 운영 사본이 아니다. `raw-manifest.json`은 **실제 수집·저장 후에만** 작성되며 파일별 상대경로·SHA256·출처·수집 시각·관측 시작/끝·가격 모드·스키마를 기록한다. 빈 manifest, 가짜 가격 또는 과거 D1 결과를 원자료로 재구성하지 않는다. 기존 경로/junction을 지우거나 C: 대체 데이터베이스를 만들지 않는다.
+현재 `--ingest`의 `collectedAt`은 사용자가 제공한 수집 기록 시각이며, **공급자 서명으로 확인한 시각은 아니다**. `collectedAtBasis=OPERATOR_DECLARED_NOT_PROVIDER_ATTESTED`로 구분한다. 공급자 실제 수집 시각을 검증했다고 추정하지 않는다.
 
 ## 코드 기능 및 제한
 
