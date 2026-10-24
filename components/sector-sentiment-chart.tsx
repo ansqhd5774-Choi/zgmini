@@ -37,6 +37,7 @@ export default function SectorSentimentChart({data=[],series=SECTORS,title='섹�
  const [hidden,setHidden]=useState<Set<string>>(()=>new Set(series===SECTORS?SECTORS.slice(6).map(sector=>sector.id):[]));
  const drag=useRef<{x:number;left:number;active:boolean;moved:boolean}>({x:0,left:0,active:false,moved:false});
  const legendRef=useRef<HTMLDivElement>(null);
+ const dashboardThemeDefaultApplied=useRef(false);
  const [atEnd,setAtEnd]=useState(false);
  const [pickerOpen,setPickerOpen]=useState(false);
  const toggleThemePicker=()=>setPickerOpen(open=>!open);
@@ -95,11 +96,21 @@ export default function SectorSentimentChart({data=[],series=SECTORS,title='섹�
   return {sector,index,score:typeof value==='number'&&Number.isFinite(value)?Math.round(value):-1};
  }).sort((a,b)=>b.score-a.score||a.index-b.index).map(({sector})=>sector):series;
  const shownSeries=series.filter(s=>!hidden.has(s.id));
- const themeLegendSeries=showDashboardThemeScores?series.map((item,index)=>{
+ const rankedThemeEntries=showDashboardThemeScores?series.map((item,index)=>{
   const lastObserved=rows.findLast(row=>typeof row[item.id]==='number'&&Number.isFinite(row[item.id]));
   const value=lastObserved?.[item.id];
   return {item,index,score:typeof value==='number'&&Number.isFinite(value)?Math.round(value):-1};
- }).sort((a,b)=>a.score-b.score||a.index-b.index).map(({item})=>item):shownSeries;
+ }).sort((a,b)=>a.score-b.score||a.index-b.index):[];
+ const themeLegendSeries=showDashboardThemeScores?rankedThemeEntries.map(({item})=>item):shownSeries;
+ // Select the highest two published scores once, without overriding later manual toggles.
+ useEffect(()=>{
+  if(!showDashboardThemeScores||dashboardThemeDefaultApplied.current||!rankedThemeEntries.some(({score})=>score>=0))return;
+  dashboardThemeDefaultApplied.current=true;
+  const selected=new Set(rankedThemeEntries.filter(({score})=>score>=0).slice(-2).map(({item})=>item.id));
+  setHidden(new Set(series.filter(({id})=>!selected.has(id)).map(({id})=>id)));
+  const list=legendRef.current;
+  if(list)list.scrollLeft=list.scrollWidth-list.clientWidth;
+ },[showDashboardThemeScores,rankedThemeEntries,series]);
  const extrema=shownSeries.length===1?chartExtrema(visibleRows.map(row=>({date:row.date,value:row[shownSeries[0].id]}))):[];
  const heldRow=heldIndex===null?null:visibleRows[heldIndex];
  const moveHeld=(clientX:number,element:HTMLDivElement)=>{const rect=element.getBoundingClientRect();setHeldIndex(clampedChartIndex(clientX,rect.left+(mobileAxisRight?0:32),rect.width-44,visibleRows.length))};
@@ -135,7 +146,7 @@ export default function SectorSentimentChart({data=[],series=SECTORS,title='섹�
    </div>
    </div>
    <div className="zg-legend-row zg-theme-picker-legend">
-    <div className="zg-sector-chart-legend is-draggable" aria-label="차트에 표시 중인 테마">
+    <div ref={legendRef} className="zg-sector-chart-legend is-draggable" aria-label="차트에 표시 중인 테마" onPointerDown={event=>{if(event.pointerType!=='mouse'||event.button!==0)return;drag.current={x:event.clientX,left:event.currentTarget.scrollLeft,active:true,moved:false}}} onPointerMove={event=>{if(!drag.current.active)return;const dx=event.clientX-drag.current.x;if(Math.abs(dx)>5){drag.current.moved=true;event.currentTarget.setPointerCapture(event.pointerId);event.currentTarget.scrollLeft=drag.current.left-dx;event.preventDefault()}}} onPointerUp={()=>{drag.current.active=false}} onPointerCancel={()=>{drag.current.active=false}} onLostPointerCapture={()=>{drag.current.active=false}} onClickCapture={event=>{if(drag.current.moved){event.preventDefault();event.stopPropagation();drag.current.moved=false}}}>
      {themeLegendSeries.map(item=>{
       const lastObserved=showDashboardThemeScores?rows.findLast(row=>typeof row[item.id]==='number'&&Number.isFinite(row[item.id])):undefined;
       const value=lastObserved?.[item.id];
