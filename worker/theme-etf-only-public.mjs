@@ -83,6 +83,8 @@ export async function readThemeEtfOnly(db,{now=Date.now(),store=publicFeedStore(
    history:t.history.map(p=>({date:p.date,score:p.score}))})),
   ...(provisional?{provisional:{asOf:provisional.asOf,
    points:provisional.points.map(point=>({date:point.date,scores:Object.fromEntries(record.themes.map(t=>[t.theme,point.scores[t.theme]]))}))}}:{})};
- const withAi=await addVerifiedAiTheme(db,result,{now});
+ // The immutable core seed is also needed to verify older AI sessions when the
+ // optional collector is legitimately behind the seven-theme feed.
+ const withAi=await addVerifiedAiTheme(db,result,{now,seed:record});
  return Response.json(await addBiotechSidecars(db,withAi,{now}),{headers:{...headers,'cache-control':'public, max-age=60, must-revalidate','x-data-snapshot-at':new Date(storedAt).toISOString()}});
 }

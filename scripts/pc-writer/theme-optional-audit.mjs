@@ -5,6 +5,11 @@ import {containedFile,inspectManifest} from './theme-data-inventory.mjs';
 import {scoreAll252,regularHour15Rows} from './theme-optional-score-r188.mjs';
 const registry=JSON.parse(fs.readFileSync(new URL('../../config/theme-data-registry.json',import.meta.url)));
 const hash=b=>createHash('sha256').update(b).digest('hex');
+export function auditThroughDate(themeId,commonDates,publicObservationDate){
+ return themeId==='ai-semiconductor'
+  ?commonDates.filter(d=>d<=publicObservationDate).at(-1)
+  :publicObservationDate;
+}
 export function auditOptionalPrices({themeId,dataRoot,reference,priorRecord}){
  const entry=registry.themes.find(t=>t.id===themeId);if(!['ai-semiconductor','biotech'].includes(themeId)||!entry)throw Error('OPTIONAL_THEME_ID');
  if(reference?.status!=='READY'||!reference.observationDate||!Array.isArray(priorRecord?.history)||priorRecord.history.length!==252||priorRecord.methodologyVersion!==entry.methodologyVersion)throw Error('REFERENCE_CONTRACT');
@@ -29,9 +34,19 @@ export function auditOptionalPrices({themeId,dataRoot,reference,priorRecord}){
   return selected.slice(-252).map((date,i)=>({date,score:Number(((axes[0][i]+axes[1][i])/2).toFixed(5))}));};
  const old=calculate(priorRecord.observationDate);if(old.some((p,i)=>p.date!==priorRecord.history[i]?.date))throw Error('PRIOR_HISTORY_DATE_ALIGNMENT');
  const differences=old.map((p,i)=>Math.abs(p.score-priorRecord.history[i].score)),maxDifference=Math.max(...differences);
- const history=calculate(reference.observationDate),wanted=reference.provisional?.points??[],pending=wanted.filter(p=>dates.includes(p.date)).map(p=>calculate(p.date).at(-1));
+ // AI is collected separately from the seven-theme feed and the upstream hourly
+ // bars can lag it. Use the most recent *observed common* session, never a
+ // fabricated bar for the newer public reference date. Biotech's independent
+ // forensic audit retains its existing reference-date contract.
+ const through=auditThroughDate(themeId,dates,reference.observationDate);
+ const history=calculate(through),wanted=reference.provisional?.points??[];
+ // An older AI confirmed point is displayed independently; it must not inherit
+ // the seven themes' newer provisional dates without real same-day prices.
+ const pending=through===reference.observationDate
+  ?wanted.filter(p=>dates.includes(p.date)).map(p=>calculate(p.date).at(-1))
+  :[];
  return {status:maxDifference===0?'PRIVATE_CANDIDATE_PARITY_VERIFIED':'CONFIRMED_SCORE_REVISION_REVIEW',themeId,methodologyVersion:entry.methodologyVersion,
-  observationDate:reference.observationDate,score:history.at(-1).score,history,provisional:{points:pending},
+  observationDate:through,score:history.at(-1).score,history,provisional:{points:pending},
   audit:{commonSessions:dates.length,latestCommon:dates.at(-1),sourceOverlapBars:overlaps,comparisonDate:priorRecord.observationDate,comparedPoints:252,maxDifference,missingProvisionalDates:wanted.filter(p=>!dates.includes(p.date)).map(p=>p.date)},
   providerCalls:0,publicWrites:0,d1Writes:0};
 }

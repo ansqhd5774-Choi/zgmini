@@ -130,3 +130,12 @@ PC에서 새 작업 등록 전 아래 단계가 필요하다.
 - R8 잠정치는 `theme-biotech-provisional-r1` 전용 D1 key에 CAS+readback으로 저장한 뒤 Worker의 `theme-biotech-provisional-r1.mjs`가 검증하여 바이오 날짜/점수만 기존 `provisional.points`에 합친다. 기존 7개의 날짜·점수·경로는 불변이다.
 - PC one-time 설치는 기존 검증된 `source-r7`를 SHA 재확인해 `source-r8`로 **복사**하고, 첫 R8 실자료 계산/게시 성공 후 **바이오 예약 작업의 명령만** R8로 바꾼다. 원래 트리거·Principal·Settings는 XML 동치 검증 후 유지한다. 원래 작업의 XML은 Desktop CMD 위치에 복구용으로 보존한다. 원래 7개 Task는 수정하지 않는다.
 - 이 GitHub 배포만으로는 새 바이오 잠정치가 이미 게시됐거나 PC Task가 전환됐다는 증거가 아니다. PC `BIOTECH_R8_CONNECT_LOG.txt`, R8 D1 readback, 공개 API의 바이오 점선 1~2점 확인 전에는 `PENDING`으로 기록한다.
+
+## 2026-10-24 AI·반도체 확정치 지연 허용 검증 보완 (PC 미적용)
+
+- 10월 24일 공개 API 실측: 기존 7개 테마는 2026-10-22 확정치와 10-23 잠정치가 있지만 AI·반도체는 10-19 확정치에서 멈췄다. 기존 PC 보관 자료의 마지막 공통 관측일은 10-21(2026-10-23 조사 결과)이며, **지금 PC의 실제 신규 수집 관측일은 미검증**이다.
+- 원인 분리: 기존 7개 예약 작업은 SMH/SOXX를 수집하지 않는다. 독립 `theme-optional-cycle.mjs`의 가격 감사도 기존 7개 최신 확정일을 강제로 요구해, GMH 시간봉이 48시간 늦게 제공될 때 실제로 존재하는 AI 확정치를 거부했다. D1 Reader는 과거 날짜에 대한 별도 252개 이력 검증을 이미 지원한다.
+- 수정: `theme-optional-audit.mjs`는 AI의 SMH/SOXX/SPY가 **모두 실제로 관측된 마지막 공통일 중 기존 7개 확정일 이하인 날**에만 저장 가격 산식을 적용한다. 더 늦은 날짜를 보간하거나 재사용하지 않는다. 바이오 감사의 기존 계약은 변경하지 않는다.
+- 신규 후보는 D1에 이미 저장된 **승인된 7개 seed의 정확한 252일 이력**과 공개 rolling 날짜를 결합해 같은 날짜의 과거 기준을 재구성한다. 이전 D1 값과 252개 검산 차이 0, 가격 manifest SHA, 출처·권리·신선도, 최종 Reader 자격 조건을 그대로 통과해야 한다. 현재 날짜의 잠정치가 없는 경우 AI 과거 확정치에 복사하지 않는다.
+- `--diagnose ai-semiconductor`는 기존 E: 원가격과 D1 SELECT만 사용하며 Provider GET, D1 UPDATE, 스케줄러 변경 및 운영 원자료 쓰기 0회다. 한 번의 `--once`는 기존대로 **공개 게시 없이** 수집·비공개 감사만 한다. `--publish`는 별도 승인/검증 뒤 실행한다.
+- GitHub 코드 테스트만으로 점수나 자동 운영을 완료했다고 보고하지 않는다. PC 승인 소스 설치 → 실제 AI raw SHA와 252일 검산 → 권리 확인 → D1 CAS/readback → 공개 API/PC·모바일 표시 → 별도 Windows 정규 작업 설치 및 **다음 실행** 확인까지 `PENDING`이다. 기존 7개 및 바이오 작업·이력·DB key·가중치·Provider는 변경하지 않는다.
