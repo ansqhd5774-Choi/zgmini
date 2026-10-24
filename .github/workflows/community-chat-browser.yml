@@ -6,6 +6,10 @@ on:
     paths:
       - 'components/community-chat.*'
       - 'app/page.tsx'
+      - 'app/layout.tsx'
+      - 'app/country-fear-greed.tsx'
+      - 'app/fear-greed/korea/page.tsx'
+      - 'app/fear-greed/investor-intent-guide.tsx'
       - 'app/dashboard-ui.tsx'
       - 'lib/market-score/market-trend-window-r1.mjs'
       - 'tests/dashboard-history-browser-r5.mjs'

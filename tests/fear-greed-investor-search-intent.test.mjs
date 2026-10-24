@@ -19,7 +19,9 @@ test('USA and Korea investor intent metadata is page-specific and data-grounded'
  assert.ok(guide.includes('/guides/fear-greed-buying/'));
  assert.ok(guide.includes('/credit-risk/'));
  assert.ok(guide.includes('/sector-fear-greed/'));
- assert.equal((guide.match(/title:"/g)||[]).length,8);
+ assert.equal((guide.match(/title:"/g)||[]).length,10);
+ for(const page of [us,kr])assert.ok(page.includes('공탐 지수'));
+ assert.ok(guide.includes('공탐은 공포와 탐욕의 줄임말'));
  assert.equal((guide.match(/<h2 /g)||[]).length,1);
  assert.equal((guide.match(/<h3 /g)||[]).length,1);
  assert.ok(!guide.includes('FAQPage'));

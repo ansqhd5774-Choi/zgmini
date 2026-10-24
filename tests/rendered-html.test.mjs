@@ -53,7 +53,7 @@ test("renders SEO metadata for all 16 public pages in the Workers runtime", asyn
     const rootHtml=await root.text();
     assert.ok(rootHtml.includes('korea-target-card'));
     const rootHead=headOf(rootHtml);
-    assert.ok(rootHead.includes("<title>ZGmini 지그미니 | 미국·한국 공포탐욕지수와 경제지표</title>"));
+    assert.ok(rootHead.includes("<title>ZGmini 지그미니 | 미국·한국 공포탐욕지수와 경제지표 · 공탐 지수</title>"));
     assert.ok(hasDescription(rootHead));
     assert.ok(hasRobots(rootHead));
     assert.ok(hasSocialTitle(rootHead));

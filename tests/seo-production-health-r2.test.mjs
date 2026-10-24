@@ -15,7 +15,7 @@ const detailHtml=`<!doctype html><html><head>
 <meta name="twitter:title" content="한국 공포탐욕지수 | ZGmini">
 <meta name="twitter:description" content="${detailDescription}">
 <link rel="canonical" href="${detailUrl}">
-</head><body><h1>한국 공포탐욕지수</h1>
+</head><body><h1>한국 공포탐욕지수</h1><p>한국 공탐지수라고도 부르며 국내 시장 투자심리를 보여줍니다.</p>
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebPage"}</script>
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList"}</script>
 </body></html>`;
@@ -58,7 +58,7 @@ test('USA SEO inspector accepts approved description and rejects the obsolete de
   const url='https://zgmini.kr/fear-greed/usa/';
   const page=readFileSync('app/fear-greed/usa/page.tsx','utf8');
   const description=page.match(/const description = "([^"]+)";/)[1];
-  const html=detailHtml.replaceAll(detailUrl,url).replaceAll(detailDescription,description);
+  const html=detailHtml.replaceAll(detailUrl,url).replaceAll(detailDescription,description).replace('한국 공탐지수라고도 부르며','미국 공탐 지수는 CNN이 제공하는');
   assert.deepEqual(inspectHtml(html,url).errors,[]);
   const obsolete=html.replaceAll(description,'원시값과 환산점수의 차이');
   assert.ok(inspectHtml(obsolete,url).errors.some(error=>error.startsWith('description_stale:')));

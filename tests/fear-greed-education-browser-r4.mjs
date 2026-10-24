@@ -40,6 +40,10 @@ try{
   await page.screenshot({path:`artifacts/fear-greed-education/education-${width}.png`});
   await disclosure.locator('summary').click();
   await education.waitFor({state:'hidden'});
+  await page.goto(base+'/fear-greed/korea/',{waitUntil:'networkidle',timeout:45000});
+  await page.locator('.zg-fg-korea .zg-fg-intro').waitFor({state:'visible'});
+  assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+1),false,'Korea introduction has no horizontal overflow');
+  await page.screenshot({path:`artifacts/fear-greed-education/korea-intro-${width}.png`});
   assert.deepEqual(errors,[]);
   console.log(`PASS education open/close, responsive cards and no overflow at ${width}px`);
   await page.close();

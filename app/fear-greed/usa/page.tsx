@@ -7,8 +7,8 @@ import InvestorIntentGuide from "../investor-intent-guide";
 import {ArrowUpRight,BookOpen} from "lucide-react";
 import "../fear-greed-detail-r1.css";
 
-const title = "미국 공포탐욕지수 | CNN 지수·S&P500 투자심리 - ZGmini";
-const description = "미국 CNN 공포탐욕지수의 점수·관측일·기간별 차트와 7개 구성요소를 확인하세요. S&P500 모멘텀·VIX 변동성·풋콜비율과 미국 주식시장 투자심리를 함께 분석합니다.";
+const title = "미국 공포탐욕지수·공탐 지수 | CNN 지수·S&P500 투자심리 - ZGmini";
+const description = "미국 CNN 공포탐욕지수의 점수·관측일·기간별 차트와 7개 구성요소를 확인하세요. 미국 주식 공탐지수와 S&P500 모멘텀·VIX 변동성·풋콜비율을 함께 살펴보세요.";
 const url = "https://zgmini.kr/fear-greed/usa/";
 export const metadata: Metadata = {
   title, description, alternates:{canonical:url},
@@ -22,7 +22,7 @@ export default function UsaFearGreedPage() {
    <header className="zg-fg-page-header" aria-label="미국 공포탐욕지수 소개">
     <p className="zg-fg-eyebrow">CNN FEAR &amp; GREED · US STOCK MARKET</p>
     <h1>미국 공포탐욕지수</h1>
-    <p className="zg-fg-intro">CNN이 제공하는 미국 주식시장 공포·탐욕지수입니다. 종합점수와 실제 관측일, 7개 구성요소를 확인하세요.</p>
+    <p className="zg-fg-intro">미국 공탐 지수는 CNN이 제공하는 미국 주식시장 공포·탐욕지수를 줄여 부르는 말입니다. 종합점수와 실제 관측일, 7개 구성요소를 확인하세요.</p>
     <nav className="zg-fg-country-tabs" aria-label="공포탐욕 국가별 상세페이지">
      <a href="/fear-greed/usa/" aria-current="page">미국 · CNN</a>
      <a href="/fear-greed/korea/">한국 · ZGmini</a>

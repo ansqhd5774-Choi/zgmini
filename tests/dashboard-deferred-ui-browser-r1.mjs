@@ -24,6 +24,13 @@ try{
   });
   await page.goto(base,{waitUntil:'networkidle',timeout:45000});
   await page.locator('.zg-dashboard[data-view="dashboard"]').waitFor({state:'visible'});
+  const header=await page.locator('.zg-country-section .zg-section-heading').evaluate(el=>{
+   const title=el.querySelector('h1').getBoundingClientRect(),guide=el.querySelector('a').getBoundingClientRect();
+   return {overlap:title.left<guide.right&&title.right>guide.left&&title.top<guide.bottom&&title.bottom>guide.top,
+    overflow:document.documentElement.scrollWidth>innerWidth+1};
+  });
+  assert.equal(header.overlap,false,'Market title and guide remain separate');
+  assert.equal(header.overflow,false,'Dashboard has no horizontal overflow');
   if(signedIn){
    const trigger=page.getByRole('button',{name:'사용자 설정',exact:true});
    await trigger.waitFor({state:'visible',timeout:15000});
