@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "files": {
+    "BIOTECH_R8_SCHEDULED.cmd": "a220ce260d9a728cd5d1c3397cbe23e4c08dd0e51a2e6e39dd694156ae9b3d0a",
+    "scripts/pc-writer/theme-biotech-auto-r8.mjs": "faf33368e427bd1378de9e43e436049d773a3af4e30c6959a4b839c42b46225e",
+    "scripts/pc-writer/theme-biotech-provisional-r8.mjs": "23cf3504f27e647c027637b8ff4884c5a49a88837680351612cc71299c3c13d3",
+    "scripts/pc-writer/theme-biotech-provisional-d1-r8.mjs": "1b2e9412a6b25a02ac060e8ade2e94a53c8564a0eb97fbddc3a0d8844d8a3467",
+    "worker/theme-biotech-provisional-r1.mjs": "72110deee1cd897f2664f1ca6faf3d56b772c50bcf4f075f5d4d34d75d5b4a8f"
+  }
+}
