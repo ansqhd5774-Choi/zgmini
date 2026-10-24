@@ -4,7 +4,7 @@ import DeferredDashboardCharts from '../components/deferred-dashboard-charts';
 import OutbreakEvents, {OutbreakSummary} from './outbreak-events';
 
 
-import { useEffect, useMemo, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from "react";
+import { lazy, Suspense, useEffect, useMemo, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from "react";
 import {
   Activity, ArrowDownRight, ArrowRight, ArrowUpRight, CalendarDays,
   CheckCircle2, ChevronLeft, ChevronRight, CircleAlert, Clock3, Database, Fuel, Gauge, Info,
@@ -18,24 +18,35 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
-} from "@/components/ui/select";
-import {
-  Accordion, AccordionContent, AccordionItem, AccordionTrigger,
-} from "@/components/ui/accordion";
-import {
-  Sheet, SheetContent, SheetDescription, SheetFooter, SheetHeader,
-  SheetTitle, SheetTrigger,
-} from "@/components/ui/sheet";
 import { Toaster } from "@/components/ui/sonner";
 import { toast } from "sonner";
 import CountryFearGreed from "./country-fear-greed";
-import CorePceRow from "./core-pce-row";
 import SiteHeader from "@/components/site-header";
 import SiteFooter from "@/components/site-footer";
 import DashboardSideRails from "@/components/dashboard-side-rails";
+
+// These controls belong to secondary views or authenticated account settings.
+// Keep their modules out of the anonymous dashboard's initial dependency graph.
+const CorePceRow=lazy(()=>import('./core-pce-row'));
+const Tabs=lazy(()=>import('@/components/ui/tabs').then(m=>({default:m.Tabs})));
+const TabsList=lazy(()=>import('@/components/ui/tabs').then(m=>({default:m.TabsList})));
+const TabsTrigger=lazy(()=>import('@/components/ui/tabs').then(m=>({default:m.TabsTrigger})));
+const Select=lazy(()=>import('@/components/ui/select').then(m=>({default:m.Select})));
+const SelectContent=lazy(()=>import('@/components/ui/select').then(m=>({default:m.SelectContent})));
+const SelectItem=lazy(()=>import('@/components/ui/select').then(m=>({default:m.SelectItem})));
+const SelectTrigger=lazy(()=>import('@/components/ui/select').then(m=>({default:m.SelectTrigger})));
+const SelectValue=lazy(()=>import('@/components/ui/select').then(m=>({default:m.SelectValue})));
+const Accordion=lazy(()=>import('@/components/ui/accordion').then(m=>({default:m.Accordion})));
+const AccordionContent=lazy(()=>import('@/components/ui/accordion').then(m=>({default:m.AccordionContent})));
+const AccordionItem=lazy(()=>import('@/components/ui/accordion').then(m=>({default:m.AccordionItem})));
+const AccordionTrigger=lazy(()=>import('@/components/ui/accordion').then(m=>({default:m.AccordionTrigger})));
+const Sheet=lazy(()=>import('@/components/ui/sheet').then(m=>({default:m.Sheet})));
+const SheetContent=lazy(()=>import('@/components/ui/sheet').then(m=>({default:m.SheetContent})));
+const SheetDescription=lazy(()=>import('@/components/ui/sheet').then(m=>({default:m.SheetDescription})));
+const SheetFooter=lazy(()=>import('@/components/ui/sheet').then(m=>({default:m.SheetFooter})));
+const SheetHeader=lazy(()=>import('@/components/ui/sheet').then(m=>({default:m.SheetHeader})));
+const SheetTitle=lazy(()=>import('@/components/ui/sheet').then(m=>({default:m.SheetTitle})));
+const SheetTrigger=lazy(()=>import('@/components/ui/sheet').then(m=>({default:m.SheetTrigger})));
 
 type Direction = "up" | "down" | "flat";
 type Signal = "positive" | "negative" | "neutral";
@@ -943,6 +954,7 @@ export default function Home() {
       <SiteHeader activeView={view==="scenarios"?"scenarios":"dashboard"} onSelectView={(next)=>selectHeaderView(next)} accountTools={sessionLoading ? (
                 <span className="hidden text-xs text-slate-400 sm:inline">계정 확인 중</span>
               ) : user ? (
+                <Suspense fallback={<span className="text-xs text-slate-400">설정 준비 중</span>}>
                 <Sheet>
                   <SheetTrigger asChild>
                     <Button className="rounded-none border border-white/20 bg-white/10 text-white hover:bg-white/20 zg-header-icon-action" aria-label="사용자 설정" title="사용자 설정">
@@ -974,10 +986,12 @@ export default function Home() {
                     </SheetFooter>
                   </SheetContent>
                 </Sheet>
+                </Suspense>
               ) : null}/>
 
       {view==="dashboard"&&<DashboardSideRails accountFavorites={favoriteItems.map(({kind,item})=>({key:sentimentKey(kind,item.name),label:item.name,group:kind==="sector"?"섹터 · 예시":"테마 · 예시",href:kind==="sector"?"/sector-fear-greed/":"/theme-fear-greed/",exampleScore:item.score}))}/>}
       <div className="zg-container">
+        <Suspense fallback={<p role="status">선택한 화면을 불러오는 중입니다.</p>}>
         {view!=='dashboard'&&<div className="zg-data-notice zg-data-notice-compact" role="status"><Info size={16}/><span>{marketDataLoading?'경제지표를 불러오고 있습니다.':marketData?.status==='live'?'공식 자료와 ZGmini 자체 계산값을 표시합니다.':marketDataError?'데이터 연결 지연 · 마지막 정상 수신값을 표시합니다.':'일부 지표 갱신 지연 · 마지막 정상 수신값을 유지합니다.'}</span></div>}
         {(view==='dashboard'||view==='countries')&&<CountryFearGreed/>}
         {view==='dashboard'&&<>
@@ -1047,6 +1061,7 @@ export default function Home() {
         </section>}
         {view==='strength'&&<><SentimentSection title="섹터별 심리 점수 · 예시" description="실제 지수가 아닌 예시 점수·추세·베타 · CNN 지수와 무관" items={sectorSentiment} period={period} kind="sector" favorites={favorites} onToggle={user ? toggleFavorite : undefined}/>
         <SentimentSection title="테마별 심리 점수 · 예시" description="실제 지수가 아닌 예시 점수·추세·베타 · CNN 지수와 무관" items={themeSentiment} period={period} kind="theme" favorites={favorites} onToggle={user ? toggleFavorite : undefined}/></>}
+        </Suspense>
       </div>
       {view==='dashboard'&&<SiteFooter/>}
       {view!=='dashboard'&&<footer className="zg-footer">ZGmini · 공식 자료와 독자 모델을 연결합니다. 투자 권유가 아니며, 예시 데이터는 별도로 표시합니다.</footer>}
