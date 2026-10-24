@@ -100,9 +100,9 @@ export default function SectorSentimentChart({data=[],series=SECTORS,title='ì„¹í
   const lastObserved=rows.findLast(row=>typeof row[item.id]==='number'&&Number.isFinite(row[item.id]));
   const value=lastObserved?.[item.id];
   return {item,index,score:typeof value==='number'&&Number.isFinite(value)?Math.round(value):-1};
- }).sort((a,b)=>a.score-b.score||a.index-b.index):[];
+ }).sort((a,b)=>b.score-a.score||a.index-b.index):[];
  const themeLegendSeries=showDashboardThemeScores?rankedThemeEntries.map(({item})=>item):shownSeries;
- // Select the highest two published scores once, without overriding later manual toggles.
+ // Select only the rightmost two published themes once, without overriding later manual toggles.
  useEffect(()=>{
   if(!showDashboardThemeScores||dashboardThemeDefaultApplied.current||!rankedThemeEntries.some(({score})=>score>=0))return;
   dashboardThemeDefaultApplied.current=true;
