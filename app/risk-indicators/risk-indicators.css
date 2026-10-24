@@ -120,24 +120,38 @@
  .zg-risk-hero h1{font-size:27px;letter-spacing:-.055em}
  .zg-risk-hero p{font-size:15px}
  .zg-risk-hero>span{font-size:10px}
- .zg-risk-feature{padding:15px 11px 12px}
- .zg-risk-feature-head{gap:9px;margin-bottom:15px;flex-wrap:wrap}
+ .zg-risk-feature{padding:12px 11px}
+ .zg-risk-feature-head{gap:7px;margin-bottom:5px;flex-wrap:wrap}
  .zg-risk-feature-eyebrow{font-size:13px}
  .zg-risk-feature-head h2{font-size:17px}
  .zg-risk-status{font-size:11px;min-width:50px;padding:3px 8px}
- .zg-risk-feature-measure{grid-template-columns:1fr;gap:13px}
- .zg-risk-feature-number>div>strong{font-size:48px}
- .zg-risk-feature-number p{font-size:11px}
- .zg-risk-feature-meter{border-left:0;padding-left:0;border-top:1px solid #29495d;padding-top:12px}
- .zg-risk-meter-title{margin-bottom:13px;font-size:11px}
- .zg-risk-trend-head{align-items:start;flex-direction:column;gap:4px}
- .zg-risk-trend-head h3{font-size:14px}
- .zg-risk-periods{width:100%;justify-content:space-between}
- .zg-risk-periods button{font-size:11px;padding:6px 12px}
- .zg-risk-chart{height:173px;min-height:173px}
- .zg-risk-feature-bottom{gap:8px}
- .zg-risk-feature-bottom p{font-size:9px}
- .zg-risk-feature-cta{min-height:36px}
+ .zg-risk-feature-measure{grid-template-columns:1fr;gap:6px;margin-bottom:9px}
+ .zg-risk-feature-number{display:flex;align-items:flex-end;justify-content:space-between;gap:8px}
+ .zg-risk-feature-number>div{gap:5px}
+ .zg-risk-feature-number>div>strong{font-size:42px;line-height:1}
+ .zg-risk-feature-number>div>span:last-child{font-size:14px}
+ .zg-risk-feature-number p{font-size:11px;line-height:1.25;margin:0;max-width:46%;text-align:right}
+ .zg-risk-feature-meter{border-left:0;padding:7px 0 0;border-top:1px solid #29495d}
+ .zg-risk-meter-title{margin-bottom:7px;font-size:11px}
+ .zg-risk-five-band{height:11px}
+ .zg-risk-five-band-labels{margin-top:6px;font-size:9px}
+ .zg-risk-trend{padding-top:8px}
+ .zg-risk-trend-head{align-items:center;flex-direction:row;gap:5px;margin-bottom:3px}
+ .zg-risk-trend-head>div:first-child{min-width:0;flex:1}
+ .zg-risk-trend-head h3{font-size:12px;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+ .zg-risk-trend-head>div:first-child>span{font-size:9px;line-height:1.2;margin-top:1px}
+ .zg-risk-periods{width:auto;justify-content:flex-end;gap:1px;flex-shrink:0}
+ .zg-risk-periods button{font-size:9px;padding:4px 3px}
+ .zg-risk-chart{height:110px;min-height:110px}
+ .zg-risk-history-note{font-size:9px;line-height:1.25;min-height:12px;margin:3px 0 6px}
+ .zg-risk-feature-bottom{gap:6px;padding:6px 8px;flex-wrap:nowrap}
+ .zg-risk-feature-bottom>div{gap:6px}
+ .zg-risk-feature-bottom>div>svg{width:16px;height:16px}
+ .zg-risk-feature-bottom p{font-size:9px;line-height:1.25}
+ .zg-risk-feature-bottom strong{font-size:9px;line-height:1.25}
+ .zg-risk-feature-bottom p span{font-size:8.5px;line-height:1.2}
+ .zg-risk-feature-cta{min-height:34px;padding:0 7px;font-size:9px;gap:4px}
+ .zg-risk-feature-cta svg{width:13px;height:13px}
  .zg-risk-ranking>header{align-items:start;flex-direction:column;gap:5px}
  .zg-risk-ranking>header p{text-align:left}
  .zg-risk-rank-select{grid-template-columns:23px minmax(80px,1fr) 57px 48px;gap:6px;padding:7px 4px 7px 8px}
@@ -160,6 +174,9 @@
  .zg-risk-feature-head{gap:6px}
  .zg-risk-feature-eyebrow{font-size:12px}
  .zg-risk-feature-head h2{font-size:15px}
+ .zg-risk-feature-number p{font-size:10px}
+ .zg-risk-periods button{padding:4px 2px}
+ .zg-risk-feature-cta{font-size:8px}
  .zg-risk-rank-select{grid-template-columns:20px minmax(77px,1fr) 51px 43px;gap:4px;padding:6px}
  .zg-risk-rank-select>strong{font-size:12px}
  .zg-risk-rank-score{font-size:17px}
