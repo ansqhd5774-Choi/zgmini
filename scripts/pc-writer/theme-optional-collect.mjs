@@ -1,7 +1,8 @@
 // Explicit, bounded private collection. Never scores, publishes, changes tasks or reads secrets.
 import fs from 'node:fs';import path from 'node:path';import {createHash} from 'node:crypto';import {fileURLToPath} from 'node:url';
 const hash=b=>createHash('sha256').update(b).digest('hex');
-const pairs={'ai-semiconductor':['SMH','SOXX','SPY'],biotech:['IBB','XBI','SPY']};
+const pairs={'ai-semiconductor':['SMH','SOXX','SPY'],biotech:['IBB','XBI','SPY'],
+ 'data-center-power':['DTCR','GRID','SPY']};
 const nyDate=new Intl.DateTimeFormat('en-CA',{timeZone:'America/New_York',year:'numeric',month:'2-digit',day:'2-digit'});
 const validDate=s=>typeof s==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(s)&&new Date(s+'T00:00:00Z').toISOString().slice(0,10)===s;
 const atomic=(f,v)=>{const tmp=f+'.'+process.pid+'.tmp';fs.writeFileSync(tmp,JSON.stringify(v,null,2)+'\n',{flag:'wx'});try{fs.renameSync(tmp,f)}finally{if(fs.existsSync(tmp))fs.unlinkSync(tmp)}};
@@ -52,6 +53,6 @@ export async function collectOptional({dataRoot,themeId,start,end,maxRequests=4,
 }
 if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.url)){
  const [mode,themeId,start,end]=process.argv.slice(2);
- if(mode!=='--collect'||!pairs[themeId]||!validDate(start)||!validDate(end)){console.log('READ_ONLY_DEFAULT: --collect <ai-semiconductor|biotech> <YYYY-MM-DD> <YYYY-MM-DD>; max 4 GETs per run, resume exact dates.');}
+ if(mode!=='--collect'||!pairs[themeId]||!validDate(start)||!validDate(end)){console.log('READ_ONLY_DEFAULT: --collect <ai-semiconductor|biotech|data-center-power> <YYYY-MM-DD> <YYYY-MM-DD>; max 4 GETs per run, resume exact dates.');}
  else try{const report=await collectOptional({dataRoot:process.env.ZGMINI_DATA_ROOT??'E:/ZGmini/data',themeId,start,end});console.log(JSON.stringify(report));if(report.status.startsWith('STOP'))process.exitCode=2;}catch{console.error('OPTIONAL_COLLECTION_STOP_CHECK_LOCAL_CHECKPOINT');process.exitCode=1;}
 }
