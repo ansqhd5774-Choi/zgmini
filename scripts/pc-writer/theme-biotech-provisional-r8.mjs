@@ -60,7 +60,19 @@ export function readVerifiedBiotechGmhPrices(dataRoot){
  return {tables,common,manifestSha256:hash(bytes),received};
 }
 
-async function defaultParquetReader(filename){
+export async function decodeVerifiedBiotechParquetR8(mod,verifiedBytes){
+ // The R165 archive was already read and SHA-verified. Decode those exact
+ // bytes; an ArrayBuffer is a supported hyparquet file input in Node/browser.
+ // This also works with the existing browser/core src/index.js export, which
+ // does NOT export the Node-only asyncBufferFromFile helper.
+ check(typeof mod?.parquetReadObjects==='function','R8_PARQUET_ADAPTER_INVALID');
+ check(Buffer.isBuffer(verifiedBytes),'R8_PARQUET_VERIFIED_BYTES_REQUIRED');
+ const file=verifiedBytes.buffer.slice(verifiedBytes.byteOffset,
+  verifiedBytes.byteOffset+verifiedBytes.byteLength);
+ return mod.parquetReadObjects({file,columns:['date','symbol','asset_type','close']});
+}
+
+async function defaultParquetReader(filename,verifiedBytes){
  // The site's existing package.json already includes hyparquet: no new paid API
  // or download is performed by this writer. Resolve the configured local copy.
  let mod;
@@ -78,9 +90,7 @@ async function defaultParquetReader(filename){
   check(resolved,'R8_EXISTING_HYPARQUET_MODULE_NOT_RESOLVED');
   mod=await import(pathToFileURL(fs.realpathSync(resolved)).href);
  }
- check(typeof mod.asyncBufferFromFile==='function'&&typeof mod.parquetReadObjects==='function','R8_PARQUET_ADAPTER_INVALID');
- const file=await mod.asyncBufferFromFile(filename);
- return mod.parquetReadObjects({file,columns:['date','symbol','asset_type','close']});
+ return decodeVerifiedBiotechParquetR8(mod,verifiedBytes);
 }
 
 export async function readVerifiedMarketParquetBiotech(dataRoot,{confirmedDate,parquetReader=defaultParquetReader}={}){
@@ -105,7 +115,7 @@ export async function readVerifiedMarketParquetBiotech(dataRoot,{confirmedDate,p
   const audit=JSON.parse(fs.readFileSync(auditPath,'utf8'));
   check(audit.date===observation&&audit.sha256===digest&&audit.complete===true&&audit.source===SOURCE,
    'R8_SEVEN_THEME_AUDIT_MISMATCH');
-  const rows=await parquetReader(filename),actual={};
+  const rows=await parquetReader(filename,bytes),actual={};
   check(Array.isArray(rows),'R8_PARQUET_ROWS_INVALID');
   for(const row of rows){
    const ticker=typeof row.symbol==='string'?row.symbol.toUpperCase():null;
