@@ -11,6 +11,7 @@ import type {CandidateEnv,CandidateReadEnv,WorkerContext,ProjectionJob} from './
 const http=candidate2dbWorker({async fetch(request:Request,env:CandidateReadEnv,ctx:WorkerContext){
  const feed=rssResponse(request,rssXml);if(feed)return feed;
  const path=decodeURIComponent(new URL(request.url).pathname).replace(/\/+/g,'/').replace(/\/$/,'')||'/';
+ if(env.ASSETS&&new URL(request.url).pathname==='/yandex_358205050d151bde.html'&&(request.method==='GET'||request.method==='HEAD'))return env.ASSETS.fetch(request);
  const id=PROJECTION_ROUTES[path];
  if(id)return readProjectionResponse(request,env.DB_CORE,id);
  if(path==='/api/data-health')return readPublicFeedHealth(env.DB_CORE);
