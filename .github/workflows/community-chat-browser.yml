@@ -6,6 +6,10 @@ on:
     paths:
       - 'components/community-chat.*'
       - 'app/page.tsx'
+      - 'app/globals.css'
+      - 'public/styles/fear-greed-education-r1.css'
+      - 'app/fear-greed/usa/page.tsx'
+      - 'tests/fear-greed-education-browser-r4.mjs'
       - 'tests/community-chat-browser-r1.mjs'
       - 'tests/dashboard-deferred-ui-browser-r1.mjs'
       - 'components/risk-detail-side-rails.*'
@@ -67,6 +71,8 @@ jobs:
         run: node tests/outbreak-scenarios-browser-r51.mjs
       - name: Validate deferred dashboard modules and account settings with isolated fixtures
         run: node tests/dashboard-deferred-ui-browser-r1.mjs
+      - name: Validate route-specific education styles and mobile layout
+        run: node tests/fear-greed-education-browser-r4.mjs
       - name: Upload browser UI evidence
         if: always()
         uses: actions/upload-artifact@v4
@@ -77,6 +83,7 @@ jobs:
             artifacts/risk-detail-side-rails/
             artifacts/outbreak-scenarios/
             artifacts/dashboard-deferred-ui/
+            artifacts/fear-greed-education/
           if-no-files-found: warn
       - name: Show local dev errors on failure
         if: failure()
