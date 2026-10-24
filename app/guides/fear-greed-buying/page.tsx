@@ -146,7 +146,7 @@ export default function Page(){
         </section>
 
         <p className="mt-5 text-[11px] leading-5 text-[#a8bccb]">※ 본 콘텐츠는 투자 판단을 위한 교육 자료이며, 특정 종목의 매수를 권유하는 것이 아닙니다.</p>
-        <p className="mt-1 text-[11px] leading-5 text-[#91aebe]">미국 CNN 지수와 한국 ZGmini 자체 지수는 산출 방식과 대상 시장이 달라 같은 점수를 동일한 매수 조건으로 해석할 수 없습니다. · 내용 확인일 2026-10-23</p>
+        <p className="mt-1 text-[11px] leading-5 text-[#91aebe]">미국 CNN 지수와 한국 ZGmini 자체 지수는 산출 방식과 대상 시장이 달라 같은 점수를 동일한 매수 조건으로 해석할 수 없습니다. · 내용 확인일 2026-10-25</p>
       </div>
     </GuidePage>
   </>;
