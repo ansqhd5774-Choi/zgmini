@@ -61,7 +61,7 @@ test('R154 chart passes published API dataset, not the old 30-theme placeholder'
  assert.doesNotMatch(page,/<SectorSentimentChart title="테마별 공포·탐욕" draggable series=/);
  assert.match(wrapper,/useStoredIndex<ThemeStoredPayload>\('\/api\/theme-fear-greed'\)/);
  assert.match(wrapper,/themeEtfDashboardSeries\(error\?null:payload\)/);
- assert.match(wrapper,/<SectorSentimentChart title="테마별 공포·탐욕" draggable themePicker series=\{series\} data=\{data\} showProvisionalNotice=\{false\}\/>/);
+ assert.match(wrapper,/<SectorSentimentChart title="테마별 공포·탐욕" draggable themePicker series=\{series\} data=\{data\} provisionalBySeries=\{provisionalBySeries\} showProvisionalNotice=\{false\}\/>/);
  assert.doesNotMatch(wrapper,/\bfetch\s*\(/);
 });
 test('R156 picker applies selections immediately without a chart-view button',()=>{
@@ -113,7 +113,7 @@ test('dashboard hides the two notices while detail page retains provisional dash
  const deferred=fs.readFileSync('components/deferred-dashboard-charts.tsx','utf8');
  const sectorDetail=fs.readFileSync('app/sector-fear-greed/sector-detail-charts.tsx','utf8');
  assert.match(deferred,/<SectorSentimentChart showProvisionalNotice=\{false\}\/>/);
- assert.match(theme,/data=\{data\} showProvisionalNotice=\{false\}\/>/);
+ assert.match(theme,/data=\{data\} provisionalBySeries=\{provisionalBySeries\} showProvisionalNotice=\{false\}\/>/);
  assert.doesNotMatch(theme,/자료 갱신 지연 · 해당 선은 마지막 관측일까지만 표시합니다/);
  assert.match(shared,/showProvisionalNotice&&hasProvisional&&<small className="zg-provisional-label"/);
  assert.match(shared,/strokeDasharray="4 5"/);

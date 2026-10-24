@@ -31,7 +31,7 @@ export type SentimentSeries={id:string;name:string;color:string;shortName?:strin
 type ChartInputRow={date:string;provisional?:boolean}&Record<string,string|number|boolean|null|undefined>;
 export type SectorSnapshotMeta={confirmedObservationDate?:string;phase?:string;provisional?:{date:string;asOf:string;delayMinutes:number|null}};
 type SectorFearGreedStoredPayload=SectorSnapshotMeta&{status?:string;history?:ChartInputRow[]};
-export default function SectorSentimentChart({data=[],series=SECTORS,title='섹터별 공포·탐욕',draggable=false,themePicker=false,linkToDetail=true,showProvisionalNotice=true,snapshot}:{data?:ChartInputRow[];series?:readonly SentimentSeries[];title?:string;draggable?:boolean;themePicker?:boolean;linkToDetail?:boolean;showProvisionalNotice?:boolean;snapshot?:SectorSnapshotMeta}){
+export default function SectorSentimentChart({data=[],series=SECTORS,title='섹터별 공포·탐욕',draggable=false,themePicker=false,linkToDetail=true,showProvisionalNotice=true,snapshot,provisionalBySeries}:{data?:ChartInputRow[];series?:readonly SentimentSeries[];title?:string;draggable?:boolean;themePicker?:boolean;linkToDetail?:boolean;showProvisionalNotice?:boolean;snapshot?:SectorSnapshotMeta;provisionalBySeries?:Record<string,string>}){
  const mobileAxisRight=useDashboardMobileAxis();
  const [hidden,setHidden]=useState<Set<string>>(()=>new Set(series===SECTORS?SECTORS.slice(6).map(sector=>sector.id):[]));
  const drag=useRef<{x:number;left:number;active:boolean;moved:boolean}>({x:0,left:0,active:false,moved:false});
@@ -62,11 +62,24 @@ export default function SectorSentimentChart({data=[],series=SECTORS,title='섹�
  const activeSnapshot=snapshot??(autoStored?payload:undefined);
  const provisionalDate=activeSnapshot?.phase==='PROVISIONAL'?activeSnapshot.provisional?.date:undefined;
  const firstProvisional=datedRows.findIndex(row=>row.provisional===true||row.date===provisionalDate);
- const hasProvisional=firstProvisional>0;
+ // Theme-only override: one calendar day can be confirmed for one ETF pair
+ // and provisional for another. The sector chart keeps its original boundary.
+ const individualStarts=provisionalBySeries===undefined?null:new Map(series.flatMap(({id})=>{
+  const start=provisionalBySeries[id];
+  if(!start||!datedRows.some(row=>row.date===start&&typeof row[id]==='number'))return [];
+  const anchor=datedRows.findLastIndex(row=>row.date<start&&typeof row[id]==='number');
+  return anchor<0?[]:[[id,{start,anchor}] as const];
+ }));
+ const hasProvisional=individualStarts?individualStarts.size>0:firstProvisional>0;
  const rows:ChartInputRow[]=datedRows.map((row,i)=>({
   date:row.date,
   ...Object.fromEntries(series.flatMap(({id})=>{
    const value=row[id],v=typeof value==='number'&&Number.isFinite(value)&&value>=0&&value<=100?value:null;
+   if(individualStarts){
+    const boundary=individualStarts.get(id);
+    return [[id,v],[id+'__solid',!boundary||row.date<boundary.start?v:null],
+     [id+'__dash',boundary&&(row.date>=boundary.start||i===boundary.anchor)?v:null]];
+   }
    return hasProvisional?[[id,v],[id+'__solid',i<firstProvisional?v:null],[id+'__dash',i>=firstProvisional-1?v:null]]:[[id,v]];
   })),
  }));
