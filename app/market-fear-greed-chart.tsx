@@ -89,7 +89,7 @@ export function MarketFearGreedChart({
     onMouseDown={event=>event.preventDefault()}
   >
     <ResponsiveContainer width="100%" height="100%" initialDimension={{width:1,height:1}}>
-    <AreaChart data={data} accessibilityLayer={false} tabIndex={-1} margin={compact ? {top:6,right:6,left:6,bottom:6} : { top: 6, right: 14, left: 0, bottom: 4 }}>
+    <AreaChart data={data} accessibilityLayer={false} tabIndex={-1} margin={compact ? {top:6,right:6,left:6,bottom:6} : mobileAxisRight ? {top:10,right:6,left:8,bottom:0} : { top: 6, right: 14, left: 0, bottom: 4 }}>
       <defs>
         <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stopColor={color} stopOpacity=".6"/>
