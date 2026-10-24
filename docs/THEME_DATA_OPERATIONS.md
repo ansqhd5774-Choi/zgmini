@@ -90,7 +90,12 @@ PC에서 새 작업 등록 전 아래 단계가 필요하다.
 2. 사용자 CMD에서 저장소의 `scripts\pc-writer\theme-optional-cycle.cmd ai-semiconductor` 및 `... biotech`를 **한 번만** 명시 실행한다. 최대 4회 무료 API GET/테마/실행이며 E: manifest/checkpoint를 원자적으로 갱신한다. `cycle-last.json` 결과와 PC 측 252점 검산을 확인한다.
 3. AI는 `CANDIDATE_VERIFIED_NOT_PUBLISHED` 확인 및 권리 근거 재확인 이후에만 `theme-optional-cycle.cmd ai-semiconductor --publish`를 실행한다. D1 성공·readback·공개 API 반영을 각각 검사한다. HTTP 응답만으로 D1 성공을 추정하지 않는다.
 4. PC에서만 별도 Windows 작업 2개를 등록한다. **기존 7개 작업은 수정하지 않는다.** 두 테마는 서로 다른 작업으로 등록해 바이오 실패가 AI 및 기존 7개 실행을 막지 않도록 한다. 작업 이름·주기·실행 경로·승인 SHA·첫 실행/다음 정규 실행 증거를 확인한 뒤 등록부의 `tasks`와 `runtime`을 갱신한다.
-5. PC 코드 배치·수집·D1 게시·다음 정규 실행은 현재 환경에서 미실행이며 자동 갱신 완료로 보고하지 않는다.
+5. 2026-10-24 PC에 `0614f6851569615b3a4700f79b58d4c89a65b2f0` 불변 실행 코드 스테이징과 AI 원자료 manifest `SHA_VERIFIED`, AI Reader 읽기 전용 진단 `PUBLIC_READER_CANDIDATE_VERIFIED_NO_PUBLICATION` 및 점수 차이 0.0을 확인했다. 새 원자료 GET·D1 게시·AI 예약 작업 등록·다음 정규 실행은 아직 미실행이며 자동 갱신 완료로 보고하지 않는다.
+
+2026-10-24 PC 예약 작업 실측(사용자가 `schtasks /query /xml`로 내보낸 기존 작업 2개의 설정 비교): 7개 ETF `ZGMINI-PC-GetMarketHistory-ETF`와 바이오 `ZGMINI-PC-Theme-Biotech`는 매일 현지 14:00, 동일 실행 주체, `PT12M` 제한, `IgnoreNew`, `StartWhenAvailable=true`, `RunOnlyIfNetworkAvailable=true`이며 작업 URI와 실행 명령/작업 디렉터리만 다르다. PC 스테이징 진단에서 AI 작업은 `NOT_REGISTERED`였다. XML 원본의 개인 사용자 SID는 저장소에 넣지 않는다.
+
+- AI 전용 작업 등록 도구: `scripts/pc-writer/theme-ai-task-mirror-r1.mjs`. GitHub 승인 SHA로 고정된 **새 불변 릴리스**에서만 `--inspect`(읽기 전용) → `--apply`(새 작업 등록) 순서로 사용한다. 기존 7개 예약 작업의 Trigger/Principal/Settings를 XML 그대로 보존하고, 새 URI·AI 실행 명령·설명만 바꾼다. 기존 작업 변경 및 `/f` 덮어쓰기는 금지한다.
+- `--apply`는 해당 릴리스의 source-manifest에 기재된 모든 파일 SHA가 일치하고 `E:/ZGmini/data/themes/ai-semiconductor/state/cycle-last.json`이 최근 36시간 내 `PUBLIC_VERIFIED`·`d1Writes=1`·`publicVerified=true`일 때만 허용한다. 따라서 먼저 AI 전용 `--once` 비공개 재수집·검산과 별도 `--publish` D1 읽기 검증을 끝내야 한다. 첫 수동 게시가 실패하거나 다음 정규 실행을 확인하지 못하면 자동 갱신 운영 완료로 표시하지 않는다.
 
 관련 권리 조건: <https://getmarkethistory.com/docs/terms> (2026-10-19 시행). 문구상 파생물 사용은 계정 정상 유지 조건과 연결된다. 기존 바이오의 익명 무료 호출 사용 권리 해석은 미확정이다.
 
