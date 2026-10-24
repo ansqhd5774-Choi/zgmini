@@ -49,6 +49,14 @@ try{
    assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+1),false,route+' has no horizontal overflow');
    assert.equal(await page.locator('h1').count(),1,route+' has one visible heading');
    assert.ok((await page.locator('h1').innerText()).trim(),route+' nonempty heading');
+   if(route==='/theme-fear-greed/'){
+    const overlap=await page.evaluate(()=>{
+     const intro=document.querySelector('.zg-sector-detail-hero p')?.getBoundingClientRect();
+     const count=document.querySelector('.zg-tfg-content .zg-sfg-as-of')?.getBoundingClientRect();
+     return !!intro&&!!count&&intro.left<count.right&&intro.right>count.left&&intro.top<count.bottom&&intro.bottom>count.top;
+    });
+    assert.equal(overlap,false,'Theme description does not overlap the theme count');
+   }
    await page.screenshot({path:`artifacts/fear-greed-education/search-${route.split('/').filter(Boolean).join('-')}-${width}.png`});
   }
   assert.deepEqual(errors,[]);
