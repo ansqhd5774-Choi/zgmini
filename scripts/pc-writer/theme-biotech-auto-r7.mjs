@@ -6,7 +6,7 @@ import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {collectOptional} from './theme-optional-collect.mjs';
 import {inspectManifest} from './theme-data-inventory.mjs';
-import {cloudflareToken} from './theme-optional-cycle.mjs';
+import {biotechCloudflareTokenR7} from './theme-biotech-auth-r7.mjs';
 import {runBiotechAutoR7} from './theme-biotech-auto-core-r7.mjs';
 import {biotechVersionedD1} from './theme-biotech-versioned-d1-r7.mjs';
 
@@ -21,7 +21,7 @@ export async function biotechPublicSnapshot({fetchImpl=fetch}={}){
 }
 
 export async function startBiotechR7({dataRoot,allowCollect=false,allowPublish=false,
- db=biotechVersionedD1({dataRoot,tokenFn:cloudflareToken}),collector=collectOptional,readBase=biotechPublicSnapshot,now=Date.now}={}){
+ db=biotechVersionedD1({dataRoot,tokenFn:biotechCloudflareTokenR7}),collector=collectOptional,readBase=biotechPublicSnapshot,now=Date.now}={}){
  const state=path.join(dataRoot,'themes','biotech','state');
  requireValid(fs.existsSync(state),'BIOTECH_R7_STATE_DIR_MISSING');
  const lock=path.join(state,'biotech-auto-r7.lock');
@@ -42,7 +42,10 @@ if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.ur
   try{
    const dataRoot=process.env.ZGMINI_DATA_ROOT??'E:/ZGmini/data';
    const report=await startBiotechR7({dataRoot,allowCollect:args.includes('--collect'),allowPublish:args.includes('--publish')});
-   console.log(JSON.stringify(report));if(report.status==='BLOCKED'||report.status==='COLLECTION_STOPPED')process.exitCode=1;
+   console.log(JSON.stringify(report));
+   const publish=args.includes('--publish');
+   if(report.status==='BLOCKED'||report.status==='COLLECTION_STOPPED'||report.status==='COLLECTION_RESUME_NEEDED'||
+    (publish&&!['PUBLIC_API_VERIFIED','NO_NEW_CONFIRMED_SESSION','UNCHANGED_NO_WRITE'].includes(report.status)))process.exitCode=1;
   }catch(e){console.log(JSON.stringify({report:'BIOTECH_AUTO_R7',status:'BLOCKED',reason:e?.code??'BIOTECH_R7_UNCLASSIFIED'}));process.exitCode=1;}
  }
 }

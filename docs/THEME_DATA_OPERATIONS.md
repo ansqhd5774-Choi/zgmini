@@ -113,3 +113,13 @@ PC에서 새 작업 등록 전 아래 단계가 필요하다.
 ## 일반 채팅 작업 지시문
 
 > ZGMINI 테마 작업은 GitHub 최신 main의 AGENTS.md, docs/THEME_DATA_OPERATIONS.md, config/theme-data-registry.json을 먼저 확인하고 진행하라. 원자료 수집→PC 저장→계산→확정/잠정 게시→D1 readback→공개 API/UI→다음 정규 실행까지 연결하라. 실행 코드는 GitHub에, 원자료는 승인된 E: 데이터 경로에 저장하고 manifest에 실제 상대 경로·SHA256·출처·수집 시각·관측 기간·스키마·가격 모드를 기록하라. 수집기·계산기·게시기·작업 이름/주기·PC 승인 SHA·D1 key를 등록부에 갱신하라. 첨부 ZIP·Desktop·임시 폴더만 유일한 사본으로 두지 마라. 로컬 접근이 없으면 적용했다고 보고하지 말고 GitHub 코드와 정확한 설치/검증 명세를 준비하라. 무료·상업용 조건과 기존 산식·데이터·잠금·게시 보호를 유지하고, 새 테마의 실패가 기존 테마 갱신을 막지 않게 하라. 실제 검사 명령과 결과·미완료 항목을 남기고 테스트/배포 성공만으로 자동 운영 완료라고 보고하지 마라.
+
+
+## 2026-10-24 바이오 확정치 R7 승인·운영 경로
+
+- 사용자 승인 범위: **기존 7개 테마의 수집·계산·게시·스케줄러·D1·공개 이력은 불변**. 바이오 IBB/XBI/SPY만 기존 PC 수집→원자료·해시 저장→저장 가격 계산→D1 게시→원격 재조회 구조에 연결한다. 바이오 전용 점수 이력은 기존 겹치는 공개 날짜를 그대로 보존하고 새 관측일만 이어 붙인다.
+- 수집은 기존 GitHub `theme-optional-collect.mjs`의 무료 GMH 시간봉을 재사용, 4 GET/1회 상한 및 기존 manifest/checkpoint 보존. 가격 모드는 현재 승인된 시간봉 15:xx/조기 폐장 12:xx 미조정 proxy 유지. MarketParquet 가격은 모드 및 원본 종목 행 미검증이므로 억지 병합하지 않는다. 공식 [신뢰성 안내](https://getmarkethistory.com/docs/reliability/)의 48시간 이후 관측 규칙을 지킨다.
+- 개인 PC에는 GitHub와 동일한 해시로 검증된 바이오 R7 코드만 `E:\\ZGmini\\data\\themes\\biotech\\source-r7`에 복사한다. 두 ETF 정규 작업은 읽기 전용으로 확인; `ZGMINI-PC-GetMarketHistory-ETF`의 Task Scheduler Trigger/Settings/Principal을 복제해 **새** `ZGMINI-PC-Theme-Biotech`만 등록한다. 새 작업의 명령은 `--once --collect --publish`. 기존 작업은 열람 외 동작 없음. 정규 작업 실제 주기·사용자는 PC에서 복제 전 실측하며 임의 시각을 하드코딩하지 않는다.
+- D1은 기존 `public_feed_snapshots_v1`에 바이오 전용 `theme-biotech-optional-r2/current` 결과를 조건부 삽입/갱신, readback 검증한다. 종전 `theme-biotech-optional-r1`은 무변경 fallback. `worker/theme-etf-only-public.mjs`의 공통 7개 Reader는 건드리지 않고 바이오 후처리만 추가한다. 웹 GET은 저장 결과를 읽기만 한다.
+- 2026-10-24 R6 PC PASS: 기존 겹치는 250점 보존 + 확정 2026-10-20/21 점수 신규 추가, 252점. Shadow 67일 차이(최대 2.35318)는 원가격 불명 사유를 기록하고 기존 공개 이력은 유지한다. R7 UI·D1·정규 실행은 PC 설치/게시 및 다음 스케줄 증거 확보 **전까지 완료 아님**.
+- 바이오 잠정치는 당일 검증된 합법적 원가격이 없어 아직 게시하지 않는다. 기존 7개의 잠정치도 수정하지 않는다.
