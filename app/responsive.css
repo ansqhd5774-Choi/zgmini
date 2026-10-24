@@ -472,6 +472,8 @@
 .zg-dashboard[data-view="dashboard"] .zg-r55-subscore-head a.zg-info{color:#fabc42;font-weight:800}
 .zg-dashboard[data-view="dashboard"] a.fg-market-detail-link svg,
 .zg-dashboard[data-view="dashboard"] .zg-r55-subscore-info a.zg-info svg{stroke-width:3}
+/* Keep the 12 economic indicator detail arrows as bold as the other dashboard links on desktop. */
+@media(min-width:768px){.zg-dashboard[data-view="dashboard"] .zg-r55-card-title-link svg{stroke-width:3}}
 .zg-dashboard[data-view="dashboard"] .zg-diagnostic-arrow[data-direction="flat"]{color:#94a3b8;animation:none}
 @media(max-width:767px){.zg-dashboard[data-view="dashboard"] .zg-r55-heading .zg-brand-tag{display:none}}
 
