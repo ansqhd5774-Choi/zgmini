@@ -26,6 +26,16 @@ const detailEndpoints:Record<RiskCard['id'],string>={
  supplyShockSafety:'/api/supply-shock-detail',
 };
 const periods:Period[]=['1개월','3개월','6개월','1년'];
+const mobileRiskNames:Record<RiskCard['id'],string>={
+ inflationStability:'물가',
+ recessionDefense:'경기 침체',
+ stagflationSafety:'스태그',
+ creditRiskDefense:'신용 위험',
+ earningsRecessionDefense:'실적 침체',
+ assetBubbleSafety:'버블',
+ debtRiskSafety:'부채 위험',
+ supplyShockSafety:'공급 충격',
+};
 const months:Record<Period,number>={'1개월':1,'3개월':3,'6개월':6,'1년':12};
 const valid=(n:unknown):n is number=>typeof n==='number'&&Number.isFinite(n)&&n>=0&&n<=100;
 const scoreOf=(datum:StatusScore|null|undefined)=>datum?.status==='READY'&&valid(datum.score)?datum.score:null;
@@ -112,7 +122,7 @@ export default function RiskIndicatorsClient(){
  const ready=cards.filter(card=>card.score!==null).length;
  const selectRisk=(id:RiskCard['id'])=>{
   setSelectedId(id);
-  if(window.matchMedia('(max-width: 950px)').matches){
+  if(window.matchMedia('(min-width: 601px) and (max-width: 950px)').matches){
    featureRef.current?.scrollIntoView({behavior:'smooth',block:'start'});
   }
  };
@@ -155,7 +165,8 @@ export default function RiskIndicatorsClient(){
        <div className={`zg-risk-ranking-item${featured?.id===card.id?' is-selected':''}`} style={{'--zg-risk-row-color':tone(card.score)} as CSSProperties}>
         <button type="button" className="zg-risk-rank-select" onClick={()=>selectRisk(card.id)} aria-pressed={featured?.id===card.id} aria-label={`${index+1}위 ${card.name}, 안정 점수 ${card.score===null?'미제공':card.score.toFixed(1)+'점'}, 왼쪽 분석에 표시`}>
          <span className="zg-risk-rank">{String(index+1).padStart(2,'0')}</span>
-         <strong>{card.name}</strong>
+         <strong className="zg-risk-rank-name-full">{card.name}</strong>
+         <strong className="zg-risk-rank-name-mobile" aria-hidden="true">{mobileRiskNames[card.id]}</strong>
          <span className="zg-risk-rank-description">{card.description}</span>
          <span className="zg-risk-rank-score"><LiveScoreValue value={card.score}>{card.score===null?'—':card.score.toFixed(1)}</LiveScoreValue></span>
          <span className="zg-risk-rank-status">{state(card.score)}</span>
@@ -167,6 +178,7 @@ export default function RiskIndicatorsClient(){
      <p className="zg-risk-ranking-footnote"><ShieldCheck size={14} aria-hidden="true"/>저장 점수 제공 {ready}/8 · 결측은 맨 아래 표시 · 지표마다 관측 시점은 다를 수 있습니다.</p>
     </section>
    </div>
+   <p className="zg-risk-mobile-footnote"><ShieldCheck size={14} aria-hidden="true"/>저장 점수 제공 {ready}/8 · 결측은 맨 아래 표시 · 지표마다 관측 시점은 다를 수 있습니다.</p>
    <section className="zg-risk-explainer">
     <div className="zg-risk-explainer-intro"><h2>이 지표는 무엇을 알려줄까요?</h2><p>8가지 위험 지표는 미국 경제의 주요 위험 요인을 점검해 지금 시장이 어디에 취약한지 한눈에 보여줍니다. 각 항목을 클릭하면 점수의 의미와 세부 요인을 확인할 수 있습니다.</p></div>
     {explainer.map(({icon:Icon,name,description,link,cta})=><article key={link}>
