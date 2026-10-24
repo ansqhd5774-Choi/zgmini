@@ -131,8 +131,13 @@ export default function SectorSentimentChart({data=[],series=SECTORS,title='섹�
    </div>
    <div className="zg-legend-row zg-theme-picker-legend">
     <div className="zg-sector-chart-legend is-draggable" aria-label="차트에 표시 중인 테마">
-     {shownSeries.map(item=>{const lastObserved=showDashboardThemeScores?rows.findLast(row=>typeof row[item.id]==='number'&&Number.isFinite(row[item.id])):undefined;const value=lastObserved?.[item.id];const score=typeof value==='number'&&Number.isFinite(value)?String(Math.round(value)):'—';return <span key={item.id} className={`zg-theme-selected-label${showDashboardThemeScores?' has-score':''}`} title={lastObserved?`${item.name} · ${lastObserved.date} 관측`:item.name} style={{borderBottomColor:item.color}}>{showDashboardThemeScores?<><span className="zg-theme-legend-name">{item.shortName??item.name}</span><span className="zg-theme-legend-color" style={{backgroundColor:item.color}} aria-hidden="true"/><strong className="zg-theme-legend-score" aria-label={score==='—'?'점수 결측':`${score}점`}>{score}</strong></>:item.shortName??item.name}</span>})}
-     {!shownSeries.length&&<span className="zg-theme-picker-empty">표시 가능한 테마 없음</span>}
+     {(showDashboardThemeScores?series:shownSeries).map(item=>{
+      const lastObserved=showDashboardThemeScores?rows.findLast(row=>typeof row[item.id]==='number'&&Number.isFinite(row[item.id])):undefined;
+      const value=lastObserved?.[item.id];
+      const score=typeof value==='number'&&Number.isFinite(value)?String(Math.round(value)):'—';
+      return showDashboardThemeScores?<button key={item.id} type="button" className="zg-theme-selected-label has-score" title={lastObserved?`${item.name} · ${lastObserved.date} 관측`:item.name} aria-label={`${item.name} · ${score==='—'?'점수 결측':`${score}점`}`} aria-pressed={!hidden.has(item.id)} onClick={()=>toggleThemePickerItem(item.id)} style={{borderBottomColor:item.color}}><span className="zg-theme-legend-name">{item.shortName??item.name}</span><span className="zg-theme-legend-color" style={{backgroundColor:item.color}} aria-hidden="true"/><strong className="zg-theme-legend-score" aria-label={score==='—'?'점수 결측':`${score}점`}>{score}</strong></button>:<span key={item.id} className="zg-theme-selected-label" title={item.name} style={{borderBottomColor:item.color}}>{item.shortName??item.name}</span>;
+     })}
+     {!showDashboardThemeScores&&!shownSeries.length&&<span className="zg-theme-picker-empty">표시 가능한 테마 없음</span>}
     </div>
     <button type="button" className="zg-theme-next" aria-label={pickerOpen?'테마 목록 닫기':'테마 목록 펼치기'} aria-controls="zg-theme-picker-options" aria-expanded={pickerOpen} onClick={toggleThemePicker} disabled={!rows.length||!series.length}>
      {pickerOpen?<ChevronDown size={16} aria-hidden="true"/>:<ChevronUp size={16} aria-hidden="true"/>}

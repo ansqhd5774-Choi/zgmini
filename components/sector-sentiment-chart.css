@@ -60,6 +60,12 @@
 /* Dashboard theme score: use existing vertical space, keeping the chart at 120px and card at 232px. */
 .zg-sector-chart.zg-theme-score-card{padding-top:11px}
 .zg-theme-selected-label.has-score{box-sizing:border-box;height:42px;flex-direction:column;gap:2px;padding:2px 4px;border-bottom:0;border-radius:3px}
+.zg-theme-picker-legend .zg-sector-chart-legend button.zg-theme-selected-label.has-score{height:42px;min-width:0;padding:2px 4px;border:0;cursor:pointer}
+.zg-theme-picker-legend .zg-sector-chart-legend button.zg-theme-selected-label.has-score[aria-pressed=false]{opacity:1;background:#102b3b}
+.zg-theme-picker-legend .zg-sector-chart-legend button.zg-theme-selected-label.has-score[aria-pressed=false] .zg-theme-legend-name,
+.zg-theme-picker-legend .zg-sector-chart-legend button.zg-theme-selected-label.has-score[aria-pressed=false] .zg-theme-legend-score{opacity:.38}
+.zg-theme-picker-legend .zg-sector-chart-legend button.zg-theme-selected-label.has-score[aria-pressed=false] .zg-theme-legend-color{opacity:.32}
+.zg-theme-picker-legend .zg-sector-chart-legend button.zg-theme-selected-label.has-score:focus-visible{box-shadow:inset 0 0 0 2px #e2e8f0}
 .zg-theme-legend-name{font-size:10px;line-height:12px;white-space:nowrap}
 .zg-theme-legend-color{width:calc(100% - 4px);height:4px;flex:0 0 4px}
 .zg-theme-legend-score{font-size:14px;font-weight:800;line-height:14px;font-variant-numeric:tabular-nums}
