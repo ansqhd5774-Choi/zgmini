@@ -20,11 +20,16 @@
 .zg-sector-chart-legend button{min-width:0;white-space:nowrap;height:32px;padding:0;border:0;border-bottom:2px solid;border-radius:3px 3px 0 0;background:#102b3b;color:#e2e8f0;font-size:10px;font-weight:600;cursor:pointer}
 .zg-sector-chart-legend button:hover{background:#1a3a4d}
 .zg-sector-chart-legend button[aria-pressed=false]{opacity:.35;background:transparent}
-/* Dashboard sector scores fit inside the original 32px legend: 232px card, 120px plot unchanged. */
-.zg-sector-chart-legend.zg-sector-compact-legend button{height:32px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;padding:1px 0;border-top:1px solid #496173;border-bottom:1px solid #496173;border-radius:0;overflow:hidden}
-.zg-sector-legend-name{max-width:100%;font-size:9px;line-height:10px;letter-spacing:-.5px;white-space:nowrap}
-.zg-sector-legend-color{width:20px;height:2px;flex:0 0 2px}
-.zg-sector-legend-score{font-size:12px;font-weight:800;line-height:12px;font-variant-numeric:tabular-nums}
+/* Use existing vertical padding for a readable legend; keep the 232px card and 120px plot. */
+.zg-sector-chart.zg-sector-score-card{padding-block:11px}
+.zg-sector-chart-legend.zg-sector-compact-legend button{height:42px;box-sizing:border-box;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:2px 0;border:0;border-radius:3px;overflow:hidden}
+.zg-sector-legend-name{max-width:100%;font-size:11px;line-height:13px;letter-spacing:-.6px;white-space:nowrap}
+.zg-sector-legend-color{width:calc(100% - 6px);height:4px;flex:0 0 4px}
+.zg-sector-legend-score{font-size:14px;font-weight:800;line-height:15px;font-variant-numeric:tabular-nums}
+.zg-sector-chart-legend.zg-sector-compact-legend button[aria-pressed=false]{opacity:1}
+.zg-sector-chart-legend.zg-sector-compact-legend button[aria-pressed=false] .zg-sector-legend-name,
+.zg-sector-chart-legend.zg-sector-compact-legend button[aria-pressed=false] .zg-sector-legend-score{opacity:.55}
+.zg-sector-chart-legend.zg-sector-compact-legend button[aria-pressed=false] .zg-sector-legend-color{opacity:.9}
 .zg-sector-chart-legend.is-draggable{display:flex;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;touch-action:pan-x pan-y;cursor:grab;user-select:none;overscroll-behavior-x:contain}
 .zg-sector-chart-legend.is-draggable::-webkit-scrollbar{display:none}
 .zg-sector-chart-legend.is-draggable:active{cursor:grabbing}
@@ -35,6 +40,7 @@
 .zg-theme-next:hover{background:#254b60;border-color:#6eb7ff}
 .zg-theme-next:disabled{opacity:.3;cursor:default}
 @media(max-width:600px){.zg-sector-chart{padding:12px}.zg-sector-chart h2{font-size:16px}.zg-sector-chart-legend{gap:2px}.zg-sector-chart-legend button{font-size:9px}}
+@media(max-width:600px){.zg-sector-chart.zg-sector-score-card{padding:10px 12px}.zg-sector-legend-name{font-size:10px;line-height:12px;letter-spacing:-1px}.zg-sector-legend-score{font-size:13px}}
 @media(max-width:420px){.zg-sector-chart h2{font-size:14px}.zg-sector-chart h2>svg{width:16px;height:16px;margin-right:4px}}
 
 /* R155: theme-only overlay selector; leaves sector chart appearance untouched. */
