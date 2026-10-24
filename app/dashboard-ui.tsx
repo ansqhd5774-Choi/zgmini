@@ -7,7 +7,7 @@ import {domainObservationDelta} from '../lib/market-score/domain-observation-del
 import {compositeDayDelta,compositePeriodDelta} from '../lib/market-score/composite-day-delta.mjs';
 
 // Cloudflare Git Integration deployment marker: plain-language macro labels R1
-import {useEffect,useId,useRef,useState,type ReactNode,type CSSProperties} from 'react';
+import {memo,useEffect,useId,useMemo,useRef,useState,type ReactNode,type CSSProperties} from 'react';
 import {Activity,ArrowRight,ArrowUpRight,ChevronLeft,ChevronRight,Info,Radar,Coins,Users,Percent,Droplet,Landmark,ShieldCheck,Factory,ShoppingCart,BriefcaseBusiness,ArrowLeftRight,Network,DollarSign} from 'lucide-react';
 import {Area,AreaChart,ReferenceArea,Line,LineChart,ResponsiveContainer,XAxis,YAxis,ReferenceDot,ReferenceLine,Tooltip} from 'recharts';
 import {readProgressiveMarketResponse} from '../lib/market-score/read-progressive-response.mjs';
@@ -57,7 +57,7 @@ function timeScaledTrend(data:DashboardPoint[],periodDays:number){
  return {points,start,end};
 }
 
-function CardTrend({data,label,color,periodDays,missingDates=[]}:{data:DashboardPoint[];label:string;color:string;periodDays:number;missingDates?:string[]}){
+const CardTrend=memo(function CardTrend({data,label,color,periodDays,missingDates=[]}:{data:DashboardPoint[];label:string;color:string;periodDays:number;missingDates?:string[]}){
  const geometry=miniTrendGeometry(data,periodDays,missingDates);
  return <div className="zg-spark zg-r55-mini-chart" aria-label={`${label} 관측 추이${missingDates.length?' · 점선은 결측 구간 연결이며 관측값이 아닙니다':''}`} title={missingDates.length?'점선: 미발표 자료가 있는 구간의 시각적 연결. 해당 월 점수는 결측입니다.':undefined} onPointerDown={event=>event.preventDefault()}>
   <div className="zg-r55-mini-y-labels" aria-hidden="true"><span>100</span><span>50</span><span>0</span></div>
@@ -68,7 +68,7 @@ function CardTrend({data,label,color,periodDays,missingDates=[]}:{data:Dashboard
     {geometry.last&&<circle cx={geometry.last.x} cy={geometry.last.y} r={2.5} fill={color}/>}
    </svg>
  </div>;
-}
+});
 
 function summaryDateParts(ts:number){
  const date=new Date(ts);
@@ -124,7 +124,7 @@ function summaryAxisConfig(points:Array<DashboardPoint&{ts:number}>,periodDays:n
  return {ticks:[...labels.keys()],labels};
 }
 
-function SummaryTrend({data,label,color,periodDays}:{data:DashboardPoint[];label:string;color:string;periodDays:number}){
+const SummaryTrend=memo(function SummaryTrend({data,label,color,periodDays}:{data:DashboardPoint[];label:string;color:string;periodDays:number}){
  const mobileAxisRight=useDashboardMobileAxis();
  const scaled=timeScaledTrend(data,periodDays),latest=scaled.points.at(-1),axis=summaryAxisConfig(scaled.points,periodDays);
  const gradientId=`summary-${useId().replace(/:/g,'')}`;
@@ -164,7 +164,7 @@ function SummaryTrend({data,label,color,periodDays}:{data:DashboardPoint[];label
    </AreaChart>
   </ResponsiveContainer>
  </div>;
-}
+});
 // Stage 12 R2 / W09.2 content ownership correction:
 // The legacy 4-component market score is not the target content.
 // CM-R1 now owns the public 12-domain composite contract.
@@ -309,8 +309,13 @@ export function CompositeMarketSection({items,points,demo,loading}:{items:Summar
  const readyDomains=market?.dataQuality?.readyDomains??0;
  const totalDomains=market?.dataQuality?.totalDomains??12;
  const coverageWeight=market?.dataQuality?.coverageWeight??0;
- const overallTrend=marketTrendWindow(amplifyCompositeDisplayTrend(normalizeMarketTrendPoints(market?.overall?.trend)),periodDays);
- const hasDatedHistory=[market?.overall?.trend,...(market?.domains??[]).map(d=>d.trend)].some(data=>marketTrendWindow(normalizeMarketTrendPoints(data),365).length>1);
+ const overallTrend=useMemo(()=>marketTrendWindow(amplifyCompositeDisplayTrend(normalizeMarketTrendPoints(market?.overall?.trend)),periodDays),[market?.overall?.trend,periodDays]);
+ const hasDatedHistory=useMemo(()=>[market?.overall?.trend,...(market?.domains??[]).map(d=>d.trend)].some(data=>marketTrendWindow(normalizeMarketTrendPoints(data),365).length>1),[market?.overall?.trend,market?.domains]);
+ // Independent diagnostic responses and arrow expiry do not change these histories.
+ const domainChartTrends=useMemo(()=>r55DomainIds.map(id=>{
+  const domain=market?.domains?.find(d=>d.id===id);
+  return marketTrendWindow(normalizeMarketTrendPoints(domain?.trend),periodDays);
+ }),[market?.domains,periodDays]);
 
  return <section id="market" className="zg-section zg-r55-market">
   <div className="zg-section-heading zg-r55-heading">
@@ -383,8 +388,7 @@ export function CompositeMarketSection({items,points,demo,loading}:{items:Summar
        const Icon=m.Icon;
        const domain=market?.domains?.find(d=>d.id===r55DomainIds[index]);
        const score=domain?.status==='READY'&&validPublicScore(domain.score)?domain.score:null;
-       const normalizedTrend=normalizeMarketTrendPoints(domain?.trend);
-       const trend=marketTrendWindow(normalizedTrend,periodDays);
+       const trend=domainChartTrends[index];
        const v9Breadth=r55DomainIds[index]==='breadth'&&domain?.methodologyVersion==='BREADTH_R10_V9_FIXED_5F_VALID_OBSERVATION_SHADOW';
        const v9Movement=v9Breadth&&typeof domain?.scoreChange==='number'&&Number.isFinite(domain.scoreChange)?domain.scoreChange:null;
        const breadthDelta=r55DomainIds[index]==='breadth'?breadthPreviousSessionDelta(domain?.trend):domainObservationDelta(domain?.trend,score,domain?.previousObservation);
@@ -428,7 +432,7 @@ export function CompositeMarketSection({items,points,demo,loading}:{items:Summar
          </div>
          <div className="zg-r55-card-visual">
           {trend.length>0
-           ?<CardTrend data={trend} label={m.label} color={score===null?'#94a3b8':scoreColor(score)} periodDays={periodDays} missingDates={r55DomainIds[index]==='consumption'?(domain?.trend??[]).filter(point=>point.value==null&&point.score==null).map(point=>point.date??point.label??''):[]}/>
+           ?<CardTrend data={trend} label={m.label} color={score===null?'#94a3b8':scoreColor(score)} periodDays={periodDays} missingDates={r55DomainIds[index]==='consumption'?(domain?.trend??[]).filter(point=>point.value==null&&point.score==null).map(point=>point.date??point.label??''):undefined}/>
            :<div className="zg-r55-card-spark-empty" aria-label={`${m.label} 추이 데이터 없음`}>—</div>}
          </div>
         </div>
