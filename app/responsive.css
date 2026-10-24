@@ -474,3 +474,13 @@
 .zg-dashboard[data-view="dashboard"] .zg-r55-subscore-info a.zg-info svg{stroke-width:3}
 .zg-dashboard[data-view="dashboard"] .zg-diagnostic-arrow[data-direction="flat"]{color:#94a3b8;animation:none}
 @media(max-width:767px){.zg-dashboard[data-view="dashboard"] .zg-r55-heading .zg-brand-tag{display:none}}
+
+/* Keep the mobile score aligned with the chart and share one comparison frame. */
+@media(max-width:767px){
+ .zg-dashboard[data-view="dashboard"] .zg-r55-summary-top{place-items:start center;align-self:start}
+ .zg-dashboard[data-view="dashboard"] .zg-r55-master-number{justify-content:flex-start}
+ .zg-dashboard[data-view="dashboard"] .zg-composite-comparisons{gap:0;border:1px solid #31506d;border-radius:6px;background:rgba(7,26,41,.62);padding:3px 0;overflow:hidden}
+ .zg-dashboard[data-view="dashboard"] .zg-composite-day-comparison{border:0;border-radius:0;background:transparent;padding:3px 8px}
+ .zg-dashboard[data-view="dashboard"] .ob-summary-track{scrollbar-width:none;-ms-overflow-style:none}
+ .zg-dashboard[data-view="dashboard"] .ob-summary-track::-webkit-scrollbar{display:none;width:0;height:0}
+}
