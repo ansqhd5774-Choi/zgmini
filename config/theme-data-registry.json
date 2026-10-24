@@ -440,6 +440,27 @@
         "path": "themes/biotech/derived/private-audit-20ac83212c235943.json",
         "sha256": "20ac83212c235943a88b64cd0b37c3ce45d0f2b5015bc7390f121f0231646520",
         "status": "CONFIRMED_SCORE_REVISION_REVIEW"
+      },
+      "plannedContinuationR7": {
+        "approvalDate": "2026-10-24",
+        "status": "SOURCE_STAGED_PC_INSTALL_AND_PUBLIC_READBACK_PENDING",
+        "scope": "BIOTECH_ONLY_SEVEN_THEME_PIPELINE_UNMODIFIED",
+        "existingPublishedRevision": "theme-biotech-optional-r1",
+        "nextPublicKey": "theme-biotech-optional-r2",
+        "dataRoot": "themes/biotech",
+        "rawManifest": "themes/biotech/raw-manifest.json",
+        "confirmedSource": "GETMARKETHISTORY_STOCKS_1H_SAVED_SHA_VERIFIED",
+        "priceMode": "UNADJUSTED_15_NY_HOURLY_PROXY_WITH_OFFICIAL_EARLY_CLOSE_12",
+        "newPublisher": "scripts/pc-writer/theme-biotech-auto-r7.mjs",
+        "pcInstaller": "scripts/pc-writer/theme-biotech-pc-install-r7.mjs",
+        "mirrorTask": "scripts/pc-writer/BIOTECH_R7_TASK_MIRROR.js",
+        "proposedTask": "ZGMINI-PC-Theme-Biotech",
+        "scheduleCopiedFrom": "ZGMINI-PC-GetMarketHistory-ETF",
+        "sourceOnPc": "E:/ZGmini/data/themes/biotech/source-r7",
+        "publicationMode": "D1_CAS_ONLY_R2_READBACK",
+        "provisional": "PENDING_VERIFIED_RECENT_PRICE_SOURCE",
+        "historicalScores": "PRESERVE_EXISTING_OVERLAP_APPEND_NEW_ONLY",
+        "taskRegistrationVerified": false
       }
     }
   ]
