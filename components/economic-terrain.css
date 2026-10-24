@@ -106,6 +106,11 @@
 .zg-terrain-axis-score-label small{margin-top:3px;font-size:10px;font-weight:550;color:#b3d4e1}
 .zg-terrain-axis-bands{height:45px}
 .zg-terrain-axis-bands>div{justify-content:center;gap:0}
+.zg-terrain-axis-bands>div:nth-child(1){background:#fa628b}
+.zg-terrain-axis-bands>div:nth-child(2){background:#ffc64b}
+.zg-terrain-axis-bands>div:nth-child(3){background:#a6bdd0}
+.zg-terrain-axis-bands>div:nth-child(4){background:#2de0c4}
+.zg-terrain-axis-bands>div:nth-child(5){background:#13bfa7}
 .zg-terrain-axis-bands strong{color:#062633;font-size:14px;line-height:1.1;font-weight:800}
 .zg-terrain-axis-bands span,.zg-terrain-axis-bands i{display:none}
 .zg-terrain-axis-ticks{height:35px}
@@ -114,3 +119,4 @@
 .zg-terrain-line{border-bottom:2px dashed var(--terrain-accent);opacity:.94}
 @media(max-width:750px){.zg-terrain-axis-label>span{font-size:11px}.zg-terrain-axis-bands{height:45px}.zg-terrain-axis-bands strong{font-size:12px}.zg-terrain-axis-ticks{height:35px}}
 @media(max-width:510px){.zg-terrain-axis{height:80px;padding-top:0}.zg-terrain-axis-plot,.zg-terrain-axis-bands>div{position:relative}.zg-terrain-axis-bands{height:45px}.zg-terrain-axis-bands strong{position:static;width:auto;font-size:clamp(9px,2.7vw,12px);text-align:center}.zg-terrain-axis-label>span{min-height:45px;height:45px;font-size:10px}.zg-terrain-axis-score-label small{font-size:8px}.zg-terrain-axis-ticks{font-size:10px}}
+
