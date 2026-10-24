@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import {createHash} from 'node:crypto';
-import {buildAiCandidate,collectWindow,runOptionalTheme,cloudflareD1,cloudflareToken,aiReaderRejectionReason,aiCandidateReference,diagnoseAiReader,diagnoseBiotechParity} from '../scripts/pc-writer/theme-optional-cycle.mjs';
+import {buildAiCandidate,collectWindow,runOptionalTheme,cloudflareD1,cloudflareToken,aiReaderRejectionReason,aiCandidateReference,diagnoseAiReader,diagnoseBiotechParity,verifySevenProvisionalAuthority} from '../scripts/pc-writer/theme-optional-cycle.mjs';
 import {auditThroughDate} from '../scripts/pc-writer/theme-optional-audit.mjs';
 import {regularHour15Rows} from '../scripts/pc-writer/theme-optional-score-r188.mjs';
 import {THEME_ETF_ONLY_PAIRS,THEME_ETF_ONLY_PUBLIC_VERSION} from '../worker/theme-etf-only-public.mjs';
@@ -150,6 +150,45 @@ test('private AI reader diagnostics name strict missing-date and provisional gat
  assert.equal(aiReaderRejectionReason(record,calendar,{now:NOW}),'PUBLIC_READER_HISTORY_CALENDAR_MISMATCH');
  const provisional={...base(),phase:'PROVISIONAL',provisional:{points:[{date:'2026-10-22',scores:{}}]}};
  assert.equal(aiReaderRejectionReason(record,provisional,{now:NOW}),'PUBLIC_READER_PROVISIONAL_DATES_MISSING');
+});
+test('AI may inherit secondary provenance only from the exact seven-theme verified rolling publisher',()=>{
+ const reference={...base(),phase:'PROVISIONAL',provisional:{points:[{date:'2026-10-22',scores:{}},{date:'2026-10-23',scores:{}}]}};
+ const rolling={status:'READY',version:'THEME_ETF_ROLLING_R178',publicationAuthorized:true,
+  upstreamCommercialRightsVerified:true,derivedLicenseVerified:true,sourcePriceReconciled:true,
+  observationDate:latest,provisional:{points:[{date:'2026-10-22'},{date:'2026-10-23'}]},
+  lineage:{primarySource:'GETMARKETHISTORY_1H_CLOSE',secondarySource:'MARKETPARQUET_ETF_DAILY_SPLIT_ADJUSTED',
+   secondaryPendingCount:2,latestCompletedSession:'2026-10-23'}};
+ assert.equal(verifySevenProvisionalAuthority(rolling,reference),true);
+ for(const invalid of [
+  {...rolling,derivedLicenseVerified:false},
+  {...rolling,lineage:{...rolling.lineage,secondarySource:'UNKNOWN'}},
+  {...rolling,provisional:{points:[{date:'2026-10-23'}]}},
+  {...rolling,lineage:{...rolling.lineage,secondaryPendingCount:1}},
+ ])assert.throws(()=>verifySevenProvisionalAuthority(invalid,reference),/AI_SEVEN_SECONDARY_RIGHTS_OR_LINEAGE_UNVERIFIED/);
+});
+test('AI private cycle attaches only date-exact verified 23rd secondary score and does not write D1',async()=>{
+ await fixture('ai-semiconductor',async({root})=>{
+  const provisionalDate='2026-10-22';let writes=0,reads=0,scoreCalls=0;
+  const publicFeed={...base(),phase:'PROVISIONAL',provisional:{points:[{date:provisionalDate,scores:{}}]}};
+  const rolling={status:'READY',version:'THEME_ETF_ROLLING_R178',publicationAuthorized:true,
+   upstreamCommercialRightsVerified:true,derivedLicenseVerified:true,sourcePriceReconciled:true,
+   observationDate:latest,provisional:{points:[{date:provisionalDate}]},
+   lineage:{primarySource:'GETMARKETHISTORY_1H_CLOSE',secondarySource:'MARKETPARQUET_ETF_DAILY_SPLIT_ADJUSTED',
+    secondaryPendingCount:1,latestCompletedSession:provisionalDate}};
+  const db={read:async key=>{reads++;return {body:key==='theme-etf-only-rolling'?rolling:priorAi(),storedAt:NOW-86400000}},
+   replace:async()=>{writes++}};
+  const result=await runOptionalTheme({themeId:'ai-semiconductor',dataRoot:root,now:()=>NOW,
+   storage:db,readPublic:async()=>publicFeed,collect:async()=>({status:'PRIVATE_RAW_COLLECTION_COMPLETE',providerCalls:0}),
+   audit:()=>({...candidateResult,provisional:{points:[]}}),
+   secondary:async()=>{scoreCalls++;return {status:'PRIVATE_PROVISIONAL_SCORES_VERIFIED',
+    points:[{date:provisionalDate,score:62.13456}],lineage:{source:'MARKETPARQUET_ETF_DAILY_SPLIT_ADJUSTED',
+     maxOverlapDifference:0.003}};}});
+  assert.equal(result.status,'CANDIDATE_VERIFIED_NOT_PUBLISHED');
+  assert.deepEqual(result.provisionalDates,[provisionalDate]);
+  assert.deepEqual(result.provisionalScores,[62.13456]);
+  assert.equal(result.sourcePriceMaxOverlapDifference,0.003);
+  assert.equal(writes,0);assert.equal(reads,2);assert.equal(scoreCalls,1);
+ });
 });
 test('read-only AI diagnostic uses existing local audit and D1 SELECT with zero provider calls and writes',async()=>{
  await fixture('ai-semiconductor',async({root})=>{
