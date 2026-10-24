@@ -5,9 +5,12 @@ import {buildBiotechPublicR2} from '../scripts/pc-writer/theme-biotech-public-re
 import {eligibleBiotechContinuationR2,addVerifiedBiotechContinuationR2} from '../worker/theme-biotech-continuation-r2.mjs';
 import {biotechBoundedCollectionWindow,runBiotechAutoR7} from '../scripts/pc-writer/theme-biotech-auto-core-r7.mjs';
 import {biotechVersionedD1} from '../scripts/pc-writer/theme-biotech-versioned-d1-r7.mjs';
+import {biotechCloudflareTokenR7} from '../scripts/pc-writer/theme-biotech-auth-r7.mjs';
+import {installBiotechPcR7} from '../scripts/pc-writer/theme-biotech-pc-install-r7.mjs';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import {createHash} from 'node:crypto';
 
 const CLOCK=Date.parse('2026-10-24T06:00:00Z');
 function sample(){
@@ -143,5 +146,56 @@ test('versioned D1 writer creates only biotech R2, proves readback, and does not
   const b=await db.writeVersioned('theme-biotech-optional-r2',pub,a.storedAt);
   assert.equal(b.status,'UNCHANGED');assert.equal(writes,1);
   await assert.rejects(()=>db.writeVersioned('theme-biotech-optional-r1',pub,123),/BIOTECH_R7_WRITE_KEY_DENIED/);
+ }finally{fs.rmSync(root,{recursive:true,force:true});}
+});
+
+test('biotech PC Cloudflare connector retains existing token and Wrangler OAuth order',()=>{
+ const root=fs.mkdtempSync(path.join(os.tmpdir(),'biotech-auth-r7-'));
+ const credentials=path.join(root,'oauth.toml');
+ try{
+  fs.writeFileSync(credentials,'oauth_token = "existing-only"\nexpiration_time = "2027-01-01T00:00:00Z"\n');
+  let refresh=0;
+  const token=biotechCloudflareTokenR7({dataRoot:root,env:{},oauthFile:credentials,
+   now:CLOCK,execute:()=>{refresh++;}});
+  assert.equal(token,'existing-only');assert.equal(refresh,0);
+  assert.equal(biotechCloudflareTokenR7({dataRoot:root,env:{CLOUDFLARE_API_TOKEN:'configured'},
+   oauthFile:path.join(root,'missing')}),'configured');
+ }finally{fs.rmSync(root,{recursive:true,force:true});}
+});
+
+test('biotech-only installer refuses source drift and does not modify previous theme data',()=>{
+ const root=fs.mkdtempSync(path.join(os.tmpdir(),'biotech-install-r7-'));
+ const dataRoot=path.join(root,'data'),bundle=path.join(root,'bundle');
+ fs.mkdirSync(path.join(dataRoot,'themes','biotech'),{recursive:true});
+ fs.mkdirSync(bundle);
+ const legacy=path.join(dataRoot,'themes','robotics');fs.mkdirSync(legacy);
+ fs.writeFileSync(path.join(legacy,'no-change.txt'),'seven-original');
+ fs.writeFileSync(path.join(dataRoot,'themes','biotech','raw-manifest.json'),'{}');
+ try{
+  const files={};
+  for(const relative of [
+   'BIOTECH_R7_SCHEDULED.cmd',
+   'scripts/pc-writer/theme-biotech-auth-r7.mjs',
+   'scripts/pc-writer/theme-biotech-auto-r7.mjs',
+   'scripts/pc-writer/theme-biotech-auto-core-r7.mjs',
+   'scripts/pc-writer/theme-biotech-continuation-r6.mjs',
+   'scripts/pc-writer/theme-biotech-public-record-r7.mjs',
+   'scripts/pc-writer/theme-biotech-shadow-core-r5.mjs',
+   'scripts/pc-writer/theme-biotech-versioned-d1-r7.mjs',
+   'scripts/pc-writer/theme-data-inventory.mjs',
+   'scripts/pc-writer/theme-optional-collect.mjs',
+   'scripts/pc-writer/theme-optional-score-r188.mjs',
+   'worker/theme-biotech-continuation-r2.mjs',
+   'worker/public-display-freshness.mjs']){
+   const dest=path.join(bundle,relative);fs.mkdirSync(path.dirname(dest),{recursive:true});
+   fs.writeFileSync(dest,relative);files[relative]=createHash('sha256').update(relative).digest('hex');
+  }
+  fs.writeFileSync(path.join(bundle,'BIOTECH_R7_FILES.json'),JSON.stringify({version:1,files}));
+  const dry=installBiotechPcR7({bundleRoot:bundle,dataRoot});assert.equal(dry.status,'READY_TO_INSTALL');
+  assert.equal(installBiotechPcR7({bundleRoot:bundle,dataRoot,install:true}).status,'INSTALLED_VERIFIED');
+  assert.equal(fs.readFileSync(path.join(legacy,'no-change.txt'),'utf8'),'seven-original');
+  const toDrift=path.join(dataRoot,'themes','biotech','source-r7','BIOTECH_R7_SCHEDULED.cmd');
+  fs.writeFileSync(toDrift,'external-change');
+  assert.throws(()=>installBiotechPcR7({bundleRoot:bundle,dataRoot,install:true}),/BIOTECH_R7_INSTALL_SOURCE_DRIFT/);
  }finally{fs.rmSync(root,{recursive:true,force:true});}
 });

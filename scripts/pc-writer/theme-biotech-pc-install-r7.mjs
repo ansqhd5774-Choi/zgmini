@@ -17,7 +17,7 @@ const names=[
  'scripts/pc-writer/theme-data-inventory.mjs',
  'scripts/pc-writer/theme-optional-collect.mjs',
  'scripts/pc-writer/theme-optional-score-r188.mjs',
- 'worker/theme-biotech-continuation-public-r2.mjs',
+ 'worker/theme-biotech-continuation-r2.mjs',
  'worker/public-display-freshness.mjs',
 ];
 const sha=b=>createHash('sha256').update(b).digest('hex');
