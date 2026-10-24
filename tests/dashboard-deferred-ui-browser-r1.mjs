@@ -30,6 +30,10 @@ try{
    await trigger.click();
    const dialog=page.getByRole('dialog');
    await dialog.getByRole('heading',{name:'사용자 설정',exact:true}).waitFor({state:'visible'});
+   await page.waitForFunction(()=>{
+    const box=document.querySelector('[role="dialog"]')?.getBoundingClientRect();
+    return box&&box.width>0&&box.left>=-0.5&&box.right<=innerWidth+0.5;
+   },null,{timeout:5000});
    assert.equal(await dialog.getByText('내 즐겨찾기 0개',{exact:true}).count(),1);
    await page.screenshot({path:`artifacts/dashboard-deferred-ui/settings-${width}.png`});
    await page.keyboard.press('Escape');
