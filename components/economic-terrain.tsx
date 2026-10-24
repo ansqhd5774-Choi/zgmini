@@ -62,7 +62,7 @@ function SelectedDetail({name,href,description,score,domain}:{name:string;href:s
 
 export default function EconomicTerrain(){
  const {payload,error}=useStoredIndex<Snapshot>('/api/market-score');
- const [selected,setSelected]=useState<string|null>('rates');
+ const [selected,setSelected]=useState<string|null>(null);
  const cards=ECONOMIC_CARDS.map(card=>{
   const domain=payload?.domains?.find(item=>item.id===card.id);
   return {...card,domain,score:readyScore(domain)};
