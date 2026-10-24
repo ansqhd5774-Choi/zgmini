@@ -4,8 +4,10 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import {createHash} from 'node:crypto';
-import {buildAiCandidate,collectWindow,runOptionalTheme,cloudflareD1,cloudflareToken,aiReaderRejectionReason,diagnoseAiReader,diagnoseBiotechParity} from '../scripts/pc-writer/theme-optional-cycle.mjs';
+import {buildAiCandidate,collectWindow,runOptionalTheme,cloudflareD1,cloudflareToken,aiReaderRejectionReason,aiCandidateReference,diagnoseAiReader,diagnoseBiotechParity} from '../scripts/pc-writer/theme-optional-cycle.mjs';
+import {auditThroughDate} from '../scripts/pc-writer/theme-optional-audit.mjs';
 import {regularHour15Rows} from '../scripts/pc-writer/theme-optional-score-r188.mjs';
+import {THEME_ETF_ONLY_PAIRS,THEME_ETF_ONLY_PUBLIC_VERSION} from '../worker/theme-etf-only-public.mjs';
 
 const NOW=Date.parse('2026-10-23T05:00:00Z');
 const latest='2026-10-21';
@@ -13,6 +15,17 @@ const dates=Array.from({length:252},(_,i)=>new Date(Date.parse(latest+'T00:00:00
 const history=dates.map((date,i)=>({date,score:Number((40+i*.02).toFixed(5))}));
 const common={status:'READY',methodologyVersion:'ETF_ONLY_T40_R20_V40_PAIR50',observationDate:latest,phase:'CONFIRMED'};
 const base=()=>({...common,themes:Array.from({length:7},(_,i)=>({theme:'base'+i,history,score:history.at(-1).score}))});
+const earlierHistory=[{date:new Date(Date.parse(dates[0]+'T00:00:00Z')-86400000).toISOString().slice(0,10),score:39},...history.slice(0,-1)];
+const approvedCoreSeed=()=>({status:'READY',version:THEME_ETF_ONLY_PUBLIC_VERSION,
+ methodologyVersion:'ETF_ONLY_T40_R20_V40_PAIR50',publicationAuthorized:true,
+ upstreamCommercialRightsVerified:true,derivedLicenseVerified:true,
+ scoreMethod:'ETF_ONLY_PROXY',individualStocksUsed:0,
+ sourcePriceMode:'UNADJUSTED_HOURLY_CLOSE_PROXY_DISCLOSED',
+ sourceStoredAt:'2026-10-22T00:00:00Z',publishedAt:'2026-10-22T00:00:00Z',
+ sourceVersion:'core-seed-test',observationDate:earlierHistory.at(-1).date,
+ weights:{trend:0.4,relativeStrength:0.2,volatility:0.4},pairWeight:0.5,
+ themes:THEME_ETF_ONLY_PAIRS.map(t=>({...t,latestScore:earlierHistory.at(-1).score,history:earlierHistory}))});
+const approvedCurrent=()=>({...base(),themes:THEME_ETF_ONLY_PAIRS.map(t=>({...t,score:history.at(-1).score,history}))});
 const priorAi=(date='2026-10-20')=>({
  ...common,theme:'AI 반도체',etfs:['SMH','SOXX'],observationDate:date,score:history.at(-1).score,
  history:history.map(p=>({...p,date:new Date(Date.parse(p.date+'T00:00:00Z')+(Date.parse(date+'T00:00:00Z')-Date.parse(latest+'T00:00:00Z'))).toISOString().slice(0,10)})),
@@ -51,6 +64,25 @@ async function fixture(themeId,callback){
 test('the shared API does not imply the optional tickers are in the seven-theme task',()=>{
  const w=collectWindow(manifest('ai-semiconductor'),base(),'ai-semiconductor');
  assert.deepEqual(w,{start:'2026-10-15',end:'2026-10-21'});
+});
+test('AI audit uses the last real common bar not a later seven-theme date; biotech audit contract stays unchanged',()=>{
+ assert.equal(auditThroughDate('ai-semiconductor',['2026-10-19','2026-10-20','2026-10-21'],'2026-10-22'),'2026-10-21');
+ assert.equal(auditThroughDate('ai-semiconductor',['2026-10-19','2026-10-21','2026-10-23'],'2026-10-22'),'2026-10-21');
+ assert.equal(auditThroughDate('ai-semiconductor',[],'2026-10-22'),undefined);
+ assert.equal(auditThroughDate('biotech',['2026-10-21'],'2026-10-22'),'2026-10-22');
+});
+test('delayed AI 252-day calendar is reconstructed from an approved core seed without loosening reader gates',()=>{
+ const reference=aiCandidateReference(approvedCurrent(),approvedCoreSeed(),earlierHistory.at(-1).date);
+ assert.equal(reference.phase,'CONFIRMED');assert.equal(reference.observationDate,'2026-10-20');
+ assert.deepEqual(reference.themes[0].history.map(p=>p.date),earlierHistory.map(p=>p.date));
+ const delayedAudit={...candidateResult,observationDate:earlierHistory.at(-1).date,
+  score:earlierHistory.at(-1).score,history:earlierHistory};
+ const record=buildAiCandidate({audit:delayedAudit,prior:priorAi('2026-10-19'),reference,
+  manifest:manifest('ai-semiconductor'),manifestBytes:Buffer.from('signed manifest'),now:NOW});
+ assert.equal(aiReaderRejectionReason(record,reference,{now:NOW}),'PASS');
+ assert.equal(record.phase,'CONFIRMED');assert.equal(record.observationDate,'2026-10-20');
+ assert.throws(()=>aiCandidateReference(approvedCurrent(),null,'2026-10-20'),/AI_HISTORICAL_SEED_NOT_VERIFIED/);
+ assert.throws(()=>aiCandidateReference(approvedCurrent(),{...approvedCoreSeed(),publicationAuthorized:false},'2026-10-20'),/AI_HISTORICAL_SEED_NOT_VERIFIED/);
 });
 test('optional PC auth refreshes an expired Wrangler OAuth token without logging or new installation',()=>{
  const root=fs.mkdtempSync(path.join(os.tmpdir(),'zg-theme-oauth-'));
@@ -153,6 +185,21 @@ test('private cycle collects and audits but never posts to D1 without --publish'
   assert.equal(result.providerCalls,3);assert.equal(writes,0);assert.equal(calls,1);
  });
 });
+test('lagging AI private cycle uses verified D1 seed to audit a real older observation day, without writing',async()=>{
+ await fixture('ai-semiconductor',async({root})=>{
+  let reads=0,writes=0,seedReads=0;
+  const delayedAudit={...candidateResult,observationDate:earlierHistory.at(-1).date,
+   score:earlierHistory.at(-1).score,history:earlierHistory};
+  const db={read:async()=>{reads++;return {body:priorAi('2026-10-19'),storedAt:NOW-86400000}},
+   readSeed:async()=>{seedReads++;return approvedCoreSeed()},replace:async()=>{writes++}};
+  const result=await runOptionalTheme({themeId:'ai-semiconductor',dataRoot:root,now:()=>NOW,
+   storage:db,readPublic:async()=>approvedCurrent(),
+   collect:async()=>({status:'PRIVATE_RAW_COLLECTION_COMPLETE',providerCalls:3}),audit:()=>delayedAudit});
+  assert.equal(result.status,'CANDIDATE_VERIFIED_NOT_PUBLISHED');
+  assert.equal(result.observationDate,'2026-10-20');
+  assert.equal(reads,1);assert.equal(seedReads,1);assert.equal(writes,0);
+ });
+});
 test('unchanged re-collection does not republish or extend source freshness',async()=>{
  await fixture('ai-semiconductor',async({root})=>{
   let writes=0;
@@ -203,10 +250,18 @@ test('D1 writer has a stale-write guard and verifies the exact written row',asyn
    assert.equal(params[3],NOW-10000);current={body:params[0],stored_at:params[1]};updates++;
    return Response.json({success:true,result:[{success:true,meta:{changes:1}}]});
   }
+  if(sql.includes('market_public_snapshots_v1')){
+   assert.deepEqual(params,['public:theme-etf-only:r1']);
+   return Response.json({success:true,result:[{success:true,results:[
+    {body:JSON.stringify(approvedCoreSeed()),stored_at:NOW-20000}
+   ]}]});
+  }
   return Response.json({success:true,result:[{success:true,results:[current]}]});
  };
  try{
   const db=cloudflareD1({dataRoot:root,fetchImpl});
+  const seed=await db.readSeed();
+  assert.equal(seed.observationDate,'2026-10-20');
   const previous=await db.read('theme-ai-semiconductor-r189');
   const next={...previous.body,observationDate:latest};
   const write=await db.replace('theme-ai-semiconductor-r189',next,previous.storedAt);

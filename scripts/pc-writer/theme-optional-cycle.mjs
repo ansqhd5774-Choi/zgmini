@@ -10,6 +10,8 @@ import {collectOptional} from './theme-optional-collect.mjs';
 import {auditOptionalPrices} from './theme-optional-audit.mjs';
 import {containedFile,inspectManifest} from './theme-data-inventory.mjs';
 import {eligibleAiTheme,AI_THEME_PUBLIC_KEY,AI_THEME_PUBLIC_VERSION} from '../../worker/theme-ai-semiconductor-optional.mjs';
+import {themeHistoryReference} from '../../worker/theme-history-reference.mjs';
+import {THEME_ETF_ONLY_PUBLIC_KEY,validateThemeEtfOnlyPublic} from '../../worker/theme-etf-only-public.mjs';
 
 const DATA_ROOT='E:/ZGmini/data';
 const FEED='https://zgmini.kr/api/theme-fear-greed/';
@@ -64,6 +66,19 @@ export function validateStoredReference(themeId,prior,reference){
  ensure(prior.observationDate<=reference.observationDate,'PRIOR_AHEAD_OF_PUBLIC');
  if(themeId==='ai-semiconductor')ensure(prior.theme==='AI 반도체'&&equal(prior.etfs,['SMH','SOXX'])&&reference.themes.length>=7,'AI_IDENTITY');
  if(themeId==='biotech')ensure(prior.etfs?.join(',')==='IBB,XBI'&&reference.themes.length>=8,'BIOTECH_IDENTITY');
+}
+
+// The optional AI feed may be one or more actual sessions behind the core
+// feed. Validate its full 252-date calendar against the exact historical core
+// seed + rolling history, just as the public reader does. Never shift prices
+// or weaken the reader's 252-point eligibility checks to fill a missing date.
+export function aiCandidateReference(base,seed,observationDate){
+ ensure(date(observationDate)&&date(base?.observationDate)&&observationDate<=base.observationDate,'AI_OBSERVATION_DATE_INVALID');
+ if(observationDate===base.observationDate)return base;
+ ensure(seed&&validateThemeEtfOnlyPublic(seed),'AI_HISTORICAL_SEED_NOT_VERIFIED');
+ const historical=themeHistoryReference(base,seed,observationDate);
+ ensure(historical?.themes?.length===7,'AI_HISTORICAL_252_REFERENCE_MISSING');
+ return historical;
 }
 
 export function buildAiCandidate({audit,prior,reference,manifest,manifestBytes,now=Date.now()}){
@@ -150,6 +165,13 @@ export function cloudflareD1({dataRoot,fetchImpl=fetch}={}){
  const sql="SELECT body,stored_at FROM public_feed_snapshots_v1 WHERE kind='output' AND feed_key=? AND snapshot_key='current'";
  return {
   async read(key){const row=(await query(sql,[key])).results?.[0];ensure(row?.body&&Number.isSafeInteger(Number(row.stored_at)),'D1_PRIOR_MISSING');return {body:JSON.parse(row.body),storedAt:Number(row.stored_at)};},
+   async readSeed(){
+    const row=(await query('SELECT body,stored_at FROM market_public_snapshots_v1 WHERE snapshot_key=?',[THEME_ETF_ONLY_PUBLIC_KEY])).results?.[0];
+    ensure(row?.body&&Number.isSafeInteger(Number(row.stored_at)),'AI_HISTORICAL_SEED_NOT_FOUND');
+    let seed;try{seed=JSON.parse(row.body)}catch{fail('AI_HISTORICAL_SEED_INVALID_JSON');}
+    ensure(validateThemeEtfOnlyPublic(seed),'AI_HISTORICAL_SEED_NOT_VERIFIED');
+    return seed;
+   },
   async replace(key,record,previousStoredAt){
    const body=JSON.stringify(record),storedAt=Date.now();ensure(storedAt>previousStoredAt,'D1_CLOCK_REGRESSION');
    writeAttempted=true;
@@ -185,7 +207,10 @@ export async function runOptionalTheme({themeId,dataRoot,readPublic=api,storage=
   result.scoreDifference=checked.audit.maxDifference;result.observationDate=checked.observationDate;
   ensure(checked.status==='PRIVATE_CANDIDATE_PARITY_VERIFIED','SCORE_DRIFT_REVIEW_REQUIRED');
   if(themeId==='biotech')fail('BIOTECH_ORIGINAL_R3_AND_RIGHTS_REVIEW_REQUIRED');
-  const verifiedManifest=fs.readFileSync(file);const record=buildAiCandidate({audit:checked,prior:previous.body,reference:base,manifest:JSON.parse(verifiedManifest),manifestBytes:verifiedManifest,now:now()});
+   const historicalSeed=checked.observationDate<base.observationDate
+    ?(typeof db.readSeed==='function'?await db.readSeed():null):null;
+   const candidateReference=aiCandidateReference(base,historicalSeed,checked.observationDate);
+   const verifiedManifest=fs.readFileSync(file);const record=buildAiCandidate({audit:checked,prior:previous.body,reference:candidateReference,manifest:JSON.parse(verifiedManifest),manifestBytes:verifiedManifest,now:now()});
   const previouslyPublished={phase:previous.body.phase,observationDate:previous.body.observationDate,score:previous.body.score,
    history:previous.body.history,provisional:previous.body.provisional??{points:[]}};
   const newPublic={phase:record.phase,observationDate:record.observationDate,score:record.score,
@@ -220,13 +245,17 @@ export async function diagnoseAiReader({dataRoot,readPublic=api,storage=null,aud
   result.publicObservationDate=reference.observationDate;
   result.publicHistoryLastDate=reference.themes[0]?.history?.at(-1)?.date??null;
   result.localObservationDate=checked.observationDate;
+   result.latestCommonSourceDate=checked.audit?.latestCommon??null;
   result.scoreDifference=checked.audit?.maxDifference??null;
   result.publicPhase=reference.phase;
   result.publicProvisionalDates=reference.phase==='PROVISIONAL'?(reference.provisional?.points??[]).map(p=>p.date):[];
   result.localProvisionalDates=(checked.provisional?.points??[]).map(p=>p.date);
   result.localAuditStatus=checked.status;
   ensure(checked.status==='PRIVATE_CANDIDATE_PARITY_VERIFIED','SCORE_DRIFT_REVIEW_REQUIRED');
-  buildAiCandidate({audit:checked,prior:previous.body,reference,manifest:JSON.parse(manifestBytes),manifestBytes,now:now()});
+   const historicalSeed=checked.observationDate<reference.observationDate
+    ?(typeof db.readSeed==='function'?await db.readSeed():null):null;
+   const candidateReference=aiCandidateReference(reference,historicalSeed,checked.observationDate);
+   buildAiCandidate({audit:checked,prior:previous.body,reference:candidateReference,manifest:JSON.parse(manifestBytes),manifestBytes,now:now()});
   result.status='PUBLIC_READER_CANDIDATE_VERIFIED_NO_PUBLICATION';
  }catch(e){result.status='BLOCKED';result.reason=e?.code??'UNKNOWN_ERROR';}
  return result;
