@@ -366,7 +366,7 @@
       ],
       "benchmark": "SPY",
       "methodologyVersion": "ETF_ONLY_T40_R20_V40_PAIR50",
-      "status": "BLOCKED_HISTORICAL_PARITY_AND_AUTOMATION",
+      "status": "CONFIRMED_R7_PUBLIC_VERIFIED_PROVISIONAL_R8_AWAITING_PC_CUTOVER",
       "rawManifest": "themes/biotech/raw-manifest.json",
       "rawAssets": [],
       "missingRawFilename": "BIOTECH_PC_R3_LOCAL_PRICES.json",
@@ -400,9 +400,7 @@
         "api": "/api/theme-fear-greed"
       },
       "blockers": [
-        "COLLECT_CALCULATE_PUBLISH_NOT_CONNECTED",
-        "ORIGINAL_R3_PRICES_UNAVAILABLE_SHADOW_ALTERNATIVE_PENDING",
-        "RECOLLECTED_HISTORY_DIFFERS_FROM_PUBLIC_HISTORY"
+        "PROVISIONAL_R8_DIRECT_PARQUET_ROW_VERIFICATION_AND_PC_CUTOVER_PENDING"
       ],
       "forensicRecovery": {
         "baselineMainSha": "a508626adcd9bb93985ba3e3aa5733caa0cb703e",
@@ -443,7 +441,7 @@
       },
       "plannedContinuationR7": {
         "approvalDate": "2026-10-24",
-        "status": "SOURCE_STAGED_PC_INSTALL_AND_PUBLIC_READBACK_PENDING",
+        "status": "CONFIRMED_R7_PC_INSTALLED_D1_AND_PUBLIC_API_VERIFIED",
         "scope": "BIOTECH_ONLY_SEVEN_THEME_PIPELINE_UNMODIFIED",
         "existingPublishedRevision": "theme-biotech-optional-r1",
         "nextPublicKey": "theme-biotech-optional-r2",
@@ -460,7 +458,32 @@
         "publicationMode": "D1_CAS_ONLY_R2_READBACK",
         "provisional": "PENDING_VERIFIED_RECENT_PRICE_SOURCE",
         "historicalScores": "PRESERVE_EXISTING_OVERLAP_APPEND_NEW_ONLY",
-        "taskRegistrationVerified": false
+        "taskRegistrationVerified": true
+      },
+      "plannedProvisionalR8": {
+        "approvalDate": "2026-10-24",
+        "status": "GITHUB_SOURCE_STAGED_PC_RUNTIME_NOT_YET_APPLIED",
+        "scope": "BIOTECH_ONLY_SEVEN_THEME_DATA_AND_SCHEDULERS_UNMODIFIED",
+        "symbols": [
+          "IBB",
+          "XBI",
+          "SPY"
+        ],
+        "confirmedFeedKey": "theme-biotech-optional-r2",
+        "provisionalFeedKey": "theme-biotech-provisional-r1",
+        "existingSevenParquetArchive": "theme-market-history-r131/marketparquet-r165",
+        "existingSevenParquetAudits": "theme-market-history-r131/marketparquet-r167",
+        "collector": "REUSE_EXISTING_SEVEN_THEME_MARKETPARQUET_R165_FILES_NO_EXTRA_PROVIDER_GET",
+        "calculator": "scripts/pc-writer/theme-biotech-provisional-r8.mjs",
+        "publisher": "scripts/pc-writer/theme-biotech-provisional-d1-r8.mjs",
+        "taskWrapper": "scripts/pc-writer/theme-biotech-auto-r8.mjs",
+        "taskRetarget": "EXISTING_ZGMINI-PC-Theme-Biotech_ACTION_ONLY_TRIGGER_UNCHANGED",
+        "reader": "worker/theme-biotech-provisional-r1.mjs",
+        "installed": false,
+        "publicApiVerified": false,
+        "provisionalPriceMode": "GMH_15_HOURLY_UNADJUSTED_PLUS_MARKETPARQUET_EOD_SPLIT_ADJUSTED",
+        "publicationPolicy": "ONLY_VERIFIED_REAL_PARQUET_IBB_XBI_SPY_WITH_OVERLAP_GUARD_PRESERVE_252_CONFIRMED",
+        "decoder": "EXISTING_HYPARQUET_PACKAGE_DEPENDENCY"
       }
     }
   ]

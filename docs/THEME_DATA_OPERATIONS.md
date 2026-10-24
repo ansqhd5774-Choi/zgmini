@@ -123,3 +123,10 @@ PC에서 새 작업 등록 전 아래 단계가 필요하다.
 - D1은 기존 `public_feed_snapshots_v1`에 바이오 전용 `theme-biotech-optional-r2/current` 결과를 조건부 삽입/갱신, readback 검증한다. 종전 `theme-biotech-optional-r1`은 무변경 fallback. `worker/theme-etf-only-public.mjs`의 공통 7개 Reader는 건드리지 않고 바이오 후처리만 추가한다. 웹 GET은 저장 결과를 읽기만 한다.
 - 2026-10-24 R6 PC PASS: 기존 겹치는 250점 보존 + 확정 2026-10-20/21 점수 신규 추가, 252점. Shadow 67일 차이(최대 2.35318)는 원가격 불명 사유를 기록하고 기존 공개 이력은 유지한다. R7 UI·D1·정규 실행은 PC 설치/게시 및 다음 스케줄 증거 확보 **전까지 완료 아님**.
 - 바이오 잠정치는 당일 검증된 합법적 원가격이 없어 아직 게시하지 않는다. 기존 7개의 잠정치도 수정하지 않는다.
+
+## 2026-10-24 바이오 R8 잠정치 별도 연결 (PC 적용 대기)
+- 기존 7개와 동일하게 이미 수집·저장 중인 `marketparquet-r165` 원본 Parquet 및 `marketparquet-r167` 감사 파일을 **읽기만** 한다. 바이오용 새 Provider 수집이나 새로운 예약 시각을 만들지 않는다. 실제 Parquet 내 IBB/XBI/SPY 행이 세 종목 모두 검증된 날짜만 점수를 계산한다.
+- 기존 바이오 R7의 GetMarketHistory 확정 수집·252개 공개 이력·`theme-biotech-optional-r2` key와 7개 원래 작업/공개 key는 변경하지 않는다. R8 산식은 기존 승인 ETF R158/R188을 재사용하되 검증된 MarketParquet 일봉을 추가 관측일로만 사용한다. 두 소스의 기준일 가격 차이가 5%를 넘으면 중단하고 빈 날짜·점수를 생성하지 않는다.
+- R8 잠정치는 `theme-biotech-provisional-r1` 전용 D1 key에 CAS+readback으로 저장한 뒤 Worker의 `theme-biotech-provisional-r1.mjs`가 검증하여 바이오 날짜/점수만 기존 `provisional.points`에 합친다. 기존 7개의 날짜·점수·경로는 불변이다.
+- PC one-time 설치는 기존 검증된 `source-r7`를 SHA 재확인해 `source-r8`로 **복사**하고, 첫 R8 실자료 계산/게시 성공 후 **바이오 예약 작업의 명령만** R8로 바꾼다. 원래 트리거·Principal·Settings는 XML 동치 검증 후 유지한다. 원래 작업의 XML은 Desktop CMD 위치에 복구용으로 보존한다. 원래 7개 Task는 수정하지 않는다.
+- 이 GitHub 배포만으로는 새 바이오 잠정치가 이미 게시됐거나 PC Task가 전환됐다는 증거가 아니다. PC `BIOTECH_R8_CONNECT_LOG.txt`, R8 D1 readback, 공개 API의 바이오 점선 1~2점 확인 전에는 `PENDING`으로 기록한다.
