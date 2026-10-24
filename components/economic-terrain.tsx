@@ -72,7 +72,7 @@ export default function EconomicTerrain(){
   <div className="zg-terrain-section-heading"><div className="zg-terrain-title"><Activity size={27} aria-hidden="true"/><div><h2 id="zg-terrain-heading">경제 지형도</h2><p>12개 경제 지표의 안정 점수 분포</p></div></div></div>
   {error&&<p className="zg-terrain-notice" role="status">데이터 갱신이 지연되고 있습니다. 현재 제공 가능한 저장 점수만 표시합니다.</p>}
   <div className="zg-terrain-list">
-   <div className="zg-terrain-axis" aria-hidden="true"><div className="zg-terrain-axis-label"><span>순위</span><span>경제 지표</span><span className="zg-terrain-axis-score-label">안정 점수<small>100점 기준</small></span></div><div className="zg-terrain-axis-plot"><div className="zg-terrain-axis-bands">{BANDS.map(b=><div key={b.name} style={{width:`${b.width}%`,backgroundColor:b.color}}><strong>{b.name}</strong><span>{b.range}</span><i style={{background:b.color}}/></div>)}</div><div className="zg-terrain-axis-ticks">{[0,25,45,55,75,100].map(v=><span key={v} style={{left:`${v}%`}}>{v}</span>)}</div></div></div>
+   <div className="zg-terrain-axis" aria-hidden="true"><div className="zg-terrain-axis-label"><span>순위</span><span>경제 지표</span><span className="zg-terrain-axis-score-label">안정 점수<small>100점 기준</small></span></div><div className="zg-terrain-axis-plot"><div className="zg-terrain-axis-bands">{BANDS.map(b=><div key={b.name} style={{width:`${b.width}%`}}><strong>{b.name}</strong><span>{b.range}</span><i style={{background:b.color}}/></div>)}</div><div className="zg-terrain-axis-ticks">{[0,25,45,55,75,100].map(v=><span key={v} style={{left:`${v}%`}}>{v}</span>)}</div></div></div>
    {shown.map((card,index)=>{
     const band=bandOf(card.score),active=selected===card.id;
     return <div className="zg-terrain-item" key={card.id} id={card.id} style={{'--terrain-accent':band?.color??'#8fa4b8'} as CSSProperties}>
@@ -86,3 +86,4 @@ export default function EconomicTerrain(){
   <p className="zg-terrain-footnote"><Info size={13} aria-hidden="true"/>높은 점수일수록 안정적인 상태를 의미합니다. 점수는 실제 위험 발생 확률이 아닙니다.</p>
  </section>;
 }
+
