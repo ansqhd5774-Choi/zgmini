@@ -97,3 +97,26 @@
 @media(max-width:390px){.zg-terrain-axis-bands span{display:none}}
 @media(max-width:750px){.zg-terrain-axis{height:80px}.zg-terrain-axis-bands{height:49px}.zg-terrain-axis-bands strong{font-size:13px}.zg-terrain-axis-bands span{font-size:11px}}
 @media(max-width:510px){.zg-terrain-axis{position:relative;height:80px;padding-top:25px}.zg-terrain-axis-plot,.zg-terrain-axis-bands>div{position:static}.zg-terrain-axis-bands{height:22px}.zg-terrain-axis-bands span{display:none}.zg-terrain-axis-bands strong{position:absolute;top:5px;width:20%;font-size:14px;text-align:center}.zg-terrain-axis-bands>div:nth-child(1) strong{left:0}.zg-terrain-axis-bands>div:nth-child(2) strong{left:20%}.zg-terrain-axis-bands>div:nth-child(3) strong{left:40%}.zg-terrain-axis-bands>div:nth-child(4) strong{left:60%}.zg-terrain-axis-bands>div:nth-child(5) strong{left:80%}}
+
+/* Economic terrain score-map R3: centered header and continuous five-zone backdrop. */
+.zg-terrain-axis-label{height:45px;align-items:stretch;padding:0;gap:0}
+.zg-terrain-axis-label>span{min-width:0;min-height:45px;display:flex;align-items:center;justify-content:center;flex-direction:column;text-align:center;background:#12394f;color:#f0f7fb;font-size:13px;font-weight:760;line-height:1.22}
+.zg-terrain-axis-label>span:first-child{background:#17475e;border-left:3px solid #2de0c4}
+.zg-terrain-axis-label>span:last-child{background:#105367}
+.zg-terrain-axis-score-label small{margin-top:3px;font-size:10px;font-weight:550;color:#b3d4e1}
+.zg-terrain-axis-bands{height:45px}
+.zg-terrain-axis-bands>div{justify-content:center;gap:0}
+.zg-terrain-axis-bands>div:nth-child(1){background:#fa628b}
+.zg-terrain-axis-bands>div:nth-child(2){background:#ffc64b}
+.zg-terrain-axis-bands>div:nth-child(3){background:#a6bdd0}
+.zg-terrain-axis-bands>div:nth-child(4){background:#2de0c4}
+.zg-terrain-axis-bands>div:nth-child(5){background:#13bfa7}
+.zg-terrain-axis-bands strong{color:#062633;font-size:14px;line-height:1.1;font-weight:800}
+.zg-terrain-axis-bands span,.zg-terrain-axis-bands i{display:none}
+.zg-terrain-axis-ticks{height:35px}
+.zg-terrain-row-index{height:100%;display:flex;align-items:center;justify-content:center;padding:0;text-align:center}
+.zg-terrain-track::before{background:linear-gradient(to right,transparent calc(25% - .5px),#315467 25%,transparent calc(25% + .5px),transparent calc(45% - .5px),#315467 45%,transparent calc(45% + .5px),transparent calc(55% - .5px),#315467 55%,transparent calc(55% + .5px),transparent calc(75% - .5px),#315467 75%,transparent calc(75% + .5px)),linear-gradient(to right,rgba(250,98,139,.10) 0 25%,rgba(255,198,75,.10) 25% 45%,rgba(166,189,208,.10) 45% 55%,rgba(45,224,196,.10) 55% 75%,rgba(19,191,167,.10) 75% 100%)}
+.zg-terrain-line{border-bottom:2px dashed var(--terrain-accent);opacity:.94}
+@media(max-width:750px){.zg-terrain-axis-label>span{font-size:11px}.zg-terrain-axis-bands{height:45px}.zg-terrain-axis-bands strong{font-size:12px}.zg-terrain-axis-ticks{height:35px}}
+@media(max-width:510px){.zg-terrain-axis{height:80px;padding-top:0}.zg-terrain-axis-plot,.zg-terrain-axis-bands>div{position:relative}.zg-terrain-axis-bands{height:45px}.zg-terrain-axis-bands strong{position:static;width:auto;font-size:clamp(9px,2.7vw,12px);text-align:center}.zg-terrain-axis-label>span{min-height:45px;height:45px;font-size:10px}.zg-terrain-axis-score-label small{font-size:8px}.zg-terrain-axis-ticks{font-size:10px}}
+
