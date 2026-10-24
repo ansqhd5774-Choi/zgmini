@@ -487,6 +487,7 @@
 
 /* The small SVG cards reserve the right gutter for mobile Y-axis labels. */
 @media(max-width:767px){
+ .zg-dashboard[data-view="dashboard"] .zg-r55-summary{grid-template-columns:90px minmax(0,1fr);column-gap:12px}
  .zg-dashboard[data-view="dashboard"] .ob-summary-chart-frame>.zg-chart-fixed-axis>span{left:calc(100% - 20px)!important;transform:translate(0,-50%)}
  .zg-dashboard[data-view="dashboard"] .ob-summary-chart-frame>svg{transform:translateX(-8%)}
  .zg-dashboard[data-view="dashboard"] .ob-summary-chart-frame>.ob-chart-endpoint{margin-left:-8%}
