@@ -24,7 +24,7 @@ test("all three original choices and stored indicator semantics are preserved",(
  assert.match(src,/item\.id==="iran"\?iran\.score:null/);
  assert.match(src,/aria-pressed=\{selectedCard\}/);
  assert.match(src,/aria-controls="ob-selected-event-panel"/);
- assert.match(src,/event\.id==='iran'\?<IranDetail view=\{iran\}\/>/);
+ assert.match(src,/event\.id==='iran'\?<Suspense fallback=\{<p role="status">[^<]+<\/p>\}><IranDetail view=\{iran\}\/><\/Suspense>/);
  assert.match(iran,/잠정 추정 차트/);
  assert.doesNotMatch(src,/Math\.random|mockScore|demoProbability/);
 });
