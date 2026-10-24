@@ -34,9 +34,10 @@ export type SectorSnapshotMeta={confirmedObservationDate?:string;phase?:string;p
 type SectorFearGreedStoredPayload=SectorSnapshotMeta&{status?:string;history?:ChartInputRow[]};
 export default function SectorSentimentChart({data=[],series=SECTORS,title='섹터별 공포·탐욕',draggable=false,themePicker=false,dashboardThemeScores=false,linkToDetail=true,showProvisionalNotice=true,snapshot,provisionalBySeries}:{data?:ChartInputRow[];series?:readonly SentimentSeries[];title?:string;draggable?:boolean;themePicker?:boolean;dashboardThemeScores?:boolean;linkToDetail?:boolean;showProvisionalNotice?:boolean;snapshot?:SectorSnapshotMeta;provisionalBySeries?:Record<string,string>}){
  const mobileAxisRight=useDashboardMobileAxis();
- const [hidden,setHidden]=useState<Set<string>>(()=>new Set(series===SECTORS?SECTORS.slice(6).map(sector=>sector.id):[]));
+ const [hidden,setHidden]=useState<Set<string>>(()=>new Set(series===SECTORS?SECTORS.map(sector=>sector.id):dashboardThemeScores?series.map(item=>item.id):[]));
  const drag=useRef<{x:number;left:number;active:boolean;moved:boolean}>({x:0,left:0,active:false,moved:false});
  const legendRef=useRef<HTMLDivElement>(null);
+ const dashboardSectorDefaultApplied=useRef(false);
  const dashboardThemeDefaultApplied=useRef(false);
  const [atEnd,setAtEnd]=useState(false);
  const [pickerOpen,setPickerOpen]=useState(false);
@@ -85,7 +86,7 @@ export default function SectorSentimentChart({data=[],series=SECTORS,title='섹�
    return hasProvisional?[[id,v],[id+'__solid',i<firstProvisional?v:null],[id+'__dash',i>=firstProvisional-1?v:null]]:[[id,v]];
   })),
  }));
- const toggle=(id:string)=>setHidden(previous=>{const next=new Set(previous);if(next.has(id))next.delete(id);else next.add(id);return next});
+ const toggle=(id:string)=>{if(compactSectorScores)dashboardSectorDefaultApplied.current=true;setHidden(previous=>{const next=new Set(previous);if(next.has(id))next.delete(id);else next.add(id);return next})};
  const end=rows.length?Date.parse(rows[rows.length-1].date):0;
  const visibleRows=rows.filter(row=>Date.parse(row.date)>=end-period*86400000);
  const latestSectorRow=rows.at(-1);
@@ -95,6 +96,13 @@ export default function SectorSentimentChart({data=[],series=SECTORS,title='섹�
   const value=latestSectorRow?.[sector.id];
   return {sector,index,score:typeof value==='number'&&Number.isFinite(value)?Math.round(value):-1};
  }).sort((a,b)=>b.score-a.score||a.index-b.index).map(({sector})=>sector):series;
+ useEffect(()=>{
+  if(!compactSectorScores||dashboardSectorDefaultApplied.current||!latestSectorRow)return;
+  const rightmost=legendSeries.at(-1);
+  if(!rightmost||typeof latestSectorRow[rightmost.id]!=='number'||!Number.isFinite(latestSectorRow[rightmost.id]))return;
+  dashboardSectorDefaultApplied.current=true;
+  setHidden(new Set(series.filter(({id})=>id!==rightmost.id).map(({id})=>id)));
+ },[compactSectorScores,latestSectorRow,legendSeries,series]);
  const shownSeries=series.filter(s=>!hidden.has(s.id));
  const rankedThemeEntries=showDashboardThemeScores?series.map((item,index)=>{
   const lastObserved=rows.findLast(row=>typeof row[item.id]==='number'&&Number.isFinite(row[item.id]));
@@ -102,11 +110,11 @@ export default function SectorSentimentChart({data=[],series=SECTORS,title='섹�
   return {item,index,score:typeof value==='number'&&Number.isFinite(value)?Math.round(value):-1};
  }).sort((a,b)=>b.score-a.score||a.index-b.index):[];
  const themeLegendSeries=showDashboardThemeScores?rankedThemeEntries.map(({item})=>item):shownSeries;
- // Select the highest two published scores once, without overriding later manual toggles.
+ // Select the highest published score once, without overriding later manual toggles.
  useEffect(()=>{
   if(!showDashboardThemeScores||dashboardThemeDefaultApplied.current||!rankedThemeEntries.some(({score})=>score>=0))return;
   dashboardThemeDefaultApplied.current=true;
-  const selected=new Set(rankedThemeEntries.filter(({score})=>score>=0).slice(0,2).map(({item})=>item.id));
+  const selected=new Set(rankedThemeEntries.filter(({score})=>score>=0).slice(0,1).map(({item})=>item.id));
   setHidden(new Set(series.filter(({id})=>!selected.has(id)).map(({id})=>id)));
   const list=legendRef.current;
   if(list)list.scrollLeft=0;
