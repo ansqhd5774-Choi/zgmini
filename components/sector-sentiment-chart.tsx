@@ -8,6 +8,7 @@ import {chartExtrema,clampedChartIndex} from '../lib/chart-extrema.mjs';
 import ChartExtremumPoint from './chart-extremum-point';
 import './sector-sentiment-chart.css';
 import ChartAxisLabels from './chart-axis-labels';
+import {uniqueChartTooltipEntries} from '../lib/chart-tooltip-unique.mjs';
 import './chart-axis-labels.css';
 
 export const SECTORS=[
@@ -104,7 +105,7 @@ export default function SectorSentimentChart({data=[],series=SECTORS,title='ì„¹í
      <XAxis dataKey="date" stroke="#9db0c2" fontSize={11} axisLine={false} tickLine={false} tickFormatter={date=>String(date).slice(5)} minTickGap={36}/>
      <YAxis orientation={mobileAxisRight?"right":"left"} domain={[0,100]} ticks={[0,25,50,75,100]} interval={0} axisLine={false} tickLine={false} stroke="#9db0c2" fontSize={11} width={32}/>
      <ReferenceLine y={50} stroke="#64748b" strokeDasharray="3 5"/>
-     <Tooltip active={touchTooltip??undefined} position={{x:0,y:0}} allowEscapeViewBox={{x:true,y:true}} wrapperStyle={{transform:'translateY(calc(-100% - 8px))',zIndex:20}} isAnimationActive={false} cursor={{stroke:'#cbd5e1',strokeWidth:1,strokeDasharray:'3 3'}} content={({active,payload,label})=>!active||!payload?.length?null:<div className="zg-sector-tooltip" role="status"><p>{String(label)}</p><ul>{payload.filter(entry=>typeof entry.value==='number'&&Number.isFinite(entry.value)).map(entry=><li key={String(entry.dataKey)} style={{color:entry.color}}><span>{entry.name}</span><strong>{Number(entry.value).toFixed(1)}</strong></li>)}</ul></div>}/>
+     <Tooltip active={touchTooltip??undefined} position={{x:0,y:0}} allowEscapeViewBox={{x:true,y:true}} wrapperStyle={{transform:'translateY(calc(-100% - 8px))',zIndex:20}} isAnimationActive={false} cursor={{stroke:'#cbd5e1',strokeWidth:1,strokeDasharray:'3 3'}} content={({active,payload,label})=>!active||!payload?.length?null:<div className="zg-sector-tooltip" role="status"><p>{String(label)}</p><ul>{uniqueChartTooltipEntries(payload).map(entry=><li key={String(entry.dataKey)} style={{color:entry.color}}><span>{entry.name}</span><strong>{Number(entry.value).toFixed(1)}</strong></li>)}</ul></div>}/>
      {series.map(sector=>hasProvisional?[
       <Line key={sector.id+'-solid'} dataKey={sector.id+'__solid'} name={sector.name} stroke={sector.color} hide={hidden.has(sector.id)} strokeWidth={2} dot={false} activeDot={{r:4}} connectNulls={false} isAnimationActive={false}/>,
       <Line key={sector.id+'-dash'} dataKey={sector.id+'__dash'} name={sector.name} stroke={sector.color} strokeDasharray="4 5" hide={hidden.has(sector.id)} strokeWidth={2} dot={false} activeDot={{r:4}} connectNulls={false} isAnimationActive={false}/>
