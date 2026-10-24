@@ -8,12 +8,16 @@ const browser=await chromium.launch({headless:true,args:['--no-sandbox']});
 try{
  for(const width of [390,1440]){
   const page=await browser.newPage({viewport:{width,height:900}});
-  const errors=[];
+  const errors=[],educationRequests=[];
   page.on('pageerror',error=>errors.push(error.message));
+  page.on('request',request=>{if(request.url().includes('/styles/fear-greed-education-r1.css'))educationRequests.push(request.url());});
   await page.addInitScript(()=>sessionStorage.setItem('zgmini-about-intro-dismissed-r1','1'));
   await page.route('https://**',route=>route.abort());
   await page.route('**/api/**',route=>route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({status:'UNAVAILABLE',user:null})}));
+  await page.goto(base,{waitUntil:'networkidle',timeout:45000});
+  assert.equal(educationRequests.length,0,'Dashboard must not request detail education CSS');
   await page.goto(base+'/fear-greed/usa/',{waitUntil:'networkidle',timeout:45000});
+  assert.equal(educationRequests.length,1,'Detail requests its education CSS');
   const disclosure=page.locator('details.fg-r2-extended');
   await disclosure.locator('summary').click();
   const education=page.locator('.cnn-education-panel');
