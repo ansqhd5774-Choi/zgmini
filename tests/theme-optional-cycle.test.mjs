@@ -179,7 +179,7 @@ test('read-only authority diagnostic detects the actual seed + provisional sidec
  const publicFeed={...approvedCurrent(),phase:'PROVISIONAL',
   provisional:{points:[{date:'2026-10-22',scores}]}};
  let reads=0,writes=0,seedReads=0;
- const db={read:async key=>{reads++;return {body:key==='theme-etf-only-rolling'
+ const db={read:async key=>{reads++;return {storedAt:NOW-1000,body:key==='theme-etf-only-rolling'
    ?{status:'READY',version:'THEME_ETF_ROLLING_R178',observationDate:'2026-10-20'}:sidecar};},
   readSeed:async()=>{seedReads++;return seed;},replace:async()=>{writes++;}};
  const actual=await diagnoseSevenProvisionalLane({storage:db,readPublic:async()=>publicFeed,now:()=>NOW});
