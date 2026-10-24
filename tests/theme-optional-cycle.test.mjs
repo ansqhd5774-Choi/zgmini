@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import {createHash} from 'node:crypto';
-import {buildAiCandidate,collectWindow,runOptionalTheme,cloudflareD1,cloudflareToken,aiReaderRejectionReason,aiCandidateReference,diagnoseAiReader,diagnoseBiotechParity,verifySevenProvisionalAuthority} from '../scripts/pc-writer/theme-optional-cycle.mjs';
+import {buildAiCandidate,collectWindow,runOptionalTheme,cloudflareD1,cloudflareToken,aiReaderRejectionReason,aiCandidateReference,diagnoseAiReader,diagnoseBiotechParity,verifySevenProvisionalAuthority,diagnoseSevenProvisionalLane} from '../scripts/pc-writer/theme-optional-cycle.mjs';
 import {auditThroughDate} from '../scripts/pc-writer/theme-optional-audit.mjs';
 import {regularHour15Rows} from '../scripts/pc-writer/theme-optional-score-r188.mjs';
 import {THEME_ETF_ONLY_PAIRS,THEME_ETF_ONLY_PUBLIC_VERSION} from '../worker/theme-etf-only-public.mjs';
@@ -165,6 +165,31 @@ test('AI may inherit secondary provenance only from the exact seven-theme verifi
   {...rolling,provisional:{points:[{date:'2026-10-23'}]}},
   {...rolling,lineage:{...rolling.lineage,secondaryPendingCount:1}},
  ])assert.throws(()=>verifySevenProvisionalAuthority(invalid,reference),/AI_SEVEN_SECONDARY_RIGHTS_OR_LINEAGE_UNVERIFIED/);
+});
+test('read-only authority diagnostic detects the actual seed + provisional sidecar route',async()=>{
+ const seed={...approvedCoreSeed(),observationDate:latest,
+  themes:THEME_ETF_ONLY_PAIRS.map(t=>({...t,latestScore:history.at(-1).score,history}))};
+ const scores=Object.fromEntries(THEME_ETF_ONLY_PAIRS.map(t=>[t.theme,54]));
+ const sidecar={status:'READY',phase:'PROVISIONAL',methodologyVersion:'ETF_ONLY_T40_R20_V40_PAIR50',
+  individualStocksUsed:0,publicationAuthorized:true,upstreamCommercialRightsVerified:true,
+  derivedLicenseVerified:true,sourcePriceReconciled:true,sourceName:'MARKETPARQUET_ETF_DAILY_SPLIT_ADJUSTED',
+  sourceVersion:'verified-test',asOf:'2026-10-23T01:00:00Z',sourceStoredAt:'2026-10-23T01:00:00Z',
+  confirmedObservationDate:latest,observationDate:'2026-10-22',
+  coverage:{etfs:13,benchmark:'SPY',complete:true},points:[{date:'2026-10-22',scores}]};
+ const publicFeed={...approvedCurrent(),phase:'PROVISIONAL',
+  provisional:{points:[{date:'2026-10-22',scores}]}};
+ let reads=0,writes=0,seedReads=0;
+ const db={read:async key=>{reads++;return {body:key==='theme-etf-only-rolling'
+   ?{status:'READY',version:'THEME_ETF_ROLLING_R178',observationDate:'2026-10-20'}:sidecar};},
+  readSeed:async()=>{seedReads++;return seed;},replace:async()=>{writes++;}};
+ const actual=await diagnoseSevenProvisionalLane({storage:db,readPublic:async()=>publicFeed,now:()=>NOW});
+ assert.equal(actual.status,'READONLY_REPORTED');
+ assert.equal(actual.activeLane,'SEED_PLUS_PROVISIONAL_SIDECAR');
+ assert.equal(actual.rolling.gates.confirmedDate,false);
+ assert.equal(actual.fallback.readerValidatorPass,true);
+ assert.equal(actual.fallback.exactPublicScoreMatch,true);
+ assert.equal(actual.providerCalls,0);assert.equal(actual.d1Writes,0);
+ assert.equal(actual.schedulerWrites,0);assert.equal(reads,2);assert.equal(seedReads,1);assert.equal(writes,0);
 });
 test('AI private cycle attaches only date-exact verified 23rd secondary score and does not write D1',async()=>{
  await fixture('ai-semiconductor',async({root})=>{

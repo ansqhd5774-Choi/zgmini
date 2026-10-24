@@ -13,7 +13,8 @@ import {containedFile,inspectManifest} from './theme-data-inventory.mjs';
 import {eligibleAiTheme,AI_THEME_PUBLIC_KEY,AI_THEME_PUBLIC_VERSION} from '../../worker/theme-ai-semiconductor-optional.mjs';
 import {themeHistoryReference} from '../../worker/theme-history-reference.mjs';
 import {THEME_ETF_ONLY_PUBLIC_KEY,validateThemeEtfOnlyPublic} from '../../worker/theme-etf-only-public.mjs';
-import {THEME_ETF_ROLLING_KEY,THEME_ETF_ROLLING_VERSION} from '../../worker/theme-etf-rolling-public.mjs';
+import {THEME_ETF_ROLLING_KEY,THEME_ETF_ROLLING_VERSION,validRollingPublic} from '../../worker/theme-etf-rolling-public.mjs';
+import {THEME_ETF_PROVISIONAL_KEY,validThemeEtfProvisional} from '../../lib/market-score/theme-etf-provisional.mjs';
 
 const DATA_ROOT='E:/ZGmini/data';
 const FEED='https://zgmini.kr/api/theme-fear-greed/';
@@ -135,6 +136,76 @@ export function verifySevenProvisionalAuthority(rolling,reference){
   equal((rolling.provisional?.points??[]).map(p=>p.date),expected)&&
   rolling.lineage?.latestCompletedSession===expected.at(-1),'AI_SEVEN_SECONDARY_RIGHTS_OR_LINEAGE_UNVERIFIED');
  return true;
+}
+
+// The public reader can select either rolling R178 or the immutable R144 seed
+// plus its provisional sidecar. Report every authority gate separately before
+// selecting a source. Never use public score equality as a license substitute.
+export async function diagnoseSevenProvisionalLane({dataRoot,storage=null,readPublic=api,now=Date.now}={}){
+ const result={report:'AI_SEVEN_PROVISIONAL_AUTHORITY_READONLY_R3',status:'STARTED',
+  providerCalls:0,d1Writes:0,schedulerWrites:0,reason:null};
+ try{
+  const db=storage??cloudflareD1({dataRoot}),feed=await readPublic();
+  ensure(feed?.status==='READY'&&feed.themes?.length>=7,'PUBLIC_SEVEN_REFERENCE_MISSING');
+  const reference={...feed,themes:feed.themes.slice(0,7)};
+  const pending=reference.phase==='PROVISIONAL'?(reference.provisional?.points??[]).map(p=>p.date):[];
+  result.publicReference={phase:reference.phase,confirmedDate:reference.observationDate,pendingDates:pending};
+  const fetchOptional=async key=>{try{return {body:(await db.read(key)).body,error:null};}
+   catch{return {body:null,error:'D1_OUTPUT_NOT_READABLE'};}};
+  const [roll,side]=await Promise.all([fetchOptional(THEME_ETF_ROLLING_KEY),fetchOptional(THEME_ETF_PROVISIONAL_KEY)]);
+  let seed=null,seedError=null;
+  try{seed=await db.readSeed();}catch{seedError='D1_IMMUTABLE_SEED_NOT_READABLE';}
+  result.immutableSeed={available:!!seed,error:seedError,confirmedDate:seed?.observationDate??null};
+  const r=roll.body;
+  const gates={
+   ready:r?.status==='READY',version:r?.version===THEME_ETF_ROLLING_VERSION,
+   publicationAuthorized:r?.publicationAuthorized===true,
+   upstreamCommercialRightsVerified:r?.upstreamCommercialRightsVerified===true,
+   derivedLicenseVerified:r?.derivedLicenseVerified===true,
+   sourcePriceReconciled:r?.sourcePriceReconciled===true,
+   primarySource:r?.lineage?.primarySource==='GETMARKETHISTORY_1H_CLOSE',
+   secondarySource:r?.lineage?.secondarySource==='MARKETPARQUET_ETF_DAILY_SPLIT_ADJUSTED',
+   pendingCount:r?.lineage?.secondaryPendingCount===pending.length,
+   confirmedDate:r?.observationDate===reference.observationDate,
+   pendingDates:equal((r?.provisional?.points??[]).map(p=>p.date),pending),
+   latestSession:r?.lineage?.latestCompletedSession===pending.at(-1),
+  };
+  const rollingValid=!!seed&&!!r&&await validRollingPublic(r,seed,{now:now()});
+  const scoreMatches=(themes,points,confirmed)=>confirmed===reference.observationDate&&
+   Array.isArray(themes)&&themes.length===7&&themes.every((t,i)=>
+    t.theme===reference.themes[i].theme&&t.score===reference.themes[i].score&&
+    equal(t.history?.map(p=>p.date),reference.themes[i].history?.map(p=>p.date))&&
+    equal(t.history?.map(p=>p.score),reference.themes[i].history?.map(p=>p.score)))&&
+   equal(points?.map(p=>p.date)??[],pending)&&
+   (points??[]).every((p,i)=>reference.themes.every(t=>p.scores?.[t.theme]===reference.provisional?.points?.[i]?.scores?.[t.theme]));
+  const rollingMatches=rollingValid&&scoreMatches(r.themes,r.provisional?.points??[],r.observationDate);
+  result.rolling={available:!!r,error:roll.error,observationDate:r?.observationDate??null,
+   pendingDates:(r?.provisional?.points??[]).map(p=>p.date),latestSession:r?.lineage?.latestCompletedSession??null,
+   secondarySourceName:r?.lineage?.secondarySource??null,gates,
+   allAuthorityGatesPass:Object.values(gates).every(Boolean),readerValidatorPass:rollingValid,
+   exactPublicScoreMatch:rollingMatches};
+  const p=side.body;
+  const fallbackValid=!!seed&&!!p&&validThemeEtfProvisional(p,seed.observationDate,{now:now(),themes:seed.themes});
+  const fallbackSeedMatches=!!seed&&reference.observationDate===seed.observationDate&&
+   seed.themes.every((t,i)=>t.theme===reference.themes[i].theme&&
+    t.latestScore===reference.themes[i].score&&
+    equal(t.history?.map(p=>p.date),reference.themes[i].history?.map(p=>p.date))&&
+    equal(t.history?.map(p=>p.score),reference.themes[i].history?.map(p=>p.score)));
+  const fallbackMatches=fallbackValid&&fallbackSeedMatches&&
+   equal(p.points.map(z=>z.date),pending)&&p.points.every((z,i)=>
+    reference.themes.every(t=>z.scores?.[t.theme]===reference.provisional?.points?.[i]?.scores?.[t.theme]));
+  result.fallback={available:!!p,error:side.error,sourceName:p?.sourceName??null,
+   confirmedDate:p?.confirmedObservationDate??null,pendingDates:(p?.points??[]).map(x=>x.date),
+   rights:{publicationAuthorized:p?.publicationAuthorized===true,
+    upstreamCommercialRightsVerified:p?.upstreamCommercialRightsVerified===true,
+    derivedLicenseVerified:p?.derivedLicenseVerified===true,
+    sourcePriceReconciled:p?.sourcePriceReconciled===true},
+   readerValidatorPass:fallbackValid,seedScoresMatch:fallbackSeedMatches,exactPublicScoreMatch:fallbackMatches};
+  result.activeLane=rollingMatches?'ROLLING_R178':fallbackMatches?'SEED_PLUS_PROVISIONAL_SIDECAR':
+   'UNVERIFIED_NO_PUBLIC_SCORE_PARITY';
+  result.status='READONLY_REPORTED';
+ }catch(e){result.status='BLOCKED';result.reason=e?.code??'UNKNOWN_ERROR';}
+ return result;
 }
 
 function config(dataRoot){
@@ -355,8 +426,13 @@ function saveCycleResult(dataRoot,themeId,result){
 
 if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.url)){
  const args=process.argv.slice(2),diagnose=args.length===2&&args[0]==='--diagnose'&&['ai-semiconductor','biotech'].includes(args[1]);
- const valid=diagnose||(args[0]==='--once'&&['ai-semiconductor','biotech','all'].includes(args[1])&&args.slice(2).every(x=>x==='--publish'));
- if(!valid){console.log('Usage: node theme-optional-cycle.mjs --once <ai-semiconductor|biotech|all> [--publish] OR --diagnose <ai-semiconductor|biotech>');process.exitCode=2;}
+ const sevenLane=args.length===1&&args[0]==='--diagnose-seven-lane';
+ const valid=diagnose||sevenLane||(args[0]==='--once'&&['ai-semiconductor','biotech','all'].includes(args[1])&&args.slice(2).every(x=>x==='--publish'));
+ if(!valid){console.log('Usage: node theme-optional-cycle.mjs --once <ai-semiconductor|biotech|all> [--publish] OR --diagnose <ai-semiconductor|biotech> OR --diagnose-seven-lane');process.exitCode=2;}
+ else if(sevenLane){
+  const result=await diagnoseSevenProvisionalLane({dataRoot:process.env.ZGMINI_DATA_ROOT??DATA_ROOT});
+  console.log(JSON.stringify(result));if(result.status==='BLOCKED')process.exitCode=1;
+ }
  else if(diagnose){
   const dataRoot=process.env.ZGMINI_DATA_ROOT??DATA_ROOT;
   const result=args[1]==='ai-semiconductor'?await diagnoseAiReader({dataRoot}):await diagnoseBiotechParity({dataRoot});
