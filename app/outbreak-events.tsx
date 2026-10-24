@@ -5,7 +5,7 @@ import '../components/chart-axis-labels.css';
 
 
 import {useStoredIndex} from '../components/use-stored-index';
-import {useEffect,useRef,useState} from 'react';
+import {lazy,Suspense,useEffect,useRef,useState} from 'react';
 import './outbreak-events.css';
 import './outbreak-scenarios-r51.css';
 import {OutbreakChange} from './outbreak-change';
@@ -13,7 +13,7 @@ import OutbreakBeginnerFed,{rateBand} from './outbreak-beginner-fed-r53';
 import {ContentHelp} from './content-help';
 import {HELP,HelpText} from './help-copy';
 import {useIranProgress,IranSummaryCard} from './iran-progress';
-import IranDetail from './outbreak-beginner-iran-r54';
+const IranDetail=lazy(()=>import('./outbreak-beginner-iran-r54'));
 import {Landmark, Swords, Target, TrendingUp, TrendingDown, Minus} from 'lucide-react';
 
 const events = [
@@ -102,7 +102,7 @@ export default function OutbreakEvents({initialEvent='fed'}:{initialEvent?:strin
      })}
     </div>
     <div id="ob-selected-event-panel" className="ob-selected-event-panel">
-    {event.id==='iran'?<IranDetail view={iran}/>:fed?<OutbreakBeginnerFed rate={rate} deltaWeek={deltaWeek}/>:<article key={event.id} className="ob-detail ob-standard-detail" aria-labelledby="ob-detail-title"><header><div><span className="ob-eyebrow">선택한 이벤트</span><h2 id="ob-detail-title">{event.title}</h2></div><span className="ob-stage">기간·판정 기준 초안</span></header>
+    {event.id==='iran'?<Suspense fallback={<p role="status">이란 전쟁 상세 분석을 불러오는 중입니다.</p>}><IranDetail view={iran}/></Suspense>:fed?<OutbreakBeginnerFed rate={rate} deltaWeek={deltaWeek}/>:<article key={event.id} className="ob-detail ob-standard-detail" aria-labelledby="ob-detail-title"><header><div><span className="ob-eyebrow">선택한 이벤트</span><h2 id="ob-detail-title">{event.title}</h2></div><span className="ob-stage">기간·판정 기준 초안</span></header>
       <details className="ob-definition ob-definition-disclosure"><summary>분석 질문 · 판정 기준 <span aria-hidden="true">⌄</span></summary><div className="ob-definition-body"><div><span>분석 질문</span><p>{event.question}</p></div><div><span>발생 판정 기준</span><p>{event.outcome}</p></div></div></details>
       <div className="ob-detail-grid"><section className="ob-panel"><h3>{fed?"금리 심리 추이":"확률 추이"}</h3><div className="ob-chart-empty">{fed&&rate?<svg viewBox="0 0 300 150" className="ob-live-rate-chart" role="img" aria-label="금리 심리 최근 5거래일 점수">{[0,50,100].map(v=><g key={v}><line x1="20" x2="280" y1={120-v} y2={120-v} stroke="#355469" strokeDasharray="2 4"/><text x="2" y={124-v} fontSize="9" fill="#96aabd">{v}</text></g>)}<polyline fill="none" stroke={rateChartColor} strokeWidth="2.8" points={rate.week.map((row,i)=>`${20+i*65},${120-row.value}`).join(" ")}/>{rate.week.map((row,i)=><circle key={row.label} cx={20+i*65} cy={120-row.value} r="3.5" fill={rateChartColor}/>)}<text x="20" y="142" fill="#96aabd" fontSize="9">{rate.week[0].label.slice(5)}</text><text x="280" y="142" textAnchor="end" fill="#96aabd" fontSize="9">{rate.week.at(-1)!.label.slice(5)}</text></svg>:<><div className="ob-chart-grid" aria-hidden="true"/><p>{fed?"금리 심리 점수 연결 대기":"확률 이력이 연결되면 추이를 표시합니다."}</p><span>{fed?"PC 저장 H.15 데이터 기준":"발표·협상 등 주요 사건을 함께 표시할 공간"}</span></>}</div><div className="ob-metrics"><div><span>{fed?"금리 심리":"현재 확률"}</span><strong>{fed&&rate?rate.score.toFixed(1):"—"} {fed?"점":"%"}</strong></div><div><span>{fed?"주간 변화":"이전 대비"}</span><strong>{fed&&deltaWeek!==null?`${deltaWeek>=0?"+":""}${deltaWeek.toFixed(1)}`:"—"} {fed?"점":"%p"}</strong></div><div><span>분석 기준일</span><strong>{fed?rate?.observationDate??"미등록":"미등록"}</strong></div></div></section>
       <section className="ob-panel ob-signals-panel"><h3>핵심 관찰 정보</h3><p className="ob-muted">관련 자산과 다음에 확인할 신호</p>{fed&&<p className="ob-signal-note">국채금리·변동성 기반 심리 점수 · 금리 결정 확률 아님</p>}<dl className="ob-facts"><div><dt>관찰 자산</dt><dd>{event.assets}</dd></div><div><dt>다음 관찰 신호</dt><dd>{event.signals.join(' · ')}</dd></div><div><dt>{fed?"점수 출처":"확률 출처"}</dt><dd>{fed?"미국 연준 H.15 저장자료":"미등록"}</dd></div></dl></section></div>

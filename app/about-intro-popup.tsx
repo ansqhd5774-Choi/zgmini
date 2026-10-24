@@ -79,6 +79,7 @@ export default function AboutIntroPopup() {
           sizes="(max-width: 600px) calc(100vw - 32px), 480px"
           width={1078}
           height={1460}
+          fetchPriority="high"
           alt=""
           aria-hidden="true"
         />

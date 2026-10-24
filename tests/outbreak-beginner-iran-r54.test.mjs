@@ -7,8 +7,8 @@ const css=read("app/outbreak-beginner-iran-r54.css");
 const page=read("app/outbreak-events.tsx");
 const source=read("app/iran-progress.tsx");
 test("approved Iran beginner detail is selected while the prior data consumer and summary remain intact",()=>{
- assert.match(page,/import IranDetail from '\.\/outbreak-beginner-iran-r54'/);
- assert.match(page,/event\.id==='iran'\?<IranDetail view=\{iran\}\/>/);
+ assert.match(page,/const IranDetail=lazy\(\(\)=>import\('\.\/outbreak-beginner-iran-r54'\)\)/);
+ assert.match(page,/event\.id==='iran'\?<Suspense fallback=\{<p role="status">[^<]+<\/p>\}><IranDetail view=\{iran\}\/><\/Suspense>/);
  assert.match(source,/useStoredIndex<any>\('\/api\/iran-progress'\)/);
  assert.match(source,/function IranChart\(/);
  assert.match(source,/export function IranSummaryCard/);

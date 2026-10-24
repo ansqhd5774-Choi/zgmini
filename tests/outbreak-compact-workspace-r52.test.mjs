@@ -21,7 +21,7 @@ test("event scores and units remain stored and missing is never inferred",()=>{
  assert.match(source,/const value=item\.id==="fed"&&rate\?rate\.score:item\.id==="iran"\?iran\.score:null/);
  assert.match(source,/value===null\?"—":value\.toFixed\(1\)/);
  assert.match(source,/const unit=item\.id==="ukraine"\?"%":"점"/);
- assert.match(source,/event\.id==='iran'\?<IranDetail view=\{iran\}\/>/);
+ assert.match(source,/event\.id==='iran'\?<Suspense fallback=\{<p role="status">[^<]+<\/p>\}><IranDetail view=\{iran\}\/><\/Suspense>/);
  assert.match(iran,/잠정 추정 차트/);
  assert.doesNotMatch(source,/Math\.random|fakeScore|demoProbability/);
 });

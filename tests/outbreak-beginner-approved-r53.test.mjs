@@ -38,7 +38,8 @@ test("beginner view explains the score without claiming policy rate or stock pre
  assert.doesNotMatch(beginner,/주가 상승 확정|금리 인하 확정|100% 예측|투자 추천/);
 });
 test("existing Iranian history and pending Ukraine event are not replaced",()=>{
- assert.match(original,/event\.id==='iran'\?<IranDetail view=\{iran\}\/>/);
+ assert.match(original,/const IranDetail=lazy\(\(\)=>import\('\.\/outbreak-beginner-iran-r54'\)\)/);
+ assert.match(original,/event\.id==='iran'\?<Suspense fallback=\{<p role="status">[^<]+<\/p>\}><IranDetail view=\{iran\}\/><\/Suspense>/);
  assert.match(original,/item\.id==="iran"\?iran\.score:null/);
  assert.match(iran,/14일 추정 흐름/);
  assert.match(original,/const unit=item\.id==="ukraine"\?"%":"점"/);
