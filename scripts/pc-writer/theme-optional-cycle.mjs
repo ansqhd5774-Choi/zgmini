@@ -15,6 +15,7 @@ import {themeHistoryReference} from '../../worker/theme-history-reference.mjs';
 import {THEME_ETF_ONLY_PUBLIC_KEY,validateThemeEtfOnlyPublic} from '../../worker/theme-etf-only-public.mjs';
 import {THEME_ETF_ROLLING_KEY,THEME_ETF_ROLLING_VERSION,validRollingPublic} from '../../worker/theme-etf-rolling-public.mjs';
 import {THEME_ETF_PROVISIONAL_KEY,validThemeEtfProvisional} from '../../lib/market-score/theme-etf-provisional.mjs';
+import {PUBLIC_DISPLAY_MAX_AGE_MS} from '../../worker/public-display-freshness.mjs';
 
 const DATA_ROOT='E:/ZGmini/data';
 const FEED='https://zgmini.kr/api/theme-fear-greed/';
@@ -147,11 +148,12 @@ export async function diagnoseSevenProvisionalLane({dataRoot,storage=null,readPu
  try{
   const db=storage??cloudflareD1({dataRoot}),feed=await readPublic();
   ensure(feed?.status==='READY'&&feed.themes?.length>=7,'PUBLIC_SEVEN_REFERENCE_MISSING');
-  const reference={...feed,themes:feed.themes.slice(0,7)};
+  const reference={...feed,themes:feed.themes.slice(0,7)},clock=now();
   const pending=reference.phase==='PROVISIONAL'?(reference.provisional?.points??[]).map(p=>p.date):[];
   result.publicReference={phase:reference.phase,confirmedDate:reference.observationDate,pendingDates:pending};
-  const fetchOptional=async key=>{try{return {body:(await db.read(key)).body,error:null};}
-   catch{return {body:null,error:'D1_OUTPUT_NOT_READABLE'};}};
+  const fetchOptional=async key=>{try{
+   const row=await db.read(key);return {body:row.body,storedAt:row.storedAt,error:null};
+  }catch{return {body:null,storedAt:null,error:'D1_OUTPUT_NOT_READABLE'};}};
   const [roll,side]=await Promise.all([fetchOptional(THEME_ETF_ROLLING_KEY),fetchOptional(THEME_ETF_PROVISIONAL_KEY)]);
   let seed=null,seedError=null;
   try{seed=await db.readSeed();}catch{seedError='D1_IMMUTABLE_SEED_NOT_READABLE';}
@@ -170,7 +172,9 @@ export async function diagnoseSevenProvisionalLane({dataRoot,storage=null,readPu
    pendingDates:equal((r?.provisional?.points??[]).map(p=>p.date),pending),
    latestSession:r?.lineage?.latestCompletedSession===pending.at(-1),
   };
-  const rollingValid=!!seed&&!!r&&await validRollingPublic(r,seed,{now:now()});
+  const rollingRowFresh=Number.isSafeInteger(roll.storedAt)&&roll.storedAt<=clock&&
+   clock-roll.storedAt<PUBLIC_DISPLAY_MAX_AGE_MS;
+  const rollingValid=rollingRowFresh&&!!seed&&!!r&&await validRollingPublic(r,seed,{now:clock});
   const scoreMatches=(themes,points,confirmed)=>confirmed===reference.observationDate&&
    Array.isArray(themes)&&themes.length===7&&themes.every((t,i)=>
     t.theme===reference.themes[i].theme&&t.score===reference.themes[i].score&&
@@ -182,10 +186,13 @@ export async function diagnoseSevenProvisionalLane({dataRoot,storage=null,readPu
   result.rolling={available:!!r,error:roll.error,observationDate:r?.observationDate??null,
    pendingDates:(r?.provisional?.points??[]).map(p=>p.date),latestSession:r?.lineage?.latestCompletedSession??null,
    secondarySourceName:r?.lineage?.secondarySource??null,gates,
-   allAuthorityGatesPass:Object.values(gates).every(Boolean),readerValidatorPass:rollingValid,
+   allAuthorityGatesPass:Object.values(gates).every(Boolean),storedRowFresh:rollingRowFresh,
+   readerValidatorPass:rollingValid,
    exactPublicScoreMatch:rollingMatches};
   const p=side.body;
-  const fallbackValid=!!seed&&!!p&&validThemeEtfProvisional(p,seed.observationDate,{now:now(),themes:seed.themes});
+  const fallbackRowValid=Number.isSafeInteger(side.storedAt)&&side.storedAt<=clock;
+  const fallbackValid=fallbackRowValid&&!!seed&&!!p&&
+   validThemeEtfProvisional(p,seed.observationDate,{now:clock,themes:seed.themes});
   const fallbackSeedMatches=!!seed&&reference.observationDate===seed.observationDate&&
    seed.themes.every((t,i)=>t.theme===reference.themes[i].theme&&
     t.latestScore===reference.themes[i].score&&
@@ -200,7 +207,8 @@ export async function diagnoseSevenProvisionalLane({dataRoot,storage=null,readPu
     upstreamCommercialRightsVerified:p?.upstreamCommercialRightsVerified===true,
     derivedLicenseVerified:p?.derivedLicenseVerified===true,
     sourcePriceReconciled:p?.sourcePriceReconciled===true},
-   readerValidatorPass:fallbackValid,seedScoresMatch:fallbackSeedMatches,exactPublicScoreMatch:fallbackMatches};
+   storedRowValid:fallbackRowValid,readerValidatorPass:fallbackValid,
+   seedScoresMatch:fallbackSeedMatches,exactPublicScoreMatch:fallbackMatches};
   result.activeLane=rollingMatches?'ROLLING_R178':fallbackMatches?'SEED_PLUS_PROVISIONAL_SIDECAR':
    'UNVERIFIED_NO_PUBLIC_SCORE_PARITY';
   result.status='READONLY_REPORTED';
