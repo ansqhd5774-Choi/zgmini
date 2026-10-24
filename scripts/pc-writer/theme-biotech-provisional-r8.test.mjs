@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {calculateBiotechProvisionalR8,readVerifiedMarketParquetBiotech,BIOTECH_PROVISIONAL_KEY} from './theme-biotech-provisional-r8.mjs';
+import {calculateBiotechProvisionalR8,readVerifiedMarketParquetBiotech,decodeVerifiedBiotechParquetR8,BIOTECH_PROVISIONAL_KEY} from './theme-biotech-provisional-r8.mjs';
 import {runBiotechR8} from './theme-biotech-auto-r8.mjs';
 import {biotechApprovedSevenTokenR8,R8_APPROVED_SEVEN_CORE_SHA256} from './theme-biotech-seven-auth-r8.mjs';
 import {validBiotechProvisionalR1,addVerifiedBiotechProvisionalR1} from '../../worker/theme-biotech-provisional-r1.mjs';
@@ -152,4 +152,22 @@ test('R8 reads actual target ETF rows and rejects audit-only evidence or missing
     {date:'2026-10-21',symbol:'XBI',close:95},{date:'2026-10-21',symbol:'SPY',close:332}]});
   assert.equal(good.status,'VERIFIED');assert.equal(good.dates[0].prices.XBI,95);
  }finally{fs.rmSync(root,{recursive:true,force:true});}
+});
+
+test('R8 decodes exactly the SHA-verified bytes with hyparquet core exports only',async()=>{
+ const input=Buffer.from([9,0,13,1,17,29]);
+ let seen=0;
+ const core={parquetReadObjects:async({file,columns})=>{
+  assert.ok(file instanceof ArrayBuffer);
+  assert.deepEqual([...new Uint8Array(file)],[...input]);
+  assert.deepEqual(columns,['date','symbol','asset_type','close']);
+  seen++;
+  return [{date:'2026-10-21',symbol:'IBB',close:111}];
+ }};
+ const rows=await decodeVerifiedBiotechParquetR8(core,input);
+ assert.equal(rows.length,1);assert.equal(seen,1);
+ await assert.rejects(()=>decodeVerifiedBiotechParquetR8({asyncBufferFromFile:()=>{}},input),
+  /R8_PARQUET_ADAPTER_INVALID/);
+ await assert.rejects(()=>decodeVerifiedBiotechParquetR8(core,new Uint8Array(input)),
+  /R8_PARQUET_VERIFIED_BYTES_REQUIRED/);
 });
