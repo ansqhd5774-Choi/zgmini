@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "verifiedAt": "2026-10-23",
+  "verifiedAt": "2026-10-24",
   "dataRootEnvironment": "ZGMINI_DATA_ROOT",
   "defaultDataRoot": "E:/ZGmini/data",
   "newThemeRoot": "themes/<theme-id>",
@@ -355,6 +355,21 @@
         "path": "themes/ai-semiconductor/derived/private-audit-497b8869e5bcf90b.json",
         "sha256": "497b8869e5bcf90b303a429d5358647c3418bc0e47abdf2547581ef356fad394",
         "status": "PRIVATE_CANDIDATE_PARITY_VERIFIED"
+      },
+      "pcForensicEvidence": {
+        "checkedAt": "2026-10-24T02:04:25Z",
+        "manifestFileCount": 3,
+        "manifestStatus": "SHA_VERIFIED",
+        "privateAuditStatus": "SHA_VERIFIED",
+        "commonSessionCount": 704,
+        "sourceObservationThrough": "2026-10-21",
+        "publicConfirmedDate": "2026-10-19",
+        "publicProvisionalDate": null,
+        "baseSevenPublicConfirmedThrough": "2026-10-21",
+        "baseSevenProvisionalDate": "2026-10-22",
+        "publicReaderDateGate": "PUBLIC_READER_OBSERVATION_DATE_MISMATCH",
+        "schedulerTaskQuery": "QUERY_EXIT_1_UNRESOLVED",
+        "nextScheduledRunVerified": false
       }
     },
     {
@@ -378,7 +393,11 @@
         "auditor": "scripts/pc-writer/theme-optional-audit.mjs",
         "publicationCandidate": "scripts/pc-writer/theme-optional-cycle.mjs",
         "pcTaskEntrypoint": "scripts/pc-writer/theme-optional-cycle.cmd",
-        "forensicReadOnly": "scripts/pc-writer/theme-biotech-forensic-r1.mjs"
+        "forensicReadOnly": "scripts/pc-writer/theme-biotech-forensic-r1.mjs",
+        "savedSourceReadOnly": "scripts/pc-writer/theme-biotech-marketparquet-r2.mjs",
+        "savedSourceCmd": "scripts/pc-writer/BIOTECH_MARKETPARQUET_R2.cmd",
+        "savedArchiveReadOnly": "scripts/pc-writer/theme-biotech-marketparquet-r3.mjs",
+        "savedArchiveCmd": "scripts/pc-writer/BIOTECH_MARKETPARQUET_R3.cmd"
       },
       "runtime": {
         "collector": null,
@@ -412,15 +431,129 @@
           "overlapDates": 250,
           "changedDates": 67,
           "maximumDifference": 2.35318,
-          "firstMismatchDate": null,
-          "inputDifferenceRootCause": "UNVERIFIED"
+          "firstMismatchDate": "2026-07-02",
+          "inputDifferenceRootCause": "ORIGINAL_R3_INPUTS_ABSENT_NO_VERIFIABLE_CAUSE",
+          "firstMismatchStageKnown": "PUBLISHED_FINAL_SCORE_VS_RECOMPUTED_RAW",
+          "sameInputR158R188All67DatesExact": true
         },
-        "implementationStatus": "READ_ONLY_SCRIPT_TESTED_ON_SYNTHETIC_DATA_PC_NOT_EXECUTED",
-        "savedRawAndAuditShaVerifiedByCurrentRun": false,
-        "marketParquetSavedRawTickerPresence": "UNKNOWN_UNTIL_PC_FILE_CONTENT_INSPECTION",
-        "separateShadowRevision": "SUPPORTED_BY_FORENSIC_LOG_NOT_PUBLIC",
+        "implementationStatus": "PC_R1_READONLY_FORENSIC_EXECUTED_NO_PUBLICATION",
+        "savedRawAndAuditShaVerifiedByCurrentRun": true,
+        "marketParquetSavedRawTickerPresence": "UNKNOWN_PARQUET_ROW_CONTENT_NOT_VERIFIED",
+        "separateShadowRevision": "BIOTECH_GMH_R1_7c0829cf2785332f_PRIVATE_TXT_ONLY",
         "newRevisionCutoverAuthorized": false,
-        "nextRegularRunVerified": false
+        "nextRegularRunVerified": false,
+        "pcEvidence": {
+          "checkedAt": "2026-10-24T02:04:25Z",
+          "result": "SHADOW_REVISION_REVIEW_REQUIRED_NO_PUBLICATION",
+          "rawManifestFileCount": 11,
+          "rawManifestStatus": "SHA_VERIFIED",
+          "privateAuditStatus": "SHA_VERIFIED",
+          "manifestSha256": "199997fd196d22262cdef15960765aeb41e633b34cb2ebb1aae637e3ad80849f",
+          "commonSessionCount": 704,
+          "commonSessionThrough": "2026-10-21",
+          "symbols": {
+            "IBB": {
+              "bars": 7039,
+              "duplicatesSamePrice": 50
+            },
+            "XBI": {
+              "bars": 10258,
+              "duplicatesSamePrice": 73
+            },
+            "SPY": {
+              "bars": 11343,
+              "duplicatesSamePrice": 80
+            }
+          },
+          "gapsOrInterpolationsFound": 0,
+          "firstRecomputedVsPublishedMismatch": "2026-07-02",
+          "changedPublishedDates": 67,
+          "largestAbsoluteScoreDifference": 2.35318,
+          "referencePublished": {
+            "date": "2026-10-19",
+            "score": 16.35516
+          },
+          "sameDateRecomputed": {
+            "date": "2026-10-19",
+            "score": 16.40278
+          },
+          "shadow": {
+            "revision": "BIOTECH_GMH_R1_7c0829cf2785332f",
+            "date": "2026-10-21",
+            "score": 29.03175,
+            "published": false,
+            "provisionalCount": 0,
+            "calculationSha256": "36d45cd82af507f5b75a5a96413c626b50c830ca2aa1291bbb64f113cd0e3366"
+          },
+          "marketParquet": {
+            "marketparquetR167DirectoryParquetCount": 0,
+            "themeMarketR131RawIbbJsonObserved": true,
+            "themeMarketR131RawIbbProvider": "UNVERIFIED",
+            "themeMarketR131RawXbiJsonFilenameObserved": false,
+            "pcWriterInventory": "TRUNCATED_1500_FILES",
+            "parquetRowsVerified": false
+          },
+          "scheduler": {
+            "sevenRegistered": true,
+            "sevenXmlSha256": "3e4f0e387e36049352fe4e6135eabd311c4862cec186a17a2f8eaf6dee3a677e",
+            "sevenFrequency": null,
+            "ai": "QUERY_EXIT_1_UNRESOLVED",
+            "biotech": "QUERY_EXIT_1_UNRESOLVED"
+          },
+          "readback": {
+            "publicConfirmedDate": "2026-10-19",
+            "provisionalDate": null,
+            "d1ReadOnly": true
+          },
+          "forensicScriptProviderCalls": 0,
+          "forensicScriptD1Writes": 0,
+          "nextScheduledRunVerified": false
+        },
+        "savedSourceR2": {
+          "codeSha256": "71424845f7c1259dc2ac8ca4a7b9cc36de30df4bd916eb2c111d72a10c25ce4d",
+          "cmdSha256": "8e424248bf68a6703002a4b04d921bd5edbecfffa324678a30bfb91241e5cab7",
+          "tests": "SYNTHETIC_PASS_2",
+          "pcActualRun": "2026-10-24T02:15:31.100Z",
+          "providerCalls": 0,
+          "d1Writes": 0,
+          "originalR3Searches": 0,
+          "existing704SessionRefetches": 0,
+          "focus": "EXISTING_MARKETPARQUET_FILES_AND_RAW_JSON_PROVENANCE",
+          "status": "READ_ONLY_EXECUTED_SHA_VERIFIED_SOME_JSON_MARKETPARQUET_RAW_NOT_INSPECTED",
+          "rawJsonEvidence": {
+            "IBB": {
+              "source": "GETMARKETHISTORY",
+              "path": "theme-market-history-r131/raw/IBB_2025-10-20_2026-10-20_1850d7c5a8413462.json",
+              "sha256": "1850d7c5a8413462f3ee7be7e778e079d9966f90f024ab6beb4200d5fb1fad6b"
+            },
+            "SPY": {
+              "source": "GETMARKETHISTORY",
+              "sha256": "217ddfe48c616d8cad11fc878434a1d265bb1a9cb7c4dd72ff477fc23826cb12"
+            }
+          },
+          "misidentifiedArchiveRoot": "marketparquet-r167_IS_CODE_AND_AUDIT_FILES",
+          "actualArchivePathFromCode": "theme-market-history-r131/marketparquet-r165",
+          "actualArchiveFilesShaVerified": false,
+          "parquetRowsVerified": false,
+          "pyarrow": "NOT_INSTALLED",
+          "r167AuditDatesKnown": [
+            "2026-10-16",
+            "2026-10-19",
+            "2026-10-20",
+            "2026-10-21",
+            "2026-10-22"
+          ]
+        },
+        "savedSourceR3": {
+          "codeSha256": "c423426c1a3b64cd93d1f598bd7006a9219353e2a6d4c21d606594ad19ad4f40",
+          "cmdSha256": "49780222c0e7b114d12413b214006667c84b1a05eb3d418f4995728cc783a4ef",
+          "tests": "SYNTHETIC_PASS_2",
+          "pcActualRun": "NOT_EXECUTED",
+          "focus": "ACTUAL_MARKETPARQUET_R165_PARQUET_ROWS_RECENT_SESSIONS",
+          "d1Writes": 0,
+          "providerCalls": 0,
+          "sourceSearchesR3Original": 0
+        }
       },
       "collectionEvidence": {
         "checkedAt": "2026-10-23",
