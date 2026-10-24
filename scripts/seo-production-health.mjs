@@ -120,7 +120,8 @@ export function inspectHtml(html,expectedUrl){
 
   if(!title) errors.push('title_missing');
   if(!description) errors.push('description_missing');
-  if(!robots.includes('index') || !robots.includes('follow')) errors.push(`robots_invalid:${robots||'missing'}`);
+  const directives=new Set(robots.split(/[,\s]+/).filter(Boolean));
+  if(!directives.has('index') || !directives.has('follow') || directives.has('noindex') || directives.has('nofollow')) errors.push(`robots_invalid:${robots||'missing'}`);
   if(canonical.length!==1) errors.push(`canonical_count:${canonical.length}`);
   else if(canonical[0]!==expectedUrl) errors.push(`canonical_mismatch:${canonical[0]}`);
   if(!ogTitle) errors.push('og_title_missing');
