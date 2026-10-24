@@ -103,14 +103,22 @@ test('dashboard-only theme legend uses left-to-right descending displayed scores
  const sampled=[{item:'방산',index:0,score:46},{item:'AI·반도체',index:1,score:26},{item:'바이오·신약',index:2,score:23},{item:'원전·SMR',index:3,score:26}];
  assert.deepEqual(sampled.sort((a,b)=>b.score-a.score||a.index-b.index).map(({item})=>item),['방산','AI·반도체','원전·SMR','바이오·신약']);
 });
-test('dashboard theme initially shows only the leftmost highest two and opens its horizontal list at the left',()=>{
+test('dashboard theme initially shows only the leftmost highest one and opens its horizontal list at the left',()=>{
  const shared=fs.readFileSync('components/sector-sentiment-chart.tsx','utf8');
  assert.match(shared,/const dashboardThemeDefaultApplied=useRef\(false\);/);
  assert.match(shared,/!showDashboardThemeScores\|\|dashboardThemeDefaultApplied\.current\|\|!rankedThemeEntries\.some\(\(\{score\}\)=>score>=0\)/);
- assert.match(shared,/rankedThemeEntries\.filter\(\(\{score\}\)=>score>=0\)\.slice\(0,2\)\.map\(\(\{item\}\)=>item\.id\)/);
+ assert.match(shared,/rankedThemeEntries\.filter\(\(\{score\}\)=>score>=0\)\.slice\(0,1\)\.map\(\(\{item\}\)=>item\.id\)/);
  assert.match(shared,/setHidden\(new Set\(series\.filter\(\(\{id\}\)=>!selected\.has\(id\)\)\.map\(\(\{id\}\)=>id\)\)\)/);
  assert.match(shared,/list\.scrollLeft=0/);
  assert.match(shared,/const toggleThemePickerItem=\(id:string\)=>setHidden\(previous=>\{/);
+});
+test('dashboard sector initially enables only the rightmost lowest-score item and preserves later manual toggles',()=>{
+ const shared=fs.readFileSync('components/sector-sentiment-chart.tsx','utf8');
+ assert.match(shared,/const dashboardSectorDefaultApplied=useRef\(false\);/);
+ assert.match(shared,/const rightmost=legendSeries\.at\(-1\);/);
+ assert.match(shared,/setHidden\(new Set\(series\.filter\(\(\{id\}\)=>id!==rightmost\.id\)\.map\(\(\{id\}\)=>id\)\)\)/);
+ assert.match(shared,/if\(compactSectorScores\)dashboardSectorDefaultApplied\.current=true/);
+ assert.match(shared,/dashboardThemeScores\?series\.map\(item=>item\.id\):\[\]/);
 });
 test('dashboard theme legend supports horizontal mouse dragging while preventing accidental toggle',()=>{
  const shared=fs.readFileSync('components/sector-sentiment-chart.tsx','utf8');
