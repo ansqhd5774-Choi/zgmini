@@ -97,6 +97,8 @@ PC에서 새 작업 등록 전 아래 단계가 필요하다.
 - AI 전용 작업 등록 도구: `scripts/pc-writer/theme-ai-task-mirror-r1.mjs`. GitHub 승인 SHA로 고정된 **새 불변 릴리스**에서만 `--inspect`(읽기 전용) → `--apply`(새 작업 등록) 순서로 사용한다. 기존 7개 예약 작업의 Trigger/Principal/Settings를 XML 그대로 보존하고, 새 URI·AI 실행 명령·설명만 바꾼다. 기존 작업 변경 및 `/f` 덮어쓰기는 금지한다.
 - `--apply`는 해당 릴리스의 source-manifest에 기재된 모든 파일 SHA가 일치하고 `E:/ZGmini/data/themes/ai-semiconductor/state/cycle-last.json`이 최근 36시간 내 `PUBLIC_VERIFIED`·`d1Writes=1`·`publicVerified=true`일 때만 허용한다. 따라서 먼저 AI 전용 `--once` 비공개 재수집·검산과 별도 `--publish` D1 읽기 검증을 끝내야 한다. 첫 수동 게시가 실패하거나 다음 정규 실행을 확인하지 못하면 자동 갱신 운영 완료로 표시하지 않는다.
 
+2026-10-24 PC 실행 추가 실측: `900e1026c75d906e4689f4ed3df353cd4d09ec58` 불변 릴리스 스테이징 `STAGED_NEW_RELEASE`, AI 작업 `--inspect` 결과 `READY_TO_REGISTER_AFTER_PUBLIC_VERIFICATION`, 기존 작업 수정 0. 이어진 `--once`는 `CANDIDATE_VERIFIED_NOT_PUBLISHED`, 점수차 0, 관측일 2026-10-21이지만 **`providerCalls=0`**이므로 최신 원가격 API 호출 완료 증거가 아니다. 원인: 수집 종료일이 공개 기준 `observationDate` 및 잠정일에만 종속되어 날짜가 바뀌어도 같은 완료 체크포인트를 재사용하는 경로. 후속 수정은 **AI만** 해당 실행의 UTC 일자를 수집 요청 범위 상한에 포함하여 새로운 날짜에는 서로 다른 체크포인트 키를 만들며, 재실행 같은 날에는 중복 호출을 생략한다. 이는 가격 관측일·산식·산출 가격을 만드는 행위가 아니며, 실제 수신한 원자료만 manifest에 추가한다. 바이오·기존 7개·D1·예약 작업은 수정하지 않는다. 새 수정 승인 SHA로 PC 스테이징 후 실제 `providerCalls>0`와 원자료 SHA를 검사하기 전에는 AI `--publish`·예약 등록을 실행하지 않는다.
+
 관련 권리 조건: <https://getmarkethistory.com/docs/terms> (2026-10-19 시행). 문구상 파생물 사용은 계정 정상 유지 조건과 연결된다. 기존 바이오의 익명 무료 호출 사용 권리 해석은 미확정이다.
 
 ## 2026-10-23 바이오·신약 R1 읽기 전용 원인 분해·Shadow 전환 준비
