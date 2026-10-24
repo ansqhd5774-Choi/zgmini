@@ -27,7 +27,8 @@ export async function startBiotechR7({dataRoot,allowCollect=false,allowPublish=f
  const lock=path.join(state,'biotech-auto-r7.lock');
  let fd;
  try{fd=fs.openSync(lock,'wx');fs.writeSync(fd,JSON.stringify({pid:process.pid,startedAt:new Date(now()).toISOString()}));}
- catch{throw Object.assign(new Error('BIOTECH_R7_LANE_ALREADY_LOCKED'),{code:'BIOTECH_R7_LANE_ALREADY_LOCKED'});}
+ catch(e){const code=e?.code==='EEXIST'?'BIOTECH_R7_LANE_ALREADY_LOCKED':'BIOTECH_R7_LOCK_UNAVAILABLE';
+  throw Object.assign(new Error(code),{code});}
  finally{if(fd!==undefined)fs.closeSync(fd);}
  try{return await runBiotechAutoR7({dataRoot,db,collect:collector,readBase,allowCollect,allowPublish,inspectManifest,now});}
  finally{fs.unlinkSync(lock);}
