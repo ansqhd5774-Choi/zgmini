@@ -44,7 +44,7 @@ export function aiReaderRejectionReason(record,reference,{now=Date.now()}={}){
  return 'PUBLIC_READER_OTHER_GATE_REJECTED';
 }
 
-export function collectWindow(manifest,reference,themeId){
+export function collectWindow(manifest,reference,themeId,now=Date.now()){
  ensure(TARGETS.includes(themeId)&&manifest?.themeId===themeId&&Array.isArray(manifest.files),'MANIFEST_INVALID');
  ensure(reference?.status==='READY'&&date(reference.observationDate),'REFERENCE_UNAVAILABLE');
  const symbols=themeId==='ai-semiconductor'?['SMH','SOXX','SPY']:['IBB','XBI','SPY'];
@@ -52,7 +52,15 @@ export function collectWindow(manifest,reference,themeId){
  ensure(latest.every(date),'MANIFEST_SYMBOL_MISSING');
  const from=minusDays(latest.sort()[0],6),provisional=reference.provisional?.points??[];
  ensure(Array.isArray(provisional)&&provisional.every(p=>date(p.date)),'REFERENCE_PROVISIONAL_INVALID');
- const through=[reference.observationDate,...provisional.map(p=>p.date)].sort().at(-1);
+ // AI's public reader may keep the same provisional end date for several days.
+ // A completed collection checkpoint is keyed by start/end; a static end date
+ // would silently skip all new provider requests on every subsequent daily run.
+ // Extend only the requested range to the UTC run date. This never creates or
+ // forecasts a price bar; only actual provider rows enter the SHA manifest.
+ const runDate=new Date(now);
+ ensure(Number.isFinite(runDate.getTime()),'COLLECTION_CLOCK_INVALID');
+ const through=[reference.observationDate,...provisional.map(p=>p.date),
+  ...(themeId==='ai-semiconductor'?[runDate.toISOString().slice(0,10)]:[])].sort().at(-1);
  ensure(through>=from,'COLLECTION_WINDOW_INVALID');
  ensure(through<='2028-12-31','NYSE_EARLY_CLOSE_CALENDAR_REVALIDATION_REQUIRED');
  return {start:from,end:through};
@@ -199,7 +207,7 @@ export async function runOptionalTheme({themeId,dataRoot,readPublic=api,storage=
   const relative=`themes/${themeId}/raw-manifest.json`;
   ensure(inspectManifest(dataRoot,relative,themeId).status==='SHA_VERIFIED','RAW_MANIFEST_INVALID');
   const file=containedFile(dataRoot,relative),manifest=JSON.parse(fs.readFileSync(file,'utf8'));
-  const window=collectWindow(manifest,base,themeId);
+  const window=collectWindow(manifest,base,themeId,now());
   const gathering=await collect({dataRoot,themeId,start:window.start,end:window.end});result.providerCalls=gathering.providerCalls;
   ensure(gathering.status==='PRIVATE_RAW_COLLECTION_COMPLETE','COLLECTION_'+gathering.status);
   ensure(inspectManifest(dataRoot,relative,themeId).status==='SHA_VERIFIED','RAW_MANIFEST_AFTER_COLLECTION_INVALID');
