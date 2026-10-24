@@ -40,3 +40,13 @@ test('all eleven sector toggles keep their existing controls, while theme picker
  assert.match(chart,/themePicker\?<>/);
  assert.match(css,/\.zg-theme-picker-legend \.zg-sector-chart-legend/);
 });
+
+test('sector legend dynamically ranks displayed integer scores high to low without changing chart line order',()=>{
+ assert.match(chart,/const legendSeries=compactSectorScores\?series\.map\(\(sector,index\)=>\{/);
+ assert.match(chart,/score:typeof value==='number'&&Number\.isFinite\(value\)\?Math\.round\(value\):-1/);
+ assert.match(chart,/\.sort\(\(a,b\)=>b\.score-a\.score\|\|a\.index-b\.index\)/);
+ assert.match(chart,/\.map\(\(\{sector\}\)=>sector\):series;/);
+ assert.match(chart,/\{legendSeries\.map\(sector=>\{/);
+ assert.match(chart,/const latestSectorRow=rows\.at\(-1\);/);
+ assert.match(chart,/\{series\.map\(sector=>hasProvisional\?\[/);
+});
