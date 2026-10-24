@@ -4,10 +4,11 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import {createHash} from 'node:crypto';
-import {buildAiCandidate,collectWindow,runOptionalTheme,cloudflareD1,cloudflareToken,aiReaderRejectionReason,aiCandidateReference,diagnoseAiReader,diagnoseBiotechParity,verifySevenProvisionalAuthority,diagnoseSevenProvisionalLane} from '../scripts/pc-writer/theme-optional-cycle.mjs';
+import {buildAiCandidate,collectWindow,runOptionalTheme,cloudflareD1,cloudflareToken,aiReaderRejectionReason,aiCandidateReference,diagnoseAiReader,diagnoseBiotechParity,verifySevenProvisionalAuthority,diagnoseSevenProvisionalLane,sevenCoreReference} from '../scripts/pc-writer/theme-optional-cycle.mjs';
 import {auditThroughDate} from '../scripts/pc-writer/theme-optional-audit.mjs';
 import {regularHour15Rows} from '../scripts/pc-writer/theme-optional-score-r188.mjs';
 import {THEME_ETF_ONLY_PAIRS,THEME_ETF_ONLY_PUBLIC_VERSION} from '../worker/theme-etf-only-public.mjs';
+import {immutableBaseHash} from '../worker/theme-etf-rolling-public.mjs';
 
 const NOW=Date.parse('2026-10-23T05:00:00Z');
 const latest='2026-10-21';
@@ -166,6 +167,51 @@ test('AI may inherit secondary provenance only from the exact seven-theme verifi
   {...rolling,lineage:{...rolling.lineage,secondaryPendingCount:1}},
  ])assert.throws(()=>verifySevenProvisionalAuthority(invalid,reference),/AI_SEVEN_SECONDARY_RIGHTS_OR_LINEAGE_UNVERIFIED/);
 });
+test('the 22 Oct biotech-only union point is not a seven-theme provisional session',()=>{
+ const sevenScores=Object.fromEntries(THEME_ETF_ONLY_PAIRS.map(t=>[t.theme,54]));
+ const feed={...approvedCurrent(),observationDate:'2026-10-22',phase:'PROVISIONAL',
+  provisional:{points:[{date:'2026-10-22',scores:{'바이오·신약':48}},
+   {date:'2026-10-23',scores:{...sevenScores,'바이오·신약':49}}]}};
+ const reference=sevenCoreReference(feed);
+ assert.equal(reference.phase,'PROVISIONAL');
+ assert.deepEqual(reference.provisional.points.map(p=>p.date),['2026-10-23']);
+ assert.deepEqual(reference.provisional.points[0].scores,sevenScores);
+ assert.equal(reference.themes.length,7);
+ assert.deepEqual(feed.provisional.points.map(p=>p.date),['2026-10-22','2026-10-23']);
+ const rolling={status:'READY',version:'THEME_ETF_ROLLING_R178',publicationAuthorized:true,
+  upstreamCommercialRightsVerified:true,derivedLicenseVerified:true,sourcePriceReconciled:true,
+  observationDate:'2026-10-22',provisional:{points:[{date:'2026-10-23'}]},
+  lineage:{primarySource:'GETMARKETHISTORY_1H_CLOSE',secondarySource:'MARKETPARQUET_ETF_DAILY_SPLIT_ADJUSTED',
+   secondaryPendingCount:1,latestCompletedSession:'2026-10-23'}};
+ assert.equal(verifySevenProvisionalAuthority(rolling,reference),true);
+});
+test('the actual rolling publisher matches the seven scores after optional-theme union is projected away',async()=>{
+ const seed=approvedCoreSeed(),core=approvedCurrent(),scores=Object.fromEntries(THEME_ETF_ONLY_PAIRS.map(t=>[t.theme,54]));
+ const rolling={status:'READY',version:'THEME_ETF_ROLLING_R178',phase:'PROVISIONAL',
+  methodologyVersion:'ETF_ONLY_T40_R20_V40_PAIR50',publicationAuthorized:true,
+  upstreamCommercialRightsVerified:true,derivedLicenseVerified:true,sourcePriceReconciled:true,
+  individualStocksUsed:0,baseObservationDate:seed.observationDate,baseHash:await immutableBaseHash(seed),
+  coverage:{etfs:13,benchmark:'SPY',complete:true},asOf:'2026-10-23T01:00:00Z',
+  sourceStoredAt:'2026-10-23T01:00:00Z',observationDate:latest,confirmedObservationDate:latest,
+  themes:core.themes,provisional:{points:[{date:'2026-10-22',scores}]},
+  lineage:{confirmedPrimaryCount:252,secondaryPendingCount:1,latestCompletedSession:'2026-10-22',
+   primarySource:'GETMARKETHISTORY_1H_CLOSE',secondarySource:'MARKETPARQUET_ETF_DAILY_SPLIT_ADJUSTED'}};
+ const feed={...core,phase:'PROVISIONAL',provisional:{points:[
+  {date:latest,scores:{'바이오·신약':50}},
+  {date:'2026-10-22',scores:{...scores,'바이오·신약':51}}]}};
+ let reads=0;
+ const db={read:async key=>{reads++;return {body:key==='theme-etf-only-rolling'?rolling:{status:'UNAVAILABLE'},storedAt:NOW-1000};},
+  readSeed:async()=>seed};
+ const report=await diagnoseSevenProvisionalLane({storage:db,readPublic:async()=>feed,now:()=>NOW});
+ assert.equal(report.status,'READONLY_REPORTED');
+ assert.equal(report.activeLane,'ROLLING_R178');
+ assert.equal(report.rolling.allAuthorityGatesPass,true);
+ assert.equal(report.rolling.readerValidatorPass,true);
+ assert.equal(report.rolling.exactPublicScoreMatch,true);
+ assert.deepEqual(report.publicReference.visibleUnionDates,[latest,'2026-10-22']);
+ assert.deepEqual(report.publicReference.pendingDates,['2026-10-22']);
+ assert.equal(reads,2);assert.equal(report.d1Writes,0);
+});
 test('read-only authority diagnostic detects the actual seed + provisional sidecar route',async()=>{
  const seed={...approvedCoreSeed(),observationDate:latest,
   themes:THEME_ETF_ONLY_PAIRS.map(t=>({...t,latestScore:history.at(-1).score,history}))};
@@ -194,7 +240,9 @@ test('read-only authority diagnostic detects the actual seed + provisional sidec
 test('AI private cycle attaches only date-exact verified 23rd secondary score and does not write D1',async()=>{
  await fixture('ai-semiconductor',async({root})=>{
   const provisionalDate='2026-10-22';let writes=0,reads=0,scoreCalls=0;
-  const publicFeed={...base(),phase:'PROVISIONAL',provisional:{points:[{date:provisionalDate,scores:{}}]}};
+  const sevenScores=Object.fromEntries(THEME_ETF_ONLY_PAIRS.map(t=>[t.theme,54]));
+  const publicFeed={...approvedCurrent(),phase:'PROVISIONAL',provisional:{points:[
+   {date:latest,scores:{'바이오·신약':48}},{date:provisionalDate,scores:sevenScores}]}};
   const rolling={status:'READY',version:'THEME_ETF_ROLLING_R178',publicationAuthorized:true,
    upstreamCommercialRightsVerified:true,derivedLicenseVerified:true,sourcePriceReconciled:true,
    observationDate:latest,provisional:{points:[{date:provisionalDate}]},
@@ -220,7 +268,8 @@ test('read-only AI diagnostic uses existing local audit and D1 SELECT with zero 
   let reads=0,writes=0,audits=0;
   const db={read:async()=>{reads++;return {body:priorAi(),storedAt:NOW-86400000}},
    replace:async()=>{writes++}};
-  const publicFeed={...base(),phase:'PROVISIONAL',provisional:{points:[{date:'2026-10-22',scores:{}}]}};
+  const sevenScores=Object.fromEntries(THEME_ETF_ONLY_PAIRS.map(t=>[t.theme,54]));
+  const publicFeed={...approvedCurrent(),phase:'PROVISIONAL',provisional:{points:[{date:'2026-10-22',scores:sevenScores}]}};
   const result=await diagnoseAiReader({dataRoot:root,now:()=>NOW,storage:db,
    readPublic:async()=>publicFeed,audit:()=>{audits++;return candidateResult}});
   assert.equal(result.status,'BLOCKED');
@@ -253,7 +302,7 @@ test('private cycle collects and audits but never posts to D1 without --publish'
   let writes=0,calls=0;
   const db={read:async()=>({body:priorAi(),storedAt:NOW-86400000}),replace:async()=>{writes++}};
   const result=await runOptionalTheme({themeId:'ai-semiconductor',dataRoot:root,now:()=>NOW,
-   storage:db,readPublic:async()=>base(),collect:async()=>{calls++;return {status:'PRIVATE_RAW_COLLECTION_COMPLETE',providerCalls:3}},
+   storage:db,readPublic:async()=>approvedCurrent(),collect:async()=>{calls++;return {status:'PRIVATE_RAW_COLLECTION_COMPLETE',providerCalls:3}},
    audit:()=>candidateResult});
   assert.equal(result.status,'CANDIDATE_VERIFIED_NOT_PUBLISHED');
   assert.equal(result.providerCalls,3);assert.equal(writes,0);assert.equal(calls,1);
@@ -280,7 +329,7 @@ test('unchanged re-collection does not republish or extend source freshness',asy
   const db={read:async()=>({body:{...priorAi(latest),provisional:{points:[]}},storedAt:NOW-5000}),
    replace:async()=>{writes++}};
   const result=await runOptionalTheme({themeId:'ai-semiconductor',dataRoot:root,now:()=>NOW,
-   allowPublish:true,storage:db,readPublic:async()=>base(),
+   allowPublish:true,storage:db,readPublic:async()=>approvedCurrent(),
    collect:async()=>({status:'PRIVATE_RAW_COLLECTION_COMPLETE',providerCalls:3}),audit:()=>candidateResult});
   assert.equal(result.status,'UNCHANGED_NO_WRITE');assert.equal(writes,0);
  });
@@ -303,7 +352,7 @@ test('an AI candidate is published only after D1 CAS and public readback',async(
    replace:async(key,record)=>{written={key,record};return {storedAt:NOW}}};
   const result=await runOptionalTheme({themeId:'ai-semiconductor',dataRoot:root,now:()=>NOW,
    allowPublish:true,storage:db,
-   readPublic:async()=>{calls++;return calls===1?base():{...base(),themes:[...base().themes,
+   readPublic:async()=>{calls++;return calls===1?approvedCurrent():{...approvedCurrent(),themes:[...approvedCurrent().themes,
     {theme:'AI 반도체',score:history.at(-1).score,history}]};},
    collect:async()=>({status:'PRIVATE_RAW_COLLECTION_COMPLETE',providerCalls:3}),audit:()=>candidateResult});
   assert.equal(result.status,'PUBLIC_VERIFIED');assert.equal(result.d1Writes,1);

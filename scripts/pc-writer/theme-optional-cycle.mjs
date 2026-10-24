@@ -12,7 +12,7 @@ import {buildAiProvisionalFromExistingSeven} from './theme-ai-marketparquet-prov
 import {containedFile,inspectManifest} from './theme-data-inventory.mjs';
 import {eligibleAiTheme,AI_THEME_PUBLIC_KEY,AI_THEME_PUBLIC_VERSION} from '../../worker/theme-ai-semiconductor-optional.mjs';
 import {themeHistoryReference} from '../../worker/theme-history-reference.mjs';
-import {THEME_ETF_ONLY_PUBLIC_KEY,validateThemeEtfOnlyPublic} from '../../worker/theme-etf-only-public.mjs';
+import {THEME_ETF_ONLY_PUBLIC_KEY,THEME_ETF_ONLY_PAIRS,validateThemeEtfOnlyPublic} from '../../worker/theme-etf-only-public.mjs';
 import {THEME_ETF_ROLLING_KEY,THEME_ETF_ROLLING_VERSION,validRollingPublic} from '../../worker/theme-etf-rolling-public.mjs';
 import {THEME_ETF_PROVISIONAL_KEY,validThemeEtfProvisional} from '../../lib/market-score/theme-etf-provisional.mjs';
 import {PUBLIC_DISPLAY_MAX_AGE_MS} from '../../worker/public-display-freshness.mjs';
@@ -139,6 +139,27 @@ export function verifySevenProvisionalAuthority(rolling,reference){
  return true;
 }
 
+// The public API is a UNION of theme-specific provisional dates: biotech can
+// add 22 Oct even when the original seven have confirmed 22 Oct and only a 23
+// Oct provisional. Recover the exact seven-core projection by the actual seven
+// score keys and confirmed date; never count an optional theme's point as a
+// seven-core market observation.
+export function sevenCoreReference(feed){
+ ensure(feed?.status==='READY'&&Array.isArray(feed.themes)&&feed.themes.length>=7&&
+  date(feed.observationDate),'PUBLIC_SEVEN_REFERENCE_MISSING');
+ const themes=feed.themes.slice(0,7),names=THEME_ETF_ONLY_PAIRS.map(t=>t.theme);
+ ensure(themes.every((t,i)=>t.theme===names[i]),'PUBLIC_SEVEN_THEME_IDENTITY_MISMATCH');
+ const all=feed.provisional?.points??[];
+ ensure(Array.isArray(all),'PUBLIC_PROVISIONAL_SCHEMA_INVALID');
+ const points=all.filter(p=>date(p?.date)&&p.date>feed.observationDate&&
+  names.every(name=>Number.isFinite(p?.scores?.[name])&&p.scores[name]>=0&&p.scores[name]<=100))
+  .map(p=>({date:p.date,scores:Object.fromEntries(names.map(name=>[name,p.scores[name]]))}));
+ ensure(points.length<=2&&points.every((p,i)=>i===0||p.date>points[i-1].date),
+  'PUBLIC_SEVEN_PROVISIONAL_DATES_INVALID');
+ return {...feed,themes,phase:points.length?'PROVISIONAL':'CONFIRMED',
+  provisional:{...feed.provisional,points}};
+}
+
 // The public reader can select either rolling R178 or the immutable R144 seed
 // plus its provisional sidecar. Report every authority gate separately before
 // selecting a source. Never use public score equality as a license substitute.
@@ -148,9 +169,10 @@ export async function diagnoseSevenProvisionalLane({dataRoot,storage=null,readPu
  try{
   const db=storage??cloudflareD1({dataRoot}),feed=await readPublic();
   ensure(feed?.status==='READY'&&feed.themes?.length>=7,'PUBLIC_SEVEN_REFERENCE_MISSING');
-  const reference={...feed,themes:feed.themes.slice(0,7)},clock=now();
+  const reference=sevenCoreReference(feed),clock=now();
   const pending=reference.phase==='PROVISIONAL'?(reference.provisional?.points??[]).map(p=>p.date):[];
-  result.publicReference={phase:reference.phase,confirmedDate:reference.observationDate,pendingDates:pending};
+  result.publicReference={phase:reference.phase,confirmedDate:reference.observationDate,
+   visibleUnionDates:(feed.provisional?.points??[]).map(p=>p.date),pendingDates:pending};
   const fetchOptional=async key=>{try{
    const row=await db.read(key);return {body:row.body,storedAt:row.storedAt,error:null};
   }catch{return {body:null,storedAt:null,error:'D1_OUTPUT_NOT_READABLE'};}};
@@ -301,7 +323,8 @@ export async function runOptionalTheme({themeId,dataRoot,readPublic=api,storage=
   ensure(TARGETS.includes(themeId),'UNREGISTERED_THEME');
   ensure(fs.existsSync(dataRoot),'E_DATA_ROOT_UNAVAILABLE');
   const db=storage??cloudflareD1({dataRoot});const publicFeed=await readPublic();
-  const base={...publicFeed,themes:publicFeed.themes.slice(0,themeId==='ai-semiconductor'?7:8)};
+  const base=themeId==='ai-semiconductor'?sevenCoreReference(publicFeed):
+   {...publicFeed,themes:publicFeed.themes.slice(0,8)};
   const key=themeId==='ai-semiconductor'?AI_THEME_PUBLIC_KEY:'theme-biotech-optional-r1';
   const previous=await db.read(key);validateStoredReference(themeId,previous.body,base);
   const relative=`themes/${themeId}/raw-manifest.json`;
@@ -349,8 +372,11 @@ export async function runOptionalTheme({themeId,dataRoot,readPublic=api,storage=
   const refreshed=await readPublic();
   const found=refreshed.themes?.find(t=>t.theme==='AI 반도체');
   ensure(found&&found.score===record.score&&equal(found.history?.map(p=>p.date),record.history.map(p=>p.date)),'D1_VERIFIED_PUBLIC_PENDING');
-  if(useSecondary)ensure(equal((refreshed.provisional?.points??[]).map(p=>p.scores?.['AI 반도체']),
-   record.provisional.points.map(p=>p.score)),'D1_VERIFIED_PROVISIONAL_PUBLIC_PENDING');
+  if(useSecondary){
+   const published=new Map((refreshed.provisional?.points??[]).map(p=>[p.date,p.scores?.['AI 반도체']]));
+   ensure(record.provisional.points.every(p=>published.get(p.date)===p.score),
+    'D1_VERIFIED_PROVISIONAL_PUBLIC_PENDING');
+  }
   result.publicVerified=true;result.status='PUBLIC_VERIFIED';return result;
  }catch(e){result.status='BLOCKED';result.reason=e?.code??'UNKNOWN_ERROR';return result;}
 }
@@ -363,7 +389,7 @@ export async function diagnoseAiReader({dataRoot,readPublic=api,storage=null,aud
  try{
   ensure(fs.existsSync(dataRoot),'E_DATA_ROOT_UNAVAILABLE');
   const db=storage??cloudflareD1({dataRoot}),publicFeed=await readPublic();
-  const reference={...publicFeed,themes:publicFeed.themes?.slice(0,7)};
+  const reference=sevenCoreReference(publicFeed);
   const previous=await db.read(AI_THEME_PUBLIC_KEY);
   validateStoredReference('ai-semiconductor',previous.body,reference);
   const relative='themes/ai-semiconductor/raw-manifest.json';
