@@ -15,7 +15,9 @@ test("U10 accessibility contracts stay explicit", async () => {
 
   assert.match(panel, /<MarketFearGreedChart/);
   assert.match(chart, /<AreaChart[^>]*accessibilityLayer/);
-  assert.match(chart, /isAnimationActive=\{!compact && !prefersReducedMotion\}/);
+  assert.match(chart, /isAnimationActive=\{animate && !compact && !prefersReducedMotion\}/);
+  assert.match(chart, /MarketChartAnimationContext=createContext\(true\)/);
+  assert.match(await read("app/country-fear-greed.tsx"), /<MarketChartAnimationContext.Provider value=\{false\}>/);
   assert.match(chart, /<Tooltip[\s\S]*?isAnimationActive="auto"/);
 
   assert.match(periods, /aria-pressed=/);

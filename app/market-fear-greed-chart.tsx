@@ -1,5 +1,5 @@
 import {useDashboardMobileAxis} from '../hooks/use-dashboard-mobile-axis';
-import { useEffect, useState } from 'react';
+import { createContext, useContext, useEffect, useState } from 'react';
 import { CircleAlert } from 'lucide-react';
 import {fearGreedStateColor} from '../lib/fear-greed-state-color.mjs';
 import {chartExtrema} from '../lib/chart-extrema.mjs';
@@ -25,6 +25,10 @@ export type MarketFearGreedChartValidPoint = {
   date: string;
   score: number;
 };
+
+// Dashboard charts render their complete stored history immediately.
+// Detail pages retain their existing motion and reduced-motion preference.
+export const MarketChartAnimationContext=createContext(true);
 
 function usePrefersReducedMotion() {
   const [reduced, setReduced] = useState(false);
@@ -77,6 +81,7 @@ export function MarketFearGreedChart({
   marketScoreBands?: boolean;
 }) {
   const mobileAxisRight=useDashboardMobileAxis();
+  const animate=useContext(MarketChartAnimationContext);
   const prefersReducedMotion = usePrefersReducedMotion();
   const extrema=compact||!showExtrema?[]:chartExtrema(data.map(p=>({date:/^\d{8}$/.test(p.date)?`${p.date.slice(0,4)}-${p.date.slice(4,6)}-${p.date.slice(6,8)}`:p.date.slice(0,10),value:p.score})));
 
@@ -173,7 +178,7 @@ export function MarketFearGreedChart({
         dot={false}
         connectNulls={false}
         activeDot={{ r: 3.5, strokeWidth: 0, fill: color }}
-        isAnimationActive={!compact && !prefersReducedMotion}
+        isAnimationActive={animate && !compact && !prefersReducedMotion}
         animationBegin={120}
         animationDuration={950}
         animationEasing="ease-out"

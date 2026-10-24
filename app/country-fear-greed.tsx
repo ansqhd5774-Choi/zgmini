@@ -4,6 +4,7 @@ import { ArrowUpRight, BookOpen, Gauge } from "lucide-react";
 import { DashboardTip } from "./dashboard-ui";
 import { KoreanCountryCard } from "./korea-composite-view";
 import CnnPanel from "./fear-greed/usa/cnn-panel";
+import { MarketChartAnimationContext } from "./market-fear-greed-chart";
 import { HELP, HelpText } from "./help-copy";
 
 export default function CountryFearGreed() {
@@ -27,10 +28,12 @@ export default function CountryFearGreed() {
         </a>
       </div>
       <div className="zg-country-panel-grid">
+        <MarketChartAnimationContext.Provider value={false}>
         <CnnPanel/>
         <div className="zg-country-grid">
           <KoreanCountryCard/>
         </div>
+        </MarketChartAnimationContext.Provider>
       </div>
     </section>
   );
