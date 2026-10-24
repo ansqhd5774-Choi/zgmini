@@ -484,3 +484,13 @@
  .zg-dashboard[data-view="dashboard"] .ob-summary-track{scrollbar-width:none;-ms-overflow-style:none}
  .zg-dashboard[data-view="dashboard"] .ob-summary-track::-webkit-scrollbar{display:none;width:0;height:0}
 }
+
+/* The small SVG cards reserve the right gutter for mobile Y-axis labels. */
+@media(max-width:767px){
+ .zg-dashboard[data-view="dashboard"] .ob-summary-chart-frame>.zg-chart-fixed-axis>span{left:calc(100% - 20px)!important;transform:translate(0,-50%)}
+ .zg-dashboard[data-view="dashboard"] .ob-summary-chart-frame>svg{transform:translateX(-8%)}
+ .zg-dashboard[data-view="dashboard"] .ob-summary-chart-frame>.ob-chart-endpoint{margin-left:-8%}
+ .zg-dashboard[data-view="dashboard"] .ob-summary-chart-frame>.zg-chart-fixed-axis>b:first-of-type{left:7.3%!important}
+ .zg-dashboard[data-view="dashboard"] .ob-summary-chart-frame>.zg-chart-fixed-axis>b:last-of-type{right:15.1%!important}
+ .zg-dashboard[data-view="dashboard"] .zg-sector-chart-plot>.zg-chart-fixed-axis>span{left:calc(100% - 24px)!important;transform:translate(0,-50%)}
+}

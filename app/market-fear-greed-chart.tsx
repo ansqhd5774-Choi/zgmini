@@ -1,3 +1,4 @@
+import {useDashboardMobileAxis} from '../hooks/use-dashboard-mobile-axis';
 import { useEffect, useState } from 'react';
 import { CircleAlert } from 'lucide-react';
 import {fearGreedStateColor} from '../lib/fear-greed-state-color.mjs';
@@ -75,6 +76,7 @@ export function MarketFearGreedChart({
   axisTickInterval?: 0 | 'preserveStartEnd';
   marketScoreBands?: boolean;
 }) {
+  const mobileAxisRight=useDashboardMobileAxis();
   const prefersReducedMotion = usePrefersReducedMotion();
   const extrema=compact||!showExtrema?[]:chartExtrema(data.map(p=>({date:/^\d{8}$/.test(p.date)?`${p.date.slice(0,4)}-${p.date.slice(4,6)}-${p.date.slice(6,8)}`:p.date.slice(0,10),value:p.score})));
 
@@ -105,7 +107,7 @@ export function MarketFearGreedChart({
         tickFormatter={(value) => axisLabels.get(String(value)) ?? ''}
         tick={{ fill: 'var(--zg-text-meta,#a8bcd0)', fontSize: 9 }}
       />
-      <YAxis
+      <YAxis orientation={mobileAxisRight?"right":"left"}
         hide={compact}
         domain={[0, 100]}
         ticks={[0, 25, 50, 75, 100]}

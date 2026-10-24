@@ -1,4 +1,5 @@
 "use client";
+import {useDashboardMobileAxis} from '../hooks/use-dashboard-mobile-axis';
 import {LiveScoreValue} from '../components/live-score-value';
 import ChartExtremumPoint from '../components/chart-extremum-point';
 import {chartExtrema} from '../lib/chart-extrema.mjs';
@@ -124,6 +125,7 @@ function summaryAxisConfig(points:Array<DashboardPoint&{ts:number}>,periodDays:n
 }
 
 function SummaryTrend({data,label,color,periodDays}:{data:DashboardPoint[];label:string;color:string;periodDays:number}){
+ const mobileAxisRight=useDashboardMobileAxis();
  const scaled=timeScaledTrend(data,periodDays),latest=scaled.points.at(-1),axis=summaryAxisConfig(scaled.points,periodDays);
  const gradientId=`summary-${useId().replace(/:/g,'')}`;
  const extrema=chartExtrema(scaled.points.map(p=>({date:new Date(p.ts).toISOString().slice(0,10),value:p.value})));
@@ -132,7 +134,7 @@ function SummaryTrend({data,label,color,periodDays}:{data:DashboardPoint[];label
    <AreaChart data={scaled.points} accessibilityLayer={false} tabIndex={-1} margin={{top:12,right:18,left:0,bottom:4}}>
     <defs><linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={color} stopOpacity=".6"/><stop offset="100%" stopColor={color} stopOpacity="0"/></linearGradient></defs>
     <XAxis dataKey="ts" type="number" domain={[scaled.start,scaled.end]} ticks={axis.ticks} interval={0} tickMargin={5} tickFormatter={value=>axis.labels.get(Number(value))??''} tick={{fill:'var(--zg-text-meta,#a8bcd0)',fontSize:9}} axisLine={false} tickLine={false} height={30}/>
-    <YAxis domain={[0,100]} ticks={[0,50,100]} tick={{fill:'#a9bfd1',fontSize:13}} axisLine={false} tickLine={false} width={36}/>
+    <YAxis orientation={mobileAxisRight?"right":"left"} domain={[0,100]} ticks={[0,50,100]} tick={{fill:'#a9bfd1',fontSize:13}} axisLine={false} tickLine={false} width={36}/>
     <ReferenceArea y1={0} y2={25} fill="#8f1f2f" fillOpacity={0.055}/>
     <ReferenceArea y1={25} y2={45} fill="#f2555a" fillOpacity={0.035}/>
     <ReferenceArea y1={45} y2={55} fill="#9aa8b6" fillOpacity={0.045}/>
