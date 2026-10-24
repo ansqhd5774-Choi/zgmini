@@ -17,7 +17,7 @@ export const metadata: Metadata = {
 };
 
 export default function UsaFearGreedPage() {
- return <><link rel="stylesheet" href="/styles/fear-greed-education-r1.css"/><SiteHeader/><main className="zg-fg-detail zg-fg-us">
+ return <><SiteHeader/><link rel="stylesheet" href="/styles/fear-greed-education-r1.css"/><main className="zg-fg-detail zg-fg-us">
   <div className="zg-fg-detail-body">
    <header className="zg-fg-page-header" aria-label="미국 공포탐욕지수 소개">
     <p className="zg-fg-eyebrow">CNN FEAR &amp; GREED · US STOCK MARKET</p>
