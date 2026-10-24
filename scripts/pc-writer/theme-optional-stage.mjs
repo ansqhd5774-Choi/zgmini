@@ -18,7 +18,14 @@ const FILES = Object.freeze([
   'scripts/pc-writer/theme-data-inventory.mjs',
   'worker/theme-ai-semiconductor-optional.mjs',
   'worker/theme-history-reference.mjs',
+  'worker/theme-etf-only-public.mjs',
+  'worker/theme-biotech-optional.mjs',
+  'worker/theme-biotech-continuation-r2.mjs',
+  'worker/theme-biotech-provisional-r1.mjs',
+  'worker/theme-etf-rolling-public.mjs',
+  'worker/public-feed-store.mjs',
   'worker/public-display-freshness.mjs',
+  'lib/market-score/theme-etf-provisional.mjs',
 ]);
 const HASH = data => createHash('sha256').update(data).digest('hex');
 const need = (ok, code) => { if (!ok) throw new Error(code); };
