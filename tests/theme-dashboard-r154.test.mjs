@@ -61,7 +61,7 @@ test('R154 chart passes published API dataset, not the old 30-theme placeholder'
  assert.doesNotMatch(page,/<SectorSentimentChart title="테마별 공포·탐욕" draggable series=/);
  assert.match(wrapper,/useStoredIndex<ThemeStoredPayload>\('\/api\/theme-fear-greed'\)/);
  assert.match(wrapper,/themeEtfDashboardSeries\(error\?null:payload\)/);
- assert.match(wrapper,/<SectorSentimentChart title="테마별 공포·탐욕" draggable themePicker series=\{series\} data=\{data\} showProvisionalNotice=\{false\}\/>/);
+ assert.match(wrapper,/<SectorSentimentChart title="테마별 공포·탐욕" draggable themePicker series=\{series\} data=\{data\} provisionalBySeries=\{provisionalBySeries\} showProvisionalNotice=\{false\}\/>/);
  assert.doesNotMatch(wrapper,/\bfetch\s*\(/);
 });
 test('R156 picker applies selections immediately without a chart-view button',()=>{
