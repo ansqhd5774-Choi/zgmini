@@ -40,20 +40,23 @@ type IndexPayload = {
 };
 
 const label = (rating = "") => rating || "확인 불가";
+// Reuse ICU formatters across history points and period changes.
+const koreanDateFormatter = new Intl.DateTimeFormat("ko-KR", { dateStyle: "medium", timeZone: "Asia/Seoul" });
+const chartDateFormatter = new Intl.DateTimeFormat("en-US", {
+  timeZone: "Asia/Seoul",
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit",
+});
 const dateLabel = (value?: string) => value
-  ? new Intl.DateTimeFormat("ko-KR", { dateStyle: "medium", timeZone: "Asia/Seoul" }).format(new Date(value))
+  ? koreanDateFormatter.format(new Date(value))
   : "—";
 
 function chartDateParts(value: string) {
   const date = new Date(value);
   if (!Number.isFinite(date.getTime())) return null;
 
-  const parts = new Intl.DateTimeFormat("en-US", {
-    timeZone: "Asia/Seoul",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).formatToParts(date);
+  const parts = chartDateFormatter.formatToParts(date);
 
   const year = Number(parts.find((part) => part.type === "year")?.value);
   const monthText = parts.find((part) => part.type === "month")?.value;
