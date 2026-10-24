@@ -485,6 +485,28 @@
         "publicationPolicy": "ONLY_VERIFIED_REAL_PARQUET_IBB_XBI_SPY_WITH_OVERLAP_GUARD_PRESERVE_252_CONFIRMED",
         "decoder": "EXISTING_HYPARQUET_PACKAGE_DEPENDENCY"
       }
+    },
+    {
+      "id": "data-center-power",
+      "label": "데이터센터·전력",
+      "symbols": ["DTCR", "GRID"],
+      "benchmark": "SPY",
+      "methodologyVersion": "ETF_ONLY_T40_R20_V40_PAIR50",
+      "status": "PRIVATE_CANDIDATE_PC_RAW_AND_PUBLICATION_PENDING",
+      "rawManifest": "themes/data-center-power/raw-manifest.json",
+      "rawAssets": [],
+      "repository": {
+        "collector": "scripts/pc-writer/theme-optional-collect.mjs",
+        "calculator": "scripts/pc-writer/theme-data-center-power-r1.mjs",
+        "publisherInstaller": null,
+        "reader": "worker/theme-data-center-power-r1.mjs"
+      },
+      "runtime": {"collector": null, "calculator": null, "publisher": null},
+      "tasks": [],
+      "public": {"table": "public_feed_snapshots_v1", "feedKey": "theme-data-center-power-r1",
+        "snapshotKey": "current", "api": "/api/theme-fear-greed"},
+      "blockers": ["PC_MANIFEST_628_SESSIONS_NOT_INSTALLED", "DERIVED_PUBLICATION_ACCOUNT_LICENSE_PROOF_PENDING", "D1_PUBLICATION_AND_REGULAR_PC_RUN_PENDING"],
+      "followUps": ["EXISTING_9_THEME_LANES_UNCHANGED", "NO_SYNTHETIC_VALUES", "NO_PUBLIC_WRITES"]
     }
   ]
 }

@@ -2,6 +2,7 @@ import {addVerifiedAiTheme} from './theme-ai-semiconductor-optional.mjs';
 import {addVerifiedBiotechTheme} from './theme-biotech-optional.mjs';
 import {addVerifiedBiotechContinuationR2} from './theme-biotech-continuation-r2.mjs';
 import {addVerifiedBiotechProvisionalR1} from './theme-biotech-provisional-r1.mjs';
+import {addVerifiedDcPower} from './theme-data-center-power-r1.mjs';
 import {readRollingPublic} from './theme-etf-rolling-public.mjs';
 import {PUBLIC_DISPLAY_MAX_AGE_MS} from './public-display-freshness.mjs';
 import {publicFeedStore} from './public-feed-store.mjs';
@@ -47,7 +48,8 @@ export function validateThemeEtfOnlyPublic(record){
 async function addBiotechSidecars(db,base,opts){
  const legacy=await addVerifiedBiotechTheme(db,base,opts);
  const continued=await addVerifiedBiotechContinuationR2(db,legacy,{now:opts.now});
- return addVerifiedBiotechProvisionalR1(db,continued,{now:opts.now});
+ const biotech=await addVerifiedBiotechProvisionalR1(db,continued,{now:opts.now});
+ return addVerifiedDcPower(db,biotech,{now:opts.now});
 }
 export async function readThemeEtfOnly(db,{now=Date.now(),store=publicFeedStore(db)}={}){
  const headers={'cache-control':'no-store','x-robots-tag':'noindex, nofollow','x-content-type-options':'nosniff','x-data-source':'STORED'};
