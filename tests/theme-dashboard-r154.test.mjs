@@ -90,13 +90,32 @@ test('only the dashboard theme legend shows rounded live scores with tighter hor
 });
 test('dashboard-only theme legend uses left-to-right ascending displayed scores with stable ties',()=>{
  const shared=fs.readFileSync('components/sector-sentiment-chart.tsx','utf8');
- assert.match(shared,/const themeLegendSeries=showDashboardThemeScores\?series\.map\(\(item,index\)=>\{/);
+ assert.match(shared,/const rankedThemeEntries=showDashboardThemeScores\?series\.map\(\(item,index\)=>\{/);
  assert.match(shared,/rows\.findLast\(row=>typeof row\[item\.id\]==='number'&&Number\.isFinite\(row\[item\.id\]\)\)/);
- assert.match(shared,/\.sort\(\(a,b\)=>a\.score-b\.score\|\|a\.index-b\.index\)\.map\(\(\{item\}\)=>item\):shownSeries;/);
+ assert.match(shared,/\.sort\(\(a,b\)=>a\.score-b\.score\|\|a\.index-b\.index\):\[\];/);
+ assert.match(shared,/const themeLegendSeries=showDashboardThemeScores\?rankedThemeEntries\.map\(\(\{item\}\)=>item\):shownSeries;/);
  assert.match(shared,/\{themeLegendSeries\.map\(item=>\{/);
  assert.match(shared,/\{series\.map\(item=><button key=\{item\.id\}/);
  const sampled=[{item:'방산',index:0,score:46},{item:'AI·반도체',index:1,score:26},{item:'바이오·신약',index:2,score:23},{item:'원전·SMR',index:3,score:26}];
  assert.deepEqual(sampled.sort((a,b)=>a.score-b.score||a.index-b.index).map(({item})=>item),['바이오·신약','AI·반도체','원전·SMR','방산']);
+});
+test('dashboard theme initially shows only the highest two and opens its horizontal list at the right',()=>{
+ const shared=fs.readFileSync('components/sector-sentiment-chart.tsx','utf8');
+ assert.match(shared,/const dashboardThemeDefaultApplied=useRef\(false\);/);
+ assert.match(shared,/!showDashboardThemeScores\|\|dashboardThemeDefaultApplied\.current\|\|!rankedThemeEntries\.some\(\(\{score\}\)=>score>=0\)/);
+ assert.match(shared,/rankedThemeEntries\.filter\(\(\{score\}\)=>score>=0\)\.slice\(-2\)\.map\(\(\{item\}\)=>item\.id\)/);
+ assert.match(shared,/setHidden\(new Set\(series\.filter\(\(\{id\}\)=>!selected\.has\(id\)\)\.map\(\(\{id\}\)=>id\)\)\)/);
+ assert.match(shared,/list\.scrollLeft=list\.scrollWidth-list\.clientWidth/);
+ assert.match(shared,/const toggleThemePickerItem=\(id:string\)=>setHidden\(previous=>\{/);
+});
+test('dashboard theme legend supports horizontal mouse dragging while preventing accidental toggle',()=>{
+ const shared=fs.readFileSync('components/sector-sentiment-chart.tsx','utf8');
+ const css=fs.readFileSync('components/sector-sentiment-chart.css','utf8');
+ assert.match(shared,/ref=\{legendRef\} className="zg-sector-chart-legend is-draggable" aria-label="차트에 표시 중인 테마" onPointerDown=/);
+ assert.match(shared,/event\.currentTarget\.setPointerCapture\(event\.pointerId\)/);
+ assert.match(shared,/event\.currentTarget\.scrollLeft=drag\.current\.left-dx/);
+ assert.match(shared,/onClickCapture=\{event=>\{if\(drag\.current\.moved\)\{event\.preventDefault\(\);event\.stopPropagation\(\);drag\.current\.moved=false\}\}\}/);
+ assert.match(css,/\.zg-sector-chart-legend\.is-draggable\{[^}]*overflow-x:auto;[^}]*touch-action:pan-x pan-y;/);
 });
 test('R156 picker applies selections immediately without a chart-view button',()=>{
  const shared=fs.readFileSync('components/sector-sentiment-chart.tsx','utf8');
