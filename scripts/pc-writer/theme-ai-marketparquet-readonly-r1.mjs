@@ -39,16 +39,21 @@ async function defaultReader(file,bytes){
 // Each archive date is checked independently. The overlap date is required in
 // addition to the target date to compare the two price modes before calculation.
 export async function inspectExistingSevenAiSource({dataRoot,targetDate='2026-10-23',
- overlapDate='2026-10-22',reader=defaultReader}={}){
+ overlapDate='2026-10-22',pendingDates=null,includePrivatePrices=false,reader=defaultReader}={}){
  const result={report:'AI_SEVEN_THEME_SOURCE_PARITY_READONLY_R1',targetDate,overlapDate,
   symbols:SYMBOLS,source:SOURCE,providerCalls:0,d1Writes:0,schedulerWrites:0,
   status:'STARTED',dates:[],targetCoverage:null};
- if(!DAY(targetDate)||!DAY(overlapDate)||overlapDate>=targetDate){result.status='DATES_INVALID';return result;}
+ const pending=pendingDates??[targetDate];
+ if(!DAY(targetDate)||!DAY(overlapDate)||!Array.isArray(pending)||pending.length<1||pending.length>2||
+  pending.at(-1)!==targetDate||pending.some((d,i)=>!DAY(d)||d<=overlapDate||(i>0&&d<=pending[i-1]))){
+  result.status='DATES_INVALID';return result;
+ }
  if(!dataRoot||!fs.existsSync(dataRoot)){result.status='DATA_ROOT_UNAVAILABLE';return result;}
  const parent=path.join(dataRoot,'theme-market-history-r131');
  const archive=path.join(parent,'marketparquet-r165'),audits=path.join(parent,'marketparquet-r167');
  if(!fs.existsSync(archive)||!fs.existsSync(audits)){result.status='SEVEN_ARCHIVE_UNAVAILABLE';return result;}
- for(const date of [overlapDate,targetDate]){
+ const verifiedPrivatePrices={};
+ for(const date of [overlapDate,...pending]){
   const name=`etf_daily_${date}.parquet`;
   const file=path.join(archive,name),auditFile=path.join(audits,`etf_daily_${date}.audit.json`);
   const daily={date,filePresent:fs.existsSync(file),auditPresent:fs.existsSync(auditFile),
@@ -88,11 +93,13 @@ export async function inspectExistingSevenAiSource({dataRoot,targetDate='2026-10
    result.status='ACTUAL_TARGET_SYMBOLS_MISSING';result.targetCoverage=daily.coverage;return result;
   }
   daily.sourceStoredAt=new Date(fs.statSync(file).mtimeMs).toISOString();
+  if(includePrivatePrices)verifiedPrivatePrices[date]=prices;
  }
  result.status='ACTUAL_TARGET_AND_OVERLAP_ROWS_VERIFIED';
  result.targetCoverage=result.dates.at(-1).coverage;
- // Prices intentionally stay private: this report proves provenance/coverage,
- // not price-mode reconciliation, rights approval or publication readiness.
+ // The CLI never prints prices. An in-process calculation may explicitly opt
+ // into a private in-memory map after each archive/audit/ticker gate passed.
+ if(includePrivatePrices)result.privateVerifiedPrices=verifiedPrivatePrices;
  return result;
 }
 
