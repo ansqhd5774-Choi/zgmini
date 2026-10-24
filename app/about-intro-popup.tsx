@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useLayoutEffect, useRef, useState } from 'react';
 import styles from './about-intro-popup.module.css';
 
 const DISMISSED_SESSION_KEY = 'zgmini-about-intro-dismissed-r1';
@@ -48,7 +48,8 @@ export default function AboutIntroPopup() {
     dialogRef.current?.close();
   }, []);
 
-  useEffect(() => {
+  // Open before paint; unrelated passive data effects must not postpone the poster.
+  useLayoutEffect(() => {
     const dialog = dialogRef.current;
     if (!dialog || !shouldShowIntroduction()) return;
     dialog.showModal();
