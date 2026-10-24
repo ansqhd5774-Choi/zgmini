@@ -395,7 +395,9 @@
         "pcTaskEntrypoint": "scripts/pc-writer/theme-optional-cycle.cmd",
         "forensicReadOnly": "scripts/pc-writer/theme-biotech-forensic-r1.mjs",
         "savedSourceReadOnly": "scripts/pc-writer/theme-biotech-marketparquet-r2.mjs",
-        "savedSourceCmd": "scripts/pc-writer/BIOTECH_MARKETPARQUET_R2.cmd"
+        "savedSourceCmd": "scripts/pc-writer/BIOTECH_MARKETPARQUET_R2.cmd",
+        "savedArchiveReadOnly": "scripts/pc-writer/theme-biotech-marketparquet-r3.mjs",
+        "savedArchiveCmd": "scripts/pc-writer/BIOTECH_MARKETPARQUET_R3.cmd"
       },
       "runtime": {
         "collector": null,
@@ -511,12 +513,46 @@
           "codeSha256": "71424845f7c1259dc2ac8ca4a7b9cc36de30df4bd916eb2c111d72a10c25ce4d",
           "cmdSha256": "8e424248bf68a6703002a4b04d921bd5edbecfffa324678a30bfb91241e5cab7",
           "tests": "SYNTHETIC_PASS_2",
-          "pcActualRun": "NOT_EXECUTED",
+          "pcActualRun": "2026-10-24T02:15:31.100Z",
           "providerCalls": 0,
           "d1Writes": 0,
           "originalR3Searches": 0,
           "existing704SessionRefetches": 0,
-          "focus": "EXISTING_MARKETPARQUET_FILES_AND_RAW_JSON_PROVENANCE"
+          "focus": "EXISTING_MARKETPARQUET_FILES_AND_RAW_JSON_PROVENANCE",
+          "status": "READ_ONLY_EXECUTED_SHA_VERIFIED_SOME_JSON_MARKETPARQUET_RAW_NOT_INSPECTED",
+          "rawJsonEvidence": {
+            "IBB": {
+              "source": "GETMARKETHISTORY",
+              "path": "theme-market-history-r131/raw/IBB_2025-10-20_2026-10-20_1850d7c5a8413462.json",
+              "sha256": "1850d7c5a8413462f3ee7be7e778e079d9966f90f024ab6beb4200d5fb1fad6b"
+            },
+            "SPY": {
+              "source": "GETMARKETHISTORY",
+              "sha256": "217ddfe48c616d8cad11fc878434a1d265bb1a9cb7c4dd72ff477fc23826cb12"
+            }
+          },
+          "misidentifiedArchiveRoot": "marketparquet-r167_IS_CODE_AND_AUDIT_FILES",
+          "actualArchivePathFromCode": "theme-market-history-r131/marketparquet-r165",
+          "actualArchiveFilesShaVerified": false,
+          "parquetRowsVerified": false,
+          "pyarrow": "NOT_INSTALLED",
+          "r167AuditDatesKnown": [
+            "2026-10-16",
+            "2026-10-19",
+            "2026-10-20",
+            "2026-10-21",
+            "2026-10-22"
+          ]
+        },
+        "savedSourceR3": {
+          "codeSha256": "c423426c1a3b64cd93d1f598bd7006a9219353e2a6d4c21d606594ad19ad4f40",
+          "cmdSha256": "49780222c0e7b114d12413b214006667c84b1a05eb3d418f4995728cc783a4ef",
+          "tests": "SYNTHETIC_PASS_2",
+          "pcActualRun": "NOT_EXECUTED",
+          "focus": "ACTUAL_MARKETPARQUET_R165_PARQUET_ROWS_RECENT_SESSIONS",
+          "d1Writes": 0,
+          "providerCalls": 0,
+          "sourceSearchesR3Original": 0
         }
       },
       "collectionEvidence": {
