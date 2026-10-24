@@ -12,6 +12,7 @@ const FILES = Object.freeze([
   'config/theme-data-registry.json',
   'scripts/pc-writer/theme-optional-cycle.cmd',
   'scripts/pc-writer/theme-optional-cycle.mjs',
+  'scripts/pc-writer/theme-ai-task-mirror-r1.mjs',
   'scripts/pc-writer/theme-optional-collect.mjs',
   'scripts/pc-writer/theme-optional-audit.mjs',
   'scripts/pc-writer/theme-optional-score-r188.mjs',
