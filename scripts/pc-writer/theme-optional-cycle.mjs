@@ -8,10 +8,12 @@ import {spawnSync} from 'node:child_process';
 import {fileURLToPath} from 'node:url';
 import {collectOptional} from './theme-optional-collect.mjs';
 import {auditOptionalPrices} from './theme-optional-audit.mjs';
+import {buildAiProvisionalFromExistingSeven} from './theme-ai-marketparquet-provisional-r2.mjs';
 import {containedFile,inspectManifest} from './theme-data-inventory.mjs';
 import {eligibleAiTheme,AI_THEME_PUBLIC_KEY,AI_THEME_PUBLIC_VERSION} from '../../worker/theme-ai-semiconductor-optional.mjs';
 import {themeHistoryReference} from '../../worker/theme-history-reference.mjs';
 import {THEME_ETF_ONLY_PUBLIC_KEY,validateThemeEtfOnlyPublic} from '../../worker/theme-etf-only-public.mjs';
+import {THEME_ETF_ROLLING_KEY,THEME_ETF_ROLLING_VERSION} from '../../worker/theme-etf-rolling-public.mjs';
 
 const DATA_ROOT='E:/ZGmini/data';
 const FEED='https://zgmini.kr/api/theme-fear-greed/';
@@ -111,10 +113,28 @@ export function buildAiCandidate({audit,prior,reference,manifest,manifestBytes,n
   publicationAuthorized:prior.publicationAuthorized,upstreamCommercialRightsVerified:prior.upstreamCommercialRightsVerified,
   derivedLicenseVerified:prior.derivedLicenseVerified,localBarsVerified:true,sourcePriceReconciled:true,
   observationDate:audit.observationDate,score:audit.score,history:audit.history,
-  phase:(reference.provisional?.points?.length??0)?'PROVISIONAL':'CONFIRMED',provisional:audit.provisional};
+  phase:(reference.provisional?.points?.length??0)?'PROVISIONAL':'CONFIRMED',provisional:audit.provisional,
+  ...(audit.provisional?.lineage?{provisionalLineage:audit.provisional.lineage}:{})};
  ensure(eligibleAiTheme(record,{...reference,themes:reference.themes.slice(0,7)},{now,storedAt:now}),
   aiReaderRejectionReason(record,reference,{now}));
  return record;
+}
+
+// Do not transfer GMH rights flags to the second provider. Require the exact
+// existing seven-theme rolling publisher's source/rights attestation for the
+// same confirmed and provisional dates, even though no raw is published.
+export function verifySevenProvisionalAuthority(rolling,reference){
+ const expected=(reference?.phase==='PROVISIONAL'?reference.provisional?.points??[]:[]).map(p=>p.date);
+ ensure(rolling?.status==='READY'&&rolling.version===THEME_ETF_ROLLING_VERSION&&
+  rolling.publicationAuthorized===true&&rolling.upstreamCommercialRightsVerified===true&&
+  rolling.derivedLicenseVerified===true&&rolling.sourcePriceReconciled===true&&
+  rolling.lineage?.primarySource==='GETMARKETHISTORY_1H_CLOSE'&&
+  rolling.lineage?.secondarySource==='MARKETPARQUET_ETF_DAILY_SPLIT_ADJUSTED'&&
+  rolling.lineage?.secondaryPendingCount===expected.length&&
+  rolling.observationDate===reference.observationDate&&
+  equal((rolling.provisional?.points??[]).map(p=>p.date),expected)&&
+  rolling.lineage?.latestCompletedSession===expected.at(-1),'AI_SEVEN_SECONDARY_RIGHTS_OR_LINEAGE_UNVERIFIED');
+ return true;
 }
 
 function config(dataRoot){
@@ -195,7 +215,8 @@ const api=async(fetchImpl=fetch)=>{
  const res=await fetchImpl(FEED+'?optional_cycle='+Date.now(),{headers:{'cache-control':'no-cache'},signal:AbortSignal.timeout(20000)});
  ensure(res.ok,'PUBLIC_API_NOT_READY');const value=await res.json();ensure(value.status==='READY','PUBLIC_API_NOT_READY');return value;
 };
-export async function runOptionalTheme({themeId,dataRoot,readPublic=api,storage=null,collect=collectOptional,audit=auditOptionalPrices,allowPublish=false,now=Date.now}={}){
+export async function runOptionalTheme({themeId,dataRoot,readPublic=api,storage=null,collect=collectOptional,
+ audit=auditOptionalPrices,secondary=buildAiProvisionalFromExistingSeven,allowPublish=false,now=Date.now}={}){
  const result={themeId,status:'STARTED',providerCalls:0,d1Writes:0,publicVerified:false,reason:null};
  try{
   ensure(TARGETS.includes(themeId),'UNREGISTERED_THEME');
@@ -211,10 +232,28 @@ export async function runOptionalTheme({themeId,dataRoot,readPublic=api,storage=
   const gathering=await collect({dataRoot,themeId,start:window.start,end:window.end});result.providerCalls=gathering.providerCalls;
   ensure(gathering.status==='PRIVATE_RAW_COLLECTION_COMPLETE','COLLECTION_'+gathering.status);
   ensure(inspectManifest(dataRoot,relative,themeId).status==='SHA_VERIFIED','RAW_MANIFEST_AFTER_COLLECTION_INVALID');
-  const checked=audit({themeId,dataRoot,reference:base,priorRecord:previous.body});
+  const useSecondary=themeId==='ai-semiconductor'&&base.phase==='PROVISIONAL'&&
+   (base.provisional?.points?.length??0)>0;
+  const checked=audit({themeId,dataRoot,reference:base,priorRecord:previous.body,
+   includePrivatePrices:useSecondary});
   result.scoreDifference=checked.audit.maxDifference;result.observationDate=checked.observationDate;
   ensure(checked.status==='PRIVATE_CANDIDATE_PARITY_VERIFIED','SCORE_DRIFT_REVIEW_REQUIRED');
   if(themeId==='biotech')fail('BIOTECH_ORIGINAL_R3_AND_RIGHTS_REVIEW_REQUIRED');
+   if(useSecondary){
+    let seven;try{seven=(await db.read(THEME_ETF_ROLLING_KEY)).body;}
+    catch{fail('AI_SEVEN_ROLLING_D1_AUTHORITY_NOT_FOUND');}
+    verifySevenProvisionalAuthority(seven,base);
+    const derived=await secondary({dataRoot,checked,reference:base,now:now()});
+    ensure(derived.status==='PRIVATE_PROVISIONAL_SCORES_VERIFIED'&&Array.isArray(derived.points)&&
+     derived.points.length===(base.provisional?.points?.length??0)&&
+     equal(derived.points.map(p=>p.date),base.provisional.points.map(p=>p.date))&&
+     derived.lineage?.source==='MARKETPARQUET_ETF_DAILY_SPLIT_ADJUSTED',
+     'AI_SECONDARY_CANDIDATE_INVALID');
+    checked.provisional={points:derived.points,lineage:derived.lineage};
+    result.provisionalDates=derived.points.map(p=>p.date);
+    result.provisionalScores=derived.points.map(p=>p.score);
+    result.sourcePriceMaxOverlapDifference=derived.lineage.maxOverlapDifference;
+   }
    const historicalSeed=checked.observationDate<base.observationDate
     ?(typeof db.readSeed==='function'?await db.readSeed():null):null;
    const candidateReference=aiCandidateReference(base,historicalSeed,checked.observationDate);
@@ -231,6 +270,8 @@ export async function runOptionalTheme({themeId,dataRoot,readPublic=api,storage=
   const refreshed=await readPublic();
   const found=refreshed.themes?.find(t=>t.theme==='AI 반도체');
   ensure(found&&found.score===record.score&&equal(found.history?.map(p=>p.date),record.history.map(p=>p.date)),'D1_VERIFIED_PUBLIC_PENDING');
+  if(useSecondary)ensure(equal((refreshed.provisional?.points??[]).map(p=>p.scores?.['AI 반도체']),
+   record.provisional.points.map(p=>p.score)),'D1_VERIFIED_PROVISIONAL_PUBLIC_PENDING');
   result.publicVerified=true;result.status='PUBLIC_VERIFIED';return result;
  }catch(e){result.status='BLOCKED';result.reason=e?.code??'UNKNOWN_ERROR';return result;}
 }

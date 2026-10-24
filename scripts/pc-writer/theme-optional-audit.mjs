@@ -10,7 +10,7 @@ export function auditThroughDate(themeId,commonDates,publicObservationDate){
   ?commonDates.filter(d=>d<=publicObservationDate).at(-1)
   :publicObservationDate;
 }
-export function auditOptionalPrices({themeId,dataRoot,reference,priorRecord}){
+export function auditOptionalPrices({themeId,dataRoot,reference,priorRecord,includePrivatePrices=false}){
  const entry=registry.themes.find(t=>t.id===themeId);if(!['ai-semiconductor','biotech'].includes(themeId)||!entry)throw Error('OPTIONAL_THEME_ID');
  if(reference?.status!=='READY'||!reference.observationDate||!Array.isArray(priorRecord?.history)||priorRecord.history.length!==252||priorRecord.methodologyVersion!==entry.methodologyVersion)throw Error('REFERENCE_CONTRACT');
  const manifestCheck=inspectManifest(dataRoot,entry.rawManifest,themeId);if(manifestCheck.status!=='SHA_VERIFIED')throw Error('RAW_MANIFEST_NOT_VERIFIED');
@@ -48,6 +48,7 @@ export function auditOptionalPrices({themeId,dataRoot,reference,priorRecord}){
  return {status:maxDifference===0?'PRIVATE_CANDIDATE_PARITY_VERIFIED':'CONFIRMED_SCORE_REVISION_REVIEW',themeId,methodologyVersion:entry.methodologyVersion,
   observationDate:through,score:history.at(-1).score,history,provisional:{points:pending},
   audit:{commonSessions:dates.length,latestCommon:dates.at(-1),sourceOverlapBars:overlaps,comparisonDate:priorRecord.observationDate,comparedPoints:252,maxDifference,missingProvisionalDates:wanted.filter(p=>!dates.includes(p.date)).map(p=>p.date)},
+  ...(includePrivatePrices&&themeId==='ai-semiconductor'?{privateVerifiedPrices:{tables,dates}}:{}),
   providerCalls:0,publicWrites:0,d1Writes:0};
 }
 if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.url)){
