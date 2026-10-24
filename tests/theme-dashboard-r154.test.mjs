@@ -69,7 +69,9 @@ test('only the dashboard theme legend shows rounded live scores with tighter hor
  const css=fs.readFileSync('components/sector-sentiment-chart.css','utf8');
  assert.match(shared,/dashboardThemeScores=false/);
  assert.match(shared,/const showDashboardThemeScores=themePicker&&dashboardThemeScores;/);
- assert.match(shared,/const value=latestSectorRow\?\.\[item\.id\];const score=typeof value==='number'&&Number\.isFinite\(value\)\?String\(Math\.round\(value\)\):'—'/);
+ assert.match(shared,/const lastObserved=showDashboardThemeScores\?rows\.findLast\(row=>typeof row\[item\.id\]==='number'&&Number\.isFinite\(row\[item\.id\]\)\):undefined/);
+ assert.match(shared,/const value=lastObserved\?\.\[item\.id\];const score=typeof value==='number'&&Number\.isFinite\(value\)\?String\(Math\.round\(value\)\):'—'/);
+ assert.match(shared,/title=\{lastObserved\?`\$\{item\.name\} · \$\{lastObserved\.date\} 관측`:item\.name\}/);
  assert.match(shared,/className="zg-theme-legend-name"/);
  assert.match(shared,/className="zg-theme-legend-color" style=\{\{backgroundColor:item\.color\}\}/);
  assert.match(shared,/className="zg-theme-legend-score" aria-label=/);
