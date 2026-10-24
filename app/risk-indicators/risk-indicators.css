@@ -72,10 +72,12 @@
 .zg-risk-rank-detail-link:hover{background:#28516b;color:#fff}
 .zg-risk-rank{font-size:13px;color:#e3eef7;font-variant-numeric:tabular-nums}
 .zg-risk-rank-select>strong{font-size:15px;letter-spacing:-.035em;line-height:1.2}
+.zg-risk-rank-name-mobile{display:none}
 .zg-risk-rank-description{font-size:11px;color:#cedce7;line-height:1.35}
 .zg-risk-rank-score{font-size:23px;color:var(--zg-risk-row-color);font-weight:790;text-align:right;letter-spacing:-.045em;font-variant-numeric:tabular-nums}
 .zg-risk-rank-status{border-radius:99px;border:1px solid var(--zg-risk-row-color);padding:4px 6px;color:var(--zg-risk-row-color);text-align:center;font-size:11px;white-space:nowrap;font-weight:750}
 .zg-risk-ranking-footnote{display:flex;gap:6px;align-items:center;font-size:10px;color:#7fa1b9;margin:8px 0 0;line-height:1.3}
+.zg-risk-mobile-footnote{display:none}
 .zg-risk-explainer{border-top:1px solid #214961;display:grid;grid-template-columns:1.15fr repeat(3,1fr);gap:0;margin:17px -42px 0;padding:27px 42px 0}
 .zg-risk-explainer-intro{padding-right:26px}
 .zg-risk-explainer h2{font-size:21px;margin:0 0 17px;letter-spacing:-.045em;line-height:1.25}
@@ -180,4 +182,49 @@
  .zg-risk-rank-select{grid-template-columns:20px minmax(77px,1fr) 51px 43px;gap:4px;padding:6px}
  .zg-risk-rank-select>strong{font-size:12px}
  .zg-risk-rank-score{font-size:17px}
+}
+/* Approved mobile pattern: large analytical card + eight right-thumb selectors. */
+@media(max-width:600px){
+ .zg-risk-overview{grid-template-columns:minmax(0,1fr) 76px;gap:5px;align-items:stretch}
+ .zg-risk-feature{grid-column:1;grid-row:1;min-width:0;padding:10px 8px;scroll-margin-top:74px}
+ .zg-risk-feature-eyebrow,.zg-risk-feature-divider{display:none}
+ .zg-risk-feature-head{flex-wrap:nowrap;gap:4px;margin-bottom:7px;min-width:0}
+ .zg-risk-feature-head h2{font-size:15px;min-width:0;overflow-wrap:anywhere;word-break:keep-all}
+ .zg-risk-status{font-size:10px;min-width:35px;padding:2px 4px}
+ .zg-risk-feature-number{min-width:0}
+ .zg-risk-feature-number>div>strong{font-size:36px}
+ .zg-risk-feature-number>div>span:last-child{font-size:11px}
+ .zg-risk-feature-number p{font-size:9px;line-height:1.25}
+ .zg-risk-meter-title{font-size:9px}
+ .zg-risk-five-band-labels{font-size:8px;gap:1px}
+ .zg-risk-trend-head{align-items:stretch;flex-wrap:wrap;gap:3px}
+ .zg-risk-trend-head>div:first-child{width:100%;flex:1 1 100%;min-width:0}
+ .zg-risk-trend-head h3{font-size:10px}
+ .zg-risk-trend-head>div:first-child>span{display:none}
+ .zg-risk-periods{width:100%;justify-content:space-between}
+ .zg-risk-periods button{font-size:9px;padding:4px 3px}
+ .zg-risk-chart{height:94px;min-height:94px}
+ .zg-risk-chart-empty{font-size:10px;padding:7px}
+ .zg-risk-feature-bottom{flex-wrap:wrap;padding:7px;gap:7px}
+ .zg-risk-feature-bottom>div{width:100%}
+ .zg-risk-feature-cta{max-width:100%;margin-left:auto;white-space:normal;min-height:32px;padding:5px 6px;font-size:9px}
+ .zg-risk-ranking{grid-column:2;grid-row:1;min-width:0;min-height:0}
+ .zg-risk-ranking>header,.zg-risk-ranking-footnote{display:none}
+ .zg-risk-ranking-list{border:0;flex:1;gap:2px;grid-template-rows:repeat(8,minmax(44px,1fr))}
+ .zg-risk-ranking-list li{border:1px solid #22516c;min-height:44px;min-width:0}
+ .zg-risk-ranking-list li+li{border-top:1px solid #22516c}
+ .zg-risk-ranking-item{min-height:44px;height:100%}
+ .zg-risk-ranking-item.is-selected{box-shadow:inset 3px 0 0 var(--zg-risk-row-color);border-color:var(--zg-risk-row-color)}
+ .zg-risk-rank-select{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;min-height:44px;padding:2px 3px;text-align:center}
+ .zg-risk-rank,.zg-risk-rank-name-full,.zg-risk-rank-description,.zg-risk-rank-status,.zg-risk-rank-detail-link{display:none}
+ .zg-risk-rank-select>.zg-risk-rank-name-mobile{display:block;min-width:0;max-width:100%;font-size:10px;line-height:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;letter-spacing:-.35px}
+ .zg-risk-rank-score{font-size:14px;line-height:16px;text-align:center}
+ .zg-risk-mobile-footnote{display:flex;align-items:flex-start;gap:6px;margin:9px 0 0;color:#7fa1b9;font-size:10px;line-height:1.35}
+ .zg-risk-mobile-footnote svg{flex-shrink:0}
+}
+@media(max-width:350px){
+ .zg-risk-overview{grid-template-columns:minmax(0,1fr) 66px}
+ .zg-risk-feature{padding:8px 6px}
+ .zg-risk-feature-head h2{font-size:14px}
+ .zg-risk-rank-select>.zg-risk-rank-name-mobile{font-size:9px}
 }
