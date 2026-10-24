@@ -4,7 +4,7 @@ import {planBiotechTaskMirror,verifyExistingBiotech} from './theme-biotech-task-
 
 const template=(logon='InteractiveToken')=>`<?xml version="1.0" encoding="UTF-16"?>
 <Task version="1.4" xmlns="http://schemas.microsoft.com/windows/2004/02/mit/task">
-<RegistrationInfo><Author>example</Author></RegistrationInfo>
+<RegistrationInfo><Author>example</Author><URI>\\ZGMINI-PC-GetMarketHistory-ETF</URI></RegistrationInfo>
 <Triggers><CalendarTrigger><StartBoundary>2026-10-24T08:00:00</StartBoundary>
 <Repetition><Interval>PT5M</Interval><Duration>P1D</Duration></Repetition>
 <Enabled>true</Enabled><ScheduleByDay><DaysInterval>1</DaysInterval></ScheduleByDay>
@@ -23,6 +23,8 @@ test('plan mirrors triggers, principal, settings without touching original XML',
  assert.equal(result.logon,'InteractiveToken');
  assert.equal(original.includes('E:\\old\\run.cmd'),true);
  assert.equal(result.xml.includes('E:\\old\\run.cmd'),false);
+ assert.match(result.xml,/<URI>\\ZGMINI-PC-Theme-Biotech<\/URI>/);
+ assert.equal(original.includes('<URI>\\ZGMINI-PC-GetMarketHistory-ETF</URI>'),true);
  assert.match(result.xml,/BIOTECH_R7_SCHEDULED\.cmd/);
  assert.match(result.xml,/<Interval>PT5M<\/Interval>/);
  assert.match(result.xml,/<RunLevel>HighestAvailable<\/RunLevel>/);
