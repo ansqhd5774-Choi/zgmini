@@ -13,6 +13,9 @@ test('economic terrain keeps the five agreed zones and numeric thresholds',()=>{
  assert.ok(component.includes("width:20,color:'#2de0c4'"));
  assert.ok(component.includes("width:25,color:'#13bfa7'"));
  assert.match(component,/\[0,25,45,55,75,100\]/);
+ for(const [i,color] of ['#fa628b','#ffc64b','#a6bdd0','#2de0c4','#13bfa7'].entries()){
+  assert.ok(design.includes(`.zg-terrain-axis-bands>div:nth-child(${i+1}){background:${color}}`));
+ }
 });
 
 test('axis header is centered and strengthened with a 100-point scale',()=>{
@@ -38,3 +41,4 @@ test('compact screen keeps category names centered inside true band proportions'
  assert.ok(design.includes('@media(max-width:510px){.zg-terrain-axis{height:80px;padding-top:0}.zg-terrain-axis-plot,.zg-terrain-axis-bands>div{position:relative}'));
  assert.match(design,/\.zg-terrain-axis-bands strong\{position:static;width:auto;font-size:clamp/);
 });
+
