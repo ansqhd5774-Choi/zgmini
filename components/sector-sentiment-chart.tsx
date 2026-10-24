@@ -102,14 +102,14 @@ export default function SectorSentimentChart({data=[],series=SECTORS,title='ì„¹í
   return {item,index,score:typeof value==='number'&&Number.isFinite(value)?Math.round(value):-1};
  }).sort((a,b)=>b.score-a.score||a.index-b.index):[];
  const themeLegendSeries=showDashboardThemeScores?rankedThemeEntries.map(({item})=>item):shownSeries;
- // Select only the rightmost two published themes once, without overriding later manual toggles.
+ // Select the highest two published scores once, without overriding later manual toggles.
  useEffect(()=>{
   if(!showDashboardThemeScores||dashboardThemeDefaultApplied.current||!rankedThemeEntries.some(({score})=>score>=0))return;
   dashboardThemeDefaultApplied.current=true;
-  const selected=new Set(rankedThemeEntries.filter(({score})=>score>=0).slice(-2).map(({item})=>item.id));
+  const selected=new Set(rankedThemeEntries.filter(({score})=>score>=0).slice(0,2).map(({item})=>item.id));
   setHidden(new Set(series.filter(({id})=>!selected.has(id)).map(({id})=>id)));
   const list=legendRef.current;
-  if(list)list.scrollLeft=list.scrollWidth-list.clientWidth;
+  if(list)list.scrollLeft=0;
  },[showDashboardThemeScores,rankedThemeEntries,series]);
  const extrema=shownSeries.length===1?chartExtrema(visibleRows.map(row=>({date:row.date,value:row[shownSeries[0].id]}))):[];
  const heldRow=heldIndex===null?null:visibleRows[heldIndex];
