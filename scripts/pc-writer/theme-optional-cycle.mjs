@@ -2,10 +2,8 @@
 // A failed optional theme never changes the original seven-theme pipeline.
 import fs from 'node:fs';
 import path from 'node:path';
-import os from 'node:os';
 import {createHash} from 'node:crypto';
-import {spawnSync} from 'node:child_process';
-import {fileURLToPath} from 'node:url';
+import {fileURLToPath,pathToFileURL} from 'node:url';
 import {collectOptional} from './theme-optional-collect.mjs';
 import {auditOptionalPrices} from './theme-optional-audit.mjs';
 import {buildAiProvisionalFromExistingSeven} from './theme-ai-marketparquet-provisional-r2.mjs';
@@ -167,7 +165,7 @@ export async function diagnoseSevenProvisionalLane({dataRoot,storage=null,readPu
  const result={report:'AI_SEVEN_PROVISIONAL_AUTHORITY_READONLY_R3',status:'STARTED',
   providerCalls:0,d1Writes:0,schedulerWrites:0,reason:null};
  try{
-  const db=storage??cloudflareD1({dataRoot}),feed=await readPublic();
+  const db=storage??await cloudflareD1({dataRoot}),feed=await readPublic();
   ensure(feed?.status==='READY'&&feed.themes?.length>=7,'PUBLIC_SEVEN_REFERENCE_MISSING');
   const reference=sevenCoreReference(feed),clock=now();
   const pending=reference.phase==='PROVISIONAL'?(reference.provisional?.points??[]).map(p=>p.date):[];
@@ -243,45 +241,42 @@ function config(dataRoot){
  ensure(/^[a-f0-9]{32}$/.test(cfg.account)&&/^[a-f0-9-]{36}$/.test(cfg.core),'PC_D1_CONFIG_INVALID');
  return cfg;
 }
-const WRANGLER_EARLY_REFRESH_MS=300000;
-// The original PC D1 writer refreshes expired OAuth via `wrangler whoami`.
-// Do not treat an expired access token as terminal when the existing Wrangler
-// refresh token can be used. Never print or copy the OAuth credential.
-export function cloudflareToken({dataRoot=DATA_ROOT,
- oauthFile=path.join(os.homedir(),'AppData','Roaming','xdg.config','.wrangler','config','default.toml'),
- env=process.env,execute=spawnSync,now=Date.now(),platform=process.platform,
- executable=process.execPath,wranglerCandidates=null}={}){
- if(env.CLOUDFLARE_API_TOKEN)return env.CLOUDFLARE_API_TOKEN;
- ensure(fs.existsSync(oauthFile),'PC_CLOUDFLARE_AUTH_UNAVAILABLE');
- const valid=()=>{
-  const body=fs.readFileSync(oauthFile,'utf8');
-  const expiry=Date.parse(body.match(/expiration_time\s*=\s*"([^"]+)"/)?.[1]??'');
-  const value=body.match(/oauth_token\s*=\s*"([^"]+)"/)?.[1];
-  return value&&Number.isFinite(expiry)&&expiry>now+WRANGLER_EARLY_REFRESH_MS?value:null;
- };
- const existing=valid();if(existing)return existing;
- const approvedRoot=path.dirname(path.resolve(dataRoot));
- const scripts=wranglerCandidates??[
-  path.join(approvedRoot,'projects','zgmini','node_modules','wrangler','bin','wrangler.js'),
-  path.join(approvedRoot,'node_modules','wrangler','bin','wrangler.js'),
-  path.join(approvedRoot,'runtime','node_modules','wrangler','bin','wrangler.js'),
- ];
- const options={encoding:'utf8',timeout:60000,windowsHide:true,maxBuffer:512*1024};
- for(const script of scripts){
-  if(!fs.existsSync(script))continue;
-  execute(executable,[script,'whoami'],options);
-  const refreshed=valid();if(refreshed)return refreshed;
- }
- if(platform==='win32'){
-  // Use an already-installed Wrangler on PATH. Do not run `npx`, which could
-  // download or install a new package on the user's PC.
-  execute('cmd.exe',['/d','/c','wrangler.cmd','whoami'],options);
-  const refreshed=valid();if(refreshed)return refreshed;
- }
- fail('PC_WRANGLER_REAUTH_REQUIRED');
+// The successful biotech R8 auth bridge resolves the approved original seven
+// publisher's source, then calls its d1.credential(repo). AI follows that
+// exact existing chain, without executing the publisher or changing its tasks.
+export const AI_APPROVED_SEVEN_CORE_SHA256='f9ea0a1bfaf52909b7a434b65ba93887f56660bc979a3cb7e0992597bc9f3b68';
+export async function aiApprovedSevenTokenR1({
+ dataRoot=DATA_ROOT,expectedCoreSha256=AI_APPROVED_SEVEN_CORE_SHA256,
+ importer=url=>import(url),
+}={}){
+ const home=path.join(dataRoot,'theme-market-history-r131','marketparquet-r167');
+ const core=path.join(home,'r179-publish-core.mjs');
+ ensure(fs.existsSync(core),'AI_APPROVED_SEVEN_CORE_MISSING');
+ ensure(sha(fs.readFileSync(core))===expectedCoreSha256,'AI_APPROVED_SEVEN_CORE_CHANGED');
+ const cfgPath=path.join(dataRoot,'pc-writer','config.json');
+ ensure(fs.existsSync(cfgPath),'AI_APPROVED_PC_CONFIG_MISSING');
+ const cfg=JSON.parse(fs.readFileSync(cfgPath,'utf8'));
+ ensure(cfg.enabled===true&&cfg.collectionTarget==='pc'&&/^[a-f0-9]{40}$/.test(cfg.source??''),
+  'AI_APPROVED_OPERATING_SOURCE_MISMATCH');
+ const source=await importer(pathToFileURL(path.join(home,'r175-source.mjs')).href);
+ ensure(typeof source.resolvePublisherSource==='function','AI_APPROVED_SOURCE_RESOLVER_MISSING');
+ const auditFile=path.join(dataRoot,'themes','ai-semiconductor','state','r1-seven-source-audit.json');
+ const selected=source.resolvePublisherSource(cfg,{auditFile});
+ ensure(typeof selected?.root==='string'&&selected.root.length>0&&
+  /^[a-f0-9]{40}$/.test(selected.head??''),'AI_APPROVED_SOURCE_NOT_VERIFIED');
+ const client=await importer(pathToFileURL(path.join(selected.root,'scripts','pc-writer','d1.mjs')).href);
+ ensure(typeof client.credential==='function','AI_APPROVED_D1_AUTH_MODULE_MISSING');
+ let token;
+ try{token=client.credential(selected.root);}
+ catch{fail('AI_APPROVED_SEVEN_CREDENTIAL_FAILED');}
+ ensure(typeof token==='string'&&token.length>0,'AI_APPROVED_D1_AUTH_UNAVAILABLE');
+ return token; // Memory only; never print or persist credentials.
 }
-export function cloudflareD1({dataRoot,fetchImpl=fetch}={}){
- const cfg=config(dataRoot),secret=cloudflareToken({dataRoot});let writeAttempted=false;
+// The seven-theme publisher already owns the verified PC authentication path.
+// Reuse it directly, as the biotech R8 auth bridge did successfully. The
+// rejected optional-only Wrangler PATH/TOML guessing path is not used.
+export async function cloudflareD1({dataRoot,fetchImpl=fetch,tokenFn=aiApprovedSevenTokenR1}={}){
+ const cfg=config(dataRoot),secret=await tokenFn({dataRoot});let writeAttempted=false;
  const query=async(sql,params)=>{
   let response;try{response=await fetchImpl(`https://api.cloudflare.com/client/v4/accounts/${cfg.account}/d1/database/${cfg.core}/query`,{
    method:'POST',headers:{Authorization:`Bearer ${secret}`,'content-type':'application/json'},
@@ -322,7 +317,7 @@ export async function runOptionalTheme({themeId,dataRoot,readPublic=api,storage=
  try{
   ensure(TARGETS.includes(themeId),'UNREGISTERED_THEME');
   ensure(fs.existsSync(dataRoot),'E_DATA_ROOT_UNAVAILABLE');
-  const db=storage??cloudflareD1({dataRoot});const publicFeed=await readPublic();
+  const db=storage??await cloudflareD1({dataRoot});const publicFeed=await readPublic();
   const base=themeId==='ai-semiconductor'?sevenCoreReference(publicFeed):
    {...publicFeed,themes:publicFeed.themes.slice(0,8)};
   const key=themeId==='ai-semiconductor'?AI_THEME_PUBLIC_KEY:'theme-biotech-optional-r1';
@@ -388,7 +383,7 @@ export async function diagnoseAiReader({dataRoot,readPublic=api,storage=null,aud
   providerCalls:0,d1Writes:0,schedulerWrites:0,reason:null};
  try{
   ensure(fs.existsSync(dataRoot),'E_DATA_ROOT_UNAVAILABLE');
-  const db=storage??cloudflareD1({dataRoot}),publicFeed=await readPublic();
+  const db=storage??await cloudflareD1({dataRoot}),publicFeed=await readPublic();
   const reference=sevenCoreReference(publicFeed);
   const previous=await db.read(AI_THEME_PUBLIC_KEY);
   validateStoredReference('ai-semiconductor',previous.body,reference);
@@ -420,7 +415,7 @@ export async function diagnoseBiotechParity({dataRoot,readPublic=api,storage=nul
   providerCalls:0,d1Writes:0,schedulerWrites:0,reason:null};
  try{
   ensure(fs.existsSync(dataRoot),'E_DATA_ROOT_UNAVAILABLE');
-  const db=storage??cloudflareD1({dataRoot}),publicFeed=await readPublic();
+  const db=storage??await cloudflareD1({dataRoot}),publicFeed=await readPublic();
   const reference={...publicFeed,themes:publicFeed.themes?.slice(0,8)};
   const previous=await db.read('theme-biotech-optional-r1');
   validateStoredReference('biotech',previous.body,reference);

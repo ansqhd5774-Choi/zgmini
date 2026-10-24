@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import {createHash} from 'node:crypto';
-import {buildAiCandidate,collectWindow,runOptionalTheme,cloudflareD1,cloudflareToken,aiReaderRejectionReason,aiCandidateReference,diagnoseAiReader,diagnoseBiotechParity,verifySevenProvisionalAuthority,diagnoseSevenProvisionalLane,sevenCoreReference} from '../scripts/pc-writer/theme-optional-cycle.mjs';
+import {buildAiCandidate,collectWindow,runOptionalTheme,cloudflareD1,aiApprovedSevenTokenR1,aiReaderRejectionReason,aiCandidateReference,diagnoseAiReader,diagnoseBiotechParity,verifySevenProvisionalAuthority,diagnoseSevenProvisionalLane,sevenCoreReference} from '../scripts/pc-writer/theme-optional-cycle.mjs';
 import {auditThroughDate} from '../scripts/pc-writer/theme-optional-audit.mjs';
 import {regularHour15Rows} from '../scripts/pc-writer/theme-optional-score-r188.mjs';
 import {THEME_ETF_ONLY_PAIRS,THEME_ETF_ONLY_PUBLIC_VERSION} from '../worker/theme-etf-only-public.mjs';
@@ -95,34 +95,39 @@ test('delayed AI 252-day calendar is reconstructed from an approved core seed wi
  assert.throws(()=>aiCandidateReference(approvedCurrent(),null,'2026-10-20'),/AI_HISTORICAL_SEED_NOT_VERIFIED/);
  assert.throws(()=>aiCandidateReference(approvedCurrent(),{...approvedCoreSeed(),publicationAuthorized:false},'2026-10-20'),/AI_HISTORICAL_SEED_NOT_VERIFIED/);
 });
-test('optional PC auth refreshes an expired Wrangler OAuth token without logging or new installation',()=>{
- const root=fs.mkdtempSync(path.join(os.tmpdir(),'zg-theme-oauth-'));
- const oauthFile=path.join(root,'default.toml');
- const script=path.join(root,'wrangler.js');
- const expired='expiration_time = "2026-10-22T00:00:00Z"\noauth_token = "expired-secret"\n';
- const refreshed='expiration_time = "2026-10-24T00:00:00Z"\noauth_token = "refreshed-secret"\n';
- fs.writeFileSync(oauthFile,expired);fs.writeFileSync(script,'// locally installed test fixture');
- let calls=0;
- const execute=(exe,args)=>{
-  calls++;assert.equal(exe,process.execPath);assert.deepEqual(args,[script,'whoami']);
-  fs.writeFileSync(oauthFile,refreshed);return {status:0};
+test('AI PC D1 auth reuses the approved seven-theme source resolver and credential unchanged',async()=>{
+ const root=fs.mkdtempSync(path.join(os.tmpdir(),'zg-ai-approved-seven-auth-'));
+ const home=path.join(root,'theme-market-history-r131','marketparquet-r167');
+ const pc=path.join(root,'pc-writer');fs.mkdirSync(home,{recursive:true});fs.mkdirSync(pc);
+ const core=Buffer.from('// approved original seven publisher fixture');
+ fs.writeFileSync(path.join(home,'r179-publish-core.mjs'),core);
+ fs.writeFileSync(path.join(pc,'config.json'),JSON.stringify({enabled:true,collectionTarget:'pc',source:'c'.repeat(40)}));
+ const expectedCoreSha256=createHash('sha256').update(core).digest('hex');
+ const publisherRoot=path.join(root,'approved-seven-repo');
+ let resolverCalls=0,credentialCalls=0;
+ const importer=async url=>{
+  if(url.endsWith('/r175-source.mjs'))return {resolvePublisherSource:(cfg,opts)=>{
+   resolverCalls++;assert.equal(cfg.collectionTarget,'pc');
+   assert.equal(opts.auditFile,path.join(root,'themes','ai-semiconductor','state','r1-seven-source-audit.json'));
+   return {root:publisherRoot,head:'a'.repeat(40)};
+  }};
+  if(url.endsWith('/d1.mjs'))return {credential:repo=>{
+   credentialCalls++;assert.equal(repo,publisherRoot);return 'approved-seven-in-memory-token';
+  }};
+  throw Error('UNEXPECTED_IMPORT');
  };
  try{
-  const options={dataRoot:root,oauthFile,env:{},now:Date.parse('2026-10-23T11:00:00Z'),
-   execute,platform:'win32',wranglerCandidates:[script]};
-  assert.equal(cloudflareToken(options),'refreshed-secret');assert.equal(calls,1);
-  assert.equal(cloudflareToken(options),'refreshed-secret');assert.equal(calls,1);
- }finally{fs.rmSync(root,{recursive:true,force:true})}
-});
-test('optional PC auth fails closed when Wrangler cannot refresh',()=>{
- const root=fs.mkdtempSync(path.join(os.tmpdir(),'zg-theme-oauth-block-'));
- const oauthFile=path.join(root,'default.toml');
- fs.writeFileSync(oauthFile,'expiration_time = "2026-10-22T00:00:00Z"\noauth_token = "expired-secret"\n');
- let calls=0;
- try{
-  assert.throws(()=>cloudflareToken({dataRoot:root,oauthFile,env:{},now:Date.parse('2026-10-23T11:00:00Z'),
-   platform:'linux',wranglerCandidates:[],execute:()=>{calls++;return {status:0}}}),/PC_WRANGLER_REAUTH_REQUIRED/);
-  assert.equal(calls,0);
+  assert.equal(await aiApprovedSevenTokenR1({dataRoot:root,expectedCoreSha256,importer}),
+   'approved-seven-in-memory-token');
+  assert.equal(resolverCalls,1);assert.equal(credentialCalls,1);
+  await assert.rejects(()=>aiApprovedSevenTokenR1({dataRoot:root,expectedCoreSha256:'0'.repeat(64),importer}),
+   /AI_APPROVED_SEVEN_CORE_CHANGED/);
+  assert.equal(credentialCalls,1);
+  await assert.rejects(()=>aiApprovedSevenTokenR1({dataRoot:root,expectedCoreSha256,
+   importer:async url=>url.endsWith('/r175-source.mjs')?{
+    resolvePublisherSource:()=>({root:publisherRoot,head:'a'.repeat(40)})
+   }:{credential:()=>{throw Error('do not leak secret internal error');}}}),
+   /AI_APPROVED_SEVEN_CREDENTIAL_FAILED/);
  }finally{fs.rmSync(root,{recursive:true,force:true})}
 });
 test('official 2026 NYSE early close uses 12:xx hourly bar without changing the approved score formula',()=>{
@@ -363,7 +368,6 @@ test('D1 writer has a stale-write guard and verifies the exact written row',asyn
  const root=fs.mkdtempSync(path.join(os.tmpdir(),'zg-theme-d1-cas-'));
  const cfgDir=path.join(root,'pc-writer');fs.mkdirSync(cfgDir);
  fs.writeFileSync(path.join(cfgDir,'config.json'),JSON.stringify({account:'a'.repeat(32),core:'11111111-1111-1111-1111-111111111111'}));
- const old=process.env.CLOUDFLARE_API_TOKEN;process.env.CLOUDFLARE_API_TOKEN='unit-test-memory-token';
  let current={body:JSON.stringify(priorAi()),stored_at:NOW-10000};let updates=0;
  const fetchImpl=async(_url,opts)=>{
   const {batch}=JSON.parse(opts.body),{sql,params}=batch[0];
@@ -382,7 +386,8 @@ test('D1 writer has a stale-write guard and verifies the exact written row',asyn
   return Response.json({success:true,result:[{success:true,results:[current]}]});
  };
  try{
-  const db=cloudflareD1({dataRoot:root,fetchImpl});
+  const db=await cloudflareD1({dataRoot:root,fetchImpl,
+   tokenFn:async()=> 'unit-test-memory-token'});
   const seed=await db.readSeed();
   assert.equal(seed.observationDate,'2026-10-20');
   const previous=await db.read('theme-ai-semiconductor-r189');
@@ -390,8 +395,6 @@ test('D1 writer has a stale-write guard and verifies the exact written row',asyn
   const write=await db.replace('theme-ai-semiconductor-r189',next,previous.storedAt);
   assert.ok(write.storedAt>previous.storedAt);assert.equal(updates,1);
  }finally{
-  if(old===undefined)delete process.env.CLOUDFLARE_API_TOKEN;
-  else process.env.CLOUDFLARE_API_TOKEN=old;
   fs.rmSync(root,{recursive:true,force:true});
  }
 });
