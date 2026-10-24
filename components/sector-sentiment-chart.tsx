@@ -95,6 +95,11 @@ export default function SectorSentimentChart({data=[],series=SECTORS,title='섹�
   return {sector,index,score:typeof value==='number'&&Number.isFinite(value)?Math.round(value):-1};
  }).sort((a,b)=>b.score-a.score||a.index-b.index).map(({sector})=>sector):series;
  const shownSeries=series.filter(s=>!hidden.has(s.id));
+ const themeLegendSeries=showDashboardThemeScores?series.map((item,index)=>{
+  const lastObserved=rows.findLast(row=>typeof row[item.id]==='number'&&Number.isFinite(row[item.id]));
+  const value=lastObserved?.[item.id];
+  return {item,index,score:typeof value==='number'&&Number.isFinite(value)?Math.round(value):-1};
+ }).sort((a,b)=>a.score-b.score||a.index-b.index).map(({item})=>item):shownSeries;
  const extrema=shownSeries.length===1?chartExtrema(visibleRows.map(row=>({date:row.date,value:row[shownSeries[0].id]}))):[];
  const heldRow=heldIndex===null?null:visibleRows[heldIndex];
  const moveHeld=(clientX:number,element:HTMLDivElement)=>{const rect=element.getBoundingClientRect();setHeldIndex(clampedChartIndex(clientX,rect.left+(mobileAxisRight?0:32),rect.width-44,visibleRows.length))};
@@ -131,7 +136,7 @@ export default function SectorSentimentChart({data=[],series=SECTORS,title='섹�
    </div>
    <div className="zg-legend-row zg-theme-picker-legend">
     <div className="zg-sector-chart-legend is-draggable" aria-label="차트에 표시 중인 테마">
-     {(showDashboardThemeScores?series:shownSeries).map(item=>{
+     {themeLegendSeries.map(item=>{
       const lastObserved=showDashboardThemeScores?rows.findLast(row=>typeof row[item.id]==='number'&&Number.isFinite(row[item.id])):undefined;
       const value=lastObserved?.[item.id];
       const score=typeof value==='number'&&Number.isFinite(value)?String(Math.round(value)):'—';
