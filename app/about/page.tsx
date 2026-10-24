@@ -3,8 +3,8 @@ import { ArrowRight } from 'lucide-react';
 import {WebPageJsonLd} from '../seo-jsonld';
 import styles from './about.module.css';
 
-const title='ZGMINI 소개 | 시장 심리와 경제지표';
-const description='미국·한국 시장 심리와 경제지표의 점수 및 과거 흐름을 함께 살펴보는 ZGMINI를 소개합니다.';
+const title='ZGMINI 지그미니 소개 | 시장 심리와 경제지표';
+const description='미국·한국 시장 심리와 경제지표의 점수 및 과거 흐름을 함께 살펴보는 ZGMINI를 소개합니다. 지그미니는 공포탐욕지수(공탐 지수)와 경제지표의 흐름을 비교하는 사이트입니다.';
 const url='https://zgmini.kr/about/';
 const image='https://zgmini.kr/zgmini-share.png';
 
@@ -30,7 +30,7 @@ export default function AboutPage() {
         <section className={styles.hero} aria-labelledby="about-headline">
           <img className={styles.heroArtwork} src="/about-market-ambient.png" width={887} height={444} alt="" aria-hidden="true" />
           <div className={styles.heroCopy}>
-            <p className={styles.hello}>안녕하세요, ZGMINI 개발자입니다.</p>
+            <p className={styles.hello}>안녕하세요, ZGMINI(지그미니) 개발자입니다.</p>
             <h1 id="about-headline">제가 편하자고<br />만든 사이트입니다. <span role="img" aria-label="웃는 얼굴">😄</span></h1>
             <p className={styles.lead}>복잡한 경제 이슈와 시장의 흐름을 매일 따라가다 보면,<br className={styles.desktopBreak}/> 필요한 정보를 찾고 정리하는 데 많은 시간과 노력이 듭니다.<br className={styles.desktopBreak}/> 그래서 저처럼 고민하는 분들에게 작은 도움이 되고 싶어 ZGMINI를 만들었습니다.</p>
           </div>

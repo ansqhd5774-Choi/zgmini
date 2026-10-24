@@ -40,11 +40,11 @@ test('R2 detail pages expose search-intent intro copy without changing data logi
 test('R2 detail page lastmod stays truthful per content update date',()=>{
   const sitemap=read('public/sitemap.xml');
   for(const path of ['/credit-risk/','/debt-risk/','/earnings-recession/','/asset-bubble/','/supply-shock/']){
-    assert.ok(sitemap.includes(`<loc>https://zgmini.kr${path}</loc><lastmod>2026-10-20</lastmod>`),path);
+    assert.ok(sitemap.includes(`<loc>https://zgmini.kr${path}</loc><lastmod>2026-10-25</lastmod>`),path);
   }
-  assert.ok(sitemap.includes('<loc>https://zgmini.kr/stagflation-risk/</loc><lastmod>2026-10-21</lastmod>'));
-  assert.ok(sitemap.includes('<loc>https://zgmini.kr/inflation/</loc><lastmod>2026-10-18</lastmod>'),'inflation');
-  assert.ok(sitemap.includes('<loc>https://zgmini.kr/recession/</loc><lastmod>2026-10-18</lastmod>'),'recession');
+  assert.ok(sitemap.includes('<loc>https://zgmini.kr/stagflation-risk/</loc><lastmod>2026-10-25</lastmod>'));
+  assert.ok(sitemap.includes('<loc>https://zgmini.kr/inflation/</loc><lastmod>2026-10-25</lastmod>'),'inflation');
+  assert.ok(sitemap.includes('<loc>https://zgmini.kr/recession/</loc><lastmod>2026-10-25</lastmod>'),'recession');
 });
 
 test('inflation search snippet, semantic heading and production freshness marker agree with live intent',()=>{

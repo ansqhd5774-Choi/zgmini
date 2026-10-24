@@ -27,6 +27,13 @@ test('production SEO inspector accepts the detail-page contract',()=>{
   assert.ok(result.types.includes('BreadcrumbList'));
 });
 
+test('robots inspection rejects negative directives instead of matching index inside noindex',()=>{
+  for(const policy of ['noindex, follow','index, nofollow','index, follow, noindex','index, follow, nofollow']){
+    const result=inspectHtml(detailHtml.replace('content="index, follow"',`content="${policy}"`),detailUrl);
+    assert.ok(result.errors.includes(`robots_invalid:${policy}`),policy);
+  }
+});
+
 test('production SEO inspector rejects stale current-page metadata even when all tags exist',()=>{
   const url='https://zgmini.kr/earnings-recession/';
   const oldDescription='미국 기업 실적 침체를 EPS 성장, 매출 성장, 영업이익률, 이익 성장 기업 비율로 확인하세요. E1-R4 저장 데이터와 메인 진단 상태를 구분해 제공합니다.';
@@ -132,9 +139,9 @@ test('local public sitemap has all 34 URLs with truthful ISO lastmod values',()=
     assert.match(url,/^https:\/\/zgmini\.kr\//);
     assert.match(lastmod,/^\d{4}-\d{2}-\d{2}$/);
   }
-  assert.equal(entries.get('https://zgmini.kr/earnings-recession/'),'2026-10-20');
-  assert.equal(entries.get('https://zgmini.kr/asset-bubble/'),'2026-10-20');
-  assert.equal(entries.get('https://zgmini.kr/supply-shock/'),'2026-10-20');
+  assert.equal(entries.get('https://zgmini.kr/earnings-recession/'),'2026-10-25');
+  assert.equal(entries.get('https://zgmini.kr/asset-bubble/'),'2026-10-25');
+  assert.equal(entries.get('https://zgmini.kr/supply-shock/'),'2026-10-25');
 });
 
 test('production SEO workflow is push-only, deployment-gated, and verifies canonical HTTP redirects',()=>{

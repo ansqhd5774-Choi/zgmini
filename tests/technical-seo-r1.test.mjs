@@ -7,20 +7,12 @@ const read=path=>readFileSync(path,'utf8');
 test('technical SEO sitemap includes every public route with truthful lastmod values',()=>{
   const sitemap=read('public/sitemap.xml');
   assert.equal((sitemap.match(/<url>/g)||[]).length,34);
-  for(const route of ['/risk-indicators/','/economic-indicators/','/theme-fear-greed/']){
-    assert.ok(sitemap.includes(`<loc>https://zgmini.kr${route}</loc><lastmod>2026-10-18</lastmod>`),route);
-  }
-  for(const route of ['/sector-fear-greed/','/guides/cpi-pce-release/','/guides/fomc/'])
-    assert.ok(sitemap.includes(`<loc>https://zgmini.kr${route}</loc><lastmod>2026-10-16</lastmod>`),route);
-  for(const route of ['/credit-risk/','/earnings-recession/','/asset-bubble/','/debt-risk/','/supply-shock/'])
-    assert.ok(sitemap.includes(`<loc>https://zgmini.kr${route}</loc><lastmod>2026-10-20</lastmod>`),route);
-  assert.ok(sitemap.includes('<loc>https://zgmini.kr/stagflation-risk/</loc><lastmod>2026-10-21</lastmod>'));
-  assert.ok(sitemap.includes('<loc>https://zgmini.kr/inflation/</loc><lastmod>2026-10-18</lastmod>'),'/inflation/');
-  assert.ok(sitemap.includes('<loc>https://zgmini.kr/recession/</loc><lastmod>2026-10-18</lastmod>'),'/recession/');
-  for(const route of ['/guides/fear-greed-buying/'])
-    assert.ok(sitemap.includes(`<loc>https://zgmini.kr${route}</loc><lastmod>2026-10-07</lastmod>`),route);
-  for(const route of ['/','/fear-greed/usa/','/fear-greed/korea/'])
+  for(const route of ["/about/","/sector-fear-greed/","/theme-fear-greed/","/stagflation-risk/","/credit-risk/","/debt-risk/","/inflation/","/recession/","/earnings-recession/","/asset-bubble/","/supply-shock/","/economic-indicators/inflation/","/economic-indicators/employment/","/economic-indicators/rates/","/economic-indicators/credit/","/economic-indicators/growth/","/economic-indicators/consumption/","/economic-indicators/earnings/","/economic-indicators/liquidity/","/economic-indicators/fund-flows/","/economic-indicators/breadth/","/economic-indicators/dollar-fx/","/economic-indicators/commodities/","/guides/cpi-pce-release/","/guides/fomc/","/guides/fear-greed-buying/","/","/fear-greed/usa/","/fear-greed/korea/"])
     assert.ok(sitemap.includes(`<loc>https://zgmini.kr${route}</loc><lastmod>2026-10-25</lastmod>`),route);
+  for(const route of ["/usage/","/data-sources/","/investment-notice/"])
+    assert.ok(sitemap.includes(`<loc>https://zgmini.kr${route}</loc><lastmod>2026-10-22</lastmod>`),route);
+  for(const route of ['/risk-indicators/','/economic-indicators/'])
+    assert.ok(sitemap.includes(`<loc>https://zgmini.kr${route}</loc><lastmod>2026-10-18</lastmod>`),route);
 });
 
 test('sector detail has dedicated social metadata and WebPage schema',()=>{
@@ -56,13 +48,13 @@ test('all three search guides emit Article structured data with truthful publica
   const cpi=read('app/guides/cpi-pce-release/page.tsx');
   const fomc=read('app/guides/fomc/page.tsx');
   assert.match(fear,/const path='\/guides\/fear-greed-buying\/'/);
-  assert.match(fear,/dateModified="2026-10-23"/);
+  assert.match(fear,/dateModified="2026-10-25"/);
   assert.match(cpi,/const path='\/guides\/cpi-pce-release\/'/);
   assert.match(cpi,/미국 CPI·PCE 발표 일정·한국시간 \| 예상치 대비 결과 읽는 법/);
-  assert.match(cpi,/dateModified="2026-10-16"/);
+  assert.match(cpi,/dateModified="2026-10-25"/);
   assert.match(fomc,/const path='\/guides\/fomc\/'/);
   assert.match(fomc,/FOMC 일정·한국시간 \| 미국 기준금리 발표 읽는 법/);
-  assert.match(fomc,/dateModified="2026-10-16"/);
+  assert.match(fomc,/dateModified="2026-10-25"/);
 });
 
 test('homepage structured data strengthens ZGmini site and organization identity',()=>{

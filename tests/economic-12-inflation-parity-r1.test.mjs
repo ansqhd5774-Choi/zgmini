@@ -17,7 +17,7 @@ test("all twelve approved stored domain IDs have distinct route and crawl contra
   for(const key of ["const title=","const description=","alternates:{canonical:url}","robots:{index:true,follow:true}","openGraph:","twitter:"])assert.ok(page.includes(key),route+" "+key);
   assert.ok(shellRoutes.includes(route),route+" missing static HTML/RSC shell");
   assert.ok(SEO_RUNTIME_MARKERS.has("https://zgmini.kr"+route),route+" missing SEO monitor");
-  assert.ok(read("public/sitemap.xml").includes("<loc>https://zgmini.kr"+route+"</loc><lastmod>2026-10-20</lastmod>"));
+  assert.ok(read("public/sitemap.xml").includes("<loc>https://zgmini.kr"+route+"</loc><lastmod>2026-10-25</lastmod>"));
  }
 });
 test("twelve detail pages use saved market-score, approved inflation components, and no invented values",()=>{

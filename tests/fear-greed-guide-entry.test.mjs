@@ -27,7 +27,7 @@ test('buying guide has the selected three-step visual flow and source market lin
   }
   assert.match(guide,/href="\/fear-greed\/usa\/"/);
   assert.match(guide,/href="\/fear-greed\/korea\/"/);
-  assert.match(guide,/dateModified="2026-10-23"/);
+  assert.match(guide,/dateModified="2026-10-25"/);
 });
 
 test('buying guide five sentiment colors and scenario markers match the live market gauge palette',()=>{

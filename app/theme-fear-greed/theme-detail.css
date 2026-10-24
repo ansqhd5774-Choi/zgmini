@@ -1,5 +1,5 @@
-.zg-theme-detail .zg-sector-detail-hero{margin-bottom:54px}
-.zg-tfg-content .zg-sfg-as-of{top:-70px}
+.zg-theme-detail .zg-sector-detail-hero{margin-bottom:18px}
+.zg-tfg-content .zg-sfg-as-of{position:static;margin:0 0 12px;text-align:right}
 .zg-tfg-toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:18px}
 .zg-tfg-toolbar .zg-explorer-filters{display:flex;gap:7px;flex-wrap:wrap}
 .zg-tfg-toolbar .zg-explorer-filters button{border:1px solid #274b5f;border-radius:3px;background:#0b283b;color:#a9c0cf;padding:7px 13px;font-size:12px;cursor:pointer}
@@ -28,8 +28,7 @@
  .zg-tfg-pending-list{grid-template-columns:repeat(3,minmax(0,1fr))}
 }
 @media(max-width:680px){
- .zg-theme-detail .zg-sector-detail-hero{margin-bottom:47px}
- .zg-tfg-content .zg-sfg-as-of{top:-43px}
+ .zg-theme-detail .zg-sector-detail-hero{margin-bottom:18px}
  .zg-tfg-toolbar{align-items:stretch}
  .zg-tfg-toolbar .zg-explorer-filters{width:100%;flex-wrap:nowrap;overflow-x:auto}
  .zg-tfg-toolbar .zg-explorer-filters button{flex:none;font-size:11px;padding:7px 9px}
