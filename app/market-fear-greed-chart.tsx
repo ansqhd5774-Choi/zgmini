@@ -118,8 +118,8 @@ export function MarketFearGreedChart({
         ticks={[0, 25, 50, 75, 100]}
         axisLine={false}
         tickLine={false}
-        width={mobileAxisRight?28:36}
-        tick={{ fill: 'var(--zg-text-meta,#a8bcd0)', fontSize: mobileAxisRight?9:13 }}
+        width={28}
+        tick={{ fill: 'var(--zg-text-meta,#a8bcd0)', fontSize: 9 }}
       />
       {marketScoreBands?<>
         <ReferenceArea y1={0} y2={25} fill="#ef4444" fillOpacity={0.055} ifOverflow="hidden"/>
