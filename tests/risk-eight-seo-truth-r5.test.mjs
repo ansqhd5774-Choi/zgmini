@@ -24,11 +24,11 @@ test("debt meta description and visible introduction do not promise absent score
  const replay=read("worker/projection-builders/debt-stored-history.mjs");
  assert.match(replay,/if\(!scoreMatch\)return \{trend:\[\]/,"incompatible or incomplete history stays unavailable");
 });
-test("sitemap lastmod reflects the verified Oct 20 KST content changes without falsifying untouched routes",()=>{
+test("sitemap lastmod reflects the Oct 25 search explanation changes to all eight risk pages",()=>{
  const sitemap=read("public/sitemap.xml");
  assert.equal((sitemap.match(/<url>/g)||[]).length,34);
  for(const key of keys){
-  const expected=key==="stagflation-risk"?"2026-10-21":["inflation","recession"].includes(key)?"2026-10-18":"2026-10-20";
+  const expected="2026-10-25";
   assert.ok(sitemap.includes("<loc>https://zgmini.kr/"+key+"/</loc><lastmod>"+expected+"</lastmod>"),key);
  }
  const robots=read("public/robots.txt");

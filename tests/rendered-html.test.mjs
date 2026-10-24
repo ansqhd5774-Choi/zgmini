@@ -3,24 +3,11 @@ import test from "node:test";
 import path from "node:path";
 import {readdir,readFile} from "node:fs/promises";
 import {createMiniflare, MFResponse} from "./miniflare-harness.mjs";
+import {inspectHtml} from "../scripts/seo-production-health.mjs";
 
-const publicRoutes=[
-  '/about/',
-  '/fear-greed/korea/',
-  '/fear-greed/usa/',
-  '/sector-fear-greed/',
-  '/inflation/',
-  '/recession/',
-  '/stagflation-risk/',
-  '/credit-risk/',
-  '/earnings-recession/',
-  '/asset-bubble/',
-  '/debt-risk/',
-  '/supply-shock/',
-  '/guides/fear-greed-buying/',
-  '/guides/cpi-pce-release/',
-  '/guides/fomc/',
-];
+const publicRoutes=[... (await readFile('public/sitemap.xml','utf8')).matchAll(/<loc>https:\/\/zgmini\.kr([^<]+)<\/loc>/g)].map(m=>m[1]).filter(route=>route!=='/');
+const catalog=JSON.parse((await readFile('lib/economic-detail-catalog.ts','utf8')).match(/ECONOMIC_DETAIL_CATALOG=(\[[\s\S]*?\]) as const/)[1]);
+
 
 function headOf(html){return html.match(/<head>([\s\S]*?)<\/head>/i)?.[1]??"";}
 function hasDescription(head){return /<meta(?=[^>]*name="description")(?=[^>]*content="[^"]+")[^>]*>/i.test(head);}
@@ -31,7 +18,7 @@ function hasSocialTitle(head){
     && /<meta(?=[^>]*name="twitter:title")(?=[^>]*content="[^"]+")[^>]*>/i.test(head);
 }
 
-test("renders SEO metadata for all 16 public pages in the Workers runtime", async () => {
+test("renders SEO metadata for all 34 public pages in the Workers runtime", async () => {
   const serverRoot = path.resolve("dist/server");
   const modules = [];
   async function walk(dir) {
@@ -66,7 +53,13 @@ test("renders SEO metadata for all 16 public pages in the Workers runtime", asyn
       assert.equal(response.status,200,route);
       assert.match(response.headers.get('content-type')??'',/^text\/html\b/i,route);
       const html=await response.text();
+      assert.deepEqual(inspectHtml(html,`https://zgmini.kr${route}`).errors,[],route+': full SEO contract');
       const head=headOf(html);
+      const detail=catalog.find(entry=>route==='/economic-indicators/'+entry.slug+'/');
+      if(detail){
+        assert.ok(head.includes(detail.description),route+': descriptive search terms in metadata');
+        assert.ok(html.slice(html.indexOf('<body')).includes(detail.description),route+': same explanation in visible body');
+      }
       assert.ok(hasTitle(head),`${route}: title`);
       assert.ok(hasDescription(head),`${route}: description`);
       assert.ok(hasRobots(head),`${route}: robots`);

@@ -4,8 +4,8 @@ import {WebPageJsonLd} from '../seo-jsonld';
 import SectorDetailCharts from './sector-detail-charts';
 import './sector-detail.css';
 
-const title='미국 섹터별 공포·탐욕 지수 | 11개 업종 투자심리 분석 - ZGmini';
-const description='미국 주식 11개 섹터의 공포·탐욕 지수를 5개 핵심 신호와 252거래일 데이터로 분석합니다. 기술·금융·에너지·헬스케어 등 업종별 투자심리와 강세·약세 흐름을 비교하세요.';
+const title='미국 섹터별 공포탐욕지수·공탐 | 11개 업종 투자심리 - ZGmini';
+const description='미국 주식 11개 섹터의 공포·탐욕 지수를 5개 핵심 신호와 252거래일 데이터로 분석합니다. 기술·금융·에너지·헬스케어 등 업종별 공탐 지수와 투자심리, 강세·약세 흐름을 비교하세요.';
 const url='https://zgmini.kr/sector-fear-greed/';
 const image='https://zgmini.kr/zgmini-search-share.png';
 
@@ -24,7 +24,7 @@ export default function SectorFearGreedPage(){
   <div className="zg-sector-detail-inner">
    <header className="zg-sector-detail-hero">
     <h1>섹터별 공포·탐욕</h1>
-    <p>미국 11개 GICS 섹터의 투자심리를 한눈에 비교합니다.</p>
+    <p>미국 11개 GICS 섹터의 공포탐욕지수(공탐 지수)를 업종별로 비교합니다. 섹터 공탐은 ETF 기반 자체 투자심리 점수이며 CNN 미국 전체 시장 지수와 다릅니다.</p>
    </header>
    <SectorDetailCharts/>
    <nav aria-label="관련 분석" className="zg-sector-related-nav">
