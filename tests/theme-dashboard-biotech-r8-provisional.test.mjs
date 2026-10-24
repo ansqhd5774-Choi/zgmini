@@ -38,14 +38,14 @@ test('R8: same date is seven confirmed and biotech provisional without overwriti
  assert.equal(prior['바이오·신약'],29.03175);
 });
 
-test('R8: incomplete required provisional points are rejected as one batch',()=>{
+test('R8: a delayed theme stays missing until its next observed value',()=>{
  const feed=seed();
  delete feed.provisional.points[1].scores['바이오·신약'];
  const out=themeEtfDashboardSeries(feed);
- assert.equal(out.data.find(row=>row.date===confirmedDate)['바이오·신약'],null);
- assert.equal(out.data.at(-1).date,confirmedDate);
- assert.equal(out.data.at(-1)[THEME_DASHBOARD_SEVEN[0].id],40);
- assert.deepEqual(out.provisionalBySeries,{});
+ assert.equal(out.data.find(row=>row.date===confirmedDate)['바이오·신약'],26.48413);
+ assert.equal(out.data.at(-1)['바이오·신약'],null);
+ assert.equal(out.provisionalBySeries['바이오·신약'],confirmedDate);
+ assert.equal(out.data.at(-1)[THEME_DASHBOARD_SEVEN[0].id],20);
 });
 
 test('R8: invalid, unordered or fabricated provisional scores do not reach dashboard',()=>{
