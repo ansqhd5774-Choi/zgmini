@@ -61,8 +61,24 @@ test('R154 chart passes published API dataset, not the old 30-theme placeholder'
  assert.doesNotMatch(page,/<SectorSentimentChart title="테마별 공포·탐욕" draggable series=/);
  assert.match(wrapper,/useStoredIndex<ThemeStoredPayload>\('\/api\/theme-fear-greed'\)/);
  assert.match(wrapper,/themeEtfDashboardSeries\(error\?null:payload\)/);
- assert.match(wrapper,/<SectorSentimentChart title="테마별 공포·탐욕" draggable themePicker series=\{series\} data=\{data\} provisionalBySeries=\{provisionalBySeries\} showProvisionalNotice=\{false\}\/>/);
+ assert.match(wrapper,/<SectorSentimentChart title="테마별 공포·탐욕" draggable themePicker dashboardThemeScores series=\{series\} data=\{data\} provisionalBySeries=\{provisionalBySeries\} showProvisionalNotice=\{false\}\/>/);
  assert.doesNotMatch(wrapper,/\bfetch\s*\(/);
+});
+test('only the dashboard theme legend shows rounded live scores with tighter horizontal spacing',()=>{
+ const shared=fs.readFileSync('components/sector-sentiment-chart.tsx','utf8');
+ const css=fs.readFileSync('components/sector-sentiment-chart.css','utf8');
+ assert.match(shared,/dashboardThemeScores=false/);
+ assert.match(shared,/const showDashboardThemeScores=themePicker&&dashboardThemeScores;/);
+ assert.match(shared,/const value=latestSectorRow\?\.\[item\.id\];const score=typeof value==='number'&&Number\.isFinite\(value\)\?String\(Math\.round\(value\)\):'—'/);
+ assert.match(shared,/className="zg-theme-legend-name"/);
+ assert.match(shared,/className="zg-theme-legend-color" style=\{\{backgroundColor:item\.color\}\}/);
+ assert.match(shared,/className="zg-theme-legend-score" aria-label=/);
+ assert.doesNotMatch(shared,/\.map\(item=><button[^\n]*zg-theme-legend-score/);
+ assert.match(css,/\.zg-theme-selected-label\.has-score\{[^}]*height:42px;[^}]*padding:2px 4px;[^}]*border-bottom:0;/);
+ assert.match(css,/\.zg-sector-chart\.zg-theme-score-card\{padding-top:11px\}/);
+ assert.match(css,/\.zg-theme-legend-color\{width:calc\(100% - 4px\);height:4px;/);
+ assert.match(css,/\.zg-sector-chart\{height:232px;/);
+ assert.match(css,/\.zg-sector-chart-plot\{position:relative;height:120px;/);
 });
 test('R156 picker applies selections immediately without a chart-view button',()=>{
  const shared=fs.readFileSync('components/sector-sentiment-chart.tsx','utf8');
