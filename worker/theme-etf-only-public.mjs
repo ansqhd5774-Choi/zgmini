@@ -1,5 +1,6 @@
 import {addVerifiedAiTheme} from './theme-ai-semiconductor-optional.mjs';
 import {addVerifiedBiotechTheme} from './theme-biotech-optional.mjs';
+import {addVerifiedBiotechContinuationR2} from './theme-biotech-continuation-r2.mjs';
 import {readRollingPublic} from './theme-etf-rolling-public.mjs';
 import {PUBLIC_DISPLAY_MAX_AGE_MS} from './public-display-freshness.mjs';
 import {publicFeedStore} from './public-feed-store.mjs';
@@ -42,6 +43,10 @@ export function validateThemeEtfOnlyPublic(record){
  }
  return true;
 }
+async function addBiotechSidecars(db,base,opts){
+ const legacy=await addVerifiedBiotechTheme(db,base,opts);
+ return addVerifiedBiotechContinuationR2(db,legacy,{now:opts.now});
+}
 export async function readThemeEtfOnly(db,{now=Date.now(),store=publicFeedStore(db)}={}){
  const headers={'cache-control':'no-store','x-robots-tag':'noindex, nofollow','x-content-type-options':'nosniff','x-data-source':'STORED'};
  let row=null;
@@ -56,7 +61,7 @@ export async function readThemeEtfOnly(db,{now=Date.now(),store=publicFeedStore(
  let rolling=null;try{rolling=await readRollingPublic(db,record,{now})}catch{}
  if(rolling){
   const withAi=await addVerifiedAiTheme(db,rolling,{now,seed:record});
-  return Response.json(await addVerifiedBiotechTheme(db,withAi,{now,seed:record}),{headers:{...headers,'cache-control':'public, max-age=60, must-revalidate','x-data-snapshot-at':rolling.sourceStoredAt}});
+  return Response.json(await addBiotechSidecars(db,withAi,{now,seed:record}),{headers:{...headers,'cache-control':'public, max-age=60, must-revalidate','x-data-snapshot-at':rolling.sourceStoredAt}});
  }
  const observedAt=Date.parse(record.observationDate+'T23:59:59Z');
  const sourceAt=Date.parse(record.sourceStoredAt),storedAt=Number(row.stored_at);
@@ -77,5 +82,5 @@ export async function readThemeEtfOnly(db,{now=Date.now(),store=publicFeedStore(
   ...(provisional?{provisional:{asOf:provisional.asOf,
    points:provisional.points.map(point=>({date:point.date,scores:Object.fromEntries(record.themes.map(t=>[t.theme,point.scores[t.theme]]))}))}}:{})};
  const withAi=await addVerifiedAiTheme(db,result,{now});
- return Response.json(await addVerifiedBiotechTheme(db,withAi,{now}),{headers:{...headers,'cache-control':'public, max-age=60, must-revalidate','x-data-snapshot-at':new Date(storedAt).toISOString()}});
+ return Response.json(await addBiotechSidecars(db,withAi,{now}),{headers:{...headers,'cache-control':'public, max-age=60, must-revalidate','x-data-snapshot-at':new Date(storedAt).toISOString()}});
 }
