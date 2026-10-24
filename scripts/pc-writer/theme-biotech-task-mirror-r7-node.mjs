@@ -46,7 +46,14 @@ export function planBiotechTaskMirror(xml){
  const replacement=`${open[0]}\n<Exec><Command>C:\\Windows\\System32\\cmd.exe</Command>`+
   `<Arguments>/d /c ""${RUNNER}""</Arguments>`+
   `<WorkingDirectory>${WORKDIR}</WorkingDirectory></Exec>\n</Actions>`;
- const modified=xml.replace(task.actions,replacement);
+ let modified=xml.replace(task.actions,replacement);
+ // A cloned task needs its own URI as well as its own /tn; never inherit
+ // the existing seven-theme task identity in RegistrationInfo.
+ const registration=modified.match(/<RegistrationInfo(?:\s[^>]*)?>[\s\S]*?<\/RegistrationInfo\s*>/);
+ if(registration&&/<URI>[^<]*<\/URI>/.test(registration[0])){
+  modified=modified.replace(registration[0],registration[0].replace(/<URI>[^<]*<\/URI>/,
+   `<URI>${TARGET}</URI>`));
+ }
  CHECK(modified!==xml,'TASK_XML_ACTION_REWRITE_FAILED');
  const after=taskDefinition(modified);
  CHECK(normalized(after.triggers)===normalized(task.triggers), 'SEVEN_THEME_TRIGGERS_CHANGED');
