@@ -120,3 +120,12 @@
 @media(max-width:750px){.zg-terrain-axis-label>span{font-size:11px}.zg-terrain-axis-bands{height:45px}.zg-terrain-axis-bands strong{font-size:12px}.zg-terrain-axis-ticks{height:35px}}
 @media(max-width:510px){.zg-terrain-axis{height:80px;padding-top:0}.zg-terrain-axis-plot,.zg-terrain-axis-bands>div{position:relative}.zg-terrain-axis-bands{height:45px}.zg-terrain-axis-bands strong{position:static;width:auto;font-size:clamp(9px,2.7vw,12px);text-align:center}.zg-terrain-axis-label>span{min-height:45px;height:45px;font-size:10px}.zg-terrain-axis-score-label small{font-size:8px}.zg-terrain-axis-ticks{font-size:10px}}
 
+/* Economic terrain axis R4: put ticks above the zones; remove lower tick gutter. */
+.zg-terrain-axis{height:59px}
+.zg-terrain-axis-label{box-sizing:border-box;height:59px;padding-top:14px}
+.zg-terrain-axis-plot{display:flex;flex-direction:column}
+.zg-terrain-axis-ticks{order:-1;flex:0 0 14px;height:14px}
+.zg-terrain-axis-ticks span{top:0;line-height:13px}
+.zg-terrain-axis-bands{order:0;flex:0 0 45px;height:45px}
+@media(max-width:510px){.zg-terrain-axis{height:59px}.zg-terrain-axis-label{height:59px;padding-top:14px}.zg-terrain-axis-ticks{height:14px;font-size:9px}.zg-terrain-axis-ticks span{top:0;line-height:12px}}
+
