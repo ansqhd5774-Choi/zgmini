@@ -88,6 +88,10 @@ test('only the dashboard theme legend shows rounded live scores with tighter hor
  assert.match(css,/\.zg-sector-chart\{height:232px;/);
  assert.match(css,/\.zg-sector-chart-plot\{position:relative;height:120px;/);
 });
+test('dashboard theme heading links to theme detail without altering sector heading link',()=>{
+ const shared=fs.readFileSync('components/sector-sentiment-chart.tsx','utf8');
+ assert.match(shared,/\{showDashboardThemeScores\?<a href="\/theme-fear-greed\/">\{title\}<\/a>:autoStored&&linkToDetail\?<a href="\/sector-fear-greed\/">\{title\}<\/a>:title\}/);
+});
 test('dashboard-only theme legend uses left-to-right descending displayed scores with stable ties',()=>{
  const shared=fs.readFileSync('components/sector-sentiment-chart.tsx','utf8');
  assert.match(shared,/const rankedThemeEntries=showDashboardThemeScores\?series\.map\(\(item,index\)=>\{/);
