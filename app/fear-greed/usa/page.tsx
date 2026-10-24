@@ -5,7 +5,6 @@ import CnnPanel from "./cnn-panel";
 import DetailReadingGuide from "../../detail-reading-guide";
 import InvestorIntentGuide from "../investor-intent-guide";
 import {ArrowUpRight,BookOpen} from "lucide-react";
-import "./education.css";
 import "../fear-greed-detail-r1.css";
 
 const title = "미국 공포탐욕지수 | CNN 지수·S&P500 투자심리 - ZGmini";
@@ -18,7 +17,7 @@ export const metadata: Metadata = {
 };
 
 export default function UsaFearGreedPage() {
- return <><SiteHeader/><main className="zg-fg-detail zg-fg-us">
+ return <><link rel="stylesheet" href="/styles/fear-greed-education-r1.css"/><SiteHeader/><main className="zg-fg-detail zg-fg-us">
   <div className="zg-fg-detail-body">
    <header className="zg-fg-page-header" aria-label="미국 공포탐욕지수 소개">
     <p className="zg-fg-eyebrow">CNN FEAR &amp; GREED · US STOCK MARKET</p>

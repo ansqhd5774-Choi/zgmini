@@ -7,7 +7,7 @@ on:
       - 'components/community-chat.*'
       - 'app/page.tsx'
       - 'app/globals.css'
-      - 'app/fear-greed/usa/education.css'
+      - 'public/styles/fear-greed-education-r1.css'
       - 'app/fear-greed/usa/page.tsx'
       - 'tests/fear-greed-education-browser-r4.mjs'
       - 'tests/community-chat-browser-r1.mjs'
