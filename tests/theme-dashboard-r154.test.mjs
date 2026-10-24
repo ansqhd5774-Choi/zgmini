@@ -75,18 +75,28 @@ test('only the dashboard theme legend shows rounded live scores with tighter hor
  assert.match(shared,/className="zg-theme-legend-name"/);
  assert.match(shared,/className="zg-theme-legend-color" style=\{\{backgroundColor:item\.color\}\}/);
  assert.match(shared,/className="zg-theme-legend-score" aria-label=/);
- assert.match(shared,/\(showDashboardThemeScores\?series:shownSeries\)\.map\(item=>\{/);
+ assert.match(shared,/themeLegendSeries\.map\(item=>\{/);
  assert.match(shared,/return showDashboardThemeScores\?<button key=\{item\.id\} type="button" className="zg-theme-selected-label has-score"/);
  assert.match(shared,/aria-pressed=\{!hidden\.has\(item\.id\)\} onClick=\{\(\)=>toggleThemePickerItem\(item\.id\)\}/);
  assert.match(shared,/!showDashboardThemeScores&&!shownSeries\.length&&<span className="zg-theme-picker-empty">/);
  assert.doesNotMatch(shared,/\.map\(item=><button[^\n]*zg-theme-legend-score/);
- assert.match(css,/\.zg-theme-picker-legend \.zg-sector-chart-legend button\.zg-theme-selected-label\.has-score\{height:42px;min-width:0;padding:2px 4px;border:0;cursor:pointer\}/);
+ assert.match(css,/\.zg-theme-picker-legend \.zg-sector-chart-legend button\.zg-theme-selected-label\.has-score\{height:42px;min-width:56px;padding:2px 4px;border:0;cursor:pointer\}/);
  assert.match(css,/button\.zg-theme-selected-label\.has-score\[aria-pressed=false\]/);
  assert.match(css,/\.zg-theme-selected-label\.has-score\{[^}]*height:42px;[^}]*padding:2px 4px;[^}]*border-bottom:0;/);
  assert.match(css,/\.zg-sector-chart\.zg-theme-score-card\{padding-top:11px\}/);
  assert.match(css,/\.zg-theme-legend-color\{width:calc\(100% - 4px\);height:4px;/);
  assert.match(css,/\.zg-sector-chart\{height:232px;/);
  assert.match(css,/\.zg-sector-chart-plot\{position:relative;height:120px;/);
+});
+test('dashboard-only theme legend uses left-to-right ascending displayed scores with stable ties',()=>{
+ const shared=fs.readFileSync('components/sector-sentiment-chart.tsx','utf8');
+ assert.match(shared,/const themeLegendSeries=showDashboardThemeScores\?series\.map\(\(item,index\)=>\{/);
+ assert.match(shared,/rows\.findLast\(row=>typeof row\[item\.id\]==='number'&&Number\.isFinite\(row\[item\.id\]\)\)/);
+ assert.match(shared,/\.sort\(\(a,b\)=>a\.score-b\.score\|\|a\.index-b\.index\)\.map\(\(\{item\}\)=>item\):shownSeries;/);
+ assert.match(shared,/\{themeLegendSeries\.map\(item=>\{/);
+ assert.match(shared,/\{series\.map\(item=><button key=\{item\.id\}/);
+ const sampled=[{item:'방산',index:0,score:46},{item:'AI·반도체',index:1,score:26},{item:'바이오·신약',index:2,score:23},{item:'원전·SMR',index:3,score:26}];
+ assert.deepEqual(sampled.sort((a,b)=>a.score-b.score||a.index-b.index).map(({item})=>item),['바이오·신약','AI·반도체','원전·SMR','방산']);
 });
 test('R156 picker applies selections immediately without a chart-view button',()=>{
  const shared=fs.readFileSync('components/sector-sentiment-chart.tsx','utf8');
