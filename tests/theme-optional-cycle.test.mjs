@@ -62,8 +62,18 @@ async function fixture(themeId,callback){
  try{return await callback({root,manifest:m});}finally{fs.rmSync(root,{recursive:true,force:true})}
 }
 test('the shared API does not imply the optional tickers are in the seven-theme task',()=>{
- const w=collectWindow(manifest('ai-semiconductor'),base(),'ai-semiconductor');
- assert.deepEqual(w,{start:'2026-10-15',end:'2026-10-21'});
+ const w=collectWindow(manifest('ai-semiconductor'),base(),'ai-semiconductor',NOW);
+ assert.deepEqual(w,{start:'2026-10-15',end:'2026-10-23'});
+});
+test('AI advances the collection checkpoint by UTC day even when the public reader date is unchanged',()=>{
+ const ai=manifest('ai-semiconductor'),reader={...base(),provisional:{points:[{date:'2026-10-23'}]}};
+ const friday=collectWindow(ai,reader,'ai-semiconductor',Date.parse('2026-10-23T23:59:00Z'));
+ const saturday=collectWindow(ai,reader,'ai-semiconductor',Date.parse('2026-10-24T00:01:00Z'));
+ assert.deepEqual(friday,{start:'2026-10-15',end:'2026-10-23'});
+ assert.deepEqual(saturday,{start:'2026-10-15',end:'2026-10-24'});
+ assert.deepEqual(collectWindow(ai,reader,'ai-semiconductor',Date.parse('2026-10-24T12:00:00Z')),saturday);
+ const biotech=manifest('biotech');
+ assert.equal(collectWindow(biotech,reader,'biotech',Date.parse('2026-10-24T12:00:00Z')).end,'2026-10-23');
 });
 test('AI audit uses the last real common bar not a later seven-theme date; biotech audit contract stays unchanged',()=>{
  assert.equal(auditThroughDate('ai-semiconductor',['2026-10-19','2026-10-20','2026-10-21'],'2026-10-22'),'2026-10-21');

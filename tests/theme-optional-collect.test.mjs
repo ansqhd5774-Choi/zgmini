@@ -18,3 +18,23 @@ test('provider failure persists a stop checkpoint and is never retried automatic
   assert.equal((await collectOptional(opts)).status,'STOP_HTTP_429');assert.equal((await collectOptional(opts)).status,'STOP_PREVIOUS_FAILURE_REVIEW_REQUIRED');assert.equal(calls,1);
  }finally{fs.rmSync(root,{recursive:true,force:true});}
 });
+test('a new daily AI window makes fresh provider requests while keeping identical raw bars deduplicated',async()=>{
+ const root=fs.mkdtempSync(path.join(os.tmpdir(),'theme-ai-daily-'));let calls=0;
+ const fetchImpl=async url=>{
+  calls++;
+  const symbol=url.pathname.split('/').at(-2);
+  return new Response(JSON.stringify({symbol,timestamp:'2026-10-21T19:00:00Z',close:100,is_gap:false})+'\n');
+ };
+ try{
+  const opts={dataRoot:root,themeId:'ai-semiconductor',start:'2026-10-15',fetchImpl};
+  const day1=await collectOptional({...opts,end:'2026-10-23'});
+  assert.equal(day1.status,'PRIVATE_RAW_COLLECTION_COMPLETE');assert.equal(day1.providerCalls,3);
+  const repeat=await collectOptional({...opts,end:'2026-10-23'});
+  assert.equal(repeat.providerCalls,0);
+  const day2=await collectOptional({...opts,end:'2026-10-24'});
+  assert.equal(day2.status,'PRIVATE_RAW_COLLECTION_COMPLETE');assert.equal(day2.providerCalls,3);
+  assert.equal(calls,6);
+  const entries=JSON.parse(fs.readFileSync(path.join(root,'themes/ai-semiconductor/raw-manifest.json'),'utf8')).files;
+  assert.equal(entries.length,3);
+ }finally{fs.rmSync(root,{recursive:true,force:true});}
+});
