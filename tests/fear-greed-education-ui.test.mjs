@@ -5,13 +5,14 @@ import fs from "node:fs";
 const panel=fs.readFileSync(new URL("../app/fear-greed/usa/cnn-panel.tsx",import.meta.url),"utf8");
 const detail=fs.readFileSync(new URL("../app/fear-greed/usa/page.tsx",import.meta.url),"utf8");
 const country=fs.readFileSync(new URL("../app/country-fear-greed.tsx",import.meta.url),"utf8");
-const css=fs.readFileSync(new URL("../app/globals.css",import.meta.url),"utf8");
+const css=fs.readFileSync(new URL("../app/fear-greed/usa/education.css",import.meta.url),"utf8");
 
 test("Fear & Greed education stays scoped to the USA detail page",()=>{
   assert.match(panel,/function CnnPanel\(\{ showEducation = false \}/);
   assert.match(country,/<CnnPanel\s*\/>/);
   assert.doesNotMatch(country,/showEducation/);
   assert.match(detail,/<CnnPanel showEducation\s*\/>/);
+  assert.match(detail,/import "\.\/education\.css"/);
 });
 
 test("seven-component overview remains present and data-driven",()=>{

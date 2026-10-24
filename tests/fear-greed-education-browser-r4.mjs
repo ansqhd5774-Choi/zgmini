@@ -1,0 +1,43 @@
+import assert from 'node:assert/strict';
+import {mkdirSync} from 'node:fs';
+import {chromium} from 'playwright';
+
+const base=process.env.CHAT_PREVIEW_URL??'http://127.0.0.1:5173';
+mkdirSync('artifacts/fear-greed-education',{recursive:true});
+const browser=await chromium.launch({headless:true,args:['--no-sandbox']});
+try{
+ for(const width of [390,1440]){
+  const page=await browser.newPage({viewport:{width,height:900}});
+  const errors=[];
+  page.on('pageerror',error=>errors.push(error.message));
+  await page.addInitScript(()=>sessionStorage.setItem('zgmini-about-intro-dismissed-r1','1'));
+  await page.route('https://**',route=>route.abort());
+  await page.route('**/api/**',route=>route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({status:'UNAVAILABLE',user:null})}));
+  await page.goto(base+'/fear-greed/usa/',{waitUntil:'networkidle',timeout:45000});
+  const disclosure=page.locator('details.fg-r2-extended');
+  await disclosure.locator('summary').click();
+  const education=page.locator('.cnn-education-panel');
+  await education.waitFor({state:'visible'});
+  assert.equal(await education.locator('.cnn-education-card').count(),7);
+  assert.equal(await education.locator('.cnn-component-overview-row').count(),7);
+  const layout=await education.evaluate(el=>{
+   const cards=[...el.querySelectorAll('.cnn-education-card')];
+   const first=cards[0].getBoundingClientRect(),last=cards.at(-1).getBoundingClientRect();
+   return {display:getComputedStyle(el.querySelector('.cnn-education-header')).display,
+    border:getComputedStyle(el).borderTopWidth,first:first.width,last:last.width,
+    overflow:document.documentElement.scrollWidth>innerWidth+1};
+  });
+  assert.equal(layout.display,'grid');
+  assert.equal(layout.border,'1px');
+  assert.equal(layout.overflow,false,'Detail must not overflow viewport');
+  if(width>=768)assert.ok(layout.last>layout.first*1.8,'Last card spans desktop row');
+  else assert.ok(Math.abs(layout.last-layout.first)<1,'Mobile cards share one column');
+  await education.scrollIntoViewIfNeeded();
+  await page.screenshot({path:`artifacts/fear-greed-education/education-${width}.png`});
+  await disclosure.locator('summary').click();
+  await education.waitFor({state:'hidden'});
+  assert.deepEqual(errors,[]);
+  console.log(`PASS education open/close, responsive cards and no overflow at ${width}px`);
+  await page.close();
+ }
+}finally{await browser.close();}

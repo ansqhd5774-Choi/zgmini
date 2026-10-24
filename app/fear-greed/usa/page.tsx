@@ -5,6 +5,7 @@ import CnnPanel from "./cnn-panel";
 import DetailReadingGuide from "../../detail-reading-guide";
 import InvestorIntentGuide from "../investor-intent-guide";
 import {ArrowUpRight,BookOpen} from "lucide-react";
+import "./education.css";
 import "../fear-greed-detail-r1.css";
 
 const title = "미국 공포탐욕지수 | CNN 지수·S&P500 투자심리 - ZGmini";
