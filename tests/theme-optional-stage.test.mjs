@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import {fileURLToPath} from 'node:url';
+import {fileURLToPath,pathToFileURL} from 'node:url';
 import {fetchSnapshot,filesForStage,sourceTreeRoot,stageOnPc,stageSnapshot} from '../scripts/pc-writer/theme-optional-stage.mjs';
 
 const here=path.dirname(fileURLToPath(import.meta.url));
@@ -19,9 +19,21 @@ const fixtureFetch=async url=>{
 test('snapshot pins one GitHub commit and includes every imported dependency',async()=>{
   const snapshot=await fetchSnapshot({fetchImpl:fixtureFetch});
   assert.equal(snapshot.sha,sha);
-  assert.equal(snapshot.assets.length,10);
+  assert.equal(snapshot.assets.length,17);
   assert.ok(snapshot.assets.every(x=>/^[a-f0-9]{64}$/.test(x.sha256)));
   assert.ok(snapshot.assets.some(x=>x.path==='worker/theme-history-reference.mjs'));
+  assert.ok(snapshot.assets.some(x=>x.path==='worker/theme-etf-only-public.mjs'));
+});
+
+test('staged release imports its actual PC cycle with all transitive dependencies',async t=>{
+  const root=fs.mkdtempSync(path.join(os.tmpdir(),'zgmini-theme-import-'));
+  t.after(()=>fs.rmSync(root,{recursive:true,force:true}));
+  const snapshot=await fetchSnapshot({fetchImpl:fixtureFetch});
+  const staged=stageSnapshot({projectsRoot:root,snapshot});
+  const entry=path.join(staged.destination,'scripts','pc-writer','theme-optional-cycle.mjs');
+  const cycle=await import(pathToFileURL(entry).href);
+  assert.equal(typeof cycle.diagnoseAiReader,'function');
+  assert.equal(typeof cycle.runOptionalTheme,'function');
 });
 
 test('existing release is verified and never overwritten',async t=>{
