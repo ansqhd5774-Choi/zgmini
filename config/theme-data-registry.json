@@ -393,7 +393,9 @@
         "auditor": "scripts/pc-writer/theme-optional-audit.mjs",
         "publicationCandidate": "scripts/pc-writer/theme-optional-cycle.mjs",
         "pcTaskEntrypoint": "scripts/pc-writer/theme-optional-cycle.cmd",
-        "forensicReadOnly": "scripts/pc-writer/theme-biotech-forensic-r1.mjs"
+        "forensicReadOnly": "scripts/pc-writer/theme-biotech-forensic-r1.mjs",
+        "savedSourceReadOnly": "scripts/pc-writer/theme-biotech-marketparquet-r2.mjs",
+        "savedSourceCmd": "scripts/pc-writer/BIOTECH_MARKETPARQUET_R2.cmd"
       },
       "runtime": {
         "collector": null,
@@ -504,6 +506,17 @@
           "forensicScriptProviderCalls": 0,
           "forensicScriptD1Writes": 0,
           "nextScheduledRunVerified": false
+        },
+        "savedSourceR2": {
+          "codeSha256": "71424845f7c1259dc2ac8ca4a7b9cc36de30df4bd916eb2c111d72a10c25ce4d",
+          "cmdSha256": "8e424248bf68a6703002a4b04d921bd5edbecfffa324678a30bfb91241e5cab7",
+          "tests": "SYNTHETIC_PASS_2",
+          "pcActualRun": "NOT_EXECUTED",
+          "providerCalls": 0,
+          "d1Writes": 0,
+          "originalR3Searches": 0,
+          "existing704SessionRefetches": 0,
+          "focus": "EXISTING_MARKETPARQUET_FILES_AND_RAW_JSON_PROVENANCE"
         }
       },
       "collectionEvidence": {
