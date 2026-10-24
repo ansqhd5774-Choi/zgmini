@@ -11,5 +11,5 @@ type ThemeStoredPayload={status:string;observationDate?:string;themes?:ThemeRow[
 export default function ThemeSentimentDashboardChart(){
  const {payload,error}=useStoredIndex<ThemeStoredPayload>('/api/theme-fear-greed');
  const {series,data,provisionalBySeries}=themeEtfDashboardSeries(error?null:payload);
- return <div style={{minWidth:0}}><SectorSentimentChart title="테마별 공포·탐욕" draggable themePicker series={series} data={data} provisionalBySeries={provisionalBySeries} showProvisionalNotice={false}/></div>;
+ return <div style={{minWidth:0}}><SectorSentimentChart title="테마별 공포·탐욕" draggable themePicker dashboardThemeScores series={series} data={data} provisionalBySeries={provisionalBySeries} showProvisionalNotice={false}/></div>;
 }
