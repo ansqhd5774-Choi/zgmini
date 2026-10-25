@@ -3967,7 +3967,7 @@ body .zg-r55-market .zg-r55-shell[data-expanded="false"] article.zg-r55-card>.zg
   display:block;
   box-sizing:border-box;
   width:100%;
-  padding-left:14px;
+  padding-left:15px;
  }
  .zg-dashboard[data-view="dashboard"] .zg-r55-card-head>span:last-child{
   position:absolute;
@@ -3977,6 +3977,7 @@ body .zg-r55-market .zg-r55-shell[data-expanded="false"] article.zg-r55-card>.zg
   height:20px;
   order:0;
  }
+ .zg-dashboard[data-view="dashboard"] .zg-r55-shell[data-expanded="false"] .zg-r55-card-head>span:last-child{top:-5px}
  .zg-dashboard[data-view="dashboard"] .zg-r55-card-head h3{
   font-size:13px;
   letter-spacing:-.55px;
