@@ -20,7 +20,9 @@ try{
    if(request.resourceType()==='script'){await hold;delivered++;}
    return route.continue();
   });
-  await page.goto(base,{waitUntil:'commit'});
+  // Use the global popup on the standalone guide so unrelated deferred chat
+  // DOM initialization cannot contaminate this deliberately delayed hydration.
+  await page.goto(`${base}/usage/`,{waitUntil:'commit'});
   await page.waitForFunction(()=>document.getElementById('zg-about-intro-dialog')?.open===true);
   assert.equal(delivered,0,'Introduction opens before external React/application modules arrive');
   const popup=page.locator('#zg-about-intro-dialog');
