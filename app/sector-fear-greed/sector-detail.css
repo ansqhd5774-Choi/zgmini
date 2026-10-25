@@ -130,7 +130,9 @@
 /* R Mobile screenshot parity: compact comparison above the one-line sector rankings.
    Presentation only; underlying API, dates, scores, and calculations are unchanged. */
 .zg-sfg-mobile-ranking-title,.zg-sfg-mobile-rank-head,.zg-sfg-legend-score{display:none}
+.zg-sfg-solo-marker{display:none}
 @media(max-width:680px){
+ .zg-sfg-solo-marker{display:block}
  .zg-sector-detail{padding:5px 4px 30px;background:#051a29}
  .zg-sector-detail-inner{width:100%;min-width:0}
  .zg-sector-detail-hero{display:block;margin:0 0 16px}
