@@ -4021,51 +4021,61 @@ body .zg-r55-market .zg-r55-shell[data-expanded="false"] article.zg-r55-card>.zg
   text-underline-offset:2px;
 }
 
-/* EC12 R4: stable heading in BOTH folded/unfolded economic cards.
-   Small superscript detail arrow stays inside the label footprint,
-   leaving the existing full-width mini chart untouched. */
+/* EC12 R6: restore the original inline 13px arrow beside the label.
+   Both folded and unfolded cards use the same title/help geometry. */
 .zg-dashboard[data-view="dashboard"] .zg-r55-shell[data-expanded] .zg-r55-card-head{
   position:relative;
   display:block;
   box-sizing:border-box;
   width:100%;
-  padding-left:15px;
+  padding-left:24px;
 }
 .zg-dashboard[data-view="dashboard"] .zg-r55-shell[data-expanded] .zg-r55-card-head>span:last-child{
   position:absolute;
-  top:-8px;
+  top:-2px;
   left:-8px;
   width:20px;
   height:20px;
   order:0;
 }
 .zg-dashboard[data-view="dashboard"] .zg-r55-shell[data-expanded] .zg-r55-card-head h3{
-  font-size:13px;
-  letter-spacing:-.75px;
+  font-size:14px;
+  letter-spacing:-.4px;
   line-height:20px;
   overflow:visible;
-  transform:translateY(2px);
+  transform:none;
 }
 .zg-dashboard[data-view="dashboard"] .zg-r55-shell[data-expanded] .zg-r55-card-title-link{
-  position:relative;
-  text-decoration-line:underline;
-  text-decoration-style:dotted;
-  text-decoration-color:rgba(167,196,220,.65);
-  text-underline-offset:2px;
+  display:inline-flex;
+  align-items:center;
+  gap:2px;
+  text-decoration:none;
 }
 .zg-dashboard[data-view="dashboard"] .zg-r55-shell[data-expanded] .zg-r55-card-title-link .zg-r55-title-arrow{
-  position:absolute;
-  top:-8px;
-  right:0;
-  width:10px;
-  height:10px;
+  position:static;
+  top:auto;
+  right:auto;
+  width:13px;
+  height:13px;
+  flex:none;
   pointer-events:none;
   color:#fabc42;
-  opacity:1;
+  opacity:.85;
 }
-
-/* EC12 R5: breathe between upper-left help and heading without
-   taking width from the mini-chart (both expanded states, all views). */
-.zg-dashboard[data-view="dashboard"] .zg-r55-shell[data-expanded] .zg-r55-card-head{padding-left:18px}
-.zg-dashboard[data-view="dashboard"] .zg-r55-shell[data-expanded] .zg-r55-card-head h3{letter-spacing:-1.2px}
-.zg-dashboard[data-view="dashboard"] .zg-r55-shell[data-expanded] .zg-r55-mini-chart{transform:translateX(4px)}
+/* Preserve 6 columns at wide desktop; allow sufficient heading+plot space
+   at narrow desktop/tablet/mobile sizes without shrinking the plot. */
+@media (min-width:960px) and (max-width:1279px){
+  .zg-dashboard[data-view="dashboard"] .zg-r55-card-grid{
+    grid-template-columns:repeat(4,minmax(0,1fr));
+  }
+}
+@media (min-width:1280px) and (max-width:1599px){
+  .zg-dashboard[data-view="dashboard"] .zg-r55-card-grid{
+    grid-template-columns:repeat(5,minmax(0,1fr));
+  }
+}
+@media (max-width:540px){
+  .zg-dashboard[data-view="dashboard"] .zg-r55-card-grid{
+    grid-template-columns:minmax(0,1fr);
+  }
+}
