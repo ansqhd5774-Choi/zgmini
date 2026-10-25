@@ -105,3 +105,11 @@
 2. 위 체크리스트 중 첫 미완료 단계부터 진행.
 3. 각 단계에서 승인/실행/검증/실패를 나누어 갱신. 이전 성공 증거를 불필요하게 반복하지 않는다.
 4. 사용자에게 CMD 실행이 필요한 경우에만 Windows CMD 파일 또는 정확한 명령과 저장 위치를 안내. 기존 데이터·운영 작업은 임의 초기화 금지.
+
+## 2026-10-25 추가 — 9개 ETF 전수 조사 및 R7 NASA 전용 수집 준비
+
+- 조사 문서: `docs/THEME_SPACE_NINE_ETF_SCREEN_R7_20261025.md`. NASA/UFO/WARP/ORBX/MARS/ARKX/ROKT/DIPR/WSPC를 발행사 규모·호가·순도·이력·중복과 권리로 비교. **초기 2개 티커 선정은 확정 조건이 아니며**, NASA는 자료상 최우선 **실가격 수집 검증 후보**. NASA 2026-10-23 보유자료 SpaceX 약 27.98% 집중도 확인. 최종 ETF 조합 미확정.
+- 기존 PC UFO **656일** 보존, 데이터센터·전력의 기존 SPY 원본 SHA 검증 11,295 1시간봉 재사용. **UFO/SPY Provider 재수집 금지**. 기존 R6 NASA+SPY 수집 CMD 실행 중지 지속.
+- 안전 대체 코드: `scripts/pc-writer/theme-space-satellite-r7-nasa-only.mjs`, `.cmd`, `tests/theme-space-satellite-r7-nasa-only.test.mjs`, `tests/theme-space-satellite-r7-launcher.test.mjs`. NASA만 수집(`2026-03-30`~`2026-10-23`), 사용자 CMD 명시 실행, 최대 4 GET/회, 별도 R7 checkpoint, 이미 있는 NASA raw나 오류 시 자동 중단, raw+manifest SHA 저장만 허용. CMD와 같은 Desktop 위치 `SPACE_SATELLITE_R7_NASA_RESULT.txt` 로그.
+- 로컬 Node `node --test` **R7 2개 파일 PASS**(NASA만 요청/비회귀/402 재요청 차단/기존 NASA 존재 차단/4 GET pagination, CMD ASCII+CRLF+SHA). 실제 Windows PC 테스트·실물 NASA 가격 획득이 **아님**. JS 소스 SHA256 `d7346a52898b2c57d612d5b9ce11e7721dc45ab718ff1e883fba47281027877e`; CMD 해시 검증. GitHub에 신규 5개 파일 별도 commit 반영.
+- 다음 사용자 작업: R7 Desktop CMD 직접 실행 → `SPACE_SATELLITE_R7_NASA_RESULT.txt` 제출 → 실제 NASA 원봉·UFO/SPY 공통 뉴욕 세션 N·정합성·보유 중복·권리 판정 → 조합 승인 여부 결정. 결제/제한 HTTP 402 시 STOP; 무단 반복 금지. D1/배포/운영과 메인 병합 모두 미실행, PR #714 Draft 유지, 브랜치 보존.
