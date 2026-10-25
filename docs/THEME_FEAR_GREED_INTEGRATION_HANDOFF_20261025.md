@@ -203,7 +203,7 @@
 ## 2026-10-25 R10 발행사 9종 재확인·N종 비중 불변식 검산 (브랜치 비공개)
 
 - 상세 근거: `docs/THEME_SPACE_BASKET_WEIGHT_R10_REVIEW_20261025.md`. 공식 ETF 발행사 9종 UFO/NASA/WARP/ORBX/MARS/ARKX/ROKT/DIPR/WSPC의 우주 순도·관측일별 AUM/스프레드/상장 기간/미검증 상태를 분리. **후보 수=편입 수가 아니며 ETF 2종 또는 3종 상한 없음**.
-- 2026-10-23 발행사 holdings 정량 교차 확인: **NASA↔ORBX 확인 기업 7개에 대한 중복 경제노출 하한 54.30%p** (SpaceX 25.64, Rocket Lab 9.03, AST SpaceMobile 5.50, Viasat 4.49, MDA 3.14, Firefly 3.52, Intuitive Machines 2.98%p). R8 NASA↔UFO 상위10 공유 4개 하한 27.57%p는 **coverage가 달라 전체 중복률 절대 비교 금지**. ORBX와 NASA를 동시 편입하는 판단에 집중 리스크 반영 필요. 종목 주가 산식 입력 없음.
+- 2026-10-23 발행사 **동일일 상위10 holdings 4종 교차 중복**: NASA/UFO **27.57%p**, NASA/ORBX **54.30%p**, NASA/DIPR **28.48%p**, UFO/ORBX **34.13%p**, UFO/DIPR **43.09%p**, ORBX/DIPR **38.12%p**(확인된 교집합 기업의 min 비중 합계 하한; 전체 중복률 아님). **NASA↔ORBX 확인 기업 7개에 대한 중복 경제노출 하한 54.30%p** (SpaceX 25.64, Rocket Lab 9.03, AST SpaceMobile 5.50, Viasat 4.49, MDA 3.14, Firefly 3.52, Intuitive Machines 2.98%p). R8 NASA↔UFO 상위10 공유 4개 하한 27.57%p는 **coverage가 달라 전체 중복률 절대 비교 금지**. ORBX와 NASA를 동시 편입하는 판단에 집중 리스크 반영 필요. 종목 주가 산식 입력 없음.
 - 실제 사용자 PC R9 상태 **보존**: UFO656/NASA144/SPY706, 252일 창 R9 105개 실제 점수, 최종 39.95701/UFO63.828%·NASA36.172%, 기존 R3와 29일 비회귀. WARP/ORBX/MARS 등은 발행사 정보만 확인했으며 **실제 ETF 점수/가격 N 미측정**.
 - R4-A 변경 없이 합성 수식표로 n=2/3/4/5/10/20 검산. n=3에서 N700/377/40은 41.176/41.176/17.647%; k종에서 N40 한 종의 최소 비중은 `3/(7k−4)`, 즉 n3=17.647%, n4=12.500%, n5=9.677%. **50:40:10은 예시지 강제 목표가 아니며**, 3종 특례/미승인 지수강화 금지.
 - 새 독립 테스트: `tests/theme-optional-relative-weight-r10-invariants.test.mjs`. 2·3·4·5·10·25·100 ETF로 정상화·순서독립·대칭성/기간우위 검증, 승인 2종 R3=70:30 보존, N39·ETF 1개 임의 점수 생성 차단. R2/R3/R4/R10/공유 SPY/R8/R9 **7개 Node 테스트 파일 로컬 PASS**. 이것은 **합성 유닛 테스트이지** 다수 ETF 실가격 확보가 아님.
