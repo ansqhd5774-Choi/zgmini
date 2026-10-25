@@ -3,7 +3,7 @@
  *
  * No confidence-score weights, historical-minimum cutoff, automatic theme
  * rejection, population projection, G/D/M normalization or trading.
- * Read only the immediately completed R16 gate and R15 evidence inventory.
+ * Read only the immediately completed R16/R17 gate and R15 evidence inventory.
  */
 
 const isFiniteNumber = (value) => typeof value === 'number' && Number.isFinite(value);
@@ -21,7 +21,7 @@ function previousCount(row) {
 }
 
 export function buildIndustryEvidenceFairness(gate, quantCoverage) {
-  if (!gate || gate.runType !== 'INVESTMENT_BOT_STAGE04_INPUT_GATE_R16'
+  if (!gate || !/^INVESTMENT_BOT_STAGE04_INPUT_GATE_R1[67]$/.test(gate.runType ?? '')
     || !Array.isArray(gate.themes) || gate.themes.length !== 9
     || !quantCoverage || quantCoverage.gateCompletedAtUtc !== gate.runAtUtc
     || !Array.isArray(quantCoverage.rows) || quantCoverage.rows.length !== 9
