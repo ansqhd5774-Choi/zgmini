@@ -17,13 +17,19 @@ test('outside paths, absolute paths and manifest identity are rejected',()=>fixt
  for(const p of ['../raw.json','C:/raw.json','/raw.json','raw\\file.json'])assert.throws(()=>containedFile(root,p));
  fs.writeFileSync(path.join(root,'manifest.json'),JSON.stringify({version:1,themeId:'other',files:[]}));assert.equal(inspectManifest(root,'manifest.json','test').status,'INVALID_MANIFEST');
 }));
-test('existing nine themes remain intact and tenth theme stays independently unregistered',()=>{
+test('original nine, tenth data center, and eleventh private space candidate remain separate',()=>{
  const registry=JSON.parse(fs.readFileSync(new URL('../config/theme-data-registry.json',import.meta.url)));
- assert.equal(registry.themes.length,10);assert.equal(new Set(registry.themes.map(t=>t.id)).size,10);
+ assert.equal(registry.themes.length,11);assert.equal(new Set(registry.themes.map(t=>t.id)).size,11);
  assert.deepEqual(registry.themes.slice(0,9).map(t=>t.id),[
   'robotics','cloud-saas','autonomous-driving','nuclear-smr','defense','fintech',
   'cybersecurity','ai-semiconductor','biotech']);
  const result=inspectRegistry(registry,{dataRoot:os.tmpdir()});assert.equal(result.providerCalls,0);assert.equal(result.d1Writes,0);
- for(const id of ['ai-semiconductor','biotech','data-center-power']){const t=result.themes.find(t=>t.id===id);assert.equal(t.runtime.collector.status,'UNREGISTERED');assert.notEqual(t.rawManifest.status,'SHA_VERIFIED');assert.ok(t.blockers.length);assert.equal(t.publicRuntime,'NOT_QUERIED');}
+ for(const id of ['ai-semiconductor','biotech','data-center-power','space-satellite']){const t=result.themes.find(t=>t.id===id);assert.equal(t.runtime.collector.status,'UNREGISTERED');assert.notEqual(t.rawManifest.status,'SHA_VERIFIED');assert.ok(t.blockers.length);assert.equal(t.publicRuntime,'NOT_QUERIED');}
+ const space=registry.themes.find(t=>t.id==='space-satellite');
+ assert.deepEqual(space.symbols,['UFO','ROKT','ARKX']);
+ assert.equal(space.public,null);assert.deepEqual(space.tasks,[]);
+ const prematurelyPublished=structuredClone(registry);
+ prematurelyPublished.themes.at(-1).public={feedKey:'unapproved'};
+ assert.throws(()=>inspectRegistry(prematurelyPublished,{dataRoot:os.tmpdir()}));
  const broken=structuredClone(registry);broken.themes[1].id=broken.themes[0].id;assert.throws(()=>inspectRegistry(broken,{dataRoot:os.tmpdir()}));
 });

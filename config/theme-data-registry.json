@@ -512,6 +512,59 @@
         "snapshotKey": "current", "api": "/api/theme-fear-greed"},
       "blockers": ["ANONYMOUS_DERIVED_LICENSE_SCOPE_UNCONFIRMED_NEW_THEME_RISK_OPT_IN_REQUIRED", "TENTH_D1_PUBLICATION_AND_SCHEDULED_PUBLIC_RUN_PENDING"],
       "followUps": ["EXISTING_9_THEME_LANES_UNCHANGED", "NO_SYNTHETIC_VALUES", "PUBLIC_R3_EXPLICIT_RISK_OPT_IN_ONLY", "D1_CAS_READBACK_NOT_YET_RUN"]
+    },
+    {
+      "id": "space-satellite",
+      "label": "우주·위성",
+      "symbols": ["UFO", "ROKT", "ARKX"],
+      "benchmark": "SPY",
+      "candidatePairs": [["UFO", "ROKT"], ["UFO", "ARKX"]],
+      "finalPairSelected": false,
+      "methodologyVersion": "ETF_ONLY_T40_R20_V40_PAIR50",
+      "status": "PRIVATE_R1_RESEARCH_ONLY_PC_REAL_PRICE_VERIFICATION_PENDING",
+      "approvedNewThemeCriteria": {
+        "decision": "R188_LEGACY_OR_ADAPTIVE_R2",
+        "existingNineExempt": true,
+        "document": "docs/THEME_ADAPTIVE_R2_PRIVATE.md",
+        "pairWeightVersion": "R3_RELATIVE_MATURITY_70_30_TO_50_50",
+        "privatePairAuditor": "scripts/pc-writer/theme-space-satellite-adaptive-r2.mjs",
+        "privatePairWeight": "scripts/pc-writer/theme-optional-pair-weight-r3.mjs",
+        "publicApplicationAuthorized": false
+      },
+      "rawManifest": "themes/space-satellite/raw-manifest.json",
+      "rawAssets": [],
+      "repository": {
+        "collector": "scripts/pc-writer/theme-optional-collect.mjs",
+        "candidateAuditor": "scripts/pc-writer/theme-space-satellite-r1.mjs",
+        "pcEntrypoint": "scripts/pc-writer/theme-space-satellite-r1.cmd",
+        "scorer": "scripts/pc-writer/theme-optional-score-r188.mjs",
+        "publisherInstaller": null,
+        "reader": null
+      },
+      "runtime": {"collector": null, "calculator": null, "publisher": null},
+      "tasks": [],
+      "public": null,
+      "licensing": {
+        "provider": "https://getmarkethistory.com/docs/terms",
+        "researchCheckedAt": "2026-10-25",
+        "derivedLicenseVerified": false,
+        "anonymousPublicUseApproved": false
+      },
+      "candidateResearch": {
+        "asOf": "2026-10-25",
+        "ufo": "https://procureetfs.com/ufo/",
+        "rokt": "https://www.ssga.com/us/en/intermediary/etfs/state-street-spdr-sp-kensho-final-frontiers-etf-rokt",
+        "arkx": "https://www.ark-funds.com/funds/ARKX",
+        "roktLimitation": "ALSO_DEEP_SEA",
+        "arkxLimitation": "ALSO_DEFENSE_AFTER_2025_RENAME",
+        "newPureSpaceEtfs": "INSUFFICIENT_ONE_YEAR_HISTORY_AS_OF_RESEARCH_DATE"
+      },
+      "blockers": [
+        "PRIVATE_LIVE_ETF_PRICE_COVERAGE_NOT_VERIFIED",
+        "ETF_PAIR_SELECTION_NOT_APPROVED",
+        "ANONYMOUS_DERIVED_PUBLICATION_RIGHTS_NOT_VERIFIED"
+      ],
+      "followUps": ["KEEP_EXISTING_9_THEME_LANES_UNCHANGED", "NO_D1_WRITES", "NO_TASK_INSTALL", "NO_PUBLICATION"]
     }
   ]
 }

@@ -1,5 +1,13 @@
 # 테마 데이터 운영·인수인계 기준
 
+## 2026-10-25 사용자 확정: 신규 혁신 테마 OR 기준·비중 (기존 9개 불변)
+
+- 기존 통과·공개된 **9개 테마는 재검증·재계산·자격 재판정 대상이 아니다**. 기존 R188 산식·ETF 50:50·원자료·발행 경로·예약 작업·D1·공개 이력을 변경하지 않는다.
+- **신규 테마의 선정**: `기존 628개 실제 공통 거래일·252개 점수 재현 R188 기준` **OR** `실제 관측 가격으로 R2 점수를 계산할 수 있는 최소 40거래일 조건`. 둘 중 하나만 통과해도 선정 계산이 가능하다. 양쪽 실패 시 후보 상태를 유지하고 결측을 표시한다. 데이터 권리·공개 승인 같은 별도 운영 게이트는 유지한다.
+- 기존 기준 통과 시 기존 R188을 우선 적용하고, 그렇지 않으면서 R2만 통과하면 적응형 R2를 적용한다. **AND 판정 및 기존 9개 재검증 금지.**
+- 신규 ETF 페어의 한쪽이 장기·다른 쪽이 단기라면 **70:30에서 50:50으로 점진 조정**한다. 각 ETF에서 377거래일의 전 지표 252표본이 충족되면 당일 점수는 R188과 일치한다. 역사 252개 점수의 완전 호환에는 628거래일이 필요하다. 날짜별 가중치를 매번 계산하며 1년 차트의 출시 이전·누락 구간은 결측으로 둔다.
+- 정확한 대칭식·세부 지표·모델 경계·테스트: [`docs/THEME_ADAPTIVE_R2_PRIVATE.md`](THEME_ADAPTIVE_R2_PRIVATE.md) 및 `scripts/pc-writer/theme-optional-pair-weight-r3.mjs`를 따른다. 이 문서가 **새 테마 전용 승인 기준**이다. 우주·위성 최종 ETF 선정·권리·실제 원가격·공개 경로는 아직 별도 검증 대상이다.
+
 ## 목적과 저장 원칙
 
 새 테마가 채팅이나 개별 ZIP에만 남거나, 과거 점수만 게시된 채 자동 갱신에서 빠지는 사고를 방지한다. 이 문서는 기존 운영 경로를 이전하거나 등록 작업·DB·산식을 변경하는 명령이 아니다.
@@ -159,6 +167,17 @@ PC에서 새 작업 등록 전 아래 단계가 필요하다.
 - `theme-data-center-power-gate-r6.mjs`는 최신 GitHub `main` SHA, 동일 SHA의 Cloudflare Production Builds `SUCCESS` 체크, 실제 API 기본 7개 각각 252일을 읽기 전용 검증한다. `theme-optional-stage.mjs`는 현재 main의 모든 필수 파일을 단일 SHA로 검증해 별도 불변 PC 릴리스에 설치한다. 이전 R4/R5 릴리스는 덮어쓰지 않는다.
 - Desktop `theme-data-center-power-r6-publish.cmd`는 **무계정** R3 원자료 수집·검산을 재사용하고, `ACCEPT`라는 **명시적 게시자 위험 수용 응답**을 받은 경우에만 독립 10번째 D1 key에 CAS/읽기 검증 게시한다. 기존 미확정 `derivedLicenseVerified=false`, 계정 미확인 표기는 유지한다. 첫 게시와 실제 API 252점이 확인돼야 `theme-data-center-power-cutover-r6.mjs`가 **10번째 Task의 기존 Desktop CMD 내용만** 원자적으로 공개 경로로 전환한다. Task XML/트리거/실행 주체·기존 9개 작업은 변경하지 않고 개인 PC 같은 폴더에 Private CMD 복구 사본을 남긴다.
 - `DATA_CENTER_POWER_R6_RESULT.txt`, `DATA_CENTER_POWER_R6_STAGE_RESULT.txt`는 실행 CMD와 같은 Desktop 폴더에 작성한다. R6 CMD PC 실행·D1 readback·사이트 10번째 등장·다음 정규 예약 실행 **아직 미확인**. `ACCEPT` 미입력 시 비공개 작업을 그대로 유지한다.
+
+## 2026-10-25 우주·위성 R1 — ETF 조합·실제 가격 적합성 비공개 검증
+
+- 현재 **공개하거나 예약 실행을 설치하는 단계가 아니다**. 기존 공개 9개/등록된 작업/D1/공급원/산식은 불변이다. 최종 ETF 조합도 아직 승인되지 않았다.
+- 미국 상장 우주·위성 전용 ETF `UFO`는 2019-04-11 설정([Procure 공식](https://procureetfs.com/ufo/)). 1년 이상의 운용 이력은 있으나, 실제 무료 가격 API의 628개 공통 거래일은 아직 수신·검증하지 않았다.
+- `ROKT`는 2018-10-22 설정([State Street 공식](https://www.ssga.com/us/en/intermediary/etfs/state-street-spdr-sp-kensho-final-frontiers-etf-rokt))이지만 **우주+심해 탐사** 혼합이다. `ARKX`는 2021년 설정 이후 2025-11-23부터 **우주+방산** 중심으로 범위가 넓어졌다([ARK 공식](https://www.ark-funds.com/funds/ARKX)). 따라서 2개 조합 `UFO/ROKT`와 `UFO/ARKX`는 **검증 후보**이고 확정이 아니다. 2026년 출시된 `MARS`(3월), `NASA`(3월), `ORBX`(4월)는 현 시점 1년치 이력이 불가하여 252일 기준의 보완 ETF로 채택하지 않는다.
+- 승인된 R188 계산기는 변경하지 않는다. `theme-optional-collect.mjs`에 새 ID와 **UFO/ROKT/ARKX/SPY**만 추가한 뒤, 각 실행 **무료 GET 최대 4건**으로 원자료를 `themes/space-satellite/raw/`, hash manifest 및 checkpoint에 저장한다. 실패한 요청은 자동 반복·실패 checkpoint 초기화하지 않는다.
+- `theme-space-satellite-r1.mjs --audit`는 저장 파일의 **실제 SHA256**과 출처·날짜·가격을 확인하고, 뉴욕 정규 15시/조기 폐장 12시 시간봉만 채택한다. SPY와 각 후보 ETF 두 개의 **실제 공통 거래일이 628개 이상**일 때만 기존 40/20/40 + ETF 50:50 산식으로 **비공개 252일 후보 2종**을 계산한다. 관측이 부족한 후보는 점수 미생성으로 표시하고, 개인 PC에 SHA 기반 derived 결과만 남긴다. 공개 이력 복사·숫자 보간은 금지한다.
+- Windows CMD 진입점 `theme-space-satellite-r1.cmd`는 승인 Node/E: 경로 및 옆의 소스 세 파일을 확인한다. 로그 `SPACE_SATELLITE_R1_RESULT.txt`는 **CMD와 같은 폴더**에 생성하며 완료·오류 모두 `pause`하여 더블클릭 직후 창이 닫히지 않게 한다. 첫 실행은 수집 최대 4 GET 후 가능한 후보만 감사하고 종료한다. 이어할 때는 이전 로그와 checkpoint를 먼저 확인하고 같은 CMD를 명시 재실행한다.
+- 공급원 [GetMarketHistory 이용약관](https://getmarkethistory.com/docs/terms)의 파생 공개권에 **계정 정상 유지 조건**이 있으므로, 익명 무료 사용을 상업 공개 승인으로 추정하지 않는다. **우주·위성 테마 별도 권리·조합·공개 승인** 전까지 D1/Worker/자동 예약/공개 게시기 구현·실행 금지. 데이터센터·전력에 대한 이전 개별 위험 수용을 우주·위성으로 자동 확장하지 않는다.
+- 상태: `R1_CODE_AND_FIXTURE_TEST`는 개발 검증 수준이다. **PC E: 실제 가격, 252일 score, 선정 ETF, 권리, D1, API, UI, 다음 예약 실행** 모두 실제 증거 전에는 `PENDING`으로 유지한다.
 
 ## 일반 채팅 작업 지시문
 
