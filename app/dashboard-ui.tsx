@@ -49,7 +49,7 @@ const CardTrend=memo(function CardTrend({data,label,color,periodDays,missingDate
  return <div className="zg-spark zg-r55-mini-chart" aria-label={`${label} 관측 추이${missingDates.length?' · 점선은 결측 구간 연결이며 관측값이 아닙니다':''}`} title={missingDates.length?'점선: 미발표 자료가 있는 구간의 시각적 연결. 해당 월 점수는 결측입니다.':undefined} onPointerDown={event=>event.preventDefault()}>
   <div className="zg-r55-mini-y-labels" aria-hidden="true"><span>100</span><span>50</span><span>0</span></div>
    <svg width="100%" height="100%" viewBox="0 0 220 60" preserveAspectRatio="none" role="img" aria-label={`${label} 관측 추이`} style={{display:'block',pointerEvents:'none'}}>
-    {[0,25,50,75,100].map(value=><line key={value} x1={13} x2={217} y1={57-value*.54} y2={57-value*.54} stroke={value===0||value===100?'rgba(168,188,208,.4)':`rgba(111,130,149,${value===50?'.26':'.22'})`} strokeDasharray={value===0||value===100?undefined:'2 3'} strokeWidth={value===0||value===100?1:.8} vectorEffect="non-scaling-stroke"/>)}
+    {[0,25,50,75,100].map(value=><line key={value} x1={13} x2={217} y1={57-value*.54} y2={57-value*.54} stroke={value===0||value===100?'rgba(168,188,208,.4)':value===50?'rgba(170,197,220,.64)':'rgba(157,184,208,.52)'} strokeDasharray={value===0||value===100?undefined:'4 4'} strokeWidth={1} vectorEffect="non-scaling-stroke"/>)}
     {missingDates.length>0&&<path d={geometry.bridge} fill="none" stroke={color} strokeOpacity={.65} strokeDasharray="2 3" strokeWidth={1.2} vectorEffect="non-scaling-stroke"/>}
     <path d={geometry.path} fill="none" stroke={color} strokeWidth={1.8} vectorEffect="non-scaling-stroke"/>
     {geometry.last&&<circle cx={geometry.last.x} cy={geometry.last.y} r={2.5} fill={color}/>}
@@ -311,7 +311,7 @@ export function CompositeMarketSection({items,points,demo,loading}:{items:Summar
        >
         <div className="zg-r55-card-head">
          <span className="zg-r55-card-icon"><Icon size={18} aria-hidden="true"/></span>
-         <h3><a className="zg-r55-card-title-link" href={"/economic-indicators/"+({inflation:"inflation",employment:"employment",rates:"rates",credit:"credit",growth:"growth",consumption:"consumption",earnings:"earnings",liquidity:"liquidity",fundFlows:"fund-flows",breadth:"breadth",dollarFx:"dollar-fx",commodities:"commodities"}[r55DomainIds[index]])+"/"} onClick={event=>event.stopPropagation()} aria-label={m.label+" 상세페이지 열기"} title={m.label+" 상세페이지"}>{m.label}<ArrowUpRight size={13} aria-hidden="true"/></a></h3>
+         <h3><a className="zg-r55-card-title-link" href={"/economic-indicators/"+({inflation:"inflation",employment:"employment",rates:"rates",credit:"credit",growth:"growth",consumption:"consumption",earnings:"earnings",liquidity:"liquidity",fundFlows:"fund-flows",breadth:"breadth",dollarFx:"dollar-fx",commodities:"commodities"}[r55DomainIds[index]])+"/"} onClick={event=>event.stopPropagation()} aria-label={m.label+" 상세페이지 열기"} title={m.label+" 상세페이지"}>{m.label}</a></h3>
          <span onClick={e=>e.stopPropagation()}><DashboardTip label={`${m.label} 도움말`}><HelpText copy={v9Breadth?{...HELP[m.label],note:'※ V9는 검증된 5개 구성 지표를 사용합니다. 최신 거래일 자료가 부족하면 마지막 유효 관측 점수를 유지합니다.'}:HELP[m.label]}/></DashboardTip></span>
         </div>
         {notice&&<p data-testid="breadth-unavailable-reason" style={{margin:'6px 0',fontSize:12,lineHeight:1.5,color:'#cbd5e1'}}>{notice.message}</p>}
