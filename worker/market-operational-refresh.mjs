@@ -1,5 +1,6 @@
 import {collectDiagnosticLiveInputs,fetchBisBulkDataset} from './diagnostic-v1-canary.mjs';
 import {bisInputField,validBisInput} from './bis-input-policy.mjs';
+import {validCreditInput} from './credit-input-policy.mjs';
 import {fetchDiagnosticFredSeries} from '../lib/diagnostic-layer/official-macro-adapters.mjs';
 import {collectRateR2Inputs,RATE_R2_PROVIDER_CONTRACT} from '../lib/market-score/rate-r2-provider.mjs';
 import {collectBreadthB1R3StoreOnlyR1} from '../lib/market-score/breadth-b1-r3-worker-domain.mjs';
@@ -116,6 +117,10 @@ export async function runMarketOperationalRefresh({env,job,store,now=Date.now(),
    return {status:'SOURCE_FAILED',job:selected,reason:macroReadiness.reason};
   }
   const collectedStatus=collected?.status??collected?.rateR2?.status;
+  if(selected==='credit'&&!validCreditInput(collected)){
+   await store.finish(selected,jobLease,now,'SOURCE_FAILED');
+   return {status:'SOURCE_FAILED',job:selected,reason:'CREDIT_INPUT_NOT_VALID'};
+  }
   if(selected==='rates'&&(collected?.rateR2?.status!=='READY'||RATE_R2_PROVIDER_CONTRACT.requiredSeries.some(id=>!collected?.rateR2?.series?.[id]?.some(row=>typeof row?.value==='number'&&Number.isFinite(row.value)&&typeof row?.observationDate==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(row.observationDate)&&row.observationDate<=asOf)))){
    await store.finish(selected,jobLease,now,'SOURCE_FAILED');
    return {status:'SOURCE_FAILED',job:selected,sourceStatus:collectedStatus,reason:'RATES_INPUT_NOT_READY'};
