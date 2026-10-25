@@ -232,3 +232,12 @@
 - R12/R11/R10/R9 테스트 4개 파일 로컬 PASS. 기존 산식·승인 이력·원본/운영 9개 테마·D1·Cloudflare·Scheduler·main 변경 0. `finalBasketSelected=false`, `rightsVerified=false`, `publicationAuthorized=false`.
 - **다음 Gate:** 기존 PC raw-manifest의 ARKX·ROKT SHA 읽기 전용 확인 → WARP·ORBX·MARS·DIPR·WSPC의 결측 기간만 제한적으로 PC 수집 → 저장된 원봉 SHA+SPY 공통 N+R2 실제 검산 → 승인 후에만 최종 가변 ETF 바스켓 산출 및 게시 검토.
 - 2026-10-25 확인된 원격 main은 `7e0c05e8b1ba8c6a23fc1aa583938a35bbb1b92c` (작업 시작 브랜치와 8커밋 분기). 현재 브랜치만 수정, main drift 해소 없이 전체 PR 병합 금지.
+
+
+## 2026-10-25 R12 NY15 추가 + R13 PC 전종목 원본 SHA 감사 준비
+
+- R12 무료 공급원 1시간봉을 실제 기존 R2의 **뉴욕 15시 프록시** 기준으로 재검산: WARP 118일, ORBX 130일, MARS 162일, **DIPR 28일, WSPC 15일**. DIPR/WSPC의 전체 거래일 92/49를 점수 적격 N으로 오인하지 않는다. **두 ETF는 수집 가능 후보로 계속 유지**, 현재 승인 R2 40일 미만이므로 점수 편입 금지. SPY 교집합/로컬 SHA 검증 전 다른 3종도 PASS 아님. 참조: `docs/THEME_SPACE_LIVE_PROVIDER_AVAILABILITY_R12_20261025.md` 5절.
+- 신규 R13 범용 **9종 전원 기존 PC 원본/manifest SHA** 읽기 전용 감사기: `scripts/pc-writer/theme-space-satellite-r13-local-universe-audit.mjs`, 테스트 2개, 7종 소스 SHA가 고정된 Desktop Windows CMD. 기존 `theme-space-satellite-adaptive-r2.mjs` NY15 함수 및 `theme-shared-spy-readonly-r1.mjs` SPY manifest 재사용. **임의 ETF 수 2/3개 상한 없음.**
+- 개인 PC 실행용 `SPACE_SATELLITE_R13_EXISTING_RAW_AUDIT_DESKTOP_20261025.zip` (8파일 무결성 압축 검증), `scripts/pc-writer/theme-space-satellite-r13-local-universe-audit.cmd`. 로그는 CMD 옆 `SPACE_SATELLITE_R13_EXISTING_RAW_RESULT.txt`. 사용자 PC에서는 아직 실행 확인 없음.
+- 단위 Node R13/R12/R11/R9 + R13 CMD 5개 테스트 파일 로컬 PASS. R13 PC READ_ONLY 이외 GET/저장/점수 계산/게시/스케줄러/운영 산식 변경 0. 근거 문서: `docs/THEME_SPACE_PC_MANIFEST_R13_20261025.md`.
+- **다음 실행:** 사용자 Windows CMD에서 R13 전종목 read-only audit 결과 제출 → ARKX/ROKT 기존 원본 SHA 상태와 추가 5종 누락 범위 확인 → 필요한 무료 원본만 한정 수집/저장 SHA → SPY 공통 N과 R2 실제 점수 검증. 본 단계에서는 ETF 최종 개수/점수/가중치 또는 배포 승인하지 않는다.
