@@ -7,7 +7,7 @@
 | 01 | 시장 분석 | ZGMINI 기존 시장 지표를 활용하도록 계획 | EXISTING_INPUT |
 | 02 | 섹터 분석 | ZGMINI 기존 ETF 섹터 공탐 활용 계획 | EXISTING_INPUT |
 | 03 | 테마 분석 | 기존 통과 ETF 테마 9개 유지; 재검증 금지 | EXISTING_INPUT |
-| 04 | 매력 테마 선정 | R2 정량 설계, R3 같은 판본 검산, R4 최신 공개 F 9/9 HTTP 200 및 산업 공식 자료 감사, M2 R25 선택 JSON | DESIGNED / PARTIAL |
+| 04 | 매력 테마 선정 | R7 읽기 전용 AI 봇 입력 게이트: 기존 공탐 F 9/9·실시간 산업 원자료 2/9(FedNow·Eurostat); G/D/M·순위 NULL | CODE_PRESENT / PARTIAL |
 | 05 | 성장 산업·기술 선정 | M2 R25 로봇 실측 코드 및 선택 JSON | CODE_PRESENT / NOT_VERIFIED |
 | 06 | 수혜 기업 발굴 | M2 R25 기업 노출·미국 유니버스·로봇·제품 조사 코드 | CODE_PRESENT / NOT_VERIFIED |
 | 07 | 기본 지표 분석 | M2 R25 재무·공식 기업 실적 확인 코드; R24 실측 2/4 부분 확보 | PARTIAL |
@@ -53,3 +53,15 @@
 3. G1/G2/G/D/M의 최소표본·가중치(60/40, 70/30) **대안별 민감도 표만 제출**. 사용자 승인 전 운영·실제 랭킹 금지.
 4. 독립된 R25 검증: Windows `M2_LATEST_STATUS.txt`를 확보하면 SERV 수정/실적 부분충족 및 원본 PDF 15/15을 실제 로그로 검증한다. R25 예상 출력은 PASS로 간주하지 않는다.
 5. 기존 9개 ETF·공탐 산식·사이트·운영 DB·Provider·스케줄러·DNS·주문 기능 변경 금지.
+
+## 2026-10-25 R7 자동 투자 봇 입력 게이트 — 실제 검증
+
+- 장기 목표는 **15단계 AI 자동 투자 봇**. 현재 완성 부분은 04단계 **독립 읽기 전용 입력 수집기**, 자동매매 엔진 아님.
+- 신규 문서: `STAGE04_INVESTMENT_BOT_R7_LIVE_EVIDENCE_20261025.md` (정확한 실측·권리·에러 기록).
+- 실행 코드: `stage04/investment-bot-gate-readonly.mjs` + `fednow-official-readonly.mjs` + `eurostat-cloud-readonly.mjs`; Windows 수동 실행 `stage04/STAGE04_BOT_READONLY.cmd`.
+- 신규 단위테스트 **10/10 PASS**; 기존 R6 F 선택 **5/5 PASS**; 연구 R5 수학적 검산 PASS.
+- 개발 환경 실제 HTTPS 테스트 `LIVE_INPUT_PARTIAL_INDUSTRY_UNRANKED`: F 9/9, 공식 원자료 2/9, 나머지 7은 결측. FedNow 2026Q3 6,376,467건·YoY +154.4478%, Eurostat 2025 유료 클라우드 52.74%·2년 +7.42%p. 출처·표본·권리 제한 유지.
+- 라이브 FedNow 4.05MB 공식 HTML의 초기 상한 실패를 페이지 5MB/ASCII 300KB 분리로 수정 후 PASS. Eurostat 2023 누락 시 과거 추세를 현재로 오판하는 버그를 최신연도 연속창 요구로 수정 후 PASS.
+- `main`의 2026-10-25 신규 1커밋은 섹터 UI·테스트 변경이며 R7 경로와 별개; 병합·배포 없음.
+- **추가 우선순위:** FDA/CPUC 공식 동적 원자료 → IFR/IEA/IAEA/ENISA/방산 5개 권리·동일판본 → 가중치·최소 N 승인 → 정식 04단계 순위. Windows 실행·주문 시스템 미검증.
+- **모든 단계 투자 권고·주문 비활성화**: `approvedAttractivenessM=null`, `officialRank=null`, `automatedTradeEnabled=false`.
