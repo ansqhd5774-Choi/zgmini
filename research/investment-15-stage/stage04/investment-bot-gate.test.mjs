@@ -193,7 +193,7 @@ test('Eurostat changed cohort, bad rate, or missing comparison stays explicit', 
 
 test('bot joins nine existing F themes but never issues a ranking or an order', async () => {
   const result = await runInvestmentBotInputGate({ fetchFn: makeFetch(), asOfDate: '2026-10-25', fdaReader, cpucReader, ifrReader });
-  assert.equal(result.runType, 'INVESTMENT_BOT_STAGE04_INPUT_GATE_R16');
+  assert.equal(result.runType, 'INVESTMENT_BOT_STAGE04_INPUT_GATE_R17');
   assert.equal(result.status, 'LIVE_INPUT_PARTIAL_INDUSTRY_UNRANKED');
   assert.equal(result.themes.length, 9);
   assert.equal(result.officialIndustry.validatedLiveThemes, 7);
@@ -206,6 +206,10 @@ test('bot joins nine existing F themes but never issues a ranking or an order', 
   assert.equal(result.industryEvidenceFairness.themesDroppedDueToMissingness, 0);
   assert.equal(result.industryEvidenceFairness.zeroImputedMissingGrowthValues, 0);
   assert.equal(result.industryEvidenceFairness.confidenceWeightsApproved, false);
+  assert.equal(result.sentimentIndustryContrast.retainedThemes, 9);
+  assert.equal(result.sentimentIndustryContrast.themeFailures, 0);
+  assert.equal(result.sentimentIndustryContrast.officialRankingEnabled, false);
+  assert.equal(result.sentimentIndustryContrast.automatedTradeEnabled, false);
   assert.equal(result.sourceVintageAudit.observedOriginalSources, 7);
   assert.equal(result.sourceVintageAudit.fixedEditionSources, 4);
   assert.equal(result.sourceVintageAudit.dynamicSourceSeries, 3);
