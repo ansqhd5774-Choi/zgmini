@@ -42,7 +42,14 @@
 .zg-schedule-company-logo{display:block;flex:none;width:14px;height:14px;max-width:14px;max-height:14px;min-width:14px;min-height:14px;overflow:visible}
 .zg-schedule-ticker-fallback{display:inline-flex;flex:none;align-items:center;justify-content:center;width:14px;height:14px;min-width:14px;max-width:14px;background:#24465b;border-radius:2px;color:#cbe0f4;font-size:7px;line-height:14px;font-weight:850;letter-spacing:-.6px}
 .zg-schedule-date{text-align:center;white-space:nowrap;font-size:10px;color:#a6c3d5;font-variant-numeric:tabular-nums;letter-spacing:-.15px}
-.zg-schedule-weekday{color:#ffc43d;font-weight:750}
+.zg-schedule-weekday{font-weight:750}
+.zg-schedule-weekday[data-day="일"]{color:#ff6a7a}
+.zg-schedule-weekday[data-day="월"]{color:#83c9ff}
+.zg-schedule-weekday[data-day="화"]{color:#ffa85e}
+.zg-schedule-weekday[data-day="수"]{color:#73dcb4}
+.zg-schedule-weekday[data-day="목"]{color:#f3d46a}
+.zg-schedule-weekday[data-day="금"]{color:#c3a3ff}
+.zg-schedule-weekday[data-day="토"]{color:#61d7e1}
 .zg-schedule-remaining{justify-self:stretch;display:block;text-align:center;white-space:nowrap;font:800 11px/1.2 Consolas,monospace;color:#ffe09a;background:#0d3044;padding:5px 2px;font-variant-numeric:tabular-nums}
 .zg-schedule-number{color:#ffe09a;font-weight:850}
 .zg-schedule-separator{color:#86b4d1;font-weight:700}
@@ -67,3 +74,16 @@
  .zg-schedule-date{font-size:9px}
  .zg-schedule-remaining{font-size:11px;padding:5px 2px}
 }
+
+/* Additive disclosure affordance and urgency text only. Do not alter bar / digit / row dimensions. */
+.zg-fomc-toggle-icon{position:absolute;top:50%;transform:translateY(-50%);width:16px;height:16px;color:#061b29;pointer-events:none;opacity:.96}
+.zg-fomc-toggle-left{left:9px}
+.zg-fomc-toggle-right{right:9px}
+@media(min-width:1024px){.zg-fomc-toggle-icon{width:19px;height:19px}.zg-fomc-toggle-left{left:12px}.zg-fomc-toggle-right{right:12px}}
+@media(max-width:359px){.zg-fomc-toggle-icon{width:14px;height:14px}.zg-fomc-toggle-left{left:6px}.zg-fomc-toggle-right{right:6px}}
+.zg-schedule-number.zg-fomc-day-2{color:#ffb555}
+.zg-schedule-number.zg-fomc-day-1{color:#ff797e}
+.zg-schedule-number.zg-fomc-day-0{color:#ff526b}
+.zg-fomc-clock.zg-fomc-day-2 .zg-fomc-clock-inner>.zg-fomc-pair:first-child .zg-fomc-digit{color:#ffb555}
+.zg-fomc-clock.zg-fomc-day-1 .zg-fomc-clock-inner>.zg-fomc-pair:first-child .zg-fomc-digit{color:#ff797e}
+.zg-fomc-clock.zg-fomc-day-0 .zg-fomc-clock-inner>.zg-fomc-pair:first-child .zg-fomc-digit{color:#ff526b}
