@@ -99,3 +99,9 @@
  .zg-dashboard[data-view="dashboard"] .zg-sector-period button{width:22px;min-width:22px}
  .zg-dashboard[data-view="dashboard"] .zg-sector-chart-legend.zg-sector-compact-legend .zg-sector-legend-name{font-size:9px;letter-spacing:-1.2px}
 }
+
+/* DASHBOARD LEGEND R2: prevent three-syllable names such as 에너지/부동산
+   from being clipped at the 1060px two-column card breakpoint.
+   Preserve the original single-row 42px legend and 120px chart. */
+.zg-sector-chart-legend.zg-sector-compact-legend button{overflow:visible}
+.zg-sector-chart-legend.zg-sector-compact-legend .zg-sector-legend-name{letter-spacing:-.85px}

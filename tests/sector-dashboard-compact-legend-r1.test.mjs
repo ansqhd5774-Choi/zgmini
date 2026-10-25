@@ -114,3 +114,11 @@ test('eleven compact legends fit full energy and real-estate names without reduc
  assert.match(css,/\.zg-sector-legend-score\{font-size:14px/);
  assert.doesNotMatch(css,/\.zg-sector-chart-legend\.zg-sector-compact-legend\{[^}]*overflow-x:auto/);
 });
+
+test('compact sector labels do not clip their outermost glyphs in 1060px cards',()=>{
+ const guard=css.split('/* DASHBOARD LEGEND R2: prevent three-syllable names')[1];
+ assert.ok(guard,'sector label clip guard missing');
+ assert.match(guard,/\.zg-sector-chart-legend\.zg-sector-compact-legend button\{overflow:visible\}/);
+ assert.match(guard,/\.zg-sector-chart-legend\.zg-sector-compact-legend \.zg-sector-legend-name\{letter-spacing:-\.85px\}/);
+ assert.doesNotMatch(guard,/grid-template-columns|height:|\.zg-sector-chart-plot\{/);
+});
