@@ -31,7 +31,7 @@ call :verify theme-optional-adaptive-r2.mjs f794f5a2005ab8da34fbd12b1e16e0519445
 if errorlevel 1 goto hash_mismatch
 call :verify theme-optional-pair-weight-r3.mjs bcaa39ef0351c5f65acaba2560c1234b215c43e223003742e919a9b01a0904d6
 if errorlevel 1 goto hash_mismatch
-call :verify theme-optional-relative-weight-r4.mjs da7f2d54329488bc6b61c2729a4c4d16b60da95b697c9f36784b86b769340af7
+call :verify theme-optional-relative-weight-r4.mjs 4474c6339273b8885333aa04102b4d0c8e4bf52dcb1201e249f9fc68e185c8e2
 if errorlevel 1 goto hash_mismatch
 call :verify theme-shared-spy-readonly-r1.mjs 663d3414fc49231b93f7f42071d8b2e9d219e11f8e50385d63066790e2db6f1d
 if errorlevel 1 goto hash_mismatch
