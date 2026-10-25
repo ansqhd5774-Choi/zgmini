@@ -1,35 +1,16 @@
 'use client';
 
-import { useCallback, useLayoutEffect, useRef, useState } from 'react';
+import { useCallback, useLayoutEffect, useRef } from 'react';
 import styles from './about-intro-popup.module.css';
+import { INTRO_BOOTSTRAP_SCRIPT, INTRO_POLICY, shouldShowIntroduction } from '../lib/about-intro-bootstrap.mjs';
 
-const DISMISSED_SESSION_KEY = 'zgmini-about-intro-dismissed-r1';
-const HIDDEN_UNTIL_KEY = 'zgmini-about-intro-hidden-until-r1';
-const SEVEN_DAYS_IN_MS = 7 * 24 * 60 * 60 * 1000;
-
-function shouldShowIntroduction(): boolean {
-  // The visitor is already reading the full introduction.
-  if (window.location.pathname.replace(/\/+$/, '') === '/about') return false;
-
-  try {
-    if (window.sessionStorage.getItem(DISMISSED_SESSION_KEY) === '1') return false;
-  } catch {
-    // Storage can be unavailable in privacy-restricted browsing contexts.
-  }
-
-  try {
-    const hiddenUntil = Number(window.localStorage.getItem(HIDDEN_UNTIL_KEY));
-    if (Number.isFinite(hiddenUntil) && hiddenUntil > Date.now()) return false;
-  } catch {
-    // Without persistent storage, the popup still remains dismissible.
-  }
-  return true;
-}
+const DISMISSED_SESSION_KEY = INTRO_POLICY.dismissedKey;
+const HIDDEN_UNTIL_KEY = INTRO_POLICY.hiddenKey;
+const SEVEN_DAYS_IN_MS = INTRO_POLICY.week;
 
 export default function AboutIntroPopup() {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const checkboxRef = useRef<HTMLInputElement>(null);
-  const [hiddenForWeek, setHiddenForWeek] = useState(false);
 
   const dismiss = useCallback(() => {
     try {
@@ -48,19 +29,25 @@ export default function AboutIntroPopup() {
     dialogRef.current?.close();
   }, []);
 
-  // Open before paint; unrelated passive data effects must not postpone the poster.
+  // SSR's parser-time script opens first. This also covers client navigation.
   useLayoutEffect(() => {
     const dialog = dialogRef.current;
-    if (!dialog || !shouldShowIntroduction()) return;
-    dialog.showModal();
+    if (!dialog) return;
+    dialog.dispatchEvent(new Event(INTRO_POLICY.hydratedEvent));
+    if (dialog.returnValue === INTRO_POLICY.dismissedValue) return;
+    if (!shouldShowIntroduction(window, INTRO_POLICY)) return;
+    if (!dialog.open) dialog.showModal();
     return () => {
       if (dialog.open) dialog.close();
     };
   }, []);
 
   return (
+    <>
     <dialog
+      id={INTRO_POLICY.dialogId}
       ref={dialogRef}
+      suppressHydrationWarning
       className={styles.dialog}
       aria-labelledby="zg-about-popup-title"
       aria-describedby="zg-about-popup-description"
@@ -92,6 +79,7 @@ export default function AboutIntroPopup() {
         </p>
         <a
           href="/about/"
+          data-intro-dismiss
           className={styles.introLink}
           onClick={dismiss}
           aria-label="개발자 이야기 전체보기"
@@ -103,17 +91,17 @@ export default function AboutIntroPopup() {
             ref={checkboxRef}
             className={styles.weekCheckbox}
             type="checkbox"
-            checked={hiddenForWeek}
-            onChange={(event) => setHiddenForWeek(event.target.checked)}
             aria-label="7일 동안 보지 않기"
           />
-          {hiddenForWeek && <span className={styles.checkmark} aria-hidden="true">✓</span>}
+          <span className={styles.checkmark} aria-hidden="true">✓</span>
           <span className={styles.screenReaderOnly}>7일 동안 보지 않기</span>
         </label>
-        <button type="button" className={styles.closeButton} onClick={dismiss} aria-label="닫기">
+        <button type="button" data-intro-dismiss className={styles.closeButton} onClick={dismiss} aria-label="닫기">
           <span className={styles.screenReaderOnly}>닫기</span>
         </button>
       </div>
     </dialog>
+    <script dangerouslySetInnerHTML={{ __html: INTRO_BOOTSTRAP_SCRIPT }} />
+    </>
   );
 }

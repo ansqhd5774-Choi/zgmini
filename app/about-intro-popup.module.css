@@ -73,6 +73,7 @@
 }
 
 .checkmark {
+  visibility: hidden;
   position: absolute;
   top: 30%;
   left: 1%;
@@ -84,6 +85,8 @@
   font: 900 clamp(12px, 1.4vw, 19px)/1 Arial, sans-serif;
   pointer-events: none;
 }
+
+.weekCheckbox:checked + .checkmark { visibility: visible; }
 
 .closeButton {
   right: 4.8%;

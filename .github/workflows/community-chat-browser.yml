@@ -6,6 +6,9 @@ on:
     paths:
       - 'components/community-chat.*'
       - 'app/page.tsx'
+      - 'app/about-intro-popup*'
+      - 'lib/about-intro-bootstrap.mjs'
+      - 'tests/about-intro-bootstrap-browser-r6.mjs'
       - 'app/layout.tsx'
       - 'app/sector-fear-greed/page.tsx'
       - 'app/theme-fear-greed/page.tsx'
@@ -92,6 +95,8 @@ jobs:
         run: node tests/fear-greed-education-browser-r4.mjs
       - name: Validate dashboard history period changes and newer snapshot refresh
         run: node tests/dashboard-history-browser-r5.mjs
+      - name: Validate introduction before hydration and dismissal preferences
+        run: node tests/about-intro-bootstrap-browser-r6.mjs
       - name: Upload browser UI evidence
         if: always()
         uses: actions/upload-artifact@v4
@@ -104,6 +109,7 @@ jobs:
             artifacts/dashboard-deferred-ui/
             artifacts/fear-greed-education/
             artifacts/dashboard-history/
+            artifacts/about-intro-bootstrap/
           if-no-files-found: warn
       - name: Show local dev errors on failure
         if: failure()

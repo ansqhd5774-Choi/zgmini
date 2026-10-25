@@ -8,22 +8,23 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const popup = readFileSync(path.join(root, 'app/about-intro-popup.tsx'), 'utf8');
 const styles = readFileSync(path.join(root, 'app/about-intro-popup.module.css'), 'utf8');
 const layout = readFileSync(path.join(root, 'app/layout.tsx'), 'utf8');
+const bootstrap = readFileSync(path.join(root, 'lib/about-intro-bootstrap.mjs'), 'utf8');
 
 test('site-wide introduction is connected and uses the approved artwork', () => {
   assert.match(layout, /<AboutIntroPopup\s*\/>/);
   assert.match(popup, /src="\/about-intro-popup-r1\.webp"/);
   assert.ok(statSync(path.join(root, 'public/about-intro-popup-r1.webp')).size > 10_000);
   assert.match(popup, /href="\/about\/"/);
-  assert.match(popup, /'\/about'/);
+  assert.match(bootstrap, /'\/about'/);
 });
 
 test('a dismissal lasts the current tab session, or seven days when selected', () => {
-  assert.match(popup, /window\.sessionStorage\.getItem\(DISMISSED_SESSION_KEY\)/);
+  assert.match(bootstrap, /target\.sessionStorage\.getItem\(policy.dismissedKey\)/);
   assert.match(popup, /window\.sessionStorage\.setItem\(DISMISSED_SESSION_KEY, '1'\)/);
-  assert.match(popup, /window\.localStorage\.getItem\(HIDDEN_UNTIL_KEY\)/);
+  assert.match(bootstrap, /target\.localStorage\.getItem\(policy.hiddenKey\)/);
   assert.match(popup, /checkboxRef\.current\?\.checked/);
   assert.match(popup, /Date\.now\(\) \+ SEVEN_DAYS_IN_MS/);
-  assert.match(popup, /7 \* 24 \* 60 \* 60 \* 1000/);
+  assert.match(bootstrap, /7 \* 24 \* 60 \* 60 \* 1000/);
   assert.match(popup, /dialogRef\.current\?\.close\(\)/);
 });
 
