@@ -1,5 +1,5 @@
 /**
- * AI investment BOT / stage04 research-input gate (prototype R7).
+ * AI investment BOT / stage04 research-input gate (prototype R8).
  *
  * Automatic read-only retrieval of the existing 9 theme F inputs and an
  * independent official industry observation. Do not silently promote either
@@ -10,16 +10,18 @@ import { resolve } from 'node:path';
 import { F_ENDPOINT, selectThemeF } from './latest-f-readonly.mjs';
 import { fetchLatestOfficialFedNow } from './fednow-official-readonly.mjs';
 import { fetchLatestEurostatCloud } from './eurostat-cloud-readonly.mjs';
+import { fetchLatestOfficialFdaCder } from './fda-cder-official-readonly.mjs';
+import { fetchLatestOfficialCpucAv } from './cpuc-av-official-readonly.mjs';
 
 export const INDUSTRY_CONTRACT = Object.freeze({
   '로봇·자동화': { institution: 'IFR', source: 'https://ifr.org/', review: 'SAME_VINTAGE_AND_RIGHTS_REVIEW' },
   '클라우드·SaaS': { institution: 'Eurostat', source: 'https://ec.europa.eu/eurostat/databrowser/view/isoc_cicce_use/', review: 'SPARSE_SURVEY_YEARS_AND_SOURCE_CREDIT' },
-  '자율주행': { institution: 'CPUC', source: 'https://www.cpuc.ca.gov/', review: 'LIMITED_GEOGRAPHY_AND_HISTORY' },
+  '자율주행': { institution: 'CPUC', source: 'https://www.cpuc.ca.gov/regulatory-services/licensing/transportation-licensing-and-analysis-branch/autonomous-vehicle-programs/quarterly-reporting', review: 'WAYMO_CALIFORNIA_ONLY_SHORT_YOY_HISTORY_AND_RIGHTS_REVIEW' },
   '원전·SMR': { institution: 'IAEA PRIS', source: 'https://pris.iaea.org/', review: 'STOCK_VS_FLOW_REQUIRES_APPROVAL' },
   '방산': { institution: 'SIPRI', source: 'https://www.sipri.org/about/terms-and-conditions', review: 'COMMERCIAL_RIGHTS_REVIEW' },
   '핀테크': { institution: 'Federal Reserve Financial Services', source: 'https://www.frbservices.org/resources/financial-services/fednow-service-resources/fednow-service-volume-value-statistics/', review: 'FEDNOW_ONLY_PROXY_AND_COMMERCIAL_RIGHTS_REVIEW' },
   '사이버보안': { institution: 'ENISA', source: 'https://www.enisa.europa.eu/', review: 'SURVEY_COHORT_COMPARABILITY' },
-  '바이오·신약': { institution: 'FDA CDER', source: 'https://www.fda.gov/media/190705/download', review: 'FDA_2025_SINGLE_VINTAGE_NOT_LIVE_PARSED' },
+  '바이오·신약': { institution: 'FDA CDER', source: 'https://www.fda.gov/media/190705/download', review: 'PINNED_2025_REPORT_REVIEW_NEXT_YEAR_AND_LIMITED_PROXY' },
   '데이터센터·전력': { institution: 'IEA', source: 'https://www.iea.org/', review: 'LONG_HISTORY_RAW_VALUES_UNAVAILABLE' },
 });
 
@@ -28,8 +30,12 @@ function errorCode(error) {
   return /^[-A-Z0-9_]+$/.test(code) ? code : 'SOURCE_READ_ERROR';
 }
 
-export async function runInvestmentBotInputGate({ fetchFn = fetch, asOfDate } = {}) {
-  const [fResult, fednowResult, eurostatResult] = await Promise.allSettled([
+export async function runInvestmentBotInputGate({
+  fetchFn = fetch, asOfDate,
+  fdaReader = fetchLatestOfficialFdaCder,
+  cpucReader = fetchLatestOfficialCpucAv,
+} = {}) {
+  const [fResult, fednowResult, eurostatResult, fdaResult, cpucResult] = await Promise.allSettled([
     (async () => {
       const response = await fetchFn(F_ENDPOINT, {
         signal: AbortSignal.timeout(15000), headers: { accept: 'application/json' },
@@ -42,11 +48,15 @@ export async function runInvestmentBotInputGate({ fetchFn = fetch, asOfDate } = 
     })(),
     fetchLatestOfficialFedNow({ fetchFn }),
     fetchLatestEurostatCloud({ fetchFn }),
+    fdaReader({ fetchFn }),
+    cpucReader({ fetchFn }),
   ]);
 
   const f = fResult.status === 'fulfilled' ? fResult.value : null;
   const fednow = fednowResult.status === 'fulfilled' ? fednowResult.value : null;
   const eurostat = eurostatResult.status === 'fulfilled' ? eurostatResult.value : null;
+  const fda = fdaResult.status === 'fulfilled' ? fdaResult.value : null;
+  const cpuc = cpucResult.status === 'fulfilled' ? cpucResult.value : null;
   const expected = Object.keys(INDUSTRY_CONTRACT);
   const themesByName = new Map(f?.themes?.map((theme) => [theme.theme, theme]) ?? []);
   const inputContractValid = f?.status === 'LIVE_F_OBSERVED'
@@ -58,6 +68,9 @@ export async function runInvestmentBotInputGate({ fetchFn = fetch, asOfDate } = 
     const contract = INDUSTRY_CONTRACT[name];
     const fednowObserved = name === '핀테크' && fednow !== null;
     const eurostatObserved = name === '클라우드·SaaS' && eurostat !== null;
+    const fdaObserved = name === '바이오·신약' && fda !== null;
+    const cpucObserved = name === '자율주행' && cpuc !== null;
+    const countObserved = fednowObserved ? fednow : fdaObserved ? fda : cpucObserved ? cpuc : null;
     return {
       theme: name,
       sentimentF: theme?.currentInput ?? null,
@@ -66,18 +79,22 @@ export async function runInvestmentBotInputGate({ fetchFn = fetch, asOfDate } = 
       industryInstitution: contract.institution,
       industryOfficialSource: contract.source,
       industryEvidenceState: fednowObserved ? 'LIVE_ORIGINAL_OBSERVATION'
-        : eurostatObserved ? 'LIVE_ORIGINAL_SPARSE_SURVEY' : 'NOT_AUTOMATICALLY_VERIFIED',
+        : eurostatObserved ? 'LIVE_ORIGINAL_SPARSE_SURVEY'
+          : fdaObserved ? 'LIVE_SOURCE_HASH_VALIDATED_FIXED_2025_REPORT'
+            : cpucObserved ? 'LIVE_ORIGINAL_QUARTERLY_AGGREGATE' : 'NOT_AUTOMATICALLY_VERIFIED',
       industryReviewFlag: contract.review,
-      industryObservationPeriod: fednowObserved ? fednow.observationPeriod
+      industryObservationPeriod: countObserved ? countObserved.observationPeriod
         : eurostatObserved ? String(eurostat.latestAvailableYear) : null,
-      industryRawCount: fednowObserved ? fednow.latestRawCount : null,
+      industryRawCount: countObserved?.latestRawCount ?? null,
       industryRawPercent: eurostatObserved ? eurostat.latestRawPct : null,
-      industryGrowthPct: fednowObserved ? fednow.yoyGrowthPct : null,
-      industryAccelerationPctPoints: fednowObserved ? fednow.sequentialYoyAccelerationPctPoints : null,
+      industryGrowthPct: countObserved?.yoyGrowthPct ?? null,
+      industryAccelerationPctPoints: countObserved?.sequentialYoyAccelerationPctPoints ?? null,
       industryTwoYearDeltaPctPoints: eurostatObserved ? eurostat.twoYearDeltaPctPoints : null,
       industryTwoYearWindowChangePctPoints: eurostatObserved ? eurostat.changeBetweenTwoYearWindowsPctPoints : null,
       provisionalIndustryProxy: fednowObserved ? 'FEDNOW_NETWORK_NOT_WHOLE_FINTECH'
-        : eurostatObserved ? 'EU_CLOUD_ADOPTION_NOT_GLOBAL_SAAS_REVENUE' : null,
+        : eurostatObserved ? 'EU_CLOUD_ADOPTION_NOT_GLOBAL_SAAS_REVENUE'
+          : fdaObserved ? 'FDA_CDER_NOVEL_APPROVALS_NOT_WHOLE_BIOTECH'
+            : cpucObserved ? 'CALIFORNIA_WAYMO_DRIVERLESS_ONLY_NOT_GLOBAL_AV' : null,
       approvedGrowthG: null,
       approvedDislocationD: null,
       approvedAttractivenessM: null,
@@ -87,10 +104,10 @@ export async function runInvestmentBotInputGate({ fetchFn = fetch, asOfDate } = 
   });
 
   return {
-    runType: 'INVESTMENT_BOT_STAGE04_INPUT_GATE_R7',
+    runType: 'INVESTMENT_BOT_STAGE04_INPUT_GATE_R8',
     runAtUtc: new Date().toISOString(),
     mode: 'READ_ONLY_RESEARCH_ONLY_NO_TRADE',
-    status: inputContractValid && fednow && eurostat
+    status: inputContractValid && fednow && eurostat && fda && cpuc
       ? 'LIVE_INPUT_PARTIAL_INDUSTRY_UNRANKED'
       : 'PARTIAL_OR_FAILED_INPUT_UNRANKED',
     inputContractValid,
@@ -102,7 +119,8 @@ export async function runInvestmentBotInputGate({ fetchFn = fetch, asOfDate } = 
       evaluatedAsOfKst: f?.evaluatedAsOfKst ?? null,
     },
     officialIndustry: {
-      validatedLiveThemes: Number(Boolean(fednow)) + Number(Boolean(eurostat)),
+      validatedLiveThemes: Number(Boolean(fednow)) + Number(Boolean(eurostat))
+        + Number(Boolean(fda)) + Number(Boolean(cpuc)),
       expectedThemes: expected.length,
       fednow: {
         state: fednow?.state ?? 'SOURCE_FAILED',
@@ -120,12 +138,29 @@ export async function runInvestmentBotInputGate({ fetchFn = fetch, asOfDate } = 
         missingYears: eurostat?.missingYears ?? null,
         twoYearComparisonYears: eurostat?.twoYearComparisonYears ?? null,
       },
+      fdaCder: {
+        state: fda?.state ?? 'SOURCE_FAILED',
+        failureCode: fdaResult.status === 'rejected' ? errorCode(fdaResult.reason) : null,
+        sourceSha256: fda?.sourceSha256 ?? null,
+        sourceDocumentYear: fda?.sourceDocumentYear ?? null,
+        historicalYoyReferenceCount: fda?.historicalYoyReferenceCount ?? null,
+        historicalAccelerationReferenceCount: fda?.historicalAccelerationReferenceCount ?? null,
+        refreshMode: fda?.dataRefreshMode ?? null,
+      },
+      cpucAv: {
+        state: cpuc?.state ?? 'SOURCE_FAILED',
+        failureCode: cpucResult.status === 'rejected' ? errorCode(cpucResult.reason) : null,
+        sourceArchivePeriods: cpuc?.sourceArchivePeriods ?? null,
+        historicalYoyReferenceCount: cpuc?.historicalYoyReferenceCount ?? null,
+        historicalAccelerationReferenceCount: cpuc?.historicalAccelerationReferenceCount ?? null,
+      },
     },
     themes: rows,
     automatedTradeEnabled: false,
     orderRequests: [],
     nextRequired: [
-      'Automate same-vintage official industry data for the other seven themes without changing registered metrics.',
+      'Automate same-vintage official industry data for the other five themes without changing registered metrics.',
+      'Review the next annual FDA report explicitly; the validated 2025 report is not a live 2026 observation.',
       'Resolve source rights and proxy limitations before published or commercial derivative scores.',
       'Receive explicit approval for historical sample minima, G/D/M formula weights and ranking.',
       'Keep stage13 human-order gate: do not connect brokerage or place any orders.',
