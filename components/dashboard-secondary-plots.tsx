@@ -1,7 +1,7 @@
 'use client';
 import {Area,AreaChart,CartesianGrid,Line,LineChart,ReferenceLine,ResponsiveContainer,Tooltip,XAxis,YAxis} from 'recharts';
 type Point={label:string;value:number};
-type IndicatorPlotItem={name:string;signal:string;chart:Point[];benchmark:number;unit:string};
+type IndicatorPlotItem={id:string;name:string;signal:string;chart:Point[];benchmark:number;unit:string};
 export function MiniIndicatorPlot({item}:{item:IndicatorPlotItem}){const color=item.signal==='positive'?'#059669':item.signal==='negative'?'#e11d48':'#64748b';return (<ResponsiveContainer width="100%" height="100%">
         <LineChart data={item.chart} margin={{top:5,right:3,bottom:5,left:3}}>
           <ReferenceLine y={item.benchmark} stroke="#94a3b8" strokeDasharray="3 3" ifOverflow="extendDomain" />
