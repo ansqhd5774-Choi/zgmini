@@ -34,13 +34,22 @@ test('mobile scores come from the saved API history and use existing five-band c
  assert.ok(css.includes('order:var(--zg-mobile-order)'));
 });
 
-test('a single selected sector reveals actual-period low high and current chart markers on mobile only',()=>{
+test('a single selected sector places low high and current callouts with guides inside the existing plot',()=>{
  const tsx=read('app/sector-fear-greed/sector-detail-charts.tsx');
  const css=read('app/sector-fear-greed/sector-detail.css');
  assert.ok(tsx.includes('visible.size===1?Array.from(visible)[0]:null'));
  assert.ok(tsx.includes('periodRows(rows,compareDays).flatMap'));
  assert.ok(tsx.includes('soloPoints.reduce'));
- assert.equal((tsx.match(/className="zg-sfg-solo-marker"/g)||[]).length,3);
+ assert.equal((tsx.match(/className="zg-sfg-solo-marker"/g)||[]).length,1);
+ assert.ok(tsx.includes('const labels=placeExtremaLabels(samples,markers.map'));
+ assert.ok(tsx.includes('const leader=extremaLeader(marker,position)'));
+ assert.ok(tsx.includes('<path data-leader-side={leader.side} d={leader.path}'));
+ assert.ok(tsx.includes('pointerEvents="none"'));
+ assert.ok(tsx.includes('const unique=candidates.filter'));
+ assert.ok(tsx.includes('shape={<SoloChartMarkers rows={soloPoints} low={soloLow} high={soloHigh} current={soloCurrent}/>}/>'));
+ assert.ok(!tsx.includes('label={{value:soloLow'));
+ assert.ok(!tsx.includes('label={{value:soloCurrent'));
  assert.ok(css.includes('.zg-sfg-solo-marker{display:none}'));
  assert.ok(css.includes('@media(max-width:680px){\n .zg-sfg-solo-marker{display:block}'));
+ assert.ok(css.includes('.zg-sfg-comparison-plot{height:126px;'));
 });

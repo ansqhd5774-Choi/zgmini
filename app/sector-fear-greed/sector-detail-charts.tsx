@@ -1,7 +1,8 @@
 'use client';
 import {type CSSProperties,useEffect,useMemo,useState} from 'react';
-import {CartesianGrid,Line,LineChart,ReferenceArea,ReferenceDot,ReferenceLine,ResponsiveContainer,Tooltip,XAxis,YAxis} from 'recharts';
+import {CartesianGrid,Line,LineChart,ReferenceArea,ReferenceDot,ReferenceLine,ResponsiveContainer,Tooltip,XAxis,YAxis,usePlotArea,useXAxisScale,useYAxisScale} from 'recharts';
 import {SECTORS,type SectorId,type SectorSentimentPoint,type SectorSnapshotMeta} from '../../components/sector-sentiment-chart';
+import {extremaLeader,placeExtremaLabels} from '../../lib/chart-extrema.mjs';
 
 const COLORS:Record<SectorId,string>={staples:'#a3e635',healthcare:'#2dd4bf',technology:'#38bdf8',materials:'#ff8729',utilities:'#b777ed',industrials:'#ffd438',communication:'#f15aa7',financials:'#ff6464',energy:'#9fb1c5',realEstate:'#16d8d7',discretionary:'#e76aba'};
 const NAMES:Partial<Record<SectorId,string>>={technology:'기술',communication:'통신서비스',discretionary:'경기소비재'};
@@ -44,6 +45,40 @@ function Sparkline({rows,id,provisionalDate}:{rows:SectorSentimentPoint[];id:Sec
   <Line dataKey={provisional?'solid':'value'} stroke={COLORS[id]} strokeWidth={1.7} dot={false} activeDot={{r:2.5}} connectNulls={false} isAnimationActive={false}/>{provisional&&<Line dataKey="dash" stroke={COLORS[id]} strokeDasharray="4 4" strokeWidth={1.7} dot={false} activeDot={{r:2.5}} connectNulls={false} isAnimationActive={false}/>}</LineChart></ResponsiveContainer></div>;
 }
 function Zones(){return <><ReferenceArea y1={0} y2={25} fill="#8d3048" fillOpacity={0.22}/><ReferenceArea y1={25} y2={45} fill="#9f6032" fillOpacity={0.18}/><ReferenceArea y1={45} y2={55} fill="#718092" fillOpacity={0.10}/><ReferenceArea y1={55} y2={75} fill="#348856" fillOpacity={0.17}/><ReferenceArea y1={75} y2={100} fill="#078b83" fillOpacity={0.18}/></>;}
+type SoloPoint={date:string;score:number};
+function SoloChartMarkers({rows,low,high,current}:{rows:SoloPoint[];low:SoloPoint;high:SoloPoint;current:SoloPoint}){
+ const plot=usePlotArea(),xScale=useXAxisScale(),yScale=useYAxisScale();
+ if(!plot||!xScale||!yScale)return null;
+ const candidates:[string,SoloPoint,string,string][]=[
+  ['min',low,'#ff7187','최저'],
+  ['max',high,'#47e3bb','최고'],
+  ['now',current,scoreColor(current.score),'현재'],
+ ];
+ // The current score can equal an extreme: one guide and one label per actual point.
+ const unique=candidates.filter(([,point],index)=>!candidates.slice(0,index).some(([,other])=>other.date===point.date&&other.score===point.score));
+ const markers=unique.flatMap(([kind,point,color,title])=>{
+  const x=xScale(point.date),y=yScale(point.score);
+  return typeof x==='number'&&typeof y==='number'?[{kind,...point,color,title,x,y}]:[];
+ });
+ const samples=rows.map(point=>{
+  const x=xScale(point.date),y=yScale(point.score);
+  return typeof x==='number'&&typeof y==='number'?{x,y}:null;
+ });
+ const labels=placeExtremaLabels(samples,markers.map(({kind,x,y})=>({kind,x,y})),plot);
+ return <g className="zg-sfg-solo-marker" pointerEvents="none">{markers.map(marker=>{
+  const label=labels.find(item=>item.kind===marker.kind);
+  const position={x:label?.x??marker.x,y:label?.y??marker.y};
+  const leader=extremaLeader(marker,position);
+  const isCurrent=marker.date===current.date&&marker.score===current.score;
+  return <g key={marker.kind} aria-label={`${marker.title}${isCurrent&&marker.kind!=='now'?'·현재':''} ${marker.score.toFixed(1)}점 (${marker.date.slice(5)})`} data-label-clear={label?.hits===0}>
+   <path data-leader-side={leader.side} d={leader.path} fill="none" stroke={marker.color} strokeWidth={.9} opacity={.85}/>
+   <circle cx={marker.x} cy={marker.y} r={3} fill={marker.color} stroke="#061d2c" strokeWidth={1}/>
+   <text x={position.x} y={position.y} textAnchor="middle" fill={marker.color} fontSize={10} fontWeight={750} stroke="#071a29" strokeWidth={3} paintOrder="stroke" strokeLinejoin="round">
+    <tspan x={position.x}>{marker.score.toFixed(1)}</tspan><tspan x={position.x} dy={11} fontWeight={500}>({marker.date.slice(5)})</tspan>
+   </text>
+  </g>;
+ })}</g>;
+}
 export default function SectorDetailCharts(){
  const [rows,setRows]=useState<SectorSentimentPoint[]|null>(null);
  const [snapshot,setSnapshot]=useState<SectorSnapshotMeta>();
@@ -99,9 +134,7 @@ export default function SectorDetailCharts(){
       <Line key={sector.id} dataKey={sector.id+'__solid'} name={nameOf(sector.id)} stroke={COLORS[sector.id]} hide={!visible.has(sector.id)} strokeWidth={1.9} dot={false} activeDot={{r:3}} connectNulls={false} isAnimationActive={false}/>,
       <Line key={sector.id+'-dash'} dataKey={sector.id+'__dash'} name={nameOf(sector.id)} stroke={COLORS[sector.id]} hide={!visible.has(sector.id)} strokeWidth={1.9} strokeDasharray="4 4" dot={false} activeDot={{r:3}} connectNulls={false} isAnimationActive={false}/>,
      ]:<Line key={sector.id} dataKey={sector.id} name={nameOf(sector.id)} stroke={COLORS[sector.id]} hide={!visible.has(sector.id)} strokeWidth={1.9} dot={false} activeDot={{r:3}} connectNulls={false} isAnimationActive={false}/>)}
-     {soloLow&&<ReferenceDot className="zg-sfg-solo-marker" x={soloLow.date} y={soloLow.score} r={3} fill="#ff7187" stroke="none" label={{value:soloLow.score.toFixed(1)+' ('+soloLow.date.slice(5)+')',position:'top',fill:'#ff7187',fontSize:9}}/>}
-     {soloHigh&&<ReferenceDot className="zg-sfg-solo-marker" x={soloHigh.date} y={soloHigh.score} r={3} fill="#47e3bb" stroke="none" label={{value:soloHigh.score.toFixed(1)+' ('+soloHigh.date.slice(5)+')',position:'bottom',fill:'#47e3bb',fontSize:9}}/>}
-     {soloCurrent&&<ReferenceDot className="zg-sfg-solo-marker" x={soloCurrent.date} y={soloCurrent.score} r={3} fill={scoreColor(soloCurrent.score)} stroke="none" label={{value:soloCurrent.score.toFixed(1),position:'top',fill:scoreColor(soloCurrent.score),fontSize:11,fontWeight:850}}/>}
+     {soloLow&&soloHigh&&soloCurrent&&<ReferenceDot x={soloCurrent.date} y={soloCurrent.score} ifOverflow="visible" shape={<SoloChartMarkers rows={soloPoints} low={soloLow} high={soloHigh} current={soloCurrent}/>}/>}
     </LineChart></ResponsiveContainer></div>
    </section>
   </div>
