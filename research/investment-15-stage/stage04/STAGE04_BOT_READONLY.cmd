@@ -1,8 +1,9 @@
 @echo off
 setlocal
-rem Stage 04 automatic evidence input gate (manual launch / no scheduler).
+rem Stage 04 R18 common-source preflight (manual launch / no scheduler).
+rem One fixed source per field. Historical R17 readers are research-only.
 rem Read-only: no orders, DB writes, Cloudflare publishing or formula changes.
-set "ZG_BOT_SCRIPT=%~dp0investment-bot-gate-readonly.mjs"
+set "ZG_BOT_SCRIPT=%~dp0common-source-gate-readonly.mjs"
 if not exist "%ZG_BOT_SCRIPT%" (
     echo STAGE04_BOT_SCRIPT_MISSING
     exit /b 2
