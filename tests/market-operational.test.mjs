@@ -12,6 +12,18 @@ function fixture(){
 }
 const now=Date.parse('2026-09-30T00:00:00Z');
 const score={status:'SUCCESS',domains:Array.from({length:12},(_,i)=>({id:String(i),score:i===0?0:null})),overall:{score:null,status:'PARTIAL'}};
+
+test('failed or empty credit acquisition preserves the last valid batch and does not calculate',async()=>{
+ const old={external:{dvpRepoRows:[{observationDate:'2026-09-29',value:0}],triPartyRepoRows:[{observationDate:'2026-09-29',value:0}],cmdiRows:[{observationDate:'2026-09-25',market:0,hy:0,ig:0}]}};
+ for(const candidate of [{external:{dvpRepoRows:[],triPartyRepoRows:[],cmdiRows:[]}},{external:{...old.external,cmdiRows:[]}}]){
+  const {store,db,sqlite}=fixture();await store.writeInput('credit',old,now-1);await store.writeScore(score,now-1);
+  const out=await runMarketOperationalRefresh({env:{DB:db},store,job:'credit',now,collectors:{credit:async()=>candidate},calculate:()=>{throw Error('MUST_NOT_CALCULATE')}});
+  assert.deepEqual(out,{status:'SOURCE_FAILED',job:'credit',reason:'CREDIT_INPUT_NOT_VALID'});
+  assert.deepEqual((await store.readInput('credit')).body,old);assert.equal((await store.readInput('credit')).storedAt,now-1);
+  assert.equal((await store.readScore()).storedAt,now-1);
+  assert.equal(sqlite.prepare("SELECT status FROM market_collection_jobs_v1 WHERE job='credit'").get().status,'SOURCE_FAILED');sqlite.close();
+ }
+});
 test('BIS failures and empty successful responses never write or calculate',async()=>{
  for(const status of ['REQUEST_FAILED','HTTP_ERROR','QUOTA_EXCEEDED','READY_CURRENT_VINTAGE_RAW']){
   const {store,db,sqlite}=fixture();
