@@ -1,6 +1,6 @@
 'use client';
 import {type CSSProperties,useEffect,useMemo,useState} from 'react';
-import {CartesianGrid,Line,LineChart,ReferenceArea,ReferenceLine,ResponsiveContainer,Tooltip,XAxis,YAxis} from 'recharts';
+import {CartesianGrid,Line,LineChart,ReferenceArea,ReferenceDot,ReferenceLine,ResponsiveContainer,Tooltip,XAxis,YAxis} from 'recharts';
 import {SECTORS,type SectorId,type SectorSentimentPoint,type SectorSnapshotMeta} from '../../components/sector-sentiment-chart';
 
 const COLORS:Record<SectorId,string>={staples:'#a3e635',healthcare:'#2dd4bf',technology:'#38bdf8',materials:'#ff8729',utilities:'#b777ed',industrials:'#ffd438',communication:'#f15aa7',financials:'#ff6464',energy:'#9fb1c5',realEstate:'#16d8d7',discretionary:'#e76aba'};
@@ -83,6 +83,13 @@ export default function SectorDetailCharts(){
  const provisional=Boolean(provisionalDate&&latest.date===provisionalDate&&rows.length>1);
  const compareRows=periodRows(rows,compareDays).map((row,index,array)=>({...row,...Object.fromEntries(SECTORS.flatMap(({id})=>[[id+'__solid',provisional&&index===array.length-1?null:row[id]],[id+'__dash',provisional&&index>=array.length-2?row[id]:null]]))}));
  const detailRows=periodRows(rows,detailDays).map((row,index,array)=>({...row,solid:provisional&&index===array.length-1?null:row[active.id],dash:provisional&&index>=array.length-2?row[active.id]:null}));
+ const soloId=visible.size===1?Array.from(visible)[0]:null;
+ const soloPoints=soloId?periodRows(rows,compareDays).flatMap(row=>{
+  const value=row[soloId];return typeof value==='number'?[{date:row.date,score:value}]:[];
+ }):[];
+ const soloLow=soloPoints.reduce<(typeof soloPoints)[number]|null>((best,point)=>!best||point.score<best.score?point:best,null);
+ const soloHigh=soloPoints.reduce<(typeof soloPoints)[number]|null>((best,point)=>!best||point.score>best.score?point:best,null);
+ const soloCurrent=soloPoints.at(-1);
  const toggle=(id:SectorId)=>setVisible(previous=>{const next=new Set(previous);if(next.has(id))next.delete(id);else next.add(id);return next;});
  return <div className="zg-sfg-content">
   <p className="zg-sfg-as-of">기준일&nbsp; {latest.date.replaceAll('-','.')}</p>
@@ -111,6 +118,9 @@ export default function SectorDetailCharts(){
       <Line key={sector.id} dataKey={sector.id+'__solid'} name={nameOf(sector.id)} stroke={COLORS[sector.id]} hide={!visible.has(sector.id)} strokeWidth={1.9} dot={false} activeDot={{r:3}} connectNulls={false} isAnimationActive={false}/>,
       <Line key={sector.id+'-dash'} dataKey={sector.id+'__dash'} name={nameOf(sector.id)} stroke={COLORS[sector.id]} hide={!visible.has(sector.id)} strokeWidth={1.9} strokeDasharray="4 4" dot={false} activeDot={{r:3}} connectNulls={false} isAnimationActive={false}/>,
      ]:<Line key={sector.id} dataKey={sector.id} name={nameOf(sector.id)} stroke={COLORS[sector.id]} hide={!visible.has(sector.id)} strokeWidth={1.9} dot={false} activeDot={{r:3}} connectNulls={false} isAnimationActive={false}/>)}
+     {soloLow&&<ReferenceDot className="zg-sfg-solo-marker" x={soloLow.date} y={soloLow.score} r={3} fill="#ff7187" stroke="none" label={{value:soloLow.score.toFixed(1)+' ('+soloLow.date.slice(5)+')',position:'top',fill:'#ff7187',fontSize:9}}/>}
+     {soloHigh&&<ReferenceDot className="zg-sfg-solo-marker" x={soloHigh.date} y={soloHigh.score} r={3} fill="#47e3bb" stroke="none" label={{value:soloHigh.score.toFixed(1)+' ('+soloHigh.date.slice(5)+')',position:'bottom',fill:'#47e3bb',fontSize:9}}/>}
+     {soloCurrent&&<ReferenceDot className="zg-sfg-solo-marker" x={soloCurrent.date} y={soloCurrent.score} r={3} fill={scoreColor(soloCurrent.score)} stroke="none" label={{value:soloCurrent.score.toFixed(1),position:'top',fill:scoreColor(soloCurrent.score),fontSize:11,fontWeight:850}}/>}
     </LineChart></ResponsiveContainer></div>
    </section>
    <section className="zg-sfg-detail" aria-label={nameOf(active.id)+' 개별 차트와 변화량'}>
