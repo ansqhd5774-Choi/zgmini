@@ -112,11 +112,11 @@ test('dashboard theme initially shows only the leftmost highest one and opens it
  assert.match(shared,/list\.scrollLeft=0/);
  assert.match(shared,/const toggleThemePickerItem=\(id:string\)=>setHidden\(previous=>\{/);
 });
-test('dashboard sector initially enables only the rightmost lowest-score item and preserves later manual toggles',()=>{
+test('dashboard sector initially enables only the leftmost highest-score item and preserves later manual toggles',()=>{
  const shared=fs.readFileSync('components/sector-sentiment-chart.tsx','utf8');
  assert.match(shared,/const dashboardSectorDefaultApplied=useRef\(false\);/);
- assert.match(shared,/const rightmost=legendSeries\.at\(-1\);/);
- assert.match(shared,/setHidden\(new Set\(series\.filter\(\(\{id\}\)=>id!==rightmost\.id\)\.map\(\(\{id\}\)=>id\)\)\)/);
+ assert.match(shared,/const highest=legendSeries\.at\(0\);/);
+ assert.match(shared,/setHidden\(new Set\(series\.filter\(\(\{id\}\)=>id!==highest\.id\)\.map\(\(\{id\}\)=>id\)\)\)/);
  assert.match(shared,/if\(compactSectorScores\)dashboardSectorDefaultApplied\.current=true/);
  assert.match(shared,/dashboardThemeScores\?series\.map\(item=>item\.id\):\[\]/);
 });
