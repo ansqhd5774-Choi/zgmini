@@ -27,8 +27,11 @@ export function scoreRelativeThemeBasket({etfs}={}){
    throw Error('THEME_R4_INSUFFICIENT_REAL_SESSIONS');
   if(typeof etf.score!=='number'||!Number.isFinite(etf.score)||etf.score<0||etf.score>100)
    throw Error('THEME_R4_MISSING_ACTUAL_ADAPTIVE_SCORE');
-  const expected=etf.sessions<PARITY_SESSIONS?'ADAPTIVE_PROVISIONAL':'R188_COMPATIBLE';
-  if(etf.status!==expected)
+  // The scorer proves parity from real indicator sample counts, not merely N.
+  // Missing SPY dates / holes can keep N>=377 provisional (or make the
+  // intersection-N shorter than the scorer's valid indicator history).
+  // Never overwrite the actual R2 status with a maturity-only guess.
+  if(!['ADAPTIVE_PROVISIONAL','R188_COMPATIBLE'].includes(etf.status))
    throw Error('THEME_R4_SCORER_PARITY_NOT_VERIFIED');
   return {symbol:etf.symbol,score:etf.score,sessions:etf.sessions,
    effectiveSessions:Math.min(etf.sessions,PARITY_SESSIONS),
