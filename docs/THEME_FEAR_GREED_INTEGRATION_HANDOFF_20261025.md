@@ -178,3 +178,12 @@
 - **합성 fixture 성적만**: UFO 656일 + NASA 144일 + SPY 656일로 R8 **29점 → R9 105점**, 새 실측 가능 일자 76점 증가, 기존 R3 유효 29점 전부 점수 일치. 새 2·3·4·5·10종 ETF 일반형 테스트. 이는 실제 사용자 PC 결과를 의미하지 않으며 실제 데이터 결측·장중 proxy 차이로 숫자가 달라질 수 있다. Node 테스트 총 8개 파일 PASS (R2/R3/R4/R8/SPY/R9).
 - R9 단독 CMD는 기존 E: 경로를 **읽기만** 하고, SHA-pinned 8개 JS 전체가 같은 Desktop 압축해제 폴더에 있어야 실행된다. 로그는 CMD 폴더 `SPACE_SATELLITE_R9_PRIVATE_SHADOW_RESULT.txt` 생성(가격 원본/민감 정보 출력하지 않음). ZIP `SPACE_SATELLITE_R9_PRIVATE_SHADOW_CMD.zip` 압축 9파일 무결성 테스트 PASS. 사용자는 Windows CMD만 실행.
 - R4-A는 최종 상대비중 확정/배포 **미승인**, ETF 최종 편입·보유종목 중복·라이선스/파생 공개 권리 **미확정**. R9 PC 실측 로그 수령·수치검토 이후 별도 승인 게이트. PR #714은 Draft 보존, main 병합 및 Cloudflare 자동배포 **불가**.
+
+
+## 2026-10-25 R9 실데이터 BLOCKED 분석 및 비공개 패치
+
+- 사용자 PC 제출 `SPACE_SATELLITE_R9_PRIVATE_SHADOW_RESULT.txt`: `status=BLOCKED`, `reason=THEME_R4_SCORER_PARITY_NOT_VERIFIED`. 소스 파일 SHA 검사 단계는 지나갔으며 Provider GET 0, 공개/D1/Scheduler 쓰기 0. **실데이터 105일 점수 검증 PASS로 보고하면 안 됨**. 원본 재수집·R8 재실행도 불필요.
+- 코드에서 확인한 원인: 초기 R4가 `N < 377 ⇒ ADAPTIVE_PROVISIONAL, N ≥ 377 ⇒ R188_COMPATIBLE`을 강제했으나, 실제 R2의 R188 동등성은 **각 세부 지표의 252 유효 관측값 충족**으로 판정된다. 실제 결측/ETF-SPY 기준일 차이 때문에 N과 산식 동등성 상태가 서로 달라질 수 있다. 이것은 가격/점수 자체가 틀렸다는 증거가 아니라 **과도한 인터페이스 검증 조건**의 문제다. 사용자의 가격파일 내용과 첫 불일치 날짜는 제공받지 않았으므로 임의 추정 금지.
+- 비공개 수정: `theme-optional-relative-weight-r4.mjs`에서 수치식·실제 가격·각 ETF 점수는 **그대로**, R2가 실제 출력한 유효 상태 `ADAPTIVE_PROVISIONAL` 또는 `R188_COMPATIBLE`만 받아들인다. `N≥40`, 점수 0–100 실제 존재, 중복 티커 차단, 미확인 상태 거절 등은 유지. 현존 테스트에 N600인데 잠정 상태인 결측 ETF 사례 및 N370이지만 점수 호환인 사례를 추가했다.
+- R9 결측 UFO 데이터 합성 케이스, 기존 R3 long+short 비중 불변, R8 비회귀, 2/3/4/5/10 ETF 배열 공통 가중치 확인. 로컬 Node 테스트 8파일 **PASS**. 기존 승인/생산 파일 R8, R3, R2와 9개 공개 테마 변경 0. R9 CMD의 R4 SHA pin만 갱신한 **R9 재검증 ZIP** 필요. GitHub CI와 실제 PC 재검증은 별도.
+- 다음 사용자가 직접 실행할 작업: 최신 R9 ZIP의 Windows CMD로 기존 저장 UFO/NASA/SPY를 읽는 감사 1회 재실행 후 `SPACE_SATELLITE_R9_PRIVATE_SHADOW_RESULT.txt`만 전달. 재수집/새 Provider 호출 금지. R4 함수 자체는 3개 이상 비중 최종 승인 전이며 main/D1/publication/Cloudflare 변경 금지, PR #714 Draft 유지.
