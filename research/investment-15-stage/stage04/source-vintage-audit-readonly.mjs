@@ -1,5 +1,5 @@
 /**
- * Stage 04 source-vintage audit (R12). No network call, persistence, score,
+ * Stage 04 source-vintage audit (R12/R13). No network call, persistence, score,
  * ranking or market-data reconstruction. Consumes the just-completed live
  * gate result to distinguish source retrieval from observation/publication.
  */
@@ -20,7 +20,10 @@ function sourcePublication(themes, official) {
   const data = {
     'Federal Reserve Financial Services': { pageLastUpdatedText: official?.fednow?.sourcePageLastUpdated ?? null },
     Eurostat: { datasetUpdatedAt: official?.eurostat?.sourceUpdatedAt ?? null },
-    'FDA CDER': { documentYear: official?.fdaCder?.sourceDocumentYear ?? null },
+    'FDA CDER': {
+      documentYear: official?.fdaCder?.sourceDocumentYear ?? null,
+      newerPeriodCatalogAlert: official?.fdaEditionCatalog?.editionAlert ?? 'UNVERIFIED',
+    },
     CPUC: {},
     IFR: { documentYear: official?.ifrRobots?.sourceDocumentYear ?? null },
     IEA: { documentYear: official?.ieaDataCentres?.sourceDocumentYear ?? null },
@@ -33,9 +36,21 @@ function sourcePublication(themes, official) {
   return data[themes.industryInstitution] ?? {};
 }
 
+function pinnedCurrencyState(institution, catalogAlert) {
+  if (institution !== 'FDA CDER') return 'PINNED_EDITION_NEWER_EDITION_NOT_AUTO_DETECTED';
+  if (catalogAlert === 'NEWER_CURRENT_YEAR_PARTIAL_LISTING_NOT_ANNUAL_REPORT') {
+    return 'CURRENT_YEAR_LISTING_FOUND_PINNED_REPORT_STILL_LAST_VALIDATED';
+  }
+  if (catalogAlert === 'NEWER_COMPLETED_YEAR_LISTED_ANNUAL_REPORT_REVIEW_REQUIRED') {
+    return 'COMPLETED_YEAR_LISTING_FOUND_PINNED_REPORT_REVIEW_REQUIRED';
+  }
+  if (catalogAlert === 'NO_LATER_APPROVAL_YEAR_LISTED') return 'YEAR_INDEX_CHECKED_NO_LATER_LISTING_ANNUAL_CURRENCY_UNVERIFIED';
+  return 'PINNED_EDITION_NEWER_EDITION_NOT_AUTO_DETECTED';
+}
+
 export function auditStage04SourceVintage(gate) {
   if (!gate || !Array.isArray(gate.themes) || gate.themes.length !== 9
-    || !/^INVESTMENT_BOT_STAGE04_INPUT_GATE_R1[12]$/.test(gate.runType ?? '')
+    || !/^INVESTMENT_BOT_STAGE04_INPUT_GATE_R1[123]$/.test(gate.runType ?? '')
     || !/^\d{4}-\d{2}-\d{2}T/.test(gate.runAtUtc ?? '')) {
     throw new Error('SOURCE_VINTAGE_INVALID_GATE_CONTRACT');
   }
@@ -60,9 +75,10 @@ export function auditStage04SourceVintage(gate) {
       pageLastUpdatedText: pub.pageLastUpdatedText ?? null,
       datasetUpdatedAt: pub.datasetUpdatedAt ?? null,
       sourceDocumentYear: pub.documentYear ?? null,
+      newerPeriodCatalogAlert: pub.newerPeriodCatalogAlert ?? null,
       gateCompletedAtUtc: gate.runAtUtc,
       editionCurrencyState: !originalObserved ? 'UNVERIFIED_OR_RIGHTS_BLOCKED'
-        : pinned ? 'PINNED_EDITION_NEWER_EDITION_NOT_AUTO_DETECTED'
+        : pinned ? pinnedCurrencyState(row.industryInstitution, pub.newerPeriodCatalogAlert)
           : 'LIVE_SERIES_FRESHNESS_LIMITED_TO_SOURCE_RESPONSE',
       latestEditionVerified: false,
       approvedGrowthG: null,
