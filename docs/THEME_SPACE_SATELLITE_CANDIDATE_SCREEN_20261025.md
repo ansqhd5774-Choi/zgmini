@@ -84,12 +84,21 @@
 - 신규 `theme-optional-pair-weight-r3.mjs`: OR 우선순위와 **장기 ≥628 + 단기 40~376**만 70:30→50:50, 단기 N≥377의 **실제 R188-compatible 검증 상태**에서 50:50. 두 ETF 모두 단기이거나 377+의 동등성 미검증인 경우 조합점수 산출 차단.
 - 신규 `theme-space-satellite-adaptive-r2.mjs`: UFO+NASA 우선 검증 한 조합만, SHA manifest/로컬 가격 read-only, 뉴욕 시간봉 정규화, 당일 N별 가중치, 결측 보존. 실제 PC 수집 원자료 **아직 미실행**.
 - 기존 `theme-optional-collect.mjs`: 기존 3개 테마 대상 목록·수집 절차는 그대로 두고 `space-satellite: UFO,NASA,SPY` 추가. 실 Provider 호출 전에는 임의 스케줄 등록/게시 없음.
-- 로컬 Node test: R2·비공개 감사 9건, OR·가중치 4건, bounded 수집 mock 1건 = **합성/모의 14건 PASS**. 장기 ETF 실제 N<628 / 신생 ETF N<40에서 합성 점수 생성 금지 추가 검증. 운영·실데이터·공개 PASS 아님.
+- 로컬 Node test: R2·비공개 감사 10건, OR·가중치 4건, bounded 수집 mock 1건, PC R5 원본 보존 Stage 1건, Windows CMD 형식 1건 = **합성/모의 17건 PASS**. 장기 ETF 실제 N<628 / 신생 ETF N<40에서 합성 점수 생성 금지, 이전 ROKT/ARKX 원자료 목록 보존 추가 검증. 운영·실데이터·공개 PASS 아님.
 - 현재 PR: https://github.com/ansqhd5774-Choi/zgmini/pull/711 (Draft, main 미병합). 기존 PR #709 전체 병합 금지 유지.
+
+## 5-B. 실제 PC 자료 확인용 R5 CMD 준비 (미실행)
+
+- Desktop 배치 `scripts/pc-writer/theme-space-satellite-r5-preflight.cmd`는 **비공개 진단 전용**. 실행 결과는 CMD와 같은 폴더의 `SPACE_SATELLITE_R5_RESULT.txt` 하나로 출력한다.
+- Stage helper `theme-space-satellite-r5-preflight.mjs` 다운로드는 GitHub 불변 커밋 `6770912321ca70c842fc618b45b10fa591b0f099`으로 고정, SHA256 `430b556baf02f1a27529520efaf90abc7cd172b636efd5e30d0b1694253ae260` 비교 후에만 실행한다.
+- helper가 5개 소스 코드를 취득하는 불변 SHA는 `d82329419a95eb0b77a638c475c7365b3627c2a7`. 각 코드의 개별 SHA256을 고정해 실제 GitHub raw 응답이 일치함을 확인했다. 다르면 즉시 중단한다.
+- 코드는 기존 테마와 같은 `E:/ZGmini/projects/zgmini-theme-optional/releases/<SHA>/` **신규 격리 릴리스**에만 저장하고 기존 실행 파일은 덮어쓰지 않는다. 기존에 동일 SHA 릴리스가 있다면 원본 매니페스트와 SHA를 읽기 검증한다.
+- 먼저 `E:/ZGmini/data/themes/space-satellite/`의 manifest·체크포인트를 확인하고, 실제 가격이 있을 때만 SHA를 검산해 UFO+NASA의 날짜별 coverage를 비공개 보고한다. **Provider ETF 호출 0, D1/공개 쓰기 0, Scheduler 변경 0**.
+- PC CMD와 source staging에 대한 Windows 실측은 아직 없으므로 `PC_PREFLIGHT_NOT_EXECUTED`. 빈 raw라면 `RAW_MANIFEST_NOT_FOUND`를 정상 진단 결과로 남기며, 수집 성공/점수 PASS라고 주장하지 않는다. 실패 시 로그 확인 전 자동 재시도 금지.
 
 ## 6. 권리·완료 판정
 
 - GetMarketHistory 2026-10-19 Terms는 정상 계정 조건 아래 raw bar를 재구성할 수 없도록 만든 파생 지표·차트 배포를 허용하고, 원가격 bulk 재배포는 금지한다. https://getmarkethistory.com/docs/terms
 - 위 문구는 사용자 계정/무료 수집 경로/현재 라이선스 범위의 실제 검증을 대신하지 않는다. provider catalog에 있다는 이유로 `derivedLicenseVerified=true`를 설정하지 않는다.
-- 현재 Evidence 상태: `PUBLIC_SYMBOL_CATALOG_PASS / SAMPLE_1H_API_3_OF_3_HTTP200 / PRIVATE_FIXTURE_TEST_14_OF_14_PASS / REAL_BAR_COMMON_SESSION_COUNT_UNKNOWN / PC_REAL_SCORE_NOT_RUN / PAIR_NOT_FINAL / PUBLICATION_NOT_AUTHORIZED`.
+- 현재 Evidence 상태: `PUBLIC_SYMBOL_CATALOG_PASS / SAMPLE_1H_API_3_OF_3_HTTP200 / PRIVATE_FIXTURE_TEST_17_OF_17_PASS / R5_CMD_READY_PC_NOT_RUN / REAL_BAR_COMMON_SESSION_COUNT_UNKNOWN / PC_REAL_SCORE_NOT_RUN / PAIR_NOT_FINAL / PUBLICATION_NOT_AUTHORIZED`.
 - **GitHub Draft의 코드 테스트 성공은 PC 원가격 수집·실측 계산·운영 설치·데이터 게시·Cloudflare 배포·자동 갱신 완료가 아니다.**
