@@ -53,6 +53,7 @@
 .zg-sfg-legend button{display:inline-flex;align-items:center;gap:7px;padding:3px 0;border:0;background:transparent;color:#b8cada;font-size:11px;white-space:nowrap;cursor:pointer}
 .zg-sfg-legend button[aria-pressed=false]{opacity:.38}
 .zg-sfg-legend i{width:10px;height:10px}
+.zg-sfg-legend-name{font-size:15px}
 .zg-sfg-comparison-plot{height:251px;min-width:0}
 .zg-sfg-tooltip{background:#092b3a;border:1px solid #527488;border-radius:5px;padding:8px 12px;color:#e9f4ff;font-size:12px;box-shadow:0 8px 24px #0006}
 .zg-sfg-spark-tooltip{min-width:132px;white-space:nowrap}
@@ -132,7 +133,7 @@
  .zg-sfg-legend button[aria-pressed=false] .zg-sfg-legend-name{opacity:.85}
  .zg-sfg-legend button[aria-pressed=true]{background:#12505a}
  .zg-sfg-legend i{width:6px;height:6px;margin-right:0;flex:0 0 6px}
- .zg-sfg-legend-name{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:clip;letter-spacing:-.055em}
+ .zg-sfg-legend-name{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:clip;letter-spacing:-.055em;font-size:9px}
  .zg-sfg-legend-score{display:block;margin-left:auto;flex:0 0 auto;font-size:9px;letter-spacing:-.03em;font-variant-numeric:tabular-nums}
  .zg-sfg-comparison-plot{height:126px;min-width:0;background:#062334}
  .zg-sfg-mobile-ranking-title{display:block;margin:6px 0 0;color:#f1f7fd;font-size:14px;line-height:20px;font-weight:850}
