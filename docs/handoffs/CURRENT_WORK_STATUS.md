@@ -30,17 +30,29 @@
 
 ### 미검증 상태 (PASS 선언 금지)
 
-- [ ] Cloudflare Git Integration의 정확한 Production deployment SHA/상태
-- [ ] `https://zgmini.kr/` 실제 공개 화면에서 기본 접힘 및 두 번째 클릭 복귀
-- [ ] PC·모바일 화면의 카드/링크 열 수, 가독성, 가로 넘침
-- [ ] 공개 서버 HTML에 설명 4개와 내부 링크 8개가 보존됐는지 확인
+- [x] Cloudflare Git Integration의 정확한 Production deployment SHA/상태
+- [x] `https://zgmini.kr/` 실제 공개 화면에서 기본 접힘 및 두 번째 클릭 복귀
+- [x] PC·모바일 화면의 카드/링크 열 수, 가독성, 가로 넘침
+- [x] 공개 서버 HTML에 설명 4개와 내부 링크 8개가 보존됐는지 확인
+
+## 2026-10-25 운영 검증 기록
+
+- **배포 출처**: Cloudflare Workers `zgmini-migration-candidate-r5` / Production / 커스텀 도메인 `zgmini.kr`.
+- **정확한 소스**: GitHub `main` 커밋 `f9312d5069754dc82b4d5a93cc7712dbdac4b640`, PR #713.
+- **Cloudflare 최신 배포**: 버전 `5065c650`, 상태 `Ready`; [hosted build #31d6fd84](https://dash.cloudflare.com/6e9b57e718b247330a6efa42a9516e95/workers/services/view/zgmini-migration-candidate-r5/production/builds/31d6fd84-0f99-49ec-b5f7-98524b72d26d)에서 `main`과 위 커밋 확인.
+- **공개 HTTP**: `https://zgmini.kr/` GET 200.
+- **서버 원본 HTML**: `<details>` 기본 접힘, `<summary>` 1개, 질문 카드 `<article>` 4개, `<a>` 8개, 질문 원문 4개 존재 확인.
+- **실제 브라우저 상호작용**: 첫 클릭 펼침, 다음 클릭 접힘, 다시 펼침 확인.
+- **PC 1280px**: 카드 2열, 링크 4열, 링크 높이 36px, 전체 문서 가로 넘침 없음.
+- **모바일 390px**: 카드 1열, 링크 2열, 카드/버튼 개별 가로 넘침 없음. 보이는 문서 너비 375px / viewport 390px.
+- **변경**: 운영 코드·산식·DB·API·DNS·Scheduler 변경 0. 이번 실행은 읽기 전용 검증과 브랜치 문서 기록만 수행함.
+- **결론**: 대시보드 SEO 안내 개선 요청 범위 **PRODUCTION_VERIFIED**. 이 작업을 이유로 재배포하지 않는다.
 
 ## 다음 실행
 
-1. 최신 main·전용 브랜치 HEAD와 Production 배포 상태 재확인
-2. 공개 페이지 PC·모바일에서 접기/펼치기·원문·링크 실증
-3. 이상이 있을 때만 최소 수정 → 전용 브랜치 기록 → 범위 제한 PR → 자동배포 → 공개 재검증
-4. 테스트·배포·Runtime 증거가 확보될 때마다 이 파일의 체크박스와 SHA를 갱신
+1. 대시보드 SEO 접이식 안내는 검증 완료. 추가 변경 지시가 없으면 재작업하지 않는다.
+2. 다음 사용자 요청 시 신규 범위를 별도로 확정하고 최신 `main` 및 이 전용 브랜치 기록을 확인한다.
+3. 새로운 작업마다 실행 증거와 완료/미완료/다음 실행 항목을 별도 섹션에 지속 갱신한다.
 
 ## 참고 문서와 범위 주의
 
