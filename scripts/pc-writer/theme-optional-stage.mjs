@@ -41,6 +41,8 @@ const FILES = Object.freeze([
   'worker/theme-data-center-power-r1.mjs',
   'worker/theme-etf-rolling-public.mjs',
   'worker/public-feed-store.mjs',
+  'worker/public-feed-input-safety.mjs',
+  'lib/cnn-index.mjs',
   'worker/public-display-freshness.mjs',
   'lib/market-score/theme-etf-provisional.mjs',
 ]);
