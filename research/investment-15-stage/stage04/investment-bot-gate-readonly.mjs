@@ -1,5 +1,5 @@
 /**
- * AI investment BOT / stage04 research-input gate (prototype R16).
+ * AI investment BOT / stage04 research-input gate (prototype R17).
  *
  * Automatic read-only retrieval of the existing 9 theme F inputs and an
  * independent official industry observation. Do not silently promote either
@@ -20,6 +20,7 @@ import { fetchFdaApprovalYearCatalog } from './fda-edition-catalog-readonly.mjs'
 import { fetchIfrIndustrialReleaseIndex } from './ifr-edition-press-watch-readonly.mjs';
 import { buildIndustryQuantCoverage } from './industry-quant-coverage-readonly.mjs';
 import { buildIndustryEvidenceFairness } from './industry-evidence-fairness-readonly.mjs';
+import { buildSentimentIndustryContrast } from './sentiment-industry-contrast-readonly.mjs';
 
 export const INDUSTRY_CONTRACT = Object.freeze({
   '로봇·자동화': { institution: 'IFR', source: 'https://ifr.org/img/worldrobotics/Executive_Summary_WR_2026_-_Industrial_Robots.pdf', review: '2025_COUNT_ONLY_ROUNDED_YOY_NO_EXACT_HISTORY_AND_LICENSE_REVIEW' },
@@ -152,7 +153,7 @@ export async function runInvestmentBotInputGate({
   });
 
   const report = {
-    runType: 'INVESTMENT_BOT_STAGE04_INPUT_GATE_R16',
+    runType: 'INVESTMENT_BOT_STAGE04_INPUT_GATE_R17',
     runAtUtc: new Date().toISOString(),
     mode: 'READ_ONLY_RESEARCH_ONLY_NO_TRADE',
     status: inputContractValid && fednow && eurostat && fda && cpuc && ifr && iea && enisa
@@ -275,6 +276,7 @@ export async function runInvestmentBotInputGate({
     sourceVintageAudit: auditStage04SourceVintage(report),
     industryQuantCoverage,
     industryEvidenceFairness: buildIndustryEvidenceFairness(report, industryQuantCoverage),
+    sentimentIndustryContrast: buildSentimentIndustryContrast(report, industryQuantCoverage),
   };
 }
 
