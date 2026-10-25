@@ -69,5 +69,15 @@ test('Desktop R6 one-click launcher requires an explicit human publisher respons
  assert.match(text,/if \/i not "%DC_ACCEPT%"=="ACCEPT" goto consent_missing/);
  assert.match(text,/theme-data-center-power-gate-r6\.mjs/);
  assert.match(text,/theme-data-center-power-cutover-r6\.mjs/);
+ assert.ok(text.indexOf('>"%DC_LOG%" echo DATA_CENTER_POWER_R6_PUBLISH_WITH_EXPLICIT_CONSENT')
+  <text.indexOf('if not exist "%DC_NODE%" goto node_missing'),
+ 'launch log must exist before any early preflight failure');
+ for(const blocked of ['APPROVED_NODE_MISSING','APPROVED_DATA_ROOT_MISSING',
+  'R5_SCHEDULED_RUNNER_MISSING_KEEP_IN_ORIGINAL_DESKTOP_FOLDER']){
+  assert.match(text,new RegExp(`>>"%DC_LOG%" echo BLOCKED=${blocked}`));
+ }
+ assert.match(text,/:runner_missing\r\n[\s\S]*?EXPECTED_RUNNER=%DC_RUNNER%\r\ngoto failed/);
+ assert.equal((text.match(/\bpause\r\nexit \/b [012]/g)||[]).length,3,
+ 'every launcher exit path must pause for users double-clicking CMD');
  assert.doesNotMatch(text,/wrangler deploy|powershell|%TEMP%/i);
 });
