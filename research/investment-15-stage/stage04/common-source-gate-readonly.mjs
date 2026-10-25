@@ -8,6 +8,7 @@
 import { fileURLToPath } from 'node:url';
 import { resolve } from 'node:path';
 import { F_ENDPOINT, selectThemeF } from './latest-f-readonly.mjs';
+import { PROPOSED_INDUSTRY_API, parseUnifiedIndustrySeries } from './unified-industry-series-readonly.mjs';
 
 export const COMMON_G_SOURCE_CANDIDATES = Object.freeze([
   Object.freeze({
@@ -106,7 +107,7 @@ export function evaluateCommonSourceStage04(f, { sourceCandidates = COMMON_G_SOU
   };
 }
 
-export async function runCommonSourceStage04({ fetchFn = fetch, asOfDate } = {}) {
+export async function runCommonSourceStage04({ fetchFn = fetch, asOfDate, industryFeedUrl = null } = {}) {
   let f = null;
   let fFailureCode = null;
   try {
@@ -122,7 +123,84 @@ export async function runCommonSourceStage04({ fetchFn = fetch, asOfDate } = {})
     fFailureCode = failureCode(error);
   }
   const result = evaluateCommonSourceStage04(f);
-  return { ...result, F: { ...result.F, failureCode: fFailureCode } };
+  const baseline = { ...result, F: { ...result.F, failureCode: fFailureCode } };
+  // Proposed unified endpoint is intentionally not called by default: it has
+  // not been created or approved for ZGMINI production. A caller can test the
+  // contract explicitly, but cannot silently substitute theme-specific URLs.
+  if (industryFeedUrl === null || f?.status !== 'LIVE_F_OBSERVED') return baseline;
+  if (industryFeedUrl !== PROPOSED_INDUSTRY_API) {
+    return {
+      ...baseline, industryCommonSource: {
+        ...baseline.industryCommonSource, feedFailureCode: 'UNAPPROVED_INDUSTRY_FEED_URL',
+      },
+    };
+  }
+  try {
+    const response = await fetchFn(industryFeedUrl, {
+      signal: AbortSignal.timeout(15000), headers: { accept: 'application/json' },
+    });
+    if (!response?.ok) throw new Error(`INDUSTRY_API_HTTP_${response?.status ?? 'UNAVAILABLE'}`);
+    if (new URL(response.url ?? industryFeedUrl).origin !== new URL(industryFeedUrl).origin) {
+      throw new Error('INDUSTRY_API_ORIGIN_DRIFT');
+    }
+    const evidence = parseUnifiedIndustrySeries(await response.json(), {
+      asOfDate: f.evaluatedAsOfKst,
+      expectedThemes: f.themes.map((theme) => theme.theme),
+    });
+    const byName = new Map(evidence.rows.map((row) => [row.theme, row]));
+    const rows = baseline.themes.map((theme) => ({
+      ...theme, industry: byName.get(theme.theme),
+    }));
+    const allDirectAndComparable = evidence.rows.every((row) =>
+      row.state === 'COMMON_INTERFACE_RAW_GROWTH_RESEARCH_ONLY'
+      && row.changeYoY !== null && row.accelerationYoYPp !== null);
+    return {
+      ...baseline,
+      status: allDirectAndComparable ? 'COMMON_INDUSTRY_RAW_INPUT_COMPLETE_UNRANKED' : 'COMMON_INDUSTRY_PARTIAL_UNRANKED',
+      themes: rows,
+      industryCommonSource: {
+        ...baseline.industryCommonSource,
+        state: 'UNIFIED_SOURCE_OBSERVED_RESEARCH_ONLY',
+        verifiedLiveCommonSourceId: 'ZGMINI_STAGE04_INDUSTRY_DEMAND_V1',
+        exactThemeHistoryVerifiedCount: evidence.rows.filter((row) =>
+          row.state === 'COMMON_INTERFACE_RAW_GROWTH_RESEARCH_ONLY'
+          && row.changeYoY !== null && row.accelerationYoYPp !== null).length,
+        unifiedFeed: {
+          schemaVersion: evidence.schemaVersion,
+          sourceVersion: evidence.sourceVersion,
+          sourceStoredAt: evidence.sourceStoredAt,
+          rawGrowthObservedCount: evidence.rawGrowthObservedCount,
+          accelerationObservedCount: evidence.accelerationObservedCount,
+        },
+      },
+      missingFieldReport: {
+        ...baseline.missingFieldReport,
+        commonInvestigationImpossibleAtPresent: [
+          ['INDUSTRY_DEMAND_X_T', (row) => row.rawValue !== null],
+          ['SAME_DEFINITION_X_PREVIOUS', (row) => row.priorYearValue !== null],
+          ['SAME_DEFINITION_GROWTH_HISTORY', (row) => row.changeYoY !== null],
+          ['SAME_DEFINITION_ACCELERATION_HISTORY', (row) => row.accelerationYoYPp !== null],
+        ].filter(([, available]) => evidence.rows.some((row) =>
+          row.state !== 'COMMON_INTERFACE_RAW_GROWTH_RESEARCH_ONLY' || !available(row)))
+          .map(([field]) => field),
+        missingByTheme: evidence.rows.filter((row) =>
+          row.state !== 'COMMON_INTERFACE_RAW_GROWTH_RESEARCH_ONLY'
+          || row.changeYoY === null || row.accelerationYoYPp === null)
+          .map((row) => ({ theme: row.theme, reason: row.state,
+            growthMissing: row.changeYoY === null, accelerationMissing: row.accelerationYoYPp === null })),
+        // Formula weights / historical normalisation remain unapproved even
+        // if all raw X values happen to be present. No promotion to ranking.
+        derivedFieldsBlocked: ['G1', 'G2', 'G', 'D', 'M', 'OFFICIAL_RANK'],
+      },
+    };
+  } catch (error) {
+    return {
+      ...baseline,
+      industryCommonSource: {
+        ...baseline.industryCommonSource, feedFailureCode: failureCode(error),
+      },
+    };
+  }
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
