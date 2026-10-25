@@ -163,6 +163,9 @@ export async function runMarketOperationalRefresh({env,job,store,now=Date.now(),
  }catch(error){
   if(jobLease)await store.finish(selected,jobLease,now,`${phase}_FAILED`).catch(()=>{});
   const reason=['INPUT_STORAGE_LIMIT','STORED_CALCULATION_FAILED','SCORE_CONTRACT_FAILED'].includes(error?.message)?error.message:(String(error?.message??'').match(/^GROWTH_R2_[A-Z0-9_]+/)?.[0]??null);
-  return {status:'ERROR',job:selected,phase,...(reason?{reason}:{})};
+  const source=error?.sourceDiagnostic;
+  const sourceDiagnostic=source?.provider==='BLS'&&Number.isInteger(source.attempts)&&source.attempts>=1&&source.attempts<=2
+   ?{provider:'BLS',httpStatus:Number.isInteger(source.httpStatus)?source.httpStatus:null,attempts:source.attempts,registered:source.registered===true}:null;
+  return {status:'ERROR',job:selected,phase,...(reason?{reason}:{}),...(sourceDiagnostic?{sourceDiagnostic}:{})};
  }finally{await store.finish('pipeline',lease,now,'IDLE')}
 }

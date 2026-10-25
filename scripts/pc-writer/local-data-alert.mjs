@@ -21,21 +21,23 @@ export function launchLocalWarning(base){
  save(pidFile,{pid:child.pid,at:Date.now()});child.unref();
  return {status:'WINDOW_STARTED'};
 }
-export function updateDataAlert(base,{key,failed,now=Date.now()},notify=launchLocalWarning){
+export function updateDataAlert(base,{key,failed,now=Date.now(),sourceDiagnostic=null},notify=launchLocalWarning){
  if(!Object.hasOwn(names,key))key='collection';
  const file=path.join(base,'data-alert-state.json');
  const state=read(file,{version:1,active:{},events:[]});
  const previous=state.active[key];
  let changed=false;
  if(failed){
-  state.active[key]={since:previous?.since??now,lastSeen:now,label:names[key]};
+  const detail=sourceDiagnostic?.provider==='BLS'&&Number.isInteger(sourceDiagnostic.attempts)
+   ?`BLS 응답 ${Number.isInteger(sourceDiagnostic.httpStatus)?sourceDiagnostic.httpStatus:'통신 실패'} · ${Math.min(2,Math.max(1,sourceDiagnostic.attempts))}회 시도`:null;
+  state.active[key]={since:previous?.since??now,lastSeen:now,label:names[key],...(detail?{detail}:{})};
   if(!previous){state.events.push({at:now,key,status:'FAILED_BLOCKED'});changed=true;}
  }else if(previous){delete state.active[key];state.events.push({at:now,key,status:'RECOVERED'});changed=true;}
  state.events=state.events.slice(-200);
  save(file,state);
  const active=Object.values(state.active);
  const text=active.length
-  ?'ZGMINI 데이터 경고\r\n'+active.map(x=>`${x.label}: 수집 또는 게시 실패. 최초 감지 ${new Date(x.since).toLocaleString('ko-KR')}`).join('\r\n')+'\r\n빈 응답·불완전 점수의 반영을 차단합니다. 정상 자료의 유효기간은 연장하지 않습니다.\r\n'
+  ?'ZGMINI 데이터 경고\r\n'+active.map(x=>`${x.label}: 수집 또는 게시 실패. ${x.detail??''} 최초 감지 ${new Date(x.since).toLocaleString('ko-KR')}`).join('\r\n')+'\r\n빈 응답·불완전 점수의 반영을 차단합니다. 정상 자료의 유효기간은 연장하지 않습니다.\r\n'
   :'ZGMINI: 감지된 수집·게시 경고가 모두 해소되었습니다.\r\n';
  fs.writeFileSync(path.join(base,'data-alert-status.txt'),'\ufeff'+text,'utf8');
  let delivery=null;
@@ -46,7 +48,7 @@ export function alertCollectionReport(base,report,notify){
  const failed=['ERROR','FAILED','SOURCE_FAILED','CONFIGURATION_MISSING'].includes(report.status);
  const success=['COMPLETE','WAITING_PUBLICATION'].includes(report.status);
  if(report.job||report.lane==='korea'){
-  if(failed||success)updateDataAlert(base,{key:report.job??'korea',failed},notify);
+  if(failed||success)updateDataAlert(base,{key:report.job??'korea',failed,sourceDiagnostic:report.sourceDiagnostic},notify);
  }
  for(const feed of report.feeds??[])if(['FAILED','COMPLETE'].includes(feed.status))
   updateDataAlert(base,{key:feed.key,failed:feed.status==='FAILED'},notify);
