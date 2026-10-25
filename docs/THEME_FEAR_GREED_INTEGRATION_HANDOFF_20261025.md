@@ -113,3 +113,11 @@
 - 안전 대체 코드: `scripts/pc-writer/theme-space-satellite-r7-nasa-only.mjs`, `.cmd`, `tests/theme-space-satellite-r7-nasa-only.test.mjs`, `tests/theme-space-satellite-r7-launcher.test.mjs`. NASA만 수집(`2026-03-30`~`2026-10-23`), 사용자 CMD 명시 실행, 최대 4 GET/회, 별도 R7 checkpoint, 이미 있는 NASA raw나 오류 시 자동 중단, raw+manifest SHA 저장만 허용. CMD와 같은 Desktop 위치 `SPACE_SATELLITE_R7_NASA_RESULT.txt` 로그.
 - 로컬 Node `node --test` **R7 2개 파일 PASS**(NASA만 요청/비회귀/402 재요청 차단/기존 NASA 존재 차단/4 GET pagination, CMD ASCII+CRLF+SHA). 실제 Windows PC 테스트·실물 NASA 가격 획득이 **아님**. JS 소스 SHA256 `d7346a52898b2c57d612d5b9ce11e7721dc45ab718ff1e883fba47281027877e`; CMD 해시 검증. GitHub에 신규 5개 파일 별도 commit 반영.
 - 다음 사용자 작업: R7 Desktop CMD 직접 실행 → `SPACE_SATELLITE_R7_NASA_RESULT.txt` 제출 → 실제 NASA 원봉·UFO/SPY 공통 뉴욕 세션 N·정합성·보유 중복·권리 판정 → 조합 승인 여부 결정. 결제/제한 HTTP 402 시 STOP; 무단 반복 금지. D1/배포/운영과 메인 병합 모두 미실행, PR #714 Draft 유지, 브랜치 보존.
+
+## 2026-10-25 사용자 PC R7 성공 및 R8 비공개 감사 준비
+
+- 사용자 제출 `SPACE_SATELLITE_R7_NASA_RESULT.txt` 확정 결과: `PRIVATE_NASA_RAW_COLLECTION_COMPLETE`, **NASA API 1회/원본 1개 파일/1페이지**, `complete=true`, D1·공개·scheduler 쓰기 0. 이는 **NASA 실제 유효 거래일 N 검증이 아님**.
+- R7 선택된 NASA의 신생 자료만 PC에 저장됨. 기존 UFO 656일 및 데이터센터·전력 공유 SPY 11,295 1h bar 재수집 금지 유지. 9개 ETF 비교 문서 `docs/THEME_SPACE_NINE_ETF_SCREEN_R7_20261025.md`에 PC 결과 반영.
+- R8 신규 파일 `scripts/pc-writer/theme-space-satellite-r8-real-audit.mjs`, `.cmd`, `tests/theme-space-satellite-r8-real-audit.test.mjs`, `tests/theme-space-satellite-r8-launcher.test.mjs`. 이미 통합 브랜치에 있던 검증된 R2 계산기/공유 SPY 판독기를 호출하는 **읽기 전용** 엔트리. 저장된 NASA/UFO + 데이터센터 SPY SHA/세션 N/최신 시점/252 표시/비공개 점수만 출력. 단독 NASA 수집처럼 Provider 0, D1 0, Scheduler 0.
+- 로컬 R8 및 원래 산식/공유 SPY 관련 **Node 테스트 5파일 PASS**. R8 Desktop CMD는 소스 6개 SHA256 고정/ASCII+CRLF/기본 E: 경로. Windows PC 실데이터 실행 **미실시**, 현재 `PC_R8_REAL_N_PENDING`, `FINAL_ETF_PAIR_NOT_APPROVED`, `PUBLICATION_NOT_AUTHORIZED`.
+- 다음 작업은 R8 CMD 실제 사용자 실행 후 `SPACE_SATELLITE_R8_REAL_AUDIT_RESULT.txt` 수령. 통과하면 ETF 종목 편중·중복 실증검토 → 최종 조합 승인 → 권리·공개 게이트. PR #714 Draft 유지, main·운영 배포·D1 변경 0, 통합 브랜치 삭제 금지.
