@@ -4062,10 +4062,6 @@ body .zg-r55-market .zg-r55-shell[data-expanded="false"] article.zg-r55-card>.zg
   color:#fabc42;
   opacity:.85;
 }
-/* Separate score and plot lanes in both collapsed and expanded cards. */
-.zg-dashboard[data-view="dashboard"] .zg-r55-shell[data-expanded] .zg-r55-card-mid{
-  grid-template-columns:84px minmax(0,1fr);
-}
 /* Preserve 6 columns at wide desktop; allow sufficient heading+plot space
    at narrow desktop/tablet/mobile sizes without shrinking the plot. */
 @media (min-width:960px) and (max-width:1023px){
