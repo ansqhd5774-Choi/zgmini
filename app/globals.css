@@ -3990,3 +3990,33 @@ body .zg-r55-market .zg-r55-shell[data-expanded="false"] article.zg-r55-card>.zg
   text-underline-offset:2px;
  }
 }
+
+/* EC12 R3: compact, collapsed cards keep help at the far top-left and
+   keep the entire mini-chart unobstructed. This specificity must beat
+   the unqualified flex layout even if the CSS bundler hoists @media. */
+.zg-dashboard[data-view="dashboard"] .zg-r55-shell[data-expanded="false"] .zg-r55-card-head{
+  position:relative;
+  display:block;
+  box-sizing:border-box;
+  width:100%;
+  padding-left:13px;
+}
+.zg-dashboard[data-view="dashboard"] .zg-r55-shell[data-expanded="false"] .zg-r55-card-head>span:last-child{
+  position:absolute;
+  top:-6px;
+  left:-8px;
+  width:20px;
+  height:20px;
+  order:0;
+}
+.zg-dashboard[data-view="dashboard"] .zg-r55-shell[data-expanded="false"] .zg-r55-card-head h3{
+  font-size:13px;
+  letter-spacing:-.55px;
+  line-height:20px;
+}
+.zg-dashboard[data-view="dashboard"] .zg-r55-shell[data-expanded="false"] .zg-r55-card-title-link{
+  text-decoration-line:underline;
+  text-decoration-style:dotted;
+  text-decoration-color:rgba(167,196,220,.65);
+  text-underline-offset:2px;
+}
