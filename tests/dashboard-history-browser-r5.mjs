@@ -21,7 +21,10 @@ try{
   await page.route('https://**',route=>route.abort());
   await page.route('**/api/**',route=>{
    const path=new URL(route.request().url()).pathname;
-   const body=path==='/api/market-score'?snapshot(revision):path==='/api/session'?{user:null}:path==='/api/market-data'?{status:'fallback',indicators:{},summary:[]}:{status:'UNAVAILABLE'};
+   const body=path==='/api/market-score'?snapshot(revision):path==='/api/fear-greed'?{
+    status:'verified',score:21,rating:'공포',observedAt:'2026-10-24T12:00:00Z',
+    history:snapshot(1).overall.trend.map(p=>({date:p.label,score:p.value})),
+   }:path==='/api/session'?{user:null}:path==='/api/market-data'?{status:'fallback',indicators:{},summary:[]}:{status:'UNAVAILABLE'};
    return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(body)});
   });
   await page.goto(base,{waitUntil:'networkidle',timeout:45000});
@@ -36,6 +39,7 @@ try{
   await intro.waitFor({state:'hidden'});
   const curve=page.locator('.zg-r55-summary-chart path.recharts-area-curve');
   await curve.waitFor({state:'visible'});
+  await page.locator('.usa-target-card path.recharts-area-curve').waitFor({state:'visible'});
   await page.reload({waitUntil:'networkidle'});
   await intro.waitFor({state:'hidden'});
   await curve.waitFor({state:'visible'});
