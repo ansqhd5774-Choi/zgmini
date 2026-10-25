@@ -170,9 +170,14 @@ test('Eurostat changed cohort, bad rate, or missing comparison stays explicit', 
 
 test('bot joins nine existing F themes but never issues a ranking or an order', async () => {
   const result = await runInvestmentBotInputGate({ fetchFn: makeFetch(), asOfDate: '2026-10-25', fdaReader, cpucReader, ifrReader });
+  assert.equal(result.runType, 'INVESTMENT_BOT_STAGE04_INPUT_GATE_R12');
   assert.equal(result.status, 'LIVE_INPUT_PARTIAL_INDUSTRY_UNRANKED');
   assert.equal(result.themes.length, 9);
   assert.equal(result.officialIndustry.validatedLiveThemes, 7);
+  assert.equal(result.sourceVintageAudit.observedOriginalSources, 7);
+  assert.equal(result.sourceVintageAudit.fixedEditionSources, 4);
+  assert.equal(result.sourceVintageAudit.dynamicSourceSeries, 3);
+  assert.equal(result.sourceVintageAudit.automaticLatestEditionClaims, 0);
   const robots = result.themes.find((x) => x.theme === '로봇·자동화');
   assert.equal(robots.industryRawCount, 603307);
   assert.equal(robots.industryGrowthPct, null);
