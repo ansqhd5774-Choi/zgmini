@@ -41,6 +41,10 @@ const REQUIRED_G_DATA = Object.freeze([
 ]);
 
 function failureCode(error) {
+  const networkCode = error?.cause?.code;
+  if (['EAI_AGAIN', 'ENOTFOUND', 'ECONNREFUSED', 'ETIMEDOUT', 'ENETUNREACH'].includes(networkCode)) {
+    return `NETWORK_${networkCode}`;
+  }
   const code = error?.message ?? 'UNKNOWN_SOURCE_ERROR';
   return /^[-A-Z0-9_]+$/.test(code) ? code : 'SOURCE_READ_ERROR';
 }
