@@ -303,3 +303,14 @@
 - 구현 `scripts/pc-writer/theme-space-satellite-r19-composition-effect.mjs`, CMD, 테스트 2개, `docs/THEME_SPACE_R19_COMPOSITION_EFFECT_20261025.md`. R18에는 CLI 출력 불변인 내부 read-only trace 옵션만 추가하고 R18 CMD SHA pin 갱신. 신규 R19 CMD는 11개 MJS 전체 SHA 핀, ASCII CRLF. Node 관련 9개 파일 PASS, Desktop ZIP 12파일 무결성 PASS. **R19 실제 PC 결과는 아직 없음**.
 - GitHub main 확인 SHA `b61b82b0e08383d951d019d6c6705398dc532958`(별도 UI 변경 진행 중), R19 작업은 전용 브랜치만 저장. branch/main 차이 있는 상태에서 자동 병합 금지, 기존 9개 운영·D1·스케줄러·Cloudflare 변화 0. PR #714 Draft 유지.
 - **다음 PC 작업**: R19 ZIP Desktop 같은 폴더 해제 → `theme-space-satellite-r19-composition-effect.cmd` 실행 → `SPACE_SATELLITE_R19_COMPOSITION_EFFECT_RESULT.txt` 제출. 결과로 구성변동 오인 리스크 검사 후 **R4-A 가중식/최종 ETF/발행사 holdings·AUM/파생 공개 권리 각각 승인**을 검토. 승인 없이 main 배포 금지.
+
+
+## 2026-10-26 사용자 R19 PC 실측 PASS → R20 발행사 holdings/순도/AUM 검증
+
+- 사용자 제출 `SPACE_SATELLITE_R19_COMPOSITION_EFFECT_RESULT.txt`: `PHASE=ALL_CODE_SHA256_VERIFIED`, `RESULT=PRIVATE_COMPOSITION_EFFECT_ONLY_NO_OPERATION_CHANGE`. 9 ETF 원본 manifest `1e046a0487548a00231da92da48c6d9fb690e8e95bba64e2071078b02e57f00b`, 공유 SPY manifest `76dfaca72fd0ded5e648ee15cceca5628288c11463214bd14ede01c2b5c4746e`, R18 추적 digest `94011b38f4d31cf21b74eac36b988a0a2565c34bf2b2e5522dc27106ac4d1216` 재확인.
+- R19 인접 전이 **251/251 수치 분해**, ETF 구성 변화 8건·동일 243건, 구성효과가 공통 ETF 변동 절대값을 지배한 전이 0건, 반대 부호 5건, 최대 구성효과 4.05108점. 최신 10/23 미승인 R4-A 비공개 42.38768점·참가 6종은 그대로. Provider 0/원본 저장 0/D1·공개·스케줄러 쓰기 0.
+- **R19 구성변화 영향이 제한적**이라는 관측은 **R4-A 가중/ETF 편입/순도/중복/권리 승인**을 뜻하지 않음. 9개 후보 수 상한 없음, ORBX/DIPR/WSPC 감시/결측 유지.
+- R20 문서 `docs/THEME_SPACE_R20_ISSUER_HOLDINGS_RISK_20261026.md`: 발행사 최신 직접 공시 확인. NASA 10/23 SpaceX 27.98%, UFO 15.82%, WARP 10/22 SpaceX 22.99%를 미승인 R4-A 6종 가중에 적용 시, **이 3 ETF가 차지하는 SpaceX 부분 노출은 전체 바스켓 기준 9.3511%p**. **MARS/ARKX/ROKT 나머지 보유비중을 0으로 간주하지 않음**, 전체 SpaceX 노출 확정 아님.
+- ARKX는 공식 우주·방산 ETF, ROKT는 우주+심해 ETF: 현재 6종 비공개 가중치 중 이 2개가 **42.6456%**. 이는 방산/심해 실질 노출이 42.6456%라는 뜻이 아니며 순도 검토 필수. MARS·ARKX 현재 공식 페이지 AUM/전체 holdings 수치 공란; 임의 추정·기존 날짜 미확인 수치 재사용 금지.
+- GetMarketHistory 2026-10-19 약관 §5는 합법 수령 bar의 비복원 가능한 파생 지표/분석 공개를 조건부 허용하고 raw-bar 재배포를 금지. 실제 수집 계정/권리/보유 공시 조건 검증과 사용자 출시 승인은 여전히 미완료 `rightsVerified=false`.
+- 다음 단계: MARS/ARKX/ROKT를 포함한 **동일 관측일 전체 보유 내역** 확보 가능한지 확인하고 ETF 중복·우주전용 순도를 비공개 수치화. 미제공 비중 unknown 유지, 최종 ETF 수 고정·R4-A 가중 승인/메인 병합/D1/Cloudflare 배포/기존 운영 변경 금지. GitHub 전용 브랜치만 저장, PR #714 Draft 유지.

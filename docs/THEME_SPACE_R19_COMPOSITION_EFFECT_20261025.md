@@ -44,3 +44,14 @@ R19 요약 출력:
 - 이후 구성변화 효과를 토대로 R4-A 사용자 승인 여부와 ETF 공식 발행사 holdings/AUM/중복 및 원가격 파생 공개 권리를 **별도** 검토한다. `rightsVerified=false`, `finalBasketSelected=false` 유지.
 
 출처: [GetMarketHistory 1h 실관측 봉/갭 정책](https://getmarkethistory.com/docs/api/reference), [NYSE 정규 거래시간](https://www.nyse.com/trade/trading-information), [원시 가격 재배포 제한](https://getmarkethistory.com/docs/terms).
+
+## 2026-10-26 사용자 PC R19 실측 결과 — 실제 완료
+
+- 제출된 `SPACE_SATELLITE_R19_COMPOSITION_EFFECT_RESULT.txt`: `PHASE=ALL_CODE_SHA256_VERIFIED` / `RESULT=PRIVATE_COMPOSITION_EFFECT_ONLY_NO_OPERATION_CHANGE`.
+- 9 ETF 원본 manifest SHA `1e046a0487548a00231da92da48c6d9fb690e8e95bba64e2071078b02e57f00b`, 공유 SPY manifest SHA `76dfaca72fd0ded5e648ee15cceca5628288c11463214bd14ede01c2b5c4746e`, R18 추적 digest `94011b38f4d31cf21b74eac36b988a0a2565c34bf2b2e5522dc27106ac4d1216`가 이전 결과와 **그대로 일치**.
+- 252개 비공개 점수의 인접 251일: **전부 정확히 분해 가능**(251/251). ETF 구성이 다른 전이 **8건**, 동일한 전이 **243건**, 최근 21개 전이 중 구성 변경 **1건**. 구성 효과가 공통 ETF 내부 변동보다 절대값상 큰 경우 **0건**. 효과가 서로 반대 방향인 경우 **5건**.
+- 구성변경 절대 효과의 중앙값 **0점**, 90분위 **0점**, 최댓값 **4.05108점**. 가장 큰 2026-03-16→17의 ROKT 진입: 구성 −4.05108 / 공통 ETF 움직임 +6.88912 / 실제 총변동 +2.83804점. 2026-09-02→03 ORBX 이탈: 구성 −2.79399 / 공통 +4.89477 / 실제 +2.10078점.
+- 구성효과 절대합 15.65385, 공통 ETF 변동 절대합 1102.084, 실제 총변동 절대합 1094.4036. **세 절대합은 항별 방향 상쇄가 있으므로 단순 가산하거나 '구성 1.43% 기여'로 단정하지 않는다.**
+- 실제 10/23 비공개 점수 **42.38768**, 기여 ETF 6개, 9개 후보 그대로. 다른 시간봉 보충/보간/재수집 0. `providerCalls=0`, `rawFilesWritten=0`, `d1Writes=0`, `publicWrites=0`, `schedulerWrites=0`.
+- **해석 경계:** 이 결과는 관측된 252일에 한정해 날짜별 ETF 진입·이탈 영향이 시장 공통 변동보다 지배적이지 않았다는 증거다. **R4-A 가중치 타당성·테마 순도·ETF 보유 종목 중복·공개 권리**를 검증/승인한 증거가 아니다.
+- 다음 R20 발행사 원자료 검토: `docs/THEME_SPACE_R20_ISSUER_HOLDINGS_RISK_20261026.md`. `weightsApproved=false`, `rightsVerified=false`, `finalBasketSelected=false`, `publicationAuthorized=false`.
