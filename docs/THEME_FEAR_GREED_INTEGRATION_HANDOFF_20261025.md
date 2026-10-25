@@ -187,3 +187,14 @@
 - 비공개 수정: `theme-optional-relative-weight-r4.mjs`에서 수치식·실제 가격·각 ETF 점수는 **그대로**, R2가 실제 출력한 유효 상태 `ADAPTIVE_PROVISIONAL` 또는 `R188_COMPATIBLE`만 받아들인다. `N≥40`, 점수 0–100 실제 존재, 중복 티커 차단, 미확인 상태 거절 등은 유지. 현존 테스트에 N600인데 잠정 상태인 결측 ETF 사례 및 N370이지만 점수 호환인 사례를 추가했다.
 - R9 결측 UFO 데이터 합성 케이스, 기존 R3 long+short 비중 불변, R8 비회귀, 2/3/4/5/10 ETF 배열 공통 가중치 확인. 로컬 Node 테스트 8파일 **PASS**. 기존 승인/생산 파일 R8, R3, R2와 9개 공개 테마 변경 0. R9 CMD의 R4 SHA pin만 갱신한 **R9 재검증 ZIP** 필요. GitHub CI와 실제 PC 재검증은 별도.
 - 다음 사용자가 직접 실행할 작업: 최신 R9 ZIP의 Windows CMD로 기존 저장 UFO/NASA/SPY를 읽는 감사 1회 재실행 후 `SPACE_SATELLITE_R9_PRIVATE_SHADOW_RESULT.txt`만 전달. 재수집/새 Provider 호출 금지. R4 함수 자체는 3개 이상 비중 최종 승인 전이며 main/D1/publication/Cloudflare 변경 금지, PR #714 Draft 유지.
+
+
+## 2026-10-25 R9 수정본 실제 사용자 PC SHA 검산 PASS
+
+- 사용자가 제출한 `SPACE_SATELLITE_R9_PRIVATE_SHADOW_RESULT(1).txt` 실제 PC 로그: `RESULT=R9_PRIVATE_SHADOW_REPORTED_NO_DATA_CHANGE`, `status=PRIVATE_ONLY_NOT_APPROVED_FOR_PUBLICATION`. 이번 결과는 합성 fixture가 아니라 **사용자 PC의 저장된 실가격 원본 SHA 검증 후 산출한 비공개 실측**. 로그 원본·가격·키는 GitHub에 올리지 않고 집계값만 보존.
+- sourceVersion: `GMH_PRIVATE_COMBINED_MANIFEST_SHA256_5dbec845c99b29527d77c9525feb08c99e9e8223b5b4585271e7d96f03d3ec6e`, 기존 `data-center-power` SPY 공유, `sourceLastDatesAgree=true`, 원가격 모드 `UNADJUSTED_15_NY_HOURLY_PROXY_WITH_OFFICIAL_EARLY_CLOSE_12`.
+- 확인된 실거래일: **UFO 656일/원본 2파일, NASA 144일/원본 1파일, SPY 706일/원본 5파일**, 세 티커 최신 관측 **2026-10-23** 동일.
+- **1년 표시창 252일** 가운데 기존 R8 **29개 실제 점수** → 제안 일반화 R4-A 기반 R9 **105개 실제 점수** (**+76개**, 결측 147개는 그대로 결측, 보간·가공 과거 점수 0). 첫 R9 점수 날짜 **2026-05-27**, 최종 2026-10-23. 252개 점수 충족을 출시 조건으로 삼지 않는다.
+- 최신 비공개 테마점수 **39.95701**, UFO **63.828%** / NASA **36.172%**; `latestScoreMatchesApprovedR3=true`. 기존 R3에서 실제 산출된 역사적 **29개 날짜 모두** R4-A 제안형 점수와 0.00001 이내 일치(`historicalSessionsMatchingApprovedR3=29`). 이는 기존 산식과 공통 구간 비회귀 검증이지만 R4-A 전체 구간의 투자 적합성 승인으로 확대하면 안 된다.
+- `providerCalls=0`, `historicalSeriesWritten=false`, `publicWrites=0`, `d1Writes=0`, `schedulerWrites=0`, `rightsVerified=false`, `publicationAuthorized=false`, `finalBasketSelected=false`. GitHub Node.js CI run #40191243921 **completed/success** (당시 코드). 기존 9개 운영 테마/main/D1/Cloudflare 수정·게시·PR 병합 없음.
+- **다음 게이트**: (1) ETF 최종 조합 2개 고정 없이 후보의 편입 순도·중복(이미 NASA/UFO SpaceX 등 중복 주의)을 재검토, (2) R4-A 임시 상대성숙도 가중식 vs 사용자 기대 비중을 날짜별 정량 검토 후 승인, (3) 데이터 권리·실제 공개 파생허용·업데이트 지연 검증 후 공개 여부 결정. R9가 PASS 했다는 이유만으로 자동 게시하지 않는다. Draft PR #714 및 통합 작업 브랜치 보존.
