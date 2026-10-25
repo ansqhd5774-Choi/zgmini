@@ -38,12 +38,12 @@ function scoreBand(value:number|null|undefined){
  return value<25?'extreme-fear':value<45?'fear':value<=55?'neutral':value<=75?'greed':'extreme-greed';
 }
 
-function ChartCurrentPoint({cx,cy,value,date,color,axisRight,extremeKind}:{cx?:number;cy?:number;value:number;date:string;color:string;axisRight:boolean;extremeKind?:string}){
+function ChartCurrentPoint({cx,cy,value,date,color,extremeKind}:{cx?:number;cy?:number;value:number;date:string;color:string;extremeKind?:string}){
  const plot=usePlotArea();
  if(typeof cx!=='number'||typeof cy!=='number')return null;
  const score=value.toFixed(1),width=score.length>4?47:41;
- const x=axisRight?cx-width-7:cx+7;
- // Keep the endpoint badge inside the 120px plot; put it opposite a nearby extremum label.
+ const x=cx+7;
+ // The chart reserves a label gutter outside its plot, including when the Y axis is on the right.
  const offset=extremeKind==='max'?9:extremeKind==='min'?-26:-9;
  const top=plot?.y??0,bottom=plot?plot.y+plot.height-19:Math.max(0,cy+offset);
  const y=Math.min(Math.max(cy+offset,top+2),Math.max(top+2,bottom));
@@ -160,14 +160,14 @@ export default function SectorSentimentChart({data=[],series=SECTORS,title='ì„¹í
     <LineChart data={visibleRows} margin={{top:6,right:currentPoint&&!mobileAxisRight?58:12,bottom:0,left:0}}>
      <CartesianGrid vertical={false} stroke="#25465a" strokeDasharray="3 5"/>
      <XAxis dataKey="date" stroke="#9db0c2" fontSize={11} axisLine={false} tickLine={false} tickFormatter={date=>String(date).slice(5)} minTickGap={36}/>
-     <YAxis orientation={mobileAxisRight?"right":"left"} domain={[0,100]} ticks={[0,25,50,75,100]} interval={0} axisLine={false} tickLine={false} stroke="#9db0c2" fontSize={11} width={32}/>
+     <YAxis orientation={mobileAxisRight?"right":"left"} domain={[0,100]} ticks={[0,25,50,75,100]} interval={0} axisLine={false} tickLine={false} stroke="#9db0c2" fontSize={11} width={mobileAxisRight&&currentPoint?92:32} tickMargin={mobileAxisRight&&currentPoint?62:5}/>
      <ReferenceLine y={50} stroke="#64748b" strokeDasharray="3 5"/>
      <Tooltip active={touchTooltip??undefined} position={{x:0,y:0}} allowEscapeViewBox={{x:true,y:true}} wrapperStyle={{transform:'translateY(calc(-100% - 8px))',zIndex:20}} isAnimationActive={false} cursor={{stroke:'#cbd5e1',strokeWidth:1,strokeDasharray:'3 3'}} content={({active,payload,label})=>!active||!payload?.length?null:<div className="zg-sector-tooltip" role="status"><p>{String(label)}</p><ul>{uniqueChartTooltipEntries(payload).map(entry=><li key={String(entry.dataKey)} style={{color:entry.color}}><span>{entry.name}</span><strong data-score-band={scoreBand(Number(entry.value))}>{Number(entry.value).toFixed(1)}</strong></li>)}</ul></div>}/>
      {series.map(sector=>hasProvisional?[
       <Line key={sector.id+'-solid'} dataKey={sector.id+'__solid'} name={sector.name} stroke={sector.color} hide={hidden.has(sector.id)} strokeWidth={2} dot={false} activeDot={{r:4}} connectNulls={false} isAnimationActive={false}/>,
       <Line key={sector.id+'-dash'} dataKey={sector.id+'__dash'} name={sector.name} stroke={sector.color} strokeDasharray="4 5" hide={hidden.has(sector.id)} strokeWidth={2} dot={false} activeDot={{r:4}} connectNulls={false} isAnimationActive={false}/>
      ]:<Line key={sector.id} dataKey={sector.id} name={sector.name} stroke={sector.color} hide={hidden.has(sector.id)} strokeWidth={2} dot={false} activeDot={{r:4}} connectNulls={false} isAnimationActive={false}/>)}
-     {currentPoint&&<ReferenceDot key={'current-'+currentPoint.date} x={currentPoint.date} y={currentPoint.value} ifOverflow="visible" shape={<ChartCurrentPoint value={currentPoint.value} date={currentPoint.date} color={currentPoint.color} axisRight={mobileAxisRight} extremeKind={currentExtremeKind}/>}/>}
+     {currentPoint&&<ReferenceDot key={'current-'+currentPoint.date} x={currentPoint.date} y={currentPoint.value} ifOverflow="visible" shape={<ChartCurrentPoint value={currentPoint.value} date={currentPoint.date} color={currentPoint.color} extremeKind={currentExtremeKind}/>}/>}
      {extrema.map(point=><ReferenceDot key={'extreme-'+point.kind} x={point.date} y={point.value} ifOverflow="visible" shape={<ChartExtremumPoint point={point} peerIndex={extrema.find(p=>p.kind!==point.kind)?.index} samples={visibleRows.map(p=>({x:p.date,value:typeof p[shownSeries[0].id]==='number'?Number(p[shownSeries[0].id]):null}))} count={visibleRows.length} color={shownSeries[0].color}/>}/>)}
      {heldRow&&<ReferenceLine x={heldRow.date} stroke="#cbd5e1" strokeDasharray="3 3"/>}
      {heldRow&&shownSeries.map(s=>typeof heldRow[s.id]==='number'?<ReferenceDot key={'held-'+s.id} x={heldRow.date} y={Number(heldRow[s.id])} r={4} fill={s.color} stroke="#fff" ifOverflow="visible"/>:null)}
