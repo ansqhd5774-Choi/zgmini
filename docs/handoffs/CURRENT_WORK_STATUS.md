@@ -74,3 +74,17 @@
 - 실제 `https://zgmini.kr/` 브라우저 검증: 11개 섹터 버튼 중 에너지 `78`만 `aria-pressed=true`; 의료 `69`, 소재 `69`, 통신 `23` 등 나머지 10개는 `false`. 최고점 최초 ON **PRODUCTION_VERIFIED**.
 - 수동 토글 동작 보호는 CI에서 테스트 근거 확인. 실제 운영 화면에서 클릭 후 상태 유지는 별도 상호작용 검증하지 않았으므로 UI 수동 재검증 PASS는 선언하지 않는다.
 - 전용 작업 브랜치는 보존하며 PR이 병합되어도 삭제하지 않는다.
+
+## 2026-10-25 대시보드 섹터·테마 공탐 OFF 디자인 통일
+
+- 사용자 요청: 섹터와 테마 범례의 OFF 상태 시각 차이를 제거. 선택 기준은 **기존 섹터 OFF 스타일**(더 선명하고 읽기 쉬움).
+- 기존 운영 실측: 섹터 OFF는 투명 배경 / 이름·점수 불투명도 0.55 / 컬러 막대 0.9. 테마 OFF는 배경 rgb(16,43,59) / 이름·점수 0.38 / 컬러 막대 0.32.
+- 수정: `components/sector-sentiment-chart.css`의 테마 OFF CSS를 섹터 OFF와 일치시키고 `tests/sector-dashboard-compact-legend-r1.test.mjs`에서 퇴행 방지 검사 추가. ON 색상·불투명도·점수·차트·선택 동작 변경 없음.
+- 코드와 테스트는 영구 브랜치 `codex/zgmini-gpt-workspace-20261025`에 기록(소스 커밋 `6e07ba6`, 테스트 `85f3909`).
+- 최소 변경 PR: [#716](https://github.com/ansqhd5774-Choi/zgmini/pull/716), CSS/테스트 2개 파일만 변경.
+- GitHub CI 실행 `40186185527`: build / type check / regression / PC publication tests 모두 성공.
+- PR #716 `main` squash 병합 SHA: `a4dc43b0089d9fc4c56a05468cec1290aa9e6f9c`.
+- Cloudflare Worker `zgmini-migration-candidate-r5` Git Integration `main` 새 버전 `5ae64e1f`: **Ready**.
+- 공개 `https://zgmini.kr/` Chrome 측정: 섹터·테마 OFF 버튼 모두 배경 `rgba(0,0,0,0)`, 버튼 불투명도 `1`, 이름·점수 `0.55`, 색상 막대 `0.9` 일치. ON도 두 차트 모두 배경 `rgb(16,43,59)`, 내부 불투명도 `1` 일치.
+- 최고점 ON 유지: 섹터 에너지 `78`, 테마 클라우드·SaaS `65`가 각각 켜짐.
+- 상태: **PRODUCTION_VERIFIED**. 해당 배포 건 재작업 필요 없음. 다음 새 대화에서는 최신 `main`과 이 기록을 우선 확인.
