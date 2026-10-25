@@ -7,6 +7,7 @@ import { F_ENDPOINT } from './latest-f-readonly.mjs';
 import { EUROSTAT_CLOUD_API, parseEurostatCloud } from './eurostat-cloud-readonly.mjs';
 import { IEA_DATA_CENTRE_REPORT } from './iea-data-centre-official-readonly.mjs';
 import { ENISA_NIS_2025_RELEASE } from './enisa-nis-official-readonly.mjs';
+import { FDA_APPROVAL_YEAR_CATALOG } from './fda-edition-catalog-readonly.mjs';
 import { INDUSTRY_CONTRACT, runInvestmentBotInputGate } from './investment-bot-gate-readonly.mjs';
 import { readPinnedFdaCderReport } from './fda-cder-official-readonly.mjs';
 import { createHash } from 'node:crypto';
@@ -77,8 +78,13 @@ const enisaHtml = `<html><head><title>What’s Driving Cybersecurity Investments
 <p>The sample for this year’s survey included 83% large enterprises and 17% SMEs.</p>
 <p>While organisations have maintained cybersecurity investment at levels comparable to last year’s (9% of IT budgets; median 1.5 million euro), spending shifted.</p>
 <p>${'EU scope and source context, not annual market growth. '.repeat(45)}</p></body></html>`;
+const fdaCatalogHtml = `<html><head><title>Novel Drug Approvals at FDA | FDA</title></head><body>
+<h1>Novel Drug Approvals at FDA</h1><p>Center for Drug Evaluation and Research (CDER)</p>
+<a href="/drugs/novel-drug-approvals-fda/novel-drug-approvals-2026">Novel Drug Approvals for 2026</a>
+<a href="/drugs/novel-drug-approvals-fda/novel-drug-approvals-2025">Novel Drug Approvals for 2025</a>
+<p>${'Official FDA index context. '.repeat(90)}</p></body></html>`;
 
-function makeFetch({ brokenFedNow = false, brokenF = false, brokenEurostat = false, brokenIea = false, brokenEnisa = false } = {}) {
+function makeFetch({ brokenFedNow = false, brokenF = false, brokenEurostat = false, brokenIea = false, brokenEnisa = false, brokenFdaCatalog = false } = {}) {
   return async (url) => {
     if (url === F_ENDPOINT) return {
       url, ok: !brokenF, status: brokenF ? 503 : 200,
@@ -103,6 +109,11 @@ function makeFetch({ brokenFedNow = false, brokenF = false, brokenEurostat = fal
       url, ok: !brokenEnisa, status: brokenEnisa ? 503 : 200,
       headers: { get: () => 'text/html; charset=utf-8' },
       text: async () => enisaHtml,
+    };
+    if (url === FDA_APPROVAL_YEAR_CATALOG) return {
+      url, ok: !brokenFdaCatalog, status: brokenFdaCatalog ? 503 : 200,
+      headers: { get: () => 'text/html; charset=utf-8' },
+      text: async () => fdaCatalogHtml,
     };
     if (url === asciiUrl) return {
       url, ok: !brokenFedNow, status: brokenFedNow ? 503 : 200, text: async () => raw,
@@ -170,7 +181,7 @@ test('Eurostat changed cohort, bad rate, or missing comparison stays explicit', 
 
 test('bot joins nine existing F themes but never issues a ranking or an order', async () => {
   const result = await runInvestmentBotInputGate({ fetchFn: makeFetch(), asOfDate: '2026-10-25', fdaReader, cpucReader, ifrReader });
-  assert.equal(result.runType, 'INVESTMENT_BOT_STAGE04_INPUT_GATE_R12');
+  assert.equal(result.runType, 'INVESTMENT_BOT_STAGE04_INPUT_GATE_R13');
   assert.equal(result.status, 'LIVE_INPUT_PARTIAL_INDUSTRY_UNRANKED');
   assert.equal(result.themes.length, 9);
   assert.equal(result.officialIndustry.validatedLiveThemes, 7);
@@ -178,6 +189,10 @@ test('bot joins nine existing F themes but never issues a ranking or an order', 
   assert.equal(result.sourceVintageAudit.fixedEditionSources, 4);
   assert.equal(result.sourceVintageAudit.dynamicSourceSeries, 3);
   assert.equal(result.sourceVintageAudit.automaticLatestEditionClaims, 0);
+  assert.equal(result.officialIndustry.fdaEditionCatalog.newestYearInOfficialIndex, 2026);
+  assert.equal(result.officialIndustry.fdaEditionCatalog.editionAlert, 'NEWER_CURRENT_YEAR_PARTIAL_LISTING_NOT_ANNUAL_REPORT');
+  assert.equal(result.sourceVintageAudit.rows.find((x) => x.institution === 'FDA CDER').newerPeriodCatalogAlert, 'NEWER_CURRENT_YEAR_PARTIAL_LISTING_NOT_ANNUAL_REPORT');
+  assert.equal(result.sourceVintageAudit.rows.find((x) => x.institution === 'FDA CDER').editionCurrencyState, 'CURRENT_YEAR_LISTING_FOUND_PINNED_REPORT_STILL_LAST_VALIDATED');
   const robots = result.themes.find((x) => x.theme === '로봇·자동화');
   assert.equal(robots.industryRawCount, 603307);
   assert.equal(robots.industryGrowthPct, null);
@@ -307,4 +322,21 @@ test('ENISA failure preserves F but clears cybersecurity survey observations and
   assert.equal(cyber.sentimentF, 50);
   assert.equal(cyber.officialRank, null);
   assert.equal(result.automatedTradeEnabled, false);
+});
+
+test('FDA catalog HTTP 503 is separately UNVERIFIED, with the 2025 hashed annual report and F unchanged', async () => {
+  const result = await runInvestmentBotInputGate({
+    fetchFn: makeFetch({ brokenFdaCatalog: true }), asOfDate: '2026-10-25',
+    fdaReader, cpucReader, ifrReader,
+  });
+  assert.equal(result.status, 'LIVE_INPUT_PARTIAL_INDUSTRY_UNRANKED');
+  assert.equal(result.officialIndustry.validatedLiveThemes, 7);
+  assert.equal(result.officialIndustry.fdaEditionCatalog.failureCode, 'FDA_CATALOG_HTTP_503');
+  assert.equal(result.officialIndustry.fdaEditionCatalog.editionAlert, 'UNVERIFIED');
+  const fda = result.themes.find((x) => x.theme === '바이오·신약');
+  assert.equal(fda.industryRawCount, 46);
+  assert.equal(fda.industryObservationPeriod, '2025');
+  assert.equal(fda.sentimentF, 22.63294);
+  assert.equal(fda.officialRank, null);
+  assert.deepEqual(result.orderRequests, []);
 });
