@@ -220,3 +220,15 @@
 - **중요 코드 경계:** 기존 R4-A 합성기는 사전 승인 2종 R3·PC R9 SHA 재현을 위해 **무변경**. R4-A가 `n>=2`만 계산한다는 사실은 **ETF 선정 기준이 아니다**. 한 ETF만 실제 점수 가용인 날짜의 점수 게시 방식은 별도 승인; 점수 결측이나 R9 최신값 소급 생성 금지.
 - [GetMarketHistory 공식 Coverage](https://getmarkethistory.com/docs/coverage)/[API](https://getmarkethistory.com/docs/api/reference): 미국 ETF 대상이라도 백필은 기호별 부분적, 무료 카탈로그만으로 전 기간 수집 성공을 단정 금지. 데이터는 통상 48시간 지연으로 당일값 위장 금지. 라이선스/권리 `false`, PR #714 Draft 및 main·D1·Cloudflare·기존 9종 운영 무변경.
 - **다음 단계**는 수집 가능성 확인을 실제 후보 전체에 적용하고, 기존 데이터 재사용 후 부족한 후보만 최소 원봉 실측하는 것. **두 ETF를 선정하고 조사 종료하는 경로 금지**.
+
+
+## 2026-10-25 R12 — ETF 수 제한 없는 7종 실공급원 조회 확인
+
+- **최신 사용자 규칙 재확인:** ETF 개수 2개 고정 없음. 수집·검증 가능한 모든 ETF를 구성 대상에 포함한다. 임의 2/3개 slice 금지. R11 기준 유지.
+- **실제 GetMarketHistory GET 실시:** 심볼 색인은 저장 원본 `1m`로 호출(잘못된 `1h` 색인 404 확인 후 수정). 새 ETF 7종 **WARP/ORBX/MARS/ARKX/ROKT/DIPR/WSPC** 모두 카탈로그 HTTP 200 + 무료 `1h` 실제 2026-10-23 비결측 가격봉 HTTP 200/심볼 일치 확인. 기존 UFO/NASA는 R9 PC 실측 보존.
+- **새 5종 무료 1시간봉 UTC 관측일:** WARP **118**, ORBX **134**, MARS **162**(부분 페이지 159일+새 3일), DIPR **92**, WSPC **49**. 이 수치는 공급원 날짜 수이고 **SPY 공통 유효 N/R2 점수 통과 아님**. 특히 WSPC·DIPR은 저유동성 및 빈 거래일 별도 검증.
+- **ARKX·ROKT**는 10/23 최근 샘플은 확인했지만 PC 기존 manifest 원본 항목이 있으므로 전체 과거 데이터를 다시 받지 않고 먼저 SHA 검산한다.
+- 신규 증거: `docs/THEME_SPACE_LIVE_PROVIDER_AVAILABILITY_R12_20261025.md`. 안전한 재실행: `scripts/pc-writer/theme-space-satellite-r12-provider-probe.mjs` (`--probe` 전에는 무네트워크), 단위검증 `tests/theme-space-satellite-r12-provider-probe.test.mjs`.
+- R12/R11/R10/R9 테스트 4개 파일 로컬 PASS. 기존 산식·승인 이력·원본/운영 9개 테마·D1·Cloudflare·Scheduler·main 변경 0. `finalBasketSelected=false`, `rightsVerified=false`, `publicationAuthorized=false`.
+- **다음 Gate:** 기존 PC raw-manifest의 ARKX·ROKT SHA 읽기 전용 확인 → WARP·ORBX·MARS·DIPR·WSPC의 결측 기간만 제한적으로 PC 수집 → 저장된 원봉 SHA+SPY 공통 N+R2 실제 검산 → 승인 후에만 최종 가변 ETF 바스켓 산출 및 게시 검토.
+- 2026-10-25 확인된 원격 main은 `7e0c05e8b1ba8c6a23fc1aa583938a35bbb1b92c` (작업 시작 브랜치와 8커밋 분기). 현재 브랜치만 수정, main drift 해소 없이 전체 PR 병합 금지.
