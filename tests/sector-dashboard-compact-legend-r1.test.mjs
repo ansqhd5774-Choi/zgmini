@@ -84,20 +84,13 @@ test('hover tooltip stays compact for one visible series and grows only for mult
  assert.match(chart,/className="zg-sector-tooltip" role="status"/);
 });
 
-test('one selected real latest point shows an endpoint score; multi-series and missing values do not',()=>{
- assert.match(chart,/const currentSeries=shownSeries\.length===1\?shownSeries\[0\]:null;/);
- assert.match(chart,/const currentRow=visibleRows\.at\(-1\);/);
- assert.match(chart,/currentSeries&&currentRow&&typeof currentValue==='number'&&Number\.isFinite\(currentValue\)/);
- assert.match(chart,/currentPoint&&<ReferenceDot key=\{'current-'/);
- assert.match(chart,/shape=\{<ChartCurrentPoint value=\{currentPoint\.value\}/);
- assert.match(chart,/const x=cx\+7;/);
- assert.match(chart,/currentPoint&&!mobileAxisRight\?58:12/);
- assert.match(chart,/width=\{mobileAxisRight&&currentPoint\?92:32\} tickMargin=\{mobileAxisRight&&currentPoint\?62:5\}/);
- assert.doesNotMatch(chart,/cx-width-7/);
- assert.match(chart,/aria-label=\{`현재 점수 \$\{score\}점/);
+test('chart keeps full plotting width while single-series extremes remain available',()=>{
+ assert.match(chart,/margin=\{\{top:6,right:12,bottom:0,left:0\}\}/);
+ assert.match(chart,/fontSize=\{11\} width=\{32\} tickMargin=\{5\}/);
  assert.match(chart,/const extrema=shownSeries\.length===1\?/);
+ assert.match(chart,/ReferenceDot key=\{'extreme-'/);
+ assert.doesNotMatch(chart,/ChartCurrentPoint|currentPoint|zg-chart-current|usePlotArea/);
 });
-
 
 test('numeric values use the established five fear-greed bands without recoloring series identity',()=>{
  const match=chart.match(/function scoreBand\(value:number\|null\|undefined\)\{([\s\S]*?)\n\}/);
@@ -110,19 +103,14 @@ test('numeric values use the established five fear-greed bands without recolorin
  assert.match(chart,/className="zg-sector-legend-score" data-score-band=\{scoreBand\(/);
  assert.match(chart,/zg-sector-held-tooltip[\s\S]*?<strong data-score-band=\{scoreBand\(Number\(heldRow\[s\.id\]\)\)\}/);
  assert.match(chart,/uniqueChartTooltipEntries\(payload\)[\s\S]*?<strong data-score-band=\{scoreBand\(Number\(entry\.value\)\)\}/);
- assert.match(chart,/className="zg-chart-current"[\s\S]*?<text[^>]*fill="currentColor" data-score-band=\{scoreBand\(value\)\}/);
- assert.match(chart,/<circle cx=\{cx\} cy=\{cy\} r=\{3\} stroke="#fff" strokeWidth=\{1\} fill=\{color\}/);
+ assert.doesNotMatch(chart,/zg-chart-current/);
  assert.match(css,/\.zg-sector-tooltip li::before\{[^}]*background:currentColor\}/);
 });
 
-test('right-hand Y axis reserves a separate current badge gutter without covering the line or ticks',()=>{
- const config=chart.match(/width=\{mobileAxisRight&&currentPoint\?(\d+):32\} tickMargin=\{mobileAxisRight&&currentPoint\?(\d+):5\}/);
- assert.ok(config,'current badge must reserve space between line endpoint and right Y-axis labels');
- const axisWidth=Number(config[1]),tickOffset=Number(config[2]);
- const badgeGap=7,badgeMaxWidth=47;
- assert.ok(badgeGap+badgeMaxWidth+5<=tickOffset,'badge must end before the right-axis tick text');
- assert.ok(tickOffset+25<=axisWidth,'Y-axis tick labels must remain inside their gutter');
- assert.match(chart,/const x=cx\+7;/);
- assert.match(chart,/width=\{mobileAxisRight&&currentPoint\?/);
- assert.match(chart,/const currentSeries=shownSeries.length===1\?/);
+test('eleven compact legends fit full energy and real-estate names without reducing score font',()=>{
+ assert.match(css,/\.zg-sector-chart-legend\.zg-sector-compact-legend\{gap:0\}/);
+ assert.match(chart,/id:'energy',name:'에너지'/);
+ assert.match(chart,/id:'realEstate',name:'부동산'/);
+ assert.match(css,/\.zg-sector-legend-score\{font-size:14px/);
+ assert.doesNotMatch(css,/\.zg-sector-chart-legend\.zg-sector-compact-legend\{[^}]*overflow-x:auto/);
 });
