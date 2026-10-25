@@ -141,6 +141,7 @@ PC에서 새 작업 등록 전 아래 단계가 필요하다.
 - 신규 `theme-data-center-power-publish-r3.mjs`: 기본 `--once`는 기존 R2 SHA 검산만, `--once --collect`는 무료 무계정 4 GET 이하·비공개 검산만 한다. 공개 명령 `--once --collect --publish --accept-anonymous-license-risk`를 명시하면, 기존 PC Cloudflare 인증 경로를 재사용해 새 D1 key `theme-data-center-power-r1`만 CAS/읽기 검증한다. 기존 9개 key·예약 작업 변경 0. `theme-data-center-power-r3.cmd` 로그는 실행 CMD와 같은 폴더 `DATA_CENTER_POWER_R3_RESULT.txt`.
 - R3 검증 조건: 실제 252개 거래일·원가격 manifest SHA·후보 파일 SHA·소스 신선도·라이선스 미확인 상태의 명시·D1 CAS/readback·공개 API readback. 신규 정규 작업은 **미등록 제안 상태**이고 PC 승인 SHA 설치·실제 게시·다음 정규 PC 실행 전에는 공개·운영 완료가 아니다.
 - 2026-10-25 공개 API 읽기 전용 실측: 기존 9개 표시, 기본 관측일 `2026-10-22`, 바이오만 `2026-10-21`. 새 DTCR/GRID 관측일도 `2026-10-22`이고 후보 252개 날짜 SHA256 `99240d830a2ab4e26512032f2d70ef6e7889fdbb0a474218079ac73327cdec99`가 공개 기존 7개 기준 시퀀스의 해시와 일치한다. R3 실제 로컬 비공개 재생 `PRIVATE_CANDIDATE_VERIFIED_NOT_PUBLISHED`, `score=14.75794`, `providerCalls=0`, `d1Writes=0`, `publicWrites=0`, `schedulerWrites=0`.
+- 2026-10-25 R4 Windows PC 준비 CMD `scripts/pc-writer/theme-data-center-power-r4-bootstrap.cmd`: R3 실측 검증 릴리스 `2f0f1a2c1b31e20f9e943e90824885d586448d29`을 immutable SHA로 고정해 GitHub 스테이징 30개 파일 해시를 검증한다. 새 PC raw manifest가 없으면 기존 4 GET 상한 수집기를 2회 이어 실행해 R1 개인 PC 252일 계산 후 R3 비공개 검산을 한다. 이미 manifest가 있으면 R3 bounded 수집·검산만 실행한다. 사용자 CMD와 같은 위치에 `DATA_CENTER_POWER_R4_RESULT.txt` 및 임시 다운로드된 스테이징 도구를 두며 `%TEMP%`/E: 로그 생성 금지. **실행하더라도 D1 게시·신규 Task 등록은 0**, 사용자 PC 실행 결과는 아직 미수신.
 
 ## 일반 채팅 작업 지시문
 
