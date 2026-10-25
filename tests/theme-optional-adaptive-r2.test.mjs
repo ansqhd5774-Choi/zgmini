@@ -33,11 +33,11 @@ function timestamp(date){
  }
  throw Error('NO_NY_HOUR');
 }
-function fixture(root){
+function fixture(root,{count=700,nasaStart=580}={}){
  const home=path.join(root,'themes','space-satellite');
  fs.mkdirSync(path.join(home,'raw'),{recursive:true});
- const dates=days(700),files=[];
- const begins={UFO:0,NASA:580,SPY:0};
+ const dates=days(count),files=[];
+ const begins={UFO:0,NASA:nasaStart,SPY:0};
  for(const symbol of Object.keys(begins)){
   const rows=dates.slice(begins[symbol]).map((date,j)=>({symbol,timestamp:timestamp(date),
    close:(symbol==='SPY'?150:80)*Math.exp(.0004*(begins[symbol]+j)+
@@ -152,5 +152,33 @@ test('R2 private audit refuses any edited original raw byte',()=>{
   const {home,files}=fixture(root),target=path.join(home,files[0].path);
   fs.appendFileSync(target,'tamper');
   assert.throws(()=>auditSpaceSatelliteAdaptive({dataRoot:root}),{code:'SPACE_R2_RAW_HASH_MISMATCH'});
+ }finally{fs.rmSync(root,{recursive:true,force:true});}
+});
+
+test('UFO with fewer than 628 verified sessions cannot force a mixed pair score',()=>{
+ const root=fs.mkdtempSync(path.join(os.tmpdir(),'space-short-long-'));
+ try{
+  fixture(root,{count:620,nasaStart:550});
+  const result=auditSpaceSatelliteAdaptive({dataRoot:root}),pair=result.candidates[0];
+  assert.equal(result.status,'PRIVATE_PRIORITY_PAIR_NOT_READY');
+  assert.equal(result.coverage.UFO.dailySessions,620);
+  assert.equal(result.coverage.NASA.dailySessions,70);
+  assert.equal(pair.score,null);
+  assert.equal(pair.scoredSessions,0);
+  assert.equal(pair.history.at(-1).status,'PAIR_APPROVAL_REQUIRED_OR_SOURCE_INCOMPLETE');
+  assert.equal(pair.eligibility.accepted,false);
+ }finally{fs.rmSync(root,{recursive:true,force:true});}
+});
+
+test('NASA under 40 real observations remains in candidate list with a missing score',()=>{
+ const root=fs.mkdtempSync(path.join(os.tmpdir(),'space-young-wait-'));
+ try{
+  fixture(root,{count:700,nasaStart:670});
+  const result=auditSpaceSatelliteAdaptive({dataRoot:root}),pair=result.candidates[0];
+  assert.deepEqual(pair.etfs,['UFO','NASA']);
+  assert.equal(result.coverage.NASA.dailySessions,30);
+  assert.equal(pair.score,null);
+  assert.equal(pair.history.at(-1).weights,null);
+  assert.equal(pair.eligibility.accepted,false);
  }finally{fs.rmSync(root,{recursive:true,force:true});}
 });
