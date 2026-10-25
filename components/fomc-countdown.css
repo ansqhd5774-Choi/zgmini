@@ -40,6 +40,7 @@
 .zg-schedule-name{display:flex;align-items:center;justify-content:center;gap:4px;min-width:0;line-height:14px;color:#e8f4fb;font-weight:700;font-size:11px}
 .zg-schedule-name-text{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:center}
 .zg-schedule-company-logo{display:block;flex:none;width:14px;height:14px;max-width:14px;max-height:14px;min-width:14px;min-height:14px;overflow:visible}
+.zg-schedule-ticker-fallback{display:inline-flex;flex:none;align-items:center;justify-content:center;width:14px;height:14px;min-width:14px;max-width:14px;background:#24465b;border-radius:2px;color:#cbe0f4;font-size:7px;line-height:14px;font-weight:850;letter-spacing:-.6px}
 .zg-schedule-date{text-align:center;white-space:nowrap;font-size:10px;color:#a6c3d5;font-variant-numeric:tabular-nums}
 .zg-schedule-remaining{justify-self:stretch;display:block;text-align:center;white-space:nowrap;font:800 11px/1.2 Consolas,monospace;color:#ffe09a;background:#0d3044;padding:5px 2px;font-variant-numeric:tabular-nums}
 .zg-schedule-number{color:#ffe09a;font-weight:850}
