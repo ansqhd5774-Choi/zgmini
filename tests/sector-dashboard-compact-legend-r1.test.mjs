@@ -90,8 +90,10 @@ test('one selected real latest point shows an endpoint score; multi-series and m
  assert.match(chart,/currentSeries&&currentRow&&typeof currentValue==='number'&&Number\.isFinite\(currentValue\)/);
  assert.match(chart,/currentPoint&&<ReferenceDot key=\{'current-'/);
  assert.match(chart,/shape=\{<ChartCurrentPoint value=\{currentPoint\.value\}/);
- assert.match(chart,/const x=axisRight\?cx-width-7:cx\+7;/);
+ assert.match(chart,/const x=cx\+7;/);
  assert.match(chart,/currentPoint&&!mobileAxisRight\?58:12/);
+ assert.match(chart,/width=\{mobileAxisRight&&currentPoint\?92:32\} tickMargin=\{mobileAxisRight&&currentPoint\?62:5\}/);
+ assert.doesNotMatch(chart,/cx-width-7/);
  assert.match(chart,/aria-label=\{`현재 점수 \$\{score\}점/);
  assert.match(chart,/const extrema=shownSeries\.length===1\?/);
 });
@@ -111,4 +113,16 @@ test('numeric values use the established five fear-greed bands without recolorin
  assert.match(chart,/className="zg-chart-current"[\s\S]*?<text[^>]*fill="currentColor" data-score-band=\{scoreBand\(value\)\}/);
  assert.match(chart,/<circle cx=\{cx\} cy=\{cy\} r=\{3\} stroke="#fff" strokeWidth=\{1\} fill=\{color\}/);
  assert.match(css,/\.zg-sector-tooltip li::before\{[^}]*background:currentColor\}/);
+});
+
+test('right-hand Y axis reserves a separate current badge gutter without covering the line or ticks',()=>{
+ const config=chart.match(/width=\{mobileAxisRight&&currentPoint\?(\d+):32\} tickMargin=\{mobileAxisRight&&currentPoint\?(\d+):5\}/);
+ assert.ok(config,'current badge must reserve space between line endpoint and right Y-axis labels');
+ const axisWidth=Number(config[1]),tickOffset=Number(config[2]);
+ const badgeGap=7,badgeMaxWidth=47;
+ assert.ok(badgeGap+badgeMaxWidth+5<=tickOffset,'badge must end before the right-axis tick text');
+ assert.ok(tickOffset+25<=axisWidth,'Y-axis tick labels must remain inside their gutter');
+ assert.match(chart,/const x=cx\+7;/);
+ assert.match(chart,/width=\{mobileAxisRight&&currentPoint\?/);
+ assert.match(chart,/const currentSeries=shownSeries.length===1\?/);
 });
