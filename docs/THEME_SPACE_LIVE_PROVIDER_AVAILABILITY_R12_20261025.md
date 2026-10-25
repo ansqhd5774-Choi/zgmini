@@ -1,0 +1,53 @@
+# R12 — 우주·위성 ETF 7종 실공급원 무료 조회 결과 (2026-10-25)
+
+- 적용 범위: `codex/theme-fear-greed-integration-20261025`, Draft PR #714 안의 신규 우주·위성 테마 조사. **ETF 2개/3개 고정 없음**. 후보는 수집·점수 산출이 검증되는 개수만큼 모두 검토한다.
+- 구분: `LIVE_CATALOG_PASS / FREE_1H_PREVIEW_PASS / FULL_PC_SHA_NOT_AUDITED / SPY_R2_NOT_AUDITED / NO_PUBLICATION`.
+- 공급원: [GetMarketHistory API reference](https://getmarkethistory.com/docs/api/reference), [coverage](https://getmarkethistory.com/docs/coverage), [terms](https://getmarkethistory.com/docs/terms). 시장일 최신 제공 **2026-10-23**. 2026-10-25 당일 시세가 아니다.
+- **실제 외부 GET 0회라고 주장하지 않는다.** 이 R12은 무료·무키 공개 API를 실제 호출했다. 실측 결과는 호출 응답의 카탈로그/최근 1시간봉에서 집계했다. **개인 PC 원자료·GitHub 원봉 저장·운영 D1·공개 점수 쓰기는 전혀 하지 않았다.**
+
+## 1. 놓치기 쉬운 API 계약 — 심볼 조회는 `1m`, 무료 가격은 `1h`
+
+1. 처음 `GET /api/v1/symbols?source=stocks&timeframe=1h&prefix=WARP` 호출은 **404**, 정확히 `stocks has no "1h" timeframe (stored: 1m)` 응답. 원인: `/symbols`의 `timeframe`은 **저장 원본 간격**이어야 한다.
+2. 정정 요청 `GET /api/v1/symbols?source=stocks&timeframe=1m&prefix=TICKER&limit=10`은 7종 전부 **HTTP 200** 및 정확한 `symbol` 등록 확인. `covered_from=2016-01-01`은 전체 데이터셋 범위이지 해당 ETF의 실제 첫 관측일이 아니다. 아래는 `first_timestamp`를 사용했다.
+3. 무료 검증 `GET /api/v1/bars/stocks/TICKER/1h?start=2026-10-23&end=2026-10-23&limit=3&format=json`은 7종 모두 **HTTP 200**, 요청 심볼·양수 close·`is_gap=false` 실제 행 반환. `X-Data-Through`도 각 심볼별 2026-10-23 관측 시각을 반환.
+4. 이것은 **조회 가능성 확인**일 뿐 SHA로 보존된 PC 전체 원본·SPY 동일 거래일·R2 계산 검증이 아니다. `1h` 원가격은 공식 종가나 배당/분할 조정 가격이라고 주장하지 않는다.
+
+## 2. 실제 관측 결과 — 신규 조사 대상 7종
+
+| ETF | 카탈로그 최초 실제 분봉 UTC일 | 카탈로그 1분봉 총 행 | 10/23 무료 1시간봉 실제 샘플 | 10/23 자료 확인 | 전체 무료 1시간봉 관측 **서로 다른 UTC일** | 결과 |
+| --- | --- | ---: | ---: | --- | ---: | --- |
+| **WARP** | 2026-05-07 | 11,002 | 3행/3행 요청 | PASS | **118일** | 무료 수집 경로 확인 |
+| **ORBX** | 2026-04-15 | 9,327 | 3행/3행 요청 | PASS | **134일** | 무료 수집 경로 확인 |
+| **MARS** | 2026-03-05 | 17,473 | 3행/3행 요청 | PASS | **162일**¹ | 무료 수집 경로 확인 |
+| **ARKX** | 2021-03-30 | 269,945 | 3행/3행 요청 | PASS | —² | 기존 manifest SHA 재검증 우선 |
+| **ROKT** | 2018-10-23 | 21,313 | 3행/3행 요청 | PASS | —² | 기존 manifest SHA 재검증 우선 |
+| **DIPR** | 2026-05-06 | 386 | **1행**/3행 요청 | PASS | **92일** | 저유동성·결측 실제 감사 필요 |
+| **WSPC** | 2026-07-09 | 105 | **2행**/3행 요청 | PASS | **49일** | 실제 거래일 검증 필요 |
+
+1. MARS 무료 1시간봉은 1,600행 상한 페이지에서 2026-10-20까지 159개 UTC일을 확인하고, 같은 10/20~10/23 구간을 별도 제한 조회해 10/21·22·23의 3개 새 날짜를 확인한 **날짜 합집합 162일**. 페이지 총 행 수를 임의로 합치거나 전체 수량이라고 표기하지 않는다.
+2. ARKX·ROKT는 과거 PC manifest 원자료 항목이 존재한다고 R5 기록에 나타나므로 신규 과거봉을 재다운로드하지 않았다. 무료 API의 10/23 최근 실봉 3개만 **별도 확인**했다. 이 단계에서 PC 원자료 SHA 재검증/공통 N은 미완료.
+
+- WARP: 제한 `1h` 1,056행 / 118일, 미도달 cursor 없음.
+- ORBX: 제한 `1h` 1,145행 / 134일, 미도달 cursor 없음.
+- MARS: 1,600행까지만 첫 페이지, 후속 10/20~23 한정 조회(상기 ¹). 원봉 합산 수량 미확정.
+- DIPR: `1h` 234행 / 92일, cursor 없음. 10/23에는 실제 단 1시간봉(2거래·250거래량)으로 표본 희소. 이는 **해당 시간봉 관측값**이지 일간 총거래량이 아니다.
+- WSPC: `1h` 91행 / 49일, cursor 없음. 10/23에는 실제 2시간봉. 49 UTC일은 SPY 공통 유효 `N>=40` 보장이 아니며, 기간별 결측이 빈번할 수 있다.
+- 날짜 수는 공급원 실봉의 UTC 날짜로 셌다. **America/New_York 정규거래 마감 관측·SPY 공통 거래일 N·R2 실제 점수는 아님.**
+
+## 3. 전체 후보 9종의 판정과 이후 점수 산출 범위
+
+| 구분 | ETF | R12 이후 처리 |
+| --- | --- | --- |
+| 기존 PC SHA+SPY 공통 실측 검증 | **UFO 656일, NASA 144일** | R9 실측 보존, 기존 원자료 재수집 금지 |
+| 이번 공급원 카탈로그+무료 실봉 **PASS** | **WARP, ORBX, MARS, DIPR, WSPC** | 신규 PC 원자료 저장·SHA/NYSE 시간 정규화·SPY 공통 N·실제 R2 검산 필요 |
+| 이번 공급원 실봉 PASS + 기존 PC 원본 목록 재검증 필요 | **ARKX, ROKT** | 기존 manifest/원본 SHA 먼저 읽기 전용 점검; 없는 날짜만 제한 수집 검토 |
+
+**결론:** 9종을 구성 상한 2종으로 줄일 증거가 없다. 이번에 신규 7종 모두 **공급원 무료 조회 가능**을 실측했다. 그러나 실제 전체 입력/점수 가능한 9종이라고 아직 판단하지 않는다. 기존 R9 두 ETF 39.95701점은 여전히 **당시 2종 비공개 재현값**이며 9종 신규 합성 점수가 아니다.
+
+## 4. 재현 가능한 비파괴 점검과 권한 구분
+
+- 신규 `scripts/pc-writer/theme-space-satellite-r12-provider-probe.mjs`는 기본 실행 무네트워크, 명시적인 `--probe`에서만 ETF별 최대 **카탈로그 1 GET + 최근 거래일 1시간봉 3행 이내 1 GET**. ETF 선택 개수 제한은 없다. `--symbols=WARP,ORBX,...` 인수를 허용.
+- `tests/theme-space-satellite-r12-provider-probe.test.mjs`로 원본 인덱스 `1m` vs 무료 조회 `1h`, ETF 1/2/4/9/25종 무자르기, invalid/bar_gap의 PASS 차단, raw/점수/게시 0 검증.
+- R12 실행으로 기존 R2·R3·R4-A·R9 산식, 9개 운영 테마, D1, Cloudflare, main, Scheduler, DNS **변경 없음**.
+- 다음은 **PC 기존 저장 manifest 읽기 전용 SHA 검사→과거 raw 없는 5종만 bounded 무료 수집→R2 계산**. PC 명령은 사용자의 Windows CMD 환경에 맞춰 별도 검증한 뒤 제시해야 한다.
+- 공급원 라이선스·48시간 지연·상업적 파생 공개 적격성 별도 최종 Gate. `rightsVerified=false`, `publicationAuthorized=false`, `finalBasketSelected=false` 유지.
