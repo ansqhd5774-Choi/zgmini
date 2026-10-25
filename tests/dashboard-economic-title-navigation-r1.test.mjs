@@ -78,9 +78,9 @@ test("economic title restores original-size inline arrow in both expanded states
 
 test("responsive economic card columns reserve room for full labels and their arrows",()=>{
  const r6=css.split("/* EC12 R6: restore the original inline 13px arrow")[1];
- assert.ok(r6.includes('@media (min-width:960px) and (max-width:1023px)'));
+ assert.ok(r6.includes('@media (min-width:960px) and (max-width:1279px)'));
  assert.ok(r6.includes('grid-template-columns:repeat(4,minmax(0,1fr));'));
- assert.ok(r6.includes('@media (min-width:1024px) and (max-width:1599px)'));
+ assert.ok(r6.includes('@media (min-width:1280px) and (max-width:1599px)'));
  assert.ok(r6.includes('grid-template-columns:repeat(5,minmax(0,1fr));'));
  assert.ok(r6.includes('@media (max-width:540px)'));
  assert.ok(r6.includes('grid-template-columns:minmax(0,1fr);'));
