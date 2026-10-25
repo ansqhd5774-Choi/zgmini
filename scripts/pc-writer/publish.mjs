@@ -1,8 +1,10 @@
 import {liquidityHistoryRow} from '../../worker/market-score-response-store.mjs';
 import {LIQUIDITY_ACTIVE_HISTORY_METHOD} from '../../worker/liquidity-active-history-reader.mjs';
 import {hash,save} from './d1.mjs';
+import {assertCompleteMarket} from './market-publication-safety.mjs';
 
 export function marketPlan(body,now,lease,previous){
+ assertCompleteMarket(body);
  if(body?.status!=='SUCCESS'||body.domains?.length!==12||!Number.isSafeInteger(now)||!lease)throw Error('INVALID_MARKET_PUBLICATION');
  const encoded=JSON.stringify(body),plan=[];
  plan.push({sql:"SELECT CASE WHEN EXISTS(SELECT 1 FROM market_collection_jobs_v1 WHERE job='pipeline' AND lease_id=? AND lease_until>?) AND COALESCE((SELECT stored_at FROM market_public_snapshots_v1 WHERE snapshot_key='current'),-1)=? THEN 1 ELSE json('PC_SOURCE_OR_LEASE_CHANGED') END AS guarded",params:[lease,Date.now(),previous??-1]});
@@ -21,6 +23,7 @@ export async function claimMarket(client,db){
 export async function releaseMarket(client,db,id){await client.request(db,[{sql:"UPDATE market_collection_jobs_v1 SET lease_id=NULL,lease_until=0,status='IDLE',finished_at=? WHERE job='pipeline' AND lease_id=?",params:[Date.now(),id]}]);}
 
 export async function publishMarket(client,db,body,now,lease,previous,file){
+ assertCompleteMarket(body);
  const pending={status:'SUBMITTING',storedAt:now,bodyHash:hash(body)};save(file,pending);
  let writeError;try{await client.request(db,marketPlan(body,now,lease,previous));}catch(error){writeError=error;}
  // A timeout is not permission to repeat a mutation: always read back first.

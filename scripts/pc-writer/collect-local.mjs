@@ -6,6 +6,7 @@ import {loadLocalProviders,installLocalRuntime} from './local-env.mjs';
 import {save} from './d1.mjs';
 import {createQuotaFetch} from './quota-fetch.mjs';
 import {recordCollectionChecks} from './collection-checks.mjs';
+import {alertCollectionReport} from './local-data-alert.mjs';
 import {collectConsumptionR5} from './consumption-r5.mjs';
 import {overdueRateJob} from './rate-refresh-priority.mjs';
 import {collectSectorFearGreedR3EtfIncremental} from './sector-fear-greed-r3-etf-incremental.mjs';
@@ -55,6 +56,7 @@ export async function collectLocal(base,{lane='core',importOnly=false,job=null}=
   report.releaseCalendar=releaseCalendar;
   save(path.join(base,'local-collection-last-run.json'),report);
   recordCollectionChecks(base,report);
+  try{alertCollectionReport(base,report);}catch{console.warn('LOCAL_DATA_ALERT_RECORD_FAILED');}
   return report;
  }finally{globalThis.fetch=originalFetch;hooks.deregister();core.close();history.close();}
 }

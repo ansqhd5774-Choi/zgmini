@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {DIAGNOSTIC_FRED_SERIES} from '../lib/diagnostic-layer/input-registry.mjs';
 import {macroCollectionReadiness,mergeSuccessfulMacroCredit} from '../worker/macro-result-contract-r61.mjs';
 import {readStoredMarketInputs} from '../worker/market-operational-store.mjs';
-const full=()=>({series:Object.fromEntries(Object.keys(DIAGNOSTIC_FRED_SERIES).map(id=>[id,[{value:0}]])),providerSummary:{fred:{failed:[]}}});
+const full=()=>({series:Object.fromEntries(Object.keys(DIAGNOSTIC_FRED_SERIES).map(id=>[id,[{observationDate:'2026-09-30',value:0}]])),providerSummary:{fred:{failed:[]}}});
 test('zero, partial and explicit failures cannot replace last-good macro',()=>{
  assert.equal(macroCollectionReadiness({series:{}}).reason,'MACRO_NO_READY_SERIES');
  const input=full();delete input.series.PAYEMS;
