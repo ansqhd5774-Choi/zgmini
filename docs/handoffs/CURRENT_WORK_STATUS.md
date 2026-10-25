@@ -164,3 +164,13 @@
 - **공개 DOM 실측**: `https://zgmini.kr/` 변경 후 390px에서 섹터·테마 최신 배지 모두 끝점 오른쪽이며 오른쪽 축 텍스트와 분리. 섹터 배지 우측 296px, Y축 눈금 좌측 316px; 에너지 78.1점·클라우드·SaaS 65.0점 실제 관측일 2026-10-23. 500px 두 차트 분리 PASS, 1280px 최신 배지 PASS, 2개 선택 시 최신 점수 배지 숨김 PASS.
 - SEO 상시 점검: 대시보드 공개 title/meta description/H1/canonical/index 상태 확인. 이 범위에서는 SEO 문구 변경 없음(`NO_CHANGE`).
 - **PUBLIC_UI_VERIFIED**. GitHub 병합 및 공개 UI 실측으로 반영 확인. 다만 Cloudflare 관리 화면의 개별 Build/Deployment ID와 `Ready`는 이번 도구 환경에서 직접 조회하지 못했으므로 **NOT_VERIFIED**로 구분한다.
+
+
+## 2026-10-25 차트 폭 복원·에너지/부동산 범례 잘림 수정 R2
+
+- 사용자 확인: 우측 최신 점수 배지를 위한 46px 차트 축소는 차트를 해치고, 범례 11개 항목 가운데 ‘에너지’, ‘부동산’ 이름이 잘림. 기준: **차트 폭과 기존 글자 크기 보존**을 우선하며 끝점 점수 배지는 제거. 현재 점수는 기존 범례 수치에 유지.
+- 코드: `components/sector-sentiment-chart.tsx`에서 최신값 중복 배지 `ChartCurrentPoint` 및 추가 plot/축 gutter 삭제. `LineChart` 오른쪽 여백 12px, `YAxis` 폭 32px·tickMargin 5로 복원. 단일 선택 최고·최저점, 기존 차트 값/산식·색상·기간·잠정·툴팁은 보존.
+- 스타일: `components/sector-sentiment-chart.css`의 소형 범례 항목 간격 3px → 0px. 360.44px 카드 기준 각 이름 폭 약 +2.73px 확장, 기존 11px 이름 텍스트·14px 점수 텍스트와 색원형 유지. 가로 드래그·차트 높이 변경 없음.
+- 검사: `tests/sector-dashboard-compact-legend-r1.test.mjs` 최신 점수 배지 삭제, 최고·최저 및 차트 폭 복원, 범례 전체 이름, 점수 구간 색상 검증 갱신.
+- 작업 브랜치 `codex/zgmini-gpt-workspace-20261025` 보존; 소형 배포 브랜치 `codex/ui-chart-width-legend-20261025` → [PR #724](https://github.com/ansqhd5774-Choi/zgmini/pull/724) **MERGED**, `main` squash SHA `c19f1fa3b04b291d2e3fb8aa337be0279d9867ab`. GitHub Actions Node.js CI run `40195141781` **SUCCESS**(빌드·타입·회귀·PC publication).
+- **PUBLIC_DEPLOY_NOT_VERIFIED**: 병합 직후 공개 `https://zgmini.kr/` 실측은 변경 전 자산(최신 점수 상자 두 개/범례 `clientWidth 27 < scrollWidth 29`)이 유지됨. Cloudflare Git Integration 배포 완료 확인 후 PC 360px 카드 및 모바일 390px 실측 필요. 공개 반영 확인 전 PASS/완료 선언 금지.
