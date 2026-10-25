@@ -7,6 +7,7 @@ import {liquidityHistoryRow} from './market-score-response-store.mjs';
 import {LIQUIDITY_ACTIVE_HISTORY_METHOD} from './liquidity-active-history-reader.mjs';
 import {mergeStoredMacro} from './candidate-market-operational-store.mjs';
 import {bisInputField,BIS_INPUT_TTL,readLastValidBis} from './bis-input-policy.mjs';
+import {readLastValidCredit} from './credit-input-policy.mjs';
 const decodeInput=text=>JSON.parse(text.startsWith('gzip:')?gunzipSync(Buffer.from(text.slice(5),'base64'),{maxOutputLength:32000000}).toString('utf8'):text);
 export function marketOperationalStore(db){
  if(!db)throw Error('STORAGE_UNAVAILABLE');
@@ -20,7 +21,7 @@ export function marketOperationalStore(db){
  const read=async(table,key)=>{const row=await db.prepare(`SELECT body,stored_at FROM ${table} WHERE ${table==='market_input_batches_v1'?'batch_key':'snapshot_key'}=?`).bind(key).first();return row?{body:JSON.parse(row.body),storedAt:row.stored_at}:null};
  return {
   initialize:init,
-  async readInput(key){await init();if(bisInputField(key))return readLastValidBis(db,key,decodeInput);const row=await db.prepare('SELECT body,stored_at FROM market_input_batches_v1 WHERE batch_key LIKE ? ORDER BY stored_at DESC LIMIT 1').bind(key+':%').first();return row?{body:decodeInput(row.body),storedAt:row.stored_at}:null},
+  async readInput(key){await init();if(bisInputField(key))return readLastValidBis(db,key,decodeInput);if(key==='credit')return readLastValidCredit(db,decodeInput);const row=await db.prepare('SELECT body,stored_at FROM market_input_batches_v1 WHERE batch_key LIKE ? ORDER BY stored_at DESC LIMIT 1').bind(key+':%').first();return row?{body:decodeInput(row.body),storedAt:row.stored_at}:null},
   readScore:()=>read('market_public_snapshots_v1','current'),
   async readScoreHistory({sinceDate='0000-00-00',limit=370}={}){
    await init();

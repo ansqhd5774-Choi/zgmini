@@ -5,6 +5,7 @@ import {gunzipSync} from 'node:zlib';
 import {Buffer} from 'node:buffer';
 import {projectionMacroKey} from './projection-input-manifest-r60.mjs';
 import {bisInputField,BIS_INPUT_TTL,readLastValidBis} from './bis-input-policy.mjs';
+import {readLastValidCredit} from './credit-input-policy.mjs';
 
 const INPUT_TTL=36*3600000;
 const decodeInput=text=>JSON.parse(text.startsWith('gzip:')?gunzipSync(Buffer.from(text.slice(5),'base64'),{maxOutputLength:32000000}).toString('utf8'):text);
@@ -33,6 +34,7 @@ export function marketOperationalStore(db){
   initialize:async()=>true,
   async readInput(key){
    if(bisInputField(key))return readLastValidBis(db,key,decodeInput);
+   if(key==='credit')return readLastValidCredit(db,decodeInput);
    const row=await db.prepare('SELECT body,stored_at FROM market_input_batches_v1 WHERE batch_key LIKE ? ORDER BY stored_at DESC LIMIT 1').bind(key+':%').first();
    if(!row)return null;
    const latest={body:decodeInput(row.body),storedAt:row.stored_at};
