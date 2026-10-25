@@ -102,3 +102,23 @@
 - 위 문구는 사용자 계정/무료 수집 경로/현재 라이선스 범위의 실제 검증을 대신하지 않는다. provider catalog에 있다는 이유로 `derivedLicenseVerified=true`를 설정하지 않는다.
 - 현재 Evidence 상태: `PUBLIC_SYMBOL_CATALOG_PASS / SAMPLE_1H_API_3_OF_3_HTTP200 / PRIVATE_FIXTURE_TEST_17_OF_17_PASS / R5_CMD_READY_PC_NOT_RUN / REAL_BAR_COMMON_SESSION_COUNT_UNKNOWN / PC_REAL_SCORE_NOT_RUN / PAIR_NOT_FINAL / PUBLICATION_NOT_AUTHORIZED`.
 - **GitHub Draft의 코드 테스트 성공은 PC 원가격 수집·실측 계산·운영 설치·데이터 게시·Cloudflare 배포·자동 갱신 완료가 아니다.**
+
+## 7. R5 PC 실행 증거와 R6 누락 종목 한정 수집 (2026-10-25)
+
+### R5 실제 PC 보고서 확인
+
+- 사용자 실행 결과 `SPACE_SATELLITE_R5_RESULT.txt`: 불변 릴리스 `d82329419a95eb0b77a638c475c7365b3627c2a7` 소스 설치 및 SHA 검증 성공.
+- 기존 원자료: **UFO 656일**(마지막 관측일 2026-10-23), NASA 0일, SPY 0일. UFO 원자료는 기존 manifest에서 읽은 값이며 이 단계에서 새로 호출하지 않았다.
+- 기존 `collection-fd8f6411c6dbaab6.json` 체크포인트와 UFO·ROKT·ARKX 원본 목록 보존. R5 Provider 호출·D1·공개 쓰기·예약 작업 변경 모두 0.
+- UFO 단독 656일은 **SPY 공통 628일을 입증하지 않는다**. NASA+UFO 조합의 유효 공통 세션은 0으로 보고되었으며 점수 계산은 시작하지 않았다.
+- R5 이전에 작성한 `PC_NOT_RUN`/`REAL_BAR_COUNT_UNKNOWN` 설명은 이 R5 사용자 실행 결과에 의해 **부분 갱신**되었다. SPY와 NASA의 원가격·공통 세션 검증은 아직 미완료다.
+
+### R6 다음 실행 Gate — NASA 및 SPY만
+
+1. `theme-space-satellite-r6-collect.mjs`는 기존 승인 bounded 수집기의 동작을 그대로 사용하고 대상 심볼만 **NASA, SPY**로 제한했다. UFO를 다시 요청하거나 이전 UFO/ROKT/ARKX 체크포인트를 재설정하지 않는다.
+2. 데이터 수집 기간은 `2024-01-01`~`2026-10-23`. 이전 체크포인트의 종료일 `2026-10-24`와 구분해 R6 진행 상태를 별도 파일로 저장한다. 데이터는 기존 `E:/ZGmini/data/themes/space-satellite/raw/`, manifest에 SHA256으로 원본 보존한다.
+3. 한 번의 CMD 실행당 외부 요청은 **최대 4회**. 페이지 커서는 같은 날짜 범위의 R6 체크포인트에서 수동 재실행 시 이어받는다. 네트워크/HTTP 오류는 실패 상태로 남기고 **로그 검토 전 자동 재시도하지 않는다**.
+4. Desktop에 ZIP을 풀어 같은 위치에 둔 `theme-space-satellite-r6-collect.cmd` 실행. 이전 R5 불변 릴리스의 감사기를 먼저 읽기 전용 실행 → NASA/SPY 가격봉 제한 수집 → 읽기 전용 재감사. 결과 파일 `SPACE_SATELLITE_R6_RESULT.txt`는 **CMD 바로 옆에 기록**.
+5. R6 커밋 고정 `016eeedf88926d2e31e504561ddbe0c895389ee3`, 새 collector SHA256 `845e325813b904e704a7948367855f152a40ab28be9fb874535eadaee9478b25`; CMD에서 파일 해시를 직접 검사한다. CMD는 임의 다운로드를 수행하지 않는다.
+6. 모든 유효 원자료가 확보된 후에도 **SPY 공통 날짜의 N≥628, 신생 N≥40** 등 승인 기준을 감사해야 한다. 현재 `PRIVATE_SCORE_NOT_RUN` / `PAIR_NOT_FINAL` / `D1_NOT_PUBLISHED` / `AUTOMATION_NOT_ENABLED` 유지.
+7. R6 bounded collector 모의 검증은 기존 UFO/이전 체크포인트 불변, 1회 요청 제한 재개, HTTP 503 재시도 차단을 확인했다. **이 테스트가 실제 PC 무료 API 수집 성공의 증거는 아니다.**
