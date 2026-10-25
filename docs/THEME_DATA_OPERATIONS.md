@@ -152,6 +152,14 @@ PC에서 새 작업 등록 전 아래 단계가 필요하다.
 - **2026-10-25 사용자 PC R5 실행 로그 수신:** `DATA_CENTER_POWER_R5_RESULT.txt`에서 `status=EXISTING_TENTH_TASK_VERIFIED`, 대상 `\\ZGMINI-PC-Theme-Data-Center-Power`, 실제 Trigger 1개, `taskWrites=0`, `existingNineTaskChanges=0`, `d1Writes=0`, `providerCalls=0`, `privateCheck` 관측일 `2026-10-23`, 12.32143점 재검산. 즉 **이미 등록된 10번째 Task가 조건에 맞음을 확인**했고, R5가 이번에 새로 생성했다고 보고하지 않는다. 실제 다음 정규 실행 로그는 **미수신**.
 - 현재 PR #692는 Draft이고 GitHub Node.js CI는 PASS이지만 `main` 반영·Cloudflare 실배포·새 D1 key 게시/읽기 검증은 미실행이다. 공개로 전환할 때는 먼저 GitHub main→Cloudflare exact production gate, 새 D1 key 조건부 게시/readback, 실제 공개 API/UI를 검증해야 하며 R5 Private만으로 공개 성공 처리하지 않는다.
 
+### 2026-10-25 R6: 실제 자동배포 확인 및 선택 테마 가용성 게이트 보정
+
+- 상기 R5 시점의 Draft/미배포 기록은 당시의 과거 상태다. **PR #692는 `main` SHA `0676246bf4995b0684776c056841edaca8de94b0`로 병합되었다.** 해당 SHA의 GitHub Node.js CI, Cloudflare GitHub 앱 `Workers Builds: zgmini-migration-candidate-r5` 체크가 모두 `SUCCESS`; 실제 Cloudflare Production Builds 링크의 build ID는 `6aef651b-88ad-4a75-b17a-8adb9242e63c`이다. 자동배포 연결 화면 재요청 불필요. 이는 **코드/빌드 확인**이며 10번째 D1 게시 증거가 아니다.
+- 실제 `https://zgmini.kr/api/theme-fear-greed/`는 `READY`, **8개**(기본 7개 + 바이오·신약 1개), 기준일 `2026-10-23`; AI·반도체는 당시 표시되지 않았다. 기존 9개가 모두 표시되어야만 10번째 D1 게시를 허용하던 R3의 `length>=9`는 AI의 독립 결측 때 신규 테마까지 부당하게 막는 조건이었다. R6는 **검증된 기본 7개만 필수**로 보되 실제 결측을 만들거나 AI/바이오 원장·스케줄러·산식은 변경하지 않는다.
+- `theme-data-center-power-gate-r6.mjs`는 최신 GitHub `main` SHA, 동일 SHA의 Cloudflare Production Builds `SUCCESS` 체크, 실제 API 기본 7개 각각 252일을 읽기 전용 검증한다. `theme-optional-stage.mjs`는 현재 main의 모든 필수 파일을 단일 SHA로 검증해 별도 불변 PC 릴리스에 설치한다. 이전 R4/R5 릴리스는 덮어쓰지 않는다.
+- Desktop `theme-data-center-power-r6-publish.cmd`는 **무계정** R3 원자료 수집·검산을 재사용하고, `ACCEPT`라는 **명시적 게시자 위험 수용 응답**을 받은 경우에만 독립 10번째 D1 key에 CAS/읽기 검증 게시한다. 기존 미확정 `derivedLicenseVerified=false`, 계정 미확인 표기는 유지한다. 첫 게시와 실제 API 252점이 확인돼야 `theme-data-center-power-cutover-r6.mjs`가 **10번째 Task의 기존 Desktop CMD 내용만** 원자적으로 공개 경로로 전환한다. Task XML/트리거/실행 주체·기존 9개 작업은 변경하지 않고 개인 PC 같은 폴더에 Private CMD 복구 사본을 남긴다.
+- `DATA_CENTER_POWER_R6_RESULT.txt`, `DATA_CENTER_POWER_R6_STAGE_RESULT.txt`는 실행 CMD와 같은 Desktop 폴더에 작성한다. R6 CMD PC 실행·D1 readback·사이트 10번째 등장·다음 정규 예약 실행 **아직 미확인**. `ACCEPT` 미입력 시 비공개 작업을 그대로 유지한다.
+
 ## 일반 채팅 작업 지시문
 
 > ZGMINI 테마 작업은 GitHub 최신 main의 AGENTS.md, docs/THEME_DATA_OPERATIONS.md, config/theme-data-registry.json을 먼저 확인하고 진행하라. 원자료 수집→PC 저장→계산→확정/잠정 게시→D1 readback→공개 API/UI→다음 정규 실행까지 연결하라. 실행 코드는 GitHub에, 원자료는 승인된 E: 데이터 경로에 저장하고 manifest에 실제 상대 경로·SHA256·출처·수집 시각·관측 기간·스키마·가격 모드를 기록하라. 수집기·계산기·게시기·작업 이름/주기·PC 승인 SHA·D1 key를 등록부에 갱신하라. 첨부 ZIP·Desktop·임시 폴더만 유일한 사본으로 두지 마라. 로컬 접근이 없으면 적용했다고 보고하지 말고 GitHub 코드와 정확한 설치/검증 명세를 준비하라. 무료·상업용 조건과 기존 산식·데이터·잠금·게시 보호를 유지하고, 새 테마의 실패가 기존 테마 갱신을 막지 않게 하라. 실제 검사 명령과 결과·미완료 항목을 남기고 테스트/배포 성공만으로 자동 운영 완료라고 보고하지 마라.

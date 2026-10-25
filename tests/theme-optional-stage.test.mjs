@@ -19,7 +19,7 @@ const fixtureFetch=async url=>{
 test('snapshot pins one GitHub commit and includes every imported dependency',async()=>{
   const snapshot=await fetchSnapshot({fetchImpl:fixtureFetch});
   assert.equal(snapshot.sha,sha);
-  assert.equal(snapshot.assets.length,30);
+  assert.equal(snapshot.assets.length,34);
   assert.ok(snapshot.assets.every(x=>/^[a-f0-9]{64}$/.test(x.sha256)));
   assert.ok(snapshot.assets.some(x=>x.path==='worker/theme-history-reference.mjs'));
   assert.ok(snapshot.assets.some(x=>x.path==='worker/theme-etf-only-public.mjs'));
@@ -29,6 +29,8 @@ test('snapshot pins one GitHub commit and includes every imported dependency',as
   assert.ok(snapshot.assets.some(x=>x.path==='scripts/pc-writer/theme-data-center-power-r1.mjs'));
   assert.ok(snapshot.assets.some(x=>x.path==='scripts/pc-writer/theme-data-center-power-r1.cmd'));
   assert.ok(snapshot.assets.some(x=>x.path==='worker/theme-data-center-power-r1.mjs'));
+  assert.ok(snapshot.assets.some(x=>x.path==='scripts/pc-writer/theme-data-center-power-gate-r6.mjs'));
+  assert.ok(snapshot.assets.some(x=>x.path==='scripts/pc-writer/theme-data-center-power-cutover-r6.mjs'));
 });
 
 test('staged release imports its actual PC cycle with all transitive dependencies',async t=>{

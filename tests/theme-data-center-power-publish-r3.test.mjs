@@ -6,7 +6,7 @@ import path from 'node:path';
 import {createHash} from 'node:crypto';
 import {buildDcPowerPublicR3} from '../scripts/pc-writer/theme-data-center-power-public-r3.mjs';
 import {dcPowerVersionedD1} from '../scripts/pc-writer/theme-data-center-power-d1-r3.mjs';
-import {runDcPowerPublishR3} from '../scripts/pc-writer/theme-data-center-power-publish-r3.mjs';
+import {runDcPowerPublishR3,dcPowerPublicSnapshot} from '../scripts/pc-writer/theme-data-center-power-publish-r3.mjs';
 import {eligibleDcPower,DC_POWER_PUBLIC_KEY} from '../worker/theme-data-center-power-r1.mjs';
 
 const CLOCK=Date.parse('2026-10-25T08:00:00Z');
@@ -38,6 +38,22 @@ test('the ninth-theme anonymous route works without a provider account but discl
  assert.equal(pub.derivedOnlyNoRaw,true);
  assert.equal(eligibleDcPower(pub,base,{now:CLOCK,storedAt:CLOCK}),true);
  assert.equal(base.themes.length,9);
+});
+
+test('a missing or stale optional AI/biotech theme cannot block isolated tenth publication',async()=>{
+ for(const count of [7,8,9]){
+  const rolling={...base,themes:base.themes.slice(0,count)};
+  const publicDoc=await dcPowerPublicSnapshot({now:CLOCK,fetchImpl:async()=>({
+   ok:true,json:async()=>rolling})});
+  assert.equal(publicDoc.themes.length,count);
+  const pub=buildDcPowerPublicR3({...options(),base:publicDoc});
+  assert.equal(eligibleDcPower(pub,publicDoc,{now:CLOCK,storedAt:CLOCK}),true);
+ }
+ const unavailable={...base,themes:base.themes.slice(0,6)};
+ await assert.rejects(()=>dcPowerPublicSnapshot({now:CLOCK,fetchImpl:async()=>({
+  ok:true,json:async()=>unavailable})}),/PUBLIC_CORE_SEVEN_NOT_READY/);
+ assert.throws(()=>buildDcPowerPublicR3({...options(),base:unavailable}),
+  /CORE_SEVEN_BASE_NOT_READY/);
 });
 
 test('no silent publisher approval and no false verified rights',()=>{
