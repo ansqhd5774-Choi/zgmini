@@ -272,3 +272,11 @@
 - R16 새 안전 코드 `scripts/pc-writer/theme-space-satellite-r16-gap-forensic.mjs`, CMD, 합성 테스트 2개, 문서 `docs/THEME_SPACE_R16_PC_GAP_FORENSIC_20261025.md`. 현존 R2 산식과 사용자 기준 변경 **0**. 뉴욕 15시 유효일의 결측 위치, 최근 21/61/125 관측일 완성도, 잔존 3축 지표와 표본, 시간대별 다른 봉의 존재만 조사. 출처 SHA가 R15 스냅샷과 다르면 BLOCKED; 값 대체/보간/추측 불허.
 - R16 관련 Node 8개 테스트 파일 PASS, Desktop ZIP 9개 파일 SHA·ASCII/CRLF 체크 PASS. **사용자 PC R16 아직 미실행**. 최종 ETF 편입 수 무제한(현재 9개 후보), `aggregateScore=null`, `aumWeightsVerified=false`, `rightsVerified=false`, `publicationAuthorized=false`.
 - 다음 순서: R16 CMD PC 직접 실행 → `SPACE_SATELLITE_R16_GAP_FORENSIC_RESULT.txt` 제출 → ORBX/DIPR/WSPC의 실제 누락 원인 판정 → 별도 최신 ETF AUM·구성 순도·권리 검증 후 최종 조합 가중 적용 검토. GitHub PR #714 Draft 유지, 기존 9개 운영 테마/main/D1/DB/스케줄러/Cloudflare 변경 0.
+
+## 2026-10-25 R16 PC 실측 통과 → R17 동일시간 ETF/SPY 봉 가능성 진단
+
+- 사용자 제출 `SPACE_SATELLITE_R16_GAP_FORENSIC_RESULT.txt`의 `PHASE=ALL_CODE_SHA256_VERIFIED` / `RESULT=PRIVATE_GAP_CAUSES_AUDITED_NO_SCORE_CHANGES` 확인. 사용자 PC의 SHA-verified 기존 9개 ETF/공유 SPY 원본 그대로 검사, Provider GET·원본/D1/공개/스케줄러 쓰기 **0**.
+- 기존 SPY 마지막 2026-10-23, 9종 중 6종 현시점 개별점수 정상; ORBX/DIPR/WSPC만 기존 산식상 현시점 점수 결측. ORBX는 마지막 10/23의 실제 15시 봉이 있으나 9/03·9/14·10/02 세션의 15시 누락(그 세 날 **다른 시간봉 있음**) 때문에 최근 R2 세부 축 0. 과거 9/02 점수 66.99047 재사용 **금지**. DIPR(15시 28일·최근 45일 결측 41/그중 다른 시간봉 26), WSPC(15시 15일·최근 45일 결측 38/다른 시간봉 21)은 40일 미달. ROKT도 9/02 15시 누락 1회 존재하나 승인 R2가 실제 이용 가능한 세부 지표로 현재 점수 정상 생성하므로 전 지표 일치 강제 **금지**.
+- 분석·신규 안전 진단 R17: `scripts/pc-writer/theme-space-satellite-r17-hour-coverage.mjs` 및 `.cmd`, 합성 테스트 2개, `docs/THEME_SPACE_R17_SAME_HOUR_FEASIBILITY_20261025.md`. 동일일 ETF와 SPY **양쪽에 실제 존재**하는 뉴욕 14/13/12/11/10시 봉의 교집합 수와 14시↔15시 실측 가격 및 ETF/SPY 상대가격 차이 분포를 정량화한다. 숫자는 **대체 사용 승인이나 점수 오차 추정이 아니다**.
+- 로컬 Node R13/R15/R16/R17 및 R2/R3/SPY 관련 테스트 **8개 파일 PASS**; R17 Desktop ZIP 8개 MJS+CMD **9개 파일 무결성 PASS**, CMD SHA 핀·ASCII·CRLF 확인. **R17 실 PC 실행 결과는 아직 없음**. 원본 저장 데이터/산식·가중치/기존 9개 운영·D1/DB/스케줄러/main/Cloudflare 변경 0. Draft PR #714 유지, 원본·권리 미확정, 브랜치 보존.
+- 다음 단계: 사용자가 Desktop `SPACE_SATELLITE_R17_HOUR_COVERAGE_DESKTOP_20261025.zip`을 같은 폴더에 해제, `theme-space-satellite-r17-hour-coverage.cmd` 직접 실행 → `SPACE_SATELLITE_R17_HOUR_COVERAGE_RESULT.txt` 제출. 결과를 보고 합법적인 같은시간 프록시 변경의 실익/왜곡/승인 필요성을 판단. **최종 ETF 수 상한 없음**, 정량 증거 없는 결측 채우기·단순 2종 고정 금지.
