@@ -7,7 +7,7 @@
 | 01 | 시장 분석 | ZGMINI 기존 시장 지표를 활용하도록 계획 | EXISTING_INPUT |
 | 02 | 섹터 분석 | ZGMINI 기존 ETF 섹터 공탐 활용 계획 | EXISTING_INPUT |
 | 03 | 테마 분석 | 기존 통과 ETF 테마 9개 유지; 재검증 금지 | EXISTING_INPUT |
-| 04 | 매력 테마 선정 | R2 정량 설계, R3 같은 판본 검산, R8 F 9/9 및 공식 산업 원문 4/9 읽기 전용 자동 연결, M2 R25 선택 JSON은 과거 스냅샷 | DESIGNED / PARTIAL |
+| 04 | 매력 테마 선정 | R2 정량 설계, R3 같은 판본 검산, R9 F 9/9 및 공식 산업 원문 5/9 읽기 전용 자동 연결, M2 R25 선택 JSON은 과거 스냅샷 | DESIGNED / PARTIAL |
 | 05 | 성장 산업·기술 선정 | M2 R25 로봇 실측 코드 및 선택 JSON | CODE_PRESENT / NOT_VERIFIED |
 | 06 | 수혜 기업 발굴 | M2 R25 기업 노출·미국 유니버스·로봇·제품 조사 코드 | CODE_PRESENT / NOT_VERIFIED |
 | 07 | 기본 지표 분석 | M2 R25 재무·공식 기업 실적 확인 코드; R24 실측 2/4 부분 확보 | PARTIAL |
@@ -36,6 +36,14 @@
 - **산식·가중치·기존 ETF·PC 작업·운영 사이트·주문 모두 변경 없음**. 사용자 Windows CMD R8 실측은 아직 미확인.
 - 근거 파일: `STAGE04_INVESTMENT_BOT_R8_FDA_CPUC_LIVE_EVIDENCE_20261025.md`. R7(2/9) 문서는 이력으로 보존.
 
+## R9 최신 실측 — IFR 공식 로봇 설치 원값 연결
+
+- 2026-10-25 Node 개발 실측: 기존 9개 F **9/9**, 공식 산업 원문 **5/9**, 상태 `LIVE_INPUT_PARTIAL_INDUSTRY_UNRANKED`, 자동 검사 **28/28 PASS**.
+- 세계 산업용 로봇 신규 설치량 **2025년 603,307대**를 IFR World Robotics **2026** 공식 PDF SHA256 고정 검증으로 추가했다. 원문에 반올림 공표된 YoY +11%는 별도 필드이며 **정확한 전년 성장률·가속도 산식은 미검증 NULL**.
+- 미해결: 원전(IAEA PRIS), 방산(SIPRI), 사이버보안(ENISA), 데이터센터·전력(IEA), 모두 **자료 불충분/권리 검토**, 테마 탈락 아님.
+- `G/D/M`, 공식 순위, 자동 주문 **모두 NULL/OFF**, `main`, UI, 기존 ETF, 스케줄러, DB, DNS·Provider 변경 없음. 사용자 Windows CMD R9 실측 아직 없음.
+- 새 기준 보고서 `STAGE04_INVESTMENT_BOT_R9_IFR_LIVE_EVIDENCE_20261025.md`; R7·R8 당시 기록은 보존.
+
 ## 가장 최근 M2 패키지 R25 진척
 
 - 원본: `INVESTMENT_M2_R25_NASDAQ_EARNINGS_REPAIR_20261025(1).zip` (원본 SHA256은 `ARTIFACT_INDEX.md`).
@@ -50,5 +58,5 @@
 1. 이 브랜치와 `m2/` 파일 목록·SHA, 현재 ZGMINI `main` SHA, 사용자 Windows에서 실행 승인된 R25 ZIP의 일치 여부 확인.
 2. 사용자가 CMD에서 R25를 실행한 실제 `M2_LATEST_STATUS.txt`를 확보하면 R25 SERV 수정이 실제 PASS인지 검증.
 3. 04단계 공식 원자료의 동일 판본·관측기간·성장률·가속도를 이어서 검산하고, 실제 최신 유효 **잠정 F** 사용.
-   R8에서 4/9 자동 검증 완료. 남은 5개 공식 데이터/재사용 조건 해결 후에만 추가 연결.
+   R9에서 5/9 자동 검증 완료(로봇은 원값만). 남은 4개 공식 데이터/재사용 조건 해결 후에만 추가 연결.
 4. 사용자 승인 이전에 M 랭킹 실운영·03단계 가중치/ETF 변경·주문 및 배포 금지.
