@@ -7,6 +7,7 @@ import {shellRoutes,shellArtifact} from '../worker/candidate-shell-r7.mjs';
 import {extractRscPayloadFromPrerenderedHtml} from '../node_modules/vinext/dist/build/prerender.js';
 import {candidateBranchGate} from './candidate-branch-gate.mjs';
 candidateBranchGate();
+execFileSync(process.execPath,['--test','tests/tailwind-runtime-sources-r7.test.mjs'],{stdio:'inherit'});
 execFileSync(process.execPath,['--test','tests/candidate-writer-linkage-r3.test.mjs'],{stdio:'inherit'});
 execFileSync(process.execPath,['--test','tests/projection-input-r60.test.mjs','tests/macro-result-contract-r61.test.mjs','tests/stored-diagnostic-r61.test.mjs'],{stdio:'inherit'});
 const env={...process.env,CLOUDFLARE_LOAD_DEV_VARS_FROM_DOT_ENV:'false'};
