@@ -1,5 +1,5 @@
 /**
- * AI investment BOT / stage04 research-input gate (prototype R12).
+ * AI investment BOT / stage04 research-input gate (prototype R13).
  *
  * Automatic read-only retrieval of the existing 9 theme F inputs and an
  * independent official industry observation. Do not silently promote either
@@ -16,6 +16,7 @@ import { fetchLatestOfficialIfrRobots } from './ifr-robot-official-readonly.mjs'
 import { fetchLatestOfficialIeaDataCentres, IEA_DATA_CENTRE_REPORT } from './iea-data-centre-official-readonly.mjs';
 import { fetchLatestOfficialEnisaNis2025, ENISA_NIS_2025_RELEASE } from './enisa-nis-official-readonly.mjs';
 import { auditStage04SourceVintage } from './source-vintage-audit-readonly.mjs';
+import { fetchFdaApprovalYearCatalog } from './fda-edition-catalog-readonly.mjs';
 
 export const INDUSTRY_CONTRACT = Object.freeze({
   '로봇·자동화': { institution: 'IFR', source: 'https://ifr.org/img/worldrobotics/Executive_Summary_WR_2026_-_Industrial_Robots.pdf', review: '2025_COUNT_ONLY_ROUNDED_YOY_NO_EXACT_HISTORY_AND_LICENSE_REVIEW' },
@@ -41,8 +42,9 @@ export async function runInvestmentBotInputGate({
   ifrReader = fetchLatestOfficialIfrRobots,
   ieaReader = fetchLatestOfficialIeaDataCentres,
   enisaReader = fetchLatestOfficialEnisaNis2025,
+  fdaCatalogReader = fetchFdaApprovalYearCatalog,
 } = {}) {
-  const [fResult, fednowResult, eurostatResult, fdaResult, cpucResult, ifrResult, ieaResult, enisaResult] = await Promise.allSettled([
+  const [fResult, fednowResult, eurostatResult, fdaResult, cpucResult, ifrResult, ieaResult, enisaResult, fdaCatalogResult] = await Promise.allSettled([
     (async () => {
       const response = await fetchFn(F_ENDPOINT, {
         signal: AbortSignal.timeout(15000), headers: { accept: 'application/json' },
@@ -60,6 +62,7 @@ export async function runInvestmentBotInputGate({
     ifrReader({ fetchFn }),
     ieaReader({ fetchFn }),
     enisaReader({ fetchFn }),
+    fdaCatalogReader({ fetchFn, asOfDate }),
   ]);
 
   const f = fResult.status === 'fulfilled' ? fResult.value : null;
@@ -70,6 +73,7 @@ export async function runInvestmentBotInputGate({
   const ifr = ifrResult.status === 'fulfilled' ? ifrResult.value : null;
   const iea = ieaResult.status === 'fulfilled' ? ieaResult.value : null;
   const enisa = enisaResult.status === 'fulfilled' ? enisaResult.value : null;
+  const fdaCatalog = fdaCatalogResult.status === 'fulfilled' ? fdaCatalogResult.value : null;
   const expected = Object.keys(INDUSTRY_CONTRACT);
   const themesByName = new Map(f?.themes?.map((theme) => [theme.theme, theme]) ?? []);
   const inputContractValid = f?.status === 'LIVE_F_OBSERVED'
@@ -134,7 +138,7 @@ export async function runInvestmentBotInputGate({
   });
 
   const report = {
-    runType: 'INVESTMENT_BOT_STAGE04_INPUT_GATE_R12',
+    runType: 'INVESTMENT_BOT_STAGE04_INPUT_GATE_R13',
     runAtUtc: new Date().toISOString(),
     mode: 'READ_ONLY_RESEARCH_ONLY_NO_TRADE',
     status: inputContractValid && fednow && eurostat && fda && cpuc && ifr && iea && enisa
@@ -217,6 +221,14 @@ export async function runInvestmentBotInputGate({
         historicalYoyReferenceCount: enisa?.historicalYoyReferenceCount ?? null,
         historicalAccelerationReferenceCount: enisa?.historicalAccelerationReferenceCount ?? null,
       },
+      fdaEditionCatalog: {
+        state: fdaCatalog?.state ?? 'CATALOG_UNCHECKED',
+        failureCode: fdaCatalogResult.status === 'rejected' ? errorCode(fdaCatalogResult.reason) : null,
+        newestYearInOfficialIndex: fdaCatalog?.newestYearInOfficialIndex ?? null,
+        latestFullCalendarYearEnded: fdaCatalog?.latestFullCalendarYearEnded ?? null,
+        editionAlert: fdaCatalog?.editionAlert ?? 'UNVERIFIED',
+        latestAnnualReportAutomaticallyVerified: false,
+      },
     },
     themes: rows,
     automatedTradeEnabled: false,
@@ -224,6 +236,7 @@ export async function runInvestmentBotInputGate({
     nextRequired: [
       'Two institutional metrics remain unconnected: IAEA PRIS official Excel GET returned HTTP 403, and SIPRI commercial derivative rights require confirmation. Do not bypass access controls.',
       'ENISA 2025 EU NIS2 survey reports 9% of respondent IT budgets; do not recast this share as industry growth, or compare unpaired survey cohorts as annual acceleration.',
+      'FDA index can list current-year 2026 approvals; that is an incomplete calendar-year tally, not a completed 2026 annual CDER report. Do not promote it to annual growth or overwrite the verified 2025 report.',
       'IEA current 2026 report gives 2025 estimated 485 TWh and rounded +17%; keep exact growth and acceleration NULL until comparable same-vintage values are acquired.',
       'IFR 2025 installation count is verified but precise 2024 base and historical YoY/acceleration remain unavailable; do not infer them from rounded 11%.',
       'Review the next annual FDA report explicitly; the validated 2025 report is not a live 2026 observation.',
