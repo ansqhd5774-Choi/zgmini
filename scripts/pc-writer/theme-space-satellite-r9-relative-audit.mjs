@@ -19,7 +19,8 @@ const need=(ok,code)=>{if(!ok)throw Object.assign(new Error(code),{code});};
 function verifiedPrivateDaily({dataRoot,sourceTheme='data-center-power'}={}){
  const root=fs.realpathSync(dataRoot),home=path.join(root,'themes','space-satellite');
  const manifestPath=path.join(home,'raw-manifest.json');
- const manifest=JSON.parse(fs.readFileSync(manifestPath,'utf8'));
+ const manifestBytes=fs.readFileSync(manifestPath);
+ const manifest=JSON.parse(manifestBytes);
  need(manifest.version===1&&manifest.themeId==='space-satellite'&&Array.isArray(manifest.files),
   'R9_SPACE_MANIFEST_INVALID');
  const raw=Object.fromEntries(ETF_SYMBOLS.map(symbol=>[symbol,new Map()]));
@@ -53,7 +54,9 @@ function verifiedPrivateDaily({dataRoot,sourceTheme='data-center-power'}={}){
   selectRealHourlySessions([...raw[symbol].values()].sort((a,b)=>a.timestamp.localeCompare(b.timestamp)))
    .map(row=>[row.date,row.close]))]));
  daily.SPY=new Map(selectRealHourlySessions(spy.bars).map(row=>[row.date,row.close]));
- return {daily,manifestSha256:SHA(fs.readFileSync(manifestPath)),spyManifestSha256:spy.manifestSha256};
+ const sourceVersion='GMH_PRIVATE_COMBINED_MANIFEST_SHA256_'+
+  SHA(manifestBytes.toString('utf8')+'\n'+spy.sourceTheme+'\n'+spy.manifestSha256);
+ return {daily,sourceVersion};
 }
 
 // Pure date-local and count-independent aggregation; fixtures can supply 2, 3, 4, 5+ ETFs.
@@ -148,7 +151,9 @@ export function summarizeR9({baseline,shadow,provenance,approvedR3History}={}){
 export function runR9({dataRoot}={}){
  const baseline=runR8({dataRoot});
  const r3=auditSpaceSatelliteAdaptive({dataRoot,sharedSpyThemeId:'data-center-power'});
- const {daily}=verifiedPrivateDaily({dataRoot});
+ const {daily,sourceVersion}=verifiedPrivateDaily({dataRoot});
+ need(baseline.sourceVersion===sourceVersion&&r3.sourceVersion===sourceVersion,
+  'R9_MANIFEST_PROVENANCE_CHANGED_DURING_AUDIT');
  const shadow=calculateRelativeShadow({daily});
  const coverage=Object.fromEntries(Object.entries(daily).map(([symbol,map])=>[symbol,map.size]));
  return summarizeR9({baseline,shadow,provenance:{coverage},
