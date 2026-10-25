@@ -17,7 +17,7 @@ if not exist "%~dp0theme-optional-score-r188.mjs" goto package_missing
 if not exist "%~dp0theme-optional-adaptive-r2.mjs" goto package_missing
 if not exist "%~dp0theme-optional-pair-weight-r3.mjs" goto package_missing
 if not exist "%~dp0theme-shared-spy-readonly-r1.mjs" goto package_missing
-call :verify theme-space-satellite-r8-real-audit.mjs 207d64b65976cfc45ba97c16623d8de0fd3b270653b9da3b5bdf417709d56c1a
+call :verify theme-space-satellite-r8-real-audit.mjs 3ad33f14b1417a053f7722b88d5be20bcce89790a81fd662626ffb17aacfb189
 if errorlevel 1 goto hash_mismatch
 call :verify theme-space-satellite-adaptive-r2.mjs 1a955d148c3a3d328d3d12048235525b1250cd54c4a1a169be8e6b88722ef586
 if errorlevel 1 goto hash_mismatch
