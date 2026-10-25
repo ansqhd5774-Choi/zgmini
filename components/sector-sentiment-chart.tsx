@@ -3,7 +3,7 @@ import {useDashboardMobileAxis} from '../hooks/use-dashboard-mobile-axis';
 import {useEffect,useRef,useState} from 'react';
 import {useStoredIndex} from './use-stored-index';
 import {ChevronRight,ChevronUp,ChevronDown,Layers3,Sparkles} from 'lucide-react';
-import {Line,LineChart,ResponsiveContainer,CartesianGrid,XAxis,YAxis,Tooltip,ReferenceLine,ReferenceDot} from 'recharts';
+import {Line,LineChart,ResponsiveContainer,CartesianGrid,XAxis,YAxis,Tooltip,ReferenceLine,ReferenceDot,usePlotArea} from 'recharts';
 import {chartExtrema,clampedChartIndex} from '../lib/chart-extrema.mjs';
 import ChartExtremumPoint from './chart-extremum-point';
 import './sector-sentiment-chart.css';
@@ -32,6 +32,22 @@ export type SentimentSeries={id:string;name:string;color:string;shortName?:strin
 type ChartInputRow={date:string;provisional?:boolean}&Record<string,string|number|boolean|null|undefined>;
 export type SectorSnapshotMeta={confirmedObservationDate?:string;phase?:string;provisional?:{date:string;asOf:string;delayMinutes:number|null}};
 type SectorFearGreedStoredPayload=SectorSnapshotMeta&{status?:string;history?:ChartInputRow[]};
+function ChartCurrentPoint({cx,cy,value,date,color,axisRight,extremeKind}:{cx?:number;cy?:number;value:number;date:string;color:string;axisRight:boolean;extremeKind?:string}){
+ const plot=usePlotArea();
+ if(typeof cx!=='number'||typeof cy!=='number')return null;
+ const score=value.toFixed(1),width=score.length>4?47:41;
+ const x=axisRight?cx-width-7:cx+7;
+ // Keep the endpoint badge inside the 120px plot; put it opposite a nearby extremum label.
+ const offset=extremeKind==='max'?9:extremeKind==='min'?-26:-9;
+ const top=plot?.y??0,bottom=plot?plot.y+plot.height-19:Math.max(0,cy+offset);
+ const y=Math.min(Math.max(cy+offset,top+2),Math.max(top+2,bottom));
+ return <g className="zg-chart-current" pointerEvents="none" role="img" aria-label={`현재 점수 ${score}점 · ${date}`}>
+  <circle cx={cx} cy={cy} r={3} stroke="#fff" strokeWidth={1} fill={color}/>
+  <rect x={x} y={y} width={width} height={18} rx={3} fill="#0b2030" stroke={color} strokeWidth={.9}/>
+  <text x={x+width/2} y={y+12.5} textAnchor="middle" fontSize={12} fontWeight={800} fill="#fff">{score}</text>
+ </g>;
+}
+
 export default function SectorSentimentChart({data=[],series=SECTORS,title='섹터별 공포·탐욕',draggable=false,themePicker=false,dashboardThemeScores=false,linkToDetail=true,showProvisionalNotice=true,snapshot,provisionalBySeries}:{data?:ChartInputRow[];series?:readonly SentimentSeries[];title?:string;draggable?:boolean;themePicker?:boolean;dashboardThemeScores?:boolean;linkToDetail?:boolean;showProvisionalNotice?:boolean;snapshot?:SectorSnapshotMeta;provisionalBySeries?:Record<string,string>}){
  const mobileAxisRight=useDashboardMobileAxis();
  const [hidden,setHidden]=useState<Set<string>>(()=>new Set(series===SECTORS?SECTORS.map(sector=>sector.id):dashboardThemeScores?series.map(item=>item.id):[]));
@@ -120,6 +136,12 @@ export default function SectorSentimentChart({data=[],series=SECTORS,title='섹�
   if(list)list.scrollLeft=0;
  },[showDashboardThemeScores,rankedThemeEntries,series]);
  const extrema=shownSeries.length===1?chartExtrema(visibleRows.map(row=>({date:row.date,value:row[shownSeries[0].id]}))):[];
+ const currentSeries=shownSeries.length===1?shownSeries[0]:null;
+ const currentRow=visibleRows.at(-1);
+ const currentValue=currentSeries?currentRow?.[currentSeries.id]:undefined;
+ // Only the latest real plotted observation may be marked as current; never fill missing values.
+ const currentPoint=currentSeries&&currentRow&&typeof currentValue==='number'&&Number.isFinite(currentValue)?{date:currentRow.date,value:currentValue,color:currentSeries.color}:null;
+ const currentExtremeKind=currentPoint?extrema.find(point=>point.date===currentPoint.date)?.kind:undefined;
  const heldRow=heldIndex===null?null:visibleRows[heldIndex];
  const moveHeld=(clientX:number,element:HTMLDivElement)=>{const rect=element.getBoundingClientRect();setHeldIndex(clampedChartIndex(clientX,rect.left+(mobileAxisRight?0:32),rect.width-44,visibleRows.length))};
  return <section className={`zg-sector-chart${compactSectorScores?' zg-sector-score-card':''}${themePicker?" zg-theme-picker-enabled":""}${showDashboardThemeScores?' zg-theme-score-card':''}`} aria-label={`${series.length}개 ${title} 비교 차트`}>
@@ -129,7 +151,7 @@ export default function SectorSentimentChart({data=[],series=SECTORS,title='섹�
    {heldRow&&<div className="zg-sector-held-tooltip zg-sector-tooltip" role="status"><p>{heldRow.date}</p><ul>{shownSeries.map(s=>typeof heldRow[s.id]==='number'?<li key={s.id} style={{color:s.color}}><span>{s.name}</span><strong>{Number(heldRow[s.id]).toFixed(1)}</strong></li>:null)}</ul></div>}
    {!rows.length&&<ChartAxisLabels ticks={[0,25,50,75,100]} top={2.15} bottom={97.85} left={4.67}/>}
    {!rows.length?<svg className="zg-chart-empty-svg" width="100%" height="100%" viewBox="0 0 600 280" preserveAspectRatio="none" role="img" aria-label={`${title} 차트, 0부터 100점 축`}><rect x="36" y="6" width="552" height="268" fill="#071a27"/>{[0,25,50,75,100].map(value=>{const y=274-value*2.68;return <g key={value}><line x1="36" x2="588" y1={y} y2={y} stroke={value===50?'#64748b':'#25465a'} strokeDasharray="3 5"/><text x="28" y={y+4} textAnchor="end" fontSize="11" fill="#9db0c2">{value}</text></g>})}</svg>:<ResponsiveContainer width="100%" height="100%">
-    <LineChart data={visibleRows} margin={{top:6,right:12,bottom:0,left:0}}>
+    <LineChart data={visibleRows} margin={{top:6,right:currentPoint&&!mobileAxisRight?58:12,bottom:0,left:0}}>
      <CartesianGrid vertical={false} stroke="#25465a" strokeDasharray="3 5"/>
      <XAxis dataKey="date" stroke="#9db0c2" fontSize={11} axisLine={false} tickLine={false} tickFormatter={date=>String(date).slice(5)} minTickGap={36}/>
      <YAxis orientation={mobileAxisRight?"right":"left"} domain={[0,100]} ticks={[0,25,50,75,100]} interval={0} axisLine={false} tickLine={false} stroke="#9db0c2" fontSize={11} width={32}/>
@@ -139,6 +161,7 @@ export default function SectorSentimentChart({data=[],series=SECTORS,title='섹�
       <Line key={sector.id+'-solid'} dataKey={sector.id+'__solid'} name={sector.name} stroke={sector.color} hide={hidden.has(sector.id)} strokeWidth={2} dot={false} activeDot={{r:4}} connectNulls={false} isAnimationActive={false}/>,
       <Line key={sector.id+'-dash'} dataKey={sector.id+'__dash'} name={sector.name} stroke={sector.color} strokeDasharray="4 5" hide={hidden.has(sector.id)} strokeWidth={2} dot={false} activeDot={{r:4}} connectNulls={false} isAnimationActive={false}/>
      ]:<Line key={sector.id} dataKey={sector.id} name={sector.name} stroke={sector.color} hide={hidden.has(sector.id)} strokeWidth={2} dot={false} activeDot={{r:4}} connectNulls={false} isAnimationActive={false}/>)}
+     {currentPoint&&<ReferenceDot key={'current-'+currentPoint.date} x={currentPoint.date} y={currentPoint.value} ifOverflow="visible" shape={<ChartCurrentPoint value={currentPoint.value} date={currentPoint.date} color={currentPoint.color} axisRight={mobileAxisRight} extremeKind={currentExtremeKind}/>}/>}
      {extrema.map(point=><ReferenceDot key={'extreme-'+point.kind} x={point.date} y={point.value} ifOverflow="visible" shape={<ChartExtremumPoint point={point} peerIndex={extrema.find(p=>p.kind!==point.kind)?.index} samples={visibleRows.map(p=>({x:p.date,value:typeof p[shownSeries[0].id]==='number'?Number(p[shownSeries[0].id]):null}))} count={visibleRows.length} color={shownSeries[0].color}/>}/>)}
      {heldRow&&<ReferenceLine x={heldRow.date} stroke="#cbd5e1" strokeDasharray="3 3"/>}
      {heldRow&&shownSeries.map(s=>typeof heldRow[s.id]==='number'?<ReferenceDot key={'held-'+s.id} x={heldRow.date} y={Number(heldRow[s.id])} r={4} fill={s.color} stroke="#fff" ifOverflow="visible"/>:null)}
