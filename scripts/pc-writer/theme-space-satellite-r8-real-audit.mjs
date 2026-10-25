@@ -13,7 +13,10 @@ export function summarizeR8(result){
  const nasaLast=result.coverage.NASA.lastObservationDate;
  const spyLast=result.coverage.SPY.lastObservationDate;
  const ufoLast=result.coverage.UFO.lastObservationDate;
- const score=Number.isFinite(candidate.score)?candidate.score:null;
+ // Never promote an old historical score into a current provisional score.
+ const current=Boolean(candidate.isCurrent)&&nasaLast!==null&&nasaLast===spyLast&&
+  nasaLast===ufoLast&&candidate.observationDate===nasaLast;
+ const score=current&&Number.isFinite(candidate.score)?candidate.score:null;
  return {
   report:'SPACE_SATELLITE_R8_REAL_DATA_READ_ONLY_AUDIT',
   status:result.status,
@@ -28,7 +31,7 @@ export function summarizeR8(result){
    calendarSessions:candidate.calendarSessions,scoredSessions:candidate.scoredSessions,
    missingSessions:candidate.missingSessions,observationDate:candidate.observationDate,
    status:candidate.status,latestStatus:candidate.latestStatus,
-   privateScore:score,weights:candidate.latestWeights,
+   isCurrent:current,privateScore:score,weights:current?candidate.latestWeights:null,
    eligibility:candidate.eligibility},
   sourceLastDatesAgree:nasaLast!==null&&nasaLast===spyLast&&nasaLast===ufoLast,
   finalPairSelected:false,rightsVerified:false,publicationAuthorized:false,
