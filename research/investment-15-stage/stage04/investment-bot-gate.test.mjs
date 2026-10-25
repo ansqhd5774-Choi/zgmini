@@ -1,0 +1,171 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {
+  discoverAsciiLink, parseFedNowAscii, fetchLatestOfficialFedNow, FEDNOW_PAGE,
+} from './fednow-official-readonly.mjs';
+import { F_ENDPOINT } from './latest-f-readonly.mjs';
+import { EUROSTAT_CLOUD_API, parseEurostatCloud } from './eurostat-cloud-readonly.mjs';
+import { INDUSTRY_CONTRACT, runInvestmentBotInputGate } from './investment-bot-gate-readonly.mjs';
+
+const asciiUrl = 'https://www.frbservices.org/wp-content/uploads/20261020-quarterly-3q2026-fednow-ascii.txt';
+const html = `<html><p>FedNow Service</p><p>Last updated on October 20, 2026</p><a href="${asciiUrl}">ASCII</a></html>`;
+const raw = `FedNow - Quarterly Data
+ 2026:Q3      6,376,467        27.6         370,862,703,867
+ 2026:Q2      4,997,811        83.2         274,663,803,964
+ 2026:Q1      2,728,510        10.6         271,252,920,121
+ 2025:Q4      2,466,494        (1.6)        251,776,175,998
+ 2025:Q3      2,506,002        17.6         307,275,281,996
+ 2025:Q2      2,130,889        62.7         245,759,303,513
+ 2025:Q1      1,310,017        43.1         48,600,347,003
+ 2024:Q4        915,263       172.0         20,181,963,324
+ 2024:Q3        336,487       115.6         17,491,272,167
+ 2024:Q2        156,076        60.2            492,250,054
+ 2024:Q1         97,424       133.6             31,421,885
+ 2023:Q4         41,698                         13,656,608
+ 2023:Q3          5,564                          4,776,756
+`;
+const names = Object.keys(INDUSTRY_CONTRACT);
+const eurostatJson = {
+  version: '2.0', class: 'dataset', source: 'ESTAT', updated: '2026-02-27T11:00:00+0100',
+  id: ['freq', 'size_emp', 'nace_r2', 'indic_is', 'unit', 'geo', 'time'],
+  size: [1, 1, 1, 1, 1, 1, 10],
+  value: { '0': 17.82, '2': 18.90, '4': 23.90, '5': 36.10, '6': 40.97, '7': 45.32, '9': 52.74 },
+  extension: { datastructure: { version: '46.0' } },
+  dimension: {
+    freq: { category: { index: { A: 0 } } },
+    size_emp: { category: { index: { GE10: 0 } } },
+    nace_r2: { category: { index: { 'C10-S951_X_K': 0 } } },
+    indic_is: { category: { index: { E_CC: 0 } } },
+    unit: { category: { index: { PC_ENT: 0 } } },
+    geo: { category: { index: { EU27_2020: 0 } } },
+    time: { category: { index: { '2014': 0, '2015': 1, '2016': 2, '2017': 3, '2018': 4,
+      '2020': 5, '2021': 6, '2023': 7, '2024': 8, '2025': 9 } } },
+  },
+};
+
+function makeFetch({ brokenFedNow = false, brokenF = false, brokenEurostat = false } = {}) {
+  return async (url) => {
+    if (url === F_ENDPOINT) return {
+      url, ok: !brokenF, status: brokenF ? 503 : 200,
+      json: async () => ({
+        status: 'READY', sourceVersion: 'TEST', sourceStoredAt: '2026-10-25T05:00:27Z',
+        themes: names.map((name) => ({ theme: name, score: 50,
+          history: [{ date: '2026-10-23' }] })),
+        provisional: { points: [{ date: '2026-10-23', scores: { '바이오·신약': 22.63294 } }] },
+      }),
+    };
+    if (url === FEDNOW_PAGE) return { url, ok: true, status: 200, text: async () => html };
+    if (url === EUROSTAT_CLOUD_API) return {
+      url, ok: !brokenEurostat, status: brokenEurostat ? 503 : 200,
+      json: async () => eurostatJson,
+    };
+    if (url === asciiUrl) return {
+      url, ok: !brokenFedNow, status: brokenFedNow ? 503 : 200, text: async () => raw,
+    };
+    throw new Error('UNEXPECTED_NETWORK_CALL');
+  };
+}
+
+test('official page points to fresh original ASCII (not hard-coded archive)', () => {
+  assert.equal(discoverAsciiLink(html), asciiUrl);
+  assert.throws(() => discoverAsciiLink('<p>FedNow</p>'), /LINK_NOT_FOUND/);
+  assert.throws(() => discoverAsciiLink('<p>FedNow</p><a href="https://example.com/fednow-ascii.txt">ASCII</a>'), /URL_NOT_OFFICIAL/);
+});
+
+test('original quarterly counts recompute official YoY and consecutive YoY change', () => {
+  const x = parseFedNowAscii(raw);
+  assert.equal(x.observationPeriod, '2026:Q3');
+  assert.equal(x.latestRawCount, 6376467);
+  assert.equal(x.previousYearSameQuarterCount, 2506002);
+  assert.equal(x.fullQuarterObservations, 11);
+  assert.equal(x.historicalYoyReferenceCount, 6);
+  assert.equal(x.historicalAccelerationReferenceCount, 5);
+  assert.ok(Math.abs(x.yoyGrowthPct - 154.4478) < 0.003);
+  assert.ok(Math.abs(x.sequentialYoyAccelerationPctPoints - 19.9067) < 0.003);
+  assert.equal(x.M, null);
+});
+
+test('duplicate, missing quarter and invalid source format are rejected', () => {
+  assert.throws(() => parseFedNowAscii(`${raw} 2026:Q3 1,234 1.1\n`), /DUPLICATE/);
+  assert.throws(() => parseFedNowAscii(raw.replace(/ 2025:Q2[^\n]*\n/, '')), /SEQUENCE_GAP/);
+  assert.throws(() => parseFedNowAscii('Old saved market number 99'), /FORMAT_CHANGED/);
+});
+
+test('source browser fetch reads live URL and validates source content', async () => {
+  const data = await fetchLatestOfficialFedNow({ fetchFn: makeFetch() });
+  assert.equal(data.asciiUrl, asciiUrl);
+  assert.equal(data.sourcePageLastUpdated, 'October 20, 2026');
+});
+
+test('Eurostat same-vintage sparse percentage-point differences never invent YoY', () => {
+  const x = parseEurostatCloud(eurostatJson);
+  assert.equal(x.latestAvailableYear, 2025);
+  assert.equal(x.latestRawPct, 52.74);
+  assert.deepEqual(x.twoYearComparisonYears, [2021, 2023, 2025]);
+  assert.ok(Math.abs(x.twoYearDeltaPctPoints - 7.42) < 0.0001);
+  assert.ok(Math.abs(x.changeBetweenTwoYearWindowsPctPoints - 3.07) < 0.0001);
+  assert.deepEqual(x.missingYears, [2015, 2017, 2024]);
+  assert.equal(x.G, null);
+});
+
+test('Eurostat changed cohort, bad rate, or missing comparison stays explicit', () => {
+  assert.throws(() => parseEurostatCloud({ ...eurostatJson, dimension: {
+    ...eurostatJson.dimension,
+    geo: { category: { index: { US: 0 } } },
+  } }), /DATA_SCOPE_DRIFT/);
+  assert.throws(() => parseEurostatCloud({ ...eurostatJson, value: {
+    ...eurostatJson.value, '9': 103,
+  } }), /OUT_OF_RANGE_VALUE/);
+  const missing = parseEurostatCloud({ ...eurostatJson, value: {
+    ...eurostatJson.value, '7': undefined,
+  } });
+  assert.equal(missing.twoYearDeltaPctPoints, null);
+  assert.equal(missing.state, 'OFFICIAL_SERIES_HISTORY_LIMITED');
+});
+
+test('bot joins nine existing F themes but never issues a ranking or an order', async () => {
+  const result = await runInvestmentBotInputGate({ fetchFn: makeFetch(), asOfDate: '2026-10-25' });
+  assert.equal(result.status, 'LIVE_INPUT_PARTIAL_INDUSTRY_UNRANKED');
+  assert.equal(result.themes.length, 9);
+  assert.equal(result.officialIndustry.validatedLiveThemes, 2);
+  const biotech = result.themes.find((x) => x.theme === '바이오·신약');
+  assert.equal(biotech.sentimentPhase, 'PROVISIONAL');
+  assert.equal(biotech.sentimentF, 22.63294);
+  const fintech = result.themes.find((x) => x.theme === '핀테크');
+  assert.equal(fintech.industryObservationPeriod, '2026:Q3');
+  assert.equal(fintech.industryRawCount, 6376467);
+  const cloud = result.themes.find((x) => x.theme === '클라우드·SaaS');
+  assert.equal(cloud.industryRawPercent, 52.74);
+  assert.ok(Math.abs(cloud.industryTwoYearDeltaPctPoints - 7.42) < 0.0001);
+  assert.equal(cloud.industryGrowthPct, null);
+  assert.ok(result.themes.every((x) => x.approvedAttractivenessM === null && x.officialRank === null));
+  assert.equal(result.automatedTradeEnabled, false);
+  assert.deepEqual(result.orderRequests, []);
+});
+
+test('Eurostat source down does not silently reuse a past response', async () => {
+  const result = await runInvestmentBotInputGate({
+    fetchFn: makeFetch({ brokenEurostat: true }), asOfDate: '2026-10-25',
+  });
+  assert.equal(result.status, 'PARTIAL_OR_FAILED_INPUT_UNRANKED');
+  assert.equal(result.officialIndustry.eurostat.failureCode, 'EUROSTAT_HTTP_503');
+  assert.equal(result.themes.find((x) => x.theme === '클라우드·SaaS').industryRawPercent, null);
+});
+
+test('FedNow HTTP failure preserves NULL industry values, not fake success', async () => {
+  const result = await runInvestmentBotInputGate({ fetchFn: makeFetch({ brokenFedNow: true }), asOfDate: '2026-10-25' });
+  assert.equal(result.status, 'PARTIAL_OR_FAILED_INPUT_UNRANKED');
+  assert.equal(result.officialIndustry.fednow.failureCode, 'FEDNOW_HTTP_503');
+  assert.equal(result.themes.find((x) => x.theme === '핀테크').industryRawCount, null);
+  assert.equal(result.themes.find((x) => x.theme === '핀테크').sentimentF, 50);
+  assert.equal(result.automatedTradeEnabled, false);
+});
+
+test('F HTTP failure preserves NULL F without substituting stored values', async () => {
+  const result = await runInvestmentBotInputGate({ fetchFn: makeFetch({ brokenF: true }), asOfDate: '2026-10-25' });
+  assert.equal(result.status, 'PARTIAL_OR_FAILED_INPUT_UNRANKED');
+  assert.equal(result.F.failureCode, 'F_API_HTTP_503');
+  assert.equal(result.themes.length, 9);
+  assert.ok(result.themes.every((x) => x.sentimentF === null && x.approvedGrowthG === null));
+  assert.equal(result.automatedTradeEnabled, false);
+});
