@@ -53,3 +53,12 @@ test('a single selected sector places low high and current callouts with guides 
  assert.ok(css.includes('@media(max-width:680px){\n .zg-sfg-solo-marker{display:block}'));
  assert.ok(css.includes('.zg-sfg-comparison-plot{height:126px;'));
 });
+
+test('sector legend names remain 15px on mobile without clipping the compact grid',()=>{
+ const css=read('app/sector-fear-greed/sector-detail.css');
+ const mobile=css.slice(css.lastIndexOf('@media(max-width:680px)'));
+ assert.match(mobile,/\.zg-sfg-legend-name\{[^}]*font-size:15px;/);
+ assert.match(mobile,/@media\(max-width:480px\)\{[^]*?\.zg-sfg-legend button\{[^}]*grid-template-rows:18px 12px;/);
+ assert.match(mobile,/@media\(max-width:355px\)\{\s*\.zg-sfg-legend\{grid-template-columns:repeat\(3,minmax\(0,1fr\)\)/);
+ assert.match(mobile,/\.zg-sfg-comparison-plot\{height:126px;/);
+});
