@@ -41,7 +41,8 @@ test('warning deduplicates failures, persists Korean status and only clears the 
  const notify=()=>{windows++;return {status:'TEST_NOTIFICATION'};};
  try{
   updateDataAlert(dir,{key:'credit',failed:true,now:100},notify);
-  updateDataAlert(dir,{key:'credit',failed:true,now:200},notify);assert.equal(windows,1);
+  updateDataAlert(dir,{key:'credit',failed:true,now:200,sourceDiagnostic:{provider:'BLS',httpStatus:503,attempts:2}},notify);assert.equal(windows,1);
+  assert.match(fs.readFileSync(path.join(dir,'data-alert-status.txt'),'utf8'),/BLS 응답 503 · 2회 시도/);
   alertCollectionReport(dir,{job:'rates',status:'COMPLETE'},notify);
   assert.equal(JSON.parse(fs.readFileSync(path.join(dir,'data-alert-state.json'))).active.credit.since,100);
   assert.match(fs.readFileSync(path.join(dir,'data-alert-status.txt'),'utf8'),/채권·신용/);
