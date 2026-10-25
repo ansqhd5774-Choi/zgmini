@@ -74,7 +74,7 @@
 - 실제 유효 거래일: UFO **656**, NASA **144**, SPY **706**. 마지막 관측일 모두 **2026-10-23**. 비공개 감사기에서 세 ETF 공통 거래일 **144**.
 - NASA 신규 원본 1개, UFO 기존 원본 2개, 데이터센터·전력의 SPY 검증 원본 5개/실제 유효 1시간봉 11,295개. 우주 manifest에서 ROKT·ARKX 등 2개 이전 탐색 원본 항목은 무시하되 변경·삭제하지 않는다.
 - 저장된 원자료만으로 `UFO+NASA` **현재 유효 ADAPTIVE_R2 점수 39.95701**, 실제 계산 당일 가중치 `UFO 63.828% / NASA 36.172%`. `candidate.isCurrent=true`, `observationDate=2026-10-23`, `eligibility.accepted=true`. **비공개 우선 후보**지 최종 ETF 선정/게시 권리 승인이 아니다.
-- 최신 252거래일 표시 구간은 **계산 점수 29일 / 실제 결측 223일**. 코드 `adaptivePairWeights`가 장기 ETF의 **SPY 공통 유효 N>=628 및 R188_COMPATIBLE**을 요구하고, UFO 전체 유효 일수가 656일이므로 **최대 656−628+1=29일**만 장기 ETF 자격 이후의 쌍 점수가 가능하다. R8의 실제 `scoredSessions=29`가 이 상한과 일치하므로 **29일 한계는 현 승인 쌍 가중치 게이트에서 유래함이 수치로 설명된다**. 처음 통과한 실제 거래일 날짜는 R8 요약에 없어 미확인이다. 223일을 직전 값·과거 점수·상장 전 추정치로 임의 채우면 안 된다. 사용자가 요구한 1년 완성 차트는 현재 미충족.
+- 최근 **252거래일은 표시창**이며 252개 점수를 반드시 채워야 하는 것은 아니다. 현재 유효 쌍 점수 **29일 / 결측 223일**. 코드 `adaptivePairWeights`가 장기 ETF의 **SPY 공통 유효 N>=628 및 R188_COMPATIBLE**을 요구하고, UFO 전체 유효 일수가 656일이므로 **최대 656−628+1=29일**만 현재의 장기-단기 쌍 혼합 점수가 가능하다. R8의 실제 `scoredSessions=29`가 이 상한과 일치한다. 그러나 ETF 각각은 해당 날짜 N<628이면 **승인 R2 계산 경로**를 사용한다. 두 ETF 모두 과거 N<628인 날짜의 **쌍 가중치 규칙만 미승인**이므로 원가격 부족/차트 불합격으로 오해하지 않는다. 최초 39개 실측일·ETF 상장 전은 점수 결측이며, 과거 값이나 임의 점수를 만들지 않는다.
 - 권리 `rightsVerified=false`, `publicationAuthorized=false`; PC R8 Provider/D1/Public/Scheduler 호출·쓰기 모두 0. 소스 코드/로컬 mock 테스트와 별개로 이번 자료 범위는 실제 PC read-only PASS.
 
 ### 5-A. ETF 보유 종목 중복 — 동일 2026-10-23 발행사 상위 10개 공시
@@ -91,4 +91,4 @@
 - NASA는 비상장 SpaceX를 SPV로 보유한다. 발행사 설명상 해당 보유분은 거래 원가로 평가해 매일 시장가격을 반영하지 않을 수 있다. ETF 시장 거래 가격과 내재 NAV 사이의 차이를 간과해서는 안 된다.
 - 근거: Procure 공식 UFO `Holdings as of 10/23/2026` https://www.procureetfs.com/ufo/ ; Tema 공식 NASA `Top 10 Holdings as of October 23, 2026` 및 SpaceX SPV/평가 설명 https://temaetfs.com/nasa .
 
-**최종 게이트:** `PC_PRIVATE_PRICE_AUDIT_PASS / PAIR_CURRENT_PRIVATE_SCORE_PASS / 252_HISTORY_INCOMPLETE_29_OF_252 / HOLDINGS_OVERLAP_MIN_27.57_PCT_POINTS / ETF_PAIR_NOT_FINAL / RIGHTS_NOT_APPROVED / NO_D1_NO_DEPLOY`.
+**최종 게이트:** `PC_PRIVATE_PRICE_AUDIT_PASS / PAIR_CURRENT_PRIVATE_SCORE_PASS / 252_WINDOW_PARTIAL_VALID_29_SCORED / PRE628_BOTH_SHORT_PAIR_WEIGHT_UNAPPROVED / HOLDINGS_OVERLAP_MIN_27.57_PCT_POINTS / ETF_PAIR_NOT_FINAL / RIGHTS_NOT_APPROVED / NO_D1_NO_DEPLOY`.
