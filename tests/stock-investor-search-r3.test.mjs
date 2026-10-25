@@ -32,3 +32,9 @@ test('investor explanations and links remain visible, specific and restricted to
  assert.match(component,/<h2/);assert.match(component,/<h3/);assert.match(component,/<p/);assert.match(component,/<a/);
  assert.doesNotMatch(component,/sr-only|display:\s*none|aria-hidden|keywords\s*:/);
 });
+
+test('buying guide explains the staged-buying search intent in visible prose as well as metadata',()=>{
+ const page=read('app/guides/fear-greed-buying/page.tsx');
+ assert.match(page,/<p[^>]*>분할매수 여부를 판단할 때도 공포탐욕지수는 참고자료입니다/);
+ assert.match(page,/매수 비중이나 횟수를 정하지 않으며/);
+});
