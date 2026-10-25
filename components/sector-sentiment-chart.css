@@ -25,6 +25,7 @@
 .zg-sector-chart-legend button[aria-pressed=false]{opacity:.35;background:transparent}
 /* Use existing vertical padding for a readable legend; keep the 232px card and 120px plot. */
 .zg-sector-chart.zg-sector-score-card{padding-block:11px}
+.zg-sector-chart-legend.zg-sector-compact-legend{gap:0}
 .zg-sector-chart-legend.zg-sector-compact-legend button{height:42px;box-sizing:border-box;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:2px 0;border:0;border-radius:3px;overflow:hidden}
 .zg-sector-legend-name{max-width:100%;font-size:11px;line-height:13px;letter-spacing:-.6px;white-space:nowrap}
 .zg-sector-legend-color{width:calc(100% - 6px);height:4px;flex:0 0 4px}
