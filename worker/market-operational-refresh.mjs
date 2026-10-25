@@ -1,6 +1,7 @@
 import {collectDiagnosticLiveInputs,fetchBisBulkDataset} from './diagnostic-v1-canary.mjs';
 import {bisInputField,validBisInput} from './bis-input-policy.mjs';
 import {validCreditInput} from './credit-input-policy.mjs';
+import {groupedInputValid,hasObservations} from './collection-input-safety.mjs';
 import {fetchDiagnosticFredSeries} from '../lib/diagnostic-layer/official-macro-adapters.mjs';
 import {collectRateR2Inputs,RATE_R2_PROVIDER_CONTRACT} from '../lib/market-score/rate-r2-provider.mjs';
 import {collectBreadthB1R3StoreOnlyR1} from '../lib/market-score/breadth-b1-r3-worker-domain.mjs';
@@ -117,6 +118,10 @@ export async function runMarketOperationalRefresh({env,job,store,now=Date.now(),
    return {status:'SOURCE_FAILED',job:selected,reason:macroReadiness.reason};
   }
   const collectedStatus=collected?.status??collected?.rateR2?.status;
+  if(!groupedInputValid(selected,collected)){
+   await store.finish(selected,jobLease,now,'SOURCE_FAILED');
+   return {status:'SOURCE_FAILED',job:selected,reason:'REQUIRED_INPUT_EMPTY_OR_INVALID'};
+  }
   if(selected==='credit'&&!validCreditInput(collected)){
    await store.finish(selected,jobLease,now,'SOURCE_FAILED');
    return {status:'SOURCE_FAILED',job:selected,reason:'CREDIT_INPUT_NOT_VALID'};
@@ -129,7 +134,7 @@ export async function runMarketOperationalRefresh({env,job,store,now=Date.now(),
    await store.finish(selected,jobLease,now,'SOURCE_FAILED');
    return {status:'SOURCE_FAILED',job:selected,sourceStatus:collectedStatus,reason:'BIS_INPUT_NOT_VALID',diagnostic:collected?.diagnostic};
   }
-  if(selected==='macroCredit'&&(collectedStatus!=='READY_CURRENT_VINTAGE'||!collected?.series?.NFCICREDIT?.length)){
+  if(selected==='macroCredit'&&(collectedStatus!=='READY_CURRENT_VINTAGE'||!hasObservations(collected?.series?.NFCICREDIT))){
    await store.finish(selected,jobLease,now,'SOURCE_FAILED');
    return {status:'SOURCE_FAILED',job:selected,reason:'MACRO_CREDIT_NOT_READY'};
   }

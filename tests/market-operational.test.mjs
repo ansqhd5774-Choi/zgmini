@@ -13,6 +13,17 @@ function fixture(){
 const now=Date.parse('2026-09-30T00:00:00Z');
 const score={status:'SUCCESS',domains:Array.from({length:12},(_,i)=>({id:String(i),score:i===0?0:null})),overall:{score:null,status:'PARTIAL'}};
 
+test('empty supply and fund flow results never replace a valid batch or trigger calculation',async()=>{
+ for(const [job,keys] of Object.entries({supply:['gscpiRows','copperRows'],fundFlows:['registeredFundFlowRows']})){
+  const {store,db,sqlite}=fixture();
+  const old={external:Object.fromEntries(keys.map(key=>[key,[{observationDate:'2026-09-29',value:0}]]))};
+  await store.writeInput(job,old,now-1);
+  const out=await runMarketOperationalRefresh({env:{DB:db},store,job,now,collectors:{[job]:async()=>({external:{}})},calculate:()=>{throw Error('MUST_NOT_CALCULATE')}});
+  assert.equal(out.status,'SOURCE_FAILED');assert.deepEqual((await store.readInput(job)).body,old);
+  assert.equal((await store.readInput(job)).storedAt,now-1);assert.ok(await store.claim('pipeline',now+1));sqlite.close();
+ }
+});
+
 test('failed or empty credit acquisition preserves the last valid batch and does not calculate',async()=>{
  const old={external:{dvpRepoRows:[{observationDate:'2026-09-29',value:0}],triPartyRepoRows:[{observationDate:'2026-09-29',value:0}],cmdiRows:[{observationDate:'2026-09-25',market:0,hy:0,ig:0}]}};
  for(const candidate of [{external:{dvpRepoRows:[],triPartyRepoRows:[],cmdiRows:[]}},{external:{...old.external,cmdiRows:[]}}]){
