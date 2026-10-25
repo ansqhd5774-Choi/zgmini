@@ -39,6 +39,7 @@ function periodRows(rows:SectorSentimentPoint[],days:number){
  return rows.filter(row=>Date.parse(row.date+'T00:00:00Z')>=end-days*86400000);
 }
 const deltaText=(v:number|null)=>v===null?'—':(v>0?'+':'')+v.toFixed(1)+'p';
+const scoreColor=(v:number|null)=>v===null?'#8299ac':v>=75?'#2dd4bf':v>=55?'#6ae3a0':v>=45?'#a7bbd1':v>=25?'#ffad5e':'#ff637c';
 const deltaState=(v:number|null)=>v===null?'is-missing':v>0?'is-up':v<0?'is-down':'is-flat';
 function PeriodButtons({value,onChange,items,label}:{value:number;onChange:(value:number)=>void;items:readonly (readonly [string,number])[];label:string}){
  return <div className="zg-sfg-periods" role="group" aria-label={label}>{items.map(([name,days])=><button key={name} type="button" aria-pressed={value===days} onClick={()=>onChange(days)}>{name}</button>)}</div>;
@@ -86,11 +87,13 @@ export default function SectorDetailCharts(){
  return <div className="zg-sfg-content">
   <p className="zg-sfg-as-of">기준일&nbsp; {latest.date.replaceAll('-','.')}</p>
   <section className="zg-sfg-ranking" aria-label="11개 섹터 투자심리 순위">
+   <h2 className="zg-sfg-mobile-ranking-title">섹터 심리 순위</h2>
+   <div className="zg-sfg-mobile-rank-head" aria-hidden="true"><span>섹터</span><span>점수</span><span>1M</span></div>
    <div className="zg-sfg-rank-head" aria-hidden="true"><span>순위</span><span>섹터</span><span>현재 점수</span><div className="zg-sfg-scale"><span>극단적 공포</span><span>공포</span><span>중립</span><span>탐욕</span><span>극단적 탐욕</span></div><span>1년 추이</span><span>1개월 변동</span></div>
    <div className="zg-sfg-rank-list">{sorted.map((sector,index)=>{
     const raw=latest[sector.id],current=typeof raw==='number'?raw:null,delta=changeFor(rows,sector.id,1,0);
     return <button type="button" className="zg-sfg-rank-row" key={sector.id} aria-pressed={visible.has(sector.id)} data-selected={active.id===sector.id} aria-label={(index+1)+'위 '+nameOf(sector.id)+', '+(current===null?'점수 없음':current.toFixed(1)+'점')+', 1개월 변화 '+deltaText(delta)+'. 비교 차트 '+(visible.has(sector.id)?'ON':'OFF')+', 클릭하면 차트 표시 전환 및 상세 보기'} onClick={()=>{setSelected(sector.id);toggle(sector.id);}}>
-     <span className="zg-sfg-rank-number">{index+1}</span><span className="zg-sfg-rank-name"><i style={{background:COLORS[sector.id]}}/>{nameOf(sector.id)}</span><strong className="zg-sfg-rank-score">{current===null?'—':current.toFixed(1)}</strong>
+     <span className="zg-sfg-rank-number">{index+1}</span><span className="zg-sfg-rank-name"><i style={{background:COLORS[sector.id]}}/>{nameOf(sector.id)}</span><strong className="zg-sfg-rank-score" style={{color:scoreColor(current)}}>{current===null?'—':current.toFixed(1)}</strong>
      <ScoreBar score={current}/><Sparkline rows={rows} id={sector.id} provisionalDate={provisionalDate}/>
      <span className={'zg-sfg-rank-delta '+deltaState(delta)}>{deltaText(delta)}{delta!==null&&delta!==0&&<i aria-hidden="true">{delta>0?'▲':'▼'}</i>}</span>
     </button>;
@@ -99,7 +102,7 @@ export default function SectorDetailCharts(){
   <div className="zg-sfg-lower">
    <section className="zg-sfg-comparison" aria-label="섹터별 심리 지수 비교">
     <div className="zg-sfg-panel-head"><div><h2>섹터별 1년 심리 지수 비교</h2><p>선택한 섹터의 공포·탐욕 지수를 비교합니다.</p></div><PeriodButtons value={compareDays} onChange={days=>{setCompareDays(days);setComparisonPinned(false);}} items={PERIODS} label="섹터 비교 기간"/></div>
-    <div className="zg-sfg-legend" role="group" aria-label="비교할 섹터 선택">{SECTORS.map(sector=><button type="button" key={sector.id} aria-pressed={visible.has(sector.id)} onClick={()=>toggle(sector.id)}><i style={{background:COLORS[sector.id]}}/>{nameOf(sector.id)}</button>)}</div>
+    <div className="zg-sfg-legend" role="group" aria-label="비교할 섹터 선택">{sorted.map(sector=>{const value=latest[sector.id],current=typeof value==='number'?value:null;return <button type="button" key={sector.id} aria-pressed={visible.has(sector.id)} onClick={()=>toggle(sector.id)}><i style={{background:COLORS[sector.id]}}/><span className="zg-sfg-legend-name">{nameOf(sector.id)}</span><strong className="zg-sfg-legend-score" style={{color:scoreColor(current)}}>{current===null?'—':current.toFixed(1)}</strong></button>;})}</div>
     <div className="zg-sfg-comparison-plot"><ResponsiveContainer width="100%" height="100%"><LineChart data={compareRows} margin={{top:8,right:10,bottom:0,left:0}} onMouseDown={()=>setComparisonPinned(true)} onMouseUp={()=>setComparisonPinned(false)} onMouseLeave={()=>setComparisonPinned(false)}>
      <Zones/><CartesianGrid stroke="#23485b" strokeDasharray="2 4" vertical={true}/>
      <XAxis dataKey="date" stroke="#a9bccd" fontSize={11} axisLine={false} tickLine={false} tickFormatter={date=>String(date).slice(5)} minTickGap={42}/><YAxis domain={[0,100]} ticks={[0,25,50,75,100]} interval={0} stroke="#a9bccd" axisLine={false} tickLine={false} fontSize={11} width={34}/><ReferenceLine y={50} stroke="#92a3b0" strokeDasharray="3 4"/>
