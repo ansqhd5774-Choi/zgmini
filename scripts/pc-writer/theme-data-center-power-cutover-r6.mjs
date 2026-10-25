@@ -54,6 +54,38 @@ function queryTask(task){
   windowsHide:true,timeout:30000,maxBuffer:3*1024*1024}));
 }
 
+// Resolve the runner from the already-registered tenth Task. The launcher can
+// be copied anywhere; it must never guess or change the scheduled task path.
+export function locateDcPowerRunnerR6({readTask=queryTask,fileExists=fs.existsSync}={}){
+ const target=readTask(TARGET);
+ const actions=[...target.matchAll(/<Actions(?:\s[^>]*)?>[\s\S]*?<\/Actions\s*>/g)];
+ need(actions.length===1,'R6_REGISTERED_TASK_ACTIONS_AMBIGUOUS');
+ const execs=[...actions[0][0].matchAll(/<Exec(?:\s[^>]*)?>([\s\S]*?)<\/Exec\s*>/g)];
+ need(execs.length===1,'R6_REGISTERED_TASK_EXEC_AMBIGUOUS');
+ const field=tag=>{
+  const matches=[...execs[0][1].matchAll(new RegExp(`<${tag}>([^<]*)<\\/${tag}>`,'g'))];
+  need(matches.length===1,`R6_REGISTERED_TASK_${tag.toUpperCase()}_MISSING`);
+  return matches[0][1].replace(/&(?:amp|quot|apos|lt|gt);/g,entity=>({
+   '&amp;':'&','&quot;':'"','&apos;':"'",'&lt;':'<','&gt;':'>'
+  })[entity]);
+ };
+ const command=field('Command');
+ need(path.win32.isAbsolute(command)&&/^cmd\.exe$/i.test(path.win32.basename(command)),
+  'R6_REGISTERED_TASK_COMMAND_UNEXPECTED');
+ const match=field('Arguments').match(/^\/d \/c ""([^"\r\n]+)""$/i);
+ need(match,'R6_REGISTERED_TASK_ARGUMENTS_UNEXPECTED');
+ const runner=match[1];
+ need(path.win32.isAbsolute(runner)&&
+  path.win32.basename(runner).toLowerCase()===NAME.toLowerCase()&&
+  !/[<>"|?*\r\n]/.test(runner),'R6_REGISTERED_TASK_RUNNER_PATH_INVALID');
+ need(path.win32.normalize(field('WorkingDirectory')).toLowerCase()===
+  path.win32.normalize(path.win32.dirname(runner)).toLowerCase(),
+ 'R6_REGISTERED_TASK_WORKDIR_UNEXPECTED');
+ const expected=planDcPowerTaskMirror(readTask(TEMPLATE),runner);
+ verifyDcPowerTask(expected,target,runner);
+ return {runner,exists:fileExists(runner)};
+}
+
 export function preflightRunnerR6({runner,sha,readTask=queryTask}){
  need(process.platform==='win32','WINDOWS_CMD_ONLY');
  need(SHA.test(sha??''),'R6_SOURCE_SHA_INVALID');
@@ -93,12 +125,22 @@ export function applyRunnerR6({runner,sha,readTask=queryTask}={}){
 if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.url)){
  const [action,runner,sha]=process.argv.slice(2);
  try{
-  need(process.argv.length===5&&['--inspect','--apply'].includes(action),'R6_ARGS_INVALID');
-  const result=action==='--apply'?applyRunnerR6({runner,sha}):{
-   status:preflightRunnerR6({runner,sha}).existingIsPromoted?
-    'TENTH_PUBLIC_RUNNER_ALREADY_VERIFIED':'TENTH_PRIVATE_RUNNER_READY_TO_CUTOVER',runnerWrites:0};
-  console.log(JSON.stringify({report:'DATA_CENTER_POWER_R6_SCHEDULE_CUTOVER',...result,
-   taskWrites:0,existingNineTaskChanges:0,d1Writes:0}));
+  need(process.platform==='win32','WINDOWS_CMD_ONLY');
+  if(action==='--locate'){
+   need(process.argv.length===3,'R6_ARGS_INVALID');
+   const located=locateDcPowerRunnerR6();
+   console.log(`runnerPath=${located.runner}`);
+   need(located.exists,'R6_REGISTERED_RUNNER_FILE_MISSING');
+   console.log(JSON.stringify({report:'DATA_CENTER_POWER_R6_RUNNER_LOCATION',status:'READY',
+    taskWrites:0,runnerWrites:0,existingNineTaskChanges:0,d1Writes:0}));
+  }else{
+   need(process.argv.length===5&&['--inspect','--apply'].includes(action),'R6_ARGS_INVALID');
+   const result=action==='--apply'?applyRunnerR6({runner,sha}):{
+    status:preflightRunnerR6({runner,sha}).existingIsPromoted?
+     'TENTH_PUBLIC_RUNNER_ALREADY_VERIFIED':'TENTH_PRIVATE_RUNNER_READY_TO_CUTOVER',runnerWrites:0};
+   console.log(JSON.stringify({report:'DATA_CENTER_POWER_R6_SCHEDULE_CUTOVER',...result,
+    taskWrites:0,existingNineTaskChanges:0,d1Writes:0}));
+  }
  }catch(error){
   console.log(JSON.stringify({report:'DATA_CENTER_POWER_R6_SCHEDULE_CUTOVER',status:'BLOCKED',
    reason:error?.reason??'R6_PC_TASK_OR_FILESYSTEM_ERROR',existingNineTaskChanges:0,

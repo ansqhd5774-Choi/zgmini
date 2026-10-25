@@ -1,8 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {inspectDcPowerR6} from '../scripts/pc-writer/theme-data-center-power-gate-r6.mjs';
-import {buildDcPowerPublicRunnerR6} from '../scripts/pc-writer/theme-data-center-power-cutover-r6.mjs';
-import {buildDcPowerScheduledRunner} from '../scripts/pc-writer/theme-data-center-power-task-r5.mjs';
+import {buildDcPowerPublicRunnerR6,locateDcPowerRunnerR6} from '../scripts/pc-writer/theme-data-center-power-cutover-r6.mjs';
+import {buildDcPowerScheduledRunner,planDcPowerTaskMirror} from '../scripts/pc-writer/theme-data-center-power-task-r5.mjs';
 
 const sha='a'.repeat(40),worker='zgmini-migration-candidate-r5';
 const core=Array.from({length:7},(_,i)=>({theme:'core-'+i,history:Array(252).fill({score:50})}));
@@ -72,12 +72,38 @@ test('Desktop R6 one-click launcher requires an explicit human publisher respons
  assert.ok(text.indexOf('>"%DC_LOG%" echo DATA_CENTER_POWER_R6_PUBLISH_WITH_EXPLICIT_CONSENT')
   <text.indexOf('if not exist "%DC_NODE%" goto node_missing'),
  'launch log must exist before any early preflight failure');
- for(const blocked of ['APPROVED_NODE_MISSING','APPROVED_DATA_ROOT_MISSING',
-  'R5_SCHEDULED_RUNNER_MISSING_KEEP_IN_ORIGINAL_DESKTOP_FOLDER']){
+ for(const blocked of ['APPROVED_NODE_MISSING','APPROVED_DATA_ROOT_MISSING']){
   assert.match(text,new RegExp(`>>"%DC_LOG%" echo BLOCKED=${blocked}`));
  }
- assert.match(text,/:runner_missing\r\n[\s\S]*?EXPECTED_RUNNER=%DC_RUNNER%\r\ngoto failed/);
+ assert.match(text,/theme-data-center-power-cutover-r6\.mjs" --locate/);
+ assert.match(text,/set "DC_LOCATE_STATUS=%ERRORLEVEL%"/);
+ assert.match(text,/%%A"=="runnerPath" set "DC_RUNNER=%%B"/);
+ assert.match(text,/if not "%DC_LOCATE_STATUS%"=="0" goto runner_resolution_failed/);
+ assert.match(text,/:runner_resolution_failed\r\n[\s\S]*?BLOCKED=REGISTERED_TENTH_RUNNER_DISCOVERY_OR_FILE_MISSING/);
+ assert.match(text,/if defined DC_RUNNER >>"%DC_LOG%" echo EXPECTED_RUNNER=%DC_RUNNER%/);
+ assert.doesNotMatch(text,/set "DC_RUNNER=%~dp0DATA_CENTER_POWER_R5_SCHEDULED\.cmd"/);
  assert.equal((text.match(/\bpause\r\nexit \/b [012]/g)||[]).length,3,
  'every launcher exit path must pause for users double-clicking CMD');
  assert.doesNotMatch(text,/wrangler deploy|powershell|%TEMP%/i);
+});
+
+test('R6 obtains the existing tenth scheduled runner from verified Task XML, independently of launcher location',()=>{
+ const runner='C:\\Users\\tester\\Documents\\DATA_CENTER_POWER_R5_SCHEDULED.cmd';
+ const template=`<?xml version="1.0" encoding="UTF-16"?>
+<Task version="1.4" xmlns="http://schemas.microsoft.com/windows/2004/02/mit/task">
+<RegistrationInfo><URI>\\ZGMINI-PC-GetMarketHistory-ETF</URI></RegistrationInfo>
+<Triggers><CalendarTrigger><Enabled>true</Enabled></CalendarTrigger></Triggers>
+<Principals><Principal><LogonType>InteractiveToken</LogonType></Principal></Principals>
+<Settings><Enabled>true</Enabled></Settings>
+<Actions><Exec><Command>C:\\older\\runner.exe</Command></Exec></Actions></Task>`;
+ const target=planDcPowerTaskMirror(template,runner).xml;
+ const readTask=task=>task==='\\ZGMINI-PC-Theme-Data-Center-Power'?target:template;
+ assert.deepEqual(locateDcPowerRunnerR6({readTask,fileExists:p=>p===runner}),
+  {runner,exists:true});
+ assert.deepEqual(locateDcPowerRunnerR6({readTask,fileExists:()=>false}),
+  {runner,exists:false});
+ assert.throws(()=>locateDcPowerRunnerR6({readTask:task=>task==='\\ZGMINI-PC-Theme-Data-Center-Power'?target.replace('cmd.exe','evil.exe'):template}),
+  /COMMAND_UNEXPECTED/);
+ assert.throws(()=>locateDcPowerRunnerR6({readTask:task=>task==='\\ZGMINI-PC-Theme-Data-Center-Power'?target.replace('<WorkingDirectory>C:\\Users\\tester\\Documents</WorkingDirectory>','<WorkingDirectory>D:\\unexpected</WorkingDirectory>'):template}),
+  /WORKDIR_UNEXPECTED/);
 });
