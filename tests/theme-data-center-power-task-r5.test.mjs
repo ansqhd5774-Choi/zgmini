@@ -1,5 +1,6 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
 import {planDcPowerTaskMirror,verifyDcPowerTask,buildDcPowerScheduledRunner}
  from '../scripts/pc-writer/theme-data-center-power-task-r5.mjs';
 
@@ -52,4 +53,16 @@ test('R5 generated Windows CMD is ASCII CRLF, private-only, Desktop log, pin R3 
  assert.doesNotMatch(text,/--publish|--accept-anonymous-license-risk|schtasks|wrangler/);
  assert.match(text,/%~dp0DATA_CENTER_POWER_R5_SCHEDULED_RESULT\.txt/);
  assert.match(text,/2f0f1a2c1b31e20f9e943e90824885d586448d29/);
+});
+
+test('R5 installer is one-click immutable GitHub source, CMD same-folder log, no broad task changes',()=>{
+ const bytes=fs.readFileSync(new URL('../scripts/pc-writer/theme-data-center-power-r5-install.cmd',import.meta.url));
+ const text=bytes.toString('ascii');
+ assert.ok(bytes.every(b=>b<128));
+ assert.equal(text.replaceAll('\r\n','').includes('\n'),false);
+ assert.match(text,/DC_R5_SHA=0eb76747e6f35e8f410ffb7a0aa07942d2da5938/);
+ assert.match(text,/--apply "%DC_RUNNER%"/);
+ assert.match(text,/%~dp0DATA_CENTER_POWER_R5_RESULT\.txt/);
+ assert.match(text,/%~dp0DATA_CENTER_POWER_R5_SCHEDULED\.cmd/);
+ assert.doesNotMatch(text,/--publish|--accept-anonymous-license-risk|\/f\b|powershell|%TEMP%/i);
 });
