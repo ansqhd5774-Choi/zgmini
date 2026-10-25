@@ -520,26 +520,34 @@ export const RISK_INVESTOR_SEARCH:Record<string,InvestorSearchCopy>={
   }
 };
 export const SECTOR_INVESTOR_SEARCH:InvestorSearchCopy={
-  "heading": "미국 업종별 투자심리 비교",
-  "items": [
+  heading:"미국 섹터별 공포·탐욕 투자 가이드",
+  items:[
     {
-      "question": "미국 섹터 ETF와 업종별 공탐은 무엇을 비교하나요?",
-      "answer": "기술·금융·통신·경기소비재·산업재·에너지·헬스케어·필수소비재·유틸리티·소재·부동산의 11개 GICS 섹터를 ETF 기반 심리 점수로 비교합니다. 업종 수익률 순위와 공포탐욕 점수는 서로 다른 정보입니다."
+      question:"미국 주식에서 지금 강한 섹터는 어떻게 찾나요?",
+      answer:"기술·금융·에너지·헬스케어 등 11개 GICS 섹터의 ETF 기반 투자심리 순위와 기간별 점수 변화를 함께 비교하세요. 공탐 점수가 높아도 ETF 수익률 1위나 앞으로의 상승을 보장하지는 않습니다."
     },
     {
-      "question": "섹터 로테이션과 강한 업종을 찾는 데 어떻게 참고하나요?",
-      "answer": "여러 업종의 점수와 기간별 변화가 함께 개선되는지 비교합니다. 업종 간 투자심리 차이를 읽는 자료이며, ETF 수익률이나 다음 주도 업종을 확정하는 매매 신호는 아닙니다."
+      question:"미국 섹터 ETF 수익률과 공포탐욕 점수는 어떻게 다른가요?",
+      answer:"ETF 수익률은 일정 기간의 가격 변화를, ZGMINI 섹터 공탐은 ETF 데이터를 활용해 계산한 투자심리 점수를 나타냅니다. 업종별 가격 강세와 투자심리가 항상 같은 방향으로 움직이지는 않습니다."
+    },
+    {
+      question:"섹터 로테이션과 경기방어주·경기민감주는 어떻게 비교하나요?",
+      answer:"필수소비재·유틸리티·헬스케어와 경기소비재·산업재 등 여러 섹터를 같은 기간의 차트에 선택해 비교하세요. 섹터 로테이션을 확정하는 신호는 아니지만 업종별 심리 변화의 차이를 살펴볼 수 있습니다."
+    },
+    {
+      question:"금리 인하 전망이나 미국 경기침체와 함께 봐야 하나요?",
+      answer:"연준 금리 전망과 미국 경기침체 위험은 업종별 투자심리와 다른 지표입니다. 섹터 공탐 점수 하나로 금리 인하 수혜 업종이나 다음 주도주를 단정하지 말고 관련 거시경제 지표를 함께 확인하세요."
+    },
+    {
+      question:"공포탐욕 지수의 25·45·55·75점은 무엇을 뜻하나요?",
+      answer:"0~100점의 다섯 구간으로 구분합니다. 25점 미만은 극단적 공포, 25점 이상 45점 미만은 공포, 45점 이상 55점 미만은 중립, 55점 이상 75점 미만은 탐욕, 75점 이상은 극단적 탐욕입니다."
     }
   ],
-  "links": [
-    {
-      "href": "/theme-fear-greed/",
-      "label": "테마 ETF·AI·반도체 투자심리"
-    },
-    {
-      "href": "/fear-greed/usa/",
-      "label": "미국 증시 공탐지수"
-    }
+  links:[
+    {href:"/fear-greed/usa/",label:"미국 증시 공포탐욕 지수"},
+    {href:"/theme-fear-greed/",label:"AI·반도체 테마 ETF 공탐"},
+    {href:"/recession/",label:"미국 경기침체 위험 지표"},
+    {href:"/asset-bubble/",label:"미국 자산 버블 위험 지표"}
   ]
 };
 export const THEME_INVESTOR_SEARCH:InvestorSearchCopy={
