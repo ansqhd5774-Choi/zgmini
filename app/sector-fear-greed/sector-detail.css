@@ -130,7 +130,9 @@
 /* R Mobile screenshot parity: compact comparison above the one-line sector rankings.
    Presentation only; underlying API, dates, scores, and calculations are unchanged. */
 .zg-sfg-mobile-ranking-title,.zg-sfg-mobile-rank-head,.zg-sfg-legend-score{display:none}
+.zg-sfg-solo-marker{display:none}
 @media(max-width:680px){
+ .zg-sfg-solo-marker{display:block}
  .zg-sector-detail{padding:5px 4px 30px;background:#051a29}
  .zg-sector-detail-inner{width:100%;min-width:0}
  .zg-sector-detail-hero{display:block;margin:0 0 16px}
@@ -149,7 +151,7 @@
  .zg-sfg-comparison .zg-sfg-panel-head>.zg-sfg-periods button{height:23px;min-width:31px;padding:0 3px;border:1px solid #2c5266;color:#99bdd0;font-size:10px;font-weight:600;line-height:20px}
  .zg-sfg-comparison .zg-sfg-panel-head>.zg-sfg-periods button[aria-pressed=true]{border-color:#04c5bc;background:#25bdaf;color:#041e2c;font-weight:850}
  .zg-sfg-legend{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));grid-auto-rows:21px;gap:2px;margin:0 0 8px}
- .zg-sfg-legend button{box-sizing:border-box;width:100%;min-width:0;min-height:21px;max-height:21px;display:flex;align-items:center;gap:4px;justify-content:space-between;margin:0;padding:0 4px;border:0;background:#0b3040;opacity:1!important;color:#c8e0ed;font-size:9px;font-weight:650;white-space:nowrap}
+ .zg-sfg-legend button{order:var(--zg-mobile-order);box-sizing:border-box;width:100%;min-width:0;min-height:21px;max-height:21px;display:flex;align-items:center;gap:4px;justify-content:space-between;margin:0;padding:0 4px;border:0;background:#0b3040;opacity:1!important;color:#c8e0ed;font-size:9px;font-weight:650;white-space:nowrap}
  .zg-sfg-legend button[aria-pressed=false]{background:#092636}
  .zg-sfg-legend button[aria-pressed=false] .zg-sfg-legend-name{opacity:.85}
  .zg-sfg-legend button[aria-pressed=true]{background:#12505a}
