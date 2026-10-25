@@ -1,8 +1,10 @@
 # ZGMINI 섹터 공포·탐욕 모바일 UI 작업 인수인계
 
+> 이 문서는 공용 UI 작업 브랜치(`codex/ui-improvements`)의 첫 번째 작업 기록이다. 브랜치는 향후 ZGMINI의 다른 UI 수정에도 사용하며, 이 문서의 섹터 모바일 변경 범위는 해당 작업에만 적용한다. 다른 UI 작업은 별도 범위·검증 기록으로 추가한다.
+
 - 작성일: 2026-10-25 (KST)
 - 대상 저장소: `ansqhd5774-Choi/zgmini`
-- 전용 브랜치: `codex/sector-fear-greed-mobile-20261025`
+- 전용 브랜치: `codex/ui-improvements`
 - 생성 기준 main SHA: `f9312d5069754dc82b4d5a93cc7712dbdac4b640`
 - 대상 URL: https://zgmini.kr/sector-fear-greed/
 - 상태: `DESIGN_REVIEW_ONLY` (소스 수정·테스트·PR·병합·배포 미실시)
