@@ -1,5 +1,5 @@
 /**
- * Stage 04 source-vintage audit (R12-R16). No network call, persistence, score,
+ * Stage 04 source-vintage audit (R12-R17). No network call, persistence, score,
  * ranking or market-data reconstruction. Consumes the just-completed live
  * gate result to distinguish source retrieval from observation/publication.
  */
@@ -65,7 +65,7 @@ function pinnedCurrencyState(institution, catalogAlert) {
 
 export function auditStage04SourceVintage(gate) {
   if (!gate || !Array.isArray(gate.themes) || gate.themes.length !== 9
-    || !/^INVESTMENT_BOT_STAGE04_INPUT_GATE_R1[23456]$/.test(gate.runType ?? '')
+    || !/^INVESTMENT_BOT_STAGE04_INPUT_GATE_R1[234567]$/.test(gate.runType ?? '')
     || !/^\d{4}-\d{2}-\d{2}T/.test(gate.runAtUtc ?? '')) {
     throw new Error('SOURCE_VINTAGE_INVALID_GATE_CONTRACT');
   }
