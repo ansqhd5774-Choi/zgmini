@@ -18,8 +18,10 @@ export async function dcPowerPublicSnapshot({fetchImpl=fetch,now=Date.now()}={})
  const response=await fetchImpl('https://zgmini.kr/api/theme-fear-greed/?dc_power_r3='+now,{
   headers:{'cache-control':'no-cache'},signal:AbortSignal.timeout(20000),redirect:'error'});
  need(response.ok,'DC_POWER_R3_PUBLIC_API_UNAVAILABLE');
- const doc=await response.json();need(doc?.status==='READY'&&doc.themes?.length>=9,
-  'DC_POWER_R3_PUBLIC_NINE_NOT_READY');
+  // The seven immutable core themes are the only required baseline. Optional
+  // AI/biotech sidecars may be absent or stale independently on a given day.
+  const doc=await response.json();need(doc?.status==='READY'&&doc.themes?.length>=7,
+  'DC_POWER_R3_PUBLIC_CORE_SEVEN_NOT_READY');
  return doc;
 }
 

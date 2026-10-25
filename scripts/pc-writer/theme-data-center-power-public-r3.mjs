@@ -21,9 +21,11 @@ export function buildDcPowerPublicR3({candidate,candidateFileSha256,sourceStored
   candidate.history.at(-1)?.date===candidate.observationDate&&candidate.history.at(-1)?.score===candidate.score&&
   /^GMH_MANIFEST_SHA256_[a-f0-9]{64}$/.test(candidate.sourceVersion??'')&&
   /^[a-f0-9]{64}$/.test(candidateFileSha256??''),'DC_POWER_R3_CANDIDATE_INVALID');
- check(base?.status==='READY'&&Array.isArray(base.themes)&&base.themes.length>=9&&
+ // The core reader validates the immutable seven; optional themes are allowed
+ // to disappear from the public projection when their source ages out.
+ check(base?.status==='READY'&&Array.isArray(base.themes)&&base.themes.length>=7&&
   typeof base.observationDate==='string'&&candidate.observationDate<=base.observationDate,
-  'DC_POWER_R3_NINE_THEME_BASE_NOT_READY');
+  'DC_POWER_R3_CORE_SEVEN_BASE_NOT_READY');
  const clock=Number(now),received=Date.parse(sourceStoredAt);
  check(Number.isSafeInteger(clock)&&Number.isFinite(received)&&received<=clock&&
   clock-received<8*86400000,'DC_POWER_R3_SOURCE_STALE');
