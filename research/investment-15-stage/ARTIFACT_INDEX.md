@@ -16,6 +16,7 @@
 | 04단계 최신 R12 시간/판본 감사 | `STAGE04_INVESTMENT_BOT_R12_SOURCE_VINTAGE_AUDIT_20261025.md`; **7/9 원천 연결 유지**. `sourceVintageAudit`로 고정 연차판 4개·동적 원천 3개·미연결 2개를 분리하고 발행일·자료 관측기간·페이지/DB 갱신일·실제 조회 종료 시각을 구분. 차기 보고서 최신성 자동 보증은 하지 않음 |
 | 04단계 최신 R13 FDA 연도 목록 가드 | `STAGE04_INVESTMENT_BOT_R13_FDA_CATALOG_EDITION_GUARD_20261025.md`; FDA 공식 2026 승인 연도 페이지 존재 감시. **2026 진행 중 목록은 확정 연차보고서가 아님**, 기존 2025 FDA 46건 수치·7/9 산업 원천 그대로, 추가 G/D/M 생성 없음. 47/47 자동 검사·직접 HTTP 실측, 원문 HTML 저장 없음 |
 | 04단계 최신 R14 IFR 뉴스 판본 가드 | `STAGE04_INVESTMENT_BOT_R14_IFR_INDUSTRIAL_PRESS_VINTAGE_GUARD_20261025.md`; IFR 공식 뉴스 목록에서 산업용 로봇 World Robotics 판본과 서비스 로봇 발표를 카드별로 구분. **목록 가시 구간만 확인**, 최신 전체 판본 자동 보증 없음. 기존 산업 7/9·IFR 2025 설치 603,307대 유지, 52/52 테스트·실제 HTTPS 실측, 원문 HTML 저장 없음 |
+| 04단계 최신 R15 정량 자료 비배타 분류 | `STAGE04_INVESTMENT_BOT_R15_NON_EXCLUSIVE_QUANT_EVIDENCE_20261025.md`; 지정 원천을 실제 재조회해 산업 자료 **7/9**, 기존 F **9/9**, 테마 **9/9 유지**. 서로 다른 조사 기간·대상·반올림으로 FAIL 처리하지 않고 3/2/1/1/2 종류별로 표시. 58/58 테스트, 별도 점수·순위·주문 없음 |
 | M2 최신 실행 코드 | `m2/` (R25 ZIP에서 복구한 텍스트 원본) |
 | M2 R25 ZIP 전체 | [개인 Library R25 원본](https://chatgpt.com/library?file_id=libfile_cb913f8bf4788191b9a20355b30bab06&account_id=personal), SHA256=`a6e7187e85633f04ed216dcdc0b8ad704564d957c798d0ebaf1c7ddd6e6ea4e9` |
 | M2 R25 원본 PDF 15개 | 위 ZIP의 `scorecards/standards/`; [개인 Library R20 원본 포함판](https://chatgpt.com/library?file_id=libfile_95e62486eaa88191be6b3e4802e43f32&account_id=personal), **GitHub 미게시** |
