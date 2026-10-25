@@ -32,3 +32,14 @@ test('mobile scores come from the saved API history and use existing five-band c
  assert.ok(tsx.includes("'--zg-mobile-order':sorted.findIndex"));
  assert.ok(css.includes('order:var(--zg-mobile-order)'));
 });
+
+test('a single selected sector reveals actual-period low high and current chart markers on mobile only',()=>{
+ const tsx=read('app/sector-fear-greed/sector-detail-charts.tsx');
+ const css=read('app/sector-fear-greed/sector-detail.css');
+ assert.ok(tsx.includes('visible.size===1?Array.from(visible)[0]:null'));
+ assert.ok(tsx.includes('periodRows(rows,compareDays).flatMap'));
+ assert.ok(tsx.includes('soloPoints.reduce'));
+ assert.equal((tsx.match(/className="zg-sfg-solo-marker"/g)||[]).length,3);
+ assert.ok(css.includes('.zg-sfg-solo-marker{display:none}'));
+ assert.ok(css.includes('@media(max-width:680px){\n .zg-sfg-solo-marker{display:block}'));
+});
