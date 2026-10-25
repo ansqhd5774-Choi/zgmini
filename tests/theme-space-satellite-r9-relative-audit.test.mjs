@@ -69,6 +69,21 @@ test('R9 pure method allows any 2–5 or more ETFs and preserves first 39 actual
  }
 });
 
+test('R9 retains actual provisional scores when an older ETF has a real missing observation',()=>{
+ const dates=weekdays(656);
+ const spy=new Map(dates.map((date,i)=>[date,150*Math.exp(.0004*i+.01*Math.sin(i*.17))]));
+ const ufo=new Map(dates.map((date,i)=>[date,100*Math.exp(.0003*i+.02*Math.sin(i*.13))]));
+ const nasa=new Map(dates.slice(512).map((date,j)=>[date,
+  110*Math.exp(.0005*j+.018*Math.sin(j*.11))]));
+ ufo.delete(dates[500]); // A real gap affects sample parity without making N < 377.
+ const result=calculateRelativeShadow({daily:{SPY:spy,UFO:ufo,NASA:nasa}});
+ assert.equal(result.effectiveSessionsAtLastDate.UFO,655);
+ assert.equal(result.effectiveSessionsAtLastDate.NASA,144);
+ assert.equal(result.latest.status,'ADAPTIVE_PROVISIONAL');
+ assert.ok(Number.isFinite(result.latest.score));
+ assert.ok(result.scoredSessions>0);
+});
+
 test('R9 actual-fixture shadow restores earlier real scores but leaves R8 unchanged',()=>{
  const root=fs.mkdtempSync(path.join(os.tmpdir(),'space-r9-shadow-'));
  try{
