@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import {easternIso,upcomingSchedule,remainingParts,kstDisplay,meetsEarningsMarketCap,SCHEDULE_MAX_ITEMS,EARNINGS_MARKET_CAP_MIN_USD_B} from '../lib/fomc-schedule.mjs';
+import {easternIso,upcomingSchedule,remainingParts,kstDisplay,kstDisplayParts,meetsEarningsMarketCap,SCHEDULE_MAX_ITEMS,EARNINGS_MARKET_CAP_MIN_USD_B} from '../lib/fomc-schedule.mjs';
 
 const file=fs.readFileSync(new URL('../components/fomc-countdown.tsx',import.meta.url),'utf8');
 const css=fs.readFileSync(new URL('../components/fomc-countdown.css',import.meta.url),'utf8');
@@ -52,7 +52,7 @@ test('countdown advances each second without day leading zero',()=>{
 });
 test('310px wraps centered four-column names with unchanged 37px height',()=>{
  assert.match(css,/@media\(max-width:359px\)/);
- assert.match(css,/grid-template-columns:28px minmax\(0,1fr\) 77px 86px/);
+ assert.match(css,/grid-template-columns:28px minmax\(0,1fr\) 94px 86px/);
  assert.match(css,/\.zg-schedule-name-text\{white-space:normal;word-break:keep-all/);
  assert.match(css,/text-align:center/);
  assert.match(css,/\.zg-schedule-item\{height:37px;min-height:37px;max-height:37px/);
@@ -69,7 +69,8 @@ test('earnings market-cap threshold is exactly 300 billion USD',()=>{
  assert.equal(meetsEarningsMarketCap(NaN),false);
 });
 test('estimate labels distinguish before-open from after-close reference',()=>{
- assert.match(file,/item\.session==='beforeOpen'/);
+ assert.match(file,/session==='beforeOpen'/);
+ assert.match(file,/<ScheduleDate at=\{item\.at\} estimated=\{item\.estimated\} session=\{item\.session\}\/>/);
  assert.match(file,/정규장 개장 09:30 ET 기준 예상 시각/);
  assert.match(file,/정규장 마감 16:00 ET 기준 예상 시각/);
  assert.match(css,/\.zg-schedule-ticker-fallback\{display:inline-flex;flex:none/);
@@ -82,4 +83,15 @@ test('major company logo imagery uses the same 14px slot with safe fallback',()=
  assert.match(file,/onError=\{\(\)=>setImageFailed\(true\)\}/);
  assert.match(file,/className="zg-schedule-ticker-fallback"/);
  assert.match(file,/domain=\{item\.logoDomain\}/);
+});
+
+test('KST date weekday uses local day, even across UTC date boundary',()=>{
+ assert.deepEqual(kstDisplayParts('2026-10-27T13:30:00Z'),{date:'10.27',weekday:'화',time:'22:30'});
+ assert.deepEqual(kstDisplayParts('2026-10-28T16:00:00Z'),{date:'10.29',weekday:'목',time:'01:00'});
+ assert.deepEqual(kstDisplayParts('2026-10-28T20:00:00Z'),{date:'10.29',weekday:'목',time:'05:00'});
+ assert.deepEqual(kstDisplayParts('2026-11-06T13:30:00Z'),{date:'11.06',weekday:'금',time:'22:30'});
+ assert.match(file,/<span className="zg-schedule-weekday">\(\{weekday\}\)<\/span>/);
+ assert.match(css,/\.zg-schedule-weekday\{color:#ffc43d;font-weight:750\}/);
+ assert.match(css,/grid-template-columns:30px minmax\(0,1fr\) 94px 86px/);
+ assert.match(css,/grid-template-columns:28px minmax\(0,1fr\) 94px 86px/);
 });

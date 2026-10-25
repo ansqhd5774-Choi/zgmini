@@ -2,7 +2,7 @@
 
 import {useEffect,useRef,useState,type KeyboardEvent} from 'react';
 import {FOMC_CHECKED_AT,FOMC_SOURCE,fomcState,fomcKst} from '../lib/fomc-countdown.mjs';
-import {upcomingSchedule,remainingParts,kstDisplay} from '../lib/fomc-schedule.mjs';
+import {upcomingSchedule,remainingParts,kstDisplayParts} from '../lib/fomc-schedule.mjs';
 import './fomc-countdown.css';
 
 function FlipDigit({value}:{value:string}) {
@@ -21,6 +21,14 @@ function CompanyLogo({logo,ticker,domain}:{logo?:string;ticker?:string;domain?:s
  if(domain&&!imageFailed)return <img className="zg-schedule-company-logo" src={'https://www.google.com/s2/favicons?domain='+encodeURIComponent(domain)+'&sz=64'} alt={(ticker??'기업')+' 로고'} width={14} height={14} loading="lazy" decoding="async" referrerPolicy="no-referrer" onError={()=>setImageFailed(true)}/>;
  if(ticker)return <span className="zg-schedule-ticker-fallback" role="img" aria-label={ticker+' 종목코드'} title="로고 이미지 불러오기 실패">{ticker.slice(0,2)}</span>;
  return null;
+}
+
+function ScheduleDate({at,estimated,session}:{at:string;estimated:boolean;session?:string}){
+ const {date,weekday,time}=kstDisplayParts(at);
+ const title=estimated
+  ?(session==='beforeOpen'?'美 정규장 개장 09:30 ET 기준 예상 시각 · 실제 실적 공개 시각 미확정':'美 정규장 마감 16:00 ET 기준 예상 시각 · 실제 실적 공개 시각 미확정')
+  :'공식 발표 예정 시각';
+ return <time className="zg-schedule-date" dateTime={at} title={title}>{estimated?'≈':''}{date}<span className="zg-schedule-weekday">({weekday})</span>{' '}{time}</time>;
 }
 
 function ScheduleTimer({at,now,estimated}:{at:string;now:number;estimated:boolean}){
@@ -68,7 +76,7 @@ export default function FomcCountdown(){
         {upcoming.length===0?<p className="zg-schedule-empty">확인된 주요 발표 일정이 없습니다.</p>:upcoming.map(item=><div className="zg-schedule-item" key={item.key}>
           <span className={'zg-schedule-kind '+(item.kind==='실적'?'is-earnings':item.kind==='연준'?'is-fed':'')}>{item.kind}</span>
           <span className="zg-schedule-name" title={item.name}><CompanyLogo logo={item.logo} ticker={item.ticker} domain={item.logoDomain}/><span className="zg-schedule-name-text">{item.name}</span></span>
-          <time className="zg-schedule-date" dateTime={item.at} title={item.estimated?(item.session==='beforeOpen'?'美 정규장 개장 09:30 ET 기준 예상 시각 · 실제 실적 공개 시각 미확정':'美 정규장 마감 16:00 ET 기준 예상 시각 · 실제 실적 공개 시각 미확정'):'공식 발표 예정 시각'}>{item.estimated?'≈':''}{kstDisplay(item.at)}</time>
+          <ScheduleDate at={item.at} estimated={item.estimated} session={item.session}/>
           {now!==null&&<ScheduleTimer at={item.at} now={now} estimated={item.estimated}/>}
         </div>)}
       </div>
