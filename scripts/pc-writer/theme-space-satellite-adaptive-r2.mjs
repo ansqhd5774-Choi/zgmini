@@ -7,6 +7,7 @@ import {fileURLToPath} from 'node:url';
 import {regularHour15Rows} from './theme-optional-score-r188.mjs';
 import {scoreAdaptiveTimeline} from './theme-optional-adaptive-r2.mjs';
 import {adaptivePairWeights,chooseNewThemeRoute} from './theme-optional-pair-weight-r3.mjs';
+import {readVerifiedSharedSpy} from './theme-shared-spy-readonly-r1.mjs';
 
 // Research-stage priority only: actual valid-session coverage is not yet proven.
 const THEME='space-satellite',SYMBOLS=['UFO','NASA','SPY'];
@@ -41,7 +42,7 @@ export function selectRealHourlySessions(rows){
  return [...byDay.values()].sort((a,b)=>a.date.localeCompare(b.date));
 }
 
-export function auditSpaceSatelliteAdaptive({dataRoot}={}){
+export function auditSpaceSatelliteAdaptive({dataRoot,sharedSpyThemeId=null}={}){
  check(typeof dataRoot==='string'&&fs.existsSync(dataRoot),'SPACE_R2_DATA_ROOT_MISSING');
  const root=fs.realpathSync(dataRoot),home=path.join(root,'themes',THEME);
  check(fs.existsSync(home)&&fs.realpathSync(home)===home,'SPACE_R2_HOME_MISSING');
@@ -62,6 +63,7 @@ export function auditSpaceSatelliteAdaptive({dataRoot}={}){
   // Earlier exploratory ROKT/ARKX files may share this manifest; preserve them
   // without letting irrelevant coverage block the approved UFO+NASA audit.
   if(!SYMBOLS.includes(symbol)){ignoredExistingRawEntries++;continue;}
+  check(!(sharedSpyThemeId&&symbol==='SPY'),'SPACE_R2_AMBIGUOUS_SPY_SOURCE');
   check(entry.source==='https://getmarkethistory.com'&&entry.priceMode===RAW_MODE&&
    Number.isFinite(Date.parse(entry.collectedAt))&&isDate(entry.observationThrough),
    'SPACE_R2_SOURCE_INVALID');
@@ -83,6 +85,12 @@ export function auditSpaceSatelliteAdaptive({dataRoot}={}){
    check(!old||old.close===row.close,'SPACE_R2_OVERLAP_PRICE_CONFLICT');
    bars[symbol].set(row.timestamp,row);
   }
+ }
+ const sharedSpy=sharedSpyThemeId?
+  readVerifiedSharedSpy({dataRoot,sourceTheme:sharedSpyThemeId}):null;
+ if(sharedSpy){
+  for(const row of sharedSpy.bars)bars.SPY.set(row.timestamp,row);
+  fileCounts.SPY=sharedSpy.rawFiles.length;
  }
  const daily={},coverage={};
  for(const symbol of SYMBOLS){
@@ -144,7 +152,13 @@ export function auditSpaceSatelliteAdaptive({dataRoot}={}){
  const ready=candidates.filter(c=>c.isCurrent).length;
  return {themeId:THEME,theme:'우주·위성',methodologyVersion:'ADAPTIVE_R2_OR_PAIR_R3_PRIVATE_UFO_NASA_SCREEN',
   status:ready===1?'PRIVATE_PRIORITY_PAIR_READY':'PRIVATE_PRIORITY_PAIR_NOT_READY',
-  source:'GETMARKETHISTORY_LOCAL_SHA_VERIFIED',sourceVersion:'GMH_MANIFEST_SHA256_'+sha(manifestBytes),
+  source:'GETMARKETHISTORY_LOCAL_SHA_VERIFIED',
+  sourceVersion:sharedSpy?'GMH_PRIVATE_COMBINED_MANIFEST_SHA256_'+
+   sha(manifestBytes.toString('utf8')+'\n'+sharedSpy.sourceTheme+'\n'+sharedSpy.manifestSha256):
+   'GMH_MANIFEST_SHA256_'+sha(manifestBytes),
+  sharedSpySource:sharedSpy?{themeId:sharedSpy.sourceTheme,
+   manifestSha256:sharedSpy.manifestSha256,verifiedHourlyBars:sharedSpy.actualHourlyBars,
+   rightsVerified:false,publicationAuthorized:false}:null,
   priceMode:'UNADJUSTED_15_NY_HOURLY_PROXY_WITH_OFFICIAL_EARLY_CLOSE_12',
   coverage,ignoredExistingRawEntries,benchmark:'SPY',candidates,finalPairSelected:false,publicationAuthorized:false,
   derivedLicenseVerified:false,individualStocksUsed:0,providerCalls:0,
