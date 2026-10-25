@@ -15,8 +15,8 @@
 | MARS | Roundhill / 우주 혁신 액티브 | 발행사 약 **$41.83M** (조회 당시) | 운용재량/구성 편중·스프레드 추가 비교 | 대안 |
 | ARKX | ARK / 우주·방산 혁신 | 발행사 약 **$700M** (조회 당시) | 방산 노출 확대로 우주 순도 떨어짐; 기존 방산 테마 중복 | 보조 후보 |
 | ROKT | State Street / 우주 및 심해 | 2026-10-22 순자산 **$148.41M**, 2018년 출시 | 이력 장점, 심해 탐사까지 포함되어 순수 우주 테마 약화 | 보조 후보 |
-| DIPR | 미국 상장 / 위성 통신 특화 | 2026-10-22 순자산 **$1.31M** | 위성 직접성 장점, 거래/규모 위험과 짧은 이력 | 관찰 |
-| WSPC | 미국 상장 / 우주 테마 | 2026-10-23 순자산 **$1.20M**, 스프레드 **0.58%** | 규모·호가 비용과 짧은 이력 불리 | 관찰 |
+| DIPR | Corgi / 우주·위성통신 특화 액티브 | 2026-10-22 순자산 **$1.31M**, 2026-05 출시 | 위성 직접성 장점, 거래/규모 위험과 짧은 이력 | 관찰 |
+| WSPC | WisdomTree / 우주경제 | 2026-10-23 순자산 **$1.20M**, 스프레드 **0.58%**, 2026-07 출시 | 규모·호가 비용과 짧은 이력 불리 | 관찰 |
 
 ## 1. 후보 선택은 잠정적이다
 
@@ -45,8 +45,8 @@
 - MARS: https://www.roundhillinvestments.com/etf/mars/
 - ARKX: https://www.ark-funds.com/funds/ARKX
 - ROKT: https://www.ssga.com/us/en/intermediary/etfs/state-street-spdr-sp-kensho-final-frontiers-etf-rokt
-- DIPR: 발행사 상품 공시/ETF 공시 기준 2026-10-22, 소규모 ETF
-- WSPC: 발행사 상품 공시/ETF 공시 기준 2026-10-23, 소규모 ETF
+- DIPR: https://corgiinvest.com/dipr · Cboe 상장 공시 https://www.cboe.com/us/equities/listings/listed_products/symbols/DIPR · SEC 투자설명서 https://www.sec.gov/Archives/edgar/data/2078265/000207826526000147/Corgi_497K_DIPR.htm
+- WSPC: https://www.wisdomtree.com/us/products/megatrends/wspc
 - GetMarketHistory 약관: https://getmarkethistory.com/docs/terms
 - 데이터 문서: https://getmarkethistory.com/docs/api/reference
 - 배경 보도: Reuters, *Space ETFs booming in anticipation of SpaceX IPO*, 2026-05-22, https://www.reuters.com/legal/transactional/space-etfs-booming-anticipation-spacex-ipo-2026-05-22/
