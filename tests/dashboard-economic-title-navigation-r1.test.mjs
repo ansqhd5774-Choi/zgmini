@@ -16,7 +16,7 @@ test("12 market card headings navigate natively to the approved published detail
  assert.ok(heading.includes('href={"/economic-indicators/"+('));
  assert.ok(heading.includes('aria-label={m.label+" 상세페이지 열기"}'));
  assert.ok(heading.includes("event.stopPropagation()"),"link should not expand card");
- assert.ok(!heading.includes("<ArrowUpRight"),"inline arrow must not cover the mini chart");
+ assert.ok(heading.includes('<ArrowUpRight className="zg-r55-title-arrow" size={10} aria-hidden="true"/>'),"compact navigation arrow must be visible without consuming chart width");
  assert.ok(css.includes("text-decoration-line:underline"),"permanent visible link affordance required");
  for(const [id,slug] of routes){
   assert.ok(heading.includes(id+':"'+slug+'"'),"bad dashboard slug "+id);
@@ -57,4 +57,20 @@ test("collapsed market cards keep help left of the title on desktop and mobile d
  assert.ok(rule.includes('left:-8px;'));
  assert.ok(rule.includes('top:-6px;'));
  assert.ok(!rule.includes('width:calc('),"must not compress mini-chart width");
+});
+
+test("folded and unfolded economic titles share fixed info position and a nonflow arrow",()=>{
+ const r4=css.split("/* EC12 R4: stable heading")[1];
+ assert.ok(r4,"R4 unified layout missing");
+ assert.ok(r4.includes('.zg-r55-shell[data-expanded] .zg-r55-card-head{'));
+ assert.ok(r4.includes('display:block;'));
+ assert.ok(r4.includes('padding-left:15px;'));
+ assert.ok(r4.includes('.zg-r55-shell[data-expanded] .zg-r55-card-head>span:last-child{'));
+ assert.ok(r4.includes('position:absolute;'));
+ assert.ok(r4.includes('top:-8px;'));
+ assert.ok(r4.includes('left:-8px;'));
+ assert.ok(r4.includes('.zg-r55-card-title-link .zg-r55-title-arrow{'));
+ assert.ok(r4.includes('right:0;'));
+ assert.ok(r4.includes('pointer-events:none;'));
+ assert.ok(!r4.includes('zg-r55-mini-chart'),"plot should not be shrunk or moved");
 });
