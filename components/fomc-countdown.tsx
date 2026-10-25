@@ -69,7 +69,7 @@ export default function FomcCountdown(){
           {now!==null&&<ScheduleTimer at={item.at} now={now} estimated={item.estimated}/>}
         </div>)}
       </div>
-      <div className="zg-schedule-foot">중요 발표만 표시 · 기업 실적 ≈ 는 美 정규장 마감 기준 예상 시각 (확정 아님) · 실적 콜 제외 · <a href="https://www.bea.gov/news/schedule" target="_blank" rel="noopener noreferrer">BEA</a> · <a href="https://www.bls.gov/schedule/2026/" target="_blank" rel="noopener noreferrer">BLS</a></div>
+      <div className="zg-schedule-foot">중요 발표만 표시 · 기업 실적 ≈ 는 美 정규장 마감 기준 예상 시각 (확정 아님) · 실적 콜 제외 · BEA · BLS</div>
     </div>
   </div>;
 }
