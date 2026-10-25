@@ -4,12 +4,15 @@ import fs from 'node:fs';
 
 const css=fs.readFileSync(new URL('../components/economic-terrain.css',import.meta.url),'utf8');
 const component=fs.readFileSync(new URL('../components/economic-terrain.tsx',import.meta.url),'utf8');
-const mobile=css.split('/* Economic terrain R5: 36px single-line mobile rows, score track aligned with five-band scale. */')[1];
+const mobile=css.split('/* Economic terrain R5: 26px single-line mobile rows, score track aligned with five-band scale. */')[1];
 
-test('mobile uses 36px single row: rank, name, gauge, score, chevron',()=>{
+test('all 12 mobile rows use 26px: rank, name, gauge, score, chevron',()=>{
  assert.ok(mobile);
  assert.match(mobile,/@media\(max-width:600px\)/);
- assert.match(mobile,/\.zg-terrain-row\{height:36px;min-height:36px;grid-template-rows:36px/);
+ assert.match(mobile,/\.zg-terrain-row\{height:26px;min-height:26px;grid-template-rows:26px;padding:0\}/);
+ assert.match(component,/const cards=ECONOMIC_CARDS\.map\(card=>/);
+ assert.match(component,/\{shown\.map\(\(card,index\)=>/);
+ assert.match(component,/className=\{`zg-terrain-row\$\{active\?' is-selected':''\}`\}/);
  assert.match(mobile,/\.zg-terrain-track\{grid-column:3;grid-row:1/);
  assert.match(mobile,/\.zg-terrain-row-score\{grid-column:4;grid-row:1/);
  assert.match(mobile,/\.zg-terrain-row-chevron\{grid-column:5;grid-row:1/);
