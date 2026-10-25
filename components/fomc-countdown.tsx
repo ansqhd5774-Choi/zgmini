@@ -13,10 +13,11 @@ function FlipDigit({value}:{value:string}) {
 }
 function Pair({value}:{value:string}){return <span className="zg-fomc-pair">{[...value].map((v,i)=><FlipDigit key={i} value={v}/>)}</span>}
 
-function CompanyLogo({logo}:{logo?:string}){
+function CompanyLogo({logo,ticker}:{logo?:string;ticker?:string}){
  if(logo==='alphabet')return <svg className="zg-schedule-company-logo" viewBox="0 0 48 48" role="img" aria-label="구글 로고"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.27 5.48-4.8 7.18l7.73 6C44.38 38.03 46.98 31.86 46.98 24.55z"/><path fill="#FBBC05" d="M10.53 28.59A14.44 14.44 0 0 1 9.75 24c0-1.59.27-3.13.77-4.59l-7.98-6.2A23.93 23.93 0 0 0 0 24c0 3.87.93 7.52 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.9-5.8l-7.73-6c-2.15 1.44-4.92 2.3-8.17 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>;
  if(logo==='microsoft')return <svg className="zg-schedule-company-logo" role="img" aria-label="마이크로소프트 로고" viewBox="0 0 24 24"><path fill="#F25022" d="M0 0h11.3v11.3H0z"/><path fill="#7FBA00" d="M12.7 0H24v11.3H12.7z"/><path fill="#00A4EF" d="M0 12.7h11.3V24H0z"/><path fill="#FFB900" d="M12.7 12.7H24V24H12.7z"/></svg>;
  if(logo==='amazon')return <svg className="zg-schedule-company-logo" role="img" aria-label="아마존 로고 예시" viewBox="0 0 24 24"><text x="6" y="16" fontFamily="Arial,sans-serif" fontSize="18" fontWeight="900" fill="#fff">a</text><path d="M3.5 19c5.4 2.9 10.7 2.9 17-.2" fill="none" stroke="#FF9900" strokeWidth="2.25" strokeLinecap="round"/><path d="m17.5 18 3.2-.7-.6 3" fill="none" stroke="#FF9900" strokeWidth="1.5" strokeLinecap="round"/></svg>;
+ if(ticker)return <span className="zg-schedule-ticker-fallback" role="img" aria-label={ticker+' 종목코드'} title="공식 로고 미확인">{ticker.slice(0,2)}</span>;
  return null;
 }
 
@@ -64,12 +65,12 @@ export default function FomcCountdown(){
       <div className="zg-schedule-list" role="region" aria-label="예정된 주요 발표 목록">
         {upcoming.length===0?<p className="zg-schedule-empty">확인된 주요 발표 일정이 없습니다.</p>:upcoming.map(item=><div className="zg-schedule-item" key={item.key}>
           <span className={'zg-schedule-kind '+(item.kind==='실적'?'is-earnings':item.kind==='연준'?'is-fed':'')}>{item.kind}</span>
-          <span className="zg-schedule-name" title={item.name}><CompanyLogo logo={item.logo}/><span className="zg-schedule-name-text">{item.name}</span></span>
-          <time className="zg-schedule-date" dateTime={item.at} title={item.estimated?'美 정규장 마감 16:00 ET 기준 예상 시각 · 실제 실적 공개 시각 미확정':'공식 발표 예정 시각'}>{item.estimated?'≈':''}{kstDisplay(item.at)}</time>
+          <span className="zg-schedule-name" title={item.name}><CompanyLogo logo={item.logo} ticker={item.ticker}/><span className="zg-schedule-name-text">{item.name}</span></span>
+          <time className="zg-schedule-date" dateTime={item.at} title={item.estimated?(item.session==='beforeOpen'?'美 정규장 개장 09:30 ET 기준 예상 시각 · 실제 실적 공개 시각 미확정':'美 정규장 마감 16:00 ET 기준 예상 시각 · 실제 실적 공개 시각 미확정'):'공식 발표 예정 시각'}>{item.estimated?'≈':''}{kstDisplay(item.at)}</time>
           {now!==null&&<ScheduleTimer at={item.at} now={now} estimated={item.estimated}/>}
         </div>)}
       </div>
-      <div className="zg-schedule-foot">중요 발표만 표시 · 기업 실적 ≈ 는 美 정규장 마감 기준 예상 시각 (확정 아님) · 실적 콜 제외 · BEA · BLS</div>
+      <div className="zg-schedule-foot">중요 발표만 표시 · 기업 실적 ≈ 는 美 장전·장후 기준 예상 시각 (확정 아님) · 실적 콜 제외 · BEA · BLS</div>
     </div>
   </div>;
 }
