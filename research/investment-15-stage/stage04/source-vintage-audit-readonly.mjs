@@ -1,5 +1,5 @@
 /**
- * Stage 04 source-vintage audit (R12/R13). No network call, persistence, score,
+ * Stage 04 source-vintage audit (R12-R14). No network call, persistence, score,
  * ranking or market-data reconstruction. Consumes the just-completed live
  * gate result to distinguish source retrieval from observation/publication.
  */
@@ -25,7 +25,10 @@ function sourcePublication(themes, official) {
       newerPeriodCatalogAlert: official?.fdaEditionCatalog?.editionAlert ?? 'UNVERIFIED',
     },
     CPUC: {},
-    IFR: { documentYear: official?.ifrRobots?.sourceDocumentYear ?? null },
+    IFR: {
+      documentYear: official?.ifrRobots?.sourceDocumentYear ?? null,
+      newerPeriodCatalogAlert: official?.ifrEditionCatalog?.editionAlert ?? 'UNVERIFIED',
+    },
     IEA: { documentYear: official?.ieaDataCentres?.sourceDocumentYear ?? null },
     ENISA: {
       publicationDateIso: official?.enisaNis?.sourcePublished ?? null,
@@ -37,6 +40,18 @@ function sourcePublication(themes, official) {
 }
 
 function pinnedCurrencyState(institution, catalogAlert) {
+  if (institution === 'IFR') {
+    if (catalogAlert === 'NEWER_INDUSTRIAL_WORLD_ROBOTICS_PRESS_RELEASE_REVIEW_REQUIRED') {
+      return 'NEWER_INDUSTRIAL_PRESS_RELEASE_FOUND_PDF_REVIEW_REQUIRED';
+    }
+    if (catalogAlert === 'NO_LATER_INDUSTRIAL_RELEASE_IN_VISIBLE_PRESS_WINDOW_NOT_PROOF') {
+      return 'VISIBLE_PRESS_WINDOW_NO_LATER_INDUSTRIAL_RELEASE_CURRENCY_NOT_PROVEN';
+    }
+    if (catalogAlert === 'PINNED_REPORT_NOT_VISIBLE_WINDOW_INCONCLUSIVE') {
+      return 'PINNED_REPORT_NOT_VISIBLE_IN_PRESS_WINDOW_INCONCLUSIVE';
+    }
+    return 'PINNED_EDITION_NEWER_EDITION_NOT_AUTO_DETECTED';
+  }
   if (institution !== 'FDA CDER') return 'PINNED_EDITION_NEWER_EDITION_NOT_AUTO_DETECTED';
   if (catalogAlert === 'NEWER_CURRENT_YEAR_PARTIAL_LISTING_NOT_ANNUAL_REPORT') {
     return 'CURRENT_YEAR_LISTING_FOUND_PINNED_REPORT_STILL_LAST_VALIDATED';
@@ -50,7 +65,7 @@ function pinnedCurrencyState(institution, catalogAlert) {
 
 export function auditStage04SourceVintage(gate) {
   if (!gate || !Array.isArray(gate.themes) || gate.themes.length !== 9
-    || !/^INVESTMENT_BOT_STAGE04_INPUT_GATE_R1[123]$/.test(gate.runType ?? '')
+    || !/^INVESTMENT_BOT_STAGE04_INPUT_GATE_R1[1234]$/.test(gate.runType ?? '')
     || !/^\d{4}-\d{2}-\d{2}T/.test(gate.runAtUtc ?? '')) {
     throw new Error('SOURCE_VINTAGE_INVALID_GATE_CONTRACT');
   }
