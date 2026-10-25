@@ -4,6 +4,7 @@ import {readFileSync} from "node:fs";
 const ui=readFileSync("app/dashboard-ui.tsx","utf8");
 const css=readFileSync("app/globals.css","utf8");
 const catalog=readFileSync("components/market-explorer-catalog.ts","utf8");
+const responsive=readFileSync("app/responsive.css","utf8");
 const routes=[
  ["inflation","inflation"],["employment","employment"],["rates","rates"],
  ["credit","credit"],["growth","growth"],["consumption","consumption"],
@@ -72,7 +73,7 @@ test("economic title restores original-size inline arrow in both expanded states
  for(const value of ['position:static;','width:13px;','height:13px;','align-items:center;','gap:2px;'])assert.ok(r6.includes(value),value);
  assert.ok(!/zg-r55-mini-chart[^}]*width\s*:/.test(r6),"trend chart width may not be reduced");
  assert.ok(!r6.includes('translateX('),"trend chart must not be shifted into another card");
- assert.ok(r6.includes('grid-template-columns:84px minmax(0,1fr);'),"plot must have a separate lane");
+ assert.ok(!r6.includes('zg-r55-card-mid{'),"card-mid has display:contents; only the card grid may reserve lanes");
 });
 
 test("responsive economic card columns reserve room for full labels and their arrows",()=>{
@@ -83,4 +84,13 @@ test("responsive economic card columns reserve room for full labels and their ar
  assert.ok(r6.includes('grid-template-columns:repeat(5,minmax(0,1fr));'));
  assert.ok(r6.includes('@media (max-width:540px)'));
  assert.ok(r6.includes('grid-template-columns:minmax(0,1fr);'));
+});
+
+test("actual economic card grid reserves 110px lane without 16px graph intrusion",()=>{
+ const r6=responsive.split("/* EC12 R6: the actual card is the grid container")[1];
+ assert.ok(r6,"responsive grid correction missing");
+ assert.ok(r6.includes(".zg-r55-shell[data-expanded] .zg-r55-card{"));
+ assert.ok(r6.includes("grid-template-columns:110px minmax(0,1fr);"));
+ assert.ok(r6.includes(".zg-r55-card-visual{"));
+ assert.ok(r6.includes("margin-left:0;"));
 });
