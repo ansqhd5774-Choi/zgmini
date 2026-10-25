@@ -7,7 +7,7 @@
 | 01 | 시장 분석 | ZGMINI 기존 시장 지표를 활용하도록 계획 | EXISTING_INPUT |
 | 02 | 섹터 분석 | ZGMINI 기존 ETF 섹터 공탐 활용 계획 | EXISTING_INPUT |
 | 03 | 테마 분석 | 기존 통과 ETF 테마 9개 유지; 재검증 금지 | EXISTING_INPUT |
-| 04 | 매력 테마 선정 | R2 정량 설계, R3 같은 판본 검산, R15 F 9/9 및 공식 산업 원문 7/9 읽기 전용 재조회·비배타 정량 증거표 + FDA 미완료 연도/IFR 산업용 판본 감시, M2 R25 선택 JSON은 과거 스냅샷 | DESIGNED / PARTIAL |
+| 04 | 매력 테마 선정 | R2 정량 설계, R3 같은 판본 검산, R16 F 9/9 및 공식 산업 원문 7/9 재조회·비배타 정량 증거표·전년 원값 3개/참고 이력 검산 + FDA 미완료 연도/IFR 산업용 판본 감시, M2 R25 선택 JSON은 과거 스냅샷 | DESIGNED / PARTIAL |
 | 05 | 성장 산업·기술 선정 | M2 R25 로봇 실측 코드 및 선택 JSON | CODE_PRESENT / NOT_VERIFIED |
 | 06 | 수혜 기업 발굴 | M2 R25 기업 노출·미국 유니버스·로봇·제품 조사 코드 | CODE_PRESENT / NOT_VERIFIED |
 | 07 | 기본 지표 분석 | M2 R25 재무·공식 기업 실적 확인 코드; R24 실측 2/4 부분 확보 | PARTIAL |
@@ -96,6 +96,14 @@
 - 58/58 자동 테스트 통과(10파일), 실제 네트워크 통합 검증 성공. **G/D/M·순위 NULL, 주문 0**. 사용자 Windows CMD 실측은 아직 미실행.
 - IEA의 2026-10-14 별도 정책보고서는 기존 2025 TWh 값과 다른 목적이므로 숫자 자동 대체 금지. ENISA 2025/2024 서로 다른 설문을 동일 기관 짝패널로 취급해 정확한 성장률 생성 금지.
 - 보고서 `STAGE04_INVESTMENT_BOT_R15_NON_EXCLUSIVE_QUANT_EVIDENCE_20261025.md`. 이전 R14는 IFR 뉴스/산업용 판본 구분 근거로 계속 보존.
+
+## R16 최신 검증 — 전년 원값·역사 표본 부족으로 감점 금지
+
+- 2026-10-25 실제 HTTPS 통합 조회: F **9/9**, 공식 산업 **7/9**, 테마 **9/9 유지**, `INVESTMENT_BOT_STAGE04_INPUT_GATE_R16`, `LIVE_INPUT_PARTIAL_INDUSTRY_UNRANKED`.
+- **동일 출처 최근 원값과 전년 동기간 원값 3개** 확보(CPUC·FedNow·FDA). 원값에서 재계산한 성장률과 기존 계산값의 잔차 **3개 모두 0%p**. YoY 참고 이력은 각각 1/6/8개, 가속도 참고 이력은 각각 0/5/7개.
+- **이력 수 최소 제한을 자동으로 부과하지 않고**, CPUC의 과거 가속도 이력 0개를 최신 유효한 가속도 관측 무효로 취급하지 않음. IFR·IEA 반올림 공표 성장률의 전년 분모를 역산하지 않음. ENISA·Eurostat는 다른 단위로 유지.
+- **자료 부족을 0으로 채운 사례 0, 자료 부족 탈락 0, 9개 유지, 주문 0건**, 신뢰도 수치 가중치·G/D/M·공식 순위 모두 NULL/OFF.
+- 신규 `industryEvidenceFairness` 및 9개 테스트를 추가해 **67/67 테스트 PASS**(11개 파일). 사용자 Windows CMD 실측 아직 미실행. 보고서 `STAGE04_INVESTMENT_BOT_R16_NUMERIC_PROVENANCE_FAIRNESS_20261025.md`.
 
 ## 가장 최근 M2 패키지 R25 진척
 
