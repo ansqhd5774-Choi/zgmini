@@ -127,6 +127,13 @@ PC에서 새 작업 등록 전 아래 단계가 필요하다.
 - GetMarketHistory 약관(2026-10-19 시행, <https://getmarkethistory.com/docs/terms>)은 파생 결과 공개를 허용하나 **계정 정상 유지 조건**이 있다. 이번 `api/v1` 익명 무료 데이터 수신만으로 계정 정상 여부가 증명되지는 않는다. 권리 검증 플래그를 임의로 `true`로 설정하지 않는다.
 - PC에서 같은 출처의 DTCR/GRID/SPY 원자료와 SHA가 확보되고, 라이선스 근거가 확인된 뒤 별도 PC 신규 key 전용 게시기·D1 CAS/readback·정규 Task를 승인 경로로 연결한다. 기존 9개 파이프라인을 수정해 우회하지 않는다. 아직 **공개·PC 자동 운영 완료가 아니다**.
 
+## 2026-10-25 데이터센터·전력 R2 — 기존 선택 테마 PC 주기 경로 재사용
+
+- 새 외부 GET 3회(DTCR, GRID, SPY 각각 1회)를 10월 25일에 실행했다. 3개 실제 원가격의 공통 마지막 관측일은 여전히 **10월 22일**이고 704개 공통 거래일, 252점, 14.75794는 변하지 않았다. 23일 점수는 공급원에 없으므로 생성하지 않는다. 새 manifest/후보 SHA는 이전 파일을 덮어쓰지 않고 추가했다.
+- `scripts/pc-writer/theme-data-center-power-cycle-r2.mjs`는 기존 선택 테마 `collectOptional`과 R1 SHA 검증 계산기를 그대로 연결한다. `--once`는 저장 원자료 검산만, `--once --collect`는 실제 원자료가 존재하는 3개 ETF에 대해 4회 이하 bounded/resume GET을 수행한다. 실행 당일 날짜로 window가 움직이므로 R1 최초 백필의 고정 종료일에 갇히지 않는다.
+- Windows `theme-data-center-power-cycle-r2.cmd` 실행 로그 `DATA_CENTER_POWER_R2_RESULT.txt`는 CMD와 **같은 폴더**에 저장한다. raw/checkpoint는 승인된 E: 데이터 경로를 따른다. 이 단계는 기존 9개/기존 태스크/D1 변경 0이며 **새 정규 태스크 등록·공개 게시 완료가 아니다**.
+- 앞선 R1 최초 백필 CMD는 최초 원자료 설치 전용으로 유지한다. R2는 R1 raw manifest와 SHA 검증 데이터가 있어야 실행한다. 샘플 API의 무계정 GET만으로 공급원 유효 계정 및 파생물 공개 권리가 증명되지 않아 `--publish` 경로는 별도 승인·D1 CAS/readback 게시기 전까지 제공하지 않는다.
+
 ## 일반 채팅 작업 지시문
 
 > ZGMINI 테마 작업은 GitHub 최신 main의 AGENTS.md, docs/THEME_DATA_OPERATIONS.md, config/theme-data-registry.json을 먼저 확인하고 진행하라. 원자료 수집→PC 저장→계산→확정/잠정 게시→D1 readback→공개 API/UI→다음 정규 실행까지 연결하라. 실행 코드는 GitHub에, 원자료는 승인된 E: 데이터 경로에 저장하고 manifest에 실제 상대 경로·SHA256·출처·수집 시각·관측 기간·스키마·가격 모드를 기록하라. 수집기·계산기·게시기·작업 이름/주기·PC 승인 SHA·D1 key를 등록부에 갱신하라. 첨부 ZIP·Desktop·임시 폴더만 유일한 사본으로 두지 마라. 로컬 접근이 없으면 적용했다고 보고하지 말고 GitHub 코드와 정확한 설치/검증 명세를 준비하라. 무료·상업용 조건과 기존 산식·데이터·잠금·게시 보호를 유지하고, 새 테마의 실패가 기존 테마 갱신을 막지 않게 하라. 실제 검사 명령과 결과·미완료 항목을 남기고 테스트/배포 성공만으로 자동 운영 완료라고 보고하지 마라.

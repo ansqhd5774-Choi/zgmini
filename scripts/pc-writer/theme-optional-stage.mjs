@@ -20,6 +20,8 @@ const FILES = Object.freeze([
   'scripts/pc-writer/theme-optional-score-r188.mjs',
   'scripts/pc-writer/theme-data-center-power-r1.cmd',
   'scripts/pc-writer/theme-data-center-power-r1.mjs',
+  'scripts/pc-writer/theme-data-center-power-cycle-r2.cmd',
+  'scripts/pc-writer/theme-data-center-power-cycle-r2.mjs',
   'scripts/pc-writer/theme-data-inventory.mjs',
   'worker/theme-ai-semiconductor-optional.mjs',
   'worker/theme-history-reference.mjs',

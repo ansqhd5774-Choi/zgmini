@@ -498,6 +498,7 @@
       "repository": {
         "collector": "scripts/pc-writer/theme-optional-collect.mjs",
         "calculator": "scripts/pc-writer/theme-data-center-power-r1.mjs",
+        "cycle": "scripts/pc-writer/theme-data-center-power-cycle-r2.mjs",
         "publisherInstaller": null,
         "reader": "worker/theme-data-center-power-r1.mjs"
       },
