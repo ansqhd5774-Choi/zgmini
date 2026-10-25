@@ -499,15 +499,15 @@
         "collector": "scripts/pc-writer/theme-optional-collect.mjs",
         "calculator": "scripts/pc-writer/theme-data-center-power-r1.mjs",
         "cycle": "scripts/pc-writer/theme-data-center-power-cycle-r2.mjs",
-        "publisherInstaller": null,
+        "publisherInstaller": "scripts/pc-writer/theme-data-center-power-publish-r3.mjs",
         "reader": "worker/theme-data-center-power-r1.mjs"
       },
       "runtime": {"collector": null, "calculator": null, "publisher": null},
-      "tasks": [],
+      "tasks": ["ZGMINI-PC-Theme-Data-Center-Power (PROPOSED_NOT_REGISTERED)"],
       "public": {"table": "public_feed_snapshots_v1", "feedKey": "theme-data-center-power-r1",
         "snapshotKey": "current", "api": "/api/theme-fear-greed"},
-      "blockers": ["PC_MANIFEST_628_SESSIONS_NOT_INSTALLED", "DERIVED_PUBLICATION_ACCOUNT_LICENSE_PROOF_PENDING", "D1_PUBLICATION_AND_REGULAR_PC_RUN_PENDING"],
-      "followUps": ["EXISTING_9_THEME_LANES_UNCHANGED", "NO_SYNTHETIC_VALUES", "NO_PUBLIC_WRITES"]
+      "blockers": ["PC_MANIFEST_628_SESSIONS_NOT_INSTALLED", "ANONYMOUS_DERIVED_LICENSE_SCOPE_UNCONFIRMED_NEW_THEME_RISK_OPT_IN_REQUIRED", "D1_PUBLICATION_AND_REGULAR_PC_RUN_PENDING"],
+      "followUps": ["EXISTING_9_THEME_LANES_UNCHANGED", "NO_SYNTHETIC_VALUES", "PUBLIC_R3_EXPLICIT_RISK_OPT_IN_ONLY", "D1_CAS_READBACK_NOT_YET_RUN"]
     }
   ]
 }

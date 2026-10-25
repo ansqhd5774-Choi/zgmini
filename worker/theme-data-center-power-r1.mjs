@@ -7,6 +7,7 @@ export const DC_POWER_PUBLIC_VERSION='THEME_DATA_CENTER_POWER_GMH_R1_PUBLIC_V1';
 const METHOD='ETF_ONLY_T40_R20_V40_PAIR50';
 const PRICE_MODE='UNADJUSTED_15_NY_HOURLY_PROXY_WITH_OFFICIAL_EARLY_CLOSE_12';
 const TERMS='https://getmarkethistory.com/docs/terms';
+const RIGHTS_BASIS='OFFICIAL_TERMS_DERIVED_WORKS_ANONYMOUS_SCOPE_UNCONFIRMED';
 const validDate=s=>typeof s==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(s)&&Number.isFinite(Date.parse(s+'T00:00:00Z'))&&
  new Date(s+'T00:00:00Z').toISOString().slice(0,10)===s;
 const score=v=>typeof v==='number'&&Number.isFinite(v)&&v>=0&&v<=100;
@@ -18,10 +19,17 @@ export function eligibleDcPower(record,base,{now=Date.now(),storedAt=now}={}){
   record.etfs?.join(',')!=='DTCR,GRID'||record.referenceSymbol!=='SPY'||record.methodologyVersion!==METHOD||
   record.scoreMethod!=='ETF_ONLY_PROXY'||record.individualStocksUsed!==0||record.sourcePriceMode!==PRICE_MODE||
   record.phase!=='CONFIRMED'||record.provisional?.points?.length!==0)return false;
- // The provider's derived-work clause is conditional on an account in good
- // standing. Anonymous sample GET alone never establishes this permission.
- if(record.publicationAuthorized!==true||record.accountGoodStandingVerified!==true||
-  record.upstreamCommercialRightsVerified!==true||record.derivedLicenseVerified!==true||
+ // Match the existing published ninth-theme contract: a fully verified path,
+ // or an explicitly publisher-accepted, honestly *unverified* anonymous path.
+ // The latter does NOT assert or imply an independent commercial data license.
+ const fullyAttested=record.accountGoodStandingVerified===true&&
+  record.upstreamCommercialRightsVerified===true&&record.derivedLicenseVerified===true;
+ const transparentlyLimited=record.accountGoodStandingVerified===false&&
+  record.upstreamCommercialRightsVerified===false&&record.derivedLicenseVerified===false&&
+  record.anonymousScopeIndependentlyConfirmed===false&&record.licensingRiskAcceptedByPublisher===true&&
+  record.sourcePriceReconciled===false&&record.fullHistoryIndependentlyReconciled===false&&
+  record.rightsBasis===RIGHTS_BASIS;
+ if(record.publicationAuthorized!==true||!(fullyAttested||transparentlyLimited)||
   record.derivedOnlyNoRaw!==true||record.localBarsVerified!==true||record.sourceTermsUrl!==TERMS)return false;
  if(record.sourceStoredAtKind!=='VERIFIED_LOCAL_MARKET_BARS'||record.sourceTimestampBasis!=='MANIFEST_GET_REQUEST_AT'||
   !/^GMH_MANIFEST_SHA256_[a-f0-9]{64}$/.test(record.sourceVersion??'')||

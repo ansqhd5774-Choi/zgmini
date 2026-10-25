@@ -134,6 +134,14 @@ PC에서 새 작업 등록 전 아래 단계가 필요하다.
 - Windows `theme-data-center-power-cycle-r2.cmd` 실행 로그 `DATA_CENTER_POWER_R2_RESULT.txt`는 CMD와 **같은 폴더**에 저장한다. raw/checkpoint는 승인된 E: 데이터 경로를 따른다. 이 단계는 기존 9개/기존 태스크/D1 변경 0이며 **새 정규 태스크 등록·공개 게시 완료가 아니다**.
 - 앞선 R1 최초 백필 CMD는 최초 원자료 설치 전용으로 유지한다. R2는 R1 raw manifest와 SHA 검증 데이터가 있어야 실행한다. 샘플 API의 무계정 GET만으로 공급원 유효 계정 및 파생물 공개 권리가 증명되지 않아 `--publish` 경로는 별도 승인·D1 CAS/readback 게시기 전까지 제공하지 않는다.
 
+## 2026-10-25 데이터센터·전력 R3 — 기존 9번째 무계정 공개 방식 재사용
+
+- 기존 바이오 9번째 운영 소스 `worker/theme-biotech-optional.mjs`, `worker/theme-biotech-continuation-r2.mjs`, `scripts/pc-writer/theme-biotech-public-record-r7.mjs`를 재확인했다. 바이오는 **무계정** `GET /api/v1/bars/stocks/{symbol}/1h`로 수집했으며 `OFFICIAL_TERMS_DERIVED_WORKS_ANONYMOUS_SCOPE_UNCONFIRMED` 및 이전 게시자의 `licensingRiskAcceptedByPublisher=true`에 따른 제한적 공개 경로를 쓴다. 무계정 조회와 파생물 배포의 법적 권리를 동일시하지 않는다. <https://getmarkethistory.com/docs/quickstart>, <https://getmarkethistory.com/docs/terms>.
+- 데이터센터·전력에도 이 **미확정 사실을 그대로 표시하는 별도 경로**를 마련했다. `accountGoodStandingVerified=false`, `upstreamCommercialRightsVerified=false`, `derivedLicenseVerified=false`, `anonymousScopeIndependentlyConfirmed=false`를 유지한다. 이 신규 테마의 게시자 위험 수용은 별도 명령 `--publish --accept-anonymous-license-risk`를 둘 다 주어야 하며 9번째 승인 상태를 자동 복사하지 않는다. 비공개 GET/검산은 별도 가입·권리 수용 없이 가능하다.
+- 신규 `theme-data-center-power-publish-r3.mjs`: 기본 `--once`는 기존 R2 SHA 검산만, `--once --collect`는 무료 무계정 4 GET 이하·비공개 검산만 한다. 공개 명령 `--once --collect --publish --accept-anonymous-license-risk`를 명시하면, 기존 PC Cloudflare 인증 경로를 재사용해 새 D1 key `theme-data-center-power-r1`만 CAS/읽기 검증한다. 기존 9개 key·예약 작업 변경 0. `theme-data-center-power-r3.cmd` 로그는 실행 CMD와 같은 폴더 `DATA_CENTER_POWER_R3_RESULT.txt`.
+- R3 검증 조건: 실제 252개 거래일·원가격 manifest SHA·후보 파일 SHA·소스 신선도·라이선스 미확인 상태의 명시·D1 CAS/readback·공개 API readback. 신규 정규 작업은 **미등록 제안 상태**이고 PC 승인 SHA 설치·실제 게시·다음 정규 PC 실행 전에는 공개·운영 완료가 아니다.
+- 2026-10-25 공개 API 읽기 전용 실측: 기존 9개 표시, 기본 관측일 `2026-10-22`, 바이오만 `2026-10-21`. 새 DTCR/GRID 관측일도 `2026-10-22`이고 후보 252개 날짜 SHA256 `99240d830a2ab4e26512032f2d70ef6e7889fdbb0a474218079ac73327cdec99`가 공개 기존 7개 기준 시퀀스의 해시와 일치한다. R3 실제 로컬 비공개 재생 `PRIVATE_CANDIDATE_VERIFIED_NOT_PUBLISHED`, `score=14.75794`, `providerCalls=0`, `d1Writes=0`, `publicWrites=0`, `schedulerWrites=0`.
+
 ## 일반 채팅 작업 지시문
 
 > ZGMINI 테마 작업은 GitHub 최신 main의 AGENTS.md, docs/THEME_DATA_OPERATIONS.md, config/theme-data-registry.json을 먼저 확인하고 진행하라. 원자료 수집→PC 저장→계산→확정/잠정 게시→D1 readback→공개 API/UI→다음 정규 실행까지 연결하라. 실행 코드는 GitHub에, 원자료는 승인된 E: 데이터 경로에 저장하고 manifest에 실제 상대 경로·SHA256·출처·수집 시각·관측 기간·스키마·가격 모드를 기록하라. 수집기·계산기·게시기·작업 이름/주기·PC 승인 SHA·D1 key를 등록부에 갱신하라. 첨부 ZIP·Desktop·임시 폴더만 유일한 사본으로 두지 마라. 로컬 접근이 없으면 적용했다고 보고하지 말고 GitHub 코드와 정확한 설치/검증 명세를 준비하라. 무료·상업용 조건과 기존 산식·데이터·잠금·게시 보호를 유지하고, 새 테마의 실패가 기존 테마 갱신을 막지 않게 하라. 실제 검사 명령과 결과·미완료 항목을 남기고 테스트/배포 성공만으로 자동 운영 완료라고 보고하지 마라.
