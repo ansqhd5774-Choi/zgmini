@@ -5,6 +5,7 @@ import {
 } from './fednow-official-readonly.mjs';
 import { F_ENDPOINT } from './latest-f-readonly.mjs';
 import { EUROSTAT_CLOUD_API, parseEurostatCloud } from './eurostat-cloud-readonly.mjs';
+import { IEA_DATA_CENTRE_REPORT } from './iea-data-centre-official-readonly.mjs';
 import { INDUSTRY_CONTRACT, runInvestmentBotInputGate } from './investment-bot-gate-readonly.mjs';
 import { readPinnedFdaCderReport } from './fda-cder-official-readonly.mjs';
 import { createHash } from 'node:crypto';
@@ -64,8 +65,13 @@ const eurostatJson = {
       '2020': 5, '2021': 6, '2023': 7, '2024': 8, '2025': 9 } } },
   },
 };
+const ieaHtml = `<html><head><title>Key Questions on Energy and AI</title></head><body>
+<h1>Executive summary</h1>
+<p>The global electricity demand of data centres – the critical infrastructure for training and running AI models – grew by 17% in 2025, in line with IEA projections.</p>
+<p>Our updated projections see electricity consumption from data centres roughly doubling from 485 TWh in 2025 to 950 TWh in 2030, accounting for around 3% of global electricity demand by that date.</p>
+<p>${'Report context. '.repeat(45)}</p></body></html>`;
 
-function makeFetch({ brokenFedNow = false, brokenF = false, brokenEurostat = false } = {}) {
+function makeFetch({ brokenFedNow = false, brokenF = false, brokenEurostat = false, brokenIea = false } = {}) {
   return async (url) => {
     if (url === F_ENDPOINT) return {
       url, ok: !brokenF, status: brokenF ? 503 : 200,
@@ -80,6 +86,11 @@ function makeFetch({ brokenFedNow = false, brokenF = false, brokenEurostat = fal
     if (url === EUROSTAT_CLOUD_API) return {
       url, ok: !brokenEurostat, status: brokenEurostat ? 503 : 200,
       json: async () => eurostatJson,
+    };
+    if (url === IEA_DATA_CENTRE_REPORT) return {
+      url, ok: !brokenIea, status: brokenIea ? 503 : 200,
+      headers: { get: () => 'text/html; charset=utf-8' },
+      text: async () => ieaHtml,
     };
     if (url === asciiUrl) return {
       url, ok: !brokenFedNow, status: brokenFedNow ? 503 : 200, text: async () => raw,
@@ -149,7 +160,7 @@ test('bot joins nine existing F themes but never issues a ranking or an order', 
   const result = await runInvestmentBotInputGate({ fetchFn: makeFetch(), asOfDate: '2026-10-25', fdaReader, cpucReader, ifrReader });
   assert.equal(result.status, 'LIVE_INPUT_PARTIAL_INDUSTRY_UNRANKED');
   assert.equal(result.themes.length, 9);
-  assert.equal(result.officialIndustry.validatedLiveThemes, 5);
+  assert.equal(result.officialIndustry.validatedLiveThemes, 6);
   const robots = result.themes.find((x) => x.theme === '로봇·자동화');
   assert.equal(robots.industryRawCount, 603307);
   assert.equal(robots.industryGrowthPct, null);
@@ -172,6 +183,11 @@ test('bot joins nine existing F themes but never issues a ranking or an order', 
   assert.equal(cloud.industryRawPercent, 52.74);
   assert.ok(Math.abs(cloud.industryTwoYearDeltaPctPoints - 7.42) < 0.0001);
   assert.equal(cloud.industryGrowthPct, null);
+  const power = result.themes.find((x) => x.theme === '데이터센터·전력');
+  assert.equal(power.industryObservationPeriod, '2025');
+  assert.equal(power.industryRawTwh, 485);
+  assert.equal(power.industryReportedRoundedGrowthPct, 17);
+  assert.equal(power.industryGrowthPct, null);
   assert.ok(result.themes.every((x) => x.approvedAttractivenessM === null && x.officialRank === null));
   assert.equal(result.automatedTradeEnabled, false);
   assert.deepEqual(result.orderRequests, []);
@@ -184,6 +200,20 @@ test('Eurostat source down does not silently reuse a past response', async () =>
   assert.equal(result.status, 'PARTIAL_OR_FAILED_INPUT_UNRANKED');
   assert.equal(result.officialIndustry.eurostat.failureCode, 'EUROSTAT_HTTP_503');
   assert.equal(result.themes.find((x) => x.theme === '클라우드·SaaS').industryRawPercent, null);
+});
+
+test('IEA official report HTTP failure leaves raw TWh and rounded growth NULL', async () => {
+  const result = await runInvestmentBotInputGate({
+    fetchFn: makeFetch({ brokenIea: true }), asOfDate: '2026-10-25', fdaReader, cpucReader, ifrReader,
+  });
+  assert.equal(result.status, 'PARTIAL_OR_FAILED_INPUT_UNRANKED');
+  assert.equal(result.officialIndustry.validatedLiveThemes, 5);
+  assert.equal(result.officialIndustry.ieaDataCentres.failureCode, 'IEA_HTTP_503');
+  const power = result.themes.find((x) => x.theme === '데이터센터·전력');
+  assert.equal(power.industryRawTwh, null);
+  assert.equal(power.industryReportedRoundedGrowthPct, null);
+  assert.equal(power.sentimentF, 50);
+  assert.equal(result.automatedTradeEnabled, false);
 });
 
 test('FedNow HTTP failure preserves NULL industry values, not fake success', async () => {
@@ -208,7 +238,7 @@ test('FDA source version drift cannot silently promote saved 2025 numbers', asyn
   const result = await runInvestmentBotInputGate({ fetchFn: makeFetch(), asOfDate: '2026-10-25',
     fdaReader: async () => { throw new Error('FDA_CDER_SOURCE_VERSION_DRIFT'); }, cpucReader, ifrReader });
   assert.equal(result.status, 'PARTIAL_OR_FAILED_INPUT_UNRANKED');
-  assert.equal(result.officialIndustry.validatedLiveThemes, 4);
+  assert.equal(result.officialIndustry.validatedLiveThemes, 5);
   assert.equal(result.officialIndustry.fdaCder.failureCode, 'FDA_CDER_SOURCE_VERSION_DRIFT');
   assert.equal(result.themes.find((x) => x.theme === '바이오·신약').industryRawCount, null);
   assert.equal(result.themes.find((x) => x.theme === '바이오·신약').sentimentF, 22.63294);
@@ -230,7 +260,7 @@ test('IFR source drift preserves NULL robot industry rather than turning rounded
     ifrReader: async () => { throw new Error('IFR_SOURCE_VERSION_DRIFT'); },
   });
   assert.equal(result.status, 'PARTIAL_OR_FAILED_INPUT_UNRANKED');
-  assert.equal(result.officialIndustry.validatedLiveThemes, 4);
+  assert.equal(result.officialIndustry.validatedLiveThemes, 5);
   assert.equal(result.officialIndustry.ifrRobots.failureCode, 'IFR_SOURCE_VERSION_DRIFT');
   const robot = result.themes.find((x) => x.theme === '로봇·자동화');
   assert.equal(robot.industryRawCount, null);
