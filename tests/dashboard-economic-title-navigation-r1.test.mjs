@@ -72,5 +72,14 @@ test("folded and unfolded economic titles share fixed info position and a nonflo
  assert.ok(r4.includes('.zg-r55-card-title-link .zg-r55-title-arrow{'));
  assert.ok(r4.includes('right:0;'));
  assert.ok(r4.includes('pointer-events:none;'));
- assert.ok(!r4.includes('zg-r55-mini-chart'),"plot should not be shrunk or moved");
+ assert.ok(!/zg-r55-mini-chart[^}]*width\s*:/.test(r4),"mini-chart width must not shrink");
+});
+
+test("compact titles keep a readable help gap without shrinking any chart",()=>{
+ const r5=css.split("/* EC12 R5: breathe between upper-left help")[1];
+ assert.ok(r5,"R5 separation rule missing");
+ assert.ok(r5.includes('.zg-r55-shell[data-expanded] .zg-r55-card-head{padding-left:18px}'));
+ assert.ok(r5.includes('.zg-r55-card-head h3{letter-spacing:-1.2px}'));
+ assert.ok(r5.includes('.zg-r55-mini-chart{transform:translateX(4px)}'));
+ assert.ok(!/zg-r55-mini-chart[^}]*width\s*:/.test(r5));
 });
