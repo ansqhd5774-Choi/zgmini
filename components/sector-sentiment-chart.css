@@ -84,3 +84,18 @@
 .zg-sector-chart [data-score-band="neutral"]{color:var(--zg-score-neutral)}
 .zg-sector-chart [data-score-band="greed"]{color:var(--zg-score-greed)}
 .zg-sector-chart [data-score-band="extreme-greed"]{color:var(--zg-score-extreme-greed)}
+
+/* R1060: keep the chart plot full-width while fitting its title, period controls,
+   and all 11 sector labels into the compact three-card dashboard layout. */
+@media (min-width:1024px) and (max-width:1179px){
+ .zg-dashboard[data-view="dashboard"] .zg-sector-chart-heading h2{font-size:16px;letter-spacing:-.4px}
+ .zg-dashboard[data-view="dashboard"] .zg-sector-period{width:124px;flex:0 0 124px}
+ .zg-dashboard[data-view="dashboard"] .zg-sector-period button{width:24.4px;min-width:24.4px}
+ .zg-dashboard[data-view="dashboard"] .zg-sector-chart-legend.zg-sector-compact-legend .zg-sector-legend-name{font-size:10px;letter-spacing:-1.1px}
+}
+@media (min-width:960px) and (max-width:1023px){
+ .zg-dashboard[data-view="dashboard"] .zg-sector-chart-heading h2{font-size:14px;letter-spacing:-.4px}
+ .zg-dashboard[data-view="dashboard"] .zg-sector-period{width:112px;flex:0 0 112px}
+ .zg-dashboard[data-view="dashboard"] .zg-sector-period button{width:22px;min-width:22px}
+ .zg-dashboard[data-view="dashboard"] .zg-sector-chart-legend.zg-sector-compact-legend .zg-sector-legend-name{font-size:9px;letter-spacing:-1.2px}
+}
