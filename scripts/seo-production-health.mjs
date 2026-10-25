@@ -9,7 +9,7 @@ export const SEO_RUNTIME_MARKERS=new Map([
   [`${SITE_ORIGIN}/risk-indicators/`,{descriptionIncludes:'미국 경제 위기 신호를 8대 위험 지표의 안정 점수로 비교하세요.'}],
   [`${SITE_ORIGIN}/economic-indicators/`,{descriptionIncludes:'12개 시장 평가 점수와 저장 추이'}],
   [`${SITE_ORIGIN}/theme-fear-greed/`,{descriptionIncludes:'공개된 ETF 기반 공포탐욕지수(공탐 지수)'}],
-  [`${SITE_ORIGIN}/`,{titleIncludes:'공포탐욕지수·공탐 지수·미국 증시',htmlIncludes:['공탐 지수는 공포와 탐욕 지수의 줄임말입니다.']}],
+  [`${SITE_ORIGIN}/`,{titleIncludes:'공포탐욕지수·공탐 지수·미국 증시',htmlIncludes:['공포·탐욕 지수는 투자자의 시장 심리를 보여줍니다.','공탐 지수']}],
   [`${SITE_ORIGIN}/about/`,{descriptionIncludes:'ZGMINI를 소개합니다'}],
   [`${SITE_ORIGIN}/usage/`,{descriptionIncludes:'5단계로 알아보세요'}],
   [`${SITE_ORIGIN}/data-sources/`,{descriptionIncludes:'관측일·발표일·갱신 시각 및 잠정치 기준'}],
