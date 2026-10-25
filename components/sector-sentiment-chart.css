@@ -76,3 +76,10 @@
 @media(max-width:600px){.zg-theme-picker-panel{top:6px;bottom:51px;left:12px;right:12px}.zg-theme-picker-options{grid-template-columns:repeat(2,minmax(0,1fr))}.zg-theme-selected-label{font-size:9px}}
 @media(max-width:600px){.zg-sector-chart.zg-theme-score-card{padding-top:10px}.zg-theme-legend-name{font-size:9px}.zg-theme-legend-score{font-size:13px}}
 .zg-provisional-label{display:block;color:#fbbf24;font-size:10px;line-height:1.4;margin:2px 0 3px;}
+
+/* Fear-greed sentiment bands apply to numeric labels; line and dot hues identify series. */
+.zg-sector-chart [data-score-band="extreme-fear"]{color:var(--zg-score-extreme-fear)}
+.zg-sector-chart [data-score-band="fear"]{color:var(--zg-score-fear)}
+.zg-sector-chart [data-score-band="neutral"]{color:var(--zg-score-neutral)}
+.zg-sector-chart [data-score-band="greed"]{color:var(--zg-score-greed)}
+.zg-sector-chart [data-score-band="extreme-greed"]{color:var(--zg-score-extreme-greed)}
