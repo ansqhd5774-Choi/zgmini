@@ -15,6 +15,7 @@
 7. `STAGE04_INVESTMENT_BOT_R8_FDA_CPUC_LIVE_EVIDENCE_20261025.md`: 최신 R8 공식 산업 원자료 **4/9 실측**, FDA 2025 PDF 판본 검증 및 CPUC 월별 ZIP 집계 범위 조회; 공식 투자 점수·순위·주문 없음.
 8. `STAGE04_INVESTMENT_BOT_R9_IFR_LIVE_EVIDENCE_20261025.md`: **최신 R9 공식 산업 원자료 5/9 실측**. IFR 2026 단일 보고서의 2025 로봇 신규 설치량·반올림 발표 성장률을 독립 검증, 정확한 가속도/점수는 결측.
 9. `STAGE04_INVESTMENT_BOT_R10_IEA_LIVE_SOURCE_20261025.md`: **최신 R10 6/9 실측**. IEA 공식 2026 보고서 HTML을 실행 때 직접 읽어 2025 데이터센터 485 TWh 및 반올림된 +17%를 추출. 원문·과거 추정치 대량 저장 없음.
+10. `STAGE04_INVESTMENT_BOT_R11_ENISA_LIVE_SURVEY_20261025.md`: **최신 R11 7/9 실측**. ENISA 공식 2025 보도자료에서 EU NIS2 설문 표본 1,080개 기관·IT 예산 대비 사이버보안 지출 9%·중앙값 150만 유로를 매 실행 추출. 연간 산업 성장률이 아니므로 G/D/M 계산에는 사용하지 않음. IAEA 공식 엑셀 HTTP 403, SIPRI 상업 이용권은 보류.
 
 ## 작업 원칙
 
