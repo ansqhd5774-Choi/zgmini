@@ -88,3 +88,18 @@
 - 공개 `https://zgmini.kr/` Chrome 측정: 섹터·테마 OFF 버튼 모두 배경 `rgba(0,0,0,0)`, 버튼 불투명도 `1`, 이름·점수 `0.55`, 색상 막대 `0.9` 일치. ON도 두 차트 모두 배경 `rgb(16,43,59)`, 내부 불투명도 `1` 일치.
 - 최고점 ON 유지: 섹터 에너지 `78`, 테마 클라우드·SaaS `65`가 각각 켜짐.
 - 상태: **PRODUCTION_VERIFIED**. 해당 배포 건 재작업 필요 없음. 다음 새 대화에서는 최신 `main`과 이 기록을 우선 확인.
+
+## 2026-10-25 대시보드 H1 검색어 과잉 표기 수정
+
+- 사용자 지적: 공개 대시보드 섹션 제목 `공포·탐욕 (공탐)`은 검색어를 시각적 제목에 억지로 넣어 전문성이 떨어진다. 요청 범위는 자연스러운 SEO 키워드 추가였음.
+- 원인: `app/country-fear-greed.tsx`의 `#global-title` 텍스트에 `(공탐)` 직접 병기.
+- 수정: 사용자에게 보이는 H1은 `공포·탐욕`으로 복원, 다음 설명에 `공탐 지수` 한 번만 자연스럽게 사용. 기존 노란 게이지 아이콘·도움말 버튼 유지.
+- 문구: `공포·탐욕 지수는 투자자의 시장 심리를 보여줍니다. ‘공탐 지수’라고도 부르며, 미국과 한국은 서로 다른 모델로 산출합니다.`
+- 바뀐 파일 3개: `app/country-fear-greed.tsx`, `scripts/seo-production-health.mjs`, `tests/fear-greed-education-ui.test.mjs`. 데이터·산식·차트·API·레이아웃 변경 없음.
+- 개발·이력 브랜치 `codex/zgmini-gpt-workspace-20261025`에 세 파일 기록; 작업 단독 배포용 PR [#717](https://github.com/ansqhd5774-Choi/zgmini/pull/717).
+- Node.js CI `40186842602` PASS(build/타입/회귀/PC 관련 테스트). 관련 문자열 검증 5항목 PASS.
+- `main` squash 병합 SHA: `5614c68f4042665aab27b46ee5b892b94b97f4e6`.
+- Cloudflare Git Integration / Worker `zgmini-migration-candidate-r5` / `main`: 버전 `eed94c5b` **Ready**.
+- 실제 공개 `https://zgmini.kr/` Chrome DOM 검증: H1 `공포·탐욕`, 아이콘 존재, 도움말 버튼 존재, 위 설명문 정확히 표시. **PRODUCTION_VERIFIED**.
+- Cloudflare 확인 과정에서 별도 Wrangler 수동배포 문구가 일시적으로 보였지만, 이후 최상위 배포 행에서 #717이 `Build / main / Ready`인 것을 확인. 본 작업은 수동 배포·배포설정 변경 없음.
+- 재개 시 이 완료 작업을 반복하지 말고, 최신 `main`과 현재 사용자 요청을 다시 확인.
