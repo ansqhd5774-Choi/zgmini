@@ -4,7 +4,7 @@
 - 상태: `PUBLIC_CATALOG_METADATA_VERIFIED / PRIVATE_SELECTION_NOT_FINAL`
 - 출발 main SHA: `81955865f589b068aabf4b581a8eefeac182c2b3`
 - 적용 계약: [신규 테마 OR·R2 승인 기준](THEME_ETF_ADAPTIVE_OR_R2_20261025.md), [테마 운영 기준](THEME_DATA_OPERATIONS.md)
-- 변경 범위: **이 조사 문서만**. 기존 9개 테마, 수집기, 계산기, D1, 예약 작업, 배포, 기존 점수·이력 변경 0.
+- 변경 범위: 초기 조사 단계는 **문서만**. 이후 같은 초안 PR #711에 신규 테마 전용 R2 계산기·비공개 감사기·테스트와 기존 수집기의 **우주 테마 신규 등록 1건**을 추가했다. 기존 9개 테마의 등록·계산기·D1·예약 작업·배포·점수·이력 변경 0.
 
 ## 1. 기존 9개 운영 방식에서 그대로 계승할 것
 
@@ -40,6 +40,13 @@
 - 특히 ROKT는 오래됐는데 총 1분봉 rows가 상대적으로 적다. `SYMBOL_LISTED`를 충분한 15:xx 뉴욕 시간봉 또는 628일 이력으로 오인하지 않는다.
 - 현재 조회는 원본 가격봉 다운로드나 로컬 원자료 저장, private score 계산, PC 운영 검증이 아니다.
 
+### 후속 무료 1시간봉 API 실측 — 2026-10-25
+
+- 읽기 전용 `GET /api/v1/bars/stocks/<symbol>/1h?start=2026-10-20&end=2026-10-23&limit=3&format=jsonl&columns=timestamp,close,symbol,is_gap` 호출에서 **UFO/NASA/SPY 각각 HTTP 200**, 실제 JSONL `timestamp/close/symbol/is_gap` 3행을 확인했다.
+- NASA의 `limit=3` 응답에서 `x-next-cursor` 헤더 존재 확인. 커서 값은 증거·문서에 노출하지 않았다.
+- 이는 **3일치 완전 수집이 아니다**. `limit=3`인 단일 페이지 샘플이며, 하루 15시 뉴욕 기준 유효값 수·기간 전체 공통 N=40/628·최종 관측일까지의 연속성은 **PC SHA 검증 원자료 수집 후 별도 판정**한다.
+- 조회는 외부 공개 샘플만 읽었다. 원가격을 GitHub/D1/공개 화면에 저장하지 않았다.
+
 ## 3. 발행사 공시의 선정 비교 (관측시각별로 구분)
 
 | 후보 | 발행사 기준 | 확인된 수치 | 선정상 의미 |
@@ -69,11 +76,20 @@
 3. 실제 SHA-검증 가격에서 뉴욕 현지 15시 시간봉(조기 폐장 12시), `is_gap`, 중복 시각, SPY 공통 날짜 및 N을 구한다. `N<40`은 후보를 유지하고 점수는 결측.
 4. 장기 N≥628이면 R188, 신생 N=40..376이면 R2를 적용한다. 상위 축 40:20:40 고정; 두 ETF 혼합은 승인 문서대로 신생 30% (N40)에서 50% (N377)까지 **각 관측일 N으로** 증가.
 5. 실제 252거래일 표시 창에서 상장 전 결측을 생성/보간하지 않고, 적응형 377일 미만은 잠정 점선으로만 구분한다. rights 확인 이후에만 독립 D1 게시를 별도 Gate로 검토한다.
-6. 기존 PR #709(`codex/space-satellite-r1`, SHA `65decc990c4e8545b721e7abb12449e015aa7f90`)의 계산기/테스트 중 필요한 것만 최신 main에 **selective recovery**한다. 해당 PR은 UFO/ROKT/ARKX만 하드코딩하고, 두 ETF 모두 단기인 대칭 가중치까지 구현하므로 이를 사용자 승인으로 간주하지 않고 전체 merge하지 않는다.
+6. 기존 PR #709(`codex/space-satellite-r1`, SHA `65decc990c4e8545b721e7abb12449e015aa7f90`)에서 R188-compatible 순수 R2 계산기·테스트를 **선별 회수하여 초안 PR #711**에 반영했다. 원래 PR의 UFO/ROKT/ARKX 하드코딩과 두 단기 ETF의 임의 50:50 규칙은 채택하지 않았다. main 병합/PC 운영 반영은 아직 하지 않았다.
+
+## 5-A. 초안 PR #711 구현 검증 (실제 가격 검증과 구분)
+
+- 신규 `theme-optional-adaptive-r2.mjs`: 기존 R188의 40:20:40, 세부 지표 및 252 midrank와 비교. 합성 700일에서 최근 252점 각각 R188과 오차 1e-11 미만.
+- 신규 `theme-optional-pair-weight-r3.mjs`: OR 우선순위와 **장기 ≥628 + 단기 40~376**만 70:30→50:50, 단기 N≥377의 **실제 R188-compatible 검증 상태**에서 50:50. 두 ETF 모두 단기이거나 377+의 동등성 미검증인 경우 조합점수 산출 차단.
+- 신규 `theme-space-satellite-adaptive-r2.mjs`: UFO+NASA 우선 검증 한 조합만, SHA manifest/로컬 가격 read-only, 뉴욕 시간봉 정규화, 당일 N별 가중치, 결측 보존. 실제 PC 수집 원자료 **아직 미실행**.
+- 기존 `theme-optional-collect.mjs`: 기존 3개 테마 대상 목록·수집 절차는 그대로 두고 `space-satellite: UFO,NASA,SPY` 추가. 실 Provider 호출 전에는 임의 스케줄 등록/게시 없음.
+- 로컬 Node test: R2 7건, OR·가중치 4건, bounded 수집 mock 1건 = **합성/모의 12건 PASS**. 운영·실데이터·공개 PASS 아님.
+- 현재 PR: https://github.com/ansqhd5774-Choi/zgmini/pull/711 (Draft, main 미병합). 기존 PR #709 전체 병합 금지 유지.
 
 ## 6. 권리·완료 판정
 
 - GetMarketHistory 2026-10-19 Terms는 정상 계정 조건 아래 raw bar를 재구성할 수 없도록 만든 파생 지표·차트 배포를 허용하고, 원가격 bulk 재배포는 금지한다. https://getmarkethistory.com/docs/terms
 - 위 문구는 사용자 계정/무료 수집 경로/현재 라이선스 범위의 실제 검증을 대신하지 않는다. provider catalog에 있다는 이유로 `derivedLicenseVerified=true`를 설정하지 않는다.
-- 현재 Evidence 상태: `PUBLIC_SYMBOL_CATALOG_PASS / REAL_BAR_SESSION_COUNT_UNKNOWN / PRIVATE_SCORE_NOT_RUN / PAIR_NOT_SELECTED / PUBLICATION_NOT_AUTHORIZED`.
-- **이번 GitHub 문서는 코드 설치·데이터 게시·Cloudflare 배포·자동 갱신 완료가 아니다.**
+- 현재 Evidence 상태: `PUBLIC_SYMBOL_CATALOG_PASS / SAMPLE_1H_API_3_OF_3_HTTP200 / PRIVATE_FIXTURE_TEST_12_OF_12_PASS / REAL_BAR_COMMON_SESSION_COUNT_UNKNOWN / PC_REAL_SCORE_NOT_RUN / PAIR_NOT_FINAL / PUBLICATION_NOT_AUTHORIZED`.
+- **GitHub Draft의 코드 테스트 성공은 PC 원가격 수집·실측 계산·운영 설치·데이터 게시·Cloudflare 배포·자동 갱신 완료가 아니다.**
