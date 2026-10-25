@@ -184,9 +184,9 @@ test('dashboard hides the two notices while detail page retains provisional dash
  assert.match(shared,/strokeDasharray="4 5"/);
  assert.match(sectorDetail,/snapshot\?\.phase==='PROVISIONAL'/);
  assert.match(sectorDetail,/strokeDasharray="4 4"/);
- assert.match(sectorDetail,/dataKey=\{provisional\?'solid':active\.id\}/);
+ assert.doesNotMatch(sectorDetail,/className="zg-sfg-detail"/);
  assert.match(sectorDetail,/aria-label="11개 섹터 투자심리 순위"/);
- assert.match(sectorDetail,/onClick=\{\(\)=>\{setSelected\(sector\.id\);toggle\(sector\.id\);\}\}/);
+ assert.match(sectorDetail,/onClick=\{\(\)=>toggle\(sector\.id\)\}/);
  assert.match(sectorDetail,/const \[compareDays,setCompareDays\]=useState\(365\)/);
 });
 
@@ -195,18 +195,27 @@ test('sector comparison defaults to the current top three and keeps rank rows an
  const css=fs.readFileSync('app/sector-fear-greed/sector-detail.css','utf8');
  assert.match(detail,/const rankedSectors=\(rows:SectorSentimentPoint\[\]\)=>/);
  assert.match(detail,/setVisible\(new Set\(rankedSectors\(history\)\.slice\(0,3\)\.map\(sector=>sector\.id\)\)\)/);
- assert.match(detail,/aria-pressed=\{visible\.has\(sector\.id\)\} data-selected=\{active\.id===sector\.id\}/);
- assert.match(detail,/onClick=\{\(\)=>\{setSelected\(sector\.id\);toggle\(sector\.id\);\}\}/);
+ assert.match(detail,/className="zg-sfg-rank-row" key=\{sector\.id\} aria-pressed=\{visible\.has\(sector\.id\)\}/);
+ assert.match(detail,/onClick=\{\(\)=>toggle\(sector\.id\)\}/);
  assert.match(detail,/aria-pressed=\{visible\.has\(sector\.id\)\} onClick=\{\(\)=>toggle\(sector\.id\)\}/);
  assert.doesNotMatch(detail,/next\.size===1/);
  assert.match(css,/\.zg-sfg-rank-row\[aria-pressed=true\] \.zg-sfg-rank-number/);
  assert.match(css,/\.zg-sfg-rank-row\[aria-pressed=true\]\{background:#103b44;box-shadow:inset 3px 0 #2addc6\}/);
  assert.match(css,/\.zg-sfg-rank-row\[aria-pressed=false\] \.zg-sfg-rank-name/);
  assert.match(css,/\.zg-sfg-rank-row\[aria-pressed=false\] \.zg-sfg-meter/);
- assert.match(css,/\.zg-sfg-rank-row\[aria-pressed=false\]\[data-selected=true\]/);
- assert.match(css,/\.zg-sfg-rank-row\[aria-pressed=true\]\[data-selected=true\]/);
+ assert.doesNotMatch(css,/\.zg-sfg-rank-row\[data-selected=true\]/);
  assert.match(css,/\.zg-sfg-rank-row\[aria-pressed=false\]:hover[^\n]*background:#102d3c/);
  assert.match(css,/\.zg-sfg-rank-row\[aria-pressed=true\]:hover[^\n]*background:#15505b/);
+});
+
+test('sector page removes the redundant per-sector detail chart while retaining the full-width comparison chart',()=>{
+ const detail=fs.readFileSync('app/sector-fear-greed/sector-detail-charts.tsx','utf8');
+ const css=fs.readFileSync('app/sector-fear-greed/sector-detail.css','utf8');
+ assert.doesNotMatch(detail,/zg-sfg-detail|zg-sfg-changes|detailRows|detailDays/);
+ assert.doesNotMatch(detail,/data-selected|setSelected/);
+ assert.match(detail,/className="zg-sfg-comparison-plot"/);
+ assert.match(css,/\.zg-sfg-lower\{display:block;margin-top:20px\}/);
+ assert.doesNotMatch(css,/\.zg-sfg-detail/);
 });
 
 test('sector detail mini charts expose stored historical date and score on hover with collapsible related links',()=>{

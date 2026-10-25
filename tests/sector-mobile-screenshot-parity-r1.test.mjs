@@ -4,14 +4,15 @@ import {readFileSync} from 'node:fs';
 
 const read=path=>readFileSync(new URL('../'+path,import.meta.url),'utf8');
 
-test('approved mobile sector layout places comparison before compact ranking without changing desktop structure',()=>{
+test('approved mobile sector layout places comparison before compact ranking without the redundant detail panel',()=>{
  const css=read('app/sector-fear-greed/sector-detail.css');
  const tsx=read('app/sector-fear-greed/sector-detail-charts.tsx');
  const mobile=css.slice(css.lastIndexOf('@media(max-width:680px)'));
  assert.ok(mobile.includes('.zg-sfg-lower{display:contents}'));
  assert.ok(mobile.includes('.zg-sfg-comparison{order:1;'));
  assert.ok(mobile.includes('.zg-sfg-ranking{order:2;'));
- assert.ok(mobile.includes('.zg-sfg-detail{order:3;'));
+ assert.ok(mobile.includes('.zg-sfg-footnote{order:3}'));
+ assert.ok(!css.includes('.zg-sfg-detail'));
  assert.ok(mobile.includes('grid-template-columns:repeat(4,minmax(0,1fr))'));
  assert.ok(mobile.includes('height:27px;min-height:27px'));
  assert.ok(tsx.includes('zg-sfg-mobile-ranking-title'));
