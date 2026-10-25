@@ -4063,3 +4063,9 @@ body .zg-r55-market .zg-r55-shell[data-expanded="false"] article.zg-r55-card>.zg
   color:#fabc42;
   opacity:1;
 }
+
+/* EC12 R5: breathe between upper-left help and heading without
+   taking width from the mini-chart (both expanded states, all views). */
+.zg-dashboard[data-view="dashboard"] .zg-r55-shell[data-expanded] .zg-r55-card-head{padding-left:18px}
+.zg-dashboard[data-view="dashboard"] .zg-r55-shell[data-expanded] .zg-r55-card-head h3{letter-spacing:-1.2px}
+.zg-dashboard[data-view="dashboard"] .zg-r55-shell[data-expanded] .zg-r55-mini-chart{transform:translateX(4px)}
