@@ -209,7 +209,7 @@ test('sector comparison defaults to the current top three and keeps rank rows an
  assert.match(css,/\.zg-sfg-rank-row\[aria-pressed=true\]:hover[^\n]*background:#15505b/);
 });
 
-test('sector detail mini charts expose stored historical date and score on hover while related links use buttons',()=>{
+test('sector detail mini charts expose stored historical date and score on hover with collapsible related links',()=>{
  const detail=fs.readFileSync('app/sector-fear-greed/sector-detail-charts.tsx','utf8');
  const page=fs.readFileSync('app/sector-fear-greed/page.tsx','utf8');
  const css=fs.readFileSync('app/sector-fear-greed/sector-detail.css','utf8');
@@ -220,8 +220,12 @@ test('sector detail mini charts expose stored historical date and score on hover
  assert.match(detail,/provisional&&<Line dataKey="dash"/);
  assert.match(css,/\.zg-sfg-sparkline\{[^}]*pointer-events:auto/);
  assert.match(css,/\.zg-sfg-rank-row:hover,\.zg-sfg-rank-row:focus-visible\{z-index:2/);
- assert.match(page,/<nav aria-label="관련 분석" className="zg-sector-related-nav">/);
- for(const href of ['/fear-greed/usa/','/recession/','/asset-bubble/'])assert.match(page,new RegExp(`className="zg-sector-related-link" href="${href}"`));
+ const guide=fs.readFileSync('components/investor-search-guide.tsx','utf8');
+ const copy=fs.readFileSync('lib/investor-search-content.ts','utf8');
+ assert.match(page,/<InvestorSearchGuide id="investor-search-sector-fear-greed" copy=\{SECTOR_INVESTOR_SEARCH\} collapsible wideLast\/>/);
+ assert.match(guide,/<details className="group/);
+ assert.match(guide,/grid-cols-2 gap-2 lg:grid-cols-4/);
+ for(const href of ['/fear-greed/usa/','/theme-fear-greed/','/recession/','/asset-bubble/'])assert.ok(copy.includes(`href:"${href}"`),href);
 });
 
 test('sector comparison keeps score during mouse drag but releases it on mouse up or leave',()=>{
