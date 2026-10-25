@@ -13,7 +13,7 @@ const data=()=>({
  },ignoredExistingRawEntries:2,
  candidates:[{etfs:['UFO','NASA'],commonSessions:142,calendarSessions:252,
   scoredSessions:80,missingSessions:172,observationDate:'2026-10-23',
-  status:'PRIVATE_ADAPTIVE_CANDIDATE_ONLY',latestStatus:'ADAPTIVE_PROVISIONAL',
+  status:'PRIVATE_ADAPTIVE_CANDIDATE_ONLY',isCurrent:true,latestStatus:'ADAPTIVE_PROVISIONAL',
   score:47.12345,latestWeights:{UFO:64,NASA:36},eligibility:{route:'ADAPTIVE'}}]
 });
 
@@ -37,7 +37,16 @@ test('R8 reports stale NASA observation as a mismatch, not a false complete scor
  const fixture=data();fixture.coverage.NASA.lastObservationDate='2026-10-22';
  const out=summarizeR8(fixture);
  assert.equal(out.sourceLastDatesAgree,false);
+ assert.equal(out.candidate.privateScore,null);
  assert.equal(out.finalPairSelected,false);
+});
+
+test('R8 does not mislabel a historical score as the current provisional score',()=>{
+ const fixture=data();fixture.candidates[0].isCurrent=false;
+ const out=summarizeR8(fixture);
+ assert.equal(out.candidate.isCurrent,false);
+ assert.equal(out.candidate.privateScore,null);
+ assert.equal(out.candidate.weights,null);
 });
 
 test('R8 never invents a missing candidate score',()=>{
