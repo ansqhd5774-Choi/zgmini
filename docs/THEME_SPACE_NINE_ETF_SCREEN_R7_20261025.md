@@ -67,3 +67,28 @@
 - 보고서의 private score가 존재하더라도 **최종 NASA 편입 확정·운영 산식 승인·파생 지표 게시 권리 확보**를 뜻하지 않는다. NASA 편중·UFO와의 보유 중복을 정량 검토하고 사용자가 최종 조합을 승인해야 한다.
 
 **승인/운영 상태:** `NINE_RESEARCHED / PC_R7_NASA_RAW_ONE_FILE_STORED / PC_R8_ACTUAL_N_AND_PAIR_SCORE_PENDING / ETF_PAIR_NOT_FINAL / RIGHTS_NOT_APPROVED / NO_D1_NO_DEPLOY`.
+
+## 5. R8 실제 PC SHA/공통거래일/현재 잠정치 검증 — 2026-10-25
+
+- 사용자 제출 `SPACE_SATELLITE_R8_REAL_AUDIT_RESULT.txt`, `status=PRIVATE_PRIORITY_PAIR_READY` / `sourceVersion=GMH_PRIVATE_COMBINED_MANIFEST_SHA256_5dbec845c99b29527d77c9525feb08c99e9e8223b5b4585271e7d96f03d3ec6e`.
+- 실제 유효 거래일: UFO **656**, NASA **144**, SPY **706**. 마지막 관측일 모두 **2026-10-23**. 비공개 감사기에서 세 ETF 공통 거래일 **144**.
+- NASA 신규 원본 1개, UFO 기존 원본 2개, 데이터센터·전력의 SPY 검증 원본 5개/실제 유효 1시간봉 11,295개. 우주 manifest에서 ROKT·ARKX 등 2개 이전 탐색 원본 항목은 무시하되 변경·삭제하지 않는다.
+- 저장된 원자료만으로 `UFO+NASA` **현재 유효 ADAPTIVE_R2 점수 39.95701**, 실제 계산 당일 가중치 `UFO 63.828% / NASA 36.172%`. `candidate.isCurrent=true`, `observationDate=2026-10-23`, `eligibility.accepted=true`. **비공개 우선 후보**지 최종 ETF 선정/게시 권리 승인이 아니다.
+- 최신 252거래일 표시 구간은 **계산 점수 29일 / 실제 결측 223일**. 기존 승인 쌍 혼합 게이트에서 UFO+SPY 실유효 공통 세션 628 통과 시점이 늦었을 가능성이 있으나, R8 로그에는 UFO+SPY 두 종목 공통 N 시계열/첫 유효 점수 날짜가 없으므로 **정확한 원인은 미확정**. 223일을 직전 값·과거 점수·상장 전 추정치로 임의 채우면 안 된다. 사용자가 요구한 1년 완성 차트는 현재 미충족.
+- 권리 `rightsVerified=false`, `publicationAuthorized=false`; PC R8 Provider/D1/Public/Scheduler 호출·쓰기 모두 0. 소스 코드/로컬 mock 테스트와 별개로 이번 자료 범위는 실제 PC read-only PASS.
+
+### 5-A. ETF 보유 종목 중복 — 동일 2026-10-23 발행사 상위 10개 공시
+
+| 공통 기업 | UFO 비중 | NASA 비중 | 승인된 R8 쌍 가중치 적용 시 가중 노출 |
+| --- | ---: | ---: | ---: |
+| SpaceX | 15.82% | 27.98% | **20.219%** |
+| Rocket Lab | 4.28% | 9.35% | 6.114% |
+| AST SpaceMobile | 3.35% | 5.50% | 4.128% |
+| Viasat | 4.12% | 4.68% | 4.323% |
+
+- 상위 10개에서 **서로 공통으로 확인된 기업 4개**. 각 ETF 비중의 `min`을 합산한 상위-10 교집합 기반 **중복 계수 하한은 27.57%p**. 이는 전체 holdings 중복률이 아니며, 10위 밖의 공통 보유 종목이 있어 실제 중복은 더 클 수 있다.
+- SpaceX 20.219%는 최신 임의 목표 비중이 아니라 **2026-10-23 실측 계산 가중치 0.63828/0.36172와 양 발행사 같은 날의 상위 보유 비중을 곱한 예시**다. 별도 가격·산식 재조정이나 2026-10-23 이후 자동 변경은 하지 않는다.
+- NASA는 비상장 SpaceX를 SPV로 보유한다. 발행사 설명상 해당 보유분은 거래 원가로 평가해 매일 시장가격을 반영하지 않을 수 있다. ETF 시장 거래 가격과 내재 NAV 사이의 차이를 간과해서는 안 된다.
+- 근거: Procure 공식 UFO `Holdings as of 10/23/2026` https://www.procureetfs.com/ufo/ ; Tema 공식 NASA `Top 10 Holdings as of October 23, 2026` 및 SpaceX SPV/평가 설명 https://temaetfs.com/nasa .
+
+**최종 게이트:** `PC_PRIVATE_PRICE_AUDIT_PASS / PAIR_CURRENT_PRIVATE_SCORE_PASS / 252_HISTORY_INCOMPLETE_29_OF_252 / HOLDINGS_OVERLAP_MIN_27.57_PCT_POINTS / ETF_PAIR_NOT_FINAL / RIGHTS_NOT_APPROVED / NO_D1_NO_DEPLOY`.
