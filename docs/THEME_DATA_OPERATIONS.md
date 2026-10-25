@@ -117,6 +117,41 @@ PC에서 새 작업 등록 전 아래 단계가 필요하다.
 
 신규 포렌식 상태는 `config/theme-data-registry.json`의 `forensicRecovery`에서 관리한다. `sourceSearch`만 종료하고, 가격 차이 원인/실제 스케줄/권리/Shadow 전환은 실증 전까지 미확정으로 유지한다.
 
+## 2026-10-24 데이터센터·전력 10번째 테마 — 9개 경로 불변
+
+- 조합: DTCR/GRID, SPY 기준, 승인 `ETF_ONLY_T40_R20_V40_PAIR50` 그대로. ETF 외 개별 종목, 산식, R188 조기폐장 선택기, 기존 9개 데이터 원장·작업·D1 키는 변경하지 않는다.
+- 기존 `theme-optional-collect.mjs`에 `data-center-power` 심볼 세 개만 추가하였다. `theme-data-center-power-r1.mjs --score`는 manifest 각 원가격 SHA를 다시 검증하고 `regularHour15Rows` 및 `scoreAll252`를 직접 재사용하여 252점의 **비공개** 후보만 만든다.
+- 이번 실행 환경에서 공급원으로 실제 7페이지(각각 DTCR 2, GRID 2, SPY 3)를 새로 수신하여 원자료 일치 공통 거래일 704개, 2026-10-22 기준 252점, 마지막 점수 **14.75794**를 확인했다. 진단 입력 manifest SHA256은 `0a1d47909868419fd14277ef4e65a0eb64a4ce44e6e993bd5f843a2836170e16`이다. 이는 **실행 환경의 비공개 실측**이지 PC `E:` 설치·자동 갱신·D1 게시 증거가 아니다. 원자료를 Git에 넣거나 재배포하지 않는다.
+- 첫 네트워크 오류는 이 실행 환경의 Node 프록시 연결에서 발생했다. 공급원 문서 GET 200으로 원인 확인 후 체크포인트 실패 이력을 보존하고 이어서 성공했다. 실패 이전에 저장된 응답/파일을 반복 다운로드하지 않았다.
+- 공개 Reader `worker/theme-data-center-power-r1.mjs`는 새로운 독립 D1 key만 읽으며, **활성 계정·상업적 파생 공개 라이선스·원자료 해시·252점·기준일·신선도**가 모두 확인되지 않으면 기존 9개를 그대로 반환한다. 사용자 방문 시 가격 수집·계산·D1 쓰기는 없다.
+- GetMarketHistory 약관(2026-10-19 시행, <https://getmarkethistory.com/docs/terms>)은 파생 결과 공개를 허용하나 **계정 정상 유지 조건**이 있다. 이번 `api/v1` 익명 무료 데이터 수신만으로 계정 정상 여부가 증명되지는 않는다. 권리 검증 플래그를 임의로 `true`로 설정하지 않는다.
+- PC에서 같은 출처의 DTCR/GRID/SPY 원자료와 SHA가 확보되고, 라이선스 근거가 확인된 뒤 별도 PC 신규 key 전용 게시기·D1 CAS/readback·정규 Task를 승인 경로로 연결한다. 기존 9개 파이프라인을 수정해 우회하지 않는다. 아직 **공개·PC 자동 운영 완료가 아니다**.
+
+## 2026-10-25 데이터센터·전력 R2 — 기존 선택 테마 PC 주기 경로 재사용
+
+- 새 외부 GET 3회(DTCR, GRID, SPY 각각 1회)를 10월 25일에 실행했다. 3개 실제 원가격의 공통 마지막 관측일은 여전히 **10월 22일**이고 704개 공통 거래일, 252점, 14.75794는 변하지 않았다. 23일 점수는 공급원에 없으므로 생성하지 않는다. 새 manifest/후보 SHA는 이전 파일을 덮어쓰지 않고 추가했다.
+- `scripts/pc-writer/theme-data-center-power-cycle-r2.mjs`는 기존 선택 테마 `collectOptional`과 R1 SHA 검증 계산기를 그대로 연결한다. `--once`는 저장 원자료 검산만, `--once --collect`는 실제 원자료가 존재하는 3개 ETF에 대해 4회 이하 bounded/resume GET을 수행한다. 실행 당일 날짜로 window가 움직이므로 R1 최초 백필의 고정 종료일에 갇히지 않는다.
+- Windows `theme-data-center-power-cycle-r2.cmd` 실행 로그 `DATA_CENTER_POWER_R2_RESULT.txt`는 CMD와 **같은 폴더**에 저장한다. raw/checkpoint는 승인된 E: 데이터 경로를 따른다. 이 단계는 기존 9개/기존 태스크/D1 변경 0이며 **새 정규 태스크 등록·공개 게시 완료가 아니다**.
+- 앞선 R1 최초 백필 CMD는 최초 원자료 설치 전용으로 유지한다. R2는 R1 raw manifest와 SHA 검증 데이터가 있어야 실행한다. 샘플 API의 무계정 GET만으로 공급원 유효 계정 및 파생물 공개 권리가 증명되지 않아 `--publish` 경로는 별도 승인·D1 CAS/readback 게시기 전까지 제공하지 않는다.
+
+## 2026-10-25 데이터센터·전력 R3 — 기존 9번째 무계정 공개 방식 재사용
+
+- 기존 바이오 9번째 운영 소스 `worker/theme-biotech-optional.mjs`, `worker/theme-biotech-continuation-r2.mjs`, `scripts/pc-writer/theme-biotech-public-record-r7.mjs`를 재확인했다. 바이오는 **무계정** `GET /api/v1/bars/stocks/{symbol}/1h`로 수집했으며 `OFFICIAL_TERMS_DERIVED_WORKS_ANONYMOUS_SCOPE_UNCONFIRMED` 및 이전 게시자의 `licensingRiskAcceptedByPublisher=true`에 따른 제한적 공개 경로를 쓴다. 무계정 조회와 파생물 배포의 법적 권리를 동일시하지 않는다. <https://getmarkethistory.com/docs/quickstart>, <https://getmarkethistory.com/docs/terms>.
+- 데이터센터·전력에도 이 **미확정 사실을 그대로 표시하는 별도 경로**를 마련했다. `accountGoodStandingVerified=false`, `upstreamCommercialRightsVerified=false`, `derivedLicenseVerified=false`, `anonymousScopeIndependentlyConfirmed=false`를 유지한다. 이 신규 테마의 게시자 위험 수용은 별도 명령 `--publish --accept-anonymous-license-risk`를 둘 다 주어야 하며 9번째 승인 상태를 자동 복사하지 않는다. 비공개 GET/검산은 별도 가입·권리 수용 없이 가능하다.
+- 신규 `theme-data-center-power-publish-r3.mjs`: 기본 `--once`는 기존 R2 SHA 검산만, `--once --collect`는 무료 무계정 4 GET 이하·비공개 검산만 한다. 공개 명령 `--once --collect --publish --accept-anonymous-license-risk`를 명시하면, 기존 PC Cloudflare 인증 경로를 재사용해 새 D1 key `theme-data-center-power-r1`만 CAS/읽기 검증한다. 기존 9개 key·예약 작업 변경 0. `theme-data-center-power-r3.cmd` 로그는 실행 CMD와 같은 폴더 `DATA_CENTER_POWER_R3_RESULT.txt`.
+- R3 검증 조건: 실제 252개 거래일·원가격 manifest SHA·후보 파일 SHA·소스 신선도·라이선스 미확인 상태의 명시·D1 CAS/readback·공개 API readback. 신규 정규 작업은 **미등록 제안 상태**이고 PC 승인 SHA 설치·실제 게시·다음 정규 PC 실행 전에는 공개·운영 완료가 아니다.
+- 2026-10-25 공개 API 읽기 전용 실측: 기존 9개 표시, 기본 관측일 `2026-10-22`, 바이오만 `2026-10-21`. 새 DTCR/GRID 관측일도 `2026-10-22`이고 후보 252개 날짜 SHA256 `99240d830a2ab4e26512032f2d70ef6e7889fdbb0a474218079ac73327cdec99`가 공개 기존 7개 기준 시퀀스의 해시와 일치한다. R3 실제 로컬 비공개 재생 `PRIVATE_CANDIDATE_VERIFIED_NOT_PUBLISHED`, `score=14.75794`, `providerCalls=0`, `d1Writes=0`, `publicWrites=0`, `schedulerWrites=0`.
+- 2026-10-25 R4 Windows PC 준비 CMD `scripts/pc-writer/theme-data-center-power-r4-bootstrap.cmd`: R3 실측 검증 릴리스 `2f0f1a2c1b31e20f9e943e90824885d586448d29`을 immutable SHA로 고정해 GitHub 스테이징 30개 파일 해시를 검증한다. 새 PC raw manifest가 없으면 기존 4 GET 상한 수집기를 2회 이어 실행해 R1 개인 PC 252일 계산 후 R3 비공개 검산을 한다. 이미 manifest가 있으면 R3 bounded 수집·검산만 실행한다. 사용자 CMD와 같은 위치에 `DATA_CENTER_POWER_R4_RESULT.txt` 및 임시 다운로드된 스테이징 도구를 두며 `%TEMP%`/E: 로그 생성 금지. **실행하더라도 D1 게시·신규 Task 등록은 0**, 사용자 PC 실행 결과는 아직 미수신.
+
+### 2026-10-25 R4 실제 사용자 PC 결과 및 R5 기존 태스크 동일 조건 복제
+
+- **실제 사용자 첨부** `DATA_CENTER_POWER_R4_RESULT.txt` 검증: `PINNED_SOURCE_SHA=2f0f1a2c1b31e20f9e943e90824885d586448d29`, `stageResult=ALREADY_STAGED_VERIFIED`, `originalSevenTask=REGISTERED`, `biotechTask=REGISTERED`, 기존 AI 작업은 `NOT_REGISTERED`. 기존 테마·예약 작업·D1 변경 `0`.
+- PC `theme-data-center-power-publish-r3.mjs --once --collect`에서 추가 GET `3`회, 마지막 실제 관측일 `2026-10-23`, **점수 12.32143**, 생성 후보 SHA256 `4fe811c0c5480d3ccb67010ddcd356fb2d5ab0cdace5aadd8c63e5a927a7a4e8`, `PRIVATE_CANDIDATE_VERIFIED_NOT_PUBLISHED` 확인. 종전 격리 환경 10월 22일/14.75794 대신 **PC 실측 10월 23일/12.32143**을 이후 게이트의 기준으로 사용한다. 이 결과로 D1/공개 API/예약 실행 성공을 주장하지 않는다.
+- `scripts/pc-writer/theme-data-center-power-task-r5.mjs`는 9번째 바이오 R7의 안전한 템플릿 복제 절차를 10번째 전용으로 적용한다. Windows `schtasks /query /tn \\ZGMINI-PC-GetMarketHistory-ETF /xml`에서 Trigger/Principal/Settings를 읽기만 하고 복제한다. 기존 7개 예약 작업을 바꾸지 않는다. 새 작업 이름 `ZGMINI-PC-Theme-Data-Center-Power`, 생성 명령은 **`/create`만 사용하고 `/f` 사용 금지**. 새 실행 CMD는 설치 CMD와 동일한 Desktop 폴더에 생성하고 `DATA_CENTER_POWER_R5_SCHEDULED_RESULT.txt`도 같은 폴더에 기록한다. E:의 고정 R3 소스로 **4 GET 이하 `--once --collect` 비공개 수집/검산만 수행**한다.
+- 원클릭 `scripts/pc-writer/theme-data-center-power-r5-install.cmd`는 R5 태스크 도구가 포함된 GitHub 불변 SHA `0eb76747e6f35e8f410ffb7a0aa07942d2da5938`에서 PC 옆 파일로 내려받는다. PC R3 비공개 `--once` 검산부터 성공해야 `--apply`가 진행되며, 기존 7개 예약 태스크의 실제 Trigger/Principal/Settings를 복제한다. 사용자 Desktop CMD/로그와 생성 실행 CMD `DATA_CENTER_POWER_R5_SCHEDULED.cmd`를 **같은 위치**에 둔다. Desktop 실행 CMD를 다른 위치로 옮기면 새 예약 작업이 경로를 잃으므로 이동하지 않는다.
+- **2026-10-25 사용자 PC R5 실행 로그 수신:** `DATA_CENTER_POWER_R5_RESULT.txt`에서 `status=EXISTING_TENTH_TASK_VERIFIED`, 대상 `\\ZGMINI-PC-Theme-Data-Center-Power`, 실제 Trigger 1개, `taskWrites=0`, `existingNineTaskChanges=0`, `d1Writes=0`, `providerCalls=0`, `privateCheck` 관측일 `2026-10-23`, 12.32143점 재검산. 즉 **이미 등록된 10번째 Task가 조건에 맞음을 확인**했고, R5가 이번에 새로 생성했다고 보고하지 않는다. 실제 다음 정규 실행 로그는 **미수신**.
+- 현재 PR #692는 Draft이고 GitHub Node.js CI는 PASS이지만 `main` 반영·Cloudflare 실배포·새 D1 key 게시/읽기 검증은 미실행이다. 공개로 전환할 때는 먼저 GitHub main→Cloudflare exact production gate, 새 D1 key 조건부 게시/readback, 실제 공개 API/UI를 검증해야 하며 R5 Private만으로 공개 성공 처리하지 않는다.
+
 ## 일반 채팅 작업 지시문
 
 > ZGMINI 테마 작업은 GitHub 최신 main의 AGENTS.md, docs/THEME_DATA_OPERATIONS.md, config/theme-data-registry.json을 먼저 확인하고 진행하라. 원자료 수집→PC 저장→계산→확정/잠정 게시→D1 readback→공개 API/UI→다음 정규 실행까지 연결하라. 실행 코드는 GitHub에, 원자료는 승인된 E: 데이터 경로에 저장하고 manifest에 실제 상대 경로·SHA256·출처·수집 시각·관측 기간·스키마·가격 모드를 기록하라. 수집기·계산기·게시기·작업 이름/주기·PC 승인 SHA·D1 key를 등록부에 갱신하라. 첨부 ZIP·Desktop·임시 폴더만 유일한 사본으로 두지 마라. 로컬 접근이 없으면 적용했다고 보고하지 말고 GitHub 코드와 정확한 설치/검증 명세를 준비하라. 무료·상업용 조건과 기존 산식·데이터·잠금·게시 보호를 유지하고, 새 테마의 실패가 기존 테마 갱신을 막지 않게 하라. 실제 검사 명령과 결과·미완료 항목을 남기고 테스트/배포 성공만으로 자동 운영 완료라고 보고하지 마라.
