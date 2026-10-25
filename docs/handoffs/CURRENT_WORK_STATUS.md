@@ -144,3 +144,11 @@
 - 호버 툴팁 69.1은 greed, 단일 폭 160px. 두 섹터 선택 시 툴팁 320px 및 밴드 색 적용, 최신 점수 끝점 배지 숨김.
 - 모바일 390px: 섹터·테마 숫자 구간 색상 일치, 수평 오버플로 없음. viewport 임시 설정 원복.
 - **PRODUCTION_VERIFIED** (이번 UI 범위). 데이터·산식·API·Provider·DB·스케줄러·DNS·배포 방식 변경 없음.
+
+## 2026-10-25 전체 페이지 검색결과 제목·설명 품질 점검 상시 규칙
+
+- 사용자 요청: 검색결과 화면에서 보이는 **페이지 제목 링크·설명문**도 향후 ZGMINI 페이지 작업마다 확인하여 적절하면 개선한다. 예시 화면의 **사과 소재는 ZGMINI 추가 대상이 아니다**.
+- 영구 지침: `AGENTS.md` §12에 의무 게이트를 연결하고 `docs/SEO_SEARCH_APPEARANCE_REVIEW.md` 신설. 각 페이지의 검색 의도, 고유 `title` 및 `meta description`, 실제 본문 스니펫 후보, 모바일·인덱싱·canonical, GSC 노출·클릭·CTR·게재순위를 가능한 범위에서 검토한다.
+- 화면 H1을 검색 키워드로 억지 증설하지 않는다(과거 `공포·탐욕 (공탐)` 사례 방지). Google이 검색 제목과 스니펫을 재작성할 수 있으므로 효과 보장·미측정 성공 보고 금지. 이미 적합하면 `NO_CHANGE`, 자료 부족은 `NOT_VERIFIED` 또는 `NO_GSC_EVIDENCE`.
+- 저장 브랜치: `codex/zgmini-gpt-workspace-20261025` 보존. 지침 추가 커밋: SEO 기준 `8b0e1aaddb677057cd8de905205064d6aefbf36e`, AGENTS 연동 `c33e1438ea46792216e1ec246acefcab29726035`.
+- **이번 단계는 브랜치 지침 저장만** 수행. 개별 URL의 title/meta/화면 코드 변경, PR 병합, main 반영, Cloudflare 공개 배포 및 검색실적 개선 검증을 수행하지 않았다.
