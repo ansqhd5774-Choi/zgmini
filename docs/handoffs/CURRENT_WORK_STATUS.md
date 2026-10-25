@@ -59,3 +59,16 @@
 - [2026-10-24 작업 방식 인수인계서](./ZGMINI_GPT_WORK_METHOD_HANDOFF_20261024.md)는 범용 운영 절차와 당시 경제지표 표 디자인을 포함하는 역사 자료다.
 - 그 문서에 쓰인 경제지표 표 디자인은 현재 대시보드 SEO 안내와 **다른 작업**이다. 작업 대상을 임의 전환하지 않는다.
 - 모든 변경은 승인 범위에 한정하며, `main` 병합·배포 성공과 소스 커밋 완료를 동일시하지 않는다.
+
+## 2026-10-25 섹터 차트 최고점 기본 선택 (후속 작업)
+
+- 사용자 요청: 대시보드 섹터 공탐 기본 ON을 최저점(통신 23)이 아닌 최고점(예: 에너지 78)으로 변경.
+- 원인: `components/sector-sentiment-chart.tsx`에서 내림차순 정렬된 `legendSeries.at(-1)`로 가장 낮은 섹터를 자동 활성화했음.
+- 수정: `legendSeries.at(0)`으로 최고점 유효 섹터를 최초 1회 ON. 사용자 수동 토글 우선, 데이터·산식/API 변경 없음.
+- 전용 장기 작업 브랜치 `codex/zgmini-gpt-workspace-20261025`에서 소스 및 테스트 3개 파일을 수정하여 보존.
+- 운영 배포용 최소 PR: [#715](https://github.com/ansqhd5774-Choi/zgmini/pull/715), 변경 3파일.
+- GitHub Actions Node.js CI 두 번째 실행 `40185305796`: PASS(빌드·타입·회귀 테스트 포함). 첫 번째 CI는 기존 최저점 예상 테스트가 남아 FAIL, 테스트 교정 후 성공.
+- PR #715 `main` 병합 SHA: `4c78ae1fbbd1c303a03c766a3619defed051b8f0`.
+- Cloudflare Worker: `zgmini-migration-candidate-r5`; Git Integration `main`의 해당 SHA 빌드 `2a0f28ee-0dc1-487c-816e-9729e66c8e86` 확인.
+- 최종 기록 시점: 새 Cloudflare 빌드 `Queued` 상태. **아직 Production 검증 완료 아님.** Ready 및 새 배포 버전 확인 후 실제 `zgmini.kr/`에서 `aria-pressed=true` 최고점·수동 선택 유지 검증 필요.
+- 전용 작업 브랜치는 보존하며 PR이 병합되어도 삭제하지 않는다.
