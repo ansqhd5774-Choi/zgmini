@@ -45,3 +45,16 @@ test("economic mini charts keep visible dotted guides and separate help position
  assert.ok(css.includes("EC12 R2: separate the help affordance"));
  assert.ok(css.includes("left:-7px;"));
 });
+
+test("collapsed market cards keep help left of the title on desktop and mobile despite media rule hoisting",()=>{
+ const rule=css.split("/* EC12 R3: compact, collapsed cards")[1];
+ assert.ok(rule,"R3 layout rule missing");
+ assert.ok(rule.includes('.zg-r55-shell[data-expanded="false"] .zg-r55-card-head{'));
+ assert.ok(rule.includes('display:block;'));
+ assert.ok(rule.includes('padding-left:13px;'));
+ assert.ok(rule.includes('.zg-r55-shell[data-expanded="false"] .zg-r55-card-head>span:last-child{'));
+ assert.ok(rule.includes('position:absolute;'));
+ assert.ok(rule.includes('left:-8px;'));
+ assert.ok(rule.includes('top:-6px;'));
+ assert.ok(!rule.includes('width:calc('),"must not compress mini-chart width");
+});
