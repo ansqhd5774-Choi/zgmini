@@ -510,3 +510,11 @@
     margin-left:0;
   }
 }
+
+/* R7: the mobile card grid lives in responsive.css, which loads after globals.
+   A single column preserves the original full-width 60px trend plot at 390px. */
+@media (max-width:540px){
+  .zg-dashboard[data-view="dashboard"] .zg-r55-card-grid{
+    grid-template-columns:minmax(0,1fr);
+  }
+}

@@ -94,3 +94,10 @@ test("actual economic card grid reserves 110px lane without 16px graph intrusion
  assert.ok(r6.includes(".zg-r55-card-visual{"));
  assert.ok(r6.includes("margin-left:0;"));
 });
+
+test("390px economic cards retain a wide plot without title-overlap",()=>{
+ const r7=responsive.split("/* R7: the mobile card grid lives in responsive.css")[1];
+ assert.ok(r7,"mobile CSS loader-order override required");
+ assert.ok(r7.includes("@media (max-width:540px)"));
+ assert.ok(r7.includes("grid-template-columns:minmax(0,1fr);"));
+});
