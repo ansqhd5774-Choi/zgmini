@@ -7,7 +7,7 @@
 | 01 | 시장 분석 | ZGMINI 기존 시장 지표를 활용하도록 계획 | EXISTING_INPUT |
 | 02 | 섹터 분석 | ZGMINI 기존 ETF 섹터 공탐 활용 계획 | EXISTING_INPUT |
 | 03 | 테마 분석 | 기존 통과 ETF 테마 9개 유지; 재검증 금지 | EXISTING_INPUT |
-| 04 | 매력 테마 선정 | R2 정량 설계, R3 같은 판본 검산, R14 F 9/9 및 공식 산업 원문 7/9 읽기 전용 직접 조회 + FDA 미완료 연도/IFR 산업용 로봇 뉴스 판본 감시, M2 R25 선택 JSON은 과거 스냅샷 | DESIGNED / PARTIAL |
+| 04 | 매력 테마 선정 | R2 정량 설계, R3 같은 판본 검산, R15 F 9/9 및 공식 산업 원문 7/9 읽기 전용 재조회·비배타 정량 증거표 + FDA 미완료 연도/IFR 산업용 판본 감시, M2 R25 선택 JSON은 과거 스냅샷 | DESIGNED / PARTIAL |
 | 05 | 성장 산업·기술 선정 | M2 R25 로봇 실측 코드 및 선택 JSON | CODE_PRESENT / NOT_VERIFIED |
 | 06 | 수혜 기업 발굴 | M2 R25 기업 노출·미국 유니버스·로봇·제품 조사 코드 | CODE_PRESENT / NOT_VERIFIED |
 | 07 | 기본 지표 분석 | M2 R25 재무·공식 기업 실적 확인 코드; R24 실측 2/4 부분 확보 | PARTIAL |
@@ -87,6 +87,15 @@
 - FDA 2026 미완성 연도 목록 경고 유지. IEA·ENISA는 다른 종류의 보고서와 혼동하지 않도록 차기 동종 판본 탐지 미확인 상태 유지.
 - **52/52 자동 테스트 PASS**(9개 테스트 파일), 승인 G/D/M·순위 **NULL**, 주문 0건, 자동매매 OFF. 사용자 Windows CMD 미검증; IAEA 403/SIPRI 권리 보류 및 `main`/운영 사이트 무변경.
 - 보고서: `STAGE04_INVESTMENT_BOT_R14_IFR_INDUSTRIAL_PRESS_VINTAGE_GUARD_20261025.md`. R13은 FDA 감시 구현 이력으로 보존.
+
+## R15 최신 검증 — 완전 일치 조건으로 테마를 탈락시키지 않는 정량 증거표
+
+- 2026-10-25 개발 Node 실제 지정 원천 재조회: **현재 공탐 F 9/9, 산업 공식 원천 7/9**, `INVESTMENT_BOT_STAGE04_INPUT_GATE_R15`, `LIVE_INPUT_PARTIAL_INDUSTRY_UNRANKED`.
+- 실제 수치 종류: 출처 내부 YoY **3**, 공식 공표 반올림 YoY **2**, 다년 도입률 변화 **1**, 설문 수준값만 **1**, 출처 권한·권리 미확인 **2**. **모든 9개 테마 유지**. 공개 수치를 서로 다른 범위의 산업 전체 성장률로 합산하지 않는다.
+- R15 `industryQuantCoverage`: 원천별 기간·단위·대상·정밀도·한계를 구분하며 완전 일치·일률적인 최저 표본량을 PASS 필수조건으로 사용하지 않는다. 권한 미확보 두 분야는 **보류이지 FAIL 또는 0점이 아님**.
+- 58/58 자동 테스트 통과(10파일), 실제 네트워크 통합 검증 성공. **G/D/M·순위 NULL, 주문 0**. 사용자 Windows CMD 실측은 아직 미실행.
+- IEA의 2026-10-14 별도 정책보고서는 기존 2025 TWh 값과 다른 목적이므로 숫자 자동 대체 금지. ENISA 2025/2024 서로 다른 설문을 동일 기관 짝패널로 취급해 정확한 성장률 생성 금지.
+- 보고서 `STAGE04_INVESTMENT_BOT_R15_NON_EXCLUSIVE_QUANT_EVIDENCE_20261025.md`. 이전 R14는 IFR 뉴스/산업용 판본 구분 근거로 계속 보존.
 
 ## 가장 최근 M2 패키지 R25 진척
 
