@@ -1,0 +1,16 @@
+{
+  "schema": "ZGMINI_M2_STAGE5_SELECTION_V1",
+  "purpose": "STAGE6_COMPANY_EXPOSURE_RESEARCH_ONLY",
+  "parentTheme": "로봇·자동화",
+  "industryId": "humanoid",
+  "industryName": "휴머노이드·범용 피지컬 AI",
+  "selectedAt": "2026-10-24T10:05:27.456Z",
+  "evidenceCheckedAt": "2026-10-24",
+  "researchSources": [
+    "https://ifr.org/ifr-press-releases/news/five-million-robots-now-operate-in-factories-globally",
+    "https://ifr.org/ifr-press-releases/news/global-sales-of-professional-service-robots-surge-24-percent"
+  ],
+  "industryInvestmentScore": null,
+  "investmentAttractiveness": "NOT_EVALUATED",
+  "noTrade": true
+}
