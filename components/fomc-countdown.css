@@ -75,11 +75,11 @@
  .zg-schedule-remaining{font-size:11px;padding:5px 2px}
 }
 
-/* Additive disclosure affordance and urgency text only. Do not alter bar / digit / row dimensions. */
+/* Disclosure arrows remain at the edges of a centered 470px content zone, not at the full desktop viewport edges. Bar/digit/row dimensions stay unchanged. */
 .zg-fomc-toggle-icon{position:absolute;top:50%;transform:translateY(-50%);width:16px;height:16px;color:#061b29;pointer-events:none;opacity:.96}
-.zg-fomc-toggle-left{left:9px}
-.zg-fomc-toggle-right{right:9px}
-@media(min-width:1024px){.zg-fomc-toggle-icon{width:19px;height:19px}.zg-fomc-toggle-left{left:12px}.zg-fomc-toggle-right{right:12px}}
+.zg-fomc-toggle-left{left:max(9px,calc(50% - 235px))}
+.zg-fomc-toggle-right{right:max(9px,calc(50% - 235px))}
+@media(min-width:1024px){.zg-fomc-toggle-icon{width:19px;height:19px}.zg-fomc-toggle-left{left:max(12px,calc(50% - 235px))}.zg-fomc-toggle-right{right:max(12px,calc(50% - 235px))}}
 @media(max-width:359px){.zg-fomc-toggle-icon{width:14px;height:14px}.zg-fomc-toggle-left{left:6px}.zg-fomc-toggle-right{right:6px}}
 .zg-schedule-number.zg-fomc-day-2{color:#ffb555}
 .zg-schedule-number.zg-fomc-day-1{color:#ff797e}

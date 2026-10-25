@@ -107,6 +107,16 @@ test('two chevrons show expand/collapse without shifting the existing bar',()=>{
  assert.match(css,/\.zg-fomc-bar\{position:relative;height:24px;min-height:24px/);
  assert.match(css,/@media\(min-width:1024px\)\{\.zg-fomc-bar\{height:30px;min-height:30px/);
 });
+test('disclosure arrows stay by central FOMC content, not screen extremes',()=>{
+ assert.match(css,/\.zg-fomc-toggle-left\{left:max\(9px,calc\(50% - 235px\)\)\}/);
+ assert.match(css,/\.zg-fomc-toggle-right\{right:max\(9px,calc\(50% - 235px\)\)\}/);
+ assert.match(css,/@media\(min-width:1024px\)\{\.zg-fomc-toggle-icon\{width:19px;height:19px\}\.zg-fomc-toggle-left\{left:max\(12px,calc\(50% - 235px\)\)\}\.zg-fomc-toggle-right\{right:max\(12px,calc\(50% - 235px\)\)\}\}/);
+ assert.match(css,/@media\(max-width:359px\)\{\.zg-fomc-toggle-icon\{width:14px;height:14px\}\.zg-fomc-toggle-left\{left:6px\}\.zg-fomc-toggle-right\{right:6px\}\}/);
+ // Closed state is the downward path; expanded state is the upward path.
+ assert.equal((file.match(/expanded\?'M3 12l9-8 9 8 M3 20l9-8 9 8':'M3 4l9 8 9-8 M3 12l9 8 9-8'/g)||[]).length,2);
+ assert.match(css,/\.zg-fomc-bar\{position:relative;height:24px;min-height:24px/);
+});
+
 test('countdown highlights only day digits at D-2 D-1 and D-0',()=>{
  assert.match(file,/function dayUrgencyClass\(days:number\)/);
  assert.match(file,/days<=0\?' zg-fomc-day-0':days===1\?' zg-fomc-day-1':days===2\?' zg-fomc-day-2':''/);
