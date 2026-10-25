@@ -7,7 +7,7 @@
 | 01 | 시장 분석 | ZGMINI 기존 시장 지표를 활용하도록 계획 | EXISTING_INPUT |
 | 02 | 섹터 분석 | ZGMINI 기존 ETF 섹터 공탐 활용 계획 | EXISTING_INPUT |
 | 03 | 테마 분석 | 기존 통과 ETF 테마 9개 유지; 재검증 금지 | EXISTING_INPUT |
-| 04 | 매력 테마 선정 | R2 정량 설계, R3 같은 판본 검산, R13 F 9/9 및 공식 산업 원문 7/9 읽기 전용 직접 조회 + FDA 2026 미완료 연도 공식 목록 감시, M2 R25 선택 JSON은 과거 스냅샷 | DESIGNED / PARTIAL |
+| 04 | 매력 테마 선정 | R2 정량 설계, R3 같은 판본 검산, R14 F 9/9 및 공식 산업 원문 7/9 읽기 전용 직접 조회 + FDA 미완료 연도/IFR 산업용 로봇 뉴스 판본 감시, M2 R25 선택 JSON은 과거 스냅샷 | DESIGNED / PARTIAL |
 | 05 | 성장 산업·기술 선정 | M2 R25 로봇 실측 코드 및 선택 JSON | CODE_PRESENT / NOT_VERIFIED |
 | 06 | 수혜 기업 발굴 | M2 R25 기업 노출·미국 유니버스·로봇·제품 조사 코드 | CODE_PRESENT / NOT_VERIFIED |
 | 07 | 기본 지표 분석 | M2 R25 재무·공식 기업 실적 확인 코드; R24 실측 2/4 부분 확보 | PARTIAL |
@@ -79,6 +79,15 @@
 - IFR·IEA·ENISA 새 보고서 목록은 아직 자동 판정하지 않는다. IAEA 공식 403·SIPRI 사용권 보류 유지. **47/47 테스트 PASS**(8개 파일), G/D/M·순위·주문 **NULL/OFF**, Windows CMD 사용자 PC 실측 미실행.
 - 근거: `STAGE04_INVESTMENT_BOT_R13_FDA_CATALOG_EDITION_GUARD_20261025.md`; R12는 시간·판본 감사 이력으로 유지.
 
+## R14 최신 검증 — IFR 산업용·서비스 로봇 발표 혼동 방지
+
+- IFR 지정 공식 보도자료 목록 및 기존 원천 **실시간 직접 GET**: F **9/9**, 공식 산업 원천 **7/9**, `INVESTMENT_BOT_STAGE04_INPUT_GATE_R14`, `LIVE_INPUT_PARTIAL_INDUSTRY_UNRANKED`.
+- 목록 첫 페이지: **World Robotics 2026 산업용 로봇 보고서 1건 감지**, **서비스 로봇 2026 발표 1건 구별·제외**. 뉴스 목록 가시 범위 내 신규 산업용 판본이 없으나 **전체 연차판 목록임을 보장하지 않음**. `latestAnnualReportAutomaticallyVerified=false`.
+- 기존 IFR 2026 PDF가 설명하는 2025 전 세계 산업용 신규 설치량 **603,307대**와 반올림 공표 +11% 유지. 서비스 로봇 +24%를 산업용 성장률에 혼합하지 않음. IFR 기준연도 바뀌어도 사용자 승인 없이 자동 산식·데이터 변경 금지.
+- FDA 2026 미완성 연도 목록 경고 유지. IEA·ENISA는 다른 종류의 보고서와 혼동하지 않도록 차기 동종 판본 탐지 미확인 상태 유지.
+- **52/52 자동 테스트 PASS**(9개 테스트 파일), 승인 G/D/M·순위 **NULL**, 주문 0건, 자동매매 OFF. 사용자 Windows CMD 미검증; IAEA 403/SIPRI 권리 보류 및 `main`/운영 사이트 무변경.
+- 보고서: `STAGE04_INVESTMENT_BOT_R14_IFR_INDUSTRIAL_PRESS_VINTAGE_GUARD_20261025.md`. R13은 FDA 감시 구현 이력으로 보존.
+
 ## 가장 최근 M2 패키지 R25 진척
 
 - 원본: `INVESTMENT_M2_R25_NASDAQ_EARNINGS_REPAIR_20261025(1).zip` (원본 SHA256은 `ARTIFACT_INDEX.md`).
@@ -93,5 +102,5 @@
 1. 이 브랜치와 `m2/` 파일 목록·SHA, 현재 ZGMINI `main` SHA, 사용자 Windows에서 실행 승인된 R25 ZIP의 일치 여부 확인.
 2. 사용자가 CMD에서 R25를 실행한 실제 `M2_LATEST_STATUS.txt`를 확보하면 R25 SERV 수정이 실제 PASS인지 검증.
 3. 04단계 공식 원자료의 동일 판본·관측기간·성장률·가속도를 이어서 검산하고, 실제 최신 유효 **잠정 F** 사용.
-   R13에서 7/9 자동 검증 완료(ENISA는 2025 설문 비중만). FDA 2026년 미완료 연도 목록은 확인했으나 확정 연간 수치로 사용하지 않는다. IAEA 접근 403·SIPRI 사용권 두 가지를 권한 내에서 해결할 때만 추가 연결. IFR·IEA·ENISA 고정 연차 자료의 **차기 판본 자동 확인은 별도 작업**이며, 오늘 원문을 다시 다운로드했다고 새로운 관측치로 간주하지 않는다.
+   R14에서 7/9 자동 검증 완료(ENISA는 2025 설문 비중만). FDA 2026년 미완료 연도 목록은 확인했으나 확정 연간 수치로 사용하지 않는다. IFR은 산업용 보도자료의 **가시 구간만** 차기판 감시하며 새 보고서 전체 목록 최신성을 보장하지 않는다. IAEA 접근 403·SIPRI 사용권 두 가지를 권한 내에서 해결할 때만 추가 연결. IEA·ENISA 고정 연차 자료의 **동종 차기 판본 자동 확인은 별도 작업**이며, 오늘 원문을 다시 다운로드했다고 새로운 관측치로 간주하지 않는다.
 4. 사용자 승인 이전에 M 랭킹 실운영·03단계 가중치/ETF 변경·주문 및 배포 금지.
