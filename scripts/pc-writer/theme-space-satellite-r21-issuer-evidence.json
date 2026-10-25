@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "checkedAt": "2026-10-26",
+  "rule": "READ_ONLY_PRIVATE_OFFICIAL_NUMERIC_OR_EXCLUDE_CURRENT_NO_RETRIES",
+  "candidates": [
+    {"ticker":"UFO","state":"OFFICIAL_NUMERIC_OBSERVED","holdingsAsOf":"2026-10-23","issuerUrl":"https://www.procureetfs.com/ufo/"},
+    {"ticker":"NASA","state":"OFFICIAL_NUMERIC_OBSERVED","holdingsAsOf":"2026-10-23","issuerUrl":"https://temaetfs.com/nasa"},
+    {"ticker":"WARP","state":"OFFICIAL_NUMERIC_OBSERVED","holdingsAsOf":"2026-10-22","issuerUrl":"https://www.vaneck.com/us/en/investments/space-etf-warp/overview/"},
+    {"ticker":"ORBX","state":"OFFICIAL_NUMERIC_OBSERVED","holdingsAsOf":"2026-10-23","issuerUrl":"https://www.globalxetfs.com/funds/orbx/"},
+    {"ticker":"MARS","state":"NOT_RETRIEVED_AFTER_BOUNDED_CHECK","issuerUrl":"https://www.roundhillinvestments.com/etf/mars/","reason":"CURRENT_ISSUER_NUMERIC_HOLDINGS_BLANK_IN_AVAILABLE_PUBLIC_TEXT"},
+    {"ticker":"ARKX","state":"NOT_RETRIEVED_AFTER_BOUNDED_CHECK","issuerUrl":"https://www.ark-funds.com/funds/ARKX","reason":"CURRENT_ISSUER_NUMERIC_HOLDINGS_BLANK_IN_AVAILABLE_PUBLIC_TEXT"},
+    {"ticker":"ROKT","state":"OFFICIAL_NUMERIC_OBSERVED","holdingsAsOf":"2026-10-22","issuerUrl":"https://www.ssga.com/us/en/intermediary/etfs/state-street-spdr-sp-kensho-final-frontiers-etf-rokt"},
+    {"ticker":"DIPR","state":"UNASSESSED_NO_CURRENT_SCORE","issuerUrl":"https://corgiinvest.com/dipr"},
+    {"ticker":"WSPC","state":"UNASSESSED_NO_CURRENT_SCORE","issuerUrl":"https://www.wisdomtree.com/us/products/megatrends/wspc"}
+  ]
+}

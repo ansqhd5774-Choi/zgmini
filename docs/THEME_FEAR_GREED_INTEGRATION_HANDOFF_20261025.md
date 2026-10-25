@@ -314,3 +314,12 @@
 - ARKX는 공식 우주·방산 ETF, ROKT는 우주+심해 ETF: 현재 6종 비공개 가중치 중 이 2개가 **42.6456%**. 이는 방산/심해 실질 노출이 42.6456%라는 뜻이 아니며 순도 검토 필수. MARS·ARKX 현재 공식 페이지 AUM/전체 holdings 수치 공란; 임의 추정·기존 날짜 미확인 수치 재사용 금지.
 - GetMarketHistory 2026-10-19 약관 §5는 합법 수령 bar의 비복원 가능한 파생 지표/분석 공개를 조건부 허용하고 raw-bar 재배포를 금지. 실제 수집 계정/권리/보유 공시 조건 검증과 사용자 출시 승인은 여전히 미완료 `rightsVerified=false`.
 - 다음 단계: MARS/ARKX/ROKT를 포함한 **동일 관측일 전체 보유 내역** 확보 가능한지 확인하고 ETF 중복·우주전용 순도를 비공개 수치화. 미제공 비중 unknown 유지, 최종 ETF 수 고정·R4-A 가중 승인/메인 병합/D1/Cloudflare 배포/기존 운영 변경 금지. GitHub 전용 브랜치만 저장, PR #714 Draft 유지.
+
+## 2026-10-26 사용자 추가 승인 — R21 수집 불가 ETF 제외 후 비공개 검산
+
+- **사용자 승인:** 필수 데이터를 수집할 수 없는 ETF는 같은 경로로 계속 조회/재시도하지 말고 현재 계산에서 제외. 수집 불가를 임의 0점으로 대체하거나 PC 원본/과거 252일 기록을 삭제하지 않음. 원래 후보 9종은 보존하고 **고정 ETF 개수 상한 없음**.
+- R20 공식 발행사 자료 검토는 docs/THEME_SPACE_R21_SOURCE_EXCLUSION_20261026.md에 정리. **UFO/NASA/WARP/ROKT 4종**은 2026-10-23 실제 PC R2 현재점수와 발행사 보유비중 수치 확인이 모두 가능. **MARS/ARKX 2종**은 발행사 공식 CSV/PDF 링크는 보이나 이번 무료 정적 조회에서 현재 보유숫자 추출 불가 → 이번 **현재 비공개** 검산에서 제외/재시도 0. 공식 자료 영구 부재나 ETF 원본 가격 부재라고 단정하지 않음. **ORBX/DIPR/WSPC 3종**은 10/23 실제 R2 현재 점수 null → 현재 검산 제외, 재수집 금지, 이전 252일 기여/원본은 보존.
+- 9종 보유 현황을 보여주는 다른 공통 사이트의 이용약관이 자동 수집·제품 DB 구축을 제한하여 **운영 자동 수집원으로 사용하지 않음**. 별도 유료 API 계약·수집기 신규 설치 없음.
+- 신규 구현: scripts/pc-writer/theme-space-satellite-r21-source-gate.mjs, theme-space-satellite-r21-issuer-evidence.json, theme-space-satellite-r21-source-gate.cmd, tests/theme-space-satellite-r21-source-gate.test.mjs. 공식 가용성 스냅샷과 실 PC R18 manifest/SPY/history SHA 고정을 교차검사하여 **최신 하루만** 4개 종목 R4-A **미승인** 비공개 점수를 별도로 출력. 252일 역사 재산출·보존 점수(42.38768) 변경 없음. 총 0 GET/0 재시도/0 원본·공개·D1·스케줄러 쓰기.
+- 로컬 Node에서 R21/R19/R18/R4-A 관련 테스트 **4개 파일 PASS**. Windows Desktop ZIP SPACE_SATELLITE_R21_SOURCE_GATE_DESKTOP_20261026.zip **13파일 무결성 PASS**, SHA256-pin CMD, CRLF. **사용자 PC R21 실행 결과는 아직 미제출**; 이 단계가 PC 실측 점수나 R4-A/최종 ETF 선정/권리/게시 승인은 아님. rightsVerified=false, publicationAuthorized=false, PR #714 Draft, 전용 브랜치에서만 저장.
+- **바로 다음 작업:** 사용자 Desktop에 ZIP **같은 폴더 해제** → theme-space-satellite-r21-source-gate.cmd 직접 실행 → **같은 폴더**에 기록된 SPACE_SATELLITE_R21_SOURCE_GATE_RESULT.txt 제출. 실 PC 4종 실제 점수 및 제외 근거 확인 후 순도/중복·가중치·권리의 남은 게이트 검토. **같은 실패 수집 경로 반복 금지**; main/Cloudflare/기존 9테마/D1/스케줄러 변경 금지.
