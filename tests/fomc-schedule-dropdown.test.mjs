@@ -31,7 +31,8 @@ test('calendar includes verified releases and excludes calls',()=>{
  const later=upcomingSchedule(Date.parse('2026-11-05T03:00:00Z'),null);
  assert.ok(later.some(e=>e.name==='미국 CPI'&&!e.estimated));
  assert.ok(events.filter(e=>e.name==='알파벳').length===1);
- assert.ok(!events.some(e=>/콜|컨퍼런스/.test(e.name)));
+ // '코카콜라' is a company name, not an earnings conference call.
+ assert.ok(!events.some(e=>/컨퍼런스|실적\\s*콜|콜\\s*일정/.test(e.name)));
 });
 test('verified macro dates use Eastern daylight saving and standard time',()=>{
  assert.equal(easternIso('2026-10-29',8,30),'2026-10-29T12:30:00.000Z');
