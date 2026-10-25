@@ -54,6 +54,7 @@ export async function collectLocal(base,{lane='core',importOnly=false,job=null}=
   const report={at:new Date().toISOString(),lane,status:result.status,job:result.job??null,attempted:result.attempted??null,feeds:result.feeds?.map(({key,status})=>({key,status})),sectorFearGreedEtf:{status:sectorFearGreedEtf.status,providerRequests:sectorFearGreedEtf.providerRequests??0,commonLatest:sectorFearGreedEtf.commonLatest??null,code:sectorFearGreedEtf.code??sectorFearGreedEtf.error??null},providers,quota:quota.summary()};
   for(const key of ['phase','reason','sourceStatus'])if(typeof result?.[key]==='string'&&/^[A-Za-z0-9_.:-]{1,120}$/.test(result[key]))report[key]=result[key];
   report.releaseCalendar=releaseCalendar;
+  if(result?.sourceDiagnostic?.provider==='BLS')report.sourceDiagnostic=result.sourceDiagnostic;
   save(path.join(base,'local-collection-last-run.json'),report);
   recordCollectionChecks(base,report);
   try{alertCollectionReport(base,report);}catch{console.warn('LOCAL_DATA_ALERT_RECORD_FAILED');}
