@@ -95,3 +95,20 @@ test('one selected real latest point shows an endpoint score; multi-series and m
  assert.match(chart,/aria-label=\{`현재 점수 \$\{score\}점/);
  assert.match(chart,/const extrema=shownSeries\.length===1\?/);
 });
+
+
+test('numeric values use the established five fear-greed bands without recoloring series identity',()=>{
+ const match=chart.match(/function scoreBand\(value:number\|null\|undefined\)\{([\s\S]*?)\n\}/);
+ assert.ok(match,'fear-greed score-band helper missing');
+ const scoreBand=new Function('value',match[1]);
+ const cases=[[-1,undefined],[0,'extreme-fear'],[24.99,'extreme-fear'],[25,'fear'],[44.99,'fear'],[45,'neutral'],[55,'neutral'],[55.01,'greed'],[75,'greed'],[75.01,'extreme-greed'],[100,'extreme-greed'],[101,undefined],[Number.NaN,undefined],[undefined,undefined]];
+ for(const [value,expected] of cases)assert.equal(scoreBand(value),expected,String(value));
+ for(const band of ['extreme-fear','fear','neutral','greed','extreme-greed'])assert.match(css,new RegExp('data-score-band="'+band+'"\\]\\{color:var\\(--zg-score-'+band+'\\)'));
+ assert.match(chart,/className="zg-theme-legend-score" data-score-band=\{scoreBand\(/);
+ assert.match(chart,/className="zg-sector-legend-score" data-score-band=\{scoreBand\(/);
+ assert.match(chart,/zg-sector-held-tooltip[\s\S]*?<strong data-score-band=\{scoreBand\(Number\(heldRow\[s\.id\]\)\)\}/);
+ assert.match(chart,/uniqueChartTooltipEntries\(payload\)[\s\S]*?<strong data-score-band=\{scoreBand\(Number\(entry\.value\)\)\}/);
+ assert.match(chart,/className="zg-chart-current"[\s\S]*?<text[^>]*fill="currentColor" data-score-band=\{scoreBand\(value\)\}/);
+ assert.match(chart,/<circle cx=\{cx\} cy=\{cy\} r=\{3\} stroke="#fff" strokeWidth=\{1\} fill=\{color\}/);
+ assert.match(css,/\.zg-sector-tooltip li::before\{[^}]*background:currentColor\}/);
+});

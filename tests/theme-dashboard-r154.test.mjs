@@ -74,7 +74,7 @@ test('only the dashboard theme legend shows rounded live scores with tighter hor
  assert.match(shared,/title=\{lastObserved\?`\$\{item\.name\} · \$\{lastObserved\.date\} 관측`:item\.name\}/);
  assert.match(shared,/className="zg-theme-legend-name"/);
  assert.match(shared,/className="zg-theme-legend-color" style=\{\{backgroundColor:item\.color\}\}/);
- assert.match(shared,/className="zg-theme-legend-score" aria-label=/);
+ assert.match(shared,/className="zg-theme-legend-score"[^>]*aria-label=/);
  assert.match(shared,/themeLegendSeries\.map\(item=>\{/);
  assert.match(shared,/return showDashboardThemeScores\?<button key=\{item\.id\} type="button" className="zg-theme-selected-label has-score"/);
  assert.match(shared,/aria-pressed=\{!hidden\.has\(item\.id\)\} onClick=\{\(\)=>toggleThemePickerItem\(item\.id\)\}/);
