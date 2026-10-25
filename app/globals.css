@@ -3958,3 +3958,28 @@ body .zg-r55-market .zg-r55-shell[data-expanded="false"] article.zg-r55-card>.zg
 .zg-dashboard[data-view="dashboard"] .zg-r55-card-title-link:focus-visible{outline:2px solid #fabc42;outline-offset:2px}
 
 .zg-earnings-provisional-summary{display:block;margin-top:4px;font-size:10px;line-height:1.4;color:#fbbf24;text-align:right;white-space:normal}.zg-earnings-provisional-summary span{color:#94a3b8}
+
+/* EC12 R2: separate the help affordance from economic titles.
+   Keep the compact chart's width and height unchanged. */
+@media (min-width:960px){
+ .zg-dashboard[data-view="dashboard"] .zg-r55-card-head{
+  position:relative;
+  display:block;
+  box-sizing:border-box;
+  width:100%;
+  padding-left:15px;
+ }
+ .zg-dashboard[data-view="dashboard"] .zg-r55-card-head>span:last-child{
+  position:absolute;
+  top:0;
+  left:-6px;
+  width:20px;
+  height:20px;
+  order:0;
+ }
+ .zg-dashboard[data-view="dashboard"] .zg-r55-card-head h3{
+  font-size:13.5px;
+  letter-spacing:-.55px;
+  line-height:20px;
+ }
+}
