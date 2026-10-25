@@ -28,15 +28,17 @@ function ScheduleDate({at,estimated,session}:{at:string;estimated:boolean;sessio
  const title=estimated
   ?(session==='beforeOpen'?'美 정규장 개장 09:30 ET 기준 예상 시각 · 실제 실적 공개 시각 미확정':'美 정규장 마감 16:00 ET 기준 예상 시각 · 실제 실적 공개 시각 미확정')
   :'공식 발표 예정 시각';
- return <time className="zg-schedule-date" dateTime={at} title={title}>{estimated?'≈':''}{date}<span className="zg-schedule-weekday">({weekday})</span>{' '}{time}</time>;
+ return <time className="zg-schedule-date" dateTime={at} title={title}>{estimated?'≈':''}{date}<span className="zg-schedule-weekday" data-day={weekday}>({weekday})</span>{' '}{time}</time>;
 }
+
+function dayUrgencyClass(days:number){return days<=0?' zg-fomc-day-0':days===1?' zg-fomc-day-1':days===2?' zg-fomc-day-2':'';}
 
 function ScheduleTimer({at,now,estimated}:{at:string;now:number;estimated:boolean}){
  const parts=remainingParts(at,now),pad=(n:number)=>String(n).padStart(2,'0');
  const expired=estimated&&now>=Date.parse(at);
  const label=expired?'예상 기준 시각 경과, 실적 공개 확인 필요':(estimated?'예상 기준까지 ':'발표까지 ')+parts.days+'일 '+parts.hours+'시간 '+parts.minutes+'분 '+parts.seconds+'초';
  return <span className="zg-schedule-remaining" role="timer" aria-live="off" aria-label={label}>
-  {expired?'예상시각 경과':<><span className="zg-schedule-number">{parts.days}</span><span className="zg-schedule-separator">일</span>{' '}<span className="zg-schedule-number">{pad(parts.hours)}</span><span className="zg-schedule-separator">:</span><span className="zg-schedule-number">{pad(parts.minutes)}</span><span className="zg-schedule-separator">:</span><span className="zg-schedule-number">{pad(parts.seconds)}</span></>}
+  {expired?'예상시각 경과':<><span className={'zg-schedule-number'+dayUrgencyClass(parts.days)}>{parts.days}</span><span className="zg-schedule-separator">일</span>{' '}<span className="zg-schedule-number">{pad(parts.hours)}</span><span className="zg-schedule-separator">:</span><span className="zg-schedule-number">{pad(parts.minutes)}</span><span className="zg-schedule-separator">:</span><span className="zg-schedule-number">{pad(parts.seconds)}</span></>}
  </span>;
 }
 
@@ -64,12 +66,14 @@ export default function FomcCountdown(){
   const toggle=()=>setExpanded(v=>!v);
   const keyDown=(e:KeyboardEvent<HTMLDivElement>)=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();toggle()}};
   return <div className={'zg-fomc-bar'+(expanded?' zg-fomc-expanded':'')} aria-label="연준 금리 발표 일정" title={title} role="button" tabIndex={0} aria-expanded={expanded} aria-controls="zg-schedule-dropdown" onClick={toggle} onKeyDown={keyDown}>
+    <svg className="zg-fomc-toggle-icon zg-fomc-toggle-left" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d={expanded?'M3 12l9-8 9 8 M3 20l9-8 9 8':'M3 4l9 8 9-8 M3 12l9 8 9-8'}/></svg>
     <div className="zg-fomc-center">
       <svg className="zg-fomc-bank" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true"><path d="m2 7 8-5 8 5H2Zm1 10h14M5 9v6m5-6v6m5-6v6"/></svg>
       <strong>연준 금리 발표</strong>
       {event?<><time dateTime={event.at} aria-label={`${new Date(event.at).getUTCFullYear()}년 ${fomcKst(event.at)} 한국시간`}>{fomcKst(event.at)} <span className="zg-fomc-zone">KST</span></time>
-      {event.reached?<span className="zg-fomc-reached">발표 시각 도달 · 결과 확인 중</span>:<span className="zg-fomc-clock" role="timer" aria-live="off" aria-label={`발표까지 ${event.days}일 ${event.hours}시간 ${event.minutes}분 ${event.seconds}초`}><span aria-hidden="true" className="zg-fomc-clock-inner"><Pair value={event.days}/><span className="zg-fomc-day">일</span><Pair value={event.hours}/><b>:</b><Pair value={event.minutes}/><b>:</b><Pair value={event.seconds}/></span></span>}</>:<span className="zg-fomc-pending">{now===null?'일정 확인 중':'다음 공식 일정 확인 필요'}</span>}
+      {event.reached?<span className="zg-fomc-reached">발표 시각 도달 · 결과 확인 중</span>:<span className={'zg-fomc-clock'+dayUrgencyClass(Number(event.days))} role="timer" aria-live="off" aria-label={`발표까지 ${event.days}일 ${event.hours}시간 ${event.minutes}분 ${event.seconds}초`}><span aria-hidden="true" className="zg-fomc-clock-inner"><Pair value={event.days}/><span className="zg-fomc-day">일</span><Pair value={event.hours}/><b>:</b><Pair value={event.minutes}/><b>:</b><Pair value={event.seconds}/></span></span>}</>:<span className="zg-fomc-pending">{now===null?'일정 확인 중':'다음 공식 일정 확인 필요'}</span>}
     </div>
+    <svg className="zg-fomc-toggle-icon zg-fomc-toggle-right" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d={expanded?'M3 12l9-8 9 8 M3 20l9-8 9 8':'M3 4l9 8 9-8 M3 12l9 8 9-8'}/></svg>
     <div className="zg-schedule-dropdown" id="zg-schedule-dropdown" hidden={!expanded} onClick={e=>e.stopPropagation()} onKeyDown={e=>e.stopPropagation()}>
       <div className="zg-schedule-heading"><strong>핵심 경제지표 · 주요 기업 실적</strong><span>시간순 · KST · {upcoming.length}건</span></div>
       <div className="zg-schedule-list" role="region" aria-label="예정된 주요 발표 목록">
