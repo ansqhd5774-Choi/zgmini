@@ -2,6 +2,7 @@
 import {useDashboardMobileAxis} from '../hooks/use-dashboard-mobile-axis';
 import {LiveScoreValue} from '../components/live-score-value';
 import ChartExtremumPoint from '../components/chart-extremum-point';
+import {useDashboardChartStartup} from '../hooks/use-dashboard-chart-startup';
 import {chartExtrema} from '../lib/chart-extrema.mjs';
 import {domainObservationDelta} from '../lib/market-score/domain-observation-delta.mjs';
 import {compositeDayDelta,compositePeriodDelta} from '../lib/market-score/composite-day-delta.mjs';
@@ -125,12 +126,13 @@ function summaryAxisConfig(points:Array<DashboardPoint&{ts:number}>,periodDays:n
 }
 
 const SummaryTrend=memo(function SummaryTrend({data,label,color,periodDays}:{data:DashboardPoint[];label:string;color:string;periodDays:number}){
+ const chartReady=useDashboardChartStartup();
  const mobileAxisRight=useDashboardMobileAxis();
  const scaled=timeScaledTrend(data,periodDays),latest=scaled.points.at(-1),axis=summaryAxisConfig(scaled.points,periodDays);
  const gradientId=`summary-${useId().replace(/:/g,'')}`;
  const extrema=chartExtrema(scaled.points.map(p=>({date:new Date(p.ts).toISOString().slice(0,10),value:p.value})));
  return <div className="zg-spark zg-r55-mini-chart zg-r55-summary-mini-chart" style={{height:120,minHeight:120,maxHeight:120}} aria-label={`${label} 관측 추이`}>
-  <ResponsiveContainer width="100%" height="100%" initialDimension={{width:1,height:1}}>
+  {chartReady&&<ResponsiveContainer width="100%" height="100%" initialDimension={{width:1,height:1}}>
    <AreaChart data={scaled.points} accessibilityLayer={false} tabIndex={-1} margin={{top:12,right:mobileAxisRight?4:18,left:mobileAxisRight?6:0,bottom:4}}>
     <defs><linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={color} stopOpacity=".6"/><stop offset="100%" stopColor={color} stopOpacity="0"/></linearGradient></defs>
     <XAxis dataKey="ts" type="number" domain={[scaled.start,scaled.end]} ticks={axis.ticks} interval={0} tickMargin={5} tickFormatter={value=>axis.labels.get(Number(value))??''} tick={{fill:'var(--zg-text-meta,#a8bcd0)',fontSize:9}} axisLine={false} tickLine={false} height={30}/>
@@ -162,7 +164,7 @@ const SummaryTrend=memo(function SummaryTrend({data,label,color,periodDays}:{dat
     {latest&&<ReferenceDot x={latest.ts} y={latest.value} r={4.4} fill={color} stroke="#fff7f7" strokeWidth={2}/>}
     {extrema.map(point=><ReferenceDot key={'extreme-'+point.kind} x={scaled.points[point.index].ts} y={point.value} ifOverflow="visible" shape={<ChartExtremumPoint point={point} peerIndex={extrema.find(p=>p.kind!==point.kind)?.index} samples={scaled.points.map(p=>({x:p.ts,value:p.value}))} count={scaled.points.length} color={color}/>}/>)}
    </AreaChart>
-  </ResponsiveContainer>
+  </ResponsiveContainer>}
  </div>;
 });
 // Stage 12 R2 / W09.2 content ownership correction:

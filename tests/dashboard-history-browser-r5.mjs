@@ -16,7 +16,6 @@ try{
   let revision=1;
   const errors=[];
   page.on('pageerror',e=>errors.push(e.message));
-  await page.addInitScript(()=>sessionStorage.setItem('zgmini-about-intro-dismissed-r1','1'));
   await page.route('https://**',route=>route.abort());
   await page.route('**/api/**',route=>{
    const path=new URL(route.request().url()).pathname;
@@ -24,7 +23,18 @@ try{
    return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(body)});
   });
   await page.goto(base,{waitUntil:'networkidle',timeout:45000});
+  const intro=page.locator('#zg-about-intro-dialog');
+  await intro.waitFor({state:'visible'});
+  assert.equal(await page.locator('.zg-r55-summary-mini-chart .recharts-responsive-container').count(),0,'Covered summary does not initialize Recharts');
+  assert.equal(await page.locator('.cnn-history-chart-hitbox .recharts-responsive-container').count(),0,'Covered market charts do not initialize Recharts');
+  assert.equal(await page.locator('#strength .recharts-wrapper').count(),0,'Covered secondary charts do not mount');
+  await page.screenshot({path:`artifacts/dashboard-history/introduction-${width}.png`,caret:'initial'});
+  await intro.getByRole('button',{name:'닫기',exact:true}).click();
+  await intro.waitFor({state:'hidden'});
   const curve=page.locator('.zg-r55-summary-chart path.recharts-area-curve');
+  await curve.waitFor({state:'visible'});
+  await page.reload({waitUntil:'networkidle'});
+  await intro.waitFor({state:'hidden'});
   await curve.waitFor({state:'visible'});
   const year=await curve.getAttribute('d');
   const periods=page.getByRole('group',{name:'종합 시장 점수 추이 기간'});
