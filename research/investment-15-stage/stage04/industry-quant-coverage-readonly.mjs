@@ -83,7 +83,7 @@ function inventoryRow(row, fetchedAtUtc) {
 }
 
 export function buildIndustryQuantCoverage(gate) {
-  if (!gate || !/^INVESTMENT_BOT_STAGE04_INPUT_GATE_R1[23456]$/.test(gate.runType ?? '')
+  if (!gate || !/^INVESTMENT_BOT_STAGE04_INPUT_GATE_R1[234567]$/.test(gate.runType ?? '')
     || !/^\d{4}-\d{2}-\d{2}T/.test(gate.runAtUtc ?? '')
     || !Array.isArray(gate.themes) || gate.themes.length !== 9
     || new Set(gate.themes.map((x) => x.theme)).size !== 9
