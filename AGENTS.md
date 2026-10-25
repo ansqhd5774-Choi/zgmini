@@ -117,6 +117,9 @@ ZGMINI PLUGIN & EXECUTION RULES — COMPACT R5 FINAL
 - 실제 GitHub/Cloudflare/Production 상태가 Linear보다 우선.
 - SEO: GSC Wizard 우선, `payment_required`면 반복 금지. Windsor fallback 허용.
 - SEO 데이터로 Runtime 오류 판정 금지.
+- ZGMINI의 **모든 신규 페이지 및 기존 페이지 UI·문구·콘텐츠 수정**에는 해당 URL의 Google 검색결과 제목 링크·설명문·검색 의도·노출/클릭 유입 개선 여부를 상시 점검한다. 상세 게이트와 기록 형식은 `docs/SEO_SEARCH_APPEARANCE_REVIEW.md`를 따른다.
+- 화면 H1을 키워드 나열로 훼손하지 않는다. SEO `title`/`description`과 화면 H1을 구분하고, 검색결과의 제목·스니펫이 자동 재작성될 수 있음을 전제한다. 자료 없이 클릭률·노출 개선을 주장하지 않는다.
+- 사용자가 제시한 타 사이트·상품·소재는 **검색결과 디자인의 예시**일 뿐 ZGMINI 키워드·콘텐츠 추가 지시가 아니다. 실제 페이지에 적합하고 개선 근거가 있을 때만 최소 변경한다.
 
 ## 13. DigitalOcean / RDC / Windows
 - DigitalOcean NON-DEFAULT. 비용 발생 리소스 생성 전 승인.
