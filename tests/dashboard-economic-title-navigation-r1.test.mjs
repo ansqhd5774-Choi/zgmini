@@ -63,7 +63,7 @@ test("economic title restores original-size inline arrow in both expanded states
  const r6=css.split("/* EC12 R6: restore the original inline 13px arrow")[1];
  assert.ok(r6,"R6 inline restoration rule missing");
  assert.ok(r6.includes('.zg-r55-shell[data-expanded] .zg-r55-card-head{'));
- assert.ok(r6.includes('padding-left:18px;'));
+ assert.ok(r6.includes('padding-left:24px;'));
  assert.ok(r6.includes('.zg-r55-card-head>span:last-child{'));
  assert.ok(r6.includes('top:-2px;')&&r6.includes('left:-8px;'));
  assert.ok(r6.includes('transform:none;'));
@@ -72,13 +72,14 @@ test("economic title restores original-size inline arrow in both expanded states
  for(const value of ['position:static;','width:13px;','height:13px;','align-items:center;','gap:2px;'])assert.ok(r6.includes(value),value);
  assert.ok(!/zg-r55-mini-chart[^}]*width\s*:/.test(r6),"trend chart width may not be reduced");
  assert.ok(!r6.includes('translateX('),"trend chart must not be shifted into another card");
+ assert.ok(r6.includes('grid-template-columns:84px minmax(0,1fr);'),"plot must have a separate lane");
 });
 
 test("responsive economic card columns reserve room for full labels and their arrows",()=>{
  const r6=css.split("/* EC12 R6: restore the original inline 13px arrow")[1];
- assert.ok(r6.includes('@media (min-width:960px) and (max-width:1279px)'));
+ assert.ok(r6.includes('@media (min-width:960px) and (max-width:1023px)'));
  assert.ok(r6.includes('grid-template-columns:repeat(4,minmax(0,1fr));'));
- assert.ok(r6.includes('@media (min-width:1280px) and (max-width:1599px)'));
+ assert.ok(r6.includes('@media (min-width:1024px) and (max-width:1599px)'));
  assert.ok(r6.includes('grid-template-columns:repeat(5,minmax(0,1fr));'));
  assert.ok(r6.includes('@media (max-width:540px)'));
  assert.ok(r6.includes('grid-template-columns:minmax(0,1fr);'));
