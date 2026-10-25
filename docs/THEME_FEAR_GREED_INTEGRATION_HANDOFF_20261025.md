@@ -291,3 +291,15 @@
 - 차기 R18 신규 검산기 `scripts/pc-writer/theme-space-satellite-r18-variable-basket-shadow.mjs`, Desktop CMD, 2개 테스트. 기존 15시/조기폐장 12시 프록시, R2/R188 실제 개별점수, N≥40 및 같은날 관측을 만족하는 ETF를 **수 제한 없이** 날짜별로 모두 포함. `R4-A` **미승인 제안** 가중치를 비공개로만 적용. 당일 0~1종이면 조합 점수 결측, 2종 이상일 때만 Shadow. 이전 점수/누락 자료 자동 보충·산식 변경 금지.
 - R18 관련 기존 R15/R17/R2/R3/R4/SPY 포함 로컬 Node 테스트 8개 파일 PASS, ZIP 10개 MJS+CMD 11개 파일 무결성 PASS. **R18 사용자 PC 실측 아직 없음**, 권리·최종 구성·R4-A 승인 **없음**. 기존 운영 9개/원가격/D1/DB/scheduler/main/Cloudflare 불변, PR #714 Draft 및 통합 브랜치 보존.
 - 사용자 다음 단계: R18 Desktop ZIP 같은 폴더 압축 해제 → `theme-space-satellite-r18-variable-basket-shadow.cmd` 실행 → 같은 폴더 `SPACE_SATELLITE_R18_VARIABLE_BASKET_RESULT.txt` 제출. 실제 6종 비공개 합성가중/252 표시구간 검사 후 ETF 무상한 구성과 허용 원본·권리 승인 별도 결정.
+
+
+## 2026-10-25 R18 PC 9개 동적 실측 PASS → R19 ETF 구성효과 진단
+
+- 사용자 제출 `SPACE_SATELLITE_R18_VARIABLE_BASKET_RESULT.txt`: `PHASE=ALL_CODE_SHA256_VERIFIED`, `RESULT=PRIVATE_UNLIMITED_COUNT_BASKET_SHADOW_NO_OPERATION_CHANGE`, 원본/공유 SPY SHA 불변, provider/raw/D1/scheduler/public 쓰기 0.
+- **9개 후보 보존**, 2026-10-23 현재 6개 개별점수 유효(UFO NASA WARP MARS ARKX ROKT). ORBX는 과거 참여 49일 있으나 현재점수 null, DIPR/WSPC도 현재 null. 모두 watch 후보 유지.
+- 252 SPY 표시거래일의 **252일 모두 비공개 R4-A 가변 점수** 실측. 기여 ETF 수 분포: 2개=98일, 3개=31일, 4개=18일, 5개=40일, 6개=23일, 7개=42일. **구성이 고정된 1년 점수가 아님**. 실제 기여일 UFO252/NASA105/WARP79/ORBX49/MARS123/ARKX252/ROKT133/DIPR0/WSPC0.
+- 10/23 **비공개·미승인 R4-A 가변 조합 42.38768점**, 가중 UFO21.3228/NASA12.0839/WARP11.2953/MARS12.6525/ARKX21.3228/ROKT21.3228%. 실제 가격/개별 R2 산식 수정 0. R18 shadow digest `94011b38f4d31cf21b74eac36b988a0a2565c34bf2b2e5522dc27106ac4d1216`.
+- R19은 최근 252일의 인접 251쌍에 대해 ETF **구성 유입·이탈 효과와 공통 ETF의 진짜 일별점수 움직임**을 교집합 재산출로 분리. 공통 ETF 2종 미만이면 수치분리 불가로 분류하고 일괄 실패 강제 금지. 개인 PC 가격 추가 수집·원본 저장 0, 날짜별 원가격/전이 전체 출력하지 않음.
+- 구현 `scripts/pc-writer/theme-space-satellite-r19-composition-effect.mjs`, CMD, 테스트 2개, `docs/THEME_SPACE_R19_COMPOSITION_EFFECT_20261025.md`. R18에는 CLI 출력 불변인 내부 read-only trace 옵션만 추가하고 R18 CMD SHA pin 갱신. 신규 R19 CMD는 11개 MJS 전체 SHA 핀, ASCII CRLF. Node 관련 9개 파일 PASS, Desktop ZIP 12파일 무결성 PASS. **R19 실제 PC 결과는 아직 없음**.
+- GitHub main 확인 SHA `b61b82b0e08383d951d019d6c6705398dc532958`(별도 UI 변경 진행 중), R19 작업은 전용 브랜치만 저장. branch/main 차이 있는 상태에서 자동 병합 금지, 기존 9개 운영·D1·스케줄러·Cloudflare 변화 0. PR #714 Draft 유지.
+- **다음 PC 작업**: R19 ZIP Desktop 같은 폴더 해제 → `theme-space-satellite-r19-composition-effect.cmd` 실행 → `SPACE_SATELLITE_R19_COMPOSITION_EFFECT_RESULT.txt` 제출. 결과로 구성변동 오인 리스크 검사 후 **R4-A 가중식/최종 ETF/발행사 holdings·AUM/파생 공개 권리 각각 승인**을 검토. 승인 없이 main 배포 금지.

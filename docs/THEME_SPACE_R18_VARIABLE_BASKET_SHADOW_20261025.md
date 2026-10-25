@@ -43,3 +43,7 @@
 - 현재 9개 후보를 6개로 고정하거나 ORBX·DIPR·WSPC 영구 제외하지 않는다. 실제 결측이 해소되면 개수 상한 없이 다음 해당일에 편입 평가한다.
 
 출처: [GetMarketHistory 1h 데이터 및 갭 정책](https://getmarkethistory.com/docs/api/reference), [NYSE 정규장](https://www.nyse.com/trade/trading-information), [GetMarketHistory 파생물 라이선스 조건](https://getmarkethistory.com/docs/terms).
+
+## R18 PC 실측 수신 및 후속
+
+2026-10-25 사용자 제출 R18 실제 로그는 `PHASE=ALL_CODE_SHA256_VERIFIED`, `RESULT=PRIVATE_UNLIMITED_COUNT_BASKET_SHADOW_NO_OPERATION_CHANGE`. **9개 후보 보존, 최신 6개 점수 실측, 비공개 가변 바스켓 252/252 관측일, 현재 42.38768점**. 과거 7개 참가 42일 포함, 가변 구성의 시계열 차이를 단순 ETF 가격 변화로 해석하지 않는다. 상세 수치와 다음 R19 구성변화 진단은 `docs/THEME_SPACE_R19_COMPOSITION_EFFECT_20261025.md`. R4-A/최종 ETF/원가격 권리/배포 승인 아님.

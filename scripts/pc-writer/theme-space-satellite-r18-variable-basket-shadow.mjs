@@ -77,7 +77,7 @@ export function calculateVariableBasketShadow({dates,etfs,timelines,observed,
 export function runSpaceVariableBasketShadow({dataRoot,
  symbols=SPACE_CANDIDATES,spyReader=readVerifiedSharedSpy,
  r15Audit=auditAllSpaceEtfScores,expectedManifestSha=EXPECT_MANIFEST,
- expectedSpySha=EXPECT_SPY}={}){
+ expectedSpySha=EXPECT_SPY,includePrivateTrace=false}={}){
  need(typeof dataRoot==='string'&&fs.existsSync(dataRoot),'R18_DATA_ROOT_MISSING');
  need(Array.isArray(symbols)&&symbols.length>0&&new Set(symbols).size===symbols.length&&
   symbols.every(x=>typeof x==='string'&&/^[A-Z][A-Z0-9.-]{0,15}$/.test(x)&&x!=='SPY'),
@@ -159,7 +159,7 @@ export function runSpaceVariableBasketShadow({dataRoot,
  need(latest.active.length===expectedLatestInputs.length&&
   expectedLatestInputs.every(s=>latest.active.includes(s)),
   'R18_LATEST_CONTRIBUTORS_MISMATCH_R15');
- return {report:'SPACE_SATELLITE_R18_PC_PRIVATE_VARIABLE_BASKET_SHADOW',
+ const report={report:'SPACE_SATELLITE_R18_PC_PRIVATE_VARIABLE_BASKET_SHADOW',
   status:'PRIVATE_R4_A_PROPOSAL_ONLY_NOT_A_BASKET_OR_PUBLIC_SCORE',
   sourceManifestSha256:expectedManifestSha,sharedSpyManifestSha256:expectedSpySha,
   candidateCount:symbols.length,benchmarkLastDate:last,
@@ -180,6 +180,11 @@ export function runSpaceVariableBasketShadow({dataRoot,
   allCandidateCountPreserved:true,finalBasketSelected:false,
   rightsVerified:false,publicationAuthorized:false,
   providerCalls:0,rawFilesWritten:0,publicWrites:0,d1Writes:0,schedulerWrites:0};
+ // Internal read-only handoff for R19; NEVER written by the R18 CLI or CMD.
+ // Contains computed per-day scores and eligibility, NOT raw hourly prices.
+ if(includePrivateTrace===true)report.privateTrace={
+  dates,symbols:[...symbols],timelines,sessionCounts,history:reduced.history};
+ return report;
 }
 
 if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.url)){

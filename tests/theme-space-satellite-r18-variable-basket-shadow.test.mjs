@@ -80,8 +80,9 @@ function fixture(t){
  }
  const content=JSON.stringify({version:1,themeId:'space-satellite',files});
  fs.writeFileSync(path.join(home,'raw-manifest.json'),content);
- const audit=(expectedManifestSha=sha(content))=>runSpaceVariableBasketShadow({
-  dataRoot:root,spyReader,expectedManifestSha,expectedSpySha:'R18_FIX_SPY'});
+ const audit=(expectedManifestSha=sha(content),includePrivateTrace=false)=>
+  runSpaceVariableBasketShadow({dataRoot:root,spyReader,
+   expectedManifestSha,expectedSpySha:'R18_FIX_SPY',includePrivateTrace});
  return {root,home,audit};
 }
 
@@ -99,6 +100,11 @@ test('R18 integrates nine verified source candidates and scores only six current
  assert.equal(result.sameHourFallbackApproved,undefined);
  assert.equal(result.priceMode,'CANONICAL_UNADJUSTED_NY15_OR_EARLY_CLOSE_12_ONLY');
  assert.equal(result.publicationAuthorized,false);
+ assert.equal(result.privateTrace,undefined);
+ const internal=f.audit(undefined,true);
+ assert.equal(internal.shadowHistorySha256,result.shadowHistorySha256);
+ assert.equal(internal.privateTrace.history.length,result.last252DisplayDays);
+ assert.equal(internal.privateTrace.symbols.length,9);
  assert.ok(fs.readFileSync(manifestPath).equals(before));
  assert.throws(()=>f.audit('f'.repeat(64)),/R18_SOURCE_SNAPSHOT_CHANGED/);
 });

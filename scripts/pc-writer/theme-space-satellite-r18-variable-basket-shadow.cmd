@@ -22,7 +22,7 @@ if not exist "%~dp0theme-optional-adaptive-r2.mjs" goto file_missing
 if not exist "%~dp0theme-optional-pair-weight-r3.mjs" goto file_missing
 if not exist "%~dp0theme-optional-relative-weight-r4.mjs" goto file_missing
 if not exist "%~dp0theme-shared-spy-readonly-r1.mjs" goto file_missing
-call :verify theme-space-satellite-r18-variable-basket-shadow.mjs 772cf058724347d57495f9151ca650af6147a85385fb58990b5b169b94b9c000
+call :verify theme-space-satellite-r18-variable-basket-shadow.mjs 48aa2da64825e8fd95ee8cc2a00bcf3395964c1342c6eb0fef567d86bef4b43e
 if errorlevel 1 goto hash_mismatch
 call :verify theme-space-satellite-r15-all-etf-score-audit.mjs 8a71a72863cd4b660394b5d33fe209b7284cad8e63ad17edb459e6a4016c09a9
 if errorlevel 1 goto hash_mismatch
