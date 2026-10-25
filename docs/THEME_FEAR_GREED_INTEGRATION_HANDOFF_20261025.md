@@ -121,3 +121,12 @@
 - R8 신규 파일 `scripts/pc-writer/theme-space-satellite-r8-real-audit.mjs`, `.cmd`, `tests/theme-space-satellite-r8-real-audit.test.mjs`, `tests/theme-space-satellite-r8-launcher.test.mjs`. 이미 통합 브랜치에 있던 검증된 R2 계산기/공유 SPY 판독기를 호출하는 **읽기 전용** 엔트리. 저장된 NASA/UFO + 데이터센터 SPY SHA/세션 N/최신 시점/252 표시/비공개 점수만 출력. 단독 NASA 수집처럼 Provider 0, D1 0, Scheduler 0.
 - 로컬 R8 및 원래 산식/공유 SPY 관련 **Node 테스트 5파일 PASS**. R8 Desktop CMD는 소스 6개 SHA256 고정/ASCII+CRLF/기본 E: 경로. Windows PC 실데이터 실행 **미실시**, 현재 `PC_R8_REAL_N_PENDING`, `FINAL_ETF_PAIR_NOT_APPROVED`, `PUBLICATION_NOT_AUTHORIZED`.
 - 다음 작업은 R8 CMD 실제 사용자 실행 후 `SPACE_SATELLITE_R8_REAL_AUDIT_RESULT.txt` 수령. 통과하면 ETF 종목 편중·중복 실증검토 → 최종 조합 승인 → 권리·공개 게이트. PR #714 Draft 유지, main·운영 배포·D1 변경 0, 통합 브랜치 삭제 금지.
+
+## 2026-10-25 R8 PC 실제 우주·위성 계산 및 발행사 holdings 중복
+
+- 사용자 제공 `SPACE_SATELLITE_R8_REAL_AUDIT_RESULT.txt`: 실제 SHA 검증 로컬 가격을 읽어 **UFO 656 / NASA 144 / SPY 706 유효 거래일**, 세 ETF 공통 **144일**, 모두 2026-10-23 최종 관측일. 공유 SPY 11,295 실제 1h 바 재사용. Provider/D1/공개/Scheduler 변경 0.
+- **현재 날짜의 비공개 ADAPTIVE_R2 점수 39.95701**, UFO 63.828% / NASA 36.172%, `isCurrent=true`, `PRIVATE_PRIORITY_PAIR_READY`. 최종 편입/권리/게시 승인 **아님**. 252 표시 구간 중 실제 점수 **29일**, 결측 **223일**. 결측/구간은 임의 채우지 않는다. 한 해 차트 완성 게이트 미통과.
+- 2026-10-23 동시점 공식 보유공시 비교: NASA/UFO 상위 10개 모두에 SpaceX, RocketLab, AST SpaceMobile, Viasat 4종 공통. 4종 한정 `sum(min(UFO_NAV%,NASA_NAV%))=27.57%p` **전체 중복 하한**. 현 가중치의 SpaceX 환산 노출 약 20.219%. NASA는 SPV를 통한 비상장 SpaceX 일부 지분을 원가로 평가할 수 있음. 출처 https://temaetfs.com/nasa , https://www.procureetfs.com/ufo/ .
+- `docs/THEME_SPACE_NINE_ETF_SCREEN_R7_20261025.md`에 PC R8 수치와 4종 교집합, 제한/권리/차트 결측 기록. 기존 산식·가중치·9개 운영 점수/DB·스케줄러 변경 없음.
+- 통합 브랜치 R8 계산기/검증테스트 커밋 `7500fa8a9be23616dda5f7a81d532b22234012fe`의 Node.js CI [#40186637867](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/40186637867) `completed/success`. 이후 문서 커밋의 CI는 별도 구분.
+- 다음 단계: 기존 29/252만 실제 점수인 이유에 대해 UFO-SPY 628일 경계/첫 유효 점수 날짜를 **추가 Provider 없이 저장 데이터로만 확인**. 현재 1년 이력 게이트와 원가격/파생 공개 권리 검증 전 main merge/생산 배포 금지. ETF 최종 조합은 사용자 승인 필요. Draft PR #714 및 통합 브랜치 **보존**.
