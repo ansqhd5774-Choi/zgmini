@@ -3982,4 +3982,10 @@ body .zg-r55-market .zg-r55-shell[data-expanded="false"] article.zg-r55-card>.zg
   letter-spacing:-.55px;
   line-height:20px;
  }
+ .zg-dashboard[data-view="dashboard"] .zg-r55-card-title-link{
+  text-decoration-line:underline;
+  text-decoration-style:dotted;
+  text-decoration-color:rgba(167,196,220,.65);
+  text-underline-offset:2px;
+ }
 }
