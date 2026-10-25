@@ -78,7 +78,20 @@ test('hover tooltip stays compact for one visible series and grows only for mult
  assert.match(css,/\.zg-sector-tooltip:has\(li:nth-child\(2\)\) ul\{grid-template-columns:repeat\(2,minmax\(0,1fr\)\)\}/);
  assert.match(css,/\.zg-sector-tooltip li::before\{content:"";width:6px;height:6px;border-radius:50%;flex:none;background:currentColor\}/);
  assert.match(css,/\.zg-sector-tooltip strong\{flex:none;color:#fff;font-size:14px;/);
- assert.match(css,/\.zg-sector-tooltip p\{margin:0 0 6px;color:#a9c0cf;font-size:10px;/);
+ assert.match(css,/\.zg-sector-tooltip p\{margin:0 0 6px;color:#b8ccd9;font-size:14px;/);
+ assert.match(css,/\.zg-sector-tooltip li span\{[^}]*font-size:14px;/);
  assert.match(chart,/className="zg-sector-held-tooltip zg-sector-tooltip"/);
  assert.match(chart,/className="zg-sector-tooltip" role="status"/);
+});
+
+test('one selected real latest point shows an endpoint score; multi-series and missing values do not',()=>{
+ assert.match(chart,/const currentSeries=shownSeries\.length===1\?shownSeries\[0\]:null;/);
+ assert.match(chart,/const currentRow=visibleRows\.at\(-1\);/);
+ assert.match(chart,/currentSeries&&currentRow&&typeof currentValue==='number'&&Number\.isFinite\(currentValue\)/);
+ assert.match(chart,/currentPoint&&<ReferenceDot key=\{'current-'/);
+ assert.match(chart,/shape=\{<ChartCurrentPoint value=\{currentPoint\.value\}/);
+ assert.match(chart,/const x=axisRight\?cx-width-7:cx\+7;/);
+ assert.match(chart,/currentPoint&&!mobileAxisRight\?58:12/);
+ assert.match(chart,/aria-label=\{`현재 점수 \$\{score\}점/);
+ assert.match(chart,/const extrema=shownSeries\.length===1\?/);
 });
