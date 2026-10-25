@@ -1,3 +1,5 @@
+import InvestorSearchGuide from '../../components/investor-search-guide';
+import {RISK_INVESTOR_SEARCH} from '../../lib/investor-search-content';
 import SiteHeader from "@/components/site-header";
 import DetailInvestorNotes from "../detail-investor-notes";
 import SearchIntentIntro from "../search-intent-intro";
@@ -29,4 +31,5 @@ export default function CreditRiskPage(){return <><SiteHeader/><main className="
  related={[{href:"/liquidity-crisis/",label:"미국 유동성 위기 지표"},{href:"/recession/",label:"미국 경기침체 지표"}]}
  />
  <DetailInvestorNotes topic="credit-risk"/>
+ <InvestorSearchGuide id="investor-search-credit-risk" copy={RISK_INVESTOR_SEARCH['credit-risk']}/>
 </div></main></>}

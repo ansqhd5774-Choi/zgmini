@@ -7,8 +7,8 @@ test('USA and Korea investor intent metadata is page-specific and data-grounded'
  const us=read('app/fear-greed/usa/page.tsx');
  const kr=read('app/fear-greed/korea/page.tsx');
  const guide=read('app/fear-greed/investor-intent-guide.tsx');
- assert.ok(us.includes('CNN 지수·S&P500 투자심리'));
- assert.ok(kr.includes('코스피 투자심리·변동성 추이'));
+ assert.ok(us.includes('CNN 공포지수·미국 증시'));
+ assert.ok(kr.includes('코스피·국내 주식 투자심리'));
  assert.ok(us.includes('<InvestorIntentGuide market="usa"/>'));
  assert.ok(kr.includes('<InvestorIntentGuide market="korea"/>'));
  assert.ok(guide.includes('S&P500·나스닥'));

@@ -16,6 +16,9 @@ try{
   await page.route('**/api/**',route=>route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({status:'UNAVAILABLE',user:null})}));
   await page.goto(base,{waitUntil:'networkidle',timeout:45000});
   assert.equal(educationRequests.length,0,'Dashboard must not request detail education CSS');
+  await page.locator('[data-testid="investor-search-dashboard"]').scrollIntoViewIfNeeded();
+  assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+1),false,'Investor market guide has no horizontal overflow');
+  await page.screenshot({path:`artifacts/fear-greed-education/investor-dashboard-${width}.png`});
   await page.goto(base+'/fear-greed/usa/',{waitUntil:'networkidle',timeout:45000});
   assert.equal(educationRequests.length,1,'Detail requests its education CSS');
   const disclosure=page.locator('details.fg-r2-extended');
@@ -44,11 +47,18 @@ try{
   await page.locator('.zg-fg-korea .zg-fg-intro').waitFor({state:'visible'});
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+1),false,'Korea introduction has no horizontal overflow');
   await page.screenshot({path:`artifacts/fear-greed-education/korea-intro-${width}.png`});
-  for(const route of ['/economic-indicators/employment/','/theme-fear-greed/','/sector-fear-greed/','/guides/fomc/','/inflation/','/about/']){
+  for(const route of ['/economic-indicators/employment/','/theme-fear-greed/','/sector-fear-greed/','/guides/fomc/','/inflation/','/risk-indicators/','/economic-indicators/','/about/']){
    await page.goto(base+route,{waitUntil:'networkidle',timeout:45000});
    assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+1),false,route+' has no horizontal overflow');
    assert.equal(await page.locator('h1').count(),1,route+' has one visible heading');
    assert.ok((await page.locator('h1').innerText()).trim(),route+' nonempty heading');
+   const searchGuide=page.locator('[data-testid^="investor-search-"]');
+   if(await searchGuide.count()){
+    await searchGuide.scrollIntoViewIfNeeded();
+    assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+1),false,route+' investor guide has no overflow');
+    await page.screenshot({path:`artifacts/fear-greed-education/investor-${route.split('/').filter(Boolean).join('-')}-${width}.png`});
+    await page.locator('h1').scrollIntoViewIfNeeded();
+   }
    if(route==='/theme-fear-greed/'){
     const overlap=await page.evaluate(()=>{
      const intro=document.querySelector('.zg-sector-detail-hero p')?.getBoundingClientRect();

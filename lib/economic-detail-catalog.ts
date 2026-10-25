@@ -3,6 +3,7 @@
 export const ECONOMIC_DETAIL_CATALOG=[
   {
     "id": "inflation",
+    "searchTitle": "미국 물가지표 | CPI·PCE·기대인플레이션",
     "slug": "inflation",
     "name": "물가",
     "tags": "CPI·PCE·기대물가",
@@ -13,6 +14,7 @@ export const ECONOMIC_DETAIL_CATALOG=[
   },
   {
     "id": "employment",
+    "searchTitle": "미국 고용지표 | 비농업고용·실업률·실업수당",
     "slug": "employment",
     "name": "고용",
     "tags": "실업률·신규 고용·실업수당",
@@ -23,6 +25,7 @@ export const ECONOMIC_DETAIL_CATALOG=[
   },
   {
     "id": "rates",
+    "searchTitle": "미국 기준금리·국채금리 | 연준 금리·실질금리",
     "slug": "rates",
     "name": "금리",
     "tags": "정책금리·국채금리·실질금리",
@@ -33,6 +36,7 @@ export const ECONOMIC_DETAIL_CATALOG=[
   },
   {
     "id": "credit",
+    "searchTitle": "미국 회사채 지표 | 하이일드·신용시장·채권 변동성",
     "slug": "credit",
     "name": "채권신용",
     "tags": "회사채·신용여건·변동성",
@@ -43,6 +47,7 @@ export const ECONOMIC_DETAIL_CATALOG=[
   },
   {
     "id": "growth",
+    "searchTitle": "미국 경기지표 | 산업생산·신규주문·경기 둔화",
     "slug": "growth",
     "name": "경기",
     "tags": "산업생산·신규주문·사업 활동",
@@ -53,6 +58,7 @@ export const ECONOMIC_DETAIL_CATALOG=[
   },
   {
     "id": "consumption",
+    "searchTitle": "미국 소비지표 | 개인소비지출·실질소비·소득",
     "slug": "consumption",
     "name": "소비",
     "tags": "실질소비·소득·가계 금융여력",
@@ -63,6 +69,7 @@ export const ECONOMIC_DETAIL_CATALOG=[
   },
   {
     "id": "earnings",
+    "searchTitle": "미국 기업 실적 | EPS·매출·영업이익률·현금흐름",
     "slug": "earnings",
     "name": "기업실적",
     "tags": "EPS·매출·이익률·현금흐름",
@@ -73,6 +80,7 @@ export const ECONOMIC_DETAIL_CATALOG=[
   },
   {
     "id": "liquidity",
+    "searchTitle": "미국 유동성 지표 | M2 통화량·은행 준비금·TGA",
     "slug": "liquidity",
     "name": "유동성",
     "tags": "은행 준비금·M2·TGA·ON RRP",
@@ -83,6 +91,7 @@ export const ECONOMIC_DETAIL_CATALOG=[
   },
   {
     "id": "fundFlows",
+    "searchTitle": "미국 펀드 자금흐름 | 자금 유입·유출·환매 압력",
     "slug": "fund-flows",
     "name": "자금흐름",
     "tags": "등록펀드 순유입·환매 압력",
@@ -93,6 +102,7 @@ export const ECONOMIC_DETAIL_CATALOG=[
   },
   {
     "id": "breadth",
+    "searchTitle": "미국 증시 수급·시장 폭 | 상승종목·거래비중",
     "slug": "breadth",
     "name": "수급·폭",
     "tags": "상승종목·거래비중·참여 폭",
@@ -103,6 +113,7 @@ export const ECONOMIC_DETAIL_CATALOG=[
   },
   {
     "id": "dollarFx",
+    "searchTitle": "미국 달러지수 | 달러 강세·약세·환율 환경",
     "slug": "dollar-fx",
     "name": "달러환율",
     "tags": "달러지수·추세·변동성",
@@ -113,6 +124,7 @@ export const ECONOMIC_DETAIL_CATALOG=[
   },
   {
     "id": "commodities",
+    "searchTitle": "국제유가·원자재 지표 | WTI·브렌트유·구리",
     "slug": "commodities",
     "name": "유가원자재",
     "tags": "WTI·Brent·구리·휘발유",

@@ -1,3 +1,5 @@
+import InvestorSearchGuide from '../../components/investor-search-guide';
+import {RISK_INVESTOR_SEARCH} from '../../lib/investor-search-content';
 import SiteHeader from "@/components/site-header";
 import DetailInvestorNotes from "../detail-investor-notes";
 import SearchIntentIntro from "../search-intent-intro";
@@ -25,4 +27,5 @@ export default function AssetBubblePage(){return <><SiteHeader/><main className=
  related={[{href:"/earnings-recession/",label:"기업 실적 침체 지표"},{href:"/credit-risk/",label:"미국 신용 위험 지표"}]}
  />
  <DetailInvestorNotes topic="asset-bubble"/>
+ <InvestorSearchGuide id="investor-search-asset-bubble" copy={RISK_INVESTOR_SEARCH['asset-bubble']}/>
 </div></main></>}

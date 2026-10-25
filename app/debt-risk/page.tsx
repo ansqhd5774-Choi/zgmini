@@ -1,3 +1,5 @@
+import InvestorSearchGuide from '../../components/investor-search-guide';
+import {RISK_INVESTOR_SEARCH} from '../../lib/investor-search-content';
 import SiteHeader from "@/components/site-header";
 import DetailInvestorNotes from "../detail-investor-notes";
 import SearchIntentIntro from "../search-intent-intro";
@@ -23,4 +25,5 @@ export default function DebtRiskPage(){return <><SiteHeader/><main className="mi
  sources={[]}
  related={[{href:"/credit-risk/",label:"미국 신용 위험 지표"},{href:"/liquidity-crisis/",label:"미국 유동성 위기 지표"}]}
  /><DetailInvestorNotes topic="debt-risk"/>
+ <InvestorSearchGuide id="investor-search-debt-risk" copy={RISK_INVESTOR_SEARCH['debt-risk']}/>
 </div></main></>}

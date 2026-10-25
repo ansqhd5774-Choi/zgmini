@@ -1,3 +1,5 @@
+import InvestorSearchGuide from '../../components/investor-search-guide';
+import {RISK_INVESTOR_SEARCH} from '../../lib/investor-search-content';
 import SiteHeader from "@/components/site-header";
 import DetailInvestorNotes from "../detail-investor-notes";
 import SearchIntentIntro from "../search-intent-intro";
@@ -28,4 +30,5 @@ export default function EarningsRecessionPage(){return <><SiteHeader/><main clas
  related={[{href:"/economic-indicators/earnings/",label:"미국 기업 실적(12대 대표 지표)"},{href:"/recession/",label:"미국 경기침체 지표"},{href:"/credit-risk/",label:"미국 신용위험 지표"}]}
 />
 <DetailInvestorNotes topic="earnings-recession"/>
+ <InvestorSearchGuide id="investor-search-earnings-recession" copy={RISK_INVESTOR_SEARCH['earnings-recession']}/>
 </div></main></>}

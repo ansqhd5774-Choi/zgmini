@@ -1,3 +1,5 @@
+import InvestorSearchGuide from '../../components/investor-search-guide';
+import {RISK_INVESTOR_SEARCH} from '../../lib/investor-search-content';
 import SiteHeader from "@/components/site-header";
 import DetailInvestorNotes from "../detail-investor-notes";
 import SearchIntentIntro from "../search-intent-intro";
@@ -23,4 +25,5 @@ export default function SupplyShockPage(){return <><SiteHeader/><main className=
  sources={[]}
  related={[{href:"/inflation/",label:"미국 인플레이션 지표"},{href:"/recession/",label:"미국 경기침체 지표"}]}
  /><DetailInvestorNotes topic="supply-shock"/>
+ <InvestorSearchGuide id="investor-search-supply-shock" copy={RISK_INVESTOR_SEARCH['supply-shock']}/>
 </div></main></>}
