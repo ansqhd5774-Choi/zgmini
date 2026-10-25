@@ -1,5 +1,5 @@
 /**
- * AI investment BOT / stage04 research-input gate (prototype R10).
+ * AI investment BOT / stage04 research-input gate (prototype R11).
  *
  * Automatic read-only retrieval of the existing 9 theme F inputs and an
  * independent official industry observation. Do not silently promote either
@@ -14,6 +14,7 @@ import { fetchLatestOfficialFdaCder } from './fda-cder-official-readonly.mjs';
 import { fetchLatestOfficialCpucAv } from './cpuc-av-official-readonly.mjs';
 import { fetchLatestOfficialIfrRobots } from './ifr-robot-official-readonly.mjs';
 import { fetchLatestOfficialIeaDataCentres, IEA_DATA_CENTRE_REPORT } from './iea-data-centre-official-readonly.mjs';
+import { fetchLatestOfficialEnisaNis2025, ENISA_NIS_2025_RELEASE } from './enisa-nis-official-readonly.mjs';
 
 export const INDUSTRY_CONTRACT = Object.freeze({
   '로봇·자동화': { institution: 'IFR', source: 'https://ifr.org/img/worldrobotics/Executive_Summary_WR_2026_-_Industrial_Robots.pdf', review: '2025_COUNT_ONLY_ROUNDED_YOY_NO_EXACT_HISTORY_AND_LICENSE_REVIEW' },
@@ -22,7 +23,7 @@ export const INDUSTRY_CONTRACT = Object.freeze({
   '원전·SMR': { institution: 'IAEA PRIS', source: 'https://pris.iaea.org/', review: 'STOCK_VS_FLOW_REQUIRES_APPROVAL' },
   '방산': { institution: 'SIPRI', source: 'https://www.sipri.org/about/terms-and-conditions', review: 'COMMERCIAL_RIGHTS_REVIEW' },
   '핀테크': { institution: 'Federal Reserve Financial Services', source: 'https://www.frbservices.org/resources/financial-services/fednow-service-resources/fednow-service-volume-value-statistics/', review: 'FEDNOW_ONLY_PROXY_AND_COMMERCIAL_RIGHTS_REVIEW' },
-  '사이버보안': { institution: 'ENISA', source: 'https://www.enisa.europa.eu/', review: 'SURVEY_COHORT_COMPARABILITY' },
+  '사이버보안': { institution: 'ENISA', source: ENISA_NIS_2025_RELEASE, review: 'SURVEY_COHORT_COMPARABILITY_AND_SPENDING_SHARE_NOT_MARKET_GROWTH' },
   '바이오·신약': { institution: 'FDA CDER', source: 'https://www.fda.gov/media/190705/download', review: 'PINNED_2025_REPORT_REVIEW_NEXT_YEAR_AND_LIMITED_PROXY' },
   '데이터센터·전력': { institution: 'IEA', source: IEA_DATA_CENTRE_REPORT, review: '2025_ESTIMATED_TWH_ROUNDED_YOY_NO_EXACT_2024_OR_ACCELERATION' },
 });
@@ -38,8 +39,9 @@ export async function runInvestmentBotInputGate({
   cpucReader = fetchLatestOfficialCpucAv,
   ifrReader = fetchLatestOfficialIfrRobots,
   ieaReader = fetchLatestOfficialIeaDataCentres,
+  enisaReader = fetchLatestOfficialEnisaNis2025,
 } = {}) {
-  const [fResult, fednowResult, eurostatResult, fdaResult, cpucResult, ifrResult, ieaResult] = await Promise.allSettled([
+  const [fResult, fednowResult, eurostatResult, fdaResult, cpucResult, ifrResult, ieaResult, enisaResult] = await Promise.allSettled([
     (async () => {
       const response = await fetchFn(F_ENDPOINT, {
         signal: AbortSignal.timeout(15000), headers: { accept: 'application/json' },
@@ -56,6 +58,7 @@ export async function runInvestmentBotInputGate({
     cpucReader({ fetchFn }),
     ifrReader({ fetchFn }),
     ieaReader({ fetchFn }),
+    enisaReader({ fetchFn }),
   ]);
 
   const f = fResult.status === 'fulfilled' ? fResult.value : null;
@@ -65,6 +68,7 @@ export async function runInvestmentBotInputGate({
   const cpuc = cpucResult.status === 'fulfilled' ? cpucResult.value : null;
   const ifr = ifrResult.status === 'fulfilled' ? ifrResult.value : null;
   const iea = ieaResult.status === 'fulfilled' ? ieaResult.value : null;
+  const enisa = enisaResult.status === 'fulfilled' ? enisaResult.value : null;
   const expected = Object.keys(INDUSTRY_CONTRACT);
   const themesByName = new Map(f?.themes?.map((theme) => [theme.theme, theme]) ?? []);
   const inputContractValid = f?.status === 'LIVE_F_OBSERVED'
@@ -80,6 +84,7 @@ export async function runInvestmentBotInputGate({
     const cpucObserved = name === '자율주행' && cpuc !== null;
     const ifrObserved = name === '로봇·자동화' && ifr !== null;
     const ieaObserved = name === '데이터센터·전력' && iea !== null;
+    const enisaObserved = name === '사이버보안' && enisa !== null;
     const countObserved = fednowObserved ? fednow : fdaObserved ? fda : cpucObserved ? cpuc
       : ifrObserved ? ifr : null;
     return {
@@ -94,14 +99,18 @@ export async function runInvestmentBotInputGate({
           : fdaObserved ? 'LIVE_SOURCE_HASH_VALIDATED_FIXED_2025_REPORT'
             : cpucObserved ? 'LIVE_ORIGINAL_QUARTERLY_AGGREGATE'
               : ifrObserved ? 'LIVE_SOURCE_HASH_VALIDATED_PARTIAL_2026_REPORT'
-                : ieaObserved ? 'LIVE_ORIGINAL_2026_REPORT_OBSERVED_ESTIMATE' : 'NOT_AUTOMATICALLY_VERIFIED',
+                : ieaObserved ? 'LIVE_ORIGINAL_2026_REPORT_OBSERVED_ESTIMATE'
+                  : enisaObserved ? 'LIVE_ORIGINAL_2025_SURVEY_SHARE_NOT_GROWTH' : 'NOT_AUTOMATICALLY_VERIFIED',
       industryReviewFlag: contract.review,
       industryObservationPeriod: countObserved ? countObserved.observationPeriod
         : ieaObserved ? iea.observationPeriod
+          : enisaObserved ? enisa.observationPeriod
         : eurostatObserved ? String(eurostat.latestAvailableYear) : null,
       industryRawCount: countObserved?.latestRawCount ?? null,
       industryRawTwh: ieaObserved ? iea.latestRawTwh : null,
-      industryRawPercent: eurostatObserved ? eurostat.latestRawPct : null,
+      industryRawPercent: eurostatObserved ? eurostat.latestRawPct : enisaObserved ? enisa.latestRawPct : null,
+      industrySurveyRespondents: enisaObserved ? enisa.surveyRespondents : null,
+      industryMedianEuro: enisaObserved ? enisa.medianCybersecurityEuro : null,
       industryGrowthPct: countObserved?.yoyGrowthPct ?? null,
       industryReportedRoundedGrowthPct: ifrObserved ? ifr.publishedRoundedYoyGrowthPct
         : ieaObserved ? iea.publishedRoundedYoyGrowthPct : null,
@@ -113,7 +122,8 @@ export async function runInvestmentBotInputGate({
           : fdaObserved ? 'FDA_CDER_NOVEL_APPROVALS_NOT_WHOLE_BIOTECH'
             : cpucObserved ? 'CALIFORNIA_WAYMO_DRIVERLESS_ONLY_NOT_GLOBAL_AV'
               : ifrObserved ? 'GLOBAL_INDUSTRIAL_ROBOT_INSTALLATIONS_NOT_SERVICE_OR_OPERATIONAL_STOCK'
-                : ieaObserved ? 'GLOBAL_DATA_CENTRE_ELECTRICITY_NOT_MARKET_REVENUE' : null,
+                : ieaObserved ? 'GLOBAL_DATA_CENTRE_ELECTRICITY_NOT_MARKET_REVENUE'
+                  : enisaObserved ? 'EU_NIS2_SURVEY_IT_BUDGET_SHARE_NOT_GLOBAL_CYBER_MARKET_GROWTH' : null,
       approvedGrowthG: null,
       approvedDislocationD: null,
       approvedAttractivenessM: null,
@@ -123,10 +133,10 @@ export async function runInvestmentBotInputGate({
   });
 
   return {
-    runType: 'INVESTMENT_BOT_STAGE04_INPUT_GATE_R10',
+    runType: 'INVESTMENT_BOT_STAGE04_INPUT_GATE_R11',
     runAtUtc: new Date().toISOString(),
     mode: 'READ_ONLY_RESEARCH_ONLY_NO_TRADE',
-    status: inputContractValid && fednow && eurostat && fda && cpuc && ifr && iea
+    status: inputContractValid && fednow && eurostat && fda && cpuc && ifr && iea && enisa
       ? 'LIVE_INPUT_PARTIAL_INDUSTRY_UNRANKED'
       : 'PARTIAL_OR_FAILED_INPUT_UNRANKED',
     inputContractValid,
@@ -139,7 +149,7 @@ export async function runInvestmentBotInputGate({
     },
     officialIndustry: {
       validatedLiveThemes: Number(Boolean(fednow)) + Number(Boolean(eurostat))
-        + Number(Boolean(fda)) + Number(Boolean(cpuc)) + Number(Boolean(ifr)) + Number(Boolean(iea)),
+        + Number(Boolean(fda)) + Number(Boolean(cpuc)) + Number(Boolean(ifr)) + Number(Boolean(iea)) + Number(Boolean(enisa)),
       expectedThemes: expected.length,
       fednow: {
         state: fednow?.state ?? 'SOURCE_FAILED',
@@ -193,12 +203,26 @@ export async function runInvestmentBotInputGate({
         historicalYoyReferenceCount: iea?.historicalYoyReferenceCount ?? null,
         historicalAccelerationReferenceCount: iea?.historicalAccelerationReferenceCount ?? null,
       },
+      enisaNis: {
+        state: enisa?.state ?? 'SOURCE_FAILED',
+        failureCode: enisaResult.status === 'rejected' ? errorCode(enisaResult.reason) : null,
+        sourcePublished: enisa?.sourcePublished ?? null,
+        observationPeriod: enisa?.observationPeriod ?? null,
+        surveyRespondents: enisa?.surveyRespondents ?? null,
+        surveyLargePct: enisa?.surveyLargePct ?? null,
+        surveySmePct: enisa?.surveySmePct ?? null,
+        dataRefreshMode: enisa?.dataRefreshMode ?? null,
+        rightsState: enisa?.rightsState ?? null,
+        historicalYoyReferenceCount: enisa?.historicalYoyReferenceCount ?? null,
+        historicalAccelerationReferenceCount: enisa?.historicalAccelerationReferenceCount ?? null,
+      },
     },
     themes: rows,
     automatedTradeEnabled: false,
     orderRequests: [],
     nextRequired: [
-      'Automate same-vintage official industry data for the remaining three themes without changing registered metrics.',
+      'Two institutional metrics remain unconnected: IAEA PRIS official Excel GET returned HTTP 403, and SIPRI commercial derivative rights require confirmation. Do not bypass access controls.',
+      'ENISA 2025 EU NIS2 survey reports 9% of respondent IT budgets; do not recast this share as industry growth, or compare unpaired survey cohorts as annual acceleration.',
       'IEA current 2026 report gives 2025 estimated 485 TWh and rounded +17%; keep exact growth and acceleration NULL until comparable same-vintage values are acquired.',
       'IFR 2025 installation count is verified but precise 2024 base and historical YoY/acceleration remain unavailable; do not infer them from rounded 11%.',
       'Review the next annual FDA report explicitly; the validated 2025 report is not a live 2026 observation.',
