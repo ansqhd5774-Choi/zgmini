@@ -51,4 +51,19 @@
 - 데이터 문서: https://getmarkethistory.com/docs/api/reference
 - 배경 보도: Reuters, *Space ETFs booming in anticipation of SpaceX IPO*, 2026-05-22, https://www.reuters.com/legal/transactional/space-etfs-booming-anticipation-spacex-ipo-2026-05-22/
 
-**승인/운영 상태:** `NINE_RESEARCHED / NASA_COLLECTION_SCRIPT_TESTED_LOCAL_MOCK / PC_REAL_NASA_NOT_COLLECTED / ETF_PAIR_NOT_FINAL / NO_SCORE_NO_D1_NO_DEPLOY`.
+## 4. 사용자 PC R7 NASA 수집 성공 증거 — 2026-10-25
+
+- 제출 로그: `SPACE_SATELLITE_R7_NASA_RESULT.txt`.
+- 실제 사용자 실행 결과: `status=PRIVATE_NASA_RAW_COLLECTION_COMPLETE`, `providerCalls=1`, `rawFilesStored=1`, `pages=1`, `complete=true`.
+- 같은 로그에서 `publicWrites=0`, `d1Writes=0`, `schedulerWrites=0`. 결과 파일에 실제 행·가격·유효 거래일 수·manifest SHA는 **없으므로** 임의로 채우지 않는다.
+- 원자료는 PC의 우주 테마 raw manifest에 추가되었다는 collector 결과. 채팅 측에서 PC 파일의 해시·기간·거래일 N을 직접 읽어 검증한 것은 **아니다**.
+- 기존 UFO 656일, 외부 데이터센터·전력의 SPY 11,295 1h 바는 별도 이전 PC 실측 증거에 따라 재사용한다. R6 NASA+SPY CMD 재실행은 여전히 금지.
+
+### 다음 승인 전 검사 R8 — 저장 데이터만 읽기
+
+- `theme-space-satellite-r8-real-audit.mjs`는 기존 신규 테마 R2 감사기를 `sharedSpyThemeId='data-center-power'`로 실행한다.
+- 지정된 6개 JS 파일의 SHA256을 CMD에서 검증한 뒤 실제 우주 NASA/UFO와 데이터센터 SPY manifest/raw의 체크섬을 읽는다. **Provider GET 0**, 원자료/DB·D1·스케줄러 변경 0.
+- 보고서: NASA/UFO/SPY 각 원본 파일·실제 세션·최종 관측일, SPY 공유 출처 SHA, 쌍의 252일 표본·공통 세션·실제 점수/가중치(가능한 경우에만), 권리/최종 승인 false.
+- 보고서의 private score가 존재하더라도 **최종 NASA 편입 확정·운영 산식 승인·파생 지표 게시 권리 확보**를 뜻하지 않는다. NASA 편중·UFO와의 보유 중복을 정량 검토하고 사용자가 최종 조합을 승인해야 한다.
+
+**승인/운영 상태:** `NINE_RESEARCHED / PC_R7_NASA_RAW_ONE_FILE_STORED / PC_R8_ACTUAL_N_AND_PAIR_SCORE_PENDING / ETF_PAIR_NOT_FINAL / RIGHTS_NOT_APPROVED / NO_D1_NO_DEPLOY`.
