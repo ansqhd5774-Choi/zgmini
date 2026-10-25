@@ -263,3 +263,12 @@
 - **합성 fixture 검증과 실제 PC 가격 점수 검증은 다름**. R15 PC 실행·실측 로그 아직 없음. 소프트웨어는 `aggregateScore=null`, `aggregateWeights=null`, `aumWeightsVerified=false`, `publicationAuthorized=false`를 출력한다. 신규 테마 9개 개별 점수를 무근거 동일가중 평균으로 합치지 않으며, 다음 단계에서 최신 AUM·권리·방법을 별도 확인한다.
 - 사용자 다음 동작: Desktop 새 폴더에 `SPACE_SATELLITE_R15_ALL_ETF_SCORE_DESKTOP_20261025.zip`을 해제한 뒤 `theme-space-satellite-r15-all-etf-score-audit.cmd`를 직접 실행. CMD 옆 `SPACE_SATELLITE_R15_ALL_ETF_SCORE_RESULT.txt`를 제출한다. 네트워크 0/PC 데이터 쓰기 0.
 - 상태: `R14_PC_PRIVATE_COLLECTION_SUCCESS / R15_SOURCE_TEST_PASS / R15_PC_PENDING / NO_FINAL_BASKET_CAP / PR_714_DRAFT_NOT_MERGED / NO_RUNTIME_CHANGE`. 메인 병합·운영 배포·D1·DB·스케줄러 변경 0.
+
+## 2026-10-25 R15 PC 9개 실점수 확인 → R16 결측 원인 전수 진단
+
+- 사용자 제출 R15 실측 로그: `PHASE=ALL_CODE_SHA256_VERIFIED`, `PRIVATE_INDIVIDUAL_SCORES_ONLY_NOT_WEIGHTED_NOT_PUBLISHED`, `candidateCount=9`, `currentScoreCount=6`, `watchOrStaleCount=3`, source manifest SHA `1e046a0487548a00231da92da48c6d9fb690e8e95bba64e2071078b02e57f00b`, shared SPY SHA `76dfaca72fd0ded5e648ee15cceca5628288c11463214bd14ede01c2b5c4746e`. 네트워크·원본·운영 쓰기 0.
+- 2026-10-23 실값: UFO 656일/34.88492 (R188), NASA 144/48.90703, WARP 118/60.5265, MARS 162/47.76741, ARKX 706/31.69048 (R188), ROKT 446/44.09211. 신규 ETF는 사용자 승인 R2 적응형 provisional.
+- ORBX 130일·최근 ETF 원본 10/23인데 현재 점수 **null**; 유효 과거 마지막 9/02 **66.99047은 현재 점수로 사용 금지**. DIPR 28일·마지막 10/08, WSPC 15일·마지막 10/16: 40일 미달로 null. 원본 수집 성공과 현시점 R2 점수 가능성을 구분한다.
+- R16 새 안전 코드 `scripts/pc-writer/theme-space-satellite-r16-gap-forensic.mjs`, CMD, 합성 테스트 2개, 문서 `docs/THEME_SPACE_R16_PC_GAP_FORENSIC_20261025.md`. 현존 R2 산식과 사용자 기준 변경 **0**. 뉴욕 15시 유효일의 결측 위치, 최근 21/61/125 관측일 완성도, 잔존 3축 지표와 표본, 시간대별 다른 봉의 존재만 조사. 출처 SHA가 R15 스냅샷과 다르면 BLOCKED; 값 대체/보간/추측 불허.
+- R16 관련 Node 8개 테스트 파일 PASS, Desktop ZIP 9개 파일 SHA·ASCII/CRLF 체크 PASS. **사용자 PC R16 아직 미실행**. 최종 ETF 편입 수 무제한(현재 9개 후보), `aggregateScore=null`, `aumWeightsVerified=false`, `rightsVerified=false`, `publicationAuthorized=false`.
+- 다음 순서: R16 CMD PC 직접 실행 → `SPACE_SATELLITE_R16_GAP_FORENSIC_RESULT.txt` 제출 → ORBX/DIPR/WSPC의 실제 누락 원인 판정 → 별도 최신 ETF AUM·구성 순도·권리 검증 후 최종 조합 가중 적용 검토. GitHub PR #714 Draft 유지, 기존 9개 운영 테마/main/D1/DB/스케줄러/Cloudflare 변경 0.
