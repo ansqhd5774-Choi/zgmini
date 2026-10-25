@@ -18,6 +18,7 @@
 10. `STAGE04_INVESTMENT_BOT_R11_ENISA_LIVE_SURVEY_20261025.md`: **최신 R11 7/9 실측**. ENISA 공식 2025 보도자료에서 EU NIS2 설문 표본 1,080개 기관·IT 예산 대비 사이버보안 지출 9%·중앙값 150만 유로를 매 실행 추출. 연간 산업 성장률이 아니므로 G/D/M 계산에는 사용하지 않음. IAEA 공식 엑셀 HTTP 403, SIPRI 상업 이용권은 보류.
 11. `STAGE04_INVESTMENT_BOT_R12_SOURCE_VINTAGE_AUDIT_20261025.md`: R12 산업 7/9 유지 + 9개 기관 보고서 판본·발행·관측·조회시각 구분 감사. 공식 원문 4개 고정 연차판과 동적 조회 3개를 구분, 최신 연차판 자동 확인이라는 허위 주장 0.
 12. `STAGE04_INVESTMENT_BOT_R13_FDA_CATALOG_EDITION_GUARD_20261025.md`: **최신 R13 7/9 유지 + FDA 공식 승인 연도 목록 직접 조회**. 2026 진행 중 연도 목록을 발견해도 2025 확정 연간 건수와 비교하지 않으며 차기 연차보고서 자동 검증은 계속 `false`. 47/47 테스트·실제 HTTPS 검증, G/D/M·순위·주문 미승인.
+13. `STAGE04_INVESTMENT_BOT_R14_IFR_INDUSTRIAL_PRESS_VINTAGE_GUARD_20261025.md`: **최신 R14 공식 산업 원천 7/9 유지 + IFR 산업용 보고서 보도자료 별도 감시**. IFR 보도자료의 서비스 로봇 2026 발표를 산업용 로봇 2026 연차판과 혼동하지 않음. 뉴스 최신 구간은 전체 연차판 목록이 아니므로 최신 보고서 자동 보증 `false`; 실제 HTTPS 및 52/52 테스트 통과.
 
 ## 작업 원칙
 
