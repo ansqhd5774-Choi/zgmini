@@ -41,8 +41,9 @@ test("title text is visibly actionable, pointer-accessible and keyboard focusabl
 
 test("economic mini charts keep visible dotted guides and separate help positioning",()=>{
  assert.ok(ui.includes("strokeDasharray={value===0||value===100?undefined:'4 4'}"));
- assert.ok(ui.includes("rgba(170,197,220,.64)"));
- assert.ok(ui.includes("rgba(157,184,208,.52)"));
+ assert.ok(ui.includes("rgba(170,197,220,.9)"));
+ assert.ok(ui.includes("rgba(157,184,208,.8)"));
+ assert.ok(ui.includes("strokeWidth={value===0||value===100?1:1.2}"));
  assert.ok(css.includes("EC12 R2: separate the help affordance"));
  assert.ok(css.includes("left:-7px;"));
 });
