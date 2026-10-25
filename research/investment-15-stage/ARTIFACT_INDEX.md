@@ -18,6 +18,7 @@
 | 04단계 최신 R14 IFR 뉴스 판본 가드 | `STAGE04_INVESTMENT_BOT_R14_IFR_INDUSTRIAL_PRESS_VINTAGE_GUARD_20261025.md`; IFR 공식 뉴스 목록에서 산업용 로봇 World Robotics 판본과 서비스 로봇 발표를 카드별로 구분. **목록 가시 구간만 확인**, 최신 전체 판본 자동 보증 없음. 기존 산업 7/9·IFR 2025 설치 603,307대 유지, 52/52 테스트·실제 HTTPS 실측, 원문 HTML 저장 없음 |
 | 04단계 최신 R15 정량 자료 비배타 분류 | `STAGE04_INVESTMENT_BOT_R15_NON_EXCLUSIVE_QUANT_EVIDENCE_20261025.md`; 지정 원천을 실제 재조회해 산업 자료 **7/9**, 기존 F **9/9**, 테마 **9/9 유지**. 서로 다른 조사 기간·대상·반올림으로 FAIL 처리하지 않고 3/2/1/1/2 종류별로 표시. 58/58 테스트, 별도 점수·순위·주문 없음 |
 | 04단계 최신 R16 이력 표본·전년 분모 검산 | `STAGE04_INVESTMENT_BOT_R16_NUMERIC_PROVENANCE_FAIRNESS_20261025.md`; 실시간 F 9/9·산업 7/9. CPUC/FedNow/FDA 3개 출처 같은 원천의 전년 분모를 확인해 YoY 독립 재계산 차이 모두 0%p, 참고 이력 표본량은 감점 없는 정보로 구분. 67/67 테스트, 테마 9/9·주문 0 |
+| 04단계 최신 R17 투자심리·산업 활동 병렬 진단 | `STAGE04_INVESTMENT_BOT_R17_SENTIMENT_INDUSTRY_CONTRAST_20261025.md`; 최신 F 9/9·산업 원천 7/9 동시 조회. 기존 F 25/45/55/75 구간을 *연구 표시*에만 적용해 낮은 F·상승 산업 활동 프록시 3개를 추가 검토 대상으로 표시. 9개 유지·결측 0점 없음·공식 G/D/M·순위·주문 NULL/OFF, 78/78 테스트 |
 | M2 최신 실행 코드 | `m2/` (R25 ZIP에서 복구한 텍스트 원본) |
 | M2 R25 ZIP 전체 | [개인 Library R25 원본](https://chatgpt.com/library?file_id=libfile_cb913f8bf4788191b9a20355b30bab06&account_id=personal), SHA256=`a6e7187e85633f04ed216dcdc0b8ad704564d957c798d0ebaf1c7ddd6e6ea4e9` |
 | M2 R25 원본 PDF 15개 | 위 ZIP의 `scorecards/standards/`; [개인 Library R20 원본 포함판](https://chatgpt.com/library?file_id=libfile_95e62486eaa88191be6b3e4802e43f32&account_id=personal), **GitHub 미게시** |
