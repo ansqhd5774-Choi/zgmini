@@ -9,14 +9,10 @@
 1. `STATUS.md`: 01~15단계별 실제 구현·검증 현황, 최근 실패, 다음 작업.
 2. `INVESTMENT_PROCESS_15_STAGE_PRECISE_IMPLEMENTATION_PLAN_R2_QUANT_20261025.md`: 15단계 전체 계획의 최신 설계 기준. 산식·가중치 미승인 부분을 운영 적용하지 않는다.
 3. `INVESTMENT_15_STAGE_HANDOFF_20261025.md`: 04단계 이전 대화의 승인·금지·주의사항.
-4. **`STAGE04_INVESTMENT_BOT_R7_LIVE_EVIDENCE_20261025.md`**: 최신 자동 투자 봇 입력 연결 — 실제 F 9/9·공식 산업 2/9, 신규 검증 10/10, 권리 게이트·다음 구현.
-5. `stage04/investment-bot-gate-readonly.mjs` 및 `stage04/STAGE04_BOT_READONLY.cmd`: 04단계 자동 원문 읽기·결측/권리 상태 출력. 수동 실행·주문 없음.
-6. `STAGE04_LIVE_F_AND_SOURCE_GATE_R4_20261025.md`: **2026-10-25 현재 공개 HTTP 실측 F 9/9** 및 공식기관 산업 통계·권리·판본 신규 검증. 04단계 최신 실행 위치.
-7. `STAGE04_LIVE_F_READER_R6_20261025.md`: 잠정치 우선 최신 F 자동 선택기 및 **오프라인 5/5·실제 공개 API 9/9 PASS**. `stage04/latest-f-readonly.mjs`는 읽기 전용.
-8. `STAGE04_SENSITIVITY_R5_RESEARCH_ONLY_20261025.md`: FDA·FedNow 두 공식 시계열의 **가중치·표본 민감도 테스트** 및 승인 전 금지사항. `stage04/quant-sensitivity-readonly.mjs`를 Node로 검사함.
-9. `STAGE04_SAME_VINTAGE_VALIDATION_R3_20261025.md`: 앞선 산업 공식 통계 동질성 검산 및 바이오 잠정치 정정.
-10. `ARTIFACT_INDEX.md`: R10~R25 압축 패키지 원본 및 15개 PDF의 외부 보존·SHA256.
-11. `m2/README_R25_NASDAQ_EARNINGS_REPAIR.md`와 `m2/M2_RUN_READONLY.cmd`: 실제 M2 R25 Windows 읽기 전용 패키지 기준.
+4. `STAGE04_SAME_VINTAGE_VALIDATION_R3_20261025.md`: 최신 산업 공식 통계 동질성 검산 및 공탐 F 잠정치 우선 정정.
+5. `ARTIFACT_INDEX.md`: R10~R25 압축 패키지 원본 및 15개 PDF의 외부 보존·SHA256.
+6. `m2/README_R25_NASDAQ_EARNINGS_REPAIR.md`와 `m2/M2_RUN_READONLY.cmd`: 실제 M2 R25 Windows 읽기 전용 패키지 기준.
+7. `STAGE04_INVESTMENT_BOT_R8_FDA_CPUC_LIVE_EVIDENCE_20261025.md`: 최신 R8 공식 산업 원자료 **4/9 실측**, FDA 2025 PDF 판본 검증 및 CPUC 월별 ZIP 집계 범위 조회; 공식 투자 점수·순위·주문 없음.
 
 ## 작업 원칙
 
@@ -33,17 +29,3 @@
 - 본 브랜치의 `m2/`는 **원본 R25 ZIP에서 코드 및 비밀이 아닌 텍스트 산출물만 복원한 아카이브**다. 새로운 Windows R25 실행 성공을 뜻하지 않는다.
 - `m2/scorecards/standards/*.pdf`는 공개 Git에 포함되지 않는다. 사용자가 보유한 R25 ZIP의 같은 상대경로로 압축 해제해야 15/15 원본 무결성 검사를 실행할 수 있다.
 - 다음 작업에서 개인정보·이용권·자격 증명 노출을 피하면서 코드를 선택적으로 갱신한다. `main`의 서비스 기능과 분리한다.
-
-## 이전 산업 통계 이력
-
-- `archive/STAGE04_PRIMARY_SOURCE_RESEARCH_R1_20261025.md`, `archive/STAGE04_OFFICIAL_HISTORY_R2_20261025.md`는 **수정 전 역사 문서**다. R1의 2023 FDA=55 및 +1.09%p 가속은 **혼합 판본 오류로 폐기**되었으며, R3/R4가 현재 진실이다.
-- **다음 실행은 R4의 미완료 공식 통계·민감도 검증에서 시작**한다. 저장된 F 스냅샷을 현재값처럼 재사용하지 않고 `/api/theme-fear-greed`를 새로 읽는다.
-
-**실행 경계:** R6 실시간 F 선택기는 G·M·정식 순위를 계산하지 않는다. 다음 대화에서 가중치 승인 없이 R5 연구 출력이나 R25 선택 JSON을 현재 추천 결과로 승격하지 말 것.
-
-## AI 자동 투자 봇 범위 선언 (R7)
-
-- 최종 목표: 15단계 전체를 출처 기반으로 순차 조사·수치화·반증·추적하는 봇. **현재 자동 입력 검증 04단계 2/9만 실제 공식 원천에 연결**.
-- 읽기 전용 R7 실행: `node research/investment-15-stage/stage04/investment-bot-gate-readonly.mjs`. Windows에서는 같은 경로의 `STAGE04_BOT_READONLY.cmd`를 사용자 CMD에서 실행 가능(Windows 결과 미검증).
-- F 9개는 매 실행마다 기존 공개 API를 재조회, 공식 산업 성장 2개도 해당 공식 원문을 재조회. 산업 미연동 7개는 `null`. 가중치·M·순위·매매는 미승인·비활성.
-- 승인 없는 실거래 주문·브로커 연결·무인 주문은 금지. 13단계 원래 수동 승인 정책 변경 필요 시 사용자가 별도로 결정.
