@@ -4,7 +4,7 @@
 - 저장소: `ansqhd5774-Choi/zgmini`
 - 통합 브랜치: `codex/theme-fear-greed-integration-20261025`
 - 생성 기준 최신 main SHA: `f9312d5069754dc82b4d5a93cc7712dbdac4b640`
-- 상태: `SELECTIVE_PRIVATE_SOURCE_RECOVERED / FIXTURE_TEST_PASS / PC_SPY_EVIDENCE_PENDING / NOT_MERGED / NO_RUNTIME_CHANGE`
+- 상태: `SELECTIVE_PRIVATE_SOURCE_RECOVERED / FIXTURE_TEST_PASS / PC_SPY_RAW_SHA_VERIFIED / CI_PASS / PRIVATE_SPACE_REAL_PRICE_AUDIT_PENDING / NOT_MERGED / NO_RUNTIME_CHANGE`
 - 저장소 `delete_branch_on_merge=false` 확인(2026-10-25). 병합 완료 후에도 작업 브랜치를 **보존**한다.
 - 본 문서는 읽기 전용 감사에 근거한 인수인계다. 설치·PC 데이터 변경·D1 게시·main 병합의 증거가 아니다.
 
@@ -39,7 +39,23 @@
 
 우주 R5가 기록한 `SPY=0`은 `E:/ZGmini/data/themes/space-satellite/raw-manifest.json`이라는 **우주 테마 한정 위치**의 값이다. PC 전체나 기존 9/10번째 테마의 SPY 원본이 없다는 증거가 아니다. R6의 NASA+SPY 신규 수집기는 **실행 중지 유지**한다.
 
-10번째 데이터센터·전력 R4 PC 비공개 검증은 `DTCR/GRID/SPY` 원자료로 관측일 2026-10-23, 점수 12.32143을 산출한 기록이 있으나, **PC 실제 파일의 현재 존재·SHA·가격모드·권리**는 따로 확인해야 한다. 기존 원본을 동일 조건으로 참조할 수 있으면 새로운 SPY GET을 하지 않는다. 증거가 부족하면 `UNVERIFIED`로 남긴다.
+10번째 데이터센터·전력 R4 PC 비공개 검증은 `DTCR/GRID/SPY` 원자료로 관측일 2026-10-23, 점수 12.32143을 산출한 기존 기록이다. 이후 2026-10-25 PC read-only 검증으로 **SPY만** 실원본 SHA·가격모드·관측일을 확인했다. DTCR/GRID 원본·R4 점수 재계산 일치까지 검증한 것은 아니다. 기존 SPY를 같은 관측/가격 계약으로 비공개 참조하므로 SPY 신규 GET을 실행하지 않는다.
+
+## PC 제출 SPY 원본 증거 (2026-10-25)
+
+사용자 제공 `THEME_SPY_SHARED_R1_RESULT.txt` 실제 실행 결과: `RESULT=PRIVATE_SPY_SOURCE_VERIFIED_NO_PROVIDER_CALL`, `status=PRIVATE_SPY_RAW_SHA_VERIFIED_ONLY`.
+
+| 검사항목 | PC 확인값 / 해석 |
+| --- | --- |
+| 원본 테마 | `data-center-power` (Space 자체에 SPY 0개여도 PC 전체 부재가 아님) |
+| manifest SHA256 | `76dfaca72fd0ded5e648ee15cceca5628288c11463214bd14ede01c2b5c4746e` |
+| SPY 원본 | SHA256 검증된 5개 manifest 파일, 파일별 실제 바 무결성·시간 정렬·중복 충돌 검사 PASS |
+| 실제 고유 시간봉 | `11295`개, `2024-01-02T09:00:00Z` ~ `2026-10-23T23:00:00Z` |
+| 모드 | `RAW_UNADJUSTED_1H_NOT_OFFICIAL_CLOSE` (공식 일간 종가 아님) |
+| 권리 | `rightsVerified=false`, `publicationAuthorized=false`; 별도 검증 전 공개·운영 사용 금지 |
+| 부작용 | `providerCalls=0`, `d1Writes=0`, `publicWrites=0`, `schedulerWrites=0` |
+
+검증 완료 범위는 **SPY 비공개 저장원본 존재와 무결성**뿐이다. 252개 일별 benchmark 값, UFO/NASA와 겹치는 실거래일, R188·신규 OR 점수, 10번째 R4 parity, 법적 권리·자동 게시 정상은 아직 실측되지 않았다. 결과 파일에는 저장 가격·비밀값이 없다. 같은 SPY read-only CMD를 다시 요구하지 않는다.
 
 ## 실제 코드 통합 결과 (2026-10-25)
 
@@ -52,8 +68,9 @@
 - 추가 구현: `scripts/pc-writer/theme-shared-spy-readonly-r1.mjs`. 기존 **데이터센터·전력 또는 AI/바이오**의 저장된 SPY manifest와 raw 파일을 SHA256·출처·가격 모드·시간 정렬·실제 bar 검증 후 **비공개 분석에서만** 참조한다. 가격 복사·신규 ETF GET·D1·스케줄러 쓰기 없음. source manifest/원본은 절대 수정하지 않는다.
 - 우주 비공개 검산기는 인수 `sharedSpyThemeId:'data-center-power'`를 **명시했을 때만** SPY를 참조한다. 우주 폴더 자체 SPY와 중복되면 실패하며, 합성 700거래일의 원래 독립 SPY 점수/전체 이력과 0차이 검증. 기존 기본 인수 동작은 유지. 공유 SPY 조합의 `sourceVersion`은 두 manifest provenance가 포함된 별도 해시이며 권리·공개 승인 false.
 - 새로운 테스트 `tests/theme-shared-spy-readonly-r1.test.mjs`과 기존 R2 테스트 확장. 로컬 Node v24에서 `node --test tests/theme-optional-adaptive-r2.test.mjs tests/theme-optional-pair-weight-r3.test.mjs tests/theme-shared-spy-readonly-r1.test.mjs` **3개 테스트 파일 PASS**. 이것은 **합성 fixture 결과**이며 실제 사용자 PC SPY 유효성/권리/운영 PASS가 아니다.
-- 다음 **사용자 CMD 요청**: 브랜치 `scripts/pc-writer/theme-shared-spy-r1-audit.cmd`를 Desktop에 저장해 실행. 기존 `E:\\ZGmini\\data\\themes\\data-center-power\\raw-manifest.json`에서 SPY만 검사한다. Node 실행 환경이 없거나 경로가 다르면 `BLOCKED` 보고, 경로를 추정하거나 원본을 재수집하지 않는다. 결과는 **동일 Desktop 폴더**의 `THEME_SPY_SHARED_R1_RESULT.txt`에 기록. CMD는 GitHub 고정 커밋 `614168b14b547977d335ce90097535a0932d80fc`의 검사 코드만 SHA256 `663d3414fc49231b93f7f42071d8b2e9d219e11f8e50385d63066790e2db6f1d` 검증 후 실행.
-- **미완료:** 사용자 PC 실데이터 readback, NASА 가격/권리 검사, 우주 최종 선정, 공개 feed/D1, 기존 9개 runtime 비회귀 검사, CI 및 main 병합. 현재 PR [#714](https://github.com/ansqhd5774-Choi/zgmini/pull/714)은 Draft.
+- **완료된 CMD:** 2026-10-25 사용자 Desktop `THEME_SPY_SHARED_R1_RESULT.txt` 제출, 데이터센터·전력 SPY 5개 원본 SHA / 11,295 실제 1시간봉 무결성 PASS. 실행 코드는 고정 커밋 `614168b14b547977d335ce90097535a0932d80fc`, 원래 검사 코드 SHA256 `663d3414fc49231b93f7f42071d8b2e9d219e11f8e50385d63066790e2db6f1d`. 재실행 금지(새 원본 갱신 시 별도 변경 근거 필요).
+- **GitHub CI PASS:** 통합 브랜치 커밋 `0ea30a1596c660a003f0aada8e9fe657fe0c508d`의 Node.js CI run [#40184047498](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/40184047498) `completed/success`. 이 후 원장 변경으로 커밋 SHA가 바뀌면 새 HEAD 기준 검증을 다시 구분한다.
+- **미완료:** 우주 UFO/NASA 실데이터와 공유 SPY의 일별 겹침·점수 검증, NASA 권리 검사, 우주 최종 선정, 공개 feed/D1, 기존 9개 PC runtime 비회귀 검사 및 main 병합. 현재 PR [#714](https://github.com/ansqhd5774-Choi/zgmini/pull/714)은 Draft.
 
 ## 통합 실행 작업 순서 (미완료)
 
@@ -63,10 +80,13 @@
 - [x] 통합 작업 원장에 근거 및 미완료 게이트 보존
 - [x] 승인된 R2 비공개 계산기와 우주 후보 계산기·테스트 선택 이식
 - [x] SPY 원본 공유 read-only 어댑터·테스트·Desktop CMD 제작 (fixture PASS, PC 미실행)
-- [ ] 기존 7개 legacy, 8번째 AI, 9번째 바이오, 10번째 데이터센터의 SPY 원본 경로 및 재사용 증빙 표 작성 (우선 데이터센터 PC CMD read-only 검사 필요)
+- [x] 10번째 데이터센터·전력의 SPY 실제 PC SHA/원본/모드/관측일 확인 (5개 SHA-verified, 11,295 hourly); 재사용 비공개 후보 확보
+- [ ] 기존 7개 legacy, 8번째 AI, 9번째 바이오의 SPY 등록·실원본 경로 및 재사용 현황 표 보강 (이미 운영하는 9개 수정 금지)
 - [x] 기존 manifest SHA를 검사하는 공통 SPY read-only **비공개** 참조 어댑터 설계 및 fixture 테스트 (기존 데이터 변경 0); 운영 등록/승인은 미완료
 - [ ] 우주 후보 NASA/기타 ETF 가격 확보 **전** 원본 reuse/rights 검증, NASA만 필요한지 결정
 - [ ] 10/25 승인 OR R2와 비교하여 우주 브랜치의 필요한 구현만 선택적으로 이식하고 경계 테스트
+- [x] 통합 PR Node.js CI run #40184047498 PASS (당시 HEAD `0ea30a1`)
+- [ ] 공유 SPY + 우주 UFO/NASA 실제 PC 일별 유효 세션·score read-only 실측 (추가 SPY GET 금지)
 - [ ] 기존 9개 결과와 PC 원본·D1·스케줄러 영향 0 검증; 신규 테마 실제 PC 결과 검증
 - [ ] 최종 GitHub PR + CI/사용자 승인 gate 통과 후 **main 병합**
 - [ ] 병합된 exact SHA 기록 및 **통합 브랜치 보존** 확인, 이후 새 작업을 같은 원장에 이어서 기록
