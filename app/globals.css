@@ -6,6 +6,8 @@
 /* Fixtures and prose are not runtime utility-class sources. */
 @source not "../tests";
 @source not "../docs";
+/* Preserve the existing catalog's public animation/scroll utility contract. */
+@source inline("scrollbar-thin scrollbar-none scrollbar-gutter-stable scroll-fade-b shimmer animate-in");
 /* Unimported starter UI: guarded by tailwind-runtime-sources-r7.test.mjs. */
 @source not "../components/ui/alert-dialog.tsx";
 @source not "../components/ui/alert.tsx";
