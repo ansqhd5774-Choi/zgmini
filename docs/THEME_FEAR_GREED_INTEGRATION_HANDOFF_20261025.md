@@ -241,3 +241,15 @@
 - 개인 PC 실행용 `SPACE_SATELLITE_R13_EXISTING_RAW_AUDIT_DESKTOP_20261025.zip` (8파일 무결성 압축 검증), `scripts/pc-writer/theme-space-satellite-r13-local-universe-audit.cmd`. 로그는 CMD 옆 `SPACE_SATELLITE_R13_EXISTING_RAW_RESULT.txt`. 사용자 PC에서는 아직 실행 확인 없음.
 - 단위 Node R13/R12/R11/R9 + R13 CMD 5개 테스트 파일 로컬 PASS. R13 PC READ_ONLY 이외 GET/저장/점수 계산/게시/스케줄러/운영 산식 변경 0. 근거 문서: `docs/THEME_SPACE_PC_MANIFEST_R13_20261025.md`.
 - **다음 실행:** 사용자 Windows CMD에서 R13 전종목 read-only audit 결과 제출 → ARKX/ROKT 기존 원본 SHA 상태와 추가 5종 누락 범위 확인 → 필요한 무료 원본만 한정 수집/저장 SHA → SPY 공통 N과 R2 실제 점수 검증. 본 단계에서는 ETF 최종 개수/점수/가중치 또는 배포 승인하지 않는다.
+
+## 2026-10-25 R13 PC 실증 → R14 누락 구간만 추가 수집 준비
+
+- 사용자 제출 R13 실측 PC 로그: `PHASE=ALL_CODE_SHA256_VERIFIED`, `PRIVATE_READ_ONLY_SHA_AND_COMMON_DATES_ONLY`, provider 0, PC data writes 0. 소스 manifest SHA `b4f628d734e61f239c83ebd77c32c3c73e7eaaaf7c09bf260351e730cb861b38`, 공유 SPY SHA `76dfaca72fd0ded5e648ee15cceca5628288c11463214bd14ede01c2b5c4746e`.
+- **ETF 조합 수량 상한 없음.** 9개 모두 후보로 유지; R14의 **6개는 최종 ETF 수가 아니라 R13에서 실제 발견한 누락 원본/기간 수집 대상 수**.
+- 기존 UFO 656 / NASA 144 / ROKT 446 SPY 공통 15시 NY 거래일 SHA 확인 및 2026-10-23까지 일치. **절대 재수집 금지.**
+- ARKX는 494일 보유하나 마지막 2025-12-18: 이후 2025-12-19~2026-10-23만 수집. WARP(5/7~), ORBX(4/15~), MARS(3/5~), DIPR(5/6~), WSPC(7/9~) 원본 없음 → 새 원본 수집. 각 시작일은 R12 실제 무료 API 샘플에서 확인한 기간이다.
+- DIPR 28 / WSPC 15의 R12 실측 NY15 세션은 승인 40일 경계 미달. **데이터 수집 후보 유지**, 점수 미산출/결측 표기. 628일/40일 OR 경로 및 상대 AUM 가중치 **변경 없음**.
+- 새 문서: `docs/THEME_SPACE_R14_MISSING_ONLY_COLLECTION_20261025.md`. 새 안전 도구: `scripts/pc-writer/theme-space-satellite-r14-missing-only.mjs`, `.cmd`; tests R14 collector+launcher. 시작 전 R13 전체 원본 SHA와 공유 SPY SHA 검사, 안전 잠금·별도 체크포인트·호출/원본 크기 제한·402/429 즉시 중단, SHA 고정 CMD. 1회 최대 6개 무료 1h GET, 의도적 수동 실행만; 원시 가격 GitHub 미업로드.
+- 로컬 Node 테스트 관련 **7개 테스트 파일 PASS**; CMD 8개 소스 SHA 일치·CRLF/ASCII 검증 및 Desktop ZIP 9파일 무결성 PASS. **사용자 PC R14 실수집 아직 미실행**.
+- 다음 사용자 작업: R14 ZIP을 Desktop 폴더에 전개 → R14 CMD 수동 실행 → Desktop의 `SPACE_SATELLITE_R14_MISSING_ONLY_RESULT.txt` 제출. `STOP_*` 또는 `BLOCKED`는 이유 확인 전 다시 실행 금지. `CHECKPOINT_READY_TO_MANUALLY_RESUME`이면 같은 CMD만 명시 재실행. 이후 **R15 read-only 9개 후보+공유 SPY 거래일·비공개 점수** 검증을 별도로 개발·판정.
+- 상태: `R14_SOURCE_TEST_PASS / PC_R14_PENDING / NO_FINAL_BASKET_COUNT_CAP / rightsVerified=false / publicationAuthorized=false / NOT_MERGED / NO_PUBLIC_WRITES`. 기존 9개 운영 테마·신규 10번째 점수/가중치/산식/D1/DB/스케줄러/Cloudflare 변경 0. PR #714 Draft, main 병합 금지.
