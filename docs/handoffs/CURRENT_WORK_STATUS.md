@@ -115,3 +115,17 @@
 - 공개 `https://zgmini.kr/` 실제 Chrome 마우스 hover: 에너지 1개 ON일 때 툴팁 `160px × 56.39px`, 날짜 `2026-08-31`, 색상점·에너지·점수 `77.2` 표시, 점수 CSS `14px`. 의료 버튼 추가 선택 시 에너지·의료 둘 모두 ON, 툴팁 항목 2개 / 너비 `320px` 표시됨.
 - 기본값으로 에너지 78 최고점 ON 유지. 단일·다중 툴팁 브라우저 상호작용 **PRODUCTION_VERIFIED**.
 - 주의: 이 작업 완료 후에도 다음 요청은 최신 `main`을 다시 확인하고 영구 작업 브랜치는 삭제하지 않는다.
+
+## 2026-10-25 대시보드 차트 툴팁 14px + 최신 점수 끝점 배지
+
+- 사용자 첨부 `image(20261025-113101).png` 피드백: 툴팁 날짜·항목명이 기존 점수(14px)보다 작음. 단일 선의 최고·최저점과 함께 최신 점수를 차트 오른쪽 끝에 표시하도록 요청.
+- 수정: 툴팁 날짜·섹터명·테마명 모두 `14px`, 점수 `14px` 유지. 한 시리즈만 선택하고 **현재 차트의 최신 관측일에 실제 유효 점수가 있을 때만** 끝점의 색상 점과 점수 배지를 표시. 최근일 결측이면 숫자를 생성하거나 이전 날짜를 오늘처럼 보여주지 않음.
+- 기존 최고·최저점은 단일 선택 상태에서 보존하고, 여러 시리즈 선택 시 최고·최저점과 현재 배지 모두 숨김. 데스크톱에서는 끝점 우측 여유 공간 확보, 모바일 오른쪽 Y축과 충돌하지 않도록 끝점 좌측에 배지 배치. 차트 높이 120px·카드 높이 232px 유지.
+- 변경 3파일: `components/sector-sentiment-chart.tsx`, `components/sector-sentiment-chart.css`, `tests/sector-dashboard-compact-legend-r1.test.mjs`. 산식·데이터·Provider/API·DB·스케줄러·DNS·배포 방식 변경 없음.
+- 장기 작업 브랜치 `codex/zgmini-gpt-workspace-20261025`: 소스 커밋 `17455d3310e6958ca4f7f98493130fc021f9fe29`, CSS `3dbbc94688c220e256e6488813f4985ae858ab15`, 테스트 `08641a703da55019de360aa8f120ad4baa4b112b`.
+- 최소 변경 PR [#719](https://github.com/ansqhd5774-Choi/zgmini/pull/719), 변경 3파일. 회귀 테스트 9개 PASS, GitHub Actions Node.js CI `40189663635` 전체 PASS(build, type, regressions, PC tests).
+- `main` squash 병합 SHA `6747e2b0c4cc880c1ba00653b188835e64538325`. Cloudflare Worker `zgmini-migration-candidate-r5` Git Integration / `main`, Production 버전 `66be1f25` **Ready**.
+- 공개 `https://zgmini.kr/` 브라우저: PC 1280px에서 섹터 에너지만 ON, 최고/최저 라벨 2개, 현재 점수 배지 `78.1`(2026-10-23 관측) 표시. 테마 클라우드·SaaS만 ON, 현재 점수 `65.0`. 툴팁 날짜·섹터명·점수 CSS 모두 `14px` 실측, 단일 폭 160px.
+- PC에서 의료 추가로 에너지+의료 2개 ON 시 섹터 현재 배지와 최고/최저점 모두 숨김 확인.
+- 모바일 390px에서 섹터/테마 배지는 차트 안 우측 끝점 근처에 정상 표시, 오른쪽 Y축 숫자와 충돌 없음. 모바일 툴팁 160px, 날짜·이름·숫자 모두 14px, 화면 가로 넘침 없음. 검증 후 브라우저 임시 viewport 재설정 해제함.
+- 이 범위 **PRODUCTION_VERIFIED**. 다음 요청에서 이미 적용된 범위를 반복 수정하지 말고 GitHub 최신 main과 이 상태를 재확인할 것.
