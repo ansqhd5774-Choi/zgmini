@@ -61,3 +61,13 @@ test('dashboard sector selects the highest latest score once, without overriding
  assert.match(chart,/const toggle=\(id:string\)=>\{if\(compactSectorScores\)dashboardSectorDefaultApplied\.current=true;/);
  assert.doesNotMatch(chart,/const rightmost=legendSeries\.at\(-1\)/);
 });
+
+test('theme and sector OFF legends share the same readable contrast without changing ON styling',()=>{
+ assert.match(css,/\.zg-sector-chart-legend\.zg-sector-compact-legend button\[aria-pressed=false\]\{opacity:1\}/);
+ assert.match(css,/\.zg-sector-legend-score\{opacity:\.55\}/);
+ assert.match(css,/\.zg-sector-legend-color\{opacity:\.9\}/);
+ assert.match(css,/button\.zg-theme-selected-label\.has-score\[aria-pressed=false\]\{opacity:1;background:transparent\}/);
+ assert.match(css,/\.zg-theme-legend-score\{opacity:\.55\}/);
+ assert.match(css,/\.zg-theme-legend-color\{opacity:\.9\}/);
+ assert.match(css,/\.zg-theme-selected-label\{[^}]*background:#102b3b;color:#e2e8f0;/);
+});
