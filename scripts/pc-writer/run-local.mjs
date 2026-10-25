@@ -20,6 +20,8 @@ import {requiresCreditR2DisplayRefresh} from './credit-r2-refresh.mjs';
 import {requiresDebtHistoryRefresh} from './debt-history-refresh.mjs';
 import {prepareStagflation,publishStagflation} from './stagflation-publication.mjs';
 import {validDegradedMarket} from './collection-publication-policy.mjs';
+import {assertCompleteMarket} from './market-publication-safety.mjs';
+import {updateDataAlert} from './local-data-alert.mjs';
 import {prepareLatestStagflation,publishLatestStagflation} from './stagflation-latest-publication.mjs';
 
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../..');
@@ -93,6 +95,8 @@ try{
     domain.previousObservation={date:priorMarket.snapshot_key,currentDate:body.asOfDate,score:old.score};
   }
  }
+ // Validate before replacing even the local current/day snapshot or result file.
+ assertCompleteMarket(body);
  await marketOperationalStore(core).writeScore(body,now);
  save(path.join(base,'local-market-result.json'),body);
  // Rate sentiment is a separate stored-data score; never modify the approved Rate R3 domain.
@@ -224,4 +228,4 @@ try{
  }
  report.status=publish?'VERIFIED':'DRY_RUN_PASS';
 }catch(error){report.status='FAILED';report.error=/^[A-Z0-9_]+$/.test(error.message??'')?error.message:error.code??'LOCAL_WRITER_FAILED';process.exitCode=1;}
-finally{globalThis.fetch=originalFetch;console.warn=originalWarn;hook.deregister();core.close();history.close();save(path.join(base,'local-writer-last-run.json'),report);if(publish)appendPublicationEvent(base,{at:report.at,source,status:report.status,error:report.error??null,recovery:report.recovery?.outcome??null});console.log(JSON.stringify(report));}
+finally{globalThis.fetch=originalFetch;console.warn=originalWarn;hook.deregister();core.close();history.close();save(path.join(base,'local-writer-last-run.json'),report);if(publish){appendPublicationEvent(base,{at:report.at,source,status:report.status,error:report.error??null,recovery:report.recovery?.outcome??null});try{updateDataAlert(base,{key:'publication',failed:report.status!=='VERIFIED'});}catch{console.warn('LOCAL_DATA_ALERT_RECORD_FAILED');}}console.log(JSON.stringify(report));}

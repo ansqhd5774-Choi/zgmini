@@ -4,6 +4,7 @@ import fs from 'node:fs';
 import {DatabaseSync} from 'node:sqlite';
 import {readonly,client} from '../scripts/pc-writer/d1.mjs';
 import {marketPlan} from '../scripts/pc-writer/publish.mjs';
+import {DOMAIN_WEIGHTS} from '../lib/market-score/composite-model-r1.mjs';
 import {readBreadthB1R5StoredScore} from '../lib/market-score/breadth-b1-r5-reader.mjs';
 
 test('readonly transport rejects mutations and stacked statements',()=>{
@@ -19,7 +20,7 @@ test('stored breadth reads existing schema without any initialization write',asy
  assert.equal(out.status,'PARTIAL');assert.deepEqual(out.missing,['B1_R4_STORED_COVERAGE_MISSING']);assert.ok(queries.length>0);
 });
 function database(){const db=new DatabaseSync(':memory:');db.exec('CREATE TABLE market_collection_jobs_v1(job TEXT PRIMARY KEY,lease_id TEXT,lease_until INTEGER); CREATE TABLE market_public_snapshots_v1(snapshot_key TEXT PRIMARY KEY,body TEXT,stored_at INTEGER);');db.prepare('INSERT INTO market_collection_jobs_v1 VALUES(?,?,?)').run('pipeline','owner',Date.now()+60000);db.prepare('INSERT INTO market_public_snapshots_v1 VALUES(?,?,?)').run('current','{}',10);return db;}
-const body={status:'SUCCESS',domains:Array.from({length:12},()=>({status:'PARTIAL'}))};
+const body={status:'SUCCESS',overall:{status:'READY',score:0,trend:[{label:'2026-10-23',value:0}]},domains:DOMAIN_WEIGHTS.map(d=>({id:d.id,status:'READY',score:0}))};
 function execute(db,plan){db.exec('BEGIN');try{for(const item of plan)db.prepare(item.sql).run(...item.params);db.exec('COMMIT');}catch(error){db.exec('ROLLBACK');throw error;}}
 test('publication is guarded by the existing pipeline lease and prior generation',()=>{
  const db=database();assert.throws(()=>execute(db,marketPlan(body,20,'other',10)));
