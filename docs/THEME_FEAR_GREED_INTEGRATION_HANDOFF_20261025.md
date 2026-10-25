@@ -4,7 +4,7 @@
 - 저장소: `ansqhd5774-Choi/zgmini`
 - 통합 브랜치: `codex/theme-fear-greed-integration-20261025`
 - 생성 기준 최신 main SHA: `f9312d5069754dc82b4d5a93cc7712dbdac4b640`
-- 상태: `INTEGRATION_PREPARATION / NOT_MERGED / NO_RUNTIME_CHANGE`
+- 상태: `SELECTIVE_PRIVATE_SOURCE_RECOVERED / FIXTURE_TEST_PASS / PC_SPY_EVIDENCE_PENDING / NOT_MERGED / NO_RUNTIME_CHANGE`
 - 저장소 `delete_branch_on_merge=false` 확인(2026-10-25). 병합 완료 후에도 작업 브랜치를 **보존**한다.
 - 본 문서는 읽기 전용 감사에 근거한 인수인계다. 설치·PC 데이터 변경·D1 게시·main 병합의 증거가 아니다.
 
@@ -41,14 +41,30 @@
 
 10번째 데이터센터·전력 R4 PC 비공개 검증은 `DTCR/GRID/SPY` 원자료로 관측일 2026-10-23, 점수 12.32143을 산출한 기록이 있으나, **PC 실제 파일의 현재 존재·SHA·가격모드·권리**는 따로 확인해야 한다. 기존 원본을 동일 조건으로 참조할 수 있으면 새로운 SPY GET을 하지 않는다. 증거가 부족하면 `UNVERIFIED`로 남긴다.
 
+## 실제 코드 통합 결과 (2026-10-25)
+
+- `main` 직접 확인: `scripts/pc-writer/theme-data-center-power-r1.mjs` 및 `tests/theme-data-center-power-r1.test.mjs`는 이미 **동일 원본 SHA로 존재**. 중복 이식 대신 현재 `main` 소스를 계승한다. 기존 등록부·collector·reader의 최신 main 코드도 우선한다.
+- 우주 브랜치 #711의 검증된 **비공개 신규 테마 계산 모듈** 3개와 테스트 2개를 파일별로 선택 이식했다.
+  - `scripts/pc-writer/theme-optional-adaptive-r2.mjs`
+  - `scripts/pc-writer/theme-optional-pair-weight-r3.mjs`
+  - `scripts/pc-writer/theme-space-satellite-adaptive-r2.mjs`
+  - `tests/theme-optional-adaptive-r2.test.mjs`, `tests/theme-optional-pair-weight-r3.test.mjs`
+- 추가 구현: `scripts/pc-writer/theme-shared-spy-readonly-r1.mjs`. 기존 **데이터센터·전력 또는 AI/바이오**의 저장된 SPY manifest와 raw 파일을 SHA256·출처·가격 모드·시간 정렬·실제 bar 검증 후 **비공개 분석에서만** 참조한다. 가격 복사·신규 ETF GET·D1·스케줄러 쓰기 없음. source manifest/원본은 절대 수정하지 않는다.
+- 우주 비공개 검산기는 인수 `sharedSpyThemeId:'data-center-power'`를 **명시했을 때만** SPY를 참조한다. 우주 폴더 자체 SPY와 중복되면 실패하며, 합성 700거래일의 원래 독립 SPY 점수/전체 이력과 0차이 검증. 기존 기본 인수 동작은 유지. 공유 SPY 조합의 `sourceVersion`은 두 manifest provenance가 포함된 별도 해시이며 권리·공개 승인 false.
+- 새로운 테스트 `tests/theme-shared-spy-readonly-r1.test.mjs`과 기존 R2 테스트 확장. 로컬 Node v24에서 `node --test tests/theme-optional-adaptive-r2.test.mjs tests/theme-optional-pair-weight-r3.test.mjs tests/theme-shared-spy-readonly-r1.test.mjs` **3개 테스트 파일 PASS**. 이것은 **합성 fixture 결과**이며 실제 사용자 PC SPY 유효성/권리/운영 PASS가 아니다.
+- 다음 **사용자 CMD 요청**: 브랜치 `scripts/pc-writer/theme-shared-spy-r1-audit.cmd`를 Desktop에 저장해 실행. 기존 `E:\\ZGmini\\data\\themes\\data-center-power\\raw-manifest.json`에서 SPY만 검사한다. Node 실행 환경이 없거나 경로가 다르면 `BLOCKED` 보고, 경로를 추정하거나 원본을 재수집하지 않는다. 결과는 **동일 Desktop 폴더**의 `THEME_SPY_SHARED_R1_RESULT.txt`에 기록. CMD는 GitHub 고정 커밋 `614168b14b547977d335ce90097535a0932d80fc`의 검사 코드만 SHA256 `663d3414fc49231b93f7f42071d8b2e9d219e11f8e50385d63066790e2db6f1d` 검증 후 실행.
+- **미완료:** 사용자 PC 실데이터 readback, NASА 가격/권리 검사, 우주 최종 선정, 공개 feed/D1, 기존 9개 runtime 비회귀 검사, CI 및 main 병합. 현재 PR [#714](https://github.com/ansqhd5774-Choi/zgmini/pull/714)은 Draft.
+
 ## 통합 실행 작업 순서 (미완료)
 
 - [x] 기존 테마·10번째·우주 및 Shadow 브랜치 범위를 GitHub에서 비교
 - [x] 최신 main 승인 기준/등록부/운영 문서 조사
 - [x] 전용 통합 브랜치를 최신 main에서 생성
 - [x] 통합 작업 원장에 근거 및 미완료 게이트 보존
-- [ ] 기존 7개 legacy, 8번째 AI, 9번째 바이오, 10번째 데이터센터의 SPY 원본 경로 및 재사용 증빙 표 작성 (PC 운영 값은 사용자 PC 진단 필요)
-- [ ] 승인된 등록부 계약에 따라 공통 SPY read-only 참조 어댑터 설계 및 fixture 테스트 (기존 데이터 변경 0)
+- [x] 승인된 R2 비공개 계산기와 우주 후보 계산기·테스트 선택 이식
+- [x] SPY 원본 공유 read-only 어댑터·테스트·Desktop CMD 제작 (fixture PASS, PC 미실행)
+- [ ] 기존 7개 legacy, 8번째 AI, 9번째 바이오, 10번째 데이터센터의 SPY 원본 경로 및 재사용 증빙 표 작성 (우선 데이터센터 PC CMD read-only 검사 필요)
+- [x] 기존 manifest SHA를 검사하는 공통 SPY read-only **비공개** 참조 어댑터 설계 및 fixture 테스트 (기존 데이터 변경 0); 운영 등록/승인은 미완료
 - [ ] 우주 후보 NASA/기타 ETF 가격 확보 **전** 원본 reuse/rights 검증, NASA만 필요한지 결정
 - [ ] 10/25 승인 OR R2와 비교하여 우주 브랜치의 필요한 구현만 선택적으로 이식하고 경계 테스트
 - [ ] 기존 9개 결과와 PC 원본·D1·스케줄러 영향 0 검증; 신규 테마 실제 PC 결과 검증
