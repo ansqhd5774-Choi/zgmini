@@ -1,0 +1,16 @@
+{
+  "schema": "ZGMINI_M2_STAGE4_SELECTION_V1",
+  "selectedTheme": "로봇·자동화",
+  "selectedAt": "2026-10-24T09:42:51.051Z",
+  "purpose": "STAGE5_INDUSTRY_TECH_RESEARCH_ONLY",
+  "source": "https://zgmini.kr/api/theme-fear-greed",
+  "sentiment": {
+    "score": 20.79167,
+    "observationDate": "2026-10-23",
+    "phase": "PROVISIONAL",
+    "marketDateMatch": true
+  },
+  "industryEvidenceStatus": "DATED_ORIGINAL_VERIFIED",
+  "investmentAttractiveness": "NOT_EVALUATED",
+  "noTrade": true
+}
