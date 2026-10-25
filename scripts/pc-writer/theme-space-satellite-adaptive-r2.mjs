@@ -52,11 +52,16 @@ export function auditSpaceSatelliteAdaptive({dataRoot}={}){
   'SPACE_R2_MANIFEST_INVALID');
  const bars=Object.fromEntries(SYMBOLS.map(symbol=>[symbol,new Map()]));
  const fileCounts=Object.fromEntries(SYMBOLS.map(symbol=>[symbol,0]));
+ let ignoredExistingRawEntries=0;
  for(const entry of manifest.files){
   check(typeof entry.path==='string'&&
-   /^raw\/(UFO|NASA|SPY)_[a-f0-9]{64}\.jsonl$/.test(entry.path)&&
+   /^raw\/[A-Z]+_[a-f0-9]{64}\.jsonl$/.test(entry.path)&&
    /^[a-f0-9]{64}$/.test(entry.sha256??'')&&entry.path.endsWith(entry.sha256+'.jsonl'),
    'SPACE_R2_RAW_PATH_INVALID');
+  const symbol=path.basename(entry.path).split('_')[0];
+  // Earlier exploratory ROKT/ARKX files may share this manifest; preserve them
+  // without letting irrelevant coverage block the approved UFO+NASA audit.
+  if(!SYMBOLS.includes(symbol)){ignoredExistingRawEntries++;continue;}
   check(entry.source==='https://getmarkethistory.com'&&entry.priceMode===RAW_MODE&&
    Number.isFinite(Date.parse(entry.collectedAt))&&isDate(entry.observationThrough),
    'SPACE_R2_SOURCE_INVALID');
@@ -64,7 +69,7 @@ export function auditSpaceSatelliteAdaptive({dataRoot}={}){
   check(real.startsWith(home+path.sep),'SPACE_R2_RAW_PATH_ESCAPE');
   const bytes=fs.readFileSync(real);
   check(sha(bytes)===entry.sha256,'SPACE_R2_RAW_HASH_MISMATCH');
-  const symbol=path.basename(entry.path).split('_')[0];fileCounts[symbol]++;
+  fileCounts[symbol]++;
   let previous='';
   for(const line of bytes.toString('utf8').split(/\r?\n/).filter(Boolean)){
    const row=JSON.parse(line);
@@ -141,7 +146,7 @@ export function auditSpaceSatelliteAdaptive({dataRoot}={}){
   status:ready===1?'PRIVATE_PRIORITY_PAIR_READY':'PRIVATE_PRIORITY_PAIR_NOT_READY',
   source:'GETMARKETHISTORY_LOCAL_SHA_VERIFIED',sourceVersion:'GMH_MANIFEST_SHA256_'+sha(manifestBytes),
   priceMode:'UNADJUSTED_15_NY_HOURLY_PROXY_WITH_OFFICIAL_EARLY_CLOSE_12',
-  coverage,benchmark:'SPY',candidates,finalPairSelected:false,publicationAuthorized:false,
+  coverage,ignoredExistingRawEntries,benchmark:'SPY',candidates,finalPairSelected:false,publicationAuthorized:false,
   derivedLicenseVerified:false,individualStocksUsed:0,providerCalls:0,
   publicWrites:0,d1Writes:0,schedulerWrites:0};
 }
