@@ -22,6 +22,23 @@ test('label placement finds clear space without mutating plot dimensions',()=>{
  const [a,b]=labels;assert.ok(Math.abs(a.x-b.x)>=48||Math.abs(a.y-b.y)>=28);
  assert.deepEqual(labels,placeExtremaLabels(points,[{kind:'max',...points[3]},{kind:'min',...points[2]}],plot));
 });
+test('three annotation targets use separated labels and leaders without changing plot size',()=>{
+ const plot={x:28,y:8,width:360,height:108},before={...plot};
+ const points=Array.from({length:60},(_,i)=>({x:28+i*6,y:54+Math.sin(i*.38)*18}));
+ const targets=[{kind:'min',...points[9]},{kind:'max',...points[22]},{kind:'now',...points[59]}];
+ const labels=placeExtremaLabels(points,targets,plot);
+ assert.equal(labels.length,3);
+ assert.deepEqual(plot,before);
+ for(const label of labels){
+  assert.ok(label.x>=plot.x+25&&label.x<=plot.x+plot.width-25);
+  assert.ok(label.y>=10&&label.y<=plot.y+plot.height-14);
+  const target=targets.find(point=>point.kind===label.kind);
+  assert.match(extremaLeader(target,label).path,/^M /);
+ }
+ for(let i=0;i<labels.length;i++)for(let j=i+1;j<labels.length;j++){
+  assert.ok(Math.abs(labels[i].x-labels[j].x)>=56||Math.abs(labels[i].y-labels[j].y)>=32);
+ }
+});
 test('held cursor clamps beyond either end and handles empty or narrow plots',()=>{
  assert.equal(clampedChartIndex(500,100,200,11),10);assert.equal(clampedChartIndex(-10,100,200,11),0);assert.equal(clampedChartIndex(200,100,200,11),5);
  assert.equal(clampedChartIndex(200,100,0,11),null);assert.equal(clampedChartIndex(200,100,200,0),null);assert.equal(clampedChartIndex(200,100,200,1),0);
