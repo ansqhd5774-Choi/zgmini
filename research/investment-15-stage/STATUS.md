@@ -105,6 +105,14 @@
 - **자료 부족을 0으로 채운 사례 0, 자료 부족 탈락 0, 9개 유지, 주문 0건**, 신뢰도 수치 가중치·G/D/M·공식 순위 모두 NULL/OFF.
 - 신규 `industryEvidenceFairness` 및 9개 테스트를 추가해 **67/67 테스트 PASS**(11개 파일). 사용자 Windows CMD 실측 아직 미실행. 보고서 `STAGE04_INVESTMENT_BOT_R16_NUMERIC_PROVENANCE_FAIRNESS_20261025.md`.
 
+## R17 최신 검증 — ETF F와 산업 활동 변화의 병렬 진단 (공식 순위 아님)
+
+- 2026-10-25 실제 HTTPS 원문·현재 공탐 직접 조회: **F 9/9, 산업 지정 공식 기관 7/9**, `INVESTMENT_BOT_STAGE04_INPUT_GATE_R17`, 테마 **9/9 유지**. F 관측일 2026-10-23을 그대로 표시한다.
+- 매 실행 현재 F와 공식 원천별 증가·감소·변화 미상을 병렬 표시하는 `sentimentIndustryContrast` 구현. **낮은 F + 증가 중인 해당 산업 프록시 연구 가설 3개**: 로봇·자동화 F 20.69 / IFR +11%(반올림), 자율주행 F 22.45 / CPUC YoY +88.83%, 데이터센터·전력 F 12.32 / IEA +17%(반올림).
+- **산업 범위/단위 비교 불가능**을 명시. Eurostat 2년간 +7.42%p는 연간 YoY 아님; ENISA IT 예산 비중 9%는 산업 증가율 아님. FDA 감소 -8%+낮은 F도 제외하지 않음. IAEA·SIPRI 미관측 2개는 그대로 보류.
+- 기존 25/45/55/75 F 구간은 **표시용**. 테마 선별을 강제하는 신규 AND 필터 아님. **결측으로 탈락 0·0점 치환 0·공식 G/D/M·순위 NULL·주문 0**, 전체 **78/78 테스트** 통과(12파일). Windows CMD 사용자 PC 실측·운영 배포 아직 없음.
+- 보고서 `STAGE04_INVESTMENT_BOT_R17_SENTIMENT_INDUSTRY_CONTRAST_20261025.md`를 최우선 최신 작업 기록으로 사용. R16은 이력 수·전년 분모 검산 이력으로 보존.
+
 ## 가장 최근 M2 패키지 R25 진척
 
 - 원본: `INVESTMENT_M2_R25_NASDAQ_EARNINGS_REPAIR_20261025(1).zip` (원본 SHA256은 `ARTIFACT_INDEX.md`).
