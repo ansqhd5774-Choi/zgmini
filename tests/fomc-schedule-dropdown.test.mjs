@@ -90,8 +90,31 @@ test('KST date weekday uses local day, even across UTC date boundary',()=>{
  assert.deepEqual(kstDisplayParts('2026-10-28T16:00:00Z'),{date:'10.29',weekday:'목',time:'01:00'});
  assert.deepEqual(kstDisplayParts('2026-10-28T20:00:00Z'),{date:'10.29',weekday:'목',time:'05:00'});
  assert.deepEqual(kstDisplayParts('2026-11-06T13:30:00Z'),{date:'11.06',weekday:'금',time:'22:30'});
- assert.match(file,/<span className="zg-schedule-weekday">\(\{weekday\}\)<\/span>/);
- assert.match(css,/\.zg-schedule-weekday\{color:#ffc43d;font-weight:750\}/);
+ assert.match(file,/<span className="zg-schedule-weekday" data-day=\{weekday\}>\(\{weekday\}\)<\/span>/);
+ const colors=[['일','#ff6a7a'],['월','#83c9ff'],['화','#ffa85e'],['수','#73dcb4'],['목','#f3d46a'],['금','#c3a3ff'],['토','#61d7e1']];
+ assert.equal(new Set(colors.map(([,color])=>color)).size,7);
+ for(const [weekday,color] of colors)assert.ok(css.includes('.zg-schedule-weekday[data-day="'+weekday+'"]{color:'+color+'}'));
  assert.match(css,/grid-template-columns:30px minmax\(0,1fr\) 94px 86px/);
  assert.match(css,/grid-template-columns:28px minmax\(0,1fr\) 94px 86px/);
+});
+
+test('two chevrons show expand/collapse without shifting the existing bar',()=>{
+ assert.match(file,/className="zg-fomc-toggle-icon zg-fomc-toggle-left"/);
+ assert.match(file,/className="zg-fomc-toggle-icon zg-fomc-toggle-right"/);
+ assert.equal((file.match(/d=\{expanded\?'M3 12l9-8 9 8/g)||[]).length,2);
+ assert.match(css,/\.zg-fomc-toggle-icon\{position:absolute;top:50%;transform:translateY\(-50%\)/);
+ assert.match(css,/pointer-events:none/);
+ assert.match(css,/\.zg-fomc-bar\{position:relative;height:24px;min-height:24px/);
+ assert.match(css,/@media\(min-width:1024px\)\{\.zg-fomc-bar\{height:30px;min-height:30px/);
+});
+test('countdown highlights only day digits at D-2 D-1 and D-0',()=>{
+ assert.match(file,/function dayUrgencyClass\(days:number\)/);
+ assert.match(file,/days<=0\?' zg-fomc-day-0':days===1\?' zg-fomc-day-1':days===2\?' zg-fomc-day-2':''/);
+ assert.match(file,/className=\{'zg-schedule-number'\+dayUrgencyClass\(parts\.days\)\}/);
+ assert.match(file,/className=\{'zg-fomc-clock'\+dayUrgencyClass\(Number\(event\.days\)\)\}/);
+ for(const day of [2,1,0]){
+  assert.ok(css.includes('.zg-schedule-number.zg-fomc-day-'+day+'{color:'));
+  assert.ok(css.includes('.zg-fomc-clock.zg-fomc-day-'+day+' .zg-fomc-clock-inner>.zg-fomc-pair:first-child .zg-fomc-digit{color:'));
+ }
+ assert.match(css,/\.zg-schedule-item\{height:37px;min-height:37px;max-height:37px/);
 });
