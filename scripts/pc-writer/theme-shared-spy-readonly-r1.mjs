@@ -3,6 +3,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import {createHash} from 'node:crypto';
+import {fileURLToPath} from 'node:url';
 
 const ALLOWED_SOURCES=new Set(['data-center-power','ai-semiconductor','biotech']);
 const RAW_MODE='RAW_UNADJUSTED_1H_NOT_OFFICIAL_CLOSE';
@@ -68,4 +69,25 @@ export function readVerifiedSharedSpy({dataRoot,sourceTheme}={}){
   bars:[...bars.values()].sort((a,b)=>a.timestamp.localeCompare(b.timestamp)),
   providerCalls:0,d1Writes:0,publicWrites:0,schedulerWrites:0,
   rightsVerified:false,publicationAuthorized:false};
+}
+
+if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.url)){
+ const [mode,sourceTheme,rootArg]=process.argv.slice(2);
+ if(mode!=='--audit'||!ALLOWED_SOURCES.has(sourceTheme)||process.argv.length>5){
+  console.error('USAGE: --audit <data-center-power|ai-semiconductor|biotech> [dataRoot]');
+  process.exitCode=2;
+ }else try{
+  const result=readVerifiedSharedSpy({dataRoot:rootArg??process.env.ZGMINI_DATA_ROOT??
+   'E:/ZGmini/data',sourceTheme});
+  console.log(JSON.stringify({status:'PRIVATE_SPY_RAW_SHA_VERIFIED_ONLY',
+   sourceTheme:result.sourceTheme,manifestSha256:result.manifestSha256,
+   rawFiles:result.rawFiles,actualHourlyBars:result.actualHourlyBars,
+   firstTimestamp:result.bars[0].timestamp,lastTimestamp:result.bars.at(-1).timestamp,
+   priceMode:result.priceMode,rightsVerified:false,publicationAuthorized:false,
+   providerCalls:0,d1Writes:0,publicWrites:0,schedulerWrites:0},null,2));
+ }catch(error){
+  console.error(JSON.stringify({status:'BLOCKED',reason:error.code??'SHARED_SPY_AUDIT_FAILED',
+   providerCalls:0,d1Writes:0,publicWrites:0,schedulerWrites:0}));
+  process.exitCode=1;
+ }
 }
