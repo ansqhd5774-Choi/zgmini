@@ -32,7 +32,7 @@
 .zg-schedule-heading strong{font-size:11px;color:#f1f6fa;white-space:nowrap}
 .zg-schedule-heading span{font-size:10px;color:#92b0c1;white-space:nowrap}
 .zg-schedule-list{max-height:228px;overflow-y:auto;scrollbar-width:thin;scrollbar-color:#385c6e #0b2535}
-.zg-schedule-item{height:37px;min-height:37px;max-height:37px;box-sizing:border-box;display:grid;grid-template-columns:30px minmax(0,1fr) 77px 86px;gap:5px;align-items:center;padding:4px 7px;border-bottom:1px solid #203c4e}
+.zg-schedule-item{height:37px;min-height:37px;max-height:37px;box-sizing:border-box;display:grid;grid-template-columns:30px minmax(0,1fr) 94px 86px;gap:5px;align-items:center;padding:4px 7px;border-bottom:1px solid #203c4e}
 .zg-schedule-item:last-child{border-bottom:0}
 .zg-schedule-kind{display:inline-flex;align-items:center;justify-content:center;height:19px;font-size:10px;border:1px solid #397794;background:#103348;color:#98def7;font-weight:700}
 .zg-schedule-kind.is-earnings{border-color:#7461a7;background:#252240;color:#d3c3ff}
@@ -41,7 +41,8 @@
 .zg-schedule-name-text{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:center}
 .zg-schedule-company-logo{display:block;flex:none;width:14px;height:14px;max-width:14px;max-height:14px;min-width:14px;min-height:14px;overflow:visible}
 .zg-schedule-ticker-fallback{display:inline-flex;flex:none;align-items:center;justify-content:center;width:14px;height:14px;min-width:14px;max-width:14px;background:#24465b;border-radius:2px;color:#cbe0f4;font-size:7px;line-height:14px;font-weight:850;letter-spacing:-.6px}
-.zg-schedule-date{text-align:center;white-space:nowrap;font-size:10px;color:#a6c3d5;font-variant-numeric:tabular-nums}
+.zg-schedule-date{text-align:center;white-space:nowrap;font-size:10px;color:#a6c3d5;font-variant-numeric:tabular-nums;letter-spacing:-.15px}
+.zg-schedule-weekday{color:#ffc43d;font-weight:750}
 .zg-schedule-remaining{justify-self:stretch;display:block;text-align:center;white-space:nowrap;font:800 11px/1.2 Consolas,monospace;color:#ffe09a;background:#0d3044;padding:5px 2px;font-variant-numeric:tabular-nums}
 .zg-schedule-number{color:#ffe09a;font-weight:850}
 .zg-schedule-separator{color:#86b4d1;font-weight:700}
@@ -60,7 +61,7 @@
  .zg-schedule-remaining{font-size:12px}
 }
 @media(max-width:359px){
- .zg-schedule-item{grid-template-columns:28px minmax(0,1fr) 77px 86px;gap:3px;padding:4px 4px}
+ .zg-schedule-item{grid-template-columns:28px minmax(0,1fr) 94px 86px;gap:3px;padding:4px 4px}
  .zg-schedule-name{font-size:10px}
  .zg-schedule-name-text{white-space:normal;word-break:keep-all;overflow-wrap:anywhere;overflow:visible;text-overflow:clip;line-height:12px;max-height:24px;text-align:center}
  .zg-schedule-date{font-size:9px}
