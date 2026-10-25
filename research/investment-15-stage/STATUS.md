@@ -7,7 +7,7 @@
 | 01 | 시장 분석 | ZGMINI 기존 시장 지표를 활용하도록 계획 | EXISTING_INPUT |
 | 02 | 섹터 분석 | ZGMINI 기존 ETF 섹터 공탐 활용 계획 | EXISTING_INPUT |
 | 03 | 테마 분석 | 기존 통과 ETF 테마 9개 유지; 재검증 금지 | EXISTING_INPUT |
-| 04 | 매력 테마 선정 | R2 정량 설계, R3 같은 판본 검산, R11 F 9/9 및 공식 산업 원문 7/9 읽기 전용 직접 조회, M2 R25 선택 JSON은 과거 스냅샷 | DESIGNED / PARTIAL |
+| 04 | 매력 테마 선정 | R2 정량 설계, R3 같은 판본 검산, R12 F 9/9 및 공식 산업 원문 7/9 읽기 전용 직접 조회 + 연차판 최신성 미확인 표시, M2 R25 선택 JSON은 과거 스냅샷 | DESIGNED / PARTIAL |
 | 05 | 성장 산업·기술 선정 | M2 R25 로봇 실측 코드 및 선택 JSON | CODE_PRESENT / NOT_VERIFIED |
 | 06 | 수혜 기업 발굴 | M2 R25 기업 노출·미국 유니버스·로봇·제품 조사 코드 | CODE_PRESENT / NOT_VERIFIED |
 | 07 | 기본 지표 분석 | M2 R25 재무·공식 기업 실적 확인 코드; R24 실측 2/4 부분 확보 | PARTIAL |
@@ -62,6 +62,14 @@
 - G/D/M·순위·주문 **NULL/OFF**, 기존 ETF·가중치·운영·DB·Provider·스케줄러·DNS·main 변경 없음. Windows CMD 사용자 PC 실행은 미검증.
 - `STAGE04_INVESTMENT_BOT_R11_ENISA_LIVE_SURVEY_20261025.md`; R8~R10은 이력으로 보존.
 
+## R12 최신 검증 — 조회 성공과 산업 관측·보고서 발행시점 분리
+
+- 실제 HTTPS 원문 통합 검증: F 9/9, 산업 공식 원천 7/9 **변동 없음**. 고정 연차 원문(FDA·IFR·IEA·ENISA) 4개, 동적 원천(FedNow·Eurostat·CPUC) 3개, 미연결 2개로 **원천 유형을 자동 구분**.
+- `sourceVintageAudit` 9행에 기관·URL·원값 관측기간·확인된 발행일/페이지 수정일/DB 갱신일·원본 판본연도·실제 게이트 종료 시각을 **서로 다른 필드**로 보존한다. 없는 발표일은 채우지 않는다.
+- **오늘 조회 성공 ≠ 최신 연차 보고서 자동 확인**. `latestEditionVerified=false`, `automaticLatestEditionClaims=0`으로 명시. 원문 200 상태를 지표의 오늘자 수치로 둔갑시키지 않는다.
+- 테스트 **42/42 PASS**(7개 파일), 통합 `INVESTMENT_BOT_STAGE04_INPUT_GATE_R12`, `LIVE_INPUT_PARTIAL_INDUSTRY_UNRANKED`. G/D/M·순위·주문은 계속 NULL/OFF, Windows CMD 사용자 PC 실행은 미확인.
+- 파일 `STAGE04_INVESTMENT_BOT_R12_SOURCE_VINTAGE_AUDIT_20261025.md`; R11은 원천 연결 이력으로 유지.
+
 ## 가장 최근 M2 패키지 R25 진척
 
 - 원본: `INVESTMENT_M2_R25_NASDAQ_EARNINGS_REPAIR_20261025(1).zip` (원본 SHA256은 `ARTIFACT_INDEX.md`).
@@ -76,5 +84,5 @@
 1. 이 브랜치와 `m2/` 파일 목록·SHA, 현재 ZGMINI `main` SHA, 사용자 Windows에서 실행 승인된 R25 ZIP의 일치 여부 확인.
 2. 사용자가 CMD에서 R25를 실행한 실제 `M2_LATEST_STATUS.txt`를 확보하면 R25 SERV 수정이 실제 PASS인지 검증.
 3. 04단계 공식 원자료의 동일 판본·관측기간·성장률·가속도를 이어서 검산하고, 실제 최신 유효 **잠정 F** 사용.
-   R11에서 7/9 자동 검증 완료(ENISA는 2025 설문 비중만). IAEA 접근 403·SIPRI 사용권 두 가지를 권한 내에서 해결할 때만 추가 연결.
+   R12에서 7/9 자동 검증 완료(ENISA는 2025 설문 비중만). IAEA 접근 403·SIPRI 사용권 두 가지를 권한 내에서 해결할 때만 추가 연결. 고정 연차 자료의 **차기 판본 자동 확인은 별도 작업**이며, 오늘 원문을 다시 다운로드했다고 새로운 관측치로 간주하지 않는다.
 4. 사용자 승인 이전에 M 랭킹 실운영·03단계 가중치/ETF 변경·주문 및 배포 금지.
