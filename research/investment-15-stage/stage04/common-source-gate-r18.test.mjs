@@ -57,6 +57,15 @@ test('R18 detects redirect off the common source origin', async () => {
   assert.equal(report.F.failureCode, 'F_API_ORIGIN_DRIFT');
 });
 
+test('R18 reports a diagnosed DNS failure instead of implying stale F values are live', async () => {
+  const report = await runCommonSourceStage04({ fetchFn: async () => {
+    throw Object.assign(new TypeError('fetch failed'), { cause: { code: 'EAI_AGAIN' } });
+  } });
+  assert.equal(report.F.failureCode, 'NETWORK_EAI_AGAIN');
+  assert.equal(report.themes.length, 0);
+  assert.equal(report.status, 'F_INPUT_INCOMPLETE_UNRANKED');
+});
+
 test('R18 common-source preflight does not silently lock theme count or promote a static provider flag', () => {
   const f = { status: 'LIVE_F_OBSERVED', themes: [...names, '추가 테마'].map((theme) => ({
     theme, currentInput: 25, observationDate: '2026-10-25', phase: 'BASE_OBSERVED',
