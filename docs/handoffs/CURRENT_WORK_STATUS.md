@@ -70,5 +70,7 @@
 - GitHub Actions Node.js CI 두 번째 실행 `40185305796`: PASS(빌드·타입·회귀 테스트 포함). 첫 번째 CI는 기존 최저점 예상 테스트가 남아 FAIL, 테스트 교정 후 성공.
 - PR #715 `main` 병합 SHA: `4c78ae1fbbd1c303a03c766a3619defed051b8f0`.
 - Cloudflare Worker: `zgmini-migration-candidate-r5`; Git Integration `main`의 해당 SHA 빌드 `2a0f28ee-0dc1-487c-816e-9729e66c8e86` 확인.
-- 최종 기록 시점: 새 Cloudflare 빌드 `Queued` 상태. **아직 Production 검증 완료 아님.** Ready 및 새 배포 버전 확인 후 실제 `zgmini.kr/`에서 `aria-pressed=true` 최고점·수동 선택 유지 검증 필요.
+- Cloudflare 빌드 `2a0f28ee-0dc1-487c-816e-9729e66c8e86`는 `Ready` 완료, 신규 Production 버전 `a0de8307`. 연결 `main`, 커밋 `4c78ae1fbbd1c303a03c766a3619defed051b8f0` 정확히 일치.
+- 실제 `https://zgmini.kr/` 브라우저 검증: 11개 섹터 버튼 중 에너지 `78`만 `aria-pressed=true`; 의료 `69`, 소재 `69`, 통신 `23` 등 나머지 10개는 `false`. 최고점 최초 ON **PRODUCTION_VERIFIED**.
+- 수동 토글 동작 보호는 CI에서 테스트 근거 확인. 실제 운영 화면에서 클릭 후 상태 유지는 별도 상호작용 검증하지 않았으므로 UI 수동 재검증 PASS는 선언하지 않는다.
 - 전용 작업 브랜치는 보존하며 PR이 병합되어도 삭제하지 않는다.
