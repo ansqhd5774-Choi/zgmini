@@ -280,3 +280,14 @@
 - 분석·신규 안전 진단 R17: `scripts/pc-writer/theme-space-satellite-r17-hour-coverage.mjs` 및 `.cmd`, 합성 테스트 2개, `docs/THEME_SPACE_R17_SAME_HOUR_FEASIBILITY_20261025.md`. 동일일 ETF와 SPY **양쪽에 실제 존재**하는 뉴욕 14/13/12/11/10시 봉의 교집합 수와 14시↔15시 실측 가격 및 ETF/SPY 상대가격 차이 분포를 정량화한다. 숫자는 **대체 사용 승인이나 점수 오차 추정이 아니다**.
 - 로컬 Node R13/R15/R16/R17 및 R2/R3/SPY 관련 테스트 **8개 파일 PASS**; R17 Desktop ZIP 8개 MJS+CMD **9개 파일 무결성 PASS**, CMD SHA 핀·ASCII·CRLF 확인. **R17 실 PC 실행 결과는 아직 없음**. 원본 저장 데이터/산식·가중치/기존 9개 운영·D1/DB/스케줄러/main/Cloudflare 변경 0. Draft PR #714 유지, 원본·권리 미확정, 브랜치 보존.
 - 다음 단계: 사용자가 Desktop `SPACE_SATELLITE_R17_HOUR_COVERAGE_DESKTOP_20261025.zip`을 같은 폴더에 해제, `theme-space-satellite-r17-hour-coverage.cmd` 직접 실행 → `SPACE_SATELLITE_R17_HOUR_COVERAGE_RESULT.txt` 제출. 결과를 보고 합법적인 같은시간 프록시 변경의 실익/왜곡/승인 필요성을 판단. **최종 ETF 수 상한 없음**, 정량 증거 없는 결측 채우기·단순 2종 고정 금지.
+
+## 2026-10-25 사용자 R17 PC 실측 PASS → R18 전 ETF 동적 비공개 Shadow
+
+- 사용자 제출 `SPACE_SATELLITE_R17_HOUR_COVERAGE_RESULT.txt` 실제 PC 로그: `PHASE=ALL_CODE_SHA256_VERIFIED`, `RESULT=PRIVATE_SAME_HOUR_FEASIBILITY_ONLY_NO_SCORE_CHANGES`. 9개 ETF·공유 SPY 동일 SHA 스냅샷, 외부 GET·원본/공개/D1/스케줄러 변경 **0**.
+- 2026-10-23 기준 NY15/SPY 유효 9종 UFO656/NASA144/WARP118/ORBX130/MARS162/ARKX706/ROKT446/DIPR28/WSPC15. **6종 현재 개별점수 정상**, ORBX/DIPR/WSPC 3종 현재 결측.
+- 실제 다른 같은시간 ETF+SPY 봉의 *검사용 잠재 관측일*: UFO+50→706, ORBX+4→134(**최근 45일 누락 3건 전부 14시 봉 존재, 최근 21/61/125 세션도 21/61/125 잠재**), ROKT+178→624(잔여 82일 불가능), DIPR+59→87(잔여 32일 불가능), WSPC+26→41(잔여 35일 불가능). 기존 NY15 가격/산식 반영 **0**.
+- ORBX NY14 대 NY15 ETF/SPY 상대가격 **118쌍**, 절대변화 중앙값 **0.42356%**, 90분위 **1.36114%**, 최대 **2.36784%**; 14시를 15시 값으로 동일시 금지. DIPR/WSPC 21일 잠재 관측은 **각 13/21**, 기존 R2 현재점수 PASS 아님. WSPC NY14/15 실측 페어 0개, 왜곡률 미관측.
+- 상세: `docs/THEME_SPACE_R18_VARIABLE_BASKET_SHADOW_20261025.md`. 외부 공급원은 [1h 원본의 `gap_policy=none`](https://getmarkethistory.com/docs/api/reference)을 제공하므로 임의 결측 생성 금지.
+- 차기 R18 신규 검산기 `scripts/pc-writer/theme-space-satellite-r18-variable-basket-shadow.mjs`, Desktop CMD, 2개 테스트. 기존 15시/조기폐장 12시 프록시, R2/R188 실제 개별점수, N≥40 및 같은날 관측을 만족하는 ETF를 **수 제한 없이** 날짜별로 모두 포함. `R4-A` **미승인 제안** 가중치를 비공개로만 적용. 당일 0~1종이면 조합 점수 결측, 2종 이상일 때만 Shadow. 이전 점수/누락 자료 자동 보충·산식 변경 금지.
+- R18 관련 기존 R15/R17/R2/R3/R4/SPY 포함 로컬 Node 테스트 8개 파일 PASS, ZIP 10개 MJS+CMD 11개 파일 무결성 PASS. **R18 사용자 PC 실측 아직 없음**, 권리·최종 구성·R4-A 승인 **없음**. 기존 운영 9개/원가격/D1/DB/scheduler/main/Cloudflare 불변, PR #714 Draft 및 통합 브랜치 보존.
+- 사용자 다음 단계: R18 Desktop ZIP 같은 폴더 압축 해제 → `theme-space-satellite-r18-variable-basket-shadow.cmd` 실행 → 같은 폴더 `SPACE_SATELLITE_R18_VARIABLE_BASKET_RESULT.txt` 제출. 실제 6종 비공개 합성가중/252 표시구간 검사 후 ETF 무상한 구성과 허용 원본·권리 승인 별도 결정.
