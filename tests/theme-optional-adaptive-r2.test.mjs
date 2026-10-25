@@ -182,3 +182,21 @@ test('NASA under 40 real observations remains in candidate list with a missing s
   assert.equal(pair.eligibility.accepted,false);
  }finally{fs.rmSync(root,{recursive:true,force:true});}
 });
+
+test('old ROKT and ARKX manifest entries are preserved but cannot block UFO+NASA inspection',()=>{
+ const root=fs.mkdtempSync(path.join(os.tmpdir(),'space-existing-manifest-'));
+ try{
+  const {home}=fixture(root),manifestPath=path.join(home,'raw-manifest.json');
+  const manifest=JSON.parse(fs.readFileSync(manifestPath,'utf8'));
+  for(const symbol of ['ROKT','ARKX']){
+   const sha256=symbol==='ROKT'?'a'.repeat(64):'b'.repeat(64);
+   manifest.files.push({path:`raw/${symbol}_${sha256}.jsonl`,sha256});
+  }
+  fs.writeFileSync(manifestPath,JSON.stringify(manifest));
+  const audit=auditSpaceSatelliteAdaptive({dataRoot:root});
+  assert.equal(audit.ignoredExistingRawEntries,2);
+  assert.equal(audit.status,'PRIVATE_PRIORITY_PAIR_READY');
+  assert.deepEqual(audit.candidates[0].etfs,['UFO','NASA']);
+  assert.equal(JSON.parse(fs.readFileSync(manifestPath,'utf8')).files.length,5);
+ }finally{fs.rmSync(root,{recursive:true,force:true});}
+});
