@@ -20,10 +20,12 @@ test('calendar includes verified releases and excludes calls',()=>{
  const events=upcomingSchedule(now,null);
  assert.equal(events.length,SCHEDULE_MAX_ITEMS);
  assert.equal(events[0].kind,'실적');
- assert.equal(events[0].name,'버라이즌');
+ assert.equal(events[0].name,'코카콜라');
  assert.ok(events.some(e=>e.name==='FOMC 금리 결정'));
  assert.ok(events.filter(e=>e.kind==='실적').length>3);
  assert.ok(events.every(e=>e.kind!=='실적'||e.marketCapUsdB>=EARNINGS_MARKET_CAP_MIN_USD_B));
+ assert.ok(events.every(e=>e.kind!=='실적'||typeof e.logoDomain==='string'));
+ assert.ok(!events.some(e=>e.kind==='실적'&&e.name==='GE 버노바'));
  assert.deepEqual(events.map(e=>e.at),events.map(e=>e.at).sort());
  assert.ok(events.some(e=>e.name==='알파벳'&&e.estimated));
  // CPI is farther away than the 20 nearest events in late October; it
@@ -57,12 +59,12 @@ test('310px wraps centered four-column names with unchanged 37px height',()=>{
  assert.match(css,/\.zg-schedule-company-logo\{display:block;flex:none;width:14px;height:14px/);
 });
 
-test('earnings market-cap threshold is exactly 100 billion USD',()=>{
- assert.equal(EARNINGS_MARKET_CAP_MIN_USD_B,100);
+test('earnings market-cap threshold is exactly 300 billion USD',()=>{
+ assert.equal(EARNINGS_MARKET_CAP_MIN_USD_B,300);
  assert.equal(SCHEDULE_MAX_ITEMS,20);
- assert.equal(meetsEarningsMarketCap(99.99),false);
- assert.equal(meetsEarningsMarketCap(100),true);
- assert.equal(meetsEarningsMarketCap(101),true);
+ assert.equal(meetsEarningsMarketCap(299.99),false);
+ assert.equal(meetsEarningsMarketCap(300),true);
+ assert.equal(meetsEarningsMarketCap(301),true);
  assert.equal(meetsEarningsMarketCap(null),false);
  assert.equal(meetsEarningsMarketCap(NaN),false);
 });
@@ -71,4 +73,13 @@ test('estimate labels distinguish before-open from after-close reference',()=>{
  assert.match(file,/정규장 개장 09:30 ET 기준 예상 시각/);
  assert.match(file,/정규장 마감 16:00 ET 기준 예상 시각/);
  assert.match(css,/\.zg-schedule-ticker-fallback\{display:inline-flex;flex:none/);
+});
+
+test('major company logo imagery uses the same 14px slot with safe fallback',()=>{
+ assert.match(file,/if\(domain&&!imageFailed\)return <img/);
+ assert.match(file,/className="zg-schedule-company-logo"/);
+ assert.match(file,/width=\{14\} height=\{14\}/);
+ assert.match(file,/onError=\{\(\)=>setImageFailed\(true\)\}/);
+ assert.match(file,/className="zg-schedule-ticker-fallback"/);
+ assert.match(file,/domain=\{item\.logoDomain\}/);
 });
