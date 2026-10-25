@@ -98,10 +98,10 @@ export default function SectorSentimentChart({data=[],series=SECTORS,title='ì„¹í
  }).sort((a,b)=>b.score-a.score||a.index-b.index).map(({sector})=>sector):series;
  useEffect(()=>{
   if(!compactSectorScores||dashboardSectorDefaultApplied.current||!latestSectorRow)return;
-  const rightmost=legendSeries.at(-1);
-  if(!rightmost||typeof latestSectorRow[rightmost.id]!=='number'||!Number.isFinite(latestSectorRow[rightmost.id]))return;
+  const highest=legendSeries.at(0);
+  if(!highest||typeof latestSectorRow[highest.id]!=='number'||!Number.isFinite(latestSectorRow[highest.id]))return;
   dashboardSectorDefaultApplied.current=true;
-  setHidden(new Set(series.filter(({id})=>id!==rightmost.id).map(({id})=>id)));
+  setHidden(new Set(series.filter(({id})=>id!==highest.id).map(({id})=>id)));
  },[compactSectorScores,latestSectorRow,legendSeries,series]);
  const shownSeries=series.filter(s=>!hidden.has(s.id));
  const rankedThemeEntries=showDashboardThemeScores?series.map((item,index)=>{

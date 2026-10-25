@@ -50,3 +50,14 @@ test('sector legend dynamically ranks displayed integer scores high to low witho
  assert.match(chart,/const latestSectorRow=rows\.at\(-1\);/);
  assert.match(chart,/\{series\.map\(sector=>hasProvisional\?\[/);
 });
+
+test('dashboard sector selects the highest latest score once, without overriding manual selection',()=>{
+ assert.match(chart,/const legendSeries=compactSectorScores\?series\.map/);
+ assert.match(chart,/\.sort\(\(a,b\)=>b\.score-a\.score\|\|a\.index-b\.index\)/);
+ assert.match(chart,/const highest=legendSeries\.at\(0\);/);
+ assert.match(chart,/if\(!highest\|\|typeof latestSectorRow\[highest\.id\]!=='number'\|\|!Number\.isFinite\(latestSectorRow\[highest\.id\]\)\)return;/);
+ assert.match(chart,/setHidden\(new Set\(series\.filter\(\(\{id\}\)=>id!==highest\.id\)\.map\(\(\{id\}\)=>id\)\)\);/);
+ assert.match(chart,/if\(!compactSectorScores\|\|dashboardSectorDefaultApplied\.current\|\|!latestSectorRow\)return;/);
+ assert.match(chart,/const toggle=\(id:string\)=>\{if\(compactSectorScores\)dashboardSectorDefaultApplied\.current=true;/);
+ assert.doesNotMatch(chart,/const rightmost=legendSeries\.at\(-1\)/);
+});
