@@ -169,3 +169,12 @@
 - **최대 3개 금지**: 4개·5개·그 이상도 동일한 일반 함수로 처리. 3 ETF 비중 예시만으로 테마당 ETF 수를 제한하거나 코드에 3종 전용 분기를 넣지 않는다.
 - 실제 R4 A는 배열 기반 n≥2(상한 없음), 4/5/10 ETF fixture 보강했고 기존 R2/R3/R8/공유 SPY 포함 5 테스트 파일 PASS. n=5 동등 이력 20%씩, 정상화 100%, 입력 순서 무관.
 - 이전 ‘3개일 때만 차등 강화 B’ 제안은 **미승인/보류**. 정확한 다수 ETF 상대 신뢰도 함수 선정은 모든 n에서 일관되는 정량 설계가 필요. 원장/브랜치에는 이 제약을 기록하고 기존 R3·R8·기존 9개·main·운영을 변경하지 않았다.
+
+
+## 2026-10-25 R9 비공개 실데이터 상대비중 Shadow 준비 및 원본 R8 보존
+
+- 신규 파일만 4개 추가: `scripts/pc-writer/theme-space-satellite-r9-relative-audit.mjs`, `.cmd`, `tests/theme-space-satellite-r9-relative-audit.test.mjs`, `tests/theme-space-satellite-r9-launcher.test.mjs`. 기존 R2/R3/R4/R8 원본과 R8 SHA-pinned Desktop CMD는 **무변경**; 기존 9개 테마, data-root, feed, D1, scheduler, DNS, main 변경 0.
+- R9는 사용자가 이미 확보한 UFO/NASA + data-center-power SPY 원자료를 SHA256로 다시 확인하고 **Provider 0회**로 R8 기존 일별 결과와 R4-A 제안형(ETF 개수 N≥2, 상한 없음)을 날짜별 비교. 기존 R8에서 계산된 날짜는 R4 점수와 오차 0.00001 이내 100% 일치하지 않으면 실패 처리. 새 R9는 N<40과 관측일 미일치 점수를 계속 결측으로 둔다. 사용자가 승인한 252거래일은 **표시창**이며 상장 전/결측 점수를 임의 생성하지 않는다.
+- **합성 fixture 성적만**: UFO 656일 + NASA 144일 + SPY 656일로 R8 **29점 → R9 105점**, 새 실측 가능 일자 76점 증가, 기존 R3 유효 29점 전부 점수 일치. 새 2·3·4·5·10종 ETF 일반형 테스트. 이는 실제 사용자 PC 결과를 의미하지 않으며 실제 데이터 결측·장중 proxy 차이로 숫자가 달라질 수 있다. Node 테스트 총 8개 파일 PASS (R2/R3/R4/R8/SPY/R9).
+- R9 단독 CMD는 기존 E: 경로를 **읽기만** 하고, SHA-pinned 8개 JS 전체가 같은 Desktop 압축해제 폴더에 있어야 실행된다. 로그는 CMD 폴더 `SPACE_SATELLITE_R9_PRIVATE_SHADOW_RESULT.txt` 생성(가격 원본/민감 정보 출력하지 않음). ZIP `SPACE_SATELLITE_R9_PRIVATE_SHADOW_CMD.zip` 압축 9파일 무결성 테스트 PASS. 사용자는 Windows CMD만 실행.
+- R4-A는 최종 상대비중 확정/배포 **미승인**, ETF 최종 편입·보유종목 중복·라이선스/파생 공개 권리 **미확정**. R9 PC 실측 로그 수령·수치검토 이후 별도 승인 게이트. PR #714은 Draft 보존, main 병합 및 Cloudflare 자동배포 **불가**.
