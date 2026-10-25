@@ -83,6 +83,8 @@ jobs:
           done
           tail -n 120 /tmp/zgmini-chat-vite.log
           exit 1
+      - name: Validate introduction before hydration and dismissal preferences
+        run: node tests/about-intro-bootstrap-browser-r6.mjs
       - name: Validate chat UI at 390, 768, 1440 and 1920 px with mocked backend
         run: node tests/community-chat-browser-r1.mjs
       - name: Validate eight-risk navigation and chat overlays at 390, 768, 1440, 1650 and 1920 px
@@ -95,8 +97,6 @@ jobs:
         run: node tests/fear-greed-education-browser-r4.mjs
       - name: Validate dashboard history period changes and newer snapshot refresh
         run: node tests/dashboard-history-browser-r5.mjs
-      - name: Validate introduction before hydration and dismissal preferences
-        run: node tests/about-intro-bootstrap-browser-r6.mjs
       - name: Upload browser UI evidence
         if: always()
         uses: actions/upload-artifact@v4

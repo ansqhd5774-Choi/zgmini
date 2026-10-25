@@ -33,7 +33,6 @@ export default function AboutIntroPopup() {
   useLayoutEffect(() => {
     const dialog = dialogRef.current;
     if (!dialog) return;
-    dialog.dispatchEvent(new Event(INTRO_POLICY.hydratedEvent));
     if (dialog.returnValue === INTRO_POLICY.dismissedValue) return;
     if (!shouldShowIntroduction(window, INTRO_POLICY)) return;
     if (!dialog.open) dialog.showModal();

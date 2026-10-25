@@ -16,11 +16,12 @@ function fixture({path='/', dismissed, until, denied=false}={}) {
   return {window,dialog,checkbox,events,session,local};
 }
 
-test('parser-time script opens without React and hands event ownership over',()=>{
+test('parser-time script opens without React and retains closing across hydration',()=>{
   const f=fixture();vm.runInNewContext(INTRO_BOOTSTRAP_SCRIPT,{window:f.window});
   assert.equal(f.dialog.open,true);assert.equal(f.dialog.opens,1);
-  f.events.get(INTRO_POLICY.hydratedEvent)();
-  assert.equal(f.events.has('click'),false);assert.equal(f.events.has('cancel'),false);
+  assert.equal(f.events.has('click'),true);assert.equal(f.events.has('cancel'),true);
+  f.events.get('click')({target:{closest:()=>true}});
+  assert.equal(f.dialog.open,false);
 });
 
 test('existing session/week/about exclusions apply before hydration; expired week opens',()=>{
