@@ -71,3 +71,14 @@ test('theme and sector OFF legends share the same readable contrast without chan
  assert.match(css,/\.zg-theme-legend-color\{opacity:\.9\}/);
  assert.match(css,/\.zg-theme-selected-label\{[^}]*background:#102b3b;color:#e2e8f0;/);
 });
+
+test('hover tooltip stays compact for one visible series and grows only for multiple series',()=>{
+ assert.match(css,/\.zg-sector-tooltip\{width:max-content;min-width:160px;max-width:min\(220px,calc\(100vw - 32px\)\)/);
+ assert.match(css,/\.zg-sector-tooltip:has\(li:nth-child\(2\)\)\{width:min\(320px,calc\(100vw - 32px\)\);max-width:none\}/);
+ assert.match(css,/\.zg-sector-tooltip:has\(li:nth-child\(2\)\) ul\{grid-template-columns:repeat\(2,minmax\(0,1fr\)\)\}/);
+ assert.match(css,/\.zg-sector-tooltip li::before\{content:"";width:6px;height:6px;border-radius:50%;flex:none;background:currentColor\}/);
+ assert.match(css,/\.zg-sector-tooltip strong\{flex:none;color:#fff;font-size:14px;/);
+ assert.match(css,/\.zg-sector-tooltip p\{margin:0 0 6px;color:#a9c0cf;font-size:10px;/);
+ assert.match(chart,/className="zg-sector-held-tooltip zg-sector-tooltip"/);
+ assert.match(chart,/className="zg-sector-tooltip" role="status"/);
+});
