@@ -1,7 +1,7 @@
 export type InvestorSearchCopy={heading:string;items:{question:string;answer:string}[];links:{href:string;label:string}[]};
 
 export default function InvestorSearchGuide({copy,id}:{copy:InvestorSearchCopy;id:string}){
- return <section className="mt-8 min-w-0 rounded-md border border-[#24485c] bg-[#071e2c] p-4 text-slate-200 sm:p-6" aria-labelledby={`${id}-title`} data-testid={id}>
+ return <section className="col-span-full mt-8 min-w-0 rounded-md border border-[#24485c] bg-[#071e2c] p-4 text-slate-200 sm:p-6" aria-labelledby={`${id}-title`} data-testid={id}>
   <h2 id={`${id}-title`} className="text-lg font-bold leading-7 text-white">{copy.heading}</h2>
   <div className="mt-4 grid gap-4 md:grid-cols-2">
    {copy.items.map(item=><article key={item.question} className="min-w-0"><h3 className="text-sm font-semibold leading-6 text-sky-100">{item.question}</h3><p className="mt-1 text-xs leading-6 text-slate-300 sm:text-sm">{item.answer}</p></article>)}
