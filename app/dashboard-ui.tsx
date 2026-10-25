@@ -311,7 +311,7 @@ export function CompositeMarketSection({items,points,demo,loading}:{items:Summar
        >
         <div className="zg-r55-card-head">
          <span className="zg-r55-card-icon"><Icon size={18} aria-hidden="true"/></span>
-         <h3><a className="zg-r55-card-title-link" href={"/economic-indicators/"+({inflation:"inflation",employment:"employment",rates:"rates",credit:"credit",growth:"growth",consumption:"consumption",earnings:"earnings",liquidity:"liquidity",fundFlows:"fund-flows",breadth:"breadth",dollarFx:"dollar-fx",commodities:"commodities"}[r55DomainIds[index]])+"/"} onClick={event=>event.stopPropagation()} aria-label={m.label+" 상세페이지 열기"} title={m.label+" 상세페이지"}>{m.label}</a></h3>
+         <h3><a className="zg-r55-card-title-link" href={"/economic-indicators/"+({inflation:"inflation",employment:"employment",rates:"rates",credit:"credit",growth:"growth",consumption:"consumption",earnings:"earnings",liquidity:"liquidity",fundFlows:"fund-flows",breadth:"breadth",dollarFx:"dollar-fx",commodities:"commodities"}[r55DomainIds[index]])+"/"} onClick={event=>event.stopPropagation()} aria-label={m.label+" 상세페이지 열기"} title={m.label+" 상세페이지"}>{m.label}<ArrowUpRight className="zg-r55-title-arrow" size={10} aria-hidden="true"/></a></h3>
          <span onClick={e=>e.stopPropagation()}><DashboardTip label={`${m.label} 도움말`}><HelpText copy={v9Breadth?{...HELP[m.label],note:'※ V9는 검증된 5개 구성 지표를 사용합니다. 최신 거래일 자료가 부족하면 마지막 유효 관측 점수를 유지합니다.'}:HELP[m.label]}/></DashboardTip></span>
         </div>
         {notice&&<p data-testid="breadth-unavailable-reason" style={{margin:'6px 0',fontSize:12,lineHeight:1.5,color:'#cbd5e1'}}>{notice.message}</p>}
