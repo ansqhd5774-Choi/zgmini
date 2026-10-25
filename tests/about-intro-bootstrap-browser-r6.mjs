@@ -28,7 +28,11 @@ try{
   const popup=page.locator('#zg-about-intro-dialog');
   const geometry=await popup.evaluate(el=>{const r=el.getBoundingClientRect();return {width:r.width,overflow:r.left<0||r.right>innerWidth+1};});
   assert.ok(geometry.width>0);assert.equal(geometry.overflow,false);
-  await page.screenshot({path:`artifacts/about-intro-bootstrap/before-hydration-${width}.png`});
+  // Playwright's default caret hiding writes an empty style attribute to
+  // inputs, which would itself cause a mismatch in this unhydrated document.
+  const inputStyle=await popup.locator('input').getAttribute('style');
+  await page.screenshot({path:`artifacts/about-intro-bootstrap/before-hydration-${width}.png`,caret:'initial'});
+  assert.equal(await popup.locator('input').getAttribute('style'),inputStyle,'Evidence capture must not mutate unhydrated markup');
   await popup.getByRole('checkbox',{name:'7일 동안 보지 않기'}).check();
   await popup.getByRole('button',{name:'닫기',exact:true}).click();
   assert.equal(await popup.evaluate(el=>el.open),false);
