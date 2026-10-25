@@ -115,6 +115,14 @@ test('failed source does not fabricate score and releases lease',async()=>{
  const r=await runMarketOperationalRefresh({env:{DB:db},store,job:'rates',now,collectors:{rates:()=>{throw Error('secret-url')}},calculate:()=>{throw Error('must not calculate')}});
  assert.deepEqual(r,{status:'ERROR',job:'rates',phase:'COLLECT'});assert.equal(await store.readScore(),null);assert.ok(await store.claim('pipeline',now+1));sqlite.close();
 });
+
+test('growth BLS transport failure retains safe HTTP metadata and releases the lease',async()=>{
+ const {store,db,sqlite}=fixture();
+ const sourceDiagnostic={provider:'BLS',httpStatus:503,attempts:2,registered:true};
+ const r=await runMarketOperationalRefresh({env:{DB:db},store,job:'growth',now,collectors:{growth:()=>{throw Object.assign(Error('GROWTH_R2_BLS_HTTP:503'),{sourceDiagnostic:{...sourceDiagnostic,raw:'PRIVATE'}});}}});
+ assert.equal(r.reason,'GROWTH_R2_BLS_HTTP');assert.deepEqual(r.sourceDiagnostic,sourceDiagnostic);
+ assert.equal(JSON.stringify(r).includes('PRIVATE'),false);assert.equal(await store.readScore(),null);assert.ok(await store.claim('pipeline',now+1));sqlite.close();
+});
 test('scheduled score persistence continues the existing liquidity trend history',async()=>{
  const {store,sqlite}=fixture();
  await store.writeScore({status:'SUCCESS',asOfDate:'2026-09-30',domains:[{id:'liquidity',status:'READY',score:0}]},now);
