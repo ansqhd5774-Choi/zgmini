@@ -492,7 +492,7 @@
       "symbols": ["DTCR", "GRID"],
       "benchmark": "SPY",
       "methodologyVersion": "ETF_ONLY_T40_R20_V40_PAIR50",
-      "status": "PRIVATE_CANDIDATE_PC_RAW_AND_PUBLICATION_PENDING",
+      "status": "PRIVATE_PC_SCORE_VERIFIED_PUBLICATION_AND_TASK_PENDING",
       "rawManifest": "themes/data-center-power/raw-manifest.json",
       "rawAssets": [],
       "repository": {
@@ -500,13 +500,15 @@
         "calculator": "scripts/pc-writer/theme-data-center-power-r1.mjs",
         "cycle": "scripts/pc-writer/theme-data-center-power-cycle-r2.mjs",
         "publisherInstaller": "scripts/pc-writer/theme-data-center-power-publish-r3.mjs",
+        "taskInstaller": "scripts/pc-writer/theme-data-center-power-task-r5.mjs",
         "reader": "worker/theme-data-center-power-r1.mjs"
       },
       "runtime": {"collector": null, "calculator": null, "publisher": null},
       "tasks": ["ZGMINI-PC-Theme-Data-Center-Power (PROPOSED_NOT_REGISTERED)"],
+      "pcEvidence": {"date": "2026-10-25", "sourceSha": "2f0f1a2c1b31e20f9e943e90824885d586448d29", "privateScoreStatus": "PRIVATE_CANDIDATE_VERIFIED_NOT_PUBLISHED", "observationDate": "2026-10-23", "score": 12.32143, "providerCalls": 3, "d1Writes": 0, "schedulerWrites": 0, "artifactSha256": "4fe811c0c5480d3ccb67010ddcd356fb2d5ab0cdace5aadd8c63e5a927a7a4e8", "evidence": "DATA_CENTER_POWER_R4_RESULT.txt"},
       "public": {"table": "public_feed_snapshots_v1", "feedKey": "theme-data-center-power-r1",
         "snapshotKey": "current", "api": "/api/theme-fear-greed"},
-      "blockers": ["PC_MANIFEST_628_SESSIONS_NOT_INSTALLED", "ANONYMOUS_DERIVED_LICENSE_SCOPE_UNCONFIRMED_NEW_THEME_RISK_OPT_IN_REQUIRED", "D1_PUBLICATION_AND_REGULAR_PC_RUN_PENDING"],
+      "blockers": ["ANONYMOUS_DERIVED_LICENSE_SCOPE_UNCONFIRMED_NEW_THEME_RISK_OPT_IN_REQUIRED", "CLOUDFLARE_GIT_DEPLOYMENT_GATE_UNVERIFIED", "D1_PUBLICATION_AND_REGULAR_PC_RUN_PENDING"],
       "followUps": ["EXISTING_9_THEME_LANES_UNCHANGED", "NO_SYNTHETIC_VALUES", "PUBLIC_R3_EXPLICIT_RISK_OPT_IN_ONLY", "D1_CAS_READBACK_NOT_YET_RUN"]
     }
   ]
