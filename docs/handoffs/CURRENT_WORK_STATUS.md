@@ -103,3 +103,15 @@
 - 실제 공개 `https://zgmini.kr/` Chrome DOM 검증: H1 `공포·탐욕`, 아이콘 존재, 도움말 버튼 존재, 위 설명문 정확히 표시. **PRODUCTION_VERIFIED**.
 - Cloudflare 확인 과정에서 별도 Wrangler 수동배포 문구가 일시적으로 보였지만, 이후 최상위 배포 행에서 #717이 `Build / main / Ready`인 것을 확인. 본 작업은 수동 배포·배포설정 변경 없음.
 - 재개 시 이 완료 작업을 반복하지 말고, 최신 `main`과 현재 사용자 요청을 다시 확인.
+
+## 2026-10-25 대시보드 차트 호버 툴팁 디자인 개선
+
+- 사용자 지적: 섹터 차트에 한 항목만 표시돼도 호버 툴팁 너비가 320px로 고정돼 오른쪽이 크게 비고, 날짜·이름·점수 위계가 약함.
+- 적용: `components/sector-sentiment-chart.css`에서 단일 선택 툴팁은 최소 160px의 내용 맞춤형 카드(테두리 반경 6px·작은 날짜·색상점·흰색 14px 점수), 두 항목 이상은 320px 2열로 표시. 차트 TSX·산식·데이터·API·선택 이벤트는 수정하지 않음.
+- 퇴행 방지: `tests/sector-dashboard-compact-legend-r1.test.mjs`에서 CSS 단일/다중 분기 및 기존 TSX 경로 보존 검증 추가. 로컬 관련 테스트 8개 PASS.
+- 영구 작업 브랜치 소스 커밋 `c8ec5c6370f0ab75a87ef427158e9d4a776ee647`, 테스트 커밋 `3de87f329e29db098f443f544edd51db61383a8b`.
+- 최소 변경 PR [#718](https://github.com/ansqhd5774-Choi/zgmini/pull/718): CSS/테스트 2파일만. GitHub Actions Node.js CI `40188611960` SUCCESS. `main` squash SHA `41b04e41c57d3a0ac5a9c701fd9ae2017418a181`.
+- Cloudflare Worker `zgmini-migration-candidate-r5` Git Integration / `main`: 새 Production 버전 `3ba1c28e` **Ready**.
+- 공개 `https://zgmini.kr/` 실제 Chrome 마우스 hover: 에너지 1개 ON일 때 툴팁 `160px × 56.39px`, 날짜 `2026-08-31`, 색상점·에너지·점수 `77.2` 표시, 점수 CSS `14px`. 의료 버튼 추가 선택 시 에너지·의료 둘 모두 ON, 툴팁 항목 2개 / 너비 `320px` 표시됨.
+- 기본값으로 에너지 78 최고점 ON 유지. 단일·다중 툴팁 브라우저 상호작용 **PRODUCTION_VERIFIED**.
+- 주의: 이 작업 완료 후에도 다음 요청은 최신 `main`을 다시 확인하고 영구 작업 브랜치는 삭제하지 않는다.
