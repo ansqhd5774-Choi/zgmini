@@ -1,3 +1,4 @@
+import {marketChartSource} from './helpers/market-chart-source.mjs';
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
@@ -8,7 +9,7 @@ test("K1 extracts USA presentation into an opt-in shared shell", async () => {
   const [shell, panel, chart, insight, css] = await Promise.all([
     read("app/fear-greed-card-shell.tsx"),
     read("app/fear-greed/usa/cnn-panel.tsx"),
-    read("app/market-fear-greed-chart.tsx"),
+    marketChartSource(),
     read("app/market-card-insight.tsx"),
     read("app/globals.css"),
   ]);

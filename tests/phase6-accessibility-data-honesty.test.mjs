@@ -1,3 +1,4 @@
+import {marketChartSource} from './helpers/market-chart-source.mjs';
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
@@ -10,7 +11,7 @@ test("U10 accessibility contracts stay explicit", async () => {
     read("app/market-period-controls.tsx"),
     read("app/globals.css"),
     read("app/market-score-orb.tsx"),
-    read("app/market-fear-greed-chart.tsx"),
+    marketChartSource(),
   ]);
 
   assert.match(panel, /<MarketFearGreedChart/);
@@ -42,7 +43,7 @@ test("U11 rejects fabricated fallback data and derives changes/insight from veri
   const [panel, route, chart] = await Promise.all([
     read("app/fear-greed/usa/cnn-panel.tsx"),
     read("app/api/fear-greed/route.ts"),
-    read("app/market-fear-greed-chart.tsx"),
+    marketChartSource(),
   ]);
 
   assert.doesNotMatch(route, /finica\.io/i);

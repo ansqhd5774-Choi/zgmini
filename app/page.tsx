@@ -11,10 +11,6 @@ import {
   LineChart as LineChartIcon, LogOut, Map as MapIcon, Settings2, ShieldCheck,
   Sparkles, Star, TrendingDown, TrendingUp, UserRound, Zap,
 } from "lucide-react";
-import {
-  Area, AreaChart, CartesianGrid, Line, LineChart, ReferenceLine,
-  ResponsiveContainer, Tooltip, XAxis, YAxis,
-} from "recharts";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -49,6 +45,11 @@ const SheetFooter=lazy(()=>import('@/components/ui/sheet').then(m=>({default:m.S
 const SheetHeader=lazy(()=>import('@/components/ui/sheet').then(m=>({default:m.SheetHeader})));
 const SheetTitle=lazy(()=>import('@/components/ui/sheet').then(m=>({default:m.SheetTitle})));
 const SheetTrigger=lazy(()=>import('@/components/ui/sheet').then(m=>({default:m.SheetTrigger})));
+
+const MiniIndicatorPlot=lazy(()=>import('../components/dashboard-secondary-plots').then(m=>({default:m.MiniIndicatorPlot})));
+const SentimentPlot=lazy(()=>import('../components/dashboard-secondary-plots').then(m=>({default:m.SentimentPlot})));
+const IndicatorPlot=lazy(()=>import('../components/dashboard-secondary-plots').then(m=>({default:m.IndicatorPlot})));
+const SummaryPlot=lazy(()=>import('../components/dashboard-secondary-plots').then(m=>({default:m.SummaryPlot})));
 
 type Direction = "up" | "down" | "flat";
 type Signal = "positive" | "negative" | "neutral";
@@ -448,12 +449,7 @@ function MiniIndicatorChart({ item }: { item: Indicator }) {
   const color = item.signal === "positive" ? "#059669" : item.signal === "negative" ? "#e11d48" : "#64748b";
   return (
     <div className="h-12 w-28" aria-label={`${item.name} 미니 추이, ${item.benchmarkLabel}`}>
-      <ResponsiveContainer width="100%" height="100%">
-        <LineChart data={item.chart} margin={{top:5,right:3,bottom:5,left:3}}>
-          <ReferenceLine y={item.benchmark} stroke="#94a3b8" strokeDasharray="3 3" ifOverflow="extendDomain" />
-          <Line type="monotone" dataKey="value" stroke={color} strokeWidth={2.2} dot={false} isAnimationActive={false} />
-        </LineChart>
-      </ResponsiveContainer>
+      <MiniIndicatorPlot item={item}/>
     </div>
   );
 }
@@ -478,12 +474,7 @@ function SentimentCard({ item, period, kind, favorite, onToggle }: { item: Senti
       <div className="mt-3 grid grid-cols-[54px_minmax(0,1fr)] items-end gap-3">
         <div className="sentiment-score" aria-label={`${item.name} ${stage} ${item.score}점`}><strong className="block text-3xl font-black text-slate-950">{item.score}</strong></div>
         <div className="h-14" aria-label={`${item.name} ${period} 공포 탐욕 추세`}>
-          <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={visible} margin={{top:5,right:2,left:2,bottom:3}}>
-              <defs><linearGradient id={`sentiment-${kind}-${item.name.replace(/[^a-zA-Z0-9가-힣]/g, "")}`} x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={color} stopOpacity={0.28}/><stop offset="100%" stopColor={color} stopOpacity={0.02}/></linearGradient></defs>
-              <Area type="monotone" dataKey="value" stroke={color} strokeWidth={2.2} fill={`url(#sentiment-${kind}-${item.name.replace(/[^a-zA-Z0-9가-힣]/g, "")})`} dot={false} isAnimationActive={false}/>
-            </AreaChart>
-          </ResponsiveContainer>
+          <SentimentPlot visible={visible} color={color} kind={kind} item={item}/>
         </div>
       </div>
       <ScoreRail score={item.score} sentiment label={`${item.name} 공포 탐욕 지수`} />
@@ -740,17 +731,7 @@ function IndicatorDetail({ item, period }: { item: Indicator; period: Period }) 
       </div>
       <div className="grid gap-5 p-5 xl:grid-cols-[minmax(0,1.7fr)_minmax(320px,0.75fr)]">
         <div className="h-72 w-full" aria-label={`${item.name} ${period} 과거 흐름`}>
-          <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={visible} margin={{top:18,right:20,left:-12,bottom:0}}>
-              <defs><linearGradient id={`macro-${item.id}`} x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#2463eb" stopOpacity={0.28}/><stop offset="100%" stopColor="#2463eb" stopOpacity={0.02}/></linearGradient></defs>
-              <CartesianGrid stroke="#cbd5e1" strokeDasharray="3 3" vertical={false}/>
-              <XAxis dataKey="label" axisLine={false} tickLine={false} tick={{fill:"#64748b",fontSize:12}}/>
-              <YAxis axisLine={false} tickLine={false} tick={{fill:"#64748b",fontSize:12}} domain={([min,max]) => [Math.min(Number(min), item.benchmark - Math.max(1, Math.abs(item.benchmark)*0.15)), Math.max(Number(max), item.benchmark + Math.max(1, Math.abs(item.benchmark)*0.15))]}/>
-              <ReferenceLine y={item.benchmark} stroke="#e11d48" strokeWidth={1.5} strokeDasharray="5 4" ifOverflow="extendDomain" label={{value:`기준 ${item.benchmark}`,position:"insideTopRight",fill:"#be123c",fontSize:12}}/>
-              <Tooltip formatter={(value) => [`${value} ${item.unit}`, item.name]} contentStyle={{borderRadius:0,border:"1px solid #94a3b8",boxShadow:"0 8px 24px rgba(15,35,65,.12)"}}/>
-              <Area type="monotone" dataKey="value" stroke="#2463eb" strokeWidth={2.8} fill={`url(#macro-${item.id})`} activeDot={{r:5}}/>
-            </AreaChart>
-          </ResponsiveContainer>
+          <IndicatorPlot visible={visible} item={item}/>
         </div>
         <div>
           <div className="grid grid-cols-3 gap-px border border-slate-300 bg-slate-300">
@@ -783,11 +764,7 @@ function SummaryMiniChart({ data, period, score, label }: { data: ChartPoint[]; 
   const visible = getVisibleSeries(data, period);
   return (
     <div className="mt-3 h-12 w-full" aria-label={`${label} ${period} 미니 차트`}>
-      <ResponsiveContainer width="100%" height="100%">
-        <AreaChart data={visible} margin={{top:4,right:1,left:1,bottom:2}}>
-          <Area type="monotone" dataKey="value" stroke={color} strokeWidth={2.4} fill={color} fillOpacity={0.1} dot={false} isAnimationActive={false}/>
-        </AreaChart>
-      </ResponsiveContainer>
+      <SummaryPlot visible={visible} color={color}/>
     </div>
   );
 }

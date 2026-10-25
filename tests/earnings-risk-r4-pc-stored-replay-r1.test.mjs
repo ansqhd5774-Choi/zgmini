@@ -1,3 +1,4 @@
+import {marketChartSource} from './helpers/market-chart-source.mjs';
 import test from "node:test";
 import assert from "node:assert/strict";
 import {readFileSync} from "node:fs";
@@ -89,7 +90,7 @@ test("actual eight-risk PC bridge is used before diagnostics without affecting t
 
 test("mature quarter chart makes missing Q4 explicit without inventing a score",()=>{
  const panel=readFileSync("app/earnings-recession/earnings-risk-only-panel.tsx","utf8");
- const chart=readFileSync("app/market-fear-greed-chart.tsx","utf8");
+ const chart=marketChartSource();
  const bridge=readFileSync("lib/market-score/earnings-recession-stored-r4-pc-r1.mjs","utf8");
  assert.match(bridge,/Date\.parse\(frame\.end\+"T00:00:00Z"\)/);
  assert.match(bridge,/periodEnd<=frame\.end/);

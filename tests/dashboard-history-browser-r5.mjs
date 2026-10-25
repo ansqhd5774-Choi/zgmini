@@ -14,12 +14,17 @@ try{
  for(const width of [390,1440]){
   const page=await browser.newPage({viewport:{width,height:900}});
   let revision=1;
+  const modules=[];
+  page.on('request',request=>modules.push(new URL(request.url()).pathname));
   const errors=[];
   page.on('pageerror',e=>errors.push(e.message));
   await page.route('https://**',route=>route.abort());
   await page.route('**/api/**',route=>{
    const path=new URL(route.request().url()).pathname;
-   const body=path==='/api/market-score'?snapshot(revision):path==='/api/session'?{user:null}:path==='/api/market-data'?{status:'fallback',indicators:{},summary:[]}:{status:'UNAVAILABLE'};
+   const body=path==='/api/market-score'?snapshot(revision):path==='/api/fear-greed'?{
+    status:'verified',score:21,rating:'공포',observedAt:'2026-10-24T12:00:00Z',
+    history:snapshot(1).overall.trend.map(p=>({date:p.label,score:p.value})),
+   }:path==='/api/session'?{user:null}:path==='/api/market-data'?{status:'fallback',indicators:{},summary:[]}:{status:'UNAVAILABLE'};
    return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(body)});
   });
   await page.goto(base,{waitUntil:'networkidle',timeout:45000});
@@ -28,11 +33,13 @@ try{
   assert.equal(await page.locator('.zg-r55-summary-mini-chart .recharts-responsive-container').count(),0,'Covered summary does not initialize Recharts');
   assert.equal(await page.locator('.cnn-history-chart-hitbox .recharts-responsive-container').count(),0,'Covered market charts do not initialize Recharts');
   assert.equal(await page.locator('#strength .recharts-wrapper').count(),0,'Covered secondary charts do not mount');
+  assert.deepEqual(modules.filter(p=>/dashboard-summary-chart|market-fear-greed-chart-renderer|dashboard-secondary-plots|korea-composite-plot/.test(p)),[],'Covered chart renderer modules are not requested');
   await page.screenshot({path:`artifacts/dashboard-history/introduction-${width}.png`,caret:'initial'});
   await intro.getByRole('button',{name:'닫기',exact:true}).click();
   await intro.waitFor({state:'hidden'});
   const curve=page.locator('.zg-r55-summary-chart path.recharts-area-curve');
   await curve.waitFor({state:'visible'});
+  await page.locator('.usa-target-card path.recharts-area-curve').waitFor({state:'visible'});
   await page.reload({waitUntil:'networkidle'});
   await intro.waitFor({state:'hidden'});
   await curve.waitFor({state:'visible'});

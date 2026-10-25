@@ -1,3 +1,4 @@
+import {marketChartSource} from './helpers/market-chart-source.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
@@ -63,7 +64,7 @@ test('K2 period and daily changes are derived from Korea history, never copied f
 });
 
 test('shared chart preserves null Korea history gaps',()=>{
-  const chart=read('app/market-fear-greed-chart.tsx');
+  const chart=marketChartSource();
   assert.match(chart,/score: number \| null/);
   assert.match(chart,/connectNulls=\{false\}/);
   assert.match(chart,/rawTooltipValue/);
