@@ -209,3 +209,14 @@
 - 새 독립 테스트: `tests/theme-optional-relative-weight-r10-invariants.test.mjs`. 2·3·4·5·10·25·100 ETF로 정상화·순서독립·대칭성/기간우위 검증, 승인 2종 R3=70:30 보존, N39·ETF 1개 임의 점수 생성 차단. R2/R3/R4/R10/공유 SPY/R8/R9 **7개 Node 테스트 파일 로컬 PASS**. 이것은 **합성 유닛 테스트이지** 다수 ETF 실가격 확보가 아님.
 - [GetMarketHistory 약관 5절](https://getmarkethistory.com/docs/terms)에는 raw bars bulk 재배포 금지 및 원시열 복원이 불가능한 파생 지표의 조건부 배포 근거가 있으나, 실제 사용 데이터셋별 권리 확인 게이트는 `rightsVerified=false`로 유지.
 - **다음:** 발행사 동일일 전체 holdings 기반 ETF끼리의 경제노출 중복 지도 → 필요 ETF만 PC 실측 → 2개 이상 가변 basket과 상대비중 함수 명시 승인 → 권리 확인. 한 종만 유효한 날짜 처리도 별도 승인. 기존 9개/main/D1/Cloudflare/Scheduler·PR #714 병합·공개 게시 **0**.
+
+
+## 2026-10-25 R11 사용자 직접 정정 — **ETF 2종 고정 아님 / 데이터 수집 가능성이 선정 기준**
+
+- **최우선 최신 기준:** `docs/THEME_SPACE_DATA_AVAILABILITY_UNLIMITED_R11_20261025.md`. UFO+NASA는 R9 당시 **실측 가능한 2종**이었을 뿐 사용자가 ETF 수를 2종으로 제한한 적 없다. 3종 상한도 없다. **무료·허용 데이터 확보 가능하고 테마 관련성/PC 실측이 검증된 모든 ETF**를 개수에 관계없이 가변 후보로 평가한다.
+- 9개 발행사 ETF 후보 전부 유지. **UFO/NASA만 R9 실측 N/점수 검증**; 나머지 WARP/ORBX/MARS/ARKX/ROKT/DIPR/WSPC는 미검증으로 보존하고 무료 카탈로그/기존 manifest·가격 실측부터 확인. 원가격 미수집을 영구 탈락으로 취급하지 않는다.
+- 발행사 AUM·스프레드·SpaceX 중복 지표는 **경고 자료**. 정식 제외 근거/기준 승인 없이 높은 중복을 이유로 ORBX 등 임의 자동 제외 금지. 모든 가격 수집 가능한 적격 ETF는 평가 대상으로 남긴다.
+- **새 순수 분류기** `scripts/pc-writer/theme-space-satellite-r11-universe.mjs`와 `tests/theme-space-satellite-r11-universe.test.mjs`: 후보 수 0·1·2·3·4·5·9·10·25·100 모두 입력 길이 유지, `CATALOG_LISTED`와 실제 `SCORE_PASS` 구분, N39 결측 및 위조 상태 차단. R11/R10/R4/R9 테스트 4파일 로컬 PASS. API GET/파일/D1/스케줄러 쓰기 0.
+- **중요 코드 경계:** 기존 R4-A 합성기는 사전 승인 2종 R3·PC R9 SHA 재현을 위해 **무변경**. R4-A가 `n>=2`만 계산한다는 사실은 **ETF 선정 기준이 아니다**. 한 ETF만 실제 점수 가용인 날짜의 점수 게시 방식은 별도 승인; 점수 결측이나 R9 최신값 소급 생성 금지.
+- [GetMarketHistory 공식 Coverage](https://getmarkethistory.com/docs/coverage)/[API](https://getmarkethistory.com/docs/api/reference): 미국 ETF 대상이라도 백필은 기호별 부분적, 무료 카탈로그만으로 전 기간 수집 성공을 단정 금지. 데이터는 통상 48시간 지연으로 당일값 위장 금지. 라이선스/권리 `false`, PR #714 Draft 및 main·D1·Cloudflare·기존 9종 운영 무변경.
+- **다음 단계**는 수집 가능성 확인을 실제 후보 전체에 적용하고, 기존 데이터 재사용 후 부족한 후보만 최소 원봉 실측하는 것. **두 ETF를 선정하고 조사 종료하는 경로 금지**.
