@@ -1,3 +1,4 @@
+import {marketChartSource} from './helpers/market-chart-source.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
@@ -7,7 +8,7 @@ const read=path=>readFileSync(path,'utf8');
 
 test('inflation 1Y detail reuses the same extrema overlay as the US market dashboard',()=>{
  const panel=read('app/inflation/inflation-panel.tsx');
- const chart=read('app/market-fear-greed-chart.tsx');
+ const chart=marketChartSource();
  const usa=read('app/fear-greed/usa/cnn-panel.tsx');
  const overlay=read('components/chart-extremum-point.tsx');
  assert.match(usa,/<MarketFearGreedChart\s+showExtrema/);

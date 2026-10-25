@@ -1,6 +1,7 @@
+import {marketChartSource} from './helpers/market-chart-source.mjs';
 import test from "node:test";import assert from "node:assert/strict";import {readFileSync} from "node:fs";
 const read=p=>readFileSync(p,"utf8");
-const panel=read("app/economic-indicators/economic-detail-panel.tsx"),chart=read("app/market-fear-greed-chart.tsx"),css=read("app/economic-indicators/economic-detail.css"),page=read("app/economic-indicators/economic-detail-page.tsx");
+const panel=read("app/economic-indicators/economic-detail-panel.tsx"),chart=marketChartSource(),css=read("app/economic-indicators/economic-detail.css"),page=read("app/economic-indicators/economic-detail-page.tsx");
 test("only twelve economic market detail charts adopt dashboard score-zone colors and guide thresholds",()=>{
  assert.ok(chart.includes("marketScoreBands = false"),"unrelated risk charts remain unchanged");
  assert.ok(chart.includes("marketScoreBands?: boolean"));

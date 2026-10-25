@@ -14,6 +14,8 @@ try{
  for(const width of [390,1440]){
   const page=await browser.newPage({viewport:{width,height:900}});
   let revision=1;
+  const modules=[];
+  page.on('request',request=>modules.push(new URL(request.url()).pathname));
   const errors=[];
   page.on('pageerror',e=>errors.push(e.message));
   await page.route('https://**',route=>route.abort());
@@ -28,6 +30,7 @@ try{
   assert.equal(await page.locator('.zg-r55-summary-mini-chart .recharts-responsive-container').count(),0,'Covered summary does not initialize Recharts');
   assert.equal(await page.locator('.cnn-history-chart-hitbox .recharts-responsive-container').count(),0,'Covered market charts do not initialize Recharts');
   assert.equal(await page.locator('#strength .recharts-wrapper').count(),0,'Covered secondary charts do not mount');
+  assert.deepEqual(modules.filter(p=>/dashboard-summary-chart|market-fear-greed-chart-renderer|dashboard-secondary-plots|korea-composite-plot/.test(p)),[],'Covered chart renderer modules are not requested');
   await page.screenshot({path:`artifacts/dashboard-history/introduction-${width}.png`,caret:'initial'});
   await intro.getByRole('button',{name:'닫기',exact:true}).click();
   await intro.waitFor({state:'hidden'});

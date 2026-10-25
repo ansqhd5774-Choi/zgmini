@@ -1,9 +1,10 @@
+import {marketChartSource} from './helpers/market-chart-source.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 
-const fearChart=readFileSync(new URL('../app/market-fear-greed-chart.tsx',import.meta.url),'utf8');
-const dashboard=readFileSync(new URL('../app/dashboard-ui.tsx',import.meta.url),'utf8');
+const fearChart=marketChartSource();
+const dashboard=readFileSync(new URL('../components/dashboard-summary-chart.tsx',import.meta.url),'utf8');
 
 test('dashboard Fear & Greed and composite score use compact 9px Y-axis labels',()=>{
   assert.match(fearChart,/const mobileAxisRight=useDashboardMobileAxis\(\)/);

@@ -6,7 +6,13 @@ import {miniTrendGeometry} from '../lib/market-score/mini-trend-geometry.mjs';
 const src=fs.readFileSync(new URL("../app/dashboard-ui.tsx",import.meta.url),"utf8");
 const responsive=fs.readFileSync(new URL("../app/responsive.css",import.meta.url),"utf8");
 
+const summarySource=fs.readFileSync(new URL('../components/dashboard-summary-chart.tsx',import.meta.url),'utf8');
 function sourceBetween(startToken,endToken){
+  if(startToken==='function timeScaledTrend(')return summarySource+sourceBetween('function CardTrend(','function summaryDateParts(');
+  if(startToken==='function summaryDateParts('||startToken==='function SummaryTrend('){
+    const start=summarySource.indexOf(startToken);assert.ok(start>=0);return summarySource.slice(start);
+  }
+  if(startToken==='function CardTrend(')endToken='const LazySummaryTrend=';
   const start=src.indexOf(startToken);
   const end=src.indexOf(endToken,start);
   assert.ok(start>=0&&end>start,`${startToken} source range`);

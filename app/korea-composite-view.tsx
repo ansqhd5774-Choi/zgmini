@@ -1,6 +1,5 @@
 "use client";
-import {useMemo,useState} from 'react';
-import {LineChart,Line,ResponsiveContainer,Tooltip,XAxis,YAxis,CartesianGrid} from 'recharts';
+import {lazy,Suspense,useMemo,useState} from 'react';
 import {useKoreaFunds,type Composite} from './korea-funds-store';
 import {DEFAULT_KOREA_MARKET_PERIOD,getMarketPeriodConfig,getMarketPeriodDays,type MarketPeriod} from './market-card-shared';
 import {MarketPeriodControls} from './market-period-controls';
@@ -8,6 +7,8 @@ import {FearGreedCardShell} from './fear-greed-card-shell';
 import {MarketCardInsight} from './market-card-insight';
 import {MarketFearGreedChart,type MarketFearGreedChartPoint,type MarketFearGreedChartValidPoint} from './market-fear-greed-chart';
 import {fearGreedStateColor} from '../lib/fear-greed-state-color.mjs';
+
+const KoreaCompositePlot=lazy(()=>import('../components/korea-composite-plot'));
 
 export const formatDate=(s:string|null)=>s?`${s.slice(0,4)}-${s.slice(4,6)}-${s.slice(6,8)}`:'—';
 const time=(d:string)=>Date.parse(`${formatDate(d)}T00:00:00Z`);
@@ -206,11 +207,7 @@ export function CompositeChart({
   else setInternalPeriod(nextPeriod);
  };
 
- const chart=<ResponsiveContainer width="100%" height="100%" initialDimension={{width:1,height:1}}><LineChart data={rows} accessibilityLayer margin={{top:8,right:8,left:mini?0:-20,bottom:4}}>
-   {!mini&&<CartesianGrid vertical={false} stroke="var(--zg-chart-grid,#365269)" strokeDasharray="3 5" strokeWidth={1}/>}<XAxis hide={mini} type="number" dataKey="time" domain={['dataMin','dataMax']} tickFormatter={v=>new Date(v).toISOString().slice(0,10)} minTickGap={40} axisLine={{stroke:'var(--zg-chart-axis,#60798d)',strokeWidth:1}} tickLine={false} tick={{fontSize:11,fill:"var(--zg-text-meta,#8fa8bb)"}}/><YAxis hide={mini} axisLine={false} tickLine={false} domain={[0,100]} ticks={[0,50,100]} tick={{fontSize:11,fill:"var(--zg-text-meta,#8fa8bb)"}}/>
-   <Tooltip content={({active,payload})=>{const p=payload?.[0]?.payload;return active&&p?<div className="rounded border bg-white p-2 text-sm text-slate-900">{formatDate(p.date)}<br/>{p.displayScore===null?'자료 없음':`${p.displayScore.toFixed(1)}점 · ${p.stageLabel}`}</div>:null;}}/>
-   <Line type="linear" dataKey="score" stroke={colors[item.stageCode??'']??'#64748b'} dot={false} connectNulls={false} isAnimationActive={false}/>
-  </LineChart></ResponsiveContainer>;
+ const chart=<Suspense fallback={null}><KoreaCompositePlot rows={rows} mini={mini} color={colors[item.stageCode??'']??'#64748b'}/></Suspense>;
 
  if(slot){
   return <div className="fg-chart-renderer" aria-label="한국 공포탐욕 추이 0~100점">{chart}</div>;
