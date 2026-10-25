@@ -33,6 +33,13 @@ jobs:
         run: npm ci
       - name: Build
         run: npm run build
+      - name: Save public CSS for asset comparison
+        uses: actions/upload-artifact@v4
+        with:
+          name: production-css-assets
+          path: dist/client/assets/*.css
+          retention-days: 7
+          if-no-files-found: error
       - name: Type check
         run: npm run typecheck
       - name: Regression tests

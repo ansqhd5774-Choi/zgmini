@@ -3,6 +3,10 @@
 @import "tw-animate-css";
 @import "../vendor/shadcn-tailwind-4.13.0.css";
 
+/* Fixtures and prose are not runtime utility-class sources. */
+@source not "../tests";
+@source not "../docs";
+
 @utility scrollbar-thin {
   scrollbar-width: thin;
 }
