@@ -253,3 +253,13 @@
 - 로컬 Node 테스트 관련 **7개 테스트 파일 PASS**; CMD 8개 소스 SHA 일치·CRLF/ASCII 검증 및 Desktop ZIP 9파일 무결성 PASS. **사용자 PC R14 실수집 아직 미실행**.
 - 다음 사용자 작업: R14 ZIP을 Desktop 폴더에 전개 → R14 CMD 수동 실행 → Desktop의 `SPACE_SATELLITE_R14_MISSING_ONLY_RESULT.txt` 제출. `STOP_*` 또는 `BLOCKED`는 이유 확인 전 다시 실행 금지. `CHECKPOINT_READY_TO_MANUALLY_RESUME`이면 같은 CMD만 명시 재실행. 이후 **R15 read-only 9개 후보+공유 SPY 거래일·비공개 점수** 검증을 별도로 개발·판정.
 - 상태: `R14_SOURCE_TEST_PASS / PC_R14_PENDING / NO_FINAL_BASKET_COUNT_CAP / rightsVerified=false / publicationAuthorized=false / NOT_MERGED / NO_PUBLIC_WRITES`. 기존 9개 운영 테마·신규 10번째 점수/가중치/산식/D1/DB/스케줄러/Cloudflare 변경 0. PR #714 Draft, main 병합 금지.
+
+## 2026-10-25 R14 실측 성공 → R15 — 9개 후보 전수 개별 점수
+
+- PC 사용자 첨부 `SPACE_SATELLITE_R14_MISSING_ONLY_RESULT.txt` 실측: `PRIVATE_MISSING_ONLY_RAW_COLLECTION_COMPLETE`, Provider GET 6, raw 파일 신규 6, WARP/ORBX/MARS/ARKX/DIPR/WSPC 모두 완료, pending 0, manifest 기존 5→11, 기존 파일 덮어쓰기 0. public/D1/scheduler writes 0. **실 PC 수집 성공**이지만 `r2ScoresVerified=false`, `rightsVerified=false`다. 반복 수집 금지.
+- 차기 단계 R15는 9개 ETF를 전수 검사하고 개별 저장원본의 SHA, 공유 SPY, 뉴욕 15시 세션 수, 기존 R2 점수, 최근 252거래일 내 실제 점수·결측일을 **읽기 전용**으로 산출한다. ETF를 2개/3개/9개로 제한하는 조건은 없음; 기본 후보만 현재 실측 9개다.
+- **현재 점수는 SPY와 마지막 동일 실측일에 실제 산출된 경우에만** 제공한다. 과거 점수는 현시점으로 대입 금지. 40일 미만은 watch/null. 기존 ETF R188/적응형 R2 산식 40:20:40 불변.
+- 추가 구현 파일: `scripts/pc-writer/theme-space-satellite-r15-all-etf-score-audit.mjs`, 동일 이름 CMD, `tests/theme-space-satellite-r15-all-etf-score-audit.test.mjs`, `tests/theme-space-satellite-r15-launcher.test.mjs`, `docs/THEME_SPACE_R15_ALL_ETF_REAL_SCORE_AUDIT_20261025.md`. Node 관련 8개 테스트 파일 PASS; R15 Desktop ZIP 9개 SHA 고정 파일 무결성 PASS.
+- **합성 fixture 검증과 실제 PC 가격 점수 검증은 다름**. R15 PC 실행·실측 로그 아직 없음. 소프트웨어는 `aggregateScore=null`, `aggregateWeights=null`, `aumWeightsVerified=false`, `publicationAuthorized=false`를 출력한다. 신규 테마 9개 개별 점수를 무근거 동일가중 평균으로 합치지 않으며, 다음 단계에서 최신 AUM·권리·방법을 별도 확인한다.
+- 사용자 다음 동작: Desktop 새 폴더에 `SPACE_SATELLITE_R15_ALL_ETF_SCORE_DESKTOP_20261025.zip`을 해제한 뒤 `theme-space-satellite-r15-all-etf-score-audit.cmd`를 직접 실행. CMD 옆 `SPACE_SATELLITE_R15_ALL_ETF_SCORE_RESULT.txt`를 제출한다. 네트워크 0/PC 데이터 쓰기 0.
+- 상태: `R14_PC_PRIVATE_COLLECTION_SUCCESS / R15_SOURCE_TEST_PASS / R15_PC_PENDING / NO_FINAL_BASKET_CAP / PR_714_DRAFT_NOT_MERGED / NO_RUNTIME_CHANGE`. 메인 병합·운영 배포·D1·DB·스케줄러 변경 0.
