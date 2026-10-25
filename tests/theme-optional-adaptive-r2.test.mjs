@@ -200,3 +200,37 @@ test('old ROKT and ARKX manifest entries are preserved but cannot block UFO+NASA
   assert.equal(JSON.parse(fs.readFileSync(manifestPath,'utf8')).files.length,5);
  }finally{fs.rmSync(root,{recursive:true,force:true});}
 });
+
+test('space can read private verified SPY from tenth-theme raw source without GET or copying',()=>{
+ const root=fs.mkdtempSync(path.join(os.tmpdir(),'space-shared-spy-'));
+ try{
+  const {home,files}=fixture(root);
+  const before=auditSpaceSatelliteAdaptive({dataRoot:root});
+  const spy=files.find(item=>item.path.startsWith('raw/SPY_'));
+  const source=path.join(root,'themes','data-center-power');
+  fs.mkdirSync(path.join(source,'raw'),{recursive:true});
+  fs.renameSync(path.join(home,spy.path),path.join(source,spy.path));
+  fs.writeFileSync(path.join(source,'raw-manifest.json'),JSON.stringify({
+   version:1,themeId:'data-center-power',files:[{
+    ...spy,observationFrom:datesForFixtureStart()}]}));
+  const manifestPath=path.join(home,'raw-manifest.json');
+  const manifest=JSON.parse(fs.readFileSync(manifestPath,'utf8'));
+  manifest.files=manifest.files.filter(item=>item.path!==spy.path);
+  fs.writeFileSync(manifestPath,JSON.stringify(manifest));
+  const after=auditSpaceSatelliteAdaptive({dataRoot:root,
+   sharedSpyThemeId:'data-center-power'});
+  assert.equal(after.coverage.SPY.dailySessions,700);
+  assert.equal(after.coverage.NASA.dailySessions,120);
+  assert.equal(after.candidates[0].score,before.candidates[0].score);
+  assert.deepEqual(after.candidates[0].history,before.candidates[0].history);
+  assert.equal(after.sharedSpySource.themeId,'data-center-power');
+  assert.equal(after.sharedSpySource.rightsVerified,false);
+  assert.equal(after.providerCalls,0);
+  assert.equal(after.d1Writes,0);
+  const isolated=auditSpaceSatelliteAdaptive({dataRoot:root});
+  assert.equal(isolated.coverage.SPY.dailySessions,0);
+  assert.equal(isolated.candidates[0].score,null);
+ }finally{fs.rmSync(root,{recursive:true,force:true});}
+});
+
+function datesForFixtureStart(){return days(1)[0];}
