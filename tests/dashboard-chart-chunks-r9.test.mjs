@@ -15,7 +15,7 @@ test('anonymous dashboard static graph excludes Recharts and the split renderers
   const text=fs.readFileSync(file,'utf8');
   // Only static value imports/re-exports; import type and lazy import() do not
   // belong to the initial runtime graph.
-  for(const match of text.matchAll(/(?:^|\n)\s*(?:import|export)\s+(?!type\b)(?:[^;'"\n]*?\s+from\s*)?['"]([^'"]+)['"]/g)){
+  for(const match of text.matchAll(/(?:^|\n)\s*(?:import\s*(?!type\b|\()(?:[^;'"`]*?\bfrom\s*)?|export\s*(?!type\b)(?:\*|\{[^}]*\})\s*from\s*)['"]([^'"]+)['"]/g)){
    const name=match[1];assert.notEqual(name,'recharts',chain.join(' -> '));
    const resolved=resolveModule(file,name);if(resolved)pending.push([resolved,[...chain,path.relative(root,resolved)]]);
   }
