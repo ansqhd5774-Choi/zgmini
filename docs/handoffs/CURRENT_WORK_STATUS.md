@@ -129,3 +129,18 @@
 - PC에서 의료 추가로 에너지+의료 2개 ON 시 섹터 현재 배지와 최고/최저점 모두 숨김 확인.
 - 모바일 390px에서 섹터/테마 배지는 차트 안 우측 끝점 근처에 정상 표시, 오른쪽 Y축 숫자와 충돌 없음. 모바일 툴팁 160px, 날짜·이름·숫자 모두 14px, 화면 가로 넘침 없음. 검증 후 브라우저 임시 viewport 재설정 해제함.
 - 이 범위 **PRODUCTION_VERIFIED**. 다음 요청에서 이미 적용된 범위를 반복 수정하지 말고 GitHub 최신 main과 이 상태를 재확인할 것.
+
+## 2026-10-25 섹터·테마 공포·탐욕 점수 숫자 5단계 색상 적용
+
+- 사용자 요청: 차트와 범례의 **점수 숫자만** 기존 공포·탐욕 5단계 색상으로 표현. 기존 글씨 크기·차트 선별 식별색·날짜·항목명·결측(—) 유지.
+- 기존 기준 재사용: app/globals.css의 --zg-score-extreme-fear (#ef4444), --zg-score-fear (#f59e0b), --zg-score-neutral (#94a3b8), --zg-score-greed (#22c55e), --zg-score-extreme-greed (#10b981). 구간은 0–25 미만 / 25–45 미만 / 45–55 / 55 초과–75 / 75 초과–100. 산식 및 임계값 변경 없음.
+- 적용: components/sector-sentiment-chart.tsx 섹터 11개·테마 9개 범례 숫자, PC/터치 호버 툴팁 숫자, 단일 선택 최신 점수 SVG 텍스트. data-score-band를 components/sector-sentiment-chart.css의 기존 토큰에 연결. 차트 선·시리즈 점은 기존 고유색 유지.
+- 테스트: tests/sector-dashboard-compact-legend-r1.test.mjs에 점수 구간 경계와 표시 경로 회귀 추가. tests/theme-dashboard-r154.test.mjs의 JSX 속성 순서 고정 검사만 수정.
+- 영구 작업 브랜치 codex/zgmini-gpt-workspace-20261025에 코드/테스트 4파일 보존(소스 마지막 커밋 b48bd00664a892a406ac28b33eea858d11813df1). 배포용 브랜치 codex/ui-score-band-numeric-text-20261025 유지.
+- PR [#720](https://github.com/ansqhd5774-Choi/zgmini/pull/720) 변경 4파일. 최초 GitHub CI 40191004020는 기존 테마 JSX 속성 순서 정적 테스트 1건 실패, 해당 검사 보정 후 CI 40191180882 **SUCCESS** (빌드·타입·회귀·PC 출판 테스트).
+- GitHub main squash SHA 807fce9f8f7e4c08bb4c9e589bf7a268dfacd3f7, 병합 직전 main SHA 6747e2b0c4cc880c1ba00653b188835e64538325, SOURCE_DRIFT NONE.
+- Cloudflare Git Integration ansqhd5774-Choi/zgmini / main, Worker zgmini-migration-candidate-r5; 빌드 0751e6c0-31ba-4045-8a2b-6ab5e788ca85, 신규 Production 버전 5180457a **Ready**.
+- 실제 공개 https://zgmini.kr/ Chrome 계산 CSS: 섹터 에너지 78/최신 점수 78.1은 extreme-greed rgb(16,185,129), 의료 69는 greed rgb(34,197,94), 금융 53은 neutral rgb(148,163,184), 기술 43은 fear rgb(245,158,11), 통신 23은 extreme-fear rgb(239,68,68). 테마 65/46/23도 각각 구간 일치.
+- 호버 툴팁 69.1은 greed, 단일 폭 160px. 두 섹터 선택 시 툴팁 320px 및 밴드 색 적용, 최신 점수 끝점 배지 숨김.
+- 모바일 390px: 섹터·테마 숫자 구간 색상 일치, 수평 오버플로 없음. viewport 임시 설정 원복.
+- **PRODUCTION_VERIFIED** (이번 UI 범위). 데이터·산식·API·Provider·DB·스케줄러·DNS·배포 방식 변경 없음.
