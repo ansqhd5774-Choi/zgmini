@@ -1,10 +1,10 @@
 import GuidePage,{guideMetadata} from '../guide-page';
 import ReleaseCalendar from '../release-calendar';
 import DetailReadingGuide from '../../detail-reading-guide';
-const title='미국 CPI·PCE 발표 일정·한국시간 | 예상치 대비 결과 읽는 법';
+const title="미국 CPI·PCE 발표 일정·한국시간 | 물가지수 발표일·발표시간";
 const answer='미국 소비자물가지수(CPI)와 개인소비지출 물가지수(PCE)의 발표일·발표시간을 안내합니다. 발표값과 예상치를 비교할 때는 같은 지표·기간·단위를 맞춰야 합니다. 전월 대비와 전년 대비, 전체와 근원 물가는 다른 값입니다. 공식 일정의 미국 현지 시각은 서머타임을 반영해 한국시간으로 확인하세요.';
 const path='/guides/cpi-pce-release/';
-export const metadata=guideMetadata(title,'CPI·PCE 공식 발표 일정의 한국시간, 확인된 발표값과 이전 값, 예상치 비교 방법과 단위 차이를 확인하세요.',path);
+export const metadata=guideMetadata(title,"CPI·PCE 공식 발표 일정의 한국시간과 미국 소비자물가지수·개인소비지출 물가지수 발표일·발표시간을 확인하세요. 발표값·이전 값·시장 예상치, 근원 물가와 전월·전년 대비의 차이를 안내합니다.",path);
 export default function Page(){return <GuidePage title={title} answer={answer} path={path} dateModified="2026-10-25">
   <ReleaseCalendar kind="inflation"/>
   <DetailReadingGuide title="예상치 대비 결과를 비교하는 순서" sections={[

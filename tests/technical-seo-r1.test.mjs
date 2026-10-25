@@ -12,7 +12,7 @@ test('technical SEO sitemap includes every public route with truthful lastmod va
   for(const route of ["/usage/","/data-sources/","/investment-notice/"])
     assert.ok(sitemap.includes(`<loc>https://zgmini.kr${route}</loc><lastmod>2026-10-22</lastmod>`),route);
   for(const route of ['/risk-indicators/','/economic-indicators/'])
-    assert.ok(sitemap.includes(`<loc>https://zgmini.kr${route}</loc><lastmod>2026-10-18</lastmod>`),route);
+    assert.ok(sitemap.includes(`<loc>https://zgmini.kr${route}</loc><lastmod>2026-10-25</lastmod>`),route);
 });
 
 test('sector detail has dedicated social metadata and WebPage schema',()=>{
@@ -50,10 +50,10 @@ test('all three search guides emit Article structured data with truthful publica
   assert.match(fear,/const path='\/guides\/fear-greed-buying\/'/);
   assert.match(fear,/dateModified="2026-10-25"/);
   assert.match(cpi,/const path='\/guides\/cpi-pce-release\/'/);
-  assert.match(cpi,/미국 CPI·PCE 발표 일정·한국시간 \| 예상치 대비 결과 읽는 법/);
+  assert.match(cpi,/미국 CPI·PCE 발표 일정·한국시간 \| 물가지수 발표일·발표시간/);
   assert.match(cpi,/dateModified="2026-10-25"/);
   assert.match(fomc,/const path='\/guides\/fomc\/'/);
-  assert.match(fomc,/FOMC 일정·한국시간 \| 미국 기준금리 발표 읽는 법/);
+  assert.match(fomc,/연준 금리 발표일·발표시간 \| FOMC 일정·한국시간/);
   assert.match(fomc,/dateModified="2026-10-25"/);
 });
 

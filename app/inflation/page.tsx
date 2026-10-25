@@ -1,3 +1,5 @@
+import InvestorSearchGuide from '../../components/investor-search-guide';
+import {RISK_INVESTOR_SEARCH} from '../../lib/investor-search-content';
 import SiteHeader from "@/components/site-header";
 import DetailInvestorNotes from "../detail-investor-notes";
 import SearchIntentIntro from "../search-intent-intro";
@@ -43,6 +45,7 @@ export default function InflationPage(){
     related={[{href:"/recession/",label:"미국 경기침체 지표"},{href:"/fear-greed/usa/",label:"미국 공포탐욕지수"}]}
    />
   <DetailInvestorNotes topic="inflation"/>
+ <InvestorSearchGuide id="investor-search-inflation" copy={RISK_INVESTOR_SEARCH['inflation']}/>
 </div>
  </main></>;
 }

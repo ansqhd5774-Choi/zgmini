@@ -23,6 +23,8 @@ import { toast } from "sonner";
 import CountryFearGreed from "./country-fear-greed";
 import SiteHeader from "@/components/site-header";
 import SiteFooter from "@/components/site-footer";
+import InvestorSearchGuide from "@/components/investor-search-guide";
+import {DASHBOARD_INVESTOR_SEARCH} from "@/lib/investor-search-content";
 import DashboardSideRails from "@/components/dashboard-side-rails";
 
 // These controls belong to secondary views or authenticated account settings.
@@ -1062,6 +1064,7 @@ export default function Home() {
         {view==='strength'&&<><SentimentSection title="섹터별 심리 점수 · 예시" description="실제 지수가 아닌 예시 점수·추세·베타 · CNN 지수와 무관" items={sectorSentiment} period={period} kind="sector" favorites={favorites} onToggle={user ? toggleFavorite : undefined}/>
         <SentimentSection title="테마별 심리 점수 · 예시" description="실제 지수가 아닌 예시 점수·추세·베타 · CNN 지수와 무관" items={themeSentiment} period={period} kind="theme" favorites={favorites} onToggle={user ? toggleFavorite : undefined}/></>}
         </Suspense>
+        {view==='dashboard'&&<InvestorSearchGuide id="investor-search-dashboard" copy={DASHBOARD_INVESTOR_SEARCH}/>}
       </div>
       {view==='dashboard'&&<SiteFooter/>}
       {view!=='dashboard'&&<footer className="zg-footer">ZGmini · 공식 자료와 독자 모델을 연결합니다. 투자 권유가 아니며, 예시 데이터는 별도로 표시합니다.</footer>}

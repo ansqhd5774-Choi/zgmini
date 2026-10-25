@@ -7,8 +7,8 @@ import InvestorIntentGuide from "../investor-intent-guide";
 import {ArrowUpRight,BookOpen} from "lucide-react";
 import "../fear-greed-detail-r1.css";
 
-const title = "한국 공포탐욕지수·공탐 지수 | 코스피 투자심리·변동성 추이 - ZGmini";
-const description = "한국 공포탐욕지수(공탐 지수)의 최근 점수·관측일·기간별 차트와 7개 핵심 신호를 확인하세요. 504개 유효 관측치 기준창으로 코스피 투자심리와 시장 폭·풋콜비율·변동성 신호를 보여주는 ZGmini 자체 지표입니다.";
+const title = "한국 공포탐욕지수·공탐 지수 | 코스피·국내 주식 투자심리 - ZGmini";
+const description = "한국 공포탐욕지수(공탐 지수)의 최근 점수·관측일·기간별 차트와 7개 핵심 신호를 확인하세요. 한국 공포지수·코스피 공탐으로 국내 주식 투자심리를 살펴보는 ZGmini 자체 지표이며 504개 유효 관측치 기준창을 사용합니다.";
 const url = "https://zgmini.kr/fear-greed/korea/";
 export const metadata: Metadata = {
   title, description, alternates: { canonical:url }, robots:{index:true,follow:true},

@@ -9,7 +9,7 @@ test('Korea fear-greed page targets the Korean market search intent',()=>{
   const engine=read('worker/korea-rev7-engine.mjs');
   assert.match(engine,/REV7_SCORE_WINDOW = 504/);
   assert.match(engine,/REV7_FACTORS = Object\.freeze\(\[\s*'momentum','strength','breadth','putCall','volatility','safeHaven','junkBond'/);
-  assert.match(page,/한국 공포탐욕지수·공탐 지수 \| 코스피 투자심리·변동성 추이 - ZGmini/);
+  assert.match(page,/한국 공포탐욕지수·공탐 지수 \| 코스피·국내 주식 투자심리 - ZGmini/);
   assert.match(page,/최근 점수·관측일·기간별 차트와 7개 핵심 신호/);
   assert.match(page,/504개 유효 관측치 기준창/);
   assert.match(page,/alt:"ZGmini 한국 공포탐욕지수 · 코스피 투자심리"/);

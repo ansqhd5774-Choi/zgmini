@@ -2,11 +2,11 @@ import {ArrowRight,ArrowUpRight,ChartNoAxesColumnIncreasing,ClipboardCheck,Exter
 import SiteHeader from '@/components/site-header';
 import GuidePage,{guideMetadata} from '../guide-page';
 
-const title='공포탐욕지수 매수 기준: 지금 주식 사도 될까?';
+const title="공탐지수·공포탐욕지수 매수 기준 | 주식 매수 타이밍";
 const answer='공포·탐욕 지수(공탐 지수)는 매수 신호가 아닌 시장 심리를 보여줍니다. 지수의 흐름과 하락 원인, 그리고 내 투자 계획을 함께 확인하세요.';
 const path='/guides/fear-greed-buying/';
 
-export const metadata=guideMetadata(title,'공포탐욕지수로 주식 매수 타이밍을 판단하기 전에 확인할 3가지, 미국·한국 지수의 차이와 상황별 해석을 쉽게 안내합니다.',path);
+export const metadata=guideMetadata(title,"공포탐욕지수로 주식 매수 타이밍을 판단하기 전에 확인할 3가지와 공탐지수·극단적 공포·탐욕의 해석을 안내합니다. 미국·한국 지수의 차이, 주가 저점과 분할매수 판단에서 살펴볼 한계를 확인하세요.",path);
 
 const bands=[
   {label:'극도의 공포',description:'매우 부정적',color:'#9f2233'},
@@ -145,7 +145,8 @@ export default function Page(){
           </nav>
         </section>
 
-        <p className="mt-5 text-[11px] leading-5 text-[#a8bccb]">※ 본 콘텐츠는 투자 판단을 위한 교육 자료이며, 특정 종목의 매수를 권유하는 것이 아닙니다.</p>
+        <p className="mt-5 text-[12px] leading-6 text-[#c0d2df]">분할매수 여부를 판단할 때도 공포탐욕지수는 참고자료입니다. 이 가이드는 매수 비중이나 횟수를 정하지 않으며, 시장 흐름·하락 원인·내 투자 계획을 함께 확인하는 순서를 안내합니다.</p>
+        <p className="mt-3 text-[11px] leading-5 text-[#a8bccb]">※ 본 콘텐츠는 투자 판단을 위한 교육 자료이며, 특정 종목의 매수를 권유하는 것이 아닙니다.</p>
         <p className="mt-1 text-[11px] leading-5 text-[#91aebe]">미국 CNN 지수와 한국 ZGmini 자체 지수는 산출 방식과 대상 시장이 달라 같은 점수를 동일한 매수 조건으로 해석할 수 없습니다. · 내용 확인일 2026-10-25</p>
       </div>
     </GuidePage>

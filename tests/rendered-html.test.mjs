@@ -39,8 +39,9 @@ test("renders SEO metadata for all 34 public pages in the Workers runtime", asyn
     assert.match(root.headers.get("content-type")??"",/^text\/html\b/i);
     const rootHtml=await root.text();
     assert.ok(rootHtml.includes('korea-target-card'));
+    assert.ok(rootHtml.includes('data-testid="investor-search-dashboard"'));
     const rootHead=headOf(rootHtml);
-    assert.ok(rootHead.includes("<title>ZGmini 지그미니 | 미국·한국 공포탐욕지수와 경제지표 · 공탐 지수</title>"));
+    assert.ok(rootHead.includes("<title>ZGmini 지그미니 | 공포탐욕지수·공탐 지수·미국 증시·경제지표</title>"));
     assert.ok(hasDescription(rootHead));
     assert.ok(hasRobots(rootHead));
     assert.ok(hasSocialTitle(rootHead));
@@ -59,7 +60,9 @@ test("renders SEO metadata for all 34 public pages in the Workers runtime", asyn
       if(detail){
         assert.ok(head.includes(detail.description),route+': descriptive search terms in metadata');
         assert.ok(html.slice(html.indexOf('<body')).includes(detail.description),route+': same explanation in visible body');
+        assert.ok(html.includes(`data-testid="investor-search-economic-${detail.id}"`),route+': investor explanation is in generated HTML');
       }
+      if(['/inflation/','/recession/','/stagflation-risk/','/credit-risk/','/earnings-recession/','/asset-bubble/','/debt-risk/','/supply-shock/','/sector-fear-greed/','/theme-fear-greed/'].includes(route))assert.ok(html.includes(`data-testid="investor-search-${route.split('/')[1]}"`),route+': visible investor explanation');
       assert.ok(hasTitle(head),`${route}: title`);
       assert.ok(hasDescription(head),`${route}: description`);
       assert.ok(hasRobots(head),`${route}: robots`);

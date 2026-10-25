@@ -1,10 +1,10 @@
 import GuidePage,{guideMetadata} from '../guide-page';
 import ReleaseCalendar from '../release-calendar';
 import DetailReadingGuide from '../../detail-reading-guide';
-const title='FOMC 일정·한국시간 | 미국 기준금리 발표 읽는 법';
+const title="연준 금리 발표일·발표시간 | FOMC 일정·한국시간";
 const answer='연준 금리 발표일·발표시간은 연방공개시장위원회(FOMC) 공식 일정과 한국시간을 기준으로 확인합니다. FOMC에서는 미국 연방기금금리 목표 범위와 통화정책 방향을 확인합니다. 금리 결정, 성명서, 기자회견을 구분해서 읽어야 합니다. 금리 인하 자체만으로 주가 상승을 확정할 수 없으며, 인하 확률은 실제 결정이나 ZGmini 평가점수와 다른 자료입니다.';
 const path='/guides/fomc/';
-export const metadata=guideMetadata(title,'FOMC 공식 일정과 한국시간 발표 시각, 확인된 미국 기준금리 목표 범위, 금리 결정·성명서·기자회견의 차이를 확인하세요.',path);
+export const metadata=guideMetadata(title,"FOMC 공식 일정과 한국시간 발표 시각, 미국 기준금리 발표일과 연준 금리 결정·성명서·기자회견을 확인하세요. 서머타임에 따른 한국 발표 날짜와 시간 차이도 안내합니다.",path);
 export default function Page(){return <GuidePage title={title} answer={answer} path={path} dateModified="2026-10-25">
   <ReleaseCalendar kind="fomc"/>
   <DetailReadingGuide title="발표를 읽는 순서와 흔한 혼동" sections={[

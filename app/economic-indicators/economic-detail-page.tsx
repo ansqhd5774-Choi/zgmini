@@ -1,3 +1,5 @@
+import InvestorSearchGuide from '../../components/investor-search-guide';
+import {ECONOMIC_INVESTOR_SEARCH} from '../../lib/investor-search-content';
 import SiteHeader from "@/components/site-header";
 import {WebPageJsonLd} from "../seo-jsonld";
 import {economicDetailById,type EconomicDomainId} from "../../lib/economic-detail-catalog";
@@ -13,7 +15,7 @@ import "./economic-detail.css";
 export default function EconomicDetailPage({id}:{id:EconomicDomainId}){
  const detail=economicDetailById(id);
  if(!detail)return null;
- const title="미국 "+detail.name+" 시장지표 | "+detail.tags+" - ZGmini";
+ const title=detail.searchTitle+" - ZGmini";
  const description=detail.description+" 저장된 0~100점과 과거 추이, 구성지표의 현재값·관측일을 확인하세요.";
  const path="/economic-indicators/"+detail.slug+"/";
  return <><SiteHeader/><EconomicDetailSideRails pathname={path}/><main className="min-h-screen bg-[#03121d] px-4 py-8 text-slate-100 sm:px-8 sm:py-12">
@@ -24,6 +26,7 @@ export default function EconomicDetailPage({id}:{id:EconomicDomainId}){
    </div>
    <WebPageJsonLd name={title} description={description} path={path}/>
    {<EconomicDetailPanel id={id}/>}
+   <InvestorSearchGuide id={`investor-search-economic-${id}`} copy={ECONOMIC_INVESTOR_SEARCH[id]}/>
   </div>
  </main></>;
 }

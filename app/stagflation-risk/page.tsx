@@ -1,3 +1,5 @@
+import InvestorSearchGuide from '../../components/investor-search-guide';
+import {RISK_INVESTOR_SEARCH} from '../../lib/investor-search-content';
 import type {Metadata} from 'next';
 import SiteHeader from "@/components/site-header";
 import StagflationPanel from './stagflation-panel';
@@ -30,4 +32,5 @@ export default function StagflationPage(){return <><SiteHeader/><main className=
   ["성장 둔화와 경제 수축은 다른 말입니다","생산·소비·고용이 늘어나고 있어도 과거보다 증가 속도가 약하면 둔화로 평가될 수 있습니다. 증가 속도와 실제 감소 여부를 구분해서 읽으세요."],
   ["월별 차트의 날짜를 확인하세요","발표 주기가 다른 자료의 최근 공통 관측월로 계산합니다. 최근 1년 차트는 현재 개정치로 재구성한 월별 이력입니다. 해당 월에 투자자가 알던 점수나 위기를 미리 맞힌 성과가 아닙니다."],
  ].map(([title,text])=>({title,text}))} related={[{href:"/inflation/",label:"미국 인플레이션 위험 지표"},{href:"/recession/",label:"미국 경기침체 지표"}]}/>
+ <InvestorSearchGuide id="investor-search-stagflation-risk" copy={RISK_INVESTOR_SEARCH['stagflation-risk']}/>
  </div></main></>}
