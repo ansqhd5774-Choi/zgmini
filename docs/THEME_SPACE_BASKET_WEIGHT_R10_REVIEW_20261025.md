@@ -57,6 +57,24 @@
 - 출처: [Tema 2026-10-23 상위 10개/FAQ](https://temaetfs.com/nasa), [Global X ORBX 2026-10-23 holdings](https://www.globalxetfs.com/funds/orbx), [Procure UFO 2026-10-23 상위 10개](https://www.procureetfs.com/ufo/).
 - ETF 가격만 각자의 점수 입력. **SpaceX 등 개별기업 가격을 우주 공탐 산식에 넣지 않는다.** 기업 보유 자료는 적격성/중복성 판정용으로만 사용한다.
 
+### 3-A. 보유중복 지도: 같은 2026-10-23 **4개 ETF 상위 10개 공시끼리**
+
+서로 비교한 두 ETF의 **각 상위 10개 기업 교집합**에 대해 `Σ min(ETF_A 보유비중, ETF_B 보유비중)`으로 산출했다. 원문은 아래 ETF별 10개 각 1회만 조회하며 개별 종목의 가격을 수집하지 않았다.
+
+| ETF 쌍 | 공개 상위 10개 공통 기업 | 동일 기업 노출 **관측 하한** |
+| --- | ---: | ---: |
+| NASA – UFO | 4종 | **27.57%p** |
+| NASA – ORBX | 7종 | **54.30%p** |
+| NASA – DIPR | 4종 | **28.48%p** |
+| UFO – ORBX | 6종 | **34.13%p** |
+| UFO – DIPR | 8종 | **43.09%p** |
+| ORBX – DIPR | 6종 | **38.12%p** |
+
+- **전 종목 holdings 기반 전체 중복률은 미확인**이다. `54.30%`를 전체 중복률, 또는 `27.57%`가 확실히 더 독립적이라는 증거로 오인하지 않는다. 실제 심사에서 동일 종목 식별자, 전체 보유분, 비상장/SPV·상장주식 구분도 함께 고려한다.
+- R10에서 새로 확인한 DIPR은 2026-10-23 상위 10개에 SpaceX 14.54%, Lockheed Martin 8.32%, Garmin 6.72%를 포함. 위성 특화 이름만으로 방산/항법 혼합 비율이 0이라고 가정할 수 없다. 30일 중앙 스프레드는 발행사 **결측(—)**.
+- VanEck WARP 일별 holdings는 **2026-10-22**로 위 10/23 4종의 동일일 비교에 섞지 않는다. WARP 10/22 공시도 SpaceX 22.99%, Rocket Lab 12.51%로 상위 기업 집중 확인; 전 종목 10/23 일치자료 확보 전 정량 비교는 보류한다.
+- 근거: [NASA 상위10, 10/23](https://temaetfs.com/nasa), [UFO 상위10, 10/23](https://www.procureetfs.com/ufo/), [ORBX 보유 10/23](https://www.globalxetfs.com/funds/orbx), [DIPR 상위10, 10/23](https://corgiinvest.com/dipr), [WARP 10/22](https://www.vaneck.com/us/en/investments/space-etf-warp/).
+
 ## 4. 제한 없는 N종 상대비중 — R4-A 구현안의 정량 검증
 
 비공개 R4-A 산식 **변경 없음**. 해당 날짜에 점수가 실재하는 ETF 수 `k≥2`에 대해:
