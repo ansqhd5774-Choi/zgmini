@@ -40,6 +40,22 @@ test("renders SEO metadata for all 34 public pages in the Workers runtime", asyn
     const rootHtml=await root.text();
     assert.ok(rootHtml.includes('korea-target-card'));
     assert.ok(rootHtml.includes('data-testid="investor-search-dashboard"'));
+
+    // The collapsed dashboard guide must remain present in server-rendered HTML,
+    // including all four complete answers and eight navigation links.
+    const investorStart=rootHtml.indexOf('data-testid="investor-search-dashboard"');
+    const investorClose=rootHtml.indexOf('</details>',investorStart);
+    assert.ok(investorStart>=0 && investorClose>investorStart,'dashboard guide is a server-rendered native details');
+    const investorHtml=rootHtml.slice(investorStart,investorClose+10);
+    assert.match(investorHtml,/<summary\b/,'a single clickable title row is rendered');
+    assert.equal((investorHtml.match(/<article\b/g)??[]).length,4,'all four investor Q&A cards are rendered');
+    assert.ok(investorHtml.includes('CNN 공포탐욕지수와 VIX'), 'original editorial explanation is not shortened');
+    assert.ok(investorHtml.includes('시장 예상치와 공식 발표값'), 'original FOMC explanation is not shortened');
+    assert.equal((investorHtml.match(/<a\b/g)??[]).length,8,'eight links remain inside the same disclosure');
+    for(const link of ['/fear-greed/usa/','/fear-greed/korea/','/economic-indicators/','/risk-indicators/','/sector-fear-greed/','/theme-fear-greed/','/guides/cpi-pce-release/','/guides/fomc/']){
+     assert.ok(investorHtml.includes('href="'+link+'"'),link+' backlink retained');
+    }
+
     const rootHead=headOf(rootHtml);
     assert.ok(rootHead.includes("<title>ZGmini 지그미니 | 공포탐욕지수·공탐 지수·미국 증시·경제지표</title>"));
     assert.ok(hasDescription(rootHead));
