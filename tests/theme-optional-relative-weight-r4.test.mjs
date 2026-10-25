@@ -44,6 +44,33 @@ test('equal maturity has equal weights regardless of ETF count; insertion order 
  close(first.score,reverse.score);
 });
 
+test('four, five, and many ETFs use one generic formula without a three-ETF cap',()=>{
+ for(const sessions of [
+  [700,500,120,40],
+  [700,500,252,120,40],
+  [700,628,500,377,252,144,120,80,41,40],
+ ]){
+  const etfs=sessions.map((n,i)=>item(`ETF${i+1}`,n,10+i*5));
+  const actual=scoreRelativeThemeBasket({etfs});
+  assert.equal(Object.keys(actual.weights).length,etfs.length);
+  close(Object.values(actual.weights).reduce((sum,w)=>sum+w,0),1);
+  for(let i=1;i<etfs.length;i++){
+   assert.ok(actual.weights[etfs[i-1].symbol]>=actual.weights[etfs[i].symbol],
+    `maturity order broken for ${etfs.length} ETFs at ${i}`);
+  }
+  const reversed=scoreRelativeThemeBasket({etfs:[...etfs].reverse()});
+  close(actual.score,reversed.score);
+  for(const symbol of etfs.map(x=>x.symbol))close(actual.weights[symbol],reversed.weights[symbol]);
+ }
+});
+
+test('five equal-history ETFs normalize to 20% each, without fixed group-level ratios',()=>{
+ const etfs=Array.from({length:5},(_,i)=>item(`ETF${i+1}`,120,20+i*10));
+ const out=scoreRelativeThemeBasket({etfs});
+ for(const weight of Object.values(out.weights))close(weight,.2);
+ close(out.score,40);
+});
+
 test('historical session counts are day-local, not retroactively replaced by latest maturity',()=>{
  const early=scoreRelativeThemeBasket({etfs:[item('UFO',530,55),item('NASA',40,65)]});
  const later=scoreRelativeThemeBasket({etfs:[item('UFO',650,55),item('NASA',144,65)]});
