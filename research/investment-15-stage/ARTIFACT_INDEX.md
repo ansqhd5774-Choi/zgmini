@@ -10,6 +10,7 @@
 | 15단계 04단계 인수인계 | `INVESTMENT_15_STAGE_HANDOFF_20261025.md` |
 | 04단계 단일 판본 검산 R3(v2) | `STAGE04_SAME_VINTAGE_VALIDATION_R3_20261025.md` |
 | 04단계 실측 자동 입력 최신 R8 | `STAGE04_INVESTMENT_BOT_R8_FDA_CPUC_LIVE_EVIDENCE_20261025.md`; FDA/CDER와 CPUC 공식 사이트를 **실행마다 조회**, 원본 PDF/ZIP은 GitHub에 저장하지 않음 |
+| 04단계 실측 자동 입력 최신 R9 | `STAGE04_INVESTMENT_BOT_R9_IFR_LIVE_EVIDENCE_20261025.md`; IFR 2026 PDF 해시 검증을 추가하여 산업 입력 **5/9**, 원본·유료 IFR 데이터베이스는 GitHub에 저장하지 않음 |
 | M2 최신 실행 코드 | `m2/` (R25 ZIP에서 복구한 텍스트 원본) |
 | M2 R25 ZIP 전체 | [개인 Library R25 원본](https://chatgpt.com/library?file_id=libfile_cb913f8bf4788191b9a20355b30bab06&account_id=personal), SHA256=`a6e7187e85633f04ed216dcdc0b8ad704564d957c798d0ebaf1c7ddd6e6ea4e9` |
 | M2 R25 원본 PDF 15개 | 위 ZIP의 `scorecards/standards/`; [개인 Library R20 원본 포함판](https://chatgpt.com/library?file_id=libfile_95e62486eaa88191be6b3e4802e43f32&account_id=personal), **GitHub 미게시** |
