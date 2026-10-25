@@ -6,6 +6,8 @@ import {
 import { F_ENDPOINT } from './latest-f-readonly.mjs';
 import { EUROSTAT_CLOUD_API, parseEurostatCloud } from './eurostat-cloud-readonly.mjs';
 import { INDUSTRY_CONTRACT, runInvestmentBotInputGate } from './investment-bot-gate-readonly.mjs';
+import { readPinnedFdaCderReport } from './fda-cder-official-readonly.mjs';
+import { createHash } from 'node:crypto';
 
 const asciiUrl = 'https://www.frbservices.org/wp-content/uploads/20261020-quarterly-3q2026-fednow-ascii.txt';
 const html = `<html><p>FedNow Service</p><p>Last updated on October 20, 2026</p><a href="${asciiUrl}">ASCII</a></html>`;
@@ -25,6 +27,16 @@ const raw = `FedNow - Quarterly Data
  2023:Q3          5,564                          4,776,756
 `;
 const names = Object.keys(INDUSTRY_CONTRACT);
+const fakePdf = Buffer.concat([Buffer.from('%PDF-1.7\n'), Buffer.alloc(140, 42)]);
+const fakePdfHash = createHash('sha256').update(fakePdf).digest('hex');
+const fdaReader = async () => readPinnedFdaCderReport(fakePdf, { expectedSha256: fakePdfHash });
+const cpucReader = async () => ({
+  state: 'OFFICIAL_CALENDAR_QUARTER_RANGE_VERIFIED_RESEARCH_ONLY', observationPeriod: '2026:Q2',
+  latestRawCount: 4220075, yoyGrowthPct: 88.8251081026904,
+  sequentialYoyAccelerationPctPoints: -25.998404744588726,
+  sourceArchivePeriods: ['2026:Q2', '2026:Q1', '2025:Q2', '2025:Q1'],
+  historicalYoyReferenceCount: 1, historicalAccelerationReferenceCount: 0,
+});
 const eurostatJson = {
   version: '2.0', class: 'dataset', source: 'ESTAT', updated: '2026-02-27T11:00:00+0100',
   id: ['freq', 'size_emp', 'nace_r2', 'indic_is', 'unit', 'geo', 'time'],
@@ -124,13 +136,20 @@ test('Eurostat changed cohort, bad rate, or missing comparison stays explicit', 
 });
 
 test('bot joins nine existing F themes but never issues a ranking or an order', async () => {
-  const result = await runInvestmentBotInputGate({ fetchFn: makeFetch(), asOfDate: '2026-10-25' });
+  const result = await runInvestmentBotInputGate({ fetchFn: makeFetch(), asOfDate: '2026-10-25', fdaReader, cpucReader });
   assert.equal(result.status, 'LIVE_INPUT_PARTIAL_INDUSTRY_UNRANKED');
   assert.equal(result.themes.length, 9);
-  assert.equal(result.officialIndustry.validatedLiveThemes, 2);
+  assert.equal(result.officialIndustry.validatedLiveThemes, 4);
   const biotech = result.themes.find((x) => x.theme === '바이오·신약');
   assert.equal(biotech.sentimentPhase, 'PROVISIONAL');
   assert.equal(biotech.sentimentF, 22.63294);
+  assert.equal(biotech.industryRawCount, 46);
+  assert.equal(biotech.industryObservationPeriod, '2025');
+  assert.ok(Math.abs(biotech.industryGrowthPct + 8) < 0.000001);
+  assert.equal(biotech.industryEvidenceState, 'LIVE_SOURCE_HASH_VALIDATED_FIXED_2025_REPORT');
+  const av = result.themes.find((x) => x.theme === '자율주행');
+  assert.equal(av.industryRawCount, 4220075);
+  assert.ok(Math.abs(av.industryAccelerationPctPoints + 25.9984) < 0.003);
   const fintech = result.themes.find((x) => x.theme === '핀테크');
   assert.equal(fintech.industryObservationPeriod, '2026:Q3');
   assert.equal(fintech.industryRawCount, 6376467);
@@ -145,7 +164,7 @@ test('bot joins nine existing F themes but never issues a ranking or an order', 
 
 test('Eurostat source down does not silently reuse a past response', async () => {
   const result = await runInvestmentBotInputGate({
-    fetchFn: makeFetch({ brokenEurostat: true }), asOfDate: '2026-10-25',
+    fetchFn: makeFetch({ brokenEurostat: true }), asOfDate: '2026-10-25', fdaReader, cpucReader,
   });
   assert.equal(result.status, 'PARTIAL_OR_FAILED_INPUT_UNRANKED');
   assert.equal(result.officialIndustry.eurostat.failureCode, 'EUROSTAT_HTTP_503');
@@ -153,7 +172,7 @@ test('Eurostat source down does not silently reuse a past response', async () =>
 });
 
 test('FedNow HTTP failure preserves NULL industry values, not fake success', async () => {
-  const result = await runInvestmentBotInputGate({ fetchFn: makeFetch({ brokenFedNow: true }), asOfDate: '2026-10-25' });
+  const result = await runInvestmentBotInputGate({ fetchFn: makeFetch({ brokenFedNow: true }), asOfDate: '2026-10-25', fdaReader, cpucReader });
   assert.equal(result.status, 'PARTIAL_OR_FAILED_INPUT_UNRANKED');
   assert.equal(result.officialIndustry.fednow.failureCode, 'FEDNOW_HTTP_503');
   assert.equal(result.themes.find((x) => x.theme === '핀테크').industryRawCount, null);
@@ -162,10 +181,30 @@ test('FedNow HTTP failure preserves NULL industry values, not fake success', asy
 });
 
 test('F HTTP failure preserves NULL F without substituting stored values', async () => {
-  const result = await runInvestmentBotInputGate({ fetchFn: makeFetch({ brokenF: true }), asOfDate: '2026-10-25' });
+  const result = await runInvestmentBotInputGate({ fetchFn: makeFetch({ brokenF: true }), asOfDate: '2026-10-25', fdaReader, cpucReader });
   assert.equal(result.status, 'PARTIAL_OR_FAILED_INPUT_UNRANKED');
   assert.equal(result.F.failureCode, 'F_API_HTTP_503');
   assert.equal(result.themes.length, 9);
   assert.ok(result.themes.every((x) => x.sentimentF === null && x.approvedGrowthG === null));
+  assert.equal(result.automatedTradeEnabled, false);
+});
+
+test('FDA source version drift cannot silently promote saved 2025 numbers', async () => {
+  const result = await runInvestmentBotInputGate({ fetchFn: makeFetch(), asOfDate: '2026-10-25',
+    fdaReader: async () => { throw new Error('FDA_CDER_SOURCE_VERSION_DRIFT'); }, cpucReader });
+  assert.equal(result.status, 'PARTIAL_OR_FAILED_INPUT_UNRANKED');
+  assert.equal(result.officialIndustry.validatedLiveThemes, 3);
+  assert.equal(result.officialIndustry.fdaCder.failureCode, 'FDA_CDER_SOURCE_VERSION_DRIFT');
+  assert.equal(result.themes.find((x) => x.theme === '바이오·신약').industryRawCount, null);
+  assert.equal(result.themes.find((x) => x.theme === '바이오·신약').sentimentF, 22.63294);
+});
+
+test('CPUC source failure cannot reuse Waymo aggregate or suppress F', async () => {
+  const result = await runInvestmentBotInputGate({ fetchFn: makeFetch(), asOfDate: '2026-10-25',
+    fdaReader, cpucReader: async () => { throw new Error('CPUC_RANGE_HTTP_503'); } });
+  assert.equal(result.status, 'PARTIAL_OR_FAILED_INPUT_UNRANKED');
+  assert.equal(result.officialIndustry.cpucAv.failureCode, 'CPUC_RANGE_HTTP_503');
+  assert.equal(result.themes.find((x) => x.theme === '자율주행').industryRawCount, null);
+  assert.equal(result.themes.find((x) => x.theme === '자율주행').sentimentF, 50);
   assert.equal(result.automatedTradeEnabled, false);
 });
