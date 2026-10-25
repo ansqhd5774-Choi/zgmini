@@ -79,6 +79,23 @@ test('historical session counts are day-local, not retroactively replaced by lat
  assert.ok(later.weights.NASA<.5);
 });
 
+test('R4 respects actual R2 indicator-sample status even when count-based parity differs',()=>{
+ const gappedLong=scoreRelativeThemeBasket({etfs:[
+  item('UFO',600,65,'ADAPTIVE_PROVISIONAL'),
+  item('NASA',144,80,'ADAPTIVE_PROVISIONAL')]});
+ const usualLong=scoreRelativeThemeBasket({etfs:[
+  item('UFO',600,65,'R188_COMPATIBLE'),
+  item('NASA',144,80,'ADAPTIVE_PROVISIONAL')]});
+ close(gappedLong.score,usualLong.score);
+ close(gappedLong.weights.NASA,usualLong.weights.NASA);
+ assert.equal(gappedLong.status,'ADAPTIVE_PROVISIONAL');
+ const shorterIntersection=scoreRelativeThemeBasket({etfs:[
+  item('UFO',370,65,'R188_COMPATIBLE'),
+  item('NASA',80,80,'ADAPTIVE_PROVISIONAL')]});
+ assert.ok(shorterIntersection.score>=0&&shorterIntersection.score<=100);
+ assert.equal(shorterIntersection.status,'ADAPTIVE_PROVISIONAL');
+});
+
 test('cannot generate false scores for a 29-session ETF or substitute missing scores',()=>{
  assert.throws(()=>scoreRelativeThemeBasket({etfs:[item('A',29,10),item('B',29,20)]}),
   /INSUFFICIENT_REAL_SESSIONS/);
@@ -86,7 +103,7 @@ test('cannot generate false scores for a 29-session ETF or substitute missing sc
   /MISSING_ACTUAL_ADAPTIVE_SCORE/);
  assert.throws(()=>scoreRelativeThemeBasket({etfs:[item('AAA',628,50),item('BBB',40,NaN)]}),
   /MISSING_ACTUAL_ADAPTIVE_SCORE/);
- assert.throws(()=>scoreRelativeThemeBasket({etfs:[item('AAA',628,50),item('BBB',252,50,'R188_COMPATIBLE')]}),
+ assert.throws(()=>scoreRelativeThemeBasket({etfs:[item('AAA',628,50),item('BBB',252,50,'UNVERIFIED')]}),
   /SCORER_PARITY_NOT_VERIFIED/);
  assert.throws(()=>scoreRelativeThemeBasket({etfs:[item('AAA',40,20),item('AAA',40,30)]}),
   /DUPLICATE_TICKER/);
