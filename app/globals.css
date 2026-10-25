@@ -4020,3 +4020,46 @@ body .zg-r55-market .zg-r55-shell[data-expanded="false"] article.zg-r55-card>.zg
   text-decoration-color:rgba(167,196,220,.65);
   text-underline-offset:2px;
 }
+
+/* EC12 R4: stable heading in BOTH folded/unfolded economic cards.
+   Small superscript detail arrow stays inside the label footprint,
+   leaving the existing full-width mini chart untouched. */
+.zg-dashboard[data-view="dashboard"] .zg-r55-shell[data-expanded] .zg-r55-card-head{
+  position:relative;
+  display:block;
+  box-sizing:border-box;
+  width:100%;
+  padding-left:15px;
+}
+.zg-dashboard[data-view="dashboard"] .zg-r55-shell[data-expanded] .zg-r55-card-head>span:last-child{
+  position:absolute;
+  top:-8px;
+  left:-8px;
+  width:20px;
+  height:20px;
+  order:0;
+}
+.zg-dashboard[data-view="dashboard"] .zg-r55-shell[data-expanded] .zg-r55-card-head h3{
+  font-size:13px;
+  letter-spacing:-.75px;
+  line-height:20px;
+  overflow:visible;
+  transform:translateY(2px);
+}
+.zg-dashboard[data-view="dashboard"] .zg-r55-shell[data-expanded] .zg-r55-card-title-link{
+  position:relative;
+  text-decoration-line:underline;
+  text-decoration-style:dotted;
+  text-decoration-color:rgba(167,196,220,.65);
+  text-underline-offset:2px;
+}
+.zg-dashboard[data-view="dashboard"] .zg-r55-shell[data-expanded] .zg-r55-card-title-link .zg-r55-title-arrow{
+  position:absolute;
+  top:-8px;
+  right:0;
+  width:10px;
+  height:10px;
+  pointer-events:none;
+  color:#fabc42;
+  opacity:1;
+}
