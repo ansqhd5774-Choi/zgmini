@@ -13,6 +13,7 @@
 5. `ARTIFACT_INDEX.md`: R10~R25 압축 패키지 원본 및 15개 PDF의 외부 보존·SHA256.
 6. `m2/README_R25_NASDAQ_EARNINGS_REPAIR.md`와 `m2/M2_RUN_READONLY.cmd`: 실제 M2 R25 Windows 읽기 전용 패키지 기준.
 7. `STAGE04_INVESTMENT_BOT_R8_FDA_CPUC_LIVE_EVIDENCE_20261025.md`: 최신 R8 공식 산업 원자료 **4/9 실측**, FDA 2025 PDF 판본 검증 및 CPUC 월별 ZIP 집계 범위 조회; 공식 투자 점수·순위·주문 없음.
+8. `STAGE04_INVESTMENT_BOT_R9_IFR_LIVE_EVIDENCE_20261025.md`: **최신 R9 공식 산업 원자료 5/9 실측**. IFR 2026 단일 보고서의 2025 로봇 신규 설치량·반올림 발표 성장률을 독립 검증, 정확한 가속도/점수는 결측.
 
 ## 작업 원칙
 
