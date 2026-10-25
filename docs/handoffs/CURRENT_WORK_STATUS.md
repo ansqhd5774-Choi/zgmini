@@ -152,3 +152,15 @@
 - 화면 H1을 검색 키워드로 억지 증설하지 않는다(과거 `공포·탐욕 (공탐)` 사례 방지). Google이 검색 제목과 스니펫을 재작성할 수 있으므로 효과 보장·미측정 성공 보고 금지. 이미 적합하면 `NO_CHANGE`, 자료 부족은 `NOT_VERIFIED` 또는 `NO_GSC_EVIDENCE`.
 - 저장 브랜치: `codex/zgmini-gpt-workspace-20261025` 보존. 지침 추가 커밋: SEO 기준 `8b0e1aaddb677057cd8de905205064d6aefbf36e`, AGENTS 연동 `c33e1438ea46792216e1ec246acefcab29726035`.
 - **이번 단계는 브랜치 지침 저장만** 수행. 개별 URL의 title/meta/화면 코드 변경, PR 병합, main 반영, Cloudflare 공개 배포 및 검색실적 개선 검증을 수행하지 않았다.
+
+## 2026-10-25 최신 점수 배지 선 가림 수정 R1
+
+- 신고 이미지 `image(20261025-121825).png`: 섹터·테마 차트의 단일 선택 최신 점수 배지가 끝점 왼쪽의 실제 시계열 선을 덮는 문제(오른쪽 Y축 반응형).
+- 근본 원인: `ChartCurrentPoint`에서 모바일 `axisRight`일 때 `x=cx-width-7`로 점수 사각형을 시계열 내부에 배치. PC 오른쪽 배지 경로는 `cx+7`이었음.
+- 해결: 배지는 `x=cx+7`로 끝점 오른쪽에 고정. 모바일 오른쪽 Y축 + 최신 관측 점수 + 단일 선택일 때 축 너비 `92px`, tickMargin `62px`로 **시계열 끝점 → 배지 → Y축 눈금**을 분리. 그 외 상태의 기존 축 폭과 선택 동작 보존.
+- `components/sector-sentiment-chart.tsx`, `tests/sector-dashboard-compact-legend-r1.test.mjs` 2파일만 변경. 최고·최저점/시리즈 색상/점수 5단계 색상/결측·잠정/높이 120px 보존. 데이터·산식·API·DB·스케줄러·DNS 변경 없음.
+- 장기 작업 브랜치 `codex/zgmini-gpt-workspace-20261025` 코드 커밋 `59f606b919913afa7be6858af97e5104389d00b1`, 테스트 커밋 `93abb4527f7272c18cd75126f180943bdd1c3257`. 브랜치 보존.
+- 최소 배포 브랜치 `codex/ui-current-score-gutter-20261025` (main 최신에서 분기)·[PR #721](https://github.com/ansqhd5774-Choi/zgmini/pull/721): 변경 2파일, SOURCE_DRIFT NONE. GitHub Actions Node.js CI `40193415170` **SUCCESS**. `main` squash SHA `16c4484a0b9b98024f0cda5b166bf283ef26a8db`.
+- **공개 DOM 실측**: `https://zgmini.kr/` 변경 후 390px에서 섹터·테마 최신 배지 모두 끝점 오른쪽이며 오른쪽 축 텍스트와 분리. 섹터 배지 우측 296px, Y축 눈금 좌측 316px; 에너지 78.1점·클라우드·SaaS 65.0점 실제 관측일 2026-10-23. 500px 두 차트 분리 PASS, 1280px 최신 배지 PASS, 2개 선택 시 최신 점수 배지 숨김 PASS.
+- SEO 상시 점검: 대시보드 공개 title/meta description/H1/canonical/index 상태 확인. 이 범위에서는 SEO 문구 변경 없음(`NO_CHANGE`).
+- **PUBLIC_UI_VERIFIED**. GitHub 병합 및 공개 UI 실측으로 반영 확인. 다만 Cloudflare 관리 화면의 개별 Build/Deployment ID와 `Ready`는 이번 도구 환경에서 직접 조회하지 못했으므로 **NOT_VERIFIED**로 구분한다.
