@@ -80,5 +80,6 @@ test("dashboard source is wired for active B1-R5 and can render a single real ob
   assert.match(source,/오른 종목 비율 30% \+ 상승 거래비중 20% \+ 5일 수급 추세 30% \+ 20일 수급 추세 20%/);
   assert.doesNotMatch(source,/BEA 해외 포트폴리오 주식수급, SEC 주식공급 폭/);
   assert.match(source,/trend\.length>0/);
-  assert.match(source,/ReferenceDot/);
+  const chart=fs.readFileSync(new URL('../components/dashboard-summary-chart.tsx',import.meta.url),'utf8');
+  assert.match(chart,/ReferenceDot/);
 });
