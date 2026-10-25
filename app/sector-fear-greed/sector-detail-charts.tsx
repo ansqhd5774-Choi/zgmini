@@ -1,5 +1,5 @@
 'use client';
-import {useEffect,useMemo,useState} from 'react';
+import {type CSSProperties,useEffect,useMemo,useState} from 'react';
 import {CartesianGrid,Line,LineChart,ReferenceArea,ReferenceLine,ResponsiveContainer,Tooltip,XAxis,YAxis} from 'recharts';
 import {SECTORS,type SectorId,type SectorSentimentPoint,type SectorSnapshotMeta} from '../../components/sector-sentiment-chart';
 
@@ -39,7 +39,7 @@ function periodRows(rows:SectorSentimentPoint[],days:number){
  return rows.filter(row=>Date.parse(row.date+'T00:00:00Z')>=end-days*86400000);
 }
 const deltaText=(v:number|null)=>v===null?'—':(v>0?'+':'')+v.toFixed(1)+'p';
-const scoreColor=(v:number|null)=>v===null?'#8299ac':v>=75?'#2dd4bf':v>=55?'#6ae3a0':v>=45?'#a7bbd1':v>=25?'#ffad5e':'#ff637c';
+const scoreColor=(v:number|null)=>v===null?'#8299ac':v>=75?'var(--zg-score-extreme-greed)':v>=55?'var(--zg-score-greed)':v>=45?'var(--zg-score-neutral)':v>=25?'var(--zg-score-fear)':'var(--zg-score-extreme-fear)';
 const deltaState=(v:number|null)=>v===null?'is-missing':v>0?'is-up':v<0?'is-down':'is-flat';
 function PeriodButtons({value,onChange,items,label}:{value:number;onChange:(value:number)=>void;items:readonly (readonly [string,number])[];label:string}){
  return <div className="zg-sfg-periods" role="group" aria-label={label}>{items.map(([name,days])=><button key={name} type="button" aria-pressed={value===days} onClick={()=>onChange(days)}>{name}</button>)}</div>;
@@ -102,7 +102,7 @@ export default function SectorDetailCharts(){
   <div className="zg-sfg-lower">
    <section className="zg-sfg-comparison" aria-label="섹터별 심리 지수 비교">
     <div className="zg-sfg-panel-head"><div><h2>섹터별 1년 심리 지수 비교</h2><p>선택한 섹터의 공포·탐욕 지수를 비교합니다.</p></div><PeriodButtons value={compareDays} onChange={days=>{setCompareDays(days);setComparisonPinned(false);}} items={PERIODS} label="섹터 비교 기간"/></div>
-    <div className="zg-sfg-legend" role="group" aria-label="비교할 섹터 선택">{sorted.map(sector=>{const value=latest[sector.id],current=typeof value==='number'?value:null;return <button type="button" key={sector.id} aria-pressed={visible.has(sector.id)} onClick={()=>toggle(sector.id)}><i style={{background:COLORS[sector.id]}}/><span className="zg-sfg-legend-name">{nameOf(sector.id)}</span><strong className="zg-sfg-legend-score" style={{color:scoreColor(current)}}>{current===null?'—':current.toFixed(1)}</strong></button>;})}</div>
+    <div className="zg-sfg-legend" role="group" aria-label="비교할 섹터 선택">{SECTORS.map(sector=>{const value=latest[sector.id],current=typeof value==='number'?value:null;return <button type="button" key={sector.id} aria-pressed={visible.has(sector.id)} onClick={()=>toggle(sector.id)} style={{'--zg-mobile-order':sorted.findIndex(item=>item.id===sector.id)} as CSSProperties}><i style={{background:COLORS[sector.id]}}/><span className="zg-sfg-legend-name">{nameOf(sector.id)}</span><strong className="zg-sfg-legend-score" style={{color:scoreColor(current)}}>{current===null?'—':current.toFixed(1)}</strong></button>;})}</div>
     <div className="zg-sfg-comparison-plot"><ResponsiveContainer width="100%" height="100%"><LineChart data={compareRows} margin={{top:8,right:10,bottom:0,left:0}} onMouseDown={()=>setComparisonPinned(true)} onMouseUp={()=>setComparisonPinned(false)} onMouseLeave={()=>setComparisonPinned(false)}>
      <Zones/><CartesianGrid stroke="#23485b" strokeDasharray="2 4" vertical={true}/>
      <XAxis dataKey="date" stroke="#a9bccd" fontSize={11} axisLine={false} tickLine={false} tickFormatter={date=>String(date).slice(5)} minTickGap={42}/><YAxis domain={[0,100]} ticks={[0,25,50,75,100]} interval={0} stroke="#a9bccd" axisLine={false} tickLine={false} fontSize={11} width={34}/><ReferenceLine y={50} stroke="#92a3b0" strokeDasharray="3 4"/>
