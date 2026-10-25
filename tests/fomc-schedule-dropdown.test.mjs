@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import {easternIso,upcomingSchedule,remainingParts,kstDisplay} from '../lib/fomc-schedule.mjs';
+import {easternIso,upcomingSchedule,remainingParts,kstDisplay,meetsEarningsMarketCap,SCHEDULE_MAX_ITEMS,EARNINGS_MARKET_CAP_MIN_USD_B} from '../lib/fomc-schedule.mjs';
 
 const file=fs.readFileSync(new URL('../components/fomc-countdown.tsx',import.meta.url),'utf8');
 const css=fs.readFileSync(new URL('../components/fomc-countdown.css',import.meta.url),'utf8');
@@ -18,11 +18,19 @@ test('original yellow banner and flip clock sizes remain unchanged',()=>{
 test('calendar includes verified releases and excludes calls',()=>{
  const now=Date.parse('2026-10-25T03:00:00Z');
  const events=upcomingSchedule(now,null);
- assert.ok(events.length>=8);
- assert.equal(events[0].kind,'연준');
+ assert.equal(events.length,SCHEDULE_MAX_ITEMS);
+ assert.equal(events[0].kind,'실적');
+ assert.equal(events[0].name,'버라이즌');
+ assert.ok(events.some(e=>e.name==='FOMC 금리 결정'));
+ assert.ok(events.filter(e=>e.kind==='실적').length>3);
+ assert.ok(events.every(e=>e.kind!=='실적'||e.marketCapUsdB>=EARNINGS_MARKET_CAP_MIN_USD_B));
  assert.deepEqual(events.map(e=>e.at),events.map(e=>e.at).sort());
  assert.ok(events.some(e=>e.name==='알파벳'&&e.estimated));
- assert.ok(events.some(e=>e.name==='미국 CPI'&&!e.estimated));
+ // CPI is farther away than the 20 nearest events in late October; it
+ // appears automatically after nearer entries expire.
+ const later=upcomingSchedule(Date.parse('2026-11-05T03:00:00Z'),null);
+ assert.ok(later.some(e=>e.name==='미국 CPI'&&!e.estimated));
+ assert.ok(events.filter(e=>e.name==='알파벳').length===1);
  assert.ok(!events.some(e=>/콜|컨퍼런스/.test(e.name)));
 });
 test('verified macro dates use Eastern daylight saving and standard time',()=>{
@@ -46,4 +54,20 @@ test('310px wraps centered four-column names with unchanged 37px height',()=>{
  assert.match(css,/text-align:center/);
  assert.match(css,/\.zg-schedule-item\{height:37px;min-height:37px;max-height:37px/);
  assert.match(css,/\.zg-schedule-company-logo\{display:block;flex:none;width:14px;height:14px/);
+});
+
+test('earnings market-cap threshold is exactly 100 billion USD',()=>{
+ assert.equal(EARNINGS_MARKET_CAP_MIN_USD_B,100);
+ assert.equal(SCHEDULE_MAX_ITEMS,20);
+ assert.equal(meetsEarningsMarketCap(99.99),false);
+ assert.equal(meetsEarningsMarketCap(100),true);
+ assert.equal(meetsEarningsMarketCap(101),true);
+ assert.equal(meetsEarningsMarketCap(null),false);
+ assert.equal(meetsEarningsMarketCap(NaN),false);
+});
+test('estimate labels distinguish before-open from after-close reference',()=>{
+ assert.match(file,/item\.session==='beforeOpen'/);
+ assert.match(file,/정규장 개장 09:30 ET 기준 예상 시각/);
+ assert.match(file,/정규장 마감 16:00 ET 기준 예상 시각/);
+ assert.match(css,/\.zg-schedule-ticker-fallback\{display:inline-flex;flex:none/);
 });
