@@ -16,7 +16,8 @@ test("12 market card headings navigate natively to the approved published detail
  assert.ok(heading.includes('href={"/economic-indicators/"+('));
  assert.ok(heading.includes('aria-label={m.label+" 상세페이지 열기"}'));
  assert.ok(heading.includes("event.stopPropagation()"),"link should not expand card");
- assert.ok(heading.includes("<ArrowUpRight"),"visible link affordance required");
+ assert.ok(!heading.includes("<ArrowUpRight"),"inline arrow must not cover the mini chart");
+ assert.ok(css.includes("text-decoration-line:underline"),"permanent visible link affordance required");
  for(const [id,slug] of routes){
   assert.ok(heading.includes(id+':"'+slug+'"'),"bad dashboard slug "+id);
   assert.ok(catalog.includes("id:'"+id+"',href:'/economic-indicators/"+slug+"/'"),"bad explorer slug "+id);
@@ -35,4 +36,12 @@ test("title text is visibly actionable, pointer-accessible and keyboard focusabl
  assert.ok(css.includes("EC12 NAV R1"));
  assert.ok(css.includes(".zg-r55-card-title-link{"));
  for(const value of ["cursor:pointer","pointer-events:auto","touch-action:manipulation",":focus-visible","text-decoration:underline"])assert.ok(css.includes(value));
+});
+
+test("economic mini charts keep visible dotted guides and separate help positioning",()=>{
+ assert.ok(ui.includes("strokeDasharray={value===0||value===100?undefined:'4 4'}"));
+ assert.ok(ui.includes("rgba(170,197,220,.64)"));
+ assert.ok(ui.includes("rgba(157,184,208,.52)"));
+ assert.ok(css.includes("EC12 R2: separate the help affordance"));
+ assert.ok(css.includes("left:-7px;"));
 });
