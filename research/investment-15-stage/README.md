@@ -10,10 +10,11 @@
 2. `INVESTMENT_PROCESS_15_STAGE_PRECISE_IMPLEMENTATION_PLAN_R2_QUANT_20261025.md`: 15단계 전체 계획의 최신 설계 기준. 산식·가중치 미승인 부분을 운영 적용하지 않는다.
 3. `INVESTMENT_15_STAGE_HANDOFF_20261025.md`: 04단계 이전 대화의 승인·금지·주의사항.
 4. `STAGE04_LIVE_F_AND_SOURCE_GATE_R4_20261025.md`: **2026-10-25 현재 공개 HTTP 실측 F 9/9** 및 공식기관 산업 통계·권리·판본 신규 검증. 04단계 최신 실행 위치.
-5. `STAGE04_SENSITIVITY_R5_RESEARCH_ONLY_20261025.md`: FDA·FedNow 두 공식 시계열의 **가중치·표본 민감도 테스트** 및 승인 전 금지사항. `stage04/quant-sensitivity-readonly.mjs`를 Node로 검사함.
-6. `STAGE04_SAME_VINTAGE_VALIDATION_R3_20261025.md`: 앞선 산업 공식 통계 동질성 검산 및 바이오 잠정치 정정.
-7. `ARTIFACT_INDEX.md`: R10~R25 압축 패키지 원본 및 15개 PDF의 외부 보존·SHA256.
-8. `m2/README_R25_NASDAQ_EARNINGS_REPAIR.md`와 `m2/M2_RUN_READONLY.cmd`: 실제 M2 R25 Windows 읽기 전용 패키지 기준.
+5. `STAGE04_LIVE_F_READER_R6_20261025.md`: 잠정치 우선 최신 F 자동 선택기 및 **오프라인 5/5·실제 공개 API 9/9 PASS**. `stage04/latest-f-readonly.mjs`는 읽기 전용.
+6. `STAGE04_SENSITIVITY_R5_RESEARCH_ONLY_20261025.md`: FDA·FedNow 두 공식 시계열의 **가중치·표본 민감도 테스트** 및 승인 전 금지사항. `stage04/quant-sensitivity-readonly.mjs`를 Node로 검사함.
+7. `STAGE04_SAME_VINTAGE_VALIDATION_R3_20261025.md`: 앞선 산업 공식 통계 동질성 검산 및 바이오 잠정치 정정.
+8. `ARTIFACT_INDEX.md`: R10~R25 압축 패키지 원본 및 15개 PDF의 외부 보존·SHA256.
+9. `m2/README_R25_NASDAQ_EARNINGS_REPAIR.md`와 `m2/M2_RUN_READONLY.cmd`: 실제 M2 R25 Windows 읽기 전용 패키지 기준.
 
 ## 작업 원칙
 
@@ -35,3 +36,5 @@
 
 - `archive/STAGE04_PRIMARY_SOURCE_RESEARCH_R1_20261025.md`, `archive/STAGE04_OFFICIAL_HISTORY_R2_20261025.md`는 **수정 전 역사 문서**다. R1의 2023 FDA=55 및 +1.09%p 가속은 **혼합 판본 오류로 폐기**되었으며, R3/R4가 현재 진실이다.
 - **다음 실행은 R4의 미완료 공식 통계·민감도 검증에서 시작**한다. 저장된 F 스냅샷을 현재값처럼 재사용하지 않고 `/api/theme-fear-greed`를 새로 읽는다.
+
+**실행 경계:** R6 실시간 F 선택기는 G·M·정식 순위를 계산하지 않는다. 다음 대화에서 가중치 승인 없이 R5 연구 출력이나 R25 선택 JSON을 현재 추천 결과로 승격하지 말 것.
