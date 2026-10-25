@@ -8,6 +8,7 @@ import { EUROSTAT_CLOUD_API, parseEurostatCloud } from './eurostat-cloud-readonl
 import { IEA_DATA_CENTRE_REPORT } from './iea-data-centre-official-readonly.mjs';
 import { ENISA_NIS_2025_RELEASE } from './enisa-nis-official-readonly.mjs';
 import { FDA_APPROVAL_YEAR_CATALOG } from './fda-edition-catalog-readonly.mjs';
+import { IFR_OFFICIAL_PRESS_INDEX } from './ifr-edition-press-watch-readonly.mjs';
 import { INDUSTRY_CONTRACT, runInvestmentBotInputGate } from './investment-bot-gate-readonly.mjs';
 import { readPinnedFdaCderReport } from './fda-cder-official-readonly.mjs';
 import { createHash } from 'node:crypto';
@@ -83,8 +84,15 @@ const fdaCatalogHtml = `<html><head><title>Novel Drug Approvals at FDA | FDA</ti
 <a href="/drugs/novel-drug-approvals-fda/novel-drug-approvals-2026">Novel Drug Approvals for 2026</a>
 <a href="/drugs/novel-drug-approvals-fda/novel-drug-approvals-2025">Novel Drug Approvals for 2025</a>
 <p>${'Official FDA index context. '.repeat(90)}</p></body></html>`;
+const ifrPressIndexHtml = `<html><head><title>IFR Press Room</title></head><body>
+<h1>IFR Press Room</h1><h1>Press Releases</h1>
+<div class="mh-news"><a href="/ifr-press-releases/news/service-robot-sales-2026"><h3 class="heading3">Global Service Robots Report</h3></a>
+<p class="subtitle">World Robotics 2026 Service Robots report</p><div class="news-teaser">The World Robotics 2026 Service Robots report covers service robots.</div></div> <!-- mh-news -->
+<div class="mh-news"><a href="/ifr-press-releases/news/five-million-robots-now-operate-in-factories-globally"><h3 class="heading3">Five Million Robots now Operate in Factories Globally</h3></a>
+<p class="subtitle">World Robotics 2026 Report by IFR released</p><div class="col-lg-6 news-teaser">Global operational stock of industrial robots grew in 2025.</div></div> <!-- mh-news -->
+<p>${'IFR publisher press context, not raw market history. '.repeat(110)}</p></body></html>`;
 
-function makeFetch({ brokenFedNow = false, brokenF = false, brokenEurostat = false, brokenIea = false, brokenEnisa = false, brokenFdaCatalog = false } = {}) {
+function makeFetch({ brokenFedNow = false, brokenF = false, brokenEurostat = false, brokenIea = false, brokenEnisa = false, brokenFdaCatalog = false, brokenIfrCatalog = false } = {}) {
   return async (url) => {
     if (url === F_ENDPOINT) return {
       url, ok: !brokenF, status: brokenF ? 503 : 200,
@@ -114,6 +122,10 @@ function makeFetch({ brokenFedNow = false, brokenF = false, brokenEurostat = fal
       url, ok: !brokenFdaCatalog, status: brokenFdaCatalog ? 503 : 200,
       headers: { get: () => 'text/html; charset=utf-8' },
       text: async () => fdaCatalogHtml,
+    };
+    if (url === IFR_OFFICIAL_PRESS_INDEX) return {
+      url, ok: !brokenIfrCatalog, status: brokenIfrCatalog ? 503 : 200,
+      headers: { get: () => 'text/html; charset=utf-8' }, text: async () => ifrPressIndexHtml,
     };
     if (url === asciiUrl) return {
       url, ok: !brokenFedNow, status: brokenFedNow ? 503 : 200, text: async () => raw,
@@ -181,7 +193,7 @@ test('Eurostat changed cohort, bad rate, or missing comparison stays explicit', 
 
 test('bot joins nine existing F themes but never issues a ranking or an order', async () => {
   const result = await runInvestmentBotInputGate({ fetchFn: makeFetch(), asOfDate: '2026-10-25', fdaReader, cpucReader, ifrReader });
-  assert.equal(result.runType, 'INVESTMENT_BOT_STAGE04_INPUT_GATE_R13');
+  assert.equal(result.runType, 'INVESTMENT_BOT_STAGE04_INPUT_GATE_R14');
   assert.equal(result.status, 'LIVE_INPUT_PARTIAL_INDUSTRY_UNRANKED');
   assert.equal(result.themes.length, 9);
   assert.equal(result.officialIndustry.validatedLiveThemes, 7);
@@ -193,6 +205,10 @@ test('bot joins nine existing F themes but never issues a ranking or an order', 
   assert.equal(result.officialIndustry.fdaEditionCatalog.editionAlert, 'NEWER_CURRENT_YEAR_PARTIAL_LISTING_NOT_ANNUAL_REPORT');
   assert.equal(result.sourceVintageAudit.rows.find((x) => x.institution === 'FDA CDER').newerPeriodCatalogAlert, 'NEWER_CURRENT_YEAR_PARTIAL_LISTING_NOT_ANNUAL_REPORT');
   assert.equal(result.sourceVintageAudit.rows.find((x) => x.institution === 'FDA CDER').editionCurrencyState, 'CURRENT_YEAR_LISTING_FOUND_PINNED_REPORT_STILL_LAST_VALIDATED');
+  assert.equal(result.officialIndustry.ifrEditionCatalog.newestIndustrialReportYearInVisibleWindow, 2026);
+  assert.equal(result.officialIndustry.ifrEditionCatalog.editionAlert, 'NO_LATER_INDUSTRIAL_RELEASE_IN_VISIBLE_PRESS_WINDOW_NOT_PROOF');
+  assert.equal(result.sourceVintageAudit.rows.find((x) => x.institution === 'IFR').editionCurrencyState,
+    'VISIBLE_PRESS_WINDOW_NO_LATER_INDUSTRIAL_RELEASE_CURRENCY_NOT_PROVEN');
   const robots = result.themes.find((x) => x.theme === '로봇·자동화');
   assert.equal(robots.industryRawCount, 603307);
   assert.equal(robots.industryGrowthPct, null);
@@ -338,5 +354,23 @@ test('FDA catalog HTTP 503 is separately UNVERIFIED, with the 2025 hashed annual
   assert.equal(fda.industryObservationPeriod, '2025');
   assert.equal(fda.sentimentF, 22.63294);
   assert.equal(fda.officialRank, null);
+  assert.deepEqual(result.orderRequests, []);
+});
+
+test('IFR press list failure does not erase verified industrial PDF/F or manufacture a new report', async () => {
+  const result = await runInvestmentBotInputGate({
+    fetchFn: makeFetch({ brokenIfrCatalog: true }), asOfDate: '2026-10-25',
+    fdaReader, cpucReader, ifrReader,
+  });
+  assert.equal(result.status, 'LIVE_INPUT_PARTIAL_INDUSTRY_UNRANKED');
+  assert.equal(result.officialIndustry.validatedLiveThemes, 7);
+  assert.equal(result.officialIndustry.ifrEditionCatalog.failureCode, 'IFR_PRESS_INDEX_HTTP_503');
+  assert.equal(result.officialIndustry.ifrEditionCatalog.editionAlert, 'UNVERIFIED');
+  const robots = result.themes.find((x) => x.theme === '로봇·자동화');
+  assert.equal(robots.industryRawCount, 603307);
+  assert.equal(robots.industryObservationPeriod, '2025');
+  assert.equal(robots.industryGrowthPct, null);
+  assert.equal(result.sourceVintageAudit.rows.find((x) => x.institution === 'IFR').latestEditionVerified, false);
+  assert.equal(result.automatedTradeEnabled, false);
   assert.deepEqual(result.orderRequests, []);
 });
