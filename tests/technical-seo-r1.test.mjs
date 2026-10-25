@@ -21,7 +21,13 @@ test('sector detail has dedicated social metadata and WebPage schema',()=>{
   assert.match(page,/twitter:\{card:'summary_large_image',title,description,images:\[image\]\}/);
   assert.match(page,/robots:\{index:true,follow:true\}/);
   assert.match(page,/<WebPageJsonLd/);
-  assert.match(page,/aria-label="관련 분석"/);
+  const guide=read('components/investor-search-guide.tsx');
+  const copy=read('lib/investor-search-content.ts');
+  assert.match(page,/<InvestorSearchGuide id="investor-search-sector-fear-greed" copy=\{SECTOR_INVESTOR_SEARCH\} collapsible wideLast\/>/);
+  assert.match(guide,/<details className="group/);
+  assert.match(guide,/<summary className=/);
+  assert.match(guide,/aria-label="관련 주식 투자 지표와 발표 안내"/);
+  assert.match(copy,/heading:"미국 섹터별 공포·탐욕 투자 가이드"/);
 });
 
 test('market details share WebPage JSON-LD and related links are capped at four',()=>{
