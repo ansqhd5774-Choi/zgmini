@@ -31,7 +31,7 @@ function DashboardSearchContent({copy}:{copy:InvestorSearchCopy}){
 export default function InvestorSearchGuide({copy,id,collapsible=false}:{copy:InvestorSearchCopy;id:string;collapsible?:boolean}){
  if(collapsible)return <details className="group col-span-full mt-4 min-w-0 rounded-md border border-[#24485c] bg-[#071e2c] text-slate-200" aria-labelledby={`${id}-title`} data-testid={id}>
   <summary className="flex min-h-10 cursor-pointer list-none items-center justify-between gap-2 px-3 py-2 text-slate-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-cyan-300 sm:px-4 [&::-webkit-details-marker]:hidden">
-   <span className="flex min-w-0 items-center gap-2"><BookOpen size={16} aria-hidden="true" className="shrink-0 text-[#75c9e6]"/><h2 id={`${id}-title`} className="text-sm font-bold leading-5 text-white">{copy.heading}</h2></span>
+   <h2 id={`${id}-title`} className="flex min-w-0 items-center gap-2 text-sm font-bold leading-5 text-white"><BookOpen size={16} aria-hidden="true" className="shrink-0 text-[#75c9e6]"/><span>{copy.heading}</span></h2>
    <ChevronsDown size={16} aria-hidden="true" className="shrink-0 text-[#a5c8da] transition-transform group-open:rotate-180"/>
   </summary>
   <DashboardSearchContent copy={copy}/>
