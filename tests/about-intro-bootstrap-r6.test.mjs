@@ -9,10 +9,10 @@ function fixture({path='/', dismissed, until, denied=false}={}) {
   const store=map=>({getItem:key=>{if(denied)throw Error('blocked');return map.get(key)??null;},setItem:(key,value)=>{if(denied)throw Error('blocked');map.set(key,value);}});
   const events=new Map();
   const checkbox={checked:false};
-  const dialog={open:false, opens:0, showModal(){this.open=true;this.opens++;},close(value){this.open=false;this.returnValue=value;},
+  const dialog={open:false, opens:0, showModal(){this.open=true;this.opens++;},close(value){this.open=false;this.returnValue=value;events.get('close')?.();},contains:target=>target===dialog||Boolean(target.closest),
     querySelector:()=>checkbox,
     addEventListener:(type,fn)=>events.set(type,fn),removeEventListener:(type,fn)=>{if(events.get(type)===fn)events.delete(type);}};
-  const window={location:{pathname:path},sessionStorage:store(session),localStorage:store(local),document:{getElementById:id=>id===INTRO_POLICY.dialogId?dialog:null}};
+  const window={location:{pathname:path},sessionStorage:store(session),localStorage:store(local),document:{getElementById:id=>id===INTRO_POLICY.dialogId?dialog:null},addEventListener:(type,fn)=>events.set(type,fn),removeEventListener:type=>events.delete(type)};
   return {window,dialog,checkbox,events,session,local};
 }
 
@@ -22,6 +22,7 @@ test('parser-time script opens without React and retains closing across hydratio
   assert.equal(f.events.has('click'),true);assert.equal(f.events.has('cancel'),true);
   f.events.get('click')({target:{closest:()=>true}});
   assert.equal(f.dialog.open,false);
+  assert.equal(f.events.has('click'),false,'Native capture is removed only after closing');
 });
 
 test('existing session/week/about exclusions apply before hydration; expired week opens',()=>{

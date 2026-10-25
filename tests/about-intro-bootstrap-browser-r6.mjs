@@ -11,6 +11,11 @@ try{
   const page=await context.newPage();const errors=[];
   page.on('pageerror',e=>errors.push(e.message));
   page.on('console',m=>{if(m.type()==='error'&&/hydrat|didn.t match/i.test(m.text()))errors.push(m.text());});
+  // Model React stopping an early discrete event at the hydration boundary.
+  // Window capture must already have processed the close before this happens.
+  await page.addInitScript(()=>document.addEventListener('click',event=>{
+   if(event.target.closest?.('#zg-about-intro-dialog [data-intro-dismiss]'))event.stopPropagation();
+  },true));
   let release;let delivered=0;
   const hold=new Promise(resolve=>{release=resolve;});
   await page.route('**/*',async route=>{

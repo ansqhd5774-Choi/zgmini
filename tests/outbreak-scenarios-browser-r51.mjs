@@ -12,19 +12,6 @@ try{
  for(const width of [390,768,1440,1920]){
   const page=await browser.newPage({viewport:{width,height:950},reducedMotion:width===390?"reduce":"no-preference"});
   page.on("pageerror",error=>errors.push(width+": "+error.message));
-  await page.addInitScript(()=>{
-   window.__introTrace=[];
-   for(const method of ['showModal','close']){
-    const original=HTMLDialogElement.prototype[method];
-    HTMLDialogElement.prototype[method]=function(...args){
-     window.__introTrace.push({method,args,at:performance.now(),stack:new Error().stack});
-     return original.apply(this,args);
-    };
-   }
-   document.addEventListener('click',event=>{
-    if(event.target.closest?.('#zg-about-intro-dialog'))window.__introTrace.push({method:'click',target:event.target.outerHTML,at:performance.now()});
-   },true);
-  });
   await page.route("**/api/rate-sentiment",r=>r.fulfill({status:200,contentType:"application/json",body:JSON.stringify({
    status:"READY",score:57.8,version:"R1",observationDate:"2026-10-19",sourceStoredAt:1792368000,
    week:[
@@ -60,15 +47,7 @@ try{
   await page.goto(base+"/?view=scenarios",{waitUntil:"domcontentloaded",timeout:45000});
   await page.locator('dialog[aria-labelledby="zg-about-popup-title"]').waitFor({state:'visible'});
   await page.getByRole('button',{name:'닫기',exact:true}).click();
-  try{
-   await page.locator('dialog[aria-labelledby="zg-about-popup-title"]').waitFor({state:'hidden'});
-  }catch(error){
-   console.log('INTRO_CLOSE_DIAGNOSTIC',JSON.stringify(await page.evaluate(()=>({trace:window.__introTrace,
-    dialog:document.getElementById('zg-about-intro-dialog')?.outerHTML,
-    returnValue:document.getElementById('zg-about-intro-dialog')?.returnValue,
-    dismissed:sessionStorage.getItem('zgmini-about-intro-dismissed-r1')}))));
-   throw error;
-  }
+  await page.locator('dialog[aria-labelledby="zg-about-popup-title"]').waitFor({state:'hidden'});
   const root=page.locator(".ob-events");
   await root.waitFor({state:"visible",timeout:45000});
   const cards=root.locator(".ob-card");
