@@ -195,9 +195,12 @@ export async function measureKeyword(keyword, {
   structuredOutput = false,
   auditForecast = false,
   rateOnlyFromSource = false,
+  resolveHistoricTableMislabel = false,
+  allowedKeywords = KEYWORDS,
 } = {}) {
   if (maxMs <= 0 || maxMs > MAX_KEYWORD_MS) throw new Error('INVALID_TIMEOUT');
-  if (!KEYWORDS.includes(keyword)) throw new Error('INVALID_TEST_KEYWORD');
+  if (!Array.isArray(allowedKeywords) || !allowedKeywords.includes(keyword) ||
+      typeof keyword !== 'string' || !keyword.trim()) throw new Error('INVALID_TEST_KEYWORD');
   if (!['bing-rss', 'publisher-site'].includes(searchMode)) throw new Error('INVALID_SEARCH_MODE');
   if (typeof structuredOutput !== 'boolean') throw new Error('INVALID_STRUCTURED_OUTPUT');
   if (typeof auditForecast !== 'boolean' || (auditForecast && searchMode !== 'publisher-site')) {
@@ -206,6 +209,10 @@ export async function measureKeyword(keyword, {
   if (typeof rateOnlyFromSource !== 'boolean' ||
       (rateOnlyFromSource && (!auditForecast || !structuredOutput))) {
     throw new Error('INVALID_RATE_ONLY_MODE');
+  }
+  if (typeof resolveHistoricTableMislabel !== 'boolean' ||
+      (resolveHistoricTableMislabel && !rateOnlyFromSource)) {
+    throw new Error('INVALID_HISTORIC_MISLABEL_MODE');
   }
   const began = now();
   const controller = new AbortController();
@@ -244,6 +251,10 @@ export async function measureKeyword(keyword, {
     result.forecast_end_year = null;
     result.forecast_base_value = null;
     result.forecast_end_value = null;
+    if (resolveHistoricTableMislabel) {
+      result.historic_narrative_pct = null;
+      result.historic_math_pct = null;
+    }
     result.model_candidate_pct = null;
     if (rateOnlyFromSource) result.period_source = 'PUBLISHER_FORECAST_ATTRIBUTES';
   }
@@ -295,7 +306,8 @@ export async function measureKeyword(keyword, {
       } catch (error) { throw new Error(`PUBLISHER_${error.message}`); }
       finally { result.report_ms = Math.round(now() - reportBegan); }
       if (auditForecast) {
-        const { forecast_excerpt, ...audit } = auditForecastSource(html);
+        const { forecast_excerpt, ...audit } = auditForecastSource(html,
+          { resolveHistoricTableMislabel });
         Object.assign(result, audit);
         if (audit.source_audit === 'INCOMPLETE' || !forecast_excerpt) {
           throw new Error('SOURCE_AUDIT_INCOMPLETE');

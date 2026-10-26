@@ -27,13 +27,14 @@ function valueMatch(text, expression) {
     unit: m[3].toLowerCase(), value: amount(m[2], m[3]) } : null;
 }
 
-export function auditForecastSource(html) {
+export function auditForecastSource(html, { resolveHistoricTableMislabel = false } = {}) {
   const text = reportText(html);
   const audit = { source_audit: 'INCOMPLETE', source_conflict_reason: null,
     forecast_narrative_pct: null, forecast_table_pct: null,
     forecast_math_pct: null, forecast_base_year: null, forecast_end_year: null,
     forecast_base_value: null, forecast_end_value: null,
-    forecast_excerpt: null };
+    forecast_excerpt: null, historic_narrative_pct: null,
+    historic_math_pct: null };
 
   const section = text.match(/What Is The\s+.{3,130}?\s+Market Growth Forecast\s*\?/i);
   if (!section) {
@@ -86,7 +87,39 @@ export function auditForecastSource(html) {
   const narrativeAgrees = Math.abs(computed - audit.forecast_narrative_pct) <= tolerancePp;
   const tableAgrees = Math.abs(computed - audit.forecast_table_pct) <= tolerancePp;
 
-  if (!narrativeAgrees || !tableAgrees) {
+  // R31 opt-in: some publisher metadata incorrectly repeats the immediately
+  // preceding historic 2025→2026 CAGR under the 2026→2030 forecast label.
+  // Resolve ONLY when the independently stated historic rate and both historic
+  // sizes agree with that metadata, AND future sizes agree with forecast prose.
+  // Unexplained metadata differences must remain SOURCE_CONFLICT, never PASS.
+  let isDemonstratedHistoricMislabel = false;
+  if (resolveHistoricTableMislabel && narrativeAgrees && !tableAgrees) {
+    const historicHeading = text.match(/What Is The\s+.{3,130}?\s+Market Size and Share\s+20\d{2}\s*\?/i);
+    const historicText = historicHeading
+      ? text.slice(historicHeading.index + historicHeading[0].length, section.index) : '';
+    const history = historicText.match(/(?:will|is expected to)\s+grow\s+from\s+\$([\d,.]+)\s+(million|billion|trillion)\s+in\s+(20\d{2})\s+to\s+\$([\d,.]+)\s+(million|billion|trillion)\s+in\s+(20\d{2})\s+at\s+(?:a\s+)?compound\s+annual\s+growth\s+rate\s*\(CAGR\)\s+of\s+([\d.]+)\s*%/i);
+    if (history) {
+      const historyBase = amount(history[1], history[2]);
+      const historyEnd = amount(history[4], history[5]);
+      const startYear = Number(history[3]);
+      const endYear = Number(history[6]);
+      const historyPct = Number(history[7]);
+      audit.historic_narrative_pct = historyPct;
+      if (historyBase > 0 && historyEnd > 0 && endYear === startYear + 1) {
+        const historicalComputed = ((historyEnd / historyBase) - 1) * 100;
+        audit.historic_math_pct = Number(historicalComputed.toFixed(3));
+        isDemonstratedHistoricMislabel = endYear === base.year &&
+          Math.abs(historyEnd / base.value - 1) <= 0.00001 &&
+          Math.abs(historicalComputed - historyPct) <= tolerancePp &&
+          Math.abs(historyPct - audit.forecast_table_pct) <= 0.05;
+      }
+    }
+  }
+
+  if (isDemonstratedHistoricMislabel) {
+    audit.source_audit = 'RESOLVED_HISTORIC_RATE_MISLABEL';
+    audit.source_conflict_reason = 'FORECAST_METADATA_REPEATS_VERIFIED_HISTORIC_CAGR';
+  } else if (!narrativeAgrees || !tableAgrees) {
     audit.source_audit = 'SOURCE_CONFLICT';
     audit.source_conflict_reason = !narrativeAgrees && !tableAgrees
       ? 'NARRATIVE_AND_TABLE_DISAGREE_WITH_MARKET_SIZES'
