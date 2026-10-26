@@ -518,3 +518,12 @@
     grid-template-columns:minmax(0,1fr);
   }
 }
+
+/* EC12 R9: 12 readable indicator charts, four columns by three rows on desktop.
+   The market panel is max-width constrained, so six columns squeezed each 60px
+   sparkline into ~48px at 1920px. Keep all chart dimensions and labels intact. */
+@media (min-width:960px){
+  .zg-dashboard[data-view="dashboard"] .zg-r55-card-grid{
+    grid-template-columns:repeat(4,minmax(0,1fr));
+  }
+}
