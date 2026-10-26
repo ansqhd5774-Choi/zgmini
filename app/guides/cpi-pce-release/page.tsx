@@ -1,7 +1,7 @@
 import GuidePage,{guideMetadata} from '../guide-page';
 import ReleaseCalendar from '../release-calendar';
 
-const title='미국 CPI·PCE 발표일·한국시간과 물가지수 해석 가이드';
+const title='미국 CPI·PCE 발표 일정·한국시간 | 물가지수 발표일·발표시간';
 const answer='미국 CPI와 PCE는 모두 물가 상승을 측정하지만 조사 범위와 계산 방식이 다릅니다. 이 글에서는 한국시간 발표 일정, 전체·근원 물가의 차이, 전월 대비·전년 대비 읽는 법, 발표값과 시장 예상치를 비교할 때의 주의점을 한 번에 정리합니다.';
 const path='/guides/cpi-pce-release/';
 
