@@ -85,8 +85,6 @@ try{
 
    assert.equal(await page.locator(".zg-container").evaluate(el=>getComputedStyle(el).width!=="0px"),true);
   }else{
-   const star=page.getByRole("button",{name:"즐겨찾기 열기"});
-   await star.click();
    await favorites.waitFor({state:"visible"});
    assert.equal(await favorites.getAttribute("data-open"),"true");
    // Wait until the slide transition has reached its final on-screen position.
@@ -164,8 +162,8 @@ try{
   await page.evaluate(()=>sessionStorage.removeItem("zgmini-community-chat-nick-r1"));
   await page.reload({waitUntil:"domcontentloaded"});
   await page.waitForFunction(()=>Boolean(sessionStorage.getItem("zgmini-community-chat-nick-r1")),null,{timeout:15000});
-  if(!wide)await page.getByRole("button",{name:"시장 채팅 열기"}).click();
-  else await page.waitForFunction(()=>document.querySelector(".zg-dashboard-side-rails-root")?.getAttribute("data-wide")==="true",null,{timeout:15000});
+  assert.equal(await page.locator("#zg-community-chat-panel").getAttribute("aria-hidden"),"true","Reload returns chat to OFF");
+  await page.getByRole("button",{name:"시장 채팅 열기"}).click();
   assert.equal(await page.locator('#zg-community-turnstile').count(),0,"Navigation without draft remains challenge-free");
   await page.locator('#zg-community-input').fill('오늘 시장 전망이 궁금해요');
   await page.waitForFunction(()=>document.querySelector(".zg-community-captcha")?.classList.contains("is-verified"),null,{timeout:10000});
