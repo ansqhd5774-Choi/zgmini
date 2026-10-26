@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "snapshotType": "NON_OPERATIONAL_PRIVATE_AUM_SENSITIVITY",
+  "checkedAt": "2026-10-26",
+  "scoreAsOf": "2026-10-23",
+  "sourceManifestSha256": "1e046a0487548a00231da92da48c6d9fb690e8e95bba64e2071078b02e57f00b",
+  "spyManifestSha256": "76dfaca72fd0ded5e648ee15cceca5628288c11463214bd14ede01c2b5c4746e",
+  "r18HistorySha256": "94011b38f4d31cf21b74eac36b988a0a2565c34bf2b2e5522dc27106ac4d1216",
+  "r21PrivateScore": 44.81142,
+  "rows": [
+    {"symbol":"UFO","score":34.88492,"aumUsd":466592647.3,"aumAsOf":"2026-10-22","issuerUrl":"https://www.procureetfs.com/ufo/"},
+    {"symbol":"NASA","score":48.90703,"aumUsd":950551499,"aumAsOf":"2026-10-22","issuerUrl":"https://temaetfs.com/nasa"},
+    {"symbol":"WARP","score":60.5265,"aumUsd":37400000,"aumAsOf":"2026-10-23","issuerUrl":"https://www.vaneck.com/us/en/investments/space-etf-warp/portfolio"},
+    {"symbol":"ROKT","score":44.09211,"aumUsd":148410000,"aumAsOf":"2026-10-22","issuerUrl":"https://www.ssga.com/us/en/intermediary/etfs/state-street-spdr-sp-kensho-final-frontiers-etf-rokt"}
+  ]
+}
