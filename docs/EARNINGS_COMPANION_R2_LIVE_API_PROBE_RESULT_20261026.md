@@ -41,13 +41,36 @@
 4. **검사기 Fix1 결과 및 Fix2**: Fix1은 5회 전체 HTTP 200. 단, `time_slot_date`가 `2026-08-01 00:00:00.0`처럼 **날짜 뒤 공백**이 있는 형식이므로 ISO `T`만 허용했던 검사기는 `latestPeriod=UNKNOWN`을 기록했다. Fix2는 앞 10자리 실제 달력 날짜를 검증하여 저장하고, **Census 3요청만** 읽기 전용 재검사한다. TXT는 CMD 옆에 생성하며 키·원문 데이터 비출력.
 5. **라이선스와 공개범위**: 국가통계 원본이라고 모든 행의 상업적 저장·파생·재공개를 자동 승인할 수는 없음. 각 확정 행의 공식 기관 조건 및 3자 자료 혼입 여부를 마지막으로 확인한 다음 사이트에 정보성으로만 편입.
 
+
+## Fix2 Census 관측기간 재검사 — 추가 결과
+
+- 사용자 PC 실행 UTC: **2026-10-26T13:37:09.127Z**
+- 검사 버전: `EARNINGS_COMPANION_R2_PROBE_FIX2_20261026`, `--census-only`
+- API GET **3회 전부 HTTP 200**, 저장·게시·기존 산식/DB/스케줄러 변경 없음.
+
+| 데이터 | HTTP | 원 응답 건수 | `time_slot_date` 최댓값 | 공식 발표 교차검증 | 남은 Gate |
+|---|---|---:|---|---|---|
+| Census QFR | **200** | 9,568 | **2026-02-01** | Census 공식 최신 보고는 **2026 Q2**(9/8 발표). API의 `-02-01`은 '2월 결산'으로 표시 금지; 분기 슬롯 해석을 별도 확인 | QFR 항목·산업·quarter slot 매핑 |
+| Census MTIS | **200** | 512 | **2026-08-01** | **2026년 8월** 자료 10/15 발표 | `IR` 비율 항목 정확한 API 행 매핑 |
+| Census M3 | **200** | 128 | **2026-08-01** | **2026년 8월** 자료 10/2 발표 | 시계열별 단위·현재 PC 저장 중복 여부 |
+
+- MTIS 8월 응답 샘플: `SM/MNFCTR/no=675497`, `SM/MNFCTR/yes=658622`, `IM/RETAIL/no=871833`. 이들은 **총 사업체 재고매출 비율** 자체를 의미하지 않음.
+- M3 8월 응답 샘플: `IS/MTM/yes=1.48`, `FI/MTM/yes=330046`, `MI/MTM/yes=365990`. Census M3 10/2 정식 발표에 **제조업 재고·출하 비율 1.48** 표기되어 있어 수치 교차검증 **PASS**.
+- MTIS 공식 10/15 발표의 **총 사업체 재고·매출 비율 1.33**과 위 샘플은 직접 동일 지표가 아니므로 서로 비교·대체·합산 금지. 총계 `IR` 행은 추가 정밀 확인할 때까지 HOLD.
+- QFR API 날짜 원문의 2월은 실제 발표 월·회계월이라고 단정하지 않는다. Census 9/8 발표 및 리포트 목록은 2026 Q2임을 확인하므로 화면에는 **2026년 2월**이라는 허위 레이블을 생성하지 않는다.
+- QFR 최신 데이터가 2026 Q2라고 공식 확인된 것과 **API의 선택 항목/코드 매핑 검증 완료는 다르다**. QFR 개별 지표는 계속 HOLD.
+- 공식 근거: [Census QFR 2026 Q2 발표](https://www.census.gov/econ/qfr/mmws/current/index.html), [Census M3 8월 발표](https://www.census.gov/manufacturing/m3/current/index.html), [Census MTIS 8월 발표](https://www.census.gov/mtis/current/index.html), [Census Economic Indicators 분류](https://www.census.gov/about/policies/quality/standards/appendixe2.html).
+
+**Fix2 결론: Census 3개 GET·기간 필드 수신 PASS. 데이터 공개 편입 여부는 시리즈 코드·사용권·기존 원자료 중복 확인 Gate를 통과한 행에 한정. 신규 PC 쓰기/D1/API/UI/배포 없음.**
+
 ## 릴리스 게이트
 
 | 게이트 | 현재 |
 |---|---|
 | PC의 기존 키로 공식 API HTTP 확인 | **Fix1: 5/5요청 HTTP 200** |
 | M3 실제 HTTP 성공 | **O — Fix1에서 200/128행** |
-| QFR·MTIS·M3 관측일 및 QFR·MTIS 세부 항목 매핑 | **보류 — Fix2 날짜 재검사 필요** |
+| QFR·MTIS·M3 관측 날짜 추출 | **O — Fix2에서 Census 3/3 필드·날짜 수신** |
+| QFR 분기 식별·QFR/MTIS 세부 항목 매핑 | **보류 — 실제 코드/분기 해석 검증 필요** |
 | BEA 이익 시리즈 식별 | **O — A051RC / 41** |
 | BLS WPSFD4 원래 의미 | **O — Final demand goods** |
 | BLS ULC 기간·변환·단위 검증 | **보류** |
