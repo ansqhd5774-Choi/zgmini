@@ -139,6 +139,13 @@
 - OECD STAN 단일 공식 API 조회 시도는 개발 실행 환경 DNS `EAI_AGAIN`: 조회 성공 아님, 본 실행에서 매체 불합격, 반복 조회 중단. 산업 직접 데이터 9개 공통 수집·사용권 승인 0건; 서비스/산식/DB/스케줄러/주문 변경 0건.
 - 근거: `STAGE04_MEDIA_RESPONSE_20S_R21_20261026.md`.
 
+## R22 공식 통계 매체 실물 연결·공통 범위 판정 (2026-10-26)
+
+- Eurostat 공식 전체 통계 카탈로그와 World Bank Indicators 메타데이터 카탈로그를 **각각 1건의 요청**으로 검사. 권한 제약 환경에서 DNS 오류 후 외부 네트워크 권한으로 연결 진단: Eurostat 38ms `EAI_AGAIN`, World Bank 5,007ms `EAI_AGAIN`. **기한 초과 0이지만 실물 응답 성공도 0**. 기존 OECD 재시도 안 함.
+- 미국 BEA·Census는 키 등록 및 미국 표준 산업·일부 서비스 범위의 한계, BLS 고용은 직접 산업 수요값이 아니라는 이유로 공통 직접 성장 원천 부적합. Eurostat와 World Bank는 API 문서상 무료 카탈로그 존재만 확인; 글로벌 9개 테마의 직접 성장·가속도 동일 정의 시계열은 미확인.
+- 최종 **공통 매체 0건**, 실패 공급원은 이 실행에 한해 `SOURCE_NOT_PROVIDING_DATA`, 테마 9개 유지, `G1/G2/G/D/M/순위=NULL`, 주문 0. 네트워크 DNS 오류를 기관의 세계적 서비스 부재로 확대 해석하지 않는다.
+- 문서만 개발 브랜치에 기록: `STAGE04_OFFICIAL_COMMON_MEDIA_R22_20261026.md`. R21 타임아웃 코드/회귀검사·운영 API/DB/스케줄러/산식 변경 없음.
+
 ## 가장 최근 M2 패키지 R25 진척
 
 - 원본: `INVESTMENT_M2_R25_NASDAQ_EARNINGS_REPAIR_20261025(1).zip` (원본 SHA256은 `ARTIFACT_INDEX.md`).
