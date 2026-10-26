@@ -86,7 +86,7 @@ export default function SectorDetailCharts(){
  const [rows,setRows]=useState<SectorSentimentPoint[]|null>(null);
  const [snapshot,setSnapshot]=useState<SectorSnapshotMeta>();
  const [failed,setFailed]=useState(false);
- const [compareDays,setCompareDays]=useState(365);
+ const [compareDays,setCompareDays]=useState(90);
  const [comparisonPinned,setComparisonPinned]=useState(false);
  const [visible,setVisible]=useState<Set<SectorId>>(()=>new Set());
  useEffect(()=>{const controller=new AbortController();fetch('/api/sector-fear-greed',{cache:'no-store',signal:controller.signal}).then(async response=>{
@@ -94,7 +94,7 @@ export default function SectorDetailCharts(){
   const body=await response.json() as SectorSnapshotMeta&{status?:string;history?:SectorSentimentPoint[]};
   if(body.status!=='READY'||!Array.isArray(body.history)||!body.history.length)throw new Error('Unavailable');
   const history=body.history.filter(row=>/^\d{4}-\d{2}-\d{2}$/.test(row.date)&&Number.isFinite(Date.parse(row.date))).map(row=>({date:row.date,...Object.fromEntries(SECTORS.map(({id})=>{const value=row[id];return [id,typeof value==='number'&&Number.isFinite(value)&&value>=0&&value<=100?value:null]}))})).sort((a,b)=>a.date.localeCompare(b.date));
-  if(!history.length)throw new Error('Unavailable');setVisible(new Set(rankedSectors(history).slice(0,3).map(sector=>sector.id)));setRows(history);setSnapshot(body);
+  if(!history.length)throw new Error('Unavailable');setVisible(new Set(rankedSectors(history).slice(0,1).map(sector=>sector.id)));setRows(history);setSnapshot(body);
  }).catch(()=>{if(!controller.signal.aborted)setFailed(true)});return()=>controller.abort();},[]);
  const sorted=useMemo(()=>rows?rankedSectors(rows):[],[rows]);
  if(!rows)return <p className="zg-sfg-state" role="status">{failed?'저장 데이터를 불러오지 못했습니다. 잠시 후 다시 방문해 주세요.':'저장 데이터를 불러오는 중입니다.'}</p>;
