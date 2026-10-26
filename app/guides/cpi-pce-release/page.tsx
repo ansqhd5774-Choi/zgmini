@@ -7,7 +7,7 @@ const path='/guides/cpi-pce-release/';
 
 export const metadata=guideMetadata(
   title,
-  '미국 CPI·PCE 발표일과 한국시간, 최신 공식 발표값을 확인하세요. 소비자물가지수와 PCE 물가지수의 차이, 근원 물가·예상치 비교 방법을 쉽게 설명합니다.',
+  'CPI·PCE 공식 발표 일정의 한국시간과 최신 공식 발표값을 확인하세요. 소비자물가지수와 PCE 물가지수의 차이, 근원 물가·예상치 비교 방법을 쉽게 설명합니다.',
   path,
 );
 
