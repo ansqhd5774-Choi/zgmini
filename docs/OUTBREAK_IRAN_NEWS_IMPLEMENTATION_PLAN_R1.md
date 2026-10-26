@@ -170,3 +170,13 @@
 - 중복 `shell.Run`, Node 실행 파일 부재, 비승인 launcher/실행기, 경로 실체 불일치는 계속 보류한다. synthetic VBS + 2개 인수, 실패 차단, UTF-16 스케줄러 XML·4회 실행 시각 테스트 3/3 PASS.
 - 기존 단일 브랜치에 `tests/iran-news-display-chain-r6.test.mjs` 및 `scripts/iran-progress/IRAN_NEWS_R6B_CHAIN_READONLY.cmd` 추가. R6B는 고정 커밋의 검증기만 다운로드하여 실행한 뒤 임시 보조 파일을 삭제하며 결과 TXT는 CMD 옆에 기록한다.
 - 운영 R13 task, VBS, PC cache, R3/R5 ledger, D1, 웹 공개 기능은 모두 미수정. 다음 Gate는 사용자 `IRAN_NEWS_R6B_CHAIN_READONLY_RESULT.txt` 확인이다.
+
+## 12. 2026-10-27 R6B 실제 운영 체인 PASS / R7 보수적 설치 준비
+
+- 사용자 PC `IRAN_NEWS_R6B_CHAIN_READONLY_RESULT.txt`: `FINAL_STATUS=PASS_R6B_CHAIN_READ_ONLY`. 실제 기존 작업은 `ZGMINI-PC-Iran-Progress-R13`, `wscript.exe`, 00/06/12/18(한국시간), `run-articles.vbs` SHA-256 `a26e561964a5d4b88a02f81185221c1d3d770541c2cc12d6ceca5898e2228846`로 확인.
+- VBS 첫 Node 진입점 `run-reference-flow-r3.mjs`, PC 실제 원본 SHA-256 `cbeff8d254504780c3446bdc7f43484a87306e2163b3687784a10f5b85a4c3b6`, PC Git HEAD `bc7bd6781d1f4083009f1709a3f2e82461c5bfb9`. 원본에 `operate-r3.mjs` 참조는 있고 `news-display-maintenance-r1.mjs` 참조는 없었다. 실제 R13 자동 실행 체인에 뉴스 30일 캐시 유지관리가 아직 연결되지 않은 상태임을 확정.
+- GitHub 원본은 LF, 현재 PC Node 원본은 CRLF여서 텍스트 동일해도 SHA-256이 달랐다. 신규 검증기는 **PC 실제 CRLF 원본 SHA를 먼저 검증**한 뒤 비교하는 텍스트 부분만 LF로 정규화하며, 백업 파일은 PC 원본 바이트 그대로 보존한다.
+- 지정된 단일 작업 브랜치 `codex/outbreak-iran-news-retention-r1-20261026`에서 기존 Node wrapper **말미에만** 뉴스 캐시 30일 정리 hook 추가. 순서 `R3 → 선택적 R5 → 기존 collector/legacy → 뉴스 캐시 30일 정리`; 뉴스 보조 작업 실패는 R3/R5/legacy의 기존 종료 상태를 바꾸지 않는다. 새 뉴스 자동 수집·D1 게시를 활성화하지 않는다.
+- `news-display-install-hook-r7.mjs`는 등록 작업 XML, VBS, PC 실제 CRLF SHA, PC HEAD, SQLite 표식, 뉴스 캐시, 원본과 비교한 정확히 한 블록의 변경, 필수 모듈의 기존 파일 충돌 여부, 백업 경로 부재를 읽기 전용으로 검사한다. 모든 조건 PASS 시에만 별도 승인 환경값을 사용해 새 표시용 모듈 및 승인된 기존 Node wrapper 하나를 설치한다. 기존 wrapper의 원본 바이트는 `.before-iran-news-r7`로 백업하고 신규 파일을 read-back한다.
+- 사용자용 `IRAN_NEWS_R7_INSTALL.cmd`는 고정 GitHub 커밋 `4b7667c13f84b362b5144037b7fd5d94de7044a2`의 작은 모듈을 CMD 옆 전용 디렉터리에 가져오고, read-only preflight PASS 후 **딱 1회** 설치를 시도한다. TXT는 CMD 옆 `IRAN_NEWS_R7_INSTALL_RESULT.txt`. 불확실 결과면 자동 재시도 금지.
+- R1/R4/R6/R7 테스트 묶음 PASS(총 4개 테스트 파일). **R7의 실제 PC 설치는 사용자 CMD 로그 회신 전까지 미실시**. R7 설치 결과를 검증한 뒤 다음 정상 R13 6시간 주기의 실행과 30일 캐시 갱신을 별도 확인해야 운영 자동화 PASS로 판정. 스케줄러/VBS/점수 산식·원장/데이터베이스/D1/사이트 디자인은 미수정.
