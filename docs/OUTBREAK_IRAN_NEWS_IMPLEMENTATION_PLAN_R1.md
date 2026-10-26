@@ -112,7 +112,7 @@
 - [ ] 기존 PC runner에 표시 전용 수집/정리/게시 연결(운영 환경 점검 선행)
 - [x] PC 표시 전용 캐시 최초 승인 기사 1건 적용/read-back: 2026-10-27 R3 로그 `PASS_PC_CACHE_APPLIED_NOT_PUBLISHED`.
 - [ ] 기존 승인 runner에 향후 기사 검토 및 30일 정리 연결(새 스케줄러 없음)
-- [ ] 뉴스 D1 게시·read-back: 사용자 R4 CMD 검증 대기
+- [x] 뉴스 D1 게시·read-back: 2026-10-27 R4B PC 로그 `PASS_D1_NEWS_ONLY_PUBLISHED`, `D1_PREFLIGHT_GATE=PASS`, `D1_PUBLISH_READBACK=PASS`, `itemCount=1`, `scoreLedgerChanged=false`
 - [ ] 뉴스 공개 API/UI 및 Cloudflare Git 배포
 
 **진행 이력:** 최초에는 계획서만 저장했다. 2026-10-26 현재 독립 구현 파일과 UI/API 연결 코드가 브랜치에 추가되었다. 그러나 기사별 검증과 자체 요약·영향 분류, PC 원본 수집기와의 런타임 연결, PC 실제 30일 정리 실행, D1 실제 게시, PR/main 반영, Cloudflare 배포는 **미실시**다. 13개 테스트 PASS는 단위 테스트 결과이지 운영 PASS가 아니다.
@@ -137,3 +137,11 @@
 - R3는 뉴스 전용 JSON 캐시 최초 1회 저장 성공이며 D1 게시·사이트 공개는 여전히 미실행이다. 기존 R3/R5 점수 원장·스케줄러는 유지했다.
 - 브랜치에 `news-display-publish-once-r4.mjs`와 2건의 원격 모의 테스트를 추가했다. 기존 13건+R4 2건 **총 15/15 PASS**. 새 게시기는 정확한 승인 기사 1건, 14일 노출 범위, 기존 뉴스 전용 D1 키 부재를 검증한 다음 **그 키만** 1회 게시하고 read-back 한다.
 - 사용자용 `IRAN_NEWS_R4_D1_PUBLISH.cmd`에는 R3 결과 Gate, D1 read-only preflight, 안전한 게시·원격 재검증과 불확실한 쓰기 결과 재실행 금지를 구현했다. 실제 D1 변경은 사용자의 PC 실행 전까지 미실시.
+
+## 8. 2026-10-27 R4B 원격 뉴스 단독 게시 PASS
+
+- R4 최초 CMD는 같은 폴더에 위치할 것을 요구한 과거 R3 TXT 확인 게이트에서 중단: `STOP_NO_D1_WRITE_ATTEMPTED`.
+- R4B는 지난 TXT 위치 의존을 제거하고 승인된 운영 PC 표시용 캐시 기사 1건의 내용·원 발행일·중립 분류·14일 범위를 직접 검사한다.
+- 사용자 제출 `IRAN_NEWS_R4B_D1_PUBLISH_RESULT.txt`: `R3_LOG=FOUND_OPTIONAL`, `D1_PREFLIGHT_GATE=PASS`, `remoteKey=ABSENT`, `itemCount=1`, `publication=VERIFIED`, `D1_PUBLISH_READBACK=PASS`, `FINAL_STATUS=PASS_D1_NEWS_ONLY_PUBLISHED`.
+- 쓰기 대상은 오직 `public:iran-progress:news:iran:r1` 뉴스 전용 D1 행 1건이다. 이는 실제 D1 저장·read-back PASS이며 공개 API/프런트 배포 또는 6시간 자동 운영 PASS는 아니다.
+- 다음 Gate: 기존 브랜치의 뉴스 API·UI·검증·운영 도구 변경만 `main`과 비교·PR 검증 후 회수한다. 최신 main SHA에 연결된 Cloudflare Workers Builds 체크, 배포 SHA 및 공개 API/UI를 각각 확인한다.
