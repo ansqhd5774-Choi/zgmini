@@ -7,7 +7,7 @@ import {client,credential,read,save,hash} from './d1.mjs';
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../..');
 const base=process.env.ZGMINI_PC_HOME??path.join(os.homedir(),'.zgmini','pc-writer');
 const config=read(path.join(base,'config.json'));
-const remote=client(config,credential(root));
+const remote=client(config,()=>credential(root));
 const progressFile=path.join(base,'local-seed-progress.json');
 const progress=fs.existsSync(progressFile)?read(progressFile):{};
 const allowed=name=>/^(api_history_|c1_r3_|growth_r2_|market_|public_feed_|kfg_rev7_)/.test(name)&&/^[a-z0-9_]+$/.test(name);

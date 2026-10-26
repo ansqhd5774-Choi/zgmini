@@ -29,15 +29,18 @@ export function read(file){return JSON.parse(fs.readFileSync(file,'utf8'));}
 export function readonly(sql){return /^\s*(SELECT|WITH)\b/i.test(sql)&&/\bSELECT\b/i.test(sql)&&!/[;]|--|\/\*|\b(insert|update|delete|replace|create|drop|alter|attach|detach|pragma|vacuum)\b/i.test(sql);}
 
 // Reuse the user's existing official Wrangler login. Never log credentials.
-export function credential(root){
- if(process.env.CLOUDFLARE_API_TOKEN)return process.env.CLOUDFLARE_API_TOKEN;
- const file=path.join(os.homedir(),'AppData/Roaming/xdg.config/.wrangler/config/default.toml');
+export function credential(root,{apiToken=process.env.CLOUDFLARE_API_TOKEN,file=path.join(os.homedir(),'AppData/Roaming/xdg.config/.wrangler/config/default.toml'),now=Date.now,refresh=()=>spawnSync(process.execPath,[path.join(root,'node_modules/wrangler/bin/wrangler.js'),'whoami'],{cwd:root,encoding:'utf8',timeout:60000,windowsHide:true})}={}){
+ if(apiToken)return apiToken;
  let cfg=fs.readFileSync(file,'utf8');
  const expiry=Date.parse(cfg.match(/expiration_time\s*=\s*"([^"]+)"/)?.[1]??'');
- if(!Number.isFinite(expiry)||expiry<Date.now()+300000){
-  const r=spawnSync(process.execPath,[path.join(root,'node_modules/wrangler/bin/wrangler.js'),'whoami'],{cwd:root,encoding:'utf8',timeout:60000,windowsHide:true});
+ // Wrangler whoami refreshes only after expiry; calling it five minutes early
+ // does not renew the token. Request-time resolution below handles long runs.
+ if(!Number.isFinite(expiry)||expiry<=now()){
+  const r=refresh();
   if(r.status!==0)throw Error('WRANGLER_LOGIN_REQUIRED');
   cfg=fs.readFileSync(file,'utf8');
+  const renewedExpiry=Date.parse(cfg.match(/expiration_time\s*=\s*"([^"]+)"/)?.[1]??'');
+  if(!Number.isFinite(renewedExpiry)||renewedExpiry<=now())throw Error('WRANGLER_LOGIN_REQUIRED');
  }
  const token=cfg.match(/oauth_token\s*=\s*"([^"]+)"/)?.[1];
  if(!token)throw Error('WRANGLER_LOGIN_REQUIRED');return token;
@@ -45,7 +48,8 @@ export function credential(root){
 
 export function client({account,core,history},token,{fetchImpl=globalThis.fetch,sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms))}={}){
  if(!/^[a-f0-9]{32}$/.test(account)||![core,history].every(x=>/^[a-f0-9-]{36}$/.test(x)))throw Error('INVALID_DATABASE_CONFIG');
- const stats={queries:0,rowsRead:0,rowsWritten:0,readFailures:0,readRetries:0,transportFailures:[]};
+ const stats={queries:0,rowsRead:0,rowsWritten:0,readFailures:0,readRetries:0,authReadRetries:0,transportFailures:[]};
+ const resolveToken=()=>typeof token==='function'?token():token;
  const failure=(code,kind,phase,httpStatus,cause,response)=>{
   const raw=cause?.cause?.code??cause?.code??cause?.name;
   const diagnostic={kind,phase,httpStatus:httpStatus??null,code:/^[A-Z0-9_]{1,64}$/.test(raw??'')?raw:raw==='TimeoutError'?'TIMEOUT':raw==='AbortError'?'ABORTED':null};
@@ -56,9 +60,15 @@ export function client({account,core,history},token,{fetchImpl=globalThis.fetch,
  };
  async function request(db,batch){
   if(![core,history].includes(db)||!batch.length||batch.length>40)throw Error('INVALID_D1_BATCH');
-  let response;const kind=batch.every(x=>readonly(x.sql))?'READ':'WRITE';
-  try{response=await Reflect.apply(fetchImpl,globalThis,[`https://api.cloudflare.com/client/v4/accounts/${account}/d1/database/${db}/query`,{method:'POST',headers:{Authorization:`Bearer ${token}`,'Content-Type':'application/json'},body:JSON.stringify({batch}),signal:AbortSignal.timeout(60000)}]);}catch(error){throw failure('D1_OUTCOME_UNKNOWN',kind,'FETCH',null,error);}
-  if(!response.ok)throw failure(`D1_HTTP_${response.status}`,kind,'HTTP',response.status,null,response);
+  let response;const kind=batch.every(x=>readonly(x.sql))?'READ':'WRITE',requestToken=resolveToken();
+  try{response=await Reflect.apply(fetchImpl,globalThis,[`https://api.cloudflare.com/client/v4/accounts/${account}/d1/database/${db}/query`,{method:'POST',headers:{Authorization:`Bearer ${requestToken}`,'Content-Type':'application/json'},body:JSON.stringify({batch}),signal:AbortSignal.timeout(60000)}]);}catch(error){throw failure('D1_OUTCOME_UNKNOWN',kind,'FETCH',null,error);}
+  if(!response.ok){
+   const error=failure(`D1_HTTP_${response.status}`,kind,'HTTP',response.status,null,response);
+   // Only a read rejected with an expired/replaced credential may be repeated.
+   // A static token or unchanged login must fail closed; writes never replay.
+   if(kind==='READ'&&[401,403].includes(response.status)&&typeof token==='function')error.credentialChanged=resolveToken()!==requestToken;
+   throw error;
+  }
   let json;try{json=await response.json();}catch(error){throw failure('D1_OUTCOME_UNKNOWN',kind,'BODY',response.status,error);}
   if(!response.ok||json.success===false)throw Error(`D1_HTTP_${response.status}`);
   if(json.result?.length!==batch.length||json.result.some(x=>x.success===false))throw Error('D1_BATCH_FAILED');
@@ -70,7 +80,7 @@ export function client({account,core,history},token,{fetchImpl=globalThis.fetch,
    if(!readonly(sql))throw Error('READ_ONLY_SQL_REQUIRED');
    for(let attempt=0;;attempt++){
     try{const result=(await request(db,[{sql,params}]))[0];if(result.meta?.rows_written)throw Error('UNEXPECTED_WRITE');return result;}
-    catch(error){if(attempt!==0||!transientD1Failure(error)||error.retryAfterMs>5000)throw error;stats.readRetries++;await sleep(Math.max(1000,error.retryAfterMs||0));}
+    catch(error){if(attempt!==0||(!error.credentialChanged&&!transientD1Failure(error))||error.retryAfterMs>5000)throw error;stats.readRetries++;if(error.credentialChanged)stats.authReadRetries++;await sleep(Math.max(1000,error.retryAfterMs||0));}
    }
   }catch(error){stats.readFailures++;throw error;}
  };
