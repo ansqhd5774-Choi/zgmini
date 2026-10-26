@@ -146,6 +146,14 @@
 - 최종 **공통 매체 0건**, 실패 공급원은 이 실행에 한해 `SOURCE_NOT_PROVIDING_DATA`, 테마 9개 유지, `G1/G2/G/D/M/순위=NULL`, 주문 0. 네트워크 DNS 오류를 기관의 세계적 서비스 부재로 확대 해석하지 않는다.
 - 문서만 개발 브랜치에 기록: `STAGE04_OFFICIAL_COMMON_MEDIA_R22_20261026.md`. R21 타임아웃 코드/회귀검사·운영 API/DB/스케줄러/산식 변경 없음.
 
+## R23 최신 사용자 정정 — 짧은 전문 매체 요약을 Ollama가 읽는 속도부터 측정 (2026-10-26)
+
+- R20~R22의 공식 통계 카탈로그 대량 탐색은 사용자가 원하는 즉답형 성장률 조사 절차와 다르므로 **현재 우선 작업이 아님**.
+- 전문 매체 **Fortune Business Insights**에서 `nuclear power` 대표 시장 보고서 1개만 선택하고, 시장 규모·전망 CAGR 구절 최대 650자만 로컬 Ollama에 보내는 읽기 전용 속도 시험 구현.
+- 동일 **20초 제한** 내 `PUBLISHER_MS / OLLAMA_MS / OLLAMA_REPORTED_MS / TOTAL_MS` 측정. 조회 1회, 생성 1회, 재시도 0, 대체 0. 실패 시 성장률 NULL. **실제 PC Ollama 실측은 아직 없음**.
+- 소스의 **예상 CAGR**과 실제 연간 성장률을 혼동하지 않는다. G/D/M·투자 순위·주문/운영 연결 없음. 코드 `stage04/market-growth-ollama-r23-readonly.mjs`, `stage04/STAGE04_OLLAMA_GROWTH_R23_READONLY.cmd`, 모의 테스트 5/5.
+- 연구기록: `STAGE04_SPECIALIST_OLLAMA_SPEED_R23_20261026.md`.
+
 ## 가장 최근 M2 패키지 R25 진척
 
 - 원본: `INVESTMENT_M2_R25_NASDAQ_EARNINGS_REPAIR_20261025(1).zip` (원본 SHA256은 `ARTIFACT_INDEX.md`).
@@ -159,5 +167,5 @@
 
 1. 이 브랜치와 `m2/` 파일 목록·SHA, 현재 ZGMINI `main` SHA, 사용자 Windows에서 실행 승인된 R25 ZIP의 일치 여부 확인.
 2. 사용자가 CMD에서 R25를 실행한 실제 `M2_LATEST_STATUS.txt`를 확보하면 R25 SERV 수정이 실제 PASS인지 검증.
-3. **R20 공통 매체 선정 우선**: 실물 산업 데이터 수집 전에 매체의 전 분야 지표 카탈로그·대량/증분 조회·동적 테마 자동매핑·자동 수집 및 파생공개 권리·관측 이력·실행 속도를 **매체 단위**로 검증한다. N=100/1,000 가상 규모 시험 후, 조회 불가능 항목만 사용자에게 보고한다. 테마/티커별 수작업 조회는 금지. 승인 이후에만 R19 ZGMINI 공통 조회 경로와 연결한다.
+3. **R23 우선 실측**: 선정한 성장률 전문매체 원자력 예제의 짧은 요약만 PC Ollama에 보내 20초 이내 응답하는지 `R23_OLLAMA_GROWTH_RESULT.txt`로 확인한다. 그다음 키워드 기반 즉답 검색을 확대할지 판단한다. R20~R22의 공식 통계 전수 카탈로그 탐색은 후순위로 전환한다.
 4. 사용자 승인 이전에 M 랭킹 실운영·03단계 가중치/ETF 변경·주문 및 배포 금지.
