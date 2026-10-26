@@ -5,7 +5,7 @@ import os from 'node:os';
 import path from 'node:path';
 import {createHash} from 'node:crypto';
 import {collectApprovedNine, collectApprovedNineAuto, inspectApprovedNine,
-  inspectCollectionFailure, readApprovedRoster}
+  inspectCollectionFailure, readApprovedRoster, resumeReviewedTimeout}
   from '../scripts/pc-writer/theme-nine-r23-collect.mjs';
 
 const hash = bytes => createHash('sha256').update(bytes).digest('hex');
@@ -191,4 +191,69 @@ test('failure diagnosis reveals reason and first affected symbol without writing
   assert.equal(detail.completedSymbols, 0);
   assert.equal(detail.manifestRawFileCount, 0);
   assert.deepEqual(fs.readFileSync(path.join(stateDir, stateFile)), before);
+});
+
+test('response-body TimeoutError 23 is classified as timeout rather than invalid market data', async t => {
+  const {root, rosterPath} = workspace(t);
+  const args = {rosterPath, dataRoot: root, start: '2023-01-01', end: '2026-10-26',
+    now: () => '2026-10-26T14:21:27.649Z',
+    fetchImpl: async () => new Response(new ReadableStream({start(controller) {
+      controller.error(new DOMException('Stream timeout', 'TimeoutError'));
+    }}))};
+  const result = await collectApprovedNine(args);
+  assert.equal(result.status, 'STOP_RESPONSE_BODY_TIMEOUT');
+  assert.equal(result.failedReason, 'RESPONSE_BODY_TIMEOUT');
+  assert.equal(result.failedSymbol, 'BOTZ');
+  assert.equal(result.providerCalls, 1);
+  assert.equal(inspectCollectionFailure(args).failedReason, 'RESPONSE_BODY_TIMEOUT');
+  assert.equal(fs.readdirSync(path.join(root, 'themes/legacy-nine-r23/raw')).length, 0);
+});
+
+test('one-time exact review rearms legacy numeric timeout only after SHA and identity verification', async t => {
+  const {root, rosterPath} = workspace(t);
+  const args = {rosterPath, dataRoot: root, start: '2023-01-01', end: '2026-10-26',
+    now: () => '2026-10-26T14:21:27.649Z',
+    fetchImpl: async () => new Response(new ReadableStream({start(controller) {
+      controller.error(new DOMException('Stream timeout', 'TimeoutError'));
+    }}))};
+  await collectApprovedNine(args);
+  const checkpoint = path.join(root, 'themes/legacy-nine-r23/state');
+  const file = path.join(checkpoint, fs.readdirSync(checkpoint).find(name => name.endsWith('.json')));
+  const state = JSON.parse(fs.readFileSync(file));
+  // Model the pre-fix software that wrote `error.code` (the numeric DOMException 23).
+  state.reason = 23;
+  fs.writeFileSync(file, JSON.stringify(state));
+  const expected = {failedAt: '2026-10-26T14:21:27.649Z', failedReason: 23,
+    firstIncompleteSymbol: 'BOTZ', completedSymbols: 0, manifestRawFileCount: 0};
+  assert.throws(() => resumeReviewedTimeout({...args, expected: {...expected, completedSymbols: 1}}),
+    /REVIEW_EVIDENCE_CHANGED_NO_WRITE/);
+  assert.equal(JSON.parse(fs.readFileSync(file)).reason, 23);
+  const result = resumeReviewedTimeout({...args, expected});
+  assert.equal(result.status, 'CHECKPOINT_REARMED_ONCE');
+  assert.equal(result.providerCalls, 0);
+  const revised = JSON.parse(fs.readFileSync(file));
+  assert.equal(revised.failedAt, undefined);
+  assert.equal(revised.manualReviews.length, 1);
+  assert.equal(revised.manualReviews[0].priorReason, 23);
+  assert.throws(() => resumeReviewedTimeout({...args, expected}),
+    /REVIEW_EVIDENCE_CHANGED_NO_WRITE/);
+  let resumedCalls = 0;
+  const resumed = await collectApprovedNine({...args, fetchImpl: async url => {
+    resumedCalls++;
+    return new Response(JSON.stringify(makeBar(url.pathname.split('/').at(-2), '21')) + '\n');
+  }});
+  assert.equal(resumed.status, 'PRIVATE_RAW_COLLECTION_COMPLETE');
+  assert.equal(resumedCalls, 4);
+});
+
+test('one-time timeout review refuses an HTTP failure without changing state', async t => {
+  const {root, rosterPath} = workspace(t);
+  const args = {rosterPath, dataRoot: root, start: '2023-01-01', end: '2026-10-26',
+    fetchImpl: async () => new Response('', {status: 429})};
+  await collectApprovedNine(args);
+  const folder = path.join(root, 'themes/legacy-nine-r23/state');
+  const filename = path.join(folder, fs.readdirSync(folder).find(name => name.endsWith('.json')));
+  const before = fs.readFileSync(filename);
+  assert.throws(() => resumeReviewedTimeout(args), /REVIEW_EVIDENCE_CHANGED_NO_WRITE/);
+  assert.deepEqual(fs.readFileSync(filename), before);
 });
