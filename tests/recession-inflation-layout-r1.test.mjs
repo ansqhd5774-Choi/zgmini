@@ -15,7 +15,7 @@ test("recession detail mirrors completed inflation shell and mobile layout",()=>
  const stickyCss=read("components/site-header.css");
  assert.match(page,/return <><SiteHeader\/><main/);
  assert.match(siteHeader,/href="\/"/);
- assert.match(siteHeader,/href="\/\?view=scenarios"/);
+ assert.match(siteHeader,/href="\/outbreak\/"/);
  assert.match(siteHeader,/aria-label="ZGmini 대시보드로 이동"/);
  assert.match(stickyCss,/\.zg-site-header\{\s*position:sticky;\s*top:0/);
  assert.doesNotMatch(page,/fixed left-4 top-4 z-50/);
