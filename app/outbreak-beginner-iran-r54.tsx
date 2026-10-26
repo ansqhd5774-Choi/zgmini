@@ -85,7 +85,8 @@ export default function OutbreakBeginnerIran({view}:{view:any}){
  const relation=(key:string)=>relationLabel[view.relations?.[key]??"UNKNOWN"]??"미확인";
  const summary=score===null?"종전 진전도를 확인할 자료가 없습니다.":score<40?"저장된 근거에서 종전 진전 신호가 제한적인 구간입니다.":"저장된 근거에서 종전 진전 신호를 계속 관찰하고 있습니다.";
  const {payload:newsPayload,loading:newsLoading,error:newsError}=useStoredIndex<{status:string;items:OutbreakNewsItem[]}>("/api/outbreak-news/iran");
- const newsItems:OutbreakNewsItem[]=Array.isArray(newsPayload?.items)?visibleIranNewsItems(newsPayload.items,{now:Date.now()}):[];\n const newsState=newsError?"error":newsLoading?"loading":newsPayload?.status==="PENDING"?"pending":newsPayload?.status==="UPDATE_DELAYED"?"delayed":"ready";
+ const newsItems:OutbreakNewsItem[]=Array.isArray(newsPayload?.items)?visibleIranNewsItems(newsPayload.items,{now:Date.now()}):[];
+ const newsState=newsError?"error":newsLoading?"loading":newsPayload?.status==="PENDING"?"pending":newsPayload?.status==="UPDATE_DELAYED"?"delayed":"ready";
  return <article className="ob-detail ob-beginner-detail ob54-detail ob55-iran-parity" aria-labelledby="ob-iran-title">
   <header className="ob53-title ob54-heading">
    <div><span className="ob-eyebrow">선택한 이벤트 · 지정학</span>
