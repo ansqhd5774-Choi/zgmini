@@ -1,7 +1,7 @@
 # 이란 전쟁 주요 뉴스 — 구현 작업 계획 R1
 
 - 계획일: 2026-10-26 (KST)
-- 상태: **코드 1차 반영 / 실 PC 실행·수집 연동·배포 전**
+- 상태: **GOV.UK 첫 1건 PC·D1·웹 공개 검증 완료 / 기존 R13 주기 연계 점검 중**
 - 작업 브랜치: `codex/outbreak-iran-news-retention-r1-20261026`
 - 선행 승인: `docs/OUTBREAK_IRAN_NEWS_RETENTION_R1.md`
 - 기준: 사이트 최근 14일 표시, PC **표시 전용 뉴스** 최근 30일 보관 후 자동 삭제
@@ -113,7 +113,7 @@
 - [x] PC 표시 전용 캐시 최초 승인 기사 1건 적용/read-back: 2026-10-27 R3 로그 `PASS_PC_CACHE_APPLIED_NOT_PUBLISHED`.
 - [ ] 기존 승인 runner에 향후 기사 검토 및 30일 정리 연결(새 스케줄러 없음)
 - [x] 뉴스 D1 게시·read-back: 2026-10-27 R4B PC 로그 `PASS_D1_NEWS_ONLY_PUBLISHED`, `D1_PREFLIGHT_GATE=PASS`, `D1_PUBLISH_READBACK=PASS`, `itemCount=1`, `scoreLedgerChanged=false`
-- [ ] 뉴스 공개 API/UI 및 Cloudflare Git 배포
+- [x] 뉴스 공개 API/UI 및 Cloudflare Git 배포: PR #794 병합, `main` 배포 커밋 `41d96e979e514a937a813d273466a7ac547622a5`, Cloudflare 공식 Build 성공, API/UI 실제 1건 및 이란 7.1점 유지 확인.
 
 **진행 이력:** 최초에는 계획서만 저장했다. 2026-10-26 현재 독립 구현 파일과 UI/API 연결 코드가 브랜치에 추가되었다. 그러나 기사별 검증과 자체 요약·영향 분류, PC 원본 수집기와의 런타임 연결, PC 실제 30일 정리 실행, D1 실제 게시, PR/main 반영, Cloudflare 배포는 **미실시**다. 13개 테스트 PASS는 단위 테스트 결과이지 운영 PASS가 아니다.
 
@@ -145,3 +145,12 @@
 - 사용자 제출 `IRAN_NEWS_R4B_D1_PUBLISH_RESULT.txt`: `R3_LOG=FOUND_OPTIONAL`, `D1_PREFLIGHT_GATE=PASS`, `remoteKey=ABSENT`, `itemCount=1`, `publication=VERIFIED`, `D1_PUBLISH_READBACK=PASS`, `FINAL_STATUS=PASS_D1_NEWS_ONLY_PUBLISHED`.
 - 쓰기 대상은 오직 `public:iran-progress:news:iran:r1` 뉴스 전용 D1 행 1건이다. 이는 실제 D1 저장·read-back PASS이며 공개 API/프런트 배포 또는 6시간 자동 운영 PASS는 아니다.
 - 다음 Gate: 기존 브랜치의 뉴스 API·UI·검증·운영 도구 변경만 `main`과 비교·PR 검증 후 회수한다. 최신 main SHA에 연결된 Cloudflare Workers Builds 체크, 배포 SHA 및 공개 API/UI를 각각 확인한다.
+
+## 9. 2026-10-27 첫 뉴스 실제 공개 및 R13 후속 검증
+
+- PR [#794](https://github.com/ansqhd5774-Choi/zgmini/pull/794)를 기존 단일 작업 브랜치에서 생성해 CI `check`/`ui` PASS 후 squash 병합했다. 신규 브랜치는 생성하지 않았다.
+- 병합된 `main` 커밋: `41d96e979e514a937a813d273466a7ac547622a5`. 공식 Cloudflare Git Integration `Workers Builds: zgmini-migration-candidate-r5` 성공, 같은 커밋의 `check`/`verify`/`notify` 성공을 검증했다.
+- 실서비스 `https://zgmini.kr/api/outbreak-news/iran`: `status=READY`, `itemCount=1`, `source=GOV.UK`, `displayDays=14`, 기사 날짜 `2026-10-23`. 화면 `https://zgmini.kr/outbreak/?event=iran`의 주요 뉴스 1건, 자체 요약·원문 링크·OGL 표시가 정상이며 기존 종전 진전도 7.1 및 14일 차트는 유지됐다.
+- **운영 범위 정확히 분리:** 첫 승인 기사 1건의 전용 D1 게시·웹 노출 성공은 정기적인 GOV.UK 수집·검토·30일 캐시 정리의 자동 운영 검증과 다르다. GOV.UK 신규 기사 자동 게시 및 추가 뉴스 매체 편입은 승인하지 않았다.
+- R13 연결 전 운영 PC 실제 `schtasks` 액션·전용 캐시·원장 존재를 안전하게 확인하도록 `scripts/iran-progress/news-display-runner-audit-r5.mjs`과 `scripts/iran-progress/IRAN_NEWS_R5_RUNNER_READONLY.cmd`를 **같은 기존 브랜치**에 추가했다. CMD는 옆에 `IRAN_NEWS_R5_RUNNER_READONLY_RESULT.txt`를 생성하고 조사 보조 파일을 제거한다. R13 작업·캐시·SQLite·D1에는 쓰지 않는다.
+- 다음 Gate: 사용자 PC R5 TXT 결과에서 실제 R13 액션 체인과 표시용 캐시 경로를 확인한 다음에만 기존 6시간 실행 경로에 정리 처리를 최소 범위로 연결한다. 연결 전 자동 운영 완료라고 보고하지 않는다.
