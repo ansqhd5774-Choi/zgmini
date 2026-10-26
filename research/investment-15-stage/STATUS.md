@@ -154,6 +154,14 @@
 - 소스의 **예상 CAGR**과 실제 연간 성장률을 혼동하지 않는다. G/D/M·투자 순위·주문/운영 연결 없음. 코드 `stage04/market-growth-ollama-r23-readonly.mjs`, `stage04/STAGE04_OLLAMA_GROWTH_R23_READONLY.cmd`, 모의 테스트 5/5.
 - 연구기록: `STAGE04_SPECIALIST_OLLAMA_SPEED_R23_20261026.md`.
 
+## R24 PC 실측 실패 원인 분리 및 Ollama 독해 속도 단독 시험 (2026-10-26)
+
+- 실제 사용자 첨부 `R23_OLLAMA_GROWTH_RESULT.txt`: **HTTP 403**, 2,019ms, 전문매체 요청 1회, Ollama 실행 **0회**. R23 실측으로 모델이 2초 걸렸다고 주장하면 오류.
+- 외부 전문매체 HTTP 요청 없이 **짧은 출처 표시 예시 문장**을 로컬 Ollama가 읽고 CAGR·예상기간을 추출하는 R24 독립 Windows CMD 시험 구현. 기존 PC Ollama 사용; 전체 20초 제한, 원문/개인키 저장 없음.
+- `stage04/STAGE04_OLLAMA_ONLY_R24_READONLY.cmd`, `stage04/market-growth-ollama-r23-readonly.mjs`. 로컬 시험 코드 추가 1/1, 총 6/6 통과. 실제 Ollama 수행 시간 미수신.
+- `SOURCE_MODE=REFERENCE_SAMPLE_NOT_LIVE`. 이 모드 숫자는 최신 산업 데이터/운영 투자 산식의 증거가 아님. 403 매체 우회·반복 없음.
+- 문서 `STAGE04_OLLAMA_MODEL_ONLY_R24_20261026.md`.
+
 ## 가장 최근 M2 패키지 R25 진척
 
 - 원본: `INVESTMENT_M2_R25_NASDAQ_EARNINGS_REPAIR_20261025(1).zip` (원본 SHA256은 `ARTIFACT_INDEX.md`).
@@ -167,5 +175,5 @@
 
 1. 이 브랜치와 `m2/` 파일 목록·SHA, 현재 ZGMINI `main` SHA, 사용자 Windows에서 실행 승인된 R25 ZIP의 일치 여부 확인.
 2. 사용자가 CMD에서 R25를 실행한 실제 `M2_LATEST_STATUS.txt`를 확보하면 R25 SERV 수정이 실제 PASS인지 검증.
-3. **R23 우선 실측**: 선정한 성장률 전문매체 원자력 예제의 짧은 요약만 PC Ollama에 보내 20초 이내 응답하는지 `R23_OLLAMA_GROWTH_RESULT.txt`로 확인한다. 그다음 키워드 기반 즉답 검색을 확대할지 판단한다. R20~R22의 공식 통계 전수 카탈로그 탐색은 후순위로 전환한다.
+3. **R24 Ollama 단독 실측 우선**: R23은 매체 HTTP 403으로 모델 호출 전 종료되었다. 외부 웹 접속과 분리하여 짧은 예시를 PC Ollama가 몇 초에 처리하는지 `R24_OLLAMA_ONLY_RESULT.txt`로 확인한다. 실제 최신 출처 검색 연결은 별개로 추후 검증한다.
 4. 사용자 승인 이전에 M 랭킹 실운영·03단계 가중치/ETF 변경·주문 및 배포 금지.
