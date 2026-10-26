@@ -24,6 +24,20 @@ test('legacy liquidity risk permanently redirects before asset rendering, preser
  }
  assert.ok(shellRoutes.includes('/economic-indicators/liquidity/'));
 });
+test('legacy scenario query redirects permanently to independent outbreak and preserves event',async()=>{
+ const cases=[
+  ['https://zgmini.kr/?view=scenarios','https://zgmini.kr/outbreak/'],
+  ['https://zgmini.kr/?view=scenarios&event=iran','https://zgmini.kr/outbreak/?event=iran'],
+  ['https://zgmini.kr/?event=iran&view=scenarios','https://zgmini.kr/outbreak/?event=iran'],
+ ];
+ for(const [url,expected] of cases){
+  const response=await staticShell(new Request(url),{});
+  assert.equal(response.status,308);
+  assert.equal(response.headers.get('location'),expected);
+ }
+ assert.ok(shellRoutes.includes('/outbreak/'));
+});
+
 test('missing shell fails closed without SSR; API outside allowlist',async()=>{
  assert.equal((await staticShell(new Request('https://candidate.workers.dev/'),{ASSETS:{fetch:async()=>new Response('',{status:404})}})).status,503);
  assert.equal(await staticShell(new Request('https://candidate.workers.dev/api/market-score'),{}),null);
