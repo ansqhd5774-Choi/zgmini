@@ -5,10 +5,10 @@ rem ZGMINI Iran news: read-only PC verification. No deletes, no D1 writes.
 rem Downloaded code is pinned to a reviewed immutable GitHub commit.
 set "ZG_IRAN_LOG=%~dp0IRAN_NEWS_R1_RESULT.txt"
 set "ZG_IRAN_RUNTIME=%~dp0IRAN_NEWS_R1_RUNTIME"
-set "ZG_IRAN_RAW=https://raw.githubusercontent.com/ansqhd5774-Choi/zgmini/8332e42d2d783ee44a73fe7b87781add4c256c43"
+set "ZG_IRAN_RAW=https://raw.githubusercontent.com/ansqhd5774-Choi/zgmini/f81416f2519633d2dae1a9ed9efa1c6607ef6a32"
 
 > "%ZG_IRAN_LOG%" echo ZGMINI IRAN NEWS R1 - READ ONLY PC CHECK
->> "%ZG_IRAN_LOG%" echo Commit: 8332e42d2d783ee44a73fe7b87781add4c256c43
+>> "%ZG_IRAN_LOG%" echo Commit: f81416f2519633d2dae1a9ed9efa1c6607ef6a32
 >> "%ZG_IRAN_LOG%" echo No cache deletion, no database changes, no D1 publishing.
 
 where node >nul 2>nul
