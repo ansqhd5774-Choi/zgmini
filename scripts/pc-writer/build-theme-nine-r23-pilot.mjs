@@ -35,7 +35,10 @@ const variants = [
   {filename: 'THEME_NINE_R23_PILOT.cmd', log: 'THEME_NINE_R23_PILOT_RESULT.txt',
     scope: 'AUTO_UP_TO_64_BATCHES_FOUR_FREE_GET_EACH_60S_PAUSE', mode: '--collect-auto'},
   {filename: 'THEME_NINE_R23_DIAGNOSE.cmd', log: 'THEME_NINE_R23_DIAGNOSE_RESULT.txt',
-    scope: 'READ_ONLY_FAILED_CHECKPOINT_NO_NETWORK', mode: '--inspect-failure'}
+    scope: 'READ_ONLY_FAILED_CHECKPOINT_NO_NETWORK', mode: '--inspect-failure'},
+  {filename: 'THEME_NINE_R23_RECOVER.cmd', log: 'THEME_NINE_R23_RECOVER_RESULT.txt',
+    scope: 'ONE_TIME_EXACT_TIMEOUT_CHECKPOINT_REARM_THEN_BOUNDED_FREE_GET',
+    mode: '--resume-reviewed-timeout', resumeAfterReview: true}
 ];
 
 for (const variant of variants) {
@@ -63,8 +66,19 @@ const lines = [
   'if errorlevel 1 goto :unpack_failed',
   'set "ZGMINI_R23_ROSTER_PATH=%R23_STAGE_ROSTER%"',
   `"%R23_NODE%" "%R23_STAGE_CODE%" ${variant.mode} 2023-01-01 2026-10-26 >>"%R23_RESULT%" 2>&1`,
+  ...(variant.resumeAfterReview ? [
+    'if errorlevel 1 goto :review_failed',
+    '>>"%R23_RESULT%" echo CHECKPOINT_REARMED_RESUMING_BOUNDED_AUTO_COLLECTION',
+    '"%R23_NODE%" "%R23_STAGE_CODE%" --collect-auto 2023-01-01 2026-10-26 >>"%R23_RESULT%" 2>&1'
+  ] : []),
   'set "R23_EXIT=%ERRORLEVEL%"',
   'goto :cleanup',
+  ...(variant.resumeAfterReview ? [
+    ':review_failed',
+    'set "R23_EXIT=%ERRORLEVEL%"',
+    '>>"%R23_RESULT%" echo REVIEW_REJECTED_NO_PROVIDER_CALL',
+    'goto :cleanup'
+  ] : []),
   ':node_missing',
   '>>"%R23_RESULT%" echo STATUS=NODE_NOT_AVAILABLE',
   'goto :cleanup',
