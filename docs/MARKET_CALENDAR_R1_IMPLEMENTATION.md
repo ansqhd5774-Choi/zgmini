@@ -39,6 +39,37 @@
 - `node --test tests/market-calendar-source-coverage-r2.test.mjs tests/market-calendar-ui-r1.test.mjs tests/release-calendar-collector-r1.test.mjs`: 3/3 PASS, `npm run typecheck`: PASS, `npm run build`: PASS (브랜치 로컬).
 - 남은 제한: 한국은행 일정 재배포 조건·PC 수집 승인 검증 전이며, 기업 실적은 검증된 지속 가능한 출처가 없다. 외부 사이트의 확인되지 않은 실적 날짜를 기존 파일에서 복제하지 않는다.
 
+## R3 — 날짜 경계 보정 및 추가 출처 권한 조사 (2026-10-27)
+
+### UI 날짜 보정 (브랜치 코드)
+- 시각 미확정 미국 공식 일정의 `D-n` 계산 기준은 미국 동부시간(`America/New_York`)의 현재 날짜로 변경. 한국시간 자정 후 미국 현지 발표일을 하루 먼저 경과 처리하던 오차를 차단한다.
+- ‘오늘’ 버튼·달력 강조는 기존 한국시간(`Asia/Seoul`)을 유지하되, 브라우저 장시간 실행 시 30초 타이머가 한국 날짜도 갱신한다.
+- `2026-10-26T15:30Z` → KST `2026-10-27` / 미국 동부 `2026-10-26`. 7월·12월 시차도 독립 계산 검증.
+- 발표시간 추정 없음. API/DB/스케줄러/산식/TTL 변경 없음. 브랜치 수정만으로 Production Runtime PASS를 주장하지 않는다.
+
+### 공식 제공원·이용조건 조사 (READ-ONLY)
+
+| 후보 | 실제 확인 | 이용조건 판정 | 처리 |
+| --- | --- | --- | --- |
+| 한국은행 월간 통계공표일정·금통위 일정 | 발표일·시각이 게시됨 | 한국은행 저작권보호방침: 제공대상 공공데이터 목록 밖 정보의 비링크 이용은 사전 협의·승인이 필요함. 일정의 목록 포함 여부 미확인 | `RIGHTS_UNCONFIRMED`, 수집·재게시 보류 |
+| 국가데이터처(구 통계청) | 공공데이터 제공목록·신청 경로 존재 | 개별 발표 일정의 이용권·기계판독형 공급 여부 미확인 | `RIGHTS_UNCONFIRMED` |
+| FinanceCalendar API | 무료 경제발표 일정, 상업적 이용 가능·표시 링크 요구; 실적 일정 제외 | 각 기록 원공급자 권리까지 준수할 것을 명시. 전체 파생·저장·재게시 권한이 자동 보증되지는 않음 | `CANDIDATE_ONLY` |
+| EarningsCalendar.net | 실적 확정·예상 API 및 90일 upcoming 문서, API 키·초당 1회 제한 | 저장·파생·상업적 재게시 권한 불명 | `RIGHTS_UNCONFIRMED` |
+| Earnings Whispers | 실적 API | 재배포·재게시는 별도 라이선스 필요 | `EXCLUDED` |
+| API Ninjas Earnings Calendar | 실적 API | 무료 플랜 상업적 이용 금지 | `EXCLUDED` |
+
+근거 URL:
+- https://www.bok.or.kr/portal/stats/statsPublictSchdul/listCldr.do?menuNo=200775
+- https://www.bok.or.kr/portal/main/contents.do?menuNo=200228
+- https://www.bok.or.kr/portal/singl/crncyPolicyDrcMtg/listYear.do?menuNo=200755&mtgSe=A
+- https://kostat.go.kr/menu.es?mid=a10106020000
+- https://www.financecalendar.com/api/reference/
+- https://api.earningscalendar.net/documentation
+- https://www.earningswhispers.com/data-api
+- https://api-ninjas.com/api/earningscalendar
+
+다음 Gate: 한국은행 통계공표일정의 공공데이터 제공목록 포함 여부·권리 확인 → 실적 제공원의 무료·상업·저장·파생·공개 재배포 권한 검증 → 승인된 공급원만 PC에 연결. 브랜치 테스트 이후에도 main 병합·Cloudflare 배포·운영 검증은 각각 별도다.
+
 ## SEO 사전 점검 (docs/SEO_SEARCH_APPEARANCE_REVIEW.md)
 
 - 검색 의도: 투자자가 미국 경제지표와 향후 기업 실적 발표 일정을 날짜별로 조회. 현재 실제 제공 범위는 공식 미국 경제지표에 국한.

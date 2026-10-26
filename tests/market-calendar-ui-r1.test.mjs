@@ -34,3 +34,19 @@ test('approved calendar controls, KST countdown and mobile adaptation remain con
  assert.match(css,/@media\(max-width:700px\)/);
  assert.match(css,/\.mc-calendar-strip/);
 });
+
+test('a long-open calendar advances KST today and keeps untimed US release dates on the US Eastern calendar',()=>{
+ assert.match(client,/const usDay=\(at:Date\)=>dayInZone\(at,'America\/New_York'\)/);
+ assert.match(client,/setToday\(kstDay\(current\)\)/);
+ assert.match(client,/row\.country==='US'\?usDay\(new Date\(nowMs\)\):today/);
+ const dateInZone=(instant,timeZone)=>{
+  const parts=new Intl.DateTimeFormat('en-US',{timeZone,year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date(instant));
+  const get=key=>parts.find(part=>part.type===key)?.value;
+  return `${get('year')}-${get('month')}-${get('day')}`;
+ };
+ const instant='2026-10-26T15:30:00Z';
+ assert.equal(dateInZone(instant,'Asia/Seoul'),'2026-10-27');
+ assert.equal(dateInZone(instant,'America/New_York'),'2026-10-26');
+ assert.equal(dateInZone('2026-07-01T03:30:00Z','America/New_York'),'2026-06-30');
+ assert.equal(dateInZone('2026-12-01T04:30:00Z','America/New_York'),'2026-11-30');
+});

@@ -43,11 +43,13 @@ const monday=(key:string)=>plusDays(key,-((parseDay(key).getUTCDay()+6)%7));
 const monthStart=(key:string)=>`${key.slice(0,7)}-01`;
 const monthEnd=(key:string)=>dayKey(new Date(Date.UTC(Number(key.slice(0,4)),Number(key.slice(5,7)),0)));
 const monthStep=(key:string,step:number)=>dayKey(new Date(Date.UTC(Number(key.slice(0,4)),Number(key.slice(5,7))-1+step,1)));
-const kstDay=(at:Date)=>{
- const parts=new Intl.DateTimeFormat('en-US',{timeZone:'Asia/Seoul',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(at);
+const dayInZone=(at:Date,timeZone:string)=>{
+ const parts=new Intl.DateTimeFormat('en-US',{timeZone,year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(at);
  const v=(key:string)=>parts.find(p=>p.type===key)?.value??'';
  return `${v('year')}-${v('month')}-${v('day')}`;
 };
+const kstDay=(at:Date)=>dayInZone(at,'Asia/Seoul');
+const usDay=(at:Date)=>dayInZone(at,'America/New_York');
 const kstTime=(at:string)=>new Intl.DateTimeFormat('ko-KR',{timeZone:'Asia/Seoul',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).format(new Date(at));
 const elapsed=(deadline:string,nowMs:number)=>{
  if(!nowMs)return '계산 중';
@@ -122,7 +124,7 @@ export default function MarketCalendar(){
 
  useEffect(()=>{
   const now=new Date();const key=kstDay(now);setToday(key);setSelected(key);setNowMs(now.getTime());
-  const timer=window.setInterval(()=>setNowMs(Date.now()),30000);
+  const timer=window.setInterval(()=>{const current=new Date();setNowMs(current.getTime());setToday(kstDay(current));},30000);
   const controller=new AbortController();
   fetch('/api/release-calendar',{signal:controller.signal,cache:'no-store'}).then(async res=>{
    if(!res.ok)throw Error(`HTTP ${res.status}`);
@@ -155,7 +157,9 @@ export default function MarketCalendar(){
   if(row.status==='released')return {label:'발표 완료',style:'done'};
   if(row.at){const label=elapsed(row.at,nowMs);return {label,style:label==='발표 시간 경과'?'elapsed':''};}
   if(!nowMs)return {label:'계산 중',style:''};
-  const daysLeft=diffDays(row.date,today);
+  // Untimed official US events are dated in the publishing agency's US calendar day.
+  const referenceDay=row.country==='US'?usDay(new Date(nowMs)):today;
+  const daysLeft=diffDays(row.date,referenceDay);
   if(daysLeft<0)return {label:'발표일 경과',style:'elapsed'};
   if(daysLeft===0)return {label:'오늘 · 시각 미정',style:'elapsed'};
   return {label:`D-${daysLeft} · 시각 미정`,style:''};
