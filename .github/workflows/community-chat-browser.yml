@@ -97,7 +97,7 @@ jobs:
         run: node tests/about-intro-bootstrap-browser-r6.mjs
       - name: Validate chat UI at 390, 768, 1440 and 1920 px with mocked backend
         run: node tests/community-chat-browser-r1.mjs
-      - name: Validate eight-risk navigation and chat overlays at 390, 768, 1440, 1650 and 1920 px
+      - name: Validate eight-risk navigation without chat at 390, 768, 1440, 1650 and 1920 px
         run: node tests/risk-detail-side-rails-browser-r44.mjs
       - name: Validate scenarios at 390, 768, 1440 and 1920 px with mocked stored snapshots
         run: node tests/outbreak-scenarios-browser-r51.mjs
