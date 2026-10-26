@@ -73,7 +73,8 @@ test('approved sector mobile cards center each legend name on one line with left
 
 test('sector legend toggles and sorted current score remain source driven',()=>{
  const tsx=read('app/sector-fear-greed/sector-detail-charts.tsx');
- assert.match(tsx,/order:var\(--zg-mobile-order\)/.test(read('app/sector-fear-greed/sector-detail.css')) ? /SECTORS\.map\(sector=>/ : /never-match/);
+ assert.match(read('app/sector-fear-greed/sector-detail.css'),/order:var\(--zg-mobile-order\)/);
+ assert.match(tsx,/SECTORS\.map\(sector=>/);
  assert.match(tsx,/onClick=\{\(\)=>toggle\(sector\.id\)\}/);
  assert.match(tsx,/\{'--zg-mobile-order':sorted\.findIndex\(item=>item\.id===sector\.id\)\}/);
  assert.match(tsx,/className="zg-sfg-legend-name">\{nameOf\(sector\.id\)\}/);
