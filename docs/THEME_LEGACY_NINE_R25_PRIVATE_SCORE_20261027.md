@@ -1,7 +1,7 @@
 # 기존 9개 테마 R25 — 3단계 ETF 개별 점수 계산 (비공개)
 
 - 적용 브랜치: `codex/theme-fear-greed-integration-20261025`만 사용.
-- R22 승인 6단계 중 **3단계** 도구 구현. 사용자 PC 실행과 결과 검증은 별개이며 아직 수행하지 않았다.
+- R22 승인 6단계 중 **3단계** 도구 구현. 사용자 PC는 2026-10-27 실제 실행했고, TXT와 전체 JSON을 R24 원본 요약에 대조해 PASS 했다. [실제 검증 결과](THEME_LEGACY_NINE_R25_PC_RESULT_AUDIT_20261027.md)를 참고한다.
 - 실행 파일: `scripts/pc-writer/THEME_NINE_R25_INDIVIDUAL_SCORES.cmd`
 - 제공 스크립트: `theme-nine-r25-individual-score.mjs`, `build-theme-nine-r25-score.mjs`
 - 검사: `tests/theme-nine-r25-individual-score.test.mjs` (64종 모의 원본·SHA·R24 감사·R2 산식 연계 PASS)
@@ -37,4 +37,4 @@ CMD는 다섯 구성요소(3단계 계산기·R20 로스터·R24 감사기·승�
 - 기존 수집기, D1, DB, Cloudflare, GitHub 자동배포, 스케줄러, 산식 원본을 변경하지 않는다.
 - 오류 시 `STOP_R25_PRIVATE_SCORE`로 종료하고 원자료나 이전 공개 점수를 조작하지 않는다.
 - 무료/유료 API 호출 모두 **0회**. 원본 저장 경로 쓰기 **0회**. 임시 스크립트는 CMD 파일 옆 임시 하위 폴더에 만들었다가 작업 종료 후 제거한다.
-- 사용자 PC 수행 전: `IMPLEMENTED_LOCAL_TEST_PASS / PC_RUN_PENDING / NO_PUBLICATION`.
+- 사용자 PC 실행·교차검증 후: `IMPLEMENTED_LOCAL_TEST_PASS / PC_RESULT_INTEGRITY_PASS / NO_PUBLICATION`.
