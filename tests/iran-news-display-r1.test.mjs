@@ -10,7 +10,7 @@ import {publishIranNewsDisplay} from '../scripts/iran-progress/news-display-publ
 import {storedIranNewsResponse} from '../worker/iran-news-display-public-r1.mjs';
 import {IRAN_NEWS_DISPLAY_KEY} from '../lib/iran-progress/news-display-r1.mjs';
 import {parseGovUkNewsCandidates,discoverGovUkNewsCandidates,govUkContentCandidate,IRAN_GOVUK_NEWS_FEED} from '../scripts/iran-progress/news-display-discover-r1.mjs';
-import {runIranNewsDisplayMaintenance} from '../scripts/iran-progress/news-display-maintenance-r1.mjs';
+import {runIranNewsDisplayMaintenance,parseReviewedNewsInput,APPROVED_INPUT_VERSION} from '../scripts/iran-progress/news-display-maintenance-r1.mjs';
 
 const now=Date.parse('2026-10-26T15:00:00.000Z'); // KST 10/27 00:00
 const item=(date,extra={})=>({source:'GOV.UK',title:'Government statement on Iran talks',summary:'The government issued a statement.',
@@ -167,4 +167,14 @@ test('PC maintenance mode gates actual cache rewrite and D1 publication separate
   assert.equal(published.publication,'VERIFIED');
   assert.equal(JSON.parse(row.body).itemCount,1);
  }finally{rmSync(root,{recursive:true,force:true});}
+});
+test('manually reviewed input can seed the display cache without bypassing per-item rights',()=>{
+ const candidate=item('2026-10-26T01:00:00Z');
+ assert.deepEqual(parseReviewedNewsInput(JSON.stringify({version:APPROVED_INPUT_VERSION,items:[candidate]}),{now}),[candidate]);
+ const invalid={version:APPROVED_INPUT_VERSION,items:[{...candidate,rightsVerified:false}]};
+ assert.throws(()=>parseReviewedNewsInput(JSON.stringify(invalid),{now}),/NEWS_REVIEW_INPUT_NOT_APPROVED/);
+ assert.throws(()=>parseReviewedNewsInput(JSON.stringify({...invalid,items:[candidate,{...candidate,rightsSource:'OTHER'}]}),{now}),/NEWS_REVIEW_INPUT_NOT_APPROVED/);
+ assert.throws(()=>parseReviewedNewsInput(JSON.stringify({version:'UNAPPROVED',items:[candidate]}),{now}),/NEWS_REVIEW_INPUT_FORMAT_INVALID/);
+ assert.throws(()=>parseReviewedNewsInput('not-json',{now}),/NEWS_REVIEW_INPUT_INVALID_JSON/);
+ assert.throws(()=>parseReviewedNewsInput('x'.repeat(65537),{now}),/NEWS_REVIEW_INPUT_TOO_LARGE/);
 });
