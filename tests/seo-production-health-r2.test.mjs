@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {SEO_RUNTIME_MARKERS,inspectCanonicalRedirect,inspectHtml,jsonLdTypes,liveSitemapEntries} from '../scripts/seo-production-health.mjs';
+import {SEO_RUNTIME_MARKERS,inspectCanonicalRedirect,inspectCrawlResponse,inspectGuideInboundLink,inspectHtml,jsonLdTypes,liveSitemapEntries} from '../scripts/seo-production-health.mjs';
 
 const detailUrl='https://zgmini.kr/fear-greed/korea/';
 const detailDescription='한국 공포탐욕지수의 최근 점수와 504개 유효 관측치 기준창을 확인하세요.';
@@ -163,4 +163,54 @@ test('production SEO workflow is push-only, deployment-gated, and verifies canon
   assert.match(script,/SEO_HEALTH_REDIRECT_PASS=/);
   assert.match(script,/lastmod_missing:/);
   assert.match(script,/SEO_HEALTH_PASS=/);
+});
+
+test('guide HTTP response validation catches unindexable headers and canonical redirects',()=>{
+ const url='https://zgmini.kr/guides/fear-greed-buying/';
+ const normal={status:200,contentType:'text/html; charset=utf-8',xRobotsTag:'',finalUrl:url};
+ assert.deepEqual(inspectCrawlResponse(normal,url,{requireOriginalUrl:true}),[]);
+ for(const header of ['noindex','googlebot: noindex','noindex, nofollow','none','noarchive, noindex']){
+  assert.ok(inspectCrawlResponse({...normal,xRobotsTag:header},url).includes('x_robots_tag_blocked:'+header),header);
+ }
+ assert.deepEqual(inspectCrawlResponse({...normal,xRobotsTag:'index, follow'},url),[]);
+ assert.deepEqual(inspectCrawlResponse({...normal,status:403,contentType:'text/plain',finalUrl:'https://zgmini.kr/blocked'},url,{requireOriginalUrl:true}),[
+  'http_403','content_type:text/plain','url_redirected:https://zgmini.kr/blocked',
+ ]);
+});
+
+test('homepage and USA/Korea public HTML must contain an actual anchor to the buying guide',()=>{
+ assert.deepEqual(inspectGuideInboundLink('<a href="/guides/fear-greed-buying/">매수 판단 가이드</a>'),[]);
+ assert.deepEqual(inspectGuideInboundLink('<script>"/guides/fear-greed-buying/"</script>'),['guide_inbound_link_missing']);
+ assert.deepEqual(inspectGuideInboundLink('<span>매수 판단 가이드</span>'),['guide_inbound_link_missing']);
+ const footer=readFileSync('components/site-footer.tsx','utf8');
+ const usa=readFileSync('app/fear-greed/usa/page.tsx','utf8');
+ const korea=readFileSync('app/fear-greed/korea/page.tsx','utf8');
+ for(const [name,source] of [['footer',footer],['USA',usa],['Korea',korea]]){
+  assert.ok(source.includes('href="/guides/fear-greed-buying/"'),name);
+ }
+ const health=readFileSync('scripts/seo-production-health.mjs','utf8');
+ assert.match(health,/GUIDE_LINK_SOURCES=new Set\(\['\/', '\/fear-greed\/usa\/', '\/fear-greed\/korea\/'\]\)/);
+ assert.match(health,/inspectGuideInboundLink\(response\.text\)/);
+ assert.match(health,/for\(const path of GUIDE_DIRECT_CHECK_PATHS\)/);
+ assert.match(health,/SEO_HEALTH_GUIDE_BARE_PASS/);
+});
+
+test('buying guide HTML contract checks substantial visible copy, not only a description tag',()=>{
+ const url='https://zgmini.kr/guides/fear-greed-buying/';
+ const markers=SEO_RUNTIME_MARKERS.get(url)?.htmlIncludes;
+ assert.deepEqual(markers,['매수 전 판단 3단계','상황별 확인 포인트','내용 확인일 2026-10-25']);
+ const guide=readFileSync('app/guides/fear-greed-buying/page.tsx','utf8');
+ for(const marker of markers)assert.ok(guide.includes(marker),'expected visible '+marker);
+ const desc=SEO_RUNTIME_MARKERS.get(url).descriptionIncludes;
+ const html=detailHtml.replaceAll(detailUrl,url).replaceAll(detailDescription,desc).replace('</body>',markers.map(marker=>'<p>'+marker+'</p>').join('')+'<script type="application/ld+json">{"@type":"Article"}</script></body>');
+ assert.deepEqual(inspectHtml(html,url).errors,[]);
+ for(const marker of markers)assert.ok(inspectHtml(html.replace('<p>'+marker+'</p>',''),url).errors.includes('html_stale:'+marker));
+});
+
+test('all guide SEO metadata shares an existing public social preview image without changing canonical',()=>{
+ const shell=readFileSync('app/guides/guide-page.tsx','utf8');
+ assert.match(shell,/const image='https:\/\/zgmini\.kr\/zgmini-share\.png'/);
+ assert.match(shell,/images:\[\{url:image,width:1200,height:630/);
+ assert.match(shell,/twitter:\{card:'summary_large_image',title:fullTitle,description,images:\[image\]\}/);
+ assert.match(shell,/alternates:\{canonical:url\},robots:\{index:true,follow:true\}/);
 });
