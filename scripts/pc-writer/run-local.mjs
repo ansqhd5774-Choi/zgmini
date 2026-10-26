@@ -1,3 +1,4 @@
+import {attemptOutput} from './independent-publication.mjs';
 import fs from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
@@ -19,7 +20,6 @@ import {requiresLiquidityR2DisplayRefresh} from './liquidity-r2-refresh.mjs';
 import {requiresCreditR2DisplayRefresh} from './credit-r2-refresh.mjs';
 import {requiresDebtHistoryRefresh} from './debt-history-refresh.mjs';
 import {prepareStagflation,publishStagflation} from './stagflation-publication.mjs';
-import {validDegradedMarket} from './collection-publication-policy.mjs';
 import {assertCompleteMarket} from './market-publication-safety.mjs';
 import {updateDataAlert} from './local-data-alert.mjs';
 import {prepareLatestStagflation,publishLatestStagflation} from './stagflation-latest-publication.mjs';
@@ -65,6 +65,7 @@ try{
  const {projectionWriter}=await import('../../worker/projection-runtime-r52.mjs');
  const {PUBLIC_PROJECTION_KEYS}=await import('../../worker/market-public-projection-store.mjs');
  const now=Date.now();
+ const marketReady=await attemptOutput(report,'market',async()=>{
  const body=await calculateMarket(root,core,now);
  // Reuse the published daily score history already read for the overall chart.
  const storedHistory=await marketOperationalStore(core).readScoreHistory({sinceDate:oneYearHistoryStart(now),limit:370});
@@ -99,17 +100,6 @@ try{
  assertCompleteMarket(body);
  await marketOperationalStore(core).writeScore(body,now);
  save(path.join(base,'local-market-result.json'),body);
- // Rate sentiment is a separate stored-data score; never modify the approved Rate R3 domain.
- const {preparePublicRateSentiment,publishPublicRateSentiment}=await import('./rate-sentiment-publication.mjs');
- const rateSentiment=await preparePublicRateSentiment(core,now);
- report.rateSentiment={status:rateSentiment.status,observationDate:rateSentiment.observationDate??null,reason:rateSentiment.reason??null};
- // Separate opt-in projection. Failure does not interrupt existing market/Korea publication.
- let stagflation={status:'DISABLED',prepared:false};
- try{stagflation=await prepareStagflation(core,{enabled:config.stagflationS21Publication===true,now});}catch{stagflation={status:'PARTIAL',prepared:false,reason:'STAGFLATION_PREPARATION_FAILED'};}
- report.stagflation={status:stagflation.status,observationMonth:stagflation.body?.observationMonth??null,reason:stagflation.reason??null};
- let stagflationLatest={status:'DISABLED',prepared:false};
- try{stagflationLatest=await prepareLatestStagflation(core,{enabled:config.latestStagflationPublication===true,now});}catch{stagflationLatest={status:'PARTIAL',prepared:false};}
- report.stagflationLatest={status:stagflationLatest.status,score:stagflationLatest.body?.score??null};
  const liquidityTrend=body.domains.find(x=>x.id==='liquidity')?.trend??[];
  const liquidityDates=liquidityTrend.map(x=>x?.label??x?.date).filter(x=>typeof x==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(x)).sort();
  report.market={
@@ -124,6 +114,20 @@ try{
   },
   liquidityCoverage,
  };
+ });
+ if(!marketReady)report.market={status:'PREVIOUS_RELEASE_PRESERVED'};
+ // Rate sentiment is a separate stored-data score; never modify the approved Rate R3 domain.
+ const {preparePublicRateSentiment,publishPublicRateSentiment}=await import('./rate-sentiment-publication.mjs');
+ let rateSentiment={status:'UNAVAILABLE'};await attemptOutput(report,'rate-sentiment-calculation',async()=>{rateSentiment=await preparePublicRateSentiment(core,now);});
+ report.rateSentiment={status:rateSentiment.status,observationDate:rateSentiment.observationDate??null,reason:rateSentiment.reason??null};
+ // Separate opt-in projection. Failure does not interrupt existing market/Korea publication.
+ let stagflation={status:'DISABLED',prepared:false};
+ try{stagflation=await prepareStagflation(core,{enabled:config.stagflationS21Publication===true,now});}catch{stagflation={status:'PARTIAL',prepared:false,reason:'STAGFLATION_PREPARATION_FAILED'};}
+ report.stagflation={status:stagflation.status,observationMonth:stagflation.body?.observationMonth??null,reason:stagflation.reason??null};
+ let stagflationLatest={status:'DISABLED',prepared:false};
+ try{stagflationLatest=await prepareLatestStagflation(core,{enabled:config.latestStagflationPublication===true,now});}catch{stagflationLatest={status:'PARTIAL',prepared:false};}
+ report.stagflationLatest={status:stagflationLatest.status,score:stagflationLatest.body?.score??null};
+ await attemptOutput(report,'korea-calculation',async()=>{
  const koreaStore=new Rev7D1Store(history,{leaseMs:600000});
  const latest=await koreaStore.getLatestCompleteDate();
  const prior=await koreaStore.getLatestSnapshot();
@@ -132,7 +136,9 @@ try{
   try{const result=await calculateKorea({query:(_db,sql,params=[])=>history.prepare(sql).bind(...params).all()},'local',path.join(base,'korea-inputs'));await koreaStore.saveSnapshot(result);report.korea={status:'LOCAL_STORED',date:result.observationDate};}
   finally{await koreaStore.releaseLease();}
  }else report.korea={status:'UNCHANGED',date:prior.date};
+ });
  for(const id of Object.keys(PUBLIC_PROJECTION_KEYS)){
+  await attemptOutput(report,'projection:'+id,async()=>{
   // Recompute only from saved inputs when the R10 input set is installed.
   // No provider fetch, and failure preserves the previous valid release file.
   if(id==='assetBubble'&&fs.existsSync(path.join(base,'local-asset-bubble-r10-breadth-research.json'))){
@@ -149,7 +155,7 @@ try{
   if(id==='assetBubble'&&r10)report.assetR10={status:r10.status,reason:r10.reason??null,reasons:r10.reasons??[]};
   if(id==='supplyShock'&&r10?.status!=='READY'){
    report.projections.push({id,status:'PREVIOUS_RELEASE_PRESERVED'});
-   continue;
+   return;
   }
   const coreCheckpoint=await readProjectionCheckpoint(scope,id);
   // Preserve the operational checkpoint's monotonic clock. The payload keeps
@@ -168,6 +174,7 @@ try{
    await projectionWriter(core).write(id,payload,Date.now(),checkpoint);
   }
   report.projections.push({id,status:'LOCAL_READY'});
+  });
  }
  const {enrichLocalBeginnerProjections}=await import('./beginner-projection-cycle.mjs');
  report.beginnerCopy=await enrichLocalBeginnerProjections({core,fetcher:originalFetch,now:Date.now()});
@@ -177,32 +184,37 @@ try{
  const health=await storeLocalCollectionHealth(core,history,now,base);
  report.collectionHealth={normal:health.normal,total:health.total,status:health.status};
  if(publish){
-  if(process.argv.includes('--collection-degraded')&&!validDegradedMarket(body))throw Error('STORED_MARKET_NOT_READY_AFTER_COLLECTION_FAILURE');
+  // Each output below owns its validation and readback; marketReady never gates peers.
   const remote=client(config,credential(root));
   report.recovery=await recoverPublication(remote,config.core,base);
   save(path.join(base,'local-publication-ledger.json'),{status:'SUBMITTING',source,at:Date.now()});
   const {claimMarket,releaseMarket,publishMarket}=await import('./publish.mjs');
+  if(marketReady)await attemptOutput(report,'market-publication',async()=>{
   const lease=await claimMarket(remote,config.core);if(!lease)throw Error('REMOTE_MARKET_LEASE_BUSY');
   try{
    const previous=(await remote.query(config.core,"SELECT stored_at FROM market_public_snapshots_v1 WHERE snapshot_key='current'")).results[0]?.stored_at;
    report.market={...report.market,...(previous>now?{status:'REMOTE_NEWER_PRESERVED',storedAt:previous}:await publishMarket(remote,config.core,read(path.join(base,'local-market-result.json')),now,lease,previous,path.join(base,'local-market-ledger.json')))};
   }finally{await releaseMarket(remote,config.core,lease);}
+  });
   // Explicit allowlist: publish display outputs only, never provider input/history rows.
   for(const {id,status} of report.projections){
-   if(status==='PREVIOUS_RELEASE_PRESERVED')continue;
+   if(status!=='LOCAL_READY')continue;
+   await attemptOutput(report,'projection-publication:'+id,async()=>{
    const row=await core.prepare('SELECT body,stored_at FROM market_public_snapshots_v1 WHERE snapshot_key=?').bind(PUBLIC_PROJECTION_KEYS[id]).first();
    const envelope=JSON.parse(row.body);
    const current=(await remote.query(config.core,'SELECT body,stored_at FROM market_public_snapshots_v1 WHERE snapshot_key=?',[PUBLIC_PROJECTION_KEYS[id]])).results[0];
-   if(current&&(JSON.parse(current.body).projection?.sourceStoredAt>envelope.projection.sourceStoredAt||current.stored_at>row.stored_at)){report.projections.find(x=>x.id===id).status='REMOTE_NEWER_PRESERVED';continue;}
-   if(current&&hash(JSON.parse(current.body))===hash(envelope))continue;
+   if(current&&(JSON.parse(current.body).projection?.sourceStoredAt>envelope.projection.sourceStoredAt||current.stored_at>row.stored_at)){report.projections.find(x=>x.id===id).status='REMOTE_NEWER_PRESERVED';return;}
+   if(current&&hash(JSON.parse(current.body))===hash(envelope))return;
    await projectionWriter(remote.adapter(config.core,{allowWrites:true})).write(id,envelope.payload,row.stored_at,envelope.projection);
    const check=(await remote.query(config.core,'SELECT body FROM market_public_snapshots_v1 WHERE snapshot_key=?',[PUBLIC_PROJECTION_KEYS[id]])).results[0];
    if(!check||hash(JSON.parse(check.body).payload)!==hash(envelope.payload))throw Error('LOCAL_PROJECTION_PUBLICATION_MISMATCH');
+   });
   }
   // Reuse the existing public snapshot table; publish only the bounded display score.
-  report.rateSentiment.publication=(await publishPublicRateSentiment(remote,config.core,rateSentiment)).status;
+  await attemptOutput(report,'rate-sentiment-publication',async()=>{report.rateSentiment.publication=(await publishPublicRateSentiment(remote,config.core,rateSentiment)).status;});
   try{report.stagflation.publication=(await publishStagflation(remote,config.core,stagflation)).status;}catch(error){report.stagflation.publication='UNVERIFIED';report.stagflation.reason=/^STAGFLATION_[A-Z_]+$/.test(error.message??'')?error.message:'STAGFLATION_PUBLICATION_FAILED';}
   try{report.stagflationLatest.publication=await publishLatestStagflation(remote,config.core,stagflationLatest);}catch{report.stagflationLatest.publication={status:'UNVERIFIED'};}
+  await attemptOutput(report,'korea-publication',async()=>{
   const koreaOutput=await history.prepare('SELECT * FROM kfg_rev7_snapshots ORDER BY date DESC LIMIT 1').first();
   if(koreaOutput){
    const existing=(await remote.query(config.history,'SELECT * FROM kfg_rev7_snapshots WHERE date=?',[koreaOutput.date])).results[0];
@@ -213,19 +225,23 @@ try{
     if(check?.composite_json!==koreaOutput.composite_json||check?.factors_json!==koreaOutput.factors_json)throw Error('LOCAL_KOREA_PUBLICATION_MISMATCH');
    }
   }
+  });
   const outputs=(await core.prepare("SELECT * FROM public_feed_snapshots_v1 WHERE kind='output' AND snapshot_key='current'").all()).results;
   for(const row of outputs){
+   await attemptOutput(report,'feed:'+row.feed_key,async()=>{
    const existing=(await remote.query(config.core,"SELECT body,stored_at FROM public_feed_snapshots_v1 WHERE kind='output' AND feed_key=? AND snapshot_key='current'",[row.feed_key])).results[0];
-   if(existing?.stored_at>=row.stored_at)continue;
-   if(existing&&!acceptsStoredUpdate(JSON.parse(existing.body),JSON.parse(row.body)))continue;
+   if(existing?.stored_at>=row.stored_at)return;
+   if(existing&&!acceptsStoredUpdate(JSON.parse(existing.body),JSON.parse(row.body)))return;
    await remote.request(config.core,[{sql:"INSERT INTO public_feed_snapshots_v1(kind,feed_key,snapshot_key,body,stored_at) VALUES('output',?,'current',?,?) ON CONFLICT(kind,feed_key,snapshot_key) DO UPDATE SET body=excluded.body,stored_at=excluded.stored_at WHERE excluded.stored_at>public_feed_snapshots_v1.stored_at",params:[row.feed_key,row.body,row.stored_at]}]);
    const check=(await remote.query(config.core,"SELECT body,stored_at FROM public_feed_snapshots_v1 WHERE kind='output' AND feed_key=? AND snapshot_key='current'",[row.feed_key])).results[0];
    if(check?.stored_at!==row.stored_at||check?.body!==row.body)throw Error('LOCAL_FEED_PUBLICATION_MISMATCH');
+   });
   }
-  report.scoreArrows=await publishCoreArrowState(remote,config.core);
+  await attemptOutput(report,'arrows',async()=>{report.scoreArrows=await publishCoreArrowState(remote,config.core);});
   report.remote=remote.stats;
-  save(path.join(base,'local-publication-ledger.json'),{status:'VERIFIED',source,at:Date.now()});
+  save(path.join(base,'local-publication-ledger.json'),{status:report.failures?.length?'PARTIAL':'VERIFIED',source,at:Date.now()});
  }
- report.status=publish?'VERIFIED':'DRY_RUN_PASS';
+ report.status=report.failures?.length?(publish?'VERIFIED_WITH_GAPS':'DRY_RUN_PARTIAL'):publish?'VERIFIED':'DRY_RUN_PASS';
+ if(report.failures?.length)process.exitCode=1;
 }catch(error){report.status='FAILED';report.error=/^[A-Z0-9_]+$/.test(error.message??'')?error.message:error.code??'LOCAL_WRITER_FAILED';process.exitCode=1;}
 finally{globalThis.fetch=originalFetch;console.warn=originalWarn;hook.deregister();core.close();history.close();save(path.join(base,'local-writer-last-run.json'),report);if(publish){appendPublicationEvent(base,{at:report.at,source,status:report.status,error:report.error??null,recovery:report.recovery?.outcome??null});try{updateDataAlert(base,{key:'publication',failed:report.status!=='VERIFIED'});}catch{console.warn('LOCAL_DATA_ALERT_RECORD_FAILED');}}console.log(JSON.stringify(report));}

@@ -64,8 +64,10 @@ test('local cycle separates collection failure from validated stored publication
  assert.match(src,/COMPLETE_WITH_COLLECTION_GAPS/);
  assert.match(src,/--collection-degraded/);
  const writer=fs.readFileSync(new URL('../scripts/pc-writer/run-local.mjs',import.meta.url),'utf8');
- assert.match(writer,/!validDegradedMarket\(body\)/);
- assert.match(writer,/STORED_MARKET_NOT_READY_AFTER_COLLECTION_FAILURE/);
+ assert.match(writer,/assertCompleteMarket\(body\)/);
+ assert.match(writer,/if\(marketReady\)/);
+ assert.match(writer,/PREVIOUS_RELEASE_PRESERVED/);
+ assert.match(writer,/VERIFIED_WITH_GAPS/);
 });
 
 
