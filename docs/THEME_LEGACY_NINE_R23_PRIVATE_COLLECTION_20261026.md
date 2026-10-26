@@ -3,7 +3,7 @@
 - 작업 브랜치: `codex/theme-fear-greed-integration-20261025` **한 곳만 사용**.
 - 사용자 승인: 2026-10-26 “진행해라” (R22 단계 1의 신규 수집 도구 구현 승인).
 - 상위 계약: `THEME_LEGACY_NINE_R22_SIX_STAGE_TOOL_ASSIGNMENT_20261026.md`.
-- 상태: `CODE_PREPARED / MOCK_TEST_PASS / PC_REAL_GET_NOT_RUN / SHADOW_ONLY`.
+- 상태: `PC_REAL_GET_R23_CONFIRMED / 2026-10-26 FIRST_TWO_BATCHES_COMPLETED_3_OF_64 / AUTO_MODE_CODE_PREPARED / SHADOW_ONLY`. 사용자 제공 1차·2차 TXT에서 GET 4회씩, 완료 1→3개, 후속 데이터 공개 변경 0을 확인했다.
 
 ## 구현 파일
 
@@ -17,15 +17,15 @@
 
 1. GetMarketHistory **무료 단일 티커 1h 경로** `GET /api/v1/bars/stocks/{TICKER}/1h`만 허용한다. 유료 `/query/`, 1d 요청, 다종목 일괄 요청, 결제는 없다.
 2. 시간 범위는 명령어에서 **명시**한다. `start/end` 고정 창과 승인 후보 파일 SHA256을 체크포인트 ID에 넣어, 날짜/명단이 바뀐 체크포인트의 자동 재사용을 차단한다.
-3. 한 번 실행의 API GET은 **최대 4회**. 각 페이지 `limit=5000`, `cursor`를 저장하고 다음 실행에서 이어받는다. 완성된 페이지는 같은 체크포인트에서 재다운로드하지 않는다. 429/오류/응답 무결성 실패 후 자동 재시도하지 않는다.
+3. 수집기 단일 배치의 API GET은 **최대 4회**. 각 페이지 `limit=5000`, `cursor`를 저장하고 다음 배치에서 이어받는다. 완성된 페이지는 같은 체크포인트에서 재다운로드하지 않는다. 429/오류/응답 무결성 실패 후 자동 재시도하지 않는다. **사용자가 승인한 자동 모드**는 최대 64배치(최대 256 GET), 배치 사이 60초 간격으로 연속 실행한다. 상한에 도달하면 `AUTO_BATCH_CAP_REACHED_RESUMABLE`을 남기고 종료한다. 이는 무료 API의 보장된 허용량이 아니라 로컬 안전 상한이다.
 4. 원본문서 내용과 각 페이지 SHA256은 `E:/ZGmini/data/themes/legacy-nine-r23/raw/`에, manifest/checkpoint는 같은 테마 아래 저장한다. **기존 9개 운영 원장·바이오/AI 원자료·스케줄러는 수정하지 않는다.**
 5. 저장 전 심볼·UTC 시각 순서·OHLCV 양수/범위·volume 유효성, 응답 크기를 검사한다. 결측/실제 무거래는 가짜 가격이나 0점으로 보충하지 않는다. 해당 원가격은 비조정 1시간봉이며 공식 일봉 종가로 명명하지 않는다.
-6. `--inspect`는 데이터 파일을 쓰거나 네트워크에 연결하지 않는다. `--collect`를 **명시**한 경우에만 무료 GET 및 독립 원자료 저장을 실행한다.
+6. `--inspect`는 데이터 파일을 쓰거나 네트워크에 연결하지 않는다. `--collect`(1배치) 또는 `--collect-auto`(자동 배치)를 **명시**한 경우에만 무료 GET 및 독립 원자료 저장을 실행한다.
 7. 수집 성공은 **실제 PC 실행 로그와 manifest SHA readback**으로만 판정한다. GitHub 코드 존재나 모의 응답 테스트는 실가격 수집 성공이 아니다.
 
 ## PC 명령 (실행은 사용자 담당)
 
-**권장: 파일 하나만 내려받아 실행.** `THEME_NINE_R23_PILOT.cmd`를 바탕화면 등 원하는 폴더에 놓고 더블클릭한다. 설치된 Node.js(`E:\ZGmini\runtime\node.exe` 우선, 없으면 PATH의 `node`)가 필요하다. 파일 자체에 시작일 `2023-01-01`, 종료일 `2026-10-26`, 최대 무료 GET 4회를 고정했다. 실행 후 같은 폴더의 `THEME_NINE_R23_PILOT_RESULT.txt`를 대화창에 제출한다. 재실행할 때 같은 파일을 사용하며, 기존 원본과 이어받기 체크포인트는 승인된 `E:\ZGmini\data\themes\legacy-nine-r23`에 유지된다. CMD 내부에서 임시로 꺼낸 코드/명단은 CMD와 같은 폴더에서만 생성·검증하고 정상 종료 시 제거한다. **실제 수집 성공은 사용자가 제출한 TXT로 확인한다.**
+**권장: 갱신된 CMD 하나만 내려받아 실행.** `THEME_NINE_R23_PILOT.cmd`를 바탕화면 등 원하는 폴더에 놓고 더블클릭한다. 설치된 Node.js(`E:\ZGmini\runtime\node.exe` 우선, 없으면 PATH의 `node`)가 필요하다. 파일 자체에 시작일 `2023-01-01`, 종료일 `2026-10-26`을 고정했다. **자동으로 4회씩 수집하고 배치 사이 60초 대기하며, 최대 64배치에서 종료한다.** 429·네트워크·원본 무결성 오류에서 추가 호출하지 않는다. 실행 후 같은 폴더의 `THEME_NINE_R23_PILOT_RESULT.txt`를 대화창에 제출한다. 기존 원본과 이어받기 체크포인트는 승인된 `E:\ZGmini\data\themes\legacy-nine-r23`에 유지된다. CMD 내부에서 임시로 꺼낸 코드/명단은 CMD와 같은 폴더에서만 생성·검증하고 종료 시 제거한다. **실제 자동 수집 성공은 사용자 PC에서 생성된 TXT로 확인한다.**
 
 **대체 방법: 저장소 체크아웃 사용 시** 아래 CMD를 쓸 수 있다.
 

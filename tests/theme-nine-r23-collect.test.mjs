@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import {createHash} from 'node:crypto';
-import {collectApprovedNine, inspectApprovedNine, readApprovedRoster}
+import {collectApprovedNine, collectApprovedNineAuto, inspectApprovedNine, readApprovedRoster}
   from '../scripts/pc-writer/theme-nine-r23-collect.mjs';
 
 const hash = bytes => createHash('sha256').update(bytes).digest('hex');
@@ -122,4 +122,52 @@ test('invalid OHLCV never becomes raw data or success', async t => {
   const result = await collectApprovedNine(args);
   assert.equal(result.status, 'STOP_INVALID_RESPONSE');
   assert.equal(fs.readdirSync(path.join(root, 'themes/legacy-nine-r23/raw')).length, 0);
+});
+
+test('automatic collector advances in bounded four-GET batches with pauses', async () => {
+  const results = [
+    {status: 'CHECKPOINT_READY_TO_RESUME', providerCalls: 4, rawFilesStored: 4,
+      completedSymbols: 1, pendingSymbols: 63},
+    {status: 'CHECKPOINT_READY_TO_RESUME', providerCalls: 4, rawFilesStored: 4,
+      completedSymbols: 3, pendingSymbols: 61},
+    {status: 'PRIVATE_RAW_COLLECTION_COMPLETE', providerCalls: 2, rawFilesStored: 2,
+      completedSymbols: 64, pendingSymbols: 0}
+  ];
+  const pauses = [], batches = [], limits = [];
+  const summary = await collectApprovedNineAuto({start: '2023-01-01', end: '2026-10-26'}, {
+    collectImpl: async options => {limits.push(options.maxRequests); return results.shift();},
+    sleep: async ms => {pauses.push(ms);}, onBatch: batch => batches.push(batch)});
+  assert.equal(summary.status, 'PRIVATE_RAW_COLLECTION_COMPLETE');
+  assert.equal(summary.totalProviderCalls, 10);
+  assert.equal(summary.totalRawFilesStored, 10);
+  assert.equal(summary.batchesExecuted, 3);
+  assert.deepEqual(limits, [4, 4, 4]);
+  assert.deepEqual(pauses, [60_000, 60_000]);
+  assert.deepEqual(batches.map(batch => batch.completedSymbols), [1, 3, 64]);
+});
+
+test('automatic collector never retries after an HTTP 429', async () => {
+  let calls = 0, pauses = 0;
+  const summary = await collectApprovedNineAuto({}, {
+    collectImpl: async () => { calls++; return {status: 'STOP_HTTP_429',
+      providerCalls: 1, rawFilesStored: 0};},
+    sleep: async () => {pauses++;}});
+  assert.equal(summary.status, 'STOP_HTTP_429');
+  assert.equal(summary.totalProviderCalls, 1);
+  assert.equal(calls, 1);
+  assert.equal(pauses, 0);
+});
+
+test('automatic collector exits at a finite cap or no-progress state', async () => {
+  const item = {status: 'CHECKPOINT_READY_TO_RESUME', providerCalls: 4, rawFilesStored: 4,
+    completedSymbols: 3, pendingSymbols: 61};
+  let calls = 0;
+  const capped = await collectApprovedNineAuto({}, {maxBatches: 2, pauseMs: 0,
+    sleep: async () => {}, collectImpl: async () => {calls++; return item;}});
+  assert.equal(capped.status, 'AUTO_BATCH_CAP_REACHED_RESUMABLE');
+  assert.equal(capped.batchesExecuted, 2);
+  assert.equal(calls, 2);
+  const stalled = await collectApprovedNineAuto({}, {collectImpl: async () => ({
+    status: 'CHECKPOINT_READY_TO_RESUME', providerCalls: 0, rawFilesStored: 0})});
+  assert.equal(stalled.status, 'STOP_AUTO_UNEXPECTED_NO_PROGRESS');
 });

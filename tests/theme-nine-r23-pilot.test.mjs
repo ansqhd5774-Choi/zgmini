@@ -27,9 +27,9 @@ test('standalone pilot is ASCII CRLF, SHA-equal to source and avoids other shell
   assert.equal(text.replace(/\r\n/g, '').includes('\n'), false);
   assert.equal(/[^\x00-\x7f]/.test(text), false);
   assert.ok(text.includes('exit /b 2\r\n:cleanup'));
-  assert.ok(text.includes('--collect 2023-01-01 2026-10-26'));
+  assert.ok(text.includes('--collect-auto 2023-01-01 2026-10-26'));
   assert.ok(text.includes('THEME_NINE_R23_PILOT_RESULT.txt'));
-  assert.ok(text.includes('SCOPE=ONE_RUN_UP_TO_FOUR_FREE_GET_REQUESTS'));
+  assert.ok(text.includes('SCOPE=AUTO_UP_TO_64_BATCHES_FOUR_FREE_GET_EACH_60S_PAUSE'));
   assert.equal(/%TEMP%|powershell\.exe|wsl\.exe|^\s*(?:powershell|wsl)\s/im.test(text), false);
   assert.equal(sha(embedded(text, '::R23_BUNDLE_CODE_BEGIN', '::R23_BUNDLE_CODE_END')),
     sha(fs.readFileSync(source)));

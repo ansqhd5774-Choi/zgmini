@@ -11,6 +11,8 @@ const DEFAULT_DATA = 'E:/ZGmini/data';
 const COLLECTION_PATH = 'themes/legacy-nine-r23';
 const SOURCE = 'https://getmarkethistory.com';
 const MAX_REQUESTS = 4;
+const AUTO_MAX_BATCHES = 64;
+const AUTO_PAUSE_MS = 60_000;
 const PAGE_LIMIT = 5000;
 const MAX_BODY_BYTES = 8_000_000;
 const sha256 = value => createHash('sha256').update(value).digest('hex');
@@ -268,15 +270,57 @@ export function inspectApprovedNine({dataRoot = DEFAULT_DATA, rosterPath = DEFAU
   return report;
 }
 
+// Reuse the unchanged four-request collector in bounded, paced batches.
+// There are no implicit retries: any STOP status ends the automatic session.
+export async function collectApprovedNineAuto(options, {collectImpl = collectApprovedNine,
+  sleep = ms => new Promise(resolve => setTimeout(resolve, ms)), onBatch = () => {},
+  maxBatches = AUTO_MAX_BATCHES, pauseMs = AUTO_PAUSE_MS} = {}) {
+  if (!Number.isInteger(maxBatches) || maxBatches < 1 || maxBatches > AUTO_MAX_BATCHES ||
+      !Number.isInteger(pauseMs) || pauseMs < 0 || pauseMs > AUTO_PAUSE_MS) fail('AUTO_LIMITS');
+  const summary = {contract: 'THEME_NINE_R23_AUTO_COLLECTION_V1',
+    mode: 'BOUNDED_FREE_1H_GET_BATCHES', branch: 'codex/theme-fear-greed-integration-20261025',
+    batchRequestLimit: MAX_REQUESTS, pauseBetweenBatchesMs: pauseMs,
+    maxBatches, batchesExecuted: 0, totalProviderCalls: 0, totalRawFilesStored: 0,
+    d1Writes: 0, schedulerWrites: 0, publicationWrites: 0};
+  for (let batch = 1; batch <= maxBatches; batch++) {
+    const report = await collectImpl({...options, maxRequests: MAX_REQUESTS});
+    if (!report || !Number.isInteger(report.providerCalls) || report.providerCalls < 0 ||
+        report.providerCalls > MAX_REQUESTS || !Number.isInteger(report.rawFilesStored) ||
+        report.rawFilesStored < 0) fail('AUTO_INVALID_BATCH_REPORT');
+    summary.batchesExecuted = batch;
+    summary.totalProviderCalls += report.providerCalls;
+    summary.totalRawFilesStored += report.rawFilesStored;
+    summary.completedSymbols = report.completedSymbols ?? null;
+    summary.pendingSymbols = report.pendingSymbols ?? null;
+    summary.status = report.status;
+    if (report.failedReason) summary.failedReason = report.failedReason;
+    onBatch({event: 'AUTO_BATCH', batch, providerCalls: report.providerCalls,
+      rawFilesStored: report.rawFilesStored, completedSymbols: summary.completedSymbols,
+      pendingSymbols: summary.pendingSymbols, status: report.status});
+    if (report.status === 'PRIVATE_RAW_COLLECTION_COMPLETE' ||
+        report.status === 'PRIVATE_RAW_COMPLETE_WITH_MISSING_SYMBOLS' ||
+        report.status?.startsWith('STOP')) return summary;
+    if (report.status !== 'CHECKPOINT_READY_TO_RESUME' || report.providerCalls === 0) {
+      summary.status = 'STOP_AUTO_UNEXPECTED_NO_PROGRESS';
+      return summary;
+    }
+    if (batch < maxBatches) await sleep(pauseMs);
+  }
+  summary.status = 'AUTO_BATCH_CAP_REACHED_RESUMABLE';
+  return summary;
+}
+
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const [mode, start, end, extra] = process.argv.slice(2);
   try {
-    if (extra || !['--inspect', '--collect'].includes(mode)) fail('USAGE_EXPECTED_INSPECT_OR_COLLECT');
-    if (mode === '--collect' && (!start || !end)) fail('EXPLICIT_DATE_RANGE_REQUIRED');
+    if (extra || !['--inspect', '--collect', '--collect-auto'].includes(mode)) fail('USAGE_EXPECTED_INSPECT_OR_COLLECT');
+    if (mode !== '--inspect' && (!start || !end)) fail('EXPLICIT_DATE_RANGE_REQUIRED');
     const options = {dataRoot: process.env.ZGMINI_DATA_ROOT || DEFAULT_DATA,
       rosterPath: process.env.ZGMINI_R23_ROSTER_PATH || DEFAULT_ROSTER,
       start: start || undefined, end: end || undefined};
-    const report = mode === '--collect' ? await collectApprovedNine(options) : inspectApprovedNine(options);
+    const report = mode === '--collect' ? await collectApprovedNine(options) :
+      mode === '--collect-auto' ? await collectApprovedNineAuto(options, {
+        onBatch: batch => process.stdout.write(JSON.stringify(batch) + '\n')}) : inspectApprovedNine(options);
     process.stdout.write(JSON.stringify(report, null, 2) + '\n');
     if (report.status?.startsWith('STOP')) process.exitCode = 2;
   } catch (error) {
