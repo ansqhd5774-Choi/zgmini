@@ -129,3 +129,15 @@ test('sector page starts with 3M selected and the single highest-ranked sector e
  assert.match(tsx,/days=\{compareDays\}/);
  assert.match(tsx,/onClick=\{\(\)=>toggle\(sector\.id\)\}/);
 });
+
+
+test('sector ranking centers only the name in its existing desktop and mobile column, with color dot left',()=>{
+ const css=read('app/sector-fear-greed/sector-detail.css');
+ const tsx=read('app/sector-fear-greed/sector-detail-charts.tsx');
+ const shared=css.slice(css.indexOf('/* Sector ranking names only:'));
+ assert.ok(shared.includes('.zg-sector-detail:not(.zg-theme-detail) .zg-sfg-rank-name{position:relative;justify-content:center;text-align:center}'));
+ assert.ok(shared.includes('.zg-sector-detail:not(.zg-theme-detail) .zg-sfg-rank-name>i{position:absolute;left:0;top:50%;transform:translateY(-50%)}'));
+ assert.ok(!shared.includes('@media'), 'centering must apply to PC and mobile alike');
+ assert.ok(!shared.includes('font-size')&&!shared.includes('grid-template-columns'), 'keep approved font sizes and column widths');
+ assert.ok(tsx.includes('<span className="zg-sfg-rank-name"><i style={{background:COLORS[sector.id]}}/>{nameOf(sector.id)}</span>'), 'do not alter ranking data or markup');
+});

@@ -208,3 +208,6 @@
  .zg-sector-detail:not(.zg-theme-detail) .zg-sfg-rank-delta{font-size:11.5px}
  .zg-sector-detail:not(.zg-theme-detail) .zg-sfg-rank-delta i{font-size:11.5px}
 }
+/* Sector ranking names only: horizontally center the text in its existing column on PC and mobile. Keep the color dot anchored on the left. */
+.zg-sector-detail:not(.zg-theme-detail) .zg-sfg-rank-name{position:relative;justify-content:center;text-align:center}
+.zg-sector-detail:not(.zg-theme-detail) .zg-sfg-rank-name>i{position:absolute;left:0;top:50%;transform:translateY(-50%)}
