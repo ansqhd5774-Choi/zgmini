@@ -1,7 +1,7 @@
 # ZGMINI 실적 침체 정보성 C — R3-B 최소 저장·재사용 계약 제안
 
 - 작성: 2026-10-27 KST
-- 상태: **DRAFT_FOR_USER_APPROVAL / NO_DB_OR_COLLECTOR_CHANGE**
+- 상태: **R3B_CONTRACT_APPROVED_BY_USER_20261027 / FRED_API_RIGHTS_HOLD / R3C_NOT_APPROVED**
 - 저장소/단일 브랜치: `ansqhd5774-Choi/zgmini` / `codex/earnings-api-site-integration-plan-r1-20261026`
 - 상위 승인 계획: `docs/EARNINGS_RECESSION_COMPANION_API_SITE_INTEGRATION_PLAN_R1_20261026.md`
 - R3-A 실측 증거: `docs/EARNINGS_COMPANION_R3A_PC_LINEAGE_REVIEW_20261027.md`
@@ -64,3 +64,17 @@
 4. 이미 존재하는 E1-R4 점수 A 및 12대 실적 B와 분리된 C 레이어만 생성.
 
 승인 후에도 **R3-C PC 수집/쓰기 구현, R3-D 계산, R4 신규 공개 키/read-model, R5 UI, R6 배포**는 각각 계획의 별도 게이트를 준수한다. 승인 전 관련 운영 변경 **0건**.
+
+
+## 5. 2026-10-27 사용자 승인 기록 및 신규 확인된 FRED 권리 게이트
+
+- 사용자 응답 **“승인”**은 이 문서의 **R3-B 설계·재사용 우선 원칙 승인**으로 기록한다. **R3-C 운영 SQLite 쓰기/신규 테이블/보존기간/스케줄 등록까지 승인한 것이 아님**.
+- 조건부 항목 FRED/PPIFIS, FRED/PRS85006111는 PC에 snapshot 메타가 있다는 사실만 확인했다. **공개용 정보성 C가 FRED API를 통해 획득한 캐시를 재사용하는 경로는 HOLD**.
+- 이유: 공식 FRED Services Terms의 *Additional Terms of Use for the FRED API / Prohibitions (l)*에는 API를 저장·캐시·아카이브에 이용하는 행위를 금지하는 문구가 명시돼 있다. FRED의 *Public Domain: Citation requested* 표시나 원천 BLS 공공 자료의 저작권 정책만으로 **FRED API 전송·저장 제한이 사라지지는 않는다**. 이는 이 프로젝트의 **원자료 저장·파생 공개 필수 조건**에 직접 영향을 준다.
+- 공식 확인 문서:
+  - FRED: https://fred.stlouisfed.org/legal/terms/ (API Prohibitions (l); Data copyright labels)
+  - BLS: https://www.bls.gov/opub/copyright-information.htm (공표된 통계 공공영역, 출처 표기 요청)
+  - BLS API: https://www.bls.gov/developers/termsOfService.htm (조회일/파생 해석 책임·API 한도)
+- **권리 검증용 안전한 변경 제안**: 신규 C 원본은 FRED 캐시 대신 **BLS 직접 API**에서 WPSFD4, WPSFD41, PRS85006111를 획득해 PC 승인 저장계약에 따라 관리하는 안을 우선 검토한다. R2 실제 BLS API 조회는 성공했고 WPSFD4=159.780, WPSFD41=162.341, PRS85006111=1.4%를 검증했다. 이 **소스 변경안은 별도 사용자 확인 전 자동 적용 금지**.
+- 기존 운영 PC FRED cache의 삭제·수정·권한 변경을 본 작업에서 실행하지 않는다. 현재 사용 중인 외부 서비스 약관 영향은 별도 운영 검토 사항으로 남긴다.
+- 이후 단계: R3-C 운영 PC 저장 및 보존기간/테이블 계약은 **추가 승인 전 실행 금지**; R4–R6도 별도 승인 유지.
