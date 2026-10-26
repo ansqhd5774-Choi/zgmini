@@ -190,3 +190,10 @@
 - 동일 브랜치에 `news-display-scheduled-verify-r8.mjs`, `IRAN_NEWS_R8_SCHEDULE_VERIFY.cmd`, `tests/iran-news-scheduled-verify-r8.test.mjs` 추가. R8은 기존 R13 XML·VBS SHA·승인 후 wrapper SHA·원본 백업 SHA·스케줄러 마지막 실행 기록/결과·뉴스 캐시 `updatedAt`과 설치된 wrapper 파일 수정 시각을 **읽기 전용**으로 교차 확인한다.
 - 한국어 오전/오후 및 영어 AM/PM 스케줄러 시간, 인용 부호가 포함된 CSV, 정상 성공/다음 실행 전 대기/실패 분기 시험 PASS. 전체 R1/R4/R6/R7/R8 테스트 파일 5개 실행 PASS.
 - 다음 Gate: **다음 정상 R13 실행이 끝난 이후** 사용자 PC에서 R8 CMD 1회 실행, 같은 위치의 `IRAN_NEWS_R8_SCHEDULE_VERIFY_RESULT.txt` 확인. `PASS_R8_NEXT_SCHEDULE_CACHE_REFRESH`와 후속 검증을 통과한 경우에만 최초 GOV.UK 뉴스용 30일 캐시 자동 유지관리 검증 완료로 판정한다. 이전 승인 GOV.UK 기사 외 신규 뉴스 자동 수집·게시 기능은 여전히 미승인.
+
+## 14. 2026-10-27 R8 실제 PC 읽기 전용 결과: 아직 자동 실행 PASS 아님
+
+- 사용자 `IRAN_NEWS_R8_SCHEDULE_VERIFY_RESULT.txt`: 새 wrapper·원본 백업·VBS·기존 SQLite 표식 검증 PASS. 단, `status=NEEDS_REVIEW_R8_TASK_LAST_RUN_UNPARSEABLE`, `cacheUpdatedAfterRunnerInstall=false`, `taskRanAfterRunnerInstall=false`, `taskLastResult=1`, `cacheUpdateKst=2026-10-27 00:01:44`. 이는 **R7 설치 자체가 실패했다는 뜻은 아니나**, 설치 이후 R13 정상 실행과 뉴스 캐시 자동 갱신을 입증하지 못한다.
+- 마지막 결과코드 `1`은 태스크/기존 점수 작업의 오류 가능성을 의미하나, 마지막 실행 시각을 읽지 못했으므로 R7 설치 전후 어느 회차의 결과인지 구분 불가. 신규 뉴스 보조 작업의 종료값은 기존 R3/R5/legacy 점수 종료코드에 영향을 주지 않도록 설계되어 있어, `1`만으로 뉴스 hook이 원인이라고 판정하지 않는다.
+- 원인은 우선 작업 스케줄러 `/V /FO CSV`의 마지막 실행 시각에 대한 지역화 형식/인코딩 식별 실패. 추가 저장소/점수/스케줄러 수정 없이 `news-display-time-probe-r8b.mjs` 및 `IRAN_NEWS_R8B_TIME_DIAG.cmd`를 기존 단일 브랜치에 추가. 출력은 해당 필드의 제한된 문자/코드포인트, 태스크 최종 결과, runner 설치 시각, 캐시 갱신 시각만 허용하며 명령 인자·계정·경로·기사 내용은 배제.
+- 다음 Gate: 사용자 PC R8B 읽기 전용 TXT로 지역화 시간 형식과 R7 설치 전후 실제 마지막 실행 여부를 분리. 이후 필요한 경우에만 R8 시간 해석기 보완 또는 기존 R13 회차 로그 자체의 읽기 전용 원인 조사. 무조건 R8 재실행하거나 R3/R5 산식·스케줄러를 변경하지 않는다.
