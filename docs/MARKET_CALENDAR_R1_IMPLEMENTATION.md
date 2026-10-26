@@ -102,6 +102,12 @@
 - R8 실행에는 `MARKET_CALENDAR_R8_PRESERVATION.cmd`, `scripts/pc-writer/market-calendar-r8-preservation-audit.mjs`, `lib/release-calendar.mjs` 세 파일을 동일한 폴더 계층으로 배치한다. 결과는 `MARKET_CALENDAR_R8_PRESERVATION_RESULT.txt` 한 건이며, 원문 ICS·비밀값·PC 경로를 출력하지 않는다. PC 원자료/API/DB/설정/작업 등록/승인 source/게시본은 **일절 수정하지 않는다**.
 - 기존 키 3건의 탈락 사유를 확인하고 보존 위험 여부를 분류하기 전에는 운영 PC 파서·설정·스케줄러를 변경하거나 게시하지 않는다. 별도 source SHA 적용 검증 및 로컬 저장→게시→D1/API/UI 재조회 Gate가 남아 있다.
 
+### R8 PC 결과 판정 — 데이터 누락 없음·식별자 의미 교정 (2026-10-27)
+- 실제 PC R8 로그(`ranAt=2026-10-26T18:25:30.107Z`)의 4개 저장 원본 전부 `PARSED`, `FULL_AUDIT`, 원본·후보 중복 각각 0건을 확인했다. 후보 518건의 날짜 범위는 `2025-01-03~2027-12-22`이며 2025년 204건, 2026년 255건, 2027년 59건이다. KST 2026-10-27부터 90일 기간에는 기존 14건, 후보 46건, 새 식별 33건(BLS 25/BEA 8)이다. 이 숫자는 PC 저장 원본의 **읽기 전용 가상 결과**이며 운영 적용 결과가 아니다.
+- `notPreservedCount=3` 모두 기존 `source:title:date`와 동일한 후보를 발견한 `SAME_DATE_TITLE_ID_CHANGED`다. 원본 일정의 날짜·제목 손실은 **0건**이다. 구형 `employment`가 잘못 가리키던 **Employment Situation of Veterans**(2025-03-20, 2026-04-28)는 `bls-employment-situation-of-veterans`로, 구형 `gdp`가 잘못 가리키던 **GDP by County and Personal Income by County, 2025**(2026-12-02)는 `bea-gdp-by-county-and-personal-income-by-county-2025`로 변경되었다. 기존 ID로 되돌리면 일반 고용·GDP 지표와 의미가 섞이므로 **리키를 의도된 교정으로 수용**한다.
+- R2 확장 파서의 교정 ID·날짜·제목을 실측 3건 그대로 회귀 테스트에 고정한다. 저장 event 5개 필드, 네 출처, 수집·게시 주기, DB/설정/TTL/산식은 변경하지 않는다.
+- **다음 적용 Gate:** 실제 PC 운영 프로젝트·승인 source SHA의 drift를 확인하고, 본 확대 파서 최소 변경을 기존 승인 GitHub/main→PC 배치 절차에 따라 반영한 뒤, PC 저장 결과→기존 게시→D1/API/UI를 순서대로 확인한다. 다른 브랜치 통째 병합, PC 승인 SHA의 무단 교체, 운영 DB 직접 변경, 강제 재수집/게시, 직접 Cloudflare 배포는 금지한다.
+
 ## SEO 사전 점검 (docs/SEO_SEARCH_APPEARANCE_REVIEW.md)
 
 - 검색 의도: 투자자가 미국 경제지표와 향후 기업 실적 발표 일정을 날짜별로 조회. 현재 실제 제공 범위는 공식 미국 경제지표에 국한.

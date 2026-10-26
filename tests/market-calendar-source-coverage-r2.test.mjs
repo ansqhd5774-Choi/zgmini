@@ -36,6 +36,23 @@ test('BEA releases retain GDP and PCE IDs while distinct publications get distin
  assert.ok(events.every(e=>e.sourceUrl==='https://www.bea.gov/news/schedule'));
 });
 
+test('R8 stored-PC mismatches are corrections of legacy classification, not lost release dates',()=>{
+ const b=parseReleaseCalendar(makeIcs([
+  {date:'2025-03-20',title:'Employment Situation of Veterans'},
+  {date:'2026-04-28',title:'Employment Situation of Veterans'},
+ ]),'bls');
+ const e=parseReleaseCalendar(makeIcs([
+  {date:'2026-12-02',title:'GDP by County and Personal Income by County\\, 2025'},
+ ]),'bea');
+ const events=[...b,...e];
+ assert.deepEqual(events.map(({source,id,date,title})=>({source,id,date,title})),[
+  {source:'bls',id:'bls-employment-situation-of-veterans',date:'2025-03-20',title:'Employment Situation of Veterans'},
+  {source:'bls',id:'bls-employment-situation-of-veterans',date:'2026-04-28',title:'Employment Situation of Veterans'},
+  {source:'bea',id:'bea-gdp-by-county-and-personal-income-by-county-2025',date:'2026-12-02',title:'GDP by County and Personal Income by County, 2025'},
+ ]);
+ assert.ok(events.every(item=>item.id!=='employment'&&item.id!=='gdp'));
+});
+
 test('market calendar shows the expanded official titles through its existing stored feed without placeholder earnings',()=>{
  const client=readFileSync(new URL('../app/market-calendar/market-calendar-client.tsx',import.meta.url),'utf8');
  const page=readFileSync(new URL('../app/market-calendar/page.tsx',import.meta.url),'utf8');
