@@ -26,3 +26,7 @@ test('failure details survive the next successful report, without raw errors or 
  const dir=fs.mkdtempSync(path.join(os.tmpdir(),'d1-recovery-'));
  try{save(path.join(dir,'local-writer-last-run.json'),{at:'failed',failures:[{id:'market-publication',reason:'D1_OUTCOME_UNKNOWN'}],remote:{transportFailures:[{kind:'WRITE',phase:'FETCH',httpStatus:null,code:'ECONNRESET',url:'private',token:'secret'}]}});appendPublicationEvent(dir,{at:'failed',status:'VERIFIED_WITH_GAPS'});save(path.join(dir,'local-writer-last-run.json'),{at:'success'});appendPublicationEvent(dir,{at:'success',status:'VERIFIED'});const text=fs.readFileSync(path.join(dir,'publication-events.jsonl'),'utf8'),events=text.trim().split('\n').map(JSON.parse);assert.equal(events[0].failures[0].reason,'D1_OUTCOME_UNKNOWN');assert.equal(events[0].transportFailures[0].code,'ECONNRESET');assert.equal(events[1].failures,undefined);assert(!/private|secret|token/.test(text));}finally{fs.rmSync(dir,{recursive:true,force:true});}
 });
+test('transport evidence is attached before initial publication recovery can fail',()=>{
+ const source=fs.readFileSync(new URL('../scripts/pc-writer/run-local.mjs',import.meta.url),'utf8');
+ assert.match(source,/const remote=client\(config,credential\(root\)\);\s*report\.remote=remote\.stats;\s*report\.recovery=await recoverPublication/);
+});
