@@ -116,16 +116,6 @@ export default function ThemeDetailCharts(){
  const [group,setGroup]=useState('전체'),[query,setQuery]=useState('');
  const [searchOpen,setSearchOpen]=useState(false);
  const searchContainerRef=useRef<HTMLDivElement>(null),searchInputRef=useRef<HTMLInputElement>(null);
- const closeSearch=()=>{setSearchOpen(false);if(query)applyThemeFilter(group,'');};
- useEffect(()=>{
-  if(!searchOpen)return;
-  searchInputRef.current?.focus();
-  const onOutsidePointer=(event:PointerEvent)=>{if(!searchContainerRef.current?.contains(event.target as Node))closeSearch();};
-  const onEscape=(event:KeyboardEvent)=>{if(event.key==='Escape')closeSearch();};
-  document.addEventListener('pointerdown',onOutsidePointer);
-  document.addEventListener('keydown',onEscape);
-  return ()=>{document.removeEventListener('pointerdown',onOutsidePointer);document.removeEventListener('keydown',onEscape);};
- },[searchOpen]);
  const [visible,setVisible]=useState<Set<string>|null>(null);
  const [compareDays,setCompareDays]=useState(90),[comparisonPinned,setComparisonPinned]=useState(false);
  // Never display a cached score once the stored-only API has failed.
@@ -140,6 +130,16 @@ export default function ThemeDetailCharts(){
   const filtered=ready.filter(t=>(nextGroup==='전체'||t.group===nextGroup)&&t.name.toLocaleLowerCase('ko').includes(normalized));
   setVisible(new Set(filtered.slice(0,1).map(t=>t.name)));
  };
+ const closeSearch=()=>{setSearchOpen(false);if(query)applyThemeFilter(group,'');};
+ useEffect(()=>{
+  if(!searchOpen)return;
+  searchInputRef.current?.focus();
+  const onOutsidePointer=(event:PointerEvent)=>{if(!searchContainerRef.current?.contains(event.target as Node))closeSearch();};
+  const onEscape=(event:KeyboardEvent)=>{if(event.key==='Escape')closeSearch();};
+  document.addEventListener('pointerdown',onOutsidePointer);
+  document.addEventListener('keydown',onEscape);
+  return ()=>{document.removeEventListener('pointerdown',onOutsidePointer);document.removeEventListener('keydown',onEscape);};
+ },[searchOpen,group,query,ready]);
  const toggle=(name:string)=>setVisible(previous=>{const next=new Set(previous??topOne);if(next.has(name))next.delete(name);else next.add(name);return next;});
  const compareRows=useMemo(()=>{
   const dates=[...new Set(ready.flatMap(t=>t.points.map(p=>p.date)))].sort();
