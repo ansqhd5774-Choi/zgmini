@@ -218,3 +218,18 @@ Windows QFR API 표본의 조정표시가 `no`임을 확인했다. Census 2026 Q
 - Census API ToS: https://www.census.gov/data/developers/about/terms-of-service.html
 
 **변경 영향:** 공식 메타데이터 교차검증과 문서 기록만 수행. API 0회, PC DB/D1/운영 수집기·산식·사이트 수정 0회.
+
+
+## 10. 후속 R2 BEA/BLS 값·단위 확인기 준비 (Windows PC 대기)
+
+이전 BEA/BLS 응답의 \`HTTP=200\`만으로 정확한 \`SeriesCode/LineNumber/Unit\` 및 \`BLS SeriesID/Period\` 일치를 주장할 수 없으므로, **가장 작은 추가 호출**로 두 공급원의 실제 시리즈를 확인하는 읽기 전용 검사기를 준비했다.
+
+- \`research/earnings-companion/EARNINGS_R2_BEA_BLS_SERIES_VERIFY.cmd\`
+- \`research/earnings-companion/EARNINGS_R2_BEA_BLS_SERIES_VERIFY.mjs\`
+- 배포 파일: \`EARNINGS_R2_BEA_BLS_SERIES_VERIFY_20261026.zip\` (CMD+MJS, 사용자 PC에서 같은 폴더에 압축 해제)
+- 실행 로그: \`EARNINGS_R2_BEA_BLS_RESULT_YYYYMMDD-HHMMSSZ.txt\` — **CMD 파일과 같은 폴더**에만 생성.
+- **최대 API 2회(재시도 없음)**: BEA NIPA \`T11200\` \`2025,2026\` 분기 GET 1회, BLS v2 \`WPSFD4/WPSFD41/PRS85006111\` 일괄 POST 1회. 둘 다 기존 승인 키를 \`providers.env\` 또는 환경에서 메모리로만 읽는다. 키가 없으면 해당 공급원 요청 **0회**.
+- **각 요청 20초·응답 3MB 상한**, redirect 불허, 로그인/설치/유료 결제/클라우드 게시 없음. API 키/쿼리 URL/원본 응답 전문 로그 **기록 금지**. 출처 공식 기관 외 도메인 미사용.
+- BEA는 \`SeriesCode=A051RC\` 행이 실측 존재하는지와 해당 분기·단위/원값 메타만 기록하고, 불일치 시 후보 line 이름만 제한 출력. BLS는 3개 ID의 최근 기간·공공 집계 원값만 제한 출력. **BLS API 응답은 이름(label)을 돌려주지 않을 수 있으므로 공식 ID 목록과 별개로 검증**한다. BLS 지수 수준을 연율 변화율로 임의 변환하지 않는다.
+- Node 24+ 내장 기능만 사용; 코드 문법 검사, \`--dry-run\` 무호출 시험, ZIP 무결성 **PASS**.
+- 실행 후 로그를 받아서 결과를 정확한 데이터 정의와 매핑하는 것이 **다음 R2 작업**이다. **새 DB/스케줄러/R3 구현이나 사이트 배포는 여전히 미승인**이다.
