@@ -3,7 +3,7 @@ import {parseSitemap,waitForCloudflare} from './indexnow-notify.mjs';
 
 const SITE_ORIGIN='https://zgmini.kr';
 const REQUEST_TIMEOUT_MS=20_000;
-const EXPECTED_PUBLIC_URLS=34;
+const EXPECTED_PUBLIC_URLS=35;
 const BUYING_GUIDE_PATH='/guides/fear-greed-buying/';
 const GUIDE_LINK_SOURCES=new Set(['/', '/fear-greed/usa/', '/fear-greed/korea/']);
 const GUIDE_DIRECT_CHECK_PATHS=['/guides/fear-greed-buying/','/guides/cpi-pce-release/','/guides/fomc/'];
@@ -13,6 +13,7 @@ export const SEO_RUNTIME_MARKERS=new Map([
   [`${SITE_ORIGIN}/economic-indicators/`,{descriptionIncludes:'12개 시장 평가 점수와 저장 추이'}],
   [`${SITE_ORIGIN}/theme-fear-greed/`,{descriptionIncludes:'공개된 ETF 기반 공포탐욕지수(공탐 지수)'}],
   [`${SITE_ORIGIN}/`,{titleIncludes:'공포탐욕지수·공탐 지수·미국 증시',htmlIncludes:['공포·탐욕 지수는 투자자의 시장 심리를 보여줍니다.','공탐 지수']}],
+  [`${SITE_ORIGIN}/outbreak/`,{titleIncludes:'아웃브레이크 | 금리 심리·이란 전쟁',descriptionIncludes:'미국 시장금리 심리, 이란 전쟁 종전 진전 신호',htmlIncludes:['큰 이벤트의 가능성과 시장의 기대를 함께 관찰합니다.','아웃브레이크']}],
   [`${SITE_ORIGIN}/about/`,{descriptionIncludes:'ZGMINI를 소개합니다'}],
   [`${SITE_ORIGIN}/usage/`,{descriptionIncludes:'5단계로 알아보세요'}],
   [`${SITE_ORIGIN}/data-sources/`,{descriptionIncludes:'관측일·발표일·갱신 시각 및 잠정치 기준'}],
@@ -245,6 +246,8 @@ async function main(){
   const redirectToken=sha.slice(0,12);
   const redirectCases=[
     [`https://zgmini.kr/liquidity-crisis/`,`https://zgmini.kr/stagflation-risk/`],
+    [`${SITE_ORIGIN}/?view=scenarios`,`${SITE_ORIGIN}/outbreak/`],
+    [`${SITE_ORIGIN}/?view=scenarios&event=iran`,`${SITE_ORIGIN}/outbreak/?event=iran`],
     [`http://zgmini.kr/?seo_redirect=${redirectToken}`,`https://zgmini.kr/?seo_redirect=${redirectToken}`],
     [`http://zgmini.kr/recession/?seo_redirect=${redirectToken}`,`https://zgmini.kr/recession/?seo_redirect=${redirectToken}`],
   ];
@@ -285,6 +288,12 @@ async function main(){
       }
     }
   }
+
+  // The new independently indexable page must also pass a query-free crawl check.
+  const outbreakUrl=`${SITE_ORIGIN}/outbreak/`;
+  const outbreakResult=await checkPage(outbreakUrl,sha,{bare:true}).catch(error=>({url:outbreakUrl,errors:[`fetch:${error?.name??'Error'}:${error?.message??String(error)}`]}));
+  if(outbreakResult.errors.length)failures.push(`bare:${outbreakUrl}=>${outbreakResult.errors.join('|')}`);
+  else console.log(`SEO_HEALTH_OUTBREAK_BARE_PASS=${outbreakUrl}`);
 
   // Repeat the guide checks without a cache-busting query: this is the URL Google discovers.
   for(const path of GUIDE_DIRECT_CHECK_PATHS){

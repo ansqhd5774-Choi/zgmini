@@ -26,7 +26,7 @@ test("debt meta description and visible introduction do not promise absent score
 });
 test("sitemap lastmod reflects the Oct 25 search explanation changes to all eight risk pages",()=>{
  const sitemap=read("public/sitemap.xml");
- assert.equal((sitemap.match(/<url>/g)||[]).length,34);
+ assert.equal((sitemap.match(/<url>/g)||[]).length,35);
  for(const key of keys){
   const expected="2026-10-25";
   assert.ok(sitemap.includes("<loc>https://zgmini.kr/"+key+"/</loc><lastmod>"+expected+"</lastmod>"),key);
