@@ -32,7 +32,7 @@ test('two failures cause exactly two secondary requests',async()=>{
  const {calls}=await run(['CUUR0000SA0','CES0000000001']);assert.deepEqual(calls,['BLS','CPIAUCNS','PAYEMS']);
 });
 test('semantic history gap blocks adoption and secondary request',async()=>{
- const {calls,result}=await run([],{mutate:p=>{p.Results.series[0].data.splice(15,1);}});
+ const {calls,result}=await run([],{mutate:p=>{p.Results.series[0].data.splice(16,1);}});
  assert.deepEqual(calls,['BLS']);assert.equal(result.data.has('CUUR0000SA0'),false);
 });
 test('secondary HTTP failure leaves metric unavailable',async()=>{
