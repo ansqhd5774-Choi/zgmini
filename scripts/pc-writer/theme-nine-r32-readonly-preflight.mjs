@@ -35,9 +35,12 @@ function exactlySameSymbols(actual, expected, code) {
 function findR25(directory, explicitPath = '') {
   if (explicitPath) {
     const resolved = path.resolve(explicitPath);
+    if (!fs.existsSync(resolved)) fail('R25_SELECTED_FILE_NOT_FOUND');
     if (!fs.statSync(resolved).isFile()) fail('R25_NOT_A_FILE');
     return resolved;
   }
+  if (!fs.existsSync(directory) || !fs.statSync(directory).isDirectory())
+    fail('CMD_FOLDER_NOT_FOUND');
   const names = fs.readdirSync(directory)
     .filter(n => /^THEME_NINE_R25_INDIVIDUAL_SCORES_[0-9]+_[0-9]+\.json$/i.test(n));
   if (names.length === 0) fail('R25_JSON_NOT_NEXT_TO_CMD');
@@ -159,8 +162,12 @@ export function inspectNineR32({r25, roster, aum}) {
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   try {
-    const [mode, folder, explicitPath, extra] = process.argv.slice(2);
+    const [mode, extra] = process.argv.slice(2);
+    const folder = process.env.R32_FOLDER;
+    const explicitPath = process.env.R32_SELECTED || '';
     if (mode !== '--preflight' || !folder || extra) fail('USAGE');
+    if (!fs.existsSync(ROSTER_FILE)) fail('EMBEDDED_ROSTER_NOT_FOUND');
+    if (!fs.existsSync(AUM_FILE)) fail('EMBEDDED_AUM_NOT_FOUND');
     const rosterBytes = fs.readFileSync(ROSTER_FILE);
     if (sha(rosterBytes) !== EXPECTED_ROSTER_SHA) fail('ROSTER_BYTES_SHA');
     const sourceFile = findR25(path.resolve(folder), explicitPath);
