@@ -1,0 +1,410 @@
+{
+  "schema": "zgmini.theme-nine.three-gate-issuer-screen.r15",
+  "asOf": "2026-10-26",
+  "scope": "RESEARCH_BRANCH_ONLY_NO_RUNTIME_IMPORT",
+  "source": "config/theme-nine-r13-formula-candidate-prescreen.json",
+  "verifiedNewEntrants": 0,
+  "thematicCandidatePositions": 64,
+  "uniqueEtfs": 63,
+  "sourceHostGroups": 19,
+  "policy": {
+    "etfCountLimit": null,
+    "themeRelevanceRequiredBeforeThreeGates": true,
+    "admissionOperator": "AND",
+    "gate1": "OFFICIAL_COMPLETE_HOLDINGS_NAMES_WEIGHTS_AS_OF_DATE_ACCESSIBLE",
+    "gate2": "REPEATABLE_REAL_MARKET_COLLECTION_AND_EXPLICIT_FREE_STORAGE_COMMERCIAL_DERIVED_PUBLIC_RIGHTS_WITH_DATED_AUM",
+    "gate3": "VERIFIED_LEGAL_ADVISER_ISSUER_GRADE_AT_LEAST_C",
+    "evaluationStates": [
+      "PASS",
+      "FAIL",
+      "PENDING"
+    ],
+    "grades": {
+      "A": ">=90",
+      "B": "75..89",
+      "C": "60..74",
+      "D": "<60"
+    },
+    "gradeRequiresVerifiedEntityAndCompleteEvidence": true,
+    "gradeRubric": {
+      "entityAndRegistration": 25,
+      "regulatoryConduct": 25,
+      "fundDisclosureIntegrity": 25,
+      "operationalTransparency": 25
+    },
+    "criticalActiveProhibitionOverridesGrade": true,
+    "earlyListingRule": "ALLOW_RESEARCH_PENDING; DO_NOT_GENERATE_R2_SCORE_BEFORE_40_REAL_SESSIONS",
+    "timeAxis": 252,
+    "neverFabricate": true,
+    "noProductionChanges": true
+  },
+  "issuerBrandDomainGroups": [
+    {
+      "issuerBrandDomain": "amplifyetfs.com",
+      "legalOperatorName": null,
+      "legalOperatorEntityId": null,
+      "verificationStatus": "PENDING",
+      "registrationEvidence": null,
+      "officialFilingEvidence": null,
+      "disciplinaryEvidence": null,
+      "operationEvidence": null,
+      "grade": null,
+      "score": null,
+      "themeSlots": 2,
+      "symbols": [
+        "IPAY",
+        "HACK"
+      ],
+      "notes": "Official product host is NOT verified as legal ETF sponsor/adviser."
+    },
+    {
+      "issuerBrandDomain": "corgiinvest.com",
+      "legalOperatorName": null,
+      "legalOperatorEntityId": null,
+      "verificationStatus": "PENDING",
+      "registrationEvidence": null,
+      "officialFilingEvidence": null,
+      "disciplinaryEvidence": null,
+      "operationEvidence": null,
+      "grade": null,
+      "score": null,
+      "themeSlots": 7,
+      "symbols": [
+        "CBOT",
+        "WR",
+        "KYC",
+        "LATR",
+        "XA",
+        "EUV",
+        "GNMX"
+      ],
+      "notes": "Official product host is NOT verified as legal ETF sponsor/adviser."
+    },
+    {
+      "issuerBrandDomain": "etf.dws.com",
+      "legalOperatorName": null,
+      "legalOperatorEntityId": null,
+      "verificationStatus": "PENDING",
+      "registrationEvidence": null,
+      "officialFilingEvidence": null,
+      "disciplinaryEvidence": null,
+      "operationEvidence": null,
+      "grade": null,
+      "score": null,
+      "themeSlots": 1,
+      "symbols": [
+        "PSWD"
+      ],
+      "notes": "Official product host is NOT verified as legal ETF sponsor/adviser."
+    },
+    {
+      "issuerBrandDomain": "institutional.fidelity.com",
+      "legalOperatorName": null,
+      "legalOperatorEntityId": null,
+      "verificationStatus": "PENDING",
+      "registrationEvidence": null,
+      "officialFilingEvidence": null,
+      "disciplinaryEvidence": null,
+      "operationEvidence": null,
+      "grade": null,
+      "score": null,
+      "themeSlots": 1,
+      "symbols": [
+        "FCLD"
+      ],
+      "notes": "Official product host is NOT verified as legal ETF sponsor/adviser."
+    },
+    {
+      "issuerBrandDomain": "kraneshares.com",
+      "legalOperatorName": null,
+      "legalOperatorEntityId": null,
+      "verificationStatus": "PENDING",
+      "registrationEvidence": null,
+      "officialFilingEvidence": null,
+      "disciplinaryEvidence": null,
+      "operationEvidence": null,
+      "grade": null,
+      "score": null,
+      "themeSlots": 1,
+      "symbols": [
+        "KARS"
+      ],
+      "notes": "Official product host is NOT verified as legal ETF sponsor/adviser."
+    },
+    {
+      "issuerBrandDomain": "sprottetfs.com",
+      "legalOperatorName": null,
+      "legalOperatorEntityId": null,
+      "verificationStatus": "PENDING",
+      "registrationEvidence": null,
+      "officialFilingEvidence": null,
+      "disciplinaryEvidence": null,
+      "operationEvidence": null,
+      "grade": null,
+      "score": null,
+      "themeSlots": 2,
+      "symbols": [
+        "URNM",
+        "URNJ"
+      ],
+      "notes": "Official product host is NOT verified as legal ETF sponsor/adviser."
+    },
+    {
+      "issuerBrandDomain": "themesetfs.com",
+      "legalOperatorName": null,
+      "legalOperatorEntityId": null,
+      "verificationStatus": "PENDING",
+      "registrationEvidence": null,
+      "officialFilingEvidence": null,
+      "disciplinaryEvidence": null,
+      "operationEvidence": null,
+      "grade": null,
+      "score": null,
+      "themeSlots": 4,
+      "symbols": [
+        "CLOD",
+        "URAN",
+        "NATO",
+        "SPAM"
+      ],
+      "notes": "Official product host is NOT verified as legal ETF sponsor/adviser."
+    },
+    {
+      "issuerBrandDomain": "www.alpsfunds.com",
+      "legalOperatorName": null,
+      "legalOperatorEntityId": null,
+      "verificationStatus": "PENDING",
+      "registrationEvidence": null,
+      "officialFilingEvidence": null,
+      "disciplinaryEvidence": null,
+      "operationEvidence": null,
+      "grade": null,
+      "score": null,
+      "themeSlots": 1,
+      "symbols": [
+        "SBIO"
+      ],
+      "notes": "Official product host is NOT verified as legal ETF sponsor/adviser."
+    },
+    {
+      "issuerBrandDomain": "www.ark-funds.com",
+      "legalOperatorName": null,
+      "legalOperatorEntityId": null,
+      "verificationStatus": "PENDING",
+      "registrationEvidence": null,
+      "officialFilingEvidence": null,
+      "disciplinaryEvidence": null,
+      "operationEvidence": null,
+      "grade": null,
+      "score": null,
+      "themeSlots": 3,
+      "symbols": [
+        "ARKQ",
+        "ARKF",
+        "ARKG"
+      ],
+      "notes": "Official product host is NOT verified as legal ETF sponsor/adviser."
+    },
+    {
+      "issuerBrandDomain": "www.ftportfolios.com",
+      "legalOperatorName": null,
+      "legalOperatorEntityId": null,
+      "verificationStatus": "PENDING",
+      "registrationEvidence": null,
+      "officialFilingEvidence": null,
+      "disciplinaryEvidence": null,
+      "operationEvidence": null,
+      "grade": null,
+      "score": null,
+      "themeSlots": 4,
+      "symbols": [
+        "ROBT",
+        "SKYY",
+        "CIBR",
+        "FBT"
+      ],
+      "notes": "Official product host is NOT verified as legal ETF sponsor/adviser."
+    },
+    {
+      "issuerBrandDomain": "www.globalxetfs.com",
+      "legalOperatorName": null,
+      "legalOperatorEntityId": null,
+      "verificationStatus": "PENDING",
+      "registrationEvidence": null,
+      "officialFilingEvidence": null,
+      "disciplinaryEvidence": null,
+      "operationEvidence": null,
+      "grade": null,
+      "score": null,
+      "themeSlots": 11,
+      "symbols": [
+        "BOTZ",
+        "CLOU",
+        "DRIV",
+        "URA",
+        "SHLD",
+        "FINX",
+        "BUG",
+        "AIQ",
+        "LLMA",
+        "GNOM"
+      ],
+      "notes": "Official product host is NOT verified as legal ETF sponsor/adviser."
+    },
+    {
+      "issuerBrandDomain": "www.invesco.com",
+      "legalOperatorName": null,
+      "legalOperatorEntityId": null,
+      "verificationStatus": "PENDING",
+      "registrationEvidence": null,
+      "officialFilingEvidence": null,
+      "disciplinaryEvidence": null,
+      "operationEvidence": null,
+      "grade": null,
+      "score": null,
+      "themeSlots": 4,
+      "symbols": [
+        "PPA",
+        "SOXQ",
+        "PSI",
+        "PBE"
+      ],
+      "notes": "Official product host is NOT verified as legal ETF sponsor/adviser."
+    },
+    {
+      "issuerBrandDomain": "www.ishares.com",
+      "legalOperatorName": null,
+      "legalOperatorEntityId": null,
+      "verificationStatus": "PENDING",
+      "registrationEvidence": null,
+      "officialFilingEvidence": null,
+      "disciplinaryEvidence": null,
+      "operationEvidence": null,
+      "grade": null,
+      "score": null,
+      "themeSlots": 8,
+      "symbols": [
+        "RBTX",
+        "IDRV",
+        "ITA",
+        "BPAY",
+        "IHAK",
+        "SOXX",
+        "ARTY",
+        "IBB"
+      ],
+      "notes": "Official product host is NOT verified as legal ETF sponsor/adviser."
+    },
+    {
+      "issuerBrandDomain": "www.rangeetfs.com",
+      "legalOperatorName": null,
+      "legalOperatorEntityId": null,
+      "verificationStatus": "PENDING",
+      "registrationEvidence": null,
+      "officialFilingEvidence": null,
+      "disciplinaryEvidence": null,
+      "operationEvidence": null,
+      "grade": null,
+      "score": null,
+      "themeSlots": 1,
+      "symbols": [
+        "NUKZ"
+      ],
+      "notes": "Official product host is NOT verified as legal ETF sponsor/adviser."
+    },
+    {
+      "issuerBrandDomain": "www.roboglobaletfs.com",
+      "legalOperatorName": null,
+      "legalOperatorEntityId": null,
+      "verificationStatus": "PENDING",
+      "registrationEvidence": null,
+      "officialFilingEvidence": null,
+      "disciplinaryEvidence": null,
+      "operationEvidence": null,
+      "grade": null,
+      "score": null,
+      "themeSlots": 1,
+      "symbols": [
+        "ROBO"
+      ],
+      "notes": "Official product host is NOT verified as legal ETF sponsor/adviser."
+    },
+    {
+      "issuerBrandDomain": "www.roundhillinvestments.com",
+      "legalOperatorName": null,
+      "legalOperatorEntityId": null,
+      "verificationStatus": "PENDING",
+      "registrationEvidence": null,
+      "officialFilingEvidence": null,
+      "disciplinaryEvidence": null,
+      "operationEvidence": null,
+      "grade": null,
+      "score": null,
+      "themeSlots": 4,
+      "symbols": [
+        "HUMN",
+        "CABZ",
+        "CHAT",
+        "DRAM"
+      ],
+      "notes": "Official product host is NOT verified as legal ETF sponsor/adviser."
+    },
+    {
+      "issuerBrandDomain": "www.ssga.com",
+      "legalOperatorName": null,
+      "legalOperatorEntityId": null,
+      "verificationStatus": "PENDING",
+      "registrationEvidence": null,
+      "officialFilingEvidence": null,
+      "disciplinaryEvidence": null,
+      "operationEvidence": null,
+      "grade": null,
+      "score": null,
+      "themeSlots": 4,
+      "symbols": [
+        "HAIL",
+        "XAR",
+        "XSD",
+        "XBI"
+      ],
+      "notes": "Official product host is NOT verified as legal ETF sponsor/adviser."
+    },
+    {
+      "issuerBrandDomain": "www.vaneck.com",
+      "legalOperatorName": null,
+      "legalOperatorEntityId": null,
+      "verificationStatus": "PENDING",
+      "registrationEvidence": null,
+      "officialFilingEvidence": null,
+      "disciplinaryEvidence": null,
+      "operationEvidence": null,
+      "grade": null,
+      "score": null,
+      "themeSlots": 3,
+      "symbols": [
+        "NLR",
+        "SMH",
+        "BBH"
+      ],
+      "notes": "Official product host is NOT verified as legal ETF sponsor/adviser."
+    },
+    {
+      "issuerBrandDomain": "www.wisdomtree.com",
+      "legalOperatorName": null,
+      "legalOperatorEntityId": null,
+      "verificationStatus": "PENDING",
+      "registrationEvidence": null,
+      "officialFilingEvidence": null,
+      "disciplinaryEvidence": null,
+      "operationEvidence": null,
+      "grade": null,
+      "score": null,
+      "themeSlots": 2,
+      "symbols": [
+        "WCLD",
+        "WCBR"
+      ],
+      "notes": "Official product host is NOT verified as legal ETF sponsor/adviser."
+    }
+  ]
+}
