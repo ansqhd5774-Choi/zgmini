@@ -4,6 +4,7 @@ import {readOnlyDatabase,candidateWorker} from '../worker/candidate-guard.mjs';
 import {candidateImportBoundary} from './candidate-import-boundary.mjs';
 import {readPublicFeed} from '../worker/public-feed-store.mjs';
 import {marketOperationalStore as candidateMarketStore,readStoredMarketInputs as candidateReadStoredMarketInputs} from '../worker/candidate-market-operational-store.mjs';
+import {fullMacro} from '../tests/helpers/validated-market-fixtures.mjs';
 test('real stored public feed reader works through SELECT-only boundary',async()=>{
  let reads=0;const now=Date.now();
  const db=readOnlyDatabase({prepare(sql){assert.match(sql,/^SELECT /);return {bind(){return this;},async first(){reads++;return {body:JSON.stringify({score:51}),stored_at:now};}};}});
@@ -38,11 +39,11 @@ test('candidate operational store reads with SELECT only and never initializes s
  const sqls=[];const now=Date.now();
  const rows={
   score:{body:JSON.stringify({overall:{score:55}}),stored_at:now},
-  macro:{body:JSON.stringify({series:{CPI:[{observationDate:'2026-10-01',value:1}]},seriesStoredAt:{CPI:now}}),stored_at:now},
+  macro:{body:JSON.stringify(fullMacro('2026-10-01',1)),stored_at:now},
  };
  const db={prepare(sql){
   sqls.push(sql);assert.match(sql,/^SELECT\b/i);
-  return {bind(...args){this.args=args;return this;},async all(){return {results:[]};},async first(){
+  return {bind(...args){this.args=args;return this;},async all(){return {results:String(this.args?.[0]??'').startsWith('macro:')?[rows.macro]:[]};},async first(){
    if(sql.includes('market_public_snapshots_v1'))return rows.score;
    if(sql.includes('market_input_batches_v1')){
     const key=String(this.args?.[0]??'');
@@ -55,7 +56,7 @@ test('candidate operational store reads with SELECT only and never initializes s
  const store=candidateMarketStore(db);
  assert.equal((await store.readScore()).body.overall.score,55);
  const inputs=await candidateReadStoredMarketInputs(store,now);
- assert.equal(inputs.series.CPI[0].value,1);
+ assert.equal(inputs.series.PAYEMS[0].value,1);
  assert.equal(sqls.some(sql=>/CREATE|INSERT|UPDATE|DELETE|PRAGMA/i.test(sql)),false);
  assert.throws(()=>store.writeScore({},now),/WRITE_DISABLED/);
 });
