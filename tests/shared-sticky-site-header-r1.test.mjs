@@ -14,9 +14,9 @@ test("dashboard and eight analytical details share one sticky navigational heade
  assert.match(shared,/<CollectionHealthIndicator\/>/);
  assert.match(shared,/<nav aria-label="주 메뉴">/);
  assert.match(shared,/href="\/"/);
- assert.match(shared,/href="\/\?view=scenarios"/);
+ assert.match(shared,/href="\/outbreak\/"/);
  assert.match(shared,/aria-label="ZGmini 대시보드로 이동"/);
- assert.match(home,/<SiteHeader activeView=\{/);
+ assert.match(home,/<SiteHeader accountTools=\{/);
  assert.doesNotMatch(home,/<header className="zg-header text-white"/);
  for(const route of routes){
   const page=read(`app/${route}/page.tsx`);
@@ -27,15 +27,19 @@ test("dashboard and eight analytical details share one sticky navigational heade
  }
 });
 
-test("the outbreak deep-link is read on the homepage without reload-dependent tab state",()=>{
- assert.match(home,/new URLSearchParams\(window.location.search\).get\("view"\)==="scenarios"/);
- assert.match(home,/window.addEventListener\("popstate",sync\)/);
- assert.match(home,/setView\(next\)/);
- assert.match(home,/url.searchParams.set\("view","scenarios"\)/);
- assert.match(home,/url.searchParams.delete\("view"\)/);
- assert.match(home,/window.history.replaceState\(window.history.state/);
- assert.match(shared,/onSelectView\("dashboard"\)/);
- assert.match(shared,/onSelectView\("scenarios"\)/);
+test("outbreak has an independent route and dashboard drilldown preserves selected event",()=>{
+ const standalone=read("app/outbreak/page.tsx");
+ const events=read("app/outbreak-events.tsx");
+ const shell=read("worker/candidate-shell-r7.mjs");
+ assert.match(standalone,/alternates:\{canonical:url\}/);
+ assert.match(standalone,/url='https:\/\/zgmini\.kr\/outbreak\/'/);
+ assert.match(standalone,/<OutbreakEvents\/>/);
+ assert.match(standalone,/<SiteHeader\/>/);
+ assert.match(home,/window.location.assign\('\/outbreak\/\?event='/);
+ assert.doesNotMatch(home,/<OutbreakEvents/);
+ assert.match(events,/new URLSearchParams\(window.location.search\).get\('event'\)/);
+ assert.match(shell,/url.searchParams.get\('view'\)==='scenarios'/);
+ assert.match(shared,/href="\/outbreak\/"/);
 });
 
 test("dashboard sign-in settings and stored favorites are preserved inside shared header",()=>{
