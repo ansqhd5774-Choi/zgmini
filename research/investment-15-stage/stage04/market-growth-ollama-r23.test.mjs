@@ -88,3 +88,11 @@ test('model-only speed test bypasses blocked publisher and labels reference inpu
   assert.equal(output.ollama_reported_ms, 5);
   assert.equal(calls, 1);
 });
+
+test('model-only unavailable Ollama does not report publisher error', async () => {
+  const output = await benchmark({ mode: 'model-only', model: 'existing-model',
+    fetchFn: async () => { throw new TypeError('fetch failed'); } });
+  assert.equal(output.state, 'FAILED');
+  assert.equal(output.failure, 'OLLAMA_LOCAL_CONNECT_FAILED');
+  assert.equal(output.publisher_requests, 0);
+});
