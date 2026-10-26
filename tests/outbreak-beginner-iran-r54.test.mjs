@@ -17,8 +17,10 @@ test("approved Iran beginner detail is selected while the prior data consumer an
 test("live 14-calendar-day history stays provisional, carried segments dotted, no fabricated observations",()=>{
  assert.match(iran,/end-13\*DAY_MS/);
  assert.match(iran,/p\.at>=start&&p\.at<=end!/);
- assert.match(iran,/strokeDasharray=\{carried\(p\)\?"5 5":undefined\}/);
- assert.match(iran,/if\(p\.at-prev\.at>DAY_MS\*1\.5\)return null/);
+ assert.match(iran,/lineSegments=\{lineSegments\}/);
+ assert.match(iran,/dashed:carried\(p\)/);
+ assert.match(iran,/if\(p\.at-prev\.at>DAY_MS\*1\.5\)return \[\]/);
+ assert.match(iran,/score:observed\.get\(day\)\?\?null/);
  assert.match(iran,/14일 추이/);
  assert.match(iran,/실제 과거 확정 관측값이 아닌/);
  assert.match(iran,/교전 중단을 뜻하지 않습니다/);
