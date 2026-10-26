@@ -1,0 +1,375 @@
+{
+  "schema": "zgmini.theme-nine.issuer-iapd-identity-crosswalk.r16",
+  "asOf": "2026-10-26",
+  "targetBranch": "research/theme-nine-r2-shadow-20261026",
+  "baseFile": "config/theme-nine-r15-three-gate-issuer-audit.json",
+  "scope": "RESEARCH_ONLY_NO_RUNTIME_IMPORT",
+  "reviewMethod": "SEC IAPD domain-indexed firm summaries and EDGAR partial fund filing references; primary-page dynamic status text not consistently available",
+  "summary": {
+    "officialProductHostGroups": 19,
+    "iapdFirmLinksFound": 19,
+    "uniqueProvisionalLegalAdviserCRDs": 18,
+    "duplicateLegalAdviserGroups": 1,
+    "fullyReviewedRegistrationAndConduct": 0,
+    "gradesFinalized": 0,
+    "etfsNewlyAdmitted": 0
+  },
+  "cautions": [
+    "An IAPD name or alias match is not a confirmed ETF-specific adviser relationship.",
+    "SEC registration, SEC endorsement, current license status, regulatory conduct and firm grade are distinct assertions.",
+    "Some IAPD pages render status/disclosures dynamically, so do not infer no sanctions or approved registration from an indexed firm link.",
+    "www.rangeetfs.com and www.roboglobaletfs.com point provisionally to the same adviser CRD 151197; issuer website domains are not distinct legal entities.",
+    "One brand may cover ETFs with different trust, sponsor or sub-advisers; verify every ticker before a shared grade.",
+    "No change to ETF gate results, scores, existing basket, 252-day axes or production."
+  ],
+  "entries": [
+    {
+      "productHost": "amplifyetfs.com",
+      "provisionalAdviserFromR15": "Amplify Investments LLC",
+      "crd": 173781,
+      "iapdUrl": "https://adviserinfo.sec.gov/firm/summary/173781",
+      "identityFinding": "IAPD_FIRM_PAGE_FOUND_NAME_OR_ALIAS_MATCH",
+      "registrationStatus": "PENDING_FULL_REGULATORY_READ",
+      "disciplinaryStatus": "PENDING_DISCLOSURE_REVIEW",
+      "etfSpecificAdviserLink": "PENDING_FUND_BY_FUND_PROSPECTUS",
+      "firmGrade": null,
+      "firmScore": null,
+      "themeSlots": 2,
+      "tickers": [
+        "IPAY",
+        "HACK"
+      ]
+    },
+    {
+      "productHost": "corgiinvest.com",
+      "provisionalAdviserFromR15": "Corgi Strategies, LLC",
+      "crd": 337985,
+      "iapdUrl": "https://adviserinfo.sec.gov/firm/summary/337985",
+      "identityFinding": "IAPD_FIRM_PAGE_FOUND_NAME_OR_ALIAS_MATCH",
+      "registrationStatus": "PENDING_FULL_REGULATORY_READ",
+      "disciplinaryStatus": "PENDING_DISCLOSURE_REVIEW",
+      "etfSpecificAdviserLink": "PENDING_FUND_BY_FUND_PROSPECTUS",
+      "firmGrade": null,
+      "firmScore": null,
+      "themeSlots": 7,
+      "tickers": [
+        "CBOT",
+        "WR",
+        "KYC",
+        "LATR",
+        "XA",
+        "EUV",
+        "GNMX"
+      ]
+    },
+    {
+      "productHost": "etf.dws.com",
+      "provisionalAdviserFromR15": "DBX Advisors LLC",
+      "crd": 154558,
+      "iapdUrl": "https://adviserinfo.sec.gov/firm/summary/154558",
+      "identityFinding": "IAPD_FIRM_PAGE_FOUND_NAME_OR_ALIAS_MATCH",
+      "registrationStatus": "PENDING_FULL_REGULATORY_READ",
+      "disciplinaryStatus": "PENDING_DISCLOSURE_REVIEW",
+      "etfSpecificAdviserLink": "PENDING_FUND_BY_FUND_PROSPECTUS",
+      "firmGrade": null,
+      "firmScore": null,
+      "themeSlots": 1,
+      "tickers": [
+        "PSWD"
+      ]
+    },
+    {
+      "productHost": "institutional.fidelity.com",
+      "provisionalAdviserFromR15": "Fidelity Management & Research Company LLC",
+      "crd": 108281,
+      "iapdUrl": "https://adviserinfo.sec.gov/firm/summary/108281",
+      "identityFinding": "IAPD_FIRM_PAGE_FOUND_NAME_OR_ALIAS_MATCH",
+      "registrationStatus": "PENDING_FULL_REGULATORY_READ",
+      "disciplinaryStatus": "PENDING_DISCLOSURE_REVIEW",
+      "etfSpecificAdviserLink": "PENDING_FUND_BY_FUND_PROSPECTUS",
+      "firmGrade": null,
+      "firmScore": null,
+      "themeSlots": 1,
+      "tickers": [
+        "FCLD"
+      ]
+    },
+    {
+      "productHost": "kraneshares.com",
+      "provisionalAdviserFromR15": "Krane Funds Advisors, LLC",
+      "crd": 157103,
+      "iapdUrl": "https://adviserinfo.sec.gov/firm/summary/157103",
+      "identityFinding": "IAPD_FIRM_PAGE_FOUND_NAME_OR_ALIAS_MATCH",
+      "registrationStatus": "PENDING_FULL_REGULATORY_READ",
+      "disciplinaryStatus": "PENDING_DISCLOSURE_REVIEW",
+      "etfSpecificAdviserLink": "PENDING_FUND_BY_FUND_PROSPECTUS",
+      "firmGrade": null,
+      "firmScore": null,
+      "themeSlots": 1,
+      "tickers": [
+        "KARS"
+      ]
+    },
+    {
+      "productHost": "sprottetfs.com",
+      "provisionalAdviserFromR15": "Sprott Asset Management USA, Inc.",
+      "crd": 139022,
+      "iapdUrl": "https://adviserinfo.sec.gov/firm/summary/139022",
+      "identityFinding": "IAPD_FIRM_PAGE_FOUND_NAME_OR_ALIAS_MATCH",
+      "registrationStatus": "PENDING_FULL_REGULATORY_READ",
+      "disciplinaryStatus": "PENDING_DISCLOSURE_REVIEW",
+      "etfSpecificAdviserLink": "PENDING_FUND_BY_FUND_PROSPECTUS",
+      "firmGrade": null,
+      "firmScore": null,
+      "themeSlots": 2,
+      "tickers": [
+        "URNM",
+        "URNJ"
+      ]
+    },
+    {
+      "productHost": "themesetfs.com",
+      "provisionalAdviserFromR15": "Tema ETFs LLC",
+      "crd": 332224,
+      "iapdUrl": "https://adviserinfo.sec.gov/firm/summary/332224",
+      "identityFinding": "IAPD_FIRM_PAGE_FOUND_NAME_OR_ALIAS_MATCH",
+      "registrationStatus": "PENDING_FULL_REGULATORY_READ",
+      "disciplinaryStatus": "PENDING_DISCLOSURE_REVIEW",
+      "etfSpecificAdviserLink": "PENDING_FUND_BY_FUND_PROSPECTUS",
+      "firmGrade": null,
+      "firmScore": null,
+      "themeSlots": 4,
+      "tickers": [
+        "CLOD",
+        "URAN",
+        "NATO",
+        "SPAM"
+      ]
+    },
+    {
+      "productHost": "www.alpsfunds.com",
+      "provisionalAdviserFromR15": "ALPS Advisors, Inc.",
+      "crd": 134340,
+      "iapdUrl": "https://adviserinfo.sec.gov/firm/summary/134340",
+      "identityFinding": "IAPD_FIRM_PAGE_FOUND_NAME_OR_ALIAS_MATCH",
+      "registrationStatus": "PENDING_FULL_REGULATORY_READ",
+      "disciplinaryStatus": "PENDING_DISCLOSURE_REVIEW",
+      "etfSpecificAdviserLink": "PENDING_FUND_BY_FUND_PROSPECTUS",
+      "firmGrade": null,
+      "firmScore": null,
+      "themeSlots": 1,
+      "tickers": [
+        "SBIO"
+      ]
+    },
+    {
+      "productHost": "www.ark-funds.com",
+      "provisionalAdviserFromR15": "ARK Investment Management LLC",
+      "crd": 169525,
+      "iapdUrl": "https://adviserinfo.sec.gov/firm/summary/169525",
+      "identityFinding": "IAPD_FIRM_PAGE_FOUND_NAME_OR_ALIAS_MATCH",
+      "registrationStatus": "PENDING_FULL_REGULATORY_READ",
+      "disciplinaryStatus": "PENDING_DISCLOSURE_REVIEW",
+      "etfSpecificAdviserLink": "PENDING_FUND_BY_FUND_PROSPECTUS",
+      "firmGrade": null,
+      "firmScore": null,
+      "themeSlots": 3,
+      "tickers": [
+        "ARKQ",
+        "ARKF",
+        "ARKG"
+      ]
+    },
+    {
+      "productHost": "www.ftportfolios.com",
+      "provisionalAdviserFromR15": "First Trust Advisors L.P.",
+      "crd": 107027,
+      "iapdUrl": "https://adviserinfo.sec.gov/firm/summary/107027",
+      "identityFinding": "IAPD_FIRM_PAGE_FOUND_NAME_OR_ALIAS_MATCH",
+      "registrationStatus": "PENDING_FULL_REGULATORY_READ",
+      "disciplinaryStatus": "PENDING_DISCLOSURE_REVIEW",
+      "etfSpecificAdviserLink": "PENDING_FUND_BY_FUND_PROSPECTUS",
+      "firmGrade": null,
+      "firmScore": null,
+      "themeSlots": 4,
+      "tickers": [
+        "ROBT",
+        "SKYY",
+        "CIBR",
+        "FBT"
+      ]
+    },
+    {
+      "productHost": "www.globalxetfs.com",
+      "provisionalAdviserFromR15": "Global X Management Company LLC",
+      "crd": 146932,
+      "iapdUrl": "https://adviserinfo.sec.gov/firm/summary/146932",
+      "identityFinding": "IAPD_FIRM_PAGE_FOUND_NAME_OR_ALIAS_MATCH",
+      "registrationStatus": "PENDING_FULL_REGULATORY_READ",
+      "disciplinaryStatus": "PENDING_DISCLOSURE_REVIEW",
+      "etfSpecificAdviserLink": "PENDING_FUND_BY_FUND_PROSPECTUS",
+      "firmGrade": null,
+      "firmScore": null,
+      "themeSlots": 11,
+      "tickers": [
+        "BOTZ",
+        "CLOU",
+        "DRIV",
+        "URA",
+        "SHLD",
+        "FINX",
+        "BUG",
+        "AIQ",
+        "LLMA",
+        "GNOM"
+      ]
+    },
+    {
+      "productHost": "www.invesco.com",
+      "provisionalAdviserFromR15": "Invesco Capital Management LLC",
+      "crd": 125601,
+      "iapdUrl": "https://adviserinfo.sec.gov/firm/summary/125601",
+      "identityFinding": "IAPD_FIRM_PAGE_FOUND_NAME_OR_ALIAS_MATCH",
+      "registrationStatus": "PENDING_FULL_REGULATORY_READ",
+      "disciplinaryStatus": "PENDING_DISCLOSURE_REVIEW",
+      "etfSpecificAdviserLink": "PENDING_FUND_BY_FUND_PROSPECTUS",
+      "firmGrade": null,
+      "firmScore": null,
+      "themeSlots": 4,
+      "tickers": [
+        "PPA",
+        "SOXQ",
+        "PSI",
+        "PBE"
+      ]
+    },
+    {
+      "productHost": "www.ishares.com",
+      "provisionalAdviserFromR15": "BlackRock Fund Advisors",
+      "crd": 105247,
+      "iapdUrl": "https://adviserinfo.sec.gov/firm/summary/105247",
+      "identityFinding": "IAPD_FIRM_PAGE_FOUND_NAME_OR_ALIAS_MATCH",
+      "registrationStatus": "PENDING_FULL_REGULATORY_READ",
+      "disciplinaryStatus": "PENDING_DISCLOSURE_REVIEW",
+      "etfSpecificAdviserLink": "PENDING_FUND_BY_FUND_PROSPECTUS",
+      "firmGrade": null,
+      "firmScore": null,
+      "themeSlots": 8,
+      "tickers": [
+        "RBTX",
+        "IDRV",
+        "ITA",
+        "BPAY",
+        "IHAK",
+        "SOXX",
+        "ARTY",
+        "IBB"
+      ]
+    },
+    {
+      "productHost": "www.rangeetfs.com",
+      "provisionalAdviserFromR15": "Exchange Traded Concepts, LLC",
+      "crd": 151197,
+      "iapdUrl": "https://adviserinfo.sec.gov/firm/summary/151197",
+      "identityFinding": "IAPD_FIRM_PAGE_FOUND_NAME_OR_ALIAS_MATCH",
+      "registrationStatus": "PENDING_FULL_REGULATORY_READ",
+      "disciplinaryStatus": "PENDING_DISCLOSURE_REVIEW",
+      "etfSpecificAdviserLink": "PENDING_FUND_BY_FUND_PROSPECTUS",
+      "firmGrade": null,
+      "firmScore": null,
+      "themeSlots": 1,
+      "tickers": [
+        "NUKZ"
+      ]
+    },
+    {
+      "productHost": "www.roboglobaletfs.com",
+      "provisionalAdviserFromR15": "Exchange Traded Concepts, LLC",
+      "crd": 151197,
+      "iapdUrl": "https://adviserinfo.sec.gov/firm/summary/151197",
+      "identityFinding": "IAPD_FIRM_PAGE_FOUND_NAME_OR_ALIAS_MATCH",
+      "registrationStatus": "PENDING_FULL_REGULATORY_READ",
+      "disciplinaryStatus": "PENDING_DISCLOSURE_REVIEW",
+      "etfSpecificAdviserLink": "PENDING_FUND_BY_FUND_PROSPECTUS",
+      "firmGrade": null,
+      "firmScore": null,
+      "themeSlots": 1,
+      "tickers": [
+        "ROBO"
+      ]
+    },
+    {
+      "productHost": "www.roundhillinvestments.com",
+      "provisionalAdviserFromR15": "Roundhill Financial Inc.",
+      "crd": 300799,
+      "iapdUrl": "https://adviserinfo.sec.gov/firm/summary/300799",
+      "identityFinding": "IAPD_FIRM_PAGE_FOUND_NAME_OR_ALIAS_MATCH",
+      "registrationStatus": "PENDING_FULL_REGULATORY_READ",
+      "disciplinaryStatus": "PENDING_DISCLOSURE_REVIEW",
+      "etfSpecificAdviserLink": "PENDING_FUND_BY_FUND_PROSPECTUS",
+      "firmGrade": null,
+      "firmScore": null,
+      "themeSlots": 4,
+      "tickers": [
+        "HUMN",
+        "CABZ",
+        "CHAT",
+        "DRAM"
+      ]
+    },
+    {
+      "productHost": "www.ssga.com",
+      "provisionalAdviserFromR15": "SSgA Funds Management, Inc.",
+      "crd": 111242,
+      "iapdUrl": "https://adviserinfo.sec.gov/firm/summary/111242",
+      "identityFinding": "IAPD_FIRM_PAGE_FOUND_NAME_OR_ALIAS_MATCH",
+      "registrationStatus": "PENDING_FULL_REGULATORY_READ",
+      "disciplinaryStatus": "PENDING_DISCLOSURE_REVIEW",
+      "etfSpecificAdviserLink": "PENDING_FUND_BY_FUND_PROSPECTUS",
+      "firmGrade": null,
+      "firmScore": null,
+      "themeSlots": 4,
+      "tickers": [
+        "HAIL",
+        "XAR",
+        "XSD",
+        "XBI"
+      ]
+    },
+    {
+      "productHost": "www.vaneck.com",
+      "provisionalAdviserFromR15": "Van Eck Associates Corporation",
+      "crd": 105080,
+      "iapdUrl": "https://adviserinfo.sec.gov/firm/summary/105080",
+      "identityFinding": "IAPD_FIRM_PAGE_FOUND_NAME_OR_ALIAS_MATCH",
+      "registrationStatus": "PENDING_FULL_REGULATORY_READ",
+      "disciplinaryStatus": "PENDING_DISCLOSURE_REVIEW",
+      "etfSpecificAdviserLink": "PENDING_FUND_BY_FUND_PROSPECTUS",
+      "firmGrade": null,
+      "firmScore": null,
+      "themeSlots": 3,
+      "tickers": [
+        "NLR",
+        "SMH",
+        "BBH"
+      ]
+    },
+    {
+      "productHost": "www.wisdomtree.com",
+      "provisionalAdviserFromR15": "WisdomTree Asset Management, Inc.",
+      "crd": 139684,
+      "iapdUrl": "https://adviserinfo.sec.gov/firm/summary/139684",
+      "identityFinding": "IAPD_FIRM_PAGE_FOUND_NAME_OR_ALIAS_MATCH",
+      "registrationStatus": "PENDING_FULL_REGULATORY_READ",
+      "disciplinaryStatus": "PENDING_DISCLOSURE_REVIEW",
+      "etfSpecificAdviserLink": "PENDING_FUND_BY_FUND_PROSPECTUS",
+      "firmGrade": null,
+      "firmScore": null,
+      "themeSlots": 2,
+      "tickers": [
+        "WCLD",
+        "WCBR"
+      ]
+    }
+  ]
+}
