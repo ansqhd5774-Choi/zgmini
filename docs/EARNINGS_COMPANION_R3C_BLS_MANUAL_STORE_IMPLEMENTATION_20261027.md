@@ -54,3 +54,17 @@
 - BLS 다중 시리즈/키: https://www.bls.gov/developers/api_signature_v2.htm
 - BLS 출처/조회일 표시: https://www.bls.gov/developers/termsOfService.htm
 - PPI 발표·수정: https://www.bls.gov/ppi/faqs/questions-and-answers.htm
+
+
+## R3-C 사용자 PC 실제 실행 Evidence (2026-10-27 KST, UTC 2026-10-26T17:02:53.267Z)
+
+- 제출 로그: `EARNINGS_R3C_BLS_STORE_ONCE_RESULT_20261026-170253Z.txt`.
+- 결과: **`PASS_R3C_MANUAL_BLS_PERSISTED`**.
+- 호출: `API_REQUESTS=1`; 기존 PC schema guard: `PASS`.
+- 최초 저장 전: `PREVIOUS_BLS_SNAPSHOTS=0`, `PREVIOUS_BLS_CHUNKS=0`.
+- 수집 관측 수: `WPSFD4=21`, `WPSFD41=21`, `PRS85006111=6`. 월·분기별 **실제 날짜·연속성·PPI YoY 유효 쌍 수는 본 요약 로그에서 미확인**.
+- 저장: `CHUNKS_INSERTED=3`, `SNAPSHOTS_INSERTED=3`, `SERIES_READBACK_VERIFIED=3`, `DB_TRANSACTION_COMMITTED=YES`, `NEW_BLS_ROWS_WRITTEN=YES`.
+- 실행기 로그상 `TABLE_CREATED_OR_ALTERED=NO`, `FRED_RECORDS_MODIFIED=NO`, `D1_OR_SCORE_OR_SCHEDULER_CHANGED=NO`. 이는 저장기 동작·로그에서 확인한 범위이며, 독립 전체 DB 감사가 수행된 것은 아니다.
+- **Gate 결론: R3-C BLS 직접 3종 1회 PC 수집·저장·내부 read-back 완료.** 추가 호출/같은 수집 CMD 반복 불필요.
+- **아직 미검증:** 개별 월/분기 원자료 정확한 기간, YoY 계산 가능 쌍, 과거 수정본 반영 방식의 실제 2회 운영, BEA/MTIS 수집, R3-D 오프라인 계산, D1/공개 배포.
+- R3-D의 추가 계산과 R4–R6의 공개 연결은 승인 전 실행하지 않는다. 계획: `docs/EARNINGS_COMPANION_R3D_STORED_DATA_CALCULATION_CONTRACT_20261027.md`.
