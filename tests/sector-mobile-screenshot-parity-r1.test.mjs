@@ -80,3 +80,19 @@ test('sector legend toggles and sorted current score remain source driven',()=>{
  assert.match(tsx,/className="zg-sfg-legend-name">\{nameOf\(sector\.id\)\}/);
  assert.match(tsx,/className="zg-sfg-legend-score" style=\{\{color:scoreColor\(current\)\}\}>\{current===null\?'—':current\.toFixed\(1\)\}/);
 });
+
+test('sector legend and compact ranking text are consistently 11.5px on mobile without changing theme pages',()=>{
+ const css=read('app/sector-fear-greed/sector-detail.css');
+ const mobile=css.slice(css.indexOf('/* Approved sector-only mobile legend:'));
+ const rule=name=>mobile.match(new RegExp('\\.zg-sector-detail:not\\(\\.zg-theme-detail\\) \\.'+name.replaceAll('.','\\.')+'\\{([^}]*)\\}'))?.[1]??'';
+ for(const selector of ['zg-sfg-legend-name','zg-sfg-legend-score','zg-sfg-mobile-rank-head','zg-sfg-rank-number','zg-sfg-rank-name','zg-sfg-rank-score','zg-sfg-rank-delta']){
+  assert.match(rule(selector),/font-size:11\\.5px/,selector);
+ }
+ assert.match(mobile,/\\.zg-sector-detail:not\\(\\.zg-theme-detail\\) \\.zg-sfg-rank-delta i\\{font-size:11\\.5px\\}/);
+ assert.match(mobile,/@media screen and \\(max-width:600px\\)\\{[\\s\\S]*?grid-template-columns:repeat\\(3,minmax\\(0,1fr\\)\\);grid-auto-rows:32px/);
+ assert.match(mobile,/@media screen and \\(max-width:355px\\)\\{[\\s\\S]*?grid-template-columns:repeat\\(2,minmax\\(0,1fr\\)\\)/);
+ assert.match(mobile,/height:32px;min-height:32px;max-height:32px/);
+ for(const line of mobile.split('\\n').filter(line=>line.trimStart().startsWith('.zg-'))){
+  assert.match(line,/\\.zg-sector-detail:not\\(\\.zg-theme-detail\\)/);
+ }
+});
