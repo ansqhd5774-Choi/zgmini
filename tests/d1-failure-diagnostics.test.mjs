@@ -26,3 +26,6 @@ test('failed official credential refresh records expired OAuth without sending a
  const c=client(cfg,()=>credential('fixture',{file,apiToken:null,now:()=>2000,refresh:()=>({status:1})}),{now:()=>2000,fetchImpl:async()=>assert.fail()});
  try{await assert.rejects(c.query(cfg.core,'SELECT 1'),/WRANGLER_LOGIN_REQUIRED/);const [d]=c.stats.transportFailures;assert.equal(d.phase,'AUTH');assert.equal(d.authRefresh,'FAILED');assert.equal(d.authExpiredAtFailure,true);assert.equal(d.httpStatus,null);assert(!JSON.stringify(d).includes('private'));}finally{fs.rmSync(dir,{recursive:true,force:true});}
 });
+test('null or malformed successful JSON is recorded as a result-contract failure',async()=>{
+ for(const body of [null,{success:true,result:{}},{success:true,result:[]}]){const c=client(cfg,'fixture',{fetchImpl:async()=>Response.json(body)});await assert.rejects(c.query(cfg.core,'SELECT 1'),/D1_BATCH_FAILED/);assert.equal(c.stats.transportFailures[0].phase,'RESULT');}
+});

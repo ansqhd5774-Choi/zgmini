@@ -81,9 +81,9 @@ export function client({account,core,history},token,{fetchImpl=globalThis.fetch,
    throw error;
   }
   let json;try{json=await response.json();}catch(error){throw fail('D1_OUTCOME_UNKNOWN',kind,'BODY',response.status,error,response);}
-  if(json.success===false||json.result?.length!==batch.length||json.result.some(x=>x.success===false)){
+  if(json?.success===false||!Array.isArray(json?.result)||json.result.length!==batch.length||json.result.some(x=>x?.success===false)){
    Object.assign(context,{cfRay:response.headers?.get('cf-ray'),errorBody:'JSON',providerCodes:codesFromResult(json)});
-   throw fail(json.success===false?`D1_HTTP_${response.status}`:'D1_BATCH_FAILED',kind,'RESULT',response.status,null,response);
+   throw fail(json?.success===false?`D1_HTTP_${response.status}`:'D1_BATCH_FAILED',kind,'RESULT',response.status,null,response);
   }
   for(const item of json.result){stats.queries++;stats.rowsRead+=item.meta?.rows_read??0;stats.rowsWritten+=item.meta?.rows_written??0;}
   return json.result;
