@@ -83,8 +83,10 @@ function mergeOfficial(feed:CalendarFeed|null):CalendarRow[]{
   const checkedAt=sourceState?.checkedAt??null;
   const fresh=sourceState?.status==='READY'&&!!checkedAt&&Date.now()-Date.parse(checkedAt)>=0&&Date.now()-Date.parse(checkedAt)<=48*3600000;
   const meta=eventKinds[item.id];
-  // The provider's feed contains dates, not verified release times.
-  fromFeed.push({key:`official-${duplicate}`,date:item.date,at:null,name:meta.name,country:'US',category:meta.category,kind:'economic',actual:null,forecast:null,previous:null,major:meta.major,source:sourceNames[item.source]??item.source,sourceUrl:item.sourceUrl,checkedAt,fresh,status:'scheduled'});
+  // Provider feed supplies dates only. Keep an exact clock time solely when
+  // the already verified manual snapshot matches this event and day.
+  const timed=item.id==='pce'?manual.find(row=>row.key.startsWith('manual-pce-')&&row.date===item.date):null;
+  fromFeed.push({key:`official-${duplicate}`,date:item.date,at:timed?.at??null,name:meta.name,country:'US',category:meta.category,kind:'economic',actual:null,forecast:null,previous:null,major:meta.major,source:sourceNames[item.source]??item.source,sourceUrl:item.sourceUrl,checkedAt:timed?.checkedAt??checkedAt,fresh:timed?false:fresh,status:'scheduled'});
  }
  const scheduledIds=new Set(fromFeed.map(row=>`${row.date}:${row.category==='물가'?'pce':row.category==='경기'?'gdp':'?'}`));
  return [...fromFeed,...manual.filter(row=>!row.key.startsWith('manual-pce-')||!scheduledIds.has(`${row.date}:pce`))];
