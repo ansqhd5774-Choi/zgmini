@@ -6,6 +6,9 @@ import {mkdtempSync,rmSync,existsSync,writeFileSync,readFileSync} from 'node:fs'
 import {tmpdir} from 'node:os';
 import path from 'node:path';
 import {maintainIranDisplayCache,DISPLAY_CACHE_BASENAME} from '../scripts/iran-progress/news-display-io-r1.mjs';
+import {publishIranNewsDisplay} from '../scripts/iran-progress/news-display-publication-r1.mjs';
+import {storedIranNewsResponse} from '../worker/iran-news-display-public-r1.mjs';
+import {IRAN_NEWS_DISPLAY_KEY} from '../lib/iran-progress/news-display-r1.mjs';
 
 const now=Date.parse('2026-10-26T15:00:00.000Z'); // KST 10/27 00:00
 const item=(date,extra={})=>({source:'GOV.UK',title:'Government statement on Iran talks',summary:'The government issued a statement.',
@@ -69,4 +72,30 @@ test('PC display cache dry-run, 30-day automatic prune and read-back never touch
   assert.equal(existsSync(file+'.next'),false);
   assert.equal(maintainIranDisplayCache(root,[item('2026-10-26T01:00:00Z')],{now,dryRun:false}).after,1);
  }finally{rmSync(root,{recursive:true,force:true});}
+});
+test('D1 news-only publication requires read-back of its distinct key',async()=>{
+ const snapshot=buildIranNewsSnapshot([toDisplayNewsItem(item('2026-10-26T01:00:00Z'),{now})],{now});
+ let stored=null;
+ const remote={query:async()=>({results:stored?[stored]:[]}),request:async(db,statements)=>{
+  assert.equal(statements[0].params[0],IRAN_NEWS_DISPLAY_KEY);
+  stored={body:statements[0].params[1],stored_at:statements[0].params[2]};
+ }};
+ assert.equal((await publishIranNewsDisplay(remote,'core',snapshot,{now})).status,'VERIFIED');
+ assert.equal((await publishIranNewsDisplay(remote,'core',snapshot,{now})).status,'UNCHANGED');
+ const error=await assert.rejects(publishIranNewsDisplay({query:remote.query,request:async()=>{throw Error('TIMEOUT');}},'core',
+  {...snapshot,publishedAt:now+1000},{now:now+1000}),/NEWS_PUBLISH_OUTCOME_UNKNOWN/);
+ void error;
+});
+test('read-only API serves only saved 14-day news and fails closed on invalid snapshot',async()=>{
+ const item0=toDisplayNewsItem(item('2026-10-26T01:00:00Z'),{now});
+ const snapshot=buildIranNewsSnapshot([item0],{now});
+ const row={body:JSON.stringify(snapshot),stored_at:now};
+ const db={prepare:()=>({bind:()=>({first:async()=>row})})};
+ const response=await storedIranNewsResponse(new Request('https://zgmini.kr/api/outbreak-news/iran'),{db,now});
+ assert.equal(response.status,200);
+ assert.equal((await response.json()).itemCount,1);
+ assert.equal(response.headers.get('x-data-snapshot-at'),new Date(now).toISOString());
+ row.body='{}';
+ const invalid=await storedIranNewsResponse(new Request('https://zgmini.kr/api/outbreak-news/iran'),{db,now});
+ assert.equal(invalid.status,503);
 });
