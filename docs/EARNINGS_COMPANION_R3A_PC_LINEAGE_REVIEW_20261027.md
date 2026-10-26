@@ -1,8 +1,9 @@
 # ZGMINI 실적 침체 정보성 C — R3-A PC lineage 실측 검토
 
 - 작성: 2026-10-27 KST
-- 기준 로그: `EARNINGS_R3A_PC_LINEAGE_RESULT_20261026-155138Z.txt` (사용자 PC, UTC 2026-10-26T15:51:38Z)
-- 상태: **R3-A PARTIAL_PASS / EXACT_PARITY_AND_REUSE_PROBE_PENDING / R3-B·C NOT_APPROVED**
+- 기준 로그 1: `EARNINGS_R3A_PC_LINEAGE_RESULT_20261026-155138Z.txt` (UTC 2026-10-26T15:51:38Z)
+- 기준 로그 2: `EARNINGS_R3A_PARITY_REUSE_RESULT_20261026-160134Z.txt` (UTC 2026-10-26T16:01:34Z)
+- 상태: **R3-A PASS (Growth ratio parity + exact FRED snapshots) / R3-B PROPOSAL_ONLY / R3-C NOT_APPROVED**
 - 저장소 기존 단일 브랜치: `ansqhd5774-Choi/zgmini` / `codex/earnings-api-site-integration-plan-r1-20261026`
 - 원래 계획: `docs/EARNINGS_RECESSION_COMPANION_API_SITE_INTEGRATION_PLAN_R1_20261026.md`
 - R3 제안: `docs/EARNINGS_COMPANION_R3_MINIMAL_PC_STORAGE_PROPOSAL_20261026.md`
@@ -48,13 +49,24 @@ R3-A 초회 로그에 부족한 정확한 수치 대조와 재사용 확인을 �
 
 검사에서 특정 시리즈가 보이지 않아도 **모든 DB 경로의 부재가 증명된 것은 아니다**. 신규 수집기·스키마 결정은 R3-B 계약 및 승인 후.
 
-## 4. 잠정 게이트 판정
+## 4. R3-A 후속 실측: 비율 값 및 FRED 원장
+
+- `G017` 구성 원자료 최신 계산 `G010/G016=0.6823357487`, 저장된 `G017=0.6823357487` (**PASS**).
+- `G018` 구성 원자료 최신 계산 `G013/G016=0.6773284573`, 저장된 `G018=0.6773284573` (**PASS**).
+- 두 비율 모두 실수 허용오차 내 차이 `0.0000000000` (출력 정밀도 10자리). **수집 시점이 오래됐어도 값의 불일치는 검출되지 않음; Growth 계산/원장 변경 없음.**
+- 기존 `api_history_snapshots_v1` 실제 키: `FRED/PPIFIS` **2개**, 최종 조회 `2026-10-15T16:45:04Z`, 마지막 관측 `2026-09-01`.
+- 기존 `FRED/PRS85006111` **1개**, 최종 조회 `2026-09-24T06:40:51Z`, 마지막 관측 `2026-04-01` (=2026Q2).
+- 이번 한정된 `provider/dataset` 검색에서는 직접 BLS `WPSFD4/WPSFD41`, BEA `A051RC`, Census `IR/TOTBUS/yes`가 검출되지 않았다. **다른 범용/전용 원장까지 부재가 증명된 것은 아님.**
+- 조회된 것은 snapshot **메타데이터**다. 실제 `api_history_chunks_v1` payload/hashes 검증·공개권 및 전송 경로 검토는 R3-B 계약의 조건으로 남는다.
+- 검사 결과 `API_REQUESTS=0`, DB/D1 쓰기 0, 스케줄러/점수 변경 0.
+
+## 5. R3-A 게이트 판정
 
 | 게이트 | 상태 |
 | --- | --- |
 | R3-A 기존 Growth current/history 대조 | **PASS (6/6 current hash present)** |
-| R3-A G017/G018 최신 구성요소 수치 parity | **PENDING, 재사용 HOLD** |
-| R3-A 정확한 FRED/BLS/BEA/Census 원장 중복 여부 | **PENDING, 후보만 확인** |
+| R3-A G017/G018 최신 구성요소 수치 parity | **PASS (두 값 10자리 일치); 기존 Growth 저장 참조 허용 후보** |
+| R3-A 정확한 FRED/BLS/BEA/Census 원장 중복 여부 | **FRED PPIFIS/PRS85006111 보유 확인; 새 원천 저장 여부는 R3-B 조건부** |
 | R3-B 신규 저장·재사용 계약 확정 | **사용자 별도 승인 전 구현 금지** |
 | R3-C PC 신규 수집·영구 저장 | **NOT_APPROVED** |
 | R3-D DB 저장값 파생 | **NOT_APPROVED** |
