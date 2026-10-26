@@ -21,6 +21,7 @@ export type MarketFearGreedChartProps = {
   axisLabels: ReadonlyMap<string, string>;
   latestPoint: MarketFearGreedChartValidPoint | null;
   gapGuides?: Array<{from:MarketFearGreedChartValidPoint;to:MarketFearGreedChartValidPoint}>;
+  lineSegments?: Array<{from:MarketFearGreedChartValidPoint;to:MarketFearGreedChartValidPoint;dashed?:boolean}>;
   dashed?: boolean;
   instanceKey: string;
   gradientId: string;
