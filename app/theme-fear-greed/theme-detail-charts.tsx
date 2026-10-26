@@ -12,8 +12,6 @@ type Theme={name:string;group:string;color:string;key:string;etfs:string[];point
 const CATALOG=THEME_GROUPS.flatMap(g=>g.items.map(name=>({name,group:g.name})));
 const COLORS=['#a3e635','#2dd4bf','#38bdf8','#ff8729','#b777ed','#ffd438','#f15aa7','#ff6464','#9fb1c5','#16d8d7','#e76aba'];
 const PERIODS=[['1W',7],['1M',30],['3M',90],['6M',180],['1Y',365]] as const;
-const DETAIL_PERIODS=[['1D',0],...PERIODS] as const;
-const CHANGES=[['1일',0,1],['1주',0,7],['1개월',1,0],['3개월',3,0],['6개월',6,0],['1년',12,0]] as const;
 const validScore=(v:unknown):v is number=>typeof v==='number'&&Number.isFinite(v)&&v>=0&&v<=100;
 const validDate=(v:unknown):v is string=>typeof v==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(v)&&Number.isFinite(Date.parse(v+'T00:00:00Z'));
 const deltaText=(v:number|null)=>v===null?'—':(v>0?'+':'')+v.toFixed(1)+'p';
@@ -43,11 +41,6 @@ function changeFor(points:Point[],months:number,days:number){
  const before=points.findLast(p=>p.date<=comparisonDate(latest.date,months,days));
  return before?Math.round((latest.score-before.score)*10)/10:null;
 }
-function periodPoints(points:Point[],days:number){
- if(!points.length)return points;if(!days)return points.slice(-2);
- const limit=Date.parse(points.at(-1)!.date+'T00:00:00Z')-days*86400000;
- return points.filter(p=>Date.parse(p.date+'T00:00:00Z')>=limit);
-}
 function PeriodButtons({value,onChange,items,label}:{value:number;onChange:(n:number)=>void;items:readonly (readonly [string,number])[];label:string}){
  return <div className="zg-sfg-periods" role="group" aria-label={label}>{items.map(([name,days])=><button type="button" key={name} aria-pressed={value===days} onClick={()=>onChange(days)}>{name}</button>)}</div>;
 }
@@ -72,8 +65,8 @@ function Zones(){return <><ReferenceArea y1={0} y2={25} fill="#8d3048" fillOpaci
 export default function ThemeDetailCharts(){
  const {payload,error,loading}=useStoredIndex<PublicThemeFeed>('/api/theme-fear-greed');
  const [group,setGroup]=useState('전체'),[query,setQuery]=useState('');
- const [visible,setVisible]=useState<Set<string>|null>(null),[selected,setSelected]=useState<string|null>(null);
- const [compareDays,setCompareDays]=useState(365),[detailDays,setDetailDays]=useState(365),[comparisonPinned,setComparisonPinned]=useState(false);
+ const [visible,setVisible]=useState<Set<string>|null>(null);
+ const [compareDays,setCompareDays]=useState(365),[comparisonPinned,setComparisonPinned]=useState(false);
  // Never display a cached score once the stored-only API has failed.
  const ready=useMemo(()=>acceptedThemes(error?null:payload),[error,payload]);
  const topThree=useMemo(()=>new Set(ready.slice(0,3).map(t=>t.name)),[ready]);
@@ -82,7 +75,6 @@ export default function ThemeDetailCharts(){
  const matches=(name:string,g:string)=>(group==='전체'||group===g)&&name.toLocaleLowerCase('ko').includes(query.trim().toLocaleLowerCase('ko'));
  const ranked=ready.filter(t=>matches(t.name,t.group));
  const pending=CATALOG.filter(t=>!available.has(t.name)&&matches(t.name,t.group));
- const active=ready.find(t=>t.name===selected)??ready[0];
  const toggle=(name:string)=>setVisible(previous=>{const next=new Set(previous??topThree);if(next.has(name))next.delete(name);else next.add(name);return next;});
  const compareRows=useMemo(()=>{
   const dates=[...new Set(ready.flatMap(t=>t.points.map(p=>p.date)))].sort();
@@ -95,10 +87,6 @@ export default function ThemeDetailCharts(){
    return [[t.key,value],[t.key+'__solid',provisional&&first&&date>=first?null:value],[t.key+'__dash',provisional&&confirmed&&date>=confirmed?value:null]];
   }))}));
  },[ready,compareDays]);
- const detailRows=active?periodPoints(active.points,detailDays).map(p=>({...p,
-  solid:active.points.length>active.provisionalFrom&&p.date>=active.points[active.provisionalFrom]?.date?null:p.score,
-  dash:active.points.length>active.provisionalFrom&&p.date>=active.points[active.provisionalFrom-1]?.date?p.score:null,
- })): [];
  return <div className="zg-sfg-content zg-tfg-content">
   <p className="zg-sfg-as-of">{ready.length?'기준일 '+(payload?.observationDate??ready[0].date).replaceAll('-','.')+' · 공개 '+ready.length+'개 / 전체 '+CATALOG.length+'개':'전체 '+CATALOG.length+'개 테마'}</p>
   <div className="zg-tfg-toolbar"><div className="zg-explorer-filters" role="group" aria-label="테마 분류">{['전체',...THEME_GROUPS.map(g=>g.name)].map(name=><button type="button" key={name} aria-pressed={group===name} onClick={()=>setGroup(name)}>{name}</button>)}</div><label className="zg-explorer-search"><Search size={16}/><input aria-label="테마 검색" type="search" value={query} onChange={e=>setQuery(e.target.value)} placeholder="테마 검색"/></label></div>
@@ -107,7 +95,7 @@ export default function ThemeDetailCharts(){
     <div className="zg-sfg-rank-head" aria-hidden="true"><span>순위</span><span>테마</span><span>현재 점수</span><div className="zg-sfg-scale"><span>극단적 공포</span><span>공포</span><span>중립</span><span>탐욕</span><span>극단적 탐욕</span></div><span>1년 추이</span><span>1개월 변동</span></div>
     <div className="zg-sfg-rank-list">{ranked.map(item=>{
      const index=ready.findIndex(t=>t.name===item.name),delta=changeFor(item.points,1,0);
-     return <button type="button" key={item.name} className="zg-sfg-rank-row" aria-pressed={currentVisible.has(item.name)} data-selected={active?.name===item.name} aria-label={(index+1)+'위 '+item.name+', '+item.score.toFixed(1)+'점, 1개월 변화 '+deltaText(delta)+'. 비교 차트 '+(currentVisible.has(item.name)?'ON':'OFF')+', 클릭하면 차트 표시 전환 및 상세 보기'} onClick={()=>{setSelected(item.name);toggle(item.name);}}>
+     return <button type="button" key={item.name} className="zg-sfg-rank-row" aria-pressed={currentVisible.has(item.name)} aria-label={(index+1)+'위 '+item.name+', '+item.score.toFixed(1)+'점, 1개월 변화 '+deltaText(delta)+'. 비교 차트 '+(currentVisible.has(item.name)?'ON':'OFF')+', 클릭하면 비교 차트 표시 전환'} onClick={()=>toggle(item.name)}>
       <span className="zg-sfg-rank-number">{index+1}</span><span className="zg-sfg-rank-name"><i style={{background:item.color}}/>{item.name}</span><strong className="zg-sfg-rank-score">{item.score.toFixed(1)}</strong>
       <ScoreBar score={item.score}/><Sparkline item={item}/><span className={'zg-sfg-rank-delta '+deltaState(delta)}>{deltaText(delta)}{delta!==null&&delta!==0&&<i aria-hidden="true">{delta>0?'▲':'▼'}</i>}</span>
      </button>;
@@ -128,17 +116,6 @@ export default function ThemeDetailCharts(){
       ]:[<Line key={item.key} dataKey={item.key} name={item.name} stroke={item.color} hide={!currentVisible.has(item.name)} strokeWidth={1.9} dot={false} activeDot={{r:3}} connectNulls={false} isAnimationActive={false}/>])}
      </LineChart></ResponsiveContainer></div>
     </section>
-    {active&&<section className="zg-sfg-detail" aria-label={active.name+' 개별 차트와 변화량'}>
-     <div className="zg-sfg-detail-head"><h2><i style={{background:active.color}}/>{active.name}</h2><strong>{active.score.toFixed(1)}<small>점</small></strong></div>
-     <p className="zg-sfg-detail-desc">{active.group} · ETF {active.etfs.join(' · ')||'구성 정보 없음'}</p><PeriodButtons value={detailDays} onChange={setDetailDays} items={DETAIL_PERIODS} label={active.name+' 차트 기간'}/>
-     <div className="zg-sfg-detail-plot"><ResponsiveContainer width="100%" height="100%"><LineChart data={detailRows} margin={{top:8,right:10,bottom:0,left:0}}>
-      <CartesianGrid vertical={false} stroke="#315064" strokeDasharray="2 4"/><XAxis dataKey="date" stroke="#9eb2c4" fontSize={10} tickFormatter={date=>String(date).slice(5)} minTickGap={26} axisLine={false} tickLine={false}/><YAxis domain={[0,100]} ticks={[0,25,50,75,100]} interval={0} width={28} stroke="#9eb2c4" fontSize={10} axisLine={false} tickLine={false}/>
-      <Tooltip content={({active:show,payload,label})=>show&&validScore(payload?.[0]?.value)?<div className="zg-sfg-tooltip"><strong>{String(label)}</strong><div><span style={{color:active.color}}>{active.name}</span><b>{Number(payload![0].value).toFixed(1)}점</b></div></div>:null}/>
-      <Line dataKey={active.points.length>active.provisionalFrom?'solid':'score'} name={active.name} stroke={active.color} strokeWidth={2} dot={false} activeDot={{r:4}} connectNulls={false} isAnimationActive={false}/>
-      {active.points.length>active.provisionalFrom&&<Line dataKey="dash" name={active.name} stroke={active.color} strokeWidth={2} strokeDasharray="4 4" dot={false} activeDot={{r:4}} connectNulls={false} isAnimationActive={false}/>}
-     </LineChart></ResponsiveContainer></div>
-     <dl className="zg-sfg-changes">{CHANGES.map(([label,months,days])=>{const delta=changeFor(active.points,months,days);return <div key={label}><dt>{label}</dt><dd className={deltaState(delta)}>{deltaText(delta)}</dd></div>;})}</dl>
-    </section>}
    </div>
    <p className="zg-sfg-footnote">ETF 저장 점수의 변화량입니다. 비교 이력이 없으면 —로 표시하며, 잠정 구간은 점선으로 구분합니다.</p>
   </>:<p className="zg-sfg-state" role="status">{loading?'ETF 전용 3축 연구 · 공개 데이터를 불러오는 중입니다.':'ETF 전용 3축 연구 · 공개 데이터 대기'}</p>}
