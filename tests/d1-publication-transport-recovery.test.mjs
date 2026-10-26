@@ -28,5 +28,5 @@ test('failure details survive the next successful report, without raw errors or 
 });
 test('transport evidence is attached before initial publication recovery can fail',()=>{
  const source=fs.readFileSync(new URL('../scripts/pc-writer/run-local.mjs',import.meta.url),'utf8');
- assert.match(source,/const remote=client\(config,credential\(root\)\);\s*report\.remote=remote\.stats;\s*report\.recovery=await recoverPublication/);
+ assert.match(source,/const remote=client\(config,\(\)=>credential\(root\)\);\s*report\.remote=remote\.stats;\s*report\.recovery=await recoverPublication/);
 });
