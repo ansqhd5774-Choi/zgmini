@@ -15,6 +15,13 @@ const AUTO_MAX_BATCHES = 64;
 const AUTO_PAUSE_MS = 60_000;
 const PAGE_LIMIT = 5000;
 const MAX_BODY_BYTES = 8_000_000;
+// A 23-second timeout expired during FINX response streaming on 2026-10-26.
+// 45 seconds is a bounded per-call budget; an error still stops without retry.
+const REQUEST_TIMEOUT_MS = 45_000;
+const REVIEWED_TIMEOUT = Object.freeze({
+  failedAt: '2026-10-26T14:21:27.649Z', failedReason: 23,
+  firstIncompleteSymbol: 'FINX', completedSymbols: 20, manifestRawFileCount: 38
+});
 const sha256 = value => createHash('sha256').update(value).digest('hex');
 const ny = new Intl.DateTimeFormat('en-US', {timeZone: 'America/New_York',
   year: 'numeric', month: '2-digit', day: '2-digit'});
@@ -196,15 +203,24 @@ export async function collectApprovedNine({dataRoot = DEFAULT_DATA, rosterPath =
         writeAtomic(statePath, state);
         result.providerCalls++;
         let response;
-        try { response = await fetchImpl(url, {redirect: 'error', signal: AbortSignal.timeout(23000)}); }
-        catch { state.reason = 'NETWORK_OR_TIMEOUT'; writeAtomic(statePath, state);
-          result.status = 'STOP_NETWORK_OR_TIMEOUT'; return result; }
+        try { response = await fetchImpl(url, {redirect: 'error', signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS)}); }
+        catch (error) { state.reason = error?.name === 'TimeoutError' || error?.code === 23 ?
+          'REQUEST_TIMEOUT_BEFORE_HEADERS' : 'NETWORK_OR_TIMEOUT'; writeAtomic(statePath, state);
+          result.status = 'STOP_NETWORK_OR_TIMEOUT'; result.failedReason = state.reason;
+          result.failedSymbol = symbol; return result; }
         if (!response.ok) { state.reason = 'HTTP_' + response.status; writeAtomic(statePath, state);
           result.status = 'STOP_HTTP_' + response.status; return result; }
         let body, page;
         try { body = await readLimitedResponse(response); page = validatePage(body, symbol, progress.lastTimestamp); }
-        catch (error) { state.reason = error.code || 'INVALID_RESPONSE'; writeAtomic(statePath, state);
-          result.status = 'STOP_INVALID_RESPONSE'; return result; }
+        catch (error) {
+          const timeout = error?.name === 'TimeoutError' || error?.code === 23;
+          state.reason = timeout ? 'RESPONSE_BODY_TIMEOUT' : error?.code || 'INVALID_RESPONSE';
+          writeAtomic(statePath, state);
+          result.status = timeout ? 'STOP_RESPONSE_BODY_TIMEOUT' : 'STOP_INVALID_RESPONSE';
+          result.failedReason = state.reason;
+          result.failedSymbol = symbol;
+          return result;
+        }
         const next = response.headers.get('x-next-cursor');
         if ((next && (next === progress.cursor || !page.count)) || (page.count === 0 && progress.pages > 0)) {
           state.reason = 'PAGINATION_CONFLICT'; writeAtomic(statePath, state);
@@ -295,6 +311,62 @@ export function inspectCollectionFailure({dataRoot = DEFAULT_DATA, rosterPath = 
     publicationWrites: 0, schedulerWrites: 0, dataWrites: 0};
 }
 
+// Explicit one-time manual review of the exact legacy DOMException 23 timeout.
+// This does not call the provider, alter raw pages, or create a new data window.
+export function resumeReviewedTimeout({dataRoot = DEFAULT_DATA, rosterPath = DEFAULT_ROSTER,
+  start, end, expected = REVIEWED_TIMEOUT, now = () => new Date().toISOString()} = {}) {
+  if (!dateOK(start) || !dateOK(end) || start > end) fail('REVIEW_DATES');
+  if (!fs.existsSync(dataRoot)) fail('DATA_ROOT_MISSING');
+  const root = fs.realpathSync(dataRoot);
+  const home = path.join(root, COLLECTION_PATH);
+  if (!fs.existsSync(home) || !fs.statSync(home).isDirectory()) fail('REVIEW_COLLECTION_MISSING');
+  assertWithin(root, fs.realpathSync(home));
+  const lock = path.join(home, 'state', 'collection.lock');
+  let fd;
+  try { fd = fs.openSync(lock, 'wx'); }
+  catch (error) { if (error.code === 'EEXIST') fail('LOCK_EXISTS_MANUAL_REVIEW'); throw error; }
+  fs.closeSync(fd);
+  try {
+    const roster = readApprovedRoster(rosterPath);
+    const manifest = readManifest(home, roster); // verifies every stored raw SHA
+    const {filename, state} = readState(home, roster, start, end);
+    if (!fs.existsSync(filename)) fail('REVIEW_CHECKPOINT_MISSING');
+    const incomplete = roster.symbols.filter(symbol => !state.symbols[symbol].complete);
+    const firstIncompleteSymbol = incomplete[0] ?? null;
+    for (const symbol of roster.symbols) {
+      const progress = state.symbols[symbol];
+      if (!Array.isArray(progress.files) ||
+          (progress.complete && !progress.files.length && !progress.noBars)) fail('CHECKPOINT_RAW_IDENTITY');
+      for (const entry of progress.files) {
+        if (!entry.path.startsWith('raw/' + symbol + '_') ||
+            !manifest.files.some(item => item.path === entry.path && item.sha256 === entry.sha256))
+          fail('CHECKPOINT_MANIFEST_MISMATCH');
+        validateRaw(home, entry);
+      }
+    }
+    if (state.failedAt !== expected.failedAt || state.reason !== expected.failedReason ||
+        firstIncompleteSymbol !== expected.firstIncompleteSymbol ||
+        roster.symbols.length - incomplete.length !== expected.completedSymbols ||
+        manifest.files.length !== expected.manifestRawFileCount ||
+        state.symbols[firstIncompleteSymbol].pages !== 0 ||
+        state.symbols[firstIncompleteSymbol].files.length !== 0 ||
+        state.symbols[firstIncompleteSymbol].cursor !== null)
+      fail('REVIEW_EVIDENCE_CHANGED_NO_WRITE');
+    const review = {at: now(), action: 'ONE_TIME_REARM_AFTER_CONFIRMED_RESPONSE_BODY_TIMEOUT',
+      failedAt: state.failedAt, priorReason: state.reason, symbol: firstIncompleteSymbol,
+      reviewedManifestFiles: manifest.files.length};
+    state.manualReviews = [...(Array.isArray(state.manualReviews) ? state.manualReviews : []), review];
+    delete state.failedAt;
+    delete state.reason;
+    writeAtomic(filename, state);
+    return {contract: 'THEME_NINE_R23_ONE_TIME_TIMEOUT_REVIEW', status: 'CHECKPOINT_REARMED_ONCE',
+      firstIncompleteSymbol, completedSymbols: expected.completedSymbols,
+      preservedRawFiles: manifest.files.length, providerCalls: 0, d1Writes: 0,
+      publicationWrites: 0, schedulerWrites: 0,
+      nextStep: 'RUN_BOUNDED_AUTO_COLLECTION_NO_AUTO_RETRY_AFTER_STOP'};
+  } finally { fs.unlinkSync(lock); }
+}
+
 // Reuse the unchanged four-request collector in bounded, paced batches.
 // There are no implicit retries: any STOP status ends the automatic session.
 export async function collectApprovedNineAuto(options, {collectImpl = collectApprovedNine,
@@ -338,7 +410,8 @@ export async function collectApprovedNineAuto(options, {collectImpl = collectApp
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const [mode, start, end, extra] = process.argv.slice(2);
   try {
-    if (extra || !['--inspect', '--inspect-failure', '--collect', '--collect-auto'].includes(mode)) fail('USAGE_EXPECTED_INSPECT_OR_COLLECT');
+    if (extra || !['--inspect', '--inspect-failure', '--collect', '--collect-auto',
+      '--resume-reviewed-timeout'].includes(mode)) fail('USAGE_EXPECTED_INSPECT_OR_COLLECT');
     if (mode !== '--inspect' && (!start || !end)) fail('EXPLICIT_DATE_RANGE_REQUIRED');
     const options = {dataRoot: process.env.ZGMINI_DATA_ROOT || DEFAULT_DATA,
       rosterPath: process.env.ZGMINI_R23_ROSTER_PATH || DEFAULT_ROSTER,
@@ -346,6 +419,7 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
     const report = mode === '--collect' ? await collectApprovedNine(options) :
       mode === '--collect-auto' ? await collectApprovedNineAuto(options, {
         onBatch: batch => process.stdout.write(JSON.stringify(batch) + '\n')}) :
+      mode === '--resume-reviewed-timeout' ? resumeReviewedTimeout(options) :
       mode === '--inspect-failure' ? inspectCollectionFailure(options) : inspectApprovedNine(options);
     process.stdout.write(JSON.stringify(report, null, 2) + '\n');
     if (report.status?.startsWith('STOP')) process.exitCode = 2;
