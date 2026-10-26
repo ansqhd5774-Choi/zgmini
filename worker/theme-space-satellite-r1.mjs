@@ -41,9 +41,14 @@ export function eligibleSpaceSatellite(record,base,{now=Date.now(),storedAt=now}
   now-Date.parse(record.observationDate+'T23:59:59Z')>=PUBLIC_DISPLAY_MAX_AGE_MS||
   !score(record.score)||record.history?.length!==252||
   record.history.at(-1)?.date!==record.observationDate||
+  !score(record.history.at(-1)?.score)||
   Math.abs(record.history.at(-1).score-record.score)>0.000001)return false;
- if(record.history.some((row,i)=>!validDate(row?.date)||!score(row?.score)||
+ if(record.history.some((row,i)=>!validDate(row?.date)||
+  !(row?.score===null||score(row?.score))||
   (i>0&&row.date<=record.history[i-1].date)))return false;
+ const observed=record.history.filter(row=>score(row.score)).length;
+ if(observed<1||!Number.isInteger(record.scoredDays)||
+  record.scoredDays!==observed)return false;
  if(!record.aumAsOf||typeof record.aumAsOf!=='object'||
   !record.etfs.every(ticker=>validDate(record.aumAsOf[ticker])&&
    record.aumAsOf[ticker]<=record.observationDate))return false;

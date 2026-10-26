@@ -56,7 +56,10 @@ export async function runSpacePublishR29({dataRoot,allowPublish=false,
   report.sourceManifestSha256=candidate.sourceManifestSha256;
   need(candidate.status==='PRIVATE_CURRENT_APPROVED_BASKET_READY'&&
    candidate.publicationCompleted===false&&candidate.history?.length===252&&
-   candidate.scoredDays===252,'SPACE_R29_PC_SCORE_NOT_COMPLETE');
+   candidate.scoredDays>0&&candidate.scoredDays<=252&&
+   candidate.scoredDays===candidate.history.filter(row=>
+    typeof row?.score==='number'&&Number.isFinite(row.score)).length,
+   'SPACE_R29_PC_SCORE_NOT_COMPLETE');
   const artifact=save(dataRoot,candidate);
   report.derivedArtifact=artifact.relativePath;
   report.candidateFileSha256=artifact.sha256;

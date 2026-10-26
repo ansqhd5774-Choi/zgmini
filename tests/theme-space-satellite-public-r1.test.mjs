@@ -25,7 +25,7 @@ const sample={status:'READY',version:SPACE_SATELLITE_PUBLIC_VERSION,theme:'ìš°ì£
  sourceVersion:'GMH_MANIFEST_SHA256_'+ 'a'.repeat(64)+'_SPY_SHA256_'+'b'.repeat(64),
  candidateFileSha256:'c'.repeat(64),
  sourceStoredAt:'2026-10-25T15:00:00Z',publishedAt:'2026-10-26T05:00:00Z',
- observationDate:dates.at(-1),score:44.65075,
+ observationDate:dates.at(-1),score:44.65075,scoredDays:252,
  history:dates.map(date=>({date,score:44.65075})),
  aumAsOf:{UFO:'2026-10-22',NASA:'2026-10-22',WARP:'2026-10-23',ROKT:'2026-10-22'}};
 
@@ -64,4 +64,20 @@ test('ETF count is not capped at four; validated dynamic roster remains eligible
  const more={...sample,etfs:[...sample.etfs,'ORBX'],
   aumAsOf:{...sample.aumAsOf,ORBX:'2026-10-22'}};
  assert.equal(eligibleSpaceSatellite(more,base,{now}),true);
+});
+test('252 actual session dates may carry 147 explicitly missing scores without fabrication',async()=>{
+ const real105=sample.history.map((point,i)=>i<147?{...point,score:null}:point);
+ const partial={...sample,history:real105,scoredDays:105};
+ assert.equal(eligibleSpaceSatellite(partial,base,{now}),true);
+ const db={prepare(){return {bind(){return {first:async()=>({
+  body:JSON.stringify(partial),stored_at:now-60_000})};}}}};
+ const result=await addVerifiedSpaceSatellite(db,base,{now});
+ assert.equal(result.themes.length,8);
+ assert.equal(result.themes.at(-1).history.length,252);
+ assert.equal(result.themes.at(-1).history.filter(p=>p.score!==null).length,105);
+ assert.equal(result.themes.at(-1).history[0].score,null);
+ assert.equal(result.themes.at(-1).score,44.65075);
+ assert.equal(eligibleSpaceSatellite({...partial,scoredDays:252},base,{now}),false);
+ assert.equal(eligibleSpaceSatellite({...partial,
+  history:real105.map((row,i)=>i===4?{...row,score:0}:row)},base,{now}),false);
 });

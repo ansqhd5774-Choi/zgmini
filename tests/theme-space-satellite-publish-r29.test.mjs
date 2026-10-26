@@ -78,3 +78,24 @@ test('missing actual history blocks publication without synthetic results',async
  assert.equal(out.status,'STOPPED');assert.equal(writes,0);
  assert.equal(out.reason,'SPACE_R29_PC_SCORE_NOT_COMPLETE');
 });
+test('105 scored days in a 252-date real history can be published with null gaps',async()=>{
+ const partialHistory=history.map((p,i)=>i<147?{...p,score:null}:p);
+ const partial={...candidate,scoredDays:105,history:partialHistory};
+ const record=buildSpaceSatellitePublicR29({candidate:partial,base,
+  candidateFileSha256:checksum,allowPublish:true,now:time});
+ assert.equal(record.history.length,252);
+ assert.equal(record.scoredDays,105);
+ assert.equal(record.history[0].score,null);
+ assert.equal(record.history.at(-1).score,44.65075);
+ let stored=null;
+ const out=await runSpacePublishR29({dataRoot:'not-accessed',allowPublish:true,
+  pcAudit:()=>partial,save:()=>({relativePath:'test.json',sha256:checksum}),
+  publicRead:async()=>stored?{...base,themes:[...base.themes,{theme:'우주·위성',
+   etfs:symbols,score:44.65075,history:partialHistory}]}:base,
+  d1:{read:async()=>stored,writeVersioned:async(_key,body)=>{
+   stored={body,storedAt:time};return {status:'WRITTEN',changes:1};}},
+  now:()=>time});
+ assert.equal(out.status,'PUBLIC_API_VERIFIED');
+ assert.equal(out.scoredDays,105);
+ assert.equal(out.d1Writes,1);
+});
