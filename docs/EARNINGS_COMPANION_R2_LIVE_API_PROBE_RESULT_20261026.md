@@ -2,7 +2,8 @@
 
 - 대상: ZGMINI `/earnings-recession/`의 **정보성 보조지표** 연결 전 읽기 전용 검증
 - 브랜치: `codex/earnings-api-site-integration-plan-r1-20261026`
-- 증거: 사용자가 PC에서 실행한 `EARNINGS_R2_READONLY_PROBE_RESULT.txt` (UTC 2026-10-26T13:11:10.898Z)
+- 증거 1: 사용자가 PC에서 실행한 `EARNINGS_R2_READONLY_PROBE_RESULT.txt` (UTC 2026-10-26T13:11:10.898Z)
+- 증거 2: 수정 재검사 `EARNINGS_R2_READONLY_PROBE_RESULT(1).txt` (UTC 2026-10-26T13:20:06.827Z). 총 API 요청 5회, **5회 모두 HTTP 200**. 최초 오류·응답은 기록상 보존.
 - 실행 범위: 공식 API 요청 **5회** (BLS 2개 시리즈를 1회 POST로 묶음), PC provider 파일 발견, **DB·D1·스케줄러·기존 점수 산식 쓰기 없음**
 - 상태: **LIVE_HTTP_CHECKED / SERIES_GATES_PARTIAL / NO_SITE_PUBLICATION**
 
@@ -10,9 +11,9 @@
 
 | API / 후보 | HTTP | 응답 건수 | 최신 실제 관측일 | 판정 |
 |---|---:|---:|---|---|
-| Census QFR | 200 | 9,568행 | **UNKNOWN** (`time_slot_id=0`은 날짜가 아님) | HTTP_O / METRIC_CODE_PENDING |
-| Census MTIS | 200 | 512행 | **UNKNOWN** (`time_slot_id=0`은 날짜가 아님) | HTTP_O / METRIC_CODE_PENDING |
-| Census M3 | **400** | — | UNKNOWN | **HTTP_X / PROBE_QUERY_FIX_AND_RETRY** |
+| Census QFR | 200 | 9,568행 | **UNKNOWN** (날짜 문자열은 수신, 검사기 공백 파싱 오류) | HTTP_O / DATE_FIX2_PENDING / METRIC_CODE_PENDING |
+| Census MTIS | 200 | 512행 | **UNKNOWN** (날짜 문자열은 수신, 검사기 공백 파싱 오류) | HTTP_O / DATE_FIX2_PENDING / METRIC_CODE_PENDING |
+| Census M3 | **200** (Fix1) | **128행** | **UNKNOWN** (날짜 문자열 수신, 파싱 보정 전) | **HTTP_O / CODE_IS_MTM_MATCH_O / DATE_FIX2_PENDING** |
 | BEA NIPA T11200, `A051RC` | 200 | 전체 294행 / 해당 시리즈 12점 | **2026Q2** | HTTP_O / SERIES_MATCH_O / RIGHTS_SCOPE_REVIEW |
 | BLS PPI `WPSFD4` | 200 | 21점 | **2026-M09** | HTTP_O / SERIES_MATCH_O / RIGHTS_SCOPE_REVIEW |
 | BLS ULC `PRS85006111` | 200 | 6점 | **2026-Q02** | HTTP_O / TRANSFORM_AND_UNIT_PENDING |
@@ -35,18 +36,18 @@
 ## 원인·재검증
 
 1. **Census 관측일 로그 오류**: 기존 검사기가 `time_slot_id`를 날짜라고 취급하여 `latestPeriod=0`을 썼음. `0`은 실제 발표일로 사용하면 안 됨. 수정 검사기는 `time_slot_date`와 `time_slot_name`을 요청하고 유효한 날짜만 최신일로 인정.
-2. **M3 HTTP 400 원인 가설**: 검사기의 M3 요청에는 공식 API 예시에서 쓰는 `for=us:*`가 없었음. 기존 Growth 수집 코드도 `for=us:*`를 사용. **누락 수정 후 재시도 전에는 원인 확정 불가**. M3 코드 `MTM`은 공식 제조업 총계 계열로 문서화돼 있음.
+2. **M3 HTTP 400 해소**: 공식 API 예시의 `for=us:*`을 요청에 추가한 Fix1에서 **HTTP 200, 128행** 확인. 기존 Growth 코드도 같은 지리 필터 사용. 최초 실패는 누락 때문에 발생했을 가능성이 높지만 변경된 필드도 있어 단독 원인을 확정하지 않음. 샘플 `IS/MTM/yes=1.49`(2026-04-01), `FI/MTM/yes=325218` 수신. 공식 Census 코드표에서 `IS`는 재고/출하 비율, `MTM`은 총제조업. 샘플 숫자의 단위·빈티지는 후속 확인.
 3. **QFR·MTIS 매핑**: 응답 행의 `data_type_code/category_code/seasonally_adj`를 공식 코드표에 대조하여 매출·순이익·재고비율 개념을 정확히 판정. 9,568/512행 성공만으로 원하는 지표가 확보됐다고 인정하지 않음.
-4. **검사기 Fix1**: 기존 CMD 및 JS 2파일의 **조회·로그만 수정**. 5요청 상한 그대로. 재실행 시 보안상 키·원문 응답 미출력, 로그는 CMD 옆에 TXT 생성.
+4. **검사기 Fix1 결과 및 Fix2**: Fix1은 5회 전체 HTTP 200. 단, `time_slot_date`가 `2026-08-01 00:00:00.0`처럼 **날짜 뒤 공백**이 있는 형식이므로 ISO `T`만 허용했던 검사기는 `latestPeriod=UNKNOWN`을 기록했다. Fix2는 앞 10자리 실제 달력 날짜를 검증하여 저장하고, **Census 3요청만** 읽기 전용 재검사한다. TXT는 CMD 옆에 생성하며 키·원문 데이터 비출력.
 5. **라이선스와 공개범위**: 국가통계 원본이라고 모든 행의 상업적 저장·파생·재공개를 자동 승인할 수는 없음. 각 확정 행의 공식 기관 조건 및 3자 자료 혼입 여부를 마지막으로 확인한 다음 사이트에 정보성으로만 편입.
 
 ## 릴리스 게이트
 
 | 게이트 | 현재 |
 |---|---|
-| PC의 기존 키로 공식 API HTTP 확인 | **4/5요청 HTTP 200** |
-| M3 실제 HTTP 성공 | **X — Fix1 재검사 필요** |
-| QFR·MTIS 날짜와 지표 코드 일치 | **보류** |
+| PC의 기존 키로 공식 API HTTP 확인 | **Fix1: 5/5요청 HTTP 200** |
+| M3 실제 HTTP 성공 | **O — Fix1에서 200/128행** |
+| QFR·MTIS·M3 관측일 및 QFR·MTIS 세부 항목 매핑 | **보류 — Fix2 날짜 재검사 필요** |
 | BEA 이익 시리즈 식별 | **O — A051RC / 41** |
 | BLS WPSFD4 원래 의미 | **O — Final demand goods** |
 | BLS ULC 기간·변환·단위 검증 | **보류** |
