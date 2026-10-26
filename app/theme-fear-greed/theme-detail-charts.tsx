@@ -1,5 +1,5 @@
 'use client';
-import {useMemo,useState} from 'react';
+import {useEffect,useMemo,useRef,useState} from 'react';
 import {usePlotArea,useXAxisScale,useYAxisScale,ReferenceDot} from 'recharts';
 import {extremaLeader,placeExtremaLabels} from '../../lib/chart-extrema.mjs';
 import {Search} from 'lucide-react';
@@ -114,6 +114,18 @@ function SoloChartMarkers({rows,low,high,current}:{rows:SoloPoint[];low:SoloPoin
 export default function ThemeDetailCharts(){
  const {payload,error,loading}=useStoredIndex<PublicThemeFeed>('/api/theme-fear-greed');
  const [group,setGroup]=useState('전체'),[query,setQuery]=useState('');
+ const [searchOpen,setSearchOpen]=useState(false);
+ const searchContainerRef=useRef<HTMLDivElement>(null),searchInputRef=useRef<HTMLInputElement>(null);
+ const closeSearch=()=>{setSearchOpen(false);setQuery('');};
+ useEffect(()=>{
+  if(!searchOpen)return;
+  searchInputRef.current?.focus();
+  const onOutsidePointer=(event:PointerEvent)=>{if(!searchContainerRef.current?.contains(event.target as Node))closeSearch();};
+  const onEscape=(event:KeyboardEvent)=>{if(event.key==='Escape')closeSearch();};
+  document.addEventListener('pointerdown',onOutsidePointer);
+  document.addEventListener('keydown',onEscape);
+  return ()=>{document.removeEventListener('pointerdown',onOutsidePointer);document.removeEventListener('keydown',onEscape);};
+ },[searchOpen]);
  const [visible,setVisible]=useState<Set<string>|null>(null);
  const [compareDays,setCompareDays]=useState(90),[comparisonPinned,setComparisonPinned]=useState(false);
  // Never display a cached score once the stored-only API has failed.
@@ -144,7 +156,13 @@ export default function ThemeDetailCharts(){
  const soloCurrent=soloPoints.at(-1);
  return <div className="zg-sfg-content zg-tfg-content">
   <p className="zg-sfg-as-of">{ready.length?'기준일 '+(payload?.observationDate??ready[0].date).replaceAll('-','.')+' · 공개 '+ready.length+'개 / 전체 '+CATALOG.length+'개':'전체 '+CATALOG.length+'개 테마'}</p>
-  <div className="zg-tfg-toolbar"><div className="zg-explorer-filters" role="group" aria-label="테마 분류">{['전체',...THEME_GROUPS.map(g=>g.name)].map(name=><button type="button" key={name} aria-pressed={group===name} onClick={()=>setGroup(name)}>{name}</button>)}</div><label className="zg-explorer-search"><Search size={16}/><input aria-label="테마 검색" type="search" value={query} onChange={e=>setQuery(e.target.value)} placeholder="테마 검색"/></label></div>
+  <div className="zg-tfg-toolbar">
+   <div className="zg-tfg-search-control" ref={searchContainerRef}>
+    <button type="button" className="zg-tfg-search-toggle" aria-label={searchOpen?'테마 검색 닫기':'테마 검색 열기'} aria-expanded={searchOpen} aria-controls="zg-tfg-search-popover" onClick={()=>{if(searchOpen)closeSearch();else setSearchOpen(true);}}><Search size={16} aria-hidden="true"/></button>
+    {searchOpen&&<div className="zg-tfg-search-popover" id="zg-tfg-search-popover"><label className="zg-explorer-search"><Search size={16} aria-hidden="true"/><input ref={searchInputRef} aria-label="테마 검색" type="search" value={query} onChange={e=>setQuery(e.target.value)} placeholder="테마 검색"/></label></div>}
+   </div>
+   <div className="zg-explorer-filters" role="group" aria-label="테마 분류">{['전체',...THEME_GROUPS.map(g=>g.name)].map(name=><button type="button" key={name} aria-pressed={group===name} onClick={()=>{setGroup(name);closeSearch();}}>{name}</button>)}</div>
+  </div>
   {ready.length?<>
    <section className="zg-sfg-ranking" aria-label="공개 테마 투자심리 순위">
     <h2 className="zg-sfg-mobile-ranking-title">테마 심리 순위</h2>
