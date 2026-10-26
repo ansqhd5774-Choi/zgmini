@@ -11,3 +11,11 @@
 - R29 첫 공개 시 상태는 `PUBLIC_API_VERIFIED`여야 한다. `D1_VERIFIED_PUBLIC_API_PENDING`은 D1 저장과 사이트 노출을 구분한 상태이며 공개 완료로 보고하지 않는다.
 - CMD 결과는 CMD 위치 `SPACE_SATELLITE_R29_PUBLICATION_RESULT.txt`에 저장된다. `E:\ZGmini\data`에는 SHA 검증한 계산 파생 파일만 저장된다. `%TEMP%`를 사용하지 않는다.
 - 새 ETF 수집/스케줄러의 반복 운영은 이 R29 배포가 자동으로 활성화하지 않으며 별도로 검증해야 한다.
+
+## R31: 신규 우주·위성 전용 PC 인증 연결 수정
+
+- R30 실 PC 결과는 105개 실제 점수·147개 결측 검증에 통과했고, D1 작업 직전에 `PC_WRANGLER_REAUTH_REQUIRED`로 중단되었다. 이 코드는 신규 D1 writer가 기존 7개 테마 인증 체인이 아닌 구형 optional 단독 Wrangler 탐색기를 잘못 호출했기 때문이다.
+- R31은 기존에 검증된 `theme-optional-cycle.mjs`의 `aiApprovedSevenTokenR1`과 동일한 **원래 7개 테마 PC 소스 선택 → 선택된 소스의 `scripts/pc-writer/d1.mjs`의 `credential(root)`** 인증 체인만 우주·위성에 연결한다.
+- `r179-publish-core.mjs`의 승인된 SHA와 기존 `pc-writer/config.json` 운영 소스를 확인한다. 비밀번호·토큰을 새로 발급하거나 기록하지 않고, 7개 테마 게시기를 실행하지 않는다.
+- 승인 원본의 인증도 유효하지 않으면 `SPACE_R31_APPROVED_SEVEN_CREDENTIAL_FAILED`로 멈추고, 원인을 이용권 또는 ETF AUM 문제로 잘못 분류하지 않는다.
+- `SPACE_SATELLITE_R29_PUBLICATION_RESULT.txt` 출력 파일명과 사용자 CMD 경로는 이전과 동일하며, R31은 기존 9개 테마의 계산·저장·배포 설정을 변경하지 않는다.

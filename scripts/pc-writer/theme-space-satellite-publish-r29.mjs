@@ -7,7 +7,7 @@ import {fileURLToPath} from 'node:url';
 import {runApprovedSpacePcR28} from './theme-space-satellite-operational-r28.mjs';
 import {buildSpaceSatellitePublicR29} from './theme-space-satellite-public-r29.mjs';
 import {spaceSatelliteD1R29} from './theme-space-satellite-d1-r29.mjs';
-import {biotechCloudflareTokenR7} from './theme-biotech-auth-r7.mjs';
+import {spaceSatelliteApprovedSevenTokenR31} from './theme-space-satellite-auth-r31.mjs';
 import {SPACE_SATELLITE_PUBLIC_KEY} from '../../worker/theme-space-satellite-r1.mjs';
 
 const hash=bytes=>createHash('sha256').update(bytes).digest('hex');
@@ -44,7 +44,7 @@ export async function readSpaceCoreR29({fetchImpl=fetch,now=Date.now()}={}){
 export async function runSpacePublishR29({dataRoot,allowPublish=false,
  pcAudit=runApprovedSpacePcR28,save=saveSpaceDerivedR29,
  publicRead=readSpaceCoreR29,d1=null,
- tokenFn=biotechCloudflareTokenR7,now=Date.now}={}){
+ tokenFn=spaceSatelliteApprovedSevenTokenR31,now=Date.now}={}){
  const report={report:'SPACE_SATELLITE_R29_PC_PUBLICATION',
   status:'STARTED',providerCalls:0,d1Writes:0,publicWrites:0,schedulerWrites:0};
  try{
@@ -67,7 +67,7 @@ export async function runSpacePublishR29({dataRoot,allowPublish=false,
   const base=await publicRead({now:now()});
   const record=buildSpaceSatellitePublicR29({candidate,base,
    candidateFileSha256:artifact.sha256,allowPublish:true,now:now()});
-  const store=d1??spaceSatelliteD1R29({dataRoot,tokenFn,clock:now});
+  const store=d1??(await spaceSatelliteD1R29({dataRoot,tokenFn,clock:now}));
   const existing=await store.read(SPACE_SATELLITE_PUBLIC_KEY);
   const written=await store.writeVersioned(SPACE_SATELLITE_PUBLIC_KEY,record,
    existing?.storedAt??null);

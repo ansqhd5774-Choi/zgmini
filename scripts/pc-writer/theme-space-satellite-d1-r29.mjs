@@ -7,13 +7,13 @@ import {SPACE_SATELLITE_PUBLIC_KEY,SPACE_SATELLITE_PUBLIC_VERSION} from
 
 const need=(ok,code)=>{if(!ok)throw Object.assign(new Error(code),{code});};
 const SELECT="SELECT body,stored_at FROM public_feed_snapshots_v1 WHERE kind='output' AND feed_key=? AND snapshot_key='current'";
-export function spaceSatelliteD1R29({dataRoot,tokenFn,fetchImpl=fetch,clock=Date.now}={}){
+export async function spaceSatelliteD1R29({dataRoot,tokenFn,fetchImpl=fetch,clock=Date.now}={}){
  need(typeof dataRoot==='string'&&typeof tokenFn==='function',
  'SPACE_R29_D1_ARGUMENTS_INVALID');
  const cfg=JSON.parse(fs.readFileSync(path.join(dataRoot,'pc-writer','config.json'),'utf8'));
  need(/^[a-f0-9]{32}$/.test(cfg.account)&&/^[a-f0-9-]{36}$/.test(cfg.core),
  'SPACE_R29_D1_CONFIG_INVALID');
- const token=tokenFn({dataRoot});
+ const token=await tokenFn({dataRoot});
  need(typeof token==='string'&&token.length>10,'SPACE_R29_D1_AUTH_UNAVAILABLE');
  let writeAttempted=false;
  async function query(sql,params,{write=false}={}){
