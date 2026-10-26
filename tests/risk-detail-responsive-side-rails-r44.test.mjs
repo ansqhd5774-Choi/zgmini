@@ -55,9 +55,9 @@ test("only the dashboard mounts public chat; risk detail neither mounts nor impo
  assert.doesNotMatch(rails,/fetch\(/);
 });
 
-test("wide risk detail content expands into space formerly reserved for chat without changing dashboard geometry",()=>{
+test("removing risk chat leaves both risk and dashboard content geometry unchanged",()=>{
  assert.match(css,/@media\(min-width:1650px\)/);
- assert.match(css,/\.zg-risk-side-rails-root\.zg-risk-only-nav\+main\{width:calc\(100% - 320px\);max-width:1500px/);
- assert.match(css,/margin-right:24px;transform:none/);
+ assert.match(css,/\.zg-risk-side-rails-root\+main\{width:calc\(100% - 670px\);max-width:1152px;margin-left:auto;margin-right:auto;transform:translateX\(-30px\)/);
+ assert.doesNotMatch(css,/\.zg-risk-side-rails-root\.zg-risk-only-nav\+main/);
  assert.match(read("components/dashboard-side-rails.css"),/width:calc\(100% - 670px\)/);
 });
