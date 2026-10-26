@@ -23,6 +23,14 @@ const eventKinds:Record<string,{category:string;name:string;major:boolean}>={
  retail:{category:'소비',name:'미국 소매판매',major:true},
  'industrial-production':{category:'제조',name:'미국 산업생산',major:false},
  cpi:{category:'물가',name:'미국 소비자물가지수(CPI)',major:true},
+ ppi:{category:'물가',name:'미국 생산자물가지수(PPI)',major:true},
+ jolts:{category:'고용',name:'미국 구인·이직 조사(JOLTS)',major:true},
+ eci:{category:'고용',name:'미국 고용비용지수(ECI)',major:true},
+ 'import-export-prices':{category:'무역',name:'미국 수출입물가지수',major:false},
+ productivity:{category:'생산성',name:'미국 생산성·단위노동비용',major:false},
+ 'real-earnings':{category:'고용',name:'미국 실질임금',major:false},
+ 'consumer-expenditures':{category:'소비',name:'미국 소비자지출 조사',major:false},
+ 'employer-compensation':{category:'고용',name:'미국 고용주 인건비 조사',major:false},
  fomc:{category:'금리',name:'미국 FOMC 기준금리 결정',major:true},
  press:{category:'금리',name:'FOMC 기자회견',major:false},
 };
@@ -53,6 +61,11 @@ const elapsed=(deadline:string,nowMs:number)=>{
 const diffDays=(a:string,b:string)=>Math.round((parseDay(a).getTime()-parseDay(b).getTime())/86400000);
 const dateCaption=(key:string)=>`${Number(key.slice(5,7))}.${key.slice(8,10)}`;
 const weekTitle=(start:string)=>`${Number(start.slice(5,7))}월 ${Math.ceil(Number(start.slice(8,10))/7)}주차`;
+const officialName=(item:OfficialEvent,defaultName:string)=>{
+ if(item.id!=='gdp')return defaultName;
+ const stage=/\bAdvance Estimate\b/i.test(item.title)?'1차 추정':/\bSecond Estimate\b/i.test(item.title)?'2차 추정':/\bThird Estimate\b/i.test(item.title)?'3차 추정':/\bInitial Estimate\b/i.test(item.title)?'초기 추정':/\bUpdated Estimate\b/i.test(item.title)?'수정 추정':null;
+ return stage?`${defaultName} · ${stage}`:defaultName;
+};
 
 function snapshotRows():CalendarRow[]{
  const scheduled:CalendarRow[]=snapshot.events.map(item=>{
@@ -74,22 +87,25 @@ function mergeOfficial(feed:CalendarFeed|null):CalendarRow[]{
  const fromFeed:CalendarRow[]=[];
  const seen=new Set<string>();
  for(const item of feed.events){
-  if(!validDate(item.date)||!eventKinds[item.id]||typeof item.sourceUrl!=='string'||!item.sourceUrl.startsWith('https://'))continue;
-  if(item.id==='cpi'||item.id==='fomc'||item.id==='press')continue;
+  if(!validDate(item.date)||!(eventKinds[item.id]||((item.source==='bls'||item.source==='bea')&&item.id.startsWith(`${item.source}-`)))||typeof item.sourceUrl!=='string'||!item.sourceUrl.startsWith('https://'))continue;
+  if(item.id==='fomc'||item.id==='press')continue;
   const duplicate=`${item.id}:${item.date}`;
   if(seen.has(duplicate))continue;
   seen.add(duplicate);
   const sourceState=feed.sources?.[item.source];
   const checkedAt=sourceState?.checkedAt??null;
   const fresh=sourceState?.status==='READY'&&!!checkedAt&&Date.now()-Date.parse(checkedAt)>=0&&Date.now()-Date.parse(checkedAt)<=48*3600000;
-  const meta=eventKinds[item.id];
+  const meta=eventKinds[item.id]??{category:item.source==='bls'?'고용·노동':'경제',name:item.title,major:false};
   // Provider feed supplies dates only. Keep an exact clock time solely when
   // the already verified manual snapshot matches this event and day.
-  const timed=item.id==='pce'?manual.find(row=>row.key.startsWith('manual-pce-')&&row.date===item.date):null;
-  fromFeed.push({key:`official-${duplicate}`,date:item.date,at:timed?.at??null,name:meta.name,country:'US',category:meta.category,kind:'economic',actual:null,forecast:null,previous:null,major:meta.major,source:sourceNames[item.source]??item.source,sourceUrl:item.sourceUrl,checkedAt:timed?.checkedAt??checkedAt,fresh:timed?false:fresh,status:'scheduled'});
+  const timed=manual.find(row=>row.key.startsWith(`manual-${item.id}-`)&&row.date===item.date);
+  // Existing verified actuals supersede past date-only schedule placeholders.
+  const hasActual=manual.some(row=>row.status==='released'&&row.date===item.date&&((item.id==='cpi'&&row.source==='BLS')||(item.id==='pce'&&row.source==='BEA')));
+  if(hasActual)continue;
+  fromFeed.push({key:`official-${duplicate}`,date:item.date,at:timed?.at??null,name:officialName(item,meta.name),country:'US',category:meta.category,kind:'economic',actual:null,forecast:null,previous:null,major:meta.major,source:sourceNames[item.source]??item.source,sourceUrl:item.sourceUrl,checkedAt:timed?.checkedAt??checkedAt,fresh:timed?false:fresh,status:'scheduled'});
  }
- const scheduledIds=new Set(fromFeed.map(row=>`${row.date}:${row.category==='물가'?'pce':row.category==='경기'?'gdp':'?'}`));
- return [...fromFeed,...manual.filter(row=>!row.key.startsWith('manual-pce-')||!scheduledIds.has(`${row.date}:pce`))];
+ const scheduledIds=new Set(fromFeed.map(row=>row.key.slice('official-'.length)));
+ return [...fromFeed,...manual.filter(row=>row.status==='released'||!scheduledIds.has(`${row.key.split('-')[1]}:${row.date}`))];
 }
 
 export default function MarketCalendar(){
