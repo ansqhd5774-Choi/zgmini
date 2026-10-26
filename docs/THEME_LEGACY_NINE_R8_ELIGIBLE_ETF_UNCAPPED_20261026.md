@@ -77,6 +77,8 @@
 ## 5. 진행 중인 실조사 증거
 - [R9: 발행사 공식 1차 탐색 — 신규 23개 후보](THEME_LEGACY_NINE_R9_ETF_ISSUER_DISCOVERY_20261026.md)
 - [R10: 추가 발행사 2차 탐색 — 신규 14개 후보](THEME_LEGACY_NINE_R10_ETF_ISSUER_DISCOVERY_20261026.md)
+- [R11: 연구용 ETF 후보 머신 목록 — 기존 18편입 위치와 신규 37개 후보, 각 gate별 PENDING](../config/theme-nine-r11-eligibility-candidates.json)
+- [R12: 가격 공급원 공식 라이선스 및 유료/무료·조정가격 위험 확인](THEME_LEGACY_NINE_R12_MARKETDATA_RIGHTS_GATES_20261026.md)
 - **신규 후보 총 37개는 사용권·가격 수집·AUM 미검증 후보**다. 합격 ETF 37개 또는 ETF 목표 37개로 해석하지 않는다. 후보 조사·적격성 판정은 계속한다.
 
 ## 6. 참조
