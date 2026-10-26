@@ -3,7 +3,7 @@
 - 확정일: 2026-10-26 (사용자 승인: “브랜치에 반영해라”)
 - 적용 브랜치: `codex/theme-fear-greed-integration-20261025`
 - 브랜치 통합: 2026-10-26 사용자 지시. 이전 `research/theme-nine-r2-shadow-20261026`는 **과거 연구 이력**이며 이후 신규 작업·수정은 하지 않는다.
-- 상태: `TOOL_PLAN_APPROVED / R23_STAGE1_PC_64_OF_64_COMPLETE / R24_STAGE2_PC_AUDIT_COMPLETE / R25_STAGE3_PC_RESULT_AUDITED / R26_STAGE4_OFFICIAL_CENSUS_63_OF_63 / R32_STAGE5_PREFLIGHT_PASS / R32_STAGE5_AGGREGATION_PENDING / SHADOW_ONLY`
+- 상태: `TOOL_PLAN_APPROVED / R23_STAGE1_PC_64_OF_64_COMPLETE / R24_STAGE2_PC_AUDIT_COMPLETE / R25_STAGE3_PC_RESULT_AUDITED / R26_STAGE4_OFFICIAL_CENSUS_63_OF_63 / R32_STAGE5_UPLOADED_JSON_PREFLIGHT_PASS / R32_STAGE5_PC_CMD_RETRY_PENDING / R32_STAGE5_AGGREGATION_PENDING / SHADOW_ONLY`
 - 최상위 적용: 10번째 우주·위성 R29·R32 기존 계산 계약, R19 3개 O/X 결과, R20 후보 승인 명단. 본 문서는 **도구·실행 담당·작업 순서만 확정**하며 산식 자체를 변경하지 않는다.
 
 ## 1. 확정 범위
@@ -69,3 +69,9 @@
 
 - [승인 산식 원문 재사용·비공개 CMD·64종 모의 테스트](THEME_LEGACY_NINE_R25_PRIVATE_SCORE_20261027.md)
 - 상태: `PC_RUN_RESULT_INTEGRITY_PASS / R26_OFFICIAL_AUM_SOURCE_CENSUS_63_OF_63 / R32_PREFLIGHT_PASS / NO_PUBLICATION`. [R25 PC 결과 검증](THEME_LEGACY_NINE_R25_PC_RESULT_AUDIT_20261027.md)과 [R26 공식 AUM 전수 조사](THEME_LEGACY_NINE_R26_OFFICIAL_AUM_RESEARCH_20261027.md), [R32 실제 R25 입력 사전점검](THEME_LEGACY_NINE_R32_PRIVATE_PREFLIGHT_20261027.md)를 참고한다.
+
+## 9. R32 PC 사전점검 1차 오류 후 수정
+
+- 2026-10-27 실제 Windows CMD 로그: 내장 파일 SHA 확인 PASS, 파일 열기 `ENOENT`로 STOP. R32 계산 완료 상태가 아니다.
+- `%~dp0` 폴더 인수의 Windows 인용부호/종단 백슬래시 문제 가능성을 제거하기 위해 환경변수로 전달하는 개정 CMD를 해당 브랜치에 반영했다. 수정 후 모의 검증 5/5 PASS, 내장 세 파일 SHA readback PASS. 재실행 TXT 제출 대기.
+- 기존 ETF 후보, R25 실점수 JSON, 공식 AUM 출처와 기준일, 승인 산식, 원자료·DB·스케줄러·공개 배포를 변경하지 않았다.
