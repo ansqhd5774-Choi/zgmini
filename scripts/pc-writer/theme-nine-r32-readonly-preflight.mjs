@@ -32,7 +32,7 @@ function exactlySameSymbols(actual, expected, code) {
     new Set(actual).size !== expected.length ||
     expected.some(s => !actual.includes(s))) fail(code);
 }
-function findR25(directory, explicitPath = '') {
+export function findR25(directory, explicitPath = '') {
   if (explicitPath) {
     const resolved = path.resolve(explicitPath);
     if (!fs.existsSync(resolved)) fail('R25_SELECTED_FILE_NOT_FOUND');
