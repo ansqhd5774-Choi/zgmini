@@ -9,7 +9,7 @@ const base=process.env.CHAT_PREVIEW_URL??"http://127.0.0.1:5173";
 const browser=await chromium.launch({headless:true,args:["--no-sandbox"]});
 const errors=[];
 try{
- for(const width of [390,768,1440,1920]){
+ for(const width of [390,430,620,768,1024,1349,1350,1440,1920]){
   const page=await browser.newPage({viewport:{width,height:950},reducedMotion:width===390?"reduce":"no-preference"});
   page.on("pageerror",error=>errors.push(width+": "+error.message));
   await page.route("**/api/rate-sentiment",r=>r.fulfill({status:200,contentType:"application/json",body:JSON.stringify({
@@ -109,6 +109,27 @@ try{
    return {introColumns:getComputedStyle(intro).gridTemplateColumns.split(" ").length,
     mainColumns:getComputedStyle(main).gridTemplateColumns.split(" ").length};
   });
+  const fedVisual=await root.evaluate(el=>{
+   const intro=el.querySelector(".ob53-intro-grid").getBoundingClientRect();
+   const score=el.querySelector(".ob53-score-card").getBoundingClientRect();
+   const main=el.querySelector(".ob53-main-grid").getBoundingClientRect();
+   const chart=el.querySelector(".ob53-chart").getBoundingClientRect();
+   const news=el.querySelector(".ob57-news").getBoundingClientRect();
+   return {scoreWidthFraction:score.width/intro.width,
+    chartWidthFraction:chart.width/(chart.width+news.width),
+    newsWidthFraction:news.width/(chart.width+news.width),
+    chartBeforeNews:chart.right<=news.left+1 || news.top>=chart.bottom-1,
+    introFills:Math.abs(intro.width-main.width)<2};
+  });
+  assert(fedVisual.scoreWidthFraction>.96&&fedVisual.introFills,
+   "R58: score strip must fill entire page width without a hidden right column");
+  if(width>=851){
+   assert(fedVisual.chartWidthFraction>.29&&fedVisual.chartWidthFraction<.39,
+    "R58: desktop chart must occupy approximately 34% of the two-column content");
+   assert(fedVisual.newsWidthFraction>.61&&fedVisual.newsWidthFraction<.71,
+    "R58: desktop news must occupy approximately 66% of the two-column content");
+  }
+  assert(fedVisual.chartBeforeNews,"R58: news must appear beside or below chart");
   await page.screenshot({path:"artifacts/outbreak-scenarios/analysis-fed-"+width+".png",fullPage:true});
 
   const disclosures=root.locator("details.ob53-details");
@@ -175,6 +196,23 @@ try{
     scoreHasScale:!!intro.querySelector(".ob55-score-card .ob54-scale")};
   });
   assert.deepEqual(iranGeometry,{...fedGeometry,scoreHasScale:true},"Iran uses the same grid breakpoints as the approved rate detail");
+  const iranVisual=await root.evaluate(el=>{
+   const intro=el.querySelector(".ob55-intro").getBoundingClientRect();
+   const score=el.querySelector(".ob55-score-card").getBoundingClientRect();
+   const chart=el.querySelector(".ob55-main .ob54-trend").getBoundingClientRect();
+   const news=el.querySelector(".ob55-main .ob57-news").getBoundingClientRect();
+   return {scoreWidthFraction:score.width/intro.width,
+    chartWidthFraction:chart.width/(chart.width+news.width),
+    newsWidthFraction:news.width/(chart.width+news.width)};
+  });
+  assert(iranVisual.scoreWidthFraction>.96,
+   "R58: Iran score and scale must fill the entire header width");
+  if(width>=851){
+   assert(iranVisual.chartWidthFraction>.29&&iranVisual.chartWidthFraction<.39,
+    "R58: Iran chart must occupy approximately 34% of desktop width");
+   assert(iranVisual.newsWidthFraction>.61&&iranVisual.newsWidthFraction<.71,
+    "R58: Iran news must occupy approximately 66% of desktop width");
+  }
   assert.equal(await root.locator(".ob54-relations strong").count(),3);
   assert.equal(await root.locator(".ob54-relations strong").first().textContent(),"미확인");
   assert.equal(await root.locator(".ob54-disclosure").count(),2);

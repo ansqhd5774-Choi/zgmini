@@ -199,3 +199,45 @@
  .ob-events .ob57-news-item{padding:10px 11px}
 }
 @media(prefers-reduced-motion:reduce){.ob-events .ob57-news-more svg{transition:none}}
+
+
+/* R58: the older R53/R55 component sheets can be emitted after this file.
+   Increase selector specificity for geometry so the approved Option 5 grid
+   wins regardless of bundler CSS import order. */
+@media(min-width:851px){
+ .ob-events .ob-selected-event-panel .ob-beginner-detail .ob53-intro-grid,
+ .ob-events .ob-selected-event-panel .ob55-iran-parity .ob55-intro{
+  grid-template-columns:minmax(0,1fr);
+ }
+ .ob-events .ob-selected-event-panel .ob-beginner-detail .ob53-main-grid,
+ .ob-events .ob-selected-event-panel .ob55-iran-parity .ob55-main{
+  grid-template-columns:minmax(0,.68fr) minmax(0,1.32fr);
+ }
+ .ob-events .ob-selected-event-panel .ob-beginner-detail .ob53-score-card,
+ .ob-events .ob-selected-event-panel .ob55-iran-parity .ob55-score-card{
+  display:grid;grid-template-columns:minmax(330px,440px) minmax(0,1fr);
+  border:0;border-radius:4px;background:#071e2c;
+  padding:13px 18px;box-shadow:none;
+ }
+ .ob-events .ob-selected-event-panel .ob-beginner-detail .ob53-chart,
+ .ob-events .ob-selected-event-panel .ob55-iran-parity .ob54-trend{
+  border:0;border-radius:4px;background:#071e2c;
+  padding:13px 14px;box-shadow:none;
+ }
+ .ob-events .ob-selected-event-panel .ob53-market-chart,
+ .ob-events .ob-selected-event-panel .ob54-market-chart{height:215px;min-height:0}
+}
+@media(min-width:851px) and (max-width:1000px){
+ .ob-events .ob-selected-event-panel .ob-beginner-detail .ob53-score-card,
+ .ob-events .ob-selected-event-panel .ob55-iran-parity .ob55-score-card{
+  grid-template-columns:minmax(0,1fr);
+ }
+}
+@media(max-width:850px){
+ .ob-events .ob-selected-event-panel .ob-beginner-detail .ob53-intro-grid,
+ .ob-events .ob-selected-event-panel .ob55-iran-parity .ob55-intro,
+ .ob-events .ob-selected-event-panel .ob-beginner-detail .ob53-main-grid,
+ .ob-events .ob-selected-event-panel .ob55-iran-parity .ob55-main{
+  grid-template-columns:minmax(0,1fr);
+ }
+}
