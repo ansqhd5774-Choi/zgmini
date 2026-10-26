@@ -12,6 +12,8 @@ export const PUBLISHER = 'Fortune Business Insights';
 export const REPORT_URL = 'https://www.fortunebusinessinsights.com/industry-reports/nuclear-power-market-100734';
 export const TOPIC = 'nuclear power';
 const MAX_SOURCE_BYTES = 1_500_000;
+// Speed-only sample. This is NOT a fresh market observation or an input to G.
+const SPEED_SAMPLE = 'Nuclear power market: global market size was USD 40.48 billion in 2025. The market is forecast to increase from USD 41.68 billion in 2026 to USD 52.62 billion by 2034, exhibiting a CAGR of 2.96% during the forecast period.';
 
 function plainText(html) {
   return html
@@ -97,27 +99,37 @@ export async function benchmark({
   topic = TOPIC,
   ollamaHost = 'http://127.0.0.1:11434',
   model = process.env.ZG_OLLAMA_MODEL || '',
+  mode = 'live',
   now = () => performance.now(),
   maxMs = MAX_TOTAL_MS,
 } = {}) {
   if (maxMs <= 0 || maxMs > MAX_TOTAL_MS) throw new Error('INVALID_DEADLINE');
+  if (!['live', 'model-only'].includes(mode)) throw new Error('INVALID_MODE');
   if (new URL(sourceUrl).origin !== new URL(REPORT_URL).origin) throw new Error('INVALID_PUBLISHER_HOST');
   if (!/^https?:\/\/127\.0\.0\.1:11434\/?$/.test(ollamaHost)) throw new Error('INVALID_OLLAMA_HOST');
   const began = now();
   const abort = new AbortController();
   const timer = setTimeout(() => abort.abort(), maxMs);
   const result = { state: 'FAILED', publisher: PUBLISHER, topic,
+    source_mode: mode === 'model-only' ? 'REFERENCE_SAMPLE_NOT_LIVE' : 'LIVE_PUBLISHER',
     url: sourceUrl, deadline_ms: maxMs, publisher_requests: 0, ollama_generations: 0,
     publisher_ms: null, ollama_ms: null, total_ms: null, model: null,
     growth_pct: null, metric: null, period_start: null, period_end: null,
     ollama_reported_ms: null, ollama_eval_tokens: null, failure: null };
   try {
-    const sourceBegan = now();
-    result.publisher_requests = 1;
-    const sourceResponse = await fetchFn(sourceUrl, { signal: abort.signal,
-      headers: { accept: 'text/html' }, redirect: 'follow' });
-    const { excerpt } = await readSmallSource(sourceResponse, topic, abort.signal);
-    result.publisher_ms = Math.round(now() - sourceBegan);
+    let excerpt;
+    if (mode === 'model-only') {
+      excerpt = SPEED_SAMPLE;
+      result.publisher_ms = 0;
+    } else {
+      const sourceBegan = now();
+      result.publisher_requests = 1;
+      const sourceResponse = await fetchFn(sourceUrl, { signal: abort.signal,
+        headers: { accept: 'text/html' }, redirect: 'follow' });
+      const sourceData = await readSmallSource(sourceResponse, topic, abort.signal);
+      excerpt = sourceData.excerpt;
+      result.publisher_ms = Math.round(now() - sourceBegan);
+    }
     if (now() - began >= maxMs) throw new Error('TOTAL_DEADLINE_EXCEEDED');
 
     const ollamaBegan = now();
@@ -173,9 +185,13 @@ function serialize(result) {
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  const result = await benchmark({ model: process.argv[2] || process.env.ZG_OLLAMA_MODEL || '' });
+  const onlyModel = process.argv[2] === '--ollama-only';
+  const selectedModel = onlyModel ? process.argv[3] : process.argv[2];
+  const result = await benchmark({ mode: onlyModel ? 'model-only' : 'live',
+    model: selectedModel || process.env.ZG_OLLAMA_MODEL || '' });
   const report = serialize(result);
-  const path = join(dirname(fileURLToPath(import.meta.url)), 'R23_OLLAMA_GROWTH_RESULT.txt');
+  const path = join(dirname(fileURLToPath(import.meta.url)),
+    onlyModel ? 'R24_OLLAMA_ONLY_RESULT.txt' : 'R23_OLLAMA_GROWTH_RESULT.txt');
   try { await writeFile(path, report, 'utf8'); }
   catch (error) { console.error('REPORT_WRITE_FAILED=' + error.message); }
   process.stdout.write(report + '\n');
