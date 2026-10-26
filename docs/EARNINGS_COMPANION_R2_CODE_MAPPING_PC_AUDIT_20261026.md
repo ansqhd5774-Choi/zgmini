@@ -196,3 +196,25 @@ Windows QFR API 표본의 조정표시가 `no`임을 확인했다. Census 2026 Q
 **자료 출처:** 사용자 Windows 읽기 전용 로그 \`EARNINGS_R2_PC_FRESHNESS_RESULT_20261026-143041Z.txt\`; U.S. Census Bureau [MTIS 2026년 8월](https://www.census.gov/mtis/current/index.html), [QFR 2026년 2분기](https://www.census.gov/econ/qfr/mmws/current/index.html), [M3](https://www.census.gov/manufacturing/m3/current/index.html).
 
 **변경 영향:** 기존 GitHub 작업 브랜치의 검증 보고 문서만 수정. PC DB·새 API 호출·산식·스케줄러·D1·Production 게시 없음.
+
+
+## 9. R2 추가 공식 교차검증 — PPI 시리즈명 충돌 및 상업 고지
+
+**BLS WPSFD4 라벨 정정 필요 (실제 신규 지표 선택 전 HOLD):**
+
+- BLS의 공식 FD-ID series ID 목록은 \`WPUFD4 = Final demand (최종수요 전체)\`, \`WPUFD41 = Final demand goods (최종수요 재화)\`로 구분한다. 해당 BLS 문서는 계절조정 시 \`WPU\`를 \`WPS\`로 대체한다고 직접 명시한다. 따라서 **\`WPSFD4 = 계절조정 최종수요 전체\`**, **\`WPSFD41 = 계절조정 최종수요 재화\`**로 읽는 것이 코드 규칙에 부합한다.
+- 이전 R2 검색에서 발견한 BLS 과거 계절조정표에는 \`WPSFD4\`를 \`Final demand goods\`라고 적은 항목도 있었다. **공식 페이지 사이 라벨 충돌**이 있으므로 이 검증만으로 기존 공개/수집 \`WPSFD4\` 값을 재명명하거나 \`WPSFD41\`로 교체하지 않는다. 실제 공식 BLS API 응답의 \`seriesID\`, 관측값, 현행 series title 확인 전 C 지표의 정확한 제목은 **HOLD_LABEL_PARITY**.
+- **이 보고서 3절·BEA/BLS 타 문서에서 \`WPSFD4\`가 재화 전체만 뜻한다는 기존 서술은 확정 근거로 사용하지 않는다.** 실제 지표명의 정합성은 운영 원자료와 대조해야 한다.
+- BLS \`PRS85006111\`는 비농업 부문 전체 근로자 단위노동비용 시리즈 후보로 외부 FRED 재현 화면에서 명칭이 확인되지만, **원 공급원 BLS API 실제 시리즈 ID/단위·연율화 여부 확인 전** R2 HTTP·정식 가공 규칙 확정으로 표시하지 않는다.
+- BEA \`A051RC\`는 IVA/CCAdj 조정 기업이익의 series code 후보이며, 실제 사용 후보 \`T11200\` 행별 적용기간·조정/단위 확인 전 정보성 C 게시 보류.
+
+**Census 서비스 출처 고지:** 공식 API 약관은 서비스 내 Census API 이용 사실, Census가 상품을 후원·인증하지 않는다는 취지의 **눈에 잘 보이는 고지**를 요구한다. 향후 \`/data-sources/\`와 C 정보성 패널에 이 요건을 반영한 표시안을 제안하되, **새 UI·공개 필드 변경은 R4/R5 승인 후** 적용한다. 데이터셋별 저장/파생/상업 이용 최종 판정은 계속 조건부 보류한다.
+
+1차 공식 근거:
+- BLS FD-ID ID 목록: https://www.bls.gov/ppi/fd-id/ppi-final-demand-intermediate-demand-aggregation-indexes-by-title-and-series-id.htm
+- BLS 계절조정 series 명칭표: https://www.bls.gov/web/ppi/ppi-fdidsf.htm
+- 과거 계절조정표(충돌 사례): https://www.bls.gov/ppi/tables/final-demand-intermediate-demand-aggregation-index-seasonal-factors-2020-2024.htm
+- BLS 노동생산성/단위노동비용: https://www.bls.gov/charts/productivity-and-costs/nonfarm-business-sector-labor-costs-percent-change.htm
+- Census API ToS: https://www.census.gov/data/developers/about/terms-of-service.html
+
+**변경 영향:** 공식 메타데이터 교차검증과 문서 기록만 수행. API 0회, PC DB/D1/운영 수집기·산식·사이트 수정 0회.
