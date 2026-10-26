@@ -10,6 +10,7 @@ import {publishIranNewsDisplay} from '../scripts/iran-progress/news-display-publ
 import {storedIranNewsResponse} from '../worker/iran-news-display-public-r1.mjs';
 import {IRAN_NEWS_DISPLAY_KEY} from '../lib/iran-progress/news-display-r1.mjs';
 import {parseGovUkNewsCandidates,discoverGovUkNewsCandidates,IRAN_GOVUK_NEWS_FEED} from '../scripts/iran-progress/news-display-discover-r1.mjs';
+import {runIranNewsDisplayMaintenance} from '../scripts/iran-progress/news-display-maintenance-r1.mjs';
 
 const now=Date.parse('2026-10-26T15:00:00.000Z'); // KST 10/27 00:00
 const item=(date,extra={})=>({source:'GOV.UK',title:'Government statement on Iran talks',summary:'The government issued a statement.',
@@ -125,4 +126,28 @@ test('GOV.UK discovery preserves published time, drops updates and never approve
 test('discovery fails closed on unsafe XML and transport errors',async()=>{
  assert.throws(()=>parseGovUkNewsCandidates('<!DOCTYPE feed><feed></feed>',{now}),/NEWS_DISCOVERY_FEED_INVALID/);
  await assert.rejects(discoverGovUkNewsCandidates({now,fetcher:async()=>new Response('offline',{status:503})}),/NEWS_DISCOVERY_SOURCE_FAILED/);
+});
+test('PC maintenance mode gates actual cache rewrite and D1 publication separately',async()=>{
+ const root=mkdtempSync(path.join(tmpdir(),'iran-news-cycle-test-'));
+ const file=path.join(root,DISPLAY_CACHE_BASENAME);
+ try{
+  const incoming=[item('2026-10-26T01:00:00Z')];
+  const dry=await runIranNewsDisplayMaintenance({dataDirectory:root,incoming,now});
+  assert.equal(dry.publication,'SKIPPED_DRY_RUN');
+  assert.equal(existsSync(file),false);
+  await assert.rejects(runIranNewsDisplayMaintenance({dataDirectory:root,incoming,now,mode:'publish'}),/NEWS_PUBLICATION_CONFIG_REQUIRED/);
+  assert.equal(existsSync(file),false);
+  const applied=await runIranNewsDisplayMaintenance({dataDirectory:root,incoming,now,mode:'apply'});
+  assert.equal(applied.written,true);
+  assert.equal(applied.visibleCount,1);
+  assert.equal(applied.publication,'SKIPPED_NOT_REQUESTED');
+  let row=null;
+  const remote={query:async()=>({results:row?[row]:[]}),request:async(_db,statements)=>{
+   row={body:statements[0].params[1],stored_at:statements[0].params[2]};
+  }};
+  const published=await runIranNewsDisplayMaintenance({dataDirectory:root,now,mode:'publish',remote,db:'core'});
+  assert.equal(published.visibleCount,1);
+  assert.equal(published.publication,'VERIFIED');
+  assert.equal(JSON.parse(row.body).itemCount,1);
+ }finally{rmSync(root,{recursive:true,force:true});}
 });
