@@ -277,7 +277,7 @@ function assembleCollected({fredResults, externalResults, fundFlows, breadth, ea
 
   const fredFailed = fredResults
     .filter(result => result?.status !== 'READY_CURRENT_VINTAGE')
-    .map(result => ({seriesId: result?.seriesId ?? null, status: result?.status ?? 'UNKNOWN'}));
+    .map(result => ({seriesId: result?.seriesId ?? null, status: result?.status ?? 'UNKNOWN',httpStatus:result?.httpStatus??null,networkCode:result?.networkCode??null,requestCount:result?.requestCount??0,durationMs:result?.durationMs??null}));
 
   const latestDate = rows =>
     Array.isArray(rows) && rows.length ? rows.at(-1)?.observationDate ?? null : null;

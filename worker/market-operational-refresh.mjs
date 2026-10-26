@@ -17,10 +17,11 @@ import {createMarketScoreR1Handler} from './market-score-r1.mjs';
 import {buildStoredDiagnostic} from './stored-diagnostic-r61.mjs';
 import {marketOperationalStore,readStoredMarketInputs} from './market-operational-store.mjs';
 import {writeProjectionMacroSlices} from './projection-input-writer-r60.mjs';
-import {macroCollectionReadiness,mergeSuccessfulMacroCredit} from './macro-result-contract-r61.mjs';
+import {macroCollectionReadiness,mergeSuccessfulMacroCredit,safeMacroDiagnostic} from './macro-result-contract-r61.mjs';
 import {mergeStoredCompositeTrend,oneYearHistoryStart} from './composite-history.mjs';
 
-export const MARKET_COLLECTION_JOBS=Object.freeze(['macroCredit','macro','rates','credit','supply','fundFlows','bisDsr','bisTc','earnings','consumption','breadth','inflation','employment','growth']);
+import {MARKET_COLLECTION_JOBS} from './market-collection-jobs.mjs';
+export {MARKET_COLLECTION_JOBS};
 const SOURCE_GROUPS={macro:['fetchFred'],credit:['fetchOfr','fetchCmdi'],supply:['fetchGscpi','fetchCopper'],fundFlows:['fetchFundFlows']};
 const EXTERNAL_KEYS={macro:['publicDomainScores'],credit:['dvpRepoRows','triPartyRepoRows','cmdiRows'],supply:['gscpiRows','copperRows'],fundFlows:['registeredFundFlowRows']};
 async function collectGroup(args,group){
@@ -118,7 +119,7 @@ export async function runMarketOperationalRefresh({env,job,store,now=Date.now(),
    for(const item of fred?.failed??[]){const status=/^[A-Z0-9_]{1,64}$/.test(item?.status??'')?item.status:'UNKNOWN';failures[status]=(failures[status]??0)+1;}
    console.warn('R60_MACRO_SOURCE_FAILED',JSON.stringify({...macroReadiness,failures}));
    await store.finish(selected,jobLease,now,'SOURCE_FAILED');
-   return {status:'SOURCE_FAILED',job:selected,reason:macroReadiness.reason};
+   return {status:'SOURCE_FAILED',job:selected,reason:macroReadiness.reason,sourceDiagnostic:safeMacroDiagnostic({provider:'FRED',...macroReadiness,failed:fred?.failed??[]})};
   }
   const collectedStatus=collected?.status??collected?.rateR2?.status;
   if(!groupedInputValid(selected,collected)){
