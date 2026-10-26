@@ -50,6 +50,7 @@
 ## 4. 구현된 비공개 검증 도구 R1
 
 - `config/theme-nine-remodel-scope-r1.json`: 기존 9개 고정 ID와 등록부 메서드 불변 경계.
+- `scripts/pc-writer/theme-nine-baseline-r1.cmd`: 승인 PC의 기존 파일/해시 검사기와 관련 Windows 작업 4종에 대한 **읽기 전용** 점검. 같은 CMD 폴더에 `THEME_NINE_BASELINE_R1_RESULT.txt` 출력. 기존 등록부 전체를 스캔하되, 개편 판정 대상은 고정 9개만이다. 미등록 manifest는 실제 가격이 존재하지 않는다는 증거가 아니다.
 - `scripts/pc-writer/theme-nine-shadow-r1.mjs`: 별도 저장 가격 JSON을 이용한 **읽기 전용** R188/R2 날짜별 비교·기존 공개값 대비 차이 분석. 공급자 GET, D1/DB 쓰기, 스케줄러 편집, GitHub 업로드 없음.
 - `tests/theme-nine-shadow-r1.test.mjs`: 동일 628+ 가격의 R188=R2, 조기 상장·결측, 등록부 드리프트·출처 불명 및 9개 커버리지 테스트.
 
@@ -76,6 +77,7 @@
 - `sourceEvidence`는 provenance를 찾기 위한 **입력 메모**일 뿐이다. 이 도구는 원자료 파일 SHA 또는 권리 증거를 직접 열어 검증하지 않으므로 결과 상태는 항상 `SOURCE_UNVERIFIED_OFFLINE_SHADOW`로 남는다.
 - 실가격 저장 데이터 확보 전에는 합성 fixture 테스트를 실제 9개 점수 재계산 성공이라고 주장하지 않는다.
 - PC 실행은 설치된 Node에서 `node scripts/pc-writer/theme-nine-shadow-r1.mjs --input <기존 실제 PC 저장자료에서 검증 후 생성한 JSON 경로>`로 한다. stdout에만 결과를 출력한다. 사용자는 이미 승인된 경로의 원자료를 보존한다.
+- 편의 CMD `scripts/pc-writer/theme-nine-shadow-r1.cmd "<검증된 입력 JSON 경로>"`는 실행 CMD와 같은 폴더의 `THEME_NINE_SHADOW_R1_RESULT.txt`에 출력한다. **해당 입력 JSON은 아직 자동 생성하지 않는다**. 기존 데이터의 다종 포맷을 확인하기 전까지 추측성 exporter를 제공하지 않는다.
 
 ## 5. 필수 실행 단계와 승인 게이트
 
