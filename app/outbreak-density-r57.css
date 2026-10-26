@@ -241,3 +241,42 @@
   grid-template-columns:minmax(0,1fr);
  }
 }
+
+
+/* R59: rate and Iran share exactly the same computed typography.
+   R53/R55 component rules may load after the common Option 5 stylesheet,
+   so both sides use selectors stronger than those legacy declarations. */
+.ob-events .ob-selected-event-panel .ob-beginner-detail .ob53-current strong,
+.ob-events .ob-selected-event-panel .ob55-iran-parity .ob54-kpis .ob53-current strong{
+ font-size:36px;line-height:1.1;letter-spacing:-.04em;font-weight:780;
+}
+.ob-events .ob-selected-event-panel .ob-beginner-detail .ob53-asof strong,
+.ob-events .ob-selected-event-panel .ob55-iran-parity .ob54-kpis .ob53-asof strong{
+ font-size:14px;line-height:1.45;letter-spacing:0;font-weight:780;
+}
+.ob-events .ob-selected-event-panel .ob-beginner-detail .ob53-chart-heading h3,
+.ob-events .ob-selected-event-panel .ob55-iran-parity .ob54-chart-head h3{
+ font-size:15px;line-height:1.5;font-weight:740;
+}
+.ob-events .ob-selected-event-panel .ob-beginner-detail .ob53-chart-heading>span,
+.ob-events .ob-selected-event-panel .ob55-iran-parity .ob54-chart-head>span{
+ font-size:10px;line-height:1.5;font-weight:400;
+}
+.ob-events .ob-selected-event-panel .ob-beginner-detail .ob53-chart-footnote,
+.ob-events .ob-selected-event-panel .ob55-iran-parity .ob54-note{
+ font-size:10px;line-height:1.5;font-weight:400;
+}
+.ob-events .ob-selected-event-panel .ob-beginner-detail .ob53-details summary,
+.ob-events .ob-selected-event-panel .ob55-iran-parity .ob54-disclosure summary{
+ font-size:12px;line-height:1.5;font-weight:700;
+}
+@media(max-width:700px){
+ .ob-events .ob-selected-event-panel .ob-beginner-detail .ob53-current strong,
+ .ob-events .ob-selected-event-panel .ob55-iran-parity .ob54-kpis .ob53-current strong{
+  font-size:30px;
+ }
+ .ob-events .ob-selected-event-panel .ob-beginner-detail .ob53-chart-heading h3,
+ .ob-events .ob-selected-event-panel .ob55-iran-parity .ob54-chart-head h3{
+  font-size:14px;
+ }
+}
