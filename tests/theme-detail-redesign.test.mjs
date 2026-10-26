@@ -16,11 +16,20 @@ const sample=(theme,score)=>({theme,score,etfs:['ETF1','ETF2'],history:days.map(
 const feed={status:'READY',observationDate:days.at(-1),phase:'CONFIRMED',themes:[
  sample('로봇·자동화',40),sample('바이오·신약',50),sample('클라우드·SaaS',60),sample('핀테크',70),
 ]};
-function render(payload,error=null){
+function render(payload,error=null,filter={}){
  const file=new URL('../app/theme-fear-greed/theme-detail-charts.tsx',import.meta.url),module={exports:{}};
  const script=ts.transpileModule(readFileSync(file,'utf8'),{compilerOptions:{jsx:ts.JsxEmit.ReactJSX,module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText;
  const require=createRequire(file);
  new Function('require','module','exports',script)(id=>{
+  if(id==='react'&&(filter.group||filter.query||filter.visible)){
+   const react=require(id);
+   return {...react,useState:initial=>{
+    if(initial==='전체'&&filter.group)return react.useState(filter.group);
+    if(initial===''&&filter.query)return react.useState(filter.query);
+    if(initial===null&&filter.visible)return react.useState(new Set(filter.visible));
+    return react.useState(initial);
+   }};
+  }
   if(id==='../../components/market-explorer-catalog')return catalog.exports;
   if(id==='../../components/use-stored-index')return {useStoredIndex:()=>({payload,error,loading:false})};
   return require(id);
@@ -167,4 +176,25 @@ test('theme rank numbers and top selection cards use the same filtered ordered s
  assert.match(src,/onClick=\{\(\)=>\{setSearchOpen\(false\);applyThemeFilter\(name,''\);\}\}/);
  assert.match(src,/onChange=\{e=>applyThemeFilter\(group,e\.target\.value\)\}/);
  assert.match(src,/\},\[searchOpen,group,query,ready\]\)/);
+});
+
+test('filtered industry theme rows and selector cards share 1–4 ranks and ordered items',()=>{
+ const industrial={status:'READY',observationDate:days.at(-1),phase:'CONFIRMED',themes:[
+  sample('핀테크',88),sample('클라우드·SaaS',77),
+  sample('방산',65),sample('우주·위성',58),sample('자율주행',51),sample('로봇·자동화',44),
+ ]};
+ const html=render(industrial,null,{group:'산업·모빌리티',visible:['방산']});
+ const labels=[...html.matchAll(/class="zg-sfg-rank-row"[^>]*aria-label="([^"]+)"/g)].map(m=>m[1]);
+ assert.deepEqual(labels.map(s=>s.match(/^(\d+)위 ([^,]+)/)?.slice(1)),[
+  ['1','방산'],['2','우주·위성'],['3','자율주행'],['4','로봇·자동화'],
+ ]);
+ assert.equal((html.match(/class="zg-sfg-rank-row" aria-pressed="true"/g)??[]).length,1);
+ const legend=html.split('aria-label="비교할 테마 선택"')[1]?.split('</div>')[0]??'';
+ assert.equal((legend.match(/<button /g)??[]).length,4);
+ for(const name of ['방산','우주·위성','자율주행','로봇·자동화'])assert.ok(legend.includes('title="'+name+'"'),name);
+ for(const name of ['핀테크','클라우드·SaaS'])assert.ok(!legend.includes('title="'+name+'"'),name);
+ const searched=render(industrial,null,{group:'산업·모빌리티',query:'우주',visible:['우주·위성']});
+ assert.deepEqual([...searched.matchAll(/class="zg-sfg-rank-row"[^>]*aria-label="(\d+)위 ([^,]+),/g)].map(m=>[m[1],m[2]]),[['1','우주·위성']]);
+ const searchLegend=searched.split('aria-label="비교할 테마 선택"')[1]?.split('</div>')[0]??'';
+ assert.equal((searchLegend.match(/<button /g)??[]).length,1);
 });
