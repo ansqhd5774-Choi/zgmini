@@ -96,3 +96,24 @@ test('sector legend and compact ranking text are consistently 11.5px on mobile w
   assert.ok(line.includes('.zg-sector-detail:not(.zg-theme-detail) '),line);
  }
 });
+
+
+test('sector mini charts follow the shared 1W–1Y period and show trend only on mobile',()=>{
+ const tsx=read('app/sector-fear-greed/sector-detail-charts.tsx');
+ const css=read('app/sector-fear-greed/sector-detail.css');
+ const spark=tsx.slice(tsx.indexOf('function Sparkline('),tsx.indexOf('function Zones()'));
+ assert.ok(spark.includes('days:number'), 'Sparkline requires its selected period');
+ assert.ok(spark.includes('const selected=periodRows(rows,days);'), 'mini-chart points must be filtered by period');
+ assert.ok(spark.includes('selected.map((row,i)=>'), 'mini-chart must plot the filtered points');
+ assert.ok(spark.includes('[rows,id,provisional,days]'), 'period changes must recalculate points');
+ assert.ok(tsx.includes('<Sparkline rows={rows} id={sector.id} provisionalDate={provisionalDate} days={compareDays}/>'));
+ assert.ok(tsx.includes('const compareRows=periodRows(rows,compareDays)'), 'main comparison keeps the same period');
+ assert.ok(spark.includes('selected.length-1')&&spark.includes('selected.length-2'), 'provisional dashed point stays tied to selected history');
+ const start=css.lastIndexOf('@media(max-width:680px)');
+ const end=css.indexOf('@media(max-width:480px)',start);
+ const mobile=css.slice(start,end);
+ assert.ok(mobile.includes('.zg-sector-detail:not(.zg-theme-detail) .zg-sfg-ranking .zg-sfg-sparkline{pointer-events:none}'), 'touch on mobile mini-chart must not raise Recharts tooltip');
+ assert.ok(mobile.includes('.zg-sector-detail:not(.zg-theme-detail) .zg-sfg-ranking .zg-sfg-sparkline .recharts-tooltip-wrapper{display:none!important}'));
+ assert.ok(spark.includes('<Tooltip'), 'desktop tooltip remains available');
+ assert.ok(css.includes('.zg-sfg-sparkline{position:relative;width:100%;height:30px;min-width:0;pointer-events:auto}'), 'desktop pointer interaction remains available');
+});

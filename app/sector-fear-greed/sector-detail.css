@@ -156,6 +156,9 @@
  .zg-sfg-rank-delta{grid-column:5;grid-row:1;font-size:10px;gap:1px;justify-content:flex-end;font-weight:800}
  .zg-sfg-rank-delta i{font-size:8px}
  .zg-sfg-sparkline{grid-column:6;grid-row:1;width:100%;height:23px}
+ /* On mobile these mini charts display trends only: suppress chart hit-testing and clipped Recharts tooltips. */
+ .zg-sector-detail:not(.zg-theme-detail) .zg-sfg-ranking .zg-sfg-sparkline{pointer-events:none}
+ .zg-sector-detail:not(.zg-theme-detail) .zg-sfg-ranking .zg-sfg-sparkline .recharts-tooltip-wrapper{display:none!important}
  .zg-sfg-footnote{font-size:10px}
 }
 @media(max-width:480px){
