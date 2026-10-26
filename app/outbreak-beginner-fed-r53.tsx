@@ -3,6 +3,7 @@ import {CalendarDays, ChevronDown, CircleHelp, Lightbulb, ShieldAlert, TrendingD
 import {useEffect,useState} from "react";
 import {MarketFearGreedChart} from "./market-fear-greed-chart";
 import "./outbreak-beginner-r53.css";
+import OutbreakChangeLogUI from "./outbreak-change-log-ui";
 
 export type RateScorePoint={label:string;value:number};
 export type RateStoredSnapshot={status:"READY";score:number;observationDate:string;version:string;sourceStoredAt:number;week:RateScorePoint[];oneMonth:RateScorePoint[]};
@@ -110,6 +111,7 @@ export default function OutbreakBeginnerFed({rate,deltaWeek}:{rate:RateStoredSna
    </div>
    <div className="ob53-main-grid">
     <Rate14Chart rate={rate}/>
+    <OutbreakChangeLogUI eventId="fed"/>
     <div className="ob53-beginner-stack">
      <section className="ob53-guide ob-panel" aria-labelledby="ob53-beginners">
       <h3 id="ob53-beginners">주식 초보자용 해석</h3>

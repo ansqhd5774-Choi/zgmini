@@ -4,6 +4,7 @@ import {CalendarDays,ChevronDown,Info,Lightbulb,ShieldAlert,Swords,TrendingUp} f
 import {MarketFearGreedChart} from "./market-fear-greed-chart";
 import "./outbreak-beginner-iran-r54.css";
 import "./outbreak-iran-parity-r55.css";
+import OutbreakChangeLogUI from "./outbreak-change-log-ui";
 
 type Point={at:number;value:number|null;carried?:boolean;phase?:string};
 const DAY_MS=86400000;
@@ -107,6 +108,7 @@ export default function OutbreakBeginnerIran({view}:{view:any}){
   </div>
   <div className="ob53-main-grid ob55-main">
    <Trend view={view}/>
+   <OutbreakChangeLogUI eventId="iran"/>
    <div className="ob53-beginner-stack ob54-right">
     <section className="ob-panel ob53-guide ob54-guide" aria-labelledby="ob54-guide">
      <h3 id="ob54-guide"><ShieldAlert size={16} aria-hidden="true"/> 주식 초보자용 해석</h3>
