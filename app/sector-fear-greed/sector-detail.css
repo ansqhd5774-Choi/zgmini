@@ -184,13 +184,24 @@
  .zg-sector-detail:not(.zg-theme-detail) .zg-sfg-legend button[aria-pressed=false]{background:#092636;border-color:#1c4052}
  .zg-sector-detail:not(.zg-theme-detail) .zg-sfg-legend button:hover{border-color:#58abae}
  .zg-sector-detail:not(.zg-theme-detail) .zg-sfg-legend i{position:absolute;left:6px;top:50%;transform:translateY(-50%);width:6px;height:6px;margin:0}
- .zg-sector-detail:not(.zg-theme-detail) .zg-sfg-legend-name{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);max-width:calc(100% - 42px);min-width:0;overflow:hidden;font-size:10.5px;line-height:15px;font-weight:750;white-space:nowrap;letter-spacing:-.045em;text-align:center}
- .zg-sector-detail:not(.zg-theme-detail) .zg-sfg-legend-score{position:absolute;right:6px;top:50%;transform:translateY(-50%);display:block;margin:0;font-size:9px;font-weight:800;line-height:14px;letter-spacing:-.03em;font-variant-numeric:tabular-nums;text-align:right}
+ .zg-sector-detail:not(.zg-theme-detail) .zg-sfg-legend-name{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);max-width:calc(100% - 42px);min-width:0;overflow:hidden;font-size:11.5px;line-height:15px;font-weight:750;white-space:nowrap;letter-spacing:-.045em;text-align:center}
+ .zg-sector-detail:not(.zg-theme-detail) .zg-sfg-legend-score{position:absolute;right:6px;top:50%;transform:translateY(-50%);display:block;margin:0;font-size:11.5px;font-weight:800;line-height:14px;letter-spacing:-.03em;font-variant-numeric:tabular-nums;text-align:right}
 }
 @media screen and (max-width:600px){
  .zg-sector-detail:not(.zg-theme-detail) .zg-sfg-legend{grid-template-columns:repeat(3,minmax(0,1fr));grid-auto-rows:32px}
 }
 @media screen and (max-width:355px){
  .zg-sector-detail:not(.zg-theme-detail) .zg-sfg-legend{grid-template-columns:repeat(2,minmax(0,1fr))}
- .zg-sector-detail:not(.zg-theme-detail) .zg-sfg-legend-name{font-size:11px}
+ .zg-sector-detail:not(.zg-theme-detail) .zg-sfg-legend-name{font-size:11.5px}
+}
+
+/* All visible mobile sector legend/ranking labels and values use the approved 11.5px size. */
+@media screen and (max-width:680px){
+ .zg-sector-detail:not(.zg-theme-detail) .zg-sfg-legend button{font-size:11.5px}
+ .zg-sector-detail:not(.zg-theme-detail) .zg-sfg-mobile-rank-head{font-size:11.5px}
+ .zg-sector-detail:not(.zg-theme-detail) .zg-sfg-rank-number{font-size:11.5px}
+ .zg-sector-detail:not(.zg-theme-detail) .zg-sfg-rank-name{font-size:11.5px}
+ .zg-sector-detail:not(.zg-theme-detail) .zg-sfg-rank-score{font-size:11.5px}
+ .zg-sector-detail:not(.zg-theme-detail) .zg-sfg-rank-delta{font-size:11.5px}
+ .zg-sector-detail:not(.zg-theme-detail) .zg-sfg-rank-delta i{font-size:11.5px}
 }
