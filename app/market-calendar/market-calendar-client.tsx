@@ -173,7 +173,7 @@ export default function MarketCalendar(){
    {!filtered.length&&<div className="mc-empty"><strong>표시할 일정이 없습니다.</strong><span>{kind==='earnings'?'기업 실적 발표일은 검증된 수집 경로가 연결되지 않았습니다.':country==='KR'?'한국 공식 발표 일정은 수집 경로 연결 전입니다.':'해당 조건에 확인된 공식 발표 일정이 없습니다.'}</span></div>}
    {byWeek.map(([weekStart,rows])=><div key={weekStart}>
     <div className="mc-week"><strong>{weekTitle(weekStart)}</strong><span>{rows.length}개 일정</span></div>
-    {rows.map(row=>{const remain=remaining(row);return <article key={row.key} id={`mc-day-${row.date}`} className="mc-row">
+    {rows.map((row,index)=>{const remain=remaining(row);const firstOfDay=rows.findIndex(item=>item.date===row.date)===index;return <article key={row.key} id={firstOfDay?`mc-day-${row.date}`:undefined} className="mc-row">
      <div className="mc-date">{dateCaption(row.date)} <small>{dayLabels[parseDay(row.date).getUTCDay()]}</small></div>
      <time className="mc-time" dateTime={row.at??row.date}>{row.at?kstTime(row.at):'미정'}</time>
      <span className="mc-country">{row.country==='US'?'미국':'한국'}</span>
