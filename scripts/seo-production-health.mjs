@@ -4,6 +4,9 @@ import {parseSitemap,waitForCloudflare} from './indexnow-notify.mjs';
 const SITE_ORIGIN='https://zgmini.kr';
 const REQUEST_TIMEOUT_MS=20_000;
 const EXPECTED_PUBLIC_URLS=34;
+const BUYING_GUIDE_PATH='/guides/fear-greed-buying/';
+const GUIDE_LINK_SOURCES=new Set(['/', '/fear-greed/usa/', '/fear-greed/korea/']);
+const GUIDE_DIRECT_CHECK_PATHS=['/guides/fear-greed-buying/','/guides/cpi-pce-release/','/guides/fomc/'];
 
 export const SEO_RUNTIME_MARKERS=new Map([
   [`${SITE_ORIGIN}/risk-indicators/`,{descriptionIncludes:'미국 경제 위기 신호를 8대 위험 지표의 안정 점수로 비교하세요.'}],
@@ -37,7 +40,7 @@ export const SEO_RUNTIME_MARKERS=new Map([
   [`${SITE_ORIGIN}/economic-indicators/breadth/`,{titleIncludes:"미국 증시 수급·시장 폭 | 상승종목·거래비중",descriptionIncludes:"저장된 0~100점과 과거 추이"}],
   [`${SITE_ORIGIN}/economic-indicators/dollar-fx/`,{titleIncludes:"미국 달러지수 | 달러 강세·약세·환율 환경",descriptionIncludes:"저장된 0~100점과 과거 추이"}],
   [`${SITE_ORIGIN}/economic-indicators/commodities/`,{titleIncludes:"국제유가·원자재 지표 | WTI·브렌트유·구리",descriptionIncludes:"저장된 0~100점과 과거 추이"}],
-  [`${SITE_ORIGIN}/guides/fear-greed-buying/`,{descriptionIncludes:'공포탐욕지수로 주식 매수 타이밍을 판단하기 전에 확인할 3가지'}],
+  [`${SITE_ORIGIN}/guides/fear-greed-buying/`,{descriptionIncludes:'공포탐욕지수로 주식 매수 타이밍을 판단하기 전에 확인할 3가지',htmlIncludes:['매수 전 판단 3단계','상황별 확인 포인트','내용 확인일 2026-10-25']} ],
   [`${SITE_ORIGIN}/guides/cpi-pce-release/`,{descriptionIncludes:'CPI·PCE 공식 발표 일정의 한국시간',htmlIncludes:['확인 당시 다음 공식 일정']}],
   [`${SITE_ORIGIN}/guides/fomc/`,{descriptionIncludes:'FOMC 공식 일정과 한국시간 발표 시각',htmlIncludes:['확인 당시 다음 공식 일정']}],
 ]);
@@ -156,6 +159,21 @@ export function inspectHtml(html,expectedUrl){
   return {title,description,robots,canonical,h1,types:[...types],errors};
 }
 
+export function inspectCrawlResponse(response,expectedUrl,{requireOriginalUrl=false}={}){
+  const errors=[];
+  if(response.status!==200) errors.push(`http_${response.status}`);
+  if(!(response.contentType??'').toLowerCase().includes('text/html')) errors.push(`content_type:${response.contentType||'missing'}`);
+  const header=response.xRobotsTag??'';
+  if(/(?:^|[\\s,;:])(?:noindex|nofollow|none)(?=$|[\\s,;])/i.test(header)) errors.push(`x_robots_tag_blocked:${header}`);
+  if(requireOriginalUrl && response.finalUrl!==expectedUrl) errors.push(`url_redirected:${response.finalUrl||'missing'}`);
+  return errors;
+}
+
+export function inspectGuideInboundLink(html){
+  const found=tags(html,'a').some(tag=>attrs(tag).href===BUYING_GUIDE_PATH);
+  return found?[]:['guide_inbound_link_missing'];
+}
+
 export function liveSitemapEntries(xml){
   const result=new Map();
   for(const match of xml.matchAll(/<url\b[^>]*>([\s\S]*?)<\/url>/g)){
@@ -174,7 +192,7 @@ async function fetchText(url){
   try{
     const response=await fetch(url,{cache:'no-store',headers:{'cache-control':'no-cache','user-agent':'zgmini-seo-production-health-r2'},signal:controller.signal});
     const text=await response.text();
-    return {status:response.status,contentType:response.headers.get('content-type')??'',text};
+    return {status:response.status,contentType:response.headers.get('content-type')??'',xRobotsTag:response.headers.get('x-robots-tag')??'',finalUrl:response.url,text};
   }finally{
     clearTimeout(timeout);
   }
@@ -198,15 +216,14 @@ export function inspectCanonicalRedirect(result,expectedLocation){
   return errors;
 }
 
-async function checkPage(url,sha){
+async function checkPage(url,sha,{bare=false}={}){
   const live=new URL(url);
-  live.searchParams.set('seo_health',sha.slice(0,12));
+  if(!bare) live.searchParams.set('seo_health',sha.slice(0,12));
   const response=await fetchText(live.href);
-  const errors=[];
-  if(response.status!==200) errors.push(`http_${response.status}`);
-  if(!response.contentType.toLowerCase().includes('text/html')) errors.push(`content_type:${response.contentType||'missing'}`);
+  const errors=inspectCrawlResponse(response,url,{requireOriginalUrl:bare});
   const inspected=inspectHtml(response.text,url);
   errors.push(...inspected.errors);
+  if(GUIDE_LINK_SOURCES.has(new URL(url).pathname)) errors.push(...inspectGuideInboundLink(response.text));
   return {url,errors};
 }
 
@@ -267,6 +284,16 @@ async function main(){
         console.log(`SEO_HEALTH_URL_PASS=${result.url}`);
       }
     }
+  }
+
+  // Repeat the guide checks without a cache-busting query: this is the URL Google discovers.
+  for(const path of GUIDE_DIRECT_CHECK_PATHS){
+    const url=`${SITE_ORIGIN}${path}`;
+    const result=await checkPage(url,sha,{bare:true}).catch(error=>({url,errors:[`fetch:${error?.name??'Error'}:${error?.message??String(error)}`]}));
+    if(result.errors.length){
+      failures.push(`bare:${url}=>${result.errors.join('|')}`);
+      console.error(`SEO_HEALTH_GUIDE_BARE_FAIL=${url} ${result.errors.join('|')}`);
+    }else console.log(`SEO_HEALTH_GUIDE_BARE_PASS=${url}`);
   }
 
   if(failures.length) throw new Error(`SEO_HEALTH_FAILED=${failures.length}\n${failures.join('\n')}`);
