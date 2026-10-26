@@ -38,7 +38,8 @@ test('theme screen uses sector comparison structure and dynamic top-three rankin
  assert.match(html,/26개/);
  assert.equal((html.match(/class="zg-sfg-rank-row" aria-pressed="true"/g)??[]).length,3);
  assert.equal((html.match(/class="zg-sfg-rank-row" aria-pressed="false"/g)??[]).length,1);
- assert.match(html,/ETF ETF1 · ETF2/);
+ assert.doesNotMatch(html,/zg-sfg-detail|zg-sfg-changes|ETF ETF1 · ETF2|개별 차트와 변화량/);
+ assert.match(html,/class="zg-sfg-comparison-plot"/);
 });
 test('theme screen never invents a missing or invalid score',()=>{
  const html=render({status:'READY',themes:[{...sample('핀테크',60),history:days.slice(0,251).map(date=>({date,score:60}))}]});
@@ -57,7 +58,8 @@ test('theme page preserves only stored API, provisional dash and synchronized le
  assert.match(component,/useStoredIndex<PublicThemeFeed>\('\/api\/theme-fear-greed'\)/);
  assert.match(component,/const currentVisible=visible\?\?topThree/);
  assert.match(component,/new Set\(ready\.slice\(0,3\)\.map\(t=>t\.name\)\)/);
- assert.match(component,/onClick=\{\(\)=>\{setSelected\(item\.name\);toggle\(item\.name\);\}\}/);
+ assert.match(component,/onClick=\{\(\)=>toggle\(item\.name\)\}/);
+ assert.doesNotMatch(component,/setSelected|detailDays|detailRows|zg-sfg-detail|zg-sfg-changes/);
  assert.match(component,/aria-pressed=\{currentVisible\.has\(item\.name\)\} onClick=\{\(\)=>toggle\(item\.name\)\}/);
  assert.match(component,/strokeDasharray="4 4"/);
  assert.match(component,/onMouseLeave=\{\(\)=>setComparisonPinned\(false\)\}/);
