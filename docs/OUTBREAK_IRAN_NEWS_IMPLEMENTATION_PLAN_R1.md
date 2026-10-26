@@ -162,3 +162,11 @@
 - 저장소의 기존 `scripts/iran-progress/install.mjs`는 R13 실행에 `wscript.exe`+ `run.vbs`를 사용하는 구조다. `install-reference-flow.mjs` 또한 `run.vbs` 또는 `run-articles.vbs`에 Node runner를 연결한다. 다만 실제 PC VBS 내용/실행파일 SHA는 이번 R5 조사 대상이 아니었으므로 추정하여 덮어쓰지 않는다.
 - `scripts/iran-progress/news-display-chain-audit-r6.mjs` 및 `scripts/iran-progress/IRAN_NEWS_R6_CHAIN_READONLY.cmd`를 기존 단일 작업 브랜치에 추가. R13 XML → VBS 런처 → Node runner를 **읽기 전용으로만** 따라가 파일 이름·SHA-256·Git HEAD(가능할 때)·기존 4회 실행 시각을 요약하고, 내용·실행 인자·절대 경로·비밀은 로그로 내보내지 않는다.
 - 다음 Gate: 사용자 PC `IRAN_NEWS_R6_CHAIN_READONLY_RESULT.txt`에서 실제 runner를 확인한 후, 기존 원장/산식·6시간 주기는 그대로 두고 표시 캐시 정리 hook만 분리·격리한다. 신규 기사 자동 공개는 개별 권리/요약 검토 승인 전까지 차단한다.
+
+## 11. 2026-10-27 R6 파서 중단 및 R6B 수정
+
+- 사용자 R6 로그: `STOP_RUNNER_CHAIN_READ_ONLY`, `reason=LAUNCHER_SCRIPT_AMBIGUOUS`. 이 오류는 R6 조사기가 VBS 내 `.mjs` 경로 **단 1개만** 허용한 자체 판별 가정의 한계이며, 작업 스케줄러나 수집기 실패를 증명하지 않는다. R6 스크립트는 실행 경로를 읽은 후 더 이상 수정하지 않았다.
+- R3 wrapper는 실행 대상 외에 `--legacy-runner`, `--collector`의 별도 `.mjs` 경로를 인수로 받을 수 있다. 수정된 `parseLauncherScript`는 정확히 한 번의 `shell.Run`에서 Node 실행 파일 확인 후 **첫 `.mjs`를 진입점**, 뒤따른 파일을 인수 참조로 구분한다.
+- 중복 `shell.Run`, Node 실행 파일 부재, 비승인 launcher/실행기, 경로 실체 불일치는 계속 보류한다. synthetic VBS + 2개 인수, 실패 차단, UTF-16 스케줄러 XML·4회 실행 시각 테스트 3/3 PASS.
+- 기존 단일 브랜치에 `tests/iran-news-display-chain-r6.test.mjs` 및 `scripts/iran-progress/IRAN_NEWS_R6B_CHAIN_READONLY.cmd` 추가. R6B는 고정 커밋의 검증기만 다운로드하여 실행한 뒤 임시 보조 파일을 삭제하며 결과 TXT는 CMD 옆에 기록한다.
+- 운영 R13 task, VBS, PC cache, R3/R5 ledger, D1, 웹 공개 기능은 모두 미수정. 다음 Gate는 사용자 `IRAN_NEWS_R6B_CHAIN_READONLY_RESULT.txt` 확인이다.
