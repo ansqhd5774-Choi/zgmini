@@ -66,12 +66,12 @@ try{
   assert.equal(await rateChart.locator(".cnn-latest-point").count(),1,"Shared chart marks only the latest observed point");
   if(width<=600){
    const mobileChart=await root.evaluate(el=>{
-    const chart=el.querySelector(".ob53-market-chart"),assets=el.querySelector(".ob53-assets"),panel=el.querySelector(".ob53-beginner-stack");
+    const chart=el.querySelector(".ob53-market-chart"),news=el.querySelector(".ob57-news"),panel=el.querySelector(".ob53-beginner-stack");
     return {chartFits:!!chart&&chart.getBoundingClientRect().width<=innerWidth,
-     assetsFullWidth:Math.abs(assets.getBoundingClientRect().width-panel.getBoundingClientRect().width)<3};
+     newsFits:!!news&&news.getBoundingClientRect().right<=innerWidth+1,extraHidden:getComputedStyle(panel).display==="none"};
    });
    assert(mobileChart.chartFits,"Shared 14-day chart fits the mobile viewport");
-   assert(mobileChart.assetsFullWidth,"Related assets are full width on narrow screens");
+   assert(mobileChart.newsFits&&mobileChart.extraHidden,"News fits mobile and redundant beginner cards remain hidden");
   }
   assert((await rateChart.textContent())?.includes("10.19"),"Last calendar tick retains its observed date");
   assert.equal(await root.locator(".ob53-chart-heading>span").textContent(),"관측 10일 / 14일");
@@ -86,13 +86,23 @@ try{
    const first=el.querySelector(".ob-card").getBoundingClientRect();
    const questions=el.querySelector(".ob53-details");
    const summary=questions?.querySelector("summary");
-   return {sideBySide:detail.left>nav.right-1,stacked:detail.top>=nav.bottom-1,
+   return {navHorizontal:[...el.querySelectorAll(".ob-card")].every(card=>Math.abs(card.getBoundingClientRect().top-first.top)<2),stacked:detail.top>=nav.bottom-1,
     compact:first.height<= (innerWidth>=1100?151:innerWidth<=700?112:180),
     questionCollapsed:questions&&!questions.open&&!!summary};
   });
   assert(firstLayout.compact,"Event selector must not resemble three oversized dashboard cards");
+   assert.equal(await root.locator(".ob57-news-item").count(),0,"No sample or invented news is published while feed data is not connected");
+   assert.equal(await root.locator(".ob57-news-count").textContent(),"0건");
+   assert.equal(await root.locator(".ob57-news-filters button").count(),3,"All / positive / negative filters are present");
+   await root.locator(".ob57-news-filters button").nth(2).click();
+   assert.equal(await root.locator(".ob57-news-filters button").nth(2).getAttribute("aria-pressed"),"true");
+   await root.locator(".ob57-news-filters button").first().click();
+   assert.equal(await root.locator(".ob57-news-filters button").first().getAttribute("aria-pressed"),"true");
+   const newsColumns=await root.locator(".ob57-news-list").evaluate(el=>getComputedStyle(el).gridTemplateColumns.split(" ").length);
+   assert.equal(newsColumns,width>=1350?2:1,"Wide screens prepare a two-column news layout; other widths use a compact list");
+
   assert(firstLayout.questionCollapsed,"Secondary explanations start collapsed");
-  assert(width>=1100?firstLayout.sideBySide:firstLayout.stacked,"Workspace breaks at 1100px");
+  assert(firstLayout.stacked&&firstLayout.navHorizontal,"Option 5 keeps three horizontal tabs above the detail at every width");
   const fedGeometry=await root.evaluate(el=>{
    const intro=el.querySelector(".ob53-intro-grid");
    const main=el.querySelector(".ob53-main-grid");
@@ -111,12 +121,12 @@ try{
    assert.equal(await guide.getAttribute("open"),"","Mobile guide opens on demand");
    await guide.locator("summary").click();
    assert.equal(await guide.getAttribute("open"),null);
-   assert.equal(await root.locator(".obm-log").isVisible(),true,"Mobile event change-log slot is visible under the chart");
+   assert.equal(await root.locator(".ob57-news").isVisible(),true,"Approved news panel is visible under the mobile chart");
    assert.equal(await root.locator(".ob53-beginner-stack").isVisible(),false,"Mobile hides redundant beginner and asset cards");
    assert.equal(await root.locator(".ob53-title").isVisible(),false,"Mobile uses compact tab title instead of duplicate detail header");
    const chartBottom=await root.locator(".ob53-chart").boundingBox();
-   const logTop=await root.locator(".obm-log").boundingBox();
-   assert(chartBottom&&logTop&&logTop.y>=chartBottom.y+chartBottom.height-1,"Change log follows the 14-day chart");
+   const logTop=await root.locator(".ob57-news").boundingBox();
+   assert(chartBottom&&logTop&&logTop.y>=chartBottom.y+chartBottom.height-1,"Major news follows the 14-day chart");
   }else{
    const definition=disclosures.nth(0),method=disclosures.nth(1);
    assert.equal(await definition.getAttribute("open"),null);
@@ -143,9 +153,9 @@ try{
   assert.equal(await root.locator(".ob55-iran-parity .ob53-main-grid").count(),1,"Iran uses R53 main-grid");
   assert.equal(await root.locator(".ob55-score-card .ob54-kpis > div").count(),3,"Iran metrics share R53 integrated score panel");
   assert.equal(await root.locator(".ob55-score-card .ob54-scale").count(),1,"The score scale must be inside integrated panel");
-  assert.equal(await root.locator(".ob55-intro > .ob54-meaning").count(),1,"The beginner meaning card is on the top right");
+  assert.equal(await root.locator(".ob55-score-card .ob57-scale-summary").count(),1,"Iran uses the approved full-width score and scale strip");
   assert.equal(await root.locator(".ob55-main .ob54-trend").count(),1,"Iran 14-day chart occupies the left analysis panel");
-  assert.equal(await root.locator(".ob55-main .ob54-guide").count(),1,"Beginner interpretations align with R53 layout");
+  assert.equal(await root.locator(".ob55-main .ob57-news").count(),1,"Iran chart and major-news panel share the approved grid");
   await page.waitForFunction(()=>document.querySelector(".ob54-kpis strong")?.textContent?.includes("13.0"),null,{timeout:12000});
   assert.equal(await root.locator(".ob54-state").textContent(),"진전 매우 낮음");
   assert.equal(await root.locator("#ob54-chart-title").textContent()," 14일 추이");
@@ -176,7 +186,7 @@ try{
    await evidence.locator("summary").click();
    assert.equal(await evidence.getAttribute("open"),null);
   }else{
-   assert.equal(await root.locator(".obm-log").isVisible(),true,"Iran mobile log slot follows the chart");
+   assert.equal(await root.locator(".ob57-news").isVisible(),true,"Iran mobile news follows the chart");
   }
   const iranChartFits=await iranChart.evaluate(el=>el.getBoundingClientRect().width<=innerWidth);
   assert(iranChartFits,"Shared Iran chart fits the viewport without horizontal clipping");
