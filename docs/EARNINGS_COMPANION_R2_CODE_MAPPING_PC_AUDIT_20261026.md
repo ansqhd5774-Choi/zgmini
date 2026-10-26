@@ -140,3 +140,18 @@ Windows QFR API 표본의 조정표시가 `no`임을 확인했다. Census 2026 Q
 | R3 실제 저장/가공 및 R4–R6 사이트 작업 | **미실행** | 계획 순서대로 선행 Gate 통과·별도 승인 필요 |
 
 **다음: 새 API 재호출 없이 운영 PC의 이미 존재하는 Growth/Earnings 테이블에서 정확한 최근 관측기간·지표 식별자·원천/가용성만 최소 읽기 전용 검증하고, PC 재사용/새 수집 필요 행을 구분한다.**
+
+## 7. PC 데이터 최신성 확인기 준비 (별도 API 0회)
+
+앞선 CMD는 보호를 위해 테이블 **존재·행 존재**만 확인했다. 이는 실제 관측기간이나 신규 수집 중복 여부를 입증하지 못한다. 이 마지막 R1/R2 미해결 지점에만 별도의 제한된 검사기를 준비했다.
+
+- 파일: `research/earnings-companion/EARNINGS_R2_PC_FRESHNESS_READONLY.cmd` 및 `.mjs`.
+- 사용자 Windows CMD 실행 후 CMD와 **동일 폴더**에 `EARNINGS_R2_PC_FRESHNESS_RESULT_YYYYMMDD-HHMMSSZ.txt`만 생성.
+- **API 0회**, Census/BEA/BLS/SEC 전부 재요청 없음. 기존 PC `core.sqlite`만 SQLite의 `readOnly:true` 및 `PRAGMA query_only=ON`으로 열고 닫음.
+- Growth 현재 원장에서 `candidate_id`, `observation_date`, 관측기간, 사용 원천, 단위, 수집 시각만 출력; `G010/G013/G015/G016/G018` 포함 현존 항목을 확인.
+- M3 저장 Snapshot 원장의 **공급그룹/최종 수집 시각**만 출력. JSON 원문·요청 URL·키·수치 원자료는 읽거나 출력하지 않음.
+- Earnings E1-R4 최근 실행의 결산기간·성공 여부·표본건수와 Universe의 모집단/발표일 메타데이터만 제한 조회. 기업명·CIK·기업 재무 수치는 조회하지 않음.
+- QFR·MTIS 전용 테이블명 존재 여부만 별도 조회(이름이 없더라도 다른 범용 Snapshot에 없다는 뜻은 아님).
+- 사용자가 PC 검사를 완료하면 이미 생성한 공식 시리즈 Selector와 결합해 **재사용 가능/새 수집 검토/보류**를 행별로 확정한다.
+
+**현재 상태: CMD 코드·ZIP 기본검증 PASS, 실제 Windows PC 로그 PENDING.** 해당 결과 없이 R3 저장·파생 구현이나 R4 공개키 변경을 앞서 실행하지 않는다.
