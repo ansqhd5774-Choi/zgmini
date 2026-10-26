@@ -6,6 +6,8 @@
 
 ## 다음 대화에서 가장 먼저 읽을 문서
 
+> **2026-10-27 최신 작업계획 (R45):** [STAGE04_R45_SEQUENTIAL_21_TOPIC_SEARCH_SPEED_PLAN_20261027.md](STAGE04_R45_SEQUENTIAL_21_TOPIC_SEARCH_SPEED_PLAN_20261027.md) — 21개 섹터·테마를 **한 항목씩**, 4개 조사기관의 실시간 검색·Ollama 수치검증·속도 반복 3회 확인 후 다음 항목으로 진행한다. 현재 01 정보기술 단계 준비 상태이며 R45 Windows 실측·코드 구현·운영 반영은 아직 아니다.
+
 1. `STATUS.md`: 01~15단계별 실제 구현·검증 현황, 최근 실패, 다음 작업.
 2. `INVESTMENT_PROCESS_15_STAGE_PRECISE_IMPLEMENTATION_PLAN_R2_QUANT_20261025.md`: 15단계 전체 계획의 최신 설계 기준. 산식·가중치 미승인 부분을 운영 적용하지 않는다.
 3. `INVESTMENT_15_STAGE_HANDOFF_20261025.md`: 04단계 이전 대화의 승인·금지·주의사항.
