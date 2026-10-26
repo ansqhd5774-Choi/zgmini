@@ -35,6 +35,7 @@ export function readApprovedSpacePrices({dataRoot,symbols}={}){
   Array.isArray(manifest.files),'SPACE_R28_MANIFEST_IDENTITY');
  const collection=new Map(symbols.map(symbol=>[symbol,new Map()]));
  const files=new Map(symbols.map(symbol=>[symbol,0]));
+ let lastCollectedAt=null;
  for(const item of manifest.files){
   need(typeof item?.path==='string'&&
    /^raw\/[A-Z][A-Z0-9.-]*_[a-f0-9]{64}\.jsonl$/.test(item.path)&&
@@ -45,6 +46,7 @@ export function readApprovedSpacePrices({dataRoot,symbols}={}){
    'SPACE_R28_RAW_ENTRY_INVALID');
   const symbol=item.path.slice(4).split('_')[0];
   if(!collection.has(symbol))continue; // Known excluded old raw is preserved.
+  if(lastCollectedAt===null||item.collectedAt>lastCollectedAt)lastCollectedAt=item.collectedAt;
   const file=fs.realpathSync(path.join(home,item.path));
   need(within(home,file)&&fs.statSync(file).size<=6_000_000,
    'SPACE_R28_RAW_PATH_INVALID');
@@ -68,6 +70,7 @@ export function readApprovedSpacePrices({dataRoot,symbols}={}){
  }
  need(symbols.every(symbol=>files.get(symbol)>0),'SPACE_R28_APPROVED_ETF_RAW_MISSING');
  return {manifestSha256:sha(bytes),symbols:[...symbols],files:Object.fromEntries(files),
+  lastCollectedAt,
   sessions:Object.fromEntries(symbols.map(symbol=>[symbol,
    selectRealHourlySessions([...collection.get(symbol).values()]
     .sort((a,b)=>a.timestamp.localeCompare(b.timestamp)))])),
@@ -119,6 +122,7 @@ export function runApprovedSpacePcR28({dataRoot,
    'PRIVATE_CURRENT_APPROVED_BASKET_READY',
   sourceManifestSha256:original.manifestSha256,
   sharedSpyManifestSha256:benchmark.manifestSha256,
+  sourceStoredAt:original.lastCollectedAt??null,
   benchmarkLastDate:dates.at(-1),individualScores:Object.fromEntries(symbols.map(symbol=>[
    symbol,timelines[symbol].at(-1).score===null?null:
     Number(timelines[symbol].at(-1).score.toFixed(5))])),
