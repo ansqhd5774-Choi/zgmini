@@ -1,0 +1,501 @@
+{
+  "schema": "zgmini.theme-nine.r20-approved-three-gate-candidates.v1",
+  "asOf": "2026-10-26",
+  "approvedBy": "User explicitly approved final 3-gate screened 63 ETF candidate roster in conversation",
+  "approvalScope": "RESEARCH_CANDIDATE_ROSTER_ONLY",
+  "sourceR19": "config/theme-nine-r19-three-gate-ox-verified.json",
+  "branch": "research/theme-nine-r2-shadow-20261026",
+  "policy": {
+    "etfCount": "UNCAPPED_NO_MIN_MAX_TARGET",
+    "candidateGate": "holdingsPublic O AND getMarketHistorySymbolLookup O AND operatorGrade>=C",
+    "themeFit": "SEPARATE_NEXT_STAGE_NOT_ASSUMED",
+    "actualPriceHistory": "NOT_COLLECTED",
+    "aum": "NOT_VERIFIED",
+    "formulaApproval": "NOT_GRANTED",
+    "productionOperations": "NO_CHANGE"
+  },
+  "counts": {
+    "themes": 9,
+    "positions": 64,
+    "uniqueTickers": 63,
+    "allThreeGatePass": 63
+  },
+  "groups": [
+    {
+      "theme": "로봇·자동화",
+      "tickers": [
+        {
+          "ticker": "BOTZ",
+          "operatorGrade": "A",
+          "approvedCandidate": true,
+          "finalFormulaAdmission": "PENDING_THEME_FIT_HOLDINGS_WEIGHT_40D_AUM_PRICE_252D_SHADOW"
+        },
+        {
+          "ticker": "ROBO",
+          "operatorGrade": "A",
+          "approvedCandidate": true,
+          "finalFormulaAdmission": "PENDING_THEME_FIT_HOLDINGS_WEIGHT_40D_AUM_PRICE_252D_SHADOW"
+        },
+        {
+          "ticker": "ROBT",
+          "operatorGrade": "B",
+          "approvedCandidate": true,
+          "finalFormulaAdmission": "PENDING_THEME_FIT_HOLDINGS_WEIGHT_40D_AUM_PRICE_252D_SHADOW"
+        },
+        {
+          "ticker": "ARKQ",
+          "operatorGrade": "A",
+          "approvedCandidate": true,
+          "finalFormulaAdmission": "PENDING_THEME_FIT_HOLDINGS_WEIGHT_40D_AUM_PRICE_252D_SHADOW"
+        },
+        {
+          "ticker": "HUMN",
+          "operatorGrade": "A",
+          "approvedCandidate": true,
+          "finalFormulaAdmission": "PENDING_THEME_FIT_HOLDINGS_WEIGHT_40D_AUM_PRICE_252D_SHADOW"
+        },
+        {
+          "ticker": "RBTX",
+          "operatorGrade": "B",
+          "approvedCandidate": true,
+          "finalFormulaAdmission": "PENDING_THEME_FIT_HOLDINGS_WEIGHT_40D_AUM_PRICE_252D_SHADOW"
+        },
+        {
+          "ticker": "CBOT",
+          "operatorGrade": "B",
+          "approvedCandidate": true,
+          "finalFormulaAdmission": "PENDING_THEME_FIT_HOLDINGS_WEIGHT_40D_AUM_PRICE_252D_SHADOW"
+        }
+      ]
+    },
+    {
+      "theme": "클라우드·SaaS",
+      "tickers": [
+        {
+          "ticker": "SKYY",
+          "operatorGrade": "B",
+          "approvedCandidate": true,
+          "finalFormulaAdmission": "PENDING_THEME_FIT_HOLDINGS_WEIGHT_40D_AUM_PRICE_252D_SHADOW"
+        },
+        {
+          "ticker": "CLOU",
+          "operatorGrade": "A",
+          "approvedCandidate": true,
+          "finalFormulaAdmission": "PENDING_THEME_FIT_HOLDINGS_WEIGHT_40D_AUM_PRICE_252D_SHADOW"
+        },
+        {
+          "ticker": "WCLD",
+          "operatorGrade": "B",
+          "approvedCandidate": true,
+          "finalFormulaAdmission": "PENDING_THEME_FIT_HOLDINGS_WEIGHT_40D_AUM_PRICE_252D_SHADOW"
+        },
+        {
+          "ticker": "FCLD",
+          "operatorGrade": "B",
+          "approvedCandidate": true,
+          "finalFormulaAdmission": "PENDING_THEME_FIT_HOLDINGS_WEIGHT_40D_AUM_PRICE_252D_SHADOW"
+        },
+        {
+          "ticker": "CLOD",
+          "operatorGrade": "B",
+          "approvedCandidate": true,
+          "finalFormulaAdmission": "PENDING_THEME_FIT_HOLDINGS_WEIGHT_40D_AUM_PRICE_252D_SHADOW"
+        }
+      ]
+    },
+    {
+      "theme": "자율주행",
+      "tickers": [
+        {
+          "ticker": "DRIV",
+          "operatorGrade": "A",
+          "approvedCandidate": true,
+          "finalFormulaAdmission": "PENDING_THEME_FIT_HOLDINGS_WEIGHT_40D_AUM_PRICE_252D_SHADOW"
+        },
+        {
+          "ticker": "BOTZ",
+          "operatorGrade": "A",
+          "approvedCandidate": true,
+          "finalFormulaAdmission": "PENDING_THEME_FIT_HOLDINGS_WEIGHT_40D_AUM_PRICE_252D_SHADOW"
+        },
+        {
+          "ticker": "IDRV",
+          "operatorGrade": "B",
+          "approvedCandidate": true,
+          "finalFormulaAdmission": "PENDING_THEME_FIT_HOLDINGS_WEIGHT_40D_AUM_PRICE_252D_SHADOW"
+        },
+        {
+          "ticker": "HAIL",
+          "operatorGrade": "B",
+          "approvedCandidate": true,
+          "finalFormulaAdmission": "PENDING_THEME_FIT_HOLDINGS_WEIGHT_40D_AUM_PRICE_252D_SHADOW"
+        },
+        {
+          "ticker": "CABZ",
+          "operatorGrade": "A",
+          "approvedCandidate": true,
+          "finalFormulaAdmission": "PENDING_THEME_FIT_HOLDINGS_WEIGHT_40D_AUM_PRICE_252D_SHADOW"
+        },
+        {
+          "ticker": "KARS",
+          "operatorGrade": "B",
+          "approvedCandidate": true,
+          "finalFormulaAdmission": "PENDING_THEME_FIT_HOLDINGS_WEIGHT_40D_AUM_PRICE_252D_SHADOW"
+        }
+      ]
+    },
+    {
+      "theme": "원전·SMR",
+      "tickers": [
+        {
+          "ticker": "NLR",
+          "operatorGrade": "B",
+          "approvedCandidate": true,
+          "finalFormulaAdmission": "PENDING_THEME_FIT_HOLDINGS_WEIGHT_40D_AUM_PRICE_252D_SHADOW"
+        },
+        {
+          "ticker": "URA",
+          "operatorGrade": "A",
+          "approvedCandidate": true,
+          "finalFormulaAdmission": "PENDING_THEME_FIT_HOLDINGS_WEIGHT_40D_AUM_PRICE_252D_SHADOW"
+        },
+        {
+          "ticker": "URNM",
+          "operatorGrade": "B",
+          "approvedCandidate": true,
+          "finalFormulaAdmission": "PENDING_THEME_FIT_HOLDINGS_WEIGHT_40D_AUM_PRICE_252D_SHADOW"
+        },
+        {
+          "ticker": "NUKZ",
+          "operatorGrade": "A",
+          "approvedCandidate": true,
+          "finalFormulaAdmission": "PENDING_THEME_FIT_HOLDINGS_WEIGHT_40D_AUM_PRICE_252D_SHADOW"
+        },
+        {
+          "ticker": "URNJ",
+          "operatorGrade": "B",
+          "approvedCandidate": true,
+          "finalFormulaAdmission": "PENDING_THEME_FIT_HOLDINGS_WEIGHT_40D_AUM_PRICE_252D_SHADOW"
+        },
+        {
+          "ticker": "URAN",
+          "operatorGrade": "B",
+          "approvedCandidate": true,
+          "finalFormulaAdmission": "PENDING_THEME_FIT_HOLDINGS_WEIGHT_40D_AUM_PRICE_252D_SHADOW"
+        }
+      ]
+    },
+    {
+      "theme": "방산",
+      "tickers": [
+        {
+          "ticker": "ITA",
+          "operatorGrade": "B",
+          "approvedCandidate": true,
+          "finalFormulaAdmission": "PENDING_THEME_FIT_HOLDINGS_WEIGHT_40D_AUM_PRICE_252D_SHADOW"
+        },
+        {
+          "ticker": "SHLD",
+          "operatorGrade": "A",
+          "approvedCandidate": true,
+          "finalFormulaAdmission": "PENDING_THEME_FIT_HOLDINGS_WEIGHT_40D_AUM_PRICE_252D_SHADOW"
+        },
+        {
+          "ticker": "XAR",
+          "operatorGrade": "B",
+          "approvedCandidate": true,
+          "finalFormulaAdmission": "PENDING_THEME_FIT_HOLDINGS_WEIGHT_40D_AUM_PRICE_252D_SHADOW"
+        },
+        {
+          "ticker": "PPA",
+          "operatorGrade": "B",
+          "approvedCandidate": true,
+          "finalFormulaAdmission": "PENDING_THEME_FIT_HOLDINGS_WEIGHT_40D_AUM_PRICE_252D_SHADOW"
+        },
+        {
+          "ticker": "NATO",
+          "operatorGrade": "B",
+          "approvedCandidate": true,
+          "finalFormulaAdmission": "PENDING_THEME_FIT_HOLDINGS_WEIGHT_40D_AUM_PRICE_252D_SHADOW"
+        },
+        {
+          "ticker": "WR",
+          "operatorGrade": "B",
+          "approvedCandidate": true,
+          "finalFormulaAdmission": "PENDING_THEME_FIT_HOLDINGS_WEIGHT_40D_AUM_PRICE_252D_SHADOW"
+        }
+      ]
+    },
+    {
+      "theme": "핀테크",
+      "tickers": [
+        {
+          "ticker": "FINX",
+          "operatorGrade": "A",
+          "approvedCandidate": true,
+          "finalFormulaAdmission": "PENDING_THEME_FIT_HOLDINGS_WEIGHT_40D_AUM_PRICE_252D_SHADOW"
+        },
+        {
+          "ticker": "ARKF",
+          "operatorGrade": "A",
+          "approvedCandidate": true,
+          "finalFormulaAdmission": "PENDING_THEME_FIT_HOLDINGS_WEIGHT_40D_AUM_PRICE_252D_SHADOW"
+        },
+        {
+          "ticker": "IPAY",
+          "operatorGrade": "A",
+          "approvedCandidate": true,
+          "finalFormulaAdmission": "PENDING_THEME_FIT_HOLDINGS_WEIGHT_40D_AUM_PRICE_252D_SHADOW"
+        },
+        {
+          "ticker": "BPAY",
+          "operatorGrade": "B",
+          "approvedCandidate": true,
+          "finalFormulaAdmission": "PENDING_THEME_FIT_HOLDINGS_WEIGHT_40D_AUM_PRICE_252D_SHADOW"
+        },
+        {
+          "ticker": "KYC",
+          "operatorGrade": "B",
+          "approvedCandidate": true,
+          "finalFormulaAdmission": "PENDING_THEME_FIT_HOLDINGS_WEIGHT_40D_AUM_PRICE_252D_SHADOW"
+        },
+        {
+          "ticker": "LATR",
+          "operatorGrade": "B",
+          "approvedCandidate": true,
+          "finalFormulaAdmission": "PENDING_THEME_FIT_HOLDINGS_WEIGHT_40D_AUM_PRICE_252D_SHADOW"
+        }
+      ]
+    },
+    {
+      "theme": "사이버보안",
+      "tickers": [
+        {
+          "ticker": "CIBR",
+          "operatorGrade": "B",
+          "approvedCandidate": true,
+          "finalFormulaAdmission": "PENDING_THEME_FIT_HOLDINGS_WEIGHT_40D_AUM_PRICE_252D_SHADOW"
+        },
+        {
+          "ticker": "BUG",
+          "operatorGrade": "A",
+          "approvedCandidate": true,
+          "finalFormulaAdmission": "PENDING_THEME_FIT_HOLDINGS_WEIGHT_40D_AUM_PRICE_252D_SHADOW"
+        },
+        {
+          "ticker": "HACK",
+          "operatorGrade": "A",
+          "approvedCandidate": true,
+          "finalFormulaAdmission": "PENDING_THEME_FIT_HOLDINGS_WEIGHT_40D_AUM_PRICE_252D_SHADOW"
+        },
+        {
+          "ticker": "IHAK",
+          "operatorGrade": "B",
+          "approvedCandidate": true,
+          "finalFormulaAdmission": "PENDING_THEME_FIT_HOLDINGS_WEIGHT_40D_AUM_PRICE_252D_SHADOW"
+        },
+        {
+          "ticker": "WCBR",
+          "operatorGrade": "B",
+          "approvedCandidate": true,
+          "finalFormulaAdmission": "PENDING_THEME_FIT_HOLDINGS_WEIGHT_40D_AUM_PRICE_252D_SHADOW"
+        },
+        {
+          "ticker": "SPAM",
+          "operatorGrade": "B",
+          "approvedCandidate": true,
+          "finalFormulaAdmission": "PENDING_THEME_FIT_HOLDINGS_WEIGHT_40D_AUM_PRICE_252D_SHADOW"
+        },
+        {
+          "ticker": "PSWD",
+          "operatorGrade": "C",
+          "approvedCandidate": true,
+          "finalFormulaAdmission": "PENDING_THEME_FIT_HOLDINGS_WEIGHT_40D_AUM_PRICE_252D_SHADOW"
+        },
+        {
+          "ticker": "XA",
+          "operatorGrade": "B",
+          "approvedCandidate": true,
+          "finalFormulaAdmission": "PENDING_THEME_FIT_HOLDINGS_WEIGHT_40D_AUM_PRICE_252D_SHADOW"
+        }
+      ]
+    },
+    {
+      "theme": "AI·반도체",
+      "tickers": [
+        {
+          "ticker": "SMH",
+          "operatorGrade": "B",
+          "approvedCandidate": true,
+          "finalFormulaAdmission": "PENDING_THEME_FIT_HOLDINGS_WEIGHT_40D_AUM_PRICE_252D_SHADOW"
+        },
+        {
+          "ticker": "SOXX",
+          "operatorGrade": "B",
+          "approvedCandidate": true,
+          "finalFormulaAdmission": "PENDING_THEME_FIT_HOLDINGS_WEIGHT_40D_AUM_PRICE_252D_SHADOW"
+        },
+        {
+          "ticker": "SOXQ",
+          "operatorGrade": "B",
+          "approvedCandidate": true,
+          "finalFormulaAdmission": "PENDING_THEME_FIT_HOLDINGS_WEIGHT_40D_AUM_PRICE_252D_SHADOW"
+        },
+        {
+          "ticker": "XSD",
+          "operatorGrade": "B",
+          "approvedCandidate": true,
+          "finalFormulaAdmission": "PENDING_THEME_FIT_HOLDINGS_WEIGHT_40D_AUM_PRICE_252D_SHADOW"
+        },
+        {
+          "ticker": "ARTY",
+          "operatorGrade": "B",
+          "approvedCandidate": true,
+          "finalFormulaAdmission": "PENDING_THEME_FIT_HOLDINGS_WEIGHT_40D_AUM_PRICE_252D_SHADOW"
+        },
+        {
+          "ticker": "AIQ",
+          "operatorGrade": "A",
+          "approvedCandidate": true,
+          "finalFormulaAdmission": "PENDING_THEME_FIT_HOLDINGS_WEIGHT_40D_AUM_PRICE_252D_SHADOW"
+        },
+        {
+          "ticker": "CHAT",
+          "operatorGrade": "A",
+          "approvedCandidate": true,
+          "finalFormulaAdmission": "PENDING_THEME_FIT_HOLDINGS_WEIGHT_40D_AUM_PRICE_252D_SHADOW"
+        },
+        {
+          "ticker": "PSI",
+          "operatorGrade": "B",
+          "approvedCandidate": true,
+          "finalFormulaAdmission": "PENDING_THEME_FIT_HOLDINGS_WEIGHT_40D_AUM_PRICE_252D_SHADOW"
+        },
+        {
+          "ticker": "EUV",
+          "operatorGrade": "B",
+          "approvedCandidate": true,
+          "finalFormulaAdmission": "PENDING_THEME_FIT_HOLDINGS_WEIGHT_40D_AUM_PRICE_252D_SHADOW"
+        },
+        {
+          "ticker": "DRAM",
+          "operatorGrade": "A",
+          "approvedCandidate": true,
+          "finalFormulaAdmission": "PENDING_THEME_FIT_HOLDINGS_WEIGHT_40D_AUM_PRICE_252D_SHADOW"
+        },
+        {
+          "ticker": "LLMA",
+          "operatorGrade": "A",
+          "approvedCandidate": true,
+          "finalFormulaAdmission": "PENDING_THEME_FIT_HOLDINGS_WEIGHT_40D_AUM_PRICE_252D_SHADOW"
+        }
+      ]
+    },
+    {
+      "theme": "바이오·신약",
+      "tickers": [
+        {
+          "ticker": "IBB",
+          "operatorGrade": "B",
+          "approvedCandidate": true,
+          "finalFormulaAdmission": "PENDING_THEME_FIT_HOLDINGS_WEIGHT_40D_AUM_PRICE_252D_SHADOW"
+        },
+        {
+          "ticker": "XBI",
+          "operatorGrade": "B",
+          "approvedCandidate": true,
+          "finalFormulaAdmission": "PENDING_THEME_FIT_HOLDINGS_WEIGHT_40D_AUM_PRICE_252D_SHADOW"
+        },
+        {
+          "ticker": "BBH",
+          "operatorGrade": "B",
+          "approvedCandidate": true,
+          "finalFormulaAdmission": "PENDING_THEME_FIT_HOLDINGS_WEIGHT_40D_AUM_PRICE_252D_SHADOW"
+        },
+        {
+          "ticker": "PBE",
+          "operatorGrade": "B",
+          "approvedCandidate": true,
+          "finalFormulaAdmission": "PENDING_THEME_FIT_HOLDINGS_WEIGHT_40D_AUM_PRICE_252D_SHADOW"
+        },
+        {
+          "ticker": "GNOM",
+          "operatorGrade": "A",
+          "approvedCandidate": true,
+          "finalFormulaAdmission": "PENDING_THEME_FIT_HOLDINGS_WEIGHT_40D_AUM_PRICE_252D_SHADOW"
+        },
+        {
+          "ticker": "ARKG",
+          "operatorGrade": "A",
+          "approvedCandidate": true,
+          "finalFormulaAdmission": "PENDING_THEME_FIT_HOLDINGS_WEIGHT_40D_AUM_PRICE_252D_SHADOW"
+        },
+        {
+          "ticker": "SBIO",
+          "operatorGrade": "A",
+          "approvedCandidate": true,
+          "finalFormulaAdmission": "PENDING_THEME_FIT_HOLDINGS_WEIGHT_40D_AUM_PRICE_252D_SHADOW"
+        },
+        {
+          "ticker": "FBT",
+          "operatorGrade": "B",
+          "approvedCandidate": true,
+          "finalFormulaAdmission": "PENDING_THEME_FIT_HOLDINGS_WEIGHT_40D_AUM_PRICE_252D_SHADOW"
+        },
+        {
+          "ticker": "GNMX",
+          "operatorGrade": "B",
+          "approvedCandidate": true,
+          "finalFormulaAdmission": "PENDING_THEME_FIT_HOLDINGS_WEIGHT_40D_AUM_PRICE_252D_SHADOW"
+        }
+      ]
+    }
+  ],
+  "riskFocus": [
+    {
+      "theme": "로봇·자동화",
+      "ticker": "ARKQ",
+      "reason": "broad innovation and mobility rather than pure robot"
+    },
+    {
+      "theme": "클라우드·SaaS",
+      "ticker": "CLOD",
+      "reason": "cloud and digital infrastructure breadth"
+    },
+    {
+      "theme": "자율주행",
+      "ticker": "BOTZ",
+      "reason": "robotics and AI vs driving autonomy exposure"
+    },
+    {
+      "theme": "자율주행",
+      "ticker": "HAIL",
+      "reason": "smart mobility breadth"
+    },
+    {
+      "theme": "자율주행",
+      "ticker": "KARS",
+      "reason": "EV manufacturing and battery supply chain"
+    },
+    {
+      "theme": "원전·SMR",
+      "ticker": "URNM",
+      "reason": "uranium mining"
+    },
+    {
+      "theme": "원전·SMR",
+      "ticker": "URNJ",
+      "reason": "junior uranium mining"
+    },
+    {
+      "theme": "방산",
+      "ticker": "WR",
+      "reason": "energy security mixed with defense"
+    },
+    {
+      "theme": "핀테크",
+      "ticker": "ARKF",
+      "reason": "blockchain and fintech multi-purpose"
+    }
+  ]
+}
