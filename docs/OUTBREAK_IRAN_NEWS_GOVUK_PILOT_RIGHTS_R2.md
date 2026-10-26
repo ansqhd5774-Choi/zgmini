@@ -33,8 +33,16 @@
 2. **완료:** 첫 GOV.UK 본문 1건의 개별 권리 범위 및 자작성 요약/영향 분류 예비 검토.
 3. **완료:** PC 캐시 유지관리 CLI에 `--reviewed-input=<절대 경로>` 추가. `rightsVerified`/URL/발행일 검증을 통과하지 않는 입력은 쓰기 전 거부. 기존 산식·DB 불변.
 4. **완료:** Windows 1파일 `IRAN_NEWS_R2_PREFLIGHT.cmd` 구현. 승인된 코드 SHA에서 읽기 전용 도구 다운로드, 공식 피드 조회, 1건 검토 입력으로 **dry-run만** 실행. 결과는 CMD 옆 `IRAN_NEWS_R2_PREFLIGHT_RESULT.txt`.
-5. **대기:** 사용자 PC에서 R2 CMD 실행과 TXT 로그 제출. 반드시 `received=1,accepted=1,after=1,dryRun=true,written=false`인지 확인.
-6. **대기:** 운영 승인 SHA·예약작업 경로 재확인 후 PC 표시 전용 캐시 최초 `--apply` 및 read-back. 별도 승인 없이 기존 R3/R5 원장·스케줄러 변경 금지.
-7. **대기:** 뉴스 전용 D1 키 게시·read-back, 브랜치 변경 내용의 필요한 파일만 main 반영, Cloudflare Git Integration exact 배포, 공개 API/UI 확인.
+5. **완료:** 2026-10-26 사용자 PC R2 로그 `FINAL_STATUS=PASS_READ_ONLY_REVIEWED`. GOV.UK Atom 20/Content API 20 성공, 30일 후보 16, R13 예약 작업 확인, reviewed `received=1,accepted=1,after=1,dryRun=true,written=false`. SQLite/D1 변경 없음.
+6. **PC 사용자 실행 대기:** `scripts/iran-progress/IRAN_NEWS_R3_APPLY.cmd` (같은 브랜치)를 R2 로그와 같은 폴더에 두고 실행한다. R2 PASS·R13 예약 작업·운영 DB 표식·전용 캐시 부재·동일 입력 dry-run 통과 시에만 `news-display-r1.json`을 한 번 생성하고 read-back 한다. D1 게시 없음. 캐시가 이미 있다면 추가 수정하지 않고 중단한다. 별도 승인 없이 기존 R3/R5 원장·스케줄러 변경 금지.
+7. **대기:** R3 실제 PC 캐시 apply/read-back 로그 검토 후 뉴스 전용 D1 키 게시·read-back, 브랜치 변경 내용의 필요한 파일만 main 반영, Cloudflare Git Integration exact 배포, 공개 API/UI 확인.
 
 **주의:** 이 문서나 CMD의 존재 자체는 실 PC 수집/게시가 이루어졌다는 뜻이 아니다. GOV.UK의 다음 기사도 자동 `rightsVerified:true`로 승인되지 않는다.
+
+## 3. R3 첫 캐시 쓰기 제한
+
+- 사용자 직접 실행용 단일 CMD 파일: `IRAN_NEWS_R3_APPLY.cmd`, 결과: 동일 폴더의 `IRAN_NEWS_R3_APPLY_RESULT.txt`.
+- R2 결과가 같은 폴더에 없거나 PASS가 아니면 중단. 기존 캐시 존재 시 덮어쓰기 금지. 쓰기 직전 `before=0,accepted=1,after=1,written=false` 검증.
+- 첫 파일 작성만 허용하고 `written=true,visibleCount=1` 및 파일 재조회에서 원문 URL·원 발행일·중립 분류가 정확히 일치해야 PASS.
+- 쓰기 시도 이후 오류는 `STOP_CACHE_WRITE_VERIFY_REQUIRED`로 중단하고 자동 재실행 금지. `--publish` 및 기존 SQLite·스케줄러·산식 변경 금지.
+- 이번 1회 캐시 작성은 계속 운영·자동 발행이 구축되었다는 뜻이 아니다. 다음 단계에서 승인된 기존 PC runner와 뉴스 전용 공개 저장 경로를 검증한다.
