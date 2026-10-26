@@ -22,7 +22,7 @@ export async function readCollectionHealth(db,now=Date.now()){
   if(![1,2,3,4].includes(body?.version)||body.scope!=='collection-jobs'||!Array.isArray(body.items)||body.items.length>100)throw Error('INVALID_SUMMARY');
   const at=Date.parse(body.checkedAt);
   if(!Number.isFinite(at)||at>now)throw Error('INVALID_TIMESTAMP');
-  const summary=collectionHealthSummary(body.items.map(x=>({id:x.id,storedAt:x.storedAt,checkedAt:body.version>=2?x.checkedAt:x.storedAt,outcome:body.version>=2?x.outcome:x.normal===true?'success':'unknown',reason:x.reason,nextRetryAt:x.nextRetryAt,...(body.version>=3?{lastSuccessAt:x.lastSuccessAt}:{})})),now);
+  const summary=collectionHealthSummary(body.items.filter(x=>x.id!=='job:themeSecondary').map(x=>({id:x.id,storedAt:x.storedAt,checkedAt:body.version>=2?x.checkedAt:x.storedAt,outcome:body.version>=2?x.outcome:x.normal===true?'success':'unknown',reason:x.reason,nextRetryAt:x.nextRetryAt,...(body.version>=3?{lastSuccessAt:x.lastSuccessAt}:{})})),now);
   // Public indicator retains its original eight-day-success contract.
   // Latest-attempt diagnostics remain intact for the PC owner.
   const publicStatus=summary.failed?'partial':summary.total&&summary.normal===summary.total?'healthy':'unknown';
