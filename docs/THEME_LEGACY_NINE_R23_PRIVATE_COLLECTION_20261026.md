@@ -3,12 +3,13 @@
 - 작업 브랜치: `codex/theme-fear-greed-integration-20261025` **한 곳만 사용**.
 - 사용자 승인: 2026-10-26 “진행해라” (R22 단계 1의 신규 수집 도구 구현 승인).
 - 상위 계약: `THEME_LEGACY_NINE_R22_SIX_STAGE_TOOL_ASSIGNMENT_20261026.md`.
-- 상태: `PC_REAL_GET_R23_CONFIRMED / AUTO_STOP_INVALID_RESPONSE / 19_OF_64_LAST_CONFIRMED / SHADOW_ONLY`. 사용자 제공 자동수집 TXT에서 8배치·GET 31회·원본 30개 저장·7배치 종료 시 19개 완료, 8배치 중단을 확인했다. 오류 응답의 실제 원인·심볼은 PC 체크포인트 진단 후 확정한다.
+- 상태: `PC_REAL_GET_R23_CONFIRMED / TIMEOUT_DURING_FINX_BODY / 20_OF_64 / 38_RAW_PAGES_PRESERVED / SHADOW_ONLY`. 2026-10-26 PC 진단 TXT 확인: 체크포인트 `collection-fcddff2ccf8ab1f1215f.json`은 `failedReason=23`, `failedAt=2026-10-26T14:21:27.649Z`, 첫 미완료 ETF `FINX`, 완료 20/64, 미완료 44, manifest 원본 38개다. 코드상 응답 본문 수신 중 `TimeoutError.code=23`이 종전 `STOP_INVALID_RESPONSE`로 잘못 분류되었다. 응답 무결성 실패로 확정하지 않는다.
 
 ## 구현 파일
 
 - `scripts/pc-writer/THEME_NINE_R23_PILOT.cmd`: **단일 다운로드 파일**. GitHub 체크아웃 없이 Windows에서 실행 가능하도록 승인된 R23 수집기와 R20 후보 명단을 검증 가능한 SHA256 번들로 포함한다. 실행 결과는 CMD **같은 위치**의 `THEME_NINE_R23_PILOT_RESULT.txt`에 남긴다.
 - `scripts/pc-writer/THEME_NINE_R23_DIAGNOSE.cmd`: 실데이터 자동 수집이 `STOP_INVALID_RESPONSE`로 중단된 경우 사용하는 **단일 다운로드 읽기 전용 진단 CMD**. 동일한 검증된 코드·승인 명단을 포함하며 네트워크 요청이나 체크포인트 변경 없이 `THEME_NINE_R23_DIAGNOSE_RESULT.txt`를 CMD 옆에 생성한다.
+- `scripts/pc-writer/THEME_NINE_R23_RECOVER.cmd`: **해당 PC 로그로 확정된 1회성 타임아웃 복구 CMD**. 기존 38개 원본 SHA 전수 검증, 완료 개수/실패 심볼/실패 시각/숫자 코드 `23` 완전 일치 확인 후 **실패 잠금만 1회 해제**하고 최대 4 GET씩 60초 간격으로 이어 수집한다. 단 한 조건이라도 다르면 GET 없이 종료한다. 결과 TXT는 CMD 같은 폴더의 `THEME_NINE_R23_RECOVER_RESULT.txt`에 저장한다.
 - `scripts/pc-writer/build-theme-nine-r23-pilot.mjs`: 원본 코드/명단 변경 시 단일 CMD를 재생성하고, 내장 자료를 역추출해 일치 여부를 검사한다.
 - `scripts/pc-writer/theme-nine-r23-collect.mjs`: R20 확정 명단 직접 읽기. 중복된 편입 64개를 고유 ETF 63개로 통합하고, SPY 기준 종목을 별도로 포함한다. 티커 수를 임의로 고정하거나 다시 심사하지 않는다.
 - `scripts/pc-writer/theme-nine-r23-collect.cmd`: 사용자 Windows CMD 진입점. 실행 결과 TXT는 CMD **동일 폴더**의 `THEME_NINE_R23_COLLECTION_RESULT.txt`에 생성한다.
@@ -18,7 +19,7 @@
 
 1. GetMarketHistory **무료 단일 티커 1h 경로** `GET /api/v1/bars/stocks/{TICKER}/1h`만 허용한다. 유료 `/query/`, 1d 요청, 다종목 일괄 요청, 결제는 없다.
 2. 시간 범위는 명령어에서 **명시**한다. `start/end` 고정 창과 승인 후보 파일 SHA256을 체크포인트 ID에 넣어, 날짜/명단이 바뀐 체크포인트의 자동 재사용을 차단한다.
-3. 수집기 단일 배치의 API GET은 **최대 4회**. 각 페이지 `limit=5000`, `cursor`를 저장하고 다음 배치에서 이어받는다. 완성된 페이지는 같은 체크포인트에서 재다운로드하지 않는다. 429/오류/응답 무결성 실패 후 자동 재시도하지 않는다. **사용자가 승인한 자동 모드**는 최대 64배치(최대 256 GET), 배치 사이 60초 간격으로 연속 실행한다. 상한에 도달하면 `AUTO_BATCH_CAP_REACHED_RESUMABLE`을 남기고 종료한다. 이는 무료 API의 보장된 허용량이 아니라 로컬 안전 상한이다.
+3. 수집기 단일 배치의 API GET은 **최대 4회**. 각 페이지 `limit=5000`, `cursor`를 저장하고 다음 배치에서 이어받는다. 완성된 페이지는 같은 체크포인트에서 재다운로드하지 않는다. 429/오류/응답 무결성 실패 후 자동 재시도하지 않는다. **사용자가 승인한 자동 모드**는 최대 64배치(최대 256 GET), 배치 사이 60초 간격으로 연속 실행한다. 요청 전체 시간 제한은 23초에서 **45초**로 확대해 느린 본문 수신을 허용하며, 여전히 타임아웃 1회에 즉시 중단한다. 상한에 도달하면 `AUTO_BATCH_CAP_REACHED_RESUMABLE`을 남기고 종료한다. 이는 무료 API의 보장된 허용량이 아니라 로컬 안전 상한이다.
 4. 원본문서 내용과 각 페이지 SHA256은 `E:/ZGmini/data/themes/legacy-nine-r23/raw/`에, manifest/checkpoint는 같은 테마 아래 저장한다. **기존 9개 운영 원장·바이오/AI 원자료·스케줄러는 수정하지 않는다.**
 5. 저장 전 심볼·UTC 시각 순서·OHLCV 양수/범위·volume 유효성, 응답 크기를 검사한다. 결측/실제 무거래는 가짜 가격이나 0점으로 보충하지 않는다. 해당 원가격은 비조정 1시간봉이며 공식 일봉 종가로 명명하지 않는다.
 6. `--inspect`는 데이터 파일을 쓰거나 네트워크에 연결하지 않는다. `--collect`(1배치) 또는 `--collect-auto`(자동 배치)를 **명시**한 경우에만 무료 GET 및 독립 원자료 저장을 실행한다.
@@ -30,7 +31,7 @@
 
 **대체 방법: 저장소 체크아웃 사용 시** 아래 CMD를 쓸 수 있다.
 
-**2026-10-26 오류 대응:** 자동 수집 로그 `STOP_INVALID_RESPONSE` 이후에는 자동 수집 CMD를 다시 실행하거나 상태 파일을 삭제하지 않는다. 먼저 최신 `THEME_NINE_R23_DIAGNOSE.cmd`를 한 번 실행하고 같은 폴더의 `THEME_NINE_R23_DIAGNOSE_RESULT.txt`를 제출한다. 이 진단은 실패 사유 코드, 실패 시각, 첫 미완료 ETF, 페이지·커서 유무, 원자료 파일 개수를 표시하되 API 호출·DB 변경·원본 변경은 하지 않는다.
+**2026-10-26 진단 완료 및 복구:** `THEME_NINE_R23_DIAGNOSE_RESULT.txt`에 타임아웃 코드 `23`이 확인됐다. 기존 자동 CMD만 다시 실행하면 실패 잠금에서 중단된다. **`THEME_NINE_R23_RECOVER.cmd`를 CMD 폴더에 내려받아 실행한다.** 이 파일만 기존 상태를 보호하며 1회 잠금을 해제하고 자동 수집을 재개한다. 결과 `THEME_NINE_R23_RECOVER_RESULT.txt`를 제출한다. 처음 실패 조건이 조금이라도 달라졌으면 `REVIEW_REJECTED_NO_PROVIDER_CALL`로 종료한다. 체크포인트를 수동 삭제하지 않는다.
 
 승인된 저장소 체크아웃의 루트에서 실행한다. `<시작일>`과 `<종료일>`은 동일하게 유지하며, 다음 호출 때도 날짜를 바꾸지 않는다.
 
