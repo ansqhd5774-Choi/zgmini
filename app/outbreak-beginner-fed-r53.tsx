@@ -49,7 +49,7 @@ function Rate14Chart({rate}:{rate:RateStoredSnapshot|null}){
  const period=stored14DayWindow(rate);
  const data=period?.points??[];
  const hasData=data.length>=2;
- // The chart uses one calendar slot per day. Unobserved days stay null:
+ // 미관측 날짜는 점을 생성하지 않음. The chart uses one calendar slot per day:
  // null separates the solid line, and only observed endpoints get a dashed gap guide.
  const observed=new Map(data.map(row=>[row.label,row.value]));
  const calendar=period?Array.from({length:14},(_,day)=>new Date(period.start+day*86_400_000).toISOString().slice(0,10)):[];
