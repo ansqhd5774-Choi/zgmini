@@ -180,6 +180,14 @@
 - `stage04/keyword-growth-speed-r26-readonly.mjs`, `stage04/STAGE04_KEYWORD_GROWTH_R26_READONLY.cmd`, `stage04/keyword-growth-speed-r26.test.mjs` 추가. **R26 3/3 모의 시험 및 Stage04 전체 18개 테스트 파일 PASS**, 실제 Windows R26 실측은 아직 없음. 연구용 전문 매체 보고서 공개·상업 이용권 미확인, G/D/M·순위·주문 변화 없음.
 - 자세한 진단 `STAGE04_KEYWORD_SEARCH_R26_DIAGNOSTICS_20261026.md`.
 
+## Stage04 R27 — 공식 성장률 매체 검색으로 5/5 실제 조회 성공 (2026-10-26)
+
+- 실제 사용자 Windows R26에서 Bing RSS 검색 모두 `HTTP 200`, 각 RSS 10건이나 전문 매체 링크 0건. 반환 도메인은 ChatGPT/네이버/유튜브/넥슨/다음 등이어서 **Bing RSS 검색 경로 폐기**. 무관한 결과를 올라마에 전달하지 않았고, 잘못된 CAGR 생성 0회.
+- 전문매체 **The Business Research Company** 자체 검색 화면에서 공식 GET `/global-market-reports?search=<키워드>`를 확인. R27 코드에 **각 키워드 검색 1회→제목·도메인이 일치하는 보고서 1건 조회→짧은 CAGR 구절만 Ollama 1회**, 총 20초/키워드 상한 구현. Bing/다른 공급원 대체·재시도 0회.
+- 개발 호스트 실제 검색·보고서 직접 GET **5/5 PASS**: 원자력 446+494ms / 로봇 439+522ms / AI 반도체 476+395ms / 바이오 718+488ms / 데이터센터 489+467ms. 예상 CAGR은 5.5/21.0/24.8/10.1/8.2%로 원문 구절 검증. **Ollama는 모의 JSON 응답**으로 실행 경로만 확인했으며, 사용자 PC 실측 시간은 아님.
+- 신규 파일 `stage04/keyword-growth-speed-r27-readonly.mjs`, `stage04/STAGE04_KEYWORD_GROWTH_R27_READONLY.cmd`, `stage04/keyword-growth-speed-r27.test.mjs`. R27 모의 테스트 **3/3**·Stage04 전체 **19개 테스트 파일 통과**. 출처 원문 대량 저장, G/D/M·순위·주문·운영 배포 변경 0건.
+- 상세 `STAGE04_OFFICIAL_REPORT_SEARCH_R27_20261026.md`. 다음에 필요한 것은 **사용자 PC R27 Ollama 실측**.
+
 ## 가장 최근 M2 패키지 R25 진척
 
 - 원본: `INVESTMENT_M2_R25_NASDAQ_EARNINGS_REPAIR_20261025(1).zip` (원본 SHA256은 `ARTIFACT_INDEX.md`).
@@ -193,5 +201,5 @@
 
 1. 이 브랜치와 `m2/` 파일 목록·SHA, 현재 ZGMINI `main` SHA, 사용자 Windows에서 실행 승인된 R25 ZIP의 일치 여부 확인.
 2. 사용자가 CMD에서 R25를 실행한 실제 `M2_LATEST_STATUS.txt`를 확보하면 R25 SERV 수정이 실제 PASS인지 검증.
-3. **R26 키워드별 재측정**: R25 실제 PC에서 5/5 RSS 보고서 미매칭·Ollama 0회 확인. R26 CMD의 `R26_KEYWORD_SEARCH_TIMINGS.txt`에서 RSS 결과 개수/매체 링크/키워드 제목 매칭과 개별 검색·본문·Ollama·총 초를 검증한다. 1회 실패를 자동 재시도하지 않는다.
+3. **R27 실 Ollama 타이밍 확인**: R25/R26 Bing RSS 실패 원인 확인 및 폐기 완료, 개발 호스트 R27 전문매체 공식 검색+원문 **5/5 PASS**. 사용자 Windows CMD 결과 `R27_KEYWORD_SEARCH_TIMINGS.txt`에서 실제 검색/보고서/Ollama/총 초를 검증한다. 20초 제한·실패 시 무재시도 유지.
 4. 사용자 승인 이전에 M 랭킹 실운영·03단계 가중치/ETF 변경·주문 및 배포 금지.
