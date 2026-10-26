@@ -172,6 +172,14 @@
 - 실제 Windows 매체·검색 접근 및 5개 키워드의 속도는 **사용자 R25 로그 수신 전 미확인**. 매체는 공개 재배포·상업적 파생 사용 승인 원천이 아니므로 연구용 시험 외 ZGMINI 운영 G/D/M·투자 점수·주문·DB·API에 사용하지 않음.
 - 상세 `STAGE04_INDEPENDENT_KEYWORD_SPEED_R25_20261026.md`.
 
+## Stage04 R26 — R25 PC 실측 미매칭 원인 세분화 (2026-10-26)
+
+- 사용자가 실제 R25 결과를 제공했다. **5/5 `SEARCH_NO_MATCHED_PUBLISHER_REPORT`**, 개별 검색 1,847/234/306/168/165ms, 검색 합계 **2,720ms**, 총 경과 합계 **2,913ms**, 본문 조회 **0회**, Ollama 생성 **0회**. 기존 R24 Ollama 2,227ms를 R25의 실제 모델 처리시간이라고 혼동하면 안 된다.
+- 원인은 R25 로그만으로 확정할 수 없다. Bing RSS가 항목 0건을 돌려줬는지, 항목은 있으나 URL/제목 선별이 너무 엄격했는지 관측하지 않았다. The Business Research Company의 일부 관련 페이지는 외부 웹 검색에서 확인됐다.
+- R26 실행기는 **동일 매체·동일 키워드 5개**를 유지하면서 엄격한 `site:`/따옴표/연도 조합을 제거한다. 각 키워드 **Bing RSS 1회, 보고서 0~1회, Ollama 0~1회, 20초**, 재시도·대체 0. `RSS_ITEMS`/`PUBLISHER_INDEX_LINKS`/`TITLE_MATCHED_LINKS`/첫 결과 제목을 각 실패에 기록한다.
+- `stage04/keyword-growth-speed-r26-readonly.mjs`, `stage04/STAGE04_KEYWORD_GROWTH_R26_READONLY.cmd`, `stage04/keyword-growth-speed-r26.test.mjs` 추가. **R26 3/3 모의 시험 및 Stage04 전체 18개 테스트 파일 PASS**, 실제 Windows R26 실측은 아직 없음. 연구용 전문 매체 보고서 공개·상업 이용권 미확인, G/D/M·순위·주문 변화 없음.
+- 자세한 진단 `STAGE04_KEYWORD_SEARCH_R26_DIAGNOSTICS_20261026.md`.
+
 ## 가장 최근 M2 패키지 R25 진척
 
 - 원본: `INVESTMENT_M2_R25_NASDAQ_EARNINGS_REPAIR_20261025(1).zip` (원본 SHA256은 `ARTIFACT_INDEX.md`).
@@ -185,5 +193,5 @@
 
 1. 이 브랜치와 `m2/` 파일 목록·SHA, 현재 ZGMINI `main` SHA, 사용자 Windows에서 실행 승인된 R25 ZIP의 일치 여부 확인.
 2. 사용자가 CMD에서 R25를 실행한 실제 `M2_LATEST_STATUS.txt`를 확보하면 R25 SERV 수정이 실제 PASS인지 검증.
-3. **R25 키워드별 실측 대기**: R24 PC Ollama 단독 2,227ms 실측을 확인했다. 제공한 R25 Windows CMD로 원자력·로봇·AI 반도체·바이오·데이터센터 5개 개별 **실제 검색/원문/Ollama/총 초**를 `R25_KEYWORD_SEARCH_TIMINGS.txt`에서 검증한다. HTTP 차단은 해당 키워드 실패로 처리하며 반복 요청하지 않는다.
+3. **R26 키워드별 재측정**: R25 실제 PC에서 5/5 RSS 보고서 미매칭·Ollama 0회 확인. R26 CMD의 `R26_KEYWORD_SEARCH_TIMINGS.txt`에서 RSS 결과 개수/매체 링크/키워드 제목 매칭과 개별 검색·본문·Ollama·총 초를 검증한다. 1회 실패를 자동 재시도하지 않는다.
 4. 사용자 승인 이전에 M 랭킹 실운영·03단계 가중치/ETF 변경·주문 및 배포 금지.
