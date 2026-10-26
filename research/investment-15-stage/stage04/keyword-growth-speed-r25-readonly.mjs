@@ -85,6 +85,26 @@ function searchDiagnostics(xml, keyword) {
     title_matched_links: titleMatched, indexed_sample: sample.join(' | ') || 'NONE' };
 }
 
+/** TBRC's public report-store search renders title links inside h4 cards. */
+export function parsePublisherSearchPage(html, keyword) {
+  const reports = [];
+  for (const match of html.matchAll(/<h4\b[^>]*>\s*<a\s+href=["'](\/report\/[^"'?#]+)["'][^>]*>([\s\S]*?)<\/a>/gi)) {
+    const url = new URL(match[1], PUBLISHER_HOST).href;
+    const title = stripTags(decodeEntities(match[2]));
+    if (!allowedReportUrl(url)) continue;
+    reports.push({ url, title, description: '' });
+    if (reports.length >= 20) break;
+  }
+  const matched = reports.filter(({ title }) => matchesKeyword(title, keyword));
+  return {
+    selected: matched[0] || null,
+    diagnostics: { search_page_cards: reports.length, publisher_index_links: reports.length,
+      title_matched_links: matched.length,
+      indexed_sample: reports.slice(0, 3).map(({ title }) =>
+        title.slice(0, 80).replace(/[\r\n=|]/g, ' ')).join(' | ') || 'NONE' }
+  };
+}
+
 async function limitedRead(response, maxBytes, stopWhen = () => false) {
   if (!response.ok) throw new Error(`HTTP_${response.status}`);
   if (!response.body?.getReader) throw new Error('EMPTY_RESPONSE');
@@ -124,24 +144,30 @@ export async function measureKeyword(keyword, {
   maxMs = MAX_KEYWORD_MS,
   now = () => performance.now(),
   searchQuery = null,
+  searchMode = 'bing-rss',
 } = {}) {
   if (maxMs <= 0 || maxMs > MAX_KEYWORD_MS) throw new Error('INVALID_TIMEOUT');
   if (!KEYWORDS.includes(keyword)) throw new Error('INVALID_TEST_KEYWORD');
+  if (!['bing-rss', 'publisher-site'].includes(searchMode)) throw new Error('INVALID_SEARCH_MODE');
   const began = now();
   const controller = new AbortController();
   const deadline = setTimeout(() => controller.abort(), maxMs);
-  const query = searchQuery || `site:thebusinessresearchcompany.com/report/ "${keyword}" market CAGR 2026 2030`;
+  const query = searchMode === 'publisher-site' ? keyword :
+    (searchQuery || `site:thebusinessresearchcompany.com/report/ "${keyword}" market CAGR 2026 2030`);
   if (typeof query !== 'string' || query.length > 220) throw new Error('INVALID_QUERY');
-  const searchUrl = `${SEARCH_HOST}/search?format=rss&q=${encodeURIComponent(query)}`;
+  const searchUrl = searchMode === 'publisher-site'
+    ? `${PUBLISHER_HOST}/global-market-reports?search=${encodeURIComponent(query)}`
+    : `${SEARCH_HOST}/search?format=rss&q=${encodeURIComponent(query)}`;
   const result = { keyword, state: 'FAILED', publisher: PUBLISHER,
-    search_engine: searchQuery ? 'Bing RSS publisher-named search' : 'Bing RSS site-filtered search',
+    search_engine: searchMode === 'publisher-site' ? 'Official TBRC report-store search' :
+      (searchQuery ? 'Bing RSS publisher-named search' : 'Bing RSS site-filtered search'),
     search_query: query,
     result_url: null, model, keyword_deadline_ms: maxMs,
     search_requests: 0, report_requests: 0, ollama_generations: 0,
     search_ms: null, report_ms: 0, ollama_ms: null,
     total_ms: null, ollama_reported_ms: null, growth_pct: null,
     metric: null, period_start: null, period_end: null, failure: null,
-    search_http_status: null, rss_items: null, publisher_index_links: null,
+    search_http_status: null, rss_items: null, search_page_cards: null, publisher_index_links: null,
     title_matched_links: null, indexed_sample: null };
   try {
     const searchBegan = now();
@@ -149,17 +175,29 @@ export async function measureKeyword(keyword, {
     let feed;
     try {
       const searchResponse = await fetchFn(searchUrl, {
-        signal: controller.signal, headers: { accept: 'application/rss+xml,application/xml,text/xml' }
+        signal: controller.signal,
+        headers: { accept: searchMode === 'publisher-site' ? 'text/html' : 'application/rss+xml,application/xml,text/xml' }
       });
       result.search_http_status = searchResponse.status;
-      if (new URL(searchResponse.url || searchUrl).origin !== SEARCH_HOST) throw new Error('SEARCH_REDIRECT_BLOCKED');
-      feed = await limitedRead(searchResponse, 350_000,
-        (raw) => (raw.match(/<\/item>/gi) || []).length >= 20);
+      const expectedOrigin = searchMode === 'publisher-site' ? PUBLISHER_HOST : SEARCH_HOST;
+      if (new URL(searchResponse.url || searchUrl).origin !== expectedOrigin) throw new Error('SEARCH_REDIRECT_BLOCKED');
+      feed = await limitedRead(searchResponse, searchMode === 'publisher-site' ? 650_000 : 350_000,
+        searchMode === 'publisher-site'
+          ? (raw) => raw.includes('</html>')
+          : (raw) => (raw.match(/<\/item>/gi) || []).length >= 20);
     } catch (error) { throw new Error(`SEARCH_${error.message}`); }
     finally { result.search_ms = Math.round(now() - searchBegan); }
-    if (!/<rss\b|<rdf:RDF\b/i.test(feed)) throw new Error('SEARCH_NOT_RSS');
-    Object.assign(result, searchDiagnostics(feed, keyword));
-    const selected = parseOneSpecialistResult(feed, keyword);
+    let selected;
+    if (searchMode === 'publisher-site') {
+      if (!/<html\b/i.test(feed)) throw new Error('SEARCH_NOT_HTML');
+      const parsed = parsePublisherSearchPage(feed, keyword);
+      Object.assign(result, parsed.diagnostics);
+      selected = parsed.selected;
+    } else {
+      if (!/<rss\b|<rdf:RDF\b/i.test(feed)) throw new Error('SEARCH_NOT_RSS');
+      Object.assign(result, searchDiagnostics(feed, keyword));
+      selected = parseOneSpecialistResult(feed, keyword);
+    }
     if (!selected) throw new Error('SEARCH_NO_MATCHED_PUBLISHER_REPORT');
     result.result_url = selected.url;
     ensureInBudget(began, now, maxMs);
@@ -219,10 +257,11 @@ export async function measureKeyword(keyword, {
   return result;
 }
 
-export function outputText(all, { reportName = 'STAGE04_KEYWORD_GROWTH_R25_READONLY' } = {}) {
+export function outputText(all, { reportName = 'STAGE04_KEYWORD_GROWTH_R25_READONLY',
+  sourceName = 'BING_RSS_INDEX_TO_THE_BUSINESS_RESEARCH_COMPANY' } = {}) {
   return [`REPORT=${reportName}`,
     'MODE=LIVE_KEYWORD_SEARCH_RESEARCH_ONLY',
-    'EXTERNAL_SOURCE=BING_RSS_INDEX_TO_THE_BUSINESS_RESEARCH_COMPANY',
+    `EXTERNAL_SOURCE=${sourceName}`,
     'SCORE_OR_TRADE=NONE', 'MAX_MS_PER_KEYWORD=20000',
     ...all.flatMap((item, index) => ['', `KEYWORD_${index + 1}=${item.keyword}`,
       ...Object.entries(item).filter(([key]) => key !== 'keyword')
