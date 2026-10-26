@@ -3,7 +3,7 @@
 - 날짜: 2026-10-26 (KST)
 - 브랜치: `codex/earnings-api-site-integration-plan-r1-20261026` (기존 브랜치 유지)
 - 대상: `/earnings-recession/`의 정보 제공용 확장형 지표(C)
-- 상태: `R2_PC_FRESHNESS_VERIFIED / SERIES_LEVEL_R2_PARTIAL / NO_PUBLICATION`
+- 상태: `R2_BEA_BLS_CENSUS_SERIES_MATCH_VERIFIED / PC_REUSE_PARTIAL / R3_NOT_APPROVED / NO_PUBLICATION`
 - 상위 계획: `docs/EARNINGS_RECESSION_COMPANION_API_SITE_INTEGRATION_PLAN_R1_20261026.md`
 
 ## 1. 기존 실측을 재사용해 확정한 범위
@@ -158,42 +158,42 @@ Windows QFR API 표본의 조정표시가 `no`임을 확인했다. Census 2026 Q
 
 ## 8. Windows R2 PC 실제 최신성 로그 — 2026-10-26 14:30:41 UTC
 
-사용자 제출: \`EARNINGS_R2_PC_FRESHNESS_RESULT_20261026-143041Z.txt\`.
-기존 \`core.sqlite\`를 **읽기 전용**으로 검사한 결과다. 신규 API 0회, 운영 SQLite·D1·스케줄러·산식 변경 0회. 이번 원장은 **관측기간/원천/시점/집계 커버리지 메타데이터만** 포함하고, 원자료 숫자나 기업별 행·원본 JSON/URL은 확인하지 않았다.
+사용자 제출: `EARNINGS_R2_PC_FRESHNESS_RESULT_20261026-143041Z.txt`.
+기존 `core.sqlite`를 **읽기 전용**으로 검사한 결과다. 신규 API 0회, 운영 SQLite·D1·스케줄러·산식 변경 0회. 이번 원장은 **관측기간/원천/시점/집계 커버리지 메타데이터만** 포함하고, 원자료 숫자나 기업별 행·원본 JSON/URL은 확인하지 않았다.
 
 | 검사 지점 | PC 실측 내용 | 정밀 판정 |
 |---|---|---|
-| Growth R2 현재 메타 | \`candidate_id <= G070\` 탐색 대상에서 현재행 **24개** | 실측. 전체 Growth 후보가 24개라는 뜻은 아님 |
-| M3 제조업 주문·출하·재고 | \`G010\` 총 신규주문, \`G013\` 총 출하, \`G015\` 미이행주문, \`G016\` 전체 재고: 관측 \`2026-08\`, \`Census_M3\`, \`MONTHLY\`, \`USD_BILLION_SA_NOMINAL\`; 행 \`retrieved_at=2026-10-15T12:15:05.739Z\` | **기존 저장 후보 O**, 신규 원천 중복 수집 제한. 실제 수치/수정본 parity는 별도 검증 필요 |
-| M3 재고 파생 | \`G017\` 신규주문/재고, \`G018\` 출하/재고: 관측 \`2026-08\`, \`retrieved_at=2026-10-02T14:20:53.819Z\` | **재검증 필요**: 상응 원자료 \`G010/G013/G016\`의 10/15 저장시각보다 오래됨. 값이 구판인지 여부는 미검증 |
-| M3 기존 provider snapshot | \`Census_M3:MDM/MTM/NXA=2026-10-08T12:45:03.460Z\`, \`MTU=2026-10-01T20:50:30.670Z\` | source-group 시각만 확인. Growth 항목별 10/15과의 계보 일치 단정 금지 |
-| E1-R4 최근 PC 성공 | \`period_end=2026-06-30\`; 10/25–10/26 최근 실행 4건 모두 \`SUCCESS\`, 최신 완료 \`2026-10-26T14:00:13.148Z\`, \`provider_requests=10\` | **기존 E1 실행/저장 O**. 이 로그는 새 정보성 C의 공개를 의미하지 않음 |
-| E1 우주(universe) | 최신 기간 \`2026-06-30\`: \`security_count=503\`, \`issuer_count=500\`; 그 이전 \`2026-03-31\`, \`2025-12-31\` 기간도 존재 | 보안·발행사 단위 혼동 금지. SEC 500개 기업 표본과 Census QFR 산업별 모집단은 다름 |
-| E1 항목별 개수 | 최신 성공 \`eps_count=420\`, \`revenue_count=409\`, \`margin_count=319\`, \`current_rows=1153\` | 500 발행사 대비 **단순 비율** EPS 84.0%, 매출 81.8%, 마진 63.8%. 고유 발행사 일대일 커버리지·상호 동일 표본은 이번 로그로 확인되지 않음 |
-| QFR·MTIS 전용 스키마명 | \`DEDICATED_QFR_MTIS_TABLE_NAMES=NOT_FOUND_NAME_ONLY\` | **전용 테이블명 미발견**. 범용 snapshot/JSON에 없다는 증거는 아님 |
-| 검사 범위 | \`PC_TABLE_CONTENTS=ONLY_METADATA_NO_VALUES_NO_PROVENANCE_JSON_NO_RAW_PAYLOAD\` | 값/중복 해시/lineage에 대한 실측 검증은 수행하지 않음 |
+| Growth R2 현재 메타 | `candidate_id <= G070` 탐색 대상에서 현재행 **24개** | 실측. 전체 Growth 후보가 24개라는 뜻은 아님 |
+| M3 제조업 주문·출하·재고 | `G010` 총 신규주문, `G013` 총 출하, `G015` 미이행주문, `G016` 전체 재고: 관측 `2026-08`, `Census_M3`, `MONTHLY`, `USD_BILLION_SA_NOMINAL`; 행 `retrieved_at=2026-10-15T12:15:05.739Z` | **기존 저장 후보 O**, 신규 원천 중복 수집 제한. 실제 수치/수정본 parity는 별도 검증 필요 |
+| M3 재고 파생 | `G017` 신규주문/재고, `G018` 출하/재고: 관측 `2026-08`, `retrieved_at=2026-10-02T14:20:53.819Z` | **재검증 필요**: 상응 원자료 `G010/G013/G016`의 10/15 저장시각보다 오래됨. 값이 구판인지 여부는 미검증 |
+| M3 기존 provider snapshot | `Census_M3:MDM/MTM/NXA=2026-10-08T12:45:03.460Z`, `MTU=2026-10-01T20:50:30.670Z` | source-group 시각만 확인. Growth 항목별 10/15과의 계보 일치 단정 금지 |
+| E1-R4 최근 PC 성공 | `period_end=2026-06-30`; 10/25–10/26 최근 실행 4건 모두 `SUCCESS`, 최신 완료 `2026-10-26T14:00:13.148Z`, `provider_requests=10` | **기존 E1 실행/저장 O**. 이 로그는 새 정보성 C의 공개를 의미하지 않음 |
+| E1 우주(universe) | 최신 기간 `2026-06-30`: `security_count=503`, `issuer_count=500`; 그 이전 `2026-03-31`, `2025-12-31` 기간도 존재 | 보안·발행사 단위 혼동 금지. SEC 500개 기업 표본과 Census QFR 산업별 모집단은 다름 |
+| E1 항목별 개수 | 최신 성공 `eps_count=420`, `revenue_count=409`, `margin_count=319`, `current_rows=1153` | 500 발행사 대비 **단순 비율** EPS 84.0%, 매출 81.8%, 마진 63.8%. 고유 발행사 일대일 커버리지·상호 동일 표본은 이번 로그로 확인되지 않음 |
+| QFR·MTIS 전용 스키마명 | `DEDICATED_QFR_MTIS_TABLE_NAMES=NOT_FOUND_NAME_ONLY` | **전용 테이블명 미발견**. 범용 snapshot/JSON에 없다는 증거는 아님 |
+| 검사 범위 | `PC_TABLE_CONTENTS=ONLY_METADATA_NO_VALUES_NO_PROVENANCE_JSON_NO_RAW_PAYLOAD` | 값/중복 해시/lineage에 대한 실측 검증은 수행하지 않음 |
 
 ### 8-1. 재사용·추가 수집 검토 구분 (정보성 C만 대상)
 
 | 지표군 | 현재 기존 자료·최신 관측 | 실행 방향 | 확인 전 금지할 주장 |
 |---|---|---|---|
-| **M3 제조업 주문·출하·재고** | \`G010/G013/G015/G016\`, **2026-08** | **REUSE_PATH_CONFIRMED**: 새 M3 전체 중복 수집기 생성 불필요. R3 승인 후 PC 원장 입력을 그대로 참조하는 방식을 설계 | 원장 관측일만으로 실제 수치·공표판(version) 동등성 주장 금지 |
-| **M3 파생 재고 비율** | \`G017/G018\`, **2026-08**, 원자료보다 이른 \`retrieved_at\` | **CHECK_REVISION_PARITY**: 기존 산식 변경 없이 과거/신규 버전의 계보와 값/시각을 별도 비교 | 같아 보이는 월만으로 최신 원자료와 동기화됐다고 주장 금지 |
-| **MTIS 전체 재고/매출 비율** | API \`IR/TOTBUS/yes\`, **2026-08**, 공식 1.33; 전용 DB 이름 미발견 | **COLLECTOR_REVIEW_NEEDED**: 현재 전용 테이블이 없어 기존 범용 원장 재사용 가능성 확인 후에만 R3 별도 수집 제안 | M3 재고/출하 \`IS/MTM/yes\` 1.48 대체 불가 |
-| **QFR 매출·손익/마진** | API \`2026Q2\`, \`101/104/115\` 코드; 전용 DB 이름 미발견 | **COLLECTOR_REVIEW_NEEDED**: 52개 중첩 산업코드 계층, 분기별 비교 가능성, 비계절조정 자료 확인 후 단계적 수집 제안 | 52개 산업을 독립 표본으로 계산하거나 NSA=SA로 처리 불가 |
-| **기존 E1-R4 기업 EPS·매출·마진** | PC \`2026-06-30\` / 500 발행사 / 항목 메타 일부 | **REUSE_PATH_CONFIRMED**: 기존 E1 점수·공개키는 불변. C는 승인 시 독립 정보성 가공/읽기 모델로만 사용 검토 | 500개 모두 모든 항목을 확보했다거나 2026Q3 데이터가 저장됐다고 주장 금지 |
-| **BEA 기업이익, BLS PPI/ULC** | 이전 HTTP 단순 200은 확인. 이 PC 원장에 해당값·시리즈는 나타나지 않음 | **R2_SERIES_PROVENANCE_PENDING**: 정확한 BEA line/단위, BLS ID/단위/조정/PC 출처 확인 | Growth의 \`BLS_CES\` 고용·근로시간 G035–G044를 기업 PPI/ULC라고 표기 불가 |
+| **M3 제조업 주문·출하·재고** | `G010/G013/G015/G016`, **2026-08** | **REUSE_PATH_CONFIRMED**: 새 M3 전체 중복 수집기 생성 불필요. R3 승인 후 PC 원장 입력을 그대로 참조하는 방식을 설계 | 원장 관측일만으로 실제 수치·공표판(version) 동등성 주장 금지 |
+| **M3 파생 재고 비율** | `G017/G018`, **2026-08**, 원자료보다 이른 `retrieved_at` | **CHECK_REVISION_PARITY**: 기존 산식 변경 없이 과거/신규 버전의 계보와 값/시각을 별도 비교 | 같아 보이는 월만으로 최신 원자료와 동기화됐다고 주장 금지 |
+| **MTIS 전체 재고/매출 비율** | API `IR/TOTBUS/yes`, **2026-08**, 공식 1.33; 전용 DB 이름 미발견 | **COLLECTOR_REVIEW_NEEDED**: 현재 전용 테이블이 없어 기존 범용 원장 재사용 가능성 확인 후에만 R3 별도 수집 제안 | M3 재고/출하 `IS/MTM/yes` 1.48 대체 불가 |
+| **QFR 매출·손익/마진** | API `2026Q2`, `101/104/115` 코드; 전용 DB 이름 미발견 | **COLLECTOR_REVIEW_NEEDED**: 52개 중첩 산업코드 계층, 분기별 비교 가능성, 비계절조정 자료 확인 후 단계적 수집 제안 | 52개 산업을 독립 표본으로 계산하거나 NSA=SA로 처리 불가 |
+| **기존 E1-R4 기업 EPS·매출·마진** | PC `2026-06-30` / 500 발행사 / 항목 메타 일부 | **REUSE_PATH_CONFIRMED**: 기존 E1 점수·공개키는 불변. C는 승인 시 독립 정보성 가공/읽기 모델로만 사용 검토 | 500개 모두 모든 항목을 확보했다거나 2026Q3 데이터가 저장됐다고 주장 금지 |
+| **BEA 기업이익, BLS PPI/ULC** | BEA `A051RC`, BLS `WPSFD4`, `WPSFD41`, `PRS85006111`: 후속 2회 API 실제 값·단위 공식 대조 완료(11절). PC 기존 SQLite 중복은 미검증 | **R2_SERIES_MATCH_PASS / PC_REUSE_UNKNOWN**: 새 원천 수집 필요 여부는 R3 설계 선검증 | 기존 `BLS_CES`를 단위노동비용/PPI라고 표기 금지 |
 | **SEC 현금흐름·산업별 분포** | E1-R4 EPS/매출/마진 수집 메타만 확인 | **R2_EXTENSION_HOLD**: 해당 원시 XBRL 항목·기업수·재사용 범위 미검증 | E1 성공만으로 현금흐름·FCF 수집 성공으로 간주 불가 |
 
 ### 8-2. 계획 게이트와 후속 순서
 
 1. **R1 기존 경로 인벤토리:** M3 및 E1 저장 경로/관측 메타는 근거 확보. QFR/MTIS 범용 Snapshot 내 중복 여부, BEA/BLS/SEC 원시 시리즈는 아직 **부분 미확인**.
-2. **R2 실제 API·시리즈:** QFR \`2026Q2\`, MTIS \`2026-08 IR/TOTBUS/yes\`, M3 \`2026-08\`의 관측기간·정의 일부 **PASS**. 공급자별 상업적 저장·파생 공개권/표시 고지, BEA/BLS 완전한 line/series/단위, QFR 2025Q2 비교·revision 계보, SEC 현금흐름 커버리지 등은 **행별 HOLD**. 전체 R2 무조건 PASS 아님.
-3. **R3 PC 저장/가공:** 승인 전 **NOT_STARTED**. 먼저 \`M3/E1 기존 원장 참조\`와 \`MTIS/QFR 신규 수집 필요성\`을 구분해 최소 설계를 제안. 운영 SQLite·D1 테이블/스케줄러·E1 점수 무단 변경 없음.
-4. **R4 신규 정보성 읽기 모델/키:** **NOT_APPROVED**. 기존 \`/api/earnings-recession-detail\` 계약에 임의 필드 합류 금지.
+2. **R2 실제 API·시리즈:** QFR `2026Q2`, MTIS `2026-08 IR/TOTBUS/yes`, M3 `2026-08`의 관측기간·정의 일부 **PASS**. 공급자별 상업적 저장·파생 공개권/표시 고지, BEA/BLS 완전한 line/series/단위, QFR 2025Q2 비교·revision 계보, SEC 현금흐름 커버리지 등은 **행별 HOLD**. 전체 R2 무조건 PASS 아님.
+3. **R3 PC 저장/가공:** 승인 전 **NOT_STARTED**. 먼저 `M3/E1 기존 원장 참조`와 `MTIS/QFR 신규 수집 필요성`을 구분해 최소 설계를 제안. 운영 SQLite·D1 테이블/스케줄러·E1 점수 무단 변경 없음.
+4. **R4 신규 정보성 읽기 모델/키:** **NOT_APPROVED**. 기존 `/api/earnings-recession-detail` 계약에 임의 필드 합류 금지.
 5. **R5 UI 및 R6 PR·Production:** **NOT_STARTED**. 기존 승인 없이 개발/공개하지 않음.
 
-**자료 출처:** 사용자 Windows 읽기 전용 로그 \`EARNINGS_R2_PC_FRESHNESS_RESULT_20261026-143041Z.txt\`; U.S. Census Bureau [MTIS 2026년 8월](https://www.census.gov/mtis/current/index.html), [QFR 2026년 2분기](https://www.census.gov/econ/qfr/mmws/current/index.html), [M3](https://www.census.gov/manufacturing/m3/current/index.html).
+**자료 출처:** 사용자 Windows 읽기 전용 로그 `EARNINGS_R2_PC_FRESHNESS_RESULT_20261026-143041Z.txt`; U.S. Census Bureau [MTIS 2026년 8월](https://www.census.gov/mtis/current/index.html), [QFR 2026년 2분기](https://www.census.gov/econ/qfr/mmws/current/index.html), [M3](https://www.census.gov/manufacturing/m3/current/index.html).
 
 **변경 영향:** 기존 GitHub 작업 브랜치의 검증 보고 문서만 수정. PC DB·새 API 호출·산식·스케줄러·D1·Production 게시 없음.
 
@@ -202,13 +202,13 @@ Windows QFR API 표본의 조정표시가 `no`임을 확인했다. Census 2026 Q
 
 **BLS WPSFD4 라벨 정정 필요 (실제 신규 지표 선택 전 HOLD):**
 
-- BLS의 공식 FD-ID series ID 목록은 \`WPUFD4 = Final demand (최종수요 전체)\`, \`WPUFD41 = Final demand goods (최종수요 재화)\`로 구분한다. 해당 BLS 문서는 계절조정 시 \`WPU\`를 \`WPS\`로 대체한다고 직접 명시한다. 따라서 **\`WPSFD4 = 계절조정 최종수요 전체\`**, **\`WPSFD41 = 계절조정 최종수요 재화\`**로 읽는 것이 코드 규칙에 부합한다.
-- 이전 R2 검색에서 발견한 BLS 과거 계절조정표에는 \`WPSFD4\`를 \`Final demand goods\`라고 적은 항목도 있었다. **공식 페이지 사이 라벨 충돌**이 있으므로 이 검증만으로 기존 공개/수집 \`WPSFD4\` 값을 재명명하거나 \`WPSFD41\`로 교체하지 않는다. 실제 공식 BLS API 응답의 \`seriesID\`, 관측값, 현행 series title 확인 전 C 지표의 정확한 제목은 **HOLD_LABEL_PARITY**.
-- **이 보고서 3절·BEA/BLS 타 문서에서 \`WPSFD4\`가 재화 전체만 뜻한다는 기존 서술은 확정 근거로 사용하지 않는다.** 실제 지표명의 정합성은 운영 원자료와 대조해야 한다.
-- BLS \`PRS85006111\`는 비농업 부문 전체 근로자 단위노동비용 시리즈 후보로 외부 FRED 재현 화면에서 명칭이 확인되지만, **원 공급원 BLS API 실제 시리즈 ID/단위·연율화 여부 확인 전** R2 HTTP·정식 가공 규칙 확정으로 표시하지 않는다.
-- BEA \`A051RC\`는 IVA/CCAdj 조정 기업이익의 series code 후보이며, 실제 사용 후보 \`T11200\` 행별 적용기간·조정/단위 확인 전 정보성 C 게시 보류.
+- BLS의 공식 FD-ID series ID 목록은 `WPUFD4 = Final demand (최종수요 전체)`, `WPUFD41 = Final demand goods (최종수요 재화)`로 구분한다. 해당 BLS 문서는 계절조정 시 `WPU`를 `WPS`로 대체한다고 직접 명시한다. 따라서 **`WPSFD4 = 계절조정 최종수요 전체`**, **`WPSFD41 = 계절조정 최종수요 재화`**로 읽는 것이 코드 규칙에 부합한다.
+- 이전 R2 검색에서 발견한 BLS 과거 계절조정표에는 `WPSFD4`를 `Final demand goods`라고 적은 항목도 있었다. **공식 페이지 사이 라벨 충돌**이 있으므로 이 검증만으로 기존 공개/수집 `WPSFD4` 값을 재명명하거나 `WPSFD41`로 교체하지 않는다. 실제 공식 BLS API 응답의 `seriesID`, 관측값, 현행 series title 확인 전 C 지표의 정확한 제목은 **HOLD_LABEL_PARITY**.
+- **이 보고서 3절·BEA/BLS 타 문서에서 `WPSFD4`가 재화 전체만 뜻한다는 기존 서술은 확정 근거로 사용하지 않는다.** 실제 지표명의 정합성은 운영 원자료와 대조해야 한다.
+- BLS `PRS85006111`는 비농업 부문 전체 근로자 단위노동비용 시리즈 후보로 외부 FRED 재현 화면에서 명칭이 확인되지만, **원 공급원 BLS API 실제 시리즈 ID/단위·연율화 여부 확인 전** R2 HTTP·정식 가공 규칙 확정으로 표시하지 않는다.
+- BEA `A051RC`는 IVA/CCAdj 조정 기업이익의 series code 후보이며, 실제 사용 후보 `T11200` 행별 적용기간·조정/단위 확인 전 정보성 C 게시 보류.
 
-**Census 서비스 출처 고지:** 공식 API 약관은 서비스 내 Census API 이용 사실, Census가 상품을 후원·인증하지 않는다는 취지의 **눈에 잘 보이는 고지**를 요구한다. 향후 \`/data-sources/\`와 C 정보성 패널에 이 요건을 반영한 표시안을 제안하되, **새 UI·공개 필드 변경은 R4/R5 승인 후** 적용한다. 데이터셋별 저장/파생/상업 이용 최종 판정은 계속 조건부 보류한다.
+**Census 서비스 출처 고지:** 공식 API 약관은 서비스 내 Census API 이용 사실, Census가 상품을 후원·인증하지 않는다는 취지의 **눈에 잘 보이는 고지**를 요구한다. 향후 `/data-sources/`와 C 정보성 패널에 이 요건을 반영한 표시안을 제안하되, **새 UI·공개 필드 변경은 R4/R5 승인 후** 적용한다. 데이터셋별 저장/파생/상업 이용 최종 판정은 계속 조건부 보류한다.
 
 1차 공식 근거:
 - BLS FD-ID ID 목록: https://www.bls.gov/ppi/fd-id/ppi-final-demand-intermediate-demand-aggregation-indexes-by-title-and-series-id.htm
@@ -222,14 +222,58 @@ Windows QFR API 표본의 조정표시가 `no`임을 확인했다. Census 2026 Q
 
 ## 10. 후속 R2 BEA/BLS 값·단위 확인기 준비 (Windows PC 대기)
 
-이전 BEA/BLS 응답의 \`HTTP=200\`만으로 정확한 \`SeriesCode/LineNumber/Unit\` 및 \`BLS SeriesID/Period\` 일치를 주장할 수 없으므로, **가장 작은 추가 호출**로 두 공급원의 실제 시리즈를 확인하는 읽기 전용 검사기를 준비했다.
+이전 BEA/BLS 응답의 `HTTP=200`만으로 정확한 `SeriesCode/LineNumber/Unit` 및 `BLS SeriesID/Period` 일치를 주장할 수 없으므로, **가장 작은 추가 호출**로 두 공급원의 실제 시리즈를 확인하는 읽기 전용 검사기를 준비했다.
 
-- \`research/earnings-companion/EARNINGS_R2_BEA_BLS_SERIES_VERIFY.cmd\`
-- \`research/earnings-companion/EARNINGS_R2_BEA_BLS_SERIES_VERIFY.mjs\`
-- 배포 파일: \`EARNINGS_R2_BEA_BLS_SERIES_VERIFY_20261026.zip\` (CMD+MJS, 사용자 PC에서 같은 폴더에 압축 해제)
-- 실행 로그: \`EARNINGS_R2_BEA_BLS_RESULT_YYYYMMDD-HHMMSSZ.txt\` — **CMD 파일과 같은 폴더**에만 생성.
-- **최대 API 2회(재시도 없음)**: BEA NIPA \`T11200\` \`2025,2026\` 분기 GET 1회, BLS v2 \`WPSFD4/WPSFD41/PRS85006111\` 일괄 POST 1회. 둘 다 기존 승인 키를 \`providers.env\` 또는 환경에서 메모리로만 읽는다. 키가 없으면 해당 공급원 요청 **0회**.
+- `research/earnings-companion/EARNINGS_R2_BEA_BLS_SERIES_VERIFY.cmd`
+- `research/earnings-companion/EARNINGS_R2_BEA_BLS_SERIES_VERIFY.mjs`
+- 배포 파일: `EARNINGS_R2_BEA_BLS_SERIES_VERIFY_20261026.zip` (CMD+MJS, 사용자 PC에서 같은 폴더에 압축 해제)
+- 실행 로그: `EARNINGS_R2_BEA_BLS_RESULT_YYYYMMDD-HHMMSSZ.txt` — **CMD 파일과 같은 폴더**에만 생성.
+- **최대 API 2회(재시도 없음)**: BEA NIPA `T11200` `2025,2026` 분기 GET 1회, BLS v2 `WPSFD4/WPSFD41/PRS85006111` 일괄 POST 1회. 둘 다 기존 승인 키를 `providers.env` 또는 환경에서 메모리로만 읽는다. 키가 없으면 해당 공급원 요청 **0회**.
 - **각 요청 20초·응답 3MB 상한**, redirect 불허, 로그인/설치/유료 결제/클라우드 게시 없음. API 키/쿼리 URL/원본 응답 전문 로그 **기록 금지**. 출처 공식 기관 외 도메인 미사용.
-- BEA는 \`SeriesCode=A051RC\` 행이 실측 존재하는지와 해당 분기·단위/원값 메타만 기록하고, 불일치 시 후보 line 이름만 제한 출력. BLS는 3개 ID의 최근 기간·공공 집계 원값만 제한 출력. **BLS API 응답은 이름(label)을 돌려주지 않을 수 있으므로 공식 ID 목록과 별개로 검증**한다. BLS 지수 수준을 연율 변화율로 임의 변환하지 않는다.
-- Node 24+ 내장 기능만 사용; 코드 문법 검사, \`--dry-run\` 무호출 시험, ZIP 무결성 **PASS**.
+- BEA는 `SeriesCode=A051RC` 행이 실측 존재하는지와 해당 분기·단위/원값 메타만 기록하고, 불일치 시 후보 line 이름만 제한 출력. BLS는 3개 ID의 최근 기간·공공 집계 원값만 제한 출력. **BLS API 응답은 이름(label)을 돌려주지 않을 수 있으므로 공식 ID 목록과 별개로 검증**한다. BLS 지수 수준을 연율 변화율로 임의 변환하지 않는다.
+- Node 24+ 내장 기능만 사용; 코드 문법 검사, `--dry-run` 무호출 시험, ZIP 무결성 **PASS**.
 - 실행 후 로그를 받아서 결과를 정확한 데이터 정의와 매핑하는 것이 **다음 R2 작업**이다. **새 DB/스케줄러/R3 구현이나 사이트 배포는 여전히 미승인**이다.
+
+
+
+## 11. BEA·BLS 실제 호출 결과 — 사용자 Windows 로그 2026-10-26 14:52:13 UTC
+
+대상 증빙: `EARNINGS_R2_BEA_BLS_RESULT_20261026-145213Z.txt`. **BEA HTTP 200, BLS HTTP 200/REQUEST_SUCCEEDED**, API 요청 합계 2회, DB/D1/산식/스케줄 변경 없음. 사용자 로그는 API 키나 요청 URL을 출력하지 않았다.
+
+| 공식 시리즈 | PC 실제 원값 | 공식 발표 대조 | R2 판정 |
+|---|---|---|---|
+| BEA NIPA `T11200/A051RC`, `LineNumber=41`, `UNIT_MULT=6` | `2026Q2`, `4,709,453` (백만 USD, Current Dollars) | **4,709.453십억 USD**, BEA 공식 기업이익 **4,709.5십억 USD**와 반올림 일치. 계절조정 **연율(SAAR)** 시계열 | **PASS_VALUE_UNIT_PERIOD** |
+| BLS `WPSFD4` | `2026M09`, 지수 **159.780** | BLS 2026년 9월 PPI 공식 표의 **최종수요 전체 FD4 = 159.780** 일치, 계절조정 | **PASS_VALUE_SCOPE_PERIOD** |
+| BLS `WPSFD41` | `2026M09`, 지수 **162.341** | 같은 표의 **최종수요 재화 FD41 = 162.341** 일치, 계절조정 | **PASS_VALUE_SCOPE_PERIOD** |
+| BLS `PRS85006111` | `2026Q02`, **1.4%** | BLS 생산성·비용 공식 보고의 **비농업 단위노동비용 전년 동기 대비 +1.4%** 일치 | **PASS_YOY_PERIOD_UNIT** |
+
+### 반드시 지킬 중복·단위 구분
+
+1. **BEA 동일 지표 중복 행:** 2025Q1–2026Q2는 6개 분기인데 `A051RC`는 **12행** 검색됐다. 공식 BEA Table 1.12에는 *같은 총기업이익*이 line **13과 41**에 중복 배치된다. 별도 두 이익 지표/기업 표본으로 더하지 않는다. 실제 PC 수집 규칙은 R3에서 정확한 `table/series/period`별 유일화 후 승인한다. 최신 로그의 `LineNumber=41`은 유일한 canonical line이라는 확정 근거가 아니다.
+2. **BEA 원 단위:** `UNIT_MULT=6`이므로 `4,709,453`은 USD 자체가 아니라 백만 USD 단위다. 공식 시각화 **4,709.5십억 USD**의 산식/표현과 일치한다. **연율화된 계절조정 분기 값**이므로 분기 실제 총수익과 혼동 금지. 원시 정밀도는 저장 시 바꾸지 않는다.
+3. **BLS PPI 명칭:** 현재 실측으로 이전 9절의 임시 `HOLD_LABEL_PARITY`를 **해소**했다. `WPSFD4 = 최종수요 전체`, `WPSFD41 = 최종수요 재화`. 오래된 별도 BLS 표의 제목만으로 이전 공개 산식/값을 교체하지 않는다. 공식 발표 수치와 Series ID 둘 다 대조 완료.
+4. **BLS 단위노동비용:** API의 **1.4%는 전년 동기 대비(4분기 변동)**. 공식 보고의 **전기 대비 연율 +1.2%**와 다른 측정 기간이다. 이를 같은 숫자라고 처리하거나 자동 연율화하지 않는다.
+5. **기존 PC 재사용:** 이번 BEA/BLS 테스트는 공식 API 값을 PC 검사 도구가 메모리에서 읽었으며 **SQLite에 저장했다는 증거가 아니다**. Growth 저장 `BLS_CES`와 BLS PPI/ULC는 다른 시리즈. 새 수집기를 만들기 전에 기존 Generic Snapshot 내 유무를 R3 사전 단계에서 조사한다.
+
+### 권리·공개 게이트
+
+- BEA 공식 원자료: 별도 제3자 권리 표시가 없다면 **퍼블릭 도메인 재사용** 원칙 확인. 출처 기재 권장.
+- BLS 공식 원자료: 일반 **퍼블릭 도메인**(제3자 사진·그래픽·기관 로고 제외). API 사용자는 **접근일을 표시**하고, 다운로드 뒤 ZGMINI가 수행한 파생분석을 BLS가 보증하지 않는다는 **명확한 고지**를 해야 한다.
+- Census QFR/MTIS/M3: API 이용은 가능하지만 **API 이용 사실과 비후원 고지, 수정/오표기 금지, 응답자 비식별** 등 별도 조건이 있어 기존 `CONDITIONAL` 유지. 자료 저장·파생·상업 이용 범위와 사이트의 실제 고지안을 R3·R4 검토 때 확인한다.
+- 기존 E1-R4와 SEC 확장: **새 원시 기업별 현금흐름/FCF 수집 여부는 미검증**. E1 성공만으로 SEC 기업 지표 전체 준비 완료라고 주장하지 않는다.
+- 위 4개 BEA/BLS 시리즈는 **R2 값·범위·단위 PASS**. 하지만 PC 기존 저장/수정치·공개 계약·UI/사이트 배포는 **별도 승인 전 HOLD**.
+
+### 다음 단계 경계
+
+**R2 값·정의 테스트를 반복하지 않는다.** 기존 보고서 8절의 M3/E1 재사용 항목을 유지하면서, 2026Q2 QFR 비교 가능성·권리/고지·현재 범용 PC 저장 중복을 기준으로 **R3 최소 수집·원자료/파생 설계**를 제안한다. **R3 PC 쓰기, 새 테이블, 스케줄 등록, 공개 키, D1, UI/Production은 미승인 상태**다.
+
+### 공식 근거
+
+- BEA 기업이익 2026Q2 4,709.5십억 USD: https://www.bea.gov/data/income-saving/corporate-profits
+- BEA Table 1.12 line 13/41 및 SAAR: https://apps.bea.gov/iTable/?categories=survey&isuri=1&nipa_table_list=+53&reqid=19&step=3
+- BEA 공공영역: https://www.bea.gov/help/faq/147
+- BLS PPI 2026-09 FD4/FD41: https://www.bls.gov/news.release/ppi.t03.htm
+- BLS 비농업 단위노동비용 2026Q2: https://www.bls.gov/news.release/prod2.nr0.htm
+- BLS 공공영역: https://www.bls.gov/opub/copyright-information.htm
+- BLS API 이용조건: https://www.bls.gov/developers/termsOfService.htm
+- Census API 이용조건: https://www.census.gov/data/developers/about/terms-of-service.html
