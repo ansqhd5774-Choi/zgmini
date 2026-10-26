@@ -34,8 +34,7 @@ test('theme screen uses sector comparison structure and dynamic top-three rankin
  assert.deepEqual(rows.map(s=>s.match(/^\d+위 ([^,]+)/)?.[1]),['핀테크','클라우드·SaaS','바이오·신약','로봇·자동화']);
  assert.match(html,/비교할 테마 선택/);
  assert.match(html,/테마별 1년 심리 지수 비교/);
- assert.match(html,/준비 중인 테마/);
- assert.match(html,/26개/);
+ assert.doesNotMatch(html,/zg-tfg-pending|데이터 준비 중인 테마|목록 펼치기/);
  assert.equal((html.match(/class="zg-sfg-rank-row" aria-pressed="true"/g)??[]).length,3);
  assert.equal((html.match(/class="zg-sfg-rank-row" aria-pressed="false"/g)??[]).length,1);
  assert.doesNotMatch(html,/zg-sfg-detail|zg-sfg-changes|ETF ETF1 · ETF2|개별 차트와 변화량/);
@@ -64,4 +63,24 @@ test('theme page preserves only stored API, provisional dash and synchronized le
  assert.match(component,/strokeDasharray="4 4"/);
  assert.match(component,/onMouseLeave=\{\(\)=>setComparisonPinned\(false\)\}/);
  assert.doesNotMatch(component,/fetch\s*\(/);
+});
+
+test('theme page shows one collapsed investor guide with all three original destinations and no separate related navigation',()=>{
+ const page=readFileSync('app/theme-fear-greed/page.tsx','utf8');
+ const content=readFileSync('lib/investor-search-content.ts','utf8');
+ const component=readFileSync('components/investor-search-guide.tsx','utf8');
+ const section=content.split('export const THEME_INVESTOR_SEARCH:InvestorSearchCopy=')[1].split('export const ECONOMICHUB_INVESTOR_SEARCH:InvestorSearchCopy=')[0];
+ assert.match(page,/<InvestorSearchGuide id="investor-search-theme-fear-greed" copy=\{THEME_INVESTOR_SEARCH\} collapsible\/>/);
+ assert.doesNotMatch(page,/zg-sector-related-nav|aria-label="관련 분석"/);
+ assert.match(component,/if\(collapsible\)return <details className="group/);
+ assert.match(component,/<BookOpen size=\{16\}/);
+ assert.match(component,/<ChevronsDown size=\{16\}/);
+ assert.match(section,/"heading": "테마 ETF와 공포탐욕 점수 읽기"/);
+ assert.equal((section.match(/"question":/g)??[]).length,2);
+ for(const href of ['/sector-fear-greed/','/fear-greed/usa/','/asset-bubble/']){
+  assert.equal((section.match(new RegExp('"href": "'+href.replaceAll('/','\\/')+'"','g'))??[]).length,1,href);
+ }
+ const html=render(feed);
+ assert.match(html,/class="zg-sfg-comparison-plot"/);
+ assert.doesNotMatch(html,/zg-tfg-pending|데이터 준비 중인 테마/);
 });
