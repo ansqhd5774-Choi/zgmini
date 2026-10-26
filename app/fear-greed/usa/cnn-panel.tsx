@@ -35,6 +35,7 @@ type IndexPayload = {
   score?: number | null;
   rating?: string;
   observedAt?: string;
+  previous?: { close?: number | null };
   history?: HistoryPoint[];
   components?: CnnComponent[];
 };
@@ -208,22 +209,6 @@ function historicalBaseline(points: ReturnType<typeof normalizeHistory>, targetT
   let candidate: number | null = null;
   for (const point of points) {
     if (point.time > targetTime) break;
-    candidate = point.score;
-  }
-  return candidate;
-}
-
-function previousHistoryBaseline(
-  points: ReturnType<typeof normalizeHistory>,
-  observedAt: string | undefined,
-) {
-  if (!observedAt) return null;
-  const observedTime = Date.parse(observedAt);
-  if (!Number.isFinite(observedTime)) return null;
-
-  let candidate: number | null = null;
-  for (const point of points) {
-    if (point.time >= observedTime) break;
     candidate = point.score;
   }
   return candidate;
@@ -446,10 +431,16 @@ export default function CnnPanel({ showEducation = false }: { showEducation?: bo
     return end ? allHistory.filter((point) => point.time >= end - selected.days * 86400000) : allHistory;
   }, [allHistory, selectedPeriod]);
 
-  const dayBaseline = useMemo(
-    () => previousHistoryBaseline(allHistory, payload?.observedAt),
-    [allHistory, payload?.observedAt],
-  );
+  // CNN's previous_close is the authoritative baseline for a live score.
+  // The most recent chart point can equal today's score.
+  const previousClose = payload?.previous?.close;
+  const dayBaseline =
+    typeof previousClose === "number" &&
+    Number.isFinite(previousClose) &&
+    previousClose >= 0 &&
+    previousClose <= 100
+      ? previousClose
+      : null;
   const periodBaseline = useMemo(() => {
     const targetTime =
       selectedPeriod === "1W"
@@ -466,8 +457,8 @@ export default function CnnPanel({ showEducation = false }: { showEducation?: bo
   }, [allHistory, payload?.observedAt, selectedPeriod]);
 
   // U11 Data Honesty:
-  // every displayed change is derived from verified history only.
-  // If the required historical baseline does not exist, render no fabricated delta.
+  // Day change uses CNN's previous close; period changes use verified history.
+  // Missing baselines remain unavailable rather than becoming fabricated zeroes.
   const dayDelta = score !== null && dayBaseline !== null ? score - dayBaseline : null;
   const periodDelta = score !== null && periodBaseline !== null ? score - periodBaseline : null;
   const latestHistoryPoint = history.at(-1) ?? null;
@@ -480,7 +471,7 @@ export default function CnnPanel({ showEducation = false }: { showEducation?: bo
   const status = payload?.status === "verified" && score !== null ? "검증된 CNN 원본" : "원본 확인 필요";
   const currentPeriodLabel = periodComparisonLabels[selectedPeriod];
   // U11 Data Honesty: interpretation is always derived from the verified
-  // score/rating and history-derived changes. No upstream/sample insight text is trusted.
+  // score/rating and verified comparison baselines. No upstream insight text is trusted.
   const marketInsight = buildMarketInsight({
     stage,
     score,
