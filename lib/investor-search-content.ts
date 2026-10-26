@@ -568,6 +568,10 @@ export const THEME_INVESTOR_SEARCH:InvestorSearchCopy={
       "label": "미국 섹터·업종별 공탐"
     },
     {
+      "href": "/fear-greed/usa/",
+      "label": "미국 공포탐욕지수"
+    },
+    {
       "href": "/asset-bubble/",
       "label": "주식 과열·자산 버블 위험"
     }
