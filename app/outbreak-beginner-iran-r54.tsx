@@ -4,7 +4,7 @@ import {CalendarDays,ChevronDown,Info,Lightbulb,ShieldAlert,Swords,TrendingUp} f
 import {MarketFearGreedChart} from "./market-fear-greed-chart";
 import "./outbreak-beginner-iran-r54.css";
 import "./outbreak-iran-parity-r55.css";
-import OutbreakChangeLogUI from "./outbreak-change-log-ui";
+import OutbreakNewsUI from "./outbreak-news-r57";
 
 type Point={at:number;value:number|null;carried?:boolean;phase?:string};
 const DAY_MS=86400000;
@@ -97,7 +97,7 @@ export default function OutbreakBeginnerIran({view}:{view:any}){
      <div className="ob53-week"><span>주간 변화</span><strong>—</strong><small>확정 비교값 미제공</small></div>
      <div className="ob53-asof"><span>분석 기준일</span><strong><CalendarDays size={15} aria-hidden="true"/>{date}</strong><small>{isEstimate?"잠정 계산 기준":"저장 자료 기준"}</small></div>
     </div>
-    <Scale score={score}/>
+    <div className="ob57-scale-summary"><Scale score={score}/><p className="ob57-summary">{summary} 종전 확률이나 미래 종료 날짜를 뜻하지 않습니다.</p></div>
    </section>
    <section className="ob-panel ob53-explain ob54-meaning" aria-labelledby="ob54-meaning">
     <h3 id="ob54-meaning"><Lightbulb size={17} aria-hidden="true"/> 이 숫자는 무슨 뜻인가요?</h3>
@@ -108,7 +108,7 @@ export default function OutbreakBeginnerIran({view}:{view:any}){
   </div>
   <div className="ob53-main-grid ob55-main">
    <Trend view={view}/>
-   <OutbreakChangeLogUI eventId="iran"/>
+   <OutbreakNewsUI eventId="iran"/>
    <div className="ob53-beginner-stack ob54-right">
     <section className="ob-panel ob53-guide ob54-guide" aria-labelledby="ob54-guide">
      <h3 id="ob54-guide"><ShieldAlert size={16} aria-hidden="true"/> 주식 초보자용 해석</h3>
