@@ -32,7 +32,9 @@ function acceptedThemes(feed:PublicThemeFeed|null):Theme[]{
   for(const extra of provisional){
    if(validDate(extra?.date)&&extra.date>points[points.length-1].date&&validScore(extra.scores?.[item.theme]))points.push({date:extra.date,score:extra.scores[item.theme]});
   }
-  return [{name:item.theme,group:CATALOG[index].group,color:COLORS[index%COLORS.length],key:'theme_'+index,etfs:Array.isArray(item.etfs)?item.etfs:[],points,provisionalFrom,score:points.at(-1)!.score,date:points.at(-1)!.date}];
+  const currentScore=points.at(-1)?.score;
+  if(!validScore(currentScore))return [];
+  return [{name:item.theme,group:CATALOG[index].group,color:COLORS[index%COLORS.length],key:'theme_'+index,etfs:Array.isArray(item.etfs)?item.etfs:[],points,provisionalFrom,score:currentScore,date:points.at(-1)!.date}];
  }).sort((a,b)=>b.score-a.score||a.name.localeCompare(b.name,'ko'));
 }
 function comparisonDate(date:string,months:number,days:number){
