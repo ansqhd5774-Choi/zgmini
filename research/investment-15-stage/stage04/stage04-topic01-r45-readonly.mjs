@@ -87,7 +87,7 @@ async function cappedText(response,max){
     finally{await reader.cancel().catch(()=>{});}return Buffer.concat(pieces).toString('utf8');}
   const body=await response.text();if(Buffer.byteLength(body)>max)throw Error('BODY_TOO_LARGE');return body;
 }
-async function getOfficial(url,p,fetchFn=fetch){
+export async function getOfficial(url,p,fetchFn=fetch){
   if(!officialReportUrl(url,p))throw Error('UNAPPROVED_REPORT_URL');
   let current=url;
   for(let redirects=0;redirects<3;redirects++){
@@ -129,11 +129,11 @@ export async function discover(p,seed,{fetchFn=fetch,searchFn=getSearch}={}){
     'PARTIAL_NON_DIRECT_DISCOVERY':out.candidate_urls.length?'SEED_ONLY_SEARCH_INCOMPLETE':'SEARCH_INCOMPLETE';
   out.search_ms=Math.round(now()-started);return out;
 }
-function titleOf(html){const m=html.match(/<h1\b[^>]*>([\s\S]*?)<\/h1>/i)||
+export function titleOf(html){const m=html.match(/<h1\b[^>]*>([\s\S]*?)<\/h1>/i)||
   html.match(/<title\b[^>]*>([\s\S]*?)<\/title>/i);return pagePlainText(m?.[1]||'').slice(0,200);}
 function periodOf(text){const m=String(text).match(/\b(20\d{2})\s*(?:-|–|—|to|through)\s*(20\d{2})\b/i);
   return m&&Number(m[2])>Number(m[1])?`${m[1]}-${m[2]}`:null;}
-async function ollamaChoose(p,title,candidates,model,{fetchFn=fetch}={}){
+export async function ollamaChoose(p,title,candidates,model,{fetchFn=fetch}={}){
   const prompt=`You are checking LITERAL MARKET RESEARCH REPORT text. No web browsing or invented facts.\n`+
     `Target: global information technology market as a publisher-defined entire market; NOT IT services, management, software-only, telecom-only, regional, or fastest growing segment.\n`+
     `Publisher ${p.id}; heading ${title}. Select a *future market forecast* CAGR in the excerpt, never historical CAGR.\n`+
