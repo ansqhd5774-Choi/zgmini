@@ -204,6 +204,14 @@
 - Stage04 **21개 테스트 파일 전체 PASS**(모의 요청). 실행 패키지 `STAGE04_KEYWORD_GROWTH_R29_READONLY.cmd`, 실제 사용자 Windows **`R29_KEYWORD_SEARCH_TIMINGS.txt` 대기**. 공식 사이트 라이브 파싱 성공을 테스트 PASS라고 과장하지 않음.
 - 보고서: `STAGE04_SOURCE_CAGR_CONFLICT_R29_20261026.md`. **G/D/M·순위·주문·운영 사이트/DB/산식/스케줄러/ETF 9개 변경 없음**.
 
+## Stage04 R30 — R29 실측 연도 추출 오류 정정, 공식 출처기간·모델 전망률 분리 (2026-10-26)
+
+- 사용자 R29 Windows 로그에서 공식 보고서 검색/GET/로컬 Ollama 모두 **5/5 실행 성공**. 다만 모델이 전망 CAGR은 `5.5/21.0/24.8/12.4/9.2%`로 읽었지만 **모든 전망 시작연도를 `2030`으로 잘못 반환**해 `OLLAMA_PERIOD_NOT_IN_SOURCE` **5/5 실패**. R29 출처 검산은 **3건 정합·2건 출처 내부 충돌**을 정확히 탐지했다.
+- 각 총시간(ms) **4,220/1,654/1,381/1,993/1,698**, 첫 실행 제외 평균 **1,682ms/키워드**; 모델만 첫 실행 제외 평균 **684ms**. 실제 사용자 PC 자료이며 추정 아님.
+- **R30 변경:** 원문 전망 속성표에서 기초연도·종료연도를 파싱·교차검증하고, Ollama는 **정확한 미래 CAGR 숫자와 `FORECAST_CAGR` 타입 두 필드만** 산출. 모형 연도 생성 자체를 제거. 5개 키워드 개별 검색/GET/모델·20초·실패 무재시도 유지.
+- 바이오 서비스 본문 12.4% vs 표 10.1%, 데이터센터 본문 9.2% vs 표 8.2%의 **출처 충돌시 `SOURCE_CONFLICT`·성장률 NULL** 유지, 기존 9개 ETF/테마 탈락 0건.
+- R30 신규 모의 시험 포함 Stage04 **22개 파일 전체 PASS**, 실제 PC `R30_KEYWORD_SEARCH_TIMINGS.txt` 대기. 보고서 `STAGE04_SOURCE_YEAR_GATED_CAGR_R30_20261026.md`. G/D/M·점수·주문·운영 사이트/DB/산식/스케줄러 변경 없음.
+
 ## 가장 최근 M2 패키지 R25 진척
 
 - 원본: `INVESTMENT_M2_R25_NASDAQ_EARNINGS_REPAIR_20261025(1).zip` (원본 SHA256은 `ARTIFACT_INDEX.md`).
@@ -217,5 +225,5 @@
 
 1. 이 브랜치와 `m2/` 파일 목록·SHA, 현재 ZGMINI `main` SHA, 사용자 Windows에서 실행 승인된 R25 ZIP의 일치 여부 확인.
 2. 사용자가 CMD에서 R25를 실행한 실제 `M2_LATEST_STATUS.txt`를 확보하면 R25 SERV 수정이 실제 PASS인지 검증.
-3. **R29 공식 출처 충돌 판정의 실제 PC 검증**: R28 Windows에서 5/5 검색·원문·Ollama 추출 PASS를 확보했으나, 서로 충돌하는 공급원 본문/표 2건까지는 탐지하지 못했다. 사용자가 R29 CMD를 실행하고 `R29_KEYWORD_SEARCH_TIMINGS.txt`를 제공하면 바이오 서비스·데이터센터의 `SOURCE_CONFLICT`·수치 NULL과 각 단계별 실측 ms를 확인한다. 20초·무재시도 유지.
+3. **R30 모델·출처 역할 분리의 실제 PC 검증**: R29 Windows 5/5 검색/원문/모델 실행과 공식 출처 충돌 2건 확인을 마쳤지만, Ollama의 2030/2030 연도 오류로 전체 판정 실패. R30에서 모델 연도 필드를 제거하고 검증된 원문 기간을 사용한다. 사용자가 R30 CMD를 실행하고 `R30_KEYWORD_SEARCH_TIMINGS.txt`를 제공하면 3건 `PASS`·2건 `SOURCE_CONFLICT`가 재현되는지 확인한다. 20초·무재시도 유지.
 4. 사용자 승인 이전에 M 랭킹 실운영·03단계 가중치/ETF 변경·주문 및 배포 금지.
