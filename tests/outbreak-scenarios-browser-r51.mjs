@@ -130,6 +130,24 @@ try{
     "R58: desktop news must occupy approximately 66% of the two-column content");
   }
   assert(fedVisual.chartBeforeNews,"R58: news must appear beside or below chart");
+  const fedTypography=await root.evaluate(el=>{
+   const selectors={
+    score:".ob53-current strong",
+    asof:".ob53-asof strong",
+    chartTitle:".ob53-chart-heading h3",
+    chartMeta:".ob53-chart-heading>span",
+    chartNote:".ob53-chart-footnote",
+    disclosure:".ob53-details summary"
+   };
+   return Object.fromEntries(Object.entries(selectors).map(([name,selector])=>{
+    const target=el.querySelector(selector);
+    if(!target)return [name,null];
+    const style=getComputedStyle(target);
+    return [name,{fontSize:style.fontSize,fontWeight:style.fontWeight,
+     lineHeight:style.lineHeight,letterSpacing:style.letterSpacing,fontFamily:style.fontFamily}];
+   }));
+  });
+  assert(Object.values(fedTypography).every(Boolean),"R59: rate typography comparison elements exist");
   await page.screenshot({path:"artifacts/outbreak-scenarios/analysis-fed-"+width+".png",fullPage:true});
 
   const disclosures=root.locator("details.ob53-details");
@@ -213,6 +231,25 @@ try{
    assert(iranVisual.newsWidthFraction>.61&&iranVisual.newsWidthFraction<.71,
     "R58: Iran news must occupy approximately 66% of desktop width");
   }
+  const iranTypography=await root.evaluate(el=>{
+   const selectors={
+    score:".ob54-kpis .ob53-current strong",
+    asof:".ob54-kpis .ob53-asof strong",
+    chartTitle:".ob54-chart-head h3",
+    chartMeta:".ob54-chart-head>span",
+    chartNote:".ob54-note",
+    disclosure:".ob54-disclosure summary"
+   };
+   return Object.fromEntries(Object.entries(selectors).map(([name,selector])=>{
+    const target=el.querySelector(selector);
+    if(!target)return [name,null];
+    const style=getComputedStyle(target);
+    return [name,{fontSize:style.fontSize,fontWeight:style.fontWeight,
+     lineHeight:style.lineHeight,letterSpacing:style.letterSpacing,fontFamily:style.fontFamily}];
+   }));
+  });
+  assert.deepEqual(iranTypography,fedTypography,
+   "R59: rate and Iran typography tokens match at width="+width);
   assert.equal(await root.locator(".ob54-relations strong").count(),3);
   assert.equal(await root.locator(".ob54-relations strong").first().textContent(),"미확인");
   assert.equal(await root.locator(".ob54-disclosure").count(),2);
