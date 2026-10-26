@@ -10,6 +10,7 @@
 - `scripts/pc-writer/THEME_NINE_R23_PILOT.cmd`: **단일 다운로드 파일**. GitHub 체크아웃 없이 Windows에서 실행 가능하도록 승인된 R23 수집기와 R20 후보 명단을 검증 가능한 SHA256 번들로 포함한다. 실행 결과는 CMD **같은 위치**의 `THEME_NINE_R23_PILOT_RESULT.txt`에 남긴다.
 - `scripts/pc-writer/THEME_NINE_R23_DIAGNOSE.cmd`: 실데이터 자동 수집이 `STOP_INVALID_RESPONSE`로 중단된 경우 사용하는 **단일 다운로드 읽기 전용 진단 CMD**. 동일한 검증된 코드·승인 명단을 포함하며 네트워크 요청이나 체크포인트 변경 없이 `THEME_NINE_R23_DIAGNOSE_RESULT.txt`를 CMD 옆에 생성한다.
 - `scripts/pc-writer/THEME_NINE_R23_RECOVER.cmd`: **해당 PC 로그로 확정된 1회성 타임아웃 복구 CMD**. 기존 38개 원본 SHA 전수 검증, 완료 개수/실패 심볼/실패 시각/숫자 코드 `23` 완전 일치 확인 후 **실패 잠금만 1회 해제**하고 최대 4 GET씩 60초 간격으로 이어 수집한다. 단 한 조건이라도 다르면 GET 없이 종료한다. 결과 TXT는 CMD 같은 폴더의 `THEME_NINE_R23_RECOVER_RESULT.txt`에 저장한다.
+- `scripts/pc-writer/THEME_NINE_R24_SESSION_AUDIT.cmd`: **R22 단계 2 읽기 전용 점검 파일**. 별도 체크아웃·API 요청 없이 기존 121개 원본 SHA, 체크포인트 완결성, 원본 가격 모드, ETF별 뉴욕 날짜 세션, SPY 최신 252개 실제 관측 세션과의 결측을 검사한다. 출력은 CMD **같은 폴더**의 `THEME_NINE_R24_SESSION_AUDIT_RESULT.txt`. **데이터 읽기만 수행하며 실제 PC 점검 결과는 아직 제출되지 않았다.**
 - `scripts/pc-writer/build-theme-nine-r23-pilot.mjs`: 원본 코드/명단 변경 시 단일 CMD를 재생성하고, 내장 자료를 역추출해 일치 여부를 검사한다.
 - `scripts/pc-writer/theme-nine-r23-collect.mjs`: R20 확정 명단 직접 읽기. 중복된 편입 64개를 고유 ETF 63개로 통합하고, SPY 기준 종목을 별도로 포함한다. 티커 수를 임의로 고정하거나 다시 심사하지 않는다.
 - `scripts/pc-writer/theme-nine-r23-collect.cmd`: 사용자 Windows CMD 진입점. 실행 결과 TXT는 CMD **동일 폴더**의 `THEME_NINE_R23_COLLECTION_RESULT.txt`에 생성한다.
@@ -45,7 +46,7 @@ scripts\pc-writer\theme-nine-r23-collect.cmd --collect 2023-01-01 2026-10-26
 ## 테스트와 후속 차단 조건
 
 - 로컬 테스트: `node tests/theme-nine-r23-collect.test.mjs` (실제 네트워크 없음).
-- **다음 단계는 R22 승인 순서의 단계 2**: 기존 수집된 121개 원본의 SHA, ETF별 실제 거래 세션 수, SPY 세션 날짜 정합성, 시간대/가격 모드, 결측 및 관측 기간을 **읽기 전용**으로 검증한다. 신규 수집/계산/공개는 별도 승인 없이 실행하지 않는다.
+- **다음 단계는 R22 승인 순서의 단계 2**: 기존 수집된 121개 원본의 SHA, ETF별 실제 거래 세션 수, SPY 세션 날짜 정합성, 시간대/가격 모드, 결측 및 관측 기간을 **읽기 전용**으로 검증한다. R24 CMD·검증 테스트는 준비 완료, 실제 PC 자료 검사는 사용자 TXT 제출 후 확정한다. 신규 수집/계산/공개는 별도 승인 없이 실행하지 않는다.
 - 기존 검증된 PC 가격/manifest와 **중복 수집을 더 줄이기 위한 독립 원본 비교**는 원본 소재·SHA·가격 모드가 확인될 때만 한다. 다른 가격 형태를 자동 재활용하거나 검증 없이 수집 성공으로 표시하지 않는다.
 - 2단계는 실제 NY 거래일(조기 폐장 포함)·SPY 정합성·가격 모드 확인. 계산과 R32 가중 합산은 3·5단계에서만 수행한다.
 - 공식 AUM은 R22 4단계의 발행사 공개 웹 자료 조사이며 신규 유료 API를 추가하지 않는다.
