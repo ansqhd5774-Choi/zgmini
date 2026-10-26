@@ -38,6 +38,7 @@ export default function CommunityChat({enabled,sidebarMode=false,sidebarOpen=fal
  const [everOpened,setEverOpened]=useState(false);
  const [nickname,setNickname]=useState("");
  const [draft,setDraft]=useState("");
+ const wantsToWrite=draft.trim().length>0;
  const [messages,setMessages]=useState<ChatMessage[]>([]);
  const [status,setStatus]=useState<"loading"|"ready"|"offline">("loading");
  const [writeEnabled,setWriteEnabled]=useState(false);
@@ -104,7 +105,7 @@ export default function CommunityChat({enabled,sidebarMode=false,sidebarOpen=fal
  },[captchaToken]);
 
  useEffect(()=>{
-  if(!open||!writeEnabled||!siteKey)return;
+  if(!open||!writeEnabled||!siteKey||!wantsToWrite)return;
   // Keep a still-unused, unexpired challenge across panel toggles and page navigation.
   if(captchaToken&&captchaSiteKey.current===siteKey&&
     Date.now()-captchaIssuedAt.current<CAPTCHA_CACHE_MAX_AGE_MS)return;
@@ -119,7 +120,7 @@ export default function CommunityChat({enabled,sidebarMode=false,sidebarOpen=fal
   function mount(){
    const api=window.turnstile;
    if(!active||!api||!captchaMount.current||captchaWidget.current)return;
-   captchaWidget.current=api.render(captchaMount.current,{sitekey:siteKey,theme:"dark",
+   captchaWidget.current=api.render(captchaMount.current,{sitekey:siteKey,theme:"dark",appearance:"interaction-only",
     callback:(token:unknown)=>{
      if(!active)return;
      const value=typeof token==="string"?token:"";
@@ -139,7 +140,7 @@ export default function CommunityChat({enabled,sidebarMode=false,sidebarOpen=fal
   script.addEventListener("load",mount);
   mount();
   return()=>{active=false;script?.removeEventListener("load",mount);if(captchaWidget.current&&window.turnstile)window.turnstile.remove(captchaWidget.current);captchaWidget.current=null;};
- },[open,writeEnabled,siteKey,captchaEpoch]);
+ },[open,writeEnabled,siteKey,captchaEpoch,wantsToWrite]);
 
  async function report(messageId:string){
   if(reported.includes(messageId))return;
@@ -167,8 +168,8 @@ export default function CommunityChat({enabled,sidebarMode=false,sidebarOpen=fal
   }catch{setError("연결을 확인하고 다시 시도해 주세요.");}
   finally{
    setSending(false);setCaptchaToken("");captchaIssuedAt.current=0;captchaSiteKey.current=null;
-   if(captchaWidget.current&&window.turnstile)window.turnstile.reset(captchaWidget.current);
-   else setCaptchaEpoch(v=>v+1);
+   if(captchaWidget.current&&window.turnstile)window.turnstile.remove(captchaWidget.current);
+   captchaWidget.current=null;setCaptchaEpoch(v=>v+1);
   }
  }
  if(!enabled)return null;
@@ -186,7 +187,7 @@ export default function CommunityChat({enabled,sidebarMode=false,sidebarOpen=fal
    </div>
    <form className="zg-community-compose" onSubmit={submit}>
     <label htmlFor="zg-community-input">{nickname||"익명"} · 공개 채팅</label>
-    {writeEnabled&&siteKey&&<div className={`zg-community-captcha${captchaToken?" is-verified":""}`} ref={captchaMount} aria-label="봇 방지 인증" aria-hidden={Boolean(captchaToken)}/>}
+    {writeEnabled&&siteKey&&wantsToWrite&&<div className={`zg-community-captcha${captchaToken?" is-verified":""}`} ref={captchaMount} aria-label="봇 방지 인증" aria-hidden={Boolean(captchaToken)}/>}
     <div><input id="zg-community-input" ref={inputRef} value={draft} onChange={event=>setDraft(event.target.value)} placeholder={writeEnabled?"시장에 대한 의견 입력":"채팅 연결 후 입력 가능"} maxLength={300} disabled={status!=="ready"||!writeEnabled||sending} autoComplete="off"/><button type="submit" aria-label="메시지 전송" disabled={status!=="ready"||!writeEnabled||sending||!captchaToken||!draft.trim()}><Send size={16}/></button></div>
     <small role="status">{error||"누구나 볼 수 있는 공개 채팅입니다. 개인정보를 공유하지 마세요."}</small>
    </form>

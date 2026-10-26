@@ -5,6 +5,15 @@ import {readFileSync} from "node:fs";
 const chat=readFileSync(new URL("../components/community-chat.tsx",import.meta.url),"utf8");
 const worker=readFileSync(new URL("../worker/community-chat-api-r1.mjs",import.meta.url),"utf8");
 
+test("reading and automatic focus do not start verification; actual draft intent does",()=>{
+ assert.match(chat,/const wantsToWrite=draft\.trim\(\)\.length>0/);
+ assert.match(chat,/if\(!open\|\|!writeEnabled\|\|!siteKey\|\|!wantsToWrite\)return/);
+ assert.match(chat,/\[open,writeEnabled,siteKey,captchaEpoch,wantsToWrite\]/);
+ assert.match(chat,/appearance:"interaction-only"/);
+ assert.match(chat,/captchaWidget\.current=null;setCaptchaEpoch/);
+ assert.doesNotMatch(chat,/turnstile\.reset\(captchaWidget\.current\)/);
+});
+
 test("chat preserves only unused challenges for same-tab navigation",()=>{
  assert.match(chat,/sessionStorage\.getItem\(CAPTCHA_CACHE_KEY\)/);
  assert.match(chat,/sessionStorage\.setItem\(CAPTCHA_CACHE_KEY/);
