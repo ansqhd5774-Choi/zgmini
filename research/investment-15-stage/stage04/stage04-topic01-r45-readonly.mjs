@@ -37,6 +37,13 @@ function normalizedUrl(raw){try{const u=new URL(raw);u.hash='';u.search='';retur
 function unwrapSearch(raw,base){
   try{let u=new URL(htmlDecode(raw),base);
     if(u.hostname.endsWith('google.com') && u.pathname==='/url' && u.searchParams.get('q'))u=new URL(u.searchParams.get('q'));
+    if(u.hostname.endsWith('bing.com')&&u.pathname==='/ck/a'&&u.searchParams.get('u')){
+      const value=u.searchParams.get('u');
+      if(/^a1[A-Za-z0-9_-]+$/.test(value)){
+        const target=Buffer.from(value.slice(2),'base64url').toString('utf8');
+        if(/^https:\/\//i.test(target))u=new URL(target);
+      }
+    }
     if(u.hostname.endsWith('duckduckgo.com') && u.searchParams.get('uddg'))u=new URL(u.searchParams.get('uddg'));
     return normalizedUrl(u.href);
   }catch{return null;}
@@ -53,7 +60,7 @@ export function searchLinks(html,base,p){
   }
   return unique(links);
 }
-function ranking(url){
+export function ranking(url){
   const segment=new URL(url).pathname.split('/').filter(Boolean).at(-1)?.toLowerCase()||'';
   if(/^(information-technology|information-technology-it)(?:-global-market-report|-market-report|-market(?:-[0-9]{4,8})?|-[0-9]+)?$/.test(segment))return 1000;
   if(/^(information-and-technology)(?:-market|-[0-9]+)?$/.test(segment))return 100;
@@ -93,7 +100,7 @@ async function getOfficial(url,p,fetchFn=fetch){
     return cappedText(r,REPORT_MAX);
   }throw Error('TOO_MANY_REDIRECTS');
 }
-async function getSearch(url,fetchFn=fetch){
+export async function getSearch(url,fetchFn=fetch){
   const r=await fetchFn(url,{signal:AbortSignal.timeout(9000),headers:{accept:'text/html',
     'user-agent':'Mozilla/5.0 (compatible; ZGMINI-public-research/1.0)'}});
   if(!r.ok)throw Error('SEARCH_HTTP_'+r.status);
@@ -152,30 +159,46 @@ export async function inspect(p,url,{fetchFn=fetch,chooseFn=ollamaChoose,model='
   try{html=await getOfficial(url,p,fetchFn)}catch(e){out.error=clean(e.message);out.state=/HTTP_(401|403|429)/.test(e.message)?'SOURCE_BLOCKED':'REPORT_FAILED';
     out.report_ms=Math.round(now()-start);return out;}
   out.report_ms=Math.round(now()-start);out.title=titleOf(html);out.scope_guard=classifyTitle(url,out.title,p);
-  const candidates=extractCagrCandidates(pagePlainText(html));
+  // Validate the literal report's market boundary BEFORE spending model time.
+  if(out.scope_guard!=='DIRECT_MARKET_SCOPE_CANDIDATE'){
+    out.state='PROXY_ONLY';out.error='REPORT_NOT_WHOLE_INFORMATION_TECHNOLOGY_MARKET';return out;
+  }
+  // R45 PC evidence selected TBRC 2025->2026 historical 7.5% instead of its
+  // 2026->2030 forecast 8.3%. Reuse the existing R29 source arithmetic audit
+  // and show Ollama ONLY the report's isolated forecast evidence. Never insert
+  // either percentage as a hard-coded or cached research value.
+  let audit=null;
+  if(p.id==='TBRC'){
+    audit=auditForecastSource(html);out.source_audit=audit.source_audit;
+    out.source_conflict=audit.source_conflict_reason;
+    if(audit.source_audit!=='CONSISTENT'){
+      out.state=audit.source_audit==='SOURCE_CONFLICT'?'SOURCE_CONFLICT':'SOURCE_AUDIT_INCOMPLETE';
+      out.error=audit.source_conflict_reason||'FORECAST_AUDIT_NOT_CONSISTENT';return out;
+    }
+  }
+  const candidates=extractCagrCandidates(audit?.forecast_excerpt||pagePlainText(html));
   if(!candidates.length){out.error='NO_LITERAL_CAGR';return out;}
   try{const ans=await chooseFn(p,out.title,candidates,model,{fetchFn});out.ollama_ms=ans.elapsed_ms||0;
     out.model_total_ms=ans.model_total_ms??null;out.model_load_ms=ans.model_load_ms??null;
     out.model_eval_ms=ans.model_eval_ms??null;out.model_scope=ans.scope;
     if(ans.index<0||['UNCLEAR','UNRELATED'].includes(ans.scope)){out.error='NO_MODEL_CONFIRMED_FORECAST';return out;}
     const chosen=candidates[ans.index];out.period=periodOf(chosen.excerpt);out.source_excerpt=chosen.excerpt.slice(0,250);
-    if(out.scope_guard!=='DIRECT_MARKET_SCOPE_CANDIDATE'){
-      out.state='PROXY_ONLY';out.error='REPORT_NOT_WHOLE_INFORMATION_TECHNOLOGY_MARKET';return out;}
     if(ans.scope!=='DIRECT'){out.state='SCOPE_REVIEW';out.error='MODEL_SCOPE_DISAGREES_WITH_TITLE';return out;}
     if(!/information technology(?: \(it\)| it)? market/i.test(chosen.excerpt)){
       out.state='EVIDENCE_SCOPE_REVIEW';out.error='CAGR_EXCERPT_LACKS_TARGET_MARKET';return out;}
-    if(p.id==='TBRC'){
-      const audit=auditForecastSource(html);out.source_audit=audit.source_audit;
-      out.source_conflict=audit.source_conflict_reason;
-      if(audit.source_audit==='SOURCE_CONFLICT'){out.state='SOURCE_CONFLICT';out.error=audit.source_conflict_reason;return out;}
+    if(audit){
+      if(Math.abs(chosen.pct-audit.forecast_narrative_pct)>0.05){
+        out.state='FORECAST_SELECTION_MISMATCH';out.error='SELECTED_RATE_DIFFERS_FROM_AUDITED_FORECAST';return out;
+      }
+      out.period=`${audit.forecast_base_year}-${audit.forecast_end_year}`;
     }
     out.cagr=chosen.pct;out.state='DIRECT_PROVISIONAL';
   }catch(err){out.error=clean(err.message);out.state='OLLAMA_FAILED';}
   return out;
 }
 export async function researchPublisher(p,seed,{fetchFn=fetch,searchFn=getSearch,chooseFn=ollamaChoose,
-  model='gemma3:4b',maxReports=12}={}){
-  const started=now();const discovery=await discover(p,seed,{fetchFn,searchFn});
+  model='gemma3:4b',maxReports=12,discoverFn=discover,inspectFn=inspect}={}){
+  const started=now();const discovery=await discoverFn(p,seed,{fetchFn,searchFn});
   const inspections=[];let state='NO_DIRECT_VERIFIED',chosen=null;
   const ranked=discovery.candidate_urls.slice(0,maxReports);
   const directCandidates=[];
@@ -183,7 +206,7 @@ export async function researchPublisher(p,seed,{fetchFn=fetch,searchFn=getSearch
     // If at least one whole-market candidate is observed, inspect all other
     // exact-scope URLs but avoid hundreds of adjacent service-sector reports.
     if(directCandidates.length && ranking(url)<1000)break;
-    const item=await inspect(p,url,{fetchFn,chooseFn,model});inspections.push(item);
+    const item=await inspectFn(p,url,{fetchFn,chooseFn,model});inspections.push(item);
     if(item.state==='DIRECT_PROVISIONAL')directCandidates.push(item);
     if(item.state==='SOURCE_BLOCKED' && /HTTP_429/.test(item.error||'')){state='RATE_LIMITED';break;}
   }
