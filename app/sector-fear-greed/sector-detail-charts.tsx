@@ -33,9 +33,12 @@ function PeriodButtons({value,onChange,items,label}:{value:number;onChange:(valu
 function ScoreBar({score}:{score:number|null}){
  return <div className="zg-sfg-meter" aria-label={score===null?'점수 없음':'심리 점수 '+score.toFixed(1)+'점'}><span/><span/><span/><span/><span/>{score!==null&&<i className="zg-sfg-meter-marker" style={{left:Math.min(100,Math.max(0,score))+'%'}}/>}</div>;
 }
-function Sparkline({rows,id,provisionalDate}:{rows:SectorSentimentPoint[];id:SectorId;provisionalDate?:string}){
+function Sparkline({rows,id,provisionalDate,days}:{rows:SectorSentimentPoint[];id:SectorId;provisionalDate?:string;days:number}){
  const provisional=Boolean(provisionalDate&&rows.length>1&&rows.at(-1)?.date===provisionalDate);
- const points=useMemo(()=>rows.map((row,i)=>({date:row.date,value:row[id],solid:provisional&&i===rows.length-1?null:row[id],dash:provisional&&i>=rows.length-2?row[id]:null})),[rows,id,provisional]);
+ const points=useMemo(()=>{
+  const selected=periodRows(rows,days);
+  return selected.map((row,i)=>({date:row.date,value:row[id],solid:provisional&&i===selected.length-1?null:row[id],dash:provisional&&i>=selected.length-2?row[id]:null}));
+ },[rows,id,provisional,days]);
  return <div className="zg-sfg-sparkline" aria-hidden="true"><ResponsiveContainer width="100%" height="100%"><LineChart accessibilityLayer={false} data={points} margin={{top:3,right:2,bottom:3,left:2}}>
   <XAxis dataKey="date" hide height={0}/><YAxis hide domain={[0,100]}/>
   <Tooltip cursor={false} isAnimationActive={false} allowEscapeViewBox={{x:true,y:true}} wrapperStyle={{pointerEvents:'none',zIndex:30}} content={({active,payload})=>{
@@ -117,7 +120,7 @@ export default function SectorDetailCharts(){
     const raw=latest[sector.id],current=typeof raw==='number'?raw:null,delta=changeFor(rows,sector.id,1,0);
     return <button type="button" className="zg-sfg-rank-row" key={sector.id} aria-pressed={visible.has(sector.id)} aria-label={(index+1)+'위 '+nameOf(sector.id)+', '+(current===null?'점수 없음':current.toFixed(1)+'점')+', 1개월 변화 '+deltaText(delta)+'. 비교 차트 '+(visible.has(sector.id)?'ON':'OFF')+', 클릭하면 비교 차트 표시 전환'} onClick={()=>toggle(sector.id)}>
      <span className="zg-sfg-rank-number">{index+1}</span><span className="zg-sfg-rank-name"><i style={{background:COLORS[sector.id]}}/>{nameOf(sector.id)}</span><strong className="zg-sfg-rank-score" style={{color:scoreColor(current)}}>{current===null?'—':current.toFixed(1)}</strong>
-     <ScoreBar score={current}/><Sparkline rows={rows} id={sector.id} provisionalDate={provisionalDate}/>
+     <ScoreBar score={current}/><Sparkline rows={rows} id={sector.id} provisionalDate={provisionalDate} days={compareDays}/>
      <span className={'zg-sfg-rank-delta '+deltaState(delta)}>{deltaText(delta)}{delta!==null&&delta!==0&&<i aria-hidden="true">{delta>0?'▲':'▼'}</i>}</span>
     </button>;
    })}</div>
