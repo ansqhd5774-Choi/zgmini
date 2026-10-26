@@ -214,7 +214,8 @@ test('all guide SEO metadata shares an existing public social preview image with
  assert.match(shell,/twitter:\{card:'summary_large_image',title:fullTitle,description,images:\[image\]\}/);
  assert.match(shell,/alternates:\{canonical:url\},robots:\{index:true,follow:true\}/);
 });
-\ntest('outbreak has a self-canonical server document and a distinct SEO contract',()=>{
+
+test('outbreak has a self-canonical server document and a distinct SEO contract',()=>{
  const page=readFileSync('app/outbreak/page.tsx','utf8');
  const contract=SEO_RUNTIME_MARKERS.get('https://zgmini.kr/outbreak/');
  assert.ok(contract);
