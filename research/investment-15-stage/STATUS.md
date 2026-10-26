@@ -162,6 +162,16 @@
 - `SOURCE_MODE=REFERENCE_SAMPLE_NOT_LIVE`. 이 모드 숫자는 최신 산업 데이터/운영 투자 산식의 증거가 아님. 403 매체 우회·반복 없음.
 - 문서 `STAGE04_OLLAMA_MODEL_ONLY_R24_20261026.md`.
 
+## Stage04 R25 — 키워드별 실제 검색·Ollama 개별 처리시간 시험 (2026-10-26)
+
+- 사용자 PC의 R24 실측: `STATE=PASS`, **Ollama 2,227ms**, 총 2,291ms, 로컬 단문 예문. **실제 최신 웹 자료가 아님**.
+- R25는 전문 성장률 매체 **The Business Research Company**를 하나 선택하고 `nuclear reactor`·`robotics and automation`·`artificial intelligence semiconductors`·`biotechnology services`·`data center` 총 **5개 키워드를 각각 독립 검색**. Bing RSS 사이트 한정 색인 1회, 해당 매체 보고서 0~1회, 로컬 Ollama 생성 0~1회를 상한으로 두고 키워드별 20초 제한.
+- 출력은 CMD와 같은 위치의 `R25_KEYWORD_SEARCH_TIMINGS.txt`에 **검색/매체 본문/Ollama/총 경과시간** 및 요청수/실패 원인을 모두 남김. 키워드 1개가 차단되어도 나머지 4개 측정 시도 계속. 403·성장률 원문 불충분은 성장값 NULL. 시장 CAGR 전망 수치를 실제 YoY로 오표기하지 않는다.
+- `stage04/keyword-growth-speed-r25-readonly.mjs`, `stage04/STAGE04_KEYWORD_GROWTH_R25_READONLY.cmd`, `stage04/keyword-growth-speed-r25.test.mjs` 추가. 공유 연구용 CAGR 검증기에서 `21.0%`와 JSON 숫자 `21`의 동치 검사를 정정.
+- R25 단독 **7/7**, R23/R24 공유 검사 **8/8**, Stage04 **17개 테스트 파일 통과**(모의 네트워크 시험, 실측과 구별).
+- 실제 Windows 매체·검색 접근 및 5개 키워드의 속도는 **사용자 R25 로그 수신 전 미확인**. 매체는 공개 재배포·상업적 파생 사용 승인 원천이 아니므로 연구용 시험 외 ZGMINI 운영 G/D/M·투자 점수·주문·DB·API에 사용하지 않음.
+- 상세 `STAGE04_INDEPENDENT_KEYWORD_SPEED_R25_20261026.md`.
+
 ## 가장 최근 M2 패키지 R25 진척
 
 - 원본: `INVESTMENT_M2_R25_NASDAQ_EARNINGS_REPAIR_20261025(1).zip` (원본 SHA256은 `ARTIFACT_INDEX.md`).
@@ -175,5 +185,5 @@
 
 1. 이 브랜치와 `m2/` 파일 목록·SHA, 현재 ZGMINI `main` SHA, 사용자 Windows에서 실행 승인된 R25 ZIP의 일치 여부 확인.
 2. 사용자가 CMD에서 R25를 실행한 실제 `M2_LATEST_STATUS.txt`를 확보하면 R25 SERV 수정이 실제 PASS인지 검증.
-3. **R24 Ollama 단독 실측 우선**: R23은 매체 HTTP 403으로 모델 호출 전 종료되었다. 외부 웹 접속과 분리하여 짧은 예시를 PC Ollama가 몇 초에 처리하는지 `R24_OLLAMA_ONLY_RESULT.txt`로 확인한다. 실제 최신 출처 검색 연결은 별개로 추후 검증한다.
+3. **R25 키워드별 실측 대기**: R24 PC Ollama 단독 2,227ms 실측을 확인했다. 제공한 R25 Windows CMD로 원자력·로봇·AI 반도체·바이오·데이터센터 5개 개별 **실제 검색/원문/Ollama/총 초**를 `R25_KEYWORD_SEARCH_TIMINGS.txt`에서 검증한다. HTTP 차단은 해당 키워드 실패로 처리하며 반복 요청하지 않는다.
 4. 사용자 승인 이전에 M 랭킹 실운영·03단계 가중치/ETF 변경·주문 및 배포 금지.
