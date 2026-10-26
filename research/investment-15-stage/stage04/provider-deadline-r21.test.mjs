@@ -33,6 +33,14 @@ test('R21 catches response-body hang, not just initial HTTP connection', async (
   }), { code: 'PROVIDER_QUERY_DEADLINE_EXCEEDED' });
 });
 
+test('R21 refuses a parsed response if measured elapsed time passed the deadline', async () => {
+  let calls = 0;
+  await assert.rejects(() => fetchProviderBatchWithinDeadline('https://example.com/industry', {
+    timeoutMs: 25, now: () => calls++ === 0 ? 0 : 26,
+    fetchFn: async (url) => ({ ok: true, url, json: async () => ({ observed: true }) }),
+  }), { code: 'PROVIDER_QUERY_DEADLINE_EXCEEDED' });
+});
+
 test('R21 rejects a provider once with no retries, no per-theme switching, no invented growth', () => {
   const names = Array.from({ length: 1000 }, (_, index) => `THEME_${index}`);
   const result = rejectProviderForThemes(names, 'PROVIDER_QUERY_DEADLINE_EXCEEDED', null, 'TEST_SOURCE');
