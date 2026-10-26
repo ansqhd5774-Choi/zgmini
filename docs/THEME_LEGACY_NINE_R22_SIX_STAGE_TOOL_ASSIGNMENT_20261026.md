@@ -3,7 +3,7 @@
 - 확정일: 2026-10-26 (사용자 승인: “브랜치에 반영해라”)
 - 적용 브랜치: `codex/theme-fear-greed-integration-20261025`
 - 브랜치 통합: 2026-10-26 사용자 지시. 이전 `research/theme-nine-r2-shadow-20261026`는 **과거 연구 이력**이며 이후 신규 작업·수정은 하지 않는다.
-- 상태: `TOOL_PLAN_APPROVED / R23_STAGE1_PC_64_OF_64_COMPLETE / R24_STAGE2_PC_AUDIT_COMPLETE / R25_STAGE3_PC_RESULT_AUDITED / R26_STAGE4_OFFICIAL_CENSUS_63_OF_63 / R32_STAGE5_UPLOADED_JSON_PREFLIGHT_PASS / R32_STAGE5_PC_CMD_RETRY_PENDING / R32_STAGE5_AGGREGATION_PENDING / SHADOW_ONLY`
+- 상태: `TOOL_PLAN_APPROVED / R23_STAGE1_PC_64_OF_64_COMPLETE / R24_STAGE2_PC_AUDIT_COMPLETE / R25_STAGE3_PC_RESULT_AUDITED / R26_STAGE4_OFFICIAL_CENSUS_63_OF_63 / R32_STAGE5_UPLOADED_JSON_PREFLIGHT_PASS / R32_STAGE5_PC_PREFLIGHT_PASS / R32_STAGE5_AGGREGATION_PENDING / SHADOW_ONLY`
 - 최상위 적용: 10번째 우주·위성 R29·R32 기존 계산 계약, R19 3개 O/X 결과, R20 후보 승인 명단. 본 문서는 **도구·실행 담당·작업 순서만 확정**하며 산식 자체를 변경하지 않는다.
 
 ## 1. 확정 범위
@@ -45,7 +45,7 @@
 
 ## 5. 실행 순서와 승인
 
-1. 최초 R22 확정 시점에는 **도구 배정 문서 반영만** 완료했다. 이후 사용자 승인으로 R23 1단계 수집기 코드·모의 테스트를 준비했다. 2026-10-27 PC에서 R23 단계 1 가격 수집(ETF 63종 + SPY 64/64, 원본 121개)과 R24 단계 2 읽기 전용 감사(428,701개 가격 행, SPY 956세션, 최신 252세션 48/64종 충족)가 완료됐다. 16종은 최신 252세션 중 미관측 날짜가 있고, LLMA(15)·RBTX(3)는 40세션 미달이다. 단계 3 계산기는 기존 R2 산식·NY 종가 대용 선택 함수를 원문 그대로 번들링하여 구현했고, 64종 모의 SHA/R24/R25 연동 테스트를 통과했다. 2026-10-27 사용자 PC R25 계산 결과를 TXT/전체 JSON/R24 원본 요약과 교차 검증하여 PASS 했다(최신일 45/63종 점수, 장마감 프록시 실세션 40 미달 7종). 단계 4 발행사 공식 AUM 출처·수치·날짜 조사는 63/63종 완료했다. 그중 42종만 2026-10-23 기준, 나머지 21종은 과거 날짜이므로 현재 일자의 R32 비중 입력 완성으로 간주하지 않는다. 단계 5의 업로드된 R25 JSON 읽기 전용 사전점검은 PASS(최신 45/63, 전체 실측 점수-날짜 10,842건)했지만 실제 가중 합산 및 사용자 PC CMD 검증은 PENDING이다.
+1. 최초 R22 확정 시점에는 **도구 배정 문서 반영만** 완료했다. 이후 사용자 승인으로 R23 1단계 수집기 코드·모의 테스트를 준비했다. 2026-10-27 PC에서 R23 단계 1 가격 수집(ETF 63종 + SPY 64/64, 원본 121개)과 R24 단계 2 읽기 전용 감사(428,701개 가격 행, SPY 956세션, 최신 252세션 48/64종 충족)가 완료됐다. 16종은 최신 252세션 중 미관측 날짜가 있고, LLMA(15)·RBTX(3)는 40세션 미달이다. 단계 3 계산기는 기존 R2 산식·NY 종가 대용 선택 함수를 원문 그대로 번들링하여 구현했고, 64종 모의 SHA/R24/R25 연동 테스트를 통과했다. 2026-10-27 사용자 PC R25 계산 결과를 TXT/전체 JSON/R24 원본 요약과 교차 검증하여 PASS 했다(최신일 45/63종 점수, 장마감 프록시 실세션 40 미달 7종). 단계 4 발행사 공식 AUM 출처·수치·날짜 조사는 63/63종 완료했다. 그중 42종만 2026-10-23 기준, 나머지 21종은 과거 날짜이므로 현재 일자의 R32 비중 입력 완성으로 간주하지 않는다. 단계 5의 업로드된 R25 JSON 읽기 전용 사전점검은 PASS(최신 45/63, 전체 실측 점수-날짜 10,842건)했고, 수정된 CMD의 사용자 Windows PC 실제 사전점검도 PASS다. **실제 가중 합산은 PENDING**이며, 기준일이 과거인 공식 AUM 21종의 처리 기준이 미확정이다.
 2. 단계별 실행은 1→2→3 순으로 원자료와 개별 점수를 검증하고, 공식 AUM 조사(4)를 준비해 5·6에 입력한다. 입력이 부족하면 해당 부분을 PENDING/null로 기록한다.
 3. 변경안이나 신규 수집 도구가 필요하면 사유와 영향을 먼저 사용자에게 보고하고 승인받는다. 미승인 작업을 임의로 추가하지 않는다.
 4. 단계 6을 검증해도 공개 전환은 별도 사용자 승인 대상이다.
@@ -70,8 +70,10 @@
 - [승인 산식 원문 재사용·비공개 CMD·64종 모의 테스트](THEME_LEGACY_NINE_R25_PRIVATE_SCORE_20261027.md)
 - 상태: `PC_RUN_RESULT_INTEGRITY_PASS / R26_OFFICIAL_AUM_SOURCE_CENSUS_63_OF_63 / R32_PREFLIGHT_PASS / NO_PUBLICATION`. [R25 PC 결과 검증](THEME_LEGACY_NINE_R25_PC_RESULT_AUDIT_20261027.md)과 [R26 공식 AUM 전수 조사](THEME_LEGACY_NINE_R26_OFFICIAL_AUM_RESEARCH_20261027.md), [R32 실제 R25 입력 사전점검](THEME_LEGACY_NINE_R32_PRIVATE_PREFLIGHT_20261027.md)를 참고한다.
 
-## 9. R32 PC 사전점검 1차 오류 후 수정
+## 9. R32 PC 사전점검 오류 수정 및 재검증
 
 - 2026-10-27 실제 Windows CMD 로그: 내장 파일 SHA 확인 PASS, 파일 열기 `ENOENT`로 STOP. R32 계산 완료 상태가 아니다.
-- `%~dp0` 폴더 인수의 Windows 인용부호/종단 백슬래시 문제 가능성을 제거하기 위해 환경변수로 전달하는 개정 CMD를 해당 브랜치에 반영했다. 수정 후 모의 검증 5/5 PASS, 내장 세 파일 SHA readback PASS. 재실행 TXT 제출 대기.
+- `%~dp0` 폴더 인수의 Windows 인용부호/종단 백슬래시 문제 가능성을 제거하기 위해 환경변수로 전달하는 개정 CMD를 해당 브랜치에 반영했다. 수정 후 모의 검증 5/5 PASS, 내장 세 파일 SHA readback PASS. 사용자 PC에서 제출한 개정판 TXT `THEME_NINE_R32_PREFLIGHT_RESULT_14715_833.txt`는 Node v24.19.0 / 내장 SHA PASS / R25 입력 검증 PASS / 읽기 전용 쓰기 0건으로 **정상 완료**했다.
 - 기존 ETF 후보, R25 실점수 JSON, 공식 AUM 출처와 기준일, 승인 산식, 원자료·DB·스케줄러·공개 배포를 변경하지 않았다.
+
+- 후속 상태: `R32_STAGE5_PC_PREFLIGHT_PASS / R32_STAGE5_AGGREGATION_PENDING / R32_STAGE6_SHADOW_PENDING`. 공식 AUM 증거 63건 가운데 42건만 2026-10-23 기준, 21건은 과거 기준일이다. 현재 AUM인 것처럼 간주하거나 산식의 가중치를 임의 변경하지 않는다. 최신 ETF 개별 점수 18건 결측은 0점 대체하지 않고 승인된 날짜별 유효 ETF 수 계약을 적용한다.
