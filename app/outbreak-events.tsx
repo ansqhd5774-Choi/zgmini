@@ -9,8 +9,9 @@ import {lazy,Suspense,useEffect,useRef,useState} from 'react';
 import './outbreak-events.css';
 import './outbreak-scenarios-r51.css';
 import './outbreak-mobile-r56.css';
+import './outbreak-density-r57.css';
 import {OutbreakChange} from './outbreak-change';
-import OutbreakChangeLogUI from './outbreak-change-log-ui';
+import OutbreakNewsUI from './outbreak-news-r57';
 import OutbreakBeginnerFed,{rateBand} from './outbreak-beginner-fed-r53';
 import {ContentHelp} from './content-help';
 import {HELP,HelpText} from './help-copy';
@@ -107,9 +108,9 @@ export default function OutbreakEvents({initialEvent='fed'}:{initialEvent?:strin
     {event.id==='iran'?<Suspense fallback={<p role="status">이란 전쟁 상세 분석을 불러오는 중입니다.</p>}><IranDetail view={iran}/></Suspense>:fed?<OutbreakBeginnerFed rate={rate} deltaWeek={deltaWeek}/>:<article key={event.id} className="ob-detail ob-standard-detail" aria-labelledby="ob-detail-title"><header><div><span className="ob-eyebrow">선택한 이벤트</span><h2 id="ob-detail-title">{event.title}</h2></div><span className="ob-stage">기간·판정 기준 초안</span></header>
       <details className="ob-definition ob-definition-disclosure"><summary>분석 질문 · 판정 기준 <span aria-hidden="true">⌄</span></summary><div className="ob-definition-body"><div><span>분석 질문</span><p>{event.question}</p></div><div><span>발생 판정 기준</span><p>{event.outcome}</p></div></div></details>
       <div className="ob-detail-grid"><section className="ob-panel"><h3>{fed?"금리 심리 추이":"확률 추이"}</h3><div className="ob-chart-empty">{fed&&rate?<svg viewBox="0 0 300 150" className="ob-live-rate-chart" role="img" aria-label="금리 심리 최근 5거래일 점수">{[0,50,100].map(v=><g key={v}><line x1="20" x2="280" y1={120-v} y2={120-v} stroke="#355469" strokeDasharray="2 4"/><text x="2" y={124-v} fontSize="9" fill="#96aabd">{v}</text></g>)}<polyline fill="none" stroke={rateChartColor} strokeWidth="2.8" points={rate.week.map((row,i)=>`${20+i*65},${120-row.value}`).join(" ")}/>{rate.week.map((row,i)=><circle key={row.label} cx={20+i*65} cy={120-row.value} r="3.5" fill={rateChartColor}/>)}<text x="20" y="142" fill="#96aabd" fontSize="9">{rate.week[0].label.slice(5)}</text><text x="280" y="142" textAnchor="end" fill="#96aabd" fontSize="9">{rate.week.at(-1)!.label.slice(5)}</text></svg>:<><div className="ob-chart-grid" aria-hidden="true"/><p>{fed?"금리 심리 점수 연결 대기":"확률 이력이 연결되면 추이를 표시합니다."}</p><span>{fed?"PC 저장 H.15 데이터 기준":"발표·협상 등 주요 사건을 함께 표시할 공간"}</span></>}</div><div className="ob-metrics"><div><span>{fed?"금리 심리":"현재 확률"}</span><strong>{fed&&rate?rate.score.toFixed(1):"—"} {fed?"점":"%"}</strong></div><div><span>{fed?"주간 변화":"이전 대비"}</span><strong>{fed&&deltaWeek!==null?`${deltaWeek>=0?"+":""}${deltaWeek.toFixed(1)}`:"—"} {fed?"점":"%p"}</strong></div><div><span>분석 기준일</span><strong>{fed?rate?.observationDate??"미등록":"미등록"}</strong></div></div></section>
-      <section className="ob-panel ob-signals-panel"><h3>핵심 관찰 정보</h3><p className="ob-muted">관련 자산과 다음에 확인할 신호</p>{fed&&<p className="ob-signal-note">국채금리·변동성 기반 심리 점수 · 금리 결정 확률 아님</p>}<dl className="ob-facts"><div><dt>관찰 자산</dt><dd>{event.assets}</dd></div><div><dt>다음 관찰 신호</dt><dd>{event.signals.join(' · ')}</dd></div><div><dt>{fed?"점수 출처":"확률 출처"}</dt><dd>{fed?"미국 연준 H.15 저장자료":"미등록"}</dd></div></dl></section></div>
+      <OutbreakNewsUI eventId="ukraine"/><section className="ob-panel ob-signals-panel"><h3>핵심 관찰 정보</h3><p className="ob-muted">관련 자산과 다음에 확인할 신호</p>{fed&&<p className="ob-signal-note">국채금리·변동성 기반 심리 점수 · 금리 결정 확률 아님</p>}<dl className="ob-facts"><div><dt>관찰 자산</dt><dd>{event.assets}</dd></div><div><dt>다음 관찰 신호</dt><dd>{event.signals.join(' · ')}</dd></div><div><dt>{fed?"점수 출처":"확률 출처"}</dt><dd>{fed?"미국 연준 H.15 저장자료":"미등록"}</dd></div></dl></section></div>
       <details className="ob-formula ob-method-disclosure"><summary className="ob-method-summary"><span><span className="ob-eyebrow">METHODOLOGY</span><strong>{fed?"금리 심리 산식과 산출 근거":"확률 산식과 산출 근거"}</strong></span><span className="ob-method-toggle">자세히 <span aria-hidden="true">⌄</span></span></summary><div className="ob-method-body"><div className="ob-formula-space">{fed?<><strong>0.50P + 0.20R₂ + 0.20R₁₀ + 0.10V</strong><p>P: 2Y−3M 금리차 5일 변화의 완화 백분위 · R: 국채금리 RSI(14) 반전 · V: 10년물 20일 변동성 백분위 반전</p></>:"산식 표시 영역"}{!fed&&<p>승인된 계산식 · 변수 정의 · 가중치 · 계산 예시</p>}</div><div className="ob-formula-fields">{['입력 데이터와 출처','산출 방법과 가중치','모델 버전·검증 결과','갱신 주기와 결측 처리'].map((label,i)=><div key={label}><span>{label}</span><p>{fed?['H.15 DGS2·DGS3MO·DGS10','금리차 50 · 2Y RSI 20 · 10Y RSI 20 · 변동성 10','R1 · 기존 저장 자료 기반 시범 산식','PC 계산·D1 저장 · 결측/지연 시 미표시'][i]:'등록 예정'}</p></div>)}</div></div></details>
-      <OutbreakChangeLogUI eventId="ukraine"/>
+      
       <p className="ob-note">{fed?"시장 금리 심리 점수는 FedWatch 확률이 아니며, 과거 금리 자료의 현행 수정본을 사용합니다.":"현재는 화면 구성만 제공합니다. 실제 확률·시장 반응·산식은 연결되지 않았습니다."}</p>
     </article>}
     </div>
@@ -122,8 +123,8 @@ export default function OutbreakEvents({initialEvent='fed'}:{initialEvent?:strin
       <p>아닙니다. 점수는 해당 사건과 관련된 방향의 신호를 나타내며, ETF 수익률이나 미래 주가를 보장하지 않습니다.</p>
       <h3>14일 차트의 점선이나 공백은 무엇인가요?</h3>
       <p>{fed?"금리 심리에서 저장되지 않은 날짜는 추정값으로 연결하지 않습니다.":"이란 전쟁 추이의 점선은 새 변화가 확인되지 않은 잠정 이월 구간입니다. 기록이 없다고 사건이 없었다는 뜻은 아닙니다."}</p>
-      <h3>변동 이력에는 무엇이 기록되나요?</h3>
-      <p>실제 점수가 달라진 날짜·변화폭·검토된 반영 사유와 출처를 구분해 기록하는 공간입니다. 원인이 확인되지 않으면 빈 상태로 둡니다.</p>
+      <h3>주요 뉴스에는 무엇이 기록되나요?</h3>
+      <p>검증된 기사에 한해 출처·제목·요약·참고 영향·원문 링크를 표시합니다. 기사 영향은 점수 변동의 직접적인 원인으로 단정하지 않습니다.</p>
       <h3>다른 지표도 함께 확인해야 하나요?</h3>
       <p>시장 전체의 공포·탐욕, 섹터별 심리, 경기침체 위험 등은 서로 다른 정보를 보여주므로 함께 비교할 수 있습니다.</p>
       <nav className="obm-search-links" aria-label="관련 투자 지표 바로가기">
