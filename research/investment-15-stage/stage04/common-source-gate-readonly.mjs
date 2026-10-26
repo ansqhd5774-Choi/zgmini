@@ -141,11 +141,12 @@ export async function runCommonSourceStage04({ fetchFn = fetch, asOfDate,
   try {
     const observed = await fetchProviderBatchWithinDeadline(industryFeedUrl, {
       fetchFn, timeoutMs: industryTimeoutMs,
+      readResponse: async (response) => parseUnifiedIndustrySeries(await response.json(), {
+        asOfDate: f.evaluatedAsOfKst,
+        expectedThemes: f.themes.map((theme) => theme.theme),
+      }),
     });
-    const evidence = parseUnifiedIndustrySeries(observed.data, {
-      asOfDate: f.evaluatedAsOfKst,
-      expectedThemes: f.themes.map((theme) => theme.theme),
-    });
+    const evidence = observed.data;
     const byName = new Map(evidence.rows.map((row) => [row.theme, row]));
     const rows = baseline.themes.map((theme) => ({
       ...theme, industry: byName.get(theme.theme),
