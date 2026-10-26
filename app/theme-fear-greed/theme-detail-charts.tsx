@@ -71,10 +71,8 @@ export default function ThemeDetailCharts(){
  const ready=useMemo(()=>acceptedThemes(error?null:payload),[error,payload]);
  const topThree=useMemo(()=>new Set(ready.slice(0,3).map(t=>t.name)),[ready]);
  const currentVisible=visible??topThree;
- const available=useMemo(()=>new Set(ready.map(t=>t.name)),[ready]);
  const matches=(name:string,g:string)=>(group==='전체'||group===g)&&name.toLocaleLowerCase('ko').includes(query.trim().toLocaleLowerCase('ko'));
  const ranked=ready.filter(t=>matches(t.name,t.group));
- const pending=CATALOG.filter(t=>!available.has(t.name)&&matches(t.name,t.group));
  const toggle=(name:string)=>setVisible(previous=>{const next=new Set(previous??topThree);if(next.has(name))next.delete(name);else next.add(name);return next;});
  const compareRows=useMemo(()=>{
   const dates=[...new Set(ready.flatMap(t=>t.points.map(p=>p.date)))].sort();
@@ -119,10 +117,5 @@ export default function ThemeDetailCharts(){
    </div>
    <p className="zg-sfg-footnote">ETF 저장 점수의 변화량입니다. 비교 이력이 없으면 —로 표시하며, 잠정 구간은 점선으로 구분합니다.</p>
   </>:<p className="zg-sfg-state" role="status">{loading?'ETF 전용 3축 연구 · 공개 데이터를 불러오는 중입니다.':'ETF 전용 3축 연구 · 공개 데이터 대기'}</p>}
-  <details className="zg-tfg-pending" open={Boolean(query.trim())} key={group}>
-   <summary>데이터 준비 중인 테마 <strong>{pending.length}개</strong><span>목록 펼치기 ▾</span></summary>
-   <div className="zg-tfg-pending-list">{pending.map(item=><div key={item.name}><span>{item.group}</span><strong>{item.name}</strong><small>— · 데이터 준비 중</small></div>)}</div>
-  </details>
-  {!ranked.length&&!pending.length&&<p className="zg-tfg-empty" role="status">검색한 테마가 없습니다.</p>}
  </div>;
 }
