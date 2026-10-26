@@ -1,6 +1,7 @@
 import {IRAN_NEWS_DISPLAY_KEY,readIranNewsSnapshot} from '../lib/iran-progress/news-display-r1.mjs';
 
 const headers={'cache-control':'no-store','content-type':'application/json; charset=utf-8'};
+/** @param {Request} request @param {{db?: any, now?: number}} options */
 export async function storedIranNewsResponse(request,{db,now=Date.now()}={}){
  if(request.method!=='GET')return Response.json({status:'UNAVAILABLE',reason:'METHOD_NOT_ALLOWED',items:[]},{status:405,headers});
  if(!db)return Response.json({status:'UNAVAILABLE',reason:'NEWS_DATABASE_UNAVAILABLE',items:[]},{status:503,headers});
