@@ -54,12 +54,28 @@ test('a single selected sector places low high and current callouts with guides 
  assert.ok(css.includes('.zg-sfg-comparison-plot{height:126px;'));
 });
 
-test('mobile sector legend names match compact ranking font size without changing chart height',()=>{
+test('approved sector mobile cards center each legend name on one line with left color dot and right score',()=>{
  const css=read('app/sector-fear-greed/sector-detail.css');
- const mobile=css.slice(css.lastIndexOf('@media(max-width:680px)'));
- assert.match(mobile,/\.zg-sfg-legend-name\{[^}]*font-size:10\.5px;line-height:15px/);
- assert.match(mobile,/\.zg-sfg-rank-name\{[^}]*font-size:10\.5px;/);
- assert.match(mobile,/@media\(max-width:480px\)\{[^]*?\.zg-sfg-legend button\{[^}]*grid-template-rows:18px 12px;/);
- assert.match(mobile,/@media\(max-width:355px\)\{\s*\.zg-sfg-legend\{grid-template-columns:repeat\(3,minmax\(0,1fr\)\)/);
- assert.match(mobile,/\.zg-sfg-comparison-plot\{height:126px;/);
+ const mobile=css.slice(css.indexOf('/* Approved sector-only mobile legend:'));
+ assert.ok(mobile.startsWith('/* Approved sector-only mobile legend:'));
+ assert.match(mobile,/@media screen and \(max-width:680px\)/);
+ assert.match(mobile,/grid-template-columns:repeat\(4,minmax\(0,1fr\)\);grid-auto-rows:32px;gap:4px/);
+ assert.match(mobile,/\.zg-sfg-legend button\{[^}]*position:relative;display:block;[^}]*height:32px;min-height:32px;max-height:32px;/);
+ assert.match(mobile,/\.zg-sfg-legend i\{[^}]*position:absolute;left:6px;top:50%;transform:translateY\(-50%\)/);
+ assert.match(mobile,/\.zg-sfg-legend-name\{[^}]*position:absolute;left:50%;top:50%;transform:translate\(-50%,-50%\);[^}]*white-space:nowrap;[^}]*text-align:center/);
+ assert.match(mobile,/\.zg-sfg-legend-score\{[^}]*position:absolute;right:6px;top:50%;transform:translateY\(-50%\);display:block/);
+ assert.match(mobile,/@media screen and \(max-width:600px\)\{\s*\.zg-sector-detail:not\(\.zg-theme-detail\) \.zg-sfg-legend\{grid-template-columns:repeat\(3,minmax\(0,1fr\)\);grid-auto-rows:32px/);
+ assert.match(mobile,/@media screen and \(max-width:355px\)\{\s*\.zg-sector-detail:not\(\.zg-theme-detail\) \.zg-sfg-legend\{grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);
+ // Shared stylesheet is imported on the theme page; every added selector is restricted to the sector page.
+ for(const rule of mobile.split('\n').filter(s=>s.trimStart().startsWith('.zg-')))assert.ok(rule.includes('.zg-sector-detail:not(.zg-theme-detail) '),rule);
+ assert.match(css,/\.zg-sfg-comparison-plot\{height:126px;/);
+});
+
+test('sector legend toggles and sorted current score remain source driven',()=>{
+ const tsx=read('app/sector-fear-greed/sector-detail-charts.tsx');
+ assert.match(tsx,/order:var\(--zg-mobile-order\)/.test(read('app/sector-fear-greed/sector-detail.css')) ? /SECTORS\.map\(sector=>/ : /never-match/);
+ assert.match(tsx,/onClick=\{\(\)=>toggle\(sector\.id\)\}/);
+ assert.match(tsx,/\{'--zg-mobile-order':sorted\.findIndex\(item=>item\.id===sector\.id\)\}/);
+ assert.match(tsx,/className="zg-sfg-legend-name">\{nameOf\(sector\.id\)\}/);
+ assert.match(tsx,/className="zg-sfg-legend-score" style=\{\{color:scoreColor\(current\)\}\}>\{current===null\?'—':current\.toFixed\(1\)\}/);
 });
