@@ -142,8 +142,8 @@ test('theme search opens as an anchored overlay before categories and does not o
 
 test('theme search closes on category selection and outside pointer without leaving a hidden query',()=>{
  const src=readFileSync('app/theme-fear-greed/theme-detail-charts.tsx','utf8');
- assert.match(src,/const closeSearch=\(\)=>\{setSearchOpen\(false\);setQuery\(''\);\}/);
- assert.match(src,/onClick=\{\(\)=>\{setGroup\(name\);closeSearch\(\);\}\}/);
+ assert.match(src,/const closeSearch=\(\)=>\{setSearchOpen\(false\);if\(query\)applyThemeFilter\(group,''\);\}/);
+ assert.match(src,/onClick=\{\(\)=>\{setSearchOpen\(false\);applyThemeFilter\(name,''\);\}\}/);
  assert.match(src,/document\.addEventListener\('pointerdown',onOutsidePointer\)/);
  assert.match(src,/!searchContainerRef\.current\?\.contains\(event\.target as Node\)\)closeSearch\(\)/);
  assert.match(src,/document\.removeEventListener\('pointerdown',onOutsidePointer\)/);
@@ -151,5 +151,20 @@ test('theme search closes on category selection and outside pointer without leav
  assert.match(src,/document\.removeEventListener\('keydown',onEscape\)/);
  assert.match(src,/searchInputRef\.current\?\.focus\(\)/);
  assert.match(src,/name\.toLocaleLowerCase\('ko'\)\.includes\(query\.trim\(\)\.toLocaleLowerCase\('ko'\)\)/);
- assert.match(src,/onChange=\{e=>setQuery\(e\.target\.value\)\}/);
+ assert.match(src,/onChange=\{e=>applyThemeFilter\(group,e\.target\.value\)\}/);
+});
+
+test('theme rank numbers and top selection cards use the same filtered ordered subset on PC and mobile',()=>{
+ const src=readFileSync('app/theme-fear-greed/theme-detail-charts.tsx','utf8');
+ assert.match(src,/const ranked=ready\.filter\(t=>matches\(t\.name,t\.group\)\)/);
+ assert.match(src,/className="zg-sfg-rank-list">\{ranked\.map\(\(item,index\)=>\{/);
+ assert.doesNotMatch(src,/ready\.findIndex\(t=>t\.name===item\.name\)/);
+ assert.match(src,/aria-label="비교할 테마 선택">\{ranked\.map\(item=>/);
+ assert.match(src,/\{ranked\.flatMap\(item=>item\.points\.length>item\.provisionalFrom/);
+ assert.match(src,/const soloTheme=currentVisible\.size===1\?ranked\.find/);
+ assert.match(src,/const applyThemeFilter=\(nextGroup:string,nextQuery:string\)=>\{/);
+ assert.match(src,/setVisible\(new Set\(filtered\.slice\(0,1\)\.map\(t=>t\.name\)\)\)/);
+ assert.match(src,/onClick=\{\(\)=>\{setSearchOpen\(false\);applyThemeFilter\(name,''\);\}\}/);
+ assert.match(src,/onChange=\{e=>applyThemeFilter\(group,e\.target\.value\)\}/);
+ assert.match(src,/\},\[searchOpen,group,query,ready\]\)/);
 });
