@@ -1,7 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import {inspectNineR32} from '../scripts/pc-writer/theme-nine-r32-readonly-preflight.mjs';
+import path from 'node:path';
+import {fileURLToPath} from 'node:url';
+import {inspectNineR32, findR25} from '../scripts/pc-writer/theme-nine-r32-readonly-preflight.mjs';
 const roster = JSON.parse(fs.readFileSync(new URL('../config/theme-nine-r20-approved-candidates.json', import.meta.url)));
 const aum = JSON.parse(fs.readFileSync(new URL('../config/theme-nine-r26-official-aum-evidence.json', import.meta.url)));
 const symbols = [...new Set(roster.groups.flatMap(g => g.tickers.map(t => t.ticker)))].sort();
@@ -70,4 +72,10 @@ test('rejects fabricated values, changed provenance, and roster mutation', () =>
   assert.throws(() => inspectNineR32({r25: changedSource, roster, aum}), /R25_SOURCE_MISMATCH/);
   const changedAum = {...aum, rows: aum.rows.slice(1)};
   assert.throws(() => inspectNineR32({r25: fixture(), roster, aum: changedAum}), /AUM_SYMBOLS/);
+});
+test('CMD file discovery emits precise errors for missing inputs', () => {
+  const testFolder = path.dirname(fileURLToPath(import.meta.url));
+  assert.throws(() => findR25(testFolder), /R25_JSON_NOT_NEXT_TO_CMD/);
+  assert.throws(() => findR25(testFolder, path.join(testFolder, 'THIS_R25_FILE_DOES_NOT_EXIST.json')),
+    /R25_SELECTED_FILE_NOT_FOUND/);
 });
