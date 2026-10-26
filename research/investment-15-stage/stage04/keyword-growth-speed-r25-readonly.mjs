@@ -7,6 +7,7 @@ import { writeFile } from 'node:fs/promises';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { extractMarketExcerpt, validateModelReply } from './market-growth-ollama-r23-readonly.mjs';
+import { auditForecastSource } from './forecast-source-audit-r29-readonly.mjs';
 
 export const MAX_KEYWORD_MS = 20_000;
 export const PUBLISHER = 'The Business Research Company';
@@ -161,11 +162,15 @@ export async function measureKeyword(keyword, {
   searchQuery = null,
   searchMode = 'bing-rss',
   structuredOutput = false,
+  auditForecast = false,
 } = {}) {
   if (maxMs <= 0 || maxMs > MAX_KEYWORD_MS) throw new Error('INVALID_TIMEOUT');
   if (!KEYWORDS.includes(keyword)) throw new Error('INVALID_TEST_KEYWORD');
   if (!['bing-rss', 'publisher-site'].includes(searchMode)) throw new Error('INVALID_SEARCH_MODE');
   if (typeof structuredOutput !== 'boolean') throw new Error('INVALID_STRUCTURED_OUTPUT');
+  if (typeof auditForecast !== 'boolean' || (auditForecast && searchMode !== 'publisher-site')) {
+    throw new Error('INVALID_FORECAST_AUDIT');
+  }
   const began = now();
   const controller = new AbortController();
   const deadline = setTimeout(() => controller.abort(), maxMs);
@@ -191,6 +196,18 @@ export async function measureKeyword(keyword, {
     result.ollama_response_sample = null;
     result.ollama_done_reason = null;
     result.ollama_eval_count = null;
+  }
+  if (auditForecast) {
+    result.source_audit = 'NOT_RUN';
+    result.source_conflict_reason = null;
+    result.forecast_narrative_pct = null;
+    result.forecast_table_pct = null;
+    result.forecast_math_pct = null;
+    result.forecast_base_year = null;
+    result.forecast_end_year = null;
+    result.forecast_base_value = null;
+    result.forecast_end_value = null;
+    result.model_candidate_pct = null;
   }
   try {
     const searchBegan = now();
@@ -235,11 +252,20 @@ export async function measureKeyword(keyword, {
           signal: controller.signal, headers: { accept: 'text/html' }, redirect: 'follow'
         });
         if (!allowedReportUrl(reportResponse.url || selected.url)) throw new Error('PUBLISHER_REDIRECT_BLOCKED');
-        html = await limitedRead(reportResponse, 1_500_000,
-          (raw) => Boolean(chooseShortExcerpt(raw, keyword)));
+        html = await limitedRead(reportResponse, auditForecast ? 2_500_000 : 1_500_000,
+          auditForecast ? () => false : (raw) => Boolean(chooseShortExcerpt(raw, keyword)));
       } catch (error) { throw new Error(`PUBLISHER_${error.message}`); }
       finally { result.report_ms = Math.round(now() - reportBegan); }
-      excerpt = chooseShortExcerpt(html, keyword);
+      if (auditForecast) {
+        const { forecast_excerpt, ...audit } = auditForecastSource(html);
+        Object.assign(result, audit);
+        if (audit.source_audit === 'INCOMPLETE' || !forecast_excerpt) {
+          throw new Error('SOURCE_AUDIT_INCOMPLETE');
+        }
+        excerpt = forecast_excerpt;
+      } else {
+        excerpt = chooseShortExcerpt(html, keyword);
+      }
     }
     if (!excerpt) throw new Error('PUBLISHER_NO_CAGR_EXCERPT');
     ensureInBudget(began, now, maxMs);
@@ -281,6 +307,23 @@ export async function measureKeyword(keyword, {
     }
     ensureInBudget(began, now, maxMs);
     Object.assign(result, validateModelReply(completion.response, excerpt));
+    if (auditForecast) {
+      result.model_candidate_pct = result.growth_pct;
+      if (Math.abs(result.growth_pct - result.forecast_narrative_pct) > 0.05 ||
+          result.period_start !== result.forecast_base_year ||
+          result.period_end !== result.forecast_end_year) {
+        throw new Error('OLLAMA_NOT_MATCHING_FORECAST_SECTION');
+      }
+      if (result.source_audit === 'SOURCE_CONFLICT') {
+        result.state = 'SOURCE_CONFLICT';
+        result.failure = 'SOURCE_FORECAST_VALUES_DISAGREE';
+        result.growth_pct = null;
+        result.metric = null;
+        result.period_start = null;
+        result.period_end = null;
+        return result;
+      }
+    }
     result.state = 'PASS';
   } catch (error) {
     result.failure = controller.signal.aborted ? 'KEYWORD_DEADLINE_EXCEEDED' : (error.message || 'UNKNOWN_ERROR');
