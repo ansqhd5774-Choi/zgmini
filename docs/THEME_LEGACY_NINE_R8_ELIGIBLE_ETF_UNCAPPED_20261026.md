@@ -79,7 +79,9 @@
 - [R10: 추가 발행사 2차 탐색 — 신규 14개 후보](THEME_LEGACY_NINE_R10_ETF_ISSUER_DISCOVERY_20261026.md)
 - [R11: 연구용 ETF 후보 머신 목록 — 기존 18편입 위치와 신규 37개 후보, 각 gate별 PENDING](../config/theme-nine-r11-eligibility-candidates.json)
 - [R12: 가격 공급원 공식 라이선스 및 유료/무료·조정가격 위험 확인](THEME_LEGACY_NINE_R12_MARKETDATA_RIGHTS_GATES_20261026.md)
-- **신규 후보 총 37개는 사용권·가격 수집·AUM 미검증 후보**다. 합격 ETF 37개 또는 ETF 목표 37개로 해석하지 않는다. 후보 조사·적격성 판정은 계속한다.
+- [R13: 9개 테마 ETF 전체 후보 연구용 머신 로스터·범위별 1차 분류](../config/theme-nine-r13-formula-candidate-prescreen.json)
+- [R14: 9개 테마 산식 편입 우선/추가검토 후보 선정](THEME_LEGACY_NINE_R14_FORMULA_CANDIDATE_SELECTION_20261026.md)
+- R9·R10 누적 신규 37개는 당시의 조사 결과이고, R13·R14에서 신규 9개를 추가 발견했다. 현재 **신규 46편입 후보 위치/전체 64후보 위치**는 탐색 결과일 뿐 목표치나 상한이 아니다. 가격·권리·AUM·실세션 검증을 통과한 추가 ETF는 아직 없고, 후보 조사는 계속한다.
 
 ## 6. 참조
 - 기존 운영: AGENTS.md, docs/THEME_DATA_OPERATIONS.md, config/theme-data-registry.json
