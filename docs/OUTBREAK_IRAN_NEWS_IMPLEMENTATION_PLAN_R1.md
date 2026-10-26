@@ -180,3 +180,13 @@
 - `news-display-install-hook-r7.mjs`는 등록 작업 XML, VBS, PC 실제 CRLF SHA, PC HEAD, SQLite 표식, 뉴스 캐시, 원본과 비교한 정확히 한 블록의 변경, 필수 모듈의 기존 파일 충돌 여부, 백업 경로 부재를 읽기 전용으로 검사한다. 모든 조건 PASS 시에만 별도 승인 환경값을 사용해 새 표시용 모듈 및 승인된 기존 Node wrapper 하나를 설치한다. 기존 wrapper의 원본 바이트는 `.before-iran-news-r7`로 백업하고 신규 파일을 read-back한다.
 - 사용자용 `IRAN_NEWS_R7_INSTALL.cmd`는 고정 GitHub 커밋 `4b7667c13f84b362b5144037b7fd5d94de7044a2`의 작은 모듈을 CMD 옆 전용 디렉터리에 가져오고, read-only preflight PASS 후 **딱 1회** 설치를 시도한다. TXT는 CMD 옆 `IRAN_NEWS_R7_INSTALL_RESULT.txt`. 불확실 결과면 자동 재시도 금지.
 - R1/R4/R6/R7 테스트 묶음 PASS(총 4개 테스트 파일). **R7의 실제 PC 설치는 사용자 CMD 로그 회신 전까지 미실시**. R7 설치 결과를 검증한 뒤 다음 정상 R13 6시간 주기의 실행과 30일 캐시 갱신을 별도 확인해야 운영 자동화 PASS로 판정. 스케줄러/VBS/점수 산식·원장/데이터베이스/D1/사이트 디자인은 미수정.
+
+## 13. 2026-10-27 R7 PC 설치 PASS / R8 다음 6시간 실행 확인 대기
+
+- 사용자 제출 `IRAN_NEWS_R7_INSTALL_RESULT.txt`: `PASS_R7_NEWS_ONLY_PREFLIGHT`, `READ_ONLY_PREFLIGHT_GATE=PASS`, `PASS_R7_NEWS_ONLY_HOOK_INSTALLED`, `R7_INSTALL_READBACK_GATE=PASS`, `FINAL_STATUS=PASS_R7_NEWS_RETENTION_HOOK_INSTALLED`.
+- 원본 PC R3 wrapper SHA-256 `cbeff8d254504780c3446bdc7f43484a87306e2163b3687784a10f5b85a4c3b6`; 새 wrapper SHA-256 `438ac0ad3f5073fbecc0e785c6f8fee19042d6fc8638ece9ef1e5198dd4c1b69`. 승인된 기존 점수 흐름 유지 계약 PASS, 기존 실행기 원본 백업 read-back PASS, 표시용 새 모듈 정확히 5개 생성.
+- 설치 중 표시 캐시 read-only dry-run PASS. 설치 보고상 스케줄러/VBS/점수 원장/D1 변경 없음. 기존 자동 게시용 D1 호출이나 신규 기사 자동 검토·승인도 추가하지 않았다.
+- 중요한 구분: 이는 **로컬 설치 PASS**이며 정상 R13 6시간 실행 이후 캐시 정리 hook이 실제로 동작했다는 증거는 아직 아니다.
+- 동일 브랜치에 `news-display-scheduled-verify-r8.mjs`, `IRAN_NEWS_R8_SCHEDULE_VERIFY.cmd`, `tests/iran-news-scheduled-verify-r8.test.mjs` 추가. R8은 기존 R13 XML·VBS SHA·승인 후 wrapper SHA·원본 백업 SHA·스케줄러 마지막 실행 기록/결과·뉴스 캐시 `updatedAt`과 설치된 wrapper 파일 수정 시각을 **읽기 전용**으로 교차 확인한다.
+- 한국어 오전/오후 및 영어 AM/PM 스케줄러 시간, 인용 부호가 포함된 CSV, 정상 성공/다음 실행 전 대기/실패 분기 시험 PASS. 전체 R1/R4/R6/R7/R8 테스트 파일 5개 실행 PASS.
+- 다음 Gate: **다음 정상 R13 실행이 끝난 이후** 사용자 PC에서 R8 CMD 1회 실행, 같은 위치의 `IRAN_NEWS_R8_SCHEDULE_VERIFY_RESULT.txt` 확인. `PASS_R8_NEXT_SCHEDULE_CACHE_REFRESH`와 후속 검증을 통과한 경우에만 최초 GOV.UK 뉴스용 30일 캐시 자동 유지관리 검증 완료로 판정한다. 이전 승인 GOV.UK 기사 외 신규 뉴스 자동 수집·게시 기능은 여전히 미승인.
