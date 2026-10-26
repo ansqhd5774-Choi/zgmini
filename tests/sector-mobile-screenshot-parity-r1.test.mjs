@@ -24,8 +24,8 @@ test('mobile scores come from the saved API history and use existing five-band c
  const tsx=read('app/sector-fear-greed/sector-detail-charts.tsx');
  const css=read('app/sector-fear-greed/sector-detail.css');
  assert.ok(tsx.includes("fetch('/api/sector-fear-greed'"));
- assert.ok(tsx.includes('const [compareDays,setCompareDays]=useState(365)'));
- assert.ok(tsx.includes('rankedSectors(history).slice(0,3)'));
+ assert.ok(tsx.includes('const [compareDays,setCompareDays]=useState(90)'));
+ assert.ok(tsx.includes('rankedSectors(history).slice(0,1)'));
  for(const name of ['extreme-fear','fear','neutral','greed','extreme-greed']){
   assert.ok(tsx.includes(`var(--zg-score-${name})`),`missing canonical band ${name}`);
  }
@@ -116,4 +116,16 @@ test('sector mini charts follow the shared 1W–1Y period and show trend only on
  assert.ok(mobile.includes('.zg-sector-detail:not(.zg-theme-detail) .zg-sfg-ranking .zg-sfg-sparkline .recharts-tooltip-wrapper{display:none!important}'));
  assert.ok(spark.includes('<Tooltip'), 'desktop tooltip remains available');
  assert.ok(css.includes('.zg-sfg-sparkline{position:relative;width:100%;height:30px;min-width:0;pointer-events:auto}'), 'desktop pointer interaction remains available');
+});
+
+test('sector page starts with 3M selected and the single highest-ranked sector enabled',()=>{
+ const tsx=read('app/sector-fear-greed/sector-detail-charts.tsx');
+ assert.match(tsx,/const PERIODS=\[\['1W',7\],\['1M',30\],\['3M',90\],\['6M',180\],\['1Y',365\]\]/);
+ assert.match(tsx,/const \[compareDays,setCompareDays\]=useState\(90\)/);
+ assert.match(tsx,/setVisible\(new Set\(rankedSectors\(history\)\.slice\(0,1\)\.map\(sector=>sector\.id\)\)\)/);
+ assert.match(tsx,/const rankedSectors=\(rows:SectorSentimentPoint\[\]\)=>\[\.\.\.SECTORS\]\.sort/);
+ assert.match(tsx,/const sorted=useMemo\(\(\)=>rows\?rankedSectors\(rows\):\[\],\[rows\]\)/);
+ assert.match(tsx,/value=\{compareDays\} onChange=\{days=>\{setCompareDays\(days\);setComparisonPinned\(false\);\}\}/);
+ assert.match(tsx,/days=\{compareDays\}/);
+ assert.match(tsx,/onClick=\{\(\)=>toggle\(sector\.id\)\}/);
 });
