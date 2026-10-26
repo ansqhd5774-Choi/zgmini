@@ -135,7 +135,7 @@
 
 - 각 테마가 공유하는 공식 매체 일괄 조회에 **HTTP+응답 본문 처리 합산 20,000ms** 상한 적용. N=9/100/1,000으로 증가해도 매체 단일 배치 조회 한 번, 테마별 직렬 통신 0회.
 - 타임아웃·HTTP·DNS·포맷 실패 매체는 **그 실행에서 정보 미제공**. 대체 공급원 자동 선택·재시도 0, 테마 자료 및 G/D/M은 NULL. 매체 실패가 03단계 테마 탈락을 의미하지 않음.
-- `stage04/provider-deadline-r21-readonly.mjs`, `stage04/provider-deadline-r21.test.mjs`, 기존 `common-source-gate-readonly.mjs` 적용. **R21 신규 5/5 + R18 회귀 5/5 PASS**.
+- `stage04/provider-deadline-r21-readonly.mjs`, `stage04/provider-deadline-r21.test.mjs`, 기존 `common-source-gate-readonly.mjs` 적용. **R21 신규 6/6 + 전체 Stage04 96/96 PASS**.
 - OECD STAN 단일 공식 API 조회 시도는 개발 실행 환경 DNS `EAI_AGAIN`: 조회 성공 아님, 본 실행에서 매체 불합격, 반복 조회 중단. 산업 직접 데이터 9개 공통 수집·사용권 승인 0건; 서비스/산식/DB/스케줄러/주문 변경 0건.
 - 근거: `STAGE04_MEDIA_RESPONSE_20S_R21_20261026.md`.
 
