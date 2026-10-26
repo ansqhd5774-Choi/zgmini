@@ -47,6 +47,12 @@ test('risk indicator guide shares the sector collapsible header and retains its 
   const page=read('app/risk-indicators/page.tsx');
   const guide=read('components/investor-search-guide.tsx');
   const copy=read('lib/investor-search-content.ts');
+  const css=read('app/risk-indicators/risk-indicators.css');
+  assert.match(page,/<div className="zg-risk-landing-inner" style=\{\{paddingTop:0,paddingBottom:32\}\}>/);
+  assert.doesNotMatch(page,/max-w-6xl/);
+  assert.match(css,/\.zg-risk-landing-inner\{max-width:1470px;margin:0 auto;padding:27px 42px 42px\}/);
+  assert.match(css,/\.zg-risk-landing-inner\{padding-left:26px;padding-right:26px\}/);
+  assert.match(css,/\.zg-risk-landing-inner\{padding:20px 13px 29px\}/);
   assert.match(page,/<InvestorSearchGuide id="investor-search-risk-hub" copy=\{RISKHUB_INVESTOR_SEARCH\} collapsible\/>/);
   assert.match(guide,/<details className="group/);
   assert.match(guide,/<summary className="flex min-h-10/);
