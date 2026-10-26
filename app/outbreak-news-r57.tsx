@@ -18,6 +18,7 @@ export type OutbreakNewsItem={
 };
 
 type Filter="all"|"positive"|"negative";
+const kstPublicationDate=(value:string)=>{const at=Date.parse(value);return Number.isFinite(at)?new Date(at+9*3600000).toISOString().slice(0,10):value.slice(0,10);};
 const labels:Record<OutbreakNewsItem["impact"],string>={
  positive:"긍정 영향",negative:"부정 영향",neutral:"중립"
 };
@@ -46,7 +47,7 @@ export default function OutbreakNewsUI({eventId,items=[]}:{eventId:string;items?
   </header>
   <div className="ob57-news-list" aria-live="polite">
    {visible.length?visible.map(item=><article className="ob57-news-item" key={item.id}>
-    <div className="ob57-news-meta"><strong>{item.source}</strong><time dateTime={item.publishedAt}>{item.publishedAt.slice(0,10)}</time></div>
+    <div className="ob57-news-meta"><strong>{item.source}</strong><time dateTime={item.publishedAt}>{kstPublicationDate(item.publishedAt)}</time></div>
     <h4>{item.title}</h4>
     <p>{item.summary}</p>
     <div className="ob57-news-foot"><span className="ob57-impact" data-impact={item.impact}>{labels[item.impact]}</span><a href={item.sourceUrl} target="_blank" rel="noopener noreferrer" title="기사 원문 보기" aria-label={`${item.source} 기사 원문 보기: ${item.title}`}><ExternalLink size={15} aria-hidden="true"/></a></div>
