@@ -91,6 +91,7 @@
 | 기존 뉴스 UI 연결 | `app/outbreak-beginner-iran-r54.tsx`, `app/outbreak-news-r57.tsx` |
 | GOV.UK 후보 발견(읽기 전용) | `scripts/iran-progress/news-display-discover-r1.mjs` |
 | PC 독립 정리/게시 실행기 | `scripts/iran-progress/news-display-maintenance-r1.mjs` |
+| PC 확인용 CMD | `scripts/iran-progress/IRAN_NEWS_R1_READONLY_CHECK.cmd` |
 | 자동 테스트 | `tests/iran-news-display-r1.test.mjs` |
 
 기존 수집기·runner·게시기 변경은 승인 경로에서 **필요한 최소 범위**로만 적용한다. 새 파일명과 전용 키는 후보이며 실제 참조 관계 검사 후 확정한다.
@@ -107,3 +108,11 @@
 - [ ] 뉴스 D1 게시·공개 UI·Cloudflare 배포
 
 **진행 이력:** 최초에는 계획서만 저장했다. 2026-10-26 현재 독립 구현 파일과 UI/API 연결 코드가 브랜치에 추가되었다. 그러나 기사별 검증과 자체 요약·영향 분류, PC 원본 수집기와의 런타임 연결, PC 실제 30일 정리 실행, D1 실제 게시, PR/main 반영, Cloudflare 배포는 **미실시**다. 11개 테스트 PASS는 단위 테스트 결과이지 운영 PASS가 아니다.
+
+## 5. 운영 PC 첫 확인 절차 (미실행)
+
+- 승인된 PC의 실제 소스 SHA와 이란 운영 홈(`ZGMINI_IRAN_HOME`)을 먼저 확인한다. 작업 브랜치가 그 PC에 반영되지 않았다면 운영 스케줄러나 기존 코드를 덮어쓰지 않는다.
+- 새로 추가한 `scripts/iran-progress/IRAN_NEWS_R1_READONLY_CHECK.cmd`는 **읽기 전용** GOV.UK 후보 조회와 **dry-run** 30일 정리 미리보기만 실행한다. `--apply`·`--publish` 및 점수 원장 변경 없음.
+- 결과는 CMD 파일 옆의 `IRAN_NEWS_DISCOVERY_R1_RESULT.txt`, `IRAN_NEWS_RETENTION_R1_RESULT.txt` 두 파일에 기록한다. 임시 폴더 및 E: 새 대용량 저장소를 만들지 않는다.
+- 첫 결과를 통해 피드 HTTP·원본 발행 시각·GOV.UK 개별 권리 검증 대상·30일 만료 대상·운영 경로를 확인한 뒤에만 실제 저장/게시 및 기존 PC 실행 경로와의 연결을 검토한다.
+- 지금까지 자동 검증은 로컬 Node 11/11 PASS. **Windows CMD 실행, 실제 PC 파일 적용, 실 기사 이용권 판정, D1/Cloudflare 공개 검증은 아직 PASS가 아니다.**
