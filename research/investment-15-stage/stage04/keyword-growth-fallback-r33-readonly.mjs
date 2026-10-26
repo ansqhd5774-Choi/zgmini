@@ -61,6 +61,22 @@ export function findDirectPublisherResult(xml, keyword, source) {
   return null;
 }
 
+/** R34 optional official sitemap lookup; does not confuse a submarket with its parent. */
+export function findDirectCatalogReport(xml, keyword, source) {
+  if (!/<urlset\b/i.test(String(xml))) return null;
+  for (const match of String(xml).matchAll(/<loc>([^<]+)<\/loc>/gi)) {
+    const url = decode(match[1]);
+    if (!allowedSourceUrl(url, source)) continue;
+    const path = new URL(url).pathname.slice(source.path.length).replace(/\/$/, '');
+    if (!/-market(?:-report)?$/i.test(path)) continue;
+    const subject = path.replace(/-market(?:-report)?$/i, '').replace(/-/g, ' ');
+    if (isDirectMarketTitle(subject + ' Market', keyword)) {
+      return { title: subject + ' Market', url };
+    }
+  }
+  return null;
+}
+
 function pageTitle(html) {
   const h1 = String(html).match(/<h1\b[^>]*>([\s\S]*?)<\/h1>/i);
   if (h1) return plainText(h1[1]);
@@ -126,7 +142,7 @@ async function readLimited(response, maxBytes, completed = () => false) {
 
 export async function measureFallback(keyword, source, {
   fetchFn = fetch, model = 'gemma3:4b', maxMs = FALLBACK_MAX_MS,
-  now = () => performance.now()
+  now = () => performance.now(), catalogText = null, directUrl = null
 } = {}) {
   const trustedSource = FALLBACK_SOURCES.find(x => x.id === source?.id);
   if (!trustedSource ||
@@ -137,31 +153,57 @@ export async function measureFallback(keyword, source, {
   const abort = new AbortController();
   const timer = setTimeout(() => abort.abort(), maxMs);
   const result = { keyword, state: 'FAILED', publisher: source.publisher,
-    search_engine: 'Bing RSS restricted to official publisher',
-    search_query: `site:${source.host}${source.id === 'FORTUNE' ? '' : source.path} "${keyword.replace(/\bcyber security\b/gi, 'cybersecurity')}" market CAGR`,
+    search_engine: catalogText !== null ? 'Official publisher sitemap (one batch lookup)' :
+      directUrl !== null ? 'One official direct report URL lookup' :
+      'Bing RSS restricted to official publisher',
+    search_query: catalogText !== null ? `https://${source.host}/reports.xml [${keyword}]` :
+      directUrl !== null ? directUrl :
+      `site:${source.host}${source.id === 'FORTUNE' ? '' : source.path} "${keyword.replace(/\bcyber security\b/gi, 'cybersecurity')}" market CAGR`,
     result_url: null, model, keyword_deadline_ms: maxMs,
     search_requests: 0, report_requests: 0, ollama_generations: 0,
     search_ms: null, report_ms: 0, ollama_ms: null, total_ms: null,
     growth_pct: null, metric: null, period_start: null, period_end: null,
     source_audit: 'NOT_RUN', failure: null, report_title: null,
-    search_http_status: null, model_candidate_pct: null };
+    search_http_status: null, model_candidate_pct: null,
+    rss_items: null, publisher_index_links: null, title_matched_links: null,
+    indexed_sample: null };
   try {
-    const queryUrl = 'https://www.bing.com/search?format=rss&q=' +
-      encodeURIComponent(result.search_query);
-    const searchBegan = now();
-    result.search_requests = 1;
-    let xml;
-    try {
-      const response = await fetchFn(queryUrl, { signal: abort.signal,
-        headers: { accept: 'application/rss+xml,application/xml,text/xml' } });
-      result.search_http_status = response.status;
-      if (new URL(response.url || queryUrl).origin !== 'https://www.bing.com')
-        throw new Error('SEARCH_REDIRECT_BLOCKED');
-      xml = await readLimited(response, 350_000, s => (s.match(/<\/item>/gi) || []).length >= 20);
-    } finally { result.search_ms = Math.round(now() - searchBegan); }
-    if (!/<rss\b|<rdf:RDF\b/i.test(xml)) throw new Error('SEARCH_NOT_RSS');
-    const selected = findDirectPublisherResult(xml, keyword, source);
-    if (!selected) throw new Error('SEARCH_NO_DIRECT_MARKET_REPORT');
+    let selected;
+    if (catalogText !== null) {
+      result.search_ms = 0;
+      selected = findDirectCatalogReport(catalogText, keyword, source);
+      if (!selected) throw new Error('CATALOG_NO_DIRECT_MARKET_REPORT');
+    } else if (directUrl !== null) {
+      result.search_ms = 0;
+      if (!allowedSourceUrl(directUrl, source)) throw new Error('DIRECT_REPORT_URL_NOT_ALLOWED');
+      selected = { title: keyword + ' Market', url: directUrl };
+    } else {
+      const queryUrl = 'https://www.bing.com/search?format=rss&q=' +
+        encodeURIComponent(result.search_query);
+      const searchBegan = now();
+      result.search_requests = 1;
+      let xml;
+      try {
+        const response = await fetchFn(queryUrl, { signal: abort.signal,
+          headers: { accept: 'application/rss+xml,application/xml,text/xml' } });
+        result.search_http_status = response.status;
+        if (new URL(response.url || queryUrl).origin !== 'https://www.bing.com')
+          throw new Error('SEARCH_REDIRECT_BLOCKED');
+        xml = await readLimited(response, 350_000, s => (s.match(/<\/item>/gi) || []).length >= 20);
+      } finally { result.search_ms = Math.round(now() - searchBegan); }
+      if (!/<rss\b|<rdf:RDF\b/i.test(xml)) throw new Error('SEARCH_NOT_RSS');
+      const items = [...xml.matchAll(/<item\b[^>]*>([\s\S]*?)<\/item>/gi)].slice(0, 20);
+      result.rss_items = items.length;
+      result.publisher_index_links = items.filter(([, item]) =>
+        allowedSourceUrl(tagValue(item, 'link'), source)).length;
+      result.title_matched_links = items.filter(([, item]) =>
+        allowedSourceUrl(tagValue(item, 'link'), source) &&
+        isDirectMarketTitle(tagValue(item, 'title'), keyword)).length;
+      result.indexed_sample = items.slice(0, 2).map(([, item]) =>
+        tagValue(item, 'title').replace(/[\r\n=|]/g, ' ').slice(0, 80)).join(' | ') || 'NONE';
+      selected = findDirectPublisherResult(xml, keyword, source);
+      if (!selected) throw new Error('SEARCH_NO_DIRECT_MARKET_REPORT');
+    }
     result.result_url = selected.url;
 
     const reportBegan = now();
