@@ -47,7 +47,10 @@ export function validateModelReply(raw, excerpt) {
   const value = Number(answer.growth_pct);
   if (!Number.isFinite(value) || value < 0 || value > 100) throw new Error('OLLAMA_INVALID_GROWTH');
   if (answer.metric !== 'FORECAST_CAGR') throw new Error('OLLAMA_WRONG_GROWTH_TYPE');
-  const pct = new RegExp(`\\b${String(value).replace('.', '\\.')}\\s*%`);
+  // JSON numbers cannot preserve a trailing .0 (21.0 becomes 21). Accept
+  // equivalent trailing zeroes, but never a different nonzero decimal digit.
+  const literal = String(value).replace('.', '\\.');
+  const pct = new RegExp(`\\b${literal}(?:\\.0+)?\\s*%`);
   if (!pct.test(excerpt)) throw new Error('OLLAMA_VALUE_NOT_IN_SOURCE');
   const from = Number(answer.period_start);
   const to = Number(answer.period_end);
