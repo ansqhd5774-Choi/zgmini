@@ -21,6 +21,16 @@ test('rejects fabricated percentage and non-forecast response', () => {
   /OLLAMA_WRONG_GROWTH_TYPE/);
 });
 
+test('matches source CAGR with insignificant trailing zeros only', () => {
+  const response = JSON.stringify({ growth_pct: 21, metric: 'FORECAST_CAGR',
+    period_start: 2026, period_end: 2030 });
+  const source = 'Robotics market forecast from 2026 to 2030 at a CAGR of 21.0%.';
+  assert.equal(validateModelReply(response, source).growth_pct, 21);
+  assert.throws(() => validateModelReply(response,
+    'Robotics market forecast from 2026 to 2030 at a CAGR of 21.01%.'),
+  /OLLAMA_VALUE_NOT_IN_SOURCE/);
+});
+
 test('single publisher request and single Ollama generation; measured separately', async () => {
   const calls = [];
   const fakeFetch = async (url, options) => {
