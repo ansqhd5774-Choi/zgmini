@@ -76,6 +76,12 @@
 
 다음 Gate: 기존 승인된 공식 미국 발표 일정의 브랜치 빌드·UI/Runtime 검증 → 필요한 경우 명시적으로 자유 재배포 가능한 신규 무료 공급원만 탐색. 브랜치 테스트 이후에도 main 병합·Cloudflare 배포·운영 검증은 각각 별도다.
 
+### R5 — 저장본 상태와 분리 검증 (2026-10-27)
+- 기존 `GET /api/release-calendar`의 공개 Production 응답을 **읽기 전용**으로 확인: envelope `READY`, `updatedAt=2026-10-26T16:25:17.444Z`, 133건(BLS 25·BEA 71·Fed 24·Census 13). `source:id:date` 중복 0건, 날짜 형식·출처 URL 오류 0건. 해당 값은 **현재 운영 저장본**으로, R2 확대 파서 481건이 운영에 반영되었다는 증거가 아님.
+- PC/D1 운영에 접근하지 않는 독립 로컬 Vite 환경의 API는 `PENDING`(이벤트 0건). 이전에는 HTTP 200만 확인되면 `loadState='ready'`로 전환되어 공식 저장본 미확정 사실을 표시하지 못함. 캘린더에 `status !== READY` 알림을 추가하고 기존 수동 확인 자료를 `확인일 기준`으로 유지. 데이터·API·산식·스케줄러 계약은 변경하지 않음.
+- 변경 후 지정 캘린더 테스트 3/3 PASS, TypeScript PASS, 전체 `vinext build` PASS. 임시 로컬 `/market-calendar/` HTTP 200 확인. 실제 브라우저는 격리된 개발 서버 `127.0.0.1:5173`에 연결 실패(`ERR_CONNECTION_REFUSED`)했으므로 화면·하이드레이션·모바일 시각 검증은 **NOT_VERIFIED**. 이를 Production 배포 검증으로 확대하지 않음.
+- 이후 필수 작업: 승인된 운영 PC 수집기에서 R2 확대 파서의 실제 실행 SHA·결과 체크포인트를 확인하고, 저장본 게시 후 D1·GET 재조회 및 PC·모바일 UI 검증. 권한 미확인 한국 일정·실적 공급원은 제외하고 허가를 요청하지 않는다.
+
 ## SEO 사전 점검 (docs/SEO_SEARCH_APPEARANCE_REVIEW.md)
 
 - 검색 의도: 투자자가 미국 경제지표와 향후 기업 실적 발표 일정을 날짜별로 조회. 현재 실제 제공 범위는 공식 미국 경제지표에 국한.

@@ -19,6 +19,8 @@ test('calendar uses the existing stored official feed and checked manual release
  assert.match(client,/release-snapshot\.json/);
  assert.match(client,/checkedAt/);
  assert.match(client,/sourceUrl/);
+ assert.match(client,/feed\?\.status!=='READY'/);
+ assert.match(client,/공식 일정 저장본 미확정/);
  assert.doesNotMatch(client,/demoEvents|forecast:'[0-9]|삼성전자|마이크로소프트|애플/);
 });
 
