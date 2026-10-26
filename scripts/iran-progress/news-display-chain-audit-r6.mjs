@@ -31,11 +31,16 @@ export function describeSchedulerXml(xml){
   originalScheduleUntouched:true};
 }
 export function parseLauncherScript(vbs){
- if(typeof vbs!=='string'||vbs.length>20000||!vbs.includes('WScript')||!/shell\.Run/i.test(vbs))throw Error('LAUNCHER_FORMAT_UNVERIFIED');
- const scripts=[...vbs.matchAll(/([a-z]:\\[^"\r\n]+?\.mjs)/gi)].map(m=>m[1]);
- const unique=[...new Set(scripts.map(v=>v.toLowerCase()))];
- if(unique.length!==1)throw Error('LAUNCHER_SCRIPT_AMBIGUOUS');
- return {scriptPath:scripts[0],scriptBase:path.win32.basename(scripts[0])};
+ if(typeof vbs!=='string'||vbs.length>20000||!vbs.includes('WScript'))throw Error('LAUNCHER_FORMAT_UNVERIFIED');
+ const calls=[...vbs.matchAll(/shell\.Run\s*\(/gi)];
+ if(calls.length!==1)throw Error('LAUNCHER_SHELL_RUN_COUNT_UNVERIFIED');
+ // The first .mjs after node.exe is the entrypoint. Later .mjs paths may be
+ // --legacy-runner=, --collector=, etc. They are inputs, not extra entrypoints.
+ const command=vbs.slice(calls[0].index);
+ const scripts=[...command.matchAll(/([a-z]:\\[^"\r\n]+?\.mjs)/gi)].map(m=>({path:m[1],index:m.index}));
+ if(scripts.length===0)throw Error('LAUNCHER_NODE_ENTRY_NOT_FOUND');
+ if(!/node\.exe/i.test(command.slice(0,scripts[0].index)))throw Error('LAUNCHER_NODE_BINARY_NOT_VERIFIED');
+ return {scriptPath:scripts[0].path,scriptBase:path.win32.basename(scripts[0].path),otherScriptReferenceCount:scripts.length-1};
 }
 function safeRead(file,max){
  const stat=fs.lstatSync(file);
@@ -64,7 +69,7 @@ export function auditChain({taskXml,newsHome=home}={}){
  result.launcher={found:true,name:path.win32.basename(launcher),sha256:digest(vbs),homeMatched:true,modified:false};
  if(!['run-reference-flow-r3.mjs','run-reference-flow.mjs'].includes(parsed.scriptBase.toLowerCase()))throw Error('ACTIVE_NODE_RUNNER_UNEXPECTED');
  const script=safeRead(parsed.scriptPath,200000);
- result.runner={found:true,name:parsed.scriptBase,sha256:digest(script),gitHead:repositorySha(parsed.scriptPath),
+ result.runner={found:true,name:parsed.scriptBase,sha256:digest(script),gitHead:repositorySha(parsed.scriptPath),otherScriptReferenceCount:parsed.otherScriptReferenceCount,
   directR3Wrapper:parsed.scriptBase.toLowerCase()==='run-reference-flow-r3.mjs',
   referencesR3Operation:script.includes('operate-r3.mjs'),
   referencesNewsDisplayMaintenance:script.includes('news-display-maintenance-r1.mjs'),modified:false};
