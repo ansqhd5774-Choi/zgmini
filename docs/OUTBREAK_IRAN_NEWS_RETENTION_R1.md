@@ -1,7 +1,7 @@
 # 아웃브레이크 · 이란 전쟁 주요 뉴스 보관 정책 R1
 
 - 확정일: 2026-10-26 (KST)
-- 상태: **사용자 승인 정책 / 구현·배포 전**
+- 상태: **사용자 승인 정책 / 독립 코드 구현 중·운영 미적용**
 - 대상: `/outbreak/?event=iran`의 주요 뉴스 표시 기능(`outbreak-news-iran`)
 - 기준: ZGMINI GitHub 최신 `main`에서 분기한 작업 브랜치
 - 개발 기준 base SHA: `972a5da9deae1a4a2f12b042f66e3bdfd72ef977`
