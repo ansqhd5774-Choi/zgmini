@@ -1,11 +1,11 @@
 @echo off
 setlocal DisableDelayedExpansion
 rem R29: approved four-ETF score -> new D1 key -> exact public readback.
-rem This CMD belongs in the root of the packaged source tree, next to scripts/.
+rem Keep the packaged scripts/pc-writer and worker directories in place.
 rem Existing nine theme keys, scheduled tasks, and raw data are untouched.
 set "SPACE29_NODE=E:\ZGmini\runtime\node.exe"
 set "SPACE29_DATA=E:\ZGmini\data"
-set "SPACE29_SCRIPT=%~dp0scripts\pc-writer\theme-space-satellite-publish-r29.mjs"
+set "SPACE29_SCRIPT=%~dp0theme-space-satellite-publish-r29.mjs"
 set "SPACE29_LOG=%~dp0SPACE_SATELLITE_R29_PUBLICATION_RESULT.txt"
 >"%SPACE29_LOG%" echo REPORT=SPACE_SATELLITE_R29_PUBLICATION
 >>"%SPACE29_LOG%" echo STARTED=%DATE% %TIME%
@@ -16,10 +16,10 @@ set "SPACE29_LOG=%~dp0SPACE_SATELLITE_R29_PUBLICATION_RESULT.txt"
 if not exist "%SPACE29_NODE%" goto node_missing
 if not exist "%SPACE29_DATA%" goto data_missing
 if not exist "%SPACE29_SCRIPT%" goto script_missing
-if not exist "%~dp0worker\theme-space-satellite-r1.mjs" goto script_missing
+if not exist "%~dp0..\..\worker\theme-space-satellite-r1.mjs" goto script_missing
 set "ZGMINI_DATA_ROOT=%SPACE29_DATA%"
 >>"%SPACE29_LOG%" echo PHASE=SHA_VERIFIED_STORED_PC_AUDIT
-"%SPACE29_NODE%" "%~dp0scripts\pc-writer\theme-space-satellite-operational-r28.mjs" --audit >>"%SPACE29_LOG%" 2>&1
+"%SPACE29_NODE%" "%~dp0theme-space-satellite-operational-r28.mjs" --audit >>"%SPACE29_LOG%" 2>&1
 if errorlevel 1 goto audit_failed
 >>"%SPACE29_LOG%" echo PHASE=DEDICATED_NEW_THEME_D1_CAS_AND_PUBLIC_READBACK
 "%SPACE29_NODE%" "%SPACE29_SCRIPT%" --once --publish >>"%SPACE29_LOG%" 2>&1
