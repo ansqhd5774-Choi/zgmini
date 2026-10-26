@@ -80,7 +80,7 @@ export async function main(args=process.argv.slice(2),now=new Date()){
    if(config?.collectionTarget!=='pc'||config?.enabled!==true||!config?.account||!config?.core||!config?.history)throw Error('V9_PC_PUBLICATION_CONFIG_INVALID');
    const root=process.env.ZGMINI_PC_CREDENTIAL_ROOT;
    if(!root||!fs.existsSync(path.join(root,'node_modules','wrangler')))throw Error('V9_CREDENTIAL_RUNTIME_UNAVAILABLE');
-   const auth=credential(root),remote=client(config,auth);
+   const remote=client(config,()=>credential(root));
    result.publication=await publishRecord({remote,db:config.core,record:publicRecord,now:Date.now()});
    result.status=['VERIFIED','UNCHANGED','REMOTE_OBSERVATION_NEWER','REMOTE_ASOF_NEWER','REMOTE_SOURCE_NEWER'].includes(result.publication.status)?'PUBLICATION_VERIFIED_OR_PRESERVED':'NOT_VERIFIED';
   }

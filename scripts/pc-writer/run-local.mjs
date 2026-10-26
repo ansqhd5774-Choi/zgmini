@@ -182,7 +182,7 @@ try{
  report.collectionHealth={normal:health.normal,total:health.total,status:health.status};
  if(publish){
   // Each output below owns its validation and readback; marketReady never gates peers.
-  const remote=client(config,credential(root));
+  const remote=client(config,()=>credential(root));
   report.remote=remote.stats;
   report.recovery=await recoverPublication(remote,config.core,base);
   save(path.join(base,'local-publication-ledger.json'),{status:'SUBMITTING',source,at:Date.now()});
