@@ -23,7 +23,8 @@ test('R23 official dated four-ETF sensitivity is explicitly private',()=>{
   UFO:29.1083,NASA:59.3,WARP:2.3332,ROKT:9.2585});
  assert.equal(r.evidenceMixedDates,true);
  assert.equal(r.maximumEvidenceLagDays,1);
- assert.equal(r.threePlusEtfWeightingApproved,false);
+ assert.equal(r.threePlusEtfWeightingApproved,true);
+ assert.equal(r.weightsApproved,true);
  assert.equal(r.publicationAuthorized,false);
  assert.equal(r.collectionRetries,0);
  assert.equal(r.providerCalls,0);
@@ -50,6 +51,7 @@ test('R23 missing AUM or real individual score is excluded, never zero-filled or
   {...one('ARKX',80,50),score:null},one('ROKT',80,300)]});
  assert.equal(r.eligibleCount,2);
  assert.equal(r.privateAumScenarioScore,65);
+ assert.equal(r.weightsApproved,false); // No two-ETF AUM override was approved.
  assert.deepEqual(r.excluded,[
   {symbol:'NASA',reason:'OFFICIAL_AUM_UNAVAILABLE_NO_RETRY'},
   {symbol:'ARKX',reason:'NO_REAL_CURRENT_INDIVIDUAL_SCORE'}]);
@@ -61,6 +63,7 @@ test('R23 cannot fabricate a one-ETF basket or look ahead to future issuer AUM',
   one('UFO',50,100),{...one('NASA',60,200),aumUsd:null}]});
  assert.equal(r.privateAumScenarioScore,null);
  assert.equal(r.weightsPercent,null);
+ assert.equal(r.weightsApproved,false);
  assert.throws(()=>compareDatedAumBasket({scoreAsOf:'2026-10-23',rows:[
   one('UFO'),{...one('NASA'),aumAsOf:'2026-10-24'}]}),
   /R23_FUTURE_AUM_LOOKAHEAD/);

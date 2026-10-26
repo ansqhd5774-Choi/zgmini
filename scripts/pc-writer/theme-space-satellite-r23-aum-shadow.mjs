@@ -1,5 +1,6 @@
-// R23: read-only, dated AUM weighting *comparison* for new themes.
-// Not an approved three-plus ETF publishing formula; no provider/PC/D1 writes.
+// R23: read-only, dated AUM weighting comparison for new themes.
+// R24: user approved relative AUM as the three-plus ETF weighting policy.
+// Formula approval does not authorize basket selection, rights, or publication.
 import fs from 'node:fs';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
@@ -64,7 +65,9 @@ export function compareDatedAumBasket({scoreAsOf,rows,priorPrivateScore=null}={}
   included:eligible.map(x=>x.symbol),excluded,
   totalAumUsd:null,weightsPercent:null,privateAumScenarioScore:null,
   comparedToPrivateScore:priorPrivateScore,scoreDelta:null,
-  evidenceMixedDates:null,collectionRetries:0,publicationAuthorized:false};
+  evidenceMixedDates:null,collectionRetries:0,
+  threePlusEtfWeightingApproved:true,weightsApproved:false,
+  publicationAuthorized:false};
  const totalAum=eligible.reduce((sum,x)=>sum+x.aumUsd,0);
  need(Number.isFinite(totalAum)&&totalAum>0,'R23_TOTAL_AUM_INVALID');
  const score=eligible.reduce((sum,x)=>sum+x.score*(x.aumUsd/totalAum),0);
@@ -79,8 +82,9 @@ export function compareDatedAumBasket({scoreAsOf,rows,priorPrivateScore=null}={}
   issuerAumAsOf:Object.fromEntries(eligible.map(x=>[x.symbol,x.aumAsOf])),
   evidenceMixedDates:distinctDates.size>1,
   maximumEvidenceLagDays:Math.max(...eligible.map(x=>x.lagDays)),
-  method:'NORMALIZED_OFFICIAL_AUM_PRIVATE_SCENARIO_NOT_APPROVED',
-  threePlusEtfWeightingApproved:false,collectionRetries:0,
+  method:'NORMALIZED_OFFICIAL_AUM_THREE_PLUS_POLICY_APPROVED_PRIVATE_SHADOW',
+  threePlusEtfWeightingApproved:true,weightsApproved:eligible.length>=3,
+  collectionRetries:0,
   providerCalls:0,rawFilesWritten:0,d1Writes:0,publicWrites:0,
   schedulerWrites:0,rightsVerified:false,publicationAuthorized:false};
 }
@@ -106,7 +110,7 @@ export function auditDatedAumEvidence(evidence){
   r18HistorySha256:evidence.r18HistorySha256,
   issuerEvidenceCheckedAt:evidence.checkedAt,...result,
   oldScoresPreserved:true,originalR18HistoryRewritten:false,
-  finalBasketSelected:false,weightsApproved:false};
+  finalBasketSelected:false};
 }
 
 if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.url)){
