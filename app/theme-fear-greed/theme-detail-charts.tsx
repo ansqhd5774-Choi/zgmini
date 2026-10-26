@@ -5,7 +5,7 @@ import {CartesianGrid,Line,LineChart,ReferenceArea,ReferenceLine,ResponsiveConta
 import {THEME_GROUPS} from '../../components/market-explorer-catalog';
 import {useStoredIndex} from '../../components/use-stored-index';
 
-type Point={date:string;score:number};
+type Point={date:string;score:number|null};
 type ThemeScore={theme:string;etfs:string[];score:number;history:Point[]};
 type PublicThemeFeed={status:string;observationDate?:string;phase?:string;themes?:ThemeScore[];provisional?:{points:{date:string;scores:Record<string,number>}[]}};
 type Theme={name:string;group:string;color:string;key:string;etfs:string[];points:Point[];provisionalFrom:number;score:number;date:string};
@@ -22,8 +22,12 @@ function acceptedThemes(feed:PublicThemeFeed|null):Theme[]{
  return feed.themes.flatMap(item=>{
   const index=CATALOG.findIndex(t=>t.name===item?.theme);
   if(index<0||!validScore(item.score)||!Array.isArray(item.history)||item.history.length!==252)return [];
-  if(!item.history.every((p,i)=>validDate(p?.date)&&validScore(p?.score)&&(!i||p.date>item.history[i-1].date)))return [];
-  if(Math.abs(item.history[251].score-item.score)>0.000001)return [];
+  const allowMissing=item.theme==='우주·위성';
+  if(!item.history.every((p,i)=>validDate(p?.date)&&
+   (validScore(p?.score)||(allowMissing&&p?.score===null))&&
+   (!i||p.date>item.history[i-1].date)))return [];
+  if(!validScore(item.history[251].score)||
+   Math.abs(item.history[251].score-item.score)>0.000001)return [];
   const points=item.history.map(p=>({...p})),provisionalFrom=points.length;
   for(const extra of provisional){
    if(validDate(extra?.date)&&extra.date>points[points.length-1].date&&validScore(extra.scores?.[item.theme]))points.push({date:extra.date,score:extra.scores[item.theme]});
@@ -37,9 +41,9 @@ function comparisonDate(date:string,months:number,days:number){
  target.setUTCDate(target.getUTCDate()-days);return target.toISOString().slice(0,10);
 }
 function changeFor(points:Point[],months:number,days:number){
- const latest=points.at(-1);if(!latest)return null;
+ const latest=points.at(-1);if(!latest||!validScore(latest.score))return null;
  const before=points.findLast(p=>p.date<=comparisonDate(latest.date,months,days));
- return before?Math.round((latest.score-before.score)*10)/10:null;
+ return before&&validScore(before.score)?Math.round((latest.score-before.score)*10)/10:null;
 }
 function PeriodButtons({value,onChange,items,label}:{value:number;onChange:(n:number)=>void;items:readonly (readonly [string,number])[];label:string}){
  return <div className="zg-sfg-periods" role="group" aria-label={label}>{items.map(([name,days])=><button type="button" key={name} aria-pressed={value===days} onClick={()=>onChange(days)}>{name}</button>)}</div>;

@@ -17,8 +17,12 @@ export function buildSpaceSatellitePublicR29({candidate,base,
   candidate.d1Writes===0&&candidate.publicWrites===0&&
   candidate.latest?.status==='APPROVED_THREE_PLUS_AUM'&&
   candidate.latest?.score!==null&&candidate.latest?.date===candidate.scoreAsOf&&
-  candidate.history?.length===252&&candidate.scoredDays===252&&
-  candidate.history.every((row,i)=>Number.isFinite(row?.score)&&
+  candidate.history?.length===252&&candidate.scoredDays>0&&
+  candidate.scoredDays===candidate.history.filter(row=>
+   typeof row?.score==='number'&&Number.isFinite(row.score)).length&&
+  candidate.history.every((row,i)=>(row?.score===null||
+   (typeof row?.score==='number'&&Number.isFinite(row.score)&&
+    row.score>=0&&row.score<=100))&&
    (i===0||row.date>candidate.history[i-1].date))&&
   candidate.latest.etfs.join(',')===candidate.etfs.join(',')&&
   candidate.history.at(-1)?.score===candidate.latest.score&&
@@ -47,6 +51,7 @@ export function buildSpaceSatellitePublicR29({candidate,base,
    `_SPY_SHA256_${candidate.sharedSpyManifestSha256}`,
   candidateFileSha256,sourceStoredAt:candidate.sourceStoredAt,
   publishedAt,observationDate:candidate.scoreAsOf,score:candidate.latest.score,
+  scoredDays:candidate.scoredDays,
   history:candidate.history.map(row=>({date:row.date,score:row.score})),
   aumAsOf:{...candidate.aumAsOf},phase:'CONFIRMED',provisional:{points:[]}};
  need(eligibleSpaceSatellite(record,base,{now:timestamp,storedAt:timestamp}),
