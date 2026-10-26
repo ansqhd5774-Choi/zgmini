@@ -9,8 +9,8 @@
 
 1. 사용자 Windows PC에 기존 승인된 Node `E:\ZGmini\runtime\node.exe`와 로컬 Ollama `gemma3:4b`가 실행 중인지 확인한다. 계정·키를 새로 입력하지 않는다.
 2. 이 파일과 같은 폴더의 `STAGE04_ALL_SECTOR_THEME_R37_FOUR_MEDIA_OLLAMA_READONLY.cmd`를 **CMD**에서 실행한다. 기본은 **21개 행 × 4기관 총 84회 조사 시도**다. 소규모 확인만 원하면 CMD 파일 뒤에 `PILOT` 인수를 붙여 첫 3개 행 × 4기관으로 제한할 수 있다.
-3. CMD 파일 옆의 `R37_FULL_FOUR_MEDIA_OLLAMA_RESULT.csv`, `.json`, `.progress.json`을 확인한다. `PILOT`로 실행했다면 `R37_PILOT_3_FOUR_MEDIA_OLLAMA_RESULT.*`가 생성된다. CSV는 Excel 2007 인식을 위해 UTF-8 BOM·CRLF로 작성한다.
-4. 실행 중 `.progress.json`은 행마다 새로 저장하며, 정상 완료되면 `FINISHED_RESEARCH_ONLY`가 된다. 이전 유효 데이터를 지우거나 기존 운영 프로그램을 실행하지 않는다.
+3. **공유할 파일은 CMD 파일 바로 옆의 `R37_FULL_FOUR_MEDIA_OLLAMA_RESULT.txt` 하나**다. `PILOT`이면 `R37_PILOT_3_FOUR_MEDIA_OLLAMA_RESULT.txt`다. TXT는 행을 처리할 때마다 추가되어 중단되더라도 성공·실패·원문·기관별 소요시간이 남는다. 사전 점검에서 중단되면 `R37_CMD_PRECHECK_ERROR.txt`를 전달한다.
+4. CSV(`R37_FULL_FOUR_MEDIA_OLLAMA_RESULT.csv`)와 상세 JSON은 별도로 남지만 공유에는 필수가 아니다. CSV는 Excel 2007 인식을 위해 UTF-8 BOM·CRLF로 작성한다. `.progress.json`은 행마다 갱신되며 정상 완료 후 `FINISHED_RESEARCH_ONLY`가 된다. 이전 유효 데이터를 지우거나 기존 운영 프로그램을 실행하지 않는다.
 
 ## 연구 처리 단계
 
