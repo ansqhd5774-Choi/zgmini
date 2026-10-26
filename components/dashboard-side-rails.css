@@ -89,3 +89,16 @@
 @media(max-width:1649px){
  .zg-dashboard-side-rails-root .zg-dashboard-favorite-link{min-height:79px}
 }
+
+/* Dashboard rails require explicit activation at every viewport width. */
+.zg-dashboard-side-rails-root .zg-risk-side-rail[data-open="false"]{visibility:hidden;opacity:0;pointer-events:none}
+.zg-dashboard-side-rails-root .zg-dashboard-rail-state{font-size:9px;line-height:10px;font-weight:700}
+@media(min-width:1650px){
+ .zg-dashboard-side-rails-root .zg-risk-side-actions{display:block}
+ .zg-dashboard-side-rails-root .zg-risk-side-action{position:fixed;bottom:14px;z-index:136;display:grid;place-items:center;width:48px;height:48px;border:1px solid rgba(28,222,198,.78);border-radius:12px;background:rgba(4,32,49,.9);color:#3ae7cf;box-shadow:0 4px 16px rgba(0,0,0,.45);cursor:pointer}
+ .zg-dashboard-side-rails-root .zg-risk-side-action.is-left{left:12px}
+ .zg-dashboard-side-rails-root .zg-risk-side-action.is-right{right:12px}
+ .zg-dashboard-side-rails-root .zg-risk-side-action[aria-expanded="true"]{background:rgba(8,101,98,.95);color:#e9fffc}
+ .zg-dashboard-side-rails-root .zg-risk-rail-close{margin-left:auto;display:grid;place-items:center;width:30px;height:30px;color:#bcd4e5;background:transparent;border:0;cursor:pointer}
+ .zg-dashboard-side-rails-root .zg-risk-side-right .zg-community-head button{display:grid}
+}

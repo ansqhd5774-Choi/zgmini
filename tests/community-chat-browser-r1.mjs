@@ -8,7 +8,7 @@ const errors=[];
 try{
  for(const width of [390,768,1440,1920]){
   const page=await browser.newPage({viewport:{width,height:900},reducedMotion:width===390?"reduce":"no-preference"});
-  let stored=[];
+  let stored=[],chatReads=0;
   await page.route("**/api/community/messages",async route=>{
    const req=route.request();
    if(req.method()==="POST"){
@@ -19,6 +19,7 @@ try{
     stored=[{id:"ac3ac84a-af50-432c-8bd2-13303421b401",nickname:body.nickname,body:body.body,created_at:"2026-10-19T00:00:00Z"}];
     return route.fulfill({status:201,contentType:"application/json",body:JSON.stringify({id:stored[0].id,created_at:stored[0].created_at})});
    }
+   chatReads++;
    return route.fulfill({status:200,contentType:"application/json",body:JSON.stringify({messages:stored,writeEnabled:true,siteKey:"test-site"})});
   });
   await page.route("**/api/community/reports",r=>r.fulfill({status:200,contentType:"application/json",body:'{"accepted":true}'}));
@@ -47,6 +48,10 @@ try{
   await page.locator('dialog[aria-labelledby="zg-about-popup-title"]').waitFor({state:'hidden'});
   await page.waitForFunction(wide=>document.querySelector(".zg-dashboard-side-rails-root")?.getAttribute("data-wide")===(wide?"true":"false"),wide,{timeout:15000});
   const favorites=page.locator("#zg-dashboard-favorites-panel");
+  assert.equal(await favorites.getAttribute("data-open"),"false","Favorites default OFF at every width");
+  assert.equal(await page.locator("#zg-community-chat-panel").getAttribute("aria-hidden"),"true");
+  assert.equal(chatReads,0,"Closed chat does not poll on entry");
+  await page.getByRole("button",{name:"즐겨찾기 열기"}).click();
   await favorites.locator('a[href="/inflation/"]').waitFor({state:"attached"});
   await favorites.locator('a[href="/debt-risk/"]').waitFor({state:"attached"});
   await favorites.getByText("제조업 신규주문").waitFor({state:"attached"});
@@ -69,7 +74,8 @@ try{
 
   if(wide){
    assert.equal(await favorites.getAttribute("data-open"),"true");
-   assert.equal(await toggle.count(),0,"Desktop chat is persistent; no second floating toggle");
+   assert.equal(await toggle.count(),1,"Desktop also requires a manual chat toggle");
+   await toggle.click();
    const card=favorites.locator(".zg-dashboard-favorite-link").first();
    const visible=await card.evaluate(el=>{
     const rect=el.getBoundingClientRect(),metric=el.querySelector(".zg-dashboard-favorite-reading").getBoundingClientRect();
@@ -79,8 +85,6 @@ try{
 
    assert.equal(await page.locator(".zg-container").evaluate(el=>getComputedStyle(el).width!=="0px"),true);
   }else{
-   const star=page.getByRole("button",{name:"즐겨찾기 열기"});
-   await star.click();
    await favorites.waitFor({state:"visible"});
    assert.equal(await favorites.getAttribute("data-open"),"true");
    // Wait until the slide transition has reached its final on-screen position.
@@ -158,8 +162,8 @@ try{
   await page.evaluate(()=>sessionStorage.removeItem("zgmini-community-chat-nick-r1"));
   await page.reload({waitUntil:"domcontentloaded"});
   await page.waitForFunction(()=>Boolean(sessionStorage.getItem("zgmini-community-chat-nick-r1")),null,{timeout:15000});
-  if(!wide)await page.getByRole("button",{name:"시장 채팅 열기"}).click();
-  else await page.waitForFunction(()=>document.querySelector(".zg-dashboard-side-rails-root")?.getAttribute("data-wide")==="true",null,{timeout:15000});
+  assert.equal(await page.locator("#zg-community-chat-panel").getAttribute("aria-hidden"),"true","Reload returns chat to OFF");
+  await page.getByRole("button",{name:"시장 채팅 열기"}).click();
   assert.equal(await page.locator('#zg-community-turnstile').count(),0,"Navigation without draft remains challenge-free");
   await page.locator('#zg-community-input').fill('오늘 시장 전망이 궁금해요');
   await page.waitForFunction(()=>document.querySelector(".zg-community-captcha")?.classList.contains("is-verified"),null,{timeout:10000});
@@ -217,7 +221,8 @@ try{
    if(width!==390) assert.equal(await panel.evaluate(el=>getComputedStyle(el).animationName),"zg-community-exit");
    assert.equal(await page.getByRole("button",{name:"시장 채팅 열기"}).getAttribute("aria-expanded"),"false");
   }else{
-   assert.equal(await panel.getAttribute("aria-hidden"),"false","Desktop chat stays visible");
+   await page.keyboard.press("Escape");
+   assert.equal(await panel.getAttribute("aria-hidden"),"true","Desktop chat also supports closing");
   }
   await page.close();
   console.log("PASS: chat browser width="+width+" with mocked API, captcha, report and Escape");
