@@ -233,7 +233,6 @@ export async function collectMarketDataFeed(env: any, store: any, now: number) {
       { name: "FRED", url: FRED_SOURCE_URL },
     ],
     warnings: [...new Set(warnings)],
-    missingObservations: saved.body.missingObservations??[],
   }, {
     headers: {
       "cache-control": "public, max-age=300, stale-while-revalidate=600",
