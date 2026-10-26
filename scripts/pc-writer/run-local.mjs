@@ -1,3 +1,4 @@
+import {appendD1Diagnostic} from './d1-diagnostics.mjs';
 import {attemptOutput} from './independent-publication.mjs';
 import {assertCompleteMarket} from './market-publication-safety.mjs';
 import {updateDataAlert} from './local-data-alert.mjs';
@@ -182,7 +183,7 @@ try{
  report.collectionHealth={normal:health.normal,total:health.total,status:health.status};
  if(publish){
   // Each output below owns its validation and readback; marketReady never gates peers.
-  const remote=client(config,()=>credential(root));
+  const remote=client(config,()=>credential(root),{onDiagnostic:diagnostic=>appendD1Diagnostic(base,{runAt:report.at,source},diagnostic)});
   report.remote=remote.stats;
   report.recovery=await recoverPublication(remote,config.core,base);
   save(path.join(base,'local-publication-ledger.json'),{status:'SUBMITTING',source,at:Date.now()});

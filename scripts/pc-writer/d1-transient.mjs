@@ -1,4 +1,5 @@
 // Only transient transport/service failures qualify. Mutations are never replayed here.
+import {safeDiagnostic} from './d1-diagnostics.mjs';
 export function transientD1Failure(error){return error?.message==='D1_OUTCOME_UNKNOWN'||/^D1_HTTP_(429|500|502|503|504)$/.test(error?.message??'');}
 export function safePublicationFailures(value){return Array.isArray(value)?value.slice(0,40).map(x=>({id:typeof x?.id==='string'&&/^[a-zA-Z0-9:.-]{1,100}$/.test(x.id)?x.id:'unknown',reason:/^[A-Z][A-Z0-9_]{1,100}$/.test(x?.reason??'')?x.reason:'OUTPUT_STAGE_FAILED'})):[];}
-export function safeTransportFailures(value){return Array.isArray(value)?value.slice(-20).map(x=>({kind:['READ','WRITE'].includes(x?.kind)?x.kind:'UNKNOWN',phase:['FETCH','HTTP','BODY'].includes(x?.phase)?x.phase:'UNKNOWN',httpStatus:Number.isInteger(x?.httpStatus)&&x.httpStatus>=100&&x.httpStatus<=599?x.httpStatus:null,code:/^[A-Z0-9_]{1,64}$/.test(x?.code??'')?x.code:null})):[];}
+export function safeTransportFailures(value){return Array.isArray(value)?value.slice(-20).map(safeDiagnostic):[];}
