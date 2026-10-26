@@ -1,7 +1,7 @@
 # 이란 전쟁 주요 뉴스 — 구현 작업 계획 R1
 
 - 계획일: 2026-10-26 (KST)
-- 상태: **계획 확정 / 구현·PC 실행·배포 전**
+- 상태: **코드 1차 반영 / 실 PC 실행·수집 연동·배포 전**
 - 작업 브랜치: `codex/outbreak-iran-news-retention-r1-20261026`
 - 선행 승인: `docs/OUTBREAK_IRAN_NEWS_RETENTION_R1.md`
 - 기준: 사이트 최근 14일 표시, PC **표시 전용 뉴스** 최근 30일 보관 후 자동 삭제
@@ -84,12 +84,12 @@
 
 | 용도 | 파일 |
 | --- | --- |
-| PC 표시 계층·30일 삭제 | `scripts/iran-progress/news-display-r1.mjs` |
+| PC 표시 계층·30일 삭제 | `scripts/iran-progress/news-display-r1.mjs`, `scripts/iran-progress/news-display-io-r1.mjs` |
 | D1 뉴스 전용 게시 | `scripts/iran-progress/news-display-publication-r1.mjs` |
-| payload·14일 검증 | `lib/iran-progress/news-display-public-r1.mjs` |
-| 저장형 GET | `app/api/outbreak-news/iran/route.ts` |
+| payload·14일 검증 | `lib/iran-progress/news-display-r1.mjs` |
+| 저장형 GET | `worker/iran-news-display-public-r1.mjs`, `app/api/outbreak-news/iran/route.ts` |
 | 기존 뉴스 UI 연결 | `app/outbreak-beginner-iran-r54.tsx`, `app/outbreak-news-r57.tsx` |
-| 자동 테스트 | `tests/iran-news-display-r1.test.mjs` |
+| GOV.UK 후보 발견(읽기 전용) | `scripts/iran-progress/news-display-discover-r1.mjs` |\n| 자동 테스트 | `tests/iran-news-display-r1.test.mjs` |
 
 기존 수집기·runner·게시기 변경은 승인 경로에서 **필요한 최소 범위**로만 적용한다. 새 파일명과 전용 키는 후보이며 실제 참조 관계 검사 후 확정한다.
 
@@ -97,8 +97,8 @@
 
 - [x] 14일 표시/30일 PC 표시용 자동 삭제/원장 보존 정책을 6단계 개발 계획으로 구체화
 - [x] 기존 수집·저장·배포 소스에서 수정 후보와 필수 검증 Gate 정리
-- [ ] 코드 구현
+- [x] 뉴스 전용 캐시·만료 필터·D1 게시 함수·읽기 전용 API·UI 연결의 **독립 코드** 구현\n- [x] GOV.UK 후보 발견 미리보기 구현(기사별 표시권리 미승인 상태 유지)\n- [x] 14/30일 경계·피드 발견·권리 차단·캐시·D1/API 단위 테스트 10개 PASS\n- [ ] 기존 PC runner에 표시 전용 수집/정리/게시 연결(운영 환경 점검 선행)
 - [ ] 실제 뉴스 수집·PC 표시 캐시 정리 실행
 - [ ] 뉴스 D1 게시·공개 UI·Cloudflare 배포
 
-**이번 요청은 계획서를 브랜치에 저장하는 작업이다.** 구현·실데이터 삭제·PC 실행·PR 병합·Production 배포는 수행하지 않는다.
+**진행 이력:** 최초에는 계획서만 저장했다. 2026-10-26 현재 독립 구현 파일과 UI/API 연결 코드가 브랜치에 추가되었다. 그러나 기사별 검증과 자체 요약·영향 분류, PC 원본 수집기와의 런타임 연결, PC 실제 30일 정리 실행, D1 실제 게시, PR/main 반영, Cloudflare 배포는 **미실시**다. 10개 테스트 PASS는 단위 테스트 결과이지 운영 PASS가 아니다.
