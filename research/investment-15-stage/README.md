@@ -29,6 +29,7 @@
 21. `STAGE04_OFFICIAL_COMMON_MEDIA_R22_20261026.md`: **R22 공식 매체 선정 게이트**. Eurostat·World Bank 공식 카탈로그 각 1개 주소 실제 접근은 DNS `EAI_AGAIN`으로 종료(각각 38ms/5,007ms, 20초 이내). BEA·Census는 키/직접 범위 부족, BLS는 고용 프록시여서 산업 수요 직접값 부적합. 공통 매체 선정 0, 원천 숫자 실측 0, G/D/M·순위 NULL. 코드·운영 변경 없음.
 22. `STAGE04_SPECIALIST_OLLAMA_SPEED_R23_20261026.md`: **R23 사용자 정정**. 전문 성장률 매체(Fortune Business Insights)의 원자력 시장 **짧은 CAGR 구절만** Ollama에 전달하는 Windows CMD 시험기를 개발. 매체 조회·Ollama 읽기·총 시간을 20초 안에서 각각 기록; 실제 Windows Ollama 실측은 CMD 실행 대기. 운영 변경 없음.
 23. `STAGE04_OLLAMA_MODEL_ONLY_R24_20261026.md`: **R24 403 실패 분리**. 사용자 PC R23 결과 `403/2,019ms/Ollama 0회`를 확인. 전문매체 실패와 무관하게 로컬 Ollama에 짧은 **속도 시험 예문**을 보내 처리 시간을 재는 독립 CMD 제공. 이 시험은 실제 최신 성장률 자료가 아니다.
+24. `STAGE04_INDEPENDENT_KEYWORD_SPEED_R25_20261026.md`: **R25 사용자 추가 요청**. 원자력·로봇·AI 반도체·바이오·데이터센터 각각 개별 Bing RSS 전문매체 검색→선택 보고서 짧은 CAGR 문장→PC Ollama 처리 시간을 나누어 측정하는 Windows CMD 패키지. 실제 5개 검색 실측은 사용자 CMD 결과 대기.
 
 ## 작업 원칙
 
