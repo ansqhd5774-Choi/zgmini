@@ -89,6 +89,13 @@
 - 별도 fixture SQLite에서 조회 테스트: 파일 크기 불변, 동일 이벤트 지문 일치, 비밀값 비출력. `node --test`에 R6 2건 포함해 지정 테스트 파일 4/4 PASS. 단, 실제 PC 런타임·DB·등록 작업은 아직 미확인이다. 출력의 `expandedParserFile`은 파일 존재 증거이며 실제 수집 실행 PASS는 `collection` 및 저장 시각 검증 전까지 주장하지 않는다.
 - 결과 해석: `parity.sameEvents=true`는 로컬과 공개 API 이벤트 목록 동등성만 의미한다. R2 코드가 운영에 반영되었다는 증거는 별도로 `task.headSha`·parser flag·수집 checkpoint에서 확인해야 한다. 불일치·결측 시 기존 유효 결과를 보존하고 임의 재실행하지 않는다.
 
+### R7 — R6 PC 실측 분석과 저장 원문 기반 확장 파서 SHADOW (2026-10-27)
+- 사용자 PC의 R6 로그(`ranAt=2026-10-26T17:08:44.149Z`)를 확인했다. PC 승인 source `36266beb3ab942979d9aca7dcdd8af16fb27825b`, 수집 checkpoint `2026-10-26T17:00:53.535Z`의 캘린더 상태 `CACHED`/Provider 요청 0, 게시 ledger `VERIFIED`(같은 source). PC SQLite와 공개 API는 모두 `READY` 133건(BLS 25·BEA 71·Fed 24·Census 13)이며 이벤트 SHA-256이 일치한다. `CACHED`는 6시간 수집 시도 보호 규칙 내 재호출 생략이지 수집 실패 증거가 아니다.
+- GitHub의 **실제 승인 source SHA**에서 `lib/release-calendar.mjs`를 재확인했다. 해당 파서는 ICS의 고용·PCE·GDP만 매핑하고, BLS의 CPI/PPI/JOLTS 등 다른 발표 및 BEA의 다른 경제 발표를 건너뛴다. 개발 브랜치에 구현한 확대 파서는 운영 PC에 **미반영** 상태다. 따라서 현재 133건은 정상 저장·게시 중인 기존 축소 커버리지이며, 저장·게시 오류로 판정하지 않는다.
+- R6의 `task.state=REGISTERED_PROJECT_UNRESOLVED`는 작업 XML에서 개발 프로젝트 경로를 추출하지 못한 **진단기 범위 제한**이다. 등록 작업 자체의 부재나 writer OFFLINE 증거가 아니다. config 승인 source와 ledger source의 일치는 별도로 확인됐다.
+- `MARKET_CALENDAR_R7_SHADOW.cmd` + `scripts/pc-writer/market-calendar-r7-raw-shadow.mjs` + `lib/release-calendar.mjs` 묶음을 준비했다. 기존 PC SQLite의 4개 공식 소스 raw input **저장본만** 읽고 승인 브랜치의 R2 확대 파서를 가상 적용한다. 원본/후보 건수·소스별 증가·중복·변경 지문을 비교한다. API 원천 호출·DB/설정/등록 작업 수정·재수집·계산·게시·소스 전환은 전혀 하지 않는다.
+- fixture SQLite 테스트(저장 원문 4개 source, 정상/누락 케이스) 및 R6/기존 캘린더 테스트 5개 파일 모두 PASS. 실제 PC shadow 결과는 아직 미수신이므로 확대 후보 수를 PC 실측 PASS로 단정하지 않는다. **운영 source 변경은 별도 승인 SHA·영향 검토 없이 진행하지 않는다.**
+
 ## SEO 사전 점검 (docs/SEO_SEARCH_APPEARANCE_REVIEW.md)
 
 - 검색 의도: 투자자가 미국 경제지표와 향후 기업 실적 발표 일정을 날짜별로 조회. 현재 실제 제공 범위는 공식 미국 경제지표에 국한.
