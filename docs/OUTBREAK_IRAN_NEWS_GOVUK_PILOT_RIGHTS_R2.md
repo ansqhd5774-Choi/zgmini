@@ -34,8 +34,9 @@
 3. **완료:** PC 캐시 유지관리 CLI에 `--reviewed-input=<절대 경로>` 추가. `rightsVerified`/URL/발행일 검증을 통과하지 않는 입력은 쓰기 전 거부. 기존 산식·DB 불변.
 4. **완료:** Windows 1파일 `IRAN_NEWS_R2_PREFLIGHT.cmd` 구현. 승인된 코드 SHA에서 읽기 전용 도구 다운로드, 공식 피드 조회, 1건 검토 입력으로 **dry-run만** 실행. 결과는 CMD 옆 `IRAN_NEWS_R2_PREFLIGHT_RESULT.txt`.
 5. **완료:** 2026-10-26 사용자 PC R2 로그 `FINAL_STATUS=PASS_READ_ONLY_REVIEWED`. GOV.UK Atom 20/Content API 20 성공, 30일 후보 16, R13 예약 작업 확인, reviewed `received=1,accepted=1,after=1,dryRun=true,written=false`. SQLite/D1 변경 없음.
-6. **PC 사용자 실행 대기:** `scripts/iran-progress/IRAN_NEWS_R3_APPLY.cmd` (같은 브랜치)를 R2 로그와 같은 폴더에 두고 실행한다. R2 PASS·R13 예약 작업·운영 DB 표식·전용 캐시 부재·동일 입력 dry-run 통과 시에만 `news-display-r1.json`을 한 번 생성하고 read-back 한다. D1 게시 없음. 캐시가 이미 있다면 추가 수정하지 않고 중단한다. 별도 승인 없이 기존 R3/R5 원장·스케줄러 변경 금지.
-7. **대기:** R3 실제 PC 캐시 apply/read-back 로그 검토 후 뉴스 전용 D1 키 게시·read-back, 브랜치 변경 내용의 필요한 파일만 main 반영, Cloudflare Git Integration exact 배포, 공개 API/UI 확인.
+6. **완료:** 2026-10-27 사용자 PC R3 로그 `FINAL_STATUS=PASS_PC_CACHE_APPLIED_NOT_PUBLISHED`. R2 Gate PASS, R13 예약 작업 확인, PC 기존 캐시 부재 확인, `received=1,accepted=1,after=1,written=true,visibleCount=1`, 단독 뉴스 캐시 재조회 PASS. D1 게시 없음, 기존 R3/R5 원장·스케줄러 변경 없음.
+7. **사용자 PC R4 실행 대기:** `scripts/iran-progress/IRAN_NEWS_R4_D1_PUBLISH.cmd`를 R3 결과 TXT와 같은 폴더에서 실행. 승인 GOV.UK 기사 내용·최초 발행일 재검사 → `public:iran-progress:news:iran:r1` 키가 없음을 D1 읽기 전용 확인 → **키 1건만 게시** → 원격 read-back. 다른 D1 키·기존 PC 파일·SQLite 불변. 오류 시 재실행 없이 로그 분석.
+8. **대기:** R4 D1 결과 검토 후 필요한 브랜치 파일만 PR/main 반영, Cloudflare Git Integration exact 배포, 공개 API/UI 검증.
 
 **주의:** 이 문서나 CMD의 존재 자체는 실 PC 수집/게시가 이루어졌다는 뜻이 아니다. GOV.UK의 다음 기사도 자동 `rightsVerified:true`로 승인되지 않는다.
 
@@ -46,3 +47,11 @@
 - 첫 파일 작성만 허용하고 `written=true,visibleCount=1` 및 파일 재조회에서 원문 URL·원 발행일·중립 분류가 정확히 일치해야 PASS.
 - 쓰기 시도 이후 오류는 `STOP_CACHE_WRITE_VERIFY_REQUIRED`로 중단하고 자동 재실행 금지. `--publish` 및 기존 SQLite·스케줄러·산식 변경 금지.
 - 이번 1회 캐시 작성은 계속 운영·자동 발행이 구축되었다는 뜻이 아니다. 다음 단계에서 승인된 기존 PC runner와 뉴스 전용 공개 저장 경로를 검증한다.
+
+## 4. R4 D1 단독 게시 제한
+
+- `IRAN_NEWS_R4_D1_PUBLISH.cmd`는 `IRAN_NEWS_R3_APPLY_RESULT.txt`의 실제 PASS를 요구한다. 뉴스 전용 PC 캐시는 **읽기만** 수행한다.
+- 이미 확인한 GOV.UK 기사 1건과 제목·요약·원 발행일·중립 분류까지 정확히 일치해야 하며 14일 노출 범위 밖이면 게시 금지.
+- 인증은 기존 PC의 `~/.zgmini/pc-writer/config.json`, Cloudflare API token 또는 기존 Wrangler OAuth를 사용한다. 임시 소스에서 OAuth 자동 갱신하지 않고 실패 시 사용자 검토 요청. 자격 증명은 로그 출력 금지.
+- D1에는 `public:iran-progress:news:iran:r1` 키 1건만 게시한다. 기저 키가 존재하면 일괄 갱신하거나 덮어쓰지 않는다. 실제 게시 직후 정확한 본문·저장 시각을 read-back 한다.
+- 사용자 로그에 `PASS_D1_NEWS_ONLY_PUBLISHED`가 나오기 전 원격 게시 PASS를 주장하지 않는다. PC cache의 성공은 자동 갱신·사이트 배포 성공이 아니다.
