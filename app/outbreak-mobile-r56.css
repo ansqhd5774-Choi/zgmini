@@ -1,0 +1,122 @@
+/* R56: scenarios mobile presentation only; scores, charts and formulas remain unchanged. */
+.ob-events .obm-log,.ob-events .obm-search-guide{display:none}
+
+@media(max-width:700px){
+ .ob-events{max-width:100%;padding:9px 0 24px}
+ .ob-events>.ob-heading{padding:0 2px 10px;display:flex;align-items:center;flex-direction:row;gap:5px}
+ .ob-events>.ob-heading h1{font-size:19px;line-height:1.3;margin:0}
+ .ob-events>.ob-heading .ob-eyebrow,.ob-events>.ob-heading p,.ob-events>.ob-heading>.ob-stage{display:none}
+
+ /* Three side-by-side event tabs, no vertically stacked selector cards. */
+ .ob-events>.ob-cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:0;margin:0 0 9px;border-bottom:1px solid #24475a}
+ .ob-events>.ob-cards>.ob-card{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;min-width:0;min-height:57px;padding:7px 2px 8px;text-align:center;box-shadow:none;border:0;border-bottom:3px solid transparent;border-radius:0;background:transparent;transition:none}
+ .ob-events>.ob-cards>.ob-card:not(:first-child):before{content:"";position:absolute;left:0;top:9px;bottom:11px;width:1px;height:auto;background:#234252}
+ .ob-events>.ob-cards>.ob-card[aria-pressed="true"]{border-bottom-color:#f5b83d;background:rgba(245,184,61,.04)}
+ .ob-events>.ob-cards>.ob-card[aria-pressed="true"]:before{display:none}
+ .ob-events>.ob-cards>.ob-card .ob-card-top,.ob-events>.ob-cards>.ob-card>p,.ob-events>.ob-cards>.ob-card .ob-card-footer,.ob-events>.ob-cards>.ob-card .ob-probability>span{display:none}
+ .ob-events>.ob-cards>.ob-card h2{display:block;order:0;font-size:11px;font-weight:770;line-height:1.4;margin:0;letter-spacing:-.03em;white-space:nowrap}
+ .ob-events>.ob-cards>.ob-card .ob-probability{display:flex;order:1;align-items:center;justify-content:center;margin:0}
+ .ob-events>.ob-cards>.ob-card .ob-probability strong{font-size:15px;line-height:1.1;letter-spacing:-.01em;color:#e4eef5}
+ .ob-events>.ob-cards>.ob-card .ob-probability strong small{font-size:9px;margin-left:2px}
+ .ob-events>.ob-cards>.ob-card[aria-pressed="true"] h2{color:#f5b83d}
+ .ob-events>.ob-selected-event-panel>.ob-detail{padding:0;border:0;background:transparent;gap:8px}
+
+ /* Compact score card. The existing real rate / Iran score, dates and five-band scale are reused. */
+ .ob-events .ob-beginner-detail>.ob53-title{display:none}
+ .ob-events .ob53-intro-grid,.ob-events .ob53-main-grid,.ob-events .ob55-intro,.ob-events .ob55-main{display:grid;grid-template-columns:minmax(0,1fr);gap:7px}
+ .ob-events .ob-beginner-detail .ob-panel{border:1px solid #24485c;border-radius:5px;background:#071e2c;padding:11px}
+ .ob-events .ob53-score-card{gap:11px}
+ .ob-events .ob53-metric-row{grid-template-columns:1fr 1fr;row-gap:7px}
+ .ob-events .ob53-metric-row>div{min-height:0;padding:3px 8px}
+ .ob-events .ob53-metric-row>div:first-child{padding-left:2px}
+ .ob-events .ob53-metric-row span{font-size:10px;margin-bottom:3px}
+ .ob-events .ob53-current strong,.ob-events .ob55-score-card .ob53-current strong{font-size:29px;line-height:1.15}
+ .ob-events .ob53-metric-row strong{font-size:16px}
+ .ob-events .ob53-current strong small{font-size:11px}
+ .ob-events .ob53-asof,.ob-events .ob55-score-card .ob53-asof{grid-column:1/-1;grid-row:2;display:flex;align-items:center;gap:8px;border-left:0;border-top:1px solid rgba(91,135,160,.25);padding:7px 2px 0}
+ .ob-events .ob53-asof span{margin:0;white-space:nowrap}
+ .ob-events .ob53-asof strong{font-size:11px;gap:4px}
+ .ob-events .ob53-score-scale,.ob-events .ob54-scale{margin-top:1px}
+ .ob-events .ob53-scale-colors>span:not(.ob53-scale-pointer){height:8px}
+ .ob-events .ob53-scale-labels>span,.ob-events .ob54-scale-labels>span{font-size:9px}
+ .ob-events .ob53-explain,.ob-events .ob53-beginner-stack,.ob-events .ob53-details,.ob-events .ob53-note,.ob-events .ob54-disclosure{display:none}
+ .ob-events .ob55-iran-parity .ob54-right{display:none}
+ .ob-events .ob55-iran-parity .ob55-main{grid-template-columns:minmax(0,1fr);gap:7px}
+ .ob-events .ob55-iran-parity .ob55-intro{grid-template-columns:minmax(0,1fr);gap:7px}
+ .ob-events .ob55-iran-parity .ob55-score-card{padding:11px;gap:11px}
+ .ob-events .ob55-iran-parity .ob54-kpis .ob53-current strong{font-size:29px}
+ .ob-events .ob55-iran-parity .ob54-kpis .ob53-asof strong{font-size:11px}
+
+ /* Chart preserves the original 14-day data, gaps and provisional dashed segments. */
+ .ob-events .ob53-chart,.ob-events .ob54-trend{padding:11px}
+ .ob-events .ob53-chart-heading h3,.ob-events .ob54-chart-head h3{font-size:13px}
+ .ob-events .ob53-chart-heading>span,.ob-events .ob54-chart-head>span{font-size:10px;white-space:normal;text-align:right}
+ .ob-events .ob53-market-chart,.ob-events .ob54-market-chart{height:171px;min-height:171px;margin-top:6px}
+ .ob-events .ob55-iran-parity .ob54-market-chart{height:171px;min-height:171px}
+ .ob-events .ob55-iran-parity .ob54-trend{padding:11px}
+ .ob-events .ob53-chart-footnote,.ob-events .ob54-note{font-size:10px;line-height:1.5}
+ .ob-events .ob53-no-trend,.ob-events .ob54-empty{min-height:171px}
+
+ /* Change-log extension point. The data worker provides real items later. */
+ .ob-events .obm-log{display:block;margin-top:0;min-width:0}
+ .ob-events .obm-log-head{display:flex;align-items:center;justify-content:space-between;gap:7px}
+ .ob-events .obm-log-head h3{display:flex;align-items:center;gap:7px;margin:0;font-size:14px;color:#e8f2f9}
+ .ob-events .obm-log-head h3 svg{color:#75c9e6;flex:none}
+ .ob-events .obm-log-head>span{font-size:10px;color:#a9bdc9}
+ .ob-events .obm-log-intro{font-size:10px;color:#abc1d0;line-height:1.5;margin:5px 0 9px}
+ .ob-events .obm-log-empty{padding:18px 12px;border-radius:4px;text-align:center;background:#0d293a;color:#a8bac7;font-size:11px;line-height:1.6}
+ .ob-events .obm-log-empty strong{display:block;color:#e0eaf2;font-size:12px;margin-bottom:4px}
+ .ob-events .obm-log-empty span{display:block}
+ .ob-events .obm-log-list{display:grid;gap:5px;margin:0;padding:0;list-style:none}
+ .ob-events .obm-log-entry{background:#0d293a;border-radius:4px;overflow:hidden}
+ .ob-events .obm-log-entry>summary{display:grid;grid-template-columns:46px minmax(0,1fr) auto 13px;align-items:center;gap:7px;min-height:58px;padding:9px;list-style:none;cursor:pointer}
+ .ob-events .obm-log-entry>summary::-webkit-details-marker{display:none}
+ .ob-events .obm-log-entry>summary:focus-visible{outline:2px solid #75c9e6;outline-offset:-2px}
+ .ob-events .obm-log-entry time{display:flex;flex-direction:column;gap:3px;font-size:11px;font-weight:800;color:#ddebf3;font-variant-numeric:tabular-nums}
+ .ob-events .obm-log-entry time small{color:#8da8b9;font-size:9px;font-weight:500}
+ .ob-events .obm-log-event{min-width:0;display:flex;flex-direction:column;gap:3px}
+ .ob-events .obm-log-event strong{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px;line-height:1.4}
+ .ob-events .obm-log-event small{font-size:9px;color:#9aafc0}
+ .ob-events .obm-log-delta{display:flex;align-items:center;gap:2px;font-size:12px;font-weight:800;white-space:nowrap;font-variant-numeric:tabular-nums}
+ .ob-events .obm-log-delta small{font-size:9px;font-weight:600}
+ .ob-events .obm-log-delta[data-direction="up"]{color:#50d995}
+ .ob-events .obm-log-delta[data-direction="down"]{color:#ff8792}
+ .ob-events .obm-log-delta[data-direction="flat"]{color:#abbecb}
+ .ob-events .obm-log-chevron{color:#9fb9c9;transition:transform .2s}
+ .ob-events .obm-log-entry[open] .obm-log-chevron{transform:rotate(180deg)}
+ .ob-events .obm-log-description{padding:0 11px 11px 62px;display:flex;flex-direction:column;gap:5px;color:#bfd1df;font-size:10px;line-height:1.6}
+ .ob-events .obm-log-description p{margin:0}
+ .ob-events .obm-log-description a{color:#78c8e2;text-decoration:underline}
+ .ob-events .obm-log-more{display:flex;align-items:center;justify-content:center;gap:5px;width:100%;min-height:35px;margin-top:7px;background:#11384c;border:0;border-radius:4px;color:#c5e5f2;font-size:11px;font-weight:750;cursor:pointer}
+ .ob-events .obm-log-more[aria-expanded="true"] svg{transform:rotate(180deg)}
+ .ob-events .obm-log-note{margin:9px 0 0;color:#90aabd;font-size:9px;line-height:1.5}
+
+ /* The unfinished Ukraine index remains clearly empty. */
+ .ob-events .ob-standard-detail>header{display:none}
+ .ob-events .ob-standard-detail>.ob-detail-grid{display:grid;grid-template-columns:1fr;gap:7px}
+ .ob-events .ob-standard-detail .ob-signals-panel{display:none}
+ .ob-events .ob-standard-detail .ob-panel:first-child{padding:11px;background:#071e2c;border:1px solid #24485c}
+ .ob-events .ob-standard-detail .ob-panel:first-child>.ob-metrics{order:0}
+ .ob-events .ob-standard-detail .ob-panel:first-child>h3{order:1;font-size:13px;margin:9px 0 5px}
+ .ob-events .ob-standard-detail .ob-panel:first-child>.ob-chart-empty{order:2;height:171px}
+ .ob-events .ob-standard-detail>.ob-definition,.ob-events .ob-standard-detail>.ob-formula,.ob-events .ob-standard-detail>.ob-note{display:none}
+ .ob-events .ob-standard-detail>.obm-log{order:2}
+
+ /* SEO/help remains in semantic HTML but starts closed so charts stay in focus. */
+ .ob-events .obm-search-guide{display:block;margin-top:10px;border:1px solid #24485c;border-radius:5px;background:#071e2c;color:#dce9f1}
+ .ob-events .obm-search-guide>summary{display:flex;align-items:center;gap:7px;min-height:42px;padding:11px;cursor:pointer;list-style:none;font-size:12px;font-weight:750}
+ .ob-events .obm-search-guide>summary::-webkit-details-marker{display:none}
+ .ob-events .obm-search-guide>summary svg:first-child{color:#75c9e6}
+ .ob-events .obm-search-guide>summary svg:last-child{margin-left:auto;transition:transform .2s}
+ .ob-events .obm-search-guide[open]>summary svg:last-child{transform:rotate(180deg)}
+ .ob-events .obm-search-content{padding:10px 12px 12px;border-top:1px solid #24485c}
+ .ob-events .obm-search-content h3{margin:0 0 5px;color:#d5e9f5;font-size:11px;line-height:1.5}
+ .ob-events .obm-search-content p{margin:0 0 11px;color:#abc1d0;font-size:11px;line-height:1.6}
+ .ob-events .obm-search-links{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:3px}
+ .ob-events .obm-search-links a{display:flex;align-items:center;min-height:34px;padding:7px 9px;border-radius:4px;background:#0b293b;border:1px solid #285167;color:#c5e8f5;font-size:10px;font-weight:700;text-decoration:none;line-height:1.4}
+}
+@media(max-width:380px){
+ .ob-events>.ob-cards>.ob-card h2{font-size:10px}
+ .ob-events .ob53-scale-labels>span,.ob-events .ob54-scale-labels>span{font-size:8px}
+}
+@media(prefers-reduced-motion:reduce){.ob-events .obm-log-chevron,.ob-events .obm-search-guide svg:last-child{transition:none}}

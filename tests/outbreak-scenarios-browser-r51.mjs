@@ -103,16 +103,30 @@ try{
 
   const disclosures=root.locator("details.ob53-details");
   assert.equal(await disclosures.count(),2);
-  const definition=disclosures.nth(0),method=disclosures.nth(1);
-  assert.equal(await definition.getAttribute("open"),null);
-  await definition.locator("summary").click();
-  assert.equal(await definition.getAttribute("open"),"");
-  assert.equal(await root.getByText(/기존 미국 연준 H\.15 국채금리 기반/).count(),1);
-  await definition.locator("summary").click();
-  await method.locator("summary").click();
-  assert.equal(await method.getAttribute("open"),"","Approved methodology expands on demand");
-  await method.locator("summary").click();
-  assert.equal(await method.getAttribute("open"),null);
+  if(width<=700){
+   const guide=root.locator("details.obm-search-guide");
+   assert.equal(await guide.isVisible(),true,"Mobile SEO guide is visible in collapsed form");
+   assert.equal(await guide.getAttribute("open"),null);
+   await guide.locator("summary").click();
+   assert.equal(await guide.getAttribute("open"),"","Mobile guide opens on demand");
+   await guide.locator("summary").click();
+   assert.equal(await guide.getAttribute("open"),null);
+   assert.equal(await root.locator(".obm-log").isVisible(),true,"Mobile event change-log slot is visible under the chart");
+   const chartBottom=await root.locator(".ob53-chart").boundingBox();
+   const logTop=await root.locator(".obm-log").boundingBox();
+   assert(chartBottom&&logTop&&logTop.y>=chartBottom.y+chartBottom.height-1,"Change log follows the 14-day chart");
+  }else{
+   const definition=disclosures.nth(0),method=disclosures.nth(1);
+   assert.equal(await definition.getAttribute("open"),null);
+   await definition.locator("summary").click();
+   assert.equal(await definition.getAttribute("open"),"");
+   assert.equal(await root.getByText(/기존 미국 연준 H\.15 국채금리 기반/).count(),1);
+   await definition.locator("summary").click();
+   await method.locator("summary").click();
+   assert.equal(await method.getAttribute("open"),"","Approved methodology expands on demand");
+   await method.locator("summary").click();
+   assert.equal(await method.getAttribute("open"),null);
+  }
 
   await cards.nth(2).click();
   assert.equal(await cards.nth(2).getAttribute("aria-pressed"),"true");
@@ -122,7 +136,7 @@ try{
 
   await cards.nth(1).click();
   assert.equal(await cards.nth(1).getAttribute("aria-pressed"),"true");
-  await root.locator("#ob-iran-title").waitFor({state:"visible"});
+  await root.locator("#ob-iran-title").waitFor({state:width<=700?"attached":"visible"});
   assert.equal(await root.locator(".ob55-iran-parity .ob53-intro-grid").count(),1,"Iran uses R53 intro-grid");
   assert.equal(await root.locator(".ob55-iran-parity .ob53-main-grid").count(),1,"Iran uses R53 main-grid");
   assert.equal(await root.locator(".ob55-score-card .ob54-kpis > div").count(),3,"Iran metrics share R53 integrated score panel");
@@ -153,11 +167,15 @@ try{
   assert.equal(await root.locator(".ob54-disclosure").count(),2);
   const evidence=root.locator(".ob54-disclosure").nth(1);
   assert.equal(await evidence.getAttribute("open"),null);
-  await evidence.locator("summary").click();
-  assert.equal(await evidence.getAttribute("open"),"","Evidence source summary can expand");
-  assert.equal(await evidence.getByText("최근 14일 확인된 공식 발표").count(),1);
-  await evidence.locator("summary").click();
-  assert.equal(await evidence.getAttribute("open"),null);
+  if(width>700){
+   await evidence.locator("summary").click();
+   assert.equal(await evidence.getAttribute("open"),"","Evidence source summary can expand on PC");
+   assert.equal(await evidence.getByText("최근 14일 확인된 공식 발표").count(),1);
+   await evidence.locator("summary").click();
+   assert.equal(await evidence.getAttribute("open"),null);
+  }else{
+   assert.equal(await root.locator(".obm-log").isVisible(),true,"Iran mobile log slot follows the chart");
+  }
   const iranChartFits=await iranChart.evaluate(el=>el.getBoundingClientRect().width<=innerWidth);
   assert(iranChartFits,"Shared Iran chart fits the viewport without horizontal clipping");
   await page.screenshot({path:"artifacts/outbreak-scenarios/analysis-iran-"+width+".png",fullPage:true});
@@ -169,9 +187,9 @@ try{
    return {rootFits:wrap.left>=-1&&wrap.right<=innerWidth+1,
     cardsFit:choices.every(box=>box.left>=wrap.left-1&&box.right<=wrap.right+1),
     detailFits:!!panel&&panel.left>=wrap.left-1&&panel.right<=wrap.right+1,
-    singleColumn:innerWidth>700||choices.every((box,i)=>i===0||box.top>=choices[i-1].bottom-1)};
+    responsiveSelectors:innerWidth>700||choices.every((box,i)=>i===0||Math.abs(box.top-choices[0].top)<2)};
   });
-  assert.deepEqual(geometry,{rootFits:true,cardsFit:true,detailFits:true,singleColumn:true},"Responsive event panels fit viewport");
+  assert.deepEqual(geometry,{rootFits:true,cardsFit:true,detailFits:true,responsiveSelectors:true},"Responsive event panels fit viewport");
   await page.screenshot({path:"artifacts/outbreak-scenarios/scenarios-"+width+".png",fullPage:true});
   console.log("PASS: scenario page responsive width="+width);
   await page.close();
