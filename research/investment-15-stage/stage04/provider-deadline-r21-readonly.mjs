@@ -43,7 +43,13 @@ export async function fetchProviderBatchWithinDeadline(url, {
       return readResponse(response);
     })();
     const data = await Promise.race([requestAndBody, deadline]);
-    return { data, durationMs: Math.max(0, now() - startedAt),
+    const durationMs = Math.max(0, now() - startedAt);
+    // Do not accept late success even if synchronous parsing briefly delayed
+    // the event-loop timer beyond the deadline.
+    if (durationMs > timeoutMs) {
+      throw new ProviderDeadlineError('PROVIDER_QUERY_DEADLINE_EXCEEDED');
+    }
+    return { data, durationMs,
       deadlineMs: timeoutMs, requests: 1 };
   } finally {
     clearTimeout(timerId);
