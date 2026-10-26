@@ -497,3 +497,24 @@
  .zg-dashboard[data-view="dashboard"] .ob-summary-chart-frame>.zg-chart-fixed-axis>b:last-of-type{right:15.1%!important}
  .zg-dashboard[data-view="dashboard"] .zg-sector-chart-plot>.zg-chart-fixed-axis>span{left:calc(100% - 24px)!important;transform:translate(0,-50%)}
 }
+
+/* EC12 R6: the actual card is the grid container (card-mid is display:contents).
+   Reserve the title/arrow lane and remove the 16px left chart intrusion.
+   These identical folded/unfolded rules protect all 12 titles without
+   reducing the 60px trend height or altering SVG/path data. */
+.zg-dashboard[data-view="dashboard"] .zg-r55-shell[data-expanded] .zg-r55-card{
+  grid-template-columns:110px minmax(0,1fr);
+}
+@media (min-width:960px){
+  .zg-dashboard[data-view="dashboard"] .zg-r55-shell[data-expanded] .zg-r55-card-visual{
+    margin-left:0;
+  }
+}
+
+/* R7: the mobile card grid lives in responsive.css, which loads after globals.
+   A single column preserves the original full-width 60px trend plot at 390px. */
+@media (max-width:540px){
+  .zg-dashboard[data-view="dashboard"] .zg-r55-card-grid{
+    grid-template-columns:minmax(0,1fr);
+  }
+}

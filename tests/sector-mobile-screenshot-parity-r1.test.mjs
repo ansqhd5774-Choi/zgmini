@@ -57,7 +57,8 @@ test('a single selected sector places low high and current callouts with guides 
 test('mobile sector legend names match compact ranking font size without changing chart height',()=>{
  const css=read('app/sector-fear-greed/sector-detail.css');
  const mobile=css.slice(css.lastIndexOf('@media(max-width:680px)'));
- assert.match(mobile,/\.zg-sfg-legend-name\{[^}]*font-size:10\.5px;line-height:15px/);\n assert.match(mobile,/\.zg-sfg-rank-name\{[^}]*font-size:10\.5px;/);
+ assert.match(mobile,/\.zg-sfg-legend-name\{[^}]*font-size:10\.5px;line-height:15px/);
+ assert.match(mobile,/\.zg-sfg-rank-name\{[^}]*font-size:10\.5px;/);
  assert.match(mobile,/@media\(max-width:480px\)\{[^]*?\.zg-sfg-legend button\{[^}]*grid-template-rows:18px 12px;/);
  assert.match(mobile,/@media\(max-width:355px\)\{\s*\.zg-sfg-legend\{grid-template-columns:repeat\(3,minmax\(0,1fr\)\)/);
  assert.match(mobile,/\.zg-sfg-comparison-plot\{height:126px;/);
