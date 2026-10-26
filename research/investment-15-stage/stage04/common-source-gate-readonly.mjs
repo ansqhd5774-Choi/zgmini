@@ -9,6 +9,8 @@ import { fileURLToPath } from 'node:url';
 import { resolve } from 'node:path';
 import { F_ENDPOINT, selectThemeF } from './latest-f-readonly.mjs';
 import { PROPOSED_INDUSTRY_API, parseUnifiedIndustrySeries } from './unified-industry-series-readonly.mjs';
+import { THEME_PROVIDER_MAX_MS, fetchProviderBatchWithinDeadline,
+  rejectProviderForThemes } from './provider-deadline-r21-readonly.mjs';
 
 export const COMMON_G_SOURCE_CANDIDATES = Object.freeze([
   Object.freeze({
@@ -42,6 +44,7 @@ const REQUIRED_G_DATA = Object.freeze([
 ]);
 
 function failureCode(error) {
+  if (error?.code && /^[-A-Z0-9_]+$/.test(error.code)) return error.code;
   const networkCode = error?.cause?.code;
   if (['EAI_AGAIN', 'ENOTFOUND', 'ECONNREFUSED', 'ETIMEDOUT', 'ENETUNREACH'].includes(networkCode)) {
     return `NETWORK_${networkCode}`;
@@ -107,20 +110,19 @@ export function evaluateCommonSourceStage04(f, { sourceCandidates = COMMON_G_SOU
   };
 }
 
-export async function runCommonSourceStage04({ fetchFn = fetch, asOfDate, industryFeedUrl = null } = {}) {
+export async function runCommonSourceStage04({ fetchFn = fetch, asOfDate,
+  industryFeedUrl = null, industryTimeoutMs = THEME_PROVIDER_MAX_MS } = {}) {
   let f = null;
   let fFailureCode = null;
   try {
-    const response = await fetchFn(F_ENDPOINT, {
-      signal: AbortSignal.timeout(15000), headers: { accept: 'application/json' },
+    const observed = await fetchProviderBatchWithinDeadline(F_ENDPOINT, {
+      fetchFn, timeoutMs: 15_000,
     });
-    if (!response?.ok) throw new Error(`F_API_HTTP_${response?.status ?? 'UNAVAILABLE'}`);
-    if (new URL(response.url ?? F_ENDPOINT).origin !== new URL(F_ENDPOINT).origin) {
-      throw new Error('F_API_ORIGIN_DRIFT');
-    }
-    f = selectThemeF(await response.json(), asOfDate ? { asOfDate } : {});
+    f = selectThemeF(observed.data, asOfDate ? { asOfDate } : {});
   } catch (error) {
-    fFailureCode = failureCode(error);
+    const code = failureCode(error);
+    fFailureCode = code.startsWith('PROVIDER_HTTP_') ? code.replace('PROVIDER_HTTP_', 'F_API_HTTP_')
+      : code === 'PROVIDER_REDIRECT_ORIGIN_CHANGED' ? 'F_API_ORIGIN_DRIFT' : code;
   }
   const result = evaluateCommonSourceStage04(f);
   const baseline = { ...result, F: { ...result.F, failureCode: fFailureCode } };
@@ -135,15 +137,12 @@ export async function runCommonSourceStage04({ fetchFn = fetch, asOfDate, indust
       },
     };
   }
+  const industryStartedAt = performance.now();
   try {
-    const response = await fetchFn(industryFeedUrl, {
-      signal: AbortSignal.timeout(15000), headers: { accept: 'application/json' },
+    const observed = await fetchProviderBatchWithinDeadline(industryFeedUrl, {
+      fetchFn, timeoutMs: industryTimeoutMs,
     });
-    if (!response?.ok) throw new Error(`INDUSTRY_API_HTTP_${response?.status ?? 'UNAVAILABLE'}`);
-    if (new URL(response.url ?? industryFeedUrl).origin !== new URL(industryFeedUrl).origin) {
-      throw new Error('INDUSTRY_API_ORIGIN_DRIFT');
-    }
-    const evidence = parseUnifiedIndustrySeries(await response.json(), {
+    const evidence = parseUnifiedIndustrySeries(observed.data, {
       asOfDate: f.evaluatedAsOfKst,
       expectedThemes: f.themes.map((theme) => theme.theme),
     });
@@ -172,6 +171,9 @@ export async function runCommonSourceStage04({ fetchFn = fetch, asOfDate, indust
           rawGrowthObservedCount: evidence.rawGrowthObservedCount,
           accelerationObservedCount: evidence.accelerationObservedCount,
         },
+        querySla: { deadlineMs: industryTimeoutMs, durationMs: observed.durationMs,
+          providerRequestCount: observed.requests, retryCount: 0, providerSwitchCount: 0,
+          perThemeMaxMs: observed.durationMs },
       },
       missingFieldReport: {
         ...baseline.missingFieldReport,
@@ -194,10 +196,20 @@ export async function runCommonSourceStage04({ fetchFn = fetch, asOfDate, indust
       },
     };
   } catch (error) {
+    const code = failureCode(error);
+    const feedFailureCode = code.startsWith('PROVIDER_HTTP_')
+      ? code.replace('PROVIDER_HTTP_', 'INDUSTRY_API_HTTP_')
+      : code === 'PROVIDER_REDIRECT_ORIGIN_CHANGED' ? 'INDUSTRY_API_ORIGIN_DRIFT' : code;
+    const rejection = rejectProviderForThemes(f.themes.map((theme) => theme.theme),
+      feedFailureCode, Math.round(performance.now() - industryStartedAt),
+      'ZGMINI_STAGE04_INDUSTRY_DEMAND_V1');
     return {
       ...baseline,
+      themes: baseline.themes.map((theme) => ({ ...theme,
+        stage04State: 'SOURCE_NOT_PROVIDING_DATA' })),
       industryCommonSource: {
-        ...baseline.industryCommonSource, feedFailureCode: failureCode(error),
+        ...baseline.industryCommonSource, feedFailureCode,
+        sourceAccess: rejection,
       },
     };
   }
