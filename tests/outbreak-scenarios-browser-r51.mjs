@@ -148,7 +148,8 @@ try{
 
   await cards.nth(1).click();
   assert.equal(await cards.nth(1).getAttribute("aria-pressed"),"true");
-  await root.locator("#ob-iran-title").waitFor({state:width<=700?"attached":"visible"});
+  await root.locator("#ob-iran-title").waitFor({state:"attached"});
+   assert.equal(await root.locator(".ob57-news").isVisible(),true,"Iran news panel is visible; duplicate detail title is hidden in Option 5");
   assert.equal(await root.locator(".ob55-iran-parity .ob53-intro-grid").count(),1,"Iran uses R53 intro-grid");
   assert.equal(await root.locator(".ob55-iran-parity .ob53-main-grid").count(),1,"Iran uses R53 main-grid");
   assert.equal(await root.locator(".ob55-score-card .ob54-kpis > div").count(),3,"Iran metrics share R53 integrated score panel");
