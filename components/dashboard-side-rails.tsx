@@ -63,18 +63,19 @@ export default function DashboardSideRails({accountFavorites}:{accountFavorites:
  useEffect(()=>{
   const refresh=()=>setSaved(browserFavorites());
   const onStorage=(e:StorageEvent)=>{if(!e.key||e.key.startsWith("zgmini:"))refresh();};
+  const onPageShow=()=>{setLeftOpen(false);setRightOpen(false);refresh();};
   refresh();
   window.addEventListener("storage",onStorage);
   window.addEventListener("focus",refresh);
-  window.addEventListener("pageshow",refresh);
+  window.addEventListener("pageshow",onPageShow);
   return()=>{
    window.removeEventListener("storage",onStorage);
    window.removeEventListener("focus",refresh);
-   window.removeEventListener("pageshow",refresh);
+   window.removeEventListener("pageshow",onPageShow);
   };
  },[]);
  useEffect(()=>{
-  if(!saved.some(x=>x.key.startsWith(ECONOMIC_KEY+":")))return;
+  if(!leftOpen||!saved.some(x=>x.key.startsWith(ECONOMIC_KEY+":")))return;
   const ctrl=new AbortController();
   // Read saved public indicator names; never calculate, collect, or publish anything.
   void fetch("/api/market-score",{cache:"no-store",signal:ctrl.signal})
@@ -109,10 +110,11 @@ export default function DashboardSideRails({accountFavorites}:{accountFavorites:
    }).catch(()=>{/* Keep existing favorites if a stored snapshot cannot be read. */});
   return()=>ctrl.abort();
  // Fetch only when the set of starred economic IDs changes, not on label refresh.
- },[saved.map(x=>x.key.startsWith(ECONOMIC_KEY+":")?x.key:"").filter(Boolean).join("|")]);
+ },[leftOpen,saved.map(x=>x.key.startsWith(ECONOMIC_KEY+":")?x.key:"").filter(Boolean).join("|")]);
  useEffect(()=>{
   // Fetch only stored public results for risk groups containing actual bookmarks.
   // No request is made for a group without saved favorites.
+  if(!leftOpen)return;
   const groups=RISK_FAVORITE_SOURCES.filter(source=>saved.some(row=>row.key.startsWith(source.storageKey+":")));
   if(groups.length===0)return;
   const controller=new AbortController();
@@ -131,10 +133,10 @@ export default function DashboardSideRails({accountFavorites}:{accountFavorites:
   }).catch(()=>{});
   return()=>controller.abort();
  // Refresh only when the starred risk indicator ID list changes.
- },[saved.filter(row=>!row.key.startsWith(ECONOMIC_KEY+":")).map(row=>row.key).join("|")]);
+ },[leftOpen,saved.filter(row=>!row.key.startsWith(ECONOMIC_KEY+":")).map(row=>row.key).join("|")]);
  useEffect(()=>{
   const onKey=(e:KeyboardEvent)=>{
-   if(e.key!=="Escape"||wide)return;
+   if(e.key!=="Escape")return;
    if(leftOpen){setLeftOpen(false);leftButton.current?.focus();}
    if(rightOpen){setRightOpen(false);rightButton.current?.focus();}
   };
@@ -142,7 +144,7 @@ export default function DashboardSideRails({accountFavorites}:{accountFavorites:
   return()=>window.removeEventListener("keydown",onKey);
  },[wide,leftOpen,rightOpen]);
  const all=[...saved,...accountFavorites];
- const leftVisible=wide||leftOpen,rightVisible=wide||rightOpen;
+ const leftVisible=leftOpen,rightVisible=rightOpen;
  return <div className="zg-risk-side-rails-root zg-dashboard-side-rails-root" data-wide={wide?"true":"false"}>
   {!wide&&(leftOpen||rightOpen)&&<button type="button" className="zg-risk-side-veil" aria-label="열린 패널 닫기" tabIndex={-1} onClick={()=>{setLeftOpen(false);setRightOpen(false);}}/>}
   <aside id="zg-dashboard-favorites-panel" className="zg-risk-side-rail zg-risk-side-left" data-open={leftVisible?"true":"false"} aria-label="내 즐겨찾기 지표" aria-hidden={!leftVisible} inert={!leftVisible}>
@@ -182,8 +184,8 @@ export default function DashboardSideRails({accountFavorites}:{accountFavorites:
    <CommunityChat enabled sidebarMode sidebarOpen={rightVisible} onSidebarClose={()=>setRightOpen(false)}/>
   </aside>
   <div className="zg-risk-side-actions" aria-label="대시보드 도구">
-   <button ref={leftButton} type="button" className="zg-risk-side-action is-left" aria-label={leftOpen?"즐겨찾기 닫기":"즐겨찾기 열기"} aria-controls="zg-dashboard-favorites-panel" aria-expanded={leftOpen} onClick={()=>{setLeftOpen(v=>!v);setRightOpen(false);}}><Star size={22}/></button>
-   <button ref={rightButton} type="button" className="zg-risk-side-action is-right" aria-label={rightOpen?"시장 채팅 닫기":"시장 채팅 열기"} aria-controls="zg-community-chat-panel" aria-expanded={rightOpen} onClick={()=>{setRightOpen(v=>!v);setLeftOpen(false);}}><MessageCircle size={22}/></button>
+   <button ref={leftButton} type="button" className="zg-risk-side-action is-left" aria-label={leftOpen?"즐겨찾기 닫기":"즐겨찾기 열기"} aria-controls="zg-dashboard-favorites-panel" aria-expanded={leftOpen} onClick={()=>{setLeftOpen(v=>!v);if(!wide)setRightOpen(false);}}><Star size={22}/><span className="zg-dashboard-rail-state" aria-hidden="true">{leftOpen?"ON":"OFF"}</span></button>
+   <button ref={rightButton} type="button" className="zg-risk-side-action is-right" aria-label={rightOpen?"시장 채팅 닫기":"시장 채팅 열기"} aria-controls="zg-community-chat-panel" aria-expanded={rightOpen} onClick={()=>{setRightOpen(v=>!v);if(!wide)setLeftOpen(false);}}><MessageCircle size={22}/><span className="zg-dashboard-rail-state" aria-hidden="true">{rightOpen?"ON":"OFF"}</span></button>
   </div>
  </div>;
 }
