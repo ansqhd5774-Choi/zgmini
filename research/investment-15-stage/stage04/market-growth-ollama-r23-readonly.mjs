@@ -162,6 +162,7 @@ export async function benchmark({
     result.state = 'PASS';
   } catch (error) {
     result.failure = abort.signal.aborted ? 'TOTAL_DEADLINE_EXCEEDED' :
+      mode === 'model-only' && error?.message === 'fetch failed' ? 'OLLAMA_LOCAL_CONNECT_FAILED' :
       error?.cause?.code === 'ECONNREFUSED' ? 'OLLAMA_NOT_RUNNING' :
       (error?.message || 'UNKNOWN_ERROR');
   } finally {
@@ -178,7 +179,8 @@ export async function benchmark({
 }
 
 function serialize(result) {
-  return ['REPORT=STAGE04_OLLAMA_GROWTH_R23_READONLY',
+  return [`REPORT=${result.source_mode === 'REFERENCE_SAMPLE_NOT_LIVE'
+    ? 'STAGE04_OLLAMA_ONLY_R24_READONLY' : 'STAGE04_OLLAMA_GROWTH_R23_READONLY'}`,
     'PURPOSE=PRIVATE_BENCHMARK_NOT_INVESTMENT_DATA',
     ...Object.entries(result).map(([key, value]) => `${key.toUpperCase()}=${value ?? 'NULL'}`),
     'PUBLICATION=NONE', 'SCORING_CHANGE=NONE', 'ORDER=NONE', 'RETRIES=0', 'SOURCE_SWITCHES=0', ''].join('\r\n');
