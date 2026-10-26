@@ -33,7 +33,10 @@ try{
    assert(await list.isVisible(),"desktop left navigation rail visible");
    const [lb,mb]=await Promise.all([list.boundingBox(),main.boundingBox()]);
    assert(lb&&mb&&lb.x+lb.width<=mb.x+3&&mb.x+mb.width<=width+3,"left rail and expanded content do not overlap");
-   assert(mb.width>1152,"released chat width is available to risk detail content");
+   const expectedWidth=Math.min(width-670,1152);
+   const expectedLeft=(width-expectedWidth)/2-30;
+   assert(Math.abs(mb.width-expectedWidth)<=3,"risk content retains its prior width "+width);
+   assert(Math.abs(mb.x-expectedLeft)<=3,"risk content retains its prior horizontal position "+width);
   }else{
    assert.equal(await list.getAttribute("aria-hidden"),"true");
    const left=page.getByRole("button",{name:"위험지표 목록 열기"});

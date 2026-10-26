@@ -29,8 +29,6 @@ body:has(.zg-risk-side-rails-root){background:#03121d}
 @media(min-width:1650px){
  .zg-risk-side-rails-root+main{width:calc(100% - 670px);max-width:1152px;margin-left:auto;margin-right:auto;transform:translateX(-30px);min-width:0}
  .zg-risk-side-rails-root+main>div{width:100%;max-width:none}
- /* Only the risk detail routes lose the right chat rail; the dashboard keeps its two-rail layout. */
- .zg-risk-side-rails-root.zg-risk-only-nav+main{width:calc(100% - 320px);max-width:1500px;margin-left:auto;margin-right:24px;transform:none}
 }
 @media(max-width:1649px){
  .zg-risk-side-rail{z-index:133;top:calc(var(--zg-site-header-height,64px) + 10px);height:min(66dvh,650px);min-height:0;max-height:calc(100dvh - var(--zg-site-header-height,64px) - 82px);background:rgba(5,28,44,.82);backdrop-filter:blur(9px);-webkit-backdrop-filter:blur(9px);transition:transform .22s ease,opacity .22s ease,visibility .22s ease}
