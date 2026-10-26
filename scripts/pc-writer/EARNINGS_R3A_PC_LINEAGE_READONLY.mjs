@@ -17,7 +17,7 @@ const lines = [
   'DATA_SCOPE=METADATA_ONLY',
 ];
 const targetIds = ['G010', 'G013', 'G015', 'G016', 'G017', 'G018'];
-const safe = value => String(value ?? 'NULL').replace(/[^A-Za-z0-9_.:+/-]/g, '_').slice(0, 90);
+const safe = value => String(value ?? 'NULL').replace(/[^A-Za-z0-9_.:+/|,-]/g, '_').slice(0, 340);
 const add = (key, value) => lines.push(`${key}=${safe(value)}`);
 const hash = value => (value ? safe(String(value).slice(0, 16)) : 'NULL');
 let db;
@@ -62,7 +62,8 @@ try {
       add(`${id}_HISTORY_ROWS_UP_TO_8`, historical.length);
       const sameDate = historical.filter(item => item.observation_date === now?.observation_date);
       add(`${id}_HISTORY_CURRENT_DATE_MATCH_COUNT_UP_TO_8`, sameDate.length);
-      add(`${id}_HISTORY_CURRENT_RECORD_MATCH`, sameDate.some(item => item.record_hash === now?.record_hash) ? 'YES' : 'NO_OR_NOT_IN_LATEST_8');
+      add(`${id}_HISTORY_CURRENT_RECORD_MATCH`, !now ? 'NOT_APPLICABLE_NO_CURRENT' :
+        sameDate.some(item => item.record_hash === now.record_hash) ? 'YES' : 'NO_OR_NOT_IN_LATEST_8');
       const first = historical[0];
       if (first) {
         add(`${id}_LATEST_HISTORY_PERIOD`, first.observation_period);
