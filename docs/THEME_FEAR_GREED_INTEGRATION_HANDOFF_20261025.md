@@ -350,3 +350,12 @@
 - 후속 사용자 "승인이지"에 따라 **신규 테마 유효 ETF가 3개 이상이면 공식 AUM 비례 정규화 가중** `w_i=AUM_i/ΣAUM` 승인. 동적 ETF 개수 상한 없음. 자료 없는 ETF는 재수집·0점 보정 없이 제외. **기존 2종 장기/단기 70:30→50:50 및 동등 경로 가중은 그대로 유지**. 1종·두 ETF 모두 단기 등의 미확정 분기는 별도 결정.
 - R23 개인 계산기의 정책 flag를 승인으로 고치되 2026-10-23 기준 4 ETF 44.65075·원 PC provenance 3 digest를 그대로 보존한다. AUM 혼합 10/22·10/23, 현재 가격 아님. 252일 전체에 최신 AUM 소급 금지.
 - **미승인 구분**: 우주·위성 최종 ETF 선발·ROKT 우주/심해 혼합 판단, 파생 공개 권리, 역사적 AUM 및 게시용 D1/Cloudflare/scheduler/main. PR #714 Draft 유지, 공개/원자료 변경 0.
+
+## 2026-10-26 R25 — 우주·위성 3종 전용 vs 4종 우주·심해, 권리 분리
+
+- 이전 R24 커밋 `9540dbc746d635be51fb0dc1abd2af6126b0cdd9` GitHub CI #40268524587 **PASS**. 3종 이상 상대 AUM 가중식 사용자 승인 유지, 2종 계약 유지.
+- R21 실제 PC 점수(2026-10-23)와 R23 공식 AUM 과거 증거 재사용만으로 4종 UFO/NASA/WARP/ROKT **44.65075**, ROKT 제외 3종 **44.70775**, 차이 **+0.05700**. UFO32.0783% NASA65.3505% WARP2.5713% (3종 상대 AUM). 2026-10-22/23 혼합 AUM이라 과거 252일 전체 가중으로 소급 금지.
+- State Street 공식 ROKT 펀드는 **우주+심해** 혼합 전략. 우주·위성 전용 표기라면 3종안이 명확하지만 **사용자 구성 승인 전 자동 제외 금지**. 제외된 기존 5 ETF의 데이터 재수집 금지.
+- GetMarketHistory 2026-10-19 Terms §5는 정상 계정 상태·비가역 파생 지표/차트 제공을 조건부 허용하지만 원가격 bulk 재배포를 금지. 발행사 UFO/NASA/WARP/ROKT AUM·holdings 사이트 각각의 자동 수집/상업 파생 권리를 이 Terms가 허가하지는 않음. rightsVerified=false 유지.
+- 문서 `docs/THEME_SPACE_R25_PURITY_RIGHTS_GATE_20261026.md`, 새 코드 `scripts/pc-writer/theme-space-satellite-r25-purity-alternatives.mjs`, 테스트 `tests/theme-space-satellite-r25-purity-alternatives.test.mjs`; 기존 R2~R25 관련 테스트 **10/10 PASS**. 신규 provider/ETF price GET 0, 원본/D1/공개/scheduler/main 변경 0. PR #714 Draft 유지.
+- **다음 승인 Gate:** ROKT 우주·심해 혼합 포함 여부, 합법적인 정기 AUM 출처와 시간별 AUM 이력/날짜 정책, 실제 운영 권리와 공개 별도 승인. 선정/rights 미확정 전 게시 금지.
