@@ -154,3 +154,11 @@
 - **운영 범위 정확히 분리:** 첫 승인 기사 1건의 전용 D1 게시·웹 노출 성공은 정기적인 GOV.UK 수집·검토·30일 캐시 정리의 자동 운영 검증과 다르다. GOV.UK 신규 기사 자동 게시 및 추가 뉴스 매체 편입은 승인하지 않았다.
 - R13 연결 전 운영 PC 실제 `schtasks` 액션·전용 캐시·원장 존재를 안전하게 확인하도록 `scripts/iran-progress/news-display-runner-audit-r5.mjs`과 `scripts/iran-progress/IRAN_NEWS_R5_RUNNER_READONLY.cmd`를 **같은 기존 브랜치**에 추가했다. CMD는 옆에 `IRAN_NEWS_R5_RUNNER_READONLY_RESULT.txt`를 생성하고 조사 보조 파일을 제거한다. R13 작업·캐시·SQLite·D1에는 쓰지 않는다.
 - 다음 Gate: 사용자 PC R5 TXT 결과에서 실제 R13 액션 체인과 표시용 캐시 경로를 확인한 다음에만 기존 6시간 실행 경로에 정리 처리를 최소 범위로 연결한다. 연결 전 자동 운영 완료라고 보고하지 않는다.
+
+## 10. 2026-10-27 R5 Windows 실행 현황 및 R6 실행경로 실측 준비
+
+- 사용자 R5 로그 `IRAN_NEWS_R5_RUNNER_READONLY_RESULT.txt`: `PASS_RUNNER_READ_ONLY_INVENTORY`, `taskName=ZGMINI-PC-Iran-Progress-R13`, 작업 Action은 `wscript.exe`로 확인. 이는 VBS 중간 실행기이므로 `referencesR3Wrapper=false`만으로 R3가 미실행이라고 단정하지 않는다.
+- 뉴스 표시 캐시: 1건, 30일 이내 1건, 만료 0건, 날짜 오류 0건, 기존 `iran.sqlite` 존재·미수정. 30일 자동 유지관리의 스케줄 연결은 여전히 미확인이다.
+- 저장소의 기존 `scripts/iran-progress/install.mjs`는 R13 실행에 `wscript.exe`+ `run.vbs`를 사용하는 구조다. `install-reference-flow.mjs` 또한 `run.vbs` 또는 `run-articles.vbs`에 Node runner를 연결한다. 다만 실제 PC VBS 내용/실행파일 SHA는 이번 R5 조사 대상이 아니었으므로 추정하여 덮어쓰지 않는다.
+- `scripts/iran-progress/news-display-chain-audit-r6.mjs` 및 `scripts/iran-progress/IRAN_NEWS_R6_CHAIN_READONLY.cmd`를 기존 단일 작업 브랜치에 추가. R13 XML → VBS 런처 → Node runner를 **읽기 전용으로만** 따라가 파일 이름·SHA-256·Git HEAD(가능할 때)·기존 4회 실행 시각을 요약하고, 내용·실행 인자·절대 경로·비밀은 로그로 내보내지 않는다.
+- 다음 Gate: 사용자 PC `IRAN_NEWS_R6_CHAIN_READONLY_RESULT.txt`에서 실제 runner를 확인한 후, 기존 원장/산식·6시간 주기는 그대로 두고 표시 캐시 정리 hook만 분리·격리한다. 신규 기사 자동 공개는 개별 권리/요약 검토 승인 전까지 차단한다.
