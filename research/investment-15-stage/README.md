@@ -27,6 +27,7 @@
 19. `STAGE04_COMMON_MEDIA_SELECTION_R20_20261026.md`: **최신 R20.1 소스선정 단계**. 실제 수치 수집 전에 한 매체의 **전 지표 카탈로그·배치/증분 조회·N=100/1,000 동적 확장·최신성**을 매체 단위로 검증한다. 9개 테마 수동 순회/개별 검색 금지. Grand View Research는 여러 관련 요약 페이지가 있지만 자동 수집 약관상 불가, Mordor는 공개 파생권 미충족. **공통 산업 매체 선정 0건**, 9개 테마 탈락 0건. 운영 수집·산식·API 변경 없음.
 20. `STAGE04_MEDIA_RESPONSE_20S_R21_20261026.md`: **R21 타임아웃 실구현**. 각 테마는 매체별 공유 배치 조회에서 HTTP·본문·데이터 계약 파싱까지 **최대 20초**. 실패한 매체는 즉시 해당 실행에서 정보 미제공, 재시도·자동 대체 0회, NULL 유지. 신규 R21 테스트 6/6·전체 Stage04 96/96 PASS. OECD 공식 API 단일 실측은 실행 호스트 `EAI_AGAIN`; 소스 합격 아님. 운영 변경 없음.
 21. `STAGE04_OFFICIAL_COMMON_MEDIA_R22_20261026.md`: **R22 공식 매체 선정 게이트**. Eurostat·World Bank 공식 카탈로그 각 1개 주소 실제 접근은 DNS `EAI_AGAIN`으로 종료(각각 38ms/5,007ms, 20초 이내). BEA·Census는 키/직접 범위 부족, BLS는 고용 프록시여서 산업 수요 직접값 부적합. 공통 매체 선정 0, 원천 숫자 실측 0, G/D/M·순위 NULL. 코드·운영 변경 없음.
+22. `STAGE04_SPECIALIST_OLLAMA_SPEED_R23_20261026.md`: **R23 사용자 정정**. 전문 성장률 매체(Fortune Business Insights)의 원자력 시장 **짧은 CAGR 구절만** Ollama에 전달하는 Windows CMD 시험기를 개발. 매체 조회·Ollama 읽기·총 시간을 20초 안에서 각각 기록; 실제 Windows Ollama 실측은 CMD 실행 대기. 운영 변경 없음.
 
 ## 작업 원칙
 
