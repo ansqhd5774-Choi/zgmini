@@ -333,3 +333,13 @@
 - AUM 자료 10/22 NASA 950.551499M/UFO 466.5926473M/ROKT 148.41M USD, 10/23 WARP 37.40M USD. **동시점 아닌 단순 비공개 가중 비교**: AUM 비율 NASA 59.3000% UFO 29.1083% WARP 2.3332% ROKT 9.2585%, R21 미승인 R4-A는 18.3021/32.2951/17.1078/32.2951%. 같은 R15 실측 개별 ETF 점수에 AUM 가중을 예시 적용한 점수 44.65075 (R21 대비 -0.16067). 가중치 결정 **미승인·미적용**, 사용자의 상대 AUM 원칙과 R4-A 차이는 최종 산식 승인 의제로 별도 보고.
 - R22는 문서만 신규, PC CMD 재실행·ETF 재수집 없음. 기존 운영 9개/DB/D1/scheduler/Cloudflare/main 불변, rightsVerified=false, publicationAuthorized=false, finalBasketSelected=false, weightsApproved=false, Draft PR #714 유지.
 - **다음 결정:** AUM 중심 승인 가중으로 전환할지/추가적인 R4-A 성숙도 보호 조건이 필요한지 사용자에게 수치 근거 제시 후 승인. 발행사 수치 불가 ETF 재수집 금지. 최종 편입/혼합테마 고지 및 파생 공개 권리는 별도 gate.
+
+## 2026-10-26 R23 — 3종 이상 신규 테마 AUM 비중의 별도 비공개 시뮬레이션
+
+- **승인 범위 보존:** 사용자는 수집 불가 ETF 반복 재수집 금지를 요청했고 R21 실제 PC는 4종(2026-10-23) 44.81142점 검산 PASS. R22 공식 AUM/중복·순도 표기까지 진행. R23은 **계산 검토 단계만 진행**하고 게시 산식·원본·PC 실행·기존 운영을 바꾸지 않음.
+- 코드: scripts/pc-writer/theme-space-satellite-r23-aum-shadow.mjs, 날짜별 근거 보존용 작고 비운영 JSON theme-space-satellite-r23-dated-aum-evidence.json, tests/theme-space-satellite-r23-aum-shadow.test.mjs, 문서 docs/THEME_SPACE_R23_AUM_RELATIVE_PRIVATE_20261026.md. source/SPY/R18 digest는 **사용자 제출 실제 R21 PC 결과와 고정 SHA 정확히 일치할 때만** 비공개 비교.
+- ETF 개수 상한 없음. 종목별 실제 현재 점수 또는 공식 AUM이 없으면 현재 비교에서 제외하되 원본·후보 목록은 그대로, GET·반복 재수집·0점 대체 없음. 미래 AUM 날짜는 look-ahead 방지를 위해 차단. 발행사 AUM 기준일 혼합은 분리 플래그로 드러냄.
+- **10/23 실제 개별 R2 × 10/22~23 공식 AUM** 4종 비공개 시나리오: UFO 29.1083%, NASA 59.3000%, WARP 2.3332%, ROKT 9.2585% → **44.65075점**. R21 **미승인 상대성숙도 44.81142점과 -0.16067** 차이. R23은 현재 252일 역사에 같은 AUM을 소급 대입하지 않음.
+- Node 실행 현황: R23/R21/R19/R18/R4 등 회귀 테스트 **9개 파일 PASS**; R23 자체 테스트는 100개 후보 무상한, 결측 제외, 미래 날짜·manifest 위조 차단, 가짜 단일 ETF 점수 없음.
+- **정책 검토 필수:** docs/THEME_ETF_ADAPTIVE_OR_R2_20261025.md의 2종 장기/단기 70:30→50:50은 승인됐지만 **3개 이상 ETF 최종 비중 미승인**. 따라서 AUM 비례 4종은 시뮬레이션일 뿐 finalBasketSelected=false, weightsApproved=false, rightsVerified=false, publicationAuthorized=false. 최종 우주+심해 혼합 ETF(ROKT) 고지/편입, 공개 데이터 파생권리도 별도 결론 필요.
+- **다음 작업:** 사용자에게 다종 신규 테마의 AUM-우선 가중 원칙과 장기/단기 보호 규칙의 우선순위를 숫자로 제출해 승인받는다. 승인 전 메인 병합/D1/Cloudflare/스케줄러/기존 9개 변경 금지, 유료 데이터 계약·무한 수집 금지. R23은 사용자 PC 재실행 필요 없음.
