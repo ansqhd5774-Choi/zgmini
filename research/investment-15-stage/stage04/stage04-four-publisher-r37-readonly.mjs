@@ -5,7 +5,7 @@
  * eligibility flags and averages are deliberately never read.
  * No DB, provider credentials, score, order, deployment, or scheduler writes.
  */
-import { readFile, writeFile } from 'node:fs/promises';
+import { appendFile, readFile, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -261,6 +261,42 @@ export function resultCsv(report) {
   return '\uFEFF' + out.map(r => r.map(csv).join(',')).join('\r\n') + '\r\n';
 }
 
+const logValue = value => String(value ?? 'NULL').replace(/[\r\n|=]/g, ' ').slice(0, 380);
+export function formatRowTxt(row, index, total) {
+  const lines = ['', `ROW=${index}/${total}`, `TYPE=${logValue(row.kind)}`,
+    `NAME=${logValue(row.name)}`, `MEAN_PCT=${row.provisional_mean ?? 'NULL'}`,
+    `MEAN_N=${row.n}`, `MEAN_STATE=${row.mean_state}`];
+  for (const r of row.results) {
+    const prefix = `MEDIA_${r.publisher.toUpperCase()}`;
+    lines.push(`${prefix}_STATUS=${r.status}`,
+      `${prefix}_CAGR_PCT=${r.growth_pct ?? 'NULL'}`,
+      `${prefix}_SCOPE=${r.scope ?? 'NULL'}`,
+      `${prefix}_PERIOD=${r.period ? `${r.period.start}-${r.period.end}` : 'NULL'}`,
+      `${prefix}_MS=${r.research_ms}`,
+      `${prefix}_OLLAMA_CALLS=${r.model_calls}`,
+      `${prefix}_URL=${logValue(r.source_url)}`,
+      `${prefix}_DISCOVERY=${r.discovery}`,
+      `${prefix}_ARITHMETIC_CHECK=${r.arithmetic_check}`,
+      `${prefix}_FAILURE=${logValue(r.reason)}`);
+  }
+  return lines.join('\r\n') + '\r\n';
+}
+
+export function formatSummaryTxt(report) {
+  const lines = ['', 'SUMMARY=FINAL', `ROWS=${report.total}`,
+    `ATTEMPTS=${report.providers.reduce((n, p) => n + p.attempts, 0)}`];
+  for (const p of report.providers) lines.push(
+    `PROVIDER_${p.id.toUpperCase()}_ATTEMPTS=${p.attempts}`,
+    `PROVIDER_${p.id.toUpperCase()}_DIRECT=${p.candidate}`,
+    `PROVIDER_${p.id.toUpperCase()}_PROXY=${p.proxy}`,
+    `PROVIDER_${p.id.toUpperCase()}_FAILED=${p.failed}`,
+    `PROVIDER_${p.id.toUpperCase()}_TOTAL_MS=${p.total_ms}`,
+    `PROVIDER_${p.id.toUpperCase()}_AVG_MS=${p.avg_ms}`);
+  lines.push('STATUS=FINISHED_RESEARCH_ONLY',
+    'FINAL_CAGR_VERIFIED=NO_ARITHMETIC_AND_SCOPE_REVIEW_PENDING');
+  return lines.join('\r\n') + '\r\n';
+}
+
 export async function runCli(args = process.argv.slice(2)) {
   const all = args.includes('--all');
   const match = args.find(a => /^--limit=\d+$/.test(a));
@@ -268,19 +304,32 @@ export async function runCli(args = process.argv.slice(2)) {
   if (limit <= 0) throw Error('LIMIT_MUST_BE_POSITIVE');
   const modelArg = args.find(a => a.startsWith('--model='));
   const model = modelArg?.slice('--model='.length) || 'gemma3:4b';
-  const matrixText = await readFile(MATRIX_PATH, 'utf8');
   const tag = limit === 21 ? 'FULL' : 'PILOT_' + limit;
   const stem = join(HERE, `R37_${tag}_FOUR_MEDIA_OLLAMA_RESULT`);
+  const txtPath = stem + '.txt';
+  await writeFile(txtPath, [
+    'REPORT=STAGE04_R37_FOUR_PUBLISHER_OLLAMA_READONLY',
+    `STARTED_AT=${new Date().toISOString()}`,
+    `MODEL=${logValue(model)}`, `SCOPE=${limit}_ROWS_X_4_PUBLISHERS`,
+    'SOURCE=LIVE_PUBLISHER_PAGES_NOT_SAVED_CAGR',
+    'STATE=RUNNING', 'PUBLICATION=NONE', 'DB_AND_SCORES_UNCHANGED=YES',
+    'NOTE=AVERAGES_ARE_PROVISIONAL_ARITHMETIC_UNCHECKED', '',
+  ].join('\r\n'), 'utf8');
+  console.log('RESULT_TXT=' + txtPath);
   const checkpoint = [];
+  try {
+  const matrixText = await readFile(MATRIX_PATH, 'utf8');
   const result = await researchR37({ matrixText, model, limit, onRow: async (r, i, total) => {
     console.log(`${i}/${total} ${r.kind} ${r.name} ${r.results.map(x => x.publisher + ':' + (x.growth_pct ?? x.reason)).join(' | ')} MEAN=${r.provisional_mean ?? 'NULL'} N=${r.n}`);
     checkpoint.push(r);
+    await appendFile(txtPath, formatRowTxt(r, i, total), 'utf8');
     await writeFile(stem + '.progress.json', JSON.stringify({
       state: 'RUNNING', completed: i, total, rows: checkpoint,
     }, null, 2), 'utf8');
   } });
   await writeFile(stem + '.json', JSON.stringify(result, null, 2), 'utf8');
   await writeFile(stem + '.csv', resultCsv(result), 'utf8');
+  await appendFile(txtPath, formatSummaryTxt(result), 'utf8');
   await writeFile(stem + '.progress.json', JSON.stringify({
     state: 'FINISHED_RESEARCH_ONLY', completed: result.total, total: limit,
     result_json: stem + '.json', result_csv: stem + '.csv',
@@ -290,6 +339,11 @@ export async function runCli(args = process.argv.slice(2)) {
   console.log('RESULT_JSON=' + stem + '.json');
   console.log('STATUS=RESEARCH_ONLY_ARITHMETIC_NOT_FULLY_VERIFIED');
   return result;
+  } catch (error) {
+    await appendFile(txtPath, '\r\nSTATUS=FAILED\r\nFATAL=' +
+      logValue(error?.message || error) + '\r\n', 'utf8');
+    throw error;
+  }
 }
 
 if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
