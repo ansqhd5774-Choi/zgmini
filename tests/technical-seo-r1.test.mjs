@@ -43,6 +43,19 @@ test('economic indicator guide shares the sector collapsible header and retains 
   for(const route of ['/guides/cpi-pce-release/','/guides/fomc/','/recession/']) assert.ok(copy.includes(route));
 });
 
+test('risk indicator guide shares the sector collapsible header and retains its links',()=>{
+  const page=read('app/risk-indicators/page.tsx');
+  const guide=read('components/investor-search-guide.tsx');
+  const copy=read('lib/investor-search-content.ts');
+  assert.match(page,/<InvestorSearchGuide id="investor-search-risk-hub" copy=\{RISKHUB_INVESTOR_SEARCH\} collapsible\/>/);
+  assert.match(guide,/<details className="group/);
+  assert.match(guide,/<summary className="flex min-h-10/);
+  assert.match(guide,/<BookOpen size=\{16\}/);
+  assert.match(guide,/<ChevronsDown size=\{16\}/);
+  assert.match(copy,/"heading": "미국 증시 위험을 함께 살펴보기"/);
+  for(const route of ['/fear-greed/usa/','/economic-indicators/','/guides/fear-greed-buying/']) assert.ok(copy.includes(route));
+});
+
 test('market details share WebPage JSON-LD and related links are capped at four',()=>{
   const notes=read('app/detail-investor-notes.tsx');
   const guide=read('app/detail-reading-guide.tsx');
