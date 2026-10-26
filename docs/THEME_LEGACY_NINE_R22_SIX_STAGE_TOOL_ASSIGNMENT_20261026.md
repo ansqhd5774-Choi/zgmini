@@ -3,7 +3,7 @@
 - 확정일: 2026-10-26 (사용자 승인: “브랜치에 반영해라”)
 - 적용 브랜치: `codex/theme-fear-greed-integration-20261025`
 - 브랜치 통합: 2026-10-26 사용자 지시. 이전 `research/theme-nine-r2-shadow-20261026`는 **과거 연구 이력**이며 이후 신규 작업·수정은 하지 않는다.
-- 상태: `TOOL_PLAN_APPROVED / R23_STAGE1_PC_64_OF_64_COMPLETE / R24_STAGE2_PC_AUDIT_COMPLETE / R25_STAGE3_PC_RESULT_AUDITED / R26_STAGE4_OFFICIAL_CENSUS_63_OF_63 / R32_STAGE5_UPLOADED_JSON_PREFLIGHT_PASS / R32_STAGE5_PC_PREFLIGHT_PASS / R32_STAGE5_CALCULATOR_TEST_PASS / R32_STAGE5_AGGREGATION_PENDING / SHADOW_ONLY`
+- 상태: `TOOL_PLAN_APPROVED / R23_STAGE1_PC_64_OF_64_COMPLETE / R24_STAGE2_PC_AUDIT_COMPLETE / R25_STAGE3_PC_RESULT_AUDITED / R26_STAGE4_OFFICIAL_CENSUS_63_OF_63 / R32_STAGE5_UPLOADED_JSON_PREFLIGHT_PASS / R32_STAGE5_PC_PREFLIGHT_PASS / R32_STAGE5_PRIVATE_LOCAL_252D_PASS / R32_STAGE5_PC_SHADOW_PENDING / R32_STAGE6_SHADOW_PENDING / NO_PUBLICATION`
 - 최상위 적용: 10번째 우주·위성 R29·R32 기존 계산 계약, R19 3개 O/X 결과, R20 후보 승인 명단. 본 문서는 **도구·실행 담당·작업 순서만 확정**하며 산식 자체를 변경하지 않는다.
 
 ## 1. 확정 범위
@@ -45,7 +45,7 @@
 
 ## 5. 실행 순서와 승인
 
-1. 최초 R22 확정 시점에는 **도구 배정 문서 반영만** 완료했다. 이후 사용자 승인으로 R23 1단계 수집기 코드·모의 테스트를 준비했다. 2026-10-27 PC에서 R23 단계 1 가격 수집(ETF 63종 + SPY 64/64, 원본 121개)과 R24 단계 2 읽기 전용 감사(428,701개 가격 행, SPY 956세션, 최신 252세션 48/64종 충족)가 완료됐다. 16종은 최신 252세션 중 미관측 날짜가 있고, LLMA(15)·RBTX(3)는 40세션 미달이다. 단계 3 계산기는 기존 R2 산식·NY 종가 대용 선택 함수를 원문 그대로 번들링하여 구현했고, 64종 모의 SHA/R24/R25 연동 테스트를 통과했다. 2026-10-27 사용자 PC R25 계산 결과를 TXT/전체 JSON/R24 원본 요약과 교차 검증하여 PASS 했다(최신일 45/63종 점수, 장마감 프록시 실세션 40 미달 7종). 단계 4 발행사 공식 AUM 출처·수치·날짜 조사는 63/63종 완료했다. 그중 42종만 2026-10-23 기준, 나머지 21종은 과거 날짜이므로 현재 일자의 R32 비중 입력 완성으로 간주하지 않는다. 단계 5의 업로드된 R25 JSON 읽기 전용 사전점검은 PASS(최신 45/63, 전체 실측 점수-날짜 10,842건)했고, 수정된 CMD의 사용자 Windows PC 실제 사전점검도 PASS다. **실제 가중 합산은 PENDING**이며, 기준일이 과거인 공식 AUM 21종의 처리 기준이 미확정이다.
+1. 최초 R22 확정 시점에는 **도구 배정 문서 반영만** 완료했다. 이후 사용자 승인으로 R23 1단계 수집기 코드·모의 테스트를 준비했다. 2026-10-27 PC에서 R23 단계 1 가격 수집(ETF 63종 + SPY 64/64, 원본 121개)과 R24 단계 2 읽기 전용 감사(428,701개 가격 행, SPY 956세션, 최신 252세션 48/64종 충족)가 완료됐다. 16종은 최신 252세션 중 미관측 날짜가 있고, LLMA(15)·RBTX(3)는 40세션 미달이다. 단계 3 계산기는 기존 R2 산식·NY 종가 대용 선택 함수를 원문 그대로 번들링하여 구현했고, 64종 모의 SHA/R24/R25 연동 테스트를 통과했다. 2026-10-27 사용자 PC R25 계산 결과를 TXT/전체 JSON/R24 원본 요약과 교차 검증하여 PASS 했다(최신일 45/63종 점수, 장마감 프록시 실세션 40 미달 7종). 단계 4 발행사 공식 AUM 출처·수치·날짜 조사는 63/63종 완료했다. 그중 42종만 2026-10-23 기준, 나머지 21종은 과거 날짜다. 2026-10-27 사용자 승인에 따라 이 21종도 **공식 발행사 기준일을 그대로 보존하는 비공개 계산**에 한정해 사용하며, 현재 일자 AUM이라고 재표기하지 않는다. 단계 5의 업로드된 R25 JSON 읽기 전용 사전점검은 PASS(최신 45/63, 전체 실측 점수-날짜 10,842건)했고, 수정된 CMD의 사용자 Windows PC 실제 사전점검도 PASS다. **사용자 제출 R25 실측 파일의 비공개 로컬 252일 합산은 9/9 테마 PASS**, 6개 파일 SHA 검증 단일 CMD 저장 완료. **사용자 Windows PC의 5단계 실행 로그와 6단계 그림자 검증은 PENDING**이다.
 2. 단계별 실행은 1→2→3 순으로 원자료와 개별 점수를 검증하고, 공식 AUM 조사(4)를 준비해 5·6에 입력한다. 입력이 부족하면 해당 부분을 PENDING/null로 기록한다.
 3. 변경안이나 신규 수집 도구가 필요하면 사유와 영향을 먼저 사용자에게 보고하고 승인받는다. 미승인 작업을 임의로 추가하지 않는다.
 4. 단계 6을 검증해도 공개 전환은 별도 사용자 승인 대상이다.
@@ -76,10 +76,19 @@
 - `%~dp0` 폴더 인수의 Windows 인용부호/종단 백슬래시 문제 가능성을 제거하기 위해 환경변수로 전달하는 개정 CMD를 해당 브랜치에 반영했다. 수정 후 모의 검증 5/5 PASS, 내장 세 파일 SHA readback PASS. 사용자 PC에서 제출한 개정판 TXT `THEME_NINE_R32_PREFLIGHT_RESULT_14715_833.txt`는 Node v24.19.0 / 내장 SHA PASS / R25 입력 검증 PASS / 읽기 전용 쓰기 0건으로 **정상 완료**했다.
 - 기존 ETF 후보, R25 실점수 JSON, 공식 AUM 출처와 기준일, 승인 산식, 원자료·DB·스케줄러·공개 배포를 변경하지 않았다.
 
-- 후속 상태: `R32_STAGE5_PC_PREFLIGHT_PASS / R32_STAGE5_AGGREGATION_PENDING / R32_STAGE6_SHADOW_PENDING`. 공식 AUM 증거 63건 가운데 42건만 2026-10-23 기준, 21건은 과거 기준일이다. 현재 AUM인 것처럼 간주하거나 산식의 가중치를 임의 변경하지 않는다. 최신 ETF 개별 점수 18건 결측은 0점 대체하지 않고 승인된 날짜별 유효 ETF 수 계약을 적용한다.
+- 후속 상태: `R32_STAGE5_PC_PREFLIGHT_PASS / R32_STAGE5_PRIVATE_LOCAL_PASS / R32_STAGE5_PC_SHADOW_PENDING / R32_STAGE6_SHADOW_PENDING`. 공식 AUM 63건 가운데 42건은 2026-10-23 기준, 21건은 더 오래된 발행사 기준일이다. 2026-10-27 사용자 승인에 따라 **날짜 표시 그대로 비공개 가중치에 사용**하되 현재 AUM으로 재표기하거나 30·90일 시차 배제 규칙을 만들지 않는다. ETF 개별 점수 18건 결측은 0점 대체하지 않는다.
 
-## 10. R32 가중 합산 코드 준비 (2026-10-27)
+## 10. R32 가중 합산 코드·CMD (2026-10-27)
 
-- 5단계 순수 계산 함수 및 승인 2-ETF R3 재사용 로직은 `scripts/pc-writer/theme-nine-r32-private-aggregate.mjs`로 지정 브랜치에 저장했다. 모의/입력거절 테스트 7/7 PASS.
-- 실제 63종 R25 데이터는 현재 AUM 기준일 불일치 21건에 의해 **중단되는 것이 안전 동작**이다. ETF를 제거·교체하거나 출처 날짜를 최신처럼 바꾸지 않는다.
-- `R32_STAGE5_AGGREGATION_PENDING` 및 6단계 비공개 그림자 검증 PENDING 유지. 사용자에게 최신 발행사 공시와 기존 날짜 수치 중 어느 것을 공식 가중치 입력으로 허용할지 확인 전에는 본계산 CMD 배포·실행·공개 전환을 하지 않는다.
+- 5단계 순수 계산 및 승인 2-ETF R3 재사용 코드를 `scripts/pc-writer/theme-nine-r32-private-aggregate.mjs`로 **지정 브랜치에 보존**했다. 정책 설정 `config/theme-nine-r32-dated-aum-approval.json`은 원래 공식 AUM 기준일을 보존해 사용하며 임의 시차 상한 없이 **비공개 전용**으로 적용한다.
+- 테스트: 로컬 **9 PASS / 0 FAIL / 1 SKIP**. SKIP 1건은 현재 실행 환경에서 Node 자식 프로세스 생성 `EPERM`으로 실행하지 못한 Windows CLI 경로이며 PC에서 확인할 항목이다.
+- 사용자 제출 실제 R25 JSON으로 9개 테마 각각 **252거래일** 비공개 계산 확인(최신값과 근거는 [R32 문서 9절](THEME_LEGACY_NINE_R32_PRIVATE_PREFLIGHT_20261027.md) 참조). 21종 공식 AUM의 과거 기준일을 공개 일자로 바꾼 적이 없다.
+- 6개 구성 파일 SHA 검증 내장 단일 `scripts/pc-writer/THEME_NINE_R32_PRIVATE_AGGREGATE.cmd` 저장 완료. 사용자 Windows PC CMD 실행 **미검증**. 5단계 PC 결과 TXT/JSON을 받은 다음 6단계 252일 그림자 비교에 착수한다. 공개 데이터·D1·산식·DB·스케줄러·UI는 변경하지 않는다.
+
+
+## 11. 후속 실행 체크리스트
+
+1. 사용자 PC의 **R25 전체 JSON** 파일과 `THEME_NINE_R32_PRIVATE_AGGREGATE.cmd`를 같은 폴더에 둔다(복수 JSON이면 사용할 파일을 CMD로 끌어놓기).
+2. Windows CMD 실행 후 같은 폴더에 생성된 `THEME_NINE_R32_PRIVATE_RESULT_*.txt`와 `THEME_NINE_R32_PRIVATE_SHADOW_*.json`을 제출한다.
+3. TXT의 구성 파일 SHA·R25 입력 SHA·9테마×252일·참여 ETF 수·공식 AUM 기준일·0점 대체/결측 미발생 계약을 대조한다. 실제 PC 실행 전에는 5단계 PC PASS로 표시하지 않는다.
+4. 결과가 일치하면 6단계 비공개 그림자 검증(기존 공개 기록과 1M/3M/1Y, 날짜별 가중치·결측·연속성)을 수행한다. 공개 전환, D1, DB, 스케줄러, UI 변경에는 별도의 사용자 승인이 필요하다.
