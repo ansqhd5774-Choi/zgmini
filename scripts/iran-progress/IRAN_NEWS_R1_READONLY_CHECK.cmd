@@ -1,0 +1,20 @@
+@echo off
+setlocal
+set "ZG_IRAN_R1_DIR=%~dp0"
+cd /d "%ZG_IRAN_R1_DIR%"
+
+node "%ZG_IRAN_R1_DIR%news-display-discover-r1.mjs" --preview > "%ZG_IRAN_R1_DIR%IRAN_NEWS_DISCOVERY_R1_RESULT.txt" 2>&1
+set "ZG_IRAN_R1_DISCOVERY_EXIT=%ERRORLEVEL%"
+
+node "%ZG_IRAN_R1_DIR%news-display-maintenance-r1.mjs" --dry-run > "%ZG_IRAN_R1_DIR%IRAN_NEWS_RETENTION_R1_RESULT.txt" 2>&1
+set "ZG_IRAN_R1_RETENTION_EXIT=%ERRORLEVEL%"
+
+echo DISCOVERY_EXIT=%ZG_IRAN_R1_DISCOVERY_EXIT%
+echo RETENTION_DRY_RUN_EXIT=%ZG_IRAN_R1_RETENTION_EXIT%
+echo Result files:
+echo %ZG_IRAN_R1_DIR%IRAN_NEWS_DISCOVERY_R1_RESULT.txt
+echo %ZG_IRAN_R1_DIR%IRAN_NEWS_RETENTION_R1_RESULT.txt
+
+if not "%ZG_IRAN_R1_DISCOVERY_EXIT%"=="0" exit /b 1
+if not "%ZG_IRAN_R1_RETENTION_EXIT%"=="0" exit /b 1
+exit /b 0
