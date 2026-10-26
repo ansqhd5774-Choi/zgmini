@@ -52,7 +52,7 @@ const cmd = [
   'if errorlevel 1 goto :node_failed',
   `"%R32_NODE%" -e "${js}" >>"%R32_RESULT%" 2>&1`,
   'if errorlevel 1 goto :unpack_failed',
-  '"%R32_NODE%" "%R32_STAGE_DIR%\\theme-nine-r32-readonly-preflight.mjs" --preflight "%R32_FOLDER%" "%R32_SELECTED%" >>"%R32_RESULT%" 2>&1',
+  '"%R32_NODE%" "%R32_STAGE_DIR%\\theme-nine-r32-readonly-preflight.mjs" --preflight >>"%R32_RESULT%" 2>&1',
   'set "R32_EXIT=%ERRORLEVEL%"',
   'goto :cleanup',
   ':node_failed',
