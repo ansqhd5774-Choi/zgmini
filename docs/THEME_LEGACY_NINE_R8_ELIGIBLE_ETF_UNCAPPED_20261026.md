@@ -74,7 +74,12 @@
 - 모든 적격 ETF 신규 바스켓의 252일 검증: 미완료
 - 공개 전환: 미승인/미착수
 
-## 5. 참조
+## 5. 진행 중인 실조사 증거
+- [R9: 발행사 공식 1차 탐색 — 신규 23개 후보](THEME_LEGACY_NINE_R9_ETF_ISSUER_DISCOVERY_20261026.md)
+- [R10: 추가 발행사 2차 탐색 — 신규 14개 후보](THEME_LEGACY_NINE_R10_ETF_ISSUER_DISCOVERY_20261026.md)
+- **신규 후보 총 37개는 사용권·가격 수집·AUM 미검증 후보**다. 합격 ETF 37개 또는 ETF 목표 37개로 해석하지 않는다. 후보 조사·적격성 판정은 계속한다.
+
+## 6. 참조
 - 기존 운영: AGENTS.md, docs/THEME_DATA_OPERATIONS.md, config/theme-data-registry.json
 - 승인 신규 ETF 적응형: docs/THEME_ETF_ADAPTIVE_OR_R2_20261025.md
 - 10번째 실증·R32: docs/THEME_SPACE_SATELLITE_R32_HISTORY_CONTINUITY.md, docs/THEME_SPACE_R22_FOUR_ETF_OVERLAP_AUM_20261026.md
