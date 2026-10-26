@@ -116,7 +116,7 @@ export default function EarningsRiskOnlyPanel(){
   </section>
   <section className="inflation-indicator-section earnings-r2-indicators" aria-labelledby="earnings-risk-factor-title">
    <header><div><p className="cnn-eyebrow">EARNINGS RECESSION RISK FACTORS</p>
-    <h2 id="earnings-risk-factor-title">실적 침체 진단 구성지표 (4개)</h2></div>
+    <h2 id="earnings-risk-factor-title">실적 침체 분석 지표</h2></div>
     <p>8대 위험 지표 전용 진단 구성요소입니다. 확인되지 않은 값과 과거 비교는 —로 표시합니다.</p>
    </header>
    <div className="inflation-table-wrap earnings-r2-table-wrap"><table className="inflation-indicator-table earnings-r2-table">
