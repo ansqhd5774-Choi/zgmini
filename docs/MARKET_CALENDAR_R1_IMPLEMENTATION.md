@@ -96,6 +96,12 @@
 - `MARKET_CALENDAR_R7_SHADOW.cmd` + `scripts/pc-writer/market-calendar-r7-raw-shadow.mjs` + `lib/release-calendar.mjs` 묶음을 준비했다. 기존 PC SQLite의 4개 공식 소스 raw input **저장본만** 읽고 승인 브랜치의 R2 확대 파서를 가상 적용한다. 원본/후보 건수·소스별 증가·중복·변경 지문을 비교한다. API 원천 호출·DB/설정/등록 작업 수정·재수집·계산·게시·소스 전환은 전혀 하지 않는다.
 - fixture SQLite 테스트(저장 원문 4개 source, 정상/누락 케이스) 및 R6/기존 캘린더 테스트 5개 파일 모두 PASS. 실제 PC shadow 결과는 아직 미수신이므로 확대 후보 수를 PC 실측 PASS로 단정하지 않는다. **운영 source 변경은 별도 승인 SHA·영향 검토 없이 진행하지 않는다.**
 
+### R8 — R7 실측: 기존 일정 보존 차이 추적 (2026-10-27)
+- R7 사용자 PC 실측(`2026-10-26T18:14:23.790Z`): 모든 4개 저장 원본 `PARSED`, 기존 공개 저장본 133건(BLS 25, BEA 71, Fed 24, Census 13) 대비 확대 파서 후보 **518건**(BLS 313, BEA 168, Fed 24, Census 13). 중복 키 **0건**, 신규 키 **388건**, 기존에만 존재하는 키 **3건**, 순증가 **385건**. 해당 후보는 `CANDIDATE_NOT_PUBLISHED`이며 운영 반영이 아니다.
+- 기존에만 있던 **3건의 원인**은 R7 요약 로그만으로 확정할 수 없다. R8 `MARKET_CALENDAR_R8_PRESERVATION.cmd`는 동일한 저장 DB를 **읽기 전용**으로 열고 구식/확장 이벤트의 `source:id:date` 차이 3건을 제목·날짜 기준으로 분류한다. 동일 날짜+제목인데 ID만 달라졌는지, 일정 날짜가 바뀌었는지, 새 저장 원본에서 일치 항목이 없는지 구분해 보여준다. 후보의 연도별 분포와 다음 90일 추가 건수도 집계한다.
+- R8 실행에는 `MARKET_CALENDAR_R8_PRESERVATION.cmd`, `scripts/pc-writer/market-calendar-r8-preservation-audit.mjs`, `lib/release-calendar.mjs` 세 파일을 동일한 폴더 계층으로 배치한다. 결과는 `MARKET_CALENDAR_R8_PRESERVATION_RESULT.txt` 한 건이며, 원문 ICS·비밀값·PC 경로를 출력하지 않는다. PC 원자료/API/DB/설정/작업 등록/승인 source/게시본은 **일절 수정하지 않는다**.
+- 기존 키 3건의 탈락 사유를 확인하고 보존 위험 여부를 분류하기 전에는 운영 PC 파서·설정·스케줄러를 변경하거나 게시하지 않는다. 별도 source SHA 적용 검증 및 로컬 저장→게시→D1/API/UI 재조회 Gate가 남아 있다.
+
 ## SEO 사전 점검 (docs/SEO_SEARCH_APPEARANCE_REVIEW.md)
 
 - 검색 의도: 투자자가 미국 경제지표와 향후 기업 실적 발표 일정을 날짜별로 조회. 현재 실제 제공 범위는 공식 미국 경제지표에 국한.
