@@ -187,14 +187,14 @@ test('dashboard hides the two notices while detail page retains provisional dash
  assert.doesNotMatch(sectorDetail,/className="zg-sfg-detail"/);
  assert.match(sectorDetail,/aria-label="11개 섹터 투자심리 순위"/);
  assert.match(sectorDetail,/onClick=\{\(\)=>toggle\(sector\.id\)\}/);
- assert.match(sectorDetail,/const \[compareDays,setCompareDays\]=useState\(365\)/);
+ assert.match(sectorDetail,/const \[compareDays,setCompareDays\]=useState\(90\)/);
 });
 
-test('sector comparison defaults to the current top three and keeps rank rows and legend toggles in sync',()=>{
+test('sector comparison defaults to the highest-ranked sector and keeps rank rows and legend toggles in sync',()=>{
  const detail=fs.readFileSync('app/sector-fear-greed/sector-detail-charts.tsx','utf8');
  const css=fs.readFileSync('app/sector-fear-greed/sector-detail.css','utf8');
  assert.match(detail,/const rankedSectors=\(rows:SectorSentimentPoint\[\]\)=>/);
- assert.match(detail,/setVisible\(new Set\(rankedSectors\(history\)\.slice\(0,3\)\.map\(sector=>sector\.id\)\)\)/);
+ assert.match(detail,/setVisible\(new Set\(rankedSectors\(history\)\.slice\(0,1\)\.map\(sector=>sector\.id\)\)\)/);
  assert.match(detail,/className="zg-sfg-rank-row" key=\{sector\.id\} aria-pressed=\{visible\.has\(sector\.id\)\}/);
  assert.match(detail,/onClick=\{\(\)=>toggle\(sector\.id\)\}/);
  assert.match(detail,/aria-pressed=\{visible\.has\(sector\.id\)\} onClick=\{\(\)=>toggle\(sector\.id\)\}/);
