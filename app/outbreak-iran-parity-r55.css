@@ -61,7 +61,7 @@
  padding:12px 14px;min-width:0;height:auto
 }
 .ob-events .ob55-iran-parity .ob54-chart-head{margin:0 0 8px}
-.ob-events .ob55-iran-parity .ob54-trend-svg{height:auto;width:100%;min-height:180px}
+.ob-events .ob55-iran-parity .ob54-market-chart{height:220px;width:100%;min-width:0}
 .ob-events .ob55-iran-parity .ob54-right{
  display:flex;flex-direction:column;gap:9px;min-width:0
 }
@@ -116,5 +116,5 @@
  .ob-events .ob55-iran-parity .ob54-kpis .ob53-asof strong{font-size:15px}
  .ob-events .ob55-iran-parity .ob54-right{display:flex;flex-direction:column}
  .ob-events .ob55-iran-parity .ob55-relations{width:100%}
- .ob-events .ob55-iran-parity .ob54-trend-svg{min-height:160px}
+ .ob-events .ob55-iran-parity .ob54-market-chart{height:180px}
 }
