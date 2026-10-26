@@ -24,39 +24,70 @@ function articleUrl(url){
   u.hash='';u.search='';return u.href;
  }catch{return null;}
 }
-function feedArticle(block,now){
+function feedArticle(block){
  const title=xmlText(block.match(/<title\b[^>]*>([\s\S]*?)<\/title>/i)?.[1]??'');
  const preferred=(block.match(/<link\b[^>]*>/gi)??[]).find(tag=>!/\brel\s*=\s*["'](?:self|edit|enclosure)["']/i.test(tag));
  const rawUrl=preferred?.match(/\bhref\s*=\s*["']([^"']+)["']/i)?.[1]
    ??block.match(/<link\b[^>]*>([^<]+)<\/link>/i)?.[1]??'';
  const sourceUrl=articleUrl(xmlText(rawUrl));
- // Atom <updated> is a revision timestamp, never the article publication date.
- const rawDate=xmlText(block.match(/<(?:published|pubDate)\b[^>]*>([^<]+)<\/(?:published|pubDate)>/i)?.[1]??'');
- const time=Date.parse(rawDate);
- if(!sourceUrl||!title||title.length>500||!Number.isSafeInteger(time)||time>now)return null;
- const {start,end}=kstDayWindow(now,NEWS_PC_RETENTION_DAYS);
- const publicationDay=kstNewsDay(time);
- if(publicationDay<start||publicationDay>end)return null;
- const summaryHint=xmlText(block.match(/<(?:summary|description)\b[^>]*>([\s\S]*?)<\/(?:summary|description)>/i)?.[1]??'').slice(0,2000);
- if(!/\b(?:iran|iranian|tehran|irgc|hormuz)\b/i.test(title+' '+summaryHint))return null;
- return {source:'GOV.UK',sourceUrl,title,publishedAt:new Date(time).toISOString(),
-  rightsVerified:false,displayEligible:false,reviewReason:'INDIVIDUAL_RIGHTS_SUMMARY_IMPACT_PENDING'};
+ if(!sourceUrl||!title||title.length>500)return null;
+ // GOV.UK Atom entries may have <updated> but no <published>.
+ // The date here is discovery metadata ONLY, never a publishable date.
+ const rawUpdated=xmlText(block.match(/<updated\b[^>]*>([^<]+)<\/updated>/i)?.[1]??'');
+ const time=Date.parse(rawUpdated);
+ return {source:'GOV.UK',sourceUrl,feedTitle:title,
+  feedUpdatedAt:Number.isSafeInteger(time)?new Date(time).toISOString():null};
 }
-export function parseGovUkNewsCandidates(xml,{now=Date.now()}={}){
+export function parseGovUkNewsCandidates(xml){
  if(typeof xml!=='string'||xml.length>1000000||/<!DOCTYPE|<!ENTITY/i.test(xml)||!/<(?:feed|rss)\b/i.test(xml))throw Error('NEWS_DISCOVERY_FEED_INVALID');
  const found=new Map();
  for(const block of xml.match(/<(?:entry|item)\b[^>]*>[\s\S]*?<\/(?:entry|item)>/gi)??[]){
-  const article=feedArticle(block,now);
+  const article=feedArticle(block);
   if(article){const previous=found.get(article.sourceUrl);
-   if(!previous||previous.publishedAt<article.publishedAt)found.set(article.sourceUrl,article);}
+   if(!previous||String(previous.feedUpdatedAt)<String(article.feedUpdatedAt))found.set(article.sourceUrl,article);}
  }
- return [...found.values()].sort((a,b)=>b.publishedAt.localeCompare(a.publishedAt)||a.sourceUrl.localeCompare(b.sourceUrl));
+ return [...found.values()].sort((a,b)=>String(b.feedUpdatedAt).localeCompare(String(a.feedUpdatedAt))||a.sourceUrl.localeCompare(b.sourceUrl));
+}
+export function govUkContentCandidate(feedItem,content,{now=Date.now()}={}){
+ if(!feedItem?.sourceUrl||!content||typeof content!=='object')return {status:'METADATA_INVALID'};
+ const expectedPath=new URL(feedItem.sourceUrl).pathname;
+ if(content.base_path!==expectedPath||content.withdrawn===true)return {status:'METADATA_INVALID'};
+ const timestamp=Date.parse(content.first_published_at??'');
+ // public_updated_at and Atom <updated> are explicitly NOT a fallback.
+ if(!Number.isSafeInteger(timestamp)||timestamp>now)return {status:'FIRST_PUBLICATION_UNVERIFIED'};
+ const {start,end}=kstDayWindow(now,NEWS_PC_RETENTION_DAYS);
+ const day=kstNewsDay(timestamp);
+ if(day<start||day>end)return {status:'OUTSIDE_30_DAY_WINDOW'};
+ const title=typeof content.title==='string'?content.title.trim():'';
+ const description=typeof content.description==='string'?content.description.trim():'';
+ if(!title||title.length>500)return {status:'METADATA_INVALID'};
+ const body=typeof content.details?.body==='string'?content.details.body:'';
+ if(!/\b(?:iran|iranian|tehran|irgc|hormuz)\b/i.test([title,description,body].join(' ')))return {status:'OUT_OF_SCOPE'};
+ return {status:'REVIEW_REQUIRED',item:{source:'GOV.UK',sourceUrl:feedItem.sourceUrl,
+  title,publishedAt:new Date(timestamp).toISOString(),sourceDescription:description.slice(0,300),
+  rightsVerified:false,displayEligible:false,reviewReason:'INDIVIDUAL_RIGHTS_SUMMARY_IMPACT_PENDING'}};
 }
 export async function discoverGovUkNewsCandidates({now=Date.now(),fetcher=fetch}={}){
  const response=await boundedRead(IRAN_GOVUK_NEWS_FEED,{fetcher,maxBytes:1000000});
  if(response.status!=='COLLECTED')throw Error('NEWS_DISCOVERY_SOURCE_FAILED');
- const candidates=parseGovUkNewsCandidates(response.body,{now});
- return {status:'REVIEW_REQUIRED',checkedAt:now,source:'GOV.UK',count:candidates.length,candidates};
+ const entries=parseGovUkNewsCandidates(response.body),candidates=[],counts={feedEntries:entries.length,apiChecked:0,apiFailed:0,old:0,outOfScope:0,unverified:0};
+ for(const entry of entries){
+  const apiUrl='https://www.gov.uk/api/content'+new URL(entry.sourceUrl).pathname;
+  try{
+   counts.apiChecked++;
+   const api=await boundedRead(apiUrl,{fetcher,maxBytes:4000000});
+   if(api.status!=='COLLECTED')throw Error('CONTENT_API_SOURCE_FAILED');
+   const assessed=govUkContentCandidate(entry,JSON.parse(api.body),{now});
+   if(assessed.item)candidates.push(assessed.item);
+   else if(assessed.status==='OUTSIDE_30_DAY_WINDOW')counts.old++;
+   else if(assessed.status==='OUT_OF_SCOPE')counts.outOfScope++;
+   else counts.unverified++;
+  }catch{counts.apiFailed++;}
+ }
+ candidates.sort((a,b)=>b.publishedAt.localeCompare(a.publishedAt)||a.sourceUrl.localeCompare(b.sourceUrl));
+ if(counts.apiChecked>0&&counts.apiFailed===counts.apiChecked)throw Error('NEWS_CONTENT_API_DISCOVERY_FAILED');
+ return {status:counts.apiFailed?'PARTIAL_REVIEW_REQUIRED':candidates.length?'REVIEW_REQUIRED':'NO_RECENT_CANDIDATES',
+  checkedAt:now,source:'GOV.UK',count:candidates.length,counts,candidates};
 }
 
 if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.url)){
