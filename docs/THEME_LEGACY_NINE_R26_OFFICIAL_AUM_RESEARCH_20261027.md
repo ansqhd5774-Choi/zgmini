@@ -2,7 +2,7 @@
 
 - 기준: 기존 R22 승인 6단계 중 4단계. 기존 ETF 63종 후보를 변경하지 않는다.
 - 검색 시작: 2026-10-27 01:10 KST, 무료 공개 발행사 웹 페이지만 이용.
-- 검증 상태: **3/63종 공식 수치 확보**. 4종 발행사 페이지를 찾았으나 AUM 직접 확인 대기. 나머지 56종 아직 확인 전. 5단계 합산 **실행 금지 상태**.
+- 검증 상태: **8/63종 공식 수치 확보** (최신일·과거 공식 공시일 구분). 로봇 4종 아직 확인 대기. 나머지 51종 아직 확인 전. 5단계 합산 **실행 금지 상태**.
 - 통화: USD. AUM은 공식 발행사 수치이며 날짜별 역사 자산값은 아니다. 공식 사이트 수치 반올림 여부를 기록한다.
 
 ## 1. 로봇·자동화 테마 — 발행사 자료
@@ -17,7 +17,19 @@
 | HUMN | — | — | `PENDING`: 발행사 펀드 페이지 `AUM` 항목이 빈칸으로 반환됨 | [Roundhill HUMN](https://www.roundhillinvestments.com/etf/humn/) |
 | CBOT | — | — | `PENDING`: 발행사 펀드 페이지 확보, 공식 AUM 값은 아직 확인되지 않음 | [Corgi CBOT](https://corgiinvest.com/cbot) |
 
-## 2. 운영 규칙
+## 2. 클라우드·SaaS 테마 — 발행사 자료
+
+| ETF | AUM (USD) | 기준일 | 확인 결과 | 직접 출처 |
+| --- | ---: | --- | --- | --- |
+| SKYY | **3,532,667,040** | 2026-10-23 | `OFFICIAL_EXACT` | [First Trust SKYY 공식 펀드 요약](https://www.ftportfolios.com/Retail/Etf/EtfSummary.aspx?Ticker=SKYY) |
+| CLOU | 약 **428,300,000** | 2026-10-23 | `OFFICIAL_ROUNDED` (발행사 $428.30M 표시) | [Global X CLOU](https://www.globalxetfs.com/funds/clou) |
+| WCLD | 약 **342,415,760** | 2026-10-23 | `OFFICIAL_DISPLAY_PRECISION` (발행사 'Total Assets (000) $342,415.76', $10 단위 표시; 실제 완전 정수 정밀도 아님) | [WisdomTree 미국 상장 WCLD](https://www.wisdomtree.com/us/products/megatrends/wcld) |
+| FCLD | 약 **144,700,000** | 2026-08-31 | `OFFICIAL_ROUNDED_OLD` (Fidelity $144.7M; 최신치 확보 전까지 과거 관측으로 유지) | [Fidelity US ETF 목록](https://institutional.fidelity.com/advisors/investment-solutions/performance/fidelity-etfs) |
+| CLOD | **1,541,624** | 2026-03-31 | `OFFICIAL_EXACT_OLD` (Themes 발행사 제출 반기보고서; 2026-10 현재치 아님) | [SEC 수록 Themes CLOD 발행사 공시](https://www.sec.gov/Archives/edgar/data/1976322/000113322826008958/R2.htm) |
+
+**시차 주의:** FCLD/CLOD는 자료가 없는 것이 아니라 확인 가능한 **공식 수치가 오래된 상태**다. 2026-10-23의 다른 ETF AUM과 시간동기된 값으로 취급하지 않으며, R32 가중 입력의 최신성 판정은 후속 확인 때 결정한다.
+
+## 3. 운영 규칙
 
 1. 데이터 수치가 외부 포털에 보이더라도 **발행사 자료로 확인되지 않으면 AUM을 채우지 않는다**.
 2. 공식 2026-10-23 AUM과 2026-10-21 AUM을 동일 날짜 현재 수치로 위장하지 않는다. 각 수치의 실제 기준일을 유지한다.
@@ -25,8 +37,8 @@
 4. 새 API/유료 경로/자체 추정 AUM/과거 날짜별 가상 AUM을 도입하지 않는다.
 5. **4단계 전체 63종 공식 자료 조사 완료 전** 이 파일을 R32 합산용 완성 입력으로 사용하지 않는다. 추가 확인 없이 R26을 공개 자료로 게시하지 않는다.
 
-## 3. 차기 작업
+## 4. 차기 작업
 
-- 미확인 4종의 공식 자산값 확인 및 나머지 56종 공식 발행사 페이지 순차 조사.
+- 미확인 로봇 4종의 공식 자산값 확인 및 나머지 51종 공식 발행사 페이지 순차 조사. FCLD/CLOD 신선한 공식 값 추가 확인.
 - 발행사 공식 사실확인 날짜·USD 금액·원문 URL·검증 상태를 ETF별 축적.
 - 4단계 전수 조사 후 5단계 R32 가중 계산기에 입력하고 252일 그림자 검증을 수행한다.
