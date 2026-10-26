@@ -1,6 +1,7 @@
 "use client";
 import {useEffect,useState} from "react";
 import {CalendarDays,ChevronDown,Info,Lightbulb,ShieldAlert,Swords,TrendingUp} from "lucide-react";
+import {MarketFearGreedChart} from "./market-fear-greed-chart";
 import "./outbreak-beginner-iran-r54.css";
 import "./outbreak-iran-parity-r55.css";
 
@@ -35,28 +36,39 @@ function Trend({view}:{view:any}){
  const end=typeof view.chartEndAt==="number"&&Number.isFinite(view.chartEndAt)?view.chartEndAt:series.at(-1)?.at??null;
  const start=end===null?null:end-13*DAY_MS;
  const points=start===null?[]:series.filter(p=>Number.isFinite(p.at)&&p.at>=start&&p.at<=end!&&typeof p.value==="number"&&Number.isFinite(p.value)).sort((a,b)=>a.at-b.at);
- const left=mobile?36:42,width=mobile?284:606,right=left+width;
- const x=(at:number)=>left+(start===null?0:(at-start)/(13*DAY_MS)*width);
- const y=(v:number)=>185-v*1.57;
- const color=band(view.score).color;
- const ticks=start===null?[]:(mobile?[0,4,8,13]:[0,2,4,6,8,10,13]).map(i=>start+i*DAY_MS);
- const date=(at:number)=>new Date(at).toISOString().slice(5,10).replace("-",".");
+ const dateKey=(at:number)=>new Date(at).toISOString().slice(0,10);
+ const date=(value:string)=>value.slice(5).replace("-",".");
  const carried=(p:Point)=>p.carried===true||p.phase==="NO_NEW_RECORDED_CHANGE"||p.phase==="EARLY_WINDOW_NO_DATED_REPORT";
+ // Calendar slots without a stored point remain null; provisional estimates retain their original values.
+ const observed=new Map(points.map(p=>[dateKey(p.at),p.value!]));
+ const calendar=start===null?[]:Array.from({length:14},(_,day)=>dateKey(start+day*DAY_MS));
+ const chartData=calendar.map(day=>({date:day,score:observed.get(day)??null}));
+ const axisTicks=(mobile?[0,4,8,13]:[0,2,4,6,8,10,13]).map(i=>calendar[i]).filter((day):day is string=>Boolean(day));
+ const axisLabels=new Map(axisTicks.map(day=>[day,date(day)]));
+ // Preserve each original segment's real-change/unchanged-carried distinction.
+ // A gap over 1.5 calendar days must not be connected or interpolated.
+ const lineSegments=points.slice(1).flatMap((p,i)=>{
+  const prev=points[i];
+  if(p.at-prev.at>DAY_MS*1.5)return [];
+  return [{from:{date:dateKey(prev.at),score:prev.value!},to:{date:dateKey(p.at),score:p.value!},dashed:carried(p)}];
+ });
+ const carriedDates=new Set(points.filter(carried).map(p=>dateKey(p.at)));
  const latest=points.at(-1);
  return <section className="ob-panel ob54-trend" aria-labelledby="ob54-chart-title">
   <div className="ob54-chart-head"><h3 id="ob54-chart-title"><TrendingUp size={16} aria-hidden="true"/> 14일 추이</h3><span>잠정 추정 · 저장된 흐름</span></div>
-  {start!==null&&points.length>0?<svg className="ob54-trend-svg" viewBox={mobile?"0 0 350 232":"0 0 700 232"} role="img" aria-label={"최근 14일 종전 진전도 잠정 흐름, 표시된 "+points.length+"개 날짜"}>
-   <title>실제 과거 확정 관측값이 아닌 저장 자료 기반 추정 흐름. 새 변화 미반영은 점선</title>
-   {[0,50,100].map(v=><g key={v}><line x1={left} x2={right} y1={y(v)} y2={y(v)} stroke="#60758c" strokeDasharray="4 6" opacity=".7"/>
-    <text x={left-12} y={y(v)+4} fontSize="11" fill="#b3c5d5" textAnchor="end">{v}</text></g>)}
-   {points.slice(1).map((p,i)=>{const prev=points[i];if(p.at-prev.at>DAY_MS*1.5)return null;
-    return <line key={p.at} x1={x(prev.at)} y1={y(prev.value!)} x2={x(p.at)} y2={y(p.value!)} stroke={color}
-     strokeWidth="2.7" strokeLinecap="round" strokeDasharray={carried(p)?"5 5":undefined} vectorEffect="non-scaling-stroke">
-     <title>{date(p.at)+" · "+p.value!.toFixed(1)+"점"+(carried(p)?" (변화 미확인·이월)":" (변화 반영)")}</title></line>;})}
-   {latest&&<g><circle cx={x(latest.at)} cy={y(latest.value!)} r="5" fill={color} stroke="#ffd1d1" strokeWidth="1.5"/>
-    <text x={x(latest.at)-6} y={y(latest.value!)-13} textAnchor="end" fontSize="14" fontWeight="800" fill={color}>{latest.value!.toFixed(1)}</text></g>}
-   {ticks.map(t=><text key={t} x={x(t)} y="220" textAnchor="middle" fontSize="11" fill="#b3c5d5">{date(t)}</text>)}
-  </svg>:<div className="ob54-empty" role="status">14일 구간의 저장된 점수가 없습니다. 임의로 생성하지 않습니다.</div>}
+  {start!==null&&points.length>0?<div className="ob54-market-chart" role="group"
+   aria-label={"최근 14일 종전 진전도 잠정 흐름, 표시된 "+points.length+"개 날짜"}
+   title="실제 과거 확정 관측값이 아닌 저장 자료 기반 추정 흐름. 새 변화 미반영은 점선"
+   data-observed-days={points.length} data-carried-days={points.filter(carried).length}>
+   <MarketFearGreedChart
+    data={chartData} axisTicks={axisTicks} axisLabels={axisLabels}
+    latestPoint={latest?{date:dateKey(latest.at),score:latest.value!}:null}
+    lineSegments={lineSegments}
+    instanceKey="iran-provisional-14d" gradientId="ob54-iran-provisional-gradient"
+    formatTooltipLabel={day=>date(day)+(carriedDates.has(day)?" · 변화 미확인·이월":"")}
+    color={band(view.score).color} marketScoreBands
+   />
+  </div>:<div className="ob54-empty" role="status">14일 구간의 저장된 점수가 없습니다. 임의로 생성하지 않습니다.</div>}
   <p className="ob54-note"><Info size={15} aria-hidden="true"/> <span>14일 추정 흐름으로, 과거 확정 점수는 아닙니다. 점선은 새 변화가 확인되지 않아 추정값을 유지한 구간이며, 교전 중단을 뜻하지 않습니다.</span></p>
  </section>;
 }
