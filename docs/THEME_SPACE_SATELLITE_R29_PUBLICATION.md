@@ -19,3 +19,7 @@
 - `r179-publish-core.mjs`의 승인된 SHA와 기존 `pc-writer/config.json` 운영 소스를 확인한다. 비밀번호·토큰을 새로 발급하거나 기록하지 않고, 7개 테마 게시기를 실행하지 않는다.
 - 승인 원본의 인증도 유효하지 않으면 `SPACE_R31_APPROVED_SEVEN_CREDENTIAL_FAILED`로 멈추고, 원인을 이용권 또는 ETF AUM 문제로 잘못 분류하지 않는다.
 - `SPACE_SATELLITE_R29_PUBLICATION_RESULT.txt` 출력 파일명과 사용자 CMD 경로는 이전과 동일하며, R31은 기존 9개 테마의 계산·저장·배포 설정을 변경하지 않는다.
+
+## R32 1년 차트 복구
+
+2026-10-26 사용자 지적에 따라 기존 UFO의 실측 252일 점수가 신규 ETF NASA(105일)·WARP(79일)·ROKT(133일)에 의해 잘리지 않게 했다. 자세한 규칙은 `docs/THEME_SPACE_SATELLITE_R32_HISTORY_CONTINUITY.md`. 기존 R1 점수 원장은 보존하고 R2 신규 키를 사용한다.

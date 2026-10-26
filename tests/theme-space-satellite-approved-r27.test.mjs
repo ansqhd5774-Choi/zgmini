@@ -45,6 +45,59 @@ test('one real ETF stays missing and no zero is synthesized',()=>{
  assert.equal(out.history[0].score,null);
  assert.deepEqual(out.history[0].etfs,[]);
 });
+test('R32 1Y continuity uses only actual ETF observations and preserves current four-ETF score',()=>{
+ const args=fixture();
+ for(const symbol of ['NASA','WARP','ROKT'])args.observed[symbol]=new Set([dates[2]]);
+ const old=calculateApprovedSpaceBasket(args);
+ const next=calculateApprovedSpaceBasket({...args,historicalSingleContinuity:true});
+ assert.equal(old.history[0].score,null);
+ assert.equal(next.history[0].score,latest.UFO);
+ assert.equal(next.history[0].status,'SINGLE_REAL_ETF_LONGEST_HISTORY_CONTINUITY');
+ assert.deepEqual(next.history[0].etfs,['UFO']);
+ assert.deepEqual(next.history[0].weightsPercent,{UFO:100});
+ assert.equal(next.scoredDays,3);
+ assert.equal(next.latest.score,44.65075);
+ assert.deepEqual(next.latest.etfs,symbols);
+ assert.equal(next.historyFallbackPolicy,'LONGEST_VERIFIED_SESSIONS_TIE_CURRENT_AUM');
+});
+test('R32 leaves unobserved dates null and selects longest verified ETF on unapproved pair',()=>{
+ const args=fixture();
+ args.observed.UFO=new Set([dates[0],dates[2]]);
+ args.observed.NASA=new Set();args.observed.WARP=new Set();
+ args.observed.ROKT=new Set([dates[1],dates[2]]);
+ args.sessionCounts.UFO=new Map(dates.map((d,i)=>[d,650+i]));
+ args.sessionCounts.ROKT=new Map(dates.map((d,i)=>[d,400+i]));
+ args.timelines.ROKT=args.timelines.ROKT.map(v=>({...v,status:'ADAPTIVE_PROVISIONAL'}));
+ const out=calculateApprovedSpaceBasket({...args,historicalSingleContinuity:true});
+ assert.equal(out.history[0].score,latest.UFO);
+ assert.equal(out.history[1].score,latest.ROKT);
+ assert.deepEqual(out.history[1].etfs,['ROKT']);
+ assert.equal(out.history[2].score,latest.UFO);
+ assert.deepEqual(out.history[2].etfs,['UFO']);
+});
+test('R32 full 252-date mixed-maturity history never shrinks to youngest ETF',()=>{
+ const year=Array.from({length:252},(_,i)=>new Date(
+  Date.parse('2026-02-14T00:00:00Z')+i*86400000).toISOString().slice(0,10));
+ const firstScoreDay={UFO:0,ROKT:119,NASA:147,WARP:173};
+ const args={dates:year,symbols,scoreAsOf:year.at(-1),aumEvidence:evidence,
+  timelines:Object.fromEntries(symbols.map(symbol=>[symbol,year.map(date=>({
+   date,score:latest[symbol],status:symbol==='UFO'? 'R188_COMPATIBLE':
+    'ADAPTIVE_PROVISIONAL'}))])),
+  observed:Object.fromEntries(symbols.map(symbol=>[symbol,new Set(
+   year.slice(firstScoreDay[symbol]))])),
+  sessionCounts:Object.fromEntries(symbols.map(symbol=>[symbol,new Map(
+   year.map((date,i)=>[date,i+405]))]))};
+ const old=calculateApprovedSpaceBasket(args);
+ const out=calculateApprovedSpaceBasket({...args,historicalSingleContinuity:true});
+ assert.equal(old.scoredDays,105);
+ assert.equal(out.windowDays,252);
+ assert.equal(out.scoredDays,252);
+ assert.deepEqual(out.history[0].etfs,['UFO']);
+ assert.equal(out.history[0].score,latest.UFO);
+ assert.equal(out.history[146].score,latest.UFO);
+ assert.equal(out.latest.score,old.latest.score);
+ assert.equal(out.latest.score,44.65075);
+});
 test('future AUM, duplicate ETF, and absent source metadata fail closed',()=>{
  const args=fixture();
  assert.throws(()=>calculateApprovedSpaceBasket({...args,

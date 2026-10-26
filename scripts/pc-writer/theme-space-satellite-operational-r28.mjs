@@ -80,7 +80,8 @@ export function readApprovedSpacePrices({dataRoot,symbols}={}){
 export function runApprovedSpacePcR28({dataRoot,
  rosterFile=new URL('./theme-space-satellite-r26-approved-roster.json',import.meta.url),
  aumFile=new URL('./theme-space-satellite-r23-dated-aum-evidence.json',import.meta.url),
- rawReader=readApprovedSpacePrices,spyReader=readVerifiedSharedSpy}={}){
+ rawReader=readApprovedSpacePrices,spyReader=readVerifiedSharedSpy,
+ historicalSingleContinuity=false}={}){
  const roster=JSON.parse(fs.readFileSync(rosterFile,'utf8'));
  need(roster.version===1&&roster.theme==='space-satellite'&&
   roster.selectionApproved===true&&roster.maximumEtfCount===null&&
@@ -116,7 +117,8 @@ export function runApprovedSpacePcR28({dataRoot,
    date:row.date,own:priceByDate[symbol].get(row.date)??null,spy:row.close})));
  }
  const result=calculateApprovedSpaceBasket({dates,symbols,timelines,observed,
-  sessionCounts,aumEvidence:evidence.rows,scoreAsOf:dates.at(-1)});
+  sessionCounts,aumEvidence:evidence.rows,scoreAsOf:dates.at(-1),
+  historicalSingleContinuity});
  return {report:'SPACE_SATELLITE_R28_PC_SAVED_SOURCE_ONLY',
   status:result.latest.score===null?'NO_CURRENT_ACTUAL_COMPOSITE_SCORE':
    'PRIVATE_CURRENT_APPROVED_BASKET_READY',
