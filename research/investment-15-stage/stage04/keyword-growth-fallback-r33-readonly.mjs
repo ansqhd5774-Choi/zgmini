@@ -106,6 +106,7 @@ async function readLimited(response, maxBytes, completed = () => false) {
   const decoder = new TextDecoder();
   let raw = '';
   let bytes = 0;
+  let lastCheckBytes = 0;
   try {
     while (true) {
       const { value, done } = await reader.read();
@@ -113,7 +114,12 @@ async function readLimited(response, maxBytes, completed = () => false) {
       bytes += value.byteLength;
       if (bytes > maxBytes) throw new Error('RESPONSE_TOO_LARGE');
       raw += decoder.decode(value, { stream: true });
-      if (completed(raw)) return raw;
+      // Full HTML extraction is more expensive than streaming; check at most
+      // once per 64 KiB instead of parsing the growing document every chunk.
+      if (bytes - lastCheckBytes >= 65536 || raw.slice(-16384).includes('</html>')) {
+        lastCheckBytes = bytes;
+        if (completed(raw)) return raw;
+      }
     }
   } finally { void reader.cancel().catch(() => {}); }
 }
@@ -132,7 +138,7 @@ export async function measureFallback(keyword, source, {
   const timer = setTimeout(() => abort.abort(), maxMs);
   const result = { keyword, state: 'FAILED', publisher: source.publisher,
     search_engine: 'Bing RSS restricted to official publisher',
-    search_query: `site:${source.host}${source.id === 'FORTUNE' ? '' : source.path} "${keyword}" market CAGR`,
+    search_query: `site:${source.host}${source.id === 'FORTUNE' ? '' : source.path} "${keyword.replace(/\bcyber security\b/gi, 'cybersecurity')}" market CAGR`,
     result_url: null, model, keyword_deadline_ms: maxMs,
     search_requests: 0, report_requests: 0, ollama_generations: 0,
     search_ms: null, report_ms: 0, ollama_ms: null, total_ms: null,
