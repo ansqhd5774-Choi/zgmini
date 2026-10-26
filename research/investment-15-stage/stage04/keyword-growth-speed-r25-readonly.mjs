@@ -20,6 +20,21 @@ export const KEYWORDS = [
   'data center',
 ];
 
+// Local Ollama's documented structured-output format for a single forecast-CAGR
+// excerpt. In the R28 benchmark, the model has no freedom to relabel the
+// metric as "growth", "CAGR" or a historic year-on-year percentage.
+export const FORECAST_CAGR_OUTPUT_SCHEMA = Object.freeze({
+  type: 'object',
+  properties: {
+    growth_pct: { type: 'number', minimum: 0, maximum: 100 },
+    metric: { type: 'string', enum: ['FORECAST_CAGR'] },
+    period_start: { type: 'integer', minimum: 2000, maximum: 2100 },
+    period_end: { type: 'integer', minimum: 2000, maximum: 2100 }
+  },
+  required: ['growth_pct', 'metric', 'period_start', 'period_end'],
+  additionalProperties: false
+});
+
 function decodeEntities(s) {
   return String(s).replace(/&amp;/gi, '&').replace(/&lt;/gi, '<')
     .replace(/&gt;/gi, '>').replace(/&quot;/gi, '"').replace(/&#39;|&apos;/gi, "'")
@@ -145,10 +160,12 @@ export async function measureKeyword(keyword, {
   now = () => performance.now(),
   searchQuery = null,
   searchMode = 'bing-rss',
+  structuredOutput = false,
 } = {}) {
   if (maxMs <= 0 || maxMs > MAX_KEYWORD_MS) throw new Error('INVALID_TIMEOUT');
   if (!KEYWORDS.includes(keyword)) throw new Error('INVALID_TEST_KEYWORD');
   if (!['bing-rss', 'publisher-site'].includes(searchMode)) throw new Error('INVALID_SEARCH_MODE');
+  if (typeof structuredOutput !== 'boolean') throw new Error('INVALID_STRUCTURED_OUTPUT');
   const began = now();
   const controller = new AbortController();
   const deadline = setTimeout(() => controller.abort(), maxMs);
@@ -169,6 +186,12 @@ export async function measureKeyword(keyword, {
     metric: null, period_start: null, period_end: null, failure: null,
     search_http_status: null, rss_items: null, search_page_cards: null, publisher_index_links: null,
     title_matched_links: null, indexed_sample: null };
+  if (structuredOutput) {
+    result.ollama_format = 'JSON_SCHEMA_FORECAST_CAGR';
+    result.ollama_response_sample = null;
+    result.ollama_done_reason = null;
+    result.ollama_eval_count = null;
+  }
   try {
     const searchBegan = now();
     result.search_requests = 1;
@@ -228,19 +251,36 @@ export async function measureKeyword(keyword, {
       const modelResponse = await fetchFn('http://127.0.0.1:11434/api/generate', {
         method: 'POST', signal: controller.signal,
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ model, stream: false, think: false, format: 'json',
-          options: { temperature: 0, num_predict: 90 },
-          prompt: 'Extract ONLY the explicitly stated future CAGR from this one brief market research excerpt. ' +
-            'Respond as JSON fields growth_pct (number), metric (exact FORECAST_CAGR), ' +
-            'period_start (year), period_end (year). Do not invent values and do not use historic YoY.\n' + excerpt })
+        body: JSON.stringify({ model, stream: false, think: false,
+          format: structuredOutput ? FORECAST_CAGR_OUTPUT_SCHEMA : 'json',
+          options: { temperature: 0, num_predict: structuredOutput ? 120 : 90 },
+          prompt: structuredOutput
+            ? 'Read ONLY the supplied market excerpt. Extract the stated FORECAST compound annual growth rate (CAGR) and forecast beginning and ending years. ' +
+              'Return exactly four JSON fields: growth_pct (number copied from the source), metric (the literal string FORECAST_CAGR), ' +
+              'period_start (number, first forecast year), period_end (number, last forecast year). ' +
+              'Never use an historical CAGR, YoY, market size, or inferred percentage. ' +
+              'The JSON schema is: ' + JSON.stringify(FORECAST_CAGR_OUTPUT_SCHEMA) +
+              '\nEXCERPT:\n' + excerpt
+            : 'Extract ONLY the explicitly stated future CAGR from this one brief market research excerpt. ' +
+              'Respond as JSON fields growth_pct (number), metric (exact FORECAST_CAGR), ' +
+              'period_start (year), period_end (year). Do not invent values and do not use historic YoY.\n' + excerpt })
       });
       if (!modelResponse.ok) throw new Error(`OLLAMA_HTTP_${modelResponse.status}`);
       completion = await modelResponse.json();
     } finally { result.ollama_ms = Math.round(now() - modelBegan); }
-    ensureInBudget(began, now, maxMs);
-    Object.assign(result, validateModelReply(completion.response, excerpt));
+    // Preserve minimal, capped diagnostics even when subsequent strict
+    // model/source validation rejects the answer. No source page is saved.
     result.ollama_reported_ms = Number.isFinite(completion.total_duration)
       ? Math.round(completion.total_duration / 1e6) : null;
+    if (structuredOutput) {
+      result.ollama_response_sample = String(completion.response ?? '').slice(0, 360)
+        .replace(/[\r\n=|]/g, ' ');
+      result.ollama_done_reason = typeof completion.done_reason === 'string'
+        ? completion.done_reason.slice(0, 50) : null;
+      result.ollama_eval_count = Number.isFinite(completion.eval_count) ? completion.eval_count : null;
+    }
+    ensureInBudget(began, now, maxMs);
+    Object.assign(result, validateModelReply(completion.response, excerpt));
     result.state = 'PASS';
   } catch (error) {
     result.failure = controller.signal.aborted ? 'KEYWORD_DEADLINE_EXCEEDED' : (error.message || 'UNKNOWN_ERROR');
