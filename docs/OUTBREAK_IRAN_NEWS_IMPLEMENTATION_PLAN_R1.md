@@ -91,7 +91,7 @@
 | 기존 뉴스 UI 연결 | `app/outbreak-beginner-iran-r54.tsx`, `app/outbreak-news-r57.tsx` |
 | GOV.UK 후보 발견(읽기 전용) | `scripts/iran-progress/news-display-discover-r1.mjs` |
 | PC 독립 정리/게시 실행기 | `scripts/iran-progress/news-display-maintenance-r1.mjs` |
-| PC 확인용 CMD | `scripts/iran-progress/IRAN_NEWS_R1_READONLY_CHECK.cmd`, `scripts/iran-progress/IRAN_NEWS_R2_PREFLIGHT.cmd` |
+| PC 확인용 CMD | `scripts/iran-progress/IRAN_NEWS_R1_READONLY_CHECK.cmd`, `scripts/iran-progress/IRAN_NEWS_R2_PREFLIGHT.cmd`, `scripts/iran-progress/IRAN_NEWS_R3_APPLY.cmd` |
 | 자동 테스트 | `tests/iran-news-display-r1.test.mjs` |
 
 기존 수집기·runner·게시기 변경은 승인 경로에서 **필요한 최소 범위**로만 적용한다. 새 파일명과 전용 키는 후보이며 실제 참조 관계 검사 후 확정한다.
@@ -107,9 +107,10 @@
 - [x] 14/30일 경계·피드 발견·권리 차단·캐시·D1/API 단위 테스트 13개 PASS
 - [x] 사용자 Windows PC의 GOV.UK 읽기 전용 조사 결과 확인: 피드 20건, Content API 20/20 성공, 30일 후보 16건, 14일 내 7건. 실제 적용/게시 없음. 상세: `docs/OUTBREAK_IRAN_NEWS_PC_LOG_REVIEW_R1_20261026.md`
 - [x] GOV.UK 첫 기사 1건의 텍스트 이용권 범위·사실 관계·한국어 자체 요약·중립 분류 검토. **개별 검토만 승인, 전체 GOV.UK 기사 자동 승인 아님.**
-- [x] 권리 검증 입력 수용 및 Windows R2 읽기 전용 dry-run CMD 준비. PC 실제 실행 결과는 미확인.
+- [x] 권리 검증 입력 수용 및 Windows R2 읽기 전용 dry-run CMD 실행·실제 PC 로그 PASS: `FINAL_STATUS=PASS_READ_ONLY_REVIEWED`, `received=1,accepted=1,after=1,written=false`.
+- [x] R2 결과 Gate를 포함한 Windows R3 첫 승인 기사 전용 캐시 apply/read-back CMD 구현·브랜치 저장. **PC 실제 실행 및 캐시 기록은 아직 대기.**
 - [ ] 기존 PC runner에 표시 전용 수집/정리/게시 연결(운영 환경 점검 선행)
-- [ ] 실제 뉴스 수집·PC 표시 캐시 정리 실행
+- [ ] 실제 뉴스 수집·PC 표시 캐시 최초 1건 적용/read-back 및 이후 기존 runner에 정리 연결
 - [ ] 뉴스 D1 게시·공개 UI·Cloudflare 배포
 
 **진행 이력:** 최초에는 계획서만 저장했다. 2026-10-26 현재 독립 구현 파일과 UI/API 연결 코드가 브랜치에 추가되었다. 그러나 기사별 검증과 자체 요약·영향 분류, PC 원본 수집기와의 런타임 연결, PC 실제 30일 정리 실행, D1 실제 게시, PR/main 반영, Cloudflare 배포는 **미실시**다. 13개 테스트 PASS는 단위 테스트 결과이지 운영 PASS가 아니다.
@@ -121,3 +122,9 @@
 - 결과는 CMD 파일 옆의 `IRAN_NEWS_R1_RESULT.txt` 한 개 TXT 파일에 기록한다. 다운로드한 CMD 한 개만으로 실행되도록 필요한 읽기 전용 모듈을 GitHub의 고정 커밋에서 별도 경량 폴더에 받는다. 임시 폴더 및 E: 새 대용량 저장소를 만들지 않는다.
 - 첫 결과를 통해 피드 HTTP·원본 발행 시각·GOV.UK 개별 권리 검증 대상·30일 만료 대상·운영 경로를 확인한 뒤에만 실제 저장/게시 및 기존 PC 실행 경로와의 연결을 검토한다.
 - 로컬 Node 단위 테스트는 13/13 PASS, **Windows 읽기 전용 CMD는 사용자 제출 로그로 PASS**. 하지만 실 PC 캐시 쓰기·만료 삭제, 개별 기사 이용권 판정, D1/Cloudflare 공개 검증은 아직 PASS가 아니다. 2026-10-26 재실행 로그에서 피드 20건·Content API 20/20 성공·30일 후보 16건을 확인했으며, 14일 창 후보 7건 중 직접 관련 2건·배경/영향 2건·부적합 3건을 예비 판별했다. 관련성 분류는 자동 게재 허가가 아니다.
+
+## 6. 2026-10-26 PC R2 검증 이후 진행
+
+- 사용자 첨부 `IRAN_NEWS_R2_PREFLIGHT_RESULT.txt`: GOV.UK 최초 발행일 확인 20/20 API 오류 0, 최근 30일 후보 16, R13 작업 `TASK_QUERY_EXIT=0`, Reviewed 1/1, `FINAL_STATUS=PASS_READ_ONLY_REVIEWED`.
+- 실제 최초 캐시 파일은 아직 없음(읽기 전용 확인만 통과). `IRAN_NEWS_R3_APPLY.cmd`에서 R2 로그·기존 R13 작업·운영 DB 표식·기존 뉴스 캐시 부재·dry-run 예상 건수 일치 조건으로 최초 `news-display-r1.json`만 생성하고 다시 읽어 검증한다.
+- D1 별도 뉴스 키 게시, 기존 runner 자동 연계, 필요한 변경의 PR/main 반영과 Cloudflare Git 배포는 R3 PC 결과 검증 이후 추진한다. 기존 R3/R5 점수, 원장, 스케줄러 불변.
