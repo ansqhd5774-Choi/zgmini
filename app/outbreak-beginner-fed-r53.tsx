@@ -3,7 +3,7 @@ import {CalendarDays, ChevronDown, CircleHelp, Lightbulb, ShieldAlert, TrendingD
 import {useEffect,useState} from "react";
 import {MarketFearGreedChart} from "./market-fear-greed-chart";
 import "./outbreak-beginner-r53.css";
-import OutbreakChangeLogUI from "./outbreak-change-log-ui";
+import OutbreakNewsUI from "./outbreak-news-r57";
 
 export type RateScorePoint={label:string;value:number};
 export type RateStoredSnapshot={status:"READY";score:number;observationDate:string;version:string;sourceStoredAt:number;week:RateScorePoint[];oneMonth:RateScorePoint[]};
@@ -101,7 +101,7 @@ export default function OutbreakBeginnerFed({rate,deltaWeek}:{rate:RateStoredSna
       <div className="ob53-week"><span>주간 변화</span><strong data-change={negative?"down":positive?"up":"flat"}>{deltaWeek===null?"—":(deltaWeek>0?"+":"")+deltaWeek.toFixed(1)}<small>점</small>{negative?<TrendingDown size={15} aria-label="하락"/>:null}</strong></div>
       <div className="ob53-asof"><span>분석 기준일</span><strong><CalendarDays size={15} aria-hidden="true"/>{date}</strong></div>
      </div>
-     <ScoreScale score={score}/>
+     <div className="ob57-scale-summary"><ScoreScale score={score}/><p className="ob57-summary">{interpretation}</p></div>
     </section>
     <section className="ob53-explain ob-panel" aria-labelledby="ob53-meaning">
      <h3 id="ob53-meaning"><Lightbulb size={17} aria-hidden="true"/> 이 숫자는 무슨 뜻인가요?</h3>
@@ -111,7 +111,7 @@ export default function OutbreakBeginnerFed({rate,deltaWeek}:{rate:RateStoredSna
    </div>
    <div className="ob53-main-grid">
     <Rate14Chart rate={rate}/>
-    <OutbreakChangeLogUI eventId="fed"/>
+    <OutbreakNewsUI eventId="fed"/>
     <div className="ob53-beginner-stack">
      <section className="ob53-guide ob-panel" aria-labelledby="ob53-beginners">
       <h3 id="ob53-beginners">주식 초보자용 해석</h3>
