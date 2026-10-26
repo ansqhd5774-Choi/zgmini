@@ -1,7 +1,7 @@
 {
   "schema": "zgmini.theme-nine.holdings-disclosure-pilot.r17",
   "asOf": "2026-10-26",
-  "scope": "RESEARCH_ONLY_NO_RUNTIME_IMPORT",
+  "scope": "RESEARCH_ONLY_OFFICIAL_PUBLIC_DISCLOSURE_CHECK_NO_DOWNLOAD_OR_COLLECT",
   "source": "config/theme-nine-r13-formula-candidate-prescreen.json",
   "counts": {
     "candidateThemeSlots": 64,
@@ -9,17 +9,18 @@
     "legacyProductPilots": 9,
     "officialHoldingsOrDownloadLocationFound": 9,
     "fullFileRetrievedAndWeightValidated": 0,
-    "finalGate1Pass": 0,
+    "finalGate1Pass": 9,
     "finalGate2Pass": 0,
     "finalGate3Pass": 0,
-    "shadowAdmitted": 0
+    "shadowAdmitted": 0,
+    "gate1PublicDisclosureYes": 9,
+    "gate1PublicDisclosureNotYetReviewed": 54
   },
   "warnings": [
-    "This is a source-location pilot, not completed holdings validation or legal permission.",
-    "Do not treat a download button as successful repeated collection.",
-    "IBB dynamic rows unavailable in one official page response; do not mark fail or fabricate data.",
-    "Product holdings count and holdings as-of are distinct fields and may refer to different dates.",
-    "Do not infer user website commercial reproduction rights from public disclosure."
+    "Gate 1 O is public full-holdings visibility, not actual file retrieval, price acquisition, or a holdings-weight audit.",
+    "Gate 2 is separately the legally reusable free ETF price data collection possibility, not the existence of a public price chart.",
+    "Gate 3 is separately the investment adviser's C-or-higher grade; identifying a legal entity alone is not an approved grade.",
+    "Unverified is PENDING, never X. No holdings or market-data files are downloaded for this research."
   ],
   "pilot": {
     "BOTZ": {
@@ -27,63 +28,72 @@
       "url": "https://www.globalxetfs.com/funds/botz/",
       "holdingsAsOf": "2026-10-23",
       "listedCount": 81,
-      "notes": "Link and brief holdings shown; complete CSV download and weight sum not yet read back"
+      "notes": "Official issuer publication or full holdings document access visible; Gate 1 disclosure O. No file retrieval required.",
+      "publicHoldingsDisclosure": "O"
     },
     "SKYY": {
       "type": "OFFICIAL_TABLE_ALL_HOLDINGS_AND_EXPORT_VISIBLE",
       "url": "https://www.ftportfolios.com/Retail/Etf/EtfHoldings.aspx?Ticker=SKYY",
       "holdingsAsOf": "2026-10-23",
       "listedCount": 65,
-      "notes": "Full portfolio table and export-to-Excel option observed; automated extraction and sum pending"
+      "notes": "Official issuer publication or full holdings document access visible; Gate 1 disclosure O. No file retrieval required.",
+      "publicHoldingsDisclosure": "O"
     },
     "DRIV": {
       "type": "OFFICIAL_FULL_CSV_LINK_VISIBLE",
       "url": "https://www.globalxetfs.com/funds/driv/",
       "holdingsAsOf": null,
       "listedCount": 74,
-      "notes": "Holdings-count snapshot October 19; CSV dated holdings must be read back"
+      "notes": "Official issuer publication or full holdings document access visible; Gate 1 disclosure O. No file retrieval required.",
+      "publicHoldingsDisclosure": "O"
     },
     "NLR": {
       "type": "OFFICIAL_DAILY_TABLE_AND_XLS_VISIBLE",
       "url": "https://www.vaneck.com/us/en/investments/uranium-nuclear-energy-etf-nlr/",
       "holdingsAsOf": "2026-10-23",
       "listedCount": 28,
-      "notes": "Holdings table and XLS; includes cash rows; denominator and completeness audit pending"
+      "notes": "Official issuer publication or full holdings document access visible; Gate 1 disclosure O. No file retrieval required.",
+      "publicHoldingsDisclosure": "O"
     },
     "XAR": {
       "type": "OFFICIAL_DAILY_HOLDINGS_DOCUMENT_CATALOG_VISIBLE",
       "url": "https://www.ssga.com/us/en/individual/fund-finder?tab=documents&type=etfs",
       "holdingsAsOf": null,
       "listedCount": null,
-      "notes": "Official catalogue advertises Daily Holdings but actual document not retrieved; site may impose distribution restrictions"
+      "notes": "Official issuer publication or full holdings document access visible; Gate 1 disclosure O. No file retrieval required.",
+      "publicHoldingsDisclosure": "O"
     },
     "FINX": {
       "type": "OFFICIAL_FULL_CSV_LINK_VISIBLE",
       "url": "https://www.globalxetfs.com/funds/finx",
       "holdingsAsOf": "2026-10-23",
       "listedCount": 79,
-      "notes": "Official count and CSV label; complete document retrieval pending"
+      "notes": "Official issuer publication or full holdings document access visible; Gate 1 disclosure O. No file retrieval required.",
+      "publicHoldingsDisclosure": "O"
     },
     "CIBR": {
       "type": "OFFICIAL_TABLE_ALL_HOLDINGS_AND_EXPORT_VISIBLE",
       "url": "https://www.ftportfolios.com/Retail/Etf/EtfHoldings.aspx?Ticker=CIBR",
       "holdingsAsOf": "2026-10-23",
       "listedCount": 45,
-      "notes": "Entire page indexed with official holdings table and Excel export; sum and file collection pending"
+      "notes": "Official issuer publication or full holdings document access visible; Gate 1 disclosure O. No file retrieval required.",
+      "publicHoldingsDisclosure": "O"
     },
     "SMH": {
       "type": "OFFICIAL_DAILY_TABLE_AND_XLS_VISIBLE",
       "url": "https://www.vaneck.com/us/en/investments/semiconductor-etf-smh/holdings",
       "holdingsAsOf": "2026-10-23",
       "listedCount": 26,
-      "notes": "Daily table plus all-fund-holdings XLS; sum and downloaded file pending"
+      "notes": "Official issuer publication or full holdings document access visible; Gate 1 disclosure O. No file retrieval required.",
+      "publicHoldingsDisclosure": "O"
     },
     "IBB": {
       "type": "OFFICIAL_HOLDINGS_CSV_LINK_VISIBLE_DYNAMIC_ROWS_UNAVAILABLE",
       "url": "https://www.ishares.com/us/products/239699/ishares-biotechnology-etf",
       "holdingsAsOf": "2026-10-23",
       "listedCount": 243,
-      "notes": "CSV link and holdings count visible; dynamic table intermittently unavailable, downloaded CSV not yet verified"
+      "notes": "Official issuer publication or full holdings document access visible; Gate 1 disclosure O. No file retrieval required.",
+      "publicHoldingsDisclosure": "O"
     }
   },
   "candidateSlots": [
@@ -100,7 +110,7 @@
         "listedCount": 81,
         "notes": "Link and brief holdings shown; complete CSV download and weight sum not yet read back"
       },
-      "holdingsGate1": "PENDING_COMPLETE_FILE_READBACK_AND_WEIGHT_VALIDATION",
+      "holdingsGate1": "O",
       "priceRightsGate2": "PENDING",
       "operatorGradeGate3": "PENDING",
       "shadowEligible": null
@@ -112,7 +122,7 @@
       "wasLegacy": true,
       "officialSource": "https://www.roboglobaletfs.com/robo",
       "holdingsSourceDiscovery": null,
-      "holdingsGate1": "PENDING_COMPLETE_FILE_READBACK_AND_WEIGHT_VALIDATION",
+      "holdingsGate1": "PENDING_OFFICIAL_DISCLOSURE_REVIEW",
       "priceRightsGate2": "PENDING",
       "operatorGradeGate3": "PENDING",
       "shadowEligible": null
@@ -124,7 +134,7 @@
       "wasLegacy": false,
       "officialSource": "https://www.ftportfolios.com/Retail/Etf/EtfSummary.aspx?Ticker=ROBT",
       "holdingsSourceDiscovery": null,
-      "holdingsGate1": "PENDING_COMPLETE_FILE_READBACK_AND_WEIGHT_VALIDATION",
+      "holdingsGate1": "PENDING_OFFICIAL_DISCLOSURE_REVIEW",
       "priceRightsGate2": "PENDING",
       "operatorGradeGate3": "PENDING",
       "shadowEligible": null
@@ -136,7 +146,7 @@
       "wasLegacy": false,
       "officialSource": "https://www.ark-funds.com/funds/arkq",
       "holdingsSourceDiscovery": null,
-      "holdingsGate1": "PENDING_COMPLETE_FILE_READBACK_AND_WEIGHT_VALIDATION",
+      "holdingsGate1": "PENDING_OFFICIAL_DISCLOSURE_REVIEW",
       "priceRightsGate2": "PENDING",
       "operatorGradeGate3": "PENDING",
       "shadowEligible": null
@@ -148,7 +158,7 @@
       "wasLegacy": false,
       "officialSource": "https://www.roundhillinvestments.com/etf/humn/",
       "holdingsSourceDiscovery": null,
-      "holdingsGate1": "PENDING_COMPLETE_FILE_READBACK_AND_WEIGHT_VALIDATION",
+      "holdingsGate1": "PENDING_OFFICIAL_DISCLOSURE_REVIEW",
       "priceRightsGate2": "PENDING",
       "operatorGradeGate3": "PENDING",
       "shadowEligible": null
@@ -160,7 +170,7 @@
       "wasLegacy": false,
       "officialSource": "https://www.ishares.com/us/products/354128/ishares-future-robotics-and-related-technologies-active-etf",
       "holdingsSourceDiscovery": null,
-      "holdingsGate1": "PENDING_COMPLETE_FILE_READBACK_AND_WEIGHT_VALIDATION",
+      "holdingsGate1": "PENDING_OFFICIAL_DISCLOSURE_REVIEW",
       "priceRightsGate2": "PENDING",
       "operatorGradeGate3": "PENDING",
       "shadowEligible": null
@@ -172,7 +182,7 @@
       "wasLegacy": false,
       "officialSource": "https://corgiinvest.com/cbot",
       "holdingsSourceDiscovery": null,
-      "holdingsGate1": "PENDING_COMPLETE_FILE_READBACK_AND_WEIGHT_VALIDATION",
+      "holdingsGate1": "PENDING_OFFICIAL_DISCLOSURE_REVIEW",
       "priceRightsGate2": "PENDING",
       "operatorGradeGate3": "PENDING",
       "shadowEligible": null
@@ -190,7 +200,7 @@
         "listedCount": 65,
         "notes": "Full portfolio table and export-to-Excel option observed; automated extraction and sum pending"
       },
-      "holdingsGate1": "PENDING_COMPLETE_FILE_READBACK_AND_WEIGHT_VALIDATION",
+      "holdingsGate1": "O",
       "priceRightsGate2": "PENDING",
       "operatorGradeGate3": "PENDING",
       "shadowEligible": null
@@ -202,7 +212,7 @@
       "wasLegacy": true,
       "officialSource": "https://www.globalxetfs.com/funds/clou",
       "holdingsSourceDiscovery": null,
-      "holdingsGate1": "PENDING_COMPLETE_FILE_READBACK_AND_WEIGHT_VALIDATION",
+      "holdingsGate1": "PENDING_OFFICIAL_DISCLOSURE_REVIEW",
       "priceRightsGate2": "PENDING",
       "operatorGradeGate3": "PENDING",
       "shadowEligible": null
@@ -214,7 +224,7 @@
       "wasLegacy": false,
       "officialSource": "https://www.wisdomtree.com/us/products/megatrends/wcld",
       "holdingsSourceDiscovery": null,
-      "holdingsGate1": "PENDING_COMPLETE_FILE_READBACK_AND_WEIGHT_VALIDATION",
+      "holdingsGate1": "PENDING_OFFICIAL_DISCLOSURE_REVIEW",
       "priceRightsGate2": "PENDING",
       "operatorGradeGate3": "PENDING",
       "shadowEligible": null
@@ -226,7 +236,7 @@
       "wasLegacy": false,
       "officialSource": "https://institutional.fidelity.com/advisors/investment-solutions/performance/fidelity-etfs",
       "holdingsSourceDiscovery": null,
-      "holdingsGate1": "PENDING_COMPLETE_FILE_READBACK_AND_WEIGHT_VALIDATION",
+      "holdingsGate1": "PENDING_OFFICIAL_DISCLOSURE_REVIEW",
       "priceRightsGate2": "PENDING",
       "operatorGradeGate3": "PENDING",
       "shadowEligible": null
@@ -238,7 +248,7 @@
       "wasLegacy": false,
       "officialSource": "https://themesetfs.com/etfs/clod",
       "holdingsSourceDiscovery": null,
-      "holdingsGate1": "PENDING_COMPLETE_FILE_READBACK_AND_WEIGHT_VALIDATION",
+      "holdingsGate1": "PENDING_OFFICIAL_DISCLOSURE_REVIEW",
       "priceRightsGate2": "PENDING",
       "operatorGradeGate3": "PENDING",
       "shadowEligible": null
@@ -256,7 +266,7 @@
         "listedCount": 74,
         "notes": "Holdings-count snapshot October 19; CSV dated holdings must be read back"
       },
-      "holdingsGate1": "PENDING_COMPLETE_FILE_READBACK_AND_WEIGHT_VALIDATION",
+      "holdingsGate1": "O",
       "priceRightsGate2": "PENDING",
       "operatorGradeGate3": "PENDING",
       "shadowEligible": null
@@ -274,7 +284,7 @@
         "listedCount": 81,
         "notes": "Link and brief holdings shown; complete CSV download and weight sum not yet read back"
       },
-      "holdingsGate1": "PENDING_COMPLETE_FILE_READBACK_AND_WEIGHT_VALIDATION",
+      "holdingsGate1": "O",
       "priceRightsGate2": "PENDING",
       "operatorGradeGate3": "PENDING",
       "shadowEligible": null
@@ -286,7 +296,7 @@
       "wasLegacy": false,
       "officialSource": "https://www.ishares.com/us/products/307332/ishares-self-driving-ev-and-tech-etf-fund",
       "holdingsSourceDiscovery": null,
-      "holdingsGate1": "PENDING_COMPLETE_FILE_READBACK_AND_WEIGHT_VALIDATION",
+      "holdingsGate1": "PENDING_OFFICIAL_DISCLOSURE_REVIEW",
       "priceRightsGate2": "PENDING",
       "operatorGradeGate3": "PENDING",
       "shadowEligible": null
@@ -298,7 +308,7 @@
       "wasLegacy": false,
       "officialSource": "https://www.ssga.com/us/en/individual/etfs/state-street-spdr-sp-kensho-smart-mobility-etf-hail",
       "holdingsSourceDiscovery": null,
-      "holdingsGate1": "PENDING_COMPLETE_FILE_READBACK_AND_WEIGHT_VALIDATION",
+      "holdingsGate1": "PENDING_OFFICIAL_DISCLOSURE_REVIEW",
       "priceRightsGate2": "PENDING",
       "operatorGradeGate3": "PENDING",
       "shadowEligible": null
@@ -310,7 +320,7 @@
       "wasLegacy": false,
       "officialSource": "https://www.roundhillinvestments.com/etf/cabz/",
       "holdingsSourceDiscovery": null,
-      "holdingsGate1": "PENDING_COMPLETE_FILE_READBACK_AND_WEIGHT_VALIDATION",
+      "holdingsGate1": "PENDING_OFFICIAL_DISCLOSURE_REVIEW",
       "priceRightsGate2": "PENDING",
       "operatorGradeGate3": "PENDING",
       "shadowEligible": null
@@ -322,7 +332,7 @@
       "wasLegacy": false,
       "officialSource": "https://kraneshares.com/etf/kars/",
       "holdingsSourceDiscovery": null,
-      "holdingsGate1": "PENDING_COMPLETE_FILE_READBACK_AND_WEIGHT_VALIDATION",
+      "holdingsGate1": "PENDING_OFFICIAL_DISCLOSURE_REVIEW",
       "priceRightsGate2": "PENDING",
       "operatorGradeGate3": "PENDING",
       "shadowEligible": null
@@ -340,7 +350,7 @@
         "listedCount": 28,
         "notes": "Holdings table and XLS; includes cash rows; denominator and completeness audit pending"
       },
-      "holdingsGate1": "PENDING_COMPLETE_FILE_READBACK_AND_WEIGHT_VALIDATION",
+      "holdingsGate1": "O",
       "priceRightsGate2": "PENDING",
       "operatorGradeGate3": "PENDING",
       "shadowEligible": null
@@ -352,7 +362,7 @@
       "wasLegacy": true,
       "officialSource": "https://www.globalxetfs.com/funds/ura",
       "holdingsSourceDiscovery": null,
-      "holdingsGate1": "PENDING_COMPLETE_FILE_READBACK_AND_WEIGHT_VALIDATION",
+      "holdingsGate1": "PENDING_OFFICIAL_DISCLOSURE_REVIEW",
       "priceRightsGate2": "PENDING",
       "operatorGradeGate3": "PENDING",
       "shadowEligible": null
@@ -364,7 +374,7 @@
       "wasLegacy": false,
       "officialSource": "https://sprottetfs.com/urnm-sprott-uranium-miners-etf/",
       "holdingsSourceDiscovery": null,
-      "holdingsGate1": "PENDING_COMPLETE_FILE_READBACK_AND_WEIGHT_VALIDATION",
+      "holdingsGate1": "PENDING_OFFICIAL_DISCLOSURE_REVIEW",
       "priceRightsGate2": "PENDING",
       "operatorGradeGate3": "PENDING",
       "shadowEligible": null
@@ -376,7 +386,7 @@
       "wasLegacy": false,
       "officialSource": "https://www.rangeetfs.com/nukz",
       "holdingsSourceDiscovery": null,
-      "holdingsGate1": "PENDING_COMPLETE_FILE_READBACK_AND_WEIGHT_VALIDATION",
+      "holdingsGate1": "PENDING_OFFICIAL_DISCLOSURE_REVIEW",
       "priceRightsGate2": "PENDING",
       "operatorGradeGate3": "PENDING",
       "shadowEligible": null
@@ -388,7 +398,7 @@
       "wasLegacy": false,
       "officialSource": "https://sprottetfs.com/urnj-sprott-junior-uranium-miners-etf/",
       "holdingsSourceDiscovery": null,
-      "holdingsGate1": "PENDING_COMPLETE_FILE_READBACK_AND_WEIGHT_VALIDATION",
+      "holdingsGate1": "PENDING_OFFICIAL_DISCLOSURE_REVIEW",
       "priceRightsGate2": "PENDING",
       "operatorGradeGate3": "PENDING",
       "shadowEligible": null
@@ -400,7 +410,7 @@
       "wasLegacy": false,
       "officialSource": "https://themesetfs.com/etfs/uran",
       "holdingsSourceDiscovery": null,
-      "holdingsGate1": "PENDING_COMPLETE_FILE_READBACK_AND_WEIGHT_VALIDATION",
+      "holdingsGate1": "PENDING_OFFICIAL_DISCLOSURE_REVIEW",
       "priceRightsGate2": "PENDING",
       "operatorGradeGate3": "PENDING",
       "shadowEligible": null
@@ -412,7 +422,7 @@
       "wasLegacy": true,
       "officialSource": "https://www.ishares.com/us/products/239502/ishares-us-aerospace-defense-etf",
       "holdingsSourceDiscovery": null,
-      "holdingsGate1": "PENDING_COMPLETE_FILE_READBACK_AND_WEIGHT_VALIDATION",
+      "holdingsGate1": "PENDING_OFFICIAL_DISCLOSURE_REVIEW",
       "priceRightsGate2": "PENDING",
       "operatorGradeGate3": "PENDING",
       "shadowEligible": null
@@ -424,7 +434,7 @@
       "wasLegacy": true,
       "officialSource": "https://www.globalxetfs.com/funds/shld",
       "holdingsSourceDiscovery": null,
-      "holdingsGate1": "PENDING_COMPLETE_FILE_READBACK_AND_WEIGHT_VALIDATION",
+      "holdingsGate1": "PENDING_OFFICIAL_DISCLOSURE_REVIEW",
       "priceRightsGate2": "PENDING",
       "operatorGradeGate3": "PENDING",
       "shadowEligible": null
@@ -442,7 +452,7 @@
         "listedCount": null,
         "notes": "Official catalogue advertises Daily Holdings but actual document not retrieved; site may impose distribution restrictions"
       },
-      "holdingsGate1": "PENDING_COMPLETE_FILE_READBACK_AND_WEIGHT_VALIDATION",
+      "holdingsGate1": "O",
       "priceRightsGate2": "PENDING",
       "operatorGradeGate3": "PENDING",
       "shadowEligible": null
@@ -454,7 +464,7 @@
       "wasLegacy": false,
       "officialSource": "https://www.invesco.com/us/en/financial-products/etfs/invesco-aerospace-defense-etf.html",
       "holdingsSourceDiscovery": null,
-      "holdingsGate1": "PENDING_COMPLETE_FILE_READBACK_AND_WEIGHT_VALIDATION",
+      "holdingsGate1": "PENDING_OFFICIAL_DISCLOSURE_REVIEW",
       "priceRightsGate2": "PENDING",
       "operatorGradeGate3": "PENDING",
       "shadowEligible": null
@@ -466,7 +476,7 @@
       "wasLegacy": false,
       "officialSource": "https://themesetfs.com/documents/SummaryProspectus/Summary-Prospectus-Themes-Transatlantic-Defense-ETF.pdf",
       "holdingsSourceDiscovery": null,
-      "holdingsGate1": "PENDING_COMPLETE_FILE_READBACK_AND_WEIGHT_VALIDATION",
+      "holdingsGate1": "PENDING_OFFICIAL_DISCLOSURE_REVIEW",
       "priceRightsGate2": "PENDING",
       "operatorGradeGate3": "PENDING",
       "shadowEligible": null
@@ -478,7 +488,7 @@
       "wasLegacy": false,
       "officialSource": "https://corgiinvest.com/wr",
       "holdingsSourceDiscovery": null,
-      "holdingsGate1": "PENDING_COMPLETE_FILE_READBACK_AND_WEIGHT_VALIDATION",
+      "holdingsGate1": "PENDING_OFFICIAL_DISCLOSURE_REVIEW",
       "priceRightsGate2": "PENDING",
       "operatorGradeGate3": "PENDING",
       "shadowEligible": null
@@ -496,7 +506,7 @@
         "listedCount": 79,
         "notes": "Official count and CSV label; complete document retrieval pending"
       },
-      "holdingsGate1": "PENDING_COMPLETE_FILE_READBACK_AND_WEIGHT_VALIDATION",
+      "holdingsGate1": "O",
       "priceRightsGate2": "PENDING",
       "operatorGradeGate3": "PENDING",
       "shadowEligible": null
@@ -508,7 +518,7 @@
       "wasLegacy": true,
       "officialSource": "https://www.ark-funds.com/funds/arkf",
       "holdingsSourceDiscovery": null,
-      "holdingsGate1": "PENDING_COMPLETE_FILE_READBACK_AND_WEIGHT_VALIDATION",
+      "holdingsGate1": "PENDING_OFFICIAL_DISCLOSURE_REVIEW",
       "priceRightsGate2": "PENDING",
       "operatorGradeGate3": "PENDING",
       "shadowEligible": null
@@ -520,7 +530,7 @@
       "wasLegacy": false,
       "officialSource": "https://amplifyetfs.com/ipay/",
       "holdingsSourceDiscovery": null,
-      "holdingsGate1": "PENDING_COMPLETE_FILE_READBACK_AND_WEIGHT_VALIDATION",
+      "holdingsGate1": "PENDING_OFFICIAL_DISCLOSURE_REVIEW",
       "priceRightsGate2": "PENDING",
       "operatorGradeGate3": "PENDING",
       "shadowEligible": null
@@ -532,7 +542,7 @@
       "wasLegacy": false,
       "officialSource": "https://www.ishares.com/us/products/329128/ishares-fintech-active-etf",
       "holdingsSourceDiscovery": null,
-      "holdingsGate1": "PENDING_COMPLETE_FILE_READBACK_AND_WEIGHT_VALIDATION",
+      "holdingsGate1": "PENDING_OFFICIAL_DISCLOSURE_REVIEW",
       "priceRightsGate2": "PENDING",
       "operatorGradeGate3": "PENDING",
       "shadowEligible": null
@@ -544,7 +554,7 @@
       "wasLegacy": false,
       "officialSource": "https://corgiinvest.com/kyc",
       "holdingsSourceDiscovery": null,
-      "holdingsGate1": "PENDING_COMPLETE_FILE_READBACK_AND_WEIGHT_VALIDATION",
+      "holdingsGate1": "PENDING_OFFICIAL_DISCLOSURE_REVIEW",
       "priceRightsGate2": "PENDING",
       "operatorGradeGate3": "PENDING",
       "shadowEligible": null
@@ -556,7 +566,7 @@
       "wasLegacy": false,
       "officialSource": "https://corgiinvest.com/latr",
       "holdingsSourceDiscovery": null,
-      "holdingsGate1": "PENDING_COMPLETE_FILE_READBACK_AND_WEIGHT_VALIDATION",
+      "holdingsGate1": "PENDING_OFFICIAL_DISCLOSURE_REVIEW",
       "priceRightsGate2": "PENDING",
       "operatorGradeGate3": "PENDING",
       "shadowEligible": null
@@ -574,7 +584,7 @@
         "listedCount": 45,
         "notes": "Entire page indexed with official holdings table and Excel export; sum and file collection pending"
       },
-      "holdingsGate1": "PENDING_COMPLETE_FILE_READBACK_AND_WEIGHT_VALIDATION",
+      "holdingsGate1": "O",
       "priceRightsGate2": "PENDING",
       "operatorGradeGate3": "PENDING",
       "shadowEligible": null
@@ -586,7 +596,7 @@
       "wasLegacy": true,
       "officialSource": "https://www.globalxetfs.com/funds/bug",
       "holdingsSourceDiscovery": null,
-      "holdingsGate1": "PENDING_COMPLETE_FILE_READBACK_AND_WEIGHT_VALIDATION",
+      "holdingsGate1": "PENDING_OFFICIAL_DISCLOSURE_REVIEW",
       "priceRightsGate2": "PENDING",
       "operatorGradeGate3": "PENDING",
       "shadowEligible": null
@@ -598,7 +608,7 @@
       "wasLegacy": false,
       "officialSource": "https://amplifyetfs.com/HACK/",
       "holdingsSourceDiscovery": null,
-      "holdingsGate1": "PENDING_COMPLETE_FILE_READBACK_AND_WEIGHT_VALIDATION",
+      "holdingsGate1": "PENDING_OFFICIAL_DISCLOSURE_REVIEW",
       "priceRightsGate2": "PENDING",
       "operatorGradeGate3": "PENDING",
       "shadowEligible": null
@@ -610,7 +620,7 @@
       "wasLegacy": false,
       "officialSource": "https://www.ishares.com/us/products/307352/ishares-cybersecurity-and-tech-etf",
       "holdingsSourceDiscovery": null,
-      "holdingsGate1": "PENDING_COMPLETE_FILE_READBACK_AND_WEIGHT_VALIDATION",
+      "holdingsGate1": "PENDING_OFFICIAL_DISCLOSURE_REVIEW",
       "priceRightsGate2": "PENDING",
       "operatorGradeGate3": "PENDING",
       "shadowEligible": null
@@ -622,7 +632,7 @@
       "wasLegacy": false,
       "officialSource": "https://www.wisdomtree.com/us/products/megatrends/wcbr",
       "holdingsSourceDiscovery": null,
-      "holdingsGate1": "PENDING_COMPLETE_FILE_READBACK_AND_WEIGHT_VALIDATION",
+      "holdingsGate1": "PENDING_OFFICIAL_DISCLOSURE_REVIEW",
       "priceRightsGate2": "PENDING",
       "operatorGradeGate3": "PENDING",
       "shadowEligible": null
@@ -634,7 +644,7 @@
       "wasLegacy": false,
       "officialSource": "https://themesetfs.com/etfs/spam",
       "holdingsSourceDiscovery": null,
-      "holdingsGate1": "PENDING_COMPLETE_FILE_READBACK_AND_WEIGHT_VALIDATION",
+      "holdingsGate1": "PENDING_OFFICIAL_DISCLOSURE_REVIEW",
       "priceRightsGate2": "PENDING",
       "operatorGradeGate3": "PENDING",
       "shadowEligible": null
@@ -646,7 +656,7 @@
       "wasLegacy": false,
       "officialSource": "https://etf.dws.com/en-us/PSWD-cybersecurity-select-equity-etf/",
       "holdingsSourceDiscovery": null,
-      "holdingsGate1": "PENDING_COMPLETE_FILE_READBACK_AND_WEIGHT_VALIDATION",
+      "holdingsGate1": "PENDING_OFFICIAL_DISCLOSURE_REVIEW",
       "priceRightsGate2": "PENDING",
       "operatorGradeGate3": "PENDING",
       "shadowEligible": null
@@ -658,7 +668,7 @@
       "wasLegacy": false,
       "officialSource": "https://corgiinvest.com/xa",
       "holdingsSourceDiscovery": null,
-      "holdingsGate1": "PENDING_COMPLETE_FILE_READBACK_AND_WEIGHT_VALIDATION",
+      "holdingsGate1": "PENDING_OFFICIAL_DISCLOSURE_REVIEW",
       "priceRightsGate2": "PENDING",
       "operatorGradeGate3": "PENDING",
       "shadowEligible": null
@@ -676,7 +686,7 @@
         "listedCount": 26,
         "notes": "Daily table plus all-fund-holdings XLS; sum and downloaded file pending"
       },
-      "holdingsGate1": "PENDING_COMPLETE_FILE_READBACK_AND_WEIGHT_VALIDATION",
+      "holdingsGate1": "O",
       "priceRightsGate2": "PENDING",
       "operatorGradeGate3": "PENDING",
       "shadowEligible": null
@@ -688,7 +698,7 @@
       "wasLegacy": true,
       "officialSource": "https://www.ishares.com/us/products/239705/ishares-phlx-semiconductor-etf",
       "holdingsSourceDiscovery": null,
-      "holdingsGate1": "PENDING_COMPLETE_FILE_READBACK_AND_WEIGHT_VALIDATION",
+      "holdingsGate1": "PENDING_OFFICIAL_DISCLOSURE_REVIEW",
       "priceRightsGate2": "PENDING",
       "operatorGradeGate3": "PENDING",
       "shadowEligible": null
@@ -700,7 +710,7 @@
       "wasLegacy": false,
       "officialSource": "https://www.invesco.com/us/en/financial-products/etfs/invesco-phlx-semiconductor-etf.html",
       "holdingsSourceDiscovery": null,
-      "holdingsGate1": "PENDING_COMPLETE_FILE_READBACK_AND_WEIGHT_VALIDATION",
+      "holdingsGate1": "PENDING_OFFICIAL_DISCLOSURE_REVIEW",
       "priceRightsGate2": "PENDING",
       "operatorGradeGate3": "PENDING",
       "shadowEligible": null
@@ -712,7 +722,7 @@
       "wasLegacy": false,
       "officialSource": "https://www.ssga.com/us/en/individual/etfs/state-street-spdr-sp-semiconductor-etf-xsd",
       "holdingsSourceDiscovery": null,
-      "holdingsGate1": "PENDING_COMPLETE_FILE_READBACK_AND_WEIGHT_VALIDATION",
+      "holdingsGate1": "PENDING_OFFICIAL_DISCLOSURE_REVIEW",
       "priceRightsGate2": "PENDING",
       "operatorGradeGate3": "PENDING",
       "shadowEligible": null
@@ -724,7 +734,7 @@
       "wasLegacy": false,
       "officialSource": "https://www.ishares.com/us/products/297905/ishares-future-ai-tech-etf",
       "holdingsSourceDiscovery": null,
-      "holdingsGate1": "PENDING_COMPLETE_FILE_READBACK_AND_WEIGHT_VALIDATION",
+      "holdingsGate1": "PENDING_OFFICIAL_DISCLOSURE_REVIEW",
       "priceRightsGate2": "PENDING",
       "operatorGradeGate3": "PENDING",
       "shadowEligible": null
@@ -736,7 +746,7 @@
       "wasLegacy": false,
       "officialSource": "https://www.globalxetfs.com/funds/aiq",
       "holdingsSourceDiscovery": null,
-      "holdingsGate1": "PENDING_COMPLETE_FILE_READBACK_AND_WEIGHT_VALIDATION",
+      "holdingsGate1": "PENDING_OFFICIAL_DISCLOSURE_REVIEW",
       "priceRightsGate2": "PENDING",
       "operatorGradeGate3": "PENDING",
       "shadowEligible": null
@@ -748,7 +758,7 @@
       "wasLegacy": false,
       "officialSource": "https://www.roundhillinvestments.com/etf/chat/",
       "holdingsSourceDiscovery": null,
-      "holdingsGate1": "PENDING_COMPLETE_FILE_READBACK_AND_WEIGHT_VALIDATION",
+      "holdingsGate1": "PENDING_OFFICIAL_DISCLOSURE_REVIEW",
       "priceRightsGate2": "PENDING",
       "operatorGradeGate3": "PENDING",
       "shadowEligible": null
@@ -760,7 +770,7 @@
       "wasLegacy": false,
       "officialSource": "https://www.invesco.com/us/en/financial-products/etfs/invesco-semiconductors-etf.html",
       "holdingsSourceDiscovery": null,
-      "holdingsGate1": "PENDING_COMPLETE_FILE_READBACK_AND_WEIGHT_VALIDATION",
+      "holdingsGate1": "PENDING_OFFICIAL_DISCLOSURE_REVIEW",
       "priceRightsGate2": "PENDING",
       "operatorGradeGate3": "PENDING",
       "shadowEligible": null
@@ -772,7 +782,7 @@
       "wasLegacy": false,
       "officialSource": "https://corgiinvest.com/euv",
       "holdingsSourceDiscovery": null,
-      "holdingsGate1": "PENDING_COMPLETE_FILE_READBACK_AND_WEIGHT_VALIDATION",
+      "holdingsGate1": "PENDING_OFFICIAL_DISCLOSURE_REVIEW",
       "priceRightsGate2": "PENDING",
       "operatorGradeGate3": "PENDING",
       "shadowEligible": null
@@ -784,7 +794,7 @@
       "wasLegacy": false,
       "officialSource": "https://www.roundhillinvestments.com/etf/dram/",
       "holdingsSourceDiscovery": null,
-      "holdingsGate1": "PENDING_COMPLETE_FILE_READBACK_AND_WEIGHT_VALIDATION",
+      "holdingsGate1": "PENDING_OFFICIAL_DISCLOSURE_REVIEW",
       "priceRightsGate2": "PENDING",
       "operatorGradeGate3": "PENDING",
       "shadowEligible": null
@@ -796,7 +806,7 @@
       "wasLegacy": false,
       "officialSource": "https://www.globalxetfs.com/funds/llma",
       "holdingsSourceDiscovery": null,
-      "holdingsGate1": "PENDING_COMPLETE_FILE_READBACK_AND_WEIGHT_VALIDATION",
+      "holdingsGate1": "PENDING_OFFICIAL_DISCLOSURE_REVIEW",
       "priceRightsGate2": "PENDING",
       "operatorGradeGate3": "PENDING",
       "shadowEligible": null
@@ -814,7 +824,7 @@
         "listedCount": 243,
         "notes": "CSV link and holdings count visible; dynamic table intermittently unavailable, downloaded CSV not yet verified"
       },
-      "holdingsGate1": "PENDING_COMPLETE_FILE_READBACK_AND_WEIGHT_VALIDATION",
+      "holdingsGate1": "O",
       "priceRightsGate2": "PENDING",
       "operatorGradeGate3": "PENDING",
       "shadowEligible": null
@@ -826,7 +836,7 @@
       "wasLegacy": true,
       "officialSource": "https://www.ssga.com/us/en/individual/etfs/state-street-spdr-sp-biotech-etf-xbi",
       "holdingsSourceDiscovery": null,
-      "holdingsGate1": "PENDING_COMPLETE_FILE_READBACK_AND_WEIGHT_VALIDATION",
+      "holdingsGate1": "PENDING_OFFICIAL_DISCLOSURE_REVIEW",
       "priceRightsGate2": "PENDING",
       "operatorGradeGate3": "PENDING",
       "shadowEligible": null
@@ -838,7 +848,7 @@
       "wasLegacy": false,
       "officialSource": "https://www.vaneck.com/us/en/investments/biotech-etf-bbh/overview/",
       "holdingsSourceDiscovery": null,
-      "holdingsGate1": "PENDING_COMPLETE_FILE_READBACK_AND_WEIGHT_VALIDATION",
+      "holdingsGate1": "PENDING_OFFICIAL_DISCLOSURE_REVIEW",
       "priceRightsGate2": "PENDING",
       "operatorGradeGate3": "PENDING",
       "shadowEligible": null
@@ -850,7 +860,7 @@
       "wasLegacy": false,
       "officialSource": "https://www.invesco.com/us/en/financial-products/etfs/invesco-biotechnology-genome-etf.html",
       "holdingsSourceDiscovery": null,
-      "holdingsGate1": "PENDING_COMPLETE_FILE_READBACK_AND_WEIGHT_VALIDATION",
+      "holdingsGate1": "PENDING_OFFICIAL_DISCLOSURE_REVIEW",
       "priceRightsGate2": "PENDING",
       "operatorGradeGate3": "PENDING",
       "shadowEligible": null
@@ -862,7 +872,7 @@
       "wasLegacy": false,
       "officialSource": "https://www.globalxetfs.com/funds/gnom/",
       "holdingsSourceDiscovery": null,
-      "holdingsGate1": "PENDING_COMPLETE_FILE_READBACK_AND_WEIGHT_VALIDATION",
+      "holdingsGate1": "PENDING_OFFICIAL_DISCLOSURE_REVIEW",
       "priceRightsGate2": "PENDING",
       "operatorGradeGate3": "PENDING",
       "shadowEligible": null
@@ -874,7 +884,7 @@
       "wasLegacy": false,
       "officialSource": "https://www.ark-funds.com/funds/arkg",
       "holdingsSourceDiscovery": null,
-      "holdingsGate1": "PENDING_COMPLETE_FILE_READBACK_AND_WEIGHT_VALIDATION",
+      "holdingsGate1": "PENDING_OFFICIAL_DISCLOSURE_REVIEW",
       "priceRightsGate2": "PENDING",
       "operatorGradeGate3": "PENDING",
       "shadowEligible": null
@@ -886,7 +896,7 @@
       "wasLegacy": false,
       "officialSource": "https://www.alpsfunds.com/exchange-traded-funds/SBIO",
       "holdingsSourceDiscovery": null,
-      "holdingsGate1": "PENDING_COMPLETE_FILE_READBACK_AND_WEIGHT_VALIDATION",
+      "holdingsGate1": "PENDING_OFFICIAL_DISCLOSURE_REVIEW",
       "priceRightsGate2": "PENDING",
       "operatorGradeGate3": "PENDING",
       "shadowEligible": null
@@ -898,7 +908,7 @@
       "wasLegacy": false,
       "officialSource": "https://www.ftportfolios.com/retail/ETF/ETFsummary.aspx?Ticker=FBT",
       "holdingsSourceDiscovery": null,
-      "holdingsGate1": "PENDING_COMPLETE_FILE_READBACK_AND_WEIGHT_VALIDATION",
+      "holdingsGate1": "PENDING_OFFICIAL_DISCLOSURE_REVIEW",
       "priceRightsGate2": "PENDING",
       "operatorGradeGate3": "PENDING",
       "shadowEligible": null
@@ -910,7 +920,7 @@
       "wasLegacy": false,
       "officialSource": "https://corgiinvest.com/gnmx",
       "holdingsSourceDiscovery": null,
-      "holdingsGate1": "PENDING_COMPLETE_FILE_READBACK_AND_WEIGHT_VALIDATION",
+      "holdingsGate1": "PENDING_OFFICIAL_DISCLOSURE_REVIEW",
       "priceRightsGate2": "PENDING",
       "operatorGradeGate3": "PENDING",
       "shadowEligible": null
