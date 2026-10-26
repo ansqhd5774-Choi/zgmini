@@ -10,7 +10,8 @@ import { fetchResearchUniverse } from './stage04-all-universe-r31.mjs';
 import { measureKeyword, outputText } from './keyword-growth-speed-r25-readonly.mjs';
 
 export async function researchAll({ fetchFn = fetch, model = 'gemma3:4b',
-  outputFile = null, onProgress = () => {} } = {}) {
+  outputFile = null, onProgress = () => {}, strictMarketScope = false,
+  reportName = 'STAGE04_ALL_SECTORS_THEMES_R31_READONLY' } = {}) {
   const { rows, errors } = await fetchResearchUniverse({ fetchFn });
   const allowedKeywords = [...new Set(rows.map(x => x.keyword).filter(Boolean))];
   const results = [];
@@ -20,7 +21,7 @@ export async function researchAll({ fetchFn = fetch, model = 'gemma3:4b',
         fetchFn, model, allowedKeywords,
         searchMode: 'publisher-site', structuredOutput: true,
         auditForecast: true, rateOnlyFromSource: true,
-        resolveHistoricTableMislabel: true
+        resolveHistoricTableMislabel: true, strictMarketScope
       })
       : { keyword: null, state: 'NO_RESEARCH_MAPPING', growth_pct: null,
         failure: 'CATEGORY_NOT_MAPPED_NO_GUESS', source_audit: 'NOT_RUN',
@@ -31,8 +32,10 @@ export async function researchAll({ fetchFn = fetch, model = 'gemma3:4b',
     results.push(joined);
     onProgress(joined, results.length, rows.length);
     if (outputFile) await writeFile(outputFile, outputText(results, {
-      reportName: 'STAGE04_ALL_SECTORS_THEMES_R31_READONLY',
-      sourceName: 'ZGMINI_LIVE_CATEGORIES_TBRC_SINGLE_REPORT_PER_CATEGORY_OLLAMA',
+      reportName,
+      sourceName: strictMarketScope
+        ? 'ZGMINI_LIVE_CATEGORIES_TBRC_DIRECT_MARKET_TITLE_ONLY_OLLAMA'
+        : 'ZGMINI_LIVE_CATEGORIES_TBRC_SINGLE_REPORT_PER_CATEGORY_OLLAMA',
     }) + `\r\nFEED_ERRORS=${errors.join(',') || 'NONE'}\r\n`, 'utf8');
   }
   return { rows: results, errors,

@@ -89,6 +89,21 @@ function matchesKeyword(title, keyword) {
     .every((token) => titleWords.includes(token.slice(0, Math.min(token.length, 6))));
 }
 
+// R32 opt-in: an indexed report about a submarket must never impersonate a
+// broader market. Search inclusion and actual market-name identity differ.
+function canonicalMarketName(raw) {
+  return stripTags(String(raw)).toLowerCase()
+    .replace(/\bcyber[\s-]*security\b/g, 'cybersecurity')
+    .replace(/\bservices\b/g, 'service')
+    .replace(/\bsatellites\b/g, 'satellite')
+    .replace(/[^a-z0-9]+/g, ' ').trim();
+}
+
+export function isDirectMarketTitle(title, keyword) {
+  const subject = String(title).match(/^(.+?)\s+Market\b/i)?.[1];
+  return Boolean(subject && canonicalMarketName(subject) === canonicalMarketName(keyword));
+}
+
 function allowedReportUrl(url) {
   try {
     const parsed = new URL(url);
@@ -133,7 +148,7 @@ function searchDiagnostics(xml, keyword) {
 }
 
 /** TBRC's public report-store search renders title links inside h4 cards. */
-export function parsePublisherSearchPage(html, keyword) {
+export function parsePublisherSearchPage(html, keyword, { strictMarketScope = false } = {}) {
   const reports = [];
   for (const match of html.matchAll(/<h4\b[^>]*>\s*<a\s+href=["'](\/report\/[^"'?#]+)["'][^>]*>([\s\S]*?)<\/a>/gi)) {
     const url = new URL(match[1], PUBLISHER_HOST).href;
@@ -143,10 +158,19 @@ export function parsePublisherSearchPage(html, keyword) {
     if (reports.length >= 20) break;
   }
   const matched = reports.filter(({ title }) => matchesKeyword(title, keyword));
+  const direct = matched.filter(({ title }) => isDirectMarketTitle(title, keyword));
   return {
-    selected: matched[0] || null,
+    selected: strictMarketScope
+      ? (direct.find(({ title }) => /\bMarket Report 2026\b/i.test(title)) || direct[0] || null)
+      : (matched[0] || null),
     diagnostics: { search_page_cards: reports.length, publisher_index_links: reports.length,
       title_matched_links: matched.length,
+      ...(strictMarketScope ? {
+        direct_market_matched_links: direct.length,
+        scope_rejected_sample: matched.filter(({ title }) => !isDirectMarketTitle(title, keyword))
+          .slice(0, 3).map(({ title }) => title.slice(0, 90).replace(/[\r\n=|]/g, ' '))
+          .join(' | ') || 'NONE'
+      } : {}),
       indexed_sample: reports.slice(0, 3).map(({ title }) =>
         title.slice(0, 80).replace(/[\r\n=|]/g, ' ')).join(' | ') || 'NONE' }
   };
@@ -196,6 +220,7 @@ export async function measureKeyword(keyword, {
   auditForecast = false,
   rateOnlyFromSource = false,
   resolveHistoricTableMislabel = false,
+  strictMarketScope = false,
   allowedKeywords = KEYWORDS,
 } = {}) {
   if (maxMs <= 0 || maxMs > MAX_KEYWORD_MS) throw new Error('INVALID_TIMEOUT');
@@ -213,6 +238,10 @@ export async function measureKeyword(keyword, {
   if (typeof resolveHistoricTableMislabel !== 'boolean' ||
       (resolveHistoricTableMislabel && !rateOnlyFromSource)) {
     throw new Error('INVALID_HISTORIC_MISLABEL_MODE');
+  }
+  if (typeof strictMarketScope !== 'boolean' ||
+      (strictMarketScope && searchMode !== 'publisher-site')) {
+    throw new Error('INVALID_MARKET_SCOPE_MODE');
   }
   const began = now();
   const controller = new AbortController();
@@ -279,7 +308,7 @@ export async function measureKeyword(keyword, {
     let selected;
     if (searchMode === 'publisher-site') {
       if (!/<html\b/i.test(feed)) throw new Error('SEARCH_NOT_HTML');
-      const parsed = parsePublisherSearchPage(feed, keyword);
+      const parsed = parsePublisherSearchPage(feed, keyword, { strictMarketScope });
       Object.assign(result, parsed.diagnostics);
       selected = parsed.selected;
     } else {
@@ -287,7 +316,10 @@ export async function measureKeyword(keyword, {
       Object.assign(result, searchDiagnostics(feed, keyword));
       selected = parseOneSpecialistResult(feed, keyword);
     }
-    if (!selected) throw new Error('SEARCH_NO_MATCHED_PUBLISHER_REPORT');
+    if (!selected) {
+      throw new Error(strictMarketScope && result.title_matched_links > 0
+        ? 'SEARCH_SCOPE_NO_DIRECT_MARKET_REPORT' : 'SEARCH_NO_MATCHED_PUBLISHER_REPORT');
+    }
     result.result_url = selected.url;
     ensureInBudget(began, now, maxMs);
 
