@@ -92,7 +92,7 @@ test('sector legend and compact ranking text are consistently 11.5px on mobile w
  assert.match(mobile,/@media screen and \\(max-width:600px\\)\\{[\\s\\S]*?grid-template-columns:repeat\\(3,minmax\\(0,1fr\\)\\);grid-auto-rows:32px/);
  assert.match(mobile,/@media screen and \\(max-width:355px\\)\\{[\\s\\S]*?grid-template-columns:repeat\\(2,minmax\\(0,1fr\\)\\)/);
  assert.match(mobile,/height:32px;min-height:32px;max-height:32px/);
- for(const line of mobile.split('\\n').filter(line=>line.trimStart().startsWith('.zg-'))){
+ for(const line of mobile.split(String.fromCharCode(10)).filter(line=>line.trimStart().startsWith('.zg-'))){
   assert.match(line,/\\.zg-sector-detail:not\\(\\.zg-theme-detail\\)/);
  }
 });
