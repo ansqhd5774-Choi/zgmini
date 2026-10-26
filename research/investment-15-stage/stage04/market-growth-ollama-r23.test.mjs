@@ -71,3 +71,20 @@ test('shared time limit aborts a slow publisher without retry', async () => {
   assert.equal(output.failure, 'TOTAL_DEADLINE_EXCEEDED');
   assert.equal(calls, 1);
 });
+
+test('model-only speed test bypasses blocked publisher and labels reference input', async () => {
+  let calls = 0;
+  const output = await benchmark({ mode: 'model-only', model: 'existing-model', fetchFn: async (url) => {
+    calls++;
+    assert.ok(url.endsWith('/api/generate'));
+    return Response.json({ response: JSON.stringify({ growth_pct: 2.96,
+      metric: 'FORECAST_CAGR', period_start: 2026, period_end: 2034 }),
+      total_duration: 5_100_000, eval_count: 21 });
+  }});
+  assert.equal(output.state, 'PASS');
+  assert.equal(output.source_mode, 'REFERENCE_SAMPLE_NOT_LIVE');
+  assert.equal(output.publisher_requests, 0);
+  assert.equal(output.ollama_generations, 1);
+  assert.equal(output.ollama_reported_ms, 5);
+  assert.equal(calls, 1);
+});
