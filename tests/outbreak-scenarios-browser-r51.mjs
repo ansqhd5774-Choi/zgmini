@@ -112,6 +112,8 @@ try{
    await guide.locator("summary").click();
    assert.equal(await guide.getAttribute("open"),null);
    assert.equal(await root.locator(".obm-log").isVisible(),true,"Mobile event change-log slot is visible under the chart");
+   assert.equal(await root.locator(".ob53-beginner-stack").isVisible(),false,"Mobile hides redundant beginner and asset cards");
+   assert.equal(await root.locator(".ob53-title").isVisible(),false,"Mobile uses compact tab title instead of duplicate detail header");
    const chartBottom=await root.locator(".ob53-chart").boundingBox();
    const logTop=await root.locator(".obm-log").boundingBox();
    assert(chartBottom&&logTop&&logTop.y>=chartBottom.y+chartBottom.height-1,"Change log follows the 14-day chart");
