@@ -3,7 +3,7 @@
 - 작성: 2026-10-27 KST
 - 기준 로그 1: `EARNINGS_R3A_PC_LINEAGE_RESULT_20261026-155138Z.txt` (UTC 2026-10-26T15:51:38Z)
 - 기준 로그 2: `EARNINGS_R3A_PARITY_REUSE_RESULT_20261026-160134Z.txt` (UTC 2026-10-26T16:01:34Z)
-- 상태: **R3-A PASS (Growth ratio parity + exact FRED snapshots) / R3-B PROPOSAL_ONLY / R3-C NOT_APPROVED**
+- 상태: **R3-A PASS / R3-B USER_APPROVED_WITH_FRED_RIGHTS_HOLD / R3-C NOT_APPROVED**
 - 저장소 기존 단일 브랜치: `ansqhd5774-Choi/zgmini` / `codex/earnings-api-site-integration-plan-r1-20261026`
 - 원래 계획: `docs/EARNINGS_RECESSION_COMPANION_API_SITE_INTEGRATION_PLAN_R1_20261026.md`
 - R3 제안: `docs/EARNINGS_COMPANION_R3_MINIMAL_PC_STORAGE_PROPOSAL_20261026.md`
@@ -67,7 +67,7 @@ R3-A 초회 로그에 부족한 정확한 수치 대조와 재사용 확인을 �
 | R3-A 기존 Growth current/history 대조 | **PASS (6/6 current hash present)** |
 | R3-A G017/G018 최신 구성요소 수치 parity | **PASS (두 값 10자리 일치); 기존 Growth 저장 참조 허용 후보** |
 | R3-A 정확한 FRED/BLS/BEA/Census 원장 중복 여부 | **FRED PPIFIS/PRS85006111 보유 확인; 새 원천 저장 여부는 R3-B 조건부** |
-| R3-B 신규 저장·재사용 계약 확정 | **사용자 별도 승인 전 구현 금지** |
+| R3-B 신규 저장·재사용 계약 확정 | **설계 승인됨, 단 FRED API 캐시 재사용 HOLD·PC 쓰기 별도 승인 필요** |
 | R3-C PC 신규 수집·영구 저장 | **NOT_APPROVED** |
 | R3-D DB 저장값 파생 | **NOT_APPROVED** |
 | R4–R6 공개 모델·UI·배포 | **NOT_APPROVED** |
