@@ -274,6 +274,7 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
     if (extra || !['--inspect', '--collect'].includes(mode)) fail('USAGE_EXPECTED_INSPECT_OR_COLLECT');
     if (mode === '--collect' && (!start || !end)) fail('EXPLICIT_DATE_RANGE_REQUIRED');
     const options = {dataRoot: process.env.ZGMINI_DATA_ROOT || DEFAULT_DATA,
+      rosterPath: process.env.ZGMINI_R23_ROSTER_PATH || DEFAULT_ROSTER,
       start: start || undefined, end: end || undefined};
     const report = mode === '--collect' ? await collectApprovedNine(options) : inspectApprovedNine(options);
     process.stdout.write(JSON.stringify(report, null, 2) + '\n');

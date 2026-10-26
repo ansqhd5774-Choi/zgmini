@@ -7,6 +7,8 @@
 
 ## 구현 파일
 
+- `scripts/pc-writer/THEME_NINE_R23_PILOT.cmd`: **단일 다운로드 파일**. GitHub 체크아웃 없이 Windows에서 실행 가능하도록 승인된 R23 수집기와 R20 후보 명단을 검증 가능한 SHA256 번들로 포함한다. 실행 결과는 CMD **같은 위치**의 `THEME_NINE_R23_PILOT_RESULT.txt`에 남긴다.
+- `scripts/pc-writer/build-theme-nine-r23-pilot.mjs`: 원본 코드/명단 변경 시 단일 CMD를 재생성하고, 내장 자료를 역추출해 일치 여부를 검사한다.
 - `scripts/pc-writer/theme-nine-r23-collect.mjs`: R20 확정 명단 직접 읽기. 중복된 편입 64개를 고유 ETF 63개로 통합하고, SPY 기준 종목을 별도로 포함한다. 티커 수를 임의로 고정하거나 다시 심사하지 않는다.
 - `scripts/pc-writer/theme-nine-r23-collect.cmd`: 사용자 Windows CMD 진입점. 실행 결과 TXT는 CMD **동일 폴더**의 `THEME_NINE_R23_COLLECTION_RESULT.txt`에 생성한다.
 - `tests/theme-nine-r23-collect.test.mjs`: 모의 API 응답으로 체크포인트 재개, 요청 상한, 원자료 SHA, 429 중단, 손상 원본 거부, 중복 원본 저장 거부, 잘못된 OHLCV 거부를 검증한다.
@@ -22,6 +24,10 @@
 7. 수집 성공은 **실제 PC 실행 로그와 manifest SHA readback**으로만 판정한다. GitHub 코드 존재나 모의 응답 테스트는 실가격 수집 성공이 아니다.
 
 ## PC 명령 (실행은 사용자 담당)
+
+**권장: 파일 하나만 내려받아 실행.** `THEME_NINE_R23_PILOT.cmd`를 바탕화면 등 원하는 폴더에 놓고 더블클릭한다. 설치된 Node.js(`E:\ZGmini\runtime\node.exe` 우선, 없으면 PATH의 `node`)가 필요하다. 파일 자체에 시작일 `2023-01-01`, 종료일 `2026-10-26`, 최대 무료 GET 4회를 고정했다. 실행 후 같은 폴더의 `THEME_NINE_R23_PILOT_RESULT.txt`를 대화창에 제출한다. 재실행할 때 같은 파일을 사용하며, 기존 원본과 이어받기 체크포인트는 승인된 `E:\ZGmini\data\themes\legacy-nine-r23`에 유지된다. CMD 내부에서 임시로 꺼낸 코드/명단은 CMD와 같은 폴더에서만 생성·검증하고 정상 종료 시 제거한다. **실제 수집 성공은 사용자가 제출한 TXT로 확인한다.**
+
+**대체 방법: 저장소 체크아웃 사용 시** 아래 CMD를 쓸 수 있다.
 
 승인된 저장소 체크아웃의 루트에서 실행한다. `<시작일>`과 `<종료일>`은 동일하게 유지하며, 다음 호출 때도 날짜를 바꾸지 않는다.
 
