@@ -3,7 +3,7 @@
 - 날짜: 2026-10-26 (KST)
 - 브랜치: `codex/earnings-api-site-integration-plan-r1-20261026` (기존 브랜치 유지)
 - 대상: `/earnings-recession/`의 정보 제공용 확장형 지표(C)
-- 상태: `R2_QFR_MTIS_SERIES_IDENTIFIED / PC_FRESHNESS_PENDING / NO_PUBLICATION`
+- 상태: `R2_PC_FRESHNESS_VERIFIED / SERIES_LEVEL_R2_PARTIAL / NO_PUBLICATION`
 - 상위 계획: `docs/EARNINGS_RECESSION_COMPANION_API_SITE_INTEGRATION_PLAN_R1_20261026.md`
 
 ## 1. 기존 실측을 재사용해 확정한 범위
@@ -13,7 +13,7 @@
 3. QFR는 *분기* 통계다. 2026년 공식 QFR 최신 발표는 **2분기**이다. API의 `2026-02-01`을 **2026년 2월** 관측이라고 사이트에 표시하지 않는다. 이번 후속 테스트에서 반환된 `time_slot_name`을 실측 로그로 확인한다.
 4. Census 공식 MTIS 2026년 8월 전체 사업체 **재고/매출 비율은 1.33**이다. Fix2 샘플 `SM/MNFCTR`, `IM/RETAIL`은 전체 비율의 식별자로 사용하지 않는다.
 5. M3 `IS/MTM/yes=1.48`은 2026년 8월 **제조업 재고/출하 비율** 공식 보도와 일치하나, MTIS 전체 사업체 재고/매출 비율 1.33과 다른 모집단·분모다.
-6. Growth 수집기의 M3 `G010/G013/G015/G016` 입력과 BLS `WPSFD4`, SEC E1-R4 등의 저장 경로는 코드로 발견했지만, PC 운영 SQLite의 현재 자료 존재/관측일은 아직 검증되지 않았다.
+6. Growth 수집기의 M3 `G010/G013/G015/G016` 입력과 BLS `WPSFD4`, SEC E1-R4 등의 저장 경로는 코드로 발견했다. M3 및 E1의 PC 관측기간·실행 메타는 후속 8절의 별도 읽기 전용 로그로 검증했다. BLS `WPSFD4`의 PC 실측값·원천 provenance는 **아직 검증되지 않았다**.
 
 ## 2. 추가 작업: 하나의 읽기 전용 CMD (API 최대 2회)
 
@@ -135,7 +135,7 @@ Windows QFR API 표본의 조정표시가 `no`임을 확인했다. Census 2026 Q
 | MTIS 총사업체 재고/매출 비율 | **O** | `IR/TOTBUS/yes=1.33` + 공식 원단위/분류 + 8월 발표 |
 | QFR 전년 대비 성장·이익률의 시차/이상값·수정본 정책 | **PENDING** | 2025 동기값·공시 리비전·유효 분모 확인 전 |
 | 기존 PC Growth/Earnings 테이블 | **O_EXISTS** | 실제 DB 테이블과 데이터 존재 |
-| 기존 PC 각 지표의 최신 관측일·중복값 | **PENDING** | 첫 검사에서 원장 값을 읽지 않도록 제한됨 |
+| 기존 PC 각 지표의 최신 관측일·중복값 | **O_OBSERVATION_METADATA / VALUES_NOT_CHECKED** | 후속 8절: 일부 Growth/E1 실제 관측기간·메타 검증, 데이터 값·원시 payload는 미확인 |
 | 라이선스·권리 최종 | **CONDITIONAL** | 공식 기관 고지 준수·제3자 자료 예외·상업 저장/파생 공개 범위 최종 검토 |
 | R3 실제 저장/가공 및 R4–R6 사이트 작업 | **미실행** | 계획 순서대로 선행 Gate 통과·별도 승인 필요 |
 
@@ -154,4 +154,45 @@ Windows QFR API 표본의 조정표시가 `no`임을 확인했다. Census 2026 Q
 - QFR·MTIS 전용 테이블명 존재 여부만 별도 조회(이름이 없더라도 다른 범용 Snapshot에 없다는 뜻은 아님).
 - 사용자가 PC 검사를 완료하면 이미 생성한 공식 시리즈 Selector와 결합해 **재사용 가능/새 수집 검토/보류**를 행별로 확정한다.
 
-**현재 상태: CMD 코드·ZIP 기본검증 PASS, 실제 Windows PC 로그 PENDING.** 해당 결과 없이 R3 저장·파생 구현이나 R4 공개키 변경을 앞서 실행하지 않는다.
+**현재 상태: CMD 코드·ZIP 기본검증 PASS, 실제 Windows PC 로그 수신·분석 완료(8절).** R3 저장·파생 구현이나 R4 공개키 변경은 별도 승인 전 실행하지 않는다.
+
+## 8. Windows R2 PC 실제 최신성 로그 — 2026-10-26 14:30:41 UTC
+
+사용자 제출: \`EARNINGS_R2_PC_FRESHNESS_RESULT_20261026-143041Z.txt\`.
+기존 \`core.sqlite\`를 **읽기 전용**으로 검사한 결과다. 신규 API 0회, 운영 SQLite·D1·스케줄러·산식 변경 0회. 이번 원장은 **관측기간/원천/시점/집계 커버리지 메타데이터만** 포함하고, 원자료 숫자나 기업별 행·원본 JSON/URL은 확인하지 않았다.
+
+| 검사 지점 | PC 실측 내용 | 정밀 판정 |
+|---|---|---|
+| Growth R2 현재 메타 | \`candidate_id <= G070\` 탐색 대상에서 현재행 **24개** | 실측. 전체 Growth 후보가 24개라는 뜻은 아님 |
+| M3 제조업 주문·출하·재고 | \`G010\` 총 신규주문, \`G013\` 총 출하, \`G015\` 미이행주문, \`G016\` 전체 재고: 관측 \`2026-08\`, \`Census_M3\`, \`MONTHLY\`, \`USD_BILLION_SA_NOMINAL\`; 행 \`retrieved_at=2026-10-15T12:15:05.739Z\` | **기존 저장 후보 O**, 신규 원천 중복 수집 제한. 실제 수치/수정본 parity는 별도 검증 필요 |
+| M3 재고 파생 | \`G017\` 신규주문/재고, \`G018\` 출하/재고: 관측 \`2026-08\`, \`retrieved_at=2026-10-02T14:20:53.819Z\` | **재검증 필요**: 상응 원자료 \`G010/G013/G016\`의 10/15 저장시각보다 오래됨. 값이 구판인지 여부는 미검증 |
+| M3 기존 provider snapshot | \`Census_M3:MDM/MTM/NXA=2026-10-08T12:45:03.460Z\`, \`MTU=2026-10-01T20:50:30.670Z\` | source-group 시각만 확인. Growth 항목별 10/15과의 계보 일치 단정 금지 |
+| E1-R4 최근 PC 성공 | \`period_end=2026-06-30\`; 10/25–10/26 최근 실행 4건 모두 \`SUCCESS\`, 최신 완료 \`2026-10-26T14:00:13.148Z\`, \`provider_requests=10\` | **기존 E1 실행/저장 O**. 이 로그는 새 정보성 C의 공개를 의미하지 않음 |
+| E1 우주(universe) | 최신 기간 \`2026-06-30\`: \`security_count=503\`, \`issuer_count=500\`; 그 이전 \`2026-03-31\`, \`2025-12-31\` 기간도 존재 | 보안·발행사 단위 혼동 금지. SEC 500개 기업 표본과 Census QFR 산업별 모집단은 다름 |
+| E1 항목별 개수 | 최신 성공 \`eps_count=420\`, \`revenue_count=409\`, \`margin_count=319\`, \`current_rows=1153\` | 500 발행사 대비 **단순 비율** EPS 84.0%, 매출 81.8%, 마진 63.8%. 고유 발행사 일대일 커버리지·상호 동일 표본은 이번 로그로 확인되지 않음 |
+| QFR·MTIS 전용 스키마명 | \`DEDICATED_QFR_MTIS_TABLE_NAMES=NOT_FOUND_NAME_ONLY\` | **전용 테이블명 미발견**. 범용 snapshot/JSON에 없다는 증거는 아님 |
+| 검사 범위 | \`PC_TABLE_CONTENTS=ONLY_METADATA_NO_VALUES_NO_PROVENANCE_JSON_NO_RAW_PAYLOAD\` | 값/중복 해시/lineage에 대한 실측 검증은 수행하지 않음 |
+
+### 8-1. 재사용·추가 수집 검토 구분 (정보성 C만 대상)
+
+| 지표군 | 현재 기존 자료·최신 관측 | 실행 방향 | 확인 전 금지할 주장 |
+|---|---|---|---|
+| **M3 제조업 주문·출하·재고** | \`G010/G013/G015/G016\`, **2026-08** | **REUSE_PATH_CONFIRMED**: 새 M3 전체 중복 수집기 생성 불필요. R3 승인 후 PC 원장 입력을 그대로 참조하는 방식을 설계 | 원장 관측일만으로 실제 수치·공표판(version) 동등성 주장 금지 |
+| **M3 파생 재고 비율** | \`G017/G018\`, **2026-08**, 원자료보다 이른 \`retrieved_at\` | **CHECK_REVISION_PARITY**: 기존 산식 변경 없이 과거/신규 버전의 계보와 값/시각을 별도 비교 | 같아 보이는 월만으로 최신 원자료와 동기화됐다고 주장 금지 |
+| **MTIS 전체 재고/매출 비율** | API \`IR/TOTBUS/yes\`, **2026-08**, 공식 1.33; 전용 DB 이름 미발견 | **COLLECTOR_REVIEW_NEEDED**: 현재 전용 테이블이 없어 기존 범용 원장 재사용 가능성 확인 후에만 R3 별도 수집 제안 | M3 재고/출하 \`IS/MTM/yes\` 1.48 대체 불가 |
+| **QFR 매출·손익/마진** | API \`2026Q2\`, \`101/104/115\` 코드; 전용 DB 이름 미발견 | **COLLECTOR_REVIEW_NEEDED**: 52개 중첩 산업코드 계층, 분기별 비교 가능성, 비계절조정 자료 확인 후 단계적 수집 제안 | 52개 산업을 독립 표본으로 계산하거나 NSA=SA로 처리 불가 |
+| **기존 E1-R4 기업 EPS·매출·마진** | PC \`2026-06-30\` / 500 발행사 / 항목 메타 일부 | **REUSE_PATH_CONFIRMED**: 기존 E1 점수·공개키는 불변. C는 승인 시 독립 정보성 가공/읽기 모델로만 사용 검토 | 500개 모두 모든 항목을 확보했다거나 2026Q3 데이터가 저장됐다고 주장 금지 |
+| **BEA 기업이익, BLS PPI/ULC** | 이전 HTTP 단순 200은 확인. 이 PC 원장에 해당값·시리즈는 나타나지 않음 | **R2_SERIES_PROVENANCE_PENDING**: 정확한 BEA line/단위, BLS ID/단위/조정/PC 출처 확인 | Growth의 \`BLS_CES\` 고용·근로시간 G035–G044를 기업 PPI/ULC라고 표기 불가 |
+| **SEC 현금흐름·산업별 분포** | E1-R4 EPS/매출/마진 수집 메타만 확인 | **R2_EXTENSION_HOLD**: 해당 원시 XBRL 항목·기업수·재사용 범위 미검증 | E1 성공만으로 현금흐름·FCF 수집 성공으로 간주 불가 |
+
+### 8-2. 계획 게이트와 후속 순서
+
+1. **R1 기존 경로 인벤토리:** M3 및 E1 저장 경로/관측 메타는 근거 확보. QFR/MTIS 범용 Snapshot 내 중복 여부, BEA/BLS/SEC 원시 시리즈는 아직 **부분 미확인**.
+2. **R2 실제 API·시리즈:** QFR \`2026Q2\`, MTIS \`2026-08 IR/TOTBUS/yes\`, M3 \`2026-08\`의 관측기간·정의 일부 **PASS**. 공급자별 상업적 저장·파생 공개권/표시 고지, BEA/BLS 완전한 line/series/단위, QFR 2025Q2 비교·revision 계보, SEC 현금흐름 커버리지 등은 **행별 HOLD**. 전체 R2 무조건 PASS 아님.
+3. **R3 PC 저장/가공:** 승인 전 **NOT_STARTED**. 먼저 \`M3/E1 기존 원장 참조\`와 \`MTIS/QFR 신규 수집 필요성\`을 구분해 최소 설계를 제안. 운영 SQLite·D1 테이블/스케줄러·E1 점수 무단 변경 없음.
+4. **R4 신규 정보성 읽기 모델/키:** **NOT_APPROVED**. 기존 \`/api/earnings-recession-detail\` 계약에 임의 필드 합류 금지.
+5. **R5 UI 및 R6 PR·Production:** **NOT_STARTED**. 기존 승인 없이 개발/공개하지 않음.
+
+**자료 출처:** 사용자 Windows 읽기 전용 로그 \`EARNINGS_R2_PC_FRESHNESS_RESULT_20261026-143041Z.txt\`; U.S. Census Bureau [MTIS 2026년 8월](https://www.census.gov/mtis/current/index.html), [QFR 2026년 2분기](https://www.census.gov/econ/qfr/mmws/current/index.html), [M3](https://www.census.gov/manufacturing/m3/current/index.html).
+
+**변경 영향:** 기존 GitHub 작업 브랜치의 검증 보고 문서만 수정. PC DB·새 API 호출·산식·스케줄러·D1·Production 게시 없음.
