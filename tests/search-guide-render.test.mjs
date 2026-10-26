@@ -5,7 +5,8 @@ import {readFileSync} from 'node:fs';
 const base=process.env.ZGMINI_LOCAL_RENDER_URL;
 const renderTest=(name,fn)=>test(name,{skip:!base},fn);
 const routes=['/guides/fear-greed-buying/','/guides/cpi-pce-release/','/guides/fomc/'];
-const html=async route=>{const r=await fetch(base+route);assert.equal(r.status,200);return (await r.text()).replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi,'');};
+const rawHtml=async route=>{const r=await fetch(base+route);assert.equal(r.status,200);return r.text();};
+const html=async route=>(await rawHtml(route)).replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi,'');
 renderTest('new routes have visible answers, one H1, canonical metadata and sitemap entries',async()=>{
  const sitemap=readFileSync('public/sitemap.xml','utf8');
  for(const route of routes){const page=await html(route);assert.equal((page.match(/<h1\b/g)||[]).length,1);assert.ok(page.includes(`href="https://zgmini.kr${route}"`));assert.ok(page.includes('name="description"'));assert.ok(sitemap.includes(`https://zgmini.kr${route}`));assert.ok(page.includes('내용 확인일 2026-10-25'));}
@@ -28,7 +29,7 @@ renderTest('initial homepage HTML and two market details link to the buying guid
 });
 renderTest('guide pages render article and breadcrumbs in initial HTML',async()=>{
  for(const route of routes){
-  const page=await html(route);
+  const page=await rawHtml(route);
   assert.match(page,/<script\b[^>]*type="application\/ld\+json"/i,route);
   assert.match(page,/"@type":"Article"/,route);
   assert.match(page,/"@type":"BreadcrumbList"/,route);
