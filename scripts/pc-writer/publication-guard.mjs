@@ -2,6 +2,7 @@ import {execFileSync} from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import {hash,read,save} from './d1.mjs';
+import {safePublicationFailures,safeTransportFailures} from './d1-transient.mjs';
 
 // UI/content commits do not change the approved publisher contract.
 export function affectsPublication(file){
@@ -46,5 +47,8 @@ export async function recoverPublication(remote,db,base,now=Date.now()){
 }
 
 export function appendPublicationEvent(base,event){
- fs.appendFileSync(path.join(base,'publication-events.jsonl'),JSON.stringify(event)+'\n');
+ const current=fs.existsSync(path.join(base,'local-writer-last-run.json'))?read(path.join(base,'local-writer-last-run.json')):null;
+ const failures=current?.at===event.at?safePublicationFailures(current.failures):[];
+ const transport=current?.at===event.at?safeTransportFailures(current.remote?.transportFailures):[];
+ fs.appendFileSync(path.join(base,'publication-events.jsonl'),JSON.stringify({...event,...(failures.length?{failures}:{}),...(transport.length?{transportFailures:transport}:{})})+'\n');
 }
