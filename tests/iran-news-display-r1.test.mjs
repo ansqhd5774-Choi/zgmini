@@ -9,7 +9,7 @@ import {maintainIranDisplayCache,DISPLAY_CACHE_BASENAME} from '../scripts/iran-p
 import {publishIranNewsDisplay} from '../scripts/iran-progress/news-display-publication-r1.mjs';
 import {storedIranNewsResponse} from '../worker/iran-news-display-public-r1.mjs';
 import {IRAN_NEWS_DISPLAY_KEY} from '../lib/iran-progress/news-display-r1.mjs';
-import {parseGovUkNewsCandidates,discoverGovUkNewsCandidates,IRAN_GOVUK_NEWS_FEED} from '../scripts/iran-progress/news-display-discover-r1.mjs';
+import {parseGovUkNewsCandidates,discoverGovUkNewsCandidates,govUkContentCandidate,IRAN_GOVUK_NEWS_FEED} from '../scripts/iran-progress/news-display-discover-r1.mjs';
 import {runIranNewsDisplayMaintenance} from '../scripts/iran-progress/news-display-maintenance-r1.mjs';
 
 const now=Date.parse('2026-10-26T15:00:00.000Z'); // KST 10/27 00:00
@@ -101,31 +101,48 @@ test('read-only API serves only saved 14-day news and fails closed on invalid sn
  const invalid=await storedIranNewsResponse(new Request('https://zgmini.kr/api/outbreak-news/iran'),{db,now});
  assert.equal(invalid.status,503);
 });
-test('GOV.UK discovery preserves published time, drops updates and never approves rights',async()=>{
+test('GOV.UK Atom updated-only feed uses Content API first_published_at and never approves rights',async()=>{
  const xml=`<?xml version="1.0"?><feed xmlns="http://www.w3.org/2005/Atom">
- <entry><title>Iran peace talks &amp; dialogue</title><published>2026-10-26T01:00:00Z</published>
- <updated>2026-10-27T01:00:00Z</updated><link rel="alternate" href="https://www.gov.uk/government/news/iran-talks"/></entry>
- <entry><title>Iran peace talks &amp; dialogue</title><published>2026-10-26T01:00:00Z</published><link href="https://www.gov.uk/government/news/iran-talks"/></entry>
- <entry><title>Iran from an unlicensed publisher</title><published>2026-10-26T02:00:00Z</published><link href="https://example.com/article"/></entry>
- <entry><title>Iran official news</title><updated>2026-10-26T02:00:00Z</updated><link href="https://www.gov.uk/government/news/missing-published"/></entry>
- <entry><title>Iran future notice</title><published>2026-10-28T02:00:00Z</published><link href="https://www.gov.uk/government/news/future"/></entry>
+ <entry><title>Iran peace talks &amp; dialogue</title><updated>2026-10-27T01:00:00Z</updated><link rel="alternate" href="https://www.gov.uk/government/news/iran-talks"/></entry>
+ <entry><title>Iran peace talks &amp; dialogue</title><updated>2026-10-26T01:00:00Z</updated><link href="https://www.gov.uk/government/news/iran-talks"/></entry>
+ <entry><title>Iran from an unlicensed publisher</title><updated>2026-10-26T02:00:00Z</updated><link href="https://example.com/article"/></entry>
+ <entry><title>Iran official news</title><updated>2026-10-26T02:00:00Z</updated><link href="https://www.gov.uk/government/news/missing-first-published"/></entry>
+ <entry><title>Iran future notice</title><updated>2026-10-26T02:00:00Z</updated><link href="https://www.gov.uk/government/news/future"/></entry>
  </feed>`;
- const parsed=parseGovUkNewsCandidates(xml,{now});
- assert.equal(parsed.length,1);
- assert.equal(parsed[0].publishedAt,'2026-10-26T01:00:00.000Z');
- assert.equal(parsed[0].title,'Iran peace talks & dialogue');
- assert.equal(parsed[0].rightsVerified,false);
- assert.equal(toDisplayNewsItem(parsed[0],{now}),null);
+ const parsed=parseGovUkNewsCandidates(xml);
+ assert.equal(parsed.length,3);
+ assert.equal(parsed[0].feedUpdatedAt,'2026-10-27T01:00:00.000Z');
+ assert.equal(parsed[0].publishedAt,undefined);
+ const official=(base_path,first_published_at)=>({base_path,title:'Iran peace talks & dialogue',description:'Official statement about Iran.',
+  first_published_at,public_updated_at:'2026-10-27T01:00:00Z',details:{body:'Iran was discussed.'}});
  const response=await discoverGovUkNewsCandidates({now,fetcher:async(url)=>{
-  assert.equal(url,IRAN_GOVUK_NEWS_FEED);
-  return new Response(xml,{status:200,headers:{'content-type':'application/atom+xml'}});
+  if(url===IRAN_GOVUK_NEWS_FEED)return new Response(xml,{status:200,headers:{'content-type':'application/atom+xml'}});
+  const pathname=new URL(url).pathname.replace('/api/content','');
+  const published=pathname.endsWith('/iran-talks')?'2026-10-26T01:00:00Z':pathname.endsWith('/future')?'2026-10-28T02:00:00Z':null;
+  return new Response(JSON.stringify(official(pathname,published)),{status:200});
  }});
  assert.equal(response.status,'REVIEW_REQUIRED');
  assert.equal(response.count,1);
+ assert.equal(response.counts.feedEntries,3);
+ assert.equal(response.counts.apiChecked,3);
+ assert.equal(response.candidates[0].publishedAt,'2026-10-26T01:00:00.000Z');
+ assert.equal(response.candidates[0].rightsVerified,false);
+ assert.equal(toDisplayNewsItem(response.candidates[0],{now}),null);
 });
 test('discovery fails closed on unsafe XML and transport errors',async()=>{
  assert.throws(()=>parseGovUkNewsCandidates('<!DOCTYPE feed><feed></feed>',{now}),/NEWS_DISCOVERY_FEED_INVALID/);
  await assert.rejects(discoverGovUkNewsCandidates({now,fetcher:async()=>new Response('offline',{status:503})}),/NEWS_DISCOVERY_SOURCE_FAILED/);
+});
+test('Content API can verify first publication for Iran mentioned in article body alone',()=>{
+ const feedItem={sourceUrl:'https://www.gov.uk/government/news/joint-ministerial-meeting'};
+ const body={base_path:'/government/news/joint-ministerial-meeting',title:'Joint ministerial meeting',
+  description:'Government issued a statement',first_published_at:'2026-10-24T07:41:00Z',
+  public_updated_at:'2026-10-26T07:41:00Z',details:{body:'The ministers discussed the US/Israel-Iran conflict.'}};
+ const assessed=govUkContentCandidate(feedItem,body,{now});
+ assert.equal(assessed.status,'REVIEW_REQUIRED');
+ assert.equal(assessed.item.publishedAt,'2026-10-24T07:41:00.000Z');
+ assert.equal(govUkContentCandidate(feedItem,{...body,first_published_at:null},{now}).status,'FIRST_PUBLICATION_UNVERIFIED');
+ assert.equal(govUkContentCandidate(feedItem,{...body,first_published_at:'2026-09-01T07:41:00Z'},{now}).status,'OUTSIDE_30_DAY_WINDOW');
 });
 test('PC maintenance mode gates actual cache rewrite and D1 publication separately',async()=>{
  const root=mkdtempSync(path.join(tmpdir(),'iran-news-cycle-test-'));
