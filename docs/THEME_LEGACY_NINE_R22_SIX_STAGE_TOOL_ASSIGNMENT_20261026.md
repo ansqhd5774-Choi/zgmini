@@ -3,7 +3,7 @@
 - 확정일: 2026-10-26 (사용자 승인: “브랜치에 반영해라”)
 - 적용 브랜치: `codex/theme-fear-greed-integration-20261025`
 - 브랜치 통합: 2026-10-26 사용자 지시. 이전 `research/theme-nine-r2-shadow-20261026`는 **과거 연구 이력**이며 이후 신규 작업·수정은 하지 않는다.
-- 상태: `TOOL_PLAN_APPROVED / IMPLEMENTATION_NOT_STARTED / SHADOW_ONLY`
+- 상태: `TOOL_PLAN_APPROVED / R23_STAGE1_CODE_PREPARED / PC_REAL_GET_NOT_RUN / SHADOW_ONLY`
 - 최상위 적용: 10번째 우주·위성 R29·R32 기존 계산 계약, R19 3개 O/X 결과, R20 후보 승인 명단. 본 문서는 **도구·실행 담당·작업 순서만 확정**하며 산식 자체를 변경하지 않는다.
 
 ## 1. 확정 범위
@@ -45,7 +45,7 @@
 
 ## 5. 실행 순서와 승인
 
-1. 지금은 **도구 배정 문서 반영만** 완료한다. 가격 데이터 조회·다운로드, 공식 AUM 63종 실제 조사, 계산기 실행은 이 커밋에서 수행하지 않는다.
+1. 최초 R22 확정 시점에는 **도구 배정 문서 반영만** 완료했다. 이후 사용자 승인으로 R23 1단계 수집기 코드·모의 테스트를 준비했다. 실제 PC 가격 조회·다운로드, 공식 AUM 63종 조사, 계산기 실행은 아직 수행하지 않았다.
 2. 단계별 실행은 1→2→3 순으로 원자료와 개별 점수를 검증하고, 공식 AUM 조사(4)를 준비해 5·6에 입력한다. 입력이 부족하면 해당 부분을 PENDING/null로 기록한다.
 3. 변경안이나 신규 수집 도구가 필요하면 사유와 영향을 먼저 사용자에게 보고하고 승인받는다. 미승인 작업을 임의로 추가하지 않는다.
 4. 단계 6을 검증해도 공개 전환은 별도 사용자 승인 대상이다.
@@ -59,3 +59,8 @@
 - [10번째 테마 승인 R32](THEME_SPACE_SATELLITE_R32_HISTORY_CONTINUITY.md)
 - [GetMarketHistory API 공식 문서](https://getmarkethistory.com/docs/api/reference)
 - [GetMarketHistory 무료 1h 경로 문서](https://getmarkethistory.com/docs/quickstart)
+
+## 7. 단계 1 실제 구현 상태 — R23
+
+- [63개 ETF 비공개 1h 원가격 수집기 구현·CMD·테스트](THEME_LEGACY_NINE_R23_PRIVATE_COLLECTION_20261026.md)
+- 브랜치: `codex/theme-fear-greed-integration-20261025`만 사용. R23 코드 저장과 PC 실제 GET/원자료 검증을 구분한다.
