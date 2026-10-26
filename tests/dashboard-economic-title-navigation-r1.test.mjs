@@ -102,3 +102,13 @@ test("390px economic cards retain a wide plot without title-overlap",()=>{
  assert.ok(r7.includes("@media (max-width:540px)"));
  assert.ok(r7.includes("grid-template-columns:minmax(0,1fr);"));
 });
+
+// R9: preserve the verified 390px mobile layout while widening desktop charts.
+test("12 market charts use a four-by-three desktop grid without resizing their plots",()=>{
+ const r9=responsive.split("/* EC12 R9: 12 readable indicator charts")[1];
+ assert.ok(r9,"final responsive desktop override missing");
+ assert.ok(r9.includes("@media (min-width:960px)"));
+ assert.ok(r9.includes(".zg-r55-card-grid{"));
+ assert.ok(r9.includes("grid-template-columns:repeat(4,minmax(0,1fr));"));
+ assert.equal(routes.length,12);
+});
