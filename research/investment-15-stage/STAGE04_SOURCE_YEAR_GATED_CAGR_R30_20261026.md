@@ -43,3 +43,23 @@
 - **Stage04 전체 22개 테스트 파일 PASS**. 이는 모의 검증이며 실제 Windows R30 실행 결과는 아니다.
 
 Windows 사용자는 R30 ZIP의 5개 파일을 **동일 폴더**에 풀고 `STAGE04_KEYWORD_GROWTH_R30_READONLY.cmd`를 더블클릭한다. 마지막 생성된 `R30_KEYWORD_SEARCH_TIMINGS.txt`를 제출하면 **실제** 검색/본문/모델 소요시간과 3개 PASS·2개 충돌 여부를 검산할 수 있다.
+
+## 추가: 사용자 Windows R30 실측 확인 (2026-10-26)
+
+사용자가 CMD로 실행한 `R30_KEYWORD_SEARCH_TIMINGS.txt`를 검토했다. 원본 로그는 사용자 보관 자료이며, 공개 GitHub에는 다음 **최소 시간·판정 요약**만 기록한다.
+
+| 키워드 | 검색 ms | 본문 GET ms | Ollama ms | 전체 ms | 상태 | CAGR 적용값 |
+|---|---:|---:|---:|---:|---|---:|
+| nuclear reactor | 402 | 488 | 1,048 | 1,946 | `PASS` | 5.5% |
+| robotics and automation | 332 | 545 | 572 | 1,451 | `PASS` | 21.0% |
+| artificial intelligence semiconductors | 362 | 606 | 502 | 1,473 | `PASS` | 24.8% |
+| biotechnology services | 510 | 585 | 1,570 | 2,667 | `SOURCE_CONFLICT` | NULL |
+| data center | 380 | 590 | 467 | 1,441 | `SOURCE_CONFLICT` | NULL |
+
+- **공식 매체 검색 5/5 HTTP 200, 본문 GET 5/5, Ollama 응답 5/5.** 이전 R29 모델 기간 오류 **0건**. R30의 공식 자료 기간 `2026→2030` 표시 3개 정상, 충돌 2개의 공식 기간은 감사 필드로만 보존.
+- R30 실행 결과 **3 `PASS` + 2 `SOURCE_CONFLICT`**, 실패/데드라인 0건. 출처 충돌 2개는 `GROWTH_PCT=NULL`, `FAILURE=SOURCE_FORECAST_VALUES_DISAGREE`인 의도된 보류 판정이다.
+- 총 소요 합계 **8,978ms**, 5개 평균 **1,796ms**. 첫 실행 제외 4개 총 소요 평균 **1,758ms**, Ollama만 평균 **778ms**. 성능은 PC/네트워크에 따라 바뀐다.
+- 바이오 서비스 전망 본문/시장규모 산술 **12.4/12.437%**와 표 **10.1%**, 데이터센터 본문/시장규모 산술 **9.2/9.173%**와 표 **8.2%**가 여전히 불일치. 테마 및 성장률 미보유를 0점/실패로 해석하지 않는다.
+- **실측 완료 사항은 공식 문서 조회·처리 지연·Ollama 전망률 추출·출처 내부 충돌 판정뿐**이다. 전문매체의 전망 CAGR이 실제 관측 산업 YoY/수익성/G/D/M/투자순위가 된 것은 아니다. 사용권/라이선스의 상업적 파생 공개 승인도 확인하지 않았으므로 서비스 투입은 계속 금지한다.
+
+차기 변경은 사용자 정책 판단 후: `SOURCE_CONFLICT` 2건을 계속 NULL 유지할지, 같은 보고서의 시장규모 역산과 전망 본문이 일치하는 경우에 한해 별도 `RESOLVED_BY_MATH` 등급을 두고 연구용 임시치로만 사용할지 **승인 전 결정하지 않는다**.
