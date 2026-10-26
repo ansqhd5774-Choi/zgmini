@@ -1,7 +1,7 @@
 # ZGMINI 실적 침체 정보성 분석 지표(C) — R3 최소 PC 원자료·가공 설계안
 
 - 작성: 2026-10-26 KST
-- 상태: **PROPOSAL_ONLY / 사용자 승인 전 구현 금지**
+- 상태: **R3-B 직접 BLS 수집 방식 승인 / R3-C 실제 DB 쓰기 미승인**
 - 저장소/작업 브랜치: `ansqhd5774-Choi/zgmini` / `codex/earnings-api-site-integration-plan-r1-20261026`
 - 원 계획: `docs/EARNINGS_RECESSION_COMPANION_API_SITE_INTEGRATION_PLAN_R1_20261026.md`
 - 근거: `docs/EARNINGS_COMPANION_R2_CODE_MAPPING_PC_AUDIT_20261026.md` (11절)
@@ -69,10 +69,17 @@ R1 계획상 원자료는 반드시 **PC SQLite에 먼저 저장**하고, 가공
 |---|---|---|
 | R1/R2 시리즈 실측 | BEA/BLS/Census API 실측, PC Growth/E1 메타 | **핵심 PASS, 단 원시 provenance·QFR 역사값·SEC 추가 HOLD** |
 | R3-A 중복·수정본 상세 읽기 | PC 원장 기존값/원천 최소 조회, **쓰기/추가 API 0** | **PASS: Growth 6/6 이력 정합, G017/G018 최신 비율 일치, FRED PPIFIS·PRS85006111 existing 확인. BEA/BLS 추가·MTIS/QFR 중복 여부는 R3-B 조건부** |
-| R3-B 저장 계약 확정 | 실제 원장 재사용 vs additive 스키마 설계/보존·수집 주기 | **설계 원칙 승인 2026-10-27 / FRED API 캐시 공개 재사용 권리 HOLD / R3-C 쓰기 승인 아님** |
-| R3-C PC 수집·원자료 저장 | 승인된 PC 공간에서만 비공개, 자동 스케줄 등록 금지 | **NOT_STARTED / 승인 필요** |
+| R3-B 저장 계약 확정 | 실제 원장 재사용 vs additive 스키마 설계/보존·수집 주기 | **설계 원칙 및 직접 BLS 3종 소스 승인 2026-10-27 / FRED API 캐시 신규 C 재사용 HOLD / R3-C 쓰기 미승인** |
+| R3-C PC 수집·원자료 저장 | 승인된 PC 공간에서만 비공개, 자동 스케줄 등록 금지 | **READ_ONLY 사전검사 파일 준비 완료 / 실제 PC 실행 및 DB 쓰기 미실시** |
 | R3-D 저장값만 계산/검증 | input lineage/수정본/결측/과거 값 보존·E1-R4 불변 비교 | **NOT_STARTED / 승인 필요** |
 | R4 공개 키·read-model | 기존 `/api/earnings-recession-detail`과 분리 | **NOT_APPROVED** |
 | R5 UI·R6 PR/Production | 실제 자료/날짜/모바일/권리 고지 및 공개 검증 | **NOT_APPROVED** |
 
 **계획은 기존 작업 브랜치에만 저장한다. 승인 전 운영 PC DB, 수집 스케줄러, 원점수, Cloudflare D1, 공개 응답·사이트, main 변경 없음.**
+
+
+## 6. 추가 승인 및 R3-C 준비(2026-10-27)
+
+사용자는 FRED API 캐시 대신 **BLS 직접 API의 WPSFD4 / WPSFD41 / PRS85006111 3종을 단일 조회**하고, 기존 원장 우선·공식 발표 교차검증·수정본 보존하는 공급원 변경에 동의했다. 확정 근거는 `docs/EARNINGS_COMPANION_R3B_STORAGE_CONTRACT_PROPOSAL_20261027.md` §6이다.
+
+이 계약에 따라 `docs/EARNINGS_COMPANION_R3C_BLS_BATCH_PREFLIGHT_20261027.md` 및 **0 API / 0 DB-write** CMD 검사기를 같은 브랜치에 준비했다. 읽기 전용 PC 증거 제출 전 새 테이블·보존기간·스케줄·기존 산식·D1/공개 URL·main을 변경하지 않는다.
