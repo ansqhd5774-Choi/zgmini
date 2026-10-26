@@ -158,7 +158,7 @@
 
 - 실제 사용자 첨부 `R23_OLLAMA_GROWTH_RESULT.txt`: **HTTP 403**, 2,019ms, 전문매체 요청 1회, Ollama 실행 **0회**. R23 실측으로 모델이 2초 걸렸다고 주장하면 오류.
 - 외부 전문매체 HTTP 요청 없이 **짧은 출처 표시 예시 문장**을 로컬 Ollama가 읽고 CAGR·예상기간을 추출하는 R24 독립 Windows CMD 시험 구현. 기존 PC Ollama 사용; 전체 20초 제한, 원문/개인키 저장 없음.
-- `stage04/STAGE04_OLLAMA_ONLY_R24_READONLY.cmd`, `stage04/market-growth-ollama-r23-readonly.mjs`. 로컬 시험 코드 추가 1/1, 총 6/6 통과. 실제 Ollama 수행 시간 미수신.
+- `stage04/STAGE04_OLLAMA_ONLY_R24_READONLY.cmd`, `stage04/market-growth-ollama-r23-readonly.mjs`. 로컬 시험 코드 추가 2/2, 총 7/7 통과. 실제 Ollama 수행 시간 미수신.
 - `SOURCE_MODE=REFERENCE_SAMPLE_NOT_LIVE`. 이 모드 숫자는 최신 산업 데이터/운영 투자 산식의 증거가 아님. 403 매체 우회·반복 없음.
 - 문서 `STAGE04_OLLAMA_MODEL_ONLY_R24_20261026.md`.
 
