@@ -5,6 +5,7 @@ export default function SiteFooter(){
   <nav className="zg-footer-links" aria-label="사이트 안내">
    <a href="/about/">ZGMINI 소개</a>
    <a href="/usage/">이용안내</a>
+   <a href="/guides/fear-greed-buying/">공포·탐욕 매수 판단 가이드</a>
    <a href="/data-sources/">지표·데이터 출처</a>
    <a href="/investment-notice/">투자 유의사항</a>
    <a href="mailto:ansqhd5774@gmail.com">문의</a>
