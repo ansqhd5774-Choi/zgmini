@@ -3,7 +3,7 @@
 - 작업 브랜치: `codex/theme-fear-greed-integration-20261025` **한 곳만 사용**.
 - 사용자 승인: 2026-10-26 “진행해라” (R22 단계 1의 신규 수집 도구 구현 승인).
 - 상위 계약: `THEME_LEGACY_NINE_R22_SIX_STAGE_TOOL_ASSIGNMENT_20261026.md`.
-- 상태: `PC_REAL_GET_R23_CONFIRMED / TIMEOUT_DURING_FINX_BODY / 20_OF_64 / 38_RAW_PAGES_PRESERVED / SHADOW_ONLY`. 2026-10-26 PC 진단 TXT 확인: 체크포인트 `collection-fcddff2ccf8ab1f1215f.json`은 `failedReason=23`, `failedAt=2026-10-26T14:21:27.649Z`, 첫 미완료 ETF `FINX`, 완료 20/64, 미완료 44, manifest 원본 38개다. 코드상 응답 본문 수신 중 `TimeoutError.code=23`이 종전 `STOP_INVALID_RESPONSE`로 잘못 분류되었다. 응답 무결성 실패로 확정하지 않는다.
+- 상태: **`STAGE1_PC_64_OF_64_COMPLETE / 121_RAW_PAGES_BY_LOG / SHADOW_ONLY / STAGE2_NOT_STARTED`**. 2026-10-27 사용자 제출 `THEME_NINE_R23_RECOVER_RESULT.txt`에서 FINX 응답 타임아웃 이후 체크포인트 1회 복구가 정상 승인됐고, 21개 배치·83 GET·83개 원본을 추가 저장해 **64/64 완료, 미완료 0**을 확인했다. 이전 manifest 38개와 합산하면 **121개 원본**이다. D1·공개 점수·스케줄러 변경은 0이다. 이 성공은 **비공개 원가격 수집의 완료**이지 252거래일·SPY 날짜 정합성·공개 가능성 검증 완료가 아니다.
 
 ## 구현 파일
 
@@ -45,6 +45,7 @@ scripts\pc-writer\theme-nine-r23-collect.cmd --collect 2023-01-01 2026-10-26
 ## 테스트와 후속 차단 조건
 
 - 로컬 테스트: `node tests/theme-nine-r23-collect.test.mjs` (실제 네트워크 없음).
+- **다음 단계는 R22 승인 순서의 단계 2**: 기존 수집된 121개 원본의 SHA, ETF별 실제 거래 세션 수, SPY 세션 날짜 정합성, 시간대/가격 모드, 결측 및 관측 기간을 **읽기 전용**으로 검증한다. 신규 수집/계산/공개는 별도 승인 없이 실행하지 않는다.
 - 기존 검증된 PC 가격/manifest와 **중복 수집을 더 줄이기 위한 독립 원본 비교**는 원본 소재·SHA·가격 모드가 확인될 때만 한다. 다른 가격 형태를 자동 재활용하거나 검증 없이 수집 성공으로 표시하지 않는다.
 - 2단계는 실제 NY 거래일(조기 폐장 포함)·SPY 정합성·가격 모드 확인. 계산과 R32 가중 합산은 3·5단계에서만 수행한다.
 - 공식 AUM은 R22 4단계의 발행사 공개 웹 자료 조사이며 신규 유료 API를 추가하지 않는다.
