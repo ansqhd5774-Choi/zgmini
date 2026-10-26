@@ -63,6 +63,18 @@
 
 **Fix2 결론: Census 3개 GET·기간 필드 수신 PASS. 데이터 공개 편입 여부는 시리즈 코드·사용권·기존 원자료 중복 확인 Gate를 통과한 행에 한정. 신규 PC 쓰기/D1/API/UI/배포 없음.**
 
+## 공식 재이용 조건 재검증 (2026-10-26)
+
+| 공급자 | 공식 원문 확인 | 상업적 정보성 공개의 운영 조건 | 상태 |
+|---|---|---|---|
+| BEA | 별도 예외 없는 BEA 자료는 퍼블릭 도메인이고 출처 표기 권고 | `Source: U.S. Bureau of Economic Analysis` 및 원본/자체 가공 구분 | 기관 직접 발표 수치 **사용권 후보 PASS**, 시리즈 단위·원장 계약은 별도 |
+| BLS | 자체 공공자료 퍼블릭 도메인, 저작권 있는 사진/삽화와 로고는 제외 | API 접속·취득일 표기, **BLS가 다운로드 후 파생 분석의 품질을 보증하지 않음** 고지, 로고 미사용 | 원시 통계 **사용권 후보 PASS**, 코드·단위 게이트 별도 |
+| Census | API를 이용한 표시·검색·분석 서비스 허용. 제3자 보증 사칭 및 개인/사업체 식별 결합·원문 왜곡 금지 | **`This product uses the Census Bureau Data API but is not endorsed or certified by the Census Bureau.`** 문구를 애플리케이션에 눈에 띄게 고지. 가공 수치를 Census 발표치라고 표기 금지 | 공개 집계 지표 **조건부 사용권 후보 PASS**. **저장·상업·파생·재배포 세부 허용 범위는 최종 계약 검토 전 HOLD** |
+
+공식 조건: [BEA 저작권 FAQ](https://www.bea.gov/help/faq/147), [BLS copyright](https://www.bls.gov/opub/copyright-information.htm), [BLS API ToS](https://www.bls.gov/developers/termsOfService.htm), [Census API ToS](https://www.census.gov/data/developers/about/terms-of-service.html).
+
+권리 O, HTTP O, 시리즈 매칭 O, PC 저장 O, 사이트 공개 O는 **서로 별도 Gate**. 이번 문서 갱신은 원시값 저장·외부 공개 허가를 확대하지 않는다.
+
 ## 릴리스 게이트
 
 | 게이트 | 현재 |
