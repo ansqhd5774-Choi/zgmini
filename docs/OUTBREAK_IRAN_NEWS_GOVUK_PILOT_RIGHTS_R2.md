@@ -35,7 +35,7 @@
 4. **완료:** Windows 1파일 `IRAN_NEWS_R2_PREFLIGHT.cmd` 구현. 승인된 코드 SHA에서 읽기 전용 도구 다운로드, 공식 피드 조회, 1건 검토 입력으로 **dry-run만** 실행. 결과는 CMD 옆 `IRAN_NEWS_R2_PREFLIGHT_RESULT.txt`.
 5. **완료:** 2026-10-26 사용자 PC R2 로그 `FINAL_STATUS=PASS_READ_ONLY_REVIEWED`. GOV.UK Atom 20/Content API 20 성공, 30일 후보 16, R13 예약 작업 확인, reviewed `received=1,accepted=1,after=1,dryRun=true,written=false`. SQLite/D1 변경 없음.
 6. **완료:** 2026-10-27 사용자 PC R3 로그 `FINAL_STATUS=PASS_PC_CACHE_APPLIED_NOT_PUBLISHED`. R2 Gate PASS, R13 예약 작업 확인, PC 기존 캐시 부재 확인, `received=1,accepted=1,after=1,written=true,visibleCount=1`, 단독 뉴스 캐시 재조회 PASS. D1 게시 없음, 기존 R3/R5 원장·스케줄러 변경 없음.
-7. **사용자 PC R4 실행 대기:** `scripts/iran-progress/IRAN_NEWS_R4_D1_PUBLISH.cmd`를 R3 결과 TXT와 같은 폴더에서 실행. 승인 GOV.UK 기사 내용·최초 발행일 재검사 → `public:iran-progress:news:iran:r1` 키가 없음을 D1 읽기 전용 확인 → **키 1건만 게시** → 원격 read-back. 다른 D1 키·기존 PC 파일·SQLite 불변. 오류 시 재실행 없이 로그 분석.
+7. **R4 중단·R4B 실행 대기:** 사용자 PC R4 로그는 단계 `[0]`에서 `FINAL_STATUS=STOP_NO_D1_WRITE_ATTEMPTED` — 과거 R3 TXT가 CMD와 같은 폴더에 없거나 내용 검사가 불합격한 것으로, **D1 접근·쓰기 전 중단**. 개선한 `scripts/iran-progress/IRAN_NEWS_R4B_D1_PUBLISH.cmd`는 그 TXT를 필수 입력으로 삼지 않는다. 대신 운영 PC 캐시의 실제 기사 1건·제목·요약·원 발행일·14일 범위를 직접 검증하고, D1 읽기 전용 키 부재 확인 후 **별도 키 1건만 게시·원격 재조회**한다. 결과는 CMD와 같은 폴더의 `IRAN_NEWS_R4B_D1_PUBLISH_RESULT.txt`. 불확실한 쓰기 결과에는 자동 재시도 금지.
 8. **대기:** R4 D1 결과 검토 후 필요한 브랜치 파일만 PR/main 반영, Cloudflare Git Integration exact 배포, 공개 API/UI 검증.
 
 **주의:** 이 문서나 CMD의 존재 자체는 실 PC 수집/게시가 이루어졌다는 뜻이 아니다. GOV.UK의 다음 기사도 자동 `rightsVerified:true`로 승인되지 않는다.
@@ -50,7 +50,7 @@
 
 ## 4. R4 D1 단독 게시 제한
 
-- `IRAN_NEWS_R4_D1_PUBLISH.cmd`는 `IRAN_NEWS_R3_APPLY_RESULT.txt`의 실제 PASS를 요구한다. 뉴스 전용 PC 캐시는 **읽기만** 수행한다.
+- 2026-10-27 R4 최초 CMD는 동일 폴더 R3 TXT 게이트에서 중단되고 D1 쓰기가 시도되지 않았다. 후속 `IRAN_NEWS_R4B_D1_PUBLISH.cmd`는 로컬 이전 로그 유무를 안내만 하고, 운영 PC의 정확한 뉴스 캐시 내용으로 검증한다. 뉴스 전용 PC 캐시는 **읽기만** 수행한다.
 - 이미 확인한 GOV.UK 기사 1건과 제목·요약·원 발행일·중립 분류까지 정확히 일치해야 하며 14일 노출 범위 밖이면 게시 금지.
 - 인증은 기존 PC의 `~/.zgmini/pc-writer/config.json`, Cloudflare API token 또는 기존 Wrangler OAuth를 사용한다. 임시 소스에서 OAuth 자동 갱신하지 않고 실패 시 사용자 검토 요청. 자격 증명은 로그 출력 금지.
 - D1에는 `public:iran-progress:news:iran:r1` 키 1건만 게시한다. 기저 키가 존재하면 일괄 갱신하거나 덮어쓰지 않는다. 실제 게시 직후 정확한 본문·저장 시각을 read-back 한다.
