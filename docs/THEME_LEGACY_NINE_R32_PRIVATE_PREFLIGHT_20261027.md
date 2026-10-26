@@ -57,8 +57,16 @@ CMD 내부의 임시 실행 파일은 **CMD가 위치한 폴더의 고유한 작
 ## 5. 검증 및 다음 단계
 
 - Node v24 로컬 모의 계약 검사 4/4 PASS; 단일 CMD 원문 역추출 3개 구성 파일 SHA 일치 PASS.
-- 사용자 제출 R25 JSON `THEME_NINE_R25_INDIVIDUAL_SCORES_2665_21261.json`을 **읽기 전용으로 재검증 PASS**: 252거래일, ETF 점수 10,842개, 최신일 45종, 해당일 AUM 42종, 이전 날짜 AUM 21종. 입력 R25 SHA256 `12544ebc141148e7fbe61765670f9807520d87de7e9b14e4f41ec85e973f0987` — 원본은 GitHub에 올리지 않음. **Windows 실제 CMD 실행은 PENDING**.
+- 사용자 제출 R25 JSON `THEME_NINE_R25_INDIVIDUAL_SCORES_2665_21261.json`을 **읽기 전용으로 재검증 PASS**: 252거래일, ETF 점수 10,842개, 최신일 45종, 해당일 AUM 42종, 이전 날짜 AUM 21종. 입력 R25 SHA256 `12544ebc141148e7fbe61765670f9807520d87de7e9b14e4f41ec85e973f0987` — 원본은 GitHub에 올리지 않음. **Windows 기존 CMD 1차 실제 실행은 `STOP_R32_PREFLIGHT/ENOENT`이며, 경로 인수 전달 방식을 수정한 **개정 CMD 재실행은 PENDING****.
 - R25 파일은 승인 manifest SHA, R20 로스터 SHA, 뉴욕 프록시 모드, 252 날짜, 각 ETF 점수 범위·실측 40세션·상태를 검증한다.
 - R26은 63 ETF/양수 AUM/공식 URL/기준일/표시 정밀도 검증 후, *같은 날짜 42종 vs 이전 날짜 21종*을 나눈다. 공식 검색 색인 추출값과 과거 공시의 품질 구별을 유지한다.
 - 결과에 공식 AUM 21종 시차와 최신 점수 18종 결측을 **명시적 차단 사유**로 기록한다. 이것은 ETF 승인 후보 자격 취소를 뜻하지 않는다.
 - 테스트 완료 후에도 `R32_STAGE5_CALCULATED` 또는 `R32_STAGE6_252D_PASS`로 표시하지 않는다. 별도 사용자 승인 없는 공개 배포·D1 쓰기·운영 산식·스케줄러·DB 변경을 금지한다.
+
+## 6. Windows PC 실제 실행 오류·재발 방지 (2026-10-27)
+
+- 사용자 PC 제출 `THEME_NINE_R32_PREFLIGHT_RESULT_12690_21493.txt`: `R32_THREE_COMPONENT_SHA_VERIFIED=YES`, Node v24.19.0, 최종 `STOP_R32_PREFLIGHT` / `ENOENT`. **실제 PC 검사 PASS가 아니다.** 원본 점수·AUM·D1·공개 데이터 쓰기 없음.
+- 당시 CMD는 `%~dp0`에서 얻은 뒤에 `\\`로 끝나는 Windows 폴더 경로를 따옴표로 감싸 Node 인수로 넘겼다. Windows 명령줄의 백슬래시·따옴표 해석에 의해 인수가 손상될 가능성이 있다. **로그만으로 원인이 확정되지는 않으므로**, 고친 CMD 재실행으로 판정한다.
+- 수정: 폴더·선택 R25 JSON을 `R32_FOLDER` / `R32_SELECTED` 환경변수로 전달하고, Node `--preflight`만 명령줄 인수로 제공한다. 누락 폴더·입력 JSON은 `CMD_FOLDER_NOT_FOUND`, `R25_JSON_NOT_NEXT_TO_CMD`, `R25_SELECTED_FILE_NOT_FOUND`로 구분한다.
+- 검증: R25 업로드 JSON을 환경변수 모드로 재검증 PASS(직접 선택/자동 탐색), 모의·오류 계약 테스트 **5/5 PASS**, SHA-verified CMD builder **3종 역추출 PASS**. **Windows 재실행은 아직 미확인**.
+- 최신 수정 CMD는 이 브랜치의 `scripts/pc-writer/THEME_NINE_R32_PREFLIGHT.cmd`. 같은 폴더의 R25 JSON을 그대로 사용하고 새 TXT 로그만 제출한다. 원자료·이전 결과 삭제 금지.
