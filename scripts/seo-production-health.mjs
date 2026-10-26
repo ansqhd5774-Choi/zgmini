@@ -164,7 +164,7 @@ export function inspectCrawlResponse(response,expectedUrl,{requireOriginalUrl=fa
   if(response.status!==200) errors.push(`http_${response.status}`);
   if(!(response.contentType??'').toLowerCase().includes('text/html')) errors.push(`content_type:${response.contentType||'missing'}`);
   const header=response.xRobotsTag??'';
-  if(/(?:^|[\\s,;:])(?:noindex|nofollow|none)(?=$|[\\s,;])/i.test(header)) errors.push(`x_robots_tag_blocked:${header}`);
+  if(/(?:^|[\s,;:])(?:noindex|nofollow|none)(?=$|[\s,;])/i.test(header)) errors.push(`x_robots_tag_blocked:${header}`);
   if(requireOriginalUrl && response.finalUrl!==expectedUrl) errors.push(`url_redirected:${response.finalUrl||'missing'}`);
   return errors;
 }
