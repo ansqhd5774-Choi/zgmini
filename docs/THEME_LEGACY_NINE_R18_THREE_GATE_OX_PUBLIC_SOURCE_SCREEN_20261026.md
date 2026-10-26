@@ -167,6 +167,7 @@ BOTZ는 로봇·자동화와 자율주행에 중복되므로 전체 63개 고유
 ## 5. ②·③ 판정이 미완료인 이유
 
 - **② 수집 가능·사용권:** [GetMarketHistory 공식 약관](https://getmarkethistory.com/docs/terms)과 [MarketParquet 라이선스](https://marketparquet.com/license)에는 가공물 관련 조건이 있지만, 현재의 **무료 범위에서 63종 ETF에 40/252거래일분을 제공하는지**, 공개 점수에 대한 상업적 권리가 현재 계정에 유효한지 확인되지 않았다. **시장자료를 시험 수집하지 않는다.** 관련 기록: `docs/THEME_LEGACY_NINE_R12_MARKETDATA_RIGHTS_GATES_20261026.md`.
+- **② 공급원 무료 용량의 문서상 가능성:** [GetMarketHistory 공식 안내](https://getmarkethistory.com/)는 무료 계정에 **월 25만 개의 1시간봉**을 제공하며, [API 안내](https://getmarkethistory.com/docs/quickstart)는 무료 범위가 1시간봉에 한정된다고 명시한다. **63 ETF + SPY = 64종 × 252거래일 × 정규장 7개 시간봉 가정 = 112,896개**이므로 용량만 놓고 보면 1년 분량 수집이 가능할 여지가 있다. 그러나 이 수치는 **이론값**이며 장전·장후 봉, 결측, 증분·요청단위 과금, 개별 종목의 실제 등록/백필, 48시간 지연을 반영하지 않았다. 자료 수집은 실행하지 않았으며 이를 개별 ETF의 ② O로 승격하지 않는다. [공식 가격 권리 조항](https://getmarkethistory.com/docs/terms)은 원시 가격 재배포를 금지하고 원시 시계열을 복원할 수 없는 파생물 공개를 조건부 허용한다.
 - **③ C등급:** 법적 자문사 18개 후보의 CRD/IAPD 페이지 연결은 확보했으나, 개별 ETF의 실제 법인 동일성, 현재 등록 상태, 공개 제재기록, 운용 안정성을 종합한 등급은 **확정 전**이다. 관련 기록: `config/theme-nine-r16-iapd-identity-crosswalk.json`. 공식: [SEC IAPD](https://adviserinfo.sec.gov/).
 - ① 공개 O는 **보유주식의 테마 적합성 최종 합격**을 뜻하지 않는다. BOTZ/ARKF/URNM 등 혼합 전략 상품은 비중과 해당 테마 노출을 별도 검토한다.
 
