@@ -11,4 +11,13 @@ const r3=await run([path.join(path.dirname(fileURLToPath(import.meta.url)),'oper
 // R3 and R5 have distinct D1 keys; existing successful R3 stays available.
 const r5=enableR5&&r3===0?await run([path.join(path.dirname(fileURLToPath(import.meta.url)),'operate-r5.mjs'),'--publish']):0;
 const original=await run([legacy,`--collector=${collector}`]);
+
+// Isolated display-cache retention: only the local, rights-reviewed news JSON.
+// Runs after all score jobs. Failures must never change their exit contract or
+// delete any R3/R5 source, decision, calculation, publication, or checkpoint.
+const retention=path.join(path.dirname(fileURLToPath(import.meta.url)),'news-display-maintenance-r1.mjs');
+if(fs.existsSync(retention)){
+ const newsExit=await run([retention,'--apply']);
+ if(newsExit!==0)console.error('IRAN_DISPLAY_NEWS_RETENTION_FAILED_SCORE_UNAFFECTED');
+}
 if(r3!==0||r5!==0||original!==0)process.exitCode=1;
