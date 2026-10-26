@@ -6,6 +6,7 @@
 - 원 계획: `docs/EARNINGS_RECESSION_COMPANION_API_SITE_INTEGRATION_PLAN_R1_20261026.md`
 - 근거: `docs/EARNINGS_COMPANION_R2_CODE_MAPPING_PC_AUDIT_20261026.md` (11절)
 - R3-A 사용자 PC 실측 결과: `docs/EARNINGS_COMPANION_R3A_PC_LINEAGE_REVIEW_20261027.md`
+- R3-B 승인 대기 계약안: `docs/EARNINGS_COMPANION_R3B_STORAGE_CONTRACT_PROPOSAL_20261027.md`
 - 작업 경계: 기존 E1-R4 점수 A(4개 구성요소), 별도 12대 실적 B, 신규 정보성 C를 **분리**. C 지표 개수는 유동적이며 기존 산식/과거 이력에 영향 없음.
 - 소스 확인 시점: GitHub 비교 `main...` 대비 작업 브랜치 `ahead=20/behind=3` (2026-10-26). **main과 병합/리베이스/복구를 자동 수행하지 않고**, 구현 직전 최신 source drift를 파일 단위로 재검사한다.
 
@@ -13,12 +14,12 @@
 
 | 원천 | 정보성 C 행 후보 | R2 최신 기간 / 실제값·정의 | R3 행동 / 재사용 |
 |---|---|---|---|
-| 기존 PC Growth Census M3 | 제조업 전체 신규주문/출하/미이행주문/재고 | `G010/G013/G015/G016`: 2026-08, 저장 메타 실측 | **기존 저장 참조** 우선, M3 중복 수집기 금지. `G017/G018`은 원자료보다 오래된 파생본이므로 **revision parity 확인 전 C 재사용 HOLD** |
+| 기존 PC Growth Census M3 | 제조업 전체 신규주문/출하/미이행주문/재고 | `G010/G013/G015/G016`: 2026-08, 저장 메타 실측 | **기존 저장 참조** 우선, M3 중복 수집기 금지. `G017/G018`도 최신 구성값 재계산과 **소수 10자리 일치 PASS**, 기존 저장 참조 후보 |
 | 기존 PC E1-R4 | S&P500 EPS/매출/마진 기존 집계의 **정보성 표기 후보** | 2026Q2, 발행사 500, EPS420/Revenue409/Margin319 개수 메타 | **기존 비공개 저장/개수 메타 참조**만 검토. 기업별 구체값·SEC 현금흐름 신규 확보가 검증되지 않았으므로 가정 금지. E1 점수·공개 계약 불변 |
 | BEA `NIPA/T11200/A051RC` | 미국 총 기업이익·동기 증가율 | 2026Q2 `4,709,453` 백만 USD, 4,709.453십억 USD/SAAR | **실제 시리즈 PASS**, 기존 PC 저장 중복 여부 확인 후 필요 시 1개 신규 원천. `A051RC`의 line 13/41 같은 값 **분기당 1번만 저장/파생** |
-| BLS `WPSFD4` | PPI 최종수요 전체 지수·YoY | 2026-09 `159.780`, 계절조정 | **실제 시리즈 PASS**, 기존 `market-data` fallback의 원 출처·저장 증빙부터 확인; FRED 간접 재배포를 새 정보성 C의 자동 권리로 보지 않음 |
+| BLS `WPSFD4` | PPI 최종수요 전체 지수·YoY | 2026-09 `159.780`, 계절조정 | **실제 시리즈 PASS**, PC `FRED/PPIFIS` snapshot 2개 실재 확인. 원문 chunk·해시·FRED 이용조건 확인 전 직접 BLS 원본과 혼용/공개 HOLD |
 | BLS `WPSFD41` | PPI 최종수요 재화 지수·YoY | 2026-09 `162.341`, 계절조정 | **실제 시리즈 PASS**, 기존 전체 FD4와 같은 지표로 합산하지 않음 |
-| BLS `PRS85006111` | 비농업 단위노동비용 YoY | 2026Q2 `1.4%` **전년 동기 대비** | **실제 시리즈 PASS**, 전기 대비 연율 `1.2%`와 다른 지표; 변환하지 않음 |
+| BLS `PRS85006111` | 비농업 단위노동비용 YoY | 2026Q2 `1.4%` **전년 동기 대비** | **실제 시리즈 PASS**, PC `FRED/PRS85006111` snapshot 1개 실재. 전기 대비 연율 `1.2%`와 다른 지표; 원문·권리 확인 전 공개 HOLD |
 | Census MTIS `IR/TOTBUS/yes` | 전체 사업체 재고/매출 비율 | 2026-08 `1.33`, 계절조정 | **실제 시리즈 PASS**, 기존 범용 snapshot에 없다면 최소 신규 수집 후보; M3 제조업 재고/출하 `1.48`로 대체 불가 |
 | Census QFR `101/104/115` | 산업별 매출/영업손익/세후손익 및 수익성 변화 | 2026Q2, 단위 백만 USD, 테스트된 API 행은 비계절조정 | **실제 코드 PASS**, 비교할 2025Q2 같은 산업/단위/조정 값 검증 전 YoY·margin breadth 생성 HOLD |
 | SEC E1-R5 Shadow CFO/FCF, 추가 기업 지표 | 조건부 후순위 연구 | R2 공식 데이터값/기업별 커버리지 미검증 | **R3 초기 편입 보류**, R4 점수나 12대 실적과 결합 금지 |
@@ -67,8 +68,8 @@ R1 계획상 원자료는 반드시 **PC SQLite에 먼저 저장**하고, 가공
 | Gate | 근거/동작 | 현재 |
 |---|---|---|
 | R1/R2 시리즈 실측 | BEA/BLS/Census API 실측, PC Growth/E1 메타 | **핵심 PASS, 단 원시 provenance·QFR 역사값·SEC 추가 HOLD** |
-| R3-A 중복·수정본 상세 읽기 | PC 원장 기존값/원천 최소 조회, **쓰기/추가 API 0** | **PARTIAL_PASS: current/history 6/6 일치; G017/G018 계산 parity 및 정확한 시리즈 중복 여부 검증 중** |
-| R3-B 저장 계약 확정 | 실제 원장 재사용 vs additive 스키마 설계/보존·수집 주기 | **사용자 별도 승인 필요** |
+| R3-A 중복·수정본 상세 읽기 | PC 원장 기존값/원천 최소 조회, **쓰기/추가 API 0** | **PASS: Growth 6/6 이력 정합, G017/G018 최신 비율 일치, FRED PPIFIS·PRS85006111 existing 확인. BEA/BLS 추가·MTIS/QFR 중복 여부는 R3-B 조건부** |
+| R3-B 저장 계약 확정 | 실제 원장 재사용 vs additive 스키마 설계/보존·수집 주기 | **구체 설계안 작성 완료, 사용자 승인 대기** |
 | R3-C PC 수집·원자료 저장 | 승인된 PC 공간에서만 비공개, 자동 스케줄 등록 금지 | **NOT_STARTED / 승인 필요** |
 | R3-D 저장값만 계산/검증 | input lineage/수정본/결측/과거 값 보존·E1-R4 불변 비교 | **NOT_STARTED / 승인 필요** |
 | R4 공개 키·read-model | 기존 `/api/earnings-recession-detail`과 분리 | **NOT_APPROVED** |
