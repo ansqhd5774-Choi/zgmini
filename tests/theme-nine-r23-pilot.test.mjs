@@ -8,6 +8,7 @@ import {fileURLToPath, pathToFileURL} from 'node:url';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const target = path.join(root, 'scripts/pc-writer/THEME_NINE_R23_PILOT.cmd');
+const diagnosticTarget = path.join(root, 'scripts/pc-writer/THEME_NINE_R23_DIAGNOSE.cmd');
 const source = path.join(root, 'scripts/pc-writer/theme-nine-r23-collect.mjs');
 const roster = path.join(root, 'config/theme-nine-r20-approved-candidates.json');
 const sha = bytes => createHash('sha256').update(bytes).digest('hex');
@@ -55,4 +56,15 @@ test('extracted embedded collector can inspect 9 themes read-only without checko
   assert.equal(report.uniqueETFs, 63);
   assert.equal(report.totalSymbolsIncludingSPY, 64);
   assert.equal(fs.existsSync(dataRoot), false);
+});
+
+test('one-file failure diagnostic contains the same audited code and roster', () => {
+  const text = fs.readFileSync(diagnosticTarget, 'ascii');
+  assert.ok(text.includes('--inspect-failure 2023-01-01 2026-10-26'));
+  assert.ok(text.includes('THEME_NINE_R23_DIAGNOSE_RESULT.txt'));
+  assert.ok(text.includes('SCOPE=READ_ONLY_FAILED_CHECKPOINT_NO_NETWORK'));
+  assert.equal(sha(embedded(text, '::R23_BUNDLE_CODE_BEGIN', '::R23_BUNDLE_CODE_END')),
+    sha(fs.readFileSync(source)));
+  assert.equal(sha(embedded(text, '::R23_BUNDLE_ROSTER_BEGIN', '::R23_BUNDLE_ROSTER_END')),
+    sha(fs.readFileSync(roster)));
 });

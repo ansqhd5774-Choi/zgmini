@@ -3,11 +3,12 @@
 - 작업 브랜치: `codex/theme-fear-greed-integration-20261025` **한 곳만 사용**.
 - 사용자 승인: 2026-10-26 “진행해라” (R22 단계 1의 신규 수집 도구 구현 승인).
 - 상위 계약: `THEME_LEGACY_NINE_R22_SIX_STAGE_TOOL_ASSIGNMENT_20261026.md`.
-- 상태: `PC_REAL_GET_R23_CONFIRMED / 2026-10-26 FIRST_TWO_BATCHES_COMPLETED_3_OF_64 / AUTO_MODE_CODE_PREPARED / SHADOW_ONLY`. 사용자 제공 1차·2차 TXT에서 GET 4회씩, 완료 1→3개, 후속 데이터 공개 변경 0을 확인했다.
+- 상태: `PC_REAL_GET_R23_CONFIRMED / AUTO_STOP_INVALID_RESPONSE / 19_OF_64_LAST_CONFIRMED / SHADOW_ONLY`. 사용자 제공 자동수집 TXT에서 8배치·GET 31회·원본 30개 저장·7배치 종료 시 19개 완료, 8배치 중단을 확인했다. 오류 응답의 실제 원인·심볼은 PC 체크포인트 진단 후 확정한다.
 
 ## 구현 파일
 
 - `scripts/pc-writer/THEME_NINE_R23_PILOT.cmd`: **단일 다운로드 파일**. GitHub 체크아웃 없이 Windows에서 실행 가능하도록 승인된 R23 수집기와 R20 후보 명단을 검증 가능한 SHA256 번들로 포함한다. 실행 결과는 CMD **같은 위치**의 `THEME_NINE_R23_PILOT_RESULT.txt`에 남긴다.
+- `scripts/pc-writer/THEME_NINE_R23_DIAGNOSE.cmd`: 실데이터 자동 수집이 `STOP_INVALID_RESPONSE`로 중단된 경우 사용하는 **단일 다운로드 읽기 전용 진단 CMD**. 동일한 검증된 코드·승인 명단을 포함하며 네트워크 요청이나 체크포인트 변경 없이 `THEME_NINE_R23_DIAGNOSE_RESULT.txt`를 CMD 옆에 생성한다.
 - `scripts/pc-writer/build-theme-nine-r23-pilot.mjs`: 원본 코드/명단 변경 시 단일 CMD를 재생성하고, 내장 자료를 역추출해 일치 여부를 검사한다.
 - `scripts/pc-writer/theme-nine-r23-collect.mjs`: R20 확정 명단 직접 읽기. 중복된 편입 64개를 고유 ETF 63개로 통합하고, SPY 기준 종목을 별도로 포함한다. 티커 수를 임의로 고정하거나 다시 심사하지 않는다.
 - `scripts/pc-writer/theme-nine-r23-collect.cmd`: 사용자 Windows CMD 진입점. 실행 결과 TXT는 CMD **동일 폴더**의 `THEME_NINE_R23_COLLECTION_RESULT.txt`에 생성한다.
@@ -28,6 +29,8 @@
 **권장: 갱신된 CMD 하나만 내려받아 실행.** `THEME_NINE_R23_PILOT.cmd`를 바탕화면 등 원하는 폴더에 놓고 더블클릭한다. 설치된 Node.js(`E:\ZGmini\runtime\node.exe` 우선, 없으면 PATH의 `node`)가 필요하다. 파일 자체에 시작일 `2023-01-01`, 종료일 `2026-10-26`을 고정했다. **자동으로 4회씩 수집하고 배치 사이 60초 대기하며, 최대 64배치에서 종료한다.** 429·네트워크·원본 무결성 오류에서 추가 호출하지 않는다. 실행 후 같은 폴더의 `THEME_NINE_R23_PILOT_RESULT.txt`를 대화창에 제출한다. 기존 원본과 이어받기 체크포인트는 승인된 `E:\ZGmini\data\themes\legacy-nine-r23`에 유지된다. CMD 내부에서 임시로 꺼낸 코드/명단은 CMD와 같은 폴더에서만 생성·검증하고 종료 시 제거한다. **실제 자동 수집 성공은 사용자 PC에서 생성된 TXT로 확인한다.**
 
 **대체 방법: 저장소 체크아웃 사용 시** 아래 CMD를 쓸 수 있다.
+
+**2026-10-26 오류 대응:** 자동 수집 로그 `STOP_INVALID_RESPONSE` 이후에는 자동 수집 CMD를 다시 실행하거나 상태 파일을 삭제하지 않는다. 먼저 최신 `THEME_NINE_R23_DIAGNOSE.cmd`를 한 번 실행하고 같은 폴더의 `THEME_NINE_R23_DIAGNOSE_RESULT.txt`를 제출한다. 이 진단은 실패 사유 코드, 실패 시각, 첫 미완료 ETF, 페이지·커서 유무, 원자료 파일 개수를 표시하되 API 호출·DB 변경·원본 변경은 하지 않는다.
 
 승인된 저장소 체크아웃의 루트에서 실행한다. `<시작일>`과 `<종료일>`은 동일하게 유지하며, 다음 호출 때도 날짜를 바꾸지 않는다.
 

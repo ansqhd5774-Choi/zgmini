@@ -31,12 +31,20 @@ const extraction = [
 
 if (extraction.includes('"') || extraction.length >= 7500) throw Error('WINDOWS_EVAL_UNSAFE');
 
+const variants = [
+  {filename: 'THEME_NINE_R23_PILOT.cmd', log: 'THEME_NINE_R23_PILOT_RESULT.txt',
+    scope: 'AUTO_UP_TO_64_BATCHES_FOUR_FREE_GET_EACH_60S_PAUSE', mode: '--collect-auto'},
+  {filename: 'THEME_NINE_R23_DIAGNOSE.cmd', log: 'THEME_NINE_R23_DIAGNOSE_RESULT.txt',
+    scope: 'READ_ONLY_FAILED_CHECKPOINT_NO_NETWORK', mode: '--inspect-failure'}
+];
+
+for (const variant of variants) {
 const lines = [
   '@echo off',
   'setlocal EnableExtensions DisableDelayedExpansion',
   'rem One-file private OHLCV pilot. Node.js required. No PowerShell, WSL or paid API.',
   'set "R23_SELF=%~f0"',
-  'set "R23_RESULT=%~dp0THEME_NINE_R23_PILOT_RESULT.txt"',
+  `set "R23_RESULT=%~dp0${variant.log}"`,
   'set "R23_NODE=node"',
   'if exist "E:\\ZGmini\\runtime\\node.exe" set "R23_NODE=E:\\ZGmini\\runtime\\node.exe"',
   'set "R23_STAGE_CODE=%~dp0R23_LOCAL_%RANDOM%_%RANDOM%.mjs"',
@@ -46,7 +54,7 @@ const lines = [
   'if exist "%R23_STAGE_ROSTER%" goto :collision',
   '>"%R23_RESULT%" echo REPORT=THEME_NINE_R23_PRIVATE_PRICE_PILOT',
   '>>"%R23_RESULT%" echo SOURCE_BRANCH=codex/theme-fear-greed-integration-20261025',
-  '>>"%R23_RESULT%" echo SCOPE=AUTO_UP_TO_64_BATCHES_FOUR_FREE_GET_EACH_60S_PAUSE',
+  `>>"%R23_RESULT%" echo SCOPE=${variant.scope}`,
   '>>"%R23_RESULT%" echo DATA_ROOT=E:/ZGmini/data',
   '>>"%R23_RESULT%" echo RAW_PUBLICATION_AND_SCHEDULER_WRITES=ZERO',
   '"%R23_NODE%" --version >>"%R23_RESULT%" 2>&1',
@@ -54,7 +62,7 @@ const lines = [
   `"%R23_NODE%" -e "${extraction}" >>"%R23_RESULT%" 2>&1`,
   'if errorlevel 1 goto :unpack_failed',
   'set "ZGMINI_R23_ROSTER_PATH=%R23_STAGE_ROSTER%"',
-  '"%R23_NODE%" "%R23_STAGE_CODE%" --collect-auto 2023-01-01 2026-10-26 >>"%R23_RESULT%" 2>&1',
+  `"%R23_NODE%" "%R23_STAGE_CODE%" ${variant.mode} 2023-01-01 2026-10-26 >>"%R23_RESULT%" 2>&1`,
   'set "R23_EXIT=%ERRORLEVEL%"',
   'goto :cleanup',
   ':node_missing',
@@ -80,7 +88,7 @@ const lines = [
   '::R23_BUNDLE_ROSTER_END'
 ];
 
-const output = path.join(here, 'THEME_NINE_R23_PILOT.cmd');
+const output = path.join(here, variant.filename);
 const content = lines.join('\r\n') + '\r\n';
 if (/[^\x00-\x7f]/.test(content)) throw Error('NON_ASCII_CMD');
 fs.writeFileSync(output, content, 'ascii');
@@ -92,3 +100,4 @@ if (!extract('::R23_BUNDLE_CODE_BEGIN', '::R23_BUNDLE_CODE_END').equals(code) ||
   throw Error('BUNDLE_READBACK_MISMATCH');
 process.stdout.write(JSON.stringify({output, bytes: fs.statSync(output).size,
   codeSha256: sha(code), rosterSha256: sha(roster), mode: 'ONE_FILE_CMD_VERIFIED'}) + '\n');
+}

@@ -4,7 +4,8 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import {createHash} from 'node:crypto';
-import {collectApprovedNine, collectApprovedNineAuto, inspectApprovedNine, readApprovedRoster}
+import {collectApprovedNine, collectApprovedNineAuto, inspectApprovedNine,
+  inspectCollectionFailure, readApprovedRoster}
   from '../scripts/pc-writer/theme-nine-r23-collect.mjs';
 
 const hash = bytes => createHash('sha256').update(bytes).digest('hex');
@@ -170,4 +171,24 @@ test('automatic collector exits at a finite cap or no-progress state', async () 
   const stalled = await collectApprovedNineAuto({}, {collectImpl: async () => ({
     status: 'CHECKPOINT_READY_TO_RESUME', providerCalls: 0, rawFilesStored: 0})});
   assert.equal(stalled.status, 'STOP_AUTO_UNEXPECTED_NO_PROGRESS');
+});
+
+test('failure diagnosis reveals reason and first affected symbol without writing', async t => {
+  const {root, rosterPath} = workspace(t);
+  const args = {rosterPath, dataRoot: root, start: '2023-01-01', end: '2026-10-26',
+    fetchImpl: async url => {const bad = makeBar(url.pathname.split('/').at(-2), '21');
+      bad.high = 90; return new Response(JSON.stringify(bad) + '\n');}};
+  const attempt = await collectApprovedNine(args);
+  assert.equal(attempt.status, 'STOP_INVALID_RESPONSE');
+  const stateDir = path.join(root, 'themes/legacy-nine-r23/state');
+  const stateFile = fs.readdirSync(stateDir).find(name => name.startsWith('collection-') && name.endsWith('.json'));
+  const before = fs.readFileSync(path.join(stateDir, stateFile));
+  const detail = inspectCollectionFailure(args);
+  assert.equal(detail.mode, 'NO_NETWORK_NO_DATA_WRITE');
+  assert.equal(detail.status, 'STOP_REVIEW_REQUIRED');
+  assert.equal(detail.failedReason, 'THEME_NINE_R23_INVALID_OHLCV');
+  assert.equal(detail.firstIncompleteSymbol, 'BOTZ');
+  assert.equal(detail.completedSymbols, 0);
+  assert.equal(detail.manifestRawFileCount, 0);
+  assert.deepEqual(fs.readFileSync(path.join(stateDir, stateFile)), before);
 });

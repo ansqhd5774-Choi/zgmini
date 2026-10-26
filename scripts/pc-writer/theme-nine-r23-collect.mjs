@@ -270,6 +270,31 @@ export function inspectApprovedNine({dataRoot = DEFAULT_DATA, rosterPath = DEFAU
   return report;
 }
 
+export function inspectCollectionFailure({dataRoot = DEFAULT_DATA, rosterPath = DEFAULT_ROSTER, start, end} = {}) {
+  if (!dateOK(start) || !dateOK(end) || start > end) fail('INSPECT_DATES');
+  const roster = readApprovedRoster(rosterPath);
+  const home = path.join(dataRoot, COLLECTION_PATH);
+  const {filename, state} = readState(home, roster, start, end);
+  const existing = fs.existsSync(filename);
+  const incomplete = roster.symbols.filter(symbol => !state.symbols[symbol].complete);
+  const symbol = incomplete[0] ?? null;
+  const active = symbol ? state.symbols[symbol] : null;
+  const manifestPath = path.join(home, 'raw-manifest.json');
+  const manifest = fs.existsSync(manifestPath) ? JSON.parse(fs.readFileSync(manifestPath, 'utf8')) : null;
+  return {contract: 'THEME_NINE_R23_READ_ONLY_FAILURE_DIAGNOSIS',
+    mode: 'NO_NETWORK_NO_DATA_WRITE', checkpointFound: existing,
+    checkpointFile: existing ? path.basename(filename) : null,
+    status: state.failedAt ? 'STOP_REVIEW_REQUIRED' : existing ? 'CHECKPOINT_AVAILABLE' : 'NO_CHECKPOINT',
+    failedReason: state.reason ?? null, failedAt: state.failedAt ?? null,
+    completedSymbols: roster.symbols.length - incomplete.length,
+    pendingSymbols: incomplete.length, firstIncompleteSymbol: symbol,
+    firstIncompleteProgress: active ? {pages: active.pages, rawFiles: active.files?.length,
+      cursorPresent: Boolean(active.cursor), lastTimestamp: active.lastTimestamp,
+      noBars: active.noBars} : null,
+    manifestRawFileCount: Array.isArray(manifest?.files) ? manifest.files.length : manifest ? null : 0,
+    publicationWrites: 0, schedulerWrites: 0, dataWrites: 0};
+}
+
 // Reuse the unchanged four-request collector in bounded, paced batches.
 // There are no implicit retries: any STOP status ends the automatic session.
 export async function collectApprovedNineAuto(options, {collectImpl = collectApprovedNine,
@@ -313,14 +338,15 @@ export async function collectApprovedNineAuto(options, {collectImpl = collectApp
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const [mode, start, end, extra] = process.argv.slice(2);
   try {
-    if (extra || !['--inspect', '--collect', '--collect-auto'].includes(mode)) fail('USAGE_EXPECTED_INSPECT_OR_COLLECT');
+    if (extra || !['--inspect', '--inspect-failure', '--collect', '--collect-auto'].includes(mode)) fail('USAGE_EXPECTED_INSPECT_OR_COLLECT');
     if (mode !== '--inspect' && (!start || !end)) fail('EXPLICIT_DATE_RANGE_REQUIRED');
     const options = {dataRoot: process.env.ZGMINI_DATA_ROOT || DEFAULT_DATA,
       rosterPath: process.env.ZGMINI_R23_ROSTER_PATH || DEFAULT_ROSTER,
       start: start || undefined, end: end || undefined};
     const report = mode === '--collect' ? await collectApprovedNine(options) :
       mode === '--collect-auto' ? await collectApprovedNineAuto(options, {
-        onBatch: batch => process.stdout.write(JSON.stringify(batch) + '\n')}) : inspectApprovedNine(options);
+        onBatch: batch => process.stdout.write(JSON.stringify(batch) + '\n')}) :
+      mode === '--inspect-failure' ? inspectCollectionFailure(options) : inspectApprovedNine(options);
     process.stdout.write(JSON.stringify(report, null, 2) + '\n');
     if (report.status?.startsWith('STOP')) process.exitCode = 2;
   } catch (error) {
