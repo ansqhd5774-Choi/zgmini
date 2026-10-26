@@ -9,6 +9,7 @@ import {maintainIranDisplayCache,DISPLAY_CACHE_BASENAME} from '../scripts/iran-p
 import {publishIranNewsDisplay} from '../scripts/iran-progress/news-display-publication-r1.mjs';
 import {storedIranNewsResponse} from '../worker/iran-news-display-public-r1.mjs';
 import {IRAN_NEWS_DISPLAY_KEY} from '../lib/iran-progress/news-display-r1.mjs';
+import {parseGovUkNewsCandidates,discoverGovUkNewsCandidates,IRAN_GOVUK_NEWS_FEED} from '../scripts/iran-progress/news-display-discover-r1.mjs';
 
 const now=Date.parse('2026-10-26T15:00:00.000Z'); // KST 10/27 00:00
 const item=(date,extra={})=>({source:'GOV.UK',title:'Government statement on Iran talks',summary:'The government issued a statement.',
@@ -98,4 +99,30 @@ test('read-only API serves only saved 14-day news and fails closed on invalid sn
  row.body='{}';
  const invalid=await storedIranNewsResponse(new Request('https://zgmini.kr/api/outbreak-news/iran'),{db,now});
  assert.equal(invalid.status,503);
+});
+test('GOV.UK discovery preserves published time, drops updates and never approves rights',async()=>{
+ const xml=`<?xml version="1.0"?><feed xmlns="http://www.w3.org/2005/Atom">
+ <entry><title>Iran peace talks &amp; dialogue</title><published>2026-10-26T01:00:00Z</published>
+ <updated>2026-10-27T01:00:00Z</updated><link rel="alternate" href="https://www.gov.uk/government/news/iran-talks"/></entry>
+ <entry><title>Iran peace talks &amp; dialogue</title><published>2026-10-26T01:00:00Z</published><link href="https://www.gov.uk/government/news/iran-talks"/></entry>
+ <entry><title>Iran from an unlicensed publisher</title><published>2026-10-26T02:00:00Z</published><link href="https://example.com/article"/></entry>
+ <entry><title>Iran official news</title><updated>2026-10-26T02:00:00Z</updated><link href="https://www.gov.uk/government/news/missing-published"/></entry>
+ <entry><title>Iran future notice</title><published>2026-10-28T02:00:00Z</published><link href="https://www.gov.uk/government/news/future"/></entry>
+ </feed>`;
+ const parsed=parseGovUkNewsCandidates(xml,{now});
+ assert.equal(parsed.length,1);
+ assert.equal(parsed[0].publishedAt,'2026-10-26T01:00:00.000Z');
+ assert.equal(parsed[0].title,'Iran peace talks & dialogue');
+ assert.equal(parsed[0].rightsVerified,false);
+ assert.equal(toDisplayNewsItem(parsed[0],{now}),null);
+ const response=await discoverGovUkNewsCandidates({now,fetcher:async(url)=>{
+  assert.equal(url,IRAN_GOVUK_NEWS_FEED);
+  return new Response(xml,{status:200,headers:{'content-type':'application/atom+xml'}});
+ }});
+ assert.equal(response.status,'REVIEW_REQUIRED');
+ assert.equal(response.count,1);
+});
+test('discovery fails closed on unsafe XML and transport errors',async()=>{
+ assert.throws(()=>parseGovUkNewsCandidates('<!DOCTYPE feed><feed></feed>',{now}),/NEWS_DISCOVERY_FEED_INVALID/);
+ await assert.rejects(discoverGovUkNewsCandidates({now,fetcher:async()=>new Response('offline',{status:503})}),/NEWS_DISCOVERY_SOURCE_FAILED/);
 });
