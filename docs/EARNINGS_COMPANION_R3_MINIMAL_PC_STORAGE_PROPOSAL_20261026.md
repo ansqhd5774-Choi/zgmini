@@ -6,7 +6,7 @@
 - 원 계획: `docs/EARNINGS_RECESSION_COMPANION_API_SITE_INTEGRATION_PLAN_R1_20261026.md`
 - 근거: `docs/EARNINGS_COMPANION_R2_CODE_MAPPING_PC_AUDIT_20261026.md` (11절)
 - R3-A 사용자 PC 실측 결과: `docs/EARNINGS_COMPANION_R3A_PC_LINEAGE_REVIEW_20261027.md`
-- R3-B 승인 대기 계약안: `docs/EARNINGS_COMPANION_R3B_STORAGE_CONTRACT_PROPOSAL_20261027.md`
+- R3-B 승인된 설계 및 FRED 권리 게이트: `docs/EARNINGS_COMPANION_R3B_STORAGE_CONTRACT_PROPOSAL_20261027.md`
 - 작업 경계: 기존 E1-R4 점수 A(4개 구성요소), 별도 12대 실적 B, 신규 정보성 C를 **분리**. C 지표 개수는 유동적이며 기존 산식/과거 이력에 영향 없음.
 - 소스 확인 시점: GitHub 비교 `main...` 대비 작업 브랜치 `ahead=20/behind=3` (2026-10-26). **main과 병합/리베이스/복구를 자동 수행하지 않고**, 구현 직전 최신 source drift를 파일 단위로 재검사한다.
 
@@ -69,7 +69,7 @@ R1 계획상 원자료는 반드시 **PC SQLite에 먼저 저장**하고, 가공
 |---|---|---|
 | R1/R2 시리즈 실측 | BEA/BLS/Census API 실측, PC Growth/E1 메타 | **핵심 PASS, 단 원시 provenance·QFR 역사값·SEC 추가 HOLD** |
 | R3-A 중복·수정본 상세 읽기 | PC 원장 기존값/원천 최소 조회, **쓰기/추가 API 0** | **PASS: Growth 6/6 이력 정합, G017/G018 최신 비율 일치, FRED PPIFIS·PRS85006111 existing 확인. BEA/BLS 추가·MTIS/QFR 중복 여부는 R3-B 조건부** |
-| R3-B 저장 계약 확정 | 실제 원장 재사용 vs additive 스키마 설계/보존·수집 주기 | **구체 설계안 작성 완료, 사용자 승인 대기** |
+| R3-B 저장 계약 확정 | 실제 원장 재사용 vs additive 스키마 설계/보존·수집 주기 | **설계 원칙 승인 2026-10-27 / FRED API 캐시 공개 재사용 권리 HOLD / R3-C 쓰기 승인 아님** |
 | R3-C PC 수집·원자료 저장 | 승인된 PC 공간에서만 비공개, 자동 스케줄 등록 금지 | **NOT_STARTED / 승인 필요** |
 | R3-D 저장값만 계산/검증 | input lineage/수정본/결측/과거 값 보존·E1-R4 불변 비교 | **NOT_STARTED / 승인 필요** |
 | R4 공개 키·read-model | 기존 `/api/earnings-recession-detail`과 분리 | **NOT_APPROVED** |
