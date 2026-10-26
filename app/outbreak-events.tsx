@@ -77,6 +77,22 @@ export function OutbreakSummary({onOpen}:{onOpen:(id:string)=>void}){
 
 export default function OutbreakEvents({initialEvent='fed'}:{initialEvent?:string}){
   const [selected,setSelected]=useState(initialEvent);
+  // Query selection hydrates after the server-rendered default event to preserve static HTML.
+  useEffect(()=>{
+    const sync=()=>{
+      const requested=new URLSearchParams(window.location.search).get('event');
+      if(requested&&events.some(item=>item.id===requested))setSelected(requested);
+    };
+    sync();
+    window.addEventListener('popstate',sync);
+    return()=>window.removeEventListener('popstate',sync);
+  },[]);
+  const selectEvent=(id:string)=>{
+    setSelected(id);
+    const url=new URL(window.location.href);
+    url.searchParams.set('event',id);
+    window.history.replaceState(window.history.state,'',url.pathname+url.search+url.hash);
+  };
   const event=events.find(item=>item.id===selected)!;
   const rate=useRateSentiment();
   const iran=useIranProgress();
@@ -94,7 +110,7 @@ export default function OutbreakEvents({initialEvent='fed'}:{initialEvent?:strin
       const description=item.id==="fed"?(rate?"금리 심리 점수":"저장 점수 대기"):item.id==="iran"?"종전 진전 점수":"확률 산출 전";
       const tone=rateBand(value);
       const toneLabel=value===null?"자료 산출 전":item.id==="iran"?(value<25?"진전 매우 낮음":value<40?"진전 낮음":value<60?"진전 보통":"진전 증가"):tone.label;
-      return <button type="button" key={item.id} className="ob-card" aria-pressed={selectedCard} aria-controls="ob-selected-event-panel" onClick={()=>setSelected(item.id)}>
+      return <button type="button" key={item.id} className="ob-card" aria-pressed={selectedCard} aria-controls="ob-selected-event-panel" onClick={()=>selectEvent(item.id)}>
        <span className="ob-card-top"><span className="ob-category">{item.category}</span><span className="ob-card-active" aria-hidden="true">{selectedCard?"선택됨":""}</span></span>
        <h2>{item.title}</h2>
        <p>{item.question}</p>
