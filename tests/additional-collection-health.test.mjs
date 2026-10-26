@@ -3,9 +3,9 @@ import {additionalCollectionEntries} from '../scripts/pc-writer/additional-colle
 import {collectionHealthSummary,COLLECTION_WINDOW_MS} from '../worker/collection-health.mjs';
 const now=Date.UTC(2026,9,10),iran={finishedAt:now-1,storageVerified:true,sources:{gdelt:{status:'COLLECTED'}},backfill:{status:'CAUGHT_UP'},articleAnalysis:{feeds:[{status:'COLLECTED'}]}};
 const alpaca={checkedAt:new Date(now-1).toISOString(),runRequests:15,status:'COLLECTED_PENDING_VALIDATION',completedGroups:55,totalGroups:55,errorCode:null};
-test('two collection jobs added; analysis and 55 chunks are not separate jobs',()=>{
- const entries=additionalCollectionEntries({iran,alpaca});assert.equal(entries.length,2);
- const summary=collectionHealthSummary(entries,now);assert.equal(summary.normal,2);assert.equal(summary.total,2);
+test('registered supply lane remains unknown when missing; analysis and 55 chunks are not separate jobs',()=>{
+ const entries=additionalCollectionEntries({iran,alpaca});assert.equal(entries.length,3);assert.equal(entries.find(x=>x.id==='job:supplyR10').outcome,'unknown');
+ const summary=collectionHealthSummary(entries,now);assert.equal(summary.normal,2);assert.equal(summary.total,3);
 });
 test('missing reports and old reports cannot claim normal',()=>{
  assert.equal(collectionHealthSummary(additionalCollectionEntries(),now).normal,0);
