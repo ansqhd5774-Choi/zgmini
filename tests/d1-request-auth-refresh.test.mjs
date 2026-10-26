@@ -11,6 +11,13 @@ test('request-time credential resolves expiry during a run using the official re
   clock=100000;options.refresh=()=>({status:0});assert.throws(()=>credential('fixture',options),/WRANGLER_LOGIN_REQUIRED/);
  }finally{fs.rmSync(dir,{recursive:true,force:true});}
 });
+test('timed-out CLI is reconciled against a valid renewed file; stale file still blocks',()=>{
+ const dir=fs.mkdtempSync(path.join(os.tmpdir(),'d1-auth-readback-')),file=path.join(dir,'fixture.toml');
+ const write=(token,expiry)=>fs.writeFileSync(file,`oauth_token = "${token}"\nexpiration_time = "${new Date(expiry).toISOString()}"`);
+ const timeout={status:null,error:{code:'ETIMEDOUT'}},options={apiToken:null,file,now:()=>2000,refresh:()=>{write('renewed',100000);return timeout;}};
+ try{write('old',1000);assert.equal(credential('fixture',options),'renewed');write('old',1000);options.refresh=()=>timeout;assert.throws(()=>credential('fixture',options),e=>e.message==='WRANGLER_AUTH_REFRESH_TIMEOUT'&&e.diagnosticAuth.authRefresh==='FAILED');write('',100000);options.refresh=()=>({status:0});assert.throws(()=>credential('fixture',options),/WRANGLER_LOGIN_REQUIRED/);
+ }finally{fs.rmSync(dir,{recursive:true,force:true});}
+});
 test('credentials are resolved for each request in a long publication',async()=>{
  let current='first';const seen=[];const c=client(config,()=>current,{fetchImpl:async(_url,init)=>{seen.push(init.headers.Authorization);return ok();}});
  await c.query(config.core,'SELECT 1');current='renewed';await c.query(config.core,'SELECT 2');assert.deepEqual(seen,['Bearer first','Bearer renewed']);

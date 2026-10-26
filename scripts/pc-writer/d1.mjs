@@ -32,7 +32,7 @@ export function readonly(sql){return /^\s*(SELECT|WITH)\b/i.test(sql)&&/\bSELECT
 // Reuse the user's existing official Wrangler login. Never log credentials.
 export function credential(root,{apiToken=process.env.CLOUDFLARE_API_TOKEN,file=path.join(os.homedir(),'AppData/Roaming/xdg.config/.wrangler/config/default.toml'),now=Date.now,refresh=()=>spawnSync(process.execPath,[path.join(root,'node_modules/wrangler/bin/wrangler.js'),'whoami'],{cwd:root,encoding:'utf8',timeout:60000,windowsHide:true})}={}){
  if(apiToken)return rememberCredential(apiToken,{authType:'API_TOKEN',authExpiresAt:null,authRefresh:'NOT_NEEDED'});
- let refreshed=false;
+ let refreshed=false,refreshedByReadback=false;
  let cfg=fs.readFileSync(file,'utf8');
  const expiry=Date.parse(cfg.match(/expiration_time\s*=\s*"([^"]+)"/)?.[1]??'');
  const authError=()=>Object.assign(Error('WRANGLER_LOGIN_REQUIRED'),{diagnosticAuth:{authType:'OAUTH',authExpiresAt:Number.isFinite(expiry)?new Date(expiry).toISOString():null,authRefresh:'FAILED'}});
@@ -40,14 +40,21 @@ export function credential(root,{apiToken=process.env.CLOUDFLARE_API_TOKEN,file=
  // does not renew the token. Request-time resolution below handles long runs.
  if(!Number.isFinite(expiry)||expiry<=now()){
   const r=refresh();
-  if(r.status!==0)throw authError();
+  // A timed-out CLI may have completed its atomic credential-file update.
+  // Its exit code is not the authority for whether a usable credential exists.
   cfg=fs.readFileSync(file,'utf8');
   const renewedExpiry=Date.parse(cfg.match(/expiration_time\s*=\s*"([^"]+)"/)?.[1]??'');
-  if(!Number.isFinite(renewedExpiry)||renewedExpiry<=now())throw authError();
+  const renewedToken=cfg.match(/oauth_token\s*=\s*"([^"]+)"/)?.[1];
+  if(!renewedToken||!Number.isFinite(renewedExpiry)||renewedExpiry<=now()){
+   const error=authError();
+   if(r.error?.code==='ETIMEDOUT'){error.message='WRANGLER_AUTH_REFRESH_TIMEOUT';error.code='ETIMEDOUT';}
+   throw error;
+  }
   refreshed=true;
+  refreshedByReadback=r.status!==0;
  }
  const token=cfg.match(/oauth_token\s*=\s*"([^"]+)"/)?.[1];
- if(!token)throw authError();return rememberCredential(token,{authType:'OAUTH',authExpiresAt:new Date(Date.parse(cfg.match(/expiration_time\s*=\s*"([^"]+)"/)?.[1])).toISOString(),authRefresh:refreshed?'SUCCEEDED':'NOT_NEEDED'});
+ if(!token)throw authError();return rememberCredential(token,{authType:'OAUTH',authExpiresAt:new Date(Date.parse(cfg.match(/expiration_time\s*=\s*"([^"]+)"/)?.[1])).toISOString(),authRefresh:refreshedByReadback?'READBACK_VERIFIED':refreshed?'SUCCEEDED':'NOT_NEEDED'});
 }
 
 export function client({account,core,history},token,{fetchImpl=globalThis.fetch,sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms)),now=Date.now,onDiagnostic}={}){
