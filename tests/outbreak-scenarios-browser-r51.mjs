@@ -44,7 +44,7 @@ try{
    probability:false,calibrated:false,verifiedWarState:false,completeEventCoverage:false
   };
   await page.route("**/api/iran-progress",r=>r.fulfill({status:200,contentType:"application/json",body:JSON.stringify(r5Fixture)}));
-  await page.goto(base+"/?view=scenarios",{waitUntil:"domcontentloaded",timeout:45000});
+  await page.goto(base+"/outbreak/",{waitUntil:"domcontentloaded",timeout:45000});
   await page.locator('dialog[aria-labelledby="zg-about-popup-title"]').waitFor({state:'visible'});
   await page.getByRole('button',{name:'닫기',exact:true}).click();
   await page.locator('dialog[aria-labelledby="zg-about-popup-title"]').waitFor({state:'hidden'});
