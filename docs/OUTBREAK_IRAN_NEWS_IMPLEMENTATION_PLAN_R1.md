@@ -89,7 +89,9 @@
 | payload·14일 검증 | `lib/iran-progress/news-display-r1.mjs` |
 | 저장형 GET | `worker/iran-news-display-public-r1.mjs`, `app/api/outbreak-news/iran/route.ts` |
 | 기존 뉴스 UI 연결 | `app/outbreak-beginner-iran-r54.tsx`, `app/outbreak-news-r57.tsx` |
-| GOV.UK 후보 발견(읽기 전용) | `scripts/iran-progress/news-display-discover-r1.mjs` |\n| 자동 테스트 | `tests/iran-news-display-r1.test.mjs` |
+| GOV.UK 후보 발견(읽기 전용) | `scripts/iran-progress/news-display-discover-r1.mjs` |
+| PC 독립 정리/게시 실행기 | `scripts/iran-progress/news-display-maintenance-r1.mjs` |
+| 자동 테스트 | `tests/iran-news-display-r1.test.mjs` |
 
 기존 수집기·runner·게시기 변경은 승인 경로에서 **필요한 최소 범위**로만 적용한다. 새 파일명과 전용 키는 후보이며 실제 참조 관계 검사 후 확정한다.
 
@@ -97,8 +99,11 @@
 
 - [x] 14일 표시/30일 PC 표시용 자동 삭제/원장 보존 정책을 6단계 개발 계획으로 구체화
 - [x] 기존 수집·저장·배포 소스에서 수정 후보와 필수 검증 Gate 정리
-- [x] 뉴스 전용 캐시·만료 필터·D1 게시 함수·읽기 전용 API·UI 연결의 **독립 코드** 구현\n- [x] GOV.UK 후보 발견 미리보기 구현(기사별 표시권리 미승인 상태 유지)\n- [x] 14/30일 경계·피드 발견·권리 차단·캐시·D1/API 단위 테스트 10개 PASS\n- [ ] 기존 PC runner에 표시 전용 수집/정리/게시 연결(운영 환경 점검 선행)
+- [x] 뉴스 전용 캐시·만료 필터·D1 게시 함수·읽기 전용 API·UI 연결의 **독립 코드** 구현
+- [x] GOV.UK 후보 발견 미리보기 구현(기사별 표시권리 미승인 상태 유지)
+- [x] 14/30일 경계·피드 발견·권리 차단·캐시·D1/API 단위 테스트 11개 PASS
+- [ ] 기존 PC runner에 표시 전용 수집/정리/게시 연결(운영 환경 점검 선행)
 - [ ] 실제 뉴스 수집·PC 표시 캐시 정리 실행
 - [ ] 뉴스 D1 게시·공개 UI·Cloudflare 배포
 
-**진행 이력:** 최초에는 계획서만 저장했다. 2026-10-26 현재 독립 구현 파일과 UI/API 연결 코드가 브랜치에 추가되었다. 그러나 기사별 검증과 자체 요약·영향 분류, PC 원본 수집기와의 런타임 연결, PC 실제 30일 정리 실행, D1 실제 게시, PR/main 반영, Cloudflare 배포는 **미실시**다. 10개 테스트 PASS는 단위 테스트 결과이지 운영 PASS가 아니다.
+**진행 이력:** 최초에는 계획서만 저장했다. 2026-10-26 현재 독립 구현 파일과 UI/API 연결 코드가 브랜치에 추가되었다. 그러나 기사별 검증과 자체 요약·영향 분류, PC 원본 수집기와의 런타임 연결, PC 실제 30일 정리 실행, D1 실제 게시, PR/main 반영, Cloudflare 배포는 **미실시**다. 11개 테스트 PASS는 단위 테스트 결과이지 운영 PASS가 아니다.
