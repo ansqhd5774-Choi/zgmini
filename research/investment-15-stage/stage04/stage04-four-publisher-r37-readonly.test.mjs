@@ -1,7 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { PUBLISHERS, parseUrlSeeds, extractCagrCandidates,
-  pagePlainText, researchR37, resultCsv } from './stage04-four-publisher-r37-readonly.mjs';
+  pagePlainText, researchR37, resultCsv, formatRowTxt,
+  formatSummaryTxt } from './stage04-four-publisher-r37-readonly.mjs';
 
 function fixtureSeeds({ blanks = false } = {}) {
   const labels = [
@@ -64,6 +65,10 @@ test('all 4 publishers are attempted even after first succeeds; mean excludes pr
   assert.equal(out.providers.reduce((sum, p) => sum + p.attempts, 0), 4);
   assert.equal(out.rows[0].mean_state, 'UNVERIFIED_RESEARCH_ONLY');
   assert.match(resultCsv(out), /정보기술/);
+  assert.match(formatRowTxt(out.rows[0], 1, 1), /MEDIA_TBRC_CAGR_PCT=10/);
+  assert.match(formatRowTxt(out.rows[0], 1, 1), /MEDIA_PRECEDENCE_STATUS=PROXY_ONLY/);
+  assert.match(formatSummaryTxt(out), /PROVIDER_BRI_DIRECT=1/);
+  assert.match(formatSummaryTxt(out), /STATUS=FINISHED_RESEARCH_ONLY/);
 });
 
 test('missing BRI seed still triggers independent synonym discovery, without fake zero', async () => {
