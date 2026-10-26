@@ -309,3 +309,61 @@
     grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr) minmax(0, 1fr);
   }
 }
+
+/* R9 USA detail layout: position/date/link/touch-target adjustments only.
+ * Keep all current gauge bands, score tones, chart colors, and live renderers.
+ */
+.zg-fg-us .usa-target-card .fg-card-header-date {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  min-width: 0;
+  margin-left: auto;
+  color: var(--zg-text-meta);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.35;
+  white-space: nowrap;
+}
+
+@media (max-width: 760px) {
+  .zg-fg-us .usa-target-card .fg-header-slot .cnn-panel-heading {
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+  }
+  .zg-fg-us .usa-target-card .fg-header-slot .fg-card-header-date {
+    font-size: 10px;
+    padding-right: 4px;
+  }
+  .zg-fg-us .usa-target-card .fg-score-slot .cnn-score-orb {
+    grid-template-rows: minmax(90px, auto);
+    column-gap: 9px;
+  }
+  .zg-fg-us .usa-target-card .cnn-spectrum-gauge {
+    grid-row: 1;
+  }
+  .zg-fg-us .usa-target-card .cnn-score-comparisons {
+    grid-row: 1;
+    height: 64px;
+    min-height: 64px;
+    max-height: 64px;
+    align-self: center;
+  }
+  .zg-fg-us .usa-target-card .cnn-score-comparison {
+    gap: 4px;
+  }
+  .zg-fg-us .usa-target-card .cnn-score-comparison > strong {
+    font-variant-numeric: tabular-nums;
+    font-size: 14px;
+  }
+  .zg-fg-us .usa-target-card .fg-analysis-slot {
+    grid-template-rows: 44px clamp(128px, 19dvh, 176px);
+  }
+  .zg-fg-us .usa-target-card .fg-period-slot,
+  .zg-fg-us .usa-target-card .fg-period-slot .cnn-period-toolbar,
+  .zg-fg-us .usa-target-card .fg-period-slot .cnn-period-button {
+    height: 44px;
+    min-height: 44px;
+    max-height: 44px;
+  }
+}

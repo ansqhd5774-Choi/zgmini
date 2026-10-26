@@ -527,6 +527,8 @@ export default function CnnPanel({ showEducation = false }: { showEducation?: bo
       testId="cnn-reference-panel"
       marketState={loading ? "loading" : score === null ? "unavailable" : history.length > 1 ? "ready" : "empty"}
       busy={loading}
+      showHeaderDate={showEducation}
+      titleLink={!showEducation}
       header={{
         flag: "/flags/us.svg",
         eyebrow: "CNN FEAR & GREED INDEX",
@@ -545,7 +547,7 @@ export default function CnnPanel({ showEducation = false }: { showEducation?: bo
         dayDelta,
         periodDelta,
         periodLabel: currentPeriodLabel,
-        metaDate: dateLabel(payload?.observedAt),
+        metaDate: showEducation ? undefined : dateLabel(payload?.observedAt),
       }}
       period={<MarketPeriodControls
         activeKey={selectedPeriod}
@@ -566,9 +568,9 @@ export default function CnnPanel({ showEducation = false }: { showEducation?: bo
       detailHref={showEducation ? undefined : "/fear-greed/usa/"}
       footer={{
         href: "https://www.cnn.com/markets/fear-and-greed",
-        label: "자세히",
+        label: showEducation ? "CNN 원문 보기" : "자세히",
         ariaLabel: "CNN Fear & Greed 원본 페이지 열기",
-        children: <a href="https://www.cnn.com/markets/fear-and-greed" aria-label="CNN Fear & Greed 출처 열기" style={{color:"inherit",textDecoration:"none"}}>데이터 출처</a>,
+        children: showEducation ? <>데이터 출처: CNN</> : <a href="https://www.cnn.com/markets/fear-and-greed" aria-label="CNN Fear & Greed 출처 열기" style={{color:"inherit",textDecoration:"none"}}>데이터 출처</a>,
       }}
     />
 
