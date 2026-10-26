@@ -82,6 +82,13 @@
 - 변경 후 지정 캘린더 테스트 3/3 PASS, TypeScript PASS, 전체 `vinext build` PASS. 임시 로컬 `/market-calendar/` HTTP 200 확인. 실제 브라우저는 격리된 개발 서버 `127.0.0.1:5173`에 연결 실패(`ERR_CONNECTION_REFUSED`)했으므로 화면·하이드레이션·모바일 시각 검증은 **NOT_VERIFIED**. 이를 Production 배포 검증으로 확대하지 않음.
 - 이후 필수 작업: 승인된 운영 PC 수집기에서 R2 확대 파서의 실제 실행 SHA·결과 체크포인트를 확인하고, 저장본 게시 후 D1·GET 재조회 및 PC·모바일 UI 검증. 권한 미확인 한국 일정·실적 공급원은 제외하고 허가를 요청하지 않는다.
 
+### R6 — PC 원본·운영 게시 계보 READ-ONLY 진단 준비 (2026-10-27)
+- `scripts/pc-writer/MARKET_CALENDAR_R6_READONLY.cmd` + 같은 폴더의 `market-calendar-r6-readonly.mjs`를 제공한다. PC 사용자는 두 파일을 같은 Desktop 폴더에 두고 CMD를 **1회** 실행한 뒤 생성된 `MARKET_CALENDAR_R6_PC_READONLY_RESULT.txt`만 전달한다.
+- 조회 범위: 실제 E: 전용 Node, 현재 운영 데이터 폴더의 `config.json` 중 비밀 아닌 승인 상태/SHA, `local-collection-last-run.json` 중 일정 수집 상태, `quota-runner-last-run.json`, `local-publication-ledger.json`, 기존 `storage/core.sqlite`의 공개 일정 output, Core 등록 작업이 가리키는 코드 파일의 R2 파서 존재 여부, 공개 `/api/release-calendar` 응답 요약.
+- **읽기 전용**: SQLite `DatabaseSync(...,{readOnly:true})`로 `SELECT`만 사용하며 DB/스케줄러/원자료/키/설정/승인 source는 변경하지 않는다. Provider 원본 API 요청·재수집·재계산·게시·git pull·배포·관리자 권한 요청 없음. 보고서에 원자료·비밀값·로컬 사용자 경로·작업 인자 전문을 남기지 않는다. 네트워크는 ZGMINI 공개 저장본 GET 1회만 사용한다.
+- 별도 fixture SQLite에서 조회 테스트: 파일 크기 불변, 동일 이벤트 지문 일치, 비밀값 비출력. `node --test`에 R6 2건 포함해 지정 테스트 파일 4/4 PASS. 단, 실제 PC 런타임·DB·등록 작업은 아직 미확인이다. 출력의 `expandedParserFile`은 파일 존재 증거이며 실제 수집 실행 PASS는 `collection` 및 저장 시각 검증 전까지 주장하지 않는다.
+- 결과 해석: `parity.sameEvents=true`는 로컬과 공개 API 이벤트 목록 동등성만 의미한다. R2 코드가 운영에 반영되었다는 증거는 별도로 `task.headSha`·parser flag·수집 checkpoint에서 확인해야 한다. 불일치·결측 시 기존 유효 결과를 보존하고 임의 재실행하지 않는다.
+
 ## SEO 사전 점검 (docs/SEO_SEARCH_APPEARANCE_REVIEW.md)
 
 - 검색 의도: 투자자가 미국 경제지표와 향후 기업 실적 발표 일정을 날짜별로 조회. 현재 실제 제공 범위는 공식 미국 경제지표에 국한.
