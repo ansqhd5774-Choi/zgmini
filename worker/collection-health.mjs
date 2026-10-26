@@ -23,6 +23,9 @@ export async function readCollectionHealth(db,now=Date.now()){
   const at=Date.parse(body.checkedAt);
   if(!Number.isFinite(at)||at>now)throw Error('INVALID_TIMESTAMP');
   const summary=collectionHealthSummary(body.items.map(x=>({id:x.id,storedAt:x.storedAt,checkedAt:body.version>=2?x.checkedAt:x.storedAt,outcome:body.version>=2?x.outcome:x.normal===true?'success':'unknown',reason:x.reason,nextRetryAt:x.nextRetryAt,...(body.version>=3?{lastSuccessAt:x.lastSuccessAt}:{})})),now);
-  return Response.json({...summary,checkedAt:body.checkedAt,status:now-at>=COLLECTION_WINDOW_MS?'unknown':summary.status},{headers});
+  // Public indicator retains its original eight-day-success contract.
+  // Latest-attempt diagnostics remain intact for the PC owner.
+  const publicStatus=summary.failed?'partial':summary.total&&summary.normal===summary.total?'healthy':'unknown';
+  return Response.json({...summary,checkedAt:body.checkedAt,status:now-at>=COLLECTION_WINDOW_MS?'unknown':publicStatus},{headers});
  }catch{return Response.json({status:'unknown',normal:null,total:null,checkedAt:null},{status:503,headers});}
 }
