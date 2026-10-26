@@ -36,6 +36,37 @@ export const FORECAST_CAGR_OUTPUT_SCHEMA = Object.freeze({
   additionalProperties: false
 });
 
+// R30: the report's verified forecast attributes own the year interval.
+// Ollama only reads the forecast narrative CAGR; it does not guess years.
+export const FORECAST_RATE_ONLY_OUTPUT_SCHEMA = Object.freeze({
+  type: 'object',
+  properties: {
+    growth_pct: { type: 'number', minimum: 0, maximum: 100 },
+    metric: { type: 'string', enum: ['FORECAST_CAGR'] }
+  },
+  required: ['growth_pct', 'metric'],
+  additionalProperties: false
+});
+
+export function validateModelForecastRateOnly(raw, excerpt) {
+  let parsed;
+  try { parsed = JSON.parse(raw); } catch { throw new Error('OLLAMA_INVALID_JSON'); }
+  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed) ||
+      Object.keys(parsed).sort().join(',') !== 'growth_pct,metric') {
+    throw new Error('OLLAMA_RATE_SCHEMA_MISMATCH');
+  }
+  if (typeof parsed.growth_pct !== 'number' || !Number.isFinite(parsed.growth_pct) ||
+      parsed.growth_pct < 0 || parsed.growth_pct > 100) {
+    throw new Error('OLLAMA_INVALID_GROWTH');
+  }
+  if (parsed.metric !== 'FORECAST_CAGR') throw new Error('OLLAMA_WRONG_GROWTH_TYPE');
+  const literal = String(parsed.growth_pct).replace('.', '\\.');
+  if (!new RegExp(`\\b${literal}(?:\\.0+)?\\s*%`).test(excerpt)) {
+    throw new Error('OLLAMA_VALUE_NOT_IN_SOURCE');
+  }
+  return { growth_pct: parsed.growth_pct, metric: 'FORECAST_CAGR' };
+}
+
 function decodeEntities(s) {
   return String(s).replace(/&amp;/gi, '&').replace(/&lt;/gi, '<')
     .replace(/&gt;/gi, '>').replace(/&quot;/gi, '"').replace(/&#39;|&apos;/gi, "'")
@@ -163,6 +194,7 @@ export async function measureKeyword(keyword, {
   searchMode = 'bing-rss',
   structuredOutput = false,
   auditForecast = false,
+  rateOnlyFromSource = false,
 } = {}) {
   if (maxMs <= 0 || maxMs > MAX_KEYWORD_MS) throw new Error('INVALID_TIMEOUT');
   if (!KEYWORDS.includes(keyword)) throw new Error('INVALID_TEST_KEYWORD');
@@ -170,6 +202,10 @@ export async function measureKeyword(keyword, {
   if (typeof structuredOutput !== 'boolean') throw new Error('INVALID_STRUCTURED_OUTPUT');
   if (typeof auditForecast !== 'boolean' || (auditForecast && searchMode !== 'publisher-site')) {
     throw new Error('INVALID_FORECAST_AUDIT');
+  }
+  if (typeof rateOnlyFromSource !== 'boolean' ||
+      (rateOnlyFromSource && (!auditForecast || !structuredOutput))) {
+    throw new Error('INVALID_RATE_ONLY_MODE');
   }
   const began = now();
   const controller = new AbortController();
@@ -192,7 +228,8 @@ export async function measureKeyword(keyword, {
     search_http_status: null, rss_items: null, search_page_cards: null, publisher_index_links: null,
     title_matched_links: null, indexed_sample: null };
   if (structuredOutput) {
-    result.ollama_format = 'JSON_SCHEMA_FORECAST_CAGR';
+    result.ollama_format = rateOnlyFromSource ? 'JSON_SCHEMA_FORECAST_RATE_ONLY' :
+      'JSON_SCHEMA_FORECAST_CAGR';
     result.ollama_response_sample = null;
     result.ollama_done_reason = null;
     result.ollama_eval_count = null;
@@ -208,6 +245,7 @@ export async function measureKeyword(keyword, {
     result.forecast_base_value = null;
     result.forecast_end_value = null;
     result.model_candidate_pct = null;
+    if (rateOnlyFromSource) result.period_source = 'PUBLISHER_FORECAST_ATTRIBUTES';
   }
   try {
     const searchBegan = now();
@@ -274,13 +312,22 @@ export async function measureKeyword(keyword, {
     result.ollama_generations = 1;
     let completion;
     try {
+      const responseSchema = rateOnlyFromSource ? FORECAST_RATE_ONLY_OUTPUT_SCHEMA :
+        FORECAST_CAGR_OUTPUT_SCHEMA;
       const modelResponse = await fetchFn('http://127.0.0.1:11434/api/generate', {
         method: 'POST', signal: controller.signal,
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ model, stream: false, think: false,
-          format: structuredOutput ? FORECAST_CAGR_OUTPUT_SCHEMA : 'json',
-          options: { temperature: 0, num_predict: structuredOutput ? 120 : 90 },
-          prompt: structuredOutput
+          format: structuredOutput ? responseSchema : 'json',
+          options: { temperature: 0, num_predict: rateOnlyFromSource ? 70 : structuredOutput ? 120 : 90 },
+          prompt: rateOnlyFromSource
+            ? 'Read ONLY the supplied official publisher forecast excerpt. Extract the explicitly stated FORECAST CAGR percentage. ' +
+              'Return ONLY two JSON fields: growth_pct (number copied exactly from the forecast narrative) ' +
+              'and metric (literal FORECAST_CAGR). Do not provide period_start, period_end or any other fields. ' +
+              'Do not use historic 2025-to-2026 growth or calculate a different CAGR. ' +
+              'The validated year interval comes from the publisher report attributes, not from the model. ' +
+              'JSON schema: ' + JSON.stringify(responseSchema) + '\nEXCERPT:\n' + excerpt
+            : structuredOutput
             ? 'Read ONLY the supplied market excerpt. Extract the stated FORECAST compound annual growth rate (CAGR) and forecast beginning and ending years. ' +
               'Return exactly four JSON fields: growth_pct (number copied from the source), metric (the literal string FORECAST_CAGR), ' +
               'period_start (number, first forecast year), period_end (number, last forecast year). ' +
@@ -306,7 +353,15 @@ export async function measureKeyword(keyword, {
       result.ollama_eval_count = Number.isFinite(completion.eval_count) ? completion.eval_count : null;
     }
     ensureInBudget(began, now, maxMs);
-    Object.assign(result, validateModelReply(completion.response, excerpt));
+    if (rateOnlyFromSource) {
+      const modelValue = validateModelForecastRateOnly(completion.response, excerpt);
+      Object.assign(result, modelValue, {
+        period_start: result.forecast_base_year,
+        period_end: result.forecast_end_year
+      });
+    } else {
+      Object.assign(result, validateModelReply(completion.response, excerpt));
+    }
     if (auditForecast) {
       result.model_candidate_pct = result.growth_pct;
       if (Math.abs(result.growth_pct - result.forecast_narrative_pct) > 0.05 ||
