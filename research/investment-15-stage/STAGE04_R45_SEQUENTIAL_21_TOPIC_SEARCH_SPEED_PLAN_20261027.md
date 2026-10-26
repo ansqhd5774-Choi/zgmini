@@ -90,3 +90,13 @@
 - 비용: 무료 공개 검색/보고서와 기존 PC Ollama만. 결제·종량제 크레딧·유료 크롤링 서비스는 승인 없이는 사용하지 않는다.
 - 모든 후속 구현은 기존 **동일 투자 연구 브랜치**에서 진행한다. 별도 브랜치 생성·다른 작업 브랜치 전환·main 병합 금지.
 - 인계 근거: `STAGE04_R35_FOUR_MEDIA_CAGR_MATRIX_20261026.md`, 사용자 제공 `R44_FULL_21_NO_CREDIT_RESULT.txt/json`, R44 README/로그, 본 R45 계획. R44 사용자 PC 로그는 이 문서의 평가 근거로만 참조하며 이번 커밋에서 저장소에 자동 업로드하지 않는다.
+
+## 7. 01 정보기술 시범 구현 현황 (2026-10-27)
+
+- 현재 단계: **기존 투자 연구 브랜치에 연구용 코드·CMD·모의 테스트 반영 완료**. 사용자 Windows/네트워크/Ollama 반복 실측은 **미실시**.
+- 독립 수집기: [stage04/stage04-topic01-r45-readonly.mjs](stage04/stage04-topic01-r45-readonly.mjs). 유료 검색 API 없음; Google/Bing 공개 결과가 차단/미발견이면 명시하고 R35 URL을 재조회하는 경로와 구분.
+- 실행: [R45_TOPIC01_INFORMATION_TECHNOLOGY.cmd](R45_TOPIC01_INFORMATION_TECHNOLOGY.cmd). 출력 TXT/JSON은 CMD 옆 폴더로 생성.
+- 사용자 안내: [README_R45_TOPIC01_20261027.md](README_R45_TOPIC01_20261027.md).
+- 자동 테스트: [stage04/stage04-topic01-r45.test.mjs](stage04/stage04-topic01-r45.test.mjs), **14/14 모의 테스트 PASS**. 사용자 PC 재현성 판정이 아니다.
+- 기존 R35~R44 원본과 점수·주문·DB·산식·스케줄러·배포 변경 **0건**. 02번 작업은 시작하지 않음.
+- 다음 게이트: 실제 Windows CMD TXT 수신 → 4매체 후보·차단·범위·반복 속도 측정 및 수정 → **01 승인 후에만 02 진행**.
