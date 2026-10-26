@@ -93,7 +93,7 @@ test('production SEO inspector requires guide Article JSON-LD',()=>{
 
 test('runtime freshness contracts cover every public sitemap URL',()=>{
   const entries=liveSitemapEntries(readFileSync('public/sitemap.xml','utf8'));
-  assert.equal(SEO_RUNTIME_MARKERS.size,34);
+  assert.equal(SEO_RUNTIME_MARKERS.size,35);
   for(const url of entries.keys()) assert.ok(SEO_RUNTIME_MARKERS.has(url),`missing runtime contract for ${url}`);
 });
 
@@ -132,9 +132,9 @@ test('canonical redirect inspector requires a permanent redirect and exact HTTPS
   assert.deepEqual(inspectCanonicalRedirect({status:308,location:'https://zgmini.kr/'},'https://zgmini.kr/about/'),['location:https://zgmini.kr/']);
 });
 
-test('local public sitemap has all 34 URLs with truthful ISO lastmod values',()=>{
+test('local public sitemap has all 35 URLs with truthful ISO lastmod values',()=>{
   const entries=liveSitemapEntries(readFileSync('public/sitemap.xml','utf8'));
-  assert.equal(entries.size,34);
+  assert.equal(entries.size,35);
   for(const [url,lastmod] of entries){
     assert.match(url,/^https:\/\/zgmini\.kr\//);
     assert.match(lastmod,/^\d{4}-\d{2}-\d{2}$/);
@@ -153,7 +153,7 @@ test('production SEO workflow is push-only, deployment-gated, and verifies canon
   assert.match(workflow,/checks: read/);
   assert.match(workflow,/SEO_HEALTH_GITHUB_TOKEN: \$\{\{ secrets\.GITHUB_TOKEN \}\}/);
   assert.match(script,/waitForCloudflare/);
-  assert.match(script,/EXPECTED_PUBLIC_URLS=34/);
+  assert.match(script,/EXPECTED_PUBLIC_URLS=35/);
   assert.match(script,/SEO_RUNTIME_MARKERS\.size!==EXPECTED_PUBLIC_URLS/);
   assert.match(script,/function includesOrError\(errors,label,value,needle\)/);
   assert.match(script,/SEO_RUNTIME_MARKERS\.get\(expectedUrl\)/);
@@ -213,4 +213,17 @@ test('all guide SEO metadata shares an existing public social preview image with
  assert.match(shell,/images:\[\{url:image,width:1200,height:630/);
  assert.match(shell,/twitter:\{card:'summary_large_image',title:fullTitle,description,images:\[image\]\}/);
  assert.match(shell,/alternates:\{canonical:url\},robots:\{index:true,follow:true\}/);
+});
+\ntest('outbreak has a self-canonical server document and a distinct SEO contract',()=>{
+ const page=readFileSync('app/outbreak/page.tsx','utf8');
+ const contract=SEO_RUNTIME_MARKERS.get('https://zgmini.kr/outbreak/');
+ assert.ok(contract);
+ assert.match(page,/alternates:\{canonical:url\}/);
+ assert.match(page,/robots:\{index:true,follow:true\}/);
+ assert.match(page,/WebPageJsonLd/);
+ assert.ok(contract.htmlIncludes.includes('아웃브레이크'));
+ assert.ok(readFileSync('public/sitemap.xml','utf8').includes('<loc>https://zgmini.kr/outbreak/</loc>'));
+ const script=readFileSync('scripts/seo-production-health.mjs','utf8');
+ assert.match(script,/SEO_HEALTH_OUTBREAK_BARE_PASS/);
+ assert.match(script,/\?view=scenarios/);
 });
