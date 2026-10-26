@@ -17,7 +17,7 @@ export default function SiteHeader({activeView=null,onSelectView,accountTools}:{
  const headerRef=useRef<HTMLElement>(null);
  const [pathname,setPathname]=useState('');
  useEffect(()=>{setPathname(window.location.pathname)},[]);
- const pageLinks=[['/risk-indicators/','위험 지표'],['/economic-indicators/','경제 지표'],['/sector-fear-greed/','섹터 공포·탐욕'],['/theme-fear-greed/','테마 공포·탐욕']] as const;
+ const pageLinks=[['/risk-indicators/','위험 지표'],['/economic-indicators/','경제 지표'],['/sector-fear-greed/','섹터 공포·탐욕'],['/theme-fear-greed/','테마 공포·탐욕'],['/market-calendar/','시장 캘린더']] as const;
  useEffect(()=>{
   const header=headerRef.current;
   if(!header)return;
