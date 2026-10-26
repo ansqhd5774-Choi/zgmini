@@ -27,7 +27,7 @@ function render(payload,error=null){
  },module,module.exports);
  return renderToStaticMarkup(React.createElement(module.exports.default));
 }
-test('theme screen uses sector comparison structure and dynamic top-three ranking',()=>{
+test('theme screen uses sector comparison structure and dynamic top-one selection',()=>{
  assert.equal(names.length,30);
  const html=render(feed);
  const rows=[...html.matchAll(/class="zg-sfg-rank-row"[^>]*aria-label="([^"]+)"/g)].map(m=>m[1]);
@@ -35,8 +35,8 @@ test('theme screen uses sector comparison structure and dynamic top-three rankin
  assert.match(html,/비교할 테마 선택/);
  assert.match(html,/테마별 1년 심리 지수 비교/);
  assert.doesNotMatch(html,/zg-tfg-pending|데이터 준비 중인 테마|목록 펼치기/);
- assert.equal((html.match(/class="zg-sfg-rank-row" aria-pressed="true"/g)??[]).length,3);
- assert.equal((html.match(/class="zg-sfg-rank-row" aria-pressed="false"/g)??[]).length,1);
+ assert.equal((html.match(/class="zg-sfg-rank-row" aria-pressed="true"/g)??[]).length,1);
+ assert.equal((html.match(/class="zg-sfg-rank-row" aria-pressed="false"/g)??[]).length,3);
  assert.doesNotMatch(html,/zg-sfg-detail|zg-sfg-changes|ETF ETF1 · ETF2|개별 차트와 변화량/);
  assert.match(html,/class="zg-sfg-comparison-plot"/);
 });
@@ -55,8 +55,8 @@ test('theme page preserves only stored API, provisional dash and synchronized le
  assert.match(page,/import '\.\.\/sector-fear-greed\/sector-detail\.css'/);
  assert.match(page,/<ThemeDetailCharts\/>/);
  assert.match(component,/useStoredIndex<PublicThemeFeed>\('\/api\/theme-fear-greed'\)/);
- assert.match(component,/const currentVisible=visible\?\?topThree/);
- assert.match(component,/new Set\(ready\.slice\(0,3\)\.map\(t=>t\.name\)\)/);
+ assert.match(component,/const currentVisible=visible\?\?topOne/);
+ assert.match(component,/new Set\(ready\.slice\(0,1\)\.map\(t=>t\.name\)\)/);
  assert.match(component,/onClick=\{\(\)=>toggle\(item\.name\)\}/);
  assert.doesNotMatch(component,/setSelected|detailDays|detailRows|zg-sfg-detail|zg-sfg-changes/);
  assert.match(component,/aria-pressed=\{currentVisible\.has\(item\.name\)\} onClick=\{\(\)=>toggle\(item\.name\)\}/);
@@ -83,4 +83,43 @@ test('theme page shows one collapsed investor guide with all three original dest
  const html=render(feed);
  assert.match(html,/class="zg-sfg-comparison-plot"/);
  assert.doesNotMatch(html,/zg-tfg-pending|데이터 준비 중인 테마/);
+});
+
+test('theme mirrors the approved sector mobile comparison and ranking without changing stored ETF contracts',()=>{
+ const component=readFileSync('app/theme-fear-greed/theme-detail-charts.tsx','utf8');
+ const css=readFileSync('app/theme-fear-greed/theme-detail.css','utf8');
+ const shared=readFileSync('app/sector-fear-greed/sector-detail.css','utf8');
+ const html=render(feed);
+ assert.ok(component.includes('const [compareDays,setCompareDays]=useState(90)'), '3M initially selected');
+ assert.ok(component.includes('ready.slice(0,1)'), 'highest theme alone starts ON');
+ assert.ok(component.includes('const currentVisible=visible??topOne'), 'manual selection unchanged');
+ assert.ok(component.includes('setCompareDays(days)'), 'all duration controls remain interactive');
+ assert.ok(component.includes('const selected=item.points.filter('), 'mini charts filter the stored dates');
+ assert.ok(component.includes('<Sparkline item={item} days={compareDays}/>'), 'mini charts use the selected period');
+ assert.ok(component.includes('selected.map(p=>'), 'period filtering is used for plotted points');
+ assert.ok(component.includes('firstProvisional'), 'dashed provisional link preserved');
+ assert.ok(component.includes('const soloTheme=currentVisible.size===1'), 'single-theme extrema marker');
+ assert.ok(component.includes('shape={<SoloChartMarkers'), 'chart uses prior sector annotation behavior');
+ assert.ok(component.includes('scoreColor(item.score)'), 'canonical five-band palette');
+ assert.ok(component.includes('<h2 className="zg-sfg-mobile-ranking-title">테마 심리 순위</h2>'));
+ assert.ok(component.includes('<div className="zg-sfg-mobile-rank-head"'), 'compact rank headings');
+ assert.ok(html.includes('테마 검색'), 'theme search preserved');
+ assert.ok(html.includes('테마 분류'), 'theme category controls preserved');
+ assert.ok(html.includes('클라우드·SaaS'), 'theme name preserved');
+ assert.equal((html.match(/class="zg-sfg-legend-score"/g)??[]).length,4, 'score badge shown for all available themes');
+ assert.ok(css.includes('.zg-theme-detail .zg-sfg-rank-name{position:relative;justify-content:center;text-align:center}'));
+ assert.ok(css.includes('.zg-theme-detail .zg-sfg-rank-name>i{position:absolute;left:0;top:50%;transform:translateY(-50%)}'));
+ assert.ok(css.includes('grid-template-columns:15px 112px minmax(24px,1fr) 35px 55px 53px'), 'full six-column mobile rank');
+ assert.ok(css.includes('grid-auto-rows:32px'), 'one-line 32px cards');
+ assert.ok(css.includes('grid-template-columns:repeat(3,minmax(0,1fr))'), '390px has 3 columns');
+ assert.ok(css.includes('grid-template-columns:repeat(2,minmax(0,1fr))'), '320px has 2 columns');
+ assert.ok(css.includes('.zg-theme-detail .zg-sfg-ranking .zg-sfg-sparkline{pointer-events:none}'), 'mobile ranking sparkline no touch');
+ assert.ok(css.includes('.zg-theme-detail .zg-sfg-ranking .zg-sfg-sparkline .recharts-tooltip-wrapper{display:none!important}'));
+ assert.ok(shared.includes('.zg-sfg-comparison{order:1;'), 'comparison remains above ranking');
+ for(const selector of ['zg-sfg-legend-name','zg-sfg-legend-score','zg-sfg-mobile-rank-head','zg-sfg-rank-number','zg-sfg-rank-name','zg-sfg-rank-score','zg-sfg-rank-delta']){
+  assert.ok(css.split('.zg-theme-detail .'+selector).slice(1).some(rule=>rule.split('}')[0].includes('font-size:11.5px'))||css.includes('.zg-theme-detail .zg-sfg-mobile-rank-head,.zg-theme-detail .zg-sfg-rank-number,.zg-theme-detail .zg-sfg-rank-name,.zg-theme-detail .zg-sfg-rank-score,.zg-theme-detail .zg-sfg-rank-delta,.zg-theme-detail .zg-sfg-rank-delta i{font-size:11.5px}'),selector);
+ }
+ assert.ok(component.includes("useStoredIndex<PublicThemeFeed>('/api/theme-fear-greed')"));
+ assert.ok(component.includes('item.history.length!==252'));
+ assert.ok(!component.includes('fetch('), 'no provider call');
 });

@@ -1,5 +1,7 @@
 'use client';
 import {useMemo,useState} from 'react';
+import {usePlotArea,useXAxisScale,useYAxisScale,ReferenceDot} from 'recharts';
+import {extremaLeader,placeExtremaLabels} from '../../lib/chart-extrema.mjs';
 import {Search} from 'lucide-react';
 import {CartesianGrid,Line,LineChart,ReferenceArea,ReferenceLine,ResponsiveContainer,Tooltip,XAxis,YAxis} from 'recharts';
 import {THEME_GROUPS} from '../../components/market-explorer-catalog';
@@ -16,6 +18,7 @@ const validScore=(v:unknown):v is number=>typeof v==='number'&&Number.isFinite(v
 const validDate=(v:unknown):v is string=>typeof v==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(v)&&Number.isFinite(Date.parse(v+'T00:00:00Z'));
 const deltaText=(v:number|null)=>v===null?'—':(v>0?'+':'')+v.toFixed(1)+'p';
 const deltaState=(v:number|null)=>v===null?'is-missing':v>0?'is-up':v<0?'is-down':'is-flat';
+const scoreColor=(v:number|null)=>v===null?'#8299ac':v>=75?'var(--zg-score-extreme-greed)':v>=55?'var(--zg-score-greed)':v>=45?'var(--zg-score-neutral)':v>=25?'var(--zg-score-fear)':'var(--zg-score-extreme-fear)';
 function acceptedThemes(feed:PublicThemeFeed|null):Theme[]{
  if(feed?.status!=='READY'||!Array.isArray(feed.themes))return [];
  const provisional=feed.phase==='PROVISIONAL'&&Array.isArray(feed.provisional?.points)?feed.provisional.points:[];
@@ -53,9 +56,15 @@ function PeriodButtons({value,onChange,items,label}:{value:number;onChange:(n:nu
 function ScoreBar({score}:{score:number}){
  return <div className="zg-sfg-meter" aria-label={'심리 점수 '+score.toFixed(1)+'점'}><span/><span/><span/><span/><span/><i className="zg-sfg-meter-marker" style={{left:score+'%'}}/></div>;
 }
-function Sparkline({item}:{item:Theme}){
+function Sparkline({item,days}:{item:Theme;days:number}){
  const provisional=item.points.length>item.provisionalFrom;
- const data=item.points.map((p,i)=>({...p,solid:provisional&&i>=item.provisionalFrom?null:p.score,dash:provisional&&i>=item.provisionalFrom-1?p.score:null}));
+ const end=Date.parse(item.points.at(-1)!.date+'T00:00:00Z');
+ const selected=item.points.filter(p=>Date.parse(p.date+'T00:00:00Z')>=end-days*86400000);
+ const firstProvisional=item.points[item.provisionalFrom]?.date,confirmed=item.points[item.provisionalFrom-1]?.date;
+ const data=selected.map(p=>({...p,
+  solid:provisional&&firstProvisional&&p.date>=firstProvisional?null:p.score,
+  dash:provisional&&confirmed&&p.date>=confirmed?p.score:null,
+ }));
  return <div className="zg-sfg-sparkline" aria-hidden="true"><ResponsiveContainer width="100%" height="100%"><LineChart accessibilityLayer={false} data={data} margin={{top:3,right:2,bottom:3,left:2}}>
   <XAxis dataKey="date" hide height={0}/><YAxis hide domain={[0,100]}/>
   <Tooltip cursor={false} isAnimationActive={false} allowEscapeViewBox={{x:true,y:true}} wrapperStyle={{pointerEvents:'none',zIndex:30}} content={({active,payload})=>{
@@ -68,18 +77,52 @@ function Sparkline({item}:{item:Theme}){
 }
 function Zones(){return <><ReferenceArea y1={0} y2={25} fill="#8d3048" fillOpacity={0.22}/><ReferenceArea y1={25} y2={45} fill="#9f6032" fillOpacity={0.18}/><ReferenceArea y1={45} y2={55} fill="#718092" fillOpacity={0.10}/><ReferenceArea y1={55} y2={75} fill="#348856" fillOpacity={0.17}/><ReferenceArea y1={75} y2={100} fill="#078b83" fillOpacity={0.18}/></>}
 
+type SoloPoint={date:string;score:number};
+function SoloChartMarkers({rows,low,high,current}:{rows:SoloPoint[];low:SoloPoint;high:SoloPoint;current:SoloPoint}){
+ const plot=usePlotArea(),xScale=useXAxisScale(),yScale=useYAxisScale();
+ if(!plot||!xScale||!yScale)return null;
+ const candidates:[string,SoloPoint,string,string][]=[
+  ['min',low,'#ff7187','최저'],
+  ['max',high,'#47e3bb','최고'],
+  ['now',current,scoreColor(current.score),'현재'],
+ ];
+ // The current score can equal an extreme: one guide and one label per actual point.
+ const unique=candidates.filter(([,point],index)=>!candidates.slice(0,index).some(([,other])=>other.date===point.date&&other.score===point.score));
+ const markers=unique.flatMap(([kind,point,color,title])=>{
+  const x=xScale(point.date),y=yScale(point.score);
+  return typeof x==='number'&&typeof y==='number'?[{kind,...point,color,title,x,y}]:[];
+ });
+ const samples=rows.map(point=>{
+  const x=xScale(point.date),y=yScale(point.score);
+  return typeof x==='number'&&typeof y==='number'?{x,y}:null;
+ });
+ const labels=placeExtremaLabels(samples,markers.map(({kind,x,y})=>({kind,x,y})),plot);
+ return <g className="zg-sfg-solo-marker" pointerEvents="none">{markers.map(marker=>{
+  const label=labels.find(item=>item.kind===marker.kind);
+  const position={x:label?.x??marker.x,y:label?.y??marker.y};
+  const leader=extremaLeader(marker,position);
+  const isCurrent=marker.date===current.date&&marker.score===current.score;
+  return <g key={marker.kind} aria-label={`${marker.title}${isCurrent&&marker.kind!=='now'?'·현재':''} ${marker.score.toFixed(1)}점 (${marker.date.slice(5)})`} data-label-clear={label?.hits===0}>
+   <path data-leader-side={leader.side} d={leader.path} fill="none" stroke={marker.color} strokeWidth={.9} opacity={.85}/>
+   <circle cx={marker.x} cy={marker.y} r={3} fill={marker.color} stroke="#061d2c" strokeWidth={1}/>
+   <text x={position.x} y={position.y} textAnchor="middle" fill={marker.color} fontSize={10} fontWeight={750} stroke="#071a29" strokeWidth={3} paintOrder="stroke" strokeLinejoin="round">
+    <tspan x={position.x}>{marker.score.toFixed(1)}</tspan><tspan x={position.x} dy={11} fontWeight={500}>({marker.date.slice(5)})</tspan>
+   </text>
+  </g>;
+ })}</g>;
+}
 export default function ThemeDetailCharts(){
  const {payload,error,loading}=useStoredIndex<PublicThemeFeed>('/api/theme-fear-greed');
  const [group,setGroup]=useState('전체'),[query,setQuery]=useState('');
  const [visible,setVisible]=useState<Set<string>|null>(null);
- const [compareDays,setCompareDays]=useState(365),[comparisonPinned,setComparisonPinned]=useState(false);
+ const [compareDays,setCompareDays]=useState(90),[comparisonPinned,setComparisonPinned]=useState(false);
  // Never display a cached score once the stored-only API has failed.
  const ready=useMemo(()=>acceptedThemes(error?null:payload),[error,payload]);
- const topThree=useMemo(()=>new Set(ready.slice(0,3).map(t=>t.name)),[ready]);
- const currentVisible=visible??topThree;
+ const topOne=useMemo(()=>new Set(ready.slice(0,1).map(t=>t.name)),[ready]);
+ const currentVisible=visible??topOne;
  const matches=(name:string,g:string)=>(group==='전체'||group===g)&&name.toLocaleLowerCase('ko').includes(query.trim().toLocaleLowerCase('ko'));
  const ranked=ready.filter(t=>matches(t.name,t.group));
- const toggle=(name:string)=>setVisible(previous=>{const next=new Set(previous??topThree);if(next.has(name))next.delete(name);else next.add(name);return next;});
+ const toggle=(name:string)=>setVisible(previous=>{const next=new Set(previous??topOne);if(next.has(name))next.delete(name);else next.add(name);return next;});
  const compareRows=useMemo(()=>{
   const dates=[...new Set(ready.flatMap(t=>t.points.map(p=>p.date)))].sort();
   const end=dates.at(-1);if(!end)return [];
@@ -91,17 +134,27 @@ export default function ThemeDetailCharts(){
    return [[t.key,value],[t.key+'__solid',provisional&&first&&date>=first?null:value],[t.key+'__dash',provisional&&confirmed&&date>=confirmed?value:null]];
   }))}));
  },[ready,compareDays]);
+ const soloTheme=currentVisible.size===1?ready.find(item=>currentVisible.has(item.name)):undefined;
+ const soloPoints=soloTheme?soloTheme.points.filter(p=>{
+  const end=Date.parse(soloTheme.points.at(-1)!.date+'T00:00:00Z');
+  return Date.parse(p.date+'T00:00:00Z')>=end-compareDays*86400000;
+ }).flatMap(p=>validScore(p.score)?[{date:p.date,score:p.score}]:[]):[];
+ const soloLow=soloPoints.reduce<(typeof soloPoints)[number]|null>((best,p)=>!best||p.score<best.score?p:best,null);
+ const soloHigh=soloPoints.reduce<(typeof soloPoints)[number]|null>((best,p)=>!best||p.score>best.score?p:best,null);
+ const soloCurrent=soloPoints.at(-1);
  return <div className="zg-sfg-content zg-tfg-content">
   <p className="zg-sfg-as-of">{ready.length?'기준일 '+(payload?.observationDate??ready[0].date).replaceAll('-','.')+' · 공개 '+ready.length+'개 / 전체 '+CATALOG.length+'개':'전체 '+CATALOG.length+'개 테마'}</p>
   <div className="zg-tfg-toolbar"><div className="zg-explorer-filters" role="group" aria-label="테마 분류">{['전체',...THEME_GROUPS.map(g=>g.name)].map(name=><button type="button" key={name} aria-pressed={group===name} onClick={()=>setGroup(name)}>{name}</button>)}</div><label className="zg-explorer-search"><Search size={16}/><input aria-label="테마 검색" type="search" value={query} onChange={e=>setQuery(e.target.value)} placeholder="테마 검색"/></label></div>
   {ready.length?<>
    <section className="zg-sfg-ranking" aria-label="공개 테마 투자심리 순위">
+    <h2 className="zg-sfg-mobile-ranking-title">테마 심리 순위</h2>
+    <div className="zg-sfg-mobile-rank-head" aria-hidden="true"><span>테마</span><span>점수</span><span>1M</span></div>
     <div className="zg-sfg-rank-head" aria-hidden="true"><span>순위</span><span>테마</span><span>현재 점수</span><div className="zg-sfg-scale"><span>극단적 공포</span><span>공포</span><span>중립</span><span>탐욕</span><span>극단적 탐욕</span></div><span>1년 추이</span><span>1개월 변동</span></div>
     <div className="zg-sfg-rank-list">{ranked.map(item=>{
      const index=ready.findIndex(t=>t.name===item.name),delta=changeFor(item.points,1,0);
      return <button type="button" key={item.name} className="zg-sfg-rank-row" aria-pressed={currentVisible.has(item.name)} aria-label={(index+1)+'위 '+item.name+', '+item.score.toFixed(1)+'점, 1개월 변화 '+deltaText(delta)+'. 비교 차트 '+(currentVisible.has(item.name)?'ON':'OFF')+', 클릭하면 비교 차트 표시 전환'} onClick={()=>toggle(item.name)}>
-      <span className="zg-sfg-rank-number">{index+1}</span><span className="zg-sfg-rank-name"><i style={{background:item.color}}/>{item.name}</span><strong className="zg-sfg-rank-score">{item.score.toFixed(1)}</strong>
-      <ScoreBar score={item.score}/><Sparkline item={item}/><span className={'zg-sfg-rank-delta '+deltaState(delta)}>{deltaText(delta)}{delta!==null&&delta!==0&&<i aria-hidden="true">{delta>0?'▲':'▼'}</i>}</span>
+      <span className="zg-sfg-rank-number">{index+1}</span><span className="zg-sfg-rank-name"><i style={{background:item.color}}/>{item.name}</span><strong className="zg-sfg-rank-score" style={{color:scoreColor(item.score)}}>{item.score.toFixed(1)}</strong>
+      <ScoreBar score={item.score}/><Sparkline item={item} days={compareDays}/><span className={'zg-sfg-rank-delta '+deltaState(delta)}>{deltaText(delta)}{delta!==null&&delta!==0&&<i aria-hidden="true">{delta>0?'▲':'▼'}</i>}</span>
      </button>;
     })}</div>
     {!ranked.length&&<p className="zg-tfg-empty">해당 분류에 공개된 점수가 없습니다.</p>}
@@ -109,7 +162,7 @@ export default function ThemeDetailCharts(){
    <div className="zg-sfg-lower">
     <section className="zg-sfg-comparison" aria-label="테마별 심리 지수 비교">
      <div className="zg-sfg-panel-head"><div><h2>테마별 1년 심리 지수 비교</h2><p>선택한 테마의 ETF 기반 공포·탐욕 점수를 비교합니다.</p></div><PeriodButtons value={compareDays} onChange={days=>{setCompareDays(days);setComparisonPinned(false);}} items={PERIODS} label="테마 비교 기간"/></div>
-     <div className="zg-sfg-legend" role="group" aria-label="비교할 테마 선택">{ready.map(item=><button type="button" key={item.name} aria-pressed={currentVisible.has(item.name)} onClick={()=>toggle(item.name)}><i style={{background:item.color}}/>{item.name}</button>)}</div>
+     <div className="zg-sfg-legend" role="group" aria-label="비교할 테마 선택">{ready.map(item=><button type="button" key={item.name} aria-pressed={currentVisible.has(item.name)} onClick={()=>toggle(item.name)} title={item.name}><i style={{background:item.color}}/><span className="zg-sfg-legend-name">{item.name}</span><strong className="zg-sfg-legend-score" style={{color:scoreColor(item.score)}}>{item.score.toFixed(1)}</strong></button>)}</div>
      <div className="zg-sfg-comparison-plot"><ResponsiveContainer width="100%" height="100%"><LineChart data={compareRows} margin={{top:8,right:10,bottom:0,left:0}} onMouseDown={()=>setComparisonPinned(true)} onMouseUp={()=>setComparisonPinned(false)} onMouseLeave={()=>setComparisonPinned(false)}>
       <Zones/><CartesianGrid stroke="#23485b" strokeDasharray="2 4" vertical={true}/>
       <XAxis dataKey="date" stroke="#a9bccd" fontSize={11} axisLine={false} tickLine={false} tickFormatter={date=>String(date).slice(5)} minTickGap={42}/><YAxis domain={[0,100]} ticks={[0,25,50,75,100]} interval={0} stroke="#a9bccd" axisLine={false} tickLine={false} fontSize={11} width={34}/><ReferenceLine y={50} stroke="#92a3b0" strokeDasharray="3 4"/>
@@ -118,6 +171,7 @@ export default function ThemeDetailCharts(){
        <Line key={item.key} dataKey={item.key+'__solid'} name={item.name} stroke={item.color} hide={!currentVisible.has(item.name)} strokeWidth={1.9} dot={false} activeDot={{r:3}} connectNulls={false} isAnimationActive={false}/>,
        <Line key={item.key+'-dash'} dataKey={item.key+'__dash'} name={item.name} stroke={item.color} hide={!currentVisible.has(item.name)} strokeWidth={1.9} strokeDasharray="4 4" dot={false} activeDot={{r:3}} connectNulls={false} isAnimationActive={false}/>,
       ]:[<Line key={item.key} dataKey={item.key} name={item.name} stroke={item.color} hide={!currentVisible.has(item.name)} strokeWidth={1.9} dot={false} activeDot={{r:3}} connectNulls={false} isAnimationActive={false}/>])}
+      {soloLow&&soloHigh&&soloCurrent&&<ReferenceDot x={soloCurrent.date} y={soloCurrent.score} ifOverflow="visible" shape={<SoloChartMarkers rows={soloPoints} low={soloLow} high={soloHigh} current={soloCurrent}/>}/>}
      </LineChart></ResponsiveContainer></div>
     </section>
    </div>
