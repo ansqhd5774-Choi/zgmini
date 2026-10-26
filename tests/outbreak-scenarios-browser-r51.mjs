@@ -57,18 +57,23 @@ try{
   assert.equal(await root.locator(".ob53-main-grid").count(),1,"Stored rate beginner analysis available");
   assert.equal(await root.locator(".ob53-current strong").textContent(),"57.8점");
   assert.equal(await root.locator("#ob53-chart-title").textContent().then(s=>s?.trim()),"14일 추이");
-  assert.equal(await root.locator(".ob53-trend-svg polyline").getAttribute("stroke"),"#94a3b8","Neutral score must render neutral, not green");
-  assert.equal(await root.locator(".ob53-trend-svg circle").count(),10,"14-day chart contains only saved observations");
-  await page.waitForFunction(expected=>document.querySelector(".ob53-trend-svg")?.getAttribute("viewBox")===expected,width<=600?"0 0 350 240":"0 0 700 240",{timeout:5000});
+  const rateChart=root.locator(".ob53-market-chart");
+  await rateChart.locator(".recharts-surface").waitFor({state:"visible",timeout:20000});
+  assert.equal(await rateChart.locator(".recharts-area-curve").getAttribute("stroke"),"#94a3b8","Neutral score keeps its band color in the shared chart");
+  assert.equal(await rateChart.locator(".recharts-reference-area").count(),5,"Shared chart shows five rate-score bands");
+  assert.equal(await rateChart.getAttribute("data-observed-days"),"10","Only the 10 stored observations are counted");
+  assert.equal(await rateChart.getAttribute("data-missing-days"),"4","Missing days remain missing instead of receiving generated values");
+  assert.equal(await rateChart.locator(".cnn-latest-point").count(),1,"Shared chart marks only the latest observed point");
   if(width<=600){
    const mobileChart=await root.evaluate(el=>{
-    const svg=el.querySelector(".ob53-trend-svg"),assets=el.querySelector(".ob53-assets"),panel=el.querySelector(".ob53-beginner-stack");
-    return {viewBox:svg?.getAttribute("viewBox"),assetsFullWidth:Math.abs(assets.getBoundingClientRect().width-panel.getBoundingClientRect().width)<3};
+    const chart=el.querySelector(".ob53-market-chart"),assets=el.querySelector(".ob53-assets"),panel=el.querySelector(".ob53-beginner-stack");
+    return {chartFits:!!chart&&chart.getBoundingClientRect().width<=innerWidth,
+     assetsFullWidth:Math.abs(assets.getBoundingClientRect().width-panel.getBoundingClientRect().width)<3};
    });
-   assert.equal(mobileChart.viewBox,"0 0 350 240","Mobile chart uses legible axis geometry");
+   assert(mobileChart.chartFits,"Shared 14-day chart fits the mobile viewport");
    assert(mobileChart.assetsFullWidth,"Related assets are full width on narrow screens");
   }
-  assert.equal(await root.locator(".ob53-trend-svg text").last().textContent(),"10.19");
+  assert((await rateChart.textContent())?.includes("10.19"),"Last calendar tick retains its observed date");
   assert.equal(await root.locator(".ob53-chart-heading>span").textContent(),"관측 10일 / 14일");
   assert.equal(await root.locator(".ob53-tone-pill").textContent(),"중립");
   assert.equal(await root.locator(".ob53-scale-colors [data-band]").count(),5);
