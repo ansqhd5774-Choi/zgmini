@@ -116,7 +116,7 @@ export default function ThemeDetailCharts(){
  const [group,setGroup]=useState('전체'),[query,setQuery]=useState('');
  const [searchOpen,setSearchOpen]=useState(false);
  const searchContainerRef=useRef<HTMLDivElement>(null),searchInputRef=useRef<HTMLInputElement>(null);
- const closeSearch=()=>{setSearchOpen(false);setQuery('');};
+ const closeSearch=()=>{setSearchOpen(false);if(query)applyThemeFilter(group,'');};
  useEffect(()=>{
   if(!searchOpen)return;
   searchInputRef.current?.focus();
@@ -134,6 +134,12 @@ export default function ThemeDetailCharts(){
  const currentVisible=visible??topOne;
  const matches=(name:string,g:string)=>(group==='전체'||group===g)&&name.toLocaleLowerCase('ko').includes(query.trim().toLocaleLowerCase('ko'));
  const ranked=ready.filter(t=>matches(t.name,t.group));
+ const applyThemeFilter=(nextGroup:string,nextQuery:string)=>{
+  setGroup(nextGroup);setQuery(nextQuery);
+  const normalized=nextQuery.trim().toLocaleLowerCase('ko');
+  const filtered=ready.filter(t=>(nextGroup==='전체'||t.group===nextGroup)&&t.name.toLocaleLowerCase('ko').includes(normalized));
+  setVisible(new Set(filtered.slice(0,1).map(t=>t.name)));
+ };
  const toggle=(name:string)=>setVisible(previous=>{const next=new Set(previous??topOne);if(next.has(name))next.delete(name);else next.add(name);return next;});
  const compareRows=useMemo(()=>{
   const dates=[...new Set(ready.flatMap(t=>t.points.map(p=>p.date)))].sort();
@@ -146,7 +152,7 @@ export default function ThemeDetailCharts(){
    return [[t.key,value],[t.key+'__solid',provisional&&first&&date>=first?null:value],[t.key+'__dash',provisional&&confirmed&&date>=confirmed?value:null]];
   }))}));
  },[ready,compareDays]);
- const soloTheme=currentVisible.size===1?ready.find(item=>currentVisible.has(item.name)):undefined;
+ const soloTheme=currentVisible.size===1?ranked.find(item=>currentVisible.has(item.name)):undefined;
  const soloPoints=soloTheme?soloTheme.points.filter(p=>{
   const end=Date.parse(soloTheme.points.at(-1)!.date+'T00:00:00Z');
   return Date.parse(p.date+'T00:00:00Z')>=end-compareDays*86400000;
@@ -159,17 +165,17 @@ export default function ThemeDetailCharts(){
   <div className="zg-tfg-toolbar">
    <div className="zg-tfg-search-control" ref={searchContainerRef}>
     <button type="button" className="zg-tfg-search-toggle" aria-label={searchOpen?'테마 검색 닫기':'테마 검색 열기'} aria-expanded={searchOpen} aria-controls="zg-tfg-search-popover" onClick={()=>{if(searchOpen)closeSearch();else setSearchOpen(true);}}><Search size={16} aria-hidden="true"/></button>
-    {searchOpen&&<div className="zg-tfg-search-popover" id="zg-tfg-search-popover"><label className="zg-explorer-search"><Search size={16} aria-hidden="true"/><input ref={searchInputRef} aria-label="테마 검색" type="search" value={query} onChange={e=>setQuery(e.target.value)} placeholder="테마 검색"/></label></div>}
+    {searchOpen&&<div className="zg-tfg-search-popover" id="zg-tfg-search-popover"><label className="zg-explorer-search"><Search size={16} aria-hidden="true"/><input ref={searchInputRef} aria-label="테마 검색" type="search" value={query} onChange={e=>applyThemeFilter(group,e.target.value)} placeholder="테마 검색"/></label></div>}
    </div>
-   <div className="zg-explorer-filters" role="group" aria-label="테마 분류">{['전체',...THEME_GROUPS.map(g=>g.name)].map(name=><button type="button" key={name} aria-pressed={group===name} onClick={()=>{setGroup(name);closeSearch();}}>{name}</button>)}</div>
+   <div className="zg-explorer-filters" role="group" aria-label="테마 분류">{['전체',...THEME_GROUPS.map(g=>g.name)].map(name=><button type="button" key={name} aria-pressed={group===name} onClick={()=>{setSearchOpen(false);applyThemeFilter(name,'');}}>{name}</button>)}</div>
   </div>
   {ready.length?<>
    <section className="zg-sfg-ranking" aria-label="공개 테마 투자심리 순위">
     <h2 className="zg-sfg-mobile-ranking-title">테마 심리 순위</h2>
     <div className="zg-sfg-mobile-rank-head" aria-hidden="true"><span>테마</span><span>점수</span><span>1M</span></div>
     <div className="zg-sfg-rank-head" aria-hidden="true"><span>순위</span><span>테마</span><span>현재 점수</span><div className="zg-sfg-scale"><span>극단적 공포</span><span>공포</span><span>중립</span><span>탐욕</span><span>극단적 탐욕</span></div><span>1년 추이</span><span>1개월 변동</span></div>
-    <div className="zg-sfg-rank-list">{ranked.map(item=>{
-     const index=ready.findIndex(t=>t.name===item.name),delta=changeFor(item.points,1,0);
+    <div className="zg-sfg-rank-list">{ranked.map((item,index)=>{
+     const delta=changeFor(item.points,1,0);
      return <button type="button" key={item.name} className="zg-sfg-rank-row" aria-pressed={currentVisible.has(item.name)} aria-label={(index+1)+'위 '+item.name+', '+item.score.toFixed(1)+'점, 1개월 변화 '+deltaText(delta)+'. 비교 차트 '+(currentVisible.has(item.name)?'ON':'OFF')+', 클릭하면 비교 차트 표시 전환'} onClick={()=>toggle(item.name)}>
       <span className="zg-sfg-rank-number">{index+1}</span><span className="zg-sfg-rank-name"><i style={{background:item.color}}/>{item.name}</span><strong className="zg-sfg-rank-score" style={{color:scoreColor(item.score)}}>{item.score.toFixed(1)}</strong>
       <ScoreBar score={item.score}/><Sparkline item={item} days={compareDays}/><span className={'zg-sfg-rank-delta '+deltaState(delta)}>{deltaText(delta)}{delta!==null&&delta!==0&&<i aria-hidden="true">{delta>0?'▲':'▼'}</i>}</span>
@@ -180,12 +186,12 @@ export default function ThemeDetailCharts(){
    <div className="zg-sfg-lower">
     <section className="zg-sfg-comparison" aria-label="테마별 심리 지수 비교">
      <div className="zg-sfg-panel-head"><div><h2>테마별 1년 심리 지수 비교</h2><p>선택한 테마의 ETF 기반 공포·탐욕 점수를 비교합니다.</p></div><PeriodButtons value={compareDays} onChange={days=>{setCompareDays(days);setComparisonPinned(false);}} items={PERIODS} label="테마 비교 기간"/></div>
-     <div className="zg-sfg-legend" role="group" aria-label="비교할 테마 선택">{ready.map(item=><button type="button" key={item.name} aria-pressed={currentVisible.has(item.name)} onClick={()=>toggle(item.name)} title={item.name}><i style={{background:item.color}}/><span className="zg-sfg-legend-name">{item.name}</span><strong className="zg-sfg-legend-score" style={{color:scoreColor(item.score)}}>{item.score.toFixed(1)}</strong></button>)}</div>
+     <div className="zg-sfg-legend" role="group" aria-label="비교할 테마 선택">{ranked.map(item=><button type="button" key={item.name} aria-pressed={currentVisible.has(item.name)} onClick={()=>toggle(item.name)} title={item.name}><i style={{background:item.color}}/><span className="zg-sfg-legend-name">{item.name}</span><strong className="zg-sfg-legend-score" style={{color:scoreColor(item.score)}}>{item.score.toFixed(1)}</strong></button>)}</div>
      <div className="zg-sfg-comparison-plot"><ResponsiveContainer width="100%" height="100%"><LineChart data={compareRows} margin={{top:8,right:10,bottom:0,left:0}} onMouseDown={()=>setComparisonPinned(true)} onMouseUp={()=>setComparisonPinned(false)} onMouseLeave={()=>setComparisonPinned(false)}>
       <Zones/><CartesianGrid stroke="#23485b" strokeDasharray="2 4" vertical={true}/>
       <XAxis dataKey="date" stroke="#a9bccd" fontSize={11} axisLine={false} tickLine={false} tickFormatter={date=>String(date).slice(5)} minTickGap={42}/><YAxis domain={[0,100]} ticks={[0,25,50,75,100]} interval={0} stroke="#a9bccd" axisLine={false} tickLine={false} fontSize={11} width={34}/><ReferenceLine y={50} stroke="#92a3b0" strokeDasharray="3 4"/>
       <Tooltip active={comparisonPinned||undefined} isAnimationActive={false} wrapperStyle={{pointerEvents:'none'}} content={({active:show,payload,label})=>!show||!payload?.length?null:<div className="zg-sfg-tooltip"><strong>{String(label)}</strong>{payload.filter(p=>validScore(p.value)).map(p=><div key={String(p.dataKey)}><span style={{color:p.color}}>{p.name}</span><b>{Number(p.value).toFixed(1)}점</b></div>)}</div>}/>
-      {ready.flatMap(item=>item.points.length>item.provisionalFrom?[
+      {ranked.flatMap(item=>item.points.length>item.provisionalFrom?[
        <Line key={item.key} dataKey={item.key+'__solid'} name={item.name} stroke={item.color} hide={!currentVisible.has(item.name)} strokeWidth={1.9} dot={false} activeDot={{r:3}} connectNulls={false} isAnimationActive={false}/>,
        <Line key={item.key+'-dash'} dataKey={item.key+'__dash'} name={item.name} stroke={item.color} hide={!currentVisible.has(item.name)} strokeWidth={1.9} strokeDasharray="4 4" dot={false} activeDot={{r:3}} connectNulls={false} isAnimationActive={false}/>,
       ]:[<Line key={item.key} dataKey={item.key} name={item.name} stroke={item.color} hide={!currentVisible.has(item.name)} strokeWidth={1.9} dot={false} activeDot={{r:3}} connectNulls={false} isAnimationActive={false}/>])}
