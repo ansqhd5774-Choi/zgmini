@@ -26,19 +26,25 @@ function nyParts(ts){
  return {date:`${parts.year}-${parts.month}-${parts.day}`,hour:parts.hour};
 }
 function dateFrom(row){
- for(const k of DATE_FIELDS){if(isoDay(row[k]))return {date:row[k],hour:null,dateField:k};}
+ const direct=DATE_FIELDS.find(k=>isoDay(row[k]));
  for(const k of TIME_FIELDS){
   const v=row[k];if(v===undefined||v===null)continue;
   if(typeof v==='string'&&isoDay(v))return {date:v,hour:null,dateField:k};
   // No implicit conversion of timezone-free hourly data.
   if(typeof v==='string'&&!/(Z|[+-]\d{2}:?\d{2})$/i.test(v))continue;
+  // Some daily data carry a midnight UTC timestamp in addition to an explicit session date.
+  if(direct&&typeof v==='string'&&/T00:00(?::00(?:\.\d+)?)?Z$/i.test(v))continue;
   const ts=typeof v==='number'&&v>1000000000?new Date(v<1e11?v*1000:v):v;
   const parts=nyParts(ts);if(parts)return {...parts,dateField:k};
  }
+ if(direct)return {date:row[direct],hour:null,dateField:direct};
  return null;
 }
 function priceFrom(row){
- for(const key of PRICE_FIELDS){const n=row[key];if(valid(n))return {price:n,field:key};}
+ for(const key of PRICE_FIELDS){
+  const v=row[key],n=typeof v==='string'&&/^\d+(?:\.\d+)?$/.test(v)?Number(v):v;
+  if(valid(n))return {price:n,field:key};
+ }
  return null;
 }
 function extractArray(a,key){
