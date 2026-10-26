@@ -31,7 +31,7 @@ test('new theme D1 CAS writes only its own key and verifies exact readback',asyn
    return {ok:true,json:async()=>({success:true,result:[result]})};
   };
   const time=Date.parse('2026-10-26T08:00:00Z');
-  const store=spaceSatelliteD1R29({dataRoot:root,tokenFn:()=> 'unit-test-only-secret',
+  const store=await spaceSatelliteD1R29({dataRoot:root,tokenFn:async()=> 'unit-test-only-secret',
    fetchImpl,clock:()=>time});
   const record={version:SPACE_SATELLITE_PUBLIC_VERSION,
    methodologyVersion:'ETF_ONLY_T40_R20_V40_ADAPTIVE_R2_CURRENT_AUM',
