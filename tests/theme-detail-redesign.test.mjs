@@ -123,3 +123,33 @@ test('theme mirrors the approved sector mobile comparison and ranking without ch
  assert.ok(component.includes('item.history.length!==252'));
  assert.ok(!component.includes('fetch('), 'no provider call');
 });
+
+test('theme search opens as an anchored overlay before categories and does not occupy layout space by default',()=>{
+ const html=render(feed);
+ const src=readFileSync('app/theme-fear-greed/theme-detail-charts.tsx','utf8');
+ const css=readFileSync('app/theme-fear-greed/theme-detail.css','utf8');
+ assert.match(html,/class="zg-tfg-search-toggle"[^>]*aria-label="테마 검색 열기"[^>]*aria-expanded="false"/);
+ assert.ok(html.indexOf('zg-tfg-search-toggle')<html.indexOf('aria-label="테마 분류"'),'search icon is before the Entire category');
+ assert.doesNotMatch(html,/aria-label="테마 검색" type="search"/,'search input is closed by default');
+ assert.match(src,/\{searchOpen&&<div className="zg-tfg-search-popover"/);
+ assert.match(src,/onClick=\{\(\)=>\{if\(searchOpen\)closeSearch\(\);else setSearchOpen\(true\);\}\}/);
+ assert.match(src,/aria-expanded=\{searchOpen\}/);
+ assert.match(css,/\.zg-tfg-search-control\{position:relative/);
+ assert.match(css,/\.zg-tfg-search-popover\{position:absolute;top:calc\(100% \+ 6px\);left:0/);
+ assert.match(css,/\.zg-tfg-toolbar\{[^}]*flex-wrap:nowrap/);
+ assert.match(css,/\.zg-tfg-toolbar \.zg-explorer-filters\{[^}]*overflow-x:auto/);
+});
+
+test('theme search closes on category selection and outside pointer without leaving a hidden query',()=>{
+ const src=readFileSync('app/theme-fear-greed/theme-detail-charts.tsx','utf8');
+ assert.match(src,/const closeSearch=\(\)=>\{setSearchOpen\(false\);setQuery\(''\);\}/);
+ assert.match(src,/onClick=\{\(\)=>\{setGroup\(name\);closeSearch\(\);\}\}/);
+ assert.match(src,/document\.addEventListener\('pointerdown',onOutsidePointer\)/);
+ assert.match(src,/!searchContainerRef\.current\?\.contains\(event\.target as Node\)\)closeSearch\(\)/);
+ assert.match(src,/document\.removeEventListener\('pointerdown',onOutsidePointer\)/);
+ assert.match(src,/document\.addEventListener\('keydown',onEscape\)/);
+ assert.match(src,/document\.removeEventListener\('keydown',onEscape\)/);
+ assert.match(src,/searchInputRef\.current\?\.focus\(\)/);
+ assert.match(src,/name\.toLocaleLowerCase\('ko'\)\.includes\(query\.trim\(\)\.toLocaleLowerCase\('ko'\)\)/);
+ assert.match(src,/onChange=\{e=>setQuery\(e\.target\.value\)\}/);
+});
