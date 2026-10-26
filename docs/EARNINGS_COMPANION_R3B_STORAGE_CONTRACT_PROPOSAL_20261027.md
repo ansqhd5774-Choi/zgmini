@@ -1,7 +1,7 @@
 # ZGMINI 실적 침체 정보성 C — R3-B 최소 저장·재사용 계약 제안
 
 - 작성: 2026-10-27 KST
-- 상태: **R3B_CONTRACT_APPROVED_BY_USER_20261027 / FRED_API_RIGHTS_HOLD / R3C_NOT_APPROVED**
+- 상태: **R3B_CONTRACT_APPROVED / BLS_DIRECT_3_SERIES_APPROVED_20261027 / FRED_CACHE_C_HOLD / R3C_DB_WRITE_NOT_APPROVED**
 - 저장소/단일 브랜치: `ansqhd5774-Choi/zgmini` / `codex/earnings-api-site-integration-plan-r1-20261026`
 - 상위 승인 계획: `docs/EARNINGS_RECESSION_COMPANION_API_SITE_INTEGRATION_PLAN_R1_20261026.md`
 - R3-A 실측 증거: `docs/EARNINGS_COMPANION_R3A_PC_LINEAGE_REVIEW_20261027.md`
@@ -13,10 +13,10 @@
 | Growth M3 G010/G013/G015/G016 | current/history 4/4 존재, 2026-08 관측 | **기존 SQLite 읽기 전용 재사용. 신규 M3 수집기·복제 저장 금지** | REUSE_CANDIDATE |
 | Growth G017/G018 | 구성 최신값 대비 비율 `0.6823357487`, `0.6773284573` 각각 완전 일치(10자리 출력) | **기존 저장 비율 재사용**. 비율 산식·score 계산 변경 금지 | REUSE_CANDIDATE |
 | 기존 E1-R4 | 기존 2026Q2, 500사 집계/커버리지 메타 R2 검증 | 기존 집계의 승인된 정보성 항목만 참조, 개별 SEC 신규 대량 호출 금지 | REUSE_METADATA_ONLY |
-| FRED/PPIFIS → BLS 최종수요 PPI | PC `api_history_snapshots_v1` **2개**, 2026-09 관측, 최종 검색 10/15 | 기존 `api_history_chunks_v1` 원문/해시·BLS 정의·FRED 공개 이용조건 검증 후 **원본 재사용 후보**. 조건을 못 맞추면 직접 BLS 원천 별도 제안 | REUSE_CONDITIONAL |
-| FRED/PRS85006111 → BLS 단위노동비용 | PC snapshot **1개**, 2026Q2 관측, 최종 검색 09/24 | 정확한 전년 동기 대비 1.4%, **전기 대비 연율로 오인 금지**. payload/해시/재이용 조건 검증 후 재사용 | REUSE_CONDITIONAL |
+| FRED/PPIFIS → BLS 최종수요 PPI | PC `api_history_snapshots_v1` **2개**, 2026-09 관측, 최종 검색 10/15 | **C 신규 데이터는 BLS 직접 API `WPSFD4`를 우선 수집**, FRED 캐시는 신규 C 입력에서 제외. 기존 캐시 읽기/쓰기/삭제 없음 | REUSE_CONDITIONAL |
+| FRED/PRS85006111 → BLS 단위노동비용 | PC snapshot **1개**, 2026Q2 관측, 최종 검색 09/24 | 정확한 전년 동기 대비 1.4%, **전기 대비 연율로 오인 금지**. **C 신규 데이터는 BLS 직접 API `PRS85006111` 원천 사용**, FRED 경유 캐시는 신규 C 입력에서 제외 | REUSE_CONDITIONAL |
 | BEA NIPA/T11200/A051RC | R2 공식 API `2026Q2 4,709.453십억 USD` 실측, PC 정확한 원장 미확인 | **조건부 신규 공공 원천 1개**. 같은 분기 BEA line 13/41 중복값을 경제값 1개로 저장 | NEW_IF_ABSENT |
-| BLS WPSFD41 | R2 공식 API 2026-09 `162.341` 검증, PC 정확한 원장 미확인 | **조건부 신규 공공 원천 1개**. `WPSFD4`/`PPIFIS` 전체 PPI와 혼합 금지 | NEW_IF_ABSENT |
+| BLS WPSFD41 | R2 공식 API 2026-09 `162.341` 검증, PC 정확한 원장 미확인 | **승인된 BLS 직접 API 3종 통합 요청에 포함**. `WPSFD4` 최종수요 전체 PPI와 `WPSFD41` 재화 PPI를 혼동·합산 금지 | NEW_IF_ABSENT |
 | Census MTIS IR/TOTBUS/yes | R2 공식 API 2026-08 `1.33` 실측 | **조건부 신규 공공 원천 1개**. 제조업 M3 `1.48`로 대체 금지 | NEW_IF_ABSENT |
 | Census QFR 101/104/115 | R2 공식 코드·2026Q2 행 검증, 2025Q2 동기 표본 쌍은 미검증 | 2025Q2/2026Q2 **동일 비중첩 산업·조정·단위 검증 후** 조건부 편입; 성장률·산업 breadth는 선행검증 실패 시 HOLD | HOLD_PAIR_VALIDATION |
 | SEC 신규 현금흐름/기업별 확대 | 기업별 실측/커버리지 미검증 | 초기 R3 원천 편입 제외 | OUT_OF_SCOPE |
@@ -58,8 +58,8 @@
 
 **R3-B 사용자 승인 요청 대상** (모두 설계 승인, 운영 적용 아님):
 
-1. 위의 **기존 Growth·FRED 원장 재사용 우선**.
-2. 미보유로 판명된 **BEA A051RC / BLS WPSFD41 / Census MTIS**만 신규 PC 원본 저장 후보로 한정. QFR 동기·산업 기준 검증 전 편입 HOLD.
+1. 위의 **기존 Growth·승인된 E1 원장 재사용 우선, 신규 C는 FRED API 캐시 재사용 금지**.
+2. 미보유로 판명된 **BEA A051RC / Census MTIS**만 추가 수집 후보로 한정하고, 신규 C의 BLS 3종은 공식 BLS 직접 API를 사용. 동일 BLS 직접 원본이 기존 PC에 검증되면 중복 저장 금지. QFR 동기·산업 기준 검증 전 편입 HOLD.
 3. 신규 보존기간·스키마 확정은 PC 실제 원장 재사용 가능성·기존 TTL 확인 결과를 토대로 별도 승인.
 4. 이미 존재하는 E1-R4 점수 A 및 12대 실적 B와 분리된 C 레이어만 생성.
 
@@ -75,6 +75,26 @@
   - FRED: https://fred.stlouisfed.org/legal/terms/ (API Prohibitions (l); Data copyright labels)
   - BLS: https://www.bls.gov/opub/copyright-information.htm (공표된 통계 공공영역, 출처 표기 요청)
   - BLS API: https://www.bls.gov/developers/termsOfService.htm (조회일/파생 해석 책임·API 한도)
-- **권리 검증용 안전한 변경 제안**: 신규 C 원본은 FRED 캐시 대신 **BLS 직접 API**에서 WPSFD4, WPSFD41, PRS85006111를 획득해 PC 승인 저장계약에 따라 관리하는 안을 우선 검토한다. R2 실제 BLS API 조회는 성공했고 WPSFD4=159.780, WPSFD41=162.341, PRS85006111=1.4%를 검증했다. 이 **소스 변경안은 별도 사용자 확인 전 자동 적용 금지**.
+- **권리 검증용 안전한 변경 제안**: 신규 C 원본은 FRED 캐시 대신 **BLS 직접 API**에서 WPSFD4, WPSFD41, PRS85006111를 획득해 PC 승인 저장계약에 따라 관리하는 안을 우선 검토한다. R2 실제 BLS API 조회는 성공했고 WPSFD4=159.780, WPSFD41=162.341, PRS85006111=1.4%를 검증했다. 이 소스 변경안은 이후 사용자 승인으로 확정되었으며, 원격 공급원 계약만 변경한 것이다. 실제 PC 쓰기는 별도 승인 사항이다.
 - 기존 운영 PC FRED cache의 삭제·수정·권한 변경을 본 작업에서 실행하지 않는다. 현재 사용 중인 외부 서비스 약관 영향은 별도 운영 검토 사항으로 남긴다.
 - 이후 단계: R3-C 운영 PC 저장 및 보존기간/테이블 계약은 **추가 승인 전 실행 금지**; R4–R6도 별도 승인 유지.
+
+
+## 6. R3-B 사용자 추가 승인: 최종 공급원·운영 설계 (2026-10-27 KST)
+
+- 사용자 메시지 **“좋은 생각이야 진행해라”**를 직전 검토·추천한 **BLS 직접 API + 기존 원장 재사용 + BLS 공식 발표 교차검증** 방향에 대한 승인으로 기록한다. 이는 앞서 승인한 R3-B 계약의 **공급원·수집 방식 보완**이며, R3-C 실제 PC SQLite 쓰기·신규 테이블/TTL·자동 스케줄 실행·D1/Production 공개를 뜻하지 않는다.
+- **신규 C 한정 공급원 확정**: `https://api.bls.gov/publicAPI/v2/timeseries/data/`의 직접 BLS `WPSFD4`(전체 최종수요 PPI, 계절조정 월 지수), `WPSFD41`(최종수요 재화 PPI, 계절조정 월 지수), `PRS85006111`(비농업부문 단위노동비용, 전년 동분기 대비 %, 계절조정 분기)를 직접 수집 후보로 설정. FRED/PPIFIS, FRED/PRS85006111의 과거 API 캐시는 **신규 C의 원본 출처로 사용하지 않음**. 기존 다른 서비스/테이블의 FRED 데이터는 이 작업에서 삭제·변경하지 않는다.
+- **최소 호출**: 기존 검증된 무료 BLS API v2 등록키 사용 가능 시 **1회 POST에 3종 seriesid를 묶는다**. R2 v2 실측 성공을 재사용하며 불필요한 반복 API 실험을 피한다. 비등록 v1(무료 25회/일, 한 번 최대 25종, 최대 10년)은 **키 부재 시 별도 동일 데이터 수신·단위 검증 후에만** 후보로 사용. v2의 등록키 신규 발급·갱신을 요구하지 않는다. 5분 PC Core 스케줄의 매 실행마다 새 호출하는 방식은 채택하지 않는다.
+- **갱신**: 정기 작업 신규 등록/주기 변경 전에는 release calendar 기준 월간 PPI 및 분기 ULC 발표 후 이벤트성 수집안을 검토. API 성공 후 `seriesID`, `year`, `period`, `value`, `footnotes`를 검증하고 `retrievedAt`, 변경 전후 관측값, `responseHash`, 수정 이력을 보존. 기존 vintage 표지가 없는 BLS 응답에 **허위 공식 vintageId를 만들지 않는다**. 수집 실패 시 이전 값을 최신값으로 재표기하지 않는다.
+- **수정본**: BLS PPI는 최근 약 4개월간 재공표·수정 가능하며, 계절조정 과거 5년 재산정도 가능. 따라서 해당 수정 관측월을 재조회·비교하되, 누적 이력 삭제/기존 점수 재계산은 금지. 1년치 월별 YoY를 모두 그리려면 최대 24개월 이상의 기준월 원본이 필요하므로 원장 보존기간/백필은 별도 승인을 받는다.
+- **단위·공식 대조**: PPI 원 지수(계절조정)를 기준으로 동일 조정 계열끼리 비교하고 월간 또는 YoY 파생치는 별도 표시. 공식 보도자료의 12개월 비계절조정 변화율과 계절조정 지수로 만든 YoY가 정확히 같아야 한다고 판정하지 않는다. `PRS85006111=1.4%`는 전년 동기 대비로서 보도자료의 전기 대비 연율 `1.2%`와 구분. `WPSFD4`/`WPSFD41`를 합산하거나 중복 지표로 점수에 재편입하지 않는다.
+- **교차검증·예비 경로**: BLS 공식 PPI/생산성 보도자료와 기간·계절조정·값을 확인한다. API 장애 시 `https://download.bls.gov/pub/time.series/`의 공식 파일은 예비 조사 후보이나, 파일 포맷·접근권·세부 series 일치 실측 없이는 자동 fallback 구축 금지.
+- **기존 원장 재사용**: Growth G010–G018, 승인된 E1-R4 메타는 기존 PC SQLite에서 **읽기 전용 참조**; BEA·MTIS 등은 기존 전용/범용 저장 존재 여부를 먼저 검사. 기존 동일 BLS 직접 출처가 있다면 신규 복제 원장 금지. 기존 FRED 캐시가 있다는 이유로 BLS 직접 source 체크를 생략하지 않는다.
+- 공식 근거: https://www.bls.gov/developers/api_FAQs.htm ; https://www.bls.gov/developers/api_signature_v2.htm ; https://www.bls.gov/developers/termsOfService.htm ; https://www.bls.gov/opub/copyright-information.htm ; https://www.bls.gov/ppi/faqs/questions-and-answers.htm ; https://fred.stlouisfed.org/legal/terms/ .
+
+### 6.1. 다음 게이트
+
+1. R3-C 스키마·저장 원장 실태에 대한 **0 API / 0 DB-write의 최소 read-only preflight**.
+2. 기존 PC raw 구조에 C의 BLS 직접 출처·raw value·retrieved timestamp·진정한 변경 이력을 기록 가능한지, 새 저장 구조 필요 여부 확인.
+3. 사용자에게 **정확한 PC 저장 방법·스키마·보존기간·수집 주기**의 변경/추가 목록을 제시해 **운영 쓰기 승인**을 받은 후에만 R3-C 실데이터 저장.
+4. R3-D/R4–R6은 별도 공개/계산/배포 게이트 유지.
