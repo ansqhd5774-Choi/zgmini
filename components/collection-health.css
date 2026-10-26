@@ -14,3 +14,6 @@
 .zg-collection-health [role=status]{max-height:60vh;overflow-y:auto;overflow-wrap:anywhere}
 @keyframes zg-collection-pulse{0%,100%{opacity:1}50%{opacity:.4}}
 @media(prefers-reduced-motion:reduce){.zg-collection-health.partial>button svg{animation:none}}
+
+/* Public icon appearance is independent of internal operational alert severity. */
+.zg-collection-health.zg-collection-public{color:#10b981}
