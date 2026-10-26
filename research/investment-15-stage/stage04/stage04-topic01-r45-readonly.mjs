@@ -17,7 +17,15 @@ const REPORT_MAX=2_000_000, SEARCH_MAX=750_000, BUDGET_MS=18000;
 const now=()=>performance.now();
 const unique=a=>[...new Set(a)];
 const clean=s=>String(s??'NULL').replace(/[\r\n=|]/g,' ').slice(0,400);
-const SCHEMA={type:'object',properties:{index:{type:'integer',minimum:-1,maximum:15},scope:{type:'string',enum:['DIRECT','PROXY','UNRELATED','UNCLEAR']}},required:['index','scope'],additionalProperties:false};
+// Never make the language model express a CAGR as an integer candidate index.
+// A constrained C0/C1 token maps to the position after strict validation.
+export function candidateChoiceSchema(count){
+  if(!Number.isInteger(count)||count<1||count>16)throw Error('CANDIDATE_COUNT_OUT_OF_BOUNDS');
+  return {type:'object',properties:{candidate_id:{type:'string',
+    enum:['NONE',...Array.from({length:count},(_,i)=>`C${i}`)]},
+    scope:{type:'string',enum:['DIRECT','PROXY','UNRELATED','UNCLEAR']}},
+    required:['candidate_id','scope'],additionalProperties:false};
+}
 export const TARGET={kind:'섹터',name:'정보기술',english:'information technology',
   aliases:['information technology market','IT industry market','information technology (IT) market'],
   scope:'PUBLISHER_MARKET_ONLY_NOT_VERIFIED_AS_GICS_INFORMATION_TECHNOLOGY'};
@@ -134,25 +142,34 @@ export function titleOf(html){const m=html.match(/<h1\b[^>]*>([\s\S]*?)<\/h1>/i)
 function periodOf(text){const m=String(text).match(/\b(20\d{2})\s*(?:-|–|—|to|through)\s*(20\d{2})\b/i);
   return m&&Number(m[2])>Number(m[1])?`${m[1]}-${m[2]}`:null;}
 export async function ollamaChoose(p,title,candidates,model,{fetchFn=fetch}={}){
+  const schema=candidateChoiceSchema(candidates.length);
   const prompt=`You are checking LITERAL MARKET RESEARCH REPORT text. No web browsing or invented facts.\n`+
     `Target: global information technology market as a publisher-defined entire market; NOT IT services, management, software-only, telecom-only, regional, or fastest growing segment.\n`+
-    `Publisher ${p.id}; heading ${title}. Select a *future market forecast* CAGR in the excerpt, never historical CAGR.\n`+
-    `Classify DIRECT only if the whole report market matches information technology market.\n`+
-    candidates.map((c,i)=>`[${i}] ${c.pct}% ${c.excerpt}`).join('\n')+'\nRespond only JSON index and scope.';
+    `Publisher ${p.id}; official REPORT HEADING: ${title}.\n`+
+    `Select the *future market forecast* excerpt, never historical CAGR.\n`+
+    `The candidate_id is a LABEL, not a number, percentage or growth rate.\n`+
+    `The ONLY valid candidate IDs are ${schema.properties.candidate_id.enum.join(', ')}.\n`+
+    `Report scope DIRECT means the report is about the whole global information technology market.\n`+
+    `A report specifically on IT services, software, telecom or a submarket is PROXY.\n`+
+    candidates.map((c,i)=>`C${i}: FORECAST_CAGR=${c.pct}% EXCERPT=${c.excerpt}`).join('\n')+
+    '\nRespond only JSON candidate_id and scope. Do NOT write a percentage into candidate_id.';
   const started=now();const r=await fetchFn(MODEL_URL,{method:'POST',signal:AbortSignal.timeout(90000),
     headers:{'content-type':'application/json'},body:JSON.stringify({model,prompt,stream:false,think:false,
-      format:SCHEMA,options:{temperature:0,seed:45,num_predict:70}})});
+      format:schema,options:{temperature:0,seed:45,num_predict:70}})});
   if(!r.ok)throw Error('OLLAMA_HTTP_'+r.status);
   const body=await r.json();let answer;try{answer=JSON.parse(body.response)}catch{throw Error('OLLAMA_JSON_INVALID')}
-  if(!Number.isInteger(answer.index)||answer.index < -1||answer.index >= candidates.length||
+  if(!schema.properties.candidate_id.enum.includes(answer?.candidate_id)||
     !['DIRECT','PROXY','UNRELATED','UNCLEAR'].includes(answer.scope)||
-    Object.keys(answer).sort().join()!=='index,scope')throw Error('OLLAMA_SCHEMA_INVALID');
-  return {...answer,elapsed_ms:Math.round(now()-started),model_total_ms:Math.round((body.total_duration||0)/1e6),
+    Object.keys(answer).sort().join()!=='candidate_id,scope')throw Error('OLLAMA_SCHEMA_INVALID');
+  const index=answer.candidate_id==='NONE'?-1:Number(answer.candidate_id.slice(1));
+  return {index,scope:answer.scope,candidate_id:answer.candidate_id,
+    elapsed_ms:Math.round(now()-started),model_total_ms:Math.round((body.total_duration||0)/1e6),
     model_load_ms:Math.round((body.load_duration||0)/1e6),
     model_eval_ms:Math.round((body.eval_duration||0)/1e6)};
 }
 export async function inspect(p,url,{fetchFn=fetch,chooseFn=ollamaChoose,model='gemma3:4b'}={}){
   const out={url,title:null,state:'FAILED',error:null,cagr:null,period:null,model_scope:null,
+    model_candidate_id:null,
     report_ms:0,ollama_ms:0,model_total_ms:null,model_load_ms:null,model_eval_ms:null,
     source_audit:'NOT_AUDITED',source_conflict:null,source_excerpt:null,scope_guard:null};
   const start=now();let html;
@@ -178,9 +195,11 @@ export async function inspect(p,url,{fetchFn=fetch,chooseFn=ollamaChoose,model='
   }
   const candidates=extractCagrCandidates(audit?.forecast_excerpt||pagePlainText(html));
   if(!candidates.length){out.error='NO_LITERAL_CAGR';return out;}
-  try{const ans=await chooseFn(p,out.title,candidates,model,{fetchFn});out.ollama_ms=ans.elapsed_ms||0;
+  const modelStart=now();
+  try{const ans=await chooseFn(p,out.title,candidates,model,{fetchFn});out.ollama_ms=ans.elapsed_ms??Math.round(now()-modelStart);
     out.model_total_ms=ans.model_total_ms??null;out.model_load_ms=ans.model_load_ms??null;
     out.model_eval_ms=ans.model_eval_ms??null;out.model_scope=ans.scope;
+    out.model_candidate_id=ans.candidate_id??null;
     if(ans.index<0||['UNCLEAR','UNRELATED'].includes(ans.scope)){out.error='NO_MODEL_CONFIRMED_FORECAST';return out;}
     const chosen=candidates[ans.index];out.period=periodOf(chosen.excerpt);out.source_excerpt=chosen.excerpt.slice(0,250);
     if(ans.scope!=='DIRECT'){out.state='SCOPE_REVIEW';out.error='MODEL_SCOPE_DISAGREES_WITH_TITLE';return out;}
@@ -193,7 +212,7 @@ export async function inspect(p,url,{fetchFn=fetch,chooseFn=ollamaChoose,model='
       out.period=`${audit.forecast_base_year}-${audit.forecast_end_year}`;
     }
     out.cagr=chosen.pct;out.state='DIRECT_PROVISIONAL';
-  }catch(err){out.error=clean(err.message);out.state='OLLAMA_FAILED';}
+  }catch(err){out.ollama_ms=Math.round(now()-modelStart);out.error=clean(err.message);out.state='OLLAMA_FAILED';}
   return out;
 }
 export async function researchPublisher(p,seed,{fetchFn=fetch,searchFn=getSearch,chooseFn=ollamaChoose,
