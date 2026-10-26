@@ -188,6 +188,14 @@
 - 신규 파일 `stage04/keyword-growth-speed-r27-readonly.mjs`, `stage04/STAGE04_KEYWORD_GROWTH_R27_READONLY.cmd`, `stage04/keyword-growth-speed-r27.test.mjs`. R27 모의 테스트 **3/3**·Stage04 전체 **19개 테스트 파일 통과**. 출처 원문 대량 저장, G/D/M·순위·주문·운영 배포 변경 0건.
 - 상세 `STAGE04_OFFICIAL_REPORT_SEARCH_R27_20261026.md`. 다음에 필요한 것은 **사용자 PC R27 Ollama 실측**.
 
+## Stage04 R28 — Windows R27 실측 실패 원인 / 구조화 모델 출력 (2026-10-26)
+
+- 실제 사용자 PC R27: **공식 사이트 5/5 HTTP 200 + 해당 보고서 조회 5/5 + Ollama 생성 5/5**, 각 전체 소요 **4,574/2,601/2,156/2,491/2,354ms**. 모두 모델 응답 `OLLAMA_WRONG_GROWTH_TYPE` 검증 실패, 추출 정합성 PASS **0/5**. 오히려 실패 모델의 실제 `metric` 문자열은 R27에 기록되지 않아 미확인.
+- R28은 전문매체·키워드·20초/개별 검색·조회 횟수를 유지하고 Ollama 공식 `format` JSON 스키마를 추가. metric은 `FORECAST_CAGR`만 허용, 숫자/연도 원문 대조 검증 유지, 실패 시 모델 출력 샘플(최대 360자) 기록.
+- 모델의 실시간 처리 `1,288/1,276/1,348/1,048/1,039ms`는 이미 실측했으나, 유효한 성장률 인식이 끝났다는 뜻이 아니다. **R28 모의 테스트 포함 Stage04 20개 테스트 파일 PASS**, 실제 Windows R28 결과 대기.
+- G/D/M·산식·점수·매매·기존 ETF 9개·운영 DB/API/배포 변경 없음. 전문 성장률 매체의 전망 CAGR은 관측 산업 실적이 아니며 운영 권리 미승인 상태이다.
+- 상세 `STAGE04_OLLAMA_SCHEMA_R28_20261026.md`.
+
 ## 가장 최근 M2 패키지 R25 진척
 
 - 원본: `INVESTMENT_M2_R25_NASDAQ_EARNINGS_REPAIR_20261025(1).zip` (원본 SHA256은 `ARTIFACT_INDEX.md`).
@@ -201,5 +209,5 @@
 
 1. 이 브랜치와 `m2/` 파일 목록·SHA, 현재 ZGMINI `main` SHA, 사용자 Windows에서 실행 승인된 R25 ZIP의 일치 여부 확인.
 2. 사용자가 CMD에서 R25를 실행한 실제 `M2_LATEST_STATUS.txt`를 확보하면 R25 SERV 수정이 실제 PASS인지 검증.
-3. **R27 실 Ollama 타이밍 확인**: R25/R26 Bing RSS 실패 원인 확인 및 폐기 완료, 개발 호스트 R27 전문매체 공식 검색+원문 **5/5 PASS**. 사용자 Windows CMD 결과 `R27_KEYWORD_SEARCH_TIMINGS.txt`에서 실제 검색/보고서/Ollama/총 초를 검증한다. 20초 제한·실패 시 무재시도 유지.
+3. **R28 실제 모델 검증 확인**: R27 Windows에서 공식 검색·원문·Ollama 전부 5/5 실행했고 타이밍 측정 완료했으나, 응답 형식 검증만 0/5. 사용자는 R28 CMD를 실행하여 `R28_KEYWORD_SEARCH_TIMINGS.txt`의 각 모델 응답 스키마·실제 점검 통과를 확인한다. 20초·무재시도 유지.
 4. 사용자 승인 이전에 M 랭킹 실운영·03단계 가중치/ETF 변경·주문 및 배포 금지.
