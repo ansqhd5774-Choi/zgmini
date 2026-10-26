@@ -26,7 +26,8 @@ test("Iran source values, provisional timeline and factual status remain untouch
  assert.match(iran,/view\.relations\?\.\[key\]/);
  assert.match(iran,/view\.overallEnded\?"확인":"미확인"/);
  assert.match(iran,/end-13\*DAY_MS/);
- assert.match(iran,/strokeDasharray=\{carried\(p\)\?"5 5":undefined\}/);
+ assert.match(iran,/lineSegments=\{lineSegments\}/);
+ assert.match(iran,/dashed:carried\(p\)/);
  assert.match(iran,/비공개 세부 산식은 공개하지 않습니다/);
  assert.doesNotMatch(iran,/19\.0|13\.0|2026-10-21|Math\.random/);
 });

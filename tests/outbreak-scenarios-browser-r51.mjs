@@ -133,7 +133,13 @@ try{
   await page.waitForFunction(()=>document.querySelector(".ob54-kpis strong")?.textContent?.includes("13.0"),null,{timeout:12000});
   assert.equal(await root.locator(".ob54-state").textContent(),"진전 매우 낮음");
   assert.equal(await root.locator("#ob54-chart-title").textContent()," 14일 추이");
-  assert.equal(await root.locator(".ob54-trend-svg line[stroke-dasharray='5 5']").count()>0,true,"Carried days remain dashed");
+  const iranChart=root.locator(".ob54-market-chart");
+  await iranChart.locator(".recharts-surface").waitFor({state:"visible",timeout:20000});
+  assert.equal(await iranChart.locator(".recharts-reference-area").count(),5,"Iran reuses five score bands");
+  assert.equal(await iranChart.getAttribute("data-observed-days"),"14","All 14 stored provisional dates remain visible");
+  assert.equal(await iranChart.getAttribute("data-carried-days"),"5","Five carried provisional dates retain their identity");
+  assert.equal(await iranChart.locator(".recharts-reference-line-line[stroke-dasharray='5 5']").count(),5,"Five carried intervals stay dashed");
+  assert.equal(await iranChart.locator(".cnn-latest-point").count(),1,"Latest provisional observation gets one marker");
   assert.equal(await root.locator(".ob54-scale-track [data-band]").count(),5);
   const iranGeometry=await root.evaluate(el=>{
    const intro=el.querySelector(".ob55-intro"),main=el.querySelector(".ob55-main");
@@ -152,9 +158,8 @@ try{
   assert.equal(await evidence.getByText("최근 14일 확인된 공식 발표").count(),1);
   await evidence.locator("summary").click();
   assert.equal(await evidence.getAttribute("open"),null);
-  const expectedBox=width<=600?"0 0 350 232":"0 0 700 232";
-  await page.waitForFunction(expected=>document.querySelector(".ob54-trend-svg")?.getAttribute("viewBox")===expected,expectedBox,{timeout:5000});
-  assert.equal(await root.locator(".ob54-trend-svg circle").count(),1,"No fictitious point added to chart");
+  const iranChartFits=await iranChart.evaluate(el=>el.getBoundingClientRect().width<=innerWidth);
+  assert(iranChartFits,"Shared Iran chart fits the viewport without horizontal clipping");
   await page.screenshot({path:"artifacts/outbreak-scenarios/analysis-iran-"+width+".png",fullPage:true});
 
   const geometry=await root.evaluate(el=>{
