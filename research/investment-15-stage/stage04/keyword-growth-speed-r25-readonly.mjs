@@ -54,7 +54,7 @@ function allowedReportUrl(url) {
 
 export function parseOneSpecialistResult(xml, keyword) {
   const items = [...xml.matchAll(/<item\b[^>]*>([\s\S]*?)<\/item>/gi)];
-  for (const [, item] of items.slice(0, 8)) {
+  for (const [, item] of items.slice(0, 20)) {
     const title = stripTags(innerTag(item, 'title'));
     const link = stripTags(innerTag(item, 'link'));
     if (!allowedReportUrl(link) || !matchesKeyword(title, keyword)) continue;
@@ -62,6 +62,27 @@ export function parseOneSpecialistResult(xml, keyword) {
     return { url: link, title, description };
   }
   return null;
+}
+
+function searchDiagnostics(xml, keyword) {
+  const items = [...xml.matchAll(/<item\b[^>]*>([\s\S]*?)<\/item>/gi)];
+  let publisher = 0;
+  let titleMatched = 0;
+  const sample = [];
+  for (const [, item] of items.slice(0, 20)) {
+    const title = stripTags(innerTag(item, 'title'));
+    const url = stripTags(innerTag(item, 'link'));
+    const allowed = allowedReportUrl(url);
+    if (allowed) publisher++;
+    if (allowed && matchesKeyword(title, keyword)) titleMatched++;
+    if (sample.length < 3) {
+      let host = 'INVALID_URL';
+      try { host = new URL(url).hostname; } catch { /* no link */ }
+      sample.push(`${host}:${title.slice(0, 70).replace(/[\r\n=|]/g, ' ')}`);
+    }
+  }
+  return { rss_items: items.length, publisher_index_links: publisher,
+    title_matched_links: titleMatched, indexed_sample: sample.join(' | ') || 'NONE' };
 }
 
 async function limitedRead(response, maxBytes, stopWhen = () => false) {
@@ -102,21 +123,26 @@ export async function measureKeyword(keyword, {
   model = 'gemma3:4b',
   maxMs = MAX_KEYWORD_MS,
   now = () => performance.now(),
+  searchQuery = null,
 } = {}) {
   if (maxMs <= 0 || maxMs > MAX_KEYWORD_MS) throw new Error('INVALID_TIMEOUT');
   if (!KEYWORDS.includes(keyword)) throw new Error('INVALID_TEST_KEYWORD');
   const began = now();
   const controller = new AbortController();
   const deadline = setTimeout(() => controller.abort(), maxMs);
-  const query = `site:thebusinessresearchcompany.com/report/ "${keyword}" market CAGR 2026 2030`;
+  const query = searchQuery || `site:thebusinessresearchcompany.com/report/ "${keyword}" market CAGR 2026 2030`;
+  if (typeof query !== 'string' || query.length > 220) throw new Error('INVALID_QUERY');
   const searchUrl = `${SEARCH_HOST}/search?format=rss&q=${encodeURIComponent(query)}`;
   const result = { keyword, state: 'FAILED', publisher: PUBLISHER,
-    search_engine: 'Bing RSS site-filtered search', search_query: query,
+    search_engine: searchQuery ? 'Bing RSS publisher-named search' : 'Bing RSS site-filtered search',
+    search_query: query,
     result_url: null, model, keyword_deadline_ms: maxMs,
     search_requests: 0, report_requests: 0, ollama_generations: 0,
     search_ms: null, report_ms: 0, ollama_ms: null,
     total_ms: null, ollama_reported_ms: null, growth_pct: null,
-    metric: null, period_start: null, period_end: null, failure: null };
+    metric: null, period_start: null, period_end: null, failure: null,
+    search_http_status: null, rss_items: null, publisher_index_links: null,
+    title_matched_links: null, indexed_sample: null };
   try {
     const searchBegan = now();
     result.search_requests = 1;
@@ -125,12 +151,14 @@ export async function measureKeyword(keyword, {
       const searchResponse = await fetchFn(searchUrl, {
         signal: controller.signal, headers: { accept: 'application/rss+xml,application/xml,text/xml' }
       });
+      result.search_http_status = searchResponse.status;
       if (new URL(searchResponse.url || searchUrl).origin !== SEARCH_HOST) throw new Error('SEARCH_REDIRECT_BLOCKED');
       feed = await limitedRead(searchResponse, 350_000,
-        (raw) => (raw.match(/<\/item>/gi) || []).length >= 8);
+        (raw) => (raw.match(/<\/item>/gi) || []).length >= 20);
     } catch (error) { throw new Error(`SEARCH_${error.message}`); }
     finally { result.search_ms = Math.round(now() - searchBegan); }
     if (!/<rss\b|<rdf:RDF\b/i.test(feed)) throw new Error('SEARCH_NOT_RSS');
+    Object.assign(result, searchDiagnostics(feed, keyword));
     const selected = parseOneSpecialistResult(feed, keyword);
     if (!selected) throw new Error('SEARCH_NO_MATCHED_PUBLISHER_REPORT');
     result.result_url = selected.url;
@@ -191,8 +219,8 @@ export async function measureKeyword(keyword, {
   return result;
 }
 
-function outputText(all) {
-  return ['REPORT=STAGE04_KEYWORD_GROWTH_R25_READONLY',
+export function outputText(all, { reportName = 'STAGE04_KEYWORD_GROWTH_R25_READONLY' } = {}) {
+  return [`REPORT=${reportName}`,
     'MODE=LIVE_KEYWORD_SEARCH_RESEARCH_ONLY',
     'EXTERNAL_SOURCE=BING_RSS_INDEX_TO_THE_BUSINESS_RESEARCH_COMPANY',
     'SCORE_OR_TRADE=NONE', 'MAX_MS_PER_KEYWORD=20000',
