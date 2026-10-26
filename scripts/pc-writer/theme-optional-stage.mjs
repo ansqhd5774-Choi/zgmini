@@ -40,6 +40,7 @@ const FILES = Object.freeze([
   'worker/theme-biotech-provisional-r1.mjs',
   'worker/theme-data-center-power-r1.mjs',
   'worker/theme-space-satellite-r1.mjs',
+  'worker/theme-space-satellite-r2.mjs',
   'worker/theme-etf-rolling-public.mjs',
   'worker/public-feed-store.mjs',
   'worker/public-feed-input-safety.mjs',

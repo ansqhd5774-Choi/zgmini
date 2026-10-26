@@ -1,6 +1,7 @@
 // Optional, isolated approved space ETF theme. Visitor GET reads D1 only.
 // Missing/invalid source never changes any of the existing theme histories.
 import {PUBLIC_DISPLAY_MAX_AGE_MS} from './public-display-freshness.mjs';
+import {addVerifiedSpaceSatelliteR2} from './theme-space-satellite-r2.mjs';
 
 export const SPACE_SATELLITE_PUBLIC_KEY='theme-space-satellite-r1';
 export const SPACE_SATELLITE_PUBLIC_VERSION='THEME_SPACE_SATELLITE_R1_PUBLIC_V1';
@@ -59,6 +60,8 @@ export function eligibleSpaceSatellite(record,base,{now=Date.now(),storedAt=now}
 
 export async function addVerifiedSpaceSatellite(db,base,{now=Date.now()}={}){
  if(base?.status!=='READY'||!Array.isArray(base.themes)||base.themes.length<7)return base;
+ const newer=await addVerifiedSpaceSatelliteR2(db,base,{now});
+ if(newer!==base)return newer; // Prefer new version; preserve immutable R1 fallback.
  let row;
  try{row=await db.prepare("SELECT body,stored_at FROM public_feed_snapshots_v1 WHERE kind='output' AND feed_key=? AND snapshot_key='current'")
   .bind(SPACE_SATELLITE_PUBLIC_KEY).first();}catch{return base;}

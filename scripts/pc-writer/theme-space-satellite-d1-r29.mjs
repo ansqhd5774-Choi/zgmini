@@ -4,12 +4,21 @@ import fs from 'node:fs';
 import path from 'node:path';
 import {SPACE_SATELLITE_PUBLIC_KEY,SPACE_SATELLITE_PUBLIC_VERSION} from
  '../../worker/theme-space-satellite-r1.mjs';
+import {SPACE_SATELLITE_R2_PUBLIC_KEY,SPACE_SATELLITE_R2_PUBLIC_VERSION} from
+ '../../worker/theme-space-satellite-r2.mjs';
 
 const need=(ok,code)=>{if(!ok)throw Object.assign(new Error(code),{code});};
 const SELECT="SELECT body,stored_at FROM public_feed_snapshots_v1 WHERE kind='output' AND feed_key=? AND snapshot_key='current'";
-export async function spaceSatelliteD1R29({dataRoot,tokenFn,fetchImpl=fetch,clock=Date.now}={}){
+export async function spaceSatelliteD1R29({dataRoot,tokenFn,fetchImpl=fetch,clock=Date.now,
+ publicKey=SPACE_SATELLITE_PUBLIC_KEY,
+ publicVersion=SPACE_SATELLITE_PUBLIC_VERSION}={}){
  need(typeof dataRoot==='string'&&typeof tokenFn==='function',
  'SPACE_R29_D1_ARGUMENTS_INVALID');
+ need((publicKey===SPACE_SATELLITE_PUBLIC_KEY&&
+  publicVersion===SPACE_SATELLITE_PUBLIC_VERSION)||
+  (publicKey===SPACE_SATELLITE_R2_PUBLIC_KEY&&
+   publicVersion===SPACE_SATELLITE_R2_PUBLIC_VERSION),
+ 'SPACE_R29_D1_PUBLIC_CONTRACT_DENIED');
  const cfg=JSON.parse(fs.readFileSync(path.join(dataRoot,'pc-writer','config.json'),'utf8'));
  need(/^[a-f0-9]{32}$/.test(cfg.account)&&/^[a-f0-9-]{36}$/.test(cfg.core),
  'SPACE_R29_D1_CONFIG_INVALID');
@@ -33,7 +42,7 @@ export async function spaceSatelliteD1R29({dataRoot,tokenFn,fetchImpl=fetch,cloc
   return body.result[0];
  }
  async function read(key){
-  need(key===SPACE_SATELLITE_PUBLIC_KEY,'SPACE_R29_D1_READ_KEY_DENIED');
+  need(key===publicKey,'SPACE_R29_D1_READ_KEY_DENIED');
   const row=(await query(SELECT,[key])).results?.[0];
   if(!row)return null;
   need(typeof row.body==='string'&&Number.isSafeInteger(Number(row.stored_at)),
@@ -41,8 +50,8 @@ export async function spaceSatelliteD1R29({dataRoot,tokenFn,fetchImpl=fetch,cloc
   return {body:JSON.parse(row.body),storedAt:Number(row.stored_at)};
  }
  return {read,async writeVersioned(key,record,expectedStoredAt){
-  need(key===SPACE_SATELLITE_PUBLIC_KEY&&
-   record?.version===SPACE_SATELLITE_PUBLIC_VERSION&&
+  need(key===publicKey&&
+   record?.version===publicVersion&&
    record.publicationAuthorized===true,'SPACE_R29_D1_WRITE_KEY_DENIED');
   const before=await read(key),encoded=JSON.stringify(record);
   if(before){

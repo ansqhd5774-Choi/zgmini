@@ -44,8 +44,10 @@ export async function readSpaceCoreR29({fetchImpl=fetch,now=Date.now()}={}){
 export async function runSpacePublishR29({dataRoot,allowPublish=false,
  pcAudit=runApprovedSpacePcR28,save=saveSpaceDerivedR29,
  publicRead=readSpaceCoreR29,d1=null,
- tokenFn=spaceSatelliteApprovedSevenTokenR31,now=Date.now}={}){
- const report={report:'SPACE_SATELLITE_R29_PC_PUBLICATION',
+ tokenFn=spaceSatelliteApprovedSevenTokenR31,now=Date.now,
+ publicKey=SPACE_SATELLITE_PUBLIC_KEY,buildPublic=buildSpaceSatellitePublicR29,
+ d1Options={},reportName='SPACE_SATELLITE_R29_PC_PUBLICATION'}={}){
+ const report={report:reportName,
   status:'STARTED',providerCalls:0,d1Writes:0,publicWrites:0,schedulerWrites:0};
  try{
   const candidate=pcAudit({dataRoot});
@@ -65,15 +67,16 @@ export async function runSpacePublishR29({dataRoot,allowPublish=false,
   report.candidateFileSha256=artifact.sha256;
   if(!allowPublish){report.status='PRIVATE_CANDIDATE_SAVED_NOT_PUBLISHED';return report;}
   const base=await publicRead({now:now()});
-  const record=buildSpaceSatellitePublicR29({candidate,base,
+  const record=buildPublic({candidate,base,
    candidateFileSha256:artifact.sha256,allowPublish:true,now:now()});
-  const store=d1??(await spaceSatelliteD1R29({dataRoot,tokenFn,clock:now}));
-  const existing=await store.read(SPACE_SATELLITE_PUBLIC_KEY);
-  const written=await store.writeVersioned(SPACE_SATELLITE_PUBLIC_KEY,record,
+  const store=d1??(await spaceSatelliteD1R29({dataRoot,tokenFn,clock:now,
+   ...d1Options}));
+  const existing=await store.read(publicKey);
+  const written=await store.writeVersioned(publicKey,record,
    existing?.storedAt??null);
   report.d1Writes=written.changes;
   report.d1WriteStatus=written.status;
-  const verify=await store.read(SPACE_SATELLITE_PUBLIC_KEY);
+  const verify=await store.read(publicKey);
   need(verify?.body?.candidateFileSha256===artifact.sha256&&
    verify.body.score===record.score&&
    verify.body.observationDate===record.observationDate,
