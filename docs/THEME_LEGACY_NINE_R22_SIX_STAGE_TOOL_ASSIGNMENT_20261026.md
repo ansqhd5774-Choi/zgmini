@@ -3,7 +3,7 @@
 - 확정일: 2026-10-26 (사용자 승인: “브랜치에 반영해라”)
 - 적용 브랜치: `codex/theme-fear-greed-integration-20261025`
 - 브랜치 통합: 2026-10-26 사용자 지시. 이전 `research/theme-nine-r2-shadow-20261026`는 **과거 연구 이력**이며 이후 신규 작업·수정은 하지 않는다.
-- 상태: `TOOL_PLAN_APPROVED / R23_STAGE1_PC_64_OF_64_COMPLETE / R24_STAGE2_PC_AUDIT_COMPLETE / R25_STAGE3_PC_RESULT_AUDITED / R26_STAGE4_OFFICIAL_CENSUS_63_OF_63 / R32_STAGE5_UPLOADED_JSON_PREFLIGHT_PASS / R32_STAGE5_PC_PREFLIGHT_PASS / R32_STAGE5_AGGREGATION_PENDING / SHADOW_ONLY`
+- 상태: `TOOL_PLAN_APPROVED / R23_STAGE1_PC_64_OF_64_COMPLETE / R24_STAGE2_PC_AUDIT_COMPLETE / R25_STAGE3_PC_RESULT_AUDITED / R26_STAGE4_OFFICIAL_CENSUS_63_OF_63 / R32_STAGE5_UPLOADED_JSON_PREFLIGHT_PASS / R32_STAGE5_PC_PREFLIGHT_PASS / R32_STAGE5_CALCULATOR_TEST_PASS / R32_STAGE5_AGGREGATION_PENDING / SHADOW_ONLY`
 - 최상위 적용: 10번째 우주·위성 R29·R32 기존 계산 계약, R19 3개 O/X 결과, R20 후보 승인 명단. 본 문서는 **도구·실행 담당·작업 순서만 확정**하며 산식 자체를 변경하지 않는다.
 
 ## 1. 확정 범위
@@ -77,3 +77,9 @@
 - 기존 ETF 후보, R25 실점수 JSON, 공식 AUM 출처와 기준일, 승인 산식, 원자료·DB·스케줄러·공개 배포를 변경하지 않았다.
 
 - 후속 상태: `R32_STAGE5_PC_PREFLIGHT_PASS / R32_STAGE5_AGGREGATION_PENDING / R32_STAGE6_SHADOW_PENDING`. 공식 AUM 증거 63건 가운데 42건만 2026-10-23 기준, 21건은 과거 기준일이다. 현재 AUM인 것처럼 간주하거나 산식의 가중치를 임의 변경하지 않는다. 최신 ETF 개별 점수 18건 결측은 0점 대체하지 않고 승인된 날짜별 유효 ETF 수 계약을 적용한다.
+
+## 10. R32 가중 합산 코드 준비 (2026-10-27)
+
+- 5단계 순수 계산 함수 및 승인 2-ETF R3 재사용 로직은 `scripts/pc-writer/theme-nine-r32-private-aggregate.mjs`로 지정 브랜치에 저장했다. 모의/입력거절 테스트 7/7 PASS.
+- 실제 63종 R25 데이터는 현재 AUM 기준일 불일치 21건에 의해 **중단되는 것이 안전 동작**이다. ETF를 제거·교체하거나 출처 날짜를 최신처럼 바꾸지 않는다.
+- `R32_STAGE5_AGGREGATION_PENDING` 및 6단계 비공개 그림자 검증 PENDING 유지. 사용자에게 최신 발행사 공시와 기존 날짜 수치 중 어느 것을 공식 가중치 입력으로 허용할지 확인 전에는 본계산 CMD 배포·실행·공개 전환을 하지 않는다.
