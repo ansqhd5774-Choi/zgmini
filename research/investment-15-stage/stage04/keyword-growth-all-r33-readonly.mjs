@@ -19,8 +19,8 @@ export const MAX_ATTEMPTS = 4;
 export const MAX_TOTAL_MS_PER_TOPIC = PER_PUBLISHER_MAX_MS * MAX_ATTEMPTS;
 
 const clip = x => String(x ?? 'NULL').replace(/[\r\n=|]/g, ' ').slice(0, 260);
-function format(results, errors) {
-  const lines = [`REPORT=${REPORT_NAME}`, 'MODE=LIVE_READONLY_FOUR_SOURCE_FAST_FALLBACK',
+function format(results, errors, reportName = REPORT_NAME, mode = 'LIVE_READONLY_FOUR_SOURCE_FAST_FALLBACK') {
+  const lines = [`REPORT=${reportName}`, `MODE=${mode}`,
     'PUBLICATION=NONE', 'SCORES_AND_DB_UNCHANGED=YES',
     `MAX_ATTEMPTS=${MAX_ATTEMPTS}`, `MAX_MS_PER_PUBLISHER=${PER_PUBLISHER_MAX_MS}`,
     `MAX_MS_PER_TOPIC=${MAX_TOTAL_MS_PER_TOPIC}`,
@@ -49,7 +49,9 @@ function format(results, errors) {
       for (const k of ['publisher', 'state', 'failure', 'search_requests',
         'report_requests', 'ollama_generations', 'search_ms', 'report_ms',
         'ollama_ms', 'total_ms', 'growth_pct', 'period_start', 'period_end',
-        'source_audit', 'result_url']) lines.push(`${n}_${k.toUpperCase()}=${clip(step[k])}`);
+        'source_audit', 'result_url', 'search_engine', 'search_http_status',
+        'rss_items', 'publisher_index_links', 'title_matched_links',
+        'indexed_sample']) lines.push(`${n}_${k.toUpperCase()}=${clip(step[k])}`);
     }
   }
   return lines.join('\r\n') + '\r\n';
@@ -59,7 +61,8 @@ function format(results, errors) {
 export async function researchFourSources({ fetchFn = fetch, model = 'gemma3:4b',
   outputFile = null, onProgress = () => {}, universe = null,
   firstResearch = measureKeyword, fallbackResearch = measureFallback,
-  now = () => performance.now() } = {}) {
+  now = () => performance.now(), reportName = REPORT_NAME,
+  mode = 'LIVE_READONLY_FOUR_SOURCE_FAST_FALLBACK' } = {}) {
   const { rows, errors } = universe || await fetchResearchUniverse({ fetchFn });
   const allowedKeywords = [...new Set(rows.map(x => x.keyword).filter(Boolean))];
   const results = [];
@@ -102,7 +105,7 @@ export async function researchFourSources({ fetchFn = fetch, model = 'gemma3:4b'
       attempts, total_ms: Math.round(now() - began) };
     results.push(merged);
     onProgress(merged, results.length, rows.length);
-    if (outputFile) await writeFile(outputFile, format(results, errors), 'utf8');
+    if (outputFile) await writeFile(outputFile, format(results, errors, reportName, mode), 'utf8');
   }
   return { rows: results, errors,
     counts: { sectors: rows.filter(r => r.type === 'SECTOR').length,
