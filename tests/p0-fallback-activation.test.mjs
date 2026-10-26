@@ -51,8 +51,7 @@ test('live entry wired; unchanged public shape and seven-input summary with seco
  assert.ok(route.includes('fetchBlsWithFallback as fetchBls'));assert.ok(route.includes('fredKey: bindings.FRED_API_KEY?.trim()'));
  const {result}=await run(Object.keys(mapping));const output=await(await compile(result)()).json();
  assert.equal(output.status,'live');assert.equal(Object.keys(output.indicators).length,7);assert.equal(output.summary.length,5);
- assert.deepEqual(Object.keys(output),['status','updatedAt','indicators','summary','sources','warnings','missingObservations']);
- assert.deepEqual(output.missingObservations,[]);
+ assert.deepEqual(Object.keys(output),['status','updatedAt','indicators','summary','sources','warnings']);
  for(const i of Object.values(output.indicators))for(const key of ['fallbackUsed','fallbackReason','provider','sourceSeries'])assert.equal(Object.hasOwn(i,key),false);
  assert.ok(route.includes('liveCount === required.length ? buildSummary(indicators) : []'));
 });

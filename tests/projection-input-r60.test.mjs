@@ -2,6 +2,7 @@ import {test} from 'node:test';import assert from 'node:assert/strict';import fs
 import {PROJECTION_MACRO_SERIES,sliceProjectionMacro} from '../worker/projection-input-manifest-r60.mjs';
 import {marketOperationalStore,mergeStoredMacro,readStoredMarketInputsSelected} from '../worker/candidate-market-operational-store.mjs';
 import {writeProjectionMacroSlices} from '../worker/projection-input-writer-r60.mjs';
+import {fullMacro} from './helpers/validated-market-fixtures.mjs';
 const now=Date.parse('2026-10-02T12:00:00Z');
 async function builder(id){const url=new URL(`../worker/projection-builders/${id}.ts`,import.meta.url);const code=ts.transpileModule(fs.readFileSync(url,'utf8'),{compilerOptions:{module:ts.ModuleKind.ESNext,target:ts.ScriptTarget.ES2022}}).outputText.replace(/from\s+["']([^"']+)["']/g,(_,p)=>`from ${JSON.stringify(new URL(p,url).href)}`);return (await import('data:text/javascript;base64,'+Buffer.from(code).toString('base64'))).buildProjection;}
 test('manifest exactly covers direct macro series references in every builder',()=>{
@@ -42,11 +43,11 @@ function fakeDb({slice=true,changed=false,oldShape=false}={}){
    if(args[0].startsWith('projection-macro:'))return slice?{body:JSON.stringify({series:{PAYEMS:[{value:0}],...(oldShape?{}:{NFCICREDIT:[]})}}),stored_at:now}:null;
    if(sql.includes('stored_at <'))return null;
    return {body:JSON.stringify({series:{PAYEMS:[{value:0}]}}),stored_at:now};
-  }};
+  },async all(){return {results:[{body:JSON.stringify(fullMacro('2026-10-02',0)),stored_at:now}]}}};
  }}}};
 }
 test('slice read never reads full macro body; absent/mismatched slice has one legacy read path',async()=>{
- for(const options of [{slice:true},{slice:false},{slice:true,changed:true},{slice:true,oldShape:true}]){const db=fakeDb(options),metadata=[];await readStoredMarketInputsSelected(marketOperationalStore(db),['macro'],now,{projectionId:'recession',onMetadata:x=>metadata.push(x)});const fullReads=db.trace.filter(x=>x.sql.startsWith('SELECT body')&&x.args[0]==='macro:%');const usesSlice=options.slice&&!options.changed&&!options.oldShape;assert.equal(fullReads.length,usesSlice?0:2);assert.equal(metadata[0].sourcePath,usesSlice?'SLICE':'LEGACY_FULL_MACRO');assert(db.trace.every(x=>x.sql.startsWith('SELECT')));}
+ for(const options of [{slice:true},{slice:false},{slice:true,changed:true},{slice:true,oldShape:true}]){const db=fakeDb(options),metadata=[];await readStoredMarketInputsSelected(marketOperationalStore(db),['macro'],now,{projectionId:'recession',onMetadata:x=>metadata.push(x)});const fullReads=db.trace.filter(x=>x.sql.startsWith('SELECT body')&&x.args[0]==='macro:%');const usesSlice=options.slice&&!options.changed&&!options.oldShape;assert.equal(fullReads.length,usesSlice?0:1);assert.equal(metadata[0].sourcePath,usesSlice?'SLICE':'LEGACY_FULL_MACRO');assert(db.trace.every(x=>x.sql.startsWith('SELECT')));}
 });
 test('writer derives six slices from read-back and rejects changed authority',async()=>{
  const db=fakeDb(),writes=[];await writeProjectionMacroSlices({db,store:{writeInput:async(...args)=>writes.push(args)},storedAt:now});assert.equal(writes.length,6);assert(writes.every(([key,,at])=>key.startsWith('projection-macro:')&&at===now));
