@@ -1146,5 +1146,23 @@
       "provisionalIapdSource": "https://adviserinfo.sec.gov/firm/summary/337985",
       "formulaAdmission": "NOT_YET_QUALIFIED"
     }
-  ]
+  ],
+  "providerLevelDocumentaryFeasibility": {
+    "source": "GetMarketHistory",
+    "officialFreePricing": "https://getmarkethistory.com/",
+    "officialCoverage": "https://getmarkethistory.com/docs/coverage",
+    "officialDataLicense": "https://getmarkethistory.com/docs/terms",
+    "officialQuickstart": "https://getmarkethistory.com/docs/quickstart",
+    "freeHourlyBarsPerMonth": 250000,
+    "theoreticalSymbolsIncludingSPY": 64,
+    "theoreticalSessions": 252,
+    "theoreticalRegularSessionHourlyBars": 7,
+    "theoreticalMinimumBars": 112896,
+    "theoreticalUnderFreeAllowance": true,
+    "individualSymbolCoverage": "PENDING",
+    "commercialDerivedSignalsRights": "CONDITIONAL_LICENSE_SUBJECT_TO_TERMS",
+    "freshness": "48H_DELAY",
+    "conclusion": "CAPACITY_PLAUSIBLE_NOT_TICKER_SPECIFIC_GATE2_O",
+    "actualBarRequests": 0
+  }
 }
