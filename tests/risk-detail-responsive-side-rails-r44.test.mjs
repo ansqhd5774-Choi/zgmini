@@ -26,19 +26,17 @@ test("eight risk routes remain mounted through header independently of dashboard
  for(const path of paths)assert.ok(catalog.includes("href:'"+path+"'"));
  assert.match(home,/<DashboardSideRails accountFavorites=/);
  assert.doesNotMatch(home,/<CommunityChat enabled\/>/);
- assert.match(chat,/if\(!enabled\)return null;/);
+ assert.match(read("components/dashboard-side-rails.tsx"),/<CommunityChat enabled sidebarMode sidebarOpen=\{rightVisible\}/);
 });
 
-test("narrow screen has thumb-reachable independent ON-OFF buttons, opposite slide directions and escape",()=>{
- assert.match(rails,/setLeftOpen\(v=>!v\);setRightOpen\(false\)/);
- assert.match(rails,/setRightOpen\(v=>!v\);setLeftOpen\(false\)/);
+test("risk detail has one thumb-reachable navigation toggle, a translucent panel and Escape dismissal",()=>{
+ assert.match(rails,/setLeftOpen\(v=>!v\)/);
  assert.match(rails,/aria-expanded=\{leftOpen\}/);
- assert.match(rails,/aria-expanded=\{rightOpen\}/);
  assert.match(rails,/e\.key!=="Escape"/);
  assert.match(rails,/zg-risk-side-veil/);
+ assert.match(rails,/!wide&&leftOpen/);
  assert.match(css,/@media\(max-width:1649px\)/);
  assert.match(css,/\.zg-risk-side-left\{left:10px;.*transform:translateX\(calc\(-100% - 12px\)\)/);
- assert.match(css,/\.zg-risk-side-right\{right:10px;.*transform:translateX\(calc\(100% \+ 12px\)\)/);
  assert.match(css,/\.zg-risk-side-rail\[data-open="true"\]\{visibility:visible;opacity:1;transform:translateX\(0\)/);
  assert.match(css,/backdrop-filter:blur\(9px\)/);
  assert.match(css,/bottom:max\(16px,env\(safe-area-inset-bottom\)\)/);
@@ -46,13 +44,20 @@ test("narrow screen has thumb-reachable independent ON-OFF buttons, opposite sli
  assert.match(css,/prefers-reduced-motion:reduce/);
 });
 
-test("desktop side rails keep full content visible and embed the existing public chat, not an invented AI API",()=>{
- assert.match(css,/@media\(min-width:1650px\)/);
- assert.match(css,/\.zg-risk-side-rails-root\+main\{width:calc\(100% - 670px\)/);
- assert.match(rails,/<CommunityChat enabled sidebarMode sidebarOpen=\{rightVisible\}/);
- assert.match(chat,/sidebarMode\?sidebarOpen:internalOpen/);
- assert.match(chat,/!sidebarMode&&<button type="button" className="zg-community-toggle"/);
+test("only the dashboard mounts public chat; risk detail neither mounts nor imports a chat client",()=>{
+ const dashboardRails=read("components/dashboard-side-rails.tsx");
+ assert.match(dashboardRails,/<CommunityChat enabled sidebarMode sidebarOpen=\{rightVisible\}/);
  assert.match(chat,/fetch\("\/api\/community\/messages"/);
  assert.match(chat,/turnstileToken:captchaToken/);
+ assert.match(rails,/className="zg-risk-side-rails-root zg-risk-only-nav"/);
+ assert.doesNotMatch(rails,/CommunityChat|community-chat|MessageCircle|zg-risk-side-right|rightOpen|setRightOpen|zg-community-chat-panel/);
+ assert.doesNotMatch(header,/CommunityChat|community-chat/);
  assert.doesNotMatch(rails,/fetch\(/);
+});
+
+test("wide risk detail content expands into space formerly reserved for chat without changing dashboard geometry",()=>{
+ assert.match(css,/@media\(min-width:1650px\)/);
+ assert.match(css,/\.zg-risk-side-rails-root\.zg-risk-only-nav\+main\{width:calc\(100% - 320px\);max-width:1500px/);
+ assert.match(css,/margin-right:24px;transform:none/);
+ assert.match(read("components/dashboard-side-rails.css"),/width:calc\(100% - 670px\)/);
 });
