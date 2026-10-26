@@ -91,7 +91,7 @@ test('all three search guides emit Article structured data with truthful publica
   assert.match(fear,/dateModified="2026-10-25"/);
   assert.match(cpi,/const path='\/guides\/cpi-pce-release\/'/);
   assert.match(cpi,/미국 CPI·PCE 발표 일정·한국시간 \| 물가지수 발표일·발표시간/);
-  assert.match(cpi,/dateModified="2026-10-25"/);
+  assert.match(cpi,/dateModified="2026-10-26"/);
   assert.match(fomc,/const path='\/guides\/fomc\/'/);
   assert.match(fomc,/연준 금리 발표일·발표시간 \| FOMC 일정·한국시간/);
   assert.match(fomc,/dateModified="2026-10-25"/);
