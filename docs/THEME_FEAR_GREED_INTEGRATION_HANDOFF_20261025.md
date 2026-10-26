@@ -359,3 +359,10 @@
 - GetMarketHistory 2026-10-19 Terms §5는 정상 계정 상태·비가역 파생 지표/차트 제공을 조건부 허용하지만 원가격 bulk 재배포를 금지. 발행사 UFO/NASA/WARP/ROKT AUM·holdings 사이트 각각의 자동 수집/상업 파생 권리를 이 Terms가 허가하지는 않음. rightsVerified=false 유지.
 - 문서 `docs/THEME_SPACE_R25_PURITY_RIGHTS_GATE_20261026.md`, 새 코드 `scripts/pc-writer/theme-space-satellite-r25-purity-alternatives.mjs`, 테스트 `tests/theme-space-satellite-r25-purity-alternatives.test.mjs`; 기존 R2~R25 관련 테스트 **10/10 PASS**. 신규 provider/ETF price GET 0, 원본/D1/공개/scheduler/main 변경 0. PR #714 Draft 유지.
 - **다음 승인 Gate:** ROKT 우주·심해 혼합 포함 여부, 합법적인 정기 AUM 출처와 시간별 AUM 이력/날짜 정책, 실제 운영 권리와 공개 별도 승인. 선정/rights 미확정 전 게시 금지.
+
+## 2026-10-26 R26 — 사용자 우주·위성 4종 최종 구성 승인, ETF 수 상한 없음
+
+- 사용자 지시 "4개로해 뭐10개로해도 상관없어": 현재 실측 자격 확인된 UFO/NASA/WARP/ROKT **4종을 구성으로 확정**, 임의 ETF 수 상한 금지. ROKT 우주+심해 혼합 성격 공시 필요. ETF 수 확대는 실제 테마 적합·R2 점수·AUM·권리 확인 조건이며 결측 생성/재수집 금지.
+- scripts/pc-writer/theme-space-satellite-r26-approved-roster.json에 승인 구성/혼합 공시/현재 5개 제외/무상한 선언. theme-space-satellite-r26-roster-audit.mjs는 R21 PC 3 SHA를 통과한 R23 실제 4종 정보와 정책을 read-only 검증. 2026-10-23 실측 개별점수+혼합 10/22·10/23 AUM의 **비공개 44.65075** 재현. 10개 입력 synthetic 회귀 포함 **Node 11/11 PASS**.
+- R25의 ROKT 제외 3종 점수 **44.70775**는 비교 예시로만 보존, 현재 선택 상태는 **finalBasketSelected=true**; rightsVerified=false, publicationAuthorized=false, historical252DayAumVerified=false 유지. ETF Provider 호출/실가격/원본/D1/공개/스케줄러/main 변경 0. 이전 R25 CI #40269330297 **success**, PR #714 Draft 보존.
+- 후속: 무료·상업적 파생 저장/공개 가능 AUM 입력 경로의 지속성 및 과거 252일 적법한 날짜별 가중 증거, 가격 공급자 사용 조건 점검 후 **별도 공개 승인을 요청**. 불가 ETF 반복 수집 금지.

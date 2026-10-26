@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "theme": "space-satellite",
+  "selectionApprovedOn": "2026-10-26",
+  "selectionPolicy": "ALL_CURRENTLY_ELIGIBLE_NO_FIXED_ETF_COUNT",
+  "approvedCurrentSymbols": ["UFO", "NASA", "WARP", "ROKT"],
+  "mixedThemeDisclosures": {
+    "ROKT": "ROKT는 우주·심해 탐사를 함께 추종하는 혼합 ETF입니다."
+  },
+  "excludedFromCurrentSelectionNoRetry": ["MARS", "ARKX", "ORBX", "DIPR", "WSPC"],
+  "maximumEtfCount": null,
+  "futureEligibleEtfsMayBeAdded": true,
+  "futureEtfsRequireRealPriceScoreAumAndThemeFit": true,
+  "approvedThreePlusWeighting": "NORMALIZED_DATED_OFFICIAL_AUM",
+  "selectionApproved": true,
+  "rightsVerified": false,
+  "publicationAuthorized": false,
+  "historical252DayAumVerified": false
+}

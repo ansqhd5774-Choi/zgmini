@@ -50,3 +50,10 @@ ROKT의 심해·해양 노출은 실제 펀드 목적에 포함됨. 다만 `ROKT
 - **NOT AUTHORIZED:** `finalBasketSelected=false`, `rightsVerified=false`, `publicationAuthorized=false`; D1·Cloudflare·API·스케줄러·PC 원본 변경 금지. 현재 수치는 **공개 시장 최신 점수 아님**.
 
 발행사 1차 출처는 위 표의 직접 링크, 시장 데이터 권리 해석은 GetMarketHistory 공식 약관에 한정한다. 위험 배경: Reuters 2026-05-22, https://www.reuters.com/legal/transactional/space-etfs-booming-anticipation-spacex-ipo-2026-05-22/ (ETF 보유중복 일반론; 특정 실측 비중의 근거 아님).
+
+## 5. R26 후속 사용자 승인 — 현재 4종 유지, ETF 수 상한 없음
+
+- 사용자 2026-10-26 명시 지시: **"4개로해 뭐10개로해도 상관없어"**. 이번 확인된 현재 구성은 **UFO/NASA/WARP/ROKT 4종으로 확정**한다. **ETF 4개를 상한으로 규정하지 않음**. 신규 ETF가 5~10개 이상이어도 테마 적합·실제 개별점수·공식 AUM·권리 요건을 충족하면 동일한 3종 이상 상대 AUM 함수로 다룰 수 있다.
+- ROKT는 승인된 4종에 **포함**하므로 바로 전 R25의 가상 3종 비교는 **대체된 선택지가 아닌 참고자료**다. ROKT의 공식 `우주+심해` 혼합 성격을 공시·설명에서 숨기지 않는다.
+- `scripts/pc-writer/theme-space-satellite-r26-approved-roster.json`에 **현재 승인 구성·제외된 5종 재수집 금지·상한 없음·혼합테마 설명**을 기록한다. `theme-space-satellite-r26-roster-audit.mjs`가 4종 실제 R21 provenance·현재 R23 AUM 비중과 점수를 재검산한다. 숫자 4는 **현재 증거의 수**일 뿐 계산기 최대 지원 ETF 수가 아님.
+- 이로써 이 문서 4절의 **사용자 구성 선택 PENDING은 해결**되었다. 그러나 `rightsVerified=false`, `publicationAuthorized=false`, `historical252DayAumVerified=false`는 그대로다. **기존 테마/메인·D1·Cloudflare·스케줄러 자동 변경 금지**. R26 실측 비공개 점수 **44.65075**(마지막 가격일 2026-10-23), 실제 현재 공개값 아님.
