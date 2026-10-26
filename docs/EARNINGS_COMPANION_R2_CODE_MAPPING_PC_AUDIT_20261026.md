@@ -3,7 +3,7 @@
 - 날짜: 2026-10-26 (KST)
 - 브랜치: `codex/earnings-api-site-integration-plan-r1-20261026` (기존 브랜치 유지)
 - 대상: `/earnings-recession/`의 정보 제공용 확장형 지표(C)
-- 상태: `CMD_READY / WINDOWS_RESULT_PENDING / NO_PUBLICATION`
+- 상태: `R2_QFR_MTIS_SERIES_IDENTIFIED / PC_FRESHNESS_PENDING / NO_PUBLICATION`
 - 상위 계획: `docs/EARNINGS_RECESSION_COMPANION_API_SITE_INTEGRATION_PLAN_R1_20261026.md`
 
 ## 1. 기존 실측을 재사용해 확정한 범위
@@ -60,3 +60,83 @@
 - Census API 이용조건: https://www.census.gov/data/developers/about/terms-of-service.html
 
 **변경 범위: 이 진단 문서 + 독립 CMD/Node 읽기 전용 검사기만 브랜치에 추가. 운영 산식·기존 공개 점수·D1·PC DB·예약작업·메인 브랜치·사이트는 그대로 유지.**
+
+## 4. 실제 Windows 로그 실측 결과 — 2026-10-26 UTC 14:09:09
+
+사용자가 직접 실행한 `EARNINGS_R2_CODE_PC_AUDIT_RESULT_20261026-140909Z.txt`의 결과다.
+
+| 검사 | 실제 결과 | 판정 |
+|---|---|---|
+| PC 운영 구성 | `source=36266beb3ab942979d9aca7dcdd8af16fb27825b`, `collectionTarget=pc`, `enabled=true` | **O** (이 SHA가 최신 main인지 별도 비교) |
+| PC 수집 | UTC 14:00:13, `earnings`, `COMPLETE` | **O** (개별 새 지표 저장과 구분) |
+| PC 게시 실행 | UTC 14:03:58, `VERIFIED` | **O** (기존 공개 계약, 새 C 지표 게시와 구분) |
+| PC cycle | UTC 14:06:45, `COMPLETE` | **O** |
+| `core.sqlite` | `OPENED_READ_ONLY`, Growth R2 3테이블·Earnings E1 4테이블·공개 snapshot 1테이블 모두 데이터 존재 | **O** (구체 관측일은 미확인) |
+| `history.sqlite` | `OPENED_READ_ONLY` | **O** |
+| Census QFR | HTTP 200, 2026년 9,568행, 최신 4,784행 | **O** |
+| QFR 슬롯명 | `Q22026`, 원시 `time_slot_date=2026-02-01` | **O** (공식 2026 **2분기**로 표시) |
+| QFR 코드 | `data_type_code` 92종, `category_code` 52종 | **O** (의미는 공식 데이터 사전으로 아래 확정) |
+| Census MTIS | HTTP 200, 2026년 512행, 8월 최신 64행 | **O** |
+| MTIS 분류 | `MNFCTR`, `RETAIL`, `TOTBUS`, `WHLSLR` | **O** |
+| 8월 총 사업체 재고/매출 비율 | `data_type_code=IR`, `category_code=TOTBUS`, `seasonally_adj=yes`, `cell_value=1.33` | **O** (공식 보도와 일치) |
+| API 총 호출 수 | **2회**, DB/D1 쓰기·스케줄러/산식 변경 없음 | **PASS_SCOPE** |
+
+단지 **동일 숫자**라는 이유로 `IR/RETAIL/no=1.33`을 채택하지 않는다. 정확한 행은 `IR/TOTBUS/yes=1.33`이다.
+
+## 5. Census 공식 다운로드 자료사전으로 지표 코드와 단위 확정
+
+공식 Census **Business and Industry: Download Data Sets**에 안내된 다음 경로에서 공개 ZIP을 읽기 전용으로 내려받아 포함된 `README`와 CSV 메타데이터를 대조했다. **데이터 다운로드는 검증 환경 내부에서만 수행**했고 PC 원자료·D1·GitHub 저장소에 ZIP 본문을 저장하지 않았다.
+
+- QFR: `https://www.census.gov/econ_getzippedfile/?programCode=QFR` → `QFR-mf.csv` `DATA TYPES` 섹션.
+- MTIS: `https://www.census.gov/econ_getzippedfile/?programCode=MTIS` → `MTIS-mf.csv` `CATEGORIES`, `DATA TYPES` 섹션.
+- 공식 제공 위치/갱신일: `https://www.census.gov/econ_datasets/` (QFR 2026-09-08, MTIS 2026-10-15).
+
+### QFR 데이터 항목 — 실제 `data_type_code` 의미
+
+| 코드 | 공식 의미 | 원단위 | 정보성 지표 활용 후보 |
+|---|---|---|---|
+| `101` | Net Sales, Receipts, and Operating Revenues | `MLN$` | 매출, 매출 증감률 |
+| `104` | Income (Loss) from Operations | `MLN$` | 영업손익, 영업이익률 |
+| `105` | Interest Expense | `MLN$` | 이자 비용 부담 |
+| `111` | Income (Loss) Before Income Taxes | `MLN$` | 세전 손익 |
+| `115` | Income (Loss) After Income Taxes | `MLN$` | 세후 손익, 순이익률 |
+| `214` | Inventories | `MLN$` | 재고 수준(분기 재무 기준) |
+| `223` | Total Assets | `MLN$` | 자산 규모 / 자산수익성 지표 후보 |
+| `TCA` | Total Current Assets | `MLN$` | 유동자산 |
+| `TCL` | Total Current Liabilities | `MLN$` | 유동부채 |
+| `TL` | Total Liabilities | `MLN$` | 부채 부담 |
+
+QFR의 92개 `data_type_code`는 **재무 원항목 46개 + 그 항목에 상응하는 `E_...` 표준오차/상대오차 46개**다. `E_115` 같은 불확실성 척도를 세후 이익의 또 다른 1개 원항목으로 집계하거나 산업에 중복 가산해서는 안 된다.
+
+QFR는 52개 산업 코드가 계층을 이룬다(`MFG` 전체 제조업과 여러 제조업 하위 산업 등). 따라서 52개를 독립적 산업 수라고 간주해 **부진 산업 비중을 분모 52로 계산하면 중복**이 된다. 향후 파생 breadth는 상위/하위 산업 계층과 겹침 여부를 따로 검증해야 한다. `101`, `104`, `115`의 마진 산출은 **동일 산업·분기·조정 상태·단위**를 조인하여야 하며, 손실·음수·분모 0 등을 구분한다.
+
+Windows QFR API 표본의 조정표시가 `no`임을 확인했다. Census 2026 Q2 보도 제목의 **계절조정(SA)** 값과 **미조정(NSA)** API 행을 숫자 일치 검사 없이 동일 자료라고 표현하지 않는다.
+
+### MTIS 데이터 항목 — 실제 `data_type_code` 의미
+
+| 코드 | 공식 의미 | 단위 |
+|---|---|---|
+| `SM` | Sales - Monthly | `MLN$` |
+| `IM` | Inventories - Monthly | `MLN$` |
+| `IR` | Inventories/Sales Ratio | `RATIO` |
+| `MPCSM` | Sales - Monthly Percent Change | `PCT` |
+| `MPCIM` | Inventories - Monthly Percent Change | `PCT` |
+
+오차코드 `E_IR`은 **재고/매출 비율의 표준오차**이고 `IR` 값 자체가 아니다. `TOTBUS`는 자료사전상 **Total Business**, `yes`는 계절조정 자료이므로 `IR/TOTBUS/yes`가 원하는 정식 총계의 정확한 Selector다.
+
+공식 `README`가 요구하는 사항: 원래 통계의 **표시 정밀도를 임의로 바꾸지 말 것**, **출처 U.S. Census Bureau와 원천 프로그램 QFR/MTIS의 명칭을 표시할 것**. API 자체의 비보증 고지는 별도로 보존한다. 상업적 저장/파생 공개 최종 Gate는 여전히 소스별로 판정해야 한다.
+
+## 6. 갱신한 R2 게이트
+
+| 게이트 | 상태 | 이유 |
+|---|---|---|
+| QFR 실제 분기 | **O** | `Q22026` 슬롯명 + 공식 2분기 발표 |
+| QFR 매출/영업손익/세후손익 코드와 단위 | **O** | 공식 ZIP 사전 + API에 해당 코드 2026Q2 행 존재 |
+| MTIS 총사업체 재고/매출 비율 | **O** | `IR/TOTBUS/yes=1.33` + 공식 원단위/분류 + 8월 발표 |
+| QFR 전년 대비 성장·이익률의 시차/이상값·수정본 정책 | **PENDING** | 2025 동기값·공시 리비전·유효 분모 확인 전 |
+| 기존 PC Growth/Earnings 테이블 | **O_EXISTS** | 실제 DB 테이블과 데이터 존재 |
+| 기존 PC 각 지표의 최신 관측일·중복값 | **PENDING** | 첫 검사에서 원장 값을 읽지 않도록 제한됨 |
+| 라이선스·권리 최종 | **CONDITIONAL** | 공식 기관 고지 준수·제3자 자료 예외·상업 저장/파생 공개 범위 최종 검토 |
+| R3 실제 저장/가공 및 R4–R6 사이트 작업 | **미실행** | 계획 순서대로 선행 Gate 통과·별도 승인 필요 |
+
+**다음: 새 API 재호출 없이 운영 PC의 이미 존재하는 Growth/Earnings 테이블에서 정확한 최근 관측기간·지표 식별자·원천/가용성만 최소 읽기 전용 검증하고, PC 재사용/새 수집 필요 행을 구분한다.**
