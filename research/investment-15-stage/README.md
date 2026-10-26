@@ -30,6 +30,7 @@
 22. `STAGE04_SPECIALIST_OLLAMA_SPEED_R23_20261026.md`: **R23 사용자 정정**. 전문 성장률 매체(Fortune Business Insights)의 원자력 시장 **짧은 CAGR 구절만** Ollama에 전달하는 Windows CMD 시험기를 개발. 매체 조회·Ollama 읽기·총 시간을 20초 안에서 각각 기록; 실제 Windows Ollama 실측은 CMD 실행 대기. 운영 변경 없음.
 23. `STAGE04_OLLAMA_MODEL_ONLY_R24_20261026.md`: **R24 403 실패 분리**. 사용자 PC R23 결과 `403/2,019ms/Ollama 0회`를 확인. 전문매체 실패와 무관하게 로컬 Ollama에 짧은 **속도 시험 예문**을 보내 처리 시간을 재는 독립 CMD 제공. 이 시험은 실제 최신 성장률 자료가 아니다.
 24. `STAGE04_INDEPENDENT_KEYWORD_SPEED_R25_20261026.md`: **R25 사용자 추가 요청**. 원자력·로봇·AI 반도체·바이오·데이터센터 각각 개별 Bing RSS 전문매체 검색→선택 보고서 짧은 CAGR 문장→PC Ollama 처리 시간을 나누어 측정하는 Windows CMD 패키지. 실제 5개 검색 실측은 사용자 CMD 결과 대기.
+25. `STAGE04_KEYWORD_SEARCH_R26_DIAGNOSTICS_20261026.md`: **R25 PC 실측 결과 5/5 매체 보고서 미매칭, 검색 합계 2.720초·Ollama 0회**. R26은 검색어 제한 완화 및 RSS 후보 개수/매체 링크/제목 매칭 진단을 추가한 별도 CMD 실행기. 운영/산식 미변경.
 
 ## 작업 원칙
 
