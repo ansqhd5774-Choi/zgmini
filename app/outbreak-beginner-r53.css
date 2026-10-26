@@ -45,7 +45,7 @@
 .ob-events .ob53-chart-heading{display:flex;justify-content:space-between;align-items:center;gap:8px}
 .ob-events .ob53-chart-heading h3{font-size:15px;margin:0;display:flex;align-items:center;gap:6px}
 .ob-events .ob53-chart-heading>span{font-size:11px;color:#a3bdd0;white-space:nowrap}
-.ob-events .ob53-trend-svg{width:100%;height:auto;min-height:180px;display:block;margin-top:6px}
+.ob-events .ob53-market-chart{width:100%;height:220px;min-width:0;margin-top:6px}
 .ob-events .ob53-chart-footnote{margin:2px 0 0;font-size:10px;color:#99b2c3;line-height:1.4}
 .ob-events .ob53-no-trend{min-height:190px;display:grid;place-items:center;color:#9fb8c7;text-align:center;font-size:12px;line-height:1.55;padding:20px}
 .ob-events .ob53-beginner-stack{display:flex;flex-direction:column;gap:9px;min-width:0}
@@ -103,7 +103,7 @@
  .ob-events .ob53-current strong{font-size:30px}
  .ob-events .ob53-explain p{font-size:12px}
  .ob-events .ob53-beginner-stack{display:flex}
- .ob-events .ob53-trend-svg{min-height:160px}
+ .ob-events .ob53-market-chart{height:180px}
  .ob-events .ob53-scale-labels>span{font-size:9px}
  .ob-events .ob53-asof strong{font-size:14px}
  .ob-events .ob53-chart-heading h3{font-size:14px}
