@@ -50,7 +50,7 @@ test('empty macro cannot replace stored source, create slices or refresh score',
  const {store,db,sqlite}=fixture();const old=fullMacro();
  await store.writeInput('macro',old,now-1);await store.writeScore(score,now-1);
  const out=await runMarketOperationalRefresh({env:{DB:db},store,job:'macro',now,collectors:{macro:async()=>({series:{},providerSummary:{fred:{requested:42,ready:0,failed:[{status:'REQUEST_FAILED'}]}}})},calculate:()=>{throw Error('MUST_NOT_CALCULATE')}});
- assert.deepEqual(out,{status:'SOURCE_FAILED',job:'macro',reason:'MACRO_NO_READY_SERIES'});
+ assert.deepEqual(out,{status:'SOURCE_FAILED',job:'macro',reason:'MACRO_NO_READY_SERIES',sourceDiagnostic:{provider:'FRED',requested:42,ready:0,missing:Object.keys(DIAGNOSTIC_FRED_SERIES),failed:[]}});
  assert.deepEqual((await store.readInput('macro')).body,old);assert.equal((await store.readScore()).storedAt,now-1);
  assert.equal(sqlite.prepare("SELECT count(*) n FROM market_input_batches_v1 WHERE batch_key LIKE 'projection-macro:%'").get().n,0);sqlite.close();
 });

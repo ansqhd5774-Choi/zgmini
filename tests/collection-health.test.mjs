@@ -38,6 +38,7 @@ test('eight day success survives later failure and expires at the boundary',asyn
  const lastSuccessAt=now-7*24*60*60*1000;
  const body=collectionHealthSummary([{id:'a',checkedAt:now-1,outcome:'failure',lastSuccessAt}],now);
  assert.equal(body.normal,1);assert.equal(body.failed,0);assert.equal(body.recentFailures,1);assert.equal(body.windowHours,192);
+ assert.equal(body.status,'partial');assert.equal(body.latestFailed,1);
  const db={prepare(){return {bind(){return {first:async()=>({body:JSON.stringify(body)})}}}}};
  assert.equal((await (await readCollectionHealth(db,now+1)).json()).normal,1);
  assert.equal(collectionHealthSummary(body.items,lastSuccessAt+COLLECTION_WINDOW_MS).failed,1);

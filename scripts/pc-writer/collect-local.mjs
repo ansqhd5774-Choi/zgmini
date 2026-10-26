@@ -6,6 +6,8 @@ import {loadLocalProviders,installLocalRuntime} from './local-env.mjs';
 import {save} from './d1.mjs';
 import {createQuotaFetch} from './quota-fetch.mjs';
 import {recordCollectionChecks} from './collection-checks.mjs';
+import {appendCollectionEvent,appendProviderFailure} from './collection-events.mjs';
+import {safeMacroDiagnostic} from '../../worker/macro-result-contract-r61.mjs';
 import {alertCollectionReport} from './local-data-alert.mjs';
 import {collectConsumptionR5} from './consumption-r5.mjs';
 import {overdueRateJob} from './rate-refresh-priority.mjs';
@@ -18,12 +20,14 @@ export async function collectLocal(base,{lane='core',importOnly=false,job=null}=
  const env={...loadLocalProviders(base),DB:core,DB_CORE:core,DB_HISTORY:history,ZGMINI_COMPUTE_TARGET:'pc'};
  const hooks=installLocalRuntime(env);
  const originalFetch=globalThis.fetch,providers={};
+ let providerDiagnosticWriteFailures=0;
+ const recordProviderFailure=(input,event)=>{try{appendProviderFailure(base,input,event);}catch{providerDiagnosticWriteFailures++;}};
  const quota=createQuotaFetch({base,originalFetch});
  globalThis.fetch=async(input,init)=>{
   const host=new URL(typeof input==='string'||input instanceof URL?input:input.url).hostname;
   const item=providers[host]??={requests:0,statuses:{}};item.requests++;
-  try{const response=await quota.fetch(input,init);item.statuses[response.status]=(item.statuses[response.status]??0)+1;return response;}
-  catch(error){const status=error?.code??'NETWORK_ERROR';item.statuses[status]=(item.statuses[status]??0)+1;if(error?.code==='PROVIDER_QUOTA_GUARD')throw error;throw Error('LOCAL_PROVIDER_NETWORK_ERROR');}
+  try{const response=await quota.fetch(input,init);item.statuses[response.status]=(item.statuses[response.status]??0)+1;if(!response.ok)recordProviderFailure(input,{phase:'HTTP',httpStatus:response.status});return response;}
+  catch(error){recordProviderFailure(input,{phase:'FETCH',error});const status=error?.code??'NETWORK_ERROR';item.statuses[status]=(item.statuses[status]??0)+1;if(error?.code==='PROVIDER_QUOTA_GUARD')throw error;throw Error('LOCAL_PROVIDER_NETWORK_ERROR');}
  };
  try{
   const {runPublicFeeds}=await import('../../worker/public-feed-collectors.ts');
@@ -55,6 +59,9 @@ export async function collectLocal(base,{lane='core',importOnly=false,job=null}=
   for(const key of ['phase','reason','sourceStatus'])if(typeof result?.[key]==='string'&&/^[A-Za-z0-9_.:-]{1,120}$/.test(result[key]))report[key]=result[key];
   report.releaseCalendar=releaseCalendar;
   if(result?.sourceDiagnostic?.provider==='BLS')report.sourceDiagnostic=result.sourceDiagnostic;
+  if(result?.sourceDiagnostic?.provider==='FRED')report.sourceDiagnostic=safeMacroDiagnostic(result.sourceDiagnostic);
+  report.providerDiagnosticWriteFailures=providerDiagnosticWriteFailures;
+  appendCollectionEvent(base,report);
   save(path.join(base,'local-collection-last-run.json'),report);
   recordCollectionChecks(base,report);
   try{alertCollectionReport(base,report);}catch{console.warn('LOCAL_DATA_ALERT_RECORD_FAILED');}

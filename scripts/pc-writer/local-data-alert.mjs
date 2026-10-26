@@ -13,7 +13,9 @@ export function launchLocalWarning(base){
  if(prior?.pid){try{process.kill(prior.pid,0);return {status:'WINDOW_ALREADY_OPEN'};}catch(error){if(error.code!=='ESRCH')return {status:'WINDOW_STATE_UNKNOWN'};}}
  const file=path.join(base,'data-alert-window.vbs');
  const detail=path.join(base,'data-alert-status.txt').replaceAll('"','""');
- const script='MsgBox "ZGMINI 자료 수집 또는 게시 오류가 감지되었습니다." & vbCrLf & "기존 정상 자료의 유효기간은 연장하지 않습니다." & vbCrLf & "상세 기록: '+detail+'", 48, "ZGMINI 데이터 경고"\r\n';
+ const active=Object.values(read(path.join(base,'data-alert-state.json'),{active:{}}).active??{});
+ const summary=active.map(x=>`${x.label}: ${x.detail??'실패 감지'}`).join(' / ').replace(/[\r\n]/g,' ').slice(0,600).replaceAll('"','""');
+ const script='MsgBox "ZGMINI 자료 수집 또는 게시 오류가 감지되었습니다." & vbCrLf & "'+summary+'" & vbCrLf & "기존 정상 자료의 유효기간은 연장하지 않습니다." & vbCrLf & "상세 기록: '+detail+'", 48, "ZGMINI 데이터 경고"\r\n';
  fs.writeFileSync(file,Buffer.concat([Buffer.from([255,254]),Buffer.from(script,'utf16le')]));
  const child=spawn(path.join(process.env.SystemRoot??'C:\\Windows','System32','wscript.exe'),['//nologo',file],{windowsHide:true,detached:true,stdio:'ignore'});
  child.on('error',()=>{try{save(path.join(base,'data-alert-delivery.json'),{status:'WINDOW_FAILED',at:Date.now()});}catch{}});
@@ -28,7 +30,9 @@ export function updateDataAlert(base,{key,failed,now=Date.now(),sourceDiagnostic
  const previous=state.active[key];
  let changed=false;
  if(failed){
-  const detail=sourceDiagnostic?.provider==='BLS'&&Number.isInteger(sourceDiagnostic.attempts)
+  const detail=sourceDiagnostic?.provider==='FRED'
+   ?`FRED 필수 자료 ${Number.isSafeInteger(sourceDiagnostic.ready)?sourceDiagnostic.ready:'?'}/${Number.isSafeInteger(sourceDiagnostic.requested)?sourceDiagnostic.requested:'?'} · 누락 ${(sourceDiagnostic.missing??[]).filter(x=>/^[A-Z0-9]{1,32}$/.test(x)).join(', ')||'상세 기록 확인'}`
+   :sourceDiagnostic?.provider==='BLS'&&Number.isInteger(sourceDiagnostic.attempts)
    ?`BLS 응답 ${Number.isInteger(sourceDiagnostic.httpStatus)?sourceDiagnostic.httpStatus:'통신 실패'} · ${Math.min(2,Math.max(1,sourceDiagnostic.attempts))}회 시도`:null;
   state.active[key]={since:previous?.since??now,lastSeen:now,label:names[key],...(detail?{detail}:{})};
   if(!previous){state.events.push({at:now,key,status:'FAILED_BLOCKED'});changed=true;}
