@@ -31,6 +31,7 @@
 23. `STAGE04_OLLAMA_MODEL_ONLY_R24_20261026.md`: **R24 403 실패 분리**. 사용자 PC R23 결과 `403/2,019ms/Ollama 0회`를 확인. 전문매체 실패와 무관하게 로컬 Ollama에 짧은 **속도 시험 예문**을 보내 처리 시간을 재는 독립 CMD 제공. 이 시험은 실제 최신 성장률 자료가 아니다.
 24. `STAGE04_INDEPENDENT_KEYWORD_SPEED_R25_20261026.md`: **R25 사용자 추가 요청**. 원자력·로봇·AI 반도체·바이오·데이터센터 각각 개별 Bing RSS 전문매체 검색→선택 보고서 짧은 CAGR 문장→PC Ollama 처리 시간을 나누어 측정하는 Windows CMD 패키지. 실제 5개 검색 실측은 사용자 CMD 결과 대기.
 25. `STAGE04_KEYWORD_SEARCH_R26_DIAGNOSTICS_20261026.md`: **R25 PC 실측 결과 5/5 매체 보고서 미매칭, 검색 합계 2.720초·Ollama 0회**. R26은 검색어 제한 완화 및 RSS 후보 개수/매체 링크/제목 매칭 진단을 추가한 별도 CMD 실행기. 운영/산식 미변경.
+26. `STAGE04_OFFICIAL_REPORT_SEARCH_R27_20261026.md`: **R26 Bing RSS 검색 결과가 전문매체와 무관함을 확인**. 매체 공식 `/global-market-reports?search=` 경로로 전환해 5개 키워드의 보고서 검색·본문 CAGR 추출을 실제 개발 네트워크에서 5/5 검증. PC Ollama 실제 시간은 R27 CMD 결과 대기, 운영 연결 없음.
 
 ## 작업 원칙
 
