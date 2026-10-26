@@ -29,6 +29,9 @@ test('fallback nested daily bar schema and no invented prices',()=>{
  assert.equal(c[0].rows.length,2);
  assert.equal(c[0].key,'source.bars.days');
  assert.equal(dateFrom({timestamp:'2025-01-02 15:00:00'}),null);
+ assert.deepEqual(dateFrom({date:'2025-01-02',timestamp:'2025-01-02T00:00:00Z'}),
+  {date:'2025-01-02',hour:null,dateField:'date'});
+ assert.equal(extractArray([{date:'2025-01-02',close:'123.40'},{date:'2025-01-03',close:'123.50'}],'daily').rows.length,2);
 });
 test('R5 CMD is fully embedded, CRLF ASCII and each line below Win CMD limit',()=>{
  const cmd=fs.readFileSync(cmdPath);
