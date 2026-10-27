@@ -5,7 +5,7 @@ import {domainObservationDelta} from '../lib/market-score/domain-observation-del
 import {compositeDayDelta,compositePeriodDelta} from '../lib/market-score/composite-day-delta.mjs';
 
 // Cloudflare Git Integration deployment marker: plain-language macro labels R1
-import {lazy,Suspense,memo,useEffect,useMemo,useRef,useState,type ReactNode,type CSSProperties} from 'react';
+import {lazy,Suspense,memo,startTransition,useEffect,useMemo,useRef,useState,type ReactNode,type CSSProperties} from 'react';
 import {Activity,ArrowRight,ArrowUpRight,ChevronLeft,ChevronRight,Info,Radar,Coins,Users,Percent,Droplet,Landmark,ShieldCheck,Factory,ShoppingCart,BriefcaseBusiness,ArrowLeftRight,Network,DollarSign} from 'lucide-react';
 import {readProgressiveMarketResponse} from '../lib/market-score/read-progressive-response.mjs';
 import {useStoredIndex} from '../components/use-stored-index';
@@ -137,11 +137,9 @@ const diagnosticSubscores=[
  {name:'공급 충격',href:'/supply-shock/',components:'글로벌 공급망, 미국 석유 공급, 에너지 가격, 공급 주도 물가, 산업생산'}
 ] as const;
 
-export function CompositeMarketSection({items,points,demo,loading}:{items:Summary[];points:number;demo:boolean;loading:boolean}){
+export const CompositeMarketSection=memo(function CompositeMarketSection({demo}:{demo:boolean}){
  const arrows=useScoreArrows();
  const arrowDelta=useScoreArrowDelta();
- void items;
- void points;
  const [expanded,setExpanded]=useState(false);
  const [periodDays,setPeriodDays]=useState(365);
  const [market,setMarket]=useState<MarketScoreResponse|null>(null);
@@ -164,8 +162,7 @@ export function CompositeMarketSection({items,points,demo,loading}:{items:Summar
   else setMarketLoading(true);
   const publish=(body:MarketScoreResponse)=>{
    if(!acceptsStoredUpdate(accepted,body))return false;
-   accepted=body;setMarket(body);
-   setMarketError(null);
+   accepted=body;startTransition(()=>{setMarket(body);setMarketError(null);});
    return true;
   };
   const load=(signal:AbortSignal)=>{
@@ -364,7 +361,7 @@ export function CompositeMarketSection({items,points,demo,loading}:{items:Summar
    </div>
   </div>
  </section>
-}
+});
 
 export type Scenario={id:string;title:string;category:string;probability:number|null;previous?:number;updatedAt?:string;confidence?:string;reason?:string};
 export function ScenarioSection({items=[]}:{items?:Scenario[]}){const ref=useRef<HTMLDivElement>(null),[position,setPosition]=useState({left:false,right:items.length>4});useEffect(()=>{const el=ref.current;if(!el)return;const measure=()=>setPosition({left:el.scrollLeft>4,right:el.scrollLeft+el.clientWidth<el.scrollWidth-4});const observer=new ResizeObserver(measure);observer.observe(el);measure();return()=>observer.disconnect();},[items.length]);const move=(dir:number)=>ref.current?.scrollBy({left:dir*ref.current.clientWidth,behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth'});return <section id="scenarios" className="zg-section"><div className="zg-section-heading"><h2><Radar/>아웃브레이크</h2><p>주요 사건의 가능성을 추적하는 모델</p></div>{!items.length?<div className="zg-scenario-empty"><Radar size={28}/><div><h3>모델 준비 중</h3><p>검증된 시나리오가 연결되면 확률과 산출 근거를 제공합니다. 현재 공개된 확률은 없습니다.</p></div><span>—</span></div>:<div className="zg-carousel-wrap">{position.left&&<button className="zg-prev" aria-label="이전 아웃브레이크" onClick={()=>move(-1)}><ChevronLeft/></button>}<div ref={ref} className="zg-scenario-track" onScroll={()=>{const e=ref.current!;setPosition({left:e.scrollLeft>4,right:e.scrollLeft+e.clientWidth<e.scrollWidth-4})}}>{items.map(s=><article className="zg-scenario-card" key={s.id}><div className="zg-card-heading"><span className="zg-neutral-tag">{s.category}</span>{s.confidence&&<span>{s.confidence}</span>}</div><h3>{s.title}</h3><div className="zg-scenario-number">{s.probability===null?'—':`${s.probability}%`}{s.previous!==undefined&&s.probability!==null&&<small>{s.probability-s.previous>=0?'+':''}{s.probability-s.previous}%p</small>}</div><ScoreScale score={s.probability} label={s.title} color="#FABC42"/><small>기준 {s.updatedAt??'확인 중'}</small>{s.reason&&<DashboardTip label="아웃브레이크 근거">{s.reason}</DashboardTip>}</article>)}</div>{position.right&&<button className="zg-next" aria-label="다음 아웃브레이크" onClick={()=>move(1)}><ChevronRight/></button>}</div>}</section>}

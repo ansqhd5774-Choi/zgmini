@@ -2,12 +2,14 @@
 
 import { useEffect } from "react";
 import { usePathname } from "next/navigation";
+import {afterFirstLoadIdle} from '../lib/noncritical-startup.mjs';
 
 const MEASUREMENT_ID = "G-KE3CHLGQPL";
 type AnalyticsWindow = Window & {
   dataLayer?: unknown[];
   gtag?: (...args: unknown[]) => void;
   zgminiGoogleAnalyticsStarted?: boolean;
+  zgminiGoogleAnalyticsScriptStarted?: boolean;
   zgminiGoogleAnalyticsPath?: string;
 };
 
@@ -27,19 +29,24 @@ export default function GoogleAnalytics() {
         allow_google_signals: false,
         allow_ad_personalization_signals: false,
       });
-      const script = document.createElement("script");
-      script.async = true;
-      script.src = `https://www.googletagmanager.com/gtag/js?id=${MEASUREMENT_ID}`;
-      document.head.appendChild(script);
     }
+    const stop=afterFirstLoadIdle(window,()=>{
+      if(analytics.zgminiGoogleAnalyticsScriptStarted)return;
+      analytics.zgminiGoogleAnalyticsScriptStarted=true;
+      const script=document.createElement("script");
+      script.async=true;script.fetchPriority="low";
+      script.src=`https://www.googletagmanager.com/gtag/js?id=${MEASUREMENT_ID}`;
+      document.head.appendChild(script);
+    });
     // One page view per route change, including client navigation, not hash changes.
-    if (!pathname || analytics.zgminiGoogleAnalyticsPath === pathname) return;
+    if (!pathname || analytics.zgminiGoogleAnalyticsPath === pathname) return stop;
     analytics.zgminiGoogleAnalyticsPath = pathname;
     analytics.gtag!("event", "page_view", {
       page_title: document.title,
       page_location: `${window.location.origin}${pathname}`,
       page_referrer: document.referrer ? document.referrer.split(/[?#]/)[0] : "",
     });
+    return stop;
   }, [pathname]);
   return null;
 }
