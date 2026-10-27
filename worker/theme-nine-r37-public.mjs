@@ -36,6 +36,7 @@ export function eligibleNineR37(record,base,{now=Date.now(),storedAt=now}={}){
   record.version!==THEME_NINE_R37_VERSION||
   record.methodologyVersion!==THEME_NINE_R37_METHOD||
   record.sourceContract!=='THEME_NINE_R32_PRIVATE_STAGE5_SHADOW_V1'||
+  record.sourcePriceMode!=='RAW_UNADJUSTED_1H_NOT_OFFICIAL_CLOSE'||
   record.historicalAumMode!==PUBLIC_DATE_MODE||
   record.rosterSha256!==THEME_NINE_R37_ROSTER_SHA||
   record.benchmark!=='SPY'||record.individualStocksUsed!==0||
