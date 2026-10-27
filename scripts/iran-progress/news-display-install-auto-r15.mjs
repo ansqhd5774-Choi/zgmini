@@ -32,6 +32,13 @@ const newFiles=[
  'scripts/iran-progress/news-display-auto-run-r15.mjs',
 ];
 export const R15_INSTALLED_PATHS=Object.freeze([...existingFiles,...newFiles]);
+export function matchesPreservedR15Module(relative,local,staged){
+ if(hash(local)===hash(staged))return true;
+ // The pre-existing PC source was checked out by Windows Git. Its line endings
+ // may be CRLF; no rewrite is authorized just to make its bytes resemble LF.
+ return relative==='scripts/iran-progress/sources.mjs'
+  &&hash(Buffer.from(local.toString('utf8').replace(/\r\n/g,'\n')))===hash(staged);
+}
 export const R15_HOOK=`// The existing R13 scheduler is reused. New article selection, PC display
 // cache and the D1 news-only key are separate from R3/R5 score calculations.
 // Do not propagate news-publication errors into the score runner exit code.
@@ -115,7 +122,7 @@ export function preflightR15({stage,newsHome=process.env.ZGMINI_IRAN_HOME??path.
   const source=safeFile(from),exists=fs.existsSync(to);
   const shouldExist=existingFiles.includes(relative);
   if(exists!==shouldExist)throw Error('R15_MODULE_INSTALL_STATE_CHANGED:'+path.basename(relative));
-  if(exists&&hash(safeFile(to))!==hash(source))
+  if(exists&&!matchesPreservedR15Module(relative,safeFile(to),source))
    throw Error('R15_EXISTING_MODULE_DRIFT:'+path.basename(relative));
   return {from,to,exists,sha256:hash(source)};
  });
