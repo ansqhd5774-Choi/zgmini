@@ -32,15 +32,16 @@ function fixture(t){
  return {root,dataRoot,outputDir,collector,original,reportPath,options};
 }
 
-test('exports actual PC collector, not a GitHub-derived baseline, without altering Core',t=>{
+test('embeds actual PC collector in a single report, without altering Core',t=>{
  const f=fixture(t);
  const before=fs.readFileSync(f.collector);
  const result=runR21SourceExport(f.options);
- assert.equal(result.decision,'PC_COLLECTOR_EXPORTED_READONLY');
+ assert.equal(result.decision,'PC_COLLECTOR_EMBEDDED_READONLY');
  assert.equal(result.pcCollectorSha256,sha(f.original));
  assert.equal(result.collectorMatchesTrackedHead,true);
  assert.deepEqual(fs.readFileSync(f.collector),before);
- assert.deepEqual(fs.readFileSync(path.join(f.outputDir,result.exportedFile)),f.original);
+ assert.deepEqual(Buffer.from(result.collectorSourceBase64,'base64'),f.original);
+ assert.deepEqual(fs.readdirSync(f.outputDir),[]);
  assert.equal(fs.readFileSync(path.join(f.dataRoot,'config.json'),'utf8').includes('NEVER_EXPORTED'),true);
  assert.equal(JSON.stringify(result).includes('NEVER_EXPORTED'),false);
 });
@@ -52,9 +53,10 @@ test('read-only collector export records tracked-head drift without overwriting 
   return args[0]==='hash-object'?'b'.repeat(40):'a'.repeat(40);
  }};
  const result=runR21SourceExport(opts);
- assert.equal(result.decision,'PC_COLLECTOR_EXPORTED_WITH_TRACKED_DRIFT');
+ assert.equal(result.decision,'PC_COLLECTOR_EMBEDDED_WITH_TRACKED_DRIFT');
  assert.equal(result.collectorMatchesTrackedHead,false);
  assert.deepEqual(fs.readFileSync(f.collector),f.original);
+ assert.deepEqual(Buffer.from(result.collectorSourceBase64,'base64'),f.original);
 });
 
 test('stops before export if approved Core HEAD or config changes',t=>{
