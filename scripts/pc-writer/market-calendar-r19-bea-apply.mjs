@@ -100,10 +100,12 @@ export function runR19({
  }catch{output.decision='BEA_PREFLIGHT_READ_FAILED_STOP';return output;}
 
  const lockFile=path.join(dataRoot,'local-cycle.lock');
- let ownLock=false,backupParser=null,committed=false;
+ let ownLock=false,backupParser=null,backupVerified=false,parserModified=false,committed=false;
  try{
+  output.phase='CORE_LOCK_ACQUIRE';
   const fd=fs.openSync(lockFile,'wx');ownLock=true;
   try{fs.writeFileSync(fd,JSON.stringify({pid:process.pid,at:Date.now(),purpose:'market-calendar-r19-bea-source-transition'}));}finally{fs.closeSync(fd);}
+  output.phase='LOCKED_SOURCE_RECHECK';
   const currentRoot=getCoreRoot(getTaskXml());
   if(!currentRoot||normalized(currentRoot)!==normalized(root)||worktreeIdentity(currentRoot)!==expectedWorktreeId||
      hex(gitCall(root,['rev-parse','HEAD']))!==approvedSource||
@@ -112,17 +114,25 @@ export function runR19({
      !fs.readFileSync(configFile).equals(configRaw)||json(configFile)?.source!==approvedSource){
    output.decision='STATE_CHANGED_AFTER_CORE_LOCK_STOP';return output;
   }
+  output.phase='BACKUP_DIRECTORY_CREATE';
   const backupDir=path.join(dataRoot,'market-calendar-r19-backups','r19-'+new Date().toISOString().replace(/[-:.TZ]/g,'')+'-'+randomUUID().slice(0,8));
   fs.mkdirSync(backupDir,{recursive:true});
   backupParser=path.join(backupDir,'release-calendar.mjs');
+  output.phase='BACKUP_PARSER';
   fs.copyFileSync(parser,backupParser);
+  if(digest(fs.readFileSync(backupParser))!==expectedBaselineSha256)throw Error('BASELINE_BACKUP_HASH_MISMATCH');
+  backupVerified=true;
+  output.phase='BACKUP_CONFIG';
   fs.copyFileSync(configFile,path.join(backupDir,'config.json'));
   output.backupCreated=true;output.backupId=path.basename(backupDir);
+  output.phase='COPY_BEA_PARSER';
+  parserModified=true;
   fs.copyFileSync(candidatePath,parser);
   if(digest(fs.readFileSync(parser))!==expectedCandidateSha256)throw Error('BEA_CANDIDATE_COPY_HASH_MISMATCH');
   if(gitCall(root,['diff','--name-only','HEAD','--',...protection]).replaceAll('\\','/').trim()!=='lib/release-calendar.mjs'){
    throw Error('BEA_NOT_EXACTLY_ONE_CHANGED_PROTECTED_FILE');
   }
+  output.phase='GIT_SINGLE_FILE_COMMIT';
   gitCall(root,['commit','--only','-m','feat(market-calendar): expand BEA calendar releases only','--','lib/release-calendar.mjs']);
   committed=true;
   const next=hex(gitCall(root,['rev-parse','HEAD']));
@@ -132,17 +142,20 @@ export function runR19({
     digest(fs.readFileSync(parser))!==expectedCandidateSha256){
    throw Error('BEA_COMMIT_PARENT_OR_CONTENT_MISMATCH');
   }
+  output.phase='CONFIG_SOURCE_UPDATE';
   if(!fs.readFileSync(configFile).equals(configRaw))throw Error('PC_CONFIG_CHANGED_DURING_INSTALL');
   const nextConfig={...config,source:next};
   const temp=path.join(backupDir,'config-new.json');
   fs.writeFileSync(temp,JSON.stringify(nextConfig,null,2)+'\n',{flag:'wx'});
   fs.renameSync(temp,configFile);
   if(json(configFile)?.source!==next)throw Error('PC_CONFIG_SOURCE_READBACK_FAILED');
+  output.phase='INSTALLED';
   output.decision='BEA_INSTALLED_IN_EXISTING_PC_SOURCE_NO_FORCED_COLLECTION';
  }catch(error){
   output.decision=committed?'PARTIAL_BEA_COMMIT_MANUAL_RECOVERY_REQUIRED_STOP':'BEA_INSTALL_ABORTED_OR_RESTORED_STOP';
-  output.errorCode=typeof error?.message==='string'&&/^[A-Z_]{5,70}$/.test(error.message)?error.message:'LOCAL_OPERATION_FAILED';
-  if(!committed&&backupParser){
+  const fsError={EEXIST:'CORE_LOCK_ALREADY_EXISTS',EACCES:'FILESYSTEM_ACCESS_DENIED',EPERM:'FILESYSTEM_PERMISSION_DENIED',ENOSPC:'DISK_FULL',ENOENT:'REQUIRED_FILE_DISAPPEARED',EBUSY:'FILE_IN_USE',EROFS:'READ_ONLY_FILESYSTEM'};
+  output.errorCode=fsError[error?.code]??(typeof error?.message==='string'&&/^[A-Z_]{5,70}$/.test(error.message)?error.message:'LOCAL_OPERATION_FAILED');
+  if(!committed&&parserModified&&backupVerified){
    try{fs.copyFileSync(backupParser,parser);}catch{output.decision='BEA_PARSER_RESTORE_FAILED_MANUAL_RECOVERY_STOP';}
   }
  }finally{
