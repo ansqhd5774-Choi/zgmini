@@ -13,6 +13,7 @@ const PC_ROOT = path.resolve(process.env.ZGMINI_PC_HOME || 'E:\\ZGmini\\data\\pc
 const DB_PATH = path.join(PC_ROOT, 'storage', 'core.sqlite');
 const API = 'https://api.bls.gov/publicAPI/v2/timeseries/data/';
 const SERIES = Object.freeze(['WPSFD4', 'WPSFD41', 'PRS85006111']);
+const SERVICE_SERIES = Object.freeze(['WPSFD42']);
 const CONTRACT = 'EARNINGS_COMPANION_R3C_BLS_DIRECT_V1';
 const YEAR_START = 2025;
 const YEAR_END = 2026;
@@ -46,7 +47,8 @@ const numeric = text => typeof text === 'string'
   && /^-?(?:0|[1-9]\d*)(?:\.\d+)?$/.test(text)
   && Number.isFinite(Number(text));
 
-function checkSchema(db) {
+function checkSchema(db,{includeServices=false}={}) {
+  const guardedSeries=includeServices?[...SERIES,...SERVICE_SERIES]:SERIES;
   const names = db.prepare(`SELECT name FROM sqlite_master WHERE type='table' AND name IN (?,?)`)
     .all(CHUNKS, SNAPSHOTS).map(row => row.name);
   if (names.length !== 2) err('EXISTING_TABLE_MISSING_NO_WRITE');
@@ -73,11 +75,11 @@ function checkSchema(db) {
   }
   // A provider namespace collision must not be interpreted as our own prior successful write.
   const snapshots = db.prepare(`SELECT dataset,provenance_json,chunk_hashes_json
-    FROM ${SNAPSHOTS} WHERE provider='BLS' AND dataset IN (?,?,?)`)
-    .all(...SERIES);
+    FROM ${SNAPSHOTS} WHERE provider='BLS' AND dataset IN (${guardedSeries.map(()=>'?').join(',')})`)
+    .all(...guardedSeries);
   const chunks = db.prepare(`SELECT dataset,chunk_sha256,payload_json
-    FROM ${CHUNKS} WHERE provider='BLS' AND dataset IN (?,?,?)`)
-    .all(...SERIES);
+    FROM ${CHUNKS} WHERE provider='BLS' AND dataset IN (${guardedSeries.map(()=>'?').join(',')})`)
+    .all(...guardedSeries);
   const referenced = new Set();
   for (const row of snapshots) {
     let meta, hashes;
@@ -116,14 +118,14 @@ function readKey() {
   return key;
 }
 
-async function fetchDirect(key, counters) {
+async function fetchDirect(key, counters,selectedSeries=SERIES) {
   counters.requests += 1;
   let response;
   try {
     response = await fetch(API, {
       method:'POST',
       headers:{'content-type':'application/json'},
-      body:JSON.stringify({seriesid:SERIES, startyear:String(YEAR_START),
+      body:JSON.stringify({seriesid:selectedSeries, startyear:String(YEAR_START),
         endyear:String(YEAR_END), registrationkey:key}),
       redirect:'error',
       signal:AbortSignal.timeout(20_000),
@@ -160,13 +162,13 @@ async function fetchDirect(key, counters) {
   return {body:parsed, responseHash:sha(bytes)};
 }
 
-function normalizeSeries(body) {
+function normalizeSeries(body,selectedSeries=SERIES) {
   const received = body?.Results?.series;
-  if (!Array.isArray(received) || received.length !== SERIES.length) {
+  if (!Array.isArray(received) || received.length !== selectedSeries.length) {
     err('BLS_SERIES_COUNT_MISMATCH_NO_WRITE');
   }
   const normalized = [];
-  for (const id of SERIES) {
+  for (const id of selectedSeries) {
     const matched = received.filter(item => item?.seriesID === id);
     if (matched.length !== 1 || !Array.isArray(matched[0].data)) {
       err('BLS_SERIES_ID_MISMATCH_NO_WRITE');
@@ -215,7 +217,7 @@ function normalizeSeries(body) {
     const rows = [...seen.values()].sort((a,b) => a.observationDate.localeCompare(b.observationDate));
     normalized.push({id,rows});
   }
-  if (received.some(item => !SERIES.includes(item?.seriesID))) {
+  if (received.some(item => !selectedSeries.includes(item?.seriesID))) {
     err('BLS_UNEXPECTED_SERIES_NO_WRITE');
   }
   return normalized;
@@ -254,12 +256,16 @@ function buildPlans(series, retrievedAt, responseHash) {
 }
 
 function insertPlans(db, plans) {
+  if(!Array.isArray(plans)||plans.length===0
+    ||plans.some(p=>![...SERIES,...SERVICE_SERIES].includes(p?.id))
+    ||new Set(plans.map(p=>p.id)).size!==plans.length)err('BLS_PLAN_SERIES_INVALID_NO_WRITE');
+  const includeServices=plans.some(p=>p.id==='WPSFD42');
   let insertedChunks = 0, insertedSnapshots = 0;
   let begun = false;
   try {
     db.exec('BEGIN IMMEDIATE');
     begun = true;
-    checkSchema(db); // Recheck atomically immediately before the first write.
+    checkSchema(db,{includeServices}); // Recheck all selected namespaces inside transaction.
     const putChunk = db.prepare(`INSERT INTO ${CHUNKS}(
       provider,dataset,chunk_sha256,first_observation_date,last_observation_date,
       row_count,payload_json,first_seen_at) VALUES(?,?,?,?,?,?,?,?)
@@ -307,18 +313,30 @@ function insertPlans(db, plans) {
   }
 }
 
-export {CONTRACT, SERIES, checkSchema, normalizeSeries, buildPlans, insertPlans};
+export {CONTRACT, SERIES, SERVICE_SERIES, checkSchema, normalizeSeries, buildPlans, insertPlans};
 
 async function main() {
+  const flags=process.argv.slice(2);
+  const includeServices=flags.length>0;
+  const dryRun=flags.join(' ')==='--services-only --dry-run';
+  const approvedAppend=flags.join(' ')==='--services-only --apply --confirm-service-sqlite-append';
+  if(includeServices&&!dryRun&&!approvedAppend) {
+    console.error('SERVICE_APPEND_CONFIRMATION_REQUIRED');
+    process.exitCode=2;
+    return;
+  }
+  const selectedSeries=includeServices?SERVICE_SERIES:SERIES;
   const utc = new Date().toISOString();
   const stamp = utc.replace(/[-:]/g,'').replace(/\.\d+Z$/,'Z').replace('T','-');
-  const logfile = path.join(HERE,`EARNINGS_R3C_BLS_STORE_ONCE_RESULT_${stamp}.txt`);
+  const logfile = path.join(HERE,
+    `${includeServices?'EARNINGS_BLS_SERVICE_R1':'EARNINGS_R3C_BLS_STORE_ONCE'}_RESULT_${stamp}.txt`);
   const notes = [
     'EARNINGS_COMPANION_R3C_BLS_DIRECT_STORE_ONCE_V1',
     `UTC=${utc}`,
-    'MODE=MANUAL_ONE_POST_EXISTING_SQLITE_APPEND_ONLY',
+    `MODE=${dryRun?'SERVICE_PREFLIGHT_READ_ONLY':includeServices?
+      'MANUAL_CONFIRMED_SERVICE_APPEND':'MANUAL_ONE_POST_EXISTING_SQLITE_APPEND_ONLY'}`,
     'PROVIDER=BLS',
-    `SERIES=${SERIES.join('|')}`,
+    `SERIES=${selectedSeries.join('|')}`,
     `YEAR_RANGE=${YEAR_START}-${YEAR_END}`,
   ];
   const counters = {requests:0, dbWritten:false, dbCommit:false};
@@ -329,17 +347,23 @@ async function main() {
     try {
       scan = new DatabaseSync(DB_PATH,{readOnly:true,timeout:3000});
       scan.exec('PRAGMA query_only=ON');
-      const previous = checkSchema(scan);
+      const previous = checkSchema(scan,{includeServices});
       notes.push('PC_EXISTING_SCHEMA_GUARD=PASS');
       notes.push(`PREVIOUS_BLS_SNAPSHOTS=${previous.existingSnapshots}`);
       notes.push(`PREVIOUS_BLS_CHUNKS=${previous.existingChunks}`);
     } finally { try { scan?.close(); } catch {} }
     const key = readKey();
-    const fetched = await fetchDirect(key,counters);
+    const fetched = await fetchDirect(key,counters,selectedSeries);
     const retrievedAt = new Date().toISOString();
-    const series = normalizeSeries(fetched.body);
+    const series = normalizeSeries(fetched.body,selectedSeries);
     const plans = buildPlans(series,retrievedAt,fetched.responseHash);
     for (const item of series) notes.push(`BLS_${item.id}_OBSERVATIONS=${item.rows.length}`);
+    if(dryRun) {
+      notes.push('SERVICE_SOURCE_VERIFIED=YES');
+      notes.push('SQLITE_APPEND_APPROVED=NO');
+      result='PASS_SERVICE_SOURCE_PREFLIGHT_NO_WRITE';
+      return;
+    }
     let db;
     try {
       db = new DatabaseSync(DB_PATH,{timeout:5000});
