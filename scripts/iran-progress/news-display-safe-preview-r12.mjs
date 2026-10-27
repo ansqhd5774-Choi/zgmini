@@ -77,6 +77,7 @@ export async function previewSafeIranNewsR12({now=Date.now(),fetcher=fetch}={}){
  return {status:'R12_DISPLAY_PREVIEW_ONLY_NO_WRITES',asOfKst:new Date(now+9*3600000).toISOString().slice(0,19).replace('T',' '),
   source:'GOV.UK',topics:'Iran OR Saudi OR Yemen OR Houthi',
   discovered30d:found.count,discovered14d:recent.length,
+  discoveryCounts:found.counts,
   inspected:previews.length,uninspected:recent.length-previews.length,
   eligible:eligible.length,held:previews.length-eligible.length,
   results:previews,summaryMode:'DETERMINISTIC_NEUTRAL_FALLBACK_TEXT',
