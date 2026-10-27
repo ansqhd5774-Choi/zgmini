@@ -99,7 +99,7 @@ try{
    assert.equal(await root.locator(".ob57-news-filters button").nth(2).getAttribute("aria-pressed"),"true");
    await root.locator(".ob57-news-filters button").first().click();
    assert.equal(await root.locator(".ob57-news-filters button").first().getAttribute("aria-pressed"),"true");
-   const newsColumns=await root.locator(".ob57-news-list").evaluate(el=>getComputedStyle(el).gridTemplateColumns.split(" ").length);
+   const newsColumns=await root.locator(".ob57-news-list").evaluate(el=>{const style=getComputedStyle(el);return style.display==="flex"?1:style.gridTemplateColumns.split(" ").length;});
    assert.equal(newsColumns,width>=1350?2:1,"Wide screens prepare a two-column news layout; other widths use a compact list");
 
   assert(firstLayout.questionCollapsed,"Secondary explanations start collapsed");
