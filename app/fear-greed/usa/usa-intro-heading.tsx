@@ -10,19 +10,16 @@ export default function UsaIntroHeading() {
   const introId = useId();
 
   return <>
-    <div className="zg-fg-title-row">
-      <h1>미국 공포탐욕지수</h1>
-      <button
-        type="button"
-        className="zg-fg-intro-button"
-        aria-label="미국 공포탐욕지수 소개"
-        aria-controls={introId}
-        aria-expanded={expanded}
-        onClick={() => setExpanded((wasExpanded) => !wasExpanded)}
-      >
-        <Info size={15} strokeWidth={2} aria-hidden="true" />
-      </button>
-    </div>
+    <button
+      type="button"
+      className="zg-fg-intro-button"
+      aria-label="미국 공포탐욕지수 소개"
+      aria-controls={introId}
+      aria-expanded={expanded}
+      onClick={() => setExpanded((wasExpanded) => !wasExpanded)}
+    >
+      <Info size={15} strokeWidth={2} aria-hidden="true" />
+    </button>
     <p id={introId} className={`zg-fg-intro${expanded ? " zg-fg-intro--expanded" : ""}`}>{intro}</p>
   </>;
 }
