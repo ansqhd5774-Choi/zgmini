@@ -4,6 +4,8 @@ import {test} from 'node:test';
 import {DatabaseSync} from 'node:sqlite';
 import {normalizeSeries,buildPlans,insertPlans} from './EARNINGS_R3C_BLS_STORE_ONCE.mjs';
 import {buildPreview,reportLines,SCHEMA_VERSION} from './EARNINGS_R4_C_READ_MODEL_PREVIEW_READONLY.mjs';
+import {validateEarningsCompanionPayload} from '../../worker/earnings-companion-c-r4.mjs';
+import {buildEarningsCostIndicatorView} from '../../app/earnings-recession/earnings-cost-indicator-list.mjs';
 
 const RETRIEVED='2026-10-26T17:02:53.996Z';
 const GENERATED='2026-10-27T02:35:01.000Z';
@@ -95,6 +97,20 @@ test('optional WPSFD42 adds two verified service indicators without changing fiv
     assert.equal(diagnostics.snapshotsChecked,4);
     assert.equal(diagnostics.bySeries.length,4);
     assert.notEqual(payload.sourceVersion,baseline.sourceVersion);
+  });
+});
+
+test('end-to-end offline seven rows validate through C worker schema and existing page registry',()=>{
+  withServiceDb({},db=>{
+    const {payload}=buildPreview(db,{generatedAt:GENERATED});
+    assert.equal(validateEarningsCompanionPayload(payload,{now:Date.parse(GENERATED)}),payload);
+    const view=buildEarningsCostIndicatorView(payload);
+    assert.equal(view.valid,true);
+    assert.equal(view.rows.length,7);
+    assert.equal(view.indicators.length,7);
+    assert.deepEqual(view.indicators.slice(5).map(x=>x.name),
+      ['서비스 생산자물가 상승률','서비스 생산자물가 지수']);
+    assert.deepEqual(view.rows.slice(5).map(x=>x.seriesId),['WPSFD42','WPSFD42']);
   });
 });
 
