@@ -25,7 +25,7 @@ function Scale({score}:{score:number|null}){
   <div className="ob54-scale-labels">{tones.map(([tone,label])=><span key={tone}>{label}</span>)}</div>
  </div>;
 }
-function Trend({view}:{view:any}){
+function Trend({view,compact=false}:{view:any;compact?:boolean}){
  const [mobile,setMobile]=useState(false);
  useEffect(()=>{
   const media=window.matchMedia("(max-width:600px)");
@@ -55,21 +55,31 @@ function Trend({view}:{view:any}){
  });
  const carriedDates=new Set(points.filter(carried).map(p=>dateKey(p.at)));
  const latest=points.at(-1);
+ // The compact mobile view shares the stored 14-day points and missing-day rules.
+ // Its vertical scale expands only when the actual observed range permits it.
+ const yAxisMax=Math.min(100,Math.max(30,Math.ceil(Math.max(0,...points.map(p=>p.value as number))/10)*10));
+ const plot=start!==null&&points.length>0?<div className={compact?"ob58-mini-plot":"ob54-market-chart"} role="group"
+  aria-label={"최근 14일 종전 진전도 잠정 흐름, 표시된 "+points.length+"개 날짜"}
+  title="실제 과거 확정 관측값이 아닌 저장 자료 기반 추정 흐름. 새 변화 미반영은 점선"
+  data-observed-days={points.length} data-carried-days={points.filter(carried).length}>
+  <MarketFearGreedChart
+   data={chartData} axisTicks={axisTicks} axisLabels={axisLabels}
+   latestPoint={latest?{date:dateKey(latest.at),score:latest.value!}:null}
+   lineSegments={lineSegments} compact={compact} yAxisMax={compact?yAxisMax:undefined}
+   instanceKey={compact?"iran-mobile-14d":"iran-provisional-14d"}
+   gradientId={compact?"ob58-iran-mini-gradient":"ob54-iran-provisional-gradient"}
+   formatTooltipLabel={day=>date(day)+(carriedDates.has(day)?" · 변화 미확인·이월":"")}
+   color={band(view.score).color} marketScoreBands={!compact}
+  />
+ </div>:<div className={compact?"ob58-mini-empty":"ob54-empty"} role="status">14일 구간의 저장된 점수가 없습니다.</div>;
+ if(compact)return <div className="ob58-mini-trend" role="region" aria-label="이란 전쟁 심리 최근 14일 추이">
+  <div className="ob58-mini-head"><span>14일 추이</span><small>0~{yAxisMax}점{yAxisMax<100?" 확대":""}</small></div>
+  {plot}
+  {calendar.length>0&&<div className="ob58-mini-axis" aria-hidden="true"><span>{date(calendar[0])}</span><span>{date(calendar.at(-1)!)}</span></div>}
+ </div>;
  return <section className="ob-panel ob54-trend" aria-labelledby="ob54-chart-title">
   <div className="ob54-chart-head"><h3 id="ob54-chart-title"><TrendingUp size={16} aria-hidden="true"/> 14일 추이</h3><span>잠정 추정 · 저장된 흐름</span></div>
-  {start!==null&&points.length>0?<div className="ob54-market-chart" role="group"
-   aria-label={"최근 14일 종전 진전도 잠정 흐름, 표시된 "+points.length+"개 날짜"}
-   title="실제 과거 확정 관측값이 아닌 저장 자료 기반 추정 흐름. 새 변화 미반영은 점선"
-   data-observed-days={points.length} data-carried-days={points.filter(carried).length}>
-   <MarketFearGreedChart
-    data={chartData} axisTicks={axisTicks} axisLabels={axisLabels}
-    latestPoint={latest?{date:dateKey(latest.at),score:latest.value!}:null}
-    lineSegments={lineSegments}
-    instanceKey="iran-provisional-14d" gradientId="ob54-iran-provisional-gradient"
-    formatTooltipLabel={day=>date(day)+(carriedDates.has(day)?" · 변화 미확인·이월":"")}
-    color={band(view.score).color} marketScoreBands
-   />
-  </div>:<div className="ob54-empty" role="status">14일 구간의 저장된 점수가 없습니다. 임의로 생성하지 않습니다.</div>}
+  {plot}
   <p className="ob54-note"><Info size={15} aria-hidden="true"/> <span>14일 추정 흐름으로, 과거 확정 점수는 아닙니다. 점선은 새 변화가 확인되지 않아 추정값을 유지한 구간이며, 교전 중단을 뜻하지 않습니다.</span></p>
  </section>;
 }
@@ -91,12 +101,14 @@ export default function OutbreakBeginnerIran({view}:{view:any}){
    <span className="ob-stage">{view.message}</span>
   </header>
   <div className="ob53-intro-grid ob55-intro">
-   <section className="ob-panel ob53-score-card ob55-score-card" aria-label="현재 종전 진전도">
+   <section className="ob-panel ob53-score-card ob55-score-card" aria-label="이란 전쟁 심리">
+    <div className="ob58-mobile-titlebar"><strong>이란 전쟁 심리</strong><time dateTime={date==="미확인"?undefined:date}>{date.replaceAll("-",".")}</time></div>
     <div className="ob53-metric-row ob54-kpis">
-     <div className="ob53-current"><span>현재 종전 진전도</span><strong>{score===null?"—":score.toFixed(1)}<small>점 / 100</small></strong></div>
+     <div className="ob53-current"><span>이란 전쟁 심리</span><strong>{score===null?"—":score.toFixed(1)}<small>점 / 100</small></strong><span className="ob58-status" data-tone={state.tone}>{state.name}</span></div>
      <div className="ob53-week"><span>주간 변화</span><strong>—</strong><small>확정 비교값 미제공</small></div>
      <div className="ob53-asof"><span>분석 기준일</span><strong><CalendarDays size={15} aria-hidden="true"/>{date}</strong><small>{isEstimate?"잠정 계산 기준":"저장 자료 기준"}</small></div>
     </div>
+    <Trend view={view} compact/>
     <div className="ob57-scale-summary"><Scale score={score}/><p className="ob57-summary">{summary} 종전 확률이나 미래 종료 날짜를 뜻하지 않습니다.</p></div>
    </section>
    <section className="ob-panel ob53-explain ob54-meaning" aria-labelledby="ob54-meaning">
