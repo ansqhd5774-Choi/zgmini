@@ -12,6 +12,7 @@ const day=x=>typeof x==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(x)&&
 
 export function buildNineR37PrivateCandidate({shadow,shadowBytes,roster,aumEvidenceBytes,r25InputSha256}={}){
  if(!shadow||shadow.contract!=='THEME_NINE_R32_PRIVATE_STAGE5_SHADOW_V1'||
+  shadow.priceMode!=='RAW_UNADJUSTED_1H_NOT_OFFICIAL_CLOSE'||
   shadow.status!=='PRIVATE_STAGE5_CALCULATED_NOT_PUBLISHED'||
   shadow.publicationAuthorized!==false||shadow.source?.rosterSha256!==rosterSha||
   shadow.source?.scoreBenchmarkDate!==shadow.benchmarkDate||
@@ -54,6 +55,7 @@ export function buildNineR37PrivateCandidate({shadow,shadowBytes,roster,aumEvide
   status:'PRIVATE_CANDIDATE_NOT_PUBLISHED',
   version:'THEME_LEGACY_NINE_R37_PUBLIC_V1',
   sourceContract:shadow.contract,
+  sourcePriceMode:shadow.priceMode,
   methodologyVersion:'ETF_ONLY_T40_R20_V40_ADAPTIVE_R2_DATED_ISSUER_AUM_R32',
   historicalAumMode:'FIXED_OFFICIAL_ISSUER_AUM_SNAPSHOT_WITH_ORIGINAL_DATES',
   rosterSha256:rosterSha,benchmark:'SPY',individualStocksUsed:0,
