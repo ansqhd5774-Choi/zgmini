@@ -531,4 +531,7 @@
 .zg-dashboard[data-view="dashboard"] #market .zg-r55-body{grid-template-columns:minmax(0,1fr);grid-template-rows:auto auto auto}
 .zg-dashboard[data-view="dashboard"] #market .zg-r55-summary{grid-template-rows:auto}
 .zg-dashboard[data-view="dashboard"] #market .zg-r55-risk-panel{min-width:0;padding:8px;border:1px solid #17446d;border-radius:7px;background:#071a2d;color:#eef4fa}
-.zg-dashboard[data-view="dashboard"] #market .zg-r55-risk-heading{margin:0 0 6px;font-size:14px;line-height:1.4;font-weight:800}
+.zg-dashboard[data-view="dashboard"] #market .zg-r55-risk-heading{margin:0 0 8px}
+.zg-dashboard[data-view="dashboard"] #market .zg-r55-risk-heading h2{margin:0}
+.zg-dashboard[data-view="dashboard"] #market .zg-r55-risk-heading a{display:inline-flex;align-items:center;gap:8px;color:inherit;text-decoration:none}
+.zg-dashboard[data-view="dashboard"] #market .zg-r55-risk-heading a:focus-visible{outline:2px solid var(--zg-brand);outline-offset:4px;border-radius:2px}
