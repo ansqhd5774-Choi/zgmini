@@ -1,0 +1,51 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import {locate} from '../scripts/pc-writer/market-calendar-r11-publisher-locator.mjs';
+
+const approved='ee41bb295200d248efc683841e0f1ba0bc4779ee';
+const baseline='f084e2a360b544257bb44a60b97875627c7ca371';
+
+function fixture({count=1,source=approved,writerStatus='VERIFIED',protectedChanges=''}={}){
+ const root=fs.mkdtempSync(path.join(os.tmpdir(),'zgmini-calendar-r11-'));
+ const projects=path.join(root,'projects'),data=path.join(root,'data');
+ fs.mkdirSync(projects);fs.mkdirSync(data);
+ const saved=(file,obj)=>fs.writeFileSync(path.join(data,file),JSON.stringify(obj));
+ saved('config.json',{source,enabled:true,collectionTarget:'pc'});
+ saved('local-writer-last-run.json',{source:approved,status:writerStatus,mode:'PUBLISH',at:'2026-10-27T06:30:06Z'});
+ saved('local-publication-ledger.json',{source:approved,status:'VERIFIED',at:'2026-10-27T06:31:17Z'});
+ for(let n=0;n<count;n++){
+  const project=path.join(projects,`case-${n}`);
+  fs.mkdirSync(path.join(project,'.git'),{recursive:true});
+  fs.mkdirSync(path.join(project,'scripts','pc-writer'),{recursive:true});
+  fs.writeFileSync(path.join(project,'scripts','pc-writer','run-local.mjs'),'// fixture');
+ }
+ const gitCall=(dir,args)=>{
+  if(args[0]==='rev-parse')return approved;
+  if(args[0]==='hash-object')return baseline;
+  if(args[0]==='diff')return protectedChanges;
+  return null;
+ };
+ return {root,run:()=>locate({projectRoot:projects,dataRoot:data,gitCall})};
+}
+
+test('R11: one clean approved-head source and verified writer can be selected without revealing paths',()=>{
+ const f=fixture();
+ try{
+  const r=f.run();
+  assert.equal(r.decision,'READY_FOR_EXACT_WORKTREE_SELECTION_NO_CHANGES_MADE');
+  assert.equal(r.projects.sourceHeadMatches,1);
+  assert.equal(r.projects.candidates[0].protectedClean,true);
+  assert.match(r.projects.candidates[0].id,/^[a-f0-9]{12}$/);
+  assert.ok(!JSON.stringify(r).includes(f.root));
+ }finally{fs.rmSync(f.root,{recursive:true,force:true});}
+});
+
+test('R11: changed source and ambiguous worktrees stop without edits',()=>{
+ for(const opts of [{source:'36266beb3ab942979d9aca7dcdd8af16fb27825b'},{count:2},{protectedChanges:'lib/release-calendar.mjs'},{writerStatus:'FAILED'}]){
+  const f=fixture(opts);
+  try{assert.match(f.run().decision,/_STOP$/);}finally{fs.rmSync(f.root,{recursive:true,force:true});}
+ }
+});
