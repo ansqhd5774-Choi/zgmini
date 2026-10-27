@@ -57,7 +57,7 @@ try{
   assert.equal(await root.locator(".ob53-main-grid").count(),1,"Stored rate beginner analysis available");
   assert.equal(await root.locator(".ob53-current strong").textContent(),"57.8점");
   assert.equal(await root.locator("#ob53-chart-title").textContent().then(s=>s?.trim()),"14일 추이");
-  const rateChart=root.locator(".ob53-market-chart");
+  const rateChart=width<=700?root.locator(".ob61-fed-compact .ob58-mini-plot"):root.locator(".ob53-market-chart");
   await rateChart.locator(".recharts-surface").waitFor({state:"visible",timeout:20000});
   assert.equal(await rateChart.locator(".recharts-area-curve").getAttribute("stroke"),"#94a3b8","Neutral score keeps its band color in the shared chart");
   assert.equal(await rateChart.locator(".recharts-reference-area").count(),5,"Shared chart shows five rate-score bands");
@@ -66,14 +66,15 @@ try{
   assert.equal(await rateChart.locator(".cnn-latest-point").count(),1,"Shared chart marks only the latest observed point");
   if(width<=600){
    const mobileChart=await root.evaluate(el=>{
-    const chart=el.querySelector(".ob53-market-chart"),news=el.querySelector(".ob57-news"),panel=el.querySelector(".ob53-beginner-stack");
+    const chart=el.querySelector(".ob61-fed-compact .ob58-mini-trend"),news=el.querySelector(".ob57-news"),panel=el.querySelector(".ob53-beginner-stack");
     return {chartFits:!!chart&&chart.getBoundingClientRect().width<=innerWidth,
      newsFits:!!news&&news.getBoundingClientRect().right<=innerWidth+1,extraHidden:getComputedStyle(panel).display==="none"};
    });
    assert(mobileChart.chartFits,"Shared 14-day chart fits the mobile viewport");
    assert(mobileChart.newsFits&&mobileChart.extraHidden,"News fits mobile and redundant beginner cards remain hidden");
   }
-  assert((await rateChart.textContent())?.includes("10.19"),"Last calendar tick retains its observed date");
+  const rateTickText=width<=700?await root.locator(".ob61-fed-compact .ob58-mini-axis").textContent():await rateChart.textContent();
+   assert(rateTickText?.includes("10.19"),"Last calendar tick retains its observed date");
   assert.equal(await root.locator(".ob53-chart-heading>span").textContent(),"관측 10일 / 14일");
   assert.equal(await root.locator(".ob53-tone-pill").textContent(),"중립");
   assert.equal(await root.locator(".ob53-scale-colors [data-band]").count(),5);
@@ -163,9 +164,22 @@ try{
    assert.equal(await root.locator(".ob57-news").isVisible(),true,"Approved news panel is visible under the mobile chart");
    assert.equal(await root.locator(".ob53-beginner-stack").isVisible(),false,"Mobile hides redundant beginner and asset cards");
    assert.equal(await root.locator(".ob53-title").isVisible(),false,"Mobile uses compact tab title instead of duplicate detail header");
-   const chartBottom=await root.locator(".ob53-chart").boundingBox();
+   const scoreBottom=await root.locator(".ob61-fed-compact .ob53-score-card").boundingBox();
    const logTop=await root.locator(".ob57-news").boundingBox();
-   assert(chartBottom&&logTop&&logTop.y>=chartBottom.y+chartBottom.height-1,"Major news follows the 14-day chart");
+   assert(scoreBottom&&logTop&&logTop.y>=scoreBottom.y+scoreBottom.height-1,"Major news follows the compact Fed score card");
+   assert.equal(await root.locator(".ob61-fed-compact .ob53-main-grid .ob53-chart").isVisible(),false,"Mobile hides only the redundant full-size Fed chart");
+   assert.equal(await root.locator(".ob61-fed-compact .ob58-mini-trend").isVisible(),true,"Mobile embeds the actual 14-day Fed chart");
+   assert.equal(await root.locator(".ob61-fed-compact .ob53-score-card").getAttribute("aria-label"),"금리 심리");
+   assert.equal(await root.locator(".ob61-fed-compact .ob53-current .ob58-status").textContent(),"중립");
+   assert.equal(await root.locator(".ob61-fed-compact .ob53-current .ob61-week-inline[data-change=\"down\"]").isVisible(),true,"Stored week-to-week change stays visible inside the compact card");
+   const fedCompactGeometry=await root.evaluate(el=>{
+    const card=el.querySelector(".ob61-fed-compact .ob53-score-card").getBoundingClientRect();
+    const mini=el.querySelector(".ob61-fed-compact .ob58-mini-trend").getBoundingClientRect();
+    const scoreStyle=getComputedStyle(el.querySelector(".ob61-fed-compact .ob53-current"));
+    return {insetFits:mini.width>90&&mini.left>=card.left&&mini.right<=card.right+1,
+     centered:scoreStyle.textAlign==="center",noOverflow:card.right<=innerWidth+1};
+   });
+   assert(fedCompactGeometry.insetFits&&fedCompactGeometry.centered&&fedCompactGeometry.noOverflow,"Fed mobile score and chart are centered without right-side overflow");
   }else{
    const definition=disclosures.nth(0),method=disclosures.nth(1);
    assert.equal(await definition.getAttribute("open"),null);
