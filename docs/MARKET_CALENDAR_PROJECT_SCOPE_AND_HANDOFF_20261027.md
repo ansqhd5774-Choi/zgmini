@@ -179,3 +179,14 @@
 - **미실행:** `gitPushed=false`, `publisherExecuted=false`, `forcedCollection=false`. 운영 데이터 정규 수집·SQLite 결과·공개 UI 반영은 해당 로그에서 미확인. 이들을 설치 PASS와 혼동하지 않는다.
 - **다음 작업:** 직전 R21의 예약 수집·공개 반영을 강제로 실행하거나 대기하지 않고, 기존 Fed 일정 누락 범위 및 안전하게 저장·재배포 가능한 경제·실적 공식 소스 추가 연결을 진행한다. 사용자는 운영 사이트를 별도로 관찰하고 오류를 알려준다.
 - 전용 브랜치 `codex/zgmini-gpt-workspace-20261025` 유지; 다른 브랜치 생성, main 병합, PC 운영 파일 임의 변경 없음.
+
+## 17. R22 연준 공식 일정 확대 — 실원문 확보 단계 CODE_READY (2026-10-28)
+
+- 직전 PC R21은 사용자 로그로 설치 확인: 승인 source `b5e860d09ac87087e158193613425b146fa9a1e5`; 이후 기존 Core 수집/게시/DB/스케줄러를 수동 실행하지 않았다.
+- 실제 공식 연준 월별 캘린더에는 G.17 외 FOMC 회의·의사록, 베이지북, G.19 소비자신용, H.4.1/H.6/H.8 등 다수 일정이 있다. 기존 코드 `RELEASE_SOURCES.fed`는 G.17만 파싱한다. `app/market-calendar/market-calendar-client.tsx`도 일반 `fed-` ID는 허용하지 않으므로 수집기·파서·UI를 함께 고려해야 한다.
+- 연준 공식 웹사이트의 제3자 표시 없는 자료는 `https://www.federalreserve.gov/disclaimer.htm`에 따라 복제·배포 가능. 별도 권리 확인 없는 비공식 서비스·제3자 자료는 사용하지 않는다.
+- 실제 월별 원본 HTML 직접 다운로드가 이 작업 환경에서는 `EAI_AGAIN`으로 막혔다. 임의 가정한 태그로 운영 파서를 설치하지 않고, **읽기 전용 R22 Fed 공식 HTML 추출 패키지**로 실제 원문 구조를 먼저 확보하도록 했다.
+- 전달 ZIP: `MARKET_CALENDAR_R22_FED_SOURCE_EXPORT_BUNDLE_20261028.zip` (SHA256 `b5db51582924cf8a4b3b1c5cee39f08cd30e52d9f23e1e77fd43a23cae3e8785`), 실제 CMD `MARKET_CALENDAR_R22_FED_SOURCE_EXPORT.cmd`, 결과 단일 TXT `MARKET_CALENDAR_R22_FED_SOURCE_EXPORT_RESULT.txt`(같은 폴더). 달력 3개월 + 연준 통계공표 + FOMC 총 5개 공식 URL을 일회성 읽기 전용으로 요청해 각 성공 원문 SHA256/Base64를 동일 TXT에 담는다. 잠금·Core·DB·Git·작업 등록·게시·수집은 변경/실행하지 않는다.
+- 파일: `scripts/pc-writer/market-calendar-r22-fed-source-export.mjs`, `tests/market-calendar-r22-fed-source-export.test.mjs`, `docs/MARKET_CALENDAR_R22_FED_COVERAGE.md`, CMD, README. 현지 fixture 4/4 PASS, 문법 PASS, CMD ASCII+CRLF, ZIP 내부 5개 파일 무결성 PASS. 브랜치 5개 파일 직접 게시 후 읽기 재검증 모두 일치.
+- **완료 범위:** R22 원문 수집·파서 검증을 위한 코드와 전달물 준비 완료. **미완료:** 사용자의 PC 실제 공개 원문 GET 결과, Fed 확대 parser/collector/UI 구현과 PC 설치, 정규 수집, 게시/readback. 결과 TXT 확보 후 원문 기반으로 후속 개발을 진행한다. R21 운영을 중단하지 않는다.
+- 전용 브랜치 `codex/zgmini-gpt-workspace-20261025` 유지, 새 브랜치 및 main 병합 없음.
