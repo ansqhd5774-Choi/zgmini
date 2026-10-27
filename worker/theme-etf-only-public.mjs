@@ -4,6 +4,7 @@ import {addVerifiedBiotechContinuationR2} from './theme-biotech-continuation-r2.
 import {addVerifiedBiotechProvisionalR1} from './theme-biotech-provisional-r1.mjs';
 import {addVerifiedDcPower} from './theme-data-center-power-r1.mjs';
 import {addVerifiedSpaceSatellite} from './theme-space-satellite-r1.mjs';
+import {addVerifiedSpaceProvisionalR1} from './theme-space-satellite-provisional-r1.mjs';
 import {addVerifiedNineR37} from './theme-nine-r37-public.mjs';
 import {readRollingPublic} from './theme-etf-rolling-public.mjs';
 import {PUBLIC_DISPLAY_MAX_AGE_MS} from './public-display-freshness.mjs';
@@ -53,7 +54,8 @@ async function addBiotechSidecars(db,base,opts){
  const biotech=await addVerifiedBiotechProvisionalR1(db,continued,{now:opts.now});
  const withDc=await addVerifiedDcPower(db,biotech,{now:opts.now});
  const withSpace=await addVerifiedSpaceSatellite(db,withDc,{now:opts.now});
- return addVerifiedNineR37(db,withSpace,{now:opts.now});
+ const withNine=await addVerifiedNineR37(db,withSpace,{now:opts.now});
+ return addVerifiedSpaceProvisionalR1(db,withNine,{now:opts.now});
 }
 export async function readThemeEtfOnly(db,{now=Date.now(),store=publicFeedStore(db)}={}){
  const headers={'cache-control':'no-store','x-robots-tag':'noindex, nofollow','x-content-type-options':'nosniff','x-data-source':'STORED'};
@@ -94,3 +96,4 @@ export async function readThemeEtfOnly(db,{now=Date.now(),store=publicFeedStore(
  const withAi=await addVerifiedAiTheme(db,result,{now,seed:record});
  return Response.json(await addBiotechSidecars(db,withAi,{now}),{headers:{...headers,'cache-control':'public, max-age=60, must-revalidate','x-data-snapshot-at':new Date(storedAt).toISOString()}});
 }
+
