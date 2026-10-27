@@ -4,7 +4,7 @@
  * BRI remains user-excluded after HTTP403. Never alter scores or a DB.
  */
 import {readFile,writeFile,appendFile} from 'node:fs/promises';
-import {dirname,join} from 'node:path';
+import {basename,dirname,join} from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {PUBLISHERS,parseUrlSeeds,pagePlainText,extractCagrCandidates} from './stage04-four-publisher-r37-readonly.mjs';
 import {officialReportUrl,getOfficial,getSearch,searchLinks,titleOf,candidateChoiceSchema} from './stage04-topic01-r45-readonly.mjs';
@@ -41,13 +41,13 @@ export function rankReport(topic,url){
   if(topic.index===3){
     if(/^(consumer-discretionary|consumer-cyclicals)(?:-market|-global-market-report)$/.test(slug))return 1000;
     if(/(?:consumer-discretionary|consumer-cyclicals|discretionary-consumer)/.test(slug))return 450;
-    if(/(?:consumer-durables|automotive|automobiles|apparel|luxury|leisure|hotels|restaurants|retail)/.test(slug) &&
+    if(/(?:consumer-durables|passenger-cars?|automotive|automobiles|apparel|luxury|leisure|hotels|restaurants|retail)/.test(slug) &&
         !/(?:consumer-staples|food-retail)/.test(slug))return 20;
     return 0;
   }
   if(/^(industrials|industrial-goods|industrial-sector)(?:-market|-global-market-report)$/.test(slug))return 1000;
   if(/(?:industrial-machinery|machinery-and-industrial|industrial-equipment)/.test(slug))return 250;
-  if(/(?:machinery|aerospace-and-defense|commercial-services|transportation|construction-equipment)/.test(slug))return 15;
+  if(/(?:machinery|machine-tools|aerospace-and-defense|commercial-services|transportation|construction-equipment)/.test(slug))return 15;
   return 0;
 }
 
@@ -285,10 +285,11 @@ export function summarizeDual(rounds){
 }
 
 export async function runR53({fetchFn=fetch,searchFn=getSearch,researchFn=researchPublisher,
-  outputPrefix=join(BASE,'R53_TOPIC03_04_PARALLEL_RESULT')}={}){
+  outputPrefix=join(BASE,'R53_TOPIC03_04_PARALLEL_RESULT'),
+  reportLabel='R53_STAGE04_TOPICS03_04_PARALLEL'}={}){
   const txt=outputPrefix+'.txt',json=outputPrefix+'.json',
     history=outputPrefix+'_HISTORY.ndjson';
-  await writeFile(txt,'REPORT=R53_STAGE04_TOPICS03_04_PARALLEL\r\n'+
+  await writeFile(txt,'REPORT='+reportLabel+'\r\n'+
     'TOPICS=03_CONSUMER_DISCRETIONARY,04_INDUSTRIALS\r\n'+
     'PARALLEL_TOPICS=YES\r\nOLLAMA_SHARED_SERIAL_QUEUE=YES\r\n'+
     'BRI_NETWORK_REQUESTS=0\r\nPROJECT_WRITES=NONE\r\nSTATUS=RUNNING\r\n');
@@ -355,7 +356,7 @@ export async function runR53({fetchFn=fetch,searchFn=getSearch,researchFn=resear
       ' SPEED_STABLE='+t.speed_stable+' RESULTS_STABLE='+t.results_stable+
       ' SECTOR_CAGR=NULL GATE='+t.gate);
     await log('STATUS=FINISHED_RESEARCH_ONLY');
-    await log('SEND_TXT=R53_TOPIC03_04_PARALLEL_RESULT.txt');
+    await log('SEND_TXT='+basename(txt));
     return {summary,rows,rounds};
   }catch(e){await log('STATUS=FAILED');await log('ERROR='+clean(e.message));throw e;}
 }
