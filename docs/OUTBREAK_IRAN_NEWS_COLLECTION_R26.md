@@ -78,3 +78,13 @@
 - 실행 전에 7개 모듈의 저장소 SHA-256 해시와 실제 로컬 바이트를 비교한다. 하나라도 누락/변경/심볼릭 링크이면 데이터 수정 없이 중단한다. 의존성 무결성 확인 후 기존 R26의 `--collect`에 해당하는 별도 PC 후보 저장/read-back만 수행한다.
 - 로그: **CMD 옆** `IRAN_NEWS_R28_OFFLINE_APPLY_RESULT.txt`. 정규 6시간 작업·D1·공개 뉴스 캐시·R3/R5 점수·사이트는 변경하지 않는다. 기록 실패/PC 후보 저장 결과 불확실은 자동 재시도하지 않는다.
 - R28 ZIP은 새 데이터 소스나 새 산식이 아니라 이미 **R26 PC 실측에서 7개 출처 접근에 성공한 동일 버전**의 수집 소스를 통째로 전달하는 포장 변경이다. 다음 Gate는 실제 PC의 후보 저장/read-back 확인이며, 이후 기존 R15 후행 운영 연결 및 개별 기사 권리 검증은 여전히 미완료다.
+
+## 10. R28 사용자 PC 실측 — 27건 후보 저장 성공
+
+- 증거: 사용자 제출 `IRAN_NEWS_R28_OFFLINE_APPLY_RESULT.txt`, 완료 관측 `2026-10-27T14:11:25.726Z` (`2026-10-27 23:11:25 KST`). 실행 로그의 `PASS_R28_OFFLINE_MODULE_INTEGRITY`, 검증 모듈 7개, `FINAL_STATUS=PASS_R28_PRIVATE_NEWS_CANDIDATES_SAVED` 확인.
+- 새 라이브 수집: **7/7 출처, 10/10 피드 성공**, 발견 55 URL, 원문 확인 52건, `ARTICLE_METADATA_REVIEWED` 27건, 신규 27건, 30일 후보 파일 저장 27건. `written:true`, `dryRun:false`; 소스 코드 자체의 다운로드 실패는 재발하지 않았다.
+- 기사의 세부 결과: BBC 4건, GOV.UK 6건, Tasnim 8건, UN 9건이 메타데이터 확인을 통과했다. 알자지라 3건은 `ARTICLE_BODY_UNVERIFIED`, 1건은 동영상 별도 검토; BBC 동영상 2건, GOV.UK 13건과 UN 1건은 30일 범위 밖; Tasnim 3건 및 UN 1건은 주제 범위 밖.
+- 원문 가져오기 실패 4건은 모두 `iaea-statements`의 `HTTP 403`이며 다른 6개 출처 성공을 막지 않았다. 이는 **원문 접근 거절 결과**만 증명한다. 서버 정책이나 일시 장애 등 403의 근본 원인은 확인되지 않았다. 기록된 URL의 연대가 대체로 오래되었더라도 피드 날짜만으로 원문 최초 발행일을 확정하거나 다른 기사에 대해 생략 조건을 신설하지 않는다. 차단 회피·무단 미러링을 시도하지 않는다.
+- `status=PARTIAL_COLLECTION_REVIEW_REQUIRED`는 실패 4건이 있는 투명한 부분성공 상태이다. `publication=NOT_AUTHORIZED`, `rightsVerified=0`, `displayEligible=0`, `scoreLedgerModified=false`, `publicCacheModified=false`, `d1Written=false`, `schedulerModified=false`, `translationModified=false` 유지.
+- **복구 진행도:** PC 다중 출처 후보 수집·검증·격리 저장은 실측 PASS. **기존 R15 6시간 자동 후행 연결 / 2회 정규 관측 / 기사별 재사용권 / D1 공개 게시 / 실제 UI는 미실행·미검증**.
+- **즉시 다음 Gate:** PC에서 기존 R15 운영 프로젝트 HEAD, R13 작업 XML·launcher·runner SHA, 후행 호출 위치, 후보 파일 27건의 읽기 검증, 보조 모듈 설치 경로를 **읽기 전용**으로 확인한다. 차이가 있으면 설치하지 않는다. 이후 해당 승인 source에서 R26 후보 수집만 독립 실패 격리 후행 처리하도록 최소 연결하고, 정규 2회 관측으로 완료를 판정한다.
