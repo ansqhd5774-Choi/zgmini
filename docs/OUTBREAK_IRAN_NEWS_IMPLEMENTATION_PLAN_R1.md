@@ -351,3 +351,15 @@
 - `scripts/iran-progress/news-display-translation-guarded-r20.mjs`는 R18 공식 소스 식별·OGL 권리 확인, PC 캐시 14일 가시기간, 기존 한국어 보존을 재사용한다. 개별 제목/원문 핵심 문장을 로컬 모델에 번역 요청하고, 추론 결과·검증 경고를 TXT에 남기는 읽기 전용 시험이다. 모든 무경고 결과도 **`DRAFT_REQUIRES_HUMAN_REVIEW`**로 남기며 자동 사실검증·게시를 승인하지 않는다.
 - PC 배치 `IRAN_NEWS_R20_GUARDED_TRANSLATION_READONLY.cmd`: ASCII+CRLF, 고정 소스 SHA `e0f4d3f867825a65ce8c80dd75845f79feef43fa`. 로그 `IRAN_NEWS_R20_GUARDED_TRANSLATION_RESULT.txt`를 생성한다. 테스트 **17/17 뉴스 테스트 파일 PASS(로컬 모의)**; 실제 PC 번역 품질 미실행. **운영 R15 후행 뉴스 hook, 캐시·D1·점수 원장·스케줄러·GitHub main은 그대로 보존**.
 - 다음 Gate: R20 PC TXT 실측에서 영어 원문↔복원 한국어를 기사별 비교, 실제 오역과 거짓 경고를 분리해 보완. 뉴스 번역이 정확하다는 증거 없이 기존 9건 및 미래 정규 수집을 한국어로 덮어쓰지 않는다. 게시 전환 시 동일 기사 ID 및 14일 공개/30일 보존 계약 유지와 PC↔D1 readback·공개 웹 확인을 별도로 수행한다.
+
+## 30. R20 품질 분석 및 R21 원문 직접 번역 실험 (2026-10-27)
+
+- R20 Windows 실측 결과: visible 10, 기존 한국어 1 보존, 신규 번역 9 중 구조 경고 없음 6, 보호어 불일치 3. 구조 경고 없음은 의미 정확성 PASS가 아니다. 예: 기사 2의 President→회장, 9의 COVID→침공, 5의 Iran 행위자 누락, 10의 anchor 코드 노출. 자동 발행 승인 0건.
+- R20 보호어 토큰 삽입은 날짜·일부 고유명사 문제를 줄였지만 문법 결합과 행위자 의미를 악화시켰다. 모델 공식 권고 prompt를 따르는 R19 원문 직접 번역 방식을 R21 초안 기본으로 복귀한다.
+- 새 검사 소스: `scripts/iran-progress/news-display-translation-direct-r21.mjs`; 회귀 테스트: `tests/iran-news-translation-direct-r21.test.mjs`. 출력 CMD: `IRAN_NEWS_R21_DIRECT_TRANSLATION_READONLY.cmd`, pinned SHA `358dd7f2eb514fbc1cc94c7cff313911d56fe867`.
+- R21은 원문 텍스트에 어떠한 가짜 anchor 문자열도 넣지 않는다. R19/TranslateGemma 4B 공식 영어→한국어 프롬프트를 그대로 이용한다. 이미 설치된 모델만 호출하며 신규 모델 다운로드를 허용하지 않는다.
+- 원문에 해당 언급이 실제로 있을 때에 한하여 Houthis의 음역 오류, Ed Miliband, Türkiye, deterrence, 20 October의 명백한 번역 혼동을 최소 범위에서 정규화한다. 원문에 없는 명칭은 변경하지 않는다. 모든 자동교정은 `CORRECTED_*`로 결과 TXT에 기록한다.
+- 검사 강화: 숫자·날짜, 출처 언급 행위자·직함, 누락된 불가능·상승·엘니뇨·핵 안전조치 불이행, 원문에 없는 사이버/제재/강제 중단/박사, COVID를 침공으로 오인, 대표적인 격조사 오류. 어떤 무경고 결과도 `R21_DRAFT_HUMAN_REVIEW`로 남는다.
+- R19 보존 출력 9건 로컬 재생 결과: 무경고 초안 4건, 검사 보류 5건(호르무즈 통과 불가능 약화, 사이버·제재·중단 삽입, 억지력 문법, 엘니뇨 누락, 허위 박사 등). *실제 R21 PC 번역 결과를 대신하지 않는다*.
+- `node --test tests/iran-news-*.test.mjs`: 뉴스 테스트 파일 18/18 PASS. CMD 로컬 정적 검사 ASCII, CRLF, immutable SHA, dependency download 12개 PASS. GitHub 작업 branch에만 반영. R21 PC 실제 실행과 공개 적용은 미검증/미실행.
+- 운영 한계: PC 뉴스 캐시·Cloudflare D1·점수 원장·6시간 운영 수집/게시 스케줄러 변경 금지. 기존 기사 1건의 한국어 표기는 보존. 번역 자동 승인·게시 경로는 설치하지 않는다. 사용자가 R21 결과 TXT를 올리면 기사별 의미 비교 후 다음 Gate를 결정한다.
