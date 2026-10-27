@@ -42,6 +42,9 @@ ZGMINI PLUGIN & EXECUTION RULES — COMPACT R5 FINAL
 - 기본 경로:
   `GitHub latest main -> Cloudflare Git integration -> Build -> exact Deployment -> Production 검증`
 - GitHub main이 Production source authority.
+- **ZGMINI 배포 실행 방식(상시): 기존 작업 전용 브랜치에서 승인된 변경을 PR로 `main`에 병합하고, 연결된 Cloudflare Git integration의 자동 빌드·자동 배포를 사용한다.** 별도의 수동 Wrangler/Sites Production 배포나 임시 배포 브랜치를 만들지 않는다.
+- UI 전용 브랜치는 `codex/ui-improvements`를 유지한다. 이 브랜치에 커밋하는 것과 Production 자동배포 완료는 다르며, `main` 병합 전 PR 변경 파일·범위를 확인하여 미승인 작업을 함께 배포하지 않는다.
+- 자동배포 후 `main` 병합 SHA, Cloudflare의 해당 Build/Deployment 상태·로그, 실제 `https://zgmini.kr/` 공개 화면을 각각 점검하고 결과를 보고한다. 자동배포 설정·배포 ID·상태를 확인할 수 없으면 완료라고 보고하지 않는다.
 - Git integration 연결 전 자동배포 존재 추정 금지.
 - Build 성공 ≠ Production 정상.
 - building/pending 중 불필요한 새 배포 금지.
