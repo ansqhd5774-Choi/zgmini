@@ -96,16 +96,27 @@ export async function addVerifiedNineR37(db,base,{now=Date.now()}={}){
  if(!row)return base;
  let record;try{record=JSON.parse(row.body);}catch{return base;}
  if(!eligibleNineR37(record,base,{now,storedAt:Number(row.stored_at)}))return base;
- const names=new Set(THEME_NINE_R37_ROSTER.map(t=>t.theme));
- const extra=base.themes.filter(t=>!names.has(t.theme));
- const themes=record.themes.map(t=>({theme:t.theme,etfs:[...t.etfs],score:t.score,
-  history:t.history.map(p=>({date:p.date,score:p.score}))}));
+ // This is a score migration, not a theme launch. Preserve the exact public
+ // roster and ordering: R32 also contains AI, which is not necessarily a
+ // public theme in the current ten-theme dashboard.
+ const updates=new Map(record.themes.map(t=>[t.theme,t]));
+ const visibleNames=new Set(base.themes.map(t=>t.theme));
+ const themes=base.themes.map(old=>{
+  const t=updates.get(old.theme);
+  return t?{theme:t.theme,etfs:[...t.etfs],score:t.score,
+   history:t.history.map(p=>({date:p.date,score:p.score}))}:old;
+ });
  return {...base,methodologyVersion:record.methodologyVersion,
   sourceVersion:record.sourceVersion??record.version,
   sourceStoredAt:record.sourceStoredAt,
-  themes:[...themes,...extra],
+  themes,
   ...(base.phase==='PROVISIONAL'?{
-   provisional:{asOf:record.provisional.asOf,
-    points:record.provisional.points.map(p=>({date:p.date,scores:{...p.scores}}))}
+   // Keep separate data-center/space provisional scores and do not expose
+   // the unpublished AI research theme through the scores side channel.
+   provisional:{asOf:base.provisional.asOf,
+    points:record.provisional.points.map((p,i)=>({date:p.date,
+     scores:{...base.provisional.points[i].scores,
+      ...Object.fromEntries(Object.entries(p.scores)
+       .filter(([name])=>visibleNames.has(name)))}}))}
   }:{}),modelRevision:record.version};
 }
