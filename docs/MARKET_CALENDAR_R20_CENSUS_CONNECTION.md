@@ -46,3 +46,12 @@
 - 사용자 PC 결과의 `decision=CENSUS_INSTALLED_IN_EXISTING_PC_SOURCE_NO_FORCED_COLLECTION`과 `phase=INSTALLED`, `newSource` 및 `changedFiles=[lib/release-calendar.mjs]`를 확인하면 **PC 코드 설치**로 분류한다.
 - 해당 결과가 나오기 전까지는 `CODE_READY`; 정규 실행·사이트 표시 여부는 별도 판단한다. 기존 6시간 주기를 기다리기 위해 다음 출처 연구를 막지 않는다.
 - 차년도 공식 Census URL 경계 처리, Fed 정기·연례 수정 일정, 신규 미국 경제 공식 일정과 기업 실적 공식 사전 일정의 사용권·수집 가능성 조사로 이어간다.
+
+## PC 사용자 전달물 — ZIP 제공 필수
+
+- 사용자 최신 지시: **실제 다운로드 가능한 CMD 또는 압축파일을 전달해야 PC 작업이 가능하다.** 저장소 파일 링크만 보고 완료 처리하지 않는다.
+- R20 배포용 패키지: `MARKET_CALENDAR_R20_CENSUS_PC_PACKAGE_20261027.zip` (사용자에게 대화 파일 링크로 별도 첨부).
+- ZIP 필수 구성: `MARKET_CALENDAR_R20_CENSUS_APPLY.cmd`, `README_R20_CENSUS_PC_INSTALL.txt`, `scripts/pc-writer/market-calendar-r20-census-apply.mjs`, `scripts/pc-writer/market-calendar-r19-bea-apply.mjs`, `staging/market-calendar/r20-census/lib/release-calendar.mjs`, 본 R20 기준서.
+- 전체 압축 해제 후 **폴더 구조를 유지한 채 CMD를 실행**한다. 단독 CMD 파일 복사·실행은 R19 스크립트 import 및 스테이징 상대 경로가 없어 실패한다.
+- CMD는 동일 폴더에 `MARKET_CALENDAR_R20_CENSUS_APPLY_RESULT.txt`를 생성한다. 사용자는 해당 파일을 제출하면 된다. 그 전에는 PC 설치 성공이라고 보고할 수 없다.
+- 브랜치에는 패키징 규칙과 원본 구성 파일을 보존한다. 채팅 전달 ZIP은 실제 다운로드 가능 상태로 생성·검증하고, ZIP 생성만으로 PC 수집·게시가 수행되었다고 주장하지 않는다.
