@@ -591,3 +591,37 @@
  .ob-events .ob61-fed-compact .ob53-main-grid>.ob57-news{grid-column:1;grid-row:1}
  .ob-events .ob61-fed-compact .ob53-main-grid>.ob53-chart{grid-column:1;grid-row:2}
 }
+/* R65 · Approved concept 1: compact desktop state pills for Iran and Fed.
+   Shared tone-aware presentation only. Keep the <=700px R60/R63 UI intact. */
+@media(min-width:701px){
+ .ob-events .ob-selected-event-panel :is(.ob55-iran-parity,.ob61-fed-compact) .ob53-current>.ob58-status{
+  --ob65-status-rgb:148,163,184;
+  --ob65-status-ink:#d7e2ed;
+  display:inline-flex;align-items:center;justify-content:flex-start;
+  gap:6px;width:max-content;max-width:100%;box-sizing:border-box;
+  margin:8px 0 0;padding:4px 9px;
+  border:1px solid rgba(var(--ob65-status-rgb),.56);
+  border-radius:999px;background:rgba(var(--ob65-status-rgb),.10);
+  color:var(--ob65-status-ink);font-size:12px;font-weight:800;
+  line-height:1.25;letter-spacing:0;white-space:nowrap;
+ }
+ .ob-events .ob-selected-event-panel :is(.ob55-iran-parity,.ob61-fed-compact) .ob53-current>.ob58-status::before{
+  content:"";width:8px;height:8px;flex:0 0 8px;
+  border-radius:50%;background:rgb(var(--ob65-status-rgb));
+ }
+ .ob-events .ob-selected-event-panel :is(.ob55-iran-parity,.ob61-fed-compact) .ob53-current>.ob58-status[data-tone="very-negative"]{
+  --ob65-status-rgb:239,68,68;--ob65-status-ink:#ffb7bd;
+ }
+ .ob-events .ob-selected-event-panel :is(.ob55-iran-parity,.ob61-fed-compact) .ob53-current>.ob58-status[data-tone="negative"]{
+  --ob65-status-rgb:245,158,11;--ob65-status-ink:#ffdb9b;
+ }
+ .ob-events .ob-selected-event-panel :is(.ob55-iran-parity,.ob61-fed-compact) .ob53-current>.ob58-status[data-tone="positive"]{
+  --ob65-status-rgb:34,197,94;--ob65-status-ink:#9fefc5;
+ }
+ .ob-events .ob-selected-event-panel :is(.ob55-iran-parity,.ob61-fed-compact) .ob53-current>.ob58-status[data-tone="very-positive"]{
+  --ob65-status-rgb:16,185,129;--ob65-status-ink:#94e9ce;
+ }
+ .ob-events .ob-selected-event-panel :is(.ob55-iran-parity,.ob61-fed-compact) .ob53-current>.ob58-status[data-tone="missing"]{
+  --ob65-status-rgb:100,116,139;--ob65-status-ink:#cbd5e1;
+ }
+}
