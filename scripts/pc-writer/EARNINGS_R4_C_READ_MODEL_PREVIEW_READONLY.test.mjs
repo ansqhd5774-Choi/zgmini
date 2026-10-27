@@ -28,7 +28,7 @@ function testDb() {
 }
 
 function response({omit=[],sep2025=null,sep2026=null,zeroLatest=false,
-  zeroBase=false,ulcLatest='1.4'}={}) {
+  zeroBase=false,ulcLatest='1.4',services=false,serviceBaseMissing=false}={}) {
   const monthly=[];
   for(let year=2025;year<=2026;year++) {
     for(let month=1;month<=(year===2025?12:9);month++) {
@@ -54,6 +54,10 @@ function response({omit=[],sep2025=null,sep2026=null,zeroLatest=false,
     {seriesID:'WPSFD4',data:monthly},
     {seriesID:'WPSFD41',data:monthly.map(x=>({...x,value:String(Number(x.value)*2)}))},
     {seriesID:'PRS85006111',data:quarterly},
+    ...(services?[{seriesID:'WPSFD42',data:monthly
+      .filter(x=>!serviceBaseMissing||!(x.year==='2025'&&x.period==='M09'))
+      .map(x=>({...x,value:x.year==='2025'&&x.period==='M09'?'150.273':
+        x.year==='2026'&&x.period==='M09'?'157.666':x.value}))}]:[]),
   ]}};
 }
 
@@ -64,6 +68,72 @@ function seeded(options={}) {
 }
 
 function withDb(options,fn) { const db=seeded(options);try{return fn(db);}finally{db.close();} }
+
+function withServiceDb(options,fn) {
+  const db=seeded(options);
+  const service=response({...options,services:true}).Results.series.at(-1);
+  insertPlans(db,buildPlans(normalizeSeries({Results:{series:[service]}},['WPSFD42']),
+    '2026-10-26T18:00:00.000Z','c'.repeat(64)));
+  try{return fn(db);}finally{db.close();}
+}
+
+test('optional WPSFD42 adds two verified service indicators without changing five existing rows',()=>{
+  const baseline=(()=>{const db=seeded();try{return buildPreview(db,{generatedAt:GENERATED}).payload;}finally{db.close();}})();
+  withServiceDb({},db=>{
+    const {payload,diagnostics}=buildPreview(db,{generatedAt:GENERATED});
+    assert.equal(payload.status,'READY');
+    assert.equal(payload.coverage.configured,7);
+    assert.equal(payload.coverage.ready,7);
+    assert.deepEqual(payload.rows.slice(0,5),baseline.rows);
+    assert.equal(payload.rows[5].indicatorId,'bls_ppi_services_yoy_sa');
+    assert.equal(payload.rows[5].kind,'DERIVED');
+    assert.equal(payload.rows[5].value,100*(157.666/150.273-1));
+    assert.equal(payload.rows[6].indicatorId,'bls_ppi_services_index');
+    assert.equal(payload.rows[6].kind,'RAW');
+    assert.equal(payload.rows[6].value,157.666);
+    assert.equal(payload.observedThroughBySeries.WPSFD42,'2026-09');
+    assert.equal(diagnostics.snapshotsChecked,4);
+    assert.equal(diagnostics.bySeries.length,4);
+    assert.notEqual(payload.sourceVersion,baseline.sourceVersion);
+  });
+});
+
+test('missing service year-ago observation leaves its YoY null, not invented',()=>{
+  withServiceDb({serviceBaseMissing:true},db=>{
+    const {payload}=buildPreview(db,{generatedAt:GENERATED});
+    assert.equal(payload.status,'PARTIAL');
+    assert.equal(payload.coverage.ready,6);
+    assert.equal(payload.rows[5].status,'PARTIAL');
+    assert.equal(payload.rows[5].value,null);
+    assert.equal(payload.rows[6].value,157.666);
+  });
+});
+
+test('service source forgery is rejected independently of the original BLS three-series cohort',()=>{
+  withServiceDb({},db=>{
+    const s=db.prepare(`SELECT provenance_json FROM api_history_snapshots_v1
+      WHERE provider='BLS' AND dataset='WPSFD42'`).get();
+    const corrupted=JSON.parse(s.provenance_json);
+    corrupted.seriesID='WPSFD41';
+    db.prepare(`UPDATE api_history_snapshots_v1 SET provenance_json=?
+      WHERE provider='BLS' AND dataset='WPSFD42'`).run(JSON.stringify(corrupted));
+    assert.throws(()=>buildPreview(db,{generatedAt:GENERATED}),
+      /BLS_SOURCE_PROVENANCE_INVALID/);
+  });
+});
+
+test('new independent service capture adds rows even when existing core observations remain unchanged',()=>{
+  withDb({},db=>{
+    const service=response({services:true}).Results.series.at(-1);
+    insertPlans(db,buildPlans(normalizeSeries({Results:{series:[service]}},['WPSFD42']),
+      '2026-10-27T00:00:00.000Z','d'.repeat(64)));
+    const {payload}=buildPreview(db,{generatedAt:GENERATED});
+    assert.equal(payload.coverage.configured,7);
+    assert.equal(payload.observedThroughBySeries.WPSFD42,'2026-09');
+    assert.equal(payload.rows[5].retrievedAt,'2026-10-27T00:00:00.000Z');
+    assert.equal(payload.rows[0].retrievedAt,RETRIEVED);
+  });
+});
 
 test('R4 builds five source-backed rows; two PPI trends have only nine actual YoY points',()=>{
   withDb({},db=>{
