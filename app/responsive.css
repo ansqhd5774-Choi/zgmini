@@ -535,3 +535,11 @@
 .zg-dashboard[data-view="dashboard"] #market .zg-r55-risk-heading h2{margin:0}
 .zg-dashboard[data-view="dashboard"] #market .zg-r55-risk-heading a{display:inline-flex;align-items:center;gap:8px;color:inherit;text-decoration:none}
 .zg-dashboard[data-view="dashboard"] #market .zg-r55-risk-heading a:focus-visible{outline:2px solid var(--zg-brand);outline-offset:4px;border-radius:2px}
+
+/* Mobile-only 2px right alignment for the three primary market charts. */
+@media (max-width:959px){
+  .zg-dashboard[data-view="dashboard"] .fg-card.fg-shared-shell .fg-chart-slot svg.recharts-surface,
+  .zg-dashboard[data-view="dashboard"] .zg-r55-summary-chart svg.recharts-surface{
+    transform:translateX(2px);
+  }
+}
