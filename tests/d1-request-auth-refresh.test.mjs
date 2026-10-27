@@ -7,9 +7,24 @@ test('request-time credential resolves expiry during a run using the official re
  const dir=fs.mkdtempSync(path.join(os.tmpdir(),'d1-auth-')),file=path.join(dir,'fixture.toml');let clock=1000,refreshes=0;
  const write=(token,expiry)=>fs.writeFileSync(file,`oauth_token = "${token}"\nexpiration_time = "${new Date(expiry).toISOString()}"`);
  const options={apiToken:null,file,now:()=>clock,refresh:()=>{refreshes++;write('renewed',100000);return {status:0};}};
- try{write('original',2000);assert.equal(credential('fixture',options),'original');assert.equal(refreshes,0);clock=2000;assert.equal(credential('fixture',options),'renewed');assert.equal(refreshes,1);
+ try{write('original',10000);assert.equal(credential('fixture',options),'original');assert.equal(refreshes,0);clock=10000;assert.equal(credential('fixture',options),'renewed');assert.equal(refreshes,1);
   clock=100000;options.refresh=()=>({status:0});assert.throws(()=>credential('fixture',options),/WRANGLER_LOGIN_REQUIRED/);
  }finally{fs.rmSync(dir,{recursive:true,force:true});}
+});
+test('a token 400ms from expiry waits then refreshes before any write dispatch',async()=>{
+ const dir=fs.mkdtempSync(path.join(os.tmpdir(),'d1-auth-boundary-')),file=path.join(dir,'fixture.toml');let clock=1000,refreshes=0;const waits=[];
+ const write=(token,expiry)=>fs.writeFileSync(file,`oauth_token = "${token}"\nexpiration_time = "${new Date(expiry).toISOString()}"`);
+ const options={apiToken:null,file,now:()=>clock,sleep:ms=>{waits.push(ms);clock+=ms;},refresh:()=>{refreshes++;write('renewed',100000);return{status:0};}};
+ try{write('near-expiry',1400);let requests=0;const c=client(config,()=>credential('fixture',options),{fetchImpl:async(_url,init)=>{requests++;assert.equal(init.headers.Authorization,'Bearer renewed');return ok();}});
+  await c.request(config.core,[{sql:'UPDATE x SET score=0',params:[]}]);assert.deepEqual(waits,[401]);assert.equal(refreshes,1);assert.equal(requests,1);
+  write('still-near',clock+200);assert.throws(()=>credential('fixture',{...options,sleep:()=>{}}),/EXPIRY_BOUNDARY_NOT_PASSED/);
+ }finally{fs.rmSync(dir,{recursive:true,force:true});}
+});
+test('a concurrent official renewal during the boundary wait is reused without another refresh',()=>{
+ const dir=fs.mkdtempSync(path.join(os.tmpdir(),'d1-auth-concurrent-')),file=path.join(dir,'fixture.toml');let clock=1000;
+ const write=(token,expiry)=>fs.writeFileSync(file,`oauth_token = "${token}"\nexpiration_time = "${new Date(expiry).toISOString()}"`);
+ try{write('old',1400);assert.equal(credential('fixture',{apiToken:null,file,now:()=>clock,sleep:ms=>{clock+=ms;write('other-renewed',100000);},refresh:()=>assert.fail('renewed file must be reused')}),'other-renewed');}
+ finally{fs.rmSync(dir,{recursive:true,force:true});}
 });
 test('timed-out CLI is reconciled against a valid renewed file; stale file still blocks',()=>{
  const dir=fs.mkdtempSync(path.join(os.tmpdir(),'d1-auth-readback-')),file=path.join(dir,'fixture.toml');

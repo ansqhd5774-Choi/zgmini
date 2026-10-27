@@ -30,14 +30,22 @@ export function read(file){return JSON.parse(fs.readFileSync(file,'utf8'));}
 export function readonly(sql){return /^\s*(SELECT|WITH)\b/i.test(sql)&&/\bSELECT\b/i.test(sql)&&!/[;]|--|\/\*|\b(insert|update|delete|replace|create|drop|alter|attach|detach|pragma|vacuum)\b/i.test(sql);}
 
 // Reuse the user's existing official Wrangler login. Never log credentials.
-export function credential(root,{apiToken=process.env.CLOUDFLARE_API_TOKEN,file=path.join(os.homedir(),'AppData/Roaming/xdg.config/.wrangler/config/default.toml'),now=Date.now,refresh=()=>spawnSync(process.execPath,[path.join(root,'node_modules/wrangler/bin/wrangler.js'),'whoami'],{cwd:root,encoding:'utf8',timeout:60000,windowsHide:true})}={}){
+export function credential(root,{apiToken=process.env.CLOUDFLARE_API_TOKEN,file=path.join(os.homedir(),'AppData/Roaming/xdg.config/.wrangler/config/default.toml'),now=Date.now,sleep=sleepSync,refresh=()=>spawnSync(process.execPath,[path.join(root,'node_modules/wrangler/bin/wrangler.js'),'whoami'],{cwd:root,encoding:'utf8',timeout:60000,windowsHide:true})}={}){
  if(apiToken)return rememberCredential(apiToken,{authType:'API_TOKEN',authExpiresAt:null,authRefresh:'NOT_NEEDED'});
  let refreshed=false,refreshedByReadback=false;
  let cfg=fs.readFileSync(file,'utf8');
- const expiry=Date.parse(cfg.match(/expiration_time\s*=\s*"([^"]+)"/)?.[1]??'');
+ let expiry=Date.parse(cfg.match(/expiration_time\s*=\s*"([^"]+)"/)?.[1]??'');
  const authError=()=>Object.assign(Error('WRANGLER_LOGIN_REQUIRED'),{diagnosticAuth:{authType:'OAUTH',authExpiresAt:Number.isFinite(expiry)?new Date(expiry).toISOString():null,authRefresh:'FAILED'}});
- // Wrangler whoami refreshes only after expiry; calling it five minutes early
- // does not renew the token. Request-time resolution below handles long runs.
+ // Never send a token during its final five seconds: it can expire in transit.
+ // Official whoami only renews after expiry. Wait at most five seconds, reread
+ // in case another process renewed it, then use the normal official refresh.
+ const remaining=expiry-now();
+ if(Number.isFinite(remaining)&&remaining>0&&remaining<=5000){
+  sleep(remaining+1);
+  cfg=fs.readFileSync(file,'utf8');
+  expiry=Date.parse(cfg.match(/expiration_time\s*=\s*"([^"]+)"/)?.[1]??'');
+  if(expiry>now()&&expiry-now()<=5000)throw Object.assign(authError(),{message:'WRANGLER_AUTH_EXPIRY_BOUNDARY_NOT_PASSED'});
+ }
  if(!Number.isFinite(expiry)||expiry<=now()){
   const r=refresh();
   // A timed-out CLI may have completed its atomic credential-file update.
@@ -45,7 +53,7 @@ export function credential(root,{apiToken=process.env.CLOUDFLARE_API_TOKEN,file=
   cfg=fs.readFileSync(file,'utf8');
   const renewedExpiry=Date.parse(cfg.match(/expiration_time\s*=\s*"([^"]+)"/)?.[1]??'');
   const renewedToken=cfg.match(/oauth_token\s*=\s*"([^"]+)"/)?.[1];
-  if(!renewedToken||!Number.isFinite(renewedExpiry)||renewedExpiry<=now()){
+  if(!renewedToken||!Number.isFinite(renewedExpiry)||renewedExpiry-now()<=5000){
    const error=authError();
    if(r.error?.code==='ETIMEDOUT'){error.message='WRANGLER_AUTH_REFRESH_TIMEOUT';error.code='ETIMEDOUT';}
    throw error;
