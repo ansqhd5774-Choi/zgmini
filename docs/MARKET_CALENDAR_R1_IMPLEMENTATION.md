@@ -115,6 +115,12 @@
 - 정확히 1개 Core 등록 작업 대상·기존 승인 Git 객체·기존 parser·변경되지 않은 게시 관련 소스가 확인될 때에만 `READY_FOR_APPROVED_SOURCE_TRANSITION_NO_CHANGES_MADE`를 반환한다. 등록 task가 C: junction 등으로 실행되어 프로젝트와 일치하지 않거나, 승인 source가 바뀌었거나, 다른 변경이 겹치면 **STOP**한다. STOP은 writer 장애 증거가 아니다.
 - R9는 Git fetch/checkout/commit/reset/merge/push, 설치/작업 등록, config·DB·스케줄러 수정, 공급자 호출, 재계산·게시·배포를 수행하지 않는다. 실제 source 전환 및 provenance/게시 계약 갱신은 R9 PC 결과 확인 후 현재 등록 source를 보존하는 최소 작업으로 따로 수행한다. `main` 및 다른 작업 브랜치는 변경하지 않는다.
 
+### R9 실측 및 R10 — 승인 source drift에서 운영 원장 확인 (2026-10-27)
+- R9 실제 PC 로그(`2026-10-27T06:17:00.048Z`)는 예약 작업 XML 정상, 탐색 Git 프로젝트 49개, 작업 참조와 일치하는 프로젝트 **1개**를 확인했다. PC 구성은 `enabled=true`, `collectionTarget=pc`, 승인 `config.source=ee41bb295200d248efc683841e0f1ba0bc4779ee`, 실제 참조 프로젝트 detached HEAD `1364b01bfc9dabd58310b1d53859b382be2588fb`이다. 기존 calendar parser blob은 `f084e2a360b544257bb44a60b97875627c7ca371`, 로컬 보호 파일 변경 0이며 확대 parser는 설치되지 않았다. 이전 승인 값 `36266beb3ab942979d9aca7dcdd8af16fb27825b`와 달라져 R9가 `APPROVED_SOURCE_CHANGED_STOP`으로 차단했다.
+- GitHub compare 확인: `1364b01b` → `ee41bb29`는 **26개 커밋, 104개 변경 파일, 게시 보호 대상 61개 파일**이며 `lib/release-calendar.mjs`는 미변경이다. 2026-10-27의 `ee41bb29`는 PC 인증·오류 진단 관련 작업을 포함한다. R9 참조 프로젝트를 실제 게시기 실행과 동일하다고 간주하면 source-only `publicationCompatibility`는 보호 파일 차이로 중단 가능하다. 하지만 R9의 task XML 문자열 매칭만으로 최신 게시 실제 실행 경로·최근 ledger의 source를 단정하지 않는다.
+- R10 `MARKET_CALENDAR_R10_LINEAGE_TELEMETRY.cmd`는 같은 등록 작업 대상에 대해 PC Git 객체의 실제 source-vs-HEAD 게시 보호 파일 **건수**와 파서 변경 여부, 최근 writer·publication ledger·collection checkpoint의 승인 아닌 메타데이터(상태/시각/SHA)만 조회한다. 외부 HTTP, DB 접근, 수집·계산·게시·source/config/스케줄러 변경, Git fetch/checkout 수행 금지. 원문 오류·등록 작업 XML·인자·PC 사용자 경로·비밀값은 출력하지 않는다.
+- R10 결과는 **운영 source 재승인이나 자동 교체 신호가 아니다.** 변경된 인증·수집 코드의 승인 권한을 다른 작업에서 먼저 확보했는지, 현재 실제 게시가 어디서 실행되는지, 최근 VERIFIED 원장이 무엇인지 확인할 Gate이다. 결과가 충돌하면 운영 writer 수정 없이 작업 중단하고 다른 운영 작업과 source provenance를 조정한다.
+
 ## SEO 사전 점검 (docs/SEO_SEARCH_APPEARANCE_REVIEW.md)
 
 - 검색 의도: 투자자가 미국 경제지표와 향후 기업 실적 발표 일정을 날짜별로 조회. 현재 실제 제공 범위는 공식 미국 경제지표에 국한.
