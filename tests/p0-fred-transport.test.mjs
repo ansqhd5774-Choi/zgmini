@@ -12,7 +12,8 @@ test('body size cap, body timeout, rejection contain no raw error',async()=>{for
 test('concurrent coalescing and 15 minute result cache',async()=>{let n=0,t=now();const h=createFredTransportCheck({now:()=>t,fetchImpl:async()=>{n++;return new Response('ok');}});await Promise.all([h(req(),true),h(req(),true)]);assert.equal(n,3);t+=899999;await h(req(),true);assert.equal(n,3);t+=2;await h(req(),true);assert.equal(n,6);});
 test('expiry/query/method checks run before fetch and cached result',async()=>{let n=0;const h=createFredTransportCheck({now:()=>Date.parse(POLICY.expiresAt),fetchImpl:async()=>{n++;return new Response('');}});assert.equal((await h(req(),true)).status,410);assert.equal((await h(new Request(req(),{method:'POST'}),true)).status,405);assert.equal((await h(new Request(req().url+'?bypass=1'),true)).status,400);assert.equal(n,0);});
 test('transport preserves provider and payroll semantics; public API is stored-read only',()=>{
-  const locked={"lib/market-data/providers.mjs":"3c0fa59f890fdfa4418c3fae5a8555d55c13d2e961fca9e2ea9b686df17053da","lib/market-data/semantics.mjs":"3d11690e25a7ca92984dac642cdb5a5e7a96eb0ea080e84a3896719a65cf0f5c"};
+  // Official unpublished BLS observations are covered by bls-unpublished-observation.test.mjs.
+  const locked={"lib/market-data/providers.mjs":"869d0a6de53424929975df3fe1da85cbf4c6fe84126a8c49cc1af33ad5957d45","lib/market-data/semantics.mjs":"3d11690e25a7ca92984dac642cdb5a5e7a96eb0ea080e84a3896719a65cf0f5c"};
   for(const [p,h] of Object.entries(locked))assert.equal(createHash('sha256').update(fs.readFileSync(p).toString('binary').replace(/\r\n/g,'\n'),'binary').digest('hex'),h,p);
   const route=fs.readFileSync('app/api/market-data/route.ts','utf8');
   assert.match(route,/readPublicFeed\(env\.DB, "market-data"\)/);

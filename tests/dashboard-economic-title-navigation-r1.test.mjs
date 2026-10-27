@@ -4,6 +4,7 @@ import {readFileSync} from "node:fs";
 const ui=readFileSync("app/dashboard-ui.tsx","utf8");
 const css=readFileSync("app/globals.css","utf8");
 const catalog=readFileSync("components/market-explorer-catalog.ts","utf8");
+const responsive=readFileSync("app/responsive.css","utf8");
 const routes=[
  ["inflation","inflation"],["employment","employment"],["rates","rates"],
  ["credit","credit"],["growth","growth"],["consumption","consumption"],
@@ -16,7 +17,8 @@ test("12 market card headings navigate natively to the approved published detail
  assert.ok(heading.includes('href={"/economic-indicators/"+('));
  assert.ok(heading.includes('aria-label={m.label+" 상세페이지 열기"}'));
  assert.ok(heading.includes("event.stopPropagation()"),"link should not expand card");
- assert.ok(heading.includes("<ArrowUpRight"),"visible link affordance required");
+ assert.ok(heading.includes('<ArrowUpRight className="zg-r55-title-arrow" size={13} aria-hidden="true"/>'),"original 13px navigation arrow must be visible beside the label");
+ assert.ok(css.includes("text-decoration-line:underline"),"permanent visible link affordance required");
  for(const [id,slug] of routes){
   assert.ok(heading.includes(id+':"'+slug+'"'),"bad dashboard slug "+id);
   assert.ok(catalog.includes("id:'"+id+"',href:'/economic-indicators/"+slug+"/'"),"bad explorer slug "+id);
@@ -35,4 +37,81 @@ test("title text is visibly actionable, pointer-accessible and keyboard focusabl
  assert.ok(css.includes("EC12 NAV R1"));
  assert.ok(css.includes(".zg-r55-card-title-link{"));
  for(const value of ["cursor:pointer","pointer-events:auto","touch-action:manipulation",":focus-visible","text-decoration:underline"])assert.ok(css.includes(value));
+});
+
+test("economic mini charts keep visible dotted guides and separate help positioning",()=>{
+ assert.ok(ui.includes("strokeDasharray={value===0||value===100?undefined:'4 4'}"));
+ assert.ok(ui.includes("rgba(170,197,220,.9)"));
+ assert.ok(ui.includes("rgba(157,184,208,.8)"));
+ assert.ok(ui.includes("strokeWidth={value===0||value===100?1:1.2}"));
+ assert.ok(css.includes("EC12 R2: separate the help affordance"));
+ assert.ok(css.includes("left:-7px;"));
+});
+
+test("collapsed market cards keep help left of the title on desktop and mobile despite media rule hoisting",()=>{
+ const rule=css.split("/* EC12 R3: compact, collapsed cards")[1];
+ assert.ok(rule,"R3 layout rule missing");
+ assert.ok(rule.includes('.zg-r55-shell[data-expanded="false"] .zg-r55-card-head{'));
+ assert.ok(rule.includes('display:block;'));
+ assert.ok(rule.includes('padding-left:13px;'));
+ assert.ok(rule.includes('.zg-r55-shell[data-expanded="false"] .zg-r55-card-head>span:last-child{'));
+ assert.ok(rule.includes('position:absolute;'));
+ assert.ok(rule.includes('left:-8px;'));
+ assert.ok(rule.includes('top:-6px;'));
+ assert.ok(!rule.includes('width:calc('),"must not compress mini-chart width");
+});
+
+test("economic title restores original-size inline arrow in both expanded states",()=>{
+ const r6=css.split("/* EC12 R6: restore the original inline 13px arrow")[1];
+ assert.ok(r6,"R6 inline restoration rule missing");
+ assert.ok(r6.includes('.zg-r55-shell[data-expanded] .zg-r55-card-head{'));
+ assert.ok(r6.includes('padding-left:24px;'));
+ assert.ok(r6.includes('.zg-r55-card-head>span:last-child{'));
+ assert.ok(r6.includes('top:-2px;')&&r6.includes('left:-8px;'));
+ assert.ok(r6.includes('transform:none;'));
+ assert.ok(r6.includes('font-size:14px;'));
+ assert.ok(r6.includes('.zg-r55-card-title-link .zg-r55-title-arrow{'));
+ for(const value of ['position:static;','width:13px;','height:13px;','align-items:center;','gap:2px;'])assert.ok(r6.includes(value),value);
+ assert.ok(!/zg-r55-mini-chart[^}]*width\s*:/.test(r6),"trend chart width may not be reduced");
+ assert.ok(!r6.includes('translateX('),"trend chart must not be shifted into another card");
+ assert.ok(!r6.includes('zg-r55-card-mid{'),"card-mid has display:contents; only the card grid may reserve lanes");
+});
+
+test("responsive economic card columns reserve room for full labels and their arrows",()=>{
+ const r6=css.split("/* EC12 R6: restore the original inline 13px arrow")[1];
+ assert.ok(r6.includes('@media (min-width:960px) and (max-width:1279px)'));
+ assert.ok(r6.includes('grid-template-columns:repeat(4,minmax(0,1fr));'));
+ assert.ok(r6.includes('@media (min-width:1280px) and (max-width:1599px)'));
+ assert.ok(r6.includes('grid-template-columns:repeat(5,minmax(0,1fr));'));
+ assert.ok(r6.includes('@media (max-width:540px)'));
+ assert.ok(r6.includes('grid-template-columns:minmax(0,1fr);'));
+});
+
+test("actual economic card grid reserves 110px lane without 16px graph intrusion",()=>{
+ const r6=responsive.split("/* EC12 R6: the actual card is the grid container")[1];
+ assert.ok(r6,"responsive grid correction missing");
+ assert.ok(r6.includes(".zg-r55-shell[data-expanded] .zg-r55-card{"));
+ assert.ok(r6.includes("grid-template-columns:110px minmax(0,1fr);"));
+ assert.ok(r6.includes(".zg-r55-card-visual{"));
+ assert.ok(r6.includes("margin-left:0;"));
+});
+
+test("390px economic cards form a two-column, six-row layout without title-chart overlap",()=>{
+ const mobile=responsive.split("/* Keep all 12 indicator cards in two mobile columns (six rows).")[1]?.split("/* EC12 R9:")[0];
+ assert.ok(mobile,"mobile two-column override required");
+ assert.ok(mobile.includes("@media (max-width:540px)"));
+ assert.ok(mobile.includes("grid-template-columns:repeat(2,minmax(0,1fr));"));
+ assert.ok(mobile.includes("grid-template-columns:82px minmax(0,1fr);"));
+ assert.ok(mobile.includes(".zg-r55-card-visual{"));
+ assert.ok(mobile.includes("grid-row:2;"));
+});
+
+// R9: preserve the independent desktop four-column layout.
+test("12 market charts use a four-by-three desktop grid without resizing their plots",()=>{
+ const r9=responsive.split("/* EC12 R9: 12 readable indicator charts")[1];
+ assert.ok(r9,"final responsive desktop override missing");
+ assert.ok(r9.includes("@media (min-width:960px)"));
+ assert.ok(r9.includes(".zg-r55-card-grid{"));
+ assert.ok(r9.includes("grid-template-columns:repeat(4,minmax(0,1fr));"));
+ assert.equal(routes.length,12);
 });

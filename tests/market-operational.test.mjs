@@ -1,3 +1,4 @@
+import {fullMacro,fullMarket} from './helpers/validated-market-fixtures.mjs';
 import {DIAGNOSTIC_FRED_SERIES} from '../lib/diagnostic-layer/input-registry.mjs';
 import {PUBLIC_DISPLAY_MAX_AGE_MS} from '../worker/public-display-freshness.mjs';
 import test from 'node:test';
@@ -7,11 +8,34 @@ import {marketOperationalStore,readStoredMarketInputs,storedMarketResponse} from
 import {runMarketOperationalRefresh,MARKET_COLLECTION_JOBS} from '../worker/market-operational-refresh.mjs';
 function fixture(){
  const sqlite=new DatabaseSync(':memory:');
- const db={prepare(sql){const statement=sqlite.prepare(sql);const bound=args=>({bind:(...values)=>bound(values),run:async()=>statement.run(...args),first:async()=>statement.get(...args),all:async()=>({results:statement.all(...args)})});return bound([])}};
+ const db={async batch(stmts){sqlite.exec('BEGIN');try{const out=[];for(const st of stmts)out.push(await st.run());sqlite.exec('COMMIT');return out;}catch(error){sqlite.exec('ROLLBACK');throw error;}},prepare(sql){const statement=sqlite.prepare(sql);const bound=args=>({bind:(...values)=>bound(values),run:async()=>statement.run(...args),first:async()=>statement.get(...args),all:async()=>({results:statement.all(...args)})});return bound([])}};
  return {sqlite,db,store:marketOperationalStore(db)};
 }
 const now=Date.parse('2026-09-30T00:00:00Z');
-const score={status:'SUCCESS',domains:Array.from({length:12},(_,i)=>({id:String(i),score:i===0?0:null})),overall:{score:null,status:'PARTIAL'}};
+const score=fullMarket();
+
+test('empty supply and fund flow results never replace a valid batch or trigger calculation',async()=>{
+ for(const [job,keys] of Object.entries({supply:['gscpiRows','copperRows'],fundFlows:['registeredFundFlowRows']})){
+  const {store,db,sqlite}=fixture();
+  const old={external:Object.fromEntries(keys.map(key=>[key,[{observationDate:'2026-09-29',value:0}]]))};
+  await store.writeInput(job,old,now-1);
+  const out=await runMarketOperationalRefresh({env:{DB:db},store,job,now,collectors:{[job]:async()=>({external:{}})},calculate:()=>{throw Error('MUST_NOT_CALCULATE')}});
+  assert.equal(out.status,'SOURCE_FAILED');assert.deepEqual((await store.readInput(job)).body,old);
+  assert.equal((await store.readInput(job)).storedAt,now-1);assert.ok(await store.claim('pipeline',now+1));sqlite.close();
+ }
+});
+
+test('failed or empty credit acquisition preserves the last valid batch and does not calculate',async()=>{
+ const old={external:{dvpRepoRows:[{observationDate:'2026-09-29',value:0}],triPartyRepoRows:[{observationDate:'2026-09-29',value:0}],cmdiRows:[{observationDate:'2026-09-25',market:0,hy:0,ig:0}]}};
+ for(const candidate of [{external:{dvpRepoRows:[],triPartyRepoRows:[],cmdiRows:[]}},{external:{...old.external,cmdiRows:[]}}]){
+  const {store,db,sqlite}=fixture();await store.writeInput('credit',old,now-1);await store.writeScore(score,now-1);
+  const out=await runMarketOperationalRefresh({env:{DB:db},store,job:'credit',now,collectors:{credit:async()=>candidate},calculate:()=>{throw Error('MUST_NOT_CALCULATE')}});
+  assert.deepEqual(out,{status:'SOURCE_FAILED',job:'credit',reason:'CREDIT_INPUT_NOT_VALID'});
+  assert.deepEqual((await store.readInput('credit')).body,old);assert.equal((await store.readInput('credit')).storedAt,now-1);
+  assert.equal((await store.readScore()).storedAt,now-1);
+  assert.equal(sqlite.prepare("SELECT status FROM market_collection_jobs_v1 WHERE job='credit'").get().status,'SOURCE_FAILED');sqlite.close();
+ }
+});
 test('BIS failures and empty successful responses never write or calculate',async()=>{
  for(const status of ['REQUEST_FAILED','HTTP_ERROR','QUOTA_EXCEEDED','READY_CURRENT_VINTAGE_RAW']){
   const {store,db,sqlite}=fixture();
@@ -23,16 +47,16 @@ test('BIS failures and empty successful responses never write or calculate',asyn
  }
 });
 test('empty macro cannot replace stored source, create slices or refresh score',async()=>{
- const {store,db,sqlite}=fixture();const old={series:{PAYEMS:[{observationDate:'2026-09-01',value:0}]}};
+ const {store,db,sqlite}=fixture();const old=fullMacro();
  await store.writeInput('macro',old,now-1);await store.writeScore(score,now-1);
  const out=await runMarketOperationalRefresh({env:{DB:db},store,job:'macro',now,collectors:{macro:async()=>({series:{},providerSummary:{fred:{requested:42,ready:0,failed:[{status:'REQUEST_FAILED'}]}}})},calculate:()=>{throw Error('MUST_NOT_CALCULATE')}});
- assert.deepEqual(out,{status:'SOURCE_FAILED',job:'macro',reason:'MACRO_NO_READY_SERIES'});
+ assert.deepEqual(out,{status:'SOURCE_FAILED',job:'macro',reason:'MACRO_NO_READY_SERIES',sourceDiagnostic:{provider:'FRED',requested:42,ready:0,missing:Object.keys(DIAGNOSTIC_FRED_SERIES),failed:[]}});
  assert.deepEqual((await store.readInput('macro')).body,old);assert.equal((await store.readScore()).storedAt,now-1);
  assert.equal(sqlite.prepare("SELECT count(*) n FROM market_input_batches_v1 WHERE batch_key LIKE 'projection-macro:%'").get().n,0);sqlite.close();
 });
 test('large normalized history is compressed in storage and restored without value loss',async()=>{
  const {store,sqlite}=fixture();
- const input={series:{A:Array.from({length:75000},(_,i)=>({date:'2026-09-30',value:i%3===0?0:i%3===1?null:i}))}};
+ const input={series:{...fullMacro().series,A:Array.from({length:75000},(_,i)=>({date:'2026-09-30',value:i%3===0?0:i%3===1?null:i}))}};
  assert.ok(JSON.stringify(input).length>1800000);
  await store.writeInput('macro',input,now);
  const stored=sqlite.prepare('SELECT body FROM market_input_batches_v1').get().body;
@@ -83,20 +107,30 @@ test('lease excludes concurrent collectors and daily input history survives late
  const {store,db,sqlite}=fixture();const id=await store.claim('pipeline',now);
  const blocked=await runMarketOperationalRefresh({env:{DB:db},store,now,collectors:{macro:()=>{throw Error('must not execute')}}});assert.equal(blocked.status,'ALREADY_RUNNING');
  await store.finish('pipeline',id,now,'IDLE');
- await store.writeInput('macro',{series:{A:[1]}},now);await store.writeInput('macro',{series:{A:[2]}},now+86400000);
+ await store.writeInput('macro',fullMacro('2026-09-29',1),now);await store.writeInput('macro',fullMacro('2026-09-30',2),now+86400000);
  assert.equal(sqlite.prepare('SELECT count(*) AS n FROM market_input_batches_v1').get().n,2);
- assert.deepEqual((await store.readInput('macro')).body.series.A,[2]);assert.equal(await store.next(MARKET_COLLECTION_JOBS),'macroCredit');sqlite.close();
+ assert.equal((await store.readInput('macro')).body.series.PAYEMS[0].value,2);assert.equal(await store.next(MARKET_COLLECTION_JOBS),'macroCredit');sqlite.close();
 });
 test('failed source does not fabricate score and releases lease',async()=>{
  const {store,db,sqlite}=fixture();
  const r=await runMarketOperationalRefresh({env:{DB:db},store,job:'rates',now,collectors:{rates:()=>{throw Error('secret-url')}},calculate:()=>{throw Error('must not calculate')}});
- assert.deepEqual(r,{status:'ERROR',job:'rates',phase:'COLLECT'});assert.equal(await store.readScore(),null);assert.ok(await store.claim('pipeline',now+1));sqlite.close();
+ const {failureDiagnostic,...result}=r;assert.deepEqual(result,{status:'ERROR',job:'rates',phase:'COLLECT'});
+ assert.equal(failureDiagnostic.name,'Error');assert.equal(failureDiagnostic.code,null);assert.equal(JSON.stringify(r).includes('secret-url'),false);
+ assert.ok(failureDiagnostic.location?.module.startsWith('worker/'));assert.equal(await store.readScore(),null);assert.ok(await store.claim('pipeline',now+1));sqlite.close();
+});
+
+test('growth BLS transport failure retains safe HTTP metadata and releases the lease',async()=>{
+ const {store,db,sqlite}=fixture();
+ const sourceDiagnostic={provider:'BLS',httpStatus:503,attempts:2,registered:true};
+ const r=await runMarketOperationalRefresh({env:{DB:db},store,job:'growth',now,collectors:{growth:()=>{throw Object.assign(Error('GROWTH_R2_BLS_HTTP:503'),{sourceDiagnostic:{...sourceDiagnostic,raw:'PRIVATE'}});}}});
+ assert.equal(r.reason,'GROWTH_R2_BLS_HTTP');assert.deepEqual(r.sourceDiagnostic,sourceDiagnostic);
+ assert.equal(JSON.stringify(r).includes('PRIVATE'),false);assert.equal(await store.readScore(),null);assert.ok(await store.claim('pipeline',now+1));sqlite.close();
 });
 test('scheduled score persistence continues the existing liquidity trend history',async()=>{
  const {store,sqlite}=fixture();
- await store.writeScore({status:'SUCCESS',asOfDate:'2026-09-30',domains:[{id:'liquidity',status:'READY',score:0}]},now);
+ await store.writeScore(fullMarket(),now);
  const row=sqlite.prepare('SELECT * FROM market_liquidity_active_history_v1').get();
  assert.equal(row.score,0);assert.equal(row.as_of_date,'2026-09-30');
- await store.writeScore({status:'SUCCESS',asOfDate:'2026-09-30',domains:[{id:'liquidity',status:'PARTIAL',score:null}]},now+1);
+ await assert.rejects(store.writeScore({status:'SUCCESS',asOfDate:'2026-09-30',domains:[{id:'liquidity',status:'PARTIAL',score:null}]},now+1),/MARKET_REQUIRED_SCORE_MISSING/);
  assert.equal(sqlite.prepare('SELECT score FROM market_liquidity_active_history_v1').get().score,0);sqlite.close();
 });

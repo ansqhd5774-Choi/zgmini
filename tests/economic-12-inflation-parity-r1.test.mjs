@@ -37,6 +37,6 @@ test("dashboard and 12-card explorer navigate to actual domain-specific detail p
  for(const item of ECONOMIC_DETAIL_CATALOG)assert.ok(catalog.includes("href:'/economic-indicators/"+item.slug+"/'"),item.id);
  assert.match(explorer,/href=\{card\.href\}/);
  assert.ok(dashboard.includes('href={"/economic-indicators/"+'));
- assert.equal(shellRoutes.length,25);
- const sitemap=read("public/sitemap.xml");assert.equal((sitemap.match(/<url>/g)||[]).length,34);
+ assert.equal(shellRoutes.length,26);
+ const sitemap=read("public/sitemap.xml");assert.equal((sitemap.match(/<url>/g)||[]).length,36);
 });

@@ -1,3 +1,5 @@
+import {assertMarketInput,readValidatedInput,VALIDATED_INPUT_KEYS} from './market-input-validation.mjs';
+import {assertCompleteMarket} from './market-publication-validation.mjs';
 import {PUBLIC_DISPLAY_MAX_AGE_MS} from './public-display-freshness.mjs';
 // Private normalized inputs and separately stored public projections.
 // Public reads never call providers or compute scores.
@@ -6,7 +8,7 @@ import {Buffer} from 'node:buffer';
 import {liquidityHistoryRow} from './market-score-response-store.mjs';
 import {LIQUIDITY_ACTIVE_HISTORY_METHOD} from './liquidity-active-history-reader.mjs';
 import {mergeStoredMacro} from './candidate-market-operational-store.mjs';
-import {bisInputField,BIS_INPUT_TTL,readLastValidBis} from './bis-input-policy.mjs';
+import {BIS_INPUT_TTL} from './bis-input-policy.mjs';
 const decodeInput=text=>JSON.parse(text.startsWith('gzip:')?gunzipSync(Buffer.from(text.slice(5),'base64'),{maxOutputLength:32000000}).toString('utf8'):text);
 export function marketOperationalStore(db){
  if(!db)throw Error('STORAGE_UNAVAILABLE');
@@ -20,7 +22,7 @@ export function marketOperationalStore(db){
  const read=async(table,key)=>{const row=await db.prepare(`SELECT body,stored_at FROM ${table} WHERE ${table==='market_input_batches_v1'?'batch_key':'snapshot_key'}=?`).bind(key).first();return row?{body:JSON.parse(row.body),storedAt:row.stored_at}:null};
  return {
   initialize:init,
-  async readInput(key){await init();if(bisInputField(key))return readLastValidBis(db,key,decodeInput);const row=await db.prepare('SELECT body,stored_at FROM market_input_batches_v1 WHERE batch_key LIKE ? ORDER BY stored_at DESC LIMIT 1').bind(key+':%').first();return row?{body:decodeInput(row.body),storedAt:row.stored_at}:null},
+  async readInput(key){await init();if(VALIDATED_INPUT_KEYS.includes(key))return readValidatedInput(db,key,decodeInput);const row=await db.prepare('SELECT body,stored_at FROM market_input_batches_v1 WHERE batch_key LIKE ? ORDER BY stored_at DESC LIMIT 1').bind(key+':%').first();return row?{body:decodeInput(row.body),storedAt:row.stored_at}:null},
   readScore:()=>read('market_public_snapshots_v1','current'),
   async readScoreHistory({sinceDate='0000-00-00',limit=370}={}){
    await init();
@@ -34,12 +36,13 @@ export function marketOperationalStore(db){
     }catch{return []}
    });
   },
-  async writeInput(key,body,now){await init();const json=JSON.stringify(body);if(Buffer.byteLength(json)>32000000)throw Error('INPUT_STORAGE_LIMIT');const encoded='gzip:'+gzipSync(json).toString('base64');if(encoded.length>1800000)throw Error('INPUT_STORAGE_LIMIT');await db.prepare('INSERT INTO market_input_batches_v1 VALUES(?,?,?) ON CONFLICT(batch_key) DO UPDATE SET body=excluded.body,stored_at=excluded.stored_at').bind(key+':'+new Date(now).toISOString().slice(0,10),encoded,now).run()},
+  async writeInput(key,body,now){assertMarketInput(key,body);await init();const json=JSON.stringify(body);if(Buffer.byteLength(json)>32000000)throw Error('INPUT_STORAGE_LIMIT');const encoded='gzip:'+gzipSync(json).toString('base64');if(encoded.length>1800000)throw Error('INPUT_STORAGE_LIMIT');await db.prepare('INSERT INTO market_input_batches_v1 VALUES(?,?,?) ON CONFLICT(batch_key) DO UPDATE SET body=excluded.body,stored_at=excluded.stored_at').bind(key+':'+new Date(now).toISOString().slice(0,10),encoded,now).run()},
   async writeScore(body,now){
-   await init();const encoded=JSON.stringify(body);
+   assertCompleteMarket(body);await init();const encoded=JSON.stringify(body);const statements=[];
    const liquidity=liquidityHistoryRow(encoded,now);
-   if(liquidity)await db.prepare('INSERT INTO market_liquidity_active_history_v1 VALUES(?,?,?,?) ON CONFLICT(as_of_date,methodology_version) DO UPDATE SET score=excluded.score,stored_at=excluded.stored_at').bind(liquidity.asOfDate,LIQUIDITY_ACTIVE_HISTORY_METHOD,liquidity.score,liquidity.storedAt).run();
-   for(const key of [new Date(now).toISOString().slice(0,10),'current'])await db.prepare('INSERT INTO market_public_snapshots_v1 VALUES(?,?,?) ON CONFLICT(snapshot_key) DO UPDATE SET body=excluded.body,stored_at=excluded.stored_at').bind(key,encoded,now).run();
+   if(liquidity)statements.push(db.prepare('INSERT INTO market_liquidity_active_history_v1 VALUES(?,?,?,?) ON CONFLICT(as_of_date,methodology_version) DO UPDATE SET score=excluded.score,stored_at=excluded.stored_at').bind(liquidity.asOfDate,LIQUIDITY_ACTIVE_HISTORY_METHOD,liquidity.score,liquidity.storedAt));
+   for(const key of [new Date(now).toISOString().slice(0,10),'current'])statements.push(db.prepare('INSERT INTO market_public_snapshots_v1 VALUES(?,?,?) ON CONFLICT(snapshot_key) DO UPDATE SET body=excluded.body,stored_at=excluded.stored_at').bind(key,encoded,now));
+   await db.batch(statements);
   },
   async claim(job,now){
    await init();const id=crypto.randomUUID();

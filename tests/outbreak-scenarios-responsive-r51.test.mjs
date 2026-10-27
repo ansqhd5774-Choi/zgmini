@@ -7,7 +7,10 @@ const page=readFileSync("app/page.tsx","utf8");
 const iran=readFileSync("app/iran-progress.tsx","utf8");
 
 test("redesign only scenarios view and leave the dashboard summary unchanged",()=>{
- assert.match(page,/view==='scenarios'&&<OutbreakEvents initialEvent=\{outbreakEvent\}\/>/);
+ const standalone=readFileSync('app/outbreak/page.tsx','utf8');
+ assert.match(standalone,/<OutbreakEvents\/>/);
+ assert.match(page,/<OutbreakSummary onOpen=/);
+ assert.doesNotMatch(page,/<OutbreakEvents/);
  assert.match(src,/import '\.\/outbreak-scenarios-r51\.css';/);
  assert.match(css,/\.ob-events \.ob-cards/);
  assert.match(css,/\.ob-events \.ob-selected-event-panel/);

@@ -4,7 +4,8 @@ import {PUBLIC_DISPLAY_MAX_AGE_MS} from './public-display-freshness.mjs';
 import {gunzipSync} from 'node:zlib';
 import {Buffer} from 'node:buffer';
 import {projectionMacroKey} from './projection-input-manifest-r60.mjs';
-import {bisInputField,BIS_INPUT_TTL,readLastValidBis} from './bis-input-policy.mjs';
+import {bisInputField,BIS_INPUT_TTL} from './bis-input-policy.mjs';
+import {readValidatedInput,VALIDATED_INPUT_KEYS} from './market-input-validation.mjs';
 
 const INPUT_TTL=36*3600000;
 const decodeInput=text=>JSON.parse(text.startsWith('gzip:')?gunzipSync(Buffer.from(text.slice(5),'base64'),{maxOutputLength:32000000}).toString('utf8'):text);
@@ -32,14 +33,10 @@ export function marketOperationalStore(db){
  return Object.freeze({
   initialize:async()=>true,
   async readInput(key){
-   if(bisInputField(key))return readLastValidBis(db,key,decodeInput);
+   if(VALIDATED_INPUT_KEYS.includes(key))return readValidatedInput(db,key,decodeInput);
    const row=await db.prepare('SELECT body,stored_at FROM market_input_batches_v1 WHERE batch_key LIKE ? ORDER BY stored_at DESC LIMIT 1').bind(key+':%').first();
    if(!row)return null;
    const latest={body:decodeInput(row.body),storedAt:row.stored_at};
-   if(key==='macro'){
-    const prior=await db.prepare('SELECT body,stored_at FROM market_input_batches_v1 WHERE batch_key LIKE ? AND stored_at < ? ORDER BY stored_at DESC LIMIT 1').bind(key+':%',row.stored_at).first();
-    if(prior)latest.body=mergeStoredMacro({body:decodeInput(prior.body),storedAt:prior.stored_at},latest,row.stored_at);
-   }
    return latest;
   },
   readScore:()=>read('market_public_snapshots_v1','current'),

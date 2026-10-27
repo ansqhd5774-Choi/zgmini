@@ -1,4 +1,5 @@
 import {PUBLIC_DISPLAY_MAX_AGE_MS} from './public-display-freshness.mjs';
+import {assertFeedInput,assertFeedOutput} from './public-feed-input-safety.mjs';
 // Public reads have no collector dependency and never initialize or write tables.
 export const FEED_POLICY=Object.freeze({
  'fear-greed':{intervalMs:15*60000,maxAgeMs:PUBLIC_DISPLAY_MAX_AGE_MS},
@@ -11,6 +12,8 @@ export function publicFeedStore(db){
   return row?{body:JSON.parse(row.body),storedAt:row.stored_at}:null;
  };
  const write=async(kind,key,body,now)=>{
+  if(kind==='input')assertFeedInput(key,body,now);
+  if(kind==='output')assertFeedOutput(key,body);
   const encoded=JSON.stringify(body);if(new TextEncoder().encode(encoded).length>1800000)throw Error('FEED_STORAGE_LIMIT');
   const statements=[new Date(now).toISOString().slice(0,10),'current'].map(snapshot=>db.prepare('INSERT INTO public_feed_snapshots_v1(kind,feed_key,snapshot_key,body,stored_at) VALUES(?,?,?,?,?) ON CONFLICT(kind,feed_key,snapshot_key) DO UPDATE SET body=excluded.body,stored_at=excluded.stored_at').bind(kind,key,snapshot,encoded,now));
   await db.batch(statements);

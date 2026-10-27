@@ -22,7 +22,7 @@ test('sector and theme describe their own published ETF models and do not treat 
 test('search coverage document accounts for every public route without creating keyword-only duplicates',()=>{
  const sitemap=read('public/sitemap.xml'),doc=read('docs/SEARCH_INTENT_COVERAGE.md');
  const urls=[...sitemap.matchAll(/<loc>(.*?)<\/loc>/g)].map(m=>m[1]);
- assert.equal(urls.length,34);
+ assert.equal(urls.length,36);
  for(const url of urls)assert.ok(doc.includes('`'+new URL(url).pathname+'`'),url);
  assert.match(doc,/제출·색인·검색 순위를 구분/);
 });

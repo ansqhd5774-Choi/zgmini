@@ -54,3 +54,6 @@ jobs:
       - name: PC publication recovery tests
         if: ${{ !cancelled() && steps.install.outcome == 'success' }}
         run: node --test scripts/pc-writer/publication-guard.test.mjs scripts/pc-writer/korea-publication.test.mjs scripts/pc-writer/local-db.test.mjs
+      - name: Cloudflare candidate read contracts
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        run: node --test scripts/projection-runtime-r52.test.mjs tests/market-projection-queue.test.mjs tests/market-public-projection-store.test.mjs scripts/candidate-guard.test.mjs scripts/candidate-2db-r5.test.mjs tests/projection-selective-source-r53.test.mjs tests/projection-writer-hotpath-r54.test.mjs tests/projection-checkpoint-r55.test.mjs tests/liquidity-percentile-r56.test.mjs scripts/candidate-shell-r7.test.mjs tests/candidate-writer-r1.test.mjs

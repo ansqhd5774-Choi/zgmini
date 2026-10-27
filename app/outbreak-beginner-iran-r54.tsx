@@ -1,8 +1,10 @@
 "use client";
 import {useEffect,useState} from "react";
 import {CalendarDays,ChevronDown,Info,Lightbulb,ShieldAlert,Swords,TrendingUp} from "lucide-react";
+import {MarketFearGreedChart} from "./market-fear-greed-chart";
 import "./outbreak-beginner-iran-r54.css";
 import "./outbreak-iran-parity-r55.css";
+import OutbreakNewsContainer from "./outbreak-news-container-r1";
 
 type Point={at:number;value:number|null;carried?:boolean;phase?:string};
 const DAY_MS=86400000;
@@ -23,7 +25,7 @@ function Scale({score}:{score:number|null}){
   <div className="ob54-scale-labels">{tones.map(([tone,label])=><span key={tone}>{label}</span>)}</div>
  </div>;
 }
-function Trend({view}:{view:any}){
+function Trend({view,compact=false}:{view:any;compact?:boolean}){
  const [mobile,setMobile]=useState(false);
  useEffect(()=>{
   const media=window.matchMedia("(max-width:600px)");
@@ -35,28 +37,49 @@ function Trend({view}:{view:any}){
  const end=typeof view.chartEndAt==="number"&&Number.isFinite(view.chartEndAt)?view.chartEndAt:series.at(-1)?.at??null;
  const start=end===null?null:end-13*DAY_MS;
  const points=start===null?[]:series.filter(p=>Number.isFinite(p.at)&&p.at>=start&&p.at<=end!&&typeof p.value==="number"&&Number.isFinite(p.value)).sort((a,b)=>a.at-b.at);
- const left=mobile?36:42,width=mobile?284:606,right=left+width;
- const x=(at:number)=>left+(start===null?0:(at-start)/(13*DAY_MS)*width);
- const y=(v:number)=>185-v*1.57;
- const color=band(view.score).color;
- const ticks=start===null?[]:(mobile?[0,4,8,13]:[0,2,4,6,8,10,13]).map(i=>start+i*DAY_MS);
- const date=(at:number)=>new Date(at).toISOString().slice(5,10).replace("-",".");
+ const dateKey=(at:number)=>new Date(at).toISOString().slice(0,10);
+ const date=(value:string)=>value.slice(5).replace("-",".");
  const carried=(p:Point)=>p.carried===true||p.phase==="NO_NEW_RECORDED_CHANGE"||p.phase==="EARLY_WINDOW_NO_DATED_REPORT";
+ // Calendar slots without a stored point remain null; provisional estimates retain their original values.
+ const observed=new Map(points.map(p=>[dateKey(p.at),p.value!]));
+ const calendar=start===null?[]:Array.from({length:14},(_,day)=>dateKey(start+day*DAY_MS));
+ const chartData=calendar.map(day=>({date:day,score:observed.get(day)??null}));
+ const axisTicks=(mobile?[0,4,8,13]:[0,2,4,6,8,10,13]).map(i=>calendar[i]).filter((day):day is string=>Boolean(day));
+ const axisLabels=new Map(axisTicks.map(day=>[day,date(day)]));
+ // Preserve each original segment's real-change/unchanged-carried distinction.
+ // A gap over 1.5 calendar days must not be connected or interpolated.
+ const lineSegments=points.slice(1).flatMap((p,i)=>{
+  const prev=points[i];
+  if(p.at-prev.at>DAY_MS*1.5)return [];
+  return [{from:{date:dateKey(prev.at),score:prev.value!},to:{date:dateKey(p.at),score:p.value!},dashed:carried(p)}];
+ });
+ const carriedDates=new Set(points.filter(carried).map(p=>dateKey(p.at)));
  const latest=points.at(-1);
+ // The compact mobile view shares the stored 14-day points and missing-day rules.
+ // Its vertical scale expands only when the actual observed range permits it.
+ const yAxisMax=Math.min(100,Math.max(30,Math.ceil(Math.max(0,...points.map(p=>p.value as number))/10)*10));
+ const plot=start!==null&&points.length>0?<div className={compact?"ob58-mini-plot":"ob54-market-chart"} role="group"
+  aria-label={"최근 14일 종전 진전도 잠정 흐름, 표시된 "+points.length+"개 날짜"}
+  title="실제 과거 확정 관측값이 아닌 저장 자료 기반 추정 흐름. 새 변화 미반영은 점선"
+  data-observed-days={points.length} data-carried-days={points.filter(carried).length}>
+  <MarketFearGreedChart
+   data={chartData} axisTicks={axisTicks} axisLabels={axisLabels}
+   latestPoint={latest?{date:dateKey(latest.at),score:latest.value!}:null}
+   lineSegments={lineSegments} compact={compact} yAxisMax={compact?yAxisMax:undefined}
+   instanceKey={compact?"iran-mobile-14d":"iran-provisional-14d"}
+   gradientId={compact?"ob58-iran-mini-gradient":"ob54-iran-provisional-gradient"}
+   formatTooltipLabel={day=>date(day)+(carriedDates.has(day)?" · 변화 미확인·이월":"")}
+   color={band(view.score).color} marketScoreBands
+  />
+ </div>:<div className={compact?"ob58-mini-empty":"ob54-empty"} role="status">14일 구간의 저장된 점수가 없습니다.</div>;
+ if(compact)return <div className="ob58-mini-trend" role="region" aria-label="이란 전쟁 심리 최근 14일 추이">
+  <div className="ob58-mini-head"><span>14일 추이</span><small>0~{yAxisMax}점{yAxisMax<100?" 확대":""}</small></div>
+  {plot}
+  {calendar.length>0&&<div className="ob58-mini-axis" aria-hidden="true"><span>{date(calendar[0])}</span><span>{date(calendar.at(-1)!)}</span></div>}
+ </div>;
  return <section className="ob-panel ob54-trend" aria-labelledby="ob54-chart-title">
   <div className="ob54-chart-head"><h3 id="ob54-chart-title"><TrendingUp size={16} aria-hidden="true"/> 14일 추이</h3><span>잠정 추정 · 저장된 흐름</span></div>
-  {start!==null&&points.length>0?<svg className="ob54-trend-svg" viewBox={mobile?"0 0 350 232":"0 0 700 232"} role="img" aria-label={"최근 14일 종전 진전도 잠정 흐름, 표시된 "+points.length+"개 날짜"}>
-   <title>실제 과거 확정 관측값이 아닌 저장 자료 기반 추정 흐름. 새 변화 미반영은 점선</title>
-   {[0,50,100].map(v=><g key={v}><line x1={left} x2={right} y1={y(v)} y2={y(v)} stroke="#60758c" strokeDasharray="4 6" opacity=".7"/>
-    <text x={left-12} y={y(v)+4} fontSize="11" fill="#b3c5d5" textAnchor="end">{v}</text></g>)}
-   {points.slice(1).map((p,i)=>{const prev=points[i];if(p.at-prev.at>DAY_MS*1.5)return null;
-    return <line key={p.at} x1={x(prev.at)} y1={y(prev.value!)} x2={x(p.at)} y2={y(p.value!)} stroke={color}
-     strokeWidth="2.7" strokeLinecap="round" strokeDasharray={carried(p)?"5 5":undefined} vectorEffect="non-scaling-stroke">
-     <title>{date(p.at)+" · "+p.value!.toFixed(1)+"점"+(carried(p)?" (변화 미확인·이월)":" (변화 반영)")}</title></line>;})}
-   {latest&&<g><circle cx={x(latest.at)} cy={y(latest.value!)} r="5" fill={color} stroke="#ffd1d1" strokeWidth="1.5"/>
-    <text x={x(latest.at)-6} y={y(latest.value!)-13} textAnchor="end" fontSize="14" fontWeight="800" fill={color}>{latest.value!.toFixed(1)}</text></g>}
-   {ticks.map(t=><text key={t} x={x(t)} y="220" textAnchor="middle" fontSize="11" fill="#b3c5d5">{date(t)}</text>)}
-  </svg>:<div className="ob54-empty" role="status">14일 구간의 저장된 점수가 없습니다. 임의로 생성하지 않습니다.</div>}
+  {plot}
   <p className="ob54-note"><Info size={15} aria-hidden="true"/> <span>14일 추정 흐름으로, 과거 확정 점수는 아닙니다. 점선은 새 변화가 확인되지 않아 추정값을 유지한 구간이며, 교전 중단을 뜻하지 않습니다.</span></p>
  </section>;
 }
@@ -78,13 +101,15 @@ export default function OutbreakBeginnerIran({view}:{view:any}){
    <span className="ob-stage">{view.message}</span>
   </header>
   <div className="ob53-intro-grid ob55-intro">
-   <section className="ob-panel ob53-score-card ob55-score-card" aria-label="현재 종전 진전도">
+   <section className="ob-panel ob53-score-card ob55-score-card" aria-label="이란 전쟁 심리">
+    <div className="ob58-mobile-titlebar"><strong>이란 전쟁 심리</strong><time dateTime={date==="미확인"?undefined:date}>{date.replaceAll("-",".")}</time></div>
     <div className="ob53-metric-row ob54-kpis">
-     <div className="ob53-current"><span>현재 종전 진전도</span><strong>{score===null?"—":score.toFixed(1)}<small>점 / 100</small></strong></div>
+     <div className="ob53-current"><span>이란 전쟁 심리</span><strong>{score===null?"—":score.toFixed(1)}<small>점 / 100</small></strong><span className="ob58-status" data-tone={state.tone}>{state.name}</span></div>
      <div className="ob53-week"><span>주간 변화</span><strong>—</strong><small>확정 비교값 미제공</small></div>
      <div className="ob53-asof"><span>분석 기준일</span><strong><CalendarDays size={15} aria-hidden="true"/>{date}</strong><small>{isEstimate?"잠정 계산 기준":"저장 자료 기준"}</small></div>
     </div>
-    <Scale score={score}/>
+    <Trend view={view} compact/>
+    <div className="ob57-scale-summary"><Scale score={score}/><p className="ob57-summary">{summary} 종전 확률이나 미래 종료 날짜를 뜻하지 않습니다.</p></div>
    </section>
    <section className="ob-panel ob53-explain ob54-meaning" aria-labelledby="ob54-meaning">
     <h3 id="ob54-meaning"><Lightbulb size={17} aria-hidden="true"/> 이 숫자는 무슨 뜻인가요?</h3>
@@ -95,6 +120,7 @@ export default function OutbreakBeginnerIran({view}:{view:any}){
   </div>
   <div className="ob53-main-grid ob55-main">
    <Trend view={view}/>
+   <OutbreakNewsContainer eventId="iran"/>
    <div className="ob53-beginner-stack ob54-right">
     <section className="ob-panel ob53-guide ob54-guide" aria-labelledby="ob54-guide">
      <h3 id="ob54-guide"><ShieldAlert size={16} aria-hidden="true"/> 주식 초보자용 해석</h3>

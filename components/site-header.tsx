@@ -17,7 +17,7 @@ export default function SiteHeader({activeView=null,onSelectView,accountTools}:{
  const headerRef=useRef<HTMLElement>(null);
  const [pathname,setPathname]=useState('');
  useEffect(()=>{setPathname(window.location.pathname)},[]);
- const pageLinks=[['/risk-indicators/','위험 지표'],['/economic-indicators/','경제 지표'],['/sector-fear-greed/','섹터 공포·탐욕'],['/theme-fear-greed/','테마 공포·탐욕']] as const;
+ const pageLinks=[['/risk-indicators/','위험 지표'],['/economic-indicators/','경제 지표'],['/sector-fear-greed/','섹터 공포·탐욕'],['/theme-fear-greed/','테마 공포·탐욕'],['/market-calendar/','시장 캘린더']] as const;
  useEffect(()=>{
   const header=headerRef.current;
   if(!header)return;
@@ -47,7 +47,7 @@ export default function SiteHeader({activeView=null,onSelectView,accountTools}:{
        <a href="/">대시보드</a>
       </>}
     {pageLinks.map(([href,label])=><a key={href} href={href} aria-current={pathname===href?'page':undefined}>{label}</a>)}
-    {onSelectView?<button type="button" aria-current={activeView==="scenarios"?"page":undefined} onClick={()=>onSelectView("scenarios")}>아웃브레이크</button>:<a href="/?view=scenarios">아웃브레이크</a>}
+    <a href="/outbreak/" aria-current={pathname==="/outbreak/"?"page":undefined}>아웃브레이크</a>
    </nav>
    <div className="zg-header-tools">
     <div className="zg-toolbar zg-toolbar-header">

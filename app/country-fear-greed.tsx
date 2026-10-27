@@ -14,10 +14,10 @@ function CountryFearGreed() {
       <div className="zg-section-heading">
         <h1 id="global-title" style={{display:"flex",alignItems:"center",gap:6}}>
           <Gauge aria-hidden="true" size={20} color="#fabc42" style={{flexShrink:0}}/>
-          공포·탐욕 (공탐)
+          공포·탐욕
           <DashboardTip label="공포·탐욕 도움말"><HelpText copy={HELP.fear}/></DashboardTip>
         </h1>
-        <p>공탐 지수는 공포와 탐욕 지수의 줄임말입니다. 미국·한국은 각각 다른 모델입니다.</p>
+        <p>공포·탐욕 지수는 투자자의 시장 심리를 보여줍니다. ‘공탐 지수’라고도 부르며, 미국과 한국은 서로 다른 모델로 산출합니다.</p>
         <a
           href="/guides/fear-greed-buying/"
           className="ml-auto inline-flex min-h-9 shrink-0 items-center gap-1.5 px-2 text-xs font-semibold text-amber-300 transition-colors hover:text-amber-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-300"

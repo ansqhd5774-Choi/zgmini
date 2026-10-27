@@ -37,3 +37,10 @@ test("overview has explicit responsive presentation",()=>{
   assert.match(css,/grid-template-columns:minmax\(180px,1\.4fr\) minmax\(120px,1fr\) 92px 108px/);
   assert.match(css,/@media\(max-width:767px\)[\s\S]*\.cnn-component-overview-row\{[\s\S]*grid-template-columns:minmax\(0,1fr\) auto/);
 });
+
+test("dashboard heading remains clean while the abbreviated SEO keyword stays in the explanation",()=>{
+  assert.match(country,/<h1 id="global-title"[^>]*>[\s\S]*?\n\s+공포·탐욕\s*\n/);
+  assert.doesNotMatch(country,/공포·탐욕\s*\(공탐\)/);
+  assert.match(country,/공포·탐욕 지수는 투자자의 시장 심리를 보여줍니다/);
+  assert.match(country,/공탐 지수/);
+});

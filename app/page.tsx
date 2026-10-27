@@ -1,7 +1,7 @@
 "use client";
 import {CompositeMarketSection,ScenarioSection} from "./dashboard-ui";
 import DeferredDashboardCharts from '../components/deferred-dashboard-charts';
-import OutbreakEvents, {OutbreakSummary} from './outbreak-events';
+import {OutbreakSummary} from './outbreak-events';
 
 
 import { lazy, Suspense, useEffect, useMemo, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from "react";
@@ -770,22 +770,8 @@ function SummaryMiniChart({ data, period, score, label }: { data: ChartPoint[]; 
 }
 
 export default function Home() {
-  const [view,setView]=useState("dashboard");
-  // Deep-link to the outbreak tab from detailed analysis pages.
-  useEffect(()=>{
-    const sync=()=>setView(new URLSearchParams(window.location.search).get("view")==="scenarios"?"scenarios":"dashboard");
-    sync();
-    window.addEventListener("popstate",sync);
-    return()=>window.removeEventListener("popstate",sync);
-  },[]);
-  const selectHeaderView=(next:"dashboard"|"scenarios")=>{
-    setView(next);
-    const url=new URL(window.location.href);
-    if(next==="scenarios")url.searchParams.set("view","scenarios");
-    else url.searchParams.delete("view");
-    window.history.replaceState(window.history.state,"",url.pathname+url.search+url.hash);
-  };
-  const [outbreakEvent,setOutbreakEvent]=useState('fed');
+  // Outbreak now owns its own route and document; the homepage remains the dashboard.
+  const [view]=useState("dashboard");
   const [category, setCategory] = useState<(typeof categories)[number]>("전체");
   const [countryFilter, setCountryFilter] = useState<Set<"ALL" | CountryCode>>(new Set(["ALL"]));
   const [importanceLevels, setImportanceLevels] = useState<Set<number>>(new Set());
@@ -930,7 +916,7 @@ export default function Home() {
   return (
     <main className="zg-app zg-dashboard min-h-screen" data-testid="dashboard-root" data-view={view}>
       <script type="application/ld+json" dangerouslySetInnerHTML={{__html: JSON.stringify({ "@context": "https://schema.org",        "@type": "WebPage",       "@id": "https://zgmini.kr/#webpage",       url: "https://zgmini.kr/",       name: "ZGmini 지그미니 | 미국·한국 공포탐욕지수와 경제지표",       description: "미국·한국 공포탐욕지수의 최근 점수와 기간별 차트를 확인하세요. 물가·고용·금리 등 주요 경제지표와 데이터 관측일을 함께 제공합니다.",       isPartOf: { "@id": "https://zgmini.kr/#website" },       about: { "@id": "https://zgmini.kr/#organization" },       inLanguage: "ko-KR",      }).replace(/</g, "\\u003c")}}/>
-      <SiteHeader activeView={view==="scenarios"?"scenarios":"dashboard"} onSelectView={(next)=>selectHeaderView(next)} accountTools={sessionLoading ? (
+      <SiteHeader accountTools={sessionLoading ? (
                 <span className="hidden text-xs text-slate-400 sm:inline">계정 확인 중</span>
               ) : user ? (
                 <Suspense fallback={<span className="text-xs text-slate-400">설정 준비 중</span>}>
@@ -973,13 +959,12 @@ export default function Home() {
         {view!=='dashboard'&&<div className="zg-data-notice zg-data-notice-compact" role="status"><Info size={16}/><span>{marketDataLoading?'경제지표를 불러오고 있습니다.':marketData?.status==='live'?'공식 자료와 ZGmini 자체 계산값을 표시합니다.':marketDataError?'데이터 연결 지연 · 마지막 정상 수신값을 표시합니다.':'일부 지표 갱신 지연 · 마지막 정상 수신값을 유지합니다.'}</span></div>}
         {(view==='dashboard'||view==='countries')&&<CountryFearGreed/>}
         {view==='dashboard'&&<>
-          <CompositeMarketSection items={displaySummaryItems} points={periodPoints[period]} demo={false} loading={marketDataLoading}/>
+          <CompositeMarketSection demo={false}/>
           <div className="zg-dashboard-secondary">
-            <OutbreakSummary onOpen={id=>{setOutbreakEvent(id);setView('scenarios');}}/>
+            <OutbreakSummary onOpen={id=>{window.location.assign('/outbreak/?event='+encodeURIComponent(id));}}/>
             <DeferredDashboardCharts/>
           </div>
         </>}
-        {view==='scenarios'&&<OutbreakEvents initialEvent={outbreakEvent}/>}
         <Suspense fallback={<p role="status">선택한 화면을 불러오는 중입니다.</p>}>
         {view!=='dashboard' && favoriteItems.length > 0 && (
           <section className="mt-6" aria-labelledby="favorite-title">

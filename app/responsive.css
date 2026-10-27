@@ -497,3 +497,55 @@
  .zg-dashboard[data-view="dashboard"] .ob-summary-chart-frame>.zg-chart-fixed-axis>b:last-of-type{right:15.1%!important}
  .zg-dashboard[data-view="dashboard"] .zg-sector-chart-plot>.zg-chart-fixed-axis>span{left:calc(100% - 24px)!important;transform:translate(0,-50%)}
 }
+
+/* EC12 R6: the actual card is the grid container (card-mid is display:contents).
+   Reserve the title/arrow lane and remove the 16px left chart intrusion.
+   These identical folded/unfolded rules protect all 12 titles without
+   reducing the 60px trend height or altering SVG/path data. */
+.zg-dashboard[data-view="dashboard"] .zg-r55-shell[data-expanded] .zg-r55-card{
+  grid-template-columns:110px minmax(0,1fr);
+}
+@media (min-width:960px){
+  .zg-dashboard[data-view="dashboard"] .zg-r55-shell[data-expanded] .zg-r55-card-visual{
+    margin-left:0;
+  }
+}
+
+/* Keep all 12 indicator cards in two mobile columns (six rows).
+   Give the trend plot its own row beneath the title, with a compact score lane. */
+@media (max-width:540px){
+  .zg-dashboard[data-view="dashboard"] .zg-r55-card-grid{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+  }
+  .zg-dashboard[data-view="dashboard"] .zg-r55-shell[data-expanded] .zg-r55-card{
+    grid-template-columns:82px minmax(0,1fr);
+  }
+  .zg-dashboard[data-view="dashboard"] .zg-r55-shell[data-expanded] .zg-r55-card-visual{
+    grid-row:2;
+  }
+}
+
+/* EC12 R9: 12 readable indicator charts, four columns by three rows on desktop.
+   The market panel is max-width constrained, so six columns squeezed each 60px
+   sparkline into ~48px at 1920px. Keep all chart dimensions and labels intact. */
+@media (min-width:960px){
+  .zg-dashboard[data-view="dashboard"] .zg-r55-card-grid{
+    grid-template-columns:repeat(4,minmax(0,1fr));
+  }
+}
+/* Keep composite history and the eight risk diagnostics in independent cards. */
+.zg-dashboard[data-view="dashboard"] #market .zg-r55-body{grid-template-columns:minmax(0,1fr);grid-template-rows:auto auto auto}
+.zg-dashboard[data-view="dashboard"] #market .zg-r55-summary{grid-template-rows:auto}
+.zg-dashboard[data-view="dashboard"] #market .zg-r55-risk-panel{min-width:0;padding:8px;border:1px solid #17446d;border-radius:7px;background:#071a2d;color:#eef4fa}
+.zg-dashboard[data-view="dashboard"] #market .zg-r55-risk-heading{margin:0 0 8px}
+.zg-dashboard[data-view="dashboard"] #market .zg-r55-risk-heading h2{margin:0}
+.zg-dashboard[data-view="dashboard"] #market .zg-r55-risk-heading a{display:inline-flex;align-items:center;gap:8px;color:inherit;text-decoration:none}
+.zg-dashboard[data-view="dashboard"] #market .zg-r55-risk-heading a:focus-visible{outline:2px solid var(--zg-brand);outline-offset:4px;border-radius:2px}
+
+/* Mobile-only 4px right alignment for the three primary market charts. */
+@media (max-width:959px){
+  .zg-dashboard[data-view="dashboard"] .fg-card.fg-shared-shell .fg-chart-slot svg.recharts-surface,
+  .zg-dashboard[data-view="dashboard"] .zg-r55-summary-chart svg.recharts-surface{
+    transform:translateX(4px);
+  }
+}

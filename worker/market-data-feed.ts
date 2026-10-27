@@ -190,7 +190,7 @@ export async function collectMarketDataFeed(env: any, store: any, now: number) {
     fetchBls({ key, fredKey: bindings.FRED_API_KEY?.trim() }),
     Promise.all(Object.entries(FRED_SERIES).map(async ([name, id]) => ({ name, id, ...await fetchFred(id, { key: bindings.FRED_API_KEY?.trim() }) }))),
   ]);
-  await store.writeInput("market-data", {blsRows:[...blsResult.data], blsStatus:blsResult.status, fredResults}, now);
+  await store.writeInput("market-data", {blsRows:[...blsResult.data], blsStatus:blsResult.status, missingObservations:blsResult.missingObservations??[], fredResults}, now);
   const saved = await store.readInput("market-data");
   if(!saved || saved.storedAt !== now) throw Error("INPUT_READBACK_FAILED");
   const bls = new Map<string, Point[]>(saved.body.blsRows);

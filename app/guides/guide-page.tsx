@@ -4,9 +4,10 @@ import {ArticleJsonLd,WebPageJsonLd} from '../seo-jsonld';
 
 export function guideMetadata(title:string,description:string,path:string):Metadata {
   const fullTitle=`${title} | ZGmini`,url=`https://zgmini.kr${path}`;
+  const image='https://zgmini.kr/zgmini-share.png';
   return {title:fullTitle,description,alternates:{canonical:url},robots:{index:true,follow:true},
-    openGraph:{title:fullTitle,description,url,type:'article',siteName:'ZGmini'},
-    twitter:{card:'summary',title:fullTitle,description}};
+    openGraph:{title:fullTitle,description,url,type:'article',siteName:'ZGmini',images:[{url:image,width:1200,height:630,alt:'ZGmini 투자 지표 가이드'}]},
+    twitter:{card:'summary_large_image',title:fullTitle,description,images:[image]}};
 }
 export default function GuidePage({title,answer,path,datePublished='2026-10-07',dateModified='2026-10-07',variant='default',children}:{title:string;answer:string;path:string;datePublished?:string;dateModified?:string;variant?:'default'|'market';children:ReactNode}) {
   const market=variant==='market';

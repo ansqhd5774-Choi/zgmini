@@ -1,5 +1,5 @@
 "use client";
-import {useEffect,useState} from 'react';
+import {startTransition,useEffect,useState} from 'react';
 import {acceptsStoredUpdate,startStoredRefresh} from '../lib/market-score/live-refresh.mjs';
 export function useStoredIndex<T>(url:string,initial:T|null=null,enabled=true){
  const [payload,setPayload]=useState<T|null>(initial);
@@ -16,10 +16,10 @@ export function useStoredIndex<T>(url:string,initial:T|null=null,enabled=true){
     const published=Date.parse(response.headers.get('x-data-snapshot-at')??response.headers.get('x-projection-source-at')??response.headers.get('x-market-snapshot-at')??'');
     if(live&&!signal.aborted&&(!Number.isFinite(published)||published>=lastPublication)&&acceptsStoredUpdate(accepted,body)){
      accepted=body;if(Number.isFinite(published))lastPublication=published;
-     setPayload(body);setError(null);
+     startTransition(()=>{setPayload(body);setError(null);});
     }
    }catch{if(live)setError('UPDATE_FAILED');}
-   finally{if(live)setLoading(false);}
+   finally{if(live)startTransition(()=>setLoading(false));}
   });
   return()=>{live=false;stop();};
  },[url,enabled]);

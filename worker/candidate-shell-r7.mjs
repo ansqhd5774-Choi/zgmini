@@ -1,7 +1,10 @@
-export const shellRoutes=Object.freeze(['/','/inflation/','/recession/','/stagflation-risk/','/credit-risk/','/earnings-recession/','/asset-bubble/','/debt-risk/','/supply-shock/','/guides/fear-greed-buying/','/guides/cpi-pce-release/','/guides/fomc/','/sector-fear-greed/','/economic-indicators/inflation/','/economic-indicators/employment/','/economic-indicators/rates/','/economic-indicators/credit/','/economic-indicators/growth/','/economic-indicators/consumption/','/economic-indicators/earnings/','/economic-indicators/liquidity/','/economic-indicators/fund-flows/','/economic-indicators/breadth/','/economic-indicators/dollar-fx/','/economic-indicators/commodities/']);
+export const shellRoutes=Object.freeze(['/','/outbreak/','/inflation/','/recession/','/stagflation-risk/','/credit-risk/','/earnings-recession/','/asset-bubble/','/debt-risk/','/supply-shock/','/guides/fear-greed-buying/','/guides/cpi-pce-release/','/guides/fomc/','/sector-fear-greed/','/economic-indicators/inflation/','/economic-indicators/employment/','/economic-indicators/rates/','/economic-indicators/credit/','/economic-indicators/growth/','/economic-indicators/consumption/','/economic-indicators/earnings/','/economic-indicators/liquidity/','/economic-indicators/fund-flows/','/economic-indicators/breadth/','/economic-indicators/dollar-fx/','/economic-indicators/commodities/']);
 export function shellArtifact(path,rsc=false){return `/__candidate_shells/${path==='/'?'index':path.slice(1,-1)}.${rsc?'rsc':'html'}`;}
 export async function staticShell(request,env){
  const url=new URL(request.url);let path=url.pathname;
+ if(path==='/'&&url.searchParams.get('view')==='scenarios'&&(request.method==='GET'||request.method==='HEAD')){
+  url.pathname='/outbreak/';url.searchParams.delete('view');return new Response(null,{status:308,headers:{location:url.toString(), 'cache-control':'public, max-age=300'}});
+ }
  if(path==='/liquidity-crisis/'||path==='/liquidity-crisis'){url.pathname='/stagflation-risk/';return new Response(null,{status:308,headers:{location:url.toString()}});}
  if(!path.endsWith('/')&&shellRoutes.includes(path+'/')){url.pathname=path+'/';return new Response(null,{status:308,headers:{location:url.toString()}});}
  if(!shellRoutes.includes(path))return null;

@@ -29,12 +29,7 @@ export default function SectorFearGreedPage(){
     <p>미국 11개 GICS 섹터의 공포탐욕지수(공탐 지수)를 업종별로 비교합니다. 섹터 공탐은 ETF 기반 자체 투자심리 점수이며 CNN 미국 전체 시장 지수와 다릅니다.</p>
    </header>
    <SectorDetailCharts/>
-   <nav aria-label="관련 분석" className="zg-sector-related-nav">
-    <a className="zg-sector-related-link" href="/fear-greed/usa/"><span>미국 공포탐욕지수</span><span aria-hidden="true">→</span></a>
-    <a className="zg-sector-related-link" href="/recession/"><span>미국 경기침체 지표</span><span aria-hidden="true">→</span></a>
-    <a className="zg-sector-related-link" href="/asset-bubble/"><span>미국 자산 버블 지표</span><span aria-hidden="true">→</span></a>
-   </nav>
- <InvestorSearchGuide id="investor-search-sector-fear-greed" copy={SECTOR_INVESTOR_SEARCH}/>
+ <InvestorSearchGuide id="investor-search-sector-fear-greed" copy={SECTOR_INVESTOR_SEARCH} collapsible wideLast/>
   </div>
  </main></>;
 }

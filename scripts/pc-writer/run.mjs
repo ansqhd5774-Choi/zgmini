@@ -32,7 +32,7 @@ try{fs.writeFileSync(lock,JSON.stringify({pid:process.pid,at:Date.now()}),{flag:
 const started=Date.now(),report={at:new Date().toISOString(),source,mode:publish?'PUBLISH':'DRY_RUN',providerCalls:0,market:null,korea:null,projections:[]};
 let c;
 try{
- c=client(config,credential(root));
+ c=client(config,()=>credential(root));
  // Refuse to blindly repeat a publication interrupted in a previous invocation.
  for(const name of ['market-ledger.json','korea-ledger.json']){
   const file=path.join(base,name);if(!fs.existsSync(file))continue;const pending=read(file);if(pending.status!=='SUBMITTING')continue;

@@ -1,8 +1,8 @@
 import test from 'node:test';import assert from 'node:assert/strict';
 import {candidateWorker} from '../worker/candidate-guard.mjs';
 import {shellRoutes,staticShell} from '../worker/candidate-shell-r7.mjs';
-test('all25 shell GET/HEAD/RSC bypass framework with exact MIME; identity not forwarded',async()=>{
- assert.equal(shellRoutes.length,25);
+test('all26 shell GET/HEAD/RSC bypass framework with exact MIME; identity not forwarded',async()=>{
+ assert.equal(shellRoutes.length,26);
  assert.ok(shellRoutes.includes('/sector-fear-greed/'));
  assert.ok(shellRoutes.includes('/stagflation-risk/'));
  assert.ok(!shellRoutes.includes('/liquidity-crisis/'));
@@ -11,9 +11,9 @@ test('all25 shell GET/HEAD/RSC bypass framework with exact MIME; identity not fo
  for(const route of shellRoutes)for(const method of ['GET','HEAD'])for(const rsc of [false,true]){
   const r=await worker.fetch(new Request('https://candidate.workers.dev'+route,{method,headers:{authorization:'fixture',...(rsc?{RSC:'1'}:{})}}),env,{});
   assert.equal(r.status,200);assert.match(r.headers.get('content-type'),rsc?/text\/x-component/:/text\/html/);assert.equal(r.headers.get('x-zgmini-ssr'),'bypassed');if(method==='HEAD')assert.equal(await r.text(),'');
- }assert.equal(assets,100);assert.equal(ssr,0);
+ }assert.equal(assets,104);assert.equal(ssr,0);
  for(const method of ['POST','PUT','PATCH','DELETE'])assert.equal((await worker.fetch(new Request('https://candidate.workers.dev/',{method}),env,{})).status,403);
- assert.equal(ssr,0);assert.equal(assets,100);
+ assert.equal(ssr,0);assert.equal(assets,104);
 });
 
 test('legacy liquidity risk permanently redirects before asset rendering, preserving query and the separate liquidity domain',async()=>{
@@ -24,6 +24,20 @@ test('legacy liquidity risk permanently redirects before asset rendering, preser
  }
  assert.ok(shellRoutes.includes('/economic-indicators/liquidity/'));
 });
+test('legacy scenario query redirects permanently to independent outbreak and preserves event',async()=>{
+ const cases=[
+  ['https://zgmini.kr/?view=scenarios','https://zgmini.kr/outbreak/'],
+  ['https://zgmini.kr/?view=scenarios&event=iran','https://zgmini.kr/outbreak/?event=iran'],
+  ['https://zgmini.kr/?event=iran&view=scenarios','https://zgmini.kr/outbreak/?event=iran'],
+ ];
+ for(const [url,expected] of cases){
+  const response=await staticShell(new Request(url),{});
+  assert.equal(response.status,308);
+  assert.equal(response.headers.get('location'),expected);
+ }
+ assert.ok(shellRoutes.includes('/outbreak/'));
+});
+
 test('missing shell fails closed without SSR; API outside allowlist',async()=>{
  assert.equal((await staticShell(new Request('https://candidate.workers.dev/'),{ASSETS:{fetch:async()=>new Response('',{status:404})}})).status,503);
  assert.equal(await staticShell(new Request('https://candidate.workers.dev/api/market-score'),{}),null);

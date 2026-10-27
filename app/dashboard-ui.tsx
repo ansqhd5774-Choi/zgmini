@@ -5,7 +5,7 @@ import {domainObservationDelta} from '../lib/market-score/domain-observation-del
 import {compositeDayDelta,compositePeriodDelta} from '../lib/market-score/composite-day-delta.mjs';
 
 // Cloudflare Git Integration deployment marker: plain-language macro labels R1
-import {lazy,Suspense,memo,useEffect,useMemo,useRef,useState,type ReactNode,type CSSProperties} from 'react';
+import {lazy,Suspense,memo,startTransition,useEffect,useMemo,useRef,useState,type ReactNode,type CSSProperties} from 'react';
 import {Activity,ArrowRight,ArrowUpRight,ChevronLeft,ChevronRight,Info,Radar,Coins,Users,Percent,Droplet,Landmark,ShieldCheck,Factory,ShoppingCart,BriefcaseBusiness,ArrowLeftRight,Network,DollarSign} from 'lucide-react';
 import {readProgressiveMarketResponse} from '../lib/market-score/read-progressive-response.mjs';
 import {useStoredIndex} from '../components/use-stored-index';
@@ -49,7 +49,7 @@ const CardTrend=memo(function CardTrend({data,label,color,periodDays,missingDate
  return <div className="zg-spark zg-r55-mini-chart" aria-label={`${label} 관측 추이${missingDates.length?' · 점선은 결측 구간 연결이며 관측값이 아닙니다':''}`} title={missingDates.length?'점선: 미발표 자료가 있는 구간의 시각적 연결. 해당 월 점수는 결측입니다.':undefined} onPointerDown={event=>event.preventDefault()}>
   <div className="zg-r55-mini-y-labels" aria-hidden="true"><span>100</span><span>50</span><span>0</span></div>
    <svg width="100%" height="100%" viewBox="0 0 220 60" preserveAspectRatio="none" role="img" aria-label={`${label} 관측 추이`} style={{display:'block',pointerEvents:'none'}}>
-    {[0,25,50,75,100].map(value=><line key={value} x1={13} x2={217} y1={57-value*.54} y2={57-value*.54} stroke={value===0||value===100?'rgba(168,188,208,.4)':`rgba(111,130,149,${value===50?'.26':'.22'})`} strokeDasharray={value===0||value===100?undefined:'2 3'} strokeWidth={value===0||value===100?1:.8} vectorEffect="non-scaling-stroke"/>)}
+    {[0,25,50,75,100].map(value=><line key={value} x1={13} x2={217} y1={57-value*.54} y2={57-value*.54} stroke={value===0||value===100?'rgba(168,188,208,.4)':value===50?'rgba(170,197,220,.9)':'rgba(157,184,208,.8)'} strokeDasharray={value===0||value===100?undefined:'4 4'} strokeWidth={value===0||value===100?1:1.2} vectorEffect="non-scaling-stroke"/>)}
     {missingDates.length>0&&<path d={geometry.bridge} fill="none" stroke={color} strokeOpacity={.65} strokeDasharray="2 3" strokeWidth={1.2} vectorEffect="non-scaling-stroke"/>}
     <path d={geometry.path} fill="none" stroke={color} strokeWidth={1.8} vectorEffect="non-scaling-stroke"/>
     {geometry.last&&<circle cx={geometry.last.x} cy={geometry.last.y} r={2.5} fill={color}/>}
@@ -137,11 +137,9 @@ const diagnosticSubscores=[
  {name:'공급 충격',href:'/supply-shock/',components:'글로벌 공급망, 미국 석유 공급, 에너지 가격, 공급 주도 물가, 산업생산'}
 ] as const;
 
-export function CompositeMarketSection({items,points,demo,loading}:{items:Summary[];points:number;demo:boolean;loading:boolean}){
+export const CompositeMarketSection=memo(function CompositeMarketSection({demo}:{demo:boolean}){
  const arrows=useScoreArrows();
  const arrowDelta=useScoreArrowDelta();
- void items;
- void points;
  const [expanded,setExpanded]=useState(false);
  const [periodDays,setPeriodDays]=useState(365);
  const [market,setMarket]=useState<MarketScoreResponse|null>(null);
@@ -164,8 +162,7 @@ export function CompositeMarketSection({items,points,demo,loading}:{items:Summar
   else setMarketLoading(true);
   const publish=(body:MarketScoreResponse)=>{
    if(!acceptsStoredUpdate(accepted,body))return false;
-   accepted=body;setMarket(body);
-   setMarketError(null);
+   accepted=body;startTransition(()=>{setMarket(body);setMarketError(null);});
    return true;
   };
   const load=(signal:AbortSignal)=>{
@@ -254,6 +251,9 @@ export function CompositeMarketSection({items,points,demo,loading}:{items:Summar
      </div>
      </div>
 
+    </article>
+    <article className="zg-r55-risk-panel" data-testid="risk-panel" aria-label="8대 위험 지표">
+     <div className="zg-section-heading zg-r55-risk-heading"><h2><a href="/risk-indicators/"><ShieldCheck aria-hidden="true"/>8대 위험 지표<ArrowUpRight aria-hidden="true"/></a></h2></div>
      <div className="zg-r55-diagnostics-zone">
       <div className="zg-r55-subscore-area" aria-label="8개 위험 지표">
        <div className="zg-r55-subscore-grid">
@@ -311,7 +311,7 @@ export function CompositeMarketSection({items,points,demo,loading}:{items:Summar
        >
         <div className="zg-r55-card-head">
          <span className="zg-r55-card-icon"><Icon size={18} aria-hidden="true"/></span>
-         <h3><a className="zg-r55-card-title-link" href={"/economic-indicators/"+({inflation:"inflation",employment:"employment",rates:"rates",credit:"credit",growth:"growth",consumption:"consumption",earnings:"earnings",liquidity:"liquidity",fundFlows:"fund-flows",breadth:"breadth",dollarFx:"dollar-fx",commodities:"commodities"}[r55DomainIds[index]])+"/"} onClick={event=>event.stopPropagation()} aria-label={m.label+" 상세페이지 열기"} title={m.label+" 상세페이지"}>{m.label}<ArrowUpRight size={13} aria-hidden="true"/></a></h3>
+         <h3><a className="zg-r55-card-title-link" href={"/economic-indicators/"+({inflation:"inflation",employment:"employment",rates:"rates",credit:"credit",growth:"growth",consumption:"consumption",earnings:"earnings",liquidity:"liquidity",fundFlows:"fund-flows",breadth:"breadth",dollarFx:"dollar-fx",commodities:"commodities"}[r55DomainIds[index]])+"/"} onClick={event=>event.stopPropagation()} aria-label={m.label+" 상세페이지 열기"} title={m.label+" 상세페이지"}>{m.label}<ArrowUpRight className="zg-r55-title-arrow" size={13} aria-hidden="true"/></a></h3>
          <span onClick={e=>e.stopPropagation()}><DashboardTip label={`${m.label} 도움말`}><HelpText copy={v9Breadth?{...HELP[m.label],note:'※ V9는 검증된 5개 구성 지표를 사용합니다. 최신 거래일 자료가 부족하면 마지막 유효 관측 점수를 유지합니다.'}:HELP[m.label]}/></DashboardTip></span>
         </div>
         {notice&&<p data-testid="breadth-unavailable-reason" style={{margin:'6px 0',fontSize:12,lineHeight:1.5,color:'#cbd5e1'}}>{notice.message}</p>}
@@ -361,7 +361,7 @@ export function CompositeMarketSection({items,points,demo,loading}:{items:Summar
    </div>
   </div>
  </section>
-}
+});
 
 export type Scenario={id:string;title:string;category:string;probability:number|null;previous?:number;updatedAt?:string;confidence?:string;reason?:string};
 export function ScenarioSection({items=[]}:{items?:Scenario[]}){const ref=useRef<HTMLDivElement>(null),[position,setPosition]=useState({left:false,right:items.length>4});useEffect(()=>{const el=ref.current;if(!el)return;const measure=()=>setPosition({left:el.scrollLeft>4,right:el.scrollLeft+el.clientWidth<el.scrollWidth-4});const observer=new ResizeObserver(measure);observer.observe(el);measure();return()=>observer.disconnect();},[items.length]);const move=(dir:number)=>ref.current?.scrollBy({left:dir*ref.current.clientWidth,behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth'});return <section id="scenarios" className="zg-section"><div className="zg-section-heading"><h2><Radar/>아웃브레이크</h2><p>주요 사건의 가능성을 추적하는 모델</p></div>{!items.length?<div className="zg-scenario-empty"><Radar size={28}/><div><h3>모델 준비 중</h3><p>검증된 시나리오가 연결되면 확률과 산출 근거를 제공합니다. 현재 공개된 확률은 없습니다.</p></div><span>—</span></div>:<div className="zg-carousel-wrap">{position.left&&<button className="zg-prev" aria-label="이전 아웃브레이크" onClick={()=>move(-1)}><ChevronLeft/></button>}<div ref={ref} className="zg-scenario-track" onScroll={()=>{const e=ref.current!;setPosition({left:e.scrollLeft>4,right:e.scrollLeft+e.clientWidth<e.scrollWidth-4})}}>{items.map(s=><article className="zg-scenario-card" key={s.id}><div className="zg-card-heading"><span className="zg-neutral-tag">{s.category}</span>{s.confidence&&<span>{s.confidence}</span>}</div><h3>{s.title}</h3><div className="zg-scenario-number">{s.probability===null?'—':`${s.probability}%`}{s.previous!==undefined&&s.probability!==null&&<small>{s.probability-s.previous>=0?'+':''}{s.probability-s.previous}%p</small>}</div><ScoreScale score={s.probability} label={s.title} color="#FABC42"/><small>기준 {s.updatedAt??'확인 중'}</small>{s.reason&&<DashboardTip label="아웃브레이크 근거">{s.reason}</DashboardTip>}</article>)}</div>{position.right&&<button className="zg-next" aria-label="다음 아웃브레이크" onClick={()=>move(1)}><ChevronRight/></button>}</div>}</section>}

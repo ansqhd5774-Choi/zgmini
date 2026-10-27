@@ -19,10 +19,17 @@ const fixtureFetch=async url=>{
 test('snapshot pins one GitHub commit and includes every imported dependency',async()=>{
   const snapshot=await fetchSnapshot({fetchImpl:fixtureFetch});
   assert.equal(snapshot.sha,sha);
-  assert.equal(snapshot.assets.length,34);
+  assert.equal(snapshot.assets.length,41);
+  assert.ok(snapshot.assets.some(x=>x.path==='worker/theme-space-satellite-provisional-r1.mjs'));
+  assert.ok(snapshot.assets.some(x=>x.path==='worker/theme-data-center-power-provisional-r1.mjs'));
+  assert.ok(snapshot.assets.some(x=>x.path==='worker/theme-space-satellite-r1.mjs'));
+  assert.ok(snapshot.assets.some(x=>x.path==='worker/theme-space-satellite-r2.mjs'));
+  assert.ok(snapshot.assets.some(x=>x.path==='worker/public-feed-input-safety.mjs'));
+  assert.ok(snapshot.assets.some(x=>x.path==='lib/cnn-index.mjs'));
   assert.ok(snapshot.assets.every(x=>/^[a-f0-9]{64}$/.test(x.sha256)));
   assert.ok(snapshot.assets.some(x=>x.path==='worker/theme-history-reference.mjs'));
   assert.ok(snapshot.assets.some(x=>x.path==='worker/theme-etf-only-public.mjs'));
+  assert.ok(snapshot.assets.some(x=>x.path==='worker/theme-nine-r37-public.mjs'));
   assert.ok(snapshot.assets.some(x=>x.path==='scripts/pc-writer/theme-ai-task-mirror-r1.mjs'));
   assert.ok(snapshot.assets.some(x=>x.path==='scripts/pc-writer/theme-ai-marketparquet-readonly-r1.mjs'));
   assert.ok(snapshot.assets.some(x=>x.path==='scripts/pc-writer/theme-ai-marketparquet-provisional-r2.mjs'));

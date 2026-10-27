@@ -20,5 +20,7 @@ test("monthly 1Y charts display 13 points while growth stores 16 months",()=>{
   assert.match(growthDomain,/splice\(i,1,\{label:asOf,value:currentScore\}\)/);
   assert.match(growthHistory,/GROWTH_R2_CHART_STORAGE_MONTHS=16/);
   assert.match(growthHistory,/getUTCMonth\(\)-\(GROWTH_R2_CHART_STORAGE_MONTHS-1\)/);
-  assert.match(growthHistory,/startyear:String\(years\[0\]\)/);
+  assert.match(growthHistory,/requestGrowthBls\(\{env,ids,startYear:years\[0\],endYear:years\.at\(-1\),fetchImpl\}\)/);
+  const blsRequest=fs.readFileSync(new URL('../lib/market-score/growth-r2-bls-request.mjs',import.meta.url),'utf8');
+  assert.match(blsRequest,/startyear:String\(startYear\)/);
 });

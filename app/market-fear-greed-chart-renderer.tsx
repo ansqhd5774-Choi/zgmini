@@ -42,12 +42,14 @@ export function MarketFearGreedChart({
   axisLabels,
   latestPoint,
   gapGuides = [],
+  lineSegments,
   dashed = false,
   instanceKey,
   gradientId,
   formatTooltipLabel,
   emptyLabel = '이력 없음',
   compact = false,
+  yAxisMax = 100,
   color = '#ff7076',
   showExtrema = false,
   axisTickInterval = 0,
@@ -58,12 +60,14 @@ export function MarketFearGreedChart({
   axisLabels: ReadonlyMap<string, string>;
   latestPoint: MarketFearGreedChartValidPoint | null;
   gapGuides?: Array<{from:MarketFearGreedChartValidPoint;to:MarketFearGreedChartValidPoint}>;
+  lineSegments?: Array<{from:MarketFearGreedChartValidPoint;to:MarketFearGreedChartValidPoint;dashed?:boolean}>;
   dashed?: boolean;
   instanceKey: string;
   gradientId: string;
   formatTooltipLabel: (value: string) => string;
   emptyLabel?: string;
   compact?: boolean;
+  yAxisMax?: number;
   color?: string;
   showExtrema?: boolean;
   axisTickInterval?: 0 | 'preserveStartEnd';
@@ -101,15 +105,24 @@ export function MarketFearGreedChart({
         tickFormatter={(value) => axisLabels.get(String(value)) ?? ''}
         tick={{ fill: 'var(--zg-text-meta,#a8bcd0)', fontSize: 9 }}
       />
-      <YAxis orientation={mobileAxisRight?"right":"left"}
-        hide={compact}
+      {compact ? <YAxis orientation={mobileAxisRight?"right":"left"}
+        hide
+        domain={[0, yAxisMax]}
+        ticks={[0, 25, 50, 75, 100]}
+        allowDataOverflow
+        axisLine={false}
+        tickLine={false}
+        width={28}
+        tick={{ fill: 'var(--zg-text-meta,#a8bcd0)', fontSize: 9 }}
+      /> : <YAxis orientation={mobileAxisRight?"right":"left"}
+        hide={false}
         domain={[0, 100]}
         ticks={[0, 25, 50, 75, 100]}
         axisLine={false}
         tickLine={false}
         width={28}
         tick={{ fill: 'var(--zg-text-meta,#a8bcd0)', fontSize: 9 }}
-      />
+      />}
       {marketScoreBands?<>
         <ReferenceArea y1={0} y2={25} fill="#ef4444" fillOpacity={0.055} ifOverflow="hidden"/>
         <ReferenceArea y1={25} y2={40} fill="#f59e0b" fillOpacity={0.04} ifOverflow="hidden"/>
@@ -160,7 +173,7 @@ export function MarketFearGreedChart({
       <Area
         type="monotone"
         dataKey="score"
-        stroke={color}
+        stroke={lineSegments ? 'none' : color}
         strokeDasharray={dashed ? '5 5' : undefined}
         fill={`url(#${gradientId})`}
         strokeWidth={2.2}
@@ -172,6 +185,10 @@ export function MarketFearGreedChart({
         animationDuration={950}
         animationEasing="ease-out"
       />
+      {lineSegments?.map((segment,i)=><ReferenceLine key={`segment-${instanceKey}-${i}-${segment.to.date}`}
+        segment={[{x:segment.from.date,y:segment.from.score},{x:segment.to.date,y:segment.to.score}]}
+        stroke={color} strokeWidth={2.2} strokeDasharray={segment.dashed ? '5 5' : undefined}
+        ifOverflow="hidden"/>)}
       {gapGuides.map(guide=><ReferenceLine key={`missing-guide-${guide.from.date}-${guide.to.date}`} segment={[{x:guide.from.date,y:guide.from.score},{x:guide.to.date,y:guide.to.score}]} stroke={color} strokeWidth={1.6} strokeDasharray="4 5" strokeOpacity={0.65} ifOverflow="hidden"/>)}
       {extrema.map(point=><ReferenceDot key={'extreme-'+point.kind} x={data[point.index].date} y={point.value} ifOverflow="visible" shape={<ChartExtremumPoint point={point} peerIndex={extrema.find(p=>p.kind!==point.kind)?.index} samples={data.map(p=>({x:p.date,value:p.score}))} count={data.length} color={color}/>}/>)}
     </AreaChart>

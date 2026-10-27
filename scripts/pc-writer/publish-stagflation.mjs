@@ -30,7 +30,7 @@ try{
  const prepared=await prepareStagflation(core,{enabled:true});
  Object.assign(report,{status:prepared.status,score:prepared.body?.score??null,observationMonth:prepared.body?.observationMonth??null,historyCount:prepared.body?.history.length??0,reason:prepared.reason??null});
  if(publish&&prepared.prepared){
-  const remote=client(config,credential(root));
+  const remote=client(config,()=>credential(root));
   report.publication=(await publishStagflation(remote,config.core,prepared)).status;
   report.remote=remote.stats;
  }

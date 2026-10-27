@@ -54,8 +54,9 @@ test("U11 rejects fabricated fallback data and derives changes/insight from veri
   assert.doesNotMatch(route, /fetch\(/);
 
   assert.doesNotMatch(panel, /payload\?\.insight/);
-  assert.doesNotMatch(panel, /payload\?\.previous/);
-  assert.match(panel, /previousHistoryBaseline\(allHistory,\s*payload\?\.observedAt\)/);
+  assert.match(panel, /const previousClose = payload\?\.previous\?\.close/);
+  assert.match(panel, /Number\.isFinite\(previousClose\)/);
+  assert.doesNotMatch(panel, /previousHistoryBaseline\(/);
   assert.match(panel, /historicalBaseline\(allHistory,\s*targetTime\)/);
   assert.match(panel, /const marketInsight = buildMarketInsight\(/);
 
