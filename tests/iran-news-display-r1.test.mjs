@@ -9,7 +9,7 @@ import {maintainIranDisplayCache,DISPLAY_CACHE_BASENAME} from '../scripts/iran-p
 import {publishIranNewsDisplay} from '../scripts/iran-progress/news-display-publication-r1.mjs';
 import {storedIranNewsResponse} from '../worker/iran-news-display-public-r1.mjs';
 import {IRAN_NEWS_DISPLAY_KEY} from '../lib/iran-progress/news-display-r1.mjs';
-import {parseGovUkNewsCandidates,discoverGovUkNewsCandidates,govUkContentCandidate,IRAN_GOVUK_NEWS_FEED} from '../scripts/iran-progress/news-display-discover-r1.mjs';
+import {parseGovUkNewsCandidates,discoverGovUkNewsCandidates,govUkContentCandidate,IRAN_GOVUK_NEWS_FEED,IRAN_GOVUK_NEWS_FEEDS,IRAN_GOVUK_NEWS_KEYWORDS,matchesIranNewsDisplayKeywords} from '../scripts/iran-progress/news-display-discover-r1.mjs';
 import {runIranNewsDisplayMaintenance,parseReviewedNewsInput,APPROVED_INPUT_VERSION} from '../scripts/iran-progress/news-display-maintenance-r1.mjs';
 
 const now=Date.parse('2026-10-26T15:00:00.000Z'); // KST 10/27 00:00
@@ -116,7 +116,7 @@ test('GOV.UK Atom updated-only feed uses Content API first_published_at and neve
  const official=(base_path,first_published_at)=>({base_path,title:'Iran peace talks & dialogue',description:'Official statement about Iran.',
   first_published_at,public_updated_at:'2026-10-27T01:00:00Z',details:{body:'Iran was discussed.'}});
  const response=await discoverGovUkNewsCandidates({now,fetcher:async(url)=>{
-  if(url===IRAN_GOVUK_NEWS_FEED)return new Response(xml,{status:200,headers:{'content-type':'application/atom+xml'}});
+  if(IRAN_GOVUK_NEWS_FEEDS.includes(url))return new Response(xml,{status:200,headers:{'content-type':'application/atom+xml'}});
   const pathname=new URL(url).pathname.replace('/api/content','');
   const published=pathname.endsWith('/iran-talks')?'2026-10-26T01:00:00Z':pathname.endsWith('/future')?'2026-10-28T02:00:00Z':null;
   return new Response(JSON.stringify(official(pathname,published)),{status:200});
@@ -124,10 +124,58 @@ test('GOV.UK Atom updated-only feed uses Content API first_published_at and neve
  assert.equal(response.status,'REVIEW_REQUIRED');
  assert.equal(response.count,1);
  assert.equal(response.counts.feedEntries,3);
+ assert.equal(response.counts.feedSucceeded,4);
+ assert.equal(response.counts.feedFailed,0);
  assert.equal(response.counts.apiChecked,3);
  assert.equal(response.candidates[0].publishedAt,'2026-10-26T01:00:00.000Z');
  assert.equal(response.candidates[0].rightsVerified,false);
  assert.equal(toDisplayNewsItem(response.candidates[0],{now}),null);
+});
+test('Iran/Saudi/Yemen/Houthi topics are OR matches in English and Korean, no unrelated terms',()=>{
+ assert.deepEqual(IRAN_GOVUK_NEWS_KEYWORDS,['Iran','Saudi','Yemen','Houthi']);
+ assert.equal(IRAN_GOVUK_NEWS_FEED,IRAN_GOVUK_NEWS_FEEDS[0]);
+ assert.equal(IRAN_GOVUK_NEWS_FEEDS.length,4);
+ for(const phrase of ['Iran','Iranian','Saudi Arabia','Saudi-led','Yemen','Yemeni','Houthi','Houthis',
+  '이란','사우디','사우디아라비아','예맨','예멘','후티'])assert.equal(matchesIranNewsDisplayKeywords(phrase),true,phrase);
+ for(const phrase of ['Tehran','IRGC','Hormuz','United Kingdom','regional summit',''])
+  assert.equal(matchesIranNewsDisplayKeywords(phrase),false,phrase);
+ const feedItem={sourceUrl:'https://www.gov.uk/government/news/regional-statement'};
+ const content={base_path:'/government/news/regional-statement',title:'Regional statement',
+  description:'No title match',first_published_at:'2026-10-25T02:00:00Z',details:{body:'The Houthis held talks.'}};
+ assert.equal(govUkContentCandidate(feedItem,content,{now}).status,'REVIEW_REQUIRED');
+ assert.equal(govUkContentCandidate(feedItem,{...content,details:{body:'The ministers met.'}},{now}).status,'OUT_OF_SCOPE');
+});
+test('all four GOV.UK queries are searched and overlapping article URLs are fetched only once',async()=>{
+ const requested=[],fetched=[];
+ const common='<entry><title>Regional update</title><updated>2026-10-25T08:00:00Z</updated><link href="https://www.gov.uk/government/news/overlap"/></entry>';
+ const one='<entry><title>Saudi statement</title><updated>2026-10-26T08:00:00Z</updated><link href="https://www.gov.uk/government/news/saudi"/></entry>';
+ const response=await discoverGovUkNewsCandidates({now,fetcher:async url=>{
+  requested.push(url);
+  if(IRAN_GOVUK_NEWS_FEEDS.includes(url)){
+   const extra=url===IRAN_GOVUK_NEWS_FEEDS[1]?one:'';
+   return new Response(`<feed>${common}${extra}</feed>`,{status:200});
+  }
+  fetched.push(url);
+  const base_path=new URL(url).pathname.replace('/api/content','');
+  return new Response(JSON.stringify({base_path,title:base_path.endsWith('saudi')?'Saudi statement':'Regional statement',
+   description:'Government announced an update',details:{body:'Yemeni representatives met officials.'},
+   first_published_at:'2026-10-25T08:00:00Z'}),{status:200});
+ }});
+ assert.equal(IRAN_GOVUK_NEWS_FEEDS.every(url=>requested.includes(url)),true);
+ assert.equal(response.counts.feedEntries,2);
+ assert.equal(response.counts.apiChecked,2);
+ assert.equal(fetched.length,2);
+ assert.equal(response.count,2);
+ assert.equal(response.candidates.every(item=>item.rightsVerified===false),true);
+});
+test('a failed topic feed reports partial results, not an invented complete collection',async()=>{
+ const response=await discoverGovUkNewsCandidates({now,fetcher:async url=>{
+  if(url===IRAN_GOVUK_NEWS_FEEDS[3])return new Response('not available',{status:503});
+  return new Response('<feed></feed>',{status:200});
+ }});
+ assert.equal(response.status,'PARTIAL_REVIEW_REQUIRED');
+ assert.equal(response.counts.feedSucceeded,3);
+ assert.equal(response.counts.feedFailed,1);
 });
 test('discovery fails closed on unsafe XML and transport errors',async()=>{
  assert.throws(()=>parseGovUkNewsCandidates('<!DOCTYPE feed><feed></feed>',{now}),/NEWS_DISCOVERY_FEED_INVALID/);
