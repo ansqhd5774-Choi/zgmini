@@ -107,7 +107,7 @@ function buildRow(def, item) {
 
 // Invokes the previously verified R3D validator before reading the chosen raw cohort.
 // Only explicitly selected, hash-verified BLS rows are used; no fallback namespace.
-export function buildPreview(db,{generatedAt=new Date().toISOString()}={}) {
+export function buildPreview(db,{generatedAt=new Date().toISOString(),includeServices=true}={}) {
   if (!isoUTC(generatedAt)) fail('R4_GENERATED_AT_INVALID');
   const prior=analyze(db);
   const picked=new Map();
@@ -135,7 +135,7 @@ export function buildPreview(db,{generatedAt=new Date().toISOString()}={}) {
   }
   // The optional service PPI is independently captured and hash-verified.
   // Keep each retrieval's own timestamp/SHA; never manufacture a common cohort.
-  const services=db.prepare(`SELECT provider,dataset,snapshot_sha256,as_of,retrieved_at,
+  const services=!includeServices?[]:db.prepare(`SELECT provider,dataset,snapshot_sha256,as_of,retrieved_at,
     status,history_mode,row_count,latest_observation_date,chunk_hashes_json,provenance_json
     FROM api_history_snapshots_v1
     WHERE provider='BLS' AND dataset='WPSFD42'
@@ -191,6 +191,37 @@ export function buildPreview(db,{generatedAt=new Date().toISOString()}={}) {
       duplicateEvidenceGroups:['WPSFD4 RAW+DERIVED','WPSFD41 RAW+DERIVED',
         ...(picked.has('WPSFD42')?['WPSFD42 RAW+DERIVED']:[])]},
   };
+}
+
+// Only the independent WPSFD42 lineage enters the supplementary D1 checkpoint.
+// The existing three-source C key continues to publish its same original five rows.
+export function buildServiceSourcePreview(db,{generatedAt=new Date().toISOString()}={}){
+  const full=buildPreview(db,{generatedAt,includeServices:true});
+  const source=full.diagnostics.bySeries.find(row=>row.seriesId==='WPSFD42');
+  if(!source)fail('R4_SERVICE_SOURCE_NOT_STORED');
+  const rows=full.payload.rows.filter(row=>row.seriesId==='WPSFD42');
+  if(rows.length!==2)fail('R4_SERVICE_INDICATOR_COUNT_MISMATCH');
+  const ready=rows.filter(row=>row.status==='READY').length;
+  const partial=rows.filter(row=>row.status==='PARTIAL').length;
+  const unavailable=rows.length-ready-partial;
+  const sourceStoredAt=Date.parse(source.firstSeenAt);
+  if(!Number.isSafeInteger(sourceStoredAt)||sourceStoredAt<=0)
+    fail('R4_SERVICE_FIRST_SEEN_AT_INVALID');
+  const payload={
+    schemaVersion:SCHEMA_VERSION,
+    status:ready===rows.length?'READY':'PARTIAL',
+    sourceVersion:sha256(`EARNINGS_C_SERVICE_SOURCE_CHECKPOINT_V1\nWPSFD42|${source.snapshotSha256}`),
+    sourceStoredAt,generatedAt,
+    historicalMode:'CURRENT_RETRIEVAL_NOT_PIT',
+    observedThroughBySeries:{WPSFD42:rows[0].observationPeriod},
+    coverage:{configured:rows.length,ready,partial,unavailable},
+    rows,
+  };
+  return {payload,diagnostics:{
+    ...full.diagnostics,snapshotsChecked:1,bySeries:[source],
+    sourceStoredAtPolicy:'WPSFD42_FIRST_SEEN_AT',
+    sourcePartition:'WPSFD42_ONLY_NO_BASE_REWRITE',
+  }};
 }
 
 export function reportLines(result,now) {
