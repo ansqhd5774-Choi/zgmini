@@ -305,3 +305,13 @@
 - R16 신규 `scripts/iran-progress/news-display-scheduled-verify-r16.mjs`: 기존 Task Scheduler XML + 최신 실행 기록(CSV), VBS SHA, 활성 R15 runner SHA, R7 복구백업, 원본 복구백업, 뉴스 상태 JSON·PC 뉴스 캐시의 실제 수정 시각을 읽기 전용으로 대조한다. 점수 작업 종료 코드 0만으로 뉴스 성공을 추정하지 않는다. 뉴스 status `PUBLISHED_D1_VERIFIED` 및 D1 `VERIFIED/UNCHANGED`와 마지막 정규 작업 시각 연계가 모두 맞아야 PASS. 다음 주기 전 또는 작업 실행 중은 PENDING, 뉴스 실패·오래된 상태·불일치는 NEEDS_REVIEW. 비밀번호/토큰은 읽거나 기록하지 않는다.
 - `IRAN_NEWS_R16_SCHEDULE_READONLY.cmd`: ASCII/CRLF, 코드 고정 SHA `70309354531ab3301db6017afe9568e0bffe5207`, PC 태스크를 직접 실행·변경하지 않고 예약 실행 기록과 R15 결과만 검사. `IRAN_NEWS_R16_SCHEDULE_READONLY_RESULT.txt` 제출 후 판단. 기존 12개+R16 테스트 **13/13 파일 PASS**(모의 환경).
 - 남은 운영 Gate: **1회째 정규 6시간 실행 R16 검증 → 다음 2회째 정규 실행 R16 재검증 → 공개 웹 API와 실제 UI 14일 노출 확인 → 정규 보관 30일 만료 검증**. PC 외부 웹 UI 직접 검증 전까지 사이트 공개 완료로 판정하지 않는다. 자동 게시 후 권한 없는 외부 제공자 수집 추가·새 스케줄·점수 산식 변경은 금지한다.
+
+
+## 25. 2026-10-27 R17 한글 번역 미적용 원인 및 읽기 전용 복구 미리보기
+
+- 사용자 확인: 기존 공개 기사 중 영문 제목이 그대로 보인다. 이는 브라우저 번역 장애가 아니라 **R12 중립 안전모드에서 `article.title`을 원문 그대로 저장하고 `safeNewsFallbackSummary()`로 고정 한국어 주제 설명만 만들었기 때문**이다. 실제 본문 번역 기능은 R13→R14→R15 자동 게시에 연결되지 않았다.
+- R10/R11 자유 요약은 실제 원문에 없는 정치·사건 주체를 만들어낸 이력이 있어 자동 게시 전환에서 제외했다. 단순히 R10/R11 호출을 복원하지 않는다.
+- R17은 `scripts/iran-progress/news-display-translation-preview-r17.mjs`와 `IRAN_NEWS_R17_KOREAN_TRANSLATION_READONLY.cmd`로 기존 PC 공개 뉴스 캐시의 최근 14일 기사만 읽고, 원문 GOV.UK Content API의 날짜·제목·경로와 공식 페이지 OGL 권리조건을 재확인한다. 짧고 완결된 해당 키워드 문장을 출처 인용구로 선택한다. 기존 로컬 Ollama(qwen3:4b 우선, gemma3:4b 대체)에서 **원제목/선택 원문을 각각 번역**하되 임의 요약·영향점수 생성은 금지한다.
+- 구조화 JSON(titleKo/excerptKo), 한글 포함, 각 필드 숫자 유지, 주요 국가·분쟁 주체 등장 여부의 영문 원문과 한국어 결과 대조를 검사한다. 통과해도 `DRAFT_REQUIRES_HUMAN_REVIEW`이며 자동 사실검증 성공을 의미하지 않는다. 이미 수동 검토된 한국어 제목+고유 요약은 `PREVIOUS_KOREAN_REVIEW_PRESERVED`로 보존한다. 적합한 짧은 문장이 없거나 실 원문·권리·모델 검사가 실패하면 보류한다.
+- CMD는 SHA `4f5eb3aeb4a759b461fed4986c05738d31bbc5f6`에 고정된 읽기 전용 코드를 다운로드해 `IRAN_NEWS_R17_KOREAN_TRANSLATION_RESULT.txt`를 남긴다. 운영 캐시, D1, 스케줄러, R3/R5 점수 원장은 변경하지 않는다. 테스트 `node --test tests/iran-news-*.test.mjs` 14개 테스트 파일 PASS(로컬 모의).
+- **현재 단계: R17 소스/테스트/CMD 작업 브랜치에 저장, PC 실측 번역 보고서 미제출, 실제 한글 공개 전환 미완료.** R17 보고서의 오역을 검토·교정한 뒤 별도의 R18 승인 절차에서 (1) 기존 공개 영문 기사의 격리된 업데이트, (2) 신문기사 최초 게재 시 자동 한글화, (3) PC 캐시↔D1 단일 뉴스 key read-back, (4) 사용자 사이트 직접 모니터링을 연결한다. 이미 배포된 R15 후행 hook 및 점수 작업은 승인 전 수정하지 않는다.
