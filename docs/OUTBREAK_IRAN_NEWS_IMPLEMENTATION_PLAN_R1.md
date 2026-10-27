@@ -315,3 +315,12 @@
 - 구조화 JSON(titleKo/excerptKo), 한글 포함, 각 필드 숫자 유지, 주요 국가·분쟁 주체 등장 여부의 영문 원문과 한국어 결과 대조를 검사한다. 통과해도 `DRAFT_REQUIRES_HUMAN_REVIEW`이며 자동 사실검증 성공을 의미하지 않는다. 이미 수동 검토된 한국어 제목+고유 요약은 `PREVIOUS_KOREAN_REVIEW_PRESERVED`로 보존한다. 적합한 짧은 문장이 없거나 실 원문·권리·모델 검사가 실패하면 보류한다.
 - CMD는 SHA `4f5eb3aeb4a759b461fed4986c05738d31bbc5f6`에 고정된 읽기 전용 코드를 다운로드해 `IRAN_NEWS_R17_KOREAN_TRANSLATION_RESULT.txt`를 남긴다. 운영 캐시, D1, 스케줄러, R3/R5 점수 원장은 변경하지 않는다. 테스트 `node --test tests/iran-news-*.test.mjs` 14개 테스트 파일 PASS(로컬 모의).
 - **현재 단계: R17 소스/테스트/CMD 작업 브랜치에 저장, PC 실측 번역 보고서 미제출, 실제 한글 공개 전환 미완료.** R17 보고서의 오역을 검토·교정한 뒤 별도의 R18 승인 절차에서 (1) 기존 공개 영문 기사의 격리된 업데이트, (2) 신문기사 최초 게재 시 자동 한글화, (3) PC 캐시↔D1 단일 뉴스 key read-back, (4) 사용자 사이트 직접 모니터링을 연결한다. 이미 배포된 R15 후행 hook 및 점수 작업은 승인 전 수정하지 않는다.
+
+
+## 26. 2026-10-27 R17 실 PC 결과: 올라마 문장 형식 통과와 번역 정확성 불일치
+
+- 사용자 제출 `IRAN_NEWS_R17_KOREAN_TRANSLATION_RESULT.txt` 실제 실행: `FINAL_STATUS=PASS_R17_KOREAN_DRAFTS_REQUIRE_REVIEW_NO_PUBLICATION`. qwen3:4b 사용, 현재 공개 10건 가운데 수동 한국어 1건 보존, 구조 검사 통과 3건, 보류 6건(숫자 사실 이탈 4, 기사 주체 불일치 2). R17은 D1·로컬 PC 뉴스 캐시·예약 작업·점수 원장 쓰기 **0**.
+- **형식상 통과 3건도 원문 의미에 부정확한 번역이 있어 자동 공개 불가**: (1) commercial ships가 겪는 항해 중단을 '여행 중단'으로 표현, (2) 핵 safeguards의 법적 의미를 '핵 보안 의무'로 표현하고 DPRK를 '평양'으로 의역, (3) deterrence를 '방어'로 옮기고 원문 구문을 반복. 따라서 R17 통과는 번역 성공이나 의미 검증 통과가 아니다.
+- 숫자/고유명사 보류 판정 때 R17 로그는 해당 초안 자체를 기록하지 않아 어디서 실패했는지 추가 검토하기 어려웠음. 모델이 원문 날짜를 말로 바꾸거나 필요한 장소/국가를 생략할 가능성도 있으므로 제약을 풀지 않는다.
+- R18 `scripts/iran-progress/news-display-translation-compare-r18.mjs`, `IRAN_NEWS_R18_KOREAN_DUAL_READONLY.cmd`: 기존 운영 Ollama `qwen3:4b` 및 `gemma3:4b`가 설치돼 있다면 같은 GOV.UK 개별 원문을 순서대로 문장 단위 번역하고, **형식 통과/보류 모두 해당 제목·문장 초안을 기록**한다. 'deterrence=억지력', 'safeguards=안전조치', 'commercial ships=상선', 'DPRK=북한' 등을 별도 정확성 경고로 표시한다. 자료 수집은 기존 공식 GOV.UK, 개별 권리·날짜·URL 확인을 그대로 재사용한다.
+- R18 CMD는 고정 SHA `417733d3a9322babcefb02ae6535331035f3a9bd`를 사용하고 `IRAN_NEWS_R18_KOREAN_DUAL_RESULT.txt`를 생성한다. 15개 뉴스 테스트 파일 모두 PASS(로컬 모의). **R18은 읽기 전용이며 운영 게시 수정은 여전히 0.** R18 실제 PC 번역 결과의 원문 대비 의미 오역을 검토한 후 R19에서만 자동 번역 기준 및 기존 9개 게시물의 안전한 번역 전환을 결정한다.
