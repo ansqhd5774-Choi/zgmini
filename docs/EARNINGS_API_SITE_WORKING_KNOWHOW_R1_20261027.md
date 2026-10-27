@@ -7,7 +7,7 @@
 - 이 문서는 **작업 과정에서 실제로 확인된 재사용 가능한 지식과 남은 미검증 경계**를 보존한다. 과거 작업 브랜치와 당시 문서 머리말은 역사적 출처이지 향후 작업 지시가 아니다.
 - 계획: `docs/EARNINGS_RECESSION_COMPANION_API_SITE_INTEGRATION_PLAN_R1_20261026.md`
 - 병합·이탈 감사: `docs/EARNINGS_API_SITE_BRANCH_ALIGNMENT_AUDIT_R1_20261027.md`
-- 이 문서는 **문서화된 증거**로 현재 구현 상태를 표현하며, 새 API 호출·PC 실행·D1 쓰기·Production 배포를 완료했다고 선언하지 않는다.
+- 이 문서는 **확인 단계별 증거**로 구현 상태를 표현한다. 2026-10-27 공개 GET 재검증과 지정 브랜치 UI 수정은 수행했지만, **BEA D1 쓰기·readback 및 신규 Production 배포는 수행하지 않았다.**
 
 ## 1. 다음 작업자가 첫 5분에 확인할 사항
 
@@ -44,12 +44,12 @@
 
 | 경로 | 확인된 내용 | 아직 주장할 수 없는 것 |
 | --- | --- | --- |
-| BLS 원자료 | 공인 시리즈 `WPSFD4` 21건, `WPSFD41` 21건, `PRS85006111` 6건. PC 수동 호출 1회, snapshot/chunk 각 3건, 원장 readback 3/3, 트랜잭션 COMMIT 증거 | 다음 자동 실행, 원격 D1 게시, Production 최신 반영 |
+| BLS 원자료 | 공인 시리즈 `WPSFD4` 21건, `WPSFD41` 21건, `PRS85006111` 6건. PC 수동 호출 1회, snapshot/chunk 각 3건, 원장 readback 3/3. **2026-10-27 공개 BLS GET `READY` 5/5 확인** | 다음 정규 자동 실행, 해당 브랜치 UI의 Production 배포 |
 | BLS 파생 | PC 저장 원본으로 정보성 **5행** 로컬 미리보기 검증(READY 5/5), SHA/cohort 검증 | 5개 **독립** 원천 아님. 2개 PPI 계열의 index와 YoY는 각각 같은 원천 |
 | BEA 법인이익 | 화면용 S6 연결 코드/데이터 읽기 경로 존재 | 그 코드 존재만으로 실제 최신 API/화면 READY·주기 갱신 PASS 아님 |
 | BEA 비금융 단위이익 | PC read-only preflight `PASS_BEA_UNIT_PREFLIGHT_ONLY`; 최신 0.250, 직전 0.231(달러/실질 GVA 단위), 당시 `D1_WRITES=0`, `SQLITE_WRITES=0` | D1 게시, 원격 readback, 실제 브라우저 최신 값 확정 아님 |
-| Worker/D1 C 코드 | 저장 전용 writer 및 GET/HEAD 읽기 전용 경로 구현, 오프라인 단위검사 근거 | 현행 원격 D1 READ/WRITE 확인·exact 배포·다음 정규 실행은 별도 증거 필요 |
-| 사이트 | 기존 점수 4행과 BLS 5행, BEA 참고 2행을 **같은 테이블 계열**에 출력하는 구현 존재 | 화면 11행 구성 = 원본 11종/11행 READY 증거가 아니다. 계획상 C 별도 영역·동적 registry와 설계 차이 존재 |
+| Worker/D1 C 코드 | 저장 전용 writer 및 GET/HEAD 읽기 전용 경로 구현. **공개 API BLS 응답을 실제 읽고 `READY` 5/5 확인** | D1 내부 직접 readback 증거, BEA 단위이익 D1 게시, exact 배포·다음 정규 실행은 별도 증거 필요 |
+| 사이트 | 기존 점수 4행 + BLS 5행 + BEA 참고 2행 계열 유지. **지정 브랜치에서 BLS 유효 `rows[]` 동적 매핑 완료**; 실 API 대조 5/5 및 단위검사 5/5 PASS | 브랜치 수정분의 Production 빌드·배포·실화면 검증은 미완료. 11행이 독립 원천 11종이라는 뜻은 아님 |
 | Census/SEC | 공식 후보 및 권리/기술 조사 항목이 계획에 있다 | QFR/M3/MTIS/SEC의 원하는 지표별 실 API 수치·저장·게시를 일괄 PASS로 선언 금지 |
 
 근거 문서:
@@ -58,6 +58,16 @@
 - BLS 실측 검증: `docs/EARNINGS_COMPANION_R4_PC_RESULT_VERIFIED_20261027.md`
 - 정보성 C D1 코드·신선도: `docs/EARNINGS_COMPANION_R4_D1_PUBLIC_READ_MODEL_PHASE2_20261027.md`
 - 복구·미진행 Gate: `docs/EARNINGS_API_SITE_BRANCH_ALIGNMENT_AUDIT_R1_20261027.md`
+
+### 2026-10-27 공개 API·페이지 연동 실증 (추가 체크포인트)
+
+- `https://zgmini.kr/api/earnings-recession-indicators`: HTTP 200, `schemaVersion=earnings-companion-c-r4-v1`, `status=READY`, `coverage.ready=5/5`, `historicalMode=CURRENT_RETRIEVAL_NOT_PIT`; 시리즈 `WPSFD4`, `WPSFD41` 관측 2026-09, `PRS85006111` 관측 2026-Q2. 실제 공개 JSON으로 새 UI 매핑 함수를 호출한 호환성 검사 5행/5행 통과.
+- `https://zgmini.kr/api/earnings-recession-bea-unit-profit`: **HTTP 503 / `status=unavailable` / `reason=STORED_PROJECTION_PENDING`**. preflight 값 0.250 / 0.231만으로 게시 완료라고 해석하지 않는다. 인증·승인된 Windows 수동 D1 게시 및 정확한 readback은 아직 필요하다.
+- A 점수 API `/api/earnings-recession-detail`은 별도로 `READY`, 기존 4요소, 진단 점수 84.6875를 확인했다. **C 원자료 추가로 A 산식·점수는 수정하지 않았다.**
+- 지정 브랜치 신규 파일: `app/earnings-recession/earnings-cost-indicator-list.mjs`, `app/earnings-recession/earnings-cost-indicator-list.test.mjs`. 패널에서 해당 등록기를 사용하도록 수정. 5개 테스트 `PASS`(결측, 기존 데이터/순서, 유효 신규 행, 위조/중복 차단, 미지원 스키마). **브랜치 코드 검사와 공개 GET 대조는 Production 화면 렌더링 확인이 아니다.**
+- UI 컴포넌트 반영 커밋: `b4c3f7536d5817e3eb403c6fca50bf6c52d053f6`. 지정 브랜치에서만 수정함; main 병합·배포, 새 브랜치 생성, 삭제는 진행하지 않음.
+
+**바로 다음 단계:** (1) 사용자가 승인한 Windows 원장·D1 수동 게시 경로에서 BEA 단위이익 `--apply --confirm-bea-unit-d1-write` 게이트를 충족할 때만 게시 및 readback, (2) 새 UI branch 결과를 안전한 빌드/모바일 검증 후 승인된 main 배포, (3) 신규 유효 정보성 지표 소스별로 같은 수직 경로 확장. BEA가 HOLD인 동안 BLS 등 통과한 지표의 UI 개선을 중단하지 않는다.
 
 ### 계산·표시에서 체득한 구체적 규칙
 
@@ -75,7 +85,7 @@
 | C BLS 읽기 | `/api/earnings-recession-indicators`, `detail:earnings-recession-indicators:v1` | `worker/earnings-companion-c-r4.mjs`의 stored-only GET/HEAD, 승인된 writer/readback 경로 |
 | C BEA 단위이익 | `/api/earnings-recession-bea-unit-profit`, `detail:earnings-bea-unit-profit:v1` | `worker/earnings-bea-unit-profit-r1.mjs`와 PC preflight를 검토하되 아직 원격 완료 선언 금지 |
 | Worker 라우팅 | `worker/candidate-r52.ts` | 보존 중인 BLS/BEA 두 경로 모두 유지; 오래된 브랜치 버전으로 교체하지 않는다 |
-| UI | `app/earnings-recession/earnings-risk-only-panel.tsx` | `costIndicators` 5행 **하드코딩** 존재. C를 제한 없이 확대하려면 검증된 registry/응답 `rows[]` 기준 렌더링 고도화가 필요 |
+| UI | `app/earnings-recession/earnings-risk-only-panel.tsx` 및 `earnings-cost-indicator-list.mjs` | **유효 BLS `rows[]`를 읽는 동적 등록기 구현**. 기존 5개 라벨·순서를 보존하고 추가 BLS 행이 있으면 자동 표시. 다른 공급자·스키마·중복·출처 위조는 제외. 운영 반영은 별도 |
 | 기존 D1 저장소 | `market_public_snapshots_v1` | 기존 공개 Snapshot 테이블 재사용; 별도 키만, 기존 점수 키·테이블·TTL 임의변경 금지 |
 | Windows BLS | `scripts/pc-writer/EARNINGS_R3C_BLS_STORE_ONCE.cmd` | 이미 성공한 1회 저장을 재실행할 이유 없음. 수정본·신규 관측이 실제 필요한 경우에만 계약 확인 |
 | Windows C D1 | `scripts/pc-writer/EARNINGS_R4_C_D1_MANUAL.cmd` | 기본 dry-run. apply/쓰기 여부와 원격 readback을 혼동하지 않는다 |
