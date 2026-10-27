@@ -3,7 +3,7 @@
 - 확정일: 2026-10-26 (사용자 승인: “브랜치에 반영해라”)
 - 적용 브랜치: `codex/theme-fear-greed-integration-20261025`
 - 브랜치 통합: 2026-10-26 사용자 지시. 이전 `research/theme-nine-r2-shadow-20261026`는 **과거 연구 이력**이며 이후 신규 작업·수정은 하지 않는다.
-- 상태: `TOOL_PLAN_APPROVED / R23_STAGE1_PC_64_OF_64_COMPLETE / R24_STAGE2_PC_AUDIT_COMPLETE / R25_STAGE3_PC_RESULT_AUDITED / R26_STAGE4_OFFICIAL_CENSUS_63_OF_63 / R32_STAGE5_UPLOADED_JSON_PREFLIGHT_PASS / R32_STAGE5_PC_PREFLIGHT_PASS / R32_STAGE5_PRIVATE_LOCAL_252D_PASS / R32_STAGE5_PC_SHADOW_PENDING / R32_STAGE6_SHADOW_PENDING / NO_PUBLICATION`
+- 상태: `TOOL_PLAN_APPROVED / R23_STAGE1_PC_64_OF_64_COMPLETE / R24_STAGE2_PC_AUDIT_COMPLETE / R25_STAGE3_PC_RESULT_AUDITED / R26_STAGE4_OFFICIAL_CENSUS_63_OF_63 / R32_STAGE5_UPLOADED_JSON_PREFLIGHT_PASS / R32_STAGE5_PC_PREFLIGHT_PASS / R32_STAGE5_PC_252D_PASS / R33_STAGE6_PRIVATE_EXACT_REPLAY_PASS / R33_PUBLIC_HISTORICAL_COMPARISON_PENDING / NO_PUBLICATION`
 - 최상위 적용: 10번째 우주·위성 R29·R32 기존 계산 계약, R19 3개 O/X 결과, R20 후보 승인 명단. 본 문서는 **도구·실행 담당·작업 순서만 확정**하며 산식 자체를 변경하지 않는다.
 
 ## 1. 확정 범위
@@ -92,3 +92,11 @@
 2. Windows CMD 실행 후 같은 폴더에 생성된 `THEME_NINE_R32_PRIVATE_RESULT_*.txt`와 `THEME_NINE_R32_PRIVATE_SHADOW_*.json`을 제출한다.
 3. TXT의 구성 파일 SHA·R25 입력 SHA·9테마×252일·참여 ETF 수·공식 AUM 기준일·0점 대체/결측 미발생 계약을 대조한다. 실제 PC 실행 전에는 5단계 PC PASS로 표시하지 않는다.
 4. 결과가 일치하면 6단계 비공개 그림자 검증(기존 공개 기록과 1M/3M/1Y, 날짜별 가중치·결측·연속성)을 수행한다. 공개 전환, D1, DB, 스케줄러, UI 변경에는 별도의 사용자 승인이 필요하다.
+
+
+## 12. 실제 PC R32 결과 수령·R33 그림자 이력 재현 검증 (2026-10-27)
+
+- 사용자 Windows PC 결과 TXT/JSON SHA256 일치; 원본 R25 SHA도 기존 검증값 일치. **9개 테마×252일=2,268건 전부 독립 재계산 결과와 동일**, 날짜별 비중합 검사 2,268/2,268 PASS.
+- 3개 이상 공식 AUM 가중 합산 2,177일 / 기존 승인 R3 2종 혼합 91일. 더 이른 공식 발행사 AUM의 실제 기준일은 유지했고, ETF 점수 결측 18종은 임의로 생성하지 않았다.
+- **6단계 비공개 내부 재현성 검증 PASS**, 7/7 로컬 테스트 PASS. 기존 공개 시계열의 동일 날짜 원본이 아직 없으므로 **과거 공개 방식과 최신/1M/3M/1Y 차이 비교는 PENDING**으로 유지한다.
+- 정확한 입력 SHA·비공개 점수 변화표·실행 도구·남은 비교는 [R33 6단계 감사](THEME_LEGACY_NINE_R33_STAGE6_PRIVATE_AUDIT_20261027.md)에 기록한다. 공개 점수·D1·DB·스케줄러·UI는 미변경.
