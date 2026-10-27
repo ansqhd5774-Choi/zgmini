@@ -1,6 +1,10 @@
-/* USA title info disclosure: desktop introduction remains unchanged. */
-.zg-fg-us .zg-fg-title-row { display: contents; }
+/* USA headline, mobile info disclosure and buying guide share one title row. */
+.zg-fg-us .zg-fg-title-row { display: flex; align-items: center; flex-wrap: wrap; column-gap: 8px; row-gap: 0; min-width: 0; }
+.zg-fg-us .zg-fg-title-row > h1 { flex: 0 1 auto; min-width: 0; }
+.zg-fg-us .zg-fg-title-row > .zg-fg-intro { flex: 0 0 100%; order: 3; }
 .zg-fg-us .zg-fg-intro-button { display: none; }
+.zg-fg-us .zg-fg-buying-guide-link { flex: 0 0 auto; order: 2; margin-left: auto; margin-bottom: 0; white-space: nowrap; }
+.zg-fg-us .zg-fg-guide-short { display: none; }
 
 /* USA fear/greed R8 mobile candidate — layout only.
  * No palette, score, chart, API or history overrides.
@@ -112,9 +116,9 @@
     padding: 6px 8px;
     font-size: 11px;
   }
-  .zg-fg-us .zg-fg-page-header > a {
-    min-height: 30px;
-    margin: 0;
+  .zg-fg-us .zg-fg-buying-guide-link {
+    min-height: 32px;
+    margin-bottom: 0;
     font-size: 11px;
   }
   .zg-fg-us .zg-fg-facts {
@@ -533,4 +537,11 @@
     min-height: 32px;
     max-height: 32px;
   }
+}
+
+@media (max-width: 480px) {
+  /* Keep the title, 32px info control and guide action on the same line. */
+  .zg-fg-us .zg-fg-guide-full { display: none; }
+  .zg-fg-us .zg-fg-guide-short { display: inline; }
+  .zg-fg-us .zg-fg-buying-guide-link svg { display: none; }
 }
