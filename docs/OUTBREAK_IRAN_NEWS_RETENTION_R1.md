@@ -1,7 +1,7 @@
 # 아웃브레이크 · 이란 전쟁 주요 뉴스 보관 정책 R1
 
 - 확정일: 2026-10-26 (KST)
-- 최신 상태(2026-10-27): **사용자 승인 정책 유지 / PC 30일 정리 hook 설치 및 갱신 1회 확인 / 실제 30일 만료 삭제 미검증 / R14 일회 공개 10건 확인 / R15 정규 자동 게시 R16 검증 대기**. 구체적인 운영 Gate와 후속 작업 우선순위는 `docs/OUTBREAK_IRAN_NEWS_IMPLEMENTATION_PLAN_R1.md` §32를 따른다.
+- 최신 상태(2026-10-27): **사용자 승인 정책 유지 / PC 30일 정리 hook 설치 및 갱신 1회 확인 / 실제 30일 만료 삭제 미검증 / R14 일회 공개 10건 확인 / R15 정규 자동 게시 R16 검증 대기**. 운영 Gate와 뉴스 **수집 복구 전담** 우선순위는 `docs/OUTBREAK_IRAN_NEWS_IMPLEMENTATION_PLAN_R1.md` §33을 따른다. 한국어 번역·뉴스 카드 UI는 별도 UI팀 책임이다.
 - 대상: `/outbreak/?event=iran`의 주요 뉴스 표시 기능(`outbreak-news-iran`)
 - 기준: ZGMINI GitHub 최신 `main`에서 분기한 작업 브랜치
 - 개발 기준 base SHA: `972a5da9deae1a4a2f12b042f66e3bdfd72ef977`
