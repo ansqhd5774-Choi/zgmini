@@ -324,7 +324,11 @@
     margin-top: 0;
     font-size: 9px;
   }
-  .zg-fg-us .fg-r2-analysis-grid { grid-template-columns: minmax(0, 1fr); }
+  /* The heading and factor table are one continuous mobile panel. */
+  .zg-fg-us .fg-r2-analysis-grid {
+    grid-template-columns: minmax(0, 1fr);
+    margin-top: 0;
+  }
   .zg-fg-us .fg-r2-table-wrap { padding: 4px; }
   /* The real table fields remain in their source order: factor, raw, score,
    * state and date. Only mobile geometry changes; all production colors stay. */
