@@ -254,6 +254,9 @@ export function CompositeMarketSection({items,points,demo,loading}:{items:Summar
      </div>
      </div>
 
+    </article>
+    <article className="zg-r55-risk-panel" data-testid="risk-panel" aria-label="8대 위험 지표">
+     <h3 className="zg-r55-risk-heading">8대 위험 지표</h3>
      <div className="zg-r55-diagnostics-zone">
       <div className="zg-r55-subscore-area" aria-label="8개 위험 지표">
        <div className="zg-r55-subscore-grid">

@@ -527,3 +527,8 @@
     grid-template-columns:repeat(4,minmax(0,1fr));
   }
 }
+/* Keep composite history and the eight risk diagnostics in independent cards. */
+.zg-dashboard[data-view="dashboard"] #market .zg-r55-body{grid-template-columns:minmax(0,1fr);grid-template-rows:auto auto auto}
+.zg-dashboard[data-view="dashboard"] #market .zg-r55-summary{grid-template-rows:auto}
+.zg-dashboard[data-view="dashboard"] #market .zg-r55-risk-panel{min-width:0;padding:8px;border:1px solid #17446d;border-radius:7px;background:#071a2d;color:#eef4fa}
+.zg-dashboard[data-view="dashboard"] #market .zg-r55-risk-heading{margin:0 0 6px;font-size:14px;line-height:1.4;font-weight:800}
