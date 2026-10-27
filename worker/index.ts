@@ -2,6 +2,7 @@ import {runPublicFeeds} from "./public-feed-collectors";
 import {readPublicFeed,readPublicFeedHealth} from "./public-feed-store.mjs";
 import {storedRateSentimentResponse} from "./rate-sentiment-public.mjs";
 import {storedScoreArrowResponse} from './score-arrow-public.mjs';
+import {EARNINGS_C_ROUTE,readEarningsCompanionResponse} from './earnings-companion-c-r4.mjs';
 /// <reference types="vite/client" />
 import { fredApiShadow } from "./p0-fred-api-shadow.mjs";
 import { fredBlsShadow } from "./p0-fred-bls-shadow.mjs";
@@ -115,6 +116,7 @@ const worker = {
     if (url.pathname === "/api/core-pce") return readPublicFeed(runtimeEnv.DB, "core-pce");
     if (url.pathname === "/api/rate-sentiment") return storedRateSentimentResponse(request,{db:runtimeEnv.DB});
     if (url.pathname === '/api/score-arrow-state') return storedScoreArrowResponse(request,{db:runtimeEnv.DB});
+    if (url.pathname === EARNINGS_C_ROUTE) return readEarningsCompanionResponse(request,runtimeEnv.DB);
     if (url.pathname === "/api/data-health") return readPublicFeedHealth(runtimeEnv.DB);
     if (url.pathname === "/api/internal/phase1-korea-data-check") return phase1KoreaDataCheck(request, env);
     if (url.pathname === "/api/internal/phase2-korea-history-check") return phase2KoreaHistoryCheck(request, env);
