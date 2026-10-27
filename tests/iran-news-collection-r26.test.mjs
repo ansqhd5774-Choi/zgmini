@@ -56,6 +56,16 @@ test('R26 display-only seven-source registry exactly matches approved R3 feeds',
  assert.deepEqual(IRAN_MULTISOURCE_FEEDS_R24,R3_FEEDS);
 });
 
+test('R26 Windows audit CMD is pinned, ASCII/CRLF and never runs collection apply',()=>{
+ const cmd=readFileSync(new URL('../IRAN_NEWS_R26_COLLECTION_READONLY.cmd',import.meta.url));
+ assert.ok(cmd.every(byte=>byte<128));
+ assert.match(cmd.toString('ascii'),/Pinned source SHA: 9560b41942a414896420b7a413de0dac49bb9048/);
+ assert.match(cmd.toString('ascii'),/news-display-collection-r26\.mjs" --dry-run/);
+ assert.equal(cmd.toString('ascii').includes(' --collect'),false);
+ assert.equal(cmd.toString('ascii').replace(/\r\n/g,'').includes('\n'),false);
+ assert.match(cmd.toString('ascii'),/IRAN_NEWS_R26_COLLECTION_READONLY_RESULT\.txt/);
+});
+
 test('R26 collects genuine article metadata from 7 sources without licensing or publishing it',async()=>{
  await inDir(async dataDirectory=>{
   const result=await collectIranNewsR26({dataDirectory,now,fetcher:mockFeedFetch()});
