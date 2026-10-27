@@ -69,3 +69,10 @@
 - R14에서는 **예약 XML의 정확한 VBS 파일만** 읽고, Windows 절대 경로가 포함된 네 가지 승인된 Node 실행 엔트리포인트 형식을 정적 검사한다. VBS를 실행하거나 내용을 기록하지 않는다. 해당 파일의 구문 형태와 실행 파일명(허용 목록), 작업 트리 비식별 지문만 출력한다.
 - Git 작업 트리는 `git rev-parse --git-common-dir`로 공통 저장소별 중복 등록을 제거하고, `git worktree list --porcelain`의 **HEAD 메타데이터를 먼저 필터링**하여 승인 source와 같은 경로에만 상세 검사를 수행한다. 하드코딩한 2,000개 상한을 25,000개로 올리되 초과 시 불완전 명시 후 중단한다.
 - R14 `MARKET_CALENDAR_R14_TARGETED_RUNTIME_RESULT.txt`는 읽기 전용이다. 스케줄러·Git·승인 source·PC 설정·DB·수집·게시·배포를 변경하지 않는다. source 유일성, 실행 스크립트, 기존 파서 무결성이 확보되면 BLS 단일 파일 소스 전환을 별도 승인된 단계로 진행한다.
+
+### R14 실측과 R15 — 정확한 예약 VBS 명령 구조 비식별 판독
+
+- R14 PC 로그(`2026-10-27T08:37:03.794Z`)의 config/writer/ledger는 source `7ac573fc` 및 `VERIFIED/PUBLISH`에 일치. 중복 제거한 **19개 Git 등록 원장 내 317개 worktree 중 정확히 한 개**가 승인 HEAD `7ac573fc`에 일치하며 parser blob `f084e2a3`, 보호 파일 청결, BLS 후보 SHA256 `54c73721`가 모두 맞는다. 검사 결과는 잘리지 않았다.
+- 실제 예약 Core 작업 XML에서 추출한 VBS는 984바이트이며 기존 데이터 루트 런처와 위치가 다르다. `node`·`.mjs` 토큰은 있지만 정적 추출 가능한 절대 경로 엔트리포인트는 0개. 일치한 worktree가 **실제 예약 실행 대상이라고는 아직 확인되지 않았다**. R14 결정은 `TASK_VBS_STATIC_ENTRYPOINT_AMBIGUOUS_OR_DYNAMIC_STOP`.
+- R15는 R14에서 이미 확인된 worktree 전체를 재검색하지 않고, **실제 예약 작업의 정확한 VBS 한 파일**을 읽어 변수명·함수 호출·문자열 결합 순서의 구조를 확인한다. 인용된 모든 문자열 값, 경로, 환경변수, 이메일, 민감 키워드가 포함된 줄은 비식별 처리하며 원문이나 실제 경로를 출력하지 않는다.
+- `MARKET_CALENDAR_R15_VBS_STRUCTURE.cmd` 실행 결과는 같은 폴더의 `MARKET_CALENDAR_R15_VBS_STRUCTURE_RESULT.txt`다. R15는 VBS 실행 없이 읽기 전용으로 동작하며 Git·PC 설정·DB·예약 작업·수집·게시·배포를 변경하지 않는다. 분석 후 **승인 source와 실제 실행 엔트리포인트 일치**를 확정하기 전에는 BLS 파일 설치·config source 전환을 하지 않는다.
