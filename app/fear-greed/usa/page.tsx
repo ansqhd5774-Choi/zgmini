@@ -24,7 +24,10 @@ export default function UsaFearGreedPage() {
   <div className="zg-fg-detail-body">
    <header className="zg-fg-page-header" aria-label="미국 공포탐욕지수 소개">
     <p className="zg-fg-eyebrow">CNN FEAR &amp; GREED · US STOCK MARKET</p>
-    <UsaIntroHeading />
+    <div className="zg-fg-title-row">
+      <h1>미국 공포탐욕지수</h1>
+      <UsaIntroHeading />
+    </div>
     <nav className="zg-fg-country-tabs" aria-label="공포탐욕 국가별 상세페이지">
      <a href="/fear-greed/usa/" aria-current="page">미국 · CNN</a>
      <a href="/fear-greed/korea/">한국 · ZGmini</a>
