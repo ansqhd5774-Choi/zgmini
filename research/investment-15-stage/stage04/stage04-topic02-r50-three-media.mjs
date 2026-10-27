@@ -69,12 +69,28 @@ export function headlineForecastConflict(title,html){
     `HEADLINE_BODY_SAME_YEAR_SIZE_CONFLICT:${targetYear}`:null;
 }
 
-function candidatePeriod(excerpt){
-  const periods=[...String(excerpt).matchAll(/\b(20\d{2})\s*(?:-|–|—|to|through)\s*(20\d{2})\b/gi)]
+export function candidatePeriod(excerpt,fullBody='',title=''){
+  // Official report pages may use HTML named dashes or non-breaking hyphens;
+  // normalize period punctuation without altering publisher CAGR numbers.
+  const normalize=s=>String(s).replace(/&(?:ndash|mdash|minus|hyphen);|&#(?:8211|8212|8209);/gi,'-')
+    .replace(/[\u2010-\u2015\u2212]/g,'-');
+  const chosen=normalize(excerpt);
+  const periods=[...chosen.matchAll(/\b(20\d{2})\s*(?:-|to|through)\s*(20\d{2})\b/gi)]
     .filter(m=>Number(m[2])>Number(m[1])&&Number(m[2])-Number(m[1])<=20);
-  if(!periods.length)return null;
-  const near=periods.find(m=>/forecast|project|CAGR/i.test(excerpt.slice(Math.max(0,m.index-120),m.index+65)));
-  const m=near||periods[0];return `${m[1]}-${m[2]}`;
+  const near=periods.find(m=>/forecast\s+(?:period|window|years)|industry\s+forecast/i.test(
+    chosen.slice(Math.max(0,m.index-75),m.index+12)));
+  if(near)return `${near[1]}-${near[2]}`;
+  // A bounded, explicitly labelled forecast period elsewhere on the same
+  // page can recover a candidate excerpt that truncates just before years.
+  const labeled=[...normalize(fullBody+' '+title).matchAll(
+    /(?:forecast\s+(?:period|window|years)|industry\s+forecast)\s*(?:[:=]|\s|\(|\))*\s*(20\d{2})\s*(?:-|to|through)\s*(20\d{2})\b/gi)]
+    .filter(m=>Number(m[2])>Number(m[1])&&Number(m[2])-Number(m[1])<=20)
+    .map(m=>`${m[1]}-${m[2]}`);
+  if(new Set(labeled).size===1)return labeled[0];
+  // Do not silently use ambiguous page-wide year pairs as a CAGR period.
+  if(labeled.length>0)return null;
+  if(periods.length===1)return `${periods[0][1]}-${periods[0][2]}`;
+  return null;
 }
 
 export async function chooseForecast(p,title,candidates,{fetchFn=fetch,model=MODEL}={}){
@@ -139,7 +155,9 @@ export async function inspectR50(p,url,{fetchFn=fetch,chooseFn=chooseForecast}={
     const chosen=candidates[model.index];
     if(!chosen){out.state='MODEL_UNCONFIRMED';return out;}
     out.evidence=chosen.excerpt.slice(0,320);
-    out.period=audit?`${audit.forecast_base_year}-${audit.forecast_end_year}`:candidatePeriod(chosen.excerpt);
+    out.period=audit?`${audit.forecast_base_year}-${audit.forecast_end_year}`:candidatePeriod(chosen.excerpt,body,out.title);
+    if(model.scope==='DIRECT'&&out.scope!=='BROAD_SCOPE_REVIEW')
+      out.scope_warning='MODEL_DIRECT_OVERRIDDEN_BY_DETERMINISTIC_MARKET_SCOPE';
     if(audit&&Math.abs(chosen.pct-audit.forecast_narrative_pct)>0.05){
       out.state='FORECAST_SELECTION_MISMATCH';return out;
     }
@@ -285,7 +303,7 @@ export async function runR50({fetchFn=fetch,searchFn=getSearch,researchFn=resear
           fetchFn,searchFn,blockedCatalogs,blockedSearchEngines,blockedReports});
         publishers.push(result);
         await log(`ROUND=${i+1} MEDIA=${p.id} STATE=${result.state} SEARCH=${result.search.search_state} CATALOG=${clean(result.search.catalog_status)} LIVE_LINKS=${result.search.live_discovered_count??0} CANDIDATES=${result.search.candidate_urls.length} CHECKED=${result.inspections.length} OBSERVED_CAGR=${result.selected?.observed_cagr??'NULL'} OBSERVED_PERIOD=${result.selected?.period??'NULL'} SCOPE=${result.selected?.scope??'NULL'} SECTOR_CAGR=NULL SEARCH_MS=${result.search_ms} REPORT_MS=${result.report_ms} OLLAMA_MS=${result.ollama_ms} TOTAL_MS=${result.total_ms}`);
-        for(const x of result.inspections)await log(`ROUND=${i+1} MEDIA=${p.id} REPORT=${clean(x.url)} STATE=${x.state} SCOPE=${x.scope??'NULL'} OBSERVED=${x.observed_cagr??'NULL'} PERIOD=${x.period??'NULL'} AUDIT=${x.source_audit??'NULL'} MODEL_ID=${x.model_candidate_id??'NULL'} MODEL_SCOPE=${x.model_scope??'NULL'} EVIDENCE=${clean(x.evidence)} ERROR=${clean(x.error)}`);
+        for(const x of result.inspections)await log(`ROUND=${i+1} MEDIA=${p.id} REPORT=${clean(x.url)} STATE=${x.state} SCOPE=${x.scope??'NULL'} OBSERVED=${x.observed_cagr??'NULL'} PERIOD=${x.period??'NULL'} AUDIT=${x.source_audit??'NULL'} MODEL_ID=${x.model_candidate_id??'NULL'} MODEL_SCOPE=${x.model_scope??'NULL'} SCOPE_WARNING=${x.scope_warning??'NULL'} EVIDENCE=${clean(x.evidence)} ERROR=${clean(x.error)}`);
         for(const x of result.search.attempts)await log(`ROUND=${i+1} MEDIA=${p.id} SEARCH_PATH=${x.engine} QUERY=${clean(x.keyword)} STATUS=${clean(x.status)} FOUND=${x.found??0} JS=${x.gate??'NA'}`);
       }
       const round={index:i+1,warmup:i===0,at:new Date().toISOString(),
