@@ -35,19 +35,19 @@
 
 1. `EARNINGS_CENSUS_QFR_R2_STORAGE_PREFLIGHT.cmd`는 항상 **읽기 전용**이다. 기존 PC DB 호환성 검사 → 새 공식 ZIP 재수집·계산 → 검증 → 같은 디렉터리에 `EARNINGS_CENSUS_QFR_R2_STORE_RESULT_*.txt` 생성. 데이터베이스·D1·점수는 기록하지 않는다.
 2. 내부 프로그램 `EARNINGS_CENSUS_QFR_R2_SQLITE_APPEND.mjs --dry-run`도 동일한 읽기 전용 프리플라이트.
-3. **별도 명시적 승인 후에만** `--apply --confirm-census-qfr-sqlite-append` 실행을 검토한다. 실행 시에도 PC의 **기존 원장 2개 테이블만** append-only 기록한다. 이 옵션이 구현됐다는 것이 PC 기록 실행·승인을 의미하지 않는다.
+3. 2026-10-27 사용자 승인 후 전용 `EARNINGS_CENSUS_QFR_R2_SQLITE_APPLY_ONCE.cmd`를 추가했다. 확인 메시지에서 Y를 선택해야 실행되며, 승인 당시 프리플라이트 ZIP 해시를 **필수 인수**로 전달한다: `--apply --confirm-census-qfr-sqlite-append --expected-source-sha256 232f7757e654e787a9eab49792302feb3683e5280a66ff0cc9bd7f0cbc448654`. 공식 ZIP 바이트가 바뀌면 SQLite 쓰기 연결 전 `QFR_SOURCE_CHANGED_SINCE_PREFLIGHT_NO_WRITE`로 중단한다. 실제 PC의 **기존 원장 2개 테이블만** append-only 기록한다.
 4. DB 저장이 끝나도 D1 신규 키/Worker/화면 노출은 별도 승인·배포·공개 검증 대상이다. 산식 가중치/점수에는 자동 편입하지 않는다.
 
 ## 검증 및 미완료 경계
 
 - R1 기존 오프라인 공식 형식 synthetic 파서 5건: PASS.
-- R2 신규 메모리 SQLite synthetic 6건: 원본 ZIP 바이트 동일·재현 SHA, 중복 저장 0건, 개정 별도 추가, 타 계약 오염 거절, 잘못된 스키마 차단, 두 번째 INSERT 실패 시 전체 롤백, BLS 레코드 불변 검증.
-- 테스트 전부 **실제 PC DB 미접근 / 실 D1 미접근 / 실제 원본 ZIP 최신 재수집 미수행**. 이는 코드 계약 검증이며 PC 배포 또는 운영 성공으로 보고할 수 없다.
+- R2 신규 메모리 SQLite synthetic 7건: 원본 ZIP 바이트 동일·재현 SHA, 중복 저장 0건, 개정 별도 추가, 타 계약 오염 거절, 잘못된 스키마 차단, 두 번째 INSERT 실패 시 전체 롤백, BLS 레코드 불변 및 **승인된 ZIP SHA 일치 필수** 검증.
+- **실제 PC R2 읽기 전용 프리플라이트 PASS**: 첨부 `EARNINGS_CENSUS_QFR_R2_STORE_RESULT_20261027T141637Z.txt`(UTC 2026-10-27 14:16:37)에 `RESULT=PASS_QFR_STORAGE_PREFLIGHT_NO_WRITE`, `PRIOR_CENSUS_SNAPSHOTS=0`, `PRIOR_CENSUS_CHUNKS=0`, `ZIP_BYTES=1746726`, `SOURCE_SHA256=232f7757e654e787a9eab49792302feb3683e5280a66ff0cc9bd7f0cbc448654`, `OBSERVED_THROUGH=2026-Q2`, 마진 `15.599418144173285` 기록. **실제 PC SQLite 쓰기 및 D1은 여전히 NOT_RUN**이다.
 - R1 원본 조사에 기록된 2026-Q2 마진 15.59941814%는 검증 당시의 산출값이며 차후 개정치에 자동 고정하지 않는다.
 
 ## 다음 Gate
 
-1. 전용 브랜치 파일을 PC 운영 위치에 설치(기존 작업자와 충돌 없도록 신규 파일만 배포).
-2. 사용자 PC에서 읽기 전용 `EARNINGS_CENSUS_QFR_R2_STORAGE_PREFLIGHT.cmd` 실행 → **같은 위치** TXT를 확인. 실제 DB의 스키마/네임스페이스와 공식 ZIP 네트워크 수신을 별도 입증.
-3. 프리플라이트 증빙 확인 후 **PC append-only 실행 승인**을 별도 받고, 승인된 명령의 원장 readback 및 기존 BLS 이력 보존 검증.
+1. 이미 완료된 PC 프리플라이트를 다시 강제하지 않는다. 해당 TXT의 ZIP 해시를 이번 **1회 저장 승인 기준**으로 사용한다.
+2. 전용 브랜치의 R2 최신 파일을 기존 PC 스크립트 폴더에 설치(기존 운영 브랜치 교체 금지). `EARNINGS_CENSUS_QFR_R2_SQLITE_APPLY_ONCE.cmd` 실행 시 Y 확인 후 **동일 ZIP 해시**만 저장한다. 자료가 개정되어 해시가 달라졌다면 중단·재검증한다.
+3. 생성된 `EARNINGS_CENSUS_QFR_R2_STORE_RESULT_*.txt`에서 `RESULT=PASS_QFR_SQLITE_APPEND_READBACK`, `SQLITE_COMMITTED=YES`, `CHUNKS_INSERTED=1`, `SNAPSHOTS_INSERTED=1`, `RAW_ZIP_ARCHIVED_IN_EXISTING_SQLITE=YES`를 확인한 뒤에만 PC 저장을 완료로 판정한다. 중복 실행일 때는 INSERT 0건이 정상일 수 있다.
 4. 신규 D1 키 설정·입력 이력/빈티지 게이트, 공개 GET, 사이트 정보성 라벨을 **각각 별도 검증**. 기존 실적 침체 위험 E1-R4 산식은 그대로 둔다.
