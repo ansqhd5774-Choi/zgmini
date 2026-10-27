@@ -1,3 +1,7 @@
+/* USA title info disclosure: desktop introduction remains unchanged. */
+.zg-fg-us .zg-fg-title-row { display: contents; }
+.zg-fg-us .zg-fg-intro-button { display: none; }
+
 /* USA fear/greed R8 mobile candidate — layout only.
  * No palette, score, chart, API or history overrides.
  * R7's full-viewport overflow lock and hidden factor fields are deliberately
@@ -57,6 +61,34 @@
     margin: 0 0 8px;
     padding: 10px 11px;
   }
+
+  /* Only mobile hides the intro until the adjacent info icon is tapped. */
+  .zg-fg-us .zg-fg-title-row {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    min-width: 0;
+  }
+  .zg-fg-us .zg-fg-intro-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 32px;
+    width: 32px;
+    height: 32px;
+    min-width: 32px;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
+  }
+  .zg-fg-us .zg-fg-intro-button:focus-visible {
+    outline: 2px solid currentColor;
+    outline-offset: 2px;
+  }
+  .zg-fg-us .zg-fg-intro:not(.zg-fg-intro--expanded) { display: none; }
 
   .zg-fg-us .zg-fg-eyebrow { font-size: 9px; }
   .zg-fg-us .zg-fg-page-header h1 { margin: 0; font-size: 20px; }
