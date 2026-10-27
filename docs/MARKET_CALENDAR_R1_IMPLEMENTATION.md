@@ -108,6 +108,13 @@
 - R2 확장 파서의 교정 ID·날짜·제목을 실측 3건 그대로 회귀 테스트에 고정한다. 저장 event 5개 필드, 네 출처, 수집·게시 주기, DB/설정/TTL/산식은 변경하지 않는다.
 - **다음 적용 Gate:** 실제 PC 운영 프로젝트·승인 source SHA의 drift를 확인하고, 본 확대 파서 최소 변경을 기존 승인 GitHub/main→PC 배치 절차에 따라 반영한 뒤, PC 저장 결과→기존 게시→D1/API/UI를 순서대로 확인한다. 다른 브랜치 통째 병합, PC 승인 SHA의 무단 교체, 운영 DB 직접 변경, 강제 재수집/게시, 직접 Cloudflare 배포는 금지한다.
 
+### R9 — 실제 PC 수집기 source 전환 전 필수 Gate (2026-10-27)
+- 사용자 승인 하에 운영 전환 준비를 진행한다. 승인된 운영 source는 R6에서 확인된 `36266beb3ab942979d9aca7dcdd8af16fb27825b`이며, 해당 커밋의 `lib/release-calendar.mjs` Git blob은 `f084e2a360b544257bb44a60b97875627c7ca371`이다. 확대 파서 후보 파일 SHA-256은 `685b41930f1dd1abe275f4b4b118fef267ef4f2758f19427233547f8d91278fc`이다.
+- **주의: 단독 parser 파일 덮어쓰기 금지.** `scripts/pc-writer/publication-guard.mjs`의 `publicationCompatibility()`는 실제 실행 HEAD와 `config.source`의 `lib/` 차이를 게시 계약 변경으로 차단한다. 운영 소스 파일만 수정하거나 별도 commit의 승인 없이 writer를 실행하면 기존 게시가 `PUBLICATION_CONTRACT_CHANGED`로 차단될 수 있다.
+- R9 `MARKET_CALENDAR_R9_SOURCE_PREFLIGHT.cmd`는 등록 Core 작업 XML(읽기), `E:\ZGmini\projects\` 직계 Git 프로젝트 후보(읽기), 실제 parser blob 및 로컬 dirty 상태, `E:\ZGmini\data\pc-writer\config.json`의 비밀 아닌 source·enabled·target만 확인한다. `MARKET_CALENDAR_R9_SOURCE_PREFLIGHT_RESULT.txt`만 생성한다. 작업 인자 전문·비밀값·로컬 PC 경로·원자료를 보고서에 쓰지 않는다.
+- 정확히 1개 Core 등록 작업 대상·기존 승인 Git 객체·기존 parser·변경되지 않은 게시 관련 소스가 확인될 때에만 `READY_FOR_APPROVED_SOURCE_TRANSITION_NO_CHANGES_MADE`를 반환한다. 등록 task가 C: junction 등으로 실행되어 프로젝트와 일치하지 않거나, 승인 source가 바뀌었거나, 다른 변경이 겹치면 **STOP**한다. STOP은 writer 장애 증거가 아니다.
+- R9는 Git fetch/checkout/commit/reset/merge/push, 설치/작업 등록, config·DB·스케줄러 수정, 공급자 호출, 재계산·게시·배포를 수행하지 않는다. 실제 source 전환 및 provenance/게시 계약 갱신은 R9 PC 결과 확인 후 현재 등록 source를 보존하는 최소 작업으로 따로 수행한다. `main` 및 다른 작업 브랜치는 변경하지 않는다.
+
 ## SEO 사전 점검 (docs/SEO_SEARCH_APPEARANCE_REVIEW.md)
 
 - 검색 의도: 투자자가 미국 경제지표와 향후 기업 실적 발표 일정을 날짜별로 조회. 현재 실제 제공 범위는 공식 미국 경제지표에 국한.
