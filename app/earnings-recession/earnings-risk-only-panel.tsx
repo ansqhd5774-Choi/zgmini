@@ -9,26 +9,19 @@ import {MarketFearGreedChart,type MarketFearGreedChartPoint,type MarketFearGreed
 import {ContentHelp} from "../content-help";
 import {EarningsFavoriteButton,EarningsFavoriteHeaderIcon} from "./earnings-favorite-button";
 import {EARNINGS_RISK_HISTORY_KIND} from "../../lib/market-score/earnings-recession-history-r1.mjs";
+import {readBeaStoredS6,type BeaIndicator} from "./earnings-bea-s6-source";
 import "./earnings-indicator-r2.css";
 import "./earnings-inflation-layout.css";
 
-// This component must only use the eight-risk diagnostic contract.
-// The separate economic-domain data is intentionally not a prop or input.
+// The score and its four risk factors use only the eight-risk diagnostic contract.
+// The BEA observation is a read-only supplemental source, never a score input.
 type RiskFactor={id:string;score:number|null;status:string;observationDate?:string|null};
 type RiskPoint={date:string;score:number};
-type BeaPoint={date:string;value:number};
-type BeaIndicator={
- id:string;status:string;value:number|null;unit:string;source:string;
- historyKind?:string;sourcePeriodEnd?:string|null;previousValue?:number|null;
- previousPeriodEnd?:string|null;sourceHistory1Y?:BeaPoint[];
- nextReleaseDate?:string|null;
-};
 type RiskPayload={
  status:string;score:number|null;asOfDate?:string|null;methodologyVersion?:string|null;
  riskFactors?:RiskFactor[];riskFactorsMethodologyVersion?:string|null;
  riskTrend?:RiskPoint[];riskHistoryKind?:string|null;
  riskFinancialPeriodEnd?:string|null;riskHistoryMode?:string|null;
- storedE1?:{status?:string;methodologyVersion?:string;indicators?:BeaIndicator[]};
 };
 const ids=["epsGrowth","margin","revenueGrowth","earningsGrowthBreadth"] as const;
 const labels:Record<string,{name:string;description:string;direction:string}>={
@@ -83,7 +76,7 @@ const beaUsable=(row:BeaIndicator|undefined)=>Boolean(
  row.previousPeriodEnd!<row.sourcePeriodEnd&&
  Array.isArray(row.sourceHistory1Y)&&row.sourceHistory1Y.length>=2&&
  row.sourceHistory1Y.length<=8&&row.sourceHistory1Y.every((point,index,all)=>
-  quarterEnd(point.date)&&finiteCost(point.value)&&
+  point&&quarterEnd(point.date)&&finiteCost(point.value)&&
   (index===0||all[index-1].date<point.date))&&
  row.sourceHistory1Y.at(-1)?.date===row.sourcePeriodEnd&&
  Math.abs(row.sourceHistory1Y.at(-1)!.value-row.value!)<1e-8
@@ -130,9 +123,7 @@ export default function EarningsRiskOnlyPanel(){
   costError?"원자료 조회 실패":"원자료 준비 중";
  // Reuse the already-stored BEA S6 source history. Its symmetric YoY
  // change is not conventional YoY growth and never enters the risk score.
- const beaIndicator=payload?.storedE1?.methodologyVersion==="E1-R5"&&
-  payload.storedE1.status==="READY"?
-  payload.storedE1.indicators?.find(row=>row.id==="S6"):undefined;
+ const beaIndicator=readBeaStoredS6(payload);
  const beaReady=beaUsable(beaIndicator);
  const beaDelta=beaReady?beaIndicator!.value!-beaIndicator!.previousValue!:null;
  const beaHistory=beaReady?beaIndicator!.sourceHistory1Y??[]:[];
