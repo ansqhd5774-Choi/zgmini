@@ -67,12 +67,17 @@ F 값을 임의로 생성해 현재 순위를 보고하지 않는다. 위 표는
 
 - `stage04-r67/forecast-sentiment-r67.mjs`: R63 Markdown/URL 파서, 2매체 평균, 그룹 백분위, **주입된 읽기 전용 F**와 연구용 괴리 계산. 실제 HTTP 요청과 게시 없음.
 - `stage04-r67/forecast-sentiment-r67.test.mjs`: 21/21·58/63·개별 평균·메타충돌·동률·결측/F=0·입력검증.
+- `stage04-r67/live-f-adapter-r67.mjs`: 명시 실행 시 기존 `stage04/latest-f-readonly.mjs`의 **F 원본 선택 로직을 재사용**해 공식 공개 테마 API를 1회 GET하고, R2/03단계 승인 9개 테마명만 조사 주제 12–20에 매핑한다. 그 밖의 테마를 승인·편입하지 않는다.
+- `stage04-r67/live-f-adapter-r67.test.mjs`: 잠정치/확정치·관측일·미승인 이름 무시·결측 대응 2개 추가 테스트.
 - 로컬 역사 검산:
 
-```bash
-R63_MATRIX_PATH=./recovered-cagr-r63-r66/CAGR_R63_21_SOURCE_MATRIX_20261027.md node stage04-r67/forecast-sentiment-r67.test.mjs
-node stage04-r67/forecast-sentiment-r67.mjs --matrix ./recovered-cagr-r63-r66/CAGR_R63_21_SOURCE_MATRIX_20261027.md
+```text
+node stage04-r67/forecast-sentiment-r67.mjs --matrix recovered-cagr-r63-r66/CAGR_R63_21_SOURCE_MATRIX_20261027.md
+node stage04-r67/live-f-adapter-r67.test.mjs
+node stage04-r67/live-f-adapter-r67.mjs --matrix recovered-cagr-r63-r66/CAGR_R63_21_SOURCE_MATRIX_20261027.md
 ```
+
+마지막 명령은 실제 공개 API를 **단 1회 읽는 명시적 선택 사항**이다. 사용자 PC의 명령 프롬프트에서 실행한다. 현재 실행환경에서는 `https://zgmini.kr/api/theme-fear-greed` 직접 `fetch`가 `fetch failed`로 종료되어 **HTTP 상태·실측 F·D는 확보하지 못했다**. 이 네트워크 실패를 ZGMINI 운영 장애로 단정하지 않는다. 이력 자료로 F 값을 대체하지 않는다.
 
 - F 공급원 인터페이스 (향후 실제 런타임 조회기에서 생성, 미확인 값 생성 금지):
 
@@ -84,8 +89,8 @@ node stage04-r67/forecast-sentiment-r67.mjs --matrix ./recovered-cagr-r63-r66/CA
 
 ### 현재 구현 완료/미완료를 나누어 보고할 것
 
-- **완료:** R63 역사 21개 연구 대상으로 산술평균·백분위 계산기가 재현됨, 2매체 PASS, 입력 검증 테스트.
-- **미완료:** 58건 현재 원문 재조회, 사용자 PC Ollama 실측, live F 최신 런타임 연결, 실제 D 투자 순위, 실측성장 `G_actual` 합성, 운영 산식 승인, main 병합, 배포, 주문.
+- **완료:** R63 역사 21개 연구 대상으로 산술평균·백분위 계산기가 재현됨, 2매체 PASS, 입력 검증 4개·읽기 전용 F 매핑 2개 테스트 PASS. GitHub 원격 반영과 로컬 실행은 개별 상태로 보고.
+- **미완료:** 58건 현재 원문 재조회, 사용자 PC Ollama 실측, live F 최신 런타임 실제 확인(이 실행환경의 네트워크 실패), 실제 D 투자 순위, 실측성장 `G_actual` 합성, 운영 산식 승인, main 병합, 배포, 주문.
 - **고정 경계:** 기존 03단계 9개 통과 테마 및 ETF 자격·628일·공탐 산식을 다시 검사하지 않는다. 21개 전망 연구 주제를 03단계 21개 ETF 승인이라고 해석하지 않는다.
 
 ## 7. 출처
