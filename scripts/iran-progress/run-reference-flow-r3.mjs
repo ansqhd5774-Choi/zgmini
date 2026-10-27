@@ -20,4 +20,12 @@ if(fs.existsSync(retention)){
  const newsExit=await run([retention,'--apply']);
  if(newsExit!==0)console.error('IRAN_DISPLAY_NEWS_RETENTION_FAILED_SCORE_UNAFFECTED');
 }
+// The existing R13 scheduler is reused. New article selection, PC display
+// cache and the D1 news-only key are separate from R3/R5 score calculations.
+// Do not propagate news-publication errors into the score runner exit code.
+const newsAuto=path.join(path.dirname(fileURLToPath(import.meta.url)),'news-display-auto-run-r15.mjs');
+if(fs.existsSync(newsAuto)){
+ const newsExit=await run([newsAuto,'--scheduled']);
+ if(newsExit!==0)console.error('IRAN_DISPLAY_NEWS_AUTO_FAILED_SCORE_UNAFFECTED');
+}
 if(r3!==0||r5!==0||original!==0)process.exitCode=1;
