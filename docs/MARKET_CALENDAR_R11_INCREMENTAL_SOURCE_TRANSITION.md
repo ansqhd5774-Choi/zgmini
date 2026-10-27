@@ -92,3 +92,11 @@
 - 통과 시 Core lock을 임시로 확보하고, 승인 데이터 루트의 `market-calendar-r17-backups` 하위에 **기존 파서와 config 원본을 모두 보존**한 뒤, 승인 PC checkout의 `lib/release-calendar.mjs` 단일 파일만 변경한다. 해당 파일만 포함하는 로컬 Git 커밋을 생성하고, 부모가 `7ac573fc`이며 차이 파일이 정확히 1개인지 확인한 뒤 `config.source`를 새 HEAD로 맞춘다. 설정 이외 DB·게시 원장·예약 작업·원자료는 변경하지 않는다.
 - GitHub push 및 `main` 변경·Cloudflare 배포·강제 수집·즉시 게시 모두 없다. 적용 결과 파일은 `MARKET_CALENDAR_R17_BLS_APPLY_RESULT.txt`. `BLS_INSTALLED_WAIT_NEXT_REGULAR_VERIFIED_CYCLE`는 설치 성공 **전용** 상태이며 이후 정규 수집의 BLS 원본 저장·파서 계산·게시 `VERIFIED` 및 공개 readback을 별도로 검증해야 한다. 그 검증 전 BEA 전환 금지.
 - 커밋 전 실패는 원본 파서를 복구하고 종료한다. 커밋 이후 설정 변경 실패는 게시 차단 상태일 수 있으므로, 임의 `git reset` 없이 백업과 결과를 확인한 뒤 별도 복구 판정을 받는다.
+
+### R17 설치 성공과 R18 — 실제 정규 수집·게시·공개 대조
+
+- 사용자 R17 결과(`2026-10-27T09:14:11.140Z`)는 `BLS_INSTALLED_WAIT_NEXT_REGULAR_VERIFIED_CYCLE`: 실제 운영 source `7ac573fc`에서 BLS 파서 한 파일 커밋 `e778f58d056e45c515fac95b4ed48295f6a3ed1a`로 전환됐다. R17 백업 `r17-20261027091413755-d53cc8ff`가 존재하고, 게시·수집·Git 원격 푸시는 시행하지 않았다. **설치 PASS ≠ 수집·게시 PASS.**
+- R18 `MARKET_CALENDAR_R18_VERIFIED_CYCLE.cmd`는 실행 중인 Core 작업 XML의 실제 원본 VBS와 정확한 worktree를 추적한다. 승인 HEAD·부모·단일 파일 diff·파서 SHA256·config.source를 확인하며, SQLite `readOnly:true`로 기존 BLS 원본 저장 시각/현재 출력/시도 시각을 읽는다.
+- R17 백업 원본 파서와 새 파서를 **동일하게 저장된 BLS 입력**에 적용해 예전 발행일·제목 누락을 확인한다. BLS 저장 이벤트의 키·건수·중복, BEA/Fed/Census 건수, 새 source `VERIFIED` writer/ledger, 공개 `/api/release-calendar`의 이벤트 해시 일치를 구분하여 판정한다.
+- 최초 정규 BLS 수집이 아직 없다면 `WAIT_FIRST_REGULAR_BLS_COLLECTION`; 수집 성공 후 게시 전이면 `WAIT_NEW_SOURCE_VERIFIED_PUBLICATION`; 공개 불일치면 `WAIT_REMOTE_EXACT_EVENT_READBACK`. 최종 `BLS_VERIFIED_PUBLIC_READBACK_PASS`에서만 다음 BEA 단독 전환 검토가 가능하다.
+- R18은 기존 예약 시각·6시간 수집 가드·DB·Git·Cloudflare·D1·공개 데이터를 변경하지 않는다. 읽기 전용 결과 TXT를 받아 판정하며 수집·게시를 임의로 강제하지 않는다.
