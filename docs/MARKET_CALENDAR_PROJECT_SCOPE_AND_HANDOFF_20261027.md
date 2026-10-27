@@ -139,3 +139,13 @@
 - 산출물 관련 코드·사용법·재생성에 필요한 파일 및 인수인계 규칙은 지정 브랜치 `codex/zgmini-gpt-workspace-20261025`에 반영한다. ZIP 전달과 브랜치 커밋은 서로 다른 완료 상태로 보고한다.
 - 사용자가 파일을 다운로드·실행했다는 근거 없이 PC 실행/설치 성공이라고 주장하지 않는다. ZIP을 제공할 수 없으면 정직하게 전달 미완료로 보고하고 경로 링크만으로 대체 완료 처리하지 않는다.
 - 최초 적용 대상: R20 Census `MARKET_CALENDAR_R20_CENSUS_APPLY.cmd`, `README_R20_CENSUS_PC_INSTALL.txt`, `scripts/pc-writer/market-calendar-r20-census-apply.mjs`, 참조 R19 스크립트, R20 후보 파서, R20 기준서가 포함된 ZIP.
+
+## 13. R20 PC 적용 완료 보고와 R21 연도 경계 후보 (2026-10-27)
+
+- 사용자 CODEX 설치 완료 보고에 따르면 R20은 정규 Core 종료 후 정상 적용되어 PC source가 `e4b0624683f29c551df381777dea871d7e3dd266`에서 `97a38c7cdfbb7e0d30eaeacea27b9605bbfa2b3b`로 전환되었다. 변경 파일은 `lib/release-calendar.mjs` 하나, 관련 검사 18건·설치된 파서 추가 검사 4건 통과, BLS·BEA 출력 보존. 이 증거는 **사용자 보고**이며 정규 수집·공개 반영 성공을 뜻하지 않는다. 본 섹션이 작성되기 전의 ‘R20 미설치’ 설명은 작성 당시의 이력이다.
+- R21은 R20 파서·승인 PC Core/스케줄을 보존하고 Census 현재/차년도 URL 조회 및 연도별 공식 일반 목록 fallback만 보완한다. HTTP 200이어도 해당 연도 일정 0건이면 실패로 구분하고, 다른 연도 일정을 잘못된 연도에 편입하지 않는다.
+- R21 후보 수집기: `staging/market-calendar/r21-census-year/scripts/pc-writer/release-calendar.mjs`, 설치기: `scripts/pc-writer/market-calendar-r21-year-apply.mjs`, 테스트 2종, 실행 CMD 및 README. 기존 PC collector 파일만 교체하는 별도 단일 파일 설치 계약.
+- 2026/2027 전환·2028 오인 방지·Census 실패 시 기존 출력 보존·BLS/BEA/Fed 회귀·기존 lease/cache·원본 source 검증·백업·잠금 보호 테스트 **8건 로컬 PASS**. 실제 PC 설치는 **미실행**이며 `CODE_READY`로 표시한다.
+- 후보 SHA256: `2e7ac2a57a7ec2c41b2f9647d98d49c7bb22d904978a0d637e3d3619e01dedf0`; R20 PC 기존 source `97a38c7cdfbb7e0d30eaeacea27b9605bbfa2b3b`와 다른 경우 적용을 중단한다.
+- PC 전달물: `MARKET_CALENDAR_R21_CENSUS_YEAR_PC_PACKAGE_20261027.zip` (CMD와 모든 필요 파일 포함). CMD 폴더 내 `MARKET_CALENDAR_R21_CENSUS_YEAR_APPLY_RESULT.txt` 생성. GitHub 브랜치 기록과 PC ZIP 실행은 별개의 단계다.
+- 상세 기준은 `docs/MARKET_CALENDAR_R21_CENSUS_YEAR_BOUNDARY.md`. 설치 결과가 확인되면 Fed 정기·연례 개정 일정과 추가 경제·기업 실적 소스 확장으로 진행한다. 사용자 별도 요청이 없는 정규 수집·공개 UI 대기나 강제 실행은 하지 않는다.
