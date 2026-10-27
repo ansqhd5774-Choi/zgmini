@@ -134,6 +134,23 @@ export function makeQfrPlan(rawZip,retrievedAt=new Date().toISOString()){
     rowCount:result.history.length,retrievedAt,asOf:retrievedAt.slice(0,10)};
 }
 
+export function parseQfrMode(args){
+  if(args.length===0||(args.length===1&&args[0]==='--dry-run'))
+    return {apply:false,expectedSha256:null};
+  if(args.length===4&&args[0]==='--apply'
+    &&args[1]==='--confirm-census-qfr-sqlite-append'
+    &&args[2]==='--expected-source-sha256'
+    &&SHA.test(args[3]))
+    return {apply:true,expectedSha256:args[3]};
+  fail('QFR_APPEND_CONFIRMATION_AND_SOURCE_SHA_REQUIRED');
+}
+
+export function verifyExpectedQfrSource(plan,expectedSha256){
+  if(!SHA.test(expectedSha256??''))fail('QFR_EXPECTED_SOURCE_SHA_INVALID_NO_WRITE');
+  if(plan?.result?.sourceSha256!==expectedSha256)
+    fail('QFR_SOURCE_CHANGED_SINCE_PREFLIGHT_NO_WRITE');
+}
+
 export function appendQfrPlan(db,plan){
   if(!plan||!SHA.test(plan.chunkHash??'')||!SHA.test(plan.snapshotHash??'')
     ||hash(plan.payloadJson)!==plan.chunkHash
@@ -184,18 +201,21 @@ export function appendQfrPlan(db,plan){
 
 async function main(){
   const args=process.argv.slice(2);
-  const apply=args.join(' ')==='--apply --confirm-census-qfr-sqlite-append';
-  const readonly=args.length===0||args.join(' ')==='--dry-run';
-  if(!apply&&!readonly){console.error('QFR_APPEND_CONFIRMATION_REQUIRED');process.exitCode=2;return;}
+  let mode;
+  try{mode=parseQfrMode(args);}catch{
+    console.error('QFR_APPEND_CONFIRMATION_AND_SOURCE_SHA_REQUIRED');process.exitCode=2;return;
+  }
+  const {apply,expectedSha256}=mode;
   const now=new Date().toISOString();
   const stamp=now.replace(/[-:]/g,'').replace(/\.\d+Z$/,'Z');
   const logfile=path.join(HERE,`EARNINGS_CENSUS_QFR_R2_STORE_RESULT_${stamp}.txt`);
   const notes=['EARNINGS_CENSUS_QFR_R2_SQLITE_APPEND',`UTC=${now}`,
     `MODE=${apply?'MANUALLY_CONFIRMED_APPEND_ONLY':'READ_ONLY_PREFLIGHT'}`,
     `PROVIDER=${PROVIDER}`,`DATASET=${DATASET}`,
+    `EXPECTED_SOURCE_SHA256=${expectedSha256??'NOT_APPLICABLE'}`,
     'D1_WRITES=0','WEB_DEPLOYMENTS=0','SCORE_WRITES=0','BLS_ROWS_MODIFIED=0',
     'SCHEMA_MIGRATIONS=0','SQLITE_DELETIONS_OR_REPLACEMENTS=0'];
-  let result='FAIL_NO_COMMIT',committed=false;
+  let result='FAIL_NO_COMMIT',committed=false,archived=false;
   try{
     if(!fs.existsSync(DB_PATH))fail('QFR_PC_SQLITE_MISSING_NO_WRITE');
     let db;
@@ -211,8 +231,8 @@ async function main(){
     notes.push(`OBSERVED_THROUGH=${plan.lastDate}`);
     notes.push(`MANUFACTURING_AFTER_TAX_MARGIN_PCT=${plan.result.value}`);
     notes.push(`ZIP_BYTES=${archive.length}`);
-    notes.push(`RAW_ZIP_ARCHIVED_IN_EXISTING_SQLITE=${apply?'PENDING':'NO'}`);
-    if(readonly){result='PASS_QFR_STORAGE_PREFLIGHT_NO_WRITE';return;}
+    if(!apply){result='PASS_QFR_STORAGE_PREFLIGHT_NO_WRITE';return;}
+    verifyExpectedQfrSource(plan,expectedSha256);
     try{
       db=new DatabaseSync(DB_PATH,{timeout:5000});
       db.exec('PRAGMA foreign_keys=ON');
@@ -220,7 +240,7 @@ async function main(){
       committed=true;
       notes.push(`CHUNKS_INSERTED=${stored.insertedChunks}`);
       notes.push(`SNAPSHOTS_INSERTED=${stored.insertedSnapshots}`);
-      notes.push('RAW_ZIP_ARCHIVED_IN_EXISTING_SQLITE=YES');
+      archived=true;
       result='PASS_QFR_SQLITE_APPEND_READBACK';
     }finally{try{db?.close();}catch{}}
   }catch(e){
@@ -229,6 +249,7 @@ async function main(){
     process.exitCode=2;
   }finally{
     notes.push(`SQLITE_COMMITTED=${committed?'YES':'NO'}`);
+    notes.push(`RAW_ZIP_ARCHIVED_IN_EXISTING_SQLITE=${archived?'YES':'NO'}`);
     notes.push(`RESULT=${result}`);
     try{
       fs.writeFileSync(logfile,notes.join('\r\n')+'\r\n',{encoding:'utf8',flag:'wx'});
