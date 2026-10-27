@@ -105,7 +105,8 @@ export async function chooseR53(topic,p,title,candidates,{fetchFn=fetch}={}){
 export async function inspectR53(topic,p,url,{fetchFn=fetch,modelQueue=serialModelQueue(),chooseFn=chooseR53}={}){
   const out={url,state:'REPORT_FAILED',title:null,market_scope:null,source_audit:'NOT_AUDITED',
     observed_cagr:null,period:null,sector_eligible:false,model_scope:null,
-    model_candidate_id:null,scope_warning:null,error:null,excerpt:null,report_ms:0,ollama_ms:0};
+    model_candidate_id:null,scope_warning:null,error:null,excerpt:null,report_ms:0,ollama_ms:0,
+    source_evidence:null};
   const start=performance.now();let html;
   try{html=await getOfficial(url,p,fetchFn);}
   catch(e){out.report_ms=Math.round(performance.now()-start);out.error=clean(e.message);
@@ -118,10 +119,20 @@ export async function inspectR53(topic,p,url,{fetchFn=fetch,modelQueue=serialMod
   if(headlineConflict){out.state='SOURCE_CONFLICT';out.error=headlineConflict;out.source_audit='SOURCE_CONFLICT';return out;}
   let audit=null;
   if(p.id==='TBRC'){
-    audit=auditForecastSource(html);out.source_audit=audit.source_audit;
+    // R29/R31's existing opt-in can distinguish a verified 2025->2026
+    // historic CAGR accidentally repeated in the publisher's 2026->2030
+    // metadata. It requires BOTH historic arithmetic and forecast narrative
+    // arithmetic to agree. Unexplained differences still remain conflicts.
+    audit=auditForecastSource(html,{resolveHistoricTableMislabel:true});
+    out.source_audit=audit.source_audit;
+    out.source_evidence={forecast_narrative_pct:audit.forecast_narrative_pct,
+      forecast_table_pct:audit.forecast_table_pct,forecast_math_pct:audit.forecast_math_pct,
+      historic_narrative_pct:audit.historic_narrative_pct,
+      historic_math_pct:audit.historic_math_pct,
+      source_conflict_reason:audit.source_conflict_reason};
     if(audit.source_audit==='SOURCE_CONFLICT'){out.state='SOURCE_CONFLICT';
       out.error=audit.source_conflict_reason;return out;}
-    if(audit.source_audit!=='CONSISTENT'){
+    if(!['CONSISTENT','RESOLVED_HISTORIC_RATE_MISLABEL'].includes(audit.source_audit)){
       // Do not let the model select a historical CAGR from an unaudited
       // TBRC full page. This is missing evidence, not a publisher ban.
       out.state='SOURCE_AUDIT_INCOMPLETE';
@@ -141,11 +152,11 @@ export async function inspectR53(topic,p,url,{fetchFn=fetch,modelQueue=serialMod
     const chosen=candidates[selected.index];
     if(!chosen){out.state='MODEL_UNCONFIRMED';return out;}
     out.excerpt=chosen.excerpt.slice(0,300);
-    out.period=audit?.source_audit==='CONSISTENT'?
+    out.period=['CONSISTENT','RESOLVED_HISTORIC_RATE_MISLABEL'].includes(audit?.source_audit)?
       audit.forecast_base_year+'-'+audit.forecast_end_year:
       candidatePeriod(chosen.excerpt,body,out.title);
     if(!out.period){out.state='FORECAST_PERIOD_UNVERIFIED';return out;}
-    if(audit?.source_audit==='CONSISTENT'&&
+    if(['CONSISTENT','RESOLVED_HISTORIC_RATE_MISLABEL'].includes(audit?.source_audit)&&
        Math.abs(chosen.pct-audit.forecast_narrative_pct)>0.05){
       out.state='FORECAST_SELECTION_MISMATCH';return out;}
     if(selected.scope==='DIRECT'&&out.market_scope!=='BROAD_SCOPE_REVIEW')
