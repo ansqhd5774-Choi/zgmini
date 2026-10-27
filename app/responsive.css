@@ -519,6 +519,11 @@
   }
   .zg-dashboard[data-view="dashboard"] .zg-r55-shell[data-expanded] .zg-r55-card{
     grid-template-columns:82px minmax(0,1fr);
+    /* Title + 60px plot + gaps/padding must fit the card in both states. */
+    grid-template-rows:22px 60px auto;
+    height:auto;
+    min-height:100px;
+    max-height:none;
   }
   .zg-dashboard[data-view="dashboard"] .zg-r55-shell[data-expanded] .zg-r55-card-visual{
     grid-row:2;
