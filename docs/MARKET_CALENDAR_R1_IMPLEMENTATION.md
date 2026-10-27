@@ -121,6 +121,12 @@
 - R10 `MARKET_CALENDAR_R10_LINEAGE_TELEMETRY.cmd`는 같은 등록 작업 대상에 대해 PC Git 객체의 실제 source-vs-HEAD 게시 보호 파일 **건수**와 파서 변경 여부, 최근 writer·publication ledger·collection checkpoint의 승인 아닌 메타데이터(상태/시각/SHA)만 조회한다. 외부 HTTP, DB 접근, 수집·계산·게시·source/config/스케줄러 변경, Git fetch/checkout 수행 금지. 원문 오류·등록 작업 XML·인자·PC 사용자 경로·비밀값은 출력하지 않는다.
 - R10 결과는 **운영 source 재승인이나 자동 교체 신호가 아니다.** 변경된 인증·수집 코드의 승인 권한을 다른 작업에서 먼저 확보했는지, 현재 실제 게시가 어디서 실행되는지, 최근 VERIFIED 원장이 무엇인지 확인할 Gate이다. 결과가 충돌하면 운영 writer 수정 없이 작업 중단하고 다른 운영 작업과 source provenance를 조정한다.
 
+### R10 PC 결과 — 실제 게시 정상, XML 참조 프로젝트와 분리 판정 (2026-10-27)
+- PC R10 로그(`2026-10-27T06:32:34.234Z`)는 XML 참조 프로젝트 1개(`HEAD=1364b01b`, detached)의 승인 소스 `ee41bb29` 대비 104개 변경 파일 중 게시 보호 파일 61개를 확인했다. 참조 프로젝트의 기존 calendar parser blob은 `f084e2a3`, 로컬 보호 파일 수정은 0개, 승인 소스 Git 객체는 존재한다. `PROTECTED_SOURCE_DRIFT_STOP`은 **이 참조 프로젝트를 실제 게시 실행 프로젝트라고 가정했을 때**의 보호 판정이다.
+- 동시에 PC의 최근 `local-writer-last-run.json`은 `2026-10-27T06:30:06.233Z`, `mode=PUBLISH`, `status=VERIFIED`, `source=ee41bb29`였고 `local-publication-ledger.json`도 `2026-10-27T06:31:17.688Z`, `status=VERIFIED`, `source=ee41bb29`였다. 두 게시 기록의 source는 승인 설정과 동일하다. 따라서 참조된 구형 프로젝트 HEAD만으로 **PC 게시 중단을 주장하지 않는다**. 최근 `local-collection-last-run.json`은 `SKIPPED`이며 해당 상태만으로 수집 장애 여부를 단정하지 않는다.
+- 결론: **기존 게시 정상 증거는 확보, 확대 캘린더 파서 운영 적용은 미실시**. 기존 133건 공개 저장본은 유지하고 저장 원본 R7/R8 가상 후보 518건을 운영 게시본으로 표기하지 않는다. 예약 작업 XML의 문자열 참조와 실제 게시 프로세스의 working tree는 별개일 수 있으므로, 이후 적용은 VERIFIED source `ee41bb29`와 실제 게시 진입점을 기준으로 최소 파서 1파일의 selective source 통합/승인 재설정 및 D1/API readback Gate를 통과해야 한다. 다른 프로젝트·승인 SHA·기존 작업 등록을 자동으로 바꾸지 않는다.
+- R10을 동일 조건으로 반복 실행하지 않는다. 코드·운영 source가 실제 변경되거나 새로운 출처 충돌 증거가 생길 때에만 해당 Gate를 재점검한다.
+
 ## SEO 사전 점검 (docs/SEO_SEARCH_APPEARANCE_REVIEW.md)
 
 - 검색 의도: 투자자가 미국 경제지표와 향후 기업 실적 발표 일정을 날짜별로 조회. 현재 실제 제공 범위는 공식 미국 경제지표에 국한.
