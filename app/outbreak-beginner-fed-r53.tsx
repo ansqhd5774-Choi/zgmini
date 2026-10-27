@@ -39,7 +39,7 @@ function ScoreScale({score}:{score:number|null}){
   <div className="ob53-scale-labels">{segments.map(x=><span key={x.key}>{x.label}</span>)}</div>
  </div>;
 }
-function Rate14Chart({rate}:{rate:RateStoredSnapshot|null}){
+function Rate14Chart({rate,compact=false}:{rate:RateStoredSnapshot|null;compact?:boolean}){
  const [mobile,setMobile]=useState(false);
  useEffect(()=>{
   const query=window.matchMedia("(max-width: 600px)");
@@ -50,8 +50,7 @@ function Rate14Chart({rate}:{rate:RateStoredSnapshot|null}){
  const period=stored14DayWindow(rate);
  const data=period?.points??[];
  const hasData=data.length>=2;
- // 미관측 날짜는 점을 생성하지 않음. The chart uses one calendar slot per day:
- // null separates the solid line, and only observed endpoints get a dashed gap guide.
+ // Keep the approved source window: missing dates remain null, not made-up points.
  const observed=new Map(data.map(row=>[row.label,row.value]));
  const calendar=period?Array.from({length:14},(_,day)=>new Date(period.start+day*86_400_000).toISOString().slice(0,10)):[];
  const chartData=calendar.map(date=>({date,score:observed.get(date)??null}));
@@ -63,22 +62,31 @@ function Rate14Chart({rate}:{rate:RateStoredSnapshot|null}){
   to:{date:row.label,score:row.value},
  }]:[]);
  const latest=data.length?{date:data[data.length-1].label,score:data[data.length-1].value}:null;
+ const yAxisMax=Math.min(100,Math.max(30,Math.ceil(Math.max(0,...data.map(row=>row.value))/10)*10));
+ const plot=period&&hasData?<div className={compact?"ob58-mini-plot":"ob53-market-chart"} role="group"
+   aria-label={"금리 심리 최근 14일, 저장된 "+data.length+"개 날짜의 관측값만 표시"}
+   data-observed-days={data.length} data-missing-days={14-data.length}>
+  <MarketFearGreedChart
+   data={chartData} axisTicks={axisTicks} axisLabels={axisLabels}
+   latestPoint={latest} gapGuides={gapGuides}
+   compact={compact} yAxisMax={compact?yAxisMax:undefined}
+   instanceKey={compact?"rate-mobile-14d":"rate-sentiment-14d"}
+   gradientId={compact?"ob61-rate-mobile-gradient":"ob53-rate-sentiment-gradient"}
+   formatTooltipLabel={date=>date.slice(5).replace("-",".")}
+   color={rateBand(rate?.score??null).color} marketScoreBands
+  />
+ </div>:<div className={compact?"ob58-mini-empty":"ob53-no-trend"} role="status">14일 범위에 저장된 점수가 2개 미만입니다. 임의의 그래프를 만들지 않습니다.</div>;
+ if(compact)return <div className="ob58-mini-trend" role="region" aria-label="금리 심리 최근 14일 추이">
+  <div className="ob58-mini-head"><span>14일 추이</span><small>{hasData?"0~"+yAxisMax+"점"+(yAxisMax<100?" 확대":""):"저장 데이터 대기"}</small></div>
+  {plot}
+  {calendar.length>0&&<div className="ob58-mini-axis" aria-hidden="true"><span>{calendar[0].slice(5).replace("-",".")}</span><span>{calendar[calendar.length-1].slice(5).replace("-",".")}</span></div>}
+ </div>;
  return <section className="ob53-chart ob-panel" aria-labelledby="ob53-chart-title">
-   <div className="ob53-chart-heading"><h3 id="ob53-chart-title">14일 추이 <CircleHelp size={13} aria-hidden="true"/></h3>
-    <span>{rate?"관측 "+data.length+"일 / 14일":"저장 데이터 대기"}</span></div>
-   {period&&hasData?<div className="ob53-market-chart" role="group"
-     aria-label={"금리 심리 최근 14일, 저장된 "+data.length+"개 날짜의 관측값만 표시"}
-     data-observed-days={data.length} data-missing-days={14-data.length}>
-    <MarketFearGreedChart
-     data={chartData} axisTicks={axisTicks} axisLabels={axisLabels}
-     latestPoint={latest} gapGuides={gapGuides}
-     instanceKey="rate-sentiment-14d" gradientId="ob53-rate-sentiment-gradient"
-     formatTooltipLabel={date=>date.slice(5).replace("-",".")}
-     color={rateBand(rate?.score??null).color} marketScoreBands
-    />
-   </div>:<div className="ob53-no-trend" role="status">14일 범위에 저장된 점수가 2개 미만입니다. 임의의 그래프를 만들지 않습니다.</div>}
-   <p className="ob53-chart-footnote">기준일 포함 최근 14일 · 저장된 날짜만 표시 · 비거래일·미수집일은 추정하지 않음</p>
-  </section>;
+  <div className="ob53-chart-heading"><h3 id="ob53-chart-title">14일 추이 <CircleHelp size={13} aria-hidden="true"/></h3>
+   <span>{rate?"관측 "+data.length+"일 / 14일":"저장 데이터 대기"}</span></div>
+  {plot}
+  <p className="ob53-chart-footnote">기준일 포함 최근 14일 · 저장된 날짜만 표시 · 비거래일·미수집일은 추정하지 않음</p>
+ </section>;
 }
 export default function OutbreakBeginnerFed({rate,deltaWeek}:{rate:RateStoredSnapshot|null;deltaWeek:number|null}){
  const score=rate?.score??null;
@@ -88,19 +96,24 @@ export default function OutbreakBeginnerFed({rate,deltaWeek}:{rate:RateStoredSna
  const date=rate?.observationDate??"미확인";
  const description=score===null?"금리 심리 점수를 확인할 수 없습니다.":"현재 금리 관련 시장 심리는 "+band.label+" 구간입니다.";
  const interpretation=score===null?"현재 점수가 없어 방향을 판단하지 않습니다.":score<40?"금리 부담이 커지는 방향의 신호가 상대적으로 우세합니다.":score<60?"금리 부담 완화와 악화 어느 한쪽으로 크게 기울지 않은 구간입니다.":"금리 부담이 완화되는 방향의 신호가 상대적으로 우세합니다.";
- return <article className="ob-detail ob-beginner-detail" aria-labelledby="ob-detail-title">
+ return <article className="ob-detail ob-beginner-detail ob61-fed-compact" aria-labelledby="ob-detail-title">
    <header className="ob53-title"><div><span className="ob-eyebrow">선택한 이벤트 · 통화 정책</span>
      <h2 id="ob-detail-title">금리 심리 <span className="ob53-tone-pill" data-tone={band.className}>{band.label}</span></h2>
      <p>{description}</p></div>
     <span className="ob-stage">금리 심리 · 저장 자료</span>
    </header>
    <div className="ob53-intro-grid">
-    <section className="ob53-score-card ob-panel" aria-label="현재 금리 심리">
+    <section className="ob53-score-card ob-panel" aria-label="금리 심리">
+     <div className="ob58-mobile-titlebar"><strong>금리 심리</strong><time dateTime={date==="미확인"?undefined:date}>{date.replaceAll("-",".")}</time></div>
      <div className="ob53-metric-row">
-      <div className="ob53-current"><span>금리 심리 점수</span><strong>{score===null?"—":score.toFixed(1)}<small>점</small></strong></div>
+      <div className="ob53-current"><span>금리 심리 점수</span><strong>{score===null?"—":score.toFixed(1)}<small>점</small></strong>
+       <span className="ob58-status" data-tone={band.className}>{band.label}</span>
+       {deltaWeek!==null&&<span className="ob61-week-inline" data-change={negative?"down":positive?"up":"flat"}>7일 {deltaWeek>0?"+":""}{deltaWeek.toFixed(1)}점</span>}
+      </div>
       <div className="ob53-week"><span>주간 변화</span><strong data-change={negative?"down":positive?"up":"flat"}>{deltaWeek===null?"—":(deltaWeek>0?"+":"")+deltaWeek.toFixed(1)}<small>점</small>{negative?<TrendingDown size={15} aria-label="하락"/>:null}</strong></div>
       <div className="ob53-asof"><span>분석 기준일</span><strong><CalendarDays size={15} aria-hidden="true"/>{date}</strong></div>
      </div>
+     <Rate14Chart rate={rate} compact/>
      <div className="ob57-scale-summary"><ScoreScale score={score}/><p className="ob57-summary">{interpretation}</p></div>
     </section>
     <section className="ob53-explain ob-panel" aria-labelledby="ob53-meaning">
