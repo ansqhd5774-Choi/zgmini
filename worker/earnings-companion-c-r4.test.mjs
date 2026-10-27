@@ -66,6 +66,21 @@ test('dynamic BLS C registry: monthly + quarterly passes without relying on fixe
   assert.equal(payload.rows.every(r=>earningsCompanionFreshness(r,{now:NOW}).status==='FRESH'),true);
 });
 
+test('verified optional service PPI rows validate in existing C schema; wrong source is rejected',()=>{
+  const payload=fixture();
+  const index=row({id:'bls_ppi_services_index',seriesId:'WPSFD42',
+    frequency:'MONTHLY',periods:monthlyPeriods,values:monthlyPeriods.map((_,i)=>150+i)});
+  const yoy=row({id:'bls_ppi_services_yoy_sa',seriesId:'WPSFD42',
+    frequency:'MONTHLY',periods:monthlyPeriods,values:monthlyPeriods.map((_,i)=>2+i/10),
+    unit:'PERCENT',method:'YOY_SA_T_MINUS_12'});
+  payload.rows.push(yoy,index);
+  payload.observedThroughBySeries.WPSFD42='2026-09';
+  payload.coverage.configured=4;payload.coverage.ready=4;
+  assert.equal(validateEarningsCompanionPayload(payload,{now:NOW}),payload);
+  index.sourceURL='https://data.bls.gov/timeseries/WPSFD41';
+  assert.throws(()=>validateEarningsCompanionPayload(payload,{now:NOW}),/INVALID_ROW/);
+});
+
 test('zero is real, null is missing; no invented observation or released date',()=>{
   const payload=fixture(),r=payload.rows[1];
   r.value=0;r.history.at(-1).value=0;r.change=-r.previousValue;
