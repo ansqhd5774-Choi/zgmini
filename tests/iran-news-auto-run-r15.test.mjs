@@ -4,7 +4,7 @@ import {mkdtempSync,rmSync,readFileSync,writeFileSync,existsSync} from 'node:fs'
 import {tmpdir} from 'node:os';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
-import {exactR15RunnerExtension,R15_HOOK,R15_INSTALLED_PATHS} from '../scripts/iran-progress/news-display-install-auto-r15.mjs';
+import {exactR15RunnerExtension,R15_HOOK,R15_INSTALLED_PATHS,matchesPreservedR15Module} from '../scripts/iran-progress/news-display-install-auto-r15.mjs';
 import {readExistingD1Token,checkLocalR15Installation,runScheduledIranNewsR15,R15_STATUS_FILE} from '../scripts/iran-progress/news-display-auto-run-r15.mjs';
 import {toDisplayNewsItem,RIGHTS_SOURCE,RIGHTS_POLICY_URL,IRAN_NEWS_CACHE_VERSION} from '../scripts/iran-progress/news-display-r1.mjs';
 import {buildIranNewsSnapshot} from '../lib/iran-progress/news-display-r1.mjs';
@@ -26,6 +26,16 @@ test('R15 task runner is an EXACT appended news-only block over the R7 runner',(
  assert.equal(exactR15RunnerExtension(before.replace('--apply','--dry-run'),after),false);
  assert.equal(exactR15RunnerExtension(before,after.replace('--scheduled','--collect-publish')),false);
  assert.equal(R15_INSTALLED_PATHS.length,12);
+});
+
+test('R15 accepts only a line-ending difference in the existing PC source module',()=>{
+ const source=readFileSync(path.join(here,'../scripts/iran-progress/sources.mjs'),'utf8');
+ assert.equal(matchesPreservedR15Module('scripts/iran-progress/sources.mjs',
+  Buffer.from(source.replace(/\n/g,'\r\n')),Buffer.from(source)),true);
+ assert.equal(matchesPreservedR15Module('scripts/iran-progress/news-display-maintenance-r1.mjs',
+  Buffer.from(source.replace(/\n/g,'\r\n')),Buffer.from(source)),false);
+ assert.equal(matchesPreservedR15Module('scripts/iran-progress/sources.mjs',
+  Buffer.from(source+'changed'),Buffer.from(source)),false);
 });
 
 test('R15 consumes only existing token without refresh or credential logging',()=>{
