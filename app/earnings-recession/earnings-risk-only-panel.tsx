@@ -35,8 +35,70 @@ const dateLabel=(value:unknown)=>validDate(value)?value.replaceAll("-",". ")+"."
 const stage=(score:number|null)=>score===null?"데이터 준비 중":score>=75?"매우 양호":score>=60?"양호":score>=45?"중립":score>=25?"실적 주의":"실적 침체 위험";
 const tone=(score:number|null)=>score===null?"#94a3b8":score>=60?"#45d99f":score>=45?"#94a3b8":"#ff7076";
 
+
+type CostHistoryPoint={period:string;value:number|null};
+type CostRow={
+ indicatorId:string;value:number|null;unit:"PERCENT"|"INDEX";status:string;
+ observationPeriod:string;previousPeriod:string|null;previousValue:number|null;change:number|null;
+ frequency:"MONTHLY"|"QUARTERLY";history:CostHistoryPoint[];
+ freshness?:{status:string;reason:string|null};seriesId:string;sourceURL:string;
+};
+type CostPayload={
+ schemaVersion:string;status:string;historicalMode:string;rows:CostRow[];
+};
+const COST_SCHEMA="earnings-companion-c-r4-v1";
+const costIndicators=[
+ {id:"bls_ppi_final_demand_yoy_sa",name:"최종수요 생산자물가 상승률",description:"최종수요 생산자물가의 전년 대비 변화",series:"WPSFD4"},
+ {id:"bls_ppi_final_demand_index",name:"최종수요 생산자물가 지수",description:"최종수요 생산자물가의 지수 수준",series:"WPSFD4"},
+ {id:"bls_ppi_goods_yoy_sa",name:"재화 생산자물가 상승률",description:"재화 생산자물가의 전년 대비 변화",series:"WPSFD41"},
+ {id:"bls_ppi_goods_index",name:"재화 생산자물가 지수",description:"재화 생산자물가의 지수 수준",series:"WPSFD41"},
+ {id:"bls_unit_labor_cost_yoy",name:"비농업 단위노동비용 증가율",description:"비농업 단위노동비용의 전년 대비 변화",series:"PRS85006111"},
+] as const;
+const finiteCost=(value:unknown):value is number=>typeof value==="number"&&Number.isFinite(value);
+const costFormat=(value:number|null|undefined,unit:"PERCENT"|"INDEX")=>
+ finiteCost(value)?value.toLocaleString("ko-KR",{minimumFractionDigits:2,maximumFractionDigits:2})+(unit==="PERCENT"?"%":""):"—";
+const costChange=(value:number|null|undefined,unit:"PERCENT"|"INDEX")=>
+ finiteCost(value)?(value>0?"+":"")+value.toFixed(2)+(unit==="PERCENT"?"%p":"p"):"—";
+const costUsable=(row:CostRow|undefined)=>Boolean(row&&row.status==="READY"&&row.freshness?.status==="FRESH"&&finiteCost(row.value));
+
+// Cost-series points are raw BLS observations, never inputs to the E1 risk score.
+function CostSpark({history}:{history:CostHistoryPoint[]}){
+ const points=Array.isArray(history)?history:[];
+ const valid=points.map((point,index)=>({index,value:point?.value}))
+  .filter((point):point is {index:number;value:number}=>finiteCost(point.value));
+ if(valid.length<2)return <span className="earnings-r2-cost-chart-empty">이력 부족</span>;
+ const min=Math.min(...valid.map(point=>point.value));
+ const max=Math.max(...valid.map(point=>point.value));
+ const x=(index:number)=>5+index*110/Math.max(1,points.length-1);
+ const y=(value:number)=>max===min?18:30-24*(value-min)/(max-min);
+ let path="";let previous=-2;
+ for(const point of valid){
+  path+=(previous===point.index-1?" L":" M")+x(point.index).toFixed(1)+" "+y(point.value).toFixed(1);
+  previous=point.index;
+ }
+ const latest=valid.at(-1)!;
+ return <svg className="earnings-r2-cost-spark" viewBox="0 0 120 36" role="img"
+  aria-label="저장된 비용 압력 관측치 추이. 결측 구간은 연결하지 않음">
+  <path d={path.trim()} fill="none" stroke="#73c9d9" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+  <circle cx={x(latest.index)} cy={y(latest.value)} r="2.5" fill="#b0eef3"/>
+ </svg>;
+}
+
 export default function EarningsRiskOnlyPanel(){
  const {payload,loading}=useStoredIndex<RiskPayload>("/api/earnings-recession-detail");
+ const {payload:costPayload,loading:costLoading,error:costError}=
+  useStoredIndex<CostPayload>("/api/earnings-recession-indicators");
+ const costValid=costPayload?.schemaVersion===COST_SCHEMA&&
+  costPayload?.historicalMode==="CURRENT_RETRIEVAL_NOT_PIT"&&Array.isArray(costPayload.rows);
+ const costRows=new Map<string,CostRow>(
+  (costValid&&costPayload?costPayload.rows:[])
+   .filter(row=>costIndicators.some(meta=>meta.id===row.indicatorId))
+   .map(row=>[row.indicatorId,row])
+ );
+ const costReady=costIndicators.filter(meta=>costUsable(costRows.get(meta.id))).length;
+ const costStatus=costLoading?"연결 확인 중":costValid?
+  "원자료 "+costReady+"/"+costIndicators.length+"개 연결":
+  costError?"원자료 조회 실패":"원자료 준비 중";
  const score=payload?.status==="READY"&&validScore(payload?.score)?payload.score:null;
  const allowedFactors=payload?.riskFactorsMethodologyVersion===payload?.methodologyVersion&&score!==null;
  const factors=new Map((allowedFactors&&Array.isArray(payload?.riskFactors)?payload.riskFactors:[])
@@ -117,7 +179,7 @@ export default function EarningsRiskOnlyPanel(){
   <section className="inflation-indicator-section earnings-r2-indicators" aria-labelledby="earnings-risk-factor-title">
    <header><div><p className="cnn-eyebrow">EARNINGS RECESSION RISK FACTORS</p>
     <h2 id="earnings-risk-factor-title">실적 침체 분석 지표</h2></div>
-    <p>8대 위험 지표 전용 진단 구성요소입니다. 확인되지 않은 값과 과거 비교는 —로 표시합니다.</p>
+    <p>기존 4개는 실적 침체 방어 진단 점수, 추가 5개는 BLS 비용 압력 원자료입니다. 점수에 합산하지 않습니다. <span className="earnings-r2-cost-status" role="status">{costStatus}</span></p>
    </header>
    <div className="inflation-table-wrap earnings-r2-table-wrap"><table className="inflation-indicator-table earnings-r2-table">
     <colgroup><col className="earnings-col-favorite"/><col className="earnings-col-name"/><col className="earnings-col-content"/><col className="earnings-col-criterion"/><col className="earnings-col-prior"/><col className="earnings-col-current"/><col className="earnings-col-release"/><col className="earnings-col-judgement"/><col className="earnings-col-spark"/><col className="earnings-col-help"/></colgroup>
@@ -128,13 +190,48 @@ export default function EarningsRiskOnlyPanel(){
      <td>{validScore(value)?value.toFixed(1)+"점":"—"}<small>결산 {dateLabel(factor?.observationDate)}</small></td>
      <td>—</td><td>{value===null?"확인 대기":value>=60?"긍정":value>=45?"중립":"부정"}</td><td>—</td>
      <td><ContentHelp label={meta.name+" 도움말"}><p>{meta.description}. 해당 지표의 원자료와 진단 점수는 구분합니다. 현재 입력은 기존 E1-R4 호환 점수이며 개별 관측일이 확인되지 않은 항목은 —로 표시합니다.</p></ContentHelp></td>
+    </tr>})}
+    {costIndicators.map(meta=>{const row=costRows.get(meta.id),ok=costUsable(row);return <tr key={meta.id} className="earnings-r2-cost-row">
+     <td><EarningsFavoriteButton id={meta.id} label={meta.name}/></td>
+     <th scope="row">{meta.name}</th>
+     <td>{meta.description}</td>
+     <td>비용 압력 참고<small>점수 미반영</small></td>
+     <td className="earnings-r2-prior">{ok&&row?costFormat(row.previousValue,row.unit):"—"}</td>
+     <td className="earnings-r2-value"><strong>{ok&&row?costFormat(row.value,row.unit):"—"}</strong>
+      <small>변동 {ok&&row?costChange(row.change,row.unit):"—"}</small></td>
+     <td className="earnings-r2-release"><strong>—</strong>
+      <small>관측 {row?.observationPeriod??"—"}</small></td>
+     <td>{ok?"참고":row?.status==="STALE"?"갱신 지연":"확인 대기"}</td>
+     <td className="earnings-r2-spark">{ok&&row?<CostSpark history={row.history}/>:"—"}</td>
+     <td><ContentHelp label={meta.name+" 도움말"}><p>{meta.description}. BLS 관측값이며 실적 침체 방어 점수에는 합산하지 않습니다. 수집 시점 기준 자료로, 발표일이 확인되지 않으면 —로 표시합니다.</p>
+      <a href={"https://data.bls.gov/timeseries/"+meta.series} target="_blank" rel="noopener noreferrer">BLS 원자료</a></ContentHelp></td>
     </tr>})}</tbody>
    </table></div>
    <div className="earnings-r2-mobile-list">{ids.map(id=>{const factor=factors.get(id),meta=labels[id],value=factor?.score??null;return <article className="earnings-r2-mobile-card" key={id}>
      <div className="earnings-r2-mobile-head"><div className="earnings-r2-mobile-title"><EarningsFavoriteButton id={id} label={meta.name}/><div><strong>{meta.name}</strong><small>진단 구성지표</small></div></div></div>
      <p className="earnings-r2-mobile-content">{meta.description}</p>
      <div className="earnings-r2-mobile-metrics"><div><span>이전</span><strong>—</strong></div><div><span>현재 점수</span><strong>{validScore(value)?value.toFixed(1)+"점":"—"}</strong></div><div><span>결산 분기</span><strong>{dateLabel(factor?.observationDate)}</strong></div></div>
+    </article>})}
+    {costIndicators.map(meta=>{const row=costRows.get(meta.id),ok=costUsable(row);return <article className="earnings-r2-mobile-card earnings-r2-cost-mobile-card" key={meta.id}>
+     <div className="earnings-r2-mobile-head"><div className="earnings-r2-mobile-title">
+      <EarningsFavoriteButton id={meta.id} label={meta.name}/><div>
+       <strong>{meta.name}</strong><small>비용 압력 참고 · 점수 미반영</small>
+      </div></div><ContentHelp label={meta.name+" 도움말"}><p>{meta.description}. BLS 관측값으로 실적 침체 방어 점수에 합산하지 않습니다.</p>
+       <a href={"https://data.bls.gov/timeseries/"+meta.series} target="_blank" rel="noopener noreferrer">BLS 원자료</a>
+      </ContentHelp></div>
+     <p className="earnings-r2-mobile-content">{meta.description}</p>
+     <div className="earnings-r2-mobile-metrics">
+      <div><span>이전</span><strong>{ok&&row?costFormat(row.previousValue,row.unit):"—"}</strong></div>
+      <div><span>현재</span><strong>{ok&&row?costFormat(row.value,row.unit):"—"}</strong>
+       <small>변동 {ok&&row?costChange(row.change,row.unit):"—"}</small></div>
+      <div><span>관측 기간</span><strong>{row?.observationPeriod??"—"}</strong>
+       <small>{row?.frequency==="MONTHLY"?"월간":row?.frequency==="QUARTERLY"?"분기":""}</small></div>
+     </div>
+     <div className="earnings-r2-mobile-spark">
+      <span>최근 이력</span>{ok&&row?<CostSpark history={row.history}/>:<span className="earnings-r2-cost-chart-empty">이력 확인 필요</span>}
+     </div>
     </article>})}</div>
+   <p className="earnings-r2-cost-footnote">BLS 저장 관측값은 수집 당시의 자료로, 잠정 추정치나 위험 점수가 아닙니다. 같은 시계열의 상승률과 지수를 각각 표시한 항목은 별도의 독립 근거로 계산하지 않습니다.</p>
   </section>
   <a className="cnn-return-cta" href="/">← 메인 대시보드로 돌아가기</a>
  </>;

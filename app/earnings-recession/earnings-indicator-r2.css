@@ -211,3 +211,42 @@
 .earnings-risk-provisional-chart{height:150px;min-width:0;margin-top:8px}
 .earnings-risk-provisional-note,.earnings-risk-provisional-empty{font-size:12px;color:#b6bfc8;line-height:1.5;margin:12px 0 0}
 @media(max-width:600px){.earnings-risk-provisional{padding:12px}.earnings-risk-provisional-chart{height:120px}.earnings-risk-provisional-top h2{font-size:14px}.earnings-risk-provisional-top>strong{font-size:23px}}
+
+
+/* R4-C: render stored BLS cost observations as rows in the existing 10-column
+   risk-indicator table. These values remain independent of the E1 score. */
+.earnings-r2-indicators .earnings-r2-cost-status{
+ display:inline-block;margin-left:8px;color:#83d6cc;font-size:11px;font-weight:700;white-space:nowrap;
+}
+.earnings-r2-indicators .earnings-r2-cost-row th[scope="row"]{color:#dff5f6}
+.earnings-r2-indicators .earnings-r2-cost-row td:nth-child(4) small{
+ display:block;margin-top:4px;color:#91aebf;font-size:10px;
+}
+.earnings-r2-indicators .earnings-r2-cost-row .earnings-r2-value strong{color:#87ddc8}
+.earnings-r2-indicators .earnings-r2-cost-row .earnings-r2-value small{white-space:normal}
+.earnings-r2-indicators .earnings-r2-cost-row .earnings-r2-release small{
+ display:block;margin-top:3px;font-size:10px;color:#91aebf;white-space:nowrap;
+}
+.earnings-r2-indicators .earnings-r2-cost-spark{
+ width:112px;max-width:100%;height:34px;vertical-align:middle;overflow:visible;
+}
+.earnings-r2-indicators .earnings-r2-cost-chart-empty{color:#8faabc;font-size:10px}
+.earnings-r2-indicators .earnings-r2-cost-footnote{
+ margin:12px 0 0;color:#8faabc;font-size:11px;line-height:1.6;word-break:keep-all;
+}
+.earnings-r2-indicators .earnings-r2-mobile-card.earnings-r2-cost-mobile-card
+ .earnings-r2-mobile-metrics strong{font-variant-numeric:tabular-nums}
+.earnings-r2-indicators .earnings-r2-cost-mobile-card .earnings-r2-mobile-spark{
+ display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:8px;
+ padding:8px 0 0;border-top:1px solid rgba(68,103,133,.24);
+}
+.earnings-r2-indicators .earnings-r2-cost-mobile-card .earnings-r2-mobile-spark>span:first-child{
+ flex:0 0 auto;color:#7891a6;font-size:9px;font-weight:700;
+}
+@media(max-width:767px){
+ .earnings-r2-indicators .earnings-r2-cost-status{display:block;margin:5px 0 0;font-size:10px}
+ .earnings-r2-indicators .earnings-r2-cost-mobile-card .earnings-r2-cost-spark{
+  width:148px;max-width:56vw;height:30px;
+ }
+ .earnings-r2-indicators .earnings-r2-cost-footnote{font-size:10px}
+}
