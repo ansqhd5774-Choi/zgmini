@@ -52,13 +52,14 @@ test('private converter faithfully maps nine 252-day histories without enabling 
  assert.equal(eligibleNineR37(candidate,base,{now,storedAt:now-30_000}),false);
 });
 
-test('authorized same-day candidate overlays nine themes but preserves non-target themes',async()=>{
+test('authorized same-day candidate overlays only the eight currently public target themes',async()=>{
  const upgraded=await addVerifiedNineR37(fakeDb(ready()),base,{now});
  assert.notEqual(upgraded,base);
- assert.equal(upgraded.themes.length,11);
+ assert.equal(upgraded.themes.length,10);
+ assert.deepEqual(upgraded.themes.map(t=>t.theme),base.themes.map(t=>t.theme));
  assert.equal(upgraded.themes[0].theme,'로봇·자동화');
  assert.equal(upgraded.themes[0].score,shadow.themes[0].latest.score);
- assert.equal(upgraded.themes.find(t=>t.theme==='AI·반도체').history.length,252);
+ assert.equal(upgraded.themes.find(t=>t.theme==='AI·반도체'),undefined);
  assert.deepEqual(upgraded.themes.find(t=>t.theme==='데이터센터·전력'),
   base.themes.find(t=>t.theme==='데이터센터·전력'));
  assert.deepEqual(upgraded.themes.find(t=>t.theme==='우주·위성'),
