@@ -5,9 +5,15 @@ import path from 'node:path';
 import {createHash} from 'node:crypto';
 import {fileURLToPath} from 'node:url';
 import {compatibleRunnerPatch} from '../scripts/iran-progress/news-display-install-hook-r7.mjs';
+import {R15_HOOK,exactR15RunnerExtension} from '../scripts/iran-progress/news-display-install-auto-r15.mjs';
 
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
-const runner=fs.readFileSync(path.join(root,'scripts/iran-progress/run-reference-flow-r3.mjs'),'utf8');
+const newRunner=fs.readFileSync(path.join(root,'scripts/iran-progress/run-reference-flow-r3.mjs'),'utf8');
+// R7 historical contract remains exact; remove only the approved R15 addition
+// when comparing the earlier R7 runner against the original R3/R5 score flow.
+const runner=newRunner.replace(R15_HOOK,'');
+if(runner===newRunner||!exactR15RunnerExtension(runner,newRunner))
+ throw Error('R15_RUNNER_EXTENSION_INVALID');
 const old=runner.replace(/\n\n\/\/ Isolated display-cache retention:[\s\S]*?\n(?=if\(r3!==0\|\|r5!==0\|\|original!==0\)process\.exitCode=1;)/,'\n');
 const sha=x=>createHash('sha256').update(x).digest('hex');
 
