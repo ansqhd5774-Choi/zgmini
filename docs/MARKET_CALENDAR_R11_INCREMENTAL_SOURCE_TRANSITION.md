@@ -45,3 +45,11 @@
 - 기존 R11 locator가 **과거** `ee41bb29`에 소스 SHA를 고정해 `APPROVED_SOURCE_DRIFT_STOP`을 반환했고, 검사한 Git 프로젝트 141개에서 일치 0건을 기록했다. 후자는 필터 자체가 `ee41bb29`로 잘못 고정됐기 때문이므로 실제 최신 source worktree가 0개라고 단정하지 않는다.
 - GitHub 확인: `e95805a3`는 `ee41bb29`의 **직계 자식**이고 변경 파일 6개는 Census 요청·진단 관련 파일이며, `lib/release-calendar.mjs` blob은 기존 `f084e2a3` 그대로이다. 기존 게시 정상과 BLS 단독 확장 목표는 유지한다.
 - R11B에서는 read-only locator가 PC 설정 source를 기준으로 **두 개의 VERIFIED 원장과 clean checkout HEAD의 동등성**을 확인하도록 수정했다. source SHA가 변했다고 자동으로 운영 승인을 갱신하지 않는다. 새 승인 커밋의 생성·PC 설치는 여전히 후속 단계다.
+
+### R11B 실측과 R12 — 실행 진입점 직접 추적
+
+- R11B 사용자 PC 로그(`2026-10-27T07:59:54.849Z`)는 config/writer/ledger source가 모두 `e95805a3`로 같고 게시 `VERIFIED`, BLS 후보 SHA256 정확히 일치하지만 `E:\ZGmini\projects\`의 **직계** 141개 프로젝트 중 source HEAD 일치 0개였다. 이 결과만으로 실행 프로젝트가 없다고 단정할 수 없다. 직계 검색 방식은 하위 release 체크아웃·junction·런처 간접 참조를 추적하지 못한다.
+- `scripts/pc-writer/install-local.mjs`의 실제 등록 계약은 Core 작업 XML → `run-local-core.vbs` → Node `scripts/pc-writer/local-cycle.mjs`이고, VBS 명령에는 **실제 실행 프로젝트 경로**가 포함된다. R9/R10의 Core 작업 XML `WorkingDirectory`만으로 실행 경로를 단정했던 한계를 회피한다.
+- R12 `MARKET_CALENDAR_R12_LAUNCHER_SOURCE.cmd`는 기존 `E:\ZGmini\data\pc-writer\run-local-core.vbs`의 JS 실행 대상을 **읽기 전용**으로 찾고, 그 저장소 HEAD·기존 parser Git blob·보호 파일의 미수정 여부를 config/writer/ledger 승인 source 및 BLS 후보 지문과 맞춘다. 등록 작업 XML이 해당 VBS를 참조하는지도 확인한다.
+- 출력에는 실제 PC 경로·VBS 인자 전문·토큰·원문을 포함하지 않고 비식별 지문과 검증 상태만 기록한다. 결과 파일 `MARKET_CALENDAR_R12_LAUNCHER_SOURCE_RESULT.txt`.
+- R12도 **수집·게시·설치·git 변경·config/DB/작업 등록 변경 없음**. 실제 publisher checkout이 확인되기 전에는 승인 SHA를 변경하거나 소스를 덮어쓰지 않는다.
