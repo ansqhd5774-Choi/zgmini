@@ -59,13 +59,16 @@ export function buildIncrementalIranNewsPlan({cache,remoteSnapshot,preview,now=D
   }
   const item=toDisplayNewsItem({source:'GOV.UK',sourceUrl:candidate.sourceUrl,
    publishedAt:candidate.publishedAt,title:candidate.title,
-   summary:candidate.summary,impact:'neutral',rightsVerified:true,
+   summary:candidate.summary,impact:'neutral',
+   ...(candidate.titleEn&&candidate.summaryEn?{titleEn:candidate.titleEn,summaryEn:candidate.summaryEn}:{}),
+   rightsVerified:true,
    rightsSource:RIGHTS_SOURCE,rightsPolicyUrl:RIGHTS_POLICY_URL},{now});
   if(!item||item.id!==candidate.displayId)
    throw Error('R13_RIGHTS_APPROVAL_CONTRACT_MISMATCH');
   // Prevent a generic automated line replacing a previously reviewed article.
   if(!originalIds.has(item.id))incoming.push({source:'GOV.UK',sourceUrl:item.sourceUrl,
    publishedAt:item.publishedAt,title:item.title,summary:item.summary,
+   ...(item.titleEn&&item.summaryEn?{titleEn:item.titleEn,summaryEn:item.summaryEn}:{}),
    impact:item.impact,rightsVerified:true,rightsSource:RIGHTS_SOURCE,
    rightsPolicyUrl:RIGHTS_POLICY_URL});
  }

@@ -7,8 +7,8 @@ import {fileURLToPath} from 'node:url';
 import {boundedRead} from './sources.mjs';
 import {readNewsDisplayCache} from './news-display-io-r1.mjs';
 import {assessGovUkNewsRights} from './news-display-safe-preview-r12.mjs';
-import {plainNewsBody} from './news-display-model-shadow-r10.mjs';
-import {displayTopicNames} from './news-display-safe-preview-r12.mjs';
+import {selectRelevantSourceExcerpt} from './news-display-safe-preview-r12.mjs';
+export {selectRelevantSourceExcerpt} from './news-display-safe-preview-r12.mjs';
 import {visibleIranNewsItems,validNewsDisplayItem} from '../../lib/iran-progress/news-display-r1.mjs';
 
 const OLLAMA_URL='http://127.0.0.1:11434';
@@ -30,23 +30,6 @@ const COUNTRY_GUARDS=[
  ['China',/\bchin(?:a|ese)\b/i,/중국/],
  ['Turkey',/\b(?:turkey|t(?:ü|u)rkiye|turkish)\b/i,/튀르키예|터키/],
 ];
-
-export function selectRelevantSourceExcerpt(html){
- if(typeof html!=='string')return '';
- const paragraphs=(html.match(/<(?:p|li|blockquote)\b[^>]*>[\s\S]*?<\/(?:p|li|blockquote)>/gi)??[])
-  .map(plainNewsBody).filter(Boolean);
- for(const paragraph of paragraphs){
-  const sentences=paragraph.split(/(?<=[.!?])\s+(?=[A-Z\"“‘])/);
-  for(const sentence of sentences){
-   const selected=sentence.trim();
-   if(displayTopicNames(selected).length&&selected.length>=45&&selected.length<=580)
-    return selected;
-  }
-  if(displayTopicNames(paragraph).length&&paragraph.length>=45&&paragraph.length<=580)
-   return paragraph;
- }
- return '';
-}
 
 export function validateTranslationDraft(raw,{sourceTitle,sourceExcerpt}={}){
  let parsed;

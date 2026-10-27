@@ -15,8 +15,14 @@ export function toDisplayNewsItem(candidate,{now=Date.now()}={}){
  if(typeof candidate.sourceUrl!=='string'||typeof candidate.publishedAt!=='string')return null;
  const url=(()=>{try{const u=new URL(candidate.sourceUrl);u.hash='';u.search='';return u.href;}catch{return '';}})();
  const id=createHash('sha256').update(url).digest('hex');
+ const hasEnglish=candidate.titleEn!==undefined||candidate.summaryEn!==undefined;
+ const hasKorean=candidate.titleKo!==undefined||candidate.summaryKo!==undefined;
+ if(hasEnglish&&!(typeof candidate.titleEn==='string'&&typeof candidate.summaryEn==='string'))return null;
+ if(hasKorean&&(!hasEnglish||candidate.translationReviewed!==true))return null;
  const item={id,source:'GOV.UK',publishedAt:candidate.publishedAt,
-  title:candidate.title,summary:candidate.summary,impact:candidate.impact,sourceUrl:url};
+  title:candidate.title,summary:candidate.summary,impact:candidate.impact,sourceUrl:url,
+  ...(hasEnglish?{titleEn:candidate.titleEn,summaryEn:candidate.summaryEn}:{}),
+  ...(hasKorean?{titleKo:candidate.titleKo,summaryKo:candidate.summaryKo,translationReviewed:true}:{})};
  return validNewsDisplayItem(item,now)?item:null;
 }
 export function previewIranNewsRetention(cache,incoming,{now=Date.now()}={}){

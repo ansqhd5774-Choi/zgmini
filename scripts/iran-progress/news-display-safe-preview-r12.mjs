@@ -19,6 +19,23 @@ const ALLOWED_DOCUMENT_TYPES=new Set(['press_release','news_story','statement','
 export function displayTopicNames(text){
  return TOPIC_PATTERNS.filter(([,test])=>test.test(text)).map(([name])=>name);
 }
+
+export function selectRelevantSourceExcerpt(html){
+ if(typeof html!=='string')return '';
+ const paragraphs=(html.match(/<(?:p|li|blockquote)\b[^>]*>[\s\S]*?<\/(?:p|li|blockquote)>/gi)??[])
+  .map(plainNewsBody).filter(Boolean);
+ for(const paragraph of paragraphs){
+  const sentences=paragraph.split(/(?<=[.!?])\s+(?=[A-Z\"“‘])/);
+  for(const sentence of sentences){
+   const selected=sentence.trim();
+   if(displayTopicNames(selected).length&&selected.length>=45&&selected.length<=580)
+    return selected;
+  }
+  if(displayTopicNames(paragraph).length&&paragraph.length>=45&&paragraph.length<=580)
+   return paragraph;
+ }
+ return '';
+}
 export function safeNewsFallbackSummary(topics){
  if(!Array.isArray(topics)||!topics.length||topics.some(name=>!TOPIC_PATTERNS.some(([allowed])=>allowed===name)))
   throw Error('NEWS_SAFE_SUMMARY_TOPICS_INVALID');
@@ -57,12 +74,17 @@ async function inspectArticle(article,fetcher,now){
   const topics=displayTopicNames([article.title,content.description??'',original].join(' '));
   if(!topics.length)return {...base,status:'SOURCE_TOPIC_NOT_CONFIRMED'};
   const summary=safeNewsFallbackSummary(topics);
+  // Keep a real, source-bound English sentence in addition to the legacy
+  // display summary. The older public fields remain unchanged.
+  const summaryEn=selectRelevantSourceExcerpt(content.details?.body??'');
   const reviewed={source:'GOV.UK',sourceUrl:article.sourceUrl,
    title:article.title,publishedAt:article.publishedAt,summary,impact:'neutral',
+   ...(summaryEn?{titleEn:article.title,summaryEn}:{}),
    rightsVerified:true,rightsSource:RIGHTS_SOURCE,rightsPolicyUrl:RIGHTS_POLICY_URL};
   const item=toDisplayNewsItem(reviewed,{now});
   if(!item)return {...base,status:'PUBLIC_DISPLAY_CONTRACT_FAILED'};
   return {...base,status:'ELIGIBLE_SAFE_TEXT_ONLY',topics,impact:'neutral',summary,
+   ...(summaryEn?{titleEn:article.title,summaryEn}:{}),
    rightsSource:RIGHTS_SOURCE,displayId:item.id};
  }catch{return {...base,status:'SOURCE_READ_FAILED'};}
 }

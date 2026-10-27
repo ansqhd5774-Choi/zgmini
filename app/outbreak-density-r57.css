@@ -75,7 +75,7 @@
 .ob-events .ob57-news-filters{display:flex;flex-shrink:0;gap:4px}
 .ob-events .ob57-news-filters button{background:transparent;border:0;border-radius:3px;padding:6px 8px;color:#a6c0cc;font-weight:750;font-size:10px;cursor:pointer;min-height:30px}
 .ob-events .ob57-news-filters button[aria-pressed="true"]{background:#174458;color:#ecf9ff}
-.ob-events .ob57-news-filters button:focus-visible,.ob-events .ob57-news-more:focus-visible,.ob-events .ob57-news-foot a:focus-visible{outline:2px solid #78ccea;outline-offset:2px}
+.ob-events .ob57-news-filters button:focus-visible,.ob-events .ob57-news-more:focus-visible,.ob-events .ob57-news-foot a:focus-visible,.ob-events .ob57-news-language:focus-visible{outline:2px solid #78ccea;outline-offset:2px}
 .ob-events .ob57-news-list{display:grid;grid-template-columns:minmax(0,1fr);gap:0;min-width:0;border-radius:4px;overflow:hidden;background:#0b2b3d;flex:1;align-content:start}
 .ob-events .ob57-news-item{display:flex;flex-direction:column;min-width:0;padding:9px 12px;border-bottom:1px solid #294b5c}
 .ob-events .ob57-news-item:last-child{border-bottom:0}
@@ -88,6 +88,10 @@
 .ob-events .ob57-impact{font-size:10px;font-weight:800;padding:4px 8px;border-radius:3px;background:#263b47;color:#bed0d8}
 .ob-events .ob57-impact[data-impact="positive"]{color:#8ee5bc;background:#193e38}
 .ob-events .ob57-impact[data-impact="negative"]{color:#ffa4a9;background:#4d2d3c}
+.ob-events .ob57-news-actions{display:flex;flex-wrap:wrap;align-items:center;justify-content:flex-end;gap:5px;min-width:0}
+.ob-events .ob57-news-language{display:inline-flex;align-items:center;justify-content:center;gap:4px;min-height:27px;padding:4px 7px;background:#173e53;border:1px solid #28566d;border-radius:3px;color:#d3f0fb;font-size:10px;font-weight:750;white-space:nowrap;cursor:pointer}
+.ob-events .ob57-news-language:hover{background:#235d77}
+.ob-events .ob57-news-language-status{font-size:10px;color:#a6bfcc;white-space:nowrap}
 .ob-events .ob57-news-foot a{display:grid;place-items:center;width:27px;height:27px;color:#bce5f6;background:#173e53;border-radius:3px;text-decoration:none}
 .ob-events .ob57-news-foot a:hover{background:#235d77}
 .ob-events .ob57-news-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;text-align:center;padding:25px 16px;min-height:194px;color:#a9c2d0;font-size:11px;line-height:1.6}
@@ -144,7 +148,7 @@
  .ob-events .ob53-market-chart,.ob-events .ob54-market-chart,.ob-events .ob55-iran-parity .ob54-market-chart{height:215px}
 }
 @media(min-width:851px) and (max-width:1349px){
- .ob-events .ob57-news-item{min-height:92px;display:grid;grid-template-columns:minmax(0,1fr) 100px;grid-template-areas:"meta foot" "title foot" "desc foot";column-gap:10px;align-content:center}
+ .ob-events .ob57-news-item{min-height:92px;display:grid;grid-template-columns:minmax(0,1fr) 124px;grid-template-areas:"meta foot" "title foot" "desc foot";column-gap:10px;align-content:center}
  .ob-events .ob57-news-meta{grid-area:meta}
  .ob-events .ob57-news-item h4{grid-area:title}
  .ob-events .ob57-news-item p{grid-area:desc}

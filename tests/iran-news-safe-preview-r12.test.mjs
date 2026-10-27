@@ -41,6 +41,8 @@ test('R12 previews eligible official topic news without cache/D1/task writes',as
  assert.equal(result.results[0].status,'ELIGIBLE_SAFE_TEXT_ONLY');
  assert.deepEqual(result.results[0].topics,['사우디아라비아','후티']);
  assert.equal(result.results[0].impact,'neutral');
+ assert.equal(result.results[0].titleEn,content.title);
+ assert.equal(result.results[0].summaryEn,'The UK Prime Minister reaffirmed support for Saudi Arabia in response to Houthi attacks.');
  assert.equal(result.publication,'NOT_STARTED');
  assert.equal(result.d1Written,false);
  assert.equal(result.cacheModified,false);
