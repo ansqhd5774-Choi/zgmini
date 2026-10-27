@@ -292,5 +292,7 @@
   - 실행 결과는 표시용 별도 `news-display-auto-r15-status.json` 단일 파일에 최신 `PUBLISHED_D1_VERIFIED` 또는 `FAILED_SCORE_UNAFFECTED`로 저장하고 기사 수·신규 수·D1 결과만 기록한다. 비밀정보는 기록하지 않는다.
   - R15 뉴스 실패는 기존 점수 러너의 exit-code에 영향을 주지 않는다. 새 Windows 예약 작업, 빈도 변경, VBS 수정, 원장 정리는 없다.
 - `scripts/iran-progress/news-display-install-auto-r15.mjs`은 PC 실제 이전 R7 runner SHA `438ac0ad...`와 원본 R7 백업, VBS, 작업 스케줄 XML, PC 운영 Git HEAD `bc7bd678...`을 대조하고, 기존 6개 모듈의 바이너리 동일성 및 새 뉴스 전용 6개 파일의 **부재**를 확인한다. 새 코드만 복사하고 승인된 runner 꼬리 블록만 `db0040ef...`으로 교체한다. 이전 runner의 `.before-iran-news-r15` 별도 백업/read-back을 필수로 남긴다.
-- 설치는 `IRAN_NEWS_R15_AUTO_INSTALL.cmd`를 사용한다. 고정 코드 SHA `8813ad6f8e5f396bf05d6db2730efc2b459cf1f9`, CMD ASCII/CRLF, PC 기존 runner 실측 preflight → 한 번의 설치 → read-back, 결과 `IRAN_NEWS_R15_AUTO_INSTALL_RESULT.txt`. R15 전체 뉴스 테스트 **12/12 파일 통과(모의·소스 검증)**.
+- 설치는 `IRAN_NEWS_R15_AUTO_INSTALL.cmd`를 사용한다. 고정 코드 SHA `35cf3c3bd0cac2a740fadcc6f9fb636270c41a0a`, CMD ASCII/CRLF, PC 기존 runner 실측 preflight → 한 번의 설치 → read-back, 결과 `IRAN_NEWS_R15_AUTO_INSTALL_RESULT.txt`. R15 전체 뉴스 테스트 **12/12 파일 통과(모의·소스 검증)**.
 - **R15 PC 설치와 정규 6시간 자동 실행은 아직 미실행**. 설치 로그 PASS 후 실제 다음 2회의 6시간 예약 실행에 대해 `news-display-auto-r15-status.json`, D1 read-back, 공개 사이트 API/UI 기사 수·시간 및 14일 노출/30일 삭제를 확인해야 운영 완료.
+
+- R15 추가 호환 검사: 기존 PC `sources.mjs`가 Windows Git 체크아웃으로 CRLF일 경우, 내용이 LF 버전과 바이트 수준 줄바꿈만 다르면 **기존 파일을 교체하지 않고** 수용한다. 다른 변경이나 R7 신규 모듈의 줄바꿈 차이는 기존 검증 규칙대로 중단한다. 실 PC 설치 전 계획만 갱신됨.
