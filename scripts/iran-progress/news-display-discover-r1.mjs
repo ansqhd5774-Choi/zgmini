@@ -5,7 +5,17 @@ import path from 'node:path';
 import {boundedRead} from './sources.mjs';
 import {kstDayWindow,kstNewsDay,NEWS_PC_RETENTION_DAYS} from '../../lib/iran-progress/news-display-r1.mjs';
 
-export const IRAN_GOVUK_NEWS_FEED='https://www.gov.uk/search/news-and-communications.atom?keywords=Iran&order=updated-newest';
+// The four user-approved topics are OR, not AND. GOV.UK uses English terms.
+export const IRAN_GOVUK_NEWS_KEYWORDS=Object.freeze(['Iran','Saudi','Yemen','Houthi']);
+export const IRAN_GOVUK_NEWS_FEEDS=Object.freeze(IRAN_GOVUK_NEWS_KEYWORDS.map(
+ keyword=>`https://www.gov.uk/search/news-and-communications.atom?keywords=${encodeURIComponent(keyword)}&order=updated-newest`));
+export const IRAN_GOVUK_NEWS_FEED=IRAN_GOVUK_NEWS_FEEDS[0]; // compatibility with R1 readers
+
+// Only the four named topics (including ordinary English/Korean inflections).
+export function matchesIranNewsDisplayKeywords(text){
+ if(typeof text!=='string')return false;
+ return /\b(?:iran(?:ian)?s?|saudis?|yemen(?:is?)?|houthis?)\b|이란|사우디(?:아라비아)?|예멘|예맨|후티/i.test(text);
+}
 
 function xmlText(value){
  return value.replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g,'$1')
@@ -62,15 +72,32 @@ export function govUkContentCandidate(feedItem,content,{now=Date.now()}={}){
  const description=typeof content.description==='string'?content.description.trim():'';
  if(!title||title.length>500)return {status:'METADATA_INVALID'};
  const body=typeof content.details?.body==='string'?content.details.body:'';
- if(!/\b(?:iran|iranian|tehran|irgc|hormuz)\b/i.test([title,description,body].join(' ')))return {status:'OUT_OF_SCOPE'};
+ if(!matchesIranNewsDisplayKeywords([title,description,body].join(' ')))return {status:'OUT_OF_SCOPE'};
  return {status:'REVIEW_REQUIRED',item:{source:'GOV.UK',sourceUrl:feedItem.sourceUrl,
   title,publishedAt:new Date(timestamp).toISOString(),sourceDescription:description.slice(0,300),
   rightsVerified:false,displayEligible:false,reviewReason:'INDIVIDUAL_RIGHTS_SUMMARY_IMPACT_PENDING'}};
 }
 export async function discoverGovUkNewsCandidates({now=Date.now(),fetcher=fetch}={}){
- const response=await boundedRead(IRAN_GOVUK_NEWS_FEED,{fetcher,maxBytes:1000000});
- if(response.status!=='COLLECTED')throw Error('NEWS_DISCOVERY_SOURCE_FAILED');
- const entries=parseGovUkNewsCandidates(response.body),candidates=[],counts={feedEntries:entries.length,apiChecked:0,apiFailed:0,old:0,outOfScope:0,unverified:0};
+ const counts={feedEntries:0,feedSucceeded:0,feedFailed:0,apiChecked:0,apiFailed:0,old:0,outOfScope:0,unverified:0};
+ const feeds=await Promise.all(IRAN_GOVUK_NEWS_FEEDS.map(async url=>{
+  try{
+   const result=await boundedRead(url,{fetcher,maxBytes:1000000});
+   if(result.status!=='COLLECTED')throw Error('NEWS_DISCOVERY_SOURCE_FAILED');
+   return parseGovUkNewsCandidates(result.body);
+  }catch{return null;}
+ }));
+ const entriesByUrl=new Map();
+ for(const entries of feeds){
+  if(entries===null){counts.feedFailed++;continue;}
+  counts.feedSucceeded++;
+  for(const entry of entries){
+   const previous=entriesByUrl.get(entry.sourceUrl);
+   if(!previous||String(previous.feedUpdatedAt)<String(entry.feedUpdatedAt))entriesByUrl.set(entry.sourceUrl,entry);
+  }
+ }
+ if(counts.feedSucceeded===0)throw Error('NEWS_DISCOVERY_SOURCE_FAILED');
+ const entries=[...entriesByUrl.values()],candidates=[];
+ counts.feedEntries=entries.length;
  for(const entry of entries){
   const apiUrl='https://www.gov.uk/api/content'+new URL(entry.sourceUrl).pathname;
   try{
@@ -86,7 +113,7 @@ export async function discoverGovUkNewsCandidates({now=Date.now(),fetcher=fetch}
  }
  candidates.sort((a,b)=>b.publishedAt.localeCompare(a.publishedAt)||a.sourceUrl.localeCompare(b.sourceUrl));
  if(counts.apiChecked>0&&counts.apiFailed===counts.apiChecked)throw Error('NEWS_CONTENT_API_DISCOVERY_FAILED');
- return {status:counts.apiFailed?'PARTIAL_REVIEW_REQUIRED':candidates.length?'REVIEW_REQUIRED':'NO_RECENT_CANDIDATES',
+ return {status:counts.apiFailed||counts.feedFailed?'PARTIAL_REVIEW_REQUIRED':candidates.length?'REVIEW_REQUIRED':'NO_RECENT_CANDIDATES',
   checkedAt:now,source:'GOV.UK',count:candidates.length,counts,candidates};
 }
 
