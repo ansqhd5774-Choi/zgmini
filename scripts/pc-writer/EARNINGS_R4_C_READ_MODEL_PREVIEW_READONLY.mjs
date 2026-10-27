@@ -5,7 +5,7 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import {fileURLToPath} from 'node:url';
 import {DatabaseSync} from 'node:sqlite';
-import {analyze} from './EARNINGS_R3D_STORED_BLS_CALC_READONLY.mjs';
+import {analyze,validateSnapshot} from './EARNINGS_R3D_STORED_BLS_CALC_READONLY.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const PC_ROOT = path.resolve(process.env.ZGMINI_PC_HOME || 'E:\\ZGmini\\data\\pc-writer');
@@ -22,6 +22,12 @@ export const INDICATORS = Object.freeze([
   {indicatorId:'bls_ppi_goods_yoy_sa',name:'재화 생산자물가 · 전년 대비',seriesId:'WPSFD41',kind:'DERIVED',method:'YOY_SA_T_MINUS_12',unit:'PERCENT'},
   {indicatorId:'bls_ppi_goods_index',name:'재화 생산자물가 · 지수',seriesId:'WPSFD41',kind:'RAW',method:'SOURCE_INDEX',unit:'INDEX'},
   {indicatorId:'bls_unit_labor_cost_yoy',name:'비농업 단위노동비용 · 전년 대비',seriesId:'PRS85006111',kind:'RAW',method:'SOURCE_YOY',unit:'PERCENT'},
+]);
+export const SERVICE_INDICATORS = Object.freeze([
+  {indicatorId:'bls_ppi_services_yoy_sa',name:'서비스 생산자물가 · 전년 대비',
+    seriesId:'WPSFD42',kind:'DERIVED',method:'YOY_SA_T_MINUS_12',unit:'PERCENT'},
+  {indicatorId:'bls_ppi_services_index',name:'서비스 생산자물가 · 지수',
+    seriesId:'WPSFD42',kind:'RAW',method:'SOURCE_INDEX',unit:'INDEX'},
 ]);
 
 const isoUTC = value => typeof value === 'string'
@@ -127,7 +133,37 @@ export function buildPreview(db,{generatedAt=new Date().toISOString()}={}) {
     picked.set(item.id,{...item,rawRows,firstSeenAt:chunk.first_seen_at});
     firstSeen.push(Date.parse(chunk.first_seen_at));
   }
-  const rows=INDICATORS.map(def=>{
+  // The optional service PPI is independently captured and hash-verified.
+  // Keep each retrieval's own timestamp/SHA; never manufacture a common cohort.
+  const services=db.prepare(`SELECT provider,dataset,snapshot_sha256,as_of,retrieved_at,
+    status,history_mode,row_count,latest_observation_date,chunk_hashes_json,provenance_json
+    FROM api_history_snapshots_v1
+    WHERE provider='BLS' AND dataset='WPSFD42'
+    ORDER BY retrieved_at DESC LIMIT 501`).all();
+  if(services.length>500)fail('R4_SERVICE_SNAPSHOT_SCAN_LIMIT');
+  if(services.length) {
+    const source=validateSnapshot(db,services[0]);
+    const hashList=JSON.parse(services[0].chunk_hashes_json);
+    const chunk=db.prepare(`SELECT payload_json,first_seen_at FROM api_history_chunks_v1
+      WHERE provider='BLS' AND dataset='WPSFD42' AND chunk_sha256=? LIMIT 1`)
+      .get(hashList[0]);
+    if(!chunk||sha256(chunk.payload_json)!==hashList[0])
+      fail('R4_SERVICE_CHUNK_CHANGED_AFTER_VALIDATION');
+    if(!isoUTC(chunk.first_seen_at)
+      ||Date.parse(chunk.first_seen_at)>Date.parse(source.retrievedAt))
+      fail('R4_SERVICE_FIRST_SEEN_AT_INVALID');
+    let rawRows;
+    try{rawRows=JSON.parse(chunk.payload_json);}catch{fail('R4_SERVICE_RAW_JSON_INVALID');}
+    if(!Array.isArray(rawRows)||rawRows.length!==source.rows
+      ||rawRows.at(-1)?.observationDate!==source.last)
+      fail('R4_SERVICE_RAW_ROWS_CHANGED_AFTER_VALIDATION');
+    picked.set(source.id,{...source,rawRows,firstSeenAt:chunk.first_seen_at});
+    firstSeen.push(Date.parse(chunk.first_seen_at));
+  }
+  const activeIndicators=picked.has('WPSFD42')
+    ?[...INDICATORS,...SERVICE_INDICATORS]:INDICATORS;
+  const activeSources=[...prior.rows,...(picked.has('WPSFD42')?[picked.get('WPSFD42')]:[])];
+  const rows=activeIndicators.map(def=>{
     const source=picked.get(def.seriesId);
     if(!source) fail('R4_REGISTRY_SOURCE_UNVERIFIED');
     return buildRow(def,source);
@@ -137,21 +173,23 @@ export function buildPreview(db,{generatedAt=new Date().toISOString()}={}) {
     unavailable:rows.filter(r=>r.status==='UNAVAILABLE').length};
   const status=prior.status==='PASS_R3D_STORED_ONLY_CALCULATION'&&coverage.ready===coverage.configured
     ?'READY':'PARTIAL';
-  const identity=[SCHEMA_VERSION,...prior.rows.map(x=>`${x.id}|${x.snapshotSha256}`).sort()];
+  const identity=[SCHEMA_VERSION,...activeSources.map(x=>`${x.id}|${x.snapshotSha256}`).sort()];
   const sourceVersion=sha256(identity.join('\n'));
   return {
     payload:{schemaVersion:SCHEMA_VERSION,status,sourceVersion,
       sourceStoredAt:Math.min(...firstSeen),generatedAt,
       historicalMode:'CURRENT_RETRIEVAL_NOT_PIT',
-      observedThroughBySeries:Object.fromEntries(prior.rows.map(x=>[
+      observedThroughBySeries:Object.fromEntries(activeSources.map(x=>[
         x.id,x.quarterly?x.last:x.last.slice(0,7)])),
       coverage,rows},
-    diagnostics:{r3dStatus:prior.status,snapshotsChecked:prior.snapshotsChecked,
+    diagnostics:{r3dStatus:prior.status,snapshotsChecked:prior.snapshotsChecked+(services.length?1:0),
       newerIncomplete:prior.newerIncomplete,cohortRetrievedAt:prior.cohortRetrievedAt,
       sourceStoredAtPolicy:'OLDEST_FIRST_SEEN_AT',
-      bySeries:prior.rows.map(x=>({seriesId:x.id,snapshotSha256:x.snapshotSha256,
+      serviceRetrievalIndependent:services.length>0,
+      bySeries:activeSources.map(x=>({seriesId:x.id,snapshotSha256:x.snapshotSha256,
         firstSeenAt:picked.get(x.id).firstSeenAt,rawRows:x.rows,gaps:x.gaps})),
-      duplicateEvidenceGroups:['WPSFD4 RAW+DERIVED','WPSFD41 RAW+DERIVED']},
+      duplicateEvidenceGroups:['WPSFD4 RAW+DERIVED','WPSFD41 RAW+DERIVED',
+        ...(picked.has('WPSFD42')?['WPSFD42 RAW+DERIVED']:[])]},
   };
 }
 
@@ -188,7 +226,7 @@ export function reportLines(result,now) {
     lines.push(`${prefix}_STATUS=${row.status}`);
     lines.push(`${prefix}_UNAVAILABLE_REASON=${row.unavailableReason??'NONE'}`);
   }
-  lines.push('SOURCE_GROUPS_INDEPENDENT=3',
+  lines.push(`SOURCE_GROUPS_INDEPENDENT=${diagnostics.bySeries.length}`,
     'RELEASE_DATES_INFERRED=NO',
     'PUBLIC_API_REGISTERED=NO','PUBLICATION_PERFORMED=NO',
     `RESULT=${payload.status==='READY'?'PASS_R4_LOCAL_PREVIEW_READY':'PARTIAL_R4_LOCAL_PREVIEW'}`);
