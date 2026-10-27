@@ -1,5 +1,11 @@
 ZGMINI MARKET CALENDAR R21 - CENSUS YEAR TRANSITION (2026-10-27)
 
+WITHDRAWN: DO NOT RUN THIS ORIGINAL INSTALL PACKAGE.
+The PC collector did not match the unverified GitHub-template baseline.
+R21 stopped safely before any source, config, DB, or scheduler change.
+Use the separate MARKET_CALENDAR_R21_PC_SOURCE_EXPORT.cmd (read-only)
+to obtain the actual PC collector for a new, correct R21 package.
+
 WORK BRANCH: codex/zgmini-gpt-workspace-20261025
 BASELINE PC CORE SHA: 97a38c7cdfbb7e0d30eaeacea27b9605bbfa2b3b
 CORE WORKTREE ID: d0a4b3cb8b95
@@ -11,12 +17,9 @@ PURPOSE
 - Do not accept a generic page unless it contains dates from the requested year.
 
 PC INSTALL
-1. Extract ALL ZIP files together, keeping scripts/ and staging/ folders.
-2. Run MARKET_CALENDAR_R21_CENSUS_YEAR_APPLY.cmd from the extracted folder.
-3. If the existing Core owns local-cycle.lock, DO NOT delete the lock.
-   Let the regular Core process finish, then retry normally.
-4. Submit MARKET_CALENDAR_R21_CENSUS_YEAR_APPLY_RESULT.txt from the
-   SAME folder as the CMD. The file is produced automatically by the CMD.
+PAUSED. The following original install CMD must not be executed:
+  MARKET_CALENDAR_R21_CENSUS_YEAR_APPLY.cmd
+Use the new read-only source-export ZIP and submit its two output files.
 
 CHANGES
 - Exactly one PC source file: scripts/pc-writer/release-calendar.mjs
