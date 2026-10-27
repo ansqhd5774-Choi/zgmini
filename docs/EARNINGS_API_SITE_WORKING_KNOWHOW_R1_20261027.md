@@ -234,3 +234,12 @@
 - 이어서 작성한 `EARNINGS_CENSUS_QFR_R4_PROJECTION_DRAFT_READONLY.mjs`는 R3 검증 결과를 받아 원시 5개 분기/단위/변화폭·시각·출처를 다시 검사해 하나의 QFR 정보행과 독립 source checkpoint를 **메모리에서만** 생성한다. D1 연결·원격 게시·Worker Route는 없다.
 - 기존 공개 C 기본 키와 서비스 키는 모두 BLS 전용 계약을 유지한다. Census를 그 5/7행 validator에 직접 합산하면 `provider=BLS`, `adjustment=SA`, 비용 범주 검사 등에 위배된다. **제안만 한 별도 QFR 키** `detail:earnings-recession-indicators:census-qfr-mfg-margin:v1`, 형식 `earnings-companion-c-qfr-r1-v1`는 사용자 승인 전 D1에 등록/쓰기/배포하지 않는다.
 - 후속 [R4 설계·Gate](EARNINGS_CENSUS_QFR_R4_PROJECTION_DRAFT_20261028.md): 사용자 승인 → 별도 안전 writer 및 D1 exact readback → 별도 저장 전용 공개 응답과 사이트 정보행 → 정규 자동 갱신. 기존 E1-R4 점수·산식/추세, 별도 12대 기업실적은 건드리지 않는다.
+
+## 17. Census QFR 전용 D1 계약 승인과 수동 게시기 구현 (2026-10-28)
+
+- §16의 독립 QFR 키 `detail:earnings-recession-indicators:census-qfr-mfg-margin:v1`와 스키마 `earnings-companion-c-qfr-r1-v1`는 **사용자 승인**을 받았다. 앞 절의 '미승인'은 당시 상태이며 D1 등록·실게시 완료를 뜻하지 않는다.
+- 새 `worker/earnings-companion-c-qfr-r1.mjs`는 QFR 단일 정보행의 정확한 스키마·이력·원본 시각·출처·비계절조정·빈티지 미확정 상태를 검증한다. D1 저장 시 **이전 체크포인트 역행 방지, 동일 버전의 내용 충돌 차단, 실제 D1 본문·저장 시각 재조회**를 요구한다. 기존 BLS 기본/서비스 C 키, BEA 공개 키 및 E1-R4 점수는 건드리지 않는다.
+- `scripts/pc-writer/EARNINGS_CENSUS_QFR_R4_D1_ONCE.mjs` 및 두 전용 CMD(`..._PREFLIGHT.cmd`, `..._APPLY.cmd`)는 이미 승인·보존된 PC SQLite 원본을 다시 읽고 R3/R4 검산을 거친다. 기존 `EARNINGS_R4_C_D1_DUAL_SOURCE_GATES.mjs`의 clean main 게시 checkout + 별도 PC 운영 checkout + `config.source` SHA 검사 재사용, 새 파일 Git 추적검사 추가. 바탕화면 단독 CMD로 이 승인 경로를 우회할 수 없다.
+- `--dry-run`에는 원격 D1 호출이 없다. 실제 쓰기는 clean main 병합·게시 소스 승인 뒤 `--apply --confirm-census-qfr-d1-write`와 CMD 사용자 `APPLY` 입력이 있어야 실행된다. TXT는 파일 옆에 `EARNINGS_CENSUS_QFR_R4_D1_RESULT_*.txt`로 기록한다.
+- 신규 Worker 6건 + 신규 게시기 연결 3건 + 기존 QFR R4 5건, R3 6건, R2 8건, 총 **28건** 로컬 회귀검사 PASS. **상태:** `CODE=PASS`, `PC_SQLITE=PASS`, `PC_STORED_CALC=PASS`, `PC_D1_PREFLIGHT=NOT_RUN`, `D1_ACTUAL_WRITE/READBACK=NOT_RUN`, `PUBLIC_GET=NOT_RUN`, `SITE_DEPLOY=NOT_RUN`, `AUTOMATION=NOT_RUN`. 별도 `main` 병합·Production 배포 없음.
+- 전체 계약 및 이후 진행 Gate는 [Census QFR R4 기준서](EARNINGS_CENSUS_QFR_R4_PROJECTION_DRAFT_20261028.md) 기준으로 이어간다.
