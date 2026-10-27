@@ -39,6 +39,22 @@ test('new verified BLS row appears without changing the display array',()=>{
   assert.equal(view.rows[0].value,null);
 });
 
+test('verified WPSFD42 activates both service labels and rejects identity substitutions',()=>{
+  const yoy=bls('bls_ppi_services_yoy_sa','WPSFD42','서버 제목',
+    'DERIVED','PERCENT');
+  const index=bls('bls_ppi_services_index','WPSFD42','서버 제목','RAW','INDEX');
+  const view=buildEarningsCostIndicatorView(payload([yoy,index]));
+  assert.equal(view.indicators.length,7);
+  assert.equal(view.indicators[5].name,'서비스 생산자물가 상승률');
+  assert.equal(view.indicators[6].name,'서비스 생산자물가 지수');
+  const forged=buildEarningsCostIndicatorView(payload([
+    {...yoy,seriesId:'WPSFD4',sourceURL:'https://data.bls.gov/timeseries/WPSFD4'},
+    {...index,kind:'DERIVED',unit:'PERCENT',changeUnit:'PERCENTAGE_POINTS'},
+  ]));
+  assert.equal(forged.indicators.length,5);
+  assert.equal(forged.rows.length,0);
+});
+
 test('spoofed source URL, wrong provider and duplicate IDs cannot extend list',()=>{
   const good=bls('bls_new_verified_observation','PRS85006111');
   const wrong={...good,sourceURL:'javascript:alert(1)',indicatorId:'bls_wrong_url'};
