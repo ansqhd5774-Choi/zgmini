@@ -197,3 +197,12 @@
 - 2026-10-27 공식 ZIP 실측: 2026-Q2 매출 2,372,409, 세후이익 370,082 (백만 USD), 제조업 세후이익률 **15.59941814%**. 2026-Q1은 **14.03708176%**, 차이 **+1.56233639%p**. NAICS 분류 전환·표본오차·비계절조정에 유의하고 제조업 집계를 미국 모든 기업의 이익률로 과장하지 않는다.
 - 준비 파일: `scripts/pc-writer/EARNINGS_CENSUS_QFR_R1_READONLY.mjs`, `EARNINGS_CENSUS_QFR_R1_PREFLIGHT.cmd`, `EARNINGS_CENSUS_QFR_R1_READONLY.test.mjs`, `docs/EARNINGS_CENSUS_QFR_MANUFACTURING_MARGIN_R1_20261027.md`.
 - 실 ZIP 압축·CRC·메타정보·연속 분기 검증 PASS; 오프라인 테스트 5건 PASS. 이 실행 환경에서 Node fetch 실네트워크는 DNS 차단으로 불확정이며 PC 실제 CMD 확인 필요. **PC SQLite 원본 저장·D1·Worker 공개 API·UI 추가는 모두 NOT_RUN**. 이후에도 동일 지정 브랜치에서 단계별로 연결한다.
+
+## 12. Census QFR 원본 ZIP 버전별 불변 원장 R2 (2026-10-27)
+
+- R1에서 확인한 Census QFR 원본 `QFR-mf.csv`를 다시 설계하거나 새 산식을 추가하지 않고, **공식 ZIP 원문 바이트를 그대로 보존**하는 PC 원장 연결 코드를 추가했다. 저장 시 ZIP 전체 base64와 ZIP SHA-256, 5분기 원시 매출·세후이익 및 자체 파생 이익률을 기존 `api_history_chunks_v1`에 담는다.
+- 기존 원장 테이블 2개 재사용, 전용 키 `provider=CENSUS` / `dataset=QFR_MFG_US_NSA_AFTER_TAX_MARGIN`, 계약 `EARNINGS_CENSUS_QFR_MFG_RAW_ZIP_V1`. BLS/BEA·타 네임스페이스 불변. 트리거·PK·열 형식 및 기존 동일 키의 해시/참조를 읽기 전용 확인한다.
+- 원본 ZIP의 동일 바이트 재수신 시 수집시각 변경과 관계없이 **중복 삽입 0건**. ZIP 바이트 변경 시 새 source SHA·청크·스냅샷으로 **append-only 개정 보존**. 동일 소스의 원래 5분기 계산값과 ZIP의 검증 관계를 다시 검사한다. retrieval date를 발표일이나 최초 경제적 이용 가능일로 위조하지 않는다.
+- `scripts/pc-writer/EARNINGS_CENSUS_QFR_R2_SQLITE_APPEND.mjs`는 기본 `--dry-run` 읽기 전용이며, `EARNINGS_CENSUS_QFR_R2_STORAGE_PREFLIGHT.cmd`도 읽기 전용이다. 실제 PC SQLite append는 **별도 명시적 사용자 승인 후**에만 `--apply --confirm-census-qfr-sqlite-append`라는 고정 플래그가 필요하다. 두 INSERT와 재조회는 단일 트랜잭션/오류 시 rollback.
+- 메모리 SQLite synthetic **R2 6건** 및 R1 파서 **5건** 검증. 실제 PC `core.sqlite` 접근, live Census R2 재수집, D1 게시, Worker 신규 GET, 사이트 표시, 자동 갱신은 여전히 **NOT_RUN**. 어느 단계도 자동 성공으로 격상하지 않는다.
+- 설계·실행 Gate 전문은 [QFR 원본 SQLite 보존 R2](EARNINGS_CENSUS_QFR_RAW_SQLITE_R2_20261027.md)에 있다. 이후 순서는 **PC 읽기 전용 preflight 증빙 → 승인된 append/readback → 별도 D1 체크포인트 설계/승인 → 공개 GET/UI 검증**. 최종 목표는 E1-R4 점수 개조가 아닌 **신뢰할 수 있는 실적 침체 참고 지표의 지속적 추가**다.
