@@ -1,0 +1,633 @@
+/* Korea Fear & Greed layout parity with the approved USA design.
+ * This stylesheet is scoped to the Korea detail page. The original index
+ * formula, API data, colors, chart renderers and desktop explanatory text
+ * remain unchanged. Snapshot based on USA usa-mobile-r8.css.
+ */
+/* USA headline, mobile info disclosure and buying guide share one title row. */
+.zg-fg-korea .zg-fg-title-row { display: flex; align-items: center; flex-wrap: wrap; column-gap: 8px; row-gap: 0; min-width: 0; }
+.zg-fg-korea .zg-fg-title-row > h1 { flex: 0 1 auto; min-width: 0; }
+.zg-fg-korea .zg-fg-title-row > .zg-fg-intro { flex: 0 0 100%; order: 3; }
+.zg-fg-korea .zg-fg-intro-button { display: none; }
+.zg-fg-korea .zg-fg-buying-guide-link { flex: 0 0 auto; order: 2; margin-left: auto; margin-bottom: 0; white-space: nowrap; }
+.zg-fg-korea .zg-fg-guide-short { display: none; }
+
+/* USA fear/greed R8 mobile candidate — layout only.
+ * No palette, score, chart, API or history overrides.
+ * R7's full-viewport overflow lock and hidden factor fields are deliberately
+ * NOT carried over: every data field and reading guide stays accessible.
+ * The existing shared market components remain the only data renderers.
+ */
+/* Use the mobile period-button design on desktop, retaining its taller chart. */
+@media (min-width: 761px) {
+  .zg-fg-korea .korea-target-card.fg-shared-shell .fg-analysis-slot {
+    grid-template-columns: minmax(0, 1fr) 36px;
+    column-gap: 5px;
+  }
+  .zg-fg-korea .korea-target-card.fg-shared-shell .fg-period-slot {
+    width: 36px;
+    min-width: 36px;
+    max-width: 36px;
+    grid-template-columns: 32px;
+    place-items: center;
+  }
+  .zg-fg-korea .korea-target-card.fg-shared-shell .fg-period-slot .cnn-period-toolbar {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    width: 32px;
+    min-width: 32px;
+    max-width: 32px;
+    height: 176px;
+    min-height: 176px;
+    max-height: 176px;
+    margin: 0;
+  }
+  .zg-fg-korea .korea-target-card.fg-shared-shell .fg-period-slot .cnn-period-button {
+    flex: 0 0 32px;
+    width: 32px;
+    min-width: 32px;
+    max-width: 32px;
+    height: 32px;
+    min-height: 32px;
+    max-height: 32px;
+    border-radius: 4px;
+  }
+  .zg-fg-korea .korea-target-card.fg-shared-shell .fg-period-slot .cnn-period-button::after {
+    font-size: .8rem;
+  }
+}
+@media (max-width: 760px) {
+  .zg-fg-korea .zg-fg-detail-body {
+    padding: 8px 8px 48px;
+  }
+
+  .zg-fg-korea .zg-fg-page-header {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 5px;
+    margin: 0 0 8px;
+    padding: 10px 11px;
+  }
+
+  /* Only mobile hides the intro until the adjacent info icon is tapped. */
+  .zg-fg-korea .zg-fg-title-row {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 5px;
+    min-width: 0;
+  }
+  .zg-fg-korea .zg-fg-title-row > .zg-fg-intro--expanded { flex: 0 0 100%; min-width: 0; }
+  .zg-fg-korea .zg-fg-intro-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 32px;
+    width: 32px;
+    height: 32px;
+    min-width: 32px;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
+  }
+  .zg-fg-korea .zg-fg-intro-button:focus-visible {
+    outline: 2px solid currentColor;
+    outline-offset: 2px;
+  }
+  .zg-fg-korea .zg-fg-intro:not(.zg-fg-intro--expanded) { display: none; }
+
+  .zg-fg-korea .zg-fg-eyebrow { font-size: 9px; }
+  .zg-fg-korea .zg-fg-page-header h1 { margin: 0; font-size: 20px; }
+  .zg-fg-korea .zg-fg-intro {
+    margin: 0;
+    max-width: none;
+    font-size: 11px;
+    line-height: 1.45;
+  }
+
+  .zg-fg-korea .zg-fg-country-tabs {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 5px;
+    margin: 0;
+  }
+  .zg-fg-korea .zg-fg-country-tabs a {
+    min-height: 32px;
+    padding: 6px 8px;
+    font-size: 11px;
+  }
+  .zg-fg-korea .zg-fg-buying-guide-link {
+    min-height: 32px;
+    margin-bottom: 0;
+    font-size: 11px;
+  }
+  .zg-fg-korea .zg-fg-facts {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 4px;
+    margin: 0;
+  }
+  .zg-fg-korea .zg-fg-facts span {
+    min-width: 0;
+    padding: 5px 4px;
+    border: 0;
+    text-align: center;
+  }
+  .zg-fg-korea .zg-fg-facts strong { font-size: 13px; }
+  .zg-fg-korea .zg-fg-facts small { font-size: 8px; letter-spacing: 0; }
+
+  /* Reflow the actual FearGreedCardShell, not a recreated chart or score. */
+  .zg-fg-korea .korea-target-card.fg-shared-shell {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto auto auto auto;
+    height: auto;
+    min-height: 0;
+    overflow: visible;
+  }
+  .zg-fg-korea .korea-target-card .fg-content-slot { display: contents; }
+  .zg-fg-korea .korea-target-card .fg-header-slot {
+    grid-column: 1;
+    grid-row: 1;
+    height: auto;
+    min-height: 54px;
+    padding: 0 4px;
+  }
+  .zg-fg-korea .korea-target-card .fg-header-slot .cnn-panel-heading {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
+    gap: 6px;
+    min-height: 54px;
+    padding: 6px;
+  }
+  .zg-fg-korea .korea-target-card .cnn-market-title h2 { font-size: 16px; }
+  .zg-fg-korea .korea-target-card .cnn-market-title p:last-child {
+    font-size: 9px;
+    white-space: normal;
+  }
+  .zg-fg-korea .korea-target-card .cnn-header-insight p {
+    font-size: 9px;
+    line-height: 1.3;
+    overflow: visible;
+  }
+
+  .zg-fg-korea .korea-target-card .fg-score-slot {
+    grid-column: 1;
+    grid-row: 2;
+    width: 100%;
+    height: auto;
+    min-height: 0;
+    padding: 6px 9px;
+    box-sizing: border-box;
+  }
+  .zg-fg-korea .korea-target-card .fg-score-slot .cnn-score-orb {
+    display: grid;
+    grid-template-columns: minmax(0, 40%) minmax(0, 1fr);
+    grid-template-rows: auto auto;
+    align-items: center;
+    column-gap: 8px;
+    row-gap: 4px;
+    width: 100%;
+    height: auto;
+    min-height: 0;
+  }
+  .zg-fg-korea .korea-target-card .cnn-spectrum-gauge {
+    grid-column: 1;
+    grid-row: 1 / 3;
+    width: 100%;
+    max-width: 144px;
+    aspect-ratio: 220 / 142;
+    place-self: center;
+  }
+  .zg-fg-korea .korea-target-card .cnn-score-whole { font-size: clamp(30px, 8vw, 40px); }
+  .zg-fg-korea .korea-target-card .cnn-score-fraction { font-size: clamp(15px, 4vw, 20px); }
+  .zg-fg-korea .korea-target-card .cnn-spectrum-center > span { font-size: 10px; }
+  .zg-fg-korea .korea-target-card .cnn-score-comparisons {
+    grid-column: 2;
+    grid-row: 1;
+    width: 100%;
+    height: auto;
+    min-height: 48px;
+    max-height: none;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-rows: auto;
+  }
+  .zg-fg-korea .korea-target-card .cnn-score-comparison {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto auto;
+    gap: 3px;
+    padding: 4px 2px;
+  }
+  .zg-fg-korea .korea-target-card .cnn-score-comparison > span { font-size: 10px; }
+  .zg-fg-korea .korea-target-card .cnn-score-comparison > strong { font-size: 13px; }
+  .zg-fg-korea .korea-target-card .cnn-score-comparison-divider { display: none; }
+  .zg-fg-korea .korea-target-card .cnn-score-observed-date {
+    grid-column: 2;
+    grid-row: 2;
+    width: 100%;
+    height: auto;
+    min-height: 16px;
+    font-size: 10px;
+    line-height: 1.25;
+    white-space: normal;
+  }
+
+  .zg-fg-korea .korea-target-card .fg-analysis-slot {
+    grid-column: 1;
+    grid-row: 3;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: 30px clamp(128px, 19dvh, 176px);
+    gap: 5px;
+    width: 100%;
+    min-height: 0;
+    padding: 6px 9px 9px;
+  }
+  .zg-fg-korea .korea-target-card .fg-period-slot {
+    grid-column: 1;
+    grid-row: 1;
+    width: 100%;
+    min-width: 0;
+    max-width: none;
+    height: 30px;
+    min-height: 30px;
+    display: flex;
+  }
+  .zg-fg-korea .korea-target-card .fg-period-slot .cnn-period-toolbar {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    width: 100%;
+    max-width: none;
+    height: 30px;
+    min-height: 30px;
+    gap: 5px;
+  }
+  .zg-fg-korea .korea-target-card .fg-period-slot .cnn-period-button {
+    flex: 1 1 0;
+    width: auto;
+    min-width: 32px;
+    max-width: none;
+    height: 30px;
+    min-height: 30px;
+    max-height: 30px;
+    border-radius: 4px;
+  }
+  .zg-fg-korea .korea-target-card .fg-chart-slot {
+    grid-column: 1;
+    grid-row: 2;
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    margin: 0;
+  }
+  .zg-fg-korea .korea-target-card .fg-footer-slot {
+    grid-column: 1;
+    grid-row: 4;
+    height: auto;
+    min-height: 28px;
+  }
+  .zg-fg-korea .korea-target-card .fg-footer-slot .cnn-panel-note {
+    min-height: 28px;
+    height: auto;
+    padding: 5px 9px;
+    font-size: 10px;
+  }
+
+  /* R14: approved 36px five-column USA factor rows with a row-wide meter.
+   * Layout only: preserve existing colors, state tones and score renderer. */
+  .zg-fg-korea .fg-r2-analysis { margin-top: 7px; }
+  /* Compact only the USA factor heading on mobile. Keep all data panels. */
+  .zg-fg-korea .fg-r2-analysis-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+    padding: 6px 10px;
+  }
+  .zg-fg-korea .fg-r2-analysis-top > div:first-child { min-width: 0; }
+  .zg-fg-korea .fg-r2-analysis-top .fg-r2-kicker,
+  .zg-fg-korea .fg-r2-analysis-top > div:first-child > p { display: none; }
+  .zg-fg-korea .fg-r2-analysis h2 {
+    margin-top: 0;
+    font-size: clamp(12px, 3.8vw, 15px);
+    line-height: 1.3;
+  }
+  .zg-fg-korea .fg-r2-coverage {
+    display: inline-flex;
+    flex: 0 0 auto;
+    flex-direction: row;
+    align-items: baseline;
+    gap: 4px;
+    padding: 4px 6px;
+  }
+  .zg-fg-korea .fg-r2-coverage strong { font-size: 12px; }
+  .zg-fg-korea .fg-r2-coverage small {
+    margin-top: 0;
+    font-size: 9px;
+  }
+  /* The heading and factor table are one continuous mobile panel. */
+  .zg-fg-korea .fg-r2-analysis-grid {
+    grid-template-columns: minmax(0, 1fr);
+    margin-top: 0;
+  }
+  .zg-fg-korea .fg-r2-table-wrap { padding: 4px; }
+  /* The real table fields remain in their source order: factor, raw, score,
+   * state and date. Only mobile geometry changes; all production colors stay. */
+  .zg-fg-korea .fg-r2-table { display: block; width: 100%; }
+  .zg-fg-korea .fg-r2-table thead { display: block; width: 100%; }
+  .zg-fg-korea .fg-r2-table tbody { display: grid; width: 100%; gap: 3px; }
+  .zg-fg-korea .fg-r2-table thead tr,
+  .zg-fg-korea .fg-r2-table tbody tr {
+    display: grid;
+    grid-template-columns: minmax(0, 37fr) minmax(0, 18fr) minmax(0, 13fr) minmax(0, 12fr) minmax(0, 20fr);
+    align-items: center;
+    column-gap: 0;
+  }
+  .zg-fg-korea .fg-r2-table thead tr { grid-template-rows: minmax(27px, auto); }
+  .zg-fg-korea .fg-r2-table tbody tr {
+    position: relative;
+    grid-template-rows: 36px;
+    height: 36px;
+    min-height: 36px;
+  }
+  .zg-fg-korea .fg-r2-table th {
+    display: block;
+    width: auto;
+    min-width: 0;
+    padding: 5px 2px;
+    font-size: 9px;
+    line-height: 1.1;
+    overflow-wrap: anywhere;
+    word-break: keep-all;
+  }
+  .zg-fg-korea .fg-r2-table td {
+    display: block;
+    grid-row: 1;
+    order: 0;
+    min-width: 0;
+    padding: 1px 2px 5px;
+    border: 0;
+    font-size: 10px;
+    line-height: 1.15;
+    overflow-wrap: anywhere;
+    word-break: keep-all;
+  }
+  .zg-fg-korea .fg-r2-table td:first-child {
+    grid-column: 1;
+    grid-row: 1;
+    padding: 0 3px 4px 5px;
+  }
+  .zg-fg-korea .fg-r2-table td:first-child button {
+    display: grid;
+    grid-template-columns: 19px minmax(0, 1fr);
+    column-gap: 4px;
+    align-content: center;
+    width: 100%;
+    height: 32px;
+    min-height: 32px;
+    padding: 0;
+  }
+  .zg-fg-korea .fg-r2-table td:first-child button small {
+    grid-column: 1;
+    grid-row: 1 / 3;
+    align-self: center;
+    margin-right: 0;
+  }
+  .zg-fg-korea .fg-r2-table td:first-child button strong {
+    grid-column: 2;
+    grid-row: 1;
+    font-size: 11px;
+    line-height: 1.2;
+    word-break: keep-all;
+  }
+  .zg-fg-korea .fg-r2-table td:first-child button span {
+    grid-column: 2;
+    grid-row: 2;
+    margin-top: 1px;
+    font-size: 9px;
+    line-height: 1.15;
+  }
+  .zg-fg-korea .fg-r2-table td:nth-child(2) { grid-column: 2; }
+  .zg-fg-korea .fg-r2-table td:nth-child(3) { grid-column: 3; }
+  .zg-fg-korea .fg-r2-table td:nth-child(4) { grid-column: 4; }
+  .zg-fg-korea .fg-r2-table td:nth-child(5) {
+    grid-column: 5;
+    white-space: normal;
+    font-variant-numeric: tabular-nums;
+  }
+  .zg-fg-korea .fg-r2-table td:not(:first-child)::before { content: none; }
+  .zg-fg-korea .fg-r2-value strong { font-size: 12px; font-variant-numeric: tabular-nums; }
+  /* Keep the existing live fill element and colors. Its positioned ancestor
+   * is the entire 36px grid row, so the meter spans all five columns. */
+  .zg-fg-korea .fg-r2-meter {
+    position: absolute;
+    left: 6px;
+    right: 6px;
+    bottom: 0;
+    width: auto;
+    height: 4px;
+    margin: 0;
+    pointer-events: none;
+  }
+  .zg-fg-korea .fg-r2-state { max-width: 100%; padding: 1px 4px; font-size: 9px; white-space: normal; }
+  .zg-fg-korea .fg-r2-footnote { padding: 7px 4px; }
+
+  /* Analysis details, sources, SEO and educational content remain available. */
+  .zg-fg-korea .fg-r2-side { grid-template-columns: minmax(0, 1fr); }
+  .zg-fg-korea .fg-r2-factor-detail { margin-top: 7px; }
+}
+
+@media (max-width: 359px) {
+  .zg-fg-korea .zg-fg-detail-body { padding-inline: 5px; }
+  .zg-fg-korea .korea-target-card .fg-header-slot .cnn-panel-heading {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 3px;
+  }
+  .zg-fg-korea .korea-target-card .fg-header-slot .cnn-header-insight { padding-left: 5px; }
+  .zg-fg-korea .korea-target-card .fg-score-slot .cnn-score-orb {
+    grid-template-columns: minmax(0, 42%) minmax(0, 1fr);
+    column-gap: 4px;
+  }
+  .zg-fg-korea .korea-target-card .fg-analysis-slot { padding-inline: 5px; }
+}
+
+/* R9 USA detail layout: position/date/link/touch-target adjustments only.
+ * Keep all current gauge bands, score tones, chart colors, and live renderers.
+ */
+.zg-fg-korea .korea-target-card .fg-card-header-date {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  min-width: 0;
+  margin-left: auto;
+  /* Preserve Korea's existing date text color. */
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.35;
+  white-space: nowrap;
+}
+
+@media (max-width: 760px) {
+  .zg-fg-korea .korea-target-card .fg-header-slot .cnn-panel-heading {
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+  }
+  .zg-fg-korea .korea-target-card .fg-header-slot .fg-card-header-date {
+    font-size: 10px;
+    padding-right: 4px;
+  }
+  .zg-fg-korea .korea-target-card .fg-score-slot .cnn-score-orb {
+    grid-template-rows: minmax(90px, auto);
+    column-gap: 9px;
+  }
+  .zg-fg-korea .korea-target-card .cnn-spectrum-gauge {
+    grid-row: 1;
+  }
+  .zg-fg-korea .korea-target-card .cnn-score-comparisons {
+    grid-row: 1;
+    height: 64px;
+    min-height: 64px;
+    max-height: 64px;
+    align-self: center;
+  }
+  .zg-fg-korea .korea-target-card .cnn-score-comparison {
+    gap: 4px;
+  }
+  .zg-fg-korea .korea-target-card .cnn-score-comparison > strong {
+    font-variant-numeric: tabular-nums;
+    font-size: 14px;
+  }
+  .zg-fg-korea .korea-target-card .fg-analysis-slot {
+    grid-template-rows: 44px clamp(128px, 19dvh, 176px);
+  }
+  .zg-fg-korea .korea-target-card .fg-period-slot,
+  .zg-fg-korea .korea-target-card .fg-period-slot .cnn-period-toolbar,
+  .zg-fg-korea .korea-target-card .fg-period-slot .cnn-period-button {
+    height: 44px;
+    min-height: 44px;
+    max-height: 44px;
+  }
+}
+
+/* R10 USA mobile chart/period geometry only.
+ * Keep the actual chart at 176px; place five existing period controls to
+ * its right in a 36px rail. This removes the stacked 44px period row and
+ * vertical padding without changing data, colors, or renderers.
+ */
+@media (max-width: 760px) {
+  .zg-fg-korea .korea-target-card.fg-shared-shell .fg-analysis-slot {
+    grid-template-columns: minmax(0, 1fr) 36px;
+    grid-template-rows: 176px;
+    column-gap: 5px;
+    row-gap: 0;
+    height: 176px;
+    min-height: 176px;
+    max-height: 176px;
+    padding-block: 0;
+  }
+  .zg-fg-korea .korea-target-card.fg-shared-shell .fg-chart-slot {
+    grid-column: 1;
+    grid-row: 1;
+    height: 176px;
+  }
+  .zg-fg-korea .korea-target-card.fg-shared-shell .fg-period-slot {
+    grid-column: 2;
+    grid-row: 1;
+    display: grid;
+    place-items: center;
+    width: 36px;
+    min-width: 36px;
+    max-width: 36px;
+    height: 176px;
+    min-height: 176px;
+    max-height: 176px;
+  }
+  .zg-fg-korea .korea-target-card.fg-shared-shell .fg-period-slot .cnn-period-toolbar {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    width: 32px;
+    min-width: 32px;
+    max-width: 32px;
+    height: 176px;
+    min-height: 176px;
+    max-height: 176px;
+    margin: 0;
+  }
+  .zg-fg-korea .korea-target-card.fg-shared-shell .fg-period-slot .cnn-period-button {
+    flex: 0 0 32px;
+    width: 32px;
+    min-width: 32px;
+    max-width: 32px;
+    height: 32px;
+    min-height: 32px;
+    max-height: 32px;
+  }
+}
+
+@media (max-width: 480px) {
+  /* Keep the title, 32px info control and guide action on the same line. */
+  .zg-fg-korea .zg-fg-guide-full { display: none; }
+  .zg-fg-korea .zg-fg-guide-short { display: inline; }
+  .zg-fg-korea .zg-fg-buying-guide-link svg { display: none; }
+}
+
+/* Korea header uses the original h1, intro and separate guide elements on
+ * desktop, retaining their order; mobile aligns all three controls in one row. */
+.zg-fg-korea .zg-fg-intro-button { display: none; }
+.zg-fg-korea .zg-fg-korea-intro-content { display: contents; }
+.zg-fg-korea .zg-fg-guide-short { display: none; }
+@media (max-width: 760px) {
+  .zg-fg-korea .zg-fg-page-header {
+    grid-template-columns: minmax(0, 1fr) 32px auto;
+    column-gap: 5px;
+    align-items: center;
+  }
+  .zg-fg-korea .zg-fg-page-header > .zg-fg-eyebrow {
+    grid-column: 1 / -1;
+    grid-row: 1;
+  }
+  .zg-fg-korea .zg-fg-page-header > h1 {
+    grid-column: 1;
+    grid-row: 2;
+    min-width: 0;
+    margin: 0;
+    white-space: nowrap;
+    font-size: clamp(16px, 5.1vw, 20px);
+  }
+  .zg-fg-korea .zg-fg-page-header > .zg-fg-intro-button {
+    display: inline-flex;
+    grid-column: 2;
+    grid-row: 2;
+  }
+  .zg-fg-korea .zg-fg-page-header > .zg-fg-buying-guide-link {
+    display: inline-flex;
+    grid-column: 3;
+    grid-row: 2;
+    min-width: 0;
+    margin: 0;
+    white-space: nowrap;
+  }
+  .zg-fg-korea .zg-fg-korea-intro-content {
+    display: none;
+    grid-column: 1 / -1;
+    min-width: 0;
+  }
+  .zg-fg-korea .zg-fg-korea-intro-content--expanded { display: block; }
+  .zg-fg-korea .zg-fg-korea-intro-content .zg-fg-subheading { margin: 4px 0; font-size: 12px; }
+  .zg-fg-korea .zg-fg-korea-intro-content .zg-fg-intro,
+  .zg-fg-korea .zg-fg-korea-intro-content .zg-fg-method { margin-top: 6px; font-size: 11px; line-height: 1.45; }
+  .zg-fg-korea .zg-fg-page-header > .zg-fg-country-tabs,
+  .zg-fg-korea .zg-fg-page-header > .zg-fg-facts { grid-column: 1 / -1; }
+  .zg-fg-korea .zg-fg-page-header > .zg-fg-hint { display: none; }
+}
+@media (max-width: 359px) {
+  .zg-fg-korea .zg-fg-page-header > h1 { font-size: 16px; }
+  .zg-fg-korea .zg-fg-buying-guide-link { font-size: 10px; }
+}
