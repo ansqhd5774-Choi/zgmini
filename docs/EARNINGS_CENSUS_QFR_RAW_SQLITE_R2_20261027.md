@@ -36,12 +36,13 @@
 1. `EARNINGS_CENSUS_QFR_R2_STORAGE_PREFLIGHT.cmd`는 항상 **읽기 전용**이다. 기존 PC DB 호환성 검사 → 새 공식 ZIP 재수집·계산 → 검증 → 같은 디렉터리에 `EARNINGS_CENSUS_QFR_R2_STORE_RESULT_*.txt` 생성. 데이터베이스·D1·점수는 기록하지 않는다.
 2. 내부 프로그램 `EARNINGS_CENSUS_QFR_R2_SQLITE_APPEND.mjs --dry-run`도 동일한 읽기 전용 프리플라이트.
 3. 2026-10-27 사용자 승인 후 전용 `EARNINGS_CENSUS_QFR_R2_SQLITE_APPLY_ONCE.cmd`를 추가했다. 확인 메시지에서 Y를 선택해야 실행되며, 승인 당시 프리플라이트 ZIP 해시를 **필수 인수**로 전달한다: `--apply --confirm-census-qfr-sqlite-append --expected-source-sha256 232f7757e654e787a9eab49792302feb3683e5280a66ff0cc9bd7f0cbc448654`. 공식 ZIP 바이트가 바뀌면 SQLite 쓰기 연결 전 `QFR_SOURCE_CHANGED_SINCE_PREFLIGHT_NO_WRITE`로 중단한다. 실제 PC의 **기존 원장 2개 테이블만** append-only 기록한다.
-4. DB 저장이 끝나도 D1 신규 키/Worker/화면 노출은 별도 승인·배포·공개 검증 대상이다. 산식 가중치/점수에는 자동 편입하지 않는다.
+4. **압축 배포에서 발견한 결함 및 수정:** 최초 전달한 최소 ZIP에는 `EARNINGS_CENSUS_QFR_R1_READONLY.mjs`가 빠져, 바탕화면 신규 압축 해제 폴더에서 Node `ERR_MODULE_NOT_FOUND`로 시작 단계에서 종료돼 결과 TXT가 생성되지 않았다. **원본 저장·D1 변경 0건**. R2는 R1 파서를 상대경로로 import하므로 독립 실행 압축파일은 반드시 **R1 parser + R2 store + APPLY CMD + 기준서**를 같은 디렉터리(평면 구조)에 포함해야 한다. CMD 시작 시 양쪽 `.mjs` 파일을 검사하고, 누락 시 `EARNINGS_CENSUS_QFR_R2_STORE_RESULT_SETUP_*.txt`를 작성하고 종료하도록 방어를 추가했다. 기존 폴더의 파일 존재를 가정하는 최소 ZIP을 재배포하지 않는다.
+5. DB 저장이 끝나도 D1 신규 키/Worker/화면 노출은 별도 승인·배포·공개 검증 대상이다. 산식 가중치/점수에는 자동 편입하지 않는다.
 
 ## 검증 및 미완료 경계
 
 - R1 기존 오프라인 공식 형식 synthetic 파서 5건: PASS.
-- R2 신규 메모리 SQLite synthetic 7건: 원본 ZIP 바이트 동일·재현 SHA, 중복 저장 0건, 개정 별도 추가, 타 계약 오염 거절, 잘못된 스키마 차단, 두 번째 INSERT 실패 시 전체 롤백, BLS 레코드 불변 및 **승인된 ZIP SHA 일치 필수** 검증.
+- R2 신규 메모리 SQLite synthetic 8건: 원본 ZIP 바이트 동일·재현 SHA, 중복 저장 0건, 개정 별도 추가, 타 계약 오염 거절, 잘못된 스키마 차단, 두 번째 INSERT 실패 시 전체 롤백, BLS 레코드 불변, **승인된 ZIP SHA 일치 필수**, **CMD 필수 의존성 사전검사** 검증.
 - **실제 PC R2 읽기 전용 프리플라이트 PASS**: 첨부 `EARNINGS_CENSUS_QFR_R2_STORE_RESULT_20261027T141637Z.txt`(UTC 2026-10-27 14:16:37)에 `RESULT=PASS_QFR_STORAGE_PREFLIGHT_NO_WRITE`, `PRIOR_CENSUS_SNAPSHOTS=0`, `PRIOR_CENSUS_CHUNKS=0`, `ZIP_BYTES=1746726`, `SOURCE_SHA256=232f7757e654e787a9eab49792302feb3683e5280a66ff0cc9bd7f0cbc448654`, `OBSERVED_THROUGH=2026-Q2`, 마진 `15.599418144173285` 기록. **실제 PC SQLite 쓰기 및 D1은 여전히 NOT_RUN**이다.
 - R1 원본 조사에 기록된 2026-Q2 마진 15.59941814%는 검증 당시의 산출값이며 차후 개정치에 자동 고정하지 않는다.
 
