@@ -4,7 +4,8 @@ import {test} from 'node:test';
 import {DatabaseSync} from 'node:sqlite';
 import crypto from 'node:crypto';
 import zlib from 'node:zlib';
-import {makeQfrPlan,checkQfrSchema,appendQfrPlan,PROVIDER,DATASET}
+import {makeQfrPlan,checkQfrSchema,appendQfrPlan,parseQfrMode,
+  verifyExpectedQfrSource,PROVIDER,DATASET}
   from './EARNINGS_CENSUS_QFR_R2_SQLITE_APPEND.mjs';
 
 const TIME='2026-10-27T13:00:00.000Z';
@@ -64,6 +65,22 @@ const createDb=({snapshotCheck=false}={})=>{
 };
 const count=(db,table)=>db.prepare(`SELECT count(*) AS n FROM ${table} WHERE provider=? AND dataset=?`)
   .get(PROVIDER,DATASET).n;
+
+test('approved apply requires exact source hash and rejects later official ZIP revision',()=>{
+  const initial=makeQfrPlan(archive(),TIME),revised=makeQfrPlan(archive({latestSales:1500}),TIME);
+  const sha256=initial.result.sourceSha256;
+  assert.deepEqual(parseQfrMode([]),{apply:false,expectedSha256:null});
+  assert.deepEqual(parseQfrMode(['--dry-run']),{apply:false,expectedSha256:null});
+  assert.deepEqual(parseQfrMode(['--apply','--confirm-census-qfr-sqlite-append',
+    '--expected-source-sha256',sha256]),{apply:true,expectedSha256:sha256});
+  assert.throws(()=>parseQfrMode(['--apply','--confirm-census-qfr-sqlite-append']),
+    /QFR_APPEND_CONFIRMATION_AND_SOURCE_SHA_REQUIRED/);
+  assert.throws(()=>parseQfrMode(['--dry-run','--apply','--confirm-census-qfr-sqlite-append',
+    '--expected-source-sha256',sha256]),/QFR_APPEND_CONFIRMATION_AND_SOURCE_SHA_REQUIRED/);
+  assert.doesNotThrow(()=>verifyExpectedQfrSource(initial,sha256));
+  assert.throws(()=>verifyExpectedQfrSource(revised,sha256),
+    /QFR_SOURCE_CHANGED_SINCE_PREFLIGHT_NO_WRITE/);
+});
 
 test('Census namespace and exact original ZIP retained with SHA as immutable chunk',()=>{
   const db=createDb();
