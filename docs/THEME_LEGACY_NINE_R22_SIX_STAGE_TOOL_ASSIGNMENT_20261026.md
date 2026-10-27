@@ -3,7 +3,7 @@
 - 확정일: 2026-10-26 (사용자 승인: “브랜치에 반영해라”)
 - 적용 브랜치: `codex/theme-fear-greed-integration-20261025`
 - 브랜치 통합: 2026-10-26 사용자 지시. 이전 `research/theme-nine-r2-shadow-20261026`는 **과거 연구 이력**이며 이후 신규 작업·수정은 하지 않는다.
-- 상태: `TOOL_PLAN_APPROVED / R23_STAGE1_PC_64_OF_64_COMPLETE / R24_STAGE2_PC_AUDIT_COMPLETE / R25_STAGE3_PC_RESULT_AUDITED / R26_STAGE4_OFFICIAL_CENSUS_63_OF_63 / R32_STAGE5_UPLOADED_JSON_PREFLIGHT_PASS / R32_STAGE5_PC_PREFLIGHT_PASS / R32_STAGE5_PC_252D_PASS / R33_STAGE6_PRIVATE_EXACT_REPLAY_PASS / R33_PUBLIC_HISTORICAL_COMPARISON_PENDING / NO_PUBLICATION`
+- 상태: `TOOL_PLAN_APPROVED / R23_STAGE1_PC_64_OF_64_COMPLETE / R24_STAGE2_PC_AUDIT_COMPLETE / R25_STAGE3_PC_RESULT_AUDITED / R26_STAGE4_OFFICIAL_CENSUS_63_OF_63 / R32_STAGE5_UPLOADED_JSON_PREFLIGHT_PASS / R32_STAGE5_PC_PREFLIGHT_PASS / R32_STAGE5_PC_252D_PASS / R33_STAGE6_PRIVATE_EXACT_REPLAY_PASS / R33_PUBLIC_8_THEMES_2016_OVERLAP_PASS / R34_REFRESH_PREFLIGHT_PC_PENDING / NO_PUBLICATION`
 - 최상위 적용: 10번째 우주·위성 R29·R32 기존 계산 계약, R19 3개 O/X 결과, R20 후보 승인 명단. 본 문서는 **도구·실행 담당·작업 순서만 확정**하며 산식 자체를 변경하지 않는다.
 
 ## 1. 확정 범위
@@ -107,3 +107,10 @@
 - 승인된 기존 9개 테마 가운데 **공개 시계열이 있는 8개×252일=2,016개 날짜-테마 지점**을 R32 비공개 값과 1:1 대조했다. 날짜 누락·중복 없이 실측점만 사용했다. 신규 테마 AI·반도체 252일은 R32 비공개에는 있으나 공개 기준선에 없어 비교 불가로 남긴다.
 - 비교는 방식 변경의 영향을 설명하는 **읽기 전용 기술 감사**다. 점수 차이만으로 오류·탈락·통과를 결정하지 않는다. 세부 차이, 근거, `5/5` 테스트는 [R33 공개 대조 감사](THEME_LEGACY_NINE_R33_STAGE6_PRIVATE_AUDIT_20261027.md)에 기록했다.
 - 상태: `R32_STAGE5_PC_252D_PASS / R33_STAGE6_8_OF_9_PUBLIC_OVERLAP_VERIFIED / AI_PUBLIC_HISTORY_PENDING / NO_PUBLICATION`. 공개 점수·DB·D1·스케줄러·웹 UI는 변경하지 않았다.
+
+## 14. R34 기존 9개 테마 반복 갱신 준비 (2026-10-27)
+
+- [R34 반복 갱신 연결·사전점검](THEME_LEGACY_NINE_R34_INCREMENTAL_REFRESH_20261027.md).
+- 기존 R23 일회성 `2023-01-01`~`2026-10-26` 수집 checkpoint/manifest는 날짜 변경을 허용하지 않는다. R24/R25도 같은 고정 날짜와 원본만 검사하므로, 단순 CMD 반복으로 신규 거래일을 얻거나 같은 manifest에 원본을 이어 붙이지 않는다.
+- **비공개·읽기 전용** R34 사전점검 코드·단일 CMD·모의 5/5 테스트를 지정 브랜치에 저장. PC 실제 로그는 아직 받지 않았으며, 후속 delta 수집/신규 252일 계산/정규 작업 등록/공개는 모두 **미실행**이다.
+- 다음 사용자 Windows PC 실행 파일: `scripts/pc-writer/THEME_NINE_R34_REFRESH_PREFLIGHT.cmd`. 원본/D1/DB/스케줄러/산식/공개 이력 변경 없음.
