@@ -21,6 +21,10 @@
 - 관련 임시 BEA 작업 브랜치 3개(`codex/earnings-bea-unit-profit-r1-20261027`, `codex/earnings-bea-unit-profit-cmd-diag-r2-20261027`, `codex/earnings-unit-portable-preflight-r3-20261027`): 공통 파일을 검사하고 현재 R3 preflight가 동일 SHA임을 확인한 뒤 병합 커밋 `9ac5056438d64aa0b6b8af7d9563a238a51b7220`으로 부모 이력을 연결했다.
 - 병합 전후 **Git tree SHA `3950cf04ed68733bdae85160e1f57c2592a7efbe` 동일**. 이는 이력 정리 과정에 코드·문서 덮어쓰기 또는 파일 삭제가 없었다는 의미이며, 새 실행 검증을 의미하지 않는다.
 - GitHub 비교 결과 네 과거 브랜치 모두 전용 브랜치에 대한 `behind_by=0`, `status=ahead`로 **커밋 이력까지 병합 확인**했다. 원본 브랜치는 사용자가 직접 삭제할 예정이므로 삭제하지 않았다.
+- 추가 범위 점검에서 같은 프로젝트의 R4 C/BLS 및 BEA S6 관련 브랜치 5개를 확인했다. 이 중 `codex/earnings-r4-c-d1-dual-source-20261027`은 이미 병합 상태(`behind_by=0`)였으며, 나머지 4개는 **이력 연결 전 미병합 커밋**이 있었다.
+- 추가 병합 커밋 `728ff6e05e156d18ab69f87d9803e59ad7819a66`에서 `codex/earnings-bea-s6-inline-20261027`, `codex/earnings-r4-c-public-reader-20261027`, `codex/earnings-r4c-inline-existing-table-20261027`, `feat/earnings-r4-c-companion-ui-20261027`을 부모 이력에 반영했다. 최종 트리 SHA는 병합 직전과 동일한 `aa63b04cc750550b485b68c7355c3d6180f12fb4`여서 현재 화면·Worker·실행 파일은 유지됐다.
+- **최종 범위 9개 브랜치 전부** 전용 브랜치 대비 `behind_by=0`, `status=ahead`임을 GitHub Compare로 재확인했다. 이 검증 범위는 API/사이트 연결·R4 C·BEA S6이며, 별도 E1-R5 Shadow 및 과거 독립 과제 브랜치 전체를 일괄 병합한 것이 아니다.
+- 사용자 지시에 따라 원본 브랜치 삭제는 실행하지 않았다. 단순한 이력 연결은 R1~R6 개발단계 최종 PASS·운영 배포 완료를 뜻하지 않는다.
 - 이 문서 최종 갱신 자체는 위 병합 커밋 이후 전용 브랜치에 기록한다. 이후 작업 보고에서는 항상 실제 최신 HEAD를 기재한다.
 
 ## 2. 최초 계획과 현재 구현의 단계별 비교
