@@ -1,0 +1,921 @@
+{
+  "report": "R64B",
+  "audit_date_kst": "2026-10-27",
+  "status": "DEFINITION_RECONCILIATION_COMPLETED_FOR_CANDIDATE_TRIAGE_FINAL_CAGR_UNCOMPUTED",
+  "reference": "R64",
+  "topic_count": 21,
+  "publisher_slots": 63,
+  "source_verified_r63": 58,
+  "opened_or_find_official_reports": 60,
+  "direct_http_get_r64b": 0,
+  "ollama_runs": 0,
+  "classification_counts": {
+    "C": 3,
+    "B": 11,
+    "A": 7
+  },
+  "topics": [
+    {
+      "topic_index": 1,
+      "name": "정보기술",
+      "kind": "sector",
+      "level": "C",
+      "market_group": "IT_GENERAL vs IT_SERVICES",
+      "market_perimeters": {
+        "TBRC": "IT 서비스·HW·통신·SW 포괄",
+        "SkyQuest": "IT 서비스·운영/컨설팅",
+        "Precedence": "공식 전체시장 보고서 미선정"
+      },
+      "scope_reason": "정보기술 보고서에 통신이 포함되어 GICS 정보기술 경계 초과. IT 서비스는 부분시장.",
+      "next_action": "GICS 기준 통신 제외 IT 전체시장 공식 출처 발굴",
+      "mean_eligible": false,
+      "publisher_rows": [
+        {
+          "publisher": "TBRC",
+          "url": "https://www.thebusinessresearchcompany.com/report/information-technology-global-market-report",
+          "reported_cagr_pct": 8.3,
+          "period": "2026-2030",
+          "source_status": "CONSISTENT",
+          "source_verified_r63": true
+        },
+        {
+          "publisher": "SkyQuest",
+          "url": "https://www.skyquestt.com/report/it-services-market",
+          "reported_cagr_pct": 9.6,
+          "period": "2026-2033",
+          "source_status": "GLOBAL_LITERAL_CONFIRMED",
+          "source_verified_r63": true
+        },
+        {
+          "publisher": "Precedence",
+          "url": null,
+          "reported_cagr_pct": null,
+          "period": null,
+          "source_status": "OFFICIAL_REPORT_NOT_SELECTED",
+          "source_verified_r63": false
+        }
+      ]
+    },
+    {
+      "topic_index": 2,
+      "name": "커뮤니케이션 서비스",
+      "kind": "sector",
+      "level": "B",
+      "market_group": "TELECOM (3)",
+      "market_perimeters": {
+        "TBRC": "유무선·통신장비·위성·재판매",
+        "SkyQuest": "모바일/고정 음성·데이터",
+        "Precedence": "통신 HW·SW 플랫폼·서비스"
+      },
+      "scope_reason": "통신 내 제품·서비스 포괄 범위 상이. GICS 커뮤니케이션은 미디어도 포함.",
+      "next_action": "통신 HW·위성 포함 여부와 시장가치 기준 비교",
+      "mean_eligible": false,
+      "publisher_rows": [
+        {
+          "publisher": "TBRC",
+          "url": "https://www.thebusinessresearchcompany.com/report/telecom-global-market-report",
+          "reported_cagr_pct": 5.3,
+          "period": "2026-2030",
+          "source_status": "CONSISTENT",
+          "source_verified_r63": true
+        },
+        {
+          "publisher": "SkyQuest",
+          "url": "https://www.skyquestt.com/report/telecommunication-market",
+          "reported_cagr_pct": 6.2,
+          "period": "2026-2033",
+          "source_status": "SKYQUEST_GLOBAL_METADATA_OPENING_VERIFIED",
+          "source_verified_r63": true
+        },
+        {
+          "publisher": "Precedence",
+          "url": "https://www.precedenceresearch.com/telecommunication-market",
+          "reported_cagr_pct": 6.03,
+          "period": "2026-2035",
+          "source_status": "GLOBAL_LITERAL_CONFIRMED",
+          "source_verified_r63": true
+        }
+      ]
+    },
+    {
+      "topic_index": 3,
+      "name": "임의소비재",
+      "kind": "sector",
+      "level": "A",
+      "market_group": "PASSENGER_CARS (3)",
+      "market_perimeters": {
+        "TBRC": "승용차 차체/연료별",
+        "SkyQuest": "승용차 차급·연료별",
+        "Precedence": "승용차 차체·연료별"
+      },
+      "scope_reason": "3기관이 승용차 완성차라는 공통 시장을 명시. GICS 임의소비재 전체는 아님.",
+      "next_action": "시장 매출 단위·차량 판매 vs 생산 가치 확인",
+      "mean_eligible": false,
+      "publisher_rows": [
+        {
+          "publisher": "TBRC",
+          "url": "https://www.thebusinessresearchcompany.com/report/passenger-car-global-market-report",
+          "reported_cagr_pct": 7.4,
+          "period": "2026-2030",
+          "source_status": "RESOLVED_HISTORIC_RATE_MISLABEL",
+          "source_verified_r63": true
+        },
+        {
+          "publisher": "SkyQuest",
+          "url": "https://www.skyquestt.com/report/passenger-cars-market",
+          "reported_cagr_pct": 5.42,
+          "period": "2026-2033",
+          "source_status": "GLOBAL_LITERAL_CONFIRMED",
+          "source_verified_r63": true
+        },
+        {
+          "publisher": "Precedence",
+          "url": "https://www.precedenceresearch.com/passenger-cars-market",
+          "reported_cagr_pct": 5.57,
+          "period": "2026-2035",
+          "source_status": "GLOBAL_LITERAL_CONFIRMED",
+          "source_verified_r63": true
+        }
+      ]
+    },
+    {
+      "topic_index": 4,
+      "name": "산업재",
+      "kind": "sector",
+      "level": "B",
+      "market_group": "INDUSTRIAL_MACHINERY (2)",
+      "market_perimeters": {
+        "TBRC": "인쇄·식품·반도체 등 산업기계",
+        "SkyQuest": "건설·농업용 장비 예시",
+        "Precedence": "공작기계로 한정"
+      },
+      "scope_reason": "같은 산업기계 제목에 상품 분할이 크게 달라 동일 모집단 입증 불충분.",
+      "next_action": "포함·제외 품목 및 산업기계 전체시장 수익 정의 확인",
+      "mean_eligible": false,
+      "publisher_rows": [
+        {
+          "publisher": "TBRC",
+          "url": "https://www.thebusinessresearchcompany.com/report/industrial-machinery-global-market-report",
+          "reported_cagr_pct": 6.9,
+          "period": "2026-2030",
+          "source_status": "CONSISTENT",
+          "source_verified_r63": true
+        },
+        {
+          "publisher": "SkyQuest",
+          "url": "https://www.skyquestt.com/report/industrial-machinery-market",
+          "reported_cagr_pct": 4.2,
+          "period": "2026-2033",
+          "source_status": "GLOBAL_LITERAL_CONFIRMED",
+          "source_verified_r63": true
+        },
+        {
+          "publisher": "Precedence",
+          "url": "https://www.precedenceresearch.com/machine-tools-market",
+          "reported_cagr_pct": 5.94,
+          "period": "2026-2035",
+          "source_status": "GLOBAL_LITERAL_CONFIRMED",
+          "source_verified_r63": true
+        }
+      ]
+    },
+    {
+      "topic_index": 5,
+      "name": "금융",
+      "kind": "sector",
+      "level": "A",
+      "market_group": "RETAIL_BANKING (2)",
+      "market_perimeters": {
+        "TBRC": "결제·보험·투자·외환 등 금융 전체",
+        "SkyQuest": "개인금융·소매은행",
+        "Precedence": "개인금융·소매은행"
+      },
+      "scope_reason": "SkyQuest/Precedence의 소매은행이라는 공통 하위시장 분류 확인.",
+      "next_action": "개인금융 수수료·순이자/총자산 수익 단위 확인",
+      "mean_eligible": false,
+      "publisher_rows": [
+        {
+          "publisher": "TBRC",
+          "url": "https://www.thebusinessresearchcompany.com/report/financial-services-global-market-report",
+          "reported_cagr_pct": 7.3,
+          "period": "2026-2030",
+          "source_status": "RESOLVED_HISTORIC_RATE_MISLABEL",
+          "source_verified_r63": true
+        },
+        {
+          "publisher": "SkyQuest",
+          "url": "https://www.skyquestt.com/report/retail-banking-market",
+          "reported_cagr_pct": 6.7,
+          "period": "2026-2033",
+          "source_status": "SKYQUEST_GLOBAL_METADATA_OPENING_VERIFIED",
+          "source_verified_r63": true
+        },
+        {
+          "publisher": "Precedence",
+          "url": "https://www.precedenceresearch.com/retail-banking-market",
+          "reported_cagr_pct": 6,
+          "period": "2026-2035",
+          "source_status": "GLOBAL_LITERAL_CONFIRMED",
+          "source_verified_r63": true
+        }
+      ]
+    },
+    {
+      "topic_index": 6,
+      "name": "유틸리티",
+      "kind": "sector",
+      "level": "A",
+      "market_group": "POWER_TRANSMISSION (2)",
+      "market_perimeters": {
+        "TBRC": "수도·가스·전력발전·송배전 포괄",
+        "SkyQuest": "송배전망·변전소·변압기",
+        "Precedence": "송배전망 인프라"
+      },
+      "scope_reason": "SkyQuest/Precedence 전력 송배전 하위시장 후보 확보.",
+      "next_action": "전력장비 매출 vs 송배전사업 수익 구분",
+      "mean_eligible": false,
+      "publisher_rows": [
+        {
+          "publisher": "TBRC",
+          "url": "https://www.thebusinessresearchcompany.com/report/utilities-global-market-report",
+          "reported_cagr_pct": 6.1,
+          "period": "2026-2030",
+          "source_status": "NARRATIVE_VERIFIED_METADATA_CONFLICT",
+          "source_verified_r63": true
+        },
+        {
+          "publisher": "SkyQuest",
+          "url": "https://www.skyquestt.com/report/electricity-transmission-and-distribution-market",
+          "reported_cagr_pct": 4.4,
+          "period": "2026-2033",
+          "source_status": "GLOBAL_LITERAL_CONFIRMED",
+          "source_verified_r63": true
+        },
+        {
+          "publisher": "Precedence",
+          "url": "https://www.precedenceresearch.com/power-transmission-and-distribution-market",
+          "reported_cagr_pct": 3.91,
+          "period": "2026-2034",
+          "source_status": "GLOBAL_LITERAL_CONFIRMED",
+          "source_verified_r63": true
+        }
+      ]
+    },
+    {
+      "topic_index": 7,
+      "name": "헬스케어",
+      "kind": "sector",
+      "level": "B",
+      "market_group": "HEALTHCARE_SERVICES (2)",
+      "market_perimeters": {
+        "TBRC": "검사·치과·의원·병원·돌봄",
+        "SkyQuest": "병원·외래·원격의료·장기요양",
+        "Precedence": "병원서비스 수치 충돌"
+      },
+      "scope_reason": "의료서비스는 중첩되지만 실험실/원격의료 포함 여부가 다르며 병원서비스 원문 충돌.",
+      "next_action": "의료서비스 경계 확인; 5.84/5.99 수치 수정 확인",
+      "mean_eligible": false,
+      "publisher_rows": [
+        {
+          "publisher": "TBRC",
+          "url": "https://www.thebusinessresearchcompany.com/report/healthcare-service-global-market-report",
+          "reported_cagr_pct": 4.9,
+          "period": "2026-2030",
+          "source_status": "CONSISTENT",
+          "source_verified_r63": true
+        },
+        {
+          "publisher": "SkyQuest",
+          "url": "https://www.skyquestt.com/report/healthcare-services-market",
+          "reported_cagr_pct": 7.42,
+          "period": "2026-2033",
+          "source_status": "GLOBAL_LITERAL_CONFIRMED",
+          "source_verified_r63": true
+        },
+        {
+          "publisher": "Precedence",
+          "url": "https://www.precedenceresearch.com/hospital-services-market",
+          "reported_cagr_pct": null,
+          "period": null,
+          "source_status": "GLOBAL_CAGR_CONFLICT",
+          "source_verified_r63": false
+        }
+      ]
+    },
+    {
+      "topic_index": 8,
+      "name": "소재",
+      "kind": "sector",
+      "level": "B",
+      "market_group": "ADVANCED_MATERIALS (3)",
+      "market_perimeters": {
+        "TBRC": "첨단소재 글로벌",
+        "SkyQuest": "폴리머·금속 등 첨단소재",
+        "Precedence": "금속·폴리머·유리·복합소재"
+      },
+      "scope_reason": "첨단소재 제품 구분은 유사하나 Precedence 핵심 6.21%, 요약 6.27% 편집 불일치.",
+      "next_action": "6.21/6.27 경고 유지; 주시장 수익·소재 포함 범위 확인",
+      "mean_eligible": false,
+      "publisher_rows": [
+        {
+          "publisher": "TBRC",
+          "url": "https://www.thebusinessresearchcompany.com/report/advanced-materials-global-market-report",
+          "reported_cagr_pct": 8.1,
+          "period": "2026-2030",
+          "source_status": "RESOLVED_HISTORIC_RATE_MISLABEL",
+          "source_verified_r63": true
+        },
+        {
+          "publisher": "SkyQuest",
+          "url": "https://www.skyquestt.com/report/advanced-materials-market",
+          "reported_cagr_pct": 6.6,
+          "period": "2026-2033",
+          "source_status": "GLOBAL_LITERAL_CONFIRMED",
+          "source_verified_r63": true
+        },
+        {
+          "publisher": "Precedence",
+          "url": "https://www.precedenceresearch.com/advanced-materials-market",
+          "reported_cagr_pct": 6.21,
+          "period": "2026-2035",
+          "source_status": "GLOBAL_LITERAL_CONFIRMED",
+          "source_verified_r63": true
+        }
+      ]
+    },
+    {
+      "topic_index": 9,
+      "name": "에너지",
+      "kind": "sector",
+      "level": "B",
+      "market_group": "OIL_AND_GAS (2)",
+      "market_perimeters": {
+        "TBRC": "석유·가스 상류·하류",
+        "SkyQuest": "석유·석유화학·윤활유 및 상중하류",
+        "Precedence": "미선정"
+      },
+      "scope_reason": "세계 석유·가스 중첩되나 석유화학·윤활유 포함 여부 불일치 가능.",
+      "next_action": "동일 연도 업스트림·다운스트림 사업 범위 대조",
+      "mean_eligible": false,
+      "publisher_rows": [
+        {
+          "publisher": "TBRC",
+          "url": "https://www.thebusinessresearchcompany.com/report/oil-and-gas-global-market-report",
+          "reported_cagr_pct": 5.4,
+          "period": "2026-2030",
+          "source_status": "CONSISTENT",
+          "source_verified_r63": true
+        },
+        {
+          "publisher": "SkyQuest",
+          "url": "https://www.skyquestt.com/report/oil-and-gas-market",
+          "reported_cagr_pct": 4.7,
+          "period": "2026-2033",
+          "source_status": "GLOBAL_LITERAL_CONFIRMED",
+          "source_verified_r63": true
+        },
+        {
+          "publisher": "Precedence",
+          "url": null,
+          "reported_cagr_pct": null,
+          "period": null,
+          "source_status": "OFFICIAL_REPORT_NOT_SELECTED",
+          "source_verified_r63": false
+        }
+      ]
+    },
+    {
+      "topic_index": 10,
+      "name": "필수소비재",
+      "kind": "sector",
+      "level": "C",
+      "market_group": "STAPLE_FOOD vs FMCG",
+      "market_perimeters": {
+        "TBRC": "기초 식품시장",
+        "SkyQuest": "FMCG 식음료·퍼스널케어·잡화",
+        "Precedence": "미선정"
+      },
+      "scope_reason": "식품만 vs 광범위 생활소비재로 분모가 다름.",
+      "next_action": "필수소비재 대표 공통 시장 공식 출처 2개 확보",
+      "mean_eligible": false,
+      "publisher_rows": [
+        {
+          "publisher": "TBRC",
+          "url": "https://www.thebusinessresearchcompany.com/report/staple-food-global-market-report",
+          "reported_cagr_pct": 6.1,
+          "period": "2026-2030",
+          "source_status": "RESOLVED_HISTORIC_RATE_MISLABEL",
+          "source_verified_r63": true
+        },
+        {
+          "publisher": "SkyQuest",
+          "url": "https://www.skyquestt.com/report/fmcg-market",
+          "reported_cagr_pct": 3.8,
+          "period": "2026-2033",
+          "source_status": "GLOBAL_LITERAL_CONFIRMED",
+          "source_verified_r63": true
+        },
+        {
+          "publisher": "Precedence",
+          "url": null,
+          "reported_cagr_pct": null,
+          "period": null,
+          "source_status": "OFFICIAL_REPORT_NOT_SELECTED",
+          "source_verified_r63": false
+        }
+      ]
+    },
+    {
+      "topic_index": 11,
+      "name": "부동산",
+      "kind": "sector",
+      "level": "B",
+      "market_group": "REAL_ESTATE_BROAD (3)",
+      "market_perimeters": {
+        "TBRC": "부동산 임대·중개업",
+        "SkyQuest": "주거·상업 매매 및 임대",
+        "Precedence": "포괄적 부동산시장"
+      },
+      "scope_reason": "시장명은 같지만 거래/임대/중개 수익 구성에 차이가 있음.",
+      "next_action": "총거래액·임대매출·부동산서비스 수익 분리",
+      "mean_eligible": false,
+      "publisher_rows": [
+        {
+          "publisher": "TBRC",
+          "url": "https://www.thebusinessresearchcompany.com/report/real-estate-global-market-report",
+          "reported_cagr_pct": 7.2,
+          "period": "2026-2030",
+          "source_status": "RESOLVED_HISTORIC_RATE_MISLABEL",
+          "source_verified_r63": true
+        },
+        {
+          "publisher": "SkyQuest",
+          "url": "https://www.skyquestt.com/report/real-estate-market",
+          "reported_cagr_pct": 5.5,
+          "period": "2026-2033",
+          "source_status": "GLOBAL_LITERAL_CONFIRMED",
+          "source_verified_r63": true
+        },
+        {
+          "publisher": "Precedence",
+          "url": "https://www.precedenceresearch.com/real-estate-market",
+          "reported_cagr_pct": 5.47,
+          "period": "2026-2035",
+          "source_status": "GLOBAL_LITERAL_CONFIRMED",
+          "source_verified_r63": true
+        }
+      ]
+    },
+    {
+      "topic_index": 12,
+      "name": "로봇·자동화",
+      "kind": "theme",
+      "level": "B",
+      "market_group": "ROBOTICS_CORE (2)",
+      "market_perimeters": {
+        "TBRC": "로봇과 자동화기술 포괄",
+        "SkyQuest": "산업용 로봇 중심",
+        "Precedence": "산업로봇·협동로봇·전문서비스로봇"
+      },
+      "scope_reason": "로봇 중심 후보는 있으나 서비스 로봇 포함 여부가 다름.",
+      "next_action": "산업·서비스·소프트웨어별 시장 매출 경계 확인",
+      "mean_eligible": false,
+      "publisher_rows": [
+        {
+          "publisher": "TBRC",
+          "url": "https://www.thebusinessresearchcompany.com/report/robotics-and-automation-market-global-report",
+          "reported_cagr_pct": 21,
+          "period": "2026-2030",
+          "source_status": "CONSISTENT",
+          "source_verified_r63": true
+        },
+        {
+          "publisher": "SkyQuest",
+          "url": "https://www.skyquestt.com/report/robotics-market",
+          "reported_cagr_pct": 17,
+          "period": "2026-2033",
+          "source_status": "GLOBAL_LITERAL_CONFIRMED",
+          "source_verified_r63": true
+        },
+        {
+          "publisher": "Precedence",
+          "url": "https://www.precedenceresearch.com/robotics-technology-market",
+          "reported_cagr_pct": 14.4,
+          "period": "2026-2035",
+          "source_status": "GLOBAL_LITERAL_CONFIRMED",
+          "source_verified_r63": true
+        }
+      ]
+    },
+    {
+      "topic_index": 13,
+      "name": "클라우드·SaaS",
+      "kind": "theme",
+      "level": "A",
+      "market_group": "CLOUD_COMPUTING (3)",
+      "market_perimeters": {
+        "TBRC": "IaaS·PaaS·SaaS 클라우드",
+        "SkyQuest": "클라우드 배치·서비스",
+        "Precedence": "클라우드 플랫폼·서비스"
+      },
+      "scope_reason": "3기관 클라우드 컴퓨팅 범위 중첩이 강함. 단 독립 SaaS 전체 성장률로 해석 금지.",
+      "next_action": "IaaS/PaaS/SaaS 포함 및 이중계상 여부 점검",
+      "mean_eligible": false,
+      "publisher_rows": [
+        {
+          "publisher": "TBRC",
+          "url": "https://www.thebusinessresearchcompany.com/report/cloud-computing-global-market-report",
+          "reported_cagr_pct": 15.6,
+          "period": "2026-2030",
+          "source_status": "RESOLVED_HISTORIC_RATE_MISLABEL",
+          "source_verified_r63": true
+        },
+        {
+          "publisher": "SkyQuest",
+          "url": "https://www.skyquestt.com/report/cloud-computing-market",
+          "reported_cagr_pct": 19.51,
+          "period": "2026-2033",
+          "source_status": "GLOBAL_LITERAL_CONFIRMED",
+          "source_verified_r63": true
+        },
+        {
+          "publisher": "Precedence",
+          "url": "https://www.precedenceresearch.com/cloud-computing-market",
+          "reported_cagr_pct": 20.61,
+          "period": "2026-2035",
+          "source_status": "GLOBAL_LITERAL_CONFIRMED",
+          "source_verified_r63": true
+        }
+      ]
+    },
+    {
+      "topic_index": 14,
+      "name": "자율주행",
+      "kind": "theme",
+      "level": "B",
+      "market_group": "AUTONOMOUS_VEHICLES (3)",
+      "market_perimeters": {
+        "TBRC": "자율주행 차량시장",
+        "SkyQuest": "운전자 보조 레벨1·레벨2도 포함",
+        "Precedence": "자율주행 차량·시스템"
+      },
+      "scope_reason": "완전자율주행과 운전자 보조 시스템 경계가 다를 수 있음.",
+      "next_action": "SAE 자율화 단계 포함 범위 비교",
+      "mean_eligible": false,
+      "publisher_rows": [
+        {
+          "publisher": "TBRC",
+          "url": "https://www.thebusinessresearchcompany.com/report/autonomous-vehicle-global-market-report",
+          "reported_cagr_pct": 28.1,
+          "period": "2026-2030",
+          "source_status": "CONSISTENT",
+          "source_verified_r63": true
+        },
+        {
+          "publisher": "SkyQuest",
+          "url": "https://www.skyquestt.com/report/autonomous-vehicles-market",
+          "reported_cagr_pct": 29.7,
+          "period": "2026-2033",
+          "source_status": "GLOBAL_LITERAL_CONFIRMED",
+          "source_verified_r63": true
+        },
+        {
+          "publisher": "Precedence",
+          "url": "https://www.precedenceresearch.com/autonomous-vehicle-market",
+          "reported_cagr_pct": 34.84,
+          "period": "2026-2035",
+          "source_status": "GLOBAL_LITERAL_CONFIRMED",
+          "source_verified_r63": true
+        }
+      ]
+    },
+    {
+      "topic_index": 15,
+      "name": "원전·SMR",
+      "kind": "theme",
+      "level": "C",
+      "market_group": "NUCLEAR_REACTOR / CONSTRUCTION / POWER",
+      "market_perimeters": {
+        "TBRC": "원자로 제품시장",
+        "SkyQuest": "원자로 건설시장",
+        "Precedence": "원자력 발전·SMR 포함"
+      },
+      "scope_reason": "원자로 제품, 건설, 발전사업의 분모가 모두 다름.",
+      "next_action": "원전·SMR 하위시장 정의를 먼저 고정하고 신규 대등 출처 확보",
+      "mean_eligible": false,
+      "publisher_rows": [
+        {
+          "publisher": "TBRC",
+          "url": "https://www.thebusinessresearchcompany.com/report/nuclear-reactor-global-market-report",
+          "reported_cagr_pct": 5.5,
+          "period": "2026-2030",
+          "source_status": "CONSISTENT",
+          "source_verified_r63": true
+        },
+        {
+          "publisher": "SkyQuest",
+          "url": "https://www.skyquestt.com/report/nuclear-reactor-construction-market",
+          "reported_cagr_pct": 1.8,
+          "period": "2026-2033",
+          "source_status": "GLOBAL_LITERAL_CONFIRMED",
+          "source_verified_r63": true
+        },
+        {
+          "publisher": "Precedence",
+          "url": "https://www.precedenceresearch.com/nuclear-power-market",
+          "reported_cagr_pct": 1.62,
+          "period": "2026-2035",
+          "source_status": "GLOBAL_LITERAL_CONFIRMED",
+          "source_verified_r63": true
+        }
+      ]
+    },
+    {
+      "topic_index": 16,
+      "name": "방산",
+      "kind": "theme",
+      "level": "B",
+      "market_group": "DEFENSE_ELECTRONICS (2)",
+      "market_perimeters": {
+        "TBRC": "방산 장비·지원 서비스 전체",
+        "SkyQuest": "항공·해양 방산전자 중심",
+        "Precedence": "항공·우주·육상·해양 방산전자"
+      },
+      "scope_reason": "방산전자 중심 2출처가 있으나 플랫폼 포괄 범위 차이.",
+      "next_action": "육상·우주 장비 포함 및 전체 방산과 별도 표시",
+      "mean_eligible": false,
+      "publisher_rows": [
+        {
+          "publisher": "TBRC",
+          "url": "https://www.thebusinessresearchcompany.com/report/defense-global-market-report",
+          "reported_cagr_pct": 8,
+          "period": "2026-2030",
+          "source_status": "RESOLVED_HISTORIC_RATE_MISLABEL",
+          "source_verified_r63": true
+        },
+        {
+          "publisher": "SkyQuest",
+          "url": "https://www.skyquestt.com/report/defense-electronics-market",
+          "reported_cagr_pct": 5,
+          "period": "2026-2033",
+          "source_status": "GLOBAL_LITERAL_CONFIRMED",
+          "source_verified_r63": true
+        },
+        {
+          "publisher": "Precedence",
+          "url": "https://www.precedenceresearch.com/defense-electronics-market",
+          "reported_cagr_pct": 5.03,
+          "period": "2026-2035",
+          "source_status": "GLOBAL_LITERAL_CONFIRMED",
+          "source_verified_r63": true
+        }
+      ]
+    },
+    {
+      "topic_index": 17,
+      "name": "핀테크",
+      "kind": "theme",
+      "level": "A",
+      "market_group": "FINTECH_BLOCKCHAIN (2)",
+      "market_perimeters": {
+        "TBRC": "블록체인 금융 솔루션",
+        "SkyQuest": "핀테크 블록체인 소프트웨어/인프라",
+        "Precedence": "동명칭·기간 및 시장규모 대규모 충돌"
+      },
+      "scope_reason": "TBRC·SkyQuest 둘은 블록체인 금융 하위시장 후보. Precedence 값은 별도 검증 필요.",
+      "next_action": "2026 시장규모 Precedence/TBRC 약106.81배 차이 확인 전 제외",
+      "mean_eligible": false,
+      "publisher_rows": [
+        {
+          "publisher": "TBRC",
+          "url": "https://www.thebusinessresearchcompany.com/report/fintech-blockchain-global-market-report",
+          "reported_cagr_pct": 42.3,
+          "period": "2026-2030",
+          "source_status": "RESOLVED_HISTORIC_RATE_MISLABEL",
+          "source_verified_r63": true
+        },
+        {
+          "publisher": "SkyQuest",
+          "url": "https://www.skyquestt.com/report/fintech-blockchain-market",
+          "reported_cagr_pct": 44.4,
+          "period": "2026-2033",
+          "source_status": "REPORT_REGION_GLOBAL_CAGR_CONFIRMED",
+          "source_verified_r63": true
+        },
+        {
+          "publisher": "Precedence",
+          "url": "https://www.precedenceresearch.com/fintech-blockchain-market",
+          "reported_cagr_pct": null,
+          "period": null,
+          "source_status": "GLOBAL_RATE_CONFIRMED_PERIOD_CONFLICT",
+          "source_verified_r63": false
+        }
+      ]
+    },
+    {
+      "topic_index": 18,
+      "name": "사이버보안",
+      "kind": "theme",
+      "level": "A",
+      "market_group": "CYBERSECURITY (3)",
+      "market_perimeters": {
+        "TBRC": "사이버보안 전체시장",
+        "SkyQuest": "기업·네트워크 등 사이버보안",
+        "Precedence": "사이버보안 시장"
+      },
+      "scope_reason": "3개 공식 보고서가 글로벌 사이버보안 중심 시장을 제시.",
+      "next_action": "제품/서비스·관리보안 이중계상 점검",
+      "mean_eligible": false,
+      "publisher_rows": [
+        {
+          "publisher": "TBRC",
+          "url": "https://www.thebusinessresearchcompany.com/report/cybersecurity-global-market-report",
+          "reported_cagr_pct": 11.8,
+          "period": "2026-2030",
+          "source_status": "CONSISTENT",
+          "source_verified_r63": true
+        },
+        {
+          "publisher": "SkyQuest",
+          "url": "https://www.skyquestt.com/report/cyber-security-market",
+          "reported_cagr_pct": 15.71,
+          "period": "2026-2033",
+          "source_status": "GLOBAL_LITERAL_CONFIRMED",
+          "source_verified_r63": true
+        },
+        {
+          "publisher": "Precedence",
+          "url": "https://www.precedenceresearch.com/cyber-security-market",
+          "reported_cagr_pct": 12.37,
+          "period": "2026-2035",
+          "source_status": "GLOBAL_LITERAL_CONFIRMED",
+          "source_verified_r63": true
+        }
+      ]
+    },
+    {
+      "topic_index": 19,
+      "name": "바이오·신약",
+      "kind": "theme",
+      "level": "B",
+      "market_group": "BIOTECH_TOTAL (2)",
+      "market_perimeters": {
+        "TBRC": "바이오기술 서비스",
+        "SkyQuest": "의료·농업 바이오기술",
+        "Precedence": "바이오기술 시장"
+      },
+      "scope_reason": "서비스시장과 기술산업 시장이 분리되며 신약시장 범위까지 보장하지 않음.",
+      "next_action": "바이오 서비스/기술/신약개발 분리",
+      "mean_eligible": false,
+      "publisher_rows": [
+        {
+          "publisher": "TBRC",
+          "url": "https://www.thebusinessresearchcompany.com/report/biotechnology-services-global-market-report",
+          "reported_cagr_pct": 12.4,
+          "period": "2026-2030",
+          "source_status": "RESOLVED_HISTORIC_RATE_MISLABEL",
+          "source_verified_r63": true
+        },
+        {
+          "publisher": "SkyQuest",
+          "url": "https://www.skyquestt.com/report/biotechnology-market",
+          "reported_cagr_pct": 14.96,
+          "period": "2026-2033",
+          "source_status": "GLOBAL_LITERAL_CONFIRMED",
+          "source_verified_r63": true
+        },
+        {
+          "publisher": "Precedence",
+          "url": "https://www.precedenceresearch.com/biotechnology-market",
+          "reported_cagr_pct": 13.61,
+          "period": "2026-2035",
+          "source_status": "GLOBAL_LITERAL_CONFIRMED",
+          "source_verified_r63": true
+        }
+      ]
+    },
+    {
+      "topic_index": 20,
+      "name": "데이터센터·전력",
+      "kind": "theme",
+      "level": "A",
+      "market_group": "DATA_CENTER (3)",
+      "market_perimeters": {
+        "TBRC": "코로케이션·하이퍼스케일·엣지",
+        "SkyQuest": "데이터센터 인프라/서비스",
+        "Precedence": "코로케이션·하이퍼스케일·엣지"
+      },
+      "scope_reason": "3개 기관이 데이터센터 시장을 기술. 전력사업 매출은 별도.",
+      "next_action": "센터 건설/장비/운영수익 포함 범위 및 시장가치 확인",
+      "mean_eligible": false,
+      "publisher_rows": [
+        {
+          "publisher": "TBRC",
+          "url": "https://www.thebusinessresearchcompany.com/report/data-center-global-market-report",
+          "reported_cagr_pct": 9.2,
+          "period": "2026-2030",
+          "source_status": "RESOLVED_HISTORIC_RATE_MISLABEL",
+          "source_verified_r63": true
+        },
+        {
+          "publisher": "SkyQuest",
+          "url": "https://www.skyquestt.com/report/data-center-market",
+          "reported_cagr_pct": 11.51,
+          "period": "2026-2033",
+          "source_status": "SKYQUEST_GLOBAL_METADATA_OPENING_VERIFIED",
+          "source_verified_r63": true
+        },
+        {
+          "publisher": "Precedence",
+          "url": "https://www.precedenceresearch.com/data-center-market",
+          "reported_cagr_pct": 11.06,
+          "period": "2026-2035",
+          "source_status": "GLOBAL_LITERAL_CONFIRMED",
+          "source_verified_r63": true
+        }
+      ]
+    },
+    {
+      "topic_index": 21,
+      "name": "우주·위성",
+      "kind": "theme",
+      "level": "B",
+      "market_group": "SATELLITES (2 provisional)",
+      "market_perimeters": {
+        "TBRC": "위성제조·규모·궤도·용도",
+        "SkyQuest": "위성 규격·궤도·용도",
+        "Precedence": "위성통신·항법·관측·서비스 포괄 가능"
+      },
+      "scope_reason": "TBRC/SkyQuest 하위분류 유사. Precedence 2026 규모는 TBRC 대비 14.79배로 다른 시장가치 정의 의심.",
+      "next_action": "Precedence 대형 수치의 포함 사업/매출과 SkyQuest·TBRC 범위 검증",
+      "mean_eligible": false,
+      "publisher_rows": [
+        {
+          "publisher": "TBRC",
+          "url": "https://www.thebusinessresearchcompany.com/report/satellites-global-market-report",
+          "reported_cagr_pct": 5.5,
+          "period": "2026-2030",
+          "source_status": "CONSISTENT",
+          "source_verified_r63": true
+        },
+        {
+          "publisher": "SkyQuest",
+          "url": "https://www.skyquestt.com/report/satellite-market",
+          "reported_cagr_pct": 12.7,
+          "period": "2026-2033",
+          "source_status": "GLOBAL_LITERAL_CONFIRMED",
+          "source_verified_r63": true
+        },
+        {
+          "publisher": "Precedence",
+          "url": "https://www.precedenceresearch.com/satellite-market",
+          "reported_cagr_pct": 7.97,
+          "period": "2026-2035",
+          "source_status": "GLOBAL_MAIN_VERIFIED_US_SECTION_EDITORIAL_CONFLICT",
+          "source_verified_r63": true
+        }
+      ]
+    }
+  ],
+  "quantitative_alerts": [
+    {
+      "topic_index": 8,
+      "publisher": "Precedence",
+      "issue": "EDITORIAL_RATE_VARIANT",
+      "values": "본문/표/FAQ 6.21%; 하이라이트 6.27%",
+      "source": "https://www.precedenceresearch.com/advanced-materials-market",
+      "calculation": "2026년 78.25B -> 2035년 134.49B / 9년 = 6.2023%",
+      "action": "6.21% 원문 유지·불일치 경고·독립 정정 확인. 6.27%로 대체 금지."
+    },
+    {
+      "topic_index": 7,
+      "publisher": "Precedence",
+      "issue": "GLOBAL_RATE_AND_YEAR_DISCREPANCY",
+      "values": "5.84% vs 5.99%; 규모 2025 14.32T, 2026 15.37T, 2035 25.26T",
+      "source": "https://www.precedenceresearch.com/hospital-services-market",
+      "calculation": "2025->2035 10년=5.840%; 2026->2035 9년=5.675%",
+      "action": "성장률과 표기된 기간 동시 불일치. 기존 NULL 유지."
+    },
+    {
+      "topic_index": 17,
+      "publisher": "Precedence",
+      "issue": "SCALE_AND_PERIOD_CONFLICT",
+      "values": "2026 Precedence 1.02T vs 2026 TBRC 9.55B; Precedence 46.31%에 2025-2034/2026-2034 병기",
+      "source": "https://www.precedenceresearch.com/fintech-blockchain-market",
+      "compare_source": "https://www.thebusinessresearchcompany.com/report/fintech-blockchain-global-market-report",
+      "calculation": "1020 / 9.55 = 106.81배",
+      "action": "원문 소스 충돌 및 모집단 차이 확인 전 NULL 유지·평균 제외."
+    },
+    {
+      "topic_index": 21,
+      "publisher": "Precedence",
+      "issue": "MARKET_SIZE_SCOPE_OUTLIER",
+      "values": "2026 Precedence 391.99B vs 2026 TBRC 26.51B",
+      "source": "https://www.precedenceresearch.com/satellite-market",
+      "compare_source": "https://www.thebusinessresearchcompany.com/report/satellites-global-market-report",
+      "calculation": "391.99 / 26.51 = 14.79배",
+      "action": "보고서 글로벌 위성 CAGR 7.97% 자체 확인과 비교평균 편입은 별개. 시장 가치 범위 해소 전 편입 보류."
+    }
+  ],
+  "operational_mutations": []
+}
