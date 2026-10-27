@@ -3,7 +3,8 @@ import assert from 'node:assert/strict';
 import {test} from 'node:test';
 import {DatabaseSync} from 'node:sqlite';
 import {normalizeSeries,buildPlans,insertPlans} from './EARNINGS_R3C_BLS_STORE_ONCE.mjs';
-import {buildPreview,reportLines,SCHEMA_VERSION} from './EARNINGS_R4_C_READ_MODEL_PREVIEW_READONLY.mjs';
+import {buildPreview,buildServiceSourcePreview,reportLines,SCHEMA_VERSION}
+  from './EARNINGS_R4_C_READ_MODEL_PREVIEW_READONLY.mjs';
 import {validateEarningsCompanionPayload} from '../../worker/earnings-companion-c-r4.mjs';
 import {buildEarningsCostIndicatorView} from '../../app/earnings-recession/earnings-cost-indicator-list.mjs';
 
@@ -78,6 +79,29 @@ function withServiceDb(options,fn) {
     '2026-10-26T18:00:00.000Z','c'.repeat(64)));
   try{return fn(db);}finally{db.close();}
 }
+
+test('separate service D1 checkpoint uses service first_seen and never modifies baseline identity',()=>{
+  const baseline=(()=>{const db=seeded();try{return buildPreview(db,{generatedAt:GENERATED}).payload;}finally{db.close();}})();
+  withServiceDb({},db=>{
+    const core=buildPreview(db,{generatedAt:GENERATED,includeServices:false});
+    const service=buildServiceSourcePreview(db,{generatedAt:GENERATED});
+    assert.deepEqual(core.payload,baseline);
+    assert.equal(core.diagnostics.snapshotsChecked,3);
+    assert.equal(service.payload.rows.length,2);
+    assert.deepEqual(service.payload.rows.map(row=>row.seriesId),['WPSFD42','WPSFD42']);
+    assert.equal(service.payload.sourceStoredAt,Date.parse('2026-10-26T18:00:00.000Z'));
+    assert.notEqual(service.payload.sourceStoredAt,core.payload.sourceStoredAt);
+    assert.match(service.payload.sourceVersion,/^[a-f0-9]{64}$/);
+    assert.notEqual(service.payload.sourceVersion,core.payload.sourceVersion);
+    assert.deepEqual(service.payload.observedThroughBySeries,{WPSFD42:'2026-09'});
+    assert.equal(service.diagnostics.snapshotsChecked,1);
+    assert.equal(service.diagnostics.sourcePartition,'WPSFD42_ONLY_NO_BASE_REWRITE');
+    assert.equal(validateEarningsCompanionPayload(service.payload,{now:Date.parse(GENERATED)}),
+      service.payload);
+  });
+  withDb({},db=>assert.throws(()=>buildServiceSourcePreview(db,{generatedAt:GENERATED}),
+    /R4_SERVICE_SOURCE_NOT_STORED/));
+});
 
 test('optional WPSFD42 adds two verified service indicators without changing five existing rows',()=>{
   const baseline=(()=>{const db=seeded();try{return buildPreview(db,{generatedAt:GENERATED}).payload;}finally{db.close();}})();
