@@ -4,6 +4,7 @@ import {test} from 'node:test';
 import {DatabaseSync} from 'node:sqlite';
 import crypto from 'node:crypto';
 import zlib from 'node:zlib';
+import fs from 'node:fs';
 import {makeQfrPlan,checkQfrSchema,appendQfrPlan,parseQfrMode,
   verifyExpectedQfrSource,PROVIDER,DATASET}
   from './EARNINGS_CENSUS_QFR_R2_SQLITE_APPEND.mjs';
@@ -65,6 +66,16 @@ const createDb=({snapshotCheck=false}={})=>{
 };
 const count=(db,table)=>db.prepare(`SELECT count(*) AS n FROM ${table} WHERE provider=? AND dataset=?`)
   .get(PROVIDER,DATASET).n;
+
+test('standalone PC CMD checks its R1 parser dependency and writes a diagnostic TXT before Node',()=>{
+  const cmd=fs.readFileSync(new URL('./EARNINGS_CENSUS_QFR_R2_SQLITE_APPLY_ONCE.cmd',import.meta.url),'utf8');
+  const store=fs.readFileSync(new URL('./EARNINGS_CENSUS_QFR_R2_SQLITE_APPEND.mjs',import.meta.url),'utf8');
+  assert.match(store,/from '\.\/EARNINGS_CENSUS_QFR_R1_READONLY\.mjs'/);
+  assert.match(cmd,/if not exist "%~dp0EARNINGS_CENSUS_QFR_R1_READONLY\.mjs"/);
+  assert.match(cmd,/if not exist "%~dp0EARNINGS_CENSUS_QFR_R2_SQLITE_APPEND\.mjs"/);
+  assert.match(cmd,/EARNINGS_CENSUS_QFR_R2_STORE_RESULT_SETUP_/);
+  assert.match(cmd,/RESULT=FAIL_NO_COMMIT/);
+});
 
 test('approved apply requires exact source hash and rejects later official ZIP revision',()=>{
   const initial=makeQfrPlan(archive(),TIME),revised=makeQfrPlan(archive({latestSales:1500}),TIME);
