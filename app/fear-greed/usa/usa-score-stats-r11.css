@@ -33,7 +33,7 @@
   margin-top: 3px;
   font-size: 11px;
 }
-.zg-fg-us .usa-target-card.fg-shared-shell .cnn-spectrum-center > .cnn-score-inline-day {
+.zg-fg-us .usa-target-card.fg-shared-shell .cnn-score-orb-hero .cnn-spectrum-center > .cnn-score-inline-day {
   display: inline-flex;
   justify-content: center;
   align-items: center;
@@ -44,6 +44,14 @@
   font-weight: 700;
   line-height: 1.2;
   white-space: nowrap;
+}
+.zg-fg-us .usa-target-card.fg-shared-shell .cnn-score-orb-hero .cnn-score-inline-day > span {
+  margin: 0;
+  color: var(--zg-text-meta);
+  font-size: 9px;
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: 0;
 }
 .zg-fg-us .usa-target-card .cnn-score-inline-day strong {
   color: #d3e4f0;
