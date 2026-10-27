@@ -69,6 +69,14 @@
 
 **바로 다음 단계:** (1) 사용자가 승인한 Windows 원장·D1 수동 게시 경로에서 BEA 단위이익 `--apply --confirm-bea-unit-d1-write` 게이트를 충족할 때만 게시 및 readback, (2) 새 UI branch 결과를 안전한 빌드/모바일 검증 후 승인된 main 배포, (3) 신규 유효 정보성 지표 소스별로 같은 수직 경로 확장. BEA가 HOLD인 동안 BLS 등 통과한 지표의 UI 개선을 중단하지 않는다.
 
+### 2026-10-27 BEA 미게시 원인 확인 및 BLS 매핑 검증 추가
+
+- BEA 단위이익은 **운영 API route 자체의 404/코드 누락이 아님**. 최신 `main`과 전용 브랜치의 `scripts/pc-writer/EARNINGS_BEA_UNIT_PROFIT_R1_ONCE.mjs`, `EARNINGS_R4_C_D1_DUAL_SOURCE_GATES.mjs`, `worker/earnings-bea-unit-profit-r1.mjs` GitHub blob SHA가 동일하고, `main`의 `worker/candidate-r52.ts`에도 route가 존재한다. 운영 공개 GET은 503 `STORED_PROJECTION_PENDING`으로 **게시된 snapshot이 없다는 단계**까지 구분한다. 공개 GET을 D1 직접 SELECT 증거로 대체하지 않는다.
+- 이미 `scripts/pc-writer/EARNINGS_BEA_UNIT_PROFIT_R1_APPLY.cmd`가 존재하므로 불필요한 새 실행기를 만들지 않는다. PC에서 실행하려면 승인된 publisher checkout(main clean + origin/main 일치), `ZGMINI_EARNINGS_C_OPERATIONAL_ROOT`, 운영 승인 SHA/config, 실제 PC 런타임 및 write 확인이 필요하다. 여기서 **PC 작업을 실행하거나 D1에 쓰지 않았으며, 게이트를 우회해서는 안 된다.**
+- BLS 페이지 동적 목록은 `indicatorId`만 일치시켜 데이터를 배정하면 공급 시리즈를 바꿔치기해 오표시할 수 있다. 등록된 5개 ID별 `seriesId/kind/unit` 일치 검사, 허용 단위·변동 단위·출처·범주 검사 추가. 로컬 테스트 **7/7**, 실제 공개 BLS API와 5/5 호환 검사 PASS. 강화 커밋 `4878baf1c2645248a76c9e38552804c971d48b3a`, 테스트 커밋 `6c3eaf374e2764637c4afd5efd3db55e73668266`.
+- **확장 시 남은 기술 경계:** UI 매핑은 신규 검증 BLS `rows[]`를 표시하지만, 현재 `worker/earnings-companion-c-r4.mjs`의 원천 `SERIES` allowlist는 `WPSFD4/WPSFD41/PRS85006111`의 3개뿐이다. 새 지표가 자동으로 수집·저장·D1 게시되는 것은 아니다. 추가 시 공급자 계약/PC 저장/Worker 검증 allowlist/게시/readback을 한 소스씩 통과시켜야 한다.
+- Census QFR은 공식 API 데이터셋이 있으나 공식 예제에 **API 키 필수**라고 명시돼 있다. 공개 자료·권한 검증 후 후보로 유지하고 임의 무키 호출이나 제공받지 않은 키를 추정하지 않는다.
+
 ### 계산·표시에서 체득한 구체적 규칙
 
 - `WPSFD4`와 `WPSFD41`은 월간 **계절조정 PPI 지수**다. 파생 YoY는 `100 × (index[t] / index[t−12] − 1)`; 비교월이 없거나 분모가 유효하지 않으면 `null`. 실측 13개월 UI 이력에서 각 YoY 값은 **9/13**만 유효했고 나머지 4개는 억지로 연결하지 않았다.
