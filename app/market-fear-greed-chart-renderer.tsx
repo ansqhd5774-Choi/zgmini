@@ -108,7 +108,8 @@ export function MarketFearGreedChart({
       <YAxis orientation={mobileAxisRight?"right":"left"}
         hide={compact}
         domain={[0, yAxisMax]}
-        ticks={compact ? [0, yAxisMax / 2, yAxisMax] : [0, 25, 50, 75, 100]}
+        ticks={[0, 25, 50, 75, 100]}
+        allowDataOverflow={compact}
         axisLine={false}
         tickLine={false}
         width={28}
