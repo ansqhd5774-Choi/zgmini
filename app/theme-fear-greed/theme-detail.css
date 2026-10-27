@@ -60,3 +60,8 @@
  .zg-theme-detail .zg-sfg-rank-row{grid-template-columns:14px 100px minmax(24px,1fr) 31px 51px 43px;column-gap:2px}
  .zg-theme-detail .zg-sfg-mobile-rank-head{grid-template-columns:14px 100px minmax(24px,1fr) 31px 51px 43px;column-gap:2px}
 }
+
+/* Theme-only comparison tooltip: missing observations remain visibly unscored. */
+.zg-theme-detail .zg-tfg-compare-tooltip .zg-tfg-tooltip-missing{opacity:.85}
+.zg-theme-detail .zg-tfg-compare-tooltip .zg-tfg-tooltip-missing b{color:#9fb1c5;display:inline-flex;gap:5px;align-items:baseline;white-space:nowrap}
+.zg-theme-detail .zg-tfg-compare-tooltip .zg-tfg-tooltip-missing small{color:#92a8b9;font-size:10px;font-weight:500}
