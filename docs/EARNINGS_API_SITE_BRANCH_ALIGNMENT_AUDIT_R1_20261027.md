@@ -15,6 +15,14 @@
 5. 36개 회수 파일의 최종 blob SHA를 다시 대조해 **36/36 일치**를 확인했다. 이 검증은 GitHub 파일 무결성이며 Windows PC 실행이나 전체 빌드 PASS를 뜻하지 않는다.
 6. 이전 임시 브랜치 3개는 해당 PR이 이미 `main`에 병합됐으나 **GitHub 삭제 권한/인증 제약으로 아직 삭제되지 않았다**. 전용 브랜치·다른 작업자 브랜치에 대한 삭제는 하지 않는다.
 
+### 병합 이력 최종 마감(2026-10-27)
+
+- 원래 계획 브랜치 `codex/earnings-api-site-integration-plan-r1-20261026`: 비파괴적 자료 회수 후 병합 커밋 `3c79cc420eea98d742c3fb738a7c85639bfa12d1`에서 부모 이력으로 연결했다. 이미 최신인 `worker/candidate-r52.ts`는 보존했다.
+- 관련 임시 BEA 작업 브랜치 3개(`codex/earnings-bea-unit-profit-r1-20261027`, `codex/earnings-bea-unit-profit-cmd-diag-r2-20261027`, `codex/earnings-unit-portable-preflight-r3-20261027`): 공통 파일을 검사하고 현재 R3 preflight가 동일 SHA임을 확인한 뒤 병합 커밋 `9ac5056438d64aa0b6b8af7d9563a238a51b7220`으로 부모 이력을 연결했다.
+- 병합 전후 **Git tree SHA `3950cf04ed68733bdae85160e1f57c2592a7efbe` 동일**. 이는 이력 정리 과정에 코드·문서 덮어쓰기 또는 파일 삭제가 없었다는 의미이며, 새 실행 검증을 의미하지 않는다.
+- GitHub 비교 결과 네 과거 브랜치 모두 전용 브랜치에 대한 `behind_by=0`, `status=ahead`로 **커밋 이력까지 병합 확인**했다. 원본 브랜치는 사용자가 직접 삭제할 예정이므로 삭제하지 않았다.
+- 이 문서 최종 갱신 자체는 위 병합 커밋 이후 전용 브랜치에 기록한다. 이후 작업 보고에서는 항상 실제 최신 HEAD를 기재한다.
+
 ## 2. 최초 계획과 현재 구현의 단계별 비교
 
 기준 계획: `docs/EARNINGS_RECESSION_COMPANION_API_SITE_INTEGRATION_PLAN_R1_20261026.md`.
