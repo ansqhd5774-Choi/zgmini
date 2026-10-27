@@ -6,7 +6,6 @@ import {createHash} from 'node:crypto';
 import {execFileSync} from 'node:child_process';
 import {fileURLToPath} from 'node:url';
 
-const EXPECTED_SOURCE='ee41bb295200d248efc683841e0f1ba0bc4779ee';
 const EXPECTED_PARSER_BLOB='f084e2a360b544257bb44a60b97875627c7ca371';
 const EXPECTED_CANDIDATE_SHA256='54c737218a40fec6482b469f7962fe5e8cd7c040705d58072396cffcdcb74c08';
 const safeSha=s=>typeof s==='string'&&/^[a-f0-9]{40}$/i.test(s)?s:null;
@@ -18,6 +17,10 @@ export function locate({projectRoot=String.raw`E:\ZGmini\projects`,dataRoot=proc
  const config=readJson(path.join(dataRoot,'config.json'));
  const writer=readJson(path.join(dataRoot,'local-writer-last-run.json'));
  const ledger=readJson(path.join(dataRoot,'local-publication-ledger.json'));
+ // The PC source is updated independently by other approved projects. For this
+ // read-only locator, trust only a valid config SHA corroborated by BOTH recent
+ // VERIFIED writer records and an identical, clean, locally checked-out HEAD.
+ const approved=safeSha(config?.source);
  let candidates=[],scanned=0,state='SCANNED';
  try{
   const entries=fs.readdirSync(projectRoot,{withFileTypes:true}).filter(x=>x.isDirectory()&&!x.isSymbolicLink()&&x.name!=='legacy').slice(0,256);
@@ -26,7 +29,7 @@ export function locate({projectRoot=String.raw`E:\ZGmini\projects`,dataRoot=proc
    if(!fs.existsSync(path.join(dir,'.git'))||!fs.existsSync(path.join(dir,'scripts','pc-writer','run-local.mjs')))continue;
    scanned++;
    const head=safeSha(gitCall(dir,['rev-parse','HEAD']));
-   if(head!==EXPECTED_SOURCE)continue;
+   if(!approved||head!==approved)continue;
    const parser=safeSha(gitCall(dir,['hash-object','lib/release-calendar.mjs']));
    const protectedDiff=gitCall(dir,['diff','--name-only','HEAD','--','lib','worker','scripts/pc-writer','package.json','package-lock.json']);
    candidates.push({id:fingerprint(dir),head,parserBlob:parser,
@@ -36,16 +39,16 @@ export function locate({projectRoot=String.raw`E:\ZGmini\projects`,dataRoot=proc
  let candidateHash=null;
  try{candidateHash=createHash('sha256').update(fs.readFileSync(candidatePath)).digest('hex');}catch{}
  let decision='READY_FOR_EXACT_WORKTREE_SELECTION_NO_CHANGES_MADE';
- if(!config||safeSha(config.source)!==EXPECTED_SOURCE)decision='APPROVED_SOURCE_DRIFT_STOP';
+ if(!approved)decision='APPROVED_SOURCE_UNREADABLE_STOP';
  else if(config.enabled!==true||config.collectionTarget!=='pc')decision='PC_CONTRACT_DRIFT_STOP';
- else if(writer?.status!=='VERIFIED'||writer?.mode!=='PUBLISH'||safeSha(writer.source)!==EXPECTED_SOURCE||ledger?.status!=='VERIFIED'||safeSha(ledger.source)!==EXPECTED_SOURCE)decision='RECENT_VERIFIED_WRITER_NOT_MATCHED_STOP';
+ else if(writer?.status!=='VERIFIED'||writer?.mode!=='PUBLISH'||safeSha(writer.source)!==approved||ledger?.status!=='VERIFIED'||safeSha(ledger.source)!==approved)decision='RECENT_VERIFIED_WRITER_NOT_MATCHED_STOP';
  else if(candidateHash!==EXPECTED_CANDIDATE_SHA256)decision='R11_BLS_CANDIDATE_MISMATCH_STOP';
  else if(state!=='SCANNED')decision='PROJECT_DIRECTORY_UNAVAILABLE_STOP';
  else if(candidates.length!==1)decision='APPROVED_SOURCE_WORKTREE_AMBIGUOUS_STOP';
  else if(!candidates[0].gitReadable||!candidates[0].protectedClean||candidates[0].parserBlob!==EXPECTED_PARSER_BLOB)decision='SOURCE_WORKTREE_DIRTY_OR_DRIFT_STOP';
  return {audit:'MARKET_CALENDAR_R11_PUBLISHER_LOCATOR',at:new Date().toISOString(),
   policy:'READ_ONLY_NO_GIT_WRITE_NO_DB_NO_CONFIG_NO_TASK_NO_COLLECTION_NO_PUBLISH',
-  expected:{approvedSource:EXPECTED_SOURCE,parserBlob:EXPECTED_PARSER_BLOB,candidateSha256:EXPECTED_CANDIDATE_SHA256},
+  expected:{parserBlob:EXPECTED_PARSER_BLOB,candidateSha256:EXPECTED_CANDIDATE_SHA256},
   config:{source:safeSha(config?.source),enabled:config?.enabled===true,collectionTarget:config?.collectionTarget==='pc'?'pc':'OTHER_OR_MISSING'},
   writer:{status:writer?.status==='VERIFIED'?'VERIFIED':'OTHER_OR_MISSING',source:safeSha(writer?.source),mode:writer?.mode==='PUBLISH'?'PUBLISH':'OTHER_OR_MISSING',at:typeof writer?.at==='string'?writer.at:null},
   ledger:{status:ledger?.status==='VERIFIED'?'VERIFIED':'OTHER_OR_MISSING',source:safeSha(ledger?.source),at:typeof ledger?.at==='string'?ledger.at:null},

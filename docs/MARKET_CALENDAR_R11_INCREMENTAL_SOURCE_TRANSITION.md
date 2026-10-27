@@ -2,7 +2,7 @@
 
 - 승인: 2026-10-27, 사용자 지시 `승인 하나쓱 차근차근 추가하면되`.
 - 대상 작업 브랜치: `codex/zgmini-gpt-workspace-20261025`만 사용. 다른 작업 브랜치/`main` 자동 변경 금지.
-- 기존 PC 승인 source (R10 실측): `ee41bb295200d248efc683841e0f1ba0bc4779ee`.
+- PC 승인 source의 역사적 R10 값: `ee41bb295200d248efc683841e0f1ba0bc4779ee`. 이후 운영 프로젝트에서 승인 source가 갱신되므로 해당 값을 현재 실행 SHA로 고정하지 않는다.
 - 기준 parser blob: `f084e2a360b544257bb44a60b97875627c7ca371` (`lib/release-calendar.mjs`).
 - 확대 최종 후보: 작업 브랜치 `lib/release-calendar.mjs` (BLS+BEA). **한꺼번에 운영 반영하지 않는다.**
 
@@ -35,6 +35,13 @@
 
 - `MARKET_CALENDAR_R11_PUBLISHER_LOCATOR.cmd`와 `scripts/pc-writer/market-calendar-r11-publisher-locator.mjs`, `staging/market-calendar/r11-bls/lib/release-calendar.mjs`를 같은 상대 디렉터리 구조로 두고 사용자 PC CMD에서 실행한다.
 - Desktop 폴더에 `MARKET_CALENDAR_R11_PUBLISHER_LOCATOR_RESULT.txt` 한 건을 생성한다. 실제 PC 경로, 계정, 키, 등록 작업 XML 원문은 로그에 포함하지 않는다.
-- R9/R10의 XML 참조 프로젝트를 다시 판정하지 않는다. 최신 PC 승인 source `ee41bb29`, 최근 `VERIFIED` 게시 writer/ledger의 source, E: 프로젝트 내 해당 HEAD를 가진 **정확히 한 개의 깨끗한 작업 트리**, 기존 parser blob과 R11-1 후보 파일 hash를 비교한다.
+- R9/R10의 XML 참조 프로젝트를 다시 판정하지 않는다. **실시간** PC 설정의 source와 최근 `VERIFIED` 게시 writer/ledger source가 동일한지, E: 프로젝트 내 해당 HEAD를 가진 **정확히 한 개의 깨끗한 작업 트리**인지, 기존 parser blob과 R11-1 후보 파일 hash가 정확한지만 비교한다.
 - `READY_FOR_EXACT_WORKTREE_SELECTION_NO_CHANGES_MADE`는 단일 source checkout을 찾았다는 뜻일 뿐 실제 프로세스 실행 디렉터리를 확정하거나 새 parser가 게시되었다는 뜻이 아니다. 어느 조건이든 모호하면 `*_STOP`이고 기존 운영 게시 상태를 변경하지 않는다.
 - Git pull/fetch/checkout/commit/reset/merge, config/DB/작업 등록, 수집/계산/게시/배포는 **절대 수행하지 않는다**. 결과를 보고 그 다음 단일 파일 승인 커밋/PC 배치 단계로 넘어간다.
+
+### R11 최초 결과와 R11B 수정
+
+- 사용자 PC R11(`2026-10-27T07:52:11.539Z`)은 config/source, 최근 writer, ledger가 모두 `e95805a368a6d0c4461f6de9410df4b8e59ea011`이고 최근 writer는 `VERIFIED/PUBLISH`(`2026-10-27T07:50:11.363Z`)로 기록했다. 후보 파서 SHA256도 정확히 일치했다.
+- 기존 R11 locator가 **과거** `ee41bb29`에 소스 SHA를 고정해 `APPROVED_SOURCE_DRIFT_STOP`을 반환했고, 검사한 Git 프로젝트 141개에서 일치 0건을 기록했다. 후자는 필터 자체가 `ee41bb29`로 잘못 고정됐기 때문이므로 실제 최신 source worktree가 0개라고 단정하지 않는다.
+- GitHub 확인: `e95805a3`는 `ee41bb29`의 **직계 자식**이고 변경 파일 6개는 Census 요청·진단 관련 파일이며, `lib/release-calendar.mjs` blob은 기존 `f084e2a3` 그대로이다. 기존 게시 정상과 BLS 단독 확장 목표는 유지한다.
+- R11B에서는 read-only locator가 PC 설정 source를 기준으로 **두 개의 VERIFIED 원장과 clean checkout HEAD의 동등성**을 확인하도록 수정했다. source SHA가 변했다고 자동으로 운영 승인을 갱신하지 않는다. 새 승인 커밋의 생성·PC 설치는 여전히 후속 단계다.

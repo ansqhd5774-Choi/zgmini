@@ -2,7 +2,7 @@
 setlocal EnableExtensions DisableDelayedExpansion
 set "NODE_BIN=E:\ZGmini\runtime\node.exe"
 set "SCRIPT=%~dp0scripts\pc-writer\market-calendar-r11-publisher-locator.mjs"
-set "RESULT=%~dp0MARKET_CALENDAR_R11_PUBLISHER_LOCATOR_RESULT.txt"
+set "RESULT=%~dp0MARKET_CALENDAR_R11B_PUBLISHER_LOCATOR_RESULT.txt"
 if not exist "%NODE_BIN%" set "NODE_BIN=node.exe"
 if not exist "%SCRIPT%" (
   echo SCRIPT_MISSING
