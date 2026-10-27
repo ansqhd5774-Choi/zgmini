@@ -18,7 +18,7 @@ function hasSocialTitle(head){
     && /<meta(?=[^>]*name="twitter:title")(?=[^>]*content="[^"]+")[^>]*>/i.test(head);
 }
 
-test("renders SEO metadata for all 34 public pages in the Workers runtime", async () => {
+test("renders SEO metadata for all 36 public pages in the Workers runtime", async () => {
   const serverRoot = path.resolve("dist/server");
   const modules = [];
   async function walk(dir) {
