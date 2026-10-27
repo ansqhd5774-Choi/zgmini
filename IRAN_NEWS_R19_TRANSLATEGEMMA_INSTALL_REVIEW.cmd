@@ -17,7 +17,7 @@ set "ZG_R19_OWN=0"
 echo R19 is preparing an offline translation quality check.
 echo The free local model download can take several minutes if not installed.
 echo Progress and the final Korean drafts are saved to:
-echo %ZG_R19_LOG%
+echo "%ZG_R19_LOG%"
 if exist "%ZG_R19_STAGE%" (
  >> "%ZG_R19_LOG%" echo STOP=R19_TEMP_DIRECTORY_ALREADY_EXISTS_AND_WAS_PRESERVED
  goto :failed_no_cleanup
