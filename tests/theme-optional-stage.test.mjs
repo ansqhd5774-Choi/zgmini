@@ -19,8 +19,9 @@ const fixtureFetch=async url=>{
 test('snapshot pins one GitHub commit and includes every imported dependency',async()=>{
   const snapshot=await fetchSnapshot({fetchImpl:fixtureFetch});
   assert.equal(snapshot.sha,sha);
-  assert.equal(snapshot.assets.length,40);
+  assert.equal(snapshot.assets.length,41);
   assert.ok(snapshot.assets.some(x=>x.path==='worker/theme-space-satellite-provisional-r1.mjs'));
+  assert.ok(snapshot.assets.some(x=>x.path==='worker/theme-data-center-power-provisional-r1.mjs'));
   assert.ok(snapshot.assets.some(x=>x.path==='worker/theme-space-satellite-r1.mjs'));
   assert.ok(snapshot.assets.some(x=>x.path==='worker/theme-space-satellite-r2.mjs'));
   assert.ok(snapshot.assets.some(x=>x.path==='worker/public-feed-input-safety.mjs'));
