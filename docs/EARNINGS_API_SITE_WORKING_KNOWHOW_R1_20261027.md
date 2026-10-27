@@ -154,3 +154,15 @@
 - SEC EDGAR 접근 안내: https://www.sec.gov/about/webmaster-frequently-asked-questions
 - Cloudflare D1 Worker 읽기/준비문: https://developers.cloudflare.com/d1/worker-api/prepared-statements/
 - GitHub 브랜치 파일 SHA 기반 수정: https://docs.github.com/en/rest/repos/contents
+
+## 9. 후속 지표 #4 BLS 서비스 생산자물가 — 실제 소스·코드·게시 Gate (2026-10-27)
+
+- 작업 브랜치는 처음부터 끝까지 `codex/api-site-integration-r1-20261026`이다. 별도 분기·삭제·main 병합·Production 배포 없음.
+- **새로운 독립 원본 1종:** 공식 BLS `WPSFD42`(최종수요 서비스 PPI, 계절조정). 공개 BLS v1 HTTP 실제 수신 `REQUEST_SUCCEEDED`. 2026-09 지수 157.666, 2025-09 지수 150.273 → 자체 파생 YoY **4.919712789389985%**. 최신 2026-09은 당시 preliminary였다. 발표일은 API 값에서 추측하지 않는다.
+- **추가 표시 행 2개:** `bls_ppi_services_index`(RAW INDEX), `bls_ppi_services_yoy_sa`(DERIVED PERCENT). **2행이지만 독립 원본 1종**이다.
+- BLS 기본 3원본 `WPSFD4/WPSFD41/PRS85006111`은 새 서비스용으로 다시 받지 않는다. 기존 `EARNINGS_R3C_BLS_STORE_ONCE.mjs`에 `--services-only --dry-run`(API 조회·검증, DB 0쓰기)과 `--services-only --apply --confirm-service-sqlite-append`(명시 승인 이후 PC 원장 단일원본 append)를 추가했다. 두 개의 전용 CMD는 `EARNINGS_BLS_SERVICE_R1_PREFLIGHT.cmd` 및 `EARNINGS_BLS_SERVICE_R1_APPLY.cmd`, 출력 TXT는 같은 디렉터리.
+- 저장된 서비스 원본은 R3D와 R4에서 별도로 SHA/provenance 검증한다. 해당 시계열이 준비됐을 때만 기존 5행을 **7행**으로 확장; R4의 기존 3원본 동일수집 묶음은 유지하고 별도 수집을 동일 응답이라고 꾸미지 않는다. Worker의 WPSFD42 검증, UI의 **게시행 있을 때만 보이는 이름/출처 매칭**을 반영했다.
+- 메모리 SQLite 기반 R4 테스트 **13/13**, Worker **9/9**, UI **8/8**, 총 **30/30 PASS**. 7행 저장자료→Worker payload validator→UI 동적 레지스트리 일괄 회귀검사도 포함했다. 이 테스트는 PC 저장·D1·Production PASS가 아니다.
+- **남은 핵심 조건:** 기존 D1 공개 C writer는 `sourceStoredAt=OLDEST_FIRST_SEEN_AT`을 유지한다. 기존 5행과 `sourceStoredAt`이 동일한 채 서비스 행을 추가하면 `sourceVersion` 변경을 거부할 수 있다. **기존 checkpoint를 속이는 timestamp 조작·무단 writer 완화 금지**. 실 D1 readback을 확인한 후 별도 게시 checkpoint/key 등의 승인 경로를 결정해야 한다.
+- 구체적인 새 파일·코드 지도·공식 실측·실행 방법·게시 제한은 [WPSFD42 서비스 PPI 연동 증거](EARNINGS_BLS_SERVICE_PPI_WPSFD42_INTEGRATION_R1_20261027.md)에 보존했다.
+- 진척 판정: SOURCE_HTTP=PASS, SOURCE_CODE/LOCAL_TEST=PASS, PC_SQLITE_WPSFD42_WRITE=NOT_RUN, D1_WRITE/READBACK=NOT_RUN, PUBLIC_GET_7ROWS=NOT_RUN, PRODUCTION_7ROWS=NOT_RUN. 기존 BEA 단위이익의 `STORED_PROJECTION_PENDING`도 별도 진행 과제로 남는다.
