@@ -17,18 +17,23 @@ const candidateBases=process.env.ZGMINI_PC_HOME?[process.env.ZGMINI_PC_HOME]
   :['E:\\ZGmini\\data\\pc-writer',path.join(os.homedir(),'.zgmini','pc-writer')];
 const base=path.resolve(candidateBases.find(p=>fs.existsSync(path.join(p,'storage','core.sqlite')))
   ??candidateBases[0]);
-const dryRun=process.argv.includes('--dry-run')||!process.argv.includes('--apply');
-const confirm=process.argv.includes('--confirm-earnings-c-d1-write');
+const args=process.argv.slice(2);
+const dryRun=args.includes('--dry-run')||!args.includes('--apply');
+const confirm=args.includes('--confirm-earnings-c-d1-write');
 const now=new Date().toISOString();
 const stamp=now.replace(/[-:]/g,'').replace(/\.\d+Z$/,'Z').replace('T','-');
-const logPath=path.join(os.homedir(),'Desktop',`EARNINGS_R4_C_D1_MANUAL_RESULT_${stamp}.txt`);
+const logName=`EARNINGS_R4_C_D1_MANUAL_RESULT_${stamp}.txt`;
+const logDirectories=[...new Set([
+  process.env.ZGMINI_EARNINGS_C_LOG_DIR,
+  path.join(os.homedir(),'Desktop'),root,
+].filter(Boolean))];
 const lines=['EARNINGS_COMPANION_R4_C_D1_MANUAL_V1',`UTC=${now}`,
   `MODE=${dryRun?'DRY_RUN':'APPLY_EXPLICIT'}`,`ROUTE=${EARNINGS_C_ROUTE}`];
 let db;
 try{
-  if(process.argv.some(arg=>!['--apply','--dry-run','--confirm-earnings-c-d1-write'].includes(arg)))
+  if(args.some(arg=>!['--apply','--dry-run','--confirm-earnings-c-d1-write'].includes(arg)))
     throw Error('EARNINGS_C_INVALID_ARGUMENT');
-  if(process.argv.includes('--dry-run')&&process.argv.includes('--apply'))
+  if(args.includes('--dry-run')&&args.includes('--apply'))
     throw Error('EARNINGS_C_CONFLICTING_MODE');
   if(!fs.existsSync(path.join(base,'storage','core.sqlite')))
     throw Error('PC_SQLITE_FILE_MISSING');
@@ -78,9 +83,15 @@ try{
   try{db?.close();}catch{}
   lines.push('BLS_PROVIDER_REQUESTS=0','PC_SQLITE_WRITES=0',
     'EXISTING_SCORE_WRITES=0','SCHEDULER_CHANGED=NO','WORKER_DEPLOYED=NO');
-  try{
-    fs.writeFileSync(logPath,lines.join('\r\n')+'\r\n',{flag:'wx',encoding:'utf8'});
-    console.log(`LOG=${logPath}`);
-  }catch{console.error('EARNINGS_C_DESKTOP_LOG_WRITE_FAILED');process.exitCode=1;}
+  let saved=false;
+  for(const dir of logDirectories){
+    try{
+      const logPath=path.join(dir,logName);
+      fs.writeFileSync(logPath,lines.join('\r\n')+'\r\n',{flag:'wx',encoding:'utf8'});
+      console.log(`LOG=${logPath}`);
+      saved=true;break;
+    }catch{}
+  }
+  if(!saved){console.error('EARNINGS_C_TXT_LOG_WRITE_FAILED');process.exitCode=1;}
   console.log(lines.filter(x=>/^(MODE|RESULT|ERROR|D1_RESULT|ROW_COUNT|FRESH_ROWS)=/.test(x)).join('\n'));
 }

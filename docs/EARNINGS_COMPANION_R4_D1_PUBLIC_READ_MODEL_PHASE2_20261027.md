@@ -48,7 +48,7 @@
 
 먼저 승인된 PC 저장소 소스가 이 버전을 포함하고 있는지 확인해야 한다. 현 단계에서 임의로 운영 source를 교체하지 않는다.
 
-기본 실행: `EARNINGS_R4_C_D1_MANUAL.cmd` → **DRY_RUN**; PC의 세 BLS 시계열을 읽어 5개 행 검증, D1 요청/쓰기 0. 결과는 Windows Desktop의 `EARNINGS_R4_C_D1_MANUAL_RESULT_<UTC>.txt`.
+기본 실행: `EARNINGS_R4_C_D1_MANUAL.cmd` → **DRY_RUN**; PC의 세 BLS 시계열을 읽어 5개 행 검증, D1 요청/쓰기 0. 기본 결과는 Windows Desktop의 `EARNINGS_R4_C_D1_MANUAL_RESULT_<UTC>.txt`. 별도 배포한 `EARNINGS_R4_C_PC_PREFLIGHT_READONLY.cmd` ZIP에서는 환경 변수로 출력 폴더를 고정하여 **CMD 바로 옆에 TXT**를 작성한다. 모든 실행 인수는 `process.argv.slice(2)`로만 해석하며, 오류가 발생해도 TXT 로그 작성을 시도한다.
 
 `--apply --confirm-earnings-c-d1-write`는 **향후 별도 D1 게시 승인** 이후에만 사용한다. 이 모드도 `main` 브랜치, `config.source == git HEAD`, 승인된 PC 수집 mode, 클린 코드 상태를 모두 요구한다. 이번 작업에서 호출하지 않았다.
 
