@@ -44,7 +44,7 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
   console.log(`RESULT_TXT=${txtPath}`);
   console.log(`TOPICS=${report.results.length}`);
   console.log(`MEANS_CALCULABLE=${report.results.filter(t => t.mean_pct !== null).length}`);
-  console.log('MISSING_ADAPTERS=SkyQuest,Precedence');
+  console.log(`MISSING_ADAPTERS=${report.missing_publisher_adapters.join(',') || 'NONE'}`);
   // Single-source R70 must never claim the 2-publisher gate passed.
   process.exitCode = report.results.some(t => t.publishers.some(p =>
     !['PASS', 'SOURCE_CONFLICT'].includes(p.state))) ? 1 : 0;
