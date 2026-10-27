@@ -3,7 +3,7 @@ import {parseSitemap,waitForCloudflare} from './indexnow-notify.mjs';
 
 const SITE_ORIGIN='https://zgmini.kr';
 const REQUEST_TIMEOUT_MS=20_000;
-const EXPECTED_PUBLIC_URLS=35;
+const EXPECTED_PUBLIC_URLS=36;
 const BUYING_GUIDE_PATH='/guides/fear-greed-buying/';
 const GUIDE_LINK_SOURCES=new Set(['/', '/fear-greed/usa/', '/fear-greed/korea/']);
 const GUIDE_DIRECT_CHECK_PATHS=['/guides/fear-greed-buying/','/guides/cpi-pce-release/','/guides/fomc/'];
@@ -14,6 +14,7 @@ export const SEO_RUNTIME_MARKERS=new Map([
   [`${SITE_ORIGIN}/theme-fear-greed/`,{descriptionIncludes:'공개된 ETF 기반 공포탐욕지수(공탐 지수)'}],
   [`${SITE_ORIGIN}/`,{titleIncludes:'공포탐욕지수·공탐 지수·미국 증시',htmlIncludes:['공포·탐욕 지수는 투자자의 시장 심리를 보여줍니다.','공탐 지수']}],
   [`${SITE_ORIGIN}/outbreak/`,{titleIncludes:'아웃브레이크 | 금리 심리·이란 전쟁',descriptionIncludes:'미국 시장금리 심리, 이란 전쟁 종전 진전 신호',htmlIncludes:['큰 이벤트의 가능성과 시장의 기대를 함께 관찰합니다.','아웃브레이크']}],
+  [`${SITE_ORIGIN}/market-calendar/`,{titleIncludes:'시장 캘린더 | 경제지표·기업 실적 발표 일정',descriptionIncludes:'미국 경제지표 발표 일정을 주간·월간 달력',htmlIncludes:['경제지표 · 기업 실적 발표 일정을 한눈에','미국 현지 발표일 기준']}],
   [`${SITE_ORIGIN}/about/`,{descriptionIncludes:'ZGMINI를 소개합니다'}],
   [`${SITE_ORIGIN}/usage/`,{descriptionIncludes:'5단계로 알아보세요'}],
   [`${SITE_ORIGIN}/data-sources/`,{descriptionIncludes:'관측일·발표일·갱신 시각 및 잠정치 기준'}],
