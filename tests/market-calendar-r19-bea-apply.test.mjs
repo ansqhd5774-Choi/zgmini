@@ -105,6 +105,8 @@ test('R19 never replaces an existing Core lock',()=>{
   fs.writeFileSync(lock,previous);
   const result=f.run(true);
   assert.equal(result.decision,'BEA_INSTALL_ABORTED_OR_RESTORED_STOP');
+  assert.equal(result.phase,'CORE_LOCK_ACQUIRE');
+  assert.equal(result.errorCode,'CORE_LOCK_ALREADY_EXISTS');
   assert.equal(fs.readFileSync(lock,'utf8'),previous);
   assert.equal(f.git(['rev-parse','HEAD']),f.approved);
   assert.equal(result.backupCreated,false);
