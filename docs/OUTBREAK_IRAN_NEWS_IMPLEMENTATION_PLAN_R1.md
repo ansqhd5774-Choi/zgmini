@@ -268,3 +268,12 @@
 - R13의 증분 계획에서는 기존 캐시의 URL-ID와 중복되는 기사에 자동 생성한 중립 문구를 **덮어쓰지 않는다**. 신규 기사만 예상 증분에 반영하고, 읽기 전용으로 다음 공개 14일 건수와 로컬 30일 보관 결과를 계산한다. 기사별 이용조건이 미확실한 후보는 보류한다.
 - 신규 테스트 `tests/iran-news-incremental-preflight-r13.test.mjs`를 포함한 `node --test tests/iran-news-*.test.mjs` **10/10 테스트 파일 통과**(모의 데이터 기반). `IRAN_NEWS_R13_INCREMENTAL_PREFLIGHT.cmd`는 공개 SHA `bffe048c3dc12d270bab82ce22351f0a5c47918c`에서 코드를 고정 다운로드하고, 운영 PC 실제 캐시·D1을 읽기 전용으로 비교하여 `IRAN_NEWS_R13_INCREMENTAL_PREFLIGHT_RESULT.txt`를 남긴다.
 - **남은 단계:** R13 실 PC 결과로 기존 수동 1건과 신규 9건(2026-10-27 당시 예상)의 보존·증분을 확인 → 뉴스 전용 캐시 안전 저장 및 D1 **한 번** 게시/read-back → 기존 R13 6시간 정상 작업 종료 후에만 격리된 뉴스 자동 게시 hook 적용 → 후속 2회 정규 실행과 사이트 API/UI·14/30일 만료 확인. 실제 자동 신규 기사 게재는 아직 미가동.
+
+
+## 22. 2026-10-27 R14 일회 증분 공개 코드 (아직 실 PC 미실행)
+
+- `scripts/iran-progress/news-display-publish-incremental-r14.mjs`은 기존 R13을 실행 직전 재검증한 후에만, 이미 수동 검증된 기사는 그대로 두고 신규 권리 조건 통과 기사만 기존 **PC 뉴스 표시 전용** `news-display-r1.json`에 원자적 저장/read-back한다.
+- 게시 직전 D1 뉴스 단독 key를 다시 읽어 변경 감지 시 중단한다. D1에는 **단 한 번** `public:iran-progress:news:iran:r1`만 게시하고 동일 행 read-back으로 `VERIFIED`를 확인한다. 실패/통신 불확실 시 이미 저장한 PC 캐시는 그대로 두며 무작정 재시도하지 않는다. R3/R5 원장·점수·예약 작업은 불변.
+- `IRAN_NEWS_R14_PUBLISH_ONCE.cmd`는 고정 SHA `e7fd9814a578412af095ce42fd53d9a982da5ab5`를 다운로드하고 **별도 읽기 전용 R13 Gate → 단 1회 R14 쓰기 → D1 read-back**을 수행한다. CMD 사용자가 명시적으로 실행해야만 쓰기 시작한다. 결과 `IRAN_NEWS_R14_PUBLISH_ONCE_RESULT.txt`를 제출해야 실 운영 증거로 인정한다.
+- 이전 10개+신규 R14 테스트 **11/11 파일 PASS**(모의). GOV.UK OGL 안내와 제3자 권리 표기 점검은 계속 요구되며, 자연어 생성 모델 자유 요약은 배포하지 않는다.
+- **게시 자동화 상태:** 일회 증분 게시 코드는 브랜치에 준비되었으나 사용자 PC에서 R14 CMD 실측 및 실제 D1/사이트 확인 전이므로 아직 자동 게시 완료가 아니다. 다음 Gate는 R14 일회 게시 검증 후 **기존 R13 00/06/12/18 KST 스케줄의 후행 격리 hook 연결**과 두 차례 정규 실행 확인. 새 작업/별도 타이머/점수 산식 변경은 금지한다.
