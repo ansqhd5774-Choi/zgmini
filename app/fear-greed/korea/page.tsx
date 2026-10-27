@@ -2,10 +2,12 @@ import DetailInvestorNotes from "../../detail-investor-notes";
 import SiteHeader from "@/components/site-header";
 import type { Metadata } from "next";
 import DataPanel from "./data-panel";
+import KoreaIntroHeading from "./korea-intro-heading";
 import DetailReadingGuide from "../../detail-reading-guide";
 import InvestorIntentGuide from "../investor-intent-guide";
 import {ArrowUpRight,BookOpen} from "lucide-react";
 import "../fear-greed-detail-r1.css";
+import "./korea-layout-parity-r1.css";
 
 const title = "한국 공포탐욕지수·공탐 지수 | 코스피·국내 주식 투자심리 - ZGmini";
 const description = "한국 공포탐욕지수(공탐 지수)의 최근 점수·관측일·기간별 차트와 7개 핵심 신호를 확인하세요. 한국 공포지수·코스피 공탐으로 국내 주식 투자심리를 살펴보는 ZGmini 자체 지표이며 504개 유효 관측치 기준창을 사용합니다.";
@@ -20,15 +22,20 @@ export default async function KoreaPage() {
     <header className="zg-fg-page-header" aria-label="한국 공포탐욕지수 소개">
       <p className="zg-fg-eyebrow">DATA-DRIVEN KOREA MARKET SENTIMENT</p>
       <h1>한국 공포탐욕지수</h1>
+      <KoreaIntroHeading>
       <h2 className="zg-fg-subheading">코스피 투자심리를 0~100으로 읽는 데이터 지표</h2>
       <p className="zg-fg-intro">한국 공포탐욕지수는 한국 공탐지수라고도 부르며, 코스피 등 국내 주식시장의 위험 선호와 위험 회피 흐름을 0~100 점수로 보여주는 ZGmini 자체 지표입니다. 점수가 낮을수록 공포, 높을수록 탐욕 방향으로 해석합니다.</p>
       <p className="zg-fg-method">Momentum·Strength·Breadth·Put/Call·Volatility·Safe Haven·Junk Bond 등 <strong className="text-white">7개 핵심 신호</strong>를 각 신호의 최근 <strong className="text-white">504개 유효 관측치 기준창</strong>에서 비교해 한국 시장의 투자심리 흐름을 수치화합니다. CNN 미국 공포탐욕지수와는 입력 시장과 산출 방식이 다릅니다.</p>
+      </KoreaIntroHeading>
       <nav className="zg-fg-country-tabs" aria-label="공포탐욕 국가별 상세페이지">
       <a href="/fear-greed/usa/">미국 · CNN</a>
       <a href="/fear-greed/korea/" aria-current="page">한국 · ZGmini</a>
     </nav>
-    <a href="/guides/fear-greed-buying/" className="mb-4 inline-flex min-h-10 items-center gap-1.5 text-sm font-semibold text-amber-300 hover:text-amber-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber-300">
-     <BookOpen size={16} aria-hidden="true"/> 공포·탐욕 매수 판단 가이드 <ArrowUpRight size={15} aria-hidden="true"/>
+    <a href="/guides/fear-greed-buying/" aria-label="공포·탐욕 매수 판단 가이드" className="zg-fg-buying-guide-link mb-4 inline-flex min-h-10 items-center gap-1.5 text-sm font-semibold text-amber-300 hover:text-amber-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber-300">
+     <BookOpen size={16} aria-hidden="true"/>
+     <span className="zg-fg-guide-full">공포·탐욕 매수 판단 가이드</span>
+     <span className="zg-fg-guide-short" aria-hidden="true">매수 가이드</span>
+     <ArrowUpRight size={15} aria-hidden="true"/>
     </a>
     <div className="zg-fg-facts" aria-label="한국 공포탐욕 분석 범위">
         <span className="bg-white/5 px-3 py-3"><strong className="block text-xl text-white">7</strong><small className="text-[11px] tracking-wider text-slate-400">SIGNALS</small></span>
