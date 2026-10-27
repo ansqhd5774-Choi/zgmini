@@ -1,0 +1,488 @@
+{
+  "schema": "zgmini.theme-nine.three-gate-issuer-screen.r15",
+  "asOf": "2026-10-26",
+  "scope": "RESEARCH_BRANCH_ONLY_NO_RUNTIME_IMPORT",
+  "source": "config/theme-nine-r13-formula-candidate-prescreen.json",
+  "verifiedNewEntrants": 0,
+  "thematicCandidatePositions": 64,
+  "uniqueEtfs": 63,
+  "sourceHostGroups": 19,
+  "policy": {
+    "etfCountLimit": null,
+    "themeRelevanceRequiredBeforeThreeGates": true,
+    "admissionOperator": "AND",
+    "gate1": "OFFICIAL_COMPLETE_HOLDINGS_NAMES_WEIGHTS_AS_OF_DATE_ACCESSIBLE",
+    "gate2": "REPEATABLE_REAL_MARKET_COLLECTION_AND_EXPLICIT_FREE_STORAGE_COMMERCIAL_DERIVED_PUBLIC_RIGHTS_WITH_DATED_AUM",
+    "gate3": "VERIFIED_LEGAL_ADVISER_ISSUER_GRADE_AT_LEAST_C",
+    "evaluationStates": [
+      "PASS",
+      "FAIL",
+      "PENDING"
+    ],
+    "grades": {
+      "A": ">=90",
+      "B": "75..89",
+      "C": "60..74",
+      "D": "<60"
+    },
+    "gradeRequiresVerifiedEntityAndCompleteEvidence": true,
+    "gradeRubric": {
+      "entityAndRegistration": 25,
+      "regulatoryConduct": 25,
+      "fundDisclosureIntegrity": 25,
+      "operationalTransparency": 25
+    },
+    "criticalActiveProhibitionOverridesGrade": true,
+    "earlyListingRule": "ALLOW_RESEARCH_PENDING; DO_NOT_GENERATE_R2_SCORE_BEFORE_40_REAL_SESSIONS",
+    "timeAxis": 252,
+    "neverFabricate": true,
+    "noProductionChanges": true
+  },
+  "issuerBrandDomainGroups": [
+    {
+      "issuerBrandDomain": "amplifyetfs.com",
+      "legalOperatorName": "Amplify Investments LLC",
+      "legalOperatorEntityId": null,
+      "verificationStatus": "PENDING",
+      "registrationEvidence": null,
+      "officialFilingEvidence": {
+        "url": "https://www.sec.gov/Archives/edgar/data/1633061/000121390026010237/ea0273008-32_497.htm",
+        "observedAt": "2026-10-26",
+        "evidenceType": "SEC_EDGAR_OR_ISSUER_PARTIAL_ADVISER_IDENTITY"
+      },
+      "disciplinaryEvidence": null,
+      "operationEvidence": null,
+      "grade": null,
+      "score": null,
+      "themeSlots": 2,
+      "symbols": [
+        "IPAY",
+        "HACK"
+      ],
+      "notes": "Provisional legal investment adviser mapping based on selected official fund document. Confirm every ETF product, trust, sub-adviser, regulatory registration, sanctions, rights and holdings separately."
+    },
+    {
+      "issuerBrandDomain": "corgiinvest.com",
+      "legalOperatorName": "Corgi Strategies, LLC",
+      "legalOperatorEntityId": null,
+      "verificationStatus": "PENDING",
+      "registrationEvidence": null,
+      "officialFilingEvidence": {
+        "url": "https://www.sec.gov/Archives/edgar/data/2078265/000207826526000071/cik0002078265-20260430.htm",
+        "observedAt": "2026-10-26",
+        "evidenceType": "SEC_EDGAR_PARTIAL_IDENTITY_ONLY"
+      },
+      "disciplinaryEvidence": null,
+      "operationEvidence": null,
+      "grade": null,
+      "score": null,
+      "themeSlots": 7,
+      "symbols": [
+        "CBOT",
+        "WR",
+        "KYC",
+        "LATR",
+        "XA",
+        "EUV",
+        "GNMX"
+      ],
+      "notes": "Corgi Trust fund filing identifies Corgi Strategies LLC as Adviser (including CBOT/EUV examples). Match all seven candidate prospectuses before a shared legal entity grade."
+    },
+    {
+      "issuerBrandDomain": "etf.dws.com",
+      "legalOperatorName": "DBX Advisors LLC",
+      "legalOperatorEntityId": null,
+      "verificationStatus": "PENDING",
+      "registrationEvidence": null,
+      "officialFilingEvidence": {
+        "url": "https://etf.dws.com/download/asset/56cac366-1dac-40b7-9e09-b819a7882e74/",
+        "observedAt": "2026-10-26",
+        "evidenceType": "SEC_EDGAR_OR_ISSUER_PARTIAL_ADVISER_IDENTITY"
+      },
+      "disciplinaryEvidence": null,
+      "operationEvidence": null,
+      "grade": null,
+      "score": null,
+      "themeSlots": 1,
+      "symbols": [
+        "PSWD"
+      ],
+      "notes": "Provisional legal investment adviser mapping based on selected official fund document. Confirm every ETF product, trust, sub-adviser, regulatory registration, sanctions, rights and holdings separately."
+    },
+    {
+      "issuerBrandDomain": "institutional.fidelity.com",
+      "legalOperatorName": "Fidelity Management & Research Company LLC",
+      "legalOperatorEntityId": null,
+      "verificationStatus": "PENDING",
+      "registrationEvidence": null,
+      "officialFilingEvidence": {
+        "url": "https://www.sec.gov/Archives/edgar/data/945908/000094590825000633/filing9952.htm",
+        "observedAt": "2026-10-26",
+        "evidenceType": "SEC_EDGAR_OR_ISSUER_PARTIAL_ADVISER_IDENTITY"
+      },
+      "disciplinaryEvidence": null,
+      "operationEvidence": null,
+      "grade": null,
+      "score": null,
+      "themeSlots": 1,
+      "symbols": [
+        "FCLD"
+      ],
+      "notes": "Provisional legal investment adviser mapping based on selected official fund document. Confirm every ETF product, trust, sub-adviser, regulatory registration, sanctions, rights and holdings separately."
+    },
+    {
+      "issuerBrandDomain": "kraneshares.com",
+      "legalOperatorName": "Krane Funds Advisors, LLC",
+      "legalOperatorEntityId": null,
+      "verificationStatus": "PENDING",
+      "registrationEvidence": null,
+      "officialFilingEvidence": {
+        "url": "https://www.sec.gov/Archives/edgar/data/1547576/000182912626007202/kraneshares_exd3.htm",
+        "observedAt": "2026-10-26",
+        "evidenceType": "SEC_EDGAR_OR_ISSUER_PARTIAL_ADVISER_IDENTITY"
+      },
+      "disciplinaryEvidence": null,
+      "operationEvidence": null,
+      "grade": null,
+      "score": null,
+      "themeSlots": 1,
+      "symbols": [
+        "KARS"
+      ],
+      "notes": "Provisional legal investment adviser mapping based on selected official fund document. Confirm every ETF product, trust, sub-adviser, regulatory registration, sanctions, rights and holdings separately."
+    },
+    {
+      "issuerBrandDomain": "sprottetfs.com",
+      "legalOperatorName": "Sprott Asset Management USA, Inc.",
+      "legalOperatorEntityId": null,
+      "verificationStatus": "PENDING",
+      "registrationEvidence": null,
+      "officialFilingEvidence": {
+        "url": "https://www.sec.gov/Archives/edgar/data/1728683/000182912626004461/sprott_497k.htm",
+        "observedAt": "2026-10-26",
+        "evidenceType": "SEC_EDGAR_OR_ISSUER_PARTIAL_ADVISER_IDENTITY"
+      },
+      "disciplinaryEvidence": null,
+      "operationEvidence": null,
+      "grade": null,
+      "score": null,
+      "themeSlots": 2,
+      "symbols": [
+        "URNM",
+        "URNJ"
+      ],
+      "notes": "Provisional legal investment adviser mapping based on selected official fund document. Confirm every ETF product, trust, sub-adviser, regulatory registration, sanctions, rights and holdings separately."
+    },
+    {
+      "issuerBrandDomain": "themesetfs.com",
+      "legalOperatorName": "Tema ETFs LLC",
+      "legalOperatorEntityId": null,
+      "verificationStatus": "PENDING",
+      "registrationEvidence": null,
+      "officialFilingEvidence": {
+        "url": "https://www.sec.gov/Archives/edgar/data/1944285/000182912626009784/temaetftrust_485bpos.htm",
+        "observedAt": "2026-10-26",
+        "evidenceType": "SEC_EDGAR_OR_ISSUER_PARTIAL_ADVISER_IDENTITY"
+      },
+      "disciplinaryEvidence": null,
+      "operationEvidence": null,
+      "grade": null,
+      "score": null,
+      "themeSlots": 4,
+      "symbols": [
+        "CLOD",
+        "URAN",
+        "NATO",
+        "SPAM"
+      ],
+      "notes": "Provisional legal investment adviser mapping based on selected official fund document. Confirm every ETF product, trust, sub-adviser, regulatory registration, sanctions, rights and holdings separately."
+    },
+    {
+      "issuerBrandDomain": "www.alpsfunds.com",
+      "legalOperatorName": "ALPS Advisors, Inc.",
+      "legalOperatorEntityId": null,
+      "verificationStatus": "PENDING",
+      "registrationEvidence": null,
+      "officialFilingEvidence": {
+        "url": "https://www.sec.gov/Archives/edgar/data/1414040/000139834426013856/fp0099343-2_ncsrsixbrl.htm",
+        "observedAt": "2026-10-26",
+        "evidenceType": "SEC_EDGAR_OR_ISSUER_PARTIAL_ADVISER_IDENTITY"
+      },
+      "disciplinaryEvidence": null,
+      "operationEvidence": null,
+      "grade": null,
+      "score": null,
+      "themeSlots": 1,
+      "symbols": [
+        "SBIO"
+      ],
+      "notes": "Provisional legal investment adviser mapping based on selected official fund document. Confirm every ETF product, trust, sub-adviser, regulatory registration, sanctions, rights and holdings separately."
+    },
+    {
+      "issuerBrandDomain": "www.ark-funds.com",
+      "legalOperatorName": "ARK Investment Management LLC",
+      "legalOperatorEntityId": null,
+      "verificationStatus": "PENDING",
+      "registrationEvidence": null,
+      "officialFilingEvidence": {
+        "url": "https://www.sec.gov/Archives/edgar/data/1579982/000121390026107605/ea0303638-01_ncsr.htm",
+        "observedAt": "2026-10-26",
+        "evidenceType": "SEC_EDGAR_OR_ISSUER_PARTIAL_ADVISER_IDENTITY"
+      },
+      "disciplinaryEvidence": null,
+      "operationEvidence": null,
+      "grade": null,
+      "score": null,
+      "themeSlots": 3,
+      "symbols": [
+        "ARKQ",
+        "ARKF",
+        "ARKG"
+      ],
+      "notes": "Provisional legal investment adviser mapping based on selected official fund document. Confirm every ETF product, trust, sub-adviser, regulatory registration, sanctions, rights and holdings separately."
+    },
+    {
+      "issuerBrandDomain": "www.ftportfolios.com",
+      "legalOperatorName": "First Trust Advisors L.P.",
+      "legalOperatorEntityId": null,
+      "verificationStatus": "PENDING",
+      "registrationEvidence": null,
+      "officialFilingEvidence": {
+        "url": "https://www.sec.gov/Archives/edgar/data/1364608/000144554626000860/etf2_497k.htm",
+        "observedAt": "2026-10-26",
+        "evidenceType": "SEC_EDGAR_OR_ISSUER_PARTIAL_ADVISER_IDENTITY"
+      },
+      "disciplinaryEvidence": null,
+      "operationEvidence": null,
+      "grade": null,
+      "score": null,
+      "themeSlots": 4,
+      "symbols": [
+        "ROBT",
+        "SKYY",
+        "CIBR",
+        "FBT"
+      ],
+      "notes": "Provisional legal investment adviser mapping based on selected official fund document. Confirm every ETF product, trust, sub-adviser, regulatory registration, sanctions, rights and holdings separately."
+    },
+    {
+      "issuerBrandDomain": "www.globalxetfs.com",
+      "legalOperatorName": "Global X Management Company LLC",
+      "legalOperatorEntityId": null,
+      "verificationStatus": "PENDING",
+      "registrationEvidence": null,
+      "officialFilingEvidence": {
+        "url": "https://www.sec.gov/Archives/edgar/data/1432353/000143235326000765/ck0001432353-20261008.htm",
+        "observedAt": "2026-10-26",
+        "evidenceType": "SEC_EDGAR_PARTIAL_IDENTITY_ONLY"
+      },
+      "disciplinaryEvidence": null,
+      "operationEvidence": null,
+      "grade": null,
+      "score": null,
+      "themeSlots": 11,
+      "symbols": [
+        "BOTZ",
+        "CLOU",
+        "DRIV",
+        "URA",
+        "SHLD",
+        "FINX",
+        "BUG",
+        "AIQ",
+        "LLMA",
+        "GNOM"
+      ],
+      "notes": "SEC document names Global X Management Company LLC as Adviser. Specific symbol-to-fund adviser still must be matched separately."
+    },
+    {
+      "issuerBrandDomain": "www.invesco.com",
+      "legalOperatorName": "Invesco Capital Management LLC",
+      "legalOperatorEntityId": null,
+      "verificationStatus": "PENDING",
+      "registrationEvidence": null,
+      "officialFilingEvidence": {
+        "url": "https://www.invesco.com/us/en/financial-products/etfs/invesco-phlx-semiconductor-etf.html",
+        "observedAt": "2026-10-26",
+        "evidenceType": "SEC_EDGAR_OR_ISSUER_PARTIAL_ADVISER_IDENTITY"
+      },
+      "disciplinaryEvidence": null,
+      "operationEvidence": null,
+      "grade": null,
+      "score": null,
+      "themeSlots": 4,
+      "symbols": [
+        "PPA",
+        "SOXQ",
+        "PSI",
+        "PBE"
+      ],
+      "notes": "Provisional legal investment adviser mapping based on selected official fund document. Confirm every ETF product, trust, sub-adviser, regulatory registration, sanctions, rights and holdings separately."
+    },
+    {
+      "issuerBrandDomain": "www.ishares.com",
+      "legalOperatorName": "BlackRock Fund Advisors",
+      "legalOperatorEntityId": null,
+      "verificationStatus": "PENDING",
+      "registrationEvidence": null,
+      "officialFilingEvidence": {
+        "url": "https://www.sec.gov/Archives/edgar/data/1100663/000119312526140080/R2.htm",
+        "observedAt": "2026-10-26",
+        "evidenceType": "SEC_EDGAR_PARTIAL_IDENTITY_ONLY"
+      },
+      "disciplinaryEvidence": null,
+      "operationEvidence": null,
+      "grade": null,
+      "score": null,
+      "themeSlots": 8,
+      "symbols": [
+        "RBTX",
+        "IDRV",
+        "ITA",
+        "BPAY",
+        "IHAK",
+        "SOXX",
+        "ARTY",
+        "IBB"
+      ],
+      "notes": "iShares Trust SEC record names BlackRock Fund Advisors as investment adviser. Multiple iShares trusts/products require per-fund adviser verification."
+    },
+    {
+      "issuerBrandDomain": "www.rangeetfs.com",
+      "legalOperatorName": "Exchange Traded Concepts, LLC",
+      "legalOperatorEntityId": null,
+      "verificationStatus": "PENDING",
+      "registrationEvidence": null,
+      "officialFilingEvidence": {
+        "url": "https://www.rangeetfs.com/nukz",
+        "observedAt": "2026-10-26",
+        "evidenceType": "SEC_EDGAR_OR_ISSUER_PARTIAL_ADVISER_IDENTITY"
+      },
+      "disciplinaryEvidence": null,
+      "operationEvidence": null,
+      "grade": null,
+      "score": null,
+      "themeSlots": 1,
+      "symbols": [
+        "NUKZ"
+      ],
+      "notes": "Provisional legal investment adviser mapping based on selected official fund document. Confirm every ETF product, trust, sub-adviser, regulatory registration, sanctions, rights and holdings separately."
+    },
+    {
+      "issuerBrandDomain": "www.roboglobaletfs.com",
+      "legalOperatorName": "Exchange Traded Concepts, LLC",
+      "legalOperatorEntityId": null,
+      "verificationStatus": "PENDING",
+      "registrationEvidence": null,
+      "officialFilingEvidence": {
+        "url": "https://www.sec.gov/Archives/edgar/data/1452937/000121390025124388/ea0269794-01_ncsrs.htm",
+        "observedAt": "2026-10-26",
+        "evidenceType": "SEC_EDGAR_OR_ISSUER_PARTIAL_ADVISER_IDENTITY"
+      },
+      "disciplinaryEvidence": null,
+      "operationEvidence": null,
+      "grade": null,
+      "score": null,
+      "themeSlots": 1,
+      "symbols": [
+        "ROBO"
+      ],
+      "notes": "Provisional legal investment adviser mapping based on selected official fund document. Confirm every ETF product, trust, sub-adviser, regulatory registration, sanctions, rights and holdings separately."
+    },
+    {
+      "issuerBrandDomain": "www.roundhillinvestments.com",
+      "legalOperatorName": "Roundhill Financial Inc.",
+      "legalOperatorEntityId": null,
+      "verificationStatus": "PENDING",
+      "registrationEvidence": null,
+      "officialFilingEvidence": {
+        "url": "https://www.sec.gov/Archives/edgar/data/1976517/000139834425007011/fp0093046-1_485apos.htm",
+        "observedAt": "2026-10-26",
+        "evidenceType": "SEC_EDGAR_PARTIAL_IDENTITY_ONLY"
+      },
+      "disciplinaryEvidence": null,
+      "operationEvidence": null,
+      "grade": null,
+      "score": null,
+      "themeSlots": 4,
+      "symbols": [
+        "HUMN",
+        "CABZ",
+        "CHAT",
+        "DRAM"
+      ],
+      "notes": "HUMN document names Roundhill Financial Inc as adviser. Other Roundhill candidate funds must be mapped by each prospectus."
+    },
+    {
+      "issuerBrandDomain": "www.ssga.com",
+      "legalOperatorName": "SSgA Funds Management, Inc.",
+      "legalOperatorEntityId": null,
+      "verificationStatus": "PENDING",
+      "registrationEvidence": null,
+      "officialFilingEvidence": {
+        "url": "https://www.sec.gov/Archives/edgar/data/927971/000121465925017214/b1125252424b2.htm",
+        "observedAt": "2026-10-26",
+        "evidenceType": "SEC_EDGAR_OR_ISSUER_PARTIAL_ADVISER_IDENTITY"
+      },
+      "disciplinaryEvidence": null,
+      "operationEvidence": null,
+      "grade": null,
+      "score": null,
+      "themeSlots": 4,
+      "symbols": [
+        "HAIL",
+        "XAR",
+        "XSD",
+        "XBI"
+      ],
+      "notes": "Provisional legal investment adviser mapping based on selected official fund document. Confirm every ETF product, trust, sub-adviser, regulatory registration, sanctions, rights and holdings separately."
+    },
+    {
+      "issuerBrandDomain": "www.vaneck.com",
+      "legalOperatorName": "Van Eck Associates Corporation",
+      "legalOperatorEntityId": null,
+      "verificationStatus": "PENDING",
+      "registrationEvidence": null,
+      "officialFilingEvidence": {
+        "url": "https://www.sec.gov/Archives/edgar/data/1000275/000114036124025496/ef20028748_424b2.htm",
+        "observedAt": "2026-10-26",
+        "evidenceType": "SEC_EDGAR_OR_ISSUER_PARTIAL_ADVISER_IDENTITY"
+      },
+      "disciplinaryEvidence": null,
+      "operationEvidence": null,
+      "grade": null,
+      "score": null,
+      "themeSlots": 3,
+      "symbols": [
+        "NLR",
+        "SMH",
+        "BBH"
+      ],
+      "notes": "Provisional legal investment adviser mapping based on selected official fund document. Confirm every ETF product, trust, sub-adviser, regulatory registration, sanctions, rights and holdings separately."
+    },
+    {
+      "issuerBrandDomain": "www.wisdomtree.com",
+      "legalOperatorName": "WisdomTree Asset Management, Inc.",
+      "legalOperatorEntityId": null,
+      "verificationStatus": "PENDING",
+      "registrationEvidence": null,
+      "officialFilingEvidence": {
+        "url": "https://www.sec.gov/Archives/edgar/data/1350487/000121465925015720/wcld497k1025.htm",
+        "observedAt": "2026-10-26",
+        "evidenceType": "SEC_EDGAR_OR_ISSUER_PARTIAL_ADVISER_IDENTITY"
+      },
+      "disciplinaryEvidence": null,
+      "operationEvidence": null,
+      "grade": null,
+      "score": null,
+      "themeSlots": 2,
+      "symbols": [
+        "WCLD",
+        "WCBR"
+      ],
+      "notes": "Provisional legal investment adviser mapping based on selected official fund document. Confirm every ETF product, trust, sub-adviser, regulatory registration, sanctions, rights and holdings separately."
+    }
+  ],
+  "provisionalLegalOperatorNamesFound": 19,
+  "issuerBrandDomainsWithUnidentifiedLegalOperator": []
+}

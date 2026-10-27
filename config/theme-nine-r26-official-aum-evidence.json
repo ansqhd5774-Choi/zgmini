@@ -1,0 +1,578 @@
+{
+  "contract": "THEME_NINE_R26_OFFICIAL_AUM_RESEARCH_EVIDENCE_V1",
+  "asOfResearchDate": "2026-10-27",
+  "scoreBenchmarkDate": "2026-10-23",
+  "currency": "USD",
+  "status": "RESEARCH_ONLY_NOT_APPROVED_FOR_LIVE_R32_WEIGHTS",
+  "provenanceDocument": "docs/THEME_LEGACY_NINE_R26_OFFICIAL_AUM_RESEARCH_20261027.md",
+  "candidateRosterSha256": "e2ea97ce0ed0bf15cb083237d63d3cf520e090d8bd229a837bad393c3f8b0c6c",
+  "rows": [
+    {
+      "ticker": "AIQ",
+      "aumUsd": 10052200543,
+      "aumAsOf": "2026-10-23",
+      "quality": "OFFICIAL_EXACT",
+      "issuerUrl": "https://www.globalxetfs.com/explore",
+      "amountApproximate": false,
+      "verification": "OFFICIAL_DOCUMENTED_NOT_TIMESERIES"
+    },
+    {
+      "ticker": "ARKF",
+      "aumUsd": 830900000,
+      "aumAsOf": "2026-09-30",
+      "quality": "OFFICIAL_ROUNDED_SEARCH_EXCERPT_OLD",
+      "issuerUrl": "https://www.ark-funds.com/our-etfs",
+      "amountApproximate": true,
+      "verification": "OFFICIAL_DOCUMENTED_NOT_TIMESERIES"
+    },
+    {
+      "ticker": "ARKG",
+      "aumUsd": 2219000000,
+      "aumAsOf": "2026-09-30",
+      "quality": "OFFICIAL_ROUNDED_SEARCH_EXCERPT_OLD",
+      "issuerUrl": "https://www.ark-funds.com/our-etfs",
+      "amountApproximate": true,
+      "verification": "OFFICIAL_DOCUMENTED_NOT_TIMESERIES"
+    },
+    {
+      "ticker": "ARKQ",
+      "aumUsd": 1891000000,
+      "aumAsOf": "2026-09-30",
+      "quality": "OFFICIAL_ROUNDED_SEARCH_EXCERPT_OLD",
+      "issuerUrl": "https://www.ark-funds.com/our-etfs",
+      "amountApproximate": true,
+      "verification": "OFFICIAL_DOCUMENTED_NOT_TIMESERIES"
+    },
+    {
+      "ticker": "ARTY",
+      "aumUsd": 3677535964,
+      "aumAsOf": "2026-09-30",
+      "quality": "OFFICIAL_EXACT_OLD",
+      "issuerUrl": "https://www.ishares.com/us/products/etf-investments",
+      "amountApproximate": false,
+      "verification": "OFFICIAL_DOCUMENTED_NOT_TIMESERIES"
+    },
+    {
+      "ticker": "BBH",
+      "aumUsd": 501960000,
+      "aumAsOf": "2026-10-23",
+      "quality": "OFFICIAL_ROUNDED",
+      "issuerUrl": "https://www.vaneck.com/us/en/investments/biotech-etf-bbh/overview/",
+      "amountApproximate": true,
+      "verification": "OFFICIAL_DOCUMENTED_NOT_TIMESERIES"
+    },
+    {
+      "ticker": "BOTZ",
+      "aumUsd": 3100000000,
+      "aumAsOf": "2026-10-23",
+      "quality": "OFFICIAL_ROUNDED",
+      "issuerUrl": "https://www.globalxetfs.com/funds/botz",
+      "amountApproximate": true,
+      "verification": "OFFICIAL_DOCUMENTED_NOT_TIMESERIES"
+    },
+    {
+      "ticker": "BPAY",
+      "aumUsd": 9251801,
+      "aumAsOf": "2026-01-31",
+      "quality": "OFFICIAL_EXACT_OLD",
+      "issuerUrl": "https://www.sec.gov/Archives/edgar/data/1761055/000119312526144976/R2.htm",
+      "amountApproximate": false,
+      "verification": "OFFICIAL_DOCUMENTED_NOT_TIMESERIES"
+    },
+    {
+      "ticker": "BUG",
+      "aumUsd": 2230000000,
+      "aumAsOf": "2026-10-23",
+      "quality": "OFFICIAL_ROUNDED",
+      "issuerUrl": "https://www.globalxetfs.com/funds/bug",
+      "amountApproximate": true,
+      "verification": "OFFICIAL_DOCUMENTED_NOT_TIMESERIES"
+    },
+    {
+      "ticker": "CABZ",
+      "aumUsd": 3790199,
+      "aumAsOf": "2026-06-30",
+      "quality": "OFFICIAL_EXACT_OLD",
+      "issuerUrl": "https://www.sec.gov/Archives/edgar/data/1976517/000113322826012187/R2.htm",
+      "amountApproximate": false,
+      "verification": "OFFICIAL_DOCUMENTED_NOT_TIMESERIES"
+    },
+    {
+      "ticker": "CBOT",
+      "aumUsd": 1470000,
+      "aumAsOf": "2026-10-23",
+      "quality": "OFFICIAL_ROUNDED",
+      "issuerUrl": "https://corgiinvest.com/cbot",
+      "amountApproximate": true,
+      "verification": "OFFICIAL_DOCUMENTED_NOT_TIMESERIES"
+    },
+    {
+      "ticker": "CHAT",
+      "aumUsd": 1427470000,
+      "aumAsOf": "2026-04-30",
+      "quality": "OFFICIAL_DISPLAY_PRECISION_OLD",
+      "issuerUrl": "https://www.sec.gov/Archives/edgar/data/1924868/000199937126014632/chat-ncsr_043026.htm",
+      "amountApproximate": true,
+      "verification": "OFFICIAL_DOCUMENTED_NOT_TIMESERIES"
+    },
+    {
+      "ticker": "CIBR",
+      "aumUsd": 18360022084,
+      "aumAsOf": "2026-10-23",
+      "quality": "OFFICIAL_EXACT",
+      "issuerUrl": "https://www.ftportfolios.com/Retail/Etf/EtfSummary.aspx?Ticker=CIBR",
+      "amountApproximate": false,
+      "verification": "OFFICIAL_DOCUMENTED_NOT_TIMESERIES"
+    },
+    {
+      "ticker": "CLOD",
+      "aumUsd": 1541624,
+      "aumAsOf": "2026-03-31",
+      "quality": "OFFICIAL_EXACT_OLD",
+      "issuerUrl": "https://www.sec.gov/Archives/edgar/data/1976322/000113322826008958/R2.htm",
+      "amountApproximate": false,
+      "verification": "OFFICIAL_DOCUMENTED_NOT_TIMESERIES"
+    },
+    {
+      "ticker": "CLOU",
+      "aumUsd": 428300000,
+      "aumAsOf": "2026-10-23",
+      "quality": "OFFICIAL_ROUNDED",
+      "issuerUrl": "https://www.globalxetfs.com/funds/clou",
+      "amountApproximate": true,
+      "verification": "OFFICIAL_DOCUMENTED_NOT_TIMESERIES"
+    },
+    {
+      "ticker": "DRAM",
+      "aumUsd": 26120339189,
+      "aumAsOf": "2026-06-30",
+      "quality": "OFFICIAL_EXACT_OLD",
+      "issuerUrl": "https://www.roundhillinvestments.com/assets/pdfs/dram_semi-annual_tsr.pdf",
+      "amountApproximate": false,
+      "verification": "OFFICIAL_DOCUMENTED_NOT_TIMESERIES"
+    },
+    {
+      "ticker": "DRIV",
+      "aumUsd": 320410000,
+      "aumAsOf": "2026-10-23",
+      "quality": "OFFICIAL_ROUNDED",
+      "issuerUrl": "https://www.globalxetfs.com/funds/driv",
+      "amountApproximate": true,
+      "verification": "OFFICIAL_DOCUMENTED_NOT_TIMESERIES"
+    },
+    {
+      "ticker": "EUV",
+      "aumUsd": 253800000,
+      "aumAsOf": "2026-10-23",
+      "quality": "OFFICIAL_ROUNDED",
+      "issuerUrl": "https://corgiinvest.com/euv",
+      "amountApproximate": true,
+      "verification": "OFFICIAL_DOCUMENTED_NOT_TIMESERIES"
+    },
+    {
+      "ticker": "FBT",
+      "aumUsd": 2976622106,
+      "aumAsOf": "2026-10-23",
+      "quality": "OFFICIAL_EXACT",
+      "issuerUrl": "https://www.ftportfolios.com/Retail/Etf/EtfSummary.aspx?Ticker=FBT",
+      "amountApproximate": false,
+      "verification": "OFFICIAL_DOCUMENTED_NOT_TIMESERIES"
+    },
+    {
+      "ticker": "FCLD",
+      "aumUsd": 144700000,
+      "aumAsOf": "2026-08-31",
+      "quality": "OFFICIAL_ROUNDED_OLD",
+      "issuerUrl": "https://institutional.fidelity.com/advisors/investment-solutions/performance/fidelity-etfs",
+      "amountApproximate": true,
+      "verification": "OFFICIAL_DOCUMENTED_NOT_TIMESERIES"
+    },
+    {
+      "ticker": "FINX",
+      "aumUsd": 156200000,
+      "aumAsOf": "2026-10-23",
+      "quality": "OFFICIAL_ROUNDED",
+      "issuerUrl": "https://www.globalxetfs.com/funds/finx",
+      "amountApproximate": true,
+      "verification": "OFFICIAL_DOCUMENTED_NOT_TIMESERIES"
+    },
+    {
+      "ticker": "GNMX",
+      "aumUsd": 1280000,
+      "aumAsOf": "2026-10-23",
+      "quality": "OFFICIAL_ROUNDED",
+      "issuerUrl": "https://corgiinvest.com/gnmx",
+      "amountApproximate": true,
+      "verification": "OFFICIAL_DOCUMENTED_NOT_TIMESERIES"
+    },
+    {
+      "ticker": "GNOM",
+      "aumUsd": 104970000,
+      "aumAsOf": "2026-10-23",
+      "quality": "OFFICIAL_ROUNDED",
+      "issuerUrl": "https://www.globalxetfs.com/funds/gnom",
+      "amountApproximate": true,
+      "verification": "OFFICIAL_DOCUMENTED_NOT_TIMESERIES"
+    },
+    {
+      "ticker": "HACK",
+      "aumUsd": 3625084956,
+      "aumAsOf": "2026-10-23",
+      "quality": "OFFICIAL_EXACT",
+      "issuerUrl": "https://amplifyetfs.com/hack/",
+      "amountApproximate": false,
+      "verification": "OFFICIAL_DOCUMENTED_NOT_TIMESERIES"
+    },
+    {
+      "ticker": "HAIL",
+      "aumUsd": 15950000,
+      "aumAsOf": "2026-10-23",
+      "quality": "OFFICIAL_ROUNDED",
+      "issuerUrl": "https://www.ssga.com/us/en/intermediary/etfs/state-street-spdr-sp-kensho-smart-mobility-etf-hail",
+      "amountApproximate": true,
+      "verification": "OFFICIAL_DOCUMENTED_NOT_TIMESERIES"
+    },
+    {
+      "ticker": "HUMN",
+      "aumUsd": 82970715,
+      "aumAsOf": "2026-06-30",
+      "quality": "OFFICIAL_EXACT_OLD",
+      "issuerUrl": "https://www.sec.gov/Archives/edgar/data/1976517/000113322826012187/R2.htm",
+      "amountApproximate": false,
+      "verification": "OFFICIAL_DOCUMENTED_NOT_TIMESERIES"
+    },
+    {
+      "ticker": "IBB",
+      "aumUsd": 10728806661,
+      "aumAsOf": "2026-10-23",
+      "quality": "OFFICIAL_EXACT",
+      "issuerUrl": "https://www.ishares.com/us/products/239699/IBB/1000",
+      "amountApproximate": false,
+      "verification": "OFFICIAL_DOCUMENTED_NOT_TIMESERIES"
+    },
+    {
+      "ticker": "IDRV",
+      "aumUsd": 118394250,
+      "aumAsOf": "2026-10-23",
+      "quality": "OFFICIAL_EXACT",
+      "issuerUrl": "https://www.ishares.com/us/products/307332/ishares",
+      "amountApproximate": false,
+      "verification": "OFFICIAL_DOCUMENTED_NOT_TIMESERIES"
+    },
+    {
+      "ticker": "IHAK",
+      "aumUsd": 1274337325,
+      "aumAsOf": "2026-10-23",
+      "quality": "OFFICIAL_EXACT",
+      "issuerUrl": "https://www.blackrock.com/us/individual/products/307352/ishares-cybersecurity-and-tech-etf",
+      "amountApproximate": false,
+      "verification": "OFFICIAL_DOCUMENTED_NOT_TIMESERIES"
+    },
+    {
+      "ticker": "IPAY",
+      "aumUsd": 146263569,
+      "aumAsOf": "2026-10-23",
+      "quality": "OFFICIAL_EXACT",
+      "issuerUrl": "https://amplifyetfs.com/ipay/",
+      "amountApproximate": false,
+      "verification": "OFFICIAL_DOCUMENTED_NOT_TIMESERIES"
+    },
+    {
+      "ticker": "ITA",
+      "aumUsd": 11773379229,
+      "aumAsOf": "2026-10-23",
+      "quality": "OFFICIAL_EXACT",
+      "issuerUrl": "https://www.ishares.com/us/products/239502/ishares-us-aerospace-defense-etf",
+      "amountApproximate": false,
+      "verification": "OFFICIAL_DOCUMENTED_NOT_TIMESERIES"
+    },
+    {
+      "ticker": "KARS",
+      "aumUsd": 63574768,
+      "aumAsOf": "2026-10-23",
+      "quality": "OFFICIAL_EXACT_SEARCH_EXCERPT",
+      "issuerUrl": "https://kraneshares.com/etf/",
+      "amountApproximate": false,
+      "verification": "OFFICIAL_DOCUMENTED_NOT_TIMESERIES"
+    },
+    {
+      "ticker": "KYC",
+      "aumUsd": 398000,
+      "aumAsOf": "2026-10-23",
+      "quality": "OFFICIAL_ROUNDED",
+      "issuerUrl": "https://corgiinvest.com/kyc",
+      "amountApproximate": true,
+      "verification": "OFFICIAL_DOCUMENTED_NOT_TIMESERIES"
+    },
+    {
+      "ticker": "LATR",
+      "aumUsd": 947000,
+      "aumAsOf": "2026-10-23",
+      "quality": "OFFICIAL_ROUNDED",
+      "issuerUrl": "https://corgiinvest.com/latr",
+      "amountApproximate": true,
+      "verification": "OFFICIAL_DOCUMENTED_NOT_TIMESERIES"
+    },
+    {
+      "ticker": "LLMA",
+      "aumUsd": 2500000,
+      "aumAsOf": "2026-10-23",
+      "quality": "OFFICIAL_ROUNDED",
+      "issuerUrl": "https://www.globalxetfs.com/funds/llma",
+      "amountApproximate": true,
+      "verification": "OFFICIAL_DOCUMENTED_NOT_TIMESERIES"
+    },
+    {
+      "ticker": "NATO",
+      "aumUsd": 101846826,
+      "aumAsOf": "2026-03-31",
+      "quality": "OFFICIAL_EXACT_OLD",
+      "issuerUrl": "https://themesetfs.jp/documents/Semi-Annual/NATO_TSR_Annual.pdf",
+      "amountApproximate": false,
+      "verification": "OFFICIAL_DOCUMENTED_NOT_TIMESERIES"
+    },
+    {
+      "ticker": "NLR",
+      "aumUsd": 3050000000,
+      "aumAsOf": "2026-10-23",
+      "quality": "OFFICIAL_ROUNDED",
+      "issuerUrl": "https://www.vaneck.com/us/en/investments/uranium-nuclear-energy-etf-nlr/overview",
+      "amountApproximate": true,
+      "verification": "OFFICIAL_DOCUMENTED_NOT_TIMESERIES"
+    },
+    {
+      "ticker": "NUKZ",
+      "aumUsd": 668000000,
+      "aumAsOf": "2026-09-30",
+      "quality": "OFFICIAL_ROUNDED_OLD",
+      "issuerUrl": "https://www.nukz.rangeetfs.com/",
+      "amountApproximate": true,
+      "verification": "OFFICIAL_DOCUMENTED_NOT_TIMESERIES"
+    },
+    {
+      "ticker": "PBE",
+      "aumUsd": 281946188,
+      "aumAsOf": "2026-07-31",
+      "quality": "OFFICIAL_EXACT_OLD",
+      "issuerUrl": "https://www.sec.gov/Archives/edgar/data/1209466/000120946626001337/edgar.htm",
+      "amountApproximate": false,
+      "verification": "OFFICIAL_DOCUMENTED_NOT_TIMESERIES"
+    },
+    {
+      "ticker": "PPA",
+      "aumUsd": 8263014930,
+      "aumAsOf": "2026-07-31",
+      "quality": "OFFICIAL_EXACT_OLD",
+      "issuerUrl": "https://www.sec.gov/Archives/edgar/data/1209466/000120946626001448/edgar.htm",
+      "amountApproximate": false,
+      "verification": "OFFICIAL_DOCUMENTED_NOT_TIMESERIES"
+    },
+    {
+      "ticker": "PSI",
+      "aumUsd": 2377473288,
+      "aumAsOf": "2026-07-31",
+      "quality": "OFFICIAL_EXACT_OLD",
+      "issuerUrl": "https://www.sec.gov/Archives/edgar/data/1209466/000120946626001311/edgar.htm",
+      "amountApproximate": false,
+      "verification": "OFFICIAL_DOCUMENTED_NOT_TIMESERIES"
+    },
+    {
+      "ticker": "PSWD",
+      "aumUsd": 6483031,
+      "aumAsOf": "2026-10-23",
+      "quality": "OFFICIAL_EXACT",
+      "issuerUrl": "https://etf.dws.com/en-us/PSWD-cybersecurity-select-equity-etf/",
+      "amountApproximate": false,
+      "verification": "OFFICIAL_DOCUMENTED_NOT_TIMESERIES"
+    },
+    {
+      "ticker": "RBTX",
+      "aumUsd": 9596069,
+      "aumAsOf": "2026-10-23",
+      "quality": "OFFICIAL_EXACT",
+      "issuerUrl": "https://www.blackrock.com/us/financial-professionals/products/354128/ishares-future-robotics-and-related-technologies-active-etf",
+      "amountApproximate": false,
+      "verification": "OFFICIAL_DOCUMENTED_NOT_TIMESERIES"
+    },
+    {
+      "ticker": "ROBO",
+      "aumUsd": 2090410802,
+      "aumAsOf": "2026-10-05",
+      "quality": "OFFICIAL_SEARCH_EXCERPT_OLD",
+      "issuerUrl": "https://www.roboglobaletfs.com/robo",
+      "amountApproximate": false,
+      "verification": "OFFICIAL_DOCUMENTED_NOT_TIMESERIES"
+    },
+    {
+      "ticker": "ROBT",
+      "aumUsd": 742239266,
+      "aumAsOf": "2026-10-23",
+      "quality": "OFFICIAL_EXACT",
+      "issuerUrl": "https://www.ftportfolios.com/Retail/Etf/EtfSummary.aspx?Ticker=ROBT",
+      "amountApproximate": false,
+      "verification": "OFFICIAL_DOCUMENTED_NOT_TIMESERIES"
+    },
+    {
+      "ticker": "SBIO",
+      "aumUsd": 184000524.27,
+      "aumAsOf": "2026-10-23",
+      "quality": "OFFICIAL_EXACT_SEARCH_EXCERPT",
+      "issuerUrl": "https://www.alpsfunds.com/exchange-traded-funds/sbio",
+      "amountApproximate": false,
+      "verification": "OFFICIAL_DOCUMENTED_NOT_TIMESERIES"
+    },
+    {
+      "ticker": "SHLD",
+      "aumUsd": 6450000000,
+      "aumAsOf": "2026-10-23",
+      "quality": "OFFICIAL_ROUNDED",
+      "issuerUrl": "https://www.globalxetfs.com/funds/shld",
+      "amountApproximate": true,
+      "verification": "OFFICIAL_DOCUMENTED_NOT_TIMESERIES"
+    },
+    {
+      "ticker": "SKYY",
+      "aumUsd": 3532667040,
+      "aumAsOf": "2026-10-23",
+      "quality": "OFFICIAL_EXACT",
+      "issuerUrl": "https://www.ftportfolios.com/Retail/Etf/EtfSummary.aspx?Ticker=SKYY",
+      "amountApproximate": false,
+      "verification": "OFFICIAL_DOCUMENTED_NOT_TIMESERIES"
+    },
+    {
+      "ticker": "SMH",
+      "aumUsd": 66600000000,
+      "aumAsOf": "2026-10-23",
+      "quality": "OFFICIAL_ROUNDED",
+      "issuerUrl": "https://www.vaneck.com/us/en/investments/semiconductor-etf-smh/overview",
+      "amountApproximate": true,
+      "verification": "OFFICIAL_DOCUMENTED_NOT_TIMESERIES"
+    },
+    {
+      "ticker": "SOXQ",
+      "aumUsd": 2429681508,
+      "aumAsOf": "2026-05-31",
+      "quality": "OFFICIAL_EXACT_OLD",
+      "issuerUrl": "https://www.sec.gov/Archives/edgar/data/1378872/000137887226001381/edgar.htm",
+      "amountApproximate": false,
+      "verification": "OFFICIAL_DOCUMENTED_NOT_TIMESERIES"
+    },
+    {
+      "ticker": "SOXX",
+      "aumUsd": 43232903200,
+      "aumAsOf": "2026-10-23",
+      "quality": "OFFICIAL_EXACT",
+      "issuerUrl": "https://www.ishares.com/us/products/239705/ishares-phlx-semiconductor-etf",
+      "amountApproximate": false,
+      "verification": "OFFICIAL_DOCUMENTED_NOT_TIMESERIES"
+    },
+    {
+      "ticker": "SPAM",
+      "aumUsd": 2296525,
+      "aumAsOf": "2026-03-31",
+      "quality": "OFFICIAL_EXACT_OLD",
+      "issuerUrl": "https://www.sec.gov/Archives/edgar/data/1976322/000113322826008958/R2.htm",
+      "amountApproximate": false,
+      "verification": "OFFICIAL_DOCUMENTED_NOT_TIMESERIES"
+    },
+    {
+      "ticker": "URA",
+      "aumUsd": 4790000000,
+      "aumAsOf": "2026-10-23",
+      "quality": "OFFICIAL_ROUNDED",
+      "issuerUrl": "https://www.globalxetfs.com/funds/ura",
+      "amountApproximate": true,
+      "verification": "OFFICIAL_DOCUMENTED_NOT_TIMESERIES"
+    },
+    {
+      "ticker": "URAN",
+      "aumUsd": 27912801,
+      "aumAsOf": "2026-03-31",
+      "quality": "OFFICIAL_EXACT_OLD",
+      "issuerUrl": "https://www.sec.gov/Archives/edgar/data/1976322/000113322826008958/R2.htm",
+      "amountApproximate": false,
+      "verification": "OFFICIAL_DOCUMENTED_NOT_TIMESERIES"
+    },
+    {
+      "ticker": "URNJ",
+      "aumUsd": 280069013.94,
+      "aumAsOf": "2026-10-23",
+      "quality": "OFFICIAL_EXACT_CENTS",
+      "issuerUrl": "https://sprottetfs.com/urnj-sprott-junior-uranium-miners-etf/",
+      "amountApproximate": false,
+      "verification": "OFFICIAL_DOCUMENTED_NOT_TIMESERIES"
+    },
+    {
+      "ticker": "URNM",
+      "aumUsd": 1640006321.99,
+      "aumAsOf": "2026-10-23",
+      "quality": "OFFICIAL_EXACT_CENTS",
+      "issuerUrl": "https://sprottetfs.com/urnm-sprott-uranium-miners-etf/",
+      "amountApproximate": false,
+      "verification": "OFFICIAL_DOCUMENTED_NOT_TIMESERIES"
+    },
+    {
+      "ticker": "WCBR",
+      "aumUsd": 227066750,
+      "aumAsOf": "2026-10-23",
+      "quality": "OFFICIAL_DISPLAY_PRECISION",
+      "issuerUrl": "https://www.wisdomtree.com/us/products/megatrends/wcbr",
+      "amountApproximate": true,
+      "verification": "OFFICIAL_DOCUMENTED_NOT_TIMESERIES"
+    },
+    {
+      "ticker": "WCLD",
+      "aumUsd": 342415760,
+      "aumAsOf": "2026-10-23",
+      "quality": "OFFICIAL_DISPLAY_PRECISION",
+      "issuerUrl": "https://www.wisdomtree.com/us/products/megatrends/wcld",
+      "amountApproximate": true,
+      "verification": "OFFICIAL_DOCUMENTED_NOT_TIMESERIES"
+    },
+    {
+      "ticker": "WR",
+      "aumUsd": 980000,
+      "aumAsOf": "2026-10-21",
+      "quality": "OFFICIAL_ROUNDED",
+      "issuerUrl": "https://corgiinvest.com/wr",
+      "amountApproximate": true,
+      "verification": "OFFICIAL_DOCUMENTED_NOT_TIMESERIES"
+    },
+    {
+      "ticker": "XA",
+      "aumUsd": 8250000,
+      "aumAsOf": "2026-10-23",
+      "quality": "OFFICIAL_ROUNDED",
+      "issuerUrl": "https://corgiinvest.com/xa",
+      "amountApproximate": true,
+      "verification": "OFFICIAL_DOCUMENTED_NOT_TIMESERIES"
+    },
+    {
+      "ticker": "XAR",
+      "aumUsd": 4858630000,
+      "aumAsOf": "2026-10-23",
+      "quality": "OFFICIAL_DISPLAY_PRECISION",
+      "issuerUrl": "https://www.ssga.com/us/en/intermediary/etfs/state-street-spdr-sp-aerospace-defense-etf-xar",
+      "amountApproximate": true,
+      "verification": "OFFICIAL_DOCUMENTED_NOT_TIMESERIES"
+    },
+    {
+      "ticker": "XBI",
+      "aumUsd": 10356730000,
+      "aumAsOf": "2026-10-23",
+      "quality": "OFFICIAL_DISPLAY_PRECISION",
+      "issuerUrl": "https://www.ssga.com/us/en/intermediary/etfs/state-street-spdr-sp-biotech-etf-xbi",
+      "amountApproximate": true,
+      "verification": "OFFICIAL_DOCUMENTED_NOT_TIMESERIES"
+    },
+    {
+      "ticker": "XSD",
+      "aumUsd": 2395560000,
+      "aumAsOf": "2026-10-23",
+      "quality": "OFFICIAL_DISPLAY_PRECISION",
+      "issuerUrl": "https://www.ssga.com/us/en/intermediary/etfs/state-street-spdr-sp-semiconductor-etf-xsd",
+      "amountApproximate": true,
+      "verification": "OFFICIAL_DOCUMENTED_NOT_TIMESERIES"
+    }
+  ]
+}

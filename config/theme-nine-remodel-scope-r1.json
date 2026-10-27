@@ -1,0 +1,21 @@
+{
+  "contractVersion": "THEME_NINE_REMODEL_SCOPE_R1",
+  "source": "config/theme-data-registry.json",
+  "expectedLegacyMethodology": "ETF_ONLY_T40_R20_V40_PAIR50",
+  "themeIds": [
+    "robotics",
+    "cloud-saas",
+    "autonomous-driving",
+    "nuclear-smr",
+    "defense",
+    "fintech",
+    "cybersecurity",
+    "ai-semiconductor",
+    "biotech"
+  ],
+  "shadowOnly": true,
+  "allowProductionWrites": false,
+  "allowLegacyHistoryOverwrite": false,
+  "allowSchedulerChanges": false,
+  "allow11thTheme": false
+}

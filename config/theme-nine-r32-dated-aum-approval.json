@@ -1,0 +1,14 @@
+{
+  "contract": "THEME_NINE_R32_DATED_AUM_PRIVATE_APPROVAL_V1",
+  "approvalDate": "2026-10-27",
+  "scope": "PRIVATE_STAGE5_AND_STAGE6_SHADOW_ONLY",
+  "policy": "USE_VERIFIED_OFFICIAL_ISSUER_AUM_WITH_ORIGINAL_AS_OF_DATE",
+  "scoreBenchmarkDate": "2026-10-23",
+  "candidateRosterSha256": "e2ea97ce0ed0bf15cb083237d63d3cf520e090d8bd229a837bad393c3f8b0c6c",
+  "evidenceContract": "THEME_NINE_R26_OFFICIAL_AUM_RESEARCH_EVIDENCE_V1",
+  "doNotInventAum": true,
+  "doNotRelabelAumDates": true,
+  "doNotImposeUnapprovedMaximumLag": true,
+  "doNotReconstructHistoricalAum": true,
+  "publicationAuthorized": false
+}

@@ -1,0 +1,301 @@
+{
+  "schema": "zgmini.theme-nine.r21-theme-fit-source-first-batch.v1",
+  "asOf": "2026-10-26",
+  "scope": "RESEARCH_ONLY_NO_PRICE_COLLECTION_NO_MAIN_FORMULA_PUBLICATION",
+  "approvedCandidateFile": "config/theme-nine-r20-approved-candidates.json",
+  "gradeGate": "R19 O/X approval remains unchanged",
+  "universe": {
+    "uniqueTickers": 63,
+    "positions": 64,
+    "scopeReviewPositions": 9,
+    "otherCorePositions": 55
+  },
+  "method": "First-party issuer full holdings/top holdings/fund objective. All percentages retain official observation dates, not inferred. Cross overlap equals sum over same issuer names of min(fund_A_weight,fund_B_weight); no automatic removal based solely on overlap.",
+  "holdingsEvidence": [
+    {
+      "theme": "로봇·자동화",
+      "ticker": "ARKQ",
+      "holdingDate": null,
+      "source": "https://www.ark-funds.com/funds/arkq",
+      "evidence": "공식 투자목적: 순자산 최소 80%를 자율 기술·로봇 테마 기업에 투자. 하부 투자 범위에 자율 모빌리티·로봇·배터리·에너지·우주·차세대 클라우드 포함",
+      "quantitativeHoldingsVerified": false,
+      "classification": "CROSS_THEME_AUTONOMY_ROBOTICS_BROAD",
+      "nextAction": "공식 동일일 전체 보유종목·분류별 비중 필요",
+      "decision": "RETAIN_APPROVED_CANDIDATE_NOT_YET_FORMULA_ADMITTED"
+    },
+    {
+      "theme": "클라우드·SaaS",
+      "ticker": "CLOD",
+      "holdingDate": "2025-12-31",
+      "source": "https://themesetfs.com/etfs/clod",
+      "supportingSource": "https://themesetfs.com/documents/Factsheets/Themes-ETFs-Factsheet-CLOD-%2812.31.2026%29.pdf",
+      "evidence": "공식 2025-12-31 자료: 클라우드 가치사슬에 데이터 보안·전자상거래 인프라·데이터 인프라 포함, 보유종목 중 CrowdStrike/Palo Alto Networks 등; 2026-10 동일일 최신 구성비는 미검증",
+      "quantitativeHoldingsVerified": false,
+      "classification": "CLOUD_BROAD_DIGITAL_SECURITY_ECOMMERCE",
+      "nextAction": "최신 공식 holdings 날짜와 세부 클라우드 매출 분류 확인",
+      "decision": "RETAIN_APPROVED_CANDIDATE_NOT_YET_FORMULA_ADMITTED"
+    },
+    {
+      "theme": "자율주행",
+      "ticker": "BOTZ",
+      "holdingDate": "2026-10-02",
+      "source": "https://www.globalxetfs.com/funds/botz",
+      "evidence": "상위 보유 종목 Fanuc 8.27%, Intuitive Surgical 8.16%, NVIDIA 8.08%, Keyence 8.05%, ABB 8.04%; 직접 자율주행 관련 Aurora Innovation 2.42%. 로봇·공장자동화·의료로봇 노출이 크고 자율주행 비중 전체는 미확인",
+      "quantitativeHoldingsVerified": true,
+      "quantitativeEvidence": {
+        "auroraInnovationPct": 2.42,
+        "asOf": "2026-10-02"
+      },
+      "classification": "AUTONOMOUS_DRIVING_BREADTH_RISK_HIGH",
+      "nextAction": "전체 holdings 종목별 자율주행 직접 매출/사업성 및 비중 합산",
+      "decision": "RETAIN_APPROVED_CANDIDATE_NOT_YET_FORMULA_ADMITTED"
+    },
+    {
+      "theme": "자율주행",
+      "ticker": "HAIL",
+      "holdingDate": "2026-10-20",
+      "source": "https://www.ssga.com/us/en/individual/etfs/state-street-spdr-sp-kensho-smart-mobility-etf-hail",
+      "evidence": "공식 하위 업종: 자동차 부품 16.56%, 완성차 16.34%, 반도체 11.64%, 애플리케이션 SW 11.03%, 항공·방산 6.34%. 모빌리티 넓은 범위라 자율주행 직접 매출 비중 검증 필요",
+      "quantitativeHoldingsVerified": true,
+      "quantitativeEvidence": {
+        "automotiveParts": 16.56,
+        "automakers": 16.34,
+        "semiconductors": 11.64,
+        "applicationSoftware": 11.03,
+        "aerospaceDefense": 6.34,
+        "asOf": "2026-10-20"
+      },
+      "classification": "SMART_MOBILITY_BROAD_NOT_PURE_AV",
+      "nextAction": "전체 holdings에 자율주행 직접 활동 태깅 후 비중 합산",
+      "decision": "RETAIN_APPROVED_CANDIDATE_NOT_YET_FORMULA_ADMITTED"
+    },
+    {
+      "theme": "자율주행",
+      "ticker": "KARS",
+      "holdingDate": "2026-10-23",
+      "source": "https://kraneshares.com/etf/kars/",
+      "evidence": "공식 ETF 목적은 EV 및 부품·배터리·리튬·전기 인프라·자율주행 혼합. 상위 Samsung SDI 5.28%, Tesla 5.02%, BMW 4.58%, BYD 4.56%, Panasonic 4.42% 등. 자율주행만의 비중 확인 전 직접 대표 ETF로 단정 금지",
+      "quantitativeHoldingsVerified": true,
+      "quantitativeEvidence": {
+        "SamsungSDI": 5.28,
+        "Tesla": 5.02,
+        "BMW": 4.58,
+        "BYD": 4.56,
+        "Panasonic": 4.42,
+        "asOf": "2026-10-23"
+      },
+      "classification": "EV_BATTERY_BROAD_NOT_PURE_AV",
+      "nextAction": "자율주행·일반 EV·배터리 등 사업 관련성 분리 집계",
+      "decision": "RETAIN_APPROVED_CANDIDATE_NOT_YET_FORMULA_ADMITTED"
+    },
+    {
+      "theme": "원전·SMR",
+      "ticker": "URNM",
+      "holdingDate": "2026-10-23",
+      "source": "https://sprottetfs.com/urnm-sprott-uranium-miners-etf/",
+      "evidence": "9/30 산업구성 Uranium & Related Equities 80.43%, Physical Uranium 19.57%. 10/23 실제 holdings 25개와 URNJ 41개 비교 공통 20개, 최소 비중 합산 중복 47.55%. SMR 원자로/기술 기업과 채굴 가치사슬 구분",
+      "quantitativeHoldingsVerified": true,
+      "quantitativeEvidence": {
+        "industryAsOf": "2026-09-30",
+        "uraniumRelatedEquities": 80.43,
+        "physicalUranium": 19.57,
+        "crossWith": "URNJ",
+        "commonHoldings": 20,
+        "minWeightOverlapPct": 47.55,
+        "holdingsDate": "2026-10-23",
+        "holdingsCount": 25
+      },
+      "classification": "URANIUM_MINING_FUEL_SUPPLY_AND_PHYSICAL_EXPOSURE",
+      "nextAction": "URA/URNJ 등과 동일일 중복 및 원전발전/SMR 직접 노출 구분",
+      "decision": "RETAIN_APPROVED_CANDIDATE_NOT_YET_FORMULA_ADMITTED"
+    },
+    {
+      "theme": "원전·SMR",
+      "ticker": "URNJ",
+      "holdingDate": "2026-10-23",
+      "source": "https://sprottetfs.com/urnj-sprott-junior-uranium-miners-etf/",
+      "evidence": "9/30 사업비중 Uranium Equities 100%; 10/23 공식 보유 41개 중 URNM과 동일 기업 20개, 최소 비중 합산 중복 47.55%; 주로 주니어 우라늄 광업에 집중",
+      "quantitativeHoldingsVerified": true,
+      "quantitativeEvidence": {
+        "industryAsOf": "2026-09-30",
+        "uraniumEquities": 100,
+        "crossWith": "URNM",
+        "commonHoldings": 20,
+        "minWeightOverlapPct": 47.55,
+        "holdingsDate": "2026-10-23",
+        "holdingsCount": 41
+      },
+      "classification": "JUNIOR_URANIUM_MINING_FUEL_SUPPLY",
+      "nextAction": "URNM·URA와 동종 광업 중복 정량, SMR 직접기업 구분",
+      "decision": "RETAIN_APPROVED_CANDIDATE_NOT_YET_FORMULA_ADMITTED"
+    },
+    {
+      "theme": "방산",
+      "ticker": "WR",
+      "holdingDate": "2026-10-21",
+      "source": "https://corgiinvest.com/wr",
+      "evidence": "공식 업종 구성: 에너지 59.22%, 산업재 20.85%, 기술 8.18%, 기타 9.81%, 소재 1.94%; ExxonMobil 9.06%, Chevron 6.66%, Palantir 6.22%, RTX 4.81%. 방산 심리보다 에너지 가격에 강하게 반응할 위험",
+      "quantitativeHoldingsVerified": true,
+      "quantitativeEvidence": {
+        "energySector": 59.22,
+        "industrials": 20.85,
+        "technology": 8.18,
+        "materials": 1.94,
+        "other": 9.81,
+        "asOf": "2026-10-21"
+      },
+      "classification": "DEFENSE_MIX_ENERGY_DOMINANT",
+      "nextAction": "방산 직접 매출·에너지 비중을 분리하고 방산 바스켓 적합성 최종 판단",
+      "decision": "RETAIN_APPROVED_CANDIDATE_PROPOSE_DEFENSE_FORMULA_EXCLUSION_REQUIRES_SEPARATE_DECISION"
+    },
+    {
+      "theme": "핀테크",
+      "ticker": "ARKF",
+      "holdingDate": null,
+      "source": "https://www.ark-funds.com/funds/arkf",
+      "evidence": "2025-11-23 공식 전략 변경: 블록체인+핀테크 테마로 변경, 전체 80%는 결합 범위. 핀테크 단독 노출/디지털자산·블록체인 비중 별도 미확인",
+      "quantitativeHoldingsVerified": false,
+      "classification": "BLOCKCHAIN_PLUS_FINTECH_MIXED",
+      "nextAction": "최신 전체 holdings 사업 분류 및 핀테크 단독 가중치 검증",
+      "decision": "RETAIN_APPROVED_CANDIDATE_NOT_YET_FORMULA_ADMITTED"
+    }
+  ],
+  "uraniumPairOverlap": {
+    "date": "2026-10-23",
+    "n_urnm": 25,
+    "n_urnj": 41,
+    "urnm_sum": 99.86,
+    "urnj_sum": 99.95000000000006,
+    "commonCompanies": 20,
+    "weightedOverlapPct": 47.55,
+    "common": [
+      {
+        "name": "NexGen Energy Ltd.",
+        "m": 13.25,
+        "j": 14.36,
+        "min": 13.25
+      },
+      {
+        "name": "Denison Mines Corp.",
+        "m": 4.07,
+        "j": 11.94,
+        "min": 4.07
+      },
+      {
+        "name": "Paladin Energy Ltd.",
+        "m": 3.68,
+        "j": 10.85,
+        "min": 3.68
+      },
+      {
+        "name": "Energy Fuels Inc.",
+        "m": 3.33,
+        "j": 9.51,
+        "min": 3.33
+      },
+      {
+        "name": "CGN Mining Co. Ltd.",
+        "m": 5.27,
+        "j": 5.73,
+        "min": 5.27
+      },
+      {
+        "name": "IsoEnergy Ltd.",
+        "m": 2.32,
+        "j": 5.23,
+        "min": 2.32
+      },
+      {
+        "name": "Bannerman Energy Ltd.",
+        "m": 2.75,
+        "j": 4.74,
+        "min": 2.75
+      },
+      {
+        "name": "Boss Energy Ltd.",
+        "m": 2.28,
+        "j": 4.36,
+        "min": 2.28
+      },
+      {
+        "name": "Ur-Energy Inc.",
+        "m": 2.04,
+        "j": 3.76,
+        "min": 2.04
+      },
+      {
+        "name": "Atha Energy Corp.",
+        "m": 1.25,
+        "j": 3.04,
+        "min": 1.25
+      },
+      {
+        "name": "Deep Yellow Ltd.",
+        "m": 2.55,
+        "j": 2.98,
+        "min": 2.55
+      },
+      {
+        "name": "Mega Uranium Ltd.",
+        "m": 0.75,
+        "j": 1.8,
+        "min": 0.75
+      },
+      {
+        "name": "Encore Energy Corp.",
+        "m": 0.91,
+        "j": 1.76,
+        "min": 0.91
+      },
+      {
+        "name": "Global Atomic Corp.",
+        "m": 0.76,
+        "j": 1.66,
+        "min": 0.76
+      },
+      {
+        "name": "Alligator Energy Ltd.",
+        "m": 0.63,
+        "j": 1.33,
+        "min": 0.63
+      },
+      {
+        "name": "Eagle Nuclear Energy Corp.",
+        "m": 0.44,
+        "j": 1.06,
+        "min": 0.44
+      },
+      {
+        "name": "Laramide Resources Ltd.",
+        "m": 0.46,
+        "j": 1.01,
+        "min": 0.46
+      },
+      {
+        "name": "Lotus Resources Ltd.",
+        "m": 0.39,
+        "j": 0.8,
+        "min": 0.39
+      },
+      {
+        "name": "Peninsula Energy Ltd.",
+        "m": 0.4,
+        "j": 0.75,
+        "min": 0.4
+      },
+      {
+        "name": "Verdera Energy Corp.",
+        "m": 0.02,
+        "j": 0.03,
+        "min": 0.02
+      }
+    ],
+    "definition": "sum(min(holding_i_weight_URNM,holding_i_weight_URNJ)) for same issuer on 2026-10-23, excludes cash; common issuer count across full 25 and 41 rows; NexGen multi-listing matched on issuer name",
+    "rawPriceCollected": 0
+  },
+  "next": [
+    "Review remaining 55 core positions with same-date official full holdings and classify sub-theme exposure.",
+    "Compute pairwise intersections in each theme on common issuer IDs/dates; avoid ticker alias mismatches.",
+    "Fetch dated official AUM as independent step. No score/collector/publication changes until user authorization."
+  ]
+}
