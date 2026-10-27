@@ -16,6 +16,24 @@ test('R8 parses alternate English date format without the host timezone',()=>{
  assert.equal(parseTaskLocalDate('2026-02-30 18:00:00'),null);
 });
 
+test('R8 parses observed Korean weekday and noon/midnight correctly',()=>{
+ assert.equal(parseTaskLocalDate('2026-10-27-화 오후 12:00:01'),Date.parse('2026-10-27T03:00:01Z'));
+ assert.equal(parseTaskLocalDate('2026-10-27 (화) 오전 12:00:01'),Date.parse('2026-10-26T15:00:01Z'));
+ assert.equal(parseTaskLocalDate('2026-10-27-화 오전 6:00:00'),Date.parse('2026-10-26T21:00:00Z'));
+ assert.equal(parseTaskLocalDate('2026-10-27-화 오후 6:00:00'),Date.parse('2026-10-27T09:00:00Z'));
+});
+
+test('R8 passes on actual observed R8B noon schedule and post-install cache refresh',()=>{
+ const gate=evaluateR8Timing({
+  runnerMtimeMs:parseTaskLocalDate('2026-10-27 03:17:15'),
+  lastRunMs:parseTaskLocalDate('2026-10-27-화 오후 12:00:01'),
+  cacheUpdatedAt:parseTaskLocalDate('2026-10-27 12:01:13'),
+  lastResult:0,
+  now:parseTaskLocalDate('2026-10-27 14:06:45'),
+ });
+ assert.equal(gate.status,'PASS_R8_NEXT_NORMAL_R13_NEWS_CACHE_REFRESH');
+});
+
 test('R8 differentiates installed, pending, successful scheduled refresh, and failed task',()=>{
  const install=Date.parse('2026-10-27T08:00:00Z');
  const run=Date.parse('2026-10-27T09:00:00Z');
