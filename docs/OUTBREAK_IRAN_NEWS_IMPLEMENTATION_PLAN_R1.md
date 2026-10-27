@@ -235,3 +235,14 @@
 - `IRAN_NEWS_R10_OLLAMA_SHADOW.cmd`는 R10 코드 SHA `030c2fc7acdbf41858d7ef8f9e5f8c27e02c9858`에서 검사기를 읽어 실제 PC에서 한 번 실행, `IRAN_NEWS_R10_OLLAMA_SHADOW_RESULT.txt`를 CMD 옆에 출력한다. CMD ASCII+CRLF/BOM 없음. 기존 Windows R13 실행기·스케줄러·D1·SQLite·캐시에 쓰지 않는다.
 - R10 단위 테스트 및 기존 R1/R4/R6/R7/R8/R9 통합 **7/7 PASS**. 다만 실제 PC 모델 추론 성능과 80개 피드의 중복·14일 후보는 **R10 실행 전 아직 미확인**이다. OGL 범위 밖 제3자 콘텐츠가 포함되는지 검증할 개별 기사 권리 게이트는 유지한다.
 - 다음 Gate: R10 실측의 처리량/유효도 확인 → 전체 갱신 기사에 대한 증분 처리, 기사별 재사용 가능성, 저장 전 상세 검증 → 뉴스 전용 캐시+원격 뉴스 키에만 그림자 게시/read-back → 운영 R13 6시간 종료 후 격리 hook에 자동 뉴스 갱신 연결 → 웹 실제 최신 기사·14일 표시 확인. 현재 자동 사이트 게시는 미가동.
+
+## 19. 2026-10-27 R10 실 PC Ollama 결과 및 R11 관련 문단 집중 검증
+
+- 사용자 `IRAN_NEWS_R10_OLLAMA_SHADOW_RESULT.txt`: `FINAL_STATUS=PASS_R10_READ_ONLY_SHADOW`, 4개 뉴스 검색 Feed 80건 → URL 중복 제거 49건, Content API 49/49 성공, 30일 내 22건, 최근 14일 10건.
+- 로컬 모델 2종 × 기사 표본 2개 = 구조화 응답 **4/4 JSON 유효**. 속도: 첫 기사 Gemma 1,862ms/Qwen 11,197ms, 둘째 기사 Gemma 13,364ms/Qwen 11,207ms. 이런 두 건의 작은 표본만으로 모델의 전체 기사 처리 속도/품질 우열은 확정할 수 없다.
+- **내용 품질 문제:** 2026-10-23 영국 총리-미국 대통령 통화 발표에는 사우디에 대한 후티 공격 관련 문단이 있음에도, Gemma는 우크라이나 중심 요약으로 `positive`를 반환. Qwen도 우크라이나 중심으로 요약. Qwen의 첫 표본에는 `요emen`과 같은 잘못된 한·영 혼합 번역이 포함됐다. R10의 `validModelCalls=4`는 JSON 구조 유효성이지 의미 정확성 검증 PASS가 아니다.
+- 원문 2건 공식 웹페이지를 교차 확인하여 오류 재현: `https://www.gov.uk/government/news/joint-press-release-on-the-r4-ministerial-meeting-in-istanbul`, `https://www.gov.uk/government/news/pm-call-with-president-trump-of-the-united-states-23-october-2026`. 관심 키워드 한 개 이상인 기사 게시 후보 선정 정책 자체는 유지하되, 뉴스의 요약과 영향 분류는 **네 키워드에 관련된 본문 문단 기준**으로만 수행해야 한다.
+- R11 관련 문단만 추출하는 `topicFocusedBody`, 모델의 `이란|사우디|예멘|예맨|후티` 요약 언급 조건, 한·영 혼합 번역 탐지, `positive/negative` 실제 분쟁 변화 요건을 추가. 예전 R10 기록의 입력 코드 SHA는 그대로 재현 가능하다. R11은 별도 `news-display-focused-shadow-r11.mjs` 진입점으로 실행한다.
+- 기존 R1/R4/R6/R7/R8/R9/R10+신규 R11 **8/8 테스트 파일 PASS**. 단순 모의 검증이며 신규 모델 실 PC 실측 결과는 아직 미확인.
+- R11 PC 파일 `IRAN_NEWS_R11_FOCUSED_SHADOW.cmd`는 원본 SHA `6e3bd1b24737c969f033d44c2c7cd005e3677d08`로 고정, 한국어 기사 요약 및 클래스별 수치·문단 발췌 길이만 로그에 출력한다. 여전히 뉴스 캐시·D1·스케줄러·점수 원장 쓰기 금지.
+- R11 결과가 의미적으로 타당하고 기사별 GOV.UK OGL 제3자 제외를 확인할 수 있을 때만 다음 단계 캐시 저장+뉴스 전용 D1 게시를 검토한다. **현재 자동 사이트 게시 미활성화**.
