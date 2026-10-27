@@ -33,10 +33,14 @@ async function existingHyparquet({dataRoot,location}){
  const roots=[process.env.ZGMINI_HYPARQUET_MODULE,
   path.join(dataRoot,'theme-market-history-r131','marketparquet-r167','node_modules','hyparquet','src','index.js'),
   path.join(path.dirname(location),'..','marketparquet-r167','node_modules','hyparquet','src','index.js')];
- const projects=path.join(dataRoot,'projects');
- if(fs.existsSync(projects))for(const name of fs.readdirSync(projects).slice(0,80)){
-  roots.push(path.join(projects,name,'node_modules','hyparquet','src','index.js'));
-  roots.push(path.join(projects,name,'zgmini','node_modules','hyparquet','src','index.js'));
+ // The approved Windows layout keeps projects beside data, not inside it.
+ // Retain the nested fallback for previously staged custom layouts.
+ for(const projects of [path.resolve(dataRoot,'..','projects'),path.join(dataRoot,'projects')]){
+  if(!fs.existsSync(projects))continue;
+  for(const name of fs.readdirSync(projects).slice(0,80)){
+   roots.push(path.join(projects,name,'node_modules','hyparquet','src','index.js'));
+   roots.push(path.join(projects,name,'zgmini','node_modules','hyparquet','src','index.js'));
+  }
  }
  for(const file of roots){
   if(typeof file!=='string'||!fs.existsSync(file))continue;
