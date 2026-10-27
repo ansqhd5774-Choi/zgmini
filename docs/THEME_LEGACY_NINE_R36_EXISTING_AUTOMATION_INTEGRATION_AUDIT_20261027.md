@@ -68,3 +68,12 @@
 - [R35 비공개 Delta 대기](THEME_LEGACY_NINE_R35_DELTA_COLLECTION_20261027.md)
 - [GetMarketHistory Reliability](https://getmarkethistory.com/docs/reliability/)
 - [MarketParquet 데이터 구조 문서](https://marketparquet.com/documentation)
+
+## 사후 실측 추가: 2026-10-27 R39 결과 (R36 원래 시점 감사는 보존)
+
+- 사용자 제출 `THEME_NINE_R39_PARQUET_COVERAGE_RESULT_20261027133725_36928.txt`와 `...133736_36960.txt` 두 건은 동일한 실PC 결과.
+- 기존 2026-10-23/26 `etf_daily` 실제 파일: **승인 고유 63종 중 54종**이 양일 모두 존재, **SPY 양일 존재**. 미발견 9종: `CABZ,CBOT,GNMX,KYC,LATR,LLMA,RBTX,WR,XA`.
+- 2026-10-23 기존 R32 개별 점수 적격 **고유 45종은 54종에 모두 들어 있음**. 적격 ETF 45종이 2026-10-26 R32 재계산에 즉시 적격이라는 의미는 아님.
+- R36 과거의 `PC_CURRENT_63_COVERAGE_UNKNOWN`은 **당시 전체 정규 작업 범위 미확인**을 뜻한다. R39를 통해 **두 날짜 저장 EOD에 한해** 54/63 보유가 새로 확정되었지만, Windows 정규 작업의 수집 목록과 252/628일 저장 범위는 아직 미확인이다.
+- 공급자 공식 문서는 MarketParquet 주식/ETF EOD가 split-adjusted임을 명시한다. 기존 R23 1h 원가격을 무검증 혼합할 수 없다. 다음 기술 단계는 데이터가 실제 겹치는 날짜들에서 가격/수익률 및 SPY, 원래 1h의 뉴욕 15시 대용값을 대조한 뒤 **동일 가격모드 연속 자료** 확보 가능성을 확인하는 것이다.
+- R39 실제 보고서와 테마별 9종 누락 위치, 파일 SHA·차기 실행 순서는 [R39 실측 결과 기준서](THEME_NINE_R39_SAVED_PARQUET_COVERAGE_20261027.md)에 있다. 새 자동수집기·스케줄러/중복 GET/로스터 임의 삭제·D1 쓰기·배포 모두 하지 않았다.
