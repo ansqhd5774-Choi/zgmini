@@ -110,3 +110,9 @@ CMD 내부의 임시 실행 파일은 **CMD가 위치한 폴더의 고유한 작
 - 위 점수는 **공개용 확정치가 아닌 로컬 비공개 비교값**이며, 사용자 Windows PC 재현성·6단계 이력 비교가 확인되지 않았다.
 - PC 실행 파일: `scripts/pc-writer/THEME_NINE_R32_PRIVATE_AGGREGATE.cmd`. 구성 6개 파일 각 SHA256 역추출 검증 PASS, 크기 84,737바이트. R25 원본 JSON과 같은 폴더에서 더블클릭(복수라면 원본 JSON을 CMD로 드래그). **같은 폴더**에 `THEME_NINE_R32_PRIVATE_RESULT_*.txt`와 `THEME_NINE_R32_PRIVATE_SHADOW_*.json` 생성. TXT·JSON 제출 후 6단계 진행.
 - 테스트 상태: 로컬 9 PASS / 0 FAIL / 1 SKIP(실행 환경의 `spawnSync EPERM`), CMD 자체의 사용자 PC 실행 증거는 아직 없음. 기존 D1·DB·스케줄러·공개 점수·UI 변경 **0건**.
+
+## 10. 실제 Windows PC R32 합산 결과 및 6단계 인계
+
+- 사용자 실제 제출: `THEME_NINE_R32_PRIVATE_RESULT_25421_4557.txt`, `THEME_NINE_R32_PRIVATE_SHADOW_18279_2554.json`. Node v24.19.0 / SHA 여섯 구성 파일 검증 / `PRIVATE_STAGE5_CALCULATED_NOT_PUBLISHED` 정상 완료.
+- PC JSON SHA256 `d69aad61083d9b77dcf0a4871e0950d5ed312e1a41480e24871eb7388d7e7d54`와 TXT 지문 일치; R25 원본 SHA256 `12544ebc141148e7fbe61765670f9807520d87de7e9b14e4f41ec85e973f0987` 일치.
+- 9×252 비공개 점수 전부 재생산 일치 및 비중 검사 PASS. 6단계 R33 비공개 내부 재현 감사는 [별도 근거 문서](THEME_LEGACY_NINE_R33_STAGE6_PRIVATE_AUDIT_20261027.md)로 확인. 과거 기존 공개 시계열 비교는 자료 확보 전까지 PENDING, 공개는 미승인.
