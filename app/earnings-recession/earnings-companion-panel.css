@@ -1,0 +1,45 @@
+.earnings-c-panel{margin:24px 0 0;padding:20px;background:#061b29;border:1px solid #24485c;border-radius:12px;color:#d7e8f0;min-width:0}
+.earnings-c-head{display:flex;justify-content:space-between;align-items:flex-start;gap:14px;margin-bottom:16px}
+.earnings-c-eyebrow{color:#eabb52;letter-spacing:.12em;font-size:10px;font-weight:800;margin:0 0 6px}
+.earnings-c-head h2{margin:0;font-size:20px;font-weight:800;line-height:1.4;color:#eff8ff}
+.earnings-c-head h2 small{font-size:11px;font-weight:750;color:#82cfda;margin-left:5px}
+.earnings-c-head p:not(.earnings-c-eyebrow){margin:6px 0 0;font-size:12px;line-height:1.6;color:#a3c1d0;word-break:keep-all}
+.earnings-c-status{display:inline-flex;align-items:center;justify-content:center;flex:none;white-space:nowrap;border:1px solid #315a6b;background:#0c2a3a;color:#a0dbe0;padding:5px 10px;border-radius:999px;font-size:11px;font-weight:750}
+.earnings-c-table-wrap{min-width:0;overflow-x:auto;border:1px solid #204154;border-radius:7px}
+.earnings-c-table{width:100%;min-width:780px;border-collapse:collapse;table-layout:fixed;font-variant-numeric:tabular-nums}
+.earnings-c-table thead{background:#0a2940;color:#a4c6d9}
+.earnings-c-table :is(th,td){padding:13px 10px;text-align:center;border-bottom:1px solid #173549;font-size:12px;white-space:nowrap}
+.earnings-c-table thead th{font-size:11px;font-weight:700}
+.earnings-c-table tbody th{text-align:left;white-space:normal;word-break:keep-all;width:29%}
+.earnings-c-table tbody th strong{display:block;color:#f1f8fc;font-size:12px;line-height:1.4}
+.earnings-c-table tbody th small{display:block;margin-top:3px;color:#91aebf;font-size:10px;line-height:1.5}
+.earnings-c-table tbody tr:last-child :is(th,td){border-bottom:0}
+.earnings-c-table .earnings-c-current{font-size:14px;font-weight:800;color:#87ddc8}
+.earnings-c-table tbody td small{display:block;margin-top:3px;color:#91aebf;font-size:10px}
+.earnings-c-table a,.earnings-c-mobile-foot a{color:#7acbda;text-decoration:underline;text-underline-offset:3px;font-size:11px}
+.earnings-c-table a:focus-visible,.earnings-c-mobile-foot a:focus-visible{outline:2px solid #7acbda;outline-offset:3px}
+.earnings-c-mini-chart{width:112px;height:34px;max-width:100%;vertical-align:middle;overflow:visible}
+.earnings-c-no-chart{font-size:10px;color:#8faabc}
+.earnings-c-footnote{font-size:11px;line-height:1.65;color:#8fabbc;margin:13px 0 0;word-break:keep-all}
+.earnings-c-mobile{display:none}
+@media(max-width:767px){
+ .earnings-c-panel{padding:14px;margin-top:18px}
+ .earnings-c-head{flex-wrap:wrap;gap:8px;margin-bottom:12px}
+ .earnings-c-head h2{font-size:17px}
+ .earnings-c-head p:not(.earnings-c-eyebrow){font-size:11px}
+ .earnings-c-status{font-size:10px;padding:4px 8px}
+ .earnings-c-table-wrap{display:none}
+ .earnings-c-mobile{display:grid;gap:8px}
+ .earnings-c-mobile-card{padding:12px;background:#071b2c;border:1px solid #244052;border-radius:6px;min-width:0}
+ .earnings-c-mobile-head{display:flex;align-items:flex-start;justify-content:space-between;gap:8px}
+ .earnings-c-mobile-head h3{margin:0;color:#f1f8fc;font-size:13px;font-weight:750;line-height:1.35;word-break:keep-all}
+ .earnings-c-mobile-head p{margin:3px 0 0;color:#93adbd;font-size:10px;line-height:1.4}
+ .earnings-c-mobile-head>span{color:#83d6cc;white-space:nowrap;font-size:10px;font-weight:750}
+ .earnings-c-mobile-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:1px;background:#1d3d4d;margin-top:12px}
+ .earnings-c-mobile-grid>div{min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#092335;padding:8px 3px;gap:4px;text-align:center}
+ .earnings-c-mobile-grid small{color:#8faabc;font-size:9px}
+ .earnings-c-mobile-grid strong{font-size:11px;line-height:1.25;color:#e3f1f7;overflow-wrap:anywhere;font-variant-numeric:tabular-nums}
+ .earnings-c-mobile-foot{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:10px}
+ .earnings-c-mobile-foot .earnings-c-mini-chart{width:125px}
+ .earnings-c-footnote{font-size:10px}
+}
