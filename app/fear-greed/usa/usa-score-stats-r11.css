@@ -1,0 +1,159 @@
+/* R11: USA detail score statistics only. Existing CNN colors/gauge retained. */
+.zg-fg-us .usa-target-card.fg-shared-shell { --fg-shared-left: clamp(350px, 44%, 510px); }
+.zg-fg-us .usa-target-card.fg-shared-shell .fg-score-slot {
+  display: grid;
+  grid-template-columns: minmax(120px, 33%) minmax(0, 1fr);
+  gap: 8px;
+  align-items: center;
+  justify-items: stretch;
+}
+.zg-fg-us .usa-target-card.fg-shared-shell .fg-score-slot .cnn-score-orb {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr);
+  width: 100%;
+  height: 126px;
+  min-height: 0;
+  max-height: 126px;
+  justify-self: center;
+  align-self: center;
+}
+.zg-fg-us .usa-target-card.fg-shared-shell .cnn-spectrum-gauge {
+  grid-column: 1;
+  grid-row: 1;
+  width: 100%;
+  max-width: 166px;
+  aspect-ratio: 220 / 142;
+  place-self: center;
+}
+.zg-fg-us .usa-target-card.fg-shared-shell .cnn-spectrum-center { top: 73%; width: 100%; }
+.zg-fg-us .usa-target-card.fg-shared-shell .cnn-score-whole { font-size: 34px; }
+.zg-fg-us .usa-target-card.fg-shared-shell .cnn-score-fraction { font-size: 17px; }
+.zg-fg-us .usa-target-card.fg-shared-shell .cnn-spectrum-center > span:not(.cnn-score-inline-day) {
+  margin-top: 3px;
+  font-size: 11px;
+}
+.zg-fg-us .usa-target-card.fg-shared-shell .cnn-score-orb-hero .cnn-spectrum-center > .cnn-score-inline-day {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  gap: 5px;
+  margin-top: 4px;
+  color: var(--zg-text-meta);
+  font-size: 9px;
+  font-weight: 700;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+.zg-fg-us .usa-target-card.fg-shared-shell .cnn-score-orb-hero .cnn-score-inline-day > span {
+  margin: 0;
+  color: var(--zg-text-meta);
+  font-size: 9px;
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: 0;
+}
+.zg-fg-us .usa-target-card .cnn-score-inline-day strong {
+  color: #d3e4f0;
+  font-size: 10px;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+}
+.zg-fg-us .usa-target-card .cnn-score-inline-day strong.is-up { color: #58c88a; }
+.zg-fg-us .usa-target-card .cnn-score-inline-day strong.is-down { color: #ff7076; }
+.zg-fg-us .usa-target-card .cnn-score-inline-day i {
+  margin-left: 2px;
+  font-size: 8px;
+  font-style: normal;
+}
+.zg-fg-us .usa-target-card .usa-score-stats {
+  display: grid;
+  grid-template-rows: 54px 54px;
+  gap: 6px;
+  width: 100%;
+  min-width: 0;
+}
+.zg-fg-us .usa-target-card .usa-score-extremes,
+.zg-fg-us .usa-target-card .usa-score-changes {
+  display: grid;
+  gap: 1px;
+  min-width: 0;
+  border-radius: 4px;
+  overflow: hidden;
+  background: #24485b;
+}
+.zg-fg-us .usa-target-card .usa-score-extremes { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.zg-fg-us .usa-target-card .usa-score-changes { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+.zg-fg-us .usa-target-card .usa-score-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  min-width: 0;
+  padding: 3px 1px;
+  background: #071e2c;
+  text-align: center;
+}
+.zg-fg-us .usa-target-card .usa-score-extremes .usa-score-stat { gap: 2px; }
+.zg-fg-us .usa-target-card .usa-score-stat-label {
+  color: #a8bcd0;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1.1;
+  white-space: nowrap;
+}
+.zg-fg-us .usa-target-card .usa-score-stat-value {
+  color: #ecf4fa;
+  font-size: 16px;
+  font-weight: 850;
+  line-height: 1.1;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.zg-fg-us .usa-target-card .usa-score-stat-date {
+  color: #86a0b7;
+  font-size: 8px;
+  font-weight: 600;
+  line-height: 1.15;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.zg-fg-us .usa-target-card .usa-score-stat.is-high .usa-score-stat-value,
+.zg-fg-us .usa-target-card .usa-score-stat.is-positive .usa-score-stat-value { color: #58c88a; }
+.zg-fg-us .usa-target-card .usa-score-stat.is-low .usa-score-stat-value,
+.zg-fg-us .usa-target-card .usa-score-stat.is-negative .usa-score-stat-value { color: #ff7076; }
+.zg-fg-us .usa-target-card .usa-score-changes .usa-score-stat-value { font-size: 13px; letter-spacing: -.5px; }
+.zg-fg-us .usa-target-card .usa-score-changes .usa-score-stat-value small {
+  margin-left: 1px;
+  font-size: 8px;
+  vertical-align: 1px;
+}
+@media (max-width: 760px) {
+  .zg-fg-us .usa-target-card.fg-shared-shell .fg-score-slot {
+    grid-template-columns: clamp(110px, 33%, 140px) minmax(0, 1fr);
+    gap: 5px;
+    padding: 8px 7px 9px;
+  }
+  .zg-fg-us .usa-target-card.fg-shared-shell .fg-score-slot .cnn-score-orb {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr);
+    height: 112px;
+    max-height: 112px;
+  }
+  .zg-fg-us .usa-target-card.fg-shared-shell .cnn-spectrum-gauge { grid-column: 1; grid-row: 1; width: 100%; max-width: 140px; }
+  .zg-fg-us .usa-target-card.fg-shared-shell .cnn-score-whole { font-size: 27px; }
+  .zg-fg-us .usa-target-card.fg-shared-shell .cnn-score-fraction { font-size: 14px; }
+  .zg-fg-us .usa-target-card .usa-score-stats { grid-template-rows: 48px 49px; gap: 5px; }
+  .zg-fg-us .usa-target-card .usa-score-stat-label { font-size: 9px; }
+  .zg-fg-us .usa-target-card .usa-score-stat-value { font-size: 14px; }
+  .zg-fg-us .usa-target-card .usa-score-changes .usa-score-stat-value { font-size: 11.5px; letter-spacing: -.6px; }
+}
+@media (max-width: 355px) {
+  .zg-fg-us .usa-target-card.fg-shared-shell .fg-score-slot { grid-template-columns: 106px minmax(0, 1fr); gap: 4px; padding-inline: 5px; }
+  .zg-fg-us .usa-target-card.fg-shared-shell .fg-score-slot .cnn-score-orb { height: 105px; max-height: 105px; }
+  .zg-fg-us .usa-target-card .usa-score-stats { grid-template-rows: 45px 47px; gap: 4px; }
+  .zg-fg-us .usa-target-card .usa-score-stat-label { font-size: 8px; }
+  .zg-fg-us .usa-target-card .usa-score-stat-value { font-size: 12px; }
+  .zg-fg-us .usa-target-card .usa-score-changes .usa-score-stat-value { font-size: 10px; }
+}

@@ -49,6 +49,7 @@ export function MarketFearGreedChart({
   formatTooltipLabel,
   emptyLabel = '이력 없음',
   compact = false,
+  yAxisMax = 100,
   color = '#ff7076',
   showExtrema = false,
   axisTickInterval = 0,
@@ -66,6 +67,7 @@ export function MarketFearGreedChart({
   formatTooltipLabel: (value: string) => string;
   emptyLabel?: string;
   compact?: boolean;
+  yAxisMax?: number;
   color?: string;
   showExtrema?: boolean;
   axisTickInterval?: 0 | 'preserveStartEnd';
@@ -103,15 +105,24 @@ export function MarketFearGreedChart({
         tickFormatter={(value) => axisLabels.get(String(value)) ?? ''}
         tick={{ fill: 'var(--zg-text-meta,#a8bcd0)', fontSize: 9 }}
       />
-      <YAxis orientation={mobileAxisRight?"right":"left"}
-        hide={compact}
+      {compact ? <YAxis orientation={mobileAxisRight?"right":"left"}
+        hide
+        domain={[0, yAxisMax]}
+        ticks={[0, 25, 50, 75, 100]}
+        allowDataOverflow
+        axisLine={false}
+        tickLine={false}
+        width={28}
+        tick={{ fill: 'var(--zg-text-meta,#a8bcd0)', fontSize: 9 }}
+      /> : <YAxis orientation={mobileAxisRight?"right":"left"}
+        hide={false}
         domain={[0, 100]}
         ticks={[0, 25, 50, 75, 100]}
         axisLine={false}
         tickLine={false}
         width={28}
         tick={{ fill: 'var(--zg-text-meta,#a8bcd0)', fontSize: 9 }}
-      />
+      />}
       {marketScoreBands?<>
         <ReferenceArea y1={0} y2={25} fill="#ef4444" fillOpacity={0.055} ifOverflow="hidden"/>
         <ReferenceArea y1={25} y2={40} fill="#f59e0b" fillOpacity={0.04} ifOverflow="hidden"/>

@@ -96,14 +96,17 @@ test("actual economic card grid reserves 110px lane without 16px graph intrusion
  assert.ok(r6.includes("margin-left:0;"));
 });
 
-test("390px economic cards retain a wide plot without title-overlap",()=>{
- const r7=responsive.split("/* R7: the mobile card grid lives in responsive.css")[1];
- assert.ok(r7,"mobile CSS loader-order override required");
- assert.ok(r7.includes("@media (max-width:540px)"));
- assert.ok(r7.includes("grid-template-columns:minmax(0,1fr);"));
+test("390px economic cards form a two-column, six-row layout without title-chart overlap",()=>{
+ const mobile=responsive.split("/* Keep all 12 indicator cards in two mobile columns (six rows).")[1]?.split("/* EC12 R9:")[0];
+ assert.ok(mobile,"mobile two-column override required");
+ assert.ok(mobile.includes("@media (max-width:540px)"));
+ assert.ok(mobile.includes("grid-template-columns:repeat(2,minmax(0,1fr));"));
+ assert.ok(mobile.includes("grid-template-columns:82px minmax(0,1fr);"));
+ assert.ok(mobile.includes(".zg-r55-card-visual{"));
+ assert.ok(mobile.includes("grid-row:2;"));
 });
 
-// R9: preserve the verified 390px mobile layout while widening desktop charts.
+// R9: preserve the independent desktop four-column layout.
 test("12 market charts use a four-by-three desktop grid without resizing their plots",()=>{
  const r9=responsive.split("/* EC12 R9: 12 readable indicator charts")[1];
  assert.ok(r9,"final responsive desktop override missing");

@@ -2,6 +2,7 @@
 import {useEffect,useMemo,useRef,useState} from 'react';
 import {usePlotArea,useXAxisScale,useYAxisScale,ReferenceDot} from 'recharts';
 import {extremaLeader,placeExtremaLabels} from '../../lib/chart-extrema.mjs';
+import {themeTooltipRows} from '../../lib/theme-tooltip-rows.mjs';
 import {Search} from 'lucide-react';
 import {CartesianGrid,Line,LineChart,ReferenceArea,ReferenceLine,ResponsiveContainer,Tooltip,XAxis,YAxis} from 'recharts';
 import {THEME_GROUPS} from '../../components/market-explorer-catalog';
@@ -190,7 +191,15 @@ export default function ThemeDetailCharts(){
      <div className="zg-sfg-comparison-plot"><ResponsiveContainer width="100%" height="100%"><LineChart data={compareRows} margin={{top:8,right:10,bottom:0,left:0}} onMouseDown={()=>setComparisonPinned(true)} onMouseUp={()=>setComparisonPinned(false)} onMouseLeave={()=>setComparisonPinned(false)}>
       <Zones/><CartesianGrid stroke="#23485b" strokeDasharray="2 4" vertical={true}/>
       <XAxis dataKey="date" stroke="#a9bccd" fontSize={11} axisLine={false} tickLine={false} tickFormatter={date=>String(date).slice(5)} minTickGap={42}/><YAxis domain={[0,100]} ticks={[0,25,50,75,100]} interval={0} stroke="#a9bccd" axisLine={false} tickLine={false} fontSize={11} width={34}/><ReferenceLine y={50} stroke="#92a3b0" strokeDasharray="3 4"/>
-      <Tooltip active={comparisonPinned||undefined} isAnimationActive={false} wrapperStyle={{pointerEvents:'none'}} content={({active:show,payload,label})=>!show||!payload?.length?null:<div className="zg-sfg-tooltip"><strong>{String(label)}</strong>{payload.filter(p=>validScore(p.value)).map(p=><div key={String(p.dataKey)}><span style={{color:p.color}}>{p.name}</span><b>{Number(p.value).toFixed(1)}점</b></div>)}</div>}/>
+      <Tooltip active={comparisonPinned||undefined} isAnimationActive={false} wrapperStyle={{pointerEvents:'none'}} content={({active:show,label})=>{
+       if(!show)return null;
+       const day=String(label),dayRow=compareRows.find(row=>row.date===day);
+       const values=themeTooltipRows(ranked,currentVisible,dayRow,day);
+       return !values.length?null:<div className="zg-sfg-tooltip zg-tfg-compare-tooltip"><strong>{day}</strong>{values.map(item=><div key={item.name} className={item.score===null?'zg-tfg-tooltip-missing':undefined}>
+        <span style={{color:item.score===null?'#8299ac':item.color}}>{item.name}</span>
+        <b>{item.score===null?'—':item.score.toFixed(1)+'점'}{item.score===null&&item.lastObservedDate&&<small>최종 {item.lastObservedDate.slice(5)}</small>}</b>
+       </div>)}</div>;
+      }}/>
       {ranked.flatMap(item=>item.points.length>item.provisionalFrom?[
        <Line key={item.key} dataKey={item.key+'__solid'} name={item.name} stroke={item.color} hide={!currentVisible.has(item.name)} strokeWidth={1.9} dot={false} activeDot={{r:3}} connectNulls={false} isAnimationActive={false}/>,
        <Line key={item.key+'-dash'} dataKey={item.key+'__dash'} name={item.name} stroke={item.color} hide={!currentVisible.has(item.name)} strokeWidth={1.9} strokeDasharray="4 4" dot={false} activeDot={{r:3}} connectNulls={false} isAnimationActive={false}/>,

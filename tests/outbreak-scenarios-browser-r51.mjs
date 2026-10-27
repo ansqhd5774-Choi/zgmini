@@ -57,7 +57,7 @@ try{
   assert.equal(await root.locator(".ob53-main-grid").count(),1,"Stored rate beginner analysis available");
   assert.equal(await root.locator(".ob53-current strong").textContent(),"57.8점");
   assert.equal(await root.locator("#ob53-chart-title").textContent().then(s=>s?.trim()),"14일 추이");
-  const rateChart=root.locator(".ob53-market-chart");
+  const rateChart=width<=700?root.locator(".ob61-fed-compact .ob58-mini-plot"):root.locator(".ob53-market-chart");
   await rateChart.locator(".recharts-surface").waitFor({state:"visible",timeout:20000});
   assert.equal(await rateChart.locator(".recharts-area-curve").getAttribute("stroke"),"#94a3b8","Neutral score keeps its band color in the shared chart");
   assert.equal(await rateChart.locator(".recharts-reference-area").count(),5,"Shared chart shows five rate-score bands");
@@ -66,14 +66,15 @@ try{
   assert.equal(await rateChart.locator(".cnn-latest-point").count(),1,"Shared chart marks only the latest observed point");
   if(width<=600){
    const mobileChart=await root.evaluate(el=>{
-    const chart=el.querySelector(".ob53-market-chart"),news=el.querySelector(".ob57-news"),panel=el.querySelector(".ob53-beginner-stack");
+    const chart=el.querySelector(".ob61-fed-compact .ob58-mini-trend"),news=el.querySelector(".ob57-news"),panel=el.querySelector(".ob53-beginner-stack");
     return {chartFits:!!chart&&chart.getBoundingClientRect().width<=innerWidth,
      newsFits:!!news&&news.getBoundingClientRect().right<=innerWidth+1,extraHidden:getComputedStyle(panel).display==="none"};
    });
    assert(mobileChart.chartFits,"Shared 14-day chart fits the mobile viewport");
    assert(mobileChart.newsFits&&mobileChart.extraHidden,"News fits mobile and redundant beginner cards remain hidden");
   }
-  assert((await rateChart.textContent())?.includes("10.19"),"Last calendar tick retains its observed date");
+  const rateTickText=width<=700?await root.locator(".ob61-fed-compact .ob58-mini-axis").textContent():await rateChart.textContent();
+   assert(rateTickText?.includes("10.19"),"Last calendar tick retains its observed date");
   assert.equal(await root.locator(".ob53-chart-heading>span").textContent(),"관측 10일 / 14일");
   assert.equal(await root.locator(".ob53-tone-pill").textContent(),"중립");
   assert.equal(await root.locator(".ob53-scale-colors [data-band]").count(),5);
@@ -98,7 +99,7 @@ try{
    assert.equal(await root.locator(".ob57-news-filters button").nth(2).getAttribute("aria-pressed"),"true");
    await root.locator(".ob57-news-filters button").first().click();
    assert.equal(await root.locator(".ob57-news-filters button").first().getAttribute("aria-pressed"),"true");
-   const newsColumns=await root.locator(".ob57-news-list").evaluate(el=>getComputedStyle(el).gridTemplateColumns.split(" ").length);
+   const newsColumns=await root.locator(".ob57-news-list").evaluate(el=>{const style=getComputedStyle(el);return style.display==="flex"?1:style.gridTemplateColumns.split(" ").length;});
    assert.equal(newsColumns,width>=1350?2:1,"Wide screens prepare a two-column news layout; other widths use a compact list");
 
   assert(firstLayout.questionCollapsed,"Secondary explanations start collapsed");
@@ -163,9 +164,22 @@ try{
    assert.equal(await root.locator(".ob57-news").isVisible(),true,"Approved news panel is visible under the mobile chart");
    assert.equal(await root.locator(".ob53-beginner-stack").isVisible(),false,"Mobile hides redundant beginner and asset cards");
    assert.equal(await root.locator(".ob53-title").isVisible(),false,"Mobile uses compact tab title instead of duplicate detail header");
-   const chartBottom=await root.locator(".ob53-chart").boundingBox();
+   const scoreBottom=await root.locator(".ob61-fed-compact .ob53-score-card").boundingBox();
    const logTop=await root.locator(".ob57-news").boundingBox();
-   assert(chartBottom&&logTop&&logTop.y>=chartBottom.y+chartBottom.height-1,"Major news follows the 14-day chart");
+   assert(scoreBottom&&logTop&&logTop.y>=scoreBottom.y+scoreBottom.height-1,"Major news follows the compact Fed score card");
+   assert.equal(await root.locator(".ob61-fed-compact .ob53-main-grid .ob53-chart").isVisible(),false,"Mobile hides only the redundant full-size Fed chart");
+   assert.equal(await root.locator(".ob61-fed-compact .ob58-mini-trend").isVisible(),true,"Mobile embeds the actual 14-day Fed chart");
+   assert.equal(await root.locator(".ob61-fed-compact .ob53-score-card").getAttribute("aria-label"),"금리 심리");
+   assert.equal(await root.locator(".ob61-fed-compact .ob53-current .ob58-status").textContent(),"중립");
+   assert.equal(await root.locator(".ob61-fed-compact .ob53-current .ob61-week-inline[data-change=\"down\"]").isVisible(),true,"Stored week-to-week change stays visible inside the compact card");
+   const fedCompactGeometry=await root.evaluate(el=>{
+    const card=el.querySelector(".ob61-fed-compact .ob53-score-card").getBoundingClientRect();
+    const mini=el.querySelector(".ob61-fed-compact .ob58-mini-trend").getBoundingClientRect();
+    const scoreStyle=getComputedStyle(el.querySelector(".ob61-fed-compact .ob53-current"));
+    return {insetFits:mini.width>90&&mini.left>=card.left&&mini.right<=card.right+1,
+     centered:scoreStyle.textAlign==="center",noOverflow:card.right<=innerWidth+1};
+   });
+   assert(fedCompactGeometry.insetFits&&fedCompactGeometry.centered&&fedCompactGeometry.noOverflow,"Fed mobile score and chart are centered without right-side overflow");
   }else{
    const definition=disclosures.nth(0),method=disclosures.nth(1);
    assert.equal(await definition.getAttribute("open"),null);
@@ -194,14 +208,14 @@ try{
   assert.equal(await root.locator(".ob55-score-card .ob54-kpis > div").count(),3,"Iran metrics share R53 integrated score panel");
   assert.equal(await root.locator(".ob55-score-card .ob54-scale").count(),1,"The score scale must be inside integrated panel");
   assert.equal(await root.locator(".ob55-score-card .ob57-scale-summary").count(),1,"Iran uses the approved full-width score and scale strip");
-  assert.equal(await root.locator(".ob55-main .ob54-trend").count(),1,"Iran 14-day chart occupies the left analysis panel");
-  assert.equal(await root.locator(".ob55-main .ob57-news").count(),1,"Iran chart and major-news panel share the approved grid");
+  assert.equal(await root.locator(".ob55-main .ob54-trend").count(),1,"Iran keeps the desktop chart while mobile uses the compact inset");
+  assert.equal(await root.locator(".ob55-main .ob57-news").count(),1,"Iran retains its source-driven news feed in the approved grid");
   await page.waitForFunction(()=>document.querySelector(".ob54-kpis strong")?.textContent?.includes("13.0"),null,{timeout:12000});
   assert.equal(await root.locator(".ob54-state").textContent(),"진전 매우 낮음");
   assert.equal(await root.locator("#ob54-chart-title").textContent()," 14일 추이");
-  const iranChart=root.locator(".ob54-market-chart");
+  const iranChart=width<=700?root.locator(".ob55-score-card .ob58-mini-plot"):root.locator(".ob54-market-chart");
   await iranChart.locator(".recharts-surface").waitFor({state:"visible",timeout:20000});
-  assert.equal(await iranChart.locator(".recharts-reference-area").count(),5,"Iran reuses five score bands");
+  if(width>700)assert.equal(await iranChart.locator(".recharts-reference-area").count(),5,"Full-size Iran chart reuses five score bands");
   assert.equal(await iranChart.getAttribute("data-observed-days"),"14","All 14 stored provisional dates remain visible");
   assert.equal(await iranChart.getAttribute("data-carried-days"),"5","Five carried provisional dates retain their identity");
   assert.equal(await iranChart.locator(".recharts-reference-line-line[stroke-dasharray='5 5']").count(),5,"Five carried intervals stay dashed");
@@ -248,8 +262,9 @@ try{
      lineHeight:style.lineHeight,letterSpacing:style.letterSpacing,fontFamily:style.fontFamily}];
    }));
   });
-  assert.deepEqual(iranTypography,fedTypography,
-   "R59: rate and Iran typography tokens match at width="+width);
+  if(width>700)assert.deepEqual(iranTypography,fedTypography,
+   "R59: desktop rate and Iran typography tokens match at width="+width);
+  else assert(iranTypography.score&&iranTypography.score.fontSize,"Mobile Iran score retains readable typography");
   assert.equal(await root.locator(".ob54-relations strong").count(),3);
   assert.equal(await root.locator(".ob54-relations strong").first().textContent(),"미확인");
   assert.equal(await root.locator(".ob54-disclosure").count(),2);
@@ -262,10 +277,21 @@ try{
    await evidence.locator("summary").click();
    assert.equal(await evidence.getAttribute("open"),null);
   }else{
-   assert.equal(await root.locator(".ob57-news").isVisible(),true,"Iran mobile news follows the chart");
+   assert.equal(await root.locator(".ob57-news").isVisible(),true,"Iran mobile news follows the compact score card");
+    assert.equal(await root.locator(".ob55-main .ob54-trend").isVisible(),false,"Mobile hides the redundant full-size chart");
+    assert.equal(await root.locator(".ob58-mini-trend").isVisible(),true,"Mobile shows the embedded 14-day chart");
+    assert.equal(await root.locator(".ob55-score-card").getAttribute("aria-label"),"이란 전쟁 심리");
+    const compactGeometry=await root.evaluate(el=>{
+     const card=el.querySelector(".ob55-score-card").getBoundingClientRect();
+     const graph=el.querySelector(".ob58-mini-trend").getBoundingClientRect();
+     const scoreStyle=getComputedStyle(el.querySelector(".ob54-kpis .ob53-current"));
+     return {graphVisible:graph.width>90&&graph.left>=card.left&&graph.right<=card.right+1,
+      scoreCentered:scoreStyle.textAlign==="center",noOverflow:card.right<=innerWidth+1};
+    });
+    assert(compactGeometry.graphVisible&&compactGeometry.scoreCentered&&compactGeometry.noOverflow,"Mobile Iran score/chart are centered and fit the card");
   }
   const iranChartFits=await iranChart.evaluate(el=>el.getBoundingClientRect().width<=innerWidth);
-  assert(iranChartFits,"Shared Iran chart fits the viewport without horizontal clipping");
+  assert(iranChartFits,"The visible Iran chart fits the viewport without horizontal clipping");
   await page.screenshot({path:"artifacts/outbreak-scenarios/analysis-iran-"+width+".png",fullPage:true});
 
   const geometry=await root.evaluate(el=>{

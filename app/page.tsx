@@ -959,7 +959,7 @@ export default function Home() {
         {view!=='dashboard'&&<div className="zg-data-notice zg-data-notice-compact" role="status"><Info size={16}/><span>{marketDataLoading?'경제지표를 불러오고 있습니다.':marketData?.status==='live'?'공식 자료와 ZGmini 자체 계산값을 표시합니다.':marketDataError?'데이터 연결 지연 · 마지막 정상 수신값을 표시합니다.':'일부 지표 갱신 지연 · 마지막 정상 수신값을 유지합니다.'}</span></div>}
         {(view==='dashboard'||view==='countries')&&<CountryFearGreed/>}
         {view==='dashboard'&&<>
-          <CompositeMarketSection items={displaySummaryItems} points={periodPoints[period]} demo={false} loading={marketDataLoading}/>
+          <CompositeMarketSection demo={false}/>
           <div className="zg-dashboard-secondary">
             <OutbreakSummary onOpen={id=>{window.location.assign('/outbreak/?event='+encodeURIComponent(id));}}/>
             <DeferredDashboardCharts/>

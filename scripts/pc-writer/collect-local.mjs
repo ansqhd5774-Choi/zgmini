@@ -8,7 +8,8 @@ import {createQuotaFetch} from './quota-fetch.mjs';
 import {recordCollectionChecks} from './collection-checks.mjs';
 import {appendCollectionEvent,appendProviderFailure} from './collection-events.mjs';
 import {safeMacroDiagnostic} from '../../worker/macro-result-contract-r61.mjs';
-import {alertCollectionReport} from './local-data-alert.mjs';
+import {safeCollectionFailure} from '../../worker/collection-failure-diagnostic.mjs';
+import {alertCollectionReport,dueCollectionRecovery} from './local-data-alert.mjs';
 import {collectConsumptionR5} from './consumption-r5.mjs';
 import {overdueRateJob} from './rate-refresh-priority.mjs';
 import {collectSectorFearGreedR3EtfIncremental} from './sector-fear-greed-r3-etf-incremental.mjs';
@@ -27,7 +28,7 @@ export async function collectLocal(base,{lane='core',importOnly=false,job=null}=
   const host=new URL(typeof input==='string'||input instanceof URL?input:input.url).hostname;
   const item=providers[host]??={requests:0,statuses:{}};item.requests++;
   try{const response=await quota.fetch(input,init);item.statuses[response.status]=(item.statuses[response.status]??0)+1;if(!response.ok)recordProviderFailure(input,{phase:'HTTP',httpStatus:response.status});return response;}
-  catch(error){recordProviderFailure(input,{phase:'FETCH',error});const status=error?.code??'NETWORK_ERROR';item.statuses[status]=(item.statuses[status]??0)+1;if(error?.code==='PROVIDER_QUOTA_GUARD')throw error;throw Error('LOCAL_PROVIDER_NETWORK_ERROR');}
+  catch(error){recordProviderFailure(input,{phase:'FETCH',error});const status=error?.code==='PROVIDER_QUOTA_GUARD'?'PROVIDER_QUOTA_GUARD':'NETWORK_ERROR';item.statuses[status]=(item.statuses[status]??0)+1;if(error?.code==='PROVIDER_QUOTA_GUARD')throw error;const failure=Error('LOCAL_PROVIDER_NETWORK_ERROR');failure.code='LOCAL_PROVIDER_NETWORK_ERROR';throw failure;}
  };
  try{
   const {runPublicFeeds}=await import('../../worker/public-feed-collectors.ts');
@@ -48,6 +49,7 @@ export async function collectLocal(base,{lane='core',importOnly=false,job=null}=
    const collectors={consumption:()=>collectConsumptionR5({db:core,fetchImpl:globalThis.fetch})};
    const now=Date.now();
    job??=await overdueRateJob(core,now);
+   job??=dueCollectionRecovery(base,now);
    if(job)result=await runMarketOperationalRefresh({env,job,now,fetchImpl:globalThis.fetch,collectors,calculate:async()=>({calculation:'PC_PENDING'})});
    else{
     const feed=await runPublicFeeds({env,maxFeedsPerRun:1});
@@ -58,6 +60,7 @@ export async function collectLocal(base,{lane='core',importOnly=false,job=null}=
   const report={at:new Date().toISOString(),lane,status:result.status,job:result.job??null,attempted:result.attempted??null,feeds:result.feeds?.map(({key,status})=>({key,status})),sectorFearGreedEtf:{status:sectorFearGreedEtf.status,providerRequests:sectorFearGreedEtf.providerRequests??0,commonLatest:sectorFearGreedEtf.commonLatest??null,code:sectorFearGreedEtf.code??sectorFearGreedEtf.error??null},providers,quota:quota.summary()};
   for(const key of ['phase','reason','sourceStatus'])if(typeof result?.[key]==='string'&&/^[A-Za-z0-9_.:-]{1,120}$/.test(result[key]))report[key]=result[key];
   report.releaseCalendar=releaseCalendar;
+  if(result.failureDiagnostic)report.failureDiagnostic=result.failureDiagnostic;
   if(result?.sourceDiagnostic?.provider==='BLS')report.sourceDiagnostic=result.sourceDiagnostic;
   if(result?.sourceDiagnostic?.provider==='FRED')report.sourceDiagnostic=safeMacroDiagnostic(result.sourceDiagnostic);
   report.providerDiagnosticWriteFailures=providerDiagnosticWriteFailures;
@@ -74,5 +77,5 @@ if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.ur
   const job=jobArg?jobArg.slice('--job='.length):null;
   console.log(JSON.stringify(await collectLocal(process.env.ZGMINI_PC_HOME??path.join(os.homedir(),'.zgmini','pc-writer'),{lane:process.argv.includes('--korea')?'korea':'core',importOnly:process.argv.includes('--import-only'),job})));
  }
- catch(error){console.log(JSON.stringify({status:'FAILED',code:error.code??'LOCAL_COLLECTION_FAILED',...(process.argv.includes('--import-only')?{importError:error.message}:{})}));process.exitCode=1;}
+ catch(error){const report={at:new Date().toISOString(),lane:process.argv.includes('--korea')?'korea':'core',status:'FAILED',reason:'LOCAL_COLLECTION_FAILED',failureDiagnostic:safeCollectionFailure(error)};try{appendCollectionEvent(process.env.ZGMINI_PC_HOME??path.join(os.homedir(),'.zgmini','pc-writer'),report);}catch{}console.log(JSON.stringify({...report,...(process.argv.includes('--import-only')?{importError:error.message}:{})}));process.exitCode=1;}
 }

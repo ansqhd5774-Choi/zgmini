@@ -6,6 +6,30 @@ import path from 'node:path';
 import {recordCollectionChecks,readCollectionChecks} from '../scripts/pc-writer/collection-checks.mjs';
 import {collectionHealthSummary,readCollectionHealth,COLLECTION_WINDOW_MS} from '../worker/collection-health.mjs';
 const now=Date.UTC(2026,9,6,14);
+
+test('retired placeholder is excluded from stored summaries without hiding real failures',async()=>{
+ const good=Array.from({length:27},(_,i)=>({id:`job:${i}`,checkedAt:now-100,outcome:'success'}));
+ for(const failing of [false,true]){
+  const entries=good.map((x,i)=>failing&&i===0?{...x,outcome:'failure'}:x);
+  const body=collectionHealthSummary([...entries,{id:'job:themeSecondary',checkedAt:null,outcome:'unknown'}],now);
+  assert.equal(body.total,28);
+  const db={prepare(){return {bind(){return {first:async()=>({body:JSON.stringify(body)})}}}}};
+  const value=await(await readCollectionHealth(db,now+1)).json();
+  assert.equal(value.total,27);assert.equal(value.normal,failing?26:27);assert.equal(value.failed,failing?1:0);assert.equal(value.unknown,0);assert.equal(value.status,failing?'partial':'healthy');assert(!value.items.some(x=>x.id==='job:themeSecondary'));
+ }
+});
+
+test('public original status retains all 28 jobs across success, failure, unknown and expiry',async()=>{
+ const entries=Array.from({length:28},(_,i)=>({id:`job:${i}`,checkedAt:now-100,outcome:'success'}));
+ for(const [entry,status,count] of [[entries[27],'healthy',28],[{id:'job:27',checkedAt:now-100,outcome:'failure'},'partial',27],[{id:'job:27',checkedAt:null,outcome:'unknown'},'unknown',27]]){
+  const body=collectionHealthSummary([...entries.slice(0,27),entry],now);
+  let queries=0;
+  const db={prepare(){queries++;return {bind(){return {first:async()=>({body:JSON.stringify(body)})}}}}};
+  const value=await(await readCollectionHealth(db,now+1)).json();
+  assert.equal(value.total,28);assert.equal(value.normal,count);assert.equal(value.status,status);assert.equal(queries,1);
+  const expired=await(await readCollectionHealth(db,now+COLLECTION_WINDOW_MS)).json();assert.equal(expired.total,28);assert.equal(expired.normal,0);assert.equal(expired.status,'unknown');
+ }
+});
 test('only completed recent storage counts; old, future, failed and missing do not',()=>{
  const result=collectionHealthSummary([{id:'good',storedAt:now-1,complete:true},{id:'old',storedAt:now-COLLECTION_WINDOW_MS,complete:true},{id:'future',storedAt:now+1,complete:true},{id:'failed',storedAt:now,complete:false},{id:'missing',storedAt:null,complete:true}],now);
  assert.equal(result.normal,1);assert.equal(result.total,5);assert.equal(result.status,'unknown');

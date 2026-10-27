@@ -6,7 +6,7 @@ const read=path=>readFileSync(path,'utf8');
 
 test('technical SEO sitemap includes every public route with truthful lastmod values',()=>{
   const sitemap=read('public/sitemap.xml');
-  assert.equal((sitemap.match(/<url>/g)||[]).length,35);
+  assert.equal((sitemap.match(/<url>/g)||[]).length,36);
   for(const route of ["/about/","/sector-fear-greed/","/theme-fear-greed/","/stagflation-risk/","/credit-risk/","/debt-risk/","/inflation/","/recession/","/earnings-recession/","/asset-bubble/","/supply-shock/","/economic-indicators/inflation/","/economic-indicators/employment/","/economic-indicators/rates/","/economic-indicators/credit/","/economic-indicators/growth/","/economic-indicators/consumption/","/economic-indicators/earnings/","/economic-indicators/liquidity/","/economic-indicators/fund-flows/","/economic-indicators/breadth/","/economic-indicators/dollar-fx/","/economic-indicators/commodities/","/fear-greed/usa/","/fear-greed/korea/"])
     assert.ok(sitemap.includes(`<loc>https://zgmini.kr${route}</loc><lastmod>2026-10-25</lastmod>`),route);
   for(const route of ["/","/outbreak/","/guides/fear-greed-buying/","/guides/cpi-pce-release/","/guides/fomc/"])
@@ -91,7 +91,7 @@ test('all three search guides emit Article structured data with truthful publica
   assert.match(fear,/dateModified="2026-10-25"/);
   assert.match(cpi,/const path='\/guides\/cpi-pce-release\/'/);
   assert.match(cpi,/미국 CPI·PCE 발표 일정·한국시간 \| 물가지수 발표일·발표시간/);
-  assert.match(cpi,/dateModified="2026-10-25"/);
+  assert.match(cpi,/dateModified="2026-10-26"/);
   assert.match(fomc,/const path='\/guides\/fomc\/'/);
   assert.match(fomc,/연준 금리 발표일·발표시간 \| FOMC 일정·한국시간/);
   assert.match(fomc,/dateModified="2026-10-25"/);

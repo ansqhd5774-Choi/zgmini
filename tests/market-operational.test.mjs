@@ -114,7 +114,9 @@ test('lease excludes concurrent collectors and daily input history survives late
 test('failed source does not fabricate score and releases lease',async()=>{
  const {store,db,sqlite}=fixture();
  const r=await runMarketOperationalRefresh({env:{DB:db},store,job:'rates',now,collectors:{rates:()=>{throw Error('secret-url')}},calculate:()=>{throw Error('must not calculate')}});
- assert.deepEqual(r,{status:'ERROR',job:'rates',phase:'COLLECT'});assert.equal(await store.readScore(),null);assert.ok(await store.claim('pipeline',now+1));sqlite.close();
+ const {failureDiagnostic,...result}=r;assert.deepEqual(result,{status:'ERROR',job:'rates',phase:'COLLECT'});
+ assert.equal(failureDiagnostic.name,'Error');assert.equal(failureDiagnostic.code,null);assert.equal(JSON.stringify(r).includes('secret-url'),false);
+ assert.ok(failureDiagnostic.location?.module.startsWith('worker/'));assert.equal(await store.readScore(),null);assert.ok(await store.claim('pipeline',now+1));sqlite.close();
 });
 
 test('growth BLS transport failure retains safe HTTP metadata and releases the lease',async()=>{

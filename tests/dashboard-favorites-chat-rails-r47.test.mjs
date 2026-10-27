@@ -35,8 +35,8 @@ test("left rail shows only saved favorites, not a static category menu",()=>{
 });
 
 test("mobile favorites and chat are independent toggles with veil, Escape and focus restoration",()=>{
- assert.match(rails,/setLeftOpen\(v=>!v\);setRightOpen\(false\)/);
- assert.match(rails,/setRightOpen\(v=>!v\);setLeftOpen\(false\)/);
+ assert.match(rails,/setLeftOpen\(v=>!v\);if\(!wide\)setRightOpen\(false\)/);
+ assert.match(rails,/setRightOpen\(v=>!v\);if\(!wide\)setLeftOpen\(false\)/);
  assert.match(rails,/aria-expanded=\{leftOpen\}/);
  assert.match(rails,/aria-expanded=\{rightOpen\}/);
  assert.match(rails,/e\.key!=="Escape"/);

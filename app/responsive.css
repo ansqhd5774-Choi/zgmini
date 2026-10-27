@@ -511,11 +511,17 @@
   }
 }
 
-/* R7: the mobile card grid lives in responsive.css, which loads after globals.
-   A single column preserves the original full-width 60px trend plot at 390px. */
+/* Keep all 12 indicator cards in two mobile columns (six rows).
+   Give the trend plot its own row beneath the title, with a compact score lane. */
 @media (max-width:540px){
   .zg-dashboard[data-view="dashboard"] .zg-r55-card-grid{
-    grid-template-columns:minmax(0,1fr);
+    grid-template-columns:repeat(2,minmax(0,1fr));
+  }
+  .zg-dashboard[data-view="dashboard"] .zg-r55-shell[data-expanded] .zg-r55-card{
+    grid-template-columns:82px minmax(0,1fr);
+  }
+  .zg-dashboard[data-view="dashboard"] .zg-r55-shell[data-expanded] .zg-r55-card-visual{
+    grid-row:2;
   }
 }
 
@@ -525,5 +531,21 @@
 @media (min-width:960px){
   .zg-dashboard[data-view="dashboard"] .zg-r55-card-grid{
     grid-template-columns:repeat(4,minmax(0,1fr));
+  }
+}
+/* Keep composite history and the eight risk diagnostics in independent cards. */
+.zg-dashboard[data-view="dashboard"] #market .zg-r55-body{grid-template-columns:minmax(0,1fr);grid-template-rows:auto auto auto}
+.zg-dashboard[data-view="dashboard"] #market .zg-r55-summary{grid-template-rows:auto}
+.zg-dashboard[data-view="dashboard"] #market .zg-r55-risk-panel{min-width:0;padding:8px;border:1px solid #17446d;border-radius:7px;background:#071a2d;color:#eef4fa}
+.zg-dashboard[data-view="dashboard"] #market .zg-r55-risk-heading{margin:0 0 8px}
+.zg-dashboard[data-view="dashboard"] #market .zg-r55-risk-heading h2{margin:0}
+.zg-dashboard[data-view="dashboard"] #market .zg-r55-risk-heading a{display:inline-flex;align-items:center;gap:8px;color:inherit;text-decoration:none}
+.zg-dashboard[data-view="dashboard"] #market .zg-r55-risk-heading a:focus-visible{outline:2px solid var(--zg-brand);outline-offset:4px;border-radius:2px}
+
+/* Mobile-only 4px right alignment for the three primary market charts. */
+@media (max-width:959px){
+  .zg-dashboard[data-view="dashboard"] .fg-card.fg-shared-shell .fg-chart-slot svg.recharts-surface,
+  .zg-dashboard[data-view="dashboard"] .zg-r55-summary-chart svg.recharts-surface{
+    transform:translateX(4px);
   }
 }

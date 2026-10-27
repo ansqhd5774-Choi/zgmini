@@ -20,9 +20,9 @@ test('collection and provider failure evidence survives a later successful run w
   const text=fs.readFileSync(path.join(base,'collection-events.jsonl'),'utf8'),events=text.trim().split('\n').map(JSON.parse),provider=fs.readFileSync(path.join(base,'provider-request-failures.jsonl'),'utf8');assert.deepEqual(events[0].sourceDiagnostic.missing,['PAYEMS']);assert.equal(events[0].sourceDiagnostic.failed[0].status,'TIMEOUT');assert.equal(events[1].status,'COMPLETE');assert.equal(JSON.parse(provider).networkCode,'TIMEOUT');assert(!/private|api_key|secret|observations/.test(text+provider));assert.equal(safeMacroDiagnostic({provider:'OTHER'}),null);
  }finally{fs.rmSync(base,{recursive:true,force:true});}
 });
-test('recent success remains historical evidence but cannot hide the latest failure',async()=>{
+test('internal latest failure survives while public status retains the original eight-day contract',async()=>{
  const body=collectionHealthSummary([{id:'job:macro',lastSuccessAt:now-100,checkedAt:now-1,outcome:'failure'}],now);assert.equal(body.normal,1);assert.equal(body.latestFailed,1);assert.equal(body.status,'partial');
- const db={prepare(){return {bind(){return {first:async()=>({body:JSON.stringify(body)})}}}}};const b=await(await readCollectionHealth(db,now+1)).json();assert.equal(b.normal,1);assert.equal(b.status,'partial');assert.equal(b.latestFailed,1);
+ const db={prepare(){return {bind(){return {first:async()=>({body:JSON.stringify(body)})}}}}};const b=await(await readCollectionHealth(db,now+1)).json();assert.equal(b.normal,1);assert.equal(b.status,'healthy');assert.equal(b.latestFailed,1);assert.equal(b.recentFailures,1);assert.equal(body.status,'partial');
 });
 test('missing new lanes stay in the denominator; private score and manifest do not prove latest success',()=>{
  const entries=expandedCollectionEntries({secondary:{status:'PRIVATE_SCORED_PENDING_LICENSE',at:new Date(now).toISOString()},biotechManifest:{version:1,files:[{sha256:'a'.repeat(64),collectedAt:new Date(now-1).toISOString()}]}});assert.equal(entries.length,EXPANDED_HEALTH_JOBS.length);assert.equal(entries.length,6);const b=collectionHealthSummary(entries,now);assert.equal(b.normal,1);assert.equal(b.latestUnknown,6);assert.equal(b.status,'unknown');assert.equal(new Set(entries.map(x=>x.id)).size,6);
