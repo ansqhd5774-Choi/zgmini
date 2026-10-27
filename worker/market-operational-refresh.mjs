@@ -175,6 +175,7 @@ export async function runMarketOperationalRefresh({env,job,store,now=Date.now(),
   const source=error?.sourceDiagnostic;
   const sourceDiagnostic=source?.provider==='BLS'&&Number.isInteger(source.attempts)&&source.attempts>=1&&source.attempts<=2
    ?{provider:'BLS',httpStatus:Number.isInteger(source.httpStatus)?source.httpStatus:null,attempts:source.attempts,registered:source.registered===true}:null;
-  return {status:'ERROR',job:selected,phase,...(reason?{reason}:{}),...(sourceDiagnostic?{sourceDiagnostic}:{})};
+  return {status:'ERROR',job:selected,phase,...(reason?{reason}:{}),failureDiagnostic:safeCollectionFailure(error),...(sourceDiagnostic?{sourceDiagnostic}:{})};
  }finally{await store.finish('pipeline',lease,now,'IDLE')}
 }
+import {safeCollectionFailure} from './collection-failure-diagnostic.mjs';
