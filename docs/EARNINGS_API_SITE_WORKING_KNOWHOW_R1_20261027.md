@@ -219,3 +219,10 @@
 - 새 **완전한 독립 실행 압축**에는 R1 읽기 전용 파서 `.mjs`, R2 저장기 `.mjs`, `EARNINGS_CENSUS_QFR_R2_SQLITE_APPLY_ONCE.cmd`, R2 기준서까지 **평면 디렉터리 구조로 4개 파일**을 동봉한다. 원래 기존 PC 스크립트 폴더에 있던 R1 파서를 가정하지 않는다. 사용자도 바탕화면 신규 폴더에서 실행 가능해야 한다.
 - APPLY CMD에서 `.mjs` 두 파일을 먼저 검사한다. 누락 시 Node를 호출하지 않고 `EARNINGS_CENSUS_QFR_R2_STORE_RESULT_SETUP_*.txt`에 고정 오류 코드·`SQLITE_COMMITTED=NO`를 남기고 종료한다. ZIP 압축 무결성도 별도 확인한 뒤 배포한다.
 - **기존 SHA 검증 게이트·기존 DB 스키마·원장 보존 제약은 그대로 유지**. 사용자 PC 재실행의 실제 `PASS_QFR_SQLITE_APPEND_READBACK` 증거 전에는 `PC_SQLITE_APPEND=NOT_RUN`이다. 잘못된 패키지는 재사용하지 않는다.
+
+## 15. Census QFR 실제 PC SQLite 저장 PASS → 저장 자료만 읽는 R3 (2026-10-27)
+
+- 사용자 전달 `EARNINGS_CENSUS_QFR_R2_STORE_RESULT_20261027T145211Z.txt`로 첫 실제 PC CENSUS 원장 기록이 확정됐다. 승인 ZIP SHA `232f7757e654e787a9eab49792302feb3683e5280a66ff0cc9bd7f0cbc448654` 일치, `CHUNKS_INSERTED=1`, `SNAPSHOTS_INSERTED=1`, `SQLITE_COMMITTED=YES`, `RAW_ZIP_ARCHIVED_IN_EXISTING_SQLITE=YES`, `RESULT=PASS_QFR_SQLITE_APPEND_READBACK`. 이번 단계는 **PC_SQLITE_APPEND=PASS**, D1/Score/Web 변경 0건.
+- 위 §13~14와 R2 기준서의 옛 `NOT_RUN` 문구는 **해당 PC 로그가 오기 전의 역사적 상태**다. 최신 근거는 이 §15 및 [R3 저장자료 검산 계약](EARNINGS_CENSUS_QFR_R3_STORED_PREVIEW_20261027.md)을 우선한다. R2 쓰기 CMD 재실행·공식 Census ZIP 재요청은 불필요하다.
+- 다음에는 `EARNINGS_CENSUS_QFR_R3_STORED_PREVIEW_READONLY.mjs`와 전용 CMD를 사용해 **이미 저장된 원문 ZIP만** 읽어 현재/직전 분기의 자체 파생 세후이익률 및 `%p` 변화폭을 재계산한다. 기존 R2 `checkQfrSchema`를 재사용하고, 별도 실제 PC에서 생성된 `EARNINGS_CENSUS_QFR_R3_STORED_RESULT_*.txt` 증거 전까지 `PC_STORED_CALC=NOT_RUN`이다.
+- R3는 D1 키·Worker reader·웹 UI·자동 스케줄과 분리된 로컬 preview다. 독립 CENSUS QFR 원천 1종에서 정보성 행 1개를 도출할 뿐 기존 4개 E1-R4 점수에는 편입하지 않는다. 이후 R3 실측 PASS → 별도 정보성 키/체크포인트 제안·승인 → D1 저장/readback → GET/UI/정규 갱신 순이다.
