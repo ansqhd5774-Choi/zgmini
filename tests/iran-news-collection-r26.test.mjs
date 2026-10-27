@@ -116,6 +116,25 @@ test('R26 isolates one publisher failure while collecting the other valid articl
  });
 });
 
+test('R26 identifies article-stage failure without dropping other reviewed candidates',async()=>{
+ await inDir(async dataDirectory=>{
+  const normalFetch=mockFeedFetch();
+  const fetcher=url=>url===bbc?new Response('Access denied',{status:403}):normalFetch(url);
+  const result=await collectIranNewsR26({dataDirectory,now,fetcher,dryRun:false});
+  assert.equal(result.status,'PARTIAL_COLLECTION_REVIEW_REQUIRED');
+  assert.equal(result.sourcesFailed,0);
+  assert.equal(result.articleFailures,1);
+  assert.equal(result.metadataReviewed,1);
+  assert.equal(result.candidatesSaved,1);
+  assert.ok(result.articleOutcomes.some(item=>item.sourceId==='bbc-middle-east'&&
+   item.status==='ARTICLE_FETCH_FAILED'&&item.count===1));
+  assert.deepEqual(result.failedArticles,[{sourceId:'bbc-middle-east',
+   status:'ARTICLE_FETCH_FAILED',articleUrl:bbc,httpStatus:403,errorCode:null}]);
+  assert.equal(readIranCollectionR26(dataDirectory,{now}).items.length,1);
+  assert.equal(readFileSync(path.join(dataDirectory,'iran.sqlite'),'utf8'),'unchanged score ledger');
+ });
+});
+
 test('R26 total source outage stops before writing and retains all prior candidate metadata',async()=>{
  await inDir(async dataDirectory=>{
   await collectIranNewsR26({dataDirectory,now,fetcher:mockFeedFetch(),dryRun:false});

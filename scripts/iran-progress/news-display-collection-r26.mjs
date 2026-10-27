@@ -99,6 +99,27 @@ export function planIranCollectionR26({before,feedReport,articleReport,now=Date.
  const partial=feedReport.sourcesFailed>0||articleReport.articleFailures>0||
   articleReport.articlesUnchecked>0;
  const freshIds=new Set(before.items.map(item=>item.id));
+ const articleOutcomeCounts=new Map();
+ const failureStatuses=new Set(['ARTICLE_FETCH_FAILED','CANDIDATE_URL_INVALID',
+  'ARTICLE_FORMAT_INVALID','PUBLISHER_IDENTITY_INVALID','CANONICAL_MISMATCH']);
+ const failedArticles=[];
+ for(const article of articleReport.articles){
+  const key=`${article.sourceId}\u0000${article.status}`;
+  articleOutcomeCounts.set(key,(articleOutcomeCounts.get(key)??0)+1);
+  if(failureStatuses.has(article.status)){
+   // Public publisher URL, HTTP status and a controlled error code only.
+   // Never log article bodies, credentials or the raw response.
+   const verifiedUrl=newsR24SourceUrl(article.sourceId,article.sourceUrl)===article.sourceUrl?
+    new URL(article.sourceUrl):null;
+   failedArticles.push({sourceId:article.sourceId,status:article.status,
+    articleUrl:verifiedUrl?verifiedUrl.origin+verifiedUrl.pathname:null,
+    httpStatus:article.httpStatus??null,
+    errorCode:article.errorCode??null});
+  }
+ }
+ const articleOutcomes=[...articleOutcomeCounts.entries()].map(([key,count])=>{
+  const [sourceId,status]=key.split('\u0000');return {sourceId,status,count};
+ }).sort((a,b)=>a.sourceId.localeCompare(b.sourceId)||a.status.localeCompare(b.status));
  return {cache:{version:NEWS_COLLECTION_R26_VERSION,updatedAt:now,items},
   report:{status:partial?'PARTIAL_COLLECTION_REVIEW_REQUIRED':'COLLECTION_REVIEW_READY',
    checkedAt:new Date(now).toISOString(),sourceCount:feedReport.sourceCount,
@@ -108,6 +129,7 @@ export function planIranCollectionR26({before,feedReport,articleReport,now=Date.
    articlesUnchecked:articleReport.articlesUnchecked,articleFailures:articleReport.articleFailures,
    metadataReviewed:verifiedThisRun,newCandidates:items.filter(item=>!freshIds.has(item.id)).length,
    expiredCandidates:before.items.length-retained.length,candidatesSaved:items.length,
+   articleOutcomes,failedArticles,
    publication:'NOT_AUTHORIZED',rightsVerified:0,displayEligible:0,
    scoreLedgerModified:false,publicCacheModified:false,d1Written:false,
    schedulerModified:false,translationModified:false}};
