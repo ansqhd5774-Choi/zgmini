@@ -214,6 +214,17 @@ function historicalBaseline(points: ReturnType<typeof normalizeHistory>, targetT
   return candidate;
 }
 
+function formatStatDelta(value: number | null) {
+  if (value === null || !Number.isFinite(value)) return "—";
+  const rounded = Math.abs(value) < 0.05 ? 0 : value;
+  return `${rounded > 0 ? "+" : ""}${rounded.toFixed(1)}`;
+}
+
+function formatStatDate(value: string) {
+  const parts = chartDateParts(value);
+  return parts ? `${parts.year}.${parts.monthText}.${parts.dayText}` : "—";
+}
+
 function subtractCalendarDays(value: string | undefined, days: number) {
   if (!value) return null;
   const date = new Date(value);
@@ -461,6 +472,37 @@ export default function CnnPanel({ showEducation = false }: { showEducation?: bo
   // Missing baselines remain unavailable rather than becoming fabricated zeroes.
   const dayDelta = score !== null && dayBaseline !== null ? score - dayBaseline : null;
   const periodDelta = score !== null && periodBaseline !== null ? score - periodBaseline : null;
+  const extrema52Week = useMemo(() => {
+    const observedTime = Date.parse(payload?.observedAt ?? "");
+    if (!Number.isFinite(observedTime)) return null;
+    const windowStart = observedTime - 364 * 86400000;
+    const historyInWindow = allHistory.filter((point) => point.time >= windowStart && point.time <= observedTime);
+    // Do not label a partial history as the full 52-week high or low.
+    if (historyInWindow.length < 180 || allHistory[0]?.time > windowStart + 7 * 86400000 || historyInWindow.at(-1)!.time < observedTime - 7 * 86400000) return null;
+    const points = [...historyInWindow];
+    if (score !== null) points.push({ date: payload!.observedAt!, time: observedTime, score });
+    let highest = points[0];
+    let lowest = points[0];
+    for (const point of points) {
+      if (point.score >= highest.score) highest = point;
+      if (point.score <= lowest.score) lowest = point;
+    }
+    return { highest, lowest };
+  }, [allHistory, payload?.observedAt, score]);
+  const fixedPeriodChanges = useMemo(() => {
+    const reference = payload?.observedAt;
+    const periods = [
+      { label: "1주", target: subtractCalendarDays(reference, 7) },
+      { label: "1개월", target: subtractCalendarMonths(reference, 1) },
+      { label: "3개월", target: subtractCalendarMonths(reference, 3) },
+      { label: "6개월", target: subtractCalendarMonths(reference, 6) },
+      { label: "1년", target: subtractCalendarMonths(reference, 12) },
+    ];
+    return periods.map(({ label, target }) => {
+      const baseline = historicalBaseline(allHistory, target);
+      return { label, delta: score !== null && baseline !== null ? score - baseline : null };
+    });
+  }, [allHistory, payload?.observedAt, score]);
   const latestHistoryPoint = history.at(-1) ?? null;
   const chartAxis = useMemo(
     () => buildChartAxisTicks(history, selectedPeriod),
@@ -539,7 +581,29 @@ export default function CnnPanel({ showEducation = false }: { showEducation?: bo
         periodDelta,
         periodLabel: currentPeriodLabel,
         metaDate: showEducation ? undefined : dateLabel(payload?.observedAt),
+        inlineDayDelta: showEducation,
       }}
+      scoreAside={showEducation ? <div className="usa-score-stats" aria-label="CNN 공포탐욕 52주 최고 최저와 기간별 점수 변동">
+        <div className="usa-score-extremes">
+          {([
+            { label: "52주 최고", point: extrema52Week?.highest ?? null, tone: "high" },
+            { label: "52주 최저", point: extrema52Week?.lowest ?? null, tone: "low" },
+          ]).map(({ label: statLabel, point, tone }) => <div className={`usa-score-stat is-${tone}`} key={tone}>
+            <span className="usa-score-stat-label">{statLabel}</span>
+            <strong className="usa-score-stat-value">{point ? point.score.toFixed(1) : "—"}</strong>
+            {point ? <time className="usa-score-stat-date" dateTime={point.date}>{formatStatDate(point.date)}</time> : <small className="usa-score-stat-date">—</small>}
+          </div>)}
+        </div>
+        <div className="usa-score-changes">
+          {fixedPeriodChanges.map(({ label: statLabel, delta }) => {
+            const direction = delta === null || Math.abs(delta) < 0.05 ? "neutral" : delta > 0 ? "positive" : "negative";
+            return <div className={`usa-score-stat is-${direction}`} key={statLabel}>
+              <span className="usa-score-stat-label">{statLabel}</span>
+              <strong className="usa-score-stat-value">{formatStatDelta(delta)}{direction === "positive" ? <small aria-hidden="true">▲</small> : direction === "negative" ? <small aria-hidden="true">▼</small> : null}</strong>
+            </div>;
+          })}
+        </div>
+      </div> : undefined}
       period={<MarketPeriodControls
         activeKey={selectedPeriod}
         onChange={setSelectedPeriod}

@@ -166,6 +166,7 @@ export function MarketScoreOrb({
   comparisonItems,
   arrowId,
   marketScoreBands = false,
+  inlineDayDelta = false,
 }: {
   score: string;
   state: string;
@@ -180,6 +181,7 @@ export function MarketScoreOrb({
   comparisonItems?: readonly ScoreComparisonItem[];
   arrowId?: string;
   marketScoreBands?: boolean;
+  inlineDayDelta?: boolean;
 }) {
   const arrows=useScoreArrows(),showArrows=arrowId?arrows(arrowId,numericScore(score)):false;
   const tone = state.includes('공포') ? 'is-fear' : state.includes('탐욕') ? 'is-greed' : '';
@@ -203,7 +205,7 @@ export function MarketScoreOrb({
 
   const displayScore = animatedScore === null ? score : animatedScore.toFixed(1);
   const [wholeScore, decimalScore = ''] = displayScore.includes('.') ? displayScore.split('.', 2) : [displayScore, ''];
-  const showMetaDate = Boolean(metaDate) && comparisonAriaLabel !== '인플레이션 안정성 점수 변화';
+  const showMetaDate = Boolean(metaDate) && comparisonAriaLabel !== '인플레이션 안정성 점수 변화' && !inlineDayDelta;
   const hasComparisonItems=Array.isArray(comparisonItems)&&comparisonItems.length>0;
 
   if (variant === 'hero') {
@@ -294,11 +296,18 @@ export function MarketScoreOrb({
               {decimalScore ? <span className="cnn-score-fraction">.{decimalScore}</span> : null}
             </LiveScoreValue>
             <span style={{color:fearGreedStateColor(state)}}>{state}</span>
+            {inlineDayDelta ? <span className="cnn-score-inline-day" aria-label={`${dayLabel} ${formatDelta(animatedDayDelta)}점`}>
+              <span>{dayLabel}</span>
+              <strong className={`is-${deltaDirection(animatedDayDelta)}`}>
+                {formatDelta(animatedDayDelta)}
+                {showArrows && (deltaDirection(animatedDayDelta) === 'up' ? <i aria-hidden="true">▲</i> : deltaDirection(animatedDayDelta) === 'down' ? <i aria-hidden="true">▼</i> : null)}
+              </strong>
+            </span> : null}
             {caption ? <small>{caption}</small> : null}
           </div>
         </div>
 
-        <div className={`cnn-score-comparisons${hasComparisonItems?' is-multi':''}`} aria-label={comparisonAriaLabel} title={hasComparisonItems||showArrows?undefined:'화살표는 최근 24시간 내 확인된 점수 변동이 있을 때 표시합니다.'}>
+        {!inlineDayDelta ? <div className={`cnn-score-comparisons${hasComparisonItems?' is-multi':''}`} aria-label={comparisonAriaLabel} title={hasComparisonItems||showArrows?undefined:'화살표는 최근 24시간 내 확인된 점수 변동이 있을 때 표시합니다.'}>
           {hasComparisonItems ? comparisonItems!.map(item=><ScoreComparisonCell key={item.label} item={item}/>) : <>
             <div className={`cnn-score-comparison is-${deltaDirection(animatedDayDelta)}`}>
               <span aria-label={dayLabel}>{dayLabel.replace(/ 대비$/, "")}</span>
@@ -316,7 +325,7 @@ export function MarketScoreOrb({
               </strong>
             </div>
           </>}
-        </div>
+        </div> : null}
         {showMetaDate ? <div className="cnn-score-observed-date">{metaDate}</div> : null}
       </div>
     );
