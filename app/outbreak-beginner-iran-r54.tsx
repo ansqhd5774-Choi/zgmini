@@ -69,7 +69,7 @@ function Trend({view,compact=false}:{view:any;compact?:boolean}){
    instanceKey={compact?"iran-mobile-14d":"iran-provisional-14d"}
    gradientId={compact?"ob58-iran-mini-gradient":"ob54-iran-provisional-gradient"}
    formatTooltipLabel={day=>date(day)+(carriedDates.has(day)?" · 변화 미확인·이월":"")}
-   color={band(view.score).color} marketScoreBands={!compact}
+   color={band(view.score).color} marketScoreBands
   />
  </div>:<div className={compact?"ob58-mini-empty":"ob54-empty"} role="status">14일 구간의 저장된 점수가 없습니다.</div>;
  if(compact)return <div className="ob58-mini-trend" role="region" aria-label="이란 전쟁 심리 최근 14일 추이">
