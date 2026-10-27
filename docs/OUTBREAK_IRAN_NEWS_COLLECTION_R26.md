@@ -88,3 +88,13 @@
 - `status=PARTIAL_COLLECTION_REVIEW_REQUIRED`는 실패 4건이 있는 투명한 부분성공 상태이다. `publication=NOT_AUTHORIZED`, `rightsVerified=0`, `displayEligible=0`, `scoreLedgerModified=false`, `publicCacheModified=false`, `d1Written=false`, `schedulerModified=false`, `translationModified=false` 유지.
 - **복구 진행도:** PC 다중 출처 후보 수집·검증·격리 저장은 실측 PASS. **기존 R15 6시간 자동 후행 연결 / 2회 정규 관측 / 기사별 재사용권 / D1 공개 게시 / 실제 UI는 미실행·미검증**.
 - **즉시 다음 Gate:** PC에서 기존 R15 운영 프로젝트 HEAD, R13 작업 XML·launcher·runner SHA, 후행 호출 위치, 후보 파일 27건의 읽기 검증, 보조 모듈 설치 경로를 **읽기 전용**으로 확인한다. 차이가 있으면 설치하지 않는다. 이후 해당 승인 source에서 R26 후보 수집만 독립 실패 격리 후행 처리하도록 최소 연결하고, 정규 2회 관측으로 완료를 판정한다.
+
+## 11. R29 기존 6시간 R13/R15 후행 뉴스 후보 자동 수집 연결
+
+- 배포 대상은 PC만이다. 새 Windows 작업, Cloudflare Cron, R3/R5 점수·원장·기존 공개 뉴스 키·번역·UI의 변경 없이 **활성 R15 runner 후행 코드에 별도 비공개 후보 수집 R29를 추가**한다. 기존 R15에서 D1 게시가 실패해도 R29 후보 수집은 별도 프로세스로 이어지며, R29 실패가 R3/R5/legacy 점수 종료코드에 전파되지 않는다.
+- R29 수집기 `news-display-auto-candidates-r29.mjs`는 R26의 다중 출처 수집을 그대로 사용하며 검증된 개인 후보 파일 `news-display-candidates-r26.json`만 갱신한다. 요약 관측 결과는 별도 `news-display-candidates-auto-r29-status.json`에 저장한다. 공개 표시 권리 없는 새 제목·기사 본문·이미지·번역은 D1/사이트에 쓰지 않는다.
+- 설치는 오프라인 코드 ZIP의 `IRAN_NEWS_R29_AUTO_CONNECT.cmd`만 실행한다. 설치 프로그램 `news-display-install-hook-r29.mjs`는 **쓰기 전** 기존 R13 task XML(0/6/12/18시)·VBS·R15 runner SHA `db0040ef...`·R7/원본 복구 사본·기존 R15 모듈·7개 수집 모듈 SHA·PC 격리 후보 파일/권리 상태를 검사한다. 정규 작업이 실행 중이거나 예정 시각 전후 25분이면 설치를 중단한다. PC HEAD는 관측치로만 기록하며 다른 작업의 Git checkout을 임의 교체하지 않는다.
+- R29 배포 ZIP: `IRAN_NEWS_R29_AUTO_CONNECT_PACKAGE.zip`, SHA-256 `c49d0601ba0e91ea1b030d22c0dec057706b7e05999214aba9705e1768d1033a`, 총 13개 스크립트/실행 파일 포함. ZIP 전체 압축 해제 뒤 **한 번만** CMD 실행. 해당 ZIP을 풀기만 해서는 운영 PC 프로젝트가 변경되지 않는다.
+- 기존 `sources.mjs`, `news-display-discover-r1.mjs`, `lib/iran-progress/news-display-r1.mjs`는 검증 후 **그대로 유지**한다. R24/25/26·소스 레지스트리·R29 실행 모듈 총 **5개 신규 파일**만 추가한다. 활성 R15 runner의 기존 내용을 검증하고 원본을 `.before-iran-news-r29`로 **배타적 백업**한 뒤 오직 후행 R29 블록만 붙인다. task·VBS·기존 R15 모듈은 수정하지 않는다.
+- 설치 전후 파일 해시 불일치, `.next`·백업 중복, 작업 실행 중, 저장 실패는 `STOP`으로 분리하고 **자동 재설치·무단 rollback·광범위 삭제를 하지 않는다**. 특히 설치 결과 불확실은 사용자의 로그 검토까지 멈춘다.
+- **현재 검증 경계:** 브랜치의 코드/회귀 테스트/ZIP 검증과 **실제 사용자 PC의 설치·정규 실행 성공은 별개**다. 사용자가 `IRAN_NEWS_R29_AUTO_CONNECT_RESULT.txt`를 확인하고, 다음 서로 다른 정규 2회에서 R29 상태 파일과 개인 후보 파일의 업데이트를 검증해야 PC 자동 수집 PASS가 된다. 기존 R16 검증기는 R15 runner 해시용이므로 R29 runner에 적용해 거짓 이상으로 해석하지 않는다.

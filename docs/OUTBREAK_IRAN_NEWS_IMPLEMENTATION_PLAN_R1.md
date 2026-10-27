@@ -475,3 +475,11 @@
 6. **별도 공개 권리 Gate:** `rightsVerified:false` 후보는 기사 제목·본문·사진·번역을 D1/사이트에 자동 게시하지 않는다. 개별 권리 검증 후 승인된 필드만 기존 뉴스 키를 통해 게시·read-back하며 UI팀에 메타데이터 계약만 전달한다.
 
 **현재 다음 실행:** 1번의 읽기 전용 PC 점검 준비. 사용자 PC의 6시간 운영 runner를 변경하거나 설치했다고 보고하지 않는다. 작업 브랜치는 `codex/outbreak-iran-news-retention-r1-20261026`로 고정한다.
+
+## 38. R29 수집기 자동 연결 구현 — PC 검증 위임
+
+- 사용자 최신 승인: **개발자가 기존 후행 자동 연결 코드·안전한 적용 CMD·회귀 검증까지 완료하고, 실제 PC의 자동 갱신 여부는 사용자가 직접 확인한다.** PC에서 성공했다고 추정하거나 6시간 예약 작업을 강제 실행하지 않는다.
+- `scripts/iran-progress/news-display-auto-candidates-r29.mjs`에서 `R26` 수집과 개인 후보 저장을 R15/D1 게시 및 점수 계산과 분리한다. 기사 일부 오류는 `PRIVATE_COLLECTION_PARTIAL`로, 전면 실패는 `PRIVATE_COLLECTION_FAILED_CANDIDATES_PRESERVED`로 기록하고 기존 후보를 소거하지 않는다. R29 상태 파일은 `news-display-candidates-auto-r29-status.json`이며 기존 뉴스 공개 상태와 이름을 분리한다.
+- `scripts/iran-progress/news-display-install-hook-r29.mjs`는 이미 설치된 R15 runner에 한정하여 동일 R13 작업 후행 위치에 R29 블록만 추가한다. 활성 runner·VBS·스케줄러·백업·기존 의존 모듈 해시/위치가 다르면 **쓰기 전에 중단**하고 추가 설치를 진행하지 않는다. 정규 작업 시각 인접/실행 중이면 설치 금지. 새 Windows 작업·점수 원장·D1·번역/UI 변경 금지.
+- 사용자는 `IRAN_NEWS_R29_AUTO_CONNECT_PACKAGE.zip`(SHA-256 `c49d0601ba0e91ea1b030d22c0dec057706b7e05999214aba9705e1768d1033a`) 전체를 풀고 `IRAN_NEWS_R29_AUTO_CONNECT.cmd`를 한 번 실행한다. 코드 파일은 모두 ZIP 내장, 런타임 GitHub 다운로드는 없다. 생성 로그는 CMD 옆 `IRAN_NEWS_R29_AUTO_CONNECT_RESULT.txt`. 설치 성공 후에도 **실제 PC 정규 2회 수집 실측은 사용자 확인 대기**이다.
+- 향후 권리 승인 작업은 이 수집기 연결과 별도. `rightsVerified=0`, `displayEligible=0`을 유지하므로 비공개 27건이 즉시 사이트 공개 27건이 되는 것은 아니다.
