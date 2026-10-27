@@ -26,9 +26,10 @@
 
 ## Gate와 다음 작업
 
-1. synthetic 메모리 SQLite 테스트·ZIP 독립 실행 패키지 검사까지는 개발 단계에서 수행한다.
-2. 실제 PC의 R3 읽기 전용 TXT에서 `RESULT=PASS_QFR_STORED_READONLY_PREVIEW`, `SOURCE_SHA256`, `OBSERVED_THROUGH`, `HISTORY_JSON`, `SOURCE_RETRIEVED_AT`을 확인한다. 재수집·재저장 없음.
-3. R3 PC 결과 검증 후 QFR **전용 D1 키와 독립 checkpoint**를 제안, 기존 `detail:earnings-recession-indicators:v1`(BLS 5행) 및 서비스 별도 키를 침범하지 않는다. D1 쓰기·라우팅·공개배포는 별도 승인과 각각의 Gate가 필요하다.
-4. 향후 QFR 데이터 갱신은 승인된 기존 PC 수집기 통합 여부 확인 후 단계적으로 진행하며, 이번 1회 저장만으로 **자동 정규 갱신 PASS를 선언하지 않는다**.
+1. synthetic 메모리 SQLite 테스트 6건과 ZIP 독립 실행 검사는 개발 단계에서 PASS.
+2. **실제 PC R3 PASS(2026-10-28 KST 수신)**: 사용자 전달 `EARNINGS_CENSUS_QFR_R3_STORED_RESULT_20261027T150635Z.txt`, UTC `2026-10-27T15:06:35.345Z`, `RESULT=PASS_QFR_STORED_READONLY_PREVIEW`. `STORED_SNAPSHOTS_VERIFIED=1`, `SOURCE_SHA256=232f7757e654e787a9eab49792302feb3683e5280a66ff0cc9bd7f0cbc448654`, `SNAPSHOT_SHA256=0cf9d0e4bced96b300810a448bf67be3b663252178f15853f103561d876ddeb3`, `SOURCE_RETRIEVED_AT=2026-10-27T14:52:13.108Z`, `SOURCE_STORED_AT=1793112733108`, `OBSERVED_THROUGH=2026-Q2`.
+3. R3 실제 계산: 2026-Q2 **15.599418144173285%**, 2026-Q1 **14.03708175763798%**, 변화 **+1.5623363865353053%p**. 5연속 분기 이력 2025-Q2~2026-Q2와 저장 원본을 검산. `SOURCE_HTTP_REQUESTS=0`, `PC_SQLITE_WRITES=0`, `D1_WRITES=0`, `SCORE_WRITES=0`, `WEB_DEPLOYMENTS=0`. **PC_STORED_CALC=PASS**로 갱신, D1/웹/자동 갱신은 `NOT_RUN`.
+4. 다음 [R4 별도 D1 투영 초안](EARNINGS_CENSUS_QFR_R4_PROJECTION_DRAFT_20261028.md)의 독립 키/checkpoint, 기원 검증·기본 데이터 형태를 설계한다. 기존 BLS 기본/서비스 키를 침범하지 않는다. D1 쓰기·라우팅·공개배포는 별도 승인·검증 필요.
+5. 향후 QFR 정규 갱신은 승인된 PC 수집기 통합 여부 확인 후 단계적으로 진행하며, 이번 1회 수동 저장만으로 **자동 정규 갱신 PASS를 선언하지 않는다**.
 
 공식 통계 출처: https://www.census.gov/econ/qfr/ , 공식 2026-Q2 발표: https://www.census.gov/econ/qfr/mmws/current/index.html
