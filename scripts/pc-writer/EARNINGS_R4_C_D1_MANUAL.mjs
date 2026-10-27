@@ -7,7 +7,6 @@ import {fileURLToPath} from 'node:url';
 import {execFileSync} from 'node:child_process';
 import {DatabaseSync} from 'node:sqlite';
 import {buildPreview} from './EARNINGS_R4_C_READ_MODEL_PREVIEW_READONLY.mjs';
-import {read,client,credential} from './d1.mjs';
 import {
   validateEarningsCompanionPayload,earningsCompanionWriter,
   earningsCompanionFreshness,EARNINGS_C_ROUTE,
@@ -55,11 +54,13 @@ try{
     const branch=execFileSync('git',['branch','--show-current'],{cwd:root,encoding:'utf8',windowsHide:true}).trim();
     if(branch!=='main')throw Error('EARNINGS_C_APPLY_MAIN_ONLY');
     const source=execFileSync('git',['rev-parse','HEAD'],{cwd:root,encoding:'utf8',windowsHide:true}).trim();
-    const config=read(path.join(base,'config.json'));
+    const config=JSON.parse(fs.readFileSync(path.join(base,'config.json'),'utf8'));
     if(config.collectionTarget!=='pc'||config.enabled!==true||config.source!==source)
       throw Error('EARNINGS_C_PC_SOURCE_NOT_APPROVED');
     execFileSync('git',['diff','--quiet','HEAD','--','worker','scripts/pc-writer'],
       {cwd:root,windowsHide:true,stdio:'pipe'});
+    // Dynamic import: portable dry-run has no D1/auth dependencies whatsoever.
+    const {client,credential}=await import('./d1.mjs');
     const remote=client(config,()=>credential(root));
     const result=await earningsCompanionWriter(remote.adapter(config.core,{allowWrites:true}))
       .write(payload,{storedAt:Date.now()});
