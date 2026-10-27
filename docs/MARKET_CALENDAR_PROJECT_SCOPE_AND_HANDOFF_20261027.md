@@ -168,3 +168,14 @@
 - `tests/market-calendar-r21-census-year-apply.test.mjs`: CRLF 기준 실제 Core 시뮬레이션·적용·백업·잠금·drift 4 PASS. `tests/market-calendar-r21-census-year-stage.test.mjs`: 2026/2027 Census fallback/연도 경계, BLS/BEA/Fed 보존, 기저 이력·lease 4 PASS. CMD ASCII/CRLF, ZIP 무결성 PASS.
 - 다음 단계는 사용자가 새 R21 CRLF ZIP을 PC에서 실행하여 `phase=INSTALLED`와 `decision=R21_CENSUS_YEAR_INSTALLED_NO_FORCED_COLLECTION` 로그를 제출하는 것. 여기까지는 코드·시뮬레이션 검증 완료이며 **실제 PC 설치 완료로 보고하지 않는다**.
 - Core 정규 수집/DB/스케줄러/게시/GitHub main은 미변경. 전용 브랜치 `codex/zgmini-gpt-workspace-20261025` 고정.
+
+## 16. R21 CRLF 사용자 PC 설치 결과 확인 (2026-10-28)
+
+- 사용자 첨부 증거: `MARKET_CALENDAR_R21_CENSUS_YEAR_APPLY_CRLF_RESULT.txt`, 내부 실행 시각 `2026-10-27T15:14:07.735Z`(UTC).
+- **실제 PC 설치 PASS:** `phase=INSTALLED`, `decision=R21_CENSUS_YEAR_INSTALLED_NO_FORCED_COLLECTION`, `changedFiles=["scripts/pc-writer/release-calendar.mjs"]`, `backupCreated=true`.
+- **PC 승인 source 전환:** `previousSource=97a38c7cdfbb7e0d30eaeacea27b9605bbfa2b3b` → `newSource=b5e860d09ac87087e158193613425b146fa9a1e5`. Core worktree `d0a4b3cb8b95` 유지.
+- LF R21 후보 SHA256 `2e7ac2a57a7ec2c41b2f9647d98d49c7bb22d904978a0d637e3d3619e01dedf0`, 실제 PC CRLF 설치 SHA256 `8105a2922ff0d05d29b329dc22dcf66d0d5920ea0d1661337066cef877f45bc5`로 사전 예상값과 정확히 일치.
+- **R20 파서 보존:** `installedParserSha256=20d6c99cc7621e08c06598e51f4c9dc8a6f945952905351287b46d2c65a1551c`. 기존 PC collector CRLF SHA256 `1b8c2760a4f815191282dd55969ce8170072d4f747c8468ddd6601dc50ee88d6`; LF 정규화 SHA `4af1164793d95e7b0a97643d91e6d23749974d17c7048bac677f727376fc7afc`.
+- **미실행:** `gitPushed=false`, `publisherExecuted=false`, `forcedCollection=false`. 운영 데이터 정규 수집·SQLite 결과·공개 UI 반영은 해당 로그에서 미확인. 이들을 설치 PASS와 혼동하지 않는다.
+- **다음 작업:** 직전 R21의 예약 수집·공개 반영을 강제로 실행하거나 대기하지 않고, 기존 Fed 일정 누락 범위 및 안전하게 저장·재배포 가능한 경제·실적 공식 소스 추가 연결을 진행한다. 사용자는 운영 사이트를 별도로 관찰하고 오류를 알려준다.
+- 전용 브랜치 `codex/zgmini-gpt-workspace-20261025` 유지; 다른 브랜치 생성, main 병합, PC 운영 파일 임의 변경 없음.
