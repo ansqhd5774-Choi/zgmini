@@ -21,8 +21,8 @@
 1. 승인 source와 실제 publisher 실행 프로젝트를 일치시킨다. R10 XML 참조 프로젝트(`1364b01b`)는 보호 파일 61개 drift를 보였지만 다른 writer 원장은 `ee41bb29`에서 `VERIFIED`; XML 문자열 경로만으로 실제 실행 프로젝트를 바꾸지 않는다.
 2. 새 승인 commit은 운영 source `ee41bb29` 또는 그 뒤에 **명시적으로 검증된 최신 PC source**를 부모로 삼아, `lib/release-calendar.mjs` 한 파일의 변경으로 구성한다. 변경 파일 1개와 다른 `lib`/`worker`/`scripts/pc-writer` 보호 파일 0개를 확인한다.
 3. 해당 새 commit을 검증된 운영 PC checkout에서 정확하게 설치하고, 그 다음 `config.source`를 그 commit SHA로 일치시킨다. 어느 하나만 선행한 상태로 정규 publisher를 돌리지 않는다. 기존 ledger·SQLite·task·활성 수집 결과를 보존한다.
-4. 정상 정규 수집 이후 저장 원본→파서 결과→게시 `VERIFIED`→D1/API readback을 순서대로 확인한다. BLS 확대·BEA/Fed/Census 불변과 이벤트 중복 0, 기존 133건의 날짜·제목 보존 여부 확인. 불일치 시 다른 단계로 진행하지 않고 기존 정상 게시본 보존.
-5. R11-1 성공 뒤 R11-2 BEA만 별도로 진행한다. BEA의 `GDP by County` ID 교정은 R11-2에 해당한다. 한국 지표·실적 데이터는 이용권 미확인으로 편입하지 않는다.
+4. 연결 구현 완료는 승인 source에 파서 단일 파일을 설치하고 `config.source`와 정확한 HEAD를 일치시키며 기존 스키마·ID·소스별 회귀 검사를 완료한 시점에 보고한다. 정규 수집·D1/API 공개 readback은 별도 운영 관측으로 구분한다. 사용자가 제보한 실제 불일치나 구체적 보호 실패는 해당 단계에서 최소 수정한다.
+5. R11-1 BLS 연결 설치·필수 코드 보호 검사를 마쳤다면 R11-2 BEA 단독 연결에 착수한다. R18 정규 수집·공개 readback 대기 자체는 BEA 구현 착수 차단 조건이 아니다. BEA의 `GDP by County` ID 교정은 R11-2에 해당한다. 한국 지표·실적 데이터는 이용권 미확인으로 편입하지 않는다.
 
 ## 현재 확인된 근거
 
@@ -90,7 +90,7 @@
 - BLS 후보 `staging/market-calendar/r11-bls/lib/release-calendar.mjs` SHA256 `54c73721`를 승인 baseline 파서와 비교했으며 차이는 BLS의 제목별 분류·ID·sourceUrl 확대와 단계 주석뿐이다. 기존 BEA·Fed·Census, `RELEASE_SOURCES`, 저장/게시 계약은 불변. `node --test tests/market-calendar-r11-bls-stage.test.mjs` 테스트를 통과했다.
 - R17 `MARKET_CALENDAR_R17_BLS_APPLY.cmd`는 **명시적으로 실행했을 때만** 적용한다. 실행 시점 R16 lineage·승인 HEAD `7ac573fc`·Git parser blob·후보 SHA256·설정 source·보호 파일 청결·Git 작성자 설정을 모두 재검증한다. 이미 Core lock이 있으면 건드리지 않고 중단한다.
 - 통과 시 Core lock을 임시로 확보하고, 승인 데이터 루트의 `market-calendar-r17-backups` 하위에 **기존 파서와 config 원본을 모두 보존**한 뒤, 승인 PC checkout의 `lib/release-calendar.mjs` 단일 파일만 변경한다. 해당 파일만 포함하는 로컬 Git 커밋을 생성하고, 부모가 `7ac573fc`이며 차이 파일이 정확히 1개인지 확인한 뒤 `config.source`를 새 HEAD로 맞춘다. 설정 이외 DB·게시 원장·예약 작업·원자료는 변경하지 않는다.
-- GitHub push 및 `main` 변경·Cloudflare 배포·강제 수집·즉시 게시 모두 없다. 적용 결과 파일은 `MARKET_CALENDAR_R17_BLS_APPLY_RESULT.txt`. `BLS_INSTALLED_WAIT_NEXT_REGULAR_VERIFIED_CYCLE`는 설치 성공 **전용** 상태이며 이후 정규 수집의 BLS 원본 저장·파서 계산·게시 `VERIFIED` 및 공개 readback을 별도로 검증해야 한다. 그 검증 전 BEA 전환 금지.
+- GitHub push 및 `main` 변경·Cloudflare 배포·강제 수집·즉시 게시 모두 없다. 적용 결과 파일은 `MARKET_CALENDAR_R17_BLS_APPLY_RESULT.txt`. `BLS_INSTALLED_WAIT_NEXT_REGULAR_VERIFIED_CYCLE`는 설치 성공 **전용** 상태이며 이후 정규 수집의 BLS 원본 저장·파서 계산·게시 `VERIFIED` 및 공개 readback을 별도로 검증해야 한다. 2026-10-27 당시의 구형 대기 게이트는 아래 최신 역할·범위 계약으로 대체한다. 실제 BLS 운영 결과 미관측은 BEA 코드 연결 착수의 차단 조건이 아니다.
 - 커밋 전 실패는 원본 파서를 복구하고 종료한다. 커밋 이후 설정 변경 실패는 게시 차단 상태일 수 있으므로, 임의 `git reset` 없이 백업과 결과를 확인한 뒤 별도 복구 판정을 받는다.
 
 ### R17 설치 성공과 R18 — 실제 정규 수집·게시·공개 대조
@@ -98,5 +98,14 @@
 - 사용자 R17 결과(`2026-10-27T09:14:11.140Z`)는 `BLS_INSTALLED_WAIT_NEXT_REGULAR_VERIFIED_CYCLE`: 실제 운영 source `7ac573fc`에서 BLS 파서 한 파일 커밋 `e778f58d056e45c515fac95b4ed48295f6a3ed1a`로 전환됐다. R17 백업 `r17-20261027091413755-d53cc8ff`가 존재하고, 게시·수집·Git 원격 푸시는 시행하지 않았다. **설치 PASS ≠ 수집·게시 PASS.**
 - R18 `MARKET_CALENDAR_R18_VERIFIED_CYCLE.cmd`는 실행 중인 Core 작업 XML의 실제 원본 VBS와 정확한 worktree를 추적한다. 승인 HEAD·부모·단일 파일 diff·파서 SHA256·config.source를 확인하며, SQLite `readOnly:true`로 기존 BLS 원본 저장 시각/현재 출력/시도 시각을 읽는다.
 - R17 백업 원본 파서와 새 파서를 **동일하게 저장된 BLS 입력**에 적용해 예전 발행일·제목 누락을 확인한다. BLS 저장 이벤트의 키·건수·중복, BEA/Fed/Census 건수, 새 source `VERIFIED` writer/ledger, 공개 `/api/release-calendar`의 이벤트 해시 일치를 구분하여 판정한다.
-- 최초 정규 BLS 수집이 아직 없다면 `WAIT_FIRST_REGULAR_BLS_COLLECTION`; 수집 성공 후 게시 전이면 `WAIT_NEW_SOURCE_VERIFIED_PUBLICATION`; 공개 불일치면 `WAIT_REMOTE_EXACT_EVENT_READBACK`. 최종 `BLS_VERIFIED_PUBLIC_READBACK_PASS`에서만 다음 BEA 단독 전환 검토가 가능하다.
+- 최초 정규 BLS 수집이 아직 없다면 `WAIT_FIRST_REGULAR_BLS_COLLECTION`; 수집 성공 후 게시 전이면 `WAIT_NEW_SOURCE_VERIFIED_PUBLICATION`; 공개 불일치면 `WAIT_REMOTE_EXACT_EVENT_READBACK`. `BLS_VERIFIED_PUBLIC_READBACK_PASS`는 공개 동작의 선택적 실측 판정이며 BEA 코드 연결 착수의 필수 조건이 아니다.
 - R18은 기존 예약 시각·6시간 수집 가드·DB·Git·Cloudflare·D1·공개 데이터를 변경하지 않는다. 읽기 전용 결과 TXT를 받아 판정하며 수집·게시를 임의로 강제하지 않는다.
+
+### R19 — 프로젝트 방향·역할 재확정 (2026-10-27 최신 지시)
+
+- 최종 목표는 **시장 캘린더 전체(경제지표·기업 실적·주요 시장 일정)의 기존 페이지 연결**이다. BLS는 전체 데이터 소스 중 1개 단계에 불과하다. 신규 별도 페이지나 통합 목적을 벗어난 실시간 감시 기능을 만들지 않는다.
+- 사용자: 실제 공개 페이지 실시간 모니터링. 개발 담당: 기존 PC 수집·파서·게시 경로에 승인된 소스들을 순차 연결하고 코드·계약 검사/정확한 설치 source를 보고한다.
+- 사용자 요청이 없다면 **예약·알림·정규 수집 대기·상시 폴링·R18 반복 결과 요청**을 연결 작업의 완료 조건이나 후속 BEA 착수 조건으로 추가하지 않는다.
+- **R17 BLS 연결 설치는 완료**(source `e778f58d056e45c515fac95b4ed48295f6a3ed1a`). R18 최초 로그는 기존 BLS 저장 입력과 6시간 가드의 캐시 상태를 나타내며 신규 BLS 공개 건수 실측은 아직 하지 않았다. 두 상태를 구분한다.
+- 다음은 **R11-2 BEA 단독 확장 연결**. 설치 전에 최신 PC 승인 source·변경 파일/게시 계약 훼손 위험만 확인하고 기존 source·DB·작업 주기·게시 이력을 보존한다. 코드 설치 PASS와 공개 사이트 PASS는 각각 다른 근거를 요구한다.
+- 전체 운영 방향과 완료 용어는 `docs/MARKET_CALENDAR_PROJECT_SCOPE_AND_HANDOFF_20261027.md`를 따른다.
