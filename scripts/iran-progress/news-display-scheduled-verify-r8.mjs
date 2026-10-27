@@ -48,7 +48,9 @@ export function csvFirstRow(input){
 export function parseTaskLocalDate(value){
  if(typeof value!=='string')return null;
  const s=value.trim();
- let m=s.match(/(20\d{2})[-./](\d{1,2})[-./](\d{1,2})\s*(오전|오후|AM|PM)?\s*(\d{1,2}):(\d{2})(?::(\d{2}))?/i);
+ // Korean schtasks may insert the localized weekday: 2026-10-27-화 오후 12:00:01.
+ // Accept that presentation detail without changing the task or assuming host locale.
+ let m=s.match(/(20\d{2})[-./](\d{1,2})[-./](\d{1,2})(?:\s*[-(]?\s*[월화수목금토일](?:요일)?\s*\)?)?\s*(오전|오후|AM|PM)?\s*(\d{1,2}):(\d{2})(?::(\d{2}))?/i);
  let y,month,day,ap,hour,minute,second;
  if(m){[,y,month,day,ap,hour,minute,second]=m;}
  else{
