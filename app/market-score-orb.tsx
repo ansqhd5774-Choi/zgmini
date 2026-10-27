@@ -205,7 +205,7 @@ export function MarketScoreOrb({
 
   const displayScore = animatedScore === null ? score : animatedScore.toFixed(1);
   const [wholeScore, decimalScore = ''] = displayScore.includes('.') ? displayScore.split('.', 2) : [displayScore, ''];
-  const showMetaDate = Boolean(metaDate) && comparisonAriaLabel !== '인플레이션 안정성 점수 변화';
+  const showMetaDate = Boolean(metaDate) && comparisonAriaLabel !== '인플레이션 안정성 점수 변화' && !inlineDayDelta;
   const hasComparisonItems=Array.isArray(comparisonItems)&&comparisonItems.length>0;
 
   if (variant === 'hero') {
@@ -326,7 +326,7 @@ export function MarketScoreOrb({
             </div>
           </>}
         </div> : null}
-        {showMetaDate && !inlineDayDelta ? <div className="cnn-score-observed-date">{metaDate}</div> : null}
+        {showMetaDate ? <div className="cnn-score-observed-date">{metaDate}</div> : null}
       </div>
     );
   }
