@@ -61,3 +61,11 @@
 - 실제 writer 원장의 `VERIFIED`는 당시 승인 source 게시 성공 근거지만 **예약 Core 런처가 그 작업 트리에서 출발했다는 증거는 아니다**. R12는 Core XML에서 VBS 파일명을 확인한 뒤 추정 데이터 루트의 VBS를 읽었으므로 두 절대 경로가 같은지도 확인하지 못했다.
 - R13은 XML `Arguments`에서 **정확한 VBS 절대 경로**를 추출하고 그 파일의 런처를 확인한다. 또한 `E:\ZGmini\projects` 직계 Git repo에서 `git worktree list --porcelain`로 **연결된 하위 worktree 등록 목록**을 읽어 실제 승인 source HEAD의 존재·유일성·파서 무결성·보호 파일 청결을 확인한다. 위치는 비식별 ID만 출력한다.
 - R13 결과는 `MARKET_CALENDAR_R13_RUNTIME_LINEAGE_RESULT.txt`; 읽기 전용이며 작업 등록·수집·게시·설치·Git 전환·config/DB 변경은 없다. 승인 checkout을 찾더라도 스케줄러 재설치는 별도 검증·승인 없이 진행하지 않는다.
+
+### R13 실측과 R14 — 검사범위 정밀화
+
+- R13 PC 로그(`2026-10-27T08:27:22.662Z`)에 승인 source `7ac573fc`, writer/ledger `VERIFIED`, 기존 parser 및 BLS 후보 해시 일치. **예약 작업 XML의 실제 VBS는 이전에 추정해 읽었던 데이터 루트 VBS와 다른 위치**다. 이 때문에 R12의 `3941d416`을 실제 Core 실행 HEAD로 단정할 수 없다.
+- R13의 정확한 VBS는 읽었지만 `identifyLauncher`가 일반적인 이중 인용부호 + `local-cycle.mjs` 형식만 처리하여 실행 대상을 찾지 못했다. Git 등록 worktree 2,022개에서 승인 source와 일치하는 깨끗한 후보 최소 1개를 확인했으나 한도에서 목록이 잘려 유일성 판단은 보류.
+- R14에서는 **예약 XML의 정확한 VBS 파일만** 읽고, Windows 절대 경로가 포함된 네 가지 승인된 Node 실행 엔트리포인트 형식을 정적 검사한다. VBS를 실행하거나 내용을 기록하지 않는다. 해당 파일의 구문 형태와 실행 파일명(허용 목록), 작업 트리 비식별 지문만 출력한다.
+- Git 작업 트리는 `git rev-parse --git-common-dir`로 공통 저장소별 중복 등록을 제거하고, `git worktree list --porcelain`의 **HEAD 메타데이터를 먼저 필터링**하여 승인 source와 같은 경로에만 상세 검사를 수행한다. 하드코딩한 2,000개 상한을 25,000개로 올리되 초과 시 불완전 명시 후 중단한다.
+- R14 `MARKET_CALENDAR_R14_TARGETED_RUNTIME_RESULT.txt`는 읽기 전용이다. 스케줄러·Git·승인 source·PC 설정·DB·수집·게시·배포를 변경하지 않는다. source 유일성, 실행 스크립트, 기존 파서 무결성이 확보되면 BLS 단일 파일 소스 전환을 별도 승인된 단계로 진행한다.
