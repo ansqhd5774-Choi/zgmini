@@ -4,10 +4,10 @@ rem R15: install a GUARDED news-only hook into the existing 6-hour R13 task.
 rem The task and VBS remain untouched. R3/R5 score and SQLite are preserved.
 set "ZG_R15_LOG=%~dp0IRAN_NEWS_R15_AUTO_INSTALL_RESULT.txt"
 set "ZG_R15_STAGE=%~dp0IRAN_NEWS_R15_INSTALL_RUNTIME"
-set "ZG_R15_RAW=https://raw.githubusercontent.com/ansqhd5774-Choi/zgmini/8813ad6f8e5f396bf05d6db2730efc2b459cf1f9"
+set "ZG_R15_RAW=https://raw.githubusercontent.com/ansqhd5774-Choi/zgmini/35cf3c3bd0cac2a740fadcc6f9fb636270c41a0a"
 set "ZG_R15_OWN_STAGE=0"
 > "%ZG_R15_LOG%" echo ZGMINI IRAN NEWS R15 - EXISTING R13 TASK AUTO NEWS INSTALL
->> "%ZG_R15_LOG%" echo Pinned source SHA: 8813ad6f8e5f396bf05d6db2730efc2b459cf1f9
+>> "%ZG_R15_LOG%" echo Pinned source SHA: 35cf3c3bd0cac2a740fadcc6f9fb636270c41a0a
 >> "%ZG_R15_LOG%" echo R14 published 10 items with verified D1 readback.
 >> "%ZG_R15_LOG%" echo No new task, VBS edit, frequency change, score calculation or ledger mutation.
 >> "%ZG_R15_LOG%" echo Existing PC runner R7 hash and source HEAD must match exactly.
