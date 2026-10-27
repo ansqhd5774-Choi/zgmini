@@ -49,6 +49,7 @@ export function MarketFearGreedChart({
   formatTooltipLabel,
   emptyLabel = '이력 없음',
   compact = false,
+  yAxisMax = 100,
   color = '#ff7076',
   showExtrema = false,
   axisTickInterval = 0,
@@ -66,6 +67,7 @@ export function MarketFearGreedChart({
   formatTooltipLabel: (value: string) => string;
   emptyLabel?: string;
   compact?: boolean;
+  yAxisMax?: number;
   color?: string;
   showExtrema?: boolean;
   axisTickInterval?: 0 | 'preserveStartEnd';
@@ -105,8 +107,8 @@ export function MarketFearGreedChart({
       />
       <YAxis orientation={mobileAxisRight?"right":"left"}
         hide={compact}
-        domain={[0, 100]}
-        ticks={[0, 25, 50, 75, 100]}
+        domain={[0, yAxisMax]}
+        ticks={compact ? [0, yAxisMax / 2, yAxisMax] : [0, 25, 50, 75, 100]}
         axisLine={false}
         tickLine={false}
         width={28}
