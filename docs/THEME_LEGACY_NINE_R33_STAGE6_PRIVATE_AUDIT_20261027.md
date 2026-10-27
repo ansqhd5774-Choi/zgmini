@@ -55,3 +55,10 @@ node scripts/pc-writer/theme-nine-r33-stage6-shadow-audit.mjs --shadow <R32_SHAD
 - 공개 이력을 입력할 때는 **기존 저장 공개 스냅샷 또는 검증된 읽기 전용 추출**을 사용하고, 기존 날짜·점수를 덮어쓰지 않는다. HTML 화면 값 하나만으로 252일 과거 공개 이력 전체를 추정하지 않는다.
 - 비공개 과거 점수는 **2026년 확인 공식 AUM 스냅샷을 252일 이력에 공통 적용한 그림자 계산**이며, 과거 각 거래일 당시의 실제 AUM 비중을 복원하거나 투자 가능 수익률을 산출한 것이 아니다.
 - 후속 공개 전환 및 9개 테마 운영 산식·DB·D1·스케줄러·API/UI 변경은 **별도 승인**이 필요하다. 새 임의 시차 상한·ETF 제외·결측 0대체 기준을 신설하지 않는다.
+
+## 5. 기존 공개 252일 비교 입력 확보 — 읽기 전용 CMD
+
+- GitHub 파일: `scripts/pc-writer/THEME_NINE_R33_PUBLIC_BASELINE_READONLY.cmd`; 빌더: `scripts/pc-writer/build-theme-nine-r33-public-readonly.mjs`.
+- 대상: **사이트가 이미 제공하는 공개 파생 점수 API** `GET https://zgmini.kr/api/theme-fear-greed` 단 한 번. GetMarketHistory 등 가격 제공자 호출·키·DB 접근·게시 없음. 응답이 `READY`가 아니면 성공이라고 표기하지 않는다.
+- Windows CMD 더블클릭 후 CMD 위치에 `THEME_NINE_R33_PUBLIC_RESULT_*.txt`, `THEME_NINE_R33_PUBLIC_BASELINE_*.json` 생성. JSON 원문을 그대로 저장하고 SHA·공개 관측일·테마별 역사 범위를 TXT로 검증한다. 공개 API가 오래되어 요청 날짜가 없으면 해당 비교를 PENDING으로 남긴다.
+- 빌더 ASCII/CRLF 검사 PASS, 네트워크 없는 정적 테스트 **2/2 PASS**. **이것은 사용자 PC의 실제 공개 API 응답을 검증한 결과가 아니다.** 수령 후 R33 비공개 일력과 겹치는 날짜에 대해서만 점수 차이를 기술적으로 비교한다.
