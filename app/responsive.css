@@ -511,11 +511,17 @@
   }
 }
 
-/* R7: the mobile card grid lives in responsive.css, which loads after globals.
-   A single column preserves the original full-width 60px trend plot at 390px. */
+/* Keep all 12 indicator cards in two mobile columns (six rows).
+   Give the trend plot its own row beneath the title, with a compact score lane. */
 @media (max-width:540px){
   .zg-dashboard[data-view="dashboard"] .zg-r55-card-grid{
-    grid-template-columns:minmax(0,1fr);
+    grid-template-columns:repeat(2,minmax(0,1fr));
+  }
+  .zg-dashboard[data-view="dashboard"] .zg-r55-shell[data-expanded] .zg-r55-card{
+    grid-template-columns:82px minmax(0,1fr);
+  }
+  .zg-dashboard[data-view="dashboard"] .zg-r55-shell[data-expanded] .zg-r55-card-visual{
+    grid-row:2;
   }
 }
 
