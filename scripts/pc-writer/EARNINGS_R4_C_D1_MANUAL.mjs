@@ -40,7 +40,7 @@ try{
   db=new DatabaseSync(path.join(base,'storage','core.sqlite'),{readOnly:true,timeout:4000});
   db.exec('PRAGMA query_only=ON');
   // Must redo the R3D hash/cohort validation; do not trust editable preview JSON.
-  const {payload,diagnostics}=buildPreview(db,{generatedAt:now});
+  const {payload,diagnostics}=buildPreview(db,{generatedAt:now,includeServices:false});
   db.close();db=null;
   validateEarningsCompanionPayload(payload);
   lines.push(`R3D_REVALIDATION=${diagnostics.r3dStatus}`,
