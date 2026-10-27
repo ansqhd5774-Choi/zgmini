@@ -9,12 +9,17 @@ import {coreRootFromTask,worktreeIdentity} from './market-calendar-r19-bea-apply
 
 const R20_SOURCE='97a38c7cdfbb7e0d30eaeacea27b9605bbfa2b3b';
 const R20_PARSER_SHA256='20d6c99cc7621e08c06598e51f4c9dc8a6f945952905351287b46d2c65a1551c';
-const R20_COLLECTOR_SHA256='4af1164793d95e7b0a97643d91e6d23749974d17c7048bac677f727376fc7afc';
+// PC HEAD stores CRLF, while the GitHub branch reference is the same code in LF.
+const R20_COLLECTOR_SHA256='1b8c2760a4f815191282dd55969ce8170072d4f747c8468ddd6601dc50ee88d6';
+const R20_COLLECTOR_LF_SHA256='4af1164793d95e7b0a97643d91e6d23749974d17c7048bac677f727376fc7afc';
 const R21_COLLECTOR_SHA256='2e7ac2a57a7ec2c41b2f9647d98d49c7bb22d904978a0d637e3d3619e01dedf0';
+const R21_PC_CRLF_SHA256='8105a2922ff0d05d29b329dc22dcf66d0d5920ea0d1661337066cef877f45bc5';
 const CORE_WORKTREE_ID='d0a4b3cb8b95';
 const protectedPaths=['lib','worker','scripts/pc-writer','package.json','package-lock.json'];
 const hex=s=>typeof s==='string'&&/^[a-f0-9]{40}$/i.test(s)?s.toLowerCase():null;
 const digest=b=>createHash('sha256').update(b).digest('hex');
+const lf=b=>Buffer.from(b.toString('utf8').replace(/\r\n/g,'\n'));
+const crlf=b=>Buffer.from(b.toString('utf8').replace(/\r?\n/g,'\r\n'));
 const json=p=>{try{return JSON.parse(fs.readFileSync(p,'utf8'));}catch{return null;}};
 const normalized=p=>path.normalize(p).replaceAll('\\','/').toLowerCase();
 const git=(root,args)=>execFileSync('git',args,{cwd:root,encoding:'utf8',windowsHide:true,timeout:25000,stdio:['ignore','pipe','pipe']}).trim();
@@ -31,18 +36,23 @@ export function runR21({
  getTaskXml=taskXml,getCoreRoot=coreRootFromTask,gitCall=git,
  approvedSource=R20_SOURCE,expectedWorktreeId=CORE_WORKTREE_ID,
  expectedParserSha256=R20_PARSER_SHA256,expectedBaselineSha256=R20_COLLECTOR_SHA256,
- expectedCandidateSha256=R21_COLLECTOR_SHA256,
+ expectedCandidateSha256=R21_COLLECTOR_SHA256,expectedInstalledSha256=R21_PC_CRLF_SHA256,
 }={}){
  const result={audit:'MARKET_CALENDAR_R21_CENSUS_YEAR_APPLY',at:new Date().toISOString(),
   mode:apply?'EXPLICIT_APPLY':'PREFLIGHT',
   policy:'CENSUS_YEAR_COLLECTOR_ONLY_NO_COLLECT_NO_PUBLISH_NO_SCHEDULER_NO_DB_NO_GIT_PUSH',
-  previousSource:approvedSource,expectedCandidateSha256,changedFiles:[],backupCreated:false,
+  previousSource:approvedSource,expectedCandidateSha256,expectedInstalledSha256,lineEnding:'CRLF',
+  changedFiles:[],backupCreated:false,
   gitPushed:false,publisherExecuted:false,forcedCollection:false,newSource:null,
   decision:'R21_PREFLIGHT_INCOMPLETE_STOP'};
- let root,configFile,configRaw,config,collector,parser;
+ let root,configFile,configRaw,config,collector,parser,installedCandidate;
  try{
-  result.candidateSha256=digest(fs.readFileSync(candidatePath));
+  const candidate=fs.readFileSync(candidatePath);
+  result.candidateSha256=digest(candidate);
   if(result.candidateSha256!==expectedCandidateSha256){result.decision='R21_CANDIDATE_HASH_MISMATCH_STOP';return result;}
+  installedCandidate=crlf(candidate);
+  result.installedCandidateSha256=digest(installedCandidate);
+  if(result.installedCandidateSha256!==expectedInstalledSha256){result.decision='R21_CRLF_TARGET_HASH_MISMATCH_STOP';return result;}
   root=getCoreRoot(getTaskXml());
   result.worktreeId=root?worktreeIdentity(root):null;
   if(!root||result.worktreeId!==expectedWorktreeId){result.decision='EXACT_CORE_ORIGIN_CHANGED_STOP';return result;}
@@ -58,8 +68,11 @@ export function runR21({
    result.decision='R20_INSTALLED_PARSER_CHANGED_STOP';return result;
   }
   collector=path.join(root,'scripts','pc-writer','release-calendar.mjs');
-  result.baselineSha256=digest(fs.readFileSync(collector));
+  const baseline=fs.readFileSync(collector);
+  result.baselineSha256=digest(baseline);
+  result.baselineNormalizedLfSha256=digest(lf(baseline));
   if(result.baselineSha256!==expectedBaselineSha256||
+   result.baselineNormalizedLfSha256!==R20_COLLECTOR_LF_SHA256||
    hex(gitCall(root,['rev-parse','HEAD:scripts/pc-writer/release-calendar.mjs']))!==hex(gitCall(root,['hash-object','scripts/pc-writer/release-calendar.mjs']))){
    result.decision='R20_COLLECTOR_CHANGED_STOP';return result;
   }
@@ -98,8 +111,8 @@ export function runR21({
   backupVerified=true;fs.copyFileSync(configFile,path.join(backupDir,'config.json'));
   result.backupCreated=true;result.backupId=path.basename(backupDir);
   result.phase='COPY_COLLECTOR';modified=true;
-  fs.copyFileSync(candidatePath,collector);
-  if(digest(fs.readFileSync(collector))!==expectedCandidateSha256)throw Error('R21_CANDIDATE_COPY_HASH_MISMATCH');
+  fs.writeFileSync(collector,installedCandidate);
+  if(digest(fs.readFileSync(collector))!==expectedInstalledSha256)throw Error('R21_CANDIDATE_COPY_HASH_MISMATCH');
   if(gitCall(root,['diff','--name-only','HEAD','--',...protectedPaths]).replaceAll('\\','/').trim()!==
    'scripts/pc-writer/release-calendar.mjs')throw Error('R21_NOT_EXACTLY_ONE_PROTECTED_FILE');
   result.phase='GIT_SINGLE_FILE_COMMIT';
@@ -109,7 +122,7 @@ export function runR21({
   if(hex(gitCall(root,['rev-parse','HEAD^']))!==approvedSource||
    gitCall(root,['diff','--name-only',approvedSource,next,'--']).replaceAll('\\','/').trim()!==
     'scripts/pc-writer/release-calendar.mjs'||
-   digest(fs.readFileSync(collector))!==expectedCandidateSha256||digest(fs.readFileSync(parser))!==expectedParserSha256){
+   digest(fs.readFileSync(collector))!==expectedInstalledSha256||digest(fs.readFileSync(parser))!==expectedParserSha256){
    throw Error('R21_COMMIT_PARENT_OR_CONTENT_MISMATCH');
   }
   result.phase='CONFIG_SOURCE_UPDATE';
