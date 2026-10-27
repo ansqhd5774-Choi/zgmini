@@ -28,6 +28,7 @@ export type MarketFearGreedChartProps = {
   formatTooltipLabel: (value: string) => string;
   emptyLabel?: string;
   compact?: boolean;
+  yAxisMax?: number;
   color?: string;
   showExtrema?: boolean;
   axisTickInterval?: 0 | 'preserveStartEnd';
