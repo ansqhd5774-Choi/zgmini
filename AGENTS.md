@@ -44,6 +44,7 @@ ZGMINI PLUGIN & EXECUTION RULES — COMPACT R5 FINAL
 - GitHub main이 Production source authority.
 - **ZGMINI 배포 실행 방식(상시): 기존 작업 전용 브랜치에서 승인된 변경을 PR로 `main`에 병합하고, 연결된 Cloudflare Git integration의 자동 빌드·자동 배포를 사용한다.** 별도의 수동 Wrangler/Sites Production 배포나 임시 배포 브랜치를 만들지 않는다.
 - UI 전용 브랜치는 `codex/ui-improvements`를 유지한다. 이 브랜치에 커밋하는 것과 Production 자동배포 완료는 다르며, `main` 병합 전 PR 변경 파일·범위를 확인하여 미승인 작업을 함께 배포하지 않는다.
+- **UI 변경 자동배포 상시 승인(2026-10-27):** 사용자가 실제 UI 수정·반영·구현을 요청한 경우, `codex/ui-improvements` 전용 브랜치에서 수정·검증한 뒤 관련 변경 파일만 PR로 `main`에 병합하고 Cloudflare Git 연동 **자동 배포 완료와 공개 화면 확인까지** 연속 수행한다. 매번 별도의 자동배포 재승인을 요청하지 않는다. 단, 사용자가 시안·제안·검토만 요구하거나 배포 보류를 명시한 경우, 범위를 벗어난 변경·실패한 배포 게이트·새 권한 또는 유료/파괴적 조치는 이 상시 승인에 포함하지 않는다.
 - 자동배포 후 `main` 병합 SHA, Cloudflare의 해당 Build/Deployment 상태·로그, 실제 `https://zgmini.kr/` 공개 화면을 각각 점검하고 결과를 보고한다. 자동배포 설정·배포 ID·상태를 확인할 수 없으면 완료라고 보고하지 않는다.
 - Git integration 연결 전 자동배포 존재 추정 금지.
 - Build 성공 ≠ Production 정상.
@@ -144,7 +145,7 @@ ZGMINI PLUGIN & EXECUTION RULES — COMPACT R5 FINAL
 - `/fear-greed/usa/`: PC 레이아웃과 기존 스타일을 보존한다. 모바일은 공포탐욕 숫자와 차트를 핵심으로 유지하고 7개 구성요소는 압축한다. 한 화면에서 읽는 것이 목표이나, 차트를 과도하게 확대하거나 목록을 확대·잘라 내거나 화면 밖 콘텐츠를 `overflow:hidden`으로 감추어 달성했다고 보고하지 않는다. 실제 기기 높이별 검증 전 시안 배치는 미확정이다.
 - 기존 `FearGreedCardShell`, `MarketScoreOrb`, `MarketPeriodControls`, `MarketFearGreedChart`, `FactorAnalysisR2`의 데이터·산식·상태·상호작용·접근성·SEO 연결을 유지한다. 독립 HTML의 임시 차트·숫자로 운영 코드를 대체하지 않는다.
 - 적용 전·후 Git diff로 **색상·배경·테두리·폰트·차트 표현의 무승인 변경이 0건인지** 점검한다. 무승인 변경 발견 시 수정·배포 중단 후 복원하고 다시 검증한다.
-- 시안 승인, 브랜치 작업 승인, `main` 병합 승인, Production 배포 승인은 각각 별개이다. 별도 승인 없이 병합·배포하지 않는다.
+- 시안만 검토하거나 디자인 의견을 묻는 요청은 실제 수정·병합·배포 승인으로 간주하지 않는다. 실제 UI 변경 요청에는 위 **UI 변경 자동배포 상시 승인(2026-10-27)**을 적용해 해당 승인 범위 내에서 PR 병합과 Cloudflare 자동 배포까지 진행한다. 범위 밖 변경은 별도 승인이 필요하다.
 
 ## 13. DigitalOcean / RDC / Windows
 - DigitalOcean NON-DEFAULT. 비용 발생 리소스 생성 전 승인.

@@ -66,9 +66,11 @@
   .zg-fg-us .zg-fg-title-row {
     display: flex;
     align-items: center;
+    flex-wrap: wrap;
     gap: 5px;
     min-width: 0;
   }
+  .zg-fg-us .zg-fg-title-row > .zg-fg-intro--expanded { flex: 0 0 100%; min-width: 0; }
   .zg-fg-us .zg-fg-intro-button {
     display: inline-flex;
     align-items: center;
