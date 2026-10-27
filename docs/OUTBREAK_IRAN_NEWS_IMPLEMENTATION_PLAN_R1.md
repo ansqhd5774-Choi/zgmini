@@ -341,3 +341,13 @@
 - `IRAN_NEWS_R19_TRANSLATEGEMMA_INSTALL_REVIEW.cmd`: ASCII/CRLF 파일, 번역기와 의존 소스를 고정 SHA `e142829f5639d8ad318fe9533db77faf123eb1b0`로 다운로드한다. 완료 로그 `IRAN_NEWS_R19_TRANSLATEGEMMA_RESULT.txt` 생성. 모델 다운로드와 로그 기록 외 **기사 게시·PC 뉴스 캐시·D1·점수 원장·Windows 예약 작업·GitHub main 변경 0**.
 - 자동검증 **16/16 테스트 파일 PASS(로컬 모의)**: 설치 선행 조회, 이미 설치된 모델 재사용, 단일 승인 모델 pull, 공식 프롬프트, 예멘→이란 번역 오류 차단, 기존 캐시/원장 불변 확인. **실제 PC에서 모델을 아직 실행하지 않았으므로 번역 품질·게시 성공을 주장하지 않는다.** 모델 설치/초안 제출 후 실제 원문-번역 비교로 자동 게시 허용 여부 결정.
 - R19이 구조적으로 통과해도 결과는 `DRAFT_REQUIRES_HUMAN_REVIEW`이고 자동 내용 검증 통과가 아니다. 실제 번역 검수 전에는 R15 영문 안전모드·기존 한국어 1건을 그대로 보존. 향후 실제 9건 한국어 전환과 이후 신규 뉴스 자동 번역은 별도 증거와 기존 기사 ID·14일 노출·30일 저장·한 번의 6시간 hook·D1 readback·공개 UI 모니터링으로 단계 전환한다.
+
+
+## 29. 2026-10-27 R19 PC 실측 및 R20 앵커 보호 번역 재검증
+
+- PC R19 결과 `IRAN_NEWS_R19_TRANSLATEGEMMA_RESULT.txt`에서 `MODEL_INSTALLATION=NEWLY_INSTALLED`, `MODEL_PULL_COMPLETE=translategemma:4b`. 기존 10개 기사 중 수동 한국어 1개 보존, 9개 TranslateGemma 4B 번역 초안 생성, 자료 보류 0. 게시·PC 캐시·D1·점수 원장·예약 작업 쓰기 0. **실제 모델 실행은 성공했지만 자동 게시 품질은 실패**.
+- 실제 오역: Houthi→'호세'/'호메인족', '20 October'→'2020년 10월', deterrence→'억지 우호', Ed Miliband→'에드 밀번드', Ms Ann Snow/Abda Sharif→원문에 없는 '박사', 수송 불가→단순 어려움, El Nino 누락, 원문에 없는 사이버 공격·제재·중단 추가. 그중 R19 숫자 검사의 일부는 영어 '23 October 2026'→'2026년 10월 23일'을 잘못 차단하는 **거짓 경고**다. 따라서 자동 형식 검사와 번역 정확성은 별도로 판정한다.
+- R20은 **모델을 추가 다운로드하지 않고** 기존 `translategemma:4b`만 사용한다. `scripts/iran-progress/news-display-translation-anchors-r20.mjs`는 문맥 앵커로 영문 날짜/특정 인명/국가/기관/후티/억지력/핵 안전조치/상선을 보호하고, 원문 숫자와 한국어 연월일을 정규화해 거짓 경고를 줄인다. 모델이 앵커를 누락·중복하면 번역을 보류한다. 핵심 부정·수치 상승·엘니뇨 누락, 원문에 없는 박사·사이버·제재·중단 표현도 별도 경고한다.
+- `scripts/iran-progress/news-display-translation-guarded-r20.mjs`는 R18 공식 소스 식별·OGL 권리 확인, PC 캐시 14일 가시기간, 기존 한국어 보존을 재사용한다. 개별 제목/원문 핵심 문장을 로컬 모델에 번역 요청하고, 추론 결과·검증 경고를 TXT에 남기는 읽기 전용 시험이다. 모든 무경고 결과도 **`DRAFT_REQUIRES_HUMAN_REVIEW`**로 남기며 자동 사실검증·게시를 승인하지 않는다.
+- PC 배치 `IRAN_NEWS_R20_GUARDED_TRANSLATION_READONLY.cmd`: ASCII+CRLF, 고정 소스 SHA `e0f4d3f867825a65ce8c80dd75845f79feef43fa`. 로그 `IRAN_NEWS_R20_GUARDED_TRANSLATION_RESULT.txt`를 생성한다. 테스트 **17/17 뉴스 테스트 파일 PASS(로컬 모의)**; 실제 PC 번역 품질 미실행. **운영 R15 후행 뉴스 hook, 캐시·D1·점수 원장·스케줄러·GitHub main은 그대로 보존**.
+- 다음 Gate: R20 PC TXT 실측에서 영어 원문↔복원 한국어를 기사별 비교, 실제 오역과 거짓 경고를 분리해 보완. 뉴스 번역이 정확하다는 증거 없이 기존 9건 및 미래 정규 수집을 한국어로 덮어쓰지 않는다. 게시 전환 시 동일 기사 ID 및 14일 공개/30일 보존 계약 유지와 PC↔D1 readback·공개 웹 확인을 별도로 수행한다.
