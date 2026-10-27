@@ -226,3 +226,11 @@
 - 위 §13~14와 R2 기준서의 옛 `NOT_RUN` 문구는 **해당 PC 로그가 오기 전의 역사적 상태**다. 최신 근거는 이 §15 및 [R3 저장자료 검산 계약](EARNINGS_CENSUS_QFR_R3_STORED_PREVIEW_20261027.md)을 우선한다. R2 쓰기 CMD 재실행·공식 Census ZIP 재요청은 불필요하다.
 - 다음에는 `EARNINGS_CENSUS_QFR_R3_STORED_PREVIEW_READONLY.mjs`와 전용 CMD를 사용해 **이미 저장된 원문 ZIP만** 읽어 현재/직전 분기의 자체 파생 세후이익률 및 `%p` 변화폭을 재계산한다. 기존 R2 `checkQfrSchema`를 재사용하고, 별도 실제 PC에서 생성된 `EARNINGS_CENSUS_QFR_R3_STORED_RESULT_*.txt` 증거 전까지 `PC_STORED_CALC=NOT_RUN`이다.
 - R3는 D1 키·Worker reader·웹 UI·자동 스케줄과 분리된 로컬 preview다. 독립 CENSUS QFR 원천 1종에서 정보성 행 1개를 도출할 뿐 기존 4개 E1-R4 점수에는 편입하지 않는다. 이후 R3 실측 PASS → 별도 정보성 키/체크포인트 제안·승인 → D1 저장/readback → GET/UI/정규 갱신 순이다.
+
+## 16. Census QFR R3 실제 PC PASS 및 R4 별도 정보성 공개 계약 초안 (2026-10-28)
+
+- **R3 실제 PC 결과 확보**: 사용자 제공 `EARNINGS_CENSUS_QFR_R3_STORED_RESULT_20261027T150635Z.txt`, `RESULT=PASS_QFR_STORED_READONLY_PREVIEW`, 이전 R2 ZIP SHA 일치, snapshot 1건 확인, 2026-Q2 **15.599418144173285%** / 2026-Q1 **14.03708175763798%** / 분기 변화 **+1.5623363865353053%p**. 외부 API 호출/SQLite 쓰기/D1 쓰기/점수 변경/배포 모두 0건. `PC_SQLITE=PASS`, `PC_STORED_CALC=PASS`.
+- 위 §15의 `PC_STORED_CALC=NOT_RUN`은 당시의 상태다. 최신 R3 실제 증거를 받았으므로 완료로 갱신한다. **재수집·R2 재저장·R3 반복 검산은 불필요**하다.
+- 이어서 작성한 `EARNINGS_CENSUS_QFR_R4_PROJECTION_DRAFT_READONLY.mjs`는 R3 검증 결과를 받아 원시 5개 분기/단위/변화폭·시각·출처를 다시 검사해 하나의 QFR 정보행과 독립 source checkpoint를 **메모리에서만** 생성한다. D1 연결·원격 게시·Worker Route는 없다.
+- 기존 공개 C 기본 키와 서비스 키는 모두 BLS 전용 계약을 유지한다. Census를 그 5/7행 validator에 직접 합산하면 `provider=BLS`, `adjustment=SA`, 비용 범주 검사 등에 위배된다. **제안만 한 별도 QFR 키** `detail:earnings-recession-indicators:census-qfr-mfg-margin:v1`, 형식 `earnings-companion-c-qfr-r1-v1`는 사용자 승인 전 D1에 등록/쓰기/배포하지 않는다.
+- 후속 [R4 설계·Gate](EARNINGS_CENSUS_QFR_R4_PROJECTION_DRAFT_20261028.md): 사용자 승인 → 별도 안전 writer 및 D1 exact readback → 별도 저장 전용 공개 응답과 사이트 정보행 → 정규 자동 갱신. 기존 E1-R4 점수·산식/추세, 별도 12대 기업실적은 건드리지 않는다.
