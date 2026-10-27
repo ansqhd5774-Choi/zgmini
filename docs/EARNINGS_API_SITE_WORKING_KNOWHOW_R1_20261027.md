@@ -188,3 +188,12 @@
 3. `EARNINGS_BLS_SERVICE_R1_D1_PREFLIGHT.cmd`로 2행 검증 및 source gates 확인. D1 `APPLY.cmd`는 **별도 사용자 승인 뒤에만** 실행. 워커를 배포하지 않은 상태에서 새 서비스 키를 먼저 공개했다고 보고하지 않는다.
 4. D1 정확한 readback → 공개 GET 7행/상태/단위/시각 → 웹페이지/모바일 → 이후 신규 BLS 관측 시 정규 갱신 검증을 개별 PASS로 기록.
 5. 다음 후보(BEA 기업·산업이익, Census QFR 등)는 위 단계 이후 우선순위 검토. 현재 서비스 2행에 점수 산식 변경·새 창구 개설·개인 브랜치 생성은 불필요하다.
+
+## 11. 다음 정보성 지표 후보 R1 — Census QFR 제조업 세후이익률 (2026-10-27)
+
+- 기존 BEA 단위이익의 공개 GET `https://zgmini.kr/api/earnings-recession-bea-unit-profit`를 같은 날 재확인한 결과 **HTTP 503 `STORED_PROJECTION_PENDING`**. 공개 Worker route 존재와 저장 자료 실제 게시를 혼동하면 안 된다. 기존 사용자 PC preflight의 `CURRENT_VALUE=0.25`, `D1_WRITES=0`은 운영 게시 완료 증거가 아니다. BEA는 기존 별도 게시 승인 단계로 유지한다.
+- 다음 독립 원본 후보는 **미국 Census QFR 공식 ZIP**이다. 무료로 직접 다운로드할 수 있는 `https://www.census.gov/econ_getzippedfile/?programCode=QFR`를 사용한다. Census 공식 API `/data/timeseries/eits/qfr` 예시에는 API 키 필수가 명시되어 있으므로 무키 API 호출 성공을 주장하지 않는다.
+- `QFR-mf.csv` 데이터에서 `MFG` + `US` + 비계절조정 `is_adj=0` + 매출 `dt_code=101` + 세후이익 `dt_code=115`의 동일분기만 사용. 매출·이익은 **백만 USD 원시 자료**, `100×이익/매출`은 **자체 계산 %**. 총 원본 증거는 Census QFR 1종이다.
+- 2026-10-27 공식 ZIP 실측: 2026-Q2 매출 2,372,409, 세후이익 370,082 (백만 USD), 제조업 세후이익률 **15.59941814%**. 2026-Q1은 **14.03708176%**, 차이 **+1.56233639%p**. NAICS 분류 전환·표본오차·비계절조정에 유의하고 제조업 집계를 미국 모든 기업의 이익률로 과장하지 않는다.
+- 준비 파일: `scripts/pc-writer/EARNINGS_CENSUS_QFR_R1_READONLY.mjs`, `EARNINGS_CENSUS_QFR_R1_PREFLIGHT.cmd`, `EARNINGS_CENSUS_QFR_R1_READONLY.test.mjs`, `docs/EARNINGS_CENSUS_QFR_MANUFACTURING_MARGIN_R1_20261027.md`.
+- 실 ZIP 압축·CRC·메타정보·연속 분기 검증 PASS; 오프라인 테스트 5건 PASS. 이 실행 환경에서 Node fetch 실네트워크는 DNS 차단으로 불확정이며 PC 실제 CMD 확인 필요. **PC SQLite 원본 저장·D1·Worker 공개 API·UI 추가는 모두 NOT_RUN**. 이후에도 동일 지정 브랜치에서 단계별로 연결한다.
