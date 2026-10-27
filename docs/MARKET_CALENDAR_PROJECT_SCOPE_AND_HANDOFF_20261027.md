@@ -47,7 +47,7 @@
 | --- | --- | --- | --- |
 | 미국 물가·고용 | CPI, PPI, 고용보고서, JOLTS, 고용비용지수, 실질임금, 수출입물가, 생산성/단위노동비용 | 기존 BLS ICS 파서 R17 PC 단일 파일 설치. 최초 R18에서 신규 정규 수집 및 공개 확대 건수는 미확인 | 저장된 공식 일정의 전체 제목·기간·취소 여부·기존 ID를 유지하면서 수집 범위 회귀 관리 |
 | 미국 성장·소득·기업이익 | GDP 1·2·3차, PCE, 개인소득·지출, 기업이익, 산업별/주별/지역별 GDP·소득, 무역·국제거래 | BEA R19 첫 시도 LOCAL_OPERATION_FAILED 후 두 번째 PC 적용 성공(source e4b06246). 운영 신규 수집 건수는 아직 미확인 | 신규 BEA 발표의 다음 정규 수집 관측은 별도 기록. 코드는 설치 완료로 분류 |
-| 미국 생산·소비·사업활동 | 연준 산업생산, Census 소매판매, 출처에서 제공하는 다른 경제 발표(재고·주택·무역·사업활동 등) | 기존 Fed/Census 일정 일부 연결. 공식 Census 2026 목록에 주택·내구재·건설·재고·사업활동 등 추가 발표 확인. Census R20 스테이징 후보와 fixture 테스트 준비, PC 미설치 | 승인 PC의 R19 BEA source를 기준으로 Census 단일 소스·단일 파일 확장 여부를 후속 설치 Gate에서 검증 |
+| 미국 생산·소비·사업활동 | 연준 산업생산, Census 소매판매, 출처에서 제공하는 다른 경제 발표(재고·주택·무역·사업활동 등) | 기존 Fed/Census 일정 일부 연결. 공식 Census 2026 목록에 주택·내구재·건설·재고·사업활동 등 추가 발표 확인. Census R20 실제 2026 공식 HTML로 174건(기존 retail 13건+신규 161건) 추출·회귀 검증, 적용기/테스트 준비 완료, PC 미설치 | R19 BEA 승인 PC source를 고정 기준으로 하는 R20 단일 파일 설치기를 준비 완료. 실제 사용자 PC 설치·config.source 전환은 미실행 |
 | 중앙은행·금융시장 정책 | FOMC 회의·금리 결정·기자회견·의사록·경제전망 등 공식 일정, 조건을 통과한 다른 중앙은행 발표 | 기존 FOMC 확인 자료 일부 사용. 추가 발표·기타 중앙은행은 후보 단계 | 기관별 일정 출처와 실제 발표시각·권리·변경 공지를 확인해 소스별 편입 심사 |
 | 기업 실적 | 기업명·종목코드·분기·확정/예정 발표일·장전/장후 또는 정확한 발표시각, 정정·취소 | **지속 가능한 승인 실적 일정 소스 미연결**. UI의 실적 선택지만 존재 | 기업 IR·공식 공시/거래소·무료 공개 공급원별로 사전 일정 제공 여부와 저장·파생·공개 재배포 권리를 먼저 판정. 승인된 공급원만 수집 연결 |
 | 한국 경제·정책 | 한국은행 통계 발표·금통위, 국가데이터처 발표 일정, 적법하게 제공되는 기타 공식 일정 | 한국 일정 미연결. R3/R4에서 일부 후보의 공개 재배포 권리 미확인으로 제외 | 이미 제외한 미확인 공급원을 우회하거나 무단 복제하지 않고, 권리가 명확한 새로운 무료 소스만 검토 |
@@ -119,4 +119,13 @@
 - 신규 Census 확대 스테이징: `staging/market-calendar/r20-census/lib/release-calendar.mjs`. 기존 R19 설치 파서를 복제한 후보 중 **Census parser만** 확장하고 기존 `retail` ID·5개 이벤트 필드·BLS/BEA/Fed 출력을 보존한다. 같은 날 같은 발표명이 여러 대상 기간을 가진 경우 기간을 ID·표시에 구분한다.
 - 회귀 검사: `tests/market-calendar-r20-census-stage.test.mjs`; 기존 R19 테스트 2개 파일과 함께 로컬 fixture 테스트 통과. 이는 **실제 Census 페이지 HTML 읽기/운영 PC 설치/정규 게시 PASS가 아니다.**
 - UI 지원: `app/market-calendar/market-calendar-client.tsx`의 공식 Feed 필터가 `census-` ID도 받아들이도록 최소 변경했다. 새로운 이벤트가 없는 현재 게시 데이터에 가상 행을 만들지 않는다.
-- 남은 Gate: 공식 Census HTML의 실수집 샘플과 staging 결과 비교 → 승인된 운영 PC source 확인 → R20 단일 파일 설치 프로그램·원본/작업/락 보호 검사 → 사용자 PC 승인 설치 → 정규 수집/게시 관측은 별도 상태로 관리한다. BEA/Census 양쪽에 같은 국제무역 발표가 있으면 동일 이벤트인지 증명 없이 다른 소스를 억지로 합치지 않는다.
+- 확인된 Gate: 2026 Census 실제 HTML 직접 파싱 검증과 R19 소매판매 13건 완전 동일성 검증, R20 단일 파일 PC 적용기·보호 테스트 준비 완료. **사용자 PC R20 설치는 미실행**, 정규 수집/게시 관측도 별도 상태로 관리한다. BEA/Census 양쪽에 같은 국제무역 발표가 있으면 동일 이벤트인지 증명 없이 다른 소스를 억지로 합치지 않는다.
+
+## 11. R20 Census 실공식 HTML·설치기 추가 검증 (2026-10-27)
+
+- Census 공식 2026 목록 `https://www.census.gov/economic-indicators/calendar-listview-2026.html`: HTTP 200, HTML 88,192자, HTML `<tr>` 179개. R19 기존 Census parser 결과 `retail` 13건, R20 후보 결과 174건(동일한 `retail` 13건 + 추가 161건), 같은 `id:date` 중복 0건. **실제 원격 HTML을 로컬 후보 파서에 직접 입력**했으며 운영 게시 건수는 아니다.
+- R20 설치기/검사: `scripts/pc-writer/market-calendar-r20-census-apply.mjs`, `tests/market-calendar-r20-census-apply.test.mjs`, `MARKET_CALENDAR_R20_CENSUS_APPLY.cmd`. Windows CMD는 자체 폴더에 `MARKET_CALENDAR_R20_CENSUS_APPLY_RESULT.txt`를 생성한다.
+- PC source 게이트: R19 설치 승인 SHA `e4b0624683f29c551df381777dea871d7e3dd266`, 기존 파서 SHA256 `9204ab733b45ad3f01a1b8a0754ce8a3f3e3d5feb4245cd01a081a5da838511f`, R20 후보 SHA256 `20d6c99cc7621e08c06598e51f4c9dc8a6f945952905351287b46d2c65a1551c`, Core worktree ID `d0a4b3cb8b95`. 상이하면 STOP.
+- R20 fixture·기존 R19 회귀 테스트 `node --test` 4개 파일 PASS, TypeScript `npm run typecheck` PASS(로컬 코드 기준). **사용자 PC에 설치하거나 정규 수집·게시하지 않았다.**
+- 새로운 발견: 기존 `calendar-listview-2027.html` URL은 2026-10-27 현재 HTTP 200이지만 일정 표 0건인 안내 페이지를 제공했다. 공식 `calendar-listview.html`에서는 2027 일정 164건 추출 가능. 기존 collector는 현재 연도만 조회하므로 2027년 전환 때 빈 페이지를 받는 문제가 발생할 수 있다. R20 설치에 임의 URL/수집 주기 변경을 섞지 않고 **차년도 URL·연도 경계 문제를 독립 후속 과제**로 기록한다.
+- 자세한 구현·안전·차년도 URL 이력: `docs/MARKET_CALENDAR_R20_CENSUS_CONNECTION.md`. 다음 작업은 사용자 PC R20 단일 파일 설치 결과 확인, 그 이후 2027년 URL/연도 경계와 Fed 누락 항목 및 신규 경제·기업 실적 소스 조사다. 정규 6시간 수집 결과가 후속 조사 시작의 필수 선행조건은 아니다.
