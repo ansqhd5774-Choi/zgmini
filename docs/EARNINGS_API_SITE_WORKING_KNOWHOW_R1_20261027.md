@@ -166,3 +166,25 @@
 - **남은 핵심 조건:** 기존 D1 공개 C writer는 `sourceStoredAt=OLDEST_FIRST_SEEN_AT`을 유지한다. 기존 5행과 `sourceStoredAt`이 동일한 채 서비스 행을 추가하면 `sourceVersion` 변경을 거부할 수 있다. **기존 checkpoint를 속이는 timestamp 조작·무단 writer 완화 금지**. 실 D1 readback을 확인한 후 별도 게시 checkpoint/key 등의 승인 경로를 결정해야 한다.
 - 구체적인 새 파일·코드 지도·공식 실측·실행 방법·게시 제한은 [WPSFD42 서비스 PPI 연동 증거](EARNINGS_BLS_SERVICE_PPI_WPSFD42_INTEGRATION_R1_20261027.md)에 보존했다.
 - 진척 판정: SOURCE_HTTP=PASS, SOURCE_CODE/LOCAL_TEST=PASS, PC_SQLITE_WPSFD42_WRITE=NOT_RUN, D1_WRITE/READBACK=NOT_RUN, PUBLIC_GET_7ROWS=NOT_RUN, PRODUCTION_7ROWS=NOT_RUN. 기존 BEA 단위이익의 `STORED_PROJECTION_PENDING`도 별도 진행 과제로 남는다.
+
+## 10. 서비스 PPI 독립 D1 체크포인트 — 다음 작업 때 그대로 사용 (2026-10-27)
+
+**이 절은 위 9절의 미결 checkpoint 문제를 코드 설계 차원에서 갱신한다.** 전용 브랜치는 계속 `codex/api-site-integration-r1-20261026`이며 개인 브랜치·main 병합·Prod 배포 없음.
+
+### 불변 경계
+
+1. 기존 5행 D1 키 `detail:earnings-recession-indicators:v1`은 값/원본 checkpoint를 그대로 유지한다. 원래 `sourceStoredAt=1793034173996`이며 공개 GET HTTP 200, 5/5 READY를 2026-10-27 읽기 전용으로 확인했다.
+2. 별도 **서비스 2행 전용 D1 키** `detail:earnings-recession-indicators:bls-wpsfd42:v1`를 **코드로만** 준비했다. 아직 D1 행을 만들거나 쓰지 않았다. 둘은 *서로 다른 산식*이 아니라 **서로 다른 원본 수집 시각/원천 해시에 대한 독립 단조 증가 체크포인트**이다.
+3. 기존 D1 게시 스크립트 `EARNINGS_R4_C_D1_MANUAL.mjs`, `EARNINGS_R4_C_D1_DUAL_SOURCE_ONCE.mjs`는 `buildPreview(...,includeServices:false)`를 호출한다. 새 서비스가 PC에 있어도 기존 D1 키에 7행을 밀어 넣는 실수를 방지한다.
+4. `buildServiceSourcePreview()`는 저장된 WPSFD42 원본만 서비스 행 2개로 선택, SHA·provenance 검증, 서비스 원본 `first_seen_at`만 사용해 sourceVersion/sourceStoredAt 산출. 원래 3종·5행 sourceVersion을 바꾸지 않는다.
+5. 서비스 신규 전용 게시 경로 `EARNINGS_BLS_SERVICE_R1_D1_ONCE.mjs`, `EARNINGS_BLS_SERVICE_R1_D1_PREFLIGHT.cmd`, `EARNINGS_BLS_SERVICE_R1_D1_APPLY.cmd`: 기본 드라이런, `--apply --confirm-earnings-c-service-d1-write` 이중 허가, 승인된 운영 checkout/config SHA·clean main publisher SHA 출처 검증, **WPSFD42 전용 키** D1 exact readback. TXT는 CMD/MJS와 같은 폴더. 스케줄러 자동 등록 없음.
+6. Worker 공개 GET: 원래 5행 저장 본문이 정상인지 먼저 확인, 추가 서비스 키를 별도로 읽어 검증. 정상일 때만 7행 + 합성 응답 식별 해시, 서비스 미발행/오류 시 기존 5행 유지. 응답 헤더 `x-earnings-c-service`로 네 상태 구분. 공개 GET은 BLS 호출·원본 계산·D1 쓰기 없음.
+7. `WPSFD42`의 2026-09 지수 157.666/2025-09 150.273 → *전년 같은 달 대비 파생값* 4.919712789389985%. BLS 2026-09 발표의 서비스 최종수요 **전월 대비** +0.8%와 혼동 금지. 원본 기간·조정·산식·출처의 차이를 반드시 UI와 검증에 보존한다.
+
+### 다음 운영 Gate (미수행은 미완료)
+
+1. 사용자 PC의 `EARNINGS_BLS_SERVICE_R1_PREFLIGHT.cmd` HTTP 실측 TXT를 확인하고 명시적 승인 후 `EARNINGS_BLS_SERVICE_R1_APPLY.cmd`로 WPSFD42 원장을 append/readback.
+2. 새 Worker GET을 승인된 Git/main·배포 경로로 반영하기 전에 **코드/지정 브랜치 테스트만**으로 준비 완료라고 기록. 사용자 승인 없는 본선 merge/배포 금지.
+3. `EARNINGS_BLS_SERVICE_R1_D1_PREFLIGHT.cmd`로 2행 검증 및 source gates 확인. D1 `APPLY.cmd`는 **별도 사용자 승인 뒤에만** 실행. 워커를 배포하지 않은 상태에서 새 서비스 키를 먼저 공개했다고 보고하지 않는다.
+4. D1 정확한 readback → 공개 GET 7행/상태/단위/시각 → 웹페이지/모바일 → 이후 신규 BLS 관측 시 정규 갱신 검증을 개별 PASS로 기록.
+5. 다음 후보(BEA 기업·산업이익, Census QFR 등)는 위 단계 이후 우선순위 검토. 현재 서비스 2행에 점수 산식 변경·새 창구 개설·개인 브랜치 생성은 불필요하다.
