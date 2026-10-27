@@ -3,9 +3,13 @@ import assert from 'node:assert/strict';
 import {buildEarningsCostIndicatorView,KNOWN_EARNINGS_COST_INDICATORS,EARNINGS_C_COST_SCHEMA}
   from './earnings-cost-indicator-list.mjs';
 
-const bls=(id,series,name='추가 BLS 지표')=>({indicatorId:id,seriesId:series,name,
-  kind:'RAW',provider:'BLS',sourceURL:'https://data.bls.gov/timeseries/'+series,
-  value:null,status:'STALE'});
+const bls=(id,series,name='추가 BLS 지표',kind='RAW',unit='PERCENT')=>({
+  indicatorId:id,seriesId:series,name,kind,unit,provider:'BLS',category:'COST_PRESSURE',
+  sourceURL:'https://data.bls.gov/timeseries/'+series,
+  frequency:series==='PRS85006111'?'QUARTERLY':'MONTHLY',adjustment:'SA',
+  changeUnit:unit==='INDEX'?'INDEX_POINTS':'PERCENTAGE_POINTS',
+  value:null,status:'PENDING',
+});
 const payload=rows=>({schemaVersion:EARNINGS_C_COST_SCHEMA,
   historicalMode:'CURRENT_RETRIEVAL_NOT_PIT',rows});
 
@@ -18,7 +22,7 @@ test('pending response preserves the five known placeholders',()=>{
 
 test('published known BLS series preserve existing names and order',()=>{
   const view=buildEarningsCostIndicatorView(payload([
-    bls('bls_ppi_final_demand_yoy_sa','WPSFD4','서버 이름은 다름'),
+    bls('bls_ppi_final_demand_yoy_sa','WPSFD4','서버 이름은 다름','DERIVED'),
     bls('bls_unit_labor_cost_yoy','PRS85006111'),
   ]));
   assert.equal(view.valid,true);
@@ -42,6 +46,31 @@ test('spoofed source URL, wrong provider and duplicate IDs cannot extend list',(
   const view=buildEarningsCostIndicatorView(payload([good,good,wrong,other]));
   assert.equal(view.rows.length,1);
   assert.equal(view.indicators.length,6);
+});
+
+test('known indicator ID with wrong series, kind or unit is not assigned another source value',()=>{
+  const id='bls_ppi_final_demand_yoy_sa';
+  const invalid=[
+    bls(id,'WPSFD41','잘못 연결','DERIVED'),
+    bls(id,'WPSFD4','잘못 연결','RAW'),
+    bls(id,'WPSFD4','잘못 연결','DERIVED','INDEX'),
+  ];
+  const view=buildEarningsCostIndicatorView(payload(invalid));
+  assert.equal(view.valid,true);
+  assert.equal(view.indicators.length,5);
+  assert.equal(view.rows.length,0);
+});
+
+test('new BLS row with unrenderable unit, category or change unit stays excluded',()=>{
+  const base=bls('bls_new_verified_observation','PRS85006111');
+  const invalid=[
+    {...base,indicatorId:'bls_bad_unit',unit:'USD'},
+    {...base,indicatorId:'bls_bad_category',category:'SCORE'},
+    {...base,indicatorId:'bls_bad_change',changeUnit:'PERCENT'},
+  ];
+  const view=buildEarningsCostIndicatorView(payload(invalid));
+  assert.equal(view.rows.length,0);
+  assert.equal(view.indicators.length,5);
 });
 
 test('unknown schema is not treated as published compatible data',()=>{
