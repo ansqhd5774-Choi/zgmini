@@ -83,3 +83,12 @@
 - 즉 R14의 `staticEntrypointCount=0`은 예약 래퍼가 직접 `scripts/pc-writer/local-cycle.mjs` 경로를 갖지 않아서 발생할 수 있다. R12의 데이터 루트 VBS를 **현재 래퍼가 실제 origin으로 참조하는지**는 아직 미확정이며, 지난번 `3941d416` 단정은 계속 보류한다.
 - R16 `MARKET_CALENDAR_R16_ORIGIN_LINEAGE.cmd`는 정확한 예약 VBS의 단일 `origin = "..."` 할당만 추출하고, 그 원본 파일이 있을 때 최대 64KiB를 읽어 Node 실행 파일 경로를 찾는다. 산출된 Git checkout HEAD·parser blob·청결 상태·비식별 경로 ID가 R14에서 확인한 승인 checkout `d0a4b3cb8b95`와 같은지 점검한다. **dispatcher는 파일 존재·형식만 확인**하고 실행하지 않는다.
 - 결과는 `MARKET_CALENDAR_R16_ORIGIN_LINEAGE_RESULT.txt`이며, 모든 PC 절대 경로·키·VBS 원문은 기록하지 않는다. Git 전체 작업 트리 재검사, VBS/Node 실행, 설치·수집·게시·config/DB/작업 수정 모두 금지. 어떤 불일치든 BLS 운영 전환은 보류한다.
+
+### R16 실측과 R17 — BLS 한 파일만 승인 PC source에 적용
+
+- R16 PC 로그(`2026-10-27T08:58:01.752Z`)은 실제 R38 wrapper → 원본 VBS(294바이트) → `local-cycle.mjs` 실행을 확인했다. 원본 VBS는 R12에서 추정한 데이터 루트 VBS와 **다른 파일**이었다. 실제 Core checkout은 R14 승인 ID `d0a4b3cb8b95`, HEAD `7ac573fc`, 기존 파서 blob `f084e2a3`, 보호 파일 청결 상태가 모두 일치한다. 최근 writer 게시 원장 역시 `VERIFIED`.
+- BLS 후보 `staging/market-calendar/r11-bls/lib/release-calendar.mjs` SHA256 `54c73721`를 승인 baseline 파서와 비교했으며 차이는 BLS의 제목별 분류·ID·sourceUrl 확대와 단계 주석뿐이다. 기존 BEA·Fed·Census, `RELEASE_SOURCES`, 저장/게시 계약은 불변. `node --test tests/market-calendar-r11-bls-stage.test.mjs` 테스트를 통과했다.
+- R17 `MARKET_CALENDAR_R17_BLS_APPLY.cmd`는 **명시적으로 실행했을 때만** 적용한다. 실행 시점 R16 lineage·승인 HEAD `7ac573fc`·Git parser blob·후보 SHA256·설정 source·보호 파일 청결·Git 작성자 설정을 모두 재검증한다. 이미 Core lock이 있으면 건드리지 않고 중단한다.
+- 통과 시 Core lock을 임시로 확보하고, 승인 데이터 루트의 `market-calendar-r17-backups` 하위에 **기존 파서와 config 원본을 모두 보존**한 뒤, 승인 PC checkout의 `lib/release-calendar.mjs` 단일 파일만 변경한다. 해당 파일만 포함하는 로컬 Git 커밋을 생성하고, 부모가 `7ac573fc`이며 차이 파일이 정확히 1개인지 확인한 뒤 `config.source`를 새 HEAD로 맞춘다. 설정 이외 DB·게시 원장·예약 작업·원자료는 변경하지 않는다.
+- GitHub push 및 `main` 변경·Cloudflare 배포·강제 수집·즉시 게시 모두 없다. 적용 결과 파일은 `MARKET_CALENDAR_R17_BLS_APPLY_RESULT.txt`. `BLS_INSTALLED_WAIT_NEXT_REGULAR_VERIFIED_CYCLE`는 설치 성공 **전용** 상태이며 이후 정규 수집의 BLS 원본 저장·파서 계산·게시 `VERIFIED` 및 공개 readback을 별도로 검증해야 한다. 그 검증 전 BEA 전환 금지.
+- 커밋 전 실패는 원본 파서를 복구하고 종료한다. 커밋 이후 설정 변경 실패는 게시 차단 상태일 수 있으므로, 임의 `git reset` 없이 백업과 결과를 확인한 뒤 별도 복구 판정을 받는다.
