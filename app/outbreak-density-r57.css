@@ -537,3 +537,57 @@
  .ob-events .ob-selected-event-panel .ob61-fed-compact .ob53-metric-row .ob53-current strong{font-size:31px}
  .ob-events .ob61-fed-compact .ob58-mini-trend{padding-left:7px}
 }
+
+/* R64 · Fed and Iran share the approved news-left / chart-right desktop
+   timeline. Mobile already uses the Iran compact score and news-first layout.
+   Presentation only: no score, news ingestion, chart point or API changes. */
+@media(min-width:701px){
+ .ob-events .ob61-fed-compact .ob53-main-grid>.ob57-news{order:1}
+ .ob-events .ob61-fed-compact .ob53-main-grid>.ob53-chart{order:2}
+ .ob-events .ob61-fed-compact .ob57-news-list{
+  display:flex;flex-direction:column;flex:none;min-width:0;
+  margin:0 0 0 8px;padding:1px 0 1px 19px;
+  border-left:1px solid #2b85aa;background:transparent;overflow:visible;gap:0;
+ }
+ .ob-events .ob61-fed-compact .ob57-news-list>.ob57-news-item{
+  position:relative;display:flex;flex-direction:column;min-width:0;
+  min-height:0;margin:0;background:transparent;
+  padding:10px 5px 12px 1px;border:0;
+  border-bottom:1px solid rgba(89,132,157,.28);border-radius:0;
+ }
+ .ob-events .ob61-fed-compact .ob57-news-list>.ob57-news-item::before{
+  content:"";position:absolute;left:-24px;top:17px;width:9px;height:9px;
+  background:#55c9f3;border:2px solid #061e2c;border-radius:50%;
+  box-sizing:content-box;
+ }
+ .ob-events .ob61-fed-compact .ob57-news-list>.ob57-news-item:last-child{border-bottom:0}
+ .ob-events .ob61-fed-compact .ob57-news-item .ob57-news-meta{
+  justify-content:flex-start;gap:10px;align-items:center;
+ }
+ .ob-events .ob61-fed-compact .ob57-news-item .ob57-news-meta time{order:-1;color:#8bc9e8}
+ .ob-events .ob61-fed-compact .ob57-news-item h4{
+  margin:5px 0 4px;line-height:1.5;white-space:normal;
+ }
+ .ob-events .ob61-fed-compact .ob57-news-item p{
+  display:block;overflow:visible;white-space:normal;
+  -webkit-line-clamp:unset;-webkit-box-orient:initial;
+ }
+ .ob-events .ob61-fed-compact .ob57-news-item .ob57-news-foot{
+  display:flex;flex-direction:row;align-items:center;justify-content:space-between;
+  gap:8px;margin:4px 0 0;padding:0;
+ }
+}
+@media(min-width:851px){
+ .ob-events .ob-selected-event-panel .ob61-fed-compact .ob53-main-grid{
+  grid-template-columns:minmax(0,2.05fr) minmax(275px,1fr);align-items:start;
+ }
+ .ob-events .ob61-fed-compact .ob53-main-grid>.ob57-news{grid-column:1;grid-row:1}
+ .ob-events .ob61-fed-compact .ob53-main-grid>.ob53-chart{grid-column:2;grid-row:1}
+}
+@media(min-width:701px) and (max-width:850px){
+ .ob-events .ob-selected-event-panel .ob61-fed-compact .ob53-main-grid{
+  grid-template-columns:minmax(0,1fr);
+ }
+ .ob-events .ob61-fed-compact .ob53-main-grid>.ob57-news{grid-column:1;grid-row:1}
+ .ob-events .ob61-fed-compact .ob53-main-grid>.ob53-chart{grid-column:1;grid-row:2}
+}
