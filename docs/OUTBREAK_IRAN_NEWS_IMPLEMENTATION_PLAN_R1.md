@@ -277,3 +277,20 @@
 - `IRAN_NEWS_R14_PUBLISH_ONCE.cmd`는 고정 SHA `e7fd9814a578412af095ce42fd53d9a982da5ab5`를 다운로드하고 **별도 읽기 전용 R13 Gate → 단 1회 R14 쓰기 → D1 read-back**을 수행한다. CMD 사용자가 명시적으로 실행해야만 쓰기 시작한다. 결과 `IRAN_NEWS_R14_PUBLISH_ONCE_RESULT.txt`를 제출해야 실 운영 증거로 인정한다.
 - 이전 10개+신규 R14 테스트 **11/11 파일 PASS**(모의). GOV.UK OGL 안내와 제3자 권리 표기 점검은 계속 요구되며, 자연어 생성 모델 자유 요약은 배포하지 않는다.
 - **게시 자동화 상태:** 일회 증분 게시 코드는 브랜치에 준비되었으나 사용자 PC에서 R14 CMD 실측 및 실제 D1/사이트 확인 전이므로 아직 자동 게시 완료가 아니다. 다음 Gate는 R14 일회 게시 검증 후 **기존 R13 00/06/12/18 KST 스케줄의 후행 격리 hook 연결**과 두 차례 정규 실행 확인. 새 작업/별도 타이머/점수 산식 변경은 금지한다.
+
+
+## 23. 2026-10-27 R14 운영 PC 실제 D1 게시 성공과 R15 자동 실행 준비
+
+- 사용자 `IRAN_NEWS_R14_PUBLISH_ONCE_RESULT.txt`의 실 PC 실행:
+  - R13 read-only preflight: GOV.UK 4/4 피드, URL 중복 제거 49, Content API 49/49, 최근 30일 22, 최근 14일 10, 개별 이용조건 최소검사 10/10, 보류 0, 로컬 PC 1건과 D1 1건 일치.
+  - R14 실제 쓰기: 신규 9건, 기존 수동 검토 1건 동일 ID·제목·요약 보존, PC 표시용 뉴스 캐시 1 → 10, D1 뉴스 단독 공개 10건, 원격 재조회 `VERIFIED`, `FINAL_STATUS=PASS_R14_PUBLISH_ONCE_D1_VERIFIED`.
+  - R14 실행에서 R3/R5 SQLite 원장·점수 산식·기존 R13 작업 스케줄러는 변경되지 않았음. **단, 별도의 웹 API/UI 직접 실측은 아직 미완료**: 외부 웹 조회에서는 `zgmini.kr` 접근을 확인하지 못했으므로 D1 확인만으로 사이트 UI 검증을 통과했다고 기록하지 않는다.
+- 추가 사용자 키워드 정책은 **Iran OR Saudi OR Yemen OR Houthi** 한 개 이상이다. GOV.UK 원문 예시 `https://www.gov.uk/government/news/joint-press-release-on-the-r4-ministerial-meeting-in-istanbul`에서 해당 네 키워드가 실제 언급된 내용도 공개 확인했다. 복사하는 것은 공식 제목, 링크, 날짜, 권리 검사 통과 뒤 생성한 중립 주제 라벨 설명뿐이다.
+- R15 `scripts/iran-progress/news-display-auto-run-r15.mjs`:
+  - **기존** `ZGMINI-PC-Iran-Progress-R13` 00/06/12/18 KST 정규 실행 내에서, 원래 R3→R5→legacy→R7 cache cleanup **모두 종료한 뒤**, 별도 뉴스-only 수집·권리점검→PC display cache 업데이트→D1 news-only key 재조회를 실행하도록 준비.
+  - 현재 PC에 이미 존재하는 `scripts/pc-writer/d1.mjs`의 `client`만 사용하고 그 파일은 변경하지 않는다. 비밀 토큰은 운영환경의 기존 토큰만 **읽어** 사용한다. 추가 로그인·권한 취득·기존 인증 파일 수정은 하지 않는다. 만료·부재 시 실패 상태를 기록한다.
+  - 실행 결과는 표시용 별도 `news-display-auto-r15-status.json` 단일 파일에 최신 `PUBLISHED_D1_VERIFIED` 또는 `FAILED_SCORE_UNAFFECTED`로 저장하고 기사 수·신규 수·D1 결과만 기록한다. 비밀정보는 기록하지 않는다.
+  - R15 뉴스 실패는 기존 점수 러너의 exit-code에 영향을 주지 않는다. 새 Windows 예약 작업, 빈도 변경, VBS 수정, 원장 정리는 없다.
+- `scripts/iran-progress/news-display-install-auto-r15.mjs`은 PC 실제 이전 R7 runner SHA `438ac0ad...`와 원본 R7 백업, VBS, 작업 스케줄 XML, PC 운영 Git HEAD `bc7bd678...`을 대조하고, 기존 6개 모듈의 바이너리 동일성 및 새 뉴스 전용 6개 파일의 **부재**를 확인한다. 새 코드만 복사하고 승인된 runner 꼬리 블록만 `db0040ef...`으로 교체한다. 이전 runner의 `.before-iran-news-r15` 별도 백업/read-back을 필수로 남긴다.
+- 설치는 `IRAN_NEWS_R15_AUTO_INSTALL.cmd`를 사용한다. 고정 코드 SHA `8813ad6f8e5f396bf05d6db2730efc2b459cf1f9`, CMD ASCII/CRLF, PC 기존 runner 실측 preflight → 한 번의 설치 → read-back, 결과 `IRAN_NEWS_R15_AUTO_INSTALL_RESULT.txt`. R15 전체 뉴스 테스트 **12/12 파일 통과(모의·소스 검증)**.
+- **R15 PC 설치와 정규 6시간 자동 실행은 아직 미실행**. 설치 로그 PASS 후 실제 다음 2회의 6시간 예약 실행에 대해 `news-display-auto-r15-status.json`, D1 read-back, 공개 사이트 API/UI 기사 수·시간 및 14일 노출/30일 삭제를 확인해야 운영 완료.
