@@ -296,3 +296,12 @@
 - **R15 PC 설치와 정규 6시간 자동 실행은 아직 미실행**. 설치 로그 PASS 후 실제 다음 2회의 6시간 예약 실행에 대해 `news-display-auto-r15-status.json`, D1 read-back, 공개 사이트 API/UI 기사 수·시간 및 14일 노출/30일 삭제를 확인해야 운영 완료.
 
 - R15 추가 호환 검사: 기존 PC `sources.mjs`가 Windows Git 체크아웃으로 CRLF일 경우, 내용이 LF 버전과 바이트 수준 줄바꿈만 다르면 **기존 파일을 교체하지 않고** 수용한다. 다른 변경이나 R7 신규 모듈의 줄바꿈 차이는 기존 검증 규칙대로 중단한다. 실 PC 설치 전 계획만 갱신됨.
+
+## 24. 2026-10-27 R15 실 PC 설치 PASS 및 R16 정규 실행 읽기 전용 검증
+
+- 사용자 제공 `IRAN_NEWS_R15_AUTO_INSTALL_RESULT.txt`: `PASS_R15_AUTO_HOOK_PREFLIGHT_READ_ONLY` → `PASS_R15_NEWS_AUTO_HOOK_INSTALLED` → `R15_HOOK_READBACK_GATE=PASS` → `FINAL_STATUS=PASS_R15_AUTO_NEWS_HOOK_INSTALLED`.
+- 실 PC: 기존 `ZGMINI-PC-Iran-Progress-R13` 00/06/12/18 KST 유지, 운영 Git HEAD `bc7bd678...` 및 기존 R7 runner `438ac0ad...` 일치 확인, 6개 기존 모듈 보존, R15 새 모듈 6개 설치, R15 runner `db0040ef...` 일치, R7 runner 별도 백업 및 read-back 검증, 기존 뉴스 캐시 10건 확인. 스케줄러·VBS·R3/R5 점수 원장·D1은 **설치 중 변경되지 않았다**.
+- R15 설치 PASS가 **정기 6시간 실제 게시 성공을 뜻하지는 않는다**. R14 일회 게시 D1 검증 10건과 구별한다. 다음 정규 R13 주기 완료 후 별도 `news-display-auto-r15-status.json`을 확인해야 한다.
+- R16 신규 `scripts/iran-progress/news-display-scheduled-verify-r16.mjs`: 기존 Task Scheduler XML + 최신 실행 기록(CSV), VBS SHA, 활성 R15 runner SHA, R7 복구백업, 원본 복구백업, 뉴스 상태 JSON·PC 뉴스 캐시의 실제 수정 시각을 읽기 전용으로 대조한다. 점수 작업 종료 코드 0만으로 뉴스 성공을 추정하지 않는다. 뉴스 status `PUBLISHED_D1_VERIFIED` 및 D1 `VERIFIED/UNCHANGED`와 마지막 정규 작업 시각 연계가 모두 맞아야 PASS. 다음 주기 전 또는 작업 실행 중은 PENDING, 뉴스 실패·오래된 상태·불일치는 NEEDS_REVIEW. 비밀번호/토큰은 읽거나 기록하지 않는다.
+- `IRAN_NEWS_R16_SCHEDULE_READONLY.cmd`: ASCII/CRLF, 코드 고정 SHA `70309354531ab3301db6017afe9568e0bffe5207`, PC 태스크를 직접 실행·변경하지 않고 예약 실행 기록과 R15 결과만 검사. `IRAN_NEWS_R16_SCHEDULE_READONLY_RESULT.txt` 제출 후 판단. 기존 12개+R16 테스트 **13/13 파일 PASS**(모의 환경).
+- 남은 운영 Gate: **1회째 정규 6시간 실행 R16 검증 → 다음 2회째 정규 실행 R16 재검증 → 공개 웹 API와 실제 UI 14일 노출 확인 → 정규 보관 30일 만료 검증**. PC 외부 웹 UI 직접 검증 전까지 사이트 공개 완료로 판정하지 않는다. 자동 게시 후 권한 없는 외부 제공자 수집 추가·새 스케줄·점수 산식 변경은 금지한다.
