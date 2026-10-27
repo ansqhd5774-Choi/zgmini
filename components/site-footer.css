@@ -1,4 +1,4 @@
-.zg-site-footer.zg-footer{display:block;padding:28px 24px 24px;text-align:center;color:#a4b7c6;background:#041722}
+.zg-site-footer.zg-footer{display:block;padding:28px 24px 24px;text-align:center;color:#a4b7c6;background:#041722;border-top:0}
 .zg-footer-links{display:flex;justify-content:center;align-items:center;flex-wrap:wrap;gap:8px 0;margin:0 auto 18px;max-width:1000px}
 .zg-footer-links a{display:inline-flex;align-items:center;min-height:28px;padding:0 16px;font-size:12px;font-weight:650;line-height:1.5;color:#cbd9e4}
 .zg-footer-links a+a{border-left:1px solid #294352}
