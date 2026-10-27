@@ -90,7 +90,7 @@ function mergeOfficial(feed:CalendarFeed|null):CalendarRow[]{
  const fromFeed:CalendarRow[]=[];
  const seen=new Set<string>();
  for(const item of feed.events){
-  if(!validDate(item.date)||!(eventKinds[item.id]||((item.source==='bls'||item.source==='bea')&&item.id.startsWith(`${item.source}-`)))||typeof item.sourceUrl!=='string'||!item.sourceUrl.startsWith('https://'))continue;
+  if(!validDate(item.date)||!(eventKinds[item.id]||((item.source==='bls'||item.source==='bea'||item.source==='census')&&item.id.startsWith(`${item.source}-`)))||typeof item.sourceUrl!=='string'||!item.sourceUrl.startsWith('https://'))continue;
   if(item.id==='fomc'||item.id==='press')continue;
   const duplicate=`${item.id}:${item.date}`;
   if(seen.has(duplicate))continue;
