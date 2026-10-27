@@ -55,6 +55,7 @@ export function analyzeNineR40Overlap({roster,eodByDate,proxyBySymbol,inventoryC
  if(dates.some(d=>! /^\d{4}-\d{2}-\d{2}$/.test(d)))fail('DATE');
  const decoded=new Map(dates.map(d=>[d,eodPrices(eodByDate.get(d),d,names)]));
  const spyDays=dates.filter(d=>decoded.get(d).has('SPY'));
+ const spyDayOrdinal=new Map(spyDays.map((d,i)=>[d,i]));
  const compare={},maturity={};
  for(const s of ['SPY',...names]){
   const rows=proxyBySymbol.get(s);
@@ -69,9 +70,11 @@ export function analyzeNineR40Overlap({roster,eodByDate,proxyBySymbol,inventoryC
   const overlap=actual.filter(d=>raw.has(d))
    .map(d=>({date:d,raw:raw.get(d),eod:decoded.get(d).get(s)}));
   const closeDiff=overlap.map(o=>1e4*(o.eod/o.raw-1));
-  const returnDiff=overlap.slice(1).map((o,i)=>{
+  const returnDiff=overlap.slice(1).flatMap((o,i)=>{
    const prior=overlap[i];
-   return 1e4*((o.eod/prior.eod-1)-(o.raw/prior.raw-1));
+   // A missing intermediate saved SPY session breaks a consecutive return interval.
+   if(spyDayOrdinal.get(o.date)!==spyDayOrdinal.get(prior.date)+1)return [];
+   return [1e4*((o.eod/prior.eod-1)-(o.raw/prior.raw-1))];
   });
   compare[s]={overlapSessions:overlap.length,
    latestOverlapDate:overlap.at(-1)?.date??null,

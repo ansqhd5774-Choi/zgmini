@@ -68,3 +68,16 @@ test('R40 rejects missing SPY raw proxy rather than inferring it',()=>{
  assert.throws(()=>analyzeNineR40Overlap({roster,eodByDate:eod(),
   proxyBySymbol:proxies,inventoryCount:4}),/PROXY_MISSING_SPY/);
 });
+test('R40 never compares returns across a missing intermediate saved SPY session',()=>{
+ const proxies=raw();
+ for(const [symbol,rs] of proxies){
+  proxies.set(symbol,rs.filter(x=>x.date!=='2026-10-22'));
+ }
+ const r=analyzeNineR40Overlap({roster,eodByDate:eod(),
+  proxyBySymbol:proxies,inventoryCount:4});
+ assert.equal(r.spyOverlap.overlapSessions,2);
+ assert.equal(r.spyOverlap.returnIntervalsCompared,0);
+ assert.equal(r.etfComparison.BOTZ.returnIntervalsCompared,0);
+ assert.equal(r.r23AndEodTwoOrMoreDates,63);
+ assert.equal(r.priceModeAlignmentAuthorized,false);
+});
