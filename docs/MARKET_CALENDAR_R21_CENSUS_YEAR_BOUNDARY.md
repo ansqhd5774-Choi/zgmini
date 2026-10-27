@@ -1,5 +1,14 @@
 # ZGMINI 시장 캘린더 R21 — Census 연도 전환과 차년도 일정
 
+## 2026-10-28 정정 설치 패키지 — 코드 검증 완료, PC 적용 대기
+
+- 업로드된 `MARKET_CALENDAR_R21_PC_SOURCE_EXPORT_RESULT(1).txt`를 확인하여 승인 PC 수집기 원문 SHA256 `1b8c2760a4f815191282dd55969ce8170072d4f747c8468ddd6601dc50ee88d6`, `collectorMatchesTrackedHead=true`, R20 PC HEAD `97a38c7cdfbb7e0d30eaeacea27b9605bbfa2b3b`, R20 파서 SHA256 `20d6c99cc7621e08c06598e51f4c9dc8a6f945952905351287b46d2c65a1551c`를 각각 확인했다.
+- 실제 PC 수집기와 GitHub `scripts/pc-writer/release-calendar.mjs`를 **LF로 줄바꿈만 정규화해 비교한 결과 내용이 완전히 동일**했다. 따라서 첫 설치 실패 원인은 수집기 기능이나 R20 설치 문제가 아니라 `CRLF(PC) ≠ LF(GitHub)`에 따른 **바이트 해시 기준 지정 오류**다.
+- R21 알고리즘 후보 LF SHA256 `2e7ac2a57a7ec2c41b2f9647d98d49c7bb22d904978a0d637e3d3619e01dedf0`는 그대로 유지한다. 새 설치기는 해당 후보를 **PC 원본처럼 CRLF로 변환**하여 저장하며, 실제 설치 대상 CRLF SHA256 `8105a2922ff0d05d29b329dc22dcf66d0d5920ea0d1661337066cef877f45bc5`를 이중 검증한다.
+- 새로운 설치 CMD는 **`MARKET_CALENDAR_R21_CENSUS_YEAR_APPLY_CRLF.cmd`**이며, 결과는 CMD와 같은 위치의 `MARKET_CALENDAR_R21_CENSUS_YEAR_APPLY_CRLF_RESULT.txt`에 기록한다. 최초 R21 ZIP/CMD를 사용하지 않는다.
+- 정정 테스트: PC CRLF 원본·R20 파서 기반 설치/백업/잠금/원본 drift **4개 PASS**, Census 2026/2027 공식 fallback·BLS/BEA/Fed·이력 보존 **4개 PASS**. 실제 PC 실행·예약 수집·공개 사이트 검증은 이 성공만으로 추정하지 않는다.
+- 다른 Core, DB, 예약 작업, 게시, GitHub main에 대한 변경은 없다. 전용 브랜치 `codex/zgmini-gpt-workspace-20261025`를 유지한다.
+
 ## 2026-10-27 설치 중단 정정 — R21 최초 패키지 사용 금지
 
 - **상태: R21 최초 패키지 WITHDRAWN / PC 미설치.** 기존 R20 운영 Core 유지. 이 문서 아래의 최초 후보와 설치 절차는 역사 기록이며 현시점 적용 지시가 아니다.
