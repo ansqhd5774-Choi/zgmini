@@ -3,7 +3,7 @@
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {boundedRead} from './sources.mjs';
-import {R3_FEEDS} from './continuous-news-r3.mjs';
+import {IRAN_DISPLAY_FEEDS_R26} from './news-display-source-registry-r26.mjs';
 import {parseGovUkNewsCandidates} from './news-display-discover-r1.mjs';
 
 const ACCEPTED_HOSTS=Object.freeze({
@@ -24,7 +24,7 @@ export const IRAN_GOVUK_R24_TOPIC_FEEDS=Object.freeze(
 const matchesIranTopicR24=text=>
  /\b(?:iran(?:ian)?s?|saudis?|yemen(?:is?)?|houthis?)\b|이란|사우디(?:아라비아)?|예멘|예맨|후티/i.test(text);
 
-export const IRAN_MULTISOURCE_FEEDS_R24=Object.freeze(R3_FEEDS.map(spec=>Object.freeze({...spec})));
+export const IRAN_MULTISOURCE_FEEDS_R24=Object.freeze(IRAN_DISPLAY_FEEDS_R26.map(spec=>Object.freeze({...spec})));
 
 function xmlText(value){
  return String(value??'').replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g,'$1')
