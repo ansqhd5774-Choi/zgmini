@@ -3,19 +3,23 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import vm from 'node:vm';
 import ts from 'typescript';
+import {afterFirstLoadIdle} from '../lib/noncritical-startup.mjs';
 
 function harness(hostname='zgmini.kr') {
   const scripts=[];
   let path='/';
-  const window={location:{hostname,origin:`https://${hostname}`}};
-  const document={title:'ZGMINI',referrer:'https://example.com/?private=value#fragment',head:{appendChild:s=>scripts.push(s)},createElement:()=>({})};
-  const context={window,document,exports:{},require:name=>name==='react'?{useEffect:f=>f()}:{usePathname:()=>path}};
+  const idle=new Map();let next=0;
+  const window={location:{hostname,origin:`https://${hostname}`},requestIdleCallback:f=>{idle.set(++next,f);return next;},cancelIdleCallback:id=>idle.delete(id),addEventListener(){},removeEventListener(){}};
+  const document={readyState:'complete',title:'ZGMINI',referrer:'https://example.com/?private=value#fragment',head:{appendChild:s=>scripts.push(s)},createElement:()=>({})};
+  window.document=document;
+  const context={window,document,exports:{},require:name=>name==='react'?{useEffect:f=>f()}:name.includes('noncritical-startup')?{afterFirstLoadIdle}:{usePathname:()=>path}};
   vm.runInNewContext(ts.transpileModule(readFileSync(new URL('../app/google-analytics.tsx',import.meta.url),'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,jsx:ts.JsxEmit.ReactJSX}}).outputText,context);
-  return {scripts,window,render:p=>{path=p;context.exports.default();},events:()=>Array.from(window.dataLayer||[],v=>Array.from(v))};
+  return {scripts,window,flush:()=>{for(const f of idle.values())f();idle.clear();},render:p=>{path=p;context.exports.default();},events:()=>Array.from(window.dataLayer||[],v=>Array.from(v))};
 }
 
 test('production initializes one tag and one initial page view under repeat effects',()=>{
   const h=harness();h.render('/');h.render('/');
+  assert.equal(h.scripts.length,0,'Queue page views without competing with startup downloads');h.flush();
   assert.equal(h.scripts.length,1);
   assert.equal(h.scripts[0].src,'https://www.googletagmanager.com/gtag/js?id=G-KE3CHLGQPL');
   assert.equal(h.events().filter(e=>e[0]==='event').length,1);
@@ -26,6 +30,7 @@ test('production initializes one tag and one initial page view under repeat effe
 });
 test('client navigation and return visits count once per route transition',()=>{
   const h=harness();for(const p of ['/','/inflation/','/inflation/','/'])h.render(p);
+  h.flush();
   assert.deepEqual(h.events().filter(e=>e[0]==='event').map(e=>e[2].page_location),['https://zgmini.kr/','https://zgmini.kr/inflation/','https://zgmini.kr/']);
   assert.equal(h.scripts.length,1);
 });
@@ -36,4 +41,4 @@ test('referrer query and hash are excluded',()=>{
 test('local and preview hosts do not send events',()=>{
   for(const host of ['localhost','127.0.0.1','preview.workers.dev']){const h=harness(host);h.render('/');assert.equal(h.scripts.length,0);assert.equal(h.events().length,0);}
 });
-test('www production host is supported',()=>{const h=harness('www.zgmini.kr');h.render('/');assert.equal(h.scripts.length,1);});
+test('www production host is supported',()=>{const h=harness('www.zgmini.kr');h.render('/');h.flush();assert.equal(h.scripts.length,1);});
