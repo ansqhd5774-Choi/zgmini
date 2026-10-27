@@ -1,7 +1,7 @@
 /**
  * R70: reusable, read-only Stage04 forecast pipeline.
  * Each publisher adapter fetches live source evidence and asks local Ollama;
- * this layer independently checks publisher identity, R30 audit provenance,
+ * this layer independently checks publisher identity, R30/R71 audit provenance,
  * duplicate publishers, and the >=2 independent publisher mean gate.
  * It never assigns investment attractiveness, G/D/M, or trade scores.
  */
@@ -34,6 +34,7 @@ function normalizedCandidate(raw, adapter, observedAt) {
     period_start: null,
     period_end: null,
     source_audit: validText(raw?.source_audit) ? raw.source_audit : 'NOT_RUN',
+    market_scope: validText(raw?.market_scope) ? raw.market_scope : null,
     source_conflict_reason: validText(raw?.source_conflict_reason) ? raw.source_conflict_reason : null,
     model_candidate_pct: Number.isFinite(raw?.model_candidate_pct) ? raw.model_candidate_pct : null,
     search_requests: Number.isInteger(raw?.search_requests) ? raw.search_requests : null,
@@ -58,8 +59,12 @@ function normalizedCandidate(raw, adapter, observedAt) {
     result.reason = 'UNVERIFIED_PUBLISHER_URL';
     return result;
   }
-  if (raw.source_audit !== 'CONSISTENT') {
+  if (!['CONSISTENT', 'EXCERPT_PERIOD_VERIFIED'].includes(raw.source_audit)) {
     result.reason = 'SOURCE_AUDIT_NOT_CONSISTENT';
+    return result;
+  }
+  if (raw.source_audit === 'EXCERPT_PERIOD_VERIFIED' && raw.market_scope !== 'DIRECT') {
+    result.reason = 'PROXY_MARKET_SCOPE_EXCLUDED';
     return result;
   }
   if (raw.metric !== 'FORECAST_CAGR' || !Number.isFinite(raw.growth_pct) ||
@@ -137,6 +142,8 @@ export async function runForecastPipeline(topics, adapters, {
       included_publishers: accepted.map(p => p.publisher),
       warnings: [
         'RESEARCH_FORECAST_ONLY_NOT_GICS_OR_INVESTMENT_SCORE',
+        ...(accepted.some(p => p.source_audit === 'EXCERPT_PERIOD_VERIFIED')
+          ? ['EXCERPT_ONLY_AUDIT_NO_SIZE_TRIANGULATION'] : []),
         ...(periodKeys.size > 1 ? ['DIFFERENT_FORECAST_PERIODS_REVIEW_SCOPE'] : [])
       ],
       publishers
