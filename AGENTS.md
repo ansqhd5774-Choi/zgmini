@@ -35,6 +35,14 @@ ZGMINI PLUGIN & EXECUTION RULES — COMPACT R5 FINAL
 - GitHub와 관계없는 작업은 `작업 브랜치: 해당 없음 (GitHub 변경 없음)`으로 명시한다. 브랜치를 조회하지 못했다면 추측하지 말고 `미확인`으로 보고한다.
 - 보고 전에 원격 브랜치 존재와 반영 커밋을 확인한다. 미실행·미배포·미병합 상태를 완료로 표현하지 않는다.
 
+## 1.2 실적 침체 API↔페이지 연동 인수인계 (2026-10-27)
+
+- **이 과제의 우선 목표:** 외부 공식 API와 `/earnings-recession/`의 정보성 지표를 연결하고, 검증된 새 지표를 개수 제한 없이 추가하며, 데이터 품질·신선도·자동 갱신을 보완한다. 계획·브랜치 정리는 이 목표를 위한 수단이다.
+- **해당 과제의 사용자 지정 유일 작업 브랜치:** `codex/api-site-integration-r1-20261026`. 이 과제에서는 개인/임시 신규 브랜치를 만들지 않는다. 다른 프로젝트의 지정 브랜치에는 이 이름을 적용하지 않는다.
+- 작업 착수 전 `docs/EARNINGS_RECESSION_COMPANION_API_SITE_INTEGRATION_PLAN_R1_20261026.md`, `docs/EARNINGS_API_SITE_WORKING_KNOWHOW_R1_20261027.md`, `docs/EARNINGS_API_SITE_BRANCH_ALIGNMENT_AUDIT_R1_20261027.md`를 읽는다. 최초 계획의 `PLAN_ONLY`/옛 브랜치명은 역사 기록이며 현재 작업 상태가 아니다.
+- 기존 BLS 실측·원장 검증, API/Worker/D1 경로, BEA preflight 실패·성공 근거를 재사용한다. **소스 구현 / PC 저장·계산 / D1 게시·readback / GET / 실제 화면 / Production / 자동 갱신**을 분리 보고한다.
+- 이 과제 관련 불필요한 브랜치 삭제는 **사용자가 직접 수행**한다. 삭제·기존 이력 변경·무단 main 병합·Production 배포 금지.
+
 ## 2. Cloudflare — DEPLOYMENT CONTROL PLANE — ACTIVE
 - 기본 경로:
   `GitHub latest main -> Cloudflare Git integration -> Build -> exact Deployment -> Production 검증`
