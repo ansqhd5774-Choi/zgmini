@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   EARNINGS_C_FRESHNESS,EARNINGS_C_ROUTE,EARNINGS_C_SNAPSHOT_KEY,
+  EARNINGS_C_SERVICE_SNAPSHOT_KEY,
   validateEarningsCompanionPayload,earningsCompanionFreshness,
   earningsCompanionWriter,readEarningsCompanionResponse,
 } from './earnings-companion-c-r4.mjs';
@@ -38,6 +39,22 @@ function fixture({quarterPeriods=qPeriods}={}){
     historicalMode:'CURRENT_RETRIEVAL_NOT_PIT',
     observedThroughBySeries:{WPSFD4:monthly.observationPeriod,PRS85006111:quarterly.observationPeriod},
     coverage:{configured:2,ready:2,partial:0,unavailable:0},rows:[monthly,quarterly]};
+}
+function serviceFixture(){
+  const serviceSourceAt=SOURCE_AT+3_600_000;
+  const index=row({id:'bls_ppi_services_index',seriesId:'WPSFD42',
+    frequency:'MONTHLY',periods:monthlyPeriods,values:monthlyPeriods.map((_,i)=>150+i)});
+  const yoy=row({id:'bls_ppi_services_yoy_sa',seriesId:'WPSFD42',
+    frequency:'MONTHLY',periods:monthlyPeriods,values:monthlyPeriods.map((_,i)=>2+i/10),
+    unit:'PERCENT',method:'YOY_SA_T_MINUS_12'});
+  for(const r of [yoy,index])r.retrievedAt=new Date(serviceSourceAt).toISOString();
+  return {schemaVersion:'earnings-companion-c-r4-v1',status:'READY',
+    sourceVersion:'b'.repeat(64),sourceStoredAt:serviceSourceAt,
+    generatedAt:'2026-10-27T07:13:08.700Z',
+    historicalMode:'CURRENT_RETRIEVAL_NOT_PIT',
+    observedThroughBySeries:{WPSFD42:'2026-09'},
+    coverage:{configured:2,ready:2,partial:0,unavailable:0},
+    rows:[yoy,index]};
 }
 const clone=x=>structuredClone(x);
 const request=(method='GET',search='')=>new Request(`https://zgmini.kr${EARNINGS_C_ROUTE}${search}`,{method});
@@ -122,7 +139,57 @@ test('reader GET/HEAD: only separate D1 key, no remote write or provider access'
   const head=await readEarningsCompanionResponse(request('HEAD'),db,{now:NOW});
   assert.equal(head.status,200);assert.equal(await head.text(),'');
   assert.equal(db.queries.filter(q=>q.kind==='WRITE').length,1);
-  assert.ok(db.queries.every(q=>q.params[0]===EARNINGS_C_SNAPSHOT_KEY));
+  assert.ok(db.queries.filter(q=>q.kind==='WRITE')
+    .every(q=>q.params[0]===EARNINGS_C_SNAPSHOT_KEY));
+  assert.ok(db.queries.filter(q=>q.kind==='READ')
+    .every(q=>[EARNINGS_C_SNAPSHOT_KEY,EARNINGS_C_SERVICE_SNAPSHOT_KEY].includes(q.params[0])));
+  assert.equal(res.headers.get('x-earnings-c-service'),'NOT_PUBLISHED');
+});
+
+test('independent service snapshot joins publicly without changing base D1 checkpoint',async()=>{
+  const db=d1(),base=fixture(),service=serviceFixture();
+  const pubBase=earningsCompanionWriter(db);
+  const pubService=earningsCompanionWriter(db,{snapshotKey:EARNINGS_C_SERVICE_SNAPSHOT_KEY});
+  await pubBase.write(base,{storedAt:NOW-2000});
+  const oldRow=db.records.get(EARNINGS_C_SNAPSHOT_KEY);
+  const added=await pubService.write(service,{storedAt:NOW-1000});
+  assert.equal(added.status,'READBACK_VERIFIED');
+  assert.equal(added.key,EARNINGS_C_SERVICE_SNAPSHOT_KEY);
+  assert.deepEqual(db.records.get(EARNINGS_C_SNAPSHOT_KEY),oldRow);
+  const res=await readEarningsCompanionResponse(request(),db,{now:NOW});
+  assert.equal(res.status,200);
+  assert.equal(res.headers.get('x-earnings-c-service'),'READY');
+  const body=await res.json();
+  assert.equal(body.coverage.configured,4);
+  assert.equal(body.coverage.ready,4);
+  assert.deepEqual(body.rows.slice(2).map(r=>r.seriesId),['WPSFD42','WPSFD42']);
+  assert.deepEqual(body.rows.slice(0,2).map(r=>r.indicatorId),
+    base.rows.map(r=>r.indicatorId));
+  assert.equal(body.sourceStoredAt,base.sourceStoredAt);
+  assert.notEqual(body.sourceVersion,base.sourceVersion);
+  assert.equal(body.observedThroughBySeries.WPSFD42,'2026-09');
+});
+
+test('invalid source extension cannot suppress healthy base readings or alter base writer',async()=>{
+  const db=d1(),base=fixture(),service=serviceFixture();
+  await earningsCompanionWriter(db).write(base,{storedAt:NOW-2000});
+  const invalid=clone(service);
+  invalid.rows[0].indicatorId='bls_fake_service_row';
+  await assert.rejects(earningsCompanionWriter(db,{
+    snapshotKey:EARNINGS_C_SERVICE_SNAPSHOT_KEY}).write(invalid,{storedAt:NOW-1000}),
+    /INVALID_SERVICE_PAYLOAD/);
+  await assert.rejects(earningsCompanionWriter(db).write(service,{storedAt:NOW-1000}),
+    /SERVICE_REQUIRES_SEPARATE_KEY/);
+  const envelope={payload:service,projection:{status:'READY',sourceVersion:service.sourceVersion,
+    sourceStoredAt:service.sourceStoredAt,expectedSourceVersion:service.sourceVersion,
+    expectedSourceStoredAt:service.sourceStoredAt,builtAt:NOW-1000}};
+  envelope.payload.rows[0].sourceURL='https://example.invalid/';
+  db.records.set(EARNINGS_C_SERVICE_SNAPSHOT_KEY,{
+    body:JSON.stringify(envelope),stored_at:NOW-1000});
+  const res=await readEarningsCompanionResponse(request(),db,{now:NOW});
+  assert.equal(res.status,200);
+  assert.equal(res.headers.get('x-earnings-c-service'),'INVALID');
+  assert.equal((await res.json()).rows.length,2);
 });
 
 test('freshness per period: stale quarterly does not erase valid monthly',async()=>{
