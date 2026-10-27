@@ -24,7 +24,23 @@ export function plainNewsBody(html){
   }).replace(/&(amp|lt|gt|quot|apos|nbsp);/gi,(_,c)=>({amp:'&',lt:'<',gt:'>',quot:'"',apos:"'",nbsp:' '})[c.toLowerCase()])
   .replace(/\s+/g,' ').trim();
 }
-export function validateLocalModelDraft(message){
+export function topicFocusedBody(html){
+ if(typeof html!=='string')return '';
+ const groups=(html.match(/<(?:p|li|blockquote)\b[^>]*>[\s\S]*?<\/(?:p|li|blockquote)>/gi)??[])
+  .map(part=>plainNewsBody(part)).filter(part=>matchesIranNewsDisplayKeywords(part));
+ if(groups.length)return groups.join(' ').slice(0,3000);
+ // The source may not contain paragraph tags; select local windows only.
+ const text=plainNewsBody(html),windows=[];
+ const needle=/\b(?:iran(?:ian)?s?|saudis?|yemen(?:is?)?|houthis?)\b|이란|사우디(?:아라비아)?|예멘|예맨|후티/gi;
+ for(const match of text.matchAll(needle)){
+  const from=Math.max(0,match.index-160),to=Math.min(text.length,match.index+400);
+  if(windows.some(w=>from<=w.to)){const last=windows.at(-1);last.to=Math.max(last.to,to);}
+  else windows.push({from,to});
+  if(windows.length>=8)break;
+ }
+ return windows.map(({from,to})=>text.slice(from,to)).join(' ... ').slice(0,3000);
+}
+export function validateLocalModelDraft(message,{requireTopic=false}={}){
  if(typeof message!=='string'||message.length>2000)return {status:'INVALID_JSON'};
  let parsed;
  try{parsed=JSON.parse(message);}catch{return {status:'INVALID_JSON'};}
@@ -33,9 +49,23 @@ export function validateLocalModelDraft(message){
   typeof parsed.summary!=='string'||parsed.summary.trim().length<20||
   parsed.summary.length>300||!/[가-힣]/.test(parsed.summary)||
   !['positive','negative','neutral'].includes(parsed.impact))return {status:'INVALID_DRAFT'};
- return {status:'VALID_SHADOW_DRAFT',summary:parsed.summary.trim(),impact:parsed.impact};
+ const summary=parsed.summary.trim();
+ if(requireTopic&&!/(?:이란|사우디|예멘|예맨|후티)/.test(summary))return {status:'INVALID_TOPIC_OMITTED'};
+ if(requireTopic&&/[가-힣][A-Za-z]{2,}|[A-Za-z]{2,}[가-힣]/.test(summary))return {status:'INVALID_MIXED_TRANSLATION'};
+ return {status:'VALID_SHADOW_DRAFT',summary,impact:parsed.impact};
 }
-function localPrompt(article,body){
+function localPrompt(article,body,{topicFocused=false}={}){
+ if(topicFocused)return [
+  '너는 이란·사우디·예멘·후티 관련 소식을 정확히 정리하는 한국어 뉴스 편집자야.',
+  '기사 전체의 다른 주제보다 아래 [해당 문단]에만 집중해. 다른 전쟁·경제·국가 이야기는 해당 문단의 의미를 이해하는 데 꼭 필요하지 않으면 제외해.',
+  '해당 문단에서 확인되는 이란·사우디·예멘·후티 중 최소 한 대상을 한국어 요약에 반드시 명시해.',
+  '사실만, 자연스러운 한국어 1~2문장(60~180자)을 작성해. 영단어가 한국어 사이에 섞인 오역, 없는 세부 사실, 미래의 결과 추정을 만들지 마.',
+  'impact는 이란·사우디·예멘·후티 관련 실제 신규 사건 기준으로만 분류해. 협의 의지나 지지 표명만으로 positive를 주지 말고, 과거 공격 배경 인용만으로 negative를 주지 마. 불확실하면 neutral.',
+  '키워드 포함 여부로 이미 선택된 기사야. 포함 여부를 다시 판단하거나 무시하지 마.',
+  'JSON의 summary 및 impact 두 필드만 반환해.',
+  `참고 제목: ${article.title}`,
+  '[해당 문단]',body.slice(0,3000),'[/해당 문단]',
+ ].join('\n');
  return [
   '다음은 GOV.UK의 공식 발표야. 뉴스 표시를 위한 한국어 초안을 생성해.',
   '반드시 본문에 실제로 명시된 사실만 사용하고 추측·배경지식·정치적 평가·없는 수치를 추가하지 마.',
@@ -56,7 +86,7 @@ async function getModels(fetcher){
   return Array.isArray(body.models)?body.models.map(m=>m.name).filter(n=>typeof n==='string'):[];
  }catch{return [];}
 }
-async function sampleBody(article,fetcher){
+async function sampleBody(article,fetcher,{topicFocused=false}={}){
  const contentUrl='https://www.gov.uk/api/content'+new URL(article.sourceUrl).pathname;
  try{
   const result=await boundedRead(contentUrl,{fetcher,maxBytes:4000000});
@@ -69,10 +99,13 @@ async function sampleBody(article,fetcher){
   if(!matchesIranNewsDisplayKeywords([article.title,article.sourceDescription??'',body].join(' ')))return {status:'OUT_OF_SCOPE'};
   // Diagnostics only: a GOV.UK domain is not proof that EVERY passage is OGL.
   const thirdPartySignal=/(?:©|copyright|rights reserved|third.party|reproduced with permission|photo credit)/i.test(body);
-  return {status:'BODY_AVAILABLE',body,documentType:content.document_type??null,thirdPartySignal};
+  const selected=topicFocused?topicFocusedBody(content.details?.body??''):body;
+  if(topicFocused&&!matchesIranNewsDisplayKeywords(selected))return {status:'BODY_NO_TOPIC_PASSAGE'};
+  return {status:'BODY_AVAILABLE',body:selected,documentType:content.document_type??null,thirdPartySignal,
+   focusCharacters:topicFocused?selected.length:null};
  }catch{return {status:'BODY_UNAVAILABLE'};}
 }
-async function runModel(article,body,model,fetcher){
+async function runModel(article,body,model,fetcher,{topicFocused=false}={}){
  const started=performance.now();
  try{
   const response=await fetcher(`${OLLAMA_ORIGIN}/api/chat`,{
@@ -80,18 +113,18 @@ async function runModel(article,body,model,fetcher){
    headers:{'Content-Type':'application/json'},
    body:JSON.stringify({model,stream:false,think:false,format:STRUCTURED_RESULT,
     options:{temperature:0,num_predict:300},
-    messages:[{role:'user',content:localPrompt(article,body)}]}),
+    messages:[{role:'user',content:localPrompt(article,body,{topicFocused})}]}),
   });
   const elapsedMs=Math.round(performance.now()-started);
   if(!response.ok)return {model,status:'MODEL_HTTP_FAILED',httpStatus:response.status,elapsedMs};
   const data=await response.json();
-  const draft=validateLocalModelDraft(data.message?.content??'');
+  const draft=validateLocalModelDraft(data.message?.content??'',{requireTopic:topicFocused});
   return {model,status:draft.status,elapsedMs,impact:draft.impact??null,
    summary:draft.summary??null,evalCount:data.eval_count??null,
    promptEvalCount:data.prompt_eval_count??null};
  }catch{return {model,status:'MODEL_REQUEST_FAILED',elapsedMs:Math.round(performance.now()-started)};}
 }
-export async function runNewsModelShadowR10({now=Date.now(),fetcher=fetch}={}){
+export async function runNewsModelShadowR10({now=Date.now(),fetcher=fetch,topicFocused=false}={}){
  const discovered=await discoverGovUkNewsCandidates({now,fetcher});
  const {start}=kstDayWindow(now,14);
  const current=discovered.candidates.filter(item=>kstNewsDay(Date.parse(item.publishedAt))>=start);
@@ -99,20 +132,22 @@ export async function runNewsModelShadowR10({now=Date.now(),fetcher=fetch}={}){
  const samples=[];
  // Sampling is deliberately capped; production must process the entire backlog.
  for(const article of current.slice(0,MAX_SAMPLE_ARTICLES)){
-  const detail=await sampleBody(article,fetcher);
+  const detail=await sampleBody(article,fetcher,{topicFocused});
   const record={sourceUrl:article.sourceUrl,title:article.title,
    firstPublishedAt:article.publishedAt,bodyStatus:detail.status,
-   documentType:detail.documentType??null,thirdPartySignal:detail.thirdPartySignal??null,results:[]};
+   documentType:detail.documentType??null,thirdPartySignal:detail.thirdPartySignal??null,
+   focusCharacters:detail.focusCharacters??null,results:[]};
   if(detail.status==='BODY_AVAILABLE'){
    for(const model of tested){
     if(samples.reduce((count,s)=>count+s.results.length,0)+record.results.length>=MAX_MODEL_CALLS)break;
-    record.results.push(await runModel(article,detail.body,model,fetcher));
+    record.results.push(await runModel(article,detail.body,model,fetcher,{topicFocused}));
    }
   }
   samples.push(record);
  }
  const modelCalls=samples.flatMap(item=>item.results);
- return {status:'R10_SHADOW_ONLY_NO_PUBLICATION',nowKst:new Date(now+9*3600000).toISOString().slice(0,19).replace('T',' '),
+ return {status:topicFocused?'R11_TOPIC_FOCUSED_SHADOW_ONLY':'R10_SHADOW_ONLY_NO_PUBLICATION',
+  nowKst:new Date(now+9*3600000).toISOString().slice(0,19).replace('T',' '),
   source:discovered.source,discoveryStatus:discovered.status,
   counts:discovered.counts,unique30DayCandidates:discovered.count,
   unique14DayCandidates:current.length,topics:'Iran OR Saudi OR Yemen OR Houthi',
