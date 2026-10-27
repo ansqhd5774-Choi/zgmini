@@ -24,6 +24,9 @@ ZGMINI PLUGIN & EXECUTION RULES — COMPACT R5 FINAL
 
 ## 1.1 작업 결과 보고 — 브랜치 명시 의무 (2026-10-27, 상시 적용)
 
+- **ZGMINI UI 작업 전용 브랜치: `codex/ui-improvements`.** UI 디자인·반응형·배지·아웃브레이크 표시 수정은 이 기존 브랜치에서만 수행한다. 별도 `ui/*`, `codex/*` 임시 브랜치 생성 금지. 다른 담당 업무의 전용 브랜치에 적용하지 않는다.
+- `main`은 운영 소스이므로, UI 전용 브랜치의 변경을 검증·승인된 PR 없이 임의로 직접 적용하지 않는다. 서로 갈라진 이력은 양쪽 고유 커밋을 보존하는 병합으로 복구하고, 덮어쓰기나 강제 ref 이동을 금지한다.
+
 - **모든 개발·조사·점검·수정 작업의 결과 보고에는 `작업 브랜치`를 반드시 명시한다.** 1회성 요청이 아니라 ZGMINI 전체 프로젝트에 계속 적용하는 공통 보고 규칙이다.
 - 작업 착수 전 실제 저장소·사용자가 지정한 기존 전용 브랜치·해당 브랜치의 최신 HEAD SHA·적용 계획서를 확인한다. 임의의 새 개인/실험/조사 브랜치를 만들지 않는다. 지정 브랜치와 다른 곳에서 작업하게 될 상황이면 먼저 중단하여 보고한다.
 - 작업 완료·부분 완료·실패·차단 보고에 아래 항목을 빠짐없이 기재한다:
@@ -39,6 +42,9 @@ ZGMINI PLUGIN & EXECUTION RULES — COMPACT R5 FINAL
 - 기본 경로:
   `GitHub latest main -> Cloudflare Git integration -> Build -> exact Deployment -> Production 검증`
 - GitHub main이 Production source authority.
+- **ZGMINI 배포 실행 방식(상시): 기존 작업 전용 브랜치에서 승인된 변경을 PR로 `main`에 병합하고, 연결된 Cloudflare Git integration의 자동 빌드·자동 배포를 사용한다.** 별도의 수동 Wrangler/Sites Production 배포나 임시 배포 브랜치를 만들지 않는다.
+- UI 전용 브랜치는 `codex/ui-improvements`를 유지한다. 이 브랜치에 커밋하는 것과 Production 자동배포 완료는 다르며, `main` 병합 전 PR 변경 파일·범위를 확인하여 미승인 작업을 함께 배포하지 않는다.
+- 자동배포 후 `main` 병합 SHA, Cloudflare의 해당 Build/Deployment 상태·로그, 실제 `https://zgmini.kr/` 공개 화면을 각각 점검하고 결과를 보고한다. 자동배포 설정·배포 ID·상태를 확인할 수 없으면 완료라고 보고하지 않는다.
 - Git integration 연결 전 자동배포 존재 추정 금지.
 - Build 성공 ≠ Production 정상.
 - building/pending 중 불필요한 새 배포 금지.
@@ -130,6 +136,15 @@ ZGMINI PLUGIN & EXECUTION RULES — COMPACT R5 FINAL
 - 실제 GitHub/Cloudflare/Production 상태가 Linear보다 우선.
 - SEO: GSC Wizard 우선, `payment_required`면 반복 금지. Windsor fallback 허용.
 - SEO 데이터로 Runtime 오류 판정 금지.
+
+## 12-1. UI 시안 승인 ≠ 임시 색상·기능 변경 승인
+- 적용 범위: ZGMINI의 HTML·이미지·독립 시안 및 실제 UI 개발 전체. 특히 `/fear-greed/usa/`의 모바일 화면 개선.
+- 사용자가 시안을 승인하더라도 **명시한 배치·크기·간격·반응형 구조만 승인**한 것으로 본다. 시안 임시 팔레트, 배경, 테두리, 글꼴, 차트/점수 색상을 실제 사이트에 이식할 권한은 아니다. 색상 변경은 대상·기존값·제안값을 별도 제시하고 명시 승인을 받는다.
+- 운영 반영은 시안 CSS를 통째로 복사하지 않고, 실제 운영 화면 및 기존 컴포넌트의 색상 변수·상태별 색상·차트·점수 표시를 먼저 확인한 후 승인된 레이아웃 속성만 최소 수정한다.
+- `/fear-greed/usa/`: PC 레이아웃과 기존 스타일을 보존한다. 모바일은 공포탐욕 숫자와 차트를 핵심으로 유지하고 7개 구성요소는 압축한다. 한 화면에서 읽는 것이 목표이나, 차트를 과도하게 확대하거나 목록을 확대·잘라 내거나 화면 밖 콘텐츠를 `overflow:hidden`으로 감추어 달성했다고 보고하지 않는다. 실제 기기 높이별 검증 전 시안 배치는 미확정이다.
+- 기존 `FearGreedCardShell`, `MarketScoreOrb`, `MarketPeriodControls`, `MarketFearGreedChart`, `FactorAnalysisR2`의 데이터·산식·상태·상호작용·접근성·SEO 연결을 유지한다. 독립 HTML의 임시 차트·숫자로 운영 코드를 대체하지 않는다.
+- 적용 전·후 Git diff로 **색상·배경·테두리·폰트·차트 표현의 무승인 변경이 0건인지** 점검한다. 무승인 변경 발견 시 수정·배포 중단 후 복원하고 다시 검증한다.
+- 시안 승인, 브랜치 작업 승인, `main` 병합 승인, Production 배포 승인은 각각 별개이다. 별도 승인 없이 병합·배포하지 않는다.
 
 ## 13. DigitalOcean / RDC / Windows
 - DigitalOcean NON-DEFAULT. 비용 발생 리소스 생성 전 승인.
