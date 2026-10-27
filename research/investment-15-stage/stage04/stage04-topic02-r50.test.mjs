@@ -4,7 +4,7 @@ import {mkdtemp,readFile} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import {PUBLISHERS} from './stage04-four-publisher-r37-readonly.mjs';
-import {TARGET,topicRank,classifyScope,headlineForecastConflict,chooseForecast,inspectR50,discoverR50,
+import {TARGET,topicRank,classifyScope,headlineForecastConflict,candidatePeriod,chooseForecast,inspectR50,discoverR50,
   summarizeR50,runR50} from './stage04-topic02-r50-three-media.mjs';
 import {excludedBri} from './stage04-topic01-r49-three-media.mjs';
 
@@ -53,12 +53,13 @@ test('R50 model chooses token C0, never the numeric forecast rate as an index',a
 
 test('R50 reports TBRC publisher forecast but never labels telecom as GICS sector',async()=>{
   const found=await inspectR50(pub('TBRC'),TBRC,{fetchFn:async()=>response(tbrcHtml),
-    chooseFn:async()=>({index:0,candidate_id:'C0',scope:'PROXY',elapsed_ms:1})});
+    chooseFn:async()=>({index:0,candidate_id:'C0',scope:'DIRECT',elapsed_ms:1})});
   assert.equal(found.state,'PUBLISHER_PROXY_OBSERVED');
   assert.equal(found.source_audit,'CONSISTENT');
   assert.equal(found.observed_cagr,5.3);
   assert.equal(found.period,'2026-2030');
   assert.equal(found.eligible,false);
+  assert.equal(found.scope_warning,'MODEL_DIRECT_OVERRIDDEN_BY_DETERMINISTIC_MARKET_SCOPE');
 });
 
 test('R50 telecom-only SkyQuest remains proxy with official future year window',async()=>{
@@ -68,6 +69,14 @@ test('R50 telecom-only SkyQuest remains proxy with official future year window',
   assert.equal(found.observed_cagr,6.2);
   assert.equal(found.period,'2026-2033');
   assert.equal(found.eligible,false);
+});
+
+test('R50 period parser recovers named dash in publisher body when candidate excerpt is truncated',()=>{
+  const short='Global telecommunication market grows at 6.2% CAGR in the forecast period (';
+  const body='The industry forecast 2026&ndash;2033. Forecast period (2026&ndash;2033).';
+  assert.equal(candidatePeriod(short,body),'2026-2033');
+  assert.equal(candidatePeriod(short,'Forecast period 2026-2033. Forecast period 2025-2035.'),null);
+  assert.equal(candidatePeriod(short,'No forecast period is provided.'),null);
 });
 
 test('R50 detects same-year forecast-size conflict before asking local model',async()=>{
