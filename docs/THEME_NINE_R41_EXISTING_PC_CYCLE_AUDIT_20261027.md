@@ -38,3 +38,15 @@ TXT는 CMD와 같은 폴더의 `THEME_NINE_R41_EXISTING_CYCLE_RESULT_*.txt`로 �
 3. R40 7개 EOD만으로 252/628일 부족을 **ETF 탈락**이라고 판정하지 않는다. 원가격 1h와 split-adjusted EOD를 무검증 연결하지 않는다.
 4. 기존 정규 작업에 실제 누락된 ETF만 최소 추가하는 방안은 수집 권리·제공 범위와 현재 설치 소스/작업 액션을 확인한 뒤 작성한다. 승인 없는 수정·수집·게시 없음.
 
+## R41 실PC 결과 수령 — 2026-10-27
+
+실제 사용자 결과 `THEME_NINE_R41_EXISTING_CYCLE_RESULT_20261027145215_10200.txt`:
+
+- `R41_READONLY_SOURCE_AND_TASK_INVENTORY_COMPLETE`; 저장 EOD 7일(10/16~10/26), 승인 63종 동일.
+- 설치 소스 실파일 SHA256: R181 `be0303b112d6f4471137aa134bf98f696a8a8dfe60d1d13502646c5e0b509d62`; R179 `f9ea0a1bfaf52909b7a434b65ba93887f56660bc979a3cb7e0992597bc9f3b68`; R171 `d6b921acd2b935360a4f1df2ce7329b4fdde0d999dddd5ee3f7f6169c9046ba8`.
+- R181/R179/R171 **세 파일 모두 승인 ETF 티커의 정적 직접 언급은 0개**. 동적 설정/하위 모듈 사용 여부는 아직 미확인이다. **63종 미수집 증거로 사용 금지**.
+- 두 예약 작업 모두 `XML_READ`. GetMarketHistory 작업은 R181 스크립트를 참조, MarketParquet 작업은 R181·R179 직접 참조가 확인되지 않았지만 기존 ZGMINI 루트 참조는 확인됐다. 두 작업의 `enabled`는 `null`이므로 활성화 상태 확정 금지. 예약 등록·실제 실행 성공 증거와 구분한다.
+- 공급자 GET·원자료/DB/D1·예약 작업 변경 모두 0. 실제 정규 수집 로스터와 시간봉/EOD 자동 갱신 연결은 여전히 미확정.
+
+다음 최소 검사: [R42 저장 소스 참조 추적](THEME_NINE_R42_SOURCE_DEPENDENCY_AUDIT_20261027.md). 기존 세 파일 원문이나 개인정보/토큰을 외부 제출하지 않고, 직접 참조한 상대 경로의 소스 존재·해시·승인 ETF 정적 언급만 검사한다. 기존 R39/R40/R41 실행을 반복하지 않는다.
+
