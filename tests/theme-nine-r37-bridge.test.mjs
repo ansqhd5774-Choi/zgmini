@@ -43,6 +43,7 @@ test('private converter faithfully maps nine 252-day histories without enabling 
  assert.equal(candidate.schedulerWrites,0);
  assert.equal(candidate.ETFPositions,64);
  assert.equal(candidate.uniqueETFs,63);
+ assert.equal(candidate.sourcePriceMode,'RAW_UNADJUSTED_1H_NOT_OFFICIAL_CLOSE');
  assert.equal(candidate.themes.length,9);
  assert.ok(candidate.themes.every(t=>t.history.length===252));
  assert.deepEqual(candidate.themes.map(t=>t.theme),THEME_NINE_R37_ROSTER.map(t=>t.theme));
