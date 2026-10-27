@@ -43,12 +43,12 @@
 
 - R1 기존 오프라인 공식 형식 synthetic 파서 5건: PASS.
 - R2 신규 메모리 SQLite synthetic 8건: 원본 ZIP 바이트 동일·재현 SHA, 중복 저장 0건, 개정 별도 추가, 타 계약 오염 거절, 잘못된 스키마 차단, 두 번째 INSERT 실패 시 전체 롤백, BLS 레코드 불변, **승인된 ZIP SHA 일치 필수**, **CMD 필수 의존성 사전검사** 검증.
-- **실제 PC R2 읽기 전용 프리플라이트 PASS**: 첨부 `EARNINGS_CENSUS_QFR_R2_STORE_RESULT_20261027T141637Z.txt`(UTC 2026-10-27 14:16:37)에 `RESULT=PASS_QFR_STORAGE_PREFLIGHT_NO_WRITE`, `PRIOR_CENSUS_SNAPSHOTS=0`, `PRIOR_CENSUS_CHUNKS=0`, `ZIP_BYTES=1746726`, `SOURCE_SHA256=232f7757e654e787a9eab49792302feb3683e5280a66ff0cc9bd7f0cbc448654`, `OBSERVED_THROUGH=2026-Q2`, 마진 `15.599418144173285` 기록. **실제 PC SQLite 쓰기 및 D1은 여전히 NOT_RUN**이다.
+- **실제 PC R2 읽기 전용 프리플라이트 PASS**: 첨부 `EARNINGS_CENSUS_QFR_R2_STORE_RESULT_20261027T141637Z.txt`(UTC 2026-10-27 14:16:37)에 `RESULT=PASS_QFR_STORAGE_PREFLIGHT_NO_WRITE`, `PRIOR_CENSUS_SNAPSHOTS=0`, `PRIOR_CENSUS_CHUNKS=0`, `ZIP_BYTES=1746726`, `SOURCE_SHA256=232f7757e654e787a9eab49792302feb3683e5280a66ff0cc9bd7f0cbc448654`, `OBSERVED_THROUGH=2026-Q2`, 마진 `15.599418144173285` 기록.
+- **실제 PC SQLite 승인 1회 저장 PASS**: 사용자 제출 `EARNINGS_CENSUS_QFR_R2_STORE_RESULT_20261027T145211Z.txt`(UTC 2026-10-27 14:52:11)에 동일 승인 원본 SHA와 `CHUNKS_INSERTED=1`, `SNAPSHOTS_INSERTED=1`, `SQLITE_COMMITTED=YES`, `RAW_ZIP_ARCHIVED_IN_EXISTING_SQLITE=YES`, `RESULT=PASS_QFR_SQLITE_APPEND_READBACK`을 확인. **PC_SQLITE_APPEND=PASS**로 갱신. 원문 원장에 대한 D1·기존 점수·Production 쓰기는 0건, PC R3 저장자료 계산은 별도 실행 전 `NOT_RUN`.
 - R1 원본 조사에 기록된 2026-Q2 마진 15.59941814%는 검증 당시의 산출값이며 차후 개정치에 자동 고정하지 않는다.
 
 ## 다음 Gate
 
-1. 이미 완료된 PC 프리플라이트를 다시 강제하지 않는다. 해당 TXT의 ZIP 해시를 이번 **1회 저장 승인 기준**으로 사용한다.
-2. 전용 브랜치의 R2 최신 파일을 기존 PC 스크립트 폴더에 설치(기존 운영 브랜치 교체 금지). `EARNINGS_CENSUS_QFR_R2_SQLITE_APPLY_ONCE.cmd` 실행 시 Y 확인 후 **동일 ZIP 해시**만 저장한다. 자료가 개정되어 해시가 달라졌다면 중단·재검증한다.
-3. 생성된 `EARNINGS_CENSUS_QFR_R2_STORE_RESULT_*.txt`에서 `RESULT=PASS_QFR_SQLITE_APPEND_READBACK`, `SQLITE_COMMITTED=YES`, `CHUNKS_INSERTED=1`, `SNAPSHOTS_INSERTED=1`, `RAW_ZIP_ARCHIVED_IN_EXISTING_SQLITE=YES`를 확인한 뒤에만 PC 저장을 완료로 판정한다. 중복 실행일 때는 INSERT 0건이 정상일 수 있다.
-4. 신규 D1 키 설정·입력 이력/빈티지 게이트, 공개 GET, 사이트 정보성 라벨을 **각각 별도 검증**. 기존 실적 침체 위험 E1-R4 산식은 그대로 둔다.
+1. R2 원본 저장 Gate는 증거를 받아 **완료**했다. 같은 ZIP을 다시 다운로드하거나 승인 CMD를 재실행하지 않는다.
+2. 다음에는 [R3 저장자료 읽기 전용 이익률 검산](EARNINGS_CENSUS_QFR_R3_STORED_PREVIEW_20261027.md)의 완전한 패키지를 PC에서 실행한다. 새 공식 HTTP 없이 기존 SQLite ZIP 원문으로만 계산하고 결과 TXT 검증 후 R3를 완료 처리한다.
+3. 그 후 신규 D1 키/독립 checkpoint, 공개 GET, 사이트 정보성 라벨을 **각각 별도 승인 및 검증**한다. 기존 실적 침체 위험 E1-R4 산식은 그대로 둔다.
