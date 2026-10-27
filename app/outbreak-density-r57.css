@@ -280,3 +280,91 @@
   font-size:14px;
  }
 }
+
+/* R60 · Approved Iran mobile summary. Desktop, scores, news and stored history are unchanged. */
+.ob58-mobile-titlebar,.ob58-mini-trend,.ob58-status{display:none}
+@media(max-width:700px){
+ .ob-events .ob-selected-event-panel .ob55-iran-parity .ob55-score-card{
+  display:grid;grid-template-columns:minmax(0,108px) minmax(0,1fr);
+  grid-template-rows:auto minmax(78px,auto) auto;
+  align-items:center;column-gap:8px;row-gap:6px;
+  min-height:0;padding:10px 11px 9px;
+  width:100%;max-width:100%;box-sizing:border-box;
+ }
+ .ob-events .ob55-iran-parity .ob58-mobile-titlebar{
+  display:flex;grid-column:1/-1;grid-row:1;align-items:baseline;
+  justify-content:space-between;gap:8px;min-width:0;
+ }
+ .ob-events .ob58-mobile-titlebar strong{font-size:12px;font-weight:800;color:#e8f5ff;letter-spacing:-.02em}
+ .ob-events .ob58-mobile-titlebar time{font-size:10px;color:#8db4c9;font-variant-numeric:tabular-nums;white-space:nowrap}
+ .ob-events .ob-selected-event-panel .ob55-iran-parity .ob54-kpis{
+  display:grid;grid-column:1;grid-row:2;grid-template-columns:minmax(0,1fr);
+  width:100%;min-width:0;gap:0;place-items:center;
+ }
+ .ob-events .ob-selected-event-panel .ob55-iran-parity .ob54-kpis .ob53-current{
+  grid-column:1;grid-row:1;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;min-width:0;width:100%;
+  min-height:75px;padding:0;border:0;text-align:center;
+ }
+ .ob-events .ob55-iran-parity .ob54-kpis .ob53-current>span:not(.ob58-status){display:none}
+ .ob-events .ob-selected-event-panel .ob55-iran-parity .ob54-kpis .ob53-current strong{
+  display:flex;align-items:baseline;justify-content:center;
+  gap:4px;margin:0;max-width:100%;font-size:34px;line-height:1;
+  white-space:nowrap;font-variant-numeric:tabular-nums;letter-spacing:-.04em;
+ }
+ .ob-events .ob55-iran-parity .ob54-kpis .ob53-current strong small{
+  font-size:9px;font-weight:600;letter-spacing:0;white-space:nowrap;margin:0;
+ }
+ .ob-events .ob55-iran-parity .ob54-kpis .ob53-current .ob58-status{
+  display:inline-flex;justify-content:center;align-items:center;
+  width:max-content;max-width:100%;margin:8px auto 0;padding:1px 6px;
+  border:1px solid #bd4450;border-radius:16px;
+  color:#ffb7b7;font-size:9px;font-weight:750;line-height:1.4;white-space:nowrap;
+ }
+ .ob-events .ob55-iran-parity .ob54-kpis .ob53-current .ob58-status[data-tone="missing"]{
+  border-color:#64748b;color:#cbd5e1;
+ }
+ .ob-events .ob55-iran-parity .ob54-kpis .ob53-current .ob58-status[data-tone="positive"],
+ .ob-events .ob55-iran-parity .ob54-kpis .ob53-current .ob58-status[data-tone="very-positive"]{
+  border-color:#1fa879;color:#8ee2bc;
+ }
+ .ob-events .ob55-iran-parity .ob54-kpis .ob53-current .ob58-status[data-tone="negative"]{
+  border-color:#c58a22;color:#ffd38c;
+ }
+ .ob-events .ob55-iran-parity .ob54-kpis .ob53-current .ob58-status[data-tone="neutral"]{
+  border-color:#718398;color:#c6d4e2;
+ }
+ .ob-events .ob55-iran-parity .ob54-kpis .ob53-week,
+ .ob-events .ob55-iran-parity .ob54-kpis .ob53-asof{display:none}
+ .ob-events .ob55-iran-parity .ob58-mini-trend{
+  grid-column:2;grid-row:2;display:flex;flex-direction:column;
+  width:100%;min-width:0;min-height:78px;padding-left:10px;
+  border-left:1px solid #24485c;box-sizing:border-box;
+ }
+ .ob-events .ob58-mini-head,.ob-events .ob58-mini-axis{
+  display:flex;align-items:center;justify-content:space-between;gap:4px;
+  white-space:nowrap;font-variant-numeric:tabular-nums;
+ }
+ .ob-events .ob58-mini-head{font-size:10px;font-weight:750;color:#e0eef9;line-height:1.5}
+ .ob-events .ob58-mini-head small{font-size:9px;color:#8db4c9;font-weight:500}
+ .ob-events .ob58-mini-plot{width:100%;min-width:0;height:54px;min-height:54px}
+ .ob-events .ob58-mini-axis{font-size:9px;line-height:1.2;color:#88abbf}
+ .ob-events .ob58-mini-empty{display:grid;place-items:center;min-height:54px;font-size:10px;color:#a3bccc}
+ .ob-events .ob-selected-event-panel .ob55-iran-parity .ob57-scale-summary{
+  grid-column:1/-1;grid-row:3;margin:0;padding:7px 0 0;
+  width:100%;border:0;border-top:1px solid rgba(67,112,137,.4);
+ }
+ .ob-events .ob55-iran-parity .ob57-scale-summary .ob57-summary{display:none}
+ .ob-events .ob55-iran-parity .ob57-scale-summary .ob54-scale{margin:0;padding:2px 0 0}
+ .ob-events .ob55-iran-parity .ob57-scale-summary .ob54-scale-labels{margin-top:6px}
+ .ob-events .ob55-iran-parity .ob55-main>.ob54-trend{display:none}
+}
+@media(max-width:360px){
+ .ob-events .ob-selected-event-panel .ob55-iran-parity .ob55-score-card{
+  grid-template-columns:minmax(0,96px) minmax(0,1fr);column-gap:6px;padding:9px;
+ }
+ .ob-events .ob-selected-event-panel .ob55-iran-parity .ob54-kpis .ob53-current strong{font-size:31px}
+ .ob-events .ob55-iran-parity .ob58-mini-trend{padding-left:7px}
+ .ob-events .ob58-mini-head{font-size:9px}
+ .ob-events .ob58-mini-head small{font-size:8px}
+}
