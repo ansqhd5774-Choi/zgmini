@@ -7,7 +7,7 @@
 - 잘못된 전제: 설치기에 넣은 기존 collector SHA256 `4af1164793d95e7b0a97643d91e6d23749974d17c7048bac677f727376fc7afc`는 **GitHub 브랜치의 `scripts/pc-writer/release-calendar.mjs`**에서 측정한 값이며 **승인 PC 원본의 검증값이 아니다**.
 - PC 로그에서 측정된 실제 collector SHA256은 `1b8c2760a4f815191282dd55969ce8170072d4f747c8468ddd6601dc50ee88d6`. R20은 `lib/release-calendar.mjs`만 수정했으므로 위 불일치는 R20 설치 실패를 뜻하지 않는다.
 - 최초 R21 테스트는 GitHub 템플릿을 PC 기존 collector처럼 사용하여 실제 PC 호환성을 검증하지 못했다. 해시만 `1b8c...`로 교체하거나 최초 후보로 원본을 덮어쓰지 않는다.
-- **복구 1단계:** `MARKET_CALENDAR_R21_PC_SOURCE_EXPORT.cmd`(읽기 전용)를 실행하여 등록된 Core의 실제 collector 원본과 해시·HEAD 일치 여부만 확보한다. 결과 TXT와 같은 위치에 생성된 `MARKET_CALENDAR_R21_PC_COLLECTOR_ORIGINAL_*.mjs`를 작업자에게 전달한다. 원본 파일은 GitHub에 업로드하지 않는다.
+- **복구 1단계(개선):** `MARKET_CALENDAR_R21_PC_SOURCE_EXPORT.cmd`(읽기 전용)를 실행하여 등록된 Core의 실제 collector 원본과 해시·HEAD 일치 여부만 확보한다. 재실행용 최신 ZIP은 **`MARKET_CALENDAR_R21_PC_SOURCE_EXPORT_RESULT.txt` 한 파일**에 원본 소스(base64)와 해시를 함께 기록한다. 별도 `.mjs` 파일을 찾거나 GitHub에 원본을 업로드하지 않는다. 최초 버전은 `.mjs` 별도 파일을 생성했으나 사용자 PC에서 파일 전달에 실패하여 단일 TXT 방식으로 변경했다.
 - **복구 2단계:** 그 실제 원본을 바탕으로 R21 연도 전환 코드만 재구현·회귀 검증하고 새 설치 후보·별도 CMD/ZIP을 만든다. 전용 브랜치 `codex/zgmini-gpt-workspace-20261025` 외 신규 브랜치 생성 금지. 기존 Core 수집·DB·스케줄러·게시·main 유지.
 
 ## 범위·근거
