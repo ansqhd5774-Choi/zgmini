@@ -1,0 +1,1512 @@
+{
+  "report": "R65",
+  "date_kst": "2026-10-27",
+  "status": "TARGETED_OFFICIAL_REPLACEMENT_CANDIDATES_AND_BASELINE_AUDIT_COMPLETE_NOT_CAGR_FINAL",
+  "basis": "R64B",
+  "topic_count": 21,
+  "topics_with_r64b_A": 7,
+  "topics_with_r64b_B": 11,
+  "topics_with_r64b_C": 3,
+  "r64b_source_verified_quotes_preserved": 58,
+  "orig_source_slots_preserved": 63,
+  "official_site_discovery": "first-party webpages crawled by live web-search provider in this run; no new 21x direct HTTP GET claimed",
+  "new_candidate_webpages_total": 5,
+  "new_candidate_topics": 3,
+  "new_candidates_by_topic": {
+    "1": [
+      {
+        "publisher": "TBRC",
+        "market": "IT services",
+        "url": "https://www.thebusinessresearchcompany.com/report/it-services-global-market-report",
+        "cagr_pct": 9.3,
+        "forecast": "2026-2030",
+        "market_size_2025_usd_bn": 3663.76,
+        "market_size_2026_usd_bn": 3974.6,
+        "market_size_2030_usd_bn": 5665.75,
+        "scope": "Hardware support, software and BPO, and cloud services; a submarket, not the GICS IT sector",
+        "evidence": "turn213view0"
+      }
+    ],
+    "10": [
+      {
+        "publisher": "Global Growth Insights",
+        "market": "FMCG",
+        "url": "https://www.globalgrowthinsights.com/market-reports/fast-moving-consumer-goods-fmcg-market-109277",
+        "cagr_pct": 5.03,
+        "forecast": "2026-2035",
+        "market_size_2025_usd_bn": 13126.73,
+        "market_size_2026_usd_bn": 13787,
+        "market_size_2035_usd_bn": 21443.22,
+        "scope": "Food & beverage, personal care, healthcare, homecare, through physical and online sales; candidate submarket, not full GICS Consumer Staples",
+        "evidence": "turn224view4"
+      }
+    ],
+    "15": [
+      {
+        "publisher": "TBRC",
+        "market": "small modular reactor",
+        "url": "https://www.thebusinessresearchcompany.com/report/small-modular-reactor-global-market-report",
+        "cagr_pct": 25.2,
+        "forecast": "2026-2030",
+        "market_size_2025_usd_bn": 0.67,
+        "market_size_2026_usd_bn": 0.84,
+        "market_size_2030_usd_bn": 2.06,
+        "scope": "Factory gate sales of reactor modules and related manufacturer products/services",
+        "evidence": "turn213view1"
+      },
+      {
+        "publisher": "SkyQuest",
+        "market": "small modular reactor",
+        "url": "https://www.skyquestt.com/report/small-modular-reactor-market",
+        "cagr_pct": 8.9,
+        "forecast": "2026-2033",
+        "market_size_2025_usd_bn": 8.17,
+        "market_size_2033_usd_bn": 16.16,
+        "scope": "Multiple reactor types, location, capacity, deployment, connectivity, applications; market snapshot's yearless 6.89bn is not used as 2026",
+        "evidence": "turn213view2"
+      },
+      {
+        "publisher": "Precedence",
+        "market": "small modular reactor",
+        "url": "https://www.precedenceresearch.com/small-modular-reactor-market",
+        "cagr_pct": 8.78,
+        "forecast": "2026-2035",
+        "market_size_2026_usd_bn": 8.16,
+        "market_size_2035_usd_bn": 17.37,
+        "scope": "Reactor type/application; market revenue construction/production basis requires further clarification",
+        "evidence": "turn213view3"
+      }
+    ]
+  },
+  "same_year_comparison_rule": "2025 vs 2025 only for TBRC/SkyQuest where they refer to same candidate submarket; Precedence 2026 explicitly shown separately and must not be treated as 2025",
+  "grade_contract": "R64B A/B/C preserved; R65 discovers leads only, no final upgrade to eligible sector/theme composite CAGR. No published rate deleted due difference alone.",
+  "level_counts_from_r64b": {
+    "C": 3,
+    "B": 11,
+    "A": 7
+  },
+  "topics": [
+    {
+      "index": 1,
+      "name": "정보기술",
+      "r64b_level": "C",
+      "r64b_market_group": "IT_GENERAL vs IT_SERVICES",
+      "tbrc_2025_usd_billion": 3663.76,
+      "skyquest_2025_usd_billion": 2030,
+      "precedence_2026_usd_billion": null,
+      "tbrc_basis_note": "TBRC replacement IT services (not original broad IT)",
+      "skyquest_basis_note": "SkyQuest IT Services",
+      "precedence_basis_note": null,
+      "same_year_tbrc_skyquest_ratio": 1.8048,
+      "ratio_interpretation": "INDICATOR_ONLY_DEFINITION_GATE_REQUIRED",
+      "r65_observation": "New IT-services pair exists, but TBRC 2025 USD3.66376T vs SkyQuest 2025 USD2.03T and service inclusion differ; cannot treat as entire GICS IT sector.",
+      "new_replacement_candidates": [
+        {
+          "publisher": "TBRC",
+          "market": "IT services",
+          "url": "https://www.thebusinessresearchcompany.com/report/it-services-global-market-report",
+          "cagr_pct": 9.3,
+          "forecast": "2026-2030",
+          "market_size_2025_usd_bn": 3663.76,
+          "market_size_2026_usd_bn": 3974.6,
+          "market_size_2030_usd_bn": 5665.75,
+          "scope": "Hardware support, software and BPO, and cloud services; a submarket, not the GICS IT sector",
+          "evidence": "turn213view0"
+        }
+      ],
+      "previous_publisher_quotes_untouched": true,
+      "final_target_cagr_eligible": false,
+      "prior_publisher_rows": [
+        {
+          "publisher": "TBRC",
+          "url": "https://www.thebusinessresearchcompany.com/report/information-technology-global-market-report",
+          "reported_cagr_pct": 8.3,
+          "period": "2026-2030",
+          "source_status": "CONSISTENT",
+          "source_verified_r63": true
+        },
+        {
+          "publisher": "SkyQuest",
+          "url": "https://www.skyquestt.com/report/it-services-market",
+          "reported_cagr_pct": 9.6,
+          "period": "2026-2033",
+          "source_status": "GLOBAL_LITERAL_CONFIRMED",
+          "source_verified_r63": true
+        },
+        {
+          "publisher": "Precedence",
+          "url": null,
+          "reported_cagr_pct": null,
+          "period": null,
+          "source_status": "OFFICIAL_REPORT_NOT_SELECTED",
+          "source_verified_r63": false
+        }
+      ],
+      "official_source_records": []
+    },
+    {
+      "index": 2,
+      "name": "커뮤니케이션 서비스",
+      "r64b_level": "B",
+      "r64b_market_group": "TELECOM (3)",
+      "tbrc_2025_usd_billion": 3048.49,
+      "skyquest_2025_usd_billion": 2036.45,
+      "precedence_2026_usd_billion": 2460,
+      "tbrc_basis_note": "TBRC telecom",
+      "skyquest_basis_note": "SkyQuest telecommunications",
+      "precedence_basis_note": "Precedence telecom 2025",
+      "same_year_tbrc_skyquest_ratio": 1.497,
+      "ratio_interpretation": "INDICATOR_ONLY_DEFINITION_GATE_REQUIRED",
+      "r65_observation": "Telecom publishers cover varying combinations of service, devices, satellites and platforms; not full GICS Communication Services.",
+      "new_replacement_candidates": [],
+      "previous_publisher_quotes_untouched": true,
+      "final_target_cagr_eligible": false,
+      "prior_publisher_rows": [
+        {
+          "publisher": "TBRC",
+          "url": "https://www.thebusinessresearchcompany.com/report/telecom-global-market-report",
+          "reported_cagr_pct": 5.3,
+          "period": "2026-2030",
+          "source_status": "CONSISTENT",
+          "source_verified_r63": true
+        },
+        {
+          "publisher": "SkyQuest",
+          "url": "https://www.skyquestt.com/report/telecommunication-market",
+          "reported_cagr_pct": 6.2,
+          "period": "2026-2033",
+          "source_status": "SKYQUEST_GLOBAL_METADATA_OPENING_VERIFIED",
+          "source_verified_r63": true
+        },
+        {
+          "publisher": "Precedence",
+          "url": "https://www.precedenceresearch.com/telecommunication-market",
+          "reported_cagr_pct": 6.03,
+          "period": "2026-2035",
+          "source_status": "GLOBAL_LITERAL_CONFIRMED",
+          "source_verified_r63": true
+        }
+      ],
+      "official_source_records": [
+        {
+          "publisher": "TBRC",
+          "url": "https://www.thebusinessresearchcompany.com/report/telecom-global-market-report",
+          "web_open_ref": "turn220view0",
+          "web_find_ref": "turn221view0"
+        },
+        {
+          "publisher": "SkyQuest",
+          "url": "https://www.skyquestt.com/report/telecommunication-market",
+          "web_open_ref": "turn220view1",
+          "web_find_ref": "turn221view1"
+        },
+        {
+          "publisher": "Precedence",
+          "url": "https://www.precedenceresearch.com/telecommunication-market",
+          "web_open_ref": "turn220view2",
+          "web_find_ref": "turn221view2"
+        }
+      ]
+    },
+    {
+      "index": 3,
+      "name": "임의소비재",
+      "r64b_level": "A",
+      "r64b_market_group": "PASSENGER_CARS (3)",
+      "tbrc_2025_usd_billion": 1644.2,
+      "skyquest_2025_usd_billion": 1952.93,
+      "precedence_2026_usd_billion": 1930,
+      "tbrc_basis_note": "TBRC passenger car",
+      "skyquest_basis_note": "SkyQuest passenger cars",
+      "precedence_basis_note": "Precedence passenger cars 2026",
+      "same_year_tbrc_skyquest_ratio": 1.1878,
+      "ratio_interpretation": "INDICATOR_ONLY_DEFINITION_GATE_REQUIRED",
+      "r65_observation": "TBRC and SkyQuest 2025 market sizes differ ~1.19x; Precedence 2026 headline USD1.93T; common passenger-car submarket candidate remains.",
+      "new_replacement_candidates": [],
+      "previous_publisher_quotes_untouched": true,
+      "final_target_cagr_eligible": false,
+      "prior_publisher_rows": [
+        {
+          "publisher": "TBRC",
+          "url": "https://www.thebusinessresearchcompany.com/report/passenger-car-global-market-report",
+          "reported_cagr_pct": 7.4,
+          "period": "2026-2030",
+          "source_status": "RESOLVED_HISTORIC_RATE_MISLABEL",
+          "source_verified_r63": true
+        },
+        {
+          "publisher": "SkyQuest",
+          "url": "https://www.skyquestt.com/report/passenger-cars-market",
+          "reported_cagr_pct": 5.42,
+          "period": "2026-2033",
+          "source_status": "GLOBAL_LITERAL_CONFIRMED",
+          "source_verified_r63": true
+        },
+        {
+          "publisher": "Precedence",
+          "url": "https://www.precedenceresearch.com/passenger-cars-market",
+          "reported_cagr_pct": 5.57,
+          "period": "2026-2035",
+          "source_status": "GLOBAL_LITERAL_CONFIRMED",
+          "source_verified_r63": true
+        }
+      ],
+      "official_source_records": [
+        {
+          "publisher": "TBRC",
+          "url": "https://www.thebusinessresearchcompany.com/report/passenger-car-global-market-report",
+          "web_open_ref": "turn218view0",
+          "web_find_ref": "turn219view0"
+        },
+        {
+          "publisher": "SkyQuest",
+          "url": "https://www.skyquestt.com/report/passenger-cars-market",
+          "web_open_ref": "turn218view1",
+          "web_find_ref": "turn219view1"
+        },
+        {
+          "publisher": "Precedence",
+          "url": "https://www.precedenceresearch.com/passenger-cars-market",
+          "web_open_ref": "turn218view2",
+          "web_find_ref": "turn219view2"
+        }
+      ]
+    },
+    {
+      "index": 4,
+      "name": "산업재",
+      "r64b_level": "B",
+      "r64b_market_group": "INDUSTRIAL_MACHINERY (2)",
+      "tbrc_2025_usd_billion": 613.44,
+      "skyquest_2025_usd_billion": 762.53,
+      "precedence_2026_usd_billion": 110.53,
+      "tbrc_basis_note": "TBRC industrial machinery",
+      "skyquest_basis_note": "SkyQuest industrial machinery",
+      "precedence_basis_note": "Precedence machine tools 2026",
+      "same_year_tbrc_skyquest_ratio": 1.243,
+      "ratio_interpretation": "INDICATOR_ONLY_DEFINITION_GATE_REQUIRED",
+      "r65_observation": "2025 baselines appear close yet end-use segmentation differs substantially; machine tools is a narrower Precedence report.",
+      "new_replacement_candidates": [],
+      "previous_publisher_quotes_untouched": true,
+      "final_target_cagr_eligible": false,
+      "prior_publisher_rows": [
+        {
+          "publisher": "TBRC",
+          "url": "https://www.thebusinessresearchcompany.com/report/industrial-machinery-global-market-report",
+          "reported_cagr_pct": 6.9,
+          "period": "2026-2030",
+          "source_status": "CONSISTENT",
+          "source_verified_r63": true
+        },
+        {
+          "publisher": "SkyQuest",
+          "url": "https://www.skyquestt.com/report/industrial-machinery-market",
+          "reported_cagr_pct": 4.2,
+          "period": "2026-2033",
+          "source_status": "GLOBAL_LITERAL_CONFIRMED",
+          "source_verified_r63": true
+        },
+        {
+          "publisher": "Precedence",
+          "url": "https://www.precedenceresearch.com/machine-tools-market",
+          "reported_cagr_pct": 5.94,
+          "period": "2026-2035",
+          "source_status": "GLOBAL_LITERAL_CONFIRMED",
+          "source_verified_r63": true
+        }
+      ],
+      "official_source_records": [
+        {
+          "publisher": "TBRC",
+          "url": "https://www.thebusinessresearchcompany.com/report/industrial-machinery-global-market-report",
+          "web_open_ref": "turn220view3",
+          "web_find_ref": "turn221view3"
+        },
+        {
+          "publisher": "SkyQuest",
+          "url": "https://www.skyquestt.com/report/industrial-machinery-market",
+          "web_open_ref": "turn220view4",
+          "web_find_ref": "turn221view4"
+        },
+        {
+          "publisher": "Precedence",
+          "url": "https://www.precedenceresearch.com/machine-tools-market",
+          "web_open_ref": "turn220view5",
+          "web_find_ref": "turn221view5"
+        }
+      ]
+    },
+    {
+      "index": 5,
+      "name": "금융",
+      "r64b_level": "A",
+      "r64b_market_group": "RETAIL_BANKING (2)",
+      "tbrc_2025_usd_billion": null,
+      "skyquest_2025_usd_billion": 2440,
+      "precedence_2026_usd_billion": 2480,
+      "tbrc_basis_note": "TBRC financial services excluded (different denominator)",
+      "skyquest_basis_note": "SkyQuest retail banking",
+      "precedence_basis_note": "Precedence retail banking 2026",
+      "same_year_tbrc_skyquest_ratio": null,
+      "ratio_interpretation": "NOT_COMPARABLE_OR_NOT_SELECTED",
+      "r65_observation": "SkyQuest 2025 USD2.44T and Precedence 2026 USD2.48T are adjacent-year values, not same-year numeric equality. Financial services broad TBRC excluded.",
+      "new_replacement_candidates": [],
+      "previous_publisher_quotes_untouched": true,
+      "final_target_cagr_eligible": false,
+      "prior_publisher_rows": [
+        {
+          "publisher": "TBRC",
+          "url": "https://www.thebusinessresearchcompany.com/report/financial-services-global-market-report",
+          "reported_cagr_pct": 7.3,
+          "period": "2026-2030",
+          "source_status": "RESOLVED_HISTORIC_RATE_MISLABEL",
+          "source_verified_r63": true
+        },
+        {
+          "publisher": "SkyQuest",
+          "url": "https://www.skyquestt.com/report/retail-banking-market",
+          "reported_cagr_pct": 6.7,
+          "period": "2026-2033",
+          "source_status": "SKYQUEST_GLOBAL_METADATA_OPENING_VERIFIED",
+          "source_verified_r63": true
+        },
+        {
+          "publisher": "Precedence",
+          "url": "https://www.precedenceresearch.com/retail-banking-market",
+          "reported_cagr_pct": 6,
+          "period": "2026-2035",
+          "source_status": "GLOBAL_LITERAL_CONFIRMED",
+          "source_verified_r63": true
+        }
+      ],
+      "official_source_records": [
+        {
+          "publisher": "TBRC",
+          "url": "https://www.thebusinessresearchcompany.com/report/financial-services-global-market-report",
+          "web_open_ref": "turn218view3",
+          "web_find_ref": "turn219view3"
+        },
+        {
+          "publisher": "SkyQuest",
+          "url": "https://www.skyquestt.com/report/retail-banking-market",
+          "web_open_ref": "turn218view4",
+          "web_find_ref": "turn219view4"
+        },
+        {
+          "publisher": "Precedence",
+          "url": "https://www.precedenceresearch.com/retail-banking-market",
+          "web_open_ref": "turn218view5",
+          "web_find_ref": "turn219view5"
+        }
+      ]
+    },
+    {
+      "index": 6,
+      "name": "유틸리티",
+      "r64b_level": "A",
+      "r64b_market_group": "POWER_TRANSMISSION (2)",
+      "tbrc_2025_usd_billion": null,
+      "skyquest_2025_usd_billion": 415.51,
+      "precedence_2026_usd_billion": 371.77,
+      "tbrc_basis_note": "TBRC utilities excluded (different denominator)",
+      "skyquest_basis_note": "SkyQuest electricity transmission and distribution",
+      "precedence_basis_note": "Precedence power transmission and distribution 2026",
+      "same_year_tbrc_skyquest_ratio": null,
+      "ratio_interpretation": "NOT_COMPARABLE_OR_NOT_SELECTED",
+      "r65_observation": "SkyQuest 2025 USD415.51B and Precedence 2026 USD371.77B are adjacent-year values; revenue from utility operation versus grid components unresolved.",
+      "new_replacement_candidates": [],
+      "previous_publisher_quotes_untouched": true,
+      "final_target_cagr_eligible": false,
+      "prior_publisher_rows": [
+        {
+          "publisher": "TBRC",
+          "url": "https://www.thebusinessresearchcompany.com/report/utilities-global-market-report",
+          "reported_cagr_pct": 6.1,
+          "period": "2026-2030",
+          "source_status": "NARRATIVE_VERIFIED_METADATA_CONFLICT",
+          "source_verified_r63": true
+        },
+        {
+          "publisher": "SkyQuest",
+          "url": "https://www.skyquestt.com/report/electricity-transmission-and-distribution-market",
+          "reported_cagr_pct": 4.4,
+          "period": "2026-2033",
+          "source_status": "GLOBAL_LITERAL_CONFIRMED",
+          "source_verified_r63": true
+        },
+        {
+          "publisher": "Precedence",
+          "url": "https://www.precedenceresearch.com/power-transmission-and-distribution-market",
+          "reported_cagr_pct": 3.91,
+          "period": "2026-2034",
+          "source_status": "GLOBAL_LITERAL_CONFIRMED",
+          "source_verified_r63": true
+        }
+      ],
+      "official_source_records": [
+        {
+          "publisher": "TBRC",
+          "url": "https://www.thebusinessresearchcompany.com/report/utilities-global-market-report",
+          "web_open_ref": "turn218view6",
+          "web_find_ref": "turn219view6"
+        },
+        {
+          "publisher": "SkyQuest",
+          "url": "https://www.skyquestt.com/report/electricity-transmission-and-distribution-market",
+          "web_open_ref": "turn218view7",
+          "web_find_ref": "turn219view7"
+        },
+        {
+          "publisher": "Precedence",
+          "url": "https://www.precedenceresearch.com/power-transmission-and-distribution-market",
+          "web_open_ref": "turn218view8",
+          "web_find_ref": "turn219view8"
+        }
+      ]
+    },
+    {
+      "index": 7,
+      "name": "헬스케어",
+      "r64b_level": "B",
+      "r64b_market_group": "HEALTHCARE_SERVICES (2)",
+      "tbrc_2025_usd_billion": 8947.65,
+      "skyquest_2025_usd_billion": 9509.38,
+      "precedence_2026_usd_billion": 15370,
+      "tbrc_basis_note": "TBRC healthcare services",
+      "skyquest_basis_note": "SkyQuest healthcare services",
+      "precedence_basis_note": "Precedence hospital services 2026 (different submarket, inconsistent CAGR)",
+      "same_year_tbrc_skyquest_ratio": 1.0628,
+      "ratio_interpretation": "INDICATOR_ONLY_DEFINITION_GATE_REQUIRED",
+      "r65_observation": "TBRC 2025 USD8.94765T and SkyQuest 2025 USD9.50938T differ ~1.06x, but segment coverage differences persist; Precedence hospital-service CAGR 5.84/5.99 conflict.",
+      "new_replacement_candidates": [],
+      "previous_publisher_quotes_untouched": true,
+      "final_target_cagr_eligible": false,
+      "prior_publisher_rows": [
+        {
+          "publisher": "TBRC",
+          "url": "https://www.thebusinessresearchcompany.com/report/healthcare-service-global-market-report",
+          "reported_cagr_pct": 4.9,
+          "period": "2026-2030",
+          "source_status": "CONSISTENT",
+          "source_verified_r63": true
+        },
+        {
+          "publisher": "SkyQuest",
+          "url": "https://www.skyquestt.com/report/healthcare-services-market",
+          "reported_cagr_pct": 7.42,
+          "period": "2026-2033",
+          "source_status": "GLOBAL_LITERAL_CONFIRMED",
+          "source_verified_r63": true
+        },
+        {
+          "publisher": "Precedence",
+          "url": "https://www.precedenceresearch.com/hospital-services-market",
+          "reported_cagr_pct": null,
+          "period": null,
+          "source_status": "GLOBAL_CAGR_CONFLICT",
+          "source_verified_r63": false
+        }
+      ],
+      "official_source_records": [
+        {
+          "publisher": "TBRC",
+          "url": "https://www.thebusinessresearchcompany.com/report/healthcare-service-global-market-report",
+          "web_open_ref": "turn220view6",
+          "web_find_ref": "turn221view6"
+        },
+        {
+          "publisher": "SkyQuest",
+          "url": "https://www.skyquestt.com/report/healthcare-services-market",
+          "web_open_ref": "turn220view7",
+          "web_find_ref": "turn221view7"
+        },
+        {
+          "publisher": "Precedence",
+          "url": "https://www.precedenceresearch.com/hospital-services-market",
+          "web_open_ref": "turn220view8",
+          "web_find_ref": "turn221view8"
+        }
+      ]
+    },
+    {
+      "index": 8,
+      "name": "소재",
+      "r64b_level": "B",
+      "r64b_market_group": "ADVANCED_MATERIALS (3)",
+      "tbrc_2025_usd_billion": 91.27,
+      "skyquest_2025_usd_billion": 72.61,
+      "precedence_2026_usd_billion": 78.25,
+      "tbrc_basis_note": "TBRC advanced materials",
+      "skyquest_basis_note": "SkyQuest advanced materials",
+      "precedence_basis_note": "Precedence advanced materials 2026 (6.21 vs 6.27 text conflict)",
+      "same_year_tbrc_skyquest_ratio": 1.257,
+      "ratio_interpretation": "INDICATOR_ONLY_DEFINITION_GATE_REQUIRED",
+      "r65_observation": "2025 market sizes within ~1.26x TBRC/SkyQuest, but Precedence page internally says 6.21 and 6.27; hold precise publisher rate until editorial resolution.",
+      "new_replacement_candidates": [],
+      "previous_publisher_quotes_untouched": true,
+      "final_target_cagr_eligible": false,
+      "prior_publisher_rows": [
+        {
+          "publisher": "TBRC",
+          "url": "https://www.thebusinessresearchcompany.com/report/advanced-materials-global-market-report",
+          "reported_cagr_pct": 8.1,
+          "period": "2026-2030",
+          "source_status": "RESOLVED_HISTORIC_RATE_MISLABEL",
+          "source_verified_r63": true
+        },
+        {
+          "publisher": "SkyQuest",
+          "url": "https://www.skyquestt.com/report/advanced-materials-market",
+          "reported_cagr_pct": 6.6,
+          "period": "2026-2033",
+          "source_status": "GLOBAL_LITERAL_CONFIRMED",
+          "source_verified_r63": true
+        },
+        {
+          "publisher": "Precedence",
+          "url": "https://www.precedenceresearch.com/advanced-materials-market",
+          "reported_cagr_pct": 6.21,
+          "period": "2026-2035",
+          "source_status": "GLOBAL_LITERAL_CONFIRMED",
+          "source_verified_r63": true
+        }
+      ],
+      "official_source_records": [
+        {
+          "publisher": "TBRC",
+          "url": "https://www.thebusinessresearchcompany.com/report/advanced-materials-global-market-report",
+          "web_open_ref": "turn220view9",
+          "web_find_ref": "turn221view9"
+        },
+        {
+          "publisher": "SkyQuest",
+          "url": "https://www.skyquestt.com/report/advanced-materials-market",
+          "web_open_ref": "turn220view10",
+          "web_find_ref": "turn221view10"
+        },
+        {
+          "publisher": "Precedence",
+          "url": "https://www.precedenceresearch.com/advanced-materials-market",
+          "web_open_ref": "turn220view11",
+          "web_find_ref": "turn221view11"
+        }
+      ]
+    },
+    {
+      "index": 9,
+      "name": "에너지",
+      "r64b_level": "B",
+      "r64b_market_group": "OIL_AND_GAS (2)",
+      "tbrc_2025_usd_billion": 8337.22,
+      "skyquest_2025_usd_billion": 8480,
+      "precedence_2026_usd_billion": null,
+      "tbrc_basis_note": "TBRC oil and gas",
+      "skyquest_basis_note": "SkyQuest oil and gas",
+      "precedence_basis_note": null,
+      "same_year_tbrc_skyquest_ratio": 1.0171,
+      "ratio_interpretation": "INDICATOR_ONLY_DEFINITION_GATE_REQUIRED",
+      "r65_observation": "TBRC/SkyQuest 2025 sizes close (~1.02x), but petrochemicals/refining/transport value definitions still require review.",
+      "new_replacement_candidates": [],
+      "previous_publisher_quotes_untouched": true,
+      "final_target_cagr_eligible": false,
+      "prior_publisher_rows": [
+        {
+          "publisher": "TBRC",
+          "url": "https://www.thebusinessresearchcompany.com/report/oil-and-gas-global-market-report",
+          "reported_cagr_pct": 5.4,
+          "period": "2026-2030",
+          "source_status": "CONSISTENT",
+          "source_verified_r63": true
+        },
+        {
+          "publisher": "SkyQuest",
+          "url": "https://www.skyquestt.com/report/oil-and-gas-market",
+          "reported_cagr_pct": 4.7,
+          "period": "2026-2033",
+          "source_status": "GLOBAL_LITERAL_CONFIRMED",
+          "source_verified_r63": true
+        },
+        {
+          "publisher": "Precedence",
+          "url": null,
+          "reported_cagr_pct": null,
+          "period": null,
+          "source_status": "OFFICIAL_REPORT_NOT_SELECTED",
+          "source_verified_r63": false
+        }
+      ],
+      "official_source_records": [
+        {
+          "publisher": "TBRC",
+          "url": "https://www.thebusinessresearchcompany.com/report/oil-and-gas-global-market-report",
+          "web_open_ref": "turn220view12",
+          "web_find_ref": "turn221view12"
+        },
+        {
+          "publisher": "SkyQuest",
+          "url": "https://www.skyquestt.com/report/oil-and-gas-market",
+          "web_open_ref": "turn220view13",
+          "web_find_ref": "turn221view13"
+        }
+      ]
+    },
+    {
+      "index": 10,
+      "name": "필수소비재",
+      "r64b_level": "C",
+      "r64b_market_group": "STAPLE_FOOD vs FMCG",
+      "tbrc_2025_usd_billion": null,
+      "skyquest_2025_usd_billion": 14630,
+      "precedence_2026_usd_billion": null,
+      "tbrc_basis_note": "TBRC staple foods excluded (different denominator)",
+      "skyquest_basis_note": "SkyQuest FMCG",
+      "precedence_basis_note": null,
+      "same_year_tbrc_skyquest_ratio": null,
+      "ratio_interpretation": "NOT_COMPARABLE_OR_NOT_SELECTED",
+      "r65_observation": "New global FMCG pair SkyQuest 2025 USD14.63T and Global Growth Insights 2025 USD13.12673T (~1.11x); not full GICS staples. CMI Consumer Staples 4.1% fails arithmetic of 2025/2034 sizes.",
+      "new_replacement_candidates": [
+        {
+          "publisher": "Global Growth Insights",
+          "market": "FMCG",
+          "url": "https://www.globalgrowthinsights.com/market-reports/fast-moving-consumer-goods-fmcg-market-109277",
+          "cagr_pct": 5.03,
+          "forecast": "2026-2035",
+          "market_size_2025_usd_bn": 13126.73,
+          "market_size_2026_usd_bn": 13787,
+          "market_size_2035_usd_bn": 21443.22,
+          "scope": "Food & beverage, personal care, healthcare, homecare, through physical and online sales; candidate submarket, not full GICS Consumer Staples",
+          "evidence": "turn224view4"
+        }
+      ],
+      "previous_publisher_quotes_untouched": true,
+      "final_target_cagr_eligible": false,
+      "prior_publisher_rows": [
+        {
+          "publisher": "TBRC",
+          "url": "https://www.thebusinessresearchcompany.com/report/staple-food-global-market-report",
+          "reported_cagr_pct": 6.1,
+          "period": "2026-2030",
+          "source_status": "RESOLVED_HISTORIC_RATE_MISLABEL",
+          "source_verified_r63": true
+        },
+        {
+          "publisher": "SkyQuest",
+          "url": "https://www.skyquestt.com/report/fmcg-market",
+          "reported_cagr_pct": 3.8,
+          "period": "2026-2033",
+          "source_status": "GLOBAL_LITERAL_CONFIRMED",
+          "source_verified_r63": true
+        },
+        {
+          "publisher": "Precedence",
+          "url": null,
+          "reported_cagr_pct": null,
+          "period": null,
+          "source_status": "OFFICIAL_REPORT_NOT_SELECTED",
+          "source_verified_r63": false
+        }
+      ],
+      "official_source_records": []
+    },
+    {
+      "index": 11,
+      "name": "부동산",
+      "r64b_level": "B",
+      "r64b_market_group": "REAL_ESTATE_BROAD (3)",
+      "tbrc_2025_usd_billion": 4443.46,
+      "skyquest_2025_usd_billion": 4340,
+      "precedence_2026_usd_billion": 4580,
+      "tbrc_basis_note": "TBRC real estate",
+      "skyquest_basis_note": "SkyQuest real estate",
+      "precedence_basis_note": "Precedence real estate 2026",
+      "same_year_tbrc_skyquest_ratio": 1.0238,
+      "ratio_interpretation": "INDICATOR_ONLY_DEFINITION_GATE_REQUIRED",
+      "r65_observation": "2025 sizes TBRC/SkyQuest close (~1.02x) but selling properties versus service revenue or broker fees could create value-definition mismatch.",
+      "new_replacement_candidates": [],
+      "previous_publisher_quotes_untouched": true,
+      "final_target_cagr_eligible": false,
+      "prior_publisher_rows": [
+        {
+          "publisher": "TBRC",
+          "url": "https://www.thebusinessresearchcompany.com/report/real-estate-global-market-report",
+          "reported_cagr_pct": 7.2,
+          "period": "2026-2030",
+          "source_status": "RESOLVED_HISTORIC_RATE_MISLABEL",
+          "source_verified_r63": true
+        },
+        {
+          "publisher": "SkyQuest",
+          "url": "https://www.skyquestt.com/report/real-estate-market",
+          "reported_cagr_pct": 5.5,
+          "period": "2026-2033",
+          "source_status": "GLOBAL_LITERAL_CONFIRMED",
+          "source_verified_r63": true
+        },
+        {
+          "publisher": "Precedence",
+          "url": "https://www.precedenceresearch.com/real-estate-market",
+          "reported_cagr_pct": 5.47,
+          "period": "2026-2035",
+          "source_status": "GLOBAL_LITERAL_CONFIRMED",
+          "source_verified_r63": true
+        }
+      ],
+      "official_source_records": [
+        {
+          "publisher": "TBRC",
+          "url": "https://www.thebusinessresearchcompany.com/report/real-estate-global-market-report",
+          "web_open_ref": "turn220view14",
+          "web_find_ref": "turn221view14"
+        },
+        {
+          "publisher": "SkyQuest",
+          "url": "https://www.skyquestt.com/report/real-estate-market",
+          "web_open_ref": "turn220view15",
+          "web_find_ref": "turn221view15"
+        },
+        {
+          "publisher": "Precedence",
+          "url": "https://www.precedenceresearch.com/real-estate-market",
+          "web_open_ref": "turn220view16",
+          "web_find_ref": "turn221view16"
+        }
+      ]
+    },
+    {
+      "index": 12,
+      "name": "로봇·자동화",
+      "r64b_level": "B",
+      "r64b_market_group": "ROBOTICS_CORE (2)",
+      "tbrc_2025_usd_billion": 77.85,
+      "skyquest_2025_usd_billion": 54.49,
+      "precedence_2026_usd_billion": 124.37,
+      "tbrc_basis_note": "TBRC robotics and automation",
+      "skyquest_basis_note": "SkyQuest robotics",
+      "precedence_basis_note": "Precedence robotics technology 2026",
+      "same_year_tbrc_skyquest_ratio": 1.4287,
+      "ratio_interpretation": "INDICATOR_ONLY_DEFINITION_GATE_REQUIRED",
+      "r65_observation": "TBRC robotics & automation, SkyQuest robotics and Precedence robotics technology have different manufacturing/service scope; rates must not be merged without mapping.",
+      "new_replacement_candidates": [],
+      "previous_publisher_quotes_untouched": true,
+      "final_target_cagr_eligible": false,
+      "prior_publisher_rows": [
+        {
+          "publisher": "TBRC",
+          "url": "https://www.thebusinessresearchcompany.com/report/robotics-and-automation-market-global-report",
+          "reported_cagr_pct": 21,
+          "period": "2026-2030",
+          "source_status": "CONSISTENT",
+          "source_verified_r63": true
+        },
+        {
+          "publisher": "SkyQuest",
+          "url": "https://www.skyquestt.com/report/robotics-market",
+          "reported_cagr_pct": 17,
+          "period": "2026-2033",
+          "source_status": "GLOBAL_LITERAL_CONFIRMED",
+          "source_verified_r63": true
+        },
+        {
+          "publisher": "Precedence",
+          "url": "https://www.precedenceresearch.com/robotics-technology-market",
+          "reported_cagr_pct": 14.4,
+          "period": "2026-2035",
+          "source_status": "GLOBAL_LITERAL_CONFIRMED",
+          "source_verified_r63": true
+        }
+      ],
+      "official_source_records": [
+        {
+          "publisher": "TBRC",
+          "url": "https://www.thebusinessresearchcompany.com/report/robotics-and-automation-market-global-report",
+          "web_open_ref": "turn220view17",
+          "web_find_ref": "turn221view17"
+        },
+        {
+          "publisher": "SkyQuest",
+          "url": "https://www.skyquestt.com/report/robotics-market",
+          "web_open_ref": "turn220view18",
+          "web_find_ref": "turn221view18"
+        },
+        {
+          "publisher": "Precedence",
+          "url": "https://www.precedenceresearch.com/robotics-technology-market",
+          "web_open_ref": "turn220view19",
+          "web_find_ref": "turn221view19"
+        }
+      ]
+    },
+    {
+      "index": 13,
+      "name": "클라우드·SaaS",
+      "r64b_level": "A",
+      "r64b_market_group": "CLOUD_COMPUTING (3)",
+      "tbrc_2025_usd_billion": 832.8,
+      "skyquest_2025_usd_billion": 1020.02,
+      "precedence_2026_usd_billion": 1106.28,
+      "tbrc_basis_note": "TBRC cloud computing",
+      "skyquest_basis_note": "SkyQuest cloud computing",
+      "precedence_basis_note": "Precedence cloud computing 2026",
+      "same_year_tbrc_skyquest_ratio": 1.2248,
+      "ratio_interpretation": "INDICATOR_ONLY_DEFINITION_GATE_REQUIRED",
+      "r65_observation": "2025 TBRC USD832.8B vs SkyQuest USD1,020.02B (~1.22x); Precedence 2026 USD1,106.28B; these are cloud computing candidates, not a SaaS-only rate.",
+      "new_replacement_candidates": [],
+      "previous_publisher_quotes_untouched": true,
+      "final_target_cagr_eligible": false,
+      "prior_publisher_rows": [
+        {
+          "publisher": "TBRC",
+          "url": "https://www.thebusinessresearchcompany.com/report/cloud-computing-global-market-report",
+          "reported_cagr_pct": 15.6,
+          "period": "2026-2030",
+          "source_status": "RESOLVED_HISTORIC_RATE_MISLABEL",
+          "source_verified_r63": true
+        },
+        {
+          "publisher": "SkyQuest",
+          "url": "https://www.skyquestt.com/report/cloud-computing-market",
+          "reported_cagr_pct": 19.51,
+          "period": "2026-2033",
+          "source_status": "GLOBAL_LITERAL_CONFIRMED",
+          "source_verified_r63": true
+        },
+        {
+          "publisher": "Precedence",
+          "url": "https://www.precedenceresearch.com/cloud-computing-market",
+          "reported_cagr_pct": 20.61,
+          "period": "2026-2035",
+          "source_status": "GLOBAL_LITERAL_CONFIRMED",
+          "source_verified_r63": true
+        }
+      ],
+      "official_source_records": [
+        {
+          "publisher": "TBRC",
+          "url": "https://www.thebusinessresearchcompany.com/report/cloud-computing-global-market-report",
+          "web_open_ref": "turn218view9",
+          "web_find_ref": "turn219view9"
+        },
+        {
+          "publisher": "SkyQuest",
+          "url": "https://www.skyquestt.com/report/cloud-computing-market",
+          "web_open_ref": "turn218view10",
+          "web_find_ref": "turn219view10"
+        },
+        {
+          "publisher": "Precedence",
+          "url": "https://www.precedenceresearch.com/cloud-computing-market",
+          "web_open_ref": "turn218view11",
+          "web_find_ref": "turn219view11"
+        }
+      ]
+    },
+    {
+      "index": 14,
+      "name": "자율주행",
+      "r64b_level": "B",
+      "r64b_market_group": "AUTONOMOUS_VEHICLES (3)",
+      "tbrc_2025_usd_billion": 80.49,
+      "skyquest_2025_usd_billion": 89.83,
+      "precedence_2026_usd_billion": 364.08,
+      "tbrc_basis_note": "TBRC autonomous vehicle",
+      "skyquest_basis_note": "SkyQuest autonomous vehicles",
+      "precedence_basis_note": "Precedence autonomous vehicle 2026",
+      "same_year_tbrc_skyquest_ratio": 1.116,
+      "ratio_interpretation": "INDICATOR_ONLY_DEFINITION_GATE_REQUIRED",
+      "r65_observation": "TBRC 2026 USD103.04B vs Precedence 2026 USD364.08B (~3.53x), despite 2025 TBRC/SkyQuest close; advanced driver-assistance levels versus higher automation need reconciliation.",
+      "new_replacement_candidates": [],
+      "previous_publisher_quotes_untouched": true,
+      "final_target_cagr_eligible": false,
+      "prior_publisher_rows": [
+        {
+          "publisher": "TBRC",
+          "url": "https://www.thebusinessresearchcompany.com/report/autonomous-vehicle-global-market-report",
+          "reported_cagr_pct": 28.1,
+          "period": "2026-2030",
+          "source_status": "CONSISTENT",
+          "source_verified_r63": true
+        },
+        {
+          "publisher": "SkyQuest",
+          "url": "https://www.skyquestt.com/report/autonomous-vehicles-market",
+          "reported_cagr_pct": 29.7,
+          "period": "2026-2033",
+          "source_status": "GLOBAL_LITERAL_CONFIRMED",
+          "source_verified_r63": true
+        },
+        {
+          "publisher": "Precedence",
+          "url": "https://www.precedenceresearch.com/autonomous-vehicle-market",
+          "reported_cagr_pct": 34.84,
+          "period": "2026-2035",
+          "source_status": "GLOBAL_LITERAL_CONFIRMED",
+          "source_verified_r63": true
+        }
+      ],
+      "official_source_records": [
+        {
+          "publisher": "TBRC",
+          "url": "https://www.thebusinessresearchcompany.com/report/autonomous-vehicle-global-market-report",
+          "web_open_ref": "turn220view20",
+          "web_find_ref": "turn221view20"
+        },
+        {
+          "publisher": "SkyQuest",
+          "url": "https://www.skyquestt.com/report/autonomous-vehicles-market",
+          "web_open_ref": "turn220view21",
+          "web_find_ref": "turn221view21"
+        },
+        {
+          "publisher": "Precedence",
+          "url": "https://www.precedenceresearch.com/autonomous-vehicle-market",
+          "web_open_ref": "turn220view22",
+          "web_find_ref": "turn221view22"
+        }
+      ]
+    },
+    {
+      "index": 15,
+      "name": "원전·SMR",
+      "r64b_level": "C",
+      "r64b_market_group": "NUCLEAR_REACTOR / CONSTRUCTION / POWER",
+      "tbrc_2025_usd_billion": 0.67,
+      "skyquest_2025_usd_billion": 8.17,
+      "precedence_2026_usd_billion": 8.16,
+      "tbrc_basis_note": "TBRC NEW SMR report (not original nuclear reactors)",
+      "skyquest_basis_note": "SkyQuest NEW SMR report (not original nuclear construction)",
+      "precedence_basis_note": "Precedence NEW SMR report 2026 (not original nuclear power)",
+      "same_year_tbrc_skyquest_ratio": 12.194,
+      "ratio_interpretation": "INDICATOR_ONLY_DEFINITION_GATE_REQUIRED",
+      "r65_observation": "New three SMR-only sources found. TBRC factory-gate 2025 USD0.67B vs SkyQuest 2025 USD8.17B (12.19x); TBRC 2026 USD0.84B vs Precedence 2026 USD8.16B (9.71x). SkyQuest/Precedence adjacent-year headline sizes are close, but year and valuation basis not reconciled.",
+      "new_replacement_candidates": [
+        {
+          "publisher": "TBRC",
+          "market": "small modular reactor",
+          "url": "https://www.thebusinessresearchcompany.com/report/small-modular-reactor-global-market-report",
+          "cagr_pct": 25.2,
+          "forecast": "2026-2030",
+          "market_size_2025_usd_bn": 0.67,
+          "market_size_2026_usd_bn": 0.84,
+          "market_size_2030_usd_bn": 2.06,
+          "scope": "Factory gate sales of reactor modules and related manufacturer products/services",
+          "evidence": "turn213view1"
+        },
+        {
+          "publisher": "SkyQuest",
+          "market": "small modular reactor",
+          "url": "https://www.skyquestt.com/report/small-modular-reactor-market",
+          "cagr_pct": 8.9,
+          "forecast": "2026-2033",
+          "market_size_2025_usd_bn": 8.17,
+          "market_size_2033_usd_bn": 16.16,
+          "scope": "Multiple reactor types, location, capacity, deployment, connectivity, applications; market snapshot's yearless 6.89bn is not used as 2026",
+          "evidence": "turn213view2"
+        },
+        {
+          "publisher": "Precedence",
+          "market": "small modular reactor",
+          "url": "https://www.precedenceresearch.com/small-modular-reactor-market",
+          "cagr_pct": 8.78,
+          "forecast": "2026-2035",
+          "market_size_2026_usd_bn": 8.16,
+          "market_size_2035_usd_bn": 17.37,
+          "scope": "Reactor type/application; market revenue construction/production basis requires further clarification",
+          "evidence": "turn213view3"
+        }
+      ],
+      "previous_publisher_quotes_untouched": true,
+      "final_target_cagr_eligible": false,
+      "prior_publisher_rows": [
+        {
+          "publisher": "TBRC",
+          "url": "https://www.thebusinessresearchcompany.com/report/nuclear-reactor-global-market-report",
+          "reported_cagr_pct": 5.5,
+          "period": "2026-2030",
+          "source_status": "CONSISTENT",
+          "source_verified_r63": true
+        },
+        {
+          "publisher": "SkyQuest",
+          "url": "https://www.skyquestt.com/report/nuclear-reactor-construction-market",
+          "reported_cagr_pct": 1.8,
+          "period": "2026-2033",
+          "source_status": "GLOBAL_LITERAL_CONFIRMED",
+          "source_verified_r63": true
+        },
+        {
+          "publisher": "Precedence",
+          "url": "https://www.precedenceresearch.com/nuclear-power-market",
+          "reported_cagr_pct": 1.62,
+          "period": "2026-2035",
+          "source_status": "GLOBAL_LITERAL_CONFIRMED",
+          "source_verified_r63": true
+        }
+      ],
+      "official_source_records": []
+    },
+    {
+      "index": 16,
+      "name": "방산",
+      "r64b_level": "B",
+      "r64b_market_group": "DEFENSE_ELECTRONICS (2)",
+      "tbrc_2025_usd_billion": null,
+      "skyquest_2025_usd_billion": 181.8,
+      "precedence_2026_usd_billion": 195.38,
+      "tbrc_basis_note": "TBRC defense excluded (different denominator)",
+      "skyquest_basis_note": "SkyQuest defense electronics",
+      "precedence_basis_note": "Precedence defense electronics 2026",
+      "same_year_tbrc_skyquest_ratio": null,
+      "ratio_interpretation": "NOT_COMPARABLE_OR_NOT_SELECTED",
+      "r65_observation": "TBRC defense entire market excluded from electronics-market comparison; SkyQuest 2025 USD181.8B and Precedence 2026 USD195.38B are adjacent-year values.",
+      "new_replacement_candidates": [],
+      "previous_publisher_quotes_untouched": true,
+      "final_target_cagr_eligible": false,
+      "prior_publisher_rows": [
+        {
+          "publisher": "TBRC",
+          "url": "https://www.thebusinessresearchcompany.com/report/defense-global-market-report",
+          "reported_cagr_pct": 8,
+          "period": "2026-2030",
+          "source_status": "RESOLVED_HISTORIC_RATE_MISLABEL",
+          "source_verified_r63": true
+        },
+        {
+          "publisher": "SkyQuest",
+          "url": "https://www.skyquestt.com/report/defense-electronics-market",
+          "reported_cagr_pct": 5,
+          "period": "2026-2033",
+          "source_status": "GLOBAL_LITERAL_CONFIRMED",
+          "source_verified_r63": true
+        },
+        {
+          "publisher": "Precedence",
+          "url": "https://www.precedenceresearch.com/defense-electronics-market",
+          "reported_cagr_pct": 5.03,
+          "period": "2026-2035",
+          "source_status": "GLOBAL_LITERAL_CONFIRMED",
+          "source_verified_r63": true
+        }
+      ],
+      "official_source_records": [
+        {
+          "publisher": "TBRC",
+          "url": "https://www.thebusinessresearchcompany.com/report/defense-global-market-report",
+          "web_open_ref": "turn220view23",
+          "web_find_ref": "turn221view23"
+        },
+        {
+          "publisher": "SkyQuest",
+          "url": "https://www.skyquestt.com/report/defense-electronics-market",
+          "web_open_ref": "turn220view24",
+          "web_find_ref": "turn221view24"
+        },
+        {
+          "publisher": "Precedence",
+          "url": "https://www.precedenceresearch.com/defense-electronics-market",
+          "web_open_ref": "turn220view25",
+          "web_find_ref": "turn221view25"
+        }
+      ]
+    },
+    {
+      "index": 17,
+      "name": "핀테크",
+      "r64b_level": "A",
+      "r64b_market_group": "FINTECH_BLOCKCHAIN (2)",
+      "tbrc_2025_usd_billion": 6.45,
+      "skyquest_2025_usd_billion": 8.35,
+      "precedence_2026_usd_billion": 1020,
+      "tbrc_basis_note": "TBRC fintech blockchain",
+      "skyquest_basis_note": "SkyQuest fintech blockchain",
+      "precedence_basis_note": "Precedence fintech blockchain 2026 (unresolved 106.81x size)",
+      "same_year_tbrc_skyquest_ratio": 1.2946,
+      "ratio_interpretation": "INDICATOR_ONLY_DEFINITION_GATE_REQUIRED",
+      "r65_observation": "TBRC/SkyQuest 2025 USD6.45B/USD8.35B (~1.29x) form candidate. Precedence 2026 USD1.02T is 106.81x TBRC 2026, retained as unresolved source quote, not average.",
+      "new_replacement_candidates": [],
+      "previous_publisher_quotes_untouched": true,
+      "final_target_cagr_eligible": false,
+      "prior_publisher_rows": [
+        {
+          "publisher": "TBRC",
+          "url": "https://www.thebusinessresearchcompany.com/report/fintech-blockchain-global-market-report",
+          "reported_cagr_pct": 42.3,
+          "period": "2026-2030",
+          "source_status": "RESOLVED_HISTORIC_RATE_MISLABEL",
+          "source_verified_r63": true
+        },
+        {
+          "publisher": "SkyQuest",
+          "url": "https://www.skyquestt.com/report/fintech-blockchain-market",
+          "reported_cagr_pct": 44.4,
+          "period": "2026-2033",
+          "source_status": "REPORT_REGION_GLOBAL_CAGR_CONFIRMED",
+          "source_verified_r63": true
+        },
+        {
+          "publisher": "Precedence",
+          "url": "https://www.precedenceresearch.com/fintech-blockchain-market",
+          "reported_cagr_pct": null,
+          "period": null,
+          "source_status": "GLOBAL_RATE_CONFIRMED_PERIOD_CONFLICT",
+          "source_verified_r63": false
+        }
+      ],
+      "official_source_records": [
+        {
+          "publisher": "TBRC",
+          "url": "https://www.thebusinessresearchcompany.com/report/fintech-blockchain-global-market-report",
+          "web_open_ref": "turn218view12",
+          "web_find_ref": "turn219view12"
+        },
+        {
+          "publisher": "SkyQuest",
+          "url": "https://www.skyquestt.com/report/fintech-blockchain-market",
+          "web_open_ref": "turn218view13",
+          "web_find_ref": "turn219view13"
+        },
+        {
+          "publisher": "Precedence",
+          "url": "https://www.precedenceresearch.com/fintech-blockchain-market",
+          "web_open_ref": "turn218view14",
+          "web_find_ref": "turn219view14"
+        }
+      ]
+    },
+    {
+      "index": 18,
+      "name": "사이버보안",
+      "r64b_level": "A",
+      "r64b_market_group": "CYBERSECURITY (3)",
+      "tbrc_2025_usd_billion": 274.26,
+      "skyquest_2025_usd_billion": 217.38,
+      "precedence_2026_usd_billion": 339.96,
+      "tbrc_basis_note": "TBRC cybersecurity",
+      "skyquest_basis_note": "SkyQuest cybersecurity",
+      "precedence_basis_note": "Precedence cyber security 2026",
+      "same_year_tbrc_skyquest_ratio": 1.2617,
+      "ratio_interpretation": "INDICATOR_ONLY_DEFINITION_GATE_REQUIRED",
+      "r65_observation": "TBRC/SkyQuest 2025 USD274.26B/USD217.38B (~1.26x); Precedence 2026 USD339.96B; align product/service and managed-services denominators.",
+      "new_replacement_candidates": [],
+      "previous_publisher_quotes_untouched": true,
+      "final_target_cagr_eligible": false,
+      "prior_publisher_rows": [
+        {
+          "publisher": "TBRC",
+          "url": "https://www.thebusinessresearchcompany.com/report/cybersecurity-global-market-report",
+          "reported_cagr_pct": 11.8,
+          "period": "2026-2030",
+          "source_status": "CONSISTENT",
+          "source_verified_r63": true
+        },
+        {
+          "publisher": "SkyQuest",
+          "url": "https://www.skyquestt.com/report/cyber-security-market",
+          "reported_cagr_pct": 15.71,
+          "period": "2026-2033",
+          "source_status": "GLOBAL_LITERAL_CONFIRMED",
+          "source_verified_r63": true
+        },
+        {
+          "publisher": "Precedence",
+          "url": "https://www.precedenceresearch.com/cyber-security-market",
+          "reported_cagr_pct": 12.37,
+          "period": "2026-2035",
+          "source_status": "GLOBAL_LITERAL_CONFIRMED",
+          "source_verified_r63": true
+        }
+      ],
+      "official_source_records": [
+        {
+          "publisher": "TBRC",
+          "url": "https://www.thebusinessresearchcompany.com/report/cybersecurity-global-market-report",
+          "web_open_ref": "turn218view15",
+          "web_find_ref": "turn219view15"
+        },
+        {
+          "publisher": "SkyQuest",
+          "url": "https://www.skyquestt.com/report/cyber-security-market",
+          "web_open_ref": "turn218view16",
+          "web_find_ref": "turn219view16"
+        },
+        {
+          "publisher": "Precedence",
+          "url": "https://www.precedenceresearch.com/cyber-security-market",
+          "web_open_ref": "turn218view17",
+          "web_find_ref": "turn219view17"
+        }
+      ]
+    },
+    {
+      "index": 19,
+      "name": "바이오·신약",
+      "r64b_level": "B",
+      "r64b_market_group": "BIOTECH_TOTAL (2)",
+      "tbrc_2025_usd_billion": null,
+      "skyquest_2025_usd_billion": 2496.33,
+      "precedence_2026_usd_billion": 2020,
+      "tbrc_basis_note": "TBRC biotechnology services excluded (different denominator)",
+      "skyquest_basis_note": "SkyQuest biotechnology",
+      "precedence_basis_note": "Precedence biotechnology 2026",
+      "same_year_tbrc_skyquest_ratio": null,
+      "ratio_interpretation": "NOT_COMPARABLE_OR_NOT_SELECTED",
+      "r65_observation": "TBRC biotechnology SERVICES (2025 USD178.54B) is not total biotechnology; SkyQuest overall 2025 USD2.49633T and Precedence 2026 USD2.02T; do not average service and total rates.",
+      "new_replacement_candidates": [],
+      "previous_publisher_quotes_untouched": true,
+      "final_target_cagr_eligible": false,
+      "prior_publisher_rows": [
+        {
+          "publisher": "TBRC",
+          "url": "https://www.thebusinessresearchcompany.com/report/biotechnology-services-global-market-report",
+          "reported_cagr_pct": 12.4,
+          "period": "2026-2030",
+          "source_status": "RESOLVED_HISTORIC_RATE_MISLABEL",
+          "source_verified_r63": true
+        },
+        {
+          "publisher": "SkyQuest",
+          "url": "https://www.skyquestt.com/report/biotechnology-market",
+          "reported_cagr_pct": 14.96,
+          "period": "2026-2033",
+          "source_status": "GLOBAL_LITERAL_CONFIRMED",
+          "source_verified_r63": true
+        },
+        {
+          "publisher": "Precedence",
+          "url": "https://www.precedenceresearch.com/biotechnology-market",
+          "reported_cagr_pct": 13.61,
+          "period": "2026-2035",
+          "source_status": "GLOBAL_LITERAL_CONFIRMED",
+          "source_verified_r63": true
+        }
+      ],
+      "official_source_records": [
+        {
+          "publisher": "TBRC",
+          "url": "https://www.thebusinessresearchcompany.com/report/biotechnology-services-global-market-report",
+          "web_open_ref": "turn220view26",
+          "web_find_ref": "turn221view26"
+        },
+        {
+          "publisher": "SkyQuest",
+          "url": "https://www.skyquestt.com/report/biotechnology-market",
+          "web_open_ref": "turn220view27",
+          "web_find_ref": "turn221view27"
+        },
+        {
+          "publisher": "Precedence",
+          "url": "https://www.precedenceresearch.com/biotechnology-market",
+          "web_open_ref": "turn220view28",
+          "web_find_ref": "turn221view28"
+        }
+      ]
+    },
+    {
+      "index": 20,
+      "name": "데이터센터·전력",
+      "r64b_level": "A",
+      "r64b_market_group": "DATA_CENTER (3)",
+      "tbrc_2025_usd_billion": 299.63,
+      "skyquest_2025_usd_billion": 564.02,
+      "precedence_2026_usd_billion": 430.18,
+      "tbrc_basis_note": "TBRC data center",
+      "skyquest_basis_note": "SkyQuest data center",
+      "precedence_basis_note": "Precedence data center 2026",
+      "same_year_tbrc_skyquest_ratio": 1.8824,
+      "ratio_interpretation": "INDICATOR_ONLY_DEFINITION_GATE_REQUIRED",
+      "r65_observation": "TBRC/SkyQuest 2025 USD299.63B/USD564.02B (~1.88x), Precedence 2026 USD430.18B; data-center facility, construction, colocation and power-sales scopes may differ.",
+      "new_replacement_candidates": [],
+      "previous_publisher_quotes_untouched": true,
+      "final_target_cagr_eligible": false,
+      "prior_publisher_rows": [
+        {
+          "publisher": "TBRC",
+          "url": "https://www.thebusinessresearchcompany.com/report/data-center-global-market-report",
+          "reported_cagr_pct": 9.2,
+          "period": "2026-2030",
+          "source_status": "RESOLVED_HISTORIC_RATE_MISLABEL",
+          "source_verified_r63": true
+        },
+        {
+          "publisher": "SkyQuest",
+          "url": "https://www.skyquestt.com/report/data-center-market",
+          "reported_cagr_pct": 11.51,
+          "period": "2026-2033",
+          "source_status": "SKYQUEST_GLOBAL_METADATA_OPENING_VERIFIED",
+          "source_verified_r63": true
+        },
+        {
+          "publisher": "Precedence",
+          "url": "https://www.precedenceresearch.com/data-center-market",
+          "reported_cagr_pct": 11.06,
+          "period": "2026-2035",
+          "source_status": "GLOBAL_LITERAL_CONFIRMED",
+          "source_verified_r63": true
+        }
+      ],
+      "official_source_records": [
+        {
+          "publisher": "TBRC",
+          "url": "https://www.thebusinessresearchcompany.com/report/data-center-global-market-report",
+          "web_open_ref": "turn218view18",
+          "web_find_ref": "turn219view18"
+        },
+        {
+          "publisher": "SkyQuest",
+          "url": "https://www.skyquestt.com/report/data-center-market",
+          "web_open_ref": "turn218view19",
+          "web_find_ref": "turn219view19"
+        },
+        {
+          "publisher": "Precedence",
+          "url": "https://www.precedenceresearch.com/data-center-market",
+          "web_open_ref": "turn218view20",
+          "web_find_ref": "turn219view20"
+        }
+      ]
+    },
+    {
+      "index": 21,
+      "name": "우주·위성",
+      "r64b_level": "B",
+      "r64b_market_group": "SATELLITES (2 provisional)",
+      "tbrc_2025_usd_billion": 25.35,
+      "skyquest_2025_usd_billion": 20.07,
+      "precedence_2026_usd_billion": 391.99,
+      "tbrc_basis_note": "TBRC satellites",
+      "skyquest_basis_note": "SkyQuest satellite",
+      "precedence_basis_note": "Precedence satellite 2026 (unresolved 14.79x size)",
+      "same_year_tbrc_skyquest_ratio": 1.2631,
+      "ratio_interpretation": "INDICATOR_ONLY_DEFINITION_GATE_REQUIRED",
+      "r65_observation": "TBRC/SkyQuest 2025 USD25.35B/USD20.07B (~1.26x), but Precedence 2026 USD391.99B vs TBRC 2026 USD26.51B (14.79x). Block all-publisher averaging pending market universe definition.",
+      "new_replacement_candidates": [],
+      "previous_publisher_quotes_untouched": true,
+      "final_target_cagr_eligible": false,
+      "prior_publisher_rows": [
+        {
+          "publisher": "TBRC",
+          "url": "https://www.thebusinessresearchcompany.com/report/satellites-global-market-report",
+          "reported_cagr_pct": 5.5,
+          "period": "2026-2030",
+          "source_status": "CONSISTENT",
+          "source_verified_r63": true
+        },
+        {
+          "publisher": "SkyQuest",
+          "url": "https://www.skyquestt.com/report/satellite-market",
+          "reported_cagr_pct": 12.7,
+          "period": "2026-2033",
+          "source_status": "GLOBAL_LITERAL_CONFIRMED",
+          "source_verified_r63": true
+        },
+        {
+          "publisher": "Precedence",
+          "url": "https://www.precedenceresearch.com/satellite-market",
+          "reported_cagr_pct": 7.97,
+          "period": "2026-2035",
+          "source_status": "GLOBAL_MAIN_VERIFIED_US_SECTION_EDITORIAL_CONFLICT",
+          "source_verified_r63": true
+        }
+      ],
+      "official_source_records": [
+        {
+          "publisher": "TBRC",
+          "url": "https://www.thebusinessresearchcompany.com/report/satellites-global-market-report",
+          "web_open_ref": "turn220view29",
+          "web_find_ref": "turn221view29"
+        },
+        {
+          "publisher": "SkyQuest",
+          "url": "https://www.skyquestt.com/report/satellite-market",
+          "web_open_ref": "turn220view30",
+          "web_find_ref": "turn221view30"
+        },
+        {
+          "publisher": "Precedence",
+          "url": "https://www.precedenceresearch.com/satellite-market",
+          "web_open_ref": "turn220view31",
+          "web_find_ref": "turn221view31"
+        }
+      ]
+    }
+  ],
+  "quantitative_alerts": [
+    {
+      "topic": 10,
+      "type": "INTERNAL_CAGR_MATH_MISMATCH",
+      "source": "https://custommarketinsights.com/report/consumer-staples-market/",
+      "base_year": 2025,
+      "base_value_usd_bn": 4988.5,
+      "forecast_year": 2034,
+      "forecast_value_usd_bn": 8865,
+      "published_pct": 4.1,
+      "implied_pct": 6.597,
+      "action": "NOT_USED_AS_REPLACEMENT",
+      "evidence": "turn224view0"
+    },
+    {
+      "topic": 15,
+      "type": "NEW_SMR_SAME_YEAR_SCALE_ALERT",
+      "tbrc_2025_usd_bn": 0.67,
+      "skyquest_2025_usd_bn": 8.17,
+      "ratio_2025": 12.194,
+      "tbrc_2026_usd_bn": 0.84,
+      "precedence_2026_usd_bn": 8.16,
+      "ratio_2026": 9.7143,
+      "action": "DEFINITION_REVIEW_REQUIRED",
+      "evidence": "turn213view1 turn213view2 turn213view3"
+    },
+    {
+      "topic": 14,
+      "type": "AUTONOMOUS_VEHICLES_2026_SCALE_REVIEW",
+      "tbrc_2026_usd_bn": 103.04,
+      "precedence_2026_usd_bn": 364.08,
+      "ratio": 3.5334,
+      "action": "LEVEL1_LEVEL2_INCLUSION_REVIEW",
+      "evidence": "turn221view20 turn221view22"
+    },
+    {
+      "topic": 17,
+      "type": "PRECEDENCE_FINTECH_2026_SCALE_ALERT",
+      "tbrc_2026_usd_bn": 9.55,
+      "precedence_2026_usd_bn": 1020,
+      "ratio": 106.8063,
+      "action": "PRECEDENCE_UNRESOLVED_QUOTE_NULL_KEPT"
+    },
+    {
+      "topic": 21,
+      "type": "PRECEDENCE_SATELLITE_2026_SCALE_ALERT",
+      "tbrc_2026_usd_bn": 26.51,
+      "precedence_2026_usd_bn": 391.99,
+      "ratio": 14.7865,
+      "action": "THREE_WAY_AVERAGE_BLOCKED"
+    },
+    {
+      "topic": 8,
+      "type": "PRECEDENCE_ADVANCED_MATERIALS_CAGR_CONFLICT",
+      "published_pct_candidates": [
+        6.21,
+        6.27
+      ],
+      "action": "EDITORIAL_WARNING"
+    },
+    {
+      "topic": 7,
+      "type": "PRECEDENCE_HOSPITAL_SERVICES_CAGR_CONFLICT",
+      "published_pct_candidates": [
+        5.84,
+        5.99
+      ],
+      "action": "NULL_RETAINED"
+    }
+  ],
+  "site_or_formula_mutations": [],
+  "ollama_runs": 0,
+  "next_contract": "R66 validate exact market perimeter and publisher independence before any submarket mean, run PC Ollama separately only as review and never generator of publisher figures",
+  "provenance": {
+    "baseline_web_find_sources": 53,
+    "baseline_market_quotes_reviewed": 21,
+    "skyquest_snapshot_finds": 21,
+    "description": "Web-search provider first-party webpage open/find rechecks; not 53 direct HTTP GET",
+    "published_rates_from_r64b_immutable": true
+  }
+}
