@@ -1,11 +1,14 @@
 // R19: install approved free local translation model and review source-anchored drafts.
 // No publication, PC news cache writes, D1 writes, score writes or scheduler edits.
+import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {compareKoreanIranNewsR18,assessTranslationTerminology}
  from './news-display-translation-compare-r18.mjs';
 import {validateTranslationDraft} from './news-display-translation-preview-r17.mjs';
+import {readNewsDisplayCache} from './news-display-io-r1.mjs';
+import {visibleIranNewsItems} from '../../lib/iran-progress/news-display-r1.mjs';
 
 export const R19_MODEL='translategemma:4b';
 const OLLAMA='http://127.0.0.1:11434';
@@ -109,6 +112,14 @@ export async function translateArticleR19({sourceTitle,sourceExcerpt,fetcher=fet
 export async function inspectTranslateGemmaNewsR19({dataDirectory,now=Date.now(),
  fetcher=fetch,allowInstall=false,logger=()=>{},modelCheck=ensureTranslateGemmaR19,
  translate=translateArticleR19}={}){
+ // Fail before a multi-GB download if the approved local data root is absent.
+ if(typeof dataDirectory!=='string'||!path.isAbsolute(dataDirectory)||
+  !fs.existsSync(path.join(dataDirectory,'iran.sqlite')))
+  throw Error('R19_EXISTING_SCORE_LEDGER_NOT_FOUND');
+ const currentCache=readNewsDisplayCache(dataDirectory);
+ if(!Array.isArray(currentCache.items)||
+  visibleIranNewsItems(currentCache.items,{now}).length===0)
+  throw Error('R19_NO_VISIBLE_NEWS_FOR_REVIEW');
  const installation=await modelCheck({fetcher,allowInstall,logger});
  const available=installation.status==='ALREADY_INSTALLED'||installation.status==='NEWLY_INSTALLED';
  const base=await compareKoreanIranNewsR18({dataDirectory,now,fetcher,
