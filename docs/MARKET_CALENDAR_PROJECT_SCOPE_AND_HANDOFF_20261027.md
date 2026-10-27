@@ -158,3 +158,13 @@
 - `MARKET_CALENDAR_R21_PC_SOURCE_EXPORT.cmd`의 읽기 전용 결과: CMD와 같은 폴더의 `MARKET_CALENDAR_R21_PC_SOURCE_EXPORT_RESULT.txt` **한 파일**(실제 collector 원문을 base64로 포함). 진짜 등록 Core source/worktree/config/parser를 확인하고 collector를 복사할 뿐 실행 중인 Core는 건드리지 않는다. PC 원본은 공개 저장소에 업로드 금지.
 - 단일 TXT에 포함된 실제 PC collector 원문과 tracked HEAD 일치 여부를 받아야 R21 연도 전환 기능을 원본 기반으로 재구현하고, 회귀 테스트 후 별도의 정확한 CMD/ZIP을 만들 수 있다. 해시만 우회 교체하거나 잘못된 R21 후보를 복사하지 않는다.
 - 전용 브랜치 `codex/zgmini-gpt-workspace-20261025`만 사용. 새 브랜치·자동 배포·강제 수집·main 병합 없음.
+
+## 15. R21 CRLF 정정 설치 패키지 — CODE_READY / PC 검증 대기 (2026-10-28)
+
+- 업로드된 단일 결과 TXT의 base64 원문을 복원하여 SHA256 `1b8c2760a4f815191282dd55969ce8170072d4f747c8468ddd6601dc50ee88d6`를 직접 재검증. 실제 운영 파일은 Git HEAD 추적 파일과 일치(`collectorMatchesTrackedHead=true`), R20 승인 source `97a38c7cdfbb7e0d30eaeacea27b9605bbfa2b3b`, R20 parser SHA `20d6c99cc7621e08c06598e51f4c9dc8a6f945952905351287b46d2c65a1551c` 확인.
+- **정정된 근본 원인:** 실제 PC collector와 GitHub 작업 브랜치 `scripts/pc-writer/release-calendar.mjs`는 코드는 완전히 동일. 단지 PC가 `CRLF`, GitHub가 `LF`였기 때문에 원본 해시 `1b8c...`와 브랜치 해시 `4af1...`가 달랐다. R20 설치나 코드 충돌이 아님.
+- 최신 R21 설치기 `scripts/pc-writer/market-calendar-r21-year-apply.mjs`는 실제 PC CRLF `1b8c...`와 정규화 LF `4af...`를 함께 검증한다. 기검증된 R21 LF 후보 `2e7ac2a57a7ec2c41b2f9647d98d49c7bb22d904978a0d637e3d3619e01dedf0`를 PC CRLF로 변환해 고정 SHA256 `8105a2922ff0d05d29b329dc22dcf66d0d5920ea0d1661337066cef877f45bc5`로 저장한다.
+- **새 CMD:** `MARKET_CALENDAR_R21_CENSUS_YEAR_APPLY_CRLF.cmd`. **결과:** `MARKET_CALENDAR_R21_CENSUS_YEAR_APPLY_CRLF_RESULT.txt`, 반드시 CMD와 동일 폴더. 최초 R21 ZIP/CMD는 사용 금지.
+- `tests/market-calendar-r21-census-year-apply.test.mjs`: CRLF 기준 실제 Core 시뮬레이션·적용·백업·잠금·drift 4 PASS. `tests/market-calendar-r21-census-year-stage.test.mjs`: 2026/2027 Census fallback/연도 경계, BLS/BEA/Fed 보존, 기저 이력·lease 4 PASS. CMD ASCII/CRLF, ZIP 무결성 PASS.
+- 다음 단계는 사용자가 새 R21 CRLF ZIP을 PC에서 실행하여 `phase=INSTALLED`와 `decision=R21_CENSUS_YEAR_INSTALLED_NO_FORCED_COLLECTION` 로그를 제출하는 것. 여기까지는 코드·시뮬레이션 검증 완료이며 **실제 PC 설치 완료로 보고하지 않는다**.
+- Core 정규 수집/DB/스케줄러/게시/GitHub main은 미변경. 전용 브랜치 `codex/zgmini-gpt-workspace-20261025` 고정.
