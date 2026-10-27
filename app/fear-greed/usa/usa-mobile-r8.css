@@ -4,6 +4,47 @@
  * NOT carried over: every data field and reading guide stays accessible.
  * The existing shared market components remain the only data renderers.
  */
+/* Use the mobile period-button design on desktop, retaining its taller chart. */
+@media (min-width: 761px) {
+  .zg-fg-us .usa-target-card.fg-shared-shell .fg-analysis-slot {
+    grid-template-columns: minmax(0, 1fr) 36px;
+    column-gap: 5px;
+  }
+  .zg-fg-us .usa-target-card.fg-shared-shell .fg-period-slot {
+    width: 36px;
+    min-width: 36px;
+    max-width: 36px;
+    grid-template-columns: 32px;
+    place-items: center;
+  }
+  .zg-fg-us .usa-target-card.fg-shared-shell .fg-period-slot .cnn-period-toolbar {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    width: 32px;
+    min-width: 32px;
+    max-width: 32px;
+    height: 176px;
+    min-height: 176px;
+    max-height: 176px;
+    margin: 0;
+  }
+  .zg-fg-us .usa-target-card.fg-shared-shell .fg-period-slot .cnn-period-button {
+    flex: 0 0 32px;
+    width: 32px;
+    min-width: 32px;
+    max-width: 32px;
+    height: 32px;
+    min-height: 32px;
+    max-height: 32px;
+    border-radius: 4px;
+  }
+  .zg-fg-us .usa-target-card.fg-shared-shell .fg-period-slot .cnn-period-button::after {
+    font-size: .8rem;
+  }
+}
 @media (max-width: 760px) {
   .zg-fg-us .zg-fg-detail-body {
     padding: 8px 8px 48px;
