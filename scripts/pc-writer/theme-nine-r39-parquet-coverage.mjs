@@ -134,12 +134,19 @@ async function readSnapshot(dataRoot,date,mod){
  return rows;
 }
 
-export async function inspectNineR39SavedParquet({dataRoot='E:\\ZGmini\\data'}={}){
+// R40 reuses precisely the pinned and SHA-verified R39 snapshots. Neither
+// trade date nor source price mode may be silently substituted.
+export async function readNineR39VerifiedSnapshots({dataRoot='E:\\ZGmini\\data'}={}){
  if(!fs.existsSync(dataRoot))fail('DATA_ROOT_MISSING');
  const roster=readRoster();
  const mod=await decoder(dataRoot);
  const [baseRows,nextRows]=await Promise.all([readSnapshot(dataRoot,BASE,mod),
   readSnapshot(dataRoot,NEXT,mod)]);
+ return {roster,baseRows,nextRows,parquetDecoder:mod};
+}
+
+export async function inspectNineR39SavedParquet({dataRoot='E:\\ZGmini\\data'}={}){
+ const {roster,baseRows,nextRows}=await readNineR39VerifiedSnapshots({dataRoot});
  return {...inspectNineR39WithRows({roster,baseRows,nextRows}),
   parquetBaseSha256:ARCHIVE_SHAS[BASE],parquetNextSha256:ARCHIVE_SHAS[NEXT],
   savedSourceReadback:'PINNED_PARQUET_SHA_AND_AUDIT_VERIFIED'};
