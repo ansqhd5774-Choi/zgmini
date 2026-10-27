@@ -50,7 +50,7 @@ function Rate14Chart({rate,compact=false}:{rate:RateStoredSnapshot|null;compact?
  const period=stored14DayWindow(rate);
  const data=period?.points??[];
  const hasData=data.length>=2;
- // Keep the approved source window: missing dates remain null, not made-up points.
+ // Keep the approved source window: 미관측 날짜는 점을 생성하지 않음; missing dates remain null, not made-up points.
  const observed=new Map(data.map(row=>[row.label,row.value]));
  const calendar=period?Array.from({length:14},(_,day)=>new Date(period.start+day*86_400_000).toISOString().slice(0,10)):[];
  const chartData=calendar.map(date=>({date,score:observed.get(date)??null}));
