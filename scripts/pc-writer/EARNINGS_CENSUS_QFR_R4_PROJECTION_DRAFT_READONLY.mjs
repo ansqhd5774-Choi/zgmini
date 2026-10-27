@@ -5,7 +5,8 @@ import {PROVIDER,DATASET,CONTRACT}
   from './EARNINGS_CENSUS_QFR_R2_SQLITE_APPEND.mjs';
 
 export const QFR_DRAFT_SCHEMA='earnings-companion-c-qfr-r1-v1';
-// Proposal only. Not registered in D1 and not approved for a public publisher.
+// Key/schema approved 2026-10-28. This pure draft itself never authorizes a D1 write.
+// Actual publication needs the separately source-gated R4_D1_ONCE publisher.
 export const QFR_PROPOSED_D1_KEY='detail:earnings-recession-indicators:census-qfr-mfg-margin:v1';
 const ID='census_qfr_manufacturing_after_tax_margin_nsa';
 const URL='https://www.census.gov/econ_getzippedfile/?programCode=QFR';
