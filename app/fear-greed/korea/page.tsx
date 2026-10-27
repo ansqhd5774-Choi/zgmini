@@ -27,7 +27,7 @@ export default async function KoreaPage() {
       <a href="/fear-greed/usa/">미국 · CNN</a>
       <a href="/fear-greed/korea/" aria-current="page">한국 · ZGmini</a>
     </nav>
-    <a href="/guides/fear-greed-buying/" aria-label="공포·탐욕 매수 판단 가이드" className="zg-fg-buying-guide-link inline-flex min-h-10 items-center gap-1.5 text-sm font-semibold text-amber-300 hover:text-amber-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber-300">
+    <a href="/guides/fear-greed-buying/" aria-label="공포·탐욕 매수 판단 가이드" className="zg-fg-buying-guide-link mb-4 inline-flex min-h-10 items-center gap-1.5 text-sm font-semibold text-amber-300 hover:text-amber-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber-300">
      <BookOpen size={16} aria-hidden="true"/>
      <span className="zg-fg-guide-full">공포·탐욕 매수 판단 가이드</span>
      <span className="zg-fg-guide-short" aria-hidden="true">매수 가이드</span>
