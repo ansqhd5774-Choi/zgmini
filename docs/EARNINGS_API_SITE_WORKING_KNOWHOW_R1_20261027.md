@@ -206,3 +206,9 @@
 - `scripts/pc-writer/EARNINGS_CENSUS_QFR_R2_SQLITE_APPEND.mjs`는 기본 `--dry-run` 읽기 전용이며, `EARNINGS_CENSUS_QFR_R2_STORAGE_PREFLIGHT.cmd`도 읽기 전용이다. 실제 PC SQLite append는 **별도 명시적 사용자 승인 후**에만 `--apply --confirm-census-qfr-sqlite-append`라는 고정 플래그가 필요하다. 두 INSERT와 재조회는 단일 트랜잭션/오류 시 rollback.
 - 메모리 SQLite synthetic **R2 6건** 및 R1 파서 **5건** 검증. 실제 PC `core.sqlite` 접근, live Census R2 재수집, D1 게시, Worker 신규 GET, 사이트 표시, 자동 갱신은 여전히 **NOT_RUN**. 어느 단계도 자동 성공으로 격상하지 않는다.
 - 설계·실행 Gate 전문은 [QFR 원본 SQLite 보존 R2](EARNINGS_CENSUS_QFR_RAW_SQLITE_R2_20261027.md)에 있다. 이후 순서는 **PC 읽기 전용 preflight 증빙 → 승인된 append/readback → 별도 D1 체크포인트 설계/승인 → 공개 GET/UI 검증**. 최종 목표는 E1-R4 점수 개조가 아닌 **신뢰할 수 있는 실적 침체 참고 지표의 지속적 추가**다.
+
+## 13. Census QFR R2 실제 PC 프리플라이트 PASS 및 승인된 원본 저장 1회 CMD (2026-10-27)
+
+- PC 결과 증빙 `EARNINGS_CENSUS_QFR_R2_STORE_RESULT_20261027T141637Z.txt`: `MODE=READ_ONLY_PREFLIGHT`, `RESULT=PASS_QFR_STORAGE_PREFLIGHT_NO_WRITE`, 기존 CENSUS snapshot/chunk **0/0**, ZIP **1,746,726바이트**, SHA-256 `232f7757e654e787a9eab49792302feb3683e5280a66ff0cc9bd7f0cbc448654`, 2026-Q2 **15.599418144173285%**. 스키마·직접 HTTP·산식 **실제 PC 프리플라이트 검증 성공**. 데이터 저장이나 웹 게시 성공은 아님.
+- 사용자 승인에 따라 `EARNINGS_CENSUS_QFR_R2_SQLITE_APPLY_ONCE.cmd`를 **같은 지정 브랜치에만** 추가. 승인 당시 원본 SHA의 정확한 일치를 요구하며, 변경된 ZIP은 쓰기 전 `QFR_SOURCE_CHANGED_SINCE_PREFLIGHT_NO_WRITE`로 거절한다. `--apply --confirm-census-qfr-sqlite-append --expected-source-sha256 <승인된 SHA>`가 있어야만 기록 가능한 구조다. 고정된 SHA는 **이번 단발성 승인용**으로, 다음 분기에는 새 검증·새 승인 값 필요.
+- 원본 저장 후 CMD 옆에 생성되는 `EARNINGS_CENSUS_QFR_R2_STORE_RESULT_*.txt`를 실제로 읽기 전까지 `PC_SQLITE_APPEND=NOT_RUN`으로 둔다. 승인된 수정 범위는 CENSUS 전용 기존 원장 2개 테이블에 **append-only 원문 ZIP 1종**이며 기존 E1-R4 산식·BLS·D1·Production 배포를 변경하지 않는다.
