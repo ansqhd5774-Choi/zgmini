@@ -11,7 +11,7 @@ export const EARNINGS_C_FRESHNESS = Object.freeze({
   MONTHLY: Object.freeze({observationMaxAgeDays:75,retrievalMaxAgeDays:75}),
   QUARTERLY: Object.freeze({observationMaxAgeDays:165,retrievalMaxAgeDays:165}),
 });
-const SERIES = new Set(['WPSFD4','WPSFD41','PRS85006111']);
+const SERIES = new Set(['WPSFD4','WPSFD41','PRS85006111','WPSFD42']);
 const METHODS = new Set(['SOURCE_INDEX','YOY_SA_T_MINUS_12','SOURCE_YOY']);
 const ROW_STATUSES = new Set(['READY','PARTIAL','PENDING','SOURCE_FAILED','UNAVAILABLE']);
 const keys = (value,allowed,code) => {
