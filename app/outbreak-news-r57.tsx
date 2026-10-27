@@ -1,7 +1,8 @@
 "use client";
 
 import {useEffect,useState} from "react";
-import {ChevronDown,ExternalLink,Newspaper} from "lucide-react";
+import {ChevronDown,ExternalLink,Languages,Newspaper} from "lucide-react";
+import {iranNewsLanguages} from "../lib/iran-progress/news-language-r22.mjs";
 
 /**
  * UI-only contract. Feed items must come from the separately verified news pipeline.
@@ -13,6 +14,11 @@ export type OutbreakNewsItem={
  publishedAt:string;
  title:string;
  summary:string;
+ titleEn?:string;
+ summaryEn?:string;
+ titleKo?:string;
+ summaryKo?:string;
+ translationReviewed?:boolean;
  impact:"positive"|"negative"|"neutral";
  sourceUrl:string;
 };
@@ -24,11 +30,94 @@ const labels:Record<OutbreakNewsItem["impact"],string>={
 };
 
 type NewsState="ready"|"loading"|"pending"|"delayed"|"error";
-export default function OutbreakNewsUI({eventId,items=[],newsState="ready"}:{eventId:string;items?:OutbreakNewsItem[];newsState?:NewsState}){
+type NewsProps={eventId:string;items?:OutbreakNewsItem[];newsState?:NewsState};
+type LocalTranslator={translate(text:string):Promise<string>;destroy?():void};
+type LocalTranslatorApi={
+ availability(options:{sourceLanguage:string;targetLanguage:string}):Promise<string>;
+ create(options:{sourceLanguage:string;targetLanguage:string}):Promise<LocalTranslator>;
+};
+const translatorApi=()=>((globalThis as typeof globalThis & {Translator?:LocalTranslatorApi}).Translator);
+const translationPair={sourceLanguage:"en",targetLanguage:"ko"};
+const digitTokens=(value:string)=>(value.match(/\d+(?:[,.]\d+)*/g)??[]).sort().join("|");
+async function localNewsTranslation(api:LocalTranslatorApi,originalTitle:string,originalSummary:string){
+ const translator=await api.create(translationPair);
+ try{
+  const [titleKo,summaryKo]=await Promise.all([
+   translator.translate(originalTitle),translator.translate(originalSummary),
+  ]);
+  if(!/[가-힣]/.test(titleKo)||!/[가-힣]/.test(summaryKo)||
+    digitTokens(originalTitle)!==digitTokens(titleKo)||
+    digitTokens(originalSummary)!==digitTokens(summaryKo))throw Error("TRANSLATION_UNVERIFIED");
+  return {titleKo,summaryKo};
+ }finally{translator.destroy?.();}
+}
+
+function NewsCard({item}:{item:OutbreakNewsItem}){
+ const [original,setOriginal]=useState(false);
+ const [automatic,setAutomatic]=useState<{originalTitle:string;originalSummary:string;titleKo:string;summaryKo:string}|null>(null);
+ const [translationState,setTranslationState]=useState<"checking"|"ready"|"download"|"busy"|"unavailable">("checking");
+ const initial=iranNewsLanguages(item);
+ const {titleEn,summaryEn,canMachineTranslate}=initial;
+ const verifiedAutomatic=automatic?.originalTitle===titleEn&&automatic?.originalSummary===summaryEn?automatic:null;
+ const languages=iranNewsLanguages(item,verifiedAutomatic);
+
+ useEffect(()=>{
+  if(!canMachineTranslate||!titleEn||!summaryEn)return;
+  const api=translatorApi();
+  if(!api)return;
+  let active=true;
+  void (async()=>{
+   try{
+    const status=await api.availability(translationPair);
+    if(!active)return;
+    if(status==="available"){
+     setTranslationState("busy");
+     const translated=await localNewsTranslation(api,titleEn,summaryEn);
+     if(active){setAutomatic({originalTitle:titleEn,originalSummary:summaryEn,...translated});setTranslationState("ready");}
+    }else setTranslationState(status==="downloadable"||status==="downloading"?"download":"unavailable");
+   }catch{if(active)setTranslationState("unavailable");}
+  })();
+  return()=>{active=false;};
+ },[item.id,titleEn,summaryEn,canMachineTranslate]);
+
+ async function translateCard(){
+  const api=translatorApi();
+  if(!api||!titleEn||!summaryEn)return;
+  setTranslationState("busy");
+  try{
+   const translated=await localNewsTranslation(api,titleEn,summaryEn);
+   setAutomatic({originalTitle:titleEn,originalSummary:summaryEn,...translated});
+   setOriginal(false);
+   setTranslationState("ready");
+  }catch{setTranslationState("unavailable");}
+ }
+
+ const displayedTitle=original&&languages.canToggle?languages.titleEn:languages.defaultTitle;
+ const displayedSummary=original&&languages.canToggle?languages.summaryEn:languages.defaultSummary;
+ return <article className="ob57-news-item" lang={original&&languages.canToggle?"en":languages.canToggle?"ko":undefined}>
+  <div className="ob57-news-meta"><strong>{item.source}</strong><time dateTime={item.publishedAt}>{kstPublicationDate(item.publishedAt)}</time></div>
+  <h4>{displayedTitle}</h4>
+  <p>{displayedSummary}</p>
+  <div className="ob57-news-foot">
+   <span className="ob57-impact" data-impact={item.impact}>{labels[item.impact]}</span>
+   <div className="ob57-news-actions">
+    {languages.canToggle?<button className="ob57-news-language" type="button" aria-pressed={original} aria-label={`${item.source} 뉴스 ${original?"한국어 번역":"영어 원문"} 보기`} onClick={()=>setOriginal(value=>!value)}><Languages size={13} aria-hidden="true"/>{original?"한국어":"원문"}</button>:
+     translationState==="download"?<button className="ob57-news-language" type="button" onClick={()=>void translateCard()}><Languages size={13} aria-hidden="true"/>한국어 번역</button>:
+     translationState==="busy"?<span className="ob57-news-language-status" role="status">번역 중</span>:null}
+    <a href={item.sourceUrl} target="_blank" rel="noopener noreferrer" title="원문 기사 사이트 열기" aria-label={`${item.source} 원문 기사 사이트 열기: ${item.title}`}><ExternalLink size={15} aria-hidden="true"/></a>
+   </div>
+  </div>
+ </article>;
+}
+
+export default function OutbreakNewsUI(props:NewsProps){
+ return <OutbreakNewsBody key={props.eventId} {...props}/>;
+}
+
+function OutbreakNewsBody({eventId,items=[]}:NewsProps){
  const [filter,setFilter]=useState<Filter>("all");
  const [expanded,setExpanded]=useState(false);
  const [wide,setWide]=useState(false);
- useEffect(()=>{setFilter("all");setExpanded(false);},[eventId]);
  useEffect(()=>{
   const media=window.matchMedia("(min-width:1350px)");
   const update=()=>setWide(media.matches);
@@ -39,7 +128,6 @@ export default function OutbreakNewsUI({eventId,items=[],newsState="ready"}:{eve
  const filtered=filter==="all"?valid:valid.filter(item=>item.impact===filter);
  const initialCount=wide?4:3;
  const visible=expanded?filtered:filtered.slice(0,initialCount);
- const emptyText=valid.length?{"title":"선택한 방향의 뉴스가 없습니다","detail":"다른 영향 필터를 선택해 보세요."}:newsState==="loading"?{"title":"주요 뉴스 확인 중","detail":"저장된 뉴스 목록을 확인하고 있습니다."}:newsState==="error"?{"title":"뉴스 조회 지연","detail":"공개 저장자료를 확인하지 못했습니다. 다음 갱신 때 다시 시도합니다."}:newsState==="pending"?{"title":"뉴스 연결 준비 중","detail":"검증된 뉴스를 아직 게시하지 않았습니다."}:newsState==="delayed"?{"title":"뉴스 갱신 지연","detail":"최근 14일 내 공개 가능한 기사가 없습니다."}:{"title":"최근 14일 주요 뉴스 없음","detail":"출처와 이용권이 확인된 기사만 표시합니다."};
  return <section className="ob57-news ob-panel" aria-labelledby={`ob57-news-${eventId}`} data-testid={`outbreak-news-${eventId}`}>
   <header className="ob57-news-header">
    <div className="ob57-news-heading"><h3 id={`ob57-news-${eventId}`}><Newspaper size={16} aria-hidden="true"/>주요 뉴스</h3><span className="ob57-news-count">{filtered.length}건</span></div>
@@ -48,12 +136,7 @@ export default function OutbreakNewsUI({eventId,items=[],newsState="ready"}:{eve
    </div>
   </header>
   <div className="ob57-news-list" aria-live="polite">
-   {visible.length?visible.map(item=><article className="ob57-news-item" key={item.id}>
-    <div className="ob57-news-meta"><strong>{item.source}</strong><time dateTime={item.publishedAt}>{kstPublicationDate(item.publishedAt)}</time></div>
-    <h4>{item.title}</h4>
-    <p>{item.summary}</p>
-    <div className="ob57-news-foot"><span className="ob57-impact" data-impact={item.impact}>{labels[item.impact]}</span><a href={item.sourceUrl} target="_blank" rel="noopener noreferrer" title="기사 원문 보기" aria-label={`${item.source} 기사 원문 보기: ${item.title}`}><ExternalLink size={15} aria-hidden="true"/></a></div>
-   </article>):<div className="ob57-news-empty" role="status">
+   {visible.length?visible.map(item=><NewsCard key={item.id} item={item}/>):<div className="ob57-news-empty" role="status">
     <Newspaper size={21} aria-hidden="true"/>
     <strong>{valid.length?"선택한 방향의 뉴스가 없습니다":"주요 뉴스 연결 준비 중"}</strong>
     <span>{valid.length?"다른 영향 필터를 선택해 보세요.":"출처·기사 제목·요약·영향이 확인된 뉴스만 표시합니다. 현재는 검증된 기사를 임의로 생성하지 않습니다."}</span>

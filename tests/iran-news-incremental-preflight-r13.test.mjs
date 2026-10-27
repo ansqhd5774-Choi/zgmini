@@ -23,7 +23,7 @@ const content=(url,title,body)=>({base_path:new URL(url).pathname,title,
  links:{organisations:[{base_path:'/government/organisations/foreign-commonwealth-development-office'}]}});
 const rightsPage='<html><footer>All content is available under the Open Government Licence v3.0 except where otherwise stated</footer></html>';
 
-function mockFetcher({oneFeedFails=false,thirdParty=false}={}){
+function mockFetcher({oneFeedFails=false,thirdParty=false,longExcerpt=false}={}){
  return async url=>{
   if(IRAN_GOVUK_NEWS_FEEDS.includes(url)){
    if(oneFeedFails&&url===IRAN_GOVUK_NEWS_FEEDS[2])return new Response('',{status:503});
@@ -35,7 +35,7 @@ function mockFetcher({oneFeedFails=false,thirdParty=false}={}){
   if(url==='https://www.gov.uk/api/content'+new URL(oldUrl).pathname)
    return new Response(JSON.stringify(content(oldUrl,'Saudi forum','<p>Saudi Arabia consultation</p>')));
   if(url==='https://www.gov.uk/api/content'+new URL(newUrl).pathname)
-   return new Response(JSON.stringify(content(newUrl,'Iran meeting',thirdParty?'<p>Iran statement © third-party agency</p>':'<p>Iran diplomatic talks</p>')));
+   return new Response(JSON.stringify(content(newUrl,'Iran meeting',thirdParty?'<p>Iran statement © third-party agency</p>':longExcerpt?'<p>Ministers discussed diplomatic negotiations with Iran and regional security priorities.</p>':'<p>Iran diplomatic talks</p>')));
   if(url===oldUrl||url===newUrl)return new Response(rightsPage);
   throw Error('Unexpected URL: '+url);
  };
@@ -71,8 +71,23 @@ test('R13 read-only plans nine-style additions, retaining the exact original rev
   assert.equal(plan.report.nextLocalCount,2);
   assert.equal(plan.report.nextPublicCount,2);
   assert.deepEqual(plan.cache.items.find(x=>x.id===oldItem.id),oldItem);
+  // Short one-line bodies are not misrepresented as a complete English excerpt.
+  assert.equal(plan.cache.items.find(x=>x.sourceUrl===newUrl).summaryEn,undefined);
   assert.equal(plan.report.pcCacheWritten,false);
   assert.equal(plan.report.d1Written,false);
+  assert.equal(d.written(),0);
+ });
+});
+
+test('R22 carries an actual GOV.UK English excerpt into the new public-news snapshot',async()=>{
+ await withCache(async dataDirectory=>{
+  const d=remoteWithRow();
+  const plan=await preflightIncrementalIranNewsR13({dataDirectory,remote:d.remote,db:'core',now,
+   fetcher:mockFetcher({longExcerpt:true})});
+  const added=plan.publicSnapshot.items.find(x=>x.sourceUrl===newUrl);
+  assert.equal(added.titleEn,'Iran meeting');
+  assert.equal(added.summaryEn,'Ministers discussed diplomatic negotiations with Iran and regional security priorities.');
+  assert.deepEqual(plan.publicSnapshot.items.find(x=>x.id===oldItem.id),oldItem);
   assert.equal(d.written(),0);
  });
 });
