@@ -66,6 +66,19 @@ test('R26 Windows audit CMD is pinned, ASCII/CRLF and never runs collection appl
  assert.match(cmd.toString('ascii'),/IRAN_NEWS_R26_COLLECTION_READONLY_RESULT\.txt/);
 });
 
+test('R27 PC apply CMD is pinned, ASCII/CRLF and writes no public news or task state',()=>{
+ const cmd=readFileSync(new URL('../IRAN_NEWS_R27_COLLECTION_APPLY.cmd',import.meta.url));
+ const source=cmd.toString('ascii');
+ assert.ok(cmd.every(byte=>byte<128));
+ assert.equal(source.replace(/\r\n/g,'').includes('\n'),false);
+ assert.match(source,/Pinned source SHA: 39b0642d35a255561722dac6bcd3126f6d177749/);
+ assert.match(source,/news-display-collection-r26\.mjs" --collect/);
+ assert.match(source,/ZGMINI_IRAN_NEWS_R26_APPROVED=YES/);
+ assert.match(source,/IRAN_NEWS_R27_COLLECTION_APPLY_RESULT\.txt/);
+ assert.match(source,/PARTIAL_COLLECTION_REVIEW_REQUIRED/);
+ assert.doesNotMatch(source,/schtasks|wrangler|\.sqlite\.next|news-display-r1\.json\.next/i);
+});
+
 test('R26 collects genuine article metadata from 7 sources without licensing or publishing it',async()=>{
  await inDir(async dataDirectory=>{
   const result=await collectIranNewsR26({dataDirectory,now,fetcher:mockFeedFetch()});
