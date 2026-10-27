@@ -53,3 +53,11 @@
 - R12 `MARKET_CALENDAR_R12_LAUNCHER_SOURCE.cmd`는 기존 `E:\ZGmini\data\pc-writer\run-local-core.vbs`의 JS 실행 대상을 **읽기 전용**으로 찾고, 그 저장소 HEAD·기존 parser Git blob·보호 파일의 미수정 여부를 config/writer/ledger 승인 source 및 BLS 후보 지문과 맞춘다. 등록 작업 XML이 해당 VBS를 참조하는지도 확인한다.
 - 출력에는 실제 PC 경로·VBS 인자 전문·토큰·원문을 포함하지 않고 비식별 지문과 검증 상태만 기록한다. 결과 파일 `MARKET_CALENDAR_R12_LAUNCHER_SOURCE_RESULT.txt`.
 - R12도 **수집·게시·설치·git 변경·config/DB/작업 등록 변경 없음**. 실제 publisher checkout이 확인되기 전에는 승인 SHA를 변경하거나 소스를 덮어쓰지 않는다.
+
+### R12 불일치 결과와 R13 — 연결된 worktree 원장 확인
+
+- R12 PC 로그(`2026-10-27T08:11:25.651Z`)에서 승인 config/writer/ledger source는 `7ac573fc`, launcher가 파악한 실행 repo HEAD는 `3941d416`. 기존 parser blob과 BLS 후보 지문은 모두 정상이다. 결과 `LAUNCHER_CHECKOUT_SOURCE_MISMATCH_STOP`.
+- GitHub ancestry: `3941d416`은 `7ac573fc`의 275개 커밋 이전 조상이다. 변경 파일 298개 가운데 보호 영역 104개가 달라, 보호 정책을 무시한 source 재지정이나 기존 스케줄러 덮어쓰기를 허용하지 않는다. `lib/release-calendar.mjs`는 두 커밋 간 변경되지 않았다.
+- 실제 writer 원장의 `VERIFIED`는 당시 승인 source 게시 성공 근거지만 **예약 Core 런처가 그 작업 트리에서 출발했다는 증거는 아니다**. R12는 Core XML에서 VBS 파일명을 확인한 뒤 추정 데이터 루트의 VBS를 읽었으므로 두 절대 경로가 같은지도 확인하지 못했다.
+- R13은 XML `Arguments`에서 **정확한 VBS 절대 경로**를 추출하고 그 파일의 런처를 확인한다. 또한 `E:\ZGmini\projects` 직계 Git repo에서 `git worktree list --porcelain`로 **연결된 하위 worktree 등록 목록**을 읽어 실제 승인 source HEAD의 존재·유일성·파서 무결성·보호 파일 청결을 확인한다. 위치는 비식별 ID만 출력한다.
+- R13 결과는 `MARKET_CALENDAR_R13_RUNTIME_LINEAGE_RESULT.txt`; 읽기 전용이며 작업 등록·수집·게시·설치·Git 전환·config/DB 변경은 없다. 승인 checkout을 찾더라도 스케줄러 재설치는 별도 검증·승인 없이 진행하지 않는다.
