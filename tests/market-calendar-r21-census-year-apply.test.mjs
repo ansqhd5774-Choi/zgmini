@@ -13,7 +13,7 @@ const r20Parser=new URL('../staging/market-calendar/r20-census/lib/release-calen
 const currentCollector=new URL('../scripts/pc-writer/release-calendar.mjs',import.meta.url);
 const candidate=new URL('../staging/market-calendar/r21-census-year/scripts/pc-writer/release-calendar.mjs',import.meta.url);
 
-function fixture({staleConfig=false,dirty=false,badCandidate=false,badCore=false}={}){
+function fixture({staleConfig=false,dirty=false,badCandidate=false,badCore=false,wrongLineEnding=false}={}){
  const tmp=fs.mkdtempSync(path.join(os.tmpdir(),'zgmini-r21-'));
  const checkout=path.join(tmp,'repo'),dataRoot=path.join(tmp,'data'),scheduler=path.join(tmp,'scheduler');
  const parser=path.join(checkout,'lib','release-calendar.mjs');
@@ -23,7 +23,11 @@ function fixture({staleConfig=false,dirty=false,badCandidate=false,badCore=false
  fs.mkdirSync(dataRoot);fs.mkdirSync(scheduler);
  const git=args=>execFileSync('git',args,{cwd:checkout,encoding:'utf8',stdio:['ignore','pipe','pipe']}).trim();
  git(['init','-q']);git(['config','user.name','R21 fixture']);git(['config','user.email','r21@example.invalid']);
- fs.copyFileSync(r20Parser,parser);fs.copyFileSync(currentCollector,collector);
+ fs.copyFileSync(r20Parser,parser);
+ const baseline=fs.readFileSync(currentCollector,'utf8');
+ const collectorBytes=Buffer.from(wrongLineEnding?baseline:baseline.replace(/\r?\n/g,'\r\n'));
+ fs.writeFileSync(collector,collectorBytes);
+ if(!wrongLineEnding)assert.equal(digest(collectorBytes),'1b8c2760a4f815191282dd55969ce8170072d4f747c8468ddd6601dc50ee88d6');
  fs.writeFileSync(runner,'// Preserve the registered PC Core runner\n');
  git(['add','lib/release-calendar.mjs','scripts/pc-writer/release-calendar.mjs','scripts/pc-writer/local-cycle.mjs']);
  git(['commit','-qm','R20 installed baseline']);
@@ -35,7 +39,6 @@ function fixture({staleConfig=false,dirty=false,badCandidate=false,badCore=false
  const input={dataRoot,getCoreRoot:()=>checkout,getTaskXml:()=>'<Task><Arguments>no-op</Arguments></Task>',
   approvedSource:approved,expectedWorktreeId:badCore?'another-core':worktreeIdentity(checkout),
   expectedParserSha256:digest(fs.readFileSync(r20Parser)),
-  expectedBaselineSha256:digest(fs.readFileSync(currentCollector)),
   expectedCandidateSha256:badCandidate?'0'.repeat(64):digest(fs.readFileSync(candidate))};
  return {tmp,checkout,collector,parser,runner,configFile,ledger,dataRoot,git,approved,run:apply=>runR21({...input,apply})};
 }
@@ -62,7 +65,10 @@ test('R21 installs precisely one collector file after R20 with an owned lock and
   assert.equal(result.phase,'INSTALLED');assert.equal(f.git(['rev-parse','HEAD']),result.newSource);
   assert.equal(f.git(['rev-parse','HEAD^']),f.approved);
   assert.equal(f.git(['diff','--name-only',f.approved,result.newSource]),'scripts/pc-writer/release-calendar.mjs');
-  assert.deepEqual(fs.readFileSync(f.collector),fs.readFileSync(candidate));
+  assert.deepEqual(fs.readFileSync(f.collector),Buffer.from(fs.readFileSync(candidate,'utf8').replace(/\r?\n/g,'\r\n')));
+  assert.equal(result.lineEnding,'CRLF');
+  assert.equal(result.baselineNormalizedLfSha256,digest(fs.readFileSync(currentCollector)));
+  assert.equal(result.installedCandidateSha256,'8105a2922ff0d05d29b329dc22dcf66d0d5920ea0d1661337066cef877f45bc5');
   assert.deepEqual(fs.readFileSync(f.parser),parser);assert.deepEqual(fs.readFileSync(f.runner),runner);
   assert.deepEqual(fs.readFileSync(f.ledger),ledger);
   assert.equal(JSON.parse(fs.readFileSync(f.configFile)).source,result.newSource);
@@ -91,7 +97,7 @@ test('R21 never replaces an already-owned Core lock or edits the collector',()=>
 });
 
 test('R21 blocks stale config, dirty Core, changed candidate and unknown worktree',()=>{
- for(const opts of [{staleConfig:true},{dirty:true},{badCandidate:true},{badCore:true}]){
+ for(const opts of [{staleConfig:true},{dirty:true},{badCandidate:true},{badCore:true},{wrongLineEnding:true}]){
   const f=fixture(opts);
   try{
    const before=fs.readFileSync(f.collector);
