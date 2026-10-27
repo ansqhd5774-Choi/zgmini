@@ -2,7 +2,7 @@
 // No source/config/git/task/DB changes, no collection, no lock acquisition.
 import fs from 'node:fs';
 import path from 'node:path';
-import {createHash,randomBytes} from 'node:crypto';
+import {createHash} from 'node:crypto';
 import {execFileSync} from 'node:child_process';
 import {fileURLToPath} from 'node:url';
 import {coreRootFromTask,worktreeIdentity} from './market-calendar-r19-bea-apply.mjs';
@@ -31,7 +31,7 @@ export function runR21SourceExport({
   mode:'READ_ONLY',previousSource:approvedSource,readOnly:true,
   coreSourceChanged:false,configChanged:false,schedulerChanged:false,
   dbChanged:false,collectionExecuted:false,gitPushed:false,
-  exportedFile:null,decision:'PREFLIGHT_NOT_COMPLETE_STOP'};
+  exportedFile:null,collectorSourceBase64:null,decision:'PREFLIGHT_NOT_COMPLETE_STOP'};
  try{
   if(!reportPath||typeof reportPath!=='string')throw Error('MISSING_REPORT_PATH');
   const root=getCoreRoot(getTaskXml());
@@ -54,15 +54,13 @@ export function runR21SourceExport({
   const currentBlob=hex40(gitCall(root,['hash-object',COLLECTOR_REL]));
   output.collectorMatchesTrackedHead=Boolean(trackedBlob&&currentBlob&&trackedBlob===currentBlob);
   if(!fs.readFileSync(collector).equals(content)){output.decision='COLLECTOR_CHANGED_DURING_EXPORT_STOP';return output;}
-  const suffix=new Date().toISOString().replace(/[-:.TZ]/g,'')+'_'+randomBytes(4).toString('hex');
-  const filename=`MARKET_CALENDAR_R21_PC_COLLECTOR_ORIGINAL_${suffix}.mjs`;
-  const outputPath=path.join(path.dirname(path.resolve(reportPath)),filename);
-  fs.writeFileSync(outputPath,content,{flag:'wx'});
-  if(sha256(fs.readFileSync(outputPath))!==output.pcCollectorSha256){
-   output.decision='EXPORTED_COPY_HASH_MISMATCH_STOP';return output;
+  // One uploadable TXT is the entire handoff. No companion .mjs file to locate.
+  output.collectorSourceBase64=content.toString('base64');
+  if(sha256(Buffer.from(output.collectorSourceBase64,'base64'))!==output.pcCollectorSha256){
+   output.collectorSourceBase64=null;
+   output.decision='SOURCE_ENCODING_MISMATCH_STOP';return output;
   }
-  output.exportedFile=filename;
-  output.decision=output.collectorMatchesTrackedHead?'PC_COLLECTOR_EXPORTED_READONLY':'PC_COLLECTOR_EXPORTED_WITH_TRACKED_DRIFT';
+  output.decision=output.collectorMatchesTrackedHead?'PC_COLLECTOR_EMBEDDED_READONLY':'PC_COLLECTOR_EMBEDDED_WITH_TRACKED_DRIFT';
  }catch(error){
   output.decision='READ_ONLY_EXPORT_FAILED_STOP';
   output.errorCode=typeof error?.code==='string'?error.code:'LOCAL_READ_OR_EXPORT_ERROR';
@@ -78,6 +76,6 @@ if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.ur
   fs.writeFileSync(report,JSON.stringify(outcome,null,2)+'\n','utf8');
   console.log(`R21_SOURCE_EXPORT=${outcome.decision}`);
   console.log(`RESULT_FILE=${report}`);
-  if(!outcome.exportedFile)process.exitCode=1;
+  if(!outcome.collectorSourceBase64)process.exitCode=1;
  }catch{console.error('EXPORT_REPORT_WRITE_FAILED');process.exitCode=2;}
 }
