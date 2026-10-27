@@ -212,3 +212,10 @@
 - PC 결과 증빙 `EARNINGS_CENSUS_QFR_R2_STORE_RESULT_20261027T141637Z.txt`: `MODE=READ_ONLY_PREFLIGHT`, `RESULT=PASS_QFR_STORAGE_PREFLIGHT_NO_WRITE`, 기존 CENSUS snapshot/chunk **0/0**, ZIP **1,746,726바이트**, SHA-256 `232f7757e654e787a9eab49792302feb3683e5280a66ff0cc9bd7f0cbc448654`, 2026-Q2 **15.599418144173285%**. 스키마·직접 HTTP·산식 **실제 PC 프리플라이트 검증 성공**. 데이터 저장이나 웹 게시 성공은 아님.
 - 사용자 승인에 따라 `EARNINGS_CENSUS_QFR_R2_SQLITE_APPLY_ONCE.cmd`를 **같은 지정 브랜치에만** 추가. 승인 당시 원본 SHA의 정확한 일치를 요구하며, 변경된 ZIP은 쓰기 전 `QFR_SOURCE_CHANGED_SINCE_PREFLIGHT_NO_WRITE`로 거절한다. `--apply --confirm-census-qfr-sqlite-append --expected-source-sha256 <승인된 SHA>`가 있어야만 기록 가능한 구조다. 고정된 SHA는 **이번 단발성 승인용**으로, 다음 분기에는 새 검증·새 승인 값 필요.
 - 원본 저장 후 CMD 옆에 생성되는 `EARNINGS_CENSUS_QFR_R2_STORE_RESULT_*.txt`를 실제로 읽기 전까지 `PC_SQLITE_APPEND=NOT_RUN`으로 둔다. 승인된 수정 범위는 CENSUS 전용 기존 원장 2개 테이블에 **append-only 원문 ZIP 1종**이며 기존 E1-R4 산식·BLS·D1·Production 배포를 변경하지 않는다.
+
+## 14. Census QFR APPLY 압축 누락 사고 및 독립 실행 패키지 수정 (2026-10-27)
+
+- 사용자 스크린샷에서 `ERR_MODULE_NOT_FOUND`, 누락 파일 `EARNINGS_CENSUS_QFR_R1_READONLY.mjs`, 실행 폴더 `C:\Users\...\Desktop\EARNINGS_CENSUS_QFR_R2_SQLITE_APPLY_ONCE_20261027` 확인. 최초 전달한 최소 패키지는 R2 저장기가 import하는 R1 파서를 포함하지 않았다. **Node 모듈 해석 단계에서 실패**한 것이므로 SQLite 기록·D1·점수 변경 0건. 스크린샷만으로 성공/실패 저장 로그를 추정하지 않는다.
+- 새 **완전한 독립 실행 압축**에는 R1 읽기 전용 파서 `.mjs`, R2 저장기 `.mjs`, `EARNINGS_CENSUS_QFR_R2_SQLITE_APPLY_ONCE.cmd`, R2 기준서까지 **평면 디렉터리 구조로 4개 파일**을 동봉한다. 원래 기존 PC 스크립트 폴더에 있던 R1 파서를 가정하지 않는다. 사용자도 바탕화면 신규 폴더에서 실행 가능해야 한다.
+- APPLY CMD에서 `.mjs` 두 파일을 먼저 검사한다. 누락 시 Node를 호출하지 않고 `EARNINGS_CENSUS_QFR_R2_STORE_RESULT_SETUP_*.txt`에 고정 오류 코드·`SQLITE_COMMITTED=NO`를 남기고 종료한다. ZIP 압축 무결성도 별도 확인한 뒤 배포한다.
+- **기존 SHA 검증 게이트·기존 DB 스키마·원장 보존 제약은 그대로 유지**. 사용자 PC 재실행의 실제 `PASS_QFR_SQLITE_APPEND_READBACK` 증거 전에는 `PC_SQLITE_APPEND=NOT_RUN`이다. 잘못된 패키지는 재사용하지 않는다.
