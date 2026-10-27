@@ -27,14 +27,17 @@ export default function UsaFearGreedPage() {
     <div className="zg-fg-title-row">
       <h1>미국 공포탐욕지수</h1>
       <UsaIntroHeading />
+      <a href="/guides/fear-greed-buying/" aria-label="공포·탐욕 매수 판단 가이드" className="zg-fg-buying-guide-link inline-flex min-h-10 items-center gap-1.5 text-sm font-semibold text-amber-300 hover:text-amber-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber-300">
+        <BookOpen size={16} aria-hidden="true"/>
+        <span className="zg-fg-guide-full">공포·탐욕 매수 판단 가이드</span>
+        <span className="zg-fg-guide-short" aria-hidden="true">매수 가이드</span>
+        <ArrowUpRight size={15} aria-hidden="true"/>
+      </a>
     </div>
     <nav className="zg-fg-country-tabs" aria-label="공포탐욕 국가별 상세페이지">
      <a href="/fear-greed/usa/" aria-current="page">미국 · CNN</a>
      <a href="/fear-greed/korea/">한국 · ZGmini</a>
     </nav>
-    <a href="/guides/fear-greed-buying/" className="mb-4 inline-flex min-h-10 items-center gap-1.5 text-sm font-semibold text-amber-300 hover:text-amber-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber-300">
-     <BookOpen size={16} aria-hidden="true"/> 공포·탐욕 매수 판단 가이드 <ArrowUpRight size={15} aria-hidden="true"/>
-    </a>
     <div className="zg-fg-facts" aria-label="미국 공포탐욕 분석 범위">
      <span><strong>7</strong><small>COMPONENTS</small></span>
      <span><strong>CNN</strong><small>OFFICIAL INDEX</small></span>
