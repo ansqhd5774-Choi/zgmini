@@ -76,3 +76,10 @@
 - 실제 예약 Core 작업 XML에서 추출한 VBS는 984바이트이며 기존 데이터 루트 런처와 위치가 다르다. `node`·`.mjs` 토큰은 있지만 정적 추출 가능한 절대 경로 엔트리포인트는 0개. 일치한 worktree가 **실제 예약 실행 대상이라고는 아직 확인되지 않았다**. R14 결정은 `TASK_VBS_STATIC_ENTRYPOINT_AMBIGUOUS_OR_DYNAMIC_STOP`.
 - R15는 R14에서 이미 확인된 worktree 전체를 재검색하지 않고, **실제 예약 작업의 정확한 VBS 한 파일**을 읽어 변수명·함수 호출·문자열 결합 순서의 구조를 확인한다. 인용된 모든 문자열 값, 경로, 환경변수, 이메일, 민감 키워드가 포함된 줄은 비식별 처리하며 원문이나 실제 경로를 출력하지 않는다.
 - `MARKET_CALENDAR_R15_VBS_STRUCTURE.cmd` 실행 결과는 같은 폴더의 `MARKET_CALENDAR_R15_VBS_STRUCTURE_RESULT.txt`다. R15는 VBS 실행 없이 읽기 전용으로 동작하며 Git·PC 설정·DB·예약 작업·수집·게시·배포를 변경하지 않는다. 분석 후 **승인 source와 실제 실행 엔트리포인트 일치**를 확정하기 전에는 BLS 파일 설치·config source 전환을 하지 않는다.
+
+### R15 실측과 R16 — R38 wrapper 원본 실행 경로 검증
+
+- R15 실측(`2026-10-27T08:49:04.707Z`)은 `ZGMINI_R38_WRAPPER_V1` 래퍼 19개 코드 줄(20행 파일)을 확인했다. `origin`과 `dispatcher`는 각각 한 개의 문자열 리터럴로 할당되고, `sh.Run`은 먼저 dispatcher 시작 작업, 이어 **기존 origin Core 실행**, 두 작업이 성공하면 dispatcher 종료 작업을 호출한다. `executable`은 환경변수와 문자열 결합으로 구성된다.
+- 즉 R14의 `staticEntrypointCount=0`은 예약 래퍼가 직접 `scripts/pc-writer/local-cycle.mjs` 경로를 갖지 않아서 발생할 수 있다. R12의 데이터 루트 VBS를 **현재 래퍼가 실제 origin으로 참조하는지**는 아직 미확정이며, 지난번 `3941d416` 단정은 계속 보류한다.
+- R16 `MARKET_CALENDAR_R16_ORIGIN_LINEAGE.cmd`는 정확한 예약 VBS의 단일 `origin = "..."` 할당만 추출하고, 그 원본 파일이 있을 때 최대 64KiB를 읽어 Node 실행 파일 경로를 찾는다. 산출된 Git checkout HEAD·parser blob·청결 상태·비식별 경로 ID가 R14에서 확인한 승인 checkout `d0a4b3cb8b95`와 같은지 점검한다. **dispatcher는 파일 존재·형식만 확인**하고 실행하지 않는다.
+- 결과는 `MARKET_CALENDAR_R16_ORIGIN_LINEAGE_RESULT.txt`이며, 모든 PC 절대 경로·키·VBS 원문은 기록하지 않는다. Git 전체 작업 트리 재검사, VBS/Node 실행, 설치·수집·게시·config/DB/작업 수정 모두 금지. 어떤 불일치든 BLS 운영 전환은 보류한다.
