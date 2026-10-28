@@ -7,7 +7,8 @@ const css=readFileSync(new URL('../components/iran-published-chart.css',import.m
 
 test('homepage Iran chart restores the original compact sparkline geometry',()=>{
  assert.ok(chart.includes('viewBox={compact?"0 0 170 68":"0 0 350 136"}'));
- assert.ok(chart.includes('preserveAspectRatio={compact?"none":"xMidYMid meet"}'));
+ assert.ok(chart.includes('preserveAspectRatio="xMidYMid meet"'));
+ assert.ok(!chart.includes('preserveAspectRatio={compact?"none"'));
  assert.ok(chart.includes('is-compact ob-summary-chart'));
  assert.ok(chart.includes('compact?54-v*.44:112-v'));
  assert.ok(css.includes('is-compact{display:block;flex:0 0 68px;height:68px;min-height:0'));

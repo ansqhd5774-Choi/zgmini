@@ -32,7 +32,7 @@ export default function IranPublishedChart({points,history=[],compact=false}:{po
   ?'M'+x(daily[0].at)+','+y(0)+' '+dailyPath.replace(/^M/,'L')+' L'+x(daily.at(-1)!.at)+','+y(0)+' Z':'';
  const delta=previous?current.value-previous.value:null;
  return <div className={'zg-iran-published-chart'+(compact?' is-compact ob-summary-chart':'')} aria-label="최근 14일 일별 추정과 실제 게시 시각별 잠정 점수">
-  <svg viewBox={compact?"0 0 170 68":"0 0 350 136"} preserveAspectRatio={compact?"none":"xMidYMid meet"} role="group" aria-labelledby={id}>
+  <svg viewBox={compact?"0 0 170 68":"0 0 350 136"} preserveAspectRatio="xMidYMid meet" role="group" aria-labelledby={id}>
    <title id={id}>{`최근 14일 · 실제 게시 기록 ${visible.length}회 · 한국시간`}</title>
    {compact&&<defs><linearGradient id={id+"-compact-fill"} x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#ef4444" stopOpacity=".25"/><stop offset="100%" stopColor="#ef4444" stopOpacity="0"/></linearGradient></defs>}
    {[0,50,100].map(v=><g key={v}><line x1={axisLeft} x2={axisRight} y1={y(v)} y2={y(v)} stroke="#52758a" strokeDasharray="2 4" opacity=".55"/><text x={axisLabelX} y={y(v)+3} textAnchor={compact?"end":undefined} fill="#a3bbcc" fontSize="9">{v}</text></g>)}
