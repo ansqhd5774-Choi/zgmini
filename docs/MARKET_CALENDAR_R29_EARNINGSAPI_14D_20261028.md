@@ -50,3 +50,10 @@
 - 키는 콘솔에서 숨김 입력하며 명령행 인수·로그·결과·Git에 넣지 않는다. `EARNINGS_API_KEY` 한 항목만 바꾸고 다른 provider 값을 파싱 전후 비교한다.
 - 실제 수정 전에 `providers.env.r29-*.bak`를 **동일 보안 폴더**에 보존한다. 기존 파일을 직접 갱신하여 Windows 파일 ACL을 유지한다. 이미 같은 키인 경우 재기록·백업하지 않는다.
 - 이 CMD는 **키 등록만 수행**한다. R29 staged 수집기는 기본 비활성이며 PC 실제 설치, 정규 수집, 상업적 재배포 권한, 공식/예상 구분, D1 게시, Cloudflare 배포를 완료하지 않는다.
+
+## 키 등록 후 실제 원문 구조 일회성 확인
+
+- 사용자가 PC에 키를 등록했다고 보고한 뒤, `scripts/pc-writer/MARKET_CALENDAR_R29_EARNINGSAPI_SOURCE_TEST.cmd`와 동봉 `market-calendar-r29-earningsapi-source-test.mjs`를 작성했다.
+- 14개 뉴욕 날짜를 읽기 전용 GET으로 조회하고 응답 날짜·배열·종목 형식과 핵심 기업 포함 개수를 확인한다. 무료 한도에서 **최대 14회** 사용하며 HTTP 401/403/429에 자동 재시도하지 않는다.
+- 결과는 `MARKET_CALENDAR_R29_EARNINGSAPI_SOURCE_TEST_RESULT.txt`에 **날짜별 건수·상태·핵심 기업 티커만** 기록한다. 응답 원문·키·다른 provider 키를 기록하지 않고 PC DB·예약 작업·게시물을 변경하지 않는다.
+- 이 실행은 사용자 Windows PC에서 아직 실측되지 않았다. 사용자에게 제공되는 1회성 원문 검증 절차이며 새 모니터링 작업이 아니다.
