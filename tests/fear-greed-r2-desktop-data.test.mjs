@@ -28,7 +28,8 @@ test('R2 Korea shows only public Revision 7 score and never exposes private weig
  assert.ok(korea.includes('c?.components??[]'));
  assert.ok(korea.includes('score:'));
  assert.ok(korea.includes('raw:null'));
- assert.ok(data.includes('<KoreanCountryCard/>'));
+ assert.ok(data.includes('<KoreanCountryCard detail/>'));
+ assert.ok(read('app/country-fear-greed.tsx').includes('<KoreanCountryCard/>'));
  assert.ok(data.includes('<KoreaFactorAnalysisR2/>'));
  assert.ok(!korea.includes('weightedContribution'));
  assert.ok(!factor.includes('weightedContribution'));
