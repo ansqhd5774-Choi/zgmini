@@ -3,11 +3,12 @@ setlocal EnableExtensions DisableDelayedExpansion
 rem R42 stand-alone launcher: download immutable approved source into a local sandbox.
 rem It does not alter the PC's approved project, R1 news key or scheduler.
 set "R42_NODE=E:\ZGmini\runtime\node.exe"
-set "R42_DIR=%~dp0IRAN_NEWS_R42_RUNTIME_FIX1"
-set "R42_RESULT=%~dp0IRAN_NEWS_R42_ONE_CLICK_FIX1_RESULT.txt"
-if exist "%USERPROFILE%\Desktop\" set "R42_RESULT=%USERPROFILE%\Desktop\IRAN_NEWS_R42_ONE_CLICK_FIX1_RESULT.txt"
+set "R42_DIR=%TEMP%\ZGMINI_IRAN_NEWS_R42_RUNTIME_FIX2"
+set "R42_RESULT=%~dp0IRAN_NEWS_R42_ONE_CLICK_FIX2_RESULT.txt"
 set "R42_RAW=https://raw.githubusercontent.com/ansqhd5774-Choi/zgmini/e149bdcef8ff52d555075478f7822114503ef296"
 if exist "%R42_RESULT%" goto existing_result
+> "%R42_RESULT%" echo R42_LAUNCH_STARTED=YES
+if errorlevel 1 goto result_write_failed
 if not exist "%R42_NODE%" goto missing_node
 where curl.exe >nul 2>nul
 if errorlevel 1 goto missing_curl
@@ -23,7 +24,7 @@ if errorlevel 1 goto setup_failed
 if not exist "%R42_DIR%\docs" mkdir "%R42_DIR%\docs"
 if errorlevel 1 goto setup_failed
 
-> "%R42_RESULT%" echo R42_SOURCE_COMMIT=e149bdcef8ff52d555075478f7822114503ef296
+>> "%R42_RESULT%" echo R42_SOURCE_COMMIT=e149bdcef8ff52d555075478f7822114503ef296
 >> "%R42_RESULT%" echo R42_STAGE_ONLY_NO_EXISTING_PC_SOURCE_CHANGED=YES
 call :download "scripts/iran-progress/news-metadata-d1-once-r42.mjs" "scripts\iran-progress\news-metadata-d1-once-r42.mjs"
 if errorlevel 1 goto download_failed
@@ -58,7 +59,8 @@ set "IRAN_NEWS_R42_APPROVED="
 if "%R42_EXIT%"=="2" goto api_pending
 if not "%R42_EXIT%"=="0" goto write_uncertain
 >> "%R42_RESULT%" echo FINAL_STATUS=D1_AND_PUBLIC_API_VERIFIED
-echo R42 SUCCESS. Upload "IRAN_NEWS_R42_ONE_CLICK_FIX1_RESULT.txt" from Desktop.
+echo R42 SUCCESS. Upload "IRAN_NEWS_R42_ONE_CLICK_FIX2_RESULT.txt" from the CMD folder.
+pause
 exit /b 0
 
 :download
@@ -72,28 +74,43 @@ exit /b 0
 :api_pending
 >> "%R42_RESULT%" echo FINAL_STATUS=D1_STORED_PUBLIC_API_PENDING
 echo D1 stored. Public API pending. DO NOT rerun; upload result.
+pause
 exit /b 2
 :write_uncertain
 >> "%R42_RESULT%" echo FINAL_STATUS=WRITE_OUTCOME_UNCERTAIN_DO_NOT_RETRY
 echo Write outcome uncertain. DO NOT rerun; upload result.
+pause
 exit /b 1
 :preflight_failed
 >> "%R42_RESULT%" echo FINAL_STATUS=PREFLIGHT_FAILED_NO_D1_WRITE
 echo Preflight failed. No D1 write started. Upload result.
+pause
 exit /b 1
 :download_failed
 >> "%R42_RESULT%" echo FINAL_STATUS=DOWNLOAD_FAILED_NO_D1_WRITE
 echo Download failed. No D1 write started. Upload result.
+pause
 exit /b 1
 :setup_failed
-echo R42_SETUP_FAILED_NO_D1_WRITE
+>> "%R42_RESULT%" echo FINAL_STATUS=SETUP_FAILED_NO_D1_WRITE
+echo R42_SETUP_FAILED_NO_D1_WRITE. Upload result from CMD folder.
+pause
 exit /b 1
 :missing_node
+>> "%R42_RESULT%" echo FINAL_STATUS=EXISTING_NODE_NOT_FOUND_NO_D1_WRITE
 echo Existing E: drive Node not found: "%R42_NODE%"
+pause
 exit /b 1
 :missing_curl
+>> "%R42_RESULT%" echo FINAL_STATUS=WINDOWS_CURL_NOT_FOUND_NO_D1_WRITE
 echo Windows curl.exe not found. No D1 write started.
+pause
 exit /b 1
 :existing_result
 echo Result file already exists. DO NOT rerun before review: "%R42_RESULT%"
+pause
+exit /b 1
+:result_write_failed
+echo Cannot write result beside this CMD. Move CMD to Downloads or Desktop, then run once.
+pause
 exit /b 1
