@@ -66,7 +66,9 @@ flowchart TD
 4. **원천 데이터 지연 확인:** 10월 27일 SPY 1h 직접 GET은 HTTP 200이지만 `x-row-count:0`, `x-data-through:2026-10-26T23:59:00Z`. 이는 **해당 제공처에서 그 시점에 27일 값이 없다는 증거**이지 모든 가격 API에서 수집 불가능하다는 증거가 아니다.
 5. **Cloudflare Git 운영 빌드 PASS(소스 배포):** `main` 커밋 `74dc2024719a527d473f249702bdd53b5f3dcbac`의 `Workers Builds: zgmini-migration-candidate-r5` 성공, 운영 build `af7548ac-9f2f-4e9f-8d64-796bd43ff681`, R37 Reader main/local 일치. **Cloudflare 빌드 성공은 R37 D1 점수 게시를 의미하지 않는다.**
 
-**현재 종료 판정:** `PC_R57_INSTALLED / R48_R54_INVOKED / CLOUDFLARE_SOURCE_BUILD_PASS / R51_2026_10_27_UNALIGNED / D1_R32_NOT_PUBLISHED`. 최신값은 실행 직전 다시 확인한다.
+**현재 종료 판정:** `PC_R57_INSTALLED / R48_R54_INVOKED / CLOUDFLARE_SOURCE_BUILD_PASS / R51_2026_10_27_UNALIGNED / D1_R32_NOT_PUBLISHED`.
+
+**R58 추가 검사(2026-10-29):** 기존 가격 원천은 재조회에서도 SPY 27일 1h 행 0건(`x-data-through:2026-10-26T23:59:00Z`), 공개 API는 아직 `modelRevision=null`. PC가 이미 사용 중인 Alpaca의 무료 IEX/SIP 1h `adjustment=raw` 가능 여부를 SPY 한 종목·최대 3GET로 확인하는 [R58 읽기 전용 검사](THEME_NINE_R58_ALPACA_SOURCE_RECOVERY_20261029.md)를 **같은 브랜치에 코드·Windows CMD·테스트와 함께 저장**했다. R58은 소스 대체 승인이나 실제 D1 게시가 아니며, 27일 원가격이 검증될 때만 기존 R47→R54 경로를 재개한다. 최신값은 실행 직전 다시 확인한다.
 
 ## 6. 다음 작업의 정확한 초점
 
