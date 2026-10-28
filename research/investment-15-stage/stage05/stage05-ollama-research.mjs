@@ -16,15 +16,16 @@ const normalUrl=s=>{
 
 /** Only a finished Stage05 calculation, never archived F or raw forecast CAGR. */
 export function readStage05Candidates(input) {
-  if(input?.version!=='STAGE05_VERIFIED_RESULTS_HANDOFF_R81'
+  if(input?.version!=='STAGE05_VERIFIED_RESULTS_HANDOFF_R85'
     ||input.status!=='READY_FOR_OLLAMA_RESEARCH'
     ||!Array.isArray(input.ollamaInput?.candidates))
     return {status:'BLOCKED_INPUT_NOT_READY',candidates:[]};
   const rows=input.ollamaInput.candidates;
   if(rows.length!==9||rows.length!==input.coverage?.approvedThemes
     ||!rows.every(r=>validText(r.themeId)&&validText(r.theme)
-      &&validScore(r.stage04M4)&&validScore(r.stage05T)&&validScore(r.stage05S5)
-      &&Math.abs(r.stage05S5-(.8*r.stage04M4+.2*r.stage05T))<=0.00001)
+      &&validScore(r.stage02Score)&&validScore(r.stage03Score)
+      &&validScore(r.stage04M4)&&validScore(r.stage05S5)
+      &&r.stage05S5===r.stage04M4)
     ||!unique(rows.map(r=>r.themeId))||!unique(rows.map(r=>r.theme)))
     throw new Error('STAGE05_CANDIDATES_CONTRACT_INVALID');
   const savedR77=input.ollamaInput.stage04SavedR77Forecast||null;
@@ -33,7 +34,9 @@ export function readStage05Candidates(input) {
     ||!Array.isArray(savedR77.topics)))
     throw new Error('STAGE05_R77_RESEARCH_INPUT_INVALID');
   return {status:'READY',candidates:rows.map(r=>({themeId:r.themeId,theme:r.theme,
-    E:r.stage04M4,T:r.stage05T,S5:r.stage05S5})),asOfDate:input.asOfDate,
+    stage02Score:r.stage02Score,stage03Score:r.stage03Score,
+    stage04M4:r.stage04M4,S5:r.stage05S5})),asOfDate:input.asOfDate,
+    marketRisk:input.ollamaInput.stage01MarketRisk||'UNKNOWN',
     savedStage04ForecastResearch:savedR77};
 }
 
@@ -89,11 +92,12 @@ export async function runStage05OllamaResearch({input,model,chat,webSearch,webFe
     throw new Error('STAGE05_TOOL_BUDGET_INVALID');
 
   const selectMessages=[{role:'system',content:
-    '당신은 5단계 투자 테마 연구 Ollama다. 제공된 E(산업 성장·괴리), T(시장 확인), S5(80% E+20% T) 계산값을 변경하지 말고, 경제학의 구조적 성장 관점과 숙련 트레이더의 시장 확인 관점으로 테마를 직접 선정하라. S5는 연구 우선순위이며 매수 신호가 아니다. 기업 매수·목표가·주문을 권고하지 말라. 자료나 점수를 만들어내지 말라.'},
+    '당신은 5단계 투자 테마 연구 Ollama다. 제공된 Stage01 시장 위험, Stage02 섹터 최종 점수, Stage03 테마 최종 점수, Stage04 확정 M4를 원형대로 읽고 경제학의 성장 관점과 숙련 트레이더의 시장 관점으로 테마를 직접 선정하라. S5는 기존 M4를 새 가중 없이 전달한 연구 우선순위다. 상대강도·추세·M4를 재계산하거나 새 합산점수를 만들지 말라. 매수·목표가·주문을 권고하지 말라. 자료나 점수를 만들어내지 말라.'},
   {role:'user',content:JSON.stringify({task:'THEME_SELECTION_FROM_EXISTING_SCORES',
-    snapshotDate:preflight.asOfDate,candidates:preflight.candidates,
+    snapshotDate:preflight.asOfDate,marketRisk:preflight.marketRisk,
+    candidates:preflight.candidates,
     savedR77ResearchContext:preflight.savedStage04ForecastResearch,
-    contextRule:'R77 전망 CAGR은 참고자료이며 M4/E/T/S5 계산값을 변경하지 않는다.'})}];
+    contextRule:'R77 전망 CAGR은 참고자료이며 Stage04 확정 M4 및 Stage05 전달값 S5를 변경하지 않는다.'})}];
   const chosen=parseAnswer(await chat({model,messages:selectMessages,
     format:selectedSchema,stream:false}));
   if(!Array.isArray(chosen.selectedThemes)||!Array.isArray(chosen.limitations)
