@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { firstPartyOllamaAdapter, discoverPublisherReports, exactMarketIdentity,
-  livePublisherSlugProbes } from './official-publisher-ollama-adapters-r71.mjs';
+  livePublisherSlugProbes, reportLeadEvidence } from './official-publisher-ollama-adapters-r71.mjs';
 import { runForecastPipeline } from './ollama-forecast-pipeline-r70.mjs';
 import { PUBLISHERS } from './stage04-four-publisher-r37-readonly.mjs';
 
@@ -196,4 +196,40 @@ test('submarket official report is excluded before calling local Ollama', async 
   assert.equal(report.growth_pct, null);
   assert.equal(modelCalls, 0);
   assert.equal(report.failure, 'SUBMARKET_OR_PROXY_REPORT_EXCLUDED');
+});
+
+test('regional CAGR below h2 cannot cancel the lead whole-market forecast CAGR', async () => {
+  const doc = '<html><h1>Global Data Center Market</h1>' +
+    '<p>The global data center market is projected to grow at CAGR 11.06% from 2026 to 2035.</p>' +
+    '<h2>U.S. Data Center Market</h2>' +
+    '<p>The U.S. data center market is forecast CAGR 11.30% from 2026 to 2035.</p></html>';
+  assert.match(reportLeadEvidence(doc), /11\.06%/);
+  assert.doesNotMatch(reportLeadEvidence(doc), /11\.30%/);
+  const report = await firstPartyOllamaAdapter('Precedence', {
+    fetchFn: async url => url === sources.Precedence.catalog ?
+      new Response('<html/>') : url === 'https://www.precedenceresearch.com/data-center-market' ?
+      new Response(doc) : new Response('missing', {status:404}),
+    searchFn: async () => '<html/>',
+    chooseFn: async () => ({index:0,scope:'DIRECT'})
+  }).run({id:'dc',keyword:'data center'});
+  assert.equal(report.state,'PASS');
+  assert.equal(report.growth_pct,11.06);
+  assert.equal(report.period_end,2035);
+});
+
+test('two explicit forecast periods in selected market excerpt are SOURCE_CONFLICT', async () => {
+  const doc = '<html><h1>Nuclear Reactor Market</h1>' +
+    '<p>The global market forecast CAGR 6.04% from 2026 to 2035, but the ' +
+    'same market forecast CAGR 6.04% from 2025 to 2034.</p></html>';
+  const report = await firstPartyOllamaAdapter('Precedence', {
+    fetchFn: async url => url === sources.Precedence.catalog ?
+      new Response('<html/>') : url === sources.Precedence.catalog + 'nuclear-reactor-market' ?
+      new Response(doc) : new Response('missing', {status:404}),
+    searchFn: async () => '<html/>',
+    chooseFn: async () => ({index:0,scope:'DIRECT'})
+  }).run({id:'nuclear',keyword:'nuclear reactor'});
+  assert.equal(report.state,'SOURCE_CONFLICT');
+  assert.equal(report.growth_pct,null);
+  assert.equal(report.source_conflict_reason,
+    'MULTIPLE_EXPLICIT_FORECAST_PERIODS_IN_SAME_CAGR_EXCERPT');
 });
