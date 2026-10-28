@@ -8,15 +8,40 @@ const args = process.argv.slice(2);
 const kstToday = () => new Intl.DateTimeFormat('en-CA',{
   year:'numeric',month:'2-digit',day:'2-digit',timeZone:'Asia/Seoul',
 }).format(new Date());
+async function saveUniqueJson(outputDir,prefix,report) {
+  if(!(await stat(outputDir)).isDirectory())throw new Error('OUTPUT_DIR_NOT_DIRECTORY');
+  const timestamp=new Date().toISOString().replace(/[:.]/g,'-');
+  const file=join(outputDir,`${prefix}_${timestamp}_${process.pid}.json`);
+  await writeFile(file,`${JSON.stringify(report,null,2)}\n`,{encoding:'utf8',flag:'wx'});
+  return file;
+}
 
 async function run() {
   if (args.length === 1 && args[0] === '--help') {
     process.stdout.write('Usage:\n  node stage05-fusion-readonly.mjs --audit-existing-live [--output-dir EXISTING_DIR]\n'
       + '  node stage05-fusion-readonly.mjs --audit-existing\n'
       + '  node stage05-fusion-readonly.mjs --audit-live\n'
+      + '  node stage05-fusion-readonly.mjs --audit-fda-growth-live [--output-dir EXISTING_DIR]\n'
       + '  node stage05-fusion-readonly.mjs --input verified-stage01-04-snapshot.json\n'
       + '  node stage05-fusion-readonly.mjs --audit-contract\n'
       + `Schema: ${SCHEMA_VERSION}; output is stdout JSON, read-only.\n`);
+    return;
+  }
+  if((args.length===1||args.length===3&&args[1]==='--output-dir')
+    &&args[0]==='--audit-fda-growth-live') {
+    const {fetchLatestOfficialFdaCder}=await import('../stage04/fda-cder-official-readonly.mjs');
+    const {previewFdaCderFromOriginalVerifiedResult}=await import('./stage05-industry-series-research.mjs');
+    const source=await fetchLatestOfficialFdaCder(); // existing official PDF, one explicit GET only
+    const result=previewFdaCderFromOriginalVerifiedResult(source,{
+      asOfDate:kstToday(),validatedDate:kstToday()});
+    const report={runType:'R80_FDA_ONE_VINTAGE_INDUSTRY_PROXY_PREVIEW',
+      status:'RESEARCH_ONLY_NOT_STAGE04_M4',...result};
+    if(args.length===3){
+      const file=await saveUniqueJson(args[2],'STAGE05_R80_FDA_PREVIEW',report);
+      process.stdout.write(`STAGE05_R80_FDA_JSON=${file}\n`
+        +'FDA PDF proof verified; historical growth preview only; M4/S5 NULL.\n');
+    }else print(report);
+    process.exitCode=2;
     return;
   }
   if ((args.length === 1 || args.length === 3 && args[1] === '--output-dir')
@@ -49,10 +74,7 @@ async function run() {
     const report={...audit,liveFError:liveError,
       sourceMode:isLive?'LIVE_PUBLIC_GET_PLUS_ARCHIVE':'ARCHIVE_ONLY'};
     if(outputDir){
-      if(!(await stat(outputDir)).isDirectory())throw new Error('OUTPUT_DIR_NOT_DIRECTORY');
-      const timestamp=new Date().toISOString().replace(/[:.]/g,'-');
-      const file=join(outputDir,`STAGE05_R79_AUDIT_${timestamp}_${process.pid}.json`);
-      await writeFile(file,`${JSON.stringify(report,null,2)}\n`,{encoding:'utf8',flag:'wx'});
+      const file=await saveUniqueJson(outputDir,'STAGE05_R79_AUDIT',report);
       process.stdout.write(`STAGE05_R79_AUDIT_JSON=${file}\n`
         + `APPROVED=${audit.coverage.approvedThemes} HISTORICAL_F=${audit.coverage.historicalF}`
         + ` INDUSTRY_SOURCES=${audit.coverage.historicalIndustrySourceObserved}`
