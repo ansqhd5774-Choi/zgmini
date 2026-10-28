@@ -2,9 +2,18 @@
 
 ## 상태 (2026-10-28)
 
-- **현재 단계: 연준 원문 5개 확보·파서/수집기/페이지 표시/PC 설치 패키지 CODE_READY.** 아직 사용자 PC R22 설치·실제 정규 주기 수집·사이트 반영 성공이 아니다.
+- **현재 단계: R22 공식 연준 수집기 사용자 PC 설치 완료(설치 로그 검증).** 실제 정규 주기 수집과 공개 사이트 반영은 별도 미확인이다.
 - 기존 PC R21 설치 증거: `phase=INSTALLED`, `decision=R21_CENSUS_YEAR_INSTALLED_NO_FORCED_COLLECTION`, HEAD `b5e860d09ac87087e158193613425b146fa9a1e5`.
 - 고정 작업 브랜치: `codex/zgmini-gpt-workspace-20261025`. 다른 브랜치·main 반영·PC 운영 코어 변경 금지.
+
+
+## 사용자 PC R22 설치 완료 증거 (2026-10-28)
+
+- 사용자 제출 단일 파일: `MARKET_CALENDAR_R22_FED_APPLY_RESULT.txt`; `mode=EXPLICIT_APPLY`, `phase=INSTALLED`, `decision=R22_FED_CALENDAR_INSTALLED_NO_FORCED_COLLECTION`. 로그 시각 `2026-10-28T02:08:12.277Z`.
+- 승인 이전 PC Core source `b5e860d09ac87087e158193613425b146fa9a1e5` → **새 로컬 Core HEAD `a50ac307d8d0849ca2800b3c4df4cd6daaba3b1e`**. 작업 나무 ID `d0a4b3cb8b95` 일치.
+- 정확히 두 파일 `lib/release-calendar.mjs`, `scripts/pc-writer/release-calendar.mjs` 변경. 후보 파서 LF SHA256 `ede3d4e1a95eb0f9bde1a1ad3f42812cf090a9821a2e7af517638fb928d6704b`, 설치 수집기 CRLF SHA256 `2ecac6ac7c16c6a06ca81b67feb32f4342f1b2b89163b5531f0f6bb90d622388` 일치.
+- `backupCreated=true`, 백업 ID `r22-20261028020813808-b0e16243`. `gitPushed=false`, `publisherExecuted=false`, `forcedCollection=false`.
+- 설치 로그 자동 비교 항목 10개 전부 PASS. **확정: 설치 및 Core config.source 전환. 미확인: 이후 예약 수집 성공·실제 발표 건수·공개 배포/readback.** 이들을 자동으로 PASS 처리하지 않는다.
 
 ## 공식 출처·범위
 
@@ -37,10 +46,10 @@
 
 ## 필요한 안전 게이트
 
-1. R22 원문 기반 코드 검증은 완료했으나 **실제 R22 PC 설치는 사용자 CMD 실행 및 결과 로그 확인 전까지 미완료**다.
+1. **R22 사용자 PC 설치 완료**: 아래 검증된 사용자 로그로 판단한다. 정규 수집·공개 노출은 이 로그만으로 PASS 처리하지 않는다.
 2. 설치는 R22 전용 패키지의 `MARKET_CALENDAR_R22_FED_APPLY.cmd`를 사용한다. R22 기존 `SOURCE_EXPORT`는 읽기 전용 원문 확보용이며 설치용이 아니다.
 3. 잠금이 존재하거나 PC HEAD, config.source, 보호 경로, 후보 SHA가 다르면 **STOP**한다. 일치시키려고 기존 데이터를 삭제하거나 설정을 우회하지 않는다.
-4. PC 설치가 성공하더라도 정규 주기에서 데이터가 수집되는지 및 공개 UI에 반영되는지는 사용자·담당자가 각각 사후 확인한다. 통과하지 않은 지표를 성공으로 보고하지 않는다.
+4. 정규 주기에서 데이터가 수집되는지 및 공개 UI에 반영되는지는 사용자 사후 확인 사항이다. 강제 수집·게시·예약 작업 변경을 요구하거나 수행하지 않는다.
 
 ## 코드와 테스트
 
@@ -49,4 +58,4 @@
 - `MARKET_CALENDAR_R22_FED_SOURCE_EXPORT.cmd`, `README_R22_FED_SOURCE_EXPORT.txt`: Windows용 실행·사용법.
 - `tests/market-calendar-r22-fed-stage.test.mjs`: 파서·수집·기존 일정 공존·월별 실패·월 경계 이력 보존·임대 잠금 7개 검사.
 - `tests/market-calendar-r22-fed-apply.test.mjs`: 설치 전용 검사·정확히 2파일 로컬 커밋·기존 락·출처 변경 감지 4개 검사.
-- PC는 아직 R22로 갱신되었다고 보고하지 않는다. 기존 R21 정상 주기 수집 여부는 사용자의 사후 확인 대상이다.
+- R22 설치는 사용자 PC 결과 로그로 확정한다. 정상 주기 수집 건수와 실제 공개 페이지 노출은 미확인 상태로 유지한다.
