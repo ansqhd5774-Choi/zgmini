@@ -2,7 +2,7 @@
 - 작성일: 2026-10-27 (사용자 확인: 163개 테마를 인기가 높은 순서부터 낮은 순서까지 확대하며, 개발 과정에서 지속 개선·보완)
 - 저장소: `ansqhd5774-Choi/zgmini`
 - **전용 작업 브랜치: `codex/theme-fear-greed-integration-20261025` (작업자 임의 신규 브랜치 생성·전환 금지)**
-- 상태: `PROGRAM_CHARTER_RECORDED / R32_EXISTING_NINE_MIGRATION_FIRST / NOT_163_THEMES_IMPLEMENTED / NO_PUBLICATION`
+- 상태: `PROGRAM_CHARTER_RECORDED / R47_PRIVATE_RECURRING_SOURCE_AND_SCORE_CODE_TESTED / PC_RUN_PENDING / NOT_163_THEMES_IMPLEMENTED / NO_PUBLICATION`
 - 효력: **범위·목표·작업 연속성 및 인수인계 규칙을 문서화**한다. 기존 산식·선정·공개·DB·예약 작업·배포 승인 계약을 변경하지 않는다.
 
 ## 0. 최상위 목표 — 작업 방향의 기준
@@ -202,6 +202,8 @@
 **중요:** 이 문서는 기존 승인 문서 내용을 덮어쓰거나 과거 단계의 작업 계획을 지우지 않는다. 충돌 시 **최신 사용자 명시 승인과 해당 작업의 승인된 실제 산식·자료 계약**을 확인하고 변경을 중지한다.
 
 
+8. [R47 기존 9개 비공개 반복 증분·재계산 경로](THEME_NINE_R47_RECURRING_PRIVATE_UPDATE_20261028.md) — 승인 산식·ETF 불변, PC 실운영·공개 미승인
+
 ## 7. 상태판 — 보고 시 반드시 최신 증거로 갱신
 
 | 구분 | 기존 확보 | 아직 필요한 정확한 다음 증거 | 이 문서 작성 시 상태 |
@@ -211,13 +213,13 @@
 | 신구 공개 이력 비교 | R33 8×252 2,016건 | 다음 신규 날짜 데이터와 비교 | `PASS (겹침 8개, 2026-10-23)` |
 | 기존 1h 원가격·증분 | R23 64/64종·121/121 SHA PASS, SPY 2026-10-23, R32 9×252 PASS | R35 신규 SPY 관측일 후 1h 증분 + 동일 모드 R23 결합 확인. 현 정규 Task 추가는 후속 승인 | `R23_PC_PASS / R35_WAIT_SOURCE` |
 | 최신 데이터 가격 모드 | R23/R32 `RAW_UNADJUSTED_1H_NOT_OFFICIAL_CLOSE`; R45 EOD는 `DAILY_SPLIT_ADJUSTED` | R46 EOD를 R32 1h와 혼합하지 않음. 필요 시 독립 연구로만 보존 | `R32_INPUT_1H_PRESERVED` |
-| 신규 9개 자동 계산 | R32 PC 9×252, R33 기존 8×252 PASS; R34/R35 기존 공급자 기반 | R35 최신 거래일 추적·별도 1h 증분 → R23 동일 모드 검증 → 기존 R32 함수 재사용 | `PRIVATE_PASS / LIVE_AUTO_PENDING` |
+| 신규 9개 자동 계산 | R32 PC 9×252, R33 기존 8×252 PASS; R47 동일 1h 공급자 증분·R25/R32 재계산 코드 및 합성 252일 테스트 PASS | PC 실제 R47 CMD 신규 거래일 수집·비공개 SHA 확인 → 예약 작업 별도 승인·2회 검증 → 권리·공개 승인 시 D1 분리 반영 | `R47_SOURCE_CODE_AND_TEST_PASS / PC_AND_LIVE_AUTO_PENDING` |
 | 안전 공개 reader | R37 코드·단위 테스트, R38 10개 보존 | 권리·LIVE D1 readback·배포 | `SOURCE_PASS / RUNTIME_PENDING` |
 | 기존 8개 실제 신규 점수 공개 | 없음 | 테마별 승인·D1/API/UI 실증 | `NOT_PUBLISHED` |
 | 미공개 AI·반도체 | R32 연구 252점 | 별도 신규 테마 출시에 필요한 승인·자동화 | `NOT_PUBLISHED` |
 | 163개 신규 테마 | 프로그램 목표와 순차 방식 확정 | 다음 인기 테마 1개부터 반복 | `NOT_163_COMPLETE` |
 
-**가장 가까운 한 가지 다음 작업:** **기존 GetMarketHistory 1시간봉 R35 증분 수집기의 고정 종료일(2026-10-26)과 다음 정규 실행에서 움직이는 날짜 범위를 점검·최소 보완**한다. R35 2026-10-27 실PC는 SPY 마지막 유효 NY 거래일이 2026-10-23으로 정상 대기했으므로 공급원 지연을 데이터 누락·계정 미등록으로 오판하지 않는다. 새 1h 관측이 제공되는 즉시 원본 R23을 보존하면서 별도 R35 raw/SHA를 추가 수집하고 동일 가격모드의 겹침·결측 검증 뒤 기존 R32 승인 점수 함수를 재사용한다. 별도 MarketParquet 일봉 R46 인증 및 신규 계정·키 발급은 필수 선행 작업에서 제외. 공개 이력·ETF·가중치·기존 정규 Task·D1 불변.
+**가장 가까운 한 가지 다음 작업:** `scripts/pc-writer/THEME_NINE_R47_RECURRING_PRIVATE_UPDATE.cmd`를 기존 PC에서 **1회 실실행**하여 실제 GetMarketHistory 신규 1h 거래일·R35 증분·R47 원가격 충돌 검증·기존 R25/R32 비공개 9개×252 결과 파일의 SHA와 상태를 받는다. R35 공급자 미갱신 시 1 GET 정상 WAIT를 기록하고 추가 계정 발급·R46 EOD 전환을 요구하지 않는다. R47 코드는 반복 날짜/고정 체크포인트를 수정했으나 현재 **실PC/예약 작업/D1·공개** 연결 완료는 아니다.
 
 ## 8. 인수인계·완료 판정·변경 금지선
 

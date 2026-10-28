@@ -232,3 +232,10 @@ candidate -> Production 전환 전 모두 PASS:
 - 새 테마는 독립 수집→저장→계산→확정/잠정 게시→D1 readback→공개 API/UI와 다음 정규 실행 검증까지 연결해야 운영 완료다. 기존 테마 수집 목록에 자동 포함된다고 가정하지 않는다.
 - 경로 검사: `node scripts/pc-writer/theme-data-inventory.mjs`. `UNREGISTERED/MISSING/BLOCKED`를 숨기거나 기존 점수를 최신으로 다시 저장하지 않는다.
 - 다른 테마의 실패가 정상 테마의 확정/잠정 게시를 막지 않게 한다. 과거 관측일과 결측을 보존하고 산식·권리 검증을 약화하지 않는다.
+
+## R47 기존 9개 테마 반복 수집·비공개 계산 (2026-10-28)
+
+- 단일 작업 브랜치 `codex/theme-fear-greed-integration-20261025` 유지. `docs/THEME_NINE_R47_RECURRING_PRIVATE_UPDATE_20261028.md`가 R47 실행·증거·실PC/공개 게이트 상세 정본이다.
+- 기존 R35 CMD의 `2026-10-26` 고정 종료일은 장기 갱신이 아니다. R47은 미완료 창의 날짜·checkpoint를 고정해 이어받고, 64심볼 완료 후 마지막 검증된 SPY 실거래일과 겹치는 다음 창으로 이동한다. 신규 SPY 자료가 없으면 1 GET 뒤 WAIT한다.
+- R23 121개 원본 SHA·R20 승인 63/64 ETF·기존 R2/R25/R32 산식 유지. R35 delta `RAW_UNADJUSTED_1H_NOT_OFFICIAL_CLOSE`에서만 SHA/충돌 검증 후 합치며 R46 split-adjusted EOD는 입력/가입 선행조건이 아니다. R26 공식 AUM 원래 기준일을 표시하고 새 공식 AUM 수집 완료를 주장하지 않는다.
+- R47 단일 CMD는 **비공개 원가격/점수 생성용**이며 예약 작업 설치·공개 사이트/D1 수정 기능이 없다. GitHub 코드/합성 단위 테스트는 PASS, 실제 Windows PC 반복 갱신·Task Scheduler·공개 운영은 증거 전까지 PENDING이다.

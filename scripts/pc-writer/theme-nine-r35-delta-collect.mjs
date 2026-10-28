@@ -115,21 +115,43 @@ function validatePage(bytes,symbol,after) {
     lastTimestamp:prev,lastValidNY};
 }
 
-export async function collectNineR35Delta({dataRoot,rosterPath,start,end,fetchImpl=fetch,
+export async function collectNineR35Delta({dataRoot,rosterPath,start,end,previousWindow=null,fetchImpl=fetch,
   maxRequests=MAX_GETS,timeoutMs=REQUEST_TIMEOUT_MS}={}) {
   if(!dateOK(start)||!dateOK(end)||start>end||!Number.isInteger(maxRequests)||
      maxRequests<1||maxRequests>MAX_GETS||!Number.isInteger(timeoutMs)||timeoutMs<1||
      timeoutMs>REQUEST_TIMEOUT_MS)fail('ARGUMENTS');
   const base=auditNineR34RefreshPreflight({dataRoot,rosterPath});
-  if(start!==base.suggestedOverlapStartNYDay||end<=start)fail('WINDOW_MUST_OVERLAP_VERIFIED_SPY');
+  if(end<=start)fail('WINDOW_MUST_OVERLAP_VERIFIED_SPY');
   const rawRoster=fs.readFileSync(rosterPath);
   const roster=JSON.parse(rawRoster.toString('utf8'));
   const symbols=['SPY',...[...new Set(roster.groups.flatMap(g=>g.tickers.map(t=>t.ticker)))]
     .filter(s=>s!=='SPY').sort((a,b)=>a.localeCompare(b))];
   if(symbols.length!==64||sha(rawRoster)!==base.rosterSha256)fail('ROSTER_DRIFT');
   const root=fs.realpathSync(dataRoot);
+  let freshnessDay=base.latestSpyNYDay;
+  if(previousWindow!==null){
+    if(!previousWindow||!dateOK(previousWindow.start)||!dateOK(previousWindow.end)||
+       previousWindow.end>=end)fail('CHAIN_WINDOW_INVALID');
+    const prevHome=path.join(root,DELTA_SUBDIR);
+    if(!fs.existsSync(prevHome))fail('CHAIN_PREVIOUS_ROOT_MISSING');
+    const actual=fs.realpathSync(prevHome);
+    if(!within(root,actual))fail('CHAIN_PREVIOUS_ROOT_ESCAPE');
+    const prev=metadata(actual,base.rosterSha256,previousWindow.start,previousWindow.end,symbols);
+    if(prev.state.failedAt||symbols.some(s=>prev.state.symbols[s].complete!==true))
+      fail('CHAIN_PREVIOUS_INCOMPLETE');
+    const refs=new Map(prev.manifest.files.map(e=>[e.path,e]));
+    const spyPages=prev.state.symbols.SPY.files.map(f=>refs.get(f.path));
+    const last=spyPages.at(-1);
+    freshnessDay=last?.lastVerifiedNYDay;
+    if(!dateOK(freshnessDay)||freshnessDay<=base.latestSpyNYDay||
+       freshnessDay>previousWindow.end||start!==freshnessDay)
+      fail('CHAIN_VERIFIED_SPY_OVERLAP_MISMATCH');
+  }else if(start!==base.suggestedOverlapStartNYDay){
+    fail('WINDOW_MUST_OVERLAP_VERIFIED_SPY');
+  }
   const report={contract:'THEME_NINE_R35_INCREMENTAL_PRIVATE_V1',status:'RUNNING',
     start,end,source:SOURCE,baseLastSpyNYDay:base.latestSpyNYDay,
+    previousVerifiedSpyNYDay:freshnessDay,
     providerCalls:0,rawFilesStored:0,completedSymbols:0,
     baseRawWrites:0,dbWrites:0,d1Writes:0,schedulerWrites:0,publicationWrites:0};
   // Source freshness: one SPY GET before making any new persistent root.
@@ -151,7 +173,7 @@ export async function collectNineR35Delta({dataRoot,rosterPath,start,end,fetchIm
       fetchImpl,timeoutMs});report.providerCalls++;
     if(firstSpy.error){report.status=firstSpy.error;return report;}
     if(!firstSpy.next&&(!firstSpy.page.lastValidNY||
-      firstSpy.page.lastValidNY<=base.latestSpyNYDay)){
+      firstSpy.page.lastValidNY<=freshnessDay)){
       report.status='WAIT_SOURCE_NO_NEW_VERIFIED_SPY_SESSION';
       report.latestSeenSpyNYDay=firstSpy.page.lastValidNY;
       return report;
@@ -194,7 +216,8 @@ export async function collectNineR35Delta({dataRoot,rosterPath,start,end,fetchIm
             collectedAt:new Date().toISOString()};
           if(!manifest.files.some(e=>e.path===relative))manifest.files.push(entry);
           writeJSON(manifestFile,manifest);
-          if(!p.files.some(e=>e.path===relative))p.files.push({path:relative,sha256:digest});
+          if(!p.files.some(e=>e.path===relative))p.files.push({path:relative,sha256:digest,
+            requestedUrl:url});
           report.rawFilesStored++;
         }else p.noBars=true;
         p.lastTimestamp=page.lastTimestamp;
