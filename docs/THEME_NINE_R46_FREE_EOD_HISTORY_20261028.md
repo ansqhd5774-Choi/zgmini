@@ -31,3 +31,12 @@
 2. 실PC에서 무료 manifest 접근 가능하면 기존 7일을 제외한 과거 EOD만 독립 보존·SHA 기록. 401/403이면 인증 문제로만 판정하고 데이터 결측으로 오판 금지.
 3. R47에서 기존 R45 저장 EOD + R46 과거 EOD를 **동일 일자/동일 split-adjusted EOD 모드로만** 일관되게 결합하고, 2026-03-27 구스키마 날짜 정규화·ETF/SPY 결측·40/377/628 실측을 검증한다.
 4. 그 다음에도 기존 승인 R32의 원가격 1시간봉에 끼워 넣는 방식은 금지. 원가격 연속 관측을 별도 확보하거나, EOD 기준 변경을 사용자에게 명시적으로 검증·승인받아야 한다. 기존 운영 7개와 공개 10개는 유지한다.
+
+## 2026-10-28 최초 실PC 결과 — 계정 인증 Gate
+
+- 실PC TXT: `THEME_NINE_R46_FREE_EOD_BACKFILL_20261028022430_36828_RESULT.txt`.
+- `STATUS=STOP_R46_FREE_EOD_BACKFILL`, `ERROR=R46_FREE_SAMPLE_ACCOUNT_ACCESS_REQUIRED`.
+- 다운로드·manifest·실제 이전/신규 R46 저장 건수는 STOP 객체의 `NONE`이며 **0건 신규 파일이 생성됐다는 실파일 검증과는 구별**한다. `ORIGINALMARKETPARQUETWRITES=0`, `DBWRITES=0`, `D1WRITES=0`, `SCHEDULERWRITES=0`.
+- 공식 문서상 무료 sample manifest는 계정 API 키로 인증한다. 익명 접근 401/403은 63종 미보유/이력 미존재나 API 유료화의 증거가 아니다.
+- **다음 작업은 무료 계정의 API 키를 사용자 자신의 Windows CMD 세션 환경변수 `MARKETPARQUET_API_KEY`에 메모리 전용으로 설정한 뒤 기존 동일 CMD를 실행**하는 것이다. 키 자체를 TXT·GitHub·채팅에 기록하지 않는다. 계정이 없거나 인증을 원하지 않으면 사용자의 선택을 기다리며, 다른 계정 사용·키 탐색·유료 접근·우회 API는 금지한다.
+- 이 단계에서 R46 파일/스케줄러/산식의 추가 코드 수정은 필요하다고 입증되지 않았다. 인증 후에만 기존 원본 재사용 건수·다운로드 실제 건수 및 2026-03-27 이전 스키마의 후속 R47 검증을 진행한다.
