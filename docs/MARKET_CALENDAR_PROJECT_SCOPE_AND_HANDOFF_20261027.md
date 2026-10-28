@@ -246,3 +246,13 @@
 - **구분할 단계:** EIA 파서 및 정규 Core 통합 설치 **완료**. PC의 향후 예약 수집 성공, SQLite 이벤트 반영 및 웹 공개 출력은 **미확인**이므로 자동 수집·공개 완료로 보고하지 않는다. 기존 이력 삭제/재계산/수집 강제 실행 금지.
 - 새 공급원 R24 조사는 공식 날짜가 명시된 미국 농무부 WASDE(농산물 수급전망) 월간 발표 일정부터 시작한다. 공식 2026·2027 날짜 공지: `https://www.usda.gov/about-usda/general-information/staff-offices/office-chief-economist/commodity-markets/wasde-report`. 확정 날짜만 수집하고 무근거 월간 반복 생성 금지. EIA 및 기존 발표원 소스는 보존한다.
 - 계속 작업 대상 브랜치는 **`codex/zgmini-gpt-workspace-20261025` 하나만**이다. 신규 브랜치/`main` 병합/운영 배포 없음.
+
+
+## 24. R24 USDA WASDE 명시 발표일 — 1회 읽기 전용 원문 확보 도구 준비 (2026-10-28)
+
+- R23 실제 사용자 PC 설치 성공(`8ff396217c9f84578b37c9d422381644c2b8f0e8`)을 전제로, **R24 신규 시장 캘린더 일정 공급원**은 미국 농무부 USDA World Agricultural Supply and Demand Estimates(WASDE)의 공식 발표 일자로 선정했다.
+- USDA 공식 `https://www.usda.gov/about-usda/general-information/staff-offices/office-chief-economist/commodity-markets/wasde-report`: 2026·2027년 연간 날짜 각각 12건, 미 동부 12:00 ET를 명시. 2026-10-28 이후 14건(2026년 2건+2027년 12건). 날짜를 임의 반복 생성하지 않는다.
+- R24 작업 문서 `docs/MARKET_CALENDAR_R24_USDA_SOURCE_REVIEW.md`; 스테이징 파서 `staging/market-calendar/r24-usda/lib/usda-calendar.mjs`; 읽기 전용 원문 조회기 `scripts/pc-writer/market-calendar-r24-usda-source-export.mjs`; 전용 CMD, README, 테스트를 **동일 지정 브랜치**에 반영했다.
+- 신규 파서/읽기 도구 테스트 4/4 PASS 및 이전 R23 EIA 파서 회귀 6/6 PASS. Windows `.cmd` ASCII CRLF, ZIP 무결성 PASS. 전달 묶음 `MARKET_CALENDAR_R24_USDA_SOURCE_EXPORT_20261028.zip`, SHA256 `b0ab1a51764e68eecae7145da48c4f4202b2d392dc03bbcead70c2a1af100abe`.
+- **R24 진행 경계:** USDA 공식 페이지 실측 HTML은 아직 PC에서 받지 않았다. 사용자가 ZIP을 전체 압축 해제해 `MARKET_CALENDAR_R24_USDA_SOURCE_EXPORT.cmd` 1회 실행하고 `MARKET_CALENDAR_R24_USDA_SOURCE_EXPORT_RESULT.txt`를 제출하면 HTML 해시/DOM 확인 후 기존 R23 Core에 최소 USDA 수집 모듈을 편입한다. 브라우저 웹 검색으로 공식 2026/27 날짜를 확인했지만 직접 HTTP HTML 조회가 개발 환경에서 503이어서 실제 원문 적합성을 확증하기 전 운영 설치를 하지 않는다.
+- R24는 **READ_ONLY_SOURCE_EXPORT_READY**이지 PC 설치/수집/게시/웹 공개 완료가 아니다. 기존 PC 수집·SQLite·예약작업·GitHub main·Cloudflare 배포 변경 없음. 신규 브랜치 생성 없음.
