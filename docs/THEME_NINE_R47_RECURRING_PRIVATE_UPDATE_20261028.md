@@ -90,3 +90,9 @@ node --test tests/theme-nine-r35-delta-collect.test.mjs tests/theme-nine-r32-pri
 - PC 비공개 산출: `E:\\ZGmini\\data\\themes\\legacy-nine-r47-private\\THEME_NINE_R47_PRIVATE_2026-10-26_3e72c174fd099d24_ETF.json`, `_NINE.json`; 출력 SHA 각각 `66ff5208ac62db0b881a38ced12f5d848be03bb4837c917df00d3ebad5495d34`, `d9f9a3937d59abc4f51a3a97a5c0839bdf574aed3dfc90a1a53bc5eee534b4b8`. **원본 2파일은 아직 업로드/직접 내용 검증하지 않았으므로 개별 점수와 결측 수는 미확인**.
 - Gate A 최초 **실PC 수집·비공개 계산 실행 PASS(자체 결과 보고 기준)**. 다음 우선 작업: PC의 `_ETF.json`·`_NINE.json` 두 결과를 독립 검사해 9개 테마 점수·유효 ETF·결측·AUM 원날짜를 확인하고, 다음 새 SPY 거래일 도착 후 동일 CMD의 **두 번째 실제 반복 실행**으로 날짜 전진 및 중복 GET 방지를 실증한다.
 - Windows Task Scheduler 자동 등록·반복 2회·D1 CAS/readback·공개 전환·정식 AUM 최신화는 아직 PENDING. 기존 운영 작업 무단 수정 금지.
+
+## 8. 제출 원본 독립 재검증 완료
+
+- 2026-10-28 사용자 후속 업로드 ETF·NINE JSON 두 원본 SHA256은 앞선 PC 실행 보고와 완전 일치한다. 9개×252일 **2,268/2,268건을 변경하지 않은 R32 순수 가중 함수로 재계산·깊은 비교 PASS**했다.
+- ETF 최신 점수 유효 **44/63종**, 결측 19종(`NO_REAL_CLOSE` 12, `INSUFFICIENT_REAL_OBSERVATIONS` 5, `BELOW_40_REAL_SESSIONS` 2). 9개 테마 역사 결과는 각 252/252 점수 존재. 승인 날짜별 AUM 원기준일 유지.
+- 이 단계의 정확한 SHA·실측·결측·권리 미완료 판정은 [별도 읽기 전용 검증서](THEME_NINE_R47_PC_SHADOW_INDEPENDENT_AUDIT_20261028.md)에 보존했다. **ETF 원가격 페이지 자체 독립 재계산, 두 번째 자동 실측, D1 공개는 아직 완료되지 않았다.**

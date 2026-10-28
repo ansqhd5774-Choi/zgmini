@@ -204,6 +204,8 @@
 
 8. [R47 기존 9개 비공개 반복 증분·재계산 경로](THEME_NINE_R47_RECURRING_PRIVATE_UPDATE_20261028.md) — 승인 산식·ETF 불변, PC 실운영·공개 미승인
 
+9. [R47 PC 비공개 ETF·9개 테마 제출 원본 독립 검증](THEME_NINE_R47_PC_SHADOW_INDEPENDENT_AUDIT_20261028.md)
+
 ## 7. 상태판 — 보고 시 반드시 최신 증거로 갱신
 
 | 구분 | 기존 확보 | 아직 필요한 정확한 다음 증거 | 이 문서 작성 시 상태 |
@@ -213,13 +215,13 @@
 | 신구 공개 이력 비교 | R33 8×252 2,016건 | 다음 신규 날짜 데이터와 비교 | `PASS (겹침 8개, 2026-10-23)` |
 | 기존 1h 원가격·증분 | R23 원본 64/64·121페이지, R35 10/27 WAIT 이력; R47 10/28 실제 PC 64심볼 완료·원자료 62파일·최신 SPY 2026-10-26 | 원본 shadow 두 파일 독립 검증, 다음 거래일 R47 2회차와 정상 예약 경로 확인 | `R47_FIRST_PC_COLLECTION_PASS / REPEAT_PENDING` |
 | 최신 데이터 가격 모드 | R23/R32 `RAW_UNADJUSTED_1H_NOT_OFFICIAL_CLOSE`; R45 EOD는 `DAILY_SPLIT_ADJUSTED` | R46 EOD를 R32 1h와 혼합하지 않음. 필요 시 독립 연구로만 보존 | `R32_INPUT_1H_PRESERVED` |
-| 신규 9개 자동 계산 | R47 실제 PC 1차 실행 `PRIVATE_SHADOW_SAVED_NOT_PUBLISHED`, SPY 2026-10-26, 9테마×252 비공개 결과 2파일 생성 보고 | 파일 내용 직접 확인·두 번째 거래일 반복·승인된 예약 작업·공개 권리 검증 | `R47_FIRST_PC_PRIVATE_SCORE_PASS / AUTO_PUBLIC_PENDING` |
+| 신규 9개 자동 계산 | R47 실제 PC 신규 1h 수집 및 ETF·9개 테마 JSON 원본 SHA 확인; 기존 R32 순수 함수로 2,268/2,268 날짜 독립 재계산 PASS, 최신 점수 ETF 44/63·결측 19 | 다음 실제 SPY 거래일 R47 두 번째 PC 실행으로 윈도 전진·중복 방지 확인, 이후 승인된 Windows 예약 경로와 D1 별도 게이트 | `R47_PC_SHADOW_AND_RECOMPUTATION_PASS / LIVE_REPEAT_PENDING` |
 | 안전 공개 reader | R37 코드·단위 테스트, R38 10개 보존 | 권리·LIVE D1 readback·배포 | `SOURCE_PASS / RUNTIME_PENDING` |
 | 기존 8개 실제 신규 점수 공개 | 없음 | 테마별 승인·D1/API/UI 실증 | `NOT_PUBLISHED` |
 | 미공개 AI·반도체 | R32 연구 252점 | 별도 신규 테마 출시에 필요한 승인·자동화 | `NOT_PUBLISHED` |
 | 163개 신규 테마 | 프로그램 목표와 순차 방식 확정 | 다음 인기 테마 1개부터 반복 | `NOT_163_COMPLETE` |
 
-**가장 가까운 한 가지 다음 작업:** 2026-10-28 실제 PC R47 첫 CMD 실행 결과는 64심볼 수집·9개×252 비공개 계산으로 PASS 보고됐다. 다음은 생성된 `_ETF.json`, `_NINE.json`의 실제 내용을 독립 검사하여 개별 테마 점수·누락·공식 AUM 원기준일을 확인한 후 **새 SPY 거래일이 공급될 때 같은 CMD 2회차를 실행**해 끝 날짜 전진·중복 수집 방지를 증명한다. 이후 기존 예약 작업명·실행경로를 확인하고 승인된 연결만 적용한다. 현재 D1/공개는 미승인·미변경.
+**가장 가까운 한 가지 다음 작업:** 업로드된 R47 실제 PC ETF·테마 원 JSON의 SHA256과 기존 R32 가중 계산 **2,268/2,268일**을 독립 재검증했고, 9테마 전 날짜 점수 유효·최신 ETF 44/63·19종 결측으로 확인됐다. 다음 새 SPY 실거래일 공급 후 **같은 R47 CMD 두 번째 PC 실행**으로 기존 checkpoint 중복 요청 0·윈도 전진·새 시각의 비공개 SHA를 검증한다. 공식 AUM 새 발행사 자료·Windows Task Scheduler 연결·공개 권리·D1/readback은 별도 미완료·미승인이다.
 
 ## 8. 인수인계·완료 판정·변경 금지선
 
