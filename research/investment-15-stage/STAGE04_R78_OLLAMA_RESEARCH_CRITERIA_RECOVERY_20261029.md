@@ -57,3 +57,27 @@ R78의 시장명 판정에는 구조적 오류가 있었다. **21개 상위 섹�
 6. **회귀 검사:** 21개 주제/60개 고정 공식 URL/3개 null, TBRC·SkyQuest·Precedence 이외 배제, `information technology`↔`it services`, `consumer discretionary`↔`passenger cars`, 실패한 GET에 따른 NULL, 두 공식 출처 갱신·경고·평균, 잘못된 출처 메타데이터의 배제를 테스트로 고정한다.
 
 **확인 상태:** Node.js 소스 구문 검사와 4단계 관련 테스트 5개 파일의 `node --test`가 모두 통과했다. 다만 Windows PC에서 로컬 올라마로 21개 주제를 실제 재수집하는 검증은 **아직 실행되지 않았다**. PC에서 최신 R79 소스로 21개 항목 재실행한 JSON·TXT·진단 로그를 받아야 비로소 정상작동 여부와 유효 평균 수를 확정할 수 있다. 기존 R78의 `8/21`이나 R63의 연구 평균 `21/21`을 R79의 검증 결과라고 표기하지 않는다.
+
+---
+
+## R80 재점검 — 기존 R31 과거/미래 CAGR 표기 오류 입증 절차 연결 (2026-10-29)
+
+R79 Windows 실측 결과: `RUN_STATE=COMPLETED`, `TOPICS_DONE=21`, `MEANS_CALCULABLE=18`, `NODE_EXIT_CODE=0`. 미산출 3개는 `consumer staples`, `fintech`, `biotechnology services`로 모두 TBRC `TABLE_DISAGREES_WITH_MARKET_SIZES`, SkyQuest PASS 1사, 나머지 Precedence 미확정이다. 3개 대상의 범위 밖 18개 결과와 1~3·5단계는 변경하지 않는다.
+
+**R63 원문 제3-2절이 이미 확정한 TBRC 절차:** 미래 전망 본문 CAGR과 미래 시장규모 수치가 서로 맞는데, 미래 전망 메타데이터의 성장률만 **직전 역사적 2025→2026 성장률을 잘못 반복한 사실을 별도 역사적 시장규모와 수치로 독립 입증한 경우에만** `RESOLVED_HISTORIC_RATE_MISLABEL`로 표시한다. R29에 이미 이 정밀 감사 알고리즘이 구현돼 있었다. R79은 R30 호출에서 이를 `false`로 꺼 두고 있었다.
+
+R80은 이 기존 R31 검증 옵션을 **오직 위 세 주제**에서만 켠다. 아래 수치는 새 산식·선정값이 아니라 공식 원문 현행 검증에 필요한 원문의 예시이며, 프로그램으로 고정 입력하지 않는다.
+
+| 주제/TBRC 공식 보고서 | 2025→2026 역사적 CAGR | 2026→2030 미래 전망 CAGR | 표의 2026→2030 잘못 표기된 CAGR |
+|---|---:|---:|---:|
+| `staple-food-global-market-report` | 6.8% | 6.1% | 6.8% |
+| `fintech-blockchain-global-market-report` | 48.2% | 42.3% | 48.2% |
+| `Biotechnology-Services-Global-Market-Report` | 10.1% | 12.4% | 10.1% |
+
+검증기 `forecast-source-audit-r29-readonly.mjs`의 감사 로직을 수정하지 않는다. 실제 공식 원문 GET과 로컬 올라마의 미래 전망 본문 추출, 과거 규모 수학 검산, 미래 규모 수학 검산을 모두 통과하고 `FORECAST_METADATA_REPEATS_VERIFIED_HISTORIC_CAGR` 플래그 및 일치 숫자들이 충족될 때만 연구용 평균 집계에서 PASS다. 해당 관측에는 `R31_PUBLISHER_FORECAST_TABLE_HISTORIC_CAGR_MISLABEL_PROVEN` 경고를 남긴다. 역사적 CAGR을 미래 값으로 대용하거나 충돌 검증을 전면 해제하는 기능이 아니다.
+
+- **그대로 보류:** Precedence 핀테크의 2025→2034 대 2026→2034 명시 전망기간 충돌, Precedence 바이오테크의 현재 원문 구간 충돌, 필수소비재 Precedence 부재는 이번 변경에서 승인·우회하지 않는다. R63의 기존 보류 기준을 유지한다.
+- **테스트:** 3개 역사적 표기오류 + 과거 규모/미래 규모 독립 검산이 통과하는 가상 원문 fixture, 증거 하나가 조작된 경우 NULL, 적용 대상 이외 18개 키워드의 이전 동작, Stage04 전체 관련 테스트 5개 파일 통과.
+- **최종 승인 대기:** PC에서 `STAGE04_R80_21_TOPICS_VALIDATE.cmd`로 21개 현재 원문을 다시 조회하고 JSON·TXT·진단 로그를 받은 뒤 18/21에서 실제로 얼마나 개선됐는지 확인한다. 21/21 성공을 사전에 주장하지 않는다.
+
+원문 근거: [TBRC Staple Food](https://www.thebusinessresearchcompany.com/report/staple-food-global-market-report), [TBRC FinTech Blockchain](https://www.thebusinessresearchcompany.com/report/fintech-blockchain-global-market-report), [TBRC Biotechnology Services](https://www.thebusinessresearchcompany.com/report/Biotechnology-Services-Global-Market-Report), 과거 기준 `recovered-cagr-r63-r66/CAGR_R63_21_RESEARCH_PLAYBOOK_20261027.md` 제3-2절.
