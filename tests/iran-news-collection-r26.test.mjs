@@ -5,6 +5,7 @@ import {tmpdir} from 'node:os';
 import path from 'node:path';
 import {createHash} from 'node:crypto';
 import {IRAN_GOVUK_R24_TOPIC_FEEDS,IRAN_ALJAZEERA_TOPIC_ARCHIVE_R32,
+ IRAN_IAEA_OFFICIAL_HOME_R34,
  IRAN_MULTISOURCE_FEEDS_R24} from '../scripts/iran-progress/news-display-multisource-audit-r24.mjs';
 import {R3_FEEDS} from '../scripts/iran-progress/continuous-news-r3.mjs';
 import {NEWS_COLLECTION_R26_FILE,NEWS_COLLECTION_R26_VERSION,collectIranNewsR26,
@@ -32,6 +33,8 @@ function mockFeedFetch({oneFailed=false,allFailed=false}={}){
  return async url=>{
   if(allFailed)return new Response('blocked',{status:503});
   if(IRAN_GOVUK_R24_TOPIC_FEEDS.includes(url))return new Response(govFeed);
+  if(url===IRAN_IAEA_OFFICIAL_HOME_R34)
+   return new Response('<html><body>No listed articles</body></html>');
   if(url===IRAN_ALJAZEERA_TOPIC_ARCHIVE_R32)
    return oneFailed?new Response('blocked',{status:503}):new Response('<html><body></body></html>');
   if(url===bbc)return new Response(bbcPage);

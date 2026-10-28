@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {IRAN_GOVUK_R24_TOPIC_FEEDS,IRAN_ALJAZEERA_TOPIC_ARCHIVE_R32,
+ IRAN_IAEA_OFFICIAL_HOME_R34,
  IRAN_MULTISOURCE_FEEDS_R24,
  newsR24SourceUrl,parseIranMultisourceFeedR24,
  auditIranMultisourceCollectionR24}
@@ -23,25 +24,30 @@ const atom=`<feed><entry><title>Iran talks continue</title>`+
  '<link rel="alternate" href="https://www.gov.uk/government/news/iran-talks-continue"/></entry></feed>';
 const tasnim='<html><a href="/en/news/2026/10/27/987/iran-ceasefire-talks">Latest</a></html>';
 const aljazeeraArchive='<html><a href="/news/2026/10/27/iran-update">Iran topic</a></html>';
+const iaeaHomepage='<!doctype html><html><a href="/newscenter/news/new-science">News</a>'+
+ '<a href="/newscenter/statements/director-general-statement-to-the-united-nations-security-council">Statement</a></html>';
 const bodyFor=id=>id==='govuk'?atom:id==='tasnim'?tasnim:rss([item(sourceLinks[id])]);
 
 test('R24 lists all existing seven sources as unpublished review candidates only',async()=>{
  const fetched=[];
  const result=await auditIranMultisourceCollectionR24({now,fetcher:async url=>{
   fetched.push(url);
+  if(url===IRAN_IAEA_OFFICIAL_HOME_R34)return new Response(iaeaHomepage);
   const spec=IRAN_MULTISOURCE_FEEDS_R24.find(feed=>feed.url===url)??
    (IRAN_GOVUK_R24_TOPIC_FEEDS.includes(url)?IRAN_MULTISOURCE_FEEDS_R24.find(feed=>feed.id==='govuk'):
     url===IRAN_ALJAZEERA_TOPIC_ARCHIVE_R32?IRAN_MULTISOURCE_FEEDS_R24.find(feed=>feed.id==='aljazeera'):null);
   assert.ok(spec);
   return new Response(url===IRAN_ALJAZEERA_TOPIC_ARCHIVE_R32?aljazeeraArchive:bodyFor(spec.id));
  }});
- assert.equal(fetched.length,11);
+ assert.equal(fetched.length,13);
  assert.equal(result.sourceCount,7);
  assert.equal(result.sourcesRead,7);
  assert.equal(result.sourcesFailed,0);
- assert.equal(result.candidatesFound,7);
+ assert.equal(result.candidatesFound,9);
  assert.equal(result.sources.find(s=>s.sourceId==='govuk').feedUrlsRead,4);
  assert.equal(result.sources.find(s=>s.sourceId==='aljazeera').feedUrlsRead,2);
+ assert.equal(result.sources.find(s=>s.sourceId==='iaea-news').feedUrlsRead,2);
+ assert.equal(result.sources.find(s=>s.sourceId==='iaea-statements').feedUrlsRead,2);
  assert.equal(result.status,'CANDIDATES_REQUIRE_REVIEW');
  assert.ok(result.candidates.every(c=>c.rightsVerified===false&&
   c.displayEligible===false&&c.originalPublicationVerified===false));
@@ -57,6 +63,7 @@ test('R24 lists all existing seven sources as unpublished review candidates only
 
 test('R24 does not conceal partial source failure or partial parsing',async()=>{
  const result=await auditIranMultisourceCollectionR24({now,fetcher:async url=>{
+  if(url===IRAN_IAEA_OFFICIAL_HOME_R34)return new Response(iaeaHomepage);
   const spec=IRAN_MULTISOURCE_FEEDS_R24.find(feed=>feed.url===url)??
    (IRAN_GOVUK_R24_TOPIC_FEEDS.includes(url)?IRAN_MULTISOURCE_FEEDS_R24.find(feed=>feed.id==='govuk'):
     url===IRAN_ALJAZEERA_TOPIC_ARCHIVE_R32?IRAN_MULTISOURCE_FEEDS_R24.find(feed=>feed.id==='aljazeera'):null);
@@ -73,11 +80,36 @@ test('R24 does not conceal partial source failure or partial parsing',async()=>{
  assert.equal(result.sources.find(s=>s.sourceId==='bbc-middle-east').parsedEntries,1);
 });
 
+test('R34 finds fresh IAEA statements absent from stale RSS through official homepage only',async()=>{
+ const url='https://www.iaea.org/newscenter/statements/director-general-statement-to-the-united-nations-security-council';
+ const bad='https://evil.test/newscenter/statements/forged';
+ const homepage=`<!doctype html><html><a href="/newscenter/statements/director-general-statement-to-the-united-nations-security-council">October 27</a>
+ <a href="/newscenter/statements/director-general-statement-to-the-united-nations-security-council">Duplicated</a>
+ <a href="${bad}">Untrusted</a><a href="/newscenter/news/another">Wrong section</a>
+ <a href="/newscenter/statements/latest?token=bad">Query</a></html>`;
+ const parsed=parseIranMultisourceFeedR24('iaea-statements','html',homepage);
+ assert.equal(parsed.rawEntries,1);
+ assert.deepEqual(parsed.records.map(x=>x.sourceUrl),[url]);
+ assert.equal(parsed.records[0].feedPublishedAt,null);
+ assert.equal(parsed.records[0].discoveryOrigin,'IAEA_OFFICIAL_HOMEPAGE_UNSCOPED_R34');
+ const report=await auditIranMultisourceCollectionR24({now,
+  feeds:IRAN_MULTISOURCE_FEEDS_R24.filter(s=>s.id==='iaea-statements'),
+  fetcher:async target=>new Response(target===IRAN_IAEA_OFFICIAL_HOME_R34?
+   homepage:rss([item(sourceLinks['iaea-statements'],'General update')]))});
+ assert.equal(report.sources[0].feedUrlsRead,2);
+ assert.equal(report.candidatesFound,1);
+ assert.equal(report.candidates[0].sourceUrl,url);
+ assert.equal(report.candidates[0].originalPublicationVerified,false);
+ assert.equal(report.candidates[0].scopeVerifiedFromArticle,false);
+ assert.equal(report.candidates[0].rightsVerified,false);
+});
+
 test('R24 deduplicates identical source URLs without conflating independent publishers',async()=>{
  const duplicateFeed=rss([item(sourceLinks['iaea-news']),item(sourceLinks['iaea-news'])]);
  const result=await auditIranMultisourceCollectionR24({now,
   feeds:IRAN_MULTISOURCE_FEEDS_R24.filter(s=>s.id==='iaea-news'),
-  fetcher:async()=>new Response(duplicateFeed)});
+  fetcher:async url=>new Response(url===IRAN_IAEA_OFFICIAL_HOME_R34?
+   '<html><body>No current items</body></html>':duplicateFeed)});
  assert.equal(result.candidatesFound,1);
  assert.equal(result.sources[0].duplicates,1);
  assert.equal(result.sources[0].status,'READ');
@@ -162,7 +194,8 @@ test('R24 detects a topic in the RSS description even when headline lacks it',as
   '<pubDate>Tue, 27 Oct 2026 03:00:00 GMT</pubDate></item>'].join('')]);
  const report=await auditIranMultisourceCollectionR24({now,
   feeds:IRAN_MULTISOURCE_FEEDS_R24.filter(s=>s.id==='iaea-news'),
-  fetcher:async()=>new Response(feed)});
+  fetcher:async url=>new Response(url===IRAN_IAEA_OFFICIAL_HOME_R34?
+   '<html><body>No current items</body></html>':feed)});
  assert.equal(report.sources[0].status,'READ');
  assert.equal(report.candidatesFound,1);
  assert.equal(report.candidates[0].scopeVerifiedFromArticle,false);

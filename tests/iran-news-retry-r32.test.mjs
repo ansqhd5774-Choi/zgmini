@@ -7,15 +7,16 @@ import {planIranR32Upgrade,applyIranR32Upgrade}
  from '../scripts/iran-progress/news-display-upgrade-r32.mjs';
 import {probeR32Historical,R32_HISTORICAL_SAMPLES}
  from '../scripts/iran-progress/news-display-historical-retry-r32.mjs';
-import {withHistoricalR28Package} from './helpers/iran-r28-bundle.fixture.mjs';
+import {withHistoricalR28Package,withHistoricalR32Package}
+ from './helpers/iran-r28-bundle.fixture.mjs';
 
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
 
 test('R32 changes exactly two old, SHA-verified modules, keeping recoverable originals',()=>{
- withHistoricalR28Package(root,projectRoot=>{
+ withHistoricalR32Package(root,bundleRoot=>withHistoricalR28Package(root,projectRoot=>{
   const original=R32_HISTORICAL_SAMPLES.length;
   assert.equal(original,3);
-  const plan=planIranR32Upgrade({bundleRoot:root,projectRoot});
+  const plan=planIranR32Upgrade({bundleRoot,projectRoot});
   assert.equal(plan.status,'R32_PATCH_READY');
   assert.equal(plan.moduleCount,2);
   assert.ok(plan.checks.every(item=>item.state==='BEFORE'));
@@ -31,24 +32,24 @@ test('R32 changes exactly two old, SHA-verified modules, keeping recoverable ori
     assert.equal(readFileSync(item.backup).equals(readFileSync(item.source)),false);
     assert.deepEqual(readFileSync(item.destination),readFileSync(item.source));
    }
-   assert.equal(planIranR32Upgrade({bundleRoot:root,projectRoot}).status,
+   assert.equal(planIranR32Upgrade({bundleRoot,projectRoot}).status,
     'R32_ALREADY_INSTALLED');
   }finally{
    if(prior===undefined)delete process.env.ZGMINI_IRAN_NEWS_R32_INSTALL_APPROVED;
    else process.env.ZGMINI_IRAN_NEWS_R32_INSTALL_APPROVED=prior;
   }
- });
+ }));
 });
 
 test('R32 refuses unapproved PC module drift before writing backups',()=>{
- withHistoricalR28Package(root,projectRoot=>{
+ withHistoricalR32Package(root,bundleRoot=>withHistoricalR28Package(root,projectRoot=>{
   const target=path.join(projectRoot,'scripts','iran-progress',
    'news-display-article-audit-r25.mjs');
   writeFileSync(target,'unapproved modified implementation');
-  assert.throws(()=>planIranR32Upgrade({bundleRoot:root,projectRoot}),
+  assert.throws(()=>planIranR32Upgrade({bundleRoot,projectRoot}),
    /R32_PC_MODULE_DRIFT/);
   assert.equal(existsSync(target+'.before-iran-news-r32'),false);
- });
+ }));
 });
 
 test('R32 direct historical probe proves three accessible publisher bodies without caching',async()=>{
