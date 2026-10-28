@@ -331,3 +331,13 @@
 - R27 exporter 전용 테스트 4/4 PASS, R26 exporter 회귀 4/4 PASS, ZIP 전체 3/3 검증 PASS. 배포 ZIP `MARKET_CALENDAR_R27_TIC_SOURCE_EXPORT_20261028.zip`, SHA256 `8df80cf19155762ce2301bb029e116ff62b37a3c550562e522d8fcafae27bf3b`.
 - 사용자는 ZIP 전체 압축 해제 후 `MARKET_CALENDAR_R27_TIC_SOURCE_EXPORT.cmd` **한 번만 실행**하고 `MARKET_CALENDAR_R27_TIC_SOURCE_EXPORT_RESULT.txt`를 제출. 해당 로그를 확인한 뒤에만 R27 parser/collector 및 안전 PC 설치 준비. 현 상태 **R27 READ_ONLY_SOURCE_EXPORT_READY / PC TIC HTTP 미확인 / 수집·DB·사이트 미편입**.
 - 기존 브랜치 `codex/zgmini-gpt-workspace-20261025` 유지, 새 브랜치 없음. 메인 병합/운영 배포/예약 작업 변경/강제 수집·게시/PC DB 변경 없음.
+
+## 32. R27 TIC 공식 PC 원문 검증·49건 파서·안전 PC 설치 준비 (2026-10-28)
+
+- 이전 사용자 PC 결과 `MARKET_CALENDAR_R27_TIC_SOURCE_EXPORT_RESULT.txt`를 다시 읽어 `TIC_HTML_CAPTURED_READONLY`, HTTP 200, 111,191 bytes, `text/html; charset=utf-8`, 원문 Base64→SHA256 `d4078362e4746da2f38ffeaab8b8661b973d1484b46a4b1f8d463306ef710486` 일치 확인. 검색/캐시가 아닌 실제 PC 수신 원문 기준.
+- 공식 6열 2026·2027 일정: **2026년 25건, 2027년 24건, 합계 49건**. 월간·분기(비금융/파생, 대외부채)·연간(미국증권 외국인 보유, 외국증권 미국인 보유) 5분류. 2026-10-30 연간 최종, 2026-11-18 월간, 2026-12-15 월간/분기, 2026-12-31 분기 대외부채. 잠정/최종/지연은 원문 구분. 미국 동부 오후 4시를 DST 반영하여 KST 다음 날 05:00/06:00에 표시, 저장 5필드 계약 유지.
+- 코드: R26 설치본 보존 R27 스테이징 `staging/market-calendar/r27-tic/` 내 parser registry/신규 TIC parser/collector; 기존 수집 raw 저장→저장본 검증, 다른 소스 실패 독립, 과거 이벤트 보존, 현재 미래 일정 개정 반영. UI `app/market-calendar/market-calendar-client.tsx`에 TIC 출처·국제자본 분류·표시 시간, `lib/market-calendar-tic-time.mjs`에 IANA 시간 계산 추가.
+- 실제 사용자 R26 PC 성공 로그 `c948f2485a55ed24a3b47f42e6c070af8b1f5a62` 재검산. R27 안전 설치기는 같은 Core `d0a4b3cb8b95` 및 source/config, parser/collector/Treasury/EIA/USDA/CFTC SHA·dirty·lock·task 검증 뒤 정확히 **3파일**만 백업·커밋, drift 시 STOP. 원본 데이터/예약작업/게시기/D1/Cloudflare/GitHub push 변경 없음.
+- SHA 후보 parser `97800cfbe226be56c3f10e9fa4a37a8967a7e84ad5ba2f098477f7fb3447aefe`, TIC `86a2a62d35f26627f8623ab9002ff56a9c28ed10b1357e2abd3794a1b3d26dae`, collector LF `aa091265aa3a80f2199b3d58258eeabdebd241709a37e034dbd113328b844e00`, 설치 CRLF `7ccf0183868fc2f19de5b5f07409383def161a78a1353dba6049299631f31708`.
+- R27 신규 11/11 + 이전 exporter/R26/R23–25 회귀 총 **41/41 PASS**; TypeScript typecheck PASS, Windows CMD ASCII·CRLF, ZIP 7/7 PASS. 설치 ZIP `MARKET_CALENDAR_R27_TIC_PC_INSTALL_20261028.zip` SHA256 `f7a894ac1bfcc40bac2c7af08d492b7fd7196871a3b39f25894e95a257404af8`.
+- 다음 PC 단계: ZIP 전체 새 폴더에 해제→`MARKET_CALENDAR_R27_TIC_APPLY.cmd` **한 번만** 실행→`MARKET_CALENDAR_R27_TIC_APPLY_RESULT.txt` 제출. **R27 VERIFIED_SOURCE_AND_CODE_READY / PC INSTALL UNCONFIRMED**, 실제 정기 수집·SQLite 반영·운영 사이트 공개는 별도 단계. 브랜치 `codex/zgmini-gpt-workspace-20261025`만 계속 사용, 새 브랜치/main 병합/운영 배포 없음.
