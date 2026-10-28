@@ -7,6 +7,17 @@ const UNITS=Object.freeze(['TIMES_GDP','LOG_PERCENT_POINTS','PERCENTAGE_POINTS',
 const DISPLAY_UNITS=Object.freeze(['배','로그 %p','%p','%','백분위점','%p']);
 const finite=x=>typeof x==='number'&&Number.isFinite(x);
 const near=(a,b)=>finite(a)&&finite(b)&&Math.abs(a-b)<1e-7;
+const isoDate=x=>typeof x==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(x)
+ &&Number.isFinite(Date.parse(x+'T00:00:00Z'))
+ &&new Date(x+'T00:00:00Z').toISOString().slice(0,10)===x;
+
+// Only the two source observations actually stored in the raw sidecar.
+// Never interpolate them or label the pair as a complete one-year history.
+const observedPair=r=>finite(r.previousValue)&&finite(r.value)
+ &&isoDate(r.previousObservationDate)&&isoDate(r.observationDate)
+ &&r.previousObservationDate<r.observationDate
+ ?[{date:r.previousObservationDate,value:r.previousValue},
+   {date:r.observationDate,value:r.value}]:undefined;
 
 export function mergeAssetR10RawForUi(scored,raw){
  if(!scored||!raw||raw.schemaVersion!=='asset-bubble-r10-raw-r1-v1'
@@ -34,5 +45,6 @@ export function mergeAssetR10RawForUi(scored,raw){
   previousObservationDate:raw.factors[i].previousObservationDate,
   unit:DISPLAY_UNITS[i],rawUnit:raw.factors[i].unit,
   source:raw.factors[i].source,
+  trend:observedPair(raw.factors[i]),
  }))};
 }

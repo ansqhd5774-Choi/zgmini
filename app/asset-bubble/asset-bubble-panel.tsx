@@ -91,11 +91,11 @@ export default function AssetBubblePanel({initialPayload}:{initialPayload?:Paylo
    <div className="inflation-direction-strip"><span><b>버블 위험</b>고평가↑ · 가격가속↑ · 위험자산 쏠림↑ · 투기자금↑</span><span><b>안정 방향</b>밸류에이션 안정 · 폭넓은 상승 · 유동성 과잉 완화</span></div>
   </section>
   <section className="inflation-indicator-section asset-r2-indicators" aria-labelledby="asset-bubble-indicator-title">
-   <header><div><p className="cnn-eyebrow">ASSET BUBBLE INDICATORS</p><h2 id="asset-bubble-indicator-title">자산 버블 분석 지표</h2></div><p>이전 값·발표일·1년 미니차트는 실제 저장 근거가 있을 때만 표시합니다. 자료가 없는 칸의 <b>—</b>는 0이 아닙니다. 판단은 구성 안전점수 기준입니다.</p></header>
+    <header><div><p className="cnn-eyebrow">ASSET BUBBLE INDICATORS</p><h2 id="asset-bubble-indicator-title">자산 버블 분석 지표</h2></div><p>관측 추이는 실제 저장된 이전·현재 2개 관측값의 변화이며, 완전한 1년 이력은 아닙니다. 발표일은 확인된 일정만 표시합니다. 자료가 없는 칸의 <b>—</b>는 0이 아닙니다. 판단은 구성 안전점수 기준입니다.</p></header>
 
    <div className="inflation-table-wrap asset-r2-table-wrap"><table className="inflation-indicator-table asset-indicator-table-r2">
     <colgroup><col className="asset-col-favorite"/><col className="asset-col-name"/><col className="asset-col-content"/><col className="asset-col-criterion"/><col className="asset-col-previous"/><col className="asset-col-current"/><col className="asset-col-release"/><col className="asset-col-judgement"/><col className="asset-col-spark"/><col className="asset-col-help"/></colgroup>
-    <thead><tr><th><AssetFavoriteHeaderIcon/><span className="sr-only">즐겨찾기</span></th><th>지표</th><th>내용</th><th>기준</th><th>이전</th><th>현재</th><th>발표</th><th>판단</th><th>미니차트(1Y)</th><th><span className="sr-only">도움말</span>ⓘ</th></tr></thead>
+     <thead><tr><th><AssetFavoriteHeaderIcon/><span className="sr-only">즐겨찾기</span></th><th>지표</th><th>내용</th><th>기준</th><th>이전</th><th>현재</th><th>발표</th><th>판단</th><th>관측 추이</th><th><span className="sr-only">도움말</span>ⓘ</th></tr></thead>
     <tbody>
      {order.map(id=>{const row=rows.get(id),m=meta[id],j=judge(row?.score,row?.status);return <tr key={id} data-judgement={j.tone}>
       <td><AssetFavoriteButton id={id} label={m.label}/></td>
@@ -105,7 +105,7 @@ export default function AssetBubblePanel({initialPayload}:{initialPayload?:Paylo
       <td className="asset-r2-value"><strong>{fmt(row)}</strong><small>{dateLabel(row?.observationDate)}</small>{sourceLabel(row?.source)&&<small>{sourceLabel(row?.source)}</small>}</td>
       <td className="asset-r2-release"><strong>{releaseLabel(row?.nextReleaseDate)}</strong><small>확인된 일정만</small></td>
       <td><span className="inflation-judgement">{j.label}</span></td>
-      <td className="asset-r2-spark-cell"><InflationMiniChart label={m.label} points={row?.trend}/></td>
+       <td className="asset-r2-spark-cell"><InflationMiniChart label={m.label} points={row?.trend} periodLabel="실제 저장된 관측 2개"/></td>
       <td><HelpTip label={m.label} text={candidate&&id==='breadthDivergence'?'12개월 지수 수익률과 200일 이동평균 위에 있는 종목 비율의 순위를 비교합니다. 최소 252개 관측을 사용하며, 분기 점수는 세 월말 점수의 평균입니다. 확인되지 않은 가격 불연속 구간은 보류합니다.':m.help}/></td>
      </tr>})}
      {dev.map(item=><tr key={item[0]} data-development="true">
@@ -121,7 +121,7 @@ export default function AssetBubblePanel({initialPayload}:{initialPayload?:Paylo
      <div className="asset-r2-mobile-head"><div className="asset-r2-mobile-title"><AssetFavoriteButton id={id} label={m.label}/><div><strong>{m.label}</strong><small>{row?.status==="READY"?"저장 데이터":"자료 확인 중"}</small></div></div><div className="asset-r2-mobile-actions"><span className="inflation-judgement">{j.label}</span><HelpTip label={m.label} text={candidate&&id==='breadthDivergence'?'12개월 지수 수익률과 200일 이동평균 위에 있는 종목 비율의 순위를 비교합니다. 최소 252개 관측을 사용하며, 분기 점수는 세 월말 점수의 평균입니다. 확인되지 않은 가격 불연속 구간은 보류합니다.':m.help}/></div></div>
      <p className="asset-r2-mobile-content">{m.content}</p>
      <p className="asset-r2-mobile-criterion"><span>기준</span>{m.criterion}</p>
-     <div className="asset-r2-mobile-spark"><span>미니차트(1Y)</span><InflationMiniChart label={m.label} points={row?.trend}/></div>
+      <div className="asset-r2-mobile-spark"><span>관측 추이</span><InflationMiniChart label={m.label} points={row?.trend} periodLabel="실제 저장된 관측 2개"/></div>
      <div className="asset-r2-mobile-metrics">
       <div><span>이전</span><strong>{fmtValue(row?.previousValue,row?.unit)}</strong><small>{dateLabel(row?.previousObservationDate)}</small></div>
       <div><span>현재</span><strong>{fmt(row)}</strong><small>{dateLabel(row?.observationDate)}</small>{sourceLabel(row?.source)&&<small>{sourceLabel(row?.source)}</small>}</div>
