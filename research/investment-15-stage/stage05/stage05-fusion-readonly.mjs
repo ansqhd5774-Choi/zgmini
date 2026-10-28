@@ -22,6 +22,8 @@ async function run() {
       + '  node stage05-fusion-readonly.mjs --audit-existing\n'
       + '  node stage05-fusion-readonly.mjs --handoff-existing\n'
       + '  node stage05-fusion-readonly.mjs --handoff-input verified-stage01-04-snapshot.json\n'
+      + '  node stage05-fusion-readonly.mjs --handoff-r77 [--output-dir EXISTING_DIR]\n'
+      + '  node stage05-fusion-readonly.mjs --handoff-input SNAPSHOT.json --r77-report SAVED_R77.json [--output-dir EXISTING_DIR]\n'
       + '  node stage05-fusion-readonly.mjs --audit-live\n'
       + '  node stage05-fusion-readonly.mjs --audit-fda-growth-live [--output-dir EXISTING_DIR]\n'
       + '  node stage05-fusion-readonly.mjs --input verified-stage01-04-snapshot.json\n'
@@ -92,19 +94,41 @@ async function run() {
     if (result.summary.rankableCount === 0) process.exitCode = 2;
     return;
   }
-  if ((args.length === 1 && args[0] === '--handoff-existing')
-    || (args.length === 2 && args[0] === '--handoff-input')) {
+  if (['--handoff-existing','--handoff-input','--handoff-r77'].includes(args[0])) {
+    const explicit=args[0]==='--handoff-input';
+    if (explicit && !args[1]) throw new Error('STAGE05_SNAPSHOT_PATH_REQUIRED');
+    const options={r77Report:null,outputDir:null};
+    const starting=explicit?2:1;
+    for(let i=starting;i<args.length;i+=2){
+      const flag=args[i],value=args[i+1];
+      if(!['--r77-report','--output-dir'].includes(flag)||!value)
+        throw new Error('STAGE05_HANDOFF_ARGUMENT_INVALID');
+      const key=flag==='--r77-report'?'r77Report':'outputDir';
+      if(options[key]!==null)throw new Error('STAGE05_HANDOFF_DUPLICATE_ARGUMENT');
+      options[key]=value;
+    }
+    if(args[0]==='--handoff-r77'&&!options.r77Report)
+      options.r77Report=new URL('../stage04/R72_OLLAMA_FORECAST_PIPELINE_RESULT.json',import.meta.url);
     const {buildExistingEvidenceAudit}=await import('./stage05-existing-evidence-bridge.mjs');
     const {buildVerifiedResultsHandoff}=await import('./stage05-verified-results-handoff.mjs');
     const original=await readFile(new URL(
       '../STAGE04_INVESTMENT_BOT_R17_SENTIMENT_INDUSTRY_CONTRAST_20261025.md',import.meta.url),'utf8');
-    const explicit=args[0]==='--handoff-input';
     const snapshot=explicit?JSON.parse(await readFile(args[1],'utf8')):null;
     const audit=buildExistingEvidenceAudit({r17Markdown:original,
       asOfDate:explicit?snapshot.snapshotDate:kstToday()});
     const fusion=explicit?calculateFusionStage05(snapshot):null;
-    const handoff=buildVerifiedResultsHandoff({audit,fusion});
-    print(handoff);
+    let handoff=buildVerifiedResultsHandoff({audit,fusion});
+    if(options.r77Report){
+      const {attachSavedR77ToStage05}=await import('./stage05-r77-result-bridge.mjs');
+      const savedR77=JSON.parse(await readFile(options.r77Report,'utf8'));
+      handoff=attachSavedR77ToStage05({handoff,savedR77});
+    }
+    if(options.outputDir){
+      const file=await saveUniqueJson(options.outputDir,'STAGE05_R83_SAVED_R77_HANDOFF',handoff);
+      process.stdout.write(`STAGE05_HANDOFF_JSON=${file}\n`
+        + `STATUS=${handoff.status} SAVED_R77=${handoff.stage04SavedR77Forecast?.status||'NOT_ATTACHED'}`
+        + ` SCORED=${handoff.coverage.verifiedCompleteScores}/${handoff.coverage.requiredCompleteScores}\n`);
+    }else print(handoff);
     if(handoff.ollamaInput===null)process.exitCode=2;
     return;
   }
