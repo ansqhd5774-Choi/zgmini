@@ -70,6 +70,12 @@ flowchart TD
 
 **R58 추가 검사(2026-10-29):** 기존 가격 원천은 재조회에서도 SPY 27일 1h 행 0건(`x-data-through:2026-10-26T23:59:00Z`), 공개 API는 아직 `modelRevision=null`. PC가 이미 사용 중인 Alpaca의 무료 IEX/SIP 1h `adjustment=raw` 가능 여부를 SPY 한 종목·최대 3GET로 확인하는 [R58 읽기 전용 검사](THEME_NINE_R58_ALPACA_SOURCE_RECOVERY_20261029.md)를 **같은 브랜치에 코드·Windows CMD·테스트와 함께 저장**했다. R58은 소스 대체 승인이나 실제 D1 게시가 아니며, 27일 원가격이 검증될 때만 기존 R47→R54 경로를 재개한다. 최신값은 실행 직전 다시 확인한다.
 
+### R58 실PC 실행 결과 (2026-10-29)
+
+- 사용자 제출 `THEME_NINE_R58_ALPACA_READONLY_RESULT_16615_3201.txt` 확인: GET **3회**, Alpaca SIP **403**, Alpaca IEX **27일 NY15시 1h 존재**, 하지만 **26일 SPY GMH 원가격과 IEX 종가는 불일치**. 63종 커버리지·가격모드 동등성 미증명, 가격 소스 변경 승인 없음. **IEX를 R32에 자동 대체하지 않는다**.
+- 원래 GMH 27일 실시간 재조회 `x-row-count: 0`, `x-data-through:2026-10-26T23:59:00Z`. 실제 공개 API `modelRevision=null`, 옛 `ETF_ONLY_T40_R20_V40_PAIR50` 그대로. **D1 R32 실제 게시 0건 유지**.
+- 승인된 해결 경로: GMH 27일 원자료 도착 후 **기존 R47→R48→R51→R54 수집/게시** 실행. 사용자가 다른 공급원으로 전환을 새로 승인하지 않는 한 27일 IEX 자료를 끼워 넣거나 확정치/잠정치를 서로 다른 방식으로 혼합하지 않는다. 세부 근거는 [R58 실PC 로그 기록](THEME_NINE_R58_ALPACA_SOURCE_RECOVERY_20261029.md).
+
 ## 6. 다음 작업의 정확한 초점
 
 - **신규 산식·ETF 선정·9×252 연구 재실행이 아니다.** 기존 9개 R32 게시의 첫 차단점은 R51이 요구하는 날짜(27일)에 해당하는 저장된 R48 원가격 계산 후보의 부재다.
