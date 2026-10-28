@@ -1,6 +1,5 @@
 "use client";
 import {useId,useState} from 'react';
-import ChartAxisLabels from './chart-axis-labels';
 import './chart-axis-labels.css';
 import './iran-published-chart.css';
 type Point={at:number;value:number;collectionCheckedAt:number;sourceStoredAt:number;eventCount:number;lineage:string};
@@ -36,7 +35,10 @@ export default function IranPublishedChart({points,history=[],compact=false}:{po
   ?'M'+x(compactLine[0].at)+','+y(0)+' L'+compactLine.map(p=>x(p.at)+','+y(p.value)).join(' L')+' L'+x(compactLine.at(-1)!.at)+','+y(0)+' Z':'';
  const delta=previous?current.value-previous.value:null;
  return <div className={'zg-iran-published-chart'+(compact?' is-compact ob-summary-chart ob-summary-chart-frame':'')} aria-label="최근 14일 일별 추정과 실제 게시 시각별 잠정 점수">
-  {compact&&<ChartAxisLabels dates/>}
+  {compact&&<div className="zg-chart-fixed-axis" aria-hidden="true">
+   {[0,50,100].map(v=><span key={v} style={{left:'11.8%',top:`${79.4-(79.4-14.7)*v/100}%`}}>{v}</span>)}
+   <b style={{left:'15.3%'}}>0</b><b style={{right:'7.1%'}}>14</b>
+  </div>}
   <svg viewBox={compact?"0 0 170 68":"0 0 350 136"} preserveAspectRatio={compact?"none":"xMidYMid meet"} role="group" aria-labelledby={id}>
    <title id={id}>{`최근 14일 · 실제 게시 기록 ${visible.length}회 · 한국시간`}</title>
    {compact&&<defs><linearGradient id={id+"-compact-fill"} x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#ef4444" stopOpacity=".25"/><stop offset="100%" stopColor="#ef4444" stopOpacity="0"/></linearGradient></defs>}
