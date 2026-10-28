@@ -62,18 +62,18 @@ test('R29 successful scheduled metadata collection records only private counts',
      d1Written:false,schedulerModified:false,
      articleCoverage:{scope:'PRIVATE_30_DAY_CANDIDATES',requiredSources:7,
       sourcesVerifiedThisRun:4,sourcesWithRetainedCandidates:4,
-      sourcesWithoutRetainedCandidates:['iaea-news','iaea-statements','aljazeera'],
+      sourcesWithoutRetainedCandidates:['guardian-iran','dw-world','aljazeera'],
       allSourcesVerifiedThisRun:false,allSourcesHaveRetainedCandidates:false,
       bySource:IRAN_DISPLAY_FEEDS_R26.map(({id})=>({sourceId:id,
-       verifiedThisRun:['iaea-news','iaea-statements','aljazeera'].includes(id)?0:1,
-       retained30DayCandidates:['iaea-news','iaea-statements','aljazeera'].includes(id)?0:1}))}};
+       verifiedThisRun:['guardian-iran','dw-world','aljazeera'].includes(id)?0:1,
+       retained30DayCandidates:['guardian-iran','dw-world','aljazeera'].includes(id)?0:1}))}};
    }});
   assert.equal(result.status,'PRIVATE_COLLECTION_PARTIAL');
   assert.equal(result.candidatesSaved,27);
   assert.equal(result.articleFailures,4);
   assert.equal(result.articleCoverage.sourcesVerifiedThisRun,4);
   assert.deepEqual(result.articleCoverage.sourcesWithoutRetainedCandidates,
-   ['iaea-news','iaea-statements','aljazeera']);
+   ['guardian-iran','dw-world','aljazeera']);
   const status=JSON.parse(readFileSync(path.join(dir,R29_STATUS_FILE),'utf8'));
   assert.deepEqual(status,result);
   assert.equal(readFileSync(path.join(dir,'iran.sqlite'),'utf8'),'preserve score ledger');

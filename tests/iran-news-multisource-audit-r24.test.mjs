@@ -11,6 +11,8 @@ const now=Date.parse('2026-10-27T06:00:00.000Z');
 const sourceLinks={
  'iaea-news':'https://www.iaea.org/newscenter/news/iran-statement',
  'iaea-statements':'https://www.iaea.org/newscenter/statements/iran-update',
+ 'guardian-iran':'https://www.theguardian.com/world/2026/oct/27/iran-diplomats-meet',
+ 'dw-world':'https://www.dw.com/en/iran-diplomats-meet/a-79776122',
  'bbc-middle-east':'https://www.bbc.com/news/articles/iran-update',
  aljazeera:'https://www.aljazeera.com/news/2026/10/27/iran-update',
  'un-middle-east':'https://news.un.org/en/story/2026/10/iran-update',
@@ -26,9 +28,11 @@ const tasnim='<html><a href="/en/news/2026/10/27/987/iran-ceasefire-talks">Lates
 const aljazeeraArchive='<html><a href="/news/2026/10/27/iran-update">Iran topic</a></html>';
 const iaeaHomepage='<!doctype html><html><a href="/newscenter/news/new-science">News</a>'+
  '<a href="/newscenter/statements/director-general-statement-to-the-united-nations-security-council">Statement</a></html>';
+const iaeaDiagnostic=id=>[{id,url:id==='iaea-news'? 'https://www.iaea.org/feeds/topnews':
+ 'https://www.iaea.org/feeds/dgstatements',kind:'xml'}];
 const bodyFor=id=>id==='govuk'?atom:id==='tasnim'?tasnim:rss([item(sourceLinks[id])]);
 
-test('R24 lists all existing seven sources as unpublished review candidates only',async()=>{
+test('R35 lists five retained and two replacement sources as unpublished review candidates',async()=>{
  const fetched=[];
  const result=await auditIranMultisourceCollectionR24({now,fetcher:async url=>{
   fetched.push(url);
@@ -39,15 +43,16 @@ test('R24 lists all existing seven sources as unpublished review candidates only
   assert.ok(spec);
   return new Response(url===IRAN_ALJAZEERA_TOPIC_ARCHIVE_R32?aljazeeraArchive:bodyFor(spec.id));
  }});
- assert.equal(fetched.length,13);
+ assert.equal(fetched.length,11);
  assert.equal(result.sourceCount,7);
  assert.equal(result.sourcesRead,7);
  assert.equal(result.sourcesFailed,0);
- assert.equal(result.candidatesFound,9);
+ assert.equal(result.candidatesFound,7);
  assert.equal(result.sources.find(s=>s.sourceId==='govuk').feedUrlsRead,4);
  assert.equal(result.sources.find(s=>s.sourceId==='aljazeera').feedUrlsRead,2);
- assert.equal(result.sources.find(s=>s.sourceId==='iaea-news').feedUrlsRead,2);
- assert.equal(result.sources.find(s=>s.sourceId==='iaea-statements').feedUrlsRead,2);
+ assert.equal(result.sources.find(s=>s.sourceId==='guardian-iran').feedUrlsRead,1);
+ assert.equal(result.sources.find(s=>s.sourceId==='dw-world').feedUrlsRead,1);
+ assert.ok(result.sources.every(s=>!s.sourceId.startsWith('iaea-')));
  assert.equal(result.status,'CANDIDATES_REQUIRE_REVIEW');
  assert.ok(result.candidates.every(c=>c.rightsVerified===false&&
   c.displayEligible===false&&c.originalPublicationVerified===false));
@@ -93,7 +98,7 @@ test('R34 finds fresh IAEA statements absent from stale RSS through official hom
  assert.equal(parsed.records[0].feedPublishedAt,null);
  assert.equal(parsed.records[0].discoveryOrigin,'IAEA_OFFICIAL_HOMEPAGE_UNSCOPED_R34');
  const report=await auditIranMultisourceCollectionR24({now,
-  feeds:IRAN_MULTISOURCE_FEEDS_R24.filter(s=>s.id==='iaea-statements'),
+  feeds:iaeaDiagnostic('iaea-statements'),
   fetcher:async target=>new Response(target===IRAN_IAEA_OFFICIAL_HOME_R34?
    homepage:rss([item(sourceLinks['iaea-statements'],'General update')]))});
  assert.equal(report.sources[0].feedUrlsRead,2);
@@ -107,7 +112,7 @@ test('R34 finds fresh IAEA statements absent from stale RSS through official hom
 test('R24 deduplicates identical source URLs without conflating independent publishers',async()=>{
  const duplicateFeed=rss([item(sourceLinks['iaea-news']),item(sourceLinks['iaea-news'])]);
  const result=await auditIranMultisourceCollectionR24({now,
-  feeds:IRAN_MULTISOURCE_FEEDS_R24.filter(s=>s.id==='iaea-news'),
+  feeds:iaeaDiagnostic('iaea-news'),
   fetcher:async url=>new Response(url===IRAN_IAEA_OFFICIAL_HOME_R34?
    '<html><body>No current items</body></html>':duplicateFeed)});
  assert.equal(result.candidatesFound,1);
@@ -193,7 +198,7 @@ test('R24 detects a topic in the RSS description even when headline lacks it',as
   '<description><![CDATA[<p>Officials discussed Iran and Saudi Arabia.</p>]]></description>',
   '<pubDate>Tue, 27 Oct 2026 03:00:00 GMT</pubDate></item>'].join('')]);
  const report=await auditIranMultisourceCollectionR24({now,
-  feeds:IRAN_MULTISOURCE_FEEDS_R24.filter(s=>s.id==='iaea-news'),
+  feeds:iaeaDiagnostic('iaea-news'),
   fetcher:async url=>new Response(url===IRAN_IAEA_OFFICIAL_HOME_R34?
    '<html><body>No current items</body></html>':feed)});
  assert.equal(report.sources[0].status,'READ');

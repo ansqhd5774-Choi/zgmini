@@ -11,6 +11,8 @@ const ACCEPTED_HOSTS=Object.freeze({
  govuk:['www.gov.uk'],
  'iaea-news':['www.iaea.org'],
  'iaea-statements':['www.iaea.org'],
+ 'guardian-iran':['www.theguardian.com'],
+ 'dw-world':['www.dw.com'],
  'bbc-middle-east':['www.bbc.com','www.bbc.co.uk','www.bbci.co.uk'],
  aljazeera:['www.aljazeera.com'],
  'un-middle-east':['news.un.org'],
@@ -31,6 +33,12 @@ const matchesIranTopicR24=text=>
  /\b(?:iran(?:ian)?s?|saudis?|yemen(?:is?)?|houthis?)\b|이란|사우디(?:아라비아)?|예멘|예맨|후티/i.test(text);
 
 export const IRAN_MULTISOURCE_FEEDS_R24=Object.freeze(IRAN_DISPLAY_FEEDS_R26.map(spec=>Object.freeze({...spec})));
+// Historical R34 IAEA diagnosis remains opt-in for reproducible read-only
+// tests. Neither source is selected by the current scheduled display collector.
+const RETIRED_IAEA_DIAGNOSTIC_FEEDS=Object.freeze([
+ Object.freeze({id:'iaea-news',url:'https://www.iaea.org/feeds/topnews',kind:'xml'}),
+ Object.freeze({id:'iaea-statements',url:'https://www.iaea.org/feeds/dgstatements',kind:'xml'}),
+]);
 
 function xmlText(value){
  return String(value??'').replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g,'$1')
@@ -58,7 +66,8 @@ export function newsR24SourceUrl(sourceId,value){
   if(sourceId==='un-middle-east'&&/^\/feed\/view\/en\/story\//.test(url.pathname))
    url.pathname=url.pathname.replace(/^\/feed\/view(?=\/en\/story\/)/,'');
   for(const key of [...url.searchParams.keys()]){
-   if(/^(?:utm_.+|at_medium|at_campaign|traffic_source)$/i.test(key))url.searchParams.delete(key);
+   if(/^(?:utm_.+|at_medium|at_campaign|traffic_source)$/i.test(key)||
+    (sourceId==='dw-world'&&key==='maca'))url.searchParams.delete(key);
   }
   return url.href;
  }catch{return null;}
@@ -156,7 +165,7 @@ export function parseIranMultisourceFeedR24(sourceId,kind,body){
 export async function auditIranMultisourceCollectionR24({now=Date.now(),fetcher=fetch,
  feeds=IRAN_MULTISOURCE_FEEDS_R24}={}){
  if(!Number.isSafeInteger(now)||!Array.isArray(feeds)||!feeds.length||feeds.length>7||
-  feeds.some(spec=>!IRAN_MULTISOURCE_FEEDS_R24.some(approved=>
+  feeds.some(spec=>![...IRAN_MULTISOURCE_FEEDS_R24,...RETIRED_IAEA_DIAGNOSTIC_FEEDS].some(approved=>
    approved.id===spec.id&&approved.url===spec.url&&approved.kind===spec.kind)))
   throw Error('R24_SOURCE_REGISTRY_INVALID');
  const seen=new Set(),candidates=[],sources=[];

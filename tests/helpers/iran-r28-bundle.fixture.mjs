@@ -42,3 +42,8 @@ export function withHistoricalR32Package(root,callback){
  return withHistoricalPackage(root,'IRAN_NEWS_R32_HISTORICAL_RETRY_PACKAGE.zip',
   'iran-r32-history-',6,callback);
 }
+
+export function withHistoricalR34Package(root,callback){
+ return withHistoricalPackage(root,'IRAN_NEWS_R34_RECENT_IAEA_PACKAGE.zip',
+  'iran-r34-history-',7,callback);
+}

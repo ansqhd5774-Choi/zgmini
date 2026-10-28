@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {readFileSync,writeFileSync,copyFileSync,existsSync} from 'node:fs';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
-import {withHistoricalR28Package,withHistoricalR32Package}
+import {withHistoricalR28Package,withHistoricalR32Package,withHistoricalR34Package}
  from './helpers/iran-r28-bundle.fixture.mjs';
 import {r34SafeInstallationTime,planIranR34Upgrade,applyIranR34Upgrade}
  from '../scripts/iran-progress/news-display-upgrade-r34.mjs';
@@ -25,11 +25,11 @@ const page=(url,day)=>`<!doctype html><html><head><link rel="canonical" href="${
  <time datetime="${day}">${day}</time><div class="statement-body"><p>${body}</p></div></body></html>`;
 
 test('R34 installs only SHA-pinned R24 over existing R32 and keeps recoverable copy',()=>{
- withHistoricalR32Package(root,r32=>withHistoricalR28Package(root,pc=>{
+ withHistoricalR34Package(root,r34=>withHistoricalR32Package(root,r32=>withHistoricalR28Package(root,pc=>{
   for(const relative of [beforeR32,beforeR25]){
    copyFileSync(path.join(r32,relative),path.join(pc,relative));
   }
-  const plan=planIranR34Upgrade({bundleRoot:root,projectRoot:pc,now});
+  const plan=planIranR34Upgrade({bundleRoot:r34,projectRoot:pc,now});
   assert.equal(plan.status,'R34_PATCH_READY');
   const prior=process.env.ZGMINI_IRAN_NEWS_R34_INSTALL_APPROVED;
   delete process.env.ZGMINI_IRAN_NEWS_R34_INSTALL_APPROVED;
@@ -41,29 +41,29 @@ test('R34 installs only SHA-pinned R24 over existing R32 and keeps recoverable c
    assert.deepEqual(readFileSync(plan.backup),readFileSync(path.join(r32,beforeR32)));
    assert.deepEqual(readFileSync(plan.destination),readFileSync(plan.source));
    assert.deepEqual(readFileSync(path.join(pc,beforeR25)),readFileSync(path.join(r32,beforeR25)));
-   assert.equal(planIranR34Upgrade({bundleRoot:root,projectRoot:pc,now}).status,
+   assert.equal(planIranR34Upgrade({bundleRoot:r34,projectRoot:pc,now}).status,
     'R34_ALREADY_INSTALLED');
   }finally{
    if(prior===undefined)delete process.env.ZGMINI_IRAN_NEWS_R34_INSTALL_APPROVED;
    else process.env.ZGMINI_IRAN_NEWS_R34_INSTALL_APPROVED=prior;
   }
- }));
+ })));
 });
 
 test('R34 rejects drift and scheduled-work windows before replacing any file',()=>{
  assert.equal(r34SafeInstallationTime(Date.parse('2026-10-28T09:00:00Z')),false);
  assert.equal(r34SafeInstallationTime(now),true);
- withHistoricalR32Package(root,r32=>withHistoricalR28Package(root,pc=>{
+ withHistoricalR34Package(root,r34=>withHistoricalR32Package(root,r32=>withHistoricalR28Package(root,pc=>{
   for(const relative of [beforeR32,beforeR25])
    copyFileSync(path.join(r32,relative),path.join(pc,relative));
-  const near=planIranR34Upgrade({bundleRoot:root,projectRoot:pc,
+  const near=planIranR34Upgrade({bundleRoot:r34,projectRoot:pc,
    now:Date.parse('2026-10-28T09:00:00Z')});
   assert.equal(near.status,'R34_NEAR_SCHEDULE_WINDOW_WAIT');
   assert.equal(existsSync(near.backup),false);
   writeFileSync(path.join(pc,beforeR32),'unapproved changed source');
-  assert.throws(()=>planIranR34Upgrade({bundleRoot:root,projectRoot:pc,now}),
+  assert.throws(()=>planIranR34Upgrade({bundleRoot:r34,projectRoot:pc,now}),
    /R34_PC_MODULE_DRIFT/);
- }));
+ })));
 });
 
 test('R34 detects both October statements absent from stale RSS and verifies publisher body',async()=>{

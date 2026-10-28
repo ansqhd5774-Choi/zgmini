@@ -58,8 +58,15 @@ async function inDir(fn){
 }
 const id=url=>createHash('sha256').update(url).digest('hex');
 
-test('R26 display-only seven-source registry exactly matches approved R3 feeds',()=>{
- assert.deepEqual(IRAN_MULTISOURCE_FEEDS_R24,R3_FEEDS);
+test('R35 display collector replaces IAEA with Guardian and DW without changing R3 score feeds',()=>{
+ assert.equal(IRAN_MULTISOURCE_FEEDS_R24.length,7);
+ assert.deepEqual(IRAN_MULTISOURCE_FEEDS_R24.map(s=>s.id),
+  ['tasnim','govuk','guardian-iran','dw-world','bbc-middle-east','aljazeera','un-middle-east']);
+ assert.deepEqual(R3_FEEDS.filter(s=>s.id.startsWith('iaea-')).map(s=>s.id),
+  ['iaea-news','iaea-statements']);
+ assert.deepEqual(IRAN_MULTISOURCE_FEEDS_R24.filter(s=>
+  !['guardian-iran','dw-world'].includes(s.id)),R3_FEEDS.filter(s=>
+  !['iaea-news','iaea-statements'].includes(s.id)));
 });
 
 test('R26 Windows audit CMD is pinned, ASCII/CRLF and never runs collection apply',()=>{
@@ -99,7 +106,7 @@ test('R26 collects genuine article metadata from 7 sources without licensing or 
   assert.equal(result.articleCoverage.allSourcesVerifiedThisRun,false);
   assert.equal(result.articleCoverage.allSourcesHaveRetainedCandidates,false);
   assert.deepEqual(result.articleCoverage.sourcesWithoutRetainedCandidates,
-   ['tasnim','iaea-news','iaea-statements','aljazeera','un-middle-east']);
+   ['tasnim','guardian-iran','dw-world','aljazeera','un-middle-east']);
   assert.equal(result.rightsVerified,0);
   assert.equal(result.displayEligible,0);
   assert.equal(result.dryRun,true);
