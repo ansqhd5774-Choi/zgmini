@@ -20,6 +20,8 @@ async function run() {
   if (args.length === 1 && args[0] === '--help') {
     process.stdout.write('Usage:\n  node stage05-fusion-readonly.mjs --audit-existing-live [--output-dir EXISTING_DIR]\n'
       + '  node stage05-fusion-readonly.mjs --audit-existing\n'
+      + '  node stage05-fusion-readonly.mjs --handoff-existing\n'
+      + '  node stage05-fusion-readonly.mjs --handoff-input verified-stage01-04-snapshot.json\n'
       + '  node stage05-fusion-readonly.mjs --audit-live\n'
       + '  node stage05-fusion-readonly.mjs --audit-fda-growth-live [--output-dir EXISTING_DIR]\n'
       + '  node stage05-fusion-readonly.mjs --input verified-stage01-04-snapshot.json\n'
@@ -88,6 +90,22 @@ async function run() {
     const result = calculateFusionStage05(JSON.parse(raw));
     print({runType:'EXPLICIT_VERIFIED_SNAPSHOT',...result});
     if (result.summary.rankableCount === 0) process.exitCode = 2;
+    return;
+  }
+  if ((args.length === 1 && args[0] === '--handoff-existing')
+    || (args.length === 2 && args[0] === '--handoff-input')) {
+    const {buildExistingEvidenceAudit}=await import('./stage05-existing-evidence-bridge.mjs');
+    const {buildVerifiedResultsHandoff}=await import('./stage05-verified-results-handoff.mjs');
+    const original=await readFile(new URL(
+      '../STAGE04_INVESTMENT_BOT_R17_SENTIMENT_INDUSTRY_CONTRAST_20261025.md',import.meta.url),'utf8');
+    const explicit=args[0]==='--handoff-input';
+    const snapshot=explicit?JSON.parse(await readFile(args[1],'utf8')):null;
+    const audit=buildExistingEvidenceAudit({r17Markdown:original,
+      asOfDate:explicit?snapshot.snapshotDate:kstToday()});
+    const fusion=explicit?calculateFusionStage05(snapshot):null;
+    const handoff=buildVerifiedResultsHandoff({audit,fusion});
+    print(handoff);
+    if(handoff.ollamaInput===null)process.exitCode=2;
     return;
   }
   if (args.length === 1 && args[0] === '--audit-contract') {
