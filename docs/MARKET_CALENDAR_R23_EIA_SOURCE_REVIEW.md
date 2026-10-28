@@ -52,3 +52,18 @@
 1. WPSR 공개 JSON의 실제 응답 구조를 수신해 명시된 정기 발표일을 검증하고, 휴일 예외 일정과 중복 없이 병합한다. EIA 접근 실패/403 시 우회하지 않으며 해당 출처만 `SOURCE_FAILED`로 표시하고 기존 공식 값은 보존한다.
 2. R22 PC Core의 기존 저장 원문→저장값 재파싱→통합 결과 계약에 독립 EIA 소스로 최소 연결한다. 새로운 DB/스케줄러/공개 산식은 추가하지 않는다.
 3. 기존 5개 소스와 EIA의 유효·중복·실패/이력 보존 회귀를 점검한 후 승인된 R22 설치 SHA 기준의 안전한 설치 도구를 제공한다. 지금 단계에서는 아직 미설치·사이트 미반영이다.
+
+## R23 공식 JSON 확보 및 연결 후보 · 2026-10-28
+
+- 사용자 PC 결과 `MARKET_CALENDAR_R23_EIA_WPSR_JSON_RESULT.txt`: 공식 `https://www.eia.gov/petroleum/supply/weekly/includes/wpsr-calendar.json` 1회 HTTP 200, 26,381바이트, SHA256 `b6293ef1109b2cfeb667b0cb5c6d585c5c6f1dfbaa38b953aed6c4e1a539d7b7`, JSON 110개 항목, 유효 날짜 110개. Base64 원문과 SHA256 자체 검산 PASS. Core·config·DB·스케줄러·Git·Publisher 변경 모두 `false`.
+- 실제 원문에는 `data_for_date`, `release_date`, `next_release_date`, `holiday_delayed`, `holiday_name`, `release_time`, `blackout_minutes` 필드가 있다. WPSR 정기·휴일 일정은 105건(2026년 10월 28일 이후 63건)이며, 과거 비정규 추가 게시 5건은 비표준 발표 시각으로 구분하여 정규 경제 캘린더에서 제외한다. 비정규 게시 사실 자체를 지우거나 조작하지 않는다.
+- 2026-11-12 WPSR 휴일 대체일/12:00 ET는 공식 JSON과 별도 공식 휴일 일정표가 일치한다.
+- `staging/market-calendar/r23-eia/lib/eia-calendar.mjs`에 정기 WPSR JSON 파서를 추가하였다. 인위적 요일 계산이나 확정되지 않은 미래 날짜의 생성은 없다.
+- 별도 R23 PC Core 후보 `staging/market-calendar/r23-eia/lib/release-calendar.mjs` 및 `scripts/pc-writer/release-calendar.mjs`에 독립 `eia` 출처가 추가되었다. 현행 BLS/BEA/G.17/Fed monthly/Census 동작과 기존 `release-calendar` 5필드 결과 계약을 보존한다. EIA 원문을 먼저 기존 SQLite input 저장소에 기록한 뒤 저장 원문으로 파싱하고, 각각 `wpsr-json`, `wngsr-schedule`, `steo-schedule`을 수집한다. 첫 번째/세 번째 소스 실패 시 EIA 공식 예외 표/다음 발표일만 추가 조회하여 부분 복구하고, 직전 공식 관측 이벤트는 지우지 않는다.
+- UI 브랜치 `app/market-calendar/market-calendar-client.tsx`에서 `eia-wpsr`, `eia-wngsr`, `eia-steo` ID 3개만 통과시키고 `EIA` / `에너지`로 표시한다. 기존 중요도·선택일·디자인·SEO 메타·다른 출처 표시를 유지한다. **아직 main 반영/사이트 배포는 하지 않았다.**
+- PC 설치기 `scripts/pc-writer/market-calendar-r23-eia-apply.mjs` 및 `MARKET_CALENDAR_R23_EIA_APPLY.cmd`는 설치 전 R22 승인된 PC source `a50ac307d8d0849ca2800b3c4df4cd6daaba3b1e`, Core worktree identity, 승인된 R22 2파일 해시, R23 후보 3파일 해시, 기존 Core cycle lock, dirty source, config.source 확인을 모두 요구한다. 신규 EIA 모듈 1개와 기존 파일 2개만 백업/로컬 커밋하며 수집·게시·예약 실행과 GitHub/main/Cloudflare 배포는 강제하지 않는다.
+- 로컬 EIA 파서·collector·installer 신규 테스트 및 기존 R22 회귀 테스트 PASS. CMD ASCII+CRLF, ZIP 무결성 PASS. 사용자 전달물 `MARKET_CALENDAR_R23_EIA_PC_INSTALL_20261028.zip` SHA256 `31056df32b0f1bb54cec6f5b2116ad851f224bc55e479d2ae629920d4741ed08`.
+
+### 정확한 다음 상태
+
+R23 연결 소스 및 UI 브랜치 반영, R23 Windows PC 설치 패키지 CODE_READY. **사용자 PC R23 설치와 사이트 정규 수집/공개 확인은 미실행**. 사용자는 ZIP 전체 압축 해제 후 CMD 1회 실행, `MARKET_CALENDAR_R23_EIA_APPLY_RESULT.txt` 한 파일만 전달하면 된다. 소스가 다르거나 설치 안전 조건이 실패하면 덮어쓰지 않고 STOP한다. R22 운영 소스 보존.
