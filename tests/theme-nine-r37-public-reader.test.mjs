@@ -89,6 +89,20 @@ test('missing, unauthorized and malformed new feeds leave the old feed untouched
  assert.equal(eligibleNineR37({...ready,sourcePriceMode:'UNDECLARED'},baseline,{now,storedAt:now-1000}),false);
 });
 
+test('R64 temporary reader trace exposes only a fixed state, not private D1 contents',async()=>{
+ const missing={};
+ assert.equal(await addVerifiedNineR37(db(null),baseline,{now,trace:missing}),baseline);
+ assert.equal(missing.state,'D1_ROW_MISSING');
+ const invalid={};
+ assert.equal(await addVerifiedNineR37(db({...ready,uniqueETFs:62}),baseline,
+  {now,trace:invalid}),baseline);
+ assert.equal(invalid.state,'RECORD_INELIGIBLE');
+ const accepted={};
+ const result=await addVerifiedNineR37(db(ready),baseline,{now,trace:accepted});
+ assert.equal(accepted.state,'APPLIED');
+ assert.equal(result.modelRevision,THEME_NINE_R37_VERSION);
+});
+
 test('explicit anonymous-derived-work publisher acceptance is a separate, disclosed path',async()=>{
  const consent={...ready,upstreamCommercialRightsVerified:false,
   derivedLicenseVerified:false,sourcePriceReconciled:false,
