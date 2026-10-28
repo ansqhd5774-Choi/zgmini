@@ -4,7 +4,8 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
-import {planIranR38Upgrade,applyIranR38Upgrade,r38SafeInstallationTime}
+import {planIranR38Upgrade,applyIranR38Upgrade,r38SafeInstallationTime,
+ r38PreflightFailureReason}
  from '../scripts/iran-progress/news-display-upgrade-r38.mjs';
 
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
@@ -52,4 +53,28 @@ test('R38 CMD is a one-time ASCII/CRLF installer that never writes public data o
  assert.match(cmd,/RESULT_ALREADY_EXISTS/);
  assert.match(cmd,/DO_NOT_RERUN_OR_REMOVE_BACKUPS/);
  assert.doesNotMatch(cmd,/\bschtasks\b|\bwrangler\b|\bPowerShell\b/i);
+});
+
+test('R38 failed preflight reveals stable R32 identity and R38 module errors, without leaking paths',()=>{
+ assert.equal(r38PreflightFailureReason(Error('R32_PC_R29_RUNNER_IDENTITY_DRIFT')),
+  'R32_PC_R29_RUNNER_IDENTITY_DRIFT');
+ assert.equal(r38PreflightFailureReason(Error('R38_PC_MODULE_DRIFT')),
+  'R38_PC_MODULE_DRIFT');
+ assert.equal(r38PreflightFailureReason({code:'ENOENT'}),'R38_EXPECTED_FILE_MISSING');
+ assert.equal(r38PreflightFailureReason(Error('sensitive C:\\Users\\personal\\secret')),
+  'R38_UNCLASSIFIED_FAILURE');
+ withInstalled(pc=>{
+  fs.unlinkSync(path.join(pc,'scripts','iran-progress',files[0]));
+  assert.throws(()=>planIranR38Upgrade({bundleRoot:root,projectRoot:pc,now}),
+   /R38_PC_MODULE_MISSING/);
+ });
+});
+
+test('R38 follow-up diagnostic is read-only and never calls the installer',()=>{
+ const bytes=fs.readFileSync(path.join(root,'IRAN_NEWS_R38_PREFLIGHT_DIAG.cmd'));
+ const script=bytes.toString('ascii');
+ assert.ok(bytes.every(byte=>byte<128));
+ assert.equal(script.replace(/\r\n/g,'').includes('\n'),false);
+ assert.match(script,/--preflight/);
+ assert.doesNotMatch(script,/--install|--verify|schtasks|wrangler|PowerShell/i);
 });
