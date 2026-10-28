@@ -7,6 +7,19 @@ import {recordCollectionChecks,readCollectionChecks} from '../scripts/pc-writer/
 import {collectionHealthSummary,readCollectionHealth,COLLECTION_WINDOW_MS} from '../worker/collection-health.mjs';
 const now=Date.UTC(2026,9,6,14);
 
+test('development primary remains in owner evidence but never changes public operating counts',async()=>{
+ for(const outcome of ['success','failure','unknown']){
+  const body=collectionHealthSummary([{id:'job:earnings',checkedAt:now-1,outcome:'success'},{id:'job:themePrimary',checkedAt:now-1,outcome},{id:'job:themeSecondary',checkedAt:null,outcome:'unknown'}],now);
+  const stored=JSON.stringify(body),db={prepare(){return {bind(){return {first:async()=>({body:stored})}}}}};
+  const publicBody=await(await readCollectionHealth(db,now+1)).json();
+  assert.equal(publicBody.total,1);assert.equal(publicBody.normal,1);assert.equal(publicBody.status,'healthy');assert.deepEqual(publicBody.items.map(x=>x.id),['job:earnings']);
+  assert.equal(body.items.length,3);assert.equal(body.items[1].outcome,outcome);assert.equal(JSON.stringify(body),stored);
+ }
+ const body=collectionHealthSummary([{id:'job:earnings',checkedAt:now-1,outcome:'failure'},{id:'job:themePrimary',checkedAt:now-1,outcome:'success'}],now);
+ const db={prepare(){return {bind(){return {first:async()=>({body:JSON.stringify(body)})}}}}};
+ const result=await(await readCollectionHealth(db,now+1)).json();assert.equal(result.total,1);assert.equal(result.failed,1);assert.equal(result.status,'partial');
+});
+
 test('retired placeholder is excluded from stored summaries without hiding real failures',async()=>{
  const good=Array.from({length:27},(_,i)=>({id:`job:${i}`,checkedAt:now-100,outcome:'success'}));
  for(const failing of [false,true]){
