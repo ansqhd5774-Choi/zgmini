@@ -45,3 +45,13 @@
 - 실제 PC에서 승인된 원본 저장 여부가 확인될 때까지 상태는 `PC_LEDGER_N400RC=UNKNOWN`이다.
 - R2 로컬 테스트 4/4 PASS. 실제 PC 실행 및 운영 저장·게시 전환은 미실행.
 - `RUN_BEA_MFG_PC_INVENTORY_READONLY.cmd`는 Windows의 승인된 Node와 PC 루트로 R2를 실행하고 바탕화면에 TXT 보고만 남기는 1회성 수동 실행기다. 원본을 수집하거나 저장하지 않는다.
+
+## R2 PC 실제 실행 결과와 R3 다음 읽기 전용 검사
+
+- 실제 PC 실행 보고 `BEA_MFG_PC_INVENTORY_29114_26237.txt`, `BEA_MFG_PC_INVENTORY_29287_6078.txt`를 2026-10-28에 수신했다.
+- 두 번 모두 `RUNNER_EXIT_CODE=0` / `WRAPPER_RESULT=COMPLETED_READ_ONLY`, 각 `filesVisited=1498`, `matchCount=0`, `scanLimited=true`, `sqlWrites`/`d1Writes` 및 `localWrites=0`이다.
+- 두 보고 모두 `core.sqlite`와 `history.sqlite`가 존재함을 확인했으나, **SQLite 내부는 미검사**였으므로 여전히 `safeToAutoCapture=false`이다.
+- 후속 `EARNINGS_BEA_MFG_PROFIT_R3_SQLITE_READONLY.mjs` 및 `RUN_BEA_MFG_SQLITE_READONLY.cmd`는 해당 SQLite 2개만 열어 100개 테이블 × 20,000행 × 24개 문자 열까지 `N400RC` 식별자를 검색한다.
+- DB는 `readOnly:true` 및 `PRAGMA query_only=ON`; 원본 행 내용은 출력하지 않는다. 검사 범위 제한, 조회 실패, 런타임 SQLite 미지원은 성공이나 원본 부재로 간주하지 않는다.
+- `safeToAutoCapture=false` 계속 유지한다. XLSX와 기타 원본 저장소는 여전히 미검증이다.
+- R3 로컬 SQLite fixture 테스트 4/4 PASS; 실제 PC R3 실행, 원본 재수집, D1 저장, GitHub `main` 반영 및 배포는 미실행.
