@@ -31,10 +31,11 @@
 
 ## 재유실 방지 검증
 
-- 테스트: `node --test stage04/official-publisher-ollama-adapters-r71.test.mjs stage04/stage04-r78-criteria-regression.test.mjs` (현재 디렉터리: `research/investment-15-stage`).
+- 테스트: `node --test stage04/ollama-forecast-pipeline-r70.test.mjs stage04/ollama-forecast-r71-runner.test.mjs stage04/official-publisher-ollama-adapters-r71.test.mjs stage04/run-ollama-forecast-r72-safe.test.mjs stage04/stage04-r78-criteria-regression.test.mjs` (현재 디렉터리: `research/investment-15-stage`).
 - 회귀 테스트는 **21개 주제/60개 주소**, 발행사 3사 화이트리스트·BRI 제외, 공식 GET 403이면 NULL, 과거 대체 시장 제외, 재조회한 실제 2사 수치만 평균 계산, 이전 R71/R77 공식 사이트맵 재사용 흐름을 고정한다.
 - 다른 개발에서 주소 목록이나 힌트/검증 연결이 삭제되면 테스트 실패로 드러나도록 같은 전용 브랜치에 저장한다.
-- 실제 Windows PC R77 ZIP은 변경되지 않는다. R78 프로그램을 PC에서 별도 실행하고 CMD 옆 JSON·TXT·실행 로그를 다시 제출하기 전까지 **새로운 21/21 결과나 PC 실측 완료를 주장하지 않는다**.
+- `stage04/STAGE04_R78_21_TOPICS_VALIDATE.cmd`는 기존 PC R77 폴더를 새 작업 폴더로 복사하고 R78의 **두 소스 파일만 새 폴더에 교체**한 후, 명시된 21개 키워드를 1회 실행한다. 원본 R77 폴더 및 과거 로그를 수정하지 않는다.
+- 실제 Windows PC R77 ZIP은 변경되지 않는다. R78 프로그램을 PC에서 별도 실행하고 JSON·TXT·실행 로그를 다시 제출하기 전까지 **새로운 21/21 결과나 PC 실측 완료를 주장하지 않는다**. `RUN_STATE=COMPLETED`는 21개 실행 종료만 의미하며, 검증된 성장률 21/21을 뜻하지 않는다.
 
 ## 남은 사실
 
