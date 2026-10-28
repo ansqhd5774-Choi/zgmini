@@ -23,6 +23,13 @@ test('mobile market overview still stacks the independent panels',()=>{
   assert.match(css,/@media \(max-width:959px\)/);
 });
 
+
+test('desktop market cards use content height without extra reserved bottom space',()=>{
+  assert.match(desktop,/\.zg-r55-summary\{[^}]*min-height:0;/);
+  assert.match(desktop,/\.zg-r55-risk-panel\{[^}]*min-height:0;/);
+  assert.doesNotMatch(desktop,/min-height:152px/);
+});
+
 test('desktop risk title shares the composite heading row without taking card space',()=>{
   assert.match(dashboard,/const riskHeading=<h2><a href="\/risk-indicators\/">/);
   assert.match(dashboard,/className="zg-section-heading zg-r55-risk-heading zg-r55-risk-heading-desktop"/);
