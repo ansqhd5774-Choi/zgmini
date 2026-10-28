@@ -89,6 +89,63 @@ test('missing, unauthorized and malformed new feeds leave the old feed untouched
  assert.equal(eligibleNineR37({...ready,sourcePriceMode:'UNDECLARED'},baseline,{now,storedAt:now-1000}),false);
 });
 
+test('R64 temporary reader trace exposes only a fixed state, not private D1 contents',async()=>{
+ const missing={};
+ assert.equal(await addVerifiedNineR37(db(null),baseline,{now,trace:missing}),baseline);
+ assert.equal(missing.state,'D1_ROW_MISSING');
+ const invalid={};
+ assert.equal(await addVerifiedNineR37(db({...ready,uniqueETFs:62}),baseline,
+  {now,trace:invalid}),baseline);
+ assert.equal(invalid.state,'RECORD_INELIGIBLE');
+ const accepted={};
+ const result=await addVerifiedNineR37(db(ready),baseline,{now,trace:accepted});
+ assert.equal(accepted.state,'APPLIED');
+ assert.equal(result.modelRevision,THEME_NINE_R37_VERSION);
+});
+
+test('explicit anonymous-derived-work publisher acceptance is a separate, disclosed path',async()=>{
+ const consent={...ready,upstreamCommercialRightsVerified:false,
+  derivedLicenseVerified:false,sourcePriceReconciled:false,
+  accountGoodStandingVerified:false,anonymousScopeIndependentlyConfirmed:false,
+  licensingRiskAcceptedByPublisher:true,
+  rightsBasis:'OFFICIAL_TERMS_DERIVED_WORKS_ANONYMOUS_SCOPE_UNCONFIRMED',
+  sourceTermsUrl:'https://getmarkethistory.com/docs/terms'};
+ assert.equal(eligibleNineR37(consent,baseline,{now,storedAt:now-1000}),true);
+ const upgraded=await addVerifiedNineR37(db(consent),baseline,{now});
+ assert.equal(upgraded.themes.length,10);
+ assert.equal(upgraded.themes[0].etfs[0],'BOTZ');
+ for(const altered of [
+  {licensingRiskAcceptedByPublisher:false},
+  {rightsBasis:'MADE_UP'},
+  {sourceTermsUrl:'https://example.org'},
+  {accountGoodStandingVerified:true},
+  {anonymousScopeIndependentlyConfirmed:true},
+  {derivedLicenseVerified:true},
+  {sourceManifestVerified:false},
+  {privateReplayVerified:false},
+  {publicationAuthorized:false},
+  {derivedOnlyNoRaw:false},
+ ]){
+  assert.equal(eligibleNineR37({...consent,...altered},baseline,
+   {now,storedAt:now-1000}),false,JSON.stringify(altered));
+ }
+});
+
+test('the public first provisional day may equal the confirmed anchor',async()=>{
+ const two=[{date:'2026-10-23',scores:Object.fromEntries(
+  THEME_NINE_R37_ROSTER.map(t=>[t.theme,50]))},
+  {date:'2026-10-26',scores:Object.fromEntries(
+   THEME_NINE_R37_ROSTER.map(t=>[t.theme,55]))}];
+ const base2={...baseline,phase:'PROVISIONAL',
+  provisional:{asOf:'2026-10-26',points:two}};
+ const rec2={...ready,phase:'PROVISIONAL',
+  provisional:{asOf:'2026-10-26',points:two}};
+ assert.equal(eligibleNineR37(rec2,base2,{now,storedAt:now-1000}),true);
+ const result=await addVerifiedNineR37(db(rec2),base2,{now});
+ assert.deepEqual(result.provisional.points.map(p=>p.date),
+  ['2026-10-23','2026-10-26']);
+});
+
 test('a newer legacy date can never be overwritten by an older R37 score',async()=>{
  const newBase={...baseline,observationDate:'2026-10-26',confirmedObservationDate:'2026-10-26',
   themes:baseline.themes.map(t=>({...t,history:t.history.map((p,i)=>i===251?{...p,date:'2026-10-26'}:p)}))};

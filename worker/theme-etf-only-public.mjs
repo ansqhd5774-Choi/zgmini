@@ -3,9 +3,6 @@ import {addVerifiedBiotechTheme} from './theme-biotech-optional.mjs';
 import {addVerifiedBiotechContinuationR2} from './theme-biotech-continuation-r2.mjs';
 import {addVerifiedBiotechProvisionalR1} from './theme-biotech-provisional-r1.mjs';
 import {addVerifiedDcPower} from './theme-data-center-power-r1.mjs';
-import {addVerifiedDcPowerProvisionalR1} from './theme-data-center-power-provisional-r1.mjs';
-import {addVerifiedSpaceSatellite} from './theme-space-satellite-r1.mjs';
-import {addVerifiedSpaceProvisionalR1} from './theme-space-satellite-provisional-r1.mjs';
 import {addVerifiedNineR37} from './theme-nine-r37-public.mjs';
 import {readRollingPublic} from './theme-etf-rolling-public.mjs';
 import {PUBLIC_DISPLAY_MAX_AGE_MS} from './public-display-freshness.mjs';
@@ -54,10 +51,7 @@ async function addBiotechSidecars(db,base,opts){
  const continued=await addVerifiedBiotechContinuationR2(db,legacy,{now:opts.now});
  const biotech=await addVerifiedBiotechProvisionalR1(db,continued,{now:opts.now});
  const withDc=await addVerifiedDcPower(db,biotech,{now:opts.now});
- const withSpace=await addVerifiedSpaceSatellite(db,withDc,{now:opts.now});
- const withNine=await addVerifiedNineR37(db,withSpace,{now:opts.now});
- const withSpaceProvisional=await addVerifiedSpaceProvisionalR1(db,withNine,{now:opts.now});
- return addVerifiedDcPowerProvisionalR1(db,withSpaceProvisional,{now:opts.now});
+ return addVerifiedNineR37(db,withDc,{now:opts.now,trace:opts.r37Trace});
 }
 export async function readThemeEtfOnly(db,{now=Date.now(),store=publicFeedStore(db)}={}){
  const headers={'cache-control':'no-store','x-robots-tag':'noindex, nofollow','x-content-type-options':'nosniff','x-data-source':'STORED'};
@@ -73,7 +67,10 @@ export async function readThemeEtfOnly(db,{now=Date.now(),store=publicFeedStore(
  let rolling=null;try{rolling=await readRollingPublic(db,record,{now})}catch{}
  if(rolling){
   const withAi=await addVerifiedAiTheme(db,rolling,{now,seed:record});
-  return Response.json(await addBiotechSidecars(db,withAi,{now,seed:record}),{headers:{...headers,'cache-control':'public, max-age=60, must-revalidate','x-data-snapshot-at':rolling.sourceStoredAt}});
+  const r37Trace={state:'NOT_STARTED'};
+  const result=await addBiotechSidecars(db,withAi,{now,seed:record,r37Trace});
+  return Response.json(result,{headers:{...headers,'cache-control':'public, max-age=60, must-revalidate',
+   'x-data-snapshot-at':rolling.sourceStoredAt,'x-r37-reader-state':r37Trace.state}});
  }
  const observedAt=Date.parse(record.observationDate+'T23:59:59Z');
  const sourceAt=Date.parse(record.sourceStoredAt),storedAt=Number(row.stored_at);
@@ -96,6 +93,8 @@ export async function readThemeEtfOnly(db,{now=Date.now(),store=publicFeedStore(
  // The immutable core seed is also needed to verify older AI sessions when the
  // optional collector is legitimately behind the seven-theme feed.
  const withAi=await addVerifiedAiTheme(db,result,{now,seed:record});
- return Response.json(await addBiotechSidecars(db,withAi,{now}),{headers:{...headers,'cache-control':'public, max-age=60, must-revalidate','x-data-snapshot-at':new Date(storedAt).toISOString()}});
+ const r37Trace={state:'NOT_STARTED'};
+ const composed=await addBiotechSidecars(db,withAi,{now,r37Trace});
+ return Response.json(composed,{headers:{...headers,'cache-control':'public, max-age=60, must-revalidate',
+  'x-data-snapshot-at':new Date(storedAt).toISOString(),'x-r37-reader-state':r37Trace.state}});
 }
-
