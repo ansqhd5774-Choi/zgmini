@@ -232,3 +232,16 @@
 - 완료 판정은 (1) 기존 8개 공개 전환 결과 및 기존 10개 보존 → (2) AI·반도체 별도 승인 이후 신규 공개(승인된 경우) → (3) 인기순 새 테마 각각의 반복적인 실제 운영 완료로 분리한다. 숫자 '163'은 예정 목록 개수가 아니라 **실제 자동 운영되는 개별 테마 수**의 최종 목표다.
 - 실제 운영 전환 요청이 오면 각 Gate 직전 최신 main/PC 설치 SHA/공급원 권리/Cloudflare 연결을 확인한다. 이 문서 반영만으로 자동 배포나 신규 공개가 발생하지 않는다.
 
+
+
+## R48 2026-10-28 — 기존 9개 자동 갱신·공개 브리지 구현 (이번 작업)
+
+- 개발 전용 브랜치 커밋: `35eeebf58b891496dc296e220ab9f54e59b6f15a`; 브랜치 `codex/theme-fear-greed-integration-20261025` 유지, 기타 작업 브랜치/운영 main 불변.
+- R47 PC 제출 ETF·NINE 원본 2개를 SHA 일치 상태로 읽고, **9개×252일 2,268건**을 기존 R37 출력 형식의 **비공개 후보**로 성공적으로 변환. 산식 R25/R32·ETF 63종/편입 64개 불변.
+- R48 PC 연결: `THEME_NINE_R48_PRIVATE_CYCLE.cmd`가 R47 수집→R48 비공개 후보 파일 저장을 순서대로 실행. `theme-nine-r48-private-schedule.mjs --install`은 *사용자 PC에서 직접 실행해야* 신규 단독 예약작업을 만들며, 기존 다른 운영 작업은 수정하지 않음. **이번 채팅에서 실PC 등록은 아직 미실행**.
+- R48 분리 D1 writer는 별도 `theme-legacy-nine-r37/current` 키 한정, 기존 공개 10개와 중복 날짜 점수는 불변, CAS 및 정확한 readback 계약. **실 D1 요청·게시 미실행**.
+- 기존 공개 R37 reader는 R32 원본 계약을 보존하면서 R47 source 계약을 명시적으로 인식하도록 확장. 6개 공개/권리/가격정합/원본검증 승인 플래그 우회 없음. **Cloudflare production 배포 미실행**.
+- GetMarketHistory 공식 2026-10-19 약관 §5에서 원봉을 대량 역복원할 수 없는 신호·지표·차트 파생 작품의 배포를 허용함을 확인(https://getmarkethistory.com/docs/terms/). 해당 일반 허용만으로 사용자 계정·타 기초 권리·가격정합·R26 연구용 AUM의 운영 승인을 자동 통과 처리하지 않음.
+- 이번 추가 테스트 및 기존 관련 테스트 **7개 파일 PASS, 0 FAIL**. 실제 R47 원본을 사용한 비공개 파일 저장 시험 PASS. 기존 R37 R32 fixture가 로컬에 없어 그 별도 fixture-dependent 테스트는 이번에 제외(기존 코드 회귀라고 판단하지 않음).
+- 이어서 필요한 운영 Gate: **실PC Task Scheduler 등록 및 최초 트리거 확인 → R47 같은 거래일·가격·권리·AUM 게시 승인 → D1 전용 키 CAS/readback → main 필요한 파일만 선별 반영 → Cloudflare exact deployment와 공개 API/UI 검증.** 사용자가 다음 거래일 ETF 결측을 직접 모니터링하므로 그것을 이번 코드 브리지 준비의 선행조건으로 재요구하지 않음.
+- 구현 정본: [R48 상세 기준서](THEME_NINE_R48_AUTOMATIC_PUBLICATION_BRIDGE_20261028.md). `R48_CODE_READY`는 `AUTOMATION_INSTALLED` 또는 `PUBLIC_DEPLOYED`가 아님.
