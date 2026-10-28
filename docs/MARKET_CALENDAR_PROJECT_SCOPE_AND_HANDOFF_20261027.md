@@ -209,3 +209,12 @@
 - **상태 분리:** R22 소스 연결 및 PC 설치 **완료**. 이후 예약 수집의 신규 연준 일정 수량·실제 SQLite 공개 저장·웹 페이지 반영은 아직 미확인. 사용자의 사이트 모니터링을 기다리도록 개발을 멈추거나, 자체 강제 수집·게시·예약 변경을 하지 않는다.
 - 다음 소스 단계는 기존 네 공급원 및 신규 연준 원문 이력을 그대로 보존하면서 미국 시장 주요 발표·기업 실적의 공식 일정 출처와 무료 공개 재사용 가능성을 검토한다. 권리가 불명확한 소스를 운영에 연결하지 않는다.
 - 전용 작업 브랜치 `codex/zgmini-gpt-workspace-20261025`를 유지한다. 신규 브랜치 생성·main 병합·운영 배포 없음.
+
+## 20. R23 EIA 공식 에너지 발표 일정 — 읽기 전용 원문 수집 준비 (2026-10-28)
+
+- R22 사용자 PC 설치 성공 source `a50ac307d8d0849ca2800b3c4df4cd6daaba3b1e` 보존. 기존 주기 수집·DB·게시/브랜치/main과 다른 안전 범위이다.
+- EIA 공식 사이트의 공개 재사용 정책 및 자동 접근 보안 정책 확인: `https://www.eia.gov/about/copyrights_reuse.php`, `https://www.eia.gov/about/privacy_security_policy.php`. 과도한 자동 요청/우회 금지. 적절한 출처·발표일 표기 필요.
+- 신규 조사 대상 공식 공개 페이지 6개: EIA 전체 발표, WPSR 기본·예외 발표 일정과 다음 발표, WNGSR 휴일 일정, STEO 일정·다음 발표. WPSR은 통상 수요일, WNGSR은 통상 목요일 동부시간 10:30이며 예외 일정이 별도로 존재한다. 임의 계산한 미래 요일 일정을 확정 일정으로 등록하지 않는다.
+- R23 구현: `scripts/pc-writer/market-calendar-r23-eia-source-export.mjs`, `tests/market-calendar-r23-eia-source-export.test.mjs`, `MARKET_CALENDAR_R23_EIA_SOURCE_EXPORT.cmd`, `README_R23_EIA_SOURCE_EXPORT.txt`, `docs/MARKET_CALENDAR_R23_EIA_SOURCE_REVIEW.md`. 고정 6개 URL, 1회 순차 GET(요청 간 1.2초), 원문 Base64/SHA256 및 실패 원인 단일 TXT. 로컬 테스트 **5/5 PASS**, Node 문법 PASS, CMD ASCII CRLF, ZIP 무결성 PASS.
+- 전달물 `MARKET_CALENDAR_R23_EIA_SOURCE_EXPORT_BUNDLE_20261028.zip` SHA256 `ffece9a00ea779ba5fece1f42e4b955dba54a3ed427fe603e6dc0493960c63f4`. 실행 결과 `MARKET_CALENDAR_R23_EIA_SOURCE_EXPORT_RESULT.txt` 한 파일을 제출받아 원문 구조로만 파서 후보를 작성한다.
+- **현재 단계는 READ_ONLY CODE_READY**: EIA source PC Core 적용·정규 수집·공개 사이트 연결·배포 모두 미실행. R22 운영을 조작하지 않는다. 전용 브랜치 `codex/zgmini-gpt-workspace-20261025` 유지.
