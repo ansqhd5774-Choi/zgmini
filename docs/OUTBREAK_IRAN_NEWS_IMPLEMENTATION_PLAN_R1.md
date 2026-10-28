@@ -497,3 +497,12 @@
 - 운영 소스는 기존 `bc7bd6781d1f4083009f1709a3f2e82461c5bfb9` detached HEAD 그대로, R13 주기 00/06/12/18 KST 그대로. runner `db0040ef...` → `9cc3a7b9...` 변경은 검증된 R29 후행 호출뿐이며 기존 runner 백업 확인. 기존 의존성 3개 확인, 신규 비공개 후보 수집 파일 5개 설치, 기존 개인 후보 27개 보존 확인.
 - 예약 작업 XML/VBS·점수 원장·공개 뉴스 캐시·D1 수정 없음. **신규 개인 뉴스 수집 실행은 설치 과정에서 하지 않았음** (`pcPrivateCollectionExecuted:false`). 따라서 자동 수집 성공은 아직 미검증이고 사용자가 서로 다른 정규 2회에서 상태 파일과 후보 수집 파일의 관측값을 확인해야 PASS.
 - 현재 추가 코드 설치·수동 뉴스 수집·번역/UI·사이트 공개는 작업 범위 밖이다. 설치 CMD 재실행 금지; 설치 및 다음 검증 책임을 분리한다.
+
+## 41. R31 관측 지원 준비 완료 — PC 자동 수집 판정은 사용자 책임
+
+- 기존 R29는 R30 사용자 실측에서 설치 완료되었지만 **정규 수집 실행 실측이 아니다**. 사용자 요청에 따라 개발자는 운영에 영향을 주지 않는 R31 결과 점검 도구까지만 준비한다. 자동 수집의 성공 판정은 사용자의 서로 다른 두 정규 6시간 회차 관측을 기다린다.
+- 배포 파일: `IRAN_NEWS_R31_CYCLE_READONLY_PACKAGE.zip`, SHA-256 `43c7ace88351be013357c906c12f77a0898e6fed5ecbf67ea5b224c8c6858cdb`. ZIP 전체 압축 해제 후 `IRAN_NEWS_R31_CYCLE_READONLY.cmd` 실행. 기존 R30/R29 설치기를 **재실행하지 않음**.
+- R31은 기존 R13 스케줄러의 **존재만 조회**하고 R29 상태 JSON 및 R26 개인 후보 JSON 두 파일의 신선도·일치·권리 미승인·쓰기 격리 계약만 읽는다. 수집·게시·점수 계산·태스크 시작/수정, 번역 및 UI 변경이 없다. 결과는 CMD 옆의 새 타임스탬프 TXT에만 기록한다. 소스는 `scripts/iran-progress/news-display-cycle-verify-r31.mjs`, 검증은 `tests/iran-news-cycle-readonly-r31.test.mjs`.
+- `R31_SINGLE_CYCLE_OBSERVED`는 **최근 파일 1회 일관성 확인**이고, 스케줄러 실행 이력 또는 정상적인 정규 **2회 완료의 독립 입증은 아니다**. 두 결과의 `observationAtKst`/6시간 구간과 사용자 PC의 Task Scheduler 실행 기록을 각각 대조해야 한다. `automaticScheduleTwoCyclesVerified:false`는 의도적이며 실제 증거 확인 전까지 유지한다.
+- `PRIVATE_COLLECTION_PARTIAL`은 403 같은 일부 원문 실패를 숨기지 않는 유효 관측일 수 있지만, 원문 접근 제약의 해결이나 공개 권리 승인으로 간주하지 않는다. R28 저장 27건을 새 자동 수집 성과로 재사용하지 않는다. PC/D1/사이트/번역·UI 구현은 이번 수정에서 제외한다.
+- **다음 Gate:** 사용자가 별개의 정상 예약 회차에서 생성한 R31 TXT 2개와 R13 작업 이력을 직접 확인한 후 `PC_AUTO_COLLECTION_VERIFIED` 여부를 결정한다. 그 전의 개발자 보고는 `SOURCE_VERIFIED`, `PC_INSTALL_VERIFIED`, `PC_SCHEDULED_COLLECTION_UNVERIFIED`를 분리한다. 신규 브랜치를 만들지 않는다.

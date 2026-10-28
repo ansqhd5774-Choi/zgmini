@@ -113,3 +113,12 @@
 - 운영 PC 프로젝트 HEAD `bc7bd6781d1f4083009f1709a3f2e82461c5bfb9` 유지. R13 작업 주기 `[0,6,12,18]` 유지. 활성 기존 runner SHA-256 `db0040ef8f3ce5b7e4cfe2ed8786a87b1f6f0ce6a9b8c6ea0cf379f494e77ae3` → 신규 R29 후행 연결 runner SHA-256 `9cc3a7b9df6a33655321fdcf9565d1e6e5afe8ee6ac88bb6df6b795feda7b3dd`. 기존 runner 백업 해시 검증 `runnerBackupVerified:true`.
 - 기존 의존 모듈 **3개 확인**, 신규 비공개 뉴스 수집 모듈 **5개 설치**. 설치 당시 기존 개인 후보 **27건** 검증. `schedulerModified:false`, `vbsModified:false`, `scoreLedgerModified:false`, `publicCacheModified:false`, `d1Written:false`.
 - `pcPrivateCollectionExecuted:false`가 명시되어 있다. **설치 PASS ≠ 자동 수집 PASS**. 사용자가 다음 별개의 정상 R13 예약 실행 2회에서 `news-display-candidates-auto-r29-status.json` 생성·관측 시각과 `news-display-candidates-r26.json` 보존·갱신을 확인하기 전에는 운영 자동 수집 성공으로 판정하지 않는다. 추가 수동 예약 실행, 공개 뉴스·번역·점수 변경은 이 단계의 작업이 아니다.
+
+## 14. R31 정규 실행 관측용 오프라인 읽기 전용 도구
+
+- 파일: `IRAN_NEWS_R31_CYCLE_READONLY_PACKAGE.zip` (SHA-256 `43c7ace88351be013357c906c12f77a0898e6fed5ecbf67ea5b224c8c6858cdb`). ZIP 전체 압축 해제 후 `IRAN_NEWS_R31_CYCLE_READONLY.cmd` 실행. 내부 파일은 `scripts/iran-progress/news-display-cycle-verify-r31.mjs` 하나뿐이며, 코드 자동 다운로드와 기사 수집이 없다.
+- **사용 시점:** 기존 `ZGMINI-PC-Iran-Progress-R13`의 서로 다른 정상 6시간 예약 회차 이후 각각 한 번씩 실행한다. 설치용 R30 CMD를 다시 실행하지 않는다. R31 CMD는 Windows `schtasks.exe /Query /TN ... /XML`로 기존 작업의 존재만 읽으며 **`/Run`, `/Create`, `/Change`를 사용하지 않는다**.
+- 읽기 대상은 현재 PC 승인 뉴스 데이터 홈(기본값 `%USERPROFILE%\.zgmini\iran-progress-r13`, 기존 E: junction 유지)의 `news-display-candidates-auto-r29-status.json`과 `news-display-candidates-r26.json`이다. 각 파일의 형식·수집 시각 일치·후보 개수·해시·8시간 내 관측 신선도, `rightsVerified:false`, `displayEligible:false`, 점수/D1/예약 작업 비변경 상태를 점검한다. 원문 URL·기사 제목은 로그에 출력하지 않는다.
+- 결과는 압축을 푼 CMD **옆** `IRAN_NEWS_R31_CYCLE_READONLY_RESULT_날짜시각_밀리초.txt`로 한 번씩 별도 생성한다. `R31_SINGLE_CYCLE_OBSERVED`는 정상 범위의 **최근 R29 출력 파일 1회분을 관측했다**는 뜻이다. 예약 작업으로 실제 실행됐는지에 관한 단독 증거도, **서로 다른 정규 2회 PASS 증거도 아니다**. 반드시 두 로그의 `observationAtKst`가 다른 6시간 회차인지 확인하고, 실제 R13 스케줄러 실행 이력과 함께 대조해야 한다.
+- `PRIVATE_COLLECTION_PARTIAL`은 개별 기사 HTTP 403 등 부분 실패가 있더라도 저장 결과가 일관되면 인정한다. `PRIVATE_COLLECTION_FAILED_CANDIDATES_PRESERVED`, 오래된 상태, 파일 시간 불일치, 후보의 공개 권리 드리프트 등은 `R31_CYCLE_NOT_VERIFIED`로 기록한다. R28 당시 27개 후보는 **새 정규 회차가 실행되었다는 단독 증거가 아니다**. 후보 수가 늘지 않아도 최신 관측 시각과 오류를 비교한다.
+- 운영 파일·PC SQLite·기존 스케줄러·VBS·R13/R15 runner·공개 캐시·D1·UI/번역을 수정하지 않는다. 결과 TXT 파일만 **CMD의 압축 해제 폴더**에 쓴다. 작업 브랜치는 `codex/outbreak-iran-news-retention-r1-20261026` 유지. 사용자 PC의 정규 2회 결과는 **사용자 검증 대기** 상태다.
