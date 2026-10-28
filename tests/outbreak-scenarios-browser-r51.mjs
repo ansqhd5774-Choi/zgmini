@@ -27,7 +27,7 @@ try{
   const now=Date.now(),asOfDate=kstCalendarDate(now);
   const dateStart=Date.parse(asOfDate+"T00:00:00Z")-13*86400000;
   const r5Fixture={
-   version:"IRAN_DAILY_PROVISIONAL_R5_1",status:"PROVISIONAL",
+   version:"IRAN_DAILY_PROVISIONAL_R5_2",status:"PROVISIONAL",
    sourceMethod:"R5_21_OCT_13_K21",anchorDate:R5_REFERENCE.date,
    anchorScore:R5_REFERENCE.score,anchorAssessedAt:R5_REFERENCE.assessedAt,
    asOfDate,score:13,
@@ -37,7 +37,7 @@ try{
      value:i===13?13:Number((35-i*1.65).toFixed(2)),
      carried,reportedEvents:carried?0:1,verifiedEvents:carried?0:1};
    }),
-   classifierVersion:CLASSIFIER_VERSION,sourceVersion:"IRAN_R5_K21_R3_4",
+   classifierVersion:CLASSIFIER_VERSION,sourceVersion:"IRAN_R5_K21_R3_5_BALANCED",
    sourceStoredAt:now-15000,sensitivityScale:21,
    acceptedEventCount:9,possibleDuplicateCount:0,
    collectionCheckedAt:now-14000,publishedAt:now-1000,
@@ -305,6 +305,30 @@ try{
   });
   assert.deepEqual(geometry,{rootFits:true,cardsFit:true,detailFits:true,responsiveSelectors:true},"Responsive event panels fit viewport");
   await page.screenshot({path:"artifacts/outbreak-scenarios/scenarios-"+width+".png",fullPage:true});
+  // Exercise actual timestamp spacing separately from the old daily-only fallback.
+  r5Fixture.updateHistoryVersion='IRAN_PUBLISHED_UPDATES_R1';
+  r5Fixture.updateHistory=[-7200000,-3600000,0].map((offset,i)=>({
+   at:r5Fixture.publishedAt+offset,value:[11,12,13][i],
+   collectionCheckedAt:r5Fixture.collectionCheckedAt+offset,
+   sourceStoredAt:r5Fixture.sourceStoredAt+offset,eventCount:i===2?9:i+1,
+   lineage:r5Fixture.version+':'+r5Fixture.sourceVersion,
+  }));
+  await page.goto(base+'/outbreak/?event=iran',{waitUntil:'domcontentloaded'});
+  const publishedChart=width<=700?root.locator('.ob55-score-card .zg-iran-published-chart'):
+   root.locator('.ob55-main .zg-iran-published-chart');
+  await publishedChart.waitFor({state:'visible',timeout:20000});
+  assert.equal(await publishedChart.locator('circle').count(),3,'Only the three saved publications are plotted');
+  const positions=await publishedChart.locator('circle').evaluateAll(nodes=>nodes.map(n=>Number(n.getAttribute('cx'))));
+  assert(positions[0]<positions[1]&&positions[1]<positions[2],'Actual publication timestamps determine point order');
+  assert.equal(await publishedChart.locator('svg title').first().textContent(),'최근 14일 · 실제 게시 기록 3회 · 한국시간');
+  assert(await publishedChart.evaluate(el=>{const b=el.getBoundingClientRect();return b.left>=-1&&b.right<=innerWidth+1;}),'Publication chart fits the viewport');
+  if(width>700){
+   await publishedChart.locator('circle[role="button"]').first().press('Enter');
+   assert.match(await publishedChart.locator('[role="status"]').textContent(),/11\.00점.*첫 게시 기록/);
+   await publishedChart.locator('circle[role="button"]').last().press('Enter');
+   assert.match(await publishedChart.locator('[role="status"]').textContent(),/13\.00점.*\+1\.00점/);
+  }
+  await page.screenshot({path:'artifacts/outbreak-scenarios/iran-publications-'+width+'.png',fullPage:true});
   console.log("PASS: scenario page responsive width="+width);
   await page.close();
  }
