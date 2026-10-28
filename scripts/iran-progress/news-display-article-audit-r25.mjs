@@ -4,7 +4,7 @@ import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {boundedRead} from './sources.mjs';
 import {auditIranMultisourceCollectionR24,newsR24SourceUrl} from './news-display-multisource-audit-r24.mjs';
-import {matchesIranNewsDisplayKeywords} from './news-display-discover-r1.mjs';
+import {matchesIranTwoStageKeywordsR38} from './news-display-discover-r1.mjs';
 import {kstDayWindow,kstNewsDay,NEWS_PC_RETENTION_DAYS} from '../../lib/iran-progress/news-display-r1.mjs';
 
 const MAX_ARTICLES=70;
@@ -158,9 +158,9 @@ function articleMarkup(html,sourceId,expectedUrl,now){
 
 function assessedArticle({sourceId,sourceUrl,title,publishedAt,dateEvidence,body,bodyEvidence,now}){
  const titleVerified=!!title&&title.length<=500;
- const bodyVerified=body.length>=200;
- // The approved Iran/Saudi/Yemen/Houthi topics are OR, exactly as in R1 discovery.
- const scopeVerified=bodyVerified&&matchesIranNewsDisplayKeywords(body);
+ const bodyVerified=body.trim().length>0;
+ // Relevance requires only one primary and one secondary keyword across title/body.
+ const scopeVerified=matchesIranTwoStageKeywordsR38([title,body].join(' '));
  const {start,end}=kstDayWindow(now,NEWS_PC_RETENTION_DAYS);
  const dateKey=publishedAt?kstNewsDay(Date.parse(publishedAt)):null;
  const withinRetentionWindow=dateKey===null?null:dateKey>=start&&dateKey<=end;

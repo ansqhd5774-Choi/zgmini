@@ -33,9 +33,9 @@ function mockFetcher({oneFeedFails=false,thirdParty=false,longExcerpt=false}={})
     '</feed>');
   }
   if(url==='https://www.gov.uk/api/content'+new URL(oldUrl).pathname)
-   return new Response(JSON.stringify(content(oldUrl,'Saudi forum','<p>Saudi Arabia consultation</p>')));
+   return new Response(JSON.stringify(content(oldUrl,'Saudi forum','<p>Saudi Arabia ceasefire consultation</p>')));
   if(url==='https://www.gov.uk/api/content'+new URL(newUrl).pathname)
-   return new Response(JSON.stringify(content(newUrl,'Iran meeting',thirdParty?'<p>Iran statement © third-party agency</p>':longExcerpt?'<p>Ministers discussed diplomatic negotiations with Iran and regional security priorities.</p>':'<p>Iran diplomatic talks</p>')));
+   return new Response(JSON.stringify(content(newUrl,'Iran meeting',thirdParty?'<p>Iran ceasefire statement © third-party agency</p>':longExcerpt?'<p>Ministers discussed diplomatic negotiations with Iran and regional security priorities.</p>':'<p>Iran diplomatic talks</p>')));
   if(url===oldUrl||url===newUrl)return new Response(rightsPage);
   throw Error('Unexpected URL: '+url);
  };

@@ -9,7 +9,7 @@ const response=(obj)=>new Response(JSON.stringify(obj),{status:200});
 const body=(name)=>({base_path:'/government/news/'+name,
  title:`${name} regional news`,description:`Official ${name} announcement`,
  first_published_at:'2026-10-26T03:00:00Z',document_type:'press_release',
- details:{body:`<p>${name} was discussed by officials. Further official developments were announced.</p>`}});
+ details:{body:`<p>${name} ceasefire negotiations were discussed by officials. Further developments were announced.</p>`}});
 
 test('R10 evaluates the four official feeds; only local Ollama receives POST; no remote publication',async()=>{
  const calls=[];

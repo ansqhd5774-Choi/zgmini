@@ -4,7 +4,7 @@ import {displayTopicNames,safeNewsFallbackSummary,assessGovUkNewsRights,previewS
 import {IRAN_GOVUK_NEWS_FEEDS} from '../scripts/iran-progress/news-display-discover-r1.mjs';
 
 const now=Date.parse('2026-10-27T06:00:00Z');
-const govBody='<p>The UK Prime Minister reaffirmed support for Saudi Arabia in response to Houthi attacks.</p>';
+const govBody='<p>The UK Prime Minister reaffirmed support for Saudi Arabia during ceasefire talks in response to Houthi attacks.</p>';
 const content={base_path:'/government/news/pm-call',title:'Prime Minister call with overseas leaders',
  description:'International affairs discussion',document_type:'press_release',
  first_published_at:'2026-10-26T03:00:00Z',details:{body:govBody},
@@ -42,7 +42,7 @@ test('R12 previews eligible official topic news without cache/D1/task writes',as
  assert.deepEqual(result.results[0].topics,['사우디아라비아','후티']);
  assert.equal(result.results[0].impact,'neutral');
  assert.equal(result.results[0].titleEn,content.title);
- assert.equal(result.results[0].summaryEn,'The UK Prime Minister reaffirmed support for Saudi Arabia in response to Houthi attacks.');
+ assert.equal(result.results[0].summaryEn,'The UK Prime Minister reaffirmed support for Saudi Arabia during ceasefire talks in response to Houthi attacks.');
  assert.equal(result.publication,'NOT_STARTED');
  assert.equal(result.d1Written,false);
  assert.equal(result.cacheModified,false);

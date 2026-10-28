@@ -5,12 +5,12 @@ import {runFocusedShadowR11} from '../scripts/iran-progress/news-display-focused
 import {IRAN_GOVUK_NEWS_FEEDS} from '../scripts/iran-progress/news-display-discover-r1.mjs';
 
 const now=Date.parse('2026-10-27T06:00:00Z');
-const snippet='<p>The leaders spoke about Ukraine and Starlink.</p><p>They also discussed energy cooperation.</p><p>The UK reaffirmed its support for Saudi Arabia in response to hostile Houthi attacks.</p>';
+const snippet='<p>The leaders spoke about Ukraine and Starlink.</p><p>They also discussed energy cooperation.</p><p>The UK reaffirmed its support for Saudi Arabia in response to hostile Houthi attacks while ceasefire talks continued.</p>';
 const official=(slug)=>({base_path:`/government/news/${slug}`,title:slug,description:'Government statement',
  first_published_at:'2026-10-26T03:00:00Z',document_type:'press_release',details:{body:snippet}});
 
 test('R11 topic paragraphs exclude the unrelated Ukraine and energy sections',()=>{
- assert.equal(topicFocusedBody(snippet),'The UK reaffirmed its support for Saudi Arabia in response to hostile Houthi attacks.');
+ assert.equal(topicFocusedBody(snippet),'The UK reaffirmed its support for Saudi Arabia in response to hostile Houthi attacks while ceasefire talks continued.');
  assert.equal(topicFocusedBody('Before Iran was mentioned. Other background after it.').includes('Iran'),true);
 });
 

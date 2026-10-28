@@ -12,9 +12,13 @@ export const IRAN_GOVUK_NEWS_FEEDS=Object.freeze(IRAN_GOVUK_NEWS_KEYWORDS.map(
 export const IRAN_GOVUK_NEWS_FEED=IRAN_GOVUK_NEWS_FEEDS[0]; // compatibility with R1 readers
 
 // Only the four named topics (including ordinary English/Korean inflections).
+const PRIMARY=/\b(?:iran(?:ian)?s?|saudis?|yemen(?:is?)?|houthis?)\b|이란|사우디(?:아라비아)?|예멘|예맨|후티/i;
+const SECONDARY=/\b(?:wars?|cease[ -]?fires?|truces?|agreements?|accords?|deals?|negotiat(?:e|es|ed|ing|ion|ions)|talks?|progress|breakthroughs?)\b|전쟁|합의|휴전|협상|진전/i;
 export function matchesIranNewsDisplayKeywords(text){
- if(typeof text!=='string')return false;
- return /\b(?:iran(?:ian)?s?|saudis?|yemen(?:is?)?|houthis?)\b|이란|사우디(?:아라비아)?|예멘|예맨|후티/i.test(text);
+ return typeof text==='string'&&PRIMARY.test(text);
+}
+export function matchesIranTwoStageKeywordsR38(text){
+ return typeof text==='string'&&PRIMARY.test(text)&&SECONDARY.test(text);
 }
 
 function xmlText(value){
@@ -72,7 +76,8 @@ export function govUkContentCandidate(feedItem,content,{now=Date.now()}={}){
  const description=typeof content.description==='string'?content.description.trim():'';
  if(!title||title.length>500)return {status:'METADATA_INVALID'};
  const body=typeof content.details?.body==='string'?content.details.body:'';
- if(!matchesIranNewsDisplayKeywords([title,description,body].join(' ')))return {status:'OUT_OF_SCOPE'};
+ // Article relevance is the two-step keyword rule; discovery keywords only find URLs.
+ if(!matchesIranTwoStageKeywordsR38([title,description,body].join(' ')))return {status:'OUT_OF_SCOPE'};
  return {status:'REVIEW_REQUIRED',item:{source:'GOV.UK',sourceUrl:feedItem.sourceUrl,
   title,publishedAt:new Date(timestamp).toISOString(),sourceDescription:description.slice(0,300),
   rightsVerified:false,displayEligible:false,reviewReason:'INDIVIDUAL_RIGHTS_SUMMARY_IMPACT_PENDING'}};

@@ -14,7 +14,7 @@ const urls={
  news:'https://www.iaea.org/newscenter/news/restoring-iaea-inspections-in-iran-would-create-promising-ground-for-wider-progress-says-director-general-grossi',
  statement:'https://www.iaea.org/newscenter/statements/iaea-director-general-grossis-statement-to-unsc-on-situation-in-iran-22-june-2025',
 };
-const body=('The IAEA and Iran discussed nuclear inspections and regional safety. ').repeat(6);
+const body=('The IAEA and Iran discussed negotiations on nuclear inspections and regional safety. ').repeat(6);
 function page(kind,{canonical=urls[kind],date=kind==='news'?'2025-09-08':'2025-06-22',
  title='Iran nuclear verification',bodyText=body}={}){
  const classname=kind==='news'?'news-story-body':'statement-body';
@@ -69,7 +69,7 @@ test('R33 rejects missing, mismatched and redirected user-saved pages',async()=>
   const invalid=verifyR33SavedIaeaHtml({directory,inspector:inspectIranArticleR25,now});
   assert.equal(invalid.verified,0);
   assert.deepEqual(invalid.results.map(item=>item.status),
-   ['R33_EXPECTED_PUBLICATION_DAY_MISMATCH','ARTICLE_BODY_UNVERIFIED']);
+   ['R33_EXPECTED_PUBLICATION_DAY_MISMATCH','ARTICLE_OUT_OF_SCOPE']);
  });
 });
 

@@ -158,7 +158,7 @@ test('all four GOV.UK queries are searched and overlapping article URLs are fetc
   fetched.push(url);
   const base_path=new URL(url).pathname.replace('/api/content','');
   return new Response(JSON.stringify({base_path,title:base_path.endsWith('saudi')?'Saudi statement':'Regional statement',
-   description:'Government announced an update',details:{body:'Yemeni representatives met officials.'},
+   description:'Government announced an update',details:{body:'Yemeni representatives held ceasefire talks with officials.'},
    first_published_at:'2026-10-25T08:00:00Z'}),{status:200});
  }});
  assert.equal(IRAN_GOVUK_NEWS_FEEDS.every(url=>requested.includes(url)),true);
@@ -185,7 +185,7 @@ test('Content API can verify first publication for Iran mentioned in article bod
  const feedItem={sourceUrl:'https://www.gov.uk/government/news/joint-ministerial-meeting'};
  const body={base_path:'/government/news/joint-ministerial-meeting',title:'Joint ministerial meeting',
   description:'Government issued a statement',first_published_at:'2026-10-24T07:41:00Z',
-  public_updated_at:'2026-10-26T07:41:00Z',details:{body:'The ministers discussed the US/Israel-Iran conflict.'}};
+  public_updated_at:'2026-10-26T07:41:00Z',details:{body:'The ministers discussed the US/Israel-Iran war.'}};
  const assessed=govUkContentCandidate(feedItem,body,{now});
  assert.equal(assessed.status,'REVIEW_REQUIRED');
  assert.equal(assessed.item.publishedAt,'2026-10-24T07:41:00.000Z');

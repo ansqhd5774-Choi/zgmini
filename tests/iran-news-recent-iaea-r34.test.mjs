@@ -18,7 +18,7 @@ const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
 const now=Date.parse('2026-10-28T07:00:00Z');
 const beforeR32='scripts/iran-progress/news-display-multisource-audit-r24.mjs';
 const beforeR25='scripts/iran-progress/news-display-article-audit-r25.mjs';
-const body=('Iran safeguards inspectors need full access to nuclear material and sites. ').repeat(10);
+const body=('Iran safeguards inspectors need full access as negotiations progress on nuclear material. ').repeat(10);
 const page=(url,day)=>`<!doctype html><html><head><link rel="canonical" href="${url}">
  <meta property="og:title" content="Director General Iran nuclear verification">
  <meta name="dcterms.date" content="${day}T12:30:00Z"></head><body>

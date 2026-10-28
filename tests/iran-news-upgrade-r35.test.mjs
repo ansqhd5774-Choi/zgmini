@@ -90,7 +90,7 @@ test('R35 one-shot probe requires both discoverable original 27 Oct articles, ne
    requested.push(url);
    const article=R35_RECENT_ARTICLES.find(x=>x.url===url);
    assert.ok(article);
-   const body=('Iran and Saudi diplomats discussed peaceful regional options. ').repeat(9);
+   const body=('Iran and Saudi diplomats discussed regional ceasefire negotiations. ').repeat(9);
    return new Response(`<!doctype html><html><head><link rel="canonical" href="${url}">`+
     `<script type="application/ld+json">${JSON.stringify({'@type':'NewsArticle',
      headline:'Iran peace efforts',datePublished:article.day+'T09:30:00Z'})}</script>`+

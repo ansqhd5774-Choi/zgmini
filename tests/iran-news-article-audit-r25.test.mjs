@@ -145,22 +145,30 @@ test('R25 rejects page canonical mismatch and cannot verify a topic using headli
  const wrong=inspectIranArticleR25(aj,articleHtml({url:'https://www.aljazeera.com/news/2026/10/27/other'}),{now});
  assert.equal(wrong.status,'CANONICAL_MISMATCH');
  const unrelated=('A meeting between regional officials on transport policy. ').repeat(7);
- const body=inspectIranArticleR25(aj,articleHtml({body:unrelated}),{now});
+ const body=inspectIranArticleR25(aj,articleHtml({body:unrelated,headline:'Regional briefing'}),{now});
  assert.equal(body.status,'ARTICLE_OUT_OF_SCOPE');
  assert.equal(body.scopeVerifiedFromArticle,false);
  const short=inspectIranArticleR25(aj,articleHtml({body:'Iran talks.'}),{now});
- assert.equal(short.status,'ARTICLE_BODY_UNVERIFIED');
+ assert.equal(short.status,'ARTICLE_METADATA_REVIEWED');
+ const empty=inspectIranArticleR25(aj,articleHtml({body:''}),{now});
+ assert.equal(empty.status,'ARTICLE_BODY_UNVERIFIED');
 });
 
-test('R25 follows the approved four-keyword OR rule in the full article body',()=>{
+test('R38 accepts primary plus secondary keywords without additional semantic ranking',()=>{
  const subjects=['Saudi','Saudi Arabia','Yemen','Yemeni','Houthis','사우디아라비아','예멘','후티'];
  for(const subject of subjects){
-  const body=(`Regional authorities reported new developments involving ${subject}. `).repeat(7);
-  const result=inspectIranArticleR25(aj,articleHtml({body,headline:'Iran briefing'}),{now});
+  const body=(`Regional authorities reported peace negotiations involving ${subject}. `).repeat(7);
+  const result=inspectIranArticleR25(aj,articleHtml({body,headline:'Regional briefing'}),{now});
   assert.equal(result.status,'ARTICLE_METADATA_REVIEWED',subject);
   assert.equal(result.scopeVerifiedFromArticle,true,subject);
   assert.equal(result.displayEligible,false,subject);
  }
+ const absentSecond=inspectIranArticleR25(aj,articleHtml({
+  body:'Iran officials met for a regional briefing.',headline:'Regional briefing'}),{now});
+ assert.equal(absentSecond.status,'ARTICLE_OUT_OF_SCOPE');
+ const split=inspectIranArticleR25(aj,articleHtml({
+  body:'Officials discussed a ceasefire.',headline:'Saudi regional briefing'}),{now});
+ assert.equal(split.status,'ARTICLE_METADATA_REVIEWED');
 });
 
 test('R25 does not substitute unapproved aliases for the four user-approved topics',()=>{

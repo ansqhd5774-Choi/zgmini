@@ -6,7 +6,7 @@ import {IRAN_GOVUK_NEWS_FEEDS} from '../scripts/iran-progress/news-display-disco
 const now=Date.parse('2026-10-27T06:00:00Z');
 const feed=(slug)=>`<feed><entry><title>Middle East briefing</title><updated>2026-10-27T04:00:00Z</updated><link href="https://www.gov.uk/government/news/${slug}"/></entry></feed>`;
 const content=slug=>({base_path:'/government/news/'+slug,title:'Middle East briefing',description:'Government update on Saudi policy',
- first_published_at:'2026-10-26T03:00:00Z',document_type:'news_story',details:{body:'Yemen was discussed.'}});
+ first_published_at:'2026-10-26T03:00:00Z',document_type:'news_story',details:{body:'Yemen peace negotiations were discussed.'}});
 
 test('R9 preflight fetches four feeds and sample APIs, only checks local Ollama tags',async()=>{
  const calls=[];

@@ -92,7 +92,7 @@ test('R36 reads R29 status without updating or executing an operation',()=>{
  }finally{rmSync(dir,{recursive:true,force:true});}
 });
 
-test('R36 validates installed R35 module identities and reads the real R26 cache contract',async()=>{
+test('R36 intentionally refuses R38-modified files under its historical R35 identity gate',async()=>{
  const pc=mkdtempSync(path.join(tmpdir(),'iran-r36-installed-'));
  try{
   const modules=['news-display-multisource-audit-r24.mjs',
@@ -122,13 +122,8 @@ test('R36 validates installed R35 module identities and reads the real R26 cache
    updatedAt:Date.parse('2026-10-28T11:00:00Z'),items});
   const cacheFile=path.join(pc,'news-display-candidates-r26.json');
   writeFileSync(cacheFile,before);
-  const result=await inspectInstalledR36({projectRoot:pc,dataDirectory:pc,now,
-   taskPresent:false});
-  assert.equal(result.status,'PASS_R36_SEVEN_SOURCE_PRIVATE_COVERAGE');
-  assert.equal(result.totalPrivateCandidateCount,7);
-  assert.equal(result.sourceCoverage.length,7);
-  assert.ok(/^[a-f0-9]{64}$/.test(result.candidateCacheSha256));
-  assert.equal(result.scheduledRun.recordState,'R29_STATUS_NOT_FOUND');
+  await assert.rejects(inspectInstalledR36({projectRoot:pc,dataDirectory:pc,now,
+   taskPresent:false}),/R36_INSTALLED_R35_IDENTITY_DRIFT/);
   assert.equal(readFileSync(cacheFile,'utf8'),before);
  }finally{rmSync(pc,{recursive:true,force:true});}
 });

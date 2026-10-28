@@ -30,7 +30,7 @@ function govFetcher({partial=false}={}){
  const metadata=url=>({base_path:new URL(url).pathname,
   title:url===originalUrl?'Iran conference':'Yemen negotiations',
   first_published_at:url===originalUrl?'2026-10-25T13:00:00.000Z':'2026-10-26T18:00:00.000Z',
-  document_type:'press_release',details:{body:url===originalUrl?'<p>Iran</p>':'<p>Yemen</p>'},
+  document_type:'press_release',details:{body:url===originalUrl?'<p>Iran talks</p>':'<p>Yemen negotiations</p>'},
   links:{organisations:[{base_path:'/government/organisations/foreign-commonwealth-development-office'}]}});
  return async url=>{
   if(IRAN_GOVUK_NEWS_FEEDS.includes(url)){

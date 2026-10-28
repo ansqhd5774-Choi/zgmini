@@ -14,7 +14,7 @@ import {NEWS_COLLECTION_R26_FILE,NEWS_COLLECTION_R26_VERSION,collectIranNewsR26,
 const now=Date.parse('2026-10-27T12:00:00Z');
 const gov='https://www.gov.uk/government/news/iran-new-r26';
 const bbc='https://www.bbc.com/news/articles/saudi-security-r26';
-const governmentBody='<p>'+('UK and Iranian ministers discussed diplomatic proposals. ').repeat(6)+'</p>';
+const governmentBody='<p>'+('UK and Iranian ministers discussed ceasefire negotiations. ').repeat(6)+'</p>';
 const bbcBody=('Saudi Arabia and Yemen announced new regional safety talks. ').repeat(7);
 const rss=items=>`<rss><channel>${items}</channel></rss>`;
 const govFeed=`<feed><entry><title>Iran new update</title>`+

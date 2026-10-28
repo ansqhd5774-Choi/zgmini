@@ -5,7 +5,7 @@ import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {performance} from 'node:perf_hooks';
 import {boundedRead} from './sources.mjs';
-import {discoverGovUkNewsCandidates,matchesIranNewsDisplayKeywords} from './news-display-discover-r1.mjs';
+import {discoverGovUkNewsCandidates,matchesIranNewsDisplayKeywords,matchesIranTwoStageKeywordsR38} from './news-display-discover-r1.mjs';
 import {kstDayWindow,kstNewsDay} from '../../lib/iran-progress/news-display-r1.mjs';
 
 const OLLAMA_ORIGIN='http://127.0.0.1:11434';
@@ -96,7 +96,7 @@ async function sampleBody(article,fetcher,{topicFocused=false}={}){
   if(Date.parse(content.first_published_at??'')!==Date.parse(article.publishedAt))return {status:'BODY_DATE_MISMATCH'};
   const body=plainNewsBody(content.details?.body??'');
   if(!body)return {status:'BODY_UNAVAILABLE'};
-  if(!matchesIranNewsDisplayKeywords([article.title,article.sourceDescription??'',body].join(' ')))return {status:'OUT_OF_SCOPE'};
+  if(!matchesIranTwoStageKeywordsR38([article.title,article.sourceDescription??'',body].join(' ')))return {status:'OUT_OF_SCOPE'};
   // Diagnostics only: a GOV.UK domain is not proof that EVERY passage is OGL.
   const thirdPartySignal=/(?:©|copyright|rights reserved|third.party|reproduced with permission|photo credit)/i.test(body);
   const selected=topicFocused?topicFocusedBody(content.details?.body??''):body;
