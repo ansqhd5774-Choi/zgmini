@@ -21,6 +21,7 @@ const deps={
  '../../lib/treasury-calendar.mjs':'../staging/market-calendar/r26-treasury/lib/treasury-calendar.mjs',
  '../../lib/tic-calendar.mjs':'../staging/market-calendar/r27-tic/lib/tic-calendar.mjs',
  '../../lib/earnings-calendar.mjs':'../staging/market-calendar/r28-earnings/lib/earnings-calendar.mjs',
+ '../../lib/earnings-api-calendar.mjs':'../staging/market-calendar/r28-earnings/lib/earnings-api-calendar.mjs',
  '../../worker/public-feed-store.mjs':'../worker/public-feed-store.mjs',
  '../../worker/market-operational-store.mjs':'../worker/market-operational-store.mjs',
 };
@@ -130,6 +131,39 @@ test('R28 PC Core stores rights-approved RSS raw input with existing six-hour gu
   assert.equal(rssCalls,1);
   assert.equal((await store.readInput('release-calendar:earnings:cik0000012345')).body.text,body);
   assert.equal((await store.readOutput('release-calendar')).body.events.filter(x=>x.source==='earnings').length,1);
+ }finally{db.close();}
+});
+
+test('R29 optional PC Core API adapter reads back 14 day inputs but never publishes vendor-only dates',async()=>{
+ const db=localDatabase(':memory:');
+ try{
+  const store=publicFeedStore(db);await store.initialize();
+  let providerCalls=0;
+  const rights={automatedFetch:true,pcStorage:true,commercialUse:true,publicDisplay:true,
+   redistribution:true,reviewedAt:'2026-10-28',evidenceUrl:'https://example.com/license',
+   evidenceNote:'TEST FIXTURE ONLY, NOT APPROVED PROVIDER LICENCE'};
+  const config={enabled:true,apiKey:'example-test-key',rights};
+  const fetchImpl=async url=>{
+   if(!url.startsWith('https://api.earningsapi.com/v1/calendar/earnings?'))
+    throw Error('OTHER_SOURCE_UNAVAILABLE');
+   providerCalls++;
+   const date=new URL(url).searchParams.get('date');
+   return new Response(JSON.stringify({date,pre:[{symbol:'NVDA',name:'NVIDIA'}],after:[],notSupplied:[]}),
+    {headers:{'content-type':'application/json'}});
+  };
+  const first=await collectReleaseCalendar(db,{now:today,earningsApiConfig:config,fetchImpl});
+  assert.equal(first.sources.earningsApi,'READY');
+  assert.equal(providerCalls,14);
+  const output=(await store.readOutput('release-calendar')).body;
+  assert.equal(output.sources.earningsApi.publicationStatus,'HELD_UNCONFIRMED');
+  assert.equal(output.sources.earningsApi.recordCount,14);
+  assert.equal(output.events.filter(e=>e.source==='earnings').length,0);
+  const input=(await store.readInput('release-calendar:earnings-api:2026-10-28')).body;
+  assert.equal(input.requestedDate,'2026-10-28');
+  assert.ok(!JSON.stringify(input).includes(config.apiKey));
+  const again=await collectReleaseCalendar(db,{now:today+7*3600000,earningsApiConfig:config,fetchImpl});
+  assert.equal(again.sources.earningsApi,'READY');
+  assert.equal(providerCalls,14);
  }finally{db.close();}
 });
 

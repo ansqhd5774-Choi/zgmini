@@ -7,6 +7,7 @@ import {CFTC_COT_URL,parseCftcCotHtml} from '../../lib/cftc-calendar.mjs';
 import {TREASURY_CUSIP_XML_URL,parseTreasuryCusipXml} from '../../lib/treasury-calendar.mjs';
 import {TIC_RELEASE_DATES_URL,parseTicReleaseDatesHtml} from '../../lib/tic-calendar.mjs';
 import {EARNINGS_SOURCES,parseIssuerEarnings,validateEarningsSource} from '../../lib/earnings-calendar.mjs';
+import {collectEarningsApiWindow,EARNINGS_API_ENDPOINT} from '../../lib/earnings-api-calendar.mjs';
 import {publicFeedStore} from '../../worker/public-feed-store.mjs';
 import {marketOperationalStore} from '../../worker/market-operational-store.mjs';
 
@@ -263,7 +264,8 @@ async function fetchCensusYear({store,key,source,spec,year,now,fetchImpl,countRe
  throw Error('CENSUS_OFFICIAL_YEAR_UNAVAILABLE');
 }
 
-export async function collectReleaseCalendar(db,{now=Date.now(),fetchImpl=fetch,earningsSources=EARNINGS_SOURCES}={}){
+export async function collectReleaseCalendar(db,{now=Date.now(),fetchImpl=fetch,
+ earningsSources=EARNINGS_SOURCES,earningsApiConfig=null}={}){
  const store=publicFeedStore(db),locks=marketOperationalStore(db),key=RELEASE_CALENDAR_KEY;
  const attempt=await store.readAttempt(key);
  if(attempt&&now-attempt.storedAt>=0&&now-attempt.storedAt<6*3600000)return {status:'CACHED',providerRequests:0};
@@ -375,6 +377,22 @@ export async function collectReleaseCalendar(db,{now=Date.now(),fetchImpl=fetch,
     // Invalid permissions/configuration must not retain or publish earnings.
     sources.earnings={status:'SOURCE_FAILED',checkedAt:null,attemptedAt:new Date(now).toISOString(),
      reason:'SOURCE_CONFIG_REJECTED'};
+   }
+  }
+  // R29: separate date-bucket API adapter. A normal Core run occurs every six
+  // hours; the provider is queried at most once per New York calendar day.
+  // Until issuer-confirmed dates and public-feed redistribution rights are
+  // independently validated, only raw PC inputs are stored: no D1 events.
+  if(earningsApiConfig?.enabled){
+   try{
+    const candidate=await collectEarningsApiWindow({store,key,now,fetchImpl,
+     apiKey:earningsApiConfig.apiKey,rights:earningsApiConfig.rights,previous,
+     countRequest:()=>requests++});
+    sources.earningsApi=candidate.state;
+   }catch{
+    sources.earningsApi={status:'SOURCE_FAILED',checkedAt:null,
+     attemptedAt:new Date(now).toISOString(),sourceUrl:EARNINGS_API_ENDPOINT,
+     publicationStatus:'HELD_UNCONFIRMED',reason:'RIGHTS_OR_KEY_NOT_APPROVED'};
    }
   }
   const body={status:Object.values(sources).every(s=>s.status==='READY')?'READY':'PARTIAL',
