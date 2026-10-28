@@ -87,8 +87,13 @@ export function buildNineR51PrivateProvisionalOverlay({confirmed,latest,publicBa
     !same(publicBase.themes[0]?.history?.map(p=>p.date),confirmedDates))
     fail('PUBLIC_CONFIRMED_ANCHOR');
   let previous=baseDate;
-  for(const point of pending){
-    if(!validDate(point?.date)||point.date<=previous||
+  for(let i=0;i<pending.length;i++){
+    const point=pending[i];
+    // The actual public R2 projection may contain a first provisional point
+    // for the very same confirmed SPY session. Preserve its published date,
+    // and still forbid any older date or any duplicate after that first point.
+    if(!validDate(point?.date)||point.date<previous||
+      (i>0&&point.date<=previous)||
       !latestDates.includes(point.date))fail('PROVISIONAL_DATES_MISSING');
     previous=point.date;
   }

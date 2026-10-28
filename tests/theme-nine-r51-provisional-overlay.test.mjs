@@ -144,6 +144,44 @@ test('R51 connects public 27 Oct provisional from 28 Oct R48 history without 27 
  assert.equal(result.provisionalLineage.latestObservationDate,'2026-10-28');
 });
 
+test('R51 mirrors the real public API with 26 Oct anchor also in provisional dates',()=>{
+ const d26=Array.from({length:252},(_,i)=>new Date(
+  Date.parse('2026-10-26T00:00:00Z')-(251-i)*86400000).toISOString().slice(0,10));
+ const older=candidate('2026-10-26',d26,50);
+ const d28=[...d26.slice(2),'2026-10-27','2026-10-28'];
+ const future=candidate('2026-10-28',d28,70);
+ for(const row of future.themes){
+  row.history.find(p=>p.date==='2026-10-26').score=50;
+  row.history.find(p=>p.date==='2026-10-27').score=65;
+ }
+ const actualPublic={...publicBase,observationDate:'2026-10-26',
+  confirmedObservationDate:'2026-10-26',
+  themes:visible.map(t=>({...t,history:older.themes[0].history})),
+  provisional:{asOf:'2026-10-28T05:00:00Z',points:[
+   {date:'2026-10-26',scores:Object.fromEntries(visible.map(t=>[t.theme,50]))},
+   {date:'2026-10-27',scores:Object.fromEntries(visible.map(t=>[t.theme,65]))}]}};
+ const result=buildNineR51PrivateProvisionalOverlay({
+  confirmed:older,latest:future,publicBase:actualPublic});
+ assert.deepEqual(result.provisional.points.map(p=>p.date),
+  ['2026-10-26','2026-10-27']);
+ assert.equal(result.provisional.points[0].scores['로봇·자동화'],50);
+ assert.equal(result.provisional.points[1].scores['로봇·자동화'],65);
+ const now=Date.parse('2026-10-28T06:00:00Z');
+ const record={...result,status:'READY',publicationAuthorized:true,
+  upstreamCommercialRightsVerified:false,derivedLicenseVerified:false,
+  sourcePriceReconciled:false,accountGoodStandingVerified:false,
+  anonymousScopeIndependentlyConfirmed:false,
+  licensingRiskAcceptedByPublisher:true,
+  rightsBasis:'OFFICIAL_TERMS_DERIVED_WORKS_ANONYMOUS_SCOPE_UNCONFIRMED',
+  sourceTermsUrl:'https://getmarkethistory.com/docs/terms',
+  sourceManifestVerified:true,privateReplayVerified:true,
+  sourceStoredAt:'2026-10-28T05:55:00Z',publishedAt:'2026-10-28T05:56:00Z'};
+ assert.equal(eligibleNineR37(record,actualPublic,{now,storedAt:now-1000}),true);
+ const invalid={...record,provisional:{...record.provisional,
+  points:[record.provisional.points[0],record.provisional.points[0]]}};
+ assert.equal(eligibleNineR37(invalid,actualPublic,{now,storedAt:now-1000}),false);
+});
+
 test('R51 reads private immutable R48 snapshots and stages provisional scores offline',async t=>{
  const dir=fs.mkdtempSync(path.join(os.tmpdir(),'theme-nine-r51-'));
  t.after(()=>fs.rmSync(dir,{recursive:true,force:true}));

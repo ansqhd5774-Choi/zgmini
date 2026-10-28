@@ -117,6 +117,21 @@ test('explicit anonymous-derived-work publisher acceptance is a separate, disclo
  }
 });
 
+test('the public first provisional day may equal the confirmed anchor',async()=>{
+ const two=[{date:'2026-10-23',scores:Object.fromEntries(
+  THEME_NINE_R37_ROSTER.map(t=>[t.theme,50]))},
+  {date:'2026-10-26',scores:Object.fromEntries(
+   THEME_NINE_R37_ROSTER.map(t=>[t.theme,55]))}];
+ const base2={...baseline,phase:'PROVISIONAL',
+  provisional:{asOf:'2026-10-26',points:two}};
+ const rec2={...ready,phase:'PROVISIONAL',
+  provisional:{asOf:'2026-10-26',points:two}};
+ assert.equal(eligibleNineR37(rec2,base2,{now,storedAt:now-1000}),true);
+ const result=await addVerifiedNineR37(db(rec2),base2,{now});
+ assert.deepEqual(result.provisional.points.map(p=>p.date),
+  ['2026-10-23','2026-10-26']);
+});
+
 test('a newer legacy date can never be overwritten by an older R37 score',async()=>{
  const newBase={...baseline,observationDate:'2026-10-26',confirmedObservationDate:'2026-10-26',
   themes:baseline.themes.map(t=>({...t,history:t.history.map((p,i)=>i===251?{...p,date:'2026-10-26'}:p)}))};
