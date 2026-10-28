@@ -54,3 +54,13 @@
 다음 Gate는 실 PC 검산 결과, 공개 R10 기존 6점수·총점과 재비교, 기존 저장 원본과 권리 상태 명시, 별도 D1 키의 정확한 readback, 최소 파일 PR, Cloudflare Git 자동배포, 실제 UI 확인 순서다.
 
 **중지 조건**: 원본/권리/단위 불명확, 2026-Q4 값을 2026-Q2에 채우려는 시도, 저장 소스가 기존 release보다 최신으로 바뀌어 체크포인트가 어긋난 경우, R10 총점·구성점수 불일치, PC 원본 변경 감지, 권한·비용 확대 요구.
+
+## 6. R10 R2 후속 Gate — 기존 점수 유지, 원자료 sidecar만 추가
+
+- 사용자 PC에서 R1 실측: `PASS_READONLY_ASSET_R10_RAW_PREFLIGHT`, `PREFLIGHT_EXIT_CODE=0`, `WRAPPER_RESULT=PASS_READONLY_NO_REMOTE_WRITES`, `pcSqliteWrites=0`, `d1Writes=0`, `scoreWrites=0`. 6개 구성점수와 총점 `22.57324252737245` 일치. 실행 화면 근거이며 D1 게시 증거가 아니다.
+- 유일하게 새로 쓸 수 있는 D1 키: `market_public_snapshots_v1.snapshot_key='detail:asset-bubble-raw:r1'`. 기존 `detail:asset-bubble:v1` / `current` / 다른 지표 키와 계산 산식은 변경하지 않는다.
+- sidecar `ASSET_R10_RAW_SCHEMA='asset-bubble-r10-raw-r1-v1'`는 6개 원값·직전 값·단위·출처·관측일, 공개 R10 원본 체크포인트와 구성점수·총점을 저장한다. `rightsStatus=USER_ACCEPTED_UNVERIFIED`, `historyMode=CURRENT_VINTAGE_NOT_PIT` 그대로 유지한다.
+- 기존 점수 `/api/asset-bubble-detail`은 **D1 SELECT 1회** 계약을 유지하므로 수정하지 않는다. 원자료는 별도 `GET/HEAD /api/asset-bubble-raw`(별도의 SELECT 1회)로만 읽는다. UI는 `sourceVersion`, `sourceStoredAt`, `asOfDate`, `scoreObservationQuarter`, 총점과 **6개 각각의 점수**가 전부 일치할 때만 원값을 렌더링한다. 누락·오류·버전 불일치면 기존 점수 표시를 보존하고 원값은 `—` 처리한다.
+- 한 번의 PC D1 게시 스크립트는 R1 읽기 전용 검산을 내부 재사용한 뒤, GitHub `main`의 clean publisher와 별도 승인된 PC operational source를 확인한다. 조건부 upsert 단 한 키만 허용하며 반환 코드가 불분명하면 다시 쓰지 않고 D1 재조회한다. `READBACK_VERIFIED` 또는 `ALREADY_STORED`를 구분한다.
+- 구현·시뮬레이션 테스트 통과는 운영 `D1 readback`·`Cloudflare deployment`·`public API`·`PC/mobile actual UI`의 PASS가 아니다. 4개 개발 중 지표는 그대로 `개발중` 표시한다.
+- 새로운 backend 파일: `worker/asset-bubble-r10-raw-r1.mjs`, `scripts/pc-writer/ASSET_R10_RAW_D1_ONE_SHOT_R2.mjs`, `tests/asset-r10-raw-sidecar-r2.test.mjs`. `worker/candidate-r52.ts`에 원자료 전용 읽기 경로만 추가한다. 기존 `worker/projection-runtime-r52.mjs`·점수 projection은 변경하지 않는다.
