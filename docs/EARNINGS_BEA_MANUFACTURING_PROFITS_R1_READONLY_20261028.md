@@ -55,3 +55,11 @@
 - DB는 `readOnly:true` 및 `PRAGMA query_only=ON`; 원본 행 내용은 출력하지 않는다. 검사 범위 제한, 조회 실패, 런타임 SQLite 미지원은 성공이나 원본 부재로 간주하지 않는다.
 - `safeToAutoCapture=false` 계속 유지한다. XLSX와 기타 원본 저장소는 여전히 미검증이다.
 - R3 로컬 SQLite fixture 테스트 4/4 PASS; 실제 PC R3 실행, 원본 재수집, D1 저장, GitHub `main` 반영 및 배포는 미실행.
+
+## R3 실제 PC 결과 — 불완전 원장 검사 / R4 압축 원본 점검
+
+- 실제 PC 보고 `BEA_MFG_SQLITE_READONLY_32713_8964.txt`는 정상 종료 코드 0으로 확인되었다.
+- `core.sqlite` 39개 테이블, `history.sqlite` 5개 테이블을 검사했고 두 DB 모두 `matchCount=0`, `rowsLimited=true`였다. 20,000행 상한 초과가 있어 **원본 부재를 확정하지 않는다**.
+- GitHub `main` 운영 코드의 `worker/market-operational-store.mjs`에는 `market_input_batches_v1.body`가 `gzip:` 접두어와 base64로 압축되어 저장되는 계약이 있다. R3 일반 문자열 검사만으로는 이 내용을 탐지할 수 없다.
+- R4 `EARNINGS_BEA_MFG_PROFIT_R4_COMPRESSED_STORE_READONLY.mjs`는 기존 `market_input_batches_v1`의 최근 macro/BEA/earnings 키 본문을 읽어 압축 해제 후 `N400RC` 존재 여부를 확인한다. `api_history_chunks_v1`, `api_history_snapshots_v1`의 dataset 식별자도 직접 확인한다.
+- R4 역시 검색 표본에 상한이 있으며 `safeToAutoCapture=false`로 신규 캡처를 자동 승인하지 않는다. 실제 PC 실행 미확인, 로컬 테스트 3/3 통과, 운영 데이터 수정·D1·배포 미실행.
