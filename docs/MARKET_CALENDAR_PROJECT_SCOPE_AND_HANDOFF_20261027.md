@@ -267,3 +267,12 @@
 - 테스트: 신규 R24 11/11 PASS, 기존 R23 collector 9/9 및 installer 4/4 PASS, `npm run typecheck` PASS. 사용자 PC 실제 공식 원문 파싱 24건 별도 PASS.
 - 전달 파일 `MARKET_CALENDAR_R24_USDA_PC_INSTALL_20261028.zip`, SHA256 `90ec6480ede3cccdf4a611d360ad83e4d5d0c973c1006b54d41fb9f66f134639`. CMD ASCII CRLF 및 ZIP 7파일 무결성 PASS.
 - **다음 단계:** 사용자 PC에서 ZIP 전체 압축 해제 후 `MARKET_CALENDAR_R24_USDA_APPLY.cmd` 1회 실행, `MARKET_CALENDAR_R24_USDA_APPLY_RESULT.txt` 전달. R24는 아직 설치 미확인, 예약 수집·SQLite 반영·웹 공개 미확인. 설치 성공 및 정규 수집 증거를 구분한다. 기존 브랜치만 사용, 신규 브랜치 생성·`main` 병합·Cloudflare 배포 없음.
+
+
+## 26. R24 USDA 설치 중단 — PC source drift 읽기 전용 확인 필요 (2026-10-28)
+
+- 사용자 `MARKET_CALENDAR_R24_USDA_APPLY_RESULT.txt` 직접 검증: `decision=PC_SOURCE_CHANGED_STOP`. R24 후보 4파일 해시·Core worktree ID는 기대값과 일치하지만 **현재 PC Git HEAD가 승인 R23 source `8ff396217c9f84578b37c9d422381644c2b8f0e8`와 다르다.** 실제 HEAD·변경 내역은 해당 설치 로그에 없으므로 원인을 추정하지 않는다.
+- `changedFiles=[]`, `backupCreated=false`, `newSource=null`, `forcedCollection=false`, `publisherExecuted=false`, `gitPushed=false`. **R24 PC 설치 0**, 기존 운영 파일에 이번 설치로 인한 수정 없음. 사용자에게 기존 R24 CMD 재실행을 요청하지 않는다.
+- 동일 기존 브랜치에 별도 읽기 전용 진단 CMD 추가: `MARKET_CALENDAR_R24_SOURCE_DRIFT_READONLY.cmd` + `scripts/pc-writer/market-calendar-r24-source-drift-readonly.mjs` + README + 테스트. 현재 HEAD/config.source/관련 파일 SHA/dirty/lock/승인 R23 조상 관계를 노출 가능한 값만 조회하며 PC 파일·Git/DB/예약·게시를 변경하지 않는다.
+- 새 사용자 전달 ZIP `MARKET_CALENDAR_R24_SOURCE_DRIFT_READONLY_20261028.zip` SHA256 `69611dfaeae502668db26d15f318abea2f1fb7a94e76dd2f5eb76f3c3fa0f6f6`, 진단 테스트 3/3, CMD ASCII CRLF, ZIP 4/4 PASS. 결과 `MARKET_CALENDAR_R24_SOURCE_DRIFT_RESULT.txt`를 받기 전엔 설치기 재고정/원본 덮어쓰기/강제 실행 금지.
+- 기존 R24 코어 후보·USDA 공식 날짜 24건 실측·브랜치 UI 변경은 보존한다. **R24 PC 설치/예약 수집/SQLite/공개 사이트 검증은 미완료**. 신규 브랜치 없음, `main` 병합/Cloudflare 배포 없음.
