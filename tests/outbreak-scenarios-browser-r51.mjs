@@ -175,7 +175,10 @@ try{
    assert.equal(await root.locator(".ob61-fed-compact .ob58-mini-trend").isVisible(),true,"Mobile embeds the actual 14-day Fed chart");
    assert.equal(await root.locator(".ob61-fed-compact .ob53-score-card").getAttribute("aria-label"),"금리 심리");
    assert.equal(await root.locator(".ob61-fed-compact .ob53-current .ob58-status").textContent(),"중립");
-   assert.equal(await root.locator(".ob61-fed-compact .ob53-current .ob61-week-inline[data-change=\"down\"]").isVisible(),true,"Stored week-to-week change stays visible inside the compact card");
+   assert.equal(await root.locator(".ob61-fed-compact .ob53-current .ob61-week-inline").count(),0,"Mobile no longer renders the redundant inline 7-day change");
+   assert.equal(await root.locator(".ob61-fed-compact .ob58-mini-head").count(),0,"Mobile rate chart has no redundant heading");
+   const plotHeight=await root.locator(".ob61-fed-compact .ob58-mini-plot").evaluate(el=>el.getBoundingClientRect().height);
+   assert(Math.abs(plotHeight-75)<1,"Rate mobile plot is exactly 75px high");
    const fedCompactGeometry=await root.evaluate(el=>{
     const card=el.querySelector(".ob61-fed-compact .ob53-score-card").getBoundingClientRect();
     const mini=el.querySelector(".ob61-fed-compact .ob58-mini-trend").getBoundingClientRect();
