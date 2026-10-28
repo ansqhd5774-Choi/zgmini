@@ -32,6 +32,8 @@ export default function IranPublishedChart({points,history=[],compact=false}:{po
  const compactLine=[...daily.filter(validDaily).map(p=>({at:p.at,value:p.value as number})),...visible];
  const compactArea=compact&&compactLine.length>1&&daily.every(validDaily)
   ?'M'+x(compactLine[0].at)+','+y(0)+' L'+compactLine.map(p=>x(p.at)+','+y(p.value)).join(' L')+' L'+x(compactLine.at(-1)!.at)+','+y(0)+' Z':'';
+ const detailArea=!compact&&compactLine.length>1&&daily.every(validDaily)
+  ?'M'+x(compactLine[0].at)+','+y(0)+' L'+compactLine.map(p=>x(p.at)+','+y(p.value)).join(' L')+' L'+x(compactLine.at(-1)!.at)+','+y(0)+' Z':'';
  const delta=previous?current.value-previous.value:null;
  return <div className={'zg-iran-published-chart'+(compact?' is-compact ob-summary-chart ob-summary-chart-frame':'')} aria-label="최근 14일 일별 추정과 실제 게시 시각별 잠정 점수">
   {compact&&<div className="zg-chart-fixed-axis" aria-hidden="true">
@@ -40,20 +42,23 @@ export default function IranPublishedChart({points,history=[],compact=false}:{po
   </div>}
   <svg viewBox={compact?"0 0 170 68":"0 0 350 136"} preserveAspectRatio={compact?"none":"xMidYMid meet"} role="group" aria-labelledby={id}>
    <title id={id}>{`최근 14일 · 실제 게시 기록 ${visible.length}회 · 한국시간`}</title>
-   {compact&&<defs><linearGradient id={id+"-compact-fill"} x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#ef4444" stopOpacity=".25"/><stop offset="100%" stopColor="#ef4444" stopOpacity="0"/></linearGradient></defs>}
-   {[0,50,100].map(v=><g key={v}><line x1={axisLeft} x2={axisRight} y1={y(v)} y2={y(v)} stroke={compact?"currentColor":"#52758a"} strokeDasharray="2 4" opacity={compact?undefined:'.55'}/>{!compact&&<text x={axisLabelX} y={y(v)+3} fill="#a3bbcc" fontSize="9">{v}</text>}</g>)}
+   <defs>{compact?<linearGradient id={id+"-compact-fill"} x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#ef4444" stopOpacity=".25"/><stop offset="100%" stopColor="#ef4444" stopOpacity="0"/></linearGradient>:<linearGradient id={id+"-detail-fill"} x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#fb7185" stopOpacity=".22"/><stop offset="100%" stopColor="#fb7185" stopOpacity="0"/></linearGradient>}</defs>
+   {!compact&&<rect data-series="low-score-band" x={axisLeft} y={y(25)} width={axisRight-axisLeft} height={y(0)-y(25)} fill="#ef4444" fillOpacity=".055"/>}
+   {[0,50,100].map(v=><g key={v}><line x1={axisLeft} x2={axisRight} y1={y(v)} y2={y(v)} stroke={compact?"currentColor":"#52758a"} strokeDasharray="2 4" opacity={compact?undefined:'.55'}/>{!compact&&<text x={axisLabelX} y={y(v)+3} fill="#a3bbcc" fontSize="10">{v}</text>}</g>)}
    {compactArea&&<path data-series="daily-estimate-area" d={compactArea} fill={"url(#"+id+"-compact-fill)"}/>}
+   {detailArea&&<path data-series="detail-score-area" d={detailArea} fill={"url(#"+id+"-detail-fill)"}/>}
    <g data-series="daily-estimate">
-    <path d={dailyPath} fill="none" stroke={compact?"#ef4444":"#94a3b8"} strokeWidth={compact?2:1.8} strokeDasharray={compact?undefined:"3 3"} vectorEffect={compact?"non-scaling-stroke":undefined} strokeLinecap={compact?"round":undefined} strokeLinejoin="round"/>
-    {daily.filter(validDaily).map(p=><circle key={p.at} data-kind="daily-estimate" cx={x(p.at)} cy={y(p.value as number)} r="1.7" opacity={compact?0:1} fill={compact?"#ef4444":"#94a3b8"}><title>{`${date(p.at)} 일별 추정 · ${(p.value as number).toFixed(2)}점`}</title></circle>)}
+    <path d={dailyPath} fill="none" stroke={compact?"#ef4444":"#fb7185"} strokeWidth={compact?2:2.4} strokeDasharray={compact?undefined:"4 3"} vectorEffect="non-scaling-stroke" strokeLinecap="round" strokeLinejoin="round"/>
+    {daily.filter(validDaily).map(p=><circle key={p.at} data-kind="daily-estimate" cx={x(p.at)} cy={y(p.value as number)} r={compact?1.7:2.3} opacity={compact?0:1} fill={compact?"#ef4444":"#fb7185"} stroke={compact?undefined:"#0b2536"} strokeWidth={compact?undefined:0.75}><title>{`${date(p.at)} 일별 추정 · ${(p.value as number).toFixed(2)}점`}</title></circle>)}
    </g>
-   {bridge&&<path data-series="estimate-to-publication" d={bridge} fill="none" stroke={compact?"#ef4444":"#94a3b8"} strokeWidth={compact?2:1.5} strokeDasharray={compact?undefined:"3 3"} vectorEffect={compact?"non-scaling-stroke":undefined}/>}
-   <path data-series="actual-publications" d={path} fill="none" stroke={compact?"#ef4444":"#29d3bc"} strokeWidth={compact?2:1.8} vectorEffect={compact?"non-scaling-stroke":undefined} strokeLinecap={compact?"round":undefined} strokeLinejoin={compact?"round":"miter"}/>
-   {visible.map(p=><circle key={p.at} data-kind="publication" cx={x(p.at)} cy={y(p.value)} r={p.at===current.at?4:2.5} opacity={compact?0:1} fill={compact?"#ef4444":"#29d3bc"} stroke="#e4fbff" strokeWidth={p.at===current.at?1.2:0} role={compact?undefined:'button'} tabIndex={compact?undefined:0} aria-label={date(p.at,true)+' KST · '+p.value.toFixed(2)+'점'} onClick={compact?undefined:()=>setSelected(p.at)} onKeyDown={compact?undefined:e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();setSelected(p.at);}}}><title>{`${date(p.at,true)} KST · ${p.value.toFixed(2)}점`}</title></circle>)}
-   {!compact&&[0,4,8,13].map(day=>{const at=start+day*86400000;return <text key={day} x={x(at)} y={axisDateY} textAnchor={day===0?'start':day===13?'end':'middle'} fill="#a3bbcc" fontSize="9">{date(at)}</text>;})}
+   {bridge&&<path data-series="estimate-to-publication" d={bridge} fill="none" stroke={compact?"#ef4444":"#fb7185"} strokeWidth={compact?2:2} strokeDasharray={compact?undefined:"4 3"} vectorEffect={compact?"non-scaling-stroke":undefined}/>}
+   <path data-series="actual-publications" d={path} fill="none" stroke={compact?"#ef4444":"#29d3bc"} strokeWidth={compact?2:2.8} vectorEffect="non-scaling-stroke" strokeLinecap="round" strokeLinejoin="round"/>
+   {!compact&&<circle data-series="selected-publication-halo" cx={x(current.at)} cy={y(current.value)} r="8" fill="#29d3bc" opacity=".2" pointerEvents="none"/>}
+   {visible.map(p=><circle key={p.at} data-kind="publication" cx={x(p.at)} cy={y(p.value)} r={p.at===current.at?(compact?4:5.4):(compact?2.5:3.6)} opacity={compact?0:1} fill={compact?"#ef4444":"#29d3bc"} stroke="#e4fbff" strokeWidth={p.at===current.at?1.5:0} role={compact?undefined:'button'} tabIndex={compact?undefined:0} aria-label={date(p.at,true)+' KST · '+p.value.toFixed(2)+'점'} onClick={compact?undefined:()=>setSelected(p.at)} onKeyDown={compact?undefined:e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();setSelected(p.at);}}}><title>{`${date(p.at,true)} KST · ${p.value.toFixed(2)}점`}</title></circle>)}
+   {!compact&&[0,4,8,13].map(day=>{const at=start+day*86400000;return <text key={day} x={x(at)} y={axisDateY} textAnchor={day===0?'start':day===13?'end':'middle'} fill="#a3bbcc" fontSize="10">{date(at)}</text>;})}
   </svg>
   {compact&&<span aria-hidden="true" className="ob-chart-endpoint" style={{left:`${x(last.at)/170*100}%`,top:`${y(last.value)/68*100}%`,background:'#ef4444'}}/>}
-  <div className="zg-iran-chart-legend"><span>┄ 일별 추정</span><span>━ 실제 갱신</span></div>
+  <div className="zg-iran-chart-legend"><span>일별 추정</span><span>실제 갱신</span></div>
   {!compact&&<div className="zg-iran-update-reading" role="status"><time dateTime={new Date(current.at).toISOString()}>{date(current.at,true)} KST</time><strong>{current.value.toFixed(2)}점</strong><span>{delta===null?'첫 게시 기록':(delta>0?'+':'')+delta.toFixed(2)+'점'}</span><small>반영 사건 누계 {current.eventCount}건 · 잠정 점수</small></div>}
   <p className="zg-iran-update-note">{compact?'14일 흐름 · 갱신별 기록 · KST':daily.some(validDaily)?'점선은 기존 일별 추정입니다. 실선은 기록 시작 이후 실제 게시 시각별 점수이며, 점을 누르면 시각과 변화를 확인할 수 있습니다.':visible.length===1?'갱신 기록을 쌓기 시작했습니다. 이전 시간대 점수는 재구성하지 않습니다.':'실제 게시된 점수를 직선으로 연결했습니다. 점을 누르면 게시 시각과 변화를 확인할 수 있습니다.'}</p>
  </div>;
