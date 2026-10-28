@@ -143,14 +143,22 @@ export function eligibleNineR37(record,base,{now=Date.now(),storedAt=now}={}){
  return true;
 }
 
-export async function addVerifiedNineR37(db,base,{now=Date.now()}={}){
- if(base?.status!=='READY'||!Array.isArray(base.themes))return base;
+export async function addVerifiedNineR37(db,base,{now=Date.now(),trace=null}={}){
+ // Temporary read-only troubleshooting: expose only a fixed outcome category,
+ // never row bytes, ETF scores, SQL error details or private source metadata.
+ const mark=category=>{if(trace&&typeof trace==='object')trace.state=category;};
+ if(base?.status!=='READY'||!Array.isArray(base.themes)){
+  mark('BASE_UNAVAILABLE');return base;
+ }
  let row;
  try{row=await db.prepare("SELECT body,stored_at FROM public_feed_snapshots_v1 WHERE kind='output' AND feed_key=? AND snapshot_key='current'")
-  .bind(THEME_NINE_R37_KEY).first();}catch{return base;}
- if(!row)return base;
- let record;try{record=JSON.parse(row.body);}catch{return base;}
- if(!eligibleNineR37(record,base,{now,storedAt:Number(row.stored_at)}))return base;
+  .bind(THEME_NINE_R37_KEY).first();}catch{mark('D1_SELECT_ERROR');return base;}
+ if(!row){mark('D1_ROW_MISSING');return base;}
+ let record;try{record=JSON.parse(row.body);}catch{mark('D1_INVALID_JSON');return base;}
+ if(!eligibleNineR37(record,base,{now,storedAt:Number(row.stored_at)})){
+  mark('RECORD_INELIGIBLE');return base;
+ }
+ mark('APPLIED');
  // This is a score migration, not a theme launch. Preserve the exact public
  // roster and ordering: R32 also contains AI, which is not necessarily a
  // public theme in the current ten-theme dashboard.
