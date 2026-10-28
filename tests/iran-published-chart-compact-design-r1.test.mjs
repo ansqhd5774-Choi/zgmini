@@ -38,3 +38,11 @@ test('detail-only styling keeps the actual publication history and honest score 
  assert.ok(css.includes('.zg-iran-published-chart:not(.is-compact) .zg-iran-chart-legend'));
  assert.ok(css.includes('.zg-iran-published-chart:not(.is-compact) .zg-iran-update-reading'));
 });
+
+test('detail publication timestamps remain individually selectable when chart dots overlap',()=>{
+ assert.ok(chart.includes('!compact&&visible.length>1&&<div className="zg-iran-publication-times"'));
+ assert.ok(chart.includes('aria-pressed={p.at===current.at}'));
+ assert.ok(chart.includes('onClick={()=>setSelected(p.at)}'));
+ assert.ok(css.includes('.zg-iran-publication-time.is-selected'));
+ assert.ok(css.includes('.zg-iran-publication-time:focus-visible'));
+});
