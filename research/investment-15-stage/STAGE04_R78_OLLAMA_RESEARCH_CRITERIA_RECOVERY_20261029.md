@@ -81,3 +81,17 @@ R80은 이 기존 R31 검증 옵션을 **오직 위 세 주제**에서만 켠다
 - **최종 승인 대기:** PC에서 `STAGE04_R80_21_TOPICS_VALIDATE.cmd`로 21개 현재 원문을 다시 조회하고 JSON·TXT·진단 로그를 받은 뒤 18/21에서 실제로 얼마나 개선됐는지 확인한다. 21/21 성공을 사전에 주장하지 않는다.
 
 원문 근거: [TBRC Staple Food](https://www.thebusinessresearchcompany.com/report/staple-food-global-market-report), [TBRC FinTech Blockchain](https://www.thebusinessresearchcompany.com/report/fintech-blockchain-global-market-report), [TBRC Biotechnology Services](https://www.thebusinessresearchcompany.com/report/Biotechnology-Services-Global-Market-Report), 과거 기준 `recovered-cagr-r63-r66/CAGR_R63_21_RESEARCH_PLAYBOOK_20261027.md` 제3-2절.
+
+---
+
+## R81 — 수집 성공 자료의 과도한 제외 방지, 기존 브랜치 보존 (2026-10-29)
+
+R79 실측의 `SOURCE_CONFLICT` 12건을 공식 발행사 원문과 대조했다. **TBRC 10건은 미래 전망 본문 CAGR과 2026→2030 시장규모 역산값이 일치하지만, 2026→2030 메타데이터 표에 2025→2026 역사적 성장률이 반복된 경우**였다. Precedence 2건(핀테크 블록체인, 바이오테크놀로지)은 같은 CAGR 수치에 시작 연도만 서로 다른 표기가 있었다. 이는 발행사 간 성장률 차이를 이유로 평균에서 제외한 것이 아니라, *한 발행사 페이지 내부 검증*에서 제외한 것이다.
+
+1. **TBRC 전 주제 R31 증거 검증 적용:** `resolveHistoricTableMislabel`은 특정 3개 키워드만이 아니라 모든 TBRC 현재 공식 보고서에 실행한다. R29 감사 엔진은 변경하지 않았다. 미래 전망 본문·미래 시장규모 수학 검산·별도의 과거 본문·과거 시장규모 수학 검산·잘못 기재된 표가 실제로 과거 CAGR이라는 점까지 **모두 검증**되어야만 `RESOLVED_HISTORIC_RATE_MISLABEL`이 된다. 과거 CAGR 자체는 절대로 미래값으로 평균하지 않는다.
+2. **Precedence 전망기간 라벨만 달라진 경우:** 기본은 기존처럼 SOURCE_CONFLICT다. 다만 동일한 전체시장 CAGR, 전망 종료 연도 동일, 시작 연도 차이 정확히 1년, 서로 다른 성장률 없음, **주요 전체시장 전망 문단에 직접 명시된 시작·종료 시장규모를 이용한 CAGR 수학 검산**이 모두 일치하면 주요 문단의 기간을 선택해 `WHOLE_MARKET_PERIOD_LABEL_VARIATION_SIZE_VERIFIED`를 기록하고 PASS한다. 시장규모가 없거나 다르거나 두 번째 CAGR이 상충하면 계속 NULL이다. 이는 무조건적인 10% 오차 허용이 아니다.
+3. **R67 평균 유지:** 검증된 독립 매체가 둘 이상일 때만 기존 산술평균, 경고 및 시장 범위 구분이 유지된다. 매체별 서로 다른 유효 CAGR을 하나의 매체의 역사/미래 값과 혼동하지 않는다. 역사 수치·R63의 과거 CAGR·다른 단계 점수·신규 발행사는 추가하지 않았다.
+4. **범위 제한:** 기존 브랜치 `codex/investment-15-stage-m2-r25-20261025`에만 추가하며 이전 R77·R79·R80 파일 및 실측 결과는 그대로 둔다. 1·2·3·5단계, 투자점수, 최종 산식, 종목 선정, 배포는 변경하지 않는다.
+5. **회귀 테스트:** TBRC 10개 공식 시장규모 예시와 가짜 과거시장 증거 거부, Precedence 2개 전망기간 라벨 변형과 거짓 시장규모 거부를 포함해 Stage04 관련 테스트 파일 5개를 통과했다.
+
+**아직 확인되지 않은 것:** 사용자 Windows PC에서 현재 올라마와 공식 사이트를 다시 조회한 R81 21개 결과는 받지 않았다. 따라서 21/21 평균 산출 또는 PC 정상 작동을 사전 확정하지 않는다. 검증용 `STAGE04_R81_21_TOPICS_VALIDATE.cmd`는 기존 R77 소스를 별도 새 폴더에 복사하고 해당 R81 파일들을 덮어씌운 뒤 21개 전부 실행해 JSON·TXT·진단 로그를 남기며 과거 파일은 삭제·변경하지 않는다.
