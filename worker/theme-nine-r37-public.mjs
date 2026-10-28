@@ -26,6 +26,28 @@ const stamp=v=>typeof v==='string'&&Number.isFinite(Date.parse(v));
 const same=(a,b)=>Array.isArray(a)&&a.length===b.length&&a.every((v,i)=>v===b[i]);
 const PUBLIC_DATE_MODE='FIXED_OFFICIAL_ISSUER_AUM_SNAPSHOT_WITH_ORIGINAL_DATES';
 const expectedSymbols=[...new Set(THEME_NINE_R37_ROSTER.flatMap(t=>t.etfs))];
+const R54_ANONYMOUS_RISK_BASIS='OFFICIAL_TERMS_DERIVED_WORKS_ANONYMOUS_SCOPE_UNCONFIRMED';
+const R54_SOURCE_TERMS='https://getmarkethistory.com/docs/terms';
+
+function publicationRightsNineR37(record){
+ if(record?.publicationAuthorized!==true||record.derivedOnlyNoRaw!==true||
+   record.sourceManifestVerified!==true||record.privateReplayVerified!==true)
+  return false;
+ const confirmed=record.upstreamCommercialRightsVerified===true&&
+  record.derivedLicenseVerified===true&&record.sourcePriceReconciled===true;
+ // The publisher expressly accepted the same anonymous-API licensing risk
+ // already disclosed by the tenth-theme reader. Never turn unknown rights or
+ // unreconciled 1h prices into false certifications. Raw-bar and score-replay
+ // validation are STILL mandatory for this alternative.
+ const disclosed=record.licensingRiskAcceptedByPublisher===true&&
+  record.rightsBasis===R54_ANONYMOUS_RISK_BASIS&&
+  record.sourceTermsUrl===R54_SOURCE_TERMS&&
+  record.upstreamCommercialRightsVerified===false&&
+  record.derivedLicenseVerified===false&&record.sourcePriceReconciled===false&&
+  record.accountGoodStandingVerified===false&&
+  record.anonymousScopeIndependentlyConfirmed===false;
+ return confirmed||disclosed;
+}
 
 export function eligibleNineR37(record,base,{now=Date.now(),storedAt=now}={}){
  if(!base||base.status!=='READY'||!Array.isArray(base.themes)||
@@ -43,10 +65,7 @@ export function eligibleNineR37(record,base,{now=Date.now(),storedAt=now}={}){
   record.rosterSha256!==THEME_NINE_R37_ROSTER_SHA||
   record.benchmark!=='SPY'||record.individualStocksUsed!==0||
   record.ETFPositions!==64||record.uniqueETFs!==63||
-  record.publicationAuthorized!==true||record.upstreamCommercialRightsVerified!==true||
-  record.derivedLicenseVerified!==true||record.sourcePriceReconciled!==true||
-  record.sourceManifestVerified!==true||record.privateReplayVerified!==true||
-  record.derivedOnlyNoRaw!==true)return false;
+  !publicationRightsNineR37(record))return false;
  if(!sha(record.rawManifestSha256)||!sha(record.r25InputSha256)||
   !sha(record.shadowSha256)||!sha(record.officialAumEvidenceSha256)||
   !validDate(record.observationDate)||record.observationDate!==baseConfirmed||

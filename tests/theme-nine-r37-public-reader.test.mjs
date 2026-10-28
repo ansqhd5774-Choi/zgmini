@@ -89,6 +89,34 @@ test('missing, unauthorized and malformed new feeds leave the old feed untouched
  assert.equal(eligibleNineR37({...ready,sourcePriceMode:'UNDECLARED'},baseline,{now,storedAt:now-1000}),false);
 });
 
+test('explicit anonymous-derived-work publisher acceptance is a separate, disclosed path',async()=>{
+ const consent={...ready,upstreamCommercialRightsVerified:false,
+  derivedLicenseVerified:false,sourcePriceReconciled:false,
+  accountGoodStandingVerified:false,anonymousScopeIndependentlyConfirmed:false,
+  licensingRiskAcceptedByPublisher:true,
+  rightsBasis:'OFFICIAL_TERMS_DERIVED_WORKS_ANONYMOUS_SCOPE_UNCONFIRMED',
+  sourceTermsUrl:'https://getmarkethistory.com/docs/terms'};
+ assert.equal(eligibleNineR37(consent,baseline,{now,storedAt:now-1000}),true);
+ const upgraded=await addVerifiedNineR37(db(consent),baseline,{now});
+ assert.equal(upgraded.themes.length,10);
+ assert.equal(upgraded.themes[0].etfs[0],'BOTZ');
+ for(const altered of [
+  {licensingRiskAcceptedByPublisher:false},
+  {rightsBasis:'MADE_UP'},
+  {sourceTermsUrl:'https://example.org'},
+  {accountGoodStandingVerified:true},
+  {anonymousScopeIndependentlyConfirmed:true},
+  {derivedLicenseVerified:true},
+  {sourceManifestVerified:false},
+  {privateReplayVerified:false},
+  {publicationAuthorized:false},
+  {derivedOnlyNoRaw:false},
+ ]){
+  assert.equal(eligibleNineR37({...consent,...altered},baseline,
+   {now,storedAt:now-1000}),false,JSON.stringify(altered));
+ }
+});
+
 test('a newer legacy date can never be overwritten by an older R37 score',async()=>{
  const newBase={...baseline,observationDate:'2026-10-26',confirmedObservationDate:'2026-10-26',
   themes:baseline.themes.map(t=>({...t,history:t.history.map((p,i)=>i===251?{...p,date:'2026-10-26'}:p)}))};
