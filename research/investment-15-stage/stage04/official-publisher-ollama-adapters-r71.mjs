@@ -40,15 +40,20 @@ function keywordSlug(keyword, keepAnd = false) {
 
 /** A direct market name must not be a longer, narrower submarket name. */
 export function exactMarketIdentity(title, keyword) {
-  const prefix = String(title).toLowerCase().split(/\b(?:market|industry)\b/)[0];
-  if (!prefix || prefix === String(title).toLowerCase()) return false;
+  const normalizeIdentity = value => String(value).toLowerCase()
+    .replace(/\bcyber[\s-]*security\b/g, 'cybersecurity')
+    .replace(/\bvehicles\b/g, 'vehicle');
+  const normalizedTitle = normalizeIdentity(title);
+  const prefix = normalizedTitle.split(/\b(?:market|industry)\b/)[0];
+  if (!prefix || prefix === normalizedTitle) return false;
   const actual = terms(prefix);
-  const requested = terms(keyword);
+  const requested = terms(normalizeIdentity(keyword));
   if (actual.length !== requested.length) return false;
   if (!requested.length) {
     // "IT Services" loses both words under the ranking stopword list.
     // Keep exact words, including short names, for this edge case.
-    return keywordSlug(prefix.replace(/^\s*global\s+/, '').trim()) === keywordSlug(keyword);
+    return keywordSlug(prefix.replace(/^\s*global\s+/, '').trim()) ===
+      keywordSlug(normalizeIdentity(keyword));
   }
   return actual.every((token, index) => token === requested[index]);
 }
@@ -128,11 +133,16 @@ function provenWholeMarketPeriodLabelVariation(primary, lead, chosen, selected) 
   const primaryPeriods = sourcePeriods(primary);
   const leadPeriods = sourcePeriods(lead);
   const chosenPeriod = sourcePeriod(chosen.excerpt);
-  if (primaryPeriods.length !== 1 || leadPeriods.length !== 1 || !chosenPeriod ||
+  if (primaryPeriods.length !== 1 || !leadPeriods.length || !chosenPeriod ||
       chosenPeriod.join('-') !== primaryPeriods[0].join('-')) return false;
   const [primaryStart, primaryEnd] = primaryPeriods[0];
-  const [leadStart, leadEnd] = leadPeriods[0];
-  if (primaryEnd !== leadEnd || Math.abs(primaryStart - leadStart) !== 1) return false;
+  // R82: a live report lead may itself repeat the *primary* period alongside
+  // its one-year-earlier label. Every lead period must share the exact end
+  // year and differ in start year by at most one; at least one must differ.
+  if (!leadPeriods.some(([start,end]) => end === primaryEnd &&
+        Math.abs(primaryStart - start) === 1) ||
+      !leadPeriods.every(([start,end]) => end === primaryEnd &&
+        Math.abs(primaryStart - start) <= 1)) return false;
   const leadRates = extractCagrCandidates(lead);
   if (!leadRates.length || leadRates.some(rate => Math.abs(rate.pct - chosen.pct) > 0.15))
     return false;
