@@ -322,3 +322,12 @@
 - R26 parser/collector/installer 테스트 11/11, 이전 R23 EIA/R24 USDA/R25 CFTC collector 회귀 15/15 PASS. 로컬 typecheck PASS. Windows CMD ASCII+CRLF, ZIP 7/7 검사 PASS.
 - 다운로드 `MARKET_CALENDAR_R26_TREASURY_PC_INSTALL_20261028.zip`, SHA256 `4dd2f5b8aef361e26520af828067cac9500c3e4c14c71b054c99a5f4d8476833`. 사용자 PC 전체 압축 해제 → `MARKET_CALENDAR_R26_TREASURY_APPLY.cmd` 1회 → `MARKET_CALENDAR_R26_TREASURY_APPLY_RESULT.txt` 제출.
 - 상태 **R26 VERIFIED_SOURCE_AND_CODE_READY / PC INSTALL UNCONFIRMED**. 자연 수집·DB·사이트 공개 미검증. 브랜치는 `codex/zgmini-gpt-workspace-20261025` 단일 유지, 신규 브랜치 생성·main 병합·운영 배포 없음.
+
+## 31. R26 Treasury PC 설치 확인과 R27 TIC 원문 확인 준비 (2026-10-28)
+
+- 사용자 PC 로그 `MARKET_CALENDAR_R26_TREASURY_APPLY_RESULT.txt` 실측: `decision=R26_TREASURY_CALENDAR_INSTALLED_NO_FORCED_COLLECTION`, `phase=INSTALLED`, 소스 HEAD `724bbbf4407363f1f091567ed196cc0bf554bb5e` → `c948f2485a55ed24a3b47f42e6c070af8b1f5a62`. `lib/release-calendar.mjs`, `lib/treasury-calendar.mjs`, `scripts/pc-writer/release-calendar.mjs` 3개만 변경, 원본 백업 있음. GitHub push/강제 수집/게시 없음. 따라서 **R26 PC 설치만 확인**, 자연 예약 수집·DB 반영·사이트 공개는 미검증.
+- R27 대상: 미 재무부 Treasury International Capital (TIC) 공식 발표 일정 `https://home.treasury.gov/data/treasury-international-capital-tic-system/release-dates-of-tic-data`. 월간/분기/연간 발표 종류, 2026·2027 발표일, 기준 시각 미 동부시간 오후 4시. 공식 페이지를 반드시 PC에서 **실제 HTTP 원문 캡처** 후 parser 정규화·편입 판단. 기존 로컬 저장 캐시를 공식 최신 원문으로 간주하지 않음.
+- 브랜치 파일: `scripts/pc-writer/market-calendar-r27-tic-source-export.mjs`, `MARKET_CALENDAR_R27_TIC_SOURCE_EXPORT.cmd`, `README_R27_TIC_SOURCE_EXPORT.txt`, `tests/market-calendar-r27-tic-source-export.test.mjs`, `docs/MARKET_CALENDAR_R27_TIC_SOURCE_REVIEW.md`. 공식 URL로 읽기 전용 HTTP GET **1회**, HTML 최대 3MB, 18초 제한, 리다이렉트 불허, Base64 원문·SHA256·상태 코드 기록. 실패 시 설치·DB 변경 없이 STOP.
+- R27 exporter 전용 테스트 4/4 PASS, R26 exporter 회귀 4/4 PASS, ZIP 전체 3/3 검증 PASS. 배포 ZIP `MARKET_CALENDAR_R27_TIC_SOURCE_EXPORT_20261028.zip`, SHA256 `8df80cf19155762ce2301bb029e116ff62b37a3c550562e522d8fcafae27bf3b`.
+- 사용자는 ZIP 전체 압축 해제 후 `MARKET_CALENDAR_R27_TIC_SOURCE_EXPORT.cmd` **한 번만 실행**하고 `MARKET_CALENDAR_R27_TIC_SOURCE_EXPORT_RESULT.txt`를 제출. 해당 로그를 확인한 뒤에만 R27 parser/collector 및 안전 PC 설치 준비. 현 상태 **R27 READ_ONLY_SOURCE_EXPORT_READY / PC TIC HTTP 미확인 / 수집·DB·사이트 미편입**.
+- 기존 브랜치 `codex/zgmini-gpt-workspace-20261025` 유지, 새 브랜치 없음. 메인 병합/운영 배포/예약 작업 변경/강제 수집·게시/PC DB 변경 없음.
