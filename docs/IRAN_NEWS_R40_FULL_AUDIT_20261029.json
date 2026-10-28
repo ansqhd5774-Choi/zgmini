@@ -1,0 +1,853 @@
+{
+  "version": "IRAN_NEWS_FULL_AUDIT_R40",
+  "checkedAt": "2026-10-28T15:56:48.513Z",
+  "mode": "READ_ONLY_DEVELOPMENT_CLI",
+  "status": "CANDIDATES_INSPECTED_REVIEW_REQUIRED",
+  "sourceCount": 7,
+  "candidatesFound": 80,
+  "candidatesInspected": 80,
+  "candidatesUninspected": 0,
+  "articleFailures": 0,
+  "sourceFeedsFailed": 0,
+  "qualified30Days": 39,
+  "qualified14Days": 35,
+  "allSevenQualified14Days": true,
+  "sourceStatusCounts": {
+    "ARTICLE_OUT_OF_SCOPE": 32,
+    "ARTICLE_METADATA_REVIEWED": 39,
+    "OUTSIDE_30_DAY_WINDOW": 8,
+    "VIDEO_REQUIRES_SEPARATE_REVIEW": 1
+  },
+  "sourceSummary": [
+    {
+      "sourceId": "tasnim",
+      "feedStatus": "READ",
+      "candidatesFound": 13,
+      "inspected": 13,
+      "qualified30Days": 2,
+      "qualified14Days": 2,
+      "requestFailures": 0
+    },
+    {
+      "sourceId": "govuk",
+      "feedStatus": "READ",
+      "candidatesFound": 20,
+      "inspected": 20,
+      "qualified30Days": 1,
+      "qualified14Days": 1,
+      "requestFailures": 0
+    },
+    {
+      "sourceId": "guardian-iran",
+      "feedStatus": "READ",
+      "candidatesFound": 18,
+      "inspected": 18,
+      "qualified30Days": 16,
+      "qualified14Days": 14,
+      "requestFailures": 0
+    },
+    {
+      "sourceId": "dw-world",
+      "feedStatus": "READ",
+      "candidatesFound": 2,
+      "inspected": 2,
+      "qualified30Days": 2,
+      "qualified14Days": 2,
+      "requestFailures": 0
+    },
+    {
+      "sourceId": "bbc-middle-east",
+      "feedStatus": "READ",
+      "candidatesFound": 4,
+      "inspected": 4,
+      "qualified30Days": 3,
+      "qualified14Days": 3,
+      "requestFailures": 0
+    },
+    {
+      "sourceId": "aljazeera",
+      "feedStatus": "READ",
+      "candidatesFound": 13,
+      "inspected": 13,
+      "qualified30Days": 11,
+      "qualified14Days": 11,
+      "requestFailures": 0
+    },
+    {
+      "sourceId": "un-middle-east",
+      "feedStatus": "READ",
+      "candidatesFound": 10,
+      "inspected": 10,
+      "qualified30Days": 4,
+      "qualified14Days": 2,
+      "requestFailures": 0
+    }
+  ],
+  "batches": [
+    {
+      "batchIndex": 1,
+      "candidateStart": 0,
+      "candidates": 21,
+      "processed": 21,
+      "requestCount": 21,
+      "articleFailures": 0
+    },
+    {
+      "batchIndex": 2,
+      "candidateStart": 21,
+      "candidates": 21,
+      "processed": 21,
+      "requestCount": 21,
+      "articleFailures": 0
+    },
+    {
+      "batchIndex": 3,
+      "candidateStart": 42,
+      "candidates": 21,
+      "processed": 21,
+      "requestCount": 20,
+      "articleFailures": 0
+    },
+    {
+      "batchIndex": 4,
+      "candidateStart": 63,
+      "candidates": 17,
+      "processed": 17,
+      "requestCount": 17,
+      "articleFailures": 0
+    }
+  ],
+  "articles": [
+    {
+      "sourceId": "tasnim",
+      "sourceUrl": "https://www.tasnimnews.ir/en/news/2026/10/28/3734720/iran-russia-plan-joint-construction-of-smrs-nuclear-official",
+      "status": "ARTICLE_OUT_OF_SCOPE",
+      "title": "Iran, Russia Plan Joint Construction of SMRs: Nuclear Official",
+      "publisherDeclaredPublishedAt": "2026-10-28T13:11:20.133Z",
+      "bodyVerified": true,
+      "twoStageKeywordsVerified": false
+    },
+    {
+      "sourceId": "govuk",
+      "sourceUrl": "https://www.gov.uk/government/speeches/iran-must-allow-the-return-of-iaea-inspectors-to-all-nuclear-sites",
+      "status": "ARTICLE_METADATA_REVIEWED",
+      "title": "Iran must allow the return of IAEA inspectors to all nuclear sites: UK statement at the UN Security Council",
+      "publisherDeclaredPublishedAt": "2026-10-27T15:51:00.000Z",
+      "bodyVerified": true,
+      "twoStageKeywordsVerified": true
+    },
+    {
+      "sourceId": "tasnim",
+      "sourceUrl": "https://www.tasnimnews.ir/en/news/2026/10/28/3734430/embassy-rejects-kuwait-s-allegations-against-iranian-national",
+      "status": "ARTICLE_OUT_OF_SCOPE",
+      "title": "Embassy Rejects Kuwait’s Allegations against Iranian National",
+      "publisherDeclaredPublishedAt": "2026-10-28T09:15:37.780Z",
+      "bodyVerified": true,
+      "twoStageKeywordsVerified": false
+    },
+    {
+      "sourceId": "govuk",
+      "sourceUrl": "https://www.gov.uk/government/news/change-of-his-majestys-ambassador-to-yemen",
+      "status": "ARTICLE_OUT_OF_SCOPE",
+      "title": "Change of His Majesty’s Ambassador to Yemen",
+      "publisherDeclaredPublishedAt": "2026-10-14T09:56:00.000Z",
+      "bodyVerified": true,
+      "twoStageKeywordsVerified": false
+    },
+    {
+      "sourceId": "tasnim",
+      "sourceUrl": "https://www.tasnimnews.ir/en/news/2026/10/28/3734212/iran-s-foreign-ministry-urges-qatar-to-uphold-requirements-of-mediation",
+      "status": "ARTICLE_METADATA_REVIEWED",
+      "title": "Iran’s Foreign Ministry Urges Qatar to Uphold Requirements of Mediation",
+      "publisherDeclaredPublishedAt": "2026-10-28T06:42:26.700Z",
+      "bodyVerified": true,
+      "twoStageKeywordsVerified": true
+    },
+    {
+      "sourceId": "govuk",
+      "sourceUrl": "https://www.gov.uk/government/news/joint-statement-on-iran-12-october",
+      "status": "ARTICLE_OUT_OF_SCOPE",
+      "title": "Joint Statement on Iran, 12 October",
+      "publisherDeclaredPublishedAt": "2026-10-12T15:06:00.000Z",
+      "bodyVerified": true,
+      "twoStageKeywordsVerified": false
+    },
+    {
+      "sourceId": "tasnim",
+      "sourceUrl": "https://www.tasnimnews.ir/en/news/2026/10/28/3734272/us-diplomacy-built-on-broken-promises-iranian-spokesman",
+      "status": "ARTICLE_OUT_OF_SCOPE",
+      "title": "US Diplomacy Built on Broken Promises: Iranian Spokesman",
+      "publisherDeclaredPublishedAt": "2026-10-28T07:34:52.587Z",
+      "bodyVerified": true,
+      "twoStageKeywordsVerified": false
+    },
+    {
+      "sourceId": "govuk",
+      "sourceUrl": "https://www.gov.uk/government/news/foreign-secretary-statement-on-iran-12-october",
+      "status": "ARTICLE_OUT_OF_SCOPE",
+      "title": "Foreign Secretary statement on Iran, 12 October",
+      "publisherDeclaredPublishedAt": "2026-10-12T14:54:00.000Z",
+      "bodyVerified": true,
+      "twoStageKeywordsVerified": false
+    },
+    {
+      "sourceId": "tasnim",
+      "sourceUrl": "https://www.tasnimnews.ir/en/news/2026/10/28/3734496/iran-s-un-envoy-urges-immediate-end-to-us-embargo-on-cuba",
+      "status": "ARTICLE_OUT_OF_SCOPE",
+      "title": "Iran’s UN Envoy Urges Immediate End to US Embargo on Cuba",
+      "publisherDeclaredPublishedAt": "2026-10-28T10:15:44.077Z",
+      "bodyVerified": true,
+      "twoStageKeywordsVerified": false
+    },
+    {
+      "sourceId": "govuk",
+      "sourceUrl": "https://www.gov.uk/government/speeches/despite-these-vetoes-of-the-panel-of-experts-mandate-un-sanctions-on-iranian-proliferation-remain-fully-in-force-uk-statement-at-the-un-general-assemb",
+      "status": "ARTICLE_OUT_OF_SCOPE",
+      "title": "Despite these vetoes of the Panel of Experts’ mandate, UN sanctions on Iranian proliferation remain fully in force: UK statement at the UN General Assembly",
+      "publisherDeclaredPublishedAt": "2026-10-01T15:20:17.000Z",
+      "bodyVerified": true,
+      "twoStageKeywordsVerified": false
+    },
+    {
+      "sourceId": "tasnim",
+      "sourceUrl": "https://www.tasnimnews.ir/en/news/2026/10/28/3734332/iran-egypt-stress-regional-consultations-to-ease-tensions",
+      "status": "ARTICLE_OUT_OF_SCOPE",
+      "title": "Iran, Egypt Stress Regional Consultations to Ease Tensions",
+      "publisherDeclaredPublishedAt": "2026-10-28T07:58:40.030Z",
+      "bodyVerified": true,
+      "twoStageKeywordsVerified": false
+    },
+    {
+      "sourceId": "govuk",
+      "sourceUrl": "https://www.gov.uk/government/news/operational-update-20-october-uk-military-support-to-the-kingdom-of-saudi-arabia",
+      "status": "ARTICLE_OUT_OF_SCOPE",
+      "title": "Operational update 20 October – UK military support to the Kingdom of Saudi Arabia",
+      "publisherDeclaredPublishedAt": "2026-10-20T10:59:00.000Z",
+      "bodyVerified": true,
+      "twoStageKeywordsVerified": false
+    },
+    {
+      "sourceId": "tasnim",
+      "sourceUrl": "https://www.tasnimnews.ir/en/news/2026/10/28/3734346/iran-jordan-stress-need-to-curb-israeli-expansionism",
+      "status": "ARTICLE_OUT_OF_SCOPE",
+      "title": "Iran, Jordan Stress Need to Curb Israeli Expansionism",
+      "publisherDeclaredPublishedAt": "2026-10-28T08:14:18.087Z",
+      "bodyVerified": true,
+      "twoStageKeywordsVerified": false
+    },
+    {
+      "sourceId": "govuk",
+      "sourceUrl": "https://www.gov.uk/government/speeches/the-united-kingdom-unequivocally-condemns-the-dangerous-escalation-by-the-houthis-in-yemen-uk-statement-at-the-un-security-council",
+      "status": "ARTICLE_OUT_OF_SCOPE",
+      "title": "The United Kingdom unequivocally condemns the dangerous escalation by the Houthis in Yemen: UK statement at the UN Security Council",
+      "publisherDeclaredPublishedAt": "2026-10-09T15:54:00.000Z",
+      "bodyVerified": true,
+      "twoStageKeywordsVerified": false
+    },
+    {
+      "sourceId": "tasnim",
+      "sourceUrl": "https://www.tasnimnews.ir/en/news/2026/10/27/3733712/iran-qatar-discuss-energy-cooperation-in-moscow",
+      "status": "ARTICLE_OUT_OF_SCOPE",
+      "title": "Iran, Qatar Discuss Energy Cooperation in Moscow",
+      "publisherDeclaredPublishedAt": "2026-10-27T12:06:34.870Z",
+      "bodyVerified": true,
+      "twoStageKeywordsVerified": false
+    },
+    {
+      "sourceId": "govuk",
+      "sourceUrl": "https://www.gov.uk/government/news/uk-military-support-to-the-kingdom-of-saudi-arabia",
+      "status": "ARTICLE_OUT_OF_SCOPE",
+      "title": "UK military support to the Kingdom of Saudi Arabia",
+      "publisherDeclaredPublishedAt": "2026-09-22T08:56:00.000Z",
+      "bodyVerified": true,
+      "twoStageKeywordsVerified": false
+    },
+    {
+      "sourceId": "tasnim",
+      "sourceUrl": "https://www.tasnimnews.ir/en/news/2026/10/27/3733689/iran-warns-of-legal-action-against-sinokor-shipping-vessels",
+      "status": "ARTICLE_OUT_OF_SCOPE",
+      "title": "Iran Warns of Legal Action against Sinokor Shipping Vessels",
+      "publisherDeclaredPublishedAt": "2026-10-27T11:56:07.197Z",
+      "bodyVerified": true,
+      "twoStageKeywordsVerified": false
+    },
+    {
+      "sourceId": "tasnim",
+      "sourceUrl": "https://www.tasnimnews.ir/en/news/2026/10/27/3733652/leader-stresses-iran-s-continued-management-of-strait-of-hormuz",
+      "status": "ARTICLE_METADATA_REVIEWED",
+      "title": "Leader Stresses Iran’s Continued Management of Strait of Hormuz",
+      "publisherDeclaredPublishedAt": "2026-10-27T11:10:44.503Z",
+      "bodyVerified": true,
+      "twoStageKeywordsVerified": true
+    },
+    {
+      "sourceId": "tasnim",
+      "sourceUrl": "https://www.tasnimnews.ir/en/news/2026/10/27/3733799/president-urges-gas-cooperation-cites-iran-s-300-bcm-production-capacity",
+      "status": "ARTICLE_OUT_OF_SCOPE",
+      "title": "President Urges Gas Cooperation, Cites Iran’s 300-Bcm Production Capacity",
+      "publisherDeclaredPublishedAt": "2026-10-27T13:11:33.763Z",
+      "bodyVerified": true,
+      "twoStageKeywordsVerified": false
+    },
+    {
+      "sourceId": "tasnim",
+      "sourceUrl": "https://www.tasnimnews.ir/en/news/2026/10/27/3733405/several-terrorists-arrested-in-se-iran",
+      "status": "ARTICLE_OUT_OF_SCOPE",
+      "title": "Several Terrorists Arrested in SE Iran",
+      "publisherDeclaredPublishedAt": "2026-10-27T08:19:58.057Z",
+      "bodyVerified": true,
+      "twoStageKeywordsVerified": false
+    },
+    {
+      "sourceId": "tasnim",
+      "sourceUrl": "https://www.tasnimnews.ir/en/news/2026/10/27/3733456/top-iranian-turkmen-diplomats-discuss-regional-developments",
+      "status": "ARTICLE_OUT_OF_SCOPE",
+      "title": "Top Iranian, Turkmen Diplomats Discuss Regional Developments",
+      "publisherDeclaredPublishedAt": "2026-10-27T08:47:32.937Z",
+      "bodyVerified": true,
+      "twoStageKeywordsVerified": false
+    },
+    {
+      "sourceId": "govuk",
+      "sourceUrl": "https://www.gov.uk/government/news/london-popcorn-maker-pops-into-saudi-arabia-with-government-insurance",
+      "status": "ARTICLE_OUT_OF_SCOPE",
+      "title": "London popcorn maker pops into Saudi Arabia with government insurance",
+      "publisherDeclaredPublishedAt": "2026-09-21T09:11:00.000Z",
+      "bodyVerified": true,
+      "twoStageKeywordsVerified": false
+    },
+    {
+      "sourceId": "guardian-iran",
+      "sourceUrl": "https://www.theguardian.com/commentisfree/2026/oct/28/donald-trump-iran-midterms-politics-diplomacy",
+      "status": "ARTICLE_METADATA_REVIEWED",
+      "title": "Trump is in a corner and likely to lash out at Iran again. Here’s how to avert that disaster",
+      "publisherDeclaredPublishedAt": "2026-10-28T06:00:02.000Z",
+      "bodyVerified": true,
+      "twoStageKeywordsVerified": true
+    },
+    {
+      "sourceId": "govuk",
+      "sourceUrl": "https://www.gov.uk/government/speeches/the-houthis-bear-full-responsibility-for-the-escalation-in-yemen-uk-statement-at-the-un-security-council",
+      "status": "OUTSIDE_30_DAY_WINDOW",
+      "title": "The Houthis bear full responsibility for the escalation in Yemen: UK statement at the UN Security Council",
+      "publisherDeclaredPublishedAt": "2026-09-15T20:07:00.000Z",
+      "bodyVerified": true,
+      "twoStageKeywordsVerified": true
+    },
+    {
+      "sourceId": "guardian-iran",
+      "sourceUrl": "https://www.theguardian.com/world/2026/oct/28/gulf-states-multipart-peace-deal-avert-renewal-us-iran-war",
+      "status": "ARTICLE_METADATA_REVIEWED",
+      "title": "Gulf states working on multipart peace deal to avert renewal of US-Iran war",
+      "publisherDeclaredPublishedAt": "2026-10-28T05:00:55.000Z",
+      "bodyVerified": true,
+      "twoStageKeywordsVerified": true
+    },
+    {
+      "sourceId": "govuk",
+      "sourceUrl": "https://www.gov.uk/government/speeches/the-united-kingdom-strongly-condemns-the-houthis-decision-to-resume-conflict-in-yemen-and-their-continued-strikes-on-saudi-arabia-uk-statement-at-the-",
+      "status": "ARTICLE_OUT_OF_SCOPE",
+      "title": "The United Kingdom strongly condemns the Houthis’ decision to resume conflict in Yemen and their continued strikes on Saudi Arabia: UK statement at the UN Security Council",
+      "publisherDeclaredPublishedAt": "2026-09-10T20:13:00.000Z",
+      "bodyVerified": true,
+      "twoStageKeywordsVerified": false
+    },
+    {
+      "sourceId": "guardian-iran",
+      "sourceUrl": "https://www.theguardian.com/global-development/2026/oct/27/fears-grow-for-iranian-athletes-on-death-row-as-mountaineer-latest-to-be-hanged",
+      "status": "ARTICLE_OUT_OF_SCOPE",
+      "title": "Fears grow for Iranian athletes on death row as mountaineer latest to be hanged",
+      "publisherDeclaredPublishedAt": "2026-10-27T09:30:30.000Z",
+      "bodyVerified": true,
+      "twoStageKeywordsVerified": false
+    },
+    {
+      "sourceId": "govuk",
+      "sourceUrl": "https://www.gov.uk/government/news/fcdo-statement-on-the-situation-in-yemen-10-september",
+      "status": "ARTICLE_OUT_OF_SCOPE",
+      "title": "FCDO statement on the situation in Yemen: 10 September",
+      "publisherDeclaredPublishedAt": "2026-09-10T09:38:00.000Z",
+      "bodyVerified": true,
+      "twoStageKeywordsVerified": false
+    },
+    {
+      "sourceId": "guardian-iran",
+      "sourceUrl": "https://www.theguardian.com/world/2026/oct/26/netanyahu-reportedly-pressured-israel-military-attack-iran-runup-to-election",
+      "status": "ARTICLE_METADATA_REVIEWED",
+      "title": "Netanyahu reportedly pressured military to attack Iran in run-up to election",
+      "publisherDeclaredPublishedAt": "2026-10-26T19:21:36.000Z",
+      "bodyVerified": true,
+      "twoStageKeywordsVerified": true
+    },
+    {
+      "sourceId": "govuk",
+      "sourceUrl": "https://www.gov.uk/government/news/saudi-arabia-special-educational-needs-market-assessment-call-for-concept-notes-2026-to-2027",
+      "status": "OUTSIDE_30_DAY_WINDOW",
+      "title": "Saudi Arabia: Special Educational Needs market assessment call for concept notes 2026 to 2027",
+      "publisherDeclaredPublishedAt": "2026-09-04T08:27:15.000Z",
+      "bodyVerified": true,
+      "twoStageKeywordsVerified": true
+    },
+    {
+      "sourceId": "guardian-iran",
+      "sourceUrl": "https://www.theguardian.com/world/2026/oct/26/saudi-pakistani-turkish-delegation-iran-avert-flare-up-conflict-us",
+      "status": "ARTICLE_METADATA_REVIEWED",
+      "title": "Middle East peace held back by US insistence that Iran is a threat, Oman’s foreign minister says",
+      "publisherDeclaredPublishedAt": "2026-10-26T19:12:09.000Z",
+      "bodyVerified": true,
+      "twoStageKeywordsVerified": true
+    },
+    {
+      "sourceId": "govuk",
+      "sourceUrl": "https://www.gov.uk/government/news/uk-steps-up-humanitarian-support-for-vulnerable-civilians-in-yemen-following-houthi-escalation",
+      "status": "OUTSIDE_30_DAY_WINDOW",
+      "title": "UK steps up humanitarian support for vulnerable civilians in Yemen following Houthi escalation",
+      "publisherDeclaredPublishedAt": "2026-09-25T12:52:00.000Z",
+      "bodyVerified": true,
+      "twoStageKeywordsVerified": true
+    },
+    {
+      "sourceId": "guardian-iran",
+      "sourceUrl": "https://www.theguardian.com/world/2026/oct/23/european-middle-eastern-ministers-summit-iran-us-israel",
+      "status": "ARTICLE_METADATA_REVIEWED",
+      "title": "US and Israel are warned against launching fresh strikes on Iran",
+      "publisherDeclaredPublishedAt": "2026-10-23T17:18:34.000Z",
+      "bodyVerified": true,
+      "twoStageKeywordsVerified": true
+    },
+    {
+      "sourceId": "govuk",
+      "sourceUrl": "https://www.gov.uk/government/speeches/iran-must-cease-its-long-standing-support-for-the-houthis-uk-statement-at-the-un-security-council",
+      "status": "ARTICLE_OUT_OF_SCOPE",
+      "title": "Reckless Houthi actions have triggered a serious escalation of violence in the region: UK statement at the UN Security Council",
+      "publisherDeclaredPublishedAt": "2026-08-13T14:41:00.000Z",
+      "bodyVerified": true,
+      "twoStageKeywordsVerified": false
+    },
+    {
+      "sourceId": "guardian-iran",
+      "sourceUrl": "https://www.theguardian.com/business/2026/oct/23/oil-five-month-high-fears-us-renews-strikes-iran",
+      "status": "ARTICLE_METADATA_REVIEWED",
+      "title": "Oil price rises above $117 a barrel amid fears US will renew strikes on Iran",
+      "publisherDeclaredPublishedAt": "2026-10-23T16:48:28.000Z",
+      "bodyVerified": true,
+      "twoStageKeywordsVerified": true
+    },
+    {
+      "sourceId": "govuk",
+      "sourceUrl": "https://www.gov.uk/government/news/fcdo-statement-on-houthi-threats-against-saudi-arabia",
+      "status": "ARTICLE_OUT_OF_SCOPE",
+      "title": "FCDO Statement on Houthi threats against Saudi Arabia",
+      "publisherDeclaredPublishedAt": "2026-07-21T21:04:00.000Z",
+      "bodyVerified": true,
+      "twoStageKeywordsVerified": false
+    },
+    {
+      "sourceId": "guardian-iran",
+      "sourceUrl": "https://www.theguardian.com/politics/2026/oct/22/reform-farage-donor-business-ties-iran-ayatollahs",
+      "status": "ARTICLE_METADATA_REVIEWED",
+      "title": "Revealed: billionaire Reform donor was in business with foundation linked to Iranian regime",
+      "publisherDeclaredPublishedAt": "2026-10-22T16:39:49.000Z",
+      "bodyVerified": true,
+      "twoStageKeywordsVerified": true
+    },
+    {
+      "sourceId": "govuk",
+      "sourceUrl": "https://www.gov.uk/government/speeches/the-united-kingdom-condemns-in-the-strongest-terms-todays-houthi-attacks-against-saudi-arabia-uk-statement-at-the-un-security-council",
+      "status": "OUTSIDE_30_DAY_WINDOW",
+      "title": "The United Kingdom condemns in the strongest terms today’s Houthi attacks against Saudi Arabia: UK statement at the UN Security Council",
+      "publisherDeclaredPublishedAt": "2026-07-13T19:29:00.000Z",
+      "bodyVerified": true,
+      "twoStageKeywordsVerified": true
+    },
+    {
+      "sourceId": "guardian-iran",
+      "sourceUrl": "https://www.theguardian.com/world/2026/oct/22/iran-threatens-seven-gulf-countries-us-israel-renew-attacks",
+      "status": "ARTICLE_METADATA_REVIEWED",
+      "title": "Iran threatens to strike oil and AI facilities across Gulf if US and Israel renew attacks",
+      "publisherDeclaredPublishedAt": "2026-10-22T15:03:00.000Z",
+      "bodyVerified": true,
+      "twoStageKeywordsVerified": true
+    },
+    {
+      "sourceId": "govuk",
+      "sourceUrl": "https://www.gov.uk/government/speeches/the-uk-provided-over-190m-towards-the-humanitarian-response-in-yemen-and-we-remain-committed-to-working-collectively-with-partners-to-reach-those-most",
+      "status": "OUTSIDE_30_DAY_WINDOW",
+      "title": "The UK provided over $190m towards the humanitarian response in Yemen, and we remain committed to working collectively with partners to reach those most in need: UK statement at the UN Security Council",
+      "publisherDeclaredPublishedAt": "2026-06-16T17:49:04.000Z",
+      "bodyVerified": true,
+      "twoStageKeywordsVerified": true
+    },
+    {
+      "sourceId": "govuk",
+      "sourceUrl": "https://www.gov.uk/government/news/pm-call-with-the-crown-prince-of-saudi-arabia-27-july-2026",
+      "status": "ARTICLE_OUT_OF_SCOPE",
+      "title": "PM call with the Crown Prince of Saudi Arabia: 27 July 2026",
+      "publisherDeclaredPublishedAt": "2026-07-27T15:50:00.000Z",
+      "bodyVerified": true,
+      "twoStageKeywordsVerified": false
+    },
+    {
+      "sourceId": "govuk",
+      "sourceUrl": "https://www.gov.uk/government/speeches/recent-houthi-attacks-against-israel-threaten-to-further-destabilise-the-region-and-undermine-yemens-security-uk-statement-at-the-un-security-council",
+      "status": "OUTSIDE_30_DAY_WINDOW",
+      "title": "Recent Houthi attacks against Israel threaten to further destabilise the region and undermine Yemen’s security: UK statement at the UN Security Council",
+      "publisherDeclaredPublishedAt": "2026-04-14T15:05:54.000Z",
+      "bodyVerified": true,
+      "twoStageKeywordsVerified": true
+    },
+    {
+      "sourceId": "guardian-iran",
+      "sourceUrl": "https://www.theguardian.com/world/2026/oct/22/us-diplomats-told-to-leave-saudi-arabia-amid-houthi-attacks",
+      "status": "ARTICLE_METADATA_REVIEWED",
+      "title": "Some US diplomats told to leave Saudi Arabia amid Houthi attacks",
+      "publisherDeclaredPublishedAt": "2026-10-22T13:05:30.000Z",
+      "bodyVerified": true,
+      "twoStageKeywordsVerified": true
+    },
+    {
+      "sourceId": "dw-world",
+      "sourceUrl": "https://www.dw.com/en/is-iran-headed-to-war-or-peace-after-mecca-alliance-meeting/a-79788256",
+      "status": "ARTICLE_METADATA_REVIEWED",
+      "title": "Is Iran moving toward war or peace after Mecca alliance meeting in Tehran?",
+      "publisherDeclaredPublishedAt": "2026-10-28T14:20:29.539Z",
+      "bodyVerified": true,
+      "twoStageKeywordsVerified": true
+    },
+    {
+      "sourceId": "bbc-middle-east",
+      "sourceUrl": "https://www.bbc.co.uk/news/articles/c9p8g7e4k2xjo",
+      "status": "ARTICLE_METADATA_REVIEWED",
+      "title": "Forty Iranian sailors stranded off Sri Lanka coast rescued",
+      "publisherDeclaredPublishedAt": "2026-10-26T03:47:28.561Z",
+      "bodyVerified": true,
+      "twoStageKeywordsVerified": true
+    },
+    {
+      "sourceId": "aljazeera",
+      "sourceUrl": "https://www.aljazeera.com/news/2026/10/28/are-gcc-countries-looking-for-a-regional-security-pact-with-iran",
+      "status": "ARTICLE_METADATA_REVIEWED",
+      "title": "Are GCC countries looking for a regional security pact with Iran?",
+      "publisherDeclaredPublishedAt": "2026-10-28T14:51:14.000Z",
+      "bodyVerified": true,
+      "twoStageKeywordsVerified": true
+    },
+    {
+      "sourceId": "guardian-iran",
+      "sourceUrl": "https://www.theguardian.com/business/2026/mar/04/maritime-and-port-workers-how-is-the-middle-east-conflict-affecting-you",
+      "status": "ARTICLE_OUT_OF_SCOPE",
+      "title": "Maritime and port workers: how is the Middle East conflict affecting you?",
+      "publisherDeclaredPublishedAt": "2026-10-22T10:18:30.000Z",
+      "bodyVerified": true,
+      "twoStageKeywordsVerified": false
+    },
+    {
+      "sourceId": "dw-world",
+      "sourceUrl": "https://www.dw.com/en/will-elections-in-israel-change-its-iran-approach/a-79776122",
+      "status": "ARTICLE_METADATA_REVIEWED",
+      "title": "Will elections in Israel change its Iran approach?",
+      "publisherDeclaredPublishedAt": "2026-10-27T13:31:42.632Z",
+      "bodyVerified": true,
+      "twoStageKeywordsVerified": true
+    },
+    {
+      "sourceId": "bbc-middle-east",
+      "sourceUrl": "https://www.bbc.co.uk/news/articles/cmn8w1ddg2x9o",
+      "status": "ARTICLE_METADATA_REVIEWED",
+      "title": "Iran trying harder to target US personnel in Middle East, intelligence chief warns",
+      "publisherDeclaredPublishedAt": "2026-10-24T07:36:02.446Z",
+      "bodyVerified": true,
+      "twoStageKeywordsVerified": true
+    },
+    {
+      "sourceId": "aljazeera",
+      "sourceUrl": "https://www.aljazeera.com/news/2026/10/28/iran-faces-espionage-attempts-but-using-threat-for-crackdown-on-opponents",
+      "status": "ARTICLE_METADATA_REVIEWED",
+      "title": "Espionage threats blur lines between security and dissent in Iran",
+      "publisherDeclaredPublishedAt": "2026-10-28T14:03:08.000Z",
+      "bodyVerified": true,
+      "twoStageKeywordsVerified": true
+    },
+    {
+      "sourceId": "guardian-iran",
+      "sourceUrl": "https://www.theguardian.com/artanddesign/2026/oct/21/strait-of-hormuz-life-amid-wartime-iran",
+      "status": "ARTICLE_METADATA_REVIEWED",
+      "title": "Troubled waters: life during wartime for Iranians on the strait of Hormuz",
+      "publisherDeclaredPublishedAt": "2026-10-21T05:00:02.000Z",
+      "bodyVerified": true,
+      "twoStageKeywordsVerified": true
+    },
+    {
+      "sourceId": "bbc-middle-east",
+      "sourceUrl": "https://www.bbc.co.uk/news/articles/cr5ynl63v0pyo",
+      "status": "ARTICLE_METADATA_REVIEWED",
+      "title": "Newborn twins fight for survival as conflict fuels Yemen's hunger crisis",
+      "publisherDeclaredPublishedAt": "2026-10-22T15:56:36.251Z",
+      "bodyVerified": true,
+      "twoStageKeywordsVerified": true
+    },
+    {
+      "sourceId": "aljazeera",
+      "sourceUrl": "https://www.aljazeera.com/news/2026/3/1/what-are-irans-weapons-as-it-fights-the-us-and-israel",
+      "status": "OUTSIDE_30_DAY_WINDOW",
+      "title": "What are Iran’s weapons as it fights the US and Israel?",
+      "publisherDeclaredPublishedAt": "2026-03-01T23:56:48.000Z",
+      "bodyVerified": true,
+      "twoStageKeywordsVerified": true
+    },
+    {
+      "sourceId": "guardian-iran",
+      "sourceUrl": "https://www.theguardian.com/uk-news/2026/oct/20/two-men-re-arrested-on-suspicion-of-aiding-iran-over-raf-fairford-incident",
+      "status": "ARTICLE_METADATA_REVIEWED",
+      "title": "Two men re-arrested on suspicion of aiding Iran over RAF Fairford incident",
+      "publisherDeclaredPublishedAt": "2026-10-20T17:54:11.000Z",
+      "bodyVerified": true,
+      "twoStageKeywordsVerified": true
+    },
+    {
+      "sourceId": "bbc-middle-east",
+      "sourceUrl": "https://www.bbc.co.uk/news/videos/cqx298yx4k48o",
+      "status": "VIDEO_REQUIRES_SEPARATE_REVIEW",
+      "title": null,
+      "publisherDeclaredPublishedAt": null,
+      "bodyVerified": false,
+      "twoStageKeywordsVerified": false
+    },
+    {
+      "sourceId": "aljazeera",
+      "sourceUrl": "https://www.aljazeera.com/news/2026/3/1/who-are-the-council-members-temporarily-in-charge-of-iran",
+      "status": "OUTSIDE_30_DAY_WINDOW",
+      "title": "Who are the council members temporarily in charge of Iran?",
+      "publisherDeclaredPublishedAt": "2026-03-01T15:47:10.000Z",
+      "bodyVerified": true,
+      "twoStageKeywordsVerified": true
+    },
+    {
+      "sourceId": "guardian-iran",
+      "sourceUrl": "https://www.theguardian.com/us-news/ng-interactive/2026/oct/20/voter-issues-midterms-elections",
+      "status": "ARTICLE_METADATA_REVIEWED",
+      "title": "From Iran to AI: the six key voter issues shaping the US midterm elections",
+      "publisherDeclaredPublishedAt": "2026-10-20T16:52:16.000Z",
+      "bodyVerified": true,
+      "twoStageKeywordsVerified": true
+    },
+    {
+      "sourceId": "aljazeera",
+      "sourceUrl": "https://www.aljazeera.com/news/2026/10/28/netanyahu-outlines-achievements-future-plans-as-likud-leads-polls",
+      "status": "ARTICLE_METADATA_REVIEWED",
+      "title": "Netanyahu outlines achievements, future plans as Likud leads Israeli polls",
+      "publisherDeclaredPublishedAt": "2026-10-28T06:02:00.000Z",
+      "bodyVerified": true,
+      "twoStageKeywordsVerified": true
+    },
+    {
+      "sourceId": "guardian-iran",
+      "sourceUrl": "https://www.theguardian.com/world/2026/oct/19/strait-of-hormuz-spilt-cargo-iran-attacks-container-ships",
+      "status": "ARTICLE_METADATA_REVIEWED",
+      "title": "People scour strait of Hormuz for spilt cargo after Iran attacks container ships",
+      "publisherDeclaredPublishedAt": "2026-10-19T14:48:56.000Z",
+      "bodyVerified": true,
+      "twoStageKeywordsVerified": true
+    },
+    {
+      "sourceId": "aljazeera",
+      "sourceUrl": "https://www.aljazeera.com/news/2026/10/27/irans-calculations-as-us-escalation-looms-trust-midterms-hormuz",
+      "status": "ARTICLE_METADATA_REVIEWED",
+      "title": "Iran’s calculations as US escalation looms: Trust, midterms, Hormuz",
+      "publisherDeclaredPublishedAt": "2026-10-27T15:26:59.000Z",
+      "bodyVerified": true,
+      "twoStageKeywordsVerified": true
+    },
+    {
+      "sourceId": "guardian-iran",
+      "sourceUrl": "https://www.theguardian.com/world/2026/oct/15/houthi-missiles-strike-aden-yemen",
+      "status": "ARTICLE_METADATA_REVIEWED",
+      "title": "Houthi missiles strike Yemen presidential palace, killing five",
+      "publisherDeclaredPublishedAt": "2026-10-16T00:27:21.000Z",
+      "bodyVerified": true,
+      "twoStageKeywordsVerified": true
+    },
+    {
+      "sourceId": "guardian-iran",
+      "sourceUrl": "https://www.theguardian.com/world/2026/oct/14/container-ship-sinks-strait-of-hormuz-surge-iranian-attacks-iran-us-midterm-elections",
+      "status": "ARTICLE_METADATA_REVIEWED",
+      "title": "Two container ships sink near strait of Hormuz amid surge in Iranian attacks",
+      "publisherDeclaredPublishedAt": "2026-10-14T17:05:42.000Z",
+      "bodyVerified": true,
+      "twoStageKeywordsVerified": true
+    },
+    {
+      "sourceId": "guardian-iran",
+      "sourceUrl": "https://www.theguardian.com/artanddesign/2026/oct/14/iran-art-scene-continuum-dario-duran-interview",
+      "status": "ARTICLE_METADATA_REVIEWED",
+      "title": "‘I must continue until I die’: inside the fight to bring Iran’s thriving art scene to the world",
+      "publisherDeclaredPublishedAt": "2026-10-14T14:00:05.000Z",
+      "bodyVerified": true,
+      "twoStageKeywordsVerified": true
+    },
+    {
+      "sourceId": "aljazeera",
+      "sourceUrl": "https://www.aljazeera.com/news/2026/10/27/qatars-emir-meets-irans-pezeshkian-in-moscow",
+      "status": "ARTICLE_METADATA_REVIEWED",
+      "title": "Qatar’s Emir meets Iran’s Pezeshkian in Moscow",
+      "publisherDeclaredPublishedAt": "2026-10-27T13:26:32.000Z",
+      "bodyVerified": true,
+      "twoStageKeywordsVerified": true
+    },
+    {
+      "sourceId": "un-middle-east",
+      "sourceUrl": "https://news.un.org/en/story/2026/10/1168654",
+      "status": "ARTICLE_METADATA_REVIEWED",
+      "title": "Yemen: Deepening concerns for Taiz City as aid is blocked from entering",
+      "publisherDeclaredPublishedAt": "2026-10-23T12:45:15.000Z",
+      "bodyVerified": true,
+      "twoStageKeywordsVerified": true
+    },
+    {
+      "sourceId": "aljazeera",
+      "sourceUrl": "https://www.aljazeera.com/news/2026/10/27/iranians-will-their-eyes-on-the-sky-for-bomb-when-israeli-us-elections-end",
+      "status": "ARTICLE_METADATA_REVIEWED",
+      "title": "Iranians brace for renewed attacks after Israeli, US elections",
+      "publisherDeclaredPublishedAt": "2026-10-27T13:23:32.000Z",
+      "bodyVerified": true,
+      "twoStageKeywordsVerified": true
+    },
+    {
+      "sourceId": "un-middle-east",
+      "sourceUrl": "https://news.un.org/en/story/2026/10/1168629",
+      "status": "ARTICLE_METADATA_REVIEWED",
+      "title": "Yemen war continues to force families from homes amid hunger and disease",
+      "publisherDeclaredPublishedAt": "2026-10-20T12:00:40.000Z",
+      "bodyVerified": true,
+      "twoStageKeywordsVerified": true
+    },
+    {
+      "sourceId": "aljazeera",
+      "sourceUrl": "https://www.aljazeera.com/news/2026/10/26/africa-food-security-under-threat-due-to-iran-war-warn-trade-officials",
+      "status": "ARTICLE_METADATA_REVIEWED",
+      "title": "Africa food security under threat due to Iran war, trade officials warn",
+      "publisherDeclaredPublishedAt": "2026-10-26T21:42:18.000Z",
+      "bodyVerified": true,
+      "twoStageKeywordsVerified": true
+    },
+    {
+      "sourceId": "un-middle-east",
+      "sourceUrl": "https://news.un.org/en/story/2026/10/1168591",
+      "status": "ARTICLE_OUT_OF_SCOPE",
+      "title": "Yemen: WFP warns of potential ‘humanitarian catastrophe’ as fighting blocks aid delivery",
+      "publisherDeclaredPublishedAt": "2026-10-14T12:41:11.000Z",
+      "bodyVerified": true,
+      "twoStageKeywordsVerified": false
+    },
+    {
+      "sourceId": "aljazeera",
+      "sourceUrl": "https://www.aljazeera.com/news/2026/10/26/mecca-defence-alliance-members-in-tehran-to-defuse-iran-us-yemen-tensions",
+      "status": "ARTICLE_METADATA_REVIEWED",
+      "title": "Mecca defence alliance members in Tehran to defuse Iran-US, Yemen tensions",
+      "publisherDeclaredPublishedAt": "2026-10-26T14:38:50.000Z",
+      "bodyVerified": true,
+      "twoStageKeywordsVerified": true
+    },
+    {
+      "sourceId": "un-middle-east",
+      "sourceUrl": "https://news.un.org/en/story/2026/10/1168590",
+      "status": "ARTICLE_OUT_OF_SCOPE",
+      "title": "WHO calls for urgent health action across the Eastern Mediterranean",
+      "publisherDeclaredPublishedAt": "2026-10-14T12:35:12.000Z",
+      "bodyVerified": true,
+      "twoStageKeywordsVerified": false
+    },
+    {
+      "sourceId": "aljazeera",
+      "sourceUrl": "https://www.aljazeera.com/news/2026/10/26/irans-anti-negotiation-hardliners-turn-against-president-pezeshkian",
+      "status": "ARTICLE_METADATA_REVIEWED",
+      "title": "Iran’s anti-negotiation hardliners turn against President Pezeshkian",
+      "publisherDeclaredPublishedAt": "2026-10-26T14:27:33.000Z",
+      "bodyVerified": true,
+      "twoStageKeywordsVerified": true
+    },
+    {
+      "sourceId": "un-middle-east",
+      "sourceUrl": "https://news.un.org/en/story/2026/10/1168589",
+      "status": "ARTICLE_METADATA_REVIEWED",
+      "title": "Yemen: Houthi siege, cholera outbreak and aid cuts put civilians in the crosshairs",
+      "publisherDeclaredPublishedAt": "2026-10-13T20:30:23.000Z",
+      "bodyVerified": true,
+      "twoStageKeywordsVerified": true
+    },
+    {
+      "sourceId": "aljazeera",
+      "sourceUrl": "https://www.aljazeera.com/news/2026/10/26/has-pakistan-reopened-its-border-with-iran-for-trade",
+      "status": "ARTICLE_METADATA_REVIEWED",
+      "title": "Has Pakistan reopened its border with Iran for trade?",
+      "publisherDeclaredPublishedAt": "2026-10-26T13:01:16.000Z",
+      "bodyVerified": true,
+      "twoStageKeywordsVerified": true
+    },
+    {
+      "sourceId": "un-middle-east",
+      "sourceUrl": "https://news.un.org/en/story/2026/10/1168559",
+      "status": "ARTICLE_METADATA_REVIEWED",
+      "title": "Security Council LIVE: Yemen has fallen back into full-scale war, warns UN envoy",
+      "publisherDeclaredPublishedAt": "2026-10-09T13:36:15.000Z",
+      "bodyVerified": true,
+      "twoStageKeywordsVerified": true
+    },
+    {
+      "sourceId": "aljazeera",
+      "sourceUrl": "https://www.aljazeera.com/news/2026/10/26/officials-from-mecca-pact-states-to-hold-talks-in-iran-amid-regional-tensions",
+      "status": "ARTICLE_METADATA_REVIEWED",
+      "title": "Iran, Saudi Arabia, Turkiye and Pakistan agree to continue talks for peace",
+      "publisherDeclaredPublishedAt": "2026-10-26T07:33:47.000Z",
+      "bodyVerified": true,
+      "twoStageKeywordsVerified": true
+    },
+    {
+      "sourceId": "un-middle-east",
+      "sourceUrl": "https://news.un.org/en/story/2026/10/1168541",
+      "status": "ARTICLE_OUT_OF_SCOPE",
+      "title": "Critical funding gap threatens health response in Yemen",
+      "publisherDeclaredPublishedAt": "2026-10-07T12:16:40.000Z",
+      "bodyVerified": true,
+      "twoStageKeywordsVerified": false
+    },
+    {
+      "sourceId": "un-middle-east",
+      "sourceUrl": "https://news.un.org/en/story/2026/10/1168528",
+      "status": "ARTICLE_OUT_OF_SCOPE",
+      "title": "More than 184,000 displaced as fighting intensifies in Yemen",
+      "publisherDeclaredPublishedAt": "2026-10-05T19:54:21.000Z",
+      "bodyVerified": true,
+      "twoStageKeywordsVerified": false
+    },
+    {
+      "sourceId": "un-middle-east",
+      "sourceUrl": "https://news.un.org/en/story/2026/10/1168509",
+      "status": "ARTICLE_OUT_OF_SCOPE",
+      "title": "Escalating fighting in Yemen deepens food security crisis",
+      "publisherDeclaredPublishedAt": "2026-10-02T12:39:40.000Z",
+      "bodyVerified": true,
+      "twoStageKeywordsVerified": false
+    },
+    {
+      "sourceId": "un-middle-east",
+      "sourceUrl": "https://news.un.org/en/story/2026/09/1168480",
+      "status": "ARTICLE_OUT_OF_SCOPE",
+      "title": "Yemen escalation fuels fears of further cholera, measles spread",
+      "publisherDeclaredPublishedAt": "2026-09-29T11:21:11.000Z",
+      "bodyVerified": true,
+      "twoStageKeywordsVerified": false
+    }
+  ],
+  "coverageProven": false,
+  "originalPublicationIndependentlyVerified": false,
+  "publicationApproved": false,
+  "displayEligible": false,
+  "d1Read": false,
+  "d1Written": false,
+  "publicSnapshotModified": false,
+  "pcRunnerModified": false,
+  "schedulerModified": false,
+  "scoreLedgerModified": false,
+  "queueModified": false
+}
