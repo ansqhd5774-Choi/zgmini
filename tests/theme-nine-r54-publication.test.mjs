@@ -1,6 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {buildNineR54PublicRecord} from '../scripts/pc-writer/theme-nine-r54-public-record.mjs';
+import {buildNineR51ExistingPublicProvisionalOverlay}
+ from '../scripts/pc-writer/theme-nine-r51-provisional-overlay.mjs';
 import {verifyNineR54Production} from '../scripts/pc-writer/theme-nine-r54-deployment-gate.mjs';
 import {eligibleNineR37,THEME_NINE_R37_ROSTER,THEME_NINE_R37_VERSION,
  THEME_NINE_R37_METHOD,THEME_NINE_R37_ROSTER_SHA}
@@ -53,6 +55,23 @@ test('R54 matches tenth-theme anonymous-risk disclosure and R37 reader',()=>{
  assert.equal(record.privateReplayVerified,true);
  assert.equal(record.provisional.points[0].scores['로봇·자동화'],62);
  assert.equal(eligibleNineR37(record,base,{now,storedAt:now}),true);
+});
+
+test('R54 accepts publisher-consented R32 confirmed with untouched legacy provisional subsets',()=>{
+ const publishedBase={...base,version:'THEME_ETF_ONLY_R144_252_PUBLIC_V1',
+  methodologyVersion:'ETF_ONLY_T40_R20_V40_PAIR50',sourceVersion:'R179_ORIGINAL',
+  provisional:{asOf:'2026-10-27T23:00:00Z',points:[
+   {date:'2026-10-26',scores:{'바이오·신약':24.93452}},
+   {date:'2026-10-27',scores:{'로봇·자동화':23.48016,'방산':50.70437}}]}};
+ const confirmed={...candidate,phase:'CONFIRMED'};
+ const overlay=buildNineR51ExistingPublicProvisionalOverlay({
+  confirmed,publicBase:publishedBase});
+ const record=buildNineR54PublicRecord({...args,candidate:overlay,
+  publicBase:publishedBase});
+ assert.equal(eligibleNineR37(record,publishedBase,{now,storedAt:now}),true);
+ assert.deepEqual(record.provisional,publishedBase.provisional);
+ assert.equal(record.provisionalLegacyMethodologyVersion,
+  publishedBase.methodologyVersion);
 });
 
 test('R54 blocks missing consent, false verification and date misalignment',()=>{
