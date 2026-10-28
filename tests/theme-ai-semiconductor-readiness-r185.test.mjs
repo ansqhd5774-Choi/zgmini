@@ -81,7 +81,7 @@ test('R185: approved seven-theme reader and ETF-only core formula remain unchang
  const reader=readFileSync('worker/theme-etf-only-public.mjs','utf8');
  assert.match(reader,/record\.themes\.length!==THEME_ETF_ONLY_PAIRS\.length/);
  const api=readFileSync('app/api/theme-fear-greed/route.ts','utf8');
- assert.match(api,/readThemeEtfOnly\(env\.DB\)/);
+ assert.match(api,/readThemeEtfOnly\(runtime\.DB_CORE\?\?runtime\.DB\)/);
  assert.equal(typeof validateThemeEtfOnlyPublic,'function');
  assert.deepEqual(AI_SEMICONDUCTOR_CANDIDATE.candidateEtfs,['SMH','SOXX']);
  assert.equal(AI_SEMICONDUCTOR_CANDIDATE.publicationAuthorized,false);
