@@ -42,6 +42,14 @@ The existing public `/api/asset-bubble-raw` sidecar contains **only two genuine 
 - `app/asset-bubble/asset-r10-history-ui-r1.mjs`: presentation-only exact score/raw/history lineage check. Five-point history for five factors; three-point partial history for breadth; fallback retains existing two-point observations.
 - Next gates: selective reader PR from latest main; confirm Cloudflare Git deployment; PC one-shot D1 apply & readback; separate selective UI PR; live PC/mobile detail verification. None of these gates is considered completed by current PC evidence alone.
 
+## Reader production gate completed (2026-10-29)
+
+- Selective PR **#877**, seven needed files only; GitHub full Node.js CI and community candidate build PASS after adding the originally missing publisher test dependency. Merged `main` commit **`50a9eb265d221ea792382c21e89ebefff7746fc4`**; unrelated concurrent main changes retained.
+- Cloudflare Git-linked service `zgmini-migration-candidate-r5` showed exact commit `50a9eb...` build **`bf9afe84-4947-444d-a60a-2c6db7c0267a`** Ready (`100%`). Build did not require a direct Wrangler or Sites deployment.
+- Public `GET https://zgmini.kr/api/asset-bubble-history` returned `{status:"PENDING",reason:"STORED_PROJECTION_PENDING"}` from the new route, expected until D1 history is published; existing `/api/asset-bubble-raw` still returned approved six-factor `READY` with exact previous/current values.
+- `scripts/pc-writer/ASSET_R10_1Y_HISTORY_D1_APPLY_R1.cmd` is now committed on the **existing** work branch. It performs a dry run, discovers exactly one approved operational root, and invokes the strictly gated one-key D1 publisher once. On failure, **STOP/NO_RETRY**; inspect D1 readback before any other attempt.
+- **Pending**: human PC execution of one-click history-only D1 post + exact readback evidence; the UI is intentionally *not yet wired* to history, so existing two-point mini charts continue unchanged.
+
 ## Non-negotiable chart design
 
 - Dashboard stays scored; detailed panel is raw source data, with separate unit/date/source and no reverse derivation from a score.
