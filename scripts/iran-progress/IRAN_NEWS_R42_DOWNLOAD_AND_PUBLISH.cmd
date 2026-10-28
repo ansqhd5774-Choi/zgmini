@@ -3,9 +3,9 @@ setlocal EnableExtensions DisableDelayedExpansion
 rem R42 stand-alone launcher: download immutable approved source into a local sandbox.
 rem It does not alter the PC's approved project, R1 news key or scheduler.
 set "R42_NODE=E:\ZGmini\runtime\node.exe"
-set "R42_DIR=%~dp0IRAN_NEWS_R42_RUNTIME"
-set "R42_RESULT=%~dp0IRAN_NEWS_R42_ONE_CLICK_RESULT.txt"
-if exist "%USERPROFILE%\Desktop\" set "R42_RESULT=%USERPROFILE%\Desktop\IRAN_NEWS_R42_ONE_CLICK_RESULT.txt"
+set "R42_DIR=%~dp0IRAN_NEWS_R42_RUNTIME_FIX1"
+set "R42_RESULT=%~dp0IRAN_NEWS_R42_ONE_CLICK_FIX1_RESULT.txt"
+if exist "%USERPROFILE%\Desktop\" set "R42_RESULT=%USERPROFILE%\Desktop\IRAN_NEWS_R42_ONE_CLICK_FIX1_RESULT.txt"
 set "R42_RAW=https://raw.githubusercontent.com/ansqhd5774-Choi/zgmini/e149bdcef8ff52d555075478f7822114503ef296"
 if exist "%R42_RESULT%" goto existing_result
 if not exist "%R42_NODE%" goto missing_node
@@ -33,6 +33,8 @@ call :download "lib/iran-progress/news-metadata-r41.mjs" "lib\iran-progress\news
 if errorlevel 1 goto download_failed
 call :download "lib/iran-progress/news-display-r1.mjs" "lib\iran-progress\news-display-r1.mjs"
 if errorlevel 1 goto download_failed
+call :download "lib/iran-progress/news-source-rights-r2.mjs" "lib\iran-progress\news-source-rights-r2.mjs"
+if errorlevel 1 goto download_failed
 call :download "scripts/pc-writer/d1.mjs" "scripts\pc-writer\d1.mjs"
 if errorlevel 1 goto download_failed
 call :download "scripts/pc-writer/d1-transient.mjs" "scripts\pc-writer\d1-transient.mjs"
@@ -56,7 +58,7 @@ set "IRAN_NEWS_R42_APPROVED="
 if "%R42_EXIT%"=="2" goto api_pending
 if not "%R42_EXIT%"=="0" goto write_uncertain
 >> "%R42_RESULT%" echo FINAL_STATUS=D1_AND_PUBLIC_API_VERIFIED
-echo R42 SUCCESS. Upload "IRAN_NEWS_R42_ONE_CLICK_RESULT.txt" from Desktop.
+echo R42 SUCCESS. Upload "IRAN_NEWS_R42_ONE_CLICK_FIX1_RESULT.txt" from Desktop.
 exit /b 0
 
 :download
