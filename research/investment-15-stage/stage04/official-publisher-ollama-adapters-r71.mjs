@@ -67,7 +67,12 @@ export function livePublisherSlugProbes(publisher, keyword) {
 function sourcePeriods(excerpt) {
   const normalized = String(excerpt).replace(/&(?:ndash|mdash|minus);/gi, '-')
     .replace(/[\u2010-\u2015\u2212]/g, '-');
-  const periods = [...normalized.matchAll(/\b(20\d{2})\s*(?:-|to|through)\s*(20\d{2})\b/gi)]
+  const direct = [...normalized.matchAll(/\b(20\d{2})\s*(?:-|to|through)\s*(20\d{2})\b/gi)];
+  // Some official leads state the period as market-size endpoints, e.g.
+  // "from USD 31.51 billion in 2026 to USD 50.37 billion by 2034".
+  // These years are explicit source text, not a calculated forecast.
+  const endpoints = [...normalized.matchAll(/\bfrom\s+(?:USD|US\$|\$)\s*[\d,.]+\s*(?:billion|million|trillion|bn|mn)?\s+in\s+(20\d{2})\s+to\s+(?:approximately\s+)?(?:USD|US\$|\$)\s*[\d,.]+\s*(?:billion|million|trillion|bn|mn)?\s+by\s+(20\d{2})\b/gi)];
+  const periods = [...direct, ...endpoints]
     .filter(match => Number(match[2]) > Number(match[1]) &&
       Number(match[2]) - Number(match[1]) <= 20)
     .map(match => [Number(match[1]), Number(match[2])]);
@@ -88,6 +93,30 @@ export function reportLeadEvidence(html) {
   const nextSection = following.search(/<h[2-6]\b/i);
   return pagePlainText(nextSection >= 0 ? following.slice(0, nextSection) :
     following.slice(0, 8_000)).slice(0, 3_500);
+}
+
+/**
+ * R75: the first h2 is often "List of Contents", before the publisher's
+ * actual whole-market forecast. Select the first matching market-size section
+ * instead of treating a no-CAGR lead as permission to mix the entire article
+ * (including U.S. and fastest-growing submarket CAGRs).
+ */
+export function primaryWholeMarketEvidence(html, keyword) {
+  const input = String(html);
+  const headings = [...input.matchAll(/<h2\b[^>]*>([\s\S]*?)<\/h2\s*>/gi)];
+  const requested = terms(keyword);
+  for (let i = 0; i < headings.length; i++) {
+    const heading = pagePlainText(headings[i][1]);
+    const label = heading.toLowerCase();
+    if (!/\bmarket\b/.test(label) || !/\b(size|forecast|growth|outlook)\b/.test(label) ||
+        !requested.every(token => label.includes(token)) ||
+        /\b(?:regional|segment|component|north america|united states|europe|asia pacific|u\.?s\.?)\b/i.test(label)) continue;
+    const start = headings[i].index + headings[i][0].length;
+    const end = headings[i + 1]?.index ?? input.length;
+    const section = `${heading}. ${pagePlainText(input.slice(start, end))}`.slice(0, 3_500);
+    if (extractCagrCandidates(section).length) return section;
+  }
+  return '';
 }
 
 function failure(id, keyword, reason, partial = {}) {
@@ -205,11 +234,18 @@ async function inspectOnePublisherReport(publisher, url, keyword, {
     return failure(publisher.id, keyword, 'SUBMARKET_OR_PROXY_REPORT_EXCLUDED', {
       url, model, ...searchMeta, report_requests: reportCount, report_ms: reportMs });
   }
-  // Ollama considers the whole-market introductory statement first. A regional
-  // or fastest-growing segment farther down the page must not be treated as
-  // a contradiction of the lead's global CAGR for the same period.
-  const leadCandidates = extractCagrCandidates(reportLeadEvidence(html));
-  const candidates = leadCandidates.length ? leadCandidates : extractCagrCandidates(evidence);
+  // Prefer the publisher's explicit whole-market size/forecast section. On
+  // some official pages an early "List of Contents" h2 makes the lead contain
+  // no CAGR; the old full-page fallback then falsely mixed global and U.S.
+  // rates. Only if no market-size section exists do we use the lead/full page.
+  const primary = primaryWholeMarketEvidence(html, keyword);
+  const lead = reportLeadEvidence(html);
+  const primaryCandidates = extractCagrCandidates(primary);
+  const leadCandidates = extractCagrCandidates(lead);
+  const candidates = primaryCandidates.length ? primaryCandidates :
+    leadCandidates.length ? leadCandidates : extractCagrCandidates(evidence);
+  const evidence_region = primaryCandidates.length ? 'PRIMARY_WHOLE_MARKET_SECTION' :
+    leadCandidates.length ? 'REPORT_LEAD' : 'FULL_PAGE_FALLBACK';
   if (!candidates.length) {
     return failure(publisher.id, keyword, 'SOURCE_NO_LITERAL_CAGR', {
       url, model, ...searchMeta, report_requests: reportCount, report_ms: reportMs });
@@ -234,13 +270,32 @@ async function inspectOnePublisherReport(publisher, url, keyword, {
       report_ms: reportMs, ollama_ms: modelMs, ollama_generations: 1 });
   }
   const chosen = candidates[selected.index];
+  // Cross-check two independently visible whole-market declarations. A
+  // contradictory period or rate on the same publisher page remains NULL.
+  if (primaryCandidates.length && leadCandidates.length) {
+    const periods = [...new Set([...sourcePeriods(primary), ...sourcePeriods(lead)]
+      .map(pair => pair.join('-')))];
+    const inconsistentRate = leadCandidates.some(c =>
+      primaryCandidates.every(p => Math.abs(p.pct - c.pct) > 0.15));
+    if (periods.length > 1 || inconsistentRate) {
+      return { ...failure(publisher.id, keyword, periods.length > 1 ?
+        'SOURCE_FORECAST_PERIODS_DISAGREE' : 'SOURCE_FORECAST_VALUES_DISAGREE', {
+        url, model, ...searchMeta, report_requests: reportCount,
+        report_ms: reportMs, ollama_ms: modelMs, ollama_generations: 1 }),
+        state: 'SOURCE_CONFLICT', source_audit: 'SOURCE_CONFLICT',
+        source_conflict_reason: periods.length > 1 ?
+          'WHOLE_MARKET_LEAD_AND_SECTION_PERIOD_MISMATCH' :
+          'WHOLE_MARKET_LEAD_AND_SECTION_RATE_MISMATCH',
+        model_candidate_pct: chosen.pct, evidence_region };
+    }
+  }
   if (sourcePeriods(chosen.excerpt).length > 1) {
     return { ...failure(publisher.id, keyword, 'SOURCE_FORECAST_PERIODS_DISAGREE', {
       url, model, ...searchMeta, report_requests: reportCount,
       report_ms: reportMs, ollama_ms: modelMs, ollama_generations: 1 }),
       state: 'SOURCE_CONFLICT', source_audit: 'SOURCE_CONFLICT',
       source_conflict_reason: 'MULTIPLE_EXPLICIT_FORECAST_PERIODS_IN_SAME_CAGR_EXCERPT',
-      model_candidate_pct: chosen.pct };
+      model_candidate_pct: chosen.pct, evidence_region };
   }
   const period = sourcePeriod(chosen.excerpt);
   if (!period || !/\b(?:forecast|projected|expected|estimated|by 20\d{2})\b/i.test(chosen.excerpt)) {
@@ -259,7 +314,7 @@ async function inspectOnePublisherReport(publisher, url, keyword, {
       report_ms: reportMs, ollama_ms: modelMs, ollama_generations: 1 }),
       state: 'SOURCE_CONFLICT', source_audit: 'SOURCE_CONFLICT',
       source_conflict_reason: 'MULTIPLE_CAGR_VALUES_SAME_EXPLICIT_PERIOD',
-      model_candidate_pct: chosen.pct };
+      model_candidate_pct: chosen.pct, evidence_region };
   }
   const scope = selected.scope === 'DIRECT' ? 'DIRECT' : 'PROXY';
   return { publisher: publisher.id, keyword, state: 'PASS', failure: null,
@@ -269,6 +324,7 @@ async function inspectOnePublisherReport(publisher, url, keyword, {
     forecast_narrative_pct: chosen.pct, source_audit: 'EXCERPT_PERIOD_VERIFIED',
     source_conflict_reason: null, model_candidate_pct: chosen.pct,
     model_scope: selected.scope, market_scope: scope, report_market_title: title.slice(0,140),
+    evidence_region,
     period_source: 'OFFICIAL_REPORT_CAGR_EXCERPT',
     discovery_diagnostics: searchMeta.discovery_diagnostics || [],
     discovery_candidates: searchMeta.discovery_candidates || [],
