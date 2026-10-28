@@ -32,3 +32,16 @@
 - R25 승인 PC source `724bbbf4407363f1f091567ed196cc0bf554bb5e`를 **다음 안전 설치 시점의 초기 기준 후보**로 기록하되, 다른 작업 전진 시 실제 HEAD/config/source 및 보호 파일 drift를 읽기 전용으로 확인한다.
 - 기존 발표 일정 5필드(`id/date/title/source/sourceUrl`) 계약, 저장 원본 후 재파싱, 예약 수집·업데이트 통제, 기존 경제·실적 이벤트를 보존한다.
 - R26 단계는 **READ_ONLY_SOURCE_EXPORT_READY**. R26 일정 파서/PC 설치/자연 수집/게시/웹 공개까지 됐다고 보고하지 않는다.
+
+## 2단계 — 사용자 PC 공식 XML 실측 및 R26 연결 준비 (2026-10-28)
+
+- 실제 제출 `MARKET_CALENDAR_R26_TREASURY_SOURCE_EXPORT_RESULT.txt`: `decision=TREASURY_XML_CAPTURED_READONLY`, HTTP `200`, `contentType=text/xml`, 원문 **4,746 bytes**, SHA256 **`a746a0555acd80d07eea66a25b64e4a26ae5de6af05db1fb88b46205adf62c5e`**. Base64 디코드 후 바이트 길이·SHA256 완전 일치 확인.
+- 정확한 `<Data><TreasuryCUSIPRelease>` 행은 **6개**. `SecurityDescription`/`CUSIP`/`SecurityType`/`Reopening` 및 공식 `<Dates>` 하위 `AnnouncementDate`, `CompetitiveAuctionCloseDate`, `IssueDate`, `OriginalIssueDate`를 확인했다. 원문 대상: 4·6·8·13·17·26주물 국채. 26주물의 공고 2026-10-29, 입찰 2026-11-02, 발행 2026-11-05.
+- 발표 캘린더에 반영할 공식 이벤트는 **공고일 6 + 경쟁입찰일 6 = 총 12건**. `IssueDate` 6건은 결제/발행 원자료로 보존하되 별도 발표 이벤트를 만들지 않는다. 2026-10-28 이후(당일 포함) 9건. **XML에는 입찰 시각이 명시되지 않아 추정 시간·KST 카운트다운을 생성하지 않는다.** 분기 잠정 일정은 섞지 않는다.
+- R26 스테이징 `staging/market-calendar/r26-treasury/`에 신규 `lib/treasury-calendar.mjs`와 기존 R25 기반 `lib/release-calendar.mjs`, `scripts/pc-writer/release-calendar.mjs` 3파일 구성. PC 수집기는 실제 원문을 `release-calendar:treasury`에 먼저 저장한 뒤 저장 원문을 재파싱한다. 공식 주간 XML이 다른 CUSIP으로 교체되어도 과거 이력과 이전 주의 다른 미래 CUSIP 보존, 동일 CUSIP의 새 입찰일은 미래 이전값 대체. 실패 시 이전 Treasury 이벤트 및 체크시각 유지·`SOURCE_FAILED`.
+- 별도 브랜치 UI `app/market-calendar/market-calendar-client.tsx`는 `treasury-auction-{cusip}`, `treasury-announcement-{cusip}`만 공식 Treasury 이벤트로 인식하여 **국채** 분류·미국 재무부 출처를 표시하도록 최소 수정했다. 기존 출처 조건의 `item.source='bls'` 대입 오타를 `item.source==='bls'` 비교로 함께 고쳤다. 화면 배치·스타일·검색 메타·기존 일정을 변경하지 않는다.
+- R26 PC 안전 설치기는 마지막 사용자 PC R25 성공 SHA **`724bbbf4407363f1f091567ed196cc0bf554bb5e`**를 엄격 고정하고, Core ID `d0a4b3cb8b95`, `config.source`, lock, Git dirty, EIA/USDA/CFTC 기존 해시 및 parser/collector 일치를 검사한다. 정확히 parser/신규 treasury 모듈/collector **3파일만** 백업·로컬 커밋·config.source readback. 다른 작업 HEAD 전진 시 `PC_SOURCE_CHANGED_STOP`; 우회 실행 금지.
+- 후보 SHA256: parser `432354b0e87ab7735330e9b29396a14fd14ee218cd0daa016ab93fb59b6d080f`, Treasury 모듈 `0eb744d67fc2d82cbba1bf7b578503dcdfe6a609df557c8666517fc1c91f9c36`, collector(LF) `47416512698f8f4b184a6a4c32128a1256b6b6a010d1932a0e69d2612472cca6`, collector(PC CRLF) `a931267b84a6a8a7c2289e4daea5630b257bf30463e58f14b4ad2b5266828f1c`.
+- R26 테스트 parser 4/4, collector 3/3, installer 4/4 **11/11 PASS**. 이전 R25 CFTC collector 3/3, R24 USDA collector 3/3, R23 EIA collector 9/9 **15/15 회귀 PASS**. 로컬 `npm run typecheck` PASS. Windows CMD ASCII+CRLF, ZIP 7/7 PASS.
+- 안전 설치 ZIP **`MARKET_CALENDAR_R26_TREASURY_PC_INSTALL_20261028.zip`**, SHA256 **`4dd2f5b8aef361e26520af828067cac9500c3e4c14c71b054c99a5f4d8476833`**. 사용자 PC에서 ZIP 전체 압축 해제→`MARKET_CALENDAR_R26_TREASURY_APPLY.cmd` 1회 실행→`MARKET_CALENDAR_R26_TREASURY_APPLY_RESULT.txt` 업로드.
+- **현재 상태**: 공식 XML 실측·코드/테스트/안전 설치기 준비 완료. **PC 실제 설치 로그 미확인**이며 자연 예약 수집, DB 저장, GitHub main/Cloudflare 배포, 공개 웹 노출도 미실행·미확인. 지정 브랜치 외 신규 브랜치 생성/병합/강제수집/배포 없음.
