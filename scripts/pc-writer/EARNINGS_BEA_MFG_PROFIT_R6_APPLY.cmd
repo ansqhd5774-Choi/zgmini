@@ -20,15 +20,6 @@ if not exist "%ZGMINI_PC_HOME%\config.json" (
   >> "%LOG%" echo ERROR=APPROVED_PC_CONFIG_MISSING
   goto :failed
 )
-if not defined ZGMINI_EARNINGS_C_OPERATIONAL_ROOT (
-  >> "%LOG%" echo ERROR=APPROVED_OPERATIONAL_ROOT_ENV_MISSING
-  >> "%LOG%" echo ACTION=Run_with_approved_ZGMINI_EARNINGS_C_OPERATIONAL_ROOT_environment
-  goto :failed
-)
-if not exist "%ZGMINI_EARNINGS_C_OPERATIONAL_ROOT%\" (
-  >> "%LOG%" echo ERROR=APPROVED_OPERATIONAL_ROOT_NOT_FOUND
-  goto :failed
-)
 where git.exe >nul 2>&1
 if errorlevel 1 (
   >> "%LOG%" echo ERROR=GIT_NOT_FOUND
@@ -38,6 +29,33 @@ if not defined TEMP (
   >> "%LOG%" echo ERROR=TEMP_NOT_CONFIGURED
   goto :failed
 )
+set "LOOKUP=%TEMP%\ZGMINI_BEA_MFG_R6_OPROOT_%RANDOM%_%RANDOM%.txt"
+if exist "%LOOKUP%" (
+  >> "%LOG%" echo ERROR=OPERATIONAL_ROOT_REPORT_ALREADY_EXISTS
+  goto :failed
+)
+if not defined ZGMINI_EARNINGS_C_OPERATIONAL_ROOT (
+  >> "%LOG%" echo STAGE=DISCOVER_APPROVED_OPERATIONAL_ROOT
+  if not exist "%~dp0BEA_MFG_R6_FIND_OPERATIONAL.mjs" (
+    >> "%LOG%" echo ERROR=DISCOVERY_HELPER_MISSING
+    goto :failed
+  )
+  "%NODE_EXE%" "%~dp0BEA_MFG_R6_FIND_OPERATIONAL.mjs" > "%LOOKUP%" 2>> "%LOG%"
+  if errorlevel 1 (
+    >> "%LOG%" echo ERROR=APPROVED_OPERATIONAL_ROOT_DISCOVERY_FAILED
+    goto :failed
+  )
+  set /p "ZGMINI_EARNINGS_C_OPERATIONAL_ROOT=" < "%LOOKUP%"
+)
+if not defined ZGMINI_EARNINGS_C_OPERATIONAL_ROOT (
+  >> "%LOG%" echo ERROR=APPROVED_OPERATIONAL_ROOT_NOT_FOUND
+  goto :failed
+)
+if not exist "%ZGMINI_EARNINGS_C_OPERATIONAL_ROOT%\" (
+  >> "%LOG%" echo ERROR=APPROVED_OPERATIONAL_ROOT_NOT_FOUND
+  goto :failed
+)
+>> "%LOG%" echo OPERATIONAL_ROOT_DISCOVERY=PASS
 set "PUBLISHER=%TEMP%\ZGMINI_BEA_MFG_R6_PUBLISHER_%RANDOM%_%RANDOM%"
 >> "%LOG%" echo STAGE=CLONE_LATEST_MAIN_AS_ISOLATED_PUBLISHER
 git clone --quiet --depth 1 --single-branch --branch main https://github.com/ansqhd5774-Choi/zgmini.git "%PUBLISHER%" >> "%LOG%" 2>&1
