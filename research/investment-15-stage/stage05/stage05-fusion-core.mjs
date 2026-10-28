@@ -52,7 +52,7 @@ function checkEvidence(evidence, kind, snapshotDate, maxAgeDays) {
   return null;
 }
 
-function checkStage04(record) {
+function checkStage04(record, snapshotDate, maxAgeDays) {
   if (!record || record.status !== 'QUANTIFIED') return 'STAGE04_NOT_QUANTIFIED';
   if (record.evidenceKind !== 'REALIZED_INDUSTRY_ACTIVITY'
     || record.sourceValidation !== 'VERIFIED'
@@ -60,6 +60,11 @@ function checkStage04(record) {
     || record.formulaId !== 'STAGE04_R2_PROPOSED'
     || !Array.isArray(record.sourceUrls) || record.sourceUrls.length === 0)
     return 'STAGE04_REALIZED_SOURCE_GATE_MISSING';
+  if (!isDate(record.validatedDate) || !isDate(record.observationPeriodEnd)
+    || record.observationPeriodEnd > record.validatedDate
+    || record.validatedDate > snapshotDate
+    || (asDay(snapshotDate)-asDay(record.validatedDate))/86400000 > maxAgeDays)
+    return 'STAGE04_CHRONOLOGY_UNVERIFIED';
   if (![record.G1,record.G2,record.F,record.G,record.D,record.M4].every(isScore))
     return 'STAGE04_SCORE_INVALID';
   const G = 0.6 * record.G1 + 0.4 * record.G2;
@@ -78,7 +83,7 @@ function checkStage04(record) {
  *    normalizationRuleId,priceSeriesId,periodStart,periodEnd}}]},
  *  stage03:{themes:[{id,sectorId,approved,trend:{...same evidence contract}}]},
  *  stage04:{themes:[{id,status,evidenceKind,sourceValidation,freshnessStatus,
- *    formulaId,sourceUrls,G1,G2,F,G,D,M4}]}}
+ *    formulaId,sourceUrls,validatedDate,observationPeriodEnd,G1,G2,F,G,D,M4}]}}
  * Only an explicit passed Stage03 theme can enter the selection table.
  */
 export function calculateFusionStage05(input, {maxAgeDays = 7} = {}) {
@@ -96,7 +101,7 @@ export function calculateFusionStage05(input, {maxAgeDays = 7} = {}) {
     if (theme.approved !== true) continue;
     const sector = sectors.get(theme.sectorId);
     const growth = industry.get(theme.id);
-    const eReason = checkStage04(growth);
+    const eReason = checkStage04(growth,input.snapshotDate,maxAgeDays);
     const rsReason = checkEvidence(sector?.relativeStrength,
       'ETF_PRICE_RELATIVE_STRENGTH',input.snapshotDate,maxAgeDays);
     const trendReason = checkEvidence(theme.trend,
