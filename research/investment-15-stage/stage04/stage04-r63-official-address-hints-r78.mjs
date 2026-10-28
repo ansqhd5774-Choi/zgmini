@@ -49,3 +49,17 @@ export function officialAddressHint(keyword, publisherId) {
   } catch { return null; }
 }
 
+
+/**
+ * R79: R63 *report market* is not always the broad 21-topic label.
+ * Recover the publisher-specific keyword from the original approved URL,
+ * never from a guessed modern slug or an archived numerical result.
+ */
+export function officialResearchMarketKeyword(topicKeyword, publisherId) {
+  const url = officialAddressHint(topicKeyword, publisherId);
+  if (!url) return null;
+  const slug = new URL(url).pathname.split('/').filter(Boolean).at(-1)?.toLowerCase() || '';
+  const name = slug.replace(/(?:-global-market-report|-market-global-report|-market-report|-global-report|-market)$/, '')
+    .replace(/-/g, ' ').trim();
+  return name || null;
+}
