@@ -10,6 +10,17 @@ export const PRIVATE_CANDIDATE_VERSION='IRAN_NEWS_COLLECTION_R26';
 export const PRIVATE_CANDIDATE_BASENAME='news-display-candidates-r26.json';
 const SOURCES=['tasnim','govuk','iaea-news','iaea-statements',
  'bbc-middle-east','aljazeera','un-middle-east'];
+// These are review pointers, not transferable publisher-wide permission receipts.
+// Publication always requires a separate, article-specific rights decision.
+export const SOURCE_RIGHTS_REVIEW=Object.freeze({
+ govuk:{review:'OGL_PAGE_AND_THIRD_PARTY_CHECK',policyUrl:'https://www.gov.uk/help/terms-conditions'},
+ 'iaea-news':{review:'IAEA_AUTHORSHIP_ATTRIBUTION_CHECK',policyUrl:'https://www.iaea.org/about/terms-of-use'},
+ 'iaea-statements':{review:'IAEA_AUTHORSHIP_ATTRIBUTION_CHECK',policyUrl:'https://www.iaea.org/about/terms-of-use'},
+ 'un-middle-east':{review:'UN_NEWS_CREDIT_AND_NOTICE_CHECK',policyUrl:'https://www.un.org/en/about-us/copyright/'},
+ 'bbc-middle-east':{review:'BBC_SEPARATE_PERMISSION_CHECK',policyUrl:'https://downloads.bbc.co.uk/usingthebbc/bbc_terms_of_use.pdf'},
+ aljazeera:{review:'ALJAZEERA_SEPARATE_PERMISSION_CHECK',policyUrl:'https://terms.aljazeera.net/'},
+ tasnim:{review:'TASNIM_CURRENT_SOURCE_LICENCE_CHECK',policyUrl:null},
+});
 const MAX_FILE_BYTES=1024*1024;
 // Read-only title focus indicator mirroring the R26 collector's four topics.
 // This never replaces the R25 article-body keyword check.
@@ -75,7 +86,35 @@ export function auditPrivateNewsPublicationGate(cache,{now=Date.now()}={}){
  };
 }
 
-export function auditPrivateNewsPublicationFile(file,{now=Date.now()}={}){
+/**
+ * Read-only per-article review queue. A keyword match or source policy does not
+ * establish article-specific rights, accuracy, Korean summary, or impact.
+ */
+export function privateNewsReviewQueue(cache,{now=Date.now()}={}){
+ const summary=auditPrivateNewsPublicationGate(cache,{now});
+ const {start,end}=kstDayWindow(now,14);
+ return {
+  ...summary,
+  reviewQueue:cache.items.map(item=>{
+   const kstDay=kstNewsDay(Date.parse(item.publisherDeclaredPublishedAt));
+   const policy=SOURCE_RIGHTS_REVIEW[item.sourceId];
+   return {
+    id:item.id,sourceId:item.sourceId,sourceUrl:item.sourceUrl,
+    publisherHost:new URL(item.sourceUrl).hostname,
+    originalTitle:item.originalTitle,publisherDeclaredPublishedAt:item.publisherDeclaredPublishedAt,
+    kstDay,withinPublicWindow:kstDay>=start&&kstDay<=end,
+    titleMentionsApprovedTopic:titleMentionsApprovedTopic(item.originalTitle),
+    rightsReview:policy.review,rightsPolicyUrl:policy.policyUrl,
+    status:'REVIEW_REQUIRED_NOT_PUBLISHABLE',
+    remainingChecks:['ORIGINAL_ARTICLE_BODY_AND_TOPIC','PUBLISHER_DATE_AND_DUPLICATE',
+     'ARTICLE_SPECIFIC_RIGHTS','INDEPENDENT_KOREAN_SUMMARY','REVIEWED_IMPACT'],
+   };
+  }).sort((a,b)=>Number(b.withinPublicWindow)-Number(a.withinPublicWindow)||
+   b.publisherDeclaredPublishedAt.localeCompare(a.publisherDeclaredPublishedAt)||a.id.localeCompare(b.id)),
+ };
+}
+
+function readPrivateNewsCandidateFile(file){
  if(typeof file!=='string'||!path.isAbsolute(file)||
   path.basename(file)!==PRIVATE_CANDIDATE_BASENAME)
   throw Error('UI_NEWS_CANDIDATE_PATH_INVALID');
@@ -86,14 +125,25 @@ export function auditPrivateNewsPublicationFile(file,{now=Date.now()}={}){
  let cache;
  try{cache=JSON.parse(fs.readFileSync(file,'utf8'));}
  catch{throw Error('UI_NEWS_CANDIDATE_JSON_INVALID');}
- return auditPrivateNewsPublicationGate(cache,{now});
+ return cache;
+}
+
+export function auditPrivateNewsPublicationFile(file,{now=Date.now()}={}){
+ return auditPrivateNewsPublicationGate(readPrivateNewsCandidateFile(file),{now});
+}
+
+export function privateNewsReviewQueueFile(file,{now=Date.now()}={}){
+ return privateNewsReviewQueue(readPrivateNewsCandidateFile(file),{now});
 }
 
 if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.url)){
  const args=process.argv.slice(2);
- if(args.length!==1||!args[0].startsWith('--input='))
+ if(args.length<1||args.length>2||!args[0].startsWith('--input=')||
+  (args.length===2&&args[1]!=='--review'))
   throw Error('UI_NEWS_EXPLICIT_INPUT_REQUIRED');
- try{console.log(JSON.stringify(auditPrivateNewsPublicationFile(args[0].slice(8))));}
+ try{console.log(JSON.stringify(args[1]==='--review'?
+  privateNewsReviewQueueFile(args[0].slice(8)):
+  auditPrivateNewsPublicationFile(args[0].slice(8))));}
  catch(error){
   console.error(JSON.stringify({status:'BLOCKED',reason:error.message}));
   process.exitCode=1;
