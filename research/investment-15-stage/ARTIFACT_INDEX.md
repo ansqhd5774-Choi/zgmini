@@ -55,7 +55,8 @@ R10/R11/R13/R14/R15/R16/R17/R18/R19/R20/R21/R22/R23/R24 ZIP들이 이전 대화 
 
 ## Stage05 융합 선정 기준 (2026-10-28)
 
-- [01~04 데이터 기반 경제학·트레이더 80:20 선정 설계](STAGE05_01_04_ECONOMIST_TRADER_SELECTION_DESIGN_20261028.md) — 사용자 승인 기준의 **문서 기록**. 기존 입력 재사용·중복 가산 금지·결측 보존·70:30/80:20/90:10 민감도 Gate. Stage05 실행 코드/Windows 실측/운영 반영은 미완료.
+- [01~04 데이터 기반 경제학·트레이더 80:20 선정 설계](STAGE05_01_04_ECONOMIST_TRADER_SELECTION_DESIGN_20261028.md) — 기준 문서 유지. 기존 입력 재사용·중복 가산 금지·결측 보존·70:30/80:20/90:10 민감도 Gate.
+- [R78 Stage05 읽기 전용 프로그램](stage05/README_STAGE05_FUSION_R78_20261028.md) — `stage05/stage05-fusion-core.mjs`, `stage05/stage05-fusion-core.test.mjs`, `stage05/stage05-fusion-readonly.mjs`, `stage05/STAGE05_FUSION_READONLY.cmd`. 가상 입력 개발 테스트 10/10 통과. 실제 Stage04 M4 및 ETF 가격 RS/Trend 부재로 실선정 NULL, Windows 실측/운영 반영 미완료.
 
 ## 재개 기준
 
