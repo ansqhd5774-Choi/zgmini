@@ -100,3 +100,26 @@ test('R30 adapter always requests verified rate-only mode and direct official ma
   assert.equal(called.options.resolveHistoricTableMislabel, false);
   assert.deepEqual(called.options.allowedKeywords, [called.keyword]);
 });
+
+test('R79 TBRC R30 uses original official report-market keyword, not broad sector', async () => {
+  let queried;
+  const adapterWithR63 = tbrcR30Adapter(async (keyword, options) => {
+    queried = {keyword,options};
+    return valid('TBRC',7);
+  }, {researchMarketFn:()=> 'passenger car'});
+  const out = await adapterWithR63.run({id:'topic-03',keyword:'consumer discretionary'});
+  assert.equal(queried.keyword,'passenger car');
+  assert.deepEqual(queried.options.allowedKeywords,['passenger car']);
+  assert.equal(out.market_scope,'R63_REFERENCE');
+  assert.equal(out.research_market_provenance,'R63_OFFICIAL_REPORT_URL');
+  assert.equal(out.growth_pct,7);
+});
+
+test('R79 refuses forged reference report provenance or unverified proxy scope', async () => {
+  const fake = {...valid('SkyQuest',6),source_audit:'EXCERPT_PERIOD_VERIFIED',
+    market_scope:'R63_REFERENCE',research_market_keyword:'passenger cars'};
+  const report = await runForecastPipeline(topic,[
+    adapter('SkyQuest',fake),adapter('Precedence',valid('Precedence',8))]);
+  assert.equal(report.results[0].mean_pct,null);
+  assert.equal(report.results[0].publishers[0].reason,'R63_REFERENCE_PROVENANCE_NOT_VERIFIED');
+});
