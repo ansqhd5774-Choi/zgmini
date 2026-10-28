@@ -79,9 +79,9 @@ test('R35 calendar controls apply same star selection to official rows and vendo
  const client=fs.readFileSync(fileURLToPath(new URL('../app/market-calendar/market-calendar-client.tsx',import.meta.url)),'utf8');
  const vendor=fs.readFileSync(fileURLToPath(new URL('../app/market-calendar/earnings-display-client.tsx',import.meta.url)),'utf8');
  assert.match(client,/aria-label="중요도 필터"/);
- assert.match(client,/row\.importance===importance/);
+ assert.match(client,/importance\.includes\(row\.importance\)/);
  assert.match(client,/importance=\{importance\}/);
- assert.match(vendor,/params\.set\('importance',String\(importance\)\)/);
+ assert.match(vendor,/params\.set\('importance',importance\.join\(','\)\)/);
  const page=fs.readFileSync(fileURLToPath(new URL('../app/market-calendar/page.tsx',import.meta.url)),'utf8');
  assert.doesNotMatch(page,/미연결 기업 실적과 한국 일정은 제공하지 않습니다/);
  assert.match(page,/중요도 필터/);

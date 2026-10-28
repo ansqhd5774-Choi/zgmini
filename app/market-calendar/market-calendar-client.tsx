@@ -3,6 +3,7 @@
 import {useEffect,useMemo,useRef,useState} from 'react';
 import {ChevronLeft,ChevronRight,Search,Star} from 'lucide-react';
 import {releaseImportance,rowsForSelectedDay} from '../../lib/market-calendar-importance.mjs';
+import {toggleStarImportance} from '../../lib/market-calendar-importance-toggle.mjs';
 import {cftcCotReleaseAt} from '../../lib/market-calendar-cftc-time.mjs';
 import {ticReleaseAt} from '../../lib/market-calendar-tic-time.mjs';
 import snapshot from '../guides/release-snapshot.json';
@@ -13,7 +14,7 @@ type Country='US'|'KR';
 type View='week'|'month';
 type FilterKind='all'|EventKind;
 type FilterCountry='all'|Country;
-type FilterImportance='all'|1|2|3;
+type FilterImportance=number[]|null;
 type OfficialEvent={id:string;date:string;title:string;source:string;sourceUrl:string};
 type SourceState={status:string;checkedAt?:string|null};
 type CalendarFeed={status:string;updatedAt?:string;sources?:Record<string,SourceState>;events?:OfficialEvent[]};
@@ -136,9 +137,9 @@ export default function MarketCalendar(){
  const [selected,setSelected]=useState('2026-10-26');
  const [activeDate,setActiveDate]=useState<string|null>(null);
  const [view,setView]=useState<View>('week');
- const [kind,setKind]=useState<FilterKind>('economic');
+ const [kind,setKind]=useState<FilterKind>('all');
  const [country,setCountry]=useState<FilterCountry>('all');
- const [importance,setImportance]=useState<FilterImportance>('all');
+ const [importance,setImportance]=useState<FilterImportance>(null);
  const [query,setQuery]=useState('');
  const [vendorCounts,setVendorCounts]=useState<Record<string,number>>({});
  const [nowMs,setNowMs]=useState(0);
@@ -159,7 +160,7 @@ export default function MarketCalendar(){
 
  const range=useMemo(()=>view==='week'?{start:monday(selected),end:plusDays(monday(selected),6)}:{start:monthStart(selected),end:monthEnd(selected)},[selected,view]);
  const allRows=useMemo(()=>mergeOfficial(feed),[feed]);
- const periodRows=useMemo(()=>allRows.filter(row=>row.date>=range.start&&row.date<=range.end&&(kind==='all'||row.kind===kind)&&(country==='all'||row.country===country)&&(importance==='all'||row.importance===importance)&&(!query||`${row.name} ${row.category} ${row.source} ${row.country}`.toLowerCase().includes(query.trim().toLowerCase()))).sort((a,b)=>a.date.localeCompare(b.date)||(a.at??'').localeCompare(b.at??'')||a.name.localeCompare(b.name)),[allRows,range,kind,country,importance,query]);
+ const periodRows=useMemo(()=>allRows.filter(row=>row.date>=range.start&&row.date<=range.end&&(kind==='all'||row.kind===kind)&&(country==='all'||row.country===country)&&(importance===null||importance.includes(row.importance))&&(!query||`${row.name} ${row.category} ${row.source} ${row.country}`.toLowerCase().includes(query.trim().toLowerCase()))).sort((a,b)=>a.date.localeCompare(b.date)||(a.at??'').localeCompare(b.at??'')||a.name.localeCompare(b.name)),[allRows,range,kind,country,importance,query]);
  const filtered=useMemo(()=>rowsForSelectedDay(periodRows,activeDate) as CalendarRow[],[periodRows,activeDate]);
  const days=useMemo(()=>Array.from({length:diffDays(range.end,range.start)+1},(_,i)=>plusDays(range.start,i)),[range]);
  const vendorCount=useMemo(()=>activeDate?vendorCounts[activeDate]??0:Object.values(vendorCounts).reduce((sum,n)=>sum+n,0),[vendorCounts,activeDate]);
@@ -193,13 +194,19 @@ export default function MarketCalendar(){
   <div className="mc-controls">
    <label className="mc-search"><Search size={15} aria-hidden="true"/><input value={query} onChange={event=>setQuery(event.target.value)} type="search" placeholder="지표·기업명 검색" aria-label="지표 또는 기업명 검색"/></label>
    <div className="mc-filter"><span className="mc-filter-label">일정</span><div className="mc-pills" role="group" aria-label="일정 유형">
-    {([['economic','경제지표'],['earnings','기업 실적'],['all','전체']] as const).map(([key,label])=><button key={key} type="button" className={kind===key?'active':''} onClick={()=>setKind(key)} aria-pressed={kind===key}>{label}</button>)}
+    {([['all','전체'],['economic','경제지표'],['earnings','기업 실적']] as const).map(([key,label])=><button key={key} type="button" className={kind===key?'active':''} onClick={()=>setKind(key)} aria-pressed={kind===key}>{label}</button>)}
    </div></div>
    <div className="mc-filter"><span className="mc-filter-label">국가</span><div className="mc-pills" role="group" aria-label="국가 선택">
     {([['all','전체'],['US','미국'],['KR','한국']] as const).map(([key,label])=><button key={key} type="button" className={country===key?'active':''} onClick={()=>setCountry(key)} aria-pressed={country===key}>{label}</button>)}
    </div></div>
    <div className="mc-filter"><span className="mc-filter-label">중요도</span><div className="mc-pills" role="group" aria-label="중요도 필터">
-    {([['all','전체'],[3,'★★★'],[2,'★★'],[1,'★']] as const).map(([key,label])=><button key={key} type="button" className={importance===key?'active':''} onClick={()=>setImportance(key)} aria-pressed={importance===key} aria-label={key==='all'?'모든 중요도':`중요도 별 ${key}개`}>{label}</button>)}
+    {([['all','전체'],[3,'★★★'],[2,'★★'],[1,'★']] as const).map(([key,label])=>{
+     const active=key==='all'?importance===null:importance?.includes(key)??false;
+     return <button key={key} type="button" className={active?'active':''} onClick={()=>{
+      if(key==='all'){setImportance(null);return;}
+      setImportance(current=>toggleStarImportance(current,key));
+     }} aria-pressed={active} aria-label={key==='all'?'모든 중요도':`중요도 별 ${key}개`}>{label}</button>;
+    })}
    </div></div>
    <div className="mc-range" role="group" aria-label="기간 선택과 이동">
     <button type="button" className={view==='week'?'active':''} aria-pressed={view==='week'} onClick={()=>{setView('week');setActiveDate(null);}}>주간</button>
