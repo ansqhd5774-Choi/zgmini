@@ -187,7 +187,10 @@ export default function MarketCalendar(){
    </div>
   </div>
   <div className="mc-calendar-strip">
-   <div className="mc-period"><strong>{view==='week'?`${range.start.slice(0,4)}년 ${weekTitle(range.start)}`:`${selected.slice(0,4)}년 ${Number(selected.slice(5,7))}월`}</strong><span>{activeDate?`${Number(activeDate.slice(5,7))}월 ${Number(activeDate.slice(8,10))}일 · `:''}{filtered.length}개 일정</span></div>
+   <button type="button" className={`mc-period ${activeDate===null?'selected':''}`} aria-pressed={activeDate===null} aria-label={`${view==='week'?`${range.start.slice(0,4)}년 ${weekTitle(range.start)}`:`${selected.slice(0,4)}년 ${Number(selected.slice(5,7))}월`} 전체 일정 보기`} onClick={()=>setActiveDate(null)}>
+    <strong>{view==='week'?`${range.start.slice(0,4)}년 ${weekTitle(range.start)}`:`${selected.slice(0,4)}년 ${Number(selected.slice(5,7))}월`}</strong>
+    <span>{periodRows.length}개 일정 · 전체 보기</span>
+   </button>
    <div className={`mc-day-strip ${view==='month'?'is-month':''}`} ref={stripRef} aria-label="가로형 달력">
     {days.map(key=><button type="button" key={key} aria-label={`${key.slice(0,4)}년 ${Number(key.slice(5,7))}월 ${Number(key.slice(8))}일`} aria-pressed={activeDate===key} className={`mc-day ${activeDate===key?'selected':''} ${today===key?'today':''} ${shownDates.has(key)?'has-event':''}`} onClick={()=>{setSelected(key);setActiveDate(current=>current===key?null:key);}}><strong>{Number(key.slice(8,10))}</strong><small>{dayLabels[parseDay(key).getUTCDay()]}</small></button>)}
    </div>
