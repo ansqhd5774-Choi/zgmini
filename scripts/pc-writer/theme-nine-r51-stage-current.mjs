@@ -5,7 +5,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import {createHash} from 'node:crypto';
 import {fileURLToPath} from 'node:url';
-import {buildNineR51PrivateProvisionalOverlay}
+import {buildNineR51PrivateProvisionalOverlay,
+  buildNineR51ExistingPublicProvisionalOverlay}
  from './theme-nine-r51-provisional-overlay.mjs';
 
 const fail=code=>{throw Object.assign(new Error('THEME_NINE_R51_'+code),
@@ -23,7 +24,9 @@ const safeFile=(dir,name)=>{
 };
 
 export async function stageNineR51Current({dataRoot='E:/ZGmini/data',
-  publicBase=null,fetchImpl=fetch}={}){
+  publicBase=null,fetchImpl=fetch,provisionalMode='PUBLIC_LEGACY_AS_IS'}={}){
+  if(!['PUBLIC_LEGACY_AS_IS','R32_DATED'].includes(provisionalMode))
+    fail('PROVISIONAL_MODE_INVALID');
   if(!publicBase){
     // Fixed, unauthenticated same-site public read. No API key or raw data GET.
     const response=await fetchImpl(publicUrl,{method:'GET',redirect:'error',
@@ -58,14 +61,17 @@ export async function stageNineR51Current({dataRoot='E:/ZGmini/data',
   // all overlapping confirmed scores are unchanged.
   const laterDates=[...new Set(files.map(n=>n.match(fmt)[1]))]
     .filter(d=>d>=final).sort();
-  const latestFile=laterDates.length?one(laterDates[0]):null;
+  const latestFile=provisionalMode==='PUBLIC_LEGACY_AS_IS'?confirmedFile:
+    laterDates.length?one(laterDates[0]):null;
   if(!confirmedFile||!latestFile)return {
     status:'WAIT_R48_ALIGNED_SNAPSHOTS',confirmedDate:base,latestDate:final,
     missing:[...(!confirmedFile?['CONFIRMED_ANCHOR']:[]),
       ...(!latestFile?['LATEST_PROVISIONAL']:[])],
     d1Writes:0,publicationWrites:0};
   const confirmed=safeFile(dir,confirmedFile),latest=safeFile(dir,latestFile);
-  const overlay=buildNineR51PrivateProvisionalOverlay({confirmed,latest,publicBase});
+  const overlay=provisionalMode==='PUBLIC_LEGACY_AS_IS'?
+    buildNineR51ExistingPublicProvisionalOverlay({confirmed,publicBase}):
+    buildNineR51PrivateProvisionalOverlay({confirmed,latest,publicBase});
   const bytes=Buffer.from(JSON.stringify(overlay,null,2)+'\n');
   const outputDir=path.join(root,'themes','legacy-nine-r51-private-provisional');
   fs.mkdirSync(outputDir,{recursive:true});
@@ -78,7 +84,10 @@ export async function stageNineR51Current({dataRoot='E:/ZGmini/data',
   return {status:'R51_PRIVATE_PROVISIONAL_STAGED_NOT_PUBLISHED',
     confirmedDate:base,provisionalDates:overlay.provisional.points.map(p=>p.date),
     latestR48SourceDate:latest.observationDate,
-    themeCount:9,scoreCount:9*overlay.provisional.points.length,
+    themeCount:9,provisionalMode,
+    scoreCount:overlay.provisional.points.reduce((n,p)=>n+Object.keys(p.scores).length,0),
+    r32ProvisionalScoreCount:provisionalMode==='PUBLIC_LEGACY_AS_IS'?0:
+      9*overlay.provisional.points.length,
     priceMode:overlay.sourcePriceMode,sourceFormulaChanged:false,
     candidateSha256:sha(bytes),candidatePath:target,
     publicationAuthorized:false,d1Writes:0,publicationWrites:0};
