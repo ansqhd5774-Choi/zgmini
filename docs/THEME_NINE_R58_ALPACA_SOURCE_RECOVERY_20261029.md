@@ -18,6 +18,18 @@ R58은 오직 다음 세 가지 **읽기 전용 HTTPS GET(최대 3개)**으로 �
 
 각 날짜 뉴욕시간 15시 봉이 실제로 존재하는지, 26일 GMH와 Alpaca SPY 종가가 일치하는지만 TXT에 출력한다. **원시 가격, 인증키, API 응답 본문, 타 종목 데이터는 TXT에 기록하지 않는다.** SIP·IEX 어느 것도 원본 가격·시각·시장 커버리지의 63 ETF 전체 일치가 검증되지 않으면 R32 자동 계산 소스에 연결하지 않는다. SPY 1종 1일 일치만으로 가격모드 동등/운영 전환을 승인하지 않는다.
 
+## 실PC R58 결과 — 2026-10-29 KST
+
+사용자 제출 `THEME_NINE_R58_ALPACA_READONLY_RESULT_16615_3201.txt` (원시값·인증키 미포함): 검사 `READ_ONLY_PROBE_COMPLETE`, 총 `requests=3`, 기록·게시 0건.
+
+| 1시간봉 소스 | 26일 뉴욕 15시 | 27일 뉴욕 15시 | 26일 SPY GetMarketHistory 원본 비교 |
+| --- | --- | --- | --- |
+| GetMarketHistory | `1`, 유효 | `0`, 미제공 | 기준 소스 |
+| Alpaca SIP raw | HTTP `403` | HTTP `403` | 비교 불가 |
+| Alpaca IEX raw | `1`, 유효 | `1`, 유효 | **종가 불일치(`false`)** |
+
+**결정:** IEX의 27일 가격은 존재하나 기존 26일 기준과 다르므로, 검증 없이 R32 원본에 편입하거나 D1 점수 게시에 사용하지 않는다. SIP 403은 권한 실패이므로 우회하지 않는다. 따라서 R58은 `ALTERNATE_SPY_27_AVAILABLE_BUT_PRICE_PARITY_NOT_APPROVED / PUBLIC_R32_STILL_BLOCKED`이다. [Alpaca 공식 문서](https://docs.alpaca.markets/us/reference/stockbars)에 raw 및 피드 구분이 명시되어 있다. 공식 무료/유료 피드 정책도 서로 다르다.
+
 ## 실행
 
 `THEME_NINE_R58_ALPACA_READONLY_WINDOWS.zip`에서 두 파일을 **같은 폴더**에 압축 해제한다.
