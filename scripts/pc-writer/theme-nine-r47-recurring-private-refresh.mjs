@@ -23,6 +23,16 @@ function nyDate(instant) {
     .filter(p=>p.type!=='literal').map(p=>[p.type,p.value]));
   return `${parts.year}-${parts.month}-${parts.day}`;
 }
+const nyHour=new Intl.DateTimeFormat('en-US',{timeZone:'America/New_York',
+  hour:'2-digit',hourCycle:'h23'});
+function latestClosedNYDate(now) {
+  // R47 runs at 11:30 KST, after the previous NY regular session has
+  // closed. Waiting until NY midnight leaves the R54 provisional feed one
+  // session ahead. Do not include an open NY session before 19:00 ET.
+  const hour=Number(nyHour.format(now));
+  const today=nyDate(now);
+  return hour>=19?today:addDays(today,-1);
+}
 const read = filename => JSON.parse(fs.readFileSync(filename,'utf8'));
 function inside(root,target) {
   const rel=path.relative(root,target);
@@ -73,7 +83,7 @@ export function planNineR47Recurring({dataRoot,rosterPath,now=new Date(),
      !Number.isInteger(maximumWindowDays)||maximumWindowDays<2||
      maximumWindowDays>14)fail('ARGUMENTS');
   const baseline=auditNineR34RefreshPreflight({dataRoot,rosterPath});
-  const cutoff=addDays(nyDate(now),-1); // never score an unfinished New York day
+  const cutoff=latestClosedNYDate(now); // market closed plus 3h safety buffer
   const roster=read(rosterPath);
   const symbols=['SPY',...[...new Set(roster.groups.flatMap(g=>g.tickers.map(t=>t.ticker)))]
     .filter(s=>s!=='SPY').sort()];
