@@ -122,6 +122,24 @@ test('R22 partial future source failure retains previously recorded rows for the
  }finally{db.close();}
 });
 
+test('R22 retains past official Fed rows when the three-month collection horizon rolls forward',async()=>{
+ const db=localDatabase(':memory:');
+ try{
+  const store=publicFeedStore(db);await store.initialize();
+  const now=Date.parse('2026-11-28T12:00:00Z');
+  const prior={id:'fed-calendar-fomc-minutes',date:'2026-10-07',title:'FOMC Minutes',
+   source:'fed_calendar',sourceUrl:'https://www.federalreserve.gov/newsevents/2026-october.htm?view=calendar'};
+  await store.writeOutput('release-calendar',{sources:{fed_calendar:{status:'READY',checkedAt:new Date(now-1e7).toISOString()}},events:[prior]},now-1e7);
+  const result=await collectReleaseCalendar(db,{now,fetchImpl:makeFetch({}).fetchImpl});
+  assert.equal(result.status,'READY'); // Current month is valid; future January is optional.
+  const saved=(await store.readOutput('release-calendar')).body;
+  assert.ok(saved.events.some(e=>e.source==='fed_calendar'&&e.id===prior.id&&e.date===prior.date));
+  assert.ok(saved.events.some(e=>e.source==='fed_calendar'&&e.date==='2026-11-14'));
+  assert.deepEqual(saved.sources.fed_calendar.coveredMonths,['2026-11','2026-12']);
+  assert.deepEqual(saved.sources.fed_calendar.missingMonths,['2027-01']);
+ }finally{db.close();}
+});
+
 test('R22 complete month failure preserves previously stored Fed events without changing current other sources',async()=>{
  const db=localDatabase(':memory:');
  try{
