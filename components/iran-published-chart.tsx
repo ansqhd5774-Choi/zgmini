@@ -11,11 +11,12 @@ export default function IranPublishedChart({points,history=[],compact=false}:{po
  const current=rows.find(p=>p.at===selected)??last,index=rows.indexOf(current),previous=rows[index-1];
  const end=last.at,kstDay=new Date(end+9*3600000).toISOString().slice(0,10),start=Date.parse(kstDay+'T00:00:00+09:00')-13*86400000;
  const visible=rows.filter(p=>p.at>=start&&p.at<=end);
- // Compact cards keep the original 170x68 sparkline geometry. Detail view stays at 350x136.
+ // Match the narrow, tall summary-card viewport so the compact chart fills its space
+ // without SVG letterboxing or distorted text. Detail view stays at 350x136.
  // Both use the same honest 0-100 score scale; only SVG drawing coordinates differ.
- const x=(at:number)=>(compact?26:24)+(compact?132:296)*(at-start)/Math.max(1,end-start);
- const y=(v:number)=>compact?54-v*.44:112-v;
- const axisLeft=compact?26:24,axisRight=compact?158:320,axisLabelX=compact?20:328,axisDateY=compact?66:131;
+ const x=(at:number)=>(compact?24:24)+(compact?90:296)*(at-start)/Math.max(1,end-start);
+ const y=(v:number)=>compact?96-v*.84:112-v;
+ const axisLeft=compact?24:24,axisRight=compact?114:320,axisLabelX=compact?20:328,axisDateY=compact?110:131;
  // Daily model values have a calendar date, not an observed intraday time.
  // Stop before the first actual publication's KST day, so that day's later
  // model total cannot be backdated to an earlier time on the same day.
@@ -32,7 +33,7 @@ export default function IranPublishedChart({points,history=[],compact=false}:{po
   ?'M'+x(daily[0].at)+','+y(0)+' '+dailyPath.replace(/^M/,'L')+' L'+x(daily.at(-1)!.at)+','+y(0)+' Z':'';
  const delta=previous?current.value-previous.value:null;
  return <div className={'zg-iran-published-chart'+(compact?' is-compact ob-summary-chart':'')} aria-label="최근 14일 일별 추정과 실제 게시 시각별 잠정 점수">
-  <svg viewBox={compact?"0 0 170 68":"0 0 350 136"} preserveAspectRatio="xMidYMid meet" role="group" aria-labelledby={id}>
+  <svg viewBox={compact?"0 0 120 112":"0 0 350 136"} preserveAspectRatio="xMidYMid meet" role="group" aria-labelledby={id}>
    <title id={id}>{`최근 14일 · 실제 게시 기록 ${visible.length}회 · 한국시간`}</title>
    {compact&&<defs><linearGradient id={id+"-compact-fill"} x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#ef4444" stopOpacity=".25"/><stop offset="100%" stopColor="#ef4444" stopOpacity="0"/></linearGradient></defs>}
    {[0,50,100].map(v=><g key={v}><line x1={axisLeft} x2={axisRight} y1={y(v)} y2={y(v)} stroke="#52758a" strokeDasharray="2 4" opacity=".55"/><text x={axisLabelX} y={y(v)+3} textAnchor={compact?"end":undefined} fill="#a3bbcc" fontSize="9">{v}</text></g>)}
