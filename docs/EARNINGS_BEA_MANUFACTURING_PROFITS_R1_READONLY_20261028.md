@@ -84,3 +84,12 @@
 - 위 내용은 **승인 PC 실행 보고 증거**다. ChatGPT 작업 환경에서 E: 원본 파일을 직접 열어 SHA를 재계산한 것은 아니므로 독립적인 파일 read-back VERIFIED로 보고하지 않는다.
 - 다음 범위: 신규 저장 원본 2개를 읽기 전용으로 체크포인트/내용 해시 재검증, 별도 stored-only 공개 sidecar 계약 및 운영 D1 write 게이트 수립. 기존 BEA 단위이익의 저장 대기 상태와 혼동하지 않고, 새 지표는 점수 0% 반영(정보성)으로 유지한다.
 - 최신 `main`에 전체 브랜치 병합 금지. 실제 D1 저장/자동배포/공개 API/UI 변경은 여전히 미실행이고 별도의 대상 파일 선별 반영 및 런타임 검증이 필요하다.
+
+## R6 저장 전용 API·PC 파일 재검증 설계 및 로컬 검증
+
+- `worker/earnings-bea-manufacturing-profit-r1.mjs`: `market_public_snapshots_v1` 별도 키 `detail:earnings-bea-manufacturing-profit:r1`에 대한 엄격한 저장 checkpoint 검사, GET/HEAD 전용 reader, 신선도 판정 및 조건부 writer.
+- `scripts/pc-writer/EARNINGS_BEA_MFG_PROFIT_R6_D1_ONE_SHOT.mjs`: PC 승인 원본 두 파일의 일치 SHA256 및 metadata/분기/전체 행 수를 **실제 파일에서 검증**하는 코드. `--dry-run`은 원본 read-only이며 `--apply --confirm-bea-manufacturing-d1-write`는 기존 D1 dual-source gate 검증과 승인된 PC D1 자격 경로를 필요로 한다.
+- 신규 R6 fixture 테스트: 저장-only reader/writer 4/4, 원본 아카이브 검증 3/3 통과. 현재 단계의 전체 BEA 신규 suite는 7개 파일 PASS.
+- 원본 `sourceVersion=ebaf93f7a1e526cabae22388ed96d280d94eb58fdd4ddf484325bf651c59bf9b`에 대한 승인 PC의 **실제 파일 readback**, publisher/operational source gate, D1 저장·read-back은 아직 미실행이다.
+- API route는 `worker/candidate-r52.ts`에 아직 연결하지 않았다. `main`에서 별도 선별 PR, 기존 S6/BEA unit sidecar/점수/UI 무변경 검증 후 연결해야 한다. 개발 branch 전체 병합 금지.
+- 새 D1 공개 값이 준비되지 않은 상태에서 Cloudflare 자동 배포나 공개 표시를 정상 완료로 판정할 수 없다. `SOURCE_READBACK=NOT_RUN`, `D1_WRITE=NOT_RUN`, `D1_READBACK=NOT_RUN`, `DEPLOY=NOT_RUN`.
