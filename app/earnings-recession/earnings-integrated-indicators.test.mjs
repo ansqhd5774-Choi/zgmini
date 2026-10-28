@@ -34,3 +34,19 @@ test("BLS cost values do not modify the E1 risk score or diagnostics",()=>{
  assert.ok(!risk.includes("score+cost"));
  assert.ok(risk.includes("점수 미반영"));
 });
+
+
+test("BEA manufacturing YoY is only rendered from a READY stored sidecar on desktop and mobile",()=>{
+ assert.ok(risk.includes('useStoredIndex<BeaMfgPayload>("/api/earnings-recession-bea-manufacturing-profit")'));
+ assert.ok(risk.includes('earnings-bea-manufacturing-profits-r1-v1'));
+ assert.ok(risk.includes('N400RC1Q027SBEA'));
+ assert.ok(risk.includes('payload.freshness?.status==="FRESH"'));
+ assert.ok(risk.includes('mfgReady&&mfgRow&&<tr'));
+ assert.ok(risk.includes('mfgReady&&mfgRow&&<article'));
+ assert.equal((risk.match(/data-source="bea-manufacturing-profit"/g)??[]).length,2);
+ assert.ok(risk.includes("mfgProfitFormat(mfgRow.currentProfitsBillionsUsdAnnualRate)"));
+ assert.ok(risk.includes("mfgYoYFormat(mfgRow.value)"));
+ assert.ok(risk.includes("점수 미반영"));
+ assert.ok(!risk.includes("score+mfg"));
+ assert.ok(!risk.includes("setScore("));
+});
