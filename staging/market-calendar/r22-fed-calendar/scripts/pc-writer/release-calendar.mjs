@@ -71,6 +71,10 @@ export async function collectReleaseCalendar(db,{now=Date.now(),fetchImpl=fetch}
    try{
     if(source==='fed_calendar'){
      const available=[],missing=[],captured=[];
+     // The rolling three-month request horizon must not erase previously
+     // published observations when the calendar advances to a new month.
+     const firstMonth=`${year}-${String(new Date(now).getUTCMonth()+1).padStart(2,'0')}`;
+     captured.push(...(previous?.body?.events??[]).filter(e=>e.source===source&&e.date<firstMonth+'-01'));
      for(let offset=0;offset<3;offset++){
       const monthDate=new Date(Date.UTC(year,new Date(now).getUTCMonth()+offset,1));
       const month=`${monthDate.getUTCFullYear()}-${String(monthDate.getUTCMonth()+1).padStart(2,'0')}`;
