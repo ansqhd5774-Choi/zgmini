@@ -64,6 +64,15 @@ test('R5 source gate rejects stale R3_3, missing feed, and collector failure bef
   assert.throws(()=>calculateOperationalR5(store,{now}),/R5_SOURCE_COLLECTION_UNREADY/);
  }finally{store.close();}
 });
+
+test('fresh stored R3_4 discovery can be reclassified without inventing a new collection time',()=>{
+ const store=openStore(':memory:');try{
+  store.putSource('news-metadata:'+hash(source),source,Date.parse('2026-10-20T18:00:00Z'));
+  store.checkpoint('continuous-news-last-run-r3',{...checkpoint,classifierVersion:'IRAN_EVENT_RULES_R3_4'});
+  const {body}=calculateOperationalR5(store,{now});assert.equal(body.classifierVersion,CLASSIFIER_VERSION);
+  assert.equal(body.collectionCheckedAt,now-1000);assert.equal(store.getCheckpoint('continuous-news-last-run-r3').classifierVersion,'IRAN_EVENT_RULES_R3_4');
+ }finally{store.close();}
+});
 test('R5 D1 readback and public worker prefer stored R5, fall back safely when corrupt',async()=>{
  const store=openStore(':memory:'),rows=new Map();
  const remote={
