@@ -53,3 +53,29 @@
 - `node --test tests/iran-news-*.test.mjs`
 - 모의 데이터에서 7개 출처 원문 메타데이터와 R38 두 단계 필터 모두 통과.
 - 하나의 출처 실패 시 `PARTIAL_REVIEW_REQUIRED`; 인증 없는 요청에서는 fetch 0건.
+
+## 2026-10-29 공개 피드 실제 조회 증거 (개발 실행 환경)
+
+`node --use-env-proxy`로 **D1 쓰기 없이** 실제 7개 공식 피드를 조회했다.
+재현 명령은 `probeIranNewsServerR39({maxArticles:21,concurrency:3})`.
+
+| 출처 | 피드 | 검사 기사 | 14일 적격 | 검증 원문 예시 |
+|---|---|---:|---:|---|
+| Tasnim | READ | 4 | 1 | [2026-10-28 기사](https://www.tasnimnews.ir/en/news/2026/10/28/3734212/iran-s-foreign-ministry-urges-qatar-to-uphold-requirements-of-mediation) |
+| GOV.UK | READ | 3 | 1 | [2026-10-27 성명](https://www.gov.uk/government/speeches/iran-must-allow-the-return-of-iaea-inspectors-to-all-nuclear-sites) |
+| Guardian | READ | 3 | 2 | [2026-10-28 기사](https://www.theguardian.com/commentisfree/2026/oct/28/donald-trump-iran-midterms-politics-diplomacy) |
+| DW | READ | 2 | 2 | [2026-10-28 기사](https://www.dw.com/en/is-iran-headed-to-war-or-peace-after-mecca-alliance-meeting/a-79788256) |
+| BBC | READ | 3 | 3 | [2026-10-26 기사](https://www.bbc.co.uk/news/articles/c9p8g7e4k2xjo) |
+| Al Jazeera | READ | 3 | 2 | [2026-10-28 기사](https://www.aljazeera.com/news/2026/10/28/are-gcc-countries-looking-for-a-regional-security-pact-with-iran) |
+| UN News | READ | 3 | 2 | [2026-10-23 기사](https://news.un.org/en/story/2026/10/1168654) |
+
+- 원문 확인 합계: **21건 검사, 13건 최근 14일 조건 통과**. 이 13건은
+  기존 R25의 제목·원문 URL·발행일·본문·R38 2단계 키워드 검사를 통과했다.
+- 소스 피드 실패: **0건**, 기사 요청 실패: **0건**.
+- 수집 후보 총 **80건** 가운데 **59건은 아직 미검사**이다. 따라서
+  전체 수집 누락이 없다는 뜻은 아니다. 상태는 `PARTIAL_REVIEW_REQUIRED`.
+- 이는 개발 환경의 실제 네트워크 접근 증거이며 **Cloudflare Worker의 실제
+  네트워크·배포·권리 검증·D1 저장·실제 페이지 표시는 여전히 미검증**이다.
+- 같은 날 공개 API `https://zgmini.kr/api/outbreak-news/iran` 읽기 결과는
+  `IRAN_NEWS_DISPLAY_R1`, 총 **7건, 전부 GOV.UK**. 운영 UI의 7매체 공개와
+  이 읽기 전용 진단을 혼동하지 않는다.
