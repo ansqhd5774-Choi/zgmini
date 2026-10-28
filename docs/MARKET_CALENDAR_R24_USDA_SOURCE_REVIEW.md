@@ -27,3 +27,21 @@
 - USDA 공식 웹 자료의 사실관계(발표 예정일)를 출처와 함께 최소한의 일정 정보로 인용·정리한다. 공식 미국 정부 자료의 공개 접근을 확인했으나 타 기관 저작권 포함 자료·사진·보고서 전문은 수집하거나 재배포하지 않는다.
 - 수집 전송은 출처 URL·관측 시각·원문 해시를 보존한다. 실패가 이전에 관측된 공식 일정 데이터를 지우지 않게 한다.
 - 자동 스크래핑 정책이 달라지거나 요청 차단 시 건너뛰고 검토한다. 사용자 PC는 원문 확보 목적의 **단 한 번의 공식 페이지 요청**만 하며 과도한 반복 접근을 하지 않는다.
+
+## R24 사용자 PC 공식 원문 실측 및 정규 수집 코드 준비 · 2026-10-28
+
+- 사용자 `MARKET_CALENDAR_R24_USDA_SOURCE_EXPORT_RESULT.txt`: `mode=READ_ONLY`, `status=RAW_HTML_CAPTURED_NOT_APPLIED`, `decision=USDA_HTML_CAPTURED_READONLY`, HTTP **200**, 원문 **160,688바이트**, SHA256 **`e558dcf956989ce9cea21065a44e13c3c487da640810ccb4baee7c6aa750338a`**. Base64 역변환·원문 바이트·SHA256 일치 검산 PASS. 기존 PC Core/DB/예약/게시/GitHub 변경 모두 false.
+- 실제 USDA HTML을 스테이징 파서 `parseUsdaWasdeHtml`에 투입해 **2026년 12건 + 2027년 12건 = 24건** 확보. 2026-10-28 이후 14건. 이 수치는 **원문 파싱 결과**이며 PC 예약 수집/공개 사이트 반영 수치가 아니다.
+- `staging/market-calendar/r24-usda/lib/release-calendar.mjs`는 R23 정확한 승인 파일에서 USDA 공급원만 추가한다. 기존 EIA/BLS/BEA/Fed/Census 등의 파서 동작은 유지.
+- `staging/market-calendar/r24-usda/scripts/pc-writer/release-calendar.mjs`는 USDA 공식 페이지 1회 조회→기존 PC input key `release-calendar:usda`로 원문 저장→**저장 원문에서 재파싱**→기존 5필드 결과와 병합. 이전 연도 이력은 보존하며 출처 실패 시 이전 USDA 이벤트만 재사용하고 `SOURCE_FAILED` 처리. 원문이 불완전하면 임의 미래 발표일 생성 금지.
+- 브랜치 `app/market-calendar/market-calendar-client.tsx`는 기존 화면·중요도/선택일 디자인을 변경하지 않고 `usda-wasde` ID와 `USDA/원자재` 표시만 추가. 사이트 title/meta/H1/경로·robots 변경 없음.
+- 설치기 `scripts/pc-writer/market-calendar-r24-usda-apply.mjs`는 **사용자 실측 R23 PC source `8ff396217c9f84578b37c9d422381644c2b8f0e8`**와 Core ID `d0a4b3cb8b95`를 고정하고 정확히 3개 파일(기존 파서·기존 수집기·신규 USDA 모듈)만 백업/로컬 커밋한다. 기존 EIA 파일은 해시 검사만 하고 변경하지 않는다. 기존 잠금/dirty/source/config 변경 시 STOP, 강제 수집·게시·GitHub push·DB/스케줄 변경 없음.
+- R23 PC 원본 승인 SHA256: 파서 `cf94658ade12f83326c5f9403e4303150f7f0b3d771ab25bf7d65bf8d9313de5`, EIA `6099a1fb912077b2627369b8428a600f613004b2facdb16b262a8ea5b3f65e90`, 수집기(CRLF) `b684ab2495b5f25fa604276694111be48df6861d8aaf5b86f75ee3593973a007`.
+- 신규 R24 코드 SHA256: 파서 `a4a2acaeb2ca1a62a20adcc7034b755e5be248506f2ce39c4b3779885d2530e7`, USDA `24555a8084b4cb62398b617331498ffa548018bed7e9058f59a6ecff15d3d7ba`, 수집기 LF `4ac69613badf96eb798239c91eba42071ffe73e47cd8e9c116b4b27c70bd2990`, 설치 수집기 CRLF `a3c1c7f274f61414676f524b927bad0169ee39c206ac7a425ff3f544fdeccf17`.
+- 테스트: 실제 PC 공식 HTML 파싱 **24건**, 신규 원문 파서/수집 도구 4건, 정규 수집 및 실패 이력 보존 3건, 설치 사전검증/정상 적용/잠금/변조 차단 4건, 이전 R23 회귀 별도 PASS. Windows CMD ASCII CRLF/ZIP 무결성 검사 및 패키지 SHA 별도 기록.
+- 최종 로컬 회귀: R24 11/11 PASS, 이전 R23 collector 9/9 PASS 및 installer 4/4 PASS, `npm run typecheck` PASS. 이 검증은 로컬 코드 대상으로 실행했고 사용자 PC 수집 성공이나 Production 게이트를 의미하지 않는다.
+- 최종 Windows 설치 묶음: `MARKET_CALENDAR_R24_USDA_PC_INSTALL_20261028.zip`, SHA256 **`90ec6480ede3cccdf4a611d360ad83e4d5d0c973c1006b54d41fb9f66f134639`**. CMD ASCII+CRLF 및 ZIP 전체 7파일 무결성 검사 PASS.
+
+### R24 다음 사용자 PC 단계
+
+ZIP 전체 압축 해제→`MARKET_CALENDAR_R24_USDA_APPLY.cmd` 단 1회 실행→`MARKET_CALENDAR_R24_USDA_APPLY_RESULT.txt` 전달. 설치 성공 결과가 오기 전에는 R24 PC Core 적용 완료·정기 수집·SQLite 반영·웹 공개를 주장하지 않는다. 기존 예약 실행/배포 관측은 사용자가 별도 확인한다.
