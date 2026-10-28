@@ -111,3 +111,13 @@ flowchart TD
 - GetMarketHistory: https://getmarkethistory.com/docs/api/reference; MarketParquet: https://marketparquet.com/documentation; Cloudflare Git 운영 빌드: https://developers.cloudflare.com/workers/ci-cd/builds/git-integration/github-integration/.
 
 > 이 기준서는 **현재 구조와 실증 상태의 인수인계 문서**다. 게시 실행·D1 쓰기 자체를 대신하지 않으며, 이후 R48/R54 로그의 첫 실패 원인만 이어서 해결한다.
+
+
+## R61 공개 잠정치 원형 보존 수정 — 2026-10-29 (R59 판단 정정, 현행)
+
+- **R59에서 27일 신규 R32 원가격이 없어 공개 잠정치 연결을 차단해야 한다고 한 판단은 잘못이었습니다.** R32 *확정* 점수와 기존 승인 파이프라인에서 이미 공개한 *잠정* 점수는 별도 계보입니다. 승인 산식·ETF 종목·API 공급처·공개 테마 구성을 변경하지 않습니다.
+- 2026-10-29 공개 API 실측: 확정 기준일 `2026-10-26`; 잠정 `2026-10-26` 점수는 바이오·신약/우주·위성/데이터센터·전력 **3개**, `2026-10-27` 점수는 로봇·자동화/클라우드·SaaS/자율주행/원전·SMR/방산/핀테크/사이버보안 **7개**입니다. 각 날짜·키·점수는 수정 금지입니다.
+- `R51 PUBLIC_LEGACY_AS_IS`가 현재 공개 API의 잠정 포인트를 **그대로** 복사하고, R32 9×252 확정 자료만 별도로 연결합니다. 기존 `R32_DATED` 검증 경로는 보관하지만 운영 기본값으로 사용하지 않습니다. 두 계보를 `provisionalMethodologyVersion`/기존 공개 `sourceVersion` 필드와 `R32 methodologyVersion`으로 구분합니다.
+- R54는 매 실행 시 현재 공개 잠정 포인트의 날짜·키·값이 동일한지 리플레이 검증하고, D1 CAS·원자료 manifest/권리 게이트·GitHub main/Cloudflare production build 게이트를 그대로 적용합니다. R37 Reader는 공개 10개 중 R32와 겹치는 **8개**의 확정 이력만 치환하고, 잠정 포인트는 **동일한 기존 객체**로 반환합니다. 미공개 AI는 게시하지 않습니다.
+- R61 변경 파일: `theme-nine-r51-provisional-overlay.mjs`, `theme-nine-r51-stage-current.mjs`, `theme-nine-r54-public-connect.mjs`, `worker/theme-nine-r37-public.mjs`. PC 설치용: `THEME_NINE_EXISTING_PROVISIONAL_UPGRADE.cmd`(기존 설치의 SHA를 검증하고 **4개 파일만** 백업·교체, 기존 R54 발행 실행, TXT 로그 생성). 예약 작업/수집 산식/원가격 수정 없음.
+- 수정 후 관련 **6개 테스트 파일 모두 PASS**. GitHub main 공개 reader 배포 커밋: `051a041dc0be08ee5ab69a4a821a2ca64ea4558b`. 이는 **코드 배포 단계**이며 실제 R54의 D1 발행 성공은 사용자 PC CMD 로그의 `d1Writes=1` 및 사이트의 `modelRevision=THEME_LEGACY_NINE_R37_PUBLIC_V1` 공개 readback 확인 전까지 미완료로 기록합니다.
