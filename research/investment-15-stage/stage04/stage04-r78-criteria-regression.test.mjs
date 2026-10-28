@@ -3,6 +3,11 @@ import assert from 'node:assert/strict';
 import { R63_ADDRESS_HINTS, officialAddressHint } from './stage04-r63-official-address-hints-r78.mjs';
 import { firstPartyOllamaAdapter } from './official-publisher-ollama-adapters-r71.mjs';
 import { runForecastPipeline } from './ollama-forecast-pipeline-r70.mjs';
+import { topicsFromArgs } from './run-ollama-forecast-r71.mjs';
+import { executeR72 } from './run-ollama-forecast-r72-safe.mjs';
+import { mkdtemp, readFile, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 
 const NO_DISCOVERY = async () => ({
   candidates: [], diagnostics: [], search_requests: 0, search_ms: 0
@@ -113,4 +118,31 @@ test('R78 two-source mean is calculated only from two independently refreshed pu
   assert.equal(output.results[0].source_count,2);
   assert.equal(output.results[0].mean_pct,10);
   assert.equal(new Set(seen).size,2);
+});
+
+test('R78 full 21-topic Windows runner accepts all 21, never silently returns to 5', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'zgmini-r78-21-'));
+  const keywords = Object.keys(R63_ADDRESS_HINTS);
+  try {
+    const report = await executeR72({outputDir:dir,args:keywords,
+      loadProgram:async()=>({
+        topicsFromArgs,
+        r71Adapters:()=>[{id:'TBRC'},{id:'SkyQuest'},{id:'Precedence'}],
+        runR71:async topics=>({results:[{
+          keyword:topics[0].keyword,
+          state:'INSUFFICIENT_INDEPENDENT_PUBLISHERS',
+          source_count:0,mean_pct:null,publishers:[],warnings:[]
+        }]})
+      })
+    });
+    assert.equal(report.run_state,'COMPLETED');
+    assert.equal(report.topics_total,21);
+    assert.equal(report.topics_done,21);
+    assert.equal(report.means_calculable,0);
+    assert.equal(report.historical_cagr_used,false);
+    assert.deepEqual(report.results.map(x=>x.keyword),keywords);
+    const persisted=JSON.parse(await readFile(join(dir,
+      'R72_OLLAMA_FORECAST_PIPELINE_RESULT.json'),'utf8'));
+    assert.equal(persisted.results.length,21);
+  } finally { await rm(dir,{recursive:true,force:true}); }
 });
