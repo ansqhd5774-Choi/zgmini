@@ -11,7 +11,7 @@ const url='https://www.bbc.com/news/articles/iran-r3-fixture';
 const article=(title,date='2026-10-20')=>({title,date,sourceUrl:url,summary:''});
 
 test('R3_4 detects independently reported Yemeni camp, Taiz and Saudi defense events',()=>{
- assert.equal(CLASSIFIER_VERSION,'IRAN_EVENT_RULES_R3_4');
+ assert.equal(CLASSIFIER_VERSION,'IRAN_EVENT_RULES_R3_5');
  for(const title of [
   'Houthi attack kills 58 at Yemen government training camp, governor says',
   'Houthis attack besieged city in Yemen',

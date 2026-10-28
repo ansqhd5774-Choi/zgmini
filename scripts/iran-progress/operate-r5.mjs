@@ -69,7 +69,7 @@ export function assertR5ProvisionalPublicationReady(shadow,body,{now=Date.now()}
     body.acceptedEventCount!==shadow.eventCount)
   throw Error('R5_PROVISIONAL_PUBLICATION_GATE_FAILED');
 }
-export function calculateOperationalR5(store,{now=Date.now()}={}){
+export function calculateOperationalR5(store,{now=Date.now(),evidencePolicy='BALANCED_REPORTED_STAGES_R5_2'}={}){
  const checkpoint=store.getCheckpoint('continuous-news-last-run-r3');
  const checked=checkpoint?.lastDiscoverySuccessAt;
  if(!Number.isSafeInteger(checked)||checked>now||now-checked>86400000||
@@ -106,6 +106,7 @@ export function calculateOperationalR5(store,{now=Date.now()}={}){
   throw Error('R5_REVIEWED_REVISION_EVENT_COLLISION');
  const shadow=calculateIranDailyAnchorShadow(input,{
   asOfDate:kstCalendarDate(now),sensitivityScale:21,
+  evidencePolicy,
   collectionCheckedAt:checked,collectionStatus:checkpoint.status,
  });
  if(shadow.status!=='SHADOW_UNCALIBRATED'||shadow.latePriorPublicationDateCount!==0||
