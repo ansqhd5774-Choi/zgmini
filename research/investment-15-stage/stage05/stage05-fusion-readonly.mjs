@@ -1,4 +1,4 @@
-/** Stage05 runner: explicit 01-04 snapshot OR read-only source-coverage audit. */
+/** Stage05 runner: consume completed 01-04 outputs; legacy coverage tools are separate. */
 import {readFile,writeFile,stat} from 'node:fs/promises';
 import {join} from 'node:path';
 import {calculateFusionStage05,SCHEMA_VERSION} from './stage05-fusion-core.mjs';
@@ -21,12 +21,12 @@ async function run() {
     process.stdout.write('Usage:\n  node stage05-fusion-readonly.mjs --audit-existing-live [--output-dir EXISTING_DIR]\n'
       + '  node stage05-fusion-readonly.mjs --audit-existing\n'
       + '  node stage05-fusion-readonly.mjs --handoff-existing\n'
-      + '  node stage05-fusion-readonly.mjs --handoff-input verified-stage01-04-snapshot.json\n'
+      + '  node stage05-fusion-readonly.mjs --handoff-input completed-stage01-04-results.json\n'
       + '  node stage05-fusion-readonly.mjs --handoff-r77 [--output-dir EXISTING_DIR]\n'
       + '  node stage05-fusion-readonly.mjs --handoff-input SNAPSHOT.json --r77-report SAVED_R77.json [--output-dir EXISTING_DIR]\n'
       + '  node stage05-fusion-readonly.mjs --audit-live\n'
       + '  node stage05-fusion-readonly.mjs --audit-fda-growth-live [--output-dir EXISTING_DIR]\n'
-      + '  node stage05-fusion-readonly.mjs --input verified-stage01-04-snapshot.json\n'
+      + '  node stage05-fusion-readonly.mjs --input completed-stage01-04-results.json\n'
       + '  node stage05-fusion-readonly.mjs --audit-contract\n'
       + `Schema: ${SCHEMA_VERSION}; output is stdout JSON, read-only.\n`);
     return;
@@ -109,15 +109,19 @@ async function run() {
     }
     if(args[0]==='--handoff-r77'&&!options.r77Report)
       options.r77Report=new URL('../stage04/R72_OLLAMA_FORECAST_PIPELINE_RESULT.json',import.meta.url);
-    const {buildExistingEvidenceAudit}=await import('./stage05-existing-evidence-bridge.mjs');
     const {buildVerifiedResultsHandoff}=await import('./stage05-verified-results-handoff.mjs');
-    const original=await readFile(new URL(
-      '../STAGE04_INVESTMENT_BOT_R17_SENTIMENT_INDUSTRY_CONTRAST_20261025.md',import.meta.url),'utf8');
     const snapshot=explicit?JSON.parse(await readFile(args[1],'utf8')):null;
-    const audit=buildExistingEvidenceAudit({r17Markdown:original,
-      asOfDate:explicit?snapshot.snapshotDate:kstToday()});
+    let audit=null;
+    if(!explicit){
+      // Legacy coverage-only mode. An explicit completed-results handoff never
+      // reloads or re-evaluates any Stage01-04 archive or operational feed.
+      const {buildExistingEvidenceAudit}=await import('./stage05-existing-evidence-bridge.mjs');
+      const original=await readFile(new URL(
+        '../STAGE04_INVESTMENT_BOT_R17_SENTIMENT_INDUSTRY_CONTRAST_20261025.md',import.meta.url),'utf8');
+      audit=buildExistingEvidenceAudit({r17Markdown:original,asOfDate:kstToday()});
+    }
     const fusion=explicit?calculateFusionStage05(snapshot):null;
-    let handoff=buildVerifiedResultsHandoff({audit,fusion});
+    let handoff=buildVerifiedResultsHandoff({audit,completedSnapshot:snapshot,fusion});
     if(options.r77Report){
       const {attachSavedR77ToStage05}=await import('./stage05-r77-result-bridge.mjs');
       const savedR77=JSON.parse(await readFile(options.r77Report,'utf8'));
@@ -136,8 +140,10 @@ async function run() {
     print({runType:'STATIC_CODE_CONTRACT_AUDIT',status:'INPUT_GAPS_NOT_RESOLVED',
       meaning:'Local contract audit only; does not prove current PC/web accessibility.',
       feeds:['/api/fear-greed','/api/sector-fear-greed','/api/theme-fear-greed'],
-      verifiedAvailability:{stage01:'REQUIRES_LIVE_CHECK',stage02:'FEAR_GREED_SCORE_NOT_PRICE_RS',
-        stage03:'FEAR_GREED_SCORE_NOT_PRICE_TREND',stage04:'FORECAST_CAGR_NOT_REALIZED_M4'},
+      verifiedAvailability:{stage01:'REQUIRES_PREVIOUS_STAGE_RESULT',
+        stage02:'REQUIRES_COMPLETED_SECTOR_SCORE',
+        stage03:'REQUIRES_COMPLETED_THEME_SCORE',
+        stage04:'REQUIRES_COMPLETED_VERIFIED_M4_NOT_FORECAST_CAGR'},
       S5:null,selectedThemeId:null});
     process.exitCode = 2;
     return;
@@ -155,16 +161,16 @@ async function run() {
       [key,{status:feed.status,date:feed.date||null,
         observationCount:feed.items?.length||feed.points?.length||0,
         reason:feed.reason||null}]));
-    const missing=['STAGE02_VERIFIED_ETF_PRICE_RELATIVE_STRENGTH',
-      'STAGE03_VERIFIED_ETF_PRICE_TREND',
+    const missing=['STAGE02_COMPLETED_SECTOR_SCORE_HANDOFF',
+      'STAGE03_COMPLETED_THEME_SCORE_HANDOFF',
       'STAGE03_APPROVED_CANDIDATE_ID_MAPPING',
-      'STAGE04_REALIZED_G1_G2_F_G_D_M4_QUANTIFIED'];
+      'STAGE04_COMPLETED_VERIFIED_FINAL_M4_HANDOFF'];
     print({runType:'LIVE_STAGE01_03_FEED_COVERAGE',retrievedAt:live.retrievedAt,
       status:'S5_INPUT_INCOMPLETE',feedStatus:live.status,feeds:statuses,
       marketRisk:'UNVERIFIED_FROM_FEAR_GREED_ONLY',
       feedAudit:live.audit?.status||'UNAVAILABLE',
       missingContracts:missing,S5:null,selectedThemeId:null,
-      interpretation:'Feed availability is not verified Stage02 ETF price RS, Stage03 ETF price trend, or Stage04 actual growth.'});
+      interpretation:'Legacy live-feed coverage is not a completed Stage01-04 handoff. Stage05 does not recalculate ETF relative strength, trend, or G1/G2/F.'});
     process.exitCode = 2;
     return;
   }
