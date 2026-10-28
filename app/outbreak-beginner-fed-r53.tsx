@@ -77,7 +77,6 @@ function Rate14Chart({rate,compact=false}:{rate:RateStoredSnapshot|null;compact?
   />
  </div>:<div className={compact?"ob58-mini-empty":"ob53-no-trend"} role="status">14일 범위에 저장된 점수가 2개 미만입니다. 임의의 그래프를 만들지 않습니다.</div>;
  if(compact)return <div className="ob58-mini-trend" role="region" aria-label="금리 심리 최근 14일 추이">
-  <div className="ob58-mini-head"><span>14일 추이</span><small>{hasData?"0~"+yAxisMax+"점"+(yAxisMax<100?" 확대":""):"저장 데이터 대기"}</small></div>
   {plot}
   {calendar.length>0&&<div className="ob58-mini-axis" aria-hidden="true"><span>{calendar[0].slice(5).replace("-",".")}</span><span>{calendar[calendar.length-1].slice(5).replace("-",".")}</span></div>}
  </div>;
@@ -108,7 +107,6 @@ export default function OutbreakBeginnerFed({rate,deltaWeek}:{rate:RateStoredSna
      <div className="ob53-metric-row">
       <div className="ob53-current"><span>금리 심리 점수</span><strong>{score===null?"—":score.toFixed(1)}<small>점</small></strong>
        <span className="ob58-status" data-tone={band.className}>{band.label}</span>
-       {deltaWeek!==null&&<span className="ob61-week-inline" data-change={negative?"down":positive?"up":"flat"}>7일 {deltaWeek>0?"+":""}{deltaWeek.toFixed(1)}점</span>}
       </div>
       <div className="ob53-week"><span>주간 변화</span><strong data-change={negative?"down":positive?"up":"flat"}>{deltaWeek===null?"—":(deltaWeek>0?"+":"")+deltaWeek.toFixed(1)}<small>점</small>{negative?<TrendingDown size={15} aria-label="하락"/>:null}</strong></div>
       <div className="ob53-asof"><span>분석 기준일</span><strong><CalendarDays size={15} aria-hidden="true"/>{date}</strong></div>
