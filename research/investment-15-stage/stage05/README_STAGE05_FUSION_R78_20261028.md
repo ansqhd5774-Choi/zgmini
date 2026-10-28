@@ -6,11 +6,10 @@
 
 ## 코드와 실행
 
-- `stage05-fusion-core.mjs`: Stage01 시장위험 분리, Stage03 승인 후보만 입력, Stage04 검증 G1/G2/F/G/D/M4 대조, ETF 가격 1년 RS·Trend의 검증·기간 일치, E/T/S5 계산, 70:30·80:20·90:10 민감도, 결측 NULL 유지.
+- `stage05-fusion-core.mjs`: Stage01 시장위험 분리, Stage03 승인 후보만 입력, **기존 Stage04 구성값 `G1/G2/F`에서 Stage05가 `G/D/M4`를 직접 계산**, ETF 가격 1년 RS·Trend의 검증·기간 일치, E/T/S5 계산, 70:30·80:20·90:10 민감도, 결측 NULL 유지. 제공된 원본 G/D/M4가 있을 때만 계산값과 일치하는지 확인한다(R84 반영).
 - `stage05-fusion-core.test.mjs`: Node 기본 테스트, **완전히 가상의 독립 fixture** 사용. 테스트 통과는 운영 데이터 완전성 통과가 아니다.
 - `stage05-fusion-readonly.mjs`: `--audit-live` 기존 M2 공식 공개 피드 3곳을 그대로 조회해 커버리지 진단(HTTP GET만), `--input <json>`은 01~04 확정·검증 스냅샷에 대해 연구식 계산, `--audit-contract` 네트워크 없는 정적 입력 계약 보고.
 - `STAGE05_FUSION_READONLY.cmd`: Windows CMD 진단 실행. Node 우선순위 `E:\ZGmini\runtime\node.exe`, 아니면 PATH의 `node`. 읽기 전용이며 비정상/결측 시 자동 재시도 없음. Exit 0=입력 계산 실행, 2=진단만/자료 부족, 1=실행 오류.
-- **R79 후속 변경:** 기본 CMD는 `--audit-existing-live --output-dir`로 실행해 R67 승인 테마 9개와 R17 역사 근거를 연결하고, 새 이름의 JSON 로그를 남긴다. [R79 상세](README_STAGE05_EXISTING_INPUT_R79_20261028.md).
 
 ### 명령
 
@@ -30,13 +29,13 @@ STAGE05_FUSION_READONLY.cmd --input verified-stage01-04-snapshot.json
 | Stage01 | `stage01.status`, `date`, `risk` | READY, 7일 이내, risk NORMAL/CAUTION/HIGH_RISK/UNKNOWN. 위험은 점수 외 별도 출력 |
 | Stage02 | `stage02.status`, `sectors[].id`, `relativeStrength` | READY, 실제 ETF 가격 RS, 1년 가격 기간·ETF·원천·가격 시계열 ID·정규화 규칙·VERIFIED |
 | Stage03 | `stage03.status`, `themes[].id`, `sectorId`, `approved`, `trend` | READY, 승인 통과 `true`만 후보, 실제 ETF 가격 추세, Stage02와 동일 비교기간 |
-| Stage04 | `stage04.status`, `themes[].id`, `status`, `G1`, `G2`, `F`, `G`, `D`, `M4`, `validatedDate`, `observationPeriodEnd` | READY, QUANTIFIED, REALIZED_INDUSTRY_ACTIVITY, VERIFIED/CURRENT, 원문 URL, 7일 이내 검증·미래 관측 금지, Stage04 R2 가설 산식 정합성 |
+| Stage04 | `stage04.status`, `themes[].id`, `status`, `G1`, `G2`, `F`, `validatedDate`, `observationPeriodEnd` (`G`/`D`/`M4`는 선택) | READY, QUANTIFIED, REALIZED_INDUSTRY_ACTIVITY, VERIFIED/CURRENT, 원문 URL, 7일 이내 검증·미래 관측 금지. 최종 계산값을 미리 요구하지 않음. |
 
 `relativeStrength`/`trend` 형식: `{ "kind":"ETF_PRICE_RELATIVE_STRENGTH" | "ETF_PRICE_TREND", "validation":"VERIFIED", "score":0..100, "etf":"...", "source":"...", "priceSeriesId":"...", "normalizationRuleId":"...", "periodStart":"YYYY-MM-DD", "periodEnd":"YYYY-MM-DD" }`.
 
 Stage04: `evidenceKind="REALIZED_INDUSTRY_ACTIVITY"`, `sourceValidation="VERIFIED"`, `freshnessStatus="CURRENT"`, `formulaId="STAGE04_R2_PROPOSED"`, `sourceUrls:["..."]`, `validatedDate="YYYY-MM-DD"`, `observationPeriodEnd="YYYY-MM-DD"`, 기타 정량 필드 0~100.
 
-연산: `G=.6*G1+.4*G2`, `D=max(0,G-F)`, `M4=.7G+.3D` 원본 검증 → `E=M4`, `T=.5RS+.5Trend`, `S5=.8E+.2T`. 실수/정규화 결과가 허위이거나 누락되면 NULL로 차단. 시장 위험은 점수와 독립. 동일 기간/최신성/중복 ID 오류를 검출.
+연산: Stage05 프로그램이 `G=.6*G1+.4*G2`, `D=max(0,G-F)`, `M4=.7G+.3D`를 직접 계산 → `E=M4`, `T=.5RS+.5Trend`, `S5=.8E+.2T`. 이미 계산한 **최종 점수 JSON을 입력으로 요구하지 않는다.** 단, 실제 구성값 자체가 없는 경우 NULL로 차단. 시장 위험은 점수와 독립. 동일 기간/최신성/중복 ID 오류를 검출.
 
 ## 운영 연결 미완료 이유
 
