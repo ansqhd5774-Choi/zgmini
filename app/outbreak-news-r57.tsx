@@ -4,6 +4,7 @@ import {useEffect,useRef,useState} from "react";
 import {ChevronDown,ExternalLink,Newspaper} from "lucide-react";
 import {needsKoreanTranslation,translateEnglishNewsText} from "../lib/iran-progress/browser-news-translation-r1.mjs";
 import {isPlaceholderNewsSummary,newsPageSize,visibleNewsLimit} from "../lib/iran-progress/news-ui-r1.mjs";
+import {sourceRightsAttribution} from "../lib/iran-progress/news-source-rights-r2.mjs";
 
 /**
  * UI-only contract. Feed items must come from the separately verified news pipeline.
@@ -17,6 +18,21 @@ export type OutbreakNewsItem={
  summary:string;
  impact:"positive"|"negative"|"neutral";
  sourceUrl:string;
+ rightsVerified?:boolean;
+ displayEligible?:boolean;
+ rightsSource?:string;
+ rightsPolicyUrl?:string;
+ publicationMode?:string;
+ rightsReviewedAt?:string;
+ creatorCredit?:string;
+ editorialSummaryReviewed?:boolean;
+ sourceOriginalContentVerified?:boolean;
+ adaptationNotice?:string;
+ newsReuseScopeReviewed?:boolean;
+ unNoticeConfirmedAt?:string;
+ independentFactsReviewed?:boolean;
+ sourceTextReused?:boolean;
+ corroboratingSourceUrl?:string;
 };
 
 type Filter="all"|"positive"|"negative";
@@ -81,10 +97,12 @@ export default function OutbreakNewsUI({eventId,items=[],newsState="ready"}:{eve
   <div className="ob57-news-list" aria-live="polite">
    {visible.length?visible.map(item=>{const title=translated[`${eventId}:${item.id}:title:${item.title}`]??item.title;
     const summary=translated[`${eventId}:${item.id}:summary:${item.summary}`]??item.summary;
+    const rights=sourceRightsAttribution(item);
     return <article className="ob57-news-item" key={item.id}>
     <div className="ob57-news-meta"><strong>{item.source}</strong><time dateTime={item.publishedAt}>{kstPublicationDate(item.publishedAt)}</time></div>
     <h4 title={title!==item.title?`영문 원제목: ${item.title}`:undefined}>{title}</h4>
     <p>{isPlaceholderNewsSummary(summary)?"기사 핵심 요약 미제공 · 원문 확인 필요":summary}</p>
+    {rights&&<small className="ob57-news-licence"><a href={rights.url} target="_blank" rel="noopener noreferrer">{rights.label}</a></small>}
     <div className="ob57-news-foot"><span className="ob57-impact" data-impact={item.impact}>{labels[item.impact]}</span><a href={item.sourceUrl} target="_blank" rel="noopener noreferrer" title="기사 원문 보기" aria-label={`${item.source} 기사 원문 보기: ${title}`}><ExternalLink size={15} aria-hidden="true"/></a></div>
    </article>;}):<div className="ob57-news-empty" role="status">
     <Newspaper size={21} aria-hidden="true"/>
