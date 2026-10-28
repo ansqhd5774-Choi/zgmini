@@ -26,7 +26,7 @@ test('historical observation date never upgraded to current',()=>{
   assert.equal(r.historicalSource.fObservedAt,'2026-10-23');
   assert.equal(r.themes[0].historicalF.notCurrent,true);
   assert.equal(r.themes[0].currentF,null);
-  assert.ok(r.rows.every(row=>row.S5===null&&row.E===null&&row.T===null));
+  assert.ok(r.rows.every(row=>row.S5===null&&row.stage04M4===null));
 });
 test('current F overlays separate field only; does not manufacture price trend or M4',()=>{
   const r=run({liveF:{records:[{topic_id:12,score:35.14,
