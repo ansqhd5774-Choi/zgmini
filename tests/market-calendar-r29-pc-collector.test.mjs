@@ -34,7 +34,10 @@ test('PC Core worker stores 14 private inputs, no D1 output and no key in record
  assert.equal(run.status,'READY');assert.equal(run.providerRequests,14);
  assert.equal(run.recordCount,14);assert.equal(run.publicationStatus,'HELD_UNCONFIRMED');
  assert.equal(calls,14);
- assert.equal(data.size,16); // 14 daily inputs, quota marker and state input
+ assert.equal(data.size,17); // 14 daily inputs, quota marker, state and R30 private view
+ assert.equal(run.projectionStatus,'READY_PRIVATE');
+ assert.equal(run.projectionCount,14);
+ assert.equal(data.get('release-calendar:earnings-api:private-events')?.body?.scope,'PC_PRIVATE');
  assert.ok(writes.every(k=>k.startsWith('release-calendar:earnings-api:')));
  assert.ok([...data.values()].every(v=>!JSON.stringify(v).includes('private-key-123')));
  assert.ok([...data.keys()].every(k=>k!=='release-calendar'));
