@@ -1,10 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {readFileSync} from 'node:fs';
-import {inspectNineR39WithRows} from '../scripts/pc-writer/theme-nine-r39-parquet-coverage.mjs';
+import {mkdtempSync,rmdirSync} from 'node:fs';
+import os from 'node:os';import path from 'node:path';
+import {inspectNineR39WithRows,inspectNineR39SavedParquet} from '../scripts/pc-writer/theme-nine-r39-parquet-coverage.mjs';
+import {r39UnitRoster as roster} from './helpers/theme-nine-r39-unit-roster.fixture.mjs';
 
-const roster=JSON.parse(readFileSync(new URL('../config/theme-nine-r20-approved-candidates.json',
- import.meta.url)));
 const symbols=[...new Set(roster.groups.flatMap(g=>g.tickers.map(t=>t.ticker)))];
 const rows=date=>[...symbols,'SPY'].map((symbol,i)=>({date,symbol,
  asset_type:'ETF',close:50+i}));
@@ -41,4 +41,10 @@ test('duplicate, wrong-date and impossible observed prices stop the audit',()=>{
   nextRows:nextRows.map((r,i)=>i===0?{...r,date:'2026-10-23'}:r)}),/PARQUET_ROW_INVALID/);
  assert.throws(()=>inspectNineR39WithRows({roster,baseRows,
   nextRows:nextRows.map((r,i)=>i===0?{...r,close:0}:r)}),/PARQUET_ROW_INVALID/);
+});
+
+test('synthetic unit roster does not authorize saved-source inspection without the approved PC roster',async()=>{
+ const root=mkdtempSync(path.join(os.tmpdir(),'zgmini-r39-unit-'));
+ try{await assert.rejects(inspectNineR39SavedParquet({dataRoot:root}),/APPROVED_ROSTER_MISSING/);}
+ finally{rmdirSync(root);}
 });
