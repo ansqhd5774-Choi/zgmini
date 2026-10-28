@@ -35,7 +35,9 @@ export function eligibleNineR37(record,base,{now=Date.now(),storedAt=now}={}){
  if(!validDate(baseConfirmed)||!record||record.status!=='READY'||
   record.version!==THEME_NINE_R37_VERSION||
   record.methodologyVersion!==THEME_NINE_R37_METHOD||
-  record.sourceContract!=='THEME_NINE_R32_PRIVATE_STAGE5_SHADOW_V1'||
+  !['THEME_NINE_R32_PRIVATE_STAGE5_SHADOW_V1',
+    'THEME_NINE_R47_PRIVATE_RECURRING_NINE_THEME_SHADOW_V1']
+    .includes(record.sourceContract)||
   record.sourcePriceMode!=='RAW_UNADJUSTED_1H_NOT_OFFICIAL_CLOSE'||
   record.historicalAumMode!==PUBLIC_DATE_MODE||
   record.rosterSha256!==THEME_NINE_R37_ROSTER_SHA||
@@ -50,6 +52,9 @@ export function eligibleNineR37(record,base,{now=Date.now(),storedAt=now}={}){
   !validDate(record.observationDate)||record.observationDate!==baseConfirmed||
   record.phase!==base.phase||!stamp(record.sourceStoredAt)||
   !stamp(record.publishedAt)||!Number.isSafeInteger(Number(storedAt)))return false;
+ if(record.sourceContract==='THEME_NINE_R47_PRIVATE_RECURRING_NINE_THEME_SHADOW_V1'&&
+   (!sha(record.baselineManifestSha256)||
+    (record.deltaManifestSha256!==null&&!sha(record.deltaManifestSha256))))return false;
  const clocks=[Date.parse(record.sourceStoredAt),Date.parse(record.publishedAt),Number(storedAt)];
  if(clocks.some(t=>t>now||now-t>=PUBLIC_DISPLAY_MAX_AGE_MS))return false;
  if(now-Date.parse(record.observationDate+'T23:59:59Z')>=PUBLIC_DISPLAY_MAX_AGE_MS)return false;
