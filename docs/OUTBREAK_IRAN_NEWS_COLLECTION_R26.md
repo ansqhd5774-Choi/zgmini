@@ -98,3 +98,11 @@
 - 기존 `sources.mjs`, `news-display-discover-r1.mjs`, `lib/iran-progress/news-display-r1.mjs`는 검증 후 **그대로 유지**한다. R24/25/26·소스 레지스트리·R29 실행 모듈 총 **5개 신규 파일**만 추가한다. 활성 R15 runner의 기존 내용을 검증하고 원본을 `.before-iran-news-r29`로 **배타적 백업**한 뒤 오직 후행 R29 블록만 붙인다. task·VBS·기존 R15 모듈은 수정하지 않는다.
 - 설치 전후 파일 해시 불일치, `.next`·백업 중복, 작업 실행 중, 저장 실패는 `STOP`으로 분리하고 **자동 재설치·무단 rollback·광범위 삭제를 하지 않는다**. 특히 설치 결과 불확실은 사용자의 로그 검토까지 멈춘다.
 - **현재 검증 경계:** 브랜치의 코드/회귀 테스트/ZIP 검증과 **실제 사용자 PC의 설치·정규 실행 성공은 별개**다. 사용자가 `IRAN_NEWS_R29_AUTO_CONNECT_RESULT.txt`를 확인하고, 다음 서로 다른 정규 2회에서 R29 상태 파일과 개인 후보 파일의 업데이트를 검증해야 PC 자동 수집 PASS가 된다. 기존 R16 검증기는 R15 runner 해시용이므로 R29 runner에 적용해 거짓 이상으로 해석하지 않는다.
+
+## 12. R30 기존 PC 표시 라이브러리 해시 호환 — 자동 수집만 설치
+
+- **운영 증거:** 2026-10-28 사용자 PC의 R29 사전 검사는 일정 보호 시간 밖에서 `R29_EXISTING_DEPENDENCY_DRIFT`로 중단. 기존 운영 소스 `bc7bd678...`와 R15 뉴스 표시 라이브러리에는 후속 번역 필드 검증 변경이 없다. 패키지의 최신 파일에만 `titleEn/summaryEn`, `titleKo/summaryKo`, `translationReviewed` 검증이 추가된 실제 코드 차이이며 단순 개행 차이가 아니다. PC 파일·스케줄러·D1·점수·개인 후보는 수정되지 않았다.
+- **최소 수정:** R29 설치기의 기존 의존성 일치 검사에서 `lib/iran-progress/news-display-r1.mjs`에 한해 SHA-256 `d960d1d1a5cd4a8642ff1a196a991f4e2a9efa244475df752367a629765f88ce` (R15 당시 번역 이전 라이브러리)를 최신 `abe67381029f802119f5fa3c7796002baea69395da86633c076019ee4f76bd65`와 함께 허용한다. 그 외 다른 해시·임의 개행 변경·다른 모듈의 차이는 계속 중단한다.
+- R26은 해당 라이브러리에서 `kstDayWindow`, `kstNewsDay`, `NEWS_PC_RETENTION_DAYS`만 사용한다. 기존 모듈을 복사하거나 덮어쓰지 않으며, 번역/UI/기존 공개 카드 게시를 실행하지 않는다. R28 오프라인 패키지 자체의 7개 모듈 SHA 검증도 변경하지 않는다.
+- **새 CMD:** ZIP `IRAN_NEWS_R30_COMPAT_INSTALL_PACKAGE.zip` (SHA-256 `00aa5c48db0ee0b93045068e6df94a44cd87a7dd9565b834d31dc968f3b36e3b`) 전체 압축 해제 후 `IRAN_NEWS_R30_COMPAT_INSTALL.cmd`를 실행한다. 결과는 CMD 옆 `IRAN_NEWS_R30_COMPAT_INSTALL_RESULT.txt`. 기존 시간대 ±25분 검사, 작업 실행 중 검사, VBS/R15 runner/복구 해시, PC 후보, 신규 5모듈 검증과 한 번의 후행 연결 설치는 R29와 동일하다. 이전 R29 로그들은 `STOP_R29_BEFORE_INSTALL`여서 설치 전 중단되었다.
+- **검증 경계:** 브랜치 테스트 성공은 PC 설치 완료와 다르다. 새 CMD 설치 결과를 확인하고 다음 2회 정상 예약 수집의 개인 후보 갱신은 사용자 검증이다.

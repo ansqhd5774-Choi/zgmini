@@ -483,3 +483,10 @@
 - `scripts/iran-progress/news-display-install-hook-r29.mjs`는 이미 설치된 R15 runner에 한정하여 동일 R13 작업 후행 위치에 R29 블록만 추가한다. 활성 runner·VBS·스케줄러·백업·기존 의존 모듈 해시/위치가 다르면 **쓰기 전에 중단**하고 추가 설치를 진행하지 않는다. 정규 작업 시각 인접/실행 중이면 설치 금지. 새 Windows 작업·점수 원장·D1·번역/UI 변경 금지.
 - 사용자는 `IRAN_NEWS_R29_AUTO_CONNECT_PACKAGE.zip`(SHA-256 `c49d0601ba0e91ea1b030d22c0dec057706b7e05999214aba9705e1768d1033a`) 전체를 풀고 `IRAN_NEWS_R29_AUTO_CONNECT.cmd`를 한 번 실행한다. 코드 파일은 모두 ZIP 내장, 런타임 GitHub 다운로드는 없다. 생성 로그는 CMD 옆 `IRAN_NEWS_R29_AUTO_CONNECT_RESULT.txt`. 설치 성공 후에도 **실제 PC 정규 2회 수집 실측은 사용자 확인 대기**이다.
 - 향후 권리 승인 작업은 이 수집기 연결과 별도. `rightsVerified=0`, `displayEligible=0`을 유지하므로 비공개 27건이 즉시 사이트 공개 27건이 되는 것은 아니다.
+
+## 39. R30 R29 설치 호환성 보완 — 번역과 운영 파일 보존
+
+- 사용자 PC 설치 로그에서 `R29_NEAR_SCHEDULE_WINDOW_WAIT` 2회는 무변경 중단, 2026-10-28 00:26 KST 재실행은 시간 검사를 통과했으나 `R29_EXISTING_DEPENDENCY_DRIFT`로 **설치 전 중단**됐다. 실제 운영 프로젝트 HEAD는 `bc7bd678...`; 스케줄러·VBS·점수·D1·개인 후보는 불변.
+- 근본 원인: R15 당시 설치된 `lib/iran-progress/news-display-r1.mjs`에는 후속 별도 UI 번역 작업이 추가한 언어 필드 검증이 없다. R29의 신규 비공개 R26 수집은 그 검증을 필요로 하지 않는데도 R29 패키지 현재 버전과 동일 해시만 요구했다.
+- **최소 코드 변경:** 설치기에서 기존 표시 라이브러리 **정확히 두 버전 SHA**만 허용한다. R15 PC 번역 이전 원본 SHA-256 `d960d1d1a5cd4a8642ff1a196a991f4e2a9efa244475df752367a629765f88ce`, 현재 R29 패키지 원본 SHA-256 `abe67381029f802119f5fa3c7796002baea69395da86633c076019ee4f76bd65`. 변경된 임의 코드/타 모듈은 기존처럼 거부. PC의 해당 모듈을 덮어쓰거나 번역 구현을 변경하지 않는다.
+- 새 한 번 실행용 오프라인 ZIP `IRAN_NEWS_R30_COMPAT_INSTALL_PACKAGE.zip` (SHA-256 `00aa5c48db0ee0b93045068e6df94a44cd87a7dd9565b834d31dc968f3b36e3b`), CMD `IRAN_NEWS_R30_COMPAT_INSTALL.cmd` 및 로그 `IRAN_NEWS_R30_COMPAT_INSTALL_RESULT.txt`. 여전히 기존 R13/R15 6시간 후행 경로만 사용, 기존 정규 시간 보호·R15 runner 해시·복구 백업·7개 오프라인 모듈 검증을 유지한다. **코드 통과와 실제 PC 설치/정규 실행은 분리하여 보고**한다.

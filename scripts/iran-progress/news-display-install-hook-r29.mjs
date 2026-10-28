@@ -51,6 +51,19 @@ const EXISTING_MODULES=Object.freeze([
 ]);
 const R15_AUTO_SHA='af4d55af8e312c2d68220d29f806df1f452f5cdc8bbcecf1f8dec2bdd45e2617';
 const R29_AUTO_SHA='faf411f9b77ed3402a4a6e7e675e150a4bae86de10969ce92b4dcdae6030dd92';
+// R15 placed the pre-translation public display library on the PC. Later
+// translation-only validation must not force a rewrite during private R26
+// metadata collection installation. Accept only its verified historical SHA.
+export const R29_PRESERVED_PC_NEWS_LIB_SHA='d960d1d1a5cd4a8642ff1a196a991f4e2a9efa244475df752367a629765f88ce';
+export function matchesPreservedR29Dependency(relative,local,staged){
+ const current=hash(local),approved=hash(staged);
+ if(current===approved)return true;
+ if(relative==='lib/iran-progress/news-display-r1.mjs')
+  return current===R29_PRESERVED_PC_NEWS_LIB_SHA;
+ if(relative==='scripts/iran-progress/sources.mjs')
+  return hash(Buffer.from(local.toString('utf8').replace(/\r\n/g,'\n')))===approved;
+ return false;
+}
 
 export function addR29ToVerifiedR15Runner(body){
  if(typeof body!=='string'||hash(Buffer.from(body,'utf8'))!==R15_RUNNER_SHA||
@@ -152,9 +165,8 @@ export function preflightR29({bundleRoot,
    throw Error('R29_INSTALL_MODULE_STATE_DRIFT');
   if(preexisting){
    const existing=safeRead(destination);
-   const comparable=relative.endsWith('/sources.mjs')?
-    Buffer.from(existing.toString('utf8').replace(/\r\n/g,'\n')):existing;
-   if(hash(comparable)!==hash(bytes))throw Error('R29_EXISTING_DEPENDENCY_DRIFT');
+   if(!matchesPreservedR29Dependency(relative,existing,bytes))
+    throw Error('R29_EXISTING_DEPENDENCY_DRIFT');
   }
   return {relative,full,destination,sha256:hash(bytes),preexisting};
  });
