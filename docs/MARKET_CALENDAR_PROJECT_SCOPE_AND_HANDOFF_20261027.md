@@ -200,3 +200,12 @@
 - 사용자 전달물: 최종 `MARKET_CALENDAR_R22_FED_PC_INSTALL_V2_20261028.zip` (과거 일정 보존 수정 반영; 기존 V1 사용 금지). 압축 해제 후 `MARKET_CALENDAR_R22_FED_APPLY.cmd` 실행, 결과 `MARKET_CALENDAR_R22_FED_APPLY_RESULT.txt` 재업로드. installer는 승인된 두 파일만 백업/로컬 커밋하여 config.source 갱신; 수집·게시·DB·예약 작업·GitHub push·main 병합 없음. 기존 락·출처 변경시 STOP.
 - **현재 미완료:** 실제 PC R22 적용 결과/사용자 운영 확인. `INSTALLED` 결과 TXT 수신 전에는 PC 적용 성공·정규 자동 수집·공개 사이트 반영 성공으로 표기 금지. 기존 R21 예약 수집 상태를 변경하거나 강제 가동하지 않는다.
 - 전용 브랜치 `codex/zgmini-gpt-workspace-20261025`만 유지. 다른 작업자 브랜치·main으로 전환하거나 병합하지 않는다.
+
+## 19. R22 공식 연준 월별 일정 — 사용자 PC 적용 성공 확인 (2026-10-28)
+
+- 사용자 `MARKET_CALENDAR_R22_FED_APPLY_RESULT.txt` 실측 로그 검증: `mode=EXPLICIT_APPLY`, `decision=R22_FED_CALENDAR_INSTALLED_NO_FORCED_COLLECTION`, `phase=INSTALLED`.
+- 기존 R21 PC source `b5e860d09ac87087e158193613425b146fa9a1e5` → **R22 새 PC 로컬 커밋 `a50ac307d8d0849ca2800b3c4df4cd6daaba3b1e`**. 작업 코어 ID `d0a4b3cb8b95`, 정확히 두 파일 `lib/release-calendar.mjs`와 `scripts/pc-writer/release-calendar.mjs` 변경, 파서/수집기 원문 해시 일치.
+- `backupCreated=true`, 백업 ID `r22-20261028020813808-b0e16243`. `gitPushed=false`, `publisherExecuted=false`, `forcedCollection=false`. 결과 로그의 10개 설치·안전 조건 전부 PASS.
+- **상태 분리:** R22 소스 연결 및 PC 설치 **완료**. 이후 예약 수집의 신규 연준 일정 수량·실제 SQLite 공개 저장·웹 페이지 반영은 아직 미확인. 사용자의 사이트 모니터링을 기다리도록 개발을 멈추거나, 자체 강제 수집·게시·예약 변경을 하지 않는다.
+- 다음 소스 단계는 기존 네 공급원 및 신규 연준 원문 이력을 그대로 보존하면서 미국 시장 주요 발표·기업 실적의 공식 일정 출처와 무료 공개 재사용 가능성을 검토한다. 권리가 불명확한 소스를 운영에 연결하지 않는다.
+- 전용 작업 브랜치 `codex/zgmini-gpt-workspace-20261025`를 유지한다. 신규 브랜치 생성·main 병합·운영 배포 없음.
