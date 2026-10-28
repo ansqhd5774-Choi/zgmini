@@ -243,3 +243,12 @@
 - `--dry-run`에는 원격 D1 호출이 없다. 실제 쓰기는 clean main 병합·게시 소스 승인 뒤 `--apply --confirm-census-qfr-d1-write`와 CMD 사용자 `APPLY` 입력이 있어야 실행된다. TXT는 파일 옆에 `EARNINGS_CENSUS_QFR_R4_D1_RESULT_*.txt`로 기록한다.
 - 신규 Worker 6건 + 신규 게시기 연결 3건 + 기존 QFR R4 5건, R3 6건, R2 8건, 총 **28건** 로컬 회귀검사 PASS. **상태:** `CODE=PASS`, `PC_SQLITE=PASS`, `PC_STORED_CALC=PASS`, `PC_D1_PREFLIGHT=NOT_RUN`, `D1_ACTUAL_WRITE/READBACK=NOT_RUN`, `PUBLIC_GET=NOT_RUN`, `SITE_DEPLOY=NOT_RUN`, `AUTOMATION=NOT_RUN`. 별도 `main` 병합·Production 배포 없음.
 - 전체 계약 및 이후 진행 Gate는 [Census QFR R4 기준서](EARNINGS_CENSUS_QFR_R4_PROJECTION_DRAFT_20261028.md) 기준으로 이어간다.
+
+## 18. Census QFR 15개 파일의 main 선택적 반영 (2026-10-28)
+
+- `main`과 지정 브랜치의 이력이 큰 폭으로 갈라진 상태(`main` 기준 ahead 162, behind 40)여서 전체 브랜치 merge/PR을 실행하지 않았다. 기존 main D1 운영 모듈은 같은 SHA이며 QFR 핵심 런타임·CMD·테스트 14개와 문서 1개만 `main`에 없음을 확인했다.
+- **사용자가 해당 15개 파일만 선택적 반영 승인**했고, 기준 `main=67c0621bb4ac02963cc847ec28af506885485b04`에서 승인된 15개 blob만 추가해 신규 `main=2f3f07fcc2b9130e4789b31381cc789947a69ba7`로 원자적 fast-forward를 완료했다.
+- 비교 검증 결과 **15개 전부 ADDED**, 다른 파일 변경/삭제 0건, 지정 작업 브랜치 내용 무변경. 기존 BLS Worker / E1-R4 점수 / PC config / Cron / D1 키 / DNS 무수정.
+- 이 커밋의 GitHub Actions `Node.js CI`는 Build PASS 이후 **전체 실행이 취소**되어 전체 CI 성공 증거가 아니다. 후속 다른 작업자의 `main` 커밋 3개가 앞에 추가됐지만 QFR 커밋은 그 조상으로 보존돼 있다.
+- 본선에 파일이 존재한다는 사실만으로 PC D1 게이트나 실제 D1 write/GET/UI가 완료된 것은 아니다. 다음 순서: PC의 clean main 게시 소스·별도 승인 운영 체크아웃 준비 → QFR D1 PREFLIGHT 실제 PC TXT 확인 → 명시 승인 후 D1 APPLY exact readback → 별도 공개 GET·UI 및 자동 갱신 검증.
+- 원본 파일/blob SHA, 기존 main 보존과 사후 비교 근거는 [Census QFR R5 선별 회수 기록](EARNINGS_CENSUS_QFR_R5_SELECTIVE_MAIN_RECOVERY_20261028.md)에 기록했다.
