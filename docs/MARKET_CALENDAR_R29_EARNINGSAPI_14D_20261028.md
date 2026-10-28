@@ -66,8 +66,20 @@
 - 합계 교차검산: `pre=1,063`, `after=1,280`, `notSupplied=266`; 2,609행과 날짜별 합이 일치.
 - 핵심 티커: 10/28 `GOOG`/`GOOGL`/`MSFT`, 10/29 `AMZN`, 11/02 `AAPL`. 공식 기업 확정 여부는 이 응답만으로 확인되지 않는다.
 - `CONFIRMATION_FIELDS_OBSERVED=0`: 알려진 명시적 확정 필드를 시험 응답에서 관찰하지 못함. 업체의 날짜가 모두 미확정이라고 단정하는 뜻이 아니다.
-- 설치 후보: `lib/earnings-api-calendar.mjs`, `scripts/pc-writer/earnings-api-local.mjs`, 기존 `scripts/pc-writer/collect-local.mjs`의 최소 변경.
+- 설치 후보: `lib/earnings-api-calendar.mjs`, `scripts/pc-writer/earnings-api-local.mjs`, R27에서 승인된 `scripts/pc-writer/release-calendar.mjs`의 최소 변경. 기존 `collect-local.mjs`는 변경하지 않음.
 - 기존 PC Core 예약 작업에서 기존 비밀 설정의 `EARNINGS_API_KEY`를 읽고 뉴욕 날짜당 최대 한 번만 14일을 수집한다. 기존 `public_feed_snapshots_v1`의 **input** 종류에만 원문/상태를 보관하며 D1에 동기화되는 **output** 종류를 만들지 않는다. 기존 DB 테이블·예약 스케줄러·게시 API는 변경하지 않는다.
 - 제공원 공식 DB 동기화 예제([문서](https://www.earningsapi.com/docs/examples/calendar-backfill-sync))에 근거한 `pc_private` 범위로만 연결한다. 원본 공개 피드 재배포 권한은 주장하지 않으며 `VENDOR_UNVERIFIED`, `HELD_UNCONFIRMED` 상태를 유지한다([약관](https://www.earningsapi.com/terms)).
 - `MARKET_CALENDAR_R29_PC_PRIVATE_APPLY.cmd` 설치기는 승인된 R27 파일 SHA·PC 작업 식별·config.source·기존 Core lock·보호 소스 청결을 확인한다. 정확히 3개 코드 파일만 반영하고 백업하며 강제 수집/게시/GitHub 푸시는 하지 않는다.
 - 현재 판정: **API 실측 PASS / PC 내부 원자료 정규 연결 코드 테스트 PASS / 사용자 PC 실제 설치 대기 / 사이트 게시 미실행**. 정규 작업 및 사이트 실행 모니터링은 사용자 담당으로 별도 추가하지 않는다.
+
+
+## R29 PC 첫 설치 결과와 안전한 V2 수정 (2026-10-28)
+
+- 사용자 첫 설치 결과 `MARKET_CALENDAR_R29_PC_PRIVATE_APPLY_RESULT.txt`: `decision=R29_CORE_COLLECTOR_BASE_CHANGED_STOP`, `changedFiles=[]`, `backupCreated=false`, `newSource=null`, `forcedCollection=false`, `publisherExecuted=false`. **PC 코드는 설치되지 않았고 기존 소스·DB·예약 작업은 변경되지 않았다.**
+- 원인: 첫 설치기가 개발 브랜치의 `collect-local.mjs` SHA를 PC의 현행 버전이라고 가정했다. 실제 PC 파일은 그 버전과 달라 정상 중단했다. PC 파일을 추정해 덮어쓰지 않는다.
+- 수정: `MARKET_CALENDAR_R29_PC_PRIVATE_APPLY_V2.cmd` 설치기는 **첫 설치기 대체**. 기존 Core 진입 파일을 건드리지 않고, 실측 확인된 R27 `release-calendar.mjs`(SHA256 CRLF `7ccf0183868fc2f19de5b5f07409383def161a78a1353dba6049299631f31708`)를 기준으로 private 수집 한 지점만 추가한다.
+- V2 변경 정확히 3개: 신규 `lib/earnings-api-calendar.mjs`, 신규 `scripts/pc-writer/earnings-api-local.mjs`, R27 수집기 `scripts/pc-writer/release-calendar.mjs`. 기존 `collect-local.mjs` 유지.
+- R27 소스 대비 삽입된 후크는 기존 `release-calendar` 갱신 여부와 독립적으로 실행되며, API 키가 없으면 요청하지 않는다. private 원문은 `kind=input`으로만 저장하고 `kind=output` 공개 데이터는 만들지 않는다.
+- V2 안전장치: Core 작업 경로, R27 parser/collector SHA, PC config.source==HEAD, 보호 소스 변경 0, 백업+해시, Core lock 확인. 설치 중 강제 수집·게시·스케줄 변경·GitHub push 없음.
+- 검증: R27/R28/R29 관련 테스트 9개 파일 통과, ZIP 파일 7개 무결성 확인. V2 실제 PC 실행은 아직 수행되지 않았으며 재실행/성공을 추정하지 않는다.
+- 주의: 첫 설치 ZIP은 **재실행 금지**. V2 결과가 `R29_V2_PC_PRIVATE_INPUT_COLLECTOR_INSTALLED_NO_FORCED_COLLECTION`일 때만 PC 설치 성공으로 판정한다.
