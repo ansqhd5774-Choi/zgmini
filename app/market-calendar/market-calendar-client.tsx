@@ -17,7 +17,7 @@ type CalendarFeed={status:string;updatedAt?:string;sources?:Record<string,Source
 type CalendarRow={key:string;date:string;at:string|null;name:string;country:Country;category:string;kind:EventKind;actual:string|null;forecast:string|null;previous:string|null;major:boolean;importance:number;source:string;sourceUrl:string;checkedAt:string|null;status:'scheduled'|'released';fresh:boolean};
 
 const dayLabels=['일','월','화','수','목','금','토'];
-const sourceNames:Record<string,string>={bls:'BLS',bea:'BEA',fed:'연준',fed_calendar:'연준',census:'Census',eia:'EIA',usda:'USDA',cftc:'CFTC'};
+const sourceNames:Record<string,string>={bls:'BLS',bea:'BEA',fed:'연준',fed_calendar:'연준',census:'Census',eia:'EIA',usda:'USDA',cftc:'CFTC',treasury:'미국 재무부'};
 const eventKinds:Record<string,{category:string;name:string;major:boolean}>={
  employment:{category:'고용',name:'미국 고용보고서 · 비농업고용·실업률',major:true},
  pce:{category:'물가',name:'미국 개인소득·지출(PCE)',major:true},
@@ -98,7 +98,8 @@ function mergeOfficial(feed:CalendarFeed|null):CalendarRow[]{
   const eiaEvent=item.source==='eia'&&['eia-wpsr','eia-wngsr','eia-steo'].includes(item.id);
   const usdaEvent=item.source==='usda'&&item.id==='usda-wasde';
   const cftcEvent=item.source==='cftc'&&item.id==='cftc-cot';
-  if(!validDate(item.date)||!(eventKinds[item.id]||fedCalendarEvent||eiaEvent||usdaEvent||cftcEvent||((item.source='bls'||item.source==='bea'||item.source==='census')&&item.id.startsWith(`${item.source}-`)))||typeof item.sourceUrl!=='string'||!item.sourceUrl.startsWith('https://'))continue;
+  const treasuryEvent=item.source==='treasury'&&/^treasury-(?:auction|announcement)-[a-z0-9]{9}$/.test(item.id);
+  if(!validDate(item.date)||!(eventKinds[item.id]||fedCalendarEvent||eiaEvent||usdaEvent||cftcEvent||treasuryEvent||((item.source==='bls'||item.source==='bea'||item.source==='census')&&item.id.startsWith(`${item.source}-`)))||typeof item.sourceUrl!=='string'||!item.sourceUrl.startsWith('https://'))continue;
   if(item.id==='fomc'||item.id==='press')continue;
   const duplicate=`${item.id}:${item.date}`;
   if(seen.has(duplicate))continue;
@@ -106,7 +107,7 @@ function mergeOfficial(feed:CalendarFeed|null):CalendarRow[]{
   const sourceState=feed.sources?.[item.source];
   const checkedAt=sourceState?.checkedAt??null;
   const fresh=sourceState?.status==='READY'&&!!checkedAt&&Date.now()-Date.parse(checkedAt)>=0&&Date.now()-Date.parse(checkedAt)<=48*3600000;
-  const category=item.source==='cftc'?'시장':item.source==='usda'?'원자재':item.source==='eia'?'에너지':item.id==='fed-calendar-fomc-minutes'?'금리':item.id==='fed-calendar-beige-book'?'경기':item.source==='bls'?'고용·노동':'경제';
+  const category=item.source==='treasury'?'국채':item.source==='cftc'?'시장':item.source==='usda'?'원자재':item.source==='eia'?'에너지':item.id==='fed-calendar-fomc-minutes'?'금리':item.id==='fed-calendar-beige-book'?'경기':item.source==='bls'?'고용·노동':'경제';
   const meta=eventKinds[item.id]??{category,name:item.title,major:false};
   // Provider feed supplies dates only. Keep an exact clock time solely when
   // the already verified manual snapshot matches this event and day.
