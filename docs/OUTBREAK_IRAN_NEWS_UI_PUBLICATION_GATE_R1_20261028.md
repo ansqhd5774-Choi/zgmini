@@ -38,7 +38,7 @@ node scripts/iran-progress/ui-news-publication-gate-r1.mjs --input=E:\ZGmini\dat
 | UN | https://www.un.org/en/about-us/copyright/ | 뉴스 관련 자료 조건에 맞는 출처 표기 및 UN 통지 여부 확인 |
 | BBC | https://downloads.bbc.co.uk/usingthebbc/bbc_terms_of_use.pdf | 별도 사용 허락 또는 허용 가능한 독립 사실 보도 범위 검토 |
 | Al Jazeera | https://terms.aljazeera.net/ | 콘텐츠 재사용 허락 여부 별도 확인 |
-| Tasnim | 공식 원문의 현재 이용권 표시 직접 확인 필요 | 과거 CC BY 4.0 표기가 알려져 있어도 최신 기사·제3자 자료까지 일괄 승인 금지 |
+| Tasnim | https://www.tasnimnews.ir/en | 공식 사이트에 CC BY 4.0 표기가 있음. 기사별 자사 원문·제3자 자료 제외 확인 후 라이선스와 번역 사실 표시 |
 
 모든 유형의 기사에서 원문 사실 확인과 독립적인 한국어 요약 작성, 참고 영향 분류를 별도로 완료해야 한다. 키워드 검출과 뉴스 저작권은 무관하다.
 
