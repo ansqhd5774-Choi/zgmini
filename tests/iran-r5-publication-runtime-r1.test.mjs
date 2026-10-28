@@ -24,7 +24,7 @@ test('same-PC R3_4 receipts -> independent R5 K21 provisional model, 14 KST poin
   store.putSource('news-metadata:'+hash(source),source,Date.parse('2026-10-20T18:00:00Z'));
   store.checkpoint('continuous-news-last-run-r3',checkpoint);
   const {body,shadow}=calculateOperationalR5(store,{now});
-  assert.equal(body.version,'IRAN_DAILY_PROVISIONAL_R5_1');
+  assert.equal(body.version,'IRAN_DAILY_PROVISIONAL_R5_2');
   assert.equal(body.score,13);
   assert.equal(body.history.length,14);
   assert.equal(body.asOfDate,'2026-10-21');
@@ -36,6 +36,9 @@ test('same-PC R3_4 receipts -> independent R5 K21 provisional model, 14 KST poin
   assert.equal(shadow.productionReady,false);
   assert.equal(body.calibrated,false);
   assert.equal(validateIranR5Public(body,now),true);
+  // Reader rollout must not invalidate the currently published R5_1/R3_4 lineage.
+  assert.equal(validateIranR5Public({...body,version:'IRAN_DAILY_PROVISIONAL_R5_1',classifierVersion:'IRAN_EVENT_RULES_R3_4',sourceVersion:'IRAN_R5_K21_R3_4'},now),true);
+  assert.equal(validateIranR5Public({...body,sourceVersion:'IRAN_R5_K21_R3_4'},now),false);
   assert.equal('sourceUrl' in body,false);
   assert.equal('events' in body,false);
   const view=iranView(body,now);
