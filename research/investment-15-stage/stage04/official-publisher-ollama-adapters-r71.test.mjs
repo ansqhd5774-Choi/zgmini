@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { firstPartyOllamaAdapter, discoverPublisherReports, exactMarketIdentity,
-  livePublisherSlugProbes, reportLeadEvidence,
+  livePublisherSlugProbes, reportLeadEvidence, officialSitemapReports,
   primaryWholeMarketEvidence } from './official-publisher-ollama-adapters-r71.mjs';
 import { runForecastPipeline } from './ollama-forecast-pipeline-r70.mjs';
 import { PUBLISHERS } from './stage04-four-publisher-r37-readonly.mjs';
@@ -330,4 +330,63 @@ test('R76: independent publisher mean accepts verified different periods with ex
   assert.equal(result.results[0].state, 'RESEARCH_MEAN_CALCULABLE');
   assert.equal(result.results[0].source_count, 2);
   assert.ok(result.results[0].warnings.includes('DIFFERENT_FORECAST_PERIODS_REVIEW_SCOPE'));
+});
+
+test('R77: official robots-advertised report sitemap discovers only literal exact-market URLs', async () => {
+  const publisher = PUBLISHERS.find(p => p.id === 'SkyQuest');
+  const sitemapUrl = 'https://www.skyquestt.com/reports.xml';
+  let engineCalls = 0;
+  const fetchFn = async url => {
+    if (url === sources.SkyQuest.catalog) return new Response('<html/>');
+    if (url === 'https://www.skyquestt.com/robots.txt') {
+      return new Response(`User-agent: *\nSitemap: ${sitemapUrl}\n`);
+    }
+    if (url === sitemapUrl) return new Response('<urlset>' +
+      '<url><loc>https://www.skyquestt.com/report/data-center-cooling-market</loc></url>' +
+      '<url><loc>https://www.skyquestt.com/report/data-center-market</loc></url>' +
+      '<url><loc>https://evil.example/report/data-center-market</loc></url></urlset>');
+    return new Response('missing', {status:404});
+  };
+  const sitemap = await officialSitemapReports(publisher, {fetchFn});
+  assert.equal(sitemap.requests, 2);
+  assert.equal(sitemap.urls.length, 2);
+  const found = await discoverPublisherReports(publisher, 'data center', {
+    fetchFn, searchFn: async () => {engineCalls++; return '<html/>';}
+  });
+  assert.equal(found.candidates[0], 'https://www.skyquestt.com/report/data-center-market');
+  assert.equal(engineCalls, 0);
+  assert.equal(found.search_requests, 3);
+  assert.ok(found.diagnostics.some(x => x.method === 'OFFICIAL_SITEMAP' && x.found === 1));
+});
+
+test('R77: official sitemap is fetched once for multiple topics in the same PC run', async () => {
+  let robotCalls = 0, sitemapCalls = 0, modelCalls = 0;
+  const url1 = 'https://www.skyquestt.com/report/robotics-market';
+  const url2 = 'https://www.skyquestt.com/report/data-center-market';
+  const fetchFn = async url => {
+    if (url === sources.SkyQuest.catalog) return new Response('<html/>');
+    if (url === 'https://www.skyquestt.com/robots.txt') {
+      robotCalls++;
+      return new Response('Sitemap: https://www.skyquestt.com/reports.xml');
+    }
+    if (url === 'https://www.skyquestt.com/reports.xml') {
+      sitemapCalls++;
+      return new Response(`<urlset><loc>${url1}</loc><loc>${url2}</loc></urlset>`);
+    }
+    if (url === url1 || url === url2) return new Response('<h1>' +
+      (url === url1 ? 'Robotics Market' : 'Data Center Market') +
+      '</h1><p>The global market is forecast CAGR 8% from 2026 to 2033.</p>');
+    return new Response('missing', {status:404});
+  };
+  const adapter = firstPartyOllamaAdapter('SkyQuest', {fetchFn,
+    searchFn:async()=>'<html/>',chooseFn:async()=>{modelCalls++;return {index:0,scope:'DIRECT'};}});
+  const first = await adapter.run({id:'robotics',keyword:'robotics'});
+  const second = await adapter.run({id:'data-center',keyword:'data center'});
+  assert.equal(first.state,'PASS');
+  assert.equal(second.state,'PASS');
+  assert.equal(robotCalls,1);
+  assert.equal(sitemapCalls,1);
+  assert.equal(modelCalls,2);
+  assert.ok(second.discovery_diagnostics.some(x =>
+    x.method === 'OFFICIAL_SITEMAP' && x.state === 'REUSED_CURRENT_RUN'));
 });
