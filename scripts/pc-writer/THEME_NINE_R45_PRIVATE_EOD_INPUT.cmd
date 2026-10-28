@@ -21,7 +21,8 @@ if not exist "%~dp0theme-nine-r20-approved-candidates.json" (
   pause
   exit /b 2
 )
-"%NODE_EXE%" "%~dp0theme-nine-r45-private-eod-feed.mjs" --export "%~dp0"
+rem The trailing dot avoids an ending backslash escaping the closing quote.
+"%NODE_EXE%" "%~dp0theme-nine-r45-private-eod-feed.mjs" --export "%~dp0."
 set "RESULT=%ERRORLEVEL%"
 echo.
 echo R45 finished. Please send only THEME_NINE_R45_PRIVATE_EOD_INPUT_*_RESULT.txt.

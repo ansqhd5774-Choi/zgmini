@@ -5,6 +5,12 @@
 - 근거: 2026-10-28 실PC R44 `r167-cycle.mjs`가 원본 ETF 일별 Parquet를 먼저 저장하고, 공개 7개용으로는 고정 14심볼 선택기만 사용한다는 소스 추적 성공.
 - 상태: **R45 입력 분리 소스/테스트 작성·CMD 제공**. 실제 사용자 Windows PC R45 실행/비공개 JSON 생성/실데이터 값 검증은 **PENDING**.
 
+### R45 Windows CMD 인수 처리 수정 (2026-10-28)
+
+- 최초 CMD를 실행한 사용자 화면에서 `R45_REPORT_FAILED R45_OUTPUT_DIR_MISSING`을 확인했다. Node에서 `%~dp0` 뒤의 `\\`와 닫는 따옴표가 충돌할 수 있는 CMD 인수 전달 문제다. **원본 Parquet 수집 실패나 ETF 내용 오류라는 증거가 아니다.**
+- `--export "%~dp0"`를 **`--export "%~dp0."`로 수정**한다. 끝에 점을 붙여 디렉터리 의미를 유지하면서 Windows 명령행 인수 끝의 역슬래시를 제거한다. 원자료/계산/기존 예약 작업 변경 없음.
+- 이 수정 뒤의 실PC TXT는 **아직 제출되지 않았으며**, `R45_OUTPUT_DIR_MISSING` 해소는 Windows 재실행 결과로 검증해야 한다.
+
 ## 1. 실제 실행 경로
 
 1. `THEME_NINE_R45_PRIVATE_EOD_INPUT_WINDOWS.zip` 압축을 한 폴더에 푼다. 파일은 CMD·MJS·`theme-nine-r20-approved-candidates.json` 총 3개다.
