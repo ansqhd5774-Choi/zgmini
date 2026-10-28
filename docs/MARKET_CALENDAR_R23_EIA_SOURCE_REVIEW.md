@@ -67,3 +67,9 @@
 ### 정확한 다음 상태
 
 R23 연결 소스 및 UI 브랜치 반영, R23 Windows PC 설치 패키지 CODE_READY. **사용자 PC R23 설치와 사이트 정규 수집/공개 확인은 미실행**. 사용자는 ZIP 전체 압축 해제 후 CMD 1회 실행, `MARKET_CALENDAR_R23_EIA_APPLY_RESULT.txt` 한 파일만 전달하면 된다. 소스가 다르거나 설치 안전 조건이 실패하면 덮어쓰지 않고 STOP한다. R22 운영 소스 보존.
+
+### 시장 캘린더 SEO 변경 범위 점검
+
+- URL `/market-calendar/`의 검색 의도는 경제지표·기업 실적 발표 일정 통합 조회이며, 이번 EIA 추가는 기존 미국 경제 발표 범주 안의 신규 데이터 출처다.
+- 브랜치 `app/market-calendar/page.tsx`의 title·description·canonical·H1·본문 안내를 확인했다. 이번 R23 변경은 데이터 표시 허용 조건·출처명·카테고리뿐이며 title/meta/H1/canonical/robots/기존 경로를 변경하지 않았다. `NO_CHANGE`.
+- 공개 URL을 별도 웹 조회했으나 접근 오류로 실제 Production DOM을 확인하지 못했다. 검색결과 색인 검색도 유효 결과 없음. `PARTIAL / NO_GSC_EVIDENCE / NO_PRODUCTION_SEO_VERIFICATION`. 검색 순위·노출·클릭 개선을 주장하지 않는다.
