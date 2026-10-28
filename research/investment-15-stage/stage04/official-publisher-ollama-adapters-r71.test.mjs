@@ -280,3 +280,54 @@ test('R75: conflicting lead, title, and primary whole-market forecast periods re
   assert.equal(report.growth_pct, null);
   assert.equal(report.source_conflict_reason, 'WHOLE_MARKET_LEAD_AND_SECTION_PERIOD_MISMATCH');
 });
+
+test('R76: official SkyQuest Market Insights separates 2025 size baseline from the 2026-2033 CAGR forecast', async () => {
+  const doc = '<html><h1>Data Center Market Size, Share, and Growth Analysis</h1>' +
+    '<h2>Data Center Market Size, Share & Trends Analysis Report</h2><p>Overview</p>' +
+    '<h2>Data Center Market Insights</h2>' +
+    '<p>Global Data Center market size is poised to grow from USD 564.02 Billion ' +
+    'in 2025 to USD 1348.35 Billion by 2033, growing at a CAGR of 11.51% ' +
+    'in the forecast period (2026&amp;ndash;2033).</p>' +
+    '<h2>Data Center Market Segments Analysis</h2><p>The hardware segment CAGR is 10.7% ' +
+    'from 2026 to 2033.</p></html>';
+  // Real publisher HTML uses the literal &ndash; entity; it should not be
+  // confused with the reference year of its prior market-size estimate.
+  const officialDoc = doc.replace('&amp;ndash;', '&ndash;');
+  const source = primaryWholeMarketEvidence(officialDoc, 'data center');
+  assert.match(source, /11\.51%/);
+  assert.doesNotMatch(source, /10\.7%/);
+  const report = await firstPartyOllamaAdapter('SkyQuest', {
+    fetchFn: async url => url === sources.SkyQuest.catalog ?
+      new Response('<html/>') : url === 'https://www.skyquestt.com/report/data-center-market' ?
+      new Response(officialDoc) : new Response('missing', {status:404}),
+    searchFn: async () => '<html/>',
+    chooseFn: async ({candidates}) => {
+      assert.deepEqual(candidates.map(x => x.pct), [11.51]);
+      return {index:0, scope:'DIRECT'};
+    }
+  }).run({id:'dc',keyword:'data center'});
+  assert.equal(report.state, 'PASS');
+  assert.equal(report.period_start, 2026);
+  assert.equal(report.period_end, 2033);
+  assert.equal(report.evidence_region, 'PRIMARY_WHOLE_MARKET_SECTION');
+});
+
+test('R76: independent publisher mean accepts verified different periods with explicit warning', async () => {
+  const doc = '<html><h1>Data Center Market</h1><h2>Data Center Market Insights</h2>' +
+    '<p>The global data center market forecast CAGR is 11.51% from 2026 to 2033.</p></html>';
+  const doc2 = '<html><h1>Data Center Market</h1><h2>What is the Data Center Market Size?</h2>' +
+    '<p>The global data center market is forecast CAGR of 11.06% from 2026 to 2035.</p></html>';
+  const fetchFn = async url => url === sources.SkyQuest.catalog || url === sources.Precedence.catalog ?
+    new Response('<html/>') : url === 'https://www.skyquestt.com/report/data-center-market' ?
+    new Response(doc) : url === 'https://www.precedenceresearch.com/data-center-market' ?
+    new Response(doc2) : new Response('missing', {status:404});
+  const result = await runForecastPipeline([{id:'dc',keyword:'data center'}], [
+    firstPartyOllamaAdapter('SkyQuest', {fetchFn,searchFn:async()=>'<html/>',
+      chooseFn:async()=>({index:0,scope:'DIRECT'})}),
+    firstPartyOllamaAdapter('Precedence', {fetchFn,searchFn:async()=>'<html/>',
+      chooseFn:async()=>({index:0,scope:'DIRECT'})})
+  ]);
+  assert.equal(result.results[0].state, 'RESEARCH_MEAN_CALCULABLE');
+  assert.equal(result.results[0].source_count, 2);
+  assert.ok(result.results[0].warnings.includes('DIFFERENT_FORECAST_PERIODS_REVIEW_SCOPE'));
+});
