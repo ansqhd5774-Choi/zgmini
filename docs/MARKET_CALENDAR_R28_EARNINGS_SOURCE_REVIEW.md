@@ -91,3 +91,10 @@
 - `tests/market-calendar-r28-earnings.test.mjs`: 권리 검증 실패 시 호출 차단, 공식 ICS/JSON, 회사/분기 ID, 잠정/취소, DST 현지 날짜, 변경·실패 보존, PC 저장 readback, UI 구분 검사를 포함한다.
 - 실제 공급원 목록 `EARNINGS_SOURCES`는 **빈 배열**이다. 테스트용 `investor.example.com`은 가상의 검증 대상이며 실행 시 가져오지 않는다. 이용약관·상업적 저장·재배포 허용이 확인된 실제 공식 공급원이 생기기 전에는 등록하지 않는다. 따라서 현재 **실제 기업 실적 수집 0건**이며 PC 운영 설치도 하지 않는다.
 - R27 설치 후보와 기존 경제지표 소스는 수정하지 않는다. R28 후보를 PC에 설치하려면 운영 승인 source SHA, 파일별 해시, 실행 중 lock, 기존 백업·config 보존을 검증하는 별도 안전 설치가 필요하다.
+
+## 핵심 기업부터 확장 — R28 우선순위 대장 (2026-10-28)
+
+- 1차는 미국의 NVDA·AAPL·MSFT·GOOGL/GOOG·AMZN·META·TSLA·AVGO 8개 기업이다. 이는 최초 개발 순서이며 운영 대상 전체의 상한이 아니다.
+- [기업별 IR·권리 조사 상세](MARKET_CALENDAR_R28_CORE_ISSUER_PRIORITY_20261028.md) 및 `staging/market-calendar/r28-earnings/lib/priority-issuers.mjs`에 기록했다. 일정 날짜를 이 목록에서 직접 게시하지 않는다.
+- 엔비디아의 공식 이벤트 RSS 제공은 확인했다. 그러나 공식 약관의 자동 수집·상업적 사용 제한을 해소하지 못했으므로 실제 수집 공급원으로 활성화하지 않는다. 애플 역시 상업적 재배포 금지 약관을 준수한다.
+- 나머지 핵심 기업은 공식 IR 일정 경로와 사전 발표 예시를 확인했으나, 재배포 허용 근거가 미확보되어 `RESEARCHING`이다. **현시점 8개 중 실제 승인 0개·자동 공개 0건**이다.
