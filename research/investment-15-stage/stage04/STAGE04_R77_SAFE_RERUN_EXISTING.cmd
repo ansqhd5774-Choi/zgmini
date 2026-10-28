@@ -1,6 +1,6 @@
 @echo off
 setlocal EnableExtensions DisableDelayedExpansion
-rem Re-run the existing R77 five-topic Stage04 Ollama bundle on this Windows PC.
+rem Re-run all existing R31-approved 11 sectors + 10 themes (21 research topics).
 rem Copy first so the last verified R77 JSON/TXT/diagnostic remain unchanged.
 rem No score formula, publisher list, scheduled task, or installation changes.
 
@@ -22,9 +22,32 @@ if not exist "%ZG_R77_RUN%\STAGE04_OLLAMA_R72_RUN_AND_DIAGNOSE.cmd" goto copy_fa
 if not exist "%ZG_R77_RUN%\run-ollama-forecast-r72-safe.mjs" goto copy_failed
 
 echo.
-echo Running the original Stage04 R77 Ollama program (5 existing topics).
+echo Running the original Stage04 R77 Ollama program for 21 approved research topics.
 echo The existing Stage04 CMD will pause after execution; press a key to return.
-call "%ZG_R77_RUN%\STAGE04_OLLAMA_R72_RUN_AND_DIAGNOSE.cmd"
+rem 11 sectors, followed by 10 themes, from stage04-all-universe-r31.mjs.
+rem Explicit args bypass the R77 five-topic diagnostic default; no new topic guessed.
+call "%ZG_R77_RUN%\STAGE04_OLLAMA_R72_RUN_AND_DIAGNOSE.cmd" ^
+  "information technology" ^
+  "telecommunications services" ^
+  "consumer discretionary" ^
+  "industrial machinery" ^
+  "financial services" ^
+  "utilities" ^
+  "healthcare services" ^
+  "advanced materials" ^
+  "energy" ^
+  "consumer staples" ^
+  "real estate" ^
+  "robotics and automation" ^
+  "cloud computing" ^
+  "autonomous vehicle" ^
+  "nuclear reactor" ^
+  "defense" ^
+  "fintech" ^
+  "cyber security" ^
+  "biotechnology services" ^
+  "data center" ^
+  "satellite"
 set "ZG_R77_EXIT=%ERRORLEVEL%"
 echo.
 echo REEXECUTION_FOLDER=%ZG_R77_RUN%
