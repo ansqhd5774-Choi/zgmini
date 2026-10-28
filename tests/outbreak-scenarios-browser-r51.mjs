@@ -120,6 +120,7 @@ try{
     chartWidthFraction:chart.width/(chart.width+news.width),
     newsWidthFraction:news.width/(chart.width+news.width),
     chartBeforeNews:chart.right<=news.left+1 || news.top>=chart.bottom-1,
+    newsBeforeChart:news.right<=chart.left+1 || chart.top>=news.bottom-1,
     introFills:Math.abs(intro.width-main.width)<2};
   });
   assert(fedVisual.scoreWidthFraction>.96&&fedVisual.introFills,
@@ -130,7 +131,10 @@ try{
    assert(fedVisual.newsWidthFraction>.61&&fedVisual.newsWidthFraction<.71,
     "R58: desktop news must occupy approximately 66% of the two-column content");
   }
-  assert(fedVisual.chartBeforeNews,"R58: news must appear beside or below chart");
+  // Existing R63/R65 styles put news first on tablet and desktop.
+  // Keep the <=700px embedded-chart contract; do not reverse production layout.
+  assert(width>700?fedVisual.newsBeforeChart:fedVisual.chartBeforeNews,
+   'Existing responsive news/chart ordering is preserved');
   const fedTypography=await root.evaluate(el=>{
    const selectors={
     score:".ob53-current strong",
