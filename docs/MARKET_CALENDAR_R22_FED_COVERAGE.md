@@ -27,13 +27,13 @@
 ## 구현 및 운영 영향
 
 - `staging/market-calendar/r22-fed-calendar/lib/release-calendar.mjs`: 기존 BLS/BEA/G.17/Census 파서를 보존하고 `parseFedMonthlyCalendar`와 `RELEASE_SOURCES.fed_calendar`만 추가한다.
-- `staging/market-calendar/r22-fed-calendar/scripts/pc-writer/release-calendar.mjs`: UTC 현재 월과 다음 2개월 공식 월별 달력 URL을 조회한다. 검증된 월만 입력을 저장하고, 한 월의 오류 발생 시 직전 승인 해당 월 자료를 유지한다. 모든 월 오류 시 기존 `SOURCE_FAILED` 이력 보존 흐름을 따른다. 기존 R21 Census 연말 경계 보정 유지.
+- `staging/market-calendar/r22-fed-calendar/scripts/pc-writer/release-calendar.mjs`: UTC 현재 월과 다음 2개월 공식 월별 달력 URL을 조회한다. 검증된 월만 입력을 저장하고, 한 월의 오류 발생 시 직전 승인 해당 월 자료를 유지한다. **다음 달로 넘어가도 이미 승인된 이전 달 일정의 공개 이력을 유지한다.** 모든 월 오류 시 기존 `SOURCE_FAILED` 이력 보존 흐름을 따른다. 기존 R21 Census 연말 경계 보정 유지.
 - `app/market-calendar/market-calendar-client.tsx`: `fed-calendar-*` 출처 ID 렌더 허용, 출처명 `연준`, FOMC 의사록·베이지북 카테고리 부여. 기존 5필드 일정 계약·타이틀·H1·메타·페이지 경로·검색 노출 설정 변경 없음.
 - `scripts/pc-writer/market-calendar-r22-fed-apply.mjs`: **기존 PC R21 HEAD에서 2개 Core 파일만** 소스·해시·잠금 확인, 백업 후 로컬 커밋, config.source 업데이트. 운영 작업 강제 실행/게시/DB 수정/예약 변경/GitHub push 없음.
 - `MARKET_CALENDAR_R22_FED_APPLY.cmd`와 `README_R22_FED_PC_INSTALL.txt`를 동일 ZIP에 포함한다. CMD는 ASCII CRLF; 성공 또는 정지 사유를 실행 위치의 단일 `MARKET_CALENDAR_R22_FED_APPLY_RESULT.txt`로 출력한다.
 - 게이트: 최초 R21 PC source `b5e860d09ac87087e158193613425b146fa9a1e5`; R21 파서 LF SHA256 `20d6c99...`, R21 수집기 PC CRLF SHA256 `8105a292...`; 작업 나무 ID `d0a4b3cb8b95`.
-- R22 파서 LF SHA256 `ede3d4e1a95eb0f9bde1a1ad3f42812cf090a9821a2e7af517638fb928d6704b`, R22 PC 수집기 CRLF SHA256 `57a5e1df39c395c32441afb43672eb059eff22f201585837e61a66a88ea34e22`.
-- 검증: `tests/market-calendar-r22-fed-stage.test.mjs` 6/6 PASS, `tests/market-calendar-r22-fed-apply.test.mjs` 4/4 PASS, `npm run typecheck` PASS. 기존 기준 검증은 별도 유지한다.
+- R22 파서 LF SHA256 `ede3d4e1a95eb0f9bde1a1ad3f42812cf090a9821a2e7af517638fb928d6704b`, R22 PC 수집기 CRLF SHA256 `2ecac6ac7c16c6a06ca81b67feb32f4342f1b2b89163b5531f0f6bb90d622388`.
+- 검증: `tests/market-calendar-r22-fed-stage.test.mjs` 7/7 PASS(월 전환 이력 보존 추가), `tests/market-calendar-r22-fed-apply.test.mjs` 4/4 PASS, `npm run typecheck` PASS. 기존 기준 검증은 별도 유지한다.
 
 ## 필요한 안전 게이트
 
@@ -47,6 +47,6 @@
 - `scripts/pc-writer/market-calendar-r22-fed-source-export.mjs`: 무변경 공개 공식 원문 수집·해시·Base64 단일 TXT 구성.
 - `tests/market-calendar-r22-fed-source-export.test.mjs`: 월 경계, 원문 바이트 검증, 미래 달력 결측, 비공식 URL 거절 4개 검사.
 - `MARKET_CALENDAR_R22_FED_SOURCE_EXPORT.cmd`, `README_R22_FED_SOURCE_EXPORT.txt`: Windows용 실행·사용법.
-- `tests/market-calendar-r22-fed-stage.test.mjs`: 파서·수집·기존 일정 공존·월별 실패·임대 잠금 6개 검사.
+- `tests/market-calendar-r22-fed-stage.test.mjs`: 파서·수집·기존 일정 공존·월별 실패·월 경계 이력 보존·임대 잠금 7개 검사.
 - `tests/market-calendar-r22-fed-apply.test.mjs`: 설치 전용 검사·정확히 2파일 로컬 커밋·기존 락·출처 변경 감지 4개 검사.
 - PC는 아직 R22로 갱신되었다고 보고하지 않는다. 기존 R21 정상 주기 수집 여부는 사용자의 사후 확인 대상이다.
