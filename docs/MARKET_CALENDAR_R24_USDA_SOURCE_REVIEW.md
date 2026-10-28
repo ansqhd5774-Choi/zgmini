@@ -65,3 +65,12 @@ ZIP 전체 압축 해제→`MARKET_CALENDAR_R24_USDA_APPLY.cmd` 단 1회 실행�
 - 안전 중단: 그사이 다른 PC 작업으로 HEAD가 다시 바뀌거나 5개 파일 변경 집합이 달라지면 `R24_V2_SOURCE_RECHECK_STOP`; 강제 설치·원상복구·옛 설치기 반복 실행을 하지 않는다.
 - 신규 V2 테스트 **4/4 PASS**, 이전 R24 설치 테스트 **4/4 PASS**, 읽기 전용 진단 **3/3 PASS**, `npm run typecheck` PASS. Windows CMD ASCII CRLF, 9파일 ZIP 무결성 PASS.
 - 사용자 전달물 `MARKET_CALENDAR_R24_USDA_PC_INSTALL_V2_20261028.zip` SHA256 **`407c291581eb8dbf6bb30711fd8a188060757be4f4d6cb903de70cbc17ba8658`**. 실행 후 `MARKET_CALENDAR_R24_USDA_APPLY_V2_RESULT.txt` 제출받아 `phase=INSTALLED` 확인 전에는 R24 PC 설치·예약 수집·공개 반영으로 판정하지 않는다.
+
+## R24 V2 PC 설치 성공 확인 (2026-10-28)
+
+- 사용자 제출 `MARKET_CALENDAR_R24_USDA_APPLY_V2_RESULT.txt` 결정 `R24_USDA_V2_INSTALLED_NO_FORCED_COLLECTION`, `phase=INSTALLED`, 내부 설치기 결정 `R24_USDA_CALENDAR_INSTALLED_NO_FORCED_COLLECTION`.
+- 적용 이전 PC HEAD `4e2a12ccf486d760a21c3269a9f77a4bfe4f48df` → 새 로컬 HEAD **`b8204432cea18f62eb34eb8d08dcfe61717a448d`**. `config.source`는 설치기 내에서 새 HEAD로 갱신하고 readback 검사 통과.
+- 변경 파일 3개: `lib/release-calendar.mjs`, `lib/usda-calendar.mjs`, `scripts/pc-writer/release-calendar.mjs`; 백업 ID `r24-20261028055231277-3a700f33`.
+- 기존 다른 작업의 변경 5파일 보존(`preservedUnrelatedFiles=5`), `forcedCollection=false`, `publisherExecuted=false`, `gitPushed=false`.
+- **PC 코드 설치 단계 완료**. 정규 예약 수집으로 USDA 발표 일정이 실제 저장·게시·화면에 노출됐는지는 미관측이며 사용자가 사후 확인한다. 이 관측을 후속 공식 소스 조사·개발의 강제 선행조건으로 만들지 않는다.
+- 다음 R25는 CFTC COT 공식 발표 일정의 읽기 전용 원문 확보부터 시작한다. 세부 근거와 패키지는 `docs/MARKET_CALENDAR_R25_CFTC_SOURCE_REVIEW.md`에 기록.
