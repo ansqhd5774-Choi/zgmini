@@ -5,6 +5,7 @@
  * duplicate publishers, and the >=2 independent publisher mean gate.
  * It never assigns investment attractiveness, G/D/M, or trade scores.
  */
+import { officialAddressHint } from './stage04-r63-official-address-hints-r78.mjs';
 
 export const ACTIVE_PUBLISHERS = Object.freeze(['TBRC', 'SkyQuest', 'Precedence']);
 export const MIN_INDEPENDENT_PUBLISHERS = 2;
@@ -53,6 +54,12 @@ function normalizedCandidate(raw, adapter, observedAt) {
     model_candidate_pct: Number.isFinite(raw?.model_candidate_pct) ? raw.model_candidate_pct : null,
     forecast_math_pct: Number.isFinite(raw?.forecast_math_pct) ? raw.forecast_math_pct : null,
     forecast_table_pct: Number.isFinite(raw?.forecast_table_pct) ? raw.forecast_table_pct : null,
+    forecast_metadata_end_year: Number.isInteger(raw?.forecast_metadata_end_year)
+      ? raw.forecast_metadata_end_year : null,
+    overview_forecast_year: Number.isInteger(raw?.overview_forecast_year)
+      ? raw.overview_forecast_year : null,
+    overview_forecast_pct: Number.isFinite(raw?.overview_forecast_pct)
+      ? raw.overview_forecast_pct : null,
     historic_narrative_pct: Number.isFinite(raw?.historic_narrative_pct)
       ? raw.historic_narrative_pct : null,
     historic_math_pct: Number.isFinite(raw?.historic_math_pct)
@@ -89,7 +96,20 @@ function normalizedCandidate(raw, adapter, observedAt) {
     Math.abs(raw.forecast_math_pct - raw.forecast_narrative_pct) <= 0.15 &&
     Math.abs(raw.forecast_table_pct - raw.historic_narrative_pct) <= 0.05 &&
     Math.abs(raw.historic_math_pct - raw.historic_narrative_pct) <= 0.15;
-  if (!['CONSISTENT', 'EXCERPT_PERIOD_VERIFIED'].includes(raw.source_audit) && !provenR31) {
+  const provenR82 = adapter.id === 'TBRC' &&
+    raw.source_audit === 'RESOLVED_FORECAST_METADATA_YEAR_AND_HISTORIC_RATE_MISLABEL' &&
+    raw.source_conflict_reason === 'OVERVIEW_AND_FORECAST_SIZES_PROVE_MISLABELED_METADATA' &&
+    [raw.forecast_math_pct, raw.forecast_table_pct, raw.historic_narrative_pct,
+      raw.historic_math_pct, raw.forecast_narrative_pct, raw.overview_forecast_pct].every(Number.isFinite) &&
+    Number.isInteger(raw.forecast_metadata_end_year) &&
+    raw.forecast_metadata_end_year !== raw.forecast_end_year &&
+    raw.overview_forecast_year === raw.forecast_end_year &&
+    Math.abs(raw.forecast_math_pct - raw.forecast_narrative_pct) <= 0.15 &&
+    Math.abs(raw.forecast_narrative_pct - raw.overview_forecast_pct) <= 0.05 &&
+    Math.abs(raw.forecast_table_pct - raw.historic_narrative_pct) <= 0.05 &&
+    Math.abs(raw.historic_math_pct - raw.historic_narrative_pct) <= 0.15;
+  if (!['CONSISTENT', 'EXCERPT_PERIOD_VERIFIED'].includes(raw.source_audit) &&
+      !provenR31 && !provenR82) {
     result.reason = 'SOURCE_AUDIT_NOT_CONSISTENT';
     return result;
   }
@@ -187,6 +207,9 @@ export async function runForecastPipeline(topics, adapters, {
           ? ['EXCERPT_ONLY_AUDIT_NO_SIZE_TRIANGULATION'] : []),
         ...(accepted.some(p => p.source_audit === 'RESOLVED_HISTORIC_RATE_MISLABEL')
           ? ['R31_PUBLISHER_FORECAST_TABLE_HISTORIC_CAGR_MISLABEL_PROVEN'] : []),
+        ...(accepted.some(p => p.source_audit ===
+          'RESOLVED_FORECAST_METADATA_YEAR_AND_HISTORIC_RATE_MISLABEL')
+          ? ['R82_PUBLISHER_METADATA_YEAR_AND_HISTORIC_RATE_MISLABEL_INDEPENDENTLY_PROVEN'] : []),
         ...(accepted.some(p => p.source_conflict_reason ===
           'WHOLE_MARKET_PERIOD_LABEL_VARIATION_SIZE_VERIFIED')
           ? ['PUBLISHER_PERIOD_LABEL_VARIATION_VERIFIED_BY_MARKET_SIZES'] : []),
@@ -212,7 +235,8 @@ export async function runForecastPipeline(topics, adapters, {
 
 /** Keep R30 defaults intact; R70 opts into direct-market title filtering. */
 export function tbrcR30Adapter(measureKeyword, {
-  model = 'gemma3:4b', fetchFn, researchMarketFn = null
+  model = 'gemma3:4b', fetchFn, researchMarketFn = null,
+  addressHintFn = officialAddressHint
 } = {}) {
   if (typeof measureKeyword !== 'function') throw new Error('INVALID_R30_MEASURE');
   return {
@@ -220,7 +244,7 @@ export function tbrcR30Adapter(measureKeyword, {
     officialHosts: ['www.thebusinessresearchcompany.com', 'thebusinessresearchcompany.com'],
     run: async topic => {
       const researchKeyword = researchMarketFn?.(topic.keyword, 'TBRC') || topic.keyword;
-      const raw = await measureKeyword(researchKeyword, {
+      const options = {
         model,
         ...(fetchFn ? { fetchFn } : {}),
         searchMode: 'publisher-site',
@@ -229,8 +253,21 @@ export function tbrcR30Adapter(measureKeyword, {
         rateOnlyFromSource: true,
         strictMarketScope: true,
         resolveHistoricTableMislabel: true,
+        resolveForecastMetadataYearMislabel: true,
         allowedKeywords: [researchKeyword]
-      });
+      };
+      // R82: the archived R63 *URL*, never an archived number, gets a fresh
+      // official GET before the brittle report-store search. A denied URL or
+      // mismatched live title falls back to normal R30 search; an authentic
+      // source's numerical conflict is not discarded to seek a nicer rate.
+      const hint = addressHintFn?.(topic.keyword, 'TBRC');
+      let raw = hint ? await measureKeyword(researchKeyword, {
+        ...options, officialReportHint: hint
+      }) : null;
+      if (!raw || (raw.state !== 'PASS' &&
+          /^(?:PUBLISHER_HTTP_|PUBLISHER_REDIRECT_BLOCKED|PUBLISHER_HINT_MARKET_TITLE_NOT_DIRECT|PUBLISHER_EMPTY_RESPONSE|PUBLISHER_RESPONSE_TOO_LARGE)/.test(raw.failure || ''))) {
+        raw = await measureKeyword(researchKeyword, options);
+      }
       return researchKeyword === topic.keyword ? raw : {
         ...raw, research_market_keyword: researchKeyword,
         research_market_provenance: 'R63_OFFICIAL_REPORT_URL',
