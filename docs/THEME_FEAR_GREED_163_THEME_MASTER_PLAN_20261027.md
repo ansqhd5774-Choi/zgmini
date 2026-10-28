@@ -211,15 +211,15 @@
 | 연구 ETF 편입 | R19/R20 63 고유·64 위치, 9테마 | 재선정 불필요 | `PASS (연구 로스터)` |
 | 비공개 역사 R32 | 실PC 9×252, 합산 2,268/2,268 | 정규 신규 거래일 재계산 | `PASS (2026-10-23 연구)` |
 | 신구 공개 이력 비교 | R33 8×252 2,016건 | 다음 신규 날짜 데이터와 비교 | `PASS (겹침 8개, 2026-10-23)` |
-| 기존 1h 원가격·증분 | R23 64/64종·121/121 SHA PASS, SPY 2026-10-23, R32 9×252 PASS | R35 신규 SPY 관측일 후 1h 증분 + 동일 모드 R23 결합 확인. 현 정규 Task 추가는 후속 승인 | `R23_PC_PASS / R35_WAIT_SOURCE` |
+| 기존 1h 원가격·증분 | R23 원본 64/64·121페이지, R35 10/27 WAIT 이력; R47 10/28 실제 PC 64심볼 완료·원자료 62파일·최신 SPY 2026-10-26 | 원본 shadow 두 파일 독립 검증, 다음 거래일 R47 2회차와 정상 예약 경로 확인 | `R47_FIRST_PC_COLLECTION_PASS / REPEAT_PENDING` |
 | 최신 데이터 가격 모드 | R23/R32 `RAW_UNADJUSTED_1H_NOT_OFFICIAL_CLOSE`; R45 EOD는 `DAILY_SPLIT_ADJUSTED` | R46 EOD를 R32 1h와 혼합하지 않음. 필요 시 독립 연구로만 보존 | `R32_INPUT_1H_PRESERVED` |
-| 신규 9개 자동 계산 | R32 PC 9×252, R33 기존 8×252 PASS; R47 동일 1h 공급자 증분·R25/R32 재계산 코드 및 합성 252일 테스트 PASS | PC 실제 R47 CMD 신규 거래일 수집·비공개 SHA 확인 → 예약 작업 별도 승인·2회 검증 → 권리·공개 승인 시 D1 분리 반영 | `R47_SOURCE_CODE_AND_TEST_PASS / PC_AND_LIVE_AUTO_PENDING` |
+| 신규 9개 자동 계산 | R47 실제 PC 1차 실행 `PRIVATE_SHADOW_SAVED_NOT_PUBLISHED`, SPY 2026-10-26, 9테마×252 비공개 결과 2파일 생성 보고 | 파일 내용 직접 확인·두 번째 거래일 반복·승인된 예약 작업·공개 권리 검증 | `R47_FIRST_PC_PRIVATE_SCORE_PASS / AUTO_PUBLIC_PENDING` |
 | 안전 공개 reader | R37 코드·단위 테스트, R38 10개 보존 | 권리·LIVE D1 readback·배포 | `SOURCE_PASS / RUNTIME_PENDING` |
 | 기존 8개 실제 신규 점수 공개 | 없음 | 테마별 승인·D1/API/UI 실증 | `NOT_PUBLISHED` |
 | 미공개 AI·반도체 | R32 연구 252점 | 별도 신규 테마 출시에 필요한 승인·자동화 | `NOT_PUBLISHED` |
 | 163개 신규 테마 | 프로그램 목표와 순차 방식 확정 | 다음 인기 테마 1개부터 반복 | `NOT_163_COMPLETE` |
 
-**가장 가까운 한 가지 다음 작업:** `scripts/pc-writer/THEME_NINE_R47_RECURRING_PRIVATE_UPDATE.cmd`를 기존 PC에서 **1회 실실행**하여 실제 GetMarketHistory 신규 1h 거래일·R35 증분·R47 원가격 충돌 검증·기존 R25/R32 비공개 9개×252 결과 파일의 SHA와 상태를 받는다. R35 공급자 미갱신 시 1 GET 정상 WAIT를 기록하고 추가 계정 발급·R46 EOD 전환을 요구하지 않는다. R47 코드는 반복 날짜/고정 체크포인트를 수정했으나 현재 **실PC/예약 작업/D1·공개** 연결 완료는 아니다.
+**가장 가까운 한 가지 다음 작업:** 2026-10-28 실제 PC R47 첫 CMD 실행 결과는 64심볼 수집·9개×252 비공개 계산으로 PASS 보고됐다. 다음은 생성된 `_ETF.json`, `_NINE.json`의 실제 내용을 독립 검사하여 개별 테마 점수·누락·공식 AUM 원기준일을 확인한 후 **새 SPY 거래일이 공급될 때 같은 CMD 2회차를 실행**해 끝 날짜 전진·중복 수집 방지를 증명한다. 이후 기존 예약 작업명·실행경로를 확인하고 승인된 연결만 적용한다. 현재 D1/공개는 미승인·미변경.
 
 ## 8. 인수인계·완료 판정·변경 금지선
 

@@ -79,3 +79,14 @@ node --test tests/theme-nine-r35-delta-collect.test.mjs tests/theme-nine-r32-pri
 - R23·R24·R25·R32·R33 과거 원본·기존 공개 10개 관측/점수·R8 별도 테마·기존 D1 키·원 정규 예약 작업 수정 금지.
 - ETF 2개·4개 고정, 새로운 가중치 규칙·시장가격 가공·임의 공식 AUM 날짜·공급자 요금제 전환 금지.
 - 비공개 파일을 게시용 확정 데이터라고 표시하지 않음.
+
+## 7. 2026-10-28 실제 Windows PC 1차 증분·비공개 점수 실행 증거
+
+- 사용자 제출 실행 TXT SHA256: `81d82fc9c02c876178849468619f660829eedcda1d4c36688ce0f77059e0af79`; JSON SHA256: `bf7a48a46b75a3a6d4e199dde853978a6a2ee725a7d2705f039ac54d596e7ad3`. TXT 안의 JSON과 별도 JSON을 파싱 후 **완전 일치** 확인.
+- PC Node `v24.19.0`, `BUNDLE_SHA_VERIFIED=YES`; R47 `status=PRIVATE_SHADOW_SAVED_NOT_PUBLISHED`, `stage=COLLECT_MERGE_R25_R32_PRIVATE_COMPLETE`.
+- 공급원 요청 `64 GET`, 완료 심볼 `64/64`, 저장 원가격 파일 `62`개. 파일이 없는 심볼 2개가 무엇인지 이 요약만으로 확정하지 않는다. 실제 PC로부터 전체 raw-manifest는 아직 받지 않았으므로 개별 심볼 원자료를 독립 재검증한 것으로 보고하지 않는다.
+- 입력 수집창 `2026-10-23 ~ 2026-10-27`, **실제 최종 점수 SPY 거래일은 `2026-10-26`**. 종료일 10월 27일을 점수 관측일로 혼동하지 않는다.
+- 계산 보고 `9개 테마, ETF 고유 63종, 위치 64개, 252 거래일`; 프로그램 보고 `formulaChanged=false`, `rosterChanged=false`, `d1Writes=0`, `schedulerWrites=0`, `publicationWrites=0`.
+- PC 비공개 산출: `E:\\ZGmini\\data\\themes\\legacy-nine-r47-private\\THEME_NINE_R47_PRIVATE_2026-10-26_3e72c174fd099d24_ETF.json`, `_NINE.json`; 출력 SHA 각각 `66ff5208ac62db0b881a38ced12f5d848be03bb4837c917df00d3ebad5495d34`, `d9f9a3937d59abc4f51a3a97a5c0839bdf574aed3dfc90a1a53bc5eee534b4b8`. **원본 2파일은 아직 업로드/직접 내용 검증하지 않았으므로 개별 점수와 결측 수는 미확인**.
+- Gate A 최초 **실PC 수집·비공개 계산 실행 PASS(자체 결과 보고 기준)**. 다음 우선 작업: PC의 `_ETF.json`·`_NINE.json` 두 결과를 독립 검사해 9개 테마 점수·유효 ETF·결측·AUM 원날짜를 확인하고, 다음 새 SPY 거래일 도착 후 동일 CMD의 **두 번째 실제 반복 실행**으로 날짜 전진 및 중복 GET 방지를 실증한다.
+- Windows Task Scheduler 자동 등록·반복 2회·D1 CAS/readback·공개 전환·정식 AUM 최신화는 아직 PENDING. 기존 운영 작업 무단 수정 금지.
