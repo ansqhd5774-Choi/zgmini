@@ -13,6 +13,7 @@ import {buildIranR5Public,validateIranR5Public} from '../../lib/iran-progress/da
 import {independentlyCorroboratedR5Positives} from '../../lib/iran-progress/verified-positive-r5.mjs';
 import {publishIranR5Provisional} from './publication.mjs';
 import {withIranPublishedUpdates} from './published-updates-r1.mjs';
+import {syncScoreNewsInput} from './score-news-input-r1.mjs';
 import {client,credential} from '../pc-writer/d1.mjs';
 
 /**
@@ -72,16 +73,24 @@ export function assertR5ProvisionalPublicationReady(shadow,body,{now=Date.now()}
 }
 export function calculateOperationalR5(store,{now=Date.now(),evidencePolicy='BALANCED_REPORTED_STAGES_R5_2'}={}){
  const checkpoint=store.getCheckpoint('continuous-news-last-run-r3');
- const checked=checkpoint?.lastDiscoverySuccessAt;
- if(!Number.isSafeInteger(checked)||checked>now||now-checked>86400000||
+ const legacyChecked=checkpoint?.lastDiscoverySuccessAt;
+ const legacyReady=Number.isSafeInteger(legacyChecked)&&legacyChecked<=now&&now-legacyChecked<=86400000&&
   // Discovery freshness describes saved source receipts. This function reclassifies
   // those immutable receipts with CLASSIFIER_VERSION; it never refreshes feed clocks.
-  !['IRAN_EVENT_RULES_R3_4',CLASSIFIER_VERSION].includes(checkpoint.classifierVersion)||
-  !Array.isArray(checkpoint.feeds)||checkpoint.feeds.length!==R3_FEEDS.length||
-  checkpoint.feeds.some(f=>f.status!=='COLLECTED'||!R3_FEEDS.some(x=>x.id===f.id))||
-  new Set(checkpoint.feeds.map(f=>f.id)).size!==R3_FEEDS.length||
-  !['UPDATED','ANALYZED_NO_CHANGE','NO_NEW_ARTICLES'].includes(checkpoint.status))
-  throw Error('R5_SOURCE_COLLECTION_UNREADY');
+  ['IRAN_EVENT_RULES_R3_4',CLASSIFIER_VERSION].includes(checkpoint.classifierVersion)&&
+  Array.isArray(checkpoint.feeds)&&checkpoint.feeds.length===R3_FEEDS.length&&
+  checkpoint.feeds.every(f=>f.status==='COLLECTED'&&R3_FEEDS.some(x=>x.id===f.id))&&
+  new Set(checkpoint.feeds.map(f=>f.id)).size===R3_FEEDS.length&&
+  ['UPDATED','ANALYZED_NO_CHANGE','NO_NEW_ARTICLES'].includes(checkpoint.status);
+ const newsInput=store.getCheckpoint('score-news-input-last-run-r1');
+ const newsReady=newsInput?.version==='IRAN_SCORE_NEWS_INPUT_R1'&&newsInput.freshnessEligible===true&&
+  Number.isSafeInteger(newsInput.collectionCheckedAt)&&newsInput.collectionCheckedAt<=now&&
+  now-newsInput.collectionCheckedAt<=86400000&&
+  Number.isSafeInteger(newsInput.checkedAt)&&newsInput.checkedAt>=newsInput.collectionCheckedAt&&newsInput.checkedAt<=now&&
+  Number.isSafeInteger(newsInput.sourcesVerifiedThisRun)&&newsInput.sourcesVerifiedThisRun>=1&&newsInput.sourcesVerifiedThisRun<=7;
+ if(!legacyReady&&!newsReady)throw Error('R5_SOURCE_COLLECTION_UNREADY');
+ const checked=newsReady?newsInput.collectionCheckedAt:legacyChecked;
+ const collectionStatus=newsReady?'ANALYZED_NO_CHANGE':checkpoint.status;
  const articles=storedR3Candidates(store),resolution=resolveR3Events(articles);
  const unique=independentlyCorroboratedR5Positives(resolution.accepted,articles);
  const firstSeen=new Map(),revisionCount=new Map(),versionsByUrl=new Map();
@@ -110,7 +119,7 @@ export function calculateOperationalR5(store,{now=Date.now(),evidencePolicy='BAL
  const shadow=calculateIranDailyAnchorShadow(input,{
   asOfDate:kstCalendarDate(now),sensitivityScale:21,
   evidencePolicy,
-  collectionCheckedAt:checked,collectionStatus:checkpoint.status,
+  collectionCheckedAt:checked,collectionStatus,
  });
  if(shadow.status!=='SHADOW_UNCALIBRATED'||shadow.latePriorPublicationDateCount!==0||
   shadow.potentialCasualtyRevisionCount!==0)throw Error('R5_SOURCE_REVIEW_REQUIRED');
@@ -129,7 +138,13 @@ if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.ur
  const store=openStore(path.join(base,'iran.sqlite')),owner=randomUUID();
  try{
   if(!store.claim(owner,Date.now()))throw Error('R5_EXISTING_COLLECTION_LEASE_HELD');
-  const now=Date.now(),{body,shadow}=calculateOperationalR5(store,{now});
+  const now=Date.now();
+  // Optional new input cannot erase or block the last valid scoring receipts.
+  if(fs.existsSync(path.join(base,'news-display-candidates-r26.json'))){
+   try{syncScoreNewsInput(store,base,{now,dryRun:mode==='--preview'});}
+   catch(error){console.error(JSON.stringify({scoreNewsInput:'PRESERVED_PREVIOUS_INPUT',reason:/^IRAN_SCORE_NEWS_[A-Z_]+$/.test(error.message)?error.message:'IRAN_SCORE_NEWS_READ_FAILED'}));}
+  }
+  const {body,shadow}=calculateOperationalR5(store,{now});
   if(mode==='--preview')console.log(JSON.stringify({status:'SHADOW_PREVIEW',
    score:body.score,asOfDate:body.asOfDate,classifierVersion:body.classifierVersion,
    collectionCheckedAt:body.collectionCheckedAt,
