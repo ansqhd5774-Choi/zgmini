@@ -31,10 +31,10 @@ function pathFor(points:InflationMiniTrendPoint[]){
  }).join(" ");
 }
 
-export function InflationMiniChart({label,points}:{label:string;points?:InflationMiniTrendPoint[]}){
+export function InflationMiniChart({label,points,periodLabel="최근 1년"}:{label:string;points?:InflationMiniTrendPoint[];periodLabel?:string}){
  const data=cleaned(points);
- if(data.length<2)return <span className="inflation-mini-chart-empty" aria-label={`${label} 최근 1년 추이 자료 부족`}>—</span>;
- return <svg className="inflation-mini-chart" viewBox={`0 0 ${WIDTH} ${HEIGHT}`} preserveAspectRatio="none" role="img" aria-label={`${label} 최근 1년 추이`}>
+ if(data.length<2)return <span className="inflation-mini-chart-empty" aria-label={`${label} ${periodLabel} 추이 자료 부족`}>—</span>;
+ return <svg className="inflation-mini-chart" viewBox={`0 0 ${WIDTH} ${HEIGHT}`} preserveAspectRatio="none" role="img" aria-label={`${label} ${periodLabel} 추이: ${data[0].date} ~ ${data.at(-1)?.date}`}>
   <path className="inflation-mini-chart-line" d={pathFor(data)}/>
  </svg>;
 }
