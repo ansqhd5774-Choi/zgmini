@@ -5,9 +5,9 @@ set "NODE_EXE=node"
 if exist "E:\ZGmini\runtime\node.exe" set "NODE_EXE=E:\ZGmini\runtime\node.exe"
 set "CMD_LOG=%SCRIPT_DIR%STAGE05_R87_CMD_%RANDOM%_%RANDOM%.log"
 if "%~1"=="" (
-  "%NODE_EXE%" "%SCRIPT_DIR%stage05-pc-results-collector.mjs" --root "%SCRIPT_DIR%.." --extra-root "E:\ZGmini\data\investment-15-stage" --output-dir "%SCRIPT_DIR%" >"%CMD_LOG%" 2>&1
+  "%NODE_EXE%" "%SCRIPT_DIR%stage05-pc-results-collector.mjs" --root "%SCRIPT_DIR%.." --extra-root "E:\ZGmini\projects" --extra-root "E:\ZGmini\data\investment-15-stage" --output-dir "%SCRIPT_DIR%." >"%CMD_LOG%" 2>&1
 ) else (
-  "%NODE_EXE%" "%SCRIPT_DIR%stage05-pc-results-collector.mjs" --root "%SCRIPT_DIR%.." --extra-root "E:\ZGmini\data\investment-15-stage" --extra-root "%~1" --output-dir "%SCRIPT_DIR%" >"%CMD_LOG%" 2>&1
+  "%NODE_EXE%" "%SCRIPT_DIR%stage05-pc-results-collector.mjs" --root "%SCRIPT_DIR%.." --extra-root "E:\ZGmini\projects" --extra-root "E:\ZGmini\data\investment-15-stage" --extra-root "%~1" --output-dir "%SCRIPT_DIR%." >"%CMD_LOG%" 2>&1
 )
 set "RUN_RESULT=%ERRORLEVEL%"
 type "%CMD_LOG%"
