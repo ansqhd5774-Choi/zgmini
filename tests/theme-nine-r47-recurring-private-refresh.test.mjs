@@ -80,6 +80,34 @@ test('R47 complete first 64-symbol window; repeat on same NY date performs no GE
   assert.equal(sha(fs.readFileSync(f.manifestFile)),f.before);
 });
 
+test('R47 11:30 KST run sees the already-closed NY session on the same NY date',async t=>{
+  const f=fixture(t);
+  await runNineR47Recurring({...f,now:f.firstTime,sleep:async()=>{}});
+  // 23:30 UTC on Oct 28 is 19:30 New York EDT, or 08:30 KST Oct 29.
+  // The closed Oct 28 day can safely open the next bounded collection window.
+  const afterClose=new Date('2026-10-28T23:30:00Z');
+  const plan=planNineR47Recurring({...f,now:afterClose});
+  assert.equal(plan.cutoffNYDay,'2026-10-28');
+  assert.equal(plan.status,'READY_NEW_WINDOW');
+  assert.deepEqual(plan.window,{start:'2026-10-26',end:'2026-10-28'});
+  const result=await runNineR47Recurring({...f,now:afterClose,sleep:async()=>{}});
+  assert.equal(result.status,'R35_DELTA_PRIVATE_COLLECTION_COMPLETE');
+  assert.equal(result.providerCalls,64);
+  assert.equal(f.getCalls().length,128);
+  assert.equal(sha(fs.readFileSync(f.manifestFile)),f.before);
+});
+
+test('R47 never opens same NY day while the regular session is still trading',async t=>{
+  const f=fixture(t);
+  await runNineR47Recurring({...f,now:f.firstTime,sleep:async()=>{}});
+  const beforeClose=new Date('2026-10-28T19:30:00Z');
+  const plan=planNineR47Recurring({...f,now:beforeClose});
+  assert.equal(plan.cutoffNYDay,'2026-10-27');
+  assert.equal(plan.status,'WAIT_WINDOW_ALREADY_CHECKED');
+  assert.equal(plan.window,null);
+  assert.equal(f.getCalls().length,64);
+});
+
 test('R47 next window overlaps last real SPY day; future stale SPY is a one-call WAIT',async t=>{
   const f=fixture(t);
   await runNineR47Recurring({...f,now:f.firstTime,sleep:async()=>{}});
