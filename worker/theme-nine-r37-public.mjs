@@ -26,6 +26,28 @@ const stamp=v=>typeof v==='string'&&Number.isFinite(Date.parse(v));
 const same=(a,b)=>Array.isArray(a)&&a.length===b.length&&a.every((v,i)=>v===b[i]);
 const PUBLIC_DATE_MODE='FIXED_OFFICIAL_ISSUER_AUM_SNAPSHOT_WITH_ORIGINAL_DATES';
 const expectedSymbols=[...new Set(THEME_NINE_R37_ROSTER.flatMap(t=>t.etfs))];
+const R54_ANONYMOUS_RISK_BASIS='OFFICIAL_TERMS_DERIVED_WORKS_ANONYMOUS_SCOPE_UNCONFIRMED';
+const R54_SOURCE_TERMS='https://getmarkethistory.com/docs/terms';
+
+function publicationRightsNineR37(record){
+ if(record?.publicationAuthorized!==true||record.derivedOnlyNoRaw!==true||
+   record.sourceManifestVerified!==true||record.privateReplayVerified!==true)
+  return false;
+ const confirmed=record.upstreamCommercialRightsVerified===true&&
+  record.derivedLicenseVerified===true&&record.sourcePriceReconciled===true;
+ // The publisher expressly accepted the same anonymous-API licensing risk
+ // already disclosed by the tenth-theme reader. Never turn unknown rights or
+ // unreconciled 1h prices into false certifications. Raw-bar and score-replay
+ // validation are STILL mandatory for this alternative.
+ const disclosed=record.licensingRiskAcceptedByPublisher===true&&
+  record.rightsBasis===R54_ANONYMOUS_RISK_BASIS&&
+  record.sourceTermsUrl===R54_SOURCE_TERMS&&
+  record.upstreamCommercialRightsVerified===false&&
+  record.derivedLicenseVerified===false&&record.sourcePriceReconciled===false&&
+  record.accountGoodStandingVerified===false&&
+  record.anonymousScopeIndependentlyConfirmed===false;
+ return confirmed||disclosed;
+}
 
 export function eligibleNineR37(record,base,{now=Date.now(),storedAt=now}={}){
  if(!base||base.status!=='READY'||!Array.isArray(base.themes)||
@@ -35,21 +57,23 @@ export function eligibleNineR37(record,base,{now=Date.now(),storedAt=now}={}){
  if(!validDate(baseConfirmed)||!record||record.status!=='READY'||
   record.version!==THEME_NINE_R37_VERSION||
   record.methodologyVersion!==THEME_NINE_R37_METHOD||
-  record.sourceContract!=='THEME_NINE_R32_PRIVATE_STAGE5_SHADOW_V1'||
+  !['THEME_NINE_R32_PRIVATE_STAGE5_SHADOW_V1',
+    'THEME_NINE_R47_PRIVATE_RECURRING_NINE_THEME_SHADOW_V1']
+    .includes(record.sourceContract)||
   record.sourcePriceMode!=='RAW_UNADJUSTED_1H_NOT_OFFICIAL_CLOSE'||
   record.historicalAumMode!==PUBLIC_DATE_MODE||
   record.rosterSha256!==THEME_NINE_R37_ROSTER_SHA||
   record.benchmark!=='SPY'||record.individualStocksUsed!==0||
   record.ETFPositions!==64||record.uniqueETFs!==63||
-  record.publicationAuthorized!==true||record.upstreamCommercialRightsVerified!==true||
-  record.derivedLicenseVerified!==true||record.sourcePriceReconciled!==true||
-  record.sourceManifestVerified!==true||record.privateReplayVerified!==true||
-  record.derivedOnlyNoRaw!==true)return false;
+  !publicationRightsNineR37(record))return false;
  if(!sha(record.rawManifestSha256)||!sha(record.r25InputSha256)||
   !sha(record.shadowSha256)||!sha(record.officialAumEvidenceSha256)||
   !validDate(record.observationDate)||record.observationDate!==baseConfirmed||
   record.phase!==base.phase||!stamp(record.sourceStoredAt)||
   !stamp(record.publishedAt)||!Number.isSafeInteger(Number(storedAt)))return false;
+ if(record.sourceContract==='THEME_NINE_R47_PRIVATE_RECURRING_NINE_THEME_SHADOW_V1'&&
+   (!sha(record.baselineManifestSha256)||
+    (record.deltaManifestSha256!==null&&!sha(record.deltaManifestSha256))))return false;
  const clocks=[Date.parse(record.sourceStoredAt),Date.parse(record.publishedAt),Number(storedAt)];
  if(clocks.some(t=>t>now||now-t>=PUBLIC_DISPLAY_MAX_AGE_MS))return false;
  if(now-Date.parse(record.observationDate+'T23:59:59Z')>=PUBLIC_DISPLAY_MAX_AGE_MS)return false;
