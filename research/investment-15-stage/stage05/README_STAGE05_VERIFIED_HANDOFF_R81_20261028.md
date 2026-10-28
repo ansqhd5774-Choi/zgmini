@@ -13,7 +13,7 @@ node research/investment-15-stage/stage05/stage05-fusion-readonly.mjs --handoff-
 ```
 
 - `--handoff-existing`: R17 보존 입력만 로드. 이미 연결된 9개 승인 테마·과거 F·산업 원천 범위를 보이되 최종 점수와 Ollama 요청은 만들지 않음.
-- `--handoff-input`: **기존 01~04 결과로 검증된 명시적 JSON**을 별도로 제공한 경우, 기존 `calculateFusionStage05`를 재사용해 점수를 검산하고 9개 후보가 모두 완결된 경우에만 Ollama 조사 입력 JSON을 반환. Ollama 실행·인터넷 검색은 수행하지 않음.
+- `--handoff-input`: 기존 01~04의 **원자료·구성값**을 연결한 JSON을 제공하면 Stage05 계산기가 G/D/M4/E/T/S5를 직접 산출한다(R84). **이미 계산된 최종 점수 파일을 요구하지 않는다.** 9개 후보가 모두 완결된 경우에만 Ollama 조사 입력 JSON을 반환. Ollama 실행·인터넷 검색은 수행하지 않음.
 - JSON의 `ollamaInput=null`은 **조사 미시작 Gate**다. 종료 코드 `2`는 정상적인 입력 미완료이며 실행 실패가 아니다. 코드 `1`만 잘못된 입력/실행 오류를 뜻한다.
 
 ## 2026-10-28 개발 환경 결과
@@ -33,4 +33,4 @@ node research/investment-15-stage/stage05/stage05-fusion-readonly.mjs --handoff-
 
 ## 다음 Gate
 
-기존 01~04 운영/연구 프로그램의 **실제** 결과 필드와 최신 관측일을 조회해 동일 스냅샷으로 제공해야 한다. 현재 이 환경에는 Stage02 ETF 가격 RS/Stage03 ETF 가격 추세의 승인 정규화 결과와 Stage04 실측 QUANTIFIED M4가 완결되어 있지 않다. 없는 점수·날짜를 임의 생성하거나 R63 옛 전망치로 대체하지 않는다. 위 입력이 완성되기 전에는 5단계 Ollama 테마·기술 선정과 6단계 기업 검증을 시작하지 않는다.
+기존 01~04의 **관측 원자료·구성값**(Stage02 ETF 가격 RS, Stage03 ETF 가격 추세, Stage04 검증된 실측 G1/G2/F)과 관측일이 동일 입력에 있어야 한다. `M4`·`E`·`T`·`S5` **완성값을 별도로 확보할 필요는 없다.** 해당 최종 점수는 Stage05 계산기가 산출한다(R84). 없는 원자료·날짜를 임의 생성하거나 R77/R63 전망 CAGR로 실측 G1/G2를 대체하지 않는다.
