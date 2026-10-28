@@ -24,7 +24,7 @@ test('same-PC R3_4 receipts -> independent R5 K21 provisional model, 14 KST poin
   store.putSource('news-metadata:'+hash(source),source,Date.parse('2026-10-20T18:00:00Z'));
   store.checkpoint('continuous-news-last-run-r3',checkpoint);
   const {body,shadow}=calculateOperationalR5(store,{now});
-  assert.equal(body.version,'IRAN_DAILY_PROVISIONAL_R5_1');
+  assert.equal(body.version,'IRAN_DAILY_PROVISIONAL_R5_2');
   assert.equal(body.score,13);
   assert.equal(body.history.length,14);
   assert.equal(body.asOfDate,'2026-10-21');
@@ -36,6 +36,9 @@ test('same-PC R3_4 receipts -> independent R5 K21 provisional model, 14 KST poin
   assert.equal(shadow.productionReady,false);
   assert.equal(body.calibrated,false);
   assert.equal(validateIranR5Public(body,now),true);
+  // Reader rollout must not invalidate the currently published R5_1/R3_4 lineage.
+  assert.equal(validateIranR5Public({...body,updateHistory:undefined,updateHistoryVersion:undefined,version:'IRAN_DAILY_PROVISIONAL_R5_1',classifierVersion:'IRAN_EVENT_RULES_R3_4',sourceVersion:'IRAN_R5_K21_R3_4'},now),true);
+  assert.equal(validateIranR5Public({...body,sourceVersion:'IRAN_R5_K21_R3_4'},now),false);
   assert.equal('sourceUrl' in body,false);
   assert.equal('events' in body,false);
   const view=iranView(body,now);
@@ -84,7 +87,7 @@ test('R5 D1 readback and public worker prefer stored R5, fall back safely when c
   assert.equal(response.status,200);
   assert.equal(response.headers.get('x-iran-flow-version'),'R5');
   assert.equal((await response.json()).score,13);
-  const moved={...body,publishedAt:now+2000,score:12.1,history:body.history.map((p,i)=>i===13?{...p,value:12.1}:p)};
+  const moved={...body,updateHistory:undefined,updateHistoryVersion:undefined,publishedAt:now+2000,score:12.1,history:body.history.map((p,i)=>i===13?{...p,value:12.1}:p)};
   await publishIranR5Provisional(remote,'core',moved,{now:now+2000});
   assert.equal(arrow().value,12.1);assert.equal(arrow().previousValue,13);assert.equal(arrow().changedAt,now+2000);
   await publishArrowState(remote,'core','iran',{iran:{score:35.5,sourceAt:now+3000,method:'IRAN_REFERENCE_FLOW_R3'}},now+3000);
@@ -92,7 +95,7 @@ test('R5 D1 readback and public worker prefer stored R5, fall back safely when c
   await publishIranR5Provisional(remote,'core',moved,{now:now+4000});
   assert.equal(arrow().changedAt,now+2000);
   const failedArrow={...remote,async request(db,statements){if(statements[0].params[0]===ARROW_KEYS.iran)throw Error('ARROW_FIXTURE_FAILURE');return remote.request(db,statements);}};
-  const deferred=await publishIranR5Provisional(failedArrow,'core',{...moved,publishedAt:now+5000},{now:now+5000});
+  const deferred=await publishIranR5Provisional(failedArrow,'core',{...moved,updateHistory:undefined,updateHistoryVersion:undefined,publishedAt:now+5000},{now:now+5000});
   assert.equal(deferred.status,'VERIFIED');assert.equal(deferred.scoreArrowStatus,'DEFERRED');
   rows.set(IRAN_R5_PUBLIC_KEY,{body:JSON.stringify({...body,score:19}),stored_at:now});
   const fallback=await storedIranProgressResponse(new Request('https://zgmini.kr/api/iran-progress'),{db,now});

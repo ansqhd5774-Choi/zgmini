@@ -12,6 +12,7 @@ import {calculateIranDailyAnchorShadow} from '../../lib/iran-progress/daily-anch
 import {buildIranR5Public,validateIranR5Public} from '../../lib/iran-progress/daily-public-r5.mjs';
 import {independentlyCorroboratedR5Positives} from '../../lib/iran-progress/verified-positive-r5.mjs';
 import {publishIranR5Provisional} from './publication.mjs';
+import {withIranPublishedUpdates} from './published-updates-r1.mjs';
 import {client,credential} from '../pc-writer/d1.mjs';
 
 /**
@@ -69,7 +70,7 @@ export function assertR5ProvisionalPublicationReady(shadow,body,{now=Date.now()}
     body.acceptedEventCount!==shadow.eventCount)
   throw Error('R5_PROVISIONAL_PUBLICATION_GATE_FAILED');
 }
-export function calculateOperationalR5(store,{now=Date.now()}={}){
+export function calculateOperationalR5(store,{now=Date.now(),evidencePolicy='BALANCED_REPORTED_STAGES_R5_2'}={}){
  const checkpoint=store.getCheckpoint('continuous-news-last-run-r3');
  const checked=checkpoint?.lastDiscoverySuccessAt;
  if(!Number.isSafeInteger(checked)||checked>now||now-checked>86400000||
@@ -106,14 +107,16 @@ export function calculateOperationalR5(store,{now=Date.now()}={}){
   throw Error('R5_REVIEWED_REVISION_EVENT_COLLISION');
  const shadow=calculateIranDailyAnchorShadow(input,{
   asOfDate:kstCalendarDate(now),sensitivityScale:21,
+  evidencePolicy,
   collectionCheckedAt:checked,collectionStatus:checkpoint.status,
  });
  if(shadow.status!=='SHADOW_UNCALIBRATED'||shadow.latePriorPublicationDateCount!==0||
   shadow.potentialCasualtyRevisionCount!==0)throw Error('R5_SOURCE_REVIEW_REQUIRED');
- const body=buildIranR5Public(shadow,{
+ const dailyBody=buildIranR5Public(shadow,{
   now,possibleDuplicateCount:resolution.held.length,collectionCheckedAt:checked,
   sourceStoredAt:Math.max(...input.map(e=>e.sourceStoredAt)),
  });
+ const body=withIranPublishedUpdates(store,dailyBody);
  return {body,shadow};
 }
 if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.url)){
@@ -136,7 +139,7 @@ if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.ur
    const cfgPath=path.join(os.homedir(),'.zgmini','pc-writer','config.json');
    const config=JSON.parse(fs.readFileSync(cfgPath,'utf8'));
    const remote=client(config,credential(root));
-   const result=await publishIranR5Provisional(remote,config.core,body,{now});
+   const result=await publishIranR5Provisional(remote,config.core,body,{now,store});
    if(!['VERIFIED','UNCHANGED'].includes(result.status))
     throw Error('R5_REMOTE_NEWER_OR_PUBLICATION_NOT_VERIFIED');
    store.checkpoint('reference-flow-last-valid-r5',body);
