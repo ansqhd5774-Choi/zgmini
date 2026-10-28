@@ -796,3 +796,73 @@
   .zg-fg-korea .korea-target-card .korea-score-stat-value { font-size: 12px; }
   .zg-fg-korea .korea-target-card .korea-score-changes .korea-score-stat-value { font-size: 10px; }
 }
+
+
+/* Korea PC header parity with the approved USA header. Mobile rules above
+ * and all score, chart, source, index and palette contracts remain unchanged.
+ * The existing disclosure retains the Korean methodology text. */
+@media (min-width: 761px) {
+  .zg-fg-korea .zg-fg-page-header {
+    display: grid;
+    grid-template-columns: max-content 32px minmax(0, 1fr);
+    column-gap: 8px;
+    align-items: center;
+  }
+  .zg-fg-korea .zg-fg-page-header > .zg-fg-eyebrow {
+    grid-column: 1 / -1;
+    grid-row: 1;
+  }
+  .zg-fg-korea .zg-fg-page-header > h1 {
+    grid-column: 1;
+    grid-row: 2;
+    min-width: 0;
+  }
+  .zg-fg-korea .zg-fg-page-header > .zg-fg-intro-button {
+    display: inline-flex;
+    grid-column: 2;
+    grid-row: 2;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    min-width: 32px;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
+  }
+  .zg-fg-korea .zg-fg-page-header > .zg-fg-intro-button:focus-visible {
+    outline: 2px solid currentColor;
+    outline-offset: 2px;
+  }
+  .zg-fg-korea .zg-fg-page-header > .zg-fg-korea-intro-content {
+    display: none;
+    grid-column: 1 / -1;
+    grid-row: 3;
+    min-width: 0;
+  }
+  .zg-fg-korea .zg-fg-page-header > .zg-fg-korea-intro-content--expanded {
+    display: block;
+  }
+  .zg-fg-korea .zg-fg-page-header > .zg-fg-buying-guide-link {
+    display: inline-flex;
+    grid-column: 3;
+    grid-row: 2;
+    justify-self: end;
+    margin-left: 0;
+    margin-bottom: 0;
+  }
+  .zg-fg-korea .zg-fg-page-header > .zg-fg-country-tabs {
+    grid-column: 1 / -1;
+    grid-row: 4;
+  }
+  .zg-fg-korea .zg-fg-page-header > .zg-fg-facts {
+    grid-column: 1 / -1;
+    grid-row: 5;
+  }
+  .zg-fg-korea .zg-fg-page-header > .zg-fg-hint {
+    display: none;
+  }
+}
