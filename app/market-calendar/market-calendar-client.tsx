@@ -13,12 +13,12 @@ type View='week'|'month';
 type FilterKind='all'|EventKind;
 type FilterCountry='all'|Country;
 type OfficialEvent={id:string;date:string;title:string;source:string;sourceUrl:string};
-type SourceState={status:string;checkedAt?:string|null};
+type SourceState={status:string;checkedAt?:string|null;issuers?:Record<string,{status:string;checkedAt?:string|null}>};
 type CalendarFeed={status:string;updatedAt?:string;sources?:Record<string,SourceState>;events?:OfficialEvent[]};
 type CalendarRow={key:string;date:string;at:string|null;name:string;country:Country;category:string;kind:EventKind;actual:string|null;forecast:string|null;previous:string|null;major:boolean;importance:number;source:string;sourceUrl:string;checkedAt:string|null;status:'scheduled'|'released';fresh:boolean};
 
 const dayLabels=['일','월','화','수','목','금','토'];
-const sourceNames:Record<string,string>={bls:'BLS',bea:'BEA',fed:'연준',fed_calendar:'연준',census:'Census',eia:'EIA',usda:'USDA',cftc:'CFTC',treasury:'미국 재무부',tic:'미국 재무부 TIC'};
+const sourceNames:Record<string,string>={bls:'BLS',bea:'BEA',fed:'연준',fed_calendar:'연준',census:'Census',eia:'EIA',usda:'USDA',cftc:'CFTC',treasury:'미국 재무부',tic:'미국 재무부 TIC',earnings:'기업 공식 IR'};
 const eventKinds:Record<string,{category:string;name:string;major:boolean}>={
  employment:{category:'고용',name:'미국 고용보고서 · 비농업고용·실업률',major:true},
  pce:{category:'물가',name:'미국 개인소득·지출(PCE)',major:true},
@@ -101,15 +101,17 @@ function mergeOfficial(feed:CalendarFeed|null):CalendarRow[]{
   const cftcEvent=item.source==='cftc'&&item.id==='cftc-cot';
   const treasuryEvent=item.source==='treasury'&&/^treasury-(?:auction|announcement)-[a-z0-9]{9}$/.test(item.id);
   const ticEvent=item.source==='tic'&&/^tic-(?:monthly|quarterly-nonfinancial|quarterly-external-debt|annual-foreign-us-(?:preliminary|final)|annual-us-foreign-(?:preliminary|final))-20\d\d-(?:0[1-9]|1[0-2])$/.test(item.id);
-  if(!validDate(item.date)||!(eventKinds[item.id]||fedCalendarEvent||eiaEvent||usdaEvent||cftcEvent||treasuryEvent||ticEvent||((item.source==='bls'||item.source==='bea'||item.source==='census')&&item.id.startsWith(`${item.source}-`)))||typeof item.sourceUrl!=='string'||!item.sourceUrl.startsWith('https://'))continue;
+  const earningsEvent=item.source==='earnings'&&/^earnings-(?:release|call)-(?:cik\d{10}|[a-z0-9.-]{1,10})-20\d\d-q[1-4]$/.test(item.id);
+  if(!validDate(item.date)||!(eventKinds[item.id]||fedCalendarEvent||eiaEvent||usdaEvent||cftcEvent||treasuryEvent||ticEvent||earningsEvent||((item.source==='bls'||item.source==='bea'||item.source==='census')&&item.id.startsWith(`${item.source}-`)))||typeof item.sourceUrl!=='string'||!item.sourceUrl.startsWith('https://'))continue;
   if(item.id==='fomc'||item.id==='press')continue;
   const duplicate=`${item.id}:${item.date}`;
   if(seen.has(duplicate))continue;
   seen.add(duplicate);
-  const sourceState=feed.sources?.[item.source];
+  const issuerKey=earningsEvent?item.id.match(/^earnings-(?:release|call)-(.+)-20\d\d-q[1-4]$/)?.[1]:null;
+  const sourceState=(issuerKey?feed.sources?.earnings?.issuers?.[issuerKey]:null)??feed.sources?.[item.source];
   const checkedAt=sourceState?.checkedAt??null;
   const fresh=sourceState?.status==='READY'&&!!checkedAt&&Date.now()-Date.parse(checkedAt)>=0&&Date.now()-Date.parse(checkedAt)<=48*3600000;
-  const category=item.source==='tic'?'국제자본':item.source==='treasury'?'국채':item.source==='cftc'?'시장':item.source==='usda'?'원자재':item.source==='eia'?'에너지':item.id==='fed-calendar-fomc-minutes'?'금리':item.id==='fed-calendar-beige-book'?'경기':item.source==='bls'?'고용·노동':'경제';
+  const category=earningsEvent?(item.id.startsWith('earnings-call-')?'실적 설명회':'실적 발표'):item.source==='tic'?'국제자본':item.source==='treasury'?'국채':item.source==='cftc'?'시장':item.source==='usda'?'원자재':item.source==='eia'?'에너지':item.id==='fed-calendar-fomc-minutes'?'금리':item.id==='fed-calendar-beige-book'?'경기':item.source==='bls'?'고용·노동':'경제';
   const meta=eventKinds[item.id]??{category,name:item.title,major:false};
   // Provider feed supplies dates only. Keep an exact clock time solely when
   // the already verified manual snapshot matches this event and day.
@@ -121,7 +123,7 @@ function mergeOfficial(feed:CalendarFeed|null):CalendarRow[]{
   // Existing verified actuals supersede past date-only schedule placeholders.
   const hasActual=manual.some(row=>row.status==='released'&&row.date===item.date&&((item.id==='cpi'&&row.source==='BLS')||(item.id==='pce'&&row.source==='BEA')));
   if(hasActual)continue;
-  fromFeed.push({key:`official-${duplicate}`,date:displayDate,at:eventAt,name:officialName(item,meta.name),country:'US',category:meta.category,kind:'economic',actual:null,forecast:null,previous:null,major:meta.major,importance:releaseImportance(item.id,item.title),source:sourceNames[item.source]??item.source,sourceUrl:item.sourceUrl,checkedAt:timed?.checkedAt??checkedAt,fresh:timed?false:fresh,status:'scheduled'});
+  fromFeed.push({key:`official-${duplicate}`,date:displayDate,at:eventAt,name:officialName(item,meta.name),country:'US',category:earningsEvent?category:meta.category,kind:earningsEvent?'earnings':'economic',actual:null,forecast:null,previous:null,major:meta.major,importance:earningsEvent?1:releaseImportance(item.id,item.title),source:sourceNames[item.source]??item.source,sourceUrl:item.sourceUrl,checkedAt:timed?.checkedAt??checkedAt,fresh:timed?false:fresh,status:'scheduled'});
  }
  const scheduledIds=new Set(fromFeed.map(row=>row.key.slice('official-'.length)));
  return [...fromFeed,...manual.filter(row=>row.status==='released'||!scheduledIds.has(`${row.key.split('-')[1]}:${row.date}`))];
@@ -212,7 +214,7 @@ export default function MarketCalendar(){
   <div className="mc-results" aria-live="polite">
    {loadState!=='ready'&&<p className="mc-data-state">{loadState==='loading'?'공식 일정 저장본 확인 중':'공식 일정 저장본 조회 실패'} · 수동 확인 자료와 분리하여 표시합니다.</p>}
    {loadState==='ready'&&feed?.status!=='READY'&&<p className="mc-data-state">공식 일정 저장본 미확정 · 기존 확인 자료는 확인일 기준으로 표시합니다.</p>}
-   {!filtered.length&&<div className="mc-empty"><strong>{activeDate?'선택한 날짜에 일정이 없습니다.':'표시할 일정이 없습니다.'}</strong><span>{kind==='earnings'?'기업 실적 발표일은 검증된 수집 경로가 연결되지 않았습니다.':country==='KR'?'한국 공식 발표 일정은 수집 경로 연결 전입니다.':'해당 조건에 확인된 공식 발표 일정이 없습니다.'}</span></div>}
+   {!filtered.length&&<div className="mc-empty"><strong>{activeDate?'선택한 날짜에 일정이 없습니다.':'표시할 일정이 없습니다.'}</strong><span>{kind==='earnings'&&!feed?.sources?.earnings?'기업 실적 발표일은 검증된 수집 경로가 연결되지 않았습니다.':country==='KR'?'한국 공식 발표 일정은 수집 경로 연결 전입니다.':'해당 조건에 확인된 공식 발표 일정이 없습니다.'}</span></div>}
    {byWeek.map(([weekStart,rows])=><div key={weekStart}>
     <div className="mc-week"><strong>{activeDate?`${Number(activeDate.slice(5,7))}월 ${Number(activeDate.slice(8,10))}일`:weekTitle(weekStart)}</strong><span>{rows.length}개 일정</span></div>
     {rows.map((row,index)=>{const remain=remaining(row);const firstOfDay=rows.findIndex(item=>item.date===row.date)===index;return <article key={row.key} id={firstOfDay?`mc-day-${row.date}`:undefined} className="mc-row">

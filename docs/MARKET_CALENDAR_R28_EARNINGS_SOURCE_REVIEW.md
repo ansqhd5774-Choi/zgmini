@@ -81,3 +81,13 @@
 
 - **역할 경계:** 개발 담당은 수집 기능과 필요한 코드 회귀 검사를 완료하고 보고한다. 사용자가 공개 사이트와 정규 예약 동작을 직접 모니터링한다. 사용자가 요청하지 않은 상시 확인·예약 알림·강제 수집·반복 PC TXT 요구를 완료 조건으로 추가하지 않는다.
 - **현재:** 자동화 방향은 확정했지만 적격 무료 재게시 소스·수집기 구현·PC 설치는 **미완료**다. 연구만으로 수집 성공을 주장하지 않는다.
+
+## R28 자동 수집 1차 구현 — 권리 검증 전 비활성 후보 (2026-10-28)
+
+- **구현 단계:** `STAGED_CODE_TESTED` / `NO_ELIGIBLE_LIVE_SOURCE` / `PC_NOT_INSTALLED` / `NOT_PUBLISHED`.
+- `staging/market-calendar/r28-earnings/lib/earnings-calendar.mjs`: 기업 IR ICS 및 명시적 JSON 일정 파서. 회사 CIK/티커와 회계연도·분기로 안정 ID를 구성하고, 실적 발표와 설명회·취소·잠정 일정을 구분한다. 공개 출력은 정확히 `id,date,title,source,sourceUrl` 5개다.
+- `staging/market-calendar/r28-earnings/scripts/pc-writer/release-calendar.mjs`: 기존 R27 수집기의 **별도 R28 설치 후보**. 동일 Core 6시간 가드·SQLite `public_feed_snapshots_v1` raw input 저장·출력·lease·기존 게시 경로를 재사용한다. 승인 기업별 원문과 출처를 저장한 다음 파서를 재실행하며, 일자 정정은 같은 이벤트 ID를 대체하고 실패 시 마지막 유효 일정을 보존·상태를 실패로 남긴다. 별도 예약/원격 크론/DB 테이블 변경 없음.
+- `app/market-calendar/market-calendar-client.tsx`: 적격 저장본이 추후 연결될 때 기존 `기업 실적` 필터에 표시할 수 있도록 소스·ID 인식 지원을 추가했다. 시각 미확정은 그대로 표시하고 실제·예상·이전 숫자는 비워 둔다. 현재 데이터가 없는 상태는 그대로 유지한다.
+- `tests/market-calendar-r28-earnings.test.mjs`: 권리 검증 실패 시 호출 차단, 공식 ICS/JSON, 회사/분기 ID, 잠정/취소, DST 현지 날짜, 변경·실패 보존, PC 저장 readback, UI 구분 검사를 포함한다.
+- 실제 공급원 목록 `EARNINGS_SOURCES`는 **빈 배열**이다. 테스트용 `investor.example.com`은 가상의 검증 대상이며 실행 시 가져오지 않는다. 이용약관·상업적 저장·재배포 허용이 확인된 실제 공식 공급원이 생기기 전에는 등록하지 않는다. 따라서 현재 **실제 기업 실적 수집 0건**이며 PC 운영 설치도 하지 않는다.
+- R27 설치 후보와 기존 경제지표 소스는 수정하지 않는다. R28 후보를 PC에 설치하려면 운영 승인 source SHA, 파일별 해시, 실행 중 lock, 기존 백업·config 보존을 검증하는 별도 안전 설치가 필요하다.
