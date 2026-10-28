@@ -292,3 +292,11 @@
 - 정확히 3개 일정 파일만 적용하고, 다른 데이터 수집·실적 작업 소유 변경 5개 파일과 기존 예약·DB·게시·GitHub main을 보존했다. R24는 **PC 코드 설치 완료**로 기록하되 정규 수집·공개 반영은 미관측으로 유지한다.
 - 다음 별도 공식 시장 이벤트 출처는 **CFTC Commitments of Traders(COT)** 주간 발표 일정. 공식 2026 일정 https://www.cftc.gov/MarketReports/CommitmentsofTraders/ReleaseSchedule/index.htm, 공개자료 권리 근거 https://www.cftc.gov/WebPolicy/index.htm. 예상 날짜를 자동 생성하지 않고 기관이 실제 게시한 2026년 날짜만 다룬다.
 - 첫 R25 작업은 운영 Core 미접촉의 **읽기 전용 공식 HTML 단 1회 수신 도구**와 회귀 테스트·CMD 제공이다. 실측 HTML 수신/구조검증 후 R24 로컬 source를 안전 기준으로 스테이징 파서·최소 설치기를 만든다. 기존 브랜치 `codex/zgmini-gpt-workspace-20261025` 유지, 새 브랜치 생성/강제 수집/배포 없음.
+
+## 28. R25 CFTC 원문 실측·파서/PC 설치 준비 (2026-10-28)
+
+- 사용자 PC 원문 조회 로그 `MARKET_CALENDAR_R25_CFTC_SOURCE_EXPORT_RESULT.txt`는 `CFTC_HTML_CAPTURED_READONLY`, HTTP 200, 원문 47,894바이트·SHA256 `bb3f01f89084d039bc3c40c5061e223eb7f89e3a7a785028e7f3dbbaee6ba792`; Base64 역산·크기·SHA256 검산 완료.
+- CFTC 공식 일정 원문에는 2026년 명시 날짜 52건, 10/28 이후 9건, 그중 휴일 지연 3건. 승인된 공식 연도만 파싱하며 추정 금요일·2027년 가상 일정 생성 금지.
+- R25 신규 파서·수집기·설치기·UI KST 발표 시각 연결 및 총 14건 테스트 PASS. 기존 R24 USDA collector 3건과 R23 EIA collector 9건 회귀 PASS. `npm run typecheck` PASS(기존 로컬 환경).
+- 사용자 PC 소스 R24 성공 SHA `b8204432cea18f62eb34eb8d08dcfe61717a448d`를 고정 기준으로 세 파일(parser, CFTC 모듈, collector)만 로컬 커밋·config.source 전환하는 설치 ZIP `MARKET_CALENDAR_R25_CFTC_PC_INSTALL_20261028.zip` 제공. SHA256 `413f9584295448542842bdc3e65be366f77ac01080ccb6d242dc8ffc347c74a5`. 그사이 다른 PC 작업으로 HEAD가 전진하면 STOP이며 덮어쓰기 금지.
+- R25는 **공식 원문 실측·코드 및 안전 설치기 준비 완료**, PC 설치 실행/정규 수집/SQLite·사이트 공개는 **미완료·미검증**. 지정 브랜치 `codex/zgmini-gpt-workspace-20261025` 외 신규 브랜치·main 병합·배포 없음. 설치 성공 로그가 오면 PC 코드 설치만 판정하고 다음 공식 소스 확장을 이어간다.
