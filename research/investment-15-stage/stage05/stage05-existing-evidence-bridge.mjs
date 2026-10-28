@@ -68,7 +68,7 @@ export function buildExistingEvidenceAudit({r17Markdown,asOfDate,liveF=null,live
   const matchedLiveThemeNames=asSet(liveNameList.filter(name=>knownNames.has(name)));
   return {version:'R79_EXISTING_STAGE01_04_EVIDENCE_BRIDGE',
     mode:'READ_ONLY_RESEARCH',asOfDate,
-    status:'S5_BLOCKED_MISSING_VERIFIED_PRICE_RS_TREND_AND_REALIZED_M4',
+    status:'S5_BLOCKED_MISSING_COMPLETED_STAGE_SCORES',
     approvedRosterSource:'STAGE03_THEME_IDS_FROM_R67_R2_R17',
     historicalSource:{type:'R17_ARCHIVED_NOT_LIVE',fObservedAt:historical.observation_date,
       fetchedAt:historical.fetched_at,sourceVersion:historical.api_source_version},
@@ -91,5 +91,6 @@ export function buildExistingEvidenceAudit({r17Markdown,asOfDate,liveF=null,live
     cautions:['R17 archived F is observed 2026-10-23, not new F.',
       'R17 source directions are proxies/partial, not G1/G2/M4.',
       'R25 M2 thematic research anchors cannot silently replace the R67 approved nine roster.',
-      'No S5 rank or trading advice until independent 01-04 verified contracts are available.']};
+      'Stage05 requires completed 01-04 final scores; RS/trend and G1/G2/F are not recalculated.',
+      'No S5 rank or trading advice until completed 01-04 output is connected.']};
 }
