@@ -285,3 +285,10 @@
 - `market-calendar-r24-usda-apply-v2.mjs`는 정확히 위 HEAD/조상 관계/5파일 목록/R23 캘린더 SHA/설정·잠금·dirty를 재검증한 다음에만 기존 테스트된 3파일 R24 installer를 새 승인 PC source 기준으로 실행. 새 PC 커밋 drift 발생 시 STOP. V2 4/4 테스트, 기초 설치 4/4, 진단 3/3, TS 검사 및 CMD·ZIP 무결성 PASS.
 - 최종 전달 ZIP `MARKET_CALENDAR_R24_USDA_PC_INSTALL_V2_20261028.zip` SHA256 `407c291581eb8dbf6bb30711fd8a188060757be4f4d6cb903de70cbc17ba8658`. 사용자 Windows CMD **`MARKET_CALENDAR_R24_USDA_APPLY_V2.cmd`** 1회 실행 후 **`MARKET_CALENDAR_R24_USDA_APPLY_V2_RESULT.txt`** 업로드. 과거 R24 V1 설치 반복 금지.
 - 상태: **V2 CODE_READY / PC 적용 로그 대기**. R24 PC 설치 성공·예약 수집·SQLite·웹 공개는 여전히 미확인. 다른 작업자 소스 5파일 보존, 브랜치 `codex/zgmini-gpt-workspace-20261025` 단일 유지, 신규 브랜치·main 병합·운영 배포 없음.
+
+## 27. R24 USDA PC 설치 성공 및 R25 CFTC 조사 착수 (2026-10-28)
+
+- 사용자 실제 설치 로그 `MARKET_CALENDAR_R24_USDA_APPLY_V2_RESULT.txt`의 최종 결정은 `R24_USDA_V2_INSTALLED_NO_FORCED_COLLECTION`, `phase=INSTALLED`이다. 원본 PC SHA `4e2a12cc...`에서 로컬 새 SHA `b8204432cea18f62eb34eb8d08dcfe61717a448d`로 이동했다.
+- 정확히 3개 일정 파일만 적용하고, 다른 데이터 수집·실적 작업 소유 변경 5개 파일과 기존 예약·DB·게시·GitHub main을 보존했다. R24는 **PC 코드 설치 완료**로 기록하되 정규 수집·공개 반영은 미관측으로 유지한다.
+- 다음 별도 공식 시장 이벤트 출처는 **CFTC Commitments of Traders(COT)** 주간 발표 일정. 공식 2026 일정 https://www.cftc.gov/MarketReports/CommitmentsofTraders/ReleaseSchedule/index.htm, 공개자료 권리 근거 https://www.cftc.gov/WebPolicy/index.htm. 예상 날짜를 자동 생성하지 않고 기관이 실제 게시한 2026년 날짜만 다룬다.
+- 첫 R25 작업은 운영 Core 미접촉의 **읽기 전용 공식 HTML 단 1회 수신 도구**와 회귀 테스트·CMD 제공이다. 실측 HTML 수신/구조검증 후 R24 로컬 source를 안전 기준으로 스테이징 파서·최소 설치기를 만든다. 기존 브랜치 `codex/zgmini-gpt-workspace-20261025` 유지, 새 브랜치 생성/강제 수집/배포 없음.
