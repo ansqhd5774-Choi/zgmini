@@ -26,6 +26,7 @@ export const R51_APPROVED_ROSTER=THEME_NINE_R37_ROSTER;
 
 const CONTRACT='THEME_NINE_R48_R47_PRIVATE_R37_CANDIDATE_V1';
 const PRICE='RAW_UNADJUSTED_1H_NOT_OFFICIAL_CLOSE';
+export const R51_PUBLIC_LEGACY_SOURCE='EXISTING_PUBLIC_PROVISIONAL_AS_PUBLISHED';
 const validDate=x=>typeof x==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(x)&&
   !Number.isNaN(Date.parse(x+'T00:00:00Z'))&&
   new Date(x+'T00:00:00Z').toISOString().slice(0,10)===x;
@@ -68,6 +69,53 @@ function verify(candidate){
     common??=dates;
   }
   return common;
+}
+
+// The public R2 feed publishes different theme subsets on different
+// provisional dates (3 on 26 Oct, 7 on 27 Oct). These published numbers
+// are NOT R32 scores. Carry them through byte-for-byte in value and key order
+// while R32 replaces only the independently verified confirmed histories.
+export function buildNineR51ExistingPublicProvisionalOverlay({confirmed,publicBase}={}){
+  const confirmedDates=verify(confirmed);
+  const baseDate=publicBase?.confirmedObservationDate??publicBase?.observationDate;
+  const pending=publicBase?.provisional?.points;
+  if(publicBase?.status!=='READY'||publicBase.phase!=='PROVISIONAL'||
+    !Array.isArray(publicBase.themes)||publicBase.themes.length<7||
+    !validDate(baseDate)||baseDate!==confirmed.observationDate||
+    publicBase.observationDate!==baseDate||
+    !Array.isArray(pending)||pending.length<1||pending.length>2||
+    !same(publicBase.themes[0]?.history?.map(p=>p.date),confirmedDates)||
+    typeof publicBase.methodologyVersion!=='string'||
+    !publicBase.methodologyVersion||typeof publicBase.version!=='string')
+    fail('PUBLIC_LEGACY_ANCHOR');
+  const visible=new Set(publicBase.themes.map(t=>t.theme));
+  let previous=baseDate;
+  const points=pending.map((point,i)=>{
+    if(!validDate(point?.date)||point.date<previous||
+      (i>0&&point.date<=previous)||
+      !point.scores||typeof point.scores!=='object'||
+      Array.isArray(point.scores)||
+      !Object.keys(point.scores).length||
+      Object.entries(point.scores).some(([name,value])=>
+        !visible.has(name)||!validScore(value)))
+      fail('PUBLIC_LEGACY_PROVISIONAL_CONTRACT');
+    previous=point.date;
+    return {date:point.date,scores:{...point.scores}};
+  });
+  return {...confirmed,phase:'PROVISIONAL',
+    provisional:{asOf:publicBase.provisional.asOf??null,points},
+    provisionalLegacyMethodologyVersion:publicBase.methodologyVersion,
+    provisionalLegacySourceVersion:publicBase.sourceVersion??null,
+    provisionalLineage:{source:R51_PUBLIC_LEGACY_SOURCE,
+      confirmedCandidateSha256:sha(confirmed),latestCandidateSha256:null,
+      confirmedObservationDate:baseDate,latestObservationDate:baseDate,
+      publicVersion:publicBase.version,
+      publicProvisionalEndDate:previous,
+      publicProvisionalPointsSha256:sha(points),
+      sameMethodology:false,overlappingHistoryIdentical:true},
+    ...Object.fromEntries(falseFlags.map(k=>[k,false])),
+    sourceStoredAt:null,publishedAt:null,
+    providerCalls:0,d1Writes:0,schedulerWrites:0};
 }
 
 export function buildNineR51PrivateProvisionalOverlay({confirmed,latest,publicBase}={}){
