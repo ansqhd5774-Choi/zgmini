@@ -283,6 +283,55 @@ test('R75: conflicting lead, title, and primary whole-market forecast periods re
   assert.equal(report.source_conflict_reason, 'WHOLE_MARKET_LEAD_AND_SECTION_PERIOD_MISMATCH');
 });
 
+test('R81: Precedence same-rate one-year labels pass only with independently matching whole-market sizes', async () => {
+  for (const input of [
+    { keyword:'fintech blockchain', baseYear:2026, endYear:2034,
+      base:'1.02', end:'21.59', pct:46.31,
+      lead:'The global FinTech blockchain market has a projected CAGR of 46.31% from 2025 to 2034.',
+      heading:'FinTech Blockchain Market Size and Forecast 2026 to 2034' },
+    { keyword:'biotechnology', baseYear:2025, endYear:2035,
+      base:'1.77', end:'6.34', pct:13.61,
+      lead:'The global biotechnology market is projected to grow from USD 2.02 trillion in 2026 to USD 6.34 trillion by 2035, registering a CAGR of 13.61%.',
+      heading:'What is the Biotechnology Market Size?' }
+  ]) {
+    const reportUrl=`https://www.precedenceresearch.com/${input.keyword.replaceAll(' ','-')}-market`;
+    const makeDocument=(end=input.end)=>(
+      `<html><h1>${input.keyword} Market Size and Forecast</h1><p>${input.lead}</p>`+
+      `<h2>${input.heading}</h2><p>The global ${input.keyword} market is forecast `+
+      `to grow from USD ${input.base} trillion in ${input.baseYear} to USD ${end} `+
+      `trillion by ${input.endYear}, registering a CAGR of ${input.pct}% `+
+      `from ${input.baseYear} to ${input.endYear}.</p></html>`);
+    const run=async end=>firstPartyOllamaAdapter('Precedence', {
+      addressHintFn:()=>reportUrl,
+      fetchFn:async url=>url===reportUrl?new Response(makeDocument(end)):
+        new Response('missing',{status:404}),
+      chooseFn:async()=>({index:0,scope:'DIRECT'})
+    }).run({id:'check',keyword:input.keyword});
+    const verified=await run(input.end);
+    assert.equal(verified.state,'PASS',input.keyword);
+    assert.equal(verified.growth_pct,input.pct);
+    assert.deepEqual([verified.period_start,verified.period_end],
+      [input.baseYear,input.endYear]);
+    assert.equal(verified.source_conflict_reason,
+      'WHOLE_MARKET_PERIOD_LABEL_VARIATION_SIZE_VERIFIED');
+    const report=await runForecastPipeline([{id:'check',keyword:input.keyword}], [
+      {id:'Precedence',officialHosts:['www.precedenceresearch.com'],run:async()=>verified},
+      {id:'SkyQuest',officialHosts:['www.skyquestt.com'],run:async()=>({
+        state:'PASS',result_url:'https://www.skyquestt.com/report/example-market',
+        source_audit:'CONSISTENT',metric:'FORECAST_CAGR',growth_pct:5,
+        forecast_narrative_pct:5,forecast_base_year:2026,forecast_end_year:2033,
+        period_start:2026,period_end:2033
+      })}
+    ]);
+    assert.equal(report.results[0].source_count,2);
+    assert.ok(report.results[0].warnings.includes(
+      'PUBLISHER_PERIOD_LABEL_VARIATION_VERIFIED_BY_MARKET_SIZES'));
+    const unsupported=await run('999');
+    assert.equal(unsupported.state,'SOURCE_CONFLICT');
+    assert.equal(unsupported.growth_pct,null);
+  }
+});
+
 test('R76: official SkyQuest Market Insights separates 2025 size baseline from the 2026-2033 CAGR forecast', async () => {
   const doc = '<html><h1>Data Center Market Size, Share, and Growth Analysis</h1>' +
     '<h2>Data Center Market Size, Share & Trends Analysis Report</h2><p>Overview</p>' +
