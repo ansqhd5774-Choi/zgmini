@@ -9,11 +9,11 @@ import {kstCalendarDate} from '../../lib/iran-progress/chart-history.mjs';
 const tokens=e=>new Set((e.evidence??'').toLowerCase().replace(/iranian|iran|navy|says|another|the |of |in |after |chief|spokesman/gi,' ').match(/[a-z]{3,}/g)??[]);
 const dialogueRules=new Set(['DIALOGUE_WILLINGNESS','MEDIATOR_MEETING','TALKS_HELD']);
 function diplomaticMeeting(e){
- if(!dialogueRules.has(e.rule)||e.location==='unknown')return null;
+ if(!dialogueRules.has(e.rule))return null;
  const text=e.evidence??'';
  const participants=[['IRAN',/\bIran(?:ian)?\b/i],['SAUDI',/\bSaudi\b/i],['PAKISTAN',/\bPakistan(?:i)?\b/i],['TURKEY',/\b(?:Turkey|Turkiye|Türkiye|Turkish)\b/i],['US',/\b(?:US|United States)\b/i],['QATAR',/\bQatar(?:i)?\b/i],['OMAN',/\bOman(?:i)?\b/i]].filter(([,re])=>re.test(text)).map(([name])=>name).sort();
  // Ambiguous reports retain the existing duplicate review; never infer participants from a summary.
- return participants.length>=3?JSON.stringify([e.date,e.location,participants]):null;
+ return participants.length>=3?JSON.stringify([e.date,participants]):null;
 }
 export function resolveR3Events(input){
  const accepted=[],held=[],keys=new Set();
@@ -23,7 +23,8 @@ export function resolveR3Events(input){
   const key=e.sourceUrl+':'+e.date+':'+e.rule;if(keys.has(key))continue;keys.add(key);
   const near=accepted.find(old=>{
    const meeting=diplomaticMeeting(e);
-   if(meeting&&meeting===diplomaticMeeting(old))return true;
+   if(meeting&&meeting===diplomaticMeeting(old)&&
+    (e.location==='unknown'||old.location==='unknown'||e.location===old.location))return true;
    if(e.rule!==old.rule||Math.abs(Date.parse(e.date)-Date.parse(old.date))>3*86400000)return false;
    if(e.location!=='unknown'&&old.location!=='unknown'&&e.location!==old.location)return false;
    if(e.target!=='unknown'&&old.target!=='unknown'&&e.target!==old.target)return false;

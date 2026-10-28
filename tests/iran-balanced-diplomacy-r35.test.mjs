@@ -16,6 +16,10 @@ test('multiple publications or stages of the same multilateral meeting count onl
  const b=event('Saudi Arabia, Turkey, Iran and Pakistan held security talks in Tehran','https://www.aljazeera.com/news/meeting');
  const c=event('Iran, Saudi Arabia, Pakistan, Turkey agreed to continue talks in Tehran','https://www.bbc.com/news/articles/meeting');
  for(const input of [[a,b,c],[c,b,a]]){const r=resolveR3Events(input);assert.equal(r.accepted.length,1);assert.equal(r.accepted[0].delta,8);assert.equal(r.held.length,2);}
+ const noPlace=event('Iran, Saudi Arabia, Pakistan, Turkey agreed to continue talks','https://www.bbc.com/news/articles/continued');
+ assert.equal(resolveR3Events([a,noPlace]).accepted.length,1,'Missing place does not prove an independent second meeting');
+ const differentPlace=event('Iran, Saudi Arabia, Pakistan, Turkey held security talks in Doha','https://www.bbc.com/news/articles/doha');
+ assert.equal(resolveR3Events([a,differentPlace]).accepted.length,2,'Explicitly different locations remain separate');
 });
 test('balanced policy permits reported diplomacy and nets both signs without a negative-day veto',()=>{
  const held=event('Iran and Saudi Arabia held peace talks');
