@@ -23,5 +23,5 @@ test('R65 composes all published optional themes and provisional scores before R
   assert.ok(current>previous,`missing or incorrectly ordered public reader: ${step}`);
   previous=current;
  }
- assert.match(source,/addVerifiedNineR37\(db,withDcProvisional,\{now:opts\.now,trace:opts\.r37Trace\}\)/);
+ assert.match(source,/addVerifiedNineR37\(db,withDcProvisional,\{now:opts\.now\}\)/);
 });
