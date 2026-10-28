@@ -81,4 +81,10 @@ Stage05는 M4 전체를 **한 번만** 사용하며, 원래 F/G/D를 별도로 �
 - 연준의 시장 위험 분리 참고: https://www.federalreserve.gov/publications/2026-may-financial-stability-report-overview.htm
 - 가격 추세의 급반전 위험 관련 원 연구: https://www.nber.org/papers/w20439
 
-**판정**: 이 문서는 Stage05 기준의 브랜치 기록이다. 코드 구현 PASS, 01~04 데이터 완전성 PASS, 현재 S5 계산 PASS, 사용자 PC 검증 PASS, 운영 적용 PASS를 주장하지 않는다.
+**원 설계 판정 (작성 시점)**: 이 문서는 Stage05 기준의 브랜치 기록이었다. 코드 구현 PASS, 01~04 데이터 완전성 PASS, 현재 S5 계산 PASS, 사용자 PC 검증 PASS, 운영 적용 PASS를 당시 주장하지 않았다.
+
+## R78 후속 구현 상태 (2026-10-28)
+
+- [R78 Stage05 융합 계산기와 Windows 읽기 전용 진단기](stage05/README_STAGE05_FUSION_R78_20261028.md) 구현. **개발 환경 가상 입력 10/10 PASS**, 누락·원천 오인·기간 충돌·Stage04 산식 불일치 차단.
+- 구현된 **계산 및 입력 Gate 검증**만 PASS. Stage02/03에 실측 ETF 가격 기반 RS·Trend 검증값과 Stage04 실측 QUANTIFIED M4가 없는 현재 **실제 S5=NULL**. 사용자 PC에서 R78 실행 증거 없음. 운영 선정·기존 산식·주문 변경 없음.
+
