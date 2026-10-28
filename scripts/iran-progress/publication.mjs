@@ -9,10 +9,24 @@ import {IRAN_FLOW_R3_KEY} from '../../lib/iran-progress/reference-flow-r3.mjs';
 import {validateReferenceFlowR3} from '../../lib/iran-progress/reference-public-r3.mjs';
 import {IRAN_R5_PUBLIC_KEY,validateIranR5Public} from '../../lib/iran-progress/daily-public-r5.mjs';
 import {publishArrowState} from '../pc-writer/score-arrow-publication.mjs';
-export async function publishIranR5Provisional(remote,db,body,{now=Date.now()}={}){
+import {attachIranUpdateHistory,IRAN_UPDATE_HISTORY_VERSION,iranPublicationPoint} from '../../lib/iran-progress/intraday-history-r1.mjs';
+import {recordIranPublishedUpdate} from './published-updates-r1.mjs';
+export async function publishIranR5Provisional(remote,db,body,{now=Date.now(),store=null}={}){
  if(!validateIranR5Public(body,now))throw Error('R5_PUBLICATION_CONTRACT_INVALID');
+ // Read the actually stored snapshot before extending its history. This also preserves
+ // confirmed points if the PC stopped between remote readback and local ledger append.
+ const prior=(await remote.query(db,'SELECT body,stored_at FROM market_public_snapshots_v1 WHERE snapshot_key=?',[IRAN_R5_PUBLIC_KEY])).results?.[0];
+ if(prior&&Number(prior.stored_at)>body.publishedAt)return {status:'REMOTE_NEWER_PRESERVED'};
+ const records=(body.updateHistory??[]).filter(p=>p.at<body.publishedAt).map(point=>({version:IRAN_UPDATE_HISTORY_VERSION,verification:'D1_READBACK_VERIFIED',point}));
+ if(prior){
+  let saved;try{saved=JSON.parse(prior.body);}catch{throw Error('R5_PREVIOUS_TIMELINE_INVALID');}
+  if(!validateIranR5Public(saved,saved.publishedAt)||Number(prior.stored_at)!==saved.publishedAt)throw Error('R5_PREVIOUS_TIMELINE_INVALID');
+  for(const point of saved.updateHistory??[iranPublicationPoint(saved)])records.push({version:IRAN_UPDATE_HISTORY_VERSION,verification:'D1_READBACK_VERIFIED',point});
+ }
+ Object.assign(body,attachIranUpdateHistory(body,records));
  const result=await publishSnapshot(remote,db,IRAN_R5_PUBLIC_KEY,body,body.publishedAt);
  if(!['VERIFIED','UNCHANGED'].includes(result.status))return result;
+ if(store)recordIranPublishedUpdate(store,body,result);
  // Keep R5 separate from the R3 writer; never infer a change time from backcast history.
  try{
   const arrows=await publishArrowState(remote,db,'iran',{'iran:r5':{score:body.score,sourceAt:body.publishedAt,method:body.version}},now);
