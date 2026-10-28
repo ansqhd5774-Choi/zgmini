@@ -44,3 +44,4 @@
 - 따라서 `NO_MATCH_IN_BOUNDED_TEXT_SCAN`은 원본 **부재의 증거가 아니다**. `safeToAutoCapture=false`를 강제하며 자동 수집·저장하지 않는다.
 - 실제 PC에서 승인된 원본 저장 여부가 확인될 때까지 상태는 `PC_LEDGER_N400RC=UNKNOWN`이다.
 - R2 로컬 테스트 4/4 PASS. 실제 PC 실행 및 운영 저장·게시 전환은 미실행.
+- `RUN_BEA_MFG_PC_INVENTORY_READONLY.cmd`는 Windows의 승인된 Node와 PC 루트로 R2를 실행하고 바탕화면에 TXT 보고만 남기는 1회성 수동 실행기다. 원본을 수집하거나 저장하지 않는다.
