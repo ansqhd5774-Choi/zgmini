@@ -1,13 +1,15 @@
 /**
  * R71: live SkyQuest / Precedence adapters for the R70 forecast pipeline.
  * Reuses existing official-link, HTML, candidate, and local Ollama selectors.
- * No history lookup, report seeds, fixed CAGR numbers or G/D/M scoring.
+ * R78 restores historic official *addresses* as live lookup hints only.
+ * No historic CAGR/mean/model verdict, fixed CAGR numbers or G/D/M scoring.
  */
 import { PUBLISHERS, pagePlainText, extractCagrCandidates,
   chooseUsingOllama } from './stage04-four-publisher-r37-readonly.mjs';
 import { officialReportUrl, searchLinks, getOfficial, getSearch,
   titleOf } from './stage04-topic01-r45-readonly.mjs';
 import { catalogLinks } from './stage04-topic01-r48-repeat.mjs';
+import { officialAddressHint } from './stage04-r63-official-address-hints-r78.mjs';
 
 const PUBLISHER_CATALOGS = Object.freeze({
   SkyQuest: 'https://www.skyquestt.com/report',
@@ -392,7 +394,8 @@ async function inspectOnePublisherReport(publisher, url, keyword, {
 /** Connect one real official publisher; never provide fake second-media data. */
 export function firstPartyOllamaAdapter(publisherId, {
   fetchFn = fetch, searchFn = getSearch, model = 'gemma3:4b',
-  chooseFn = chooseUsingOllama, discoverFn = discoverPublisherReports
+  chooseFn = chooseUsingOllama, discoverFn = discoverPublisherReports,
+  addressHintFn = officialAddressHint
 } = {}) {
   if (!['SkyQuest', 'Precedence'].includes(publisherId)) throw Error('R71_UNSUPPORTED_PUBLISHER');
   const publisher = PUBLISHERS.find(p => p.id === publisherId);
@@ -415,6 +418,32 @@ export function firstPartyOllamaAdapter(publisherId, {
         ...options,
         signal: options.signal ? AbortSignal.any([budget, options.signal]) : budget
       });
+       // R37 used archived report *addresses* as discovery aids. R78 restores
+       // that path only. A hint is NEVER a verified source or cached figure:
+       // inspectOnePublisherReport performs a new official GET, title/scope
+       // checks, literal CAGR extraction, Ollama selection and period audit.
+       const hint = addressHintFn(topic.keyword, publisherId);
+       const attempts = [];
+       let reportCount = 0;
+       if (hint && officialReportUrl(hint, publisher)) {
+         reportCount++;
+         const hintMeta = { search_requests: 0, search_ms: 0,
+           discovery_diagnostics: [{ method: 'R63_OFFICIAL_ADDRESS_HINT',
+             state: 'UNVERIFIED_ADDRESS_ONLY_FRESH_GET_REQUIRED', found: 1 }],
+           discovery_candidates: [hint] };
+         const checked = await inspectOnePublisherReport(publisher, hint, topic.keyword, {
+           fetchFn: boundedFetch, chooseFn, model, searchMeta: hintMeta, reportCount
+         });
+         attempts.push(checked);
+         if (checked.state === 'PASS' || checked.state === 'SOURCE_CONFLICT') {
+           return { ...checked, total_ms: Math.round(performance.now() - began) };
+         }
+       }
+       if (budget.aborted) {
+         return failure(publisherId, topic.keyword, 'PUBLISHER_TIME_BUDGET_EXCEEDED', {
+           model, report_requests: reportCount, historical_cagr_used: false,
+           total_ms: Math.round(performance.now() - began) });
+       }
       let discovery;
       try { discovery = await discoverFn(publisher, topic.keyword, {
         fetchFn: boundedFetch, searchFn, sitemapFn: currentRunSitemap
@@ -424,13 +453,17 @@ export function firstPartyOllamaAdapter(publisherId, {
         search_ms: discovery.search_ms,
         discovery_diagnostics: discovery.diagnostics,
         discovery_candidates: discovery.candidates.slice(0, 8) };
-      if (!discovery.candidates.length) {
+       // Never spend another publisher request on a failed archived address.
+       const candidates = discovery.candidates.filter(url => url !== hint);
+       if (!candidates.length && attempts.length) {
+         return { ...attempts.at(-1), report_requests: reportCount,
+           total_ms: Math.round(performance.now() - began) };
+       }
+       if (!candidates.length) {
         return failure(publisherId, topic.keyword, 'NO_VERIFIED_OFFICIAL_REPORT_DISCOVERED', {
           model, ...searchMeta, total_ms: Math.round(performance.now() - began) });
       }
-      const attempts = [];
-      let reportCount = 0;
-      for (const url of discovery.candidates.slice(0, MAX_REPORTS)) {
+       for (const url of candidates.slice(0, MAX_REPORTS - reportCount)) {
         if (budget.aborted) break;
         reportCount++;
         const result = await inspectOnePublisherReport(publisher, url, topic.keyword, {
