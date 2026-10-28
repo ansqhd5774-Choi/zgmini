@@ -83,3 +83,15 @@
 - V2 안전장치: Core 작업 경로, R27 parser/collector SHA, PC config.source==HEAD, 보호 소스 변경 0, 백업+해시, Core lock 확인. 설치 중 강제 수집·게시·스케줄 변경·GitHub push 없음.
 - 검증: R27/R28/R29 관련 테스트 9개 파일 통과, ZIP 파일 7개 무결성 확인. V2 실제 PC 실행은 아직 수행되지 않았으며 재실행/성공을 추정하지 않는다.
 - 주의: 첫 설치 ZIP은 **재실행 금지**. V2 결과가 `R29_V2_PC_PRIVATE_INPUT_COLLECTOR_INSTALLED_NO_FORCED_COLLECTION`일 때만 PC 설치 성공으로 판정한다.
+
+
+## R29 V2 설치 중단 및 V3 단계별 진단 개선 (2026-10-28)
+
+- V2 사용자 결과: `decision=R29_INSTALL_ABORTED_OR_RESTORED_STOP`, `previousSource=348e83f352258d768e34097d8a1e1aa474dae321`, `newSource=null`, `backupCreated=false`, `forcedCollection=false`, `publisherExecuted=false`. 기존 R27 source preflight는 통과했으나 실제 설치는 **미완료**.
+- V2 보고서의 `changedFiles` 배열은 **예정 대상 목록**이어서 실제 변경 증거가 아니다. 백업 전 예외이므로 설치는 확인되지 않았고, 정확한 예외 코드/중단 단계가 누락되었다.
+- 가능성: `local-cycle.lock`이 이미 존재하는 경우 Node `fs.openSync(lock,'wx')`에서 `EEXIST`가 발생할 수 있다. 단, 원래 로그만으로 이 원인이라 확정하지 않는다.
+- V3는 **실행 정책·설치 후보 파일·기존 R27 해시·3개 변경 대상은 V2와 동일**하고 진단 정보만 강화한다.
+- V3 결과는 `phase`, 운영체제 `errorCode`, 사전 잠금 존재 여부 및 초 단위 파일 나이(잠금이 있을 때만)를 기록한다. 비밀 키·파일 내용·API 응답 원문은 기록하지 않는다.
+- 잠금이 이미 존재하면 `R29_V3_CORE_LOCK_PRESENT_STOP`, 확인 후 생긴 경합이면 `R29_V3_CORE_LOCK_RACE_STOP`으로 즉시 중단한다. 잠금 파일 강제 삭제·예약 작업 종료·자동 반복 실행 금지.
+- V3는 계획 파일 `plannedFiles`와 **실제 반영 증거** `changedFiles`를 분리한다. 백업·원본 복구가 완료되면 실제 변경 목록은 비우며, 미완전 복구는 별도로 STOP 표기한다.
+- 실제 사용자 PC에 V3를 설치했다는 증거는 아직 없음. V1/V2 ZIP 재실행 금지. V3에서도 실패하면 원인 코드와 중단 단계만 보고해 최소 조치를 결정한다.
