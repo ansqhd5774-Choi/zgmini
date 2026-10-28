@@ -122,3 +122,11 @@
 - 결과는 압축을 푼 CMD **옆** `IRAN_NEWS_R31_CYCLE_READONLY_RESULT_날짜시각_밀리초.txt`로 한 번씩 별도 생성한다. `R31_SINGLE_CYCLE_OBSERVED`는 정상 범위의 **최근 R29 출력 파일 1회분을 관측했다**는 뜻이다. 예약 작업으로 실제 실행됐는지에 관한 단독 증거도, **서로 다른 정규 2회 PASS 증거도 아니다**. 반드시 두 로그의 `observationAtKst`가 다른 6시간 회차인지 확인하고, 실제 R13 스케줄러 실행 이력과 함께 대조해야 한다.
 - `PRIVATE_COLLECTION_PARTIAL`은 개별 기사 HTTP 403 등 부분 실패가 있더라도 저장 결과가 일관되면 인정한다. `PRIVATE_COLLECTION_FAILED_CANDIDATES_PRESERVED`, 오래된 상태, 파일 시간 불일치, 후보의 공개 권리 드리프트 등은 `R31_CYCLE_NOT_VERIFIED`로 기록한다. R28 당시 27개 후보는 **새 정규 회차가 실행되었다는 단독 증거가 아니다**. 후보 수가 늘지 않아도 최신 관측 시각과 오류를 비교한다.
 - 운영 파일·PC SQLite·기존 스케줄러·VBS·R13/R15 runner·공개 캐시·D1·UI/번역을 수정하지 않는다. 결과 TXT 파일만 **CMD의 압축 해제 폴더**에 쓴다. 작업 브랜치는 `codex/outbreak-iran-news-retention-r1-20261026` 유지. 사용자 PC의 정규 2회 결과는 **사용자 검증 대기** 상태다.
+
+## 15. R31 FIX1 — 실행창 즉시 종료·로그 미생성 복구
+
+- 사용자 보고: 이전 R31 CMD를 더블클릭하면 즉시 닫히고 결과 로그가 생성되지 않음. 구버전 CMD는 **패키지 미완전 압축 해제 또는 Node PATH 미인식**과 같은 시작 단계 실패 시 콘솔 `echo` 직후 종료했으며, 이 분기에는 로그 쓰기가 없었다. 어느 원인이 실제 발생했는지는 PC 증거가 없어 아직 미확정이다.
+- **기존 R31 ZIP 대신** `IRAN_NEWS_R31_FIX1_CYCLE_READONLY_PACKAGE.zip` 사용 (SHA-256 `98ca9d3bcfa06bbd6112e5a32d1ae9b0d07bd8f759293ad3229639ba13ec6916`). 기존 패키지/코드 파일을 무단 삭제하지 않는다. 새 ZIP 압축 해제 후 동일한 `IRAN_NEWS_R31_CYCLE_READONLY.cmd` 실행.
+- CMD 시작 즉시 별도 `IRAN_NEWS_R31_LAUNCH_RESULT.txt`에 실행 시작 표시를 **추가 기록**한다. 파일/Node 미발견, R29 결과 미검증, 성공을 각 `FINAL_STATUS`로 구분하고 모든 경로에서 `pause`를 사용해 콘솔을 유지한다. `where node.exe` 실패 시 운영 계약에 명시된 `E:\ZGmini\runtime\node.exe`만 보조 경로로 검사한다. 다른 디스크 탐색·런타임 다운로드·Node 설치는 하지 않는다.
+- Node 검사까지 도달한 경우 기존 시각별 `IRAN_NEWS_R31_CYCLE_READONLY_RESULT_*.txt`도 별도로 생성한다. 파일 미존재의 경우에도 `STOP_R31_PACKAGE_INCOMPLETE`, Node 경로 부재에는 `STOP_R31_NODE_MISSING` 등 정확한 사유가 launcher 로그에 남는다. 압축 해제 폴더가 쓰기 불가이면 콘솔에서 별도 `STOP`을 표시하고 사용자가 경로를 선택한다.
+- **정규 수집 검증 자체는 여전히 대기**한다. 보조 CMD를 실행해도 스케줄러를 강제 실행하지 않으며, 기존 사용자 PC의 점수 DB·D1·수집 후보·R15/R29 hook·UI/번역에는 쓰지 않는다.

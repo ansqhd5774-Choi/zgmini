@@ -61,5 +61,11 @@ test('R31 CMD is offline ASCII CRLF and never invokes scheduler jobs',()=>{
  const text=bytes.toString('ascii');
  assert.equal(text.replace(/\r\n/g,'').includes('\n'),false);
  assert.match(text,/news-display-cycle-verify-r31\.mjs/);
+ assert.match(text,/IRAN_NEWS_R31_LAUNCH_RESULT\.txt/);
+ assert.match(text,/STOP_R31_PACKAGE_INCOMPLETE/);
+ assert.match(text,/STOP_R31_NODE_MISSING/);
+ assert.match(text,/STOP_R31_OBSERVATION_REQUIRES_REVIEW/);
+ assert.match(text,/E:\\ZGmini\\runtime\\node\.exe/);
+ assert.match(text,/pause\s*\r?\n/i);
  assert.doesNotMatch(text,/schtasks|\bcurl\b|PowerShell|Invoke-WebRequest|--scheduled|--collect|\/Run|\/Create|\/Change/i);
 });

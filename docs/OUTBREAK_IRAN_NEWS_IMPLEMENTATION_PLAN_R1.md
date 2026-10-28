@@ -506,3 +506,9 @@
 - `R31_SINGLE_CYCLE_OBSERVED`는 **최근 파일 1회 일관성 확인**이고, 스케줄러 실행 이력 또는 정상적인 정규 **2회 완료의 독립 입증은 아니다**. 두 결과의 `observationAtKst`/6시간 구간과 사용자 PC의 Task Scheduler 실행 기록을 각각 대조해야 한다. `automaticScheduleTwoCyclesVerified:false`는 의도적이며 실제 증거 확인 전까지 유지한다.
 - `PRIVATE_COLLECTION_PARTIAL`은 403 같은 일부 원문 실패를 숨기지 않는 유효 관측일 수 있지만, 원문 접근 제약의 해결이나 공개 권리 승인으로 간주하지 않는다. R28 저장 27건을 새 자동 수집 성과로 재사용하지 않는다. PC/D1/사이트/번역·UI 구현은 이번 수정에서 제외한다.
 - **다음 Gate:** 사용자가 별개의 정상 예약 회차에서 생성한 R31 TXT 2개와 R13 작업 이력을 직접 확인한 후 `PC_AUTO_COLLECTION_VERIFIED` 여부를 결정한다. 그 전의 개발자 보고는 `SOURCE_VERIFIED`, `PC_INSTALL_VERIFIED`, `PC_SCHEDULED_COLLECTION_UNVERIFIED`를 분리한다. 신규 브랜치를 만들지 않는다.
+
+## 42. R31 FIX1 실행기 시작 오류 진단 복구
+
+- 사용자 PC에서 R31 CMD 더블클릭 직후 창이 닫히고 결과 TXT가 없는 현상 보고. 원인은 아직 로그가 없어 미확정이며, 기존 CMD의 **실행기 사전 검사 단계에서 로그와 창 유지 수단이 없다는 결함**만 소스 코드로 확정했다.
+- 신규 패키지 `IRAN_NEWS_R31_FIX1_CYCLE_READONLY_PACKAGE.zip` (SHA-256 `98ca9d3bcfa06bbd6112e5a32d1ae9b0d07bd8f759293ad3229639ba13ec6916`)을 기존 R31 ZIP보다 우선 사용한다. CMD는 `IRAN_NEWS_R31_LAUNCH_RESULT.txt`를 시작 즉시 추가 기록하고 미완전 압축 해제·Node 경로 부재·R29 상태 미검증을 분리한다. 운영 Node E: 승인 경로만 보조로 검사하며 CMD 종료 전 화면 `pause`를 추가한다.
+- Node 코드·실제 R29 수집기·R13/R15 runner·작업 시간표·R3/R5 점수·D1·공개 뉴스·UI/번역은 변경하지 않는다. 새 CMD도 R29 수집 자체를 실행하거나 예약 작업을 강제 실행하지 않는다. 다음 Gate는 수정 CMD가 생성한 실행기 로그와 사용자 PC의 정규 회차 실측이다.
