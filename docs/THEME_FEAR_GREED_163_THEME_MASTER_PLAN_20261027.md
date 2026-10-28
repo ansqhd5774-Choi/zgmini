@@ -2,8 +2,19 @@
 - 작성일: 2026-10-27 (사용자 확인: 163개 테마를 인기가 높은 순서부터 낮은 순서까지 확대하며, 개발 과정에서 지속 개선·보완)
 - 저장소: `ansqhd5774-Choi/zgmini`
 - **전용 작업 브랜치: `codex/theme-fear-greed-integration-20261025` (작업자 임의 신규 브랜치 생성·전환 금지)**
-- 상태: `PROGRAM_CHARTER_RECORDED / R47_PRIVATE_RECURRING_SOURCE_AND_SCORE_CODE_TESTED / PC_RUN_PENDING / NOT_163_THEMES_IMPLEMENTED / NO_PUBLICATION`
+- 상태: `PROGRAM_CHARTER_RECORDED / R57_PRIVATE_PC_INSTALLED / R48_R54_INVOKED / CLOUDFLARE_MAIN_BUILD_PASS / R51_DATE_UNALIGNED / R32_D1_NOT_PUBLISHED / NOT_163_THEMES_IMPLEMENTED`
 - 효력: **범위·목표·작업 연속성 및 인수인계 규칙을 문서화**한다. 기존 산식·선정·공개·DB·예약 작업·배포 승인 계약을 변경하지 않는다.
+
+## 2026-10-29 최신 운영 아키텍처·API·배포 인수인계 (이전 R45~R48 상태보다 우선)
+
+**반드시 먼저 읽을 정본:** [기존 9개 R32 실제 API·원가격·확정/잠정·D1 게시 구조](THEME_NINE_LIVE_ARCHITECTURE.md). 기존 아래 R39~R48 표·서술은 해당 시점의 이력 증거이며 현 운영 상태와 미완료 항목은 이 최신 구조도 및 최신 PC 실행 로그로 판단한다.
+
+- **확정 산식 유지:** 연구 9개(고유 ETF 63/편입 64), 공개 교집합 8개. 우주·위성 등 기존 공개 10개와 미공개 AI 구분. R32 9×252·R33 8×252 실증 및 기존 R25/R32/공식 AUM 규칙을 다시 만들지 않는다.
+- **API 사용 현황:** R32 ETF 1h 가격의 **실제 활성 외부 수집원은 GetMarketHistory 한 곳**. MarketParquet EOD는 기존 원자료 R45 재사용·R46 후보 경로로서 **현재 R32 가격 산식 미연결**. 공개 사이트 날짜 조회(ZGMINI 자체 API), 운영 빌드 검증(GitHub API), 파생 점수 게시(Cloudflare D1 API)는 가격 공급원이 아니다.
+- **실PC 배치:** R57 승인 R47 교체 및 백업 성공(SHA256 `5a2149556ab4ebc255ea54a14501d1511a906a2904252cad938f9de0b730a24c`). R55의 R48/R54 호출은 완료됐지만, R51 최신 잠정일 2026-10-27에 정렬된 R48 데이터가 없어 D1 쓰기는 0. **R48/R54 명령 종료 코드 0을 운영 공개 성공으로 표시하지 않는다.**
+- **실데이터 증거:** GetMarketHistory SPY 1h 2026-10-27 요청은 `x-row-count:0`, `x-data-through:2026-10-26T23:59:00Z`. 이미 공개된 27일 기존 잠정점수와 새로운 R32 입력은 별개이며 원자료가 없는 날짜를 0점/기존 점수로 대체하지 않는다.
+- **배포 증거 구분:** GitHub main `74dc2024719a527d473f249702bdd53b5f3dcbac`의 Cloudflare Workers Production Build는 성공(build `af7548ac-9f2f-4e9f-8d64-796bd43ff681`). 그러나 공개 API는 아직 `modelRevision=null`, `ETF_ONLY_T40_R20_V40_PAIR50`. **소스 빌드 PASS ≠ R32 D1 공개 완료.**
+- **이후 첫 작업:** 기존 API 및 저장된 PC ETF 원본에서 27일 R32 가격모드·수집 가능성을 정확히 확인해 R47→R48→R51→R54 **실제 게시**를 완료한다. MarketParquet 일봉을 1h 원가격과 근거 없이 혼합하지 않고, 사용자의 **배포 후 모니터링**을 **첫 게시 생략**으로 오해하지 않는다. 어떤 신규 산식·ETF 재선정·브랜치 변경도 하지 않는다.
 
 ## 0. 최상위 목표 — 작업 방향의 기준
 
@@ -221,7 +232,7 @@
 | 미공개 AI·반도체 | R32 연구 252점 | 별도 신규 테마 출시에 필요한 승인·자동화 | `NOT_PUBLISHED` |
 | 163개 신규 테마 | 프로그램 목표와 순차 방식 확정 | 다음 인기 테마 1개부터 반복 | `NOT_163_COMPLETE` |
 
-**가장 가까운 한 가지 다음 작업:** 업로드된 R47 실제 PC ETF·테마 원 JSON의 SHA256과 기존 R32 가중 계산 **2,268/2,268일**을 독립 재검증했고, 9테마 전 날짜 점수 유효·최신 ETF 44/63·19종 결측으로 확인됐다. 다음 새 SPY 실거래일 공급 후 **같은 R47 CMD 두 번째 PC 실행**으로 기존 checkpoint 중복 요청 0·윈도 전진·새 시각의 비공개 SHA를 검증한다. 공식 AUM 새 발행사 자료·Windows Task Scheduler 연결·공개 권리·D1/readback은 별도 미완료·미승인이다.
+**가장 가까운 한 가지 다음 작업(2026-10-29 최신):** [실제 R32 아키텍처 정본](THEME_NINE_LIVE_ARCHITECTURE.md)의 R51 날짜 정렬 첫 차단점부터 해결한다. 최신 27일 R48 원가격 계산 후보를 검증된 같은 모드로 확보한 뒤 R54 D1 CAS/readback, 공개 API 모델 Revision/점수 일치를 **실제로 확인해야만 게시 완료**다. 이전의 R46 인증·R47 2차 실행·Task 설치 자체를 다시 최우선 개발 목표로 삼거나 배포 성공이라고 보고하지 않는다.
 
 ## 8. 인수인계·완료 판정·변경 금지선
 
