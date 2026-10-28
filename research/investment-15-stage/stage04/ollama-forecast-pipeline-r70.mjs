@@ -8,12 +8,9 @@
 
 export const ACTIVE_PUBLISHERS = Object.freeze(['TBRC', 'SkyQuest', 'Precedence']);
 export const MIN_INDEPENDENT_PUBLISHERS = 2;
-// R31 was already established to distinguish a publisher's *proven*
-// historic-CAGR metadata typo from a genuine conflicting forecast. R80
-// activates it ONLY for the three unresolved R79 research topics.
-export const R31_RECHECK_TOPICS = Object.freeze([
-  'consumer staples', 'fintech', 'biotechnology services'
-]);
+// R31's independent historic and forecast size proofs apply to every TBRC
+// report.  R80 enabled only three topics; R81 removes that topic-specific
+// gate without relaxing any of the actual mathematical/source checks.
 
 function validText(value) {
   return typeof value === 'string' && value.trim().length > 0;
@@ -190,6 +187,9 @@ export async function runForecastPipeline(topics, adapters, {
           ? ['EXCERPT_ONLY_AUDIT_NO_SIZE_TRIANGULATION'] : []),
         ...(accepted.some(p => p.source_audit === 'RESOLVED_HISTORIC_RATE_MISLABEL')
           ? ['R31_PUBLISHER_FORECAST_TABLE_HISTORIC_CAGR_MISLABEL_PROVEN'] : []),
+        ...(accepted.some(p => p.source_conflict_reason ===
+          'WHOLE_MARKET_PERIOD_LABEL_VARIATION_SIZE_VERIFIED')
+          ? ['PUBLISHER_PERIOD_LABEL_VARIATION_VERIFIED_BY_MARKET_SIZES'] : []),
         ...(periodKeys.size > 1 ? ['DIFFERENT_FORECAST_PERIODS_REVIEW_SCOPE'] : []),
         ...(accepted.some(p => p.market_scope === 'R63_REFERENCE')
           ? ['R63_REFERENCE_REPORT_MARKET_NOT_GICS_SECTOR_CAGR'] : []),
@@ -228,7 +228,7 @@ export function tbrcR30Adapter(measureKeyword, {
         auditForecast: true,
         rateOnlyFromSource: true,
         strictMarketScope: true,
-        resolveHistoricTableMislabel: R31_RECHECK_TOPICS.includes(topic.keyword),
+        resolveHistoricTableMislabel: true,
         allowedKeywords: [researchKeyword]
       });
       return researchKeyword === topic.keyword ? raw : {
