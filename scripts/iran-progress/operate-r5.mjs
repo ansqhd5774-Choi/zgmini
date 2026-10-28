@@ -74,7 +74,9 @@ export function calculateOperationalR5(store,{now=Date.now(),evidencePolicy='BAL
  const checkpoint=store.getCheckpoint('continuous-news-last-run-r3');
  const checked=checkpoint?.lastDiscoverySuccessAt;
  if(!Number.isSafeInteger(checked)||checked>now||now-checked>86400000||
-  checkpoint.classifierVersion!==CLASSIFIER_VERSION||
+  // Discovery freshness describes saved source receipts. This function reclassifies
+  // those immutable receipts with CLASSIFIER_VERSION; it never refreshes feed clocks.
+  !['IRAN_EVENT_RULES_R3_4',CLASSIFIER_VERSION].includes(checkpoint.classifierVersion)||
   !Array.isArray(checkpoint.feeds)||checkpoint.feeds.length!==R3_FEEDS.length||
   checkpoint.feeds.some(f=>f.status!=='COLLECTED'||!R3_FEEDS.some(x=>x.id===f.id))||
   new Set(checkpoint.feeds.map(f=>f.id)).size!==R3_FEEDS.length||
