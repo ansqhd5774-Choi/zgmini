@@ -100,8 +100,8 @@ test('invalid unit, future source, bad prior quarter, bad source are rejected',(
 test('missing/invalid D1 raw key safely returns unavailable on separate raw API',async()=>{
  const {db,rows}=mockDb(),request=new Request('https://zgmini.kr'+ASSET_R10_RAW_ROUTE);
  const missing=await readAssetR10RawResponse(request,db,{now:NOW});
- assert.equal(missing.status,503);
- assert.equal((await missing.json()).reason,'STORED_PROJECTION_PENDING');
+ assert.equal(missing.status,200);
+ assert.deepEqual(await missing.json(),{status:'PENDING',reason:'STORED_PROJECTION_PENDING'});
  rows.set(ASSET_R10_RAW_KEY,{body:'{broken',stored_at:NOW-2000});
  const invalid=await readAssetR10RawResponse(request,db,{now:NOW});
  assert.equal(invalid.status,503);

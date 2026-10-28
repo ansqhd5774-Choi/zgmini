@@ -51,7 +51,7 @@ if /I not "%WRITER_HASH%"=="a790e9acfa63ea91f7110ab9f839d710f533b003" (
  goto :failed
 )
 for /f "delims=" %%H in ('git -C "%PUBLISHER%" hash-object worker/asset-bubble-r10-raw-r1.mjs') do set "READER_HASH=%%H"
-if /I not "%READER_HASH%"=="4f5d38c36f71443e0f644f7c4c48637de40dd81a" (
+if /I not "%READER_HASH%"=="35c321df10b90072cec044abe181d180aa2c349e" (
  >> "%LOG%" echo ERROR=APPROVED_RAW_CONTRACT_SHA_DRIFT
  goto :failed
 )
