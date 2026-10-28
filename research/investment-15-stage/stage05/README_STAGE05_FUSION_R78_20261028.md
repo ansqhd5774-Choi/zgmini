@@ -29,11 +29,11 @@ STAGE05_FUSION_READONLY.cmd --input verified-stage01-04-snapshot.json
 | Stage01 | `stage01.status`, `date`, `risk` | READY, 7일 이내, risk NORMAL/CAUTION/HIGH_RISK/UNKNOWN. 위험은 점수 외 별도 출력 |
 | Stage02 | `stage02.status`, `sectors[].id`, `relativeStrength` | READY, 실제 ETF 가격 RS, 1년 가격 기간·ETF·원천·가격 시계열 ID·정규화 규칙·VERIFIED |
 | Stage03 | `stage03.status`, `themes[].id`, `sectorId`, `approved`, `trend` | READY, 승인 통과 `true`만 후보, 실제 ETF 가격 추세, Stage02와 동일 비교기간 |
-| Stage04 | `stage04.status`, `themes[].id`, `status`, `G1`, `G2`, `F`, `G`, `D`, `M4` | READY, QUANTIFIED, REALIZED_INDUSTRY_ACTIVITY, VERIFIED/CURRENT, 원문 URL, Stage04 R2 가설 산식 정합성 |
+| Stage04 | `stage04.status`, `themes[].id`, `status`, `G1`, `G2`, `F`, `G`, `D`, `M4`, `validatedDate`, `observationPeriodEnd` | READY, QUANTIFIED, REALIZED_INDUSTRY_ACTIVITY, VERIFIED/CURRENT, 원문 URL, 7일 이내 검증·미래 관측 금지, Stage04 R2 가설 산식 정합성 |
 
 `relativeStrength`/`trend` 형식: `{ "kind":"ETF_PRICE_RELATIVE_STRENGTH" | "ETF_PRICE_TREND", "validation":"VERIFIED", "score":0..100, "etf":"...", "source":"...", "priceSeriesId":"...", "normalizationRuleId":"...", "periodStart":"YYYY-MM-DD", "periodEnd":"YYYY-MM-DD" }`.
 
-Stage04: `evidenceKind="REALIZED_INDUSTRY_ACTIVITY"`, `sourceValidation="VERIFIED"`, `freshnessStatus="CURRENT"`, `formulaId="STAGE04_R2_PROPOSED"`, `sourceUrls:["..."]`, 기타 정량 필드 0~100.
+Stage04: `evidenceKind="REALIZED_INDUSTRY_ACTIVITY"`, `sourceValidation="VERIFIED"`, `freshnessStatus="CURRENT"`, `formulaId="STAGE04_R2_PROPOSED"`, `sourceUrls:["..."]`, `validatedDate="YYYY-MM-DD"`, `observationPeriodEnd="YYYY-MM-DD"`, 기타 정량 필드 0~100.
 
 연산: `G=.6*G1+.4*G2`, `D=max(0,G-F)`, `M4=.7G+.3D` 원본 검증 → `E=M4`, `T=.5RS+.5Trend`, `S5=.8E+.2T`. 실수/정규화 결과가 허위이거나 누락되면 NULL로 차단. 시장 위험은 점수와 독립. 동일 기간/최신성/중복 ID 오류를 검출.
 
