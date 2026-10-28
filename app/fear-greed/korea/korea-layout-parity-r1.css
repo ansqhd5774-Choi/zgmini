@@ -585,7 +585,7 @@
 .zg-fg-korea .zg-fg-guide-short { display: none; }
 @media (max-width: 760px) {
   .zg-fg-korea .zg-fg-page-header {
-    grid-template-columns: minmax(0, 1fr) 32px auto;
+    grid-template-columns: max-content 32px minmax(0, 1fr);
     column-gap: 5px;
     align-items: center;
   }
@@ -610,6 +610,7 @@
     display: inline-flex;
     grid-column: 3;
     grid-row: 2;
+    justify-self: end;
     min-width: 0;
     margin: 0;
     white-space: nowrap;
