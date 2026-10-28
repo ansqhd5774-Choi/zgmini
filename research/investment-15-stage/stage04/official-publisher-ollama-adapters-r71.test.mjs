@@ -1,7 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { firstPartyOllamaAdapter, discoverPublisherReports, exactMarketIdentity,
-  livePublisherSlugProbes, reportLeadEvidence } from './official-publisher-ollama-adapters-r71.mjs';
+  livePublisherSlugProbes, reportLeadEvidence,
+  primaryWholeMarketEvidence } from './official-publisher-ollama-adapters-r71.mjs';
 import { runForecastPipeline } from './ollama-forecast-pipeline-r70.mjs';
 import { PUBLISHERS } from './stage04-four-publisher-r37-readonly.mjs';
 
@@ -232,4 +233,50 @@ test('two explicit forecast periods in selected market excerpt are SOURCE_CONFLI
   assert.equal(report.growth_pct,null);
   assert.equal(report.source_conflict_reason,
     'MULTIPLE_EXPLICIT_FORECAST_PERIODS_IN_SAME_CAGR_EXCERPT');
+});
+
+test('R75: official table of contents before the global section cannot cause US CAGR conflict', async () => {
+  const doc = '<html><h1>Data Center Market Size and Trends</h1>' +
+    '<p>Report updated 2026.</p><h2>List of Contents</h2>' +
+    '<p>Revenue 2026, forecast 2035, CAGR 2026 - 2035 11.06%</p>' +
+    '<h2>What is the Data Center Market Size?</h2>' +
+    '<p>The global data center market is projected at CAGR of 11.06% from 2026 to 2035.</p>' +
+    '<h2>Regional Insights</h2><p>U.S. data center market is projected at ' +
+    'CAGR of 11.30% from 2026 to 2035.</p></html>';
+  assert.match(primaryWholeMarketEvidence(doc, 'data center'), /11\.06%/);
+  assert.doesNotMatch(primaryWholeMarketEvidence(doc, 'data center'), /11\.30%/);
+  const report = await firstPartyOllamaAdapter('Precedence', {
+    fetchFn: async url => url === sources.Precedence.catalog ?
+      new Response('<html/>') : url === 'https://www.precedenceresearch.com/data-center-market' ?
+      new Response(doc) : new Response('missing', {status:404}),
+    searchFn: async () => '<html/>',
+    chooseFn: async ({candidates}) => {
+      assert.ok(candidates.every(c => c.pct === 11.06));
+      return {index:0,scope:'DIRECT'};
+    }
+  }).run({id:'dc',keyword:'data center'});
+  assert.equal(report.state, 'PASS');
+  assert.equal(report.growth_pct, 11.06);
+  assert.equal(report.evidence_region, 'PRIMARY_WHOLE_MARKET_SECTION');
+});
+
+test('R75: conflicting lead, title, and primary whole-market forecast periods remain NULL', async () => {
+  const doc = '<html><h1>Nuclear Reactor Market</h1>' +
+    '<p>The global nuclear reactor market is projected to grow from USD 31.51 billion ' +
+    'in 2026 to USD 50.37 billion by 2034, registering a CAGR of 6.04% ' +
+    'during the forecast period.</p>' +
+    '<h2>List of Contents</h2><p>Nuclear reactor forecast</p>' +
+    '<h2>Nuclear Reactor Market Size and Forecast 2026 to 2034</h2>' +
+    '<p>The global nuclear reactor market is projected CAGR of 6.04% ' +
+    'from 2025 to 2034.</p></html>';
+  const report = await firstPartyOllamaAdapter('Precedence', {
+    fetchFn: async url => url === sources.Precedence.catalog ?
+      new Response('<html/>') : url === sources.Precedence.catalog + 'nuclear-reactor-market' ?
+      new Response(doc) : new Response('missing', {status:404}),
+    searchFn: async () => '<html/>',
+    chooseFn: async () => ({index:0,scope:'DIRECT'})
+  }).run({id:'reactor',keyword:'nuclear reactor'});
+  assert.equal(report.state, 'SOURCE_CONFLICT');
+  assert.equal(report.growth_pct, null);
+  assert.equal(report.source_conflict_reason, 'WHOLE_MARKET_LEAD_AND_SECTION_PERIOD_MISMATCH');
 });
