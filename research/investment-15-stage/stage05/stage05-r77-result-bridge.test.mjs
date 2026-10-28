@@ -21,7 +21,7 @@ const saved=()=>({
   ],
 });
 
-const handoff=()=>({version:'STAGE05_VERIFIED_RESULTS_HANDOFF_R81',
+const handoff=()=>({version:'STAGE05_VERIFIED_RESULTS_HANDOFF_R85',
   status:'BLOCKED_STAGE01_04_SCORES',ollamaInput:null});
 
 test('saved R77 results are connected without replacing CAGR with a score',()=>{
