@@ -5,6 +5,7 @@ import {mkdtempSync,writeFileSync,readFileSync,rmSync} from 'node:fs';
 import {tmpdir} from 'node:os';
 import path from 'node:path';
 import {auditPrivateNewsPublicationGate,auditPrivateNewsPublicationFile,
+ privateNewsReviewQueue,privateNewsReviewQueueFile,SOURCE_RIGHTS_REVIEW,
  PRIVATE_CANDIDATE_BASENAME,PRIVATE_CANDIDATE_VERSION} from '../scripts/iran-progress/ui-news-publication-gate-r1.mjs';
 
 const now=Date.parse('2026-10-28T10:00:00Z');
@@ -55,7 +56,31 @@ test('read-only file audit accepts exact basename without modifying it',()=>{
   const raw=JSON.stringify(cache([candidate('govuk','Iran update','2026-10-27T03:00:00.000Z')]));
   writeFileSync(file,raw);
   assert.equal(auditPrivateNewsPublicationFile(file,{now}).publicReadyCount,0);
+  assert.equal(privateNewsReviewQueueFile(file,{now}).reviewQueue.length,1);
   assert.throws(()=>auditPrivateNewsPublicationFile(path.join(root,'wrong.json'),{now}),/PATH_INVALID/);
   assert.equal(readFileSync(file,'utf8'),raw);
  }finally{rmSync(root,{recursive:true,force:true});}
+});
+
+test('source-specific review queue is read-only and never grants rights',()=>{
+ const entries=[
+  candidate('govuk','Iran statement','2026-10-27T03:00:00.000Z'),
+  candidate('iaea-news','Iran safeguards update','2026-10-27T04:00:00.000Z'),
+  candidate('un-middle-east','Yemen talks','2026-10-27T05:00:00.000Z'),
+  candidate('bbc-middle-east','Iran talks','2026-10-27T06:00:00.000Z'),
+  candidate('aljazeera','Iran update','2026-10-27T07:00:00.000Z'),
+  candidate('tasnim','Iran report','2026-10-12T07:00:00.000Z'),
+ ];
+ const before=JSON.stringify(entries);
+ const result=privateNewsReviewQueue(cache(entries),{now});
+ assert.equal(result.publicReadyCount,0);
+ assert.equal(result.reviewQueue.length,6);
+ assert.equal(result.reviewQueue[0].sourceId,'aljazeera');
+ assert.equal(result.reviewQueue.at(-1).withinPublicWindow,false);
+ for(const entry of result.reviewQueue){
+  assert.equal(entry.status,'REVIEW_REQUIRED_NOT_PUBLISHABLE');
+  assert.equal(entry.rightsReview,SOURCE_RIGHTS_REVIEW[entry.sourceId].review);
+  assert.equal(entry.remainingChecks.length,5);
+ }
+ assert.equal(JSON.stringify(entries),before);
 });
