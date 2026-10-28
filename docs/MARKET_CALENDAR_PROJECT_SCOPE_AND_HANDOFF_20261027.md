@@ -225,3 +225,12 @@
 - WPSR 휴일 예외 2026-11-12 12:00 ET, WNGSR 휴일 예외 2026-11-13 10:30 ET 및 2026-11-25 12:00 ET, STEO 공식 발표 표의 2026·2027년 24개월 날짜를 원문에서 식별했다. 2026-10-28 이후 STEO 14건. `staging/market-calendar/r23-eia/lib/eia-calendar.mjs`는 이를 명시 날짜만 5필드 이벤트로 파싱하며 정기 요일로 확정 일자를 생성하지 않는다. 실제 원문 검산은 WPSR 1건/WNGSR 2건/STEO 14건 및 STEO 다음 발표 2026-11-10 1건; 스테이징 테스트 PASS.
 - 중요 구조 발견: WPSR 메인 HTML의 다음 발표일은 비어 있고 `./includes/wpsr-calendar.json`에서 JS로 채운다. 이 정확한 공식 공개 JSON 1회만 PC에서 읽기 위한 `MARKET_CALENDAR_R23_EIA_WPSR_JSON_EXPORT.cmd` 및 동봉 JS·테스트·README 작성. 기존 6개 HTML 재요청이나 Core 점검 요구는 하지 않는다.
 - **현재 정확한 상태:** 브랜치에 R23 파서 스테이징·추가 원문 확보 도구 반영, PC Core R23 설치와 실제 정기 수집·웹 공개 반영은 미완료. 사용자 WPSR JSON 1회 결과를 받으면 JSON 구조 검증→R22 원본 경로에 EIA 소스 최소 편입→회귀·승인 PC 소스 고정 설치 패키지 준비 순서로 진행한다. R22 PC Core 승인 SHA `a50ac307d8d0849ca2800b3c4df4cd6daaba3b1e` 보존. 기존 지정 브랜치만 사용한다.
+
+## 22. R23 EIA 정규 수집 후보·PC 안전 설치 준비 (2026-10-28)
+
+- 공식 WPSR 공개 JSON 사용자 PC 캡처 `MARKET_CALENDAR_R23_EIA_WPSR_JSON_RESULT.txt`: HTTP 200, SHA256 `b6293ef1109b2cfeb667b0cb5c6d585c5c6f1dfbaa38b953aed6c4e1a539d7b7` 검증. 110개 행에서 비정규 추가 게시 5개를 구분해 정기 일정 105건, 2026-10-28 이후 63건을 확인했다. WPSR 예외 2026-11-12의 12:00 ET는 별도 공식 일정표와 일치한다. STEO 2026·2027 표와 WNGSR 휴일 예외 HTML 6/6 이전 확인 증거도 재사용한다.
+- R23 `staging/market-calendar/r23-eia/` 후보: 기존 R22 `lib/release-calendar.mjs`, `scripts/pc-writer/release-calendar.mjs` 그대로 기반으로 독립 `eia` 소스만 추가, 신규 `lib/eia-calendar.mjs` 파서 제공. WPSR JSON·WNGSR 예외표·STEO 발표표 공식 원문을 기존 PC raw input에 저장한 뒤 저장 원문으로 파싱한다. 개별 실패 시 공식 예외/다음 발표만 fallback, 이전 공식 이력은 보존. 임의 정기 날짜 생성·DB 변경·스케줄 변경 없음.
+- 표시 경로: 지정 브랜치 `app/market-calendar/market-calendar-client.tsx`만 최소 보완하여 `eia-wpsr`, `eia-wngsr`, `eia-steo`를 에너지/EIA로 표시할 수 있다. 이미 승인된 캘린더 UI 중요도·선택일 기능을 유지한다. Cloudflare/main/Production 배포는 실행하지 않았다.
+- PC 설치 도구: `scripts/pc-writer/market-calendar-r23-eia-apply.mjs` + `MARKET_CALENDAR_R23_EIA_APPLY.cmd` + README. 승인된 설치 PC R22 source `a50ac307d8d0849ca2800b3c4df4cd6daaba3b1e` 및 Core ID `d0a4b3cb8b95`, 파일 해시·dirty·lock·config.source를 검사하고, 신규 EIA 모듈 포함 정확히 3파일만 백업 후 로컬 커밋한다. 6시간 가드와 정규 실행을 강제하지 않는다. 출처 변조/소스 변경 시 STOP.
+- 다운로드 파일 `MARKET_CALENDAR_R23_EIA_PC_INSTALL_20261028.zip` SHA256 `31056df32b0f1bb54cec6f5b2116ad851f224bc55e479d2ae629920d4741ed08`. Node 신규 수집·파서·로컬 Git 설치 테스트, R22 기존 회귀 테스트 PASS, CMD ASCII CRLF와 ZIP 무결성 PASS.
+- **현재 상태:** R23 후보/화면 브랜치 반영 + PC 실행 패키지 준비 완료. **R23 PC 설치 미확인**, 따라서 정규 수집 및 사이트 공개 반영 완료 아님. 사용자 ZIP 압축 해제→`MARKET_CALENDAR_R23_EIA_APPLY.cmd` 한 번 실행→`MARKET_CALENDAR_R23_EIA_APPLY_RESULT.txt` 전달. 기존 승인 브랜치만 유지, 신규 브랜치·main 병합·운영 배포 없음.
