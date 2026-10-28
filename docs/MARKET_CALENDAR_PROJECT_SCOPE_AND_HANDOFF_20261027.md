@@ -309,3 +309,16 @@
 - 지정 브랜치에 R26 **읽기 전용** `scripts/pc-writer/market-calendar-r26-treasury-source-export.mjs`, Windows `MARKET_CALENDAR_R26_TREASURY_SOURCE_EXPORT.cmd`, README, 4개 테스트, `docs/MARKET_CALENDAR_R26_TREASURY_SOURCE_REVIEW.md` 등록. 신규 R26 4/4 + 직전 R25 4/4 테스트 PASS, CMD ASCII CRLF, ZIP 3파일 무결성 PASS.
 - 전달 `MARKET_CALENDAR_R26_TREASURY_SOURCE_EXPORT_20261028.zip` SHA256 `a90823333bb0a7ce4ea37e1729665495f3bf00b038c47f43a11ae3e7e146c242`. 사용자가 압축 전체 해제→CMD 1회 실행→`MARKET_CALENDAR_R26_TREASURY_SOURCE_EXPORT_RESULT.txt` 제출. 이후 실제 XML 검산·파서·R25 PC Core 무결성 검증·최소 설치 순서.
 - R26 상태는 **READ_ONLY_SOURCE_EXPORT_READY**이고 PC 원문 캡처·수집기 설치·예약 수집·게시·사이트 공개는 미실행. 동일 브랜치 `codex/zgmini-gpt-workspace-20261025` 유지, 새 브랜치/main 병합/배포 없음.
+
+
+## 30. R26 Treasury 공식 XML 실측과 PC 안전 설치 준비 (2026-10-28)
+
+- 사용자 PC 공식 소스 TXT `MARKET_CALENDAR_R26_TREASURY_SOURCE_EXPORT_RESULT.txt` 실측: `TREASURY_XML_CAPTURED_READONLY`, HTTP 200, 4,746 bytes, Content-Type text/xml, SHA256 `a746a0555acd80d07eea66a25b64e4a26ae5de6af05db1fb88b46205adf62c5e` 자체 검산 PASS. 공식 `https://www.treasurydirect.gov/xml/TreasuryCUSIPRelease.xml` 주간 XML의 `<TreasuryCUSIPRelease>` 6행, 4·6·8·13·17·26주물 국채.
+- 원문 필드 `AnnouncementDate` 6건, `CompetitiveAuctionCloseDate` 6건, `IssueDate` 6건. 웹 발표 일정에 공고일+입찰일 **12건**만 편입, 발행일은 원자료로 보존. 2026-10-28 당일 포함 미래 9건. 공식 XML에 발표 시각 없으므로 임의 시간·KST 카운트다운 없음. 잠정 분기표는 혼합 금지.
+- R26 스테이징 `staging/market-calendar/r26-treasury/`: 새 parser `lib/treasury-calendar.mjs`, 기존 R25 기반 parser registry/collector; XML 먼저 PC raw `release-calendar:treasury` 저장 후 저장본 파싱. 주간 소스 rollover 시 과거/다른 미래 CUSIP 보존, 동일 CUSIP 미래 변경값 최신 공식 관측으로 대체, 출처 실패 시 이전 이벤트 유지.
+- 같은 브랜치 UI `app/market-calendar/market-calendar-client.tsx`에서 Treasury CUSIP 2개 이벤트 유형과 '국채' 분류 추가, 기존 BLS source 조건의 `=` 대입 오타를 `===` 비교로 교정. 기존 스타일/데이터/타팀 파일 변경 없음.
+- 안전 PC 설치 기준 R25 사용자 성공 SHA `724bbbf4407363f1f091567ed196cc0bf554bb5e`, Core ID `d0a4b3cb8b95`. EIA/USDA/CFTC 해시/기존 parser/collector/작업/잠금/config/dirty 확인 후 **3파일만** 백업·로컬 Git 커밋. 다른 PC 작업자 HEAD가 바뀌면 STOP, 절대 우회하지 않음. 강제 수집·게시·SQLite/D1·예약 작업·GitHub push·Cloudflare 배포 없음.
+- 후보 SHA256: parser `432354b0e87ab7735330e9b29396a14fd14ee218cd0daa016ab93fb59b6d080f`, Treasury module `0eb744d67fc2d82cbba1bf7b578503dcdfe6a609df557c8666517fc1c91f9c36`, collector LF `47416512698f8f4b184a6a4c32128a1256b6b6a010d1932a0e69d2612472cca6`, collector CRLF `a931267b84a6a8a7c2289e4daea5630b257bf30463e58f14b4ad2b5266828f1c`.
+- R26 parser/collector/installer 테스트 11/11, 이전 R23 EIA/R24 USDA/R25 CFTC collector 회귀 15/15 PASS. 로컬 typecheck PASS. Windows CMD ASCII+CRLF, ZIP 7/7 검사 PASS.
+- 다운로드 `MARKET_CALENDAR_R26_TREASURY_PC_INSTALL_20261028.zip`, SHA256 `4dd2f5b8aef361e26520af828067cac9500c3e4c14c71b054c99a5f4d8476833`. 사용자 PC 전체 압축 해제 → `MARKET_CALENDAR_R26_TREASURY_APPLY.cmd` 1회 → `MARKET_CALENDAR_R26_TREASURY_APPLY_RESULT.txt` 제출.
+- 상태 **R26 VERIFIED_SOURCE_AND_CODE_READY / PC INSTALL UNCONFIRMED**. 자연 수집·DB·사이트 공개 미검증. 브랜치는 `codex/zgmini-gpt-workspace-20261025` 단일 유지, 신규 브랜치 생성·main 병합·운영 배포 없음.
