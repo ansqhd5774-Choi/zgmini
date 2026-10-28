@@ -1,5 +1,6 @@
 "use client";
 import {useStoredIndex} from '../../components/use-stored-index';
+import {mergeAssetR10RawForUi} from './asset-r10-raw-ui-r1.mjs';
 import {ContentHelp} from '../content-help';
 import {HelpText} from '../help-copy';
 
@@ -17,7 +18,8 @@ import "../risk-last3-hero-parity-r2.css";
 import "../shared-risk-indicator-width-r1.css";
 
 type Row={id:string;name:string;status:string;score:number|null;value:number|null;unit:string;observationDate:string|null;source:string;weight:number;previousValue?:number|null;previousObservationDate?:string|null;trend?:Array<{date:string;value:number}>;nextReleaseDate?:string|null};
-export type Payload={status:string;score:number|null;asOfDate?:string|null;methodologyVersion?:string;missingFactors?:string[];indicators?:Row[];trend?:Array<{label:string;value:number}>;diagnosticQuarter?:string|null;scoreObservationQuarter?:string|null;sourceStoredAt?:number|null;historyMode?:string;rightsStatus?:string;publicationPolicy?:string;notes?:string[];scoreComparisons?:{week?:number|null;month?:number|null;threeMonth?:number|null;sixMonth?:number|null;year?:number|null}};
+export type Payload={status:string;score:number|null;asOfDate?:string|null;methodologyVersion?:string;missingFactors?:string[];indicators?:Row[];trend?:Array<{label:string;value:number}>;diagnosticQuarter?:string|null;scoreObservationQuarter?:string|null;sourceVersion?:string;sourceStoredAt?:number|null;historyMode?:string;rightsStatus?:string;publicationPolicy?:string;notes?:string[];scoreComparisons?:{week?:number|null;month?:number|null;threeMonth?:number|null;sixMonth?:number|null;year?:number|null}};
+type RawPayload={schemaVersion:string;status:string;sourceVersion:string;sourceStoredAt:number;asOfDate:string;scoreObservationQuarter:string;rightsStatus:string;diagnosticScore:number;factors:Array<{id:string;score:number;value:number;previousValue:number|null;observationDate:string;previousObservationDate:string|null;unit:string;source:string}>};
 const meta:Record<string,{label:string;content:string;criterion:string;help:string}>={
  valuationPressure:{label:"밸류에이션 압력",content:"주식시장 가치가 명목 GDP 대비 얼마나 높은지 측정",criterion:"장기분포 대비 낮을수록 양호",help:"금융·비금융 상장주식 가치 합계를 명목 GDP와 비교합니다. 장기 분포에서 밸류에이션 압력이 높을수록 버블 위험이 커져 안전점수는 낮아집니다."},
  priceAcceleration:{label:"가격가속",content:"최근 3개월 상승속도가 12개월 추세보다 얼마나 빨라졌는지 측정",criterion:"급격한 가속이 없을수록 양호",help:"단순 수익률이 아니라 단기 가격 상승속도의 가속을 봅니다. 짧은 기간 가격이 장기 추세보다 빠르게 치솟으면 버블 위험 신호가 강해집니다."},
@@ -40,10 +42,21 @@ function judge(s:number|null|undefined,status?:string){if(status!=="READY"||type
 function fmt(r:Row|null|undefined){if(!r||typeof r.value!=="number"||!Number.isFinite(r.value))return "—";const n=Math.abs(r.value)>=100?1:3;return r.value.toFixed(n)+(r.unit?" "+r.unit:"")}
 function fmtValue(value:number|null|undefined,unit?:string|null){if(typeof value!=="number"||!Number.isFinite(value))return "—";const n=Math.abs(value)>=100?1:3;return value.toFixed(n)+(unit?" "+unit:"")}
 function releaseLabel(value?:string|null){return value&&Number.isFinite(Date.parse(value))?dateLabel(value):"—"}
+const sourceLabels:Record<string,string>={
+ FRB_Z1_EQUITY_MARKET_VALUE_AND_BEA_GDP:'FRB Z.1 · BEA',
+ STORED_SP500_PRICE_3M_VS_12M:'저장 S&P 500',
+ FRB_Z1_HOUSEHOLD_EQUITY_SHARE_4Q_CHANGE:'FRB Z.1',
+ FRB_Z1_POSITIVE_EQUITY_NET_FLOW_4Q:'FRB Z.1',
+ STORED_ALPACA_RESEARCH_12M_RETURN_VS_200MA_BREADTH:'저장 Alpaca 연구값',
+ FRB_M2_YOY_MINUS_BEA_NOMINAL_GDP_YOY:'FRB M2 · BEA',
+};
+const sourceLabel=(source?:string|null)=>source?sourceLabels[source]??'출처 확인 필요':null;
 function HelpTip({label,text}:{label:string;text:string}){return <ContentHelp label={label+' 도움말'}><HelpText copy={{meaning:text,reading:'원자료의 단위와 기준선, 관측일을 함께 확인하세요. 원자료의 상승·하락과 시장 평가 점수의 상승·하락은 서로 다를 수 있습니다.',note:'자료가 없거나 개발 중인 항목은 숫자를 표시하지 않습니다. 「—」는 0이 아닙니다.'}}/></ContentHelp>;}
 
 export default function AssetBubblePanel({initialPayload}:{initialPayload?:Payload}={}){
  const {payload,loading}=useStoredIndex<Payload>('/api/asset-bubble-detail',initialPayload??null);
+ const {payload:raw}=useStoredIndex<RawPayload>('/api/asset-bubble-raw',null,payload?.status==='READY'&&payload?.methodologyVersion==='ASSET_BUBBLE_R10_CANDIDATE');
+ const displayPayload=useMemo(()=>mergeAssetR10RawForUi(payload,raw) as Payload|null,[payload,raw]);
  const candidate=payload?.methodologyVersion==='ASSET_BUBBLE_R10_CANDIDATE';
  const publishedCurrentVintage=payload?.publicationPolicy==='USER_APPROVED_CURRENT_VINTAGE_UNVERIFIED_SOURCES';
  const score=(!candidate||payload?.status==='READY')&&typeof payload?.score==="number"&&Number.isFinite(payload.score)?payload.score:null;
@@ -61,7 +74,7 @@ export default function AssetBubblePanel({initialPayload}:{initialPayload?:Paylo
   {label:"6개월",value:storedComparison?.sixMonth??null},
   {label:"1년",value:storedComparison?.year??null},
  ];
- const rows=new Map((payload?.indicators??[]).map(x=>[x.id,x]));
+ const rows=new Map((displayPayload?.indicators??[]).map(x=>[x.id,x]));
  return <>
   <section className="cnn-reference-panel fg-card fg-shared-shell asset-bubble-target-card" data-testid="asset-bubble-detail-hero" data-market-state={loading?"loading":score===null?"unavailable":"ready"} aria-busy={loading}>
    <div className="fg-header-slot"><MarketCardHeader flag="/flags/us.svg" eyebrow={candidate?(publishedCurrentVintage?'ZGMINI ASSET BUBBLE R10 · 참고 지표':'ZGMINI ASSET BUBBLE R10 · 연구 후보'):'ZGMINI ASSET BUBBLE R9'} title="미국 자산 버블" description="저장된 현재 개정 자료 기반" dateLabel="데이터 기준일" date={dateLabel(payload?.asOfDate)} source={payload?.methodologyVersion??"ASSET_BUBBLE_R9"}/></div>
@@ -89,7 +102,7 @@ export default function AssetBubblePanel({initialPayload}:{initialPayload?:Paylo
       <th scope="row"><strong>{m.label}</strong><small>{row?.status==="READY"?"저장 데이터":"자료 확인 중"}</small></th>
       <td>{m.content}</td><td className="asset-r2-criterion">{m.criterion}</td>
       <td className="asset-r2-value"><strong>{fmtValue(row?.previousValue,row?.unit)}</strong><small>{dateLabel(row?.previousObservationDate)}</small></td>
-      <td className="asset-r2-value"><strong>{fmt(row)}</strong><small>{dateLabel(row?.observationDate)}</small></td>
+      <td className="asset-r2-value"><strong>{fmt(row)}</strong><small>{dateLabel(row?.observationDate)}</small>{sourceLabel(row?.source)&&<small>{sourceLabel(row?.source)}</small>}</td>
       <td className="asset-r2-release"><strong>{releaseLabel(row?.nextReleaseDate)}</strong><small>확인된 일정만</small></td>
       <td><span className="inflation-judgement">{j.label}</span></td>
       <td className="asset-r2-spark-cell"><InflationMiniChart label={m.label} points={row?.trend}/></td>
@@ -111,7 +124,7 @@ export default function AssetBubblePanel({initialPayload}:{initialPayload?:Paylo
      <div className="asset-r2-mobile-spark"><span>미니차트(1Y)</span><InflationMiniChart label={m.label} points={row?.trend}/></div>
      <div className="asset-r2-mobile-metrics">
       <div><span>이전</span><strong>{fmtValue(row?.previousValue,row?.unit)}</strong><small>{dateLabel(row?.previousObservationDate)}</small></div>
-      <div><span>현재</span><strong>{fmt(row)}</strong><small>{dateLabel(row?.observationDate)}</small></div>
+      <div><span>현재</span><strong>{fmt(row)}</strong><small>{dateLabel(row?.observationDate)}</small>{sourceLabel(row?.source)&&<small>{sourceLabel(row?.source)}</small>}</div>
       <div><span>발표</span><strong>{releaseLabel(row?.nextReleaseDate)}</strong><small>확인된 일정만</small></div>
      </div>
     </article>})}
