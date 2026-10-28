@@ -32,3 +32,12 @@
 - 새 코드: `scripts/pc-writer/theme-nine-r45-private-eod-feed.mjs` (독립 실행), `scripts/pc-writer/THEME_NINE_R45_PRIVATE_EOD_INPUT.cmd` (Windows 실행), `tests/theme-nine-r45-private-eod-feed.test.mjs`.
 - 실제 사용자 CMD 이후 확인할 것: **유효 일별 EOD 입력 경로**에 63 ETF/SPY가 언제부터 지속적으로 보관되는지, 누락 9종의 사유가 원본 공급 자료 미등재인지, 비공개 입력 파일이 후속 계산기에 투입 가능한 구조인지. 기존 정규 작업의 후킹·승인 산식 재계산·공개 게시의 승인은 별도다.
 - 기존 R32 원가격(1h)과 EOD의 날짜·수익률 간 등가성 증거가 부족하므로, 다음 단계에서는 **별도 검증된 원가격 증분 경로 사용** 또는 EOD 기반 공통 산식 적용에 대한 명시적 승인/검증을 받는다. 이 둘을 은밀히 섞지 않는다.
+
+## 4. R45 실PC 제출 결과 — 2026-10-28
+
+- 사용자 실PC 결과: `THEME_NINE_R45_PRIVATE_EOD_INPUT_20261028021118_30404_RESULT.txt` 및 동명 `.json`. JSON SHA256 `f83ad6e843610ac475b6fb0cbddf561bd42dabf61904a87bd8a21d2479ed5fb5`; TXT의 SHA와 직접 일치.
+- `STATUS=PRIVATE_EOD_INPUT_EXTRACTED_R32_BLOCKED`, `ERROR=NONE`; 승인 R20 63 ETF·9테마·64편입 자리와 SHA 일치. **비공개 JSON 실제 생성 완료**.
+- Parquet 원본 7개, 날짜 `2026-10-16/19/20/21/22/23/26`; SPY 7일 모두. ETF 관측 개수 순서대로 **54/53/53/53/52/54/54**.
+- 최신 2026-10-26에 54/63종, 전 기간 단 한 번도 없는 고유 9종 `CABZ,CBOT,GNMX,KYC,LATR,LLMA,RBTX,WR,XA`. **52종은 SPY와 7거래일 모두**, `BPAY` 5일, `HAIL` 4일. 40일 이상 SPY 겹침 **0종**.
+- 별도 JSON과 기존 R39/R40의 자료 범위가 부합한다. 데이터 보유 54/63이라는 사실과 **R32 점수 재계산/신규일 1h 정합/자동 운영/공개 준비 완료는 별개**다.
+- 다음 하나의 실제 데이터 확장 수단: [R46 MarketParquet 무료 일별 ETF 과거 구간 백필](THEME_NINE_R46_FREE_EOD_HISTORY_20261028.md). 원본 7일/공개 10개 그대로 유지, EOD 가격모드 독립. 실PC에서 인증·무료 구간·다운로드는 별도 검증 필요.
