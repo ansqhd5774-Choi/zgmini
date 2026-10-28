@@ -223,6 +223,7 @@ test('two explicit forecast periods in selected market excerpt are SOURCE_CONFLI
     '<p>The global market forecast CAGR 6.04% from 2026 to 2035, but the ' +
     'same market forecast CAGR 6.04% from 2025 to 2034.</p></html>';
   const report = await firstPartyOllamaAdapter('Precedence', {
+    addressHintFn: () => null, // R75 generic fixture, not the R63 nuclear-power report
     fetchFn: async url => url === sources.Precedence.catalog ?
       new Response('<html/>') : url === sources.Precedence.catalog + 'nuclear-reactor-market' ?
       new Response(doc) : new Response('missing', {status:404}),
@@ -270,6 +271,7 @@ test('R75: conflicting lead, title, and primary whole-market forecast periods re
     '<p>The global nuclear reactor market is projected CAGR of 6.04% ' +
     'from 2025 to 2034.</p></html>';
   const report = await firstPartyOllamaAdapter('Precedence', {
+    addressHintFn: () => null, // Exercise the legacy generic nuclear-reactor discovery fixture
     fetchFn: async url => url === sources.Precedence.catalog ?
       new Response('<html/>') : url === sources.Precedence.catalog + 'nuclear-reactor-market' ?
       new Response(doc) : new Response('missing', {status:404}),
