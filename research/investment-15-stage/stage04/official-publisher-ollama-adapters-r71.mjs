@@ -14,7 +14,7 @@ const PUBLISHER_CATALOGS = Object.freeze({
   Precedence: 'https://www.precedenceresearch.com/'
 });
 const PUBLISHER_TIMEOUT_MS = 20_000;
-const MAX_REPORTS = 2;
+const MAX_REPORTS = 3;
 const OMIT = new Set(['the', 'and', 'for', 'with', 'market', 'report',
   'global', 'worldwide', 'industry', 'industries', 'services', 'research']);
 
@@ -27,6 +27,41 @@ function rankForTopic(url, keyword) {
   const slug = new URL(url).pathname.split('/').filter(Boolean).at(-1) || '';
   const tokens = terms(keyword);
   return tokens.reduce((sum, t) => sum + (slug.toLowerCase().includes(t) ? 1 : 0), 0);
+}
+
+function keywordSlug(keyword, keepAnd = false) {
+  const cleaned = String(keyword).toLowerCase().replace(/[^a-z0-9]+/g, ' ')
+    .split(/\s+/).filter(Boolean).filter(t => keepAnd || t !== 'and');
+  return cleaned.join('-');
+}
+
+/** A direct market name must not be a longer, narrower submarket name. */
+export function exactMarketIdentity(title, keyword) {
+  const prefix = String(title).toLowerCase().split(/\b(?:market|industry)\b/)[0];
+  if (!prefix || prefix === String(title).toLowerCase()) return false;
+  const actual = terms(prefix);
+  const requested = terms(keyword);
+  return actual.length === requested.length &&
+    actual.every((token, index) => token === requested[index]);
+}
+
+export function exactMarketSlug(url, keyword) {
+  try {
+    const slug = new URL(url).pathname.split('/').filter(Boolean).at(-1)?.toLowerCase() || '';
+    const core = slug.replace(/(?:-global)?-market(?:-report)?(?:-20\d{2})?$/, '')
+      .replace(/-global-market-report$/, '');
+    return core === keywordSlug(keyword) || core === keywordSlug(keyword, true);
+  } catch { return false; }
+}
+
+/** Candidate URL construction is NOT evidence. Each URL still needs a real GET. */
+export function livePublisherSlugProbes(publisher, keyword) {
+  if (!['SkyQuest', 'Precedence'].includes(publisher?.id)) return [];
+  const base = publisher.id === 'SkyQuest' ?
+    'https://www.skyquestt.com/report/' : 'https://www.precedenceresearch.com/';
+  const slugs = [...new Set([keywordSlug(keyword, true), keywordSlug(keyword)])]
+    .filter(Boolean).slice(0, 2);
+  return slugs.map(s => `${base}${s}-market`).filter(url => officialReportUrl(url, publisher));
 }
 
 function sourcePeriod(excerpt) {
@@ -48,6 +83,8 @@ function failure(id, keyword, reason, partial = {}) {
     model_candidate_pct: null, search_requests: partial.search_requests ?? 0,
     report_requests: partial.report_requests ?? 0,
     ollama_generations: partial.ollama_generations ?? 0,
+    discovery_diagnostics: partial.discovery_diagnostics || [],
+    discovery_candidates: partial.discovery_candidates || [],
     search_ms: partial.search_ms ?? null, report_ms: partial.report_ms ?? null,
     ollama_ms: partial.ollama_ms ?? null, total_ms: partial.total_ms ?? null };
 }
@@ -77,7 +114,7 @@ async function officialCatalog(url, publisher, fetchFn) {
 
 /** First-party catalog first; only then bounded public search discovery. */
 export async function discoverPublisherReports(publisher, keyword, {
-  fetchFn = fetch, searchFn = getSearch, maxSearchEngines = 2
+  fetchFn = fetch, searchFn = getSearch, maxSearchEngines = 3
 } = {}) {
   if (!PUBLISHER_CATALOGS[publisher?.id] || !terms(keyword).length) {
     throw Error('INVALID_R71_PUBLISHER_OR_KEYWORD');
@@ -93,10 +130,13 @@ export async function discoverPublisherReports(publisher, keyword, {
   } catch (error) {
     diagnostics.push({ method: 'OFFICIAL_CATALOG', state: String(error?.message).slice(0,100), found: 0 });
   }
+  // A catalog submarket is not proof of a direct-market report. Continue
+  // searching instead of hiding search engines behind a weak token match.
   const discoveredRelevant = discovered.some(url =>
-    officialReportUrl(url, publisher) && rankForTopic(url, keyword) > 0);
+    officialReportUrl(url, publisher) && exactMarketSlug(url, keyword));
   const query = `site:${publisher.host} ${keyword} market report CAGR`;
   for (const [engine, url] of (discoveredRelevant ? [] : [
+    ['BING_RSS', `https://www.bing.com/search?format=rss&q=${encodeURIComponent(query)}`],
     ['GOOGLE', `https://www.google.com/search?q=${encodeURIComponent(query)}&num=20`],
     ['BING', `https://www.bing.com/search?q=${encodeURIComponent(query)}&count=20`]
   ]).slice(0, maxSearchEngines)) {
@@ -106,14 +146,25 @@ export async function discoverPublisherReports(publisher, keyword, {
       const links = searchLinks(html, url, publisher);
       discovered.push(...links);
       diagnostics.push({ method: engine, state: 'PASS', found: links.length });
+      if (links.some(url => exactMarketSlug(url, keyword))) break;
     } catch (error) {
       diagnostics.push({ method: engine, state: String(error?.message).slice(0,100), found: 0 });
     }
   }
-  const candidates = [...new Set(discovered)].filter(url =>
+  const catalogAndSearch = [...new Set(discovered)].filter(url =>
     officialReportUrl(url, publisher) && rankForTopic(url, keyword) > 0)
-    .sort((a, b) => rankForTopic(b, keyword) - rankForTopic(a, keyword) || a.localeCompare(b));
-  return { candidates, diagnostics, search_requests: count,
+    .sort((a, b) => Number(exactMarketSlug(b, keyword)) - Number(exactMarketSlug(a, keyword)) ||
+      rankForTopic(b, keyword) - rankForTopic(a, keyword) || a.localeCompare(b));
+  const probes = livePublisherSlugProbes(publisher, keyword);
+  const candidates = [...new Set([
+    ...catalogAndSearch.filter(url => exactMarketSlug(url, keyword)),
+    ...probes,
+    ...catalogAndSearch.filter(url => !exactMarketSlug(url, keyword))
+  ])];
+  diagnostics.push({ method: 'UNVERIFIED_SLUG_PROBES', state: 'CANDIDATES_ONLY',
+    found: probes.length });
+  return { candidates, diagnostics, proposed_urls: probes,
+    search_requests: count,
     search_ms: Math.round(performance.now() - began) };
 }
 
@@ -131,9 +182,12 @@ async function inspectOnePublisherReport(publisher, url, keyword, {
   const reportMs = Math.round(performance.now() - began);
   const title = titleOf(html);
   const evidence = pagePlainText(html);
-  if (!title || rankForTopic(url, keyword) <= 0 ||
-      !terms(keyword).some(term => title.toLowerCase().includes(term))) {
+  if (!title || rankForTopic(url, keyword) <= 0) {
     return failure(publisher.id, keyword, 'REPORT_MARKET_IDENTITY_UNVERIFIED', {
+      url, model, ...searchMeta, report_requests: reportCount, report_ms: reportMs });
+  }
+  if (!exactMarketIdentity(title, keyword)) {
+    return failure(publisher.id, keyword, 'SUBMARKET_OR_PROXY_REPORT_EXCLUDED', {
       url, model, ...searchMeta, report_requests: reportCount, report_ms: reportMs });
   }
   const candidates = extractCagrCandidates(evidence);
@@ -180,10 +234,7 @@ async function inspectOnePublisherReport(publisher, url, keyword, {
       source_conflict_reason: 'MULTIPLE_CAGR_VALUES_SAME_EXPLICIT_PERIOD',
       model_candidate_pct: chosen.pct };
   }
-  const reportTokens = terms(title);
-  const targetTokens = terms(keyword);
-  const scope = targetTokens.every(t => reportTokens.some(v => v === t)) &&
-    selected.scope === 'DIRECT' ? 'DIRECT' : 'PROXY';
+  const scope = selected.scope === 'DIRECT' ? 'DIRECT' : 'PROXY';
   return { publisher: publisher.id, keyword, state: 'PASS', failure: null,
     result_url: url, model, metric: 'FORECAST_CAGR', growth_pct: chosen.pct,
     period_start: period[0], period_end: period[1],
@@ -192,6 +243,8 @@ async function inspectOnePublisherReport(publisher, url, keyword, {
     source_conflict_reason: null, model_candidate_pct: chosen.pct,
     model_scope: selected.scope, market_scope: scope, report_market_title: title.slice(0,140),
     period_source: 'OFFICIAL_REPORT_CAGR_EXCERPT',
+    discovery_diagnostics: searchMeta.discovery_diagnostics || [],
+    discovery_candidates: searchMeta.discovery_candidates || [],
     ...searchMeta, report_requests: reportCount, ollama_generations: 1,
     report_ms: reportMs, ollama_ms: modelMs,
     total_ms: searchMeta.search_ms + reportMs + modelMs };
@@ -217,7 +270,10 @@ export function firstPartyOllamaAdapter(publisherId, {
       let discovery;
       try { discovery = await discoverFn(publisher, topic.keyword, { fetchFn: boundedFetch, searchFn }); }
       catch (error) { return failure(publisherId, topic.keyword, String(error?.message), { model }); }
-      const searchMeta = { search_requests: discovery.search_requests, search_ms: discovery.search_ms };
+      const searchMeta = { search_requests: discovery.search_requests,
+        search_ms: discovery.search_ms,
+        discovery_diagnostics: discovery.diagnostics,
+        discovery_candidates: discovery.candidates.slice(0, 8) };
       if (!discovery.candidates.length) {
         return failure(publisherId, topic.keyword, 'NO_VERIFIED_OFFICIAL_REPORT_DISCOVERED', {
           model, ...searchMeta, total_ms: Math.round(performance.now() - began) });
