@@ -9,7 +9,7 @@ const axisCss=readFileSync(new URL('../components/chart-axis-labels.css',import.
 test('homepage Iran chart matches rate sentiment axis, gradient and endpoint styling',()=>{
  assert.ok(chart.includes('viewBox={compact?"0 0 170 68":"0 0 350 136"}'));
  assert.ok(chart.includes('preserveAspectRatio={compact?"none":"xMidYMid meet"}'));
- assert.ok(chart.includes('<ChartAxisLabels dates/>'));
+ assert.ok(chart.includes('className="zg-chart-fixed-axis"'));
  assert.ok(axisCss.includes('.ob-summary-chart-frame>svg text{display:none}'));
  assert.ok(chart.includes('is-compact ob-summary-chart ob-summary-chart-frame'));
  assert.ok(chart.includes('is-compact ob-summary-chart'));
