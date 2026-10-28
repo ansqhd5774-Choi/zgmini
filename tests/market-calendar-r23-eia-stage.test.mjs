@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {parseEiaScheduleHtml} from '../staging/market-calendar/r23-eia/lib/eia-calendar.mjs';
+import {parseEiaScheduleHtml,parseEiaWpsrCalendarJson} from '../staging/market-calendar/r23-eia/lib/eia-calendar.mjs';
 
 const wpsr=`<html><h1>Weekly Petroleum Status Report Schedule</h1><table class="basic-table schedule">
 <tr><th>Data for the week ending</th><th>Alternate release date</th><th>Release day</th><th>Release time</th><th>Holiday</th></tr>
@@ -55,4 +55,20 @@ test('R23 rejects incorrect official identity, invalid input and missing future 
  assert.throws(()=>parseEiaScheduleHtml(steo,'steo-schedule',{fromDate:'2028-01-01'}),/EIA_NO_EXPLICIT_DATES/);
  assert.throws(()=>parseEiaScheduleHtml(steo,'unknown'),/EIA_KIND_INVALID/);
  assert.throws(()=>parseEiaScheduleHtml(steo,'steo-schedule',{fromDate:'2026-02-30'}),/EIA_INPUT_INVALID/);
+});
+
+test('R23 WPSR JSON takes official dated rows and excludes exceptional repost timestamps',()=>{
+ const row=(date,data,time,holiday=false)=>({data_for_date:data,release_date:date,
+  next_release_date:'2026-11-18',holiday_delayed:holiday,holiday_name:holiday?'Veterans Day':null,
+  release_time:time,blackout_minutes:15});
+ const rows=[row('2026-11-04','2026-10-30','10:30'),
+  row('2026-11-12','2026-11-06','12:00',true),
+  row('2026-11-13','2026-11-06','13:50'),
+  row('2026-02-30','2026-02-23','10:30')];
+ const events=parseEiaWpsrCalendarJson(JSON.stringify(rows),{fromDate:'2026-10-28'});
+ assert.deepEqual(events.map(e=>e.date),['2026-11-04','2026-11-12']);
+ assert.match(events[1].title,/휴일 조정/);
+ assert.equal(events[0].source,'eia');
+ assert.throws(()=>parseEiaWpsrCalendarJson('{bad-json'),/EIA_WPSR_JSON_INVALID/);
+ assert.throws(()=>parseEiaWpsrCalendarJson('[]'),/EIA_WPSR_JSON_SHAPE_INVALID/);
 });
