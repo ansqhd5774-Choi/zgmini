@@ -2,6 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { runForecastPipeline, tbrcR30Adapter } from './ollama-forecast-pipeline-r70.mjs';
 import { auditForecastSource } from './forecast-source-audit-r29-readonly.mjs';
+import { proveR82ForecastMetadataPeriodMislabel } from './forecast-source-audit-r82-supplement.mjs';
+import { measureKeyword } from './keyword-growth-speed-r25-readonly.mjs';
 
 const hosts = {
   TBRC: ['www.thebusinessresearchcompany.com'],
@@ -185,4 +187,98 @@ test('R81 retains all ten mathematically proven R31 historic-mislabel reports; i
     assert.equal(fake.results[0].source_count,1);
     assert.equal(fake.results[0].mean_pct,null);
   }
+});
+
+test('R82: archived TBRC address is a fresh GET hint, never a cached growth rate', async () => {
+  const calls = [];
+  const hint = 'https://www.thebusinessresearchcompany.com/report/information-technology-global-market-report';
+  const report = await tbrcR30Adapter(async (keyword, options) => {
+    calls.push({keyword,options});
+    return valid('TBRC',8.3);
+  }).run({id:'it', keyword:'information technology'});
+  assert.equal(calls.length,1);
+  assert.equal(calls[0].keyword,'information technology');
+  assert.equal(calls[0].options.officialReportHint,hint);
+  assert.equal(calls[0].options.resolveForecastMetadataYearMislabel,true);
+  assert.equal(report.growth_pct,8.3);
+});
+
+test('R82: rejected or unavailable TBRC hint falls back to live report-store search', async () => {
+  const calls = [];
+  const output = await tbrcR30Adapter(async (keyword, options) => {
+    calls.push(options);
+    return options.officialReportHint ? {
+      state:'FAILED', failure:'PUBLISHER_HINT_MARKET_TITLE_NOT_DIRECT'
+    } : valid('TBRC', 8.3);
+  }).run({id:'it',keyword:'information technology'});
+  assert.equal(calls.length,2);
+  assert.ok(calls[0].officialReportHint);
+  assert.equal(calls[1].officialReportHint,undefined);
+  assert.equal(output.state,'PASS');
+});
+
+function r82UtilitiesFixture() {
+  return '<html><h1>Utilities Market Report 2026</h1>' +
+    '<h2>Utilities Market Overview</h2><p>Utilities market size has reached to $7022.7 billion in 2025. ' +
+    'Expected to grow to $9392.75 billion in 2030 at a compound annual growth rate (CAGR) of 6.1%.</p>' +
+    '<h2>What Is Covered Under Utilities Market?</h2><p>electricity and water.</p>' +
+    '<h2>What Is The Utilities Market Size and Share 2026?</h2>' +
+    '<p>It will grow from $7022.7 billion in 2025 to $7411.11 billion in 2026 ' +
+    'at a compound annual growth rate (CAGR) of 5.5%.</p>' +
+    '<h2>What Is The Utilities Market Growth Forecast?</h2>' +
+    '<p>It will grow to $9392.75 billion in 2030 at a compound annual ' +
+    'growth rate (CAGR) of 6.1%.</p>' +
+    '<h2>Utilities Market Report Forecast Analysis</h2><p>Market Size Value In 2026 $7411.11 billion ' +
+    'Revenue Forecast In 2035 $9392.75 billion Growth Rate CAGR of 5.5% from 2026 to 2035</p></html>';
+}
+
+test('R82: live overview, forecast, historic sizes and table prove mislabelled metadata without editing R29', () => {
+  const html = r82UtilitiesFixture();
+  const original = auditForecastSource(html,{resolveHistoricTableMislabel:true});
+  assert.equal(original.source_audit,'INCOMPLETE');
+  assert.equal(original.source_conflict_reason,'INCONSISTENT_REPORT_PERIOD_OR_UNITS');
+  const proven = proveR82ForecastMetadataPeriodMislabel(html);
+  assert.equal(proven?.source_audit,'RESOLVED_FORECAST_METADATA_YEAR_AND_HISTORIC_RATE_MISLABEL');
+  assert.equal(proven?.forecast_base_year,2026);
+  assert.equal(proven?.forecast_end_year,2030);
+  assert.equal(proven?.forecast_metadata_end_year,2035);
+  assert.equal(proven?.forecast_narrative_pct,6.1);
+  assert.equal(proven?.historic_narrative_pct,5.5);
+  for (const tampered of [
+    html.replace('Expected to grow to $9392.75 billion','Expected to grow to $8392.75 billion'),
+    html.replace('in 2030 at a compound annual growth rate (CAGR) of 6.1%.','in 2031 at a compound annual growth rate (CAGR) of 6.1%.'),
+    html.replace('Revenue Forecast In 2035 $9392.75 billion','Revenue Forecast In 2035 $8392.75 billion'),
+    html.replace('in 2026 at a compound annual growth rate (CAGR) of 5.5%.','in 2026 at a compound annual growth rate (CAGR) of 8.5%.')
+  ]) assert.equal(proveR82ForecastMetadataPeriodMislabel(tampered),null);
+});
+
+test('R82: TBRC direct hint calls only the official report and local Ollama after source audit', async () => {
+  const hint='https://www.thebusinessresearchcompany.com/report/utilities-global-market-report';
+  const requested=[];
+  const fetchFn=async (url,options={})=>{
+    requested.push(url);
+    if (url === hint) return new Response(r82UtilitiesFixture());
+    if (url === 'http://127.0.0.1:11434/api/generate') {
+      return new Response(JSON.stringify({response:'{"growth_pct":6.1,"metric":"FORECAST_CAGR"}'}));
+    }
+    throw new Error('UNEXPECTED_NETWORK_CALL');
+  };
+  const raw=await measureKeyword('utilities', {
+    fetchFn, searchMode:'publisher-site', structuredOutput:true,
+    auditForecast:true, rateOnlyFromSource:true, strictMarketScope:true,
+    resolveHistoricTableMislabel:true, resolveForecastMetadataYearMislabel:true,
+    officialReportHint:hint, allowedKeywords:['utilities']
+  });
+  assert.equal(raw.state,'PASS',raw.failure);
+  assert.equal(raw.growth_pct,6.1);
+  assert.equal(raw.search_requests,0);
+  assert.equal(raw.report_requests,1);
+  assert.equal(raw.ollama_generations,1);
+  assert.deepEqual(requested,[hint,'http://127.0.0.1:11434/api/generate']);
+  const combined=await runForecastPipeline([{id:'utilities',keyword:'utilities'}], [
+    adapter('TBRC',raw), adapter('SkyQuest',valid('SkyQuest',4.4)),
+    adapter('Precedence',valid('Precedence',3.91))]);
+  assert.equal(combined.results[0].source_count,3);
+  assert.equal(combined.results[0].mean_pct,4.803333);
+  assert.ok(combined.results[0].warnings.some(w=>w.startsWith('R82_PUBLISHER_METADATA')));
 });
