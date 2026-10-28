@@ -379,7 +379,8 @@ test('R77: official sitemap is fetched once for multiple topics in the same PC r
     return new Response('missing', {status:404});
   };
   const adapter = firstPartyOllamaAdapter('SkyQuest', {fetchFn,
-    searchFn:async()=>'<html/>',chooseFn:async()=>{modelCalls++;return {index:0,scope:'DIRECT'};}});
+    searchFn:async()=>'<html/>', addressHintFn:()=>null,
+    chooseFn:async()=>{modelCalls++;return {index:0,scope:'DIRECT'};}});
   const first = await adapter.run({id:'robotics',keyword:'robotics'});
   const second = await adapter.run({id:'data-center',keyword:'data center'});
   assert.equal(first.state,'PASS');
