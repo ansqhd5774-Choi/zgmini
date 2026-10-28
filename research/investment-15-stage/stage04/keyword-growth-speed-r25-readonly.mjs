@@ -8,6 +8,7 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { extractMarketExcerpt, validateModelReply } from './market-growth-ollama-r23-readonly.mjs';
 import { auditForecastSource } from './forecast-source-audit-r29-readonly.mjs';
+import { proveR82ForecastMetadataPeriodMislabel } from './forecast-source-audit-r82-supplement.mjs';
 
 export const MAX_KEYWORD_MS = 20_000;
 export const PUBLISHER = 'The Business Research Company';
@@ -220,7 +221,9 @@ export async function measureKeyword(keyword, {
   auditForecast = false,
   rateOnlyFromSource = false,
   resolveHistoricTableMislabel = false,
+  resolveForecastMetadataYearMislabel = false,
   strictMarketScope = false,
+  officialReportHint = null,
   allowedKeywords = KEYWORDS,
 } = {}) {
   if (maxMs <= 0 || maxMs > MAX_KEYWORD_MS) throw new Error('INVALID_TIMEOUT');
@@ -239,9 +242,22 @@ export async function measureKeyword(keyword, {
       (resolveHistoricTableMislabel && !rateOnlyFromSource)) {
     throw new Error('INVALID_HISTORIC_MISLABEL_MODE');
   }
+  if (typeof resolveForecastMetadataYearMislabel !== 'boolean' ||
+      (resolveForecastMetadataYearMislabel &&
+       (!resolveHistoricTableMislabel || !strictMarketScope))) {
+    throw new Error('INVALID_FORECAST_YEAR_MISLABEL_MODE');
+  }
   if (typeof strictMarketScope !== 'boolean' ||
       (strictMarketScope && searchMode !== 'publisher-site')) {
     throw new Error('INVALID_MARKET_SCOPE_MODE');
+  }
+  // R82 opt-in: an R63 official address is only a discovery hint. It must
+  // receive a fresh GET, an exact live market-title check and the full R29
+  // source audit before Ollama is called. The default R25/R30 route is intact.
+  if (officialReportHint !== null &&
+      (typeof officialReportHint !== 'string' || !allowedReportUrl(officialReportHint) ||
+       searchMode !== 'publisher-site' || !strictMarketScope || !auditForecast)) {
+    throw new Error('INVALID_OFFICIAL_REPORT_HINT');
   }
   const began = now();
   const controller = new AbortController();
@@ -288,37 +304,45 @@ export async function measureKeyword(keyword, {
     if (rateOnlyFromSource) result.period_source = 'PUBLISHER_FORECAST_ATTRIBUTES';
   }
   try {
-    const searchBegan = now();
-    result.search_requests = 1;
-    let feed;
-    try {
-      const searchResponse = await fetchFn(searchUrl, {
-        signal: controller.signal,
-        headers: { accept: searchMode === 'publisher-site' ? 'text/html' : 'application/rss+xml,application/xml,text/xml' }
-      });
-      result.search_http_status = searchResponse.status;
-      const expectedOrigin = searchMode === 'publisher-site' ? PUBLISHER_HOST : SEARCH_HOST;
-      if (new URL(searchResponse.url || searchUrl).origin !== expectedOrigin) throw new Error('SEARCH_REDIRECT_BLOCKED');
-      feed = await limitedRead(searchResponse, searchMode === 'publisher-site' ? 650_000 : 350_000,
-        searchMode === 'publisher-site'
-          ? (raw) => raw.includes('</html>')
-          : (raw) => (raw.match(/<\/item>/gi) || []).length >= 20);
-    } catch (error) { throw new Error(`SEARCH_${error.message}`); }
-    finally { result.search_ms = Math.round(now() - searchBegan); }
     let selected;
-    if (searchMode === 'publisher-site') {
-      if (!/<html\b/i.test(feed)) throw new Error('SEARCH_NOT_HTML');
-      const parsed = parsePublisherSearchPage(feed, keyword, { strictMarketScope });
-      Object.assign(result, parsed.diagnostics);
-      selected = parsed.selected;
+    if (officialReportHint) {
+      selected = { url: officialReportHint, title: '', description: '' };
+      result.search_engine = 'R63 address hint - fresh official report GET';
+      result.search_query = keyword;
+      result.search_requests = 0;
+      result.search_ms = 0;
     } else {
-      if (!/<rss\b|<rdf:RDF\b/i.test(feed)) throw new Error('SEARCH_NOT_RSS');
-      Object.assign(result, searchDiagnostics(feed, keyword));
-      selected = parseOneSpecialistResult(feed, keyword);
-    }
-    if (!selected) {
-      throw new Error(strictMarketScope && result.title_matched_links > 0
-        ? 'SEARCH_SCOPE_NO_DIRECT_MARKET_REPORT' : 'SEARCH_NO_MATCHED_PUBLISHER_REPORT');
+      const searchBegan = now();
+      result.search_requests = 1;
+      let feed;
+      try {
+        const searchResponse = await fetchFn(searchUrl, {
+          signal: controller.signal,
+          headers: { accept: searchMode === 'publisher-site' ? 'text/html' : 'application/rss+xml,application/xml,text/xml' }
+        });
+        result.search_http_status = searchResponse.status;
+        const expectedOrigin = searchMode === 'publisher-site' ? PUBLISHER_HOST : SEARCH_HOST;
+        if (new URL(searchResponse.url || searchUrl).origin !== expectedOrigin) throw new Error('SEARCH_REDIRECT_BLOCKED');
+        feed = await limitedRead(searchResponse, searchMode === 'publisher-site' ? 650_000 : 350_000,
+          searchMode === 'publisher-site'
+            ? (raw) => raw.includes('</html>')
+            : (raw) => (raw.match(/<\/item>/gi) || []).length >= 20);
+      } catch (error) { throw new Error(`SEARCH_${error.message}`); }
+      finally { result.search_ms = Math.round(now() - searchBegan); }
+      if (searchMode === 'publisher-site') {
+        if (!/<html\b/i.test(feed)) throw new Error('SEARCH_NOT_HTML');
+        const parsed = parsePublisherSearchPage(feed, keyword, { strictMarketScope });
+        Object.assign(result, parsed.diagnostics);
+        selected = parsed.selected;
+      } else {
+        if (!/<rss\b|<rdf:RDF\b/i.test(feed)) throw new Error('SEARCH_NOT_RSS');
+        Object.assign(result, searchDiagnostics(feed, keyword));
+        selected = parseOneSpecialistResult(feed, keyword);
+      }
+      if (!selected) {
+        throw new Error(strictMarketScope && result.title_matched_links > 0
+          ? 'SEARCH_SCOPE_NO_DIRECT_MARKET_REPORT' : 'SEARCH_NO_MATCHED_PUBLISHER_REPORT');
+      }
     }
     result.result_url = selected.url;
     ensureInBudget(began, now, maxMs);
@@ -337,9 +361,22 @@ export async function measureKeyword(keyword, {
           auditForecast ? () => false : (raw) => Boolean(chooseShortExcerpt(raw, keyword)));
       } catch (error) { throw new Error(`PUBLISHER_${error.message}`); }
       finally { result.report_ms = Math.round(now() - reportBegan); }
+      if (officialReportHint &&
+          !isDirectMarketTitle(stripTags((html.match(/<h1\b[^>]*>([\s\S]*?)<\/h1>/i) ||
+            html.match(/<title\b[^>]*>([\s\S]*?)<\/title>/i) || [,''])[1]), keyword)) {
+        throw new Error('PUBLISHER_HINT_MARKET_TITLE_NOT_DIRECT');
+      }
       if (auditForecast) {
-        const { forecast_excerpt, ...audit } = auditForecastSource(html,
+        let { forecast_excerpt, ...audit } = auditForecastSource(html,
           { resolveHistoricTableMislabel });
+        if (resolveForecastMetadataYearMislabel &&
+            audit.source_audit === 'INCOMPLETE' &&
+            audit.source_conflict_reason === 'INCONSISTENT_REPORT_PERIOD_OR_UNITS') {
+          const proof = proveR82ForecastMetadataPeriodMislabel(html);
+          if (proof) {
+            ({ forecast_excerpt, ...audit } = proof);
+          }
+        }
         Object.assign(result, audit);
         if (audit.source_audit === 'INCOMPLETE' || !forecast_excerpt) {
           throw new Error('SOURCE_AUDIT_INCOMPLETE');
