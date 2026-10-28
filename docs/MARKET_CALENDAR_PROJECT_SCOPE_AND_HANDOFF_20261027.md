@@ -218,3 +218,10 @@
 - R23 구현: `scripts/pc-writer/market-calendar-r23-eia-source-export.mjs`, `tests/market-calendar-r23-eia-source-export.test.mjs`, `MARKET_CALENDAR_R23_EIA_SOURCE_EXPORT.cmd`, `README_R23_EIA_SOURCE_EXPORT.txt`, `docs/MARKET_CALENDAR_R23_EIA_SOURCE_REVIEW.md`. 고정 6개 URL, 1회 순차 GET(요청 간 1.2초), 원문 Base64/SHA256 및 실패 원인 단일 TXT. 로컬 테스트 **5/5 PASS**, Node 문법 PASS, CMD ASCII CRLF, ZIP 무결성 PASS.
 - 전달물 `MARKET_CALENDAR_R23_EIA_SOURCE_EXPORT_BUNDLE_20261028.zip` SHA256 `ffece9a00ea779ba5fece1f42e4b955dba54a3ed427fe603e6dc0493960c63f4`. 실행 결과 `MARKET_CALENDAR_R23_EIA_SOURCE_EXPORT_RESULT.txt` 한 파일을 제출받아 원문 구조로만 파서 후보를 작성한다.
 - **현재 단계는 READ_ONLY CODE_READY**: EIA source PC Core 적용·정규 수집·공개 사이트 연결·배포 모두 미실행. R22 운영을 조작하지 않는다. 전용 브랜치 `codex/zgmini-gpt-workspace-20261025` 유지.
+
+## 21. R23 공식 EIA 원문 확보·스테이징 파서 · 2026-10-28
+
+- 사용자 PC `MARKET_CALENDAR_R23_EIA_SOURCE_EXPORT_RESULT.txt`는 공식 EIA 공개 HTML 6/6 원문 확보 및 SHA256 검증 완료. 운영 Core/SQLite/예약 수집/배포 변경 없음.
+- WPSR 휴일 예외 2026-11-12 12:00 ET, WNGSR 휴일 예외 2026-11-13 10:30 ET 및 2026-11-25 12:00 ET, STEO 공식 발표 표의 2026·2027년 24개월 날짜를 원문에서 식별했다. 2026-10-28 이후 STEO 14건. `staging/market-calendar/r23-eia/lib/eia-calendar.mjs`는 이를 명시 날짜만 5필드 이벤트로 파싱하며 정기 요일로 확정 일자를 생성하지 않는다. 실제 원문 검산은 WPSR 1건/WNGSR 2건/STEO 14건 및 STEO 다음 발표 2026-11-10 1건; 스테이징 테스트 PASS.
+- 중요 구조 발견: WPSR 메인 HTML의 다음 발표일은 비어 있고 `./includes/wpsr-calendar.json`에서 JS로 채운다. 이 정확한 공식 공개 JSON 1회만 PC에서 읽기 위한 `MARKET_CALENDAR_R23_EIA_WPSR_JSON_EXPORT.cmd` 및 동봉 JS·테스트·README 작성. 기존 6개 HTML 재요청이나 Core 점검 요구는 하지 않는다.
+- **현재 정확한 상태:** 브랜치에 R23 파서 스테이징·추가 원문 확보 도구 반영, PC Core R23 설치와 실제 정기 수집·웹 공개 반영은 미완료. 사용자 WPSR JSON 1회 결과를 받으면 JSON 구조 검증→R22 원본 경로에 EIA 소스 최소 편입→회귀·승인 PC 소스 고정 설치 패키지 준비 순서로 진행한다. R22 PC Core 승인 SHA `a50ac307d8d0849ca2800b3c4df4cd6daaba3b1e` 보존. 기존 지정 브랜치만 사용한다.
