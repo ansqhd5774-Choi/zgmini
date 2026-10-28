@@ -8,7 +8,9 @@ import {fileURLToPath} from 'node:url';
 import {stageCurrentNineR48} from './theme-nine-r48-stage-current.mjs';
 import {stageNineR51Current} from './theme-nine-r51-stage-current.mjs';
 import {buildNineR48PrivatePublicationCandidate} from './theme-nine-r48-r47-bridge.mjs';
-import {buildNineR51PrivateProvisionalOverlay} from './theme-nine-r51-provisional-overlay.mjs';
+import {buildNineR51PrivateProvisionalOverlay,
+ buildNineR51ExistingPublicProvisionalOverlay,R51_PUBLIC_LEGACY_SOURCE}
+ from './theme-nine-r51-provisional-overlay.mjs';
 import {buildNineR54PublicRecord} from './theme-nine-r54-public-record.mjs';
 import {verifyNineR54Production} from './theme-nine-r54-deployment-gate.mjs';
 import {createNineR54D1Query} from './theme-nine-r54-d1-client.mjs';
@@ -150,11 +152,16 @@ export async function runNineR54PublicConnect({dataRoot='E:/ZGmini/data',
   return options[0];
  };
  const original=readR48(overlay.provisionalLineage?.confirmedCandidateSha256);
- const latest=readR48(overlay.provisionalLineage?.latestCandidateSha256);
- need(same(buildNineR51PrivateProvisionalOverlay({confirmed:original,
-  latest,publicBase}),overlay),'R51_PRIVATE_PROVISIONAL_REPLAY_DRIFT');
+ const publicLegacy=overlay.provisionalLineage?.source===R51_PUBLIC_LEGACY_SOURCE;
+ const latest=publicLegacy?original:
+  readR48(overlay.provisionalLineage?.latestCandidateSha256);
+ const replay=publicLegacy?
+  buildNineR51ExistingPublicProvisionalOverlay({confirmed:original,publicBase}):
+  buildNineR51PrivateProvisionalOverlay({confirmed:original,latest,publicBase});
+ need(same(replay,overlay),'R51_PRIVATE_PROVISIONAL_REPLAY_DRIFT');
  const first=verifyNineR54PrivatePair({dataRoot:root,configDirectory,candidate:original});
- const last=verifyNineR54PrivatePair({dataRoot:root,configDirectory,candidate:latest});
+ const last=publicLegacy?first:
+  verifyNineR54PrivatePair({dataRoot:root,configDirectory,candidate:latest});
  const sourceProof=verifyNineR54RawManifest({dataRoot:root,source:last.source});
  need(first.source.latestSpySessionDate===original.observationDate&&
   last.source.latestSpySessionDate===latest.observationDate,
@@ -196,6 +203,7 @@ export async function runNineR54PublicConnect({dataRoot='E:/ZGmini/data',
   d1Writes:result.written,dbStatus:result.status,
   productionMainSha:deployment.mainSha,
   sourceDate:latest.observationDate,confirmedDate:record.observationDate,
+  provisionalMode:publicLegacy?'PUBLIC_LEGACY_AS_IS':'R32_DATED',
   provisionalDates:record.provisional.points.map(p=>p.date),
   themesValidated:9,historyRows:2268,rawFilesShaVerified:sourceProof.rawFilesShaVerified,
   publicDateMatched:dateMatched,publicScoresMatched:matched,
