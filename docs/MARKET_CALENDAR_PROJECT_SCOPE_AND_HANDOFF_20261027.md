@@ -256,3 +256,14 @@
 - 신규 파서/읽기 도구 테스트 4/4 PASS 및 이전 R23 EIA 파서 회귀 6/6 PASS. Windows `.cmd` ASCII CRLF, ZIP 무결성 PASS. 전달 묶음 `MARKET_CALENDAR_R24_USDA_SOURCE_EXPORT_20261028.zip`, SHA256 `b0ab1a51764e68eecae7145da48c4f4202b2d392dc03bbcead70c2a1af100abe`.
 - **R24 진행 경계:** USDA 공식 페이지 실측 HTML은 아직 PC에서 받지 않았다. 사용자가 ZIP을 전체 압축 해제해 `MARKET_CALENDAR_R24_USDA_SOURCE_EXPORT.cmd` 1회 실행하고 `MARKET_CALENDAR_R24_USDA_SOURCE_EXPORT_RESULT.txt`를 제출하면 HTML 해시/DOM 확인 후 기존 R23 Core에 최소 USDA 수집 모듈을 편입한다. 브라우저 웹 검색으로 공식 2026/27 날짜를 확인했지만 직접 HTTP HTML 조회가 개발 환경에서 503이어서 실제 원문 적합성을 확증하기 전 운영 설치를 하지 않는다.
 - R24는 **READ_ONLY_SOURCE_EXPORT_READY**이지 PC 설치/수집/게시/웹 공개 완료가 아니다. 기존 PC 수집·SQLite·예약작업·GitHub main·Cloudflare 배포 변경 없음. 신규 브랜치 생성 없음.
+
+
+## 25. R24 USDA 공식 원문 실측 및 PC 연결 설치 준비 (2026-10-28)
+
+- 사용자 PC 원문 결과 `MARKET_CALENDAR_R24_USDA_SOURCE_EXPORT_RESULT.txt`: HTTP 200, 160,688바이트, SHA256 `e558dcf956989ce9cea21065a44e13c3c487da640810ccb4baee7c6aa750338a` 자체 검증 PASS. `mode=READ_ONLY`, 기존 Core/SQLite/예약·게시 작업 변경 없음.
+- 실제 공식 HTML 파서 결과 **2026년 12 + 2027년 12 = 24건**, 2026-10-28 이후 14건. 날짜 추정·가상 반복 없음. USDA 원문을 기존 PC input 저장소 `release-calendar:usda`에 먼저 저장한 다음 저장 원문을 다시 파싱하는 R24 collector 개발.
+- 기존 사용자 승인 PC R23 source `8ff396217c9f84578b37c9d422381644c2b8f0e8`, Core ID `d0a4b3cb8b95`, 파일 SHA 3종을 고정한 **R24 안전 설치 도구** 개발. 기존 EIA 모듈은 보존·무결성 검사만 수행. 정확히 3파일(신규 USDA 모듈·기존 일정 파서·수집기) 변경, 원본/PC config 백업과 로컬 Git 커밋. 소스 변경/dirty/잠금 충돌이면 STOP.
+- 지정 브랜치 `app/market-calendar/market-calendar-client.tsx`에서는 `usda-wasde` 이벤트 및 USDA/원자재 라벨만 추가했다. 기존 디자인·중요도·선택일·페이지 SEO 메타 변경 없음. `main` 병합·운영 배포 미실행.
+- 테스트: 신규 R24 11/11 PASS, 기존 R23 collector 9/9 및 installer 4/4 PASS, `npm run typecheck` PASS. 사용자 PC 실제 공식 원문 파싱 24건 별도 PASS.
+- 전달 파일 `MARKET_CALENDAR_R24_USDA_PC_INSTALL_20261028.zip`, SHA256 `90ec6480ede3cccdf4a611d360ad83e4d5d0c973c1006b54d41fb9f66f134639`. CMD ASCII CRLF 및 ZIP 7파일 무결성 PASS.
+- **다음 단계:** 사용자 PC에서 ZIP 전체 압축 해제 후 `MARKET_CALENDAR_R24_USDA_APPLY.cmd` 1회 실행, `MARKET_CALENDAR_R24_USDA_APPLY_RESULT.txt` 전달. R24는 아직 설치 미확인, 예약 수집·SQLite 반영·웹 공개 미확인. 설치 성공 및 정규 수집 증거를 구분한다. 기존 브랜치만 사용, 신규 브랜치 생성·`main` 병합·Cloudflare 배포 없음.
