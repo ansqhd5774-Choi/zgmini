@@ -35,6 +35,12 @@ function normalizedCandidate(raw, adapter, observedAt) {
     period_end: null,
     source_audit: validText(raw?.source_audit) ? raw.source_audit : 'NOT_RUN',
     market_scope: validText(raw?.market_scope) ? raw.market_scope : null,
+    research_market_keyword: validText(raw?.research_market_keyword)
+      ? raw.research_market_keyword : null,
+    research_market_provenance: validText(raw?.research_market_provenance)
+      ? raw.research_market_provenance : null,
+    publisher_attempts: Array.isArray(raw?.publisher_attempts)
+      ? raw.publisher_attempts.slice(0, 3) : [],
     discovery_diagnostics: Array.isArray(raw?.discovery_diagnostics)
       ? raw.discovery_diagnostics.slice(0, 6) : [],
     discovery_candidates: Array.isArray(raw?.discovery_candidates)
@@ -68,7 +74,18 @@ function normalizedCandidate(raw, adapter, observedAt) {
     result.reason = 'SOURCE_AUDIT_NOT_CONSISTENT';
     return result;
   }
-  if (raw.source_audit === 'EXCERPT_PERIOD_VERIFIED' && raw.market_scope !== 'DIRECT') {
+  // R67 explicitly permits historical, publisher-specific report markets
+  // for RESEARCH averages only. This is never a GICS-sector CAGR claim.
+  const verifiedReference = raw.market_scope === 'R63_REFERENCE' &&
+    raw.verified_scope === 'DIRECT' &&
+    raw.research_market_provenance === 'R63_OFFICIAL_REPORT_URL' &&
+    validText(raw.research_market_keyword);
+  if (raw.market_scope === 'R63_REFERENCE' && !verifiedReference) {
+    result.reason = 'R63_REFERENCE_PROVENANCE_NOT_VERIFIED';
+    return result;
+  }
+  if (raw.source_audit === 'EXCERPT_PERIOD_VERIFIED' &&
+      raw.market_scope !== 'DIRECT' && !verifiedReference) {
     result.reason = 'PROXY_MARKET_SCOPE_EXCLUDED';
     return result;
   }
@@ -149,7 +166,11 @@ export async function runForecastPipeline(topics, adapters, {
         'RESEARCH_FORECAST_ONLY_NOT_GICS_OR_INVESTMENT_SCORE',
         ...(accepted.some(p => p.source_audit === 'EXCERPT_PERIOD_VERIFIED')
           ? ['EXCERPT_ONLY_AUDIT_NO_SIZE_TRIANGULATION'] : []),
-        ...(periodKeys.size > 1 ? ['DIFFERENT_FORECAST_PERIODS_REVIEW_SCOPE'] : [])
+        ...(periodKeys.size > 1 ? ['DIFFERENT_FORECAST_PERIODS_REVIEW_SCOPE'] : []),
+        ...(accepted.some(p => p.market_scope === 'R63_REFERENCE')
+          ? ['R63_REFERENCE_REPORT_MARKET_NOT_GICS_SECTOR_CAGR'] : []),
+        ...(new Set(accepted.map(p => p.research_market_keyword || topic.keyword)).size > 1
+          ? ['DIFFERENT_RESEARCH_MARKET_DEFINITIONS_REVIEW_SCOPE'] : [])
       ],
       publishers
     });
@@ -166,21 +187,33 @@ export async function runForecastPipeline(topics, adapters, {
 }
 
 /** Keep R30 defaults intact; R70 opts into direct-market title filtering. */
-export function tbrcR30Adapter(measureKeyword, { model = 'gemma3:4b', fetchFn } = {}) {
+export function tbrcR30Adapter(measureKeyword, {
+  model = 'gemma3:4b', fetchFn, researchMarketFn = null
+} = {}) {
   if (typeof measureKeyword !== 'function') throw new Error('INVALID_R30_MEASURE');
   return {
     id: 'TBRC',
     officialHosts: ['www.thebusinessresearchcompany.com', 'thebusinessresearchcompany.com'],
-    run: topic => measureKeyword(topic.keyword, {
-      model,
-      ...(fetchFn ? { fetchFn } : {}),
-      searchMode: 'publisher-site',
-      structuredOutput: true,
-      auditForecast: true,
-      rateOnlyFromSource: true,
-      strictMarketScope: true,
-      resolveHistoricTableMislabel: false,
-      allowedKeywords: [topic.keyword]
-    })
+    run: async topic => {
+      const researchKeyword = researchMarketFn?.(topic.keyword, 'TBRC') || topic.keyword;
+      const raw = await measureKeyword(researchKeyword, {
+        model,
+        ...(fetchFn ? { fetchFn } : {}),
+        searchMode: 'publisher-site',
+        structuredOutput: true,
+        auditForecast: true,
+        rateOnlyFromSource: true,
+        strictMarketScope: true,
+        resolveHistoricTableMislabel: false,
+        allowedKeywords: [researchKeyword]
+      });
+      return researchKeyword === topic.keyword ? raw : {
+        ...raw, research_market_keyword: researchKeyword,
+        research_market_provenance: 'R63_OFFICIAL_REPORT_URL',
+        ...(raw?.state === 'PASS' ? {
+          market_scope: 'R63_REFERENCE', verified_scope: 'DIRECT'
+        } : {})
+      };
+    }
   };
 }
