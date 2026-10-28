@@ -45,3 +45,12 @@
 ### R24 다음 사용자 PC 단계
 
 ZIP 전체 압축 해제→`MARKET_CALENDAR_R24_USDA_APPLY.cmd` 단 1회 실행→`MARKET_CALENDAR_R24_USDA_APPLY_RESULT.txt` 전달. 설치 성공 결과가 오기 전에는 R24 PC Core 적용 완료·정기 수집·SQLite 반영·웹 공개를 주장하지 않는다. 기존 예약 실행/배포 관측은 사용자가 별도 확인한다.
+
+
+## R24 사용자 PC 설치 안전 중단 및 원인확인 도구 · 2026-10-28
+
+- 사용자 제출 `MARKET_CALENDAR_R24_USDA_APPLY_RESULT.txt`: `mode=EXPLICIT_APPLY`, `decision=PC_SOURCE_CHANGED_STOP`, `newSource=null`, `changedFiles=[]`, `backupCreated=false`, `forcedCollection=false`, `gitPushed=false`, `publisherExecuted=false`. **R24는 설치되지 않았으며 기존 Core 파일 변경 없음.**
+- 설치 후보 4해시가 모두 기존 승인 R24 값에 일치하고 Core worktree ID도 `d0a4b3cb8b95`로 확인됐다. 사전검증 중 **현재 PC Git HEAD가 지정 R23 base `8ff396217c9f84578b37c9d422381644c2b8f0e8`과 달라** 설치기가 안전하게 멈춘 것이다. 결과 TXT에는 현재 HEAD 값 자체는 포함되지 않아 변경 주체/내용·config.source 상태를 아직 판정할 수 없다.
+- R24 설치 ZIP을 재실행하지 않는다. 읽기 전용 조사 도구 `scripts/pc-writer/market-calendar-r24-source-drift-readonly.mjs`, `MARKET_CALENDAR_R24_SOURCE_DRIFT_READONLY.cmd`, README, 테스트 제공. 정규 PC 예약 작업에서 Core 경로를 식별하고 현재 Git HEAD, 승인 R23 조상 관계, 승인 파일 4종 SHA, config.source, 보호 파일 Git diff, lock 존재 여부만 기록한다. 경로·기밀 값 출력 금지, 파일/작업/DB/Git/lock 쓰기 0.
+- 진단 테스트 **3/3 PASS**, `npm run typecheck` PASS, CMD ASCII+CRLF 및 ZIP 4파일 무결성 PASS. 전달 묶음 `MARKET_CALENDAR_R24_SOURCE_DRIFT_READONLY_20261028.zip` SHA256 `69611dfaeae502668db26d15f318abea2f1fb7a94e76dd2f5eb76f3c3fa0f6f6`.
+- 결과 파일 `MARKET_CALENDAR_R24_SOURCE_DRIFT_RESULT.txt` 수신 후, 현재 PC 운영 소스가 기존 설치 파일과 달라진 사유를 확인한다. **승인 없는 reset/checkout/운영 소스 덮어쓰기 금지**. 기존 R24 수집기·UI 코드는 작업 브랜치에 보존, PC 설치·예약 수집·웹 공개는 미확인으로 유지.
