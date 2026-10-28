@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { R63_ADDRESS_HINTS, officialAddressHint } from './stage04-r63-official-address-hints-r78.mjs';
+import { R63_ADDRESS_HINTS, officialAddressHint, officialResearchMarketKeyword } from './stage04-r63-official-address-hints-r78.mjs';
 import { firstPartyOllamaAdapter } from './official-publisher-ollama-adapters-r71.mjs';
 import { runForecastPipeline } from './ollama-forecast-pipeline-r70.mjs';
 import { topicsFromArgs } from './run-ollama-forecast-r71.mjs';
@@ -38,6 +38,74 @@ test('R78 locks 21 original themes and 60 official URLs; BRI stays excluded', ()
       assert.doesNotMatch(url, /(?:^|[?&])(?:growth|cagr|mean|rate|score)=/i);
     }
   }
+});
+
+test('R79 recovers exact per-publisher R63 source-market names from original URLs', () => {
+  assert.equal(officialResearchMarketKeyword('consumer discretionary','TBRC'),'passenger car');
+  assert.equal(officialResearchMarketKeyword('consumer discretionary','SkyQuest'),'passenger cars');
+  assert.equal(officialResearchMarketKeyword('financial services','Precedence'),'retail banking');
+  assert.equal(officialResearchMarketKeyword('information technology','SkyQuest'),'it services');
+  assert.equal(officialResearchMarketKeyword('fintech','TBRC'),'fintech blockchain');
+  assert.equal(officialResearchMarketKeyword('consumer staples','Precedence'),null);
+  assert.equal(officialResearchMarketKeyword('consumer discretionary','BRI'),null);
+});
+
+test('R79 IT Services original report bypasses empty stopword token ranking only by exact URL and title', async () => {
+  const report = officialAddressHint('information technology','SkyQuest');
+  let ollama = 0;
+  const adapter = firstPartyOllamaAdapter('SkyQuest', {
+    fetchFn: async url => {
+      assert.equal(url,report);
+      return new Response('<h1>IT Services Market</h1><p>IT services market ' +
+        'is forecast to grow at a CAGR of 15% from 2026 to 2032.</p>');
+    },
+    chooseFn: async () => {ollama++; return {index:0,scope:'DIRECT'};},
+    discoverFn: NO_DISCOVERY
+  });
+  const raw = await adapter.run({id:'topic-01',keyword:'information technology'});
+  assert.equal(raw.state,'PASS');
+  assert.equal(raw.research_market_keyword,'it services');
+  assert.equal(raw.market_scope,'R63_REFERENCE');
+  assert.equal(raw.growth_pct,15);
+  assert.equal(ollama,1);
+});
+
+test('R79 original report with Ollama PROXY verdict is never promoted to verified DIRECT', async () => {
+  const source = officialAddressHint('consumer discretionary','SkyQuest');
+  const a = firstPartyOllamaAdapter('SkyQuest', {
+    fetchFn: async url => {
+      assert.equal(url,source);
+      return new Response('<h1>Passenger Cars Market</h1>' +
+        '<p>Passenger cars market forecast CAGR 8% from 2026 to 2031.</p>');
+    },
+    chooseFn: async () => ({index:0,scope:'PROXY'}),
+    discoverFn: NO_DISCOVERY
+  });
+  const output = await runForecastPipeline([{id:'topic-03',
+    keyword:'consumer discretionary'}],[a]);
+  assert.equal(output.results[0].source_count,0);
+  assert.equal(output.results[0].publishers[0].reason,'PROXY_MARKET_SCOPE_EXCLUDED');
+});
+
+test('R79 two independent R63 proxy markets produce warned research mean only', async () => {
+  const liveRates = { SkyQuest: 8, Precedence: 12 };
+  const adapters = Object.keys(liveRates).map(id => firstPartyOllamaAdapter(id, {
+    fetchFn: async url => {
+      assert.equal(url,officialAddressHint('consumer discretionary',id));
+      return new Response('<h1>Passenger Cars Market</h1><p>' +
+        `Passenger cars market forecast CAGR ${liveRates[id]}% from 2026 to 2031.</p>`);
+    },
+    chooseFn: async () => ({index:0,scope:'DIRECT'}),
+    discoverFn: NO_DISCOVERY
+  }));
+  const report = await runForecastPipeline(
+    [{id:'topic-03',keyword:'consumer discretionary'}],adapters);
+  assert.equal(report.results[0].source_count,2);
+  assert.equal(report.results[0].mean_pct,10);
+  assert.ok(report.results[0].warnings.includes(
+    'R63_REFERENCE_REPORT_MARKET_NOT_GICS_SECTOR_CAGR'));
+  assert.ok(report.results[0].publishers.every(p=>
+    p.market_scope==='R63_REFERENCE' && p.research_market_keyword==='passenger cars'));
 });
 
 test('R78 archived address is re-fetched live and Ollama decides a new DIRECT rate', async () => {
@@ -81,7 +149,7 @@ test('R78 archived numbers never replace a live failed or blocked GET', async ()
   assert.equal(modelCalls,0);
 });
 
-test('R78 historical submarket address cannot count toward theme research', async () => {
+test('R79 original R63 report market is counted as research, never GICS-sector CAGR', async () => {
   const report = officialAddressHint('consumer discretionary', 'SkyQuest');
   let modelCalls = 0;
   const adapter = firstPartyOllamaAdapter('SkyQuest', {
@@ -94,11 +162,13 @@ test('R78 historical submarket address cannot count toward theme research', asyn
     discoverFn: NO_DISCOVERY
   });
   const result = await adapter.run({id:'topic-03',keyword:'consumer discretionary'});
-  assert.equal(result.state,'FAILED');
-  assert.ok(['REPORT_MARKET_IDENTITY_UNVERIFIED',
-    'SUBMARKET_OR_PROXY_REPORT_EXCLUDED'].includes(result.failure));
-  assert.equal(result.growth_pct,null);
-  assert.equal(modelCalls,0);
+  assert.equal(result.state,'PASS');
+  assert.equal(result.growth_pct,30);
+  assert.equal(result.keyword,'consumer discretionary');
+  assert.equal(result.research_market_keyword,'passenger cars');
+  assert.equal(result.market_scope,'R63_REFERENCE');
+  assert.equal(result.research_market_provenance,'R63_OFFICIAL_REPORT_URL');
+  assert.equal(modelCalls,1);
 });
 
 test('R78 two-source mean is calculated only from two independently refreshed publisher pages', async () => {
