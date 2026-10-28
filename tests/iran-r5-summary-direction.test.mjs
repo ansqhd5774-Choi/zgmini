@@ -85,7 +85,25 @@ test('actual publication points render in the compact summary without nested int
  const html=render({...view,updateHistory:[point(at,12.1),point(at+3600000,13)]});
  assert.match(html,/실제 게시 기록 2회/);
  assert.match(html,/갱신별 기록 · KST/);
- assert.equal((html.match(/<circle /g)??[]).length,2);
+ assert.equal((html.match(/data-kind="publication"/g)??[]).length,2);
+ assert.equal((html.match(/data-kind="daily-estimate"/g)??[]).length,13,'13 prior daily estimates survive alongside today’s actual publications');
  assert.doesNotMatch(html,/<circle[^>]*role="button"/);
  assert.match(html,/전일 대비 1점 상승/);
+});
+
+test('daily zero and gaps are preserved; the first actual day does not receive a backdated daily total',()=>{
+ const {render,view}=mountCard(true),at=Date.parse('2026-10-21T03:00:00Z');
+ const point={at,value:13,collectionCheckedAt:at-1000,sourceStoredAt:at-2000,eventCount:2,lineage:'fixture'};
+ const chartHistory=[
+  {date:'2026-10-18',at:Date.parse('2026-10-18T00:00:00Z'),value:0},
+  {date:'2026-10-19',at:Date.parse('2026-10-19T00:00:00Z'),value:null},
+  {date:'2026-10-20',at:Date.parse('2026-10-20T00:00:00Z'),value:12},
+  {date:'2026-10-21',at:Date.parse('2026-10-21T00:00:00Z'),value:99},
+ ];
+ const html=render({...view,chartHistory,updateHistory:[point]});
+ assert.equal((html.match(/data-kind="daily-estimate"/g)??[]).length,2);
+ assert.match(html,/일별 추정 · 0\.00점/);assert.doesNotMatch(html,/99\.00점/);
+ const path=html.match(/data-series="daily-estimate"><path d="([^"]*)"/)?.[1];
+ assert.equal((path?.match(/M/g)??[]).length,2,'A missing daily value breaks the historical line');
+ assert.match(html,/data-series="estimate-to-publication"/);
 });
