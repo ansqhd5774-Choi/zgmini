@@ -4,11 +4,12 @@ import {readStage05Candidates,runStage05OllamaResearch} from './stage05-ollama-r
 
 const source='https://example.org/official-technology-report';
 const fixture=()=>({
-  version:'STAGE05_VERIFIED_RESULTS_HANDOFF_R81',status:'READY_FOR_OLLAMA_RESEARCH',
+  version:'STAGE05_VERIFIED_RESULTS_HANDOFF_R85',status:'READY_FOR_OLLAMA_RESEARCH',
   asOfDate:'2026-10-28',coverage:{approvedThemes:9},
-  ollamaInput:{candidates:Array.from({length:9},(_,i)=>({
+  ollamaInput:{stage01MarketRisk:'CAUTION',candidates:Array.from({length:9},(_,i)=>({
     themeId:`approved-${i+12}`,theme:`승인테마-${i+12}`,
-    stage04M4:70+i,stage05T:60+i,stage05S5:68+i,
+    stage02Score:50+i,stage03Score:60+i,
+    stage04M4:70+i,stage05S5:70+i,
   }))},
 });
 const selection=ids=>({message:{content:JSON.stringify({
@@ -60,7 +61,8 @@ test('computed scores are consumed as-is; Ollama selects then researches only ch
   assert.equal(r.status,'RESEARCH_OUTPUT_WITH_FETCHED_URLS');
   assert.equal(r.selectedThemes.length,1);
   assert.equal(r.selectedThemes[0].themeId,'approved-12');
-  assert.equal(r.selectedThemes[0].S5,68);
+  assert.equal(r.selectedThemes[0].S5,70);
+  assert.equal(r.selectedThemes[0].stage02Score,50);
   assert.equal(r.research.themes[0].companies.length,1);
   assert.equal(r.provenance.fetchedUrlCount,1);
   assert.deepEqual(deps.called,{select:1,research:3,final:1,search:1,fetch:1});
@@ -123,5 +125,25 @@ test('existing R77 forecast research reaches Ollama as context, never as an S5 s
     assert.equal(data.savedR77ResearchContext.topics[0].meanCagrPct,11.285);
     assert.equal(data.savedR77ResearchContext.scoreStatus,'NOT_STAGE04_M4_OR_STAGE05_S5');
   }
-  assert.equal(input.ollamaInput.candidates[0].stage05S5,68);
+  assert.equal(input.ollamaInput.candidates[0].stage05S5,70);
+});
+
+test('the model receives all four completed-stage contexts without duplicate indicator math',async()=>{
+  const input=fixture(),requests=[];
+  const chat=async req=>{
+    requests.push(req);
+    if(req.format?.properties?.selectedThemes)return selection([]);
+    throw new Error('UNEXPECTED_RESEARCH');
+  };
+  const r=await runStage05OllamaResearch({input,model:'mock',chat,
+    webSearch:async()=>{throw new Error('UNEXPECTED_SEARCH');},
+    webFetch:async()=>{throw new Error('UNEXPECTED_FETCH');}});
+  assert.equal(r.status,'NO_THEME_SELECTED');
+  const payload=JSON.parse(requests[0].messages[1].content);
+  assert.equal(payload.marketRisk,'CAUTION');
+  assert.equal(payload.candidates[0].stage02Score,50);
+  assert.equal(payload.candidates[0].stage03Score,60);
+  assert.equal(payload.candidates[0].stage04M4,70);
+  assert.equal(payload.candidates[0].S5,70);
+  assert.equal('T' in payload.candidates[0],false);
 });
