@@ -1,150 +1,100 @@
 /**
- * Stage05 research priority selector. Inputs are verified Stage01-04 observations;
- * this module never downloads data, fills missing values, or generates trade advice.
- * Stage04's R2 formula is audited, not activated as an operating score.
+ * Stage05: consume the completed Stage01-04 scores without re-scoring them.
+ * Stage04 owns G1/G2/F/G/D/M4; Stage02/03 own ETF and sentiment indicators.
+ * Stage05 passes the published M4 through as its research-priority value and
+ * carries the earlier scores as independent context for Ollama's selection.
+ * No prices, news, new weights, Stage01-04 code or live-trading paths are used.
  */
-export const SCHEMA_VERSION = 'STAGE05_01_04_V1';
-export const DEFAULT_WEIGHTS = Object.freeze([0.7, 0.8, 0.9]);
+export const SCHEMA_VERSION = 'STAGE05_COMPLETED_STAGE_RESULTS_V2';
 
-const isScore = value => typeof value === 'number' && Number.isFinite(value)
-  && value >= 0 && value <= 100;
-const isDate = value => typeof value === 'string'
-  && /^\d{4}-\d{2}-\d{2}$/.test(value)
-  && !Number.isNaN(Date.parse(`${value}T00:00:00Z`))
-  && new Date(`${value}T00:00:00Z`).toISOString().slice(0, 10) === value;
-const asDay = date => Date.parse(`${date}T00:00:00Z`);
-const round6 = value => Math.round((value + Number.EPSILON) * 1e6) / 1e6;
-const uniqueById = (rows, label) => {
-  const map = new Map();
+const isScore = n => typeof n === 'number' && Number.isFinite(n)
+  && n >= 0 && n <= 100;
+const isDate = s => typeof s === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(s)
+  && !Number.isNaN(Date.parse(`${s}T00:00:00Z`))
+  && new Date(`${s}T00:00:00Z`).toISOString().slice(0,10) === s;
+const index = (rows, name) => {
+  const result = new Map();
   for (const row of rows) {
     if (!row || typeof row.id !== 'string' || !row.id.trim())
-      throw new Error(`${label}_ID_INVALID`);
-    if (map.has(row.id)) throw new Error(`${label}_DUPLICATE_ID_${row.id}`);
-    map.set(row.id, row);
+      throw new Error(`${name}_ID_INVALID`);
+    if (result.has(row.id)) throw new Error(`${name}_DUPLICATE_ID_${row.id}`);
+    result.set(row.id,row);
   }
-  return map;
+  return result;
 };
-const reasons = (...entries) => entries.filter(Boolean);
-
-function checkMarket(stage01, snapshotDate, maxAgeDays) {
-  if (stage01?.status !== 'READY' || !isDate(stage01.date))
-    return {valid:false,reason:'STAGE01_MARKET_UNAVAILABLE',risk:'UNKNOWN'};
-  if (stage01.date > snapshotDate || (asDay(snapshotDate) - asDay(stage01.date)) / 86400000 > maxAgeDays)
-    return {valid:false,reason:'STAGE01_DATE_STALE_OR_FUTURE',risk:'UNKNOWN'};
-  if (!['NORMAL','CAUTION','HIGH_RISK','UNKNOWN'].includes(stage01.risk))
-    return {valid:false,reason:'STAGE01_RISK_UNVERIFIED',risk:'UNKNOWN'};
-  return {valid:true,reason:null,risk:stage01.risk,observedDate:stage01.date};
-}
-
-function checkEvidence(evidence, kind, snapshotDate, maxAgeDays) {
-  if (!evidence || evidence.kind !== kind || evidence.validation !== 'VERIFIED')
-    return 'ETF_PRICE_EVIDENCE_NOT_VERIFIED';
-  if (!isScore(evidence.score) || !evidence.etf || !evidence.source
-    || !evidence.normalizationRuleId || !evidence.priceSeriesId)
-    return 'ETF_PRICE_SCORE_CONTRACT_INCOMPLETE';
-  if (!isDate(evidence.periodStart) || !isDate(evidence.periodEnd)
-    || evidence.periodEnd <= evidence.periodStart) return 'ETF_PRICE_PERIOD_INVALID';
-  const days = (asDay(evidence.periodEnd) - asDay(evidence.periodStart)) / 86400000;
-  if (days < 300 || days > 380) return 'ETF_PRICE_NOT_ONE_YEAR';
-  if (evidence.periodEnd > snapshotDate
-    || (asDay(snapshotDate) - asDay(evidence.periodEnd)) / 86400000 > maxAgeDays)
-    return 'ETF_PRICE_DATE_STALE_OR_FUTURE';
-  return null;
-}
-
-function computeIndustryComponent(record, snapshotDate, maxAgeDays) {
-  const blocked = reason => ({reason,score:null,components:null});
-  if (!record || record.status !== 'QUANTIFIED') return blocked('STAGE04_NOT_QUANTIFIED');
-  if (record.evidenceKind !== 'REALIZED_INDUSTRY_ACTIVITY'
-    || record.sourceValidation !== 'VERIFIED'
-    || record.freshnessStatus !== 'CURRENT'
-    || record.formulaId !== 'STAGE04_R2_PROPOSED'
-    || !Array.isArray(record.sourceUrls) || record.sourceUrls.length === 0)
-    return blocked('STAGE04_REALIZED_SOURCE_GATE_MISSING');
-  if (!isDate(record.validatedDate) || !isDate(record.observationPeriodEnd)
-    || record.observationPeriodEnd > record.validatedDate
-    || record.validatedDate > snapshotDate
-    || (asDay(snapshotDate)-asDay(record.validatedDate))/86400000 > maxAgeDays)
-    return blocked('STAGE04_CHRONOLOGY_UNVERIFIED');
-  // Stage05 is the calculator: it needs source-derived component inputs, not
-  // an already-computed final M4, E, T or S5 from Stage01–04.
-  if (![record.G1,record.G2,record.F].every(isScore))
-    return blocked('STAGE04_COMPONENT_INPUT_MISSING');
-  const G = 0.6 * record.G1 + 0.4 * record.G2;
-  const D = Math.max(0,G - record.F);
-  const M4 = 0.7 * G + 0.3 * D;
-  if ([['G',G],['D',D],['M4',M4]].some(([name,computed]) =>
-    record[name] !== undefined && (!isScore(record[name])
-      || Math.abs(computed-record[name])>0.00001)))
-    return blocked('STAGE04_FORMULA_MISMATCH');
-  return {reason:null,score:round6(M4),components:{G1:record.G1,G2:record.G2,
-    F:record.F,G:round6(G),D:round6(D),M4:round6(M4)}};
-}
 
 /**
- * Input contract:
- * {schemaVersion,snapshotDate,
- *  stage01:{status,date,risk},
- *  stage02:{sectors:[{id,relativeStrength:{kind,validation,score,etf,source,
- *    normalizationRuleId,priceSeriesId,periodStart,periodEnd}}]},
- *  stage03:{themes:[{id,sectorId,approved,trend:{...same evidence contract}}]},
- *  stage04:{themes:[{id,status,evidenceKind,sourceValidation,freshnessStatus,
- *    formulaId,sourceUrls,validatedDate,observationPeriodEnd,G1,G2,F,
- *    G?,D?,M4?}]}}
- * Only an explicit passed Stage03 theme can enter the selection table.
+ * Input: already-completed Stage01-04 output, normalized into this Stage05-only
+ * handoff. No raw RS, trend, G1, G2 or F fields are required or recomputed.
+ * {
+ *  schemaVersion, snapshotDate,
+ *  stage01:{status:'READY',date,risk},
+ *  stage02:{status:'READY',sectors:[{id,score}]},
+ *  stage03:{status:'READY',themes:[{id,sectorId,approved,score}]},
+ *  stage04:{status:'READY',themes:[{id,status:'QUANTIFIED',M4,
+ *    scoreKind:'STAGE04_M4_FINAL',scoreValidation:'VERIFIED',validatedDate}]}
+ * }
+ * Stage02/03 scores and Stage01 risk are context, never a second weighted
+ * contribution to the Stage04 result. Only Stage03-approved themes are ranked.
  */
-export function calculateFusionStage05(input, {maxAgeDays = 7} = {}) {
-  if (input?.schemaVersion !== SCHEMA_VERSION) throw new Error('INPUT_SCHEMA_VERSION_MISMATCH');
-  if (!isDate(input?.snapshotDate)) throw new Error('SNAPSHOT_DATE_INVALID');
-  if (!Number.isInteger(maxAgeDays) || maxAgeDays < 0 || maxAgeDays > 30)
-    throw new Error('MAX_AGE_DAYS_INVALID');
-  const market = checkMarket(input.stage01,input.snapshotDate,maxAgeDays);
-  const sectors = uniqueById(input.stage02?.sectors || [], 'STAGE02_SECTOR');
-  const candidates = uniqueById(input.stage03?.themes || [], 'STAGE03_THEME');
-  const industry = uniqueById(input.stage04?.themes || [], 'STAGE04_THEME');
-  const rows = [];
+export function calculateFusionStage05(input) {
+  if(input?.schemaVersion!==SCHEMA_VERSION)
+    throw new Error('INPUT_SCHEMA_VERSION_MISMATCH');
+  if(!isDate(input?.snapshotDate))throw new Error('SNAPSHOT_DATE_INVALID');
+  const market=input.stage01;
+  const marketReady=market?.status==='READY'&&isDate(market.date)
+    &&market.date<=input.snapshotDate
+    &&['NORMAL','CAUTION','HIGH_RISK','UNKNOWN'].includes(market.risk);
+  const sectors=index(input.stage02?.sectors||[],'STAGE02_SECTOR');
+  const themes=index(input.stage03?.themes||[],'STAGE03_THEME');
+  const industry=index(input.stage04?.themes||[],'STAGE04_THEME');
+  const rows=[];
 
-  for (const theme of candidates.values()) {
-    if (theme.approved !== true) continue;
-    const sector = sectors.get(theme.sectorId);
-    const growth = industry.get(theme.id);
-    const industryComponent=computeIndustryComponent(growth,input.snapshotDate,maxAgeDays);
-    const eReason=industryComponent.reason;
-    const rsReason = checkEvidence(sector?.relativeStrength,
-      'ETF_PRICE_RELATIVE_STRENGTH',input.snapshotDate,maxAgeDays);
-    const trendReason = checkEvidence(theme.trend,
-      'ETF_PRICE_TREND',input.snapshotDate,maxAgeDays);
-    const samePeriod = !rsReason && !trendReason
-      && sector.relativeStrength.periodStart === theme.trend.periodStart
-      && sector.relativeStrength.periodEnd === theme.trend.periodEnd;
-    const periodReason = !rsReason && !trendReason && !samePeriod
-      ? 'ETF_RS_TREND_PERIOD_MISMATCH' : null;
-    const E = industryComponent.score;
-    const T = rsReason || trendReason || periodReason ? null
-      : round6(0.5*sector.relativeStrength.score + 0.5*theme.trend.score);
-    const blockReasons = reasons(eReason,rsReason,trendReason,periodReason,
-      market.reason, input.stage02?.status !== 'READY' ? 'STAGE02_NOT_READY' : null,
-      input.stage03?.status !== 'READY' ? 'STAGE03_NOT_READY' : null,
-      input.stage04?.status !== 'READY' ? 'STAGE04_NOT_READY' : null);
-    const eligible = E !== null && T !== null && blockReasons.length === 0;
-    const sensitivity = Object.fromEntries(DEFAULT_WEIGHTS.map(w => [String(Math.round(w*100)),
-      eligible ? round6(w*E+(1-w)*T) : null]));
-    rows.push({themeId:theme.id,sectorId:theme.sectorId,
+  for(const candidate of themes.values()){
+    if(candidate.approved!==true)continue;
+    const sector=sectors.get(candidate.sectorId);
+    const final=industry.get(candidate.id);
+    const reasons=[];
+    if(!marketReady)reasons.push('STAGE01_RESULT_NOT_READY');
+    if(input.stage02?.status!=='READY')reasons.push('STAGE02_RESULT_NOT_READY');
+    if(input.stage03?.status!=='READY')reasons.push('STAGE03_RESULT_NOT_READY');
+    if(input.stage04?.status!=='READY')reasons.push('STAGE04_RESULT_NOT_READY');
+    if(!sector||!isScore(sector.score))reasons.push('STAGE02_FINAL_SCORE_MISSING');
+    if(!isScore(candidate.score))reasons.push('STAGE03_FINAL_SCORE_MISSING');
+    if(!final||final.status!=='QUANTIFIED'||!isScore(final.M4)
+      ||final.scoreKind!=='STAGE04_M4_FINAL'
+      ||final.scoreValidation!=='VERIFIED')
+      reasons.push('STAGE04_FINAL_M4_MISSING');
+    if(!isDate(final?.validatedDate)||final.validatedDate>input.snapshotDate)
+      reasons.push('STAGE04_RESULT_DATE_INVALID');
+
+    const eligible=reasons.length===0;
+    rows.push({themeId:candidate.id,sectorId:candidate.sectorId,
       status:eligible?'RANKABLE':'BLOCKED',
-      calculatedIndustry:industryComponent.components,
-      E,T,S5:sensitivity['80'],sensitivity,blockReasons:[...new Set(blockReasons)]});
+      stage02Score:isScore(sector?.score)?sector.score:null,
+      stage03Score:isScore(candidate.score)?candidate.score:null,
+      stage04M4:isScore(final?.M4)&&final?.status==='QUANTIFIED'
+        &&final.scoreKind==='STAGE04_M4_FINAL'
+        &&final.scoreValidation==='VERIFIED'?final.M4:null,
+      // S5 is a passthrough of the completed M4, not a new additive formula.
+      S5:eligible?final.M4:null,
+      calculation:'STAGE04_FINAL_SCORE_REUSED_NO_REWEIGHTING',
+      blockReasons:reasons});
   }
-  const ranked = rows.filter(r=>r.status==='RANKABLE').sort((a,b)=>b.S5-a.S5
-    || a.themeId.localeCompare(b.themeId));
-  return {
-    schemaVersion:SCHEMA_VERSION,mode:'READ_ONLY_RESEARCH',snapshotDate:input.snapshotDate,
-    stage01:{risk:market.risk,status:market.valid?'VERIFIED':'UNAVAILABLE',
-      observedDate:market.observedDate||null,reason:market.reason},
+
+  const ranked=rows.filter(row=>row.status==='RANKABLE')
+    .sort((a,b)=>b.S5-a.S5||a.themeId.localeCompare(b.themeId));
+  return {schemaVersion:SCHEMA_VERSION,mode:'READ_ONLY_RESEARCH',
+    snapshotDate:input.snapshotDate,
+    stage01:{risk:marketReady?market.risk:'UNKNOWN',
+      status:marketReady?'VERIFIED':'UNAVAILABLE',
+      observedDate:marketReady?market.date:null},
     summary:{approvedCandidateCount:rows.length,rankableCount:ranked.length,
-      blockedCount:rows.length-ranked.length,selectedThemeId:ranked[0]?.themeId||null},
-    rows, ranking:ranked.map((r,index)=>({rank:index+1,themeId:r.themeId,S5:r.S5,
-      sensitivity:r.sensitivity})),
-    notes:['S5 is research priority only; not a buy signal, trade or approved live formula.',
-      'Incomplete source, approved ETF-price normalization, or realized G/D/M: NULL, never zero.'],
-  };
+      blockedCount:rows.length-ranked.length,selectedThemeId:null},
+    rows,ranking:ranked.map((row,i)=>({rank:i+1,themeId:row.themeId,
+      S5:row.S5,stage02Score:row.stage02Score,stage03Score:row.stage03Score})),
+    notes:['Stage05 does not select the final theme; Ollama selects from these completed results.',
+      'S5 is the already-computed Stage04 M4 research priority, not a fresh score or buy signal.',
+      'Earlier Stage02/03 scores are passed as context; raw RS/trend or G1/G2/F is never recalculated.',
+      'An unavailable final input remains NULL. Saved R77 forecast CAGR is not M4.']};
 }
