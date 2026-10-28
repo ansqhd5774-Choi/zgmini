@@ -4,7 +4,7 @@ set "SCRIPT_DIR=%~dp0"
 set "NODE_EXE=node"
 if exist "E:\ZGmini\runtime\node.exe" set "NODE_EXE=E:\ZGmini\runtime\node.exe"
 if "%~1"=="" (
-  "%NODE_EXE%" "%SCRIPT_DIR%stage05-fusion-readonly.mjs" --audit-live
+  "%NODE_EXE%" "%SCRIPT_DIR%stage05-fusion-readonly.mjs" --audit-existing-live --output-dir "%SCRIPT_DIR%"
 ) else (
   "%NODE_EXE%" "%SCRIPT_DIR%stage05-fusion-readonly.mjs" %*
 )
