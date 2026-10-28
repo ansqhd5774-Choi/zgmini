@@ -26,6 +26,10 @@ if errorlevel 1 (
  >> "%LOG%" echo ERROR=GIT_NOT_FOUND
  goto :failed
 )
+if not defined TEMP (
+ >> "%LOG%" echo ERROR=TEMP_NOT_CONFIGURED
+ goto :failed
+)
 set "ISOLATED=%TEMP%\ZGMINI_ASSET_R10_1Y_D1_%RANDOM%_%RANDOM%"
 if exist "%ISOLATED%\" (
  >> "%LOG%" echo ERROR=ISOLATED_CHECKOUT_ALREADY_EXISTS
