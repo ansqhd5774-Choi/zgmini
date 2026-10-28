@@ -512,3 +512,9 @@
 - 사용자 PC에서 R31 CMD 더블클릭 직후 창이 닫히고 결과 TXT가 없는 현상 보고. 원인은 아직 로그가 없어 미확정이며, 기존 CMD의 **실행기 사전 검사 단계에서 로그와 창 유지 수단이 없다는 결함**만 소스 코드로 확정했다.
 - 신규 패키지 `IRAN_NEWS_R31_FIX1_CYCLE_READONLY_PACKAGE.zip` (SHA-256 `98ca9d3bcfa06bbd6112e5a32d1ae9b0d07bd8f759293ad3229639ba13ec6916`)을 기존 R31 ZIP보다 우선 사용한다. CMD는 `IRAN_NEWS_R31_LAUNCH_RESULT.txt`를 시작 즉시 추가 기록하고 미완전 압축 해제·Node 경로 부재·R29 상태 미검증을 분리한다. 운영 Node E: 승인 경로만 보조로 검사하며 CMD 종료 전 화면 `pause`를 추가한다.
 - Node 코드·실제 R29 수집기·R13/R15 runner·작업 시간표·R3/R5 점수·D1·공개 뉴스·UI/번역은 변경하지 않는다. 새 CMD도 R29 수집 자체를 실행하거나 예약 작업을 강제 실행하지 않는다. 다음 Gate는 수정 CMD가 생성한 실행기 로그와 사용자 PC의 정규 회차 실측이다.
+
+## 43. R31 FIX2 사용자 실행기 로그 검증 — 파일 보고서 쓰기 단계 실패
+
+- 사용자가 제출한 FIX1 실행기 로그에 `R31_LAUNCH_BEGIN`, `R31_TOOL_AND_NODE_FOUND`, `R31_REPORT_WRITE_FAILED`, `STOP_R31_OBSERVATION_REQUIRES_REVIEW` 기록. **Node 부재 또는 파일 압축 해제 누락이 이번 실행의 원인은 아님**. 원래 결과 파일의 파일 생성 에러 코드는 구버전에서 누락됐으며 실제 경로 오류를 증명했다고 보고하지 않는다.
+- CMD의 `"%~dp0"`처럼 **백슬래시로 끝나는 인용부호 인자** 전달을 제거한다. R31 모듈은 `import.meta.url`을 기반으로 ZIP 루트 위치를 계산하고, 쓰기 오류가 재발하면 launcher 로그 안에 통제된 오류 코드와 검사 요약을 남기도록 변경한다.
+- 신규 `IRAN_NEWS_R31_FIX2_CYCLE_READONLY_PACKAGE.zip` (SHA-256 `68acb309067ed8578daa9fca9b7499e1e46a7db13c427217466b6038296aa0c6`)을 이전 FIX1 대신 사용한다. 기존 정규 PC R29 수집·R13 작업·점수·D1·기사 공개·UI/번역 변경 0. 다음 Gate는 새 CMD의 결과 파일 생성·수집 시각 읽기, 이후 사용자 정규 2회 관측이다.

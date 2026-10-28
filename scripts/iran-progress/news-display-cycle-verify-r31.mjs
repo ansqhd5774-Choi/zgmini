@@ -13,6 +13,8 @@ const CANDIDATES='news-display-candidates-r26.json';
 const validStatus=new Set(['PRIVATE_COLLECTION_READY','PRIVATE_COLLECTION_PARTIAL']);
 const isoKst=epoch=>new Date(epoch+9*3600000).toISOString().replace('T',' ').slice(0,19);
 const sha=bytes=>createHash('sha256').update(bytes).digest('hex');
+export const reportDirectoryForR31=(moduleUrl=import.meta.url)=>
+ path.resolve(path.dirname(fileURLToPath(moduleUrl)),'..','..');
 const safeReason=error=>/^R31_[A-Z0-9_]{1,85}$/.test(error?.message??'')?
  error.message:'R31_UNCLASSIFIED_FAILURE';
 
@@ -88,9 +90,10 @@ function taskPresent(){
 }
 
 if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.url)){
- const [reportDirectory]=process.argv.slice(2);
- if(process.argv.length!==3||!path.isAbsolute(reportDirectory)){
-  console.error('R31_EXPLICIT_REPORT_DIRECTORY_REQUIRED');process.exitCode=2;
+ // Derive the ZIP root from this module, not from CMD's quoted trailing \\ path.
+ const reportDirectory=reportDirectoryForR31();
+ if(process.argv.length!==2){
+  console.error('R31_UNEXPECTED_CLI_ARGUMENT');process.exitCode=2;
  }else{
   const now=Date.now();
   let report;
@@ -105,12 +108,20 @@ if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.ur
   const name='IRAN_NEWS_R31_CYCLE_READONLY_RESULT_'+
    new Date(now+9*3600000).toISOString().slice(0,19).replace(/[-:T]/g,'')+'_'+
    String(now%1000).padStart(3,'0')+'.txt';
+  let reportSaved=false;
   try{
    const output=path.join(reportDirectory,name);
    fs.writeFileSync(output,JSON.stringify(report,null,2)+'\n',{flag:'wx'});
+   reportSaved=true;
    console.log('R31_RESULT_FILE='+output);
    console.log('R31_STATUS='+report.phase);
-  }catch{console.error('R31_REPORT_WRITE_FAILED');process.exitCode=2;}
-  if(report.phase!=='R31_SINGLE_CYCLE_OBSERVED')process.exitCode=1;
+  }catch(error){
+   const code=/^[A-Z0-9_]{1,30}$/.test(error?.code??'')?error.code:'UNKNOWN';
+   console.error('R31_REPORT_WRITE_FAILED_'+code);
+   // The launcher logs this summary even when the timestamped TXT cannot be written.
+   console.log('R31_FALLBACK_SUMMARY='+JSON.stringify(report));
+  }
+  if(!reportSaved)process.exitCode=2;
+  else if(report.phase!=='R31_SINGLE_CYCLE_OBSERVED')process.exitCode=1;
  }
 }

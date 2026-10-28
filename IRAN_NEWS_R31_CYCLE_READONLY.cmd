@@ -13,7 +13,7 @@ if not errorlevel 1 set "ZG_R31_NODE=node.exe"
 if not defined ZG_R31_NODE if exist "E:\ZGmini\runtime\node.exe" set "ZG_R31_NODE=E:\ZGmini\runtime\node.exe"
 if not defined ZG_R31_NODE goto :missing_node
 >> "%ZG_R31_LOG%" echo R31_TOOL_AND_NODE_FOUND
-"%ZG_R31_NODE%" "%ZG_R31_TOOL%" "%~dp0" >> "%ZG_R31_LOG%" 2>&1
+"%ZG_R31_NODE%" "%ZG_R31_TOOL%" >> "%ZG_R31_LOG%" 2>&1
 set "ZG_R31_RC=%ERRORLEVEL%"
 if not "%ZG_R31_RC%"=="0" goto :observation_unverified
 >> "%ZG_R31_LOG%" echo FINAL_STATUS=PASS_R31_RECENT_OUTPUT_OBSERVED

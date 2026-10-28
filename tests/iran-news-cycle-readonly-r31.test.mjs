@@ -3,7 +3,8 @@ import assert from 'node:assert/strict';
 import {mkdtempSync,writeFileSync,readFileSync,rmSync} from 'node:fs';
 import {tmpdir} from 'node:os';
 import path from 'node:path';
-import {inspectR31} from '../scripts/iran-progress/news-display-cycle-verify-r31.mjs';
+import {pathToFileURL} from 'node:url';
+import {inspectR31,reportDirectoryForR31} from '../scripts/iran-progress/news-display-cycle-verify-r31.mjs';
 
 const now=Date.parse('2026-10-28T03:10:00Z');
 function fixture(fn){
@@ -54,6 +55,12 @@ test('R31 rejects candidate rights drift despite safe status summary',()=>fixtur
  assert.equal(observed.rightsUnverified,false);
 }));
 
+test('R31 derives report directory from its extracted module path without CMD argument',()=>{
+ const root=path.join(tmpdir(),'r31-extracted-folder');
+ const script=path.join(root,'scripts','iran-progress','news-display-cycle-verify-r31.mjs');
+ assert.equal(reportDirectoryForR31(pathToFileURL(script)),root);
+});
+
 test('R31 CMD is offline ASCII CRLF and never invokes scheduler jobs',()=>{
  const filename=path.resolve(import.meta.dirname,'..','IRAN_NEWS_R31_CYCLE_READONLY.cmd');
  const bytes=readFileSync(filename);
@@ -67,5 +74,7 @@ test('R31 CMD is offline ASCII CRLF and never invokes scheduler jobs',()=>{
  assert.match(text,/STOP_R31_OBSERVATION_REQUIRES_REVIEW/);
  assert.match(text,/E:\\ZGmini\\runtime\\node\.exe/);
  assert.match(text,/pause\s*\r?\n/i);
+ assert.match(text,/"%ZG_R31_NODE%" "%ZG_R31_TOOL%" >>/);
+ assert.doesNotMatch(text,/"%ZG_R31_TOOL%" "%~dp0"/);
  assert.doesNotMatch(text,/schtasks|\bcurl\b|PowerShell|Invoke-WebRequest|--scheduled|--collect|\/Run|\/Create|\/Change/i);
 });

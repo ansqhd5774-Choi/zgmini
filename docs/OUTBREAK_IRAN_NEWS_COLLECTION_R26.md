@@ -130,3 +130,11 @@
 - CMD 시작 즉시 별도 `IRAN_NEWS_R31_LAUNCH_RESULT.txt`에 실행 시작 표시를 **추가 기록**한다. 파일/Node 미발견, R29 결과 미검증, 성공을 각 `FINAL_STATUS`로 구분하고 모든 경로에서 `pause`를 사용해 콘솔을 유지한다. `where node.exe` 실패 시 운영 계약에 명시된 `E:\ZGmini\runtime\node.exe`만 보조 경로로 검사한다. 다른 디스크 탐색·런타임 다운로드·Node 설치는 하지 않는다.
 - Node 검사까지 도달한 경우 기존 시각별 `IRAN_NEWS_R31_CYCLE_READONLY_RESULT_*.txt`도 별도로 생성한다. 파일 미존재의 경우에도 `STOP_R31_PACKAGE_INCOMPLETE`, Node 경로 부재에는 `STOP_R31_NODE_MISSING` 등 정확한 사유가 launcher 로그에 남는다. 압축 해제 폴더가 쓰기 불가이면 콘솔에서 별도 `STOP`을 표시하고 사용자가 경로를 선택한다.
 - **정규 수집 검증 자체는 여전히 대기**한다. 보조 CMD를 실행해도 스케줄러를 강제 실행하지 않으며, 기존 사용자 PC의 점수 DB·D1·수집 후보·R15/R29 hook·UI/번역에는 쓰지 않는다.
+
+## 16. R31 FIX2 — 실제 PC 결과 로그의 파일 쓰기 오류 개선
+
+- 사용자 제출 `IRAN_NEWS_R31_LAUNCH_RESULT.txt` 내용: `R31_LAUNCH_BEGIN`, `R31_TOOL_AND_NODE_FOUND`, `R31_REPORT_WRITE_FAILED`, `FINAL_STATUS=STOP_R31_OBSERVATION_REQUIRES_REVIEW`. 따라서 **실행기 시작·모듈/Node 발견은 확인**, 결과 파일 저장은 실패. 구버전이 파일 쓰기 예외의 OS 오류 코드를 기록하지 않아 실제 Windows 오류 종류는 아직 미확정이다.
+- 설계상의 유력 원인: CMD는 디렉터리 문자열 `%~dp0`가 끝나는 백슬래시(`\`)까지 인용부호 안에 넣어 Node에 전달했다. Windows 명령행 인자 해석은 인용부호 직전의 홀수 백슬래시를 일반 문자로 해석하지 않는다. **경로 인자 전달을 완전히 제거**하고, Node가 자신의 모듈 경로 `scripts/iran-progress/`에서 ZIP 루트(두 단계 상위)를 직접 계산하도록 한다.
+- 새 패키지: `IRAN_NEWS_R31_FIX2_CYCLE_READONLY_PACKAGE.zip`, SHA-256 `68acb309067ed8578daa9fca9b7499e1e46a7db13c427217466b6038296aa0c6`. 압축 해제 후 기존 이름 `IRAN_NEWS_R31_CYCLE_READONLY.cmd`를 실행한다. FIX1과 달리 CMD 인자에 `%~dp0` 자체를 넣지 않는다.
+- 파일 저장이 다시 실패하더라도 `R31_REPORT_WRITE_FAILED_<OS_ERROR_CODE>`와 제목/URL 없는 `R31_FALLBACK_SUMMARY`를 기존 `IRAN_NEWS_R31_LAUNCH_RESULT.txt`에 남긴다. 보고서 작성 실패의 exit code `2`를 의도적으로 보존하여 정상 완료로 오인하지 않는다.
+- 자료 파일·수집기·작업 스케줄러·뉴스 후보·SQLite·D1·점수·UI/번역에 쓰지 않는다. 본 패키지의 관측 대상은 **R29가 과거에 남긴 파일**이며 R29 자동 수집 성패는 여전히 실제 정규 회차 증거가 있어야 판정한다.
