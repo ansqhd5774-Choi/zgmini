@@ -6,6 +6,7 @@ import {releaseImportance,rowsForSelectedDay} from '../../lib/market-calendar-im
 import {cftcCotReleaseAt} from '../../lib/market-calendar-cftc-time.mjs';
 import {ticReleaseAt} from '../../lib/market-calendar-tic-time.mjs';
 import snapshot from '../guides/release-snapshot.json';
+import EarningsDisplayClient from './earnings-display-client';
 
 type EventKind='economic'|'earnings';
 type Country='US'|'KR';
@@ -139,6 +140,7 @@ export default function MarketCalendar(){
  const [kind,setKind]=useState<FilterKind>('economic');
  const [country,setCountry]=useState<FilterCountry>('all');
  const [query,setQuery]=useState('');
+ const [vendorCounts,setVendorCounts]=useState<Record<string,number>>({});
  const [nowMs,setNowMs]=useState(0);
  const stripRef=useRef<HTMLDivElement>(null);
 
@@ -160,7 +162,8 @@ export default function MarketCalendar(){
  const periodRows=useMemo(()=>allRows.filter(row=>row.date>=range.start&&row.date<=range.end&&(kind==='all'||row.kind===kind)&&(country==='all'||row.country===country)&&(!query||`${row.name} ${row.category} ${row.source} ${row.country}`.toLowerCase().includes(query.trim().toLowerCase()))).sort((a,b)=>a.date.localeCompare(b.date)||(a.at??'').localeCompare(b.at??'')||a.name.localeCompare(b.name)),[allRows,range,kind,country,query]);
  const filtered=useMemo(()=>rowsForSelectedDay(periodRows,activeDate) as CalendarRow[],[periodRows,activeDate]);
  const days=useMemo(()=>Array.from({length:diffDays(range.end,range.start)+1},(_,i)=>plusDays(range.start,i)),[range]);
- const shownDates=useMemo(()=>new Set(periodRows.map(row=>row.date)),[periodRows]);
+ const vendorCount=useMemo(()=>activeDate?vendorCounts[activeDate]??0:Object.values(vendorCounts).reduce((sum,n)=>sum+n,0),[vendorCounts,activeDate]);
+ const shownDates=useMemo(()=>new Set([...periodRows.map(row=>row.date),...Object.entries(vendorCounts).filter(([,num])=>num>0).map(([day])=>day)]),[periodRows,vendorCounts]);
  const byWeek=useMemo(()=>{
   const groups=new Map<string,CalendarRow[]>();
   for(const row of filtered){const key=monday(row.date);groups.set(key,[...(groups.get(key)??[]),row]);}
@@ -212,9 +215,10 @@ export default function MarketCalendar(){
   </div>
   <div className="mc-head" aria-hidden="true"><span className="mc-importance-heading" title="발표 예상 시장 영향도: 별 1개 일반, 2개 관심, 3개 핵심"><Star size={12} fill="currentColor" aria-hidden="true"/>중요도</span><span>날짜</span><span>시간</span><span>국가</span><span>발표 일정</span><span>발표</span><span>예상</span><span>이전</span><span>남은 시간</span></div>
   <div className="mc-results" aria-live="polite">
+   <EarningsDisplayClient start={range.start} end={range.end} activeDate={activeDate} query={query} enabled={(kind==='all'||kind==='earnings')&&country!=='KR'} onCounts={setVendorCounts}/>
    {loadState!=='ready'&&<p className="mc-data-state">{loadState==='loading'?'공식 일정 저장본 확인 중':'공식 일정 저장본 조회 실패'} · 수동 확인 자료와 분리하여 표시합니다.</p>}
    {loadState==='ready'&&feed?.status!=='READY'&&<p className="mc-data-state">공식 일정 저장본 미확정 · 기존 확인 자료는 확인일 기준으로 표시합니다.</p>}
-   {!filtered.length&&<div className="mc-empty"><strong>{activeDate?'선택한 날짜에 일정이 없습니다.':'표시할 일정이 없습니다.'}</strong><span>{kind==='earnings'&&!feed?.sources?.earnings?'기업 실적 발표일은 검증된 수집 경로가 연결되지 않았습니다.':country==='KR'?'한국 공식 발표 일정은 수집 경로 연결 전입니다.':'해당 조건에 확인된 공식 발표 일정이 없습니다.'}</span></div>}
+   {!filtered.length&&!vendorCount&&<div className="mc-empty"><strong>{activeDate?'선택한 날짜에 일정이 없습니다.':'표시할 일정이 없습니다.'}</strong><span>{kind==='earnings'&&!feed?.sources?.earnings?'기업 실적 발표일은 검증된 수집 경로가 연결되지 않았습니다.':country==='KR'?'한국 공식 발표 일정은 수집 경로 연결 전입니다.':'해당 조건에 확인된 공식 발표 일정이 없습니다.'}</span></div>}
    {byWeek.map(([weekStart,rows])=><div key={weekStart}>
     <div className="mc-week"><strong>{activeDate?`${Number(activeDate.slice(5,7))}월 ${Number(activeDate.slice(8,10))}일`:weekTitle(weekStart)}</strong><span>{rows.length}개 일정</span></div>
     {rows.map((row,index)=>{const remain=remaining(row);const firstOfDay=rows.findIndex(item=>item.date===row.date)===index;return <article key={row.key} id={firstOfDay?`mc-day-${row.date}`:undefined} className="mc-row">

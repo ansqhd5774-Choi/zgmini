@@ -3,6 +3,7 @@
 import {publicFeedStore} from '../../worker/public-feed-store.mjs';
 import {collectEarningsApiWindow} from '../../lib/earnings-api-calendar.mjs';
 import {readEarningsApiPrivateProjection,EARNINGS_API_R30_PRIVATE_KEY} from '../../lib/earnings-api-private-projection.mjs';
+import {earningsDisplaySnapshot,EARNINGS_API_DISPLAY_KEY} from '../../lib/earnings-api-display.mjs';
 
 const KEY='release-calendar';
 const STATUS_KEY=`${KEY}:earnings-api:status`;
@@ -23,6 +24,7 @@ export async function collectEarningsApiLocal({db,apiKey,now=Date.now(),fetchImp
  if(!result.skipped)await store.writeInput(STATUS_KEY,result.state,now);
  let projectionStatus='SKIPPED_UNCHANGED';
  let projectionCount=null;
+ let displayStatus='SKIPPED_UNCHANGED';
  if(!result.skipped&&result.state.status==='READY'){
   try{
    // No extra network calls: only the already persisted private R29 inputs.
@@ -32,9 +34,18 @@ export async function collectEarningsApiLocal({db,apiKey,now=Date.now(),fetchImp
    const saved=await store.readInput(EARNINGS_API_R30_PRIVATE_KEY);
    if(JSON.stringify(saved?.body)!==JSON.stringify(projection))throw Error('R30_PRIVATE_READBACK_FAILED');
    projectionStatus='READY_PRIVATE';projectionCount=projection.recordCount;
+   // Only rendered, escaped HTML for this site's calendar. No public JSON
+   // vendor rows and no source feed promotion to release-calendar.
+   try{
+    const display=earningsDisplaySnapshot(projection);
+    await store.writeOutput(EARNINGS_API_DISPLAY_KEY,display,now);
+    const published=await store.readOutput(EARNINGS_API_DISPLAY_KEY);
+    if(JSON.stringify(published?.body)!==JSON.stringify(display))throw Error('R31_DISPLAY_READBACK_FAILED');
+    displayStatus='READY_DISPLAY';
+   }catch{displayStatus='DISPLAY_FAILED';}
   }catch{projectionStatus='PRIVATE_PROJECTION_FAILED';}
  }
  return {status:result.state.status,recordCount:result.state.recordCount??0,
   providerRequests:result.providerRequests,skipped:result.skipped??false,
-  publicationStatus:'HELD_UNCONFIRMED',projectionStatus,projectionCount};
+  publicationStatus:'HELD_UNCONFIRMED',projectionStatus,projectionCount,displayStatus};
 }
