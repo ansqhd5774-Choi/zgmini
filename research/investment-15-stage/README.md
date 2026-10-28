@@ -15,7 +15,7 @@
 ## 2026-10-27 사용자 정정 — Ollama 자동 실행 프로세스 개발 최우선
 
 - **현재 작업의 목적은 ChatGPT가 산업을 대신 조사·판단하는 것이 아니라, 프로그램이 출처를 수집하고 Ollama가 원문을 추출·분류하도록 훈련(프롬프트/회귀 시험)하며 검증·집계·다음 단계 전달을 자동화하는 것이다.**
-- 최우선 기준: [Stage04 Ollama 자율 처리 프로그램 계약](STAGE04_OLLAMA_AUTONOMOUS_PROCESS_CONTRACT_20261027.md). **R70 1차 코드:** [R30 재사용·출처 게이트·Windows 실행기](STAGE04_OLLAMA_FORECAST_PIPELINE_R70_20261028.md). **R71 3발행사 통합 구현:** [SkyQuest·Precedence 원문+Ollama 연결](STAGE04_OLLAMA_THREE_PUBLISHER_R71_20261028.md). R70 9/9 + R71 발행사 9/9 + 통합 실행기 3/3 = 개발 모의 시험 21/21 PASS. **TBRC·SkyQuest·Precedence 3개 어댑터 코드 연결 완료, Windows R71 실측·실제 2발행사 평균 성공은 미검증**이다.
+- 최우선 기준: [Stage04 Ollama 자율 처리 프로그램 계약](STAGE04_OLLAMA_AUTONOMOUS_PROCESS_CONTRACT_20261027.md). **R70 1차 코드:** [R30 재사용·출처 게이트·Windows 실행기](STAGE04_OLLAMA_FORECAST_PIPELINE_R70_20261028.md). **R71 3발행사 통합 구현:** [SkyQuest·Precedence 원문+Ollama 연결](STAGE04_OLLAMA_THREE_PUBLISHER_R71_20261028.md). R70 9/9 + R71 발행사 9/9 + 통합 실행기 3/3 = 개발 모의 시험 21/21 PASS. **TBRC·SkyQuest·Precedence 3개 어댑터 코드 연결 완료, Windows R71 실측·실제 2발행사 평균 성공은 미검증**이다. **R72 진단·독립 압축 배포:** [Windows 전체 패키지·오류 로그·결과 사전 생성](STAGE04_R72_WINDOWS_BUNDLE_DIAGNOSTICS_20261028.md). R71 CMD만 별도 다운로드할 때 의존 모듈 미포함으로 실행 전에 실패 가능한 문제를 보완. R72 단위 테스트 3/3 통과, 압축본 전체 13개 파일 검증 및 임시 폴더 모듈 import 통과. Windows 실측 결과는 아직 미수신.
 - R69의 과거 통계 결합과 R63/R67 수동 연구 평균은 **이력/회귀검증 참고**로만 둔다. R69 CMD 재실행, 채팅 중 수동 조사 및 새 표 계산, 미승인 G/D/M 시뮬레이션은 현재 개발 선행 조건이 아니다.
 - 매 작업은 실제 코드·검증을 증거로 전용 브랜치에 커밋한다. 문서 수정은 프로그램 완성이나 PC 설치·실행 성공이 아니다.
 
