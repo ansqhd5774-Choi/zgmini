@@ -10,6 +10,7 @@
 - `stage05-fusion-core.test.mjs`: Node 기본 테스트, **완전히 가상의 독립 fixture** 사용. 테스트 통과는 운영 데이터 완전성 통과가 아니다.
 - `stage05-fusion-readonly.mjs`: `--audit-live` 기존 M2 공식 공개 피드 3곳을 그대로 조회해 커버리지 진단(HTTP GET만), `--input <json>`은 01~04 확정·검증 스냅샷에 대해 연구식 계산, `--audit-contract` 네트워크 없는 정적 입력 계약 보고.
 - `STAGE05_FUSION_READONLY.cmd`: Windows CMD 진단 실행. Node 우선순위 `E:\ZGmini\runtime\node.exe`, 아니면 PATH의 `node`. 읽기 전용이며 비정상/결측 시 자동 재시도 없음. Exit 0=입력 계산 실행, 2=진단만/자료 부족, 1=실행 오류.
+- **R79 후속 변경:** 기본 CMD는 `--audit-existing-live --output-dir`로 실행해 R67 승인 테마 9개와 R17 역사 근거를 연결하고, 새 이름의 JSON 로그를 남긴다. [R79 상세](README_STAGE05_EXISTING_INPUT_R79_20261028.md).
 
 ### 명령
 
