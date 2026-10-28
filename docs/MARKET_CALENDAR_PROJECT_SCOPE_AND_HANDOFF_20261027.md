@@ -194,9 +194,9 @@
 ## 18. R22 연준 공식 일정 확대 — 원문 검증·코드 반영·PC 설치 대기 (2026-10-28)
 
 - 사용자 업로드 `MARKET_CALENDAR_R22_FED_SOURCE_EXPORT_RESULT.txt` 확인: 공식 연준 월간 2026-10/11/12, 연준 통계발표, FOMC 5개 원문 모두 HTTP 200. 공식 실 HTML `cal-nojs` 구조에 맞춘 추출이 월별 62/58/64행(총 184행)으로 성공했다. **이는 로컬 원문 파서 산출 건수이며 운영 DB·사이트 공개 건수가 아니다.**
-- 신규 `fed_calendar` source: FOMC 의사록, 베이지북, 통계발표 일정을 공식 출처 URL과 미국 현지 일자 기준으로 수집. 기존 G.17, FOMC 기준금리 결정, 기자회견은 중복 등록하지 않는다. G.20 잠정 발표일은 잠정 표시한다. 기존 Census R21·BLS·BEA·G17 경로를 보존한다.
+- 신규 `fed_calendar` source: FOMC 의사록, 베이지북, 통계발표 일정을 공식 출처 URL과 미국 현지 일자 기준으로 수집. 달이 바뀌어 조회 범위에서 빠진 이전 달 공식 일정도 공개 이력에서 보존. 기존 G.17, FOMC 기준금리 결정, 기자회견은 중복 등록하지 않는다. G.20 잠정 발표일은 잠정 표시한다. 기존 Census R21·BLS·BEA·G17 경로를 보존한다.
 - 작업한 코드: `staging/market-calendar/r22-fed-calendar/lib/release-calendar.mjs` 및 `staging/market-calendar/r22-fed-calendar/scripts/pc-writer/release-calendar.mjs`에 후보를 두고 `app/market-calendar/market-calendar-client.tsx`에서 연준 새 출처 이벤트 표시만 허용. 원격 브랜치에 이미 들어온 중요도/선택일 표시 기능은 덮어쓰지 않고 유지했다. 페이지 제목·경로·H1·메타·색인 정책·기존 공개 점수에 변경 없음.
-- 로컬 검증: Fed 단계 회귀 테스트 6/6 PASS, 2파일 설치 안전성 테스트 4/4 PASS, `npm run typecheck` PASS, CMD ASCII CRLF, ZIP 무결성 PASS. 사용자 승인 PC HEAD `b5e860d09ac87087e158193613425b146fa9a1e5`, 고정 worktree ID `d0a4b3cb8b95`, 기존 파서·수집기 SHA를 검사한다.
-- 사용자 전달물: `MARKET_CALENDAR_R22_FED_PC_INSTALL_20261028.zip`. 압축 해제 후 `MARKET_CALENDAR_R22_FED_APPLY.cmd` 실행, 결과 `MARKET_CALENDAR_R22_FED_APPLY_RESULT.txt` 재업로드. installer는 승인된 두 파일만 백업/로컬 커밋하여 config.source 갱신; 수집·게시·DB·예약 작업·GitHub push·main 병합 없음. 기존 락·출처 변경시 STOP.
+- 로컬 검증: Fed 단계 회귀 테스트 7/7 PASS(이전 달 이력 보존 추가), 2파일 설치 안전성 테스트 4/4 PASS, `npm run typecheck` PASS, CMD ASCII CRLF, ZIP 무결성 PASS. 사용자 승인 PC HEAD `b5e860d09ac87087e158193613425b146fa9a1e5`, 고정 worktree ID `d0a4b3cb8b95`, 기존 파서·수집기 SHA를 검사한다.
+- 사용자 전달물: 최종 `MARKET_CALENDAR_R22_FED_PC_INSTALL_V2_20261028.zip` (과거 일정 보존 수정 반영; 기존 V1 사용 금지). 압축 해제 후 `MARKET_CALENDAR_R22_FED_APPLY.cmd` 실행, 결과 `MARKET_CALENDAR_R22_FED_APPLY_RESULT.txt` 재업로드. installer는 승인된 두 파일만 백업/로컬 커밋하여 config.source 갱신; 수집·게시·DB·예약 작업·GitHub push·main 병합 없음. 기존 락·출처 변경시 STOP.
 - **현재 미완료:** 실제 PC R22 적용 결과/사용자 운영 확인. `INSTALLED` 결과 TXT 수신 전에는 PC 적용 성공·정규 자동 수집·공개 사이트 반영 성공으로 표기 금지. 기존 R21 예약 수집 상태를 변경하거나 강제 가동하지 않는다.
 - 전용 브랜치 `codex/zgmini-gpt-workspace-20261025`만 유지. 다른 작업자 브랜치·main으로 전환하거나 병합하지 않는다.
