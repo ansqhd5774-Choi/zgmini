@@ -42,3 +42,11 @@
 - 사용자가 무료 계정 API 키를 발급받으면 PC의 보호된 환경 설정으로만 전달받는다. 테스트/문서/채팅/Git에 노출하지 않는다.
 - 실제 인증 API 한 건으로 회사 수/날짜 구간/공식 확정 플래그를 실측한다. 이후 변경 파일의 이전 승인 SHA·백업·PC lock 검사 안전 설치 및 정규 수집·게시를 **별도 단계**로 진행한다.
 - 사용자 역할: 공개 사이트 및 정규 예약 작업의 실시간 모니터링은 사용자 담당. 개발 담당이 별도 모니터링을 추가하지 않는다.
+
+## R29 API 키 등록용 CMD 준비 (사용자 요청)
+
+- `scripts/pc-writer/MARKET_CALENDAR_R29_EARNINGSAPI_KEY_REGISTER.cmd`와 함께 제공되는 `market-calendar-r29-key-register.mjs`를 한 폴더에서 실행한다.
+- 승인된 Windows 런타임 `E:\ZGmini\runtime\node.exe`를 사용하며, 기존 `ZGMINI_PC_HOME` 또는 `E:\ZGmini\data\pc-writer` 아래 **기존** `providers.env`만 변경한다. 파일/디렉터리가 없으면 새로 만들지 않고 중단한다.
+- 키는 콘솔에서 숨김 입력하며 명령행 인수·로그·결과·Git에 넣지 않는다. `EARNINGS_API_KEY` 한 항목만 바꾸고 다른 provider 값을 파싱 전후 비교한다.
+- 실제 수정 전에 `providers.env.r29-*.bak`를 **동일 보안 폴더**에 보존한다. 기존 파일을 직접 갱신하여 Windows 파일 ACL을 유지한다. 이미 같은 키인 경우 재기록·백업하지 않는다.
+- 이 CMD는 **키 등록만 수행**한다. R29 staged 수집기는 기본 비활성이며 PC 실제 설치, 정규 수집, 상업적 재배포 권한, 공식/예상 구분, D1 게시, Cloudflare 배포를 완료하지 않는다.
