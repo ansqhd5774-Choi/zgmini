@@ -64,7 +64,7 @@ export function livePublisherSlugProbes(publisher, keyword) {
   return slugs.map(s => `${base}${s}-market`).filter(url => officialReportUrl(url, publisher));
 }
 
-function sourcePeriod(excerpt) {
+function sourcePeriods(excerpt) {
   const normalized = String(excerpt).replace(/&(?:ndash|mdash|minus);/gi, '-')
     .replace(/[\u2010-\u2015\u2212]/g, '-');
   const periods = [...normalized.matchAll(/\b(20\d{2})\s*(?:-|to|through)\s*(20\d{2})\b/gi)]
@@ -72,7 +72,22 @@ function sourcePeriod(excerpt) {
       Number(match[2]) - Number(match[1]) <= 20)
     .map(match => [Number(match[1]), Number(match[2])]);
   const unique = [...new Map(periods.map(pair => [pair.join('-'), pair])).values()];
-  return unique.length === 1 ? unique[0] : null;
+  return unique;
+}
+
+function sourcePeriod(excerpt) {
+  const periods = sourcePeriods(excerpt);
+  return periods.length === 1 ? periods[0] : null;
+}
+
+/** Main report lead is separated from regional and product segment sections. */
+export function reportLeadEvidence(html) {
+  const h1 = /<h1\b[^>]*>[\s\S]*?<\/h1\s*>/i.exec(String(html));
+  if (!h1) return '';
+  const following = String(html).slice(h1.index + h1[0].length);
+  const nextSection = following.search(/<h[2-6]\b/i);
+  return pagePlainText(nextSection >= 0 ? following.slice(0, nextSection) :
+    following.slice(0, 8_000)).slice(0, 3_500);
 }
 
 function failure(id, keyword, reason, partial = {}) {
@@ -190,7 +205,11 @@ async function inspectOnePublisherReport(publisher, url, keyword, {
     return failure(publisher.id, keyword, 'SUBMARKET_OR_PROXY_REPORT_EXCLUDED', {
       url, model, ...searchMeta, report_requests: reportCount, report_ms: reportMs });
   }
-  const candidates = extractCagrCandidates(evidence);
+  // Ollama considers the whole-market introductory statement first. A regional
+  // or fastest-growing segment farther down the page must not be treated as
+  // a contradiction of the lead's global CAGR for the same period.
+  const leadCandidates = extractCagrCandidates(reportLeadEvidence(html));
+  const candidates = leadCandidates.length ? leadCandidates : extractCagrCandidates(evidence);
   if (!candidates.length) {
     return failure(publisher.id, keyword, 'SOURCE_NO_LITERAL_CAGR', {
       url, model, ...searchMeta, report_requests: reportCount, report_ms: reportMs });
@@ -215,6 +234,14 @@ async function inspectOnePublisherReport(publisher, url, keyword, {
       report_ms: reportMs, ollama_ms: modelMs, ollama_generations: 1 });
   }
   const chosen = candidates[selected.index];
+  if (sourcePeriods(chosen.excerpt).length > 1) {
+    return { ...failure(publisher.id, keyword, 'SOURCE_FORECAST_PERIODS_DISAGREE', {
+      url, model, ...searchMeta, report_requests: reportCount,
+      report_ms: reportMs, ollama_ms: modelMs, ollama_generations: 1 }),
+      state: 'SOURCE_CONFLICT', source_audit: 'SOURCE_CONFLICT',
+      source_conflict_reason: 'MULTIPLE_EXPLICIT_FORECAST_PERIODS_IN_SAME_CAGR_EXCERPT',
+      model_candidate_pct: chosen.pct };
+  }
   const period = sourcePeriod(chosen.excerpt);
   if (!period || !/\b(?:forecast|projected|expected|estimated|by 20\d{2})\b/i.test(chosen.excerpt)) {
     return failure(publisher.id, keyword, 'FORECAST_PERIOD_NOT_EXPLICIT_IN_CAGR_EXCERPT', {
