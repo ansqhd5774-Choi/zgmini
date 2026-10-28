@@ -56,6 +56,20 @@ type BeaUnitPayload={
   value:number;previousValue:number;change:number;history:BeaUnitPoint[];
  };
 };
+type BeaMfgHistoryPoint={period:string;periodEnd:string;profitsBillionsUsdAnnualRate:number};
+type BeaMfgPayload={
+ schemaVersion:string;status:string;historicalMode:string;
+ freshness?:{status:string;reason:string|null};
+ indicator?:{
+  id:string;seriesId:string;source:string;unit:string;adjustment:string;
+  profitsDefinition:string;value:number;observationPeriod:string;
+  observationPeriodEnd:string;yearAgoPeriod:string;yearAgoPeriodEnd:string;
+  currentProfitsBillionsUsdAnnualRate:number;yearAgoProfitsBillionsUsdAnnualRate:number;
+  history:BeaMfgHistoryPoint[];
+ };
+};
+const MFG_SCHEMA="earnings-bea-manufacturing-profits-r1-v1";
+const MFG_SERIES="N400RC1Q027SBEA";
 const COST_SCHEMA="earnings-companion-c-r4-v1";
 const costIndicators=[
  {id:"bls_ppi_final_demand_yoy_sa",name:"최종수요 생산자물가 상승률",description:"최종수요 생산자물가의 전년 대비 변화",series:"WPSFD4"},
@@ -83,6 +97,27 @@ const unitUsable=(payload:BeaUnitPayload|null|undefined)=>Boolean(
 );
 const unitFormat=(value:number|null|undefined)=>finiteCost(value)?"$"+value.toFixed(3):"—";
 const unitChange=(value:number|null|undefined)=>finiteCost(value)?(value>0?"+":"")+value.toFixed(3)+"달러":"—";
+const mfgProfitFormat=(value:number|null|undefined)=>finiteCost(value)?
+ value.toLocaleString("ko-KR",{minimumFractionDigits:2,maximumFractionDigits:2})+" 십억 달러":"—";
+const mfgYoYFormat=(value:number|null|undefined)=>finiteCost(value)?
+ (value>0?"+":"")+value.toFixed(2)+"%":"—";
+const mfgUsable=(payload:BeaMfgPayload|null|undefined)=>Boolean(
+ payload?.schemaVersion===MFG_SCHEMA&&payload.status==="READY"&&
+ payload.historicalMode==="CURRENT_VINTAGE_NOT_PIT"&&payload.freshness?.status==="FRESH"&&
+ payload.indicator?.id==="bea_manufacturing_corporate_profits_yoy"&&
+ payload.indicator.seriesId===MFG_SERIES&&payload.indicator.unit==="PERCENT_YOY"&&
+ payload.indicator.adjustment==="SAAR"&&
+ payload.indicator.profitsDefinition==="WITH_INVENTORY_VALUATION_ADJUSTMENT"&&
+ quarterEnd(payload.indicator.observationPeriodEnd)&&quarterEnd(payload.indicator.yearAgoPeriodEnd)&&
+ finiteCost(payload.indicator.value)&&finiteCost(payload.indicator.currentProfitsBillionsUsdAnnualRate)&&
+ finiteCost(payload.indicator.yearAgoProfitsBillionsUsdAnnualRate)&&
+ payload.indicator.yearAgoProfitsBillionsUsdAnnualRate>0&&
+ Math.abs(payload.indicator.value-(payload.indicator.currentProfitsBillionsUsdAnnualRate/payload.indicator.yearAgoProfitsBillionsUsdAnnualRate-1)*100)<1e-8&&
+ Array.isArray(payload.indicator.history)&&payload.indicator.history.length===5&&
+ payload.indicator.history.every(point=>quarterEnd(point.periodEnd)&&finiteCost(point.profitsBillionsUsdAnnualRate))&&
+ payload.indicator.history[0].periodEnd===payload.indicator.yearAgoPeriodEnd&&
+ payload.indicator.history[4].periodEnd===payload.indicator.observationPeriodEnd
+);
 const BEA_SOURCE="BEA NIPA A051RC";
 const quarterEnd=(value:unknown):value is string=>{
  if(!validDate(value))return false;
@@ -137,6 +172,10 @@ export default function EarningsRiskOnlyPanel(){
   const unitReady=unitUsable(unitPayload);
   const unitRow=unitReady?unitPayload?.indicator:null;
   const unitStatus=unitLoading?"연결 확인 중":unitReady?"연결 완료":unitError?"자료 확인 대기":"자료 확인 대기";
+  const {payload:mfgPayload}=useStoredIndex<BeaMfgPayload>("/api/earnings-recession-bea-manufacturing-profit");
+  const mfgReady=mfgUsable(mfgPayload);
+  const mfgRow=mfgReady?mfgPayload?.indicator:null;
+  const mfgHistory=mfgRow?.history.map(point=>({value:point.profitsBillionsUsdAnnualRate}))??[];
  const costValid=costPayload?.schemaVersion===COST_SCHEMA&&
   costPayload?.historicalMode==="CURRENT_RETRIEVAL_NOT_PIT"&&Array.isArray(costPayload.rows);
  const costRows=new Map<string,CostRow>(
@@ -235,7 +274,7 @@ export default function EarningsRiskOnlyPanel(){
   <section className="inflation-indicator-section earnings-r2-indicators" aria-labelledby="earnings-risk-factor-title">
    <header><div><p className="cnn-eyebrow">EARNINGS RECESSION RISK FACTORS</p>
     <h2 id="earnings-risk-factor-title">실적 침체 분석 지표</h2></div>
-     <p>기존 4개는 실적 침체 방어 진단 점수, 추가 5개는 BLS 비용 압력 원자료, 2개는 BEA 기업이익 원자료입니다. 추가 원자료는 진단 점수에 합산하지 않습니다. <span className="earnings-r2-cost-status" role="status">{costStatus} · BEA 기업이익 {beaReady?"연결 완료":"자료 확인 대기"} · BEA 단위이익 {unitStatus}</span></p>
+     <p>기존 4개는 실적 침체 방어 진단 점수, 추가 5개는 BLS 비용 압력 원자료, {mfgReady?"3개":"2개"}는 BEA 기업이익 원자료입니다. 추가 원자료는 진단 점수에 합산하지 않습니다. <span className="earnings-r2-cost-status" role="status">{costStatus} · BEA 기업이익 {beaReady?"연결 완료":"자료 확인 대기"} · BEA 단위이익 {unitStatus}</span></p>
    </header>
    <div className="inflation-table-wrap earnings-r2-table-wrap"><table className="inflation-indicator-table earnings-r2-table">
     <colgroup><col className="earnings-col-favorite"/><col className="earnings-col-name"/><col className="earnings-col-content"/><col className="earnings-col-criterion"/><col className="earnings-col-prior"/><col className="earnings-col-current"/><col className="earnings-col-release"/><col className="earnings-col-judgement"/><col className="earnings-col-spark"/><col className="earnings-col-help"/></colgroup>
@@ -297,7 +336,25 @@ export default function EarningsRiskOnlyPanel(){
        <p>최근 저장한 원자료의 개정분을 보여주며 발표 당시 확정 자료(PIT)는 아닙니다. 실적 침체 방어 점수에도 합산하지 않습니다.</p>
        <a href="https://fred.stlouisfed.org/series/A463RD3Q052SBEA" target="_blank" rel="noopener noreferrer">BEA·FRED 원자료</a>
       </ContentHelp></td>
-     </tr></tbody>
+     </tr>
+     {mfgReady&&mfgRow&&<tr className="earnings-r2-cost-row" data-source="bea-manufacturing-profit">
+      <td><EarningsFavoriteButton id="bea_manufacturing_corporate_profits_yoy" label="미국 제조업 기업이익 증가율"/></td>
+      <th scope="row">미국 제조업 기업이익 증가율</th>
+      <td>미국 제조업(국내 비금융)의 재고평가 조정 기업이익 전년 대비 증가율</td>
+      <td>BEA 제조업 참고<small>점수 미반영</small></td>
+      <td className="earnings-r2-prior">{mfgProfitFormat(mfgRow.yearAgoProfitsBillionsUsdAnnualRate)}</td>
+      <td className="earnings-r2-value"><strong>{mfgProfitFormat(mfgRow.currentProfitsBillionsUsdAnnualRate)}</strong>
+       <small>전년 동기 대비 {mfgYoYFormat(mfgRow.value)}</small></td>
+      <td className="earnings-r2-release"><strong>분기</strong>
+       <small>관측 {mfgRow.observationPeriodEnd}</small></td>
+      <td>참고</td>
+      <td className="earnings-r2-spark"><CostSpark history={mfgHistory} label="BEA 제조업 기업이익 최근 5개 분기 금액 추이"/></td>
+      <td><ContentHelp label="미국 제조업 기업이익 증가율 도움말">
+       <p>BEA NIPA 표 6.16D의 미국 국내 비금융 제조업 기업이익(N400RC)입니다. 재고평가 조정이 적용된 분기 자료의 계절조정 연율(SAAR), 단위는 십억 달러입니다.</p>
+       <p>전년 동기 대비 일반 증가율이며 대칭 변화율·영업이익률이 아닙니다. 현행 개정자료(발표 당시 확정 빈티지 아님)이고 실적 침체 진단 점수에는 반영하지 않습니다.</p>
+       <a href="https://fred.stlouisfed.org/series/N400RC1Q027SBEA" target="_blank" rel="noopener noreferrer">BEA·FRED 원자료</a>
+      </ContentHelp></td>
+     </tr>}</tbody>
    </table></div>
    <div className="earnings-r2-mobile-list">{ids.map(id=>{const factor=factors.get(id),meta=labels[id],value=factor?.score??null;return <article className="earnings-r2-mobile-card" key={id}>
      <div className="earnings-r2-mobile-head"><div className="earnings-r2-mobile-title"><EarningsFavoriteButton id={id} label={meta.name}/><div><strong>{meta.name}</strong><small>진단 구성지표</small></div></div></div>
@@ -362,8 +419,27 @@ export default function EarningsRiskOnlyPanel(){
       <div className="earnings-r2-mobile-spark">
        <span>최근 이력</span>{unitReady&&unitRow?<CostSpark history={unitRow.history} label="BEA 비금융기업 단위이익 최근 5개 분기 추이"/>:<span className="earnings-r2-cost-chart-empty">이력 확인 필요</span>}
       </div>
-     </article></div>
-    <p className="earnings-r2-cost-footnote">BLS 저장 관측값은 수집 당시의 자료로, 잠정 추정치나 위험 점수가 아닙니다. 같은 시계열의 상승률과 지수를 각각 표시한 항목은 별도의 독립 근거로 계산하지 않습니다. BEA 기업이익 변화율은 일반 전년비 성장률과 다른 대칭 변화율이며, BEA 비금융기업 단위이익은 달러/실질 부가가치 단위로 표시합니다. 모두 저장 당시 개정분이며 진단 점수에는 반영하지 않습니다.</p>
+     </article>
+     {mfgReady&&mfgRow&&<article className="earnings-r2-mobile-card earnings-r2-cost-mobile-card" data-source="bea-manufacturing-profit">
+      <div className="earnings-r2-mobile-head"><div className="earnings-r2-mobile-title">
+       <EarningsFavoriteButton id="bea_manufacturing_corporate_profits_yoy" label="미국 제조업 기업이익 증가율"/><div>
+        <strong>미국 제조업 기업이익 증가율</strong><small>BEA · 전년비 · 점수 미반영</small>
+       </div></div><ContentHelp label="미국 제조업 기업이익 증가율 도움말">
+        <p>재고평가 조정된 미국 국내 비금융 제조업 기업이익의 일반 전년비 증가율입니다. 금액은 십억 달러, 계절조정 연율(SAAR)입니다. 현행 개정자료이며 진단 점수에 합산하지 않습니다.</p>
+        <a href="https://fred.stlouisfed.org/series/N400RC1Q027SBEA" target="_blank" rel="noopener noreferrer">BEA·FRED 원자료</a>
+       </ContentHelp></div>
+      <p className="earnings-r2-mobile-content">미국 제조업의 전년 같은 분기 대비 기업이익 증가율</p>
+      <div className="earnings-r2-mobile-metrics">
+       <div><span>전년 동기</span><strong>{mfgProfitFormat(mfgRow.yearAgoProfitsBillionsUsdAnnualRate)}</strong></div>
+       <div><span>현재</span><strong>{mfgProfitFormat(mfgRow.currentProfitsBillionsUsdAnnualRate)}</strong>
+        <small>전년비 {mfgYoYFormat(mfgRow.value)}</small></div>
+       <div><span>관측 분기</span><strong>{mfgRow.observationPeriodEnd}</strong><small>분기 · SAAR</small></div>
+      </div>
+      <div className="earnings-r2-mobile-spark">
+       <span>최근 이력</span><CostSpark history={mfgHistory} label="BEA 제조업 기업이익 최근 5개 분기 금액 추이"/>
+      </div>
+     </article>}</div>
+    <p className="earnings-r2-cost-footnote">BLS 저장 관측값은 수집 당시의 자료로, 잠정 추정치나 위험 점수가 아닙니다. 같은 시계열의 상승률과 지수를 각각 표시한 항목은 별도의 독립 근거로 계산하지 않습니다. BEA 기업이익 변화율은 일반 전년비 성장률과 다른 대칭 변화율이며, BEA 비금융기업 단위이익은 달러/실질 부가가치 단위로 표시합니다. 모두 저장 당시 개정분이며 진단 점수에는 반영하지 않습니다. {mfgReady?"제조업 기업이익은 재고평가 조정분의 일반 전년비 증가율이며, 금액은 십억 달러·계절조정 연율(SAAR)입니다.":""}</p>
   </section>
   <a className="cnn-return-cta" href="/">← 메인 대시보드로 돌아가기</a>
  </>;
