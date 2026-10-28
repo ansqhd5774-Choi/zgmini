@@ -1,6 +1,7 @@
 // R23 inert stage. Parse dates explicitly printed on official EIA pages.
 // No cadence-based future date prediction. Existing 5-field contract only.
 export const EIA_SOURCE_URLS=Object.freeze({
+ 'wpsr-json':'https://www.eia.gov/petroleum/supply/weekly/includes/wpsr-calendar.json',
  'wpsr-schedule':'https://www.eia.gov/petroleum/supply/weekly/schedule.php',
  'wngsr-schedule':'https://ir.eia.gov/ngs/schedule.html',
  'steo-schedule':'https://www.eia.gov/outlooks/steo/release_schedule.php',
@@ -31,6 +32,33 @@ const cells=row=>[...row.matchAll(/<t[dh]\b[^>]*>([\s\S]*?)<\/t[dh]>/gi)].map(m=
 const candidateRows=table=>[...table.matchAll(/<tr\b[^>]*>([\s\S]*?)<\/tr>/gi)].map(m=>cells(m[1]));
 const event=(id,date,title,sourceUrl)=>({id,date,title,source:'eia',sourceUrl});
 const dedupe=arr=>[...new Map(arr.map(e=>[e.id+':'+e.date,e])).values()].sort((a,b)=>a.date.localeCompare(b.date));
+
+// The official WPSR page loads this JSON in its own front-end. Actual PC
+// capture: 110 release rows, 2026-01 to 2028-01. Five historical ad-hoc
+// repost rows use non-standard times (13:00, 13:50, 14:45, 15:10, 15:45).
+// A market schedule must not mistake these reposts for regular weeklies.
+export function parseEiaWpsrCalendarJson(input,{fromDate='2026-01-01'}={}){
+ if(!dateValid(fromDate))throw Error('EIA_INPUT_INVALID');
+ let calendar;
+ try{calendar=typeof input==='string'?JSON.parse(input):input;}catch{throw Error('EIA_WPSR_JSON_INVALID');}
+ if(!Array.isArray(calendar)||calendar.length<1||calendar.length>1000)throw Error('EIA_WPSR_JSON_SHAPE_INVALID');
+ const results=[],seen=new Set();
+ for(const row of calendar){
+  if(!row||typeof row!=='object'||!dateValid(row.release_date)||!dateValid(row.data_for_date)||
+   typeof row.holiday_delayed!=='boolean'||typeof row.release_time!=='string')continue;
+  // Conservative canonical-report filter, not a claim that an ad-hoc posting
+  // is fictitious. Other times belong to a separate publication history.
+  if(row.release_time!=='10:30'&&row.release_time!=='12:00')continue;
+  if(row.release_date<fromDate||seen.has(row.release_date))continue;
+  if(Date.parse(row.data_for_date+'T00:00:00Z')>Date.parse(row.release_date+'T00:00:00Z'))continue;
+  seen.add(row.release_date);
+  const holiday=row.holiday_delayed===true?' · 휴일 조정':'';
+  results.push(event('eia-wpsr',row.release_date,
+   `미국 주간 석유재고(WPSR)${holiday} · ET ${row.release_time}`,EIA_SOURCE_URLS['wpsr-json']));
+ }
+ if(!results.length)throw Error('EIA_WPSR_CANONICAL_DATES_EMPTY');
+ return dedupe(results);
+}
 
 export function parseEiaScheduleHtml(html,kind,{fromDate='2026-01-01'}={}){
  if(typeof html!=='string'||html.length<100||!dateValid(fromDate))throw Error('EIA_INPUT_INVALID');
