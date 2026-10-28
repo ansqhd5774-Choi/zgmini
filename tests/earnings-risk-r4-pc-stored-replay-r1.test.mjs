@@ -4,6 +4,7 @@ import assert from "node:assert/strict";
 import {readFileSync} from "node:fs";
 import {readStoredEarningsRiskFourFactor,RISK_R4_PERIOD_RECONSTRUCTION} from "../lib/market-score/earnings-recession-stored-r4-pc-r1.mjs";
 import {buildEarningsE1R4} from "../lib/market-score/earnings-e1-r4.mjs";
+import {buildRiskFourRawPayload} from "../lib/market-score/earnings-risk-four-raw-source-r1.mjs";
 
 const issuerIds=Array.from({length:500},(_,i)=>String(i+1).padStart(10,"0"));
 const periods=["2025-06-30","2025-09-30","2025-12-31","2026-03-31","2026-06-30"];
@@ -72,6 +73,24 @@ test("PC bridge blocks absent or invalid source and never substitutes a legacy s
  assert.equal(tooEarly.status,"PARTIAL");
  assert.equal(tooEarly.score,null);
  assert.equal(db.getWrites(),0);
+});
+test("opt-in raw replay uses same persisted SEC issuer rows without changing diagnostic",async()=>{
+ const db=mockDb();
+ const plain=await readStoredEarningsRiskFourFactor({db,asOf:"2026-10-20"});
+ const observed=await readStoredEarningsRiskFourFactor({db,asOf:"2026-10-20",includeRaw:true});
+ assert.equal(db.getWrites(),0);
+ assert.equal(observed.score,plain.score);
+ assert.deepEqual(observed.factors,plain.factors);
+ assert.equal(plain.rawFactors,undefined);
+ assert.equal(observed.rawFactors.length,4);
+ const payload=buildRiskFourRawPayload(observed,{now:Date.parse("2026-10-28T00:00:00Z")});
+ assert.equal(payload.financialPeriodEnd,"2026-06-30");
+ assert.deepEqual(payload.factors.map(x=>x.id),["epsGrowth","margin","revenueGrowth","earningsGrowthBreadth"]);
+ assert.ok(Math.abs(payload.factors[0].value-7.6)<1e-10);
+ assert.ok(Math.abs(payload.factors[0].previousValue-6.6)<1e-10);
+ assert.equal(payload.factors[3].value,100);
+ assert.deepEqual(payload.history.map(x=>x.periodEnd),["2025-06-30","2025-09-30","2026-03-31","2026-06-30"]);
+ assert.equal(payload.historyMode,"CURRENT_VINTAGE_NOT_PIT");
 });
 test("actual eight-risk PC bridge is used before diagnostics without affecting twelve-domain E1-R5",()=>{
  const pc=readFileSync("scripts/pc-writer/market.mjs","utf8");

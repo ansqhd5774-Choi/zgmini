@@ -4,6 +4,7 @@ import {candidate2dbWorker} from './candidate-2db-guard.mjs';
 import {EARNINGS_C_ROUTE,readEarningsCompanionResponse} from './earnings-companion-c-r4.mjs';
 import {BEA_UNIT_ROUTE,readBeaUnitResponse} from './earnings-bea-unit-profit-r1.mjs';
 import {BEA_MFG_ROUTE,readBeaMfgResponse} from './earnings-bea-manufacturing-profit-r1.mjs';
+import {RISK_R4_RAW_ROUTE,readRiskFourRawResponse} from './earnings-risk-four-raw-r1.mjs';
 import {staticShell} from './candidate-shell-r7.mjs';
 import {PROJECTION_ROUTES,readProjectionResponse} from './projection-runtime-r52.mjs';
 import {readPublicFeedHealth} from './public-feed-store.mjs';
@@ -20,6 +21,7 @@ const http=candidate2dbWorker({async fetch(request:Request,env:CandidateReadEnv,
  if(path===EARNINGS_C_ROUTE)return readEarningsCompanionResponse(request,env.DB_CORE);
   if(path===BEA_UNIT_ROUTE)return readBeaUnitResponse(request,env.DB_CORE);
  if(path===BEA_MFG_ROUTE)return readBeaMfgResponse(request,env.DB_CORE);
+ if(path===RISK_R4_RAW_ROUTE)return readRiskFourRawResponse(request,env.DB_CORE);
  if(path==='/api/data-health')return readPublicFeedHealth(env.DB_CORE);
  if(path==='/api/collection-health')return readCollectionHealth(env.DB_CORE);
  const shell=await staticShell(request,env);if(shell)return shell;
