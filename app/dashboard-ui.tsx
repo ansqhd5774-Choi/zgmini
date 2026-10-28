@@ -211,6 +211,7 @@ export const CompositeMarketSection=memo(function CompositeMarketSection({demo}:
   const domain=market?.domains?.find(d=>d.id===id);
   return marketTrendWindow(normalizeMarketTrendPoints(domain?.trend),periodDays);
  }),[market?.domains,periodDays]);
+ const riskHeading=<h2><a href="/risk-indicators/"><ShieldCheck aria-hidden="true"/>8대 위험 지표<ArrowUpRight aria-hidden="true"/></a></h2>;
 
  return <section id="market" className="zg-section zg-r55-market">
   <div className="zg-section-heading zg-r55-heading">
@@ -219,6 +220,7 @@ export const CompositeMarketSection=memo(function CompositeMarketSection({demo}:
     <span className="zg-r55-beta-label" style={{fontSize:12,fontWeight:500,color:'#a8bacb',whiteSpace:'nowrap'}}>베타 버전 v1.2</span>
     <span className="zg-brand-tag">ZGmini 독자 지표{demo?' · 예시':''}</span>
    </div>
+   <div className="zg-section-heading zg-r55-risk-heading zg-r55-risk-heading-desktop">{riskHeading}</div>
    <div className="zg-r55-header-controls">
    <div className="zg-r55-period" role="group" aria-label="종합 시장 점수 추이 기간" title={hasDatedHistory?'제공된 관측 마지막 날짜 기준':'날짜가 있는 추이 데이터 제공 시 이용 가능'}>
     {marketPeriods.map(p=><button key={p.label} type="button" disabled={!hasDatedHistory} aria-pressed={periodDays===p.days} onClick={()=>setPeriodDays(p.days)}>{p.label}</button>)}
@@ -253,7 +255,7 @@ export const CompositeMarketSection=memo(function CompositeMarketSection({demo}:
 
     </article>
     <article className="zg-r55-risk-panel" data-testid="risk-panel" aria-label="8대 위험 지표">
-     <div className="zg-section-heading zg-r55-risk-heading"><h2><a href="/risk-indicators/"><ShieldCheck aria-hidden="true"/>8대 위험 지표<ArrowUpRight aria-hidden="true"/></a></h2></div>
+     <div className="zg-section-heading zg-r55-risk-heading zg-r55-risk-heading-inline">{riskHeading}</div>
      <div className="zg-r55-diagnostics-zone">
       <div className="zg-r55-subscore-area" aria-label="8개 위험 지표">
        <div className="zg-r55-subscore-grid">
