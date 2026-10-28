@@ -15,6 +15,7 @@ const PUBLISHER_CATALOGS = Object.freeze({
 });
 const PUBLISHER_TIMEOUT_MS = 20_000;
 const MAX_REPORTS = 3;
+const MAX_SITEMAP_BYTES = 4_000_000;
 const OMIT = new Set(['the', 'and', 'for', 'with', 'market', 'report',
   'global', 'worldwide', 'industry', 'industries', 'services', 'research']);
 
@@ -160,9 +161,46 @@ async function officialCatalog(url, publisher, fetchFn) {
     ms: Math.round(performance.now() - started) };
 }
 
+/** Read only sitemap URLs advertised by the publisher itself. A sitemap URL
+ * is merely a discovery candidate; official report GET + title + Ollama +
+ * literal-source checks still decide whether it can enter the mean. */
+export async function officialSitemapReports(publisher, { fetchFn = fetch } = {}) {
+  const started = performance.now();
+  const hosts = new Set([publisher.host, publisher.host.replace(/^www\./, '')]);
+  const safeHost = url => {
+    try { const u = new URL(url); return u.protocol === 'https:' && hosts.has(u.hostname); }
+    catch { return false; }
+  };
+  let requests = 0;
+  async function read(url, limit) {
+    if (!safeHost(url)) throw Error('SITEMAP_NONOFFICIAL_URL');
+    requests++;
+    const response = await fetchFn(url, { signal: AbortSignal.timeout(8_000),
+      headers: { accept: 'application/xml,text/xml,text/plain' } });
+    if (!response.ok || !safeHost(response.url || url)) throw Error('SITEMAP_GET_UNVERIFIED');
+    if (Number(response.headers?.get?.('content-length') || 0) > limit)
+      throw Error('SITEMAP_BODY_TOO_LARGE');
+    const body = await response.text();
+    if (Buffer.byteLength(body, 'utf8') > limit) throw Error('SITEMAP_BODY_TOO_LARGE');
+    return body;
+  }
+  const robots = await read(`https://${publisher.host}/robots.txt`, 50_000);
+  const advertised = [...robots.matchAll(/^\s*Sitemap:\s*(https:\/\/[^\s]+)\s*$/gim)]
+    .map(m => m[1].trim()).filter(safeHost)
+    .filter(url => !/image|video|news/i.test(new URL(url).pathname))
+    .sort((a, b) => Number(/reports?\.xml/i.test(new URL(b).pathname)) -
+      Number(/reports?\.xml/i.test(new URL(a).pathname)));
+  if (!advertised.length) throw Error('NO_OFFICIAL_SITEMAP_ADVERTISED');
+  const xml = await read(advertised[0], MAX_SITEMAP_BYTES);
+  const urls = [...new Set([...xml.matchAll(/<loc>\s*(https:\/\/[^<]+)\s*<\/loc>/gi)]
+    .map(m => m[1].trim()).filter(url => officialReportUrl(url, publisher)))];
+  return { urls, requests, ms: Math.round(performance.now() - started) };
+}
+
 /** First-party catalog first; only then bounded public search discovery. */
 export async function discoverPublisherReports(publisher, keyword, {
-  fetchFn = fetch, searchFn = getSearch, maxSearchEngines = 3
+  fetchFn = fetch, searchFn = getSearch, maxSearchEngines = 3,
+  sitemapFn = officialSitemapReports
 } = {}) {
   if (!PUBLISHER_CATALOGS[publisher?.id] || !terms(keyword).length) {
     throw Error('INVALID_R71_PUBLISHER_OR_KEYWORD');
@@ -177,6 +215,20 @@ export async function discoverPublisherReports(publisher, keyword, {
     diagnostics.push({ method: 'OFFICIAL_CATALOG', state: 'PASS', found: result.urls.length });
   } catch (error) {
     diagnostics.push({ method: 'OFFICIAL_CATALOG', state: String(error?.message).slice(0,100), found: 0 });
+  }
+  // Prefer the current publisher-advertised report inventory over unreliable
+  // Bing/Google result pages. The caller memoizes only within this run.
+  if (!discovered.some(url => exactMarketSlug(url, keyword))) {
+    try {
+      const sitemap = await sitemapFn(publisher, { fetchFn });
+      count += sitemap.requests;
+      const direct = sitemap.urls.filter(url => exactMarketSlug(url, keyword));
+      discovered.push(...direct);
+      diagnostics.push({ method: 'OFFICIAL_SITEMAP', state: sitemap.cached ?
+        'REUSED_CURRENT_RUN' : 'PASS', found: direct.length });
+    } catch (error) {
+      diagnostics.push({ method: 'OFFICIAL_SITEMAP', state: String(error?.message).slice(0,100), found: 0 });
+    }
   }
   // A catalog submarket is not proof of a direct-market report. Continue
   // searching instead of hiding search engines behind a weak token match.
@@ -344,6 +396,15 @@ export function firstPartyOllamaAdapter(publisherId, {
 } = {}) {
   if (!['SkyQuest', 'Precedence'].includes(publisherId)) throw Error('R71_UNSUPPORTED_PUBLISHER');
   const publisher = PUBLISHERS.find(p => p.id === publisherId);
+  let sitemapRunMemo = null;
+  const currentRunSitemap = async (p, { fetchFn }) => {
+    if (sitemapRunMemo) {
+      const data = await sitemapRunMemo;
+      return { ...data, requests: 0, cached: true };
+    }
+    sitemapRunMemo = officialSitemapReports(p, { fetchFn });
+    return sitemapRunMemo;
+  };
   return { id: publisherId, officialHosts: [publisher.host, publisher.host.replace(/^www\./, '')],
     run: async topic => {
       const began = performance.now();
@@ -355,7 +416,9 @@ export function firstPartyOllamaAdapter(publisherId, {
         signal: options.signal ? AbortSignal.any([budget, options.signal]) : budget
       });
       let discovery;
-      try { discovery = await discoverFn(publisher, topic.keyword, { fetchFn: boundedFetch, searchFn }); }
+      try { discovery = await discoverFn(publisher, topic.keyword, {
+        fetchFn: boundedFetch, searchFn, sitemapFn: currentRunSitemap
+      }); }
       catch (error) { return failure(publisherId, topic.keyword, String(error?.message), { model }); }
       const searchMeta = { search_requests: discovery.search_requests,
         search_ms: discovery.search_ms,
