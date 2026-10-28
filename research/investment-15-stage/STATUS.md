@@ -301,3 +301,10 @@
 - **실제 Windows R77**: `publisher_adapter_revision=R77_OFFICIAL_SITEMAP_DISCOVERY`, `run_state=COMPLETED`, 5/5, 치명 오류 없음. 연구용 `means_calculable=1/5`, 데이터센터 11.285%(SkyQuest 11.51%·Precedence 11.06%) 유지. 독립 보고서 2개 부족한 4개 시장은 NULL.
 - **사이트맵 기능 실증**: 첫 주제 실제 공식 Sitemap PASS, 나머지 4개에서 `REUSED_CURRENT_RUN` 확인. SkyQuest 공식 Sitemap에서 데이터센터 일치 전체시장 URL 1개 발견, 다른 직접시장 URL 0개. Precedence Sitemap 일치 URL 0개, 기존 직접 슬러그 탐색 데이터센터 PASS.
 - 이 결과에서 사이트맵 읽기 기능의 고장을 확인하지 못함. 다음 코드 작업의 대상은 신뢰성·시장정의·원문 수치와 기간이 검증된 **추가 독립 발행사 어댑터**이며, 유사·하위시장 자료 끼워넣기와 평균 Gate 완화는 제외. 동일 명령 재실행이나 신규 CMD 제작은 현재 불필요. [사용자 PC 실측 원장](README_R77_PC_RESULT_AND_SOURCE_COVERAGE_20261028.md).
+
+## Stage05 — 01~04 데이터 기반 경제학·트레이더 융합 기준 승인 기록 (2026-10-28)
+
+- 사용자 지시에 따라 기존 전용 브랜치에만 [Stage05 융합 선정 설계](STAGE05_01_04_ECONOMIST_TRADER_SELECTION_DESIGN_20261028.md)를 기록. **새 브랜치 생성 0**, 기존 Stage04 실측·운영 산식·실행 코드 변경 0.
+- Stage04 경제학적 매력도 E=M4, Stage02/03 기존 ETF 상대강도·1년 추세로 시장 확인 T를 구성하는 **80:20 설계 기준**을 보존. Stage01은 전체 시장 위험/시점 Gate로 분리하고 F/G/D 중복 가산 금지.
+- RS/추세의 0~100 정규화, 실제 01~04 입력 연결, 민감도 분석 및 Windows 실행은 **미구현·미검증**. M4 역시 운영 미승인이고 R77 연구용 전망 CAGR 11.285%를 실측 G로 전환하지 않음. S5 실측값·최종 순위·거래판정 없음.
+- 기존 TBRC/SkyQuest/Precedence 3매체 및 BRI HTTP403 제외 유지. 새로운 발행사 추가·CMD 재실행을 이 설계의 선행조건으로 만들지 않음. 기존 역사 선택 JSON·원본 15개 PDF·G/D/M·주문·사이트·스케줄러 불변.
