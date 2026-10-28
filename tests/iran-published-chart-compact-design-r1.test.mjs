@@ -25,6 +25,10 @@ test('compact decoration does not remove published records or detail interaction
  assert.ok(chart.includes('strokeDasharray={compact?undefined:"4 3"}'));
  assert.ok(chart.includes('const compactLine=['));
  assert.ok(chart.includes('!compact&&<div className="zg-iran-update-reading"'));
+ assert.ok(chart.includes('!compact&&<div className="zg-iran-chart-legend"'));
+ assert.ok(chart.includes('!compact&&<p className="zg-iran-update-note"'));
+ assert.ok(css.includes('height:75px'));
+ assert.ok(css.includes('.ob58-mini-trend .zg-iran-published-chart.is-compact>.zg-chart-fixed-axis'));
 });
 
 test('detail-only styling keeps the actual publication history and honest score axis',()=>{
