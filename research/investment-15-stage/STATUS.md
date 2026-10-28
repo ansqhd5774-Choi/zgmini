@@ -281,3 +281,10 @@
 - R75 개발: 해당 전체시장 이름이 포함된 `Market Size/Forecast` 첫 실제 본문을 분리, 모델 입력을 해당 구획으로 제한, 동일시장 도입부↔본문 간 기간/성장률 불일치 차단, 모델 입력 위치 식별값 노출.
 - 공식 Precedence 공개 HTML 2건을 직접 취득하여 오프라인 재현: 데이터센터 글로벌 본문은 PASS 경로, 원자로 기간 불일치는 SOURCE_CONFLICT. 이때 Ollama 응답은 **모의**. 전체 회귀 **33/33 PASS**, 13개 파일 Windows ZIP 검사 완료.
 - **R75 실제 Windows Ollama 실행 대기**. 2개 독립 발행사 평균의 실전 성공은 미확인. 원문·과거 JSON을 현행 성장률로 저장/재사용하지 않고 운영 점수·주문·사이트 변경 없음. [상세](STAGE04_R75_PRIMARY_GLOBAL_SECTION_FROM_R74_PC_20261028.md).
+
+## Stage04 R76 — R75 사용자 PC 결과 및 자동 원문 판독기 보정 (2026-10-28)
+
+- R75 PC: 5/5 실행 완료·평균 0/5. Precedence 데이터센터 글로벌 본문 분리 수정은 PASS, SkyQuest 같은 시장은 `MULTIPLE_EXPLICIT_FORECAST_PERIODS_IN_SAME_CAGR_EXCERPT`로 회귀. 기존 나머지 출처 누락·실제 출처 충돌은 유지.
+- R76: SkyQuest 공식 보고서가 `2025` 기준규모와 `2026–2033` 성장 전망기간을 동시에 명시하는 점을 확인하고 `sourcePeriods`에서 직접 명시된 전망기간을 우선하도록 수정. `Market Insights` 본문도 전체시장 후보 추출에 포함하고 세부시장 CAGR 제외 유지.
+- 개발 측 공식 보고서 HTML 2건 오프라인 재현에서 2개 독립 발행사 PASS 및 평균 Gate 경로 확인. Ollama 선택값은 **모의 함수**. 35/35 모의 테스트 통과, 13개 파일 전체 Windows ZIP 무결성·모듈 import PASS.
+- **사용자 PC R76 실행과 평균 성공은 미확인**. 운영 API·G/D/M·점수·주문·사이트 변경 없음. [상세 기준](STAGE04_R76_FORECAST_BASELINE_FROM_R75_PC_20261028.md).
