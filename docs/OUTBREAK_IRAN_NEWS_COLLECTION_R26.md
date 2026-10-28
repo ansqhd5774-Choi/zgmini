@@ -173,3 +173,10 @@
 - **성공 범위 구분:** R32 과거 기사 조회는 읽기 전용이며 `pcCacheWritten=false`, `d1Written=false`, `scoreLedgerModified=false`, `schedulerModified=false`, `translationModified=false`였다. 알자지라 1건의 PC 원문 검증 성공을 신규 후보 실제 저장·기존 사이트 공개 10건 증가·IAEA 30일 기사 확보로 계산하지 않는다. R28 PC 저장 실측에서 4/7 source ID만 적격 기사가 저장됐던 상태를 이 로그만으로 7/7 저장 성공으로 변경할 수 없다.
 - **권한/접근 STOP:** 개발 환경에서는 같은 IAEA 공개 원문에 접근했지만, 사용자 PC의 직접 HTTP 요청은 403이었다. 403의 구체 원인(사이트 정책, PC 네트워크, 요청 환경 등)은 현 로그로 특정할 수 없다. User-Agent 위장, 프록시 회전, 차단 우회, 반복 설치·반복 자동 요청을 하지 않는다. 다음 최소 진단은 **동일 PC의 일반 브라우저에서 공식 IAEA 원문 두 URL이 정상 열리는지** 사용자가 확인하는 것이다. 브라우저조차 403이면 게시자 접근 허용 또는 공식 제공 경로 확인이 선행되어야 한다. 브라우저만 열리더라도 자동 수집 허용을 추정하지 않는다.
 - **현재 Gate:** `PC_R32_MODULES_PRESENT=PASS`, `PC_R32_DIRECT_HISTORICAL_ALJAZEERA=PASS`, `PC_R32_DIRECT_HISTORICAL_IAEA_NEWS=HTTP_403`, `PC_R32_DIRECT_HISTORICAL_IAEA_STATEMENTS=HTTP_403`, `SEVEN_SOURCE_HISTORICAL_PC_GATE=FAIL`. R29 서로 다른 2회 정규 실행 검증과 R26/R29 후속 보고 코드의 사용자 PC 설치는 별도 PENDING이다.
+
+## 21. IAEA 사용자 브라우저 원문 접근 사진 확인 — 자동 HTTP 접근과 분리
+
+- **2026-10-28 사용자 제출 화면 2장:** IAEA 공식 뉴스 2025-09-08 원문과 IAEA 사무총장 2025-06-22 성명이 각각 일반 브라우저에 제목·발행일·본문 문단·사진과 함께 표시됐다. 브라우저 화면에서 두 원문이 존재하고 **시각적으로 접근 가능**한 사실을 확인했다. 브라우저 번역 표시가 있어 화면의 한국어 문구를 원발행사의 한국어 공식 게시물로 간주하지 않는다.
+- **실패 경계 확정:** 같은 두 URL에 대한 사용자 제출 R32 자동 HTTP 검사에서는 둘 다 `ARTICLE_FETCH_FAILED` / `httpStatus=403`이었다. 따라서 `PC_BROWSER_IAEA_PAGE_VISIBLE=PASS`와 `PC_AUTOMATED_IAEA_ARTICLE_FETCH=HTTP_403`을 동시에 유지한다. 브라우저 접근은 자동 프로그램의 접근 허가, 사이트 전체 네트워크 장애의 해소, 본문 파서 통과를 증명하지 않는다. 서버가 자동 요청을 거부한 정확한 이유는 현 증거로 특정할 수 없다.
+- **후속 범위:** 공식 IAEA [RSS](https://www.iaea.org/feeds)는 새 글의 발견 경로로 유지하되, 피드 접속과 원문 본문 확인을 분리한다. 정상 브라우저의 쿠키·세션 추출, User-Agent 위장, 네트워크 회전 등으로 HTTP 403을 우회하지 않는다. 허용된 공식 기계 접근 수단이 확인되지 않으면 해당 PC의 자동 원문 검증은 ACCESS_DENIED로 남기고, 별도 사람 확인 증거와 30일 자동 후보 수집 성공을 혼동하지 않는다. 과거 2025년 자료는 30일 캐시 대상이 아니다.
+- **현 시점 판정:** `IAEA_HISTORICAL_BROWSER_VISIBLE=2/2`, `IAEA_HISTORICAL_PC_AUTOMATED_FETCH=0/2`, `R32_THREE_HISTORICAL_PC_AUTOMATED_GATE=1/3`. 실제 사용자 PC 7/7 출처 자동 수집 완료, R29 정상 예약 2회, 공개 권리 승인 및 D1/API/UI 갱신은 미완료다. 기존 R32 설치기 재실행 불필요.
