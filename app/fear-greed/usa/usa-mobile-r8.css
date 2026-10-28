@@ -12,8 +12,30 @@
  * NOT carried over: every data field and reading guide stays accessible.
  * The existing shared market components remain the only data renderers.
  */
-/* Use the mobile period-button design on desktop, retaining its taller chart. */
+/* On desktop, use the same title-adjacent disclosure as mobile. */
 @media (min-width: 761px) {
+  .zg-fg-us .zg-fg-intro-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 32px;
+    width: 32px;
+    height: 32px;
+    min-width: 32px;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
+  }
+  .zg-fg-us .zg-fg-intro-button:focus-visible {
+    outline: 2px solid currentColor;
+    outline-offset: 2px;
+  }
+  .zg-fg-us .zg-fg-intro:not(.zg-fg-intro--expanded) { display: none; }
+
+  /* Keep the existing taller desktop chart and its period buttons. */
   .zg-fg-us .usa-target-card.fg-shared-shell .fg-analysis-slot {
     grid-template-columns: minmax(0, 1fr) 36px;
     column-gap: 5px;
@@ -66,7 +88,7 @@
     padding: 10px 11px;
   }
 
-  /* Only mobile hides the intro until the adjacent info icon is tapped. */
+  /* Mobile retains its existing title-adjacent disclosure styling. */
   .zg-fg-us .zg-fg-title-row {
     display: flex;
     align-items: center;
