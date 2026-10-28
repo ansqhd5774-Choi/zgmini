@@ -9,7 +9,7 @@ import { PUBLISHERS, pagePlainText, extractCagrCandidates,
 import { officialReportUrl, searchLinks, getOfficial, getSearch,
   titleOf } from './stage04-topic01-r45-readonly.mjs';
 import { catalogLinks } from './stage04-topic01-r48-repeat.mjs';
-import { officialAddressHint } from './stage04-r63-official-address-hints-r78.mjs';
+import { officialAddressHint, officialResearchMarketKeyword } from './stage04-r63-official-address-hints-r78.mjs';
 
 const PUBLISHER_CATALOGS = Object.freeze({
   SkyQuest: 'https://www.skyquestt.com/report',
@@ -44,8 +44,13 @@ export function exactMarketIdentity(title, keyword) {
   if (!prefix || prefix === String(title).toLowerCase()) return false;
   const actual = terms(prefix);
   const requested = terms(keyword);
-  return actual.length === requested.length &&
-    actual.every((token, index) => token === requested[index]);
+  if (actual.length !== requested.length) return false;
+  if (!requested.length) {
+    // "IT Services" loses both words under the ranking stopword list.
+    // Keep exact words, including short names, for this edge case.
+    return keywordSlug(prefix.replace(/^\s*global\s+/, '').trim()) === keywordSlug(keyword);
+  }
+  return actual.every((token, index) => token === requested[index]);
 }
 
 export function exactMarketSlug(url, keyword) {
@@ -284,7 +289,8 @@ async function inspectOnePublisherReport(publisher, url, keyword, {
   const reportMs = Math.round(performance.now() - began);
   const title = titleOf(html);
   const evidence = pagePlainText(html);
-  if (!title || rankForTopic(url, keyword) <= 0) {
+  if (!title || (rankForTopic(url, keyword) <= 0 &&
+      !exactMarketSlug(url, keyword))) {
     return failure(publisher.id, keyword, 'REPORT_MARKET_IDENTITY_UNVERIFIED', {
       url, model, ...searchMeta, report_requests: reportCount, report_ms: reportMs });
   }
@@ -395,7 +401,8 @@ async function inspectOnePublisherReport(publisher, url, keyword, {
 export function firstPartyOllamaAdapter(publisherId, {
   fetchFn = fetch, searchFn = getSearch, model = 'gemma3:4b',
   chooseFn = chooseUsingOllama, discoverFn = discoverPublisherReports,
-  addressHintFn = officialAddressHint
+  addressHintFn = officialAddressHint,
+  marketKeywordFn = officialResearchMarketKeyword
 } = {}) {
   if (!['SkyQuest', 'Precedence'].includes(publisherId)) throw Error('R71_UNSUPPORTED_PUBLISHER');
   const publisher = PUBLISHERS.find(p => p.id === publisherId);
@@ -411,75 +418,108 @@ export function firstPartyOllamaAdapter(publisherId, {
   return { id: publisherId, officialHosts: [publisher.host, publisher.host.replace(/^www\./, '')],
     run: async topic => {
       const began = performance.now();
-      // The same abort budget covers publisher catalog, search, report and
-      // local Ollama selection, including the time spent across retries.
       const budget = AbortSignal.timeout(PUBLISHER_TIMEOUT_MS);
       const boundedFetch = (url, options = {}) => fetchFn(url, {
         ...options,
         signal: options.signal ? AbortSignal.any([budget, options.signal]) : budget
       });
-       // R37 used archived report *addresses* as discovery aids. R78 restores
-       // that path only. A hint is NEVER a verified source or cached figure:
-       // inspectOnePublisherReport performs a new official GET, title/scope
-       // checks, literal CAGR extraction, Ollama selection and period audit.
-       const hint = addressHintFn(topic.keyword, publisherId);
-       const attempts = [];
-       let reportCount = 0;
-       if (hint && officialReportUrl(hint, publisher)) {
-         reportCount++;
-         const hintMeta = { search_requests: 0, search_ms: 0,
-           discovery_diagnostics: [{ method: 'R63_OFFICIAL_ADDRESS_HINT',
-             state: 'UNVERIFIED_ADDRESS_ONLY_FRESH_GET_REQUIRED', found: 1 }],
-           discovery_candidates: [hint] };
-         const checked = await inspectOnePublisherReport(publisher, hint, topic.keyword, {
-           fetchFn: boundedFetch, chooseFn, model, searchMeta: hintMeta, reportCount
-         });
-         attempts.push(checked);
-         if (checked.state === 'PASS' || checked.state === 'SOURCE_CONFLICT') {
-           return { ...checked, total_ms: Math.round(performance.now() - began) };
-         }
-       }
-       if (budget.aborted) {
-         return failure(publisherId, topic.keyword, 'PUBLISHER_TIME_BUDGET_EXCEEDED', {
-           model, report_requests: reportCount, historical_cagr_used: false,
-           total_ms: Math.round(performance.now() - began) });
-       }
-      let discovery;
-      try { discovery = await discoverFn(publisher, topic.keyword, {
-        fetchFn: boundedFetch, searchFn, sitemapFn: currentRunSitemap
-      }); }
-      catch (error) { return failure(publisherId, topic.keyword, String(error?.message), { model }); }
-      const searchMeta = { search_requests: discovery.search_requests,
-        search_ms: discovery.search_ms,
-        discovery_diagnostics: discovery.diagnostics,
-        discovery_candidates: discovery.candidates.slice(0, 8) };
-       // Never spend another publisher request on a failed archived address.
-       const candidates = discovery.candidates.filter(url => url !== hint);
-       if (!candidates.length && attempts.length) {
-         return { ...attempts.at(-1), report_requests: reportCount,
-           total_ms: Math.round(performance.now() - began) };
-       }
-       if (!candidates.length) {
-        return failure(publisherId, topic.keyword, 'NO_VERIFIED_OFFICIAL_REPORT_DISCOVERED', {
-          model, ...searchMeta, total_ms: Math.round(performance.now() - began) });
+      // R79: preserve the actual R63 official REPORT MARKET keyword separately
+      // from the broad 21-sector/theme label. No archived figures are used.
+      const proposedHint = addressHintFn(topic.keyword, publisherId);
+      const hint = proposedHint && officialReportUrl(proposedHint, publisher)
+        ? proposedHint : null;
+      const researchKeyword = hint
+        ? (marketKeywordFn(topic.keyword, publisherId) || topic.keyword) : topic.keyword;
+      const attempts = [];
+      let reportCount = 0;
+      const decorate = result => ({
+        ...result, keyword: topic.keyword,
+        ...(researchKeyword !== topic.keyword && hint ? {
+          research_market_keyword: researchKeyword,
+          research_market_provenance: 'R63_OFFICIAL_REPORT_URL',
+          // A model PROXY verdict must never be laundered into DIRECT.
+          ...(result?.state === 'PASS' && result.market_scope === 'DIRECT' &&
+              result.model_scope === 'DIRECT' ? {
+            market_scope: 'R63_REFERENCE', verified_scope: 'DIRECT'
+          } : {})
+        } : {}),
+        publisher_attempts: attempts.map(a => ({
+          url: a.result_url || a.url || null,
+          state: a.state, reason: a.failure || null
+        }))
+      });
+      if (hint) {
+        reportCount++;
+        const hintMeta = { search_requests: 0, search_ms: 0,
+          discovery_diagnostics: [{ method: 'R63_OFFICIAL_ADDRESS_HINT',
+            state: 'UNVERIFIED_ADDRESS_ONLY_FRESH_GET_REQUIRED', found: 1 }],
+          discovery_candidates: [hint] };
+        const checked = await inspectOnePublisherReport(publisher, hint, researchKeyword, {
+          fetchFn: boundedFetch, chooseFn, model, searchMeta: hintMeta, reportCount
+        });
+        attempts.push(checked);
+        if (checked.state === 'PASS' || checked.state === 'SOURCE_CONFLICT') {
+          return decorate({ ...checked, total_ms: Math.round(performance.now() - began) });
+        }
       }
-       for (const url of candidates.slice(0, MAX_REPORTS - reportCount)) {
+      if (budget.aborted) {
+        return decorate(failure(publisherId, topic.keyword, 'PUBLISHER_TIME_BUDGET_EXCEEDED', {
+          model, report_requests: reportCount, historical_cagr_used: false,
+          total_ms: Math.round(performance.now() - began)
+        }));
+      }
+      let discovery;
+      try {
+        discovery = await discoverFn(publisher, researchKeyword, {
+          fetchFn: boundedFetch, searchFn, sitemapFn: currentRunSitemap
+        });
+      } catch (error) {
+        return decorate(failure(publisherId, topic.keyword, String(error?.message), { model }));
+      }
+      const searchMeta = {
+        search_requests: discovery.search_requests,
+        search_ms: discovery.search_ms,
+        discovery_diagnostics: [
+          ...attempts.map(a => ({
+            method: 'R63_HINT_FRESH_GET_ATTEMPT',
+            state: a.failure || a.state, found: 0
+          })),
+          ...discovery.diagnostics
+        ],
+        discovery_candidates: [hint, ...discovery.candidates].filter(Boolean).slice(0, 8)
+      };
+      // Do not retry the same invalid archived URL; continue current discovery
+      // against the archived report market, not the unrelated sector label.
+      const candidates = discovery.candidates.filter(url => url !== hint);
+      if (!candidates.length && attempts.length) {
+        return decorate({ ...attempts.at(-1), report_requests: reportCount,
+          total_ms: Math.round(performance.now() - began) });
+      }
+      if (!candidates.length) {
+        return decorate(failure(publisherId, topic.keyword,
+          'NO_VERIFIED_OFFICIAL_REPORT_DISCOVERED', {
+            model, ...searchMeta, total_ms: Math.round(performance.now() - began)
+          }));
+      }
+      for (const url of candidates.slice(0, Math.max(0, MAX_REPORTS - reportCount))) {
         if (budget.aborted) break;
         reportCount++;
-        const result = await inspectOnePublisherReport(publisher, url, topic.keyword, {
+        const result = await inspectOnePublisherReport(publisher, url, researchKeyword, {
           fetchFn: boundedFetch, chooseFn, model, searchMeta, reportCount
         });
         attempts.push(result);
-        if (result.state === 'PASS') return { ...result,
-          total_ms: Math.round(performance.now() - began) };
-        if (result.state === 'SOURCE_CONFLICT') return { ...result,
-          total_ms: Math.round(performance.now() - began) };
+        if (result.state === 'PASS' || result.state === 'SOURCE_CONFLICT') {
+          return decorate({ ...result, total_ms: Math.round(performance.now() - began) });
+        }
       }
       const last = attempts.at(-1);
-      if (!last) return failure(publisherId, topic.keyword, 'PUBLISHER_TIME_BUDGET_EXCEEDED', {
-        model, ...searchMeta, report_requests: reportCount,
+      if (!last) return decorate(failure(publisherId, topic.keyword,
+        'PUBLISHER_TIME_BUDGET_EXCEEDED', {
+          model, ...searchMeta, report_requests: reportCount,
+          total_ms: Math.round(performance.now() - began)
+        }));
+      return decorate({ ...last, report_requests: reportCount,
         total_ms: Math.round(performance.now() - began) });
-      return { ...last, report_requests: reportCount,
-        total_ms: Math.round(performance.now() - began) };
+
     } };
 }
