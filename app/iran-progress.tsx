@@ -20,7 +20,7 @@ type View=ReturnType<typeof iranView>;
 function iranScoreColor(value:number|null){return value===null?'#94a3b8':value<25?'#ef4444':value<40?'#f59e0b':value<60?'#94a3b8':value<75?'#22c55e':'#10b981';}
 export function IranScore({value}:{value:number|null}){return <>{value===null?'—':<>{value.toFixed(1).split('.')[0]}<small className="ob-score-fraction">.{value.toFixed(1).split('.')[1]}</small></>}</>;}
 function IranChart({view,compact=false}:{view:View;compact?:boolean}){
- if('updateHistory' in view&&Array.isArray(view.updateHistory)&&view.updateHistory.length)return <IranPublishedChart points={view.updateHistory} compact={compact}/>;
+ if('updateHistory' in view&&Array.isArray(view.updateHistory)&&view.updateHistory.length)return <IranPublishedChart points={view.updateHistory} history={view.chartHistory??view.history} compact={compact}/>;
  const history=('chartHistory' in view?view.chartHistory:view.history) as Array<{at:number;value:number|null;carried?:boolean;phase?:string}>;
  const x=(p:{at:number},i:number)=>'chartEndAt' in view?26+132*(p.at-(view.chartEndAt-13*86400000))/(13*86400000):26+(history.length>1?132*i/(history.length-1):66);
  const plotted=history.map((p,i)=>({p,i})).filter(q=>typeof q.p.value==='number'&&Number.isFinite(q.p.value));

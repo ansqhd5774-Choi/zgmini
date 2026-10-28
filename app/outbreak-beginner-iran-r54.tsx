@@ -34,7 +34,7 @@ function Trend({view,compact=false}:{view:any;compact?:boolean}){
   update();media.addEventListener("change",update);
   return()=>media.removeEventListener("change",update);
  },[]);
- if(Array.isArray(view.updateHistory)&&view.updateHistory.length)return <section className={compact?'ob58-mini-trend':'ob-panel ob54-trend'} aria-label="최근 14일 갱신별 추이"><div className="ob54-chart-head"><h3>14일 갱신별 추이</h3><span>실제 게시 기록 · KST</span></div><IranPublishedChart points={view.updateHistory} compact={compact}/></section>;
+ if(Array.isArray(view.updateHistory)&&view.updateHistory.length)return <section className={compact?'ob58-mini-trend':'ob-panel ob54-trend'} aria-label="최근 14일 갱신별 추이"><div className="ob54-chart-head"><h3>14일 갱신별 추이</h3><span>일별 추정 + 실제 갱신 · KST</span></div><IranPublishedChart points={view.updateHistory} history={view.chartHistory??view.history??[]} compact={compact}/></section>;
  const series:Array<Point>=Array.isArray(view.chartHistory)?view.chartHistory:Array.isArray(view.history)?view.history:[];
  const end=typeof view.chartEndAt==="number"&&Number.isFinite(view.chartEndAt)?view.chartEndAt:series.at(-1)?.at??null;
  const start=end===null?null:end-13*DAY_MS;

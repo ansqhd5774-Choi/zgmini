@@ -321,8 +321,10 @@ try{
   const publishedChart=width<=700?root.locator('.ob55-score-card .zg-iran-published-chart'):
    root.locator('.ob55-main .zg-iran-published-chart');
   await publishedChart.waitFor({state:'visible',timeout:20000});
-  assert.equal(await publishedChart.locator('circle').count(),3,'Only the three saved publications are plotted');
-  const positions=await publishedChart.locator('circle').evaluateAll(nodes=>nodes.map(n=>Number(n.getAttribute('cx'))));
+  assert.equal(await publishedChart.locator('circle[data-kind="publication"]').count(),3,'Only the three saved publications are actual intraday points');
+  const firstActualDay=kstCalendarDate(r5Fixture.updateHistory[0].at);
+  assert.equal(await publishedChart.locator('circle[data-kind="daily-estimate"]').count(),r5Fixture.history.filter(p=>p.date<firstActualDay).length,'Earlier daily estimates remain visible across the original 14-day window');
+  const positions=await publishedChart.locator('circle[data-kind="publication"]').evaluateAll(nodes=>nodes.map(n=>Number(n.getAttribute('cx'))));
   assert(positions[0]<positions[1]&&positions[1]<positions[2],'Actual publication timestamps determine point order');
   assert.equal(await publishedChart.locator('svg title').first().textContent(),'최근 14일 · 실제 게시 기록 3회 · 한국시간');
   assert(await publishedChart.evaluate(el=>{const b=el.getBoundingClientRect();return b.left>=-1&&b.right<=innerWidth+1;}),'Publication chart fits the viewport');
