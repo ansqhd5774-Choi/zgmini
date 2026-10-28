@@ -22,6 +22,8 @@ async function run() {
       + '  node stage05-fusion-readonly.mjs --audit-existing\n'
       + '  node stage05-fusion-readonly.mjs --handoff-existing\n'
       + '  node stage05-fusion-readonly.mjs --handoff-input completed-stage01-04-results.json\n'
+      + '  node stage05-fusion-readonly.mjs --stage-files completed-files-manifest.json\n'
+      + '  node stage05-fusion-readonly.mjs --handoff-stage-files completed-files-manifest.json\n'
       + '  node stage05-fusion-readonly.mjs --handoff-r77 [--output-dir EXISTING_DIR]\n'
       + '  node stage05-fusion-readonly.mjs --handoff-input SNAPSHOT.json --r77-report SAVED_R77.json [--output-dir EXISTING_DIR]\n'
       + '  node stage05-fusion-readonly.mjs --audit-live\n'
@@ -92,6 +94,21 @@ async function run() {
     const result = calculateFusionStage05(JSON.parse(raw));
     print({runType:'EXPLICIT_VERIFIED_SNAPSHOT',...result});
     if (result.summary.rankableCount === 0) process.exitCode = 2;
+    return;
+  }
+  if (args.length === 2 && ['--stage-files','--handoff-stage-files'].includes(args[0])) {
+    const {loadCompletedStageFiles}=await import('./stage05-completed-files.mjs');
+    const {snapshot}=await loadCompletedStageFiles(args[1]);
+    const fusion=calculateFusionStage05(snapshot);
+    if(args[0]==='--stage-files'){
+      print({runType:'EXPLICIT_FOUR_COMPLETED_FILES',...fusion});
+      if(fusion.summary.rankableCount!==9)process.exitCode=2;
+    }else{
+      const {buildVerifiedResultsHandoff}=await import('./stage05-verified-results-handoff.mjs');
+      const handoff=buildVerifiedResultsHandoff({completedSnapshot:snapshot,fusion});
+      print(handoff);
+      if(handoff.ollamaInput===null)process.exitCode=2;
+    }
     return;
   }
   if (['--handoff-existing','--handoff-input','--handoff-r77'].includes(args[0])) {
