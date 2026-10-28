@@ -35,3 +35,12 @@
 - 테스트: `tests/earnings-bea-manufacturing-profit-source-r1.test.mjs`
 - `LIVE_SOURCE_PARSE=PASS`, `LOCAL_UNIT_TESTS=4/4`, `PC_LEDGER_N400RC=UNKNOWN`, `D1_WRITE=NOT_RUN`, `PUBLIC_GET=NOT_RUN`, `DEPLOY=NOT_RUN`.
 - 출처: https://www.bea.gov/data/income-saving/corporate-profits 및 https://fred.stlouisfed.org/series/N400RC1Q027SBEA
+
+## R2 — PC 중복 수집 예방용 읽기 전용 재고 검사
+
+- `scripts/pc-writer/EARNINGS_BEA_MFG_PROFIT_R2_PC_INVENTORY_READONLY.mjs`는 승인 PC 루트의 `raw/`, `manual-input/`에서 최대 3,000개의 작은 CSV/JSON을 제한적으로 검사한다.
+- 일치하는 FRED 시계열 헤더 또는 메타데이터만 탐지한다. 비밀값/원문 내용을 출력하지 않으며, 원본 파일·DB·Git·D1에 쓰지 않는다.
+- `storage/core.sqlite` 및 `history.sqlite` 파일의 존재만 확인하고 내용을 조회하지 않는다. Excel과 기타 원장도 미검사다.
+- 따라서 `NO_MATCH_IN_BOUNDED_TEXT_SCAN`은 원본 **부재의 증거가 아니다**. `safeToAutoCapture=false`를 강제하며 자동 수집·저장하지 않는다.
+- 실제 PC에서 승인된 원본 저장 여부가 확인될 때까지 상태는 `PC_LEDGER_N400RC=UNKNOWN`이다.
+- R2 로컬 테스트 4/4 PASS. 실제 PC 실행 및 운영 저장·게시 전환은 미실행.
