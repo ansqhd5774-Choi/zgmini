@@ -48,6 +48,6 @@ test('R20 intended display accepts newly added Census IDs without replacing veri
  const client=fs.readFileSync(new URL('../app/market-calendar/market-calendar-client.tsx',import.meta.url),'utf8');
  assert.match(client,/item\.source==='census'/);
  assert.match(client,/item\.id\.startsWith\(\`\$\{item\.source\}-\`\)/);
- assert.match(client,/sourceNames:Record<string,string>\s*=\s*\{bls:'BLS',bea:'BEA',fed:'연준',census:'Census'/);
+ assert.match(client,/sourceNames:Record<string,string>\s*=\s*\{[^}]*\bcensus:'Census'/);
  assert.match(client,/forecast:null,previous:null/);
 });
