@@ -77,8 +77,8 @@ export default function IranPublishedChart({points,history=[],compact=false}:{po
    {!compact&&[0,2,4,6,8,10,13].map(day=>{const at=start+day*86400000;return <text key={day} data-mobile-skip={[2,6,10].includes(day)?"true":undefined} x={x(at)} y={axisDateY} textAnchor={day===0?'start':day===13?'end':'middle'} fill="#a3bbcc" fontSize="9">{date(at)}</text>;})}
   </svg>
   {compact&&<span aria-hidden="true" className="ob-chart-endpoint" style={{left:`${x(last.at)/170*100}%`,top:`${y(last.value)/68*100}%`,background:'#ef4444'}}/>}
-  <div className="zg-iran-chart-legend"><span>일별 추정</span><span>실제 갱신</span></div>
+  {!compact&&<div className="zg-iran-chart-legend"><span>일별 추정</span><span>실제 갱신</span></div>}
   {!compact&&<div className="zg-iran-update-reading" role="status"><time dateTime={new Date(current.at).toISOString()}>{date(current.at,true)} KST</time><strong>{current.value.toFixed(2)}점</strong><span>{delta===null?'첫 게시 기록':(delta>0?'+':'')+delta.toFixed(2)+'점'}</span><small>반영 사건 누계 {current.eventCount}건 · 잠정 점수</small></div>}
-  <p className="zg-iran-update-note">{compact?'14일 흐름 · 갱신별 기록 · KST':daily.some(validDaily)?'점선은 기존 일별 추정입니다. 실선은 기록 시작 이후 실제 게시 시각별 점수이며, 점을 누르면 시각과 변화를 확인할 수 있습니다.':visible.length===1?'갱신 기록을 쌓기 시작했습니다. 이전 시간대 점수는 재구성하지 않습니다.':'실제 게시된 점수를 직선으로 연결했습니다. 점을 누르면 게시 시각과 변화를 확인할 수 있습니다.'}</p>
+  {!compact&&<p className="zg-iran-update-note">{daily.some(validDaily)?'점선은 기존 일별 추정입니다. 실선은 기록 시작 이후 실제 게시 시각별 점수이며, 점을 누르면 시각과 변화를 확인할 수 있습니다.':visible.length===1?'갱신 기록을 쌓기 시작했습니다. 이전 시간대 점수는 재구성하지 않습니다.':'실제 게시된 점수를 직선으로 연결했습니다. 점을 누르면 게시 시각과 변화를 확인할 수 있습니다.'}</p>}
  </div>;
 }
