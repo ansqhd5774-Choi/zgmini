@@ -64,7 +64,7 @@ export function readSavedR77Forecast(report) {
 }
 
 export function attachSavedR77ToStage05({handoff, savedR77} = {}) {
-  if (handoff?.version !== 'STAGE05_VERIFIED_RESULTS_HANDOFF_R81')
+  if (handoff?.version !== 'STAGE05_VERIFIED_RESULTS_HANDOFF_R85')
     throw new Error('STAGE05_HANDOFF_REQUIRED');
   const forecast = readSavedR77Forecast(savedR77);
   return {
