@@ -52,27 +52,33 @@ function checkEvidence(evidence, kind, snapshotDate, maxAgeDays) {
   return null;
 }
 
-function checkStage04(record, snapshotDate, maxAgeDays) {
-  if (!record || record.status !== 'QUANTIFIED') return 'STAGE04_NOT_QUANTIFIED';
+function computeIndustryComponent(record, snapshotDate, maxAgeDays) {
+  const blocked = reason => ({reason,score:null,components:null});
+  if (!record || record.status !== 'QUANTIFIED') return blocked('STAGE04_NOT_QUANTIFIED');
   if (record.evidenceKind !== 'REALIZED_INDUSTRY_ACTIVITY'
     || record.sourceValidation !== 'VERIFIED'
     || record.freshnessStatus !== 'CURRENT'
     || record.formulaId !== 'STAGE04_R2_PROPOSED'
     || !Array.isArray(record.sourceUrls) || record.sourceUrls.length === 0)
-    return 'STAGE04_REALIZED_SOURCE_GATE_MISSING';
+    return blocked('STAGE04_REALIZED_SOURCE_GATE_MISSING');
   if (!isDate(record.validatedDate) || !isDate(record.observationPeriodEnd)
     || record.observationPeriodEnd > record.validatedDate
     || record.validatedDate > snapshotDate
     || (asDay(snapshotDate)-asDay(record.validatedDate))/86400000 > maxAgeDays)
-    return 'STAGE04_CHRONOLOGY_UNVERIFIED';
-  if (![record.G1,record.G2,record.F,record.G,record.D,record.M4].every(isScore))
-    return 'STAGE04_SCORE_INVALID';
+    return blocked('STAGE04_CHRONOLOGY_UNVERIFIED');
+  // Stage05 is the calculator: it needs source-derived component inputs, not
+  // an already-computed final M4, E, T or S5 from Stage01–04.
+  if (![record.G1,record.G2,record.F].every(isScore))
+    return blocked('STAGE04_COMPONENT_INPUT_MISSING');
   const G = 0.6 * record.G1 + 0.4 * record.G2;
   const D = Math.max(0,G - record.F);
   const M4 = 0.7 * G + 0.3 * D;
-  if (Math.abs(G-record.G)>0.00001 || Math.abs(D-record.D)>0.00001
-    || Math.abs(M4-record.M4)>0.00001) return 'STAGE04_FORMULA_MISMATCH';
-  return null;
+  if ([['G',G],['D',D],['M4',M4]].some(([name,computed]) =>
+    record[name] !== undefined && (!isScore(record[name])
+      || Math.abs(computed-record[name])>0.00001)))
+    return blocked('STAGE04_FORMULA_MISMATCH');
+  return {reason:null,score:round6(M4),components:{G1:record.G1,G2:record.G2,
+    F:record.F,G:round6(G),D:round6(D),M4:round6(M4)}};
 }
 
 /**
@@ -83,7 +89,8 @@ function checkStage04(record, snapshotDate, maxAgeDays) {
  *    normalizationRuleId,priceSeriesId,periodStart,periodEnd}}]},
  *  stage03:{themes:[{id,sectorId,approved,trend:{...same evidence contract}}]},
  *  stage04:{themes:[{id,status,evidenceKind,sourceValidation,freshnessStatus,
- *    formulaId,sourceUrls,validatedDate,observationPeriodEnd,G1,G2,F,G,D,M4}]}}
+ *    formulaId,sourceUrls,validatedDate,observationPeriodEnd,G1,G2,F,
+ *    G?,D?,M4?}]}}
  * Only an explicit passed Stage03 theme can enter the selection table.
  */
 export function calculateFusionStage05(input, {maxAgeDays = 7} = {}) {
@@ -101,7 +108,8 @@ export function calculateFusionStage05(input, {maxAgeDays = 7} = {}) {
     if (theme.approved !== true) continue;
     const sector = sectors.get(theme.sectorId);
     const growth = industry.get(theme.id);
-    const eReason = checkStage04(growth,input.snapshotDate,maxAgeDays);
+    const industryComponent=computeIndustryComponent(growth,input.snapshotDate,maxAgeDays);
+    const eReason=industryComponent.reason;
     const rsReason = checkEvidence(sector?.relativeStrength,
       'ETF_PRICE_RELATIVE_STRENGTH',input.snapshotDate,maxAgeDays);
     const trendReason = checkEvidence(theme.trend,
@@ -111,7 +119,7 @@ export function calculateFusionStage05(input, {maxAgeDays = 7} = {}) {
       && sector.relativeStrength.periodEnd === theme.trend.periodEnd;
     const periodReason = !rsReason && !trendReason && !samePeriod
       ? 'ETF_RS_TREND_PERIOD_MISMATCH' : null;
-    const E = eReason ? null : growth.M4;
+    const E = industryComponent.score;
     const T = rsReason || trendReason || periodReason ? null
       : round6(0.5*sector.relativeStrength.score + 0.5*theme.trend.score);
     const blockReasons = reasons(eReason,rsReason,trendReason,periodReason,
@@ -123,6 +131,7 @@ export function calculateFusionStage05(input, {maxAgeDays = 7} = {}) {
       eligible ? round6(w*E+(1-w)*T) : null]));
     rows.push({themeId:theme.id,sectorId:theme.sectorId,
       status:eligible?'RANKABLE':'BLOCKED',
+      calculatedIndustry:industryComponent.components,
       E,T,S5:sensitivity['80'],sensitivity,blockReasons:[...new Set(blockReasons)]});
   }
   const ranked = rows.filter(r=>r.status==='RANKABLE').sort((a,b)=>b.S5-a.S5
