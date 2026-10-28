@@ -631,3 +631,167 @@
   .zg-fg-korea .zg-fg-page-header > h1 { font-size: 16px; }
   .zg-fg-korea .zg-fg-buying-guide-link { font-size: 10px; }
 }
+
+/* R2 mobile Korea/USA score-card parity.
+ * Korea's existing desktop comparison cells and observed date remain intact.
+ * The extra statistics reuse stored Korea history, never synthetic fallback values.
+ */
+.zg-fg-korea .korea-target-card .fg-card-header-date,
+.zg-fg-korea .korea-target-card .korea-score-stats,
+.zg-fg-korea .korea-target-card .cnn-score-inline-day-mobile {
+  display: none;
+}
+@media (max-width: 760px) {
+  .zg-fg-korea .korea-target-card .fg-header-slot .fg-card-header-date {
+    display: inline-flex;
+  }
+  .zg-fg-korea .korea-target-card.fg-shared-shell .fg-score-slot {
+    display: grid;
+    grid-template-columns: clamp(110px, 33%, 140px) minmax(0, 1fr);
+    align-items: center;
+    gap: 5px;
+    width: 100%;
+    padding: 8px 7px 9px;
+  }
+  .zg-fg-korea .korea-target-card.fg-shared-shell .fg-score-slot .cnn-score-orb {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr);
+    align-items: center;
+    justify-items: stretch;
+    width: 100%;
+    height: 112px;
+    min-height: 0;
+    max-height: 112px;
+  }
+  .zg-fg-korea .korea-target-card.fg-shared-shell .cnn-spectrum-gauge {
+    grid-column: 1;
+    grid-row: 1;
+    width: 100%;
+    max-width: 140px;
+    aspect-ratio: 220 / 142;
+    place-self: center;
+  }
+  .zg-fg-korea .korea-target-card.fg-shared-shell .cnn-spectrum-center { top: 73%; width: 100%; }
+  .zg-fg-korea .korea-target-card.fg-shared-shell .cnn-score-whole { font-size: 27px; }
+  .zg-fg-korea .korea-target-card.fg-shared-shell .cnn-score-fraction { font-size: 14px; }
+  .zg-fg-korea .korea-target-card.fg-shared-shell .cnn-spectrum-center > span:not(.cnn-score-inline-day) {
+    margin-top: 3px;
+    font-size: 11px;
+  }
+  .zg-fg-korea .korea-target-card .cnn-score-comparisons,
+  .zg-fg-korea .korea-target-card .cnn-score-observed-date { display: none; }
+  .zg-fg-korea .korea-target-card.fg-shared-shell .cnn-score-inline-day-mobile {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    margin-top: 4px;
+    color: var(--zg-text-meta);
+    font-size: 9px;
+    font-weight: 700;
+    line-height: 1.2;
+    white-space: nowrap;
+  }
+  .zg-fg-korea .korea-target-card .cnn-score-inline-day-mobile > span {
+    margin: 0;
+    color: var(--zg-text-meta);
+    font-size: 9px;
+    font-weight: 700;
+    line-height: 1.2;
+  }
+  .zg-fg-korea .korea-target-card .cnn-score-inline-day-mobile strong {
+    color: #d3e4f0;
+    font-size: 10px;
+    font-weight: 900;
+    font-variant-numeric: tabular-nums;
+  }
+  .zg-fg-korea .korea-target-card .cnn-score-inline-day-mobile strong.is-up { color: #58c88a; }
+  .zg-fg-korea .korea-target-card .cnn-score-inline-day-mobile strong.is-down { color: #ff7076; }
+  .zg-fg-korea .korea-target-card .cnn-score-inline-day-mobile i {
+    margin-left: 2px;
+    font-size: 8px;
+    font-style: normal;
+  }
+  .zg-fg-korea .korea-target-card .korea-score-stats {
+    display: grid;
+    grid-template-rows: 48px 49px;
+    gap: 5px;
+    width: 100%;
+    min-width: 0;
+  }
+  .zg-fg-korea .korea-target-card .korea-score-extremes,
+  .zg-fg-korea .korea-target-card .korea-score-changes {
+    display: grid;
+    gap: 1px;
+    min-width: 0;
+    border-radius: 4px;
+    overflow: hidden;
+    background: #24485b;
+  }
+  .zg-fg-korea .korea-target-card .korea-score-extremes { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .zg-fg-korea .korea-target-card .korea-score-changes { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+  .zg-fg-korea .korea-target-card .korea-score-stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    min-width: 0;
+    padding: 3px 1px;
+    background: #071e2c;
+    text-align: center;
+  }
+  .zg-fg-korea .korea-target-card .korea-score-extremes .korea-score-stat { gap: 2px; }
+  .zg-fg-korea .korea-target-card .korea-score-stat-label {
+    color: #a8bcd0;
+    font-size: 9px;
+    font-weight: 700;
+    line-height: 1.1;
+    white-space: nowrap;
+  }
+  .zg-fg-korea .korea-target-card .korea-score-stat-value {
+    color: #ecf4fa;
+    font-size: 14px;
+    font-weight: 850;
+    line-height: 1.1;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+  }
+  .zg-fg-korea .korea-target-card .korea-score-stat-date {
+    color: #86a0b7;
+    font-size: 8px;
+    font-weight: 600;
+    line-height: 1.15;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+  }
+  .zg-fg-korea .korea-target-card .korea-score-stat.is-high .korea-score-stat-value,
+  .zg-fg-korea .korea-target-card .korea-score-stat.is-positive .korea-score-stat-value { color: #58c88a; }
+  .zg-fg-korea .korea-target-card .korea-score-stat.is-low .korea-score-stat-value,
+  .zg-fg-korea .korea-target-card .korea-score-stat.is-negative .korea-score-stat-value { color: #ff7076; }
+  .zg-fg-korea .korea-target-card .korea-score-changes .korea-score-stat-value {
+    font-size: 11.5px;
+    letter-spacing: -.6px;
+  }
+  .zg-fg-korea .korea-target-card .korea-score-changes .korea-score-stat-value small {
+    margin-left: 1px;
+    font-size: 8px;
+    vertical-align: 1px;
+  }
+}
+@media (max-width: 355px) {
+  .zg-fg-korea .korea-target-card.fg-shared-shell .fg-score-slot {
+    grid-template-columns: 106px minmax(0, 1fr);
+    gap: 4px;
+    padding-inline: 5px;
+  }
+  .zg-fg-korea .korea-target-card.fg-shared-shell .fg-score-slot .cnn-score-orb {
+    height: 105px;
+    max-height: 105px;
+  }
+  .zg-fg-korea .korea-target-card .korea-score-stats { grid-template-rows: 45px 47px; gap: 4px; }
+  .zg-fg-korea .korea-target-card .korea-score-stat-label { font-size: 8px; }
+  .zg-fg-korea .korea-target-card .korea-score-stat-value { font-size: 12px; }
+  .zg-fg-korea .korea-target-card .korea-score-changes .korea-score-stat-value { font-size: 10px; }
+}

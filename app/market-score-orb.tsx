@@ -167,6 +167,7 @@ export function MarketScoreOrb({
   arrowId,
   marketScoreBands = false,
   inlineDayDelta = false,
+  mobileInlineDayDelta = false,
 }: {
   score: string;
   state: string;
@@ -182,6 +183,7 @@ export function MarketScoreOrb({
   arrowId?: string;
   marketScoreBands?: boolean;
   inlineDayDelta?: boolean;
+  mobileInlineDayDelta?: boolean;
 }) {
   const arrows=useScoreArrows(),showArrows=arrowId?arrows(arrowId,numericScore(score)):false;
   const tone = state.includes('공포') ? 'is-fear' : state.includes('탐욕') ? 'is-greed' : '';
@@ -296,7 +298,7 @@ export function MarketScoreOrb({
               {decimalScore ? <span className="cnn-score-fraction">.{decimalScore}</span> : null}
             </LiveScoreValue>
             <span style={{color:fearGreedStateColor(state)}}>{state}</span>
-            {inlineDayDelta ? <span className="cnn-score-inline-day" aria-label={`${dayLabel} ${formatDelta(animatedDayDelta)}점`}>
+            {(inlineDayDelta || mobileInlineDayDelta) ? <span className={`cnn-score-inline-day${mobileInlineDayDelta && !inlineDayDelta ? ' cnn-score-inline-day-mobile' : ''}`} aria-label={`${dayLabel} ${formatDelta(animatedDayDelta)}점`}>
               <span>{dayLabel}</span>
               <strong className={`is-${deltaDirection(animatedDayDelta)}`}>
                 {formatDelta(animatedDayDelta)}

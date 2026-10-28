@@ -17,7 +17,7 @@ type FearGreedCardShellProps = {
   showHeaderDate?: boolean;
   titleLink?: boolean;
   header: { flag: string; eyebrow: string; title: string; description: string; dateLabel: string; date: string; source: string; rightContent?: ReactNode };
-  score: { arrowId?: string; value: string; state: string; caption?: string; variant?: 'compact' | 'hero'; dayDelta?: number | null; periodDelta?: number | null; periodLabel?: string; metaDate?: string; dayLabel?: string; comparisonAriaLabel?: string; inlineDayDelta?: boolean };
+  score: { arrowId?: string; value: string; state: string; caption?: string; variant?: 'compact' | 'hero'; dayDelta?: number | null; periodDelta?: number | null; periodLabel?: string; metaDate?: string; dayLabel?: string; comparisonAriaLabel?: string; inlineDayDelta?: boolean; mobileInlineDayDelta?: boolean };
   scoreAside?: ReactNode;
   period: ReactNode;
   chart: ReactNode;
@@ -30,7 +30,7 @@ export function FearGreedCardShell({className='',layoutVariant='legacy',testId,m
   return <section className={`cnn-reference-panel fg-card ${layoutClass} ${className}`.trim()} data-testid={testId} data-market-state={marketState} aria-busy={busy}>
     <div className="fg-header-slot"><MarketCardHeader {...header} titleHref={titleLink ? detailHref??footer.href : undefined} titleAction={<>{titleLink ? <a className="fg-market-detail-link" href={detailHref??footer.href} aria-label={detailHref?`${header.title} 상세페이지 열기`:footer.ariaLabel??`${header.title} 상세페이지 열기`}><ArrowUpRight size={14}/></a> : null}<span className="zg-market-title-help"><ContentHelp label={`${header.title} 공포·탐욕 도움말`}><HelpText copy={header.title.includes('한국')?HELP.korea:HELP.usa}/></ContentHelp></span></>} rightContent={showHeaderDate ? <time className="fg-card-header-date">{header.date}</time> : layoutVariant==='shared'?<></>:header.rightContent}/></div>
     <div className="fg-content-slot">
-      <div className="fg-score-slot"><MarketScoreOrb arrowId={score.arrowId} score={score.value} state={score.state} caption={score.caption} variant={score.variant} dayDelta={score.dayDelta} periodDelta={score.periodDelta} periodLabel={score.periodLabel} metaDate={score.metaDate} dayLabel={score.dayLabel} comparisonAriaLabel={score.comparisonAriaLabel} inlineDayDelta={score.inlineDayDelta}/>{scoreAside}</div>
+      <div className="fg-score-slot"><MarketScoreOrb arrowId={score.arrowId} score={score.value} state={score.state} caption={score.caption} variant={score.variant} dayDelta={score.dayDelta} periodDelta={score.periodDelta} periodLabel={score.periodLabel} metaDate={score.metaDate} dayLabel={score.dayLabel} comparisonAriaLabel={score.comparisonAriaLabel} inlineDayDelta={score.inlineDayDelta} mobileInlineDayDelta={score.mobileInlineDayDelta}/>{scoreAside}</div>
       <MarketTrendFrame className="fg-analysis-slot"><div className="fg-period-slot">{period}</div><div className="fg-chart-slot"><div className="fg-renderer">{chart}</div></div></MarketTrendFrame>
     </div>
     <div className="fg-footer-slot"><MarketCardFooter {...footer} date={score.metaDate}/></div>

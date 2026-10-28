@@ -235,7 +235,7 @@ export function KoreaCompositeView({detail=false}:{detail?:boolean}){
  </div>;
 }
 
-export function KoreanCountryCard(){
+export function KoreanCountryCard({detail=false}:{detail?:boolean}={}){
  const {composite:c,loading}=useKoreaFunds();
  const [selectedPeriod,setSelectedPeriod]=useState<MarketPeriod>(DEFAULT_KOREA_MARKET_PERIOD);
  const valid=typeof c?.displayScore==='number'&&Number.isFinite(c.displayScore);
@@ -256,6 +256,31 @@ export function KoreanCountryCard(){
   [allHistory,c?.observationDate,selectedPeriod],
  );
  const score=valid?c!.displayScore!:null;
+ // Match the USA detail card's 52-week statistics without inventing values
+ // when the stored Korean series does not cover the comparison window.
+ const extrema52Week=useMemo(()=>{
+  if(!detail||score===null||!c?.observationDate||observedTime===null||!Number.isFinite(observedTime))return null;
+  const start=observedTime-364*86400000;
+  const historyInWindow=validHistory(allHistory).filter(point=>point.time>=start&&point.time<=observedTime);
+  if(historyInWindow.length<180||!allHistory.length||
+   historyInWindow[0].time>start+7*86400000||
+   historyInWindow[historyInWindow.length-1].time<observedTime-7*86400000)return null;
+  const points=[...historyInWindow,{date:c.observationDate,time:observedTime,score}];
+  let highest=points[0],lowest=points[0];
+  for(const point of points){
+   if(point.score>=highest.score)highest=point;
+   if(point.score<=lowest.score)lowest=point;
+  }
+  return {highest,lowest};
+ },[allHistory,c?.observationDate,detail,observedTime,score]);
+ const fixedPeriodChanges=useMemo(
+  ()=>!detail?[]:(["1W","1M","3M","6M","1Y"] as const).map((period,index)=>{
+   const labels=["1주","1개월","3개월","6개월","1년"];
+   const baseline=historicalBaseline(allHistory,targetPeriodTime(c?.observationDate,period));
+   return {label:labels[index],delta:score!==null&&baseline!==null?score-baseline:null};
+  }),
+  [allHistory,c?.observationDate,detail,score],
+ );
  const dayDelta=score!==null&&dayBaseline!==null?score-dayBaseline:null;
  const periodDelta=score!==null&&periodBaseline!==null?score-periodBaseline:null;
  const periodLabel=periodComparisonLabels[selectedPeriod];
@@ -270,6 +295,7 @@ export function KoreanCountryCard(){
   testId="kr-composite"
   marketState={loading?'loading':!c?'empty':valid?c.status.toLowerCase():'unavailable'}
   busy={loading}
+  showHeaderDate={detail}
   header={{
    flag:"/flags/kr.svg",
    eyebrow:"ZGMINI KOREA FEAR & GREED",
@@ -291,7 +317,31 @@ export function KoreanCountryCard(){
    metaDate:cardDate(c?.observationDate),
    dayLabel:"이전 대비",
    comparisonAriaLabel:"한국 공포탐욕 변화량",
+   mobileInlineDayDelta:detail,
   }}
+  scoreAside={detail ? <div className="korea-score-stats" aria-label="한국 공포탐욕 52주 최고 최저와 기간별 점수 변동">
+   <div className="korea-score-extremes">
+    {([
+      {label:"52주 최고",point:extrema52Week?.highest??null,tone:"high"},
+      {label:"52주 최저",point:extrema52Week?.lowest??null,tone:"low"},
+    ]).map(({label,point,tone})=><div className={`korea-score-stat is-${tone}`} key={tone}>
+      <span className="korea-score-stat-label">{label}</span>
+      <strong className="korea-score-stat-value">{point?point.score.toFixed(1):"—"}</strong>
+      {point?<time className="korea-score-stat-date" dateTime={formatDate(point.date)}>{point.date.slice(0,4)}.{point.date.slice(4,6)}.{point.date.slice(6,8)}</time>
+        :<small className="korea-score-stat-date">—</small>}
+    </div>)}
+   </div>
+   <div className="korea-score-changes">
+    {fixedPeriodChanges.map(({label,delta})=>{
+      const direction=delta===null||Math.abs(delta)<0.05?"neutral":delta>0?"positive":"negative";
+      const rounded=delta===null?"—":(Math.abs(delta)<0.05?0:delta).toFixed(1);
+      return <div className={`korea-score-stat is-${direction}`} key={label}>
+        <span className="korea-score-stat-label">{label}</span>
+        <strong className="korea-score-stat-value">{delta!==null&&delta>=0.05?"+":""}{rounded}{direction==="positive"?<small aria-hidden="true">▲</small>:direction==="negative"?<small aria-hidden="true">▼</small>:null}</strong>
+      </div>;
+    })}
+   </div>
+  </div> : undefined}
   period={<MarketPeriodControls
    activeKey={selectedPeriod}
    onChange={setSelectedPeriod}
