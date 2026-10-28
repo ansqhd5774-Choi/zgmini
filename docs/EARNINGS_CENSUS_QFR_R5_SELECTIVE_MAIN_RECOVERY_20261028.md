@@ -1,11 +1,11 @@
-# 실적 침체 Census QFR — 본선 선별 회수 사전검증 R5 (미반영)
+# 실적 침체 Census QFR — 본선 선별 회수 사전검증 및 적용 결과 R5
 
 - 기준일: 2026-10-28 KST
 - 저장소: `ansqhd5774-Choi/zgmini`
 - **유일 작업 브랜치:** `codex/api-site-integration-r1-20261026`
 - 조사 시 브랜치 HEAD: `a745f781f88240964e5f0b912388282cbcd58bdf`
 - 조사 시 `main` HEAD: `67c0621bb4ac02963cc847ec28af506885485b04`
-- 상태: **선별 회수 대상 확정 / 실제 main 파일 쓰기·PR·병합·Cloudflare 배포·PC D1 쓰기 없음**.
+- 최초 조사 상태: **선별 회수 대상 확정 / 당시 main 파일 쓰기·PR·병합·Cloudflare 배포·PC D1 쓰기 없음**. 최신 적용 상태는 아래 §6 참조.
 
 ## 1. 왜 브랜치 전체 병합을 하지 않는가
 
@@ -60,3 +60,14 @@ GitHub compare(`base=main`,`head=codex/api-site-integration-r1-20261026`)에서 
 - QFR D1 게시 로직·CMD 및 로컬 QFR 33건(R1 5 + R2 8 + R3 6 + R4 5 + 게시기 3 + Worker 6) + 기존 BLS/화면 19건, 합계 52건의 회귀 테스트 코드가 작업 브랜치에 있다.
 - **첫 운영 미검증 Gate는 `main`의 선택적 15파일 회수 및 clean main 게시 소스 준비**다. 이 보고서 작성만으로 해당 Gate를 통과한 것이 아니다.
 - `MAIN_QFR_FILES=NOT_PRESENT`, `MAIN_SELECTIVE_RECOVERY=NOT_RUN`, `PC_D1_PREFLIGHT=NOT_RUN`, `D1_APPLY/READBACK=NOT_RUN`, `PUBLIC_GET=NOT_RUN`, `SITE_DEPLOY=NOT_RUN`.
+
+## 6. 사용자 승인 이후 실제 main 선별 반영 결과 (2026-10-28)
+
+- 사용자가 **정확한 Census QFR 15개 파일만 최신 `main`에 선별 반영**하도록 명시 승인했다. 위 §1~5의 스냅샷은 승인 전 조사 기록이며 현재 운영 판정은 이 절을 우선한다.
+- 반영 직전 지정 작업 브랜치 원본 SHA **15/15 일치**, `main` 대상 경로 **15/15 미존재** 확인. 재사용 D1 모듈 2개는 양쪽 blob 동일.
+- 부모 `main=67c0621bb4ac02963cc847ec28af506885485b04`, 부모 tree=`876a136f3a364307ef1f008ebff306f108d85507`에서 **승인된 blob SHA 15개만 추가**한 tree=`32fc55b3fbbf6bcba7d279634572a598ec568598`를 생성했다.
+- 신규 `main` 커밋 **`2f3f07fcc2b9130e4789b31381cc789947a69ba7`**. 브랜치 ref는 `force=false` + 기존 부모 SHA 기대조건으로 갱신했고 `success=true`를 받았다.
+- `compare(parent, main)`에서 **ahead 1, behind 0, 변경 15개 전부 ADDED**, 경로 집합 **15/15 정확 일치**, 기존 파일 수정·삭제 **0** 확인. 실제 `main` HEAD도 해당 커밋과 일치. 지정 작업 브랜치는 건드리지 않고 기존 이력 보존.
+- GitHub Actions `Node.js CI`(run `40617816279`)가 신규 main 커밋으로 자동 시작되어 **Build 단계 PASS**를 확인했으나, 이후 **run 전체는 `CANCELLED`**로 종료됐다. Regression tests는 취소되고 후속 일부 검사는 SKIPPED였다. 따라서 **CI 전체 PASS를 주장하지 않는다**. `IndexNow notify` 작업은 별도 성공. Cloudflare exact deployment / 실제 API / UI / D1 readback은 각각 별도 검증이 필요하다.
+- 후속 읽기 전용 조회에서 다른 작업자의 `main=e7592a6f6bab7ce4e37a3fb204006a79aedc96f3`가 확인됐다. `compare(2f3f07...,main)`은 `ahead=3,behind=0`, 신규 차이 8개는 공포탐욕 UI·테스트 파일에만 있어 **QFR 15파일 및 본선 커밋은 그대로 조상에 남아 있다**. 이 조회 이후 main HEAD는 다시 변경될 수 있다.
+- 최종 구분: `MAIN_QFR_SELECTIVE_RECOVERY=PASS`, `SOURCE_CONTENT_15_15=PASS`, `CODE_LOCAL_TEST_52_52=PASS`(반영 전 동일 blob), `QFR_MAIN_COMMIT_CI=CANCELLED_AFTER_BUILD_PASS`, `PC_D1_PREFLIGHT=NOT_RUN`, `D1_WRITE/READBACK=NOT_RUN`, `PUBLIC_GET=NOT_RUN`, `SITE_DEPLOY=NOT_VERIFIED`.
