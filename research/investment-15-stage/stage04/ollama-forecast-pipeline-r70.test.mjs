@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { runForecastPipeline, tbrcR30Adapter, R31_RECHECK_TOPICS } from './ollama-forecast-pipeline-r70.mjs';
+import { runForecastPipeline, tbrcR30Adapter } from './ollama-forecast-pipeline-r70.mjs';
 import { auditForecastSource } from './forecast-source-audit-r29-readonly.mjs';
 
 const hosts = {
@@ -98,7 +98,7 @@ test('R30 adapter always requests verified rate-only mode and direct official ma
   assert.equal(called.keyword, 'fresh market without hardcoded list');
   assert.equal(called.options.strictMarketScope, true);
   assert.equal(called.options.rateOnlyFromSource, true);
-  assert.equal(called.options.resolveHistoricTableMislabel, false);
+  assert.equal(called.options.resolveHistoricTableMislabel, true);
   assert.deepEqual(called.options.allowedKeywords, [called.keyword]);
 });
 
@@ -137,26 +137,32 @@ function r31HistoricMislabelFixture(name, historic, base, forecast, historicRate
     `Growth Rate CAGR of ${historicRate}% from 2026 to 2030</p></html>`;
 }
 
-test('R80 activates established R31 proof only for three missing R79 topics', async () => {
-  assert.deepEqual(R31_RECHECK_TOPICS,
-    ['consumer staples', 'fintech', 'biotechnology services']);
-  for (const keyword of ['consumer staples','fintech','biotechnology services','data center']) {
+test('R81 applies the established independent R31 proof to every TBRC topic', async () => {
+  for (const keyword of ['consumer staples','fintech','biotechnology services',
+    'data center','cloud computing','consumer discretionary','random legitimate topic']) {
     let called;
     await tbrcR30Adapter(async (query, opts) => {
       called = opts;
       return valid('TBRC',5);
     }).run({id:'t',keyword});
-    assert.equal(called.resolveHistoricTableMislabel,R31_RECHECK_TOPICS.includes(keyword));
+    assert.equal(called.resolveHistoricTableMislabel,true);
     assert.equal(called.rateOnlyFromSource,true);
     assert.equal(called.strictMarketScope,true);
   }
 });
 
-test('R80 retains three proven R31 historic-mislabel reports; invented proof still fails', async () => {
+test('R81 retains all ten mathematically proven R31 historic-mislabel reports; invented proof still fails', async () => {
   for (const entry of [
+    ['Passenger Car', 1644.2, 1749.76, 2325.31, 6.4, 7.4],
+    ['Financial Services', 36130.35, 38583.29, 51116.31, 6.8, 7.3],
+    ['Advanced Materials', 91.27, 98.22, 134.03, 7.6, 8.1],
     ['Staple Food', 1838.96, 1963.65, 2485.28, 6.8, 6.1],
+    ['Real Estate', 4443.46, 4744.35, 6267.22, 6.8, 7.2],
+    ['Cloud Computing', 832.8, 959.79, 1711.49, 15.2, 15.6],
+    ['Defense', 506.9, 542.72, 739.43, 7.1, 8.0],
     ['FinTech Blockchain', 6.45, 9.55, 39.18, 48.2, 42.3],
-    ['Biotechnology Services', 178.54, 196.54, 314.12, 10.1, 12.4]
+    ['Biotechnology Services', 178.54, 196.54, 314.12, 10.1, 12.4],
+    ['Data Center', 299.63, 324.25, 460.61, 8.2, 9.2]
   ]) {
     const [name,historic,base,forecast,historicRate,forecastRate]=entry;
     const html=r31HistoricMislabelFixture(name,historic,base,forecast,historicRate,forecastRate);
