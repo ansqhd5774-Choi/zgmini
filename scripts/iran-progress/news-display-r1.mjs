@@ -2,6 +2,7 @@
 import {createHash} from 'node:crypto';
 import {NEWS_PC_RETENTION_DAYS,IRAN_NEWS_DISPLAY_VERSION,kstDayWindow,kstNewsDay,
  validNewsDisplayItem,visibleIranNewsItems,buildIranNewsSnapshot} from '../../lib/iran-progress/news-display-r1.mjs';
+import {validSourceRightsNews} from '../../lib/iran-progress/news-source-rights-r2.mjs';
 
 export const RIGHTS_SOURCE='GOV_UK_OGL_V3';
 export const RIGHTS_POLICY_URL='https://www.gov.uk/help/reuse-govuk-content';
@@ -10,13 +11,24 @@ export const EMPTY_IRAN_NEWS_CACHE=Object.freeze({version:IRAN_NEWS_CACHE_VERSIO
 
 // The caller must establish that the individual GOV.UK page is not third-party content.
 export function toDisplayNewsItem(candidate,{now=Date.now()}={}){
- if(candidate?.rightsVerified!==true||candidate.rightsSource!==RIGHTS_SOURCE||
-    candidate.rightsPolicyUrl!==RIGHTS_POLICY_URL||candidate.source!=='GOV.UK')return null;
+ const gov=candidate?.source==='GOV.UK';
+ if(gov?(candidate?.rightsVerified!==true||candidate.rightsSource!==RIGHTS_SOURCE||
+    candidate.rightsPolicyUrl!==RIGHTS_POLICY_URL):!validSourceRightsNews(candidate,now))return null;
  if(typeof candidate.sourceUrl!=='string'||typeof candidate.publishedAt!=='string')return null;
  const url=(()=>{try{const u=new URL(candidate.sourceUrl);u.hash='';u.search='';return u.href;}catch{return '';}})();
  const id=createHash('sha256').update(url).digest('hex');
- const item={id,source:'GOV.UK',publishedAt:candidate.publishedAt,
-  title:candidate.title,summary:candidate.summary,impact:candidate.impact,sourceUrl:url};
+ const item={id,source:candidate.source,publishedAt:candidate.publishedAt,
+  title:candidate.title,summary:candidate.summary,impact:candidate.impact,sourceUrl:url,
+  ...(gov?{}:{rightsVerified:true,displayEligible:true,rightsSource:candidate.rightsSource,
+   rightsPolicyUrl:candidate.rightsPolicyUrl,publicationMode:candidate.publicationMode,
+   rightsReviewedAt:candidate.rightsReviewedAt,editorialSummaryReviewed:true,
+   ...(candidate.source==='BBC'?{}:{creatorCredit:candidate.creatorCredit}),
+   ...(candidate.source==='Tasnim'||candidate.source==='IAEA'?{
+    sourceOriginalContentVerified:true,adaptationNotice:candidate.adaptationNotice}:{}),
+   ...(candidate.source==='UN'?{sourceOriginalContentVerified:true,newsReuseScopeReviewed:true,
+    unNoticeConfirmedAt:candidate.unNoticeConfirmedAt,adaptationNotice:candidate.adaptationNotice}:{}),
+   ...(candidate.source==='BBC'?{independentFactsReviewed:true,sourceTextReused:false,
+    corroboratingSourceUrl:candidate.corroboratingSourceUrl}:{})})};
  return validNewsDisplayItem(item,now)?item:null;
 }
 export function previewIranNewsRetention(cache,incoming,{now=Date.now()}={}){
