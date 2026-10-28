@@ -8,7 +8,7 @@
 | 02 | 섹터 분석 | ZGMINI 기존 ETF 섹터 공탐 활용 계획 | EXISTING_INPUT |
 | 03 | 테마 분석 | 기존 통과 ETF 테마 9개 유지; 재검증 금지 | EXISTING_INPUT |
 | 04 | 매력 테마 선정 | R63 21/21 미래 CAGR 평균·58/63 유효 수치 + **R69에서 R17 기존 F 9/9·산업 원천 7/9·변화 방향 6/9를 역사 시점으로 병렬 결합**, 신규 취득 없음. 현재 F 및 G/D/M 매력 공식·순위는 미승인 | DESIGNED / PARTIAL |
-| 05 | 성장 산업·기술 선정 | R25 역사 선택 보존 + R78 읽기 전용 01~04 E/T/S5 융합 계산기 구현; 개발 환경 가상 10/10 검증, 실제 ETF 가격 RS·Trend·실측 Stage04 M4 미연결 | CODE_PRESENT / PARTIAL |
+| 05 | 성장 산업·기술 선정 | R25 역사 선택 보존 + R78 읽기 전용 01~04 E/T/S5 융합 계산기 구현; 개발 환경 가상 11/11 검증, 실제 ETF 가격 RS·Trend·실측 Stage04 M4 미연결 | CODE_PRESENT / PARTIAL |
 | 06 | 수혜 기업 발굴 | M2 R25 기업 노출·미국 유니버스·로봇·제품 조사 코드 | CODE_PRESENT / NOT_VERIFIED |
 | 07 | 기본 지표 분석 | M2 R25 재무·공식 기업 실적 확인 코드; R24 실측 2/4 부분 확보 | PARTIAL |
 | 08 | 15대 점수 | M2 R25 원본 계산기 코드, 원본 PDF 15건 SHA256 보존. 직전 실측 평가 0/60 | CODE_PRESENT / PARTIAL |
@@ -312,4 +312,4 @@
 ## R78 Stage05 융합 계산기 개발 검증 (2026-10-28)
 
 - [R78 Stage05 실행기·입력 계약·차단 이유](stage05/README_STAGE05_FUSION_R78_20261028.md): 01 시장 위험은 경고 분리, 02 ETF 가격 상대강도 + 03 승인 테마 ETF 추세를 트레이더 T로 결합, 04 QUANTIFIED 실측 성장 G/D/M4를 경제학 E로 사용하여 **S5=0.8E+0.2T**. 70:30/90:10 민감도 표시. 과거 M2 선택·운영 점수 변경 없음.
-- Node 개발 환경 **가상 fixture 회귀 10/10 PASS**. `--audit-contract` 실행은 `INPUT_GAPS_NOT_RESOLVED`(exit 2): 현재 01~03 피드의 252개 공탐 이력은 ETF 가격 RS/Trend가 아니며, R77 미래 CAGR은 실측 M4가 아니다. **실제 선정 S5=NULL**. Windows 사용자 PC R78 실측·운영 전환 미검증. 기존 R77 PC 5/5는 Stage04 연구 수집 검증으로 유지.
+- Node 개발 환경 **가상 fixture 회귀 11/11 PASS**. `--audit-contract` 실행은 `INPUT_GAPS_NOT_RESOLVED`(exit 2): 현재 01~03 피드의 252개 공탐 이력은 ETF 가격 RS/Trend가 아니며, R77 미래 CAGR은 실측 M4가 아니다. **실제 선정 S5=NULL**. Windows 사용자 PC R78 실측·운영 전환 미검증. 기존 R77 PC 5/5는 Stage04 연구 수집 검증으로 유지.
