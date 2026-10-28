@@ -5,11 +5,12 @@ import { fileURLToPath } from 'node:url';
 import { KEYWORDS, measureKeyword } from './keyword-growth-speed-r25-readonly.mjs';
 import { runForecastPipeline, tbrcR30Adapter } from './ollama-forecast-pipeline-r70.mjs';
 import { firstPartyOllamaAdapter } from './official-publisher-ollama-adapters-r71.mjs';
+import { officialResearchMarketKeyword } from './stage04-r63-official-address-hints-r78.mjs';
 import { textSummary } from './run-ollama-forecast-r70.mjs';
 
 export function r71Adapters({ model = 'gemma3:4b' } = {}) {
   return [
-    tbrcR30Adapter(measureKeyword, { model }),
+    tbrcR30Adapter(measureKeyword, { model, researchMarketFn: officialResearchMarketKeyword }),
     firstPartyOllamaAdapter('SkyQuest', { model }),
     firstPartyOllamaAdapter('Precedence', { model })
   ];
