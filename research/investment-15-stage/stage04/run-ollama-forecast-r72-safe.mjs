@@ -70,7 +70,7 @@ export async function executeR72({
     started_at: new Date().toISOString(),
     last_updated_at: null,
     node_version: process.version,
-    publisher_adapter_revision: 'R76_BASE_YEAR_FORECAST_PERIOD_DISAMBIGUATION',
+    publisher_adapter_revision: 'R77_OFFICIAL_SITEMAP_DISCOVERY',
     topics_total: null,
     topics_done: 0,
     means_calculable: 0,
