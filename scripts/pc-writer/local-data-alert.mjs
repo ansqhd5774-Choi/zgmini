@@ -30,7 +30,8 @@ export function transientCollectionFailure(report){
  const retryHttp=status=>[500,502,503,504].includes(status);
  const fred=source?.provider==='FRED'&&source.failed?.length>0&&source.failed.every(x=>retryHttp(x.httpStatus)||x.httpStatus===null&&['TIMEOUT','ABORTED','ETIMEDOUT','ECONNRESET','ENOTFOUND','EAI_AGAIN','UND_ERR_CONNECT_TIMEOUT'].includes(x.networkCode));
  const bls=source?.provider==='BLS'&&retryHttp(source.httpStatus);
- return (transport||fred||bls)&&statuses.some(([s])=>['NETWORK_ERROR','500','502','503','504'].includes(s));
+ const wiki=report.job==='earnings'&&source?.provider==='WIKIPEDIA'&&source.stage==='UNIVERSE_REQUEST'&&retryHttp(source.httpStatus)&&Number(report.providers?.['en.wikipedia.org']?.statuses?.[String(source.httpStatus)])>0;
+ return (transport||fred||bls||wiki)&&statuses.some(([s])=>['NETWORK_ERROR','500','502','503','504'].includes(s));
 }
 function queueRecovery(base,report,now){
  const state=read(path.join(base,'data-alert-state.json'),{version:2,active:{},pending:{},events:[]});state.pending??={};
@@ -79,7 +80,9 @@ export function updateDataAlert(base,{key,failed,now=Date.now(),sourceDiagnostic
   const detail=sourceDiagnostic?.provider==='FRED'
    ?`FRED 필수 자료 ${Number.isSafeInteger(sourceDiagnostic.ready)?sourceDiagnostic.ready:'?'}/${Number.isSafeInteger(sourceDiagnostic.requested)?sourceDiagnostic.requested:'?'} · 누락 ${(sourceDiagnostic.missing??[]).filter(x=>/^[A-Z0-9]{1,32}$/.test(x)).join(', ')||'상세 기록 확인'}`
    :sourceDiagnostic?.provider==='BLS'&&Number.isInteger(sourceDiagnostic.attempts)
-   ?`BLS 응답 ${Number.isInteger(sourceDiagnostic.httpStatus)?sourceDiagnostic.httpStatus:'통신 실패'} · ${Math.min(2,Math.max(1,sourceDiagnostic.attempts))}회 시도`:null;
+   ?`BLS 응답 ${Number.isInteger(sourceDiagnostic.httpStatus)?sourceDiagnostic.httpStatus:'통신 실패'} · ${Math.min(2,Math.max(1,sourceDiagnostic.attempts))}회 시도`
+   :sourceDiagnostic?.provider==='WIKIPEDIA'&&sourceDiagnostic.stage==='UNIVERSE_REQUEST'&&Number.isInteger(sourceDiagnostic.httpStatus)
+   ?`Wikipedia 구성종목 조회 HTTP ${sourceDiagnostic.httpStatus}`:null;
   state.active[key]={since:previous?.since??pending?.since??now,lastSeen:now,label:names[key],...(detail?{detail}:{})};
   if(!previous){state.events.push({at:now,key,status:'FAILED_BLOCKED'});changed=true;}
  }else if(previous||pending){delete state.active[key];state.events.push({at:now,key,status:'RECOVERED'});changed=true;}

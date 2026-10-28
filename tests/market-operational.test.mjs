@@ -6,6 +6,7 @@ import assert from 'node:assert/strict';
 import {DatabaseSync} from 'node:sqlite';
 import {marketOperationalStore,readStoredMarketInputs,storedMarketResponse} from '../worker/market-operational-store.mjs';
 import {runMarketOperationalRefresh,MARKET_COLLECTION_JOBS} from '../worker/market-operational-refresh.mjs';
+import {collectEarningsE1R4ToStore} from '../lib/market-score/sec-earnings-e1-r4-provider.mjs';
 function fixture(){
  const sqlite=new DatabaseSync(':memory:');
  const db={async batch(stmts){sqlite.exec('BEGIN');try{const out=[];for(const st of stmts)out.push(await st.run());sqlite.exec('COMMIT');return out;}catch(error){sqlite.exec('ROLLBACK');throw error;}},prepare(sql){const statement=sqlite.prepare(sql);const bound=args=>({bind:(...values)=>bound(values),run:async()=>statement.run(...args),first:async()=>statement.get(...args),all:async()=>({results:statement.all(...args)})});return bound([])}};
@@ -13,6 +14,10 @@ function fixture(){
 }
 const now=Date.parse('2026-09-30T00:00:00Z');
 const score=fullMarket();
+
+test('actual earnings provider labels Wikipedia 503 and preserves stored issuer facts',async()=>{const {db,sqlite}=fixture();try{const out=await collectEarningsE1R4ToStore({asOf:'2026-09-30',now:()=>new Date(now),db,fetchImpl:async()=>new Response('{}',{status:503})});assert.equal(out.status,'FAIL');assert.deepEqual(out.sourceDiagnostic,{provider:'WIKIPEDIA',stage:'UNIVERSE_REQUEST',httpStatus:503});assert.equal(out.providerRequests,1);assert.equal(sqlite.prepare('SELECT COUNT(*) AS n FROM market_score_earnings_e1_r3_current_v1').get().n,0);}finally{sqlite.close();}});
+
+test('earnings collection failure keeps only the proven Wikipedia root HTTP diagnostic without calculation',async()=>{for(const reason of ['WIKIPEDIA_UNIVERSE_REQUEST_FAILED','WIKIPEDIA_UNIVERSE_PARSE_FAILED']){const {store,db,sqlite}=fixture();try{await store.writeScore(score,now-1);const result=await runMarketOperationalRefresh({env:{DB:db},store,job:'earnings',now,collectors:{earnings:async()=>({status:'FAIL',failureCode:reason,sourceDiagnostic:{provider:'WIKIPEDIA',stage:'UNIVERSE_REQUEST',httpStatus:503,raw:'PRIVATE'}})},calculate:()=>{throw Error('MUST_NOT_CALCULATE')}});assert.equal(result.status,'SOURCE_FAILED');assert.deepEqual(result.sourceDiagnostic,reason==='WIKIPEDIA_UNIVERSE_REQUEST_FAILED'?{provider:'WIKIPEDIA',stage:'UNIVERSE_REQUEST',httpStatus:503}:undefined);assert(!JSON.stringify(result).includes('PRIVATE'));assert.equal((await store.readScore()).storedAt,now-1);}finally{sqlite.close();}}});
 
 test('empty supply and fund flow results never replace a valid batch or trigger calculation',async()=>{
  for(const [job,keys] of Object.entries({supply:['gscpiRows','copperRows'],fundFlows:['registeredFundFlowRows']})){
