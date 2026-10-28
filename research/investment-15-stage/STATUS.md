@@ -295,3 +295,9 @@
 - R77 **코드 개발**: 공식 로봇 파일에 게시된 Sitemap XML을 읽어 사이트맵 내 전체시장 보고서 URL을 우선 검색, 다른 URL은 후보에서 제외. 현재 Windows 실행 프로세스 내 URL 캐시만 사용하고 다음 실행에서는 재조회. 20초 발행사 예산·4MB XML 상한·HTTPS 발행사 호스트/제목/원문 검증 유지.
 - SkyQuest 공식 `reports.xml` 18,664개 `loc`의 개발측 오프라인 확인, Precedence 공식 Sitemap에서는 분류 목록 중심 확인. 모의 회귀 37/37 PASS, ZIP 13개 파일 검사 PASS. R77 사용자 PC Ollama 실측·추가 평균 산출은 **아직 미확인**.
 - 산업 CAGR은 운영 투자 G/D/M 확정점수로 전환하지 않았고, 과거 저장 JSON 재사용·사이트 배포·주문·스케줄러 변경 없음. [상세](STAGE04_R77_OFFICIAL_SITEMAP_FROM_R76_PC_20261028.md).
+
+## Stage04 R77 — 사용자 PC 실측 후 운영 판정 (2026-10-28)
+
+- **실제 Windows R77**: `publisher_adapter_revision=R77_OFFICIAL_SITEMAP_DISCOVERY`, `run_state=COMPLETED`, 5/5, 치명 오류 없음. 연구용 `means_calculable=1/5`, 데이터센터 11.285%(SkyQuest 11.51%·Precedence 11.06%) 유지. 독립 보고서 2개 부족한 4개 시장은 NULL.
+- **사이트맵 기능 실증**: 첫 주제 실제 공식 Sitemap PASS, 나머지 4개에서 `REUSED_CURRENT_RUN` 확인. SkyQuest 공식 Sitemap에서 데이터센터 일치 전체시장 URL 1개 발견, 다른 직접시장 URL 0개. Precedence Sitemap 일치 URL 0개, 기존 직접 슬러그 탐색 데이터센터 PASS.
+- 이 결과에서 사이트맵 읽기 기능의 고장을 확인하지 못함. 다음 코드 작업의 대상은 신뢰성·시장정의·원문 수치와 기간이 검증된 **추가 독립 발행사 어댑터**이며, 유사·하위시장 자료 끼워넣기와 평균 Gate 완화는 제외. 동일 명령 재실행이나 신규 CMD 제작은 현재 불필요. [사용자 PC 실측 원장](README_R77_PC_RESULT_AND_SOURCE_COVERAGE_20261028.md).
