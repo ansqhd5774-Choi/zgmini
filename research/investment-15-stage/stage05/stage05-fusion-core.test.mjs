@@ -12,6 +12,7 @@ const growth = (id,G1,G2,F) => {
   return {id,status:'QUANTIFIED',evidenceKind:'REALIZED_INDUSTRY_ACTIVITY',
     sourceValidation:'VERIFIED',freshnessStatus:'CURRENT',
     formulaId:'STAGE04_R2_PROPOSED',sourceUrls:['https://example.org/verified-realized'],
+    validatedDate:'2026-10-27',observationPeriodEnd:'2026-09-30',
     G1,G2,F,G,D,M4:0.7*G+0.3*D};
 };
 function fixture() {
@@ -63,6 +64,14 @@ test('missing stage02 evidence does not become zero, 50 or stale value', () => {
 test('Stage04 G/D/M inconsistency blocks score', () => {
   const input=fixture();input.stage04.themes[0].D+=1;
   assert.equal(calculateFusionStage05(input).rows[0].blockReasons[0],'STAGE04_FORMULA_MISMATCH');
+});
+test('Stage04 post-snapshot validation or period end is lookahead and must block', () => {
+  const input=fixture();input.stage04.themes[0].validatedDate='2026-10-29';
+  assert.equal(calculateFusionStage05(input).rows[0].E,null);
+  assert.ok(calculateFusionStage05(input).rows[0].blockReasons.includes('STAGE04_CHRONOLOGY_UNVERIFIED'));
+  input.stage04.themes[0].validatedDate='2026-10-27';
+  input.stage04.themes[0].observationPeriodEnd='2026-10-29';
+  assert.equal(calculateFusionStage05(input).rows[0].S5,null);
 });
 test('period mismatch, future dates, and stale stage01 block promotion', () => {
   const input=fixture();input.stage03.themes[0].trend.periodStart='2025-11-01';
