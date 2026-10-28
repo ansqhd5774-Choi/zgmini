@@ -38,6 +38,28 @@ test('80:20 economic+trader fusion with separate market risk and 70/90 sensitivi
   assert.equal(a.sensitivity['90'],58.4);
   assert.equal(result.rows.some(r=>r.themeId==='c'),false);
 });
+test('Stage05 calculates G/D/M4/E/T/S5 from existing component inputs, without precomputed scores',()=>{
+  const input=fixture();
+  for(const record of input.stage04.themes){delete record.G;delete record.D;delete record.M4;}
+  const result=calculateFusionStage05(input);
+  const a=result.rows.find(r=>r.themeId==='a');
+  assert.equal(result.summary.rankableCount,2);
+  assert.deepEqual(a.calculatedIndustry,{G1:80,G2:80,F:80,G:80,D:0,M4:56});
+  assert.deepEqual({E:a.E,T:a.T,S5:a.S5},{E:56,T:80,S5:60.8});
+  assert.equal(result.ranking[0].themeId,'a');
+});
+test('missing industry input is NULL and never filled from a saved forecast average',()=>{
+  const input=fixture();
+  delete input.stage04.themes[0].G1;
+  delete input.stage04.themes[0].G;
+  delete input.stage04.themes[0].D;
+  delete input.stage04.themes[0].M4;
+  input.stage04.themes[0].mean_pct=11.285;
+  const a=calculateFusionStage05(input).rows[0];
+  assert.equal(a.E,null);
+  assert.equal(a.S5,null);
+  assert.ok(a.blockReasons.includes('STAGE04_COMPONENT_INPUT_MISSING'));
+});
 test('source is forecast CAGR, not realized G; return null without substituting R77 11.285', () => {
   const input=fixture();
   input.stage04.themes[0].evidenceKind='FORECAST_CAGR';
