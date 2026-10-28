@@ -300,3 +300,12 @@
 - R25 신규 파서·수집기·설치기·UI KST 발표 시각 연결 및 총 14건 테스트 PASS. 기존 R24 USDA collector 3건과 R23 EIA collector 9건 회귀 PASS. `npm run typecheck` PASS(기존 로컬 환경).
 - 사용자 PC 소스 R24 성공 SHA `b8204432cea18f62eb34eb8d08dcfe61717a448d`를 고정 기준으로 세 파일(parser, CFTC 모듈, collector)만 로컬 커밋·config.source 전환하는 설치 ZIP `MARKET_CALENDAR_R25_CFTC_PC_INSTALL_20261028.zip` 제공. SHA256 `413f9584295448542842bdc3e65be366f77ac01080ccb6d242dc8ffc347c74a5`. 그사이 다른 PC 작업으로 HEAD가 전진하면 STOP이며 덮어쓰기 금지.
 - R25는 **공식 원문 실측·코드 및 안전 설치기 준비 완료**, PC 설치 실행/정규 수집/SQLite·사이트 공개는 **미완료·미검증**. 지정 브랜치 `codex/zgmini-gpt-workspace-20261025` 외 신규 브랜치·main 병합·배포 없음. 설치 성공 로그가 오면 PC 코드 설치만 판정하고 다음 공식 소스 확장을 이어간다.
+
+
+## 29. R25 PC 설치 검증 및 R26 Treasury 원문 확보 (2026-10-28)
+
+- 실제 사용자 PC 실행 로그 `MARKET_CALENDAR_R25_CFTC_APPLY_RESULT.txt` 직접 확인: `decision=R25_CFTC_CALENDAR_INSTALLED_NO_FORCED_COLLECTION`, `phase=INSTALLED`, `backupCreated=true`, `newSource=724bbbf4407363f1f091567ed196cc0bf554bb5e`. 이전 R24 PC SHA `b8204432cea18f62eb34eb8d08dcfe61717a448d`에서 전진. 변경 3파일 `lib/release-calendar.mjs`, `lib/cftc-calendar.mjs`, `scripts/pc-writer/release-calendar.mjs`만. 강제수집·게시·GitHub push 없음. R25 **코드 설치 완료**, 자연 예약 수집/SQLite/사이트 공개는 여전히 미검증.
+- 다음 공식 발표원 R26은 미국 재무부 TreasuryDirect `https://www.treasurydirect.gov/auctions/auction-announcements/` 공식 공지에 제공된 **주간 Treasury CUSIP Release XML** `https://www.treasurydirect.gov/xml/TreasuryCUSIPRelease.xml`. 별도 분기별 Tentative XML과 확정 일정 구분. 원문 실측 전 XML 구조/날짜 의미 추측하지 않음.
+- 지정 브랜치에 R26 **읽기 전용** `scripts/pc-writer/market-calendar-r26-treasury-source-export.mjs`, Windows `MARKET_CALENDAR_R26_TREASURY_SOURCE_EXPORT.cmd`, README, 4개 테스트, `docs/MARKET_CALENDAR_R26_TREASURY_SOURCE_REVIEW.md` 등록. 신규 R26 4/4 + 직전 R25 4/4 테스트 PASS, CMD ASCII CRLF, ZIP 3파일 무결성 PASS.
+- 전달 `MARKET_CALENDAR_R26_TREASURY_SOURCE_EXPORT_20261028.zip` SHA256 `a90823333bb0a7ce4ea37e1729665495f3bf00b038c47f43a11ae3e7e146c242`. 사용자가 압축 전체 해제→CMD 1회 실행→`MARKET_CALENDAR_R26_TREASURY_SOURCE_EXPORT_RESULT.txt` 제출. 이후 실제 XML 검산·파서·R25 PC Core 무결성 검증·최소 설치 순서.
+- R26 상태는 **READ_ONLY_SOURCE_EXPORT_READY**이고 PC 원문 캡처·수집기 설치·예약 수집·게시·사이트 공개는 미실행. 동일 브랜치 `codex/zgmini-gpt-workspace-20261025` 유지, 새 브랜치/main 병합/배포 없음.
