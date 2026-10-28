@@ -60,8 +60,18 @@ export function stageCurrentNineR48({dataRoot='E:/ZGmini/data',
 if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.url)){
   try{
     if(process.argv.length!==3||process.argv[2]!=='--stage-private')fail('USAGE');
-    process.stdout.write(JSON.stringify(stageCurrentNineR48({
-      dataRoot:process.env.ZGMINI_DATA_ROOT||'E:/ZGmini/data'}),null,2)+'\n');
+    const dataRoot=process.env.ZGMINI_DATA_ROOT||'E:/ZGmini/data';
+    const completed=stageCurrentNineR48({dataRoot});
+    const r51Path=path.join(HERE,'theme-nine-r51-stage-current.mjs');
+    let provisional={status:'R51_PROVISIONAL_MODULE_NOT_INSTALLED'};
+    if(fs.existsSync(r51Path)){
+      try{
+        const {stageNineR51Current}=await import('./theme-nine-r51-stage-current.mjs');
+        provisional=await stageNineR51Current({dataRoot});
+      }catch(e){provisional={status:'STOP_R51_PROVISIONAL_INDEPENDENT',
+        error:e.code??'R51_UNEXPECTED'};}
+    }
+    process.stdout.write(JSON.stringify({...completed,provisional},null,2)+'\n');
   }catch(e){process.stderr.write(JSON.stringify({status:'STOP_R48_PRIVATE_STAGE',
     error:e.code??'R48_UNEXPECTED',detail:e.code?undefined:String(e.message)})+'\n');
     process.exitCode=1;}

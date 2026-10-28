@@ -11,6 +11,8 @@ import {fileURLToPath} from 'node:url';
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
 const script=path.join(root,'scripts','pc-writer','THEME_NINE_R49_ONE_CLICK_PRIVATE_AUTO_INSTALL.cmd');
 const sha=bytes=>createHash('sha256').update(bytes).digest('hex');
+// R49 is immutable. R52 separately upgrades only its installed R48 stage.
+const originalR49StageSha='d3a5afad2adee9c9e14382384b7ba8c87f88e016a8880571d975b7d64010f2ea';
 const sources=[
   ['R47','scripts/pc-writer/THEME_NINE_R47_RECURRING_PRIVATE_UPDATE.cmd'],
   ['CYCLE','scripts/pc-writer/THEME_NINE_R48_PRIVATE_CYCLE.cmd'],
@@ -49,7 +51,8 @@ test('R49 is one-file CRLF ASCII with all seven byte-identical SHA sections',()=
     assert.ok(start>=0&&finish>start,key);
     const payload=Buffer.from(cmd.slice(start+begin.length,finish)
       .replace(/[^A-Za-z0-9+/=]/g,''),'base64');
-    assert.equal(sha(payload),sha(fs.readFileSync(path.join(root,source))),source);
+    assert.equal(sha(payload),key==='STAGE'?originalR49StageSha:
+      sha(fs.readFileSync(path.join(root,source))),source);
   }
   assert.match(cmd,/FULL_PROVIDER_COLLECTION_DURING_INSTALL=NO/);
   assert.match(cmd,/D1_WRITES=0/);
@@ -65,9 +68,10 @@ test('R49 extractor installs exact files idempotently and rejects conflicts',t=>
   const initial=extractTo(cmd,dir);
   assert.match(initial,/BUNDLE_SHA_VERIFIED=YES/);
   assert.match(initial,/FILES_INSTALLED_OR_VERIFIED=7\/7/);
-  for(const [,source] of sources){
+  for(const [key,source] of sources){
     const target=path.join(dir,path.basename(source));
-    assert.equal(sha(fs.readFileSync(target)),sha(fs.readFileSync(path.join(root,source))));
+    assert.equal(sha(fs.readFileSync(target)),key==='STAGE'?originalR49StageSha:
+      sha(fs.readFileSync(path.join(root,source))));
   }
   const second=extractTo(cmd,dir);
   assert.match(second,/BUNDLE_SHA_VERIFIED=YES/);
