@@ -554,3 +554,50 @@
     transform:translateX(4px);
   }
 }
+
+/* Desktop market overview: equal-width composite and risk panels.
+   Keep the twelve economic domains below both panels at full width. */
+@container marketShell (min-width:960px){
+  .zg-dashboard[data-view="dashboard"] #market .zg-r55-body{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    grid-template-rows:auto auto;
+    align-items:stretch;
+  }
+  .zg-dashboard[data-view="dashboard"] #market .zg-r55-summary{
+    grid-column:1;
+    grid-row:1;
+    width:100%;
+    height:auto;
+    min-height:152px;
+    align-self:stretch;
+  }
+  .zg-dashboard[data-view="dashboard"] #market .zg-r55-risk-panel{
+    grid-column:2;
+    grid-row:1;
+    min-height:152px;
+    align-self:stretch;
+  }
+  .zg-dashboard[data-view="dashboard"] #market .zg-r55-component-panel{
+    grid-column:1 / -1;
+    grid-row:2;
+  }
+  .zg-dashboard[data-view="dashboard"] #market .zg-r55-risk-panel .zg-r55-subscore-grid{
+    grid-template-columns:repeat(4,minmax(0,1fr));
+    grid-template-rows:repeat(2,minmax(60px,auto));
+    width:100%;
+    height:auto;
+    min-height:0;
+  }
+  .zg-dashboard[data-view="dashboard"] #market .zg-r55-risk-panel .zg-r55-subscore{
+    height:auto;
+    min-height:60px;
+    padding:4px 6px;
+    border-right:0;
+  }
+  .zg-dashboard[data-view="dashboard"] #market .zg-r55-risk-panel .zg-r55-subscore:not(:nth-child(4n)){
+    border-right:1px dashed rgba(42,91,131,.72);
+  }
+  .zg-dashboard[data-view="dashboard"] #market .zg-r55-risk-panel .zg-r55-subscore:nth-child(n+5){
+    border-top:1px dashed rgba(42,91,131,.72);
+  }
+}
