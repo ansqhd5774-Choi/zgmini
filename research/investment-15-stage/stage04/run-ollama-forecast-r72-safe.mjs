@@ -70,7 +70,7 @@ export async function executeR72({
     started_at: new Date().toISOString(),
     last_updated_at: null,
     node_version: process.version,
-    publisher_adapter_revision: 'R74_LEAD_MARKET_SCOPE_REPAIR',
+    publisher_adapter_revision: 'R75_PRIMARY_GLOBAL_MARKET_SECTION',
     topics_total: null,
     topics_done: 0,
     means_calculable: 0,
