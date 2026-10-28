@@ -20,8 +20,18 @@ type RiskPoint={date:string;score:number};
 type RiskPayload={
  status:string;score:number|null;asOfDate?:string|null;methodologyVersion?:string|null;
  riskFactors?:RiskFactor[];riskFactorsMethodologyVersion?:string|null;
+ riskFactorsSource?:string|null;
  riskTrend?:RiskPoint[];riskHistoryKind?:string|null;
  riskFinancialPeriodEnd?:string|null;riskHistoryMode?:string|null;
+};
+type RiskRawFactor={id:string;value:number;previousValue:number|null;unit:string};
+type RiskRawPoint={periodEnd:string;values:Record<string,number>};
+type RiskFourRawPayload={
+ schemaVersion:string;status:string;source:string;sourceVersion:string;
+ methodologyVersion:string;historyMode:string;financialPeriodEnd:string;
+ diagnosticScore:number;scoreFactors:Array<{id:string;score:number}>;
+ factors:RiskRawFactor[];history:RiskRawPoint[];
+ freshness?:{status:string;reason:string|null};
 };
 const ids=["epsGrowth","margin","revenueGrowth","earningsGrowthBreadth"] as const;
 const labels:Record<string,{name:string;description:string;direction:string}>={
@@ -79,6 +89,31 @@ const costIndicators=[
  {id:"bls_unit_labor_cost_yoy",name:"비농업 단위노동비용 증가율",description:"비농업 단위노동비용의 전년 대비 변화",series:"PRS85006111"},
 ] as const;
 const finiteCost=(value:unknown):value is number=>typeof value==="number"&&Number.isFinite(value);
+const riskRawUsable=(raw:RiskFourRawPayload|null|undefined,risk:RiskPayload|null|undefined)=>Boolean(
+ raw?.schemaVersion==="earnings-recession-risk-four-raw-r1-v1"&&raw.status==="READY"&&
+ raw.source==="PC_STORED_SEC_EDGAR_E1_R4"&&raw.methodologyVersion==="E1-R4"&&
+ raw.historyMode==="CURRENT_VINTAGE_NOT_PIT"&&raw.freshness?.status==="FRESH"&&
+ risk?.status==="READY"&&risk.riskFactorsSource==="E1_R4_STORED_PC_REPLAY"&&
+ risk.riskHistoryMode==="CURRENT_VINTAGE_NOT_PIT"&&
+ raw.financialPeriodEnd===risk.riskFinancialPeriodEnd&&quarterEnd(raw.financialPeriodEnd)&&
+ validScore(risk.score)&&validScore(raw.diagnosticScore)&&
+ Math.abs(raw.diagnosticScore-risk.score)<1e-7&&
+ Array.isArray(raw.factors)&&raw.factors.length===4&&
+ Array.isArray(raw.scoreFactors)&&raw.scoreFactors.length===4&&
+ ids.every((id,index)=>raw.factors[index]?.id===id&&raw.factors[index].unit==="PERCENT"&&
+  finiteCost(raw.factors[index].value)&&
+  (raw.factors[index].previousValue===null||finiteCost(raw.factors[index].previousValue))&&
+  raw.scoreFactors[index]?.id===id&&validScore(raw.scoreFactors[index].score)&&
+  risk.riskFactors?.some(row=>row.id===id&&row.status==="READY"&&
+   validScore(row.score)&&Math.abs(row.score-raw.scoreFactors[index].score)<1e-7))&&
+ Array.isArray(raw.history)&&raw.history.length>=1&&raw.history.length<=5&&
+ raw.history.at(-1)?.periodEnd===raw.financialPeriodEnd&&
+ raw.history.every((row,index)=>quarterEnd(row.periodEnd)&&
+  (index===0||raw.history[index-1].periodEnd<row.periodEnd)&&
+  ids.every(id=>finiteCost(row.values?.[id])))
+);
+const riskRawFormat=(value:number|null|undefined)=>finiteCost(value)?
+ (value>0?"+":"")+value.toLocaleString("ko-KR",{minimumFractionDigits:2,maximumFractionDigits:2})+"%":"—";
 const costFormat=(value:number|null|undefined,unit:"PERCENT"|"INDEX")=>
  finiteCost(value)?value.toLocaleString("ko-KR",{minimumFractionDigits:2,maximumFractionDigits:2})+(unit==="PERCENT"?"%":""):"—";
 const costChange=(value:number|null|undefined,unit:"PERCENT"|"INDEX")=>
@@ -165,6 +200,9 @@ function CostSpark({history,label="저장된 비용 압력 관측치 추이. 결
 
 export default function EarningsRiskOnlyPanel(){
  const {payload,loading}=useStoredIndex<RiskPayload>("/api/earnings-recession-detail");
+ const {payload:riskRawPayload}=useStoredIndex<RiskFourRawPayload>("/api/earnings-recession-risk-four-raw");
+ const riskRawReady=riskRawUsable(riskRawPayload,payload);
+ const rawFactors=new Map<string,RiskRawFactor>(riskRawReady?riskRawPayload!.factors.map(row=>[row.id,row]):[]);
  const {payload:costPayload,loading:costLoading,error:costError}=
   useStoredIndex<CostPayload>("/api/earnings-recession-indicators");
   const {payload:unitPayload,loading:unitLoading,error:unitError}=
@@ -274,17 +312,23 @@ export default function EarningsRiskOnlyPanel(){
   <section className="inflation-indicator-section earnings-r2-indicators" aria-labelledby="earnings-risk-factor-title">
    <header><div><p className="cnn-eyebrow">EARNINGS RECESSION RISK FACTORS</p>
     <h2 id="earnings-risk-factor-title">실적 침체 분석 지표</h2></div>
-     <p>기존 4개는 실적 침체 방어 진단 점수, 추가 5개는 BLS 비용 압력 원자료, {mfgReady?"3개":"2개"}는 BEA 기업이익 원자료입니다. 추가 원자료는 진단 점수에 합산하지 않습니다. <span className="earnings-r2-cost-status" role="status">{costStatus} · BEA 기업이익 {beaReady?"연결 완료":"자료 확인 대기"} · BEA 단위이익 {unitStatus}</span></p>
+     <p>기존 4개는 {riskRawReady?"저장된 SEC 재무 원자료 수치와 기존 진단 점수를 구분":"기존 실적 침체 방어 진단 점수"}하여 표시합니다. 추가 5개는 BLS 비용 압력 원자료, {mfgReady?"3개":"2개"}는 BEA 기업이익 원자료입니다. 추가 원자료는 진단 점수에 합산하지 않습니다. <span className="earnings-r2-cost-status" role="status">SEC 원자료 {riskRawReady?"4/4 연결":"게시 확인 대기"} · {costStatus} · BEA 기업이익 {beaReady?"연결 완료":"자료 확인 대기"} · BEA 단위이익 {unitStatus}</span></p>
    </header>
    <div className="inflation-table-wrap earnings-r2-table-wrap"><table className="inflation-indicator-table earnings-r2-table">
     <colgroup><col className="earnings-col-favorite"/><col className="earnings-col-name"/><col className="earnings-col-content"/><col className="earnings-col-criterion"/><col className="earnings-col-prior"/><col className="earnings-col-current"/><col className="earnings-col-release"/><col className="earnings-col-judgement"/><col className="earnings-col-spark"/><col className="earnings-col-help"/></colgroup>
     <thead><tr><th><EarningsFavoriteHeaderIcon/><span className="sr-only">즐겨찾기</span></th><th>지표</th><th>내용</th><th>기준</th><th>이전</th><th>현재</th><th>발표</th><th>판단</th><th>미니차트(1Y)</th><th>ⓘ</th></tr></thead>
-    <tbody>{ids.map(id=>{const factor=factors.get(id),meta=labels[id],value=factor?.score??null;return <tr key={id}>
+    <tbody>{ids.map(id=>{const factor=factors.get(id),meta=labels[id],value=factor?.score??null;
+     const raw=rawFactors.get(id),rawHistory=riskRawReady?riskRawPayload!.history.map(point=>({value:point.values[id]})):[];
+     return <tr key={id} data-source={raw?"sec-stored-r4-raw":"sec-stored-r4-score"}>
      <td><EarningsFavoriteButton id={id} label={meta.name}/></td><th scope="row">{meta.name}</th>
-     <td>{meta.description}</td><td>{meta.direction}</td><td>—</td>
-     <td>{validScore(value)?value.toFixed(1)+"점":"—"}<small>결산 {dateLabel(factor?.observationDate)}</small></td>
-     <td>—</td><td>{value===null?"확인 대기":value>=60?"긍정":value>=45?"중립":"부정"}</td><td>—</td>
-     <td><ContentHelp label={meta.name+" 도움말"}><p>{meta.description}. 해당 지표의 원자료와 진단 점수는 구분합니다. 현재 입력은 기존 E1-R4 호환 점수이며 개별 관측일이 확인되지 않은 항목은 —로 표시합니다.</p></ContentHelp></td>
+     <td>{meta.description}</td><td>{meta.direction}<small>{raw?"SEC 재무 원자료":"진단 점수"}</small></td>
+     <td>{raw?riskRawFormat(raw.previousValue):"—"}</td>
+     <td>{raw?<><strong>{riskRawFormat(raw.value)}</strong><small>진단 {validScore(value)?value.toFixed(1)+"점":"—"}</small></>
+       :validScore(value)?value.toFixed(1)+"점 (진단)":"—"}</td>
+     <td>—<small>결산 {dateLabel(factor?.observationDate)}</small></td>
+     <td>{value===null?"확인 대기":value>=60?"긍정":value>=45?"중립":"부정"}</td>
+     <td>{raw?<CostSpark history={rawHistory} label={meta.name+" 저장된 SEC 결산 원자료 추이"}/>:"—"}</td>
+     <td><ContentHelp label={meta.name+" 도움말"}><p>{meta.description}. 실제 SEC EDGAR XBRL 기업 재무자료에서 산출한 기업 집합의 {id==="earningsGrowthBreadth"?"EPS 증가 기업 비율":"중앙값"}입니다. 단위는 %이며, 표시된 진단 점수는 과거 분포에서 정규화한 별도 값입니다.</p><p>현재 확보된 개정 자료의 결산 분기 기준 사후 재구성 결과(PIT 아님)입니다. 이전 분기 값이 확인되지 않으면 —로 표시합니다. 기업별 원자료는 공개하지 않습니다.</p><a href="https://www.sec.gov/search-filings/edgar-application-programming-interfaces" target="_blank" rel="noopener noreferrer">SEC EDGAR 원자료 안내</a></ContentHelp></td>
     </tr>})}
     {costIndicators.map(meta=>{const row=costRows.get(meta.id),ok=costUsable(row);return <tr key={meta.id} className="earnings-r2-cost-row">
      <td><EarningsFavoriteButton id={meta.id} label={meta.name}/></td>
@@ -356,10 +400,17 @@ export default function EarningsRiskOnlyPanel(){
       </ContentHelp></td>
      </tr>}</tbody>
    </table></div>
-   <div className="earnings-r2-mobile-list">{ids.map(id=>{const factor=factors.get(id),meta=labels[id],value=factor?.score??null;return <article className="earnings-r2-mobile-card" key={id}>
-     <div className="earnings-r2-mobile-head"><div className="earnings-r2-mobile-title"><EarningsFavoriteButton id={id} label={meta.name}/><div><strong>{meta.name}</strong><small>진단 구성지표</small></div></div></div>
+   <div className="earnings-r2-mobile-list">{ids.map(id=>{const factor=factors.get(id),meta=labels[id],value=factor?.score??null;
+    const raw=rawFactors.get(id),rawHistory=riskRawReady?riskRawPayload!.history.map(point=>({value:point.values[id]})):[];
+    return <article className="earnings-r2-mobile-card" key={id} data-source={raw?"sec-stored-r4-raw":"sec-stored-r4-score"}>
+     <div className="earnings-r2-mobile-head"><div className="earnings-r2-mobile-title"><EarningsFavoriteButton id={id} label={meta.name}/><div><strong>{meta.name}</strong><small>{raw?"SEC 실적 원자료 · 진단 점수 분리":"진단 구성지표"}</small></div></div>
+      <ContentHelp label={meta.name+" 도움말"}><p>SEC EDGAR에서 수집한 기업 재무자료의 집계 수치입니다. 값(%)과 진단 점수(0~100점)는 다릅니다. 기존 결산 분기는 개정된 자료로 사후 재구성한 값이며 발표 당시 확정 빈티지는 아닙니다.</p><a href="https://www.sec.gov/search-filings/edgar-application-programming-interfaces" target="_blank" rel="noopener noreferrer">SEC EDGAR 원자료 안내</a></ContentHelp></div>
      <p className="earnings-r2-mobile-content">{meta.description}</p>
-     <div className="earnings-r2-mobile-metrics"><div><span>이전</span><strong>—</strong></div><div><span>현재 점수</span><strong>{validScore(value)?value.toFixed(1)+"점":"—"}</strong></div><div><span>결산 분기</span><strong>{dateLabel(factor?.observationDate)}</strong></div></div>
+     <div className="earnings-r2-mobile-metrics"><div><span>이전</span><strong>{raw?riskRawFormat(raw.previousValue):"—"}</strong></div>
+      <div><span>{raw?"현재 원자료":"현재 점수"}</span><strong>{raw?riskRawFormat(raw.value):validScore(value)?value.toFixed(1)+"점":"—"}</strong>
+       {raw&&<small>진단 {validScore(value)?value.toFixed(1)+"점":"—"}</small>}</div>
+      <div><span>결산 분기</span><strong>{dateLabel(factor?.observationDate)}</strong></div></div>
+     {raw&&<div className="earnings-r2-mobile-spark"><span>실제 관측 이력</span><CostSpark history={rawHistory} label={meta.name+" 저장된 SEC 결산 원자료 추이"}/></div>}
     </article>})}
     {costIndicators.map(meta=>{const row=costRows.get(meta.id),ok=costUsable(row);return <article className="earnings-r2-mobile-card earnings-r2-cost-mobile-card" key={meta.id}>
      <div className="earnings-r2-mobile-head"><div className="earnings-r2-mobile-title">
