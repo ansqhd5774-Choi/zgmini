@@ -44,6 +44,16 @@ if not exist "%RUNNER%" (
  >> "%LOG%" echo ERROR=READONLY_RUNNER_NOT_FOUND
  goto :failed
 )
+for /f "delims=" %%H in ('git -C "%READONLY%" hash-object scripts/pc-writer/ASSET_R10_RAW_PREFLIGHT_R1.mjs') do set "RUNNER_HASH=%%H"
+if /I not "%RUNNER_HASH%"=="66ae83d5b7989a92de73bdfa380f9cdd2b217353" (
+ >> "%LOG%" echo ERROR=READONLY_RUNNER_SHA_DRIFT
+ goto :failed
+)
+for /f "delims=" %%H in ('git -C "%READONLY%" hash-object lib/diagnostic-layer/asset-bubble-r10-raw-evidence-r1.mjs') do set "EVIDENCE_HASH=%%H"
+if /I not "%EVIDENCE_HASH%"=="29e5e793961a49fe9ab87f77de77e0eca6132da8" (
+ >> "%LOG%" echo ERROR=READONLY_EVIDENCE_SHA_DRIFT
+ goto :failed
+)
 for /f "delims=" %%S in ('git -C "%READONLY%" rev-parse HEAD') do set "SOURCE_SHA=%%S"
 >> "%LOG%" echo PREFLIGHT_BRANCH=codex/api-site-integration-r1-20261026
 >> "%LOG%" echo PREFLIGHT_SOURCE_SHA=%SOURCE_SHA%
