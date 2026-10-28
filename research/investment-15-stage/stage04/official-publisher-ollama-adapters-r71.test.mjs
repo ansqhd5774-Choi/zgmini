@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { firstPartyOllamaAdapter, discoverPublisherReports } from './official-publisher-ollama-adapters-r71.mjs';
+import { firstPartyOllamaAdapter, discoverPublisherReports, exactMarketIdentity,
+  livePublisherSlugProbes } from './official-publisher-ollama-adapters-r71.mjs';
 import { runForecastPipeline } from './ollama-forecast-pipeline-r70.mjs';
 import { PUBLISHERS } from './stage04-four-publisher-r37-readonly.mjs';
 
@@ -114,7 +115,9 @@ test('the search process rejects unrelated and nonofficial report links', async 
     '<a href="https://evil.example/report/robotics-market">Robotics</a><a href="/report/unrelated-market">Other</a>' : '<html></html>');
   const report = await discoverPublisherReports(publisher, 'robotics', { fetchFn: fn,
     searchFn: async () => '<html></html>' });
-  assert.deepEqual(report.candidates, []);
+  assert.deepEqual(report.candidates, [sources.SkyQuest.report]);
+  assert.equal(report.search_requests, 4);
+  assert.ok(report.diagnostics.some(x => x.method === 'UNVERIFIED_SLUG_PROBES'));
 });
 
 test('BRI cannot be added as a current publisher adapter', () => {
@@ -133,4 +136,64 @@ test('a source only recognized as market proxy cannot enter the mean', async () 
   assert.equal(report.results[0].mean_pct, null);
   assert.equal(report.results[0].source_count, 1);
   assert.equal(report.results[0].publishers[0].reason, 'PROXY_MARKET_SCOPE_EXCLUDED');
+});
+
+test('a narrow submarket cannot masquerade as an exact target market', () => {
+  assert.equal(exactMarketIdentity('Data Center Liquid Cooling Valves Market', 'data center'), false);
+  assert.equal(exactMarketIdentity('Global Data Center Market Report', 'data center'), true);
+  assert.equal(exactMarketIdentity('Robotics and Automation Market 2030', 'robotics and automation'), true);
+});
+
+test('discovery continues search when official homepage contains only a submarket', async () => {
+  const publisher = PUBLISHERS.find(p => p.id === 'Precedence');
+  const unrelated = 'https://www.precedenceresearch.com/data-center-liquid-cooling-valves-market';
+  let searchCount = 0;
+  const found = await discoverPublisherReports(publisher, 'data center', {
+    fetchFn: async url => new Response(url === sources.Precedence.catalog ?
+      `<a href="${unrelated}">Data Center Liquid Cooling Valves</a>` : '<html/>'),
+    searchFn: async () => { searchCount++; return '<html/>'; }
+  });
+  assert.equal(searchCount, 3);
+  assert.ok(found.candidates.includes('https://www.precedenceresearch.com/data-center-market'));
+  assert.ok(found.candidates.indexOf(unrelated) > found.candidates.indexOf('https://www.precedenceresearch.com/data-center-market'));
+});
+
+test('unverified direct slug probes are generated from dynamic keyword, never from stored CAGR', () => {
+  const publisher = PUBLISHERS.find(p => p.id === 'SkyQuest');
+  assert.deepEqual(livePublisherSlugProbes(publisher, 'robotics and automation'), [
+    'https://www.skyquestt.com/report/robotics-and-automation-market',
+    'https://www.skyquestt.com/report/robotics-automation-market'
+  ]);
+});
+
+test('a direct official report found in Bing RSS stops additional engines', async () => {
+  const publisher = PUBLISHERS.find(p => p.id === 'Precedence');
+  const urls = [];
+  const found = await discoverPublisherReports(publisher, 'robotics', {
+    fetchFn: async () => new Response('<html/>'),
+    searchFn: async url => {
+      urls.push(url);
+      return `<rss><item><link>${sources.Precedence.report}</link></item></rss>`;
+    }
+  });
+  assert.equal(urls.length, 1);
+  assert.match(urls[0], /format=rss/);
+  assert.deepEqual(found.candidates, [sources.Precedence.report]);
+});
+
+test('submarket official report is excluded before calling local Ollama', async () => {
+  const reportUrl = 'https://www.precedenceresearch.com/data-center-liquid-cooling-valves-market';
+  let modelCalls = 0;
+  const report = await firstPartyOllamaAdapter('Precedence', {
+    fetchFn: async url => {
+      if (url === sources.Precedence.catalog) return new Response(`<a href="${reportUrl}">Report</a>`);
+      if (url === reportUrl) return new Response('<h1>Data Center Liquid Cooling Valves Market</h1><p>Forecast CAGR 8% from 2026 to 2033.</p>');
+      return new Response('missing', { status: 404 });
+    },
+    searchFn: async () => '<html/>',
+    chooseFn: async () => { modelCalls++; return {index:0,scope:'DIRECT'}; }
+  }).run({ id: 'dc', keyword: 'data center' });
+  assert.equal(report.growth_pct, null);
+  assert.equal(modelCalls, 0);
+  assert.equal(report.failure, 'SUBMARKET_OR_PROXY_REPORT_EXCLUDED');
 });
