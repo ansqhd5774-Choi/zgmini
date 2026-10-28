@@ -54,3 +54,14 @@ ZIP 전체 압축 해제→`MARKET_CALENDAR_R24_USDA_APPLY.cmd` 단 1회 실행�
 - R24 설치 ZIP을 재실행하지 않는다. 읽기 전용 조사 도구 `scripts/pc-writer/market-calendar-r24-source-drift-readonly.mjs`, `MARKET_CALENDAR_R24_SOURCE_DRIFT_READONLY.cmd`, README, 테스트 제공. 정규 PC 예약 작업에서 Core 경로를 식별하고 현재 Git HEAD, 승인 R23 조상 관계, 승인 파일 4종 SHA, config.source, 보호 파일 Git diff, lock 존재 여부만 기록한다. 경로·기밀 값 출력 금지, 파일/작업/DB/Git/lock 쓰기 0.
 - 진단 테스트 **3/3 PASS**, `npm run typecheck` PASS, CMD ASCII+CRLF 및 ZIP 4파일 무결성 PASS. 전달 묶음 `MARKET_CALENDAR_R24_SOURCE_DRIFT_READONLY_20261028.zip` SHA256 `69611dfaeae502668db26d15f318abea2f1fb7a94e76dd2f5eb76f3c3fa0f6f6`.
 - 결과 파일 `MARKET_CALENDAR_R24_SOURCE_DRIFT_RESULT.txt` 수신 후, 현재 PC 운영 소스가 기존 설치 파일과 달라진 사유를 확인한다. **승인 없는 reset/checkout/운영 소스 덮어쓰기 금지**. 기존 R24 수집기·UI 코드는 작업 브랜치에 보존, PC 설치·예약 수집·웹 공개는 미확인으로 유지.
+
+
+## R24 V2 — 다른 PC 작업의 소스 전진 보존·설치 재고정 (2026-10-28)
+
+- 읽기 전용 사용자 로그 `MARKET_CALENDAR_R24_SOURCE_DRIFT_RESULT.txt` 결과 `R24_SOURCE_DRIFT_READONLY_COMPLETE`. 실제 PC HEAD **`4e2a12ccf486d760a21c3269a9f77a4bfe4f48df`**, `config.source`와 일치, `enabled=true`, `collectionTarget=pc`, 잠금 없음, tracked dirty 0.
+- `r23ObjectAvailable=true`, `r23IsAncestor=true`: 사용자 실측 R23 `8ff396217c9f84578b37c9d422381644c2b8f0e8` 이후 정상적인 후속 커밋이다. Git 공식 `merge-base --is-ancestor` 동작으로 관계를 구분한다. 승인 캘린더 파일 3종 SHA는 R23 그대로이며 USDA 모듈 없음.
+- R23과 현재 HEAD 사이 **보호 범위 내 변경 5파일**은 `lib/market-score/sec-earnings-e1-r4-provider.mjs`, `scripts/pc-writer/collect-local.mjs`, `scripts/pc-writer/collection-events.mjs`, `scripts/pc-writer/local-data-alert.mjs`, `worker/market-operational-refresh.mjs`. **캘린더 설치 대상 3파일과 겹치지 않는다.** 이 5개 파일은 다른 작업의 소유로 간주해 변경·되돌림·병합하지 않는다.
+- `scripts/pc-writer/market-calendar-r24-usda-apply-v2.mjs`: 현재 HEAD, config.source, R23 조상 관계, 정확히 5개 보호 변경 경로, 캘린더 파일 SHA, 기존 EIA 무결성, USDA 모듈 미존재, lock/dirty를 **한 번 더 읽기 전용 검사**한다. 모두 충족하면 기존 검증된 R24 installer를 `approvedSource=4e2a12cc...`으로 호출. 해당 installer는 **락을 잡은 상태에서 다시 HEAD/파일/config 확인**하고 정확히 3파일만 로컬 커밋한다. 나머지 5파일은 절대 수정하지 않는다.
+- 안전 중단: 그사이 다른 PC 작업으로 HEAD가 다시 바뀌거나 5개 파일 변경 집합이 달라지면 `R24_V2_SOURCE_RECHECK_STOP`; 강제 설치·원상복구·옛 설치기 반복 실행을 하지 않는다.
+- 신규 V2 테스트 **4/4 PASS**, 이전 R24 설치 테스트 **4/4 PASS**, 읽기 전용 진단 **3/3 PASS**, `npm run typecheck` PASS. Windows CMD ASCII CRLF, 9파일 ZIP 무결성 PASS.
+- 사용자 전달물 `MARKET_CALENDAR_R24_USDA_PC_INSTALL_V2_20261028.zip` SHA256 **`407c291581eb8dbf6bb30711fd8a188060757be4f4d6cb903de70cbc17ba8658`**. 실행 후 `MARKET_CALENDAR_R24_USDA_APPLY_V2_RESULT.txt` 제출받아 `phase=INSTALLED` 확인 전에는 R24 PC 설치·예약 수집·공개 반영으로 판정하지 않는다.
