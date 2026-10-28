@@ -27,7 +27,7 @@ const unescapeIcs=value=>value.replace(/\\[nN]/g,' ').replace(/\\([,;\\])/g,'$1'
 
 export function validateEarningsSource(spec){
  if(!spec||typeof spec!=='object'||!httpsUrl(spec.url)||!httpsUrl(spec.page)||
-  !['ics','json'].includes(spec.format)||!/^([A-Z][A-Z0-9.\-]{0,9})$/.test(spec.ticker??'')||
+  !['ics','json','rss'].includes(spec.format)||!/^([A-Z][A-Z0-9.\-]{0,9})$/.test(spec.ticker??'')||
   (spec.cik!==undefined&&!/^\d{1,10}$/.test(spec.cik))||
   typeof spec.company!=='string'||!spec.company.trim()||spec.company.length>100||
   !['America/New_York','America/Los_Angeles','America/Chicago','America/Denver'].includes(spec.timeZone)||
@@ -57,6 +57,28 @@ const parseIcsDay=(raw,params,spec)=>{
  return day;
 };
 
+const xmlText=value=>value?.replace(/^<!\[CDATA\[([\s\S]*)\]\]>$/,'$1')
+ .replace(/&(?:amp|lt|gt|quot|apos);/g,entity=>({
+  '&amp;':'&','&lt;':'<','&gt;':'>','&quot;':'"','&apos;':"'"})[entity]).trim()??'';
+const xmlField=(block,name)=>{
+ const escaped=name.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+ return xmlText(block.match(new RegExp(`<${escaped}(?:\\s[^>]*)?>([\\s\\S]*?)<\\/${escaped}>`,'i'))?.[1]);
+};
+const rssDay=(value,spec)=>{
+ if(!value)return null;
+ if(validDay(value))return value;
+ // Offset-qualified ISO instants only. Publication dates are never used.
+ if(!/^20\d\d-\d\d-\d\dT\d\d:\d\d:\d\d(?:\.\d+)?(?:Z|[+-]\d\d:\d\d)$/.test(value))
+  throw Error('EARNINGS_RSS_EVENT_DATE_UNQUALIFIED');
+ const stamp=new Date(value);
+ if(Number.isNaN(stamp.getTime()))throw Error('EARNINGS_RSS_EVENT_DATE_INVALID');
+ const fields=new Intl.DateTimeFormat('en-US',{timeZone:spec.timeZone,year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(stamp);
+ const part=type=>fields.find(x=>x.type===type)?.value;
+ const date=`${part('year')}-${part('month')}-${part('day')}`;
+ if(!validDay(date))throw Error('EARNINGS_RSS_EVENT_DATE_INVALID');
+ return date;
+};
+
 function normalizedRecord({date,title,kind,period,status,sourceUrl},spec){
  if(!validDay(date)||!kind||!period||!Number.isInteger(period.quarter)||period.quarter<1||period.quarter>4||
   !Number.isInteger(period.fiscalYear)||period.fiscalYear<2000||period.fiscalYear>2100)
@@ -83,6 +105,26 @@ export function parseIssuerEarnings(text,sourceSpec){
    const period={fiscalYear:entry.fiscalYear,quarter:entry.quarter};
    rows.push(normalizedRecord({date:entry.date,title:entry.title,kind,period,
     status:entry.status==='cancelled'?'cancelled':entry.status==='confirmed'?'confirmed':'unconfirmed',sourceUrl:entry.sourceUrl},spec));
+  }
+ }else if(spec.format==='rss'){
+  if(!/<rss(?:\s|>)/i.test(text)||!/<channel(?:\s|>)/i.test(text)||!/<\/rss>/i.test(text))
+   throw Error('EARNINGS_RSS_INVALID');
+  const items=[...text.matchAll(/<item(?:\s[^>]*)?>([\s\S]*?)<\/item>/gi)];
+  if(items.length>500)throw Error('EARNINGS_RSS_EVENTS_LIMIT');
+  for(const [,item] of items){
+   const title=xmlField(item,'title');
+   if(title.length>300)throw Error('EARNINGS_RSS_TITLE_INVALID');
+   const kind=kindFor(title),period=quarterFor(title);
+   if(!kind||!period)continue;
+   // RSS pubDate is when the notice was published, not the earnings event.
+   // Require a separately named, machine-readable event start field.
+   const rawDate=xmlField(item,'eventStartDate')||xmlField(item,'event:startDate')||
+    xmlField(item,'eventDate');
+   if(!rawDate)continue;
+   const status=(xmlField(item,'eventStatus')||xmlField(item,'status')||'confirmed').toLowerCase();
+   if(!['confirmed','cancelled'].includes(status))continue;
+   const date=rssDay(rawDate,spec);
+   rows.push(normalizedRecord({date,title,kind,period,status,sourceUrl:xmlField(item,'link')||undefined},spec));
   }
  }else{
   if(!text.includes('BEGIN:VCALENDAR')||!text.includes('END:VCALENDAR'))throw Error('EARNINGS_ICS_INVALID');

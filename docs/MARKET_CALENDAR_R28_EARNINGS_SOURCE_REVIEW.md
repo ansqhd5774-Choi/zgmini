@@ -98,3 +98,4 @@
 - [기업별 IR·권리 조사 상세](MARKET_CALENDAR_R28_CORE_ISSUER_PRIORITY_20261028.md) 및 `staging/market-calendar/r28-earnings/lib/priority-issuers.mjs`에 기록했다. 일정 날짜를 이 목록에서 직접 게시하지 않는다.
 - 엔비디아의 공식 이벤트 RSS 제공은 확인했다. 그러나 공식 약관의 자동 수집·상업적 사용 제한을 해소하지 못했으므로 실제 수집 공급원으로 활성화하지 않는다. 애플 역시 상업적 재배포 금지 약관을 준수한다.
 - 나머지 핵심 기업은 공식 IR 일정 경로와 사전 발표 예시를 확인했으나, 재배포 허용 근거가 미확보되어 `RESEARCHING`이다. **현시점 8개 중 실제 승인 0개·자동 공개 0건**이다.
+- R28 기업별 예비 파서에 RSS를 추가해 **이벤트 전용 날짜 필드와 RSS 공지일(`pubDate`)을 분리**했다. 실제 피드 형식·권리 확인 전에는 운영 호출을 만들지 않는다. [공식 IR 및 통합 API 판정 상세](MARKET_CALENDAR_R28_CORE_ISSUER_PRIORITY_20261028.md)를 참조한다.

@@ -36,6 +36,23 @@
 3. 권리 검증을 통과한 기업만 `EARNINGS_SOURCES`에 활성 등록하고, 기존 `ZGMINI-PC-Local-Core` 수집기·SQLite·게시 5필드 계약으로 연결한다.
 4. 사용자 요청과 무관한 별도 예약·알림·감시 기능은 만들지 않는다. PC 설치·정규 수집 관측·사이트 게시를 각각 별도 증거로 보고한다.
 
+## RSS 자동 연결 후보 코드 확장 (2026-10-28)
+
+- `staging/market-calendar/r28-earnings/lib/earnings-calendar.mjs`에서 기존 ICS/JSON에 더해 **RSS 형식**을 처리하도록 확장했다. 예비 파서는 공식 피드 항목에 별도의 구조화된 `eventStartDate` / `event:startDate` / `eventDate`가 있는 경우에만 일자를 추출한다.
+- 일반 RSS `<pubDate>`는 **공지 게시 날짜**일 수 있으므로 **실적 개최 날짜로 전환하지 않는다**. 실적 설명회/발표·회계연도·분기·확정/잠정/취소 상태·현지 시간대와 링크 도메인을 확인한다. 공개 출력 5필드는 유지한다.
+- `staging/market-calendar/r28-earnings/scripts/pc-writer/release-calendar.mjs`는 적격 RSS 원문을 기존 6시간 PC Core 흐름의 SQLite 입력에 보존하고 파서를 재실행하도록 변경했다. 실제 공급원은 **여전히 0개**이며 테스트용 가상 RSS만 사용했다.
+- NVIDIA RSS는 실제 공식 URL이 확인됐으나 **개별 항목의 구조화된 이벤트 날짜 필드 존재 여부를 검증하지 못했으며 약관상 운영 수집이 제외**되어 있다. 이번 파서의 NVIDIA 실데이터 적합성·재배포 적법성이 통과했다는 뜻이 아니다.
+
+### 통합 상용 데이터 API 추가 판정
+
+| 후보 | 공식 사용권 근거 | R28 조치 |
+| --- | --- | --- |
+| [Financial Modeling Prep](https://site.financialmodelingprep.com/developer/docs/pricing?planType=commercial) | 데이터 표시 및 재배포에는 별도 Data Display and Licensing Agreement를 요구한다. | 무료 공개 재배포 공급원으로 승인하지 않음. `EXCLUDED_RIGHTS` |
+| [Polygon Market Data](https://polygon.io/terms/market_data_terms.pdf) | 별도 서면 동의 또는 제3자 제공자 허용 범위 밖의 재배포·사업/상업적 사용을 제한한다. | `EXCLUDED_RIGHTS` |
+| [Alpha Vantage 시장 데이터 정책](https://www.alphavantage.co/realtime_data_policy/) | 상업적 사용은 별도 연락·데이터 온보딩 안내. 이는 시장 데이터 정책으로 실적 일정 전체 권리를 단정할 수 없으나 무료 재배포 허용 근거는 아니다. | `RESEARCHING / NOT_APPROVED` |
+
+유료 플랜 구매, 라이선스 문의, 우회 수집은 사용자 별도 승인 전 진행하지 않는다.
+
 ### 권리 판정 주의
 
 금융시장의 공개 **사실**과 특정 사이트의 **콘텐츠/자동 수집 이용허가**는 법적으로 별개일 수 있다. 이 프로젝트는 더 엄격한 사용자 승인 계약에 따라 **사용·저장·상업적 재배포의 명시 허용**을 소스별 채택 조건으로 사용한다. 무허가 피드를 우회 수집하지 않는다.

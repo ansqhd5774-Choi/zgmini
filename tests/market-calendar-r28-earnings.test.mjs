@@ -90,6 +90,49 @@ test('R28 explicit issuer JSON does not treat public notice date or estimate as 
  assert.deepEqual(parsed.events.map(x=>[x.id,x.date]),[['earnings-release-cik0000012345-2026-q4','2026-11-05']]);
 });
 
+const rss=eventFields=>`<?xml version="1.0"?><rss version="2.0"><channel><title>Issuer IR Events</title><item>
+<title><![CDATA[Example Corporation FY2026 Q4 Earnings Call]]></title>
+<pubDate>Wed, 28 Oct 2026 14:00:00 GMT</pubDate>
+<link>https://investor.example.com/events/q4</link>${eventFields}
+</item></channel></rss>`;
+
+test('R28 official RSS requires an explicit event date, never interprets notice pubDate as earnings day',()=>{
+ const rssSpec={...source,format:'rss'};
+ assert.deepEqual(parseIssuerEarnings(rss(''),rssSpec),{events:[],cancelledIds:[]});
+ const parsed=parseIssuerEarnings(rss('<eventStartDate>2026-11-03T01:00:00Z</eventStartDate>'),rssSpec);
+ assert.deepEqual(parsed.events.map(x=>[x.id,x.date]),[['earnings-call-cik0000012345-2026-q4','2026-11-02']]);
+ assert.deepEqual(Object.keys(parsed.events[0]).sort(),['date','id','source','sourceUrl','title']);
+});
+
+test('R28 RSS tentative and cancellation status are not promoted to confirmed earnings',()=>{
+ const rssSpec={...source,format:'rss'};
+ const tentative=parseIssuerEarnings(rss('<eventDate>2026-11-02</eventDate><eventStatus>estimated</eventStatus>'),rssSpec);
+ assert.deepEqual(tentative.events,[]);
+ const cancelled=parseIssuerEarnings(rss('<eventDate>2026-11-02</eventDate><eventStatus>cancelled</eventStatus>'),rssSpec);
+ assert.deepEqual(cancelled.events,[]);
+ assert.deepEqual(cancelled.cancelledIds,['earnings-call-cik0000012345-2026-q4']);
+ assert.throws(()=>parseIssuerEarnings(rss('<eventDate>11/02/2026</eventDate>'),rssSpec),/EVENT_DATE_UNQUALIFIED/);
+});
+
+test('R28 PC Core stores rights-approved RSS raw input with existing six-hour guard',async()=>{
+ const db=localDatabase(':memory:');
+ try{
+  const store=publicFeedStore(db);await store.initialize();
+  const rssSpec={...source,format:'rss'};
+  const body=rss('<eventDate>2026-11-02</eventDate>');
+  let rssCalls=0;
+  const cycle=await collectReleaseCalendar(db,{now:today,earningsSources:[rssSpec],fetchImpl:async(url,options)=>{
+   if(url!==source.url)throw Error('OTHER_SOURCE_UNAVAILABLE');
+   rssCalls++;assert.match(options.headers.accept,/rss\+xml/);
+   return new Response(body,{headers:{'content-type':'application/rss+xml'}});
+  }});
+  assert.equal(cycle.sources.earnings,'READY');
+  assert.equal(rssCalls,1);
+  assert.equal((await store.readInput('release-calendar:earnings:cik0000012345')).body.text,body);
+  assert.equal((await store.readOutput('release-calendar')).body.events.filter(x=>x.source==='earnings').length,1);
+ }finally{db.close();}
+});
+
 test('R28 PC cycle stores source input before output, revisions replace same quarter date',async()=>{
  const db=localDatabase(':memory:');
  try{

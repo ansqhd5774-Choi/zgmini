@@ -32,11 +32,12 @@ async function collectEarningsSources({store,key,now,fetchImpl,countRequest,prev
   try{
    countRequest();
    const response=await fetchImpl(spec.url,{signal:AbortSignal.timeout(15000),redirect:'error',headers:{...requestHeaders,
-    accept:spec.format==='ics'?'text/calendar':'application/json'}});
+    accept:spec.format==='ics'?'text/calendar':spec.format==='rss'?'application/rss+xml, application/xml':'application/json'}});
    if(!response.ok)throw Error('EARNINGS_HTTP_'+response.status);
    if(response.url&&response.url!==spec.url)throw Error('EARNINGS_REDIRECT_NOT_ALLOWED');
    const type=response.headers?.get('content-type')??'';
-   if(type&&!(spec.format==='ics'?/^text\/calendar\b/i:/^application\/(?:json|[^;]+\+json)\b/i).test(type))
+   if(type&&!(spec.format==='ics'?/^text\/calendar\b/i:spec.format==='rss'?/^(?:application\/(?:rss\+xml|xml)|text\/xml)\b/i:
+    /^application\/(?:json|[^;]+\+json)\b/i).test(type))
     throw Error('EARNINGS_CONTENT_TYPE_CHANGED');
    const raw=await response.text();
    if(!raw||raw.length>1000000)throw Error('EARNINGS_TOO_LARGE_OR_EMPTY');
