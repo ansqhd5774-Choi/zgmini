@@ -5,6 +5,7 @@ import os from 'node:os';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {collectIranNewsR26} from './news-display-collection-r26.mjs';
+import {IRAN_DISPLAY_FEEDS_R26} from './news-display-source-registry-r26.mjs';
 
 export const R29_STATUS_FILE='news-display-candidates-auto-r29-status.json';
 const kst=now=>new Date(now+9*3600000).toISOString().slice(0,19).replace('T',' ');
@@ -47,11 +48,30 @@ export async function runR29PrivateNews({dataDirectory,
  let result,record;
  try{
   result=await collector({dataDirectory,now,dryRun:false});
+  const coverage=result.articleCoverage;
+  const sourceIds=IRAN_DISPLAY_FEEDS_R26.map(s=>s.id);
+  const bySource=coverage?.bySource;
+  const validBySource=Array.isArray(bySource)&&bySource.length===sourceIds.length&&
+   bySource.every((s,i)=>s?.sourceId===sourceIds[i]&&
+    Number.isSafeInteger(s.verifiedThisRun)&&s.verifiedThisRun>=0&&
+    Number.isSafeInteger(s.retained30DayCandidates)&&s.retained30DayCandidates>=0);
+  const verifiedCount=validBySource?bySource.filter(s=>s.verifiedThisRun>0).length:0;
+  const retainedCount=validBySource?bySource.filter(s=>s.retained30DayCandidates>0).length:0;
+  const missing=validBySource?bySource.filter(s=>s.retained30DayCandidates===0)
+   .map(s=>s.sourceId):[];
   if(result.written!==true||result.dryRun!==false||result.sourceCount!==7||
    result.scoreLedgerModified!==false||result.publicCacheModified!==false||
    result.d1Written!==false||result.schedulerModified!==false||
    result.rightsVerified!==0||result.displayEligible!==0||
-   !Number.isSafeInteger(result.candidatesSaved)||result.candidatesSaved<0)
+   !Number.isSafeInteger(result.candidatesSaved)||result.candidatesSaved<0||
+   coverage?.scope!=='PRIVATE_30_DAY_CANDIDATES'||
+   coverage.requiredSources!==sourceIds.length||!validBySource||
+   coverage.sourcesVerifiedThisRun!==verifiedCount||
+   coverage.sourcesWithRetainedCandidates!==retainedCount||
+   !Array.isArray(coverage.sourcesWithoutRetainedCandidates)||
+   JSON.stringify(coverage.sourcesWithoutRetainedCandidates)!==JSON.stringify(missing)||
+   coverage.allSourcesVerifiedThisRun!==(verifiedCount===sourceIds.length)||
+   coverage.allSourcesHaveRetainedCandidates!==(retainedCount===sourceIds.length))
    throw Error('R29_COLLECTION_RESULT_INVALID');
   record={version:'IRAN_NEWS_PRIVATE_AUTO_R29',
    status:result.status==='COLLECTION_REVIEW_READY'?'PRIVATE_COLLECTION_READY':
@@ -60,6 +80,12 @@ export async function runR29PrivateNews({dataDirectory,
    sourcesFailed:result.sourcesFailed,articleFailures:result.articleFailures,
    candidatesSaved:result.candidatesSaved,newCandidates:result.newCandidates,
    expiredCandidates:result.expiredCandidates,rightsVerified:0,displayEligible:0,
+   articleCoverage:{scope:coverage.scope,requiredSources:7,
+    sourcesVerifiedThisRun:coverage.sourcesVerifiedThisRun,
+    sourcesWithRetainedCandidates:coverage.sourcesWithRetainedCandidates,
+    sourcesWithoutRetainedCandidates:coverage.sourcesWithoutRetainedCandidates,
+    allSourcesVerifiedThisRun:coverage.allSourcesVerifiedThisRun,
+    allSourcesHaveRetainedCandidates:coverage.allSourcesHaveRetainedCandidates},
    scoreLedgerModified:false,publicCacheModified:false,d1Written:false,
    schedulerModified:false,translationModified:false};
  }catch(error){

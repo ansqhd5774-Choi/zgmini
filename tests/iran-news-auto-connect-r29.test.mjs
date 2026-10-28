@@ -12,6 +12,7 @@ import {runR29PrivateNews,R29_STATUS_FILE}
 import {verifyIranOfflineBundleR28}
  from '../scripts/iran-progress/news-display-offline-bundle-r28.mjs';
 import {withHistoricalR28Package} from './helpers/iran-r28-bundle.fixture.mjs';
+import {IRAN_DISPLAY_FEEDS_R26} from '../scripts/iran-progress/news-display-source-registry-r26.mjs';
 
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
 const now=Date.parse('2026-10-27T14:00:00Z');
@@ -58,17 +59,45 @@ test('R29 successful scheduled metadata collection records only private counts',
      sourcesFailed:0,articleFailures:4,candidatesSaved:27,newCandidates:1,
      expiredCandidates:0,dryRun:false,written:true,rightsVerified:0,
      displayEligible:0,scoreLedgerModified:false,publicCacheModified:false,
-     d1Written:false,schedulerModified:false};
+     d1Written:false,schedulerModified:false,
+     articleCoverage:{scope:'PRIVATE_30_DAY_CANDIDATES',requiredSources:7,
+      sourcesVerifiedThisRun:4,sourcesWithRetainedCandidates:4,
+      sourcesWithoutRetainedCandidates:['iaea-news','iaea-statements','aljazeera'],
+      allSourcesVerifiedThisRun:false,allSourcesHaveRetainedCandidates:false,
+      bySource:IRAN_DISPLAY_FEEDS_R26.map(({id})=>({sourceId:id,
+       verifiedThisRun:['iaea-news','iaea-statements','aljazeera'].includes(id)?0:1,
+       retained30DayCandidates:['iaea-news','iaea-statements','aljazeera'].includes(id)?0:1}))}};
    }});
   assert.equal(result.status,'PRIVATE_COLLECTION_PARTIAL');
   assert.equal(result.candidatesSaved,27);
   assert.equal(result.articleFailures,4);
+  assert.equal(result.articleCoverage.sourcesVerifiedThisRun,4);
+  assert.deepEqual(result.articleCoverage.sourcesWithoutRetainedCandidates,
+   ['iaea-news','iaea-statements','aljazeera']);
   const status=JSON.parse(readFileSync(path.join(dir,R29_STATUS_FILE),'utf8'));
   assert.deepEqual(status,result);
   assert.equal(readFileSync(path.join(dir,'iran.sqlite'),'utf8'),'preserve score ledger');
   assert.equal(readFileSync(path.join(dir,'news-display-r1.json'),'utf8'),
    'preserve public news cache');
   assert.equal(existsSync(path.join(dir,'news-display-candidates-r26.json')),false);
+ });
+});
+
+test('R29 rejects an unverified seven-source coverage claim before recording success',async()=>{
+ await fixture(async dir=>{
+  const result=await runR29PrivateNews({dataDirectory:dir,now,
+   collector:async()=>({status:'COLLECTION_REVIEW_READY',sourceCount:7,
+    sourcesFailed:0,articleFailures:0,candidatesSaved:27,newCandidates:0,
+    expiredCandidates:0,dryRun:false,written:true,rightsVerified:0,
+    displayEligible:0,scoreLedgerModified:false,publicCacheModified:false,
+    d1Written:false,schedulerModified:false,
+    articleCoverage:{scope:'PRIVATE_30_DAY_CANDIDATES',requiredSources:7,
+     sourcesVerifiedThisRun:4,sourcesWithRetainedCandidates:4,
+     sourcesWithoutRetainedCandidates:[],allSourcesVerifiedThisRun:true,
+     allSourcesHaveRetainedCandidates:true,bySource:IRAN_DISPLAY_FEEDS_R26.map(({id})=>
+      ({sourceId:id,verifiedThisRun:1,retained30DayCandidates:1}))}})});
+  assert.equal(result.status,'PRIVATE_COLLECTION_FAILED_CANDIDATES_PRESERVED');
+  assert.equal(result.reason,'R29_COLLECTION_RESULT_INVALID');
  });
 });
 

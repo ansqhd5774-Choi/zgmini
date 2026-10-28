@@ -90,6 +90,13 @@ test('R26 collects genuine article metadata from 7 sources without licensing or 
   assert.equal(result.sourcesFailed,0);
   assert.equal(result.newCandidates,2);
   assert.equal(result.candidatesSaved,2);
+  assert.equal(result.articleCoverage.requiredSources,7);
+  assert.equal(result.articleCoverage.sourcesVerifiedThisRun,2);
+  assert.equal(result.articleCoverage.sourcesWithRetainedCandidates,2);
+  assert.equal(result.articleCoverage.allSourcesVerifiedThisRun,false);
+  assert.equal(result.articleCoverage.allSourcesHaveRetainedCandidates,false);
+  assert.deepEqual(result.articleCoverage.sourcesWithoutRetainedCandidates,
+   ['tasnim','iaea-news','iaea-statements','aljazeera','un-middle-east']);
   assert.equal(result.rightsVerified,0);
   assert.equal(result.displayEligible,0);
   assert.equal(result.dryRun,true);
@@ -117,6 +124,8 @@ test('R26 stores metadata only in its independent PC file with exact read-back',
    fetcher:mockFeedFetch(),dryRun:false});
   assert.equal(again.newCandidates,0);
   assert.equal(again.candidatesSaved,2);
+  assert.equal(again.articleCoverage.sourcesVerifiedThisRun,2);
+  assert.equal(again.articleCoverage.sourcesWithRetainedCandidates,2);
  });
 });
 
@@ -178,6 +187,10 @@ test('R26 expires metadata using original publication date and preserves valid h
   articlesUnchecked:0,articlesChecked:0,articles:[]},now});
  assert.equal(result.report.expiredCandidates,1);
  assert.equal(result.report.candidatesSaved,1);
+ assert.equal(result.report.articleCoverage.sourcesVerifiedThisRun,0);
+ assert.equal(result.report.articleCoverage.sourcesWithRetainedCandidates,1);
+ assert.equal(result.report.articleCoverage.bySource.find(s=>s.sourceId==='govuk')
+  .retained30DayCandidates,1);
  assert.deepEqual(result.cache.items,[recent]);
 });
 

@@ -7,6 +7,7 @@ import {createHash} from 'node:crypto';
 import {fileURLToPath} from 'node:url';
 import {auditIranMultisourceCollectionR24,newsR24SourceUrl} from './news-display-multisource-audit-r24.mjs';
 import {auditIranArticleDetailsR25} from './news-display-article-audit-r25.mjs';
+import {IRAN_DISPLAY_FEEDS_R26} from './news-display-source-registry-r26.mjs';
 import {kstDayWindow,kstNewsDay} from '../../lib/iran-progress/news-display-r1.mjs';
 
 export const NEWS_COLLECTION_R26_VERSION='IRAN_NEWS_COLLECTION_R26';
@@ -120,6 +121,23 @@ export function planIranCollectionR26({before,feedReport,articleReport,now=Date.
  const articleOutcomes=[...articleOutcomeCounts.entries()].map(([key,count])=>{
   const [sourceId,status]=key.split('\u0000');return {sourceId,status,count};
  }).sort((a,b)=>a.sourceId.localeCompare(b.sourceId)||a.status.localeCompare(b.status));
+ // Feed reachability, newly verified articles and retained private candidates
+ // are three distinct facts. Never present "7 feeds read" as "7 sources collected".
+ const articleCoverageBySource=IRAN_DISPLAY_FEEDS_R26.map(({id:sourceId})=>({
+  sourceId,
+  verifiedThisRun:articleReport.articles.filter(article=>
+   article.sourceId===sourceId&&article.status==='ARTICLE_METADATA_REVIEWED').length,
+  retained30DayCandidates:items.filter(item=>item.sourceId===sourceId).length,
+ }));
+ const articleCoverage={scope:'PRIVATE_30_DAY_CANDIDATES',
+  requiredSources:articleCoverageBySource.length,
+  sourcesVerifiedThisRun:articleCoverageBySource.filter(s=>s.verifiedThisRun>0).length,
+  sourcesWithRetainedCandidates:articleCoverageBySource.filter(s=>s.retained30DayCandidates>0).length,
+  sourcesWithoutRetainedCandidates:articleCoverageBySource.filter(s=>
+   s.retained30DayCandidates===0).map(s=>s.sourceId),
+  allSourcesVerifiedThisRun:articleCoverageBySource.every(s=>s.verifiedThisRun>0),
+  allSourcesHaveRetainedCandidates:articleCoverageBySource.every(s=>s.retained30DayCandidates>0),
+  bySource:articleCoverageBySource};
  return {cache:{version:NEWS_COLLECTION_R26_VERSION,updatedAt:now,items},
   report:{status:partial?'PARTIAL_COLLECTION_REVIEW_REQUIRED':'COLLECTION_REVIEW_READY',
    checkedAt:new Date(now).toISOString(),sourceCount:feedReport.sourceCount,
@@ -129,7 +147,7 @@ export function planIranCollectionR26({before,feedReport,articleReport,now=Date.
    articlesUnchecked:articleReport.articlesUnchecked,articleFailures:articleReport.articleFailures,
    metadataReviewed:verifiedThisRun,newCandidates:items.filter(item=>!freshIds.has(item.id)).length,
    expiredCandidates:before.items.length-retained.length,candidatesSaved:items.length,
-   articleOutcomes,failedArticles,
+   articleOutcomes,failedArticles,articleCoverage,
    publication:'NOT_AUTHORIZED',rightsVerified:0,displayEligible:0,
    scoreLedgerModified:false,publicCacheModified:false,d1Written:false,
    schedulerModified:false,translationModified:false}};
