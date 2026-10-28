@@ -22,3 +22,14 @@ test('mobile market overview still stacks the independent panels',()=>{
   assert.match(css,/#market \.zg-r55-body\{grid-template-columns:minmax\(0,1fr\);grid-template-rows:auto auto auto\}/);
   assert.match(css,/@media \(max-width:959px\)/);
 });
+
+test('desktop risk title shares the composite heading row without taking card space',()=>{
+  assert.match(dashboard,/const riskHeading=<h2><a href="\/risk-indicators\/">/);
+  assert.match(dashboard,/className="zg-section-heading zg-r55-risk-heading zg-r55-risk-heading-desktop"/);
+  assert.match(dashboard,/className="zg-section-heading zg-r55-risk-heading zg-r55-risk-heading-inline"/);
+  assert.match(css,/#market \.zg-r55-risk-heading-desktop\{display:none\}/);
+  assert.match(desktop,/#market \.zg-r55-heading\{\s*display:grid;\s*grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);
+  assert.match(desktop,/#market \.zg-r55-heading>\.zg-r55-risk-heading-desktop\{\s*display:flex;\s*grid-column:2;\s*grid-row:1/);
+  assert.match(desktop,/#market \.zg-r55-heading>\.zg-r55-header-controls\{\s*grid-column:2;\s*grid-row:1/);
+  assert.match(desktop,/#market \.zg-r55-risk-panel \.zg-r55-risk-heading-inline\{\s*display:none;/);
+});
