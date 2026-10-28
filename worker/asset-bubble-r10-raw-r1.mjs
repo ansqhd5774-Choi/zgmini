@@ -118,7 +118,9 @@ export async function readAssetR10RawResponse(request,db,{now=Date.now()}={}){
  try{row=await db.prepare('SELECT body,stored_at FROM market_public_snapshots_v1 WHERE snapshot_key=?')
   .bind(ASSET_R10_RAW_KEY).first();}
  catch{return reply({status:'unavailable',reason:'PROJECTION_READ_UNAVAILABLE'},503);}
- if(!row)return reply({status:'unavailable',reason:'STORED_PROJECTION_PENDING'},503);
+ // Optional sidecar is not yet published during the Git-auto-deploy stage.
+ // This is an expected data state, not a failure of the existing scored site.
+ if(!row)return reply({status:'PENDING',reason:'STORED_PROJECTION_PENDING'});
  try{
   if(typeof row.body!=='string'||row.body.length>30_000)throw Error('INVALID_BODY');
   const envelope=JSON.parse(row.body),p=envelope?.projection;
