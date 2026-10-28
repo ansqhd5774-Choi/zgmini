@@ -40,6 +40,7 @@ function normalizedCandidate(raw, adapter, observedAt) {
     discovery_candidates: Array.isArray(raw?.discovery_candidates)
       ? raw.discovery_candidates.slice(0, 8) : [],
     source_conflict_reason: validText(raw?.source_conflict_reason) ? raw.source_conflict_reason : null,
+    evidence_region: validText(raw?.evidence_region) ? raw.evidence_region : null,
     model_candidate_pct: Number.isFinite(raw?.model_candidate_pct) ? raw.model_candidate_pct : null,
     search_requests: Number.isInteger(raw?.search_requests) ? raw.search_requests : null,
     report_requests: Number.isInteger(raw?.report_requests) ? raw.report_requests : null,
