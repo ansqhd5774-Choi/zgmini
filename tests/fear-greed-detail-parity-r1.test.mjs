@@ -39,7 +39,8 @@ test('Korea detail reuses the proven home-market card without changing data cont
  const kr=read('app/fear-greed/korea/page.tsx');
  const panel=read('app/fear-greed/korea/data-panel.tsx');
  const shared=read('app/korea-composite-view.tsx');
- assert.match(panel,/<KoreanCountryCard\/>/);
+ assert.match(panel,/<KoreanCountryCard detail\/>/);
+ assert.match(read('app/country-fear-greed.tsx'),/<KoreanCountryCard\/>/);
  assert.match(panel,/point-in-time 빈티지는 검증되지 않았습니다/);
  assert.doesNotMatch(panel,/bg-slate-50/);
  assert.match(shared,/export function KoreanCountryCard/);
