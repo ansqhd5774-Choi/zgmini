@@ -288,3 +288,10 @@
 - R76: SkyQuest 공식 보고서가 `2025` 기준규모와 `2026–2033` 성장 전망기간을 동시에 명시하는 점을 확인하고 `sourcePeriods`에서 직접 명시된 전망기간을 우선하도록 수정. `Market Insights` 본문도 전체시장 후보 추출에 포함하고 세부시장 CAGR 제외 유지.
 - 개발 측 공식 보고서 HTML 2건 오프라인 재현에서 2개 독립 발행사 PASS 및 평균 Gate 경로 확인. Ollama 선택값은 **모의 함수**. 35/35 모의 테스트 통과, 13개 파일 전체 Windows ZIP 무결성·모듈 import PASS.
 - **사용자 PC R76 실행과 평균 성공은 미확인**. 운영 API·G/D/M·점수·주문·사이트 변경 없음. [상세 기준](STAGE04_R76_FORECAST_BASELINE_FROM_R75_PC_20261028.md).
+
+## Stage04 R77 — 첫 PC 독립 두 매체 평균 성공 이후 발견 경로 확대 (2026-10-28)
+
+- 사용자 **R76 PC 실측**: 총 5/5 실행, 평균 1/5. `data center`: SkyQuest 11.51%(2026–2033)와 Precedence 11.06%(2026–2035), 연구 참고 평균 11.285%, 서로 다른 기간 경고 유지. TBRC 출처 내부 데이터센터 수치 충돌은 NULL 유지. 다른 4개 주제는 출처 수 부족.
+- R77 **코드 개발**: 공식 로봇 파일에 게시된 Sitemap XML을 읽어 사이트맵 내 전체시장 보고서 URL을 우선 검색, 다른 URL은 후보에서 제외. 현재 Windows 실행 프로세스 내 URL 캐시만 사용하고 다음 실행에서는 재조회. 20초 발행사 예산·4MB XML 상한·HTTPS 발행사 호스트/제목/원문 검증 유지.
+- SkyQuest 공식 `reports.xml` 18,664개 `loc`의 개발측 오프라인 확인, Precedence 공식 Sitemap에서는 분류 목록 중심 확인. 모의 회귀 37/37 PASS, ZIP 13개 파일 검사 PASS. R77 사용자 PC Ollama 실측·추가 평균 산출은 **아직 미확인**.
+- 산업 CAGR은 운영 투자 G/D/M 확정점수로 전환하지 않았고, 과거 저장 JSON 재사용·사이트 배포·주문·스케줄러 변경 없음. [상세](STAGE04_R77_OFFICIAL_SITEMAP_FROM_R76_PC_20261028.md).
