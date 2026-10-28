@@ -1,6 +1,5 @@
 "use client";
 import {useId,useState} from 'react';
-import './chart-axis-labels.css';
 import './iran-published-chart.css';
 type Point={at:number;value:number;collectionCheckedAt:number;sourceStoredAt:number;eventCount:number;lineage:string};
 type DailyPoint={at:number;date?:string;value:number|null};
