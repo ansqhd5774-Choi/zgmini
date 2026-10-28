@@ -490,3 +490,10 @@
 - 근본 원인: R15 당시 설치된 `lib/iran-progress/news-display-r1.mjs`에는 후속 별도 UI 번역 작업이 추가한 언어 필드 검증이 없다. R29의 신규 비공개 R26 수집은 그 검증을 필요로 하지 않는데도 R29 패키지 현재 버전과 동일 해시만 요구했다.
 - **최소 코드 변경:** 설치기에서 기존 표시 라이브러리 **정확히 두 버전 SHA**만 허용한다. R15 PC 번역 이전 원본 SHA-256 `d960d1d1a5cd4a8642ff1a196a991f4e2a9efa244475df752367a629765f88ce`, 현재 R29 패키지 원본 SHA-256 `abe67381029f802119f5fa3c7796002baea69395da86633c076019ee4f76bd65`. 변경된 임의 코드/타 모듈은 기존처럼 거부. PC의 해당 모듈을 덮어쓰거나 번역 구현을 변경하지 않는다.
 - 새 한 번 실행용 오프라인 ZIP `IRAN_NEWS_R30_COMPAT_INSTALL_PACKAGE.zip` (SHA-256 `00aa5c48db0ee0b93045068e6df94a44cd87a7dd9565b834d31dc968f3b36e3b`), CMD `IRAN_NEWS_R30_COMPAT_INSTALL.cmd` 및 로그 `IRAN_NEWS_R30_COMPAT_INSTALL_RESULT.txt`. 여전히 기존 R13/R15 6시간 후행 경로만 사용, 기존 정규 시간 보호·R15 runner 해시·복구 백업·7개 오프라인 모듈 검증을 유지한다. **코드 통과와 실제 PC 설치/정규 실행은 분리하여 보고**한다.
+
+## 40. R30 PC 설치 실측 PASS — 6시간 정규 후보 수집 관측 대기
+
+- 2026-10-28 사용자 제출 R30 CMD 로그: `PASS_R29_EXISTING_R15_PREFLIGHT_READ_ONLY` → `PASS_R29_PRIVATE_NEWS_SCHEDULED_HOOK_INSTALLED` → `FINAL_STATUS=PASS_R30_R29_PRIVATE_NEWS_HOOK_INSTALLED`.
+- 운영 소스는 기존 `bc7bd6781d1f4083009f1709a3f2e82461c5bfb9` detached HEAD 그대로, R13 주기 00/06/12/18 KST 그대로. runner `db0040ef...` → `9cc3a7b9...` 변경은 검증된 R29 후행 호출뿐이며 기존 runner 백업 확인. 기존 의존성 3개 확인, 신규 비공개 후보 수집 파일 5개 설치, 기존 개인 후보 27개 보존 확인.
+- 예약 작업 XML/VBS·점수 원장·공개 뉴스 캐시·D1 수정 없음. **신규 개인 뉴스 수집 실행은 설치 과정에서 하지 않았음** (`pcPrivateCollectionExecuted:false`). 따라서 자동 수집 성공은 아직 미검증이고 사용자가 서로 다른 정규 2회에서 상태 파일과 후보 수집 파일의 관측값을 확인해야 PASS.
+- 현재 추가 코드 설치·수동 뉴스 수집·번역/UI·사이트 공개는 작업 범위 밖이다. 설치 CMD 재실행 금지; 설치 및 다음 검증 책임을 분리한다.

@@ -106,3 +106,10 @@
 - R26은 해당 라이브러리에서 `kstDayWindow`, `kstNewsDay`, `NEWS_PC_RETENTION_DAYS`만 사용한다. 기존 모듈을 복사하거나 덮어쓰지 않으며, 번역/UI/기존 공개 카드 게시를 실행하지 않는다. R28 오프라인 패키지 자체의 7개 모듈 SHA 검증도 변경하지 않는다.
 - **새 CMD:** ZIP `IRAN_NEWS_R30_COMPAT_INSTALL_PACKAGE.zip` (SHA-256 `00aa5c48db0ee0b93045068e6df94a44cd87a7dd9565b834d31dc968f3b36e3b`) 전체 압축 해제 후 `IRAN_NEWS_R30_COMPAT_INSTALL.cmd`를 실행한다. 결과는 CMD 옆 `IRAN_NEWS_R30_COMPAT_INSTALL_RESULT.txt`. 기존 시간대 ±25분 검사, 작업 실행 중 검사, VBS/R15 runner/복구 해시, PC 후보, 신규 5모듈 검증과 한 번의 후행 연결 설치는 R29와 동일하다. 이전 R29 로그들은 `STOP_R29_BEFORE_INSTALL`여서 설치 전 중단되었다.
 - **검증 경계:** 브랜치 테스트 성공은 PC 설치 완료와 다르다. 새 CMD 설치 결과를 확인하고 다음 2회 정상 예약 수집의 개인 후보 갱신은 사용자 검증이다.
+
+## 13. R30 사용자 PC 설치 완료 증거 — 정규 수집 검증 전
+
+- 사용자 제출 로그: `IRAN_NEWS_R30_COMPAT_INSTALL_RESULT.txt` (2026-10-28). `--preflight` 결과 `PASS_R29_EXISTING_R15_PREFLIGHT_READ_ONLY`, 실제 `--install` 결과 `PASS_R29_PRIVATE_NEWS_SCHEDULED_HOOK_INSTALLED`, CMD 최종 `PASS_R30_R29_PRIVATE_NEWS_HOOK_INSTALLED`.
+- 운영 PC 프로젝트 HEAD `bc7bd6781d1f4083009f1709a3f2e82461c5bfb9` 유지. R13 작업 주기 `[0,6,12,18]` 유지. 활성 기존 runner SHA-256 `db0040ef8f3ce5b7e4cfe2ed8786a87b1f6f0ce6a9b8c6ea0cf379f494e77ae3` → 신규 R29 후행 연결 runner SHA-256 `9cc3a7b9df6a33655321fdcf9565d1e6e5afe8ee6ac88bb6df6b795feda7b3dd`. 기존 runner 백업 해시 검증 `runnerBackupVerified:true`.
+- 기존 의존 모듈 **3개 확인**, 신규 비공개 뉴스 수집 모듈 **5개 설치**. 설치 당시 기존 개인 후보 **27건** 검증. `schedulerModified:false`, `vbsModified:false`, `scoreLedgerModified:false`, `publicCacheModified:false`, `d1Written:false`.
+- `pcPrivateCollectionExecuted:false`가 명시되어 있다. **설치 PASS ≠ 자동 수집 PASS**. 사용자가 다음 별개의 정상 R13 예약 실행 2회에서 `news-display-candidates-auto-r29-status.json` 생성·관측 시각과 `news-display-candidates-r26.json` 보존·갱신을 확인하기 전에는 운영 자동 수집 성공으로 판정하지 않는다. 추가 수동 예약 실행, 공개 뉴스·번역·점수 변경은 이 단계의 작업이 아니다.
