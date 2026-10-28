@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { runForecastPipeline, tbrcR30Adapter } from './ollama-forecast-pipeline-r70.mjs';
+import { runForecastPipeline, tbrcR30Adapter, R31_RECHECK_TOPICS } from './ollama-forecast-pipeline-r70.mjs';
+import { auditForecastSource } from './forecast-source-audit-r29-readonly.mjs';
 
 const hosts = {
   TBRC: ['www.thebusinessresearchcompany.com'],
@@ -122,4 +123,60 @@ test('R79 refuses forged reference report provenance or unverified proxy scope',
     adapter('SkyQuest',fake),adapter('Precedence',valid('Precedence',8))]);
   assert.equal(report.results[0].mean_pct,null);
   assert.equal(report.results[0].publishers[0].reason,'R63_REFERENCE_PROVENANCE_NOT_VERIFIED');
+});
+
+function r31HistoricMislabelFixture(name, historic, base, forecast, historicRate, forecastRate) {
+  return `<html><h2>What Is The ${name} Market Size and Share 2026?</h2>` +
+    `<p>It will grow from $${historic} billion in 2025 to $${base} billion in 2026 ` +
+    `at a compound annual growth rate (CAGR) of ${historicRate}%.</p>` +
+    `<h2>What Is The ${name} Market Growth Forecast?</h2>` +
+    `<p>It will grow to $${forecast} billion in 2030 at a compound annual ` +
+    `growth rate (CAGR) of ${forecastRate}%.</p>` +
+    `<h2>${name} Market Report Forecast Analysis</h2><p>Market Size Value In 2026 ` +
+    `$${base} billion Revenue Forecast In 2030 $${forecast} billion ` +
+    `Growth Rate CAGR of ${historicRate}% from 2026 to 2030</p></html>`;
+}
+
+test('R80 activates established R31 proof only for three missing R79 topics', async () => {
+  assert.deepEqual(R31_RECHECK_TOPICS,
+    ['consumer staples', 'fintech', 'biotechnology services']);
+  for (const keyword of ['consumer staples','fintech','biotechnology services','data center']) {
+    let called;
+    await tbrcR30Adapter(async (query, opts) => {
+      called = opts;
+      return valid('TBRC',5);
+    }).run({id:'t',keyword});
+    assert.equal(called.resolveHistoricTableMislabel,R31_RECHECK_TOPICS.includes(keyword));
+    assert.equal(called.rateOnlyFromSource,true);
+    assert.equal(called.strictMarketScope,true);
+  }
+});
+
+test('R80 retains three proven R31 historic-mislabel reports; invented proof still fails', async () => {
+  for (const entry of [
+    ['Staple Food', 1838.96, 1963.65, 2485.28, 6.8, 6.1],
+    ['FinTech Blockchain', 6.45, 9.55, 39.18, 48.2, 42.3],
+    ['Biotechnology Services', 178.54, 196.54, 314.12, 10.1, 12.4]
+  ]) {
+    const [name,historic,base,forecast,historicRate,forecastRate]=entry;
+    const html=r31HistoricMislabelFixture(name,historic,base,forecast,historicRate,forecastRate);
+    const before=auditForecastSource(html);
+    assert.equal(before.source_audit,'SOURCE_CONFLICT');
+    assert.equal(before.source_conflict_reason,'TABLE_DISAGREES_WITH_MARKET_SIZES');
+    const proven=auditForecastSource(html,{resolveHistoricTableMislabel:true});
+    assert.equal(proven.source_audit,'RESOLVED_HISTORIC_RATE_MISLABEL');
+    assert.equal(proven.source_conflict_reason,'FORECAST_METADATA_REPEATS_VERIFIED_HISTORIC_CAGR');
+    const source={...valid('TBRC',forecastRate),...proven};
+    const report=await runForecastPipeline(topic,[
+      adapter('TBRC',source),adapter('SkyQuest',valid('SkyQuest',6))]);
+    assert.equal(report.results[0].source_count,2);
+    assert.equal(report.results[0].mean_pct,Number(((forecastRate+6)/2).toFixed(6)));
+    assert.ok(report.results[0].warnings.includes(
+      'R31_PUBLISHER_FORECAST_TABLE_HISTORIC_CAGR_MISLABEL_PROVEN'));
+    const fake=await runForecastPipeline(topic,[
+      adapter('TBRC',{...source,historic_math_pct:999}),
+      adapter('SkyQuest',valid('SkyQuest',6))]);
+    assert.equal(fake.results[0].source_count,1);
+    assert.equal(fake.results[0].mean_pct,null);
+  }
 });
