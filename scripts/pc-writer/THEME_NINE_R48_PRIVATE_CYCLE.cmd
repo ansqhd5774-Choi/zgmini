@@ -5,6 +5,7 @@ rem Does not publish, write D1, or alter any scheduled tasks.
 set "R48_R47=%~dp0THEME_NINE_R47_RECURRING_PRIVATE_UPDATE.cmd"
 set "R48_STAGE=%~dp0theme-nine-r48-stage-current.mjs"
 set "R48_BRIDGE=%~dp0theme-nine-r48-r47-bridge.mjs"
+set "ZGMINI_R48_CONFIG_DIR=%~dp0"
 set "R48_NODE=node"
 if exist "E:\ZGmini\runtime\node.exe" set "R48_NODE=E:\ZGmini\runtime\node.exe"
 set "R48_LOG=%~dp0THEME_NINE_R48_PRIVATE_CYCLE_%RANDOM%_%RANDOM%.txt"

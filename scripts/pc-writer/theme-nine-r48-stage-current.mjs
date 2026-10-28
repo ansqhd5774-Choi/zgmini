@@ -20,7 +20,7 @@ const safeRead=(dir,name)=>{
 };
 
 export function stageCurrentNineR48({dataRoot='E:/ZGmini/data',
-  configDirectory=path.resolve(HERE,'../../config')}={}){
+  configDirectory=process.env.ZGMINI_R48_CONFIG_DIR||path.resolve(HERE,'../../config')}={}){
   const root=fs.realpathSync(dataRoot),priv=path.join(root,'themes','legacy-nine-r47-private');
   if(!fs.existsSync(priv)||fs.realpathSync(priv)!==path.resolve(priv))
     fail('R47_PRIVATE_DIR_INVALID');
