@@ -37,11 +37,13 @@ test('R52 embeds three verified modules without rewriting formula or scheduler',
   const bytes=fs.readFileSync(installer),text=bytes.toString('ascii');
   assert.equal(bytes.equals(Buffer.from(text,'ascii')),true);
   assert.equal(/(?<!\r)\n/.test(text),false);
-  for(const [key,source] of [
-    ['STAGE','theme-nine-r48-stage-current.mjs'],
-    ['R51','theme-nine-r51-provisional-overlay.mjs'],
-    ['R51STAGE','theme-nine-r51-stage-current.mjs']]){
-    assert.equal(sha(section(text,key,'R52')),sha(fs.readFileSync(path.join(scripts,source))));
+  // R52 is already installed in the user's PC. Its historical payload is
+  // immutable even when a later R53 upgrade changes the sidecar sources.
+  for(const [key,approvedSha] of [
+    ['STAGE','1305b1c3e84891b3cde287645eefc45a57f483905171a609ebb4721321faeaba'],
+    ['R51','4a0bb3f61fcc6e106e283ba4469d4281d2931b5668a6e228b7a9db7ea7aab3c1'],
+    ['R51STAGE','582c876d04f6ed91d7a935d5f70408ba5255036f00102a30a52622a9671eec73']]){
+    assert.equal(sha(section(text,key,'R52')),approvedSha);
   }
   assert.match(text,/TASK_CHANGED=NO/);
   assert.match(text,/R47_FORMULA_CHANGED=NO/);
@@ -58,8 +60,8 @@ test('R52 preserves original R49 stage before scoped update and is idempotent',t
   fs.writeFileSync(stage,old,{flag:'wx'});
   const source=fs.readFileSync(installer,'ascii');
   assert.match(execute(source,temp),/R51_PROVISIONAL_MODULES_INSTALLED=YES/);
-  assert.equal(sha(fs.readFileSync(stage)),sha(fs.readFileSync(
-    path.join(scripts,'theme-nine-r48-stage-current.mjs'))));
+  assert.equal(sha(fs.readFileSync(stage)),
+    '1305b1c3e84891b3cde287645eefc45a57f483905171a609ebb4721321faeaba');
   assert.equal(sha(fs.readFileSync(stage+'.R49.BAK')),sha(old));
   assert.match(execute(source,temp),/R52_BUNDLE_SHA_VERIFIED=3\/3/);
   assert.equal(fs.readdirSync(temp).length,4);

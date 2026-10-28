@@ -52,6 +52,12 @@ const candidate=(observed,d,score)=>({
 });
 const base=candidate('2026-10-23',dates,50);
 const next=candidate('2026-10-26',recent,65);
+const laterDates=[...recent.slice(1),'2026-10-27'];
+const later=candidate('2026-10-27',laterDates,70);
+for(const item of later.themes){
+ const provisional=item.history.find(p=>p.date==='2026-10-26');
+ provisional.score=65;
+}
 const visible=[...THEME_NINE_R37_ROSTER.slice(0,7).map(t=>({
  theme:t.theme,etfs:['OLD'],score:47,history:base.themes[0].history})),
  {theme:'바이오·신약',etfs:['OLD'],score:47,history:base.themes[0].history},
@@ -109,6 +115,35 @@ test('R51 rejects missing dates, score rewrites and fabricated provisional point
   /PROVISIONAL_DATES_MISSING/);
 });
 
+test('R51 uses an already-scored 27 Oct historical point from a later R48 snapshot',()=>{
+ const result=buildNineR51PrivateProvisionalOverlay({
+  confirmed:base,latest:later,publicBase});
+ assert.deepEqual(result.provisional.points.map(p=>p.date),['2026-10-26']);
+ assert.equal(result.provisional.points[0].scores['방산'],65);
+ assert.equal(result.provisionalLineage.latestObservationDate,'2026-10-27');
+ assert.equal(result.provisionalLineage.publicProvisionalEndDate,'2026-10-26');
+ assert.deepEqual(result.themes[0].history,base.themes[0].history);
+});
+
+test('R51 connects public 27 Oct provisional from 28 Oct R48 history without 27 Oct candidate',()=>{
+ const d26=Array.from({length:252},(_,i)=>new Date(
+  Date.parse('2026-10-26T00:00:00Z')-(251-i)*86400000).toISOString().slice(0,10));
+ const older=candidate('2026-10-26',d26,50);
+ const d28=[...d26.slice(2),'2026-10-27','2026-10-28'];
+ const future=candidate('2026-10-28',d28,70);
+ for(const row of future.themes)row.history.find(p=>p.date==='2026-10-27').score=65;
+ const public27={...publicBase,observationDate:'2026-10-26',
+  confirmedObservationDate:'2026-10-26',
+  themes:visible.map(t=>({...t,history:older.themes[0].history})),
+  provisional:{asOf:'2026-10-28T03:00:00Z',points:[
+   {date:'2026-10-27',scores:Object.fromEntries(visible.map(t=>[t.theme,47]))}]}};
+ const result=buildNineR51PrivateProvisionalOverlay({
+  confirmed:older,latest:future,publicBase:public27});
+ assert.equal(result.provisional.points[0].date,'2026-10-27');
+ assert.equal(result.provisional.points[0].scores['핀테크'],65);
+ assert.equal(result.provisionalLineage.latestObservationDate,'2026-10-28');
+});
+
 test('R51 reads private immutable R48 snapshots and stages provisional scores offline',async t=>{
  const dir=fs.mkdtempSync(path.join(os.tmpdir(),'theme-nine-r51-'));
  t.after(()=>fs.rmSync(dir,{recursive:true,force:true}));
@@ -137,4 +172,23 @@ test('R51 reads private immutable R48 snapshots and stages provisional scores of
  const missingPublic=await stageNineR51Current({dataRoot:dir,
   fetchImpl:async()=>({status:503,ok:false})});
  assert.equal(missingPublic.status,'WAIT_PUBLIC_FEED_UNAVAILABLE');
+});
+
+test('R51 accepts a later private snapshot when exact provisional-day file is absent',async t=>{
+ const dir=fs.mkdtempSync(path.join(os.tmpdir(),'theme-nine-r51-later-'));
+ t.after(()=>fs.rmSync(dir,{recursive:true,force:true}));
+ const input=path.join(dir,'themes','legacy-nine-r48-private-candidate');
+ fs.mkdirSync(input,{recursive:true});
+ for(const record of [base,later]){
+  const bytes=Buffer.from(JSON.stringify(record,null,2)+'\n');
+  const digest=createHash('sha256').update(bytes).digest('hex').slice(0,16);
+  const name=`THEME_NINE_R48_PRIVATE_CANDIDATE_${record.observationDate}_${digest}.json`;
+  fs.writeFileSync(path.join(input,name),bytes,{flag:'wx'});
+ }
+ const result=await stageNineR51Current({dataRoot:dir,publicBase});
+ assert.equal(result.status,'R51_PRIVATE_PROVISIONAL_STAGED_NOT_PUBLISHED');
+ assert.equal(result.latestR48SourceDate,'2026-10-27');
+ assert.deepEqual(result.provisionalDates,['2026-10-26']);
+ const stored=JSON.parse(fs.readFileSync(result.candidatePath,'utf8'));
+ assert.equal(stored.provisional.points[0].scores['방산'],65);
 });

@@ -51,7 +51,14 @@ export async function stageNineR51Current({dataRoot='E:/ZGmini/data',
     if(options.length>1)fail('R48_CANDIDATE_DATE_AMBIGUOUS');
     return options[0]??null;
   };
-  const confirmedFile=one(base),latestFile=one(final);
+  const confirmedFile=one(base);
+  // A later R48 run can contain the public provisional day in its 252-day
+  // history. Choose the earliest SHA-verified candidate at/after that day.
+  // The pure overlay independently verifies every requested date and that
+  // all overlapping confirmed scores are unchanged.
+  const laterDates=[...new Set(files.map(n=>n.match(fmt)[1]))]
+    .filter(d=>d>=final).sort();
+  const latestFile=laterDates.length?one(laterDates[0]):null;
   if(!confirmedFile||!latestFile)return {
     status:'WAIT_R48_ALIGNED_SNAPSHOTS',confirmedDate:base,latestDate:final,
     missing:[...(!confirmedFile?['CONFIRMED_ANCHOR']:[]),
@@ -70,6 +77,7 @@ export async function stageNineR51Current({dataRoot='E:/ZGmini/data',
   }else fs.writeFileSync(target,bytes,{flag:'wx'});
   return {status:'R51_PRIVATE_PROVISIONAL_STAGED_NOT_PUBLISHED',
     confirmedDate:base,provisionalDates:overlay.provisional.points.map(p=>p.date),
+    latestR48SourceDate:latest.observationDate,
     themeCount:9,scoreCount:9*overlay.provisional.points.length,
     priceMode:overlay.sourcePriceMode,sourceFormulaChanged:false,
     candidateSha256:sha(bytes),candidatePath:target,

@@ -92,7 +92,10 @@ export function buildNineR51PrivateProvisionalOverlay({confirmed,latest,publicBa
       !latestDates.includes(point.date))fail('PROVISIONAL_DATES_MISSING');
     previous=point.date;
   }
-  if(previous!==latest.observationDate)fail('LATEST_DATE_NOT_PROVISIONAL_END');
+  // A later R48 snapshot already contains the requested provisional date in
+  // its verified 252-day score history. Reuse that exact historical point;
+  // do not require an otherwise unnecessary single-day R48 snapshot.
+  if(previous>latest.observationDate)fail('LATEST_SOURCE_BEFORE_PROVISIONAL_END');
   const fixed=new Set(confirmedDates);
   for(let i=0;i<9;i++){
     const initial=new Map(confirmed.themes[i].history.map(p=>[p.date,p.score]));
@@ -113,6 +116,7 @@ export function buildNineR51PrivateProvisionalOverlay({confirmed,latest,publicBa
     provisionalLineage:{source:'R47_R48_SAME_PRICE_MODE_EXISTING_SCORES',
       confirmedCandidateSha256:sha(confirmed),latestCandidateSha256:sha(latest),
       confirmedObservationDate:baseDate,latestObservationDate:latest.observationDate,
+      publicProvisionalEndDate:previous,
       sameMethodology:true,overlappingHistoryIdentical:true},
     // Public approval remains strictly external. This is a private candidate.
     ...Object.fromEntries(falseFlags.map(k=>[k,false])),
