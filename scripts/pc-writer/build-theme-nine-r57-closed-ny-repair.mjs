@@ -76,7 +76,7 @@ const lines=[
  'if not exist "%R57_TARGET%" goto :missing',
  `"%R57_NODE%" -e "${js}" >>"%R57_REPORT%" 2>&1`,
  'if errorlevel 1 goto :stop',
- '>>"%R57_REPORT%" echo STATUS=INSTALLED_NEXT_EXISTING_R48_R54_CYCLE_CAN_PUBLISH',
+ '>>"%R57_REPORT%" echo STATUS=INSTALLED_AWAIT_REAL_DATA_AND_EXISTING_R48_R54_CYCLE',
  'set "R57_EXIT=0"',
  'goto :done',
  ':missing',
