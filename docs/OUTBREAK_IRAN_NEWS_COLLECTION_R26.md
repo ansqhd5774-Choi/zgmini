@@ -138,3 +138,11 @@
 - 새 패키지: `IRAN_NEWS_R31_FIX2_CYCLE_READONLY_PACKAGE.zip`, SHA-256 `68acb309067ed8578daa9fca9b7499e1e46a7db13c427217466b6038296aa0c6`. 압축 해제 후 기존 이름 `IRAN_NEWS_R31_CYCLE_READONLY.cmd`를 실행한다. FIX1과 달리 CMD 인자에 `%~dp0` 자체를 넣지 않는다.
 - 파일 저장이 다시 실패하더라도 `R31_REPORT_WRITE_FAILED_<OS_ERROR_CODE>`와 제목/URL 없는 `R31_FALLBACK_SUMMARY`를 기존 `IRAN_NEWS_R31_LAUNCH_RESULT.txt`에 남긴다. 보고서 작성 실패의 exit code `2`를 의도적으로 보존하여 정상 완료로 오인하지 않는다.
 - 자료 파일·수집기·작업 스케줄러·뉴스 후보·SQLite·D1·점수·UI/번역에 쓰지 않는다. 본 패키지의 관측 대상은 **R29가 과거에 남긴 파일**이며 R29 자동 수집 성패는 여전히 실제 정규 회차 증거가 있어야 판정한다.
+
+## 17. R31 FIX2 사용자 PC 첫 수집 출력 관측 — 2026-10-28 12시 회차
+
+- 사용자 제출 `IRAN_NEWS_R31_LAUNCH_RESULT(1).txt`: `R31_RESULT_FILE=...`, `R31_STATUS=R31_SINGLE_CYCLE_OBSERVED`, `FINAL_STATUS=PASS_R31_RECENT_OUTPUT_OBSERVED`. **결과 TXT 저장 문제는 이 사용자 PC 실행에서 해결됨**.
+- 결과 `IRAN_NEWS_R31_CYCLE_READONLY_RESULT_20261028140821_722.txt`: `observationAtKst=2026-10-28 12:02:36`, 12시 6시간 구간, 조회 시 데이터 연령 126분, `taskPresent=true`, `cacheCoherent=true`, `statusFresh=true`, `isolationMaintained=true`.
+- R29 개인 뉴스 후보: `collectorStatus=PRIVATE_COLLECTION_PARTIAL`, `sourceCount=7`, `sourcesFailed=0`, `articleFailures=4`, `candidatesSaved=28`, `verifiedCandidateCount=28`, `newCandidates=1`; R28 기존 저장 27건과 구분해 **실제 새로운 후보 1건이 R29 상태 파일에 기록된 사실**을 보존한다. 다만 R31 요약 로그만으로 그 신규 건의 원문 URL·제목·발행일은 독립 검증하지 않는다.
+- `rightsUnverified=true`, `operationalFilesWritten=false`, `collectionExecuted=false`, `schedulerModified=false`. R31 도구 자체는 읽기 전용이고 D1/공개 뉴스/점수 게시 근거는 아니다. `taskPresent=true`는 Windows 작업 **존재** 확인일 뿐 이 로그 하나로 작업 실행 이력을 독립 증명하지 않는다.
+- **현재 Gate: 1회 신선한 R29 출력 관측 PASS / 서로 다른 정규 2회 확인 PENDING**. 사용자 제출 결과가 명시적으로 `automaticScheduleTwoCyclesVerified=false`이므로 다음 정상 6시간 회차의 별도 관측 시각과 실제 예약 작업 기록을 확인하기 전 `PC_AUTO_COLLECTION_VERIFIED`라고 선언하지 않는다. 수동 강제 실행·추가 설치 불필요.
