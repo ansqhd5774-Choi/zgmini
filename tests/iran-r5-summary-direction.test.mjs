@@ -84,7 +84,8 @@ test('actual publication points render in the compact summary without nested int
  const point=(at,value)=>({at,value,collectionCheckedAt:at-1000,sourceStoredAt:at-2000,eventCount:2,lineage:'fixture'});
  const html=render({...view,updateHistory:[point(at,12.1),point(at+3600000,13)]});
  assert.match(html,/실제 게시 기록 2회/);
- assert.match(html,/갱신별 기록 · KST/);
+ assert.doesNotMatch(html,/갱신별 기록 · KST/,'Compact card omits its redundant chart note');
+ assert.doesNotMatch(html,/zg-iran-chart-legend/,'Compact card omits the legend labels');
  assert.equal((html.match(/data-kind="publication"/g)??[]).length,2);
  assert.equal((html.match(/data-kind="daily-estimate"/g)??[]).length,13,'13 prior daily estimates survive alongside today’s actual publications');
  assert.doesNotMatch(html,/<circle[^>]*role="button"/);
