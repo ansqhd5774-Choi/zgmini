@@ -97,6 +97,13 @@ flowchart TD
 - 사용자는 **배포 이후 거래일별 운영 결과를 모니터링**한다. 사용자의 모니터링 약속을 이유로 **초기 D1 게시를 건너뛰거나, 예약 작업 설치만으로 완료**라고 보고하지 않는다.
 - 산식 변경·비공개 연구 9개와 공개 교집합 8개의 혼동·공개 10개 삭제·예전 점수 최신으로 복제·임의 Git 브랜치 생성/교체·다른 프로젝트 코드와의 혼합 금지.
 
+### R59 기존 잠정치 연결 코드 대조 — 2026-10-29 (소스 변경 없음)
+
+- 정상 운영 중인 기존 공개 잠정치는 PC `theme-optional-cycle.mjs`의 `sevenCoreReference`/`verifySevenProvisionalAuthority`, 기존 sidecar `lib/market-score/theme-etf-provisional.mjs`, 공개 Reader가 **독립된 승인 데이터/날짜 계약**으로 유지한다. **27일 잠정치가 없다는 뜻이 아니며**, R32의 새 보관 후보가 부족하다고 해서 기존 잠정치를 삭제하거나 의미를 바꾸지 않는다.
+- `theme-nine-r51-provisional-overlay.mjs`는 **이미 공개된 잠정 날짜**를 그대로 사용하고, 동일 R32 산식으로 검증된 `R48` 날짜별 원점수만 매핑한다. `theme-nine-r37-public.mjs`는 대상 8개 테마만 덮고 다른 공개 테마를 보존한다. 실공개 26일 확정 기준+26/27 잠정 날짜 fixture도 기존 테스트에 있다.
+- 관련 4개 테스트 파일(`theme-nine-r37-public-reader`, `theme-nine-r51-provisional-overlay`, `theme-nine-r54-bundle`, `theme-nine-r54-publication`) **4/4 PASS**. 이 코드 대조에서는 잠정치 정의나 R51 날짜 매핑 자체의 고장 증거를 발견하지 않았다. **차단은 마지막 R48 신규 R32 후보의 27일 원가격 미확보**이며 R54 D1 게시 0건 상태다. GetMarketHistory 직접 조회 `x-data-through=2026-10-26T23:59:00Z`, 27일 `x-row-count=0` 재확인. 공식 헤더 의미는 제공처 [API reference](https://getmarkethistory.com/docs/api/reference)를 따른다.
+- 따라서 **근거 없는 R51/R54 소스 변경이나 임의 잠정치 대체를 실행하지 않는다.** 기존 승인 원가격이 실제 도착하면 기존 설치된 R47→R48→R51→R54 실행과 D1/public readback을 즉시 수행하는 것이 첫 유효 작업이다. 관련 코드 PASS와 Production 게시 미완료를 혼동하지 않는다.
+
 ## 7. 기준 문서·로그·공식 API
 
 - 상위 목표: [163 테마 최상위 계획](THEME_FEAR_GREED_163_THEME_MASTER_PLAN_20261027.md). 실PC 증거·해시: [R57 closed-NY 수정](THEME_NINE_R57_NY_CLOSED_SESSION_REPAIR_20261029.md); 게시 계약: [R54 D1 연결](THEME_NINE_R54_PUBLIC_D1_CONNECT_20261028.md).
