@@ -37,3 +37,9 @@
 - 다음은 안전 설치 ZIP을 PC에서 한 번 실행하고 결과 로그를 받아 `phase=INSTALLED` 여부만 판정한다. 설치 이후 정규 데이터 수집과 공개 사이트 반영은 별개 상태다.
 - 최종 검증: 신규 R25 파서 4/4·수집기 3/3·설치기 4/4 **11/11 PASS**, 기존 R24 USDA collector 3/3 및 R23 EIA collector 9/9 **12/12 PASS**, `npm run typecheck` PASS. Windows CMD ASCII+CRLF, ZIP 7파일 무결성 PASS.
 - 사용자 전달 ZIP: `MARKET_CALENDAR_R25_CFTC_PC_INSTALL_20261028.zip`, SHA256 **`413f9584295448542842bdc3e65be366f77ac01080ccb6d242dc8ffc347c74a5`**. 실행 CMD는 `MARKET_CALENDAR_R25_CFTC_APPLY.cmd`, 출력은 `MARKET_CALENDAR_R25_CFTC_APPLY_RESULT.txt`.
+
+## R25 표시 연결 및 검증 보강
+
+- 같은 작업 브랜치의 `app/market-calendar/market-calendar-client.tsx`에 `cftc-cot`/`CFTC` 분류·표시를 최소 추가했다. 기존 배치·필터 구조·다른 이벤트 화면 변경 없음.
+- 공식 15:30 미국 동부 현지 발표시각을 기존 5필드 API를 확장하지 않은 상태에서 `lib/market-calendar-cftc-time.mjs`로 `America/New_York`(서머타임 적용) 시각 → KST 표시 날짜·남은시간으로 변환한다. 예: 2026-10-30 미국 15:30 EDT → 2026-10-31 한국 04:30, 2026-11-06 미국 15:30 EST → 2026-11-07 한국 05:30. 공휴일 지연 표시도 유지한다.
+- 시간 변환/비정상 날짜 차단 테스트 3/3 PASS. R25 전체 신규 테스트는 파서·수집·설치·표시 시각 **14/14 PASS**. 이 결과는 개발 코드 및 공식 원문 적합성 검증이며 사용자 PC 설치 완료나 웹 배포를 의미하지 않는다.
