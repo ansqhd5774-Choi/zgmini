@@ -19,7 +19,7 @@ export const SOURCE_RIGHTS_REVIEW=Object.freeze({
  'un-middle-east':{review:'UN_NEWS_CREDIT_AND_NOTICE_CHECK',policyUrl:'https://www.un.org/en/about-us/copyright/'},
  'bbc-middle-east':{review:'BBC_SEPARATE_PERMISSION_CHECK',policyUrl:'https://downloads.bbc.co.uk/usingthebbc/bbc_terms_of_use.pdf'},
  aljazeera:{review:'ALJAZEERA_SEPARATE_PERMISSION_CHECK',policyUrl:'https://terms.aljazeera.net/'},
- tasnim:{review:'TASNIM_CURRENT_SOURCE_LICENCE_CHECK',policyUrl:null},
+ tasnim:{review:'TASNIM_CC_BY_4_0_ARTICLE_AUTHORSHIP_CHECK',policyUrl:'https://www.tasnimnews.ir/en'},
 });
 const MAX_FILE_BYTES=1024*1024;
 // Read-only title focus indicator mirroring the R26 collector's four topics.
