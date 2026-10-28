@@ -13,6 +13,7 @@ type Country='US'|'KR';
 type View='week'|'month';
 type FilterKind='all'|EventKind;
 type FilterCountry='all'|Country;
+type FilterImportance='all'|1|2|3;
 type OfficialEvent={id:string;date:string;title:string;source:string;sourceUrl:string};
 type SourceState={status:string;checkedAt?:string|null;issuers?:Record<string,{status:string;checkedAt?:string|null}>};
 type CalendarFeed={status:string;updatedAt?:string;sources?:Record<string,SourceState>;events?:OfficialEvent[]};
@@ -139,6 +140,7 @@ export default function MarketCalendar(){
  const [view,setView]=useState<View>('week');
  const [kind,setKind]=useState<FilterKind>('economic');
  const [country,setCountry]=useState<FilterCountry>('all');
+ const [importance,setImportance]=useState<FilterImportance>('all');
  const [query,setQuery]=useState('');
  const [vendorCounts,setVendorCounts]=useState<Record<string,number>>({});
  const [nowMs,setNowMs]=useState(0);
@@ -159,7 +161,7 @@ export default function MarketCalendar(){
 
  const range=useMemo(()=>view==='week'?{start:monday(selected),end:plusDays(monday(selected),6)}:{start:monthStart(selected),end:monthEnd(selected)},[selected,view]);
  const allRows=useMemo(()=>mergeOfficial(feed),[feed]);
- const periodRows=useMemo(()=>allRows.filter(row=>row.date>=range.start&&row.date<=range.end&&(kind==='all'||row.kind===kind)&&(country==='all'||row.country===country)&&(!query||`${row.name} ${row.category} ${row.source} ${row.country}`.toLowerCase().includes(query.trim().toLowerCase()))).sort((a,b)=>a.date.localeCompare(b.date)||(a.at??'').localeCompare(b.at??'')||a.name.localeCompare(b.name)),[allRows,range,kind,country,query]);
+ const periodRows=useMemo(()=>allRows.filter(row=>row.date>=range.start&&row.date<=range.end&&(kind==='all'||row.kind===kind)&&(country==='all'||row.country===country)&&(importance==='all'||row.importance===importance)&&(!query||`${row.name} ${row.category} ${row.source} ${row.country}`.toLowerCase().includes(query.trim().toLowerCase()))).sort((a,b)=>a.date.localeCompare(b.date)||(a.at??'').localeCompare(b.at??'')||a.name.localeCompare(b.name)),[allRows,range,kind,country,importance,query]);
  const filtered=useMemo(()=>rowsForSelectedDay(periodRows,activeDate) as CalendarRow[],[periodRows,activeDate]);
  const days=useMemo(()=>Array.from({length:diffDays(range.end,range.start)+1},(_,i)=>plusDays(range.start,i)),[range]);
  const vendorCount=useMemo(()=>activeDate?vendorCounts[activeDate]??0:Object.values(vendorCounts).reduce((sum,n)=>sum+n,0),[vendorCounts,activeDate]);
@@ -198,6 +200,9 @@ export default function MarketCalendar(){
    <div className="mc-filter"><span className="mc-filter-label">국가</span><div className="mc-pills" role="group" aria-label="국가 선택">
     {([['all','전체'],['US','미국'],['KR','한국']] as const).map(([key,label])=><button key={key} type="button" className={country===key?'active':''} onClick={()=>setCountry(key)} aria-pressed={country===key}>{label}</button>)}
    </div></div>
+   <div className="mc-filter"><span className="mc-filter-label">중요도</span><div className="mc-pills" role="group" aria-label="중요도 필터">
+    {([['all','전체'],[3,'★★★'],[2,'★★'],[1,'★']] as const).map(([key,label])=><button key={key} type="button" className={importance===key?'active':''} onClick={()=>setImportance(key)} aria-pressed={importance===key} aria-label={key==='all'?'모든 중요도':`중요도 별 ${key}개`}>{label}</button>)}
+   </div></div>
    <div className="mc-range" role="group" aria-label="기간 선택과 이동">
     <button type="button" className={view==='week'?'active':''} aria-pressed={view==='week'} onClick={()=>{setView('week');setActiveDate(null);}}>주간</button>
     <button type="button" className={view==='month'?'active':''} aria-pressed={view==='month'} onClick={()=>{setView('month');setActiveDate(null);}}>월간</button>
@@ -215,7 +220,7 @@ export default function MarketCalendar(){
   </div>
   <div className="mc-head" aria-hidden="true"><span className="mc-importance-heading" title="발표 예상 시장 영향도: 별 1개 일반, 2개 관심, 3개 핵심"><Star size={12} fill="currentColor" aria-hidden="true"/>중요도</span><span>날짜</span><span>시간</span><span>국가</span><span>발표 일정</span><span>발표</span><span>예상</span><span>이전</span><span>남은 시간</span></div>
   <div className="mc-results" aria-live="polite">
-   <EarningsDisplayClient start={range.start} end={range.end} activeDate={activeDate} query={query} enabled={(kind==='all'||kind==='earnings')&&country!=='KR'} onCounts={setVendorCounts}/>
+   <EarningsDisplayClient start={range.start} end={range.end} activeDate={activeDate} query={query} importance={importance} enabled={(kind==='all'||kind==='earnings')&&country!=='KR'} onCounts={setVendorCounts}/>
    {loadState!=='ready'&&<p className="mc-data-state">{loadState==='loading'?'공식 일정 저장본 확인 중':'공식 일정 저장본 조회 실패'} · 수동 확인 자료와 분리하여 표시합니다.</p>}
    {loadState==='ready'&&feed?.status!=='READY'&&<p className="mc-data-state">공식 일정 저장본 미확정 · 기존 확인 자료는 확인일 기준으로 표시합니다.</p>}
    {!filtered.length&&!vendorCount&&<div className="mc-empty"><strong>{activeDate?'선택한 날짜에 일정이 없습니다.':'표시할 일정이 없습니다.'}</strong><span>{kind==='earnings'&&!feed?.sources?.earnings?'기업 실적 발표일은 검증된 수집 경로가 연결되지 않았습니다.':country==='KR'?'한국 공식 발표 일정은 수집 경로 연결 전입니다.':'해당 조건에 확인된 공식 발표 일정이 없습니다.'}</span></div>}
