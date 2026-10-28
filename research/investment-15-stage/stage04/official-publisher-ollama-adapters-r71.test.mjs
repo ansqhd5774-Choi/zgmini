@@ -145,6 +145,16 @@ test('a narrow submarket cannot masquerade as an exact target market', () => {
   assert.equal(exactMarketIdentity('Robotics and Automation Market 2030', 'robotics and automation'), true);
 });
 
+test('R82: publisher spellings accept plural vehicles and unspaced cybersecurity, never a submarket', () => {
+  assert.equal(exactMarketIdentity('Autonomous Vehicles Market Growth & Competitive Insights 2033',
+    'autonomous vehicle'), true);
+  assert.equal(exactMarketIdentity('Cybersecurity Market Companies, Size & Trends 2026-2035',
+    'cyber security'), true);
+  assert.equal(exactMarketIdentity('Autonomous Vehicles Sensors Market', 'autonomous vehicle'), false);
+  assert.equal(exactMarketIdentity('Cybersecurity Insurance Market', 'cyber security'), false);
+  assert.equal(exactMarketIdentity('Autonomous Vehicle Hardware Market', 'autonomous vehicle'), false);
+});
+
 test('discovery continues search when official homepage contains only a submarket', async () => {
   const publisher = PUBLISHERS.find(p => p.id === 'Precedence');
   const unrelated = 'https://www.precedenceresearch.com/data-center-liquid-cooling-valves-market';
@@ -330,6 +340,32 @@ test('R81: Precedence same-rate one-year labels pass only with independently mat
     assert.equal(unsupported.state,'SOURCE_CONFLICT');
     assert.equal(unsupported.growth_pct,null);
   }
+});
+
+test('R82: Precedence lead may repeat both adjacent labels; only independently size-proven primary rate passes', async () => {
+  const url='https://www.precedenceresearch.com/fintech-blockchain-market';
+  const doc=(size='21.59',leadExtra='2026 to 2034')=>
+    '<html><h1>FinTech Blockchain Market Companies, Size & Trends</h1>' +
+    '<p>The global fintech blockchain market has a projected CAGR of 46.31% from 2025 to 2034. ' +
+    `The same rate is also listed for ${leadExtra} in the report highlights.</p>` +
+    '<h2>FinTech Blockchain Market Size and Forecast 2026 to 2034</h2>' +
+    `<p>The global fintech blockchain market size was calculated at USD 1.02 trillion in 2026 ` +
+    `and is predicted to reach USD ${size} trillion by 2034, expanding at a CAGR of 46.31% ` +
+    'from 2026 to 2034.</p></html>';
+  const run=async (html)=>firstPartyOllamaAdapter('Precedence',{
+    addressHintFn:()=>url,
+    fetchFn:async target=>target===url?new Response(html):new Response('missing',{status:404}),
+    chooseFn:async()=>({index:0,scope:'DIRECT'})
+  }).run({id:'fintech',keyword:'fintech blockchain'});
+  const pass=await run(doc());
+  assert.equal(pass.state,'PASS',pass.failure);
+  assert.equal(pass.growth_pct,46.31);
+  assert.equal(pass.period_start,2026);
+  assert.equal(pass.period_end,2034);
+  const mismatch=await run(doc('19.59'));
+  assert.equal(mismatch.state,'SOURCE_CONFLICT');
+  const unrelated=await run(doc('21.59','2023 to 2034'));
+  assert.equal(unrelated.state,'SOURCE_CONFLICT');
 });
 
 test('R76: official SkyQuest Market Insights separates 2025 size baseline from the 2026-2033 CAGR forecast', async () => {
