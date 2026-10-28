@@ -99,3 +99,29 @@ test('tool call limit aborts without claiming a finished research report',async(
   await assert.rejects(runStage05OllamaResearch({
     input:fixture(),model:'mock',...deps,maxToolCalls:1}),/TOOL_BUDGET_EXCEEDED/);
 });
+
+test('existing R77 forecast research reaches Ollama as context, never as an S5 score',async()=>{
+  const input=fixture();
+  input.ollamaInput.stage04SavedR77Forecast={
+    version:'STAGE05_R77_SAVED_FORECAST_BRIDGE_R83',
+    status:'CONNECTED_R77_RESEARCH_ONLY',
+    topics:[{keyword:'data center',meanCagrPct:11.285}],
+    scoreStatus:'NOT_STAGE04_M4_OR_STAGE05_S5',
+  };
+  const seen=[];
+  const chat=async request=>{
+    seen.push(request);
+    if(request.format?.properties?.selectedThemes)return selection(['approved-12']);
+    return {message:{content:'no additional evidence',tool_calls:[]}};
+  };
+  const result=await runStage05OllamaResearch({input,model:'mock',chat,
+    webSearch:async()=>({results:[]}),webFetch:async()=>({content:''})});
+  assert.equal(result.status,'NO_FETCHED_PRIMARY_EVIDENCE');
+  for(const request of seen){
+    const userMessage=request.messages.find(m=>m.role==='user');
+    const data=JSON.parse(userMessage.content);
+    assert.equal(data.savedR77ResearchContext.topics[0].meanCagrPct,11.285);
+    assert.equal(data.savedR77ResearchContext.scoreStatus,'NOT_STAGE04_M4_OR_STAGE05_S5');
+  }
+  assert.equal(input.ollamaInput.candidates[0].stage05S5,68);
+});
