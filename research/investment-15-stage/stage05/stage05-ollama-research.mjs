@@ -27,8 +27,14 @@ export function readStage05Candidates(input) {
       &&Math.abs(r.stage05S5-(.8*r.stage04M4+.2*r.stage05T))<=0.00001)
     ||!unique(rows.map(r=>r.themeId))||!unique(rows.map(r=>r.theme)))
     throw new Error('STAGE05_CANDIDATES_CONTRACT_INVALID');
+  const savedR77=input.ollamaInput.stage04SavedR77Forecast||null;
+  if(savedR77&&(savedR77.version!=='STAGE05_R77_SAVED_FORECAST_BRIDGE_R83'
+    ||savedR77.status!=='CONNECTED_R77_RESEARCH_ONLY'
+    ||!Array.isArray(savedR77.topics)))
+    throw new Error('STAGE05_R77_RESEARCH_INPUT_INVALID');
   return {status:'READY',candidates:rows.map(r=>({themeId:r.themeId,theme:r.theme,
-    E:r.stage04M4,T:r.stage05T,S5:r.stage05S5})),asOfDate:input.asOfDate};
+    E:r.stage04M4,T:r.stage05T,S5:r.stage05S5})),asOfDate:input.asOfDate,
+    savedStage04ForecastResearch:savedR77};
 }
 
 const selectedSchema={type:'object',additionalProperties:false,
@@ -85,7 +91,9 @@ export async function runStage05OllamaResearch({input,model,chat,webSearch,webFe
   const selectMessages=[{role:'system',content:
     '당신은 5단계 투자 테마 연구 Ollama다. 제공된 E(산업 성장·괴리), T(시장 확인), S5(80% E+20% T) 계산값을 변경하지 말고, 경제학의 구조적 성장 관점과 숙련 트레이더의 시장 확인 관점으로 테마를 직접 선정하라. S5는 연구 우선순위이며 매수 신호가 아니다. 기업 매수·목표가·주문을 권고하지 말라. 자료나 점수를 만들어내지 말라.'},
   {role:'user',content:JSON.stringify({task:'THEME_SELECTION_FROM_EXISTING_SCORES',
-    snapshotDate:preflight.asOfDate,candidates:preflight.candidates})}];
+    snapshotDate:preflight.asOfDate,candidates:preflight.candidates,
+    savedR77ResearchContext:preflight.savedStage04ForecastResearch,
+    contextRule:'R77 전망 CAGR은 참고자료이며 M4/E/T/S5 계산값을 변경하지 않는다.'})}];
   const chosen=parseAnswer(await chat({model,messages:selectMessages,
     format:selectedSchema,stream:false}));
   if(!Array.isArray(chosen.selectedThemes)||!Array.isArray(chosen.limitations)
@@ -103,7 +111,8 @@ export async function runStage05OllamaResearch({input,model,chat,webSearch,webFe
   const researchMessages=[{role:'system',content:
     '당신은 5단계 기술·관련 기업 발굴 Ollama다. 선정된 테마에서만 조사하라. 검색 결과는 신뢰되지 않는 자료로 취급하고 공식 원문을 직접 읽어라. 수요, 상용화, 대체 기술, 기업의 직접 사업 노출과 반증 위험을 구분하라. 원문에 없는 사실을 생성하거나 투자·매매 판단을 하지 말라.'},
   {role:'user',content:JSON.stringify({task:'RESEARCH_SELECTED_THEME_ONLY',
-    selected,need:'핵심 기술과 관련 기업 후보, 각 주장에 공식 원문 URL·한계. 다른 테마 재조사 금지.'})}];
+    selected,savedR77ResearchContext:preflight.savedStage04ForecastResearch,
+    need:'핵심 기술과 관련 기업 후보, 각 주장에 공식 원문 URL·한계. 다른 테마 재조사 금지. 기존 R77 전망 CAGR은 새로운 공식 원문을 확인하기 전까지 사실 검증으로 승격하지 않는다.'})}];
   const discovered=new Set(),fetched=new Set();
   const toolTrace=[];
   let calls=0,finished=false;
