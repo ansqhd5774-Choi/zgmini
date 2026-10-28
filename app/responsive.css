@@ -546,6 +546,7 @@
 .zg-dashboard[data-view="dashboard"] #market .zg-r55-risk-heading h2{margin:0}
 .zg-dashboard[data-view="dashboard"] #market .zg-r55-risk-heading a{display:inline-flex;align-items:center;gap:8px;color:inherit;text-decoration:none}
 .zg-dashboard[data-view="dashboard"] #market .zg-r55-risk-heading a:focus-visible{outline:2px solid var(--zg-brand);outline-offset:4px;border-radius:2px}
+.zg-dashboard[data-view="dashboard"] #market .zg-r55-risk-heading-desktop{display:none}
 
 /* Mobile-only 4px right alignment for the three primary market charts. */
 @media (max-width:959px){
@@ -558,6 +559,35 @@
 /* Desktop market overview: equal-width composite and risk panels.
    Keep the twelve economic domains below both panels at full width. */
 @container marketShell (min-width:960px){
+  /* Align both section titles above their matching half-width cards. */
+  .zg-dashboard[data-view="dashboard"] #market .zg-r55-heading{
+    display:grid;
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    column-gap:8px;
+    align-items:center;
+  }
+  .zg-dashboard[data-view="dashboard"] #market .zg-r55-heading>div:first-child{
+    grid-column:1;
+    grid-row:1;
+  }
+  .zg-dashboard[data-view="dashboard"] #market .zg-r55-heading>.zg-r55-risk-heading-desktop{
+    display:flex;
+    grid-column:2;
+    grid-row:1;
+    justify-self:start;
+    align-items:center;
+    min-width:0;
+    margin:0;
+  }
+  .zg-dashboard[data-view="dashboard"] #market .zg-r55-heading>.zg-r55-header-controls{
+    grid-column:2;
+    grid-row:1;
+    justify-self:end;
+    margin-left:0;
+  }
+  .zg-dashboard[data-view="dashboard"] #market .zg-r55-risk-panel .zg-r55-risk-heading-inline{
+    display:none;
+  }
   .zg-dashboard[data-view="dashboard"] #market .zg-r55-body{
     grid-template-columns:repeat(2,minmax(0,1fr));
     grid-template-rows:auto auto;
