@@ -144,7 +144,10 @@ export async function runMarketOperationalRefresh({env,job,store,now=Date.now(),
   }
   if(/^(FAIL|FAILED|ERROR|CONFIGURATION_MISSING|UNAVAILABLE)$/.test(collectedStatus??'')){
    await store.finish(selected,jobLease,now,'SOURCE_FAILED');
-   return {status:'SOURCE_FAILED',job:selected,sourceStatus:collectedStatus};
+   const d=collected?.sourceDiagnostic;
+   const sourceDiagnostic=selected==='earnings'&&collected?.failureCode==='WIKIPEDIA_UNIVERSE_REQUEST_FAILED'&&d?.provider==='WIKIPEDIA'&&d.stage==='UNIVERSE_REQUEST'&&Number.isInteger(d.httpStatus)&&d.httpStatus>=100&&d.httpStatus<=599
+    ?{provider:'WIKIPEDIA',stage:'UNIVERSE_REQUEST',httpStatus:d.httpStatus}:null;
+   return {status:'SOURCE_FAILED',job:selected,sourceStatus:collectedStatus,...(sourceDiagnostic?{sourceDiagnostic}:{})};
   }
   const disposition=collectionDisposition(selected,collectedStatus);
   if(disposition!=='COMPLETE'){

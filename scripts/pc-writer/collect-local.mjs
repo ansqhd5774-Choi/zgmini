@@ -63,6 +63,8 @@ export async function collectLocal(base,{lane='core',importOnly=false,job=null}=
   if(result.failureDiagnostic)report.failureDiagnostic=result.failureDiagnostic;
   if(result?.sourceDiagnostic?.provider==='BLS')report.sourceDiagnostic=result.sourceDiagnostic;
   if(result?.sourceDiagnostic?.provider==='FRED')report.sourceDiagnostic=safeMacroDiagnostic(result.sourceDiagnostic);
+  if(result.job==='earnings'&&result?.sourceDiagnostic?.provider==='WIKIPEDIA'&&result.sourceDiagnostic.stage==='UNIVERSE_REQUEST'&&Number.isInteger(result.sourceDiagnostic.httpStatus))
+   report.sourceDiagnostic={provider:'WIKIPEDIA',stage:'UNIVERSE_REQUEST',httpStatus:result.sourceDiagnostic.httpStatus};
   report.providerDiagnosticWriteFailures=providerDiagnosticWriteFailures;
   appendCollectionEvent(base,report);
   save(path.join(base,'local-collection-last-run.json'),report);
