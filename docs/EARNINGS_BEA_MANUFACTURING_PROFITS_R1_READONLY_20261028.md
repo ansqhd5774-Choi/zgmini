@@ -73,3 +73,14 @@
 - 동일 SHA가 있으면 원문을 검증 후 재사용하고, 내용이 충돌하면 정지한다. 메타데이터는 최초 캡처 시각을 보존한다.
 - 실행기는 Windows에서 새 원본 파일 생성 전 Y/N 확인을 표시한다. R5에 의한 새 원본 저장은 **기존 전체 원본의 부재 입증을 뜻하지 않는다**.
 - R5 로컬 테스트 4/4 PASS. 승인 PC 실제 수집·원본 생성, D1 저장, 공개 API, UI 및 배포는 실행 전까지 미확인/미실행이다.
+
+## R5 실제 PC 보관 보고 수신 — 원본 저장 성공 / 게시 미실행
+
+- 사용자 제출 PC 보고: `BEA_MFG_CAPTURE_3008_31194.txt` (`RUNNER_EXIT_CODE=0`, `WRAPPER_RESULT=CAPTURE_COMMAND_COMPLETED`).
+- 실행기 보고값: `status=APPEND_ONLY_SOURCE_STORED`, `sourceWrites=2`, `sqliteWrites=0`, `d1Writes=0`.
+- `sourceVersion=ebaf93f7a1e526cabae22388ed96d280d94eb58fdd4ddf484325bf651c59bf9b`.
+- 실제 저장했다고 보고된 상대 경로: `raw/earnings-recession/bea-manufacturing-profits-r5/<sourceVersion>.csv` 및 `.json`.
+- 최신 관측 분기 `2026-Q2`, 현행 FRED 빈티지 YoY `54.60548815840656%`. 발표 시점 PIT 결과가 아님.
+- 위 내용은 **승인 PC 실행 보고 증거**다. ChatGPT 작업 환경에서 E: 원본 파일을 직접 열어 SHA를 재계산한 것은 아니므로 독립적인 파일 read-back VERIFIED로 보고하지 않는다.
+- 다음 범위: 신규 저장 원본 2개를 읽기 전용으로 체크포인트/내용 해시 재검증, 별도 stored-only 공개 sidecar 계약 및 운영 D1 write 게이트 수립. 기존 BEA 단위이익의 저장 대기 상태와 혼동하지 않고, 새 지표는 점수 0% 반영(정보성)으로 유지한다.
+- 최신 `main`에 전체 브랜치 병합 금지. 실제 D1 저장/자동배포/공개 API/UI 변경은 여전히 미실행이고 별도의 대상 파일 선별 반영 및 런타임 검증이 필요하다.
