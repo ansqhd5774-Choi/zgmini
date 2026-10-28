@@ -113,3 +113,13 @@
 @media(prefers-reduced-motion:reduce){
  .ob-events .ob53-details summary>svg{transition:none}
 }
+
+/* R65: mobile-only 75px rate chart, with no redundant heading or week label. */
+@media(max-width:700px){
+ .ob-events .ob61-fed-compact .ob58-mini-plot{
+  height:75px;min-height:75px;
+ }
+ .ob-events .ob61-fed-compact .ob58-mini-empty{
+  min-height:75px;
+ }
+}
