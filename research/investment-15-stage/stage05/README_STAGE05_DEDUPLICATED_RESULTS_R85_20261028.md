@@ -50,6 +50,25 @@
 - `stage04.scoreKind`/`scoreValidation`은 이전 단계의 확정된 M4임을 표시하는 **전달 계약 상태**이지 5단계에서 이전 단계를 재감사하라는 뜻이 아니다.
 - 직접 계산 확인: `node stage05-fusion-readonly.mjs --input 기존_결과_연결.json` (실제 시장 데이터가 아닌 한 가상 테스트 숫자를 운영 선정으로 표시하지 않는다).
 - Ollama용 전달: `node stage05-fusion-readonly.mjs --handoff-input 기존_결과_연결.json`.
+- **R86 개별 완료 파일 연결**: Stage05가 기존의 단계별 JSON을 각각 읽도록 `--stage-files 완료파일목록.json` 및 `--handoff-stage-files 완료파일목록.json`을 추가했다. 입력 경로와 상태를 명시한 기존 파일만 읽으며 1~4단계를 자동 실행하거나 지표를 다시 산출하지 않는다.
+- 완료파일목록 예시(아래 경로는 실제 파일 위치로 지정해야 함):
+
+```json
+{
+  "version":"STAGE05_EXISTING_FILES_MANIFEST_V1",
+  "snapshotDate":"2026-10-28",
+  "files":{
+    "stage01":"stage01-completed.json",
+    "stage02":"stage02-completed.json",
+    "stage03":"stage03-completed.json",
+    "stage04":"stage04-completed.json"
+  }
+}
+```
+
+- 각 JSON은 위 V2 계약의 해당 `stage01`~`stage04` 객체 또는 그 키로 감싼 동일 객체여야 한다. **이것은 실측 완료 파일을 대신하는 샘플이 아니다.** 실제 다른 형식의 파일은 기존 필드 명세를 확인한 다음 Stage05에서 읽기 연결만 추가하며 수치를 추측하지 않는다.
+- 사용자 PC에는 지정된 완료 파일이 있을 수 있지만 GitHub 브랜치에는 9개 테마의 확정 M4 원자료가 올라와 있지 않다. R77 보고서는 5개 전망 주제와 CAGR이며 9개 M4 완료 점수 파일을 대신할 수 없다. 따라서 실제 데이터 순위는 아직 `NULL`이다.
+- Stage05 Windows CMD를 인수 없이 실행하면 더 이상 Stage01~04 현황을 자동 재조회하지 않고 사용법만 표시한다. 기존 읽기 전용 감사 옵션은 별도로 명시해 호출할 때만 작동한다.
 - Ollama는 기존 승인 후보 **9개 전부의 완료 점수가 연결된 경우에만** 호출할 수 있다. 단일 테마 예시는 입력 구조를 보일 뿐 Ollama 실행 조건을 채우지 않는다.
 - 5단계가 자동으로 과거 Windows PC 파일을 찾아보거나 Stage01~04를 다시 실행하지 않는다. 실제 파일을 Stage05 전용 JSON에 연결하는 작업은 기존 산출물의 위치와 형식이 알려져야 한다.
 
