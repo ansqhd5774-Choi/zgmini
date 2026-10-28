@@ -23,7 +23,11 @@ function mountCard(arrowVisible=true){
   '../lib/outbreak-change.mjs':createRequire(import.meta.url)('../lib/outbreak-change.mjs'),
   '../components/score-arrow-provider':{useScoreArrows:()=>series=>{arrowSeries.push(series);return arrowVisible;}},
  });
+ const {default:IranPublishedChart}=compile('../components/iran-published-chart.tsx',{
+  './iran-published-chart.css':{},
+ });
  const {IranSummaryCard}=compile('../app/iran-progress.tsx',{
+  '../components/iran-published-chart':{default:IranPublishedChart},
   '../components/live-score-value':{LiveScoreValue:({children})=>React.createElement(React.Fragment,null,children)},
   '../components/chart-axis-labels':{default:()=>null},
   '../components/chart-axis-labels.css':{},
@@ -72,4 +76,16 @@ test('the old artificial backcast remains excluded, while R3 still shows the sha
  assert.doesNotMatch(legacy,/ob-direction-/);
  const r3=render({...view,dailyAnchorEstimate:false,displayEstimate:null});
  assert.match(r3,/aria-label="전일 대비 1점 상승"/);
+});
+
+test('actual publication points render in the compact summary without nested interactive controls',()=>{
+ const {render,view}=mountCard(true);
+ const at=Date.parse('2026-10-21T03:00:00Z');
+ const point=(at,value)=>({at,value,collectionCheckedAt:at-1000,sourceStoredAt:at-2000,eventCount:2,lineage:'fixture'});
+ const html=render({...view,updateHistory:[point(at,12.1),point(at+3600000,13)]});
+ assert.match(html,/실제 게시 기록 2회/);
+ assert.match(html,/갱신별 기록 · KST/);
+ assert.equal((html.match(/<circle /g)??[]).length,2);
+ assert.doesNotMatch(html,/<circle[^>]*role="button"/);
+ assert.match(html,/전일 대비 1점 상승/);
 });
