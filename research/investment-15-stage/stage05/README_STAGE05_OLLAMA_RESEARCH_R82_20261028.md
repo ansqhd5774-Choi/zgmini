@@ -1,5 +1,7 @@
 # R82 — 5단계 Ollama 테마·핵심 기술·관련 기업 조사 실행기
 
+> **최신 R85 규칙 적용:** 아래 R81·R84 구계약 `E/T/S5` 및 기존 80:20 가중은 현재 사용하지 않는다. Stage05는 1~4단계의 이미 확정된 결과를 전달하며 Ollama가 직접 테마를 선정한다. [현행 R85 입력·전달 계약](README_STAGE05_DEDUPLICATED_RESULTS_R85_20261028.md)을 참조한다.
+
 - 고정 브랜치: `codex/investment-15-stage-m2-r25-20261025` (새 브랜치 생성 금지).
 - **Stage05만 구현**. Stage01~04 파일·산식·운영 자료 재조회/재검증/수정 없음.
 - 입력: 기존 Stage05 계산기에서 발행하는 `STAGE05_VERIFIED_RESULTS_HANDOFF_R81` JSON. 9개 테마의 이미 계산된 `E/T/S5`가 있어야 시작한다. 과거 F 또는 CAGR을 임의로 점수로 승격하지 않는다.
