@@ -34,7 +34,7 @@ function Trend({view,compact=false}:{view:any;compact?:boolean}){
   update();media.addEventListener("change",update);
   return()=>media.removeEventListener("change",update);
  },[]);
- if(Array.isArray(view.updateHistory)&&view.updateHistory.length)return <section className={compact?'ob58-mini-trend':'ob-panel ob54-trend'} aria-label="최근 14일 갱신별 추이"><div className="ob54-chart-head"><h3>14일 갱신별 추이</h3><span>일별·갱신 · KST</span></div><IranPublishedChart points={view.updateHistory} history={view.chartHistory??view.history??[]} compact={compact}/></section>;
+ if(Array.isArray(view.updateHistory)&&view.updateHistory.length)return <section className={compact?'ob58-mini-trend':'ob-panel ob54-trend'} aria-label="최근 14일 갱신별 추이">{!compact&&<div className="ob54-chart-head"><h3>14일 갱신별 추이</h3><span>일별·갱신 · KST</span></div>}<IranPublishedChart points={view.updateHistory} history={view.chartHistory??view.history??[]} compact={compact}/></section>;
  const series:Array<Point>=Array.isArray(view.chartHistory)?view.chartHistory:Array.isArray(view.history)?view.history:[];
  const end=typeof view.chartEndAt==="number"&&Number.isFinite(view.chartEndAt)?view.chartEndAt:series.at(-1)?.at??null;
  const start=end===null?null:end-13*DAY_MS;
@@ -75,7 +75,6 @@ function Trend({view,compact=false}:{view:any;compact?:boolean}){
   />
  </div>:<div className={compact?"ob58-mini-empty":"ob54-empty"} role="status">14일 구간의 저장된 점수가 없습니다.</div>;
  if(compact)return <div className="ob58-mini-trend" role="region" aria-label="이란 전쟁 심리 최근 14일 추이">
-  <div className="ob58-mini-head"><span>14일 추이</span><small>0~{yAxisMax}점{yAxisMax<100?" 확대":""}</small></div>
   {plot}
   {calendar.length>0&&<div className="ob58-mini-axis" aria-hidden="true"><span>{date(calendar[0])}</span><span>{date(calendar.at(-1)!)}</span></div>}
  </div>;
