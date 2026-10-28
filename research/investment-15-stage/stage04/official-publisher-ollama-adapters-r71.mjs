@@ -72,7 +72,11 @@ function sourcePeriods(excerpt) {
   // "from USD 31.51 billion in 2026 to USD 50.37 billion by 2034".
   // These years are explicit source text, not a calculated forecast.
   const endpoints = [...normalized.matchAll(/\bfrom\s+(?:USD|US\$|\$)\s*[\d,.]+\s*(?:billion|million|trillion|bn|mn)?\s+in\s+(20\d{2})\s+to\s+(?:approximately\s+)?(?:USD|US\$|\$)\s*[\d,.]+\s*(?:billion|million|trillion|bn|mn)?\s+by\s+(20\d{2})\b/gi)];
-  const periods = [...direct, ...endpoints]
+  // A baseline size year may precede the explicitly labelled forecast
+  // period. Prefer published period ranges; use size endpoints only if the
+  // source gives no direct year range. This avoids treating 2025 size vs
+  // forecast 2026-2033 as two competing CAGR forecast periods.
+  const periods = (direct.length ? direct : endpoints)
     .filter(match => Number(match[2]) > Number(match[1]) &&
       Number(match[2]) - Number(match[1]) <= 20)
     .map(match => [Number(match[1]), Number(match[2])]);
@@ -108,7 +112,7 @@ export function primaryWholeMarketEvidence(html, keyword) {
   for (let i = 0; i < headings.length; i++) {
     const heading = pagePlainText(headings[i][1]);
     const label = heading.toLowerCase();
-    if (!/\bmarket\b/.test(label) || !/\b(size|forecast|growth|outlook)\b/.test(label) ||
+    if (!/\bmarket\b/.test(label) || !/\b(size|forecast|growth|outlook|insights)\b/.test(label) ||
         !requested.every(token => label.includes(token)) ||
         /\b(?:regional|segment|component|north america|united states|europe|asia pacific|u\.?s\.?)\b/i.test(label)) continue;
     const start = headings[i].index + headings[i][0].length;
