@@ -73,3 +73,12 @@ R23 연결 소스 및 UI 브랜치 반영, R23 Windows PC 설치 패키지 CODE_
 - URL `/market-calendar/`의 검색 의도는 경제지표·기업 실적 발표 일정 통합 조회이며, 이번 EIA 추가는 기존 미국 경제 발표 범주 안의 신규 데이터 출처다.
 - 브랜치 `app/market-calendar/page.tsx`의 title·description·canonical·H1·본문 안내를 확인했다. 이번 R23 변경은 데이터 표시 허용 조건·출처명·카테고리뿐이며 title/meta/H1/canonical/robots/기존 경로를 변경하지 않았다. `NO_CHANGE`.
 - 공개 URL을 별도 웹 조회했으나 접근 오류로 실제 Production DOM을 확인하지 못했다. 검색결과 색인 검색도 유효 결과 없음. `PARTIAL / NO_GSC_EVIDENCE / NO_PRODUCTION_SEO_VERIFICATION`. 검색 순위·노출·클릭 개선을 주장하지 않는다.
+
+
+## 사용자 PC R23 설치 결과 확정 · 2026-10-28
+
+- 제출 로그 판정: `R23_EIA_CALENDAR_INSTALLED_NO_FORCED_COLLECTION`, `phase=INSTALLED`, 명시적 설치(`EXPLICIT_APPLY`).
+- PC 소스 `a50ac307d8d0849ca2800b3c4df4cd6daaba3b1e` → **`8ff396217c9f84578b37c9d422381644c2b8f0e8`**, worktree ID `d0a4b3cb8b95`.
+- 신규 `lib/eia-calendar.mjs`, 기존 `lib/release-calendar.mjs`, 기존 `scripts/pc-writer/release-calendar.mjs` **정확히 3파일** 변경 및 설치 SHA 검증. `backupCreated=true`, ID `r23-20261028051900439-9be75d4f`.
+- `forcedCollection=false`, `publisherExecuted=false`, `gitPushed=false`. Core에 EIA 공식 발표원 연결 코드는 설치되었으나 예약 수집의 실제 성공 건수, SQLite 저장, 웹 공개 화면은 별도 미검증이다. 위 문서의 과거 `설치 미확인`은 해당 당시 상태이며, **본 항의 사용자 PC 실측 설치 완료 결과가 최신 상태**이다.
+- 다음 공식 발표 일정 공급원 조사: USDA WASDE, 2026/27년 발표 날짜·12:00 ET를 공식 USDA 페이지에서 확인. 신규 자료를 임의 미래 날짜 생성에 이용하지 않음. 기존 출처·이력·DB/스케줄러·운영 배포 보존.
