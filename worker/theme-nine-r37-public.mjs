@@ -28,6 +28,7 @@ const PUBLIC_DATE_MODE='FIXED_OFFICIAL_ISSUER_AUM_SNAPSHOT_WITH_ORIGINAL_DATES';
 const expectedSymbols=[...new Set(THEME_NINE_R37_ROSTER.flatMap(t=>t.etfs))];
 const R54_ANONYMOUS_RISK_BASIS='OFFICIAL_TERMS_DERIVED_WORKS_ANONYMOUS_SCOPE_UNCONFIRMED';
 const R54_SOURCE_TERMS='https://getmarkethistory.com/docs/terms';
+const R51_PUBLIC_LEGACY_SOURCE='EXISTING_PUBLIC_PROVISIONAL_AS_PUBLISHED';
 
 function publicationRightsNineR37(record){
  if(record?.publicationAuthorized!==true||record.derivedOnlyNoRaw!==true||
@@ -99,6 +100,33 @@ export function eligibleNineR37(record,base,{now=Date.now(),storedAt=now}={}){
   const fromBase=base.provisional?.points,fromNew=record.provisional?.points;
   if(!Array.isArray(fromBase)||!Array.isArray(fromNew)||
    fromBase.length!==fromNew.length||fromNew.length<1||fromNew.length>2)return false;
+  if(record.provisionalLineage?.source===R51_PUBLIC_LEGACY_SOURCE){
+   // For the current public contract, 26 Oct has three optional scores and
+   // 27 Oct has seven core scores. This mode NEVER recalculates or replaces
+   // any legacy provisional score, nor invents an unpublished AI score.
+   if(record.provisionalLegacyMethodologyVersion!==base.methodologyVersion||
+    record.provisionalLegacySourceVersion!==(base.sourceVersion??null)||
+    record.provisionalLineage?.publicVersion!==base.version||
+    record.provisionalLineage?.confirmedObservationDate!==baseConfirmed||
+    record.provisionalLineage?.latestCandidateSha256!==null||
+    record.provisionalLineage?.sameMethodology!==false||
+    !sha(record.provisionalLineage?.publicProvisionalPointsSha256)||
+    record.provisional?.asOf!==(base.provisional?.asOf??null)||
+    JSON.stringify(fromNew)!==JSON.stringify(fromBase))return false;
+   const visible=new Set(base.themes.map(t=>t.theme));
+   let prev=baseConfirmed;
+   for(let i=0;i<fromNew.length;i++){
+    const point=fromNew[i];
+    if(!validDate(point?.date)||point.date<prev||
+     (i>0&&point.date<=prev)||
+     !point.scores||typeof point.scores!=='object'||
+     Array.isArray(point.scores)||!Object.keys(point.scores).length||
+     Object.entries(point.scores).some(([name,value])=>
+       !visible.has(name)||!score(value)))return false;
+    prev=point.date;
+   }
+   return true;
+  }
   let prev=baseConfirmed;
   for(let i=0;i<fromNew.length;i++){
    const point=fromNew[i];
@@ -128,6 +156,7 @@ export async function addVerifiedNineR37(db,base,{now=Date.now()}={}){
  // public theme in the current ten-theme dashboard.
  const updates=new Map(record.themes.map(t=>[t.theme,t]));
  const visibleNames=new Set(base.themes.map(t=>t.theme));
+ const publicLegacy=record.provisionalLineage?.source===R51_PUBLIC_LEGACY_SOURCE;
  const themes=base.themes.map(old=>{
   const t=updates.get(old.theme);
   return t?{theme:t.theme,etfs:[...t.etfs],score:t.score,
@@ -140,10 +169,14 @@ export async function addVerifiedNineR37(db,base,{now=Date.now()}={}){
   ...(base.phase==='PROVISIONAL'?{
    // Keep separate data-center/space provisional scores and do not expose
    // the unpublished AI research theme through the scores side channel.
-   provisional:{asOf:base.provisional.asOf,
+   provisional:publicLegacy?base.provisional:{asOf:base.provisional.asOf,
     points:record.provisional.points.map((p,i)=>({date:p.date,
      scores:{...base.provisional.points[i].scores,
       ...Object.fromEntries(Object.entries(p.scores)
-       .filter(([name])=>visibleNames.has(name)))}}))}
+       .filter(([name])=>visibleNames.has(name)))}}))},
+   ...(publicLegacy?{
+    provisionalMethodologyVersion:base.methodologyVersion,
+    provisionalSourceVersion:base.sourceVersion??null,
+    provisionalSourceStoredAt:base.sourceStoredAt??null}:{}),
   }:{}),modelRevision:record.version};
 }
