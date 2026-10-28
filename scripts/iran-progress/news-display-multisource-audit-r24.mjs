@@ -21,6 +21,7 @@ const MAX_CANDIDATES_PER_FEED=250;
 export const IRAN_GOVUK_R24_TOPIC_FEEDS=Object.freeze(
  ['Iran','Saudi','Yemen','Houthi'].map(keyword=>
   `https://www.gov.uk/search/news-and-communications.atom?keywords=${encodeURIComponent(keyword)}&order=updated-newest`));
+export const IRAN_ALJAZEERA_TOPIC_ARCHIVE_R32='https://www.aljazeera.com/where/iran';
 const matchesIranTopicR24=text=>
  /\b(?:iran(?:ian)?s?|saudis?|yemen(?:is?)?|houthis?)\b|이란|사우디(?:아라비아)?|예멘|예맨|후티/i.test(text);
 
@@ -115,6 +116,20 @@ export function parseIranMultisourceFeedR24(sourceId,kind,body){
   })).filter(r=>r.sourceUrl);
   return {rawEntries:urls.size,records};
  }
+ if(kind==='html'&&sourceId==='aljazeera'){
+  if(!/<html\b|<!doctype html/i.test(body))throw Error('R24_FEED_FORMAT_INVALID');
+  // Official Iran topic listing supplements the short, all-topic RSS history.
+  // Its URLs are hints only; R25 must validate every article body and first date.
+  const matches=[...body.matchAll(/\bhref\s*=\s*["'](\/news\/\d{4}\/\d{1,2}\/\d{1,2}\/([a-z0-9-]+))["']/gi)];
+  const urls=new Map(matches.map(match=>[match[1],match[2]]));
+  const records=[...urls].slice(0,MAX_CANDIDATES_PER_FEED+1).map(([link,slug])=>({
+   sourceUrl:newsR24SourceUrl(sourceId,`https://www.aljazeera.com${link}`),
+   feedTitle:null,topicHint:`Iran topic archive ${slug.replaceAll('-',' ')}`,
+   feedDescription:'',feedPublishedAt:null,feedUpdatedAt:null,
+   timestampStatus:'ARTICLE_DETAIL_AND_FIRST_PUBLICATION_REQUIRED',
+  })).filter(record=>record.sourceUrl);
+  return {rawEntries:urls.size,records};
+ }
  throw Error('R24_FEED_KIND_INVALID');
 }
 
@@ -126,14 +141,16 @@ export async function auditIranMultisourceCollectionR24({now=Date.now(),fetcher=
   throw Error('R24_SOURCE_REGISTRY_INVALID');
  const seen=new Set(),candidates=[],sources=[];
  for(const spec of feeds){
-  const urls=spec.id==='govuk'?IRAN_GOVUK_R24_TOPIC_FEEDS:[spec.url];
+  const urls=spec.id==='govuk'?IRAN_GOVUK_R24_TOPIC_FEEDS:
+   spec.id==='aljazeera'?[spec.url,IRAN_ALJAZEERA_TOPIC_ARCHIVE_R32]:[spec.url];
   const result={rawEntries:0,records:[]};
   let feedUrlsRead=0,feedUrlsFailed=0,failedFormat=false;
   for(const url of urls){
    try{
     const response=await boundedRead(url,{fetcher,maxBytes:MAX_FEED_BYTES});
     if(response.status!=='COLLECTED')throw Error('R24_SOURCE_READ_FAILED');
-    const parsed=parseIranMultisourceFeedR24(spec.id,spec.kind,response.body);
+    const kind=url===IRAN_ALJAZEERA_TOPIC_ARCHIVE_R32?'html':spec.kind;
+    const parsed=parseIranMultisourceFeedR24(spec.id,kind,response.body);
     result.rawEntries+=parsed.rawEntries;result.records.push(...parsed.records);
     feedUrlsRead++;
    }catch(error){

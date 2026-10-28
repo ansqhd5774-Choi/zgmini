@@ -11,6 +11,7 @@ import {runR29PrivateNews,R29_STATUS_FILE}
  from '../scripts/iran-progress/news-display-auto-candidates-r29.mjs';
 import {verifyIranOfflineBundleR28}
  from '../scripts/iran-progress/news-display-offline-bundle-r28.mjs';
+import {withHistoricalR28Package} from './helpers/iran-r28-bundle.fixture.mjs';
 
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
 const now=Date.parse('2026-10-27T14:00:00Z');
@@ -43,7 +44,8 @@ test('R29 appends only a separate after-R15 private hook to verified R15 runner'
 });
 
 test('R29 already verified offline collection input has all seven pinned dependencies',()=>{
- assert.equal(verifyIranOfflineBundleR28({directory:root}).verifiedModules,7);
+ withHistoricalR28Package(root,directory=>
+  assert.equal(verifyIranOfflineBundleR28({directory}).verifiedModules,7));
 });
 
 test('R29 successful scheduled metadata collection records only private counts',async()=>{

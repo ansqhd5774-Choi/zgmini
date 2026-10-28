@@ -96,6 +96,32 @@ function unStoryBodyParagraphs(html){
   .map(match=>match[1]).join(' ');
 }
 
+function publisherBodyParagraphs(html,containerClass){
+ // Some publishers place their editorial text in a named div without <article>.
+ // Restrict the scan to that exact publisher container, never the whole page.
+ const marker=[...html.matchAll(/<div\b[^>]*>/gi)].find(match=>
+  (attribute(match[0],'class')??'').split(/\s+/).includes(containerClass));
+ if(!marker)return '';
+ const start=marker.index+marker[0].length;
+ let level=1,end=-1;
+ for(const tag of html.slice(start).matchAll(/<\/?div\b[^>]*>/gi)){
+  level+=/^<\/div\b/i.test(tag[0])?-1:1;
+  if(level===0){end=start+tag.index;break;}
+  if(tag.index>250_000)return '';
+ }
+ if(end<start||end-start>250_000)return '';
+ return [...html.slice(start,end).matchAll(/<p\b[^>]*>([\s\S]*?)<\/p\s*>/gi)]
+  .map(match=>match[1]).join(' ');
+}
+
+function iaeaDeclaredDate(html){
+ const declared=meta(html,['dcterms.date']);
+ if(!declared)return null;
+ // A publication-date hint must agree with IAEA's visible dated page metadata.
+ const visible=html.match(/<time\b[^>]*\bdatetime\s*=\s*["'](\d{4}-\d{2}-\d{2})["']/i)?.[1];
+ return visible===declared.slice(0,10)?declared:null;
+}
+
 function articleMarkup(html,sourceId,expectedUrl,now){
  if(typeof html!=='string'||html.length>MAX_HTML_BYTES||
   !/<html\b|<!doctype html/i.test(html))return {status:'ARTICLE_FORMAT_INVALID'};
@@ -106,19 +132,28 @@ function articleMarkup(html,sourceId,expectedUrl,now){
   html.match(/<h1\b[^>]*>([\s\S]*?)<\/h1\s*>/i)?.[1]??'';
  const title=plain(typeof rawTitle==='string'?rawTitle:'').slice(0,501);
  const rawDate=schema?.datePublished??meta(html,[
-  'article:published_time','datepublished','date_published','pubdate']);
+  'article:published_time','datepublished','date_published','pubdate'])??
+  (sourceId.startsWith('iaea-')?iaeaDeclaredDate(html):null);
  const publishedAt=publisherTimestamp(rawDate,now);
  const semanticArticle=html.match(/<article\b[^>]*>([\s\S]*?)<\/article\s*>/i)?.[1]??'';
  // Body scope must not be passed by a title, navigation or teaser alone.
  const paragraphs=[...semanticArticle.matchAll(/<p\b[^>]*>([\s\S]*?)<\/p\s*>/gi)]
   .map(match=>match[1]).join(' ');
  const unBody=sourceId==='un-middle-east'?unStoryBodyParagraphs(html):'';
- const rawBody=typeof schema?.articleBody==='string'?schema.articleBody:unBody||paragraphs;
+ const editorialClass=sourceId==='aljazeera'?'wysiwyg--all-content':
+  sourceId==='iaea-statements'?'statement-body':
+  sourceId==='iaea-news'?'news-story-body':null;
+ const editorialBody=editorialClass?publisherBodyParagraphs(html,editorialClass):'';
+ const rawBody=typeof schema?.articleBody==='string'?schema.articleBody:
+  unBody||editorialBody||paragraphs;
  const body=plain(rawBody);
  return assessedArticle({sourceId,sourceUrl:expectedUrl,title,publishedAt,
-  dateEvidence:publishedAt?(schema?.datePublished?'PUBLISHER_JSON_LD':'PUBLISHER_HTML_META'):null,
+  dateEvidence:publishedAt?(schema?.datePublished?'PUBLISHER_JSON_LD':
+   sourceId.startsWith('iaea-')&&iaeaDeclaredDate(html)===rawDate?
+    'IAEA_DCTERMS_DATE_AND_VISIBLE_DATE':'PUBLISHER_HTML_META'):null,
   body,bodyEvidence:typeof schema?.articleBody==='string'?'SCHEMA_ARTICLE_BODY':
-   unBody?'UN_NEWS_STORY_BODY':paragraphs?'SEMANTIC_ARTICLE_PARAGRAPHS':'NONE',now});
+   unBody?'UN_NEWS_STORY_BODY':editorialBody?'PUBLISHER_EDITORIAL_CONTAINER_PARAGRAPHS':
+    paragraphs?'SEMANTIC_ARTICLE_PARAGRAPHS':'NONE',now});
 }
 
 function assessedArticle({sourceId,sourceUrl,title,publishedAt,dateEvidence,body,bodyEvidence,now}){

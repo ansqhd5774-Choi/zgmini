@@ -72,6 +72,42 @@ test('R25 parses original English metadata from publisher JSON-LD and detects Ir
  assert.equal(result.rightsVerified,false);
 });
 
+test('R25 reads Al Jazeera editorial paragraphs without requiring a semantic article tag',()=>{
+ const markup=articleHtml().replace('<article>',
+  '<nav><p>Unrelated navigation and news links.</p></nav><div class="wysiwyg wysiwyg--all-content"><div>')
+  .replace('</article>','</div></div>');
+ const result=inspectIranArticleR25(aj,markup,{now});
+ assert.equal(result.status,'ARTICLE_METADATA_REVIEWED');
+ assert.equal(result.articleBodyEvidence,'PUBLISHER_EDITORIAL_CONTAINER_PARAGRAPHS');
+ assert.equal(result.articleBodyAccessible,true);
+ assert.equal(result.rightsVerified,false);
+});
+
+test('R25 reads official IAEA news and statement body containers with publisher date evidence',()=>{
+ const sourceUrl='https://www.iaea.org/newscenter/statements/iran-director-statement';
+ const date='2025-06-22T19:30+02:00';
+ const markup=`<!doctype html><html><head><meta property="og:title" content="Iran director statement">
+ <meta name="dcterms.date" content="${date}"></head><body>
+ <time datetime="2025-06-22">22 June 2025</time>
+ <div class="statement-body"><div class="field field--name-field-newsstory-body">
+ <p>${paragraph}</p></div></div></body></html>`;
+ const statement=inspectIranArticleR25({sourceId:'iaea-statements',sourceUrl},markup,{now});
+ assert.equal(statement.status,'OUTSIDE_30_DAY_WINDOW');
+ assert.equal(statement.publisherDeclaredPublishedAt,'2025-06-22T17:30:00.000Z');
+ assert.equal(statement.publicationDateEvidence,'IAEA_DCTERMS_DATE_AND_VISIBLE_DATE');
+ assert.equal(statement.articleBodyEvidence,'PUBLISHER_EDITORIAL_CONTAINER_PARAGRAPHS');
+ assert.equal(statement.articleBodyAccessible,true);
+ assert.equal(statement.displayEligible,false);
+ const newsUrl='https://www.iaea.org/newscenter/news/iran-progress';
+ const newsMarkup=markup.replace('statement-body','news-story-body');
+ const news=inspectIranArticleR25({sourceId:'iaea-news',sourceUrl:newsUrl},newsMarkup,{now});
+ assert.equal(news.status,'OUTSIDE_30_DAY_WINDOW');
+ assert.equal(news.articleBodyAccessible,true);
+ const mismatched=inspectIranArticleR25({sourceId:'iaea-statements',sourceUrl},
+  markup.replace('datetime="2025-06-22"','datetime="2025-06-23"'),{now});
+ assert.equal(mismatched.status,'FIRST_PUBLICATION_UNVERIFIED');
+});
+
 test('R25 accepts BBC publisher ReportageNewsArticle without assuming publishing rights',()=>{
  const markup=articleHtml({url:bbc.sourceUrl}).replace('NewsArticle','ReportageNewsArticle');
  const result=inspectIranArticleR25(bbc,markup,{now});

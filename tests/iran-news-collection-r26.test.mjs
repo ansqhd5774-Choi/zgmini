@@ -4,7 +4,8 @@ import {mkdtempSync,rmSync,writeFileSync,readFileSync,existsSync} from 'node:fs'
 import {tmpdir} from 'node:os';
 import path from 'node:path';
 import {createHash} from 'node:crypto';
-import {IRAN_GOVUK_R24_TOPIC_FEEDS,IRAN_MULTISOURCE_FEEDS_R24} from '../scripts/iran-progress/news-display-multisource-audit-r24.mjs';
+import {IRAN_GOVUK_R24_TOPIC_FEEDS,IRAN_ALJAZEERA_TOPIC_ARCHIVE_R32,
+ IRAN_MULTISOURCE_FEEDS_R24} from '../scripts/iran-progress/news-display-multisource-audit-r24.mjs';
 import {R3_FEEDS} from '../scripts/iran-progress/continuous-news-r3.mjs';
 import {NEWS_COLLECTION_R26_FILE,NEWS_COLLECTION_R26_VERSION,collectIranNewsR26,
  planIranCollectionR26,readIranCollectionR26} from '../scripts/iran-progress/news-display-collection-r26.mjs';
@@ -31,6 +32,8 @@ function mockFeedFetch({oneFailed=false,allFailed=false}={}){
  return async url=>{
   if(allFailed)return new Response('blocked',{status:503});
   if(IRAN_GOVUK_R24_TOPIC_FEEDS.includes(url))return new Response(govFeed);
+  if(url===IRAN_ALJAZEERA_TOPIC_ARCHIVE_R32)
+   return oneFailed?new Response('blocked',{status:503}):new Response('<html><body></body></html>');
   if(url===bbc)return new Response(bbcPage);
   if(url==='https://www.gov.uk/api/content/government/news/iran-new-r26')return new Response(content);
   const spec=IRAN_MULTISOURCE_FEEDS_R24.find(feed=>feed.url===url);

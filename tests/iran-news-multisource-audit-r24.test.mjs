@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {IRAN_GOVUK_R24_TOPIC_FEEDS,IRAN_MULTISOURCE_FEEDS_R24,
+import {IRAN_GOVUK_R24_TOPIC_FEEDS,IRAN_ALJAZEERA_TOPIC_ARCHIVE_R32,
+ IRAN_MULTISOURCE_FEEDS_R24,
  newsR24SourceUrl,parseIranMultisourceFeedR24,
  auditIranMultisourceCollectionR24}
  from '../scripts/iran-progress/news-display-multisource-audit-r24.mjs';
@@ -21,6 +22,7 @@ const atom=`<feed><entry><title>Iran talks continue</title>`+
  '<updated>2026-10-27T03:00:00Z</updated>'+
  '<link rel="alternate" href="https://www.gov.uk/government/news/iran-talks-continue"/></entry></feed>';
 const tasnim='<html><a href="/en/news/2026/10/27/987/iran-ceasefire-talks">Latest</a></html>';
+const aljazeeraArchive='<html><a href="/news/2026/10/27/iran-update">Iran topic</a></html>';
 const bodyFor=id=>id==='govuk'?atom:id==='tasnim'?tasnim:rss([item(sourceLinks[id])]);
 
 test('R24 lists all existing seven sources as unpublished review candidates only',async()=>{
@@ -28,16 +30,18 @@ test('R24 lists all existing seven sources as unpublished review candidates only
  const result=await auditIranMultisourceCollectionR24({now,fetcher:async url=>{
   fetched.push(url);
   const spec=IRAN_MULTISOURCE_FEEDS_R24.find(feed=>feed.url===url)??
-   (IRAN_GOVUK_R24_TOPIC_FEEDS.includes(url)?IRAN_MULTISOURCE_FEEDS_R24.find(feed=>feed.id==='govuk'):null);
+   (IRAN_GOVUK_R24_TOPIC_FEEDS.includes(url)?IRAN_MULTISOURCE_FEEDS_R24.find(feed=>feed.id==='govuk'):
+    url===IRAN_ALJAZEERA_TOPIC_ARCHIVE_R32?IRAN_MULTISOURCE_FEEDS_R24.find(feed=>feed.id==='aljazeera'):null);
   assert.ok(spec);
-  return new Response(bodyFor(spec.id));
+  return new Response(url===IRAN_ALJAZEERA_TOPIC_ARCHIVE_R32?aljazeeraArchive:bodyFor(spec.id));
  }});
- assert.equal(fetched.length,10);
+ assert.equal(fetched.length,11);
  assert.equal(result.sourceCount,7);
  assert.equal(result.sourcesRead,7);
  assert.equal(result.sourcesFailed,0);
  assert.equal(result.candidatesFound,7);
  assert.equal(result.sources.find(s=>s.sourceId==='govuk').feedUrlsRead,4);
+ assert.equal(result.sources.find(s=>s.sourceId==='aljazeera').feedUrlsRead,2);
  assert.equal(result.status,'CANDIDATES_REQUIRE_REVIEW');
  assert.ok(result.candidates.every(c=>c.rightsVerified===false&&
   c.displayEligible===false&&c.originalPublicationVerified===false));
@@ -54,7 +58,8 @@ test('R24 lists all existing seven sources as unpublished review candidates only
 test('R24 does not conceal partial source failure or partial parsing',async()=>{
  const result=await auditIranMultisourceCollectionR24({now,fetcher:async url=>{
   const spec=IRAN_MULTISOURCE_FEEDS_R24.find(feed=>feed.url===url)??
-   (IRAN_GOVUK_R24_TOPIC_FEEDS.includes(url)?IRAN_MULTISOURCE_FEEDS_R24.find(feed=>feed.id==='govuk'):null);
+   (IRAN_GOVUK_R24_TOPIC_FEEDS.includes(url)?IRAN_MULTISOURCE_FEEDS_R24.find(feed=>feed.id==='govuk'):
+    url===IRAN_ALJAZEERA_TOPIC_ARCHIVE_R32?IRAN_MULTISOURCE_FEEDS_R24.find(feed=>feed.id==='aljazeera'):null);
   if(spec.id==='aljazeera')return new Response('temporarily unavailable',{status:503});
   if(spec.id==='bbc-middle-east')return new Response(rss([
    item(sourceLinks['bbc-middle-east']),item('https://evil.example/article'),
@@ -128,6 +133,26 @@ test('R24 reads legitimate HTML doctype and official IAEA http feed links',()=>{
   rss([item('http://www.iaea.org/newscenter/news/iran-statement')]));
  assert.equal(iaeaRecord.records[0].sourceUrl,
   'https://www.iaea.org/newscenter/news/iran-statement');
+});
+
+test('R24 supplements Al Jazeera RSS with article URL hints from its official Iran archive',async()=>{
+ const archive=`<!doctype html><html><a href="/news/2026/10/27/iran-update">News</a>
+ <a href="/news/2026/10/27/iran-update">Duplicate</a>
+ <a href="https://evil.test/news/2026/10/27/iran-update">Not accepted</a>
+ <a href="/video/2026/10/27/iran-update">Not a text article</a></html>`;
+ const parsed=parseIranMultisourceFeedR24('aljazeera','html',archive);
+ assert.equal(parsed.rawEntries,1);
+ assert.equal(parsed.records[0].feedTitle,null);
+ assert.equal(parsed.records[0].sourceUrl,sourceLinks.aljazeera);
+ assert.equal(parsed.records[0].feedPublishedAt,null);
+ assert.equal(parsed.records[0].timestampStatus,'ARTICLE_DETAIL_AND_FIRST_PUBLICATION_REQUIRED');
+ const report=await auditIranMultisourceCollectionR24({now,
+  feeds:IRAN_MULTISOURCE_FEEDS_R24.filter(spec=>spec.id==='aljazeera'),
+  fetcher:async url=>new Response(url===IRAN_ALJAZEERA_TOPIC_ARCHIVE_R32?archive:rss([]))});
+ assert.equal(report.sources[0].feedUrlsRead,2);
+ assert.equal(report.sources[0].queuedForReview,1);
+ assert.equal(report.candidates[0].scopeVerifiedFromArticle,false);
+ assert.equal(report.candidates[0].rightsVerified,false);
 });
 
 test('R24 detects a topic in the RSS description even when headline lacks it',async()=>{
