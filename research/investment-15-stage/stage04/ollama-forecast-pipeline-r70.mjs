@@ -35,6 +35,10 @@ function normalizedCandidate(raw, adapter, observedAt) {
     period_end: null,
     source_audit: validText(raw?.source_audit) ? raw.source_audit : 'NOT_RUN',
     market_scope: validText(raw?.market_scope) ? raw.market_scope : null,
+    discovery_diagnostics: Array.isArray(raw?.discovery_diagnostics)
+      ? raw.discovery_diagnostics.slice(0, 6) : [],
+    discovery_candidates: Array.isArray(raw?.discovery_candidates)
+      ? raw.discovery_candidates.slice(0, 8) : [],
     source_conflict_reason: validText(raw?.source_conflict_reason) ? raw.source_conflict_reason : null,
     model_candidate_pct: Number.isFinite(raw?.model_candidate_pct) ? raw.model_candidate_pct : null,
     search_requests: Number.isInteger(raw?.search_requests) ? raw.search_requests : null,
