@@ -63,3 +63,13 @@
 - GitHub `main` 운영 코드의 `worker/market-operational-store.mjs`에는 `market_input_batches_v1.body`가 `gzip:` 접두어와 base64로 압축되어 저장되는 계약이 있다. R3 일반 문자열 검사만으로는 이 내용을 탐지할 수 없다.
 - R4 `EARNINGS_BEA_MFG_PROFIT_R4_COMPRESSED_STORE_READONLY.mjs`는 기존 `market_input_batches_v1`의 최근 macro/BEA/earnings 키 본문을 읽어 압축 해제 후 `N400RC` 존재 여부를 확인한다. `api_history_chunks_v1`, `api_history_snapshots_v1`의 dataset 식별자도 직접 확인한다.
 - R4 역시 검색 표본에 상한이 있으며 `safeToAutoCapture=false`로 신규 캡처를 자동 승인하지 않는다. 실제 PC 실행 미확인, 로컬 테스트 3/3 통과, 운영 데이터 수정·D1·배포 미실행.
+
+## R4 PC 결과 및 R5 분리 보관 후보
+
+- `BEA_MFG_COMPRESSED_READONLY_1186_30127.txt`에서 실제 PC R4가 `RUNNER_EXIT_CODE=0`으로 완료됐다.
+- `core.sqlite` 최근 입력 153개(`latestRowsChecked=45` 포함)와 API 이력 식별자에서 `N400RC`를 찾지 못했고, `history.sqlite` 역시 알려진 이력 저장소 일치는 0건이었다.
+- 다만 `PREFIX_SAMPLE_LIMIT`, `LATEST_SAMPLE_LIMIT`이 있어 **기존 원본의 전역 미존재는 증명되지 않았다**. 기존 DB 자동 보완/삭제/덮어쓰기 금지.
+- R5는 이 불확실성에서 기존 원장을 수정하지 않도록 `raw/earnings-recession/bea-manufacturing-profits-r5/`라는 신규 전용 경로에 FRED 현재 빈티지 CSV를 SHA256 이름으로 append-only 보관하는 별도 단계다.
+- 동일 SHA가 있으면 원문을 검증 후 재사용하고, 내용이 충돌하면 정지한다. 메타데이터는 최초 캡처 시각을 보존한다.
+- 실행기는 Windows에서 새 원본 파일 생성 전 Y/N 확인을 표시한다. R5에 의한 새 원본 저장은 **기존 전체 원본의 부재 입증을 뜻하지 않는다**.
+- R5 로컬 테스트 4/4 PASS. 승인 PC 실제 수집·원본 생성, D1 저장, 공개 API, UI 및 배포는 실행 전까지 미확인/미실행이다.
