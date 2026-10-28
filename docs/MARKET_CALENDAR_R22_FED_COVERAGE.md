@@ -2,7 +2,7 @@
 
 ## 상태 (2026-10-28)
 
-- **현재 단계: 공식 출처 범위 조사 + 읽기 전용 원문 구조 확보 패키지 CODE_READY.** PC 설치·수집·게시 성공이 아니다.
+- **현재 단계: 연준 원문 5개 확보·파서/수집기/페이지 표시/PC 설치 패키지 CODE_READY.** 아직 사용자 PC R22 설치·실제 정규 주기 수집·사이트 반영 성공이 아니다.
 - 기존 PC R21 설치 증거: `phase=INSTALLED`, `decision=R21_CENSUS_YEAR_INSTALLED_NO_FORCED_COLLECTION`, HEAD `b5e860d09ac87087e158193613425b146fa9a1e5`.
 - 고정 작업 브랜치: `codex/zgmini-gpt-workspace-20261025`. 다른 브랜치·main 반영·PC 운영 코어 변경 금지.
 
@@ -16,17 +16,37 @@
 - 기존 `RELEASE_SOURCES.fed`는 `https://www.federalreserve.gov/releases/g17/`에서 **G.17만** 파싱한다. 기존 ID `industrial-production` 및 BLS·BEA·Census 출력, Core schedule/cache/lease 계약을 보존한다.
 - `app/market-calendar/market-calendar-client.tsx`는 현재 Fed의 일반 `fed-...` ID를 렌더링하지 않는다. 추가 Fed 이벤트를 수집하더라도 UI 조건을 별도로 갱신하지 않으면 표시되지 않는다.
 
+## 2026-10-28 실제 PC 수신 원문 확인
+
+- `MARKET_CALENDAR_R22_FED_SOURCE_EXPORT_RESULT.txt`로 월별 3개(2026년 10·11·12월), 통계공표 일정, FOMC 공표 일정 **5개 모두 HTTP 200** 및 비어 있지 않은 원문 Base64·SHA256 확보.
+- 실제 `cal-nojs`의 월 제목(`October 2026` 등), 섹션(`FOMC Meetings`, `Beige Book`, `Statistical Releases`), 3열 행(미국 현지시각·발표명·일)을 근거로 파서를 개발했다. 수신 문서와 월 제목이 달라지거나 발표행이 없으면 실패 처리한다.
+- 보관된 원문을 메모리에서만 읽어 검증한 추출 후보: **10월 62개·11월 58개·12월 64개, 총 184개 일정 행**. 이는 정규 PC DB 또는 공개 사이트의 수집 건수가 아니라 **R22 로컬 파서 검증 결과**다.
+- G.17(`industrial-production`)는 기존 `fed` 제공 일정과 중복되므로 제외한다. FOMC 기준금리 결정과 기자회견은 기존 수동 일정과 중복되므로 제외한다. FOMC 의사록·베이지북 및 기타 별도 통계 일정은 새 `fed_calendar` 출처에 남긴다.
+- 공식 사이트가 `approximate`로 표시한 G.20 등은 **발표일 잠정**으로 구분한다. 시각이 확인되지 않은 UI 일정에 시간을 추정해서 생성하지 않는다.
+
+## 구현 및 운영 영향
+
+- `staging/market-calendar/r22-fed-calendar/lib/release-calendar.mjs`: 기존 BLS/BEA/G.17/Census 파서를 보존하고 `parseFedMonthlyCalendar`와 `RELEASE_SOURCES.fed_calendar`만 추가한다.
+- `staging/market-calendar/r22-fed-calendar/scripts/pc-writer/release-calendar.mjs`: UTC 현재 월과 다음 2개월 공식 월별 달력 URL을 조회한다. 검증된 월만 입력을 저장하고, 한 월의 오류 발생 시 직전 승인 해당 월 자료를 유지한다. 모든 월 오류 시 기존 `SOURCE_FAILED` 이력 보존 흐름을 따른다. 기존 R21 Census 연말 경계 보정 유지.
+- `app/market-calendar/market-calendar-client.tsx`: `fed-calendar-*` 출처 ID 렌더 허용, 출처명 `연준`, FOMC 의사록·베이지북 카테고리 부여. 기존 5필드 일정 계약·타이틀·H1·메타·페이지 경로·검색 노출 설정 변경 없음.
+- `scripts/pc-writer/market-calendar-r22-fed-apply.mjs`: **기존 PC R21 HEAD에서 2개 Core 파일만** 소스·해시·잠금 확인, 백업 후 로컬 커밋, config.source 업데이트. 운영 작업 강제 실행/게시/DB 수정/예약 변경/GitHub push 없음.
+- `MARKET_CALENDAR_R22_FED_APPLY.cmd`와 `README_R22_FED_PC_INSTALL.txt`를 동일 ZIP에 포함한다. CMD는 ASCII CRLF; 성공 또는 정지 사유를 실행 위치의 단일 `MARKET_CALENDAR_R22_FED_APPLY_RESULT.txt`로 출력한다.
+- 게이트: 최초 R21 PC source `b5e860d09ac87087e158193613425b146fa9a1e5`; R21 파서 LF SHA256 `20d6c99...`, R21 수집기 PC CRLF SHA256 `8105a292...`; 작업 나무 ID `d0a4b3cb8b95`.
+- R22 파서 LF SHA256 `ede3d4e1a95eb0f9bde1a1ad3f42812cf090a9821a2e7af517638fb928d6704b`, R22 PC 수집기 CRLF SHA256 `57a5e1df39c395c32441afb43672eb059eff22f201585837e61a66a88ea34e22`.
+- 검증: `tests/market-calendar-r22-fed-stage.test.mjs` 6/6 PASS, `tests/market-calendar-r22-fed-apply.test.mjs` 4/4 PASS, `npm run typecheck` PASS. 기존 기준 검증은 별도 유지한다.
+
 ## 필요한 안전 게이트
 
-1. 공식 연준 실제 HTML 레이아웃을 먼저 확보한다. 로컬 작업 환경에서는 외부 직접 HTTP의 DNS 조회가 실패했으므로 임의 HTML 템플릿만으로 운영 파서를 설치하지 않는다.
-2. `MARKET_CALENDAR_R22_FED_SOURCE_EXPORT.cmd`는 5개 공개 공식 URL을 1회 읽고, 수신 원문을 Base64로 `MARKET_CALENDAR_R22_FED_SOURCE_EXPORT_RESULT.txt` **한 파일**에 담는다. 스크립트는 Core/DB/scheduler/Git/publisher를 읽거나 실행·수정하지 않는다.
-3. 원문을 기반으로 경계·시간·동일행 중복·전월/차월·미발행 미래연도·잠정 일정 구분 검증 후 staged parser/collector 구현. 존재하지 않는 날짜·시간은 생성하지 않는다.
-4. 연준 산업생산 G.17 중복, FOMC 기존 고정 일정과 중복, 실패 시 마지막 승인 이력 보존을 필수 회귀 항목으로 한다.
-5. PC 운영에 적용할 단계에서는 실제 승인 R21 PC collector CRLF 원본/HEAD/설정/source를 기준으로 단일 변경 범위를 명시한 별도 패키지·검증 절차를 만든다. 본 R22 read-only 패키지는 운영 파일 설치용이 아니다.
+1. R22 원문 기반 코드 검증은 완료했으나 **실제 R22 PC 설치는 사용자 CMD 실행 및 결과 로그 확인 전까지 미완료**다.
+2. 설치는 R22 전용 패키지의 `MARKET_CALENDAR_R22_FED_APPLY.cmd`를 사용한다. R22 기존 `SOURCE_EXPORT`는 읽기 전용 원문 확보용이며 설치용이 아니다.
+3. 잠금이 존재하거나 PC HEAD, config.source, 보호 경로, 후보 SHA가 다르면 **STOP**한다. 일치시키려고 기존 데이터를 삭제하거나 설정을 우회하지 않는다.
+4. PC 설치가 성공하더라도 정규 주기에서 데이터가 수집되는지 및 공개 UI에 반영되는지는 사용자·담당자가 각각 사후 확인한다. 통과하지 않은 지표를 성공으로 보고하지 않는다.
 
 ## 코드와 테스트
 
 - `scripts/pc-writer/market-calendar-r22-fed-source-export.mjs`: 무변경 공개 공식 원문 수집·해시·Base64 단일 TXT 구성.
 - `tests/market-calendar-r22-fed-source-export.test.mjs`: 월 경계, 원문 바이트 검증, 미래 달력 결측, 비공식 URL 거절 4개 검사.
 - `MARKET_CALENDAR_R22_FED_SOURCE_EXPORT.cmd`, `README_R22_FED_SOURCE_EXPORT.txt`: Windows용 실행·사용법.
-- 원문 확보 전 파서 또는 UI를 설치했다고 보고하지 않는다. 기존 R21 정규 수집 여부는 사용자의 사후 관찰 대상이며 R22 소스 개발 선행조건은 아니다.
+- `tests/market-calendar-r22-fed-stage.test.mjs`: 파서·수집·기존 일정 공존·월별 실패·임대 잠금 6개 검사.
+- `tests/market-calendar-r22-fed-apply.test.mjs`: 설치 전용 검사·정확히 2파일 로컬 커밋·기존 락·출처 변경 감지 4개 검사.
+- PC는 아직 R22로 갱신되었다고 보고하지 않는다. 기존 R21 정상 주기 수집 여부는 사용자의 사후 확인 대상이다.
