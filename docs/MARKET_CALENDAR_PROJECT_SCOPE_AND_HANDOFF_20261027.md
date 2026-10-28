@@ -234,3 +234,15 @@
 - PC 설치 도구: `scripts/pc-writer/market-calendar-r23-eia-apply.mjs` + `MARKET_CALENDAR_R23_EIA_APPLY.cmd` + README. 승인된 설치 PC R22 source `a50ac307d8d0849ca2800b3c4df4cd6daaba3b1e` 및 Core ID `d0a4b3cb8b95`, 파일 해시·dirty·lock·config.source를 검사하고, 신규 EIA 모듈 포함 정확히 3파일만 백업 후 로컬 커밋한다. 6시간 가드와 정규 실행을 강제하지 않는다. 출처 변조/소스 변경 시 STOP.
 - 다운로드 파일 `MARKET_CALENDAR_R23_EIA_PC_INSTALL_20261028.zip` SHA256 `31056df32b0f1bb54cec6f5b2116ad851f224bc55e479d2ae629920d4741ed08`. Node 신규 수집·파서·로컬 Git 설치 테스트, R22 기존 회귀 테스트 PASS, CMD ASCII CRLF와 ZIP 무결성 PASS.
 - **현재 상태:** R23 후보/화면 브랜치 반영 + PC 실행 패키지 준비 완료. **R23 PC 설치 미확인**, 따라서 정규 수집 및 사이트 공개 반영 완료 아님. 사용자 ZIP 압축 해제→`MARKET_CALENDAR_R23_EIA_APPLY.cmd` 한 번 실행→`MARKET_CALENDAR_R23_EIA_APPLY_RESULT.txt` 전달. 기존 승인 브랜치만 유지, 신규 브랜치·main 병합·운영 배포 없음.
+
+
+## 23. R23 EIA PC 설치 완료 — 사용자 실측 결과 (2026-10-28)
+
+- 사용자 제출 `MARKET_CALENDAR_R23_EIA_APPLY_RESULT.txt`의 상태를 직접 확인했다. `mode=EXPLICIT_APPLY`, `phase=INSTALLED`, `decision=R23_EIA_CALENDAR_INSTALLED_NO_FORCED_COLLECTION`.
+- **실제 PC Core source 전환:** R22 `a50ac307d8d0849ca2800b3c4df4cd6daaba3b1e` → R23 `8ff396217c9f84578b37c9d422381644c2b8f0e8` (worktree ID `d0a4b3cb8b95`).
+- 변경 파일 **3개만**: `lib/eia-calendar.mjs`, `lib/release-calendar.mjs`, `scripts/pc-writer/release-calendar.mjs`. `backupCreated=true`, 백업 ID `r23-20261028051900439-9be75d4f`.
+- 승인 설치 해시 검사 PASS. 설치된 파서 `ede3d4e1a95eb0f9bde1a1ad3f42812cf090a9821a2e7af517638fb928d6704b`, 수집기 `2ecac6ac7c16c6a06ca81b67feb32f4342f1b2b89163b5531f0f6bb90d622388`.
+- `gitPushed=false`, `publisherExecuted=false`, `forcedCollection=false`: PC 소스 설치만 완료했고 GitHub push/운영 게시/예약 작업/강제 수집은 실행하지 않았다.
+- **구분할 단계:** EIA 파서 및 정규 Core 통합 설치 **완료**. PC의 향후 예약 수집 성공, SQLite 이벤트 반영 및 웹 공개 출력은 **미확인**이므로 자동 수집·공개 완료로 보고하지 않는다. 기존 이력 삭제/재계산/수집 강제 실행 금지.
+- 새 공급원 R24 조사는 공식 날짜가 명시된 미국 농무부 WASDE(농산물 수급전망) 월간 발표 일정부터 시작한다. 공식 2026·2027 날짜 공지: `https://www.usda.gov/about-usda/general-information/staff-offices/office-chief-economist/commodity-markets/wasde-report`. 확정 날짜만 수집하고 무근거 월간 반복 생성 금지. EIA 및 기존 발표원 소스는 보존한다.
+- 계속 작업 대상 브랜치는 **`codex/zgmini-gpt-workspace-20261025` 하나만**이다. 신규 브랜치/`main` 병합/운영 배포 없음.
