@@ -44,7 +44,7 @@ export default function IranPublishedChart({points,history=[],compact=false}:{po
  // The historical fill stops with the dated estimates; bridging to a later publication
  // is explicitly a dashed guide, never an invented intraday observation.
  const detailArea=!compact&&daily.length>1&&daily.every(validDaily)
-  ?'M'+x(daily[0].at)+','+y(0)+' L'+daily.map(p=>x(p.at)+','+y(p.value)).join(' L')+' L'+x(daily.at(-1)!.at)+','+y(0)+' Z':'';
+  ?'M'+x(daily[0].at)+','+y(0)+' L'+daily.map(p=>x(p.at)+','+y(p.value as number)).join(' L')+' L'+x(daily.at(-1)!.at)+','+y(0)+' Z':'';
  const delta=previous?current.value-previous.value:null;
  return <div className={'zg-iran-published-chart'+(compact?' is-compact ob-summary-chart ob-summary-chart-frame':'')} aria-label="최근 14일 일별 추정과 실제 게시 시각별 잠정 점수">
   {compact&&<div className="zg-chart-fixed-axis" aria-hidden="true">
