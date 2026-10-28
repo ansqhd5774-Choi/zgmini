@@ -8,6 +8,12 @@
 
 export const ACTIVE_PUBLISHERS = Object.freeze(['TBRC', 'SkyQuest', 'Precedence']);
 export const MIN_INDEPENDENT_PUBLISHERS = 2;
+// R31 was already established to distinguish a publisher's *proven*
+// historic-CAGR metadata typo from a genuine conflicting forecast. R80
+// activates it ONLY for the three unresolved R79 research topics.
+export const R31_RECHECK_TOPICS = Object.freeze([
+  'consumer staples', 'fintech', 'biotechnology services'
+]);
 
 function validText(value) {
   return typeof value === 'string' && value.trim().length > 0;
@@ -48,6 +54,12 @@ function normalizedCandidate(raw, adapter, observedAt) {
     source_conflict_reason: validText(raw?.source_conflict_reason) ? raw.source_conflict_reason : null,
     evidence_region: validText(raw?.evidence_region) ? raw.evidence_region : null,
     model_candidate_pct: Number.isFinite(raw?.model_candidate_pct) ? raw.model_candidate_pct : null,
+    forecast_math_pct: Number.isFinite(raw?.forecast_math_pct) ? raw.forecast_math_pct : null,
+    forecast_table_pct: Number.isFinite(raw?.forecast_table_pct) ? raw.forecast_table_pct : null,
+    historic_narrative_pct: Number.isFinite(raw?.historic_narrative_pct)
+      ? raw.historic_narrative_pct : null,
+    historic_math_pct: Number.isFinite(raw?.historic_math_pct)
+      ? raw.historic_math_pct : null,
     search_requests: Number.isInteger(raw?.search_requests) ? raw.search_requests : null,
     report_requests: Number.isInteger(raw?.report_requests) ? raw.report_requests : null,
     ollama_generations: Number.isInteger(raw?.ollama_generations) ? raw.ollama_generations : null,
@@ -70,7 +82,17 @@ function normalizedCandidate(raw, adapter, observedAt) {
     result.reason = 'UNVERIFIED_PUBLISHER_URL';
     return result;
   }
-  if (!['CONSISTENT', 'EXCERPT_PERIOD_VERIFIED'].includes(raw.source_audit)) {
+  // Only the already-implemented R31 proof is eligible; merely labelling a
+  // conflict "historic" cannot bypass market-size and forecast-rate checks.
+  const provenR31 = adapter.id === 'TBRC' &&
+    raw.source_audit === 'RESOLVED_HISTORIC_RATE_MISLABEL' &&
+    raw.source_conflict_reason === 'FORECAST_METADATA_REPEATS_VERIFIED_HISTORIC_CAGR' &&
+    [raw.forecast_math_pct, raw.forecast_table_pct, raw.historic_narrative_pct,
+      raw.historic_math_pct, raw.forecast_narrative_pct].every(Number.isFinite) &&
+    Math.abs(raw.forecast_math_pct - raw.forecast_narrative_pct) <= 0.15 &&
+    Math.abs(raw.forecast_table_pct - raw.historic_narrative_pct) <= 0.05 &&
+    Math.abs(raw.historic_math_pct - raw.historic_narrative_pct) <= 0.15;
+  if (!['CONSISTENT', 'EXCERPT_PERIOD_VERIFIED'].includes(raw.source_audit) && !provenR31) {
     result.reason = 'SOURCE_AUDIT_NOT_CONSISTENT';
     return result;
   }
@@ -166,6 +188,8 @@ export async function runForecastPipeline(topics, adapters, {
         'RESEARCH_FORECAST_ONLY_NOT_GICS_OR_INVESTMENT_SCORE',
         ...(accepted.some(p => p.source_audit === 'EXCERPT_PERIOD_VERIFIED')
           ? ['EXCERPT_ONLY_AUDIT_NO_SIZE_TRIANGULATION'] : []),
+        ...(accepted.some(p => p.source_audit === 'RESOLVED_HISTORIC_RATE_MISLABEL')
+          ? ['R31_PUBLISHER_FORECAST_TABLE_HISTORIC_CAGR_MISLABEL_PROVEN'] : []),
         ...(periodKeys.size > 1 ? ['DIFFERENT_FORECAST_PERIODS_REVIEW_SCOPE'] : []),
         ...(accepted.some(p => p.market_scope === 'R63_REFERENCE')
           ? ['R63_REFERENCE_REPORT_MARKET_NOT_GICS_SECTOR_CAGR'] : []),
@@ -204,7 +228,7 @@ export function tbrcR30Adapter(measureKeyword, {
         auditForecast: true,
         rateOnlyFromSource: true,
         strictMarketScope: true,
-        resolveHistoricTableMislabel: false,
+        resolveHistoricTableMislabel: R31_RECHECK_TOPICS.includes(topic.keyword),
         allowedKeywords: [researchKeyword]
       });
       return researchKeyword === topic.keyword ? raw : {
