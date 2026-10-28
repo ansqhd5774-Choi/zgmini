@@ -100,7 +100,7 @@ try{
    await root.locator(".ob57-news-filters button").first().click();
    assert.equal(await root.locator(".ob57-news-filters button").first().getAttribute("aria-pressed"),"true");
    const newsColumns=await root.locator(".ob57-news-list").evaluate(el=>{const style=getComputedStyle(el);return style.display==="flex"?1:style.gridTemplateColumns.split(" ").length;});
-   assert.equal(newsColumns,width>=1350?2:1,"Wide screens prepare a two-column news layout; other widths use a compact list");
+   assert.equal(newsColumns,1,"Existing R63 Fed news timeline stays a single list at every width");
 
   assert(firstLayout.questionCollapsed,"Secondary explanations start collapsed");
   assert(firstLayout.stacked&&firstLayout.navHorizontal,"Option 5 keeps three horizontal tabs above the detail at every width");
