@@ -276,3 +276,12 @@
 - 동일 기존 브랜치에 별도 읽기 전용 진단 CMD 추가: `MARKET_CALENDAR_R24_SOURCE_DRIFT_READONLY.cmd` + `scripts/pc-writer/market-calendar-r24-source-drift-readonly.mjs` + README + 테스트. 현재 HEAD/config.source/관련 파일 SHA/dirty/lock/승인 R23 조상 관계를 노출 가능한 값만 조회하며 PC 파일·Git/DB/예약·게시를 변경하지 않는다.
 - 새 사용자 전달 ZIP `MARKET_CALENDAR_R24_SOURCE_DRIFT_READONLY_20261028.zip` SHA256 `69611dfaeae502668db26d15f318abea2f1fb7a94e76dd2f5eb76f3c3fa0f6f6`, 진단 테스트 3/3, CMD ASCII CRLF, ZIP 4/4 PASS. 결과 `MARKET_CALENDAR_R24_SOURCE_DRIFT_RESULT.txt`를 받기 전엔 설치기 재고정/원본 덮어쓰기/강제 실행 금지.
 - 기존 R24 코어 후보·USDA 공식 날짜 24건 실측·브랜치 UI 변경은 보존한다. **R24 PC 설치/예약 수집/SQLite/공개 사이트 검증은 미완료**. 신규 브랜치 없음, `main` 병합/Cloudflare 배포 없음.
+
+
+## 27. R24 PC 소스 전진 확인 후 안전 설치 V2 준비 (2026-10-28)
+
+- 사용자 read-only source drift log 실측: PC `HEAD=config.source=4e2a12ccf486d760a21c3269a9f77a4bfe4f48df`, Core ID `d0a4b3cb8b95`, enabled PC 수집, 잠금 없음, tracked dirty 0, 기존 R23 `8ff396217c9f84578b37c9d422381644c2b8f0e8`은 해당 HEAD의 조상.
+- 두 커밋 사이 보호 파일 변경은 정확히 **5개**, 모두 실적 E1 provider/PC 수집·이벤트·알림/운영 refresh. 기존 캘린더 파서·EIA 모듈·캘린더 수집기 3개 SHA는 R23 그대로, USDA 모듈 미설치. 다른 작업의 전진을 되돌리지 않고 유지한다.
+- `market-calendar-r24-usda-apply-v2.mjs`는 정확히 위 HEAD/조상 관계/5파일 목록/R23 캘린더 SHA/설정·잠금·dirty를 재검증한 다음에만 기존 테스트된 3파일 R24 installer를 새 승인 PC source 기준으로 실행. 새 PC 커밋 drift 발생 시 STOP. V2 4/4 테스트, 기초 설치 4/4, 진단 3/3, TS 검사 및 CMD·ZIP 무결성 PASS.
+- 최종 전달 ZIP `MARKET_CALENDAR_R24_USDA_PC_INSTALL_V2_20261028.zip` SHA256 `407c291581eb8dbf6bb30711fd8a188060757be4f4d6cb903de70cbc17ba8658`. 사용자 Windows CMD **`MARKET_CALENDAR_R24_USDA_APPLY_V2.cmd`** 1회 실행 후 **`MARKET_CALENDAR_R24_USDA_APPLY_V2_RESULT.txt`** 업로드. 과거 R24 V1 설치 반복 금지.
+- 상태: **V2 CODE_READY / PC 적용 로그 대기**. R24 PC 설치 성공·예약 수집·SQLite·웹 공개는 여전히 미확인. 다른 작업자 소스 5파일 보존, 브랜치 `codex/zgmini-gpt-workspace-20261025` 단일 유지, 신규 브랜치·main 병합·운영 배포 없음.
