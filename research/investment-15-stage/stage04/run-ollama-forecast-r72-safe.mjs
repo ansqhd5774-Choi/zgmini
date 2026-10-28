@@ -41,6 +41,10 @@ export function summarizeR72(report) {
         `CAGR_PCT=${p.growth_pct ?? 'NULL'}`,
         `SOURCE_AUDIT=${p.source_audit || 'NULL'}`,
         `FAILURE=${p.reason || 'NONE'}`,
+        `SEARCH_REQUESTS=${p.search_requests ?? 'NULL'}`,
+        `REPORT_REQUESTS=${p.report_requests ?? 'NULL'}`,
+        `DISCOVERY=${(p.discovery_diagnostics || []).map(d =>
+          `${d.method}:${d.state}:${d.found}`).join('|') || 'NONE'}`,
         `TOTAL_MS=${p.total_ms ?? 'NULL'}`
       ])
     ]), ''
@@ -66,6 +70,7 @@ export async function executeR72({
     started_at: new Date().toISOString(),
     last_updated_at: null,
     node_version: process.version,
+    publisher_adapter_revision: 'R73_OFFICIAL_DISCOVERY_REPAIR',
     topics_total: null,
     topics_done: 0,
     means_calculable: 0,
