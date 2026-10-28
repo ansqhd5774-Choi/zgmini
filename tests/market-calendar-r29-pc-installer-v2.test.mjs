@@ -1,7 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
 import {runR29} from '../scripts/pc-writer/market-calendar-r29-pc-apply-v2.mjs';
+import {worktreeIdentity} from '../scripts/pc-writer/market-calendar-r19-bea-apply.mjs';
 
 test('V2 refuses an unknown scheduled Core identity before any file mutation',()=>{
  const r=runR29({apply:true,getRoot:()=>null,getTask:()=>'',dataRoot:'/not-pc'});
@@ -26,4 +29,39 @@ test('V2 stages only a private source hook on top of byte-verified R27 collector
  assert.equal(candidate,expected);
  assert.equal((candidate.match(/collectEarningsApiLocal\(/g)??[]).length,1);
  assert.ok(!candidate.includes('source=\'earnings\''));
+});
+
+test('V2 preflight accepts exactly the verified R27 files without mutating them',()=>{
+ const root=fs.mkdtempSync(path.join(os.tmpdir(),'r29-v2-preflight-'));
+ const data=path.join(root,'data');
+ const head='a'.repeat(40),blob='b'.repeat(40);
+ try{
+  fs.mkdirSync(path.join(root,'lib'),{recursive:true});
+  fs.mkdirSync(path.join(root,'scripts','pc-writer'),{recursive:true});
+  fs.mkdirSync(data);
+  const parser=fs.readFileSync(new URL('../staging/market-calendar/r27-tic/lib/release-calendar.mjs',import.meta.url));
+  const collector=fs.readFileSync(new URL('../staging/market-calendar/r27-tic/scripts/pc-writer/release-calendar.mjs',import.meta.url),'utf8');
+  fs.writeFileSync(path.join(root,'lib','release-calendar.mjs'),parser);
+  const source=Buffer.from(collector.replace(/\r?\n/g,'\r\n'));
+  fs.writeFileSync(path.join(root,'scripts','pc-writer','release-calendar.mjs'),source);
+  fs.writeFileSync(path.join(data,'config.json'),JSON.stringify({enabled:true,collectionTarget:'pc',source:head}));
+  const gitCall=(_root,args)=>{
+   if(args[0]==='rev-parse')return args[1]==='HEAD'?head:blob;
+   if(args[0]==='hash-object')return blob;
+   if(args[0]==='diff'||args[0]==='ls-files')return '';
+   if(args[0]==='var')return 'test identity';
+   throw Error('UNEXPECTED_GIT_CALL');
+  };
+  const result=runR29({apply:false,dataRoot:data,getRoot:()=>root,getTask:()=>'',gitCall,
+   expectedIdentity:worktreeIdentity(root)});
+  assert.equal(result.decision,'R29_THREE_FILE_PREFLIGHT_READY_NO_CHANGES_MADE');
+  assert.equal(result.previousSource,head);
+  assert.deepEqual(result.changedFiles,[
+   'lib/earnings-api-calendar.mjs',
+   'scripts/pc-writer/earnings-api-local.mjs',
+   'scripts/pc-writer/release-calendar.mjs']);
+  assert.equal(result.backupCreated,false);
+  assert.equal(fs.readFileSync(path.join(root,'scripts','pc-writer','release-calendar.mjs')).equals(source),true);
+  assert.equal(fs.existsSync(path.join(root,'lib','earnings-api-calendar.mjs')),false);
+ }finally{fs.rmSync(root,{recursive:true,force:true});}
 });
