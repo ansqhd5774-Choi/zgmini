@@ -97,6 +97,48 @@ function sourcePeriod(excerpt) {
   return periods.length === 1 ? periods[0] : null;
 }
 
+/**
+ * R81: A source may label the same global-market CAGR as 2025-2035 in one
+ * place and 2026-2035 in another. Resolve the *primary* forecast period only
+ * when its two published whole-market sizes independently reproduce the
+ * selected CAGR. Do not average periods, accept an unexplained second rate,
+ * or infer a growth rate from submarket/regional figures.
+ */
+function primaryPeriodMathVerified(primary, period, rate) {
+  if (!period || !Number.isFinite(rate)) return false;
+  const values = new Map();
+  for (const match of String(primary).matchAll(
+    /(?:USD|US\$|\$)\s*([\d,.]+)\s*(million|billion|trillion)\s*(?:in|by)\s*(20\d{2})/gi)) {
+    const number = Number(match[1].replaceAll(',', ''));
+    const scale = { million: 1e6, billion: 1e9, trillion: 1e12 }[match[2].toLowerCase()];
+    const year = Number(match[3]);
+    const value = number * scale;
+    if (!Number.isFinite(value) || value <= 0) return false;
+    if (values.has(year) && Math.abs(values.get(year) / value - 1) > 0.00001) return false;
+    values.set(year, value);
+  }
+  const [start, end] = period;
+  if (!values.has(start) || !values.has(end) || end <= start) return false;
+  const implied = (Math.pow(values.get(end) / values.get(start), 1 / (end - start)) - 1) * 100;
+  return Number.isFinite(implied) && Math.abs(implied - rate) <= 0.15;
+}
+
+function provenWholeMarketPeriodLabelVariation(primary, lead, chosen, selected) {
+  if (selected?.scope !== 'DIRECT') return false;
+  const primaryPeriods = sourcePeriods(primary);
+  const leadPeriods = sourcePeriods(lead);
+  const chosenPeriod = sourcePeriod(chosen.excerpt);
+  if (primaryPeriods.length !== 1 || leadPeriods.length !== 1 || !chosenPeriod ||
+      chosenPeriod.join('-') !== primaryPeriods[0].join('-')) return false;
+  const [primaryStart, primaryEnd] = primaryPeriods[0];
+  const [leadStart, leadEnd] = leadPeriods[0];
+  if (primaryEnd !== leadEnd || Math.abs(primaryStart - leadStart) !== 1) return false;
+  const leadRates = extractCagrCandidates(lead);
+  if (!leadRates.length || leadRates.some(rate => Math.abs(rate.pct - chosen.pct) > 0.15))
+    return false;
+  return primaryPeriodMathVerified(primary, chosenPeriod, chosen.pct);
+}
+
 /** Main report lead is separated from regional and product segment sections. */
 export function reportLeadEvidence(html) {
   const h1 = /<h1\b[^>]*>[\s\S]*?<\/h1\s*>/i.exec(String(html));
@@ -335,13 +377,18 @@ async function inspectOnePublisherReport(publisher, url, keyword, {
   }
   const chosen = candidates[selected.index];
   // Cross-check two independently visible whole-market declarations. A
-  // contradictory period or rate on the same publisher page remains NULL.
+  // contradictory rate remains NULL; a one-year period-label variation can
+  // only pass after primary whole-market size arithmetic independently agrees.
+  let verifiedPeriodLabelVariation = false;
   if (primaryCandidates.length && leadCandidates.length) {
     const periods = [...new Set([...sourcePeriods(primary), ...sourcePeriods(lead)]
       .map(pair => pair.join('-')))];
     const inconsistentRate = leadCandidates.some(c =>
       primaryCandidates.every(p => Math.abs(p.pct - c.pct) > 0.15));
-    if (periods.length > 1 || inconsistentRate) {
+    verifiedPeriodLabelVariation = publisher.id === 'Precedence' &&
+      periods.length === 2 && !inconsistentRate &&
+      provenWholeMarketPeriodLabelVariation(primary, lead, chosen, selected);
+    if ((periods.length > 1 && !verifiedPeriodLabelVariation) || inconsistentRate) {
       return { ...failure(publisher.id, keyword, periods.length > 1 ?
         'SOURCE_FORECAST_PERIODS_DISAGREE' : 'SOURCE_FORECAST_VALUES_DISAGREE', {
         url, model, ...searchMeta, report_requests: reportCount,
@@ -386,7 +433,9 @@ async function inspectOnePublisherReport(publisher, url, keyword, {
     period_start: period[0], period_end: period[1],
     forecast_base_year: period[0], forecast_end_year: period[1],
     forecast_narrative_pct: chosen.pct, source_audit: 'EXCERPT_PERIOD_VERIFIED',
-    source_conflict_reason: null, model_candidate_pct: chosen.pct,
+    source_conflict_reason: verifiedPeriodLabelVariation ?
+      'WHOLE_MARKET_PERIOD_LABEL_VARIATION_SIZE_VERIFIED' : null,
+    model_candidate_pct: chosen.pct,
     model_scope: selected.scope, market_scope: scope, report_market_title: title.slice(0,140),
     evidence_region,
     period_source: 'OFFICIAL_REPORT_CAGR_EXCERPT',
