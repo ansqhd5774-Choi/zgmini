@@ -102,7 +102,10 @@ export function eligibleNineR37(record,base,{now=Date.now(),storedAt=now}={}){
   let prev=baseConfirmed;
   for(let i=0;i<fromNew.length;i++){
    const point=fromNew[i];
-   if(!validDate(point?.date)||point.date!==fromBase[i]?.date||point.date<=prev||
+   // Match the existing R2 public contract: its first provisional day may
+   // equal the confirmed anchor. Only subsequent days must increase strictly.
+   if(!validDate(point?.date)||point.date!==fromBase[i]?.date||point.date<prev||
+    (i>0&&point.date<=prev)||
     !point.scores||typeof point.scores!=='object'||Array.isArray(point.scores)||
     !same(Object.keys(point.scores).sort(),THEME_NINE_R37_ROSTER.map(t=>t.theme).sort())||
     !Object.values(point.scores).every(score))return false;
