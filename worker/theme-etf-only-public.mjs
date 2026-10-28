@@ -60,7 +60,7 @@ async function addBiotechSidecars(db,base,opts){
  // Public R37 was written against this complete ten-theme legacy projection.
  // Keep both independent provisional sidecars intact before verifying its
  // byte-for-byte legacy provisional lineage and replacing the eight scores.
- return addVerifiedNineR37(db,withDcProvisional,{now:opts.now,trace:opts.r37Trace});
+ return addVerifiedNineR37(db,withDcProvisional,{now:opts.now});
 }
 export async function readThemeEtfOnly(db,{now=Date.now(),store=publicFeedStore(db)}={}){
  const headers={'cache-control':'no-store','x-robots-tag':'noindex, nofollow','x-content-type-options':'nosniff','x-data-source':'STORED'};
@@ -76,10 +76,9 @@ export async function readThemeEtfOnly(db,{now=Date.now(),store=publicFeedStore(
  let rolling=null;try{rolling=await readRollingPublic(db,record,{now})}catch{}
  if(rolling){
   const withAi=await addVerifiedAiTheme(db,rolling,{now,seed:record});
-  const r37Trace={state:'NOT_STARTED'};
-  const result=await addBiotechSidecars(db,withAi,{now,seed:record,r37Trace});
+  const result=await addBiotechSidecars(db,withAi,{now,seed:record});
   return Response.json(result,{headers:{...headers,'cache-control':'public, max-age=60, must-revalidate',
-   'x-data-snapshot-at':rolling.sourceStoredAt,'x-r37-reader-state':r37Trace.state}});
+   'x-data-snapshot-at':rolling.sourceStoredAt}});
  }
  const observedAt=Date.parse(record.observationDate+'T23:59:59Z');
  const sourceAt=Date.parse(record.sourceStoredAt),storedAt=Number(row.stored_at);
@@ -102,8 +101,7 @@ export async function readThemeEtfOnly(db,{now=Date.now(),store=publicFeedStore(
  // The immutable core seed is also needed to verify older AI sessions when the
  // optional collector is legitimately behind the seven-theme feed.
  const withAi=await addVerifiedAiTheme(db,result,{now,seed:record});
- const r37Trace={state:'NOT_STARTED'};
- const composed=await addBiotechSidecars(db,withAi,{now,r37Trace});
+ const composed=await addBiotechSidecars(db,withAi,{now});
  return Response.json(composed,{headers:{...headers,'cache-control':'public, max-age=60, must-revalidate',
-  'x-data-snapshot-at':new Date(storedAt).toISOString(),'x-r37-reader-state':r37Trace.state}});
+  'x-data-snapshot-at':new Date(storedAt).toISOString()}});
 }
