@@ -132,3 +132,13 @@ test('invalid preexisting batch is not skipped or overwritten',async t=>{
  fs.writeFileSync(path.join(directory,'rows','batch-0000.json'),JSON.stringify({index:0,rows:[]}));
  await assert.rejects(()=>collectOne({pcHome:root,fetchImpl:async()=>{throw Error('NO_API');}}),/R51_PREVIOUS_BATCH_CORRUPT_STOP/);
 });
+test('Windows CMD passes a non-trailing-backslash output directory and emits a launch log',()=>{
+ for(const name of ['MARKET_CALENDAR_R51_PREFLIGHT.cmd','MARKET_CALENDAR_R51_COLLECT_ONCE.cmd']){
+  const script=fs.readFileSync(new URL('../../'+name,import.meta.url),'ascii');
+  assert.match(script,/"%~dp0\."/);
+  assert.doesNotMatch(script,/"%~dp0"/);
+  assert.match(script,/LAUNCH_RESULT\.txt/);
+  assert.match(script,/> "%ZGR51_LOG%" echo LAUNCH=/);
+  assert.match(script,/EXIT_CODE=%ZGR51_CODE%/);
+ }
+});

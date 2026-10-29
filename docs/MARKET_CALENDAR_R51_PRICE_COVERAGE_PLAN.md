@@ -32,6 +32,13 @@
 - 429/403, 응답 스키마·티커·가격 불일치, 기존 계획 해시 불일치, 이전 배치 손상, 중복 실행 락, 누락 의존성은 STOP. 일시 오류에도 저장된 페이지는 삭제·초기화하지 않는다.
 - R51은 자동 스케줄러 작업이 아니다. 운영 자동화는 원본 수집·발행 권리·클래스별 시총 연결이 검증된 후 별도 설계한다.
 
+## R51 R2 Windows 실행 기록 복구
+
+- 기존 R51 첫 패키지의 CMD가 Node 실행 결과 폴더를 `"%~dp0"`로 전달했다. Windows의 명령행 인수 파서는 인용부호 바로 앞의 `\`를 특별하게 처리하므로 실행 파일이 의도한 경로를 수신하지 못할 수 있다. 수정본은 `"%~dp0."`로 전달한다.
+- R2의 PREFLIGHT/COLLECT CMD는 Node 실행 **전** 각각 `MARKET_CALENDAR_R51_PREFLIGHT_LAUNCH_RESULT.txt`, `MARKET_CALENDAR_R51_COLLECT_LAUNCH_RESULT.txt`를 실행 ZIP 압축 해제 폴더에 생성하고, Node 부재·스크립트 누락·종료 코드와 오류를 기록한다.
+- 재실행에 의한 로그 덮어쓰기는 STOP. 사용자는 기존 패키지 폴더를 수정하지 않고 **새 빈 폴더**에 R2 압축을 해제해 PREFLIGHT 1회부터 시작한다. PC `market-calendar-r51-alpaca/plan.json`이 이미 유효하게 존재하면 재생성하지 않고 `R51_EXISTING_PLAN_VALID`를 반환한다.
+- PC 최초 실패의 구체적 증상이 아직 전달되지 않아 말단 역슬래시 오류는 **확인된 코드 위험**, 실제 PC 근본 원인은 **미검증**으로 구분한다.
+
 ## 공식 근거
 
 - Alpaca 다종목 역사적 일봉 API 및 페이지 토큰: https://docs.alpaca.markets/us/reference/stockbars
