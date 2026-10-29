@@ -55,9 +55,15 @@ export function discoverR45ArticleUrls(sourceId,html,limit=12){
   const href=attr(tag,'href');
   const u=normalizeR45ArticleUrl(sourceId,href,spec.listing);
   if(u)urls.add(u);
-  if(urls.size>=limit)break;
  }
- return [...urls];
+ // Search priority is not a publication filter: a secondary keyword might only
+ // appear in the original article, so never discard unrelated-looking slugs.
+ const ordered=[...urls].sort((a,b)=>{
+  const ap=PRIMARY.test(new URL(a).pathname)?1:0;
+  const bp=PRIMARY.test(new URL(b).pathname)?1:0;
+  return bp-ap;
+ });
+ return ordered.slice(0,limit);
 }
 function articleJsonLd(html){
  for(const m of html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script\s*>/gi)){
@@ -78,23 +84,82 @@ function articleJsonLd(html){
  return null;
 }
 function kstDate(ms){return new Date(ms+9*3600_000).toISOString().slice(0,10);}
+
+function publisherIsoDate(raw){
+ // Do not invent a timezone or treat feed update times as publication dates.
+ if(typeof raw!=='string'||!/^\d{4}-\d\d-\d\dT\d\d:\d\d(?::\d\d(?:\.\d+)?)?(?:Z|[+-]\d\d:\d\d)$/i.test(raw.trim()))return NaN;
+ return Date.parse(raw.trim());
+}
+function timeTagDate(html){
+ for(const tag of html.match(/<time\b[^>]*>/gi)??[]){
+  const date=attr(tag,'datetime')??attr(tag,'content');
+  if(Number.isFinite(publisherIsoDate(date)))return date;
+ }
+ return null;
+}
+function publisherDate(html,schema){
+ const candidates=[schema?.datePublished,meta(html,[
+  'article:published_time','datepublished','date_published','pubdate',
+  'datecreated','dc.date.issued','dc.date','sailthru.date']),
+  timeTagDate(html)];
+ return candidates.find(date=>Number.isFinite(publisherIsoDate(date)))??null;
+}
+function containedParagraphs(html,sourceId){
+ // Only the publisher's named editorial body is allowed as a fallback.
+ const selectors=sourceId==='arabnews'?[
+  /\b(?:field-name-body|field--name-body|article-body|article__body|story-body|entry-content|article-content)\b/i,
+  /\b(?:field--type-text-with-summary|field-type-text-with-summary)\b/i
+ ]:sourceId==='anadolu'?[
+  /\b(?:detay-icerik|detay-spot|article-body|article__body|news-content|content-detail|detail-text|article-content)\b/i
+ ]:[];
+ if(!selectors.length)return '';
+ for(const tag of html.matchAll(/<(?:div|section)\b[^>]*>/gi)){
+  const cls=attr(tag[0],'class')??'';
+  const id=attr(tag[0],'id')??'';
+  if(!selectors.some(re=>re.test(cls)||re.test(id)))continue;
+  const node=tag[0].match(/^<(div|section)/i)?.[1]?.toLowerCase();
+  const token=new RegExp('<\\/?'+node+'\\b[^>]*>','gi');
+  token.lastIndex=tag.index+tag[0].length;
+  let depth=1,end=-1;
+  for(const match of html.matchAll(token)){
+   if(match.index<token.lastIndex)continue;
+   depth+=/^<\//.test(match[0])?-1:1;
+   if(depth===0){end=match.index;break;}
+   if(match.index-tag.index>250000)break;
+  }
+  if(end<0)continue;
+  const part=html.slice(tag.index+tag[0].length,end);
+  const paras=[...part.matchAll(/<p\b[^>]*>([\s\S]*?)<\/p\s*>/gi)].map(m=>m[1]);
+  const text=htmlText(paras.join(' '));
+  if(text.length>30)return text;
+ }
+ return '';
+}
+function articleBody(html,sourceId,schema){
+ if(typeof schema?.articleBody==='string'&&htmlText(schema.articleBody).length>30)
+  return {text:htmlText(schema.articleBody),evidence:'PUBLISHER_JSONLD_ARTICLE_BODY'};
+ const article=html.match(/<article\b[^>]*>([\s\S]*?)<\/article\s*>/i)?.[1]??'';
+ const paragraphs=[...article.matchAll(/<p\b[^>]*>([\s\S]*?)<\/p\s*>/gi)].map(m=>m[1]).join(' ');
+ if(htmlText(paragraphs).length>30)return {text:htmlText(paragraphs),evidence:'SEMANTIC_ARTICLE_PARAGRAPHS'};
+ const fallback=containedParagraphs(html,sourceId);
+ if(fallback)return {text:fallback,evidence:'PUBLISHER_EDITORIAL_BODY'};
+ return {text:'',evidence:'NO_VERIFIED_EDITORIAL_BODY'};
+}
 export function inspectR45Article(sourceId,url,html,{now=Date.now()}={}){
  if(!normalizeR45ArticleUrl(sourceId,url)||typeof html!=='string'||html.length>MAX_HTML||
   !/<html\b|<!doctype html/i.test(html))return {sourceId,url,status:'ARTICLE_FORMAT_INVALID'};
  const schema=articleJsonLd(html);
- const rawDate=schema?.datePublished??meta(html,['article:published_time','datepublished','date_published','pubdate']);
- const when=typeof rawDate==='string'&&/^\d{4}-\d\d-\d\dT\d\d:\d\d(?::\d\d(?:\.\d+)?)?(?:Z|[+-]\d\d:\d\d)$/i.test(rawDate)?Date.parse(rawDate):NaN;
+ const rawDate=publisherDate(html,schema);
+ const when=publisherIsoDate(rawDate);
  const title=htmlText(schema?.headline??meta(html,['og:title','twitter:title'])??
   html.match(/<h1\b[^>]*>([\s\S]*?)<\/h1\s*>/i)?.[1]??'');
- const article=html.match(/<article\b[^>]*>([\s\S]*?)<\/article\s*>/i)?.[1]??'';
- const paragraphs=[...article.matchAll(/<p\b[^>]*>([\s\S]*?)<\/p\s*>/gi)].map(m=>m[1]).join(' ');
- const text=htmlText(typeof schema?.articleBody==='string'?schema.articleBody:paragraphs);
+ const {text,evidence:bodyEvidence}=articleBody(html,sourceId,schema);
  const validDate=Number.isFinite(when)&&when<=now+300_000&&when>=0;
  const offsetDays=validDate?(Date.parse(kstDate(now)+'T00:00:00Z')-Date.parse(kstDate(when)+'T00:00:00Z'))/86400_000:null;
  const status=!title||title.length>500?'TITLE_UNVERIFIED':!validDate?'FIRST_PUBLICATION_UNVERIFIED':
   !text?'ARTICLE_BODY_UNVERIFIED':!PRIMARY.test(title+' '+text)||!SECONDARY.test(title+' '+text)?'ARTICLE_OUT_OF_SCOPE':
    offsetDays<0||offsetDays>=14?'OUTSIDE_14_DAY_WINDOW':'ARTICLE_METADATA_REVIEWED';
- return {sourceId,url,status,
+ return {sourceId,url,status,bodyEvidence,dateEvidence:rawDate?'PUBLISHER_DECLARED_ZONED_DATE':'NONE',
   ...(status==='ARTICLE_METADATA_REVIEWED'?{title,publishedAt:new Date(when).toISOString()}:{}),
   rightsVerified:false,displayEligible:false};
 }
