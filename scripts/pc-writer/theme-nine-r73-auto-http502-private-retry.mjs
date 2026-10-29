@@ -25,10 +25,21 @@ export function r73ScheduledPreflight({now=new Date(),exists=fs.existsSync,
   }).formatToParts(now).filter(x=>['hour','minute'].includes(x.type))
     .map(x=>[x.type,Number(x.value)]));
   const minute=h.hour*60+h.minute;
-  // This mode is reserved for the EXISTING 11:30 scheduler action.
+  // The existing 11:30 scheduled slot is permitted even though the manual
+  // R71 guard rejects overlaps. A user-triggered run of the *same* scheduled
+  // task outside that slot must also work when the manual R71 guard is clear.
   const insidePrivateSlot=minute>=680&&minute<=735;
-  return {canRun:required.allRequiredPresent&&insidePrivateSlot&&
-    exists(ACTION)&&!exists(LOCK),insidePrivateSlot};
+  const manualSlotAllowed=required.canRun===true;
+  const actionPresent=exists(ACTION);
+  const activeLock=exists(LOCK);
+  const canRun=required.allRequiredPresent&&
+    (insidePrivateSlot||manualSlotAllowed)&&actionPresent&&!activeLock;
+  const reason=!required.allRequiredPresent?'MISSING_PRIVATE_CHAIN':
+    !actionPresent?'MISSING_R48_COMMAND':
+    activeLock?'PRIVATE_COLLECTION_ACTIVE':
+    !(insidePrivateSlot||manualSlotAllowed)?'KNOWN_SCHEDULE_OVERLAP':
+    'READY';
+  return {canRun,insidePrivateSlot,manualSlotAllowed,reason};
 }
 
 export function runR73ScheduledR48({run=spawnSync}={}){
@@ -54,7 +65,8 @@ export async function runR73PrivateAutoRetry({
   for(let attempt=1;attempt<=maxAttempts;attempt++){
     const ready=preflight();
     if(!ready.canRun)return {status:'STOP_R73_PC_PREFLIGHT',attempts:attempt-1,
-      recoveries,d1Writes:0,schedulerWrites:0,publicWrites:0};
+      reason:ready.reason??'PREFLIGHT_NOT_READY',recoveries,d1Writes:0,
+      schedulerWrites:0,publicWrites:0};
     const checkpoint=inspect(); // validated SHA and exact checkpoint identity
     if(!checkpoint.noFailed){
       if(checkpoint.sourceFailure!=='STOP_HTTP_502')return {
