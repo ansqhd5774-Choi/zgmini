@@ -44,3 +44,27 @@ Source on `codex/ui-improvements`; PC 실행 결과 미수신, 운영 시총 점
 - 샘플 표본 결과가 25/25라도 실제 전체 2,640개 ticker 커버리지, 다른 통화 정규화, issuer 단위 시총, 공개 파생 결과의 라이선스는 **여전히 미검증**.
 - R46 로컬 모의 테스트 7/7 PASS. 사용자 PC 실측은 **NOT RUN**.
 - 참고: https://site.financialmodelingprep.com/developer/docs/stable/batch-market-cap / https://site.financialmodelingprep.com/pricing-plans (일괄·대량 제공 상위 티어 및 표시/재배포 별도 라이선스 주의).
+
+
+## R46 실제 PC 결과 (2026-10-29): 25개 요청, 2개만 반환
+- 사용자 제공 `MARKET_CALENDAR_R46_FMP_BATCH_PILOT_RESULT.txt` 실제 증거.
+- `status=R46_BOUNDED_PILOT_COMPLETE`, `providerRequests=1`; `dbWrites=0`, `d1Writes=0`.
+- R44 일정 스냅샷 `recordCount=2640`, `uniqueTickers=2640` (기업별 CIK를 합친 issuer 수는 아님).
+- 배치 요청 `sampleRequested=25`, `returnedMatched=2`, `coveragePercent=8`, `missingCount=23`, `invalidCount=0`, `duplicateCount=0`, `unexpectedCount=0`; HTTP 200.
+- 반환된 2건 `date=2026-10-28` 모두 ★★★ 구간. 누락 23개가 소형 기업이라는 뜻이 아니라 **자료가 반환되지 않았음**을 뜻한다.
+- `currencyVerified=false`, `issuerLevelVerified=false`, `publicDisplayLicenseValidated=false`, `all2640CoverageValidated=false`.
+- 요청 코드를 실측 대조한 결과, `/stable/market-capitalization-batch?symbols=...` 형식은 FMP 공식 문서와 일치한다. 하지만 2/25만 반환된 정확한 원인은 데이터 부족·요금제 제한·이름 매칭 등으로 **아직 구분할 수 없음**. 특정 원인이나 일반적인 2종목 제한을 확정하지 않는다.
+- R45의 2/2 확보 결과를 2,640개 전체 사용 가능 증거로 확대하지 않는다. 무료 계정 시총 FMP 대량 재호출·유료 업그레이드 금지.
+- FMP는 무료 공개 사이트뿐 아니라 ★ 점수처럼 파생 출력도 적절한 라이선스 범위를 확인해야 한다고 설명한다. 별표 결과를 무단 게시하지 않음. https://site.financialmodelingprep.com/insights/platform/can-you-use-fmp-data-in-a-public-app-website-or-client-dashboard
+
+## R47 후속: 기존 PC 저장 자료 간 무호출 교집합 점검 (사용자 실행 전)
+- **목적:** FMP 확대 대신 이미 저장한 SEC Company Facts, 기존 E1-R3 CIK↔ticker 매핑, 기존 Alpaca 그룹 티커가 실적 2,640개 티커와 얼마나 겹치는지 증거로 확인. **표시·계산·게시 자동화가 완료됐다는 뜻이 아님.**
+- 패키지: `MARKET_CALENDAR_R47_OFFLINE_SOURCE_COVERAGE_20261029.zip` 안의 `MARKET_CALENDAR_R47_OFFLINE_SOURCE_COVERAGE.cmd`, `market-calendar-r47-offline-source-audit.mjs`, `README_R47.txt`.
+- Windows 기존 node `E:\ZGmini\runtime\node.exe`, PC 저장소 `E:\ZGmini\data\pc-writer`. 1회 실행 후 `MARKET_CALENDAR_R47_OFFLINE_SOURCE_COVERAGE_RESULT.txt` 전달.
+- `storage/core.sqlite`: `market-calendar:earnings-display-html` + `market_score_earnings_e1_r3_universe_v1` 최신 `body_json`을 **readonly**로 조회.
+- 원본 파일 이름만 조회: `manual-input/e1-r5/incoming/companyfacts/CIK*.json`. `asset-r10-alpaca/group-*.json`에서 ticker 멤버십만 판정. 모든 가격·주식수·시총 raw row는 보고하지 않음.
+- 결과: 일정 수/고유 티커 수, SEC 맵핑 후보·회사공시 파일 후보·Alpaca 그룹 종목 후보·동시 출현 후보 **집계 수만** 기록. 유효/최신 주식수, 실제 issuer-level cap, USD 여부는 아직 검증 안 되므로 `gradeableTickerCount=0` 고정.
+- 새 provider API 호출 0, PC SQLite 쓰기 0, D1 쓰기 0, 자동 재시도 0. 결과 파일이 이미 있으면 생성·실행을 중단. 신규 스케줄러·Cloudflare Cron·배포·기존 중요도 로직 변경 없음.
+- 로컬 모의 fixture 단위 테스트 7/7 PASS; **실제 PC에서 R47을 돌렸다고 주장하지 않음**.
+- SEC 공식 bulk 자료 설명: https://www.sec.gov/search-filings/edgar-application-programming-interfaces
+- R47 결과로 기존 원본의 겹치는 범위를 확인한 뒤 공급자별 정확성·라이선스·실제 샘플 등급 검증 후에만 전체 자동화 범위를 결정.
