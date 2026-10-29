@@ -83,6 +83,26 @@ test('rate-limit preserves already persisted raw page and resumes without re-req
  assert.equal(again.status,'R51_BATCH_STORED');assert.equal(again.reusedRawPages,1);
  assert.equal(again.providerRequests,1);assert.equal(calls,3);
 });
+test('transient timeout is classified and a later run safely resumes the uncommitted batch',async t=>{
+ const {root,directory}=fixture(t);preflight({pcHome:root,asOf:'2026-10-29'});
+ const first=await collectOne({pcHome:root,wait:async()=>{},fetchImpl:async()=>{const e=Error('request timed out');e.name='TimeoutError';throw e;}});
+ assert.equal(first.status,'R51_PROVIDER_TIMEOUT');
+ assert.equal(first.providerRequests,1);
+ assert.equal(fs.existsSync(path.join(directory,'rows','batch-0000.json')),false);
+ const next=await collectOne({pcHome:root,wait:async()=>{},fetchImpl:async()=>response({MSFT:[bar('MSFT',301)]})});
+ assert.equal(next.status,'R51_BATCH_STORED');
+ assert.equal(next.batchReadbackVerified,true);
+});
+test('request budget includes every actual API request and preserves partial raw pages',async t=>{
+ const missing=Array.from({length:121},(_,i)=>`Q${String(i).padStart(4,'0')}`);
+ const {root,directory}=fixture(t,{missing});preflight({pcHome:root,asOf:'2026-10-29'});
+ const fetchImpl=async url=>response(Object.fromEntries(url.searchParams.get('symbols').split(',').map(s=>[s,[bar(s,101)]])));
+ const result=await collectOne({pcHome:root,fetchImpl,wait:async()=>{},maxRequests:2});
+ assert.equal(result.status,'R51_REQUEST_BUDGET_STOP');
+ assert.equal(result.providerRequests,2);
+ assert.equal(result.newRawPages,2);
+ assert.equal(fs.existsSync(path.join(directory,'rows','batch-0000.json')),false);
+});
 test('invalid provider ticker stops and keeps original DB unchanged',async t=>{
  const {root,dbFile,directory}=fixture(t);preflight({pcHome:root,asOf:'2026-10-29'});
  const before=fs.readFileSync(dbFile);
@@ -134,7 +154,7 @@ test('invalid preexisting batch is not skipped or overwritten',async t=>{
 });
 test('Windows CMD passes a non-trailing-backslash output directory and emits a launch log',()=>{
  for(const name of ['MARKET_CALENDAR_R51_PREFLIGHT.cmd','MARKET_CALENDAR_R51_COLLECT_ONCE.cmd']){
-  const script=fs.readFileSync(new URL('../../'+name,import.meta.url),'ascii');
+  const script=fs.readFileSync(new URL('../../tools/market-calendar-r51/'+name,import.meta.url),'ascii');
   assert.match(script,/"%~dp0\."/);
   assert.doesNotMatch(script,/"%~dp0"/);
   assert.match(script,/LAUNCH_RESULT\.txt/);

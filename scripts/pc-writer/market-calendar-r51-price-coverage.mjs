@@ -92,7 +92,7 @@ function parsePage(body,symbols,plan){
  }
  return {rows,token:data.next_page_token||null};
 }
-async function readGroup({directory,batchIndex,groupIndex,symbols,plan,fetchImpl,wait,headers,counters}){
+async function readGroup({directory,batchIndex,groupIndex,symbols,plan,fetchImpl,wait,headers,counters,maxRequests}){
  const raw=path.join(directory,'raw');makeDir(raw);
  let page=0,token=null;const tokens=new Set(),latest=new Map();
  do{
@@ -103,16 +103,25 @@ async function readGroup({directory,batchIndex,groupIndex,symbols,plan,fetchImpl
    body=fs.readFileSync(file,'utf8');if(Buffer.byteLength(body)>MAX_RESPONSE_BYTES)throw Error('R51_STORED_PAGE_TOO_LARGE');
    counters.reusedPages++;
   }else{
-   if(counters.requests>=MAX_PAGES)throw Error('R51_REQUEST_BUDGET_STOP');
+   if(counters.requests>=maxRequests)throw Error('R51_REQUEST_BUDGET_STOP');
    if(counters.requests>0)await wait(800);
    const url=new URL('https://data.alpaca.markets/v2/stocks/bars');
    url.search=new URLSearchParams({symbols:symbols.join(','),timeframe:'1Day',start:plan.start+'T00:00:00Z',end:plan.end+'T23:59:59Z',feed:'iex',adjustment:'split',limit:'10000',...(token?{page_token:token}:{})});
    counters.requests++;
-   const response=await fetchImpl(url,{headers,signal:AbortSignal.timeout(20000),redirect:'error'});
+   let response;
+   try{response=await fetchImpl(url,{headers,signal:AbortSignal.timeout(45000),redirect:'error'});}
+   catch(error){
+    if(error?.name==='TimeoutError'||error?.name==='AbortError'||error?.cause?.code==='UND_ERR_CONNECT_TIMEOUT')throw Error('R51_PROVIDER_TIMEOUT');
+    throw Error('R51_PROVIDER_NETWORK_FAILURE');
+   }
    if(!response.ok)throw Error(`R51_PROVIDER_HTTP_${Number(response.status)||0}`);
    const length=Number(response.headers?.get?.('content-length')||0);
    if(length>MAX_RESPONSE_BYTES)throw Error('R51_RESPONSE_TOO_LARGE');
-   body=await response.text();
+   try{body=await response.text();}
+   catch(error){
+    if(error?.name==='TimeoutError'||error?.name==='AbortError')throw Error('R51_PROVIDER_TIMEOUT');
+    throw Error('R51_PROVIDER_NETWORK_FAILURE');
+   }
    if(Buffer.byteLength(body)>MAX_RESPONSE_BYTES)throw Error('R51_RESPONSE_TOO_LARGE');
    parsePage(body,symbols,plan); // reject invalid provider data before creating evidence
    writeOnce(file,body);counters.newPages++;
@@ -130,7 +139,8 @@ async function readGroup({directory,batchIndex,groupIndex,symbols,plan,fetchImpl
  return latest;
 }
 
-export async function collectOne({pcHome,fetchImpl=fetch,wait=ms=>new Promise(r=>setTimeout(r,ms))}={}){
+export async function collectOne({pcHome,fetchImpl=fetch,wait=ms=>new Promise(r=>setTimeout(r,ms)),maxRequests=MAX_PAGES}={}){
+ if(!Number.isInteger(maxRequests)||maxRequests<1||maxRequests>MAX_PAGES)throw Error('R51_REQUEST_BUDGET_INVALID');
  const directory=localDir(pcHome),wrapped=loadPlan(directory),plan=wrapped.plan;
  const rowsDir=path.join(directory,'rows');makeDir(rowsDir);
  const batches=Math.ceil(plan.tickers.length/BATCH_SIZE);
@@ -153,7 +163,7 @@ export async function collectOne({pcHome,fetchImpl=fetch,wait=ms=>new Promise(r=
   const members=plan.tickers.slice(index*BATCH_SIZE,(index+1)*BATCH_SIZE),all=new Map();
   const headers={'APCA-API-KEY-ID':env.APCA_API_KEY_ID,'APCA-API-SECRET-KEY':env.APCA_API_SECRET_KEY};
   for(let at=0;at<members.length;at+=GROUP_SIZE){
-   const group=await readGroup({directory,batchIndex:index,groupIndex:Math.floor(at/GROUP_SIZE),symbols:members.slice(at,at+GROUP_SIZE),plan,fetchImpl,wait,headers,counters});
+   const group=await readGroup({directory,batchIndex:index,groupIndex:Math.floor(at/GROUP_SIZE),symbols:members.slice(at,at+GROUP_SIZE),plan,fetchImpl,wait,headers,counters,maxRequests});
    for(const [ticker,row]of group){if(all.has(ticker)&&JSON.stringify(all.get(ticker))!==JSON.stringify(row))throw Error('R51_GROUP_PRICE_CONFLICT_STOP');all.set(ticker,row);}
   }
   const data={schema:S,planSha256:wrapped.sha256,index,expectedTickers:members.length,rows:[...all.values()].sort((a,b)=>a.ticker.localeCompare(b.ticker))};
@@ -166,11 +176,11 @@ export async function collectOne({pcHome,fetchImpl=fetch,wait=ms=>new Promise(r=
   return noSymbolReport({status:/^R51_[A-Z0-9_]+$/.test(error?.message)?error.message:'R51_LOCAL_OR_NETWORK_FAILURE',asOf:plan.asOf,other:{batchNumber:index+1,totalBatches:batches,providerRequests:counters.requests,newRawPages:counters.newPages,reusedRawPages:counters.reusedPages,gradeableTickerCount:0,note:'STOP; RAW_PAGES_PRESERVED; REVIEW_BEFORE_RESUME'}});
  }finally{try{if(fd!==undefined)fs.closeSync(fd);}catch{}try{fs.unlinkSync(lock);}catch{}}
 }
-export async function runPc({mode,pcHome=String.raw`E:\ZGmini\data\pc-writer`,outputDir=path.dirname(fileURLToPath(import.meta.url)),fetchImpl,wait,asOf}={}){
+export async function runPc({mode,pcHome=String.raw`E:\ZGmini\data\pc-writer`,outputDir=path.dirname(fileURLToPath(import.meta.url)),fetchImpl,wait,asOf,maxRequests}={}){
  let report;
  try{
   if(mode==='preflight')report=preflight({pcHome,asOf});
-  else if(mode==='collect')report=await collectOne({pcHome,fetchImpl,wait});
+  else if(mode==='collect')report=await collectOne({pcHome,fetchImpl,wait,maxRequests});
   else throw Error('R51_MODE_INVALID');
  }catch(error){report=noSymbolReport({status:/^R51_[A-Z0-9_]+$/.test(error?.message)?error.message:'R51_LOCAL_OR_NETWORK_FAILURE',asOf:asOf??kstDay(),other:{note:'STOP; PRESERVE_EVIDENCE; DO_NOT_DELETE_LOCK_OR_RETRY_BLINDLY'}});}
  const filename=`MARKET_CALENDAR_R51_${mode==='collect'?'COLLECT':'PREFLIGHT'}_RESULT_${new Date().toISOString().replace(/[:.]/g,'').replace(/-/g,'')}_${process.pid}.txt`;
