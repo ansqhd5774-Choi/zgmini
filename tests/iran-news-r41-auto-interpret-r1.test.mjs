@@ -427,3 +427,16 @@ test('repeated failures rotate through all eligible articles without dropping hi
    }});
  assert.equal(fifth.privateCache.attempts.length,4);
 });
+
+test('missing evidence exposes safe private cause counts without changing public pending',async()=>{
+ const result=await runR41AnalysisCycle({items:[item]},
+  {now,modelDigest:'digest-1',maxNew:1,
+   evidenceCollector:async()=>({items:[],failures:[
+    {id:item.id,reason:'NEWS_R26_TASNIM_ARTICLE_UNVERIFIED'},
+    {id:'other',reason:'raw secret and sensitive content'}]})});
+ assert.equal(result.publicResult.pending[0].reason,'ARTICLE_BODY_EVIDENCE_UNAVAILABLE');
+ assert.equal(result.report.sourceFailureBreakdown.NEWS_R26_TASNIM_ARTICLE_UNVERIFIED,1);
+ assert.equal(result.report.sourceFailureBreakdown.NEWS_R26_SOURCE_FETCH_FAILED,1);
+ assert.equal(result.report.directlyFetched,0);
+ assert.equal(JSON.stringify(result.report).includes('raw secret'),false);
+});
