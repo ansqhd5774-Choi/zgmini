@@ -138,3 +138,14 @@ R75는 기존 R48을 **한 번** 호출하며 R48 종료 0을 점수/운영 갱�
 - 보호 조건: 한국시간 10:55~14:35 실행 금지, 공개 10테마 READY·R48 개인 후보 일치·기존 R54 동의 및 잠금·기존 승인 R51/R37/R80/R54 실행 SHA·R8·원래 7개 core SHA 확인. 인증 자체를 먼저 **읽기 중심으로** 확인하고 실패하면 R54 파일조차 수정하지 않는다. 통과하면 기존 R54 1개만 `.R81_BACKUP` 후 교체, 승인 R54 **1회** 게시, D1/공개 읽기 확인한다. 인증 정보는 출력·저장·전송하지 않는다.
 - 관련 테스트 6개 PASS: `tests/theme-nine-r81-approved-seven-auth.test.mjs`, `scripts/pc-writer/theme-ten-r81-seven-auth-once.test.mjs`, R54/R48 D1/R51/R37 관련 테스트. 원래 작업 브랜치에 소스·테스트·CMD·절차 등록.
 - **검증 상태: R81 ZIP 준비·테스트·브랜치 등록까지. Windows PC 설치 / 승인 R54 실행 / D1 새 write / 공개 API R37 revision / 실제 UI / 다음 정규 예약 모두 아직 미검증.** 실제 결과 `THEME_TEN_R81_AUTH_RESULT_*.txt` 한 개로 후속 판정한다. 신규 테마·ETF·산식·기존 정상 7개·예약 작업·원본 임의보정 0. 우주·위성/데이터센터·전력 전용 10/27·28 수집 누락은 별도 미완료.
+
+
+## R81 실PC 결과 및 독립 운영 API readback — 2026-10-30 KST
+
+- 사용자 원본 `THEME_TEN_R81_AUTH_RESULT_1729_24261.txt` (`inspectedAt=2026-10-29T16:28:20.399Z`), `THEME_NINE_R54_CYCLE_1876_16419.txt` 확인. 기존 보호 게이트 허용, 확정 2026-10-27 R48 후보와 공개 날짜 일치.
+- 승인된 7개 테마의 기존 자격증명만 메모리에서 확인: `R81_SEVEN_AUTH_MEMORY_ONLY_VERIFIED`, 비밀 기록/출력 0. 기존 R54 파일 1개만 `.R81_BACKUP` 보존하여 설치 및 새 SHA 확인: `R81_R54_ONE_FILE_INSTALLED_SHA_VERIFIED`, `changed=1`. 앞선 R80 D1 수정은 `R80_PATCH_ALREADY_VERIFIED`, `changed=0`.
+- 기존 R54 명령 1회 실행 `exit=0`, 상세 `PUBLIC_API_VERIFIED`, D1 `d1Writes=1` 및 `WRITTEN_AND_READBACK_VERIFIED`, 원본 SHA 검증 245건, 테마 검증 9개, 확정 10/27. 기존 공개 잠정치 날짜 10/26·10/28의 값은 복제/보간/재라벨 없이 그대로 검증. `publicDateMatched=true`, `publicScoresMatched=true`, `publicProvisionalScoresMatched=true`, `otherFeedsChanged=false`, `providerCalls=0`.
+- 사용자 실행 직후 공개 API는 `READY`, 10개, `modelRevision=THEME_LEGACY_NINE_R37_PUBLIC_V1`, 확정 10/27, `R81_PUBLIC_R37_VERIFIED_NEXT_REGULAR_PENDING`. 바이오·신약 10/27, 우주·위성/데이터센터·전력 각각 10/23 이력 유지.
+- 별도 읽기 전용 HTTPS 요청으로 공개 `https://zgmini.kr/api/theme-fear-greed/?r81_verify=20261030T020000` 독립 재확인: `READY`, 10개, 확정 10/27, R37 revision 존재. 방법 식별자 `ETF_ONLY_T40_R20_V40_ADAPTIVE_R2_DATED_ISSUER_AUM_R32`는 기존 `worker/theme-nine-r37-public.mjs`의 `THEME_NINE_R37_METHOD`와 일치한다. 바이오 10/27(점수 34.68369), 우주 10/23(44.65075), 데이터센터 10/23(12.32143). 최신 수치/모델은 운영 readback이며 기존 원시값을 임의로 고친 증거가 아니다.
+- **완료한 범위:** R54 인증 + D1 1회 쓰기/readback + 공개 R37 재채택. 변경 신규 테마 0, 산식 0, 예약 0, 원시값 재기입 0.
+- **미완료 별도 경로:** 우주·위성 4개 ETF 및 데이터센터·전력 3개 전용 PC 원시매니페스트의 10/23 이후 수집→해당 기존 승인 계산→전용 D1→공개 차트. 먼저 예약 실행의 **실제 승인 PC 경로·실행 로그·공급자 10/27/28 현재 제공 여부**를 읽기 전용으로 추적하고, 원본이 존재하는 날짜만 보수 복구한다. 다음 기존 11:30 수집/13:30 게시 정규 실행 결과도 별도 확보. 그 전 **10개 테마 일괄 매일 갱신 완료를 선언하지 않는다**.
