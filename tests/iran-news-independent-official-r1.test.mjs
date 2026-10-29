@@ -12,7 +12,7 @@ test('independent official evidence candidates stay isolated from R41 and R5',()
  assert.deepEqual(summarizeIranOfficialNewsBriefsR1(sample),{
   version:'IRAN_OFFICIAL_NEWS_BRIEFS_R1',asOfDate:'2026-10-29',candidateCount:5,
   publicationAuthorized:false,officialEvidenceOnly:true,articleReadyCountDelta:0,
-  r5ScoreChanges:0,signals:{diplomatic_positive:3,risk_increase:2,mixed:0,neutral:0},
+  r5ScoreChanges:0,signals:{diplomatic_positive:3,risk_persistent:1,risk_increase:1,mixed:0,neutral:0},
  });
 });
 
