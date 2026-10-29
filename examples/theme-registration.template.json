@@ -1,0 +1,10 @@
+{
+  "schema": "ZGMINI_THEME_CONFIG_V1",
+  "id": "example-theme",
+  "label": "새 테마 이름",
+  "provider": "getmarkethistory",
+  "profile": "ADAPTIVE_R2_PAIR_R3",
+  "etfs": ["AAA", "BBB"],
+  "benchmark": "SPY",
+  "startDate": "2023-01-01"
+}
