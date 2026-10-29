@@ -235,3 +235,23 @@ R5는 `CORE_VBS_TO_PUBLISH_CYCLE_OBSERVED`를 포착하더라도 **설치 승인
 - 오프라인 회귀시험: R7 설치기 8건 + PR #893 sidecar 9건 **총 17건 PASS**, Linux 실행 차단, ZIP 무결성, Git 없는 압축본 테스트. **Windows R7 실제 PREFLIGHT/INSTALL 및 정규 D1 readback은 아직 하지 않았다.**
 
 PC 실행 지침: 새 빈 폴더에 R7 ZIP을 압축 해제 → `RUN_PREFLIGHT.cmd` 1회. `STATUS=READY_FOR_INSTALL`인 경우에만 `RUN_INSTALL.cmd` 1회; 아니면 결과 TXT를 제출하고 설치 중단. 설치 성공 시 `PC_SOURCE_INSTALLED_AWAIT_NORMAL_CYCLE`은 코드 설치일 뿐 자동 갱신 완료가 아니다. 다음 두 정규 주기에서 `RUN_VERIFY.cmd`와 각각의 R10 raw/history D1 readback을 분리하여 재확인한다.
+
+## 18. R7 실제 PC 중단과 R8 Writer 줄바꿈 동등성 검증
+
+2026-10-30 KST 제출된 `ASSET_R10_CMD_PREFLIGHT_RESULT(1).txt`는 `STATUS=STOP`, `ERROR_CODE=STOP_WRITER_BASELINE_SHA_MISMATCH`였다. 첫 실패는 **승인 Git 원본과 현재 Writer의 바이트 단위 비교**다. 다음 사실만 PC 증거로 확정한다.
+
+- `BEFORE_SHA`, `CONFIG_SOURCE`, `LAST_WRITER_SOURCE`가 모두 `a477ef304425145f559352af4291e437e3b08a2d`와 일치하고 `TRACKED_DIRTY=NO`, ledger `VERIFIED`였다.
+- `TASK_ROUTE=VERIFIED_R5_PINNED_RUNTIME_ROUTE`, Core/Korea 모두 `Ready`, 당시 다음 Core까지 254초 여유가 있었고 실제 Writer 관련 프로세스 판정은 `CLEAR`였다.
+- 최초 검사에서 `LOCK_STATUS=STOP_LOCK_PRESENT`였지만 이후 안전 검사에서는 잠금 검사를 통과해 소스 검증에 도달했다. 이것은 잠금의 삭제·유효성 영구 해제를 뜻하지 않는다.
+- `HOOK_STATUS=UNVERIFIED`, `AFTER_SHA=NOT_APPLIED`, 백업/설치/sidecar/D1/다음 주기 검증 모두 미실행이다.
+
+**원인 가설:** Windows의 `core.autocrlf` 등에 의해 worktree의 `run-local.mjs`가 CRLF, `git show HEAD:...`가 LF인 경우, Git은 clean으로 판단하나 R7 바이트 SHA가 달라진다. 실제 PC 파일의 줄바꿈 유형은 아직 확인되지 않았으므로 이를 확정 원인이라고 기록하지 않는다.
+
+**최소 보정:** 기존 R7을 보존하고 R8 패키지에서 해당 비교와 훅 삽입만 수정한다. 앞선 `git status --porcelain` clean과 HEAD/소스·실행 경로·예약·잠금·원장 검사를 모두 유지한다. Writer 현재 텍스트와 지정 Git 객체를 각각 엄격한 LF 텍스트로 정규화한 뒤 **내용 전체가 정확히 같을 때만** 통과한다. 단독 CR·LF/CRLF 혼합·내용·공백 차이는 `STOP`이며, 원본 checkout의 CRLF/LF 형식을 훅을 넣은 결과에도 보존한다. `publication-guard.mjs` 및 기존 의존 파일 해시 검증은 완화하지 않는다.
+
+- 새 ZIP: `ASSET_R10_AUTO_CMD_R8_20261030.zip`, SHA-256 `5a2be9965117e0131fd5d8e04d7540cc5ceb62e73bc170dfbf9eedecf3829216`.
+- manifest: `scripts/pc-writer/asset-r10-cmd-r8/package-manifest.json`, SHA-256 `8e737a42d02680785ca323f86a8e9be5eef7fc7b2adf3c31b1b0027f1953c230`.
+- 실행 코드: `scripts/pc-writer/asset-r10-cmd-r8/r10-ops.mjs`. 기존 PR #893 payload와 R7 예약 보호 조건을 재사용한다.
+- R8 테스트: 설치기 10건 + PR #893 sidecar 9건, 총 19건 PASS. ZIP CRC 검사 통과. Windows 실제 PREFLIGHT/INSTALL 결과는 아직 미확인이다.
+
+**현재 실행 지침:** 새 빈 폴더에 R8 ZIP 압축 해제 → `RUN_PREFLIGHT.cmd` **1회** → `ASSET_R10_CMD_PREFLIGHT_RESULT.txt` 제출. `STATUS=READY_FOR_INSTALL`라도 먼저 이 실 PC 결과에서 `WRITER_WORKTREE_EOL`, `WRITER_GIT_BLOB_EOL`, `WRITER_BASELINE_EQUIVALENCE`, 의존성·잠금 상태를 확인할 때까지 **INSTALL 실행 보류**. 중단 시 기존 R7 INSTALL이나 강제 소스 변경으로 우회하지 않는다. 새 테마·산식·예약·원장·DB·D1·Cloudflare는 변경하지 않는다.
