@@ -9,7 +9,7 @@ const urls={
  arabnews:'https://www.arabnews.com/middle-east/iran-war-discussions-3008699',
  anadolu:'https://www.aa.com.tr/en/middle-east/iran-saudi-war-talks/4100729',
 };
-const page=(date='2026-10-28T10:00:00Z',body='Iran war talks continue')=>
+const page=(date='2026-10-28T10:00:00Z',body='Iran war negotiations and diplomatic talks continue today in the region')=>
  '<!doctype html><html><head><meta property="og:title" content="Iran peace negotiations"/>'+
  '<meta property="article:published_time" content="'+date+'"/></head><body><article><p>'+body+
  '</p></article></body></html>';
@@ -26,8 +26,8 @@ test('R45 requires publisher date, article body and exact two-step keywords',()=
  for(const s of IRAN_NEWS_R45_SOURCES){
   assert.equal(inspectR45Article(s.id,urls[s.id],page(),{now}).status,'ARTICLE_METADATA_REVIEWED');
   assert.equal(inspectR45Article(s.id,urls[s.id],page('2026-10-01T10:00:00Z'),{now}).status,'OUTSIDE_14_DAY_WINDOW');
-  assert.equal(inspectR45Article(s.id,urls[s.id],page('2026-10-28T10:00:00Z','Iran trade expands').replace('Iran peace negotiations','Iran trade update'),{now}).status,'ARTICLE_OUT_OF_SCOPE');
-  assert.equal(inspectR45Article(s.id,urls[s.id],page('2026-10-28T10:00:00Z','Ukraine war expands'),{now}).status,'ARTICLE_METADATA_REVIEWED');
+  assert.equal(inspectR45Article(s.id,urls[s.id],page('2026-10-28T10:00:00Z','Iran trading volumes expand with higher exports and more commercial contracts').replace('Iran peace negotiations','Iran trade update'),{now}).status,'ARTICLE_OUT_OF_SCOPE');
+  assert.equal(inspectR45Article(s.id,urls[s.id],page('2026-10-28T10:00:00Z','Ukraine war expands with renewed military clashes and ceasefire negotiations'),{now}).status,'ARTICLE_METADATA_REVIEWED');
  }
 });
 test('R45 source errors are isolated and no mutations occur',async()=>{
