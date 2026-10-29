@@ -34,23 +34,25 @@ export function verifyR51ZeroLogR52(text){
   throw Error('R52_R51_ZERO_STATE_UNVERIFIED');
  return {previousD1Rows:41,expectedNew:8,storedNew:0};
 }
-export async function diagnoseR50ReadOnlyR52({remote,db,r46,r49,r50,r51,now=Date.now(),onPhase=()=>{}}={}){
+export async function diagnoseR50ReadOnlyR52({remote,db,r46,r49,r50,r51,now=Date.now(),onPhase=()=>{},
+ preflight=preflightIranNewsR47,r1Baseline={hash:R48_R1_HASH,storedAt:R48_R1_TIME}}={}){
  if(!remote||typeof remote.query!=='function'||typeof remote.adapter!=='function'||
   typeof db!=='string'||!db)throw Error('R52_CONNECTION_INVALID');
  onPhase('R50_R51_EVIDENCE');
  validateR50UncertainLogR51(r50);
  const recorded=verifyR51ZeroLogR52(r51);
  onPhase('R46_R49_EVIDENCE');
- const rows=parseIranNewsR46Evidence(r46,{now}).rows;
+ const probe=parseIranNewsR46Evidence(r46,{now});
+ const rows=probe.rows;
  const gate=parseR49ApprovalEvidenceR50(r49);
- if(rows.length!==8||gate.newRows!==8)throw Error('R52_EIGHT_ARTICLE_EVIDENCE_MISMATCH');
+ if(rows.length!==8||gate.newRows!==8||probe.checkedAt!==gate.evidenceCheckedAt)throw Error('R52_EIGHT_ARTICLE_EVIDENCE_MISMATCH');
  onPhase('R41_STAGING_INPUT');
  if(rows.some(row=>!validIranMetadataRowR41(row,{now})))
   throw Error('R52_STAGE_ROW_INVALID');
  const unique=new Set(rows.map(row=>row.articleId));
  if(unique.size!==8)throw Error('R52_STAGE_ROW_DUPLICATE');
  onPhase('R47_LIVE_PREFLIGHT');
- const r47=await preflightIranNewsR47({remote,db,evidence:r46,now});
+ const r47=await preflight({remote,db,evidence:r46,now});
  if(r47.status!=='PREFLIGHT_READY_FOR_APPROVED_PUBLISH'||
   r47.baselineOriginal39!==39||r47.newArticleIds!==8||r47.existingVerified!==0||
   r47.baselineOriginal39Sha256!==gate.originalHash)
@@ -65,7 +67,7 @@ export async function diagnoseR50ReadOnlyR52({remote,db,r46,r49,r50,r51,now=Date
  onPhase('R50_R1_BASELINE_QUERY');
  const r1=(await remote.query(db,R1_SQL,[R1_KEY]))?.results;
  if(!Array.isArray(r1)||r1.length!==1||typeof r1[0].body!=='string'||
-  sha(r1[0].body)!==R48_R1_HASH||Number(r1[0].stored_at)!==R48_R1_TIME)
+  sha(r1[0].body)!==r1Baseline.hash||Number(r1[0].stored_at)!==r1Baseline.storedAt)
   throw Error('R52_R1_BASELINE_CHANGED');
  onPhase('D1_ADAPTER_READBACK_COMPAT');
  const query='SELECT article_id,source_url,body_verified,keywords_verified,checked_at FROM '+
