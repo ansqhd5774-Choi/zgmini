@@ -125,3 +125,23 @@ PC에서 `E:\ZGmini\data\pc-writer\config.json`의 `source`, 마지막 실행 `l
 - 자체 무결성 검증, Node 구문, Linux에서의 안전한 `STOP_WINDOWS_ONLY`, ZIP 압축 무결성은 확인했다. Windows 실행 및 실제 경로 결론은 아직 검증되지 않았다.
 
 **R2도 설치·수집·D1 쓰기 기능은 전혀 없다.** `STATUS=READONLY_INVENTORY_COMPLETED`는 진단 성공일 뿐 설치 가능 판정이 아니다. 실행 경로 확인, 관련 프로세스 소강 및 잠금 해제, 원본 계약·해시 검증 전까지 R6 INSTALL을 실행하지 않는다.
+
+## 12. R2 실측 후속 — Korea 정적 참조와 Core 실제 게시 분기 구분
+
+2026-10-29 PC에서 제출한 `ASSET_R10_ROUTE_INVENTORY_RESULT.txt`는 `READONLY_INVENTORY_COMPLETED`, manifest `HASH_VERIFIED`였다. 예약 작업 전체 409개 중 관련 항목 22개를 조사했다.
+
+- 승인 checkout HEAD/config.source/last source 모두 `a477ef304425145f559352af4291e437e3b08a2d`이고 tracked dirty `NO`, R10 hook `NO`.
+- `ZGMINI-PC-Local-Core`: `run-local-core.vbs`, 약 5분 주기, 승인 Writer를 가리키는 완전한 리터럴 경로는 발견되지 않았지만 Writer 관련 문자열은 있다. 호출 구조는 **미확정**.
+- `ZGMINI-PC-Local-Korea`: `run-local-korea.vbs` → `scripts/pc-writer/local-cycle.mjs` → `run-local.mjs`라는 정적 참조가 확인된다. **그러나** 실제 `local-cycle.mjs` 코드에서 `progressivePublication({enabled: lane==='core' && publishAllowed, ...})`라 Korea 경로의 게시 함수는 호출되지 않는다. 따라서 이 정적 참조만으로 Korea 작업을 Writer 게시 경로라고 판단하지 않는다.
+- 이전 별도 `ZGMINI-PC-Writer` 예약 작업은 XML `<Enabled>false</Enabled>`로 비활성. 임의로 활성화하지 않는다.
+- `PROCESS_LINEAGE=UNAVAILABLE`(WMIC 없는 환경일 수 있음), `local-cycle.lock` 1개(수정 후 경과 3분). 프로세스 종료·잠금 삭제는 하지 않는다.
+
+이에 정확한 최소 확인용 읽기 전용 R3를 준비했다.
+
+- ZIP: `ASSET_R10_CORE_ROUTE_PROOF_R3_20261029.zip`, SHA-256 `b4cbda611770e2d720a6d3d3cba5e712b1cbc6ce9d8f4fe73abf73cb00f115a5`.
+- manifest: `scripts/pc-writer/asset-r10-core-route-proof-r3/package-manifest.json`, SHA-256 `474fb8bce15bc0f372d3201754a73bf4b4261a9ffea7b7663ee52ff32cf802f5`.
+- 사용자 실행: 압축 해제 → `RUN_R10_CORE_ROUTE_PROOF.cmd` 1회 → `ASSET_R10_CORE_ROUTE_PROOF_RESULT.txt` 반환.
+- 탐색 대상: R2에서 해시로 확인한 Core/Korea VBS 두 파일의 변경 여부, 안전한 구조적 키워드(실제 본문 출력 금지), `local-cycle.mjs` 게시 분기, 마지막 Writer 시각, `local-cycle.lock`의 PID·존재 확인. 파일/프로세스를 변경하지 않는다.
+- 코드/manifest/ZIP 정적 검사 및 Linux 비-Windows 차단은 수행; 실제 Windows 운용 결과는 아직 미검증. 구조상 문자열 탐지가 곧 실제 분기 실행 증거는 아니다.
+
+현재 `BEFORE_SHA=a477ef...`, `AFTER_SHA=NOT_APPLIED`, `HOOK_STATUS=ABSENT`, 설치 승인 `NO`는 유지한다. R3 결과를 대조해 실제 Core 게시 호출 관계를 확인하고, 기존 설치기 `Local-Core` 경로 판정의 정확한 개선 범위만 결정한다. 과잉 차단을 해제하려고 잠금·프로세스·스케줄러 보호를 우회하지 않는다.

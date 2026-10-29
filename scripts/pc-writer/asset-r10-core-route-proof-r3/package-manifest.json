@@ -1,0 +1,17 @@
+{
+  "version": "R10-CORE-ROUTE-PROOF-R3",
+  "kind": "read-only-local-core-vbs-and-lock-ownership-proof",
+  "repository": "ansqhd5774-Choi/zgmini",
+  "targetBranch": "codex/api-site-integration-r1-20261026",
+  "approvedWriterSha": "a477ef304425145f559352af4291e437e3b08a2d",
+  "r10MergedSourceSha": "8a7634a5358cb19280725fe29a977ba4feb44be8",
+  "entrypoint": "RUN_R10_CORE_ROUTE_PROOF.cmd",
+  "runtime": ["Windows cmd.exe", "Node.js >=18", "schtasks.exe", "git.exe"],
+  "writes": ["ASSET_R10_CORE_ROUTE_PROOF_RESULT.txt (package folder only)"],
+  "prohibited": ["Writer execution", "scheduled task changes", "lock removal", "D1 publication", "website deployment"],
+  "files": [
+    {"path": "RUN_R10_CORE_ROUTE_PROOF.cmd", "sha256": "93fd180889d6c1c20b29f1113d55994f311349bccdfd8f27de62625f722ef90a"},
+    {"path": "r10-core-route-proof.mjs", "sha256": "0941c12c2b5f163ebf0dbfe2254eccefef36e84457001084c854fe89bbb0d042"},
+    {"path": "README_KO.txt", "sha256": "62c0dc5637e4281f4f18216e9b9d3bc7a77d59046108af8bb4810fbd299f594b"}
+  ]
+}
