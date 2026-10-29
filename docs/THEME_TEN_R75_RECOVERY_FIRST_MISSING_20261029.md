@@ -127,3 +127,14 @@ R75는 기존 R48을 **한 번** 호출하며 R48 종료 0을 점수/운영 갱�
 - 같은 실행에서 기존 R54 종료 코드 `1`, 새 실제 로그 `E:\\ZGmini\\data\\pc-writer\\theme-nine-r54\\logs\\THEME_NINE_R54_CYCLE_31692_31956.txt` (`newLogVerified=true`). 해당 로그의 내부 상태는 `STOP_R54_PUBLIC_CONNECTION`, 상세 error는 **R80 요약에 포함되지 않아 아직 불명**. `dbStatus`/D1 write 결과도 미확정이므로 코드 게이트 실패 여부·D1 CAS 실패 여부를 추정으로 확정하지 않는다.
 - 공개 after READY·10개·확정 10/27·revision null, 바이오 이력 10/27 및 우주/데이터센터 이력 각 10/23으로 실행 전과 동일. `status=STOP_OR_PENDING_REVIEW_EXISTING_R54_AND_PUBLIC_READBACK`; 운영 복구 및 다음 정규 실행 완료로 선언 금지.
 - **다음 최소 조치**: R54 재실행·R80 재설치 금지. 위 기존 `THEME_NINE_R54_CYCLE_31692_31956.txt` 원본을 1개 확보해 내부 `error` 코드를 확인한 뒤 해당 최초 STOP 조건만 검증/수정한다. 데이터·권리·확정값·정상 7개 및 기존 예약 설정 보존.
+
+
+## R81 — R80 실PC 최초 FAIL 인증 출처 및 기존 7개 승인 경로 재사용 (2026-10-30 KST)
+
+- 실제 R80 세부 로그 `THEME_NINE_R54_CYCLE_31692_31956.txt`: `STOP_R54_PUBLIC_CONNECTION`, `PC_WRANGLER_REAUTH_REQUIRED`, `stage=NO_NEW_D1_WRITE_UNLESS_OUTCOME_UNKNOWN`. R54는 R80 D1 CAS 코드를 실행하기 **전** 인증 출처에서 중단. R80 D1 수정 설치는 성공했으나 D1 재게시·공개 R37 갱신은 확인되지 않았다.
+- 이전 정상 바이오 R8 인증 파일 `theme-biotech-seven-auth-r8.mjs` SHA `9b1f952f720abe0d6e631ad8fac908cfd51b00575690e9abea8cd09f1a6a4bd3`는 기존 승인된 원래 7개 테마 `r179-publish-core.mjs` SHA `f9ea0a1bfaf52909b7a434b65ba93887f56660bc979a3cb7e0992597bc9f3b68`의 운영 소스 선택기와 `d1.credential`을 이용한다. 새 키·권한·로그인·7테마 게시기 실행 없이 이 **기존 경로를 인증 함수로만** 재사용한다.
+- 기존 `theme-nine-r54-public-connect.mjs`의 구형 R7 Wrangler 인증 조회 대신, `approvedNineR54SevenToken` 비동기 함수를 추가하여 승인 R8 인증 파일의 실제 경로·비심볼릭·SHA를 검증 후 토큰을 **메모리에서만** 기존 동기 D1 query 콜백으로 전달한다. 권리·원본 SHA·공개 Reader 배포·D1 CAS/readback/날짜 게이트는 그대로다. 이전 소스 SHA `195332100e32473c59c4820d8961de2dd7cac978b7f87b782cfa968c737f6b77` → R81 `e65bb10399acc5dc017f5241624a2fa29c82c34b42f4424dbfb3cf04a9c0e55b`, 원래 작업 브랜치 커밋 `95824d67282505152d8f9c1e95e90b6f5fd5cd4d`.
+- 사용자 실행용 `THEME_TEN_R81_R54_APPROVED_SEVEN_AUTH_ONCE_20261030.zip` SHA-256 `1ac01fe18682c29af7cfffa0fc7096f00d879fc2d7bf791beacdeb5c1123fdd2`. 포함: R54 수정 파일, 현재 설치된 R80 D1 게시기 파일(검증용), 기존 R80 도우미, R81 일회성 도우미, CMD, README. 기존 R80 D1 게시기 **재설치 없음**.
+- 보호 조건: 한국시간 10:55~14:35 실행 금지, 공개 10테마 READY·R48 개인 후보 일치·기존 R54 동의 및 잠금·기존 승인 R51/R37/R80/R54 실행 SHA·R8·원래 7개 core SHA 확인. 인증 자체를 먼저 **읽기 중심으로** 확인하고 실패하면 R54 파일조차 수정하지 않는다. 통과하면 기존 R54 1개만 `.R81_BACKUP` 후 교체, 승인 R54 **1회** 게시, D1/공개 읽기 확인한다. 인증 정보는 출력·저장·전송하지 않는다.
+- 관련 테스트 6개 PASS: `tests/theme-nine-r81-approved-seven-auth.test.mjs`, `scripts/pc-writer/theme-ten-r81-seven-auth-once.test.mjs`, R54/R48 D1/R51/R37 관련 테스트. 원래 작업 브랜치에 소스·테스트·CMD·절차 등록.
+- **검증 상태: R81 ZIP 준비·테스트·브랜치 등록까지. Windows PC 설치 / 승인 R54 실행 / D1 새 write / 공개 API R37 revision / 실제 UI / 다음 정규 예약 모두 아직 미검증.** 실제 결과 `THEME_TEN_R81_AUTH_RESULT_*.txt` 한 개로 후속 판정한다. 신규 테마·ETF·산식·기존 정상 7개·예약 작업·원본 임의보정 0. 우주·위성/데이터센터·전력 전용 10/27·28 수집 누락은 별도 미완료.
