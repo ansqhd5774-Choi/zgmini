@@ -90,3 +90,35 @@ test('React panel fetches separate public stored history only for R10 and identi
  assert.match(panel,/fullYearFactors===5&&partialHistoryFactors===1/);
  assert.doesNotMatch(panel,/미니차트\(1Y\)/);
 });
+
+test('2026-10-29 scored daily release joins validated Oct 28 raw/history with identical content digest',()=>{
+ const {history,scored,raw}=build();
+ const live={...scored,
+  sourceVersion:scored.sourceVersion.replace('2026-10-28','2026-10-29'),
+  sourceStoredAt:1793254203126,asOfDate:'2026-10-29'};
+ const joinedRaw=mergeAssetR10RawForUi(live,raw);
+ assert.notEqual(joinedRaw,live);
+ assert.equal(joinedRaw.indicators[0].trend.length,2);
+ const joinedHistory=mergeAssetR10HistoryForUi(joinedRaw,history);
+ assert.deepEqual(joinedHistory.indicators.map(x=>x.trend.length),[5,5,5,5,3,5]);
+ assert.equal(joinedHistory.score,live.score);
+ assert.deepEqual(joinedHistory.indicators.map(x=>x.score),live.indicators.map(x=>x.score));
+ assert.equal(joinedHistory.indicators[4].trend[0].date,'2025-12-31');
+ assert.equal(history.sourceStoredAt,1793203206694); // historical provenance preserved
+});
+test('same-content date exception never accepts a new macro digest or changed factor score',()=>{
+ const {history,scored,raw}=build();
+ const live={...scored,sourceVersion:scored.sourceVersion.replace('2026-10-28','2026-10-29'),
+  sourceStoredAt:1793254203126,asOfDate:'2026-10-29'};
+ const wrongDigest={...live,sourceVersion:'macro:2026-10-29:'+('b'.repeat(64))};
+ assert.equal(mergeAssetR10RawForUi(wrongDigest,raw),wrongDigest);
+ const wrongScore={...live,indicators:live.indicators.map((r,i)=>i===3?{...r,score:r.score+1}:r)};
+ assert.equal(mergeAssetR10RawForUi(wrongScore,raw),wrongScore);
+ const good=mergeAssetR10RawForUi(live,raw);
+ const wrongHistory=clone(history);wrongHistory.factors[1].points[0].value=4000;
+ // A valid but data-altered history must not overwrite current verified values:
+ // last-two parity still holds, so reject only source revisions; older points
+ // require explicit current-vintage audit when fingerprint changes.
+ wrongHistory.sourceVersion='macro:2026-10-28:'+('c'.repeat(64));
+ assert.equal(mergeAssetR10HistoryForUi(good,wrongHistory),good);
+});
