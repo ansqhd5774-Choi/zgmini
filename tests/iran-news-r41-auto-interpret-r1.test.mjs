@@ -204,6 +204,41 @@ test('repeat-token HTTP 500 retries with anti-loop settings then JSON fallback',
  assert.ok(payloads.every(payload=>payload.model==='gemma3:4b'));
 });
 
+test('HTTP 200 with malformed evidence quote retries with a fixed corrective hint',async()=>{
+ const payloads=[];
+ const result=await generateR41ModelAnalysis({originalTitle:item.title,articleBody},
+  {fetcher:async(_,options)=>{
+   const payload=JSON.parse(options.body);
+   payloads.push(payload);
+   return {ok:true,json:async()=>({response:JSON.stringify(payloads.length===1?
+    {...proposal,supportingQuotes:['a fabricated quote not in source']}:
+    proposal)})};
+  }});
+ assert.equal(result.impact,'neutral');
+ assert.equal(payloads.length,2);
+ assert.equal(payloads[0].prompt.includes('CORRECTION REQUIRED'),false);
+ assert.match(payloads[1].prompt,/CORRECTION REQUIRED: Copy each supportingQuotes/);
+ assert.ok(!payloads[1].prompt.includes('a fabricated quote not in source'));
+});
+
+test('invalid JSON can recover on a bounded retry but no evidence gate is bypassed',async()=>{
+ let calls=0;
+ const result=await generateR41ModelAnalysis({originalTitle:item.title,articleBody},
+  {fetcher:async()=>({ok:true,json:async()=>({response:++calls===1?'{':
+   JSON.stringify(proposal)})})});
+ assert.equal(result.impact,'neutral');
+ assert.equal(calls,2);
+});
+
+test('three HTTP 200 model outputs with fabricated quotes are all rejected',async()=>{
+ let calls=0;
+ await assert.rejects(generateR41ModelAnalysis({originalTitle:item.title,articleBody},
+  {fetcher:async()=>{calls++;return {ok:true,json:async()=>({response:JSON.stringify({
+   ...proposal,supportingQuotes:['fabricated proof never present in source'],
+  })})};}}),/NEWS_R41_ANALYSIS_MODEL_OUTPUT_INVALID/);
+ assert.equal(calls,3);
+});
+
 test('unrelated HTTP 500 never triggers retry or leaks the raw response',async()=>{
  let calls=0;
  await assert.rejects(generateR41ModelAnalysis({originalTitle:item.title,articleBody},
