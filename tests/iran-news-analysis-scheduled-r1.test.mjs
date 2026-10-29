@@ -61,3 +61,36 @@ test('failed analysis never runs D1 preflight or publisher',()=>{
   assert.equal(calls,1);
  }finally{fs.rmSync(directory,{recursive:true,force:true});}
 });
+
+test('remote-newer D1 preservation is not falsely reported as a successful publish',()=>{
+ const directory=fs.mkdtempSync(path.join(os.tmpdir(),'zg-iran-news-r1-'));
+ try{
+  let count=0;
+  const result=runScheduledIranNewsAnalysisR1({dataDirectory:directory,now:123456,
+   run:()=>{
+    count++;
+    const payload=count===1?{status:'PARTIAL',ready:1,pending:39}:
+     count===2?{status:'DRY_RUN_VALIDATED',itemCount:1,pendingCount:39}:
+     {status:'REMOTE_NEWER_PRESERVED',publishedAt:1793280000000};
+    return {status:0,stdout:JSON.stringify(payload)+'\n'};
+   }});
+  assert.equal(count,3);
+  assert.equal(result.status,'REMOTE_NEWER_PRESERVED');
+  assert.notEqual(result.status,'PUBLISHED_READBACK_VERIFIED');
+  assert.equal(result.steps.at(-1).status,'REMOTE_NEWER_PRESERVED');
+ }finally{fs.rmSync(directory,{recursive:true,force:true});}
+});
+
+test('unchanged published payload is distinct from a new D1 publication',()=>{
+ const directory=fs.mkdtempSync(path.join(os.tmpdir(),'zg-iran-news-r1-'));
+ try{
+  let count=0;
+  const result=runScheduledIranNewsAnalysisR1({dataDirectory:directory,now:123456,
+   run:()=>{
+    count++;
+    return {status:0,stdout:JSON.stringify({status:count===1?'PARTIAL':
+     count===2?'DRY_RUN_VALIDATED':'UNCHANGED'})+'\n'};
+   }});
+  assert.equal(result.status,'ALREADY_PUBLISHED_VERIFIED');
+ }finally{fs.rmSync(directory,{recursive:true,force:true});}
+});
