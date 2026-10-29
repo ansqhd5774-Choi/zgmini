@@ -12,6 +12,6 @@ test('R37 retains all other source collection logic and public event schema',()=
  assert.match(next,/key\+':census:diagnostic:'\+year/);
  assert.match(next,/REQUEST_TIMEOUT_OR_ABORT/);
  assert.match(next,/YEAR_EVENTS_EMPTY_OR_WRONG_YEAR/);
- assert.match(next,/status:'SOURCE_FAILED'/);
+ assert.match(next,/saveCensusPrivateDiagnostic\(store,key,year,now,'SOURCE_FAILED',attempts\)/);
  assert.doesNotMatch(next.slice(d),/censusDiagnostics/);
 });
