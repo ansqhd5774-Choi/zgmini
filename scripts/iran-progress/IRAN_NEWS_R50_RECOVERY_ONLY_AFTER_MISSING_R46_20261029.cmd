@@ -16,13 +16,7 @@ if exist "%LOG%" (
 >>"%LOG%" echo PINNED_SOURCE=%PIN%
 >>"%LOG%" echo R50_ONLY_R41_ARTICLE_METADATA_TABLE=YES
 >>"%LOG%" echo NO_R1_NO_SCHEDULER_NO_SCORE_NO_DEPLOY=YES
-if not exist "%R46%" goto :prior_missing
->>"%LOG%" echo FINAL_STATUS=PRIOR_R50_PREWRITE_LOG_MISSING
-goto :failed
-:prior_not_safe
->>"%LOG%" echo FINAL_STATUS=PRIOR_R50_LOG_UNEXPECTED_STOP_NO_RETRY
-goto :failed
-:r46_missing
+if not exist "%R46%" goto :r46_missing
 if not exist "%R49%" goto :r49_missing
 if not exist "%NODE%" goto :node_missing
 if not exist "%PRIOR%" goto :prior_missing
@@ -71,6 +65,12 @@ if not "%R50_RC%"=="0" goto :publish_review
 echo R50 D1 insert and readback verified. Upload result TXT.
 pause
 exit /b 0
+:prior_missing
+>>"%LOG%" echo FINAL_STATUS=PRIOR_R50_PREWRITE_LOG_MISSING
+goto :failed
+:prior_not_safe
+>>"%LOG%" echo FINAL_STATUS=PRIOR_R50_LOG_UNEXPECTED_STOP_NO_RETRY
+goto :failed
 :r46_missing
 >>"%LOG%" echo FINAL_STATUS=R46_LOG_MISSING
 goto :failed
