@@ -6,9 +6,24 @@ import {fileURLToPath} from 'node:url';
 import {execFileSync} from 'node:child_process';
 import {digest,ensure,safeDirectory} from './theme-config-registry.mjs';
 const repo=fileURLToPath(new URL('../../',import.meta.url));
-export function installConfiguredTool({dataRoot,sourceSha,registerTask=false}={}){
+export function configuredScheduledCommand({dataRoot,home,version}){
+ const runner=path.join(home,'versions',version,'scripts','pc-writer','theme-config-tool.mjs');
+ return ['@echo off','setlocal EnableExtensions DisableDelayedExpansion',
+  `set "ZGMINI_DATA_ROOT=${fs.realpathSync(dataRoot)}"`,
+  `"E:\\ZGmini\\runtime\\node.exe" "${runner}" --scheduled >>"${path.join(home,'SCHEDULE_HISTORY.log')}" 2>&1`,
+  'set "RESULT=%ERRORLEVEL%"','exit /b %RESULT%',''].join('\r\n');
+}
+export function installConfiguredTool({dataRoot,sourceSha,registerTask=false,stageOnly=false}={}){
+ ensure(!stageOnly||!registerTask,'CONFIG_STAGE_CANNOT_REGISTER_TASK');
  ensure(/^[a-f0-9]{40}$/.test(sourceSha??''),'CONFIG_INSTALL_SOURCE_SHA');
- const files=['theme-config-registry.mjs','theme-config-score.mjs','theme-config-tool.mjs','theme-optional-collect.mjs','theme-optional-adaptive-r2.mjs','theme-optional-pair-weight-r3.mjs','theme-space-satellite-adaptive-r2.mjs','theme-shared-spy-readonly-r1.mjs','theme-optional-score-r188.mjs'].map(n=>'scripts/pc-writer/'+n);
+ const files=['theme-config-registry.mjs','theme-config-score.mjs','theme-config-tool.mjs',
+  'theme-optional-collect.mjs','theme-optional-adaptive-r2.mjs',
+  'theme-optional-pair-weight-r3.mjs','theme-space-satellite-adaptive-r2.mjs',
+  'theme-shared-spy-readonly-r1.mjs','theme-optional-score-r188.mjs',
+  'theme-config-publication-preflight.mjs','theme-config-publication-d1.mjs',
+  'theme-config-auto-publish.mjs','theme-nine-r54-d1-client.mjs',
+  'theme-biotech-auth-r7.mjs'].map(n=>'scripts/pc-writer/'+n);
+ files.push('worker/public-display-freshness.mjs');
  files.push('config/theme-data-registry.json','examples/theme-registration.template.json','docs/THEME_CONFIG_TOOL.md');
  const manifest=Object.fromEntries(files.map(f=>[f,digest(fs.readFileSync(path.join(repo,f)))]));
  const version=digest(JSON.stringify(manifest)).slice(0,16),home=safeDirectory(dataRoot,'pc-writer/theme-config-tool',{create:true});
@@ -19,10 +34,12 @@ export function installConfiguredTool({dataRoot,sourceSha,registerTask=false}={}
   else fs.writeFileSync(dest,bytes,{flag:'wx'});
   ensure(digest(fs.readFileSync(dest))===manifest[f],'CONFIG_INSTALL_READBACK');
  }
+ if(stageOnly)return {status:'CONFIG_BUNDLE_STAGED_NO_LAUNCHER_CHANGE',
+  sourceSha,version,home,manifest,launcherWrites:0,taskWrites:0,d1Writes:0};
  const runner=path.join(versionDir,'scripts','pc-writer','theme-config-tool.mjs');
  const command=(mode,argument)=>['@echo off','setlocal EnableExtensions DisableDelayedExpansion',`set "ZGMINI_DATA_ROOT=${fs.realpathSync(dataRoot)}"`,`"E:\\ZGmini\\runtime\\node.exe" "${runner}" ${mode}${argument?' "%~1"':''}${mode==='--scheduled'?' >>"'+path.join(home,'SCHEDULE_HISTORY.log')+'" 2>&1':''}`,'set "RESULT=%ERRORLEVEL%"',...(mode==='--scheduled'?[]:['pause']),'exit /b %RESULT%',''].join('\r\n');
  const vbs=['Option Explicit','Dim shell','Set shell = CreateObject("WScript.Shell")','WScript.Quit shell.Run("""'+path.join(home,'THEME_SCHEDULED.cmd').replaceAll('"','""')+'""", 0, True)',''].join('\r\n');
- const launchers={'THEME_REGISTER.cmd':command('--import',true),'THEME_UPDATE.cmd':command('--interactive-cycle',false),'THEME_LIST.cmd':command('--list',false),'THEME_SCHEDULED.cmd':command('--scheduled',false),'THEME_SCHEDULED.vbs':vbs};
+ const launchers={'THEME_REGISTER.cmd':command('--import',true),'THEME_UPDATE.cmd':command('--interactive-cycle',false),'THEME_LIST.cmd':command('--list',false),'THEME_SCHEDULED.cmd':configuredScheduledCommand({dataRoot,home,version}),'THEME_SCHEDULED.vbs':vbs};
  for(const [name,body] of Object.entries(launchers)){
   const dest=path.join(home,name);
   if(fs.existsSync(dest))ensure(fs.readFileSync(dest,'utf8')===body,'CONFIG_LAUNCHER_EXISTS_DIFFERENT');
