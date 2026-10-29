@@ -123,3 +123,24 @@ GetMarketHistory 공식 Coverage는 미국 주식·ETF 데이터가 **최소 48�
 - 결과 업로드: CMD와 같은 폴더에 생성되는 `THEME_NINE_R71_PRIVATE_RECOVERY_*.txt` **하나만** 업로드. 11:30/13:30에 의해 발생하는 별도 예약 로그와 혼동 금지.
 
 **다음 게이트:** R71이 로컬 필수 파일 누락이면 정확한 파일 재설치 절차를 수립한다. R71 실행이 10/27 원시 63 ETF 및 R32 후보를 완성하면 R54 날짜 정렬·D1 CAS·실제 API 공개까지 연결한다. R71이 여전히 `WAIT_WINDOW_ALREADY_CHECKED`이면 소스 지연과 수집 날짜 창을 구분하여 기존 코드를 국소적으로 수정하고 테스트한 후 승인된 PC bundle 경로로 배포한다. 단순히 새 점수를 강제해 확정하지 않는다.
+
+## G. R71 실PC 신규 오류 및 R72 복구 — 2026-10-29
+
+사용자가 제출한 `THEME_NINE_R71_PRIVATE_RECOVERY_30476_2429.txt`에서는 기존 R48 실행이 실제로 시작된 것이 확인됐다. 필수 로컬 파일 네 개는 전부 존재했고 새 R47/R48 로그가 작성됐지만, **GET 37회, 원시 35파일 저장 후 `STOP_HTTP_502`**로 끝났다. `existingPrivateCommandExit=3`, D1·공개 변경은 0. 따라서 '11:44 로그 누락'만이 문제가 아니며 현재 가장 직접적인 차단 원인은 **일시적 502 이후 수집 체크포인트 실패 표식이 영구 차단으로 남는 것**이다.
+
+소스 근거:
+
+- `scripts/pc-writer/theme-nine-r35-delta-collect.mjs`: GET 응답 오류 시 `state.failedAt`/`state.failure='STOP_HTTP_502'`를 기록하고 종료한다. 기존 raw manifest·파일·각 종목 완료 상태는 보존한다.
+- `scripts/pc-writer/theme-nine-r47-recurring-private-refresh.mjs`: 체크포인트 하나라도 `failure`가 있으면 `PRIOR_PROVIDER_FAILURE_REVIEW_REQUIRED`로 안전 정지한다. 기존 CMD를 계속 다시 실행해도 502 실패가 자동 해제되지 않는다.
+- 공급자 공식 신뢰성 정책은 주식 세션 자료 최소 48시간 지연을 안내하나, HTTP 502는 시간차와 별도로 처리해야 하는 서버 응답 오류다. https://getmarkethistory.com/docs/reliability/
+
+**R72 1회 복구 CMD** (자동 상시 변경이 아닌, 정확한 PC 상태를 확인한 뒤 수동 동의):
+
+1. `scripts/pc-writer/THEME_NINE_R72_RESUME_HTTP502_ONCE.cmd`를 실행한다. 같은 폴더에 `theme-nine-r72-transient-checkpoint-recover.mjs`, R71/R70/R69 `.mjs` 모듈이 필요하다.
+2. R72가 `E:\ZGmini\data\themes\legacy-nine-r35-delta`의 매니페스트와 **모든 1h 원본 파일 SHA**, 64 종목 checkpoint 참조, 실패 checkpoint **정확히 1건, 실패 코드 `STOP_HTTP_502`**, `delta.lock` 부재를 읽기 전용으로 검증한다. 오작동·기타 실패 코드는 수정을 거부한다.
+3. 실패 발생 후 15분 이상 지나고 예약 작업 충돌 시간이 아닐 때 사용자가 `RESUME`을 입력한다.
+4. 해당 실패 checkpoint **하나만** `.r72-backup-<시각>.bak`로 백업하고 SHA를 검증한 뒤 `failedAt`/`failure` 두 표식만 제거하여 원본 checksum·종목 완료 상태·커서·매니페스트를 그대로 보존한다. 백업 확장자는 **`.bak`**로 고정하여 R47의 `delta-*.json` 실제 checkpoint 목록에 끼지 않는다.
+5. 그 후 **기존 R48 수집 1회**를 재실행하여 35개 저장 원본을 활용하고 아직 누락된 종목부터 계속 진행한다. 다시 502가 나오면 결과를 보고 추가 복구를 무한 반복하지 않는다. D1/public/schedule 작업은 전혀 변경하지 않는다.
+6. 안전 결과 로그 `THEME_NINE_R72_RECOVER_*.txt`를 업로드한다. 실제 63개 ETF와 10/27 검증이 완성되면 R54 후속 게시 게이트로 진행한다.
+
+이 복구는 **이번에 확인된 특정 502에만 적용**되며, 매일 발생할 수 있는 429/502/503의 안정적인 지수형 재시도와 자동화 일정 복구를 완료했다는 의미가 아니다. R72 결과에 따라 기존 R47/R35 코드에 제한된 자동 재시도·적절한 실패 상태 처리를 구현하고 실제 PC 설치 번들의 해시/배포 경로까지 검증해야 최종 자동 운영 PASS가 된다.
