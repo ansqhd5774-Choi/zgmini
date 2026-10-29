@@ -1,4 +1,5 @@
 // Presentation-only join of the scored R10 response and validated raw sidecar.
+import {sameR10StoredSourceOrContent} from './asset-r10-source-vintage-r2.mjs';
 // No score change, score rounding, date extrapolation, or invented observations.
 const IDS=Object.freeze(['valuationPressure','priceAcceleration','riskAssetShare',
  'speculativeFlows','breadthDivergence','excessLiquidity']);
@@ -26,9 +27,7 @@ export function mergeAssetR10RawForUi(scored,raw){
   ||scored.historyMode!=='CURRENT_VINTAGE_ONLY'
   ||scored.rightsStatus!=='USER_ACCEPTED_UNVERIFIED'
   ||raw.rightsStatus!==scored.rightsStatus
-  ||scored.sourceVersion!==raw.sourceVersion
-  ||scored.sourceStoredAt!==raw.sourceStoredAt
-  ||scored.asOfDate!==raw.asOfDate
+  ||!sameR10StoredSourceOrContent(scored,raw)
   ||scored.scoreObservationQuarter!==raw.scoreObservationQuarter
   ||!near(scored.score,raw.diagnosticScore)
   ||!Array.isArray(scored.indicators)||scored.indicators.length!==6
