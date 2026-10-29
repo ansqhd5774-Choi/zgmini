@@ -3,6 +3,7 @@
 import {useEffect,useMemo,useRef,useState} from 'react';
 import {ChevronLeft,ChevronRight,Search,Star} from 'lucide-react';
 import {releaseImportance,rowsForSelectedDay} from '../../lib/market-calendar-importance.mjs';
+import {collapseCrossSourceTradeDuplicates} from '../../lib/market-calendar-cross-source-dedupe.mjs';
 import {toggleStarImportance} from '../../lib/market-calendar-importance-toggle.mjs';
 import {cftcCotReleaseAt} from '../../lib/market-calendar-cftc-time.mjs';
 import {ticReleaseAt} from '../../lib/market-calendar-tic-time.mjs';
@@ -97,7 +98,7 @@ function mergeOfficial(feed:CalendarFeed|null):CalendarRow[]{
  if(!feed?.events?.length)return manual;
  const fromFeed:CalendarRow[]=[];
  const seen=new Set<string>();
- for(const item of feed.events){
+ for(const item of collapseCrossSourceTradeDuplicates(feed.events)){
   const fedCalendarEvent=item.source==='fed_calendar'&&item.id.startsWith('fed-calendar-');
   const eiaEvent=item.source==='eia'&&['eia-wpsr','eia-wngsr','eia-steo'].includes(item.id);
   const usdaEvent=item.source==='usda'&&item.id==='usda-wasde';
