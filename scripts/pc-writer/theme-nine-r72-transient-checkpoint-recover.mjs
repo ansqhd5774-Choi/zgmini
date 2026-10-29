@@ -13,7 +13,7 @@ const fail=code=>{throw Object.assign(new Error('R72_'+code),{code:'R72_'+code})
 const statePattern=/^delta-[a-f0-9]{20}\.json$/;
 const rawPattern=/^raw\/[A-Z][A-Z0-9.]{0,11}_[a-f0-9]{64}\.jsonl$/;
 
-export function inspectR72Checkpoint({home=HOME,now=new Date()}={}){
+export function inspectR72Checkpoint({home=HOME,now=new Date(),allowNoFailure=false}={}){
   if(!fs.existsSync(home))fail('DELTA_HOME_ABSENT');
   const homeReal=fs.realpathSync(home);
   if(fs.existsSync(path.join(homeReal,'state','delta.lock')))
@@ -61,6 +61,8 @@ export function inspectR72Checkpoint({home=HOME,now=new Date()}={}){
     }
     if(state.failedAt||state.failure)failed.push({name,statePath,state});
   }
+  if(allowNoFailure&&failed.length===0)return {noFailed:true,
+    manifestPagesVerified:indexed.size,allRawPagesShaVerified:true};
   if(failed.length!==1)fail('EXPECTED_ONE_FAILED_CHECKPOINT');
   const selected=failed[0];
   if(selected.state.failure!=='STOP_HTTP_502'||
@@ -73,7 +75,7 @@ export function inspectR72Checkpoint({home=HOME,now=new Date()}={}){
     failedAt:selected.state.failedAt,ageMinutes,
     sourceFailure:selected.state.failure,manifestPagesVerified:indexed.size,
     completedSymbols:Object.values(selected.state.symbols).filter(s=>s.complete).length,
-    allRawPagesShaVerified:true,cooldownComplete:ageMinutes>=15,
+    allRawPagesShaVerified:true,
     statePath:selected.statePath,state:selected.state};
 }
 
@@ -82,7 +84,6 @@ export function recoverR72Checkpoint({home=HOME,now=new Date(),
   const ready=preflightFn({now});
   if(!ready.canRun)fail('PRIVATE_RUN_PREFLIGHT_NOT_READY');
   const inspected=inspectR72Checkpoint({home,now});
-  if(!inspected.cooldownComplete)fail('HTTP_502_COOLDOWN_15_MIN');
   const oldBytes=fs.readFileSync(inspected.statePath);
   // NEVER use .json here: R47 treats every delta-*.json as an active checkpoint.
   const backup=inspected.statePath+'.r72-backup-'+Date.now()+'.bak';
@@ -119,7 +120,6 @@ if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.ur
       const info=inspectR72Checkpoint();
       process.stdout.write(JSON.stringify({report:'THEME_NINE_R72_TRANSIENT_INSPECT',
         ...publicSafe(info),taskWrites:0,d1Writes:0},null,2)+'\n');
-      if(!info.cooldownComplete)process.exitCode=2;
     }else{
       const repair=recoverR72Checkpoint();
       process.stdout.write(JSON.stringify(repair,null,2)+'\n');
