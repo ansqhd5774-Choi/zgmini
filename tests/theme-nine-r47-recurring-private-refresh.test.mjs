@@ -75,7 +75,7 @@ test('R47 complete first 64-symbol window; repeat on same NY date performs no GE
   assert.equal(result.status,'R35_DELTA_PRIVATE_COLLECTION_COMPLETE');
   assert.equal(result.providerCalls,64);
   const repeat=await runNineR47Recurring({...f,now:f.firstTime,sleep:async()=>{}});
-  assert.equal(repeat.status,'WAIT_WINDOW_ALREADY_CHECKED');
+  assert.equal(repeat.status,'WAIT_SOURCE_PROBE_COOLDOWN');
   assert.equal(f.getCalls().length,64);
   assert.equal(sha(fs.readFileSync(f.manifestFile)),f.before);
 });
@@ -103,7 +103,7 @@ test('R47 never opens same NY day while the regular session is still trading',as
   const beforeClose=new Date('2026-10-28T19:30:00Z');
   const plan=planNineR47Recurring({...f,now:beforeClose});
   assert.equal(plan.cutoffNYDay,'2026-10-27');
-  assert.equal(plan.status,'WAIT_WINDOW_ALREADY_CHECKED');
+  assert.equal(plan.status,'WAIT_SOURCE_PROBE_COOLDOWN');
   assert.equal(plan.window,null);
   assert.equal(f.getCalls().length,64);
 });
@@ -160,3 +160,131 @@ test('R47 existing chain with tampered bytes fails before any provider calls',as
     {code:'THEME_NINE_R47_DELTA_PAGE_SHA'});
   assert.equal(f.getCalls().length,64);
 });
+
+function setFixtureCollectedAt(f,when){
+  const file=path.join(f.deltaHome,'raw-manifest.json');
+  const manifest=JSON.parse(fs.readFileSync(file));
+  for(const entry of manifest.files)entry.collectedAt=when.toISOString();
+  fs.writeFileSync(file,JSON.stringify(manifest));
+}
+
+test('R47 late source: cooldown, SPY recheck, same-end repair, no duplicate',async t=>{
+  const f=fixture(t);
+  const initial=new Date('2026-10-28T00:00:00Z');
+  const first=await runNineR47Recurring({...f,now:initial,sleep:async()=>{}});
+  assert.equal(first.status,'R35_DELTA_PRIVATE_COLLECTION_COMPLETE');
+  assert.equal(first.providerCalls,64);
+  setFixtureCollectedAt(f,initial);
+  const originalManifest=JSON.parse(fs.readFileSync(path.join(f.deltaHome,'raw-manifest.json')));
+  const originalStates=fs.readdirSync(path.join(f.deltaHome,'state')).filter(s=>s.endsWith('.json'));
+  assert.equal(originalStates.length,1);
+  assert.equal(planNineR47Recurring({...f,now:new Date('2026-10-28T01:00:00Z')}).status,
+    'WAIT_SOURCE_PROBE_COOLDOWN');
+  let available=false,lateCalls=[];
+  const lateFetch=async url=>{
+    const symbol=url.pathname.split('/').at(-2);
+    lateCalls.push(symbol);
+    const days=available?['2026-10-26','2026-10-27']:['2026-10-26'];
+    return new Response(days.map(day=>bar(symbol,day+'T19:00:00Z')).join('\n')+'\n');
+  };
+  const pending=await runNineR47Recurring({...f,
+    now:new Date('2026-10-28T07:00:00Z'),fetchImpl:lateFetch,sleep:async()=>{}});
+  assert.equal(pending.status,'WAIT_SOURCE_NO_NEW_VERIFIED_SPY_SESSION');
+  assert.equal(pending.providerCalls,1);
+  assert.equal(lateCalls.length,1);
+  assert.deepEqual(fs.readdirSync(path.join(f.deltaHome,'state')).filter(s=>s.endsWith('.json')),
+    originalStates); // no successful checkpoint written for pending data
+  const waiting=await runNineR47Recurring({...f,
+    now:new Date('2026-10-28T08:00:00Z'),fetchImpl:lateFetch,sleep:async()=>{}});
+  assert.equal(waiting.status,'WAIT_SOURCE_PROBE_COOLDOWN');
+  assert.equal(lateCalls.length,1);
+  available=true;
+  const recovered=await runNineR47Recurring({...f,
+    now:new Date('2026-10-28T14:00:00Z'),fetchImpl:lateFetch,sleep:async()=>{}});
+  assert.equal(recovered.status,'R35_DELTA_PRIVATE_COLLECTION_COMPLETE');
+  assert.equal(recovered.planned,'READY_LATE_SOURCE_RECHECK');
+  assert.equal(recovered.providerCalls,64);
+  assert.equal(lateCalls.length,65);
+  const after=planNineR47Recurring({...f,now:new Date('2026-10-28T14:10:00Z')});
+  assert.equal(after.status,'WAIT_WINDOW_ALREADY_CHECKED');
+  assert.equal(after.lastVerifiedSpyNYDay,'2026-10-27');
+  assert.equal(after.verifiedCompletedWindows.length,2);
+  assert.deepEqual(after.verifiedCompletedWindows.map(s=>s.end),
+    ['2026-10-27','2026-10-27']);
+  const repeat=await runNineR47Recurring({...f,now:new Date('2026-10-28T14:20:00Z'),
+    fetchImpl:lateFetch,sleep:async()=>{}});
+  assert.equal(repeat.providerCalls,0);
+  assert.equal(lateCalls.length,65);
+  for(const entry of originalManifest.files){
+    assert.ok(fs.existsSync(path.join(f.deltaHome,entry.path)));
+    assert.equal(sha(fs.readFileSync(path.join(f.deltaHome,entry.path))),entry.sha256);
+  }
+  assert.equal(sha(fs.readFileSync(f.manifestFile)),f.before);
+});
+
+test('R47 limits stale probes to two per NY day',async t=>{
+  const f=fixture(t),initial=new Date('2026-10-28T00:00:00Z');
+  await runNineR47Recurring({...f,now:initial,sleep:async()=>{}});
+  setFixtureCollectedAt(f,initial);
+  let requests=0;
+  const stale=async url=>{
+    requests++;
+    return new Response(bar(url.pathname.split('/').at(-2),'2026-10-26T19:00:00Z')+'\n');
+  };
+  for(const hour of ['07','14']){
+    const r=await runNineR47Recurring({...f,
+      now:new Date(`2026-10-28T${hour}:00:00Z`),fetchImpl:stale});
+    assert.equal(r.status,'WAIT_SOURCE_NO_NEW_VERIFIED_SPY_SESSION');
+  }
+  const third=await runNineR47Recurring({...f,
+    now:new Date('2026-10-28T21:00:00Z'),fetchImpl:stale});
+  assert.equal(third.status,'WAIT_SOURCE_PROBE_DAILY_CAP');
+  assert.equal(requests,2);
+});
+
+test('R47 empty initial response: no R35 checkpoint, retry cooldown, late delivery',async t=>{
+  const f=fixture(t);let calls=0;
+  const empty=async()=>{calls++;return new Response('');};
+  const now=new Date('2026-10-28T00:00:00Z');
+  const first=await runNineR47Recurring({...f,now,fetchImpl:empty});
+  assert.equal(first.status,'WAIT_SOURCE_NO_NEW_VERIFIED_SPY_SESSION');
+  assert.equal(first.providerCalls,1);
+  assert.equal(fs.existsSync(f.deltaHome),false);
+  const retry=await runNineR47Recurring({...f,
+    now:new Date('2026-10-28T01:00:00Z'),fetchImpl:empty});
+  assert.equal(retry.status,'WAIT_SOURCE_PROBE_COOLDOWN');
+  assert.equal(calls,1);
+  const recovered=await runNineR47Recurring({...f,
+    now:new Date('2026-10-28T07:00:00Z'),fetchImpl:f.fetchImpl,sleep:async()=>{}});
+  assert.equal(recovered.status,'R35_DELTA_PRIVATE_COLLECTION_COMPLETE');
+  assert.equal(recovered.providerCalls,64);
+});
+
+for(const failure of ['502','timeout','empty']){
+  test(`R47 late recheck preserves verified original on ${failure}`,async t=>{
+    const f=fixture(t),initial=new Date('2026-10-28T00:00:00Z');
+    await runNineR47Recurring({...f,now:initial,sleep:async()=>{}});
+    setFixtureCollectedAt(f,initial);
+    const before=fs.readFileSync(path.join(f.deltaHome,'raw-manifest.json'));
+    const files=fs.readdirSync(path.join(f.deltaHome,'state')).filter(s=>s.endsWith('.json'));
+    let calls=0;
+    const fetchImpl=async()=>{
+      calls++;
+      if(failure==='timeout')throw Error('network timeout');
+      if(failure==='502')return new Response('',{status:502});
+      return new Response('');
+    };
+    const result=await runNineR47Recurring({...f,now:new Date('2026-10-28T07:00:00Z'),
+      fetchImpl,sleep:async()=>{}});
+    assert.equal(result.status,failure==='502'?'STOP_HTTP_502':failure==='timeout'?
+      'STOP_NETWORK_OR_TIMEOUT':'WAIT_SOURCE_NO_NEW_VERIFIED_SPY_SESSION');
+    assert.equal(calls,1);
+    assert.deepEqual(fs.readdirSync(path.join(f.deltaHome,'state')).filter(s=>s.endsWith('.json')),
+      files);
+    assert.deepEqual(fs.readFileSync(path.join(f.deltaHome,'raw-manifest.json')),before);
+    const immediate=await runNineR47Recurring({...f,now:new Date('2026-10-28T08:00:00Z'),
+      fetchImpl,sleep:async()=>{}});
+    assert.equal(immediate.status,'WAIT_SOURCE_PROBE_COOLDOWN');
+    assert.equal(calls,1);
+  });
+}

@@ -1,5 +1,8 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
 import {runR73PrivateAutoRetry,r73ScheduledPreflight,runR73ScheduledR48} from
   '../scripts/pc-writer/theme-nine-r73-auto-http502-private-retry.mjs';
 
@@ -90,4 +93,22 @@ test('R73 scheduled mode calls existing R48 directly, not the manual R71 guard',
   assert.equal(record[0][0],'cmd.exe');
   assert.equal(record[0][1][2].endsWith('THEME_NINE_R48_PRIVATE_CYCLE.cmd'),true);
   assert.equal(result.existingPrivateCommandExit,0);
+});
+
+test('R73 distinguishes successful scheduled CMD from stale R47 source result',t=>{
+  const root=fs.mkdtempSync(path.join(os.tmpdir(),'theme-r73-correlate-'));
+  t.after(()=>fs.rmSync(root,{recursive:true,force:true}));
+  const result=runR73ScheduledR48({root,run:()=>{
+    fs.writeFileSync(path.join(root,'THEME_NINE_R47_RECURRING_PRIVATE_UPDATE_123_456.json'),
+      JSON.stringify({contract:'THEME_NINE_R47_PRIVATE_AUTOMATIC_UPDATE_V1',
+        status:'PRIVATE_SHADOW_ALREADY_VERIFIED',
+        collection:{status:'WAIT_SOURCE_PROBE_COOLDOWN'},
+        dataOutcome:'SOURCE_DELAYED',freshness:{targetClosedNYDay:'2026-10-28',
+          lastVerifiedSpyNYDay:'2026-10-27',targetDayVerified:false}}));
+    return {status:0,error:null};
+  }});
+  assert.equal(result.existingPrivateCommandExit,0);
+  assert.equal(result.latestR47.evidenceStatus,'R47_RESULT_CORRELATED');
+  assert.equal(result.latestR47.dataOutcome,'SOURCE_DELAYED');
+  assert.equal(result.latestR47.dates.lastVerifiedSpyNYDay,'2026-10-27');
 });

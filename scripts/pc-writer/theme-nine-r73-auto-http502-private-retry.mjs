@@ -42,14 +42,39 @@ export function r73ScheduledPreflight({now=new Date(),exists=fs.existsSync,
   return {canRun,insidePrivateSlot,manualSlotAllowed,reason};
 }
 
-export function runR73ScheduledR48({run=spawnSync}={}){
+function correlateR47Result(root,before){
+  const names=fs.readdirSync(root).filter(n=>
+    /^THEME_NINE_R47_RECURRING_PRIVATE_UPDATE_\d+_\d+\.json$/.test(n)&&
+    !before.has(n));
+  if(names.length!==1)return {evidenceStatus:'R47_RESULT_NOT_UNIQUELY_CORRELATED',
+    statuses:[],dataOutcome:'NOT_VERIFIED',dates:null};
+  const file=path.join(root,names[0]);
+  if(!fs.statSync(file).isFile()||fs.lstatSync(file).isSymbolicLink())
+    return {evidenceStatus:'R47_RESULT_NOT_REGULAR_FILE',statuses:[],
+      dataOutcome:'NOT_VERIFIED',dates:null};
+  try{
+    const parsed=JSON.parse(fs.readFileSync(file,'utf8'));
+    if(parsed.contract!=='THEME_NINE_R47_PRIVATE_AUTOMATIC_UPDATE_V1')
+      throw Error('R47_RESULT_CONTRACT');
+    return {evidenceStatus:'R47_RESULT_CORRELATED',
+      statuses:[parsed.collection?.status,parsed.status].filter(x=>typeof x==='string'),
+      dataOutcome:parsed.dataOutcome??'NOT_VERIFIED',
+      dates:{cutoffNYDay:parsed.freshness?.targetClosedNYDay??null,
+        lastVerifiedSpyNYDay:parsed.freshness?.lastVerifiedSpyNYDay??null}};
+  }catch{return {evidenceStatus:'R47_RESULT_INVALID',statuses:[],
+    dataOutcome:'NOT_VERIFIED',dates:null};}
+}
+
+export function runR73ScheduledR48({run=spawnSync,root=ROOT}={}){
+  const before=fs.existsSync(root)?new Set(fs.readdirSync(root)):new Set();
   const result=run('cmd.exe',['/d','/c',ACTION],{
     encoding:null,timeout:25*60*1000,windowsHide:true,cwd:ROOT,
     maxBuffer:8*1024*1024});
+  const latestR47=fs.existsSync(root)?correlateR47Result(root,before):null;
   return {existingPrivateCommandExit:result.status,
     status:result.status===0&&!result.error?
       'R71_EXISTING_PRIVATE_RUN_RETURNED_ZERO':'R71_EXISTING_PRIVATE_RUN_NONZERO',
-    processError:result.error?.code??null};
+    processError:result.error?.code??null,latestR47};
 }
 
 export async function runR73PrivateAutoRetry({
@@ -81,12 +106,16 @@ export async function runR73PrivateAutoRetry({
     report({event:'EXISTING_PRIVATE_CYCLE_FINISHED',attempt,
       privateExit:result.existingPrivateCommandExit,
       privateStatus:result.status,
+      sourceEvidenceStatus:result.latestR47?.evidenceStatus??'NOT_VERIFIED',
+      dataOutcome:result.latestR47?.dataOutcome??'NOT_VERIFIED',
       latestR47Codes:result.latestR47?.statuses??[],
       lastVerifiedSpyNYDay:result.latestR47?.dates?.lastVerifiedSpyNYDay??null});
     if(result.existingPrivateCommandExit===0&&
        result.status==='R71_EXISTING_PRIVATE_RUN_RETURNED_ZERO')return {
       status:'R73_PRIVATE_COMMAND_RETURNED_ZERO',attempts:attempt,
       recoveries,lastPrivateStatus:result.status,
+      sourceEvidenceStatus:result.latestR47?.evidenceStatus??'NOT_VERIFIED',
+      dataOutcome:result.latestR47?.dataOutcome??'NOT_VERIFIED',
       d1Writes:0,schedulerWrites:0,publicWrites:0};
     const next=inspect(); // never retry unknown/429/non-502 failures
     if(next.noFailed||next.sourceFailure!=='STOP_HTTP_502')return {

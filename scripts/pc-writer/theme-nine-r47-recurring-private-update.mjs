@@ -56,10 +56,18 @@ export async function updateNineR47Private({dataRoot,rosterPath,now=new Date(),
   if(collected.status.startsWith('STOP'))return {status:collected.status,
     stage:'SOURCE_COLLECTION',collection:collected,publicationAuthorized:false};
   const after=planNineR47Recurring({...arg,now});
+  const verifiedSpyNYDay=after.lastVerifiedSpyNYDay??
+    after.verifiedCompletedWindows?.at(-1)?.spyDay??after.latestBaselineSpyNYDay;
+  const freshness={targetClosedNYDay:after.cutoffNYDay,
+    lastVerifiedSpyNYDay:verifiedSpyNYDay,
+    targetDayVerified:verifiedSpyNYDay>=after.cutoffNYDay,
+    sourceCollectionStatus:collected.status};
   if(!after.verifiedCompletedWindows.length){
     return {contract:'THEME_NINE_R47_PRIVATE_AUTOMATIC_UPDATE_V1',
       status:collected.status,stage:'WAIT_FIRST_COMPLETE_PRIVATE_SOURCE',
-      collection:collected,shadow:null,publicationAuthorized:false,
+      collection:collected,shadow:null,freshness,
+      dataOutcome:collected.status.startsWith('WAIT_SOURCE')?'SOURCE_DELAYED':
+        'NO_NEW_PRIVATE_SOURCE',publicationAuthorized:false,
       d1Writes:0,schedulerWrites:0,publicationWrites:0};
   }
   const scores=calculateNineR47PrivateScores({...arg,now});
@@ -68,9 +76,12 @@ export async function updateNineR47Private({dataRoot,rosterPath,now=new Date(),
     rosterPath:arg.rosterPath});
   const themes=calculateNineR47PrivateThemes({scores,...evidence});
   const shadow=savePrivateShadow(arg.dataRoot,scores,themes);
+  const dataOutcome=shadow.writtenFiles===2?'NEW_PRIVATE_RESULT_SAVED':
+    collected.status.startsWith('WAIT_SOURCE')?'SOURCE_DELAYED':
+      'PRIVATE_RESULT_UNCHANGED';
   return {contract:'THEME_NINE_R47_PRIVATE_AUTOMATIC_UPDATE_V1',
     status:shadow.status,stage:'COLLECT_MERGE_R25_R32_PRIVATE_COMPLETE',
-    benchmarkDate:themes.benchmarkDate,collection:collected,
+    benchmarkDate:themes.benchmarkDate,collection:collected,freshness,dataOutcome,
     shadow,counts:themes.counts,
     sourceMode:scores.priceMode,formulaChanged:false,rosterChanged:false,
     publicationAuthorized:false,d1Writes:0,schedulerWrites:0,

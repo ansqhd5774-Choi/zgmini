@@ -131,7 +131,7 @@ export async function collectNineR35Delta({dataRoot,rosterPath,start,end,previou
   let freshnessDay=base.latestSpyNYDay;
   if(previousWindow!==null){
     if(!previousWindow||!dateOK(previousWindow.start)||!dateOK(previousWindow.end)||
-       previousWindow.end>=end)fail('CHAIN_WINDOW_INVALID');
+       previousWindow.end>end)fail('CHAIN_WINDOW_INVALID');
     const prevHome=path.join(root,DELTA_SUBDIR);
     if(!fs.existsSync(prevHome))fail('CHAIN_PREVIOUS_ROOT_MISSING');
     const actual=fs.realpathSync(prevHome);

@@ -11,6 +11,11 @@ import {collectNineR35Delta, collectNineR35Auto} from './theme-nine-r35-delta-co
 const fail = code => {throw Object.assign(new Error('THEME_NINE_R47_'+code),
   {code:'THEME_NINE_R47_'+code});};
 const sha = data => createHash('sha256').update(data).digest('hex');
+const RECHECK_MIN_INTERVAL_MS=6*60*60*1000;
+const RECHECK_MAX_PER_NY_DAY=2;
+const recordedProbeOutcome=status=>
+  ['WAIT_SOURCE_NO_NEW_VERIFIED_SPY_SESSION','STOP_NETWORK_OR_TIMEOUT',
+    'STOP_RESPONSE_OR_INVALID_BARS'].includes(status)||/^STOP_HTTP_\d{3}$/.test(status);
 const goodDate = d => typeof d==='string' && /^\d{4}-\d{2}-\d{2}$/.test(d) &&
   !Number.isNaN(Date.parse(d+'T00:00:00Z')) &&
   new Date(d+'T00:00:00Z').toISOString().slice(0,10)===d;
@@ -77,6 +82,71 @@ function verifyDeltaState(home, name, rosterSha, symbols, manifest) {
     spyDay, name};
 }
 
+// Attempt ledger is intentionally separate from completed delta checkpoints.
+// A stale/failed probe must never advance a verified session or alter raw data.
+function attemptPath(dataRoot,rosterSha,window) {
+  const key=sha(JSON.stringify({rosterSha,start:window.start,end:window.end})).slice(0,20);
+  const root=fs.realpathSync(dataRoot);
+  const themes=path.join(root,'themes');
+  if(!fs.existsSync(themes)||!inside(root,fs.realpathSync(themes)))
+    fail('PROBE_THEME_ROOT_ESCAPE');
+  const home=path.join(root,'themes','legacy-nine-r47-probes');
+  if(fs.existsSync(home)&&!inside(root,fs.realpathSync(home)))fail('PROBE_ROOT_ESCAPE');
+  return path.join(home,`r47-source-probe-${key}.json`);
+}
+function probeGate(dataRoot,rosterSha,window,now,previousCheckedAt=null) {
+  const file=attemptPath(dataRoot,rosterSha,window);
+  if(fs.existsSync(file)&&(!fs.lstatSync(file).isFile()||fs.lstatSync(file).isSymbolicLink()))
+    fail('PROBE_LEDGER_NOT_REGULAR_FILE');
+  const prior=fs.existsSync(file)?read(file):null;
+  if(prior&&(prior.version!==1||prior.project!=='legacy-nine-r47-source-probe'||
+     prior.rosterSha256!==rosterSha||
+     prior.window?.start!==window.start||prior.window?.end!==window.end||
+     !Array.isArray(prior.attempts)||prior.attempts.length>14||
+     prior.attempts.some(a=>typeof a.at!=='string'||!Number.isFinite(Date.parse(a.at))||
+       !recordedProbeOutcome(a.status))))
+    fail('PROBE_LEDGER_INVALID');
+  const currentNYDay=nyDate(now);
+  const attempts=(prior?.attempts??[]).filter(a=>nyDate(new Date(a.at))===currentNYDay);
+  const mostRecent=[previousCheckedAt,...(prior?.attempts??[]).map(a=>a.at)]
+    .filter(x=>typeof x==='string'&&!Number.isNaN(Date.parse(x)))
+    .map(x=>Date.parse(x)).sort((a,b)=>b-a)[0];
+  if(mostRecent!==undefined&&mostRecent>now.getTime())return {
+    status:'WAIT_SOURCE_PROBE_COOLDOWN',lastCheckedAt:new Date(mostRecent).toISOString(),
+    nextRetryAt:new Date(mostRecent+RECHECK_MIN_INTERVAL_MS).toISOString(),file};
+  if(attempts.length>=RECHECK_MAX_PER_NY_DAY)return {status:'WAIT_SOURCE_PROBE_DAILY_CAP',
+    nextRetryAt:null,lastCheckedAt:new Date(mostRecent).toISOString(),file};
+  if(mostRecent!==undefined&&now.getTime()-mostRecent<RECHECK_MIN_INTERVAL_MS)
+    return {status:'WAIT_SOURCE_PROBE_COOLDOWN',
+      nextRetryAt:new Date(mostRecent+RECHECK_MIN_INTERVAL_MS).toISOString(),
+      lastCheckedAt:new Date(mostRecent).toISOString(),file};
+  return {status:'READY',lastCheckedAt:mostRecent===undefined?null:
+    new Date(mostRecent).toISOString(),file};
+}
+function recordProbe(dataRoot,rosterSha,window,now,collection) {
+  if(!recordedProbeOutcome(collection.status))return;
+  const file=attemptPath(dataRoot,rosterSha,window);
+  fs.mkdirSync(path.dirname(file),{recursive:true});
+  const real=fs.realpathSync(path.dirname(file));
+  if(!inside(fs.realpathSync(dataRoot),real))fail('PROBE_ROOT_ESCAPE');
+  if(fs.existsSync(file)&&(!fs.lstatSync(file).isFile()||fs.lstatSync(file).isSymbolicLink()))
+    fail('PROBE_LEDGER_NOT_REGULAR_FILE');
+  const previous=fs.existsSync(file)?read(file):null;
+  if(previous&&(previous.version!==1||previous.project!=='legacy-nine-r47-source-probe'||
+     previous.rosterSha256!==rosterSha||
+     previous.window?.start!==window.start||previous.window?.end!==window.end))
+    fail('PROBE_LEDGER_INVALID');
+  const record={version:1,project:'legacy-nine-r47-source-probe',
+    rosterSha256:rosterSha,window,
+    attempts:[...(previous?.attempts??[]).slice(-13),{
+      at:now.toISOString(),status:collection.status,
+      latestSeenSpyNYDay:collection.latestSeenSpyNYDay??null,
+      providerCalls:collection.totalProviderCalls??collection.providerCalls??0}]};
+  const tmp=file+'.'+process.pid+'.'+Math.random().toString(36).slice(2)+'.tmp';
+  fs.writeFileSync(tmp,JSON.stringify(record,null,2)+'\n',{flag:'wx'});
+  try{fs.renameSync(tmp,file);}finally{if(fs.existsSync(tmp))fs.unlinkSync(tmp);}
+}
+
 export function planNineR47Recurring({dataRoot,rosterPath,now=new Date(),
   maximumWindowDays=7}={}) {
   if(!(now instanceof Date)||Number.isNaN(now.getTime())||
@@ -98,10 +168,15 @@ export function planNineR47Recurring({dataRoot,rosterPath,now=new Date(),
     verifiedCompletedWindows:[]};
   const root=fs.realpathSync(dataRoot);
   const home=path.join(root,'themes','legacy-nine-r35-delta');
-  if(!fs.existsSync(home))return {...result,status:'READY_NEW_WINDOW',verifiedCompletedWindows:[],
-    window:{start:baseline.latestSpyNYDay,
-      end:[cutoff,addDays(baseline.latestSpyNYDay,maximumWindowDays)].sort()[0]},
-    previousWindow:null};
+  if(!fs.existsSync(home)){
+    const window={start:baseline.latestSpyNYDay,
+      end:[cutoff,addDays(baseline.latestSpyNYDay,maximumWindowDays)].sort()[0]};
+    const gate=probeGate(root,baseline.rosterSha256,window,now);
+    return {...result,status:gate.status==='READY'?'READY_NEW_WINDOW':gate.status,
+      verifiedCompletedWindows:[],window:gate.status==='READY'?window:null,
+      previousWindow:null,
+      recheck:{lastCheckedAt:gate.lastCheckedAt,nextRetryAt:gate.nextRetryAt??null}};
+  }
   const actual=fs.realpathSync(home);
   if(!inside(root,actual))fail('DELTA_ROOT_ESCAPE');
   const manifest=read(path.join(actual,'raw-manifest.json'));
@@ -132,7 +207,9 @@ export function planNineR47Recurring({dataRoot,rosterPath,now=new Date(),
     if(choices.length!==1)fail('CHAIN_AMBIGUOUS_OR_ORPHANED');
     const state=choices[0];
     remaining=remaining.filter(s=>s!==state);
-    if(prior&&state.end<=prior.end)fail('CHAIN_WINDOW_NOT_ADVANCING');
+    // A late-data repair may use the same end, but must advance the actual
+    // verified SPY session. The chain still has exactly one next state.
+    if(prior&&state.end<prior.end)fail('CHAIN_WINDOW_NOT_ADVANCING');
     if(state.failure)fail('PRIOR_PROVIDER_FAILURE_REVIEW_REQUIRED');
     if(!state.completed) {
       if(remaining.length)fail('CHAIN_AFTER_INCOMPLETE_WINDOW');
@@ -147,31 +224,59 @@ export function planNineR47Recurring({dataRoot,rosterPath,now=new Date(),
       spyDay:state.spyDay,stateFile:state.name});
     prior=state;
   }
-  if(prior.end>=cutoff)return {...result,status:'WAIT_WINDOW_ALREADY_CHECKED',
-    window:null,lastCompletedWindow:{start:prior.start,end:prior.end},
-    verifiedCompletedWindows,
-    lastVerifiedSpyNYDay:anchor};
+  if(prior.end>=cutoff){
+    const summary={lastCompletedWindow:{start:prior.start,end:prior.end},
+      verifiedCompletedWindows,lastVerifiedSpyNYDay:anchor};
+    if(prior.end!==cutoff||anchor>=cutoff||[0,6].includes(
+      new Date(cutoff+'T00:00:00Z').getUTCDay()))return {...result,
+        status:'WAIT_WINDOW_ALREADY_CHECKED',window:null,...summary};
+    const window={start:anchor,end:prior.end};
+    if(fs.existsSync(path.join(actual,'state','delta.lock')))fail('DELTA_LOCK_EXISTS');
+    const indexed=new Map(manifest.files.map(e=>[e.path,e]));
+    const checked=prior.name&&read(path.join(actual,'state',prior.name))
+      .symbols.SPY.files.map(f=>indexed.get(f.path)?.collectedAt).filter(Boolean).at(-1);
+    const gate=probeGate(root,baseline.rosterSha256,window,now,checked);
+    return {...result,status:gate.status==='READY'?'READY_LATE_SOURCE_RECHECK':gate.status,
+      window:gate.status==='READY'?window:null,
+      previousWindow:{start:prior.start,end:prior.end},
+      recheck:{lastCheckedAt:gate.lastCheckedAt,nextRetryAt:gate.nextRetryAt??null,
+        minIntervalMinutes:RECHECK_MIN_INTERVAL_MS/60000,
+        maxAttemptsPerNYDay:RECHECK_MAX_PER_NY_DAY},...summary};
+  }
   const nextEnd=[cutoff,addDays(prior.end,maximumWindowDays)].sort()[0];
   if(nextEnd<=anchor)fail('CHAIN_NEXT_WINDOW_NOT_FORWARD');
+  const window={start:anchor,end:nextEnd};
+  const gate=probeGate(root,baseline.rosterSha256,window,now);
+  if(gate.status!=='READY')return {...result,status:gate.status,window:null,
+    lastVerifiedSpyNYDay:anchor,verifiedCompletedWindows,
+    recheck:{lastCheckedAt:gate.lastCheckedAt,nextRetryAt:gate.nextRetryAt??null}};
   return {...result,status:'READY_NEW_WINDOW',verifiedCompletedWindows,
-    window:{start:anchor,end:nextEnd},
+    window,
     previousWindow:{start:prior.start,end:prior.end},
     lastVerifiedSpyNYDay:anchor};
 }
 
 export async function runNineR47Recurring({auto=true,fetchImpl=fetch,sleep,
   maxBatches,maximumWindowDays,dataRoot,rosterPath,now}={}) {
-  const plan=planNineR47Recurring({dataRoot,rosterPath,now,maximumWindowDays});
+  const at=now??new Date();
+  const plan=planNineR47Recurring({dataRoot,rosterPath,now:at,maximumWindowDays});
   if(!plan.window)return plan;
   const args={dataRoot,rosterPath,...plan.window,previousWindow:plan.previousWindow,fetchImpl};
   const collection=auto?await collectNineR35Auto({...args,
     ...(sleep?{sleep}:{}),...(maxBatches?{maxBatches}:{})}):
     await collectNineR35Delta(args);
+  if(collection.providerCalls||collection.totalProviderCalls){
+    const rosterSha=sha(fs.readFileSync(rosterPath));
+    recordProbe(dataRoot,rosterSha,plan.window,at,collection);
+  }
   return {contract:'THEME_NINE_R47_RECURRING_PRIVATE_EXECUTION_V1',
     status:collection.status,planned:plan.status,window:plan.window,
     previousWindow:plan.previousWindow,
     providerCalls:collection.totalProviderCalls??collection.providerCalls,
     rawFilesStored:collection.totalRawFilesStored??collection.rawFilesStored,
+    latestSeenSpyNYDay:collection.latestSeenSpyNYDay??null,
+    cutoffNYDay:plan.cutoffNYDay,
+    lastVerifiedSpyNYDayBefore:plan.lastVerifiedSpyNYDay??null,
     completedSymbols:collection.completedSymbols,
     source:plan.source,priceMode:plan.priceMode,
     immutableR23:true,existingFormulaUnchanged:true,publicationAuthorized:false,
