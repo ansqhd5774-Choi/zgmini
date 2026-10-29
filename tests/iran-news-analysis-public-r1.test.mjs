@@ -44,6 +44,25 @@ test('valid independent provisional analysis yields readiness and no score mutat
   'SELECT body,stored_at FROM market_public_snapshots_v1 WHERE snapshot_key=?');
 });
 
+test('R2 key points and facts are accepted without breaking the existing R1 snapshot',async()=>{
+ const enhanced={...valid,items:[{...valid.items[0],
+  keyPointKo:'이란이 핵시설 사찰에 대한 접근을 허용하지 않고 있다고 영국 정부가 발표했다.',
+  keyFactsKo:[
+   '영국 정부는 IAEA의 핵시설 사찰 접근이 제한되고 있다고 밝혔다.',
+   '영국 정부는 이란의 핵 안전조치 의무 이행을 촉구했다.',
+  ],
+ }]};
+ assert.equal(await validIranNewsAnalysisSnapshotR1(valid,{now}),true);
+ assert.equal(await validIranNewsAnalysisSnapshotR1(enhanced,{now}),true);
+ const response=await storedIranNewsAnalysisR1Response(new Request('https://x.test'),
+  {db:d1(enhanced),now});
+ assert.equal((await response.json()).items[0].keyFactsKo.length,2);
+ assert.equal(await validIranNewsAnalysisSnapshotR1({...enhanced,
+  items:[{...enhanced.items[0],keyFactsKo:['짧은 사실 하나']}]},{now}),false);
+ assert.equal(await validIranNewsAnalysisSnapshotR1({...enhanced,
+  items:[{...enhanced.items[0],keyPointKo:undefined}]},{now}),false);
+});
+
 test('independent reader reports PENDING, PARTIAL and STALE without fabricating',async()=>{
  const pending=await storedIranNewsAnalysisR1Response(new Request('https://x.test'),
   {db:d1(null),now});
