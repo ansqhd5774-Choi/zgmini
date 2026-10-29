@@ -87,9 +87,11 @@ if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.ur
   try{
     if(process.argv.length!==3||!['--check','--run'].includes(process.argv[2]))
       throw Error('R71_USAGE');
-    const report=process.argv[2]==='--check'?{
+    const check=process.argv[2]==='--check'?r71Preflight():null;
+    const report=check?{
       report:'THEME_NINE_R71_PRIVATE_PREFLIGHT',
-      preflight:r71Preflight(),taskWrites:0,d1Writes:0,publicWrites:0,
+      status:check.canRun?'R71_PREFLIGHT_READY':'STOP_R71_PREFLIGHT',
+      preflight:check,taskWrites:0,d1Writes:0,publicWrites:0,
     }:runR71PrivateRecovery();
     process.stdout.write(JSON.stringify(report,null,2)+'\n');
     if(report.status?.startsWith('STOP')||report.existingPrivateCommandExit>0)
