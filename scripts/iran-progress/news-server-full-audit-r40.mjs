@@ -4,7 +4,7 @@
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {writeFile} from 'node:fs/promises';
-import {auditIranMultisourceCollectionR24} from './news-display-multisource-audit-r24.mjs';
+import {auditIranMultisourceCollectionR24,IRAN_MULTISOURCE_FEEDS_R24} from './news-display-multisource-audit-r24.mjs';
 import {auditIranArticleDetailsR25} from './news-display-article-audit-r25.mjs';
 import {boundedIranNewsServerFetcherR39,
  IRAN_NEWS_SERVER_SHADOW_SOURCES} from '../../worker/iran-news-server-shadow-r39.mjs';
@@ -40,6 +40,9 @@ export async function auditIranNewsFullR40({now=Date.now(),fetcher=fetch,
   (onBatch!==null&&typeof onBatch!=='function'))throw Error('R40_OPTIONS_INVALID');
  const feeds=feedReport??await auditIranMultisourceCollectionR24({
   now,fetcher:boundedIranNewsServerFetcherR39(fetcher).fetcher,
+  // R40 is the immutable seven-source archival audit. R45 private sources
+  // have their own audit; do not change original 39-row evidence.
+  feeds:IRAN_MULTISOURCE_FEEDS_R24.filter(item=>IRAN_NEWS_SERVER_SHADOW_SOURCES.includes(item.id)),
  });
  if(feeds.version!=='IRAN_NEWS_MULTISOURCE_AUDIT_R24'||
   !Array.isArray(feeds.candidates)||!Array.isArray(feeds.sources)||
