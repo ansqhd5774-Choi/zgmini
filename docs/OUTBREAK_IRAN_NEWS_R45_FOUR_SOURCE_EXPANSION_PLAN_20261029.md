@@ -131,3 +131,12 @@
 - `scripts/iran-progress/IRAN_NEWS_R48_BASELINE_READONLY_20261029.cmd`: 정확한 소스 SHA `f020b2f1ed0adc58fcfab97fb4f821820f2ae547`의 6개 파일을 Git Blob 해시 검증해 사용자 PC에서 테스트→원격 D1 SELECT를 실행. 기존 `E:\ZGmini\runtime\node.exe`와 기존 writer 설정·인증 사용. 로그 파일 `IRAN_NEWS_R48_BASELINE_READONLY_RESULT.txt`. 동일 로그가 이미 있으면 자동 재실행 금지.
 - 운영 R41 / D1 쓰기, R1, 점수, 스케줄, GitHub main/배포 상태 **이번 작업에서 변경 안 함**. R48 PC 원격 실행 아직 **미실행**.
 - NEXT: R48 결과에서 `original39Present`, `original39Missing`, `oldSourceRows`, `newSourceRows`, `sources[]`를 확인. 39개 원본 ID 전부 보존된 경우에만 기존 소스 count==39 Gate를 보존 검증으로 최소 수정 검토. 실제 누락 또는 identity drift가 있으면 게시 중단 및 해당 데이터 손실 원인을 별도 조사. 신규 R46 8건 쓰기·재조회와 main 최소 변경 자동 배포는 그 후에 수행.
+
+## 11. R48 실제 D1 증거 및 R49 최소 수정 (2026-10-29 KST)
+
+- **PC R48 실제 결과:** `IRAN_NEWS_R48_BASELINE_READONLY_RESULT.txt`, `SOURCE_FILES=6_VERIFIED`, fixture Node 테스트 `5/5 PASS`, `FINAL_STATUS=R48_REMOTE_DIAG_DONE_NO_D1_WRITE`.
+- **운영 D1 기준선:** 총 **41행**, 기존 7개 출처 행 41, 신규 출처 행 0. 최초 R41 staging **39개 기사 ID 전부 재조회 보존**, ID/source URL 변경 0, 제목/발행일 정정 0, 누락 0. 기존 7개 출처에서 신규 기사 +2건이 생겼음. R1 보존본 버전 `IRAN_NEWS_DISPLAY_R1`; 실제 R48 `r1StoredAt=1793242899922`. 증거에 따르면 R47의 `R47_ORIGINAL_39_BASELINE_MISMATCH`는 원본 손실이 아니라 현재 기존 출처 41행을 과거 39행과 같다고 강제한 **검증 조건 오류**.
+- **최소 코드 수정:** `scripts/iran-progress/news-metadata-preflight-r47.mjs`에서 초기 출처 합계 39행 강제 검증을 제거하고, **승인된 R41 원본 39개 manifest 기사 ID마다 D1 기사 ID·sourceId·sourceUrl이 존재·일치하는지** 확인한다. 원본 ID 누락 `R47_ORIGINAL_39_ARTICLES_MISSING`, URL/출처 변경 `R47_ORIGINAL_39_IDENTITY_CHANGED`는 여전히 중단. 원본 39개 SHA256 및 현재 초기 출처 추가 행 수, 기존 기사 제목·발행일 정정 수를 별도 기록. R1 identity·새 기사 충돌·R41 검증 조건은 유지.
+- **회귀 테스트 보강:** `tests/iran-news-r47-preflight.test.mjs` 4개→6개 검증 항목. 누락 및 식별 변경 감지, 현재 초기 출처 **+2건을 보존하면서 통과**하는 fixture 추가. 수정 소스·테스트는 GitHub 원격 재조회와 SHA 확인 완료. **새 6개 테스트 실제 Node 실행 아직 미검증**.
+- **R49 재검증 실행기:** `scripts/iran-progress/IRAN_NEWS_R49_MEMBERSHIP_READONLY_20261029.cmd` (고정 소스 commit `1c36f385d55d4fb97d380f33105b7e930ba6efe1`)가 11개 파일을 Git Blob SHA 검사 후 Node 테스트 및 기존 D1 read-only 사전검사를 실행한다. 기존 R46 원본 결과 `IRAN_NEWS_R45_R46_TEST_RESULT.txt`를 CMD와 같은 디렉터리에 둬야 한다. 결과는 `IRAN_NEWS_R49_MEMBERSHIP_PREFLIGHT_RESULT.txt`. 재실행·무조건 D1 게시 금지.
+- **상태:** R48 Runtime **PASS: ARCHIVE_39_PRESERVED_WITH_ADDITIONS**. R49 SOURCE/TEST_STAGED, **PC_RUNTIME_NOT_RUN**. 신규 Arab News 8건 D1 쓰기 0, Cloudflare 배포 0, 스케줄·점수 변경 0. R49가 PASS여야 승인된 다음 단계 증분 게시/ledger/remote readback으로 이동한다.
