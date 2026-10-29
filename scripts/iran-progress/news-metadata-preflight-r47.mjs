@@ -6,11 +6,13 @@ import os from 'node:os';
 import {createHash} from 'node:crypto';
 import {fileURLToPath} from 'node:url';
 import {prepareIranNewsIncrementalR45} from './news-metadata-incremental-r45.mjs';
+import {validateArchiveR48} from './news-metadata-baseline-diagnose-r48.mjs';
 
 const R46_SOURCE='485c9a08b37270b5cc35260829e81adda3e19bc7';
 const R1_KEY='public:iran-progress:news:iran:r1';
 const R1_QUERY='SELECT body,stored_at FROM market_public_snapshots_v1 WHERE snapshot_key=?';
 const R41_QUERY='SELECT article_id,source_id,source_url,title,published_at,body_verified,keywords_verified,checked_at FROM iran_news_article_metadata_r41 ORDER BY article_id LIMIT 250';
+const ARCHIVE_MANIFEST=new URL('../../docs/IRAN_NEWS_R41_STAGING_ROWS_20261029.json',import.meta.url);
 const ORIGINAL_IDS=['tasnim','govuk','guardian-iran','dw-world','bbc-middle-east','aljazeera','un-middle-east'];
 
 function exactLine(text,line){return text.split(/\r?\n/).filter(x=>x===line).length===1;}
@@ -58,10 +60,15 @@ export function parseIranNewsR46Evidence(text,{now=Date.now()}={}){
  return {checkedAt:probe.checkedAt,rows,reportedCandidates:probe.candidatesDiscovered,
   reportedArticleFailures:Number(probe.articleOutcomes?.ARTICLE_FETCH_FAILED??0)};
 }
-export async function preflightIranNewsR47({remote,db,evidence,now=Date.now()}={}){
+export async function preflightIranNewsR47({remote,db,evidence,now=Date.now(),archiveRows=null}={}){
  if(!remote||typeof remote.query!=='function'||typeof db!=='string')
   throw Error('R47_D1_CONNECTION_INVALID');
  const e=parseIranNewsR46Evidence(evidence,{now});
+ // Verify each archived URL-derived article ID, not an obsolete total count.
+ // Extra rows from any source must not invalidate the original 39.
+ const archived=archiveRows===null?
+  validateArchiveR48(fs.readFileSync(ARCHIVE_MANIFEST,'utf8')):
+  validateArchiveR48(JSON.stringify({version:'IRAN_NEWS_R41_STAGING_ROWS',rows:archiveRows}));
  const r1=await remote.query(db,R1_QUERY,[R1_KEY]);
  if(r1?.results?.length!==1||typeof r1.results[0].body!=='string')
   throw Error('R47_R1_IDENTITY_UNAVAILABLE');
@@ -76,9 +83,19 @@ export async function preflightIranNewsR47({remote,db,evidence,now=Date.now()}={
  const existing=raw.results;
  const existingIds=new Set(existing.map(row=>row.article_id));
  if(existingIds.size!==existing.length)throw Error('R47_R41_DUPLICATE_STORAGE');
- const original=existing.filter(row=>ORIGINAL_IDS.includes(row.source_id));
- if(original.length!==39||new Set(original.map(x=>x.source_id)).size!==7)
-  throw Error('R47_ORIGINAL_39_BASELINE_MISMATCH');
+ const byId=new Map(existing.map(row=>[row.article_id,row]));
+ if(archived.some(row=>!byId.has(row.articleId)))
+  throw Error('R47_ORIGINAL_39_ARTICLES_MISSING');
+ if(archived.some(row=>{
+  const stored=byId.get(row.articleId);
+  return stored.source_id!==row.sourceId||stored.source_url!==row.sourceUrl;
+ }))throw Error('R47_ORIGINAL_39_IDENTITY_CHANGED');
+ const original=archived.map(row=>byId.get(row.articleId));
+ const currentOriginalSourceRows=existing.filter(row=>ORIGINAL_IDS.includes(row.source_id)).length;
+ const historicalMetadataCorrections=archived.filter(row=>{
+  const stored=byId.get(row.articleId);
+  return stored.title!==row.title||stored.published_at!==row.publishedAt;
+ }).length;
  const checksum=rows=>createHash('sha256').update(JSON.stringify(rows.map(r=>[
   r.article_id,r.source_id,r.source_url,r.title,r.published_at,r.body_verified,
   r.keywords_verified,r.checked_at]))).digest('hex');
@@ -98,6 +115,8 @@ export async function preflightIranNewsR47({remote,db,evidence,now=Date.now()}={
   newArticlesVerified:e.rows.length,existingVerified:duplicates.length,
   newArticleIds:novel.length,failedArticleFetches:e.reportedArticleFailures,
   baselineOriginal39:original.length,baselineOriginal39Sha256:baselineHash,
+  currentOriginalSourceRows,extraOriginalSourceRows:currentOriginalSourceRows-39,
+  historicalMetadataCorrections,
   r1Version:parsed.version,r1StoredAt:Number(r1.results[0].stored_at),
   d1Written:false,r1Modified:false,schedulerModified:false,
   publicCacheModified:false};
