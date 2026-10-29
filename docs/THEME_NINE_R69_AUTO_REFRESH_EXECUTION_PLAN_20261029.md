@@ -102,3 +102,24 @@ GetMarketHistory 공식 Coverage는 미국 주식·ETF 데이터가 **최소 48�
 - 운영 작업 수정·공급자 GET·D1 읽기/쓰기를 하지 않으며 CMD 실행 로그 이름은 `THEME_NINE_R70_CYCLE_READONLY_*.txt`이다.
 
 **이후 게이트:** R70 로그에 실행 경로·시간 일치 실패가 확인되면 정확한 대상을 백업하는 설치 개선안을 별도 검토한다. 이미 동작하는 작업을 임의로 삭제·재생성하지 않는다. 그리고 27일 원시자료는 SPY 단독이 아닌 승인 63개 ETF 전체 수집·R32 집계·R54 날짜 정렬까지 통과해야 공개 확정일 상승으로 인정한다.
+
+## F. R70 실PC 결과와 R71 기존 비공개 수집 복구 — 2026-10-29
+
+사용자가 제출한 `THEME_NINE_R70_CYCLE_READONLY_29391_5670.txt`는 아래 사실을 확증한다.
+
+1. **두 예약 작업의 Windows XML에 등록된 절대 실행 경로는 정확하다.** 작업이 등록되지 않았거나 잘못된 파일을 가리키는 문제는 아니다. 그러나 파일이 현재 실제 존재하는지, 실행 도중 무엇이 반환됐는지는 R70만으로 확정 불가.
+2. **R47과 R48 최근 3개의 로그 모두 10/29 02:01~02:16 KST에 종료했고 10/26이 마지막 SPY 검증일이다.** 상태 `WAIT_WINDOW_ALREADY_CHECKED`, 공급자 호출 0, R48 후보는 기존 10/26 그대로다. Windows 10/29 11:44:50 실행 기록에는 대응하는 R47/R48 로그가 없음 (`minutesLogAfterRun=-569`, `lastResult=null`).
+3. **R54 10/29 13:30 공개 예약 작업은 정상 실행됐다.** `PUBLIC_API_VERIFIED`, `sourceDate=2026-10-26`, `d1Writes=0`: 공개 Reader의 기존 데이터 검증 성공이며 새 거래일 게시가 아니다. 이전 10/29 02:46 KST 실행은 `D1_VERIFIED_AWAIT_PUBLIC_API_REFRESH`, `d1Writes=1`, 나중에 공개 반영이 이루어졌으므로 과거 장애를 현재 장애라고 단정하지 않는다.
+4. `theme-nine-r47-recurring-private-refresh.mjs`의 기존 예약 로직은 **완료된 조회 날짜의 재조회 금지** (`prior.end>=cutoff` → `WAIT_WINDOW_ALREADY_CHECKED`)다. 48시간 지연 동안 값이 없어도 조회 완료가 될 수 있으므로, 이후 열린 구간이 공급자 후행 자료를 받아야 한다. 일단 원시 가격과 기존 checkpoint/manifest는 변경하거나 삭제하지 않고 기존 R47을 정확히 한 번 실행해 결과를 본다.
+
+**R71 재실행 도구** (PC에서 명시적 `RUN` 입력 후 한 번만 실행):
+
+- `scripts/pc-writer/THEME_NINE_R71_PRIVATE_RECOVERY_ONCE.cmd`
+- `scripts/pc-writer/theme-nine-r71-private-recovery-once.mjs`
+- 종속: `scripts/pc-writer/theme-nine-r70-cycle-correlation-readonly.mjs`, `scripts/pc-writer/theme-nine-r69-schedule-readonly.mjs` (총 4파일 동일 폴더).
+- 먼저 승인된 E: 경로의 R48 실행 파일, R47 반복 수집 CMD, R48 stage/bridge 2개가 존재하는지 확인한다. 11:10~12:15 및 13:15~13:45 KST에는 예약 작업과 겹칠 수 있어 실행 중단한다.
+- 사용자 명시적 `RUN` 후 **이미 설치된 기존** `THEME_NINE_R48_PRIVATE_CYCLE.cmd`를 한 차례 실행한다. 기존 63 ETF source collection→R25/R32→R48 *비공개 후보*만 수행한다. 원래의 R48 로그 생성 여부, 종료 코드, 원시 API 호출수, 마지막 SPY 날짜, 최근 후보 날짜를 안전하게 정리한다.
+- **예정대로 공급자 GET 및 PC E: 비공개 파일이 늘어날 수 있다.** 원래 작업의 유일한 목적이고, 이 CMD는 Windows 예약 작업·기존 public D1/Cloudflare Worker·`main`·R32 산식·보유 ETF 로스터는 수정하지 않는다. 전/후 원시 결과 전체는 외부로 출력하지 않는다.
+- 결과 업로드: CMD와 같은 폴더에 생성되는 `THEME_NINE_R71_PRIVATE_RECOVERY_*.txt` **하나만** 업로드. 11:30/13:30에 의해 발생하는 별도 예약 로그와 혼동 금지.
+
+**다음 게이트:** R71이 로컬 필수 파일 누락이면 정확한 파일 재설치 절차를 수립한다. R71 실행이 10/27 원시 63 ETF 및 R32 후보를 완성하면 R54 날짜 정렬·D1 CAS·실제 API 공개까지 연결한다. R71이 여전히 `WAIT_WINDOW_ALREADY_CHECKED`이면 소스 지연과 수집 날짜 창을 구분하여 기존 코드를 국소적으로 수정하고 테스트한 후 승인된 PC bundle 경로로 배포한다. 단순히 새 점수를 강제해 확정하지 않는다.
