@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import {visibleIranMetadataRowsR41} from '../lib/iran-progress/news-metadata-r41.mjs';
 import {iranNewsOffTopicReasonR1} from '../lib/iran-progress/news-offtopic-exclusions-r1.mjs';
 
 test('three demonstrated unrelated headlines are filtered',()=>{
@@ -30,4 +31,28 @@ test('exclude only distinct conjunctions, never a single ordinary keyword',()=>{
   'Saudi actor reports on Iran ceasefire talks',
   'UK donor discusses Iran war aid',
  ])assert.equal(iranNewsOffTopicReasonR1(title),null,title);
+});
+
+test('R41 public read model excludes only the three off-topic types without mutating stored rows',()=>{
+ const now=Date.parse('2026-10-30T01:30:00.000Z');
+ const titles=[
+  'Saudi actor Yaqoub Alfarhan stars in new Netflix horror show set in 1970s Kuwait',
+  'Syria court sentences Iran-linked militia member to life in prison',
+  'Revealed: billionaire Reform donor was in business with foundation linked to Iranian regime',
+  'At Least 14 Killed in Saudi Strikes on Yemen As Attacks Reach 101 in 24 Hours',
+  'How Yemen’s Houthis finance their war and evade sanctions',
+  'Iran and Saudi Arabia begin ceasefire negotiations',
+ ];
+ const rows=titles.map((title,index)=>({
+  articleId:(index+1).toString(16).padStart(64,'0'),
+  sourceId:'arabnews',source:'Arab News',
+  sourceUrl:`https://www.arabnews.com/middle-east/filter-test-${index+1}`,
+  title,publishedAt:'2026-10-29T08:00:00.000Z',checkedAt:now-1000,
+  bodyVerified:true,twoStageKeywordsVerified:true,
+ }));
+ const snapshot=JSON.stringify(rows);
+ const visible=visibleIranMetadataRowsR41(rows,{now});
+ assert.deepEqual(visible.map(row=>row.title).sort(),titles.slice(3).sort());
+ assert.equal(rows.length,6);
+ assert.equal(JSON.stringify(rows),snapshot);
 });
