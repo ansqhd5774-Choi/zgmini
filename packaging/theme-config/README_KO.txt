@@ -53,3 +53,11 @@ ZGMINI 테마 공통 도구 — 자동 게시 모듈 1회 전환 (Windows CMD)
 - 실패했다면 같은 파일과 오류 화면의 상태 코드만 알려주세요.
 - 전체 원자료/키/토큰, 기존 INSTALL_RESULT.json 전문은 보내지 마세요.
 - 다음 정규 예약 실행 검증과 사이트 공개 연결은 별도 단계입니다.
+
+8. 이전 PREFLIGHT가 ETIMEDOUT으로 STOP된 경우에만
+- 실패한 압축 해제 폴더에서는 어떤 CMD도 다시 실행하지 마세요.
+- 새로 전달받은 진단 기능 포함 ZIP을 새 빈 폴더에 압축 해제하세요.
+- RUN_DIAGNOSE.cmd만 정확히 1회 실행하고,
+  THEME_TASK_TIMEOUT_DIAG_RESULT.txt를 전달하세요.
+- 이 진단은 기존 설치·전환·예약 변경 없이 작업 상태와 XML 조회를
+  각각 최대 12초 검사합니다. 결과 확인 전 PREFLIGHT/INSTALL 금지.

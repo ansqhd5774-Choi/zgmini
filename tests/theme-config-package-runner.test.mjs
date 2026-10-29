@@ -11,7 +11,7 @@ import {PACKAGE_FILES,PACKAGE_SCHEMA,PACKAGE_REPOSITORY} from '../scripts/pc-wri
 const repo=path.resolve(import.meta.dirname,'..');
 const sourceSha='a'.repeat(40);
 const sourceTreeSha='b'.repeat(40);
-const sourcePath=rel=>['RUN_PREFLIGHT.cmd','RUN_INSTALL.cmd','README_KO.txt'].includes(rel)?
+const sourcePath=rel=>['RUN_PREFLIGHT.cmd','RUN_INSTALL.cmd','RUN_DIAGNOSE.cmd','README_KO.txt'].includes(rel)?
  path.join(repo,'packaging','theme-config',rel):path.join(repo,...rel.split('/'));
 const hashes=root=>{
  const entries={};
@@ -117,12 +117,36 @@ test('Git-free command invocation does not call git rev-parse in the package',as
  catch(e){output=e.stdout?.toString()??'';}
  assert.match(output,/"reason":"PACKAGE_WINDOWS_REQUIRED"/);
  assert.doesNotMatch(output,/git|rev-parse/i);
- for(const name of ['RUN_PREFLIGHT.cmd','RUN_INSTALL.cmd']){
+ for(const name of ['RUN_PREFLIGHT.cmd','RUN_INSTALL.cmd','RUN_DIAGNOSE.cmd']){
   const bytes=fs.readFileSync(path.join(f.packageRoot,name));
   assert.equal(bytes.some(b=>b>=128),false);
   assert.match(bytes.toString('ascii'),/\r\n/);
   assert.doesNotMatch(bytes.toString('ascii'),/(?<!\r)\n/);
  }
+});
+
+test('timeout diagnosis distinguishes COM task-state failure from XML query without install',async t=>{
+ const f=await fixture(t);
+ const diag=await import(pathToFileURL(path.join(f.packageRoot,'scripts',
+  'pc-writer','theme-config-timeout-diagnose.mjs')).href);
+ const before=hashes(f.dataRoot);
+ const calls=[];
+ const report=diag.diagnoseConfiguredTask({platform:'win32',
+  program:'E:\\ZGmini\\runtime\\node.exe',
+  run:(command,args,options)=>{
+   calls.push({command,args,options});
+   if(command==='cscript.exe')return {error:{code:'ETIMEDOUT'}};
+   return {status:0,stdout:f.taskXml};
+  }});
+ assert.equal(report.DIAG_STATUS,'REVIEW_REQUIRED');
+ assert.equal(report.TASK_STATE_QUERY,'PROCESS_ERROR');
+ assert.equal(report.TASK_STATE_ERROR,'ETIMEDOUT');
+ assert.equal(report.TASK_XML_QUERY,'COMMAND_OK');
+ assert.equal(report.TASK_XML_TIME_1300,'YES');
+ assert.equal(report.PC_FILES_CHANGED,0);
+ assert.equal(calls.length,2);
+ assert.ok(calls.every(c=>c.options.timeout===12000));
+ assert.deepEqual(hashes(f.dataRoot),before);
 });
 
 test('changed package bytes block preflight before any PC file change',async t=>{

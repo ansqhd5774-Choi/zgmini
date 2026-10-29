@@ -10,7 +10,7 @@ import {PACKAGE_FILES,PACKAGE_SCHEMA,PACKAGE_REPOSITORY} from './theme-config-pa
 const repositoryRoot=fileURLToPath(new URL('../../',import.meta.url));
 const need=(ok,code)=>{if(!ok)throw Object.assign(new Error(code),{code});};
 const git=(args,opts={})=>execFileSync('git',args,{cwd:repositoryRoot,...opts});
-const sourcePath=rel=>['RUN_PREFLIGHT.cmd','RUN_INSTALL.cmd','README_KO.txt'].includes(rel)?
+const sourcePath=rel=>['RUN_PREFLIGHT.cmd','RUN_INSTALL.cmd','RUN_DIAGNOSE.cmd','README_KO.txt'].includes(rel)?
  'packaging/theme-config/'+rel:rel;
 const importedPaths=source=>{
  const imports=[];

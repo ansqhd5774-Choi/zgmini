@@ -15,8 +15,9 @@ export const PACKAGE_TASK='ZGMINI-PC-Configured-Themes';
 export const PACKAGE_DATA_ROOT='E:/ZGmini/data';
 export const PACKAGE_NODE='E:/ZGmini/runtime/node.exe';
 export const PACKAGE_FILES=[
- 'RUN_PREFLIGHT.cmd','RUN_INSTALL.cmd','README_KO.txt',
+ 'RUN_PREFLIGHT.cmd','RUN_INSTALL.cmd','RUN_DIAGNOSE.cmd','README_KO.txt',
  'scripts/pc-writer/theme-config-package-runner.mjs',
+ 'scripts/pc-writer/theme-config-timeout-diagnose.mjs',
  'scripts/pc-writer/theme-config-task-state.js',
  'scripts/pc-writer/theme-config-upgrade.mjs',
  'scripts/pc-writer/theme-config-install.mjs',
@@ -94,10 +95,12 @@ export function verifyConfiguredPackage(packageRoot=packageHere){
  }
  need(JSON.stringify(seen)===JSON.stringify(PACKAGE_FILES),
   'PACKAGE_MANIFEST_FILE_SET');
- const allowed=[...PACKAGE_FILES,'package-manifest.json','PACKAGE_RESULT.txt'];
+ const allowed=[...PACKAGE_FILES,'package-manifest.json','PACKAGE_RESULT.txt',
+  'THEME_TASK_TIMEOUT_DIAG_RESULT.txt'];
  const present=inventory(root);
  need(present.every(f=>allowed.includes(f))&&
-  present.filter(f=>f!=='PACKAGE_RESULT.txt').length===PACKAGE_FILES.length+1,
+  present.filter(f=>f!=='PACKAGE_RESULT.txt'&&
+   f!=='THEME_TASK_TIMEOUT_DIAG_RESULT.txt').length===PACKAGE_FILES.length+1,
   'PACKAGE_UNLISTED_OR_MISSING_FILE');
  for(const entry of manifest.files){
   need(digest(readRegular(path.join(root,...entry.path.split('/'))))===entry.sha256,
