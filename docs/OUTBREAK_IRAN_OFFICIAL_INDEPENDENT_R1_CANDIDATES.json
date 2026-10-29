@@ -14,8 +14,8 @@
         {"textKo": "영국과 독일은 모두 핵 검증 문제의 해결과 외교적 해법을 지지한다는 입장을 밝혔습니다.", "sourceIndexes": [0, 1]}
       ],
       "interpretationKo": "사찰과 검증에 관한 공식 우려가 지속된다는 점은 핵 관련 긴장이 해소되지 않았다는 신호입니다. 다만 사찰 재개 요구만으로 새로운 군사 충돌이나 협상 결렬을 단정할 수 없습니다.",
-      "signal": "risk_increase",
-      "signalReasonKo": "검증 공백이 해결되지 않았다는 당사국 정부의 발표가 유지된 점을 위험 신호로 분류했습니다.",
+      "signal": "risk_persistent",
+      "signalReasonKo": "검증 공백이 해결되지 않았다는 공식 입장이 유지된 사실만으로 새롭게 위험이 증가했다고 판정하지 않습니다.",
       "evidenceLevel": "MULTIPLE_PRIMARY_STATEMENTS",
       "sourceEvidence": [
         {
