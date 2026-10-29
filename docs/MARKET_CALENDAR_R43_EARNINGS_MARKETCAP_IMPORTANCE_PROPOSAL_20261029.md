@@ -37,6 +37,35 @@
 - `lib/market-score/equibles-e1-r1-provider.mjs`에 marketcap CSV 파서는 있으나 PRO 권한이 필요한 별도 평가 경로; 실제 무료 운영 시총 전량 확보라는 증거가 아님.
 - SEC 무료 API는 공식 문서에 확인되나, 실제 ZGmini 모든 예약 종목의 주식수 품질/다중 클래스 매핑은 아직 증명되지 않음.
 
+## R44 일괄 자동화 구조 (실행 가능성·제약 분석, 2026-10-29)
+목표는 **한 번의 승인된 PC 배치 처리로 일정 범위 내 전체 기업의 등급을 동일하게 계산하여 동시에 게시**하는 것. 티커별 수동 등록/하드코딩/별도 클릭/방문자 실시간 계산 금지.
+
+### 원본 계약, 무료 호출 경제성
+- 2026-10-29 운영 소스 `lib/earnings-api-display.mjs`에는 `marketCap` 필드가 없고 `priority`가 ★의 근거임. 현재 `EarningsAPI` 표시는 14일 범위를 저장한 HTML 전용 프로젝션이며 D1 공개 원문 재배포 제한 유지.
+- 확인된 이전 PC R33 저장본 `recordCount=2609`는 **실적 일정 건수이며 고유 기업 수가 아님**. 작업 시 원본 저장본에서 unique issuer/ticker 건수를 먼저 실측해야 함.
+- EarningsAPI 공식 `/v1/profile/{symbol}` 문서에는 `marketCap`이 기재됨. 그러나 사용 중인 정확한 호스트/권한/호출 가능성을 운영 PC에서 확인하기 전 **기존 계정에 접근 가능한 승인 endpoint로 간주하지 말 것**.
+- 해당 서비스 공개 무료 기준 100 requests/day, 1000 requests/month. 매일 14일짜리 일정을 14회 재조회하는 사용량이 계속된다면 월 420회가 일정 수집에 사용됨(30일을 가정한 이론상 값). 따라서 수백~수천 신규 프로필을 즉시 개별 API 요청으로 조회하는 방식을 채택하지 않음.
+- 기존 PC `Alpaca` 코드가 종가/거래량을 가져오지만 회사 전체 주식수는 제공하지 않고 해당 수집기의 현재 승인 범위는 별도임.
+- 미국 SEC 공시: 무료 CIK/회사명/주식수 관련 사실, `companyfacts.zip` nightly bulk. 실적 기업 전체의 ADR·복수 클래스·기업 변경·주식수 시점이 자동 매칭되는 것은 **미검증**.
+- Alpaca 무료 Basic의 IEX 실시간 범위·가격 데이터 외부 표시/상업적 파생 사용권도 검증. 유료 또는 상업적 불가라면 자동 fallback 없이 멈출 것.
+
+### 승인 후 자동 수집-계산-게시 설계
+1. **PC Private** 기존 14일 실적 저장본에서 고유 ticker/issuer 집합 추출. 알파벳 등 중복 클래스는 기업 단위로 병합; 기존 earnings occurrence/일정 변경 금지.
+2. 허가된 기존 저장 시총 스냅샷 우선 재사용; 없을 경우 승인된 무료 source로 필요한 가격·전체 유통/발행 주식 정보만 일괄 보충. SEC 공시 시점, share class, ADR, USD normalization 및 가격 as-of 일치 여부 검사.
+3. 동일 시점의 유효 시총을 기준으로 ***모든 종목*** 등급 후보 계산 (R43 수치 기준은 아직 사용자 최종 승인 전). 누락·오류·stale은 별도 상태 및 커버리지 보고. ★을 기본값으로 지정하는 금지.
+4. 등급 후보 + 원본 PC HTML 전용 일정에 대해 **일괄 재생성**. 결과를 로컬 SQLite 저장 후 readback, 기존 14일 범위와 표본 개수/발표일/중복/필터/정렬 비교.
+5. 승인된 HTML-only 결과만 기존 D1 공개 output 키에 게시 및 재조회. UI 전체 목록과 ★ 필터의 표시/집계가 **같은 저장 결과**를 사용하게 해서 즉시 일치. 원본, 키, 개인/재배포 불가 data 공개 금지.
+6. 이후 기존 PC 예약 실행에서 원본 일정 갱신 또는 유효 시총 갱신 시 자동 재계산·재게시. **새 예약 작업·Cloudflare Cron·별도 공개 API 실시간 수집·강제 전체 재수집 금지**. 주기/TTL은 기존 승인값을 확인·보존하고 임의 변경하지 않음.
+7. provider의 일시 실패 시 마지막 유효 결과를 유지하되 확인 시각과 상태를 표시. 커버리지가 통과하지 못하는 경우 정확한 원인을 남기고 화면의 ★를 사실처럼 조용히 덮어쓰지 않음.
+
+### 실행 게이트·상태
+- source 연결과 시총 저장/검증이 **완성되지 않았으므로 지금 운영 사이트 ★를 전환하면 안 됨**. 현재 자동 일괄 업데이트는 구현·운영 검증 **NOT DONE**.
+- 먼저 R44 read-only PC audit에서 `uniqueIssuers`, `existingMarketCapCoverage`, `priceCoverage`, `issuerMappingCoverage`, `rightsOK`, `missingSymbols`를 확인. 실제 PC/D1/API/UI에서 값이 검증될 때까지 전체 자동화 완료라고 보고하지 않음.
+- 데이터 소스 선택과 공시/가격 연계가 검증되면 CI 테스트 → 최소 변경 PR → `main` → Cloudflare Git Integration → exact deployment → 저장 결과/UI readback 순서로 수행.
+- 최소 범위만 작업하고 현재 진행 중인 다른 UI 작업을 함께 병합하거나 덮어쓰지 않음.
+
+자료 확인: SEC companyfacts `https://www.sec.gov/search-filings/edgar-application-programming-interfaces`; EarningsAPI profile `https://www.earningsapi.com/docs/examples/profile-enrichment`; Alpaca Basic `https://docs.alpaca.markets/us/docs/about-market-data-api`.
+
 ## 운영 전 Gate
 1. 사용자 ★ 구간 및 미확인 처리 승인 (아직 미확정).
 2. 승인된 무료 데이터 소스/약관, 전체 종목 coverage, 최근 실제 runtime 데이터와 수집 쿼터 확인.
