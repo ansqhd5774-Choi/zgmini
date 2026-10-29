@@ -1,0 +1,79 @@
+{
+  "version": "IRAN_OFFICIAL_NEWS_BRIEFS_R1",
+  "scope": "INDEPENDENT_OFFICIAL_EVENTS",
+  "asOfDate": "2026-10-29",
+  "publicationAuthorized": false,
+  "items": [
+    {
+      "id": "OFFICIAL-20261027-01",
+      "eventDate": "2026-10-27",
+      "titleKo": "이란 핵사찰 접근 문제에 대한 유럽 국가들의 우려 재확인",
+      "facts": [
+        {"textKo": "영국 정부는 10월 27일 유엔 안전보장이사회 발언에서 이란 핵시설에 대한 국제원자력기구 사찰 재개를 촉구했습니다.", "sourceIndexes": [0]},
+        {"textKo": "독일 정부는 같은 회의 발언에서 국제원자력기구가 이란 핵물질을 검증하는 데 필요한 정보와 접근을 확보하지 못했다고 설명했습니다.", "sourceIndexes": [1]},
+        {"textKo": "영국과 독일은 모두 핵 검증 문제의 해결과 외교적 해법을 지지한다는 입장을 밝혔습니다.", "sourceIndexes": [0, 1]}
+      ],
+      "interpretationKo": "사찰과 검증에 관한 공식 우려가 지속된다는 점은 핵 관련 긴장이 해소되지 않았다는 신호입니다. 다만 사찰 재개 요구만으로 새로운 군사 충돌이나 협상 결렬을 단정할 수 없습니다.",
+      "signal": "risk_increase",
+      "signalReasonKo": "검증 공백이 해결되지 않았다는 당사국 정부의 발표가 유지된 점을 위험 신호로 분류했습니다.",
+      "evidenceLevel": "MULTIPLE_PRIMARY_STATEMENTS",
+      "sourceEvidence": [
+        {
+          "organization": "영국 외무부",
+          "publicationDate": "2026-10-27",
+          "url": "https://www.gov.uk/government/speeches/iran-must-allow-the-return-of-iaea-inspectors-to-all-nuclear-sites"
+        },
+        {
+          "organization": "독일 연방외무부",
+          "publicationDate": "2026-10-26",
+          "url": "https://new-york-un.diplo.de/un-en/2807972-2807972"
+        }
+      ],
+      "status": "SOURCE_VERIFIED_CANDIDATE"
+    },
+    {
+      "id": "OFFICIAL-20261027-02",
+      "eventDate": "2026-10-27",
+      "titleKo": "카타르 외교부, 미국과 이란 사이의 중재 메시지 교환 지속 발표",
+      "facts": [
+        {"textKo": "카타르 외교부는 10월 27일 발표에서 미국과 이란 사이의 외교 메시지와 제안이 카타르의 중재 경로를 통해 계속 오가고 있다고 설명했습니다.", "sourceIndexes": [0]},
+        {"textKo": "카타르 외교부는 자국 대표단의 테헤란 방문이 협의와 중재 유지 노력의 일부라고 밝혔습니다.", "sourceIndexes": [0]},
+        {"textKo": "동시에 카타르는 이란에 주변국 위협 중단과 호르무즈 해협 항행 안전 보장에 관한 구체적 행동을 요구했습니다.", "sourceIndexes": [0]}
+      ],
+      "interpretationKo": "중재 경로가 유지되고 있다는 카타르의 발표는 외교적 완화 가능성을 보여줍니다. 그러나 실제 합의가 체결됐거나 현장의 긴장이 낮아졌다는 독립 검증까지 이뤄진 것은 아닙니다.",
+      "signal": "diplomatic_positive",
+      "signalReasonKo": "합의 체결이 아닌 외교 메시지 교환의 지속 자체를 제한적인 긍정 신호로 평가했습니다.",
+      "evidenceLevel": "ONE_PRIMARY_STATEMENT",
+      "sourceEvidence": [
+        {
+          "organization": "카타르 외교부",
+          "publicationDate": "2026-10-27",
+          "url": "https://mofa.gov.qa/en/qatar/latest-articles/latest-news/details/2026/10/27/qatar-calls-for-new-regional-security-framework-based-on-state-sovereignty-respect"
+        }
+      ],
+      "status": "SOURCE_VERIFIED_CANDIDATE"
+    },
+    {
+      "id": "OFFICIAL-20261023-01",
+      "eventDate": "2026-10-23",
+      "titleKo": "이스탄불 다자 외교장관 회의, 이란 관련 분쟁의 외교적 해결 강조",
+      "facts": [
+        {"textKo": "10월 23일 이스탄불에서 튀르키예와 이집트 등 지역 국가 및 영국과 프랑스 등 유럽 국가의 외교장관들이 회의를 열었습니다.", "sourceIndexes": [0]},
+        {"textKo": "10월 24일 영국 정부가 공개한 공동 발표문은 미국과 이스라엘, 이란 관련 분쟁 및 호르무즈 해협 항행 문제를 논의했다고 설명했습니다.", "sourceIndexes": [0]},
+        {"textKo": "참석 장관들은 외교와 대화를 통한 긴장 완화가 필요하며 해당 회의 형식의 대화를 지속하기로 했다고 발표했습니다.", "sourceIndexes": [0]}
+      ],
+      "interpretationKo": "여러 국가가 외교적 해결의 필요성을 공동으로 제시한 점은 대화 경로의 존재를 보여줍니다. 하지만 공동 성명은 실제 군사적 긴장 완화나 휴전 이행이 확인됐다는 증거는 아닙니다.",
+      "signal": "diplomatic_positive",
+      "signalReasonKo": "다자회의에서 대화를 이어가기로 한 공식 약속은 외교적 긍정 신호지만 실효성은 미확인입니다.",
+      "evidenceLevel": "ONE_PRIMARY_STATEMENT",
+      "sourceEvidence": [
+        {
+          "organization": "영국 외무부 공동 발표",
+          "publicationDate": "2026-10-24",
+          "url": "https://www.gov.uk/government/news/joint-press-release-on-the-r4-ministerial-meeting-in-istanbul"
+        }
+      ],
+      "status": "SOURCE_VERIFIED_CANDIDATE"
+    }
+  ]
+}
