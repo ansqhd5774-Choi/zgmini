@@ -6,6 +6,9 @@ import {fileURLToPath} from 'node:url';
 import {IRAN_NEWS_METADATA_SOURCE_IDS_R41,IRAN_NEWS_METADATA_SOURCES_R41,
  validIranMetadataRowR41} from '../../lib/iran-progress/news-metadata-r41.mjs';
 
+const R41_ORIGINAL_SEVEN_SOURCES=Object.freeze(['tasnim','govuk','guardian-iran',
+ 'dw-world','bbc-middle-east','aljazeera','un-middle-east']);
+
 export const IRAN_NEWS_R41_UPSERT_SQL=`INSERT INTO iran_news_article_metadata_r41
  (article_id,source_id,source,source_url,title,published_at,body_verified,
  keywords_verified,checked_at,stored_at)
@@ -42,7 +45,7 @@ export function prepareIranNewsMetadataR41(report,{now=Date.now()}={}){
   seen.add(articleId);rows.push(row);
  }
  if(rows.length!==report.qualified30Days||
-  IRAN_NEWS_METADATA_SOURCE_IDS_R41.some(id=>!rows.some(row=>row.sourceId===id)))
+  R41_ORIGINAL_SEVEN_SOURCES.some(id=>!rows.some(row=>row.sourceId===id)))
   throw Error('R41_QUALIFIED_COUNT_OR_SOURCE_MISMATCH');
  return rows.sort((a,b)=>b.publishedAt.localeCompare(a.publishedAt)||a.articleId.localeCompare(b.articleId));
 }
