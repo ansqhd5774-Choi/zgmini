@@ -448,6 +448,44 @@
         }
       ],
       "status": "SOURCE_VERIFIED_CANDIDATE"
+    },
+    {
+      "id": "OFFICIAL-20261026-05",
+      "eventDate": "2026-10-26",
+      "titleKo": "오만과 남아공 외교장관, 걸프 정세 완화와 항행 안전 관련 통화",
+      "facts": [
+        {
+          "textKo": "오만 외교부는 10월 26일 바드르 알부사이디 외교장관이 남아프리카공화국의 로널드 라몰라 국제관계협력부 장관과 전화 통화했다고 발표했습니다.",
+          "sourceIndexes": [
+            0
+          ]
+        },
+        {
+          "textKo": "양국 장관은 중동과 걸프의 정세를 논의하고 긴장 완화를 위한 외교 노력과 국가 주권 존중에 기초한 지역 협력의 필요성을 강조했습니다.",
+          "sourceIndexes": [
+            0
+          ]
+        },
+        {
+          "textKo": "오만 정부 발표는 물자 공급과 해상 항행의 안전을 중요한 목표로 언급했지만 새로운 합의 체결이나 통행 안전의 실제 개선을 확인하지는 않았습니다.",
+          "sourceIndexes": [
+            0
+          ]
+        }
+      ],
+      "interpretationKo": "오만과 남아공의 별도 고위급 대화가 공식 확인됐습니다. 그러나 지역 안보와 항행에 관한 원칙적 협의로서 새로운 중재 합의가 타결됐거나 현장 충돌이 감소했다는 증거는 아닙니다.",
+      "signal": "neutral",
+      "signalReasonKo": "실제 외교장관 통화는 확인됐지만 신규 합의 또는 군사·항행 위험 완화 조치가 확인되지 않아 방향성을 중립으로 기록합니다.",
+      "evidenceLevel": "ONE_PRIMARY_STATEMENT",
+      "sourceEvidence": [
+        {
+          "organization": "오만 외교부 아랍어 원문",
+          "sourceDate": "2026-10-26",
+          "dateKind": "PUBLISHED",
+          "url": "https://www.fm.gov.om/ar/62261/"
+        }
+      ],
+      "status": "SOURCE_VERIFIED_CANDIDATE"
     }
   ]
 }
