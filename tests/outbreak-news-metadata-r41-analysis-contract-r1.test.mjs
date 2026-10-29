@@ -50,3 +50,17 @@ test('existing Korean title translation and pagination remain intact',()=>{
  assert.match(source,/뉴스 더보기/);
  assert.match(source,/MyMemory/);
 });
+
+test('the actual Iran news renderer mounts the evaluated card without losing current filters and links',()=>{
+ const current=readFileSync(new URL('../app/outbreak-news-r57.tsx',import.meta.url),'utf8');
+ const container=readFileSync(new URL('../app/outbreak-news-container-r1.tsx',import.meta.url),'utf8');
+ assert.match(container,/<OutbreakNewsUI eventId=\{eventId\} items=\{items\}/);
+ assert.match(current,/IranNewsEvaluationCard,validAnalysis/);
+ assert.match(current,/eventId==="iran"&&items\.length>0/);
+ assert.match(current,/analysis\?<IranNewsEvaluationCard analysis=\{analysis\}\/>/);
+ assert.match(current,/data-analysis-status=\{analysis\?"READY":"PENDING"\}/);
+ assert.match(current,/newsPageSize\(wide\)/);
+ assert.match(current,/sourceRightsAttribution\(item\)/);
+ assert.match(current,/aria-label=\{`\$\{item\.source\} 기사 원문 보기/);
+ assert.match(current,/role="group" aria-label="뉴스 영향 필터"/);
+});
