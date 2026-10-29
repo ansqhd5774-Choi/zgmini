@@ -21,8 +21,8 @@
 | 신규 실테마 수집·계산 | 미실행 | 실제 테마 미선정. fixture와 혼동 금지 |
 | 다음 정규 실행 | 미관찰 | 등록 성공과 실행 관찰을 구분 |
 | 공개 게시 준비 | 다음 단계 구현 | `theme-config-publication-preflight.mjs`, 로컬 replay·해시·승인 검사만 |
-| 공통 D1 게시/readback | 미구현 | 기존 public-feed 테이블·CAS 재사용 예정, 원자료 게시 금지 |
-| 공개 Reader/API·UI | 미연결 | UI 역할은 기존 `codex/ui-improvements`, 기존 테마·산식 불변 |
+| 공통 D1 게시/readback | **코어 소스 구현·로컬 모의 D1 8검사 PASS / 실D1 미실행** | `theme-config-publication-d1.mjs`; 기존 public-feed 테이블·CAS·exact readback. 실제 PC 인증/게시 연결은 미완료 |
+| 공개 Reader/API·UI | **독립 Reader/API 소스 구현·로컬 6검사 PASS / 배포·UI 미연결** | `worker/theme-configured-public.mjs`, `/api/theme-configured`; 기존 10개 공개 Reader/UI·산식 불변 |
 
 PC 설치본: `E:/ZGmini/data/pc-writer/theme-config-tool`  
 설치 증거: `INSTALL_RESULT.json`  
@@ -53,8 +53,8 @@ PC 설치본: `E:/ZGmini/data/pc-writer/theme-config-tool`
 
 순서:
 1. **진행 중:** 등록 정의 해시, 최신 원본 SHA, 저장 계산 결과의 재현, 관측일/원본 수집 시각, 별도 운영자 공개 승인 대조. 로컬 사전검사는 원격D1 요청0/쓰기0이다.
-2. **대기:** 기존 D1 인증·테이블·CAS를 재사용하는 공통 publisher와 exact readback. 기존키 교체 없이 `theme-configured:<id>` namespace를 사용한다. 모호한 제출 결과는 조회부터 수행한다.
-3. **대기:** 공통 Reader가 승인된 개별 레코드만 읽고 기존 공개 테마를 교체하지 않도록 구성. 미승인·빈·오래된 후보는 공개 정상 테마를 막지 않는다.
+2. **코어 소스 구현·운영 검증 대기:** 기존 D1 테이블·CAS를 재사용하는 공통 publisher와 exact readback을 작성했다. 기존키 교체 없이 `theme-configured:<id>` namespace를 사용하며, 모호한 제출 결과는 조회만 하고 재전송하지 않는다. 실PC 인증 어댑터 연결·실D1 게시·readback 증거는 아직 없다.
+3. **독립 Reader/API 소스 구현·배포 검증 대기:** 공통 Reader는 승인된 개별 레코드만 별도 `/api/theme-configured`에서 읽는다. 기존 공개 10개 테마를 교체하지 않고, 미승인·빈·오래된 후보를 건너뛴다. 실D1 읽기와 사이트 배포는 미실행이다.
 4. **대기:** UI는 동적 테마 목록·실제 결측·점선/확정 경계를 기존 스타일로 표시한다. 고정 팔레트와 기존 산식을 바꾸지 않는다.
 5. **대기:** 실제 선택한 신규 테마 한 개로 원본→계산→승인→D1→API/UI→다음 정규 실행 증거를 확보한다. 샘플 AAA/BBB로 성공을 꾸미지 않는다.
 
@@ -63,6 +63,14 @@ PC 설치본: `E:/ZGmini/data/pc-writer/theme-config-tool`
 설정 JSON에 `publicationAuthorized`, 권리 승인, SQL, URL, command 등을 추가해도 등록기가 거부한다. 공개 승인 레코드는 별도의 운영자 검토 결과이며 등록·테스트로 자동 생성하지 않는다. 기존 테마에 적용된 익명 사용 위험 수용을 새로운 모든 테마의 권리 확인으로 자동 승계하지 않는다. 현재 사전검사 v1은 명시적으로 검토된 파생 공개 권리 모드만 지원한다. 이 검사는 승인 문서의 구조·해시·범위 대조이며 독립 법률 검증이 아니다.
 
 `--preflight <id>` / `--all` 결과가 `PREFLIGHT_PASS_NO_REMOTE_ACCESS`여도 D1 저장·API 연결·사이트 공개 성공이 아니다. 후보는 과거 원자료를 다시 수집하지 않고 현재 보존 자료에서 재현한다. 공개 승인이 없거나 계산 자료가 부족하면 해당 테마의 공개 단계만 대기하며 기존 운영은 계속한다.
+
+## 2026-10-29 공개 연결 코드 인계 — 설정 기반 테마
+
+- 기준 브랜치: `codex/theme-fear-greed-integration-20261025`; 이전 기준 커밋: `74a5beefb5c69379fdad32dd544bd74c06f90edf`. 브랜치 전체 main 병합 금지.
+- **코드 준비:** `scripts/pc-writer/theme-config-publication-d1.mjs`는 기존 로컬 사전검사를 게시 시점에 재실행하는 `publishConfiguredThemeD1` 진입점을 제공한다. 기존 D1 query 어댑터를 주입하는 방식이며 인증정보·원본·공개 승인 문서를 생성하지 않는다. 준비 후보만 `theme-configured:<id>` 새 key로 CAS INSERT/UPDATE하고, exact readback을 확인한다. 결과가 모호하면 읽기만 수행하고 재전송하지 않는다.
+- **공개 Reader/API 준비:** `worker/theme-configured-public.mjs`와 `app/api/theme-configured/route.ts`는 공개 레코드를 화이트리스트로 제한한다. 기존 `/api/theme-fear-greed`·공개 10개 테마·잠정치·R32·기존 키를 수정하지 않는다. 결측 점수는 null로 유지한다.
+- **검증 범위:** 로컬 mock D1 게시 8/8, Reader 6/6 통과, 원격 소스 readback 일치. 실제 신규 등록 0개(기존 전달된 PC 증거 기준이며 이번 채팅에서 PC 직접 재조회하지 않음). 테스트 fixture는 운영 게시 증거가 아니다.
+- **미완료:** PC 설치 및 인증 어댑터 연결, 실원본→계산→독립 운영자 권리 승인, D1 CAS write/readback, Cloudflare main selective recovery·배포, 기존 UI 목록 통합, 정규 실행 관찰. 이번 코드 커밋은 D1 요청0·쓰기0·배포0이다. 등록/승인 없을 때 미게시가 정상이며, 임의 권리 승인을 만들어 운영 게시하지 않는다.
 
 ## 실행·배포 경계
 
