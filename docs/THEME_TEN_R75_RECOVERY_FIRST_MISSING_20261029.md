@@ -95,3 +95,14 @@ R75는 기존 R48을 **한 번** 호출하며 R48 종료 0을 점수/운영 갱�
 - 실행 게이트: 한국시간 10:55~14:35 예약 보호, 공개 `READY`·기존 10개 테마, 확정일과 승인 R48 개인 후보 정확히 일치, R54 기존 동의 파일, 개인 수집 lock 없음, PC에 설치된 R78 R51/R37 두 SHA 정확히 일치. 이미 R37 버전이면 D1 쓰지 않고 종료.
 - R54 종료 코드 0과 별개로 다시 공개 API `modelRevision=THEME_LEGACY_NINE_R37_PUBLIC_V1` 및 확정일 일치 재확인. 완료 상태도 `NEXT_REGULAR_PENDING`으로 명시하여 정규 실행 검증과 구분한다.
 - 우주·위성/데이터센터·전력은 원본 10/27 수집 누락이 먼저이므로 R79에서 **어떤 원자료·전용 계산·D1 게시도 시도하지 않는다**. 전용 Windows 작업 실제 실행 경로·승인 collector 확인 후 별도 최소 복구한다. 다음 정규 실행 로그와 실제 화면 날짜까지 확인하기 전 운영 복구 완료 판정 금지.
+
+
+## R79 실제 PC 실행 — D1 readback 통과, 공개 Reader 미채택 (2026-10-30 KST)
+
+- 사용자 결과 `THEME_TEN_R79_R54_ONLY_RESULT_27032_29404.txt` (`inspectedAt=2026-10-29T15:50:14.845Z`) 확인. 신규 테마·산식·작업·원본 대체 0. 사전 공개 `READY`, 확정 10/27, 10개, `modelRevision=null`, 27일 R48 후보 일치, 게이트 통과.
+- R54 1회 실행 종료 코드 1. 실제 세부 로그 파일명은 `E:\\ZGmini\\data\\pc-writer\\theme-nine-r54\\logs\\THEME_NINE_R54_CYCLE_27035_7384.txt`, 핵심 상태는 `D1_VERIFIED_AWAIT_PUBLIC_API_REFRESH`. **D1 검증은 수행·통과했으나 공개 API 반영은 검증하지 못한 중간 단계**로 기록. R79 helper 자체는 D1 추가 쓰기 0이고 R54 내부에서 승인 D1 게시가 있었다.
+- 브라우저 독립 공개 API 재조회에서 기존 `methodologyVersion=ETF_ONLY_T40_R20_V40_PAIR50`, R37 `modelRevision` 없음(즉 `null`). 바이오·신약 27일, 우주·위성/데이터센터·전력 23일. 바이오 27일 잠정 점수 36.25595와 나머지 기존 잠정 26/28일 행 그대로 보존.
+- GitHub `main`과 기존 작업 브랜치의 `worker/theme-nine-r37-public.mjs` blob SHA는 모두 `406e3d78008090d4b0093898718dfe2d112d7699`로 동일. **GitHub 파일 불일치는 관측되지 않았지만 실제 production Worker/D1 binding의 정확한 원인까지 증명된 것은 아님**.
+- R54는 D1 readback 뒤 `addVerifiedNineR37`로 서버 시뮬레이션하고 공개 API 이력·잠정 scores의 정확한 일치를 한 번 검사한다. 종료 코드 1이 바로 원본 수집 실패라는 의미는 아니다. **R54를 재실행하지 말고 기존 세부 로그 단일 파일** `THEME_NINE_R54_CYCLE_27035_7384.txt`의 `publicDateMatched`, `publicScoresMatched`, `publicProvisionalScoresMatched`, `dbStatus`, `d1Writes`를 확인한다. 비밀 토큰/원본 데이터 없이 상태 필드만 전달하면 된다.
+- 원인 분리: (a) 한 번의 검사 시점에서 공개 API 아직 갱신되지 않은 지연, (b) R37 공개 eligibility의 D1/public sidecar 불일치, (c) Worker D1 binding/배포 반영 미일치. 위 로그와 날짜별 공개 readback으로 구분할 것. R37 정확 일치/권리/시간 가드를 임의 완화하거나 기존 정상 7개/두 전용 수집 경로를 변경하지 않는다.
+- 기존 우주·위성/데이터센터·전력 PC 10/27 원본 누락은 여전히 별도 복구 과제. 공개 10테마 자동 갱신 및 다음 정규 실행 성공 판정 금지.
