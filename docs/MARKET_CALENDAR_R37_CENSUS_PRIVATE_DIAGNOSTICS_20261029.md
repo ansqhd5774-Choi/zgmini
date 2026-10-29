@@ -24,3 +24,10 @@ Check existing Core normal execution after installation; never count installatio
 ## Verification
 Local isolated Node tests: 7/7 PASS (diagnostic classification, fallback, current/next-year separation, preserving old data, install fail-closed). Actual PC installation and runtime latest-state verification: NOT EXECUTED.
 Reference official source: https://www.census.gov/economic-indicators/calendar-listview.html
+
+## Read-only evidence after next normal run
+The ZIP additionally contains `MARKET_CALENDAR_R37_CENSUS_READONLY.cmd`.
+It opens the existing `E:\ZGmini\data\pc-writer\storage\core.sqlite` with `node:sqlite` read-only and produces `MARKET_CALENDAR_R37_CENSUS_READONLY_RESULT.txt`.
+The report includes the current Census public status/record count and private input diagnostics for the current and next year; no raw HTML or credentials.
+Use only after installation and the existing normal 6-hour calendar refresh (do not force a new collection).
+A local synthetic SQLite fixture for this reader returned `READ_ONLY_RETRIEVED`, status `READY`, and the expected `HTTP_429` diagnosis.
