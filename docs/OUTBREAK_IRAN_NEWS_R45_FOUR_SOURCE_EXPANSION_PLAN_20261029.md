@@ -170,3 +170,13 @@
 - **고정 PIN CMD:** `scripts/iran-progress/IRAN_NEWS_R51_READBACK_ONLY_20261029.cmd`. PIN `842f09210f4276de54acfb04e796795a8cbf93e4`; 소스 13개 Git Blob SHA 확인 후 R51 Node mock 테스트→승인 PC Writer 기존 계정으로 D1 SELECT 2종만 실행. R50 승인 환경변수 설정/UPSERT/배포 없음. 로그 `IRAN_NEWS_R51_READBACK_RESULT.txt`; 기존 결과 있으면 재실행 거부.
 - **다운로드 보강:** `R51_READBACK.zip`에 R51 CMD 및 기존 R46, R49, R50 불명확 결과 TXT 3개를 원본 그대로 포함하여 별도 수동 파일 이동 불필요. ZIP CRC PASS, ZIP CMD와 GitHub blob 동일성 PASS, PIN의 13개 소스 Blob SHA **13/13 PASS**.
 - **NEXT:** PC R51 단일 read-only 실행 결과 받아 실제 D1 저장 상태 판정. 8/8 보존 성공이면 게시 재실행 금지 및 최신 main 대비 최소 파일만 반영해 Cloudflare Git Integration/사이트 UI 확인. 0/8 또는 일부/충돌이면 FIRST FAIL 자료로 추적하고 운영 쓰기 실행 여부는 다시 평가. 백그라운드 자동 재시도 금지.
+
+
+## 15. R51 운영 원격 재조회 결과 0/8, R52 단계별 읽기 전용 원인 진단 (2026-10-29)
+
+- **실제 PC R51 증거:** `IRAN_NEWS_R51_READBACK_RESULT.txt`, Git pin `842f09210f4276de54acfb04e796795a8cbf93e4`, 소스 13/13 검증, fixture Node **6/6 PASS**, 실제 remote D1 `R50_ZERO_EXPECTED_STORED_NO_RETRY`. 총 **41행**, 초기 원본 39개 URL/ID **39/39 보존**, 누락 0, 변경 0, R50 기대 신규 **8개 중 실제 저장 0개**, Arab News 전체 0행, R1 기존 SHA/storedAt 일치. 결과 `R51_NODE_EXIT=2`는 D1 조회 실패가 아니라 **기대 8개가 저장되지 않은 상태**를 알리는 리뷰 종료.
+- **R50 본 오류의 FIRST FAIL:** `STEP_2=ONE_TIME_APPROVED_R41_D1_INCREMENTAL_PUBLISH` 뒤 구체적 예외가 `R50_WRITE_OR_READBACK_OUTCOME_UNKNOWN` 하나로 마스킹됨. 현재 데이터는 0/8이지만 **문제의 최초 예외 발생 지점은 확정되지 않음**. 0개 저장을 인증 오류·쓰기 오류로 단정 금지. 승인 없는 반복 게시 금지.
+- **R52:** `scripts/iran-progress/news-r50-failure-readonly-r52.mjs`와 `tests/iran-news-r52-prewrite.test.mjs` 추가. 실 원본 R46/R49/R50/R51 증거를 대조하고, R50의 신규 8개 R41 유효성, R47 preflight(39개 archive·R1·ID 검증), 현 D1 41행+중복 0, R1 SHA/storedAt, 기존 D1 adapter의 신규 ID SELECT 호환성을 **순서대로 재현**한다. 실패 시 안전한 `firstFail`/코드, 성공 시 `PREWRITE_CURRENTLY_PASS_R50_CAUSE_NOT_YET_PROVEN` 반환. 어떠한 D1 mutation API도 실행하지 않음.
+- **R52 실행기:** `scripts/iran-progress/IRAN_NEWS_R52_READONLY_DIAG_20261029.cmd`. 고정 PIN `c35c8caf5c2d11f107f99c7f78cb987d7c43ab87`, 필수 원격 소스 15개 Git Blob 확인(연결 소스 정적 SHA 15/15 일치), Node 회귀 테스트 및 PC D1 SELECT 진단. 결과 파일 `IRAN_NEWS_R52_PREWRITE_DIAG_RESULT.txt` 신규 생성; 기존 로그 덮어쓰기·자동 재실행 금지. 사용자에게 제공한 `R52_DIAG.zip`에는 CMD + 원본 R46/R49/R50/R51 TXT 4개를 묶었으며 ZIP CRC, CMD Git Blob SHA 일치 확인됨.
+- **검증 상태:** R52 소스/테스트 GitHub 반영 및 ZIP 검증 완료. R52 신규 5개 테스트는 **실제 PC에서 아직 미실행**, D1 R52 조회도 미실행. R51 0/8 실측만 PASS. D1 쓰기·main 병합·배포 미실행.
+- **NEXT:** R52 실결과의 단계별 `firstFail` 확인 → 정확한 최초 실패 코드와 영향 범위만 최소 수정 → R51의 0/8 저장 상태 재확인 후 별도 승인된 신규 1회성 게시로 재개. 운영 source/계정/D1·R1 보존을 유지하고 실패 원인 없이는 R50 CMD 재실행 금지.
