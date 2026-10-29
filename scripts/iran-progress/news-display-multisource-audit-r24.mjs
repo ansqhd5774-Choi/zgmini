@@ -3,7 +3,7 @@
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {boundedRead} from './sources.mjs';
-import {IRAN_DISPLAY_FEEDS_R26} from './news-display-source-registry-r26.mjs';
+import {IRAN_DISPLAY_FEEDS_R26,IRAN_DISPLAY_FEEDS_R45_OPTIONAL} from './news-display-source-registry-r26.mjs';
 import {discoverR45ArticleUrls,normalizeR45ArticleUrl} from './news-four-source-probe-r45.mjs';
 import {parseGovUkNewsCandidates} from './news-display-discover-r1.mjs';
 
@@ -179,7 +179,7 @@ export function parseIranMultisourceFeedR24(sourceId,kind,body){
 export async function auditIranMultisourceCollectionR24({now=Date.now(),fetcher=fetch,
  feeds=IRAN_MULTISOURCE_FEEDS_R24}={}){
  if(!Number.isSafeInteger(now)||!Array.isArray(feeds)||!feeds.length||feeds.length>11||
-  feeds.some(spec=>![...IRAN_MULTISOURCE_FEEDS_R24,...RETIRED_IAEA_DIAGNOSTIC_FEEDS].some(approved=>
+  feeds.some(spec=>![...IRAN_MULTISOURCE_FEEDS_R24,...IRAN_DISPLAY_FEEDS_R45_OPTIONAL,...RETIRED_IAEA_DIAGNOSTIC_FEEDS].some(approved=>
    approved.id===spec.id&&approved.url===spec.url&&approved.kind===spec.kind)))
   throw Error('R24_SOURCE_REGISTRY_INVALID');
  const seen=new Set(),candidates=[],sources=[];
