@@ -70,7 +70,7 @@ test('earnings market-cap threshold is exactly 300 billion USD',()=>{
 });
 test('estimate labels distinguish before-open from after-close reference',()=>{
  assert.match(file,/session==='beforeOpen'/);
- assert.match(file,/<ScheduleDate at=\{item\.at\} estimated=\{item\.estimated\} session=\{item\.session\}\/>/);
+ assert.match(file,/<ScheduleDate at=\{item\.at\} date=\{item\.date\} estimated=\{item\.estimated\} session=\{item\.session\}\/>/);
  assert.match(file,/정규장 개장 09:30 ET 기준 예상 시각/);
  assert.match(file,/정규장 마감 16:00 ET 기준 예상 시각/);
  assert.match(css,/\.zg-schedule-ticker-fallback\{display:inline-flex;flex:none/);

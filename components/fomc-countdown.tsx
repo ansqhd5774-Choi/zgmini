@@ -1,8 +1,8 @@
 "use client";
 
 import {useEffect,useRef,useState,type KeyboardEvent} from 'react';
-import {FOMC_CHECKED_AT,FOMC_SOURCE,fomcState,fomcKst} from '../lib/fomc-countdown.mjs';
-import {upcomingSchedule,remainingParts,kstDisplayParts} from '../lib/fomc-schedule.mjs';
+import {remainingParts,kstDisplayParts} from '../lib/fomc-schedule.mjs';
+import {marketCalendarBannerRows,bannerCalendarRange} from '../lib/market-calendar-banner.mjs';
 import './fomc-countdown.css';
 
 function FlipDigit({value}:{value:string}) {
@@ -23,7 +23,8 @@ function CompanyLogo({logo,ticker,domain}:{logo?:string;ticker?:string;domain?:s
  return null;
 }
 
-function ScheduleDate({at,estimated,session}:{at:string;estimated:boolean;session?:string}){
+function ScheduleDate({at,date:sourceDate,estimated,session}:{at:string|null;date:string;estimated:boolean;session?:string}){
+ if(!at)return <time className="zg-schedule-date" dateTime={sourceDate} title="미국 발표 예정일 · 실제 발표 시각 미정">{sourceDate.slice(5).replace('-','.')} 美 · 미정</time>;
  const {date,weekday,time}=kstDisplayParts(at);
  const title=estimated
   ?(session==='beforeOpen'?'美 정규장 개장 09:30 ET 기준 예상 시각 · 실제 실적 공개 시각 미확정':'美 정규장 마감 16:00 ET 기준 예상 시각 · 실제 실적 공개 시각 미확정')
@@ -33,7 +34,8 @@ function ScheduleDate({at,estimated,session}:{at:string;estimated:boolean;sessio
 
 function dayUrgencyClass(days:number){return days<=0?' zg-fomc-day-0':days===1?' zg-fomc-day-1':days===2?' zg-fomc-day-2':'';}
 
-function ScheduleTimer({at,now,estimated}:{at:string;now:number;estimated:boolean}){
+function ScheduleTimer({at,now,estimated}:{at:string|null;now:number;estimated:boolean}){
+ if(!at)return <span className="zg-schedule-remaining">시각 미정</span>;
  const parts=remainingParts(at,now),pad=(n:number)=>String(n).padStart(2,'0');
  const expired=estimated&&now>=Date.parse(at);
  const label=expired?'예상 기준 시각 경과, 실적 공개 확인 필요':(estimated?'예상 기준까지 ':'발표까지 ')+parts.days+'일 '+parts.hours+'시간 '+parts.minutes+'분 '+parts.seconds+'초';
@@ -46,6 +48,8 @@ export default function FomcCountdown(){
   const [now,setNow]=useState<number|null>(null);
   const [expanded,setExpanded]=useState(false);
   const [calendar,setCalendar]=useState<any>(null);
+  const [earningsHtml,setEarningsHtml]=useState('');
+  const [loaded,setLoaded]=useState(false);
   const fetchedAt=useRef(0);
   useEffect(()=>{
     const tick=()=>setNow(Date.now());tick();
@@ -54,37 +58,50 @@ export default function FomcCountdown(){
     return()=>{clearInterval(timer);document.removeEventListener('visibilitychange',tick)};
   },[]);
   useEffect(()=>{
-    if(!expanded||Date.now()-fetchedAt.current<10*60000)return;
-    fetchedAt.current=Date.now();
-    const ac=new AbortController();
-    fetch('/api/release-calendar',{signal:ac.signal}).then(r=>{if(!r.ok)throw Error('CALENDAR_HTTP_'+r.status);return r.json()}).then(data=>setCalendar(data)).catch(()=>{});
-    return()=>ac.abort();
-  },[expanded]);
-  const event=now===null?null:fomcState(now);
-  const upcoming=now===null?[]:upcomingSchedule(now,calendar);
-  const title=`연준 공식 예정 일정 · 한국시간 · 일정 변경 가능 · 확인 ${FOMC_CHECKED_AT} · ${FOMC_SOURCE}`;
+    let ac:AbortController|null=null,active=true;
+    const refresh=()=>{
+      if(document.visibilityState==='hidden'||Date.now()-fetchedAt.current<10*60000)return;
+      fetchedAt.current=Date.now();ac?.abort();ac=new AbortController();
+      const {start,end}=bannerCalendarRange(Date.now()),signal=ac.signal;
+      Promise.allSettled([
+        fetch('/api/release-calendar',{signal}).then(r=>{if(!r.ok)throw Error('CALENDAR_HTTP');return r.json();}),
+        fetch(`/api/earnings-calendar-display?start=${start}&end=${end}&importance=3`,{signal}).then(r=>{if(r.status===204)return '';if(!r.ok||!r.headers.get('content-type')?.includes('text/html'))throw Error('EARNINGS_DISPLAY_HTTP');return r.text();}),
+      ]).then(([releases,earnings])=>{
+        if(!active||signal.aborted)return;
+        if(releases.status==='fulfilled')setCalendar(releases.value);
+        if(earnings.status==='fulfilled')setEarningsHtml(earnings.value);
+        setLoaded(true);
+      });
+    };
+    refresh();const timer=setInterval(refresh,10*60000);document.addEventListener('visibilitychange',refresh);
+    return()=>{active=false;ac?.abort();clearInterval(timer);document.removeEventListener('visibilitychange',refresh);};
+  },[]);
+  const upcoming=now===null?[]:marketCalendarBannerRows(now,calendar,earningsHtml);
+  const headline=upcoming[0]??null;
+  const event=now===null||!headline?.at?null:{at:headline.at,...Object.fromEntries(Object.entries(remainingParts(headline.at,now)).map(([k,v])=>[k,String(v).padStart(2,'0')]))} as {at:string;days:string;hours:string;minutes:string;seconds:string}|null;
+  const title='시장 캘린더 · 발표 전 중요도 ★★★ · 시간순 · KST · 기업 실적 시각은 추정 또는 미정';
   const toggle=()=>setExpanded(v=>!v);
   const keyDown=(e:KeyboardEvent<HTMLDivElement>)=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();toggle()}};
-  return <div className={'zg-fomc-bar'+(expanded?' zg-fomc-expanded':'')} aria-label="연준 금리 발표 일정" title={title} role="button" tabIndex={0} aria-expanded={expanded} aria-controls="zg-schedule-dropdown" onClick={toggle} onKeyDown={keyDown}>
+  return <div className={'zg-fomc-bar'+(expanded?' zg-fomc-expanded':'')} aria-label="발표 전 별 3개 시장 일정" title={title} role="button" tabIndex={0} aria-expanded={expanded} aria-controls="zg-schedule-dropdown" onClick={toggle} onKeyDown={keyDown}>
     <svg className="zg-fomc-toggle-icon zg-fomc-toggle-left" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d={expanded?'M3 12l9-8 9 8 M3 20l9-8 9 8':'M3 4l9 8 9-8 M3 12l9 8 9-8'}/></svg>
     <div className="zg-fomc-center">
       <svg className="zg-fomc-bank" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true"><path d="m2 7 8-5 8 5H2Zm1 10h14M5 9v6m5-6v6m5-6v6"/></svg>
-      <strong>연준 금리 발표</strong>
-      {event?<><time dateTime={event.at} aria-label={`${new Date(event.at).getUTCFullYear()}년 ${fomcKst(event.at)} 한국시간`}>{fomcKst(event.at)} <span className="zg-fomc-zone">KST</span></time>
-      {event.reached?<span className="zg-fomc-reached">발표 시각 도달 · 결과 확인 중</span>:<span className={'zg-fomc-clock'+dayUrgencyClass(Number(event.days))} role="timer" aria-live="off" aria-label={`발표까지 ${event.days}일 ${event.hours}시간 ${event.minutes}분 ${event.seconds}초`}><span aria-hidden="true" className="zg-fomc-clock-inner"><Pair value={event.days}/><span className="zg-fomc-day">일</span><Pair value={event.hours}/><b>:</b><Pair value={event.minutes}/><b>:</b><Pair value={event.seconds}/></span></span>}</>:<span className="zg-fomc-pending">{now===null?'일정 확인 중':'다음 공식 일정 확인 필요'}</span>}
+      <strong>{headline?(headline.ticker?headline.ticker+' 실적':headline.name):'주요 발표 일정'}</strong>
+      {event?<><time dateTime={event.at} title={headline?.estimated?'장전·장후 기준 예상 시각 · 실제 발표시각 미확정':'공식 발표 예정 시각'}>{headline?.estimated?'≈':''}{kstDisplayParts(event.at).date} {kstDisplayParts(event.at).time} <span className="zg-fomc-zone">KST</span></time>
+      <span className={'zg-fomc-clock'+dayUrgencyClass(Number(event.days))} role="timer" aria-live="off" aria-label={`${headline?.estimated?'예상 기준까지':'발표까지'} ${event.days}일 ${event.hours}시간 ${event.minutes}분 ${event.seconds}초`}><span aria-hidden="true" className="zg-fomc-clock-inner"><Pair value={event.days}/><span className="zg-fomc-day">일</span><Pair value={event.hours}/><b>:</b><Pair value={event.minutes}/><b>:</b><Pair value={event.seconds}/></span></span></>:<span className="zg-fomc-pending">{headline?'발표 시각 미정':!loaded?'일정 확인 중':'확인된 예정 발표 없음'}</span>}
     </div>
     <svg className="zg-fomc-toggle-icon zg-fomc-toggle-right" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d={expanded?'M3 12l9-8 9 8 M3 20l9-8 9 8':'M3 4l9 8 9-8 M3 12l9 8 9-8'}/></svg>
     <div className="zg-schedule-dropdown" id="zg-schedule-dropdown" hidden={!expanded} onClick={e=>e.stopPropagation()} onKeyDown={e=>e.stopPropagation()}>
-      <div className="zg-schedule-heading"><strong>핵심 경제지표 · 주요 기업 실적</strong><span>시간순 · KST · {upcoming.length}건</span></div>
+      <div className="zg-schedule-heading"><strong>발표 전 ★★★ 지표 · 기업 실적</strong><span>시간순 · KST · {upcoming.length}건</span></div>
       <div className="zg-schedule-list" role="region" aria-label="예정된 주요 발표 목록">
         {upcoming.length===0?<p className="zg-schedule-empty">확인된 주요 발표 일정이 없습니다.</p>:upcoming.map(item=><div className="zg-schedule-item" key={item.key}>
           <span className={'zg-schedule-kind '+(item.kind==='실적'?'is-earnings':item.kind==='연준'?'is-fed':'')}>{item.kind}</span>
           <span className="zg-schedule-name" title={item.name}><CompanyLogo logo={item.logo} ticker={item.ticker} domain={item.logoDomain}/><span className="zg-schedule-name-text">{item.name}</span></span>
-          <ScheduleDate at={item.at} estimated={item.estimated} session={item.session}/>
+          <ScheduleDate at={item.at} date={item.date} estimated={item.estimated} session={item.session}/>
           {now!==null&&<ScheduleTimer at={item.at} now={now} estimated={item.estimated}/>}
         </div>)}
       </div>
-      <div className="zg-schedule-foot">중요 발표만 표시 · 기업 실적 ≈ 는 美 장전·장후 기준 예상 시각 (확정 아님) · 실적 콜 제외 · BEA · BLS</div>
+      <div className="zg-schedule-foot">시장 캘린더 ★★★ · 발표 전 일정만 표시 · 실적 ≈ 는 美 장전·장후 기준 예상 시각 (확정 아님) · 시각 미정은 미국 예정일 기준 · 실적 콜 제외</div>
     </div>
   </div>;
 }
