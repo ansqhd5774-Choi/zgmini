@@ -114,10 +114,13 @@ export function eligibleNineR37(record,base,{now=Date.now(),storedAt=now}={}){
     record.provisional?.asOf!==(base.provisional?.asOf??null)||
     JSON.stringify(fromNew)!==JSON.stringify(fromBase))return false;
    const visible=new Set(base.themes.map(t=>t.theme));
-   let prev=baseConfirmed;
+   // A public legacy provisional point can predate the newly advanced
+   // confirmed anchor. Exact public-value equality is required above;
+   // enforce ordering within that unchanged public series only.
+   let prev=null;
    for(let i=0;i<fromNew.length;i++){
     const point=fromNew[i];
-    if(!validDate(point?.date)||point.date<prev||
+    if(!validDate(point?.date)||
      (i>0&&point.date<=prev)||
      !point.scores||typeof point.scores!=='object'||
      Array.isArray(point.scores)||!Object.keys(point.scores).length||
