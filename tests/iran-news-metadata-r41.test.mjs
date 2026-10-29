@@ -8,6 +8,8 @@ import {storedIranNewsMetadataR41Response}
  from '../worker/iran-news-metadata-public-r41.mjs';
 import {IRAN_NEWS_METADATA_SOURCE_IDS_R41}
  from '../lib/iran-progress/news-metadata-r41.mjs';
+import {iranNewsOffTopicReasonR1}
+ from '../lib/iran-progress/news-offtopic-exclusions-r1.mjs';
 
 const report=JSON.parse(readFileSync(new URL('../docs/IRAN_NEWS_R40_FULL_AUDIT_20261029.json',import.meta.url),'utf8'));
 const now=Date.parse('2026-10-29T01:30:00.000Z');
@@ -66,7 +68,7 @@ test('R41 uses a separate D1 table with checked-at monotonic upserts and read-ba
  }finally{db.close()}
 });
 
-test('R41 reader displays 35 last-14-day original-source titles and never joins R1',async()=>{
+test('R41 reader excludes off-topic titles without deleting D1 rows or joining R1',async()=>{
  const db=d1(),rows=prepareIranNewsMetadataR41(report,{now});
  try{
   await stageIranNewsMetadataR41(db,rows,{now});
@@ -76,7 +78,12 @@ test('R41 reader displays 35 last-14-day original-source titles and never joins 
   const payload=await response.json();
   assert.equal(payload.version,'IRAN_NEWS_METADATA_R41');
   assert.equal(payload.status,'READY');
-  assert.equal(payload.itemCount,35);
+  const excluded=rows.filter(row=>iranNewsOffTopicReasonR1(row.title));
+  assert.equal(excluded.length,1);
+  assert.match(excluded[0].title,/Reform donor/);
+  assert.equal(payload.itemCount,35-excluded.length);
+  assert.equal(db.sqlite.prepare('SELECT COUNT(*) AS n FROM iran_news_article_metadata_r41').get().n,39);
+  assert.ok(payload.items.every(item=>!iranNewsOffTopicReasonR1(item.title)));
   assert.equal(payload.sourceCount,7);
   assert.ok(payload.items.every(item=>item.id&&item.title&&item.source&&item.sourceUrl&&
    !Object.hasOwn(item,'summary')&&!Object.hasOwn(item,'body')&&!Object.hasOwn(item,'impact')));
