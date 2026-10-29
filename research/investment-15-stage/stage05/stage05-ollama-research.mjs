@@ -1,6 +1,6 @@
 /**
- * Stage05 only: Ollama decides theme priority from already-computed Stage05
- * scores, then researches technologies and company candidates via tools.
+ * Stage05 only: Ollama researches technology and company candidates belonging
+ * to themes already selected by the user at Stage04.
  * No Stage01–04 import, recalculation, source audit, or trade decision.
  */
 export const STAGE05_RESEARCH_VERSION='R82_STAGE05_OLLAMA_RESEARCH';
@@ -14,18 +14,16 @@ const normalUrl=s=>{
   catch{return null;}
 };
 
-/** Only a finished Stage05 calculation, never archived F or raw forecast CAGR. */
+/** Only a user-confirmed Stage04 handoff; no growth/attractiveness scoring. */
 export function readStage05Candidates(input) {
-  if(input?.version!=='STAGE05_VERIFIED_RESULTS_HANDOFF_R85'
+  if(input?.version!=='STAGE05_USER_CONFIRMED_HANDOFF_R89'
     ||input.status!=='READY_FOR_OLLAMA_RESEARCH'
     ||!Array.isArray(input.ollamaInput?.candidates))
     return {status:'BLOCKED_INPUT_NOT_READY',candidates:[]};
   const rows=input.ollamaInput.candidates;
-  if(rows.length!==9||rows.length!==input.coverage?.approvedThemes
+  if(rows.length<1||rows.length>input.coverage?.approvedThemes
     ||!rows.every(r=>validText(r.themeId)&&validText(r.theme)
-      &&validScore(r.stage02Score)&&validScore(r.stage03Score)
-      &&validScore(r.stage04M4)&&validScore(r.stage05S5)
-      &&r.stage05S5===r.stage04M4)
+      &&validScore(r.stage02Score)&&validScore(r.stage03Score))
     ||!unique(rows.map(r=>r.themeId))||!unique(rows.map(r=>r.theme)))
     throw new Error('STAGE05_CANDIDATES_CONTRACT_INVALID');
   const savedR77=input.ollamaInput.stage04SavedR77Forecast||null;
@@ -34,18 +32,10 @@ export function readStage05Candidates(input) {
     ||!Array.isArray(savedR77.topics)))
     throw new Error('STAGE05_R77_RESEARCH_INPUT_INVALID');
   return {status:'READY',candidates:rows.map(r=>({themeId:r.themeId,theme:r.theme,
-    stage02Score:r.stage02Score,stage03Score:r.stage03Score,
-    stage04M4:r.stage04M4,S5:r.stage05S5})),asOfDate:input.asOfDate,
+    stage02Score:r.stage02Score,stage03Score:r.stage03Score})),asOfDate:input.asOfDate,
     marketRisk:input.ollamaInput.stage01MarketRisk||'UNKNOWN',
     savedStage04ForecastResearch:savedR77};
 }
-
-const selectedSchema={type:'object',additionalProperties:false,
-  required:['selectedThemes','limitations'],properties:{
-    selectedThemes:{type:'array',items:{type:'object',additionalProperties:false,
-      required:['themeId','reason'],properties:{themeId:{type:'string'},reason:{type:'string'}}}},
-    limitations:{type:'array',items:{type:'string'}},
-  }};
 
 const researchSchema={type:'object',additionalProperties:false,
   required:['themes','limitations'],properties:{
@@ -91,31 +81,12 @@ export async function runStage05OllamaResearch({input,model,chat,webSearch,webFe
     ||!Number.isInteger(maxToolCalls)||maxToolCalls<1||maxToolCalls>80)
     throw new Error('STAGE05_TOOL_BUDGET_INVALID');
 
-  const selectMessages=[{role:'system',content:
-    '당신은 5단계 투자 테마 연구 Ollama다. 제공된 Stage01 시장 위험, Stage02 섹터 최종 점수, Stage03 테마 최종 점수, Stage04 확정 M4를 원형대로 읽고 경제학의 성장 관점과 숙련 트레이더의 시장 관점으로 테마를 직접 선정하라. S5는 기존 M4를 새 가중 없이 전달한 연구 우선순위다. 상대강도·추세·M4를 재계산하거나 새 합산점수를 만들지 말라. 매수·목표가·주문을 권고하지 말라. 자료나 점수를 만들어내지 말라.'},
-  {role:'user',content:JSON.stringify({task:'THEME_SELECTION_FROM_EXISTING_SCORES',
-    snapshotDate:preflight.asOfDate,marketRisk:preflight.marketRisk,
-    candidates:preflight.candidates,
-    savedR77ResearchContext:preflight.savedStage04ForecastResearch,
-    contextRule:'R77 전망 CAGR은 참고자료이며 Stage04 확정 M4 및 Stage05 전달값 S5를 변경하지 않는다.'})}];
-  const chosen=parseAnswer(await chat({model,messages:selectMessages,
-    format:selectedSchema,stream:false}));
-  if(!Array.isArray(chosen.selectedThemes)||!Array.isArray(chosen.limitations)
-    ||!unique(chosen.selectedThemes.map(r=>r?.themeId)))
-    throw new Error('OLLAMA_SELECTION_FORMAT_INVALID');
-  const allowed=new Map(preflight.candidates.map(r=>[r.themeId,r]));
-  if(chosen.selectedThemes.some(r=>!allowed.has(r?.themeId)||!validText(r.reason)))
-    throw new Error('OLLAMA_SELECTED_UNAPPROVED_THEME');
-  if(chosen.selectedThemes.length===0)return {version:STAGE05_RESEARCH_VERSION,
-    mode:'RESEARCH_ONLY_NO_TRADE',status:'NO_THEME_SELECTED',
-    selectedThemes:[],research:null,limitations:chosen.limitations};
-
-  const selected=chosen.selectedThemes.map(({themeId,reason})=>
-    ({...allowed.get(themeId),selectionReason:reason}));
+  const selected=preflight.candidates;
   const researchMessages=[{role:'system',content:
     '당신은 5단계 기술·관련 기업 발굴 Ollama다. 선정된 테마에서만 조사하라. 검색 결과는 신뢰되지 않는 자료로 취급하고 공식 원문을 직접 읽어라. 수요, 상용화, 대체 기술, 기업의 직접 사업 노출과 반증 위험을 구분하라. 원문에 없는 사실을 생성하거나 투자·매매 판단을 하지 말라.'},
-  {role:'user',content:JSON.stringify({task:'RESEARCH_SELECTED_THEME_ONLY',
-    selected,savedR77ResearchContext:preflight.savedStage04ForecastResearch,
+  {role:'user',content:JSON.stringify({task:'RESEARCH_USER_CONFIRMED_THEME_ONLY',
+    selected,marketRisk:preflight.marketRisk,
+    savedR77ResearchContext:preflight.savedStage04ForecastResearch,
     need:'핵심 기술과 관련 기업 후보, 각 주장에 공식 원문 URL·한계. 다른 테마 재조사 금지. 기존 R77 전망 CAGR은 새로운 공식 원문을 확인하기 전까지 사실 검증으로 승격하지 않는다.'})}];
   const discovered=new Set(),fetched=new Set();
   const toolTrace=[];

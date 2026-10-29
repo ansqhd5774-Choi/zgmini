@@ -21,8 +21,8 @@ const saved=()=>({
   ],
 });
 
-const handoff=()=>({version:'STAGE05_VERIFIED_RESULTS_HANDOFF_R85',
-  status:'BLOCKED_STAGE01_04_SCORES',ollamaInput:null});
+const handoff=()=>({version:'STAGE05_USER_CONFIRMED_HANDOFF_R89',
+  status:'BLOCKED_USER_CONFIRMATION_OR_PRIOR_RESULTS',ollamaInput:null});
 
 test('saved R77 results are connected without replacing CAGR with a score',()=>{
   const report=readSavedR77Forecast(saved());
@@ -30,22 +30,22 @@ test('saved R77 results are connected without replacing CAGR with a score',()=>{
   assert.equal(report.topics[0].meanCagrPct,11.285);
   assert.equal(report.topics[0].publishers[0].cagrPct,11.51);
   assert.equal(report.topics[1].meanCagrPct,null);
-  assert.equal(report.scoreStatus,'NOT_STAGE04_M4_OR_STAGE05_S5');
+  assert.equal(report.scoreStatus,'FORECAST_RESEARCH_ONLY');
 });
 
 test('Stage05 blocked scores stay blocked; saved forecast evidence remains visible',()=>{
   const result=attachSavedR77ToStage05({handoff:handoff(),savedR77:saved()});
-  assert.equal(result.status,'BLOCKED_STAGE01_04_SCORES');
+  assert.equal(result.status,'BLOCKED_USER_CONFIRMATION_OR_PRIOR_RESULTS');
   assert.equal(result.ollamaInput,null);
   assert.equal(result.stage04SavedR77Forecast.topics[0].meanCagrPct,11.285);
 });
 
 test('ready Stage05 handoff carries R77 research into future Ollama input',()=>{
   const ready={...handoff(),status:'READY_FOR_OLLAMA_RESEARCH',
-    ollamaInput:{candidates:[{themeId:'example',stage05S5:80}]}};
+    ollamaInput:{candidates:[{themeId:'example',stage03Score:80}]}};
   const result=attachSavedR77ToStage05({handoff:ready,savedR77:saved()});
   assert.equal(result.ollamaInput.stage04SavedR77Forecast.coverage.topicsDone,5);
-  assert.equal(result.ollamaInput.candidates[0].stage05S5,80);
+  assert.equal(result.ollamaInput.candidates[0].stage03Score,80);
 });
 
 test('incomplete R77 process, forged mean count or duplicate topics are rejected',()=>{

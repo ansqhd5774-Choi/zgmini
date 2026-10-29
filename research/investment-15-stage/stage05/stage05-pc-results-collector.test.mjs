@@ -4,6 +4,7 @@ import {mkdtemp,writeFile,mkdir,rm} from 'node:fs/promises';
 import {join} from 'node:path';
 import {tmpdir} from 'node:os';
 import {collectStage05ResultInventory} from './stage05-pc-results-collector.mjs';
+import {SCHEMA_VERSION} from './stage05-fusion-core.mjs';
 
 const date='2026-10-28';
 test('inventory identifies a complete saved snapshot and outputs existing scores only',async()=>{
@@ -11,24 +12,24 @@ test('inventory identifies a complete saved snapshot and outputs existing scores
   try{
     const themes=Array.from({length:9},(_,i)=>({id:`approved-${i}`,
       name:`테마-${i}`,approved:true,sectorId:'s',score:40+i}));
-    const snapshot={schemaVersion:'STAGE05_COMPLETED_STAGE_RESULTS_V2',snapshotDate:date,
+    const snapshot={schemaVersion:SCHEMA_VERSION,snapshotDate:date,
       stage01:{status:'READY',date,risk:'CAUTION'},
       stage02:{status:'READY',sectors:[{id:'s',score:70}]},
       stage03:{status:'READY',themes},
-      stage04:{status:'READY',themes:themes.map((x,i)=>({id:x.id,
-        status:'QUANTIFIED',M4:50+i,scoreKind:'STAGE04_M4_FINAL',
-        scoreValidation:'VERIFIED',validatedDate:date}))}};
+      stage04:{status:'READY',final_selection:{state:'FINAL_CONFIRMED',
+        confirmed_theme_ids:['approved-8'],approval_evidence:'USER_APPROVAL',
+        confirmed_at:date}}};
     await writeFile(join(root,'COMPLETED_SNAPSHOT.json'),JSON.stringify(snapshot));
     const r=await collectStage05ResultInventory({roots:[root]});
     assert.equal(r.summary.candidateCount,1);
     assert.equal(r.summary.readyForOllama,true);
-    assert.equal(r.summary.verifiedM4Rows,9);
-    assert.equal(r.files[0].ranking[0].S5,58);
-    assert.equal(r.files[0].ranking[0].themeId,'approved-8');
+    assert.equal(r.summary.userConfirmedThemes,1);
+    assert.deepEqual(r.files[0].ranking,[]);
+    assert.equal(r.files[0].confirmedCount,1);
   }finally{await rm(root,{recursive:true,force:true});}
 });
 
-test('R77 forecast and old M2 selection do not become a verified M4 score',async()=>{
+test('R77 forecast and old M2 selection do not become user confirmation',async()=>{
   const root=await mkdtemp(join(tmpdir(),'r87-null-'));
   try{
     await writeFile(join(root,'R77_OLLAMA_FORECAST_RESULT.json'),JSON.stringify({
@@ -39,7 +40,7 @@ test('R77 forecast and old M2 selection do not become a verified M4 score',async
     await writeFile(join(root,'secrets','STAGE04_SECRET.json'),JSON.stringify({token:'PRIVATE'}));
     const r=await collectStage05ResultInventory({roots:[root]});
     assert.equal(r.summary.candidateCount,2);
-    assert.equal(r.summary.verifiedM4Rows,0);
+    assert.equal(r.summary.userConfirmedThemes,0);
     assert.equal(r.summary.readyForOllama,false);
     assert.ok(r.files.every(x=>!('token'in x)));
   }finally{await rm(root,{recursive:true,force:true});}

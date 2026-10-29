@@ -56,7 +56,8 @@ test('실제 R82 21개를 동일 매체 평균 그대로 매칭하고 시장·�
   assert.equal(r.final_selection.state,'UNRANKED_REVIEW');
   assert.equal(r.final_selection.next_stage_allowed,false);
   assert.equal(r.order_state,'NO_TRADE');
-  assert.ok(r.themes.every(row=>row.attractiveness_m4===null&&row.screening_rank===null));
+  assert.ok(r.themes.every(row=>!('attractiveness_m4' in row)&&!('industry_acceleration_g2' in row)));
+  assert.deepEqual(r.data_quality.remaining_required,['SEPARATE_MARKET_SCORE','USER_FINAL_THEME_APPROVAL']);
 });
 
 test('4단계 기존 승인 9개와 연구용 우주 1개를 자동 승인 없이 구분한다',()=>{
@@ -102,10 +103,11 @@ test('허가되지 않은 원천·키워드 드리프트를 묵인하지 않는�
   assert.throws(()=>buildStage04R86NumericBridge(wrong,liveModel()),/ROSTER/);
 });
 
-test('보고서에 숫자만 표시하고 최종 M4 NULL·미선정을 명시한다',()=>{
+test('보고서에는 전망과 F 및 사용자 미선정 상태만 표시한다',()=>{
   const text=stage04R86Markdown(buildStage04R86NumericBridge(observedR82(),liveModel()));
   assert.match(text,/전체 시장 공탐: 33\.500점/);
   assert.match(text,/전체 시장 점수: NULL/);
-  assert.match(text,/M4·테마 순위·확정 테마: \*\*NULL/);
+  assert.match(text,/최종 확정 테마: \*\*없음/);
+  assert.doesNotMatch(text,/최종 M4|성장 가속도/);
   assert.match(text,/우주·위성/);
 });

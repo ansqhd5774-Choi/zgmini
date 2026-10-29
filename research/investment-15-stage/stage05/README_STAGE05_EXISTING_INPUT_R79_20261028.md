@@ -44,3 +44,5 @@
 - [R17 9개 F·산업활동 보존 근거](../STAGE04_INVESTMENT_BOT_R17_SENTIMENT_INDUSTRY_CONTRAST_20261025.md)
 - [R69 실제 기존 자료 이력·출처 결합](../stage04-r69/STAGE04_R69_EXISTING_EVIDENCE_JOIN_20261027.md)
 - [R78 융합 계산기 입력 계약](README_STAGE05_FUSION_R78_20261028.md)
+> **R89 폐기 공지:** R17 역사 산업 관측 연결 및 M4 의존 R79 연구 실행기는 삭제. 현행 5단계는 사용자 확정 테마 입력을 요구한다. [R89](../STAGE04_R89_REMOVE_REALIZED_INDUSTRY_YOY_ACCEL_20261029.md).
+

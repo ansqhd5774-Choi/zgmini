@@ -36,3 +36,5 @@ node research/investment-15-stage/stage05/stage05-fusion-readonly.mjs --handoff-
 ## 다음 Gate
 
 기존 01~04의 **관측 원자료·구성값**(Stage02 ETF 가격 RS, Stage03 ETF 가격 추세, Stage04 검증된 실측 G1/G2/F)과 관측일이 동일 입력에 있어야 한다. `M4`·`E`·`T`·`S5` **완성값을 별도로 확보할 필요는 없다.** 해당 최종 점수는 Stage05 계산기가 산출한다(R84). 없는 원자료·날짜를 임의 생성하거나 R77/R63 전망 CAGR로 실측 G1/G2를 대체하지 않는다.
+> **R89 계약 교체:** 이 문서의 산업 실측 M4/S5 필수 입력/전달식은 폐기. Stage04 `FINAL_CONFIRMED` 사용자 선정 증거만 다음 단계로 전달한다. [현행 R89](../STAGE04_R89_REMOVE_REALIZED_INDUSTRY_YOY_ACCEL_20261029.md).
+

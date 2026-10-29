@@ -59,21 +59,3 @@ export async function fetchProviderBatchWithinDeadline(url, {
   }
 }
 
-/** An unavailable provider supplies no Stage04 measurement in this run. */
-export function rejectProviderForThemes(themes, code, durationMs, providerId) {
-  if (!Array.isArray(themes) || !themes.every((name) => typeof name === 'string' && name.trim())) {
-    throw new ProviderDeadlineError('INVALID_THEME_UNIVERSE');
-  }
-  return {
-    providerId,
-    state: 'PROVIDER_NOT_PROVIDING_DATA',
-    failureCode: code,
-    durationMs,
-    deadlineMs: THEME_PROVIDER_MAX_MS,
-    providerRequestCount: 1,
-    retryCount: 0,
-    providerSwitchCount: 0,
-    themes: themes.map((theme) => ({ theme, state: 'SOURCE_NOT_PROVIDING_DATA',
-      G1: null, G2: null, G: null, D: null, M: null })),
-  };
-}

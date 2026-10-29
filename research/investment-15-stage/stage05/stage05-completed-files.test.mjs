@@ -16,9 +16,9 @@ function stages(){
     stage02:{status:'READY',sectors:[{id:'sector-a',score:75}]},
     stage03:{status:'READY',themes:names.map((name,i)=>({id:`approved-${i+12}`,
       name,sectorId:'sector-a',approved:true,score:40+i}))},
-    stage04:{status:'READY',themes:names.map((name,i)=>({id:`approved-${i+12}`,
-      status:'QUANTIFIED',M4:50+i,scoreKind:'STAGE04_M4_FINAL',
-      scoreValidation:'VERIFIED',validatedDate:snapshotDate}))},
+    stage04:{status:'READY',final_selection:{state:'FINAL_CONFIRMED',
+      confirmed_theme_ids:['approved-12'],approval_evidence:'USER_APPROVAL',
+      confirmed_at:snapshotDate}},
   };
 }
 async function withFiles(fn){
@@ -40,28 +40,28 @@ test('four explicit completed files join without recalculation or program theme 
     const {snapshot}=await loadCompletedStageFiles(manifestPath);
     const result=calculateFusionStage05(snapshot);
     const handoff=buildVerifiedResultsHandoff({completedSnapshot:snapshot,fusion:result});
-    assert.equal(result.summary.rankableCount,9);
-    assert.equal(result.summary.selectedThemeId,null);
+    assert.equal(result.summary.confirmedCount,1);
+    assert.equal(result.summary.selectedThemeId,'approved-12');
     assert.equal(handoff.status,'READY_FOR_OLLAMA_RESEARCH');
-    assert.equal(handoff.ollamaInput.candidates.length,9);
-    assert.equal(result.rows[0].S5,50);
+    assert.equal(handoff.ollamaInput.candidates.length,1);
+    assert.equal(result.rows[0].selectionState,'USER_SELECTED');
     assert.equal(result.rows[0].stage03Score,40);
     assert.equal(handoff.ollamaInput.selectedThemeId,undefined);
   });
 });
 
-test('missing finalized M4 stays NULL and prevents Ollama handoff',async()=>{
+test('missing user confirmation prevents Ollama handoff',async()=>{
   await withFiles(async({manifestPath,save})=>{
     const input=stages();
-    delete input.stage04.themes[0].M4;
-    input.stage04.themes[0].mean_pct=11.285;
+    input.stage04.final_selection={state:'UNRANKED_REVIEW',confirmed_theme_ids:null,
+      approval_evidence:null};
     await save(input);
     const {snapshot}=await loadCompletedStageFiles(manifestPath);
     const result=calculateFusionStage05(snapshot);
     const handoff=buildVerifiedResultsHandoff({completedSnapshot:snapshot,fusion:result});
-    assert.equal(result.summary.rankableCount,8);
-    assert.equal(result.rows[0].S5,null);
-    assert.equal(handoff.status,'BLOCKED_STAGE01_04_SCORES');
+    assert.equal(result.summary.confirmedCount,0);
+    assert.equal(result.rows[0].status,'BLOCKED');
+    assert.equal(handoff.status,'BLOCKED_USER_CONFIRMATION_OR_PRIOR_RESULTS');
     assert.equal(handoff.ollamaInput,null);
   });
 });

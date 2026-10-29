@@ -58,7 +58,7 @@ echo SEND_RUN1_CONSOLE=%ZG_LOG1%
 echo SEND_RUN2_CONSOLE=%ZG_LOG2%
 echo SEND_RUN3_CONSOLE=%ZG_LOG3%
 echo RESULT_EXIT_CODE=%ZG_AUDIT_EXIT%
-echo Note: R85 compares repeatability; it does not invent final M4 or select themes.
+echo Note: R85 compares research repeatability; it does not select themes.
 pause
 exit /b %ZG_AUDIT_EXIT%
 

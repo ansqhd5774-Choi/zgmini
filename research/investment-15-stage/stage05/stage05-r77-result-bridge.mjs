@@ -58,13 +58,13 @@ export function readSavedR77Forecast(report) {
     coverage: {topicsDone: report.topics_done, topicsTotal: report.topics_total,
       meansCalculable: calculated},
     topics,
-    scoreStatus: 'NOT_STAGE04_M4_OR_STAGE05_S5',
-    caveat: '기존 Windows R77 원본을 읽기 전용 전달한다. 보고서 전망 CAGR은 확정 M4/E/T/S5가 아니며, 원문 재조사·독립 검산을 뜻하지 않는다.',
+    scoreStatus: 'FORECAST_RESEARCH_ONLY',
+    caveat: '기존 Windows R77 전망 CAGR을 읽기 전용 전달한다. 이 데이터로 자동 투자 점수나 테마 승인을 생성하지 않는다.',
   };
 }
 
 export function attachSavedR77ToStage05({handoff, savedR77} = {}) {
-  if (handoff?.version !== 'STAGE05_VERIFIED_RESULTS_HANDOFF_R85')
+  if (handoff?.version !== 'STAGE05_USER_CONFIRMED_HANDOFF_R89')
     throw new Error('STAGE05_HANDOFF_REQUIRED');
   const forecast = readSavedR77Forecast(savedR77);
   return {

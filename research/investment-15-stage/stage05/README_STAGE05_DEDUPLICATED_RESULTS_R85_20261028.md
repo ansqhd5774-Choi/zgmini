@@ -90,3 +90,5 @@
 - 테스트: `node --test research/investment-15-stage/stage05/*.test.mjs`.
 
 **범위 경계:** 5단계 코드·모의 테스트 통과는 Stage01~04의 실제 Windows 출력에서 9개 M4 실측값이 연결됐거나, 사용자 PC Ollama가 실제 조사까지 완료했다는 뜻이 아니다.
+> **R89 계약 교체:** 과거 M4/S5 점수 증거 요구는 폐기. 사용자 확정 Stage04 테마만 전달한다. 이 문서는 역사 기록으로 보존. [현행 R89](../STAGE04_R89_REMOVE_REALIZED_INDUSTRY_YOY_ACCEL_20261029.md).
+

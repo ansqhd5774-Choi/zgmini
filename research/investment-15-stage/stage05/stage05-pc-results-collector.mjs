@@ -1,7 +1,7 @@
 /**
  * Stage05-only Windows inventory: inspect saved result JSON files by filename
  * and known handoff fields. Never execute, fetch or score Stage01-04 again.
- * Output contains only paths and whitelisted status/score coverage, no raw JSON.
+ * Output contains only paths and whitelisted status/approval coverage, no raw JSON.
  */
 import {readdir,readFile,stat,writeFile} from 'node:fs/promises';
 import {resolve,join,basename} from 'node:path';
@@ -11,7 +11,7 @@ import {loadCompletedStageFiles,FILES_MANIFEST_VERSION} from './stage05-complete
 
 const ignoredDirs=new Set(['.git','.next','node_modules','.venv','venv',
   'cache','__pycache__','.aws','.codex','.agents','secrets','private']);
-const candidateName=/(stage0?[1-5]|R7[027]|M4|result|score|snapshot|handoff|manifest|output)/i;
+const candidateName=/(stage0?[1-5]|R7[027]|result|score|snapshot|handoff|manifest|output)/i;
 const isScore=value=>typeof value==='number'&&Number.isFinite(value)
   &&value>=0&&value<=100;
 
@@ -27,7 +27,7 @@ export function summarizeSavedJson(file,content){
     }catch(error){return {path:file,kind:'FOUR_STAGE_SNAPSHOT_INVALID',error:error.message};}
     return {path:file,kind:'FOUR_STAGE_SNAPSHOT',snapshotDate:content.snapshotDate,
       approvedCount:result.summary.approvedCandidateCount,
-      scoredCount:result.summary.rankableCount,
+      confirmedCount:result.summary.confirmedCount,
       blockedCount:result.summary.blockedCount,
       ranking:result.ranking};
   }
@@ -52,20 +52,16 @@ export function summarizeSavedJson(file,content){
     if(stage==='stage04'&&Array.isArray(object.themes))
       stages.stage04={status:object.status??null,
         themes:object.themes.length,
-        verifiedM4:object.themes.filter(x=>isScore(x?.M4)
-          &&x?.scoreKind==='STAGE04_M4_FINAL'
-          &&x?.scoreValidation==='VERIFIED').length};
+        selectionState:object.final_selection?.state??'UNAVAILABLE',
+        userConfirmed:object.final_selection?.confirmed_theme_ids?.length??0};
   }
   if(Object.keys(stages).length)return {path:file,kind:'STAGE_RESULTS',stages};
-  if(content.schema==='ZGMINI_M2_STAGE4_SELECTION_V1')
-    return {path:file,kind:'OLD_SELECTION_NOT_FINAL_M4',
-      investmentAttractiveness:content.investmentAttractiveness??null};
-  if(content.schema==='ZGMINI_M2_STAGE5_SELECTION_V1')
-    return {path:file,kind:'OLD_SELECTION_NOT_FINAL_M4',
-      investmentScoreAvailable:isScore(content.industryInvestmentScore)};
+  if(content.schema==='ZGMINI_M2_STAGE4_SELECTION_V1'
+    ||content.schema==='ZGMINI_M2_STAGE5_SELECTION_V1')
+    return {path:file,kind:'LEGACY_SELECTION_NOT_USER_CONFIRMED'};
   if(/(R72|R77|forecast)/i.test(basename(file))
     ||'publisher_adapter_revision'in content ||'run_state'in content)
-    return {path:file,kind:'FORECAST_OR_RUN_LOG_NOT_FINAL_M4'};
+    return {path:file,kind:'FORECAST_OR_RUN_LOG_NOT_USER_CONFIRMATION'};
   if(fields)return {path:file,kind:'UNKNOWN_STAGE_RESULT_SHAPE'};
   return null;
 }
@@ -75,7 +71,7 @@ export async function collectStage05ResultInventory({roots,maxFiles=3000,
   if(!Array.isArray(roots)||!roots.length)throw new Error('STAGE05_ROOT_REQUIRED');
   const report={version:'STAGE05_R87_PC_RESULT_INVENTORY',
     examinedAt:new Date().toISOString(),roots:[],files:[],
-    summary:{candidateCount:0,completeSnapshots:0,verifiedM4Rows:0,
+    summary:{candidateCount:0,completeSnapshots:0,userConfirmedThemes:0,
       readyForOllama:false,limitReached:false}};
   let visited=0;
   const seen=new Set();
@@ -106,7 +102,7 @@ export async function collectStage05ResultInventory({roots,maxFiles=3000,
           const {snapshot}=await loadCompletedStageFiles(child,{readText:readJson});
           const fusion=calculateFusionStage05(snapshot);
           record.approvedCount=fusion.summary.approvedCandidateCount;
-          record.scoredCount=fusion.summary.rankableCount;
+          record.confirmedCount=fusion.summary.confirmedCount;
           record.ranking=fusion.ranking;
         }catch(error){record.connectionError=error.message;}
       }
@@ -127,10 +123,9 @@ export async function collectStage05ResultInventory({roots,maxFiles=3000,
   report.summary.candidateCount=report.files.length;
   report.summary.completeSnapshots=report.files.filter(x=>
     x.kind==='FOUR_STAGE_SNAPSHOT'||x.kind==='STAGE05_COMPLETED_FILES_MANIFEST').length;
-  report.summary.verifiedM4Rows=Math.max(0,...report.files.map(x=>
-    x.kind==='STAGE_RESULTS'?x.stages.stage04?.verifiedM4??0:x.scoredCount??0));
-  report.summary.readyForOllama=report.files.some(x=>x.scoredCount===9
-    &&x.approvedCount===9);
+  report.summary.userConfirmedThemes=Math.max(0,...report.files.map(x=>
+    x.kind==='STAGE_RESULTS'?x.stages.stage04?.userConfirmed??0:x.confirmedCount??0));
+  report.summary.readyForOllama=report.files.some(x=>x.confirmedCount>0);
   return report;
 }
 
@@ -155,9 +150,9 @@ async function main(){
   const filename=`STAGE05_R87_PC_LOG_${new Date().toISOString().replace(/[:.]/g,'-')}_${process.pid}.json`;
   const filepath=join(resolve(outputDir),filename);
   await writeFile(filepath,`${JSON.stringify(report,null,2)}\n`,{encoding:'utf8',flag:'wx'});
-  process.stdout.write(`STAGE05_R87_STATUS=${report.summary.readyForOllama?'READY':'WAITING_FOR_COMPLETED_SCORE_FILES'}\n`);
+  process.stdout.write(`STAGE05_R87_STATUS=${report.summary.readyForOllama?'READY':'WAITING_FOR_USER_CONFIRMED_THEMES'}\n`);
   process.stdout.write(`STAGE05_R87_CANDIDATES=${report.summary.candidateCount}\n`);
-  process.stdout.write(`STAGE05_R87_VERIFIED_M4_ROWS=${report.summary.verifiedM4Rows}\n`);
+  process.stdout.write(`STAGE05_R87_USER_CONFIRMED_THEMES=${report.summary.userConfirmedThemes}\n`);
   process.stdout.write(`STAGE05_R87_LOG_JSON=${filepath}\n`);
   if(!report.summary.readyForOllama)process.exitCode=2;
 }

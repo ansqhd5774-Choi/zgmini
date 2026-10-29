@@ -1,4 +1,6 @@
-# Stage04 R67 — 21개 조사 주제 2매체 산술평균 및 성장·시장심리 괴리 구현
+# Stage04 R67 — 21개 조사 주제 2매체 산술평균 및 당시 비교 실험 기록
+
+> **R89 개정 (2026-10-29):** 전망 CAGR 백분위−F 간격·투자매력 비교 수식은 폐기했다. 현재 R67 코드는 2개 이상 독립 발행사 CAGR 평균과 F 원자료 독립 표시만 보존한다. 과거 점수 예시는 역사 기록이며 현행 기준이 아니다. [현행 R89](../STAGE04_R89_REMOVE_REALIZED_INDUSTRY_YOY_ACCEL_20261029.md).
 
 > 2026-10-27 / 저장소 `ansqhd5774-Choi/zgmini` / 단일 전용 브랜치 `codex/investment-15-stage-m2-r25-20261025`
 >
@@ -99,3 +101,4 @@ node stage04-r67/live-f-adapter-r67.mjs --matrix recovered-cagr-r63-r66/CAGR_R63
 2. [R63–R66 역사 근거 선별 복구 원장](../recovered-cagr-r63-r66/RECOVERY_INDEX_20261027.md)
 3. [R2 정량 연구 설계 원본](../INVESTMENT_PROCESS_15_STAGE_PRECISE_IMPLEMENTATION_PLAN_R2_QUANT_20261025.md)
 4. [S&P Dow Jones Indices GICS 공식 설명](https://www.spglobal.com/spdji/en/landing/topic/gics/) — 섹터 11개 및 하위시장 분류 설명.
+

@@ -1,5 +1,7 @@
 # 15단계 상태 · 2026-10-27
 
+> **현행 R89(2026-10-29):** Stage04 산업 실측·YoY·가속도 및 G/D/M4 수집·산식·실행기 제거. 연계 Stage05 R80 실측, M4/S5 자동 점수 게이트도 폐기. 유지: 21개 전망 CAGR, 시장·섹터·테마 F, Stage01 별도 시장 점수, Stage03 승인 9개/우주 연구 전용, 사용자 `FINAL_CONFIRMED`. [현재 기준](STAGE04_THEME_SELECTION_RULES_R83_20261029.md) · [삭제 내역](STAGE04_R89_REMOVE_REALIZED_INDUSTRY_YOY_ACCEL_20261029.md). 아래 과거 기록은 현행 실행 기준이 아니다.
+
 상태값: `EXISTING_INPUT` 기존 ZGMINI 입력, `DESIGNED` 설계 보관, `CODE_PRESENT` R25 코드 보관, `PARTIAL` 외부 원문/실행 검증 일부 완료, `NOT_VERIFIED` 본 브랜치에서 검증하지 않음.
 
 | 단계 | 작업 | 현재 확인 가능한 근거 | 상태 |
@@ -323,3 +325,4 @@
 
 - [R80 지정 공식 산업 원천의 같은 시계열 성장·가속도 계산 연구](stage05/README_STAGE05_REALIZED_SERIES_R80_20261028.md): 원본 R2 동일 산업 내부 과거 백분위 규칙 재현, 향후 분기/연간 시계열 검증기 구현. FDA 2025 연차보고서 SHA 검증 성공 시에만 **신약 승인 건수** 2016~2025 자료로 연구용 G1/G2/G 표시. 2025 승인 46건, YoY -8%, 연구 G1=12.5/G2=35.714286/G=21.785714은 **바이오 시장 성장/공식 Stage04 M이 아님**.
 - R80 신규 개발 8/8 + 기존 R78 11/11 + R79 9/9 = **28/28 PASS**. Windows R80 실제 FDA PDF GET 미실행, 현재 공식 Stage04 G/D/M4·Stage05 E/T/S5 및 투자 순위는 계속 NULL. 02·03 ETF 원시 가격/RS/Trend 미확보, 신규 매체·산식 운영 승인·주문·사이트·예약 작업 변경 없음.
+

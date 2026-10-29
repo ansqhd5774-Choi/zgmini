@@ -44,3 +44,5 @@ Stage04: `evidenceKind="REALIZED_INDUSTRY_ACTIVITY"`, `sourceValidation="VERIFIE
 현재 공개 M2 1~3 피드는 **252개 공포·탐욕 점수 이력**이며 1년 ETF 가격 기반 RS·Trend가 아니고, 승인된 가격 정규화 계약도 확인되지 않았다. Stage04 R70~R77은 **보고서 전망 CAGR** 연구이며 검증된 실측 G1/G2/F/G/D/M4 출력을 제공하지 않는다. 따라서 현재 실제 시장별 S5 및 선정 순위는 계산 불가(`NULL`). 1~4단계 설계 자체를 폐기하는 것이 아니라 **정확한 기존 데이터 필드와 산식 입력이 충족되는지를 먼저 검사**하는 것이다.
 
 가상 테스트 점수는 Windows 실측이나 시장 분석 결과로 인용하지 않는다. 실운영 반영과 User PC Ollama 검증은 별도 단계이며 이번 변경에 포함되지 않는다.
+> **R89 폐기 공지:** Stage04 G/D/M4 및 Stage05 S5 산식·실행 계약은 2026-10-29 삭제. 본 문서는 과거 연구 보관본이며 현재 산식/입력 요건 아님. 현행: [R89](../STAGE04_R89_REMOVE_REALIZED_INDUSTRY_YOY_ACCEL_20261029.md).
+

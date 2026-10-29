@@ -86,10 +86,6 @@ export function buildStage04R86NumericBridge(r82, normalizedModel) {
       theme_forecast_cagr:forecastCell(indexed.get(THEME_TOPICS[name])),
       // A theme may span several sectors. No guessed theme->sector mapping.
       linked_sector_ids:null,
-      industry_actual_growth_g:null,
-      industry_acceleration_g2:null,
-      attractiveness_m4:null,
-      screening_rank:null,
       selection_state:'UNRANKED_REVIEW',
     }));
   const missingThemeNames = researchThemeNames
@@ -101,7 +97,7 @@ export function buildStage04R86NumericBridge(r82, normalizedModel) {
   } : {score:null,observed_at:null,phase:'UNAVAILABLE',source:F_ENDPOINTS.market};
 
   const result = {
-    schema_version:'STAGE04_R86_NUMERIC_INPUT_BRIDGE_V1',
+    schema_version:'STAGE04_R89_FORECAST_AND_SENTIMENT_V2',
     mode:'READ_ONLY_NO_OLLAMA_RERUN_NO_TRADE',
     forecast_run_started_at:r82.started_at,
     forecast_run_completed_at:r82.last_updated_at,
@@ -122,18 +118,16 @@ export function buildStage04R86NumericBridge(r82, normalizedModel) {
       missing_theme_feed_aliases:missingThemeNames,
       ignored_non_cohort_theme_feed_names:[...byTheme.keys()].filter(name=>!researchThemeNames.includes(name)),
       unrecognized_theme_feed_names:extraThemeNames,
-      remaining_required:['SEPARATE_MARKET_SCORE','APPROVED_STAGE04_G_D_M4_FORMULA',
-        'COMPARABLE_REALIZED_INDUSTRY_SERIES_FOR_G1_G2','USER_FINAL_THEME_APPROVAL'],
+      remaining_required:['SEPARATE_MARKET_SCORE','USER_FINAL_THEME_APPROVAL'],
     },
     final_selection:{
-      state:'UNRANKED_REVIEW', formula_approved:false,
-      ranked_theme_ids:null, confirmed_theme_ids:null,
+      state:'UNRANKED_REVIEW', confirmed_theme_ids:null,
       approval_evidence:null, next_stage_allowed:false,
     },
     order_state:'NO_TRADE',
   };
-  // No final numerical score/ranking is reported while original R2 weights
-  // remain explicitly unapproved and G1/G2 historical samples are not present.
+  // Stage04 no longer collects actual industrial YoY/acceleration or derives
+  // a G/D/M4 attractiveness score. Theme selection remains user-controlled.
   return result;
 }
 
@@ -145,7 +139,7 @@ export function stage04R86Markdown(result) {
     `- 성장률 조사 시각(UTC): ${result.forecast_run_started_at}`,
     `- 전체 시장 점수: ${fmt(result.market.market_score.score)} (별도 1단계 입력 미연결)`,
     `- 전체 시장 공탐: ${fmt(result.market.market_fear_greed.score)}점 (${result.market.market_fear_greed.observed_at??'미관측'})`,
-    '- 최종 매력도 M4·테마 순위·확정 테마: **NULL / UNRANKED_REVIEW** (승인되지 않은 산식 미적용)',
+    '- 최종 확정 테마: **없음 / UNRANKED_REVIEW** (사용자 선정 대기)',
     '',
     '## 섹터 11개',
     '',
@@ -155,9 +149,9 @@ export function stage04R86Markdown(result) {
     '',
     '## 테마 (기존 9개 승인 기반 / 10번째는 별도 연구)',
     '',
-    '| 테마 | Stage03 | 공탐 F(점) | 관측일 | 전망 CAGR 평균(%) | 유효 매체 수 | 최종 M4 |',
-    '|---|---|---:|---|---:|---:|---:|',
-    ...result.themes.map(r=>`| ${r.theme_id} | ${r.stage03_approval} | ${fmt(r.theme_fear_greed.score)} | ${r.theme_fear_greed.observed_at??'-'} | ${fmt(r.theme_forecast_cagr.mean_pct)} | ${r.theme_forecast_cagr.publisher_count} | NULL |`),
+    '| 테마 | Stage03 | 공탐 F(점) | 관측일 | 전망 CAGR 평균(%) | 유효 매체 수 |',
+    '|---|---|---:|---|---:|---:|',
+    ...result.themes.map(r=>`| ${r.theme_id} | ${r.stage03_approval} | ${fmt(r.theme_fear_greed.score)} | ${r.theme_fear_greed.observed_at??'-'} | ${fmt(r.theme_forecast_cagr.mean_pct)} | ${r.theme_forecast_cagr.publisher_count} |`),
     '',
     '참고: 전망 CAGR 평균은 조사기관이 정의한 시장의 예상 성장률이지 GICS 전체 실측 성장률이 아닙니다.',
     '공탐과 성장률은 단위가 달라 승인 전 임의 가중·합산·서열화하지 않습니다.',
@@ -191,7 +185,7 @@ async function cli() {
   process.stdout.write(`R86_SECTOR_F=${result.data_quality.observed_sector_f}/11\n`);
   process.stdout.write(`R86_THEME_F=${result.data_quality.observed_theme_f}/${result.themes.length}\n`);
   process.stdout.write(`R86_MARKET_F=${result.market.market_fear_greed.score??'NULL'}\n`);
-  process.stdout.write('R86_MARKET_SCORE=UNCONNECTED\nR86_M4=UNAPPROVED_NULL\n');
+  process.stdout.write('R86_MARKET_SCORE=UNCONNECTED\n');
   process.stdout.write(`R86_RESULT=${result.final_selection.state}\n`);
   if(!jsonPath&&!mdPath)process.stdout.write(stage04R86Markdown(result));
 }

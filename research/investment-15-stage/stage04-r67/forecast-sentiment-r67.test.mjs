@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { analyzeR63ResearchSnapshot, applyPeerPercentiles, addReadOnlySentiment, parseR63Matrix } from './forecast-sentiment-r67.mjs';
+import { analyzeR63ResearchSnapshot, addReadOnlySentiment, parseR63Matrix } from './forecast-sentiment-r67.mjs';
 
 const input = process.env.R63_MATRIX_PATH;
 
@@ -9,7 +9,7 @@ test('R63 snapshot: all 21 topics pass the two-publisher criterion', { skip: !in
   const result = analyzeR63ResearchSnapshot(readFileSync(input, 'utf8'));
   assert.deepEqual(result.counts, {
     topics: 21, average_ready: 21, valid_observations: 58,
-    two_publishers: 5, three_publishers: 16, sentiment_comparisons: 0,
+    two_publishers: 5, three_publishers: 16, sentiment_observations: 0,
   });
   const byId = new Map(result.topics.map(row => [row.topic_id, row]));
   assert.equal(byId.get(1).average_cagr_pct, 8.95);
@@ -31,34 +31,34 @@ const smallMatrix = `| 번호 | 섹터/테마 | TBRC | SkyQuest | Precedence |
 | 13 | D | 미확정 (MISSING) | 미확정 (MISSING) | 99% (2026-2035; VALID) |`;
 
 test('two independent publisher values are enough; third missing is not zero', () => {
-  const topics = applyPeerPercentiles(parseR63Matrix(smallMatrix));
+  const topics = parseR63Matrix(smallMatrix);
   assert.equal(topics[0].average_cagr_pct, 4);
   assert.equal(topics[0].observation_count, 2);
   assert.equal(topics[0].forecast_status, 'MEAN_CALCULABLE');
   assert.equal(topics[3].forecast_status, 'INSUFFICIENT_PUBLISHERS');
   assert.equal(topics[3].average_cagr_pct, null);
-  assert.equal(topics[0].growth_peer_percentile, 50);
-  assert.equal(topics[1].growth_peer_percentile, 50);
+  assert.equal('growth_peer_percentile' in topics[0], false);
+  assert.equal('growth_peer_percentile' in topics[1], false);
 });
 
 test('no sentiment never becomes zero; hypothetical 0 is valid if sourced', () => {
-  const topics = applyPeerPercentiles(parseR63Matrix(smallMatrix));
+  const topics = parseR63Matrix(smallMatrix);
   const withoutSentiment = addReadOnlySentiment(topics);
   assert.equal(withoutSentiment[0].sentiment_score, null);
-  assert.equal(withoutSentiment[0].growth_sentiment_gap, null);
+  assert.equal('growth_sentiment_gap' in withoutSentiment[0], false);
   const withSentiment = addReadOnlySentiment(topics, { records: [
     { topic_id: 1, score: 0, observed_at: '2026-10-27T00:00:00Z', status: 'PROVISIONAL', source: 'TEST_ONLY' },
   ] });
   assert.equal(withSentiment[0].sentiment_score, 0);
-  assert.equal(withSentiment[0].growth_sentiment_gap, 50);
-  assert.equal(withSentiment[1].growth_sentiment_gap, null);
-  assert.equal(withSentiment[0].comparison_status, 'RESEARCH_SIMULATION_ONLY');
+  assert.equal('growth_sentiment_gap' in withSentiment[0], false);
+  assert.equal(withSentiment[1].sentiment_score, null);
+  assert.equal(withSentiment[0].comparison_status, 'INDEPENDENT_CONTEXT_ONLY');
 });
 
 test('publisher validation and sentiment provenance reject invalid inputs', () => {
   assert.throws(() => parseR63Matrix(smallMatrix.replace('3% (2026-2030; VALID)', 'bogus')), /Unrecognized/);
   assert.throws(() => parseR63Matrix(`${smallMatrix}\n${smallMatrix.split('\n')[2]}`), /Duplicate topic/);
-  const topics = applyPeerPercentiles(parseR63Matrix(smallMatrix));
+  const topics = parseR63Matrix(smallMatrix);
   assert.throws(() => addReadOnlySentiment(topics, { records: [
     { topic_id: 1, score: 101, observed_at: 'now', source: 'TEST_ONLY', status: 'CONFIRMED' },
   ] }), /Invalid sentiment score/);

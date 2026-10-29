@@ -44,3 +44,5 @@
 - [R2 01~04 연구 정량 산식](../INVESTMENT_PROCESS_15_STAGE_PRECISE_IMPLEMENTATION_PLAN_R2_QUANT_20261025.md)
 - [FDA 2025 신규 신약 승인 공식 목록](https://www.fda.gov/drugs/novel-drug-approvals-fda/novel-drug-approvals-2025)
 - [기존 FDA 2025 연차보고서 PDF](https://www.fda.gov/media/190705/download)
+> **R89 폐기 공지:** FDA 시계열 실현 YoY·성장 가속도·G1/G2/G 산출 연구 코드 및 실행기는 2026-10-29 사용자 지시로 삭제. 이 문서는 역사 기록 전용. [현행 R89](../STAGE04_R89_REMOVE_REALIZED_INDUSTRY_YOY_ACCEL_20261029.md).
+

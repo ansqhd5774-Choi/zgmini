@@ -117,8 +117,8 @@ export function compareR85Runs(runs) {
     caveats:[
       'Same publisher observed in multiple runs is one publisher, not an additional independent publisher.',
       'Repeated forecast changes are reported, not excluded or averaged across run copies.',
-      'Forecast CAGR is research-only; it is not realized GICS sector growth or Stage04 M4.',
-      'This audit does not verify market F, sector F, theme F, theme selection, M4, Stage05 S5, or orders.'
+      'Forecast CAGR is research-only and not evidence of actual GICS sector growth.',
+      'This audit does not verify market F, sector F, theme F, user selection, or orders.'
     ]
   };
 }

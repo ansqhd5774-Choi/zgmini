@@ -1,4 +1,4 @@
-// Stage 04 R67: historical R63 research reconstruction and read-only sensitivity preview.
+// Stage 04 R89: historical R63 forecast CAGR averages plus independent F context.
 // This program deliberately does not fetch live data or change ZGMINI production scores.
 import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
@@ -86,25 +86,6 @@ export function parseR63Matrix(markdown) {
   return topics;
 }
 
-export function applyPeerPercentiles(topics) {
-  const copy = topics.map(row => ({ ...row, growth_peer_percentile: null }));
-  for (const group of ['SECTOR', 'THEME']) {
-    const cohort = copy.filter(row => row.group === group && row.average_cagr_pct !== null)
-      .sort((a, b) => a.average_cagr_pct - b.average_cagr_pct);
-    const total = cohort.length;
-    for (let first = 0; first < total;) {
-      let last = first;
-      while (last + 1 < total && cohort[last + 1].average_cagr_pct === cohort[first].average_cagr_pct) last++;
-      // Ascending one-based mean rank for ties.
-      const rank = (first + last) / 2 + 1;
-      const percentile = round(100 * (rank - 0.5) / total, 2);
-      for (let k = first; k <= last; k++) cohort[k].growth_peer_percentile = percentile;
-      first = last + 1;
-    }
-  }
-  return copy;
-}
-
 export function addReadOnlySentiment(topics, sentiment) {
   const records = sentiment?.records ?? [];
   if (!Array.isArray(records)) throw new TypeError('sentiment.records must be an array');
@@ -124,34 +105,28 @@ export function addReadOnlySentiment(topics, sentiment) {
   return topics.map(row => {
     const f = byId.get(row.topic_id);
     const score = f?.score ?? null;
-    const gap = score !== null && row.growth_peer_percentile !== null
-      ? round(row.growth_peer_percentile - score, 2) : null;
     return {
       ...row,
       sentiment_score: score,
       sentiment_observed_at: f?.observed_at ?? null,
       sentiment_status: f?.status ?? 'NOT_SUPPLIED',
       sentiment_source: f?.source ?? null,
-      growth_sentiment_gap: gap,
-      positive_gap: gap === null ? null : Math.max(0, gap),
-      comparison_status: gap === null ? 'SENTIMENT_NOT_AVAILABLE' : 'RESEARCH_SIMULATION_ONLY',
+      comparison_status: score === null ? 'SENTIMENT_NOT_AVAILABLE' : 'INDEPENDENT_CONTEXT_ONLY',
     };
   });
 }
 
 export function analyzeR63ResearchSnapshot(markdown, sentiment = null) {
-  const topics = addReadOnlySentiment(applyPeerPercentiles(parseR63Matrix(markdown)), sentiment);
+  const topics = addReadOnlySentiment(parseR63Matrix(markdown), sentiment);
   return {
-    schema_version: 'stage04-r67-research-v1',
+    schema_version: 'stage04-r89-forecast-with-independent-f-v2',
     source_document_sha256: createHash('sha256').update(markdown).digest('hex'),
     source_basis: 'R63_20261027_HISTORICAL_RESEARCH',
     result_status: 'RESEARCH_ONLY_NOT_CURRENT_VERIFIED_NOT_APPROVED_FOR_LIVE_SCORING',
     methodology: {
       minimum_distinct_publishers: MIN_PUBLISHERS_FOR_MEAN,
       mean: 'UNWEIGHTED_ARITHMETIC_MEAN_OF_VALID_PUBLISHER_FORECAST_CAGR_PCT',
-      percentile: '100*(ASCENDING_COHORT_MIDRANK-0.5)/COHORT_COUNT',
       cohorts: ['11_SECTORS', '10_THEMES'],
-      gap: 'GROWTH_PEER_PERCENTILE_MINUS_EXISTING_ZGMINI_SENTIMENT_SCORE',
       note: 'Historical research cannot replace fresh official source verification; do not deploy or trade.',
     },
     counts: {
@@ -160,7 +135,7 @@ export function analyzeR63ResearchSnapshot(markdown, sentiment = null) {
       valid_observations: topics.reduce((sum, row) => sum + row.observation_count, 0),
       two_publishers: topics.filter(row => row.observation_count === 2).length,
       three_publishers: topics.filter(row => row.observation_count === 3).length,
-      sentiment_comparisons: topics.filter(row => row.growth_sentiment_gap !== null).length,
+      sentiment_observations: topics.filter(row => row.sentiment_score !== null).length,
     },
     topics,
   };

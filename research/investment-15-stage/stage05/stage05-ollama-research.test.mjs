@@ -2,148 +2,76 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readStage05Candidates,runStage05OllamaResearch} from './stage05-ollama-research.mjs';
 
-const source='https://example.org/official-technology-report';
+const url='https://example.org/official-report';
 const fixture=()=>({
-  version:'STAGE05_VERIFIED_RESULTS_HANDOFF_R85',status:'READY_FOR_OLLAMA_RESEARCH',
-  asOfDate:'2026-10-28',coverage:{approvedThemes:9},
-  ollamaInput:{stage01MarketRisk:'CAUTION',candidates:Array.from({length:9},(_,i)=>({
-    themeId:`approved-${i+12}`,theme:`승인테마-${i+12}`,
-    stage02Score:50+i,stage03Score:60+i,
-    stage04M4:70+i,stage05S5:70+i,
-  }))},
+  version:'STAGE05_USER_CONFIRMED_HANDOFF_R89',
+  status:'READY_FOR_OLLAMA_RESEARCH',asOfDate:'2026-10-29',
+  coverage:{approvedThemes:9,userConfirmed:1},
+  ollamaInput:{stage01MarketRisk:'CAUTION',candidates:[{
+    themeId:'approved-12',theme:'로봇·자동화',
+    stage02Score:50,stage03Score:60}]},
 });
-const selection=ids=>({message:{content:JSON.stringify({
-  selectedThemes:ids.map(themeId=>({themeId,reason:'기존 산식과 위험을 함께 고려'})),
-  limitations:[],
-})}});
-const resultJSON=url=>({themes:[{themeId:'approved-12',risks:['시장가격과 산업수요 차이'],
-  sources:[url],technologies:[{name:'핵심 기술 예시',demand:'공식 보고서에 수요 언급',
-    commercialization:'상용화 근거 추출 필요',alternatives:'대체 기술 비교 필요',sources:[url]}],
-  companies:[{name:'관련 기업 예시',exposure:'공식 문서에 사업 노출 정보',sources:[url]}],
-}],limitations:[]});
+const report=link=>({themes:[{
+  themeId:'approved-12',risks:['출처 한계'],sources:[link],
+  technologies:[{name:'핵심 기술',demand:'공식 문서 근거',
+    commercialization:'초기',alternatives:'대체 가능',
+    sources:[link]}],companies:[{name:'관련 기업',exposure:'사업 노출',
+    sources:[link]}]}],limitations:[]});
 
-function mocks({selectionIds=['approved-12'],researchUrl=source,badFetchedUrl=false}={}){
-  let phase=0;
-  const called={select:0,research:0,final:0,search:0,fetch:0};
+function mocks({fakeCitation=false}={}){
+  let round=0;
+  const calls={chat:0,search:0,fetch:0};
   const chat=async request=>{
+    calls.chat++;
     if(request.tools){
-      called.research++;
-      phase++;
-      if(phase===1)return {message:{content:'',tool_calls:[{
-        function:{name:'web_search',arguments:{query:'공식 기술 보고서'}}}]}};
-      if(phase===2)return {message:{content:'',tool_calls:[{
-        function:{name:'web_fetch',arguments:{url:source}}}]}};
-      return {message:{content:'조사 완료',tool_calls:[]}};
+      round++;
+      if(round===1)return {message:{content:'',tool_calls:[
+        {function:{name:'web_search',arguments:{query:'공식 로봇 자료'}}}]}};
+      if(round===2)return {message:{content:'',tool_calls:[
+        {function:{name:'web_fetch',arguments:{url}}}]}};
+      return {message:{content:'완료',tool_calls:[]}};
     }
-    if(request.format?.properties?.selectedThemes){called.select++;return selection(selectionIds);}
-    called.final++;
-    return {message:{content:JSON.stringify(resultJSON(
-      badFetchedUrl?'https://invented.example/not-fetched':researchUrl))}};
+    return {message:{content:JSON.stringify(report(fakeCitation
+      ?'https://fabricated.example/not-read':url))}};
   };
-  const webSearch=async()=>{called.search++;return {results:[{
-    title:'Official source',url:source,content:'공식 보고서 자료 일부'}]};};
-  const webFetch=async()=>{called.fetch++;return {title:'Official source',
-    content:'선정 테마 수요와 상용화 관련 원문. 인용 가능한 근거.'};};
-  return {called,chat,webSearch,webFetch};
+  return {calls,chat,
+    webSearch:async()=>{calls.search++;return {results:[{title:'공식 보고서',
+      url,content:'근거'}]};},
+    webFetch:async()=>{calls.fetch++;return {title:'보고서',content:'공식 원문'};}};
 }
 
-test('incomplete Stage05 score blocks before any model or web call',async()=>{
-  const input=fixture();input.status='BLOCKED_STAGE01_04_SCORES';input.ollamaInput=null;
-  const deps=mocks();const r=await runStage05OllamaResearch({input,model:'mock',...deps});
+test('user confirmation absent: no model or web call',async()=>{
+  const d=fixture();d.status='BLOCKED_USER_CONFIRMATION_OR_PRIOR_RESULTS';
+  d.ollamaInput=null;
+  const m=mocks();
+  const r=await runStage05OllamaResearch({input:d,model:'mock',...m});
   assert.equal(r.status,'BLOCKED_INPUT_NOT_READY');
-  assert.equal(r.research,null);
-  assert.deepEqual(Object.values(deps.called),[0,0,0,0,0]);
+  assert.deepEqual(m.calls,{chat:0,search:0,fetch:0});
 });
-
-test('computed scores are consumed as-is; Ollama selects then researches only chosen theme',async()=>{
-  const deps=mocks();const r=await runStage05OllamaResearch({
-    input:fixture(),model:'mock',...deps});
+test('user-confirmed themes proceed to technology research without auto selection or M4/S5',async()=>{
+  const d=fixture(),m=mocks();
+  const r=await runStage05OllamaResearch({input:d,model:'mock',...m});
   assert.equal(r.status,'RESEARCH_OUTPUT_WITH_FETCHED_URLS');
-  assert.equal(r.selectedThemes.length,1);
-  assert.equal(r.selectedThemes[0].themeId,'approved-12');
-  assert.equal(r.selectedThemes[0].S5,70);
-  assert.equal(r.selectedThemes[0].stage02Score,50);
-  assert.equal(r.research.themes[0].companies.length,1);
-  assert.equal(r.provenance.fetchedUrlCount,1);
-  assert.deepEqual(deps.called,{select:1,research:3,final:1,search:1,fetch:1});
+  assert.deepEqual(r.selectedThemes.map(x=>x.themeId),['approved-12']);
+  assert.equal(m.calls.chat,4);
+  assert.equal(m.calls.search,1);
+  assert.equal(m.calls.fetch,1);
+  assert.equal('S5'in r.selectedThemes[0],false);
 });
-
-test('model cannot insert an unapproved theme',async()=>{
-  const deps=mocks({selectionIds:['theme-999']});
-  await assert.rejects(runStage05OllamaResearch({input:fixture(),model:'mock',...deps}),
-    /OLLAMA_SELECTED_UNAPPROVED_THEME/);
-  assert.equal(deps.called.search,0);
+test('duplicate or nonnumeric candidate inputs are rejected',()=>{
+  const d=fixture();d.ollamaInput.candidates.push({...d.ollamaInput.candidates[0]});
+  assert.throws(()=>readStage05Candidates(d),/CANDIDATES_CONTRACT_INVALID/);
+  d.ollamaInput.candidates.pop();
+  d.ollamaInput.candidates[0].stage02Score=null;
+  assert.throws(()=>readStage05Candidates(d),/CANDIDATES_CONTRACT_INVALID/);
 });
-
-test('fabricated citation that Ollama never fetched is rejected',async()=>{
-  const deps=mocks({badFetchedUrl:true});
-  await assert.rejects(runStage05OllamaResearch({input:fixture(),model:'mock',...deps}),
-    /OLLAMA_EVIDENCE_URL_NOT_FETCHED/);
-});
-
-test('Ollama may decide no theme deserves research without triggering a web call',async()=>{
-  const deps=mocks({selectionIds:[]});
-  const r=await runStage05OllamaResearch({input:fixture(),model:'mock',...deps});
-  assert.equal(r.status,'NO_THEME_SELECTED');
-  assert.equal(deps.called.search,0);
-  assert.equal(r.selectedThemes.length,0);
-});
-
-test('duplicate/missing numeric IDs cannot be accepted as a verified handoff',()=>{
-  const x=fixture();x.ollamaInput.candidates[8].themeId='approved-12';
-  assert.throws(()=>readStage05Candidates(x),/CANDIDATES_CONTRACT_INVALID/);
-  const y=fixture();y.ollamaInput.candidates[0].stage05S5=null;
-  assert.throws(()=>readStage05Candidates(y),/CANDIDATES_CONTRACT_INVALID/);
-});
-
-test('tool call limit aborts without claiming a finished research report',async()=>{
-  const deps=mocks();
+test('fabricated URL without fetched primary evidence is rejected',async()=>{
+  const m=mocks({fakeCitation:true});
   await assert.rejects(runStage05OllamaResearch({
-    input:fixture(),model:'mock',...deps,maxToolCalls:1}),/TOOL_BUDGET_EXCEEDED/);
+    input:fixture(),model:'mock',...m}),/OLLAMA_EVIDENCE_URL_NOT_FETCHED/);
 });
-
-test('existing R77 forecast research reaches Ollama as context, never as an S5 score',async()=>{
-  const input=fixture();
-  input.ollamaInput.stage04SavedR77Forecast={
-    version:'STAGE05_R77_SAVED_FORECAST_BRIDGE_R83',
-    status:'CONNECTED_R77_RESEARCH_ONLY',
-    topics:[{keyword:'data center',meanCagrPct:11.285}],
-    scoreStatus:'NOT_STAGE04_M4_OR_STAGE05_S5',
-  };
-  const seen=[];
-  const chat=async request=>{
-    seen.push(request);
-    if(request.format?.properties?.selectedThemes)return selection(['approved-12']);
-    return {message:{content:'no additional evidence',tool_calls:[]}};
-  };
-  const result=await runStage05OllamaResearch({input,model:'mock',chat,
-    webSearch:async()=>({results:[]}),webFetch:async()=>({content:''})});
-  assert.equal(result.status,'NO_FETCHED_PRIMARY_EVIDENCE');
-  for(const request of seen){
-    const userMessage=request.messages.find(m=>m.role==='user');
-    const data=JSON.parse(userMessage.content);
-    assert.equal(data.savedR77ResearchContext.topics[0].meanCagrPct,11.285);
-    assert.equal(data.savedR77ResearchContext.scoreStatus,'NOT_STAGE04_M4_OR_STAGE05_S5');
-  }
-  assert.equal(input.ollamaInput.candidates[0].stage05S5,70);
-});
-
-test('the model receives all four completed-stage contexts without duplicate indicator math',async()=>{
-  const input=fixture(),requests=[];
-  const chat=async req=>{
-    requests.push(req);
-    if(req.format?.properties?.selectedThemes)return selection([]);
-    throw new Error('UNEXPECTED_RESEARCH');
-  };
-  const r=await runStage05OllamaResearch({input,model:'mock',chat,
-    webSearch:async()=>{throw new Error('UNEXPECTED_SEARCH');},
-    webFetch:async()=>{throw new Error('UNEXPECTED_FETCH');}});
-  assert.equal(r.status,'NO_THEME_SELECTED');
-  const payload=JSON.parse(requests[0].messages[1].content);
-  assert.equal(payload.marketRisk,'CAUTION');
-  assert.equal(payload.candidates[0].stage02Score,50);
-  assert.equal(payload.candidates[0].stage03Score,60);
-  assert.equal(payload.candidates[0].stage04M4,70);
-  assert.equal(payload.candidates[0].S5,70);
-  assert.equal('T' in payload.candidates[0],false);
+test('tool budget still stops overbroad research',async()=>{
+  const m=mocks();
+  await assert.rejects(runStage05OllamaResearch({
+    input:fixture(),model:'mock',...m,maxToolCalls:1}),/TOOL_BUDGET_EXCEEDED/);
 });
