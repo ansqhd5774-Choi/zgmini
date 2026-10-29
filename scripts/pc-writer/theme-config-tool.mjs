@@ -79,7 +79,27 @@ async function cli(){
  if(mode==='--register')return registerDefinition({dataRoot:root(),definition:readDefinition(arg),legacyRegistry:legacy()});
  if(mode==='--plan')return planRegistered(root(),arg);
  if(mode==='--cycle')return runConfiguredOnce({dataRoot:root(),id:arg});
- if(mode==='--scheduled'){ensure(!arg,'CONFIG_USAGE');return runConfiguredSchedule({dataRoot:root()});}
+ if(mode==='--scheduled'){
+  ensure(!arg,'CONFIG_USAGE');
+  // This is still the single existing configured-theme scheduled entry.
+  // Private collection/calculation runs first with the original UTC 4-GET budget.
+  const privateCycle=await runConfiguredSchedule({dataRoot:root()});
+  let publicCycle;
+  try{
+   const {runConfiguredAutoPublish}=await import('./theme-config-auto-publish.mjs');
+   publicCycle=await runConfiguredAutoPublish({dataRoot:root()});
+  }catch(e){
+   publicCycle={status:'PUBLICATION_PARTIAL_REVIEW_REQUIRED',
+    reason:e.code??'CONFIG_PUBLIC_SCHEDULE_ERROR',providerCalls:0,d1Writes:0};
+  }
+  return {...privateCycle,
+   status:privateCycle.status==='PARTIAL_REVIEW_REQUIRED'||
+    publicCycle.status==='PUBLICATION_PARTIAL_REVIEW_REQUIRED'?
+    'PARTIAL_REVIEW_REQUIRED':privateCycle.status,
+   privateStatus:privateCycle.status,
+   publicConnection:publicCycle,
+   d1Writes:publicCycle.d1Writes??0};
+ }
  if(mode==='--import'){
   const d=readDefinition(arg),ui=createInterface({input:process.stdin,output:process.stdout});
   try{console.log(`테마: ${d.label}\nETF: ${d.etfs.join(' + ')} / SPY\n산식: ${d.profile}\n비공개 자동 수집·계산 목록에 등록합니다. 예약 전체 UTC 날짜당 최대 4 GET입니다. 사이트 게시는 하지 않습니다.`);
