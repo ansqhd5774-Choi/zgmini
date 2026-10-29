@@ -201,3 +201,12 @@
 - **확정한 원인 범위:** 원본 7개 CHECK가 `arabnews`를 거부하는 실제 운영 제약이었음은 확정. 다만 R50에서 마스킹된 최초 예외의 정확한 위치 자체는 미확정이며 오류를 단정하지 않는다.
 - **미완료:** R53은 기사 INSERT를 수행하지 않았으므로 Arab News 목표 8건에 대한 현재 membership, 게시 결과, API/UI 반영을 **아직 확인하지 않음**. 과거 R51의 0/8을 오늘의 0/8로 간주하지 않는다.
 - **R54 필수 순서:** D1 현재 8개 ID membership와 기존 행/R1 read-only 재조회 → 현재 존재하는 신규 ID는 재작성 금지 → 아직 없는 승인 8건만 기존 R46 원본 증거를 재사용하는 bounded one-shot 게시(필요 시 명시적 재승인) → D1 전체 보존/8개 ID/중복 0 remote readback → 공개 API/UI 확인. R50 기존 CMD 무조건 재실행 금지. unknown write outcome에는 자동 재시도 금지. 신규 schema/산식·배포·스케줄러 변경 금지.
+
+## 18. R54 — R53 완료 이후 신규 8건 제한적 D1 게시 준비 (2026-10-29)
+
+- **현 운영 증거:** 사용자 R53 제출 로그에서 D1 7→11 허용 소스 전환, 게시 전후 **44→44건**, 원본 39건/R1 보존 PASS. 8건의 **현재 membership는 아직 미조회**. R51의 과거 0/8을 현 상태로 확정 금지.
+- **구현:** `scripts/iran-progress/news-metadata-publish-r54.mjs` 신설. R53 실제 11개 CHECK·39건 보존·R1을 SELECT로 확인, R46 8건과 R49 증거를 원형 그대로 검증, 현 D1 정확한 8개 ID를 재조회. 전부 미저장이면 직전 재조회로 schema/rows/R1 drift 방지 후 **plain INSERT 8개를 하나의 D1 요청으로 실행**. ON CONFLICT UPDATE 없음. 이미 8/8 저장이면 무쓰기, 부분 저장·기존 동일 ID 내용 충돌·R1/원본 변경이면 무쓰기 STOP. INSERT 결과 불명확 시 자동 재시도 금지; remote readback 먼저.
+- **동일 브랜치 테스트:** `tests/iran-news-r54-publish.test.mjs`, 메모리 실제 11-ID SQLite schema 기반 **8/8 PASS (Node 24 fixture)**. 44→52과 기존 44/R1 무변경, 8건 이미 존재하면 no-op, 1건만 있으면 차단, 구 7-ID schema 차단, R1 drift 차단, 동시 unique 충돌의 D1 배치 rollback 재현. 실제 PC Node/Cloudflare D1 미실행이므로 운영 PASS로 확대하지 않음.
+- **PC 실행기:** `scripts/iran-progress/IRAN_NEWS_R54_EIGHT_PUBLISH_ONCE_20261029.cmd`와 `.zip`(CMD 1개, ZIP CRC PASS). 고정 소스 PIN `d4b9630dda46fd721a38358b0237afd4632b4765`, Git Blob 14개 검사 → 8개 테스트 → 현재 D1 11개 스키마 읽기 전용 확인 → 원본 R46/R49 로그로 8개 정확 ID 재조회 → 조건 충족 시 1회 D1 INSERT/readback. 이전 R50 CMD 실행 금지. 이전 R50 복구용 폴더의 `IRAN_NEWS_R45_R46_TEST_RESULT.txt`와 `IRAN_NEWS_R49_MEMBERSHIP_PREFLIGHT_RESULT.txt`를 **같은 폴더**에 두어야 하며 로그 내용은 Git에 올리지 않음.
+- **중복 실행 방지:** `IRAN_NEWS_R54_EIGHT_PUBLISH_RESULT.txt`가 이미 있으면 CMD는 작업 전에 중단. 쓰기 이후 오류는 저장 여부가 불명확할 수 있으므로, 임의 재실행 없이 결과 제출 후 원격 readback으로 판단.
+- **현 상태:** R54 SOURCE/LOCAL_TEST_PASS, GITHUB_BRANCH_REFLECTED, **PC_RUNTIME_PENDING**, **R54_D1_WRITE_NOT_EXECUTED**, API/UI/Production 검증 대기. 기존 main/Production 자동 변경 없음. R54 로컬 실행 후 D1 결과 및 사이트 실제 노출을 후속 검증한다.
