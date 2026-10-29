@@ -17,7 +17,9 @@ export function eligibleConfiguredPublic(record,key,storedAt,now=Date.now()){
   record.version!==VERSION||record.status!=='READY'||
   typeof record.themeId!=='string'||key!==PREFIX+record.themeId||
   !/^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/.test(record.themeId)||
-  typeof record.theme!=='string'||!record.theme.trim()||record.theme.length>60||
+  typeof record.theme!=='string'||!record.theme.trim()||
+  record.theme.trim()!==record.theme||record.theme.length>60||
+  /[<>\x00-\x1f\x7f]/.test(record.theme)||
   record.benchmark!=='SPY'||record.methodologyVersion!=='ADAPTIVE_R2_PAIR_R3'||
   record.publicationAuthorized!==true||record.derivedOnlyNoRaw!==true||
   record.publicationAuthorizationBasis!=='LOCAL_OPERATOR_ATTESTATION_NOT_INDEPENDENT_LEGAL_VERIFICATION'||
