@@ -161,5 +161,6 @@ echo SEND_RESULT_TXT=%ZG_RUN%\R72_OLLAMA_FORECAST_PIPELINE_RESULT.txt
 echo SEND_EXECUTION_LOG=%ZG_RUN%\R82_EXECUTION_DIAGNOSTIC.txt
 echo EXIT_CODE=%ZG_EXIT%
 echo Original R77 and previous reports were not modified.
-pause
+rem Keep the original interactive behavior unless an explicit R85 repeat runner owns the console.
+if not "%STAGE04_R85_REPEAT_NONINTERACTIVE%"=="1" pause
 exit /b %ZG_EXIT%
