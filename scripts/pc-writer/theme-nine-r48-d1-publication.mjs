@@ -9,6 +9,13 @@ const fail=code=>{throw Object.assign(new Error('THEME_NINE_R48_'+code),{code:'T
 const same=(a,b)=>JSON.stringify(a)===JSON.stringify(b);
 const hashes=['rawManifestSha256','r25InputSha256','shadowSha256',
   'officialAumEvidenceSha256','baselineManifestSha256'];
+const LEGACY_PROVISIONAL='EXISTING_PUBLIC_PROVISIONAL_AS_PUBLISHED';
+const rebaseOnlyFields=new Set([
+  'provisional','provisionalLineage','candidateFileSha256',
+  'publishedAt','sourceStoredAt',
+]);
+const immutableSameDay=record=>Object.fromEntries(Object.entries(record)
+  .filter(([key])=>!rebaseOnlyFields.has(key)));
 
 export async function publishNineR48D1({query,record,publicBase,now=Date.now(),
   expectedStoredAt=null}={}){
@@ -50,7 +57,18 @@ export async function publishNineR48D1({query,record,publicBase,now=Date.now(),
     }
     if(before.body.observationDate===record.observationDate){
       if(!same(before.body.themes,record.themes))fail('D1_SAME_DATE_REWRITE_DENIED');
-      return {status:'UNCHANGED',written:0,storedAt:before.storedAt};
+      // A separately approved optional theme may publish a later provisional
+      // sidecar WITHOUT changing this day's 252-session R32 confirmed history.
+      // Old R37 then ceases to match the public base byte-for-byte. Rebase
+      // ONLY the already-approved PUBLIC_LEGACY_AS_IS provisional lineage;
+      // no same-date confirmed score, formula, raw source, rights or roster
+      // changes can pass. Both dates and scores are re-verified by R37 above.
+      if(same(before.body.provisional,record.provisional))
+        return {status:'UNCHANGED',written:0,storedAt:before.storedAt};
+      if(before.body.provisionalLineage?.source!==LEGACY_PROVISIONAL||
+         record.provisionalLineage?.source!==LEGACY_PROVISIONAL||
+         !same(immutableSameDay(before.body),immutableSameDay(record)))
+        fail('D1_SAME_DATE_REBASE_SCOPE_DENIED');
     }
   }
   if(now<=(before?.storedAt??0))fail('D1_CLOCK_NOT_MONOTONIC');
