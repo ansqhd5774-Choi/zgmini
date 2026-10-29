@@ -43,7 +43,7 @@ test('detail-only styling keeps the actual publication history and honest score 
  assert.ok(chart.includes('return compact?\'L\''));
  assert.equal((chart.match(/level:"(?:very-negative|negative|neutral|positive|very-positive)"/g)??[]).length,5);
  assert.ok(chart.includes('data-series="selected-publication-halo"'));
- assert.ok(chart.includes('stroke={compact?"#ef4444":"#29d3bc"}'));
+ assert.ok(chart.includes('stroke={compact?"#ef4444":"#fb7185"}'));
  assert.ok(chart.includes('onClick={compact?undefined:()=>setSelected(p.at)}'));
  assert.ok(chart.includes("!compact&&<div className=\"zg-iran-update-reading\""));
  assert.ok(css.includes('.zg-iran-published-chart:not(.is-compact) .zg-iran-chart-legend'));
