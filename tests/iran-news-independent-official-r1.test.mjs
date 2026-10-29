@@ -10,9 +10,9 @@ const clone=()=>structuredClone(sample);
 test('independent official evidence candidates stay isolated from R41 and R5',()=>{
  assert.equal(validateIranOfficialNewsBriefsR1(sample),true);
  assert.deepEqual(summarizeIranOfficialNewsBriefsR1(sample),{
-  version:'IRAN_OFFICIAL_NEWS_BRIEFS_R1',asOfDate:'2026-10-29',candidateCount:5,
+  version:'IRAN_OFFICIAL_NEWS_BRIEFS_R1',asOfDate:'2026-10-29',candidateCount:13,
   publicationAuthorized:false,officialEvidenceOnly:true,articleReadyCountDelta:0,
-  r5ScoreChanges:0,signals:{diplomatic_positive:3,risk_persistent:1,risk_increase:1,mixed:0,neutral:0},
+  r5ScoreChanges:0,signals:{diplomatic_positive:5,risk_persistent:2,risk_increase:3,mixed:1,neutral:2},
  });
 });
 
@@ -28,6 +28,7 @@ test('reject article crosswalk, R41 id, and unauthorized auto publication',()=>{
 test('reject non-official links, query manipulation, duplicate events and invalid signals',()=>{
  const cases=[
   changed=>{changed.items[0].sourceEvidence[0].url='https://www.theguardian.com/world/article';},
+  changed=>{changed.items[0].sourceEvidence[0].url='https://www.fm.gov.om.evil.example/en/62528/';},
   changed=>{changed.items[0].sourceEvidence[0].url+='?next=https://www.gov.uk/';},
   changed=>{changed.items[0].id=changed.items[1].id;},
   changed=>{changed.items[0].signal='negative';},
@@ -38,6 +39,20 @@ test('reject non-official links, query manipulation, duplicate events and invali
   changed=>{changed.items[1].facts[0].sourceIndexes=[2];},
  ];
  for(const change of cases){const payload=clone();change(payload);assert.equal(validateIranOfficialNewsBriefsR1(payload),false);}
+});
+
+test('each candidate is anchored in official-source evidence with unique IDs and event dates',()=>{
+ assert.equal(sample.items.length,13);
+ const known=new Set();
+ for(const item of sample.items){
+  assert.equal(known.has(item.id),false,item.id);
+  known.add(item.id);
+  assert.match(item.id,/^OFFICIAL-\d{8}-\d{2}$/);
+  assert.ok(item.sourceEvidence.every(source=>source.sourceDate<=sample.asOfDate));
+  assert.ok(item.sourceEvidence.every(source=>new URL(source.url).protocol==='https:'));
+  assert.ok(item.facts.every(fact=>fact.sourceIndexes.length>0));
+  assert.equal(item.status,'SOURCE_VERIFIED_CANDIDATE');
+ }
 });
 
 test('no publishable status or R41 READY annotation can be spoofed',()=>{
