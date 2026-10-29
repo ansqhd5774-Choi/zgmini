@@ -129,4 +129,6 @@ test('R47 reuses R25 approved scoring on verified 9-theme baseline plus R35 wind
   const repeated=await updateNineR47Private(opts);
   assert.equal(repeated.status,'PRIVATE_SHADOW_ALREADY_VERIFIED');
   assert.equal(repeated.shadow.writtenFiles,0);
+  assert.equal(repeated.shadow.calculationSkipped,true);
+  assert.equal(repeated.stage,'EXISTING_PRIVATE_RESULT_REUSED_NO_RECALCULATION');
 });

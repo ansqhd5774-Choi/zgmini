@@ -48,6 +48,55 @@ function savePrivateShadow(dataRoot,scores,themes){
     themeSha256:sha(themeBytes),writtenFiles:2};
 }
 
+// Skip a duplicate R25/R32 calculation only when both existing immutable
+// private results match the exact currently SHA-verified R47 source manifests.
+function reusePrivateShadow(dataRoot,rosterPath,after){
+  const date=after.lastVerifiedSpyNYDay??after.verifiedCompletedWindows.at(-1)?.spyDay;
+  if(!date)return null;
+  const root=fs.realpathSync(dataRoot);
+  const home=path.join(root,'themes','legacy-nine-r47-private');
+  if(!fs.existsSync(home))return null;
+  if(fs.realpathSync(home)!==path.resolve(home))fail('PRIVATE_SHADOW_DIRECTORY_REDIRECT');
+  const expected={roster:sha(fs.readFileSync(rosterPath)),
+    baseline:sha(fs.readFileSync(path.join(root,'themes','legacy-nine-r23','raw-manifest.json'))),
+    delta:sha(fs.readFileSync(path.join(root,'themes','legacy-nine-r35-delta','raw-manifest.json'))),
+    windows:after.verifiedCompletedWindows.map(w=>({start:w.start,end:w.end,spyDay:w.spyDay}))};
+  const candidates=fs.readdirSync(home).filter(n=>n.startsWith(`THEME_NINE_R47_PRIVATE_${date}_`)&&
+    /^THEME_NINE_R47_PRIVATE_\d{4}-\d{2}-\d{2}_[a-f0-9]{16}_ETF\.json$/.test(n));
+  for(const name of candidates){
+    const first=path.join(home,name),second=first.replace(/_ETF\.json$/,'_NINE.json');
+    if(!fs.existsSync(second))fail('PRIVATE_SHADOW_PAIR_INCOMPLETE');
+    if([first,second].some(file=>!fs.lstatSync(file).isFile()||
+      fs.lstatSync(file).isSymbolicLink()))fail('PRIVATE_SHADOW_FILE_REDIRECT');
+    const a=fs.readFileSync(first),b=fs.readFileSync(second);
+    const digest=sha(Buffer.concat([a,b])).slice(0,16);
+    if(!name.includes(`_${digest}_`))fail('PRIVATE_SHADOW_SHA_DRIFT');
+    let score,theme;
+    try{score=JSON.parse(a.toString('utf8'));theme=JSON.parse(b.toString('utf8'));}
+    catch{fail('PRIVATE_SHADOW_INVALID_JSON');}
+    const source=score.source;
+    if(score.contract!=='THEME_NINE_R47_PRIVATE_INCREMENTAL_INDIVIDUAL_V1'||
+      theme.contract!=='THEME_NINE_R47_PRIVATE_RECURRING_NINE_THEME_SHADOW_V1'||
+      theme.benchmarkDate!==date||source?.latestSpySessionDate!==date||
+      theme.publicationAuthorized!==false||
+      score.approvedFormula!=='EXACT_EXISTING_THEME_OPTIONAL_ADAPTIVE_R2_T40_R20_V40'||
+      theme.aggregation!=='EXACT_EXISTING_R32_DATE_REDUCER'||
+      theme.counts?.themes!==9||theme.counts?.uniqueApprovedETFs!==63||
+      theme.counts?.approvedETFPositions!==64||
+      JSON.stringify(theme.source)!==JSON.stringify(source))
+      fail('PRIVATE_SHADOW_REUSE_CONTRACT');
+    if(source.rosterSha256!==expected.roster||
+       source.baselineManifestSha256!==expected.baseline||
+       source.deltaManifestSha256!==expected.delta||
+       JSON.stringify(source.deltaCompletedWindows)!==JSON.stringify(expected.windows))
+      continue; // older valid private result; score current source normally
+    return {status:'PRIVATE_SHADOW_ALREADY_VERIFIED',scoreFile:first,
+      themeFile:second,scoreSha256:sha(a),themeSha256:sha(b),writtenFiles:0,
+      calculationSkipped:true};
+  }
+  return null;
+}
+
 export async function updateNineR47Private({dataRoot,rosterPath,now=new Date(),
   fetchImpl=fetch,sleep,auto=true,officialEvidence=null}={}){
   const arg=settings({dataRoot,rosterPath});
@@ -68,6 +117,18 @@ export async function updateNineR47Private({dataRoot,rosterPath,now=new Date(),
       collection:collected,shadow:null,freshness,
       dataOutcome:collected.status.startsWith('WAIT_SOURCE')?'SOURCE_DELAYED':
         'NO_NEW_PRIVATE_SOURCE',publicationAuthorized:false,
+      d1Writes:0,schedulerWrites:0,publicationWrites:0};
+  }
+  if(!collected.providerCalls&&!collected.rawFilesStored){
+    const reused=reusePrivateShadow(arg.dataRoot,arg.rosterPath,after);
+    if(reused)return {contract:'THEME_NINE_R47_PRIVATE_AUTOMATIC_UPDATE_V1',
+      status:reused.status,stage:'EXISTING_PRIVATE_RESULT_REUSED_NO_RECALCULATION',
+      benchmarkDate:after.lastVerifiedSpyNYDay,collection:collected,
+      freshness,dataOutcome:collected.status.startsWith('WAIT_SOURCE')?
+        'SOURCE_DELAYED':'PRIVATE_RESULT_UNCHANGED',shadow:reused,
+      counts:{themes:9,approvedETFPositions:64,uniqueApprovedETFs:63,tradingDates:252},
+      sourceMode:'RAW_UNADJUSTED_1H_NOT_OFFICIAL_CLOSE',
+      formulaChanged:false,rosterChanged:false,publicationAuthorized:false,
       d1Writes:0,schedulerWrites:0,publicationWrites:0};
   }
   const scores=calculateNineR47PrivateScores({...arg,now});

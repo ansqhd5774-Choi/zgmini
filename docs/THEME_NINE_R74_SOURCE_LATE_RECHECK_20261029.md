@@ -13,7 +13,7 @@
 - `theme-nine-r47-recurring-private-refresh.mjs`: **조회 종료일** `end`와 **실제 검증 SPY 거래일** `spyDay`를 별도로 판단한다. `end=cutoff`인데 `spyDay<cutoff`이면 같은 종료일의 보완 구간 `start=spyDay,end=prior.end`를 허용한다. 기존 체인의 이전 state 파일은 수정하지 않는다. 보완 checkpoint는 새로운 `delta-{SHA}.json`로 부가되며 SPY 일자가 반드시 더 전진해야 완료 체인으로 인정된다.
 - 데이터가 여전히 없으면 SPY GET 1회 후 `WAIT_SOURCE_NO_NEW_VERIFIED_SPY_SESSION`으로 종료하고, R35 원본·성공 checkpoint를 추가/덮어쓰기 하지 않는다. 날짜별 프로브 시도 기록은 성공 checkpoint와 완전히 별개인 `themes/legacy-nine-r47-probes/r47-source-probe-*.json`에 저장한다. 6시간 미만 재요청 금지, 같은 뉴욕 날짜에 최대 2회 재확인(기존 11:30 KST 1일 1회 예약은 변경 없음). 별도 재예약 생성 없음. `delta.lock`이 있으면 보완 조회를 시작하지 않는다.
 - `theme-nine-r35-delta-collect.mjs`: 이전 완료 구간과 같은 `end`를 갖는 보완 체크포인트 허용. 기존 완료 체크포인트와 검증된 SPY overlap이 동일해야 한다. 데이터·산식·로스터는 원본 그대로 보존.
-- `theme-nine-r47-recurring-private-update.mjs`: `collection.status` 및 `freshness.targetDayVerified`, `dataOutcome`으로 원천 지연/변경 없음/신규 비공개 결과 저장을 분리한다. 기존 결과 파일·계산식·공개 UI 계약 불변.
+- `theme-nine-r47-recurring-private-update.mjs`: `collection.status` 및 `freshness.targetDayVerified`, `dataOutcome`으로 원천 지연/변경 없음/신규 비공개 결과 저장을 분리한다. 수집 변경이 없고 기존 ETF·9테마 비공개 결과 두 파일의 SHA, 출처 manifest SHA, 완료 구간, R32 계약이 모두 현재와 일치하면 R25/R32 중복 재계산을 생략한다. 기존 결과 파일·계산식·공개 UI 계약 불변.
 - `theme-nine-r73-auto-http502-private-retry.mjs`: 이번 실행에서 **새로 생성된 유일한 R47 JSON**과 대응했을 때에만 `sourceEvidenceStatus`, `dataOutcome`, `lastVerifiedSpyNYDay`를 기록한다. `R73_PRIVATE_COMMAND_RETURNED_ZERO`는 **명령 종료**만 의미한다. 새 파일을 특정하지 못하면 `NOT_VERIFIED`로 남긴다. R73의 스케줄·502 복구 규칙은 불변.
 - SHA 확인용 `THEME_NINE_R47_RECURRING_PRIVATE_UPDATE.cmd`를 변경된 R47/R35에서 다시 생성했다. 기존 PC에 설치된 R47 CMD와 자동으로 교체하지 않는다. 사용자 승인하에 기존 파일 백업 및 SHA 대조 후 설치해야 실제 PC에 적용된다.
 
