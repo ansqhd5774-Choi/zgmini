@@ -19,6 +19,9 @@ if not exist "%R45_DIR%" mkdir "%R45_DIR%" >nul 2>&1
 if not exist "%R45_DIR%" goto :mkdir_failed
 curl.exe -fLSs --connect-timeout 10 --max-time 35 --output "%R45_SCRIPT%" "https://raw.githubusercontent.com/ansqhd5774-Choi/zgmini/%R45_SHA%/scripts/iran-progress/news-four-source-probe-r45.mjs" >>"%R45_LOG%" 2>&1
 if errorlevel 1 goto :download_failed
+certutil -hashfile "%R45_SCRIPT%" SHA256 2>nul | findstr /I /C:"0fed69ab59376283ca950433b1bf38619abe06954729d1cc65a2439e925b4c83" >nul
+if errorlevel 1 goto :hash_failed
+>>"%R45_LOG%" echo R45_SOURCE_SHA256=PASS
 >>"%R45_LOG%" echo R45_SOURCE_FETCH=PASS
 "%R45_NODE%" "%R45_SCRIPT%" --probe >>"%R45_LOG%" 2>&1
 set "R45_RC=%errorlevel%"
@@ -36,6 +39,9 @@ exit /b 0
  goto :done_failed
 :download_failed
 >>"%R45_LOG%" echo FINAL_STATUS=DOWNLOAD_FAILED_NO_COLLECTION
+ goto :done_failed
+:hash_failed
+>>"%R45_LOG%" echo FINAL_STATUS=SOURCE_HASH_MISMATCH_NO_COLLECTION
  goto :done_failed
 :done_failed
 echo R45 failed before or during read-only probe. Send result TXT. Do not rerun.
