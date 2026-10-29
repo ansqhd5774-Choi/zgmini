@@ -24,6 +24,7 @@
 .asset-r2-spark-cell{padding-left:7px!important;padding-right:7px!important}
 .asset-r2-spark-cell .inflation-mini-chart{width:112px;max-width:100%;height:32px}
 .asset-r2-spark-cell .inflation-mini-chart-empty{min-width:0;max-width:100%}
+.asset-r2-spark-caption{display:block;margin-top:3px;font-size:9px;line-height:1.25;color:#7891a6;white-space:nowrap}
 .asset-r2-indicators [data-judgement="positive"] .inflation-mini-chart-line{stroke:#77e59c}
 .asset-r2-indicators [data-judgement="neutral"] .inflation-mini-chart-line{stroke:#cbd5e1}
 .asset-r2-indicators [data-judgement="negative"] .inflation-mini-chart-line{stroke:#ff9a9a}
