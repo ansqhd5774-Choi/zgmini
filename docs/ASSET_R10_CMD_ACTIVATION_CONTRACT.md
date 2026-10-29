@@ -175,3 +175,26 @@ R4 사용자 Windows 스크린샷에서 `C:\nvm4w\nodejs\node.exe`가 현재 Win
 - CMD는 PATH의 `node.exe`를 더 이상 사용하지 않는다. 고정 Node가 없거나 `--version` 실행 실패 시 `ASSET_R10_WRITER_ORIGIN_LAUNCH_RESULT.txt`에 `STOP_PINNED_NODE_MISSING` 또는 `STOP_PINNED_NODE_INCOMPATIBLE`을 기록하고 중단한다. 임의 설치·런타임 교체·PATH 변경을 하지 않는다.
 - 진단 helper와 대상 조회 범위, 승인 source, R10 구현·검증 계약은 R4와 동일하다. 기존 `R4` ZIP 대신 새 `R4_FIX1`을 **새 폴더에** 압축 해제하고 CMD 1회 실행한다.
 - Linux fixture 테스트는 Node 고정 경로 CMD의 Windows 실행을 증명하지 않는다. 실 Windows에서 수정 런처의 성공 여부는 사용자 결과 TXT로 확인한다. INSTALL·D1·스케줄러·VBS 변경 없음.
+
+## 15. R4 FIX1 실제 PC 실행 결과 — 안전 중단 유지
+
+2026-10-29 사용자가 제출한 `ASSET_R10_WRITER_ORIGIN_RESULT.txt`에서 `STATUS=READONLY_WRITER_ORIGIN_COMPLETED`, `MANIFEST_STATUS=HASH_VERIFIED`, `INSTALL_AUTHORIZATION=NO`를 확인했다. 수정 런처는 실제 Windows에서 진단 helper를 정상 실행했다.
+
+**기존 승인 Writer 확인**
+
+- `APPROVED_CHECKOUT_HEAD`, `CONFIG_SOURCE`, `LAST_WRITER_SOURCE` 모두 `a477ef304425145f559352af4291e437e3b08a2d` 일치, tracked dirty `NO`, Writer 마지막 상태 `VERIFIED`.
+- `LAST_WRITER_AT=2026-10-29T14:00:50.753Z`; R10 훅 `ABSENT`; ledger `VERIFIED`. 기존 Writer가 실행된 기록은 있으나 이 자료만으로 **어느 예약 실행기에서 호출했는지**는 확인되지 않는다.
+
+**실행 경로 확인**
+
+- `CORE_TASK_ENABLED=YES`, `CORE_TASK_STATE=Running`. Core VBS SHA 일치; `R38_AUTO_DISPATCH` 호출, 직접적인 `run-local.mjs` / `local-cycle.mjs` / 승인 checkout 경로 문자열 없음.
+- R38은 R31 scoped publication과 R33 observe 모듈을 참조하고, R31은 `d1.mjs`만 파일명으로 언급한다. 해당 체인에서 검사한 6개 고정 파일 모두 승인 Writer 경로 / `run-local.mjs` / `local-cycle.mjs`의 **정적 참조를 갖지 않는다**. 동적 경로 생성 가능성까지 부정하는 뜻은 아니므로 `WRITER_ROUTE=UNPROVEN`, `ROUTE_ASSESSMENT=NO_WRITER_REFERENCE_IN_PINNED_DISPATCH_CHAIN`을 유지한다.
+- 기존 `Local-Korea` 정적 참조는 `lane==='core'&&publishAllowed` 조건상 Writer 게시 실행 근거가 아니다. 비활성 별도 Writer 작업도 임의 활성화하지 않는다.
+
+**운영 충돌 방지**
+
+- `LOCK_STATUS=PRESENT`, 경과 177초, PID `16360`. Windows CIM 조사 성공: `node.exe`이며 명령줄에 승인 checkout 및 `local-cycle.mjs`가 포함된다. 단 PID 생성 시점과 lock 생성 시점의 상대 순서는 `UNVERIFIED`이므로 잠금의 소유권·수명 완전 확정으로 확대하지 않는다.
+- 동시 관련 프로세스 13개, Writer 경로 포함 1개, `local-cycle.mjs` 1개. `INSTALL_STOP_REASONS=LOCK_PRESENT,WRITER_EXECUTION_ROUTE_UNPROVEN`.
+- **결론: R6 INSTALL 실행 불가.** 승인 checkout에 코드를 삽입하거나 config.source를 전환하지 않았다. 예약 작업·프로세스·잠금·원장·D1은 변경하지 않았다.
+
+다음 작업은 예약 구성 변경이나 임의 프로세스 종료가 아니라 **실제 정규 Writer 호출 출처의 런타임 증거** 확인이다. 정규 실행 로그 또는 PID의 부모-자식 실행 증거가 확보되고, 별도의 안전한 유휴 시점에서 lock/ledger/source를 다시 확인한 경우에만 선택 적용 여부를 재판정한다. `AFTER_SHA=NOT_APPLIED`, `HOOK_STATUS=ABSENT`, `R10_SIDECAR_RAW/HISTORY=NOT_OBSERVED`, `D1_READBACK/NEXT_CYCLE=NOT_VERIFIED`로 유지한다.
