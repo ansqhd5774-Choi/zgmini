@@ -193,3 +193,11 @@
 - **NEXT:** 사용자의 R53 CMD 단일 실행 결과 TXT 확인. 운영 D1 스키마 11개·기존 41건/R1 보존 readback PASS인 경우에만 R51 0/8 재확인 후 기존 R50을 무조건 재실행하지 않고 승인된 후속 신규 기사 게시 경로를 설계한다. 기존 7개 소스/11개 API UI와 latest main 파일별 drift를 확인해 선택 반영·실제 공개 검증.
 
 - **다운로드 패키지:** `scripts/iran-progress/IRAN_NEWS_R53_SCHEMA_EXPAND_ONCE_20261029.zip`은 위 고정 PIN CMD 1개만 포함하는 ZIP으로, 압축 테스트 PASS. 소스 7개는 CMD가 검증된 GitHub commit에서 직접 내려받는다. 이전 R46/R49/R50/R51 로그를 포함하지 않아도 된다.
+
+## 17. R53 PC 운영 실행 결과와 R54 후속 경계 (2026-10-29)
+
+- **실제 PC 로그:** 사용자가 제출한 `IRAN_NEWS_R53_SCHEMA_EXPAND_RESULT.txt`에서 `SOURCE_FILES=7_VERIFIED`, `R53_TESTS=PASS` (6/6), `FINAL_STATUS=R53_11_SOURCE_SCHEMA_VERIFIED` 확인. 구 R41 D1 실제 정의는 7개 `source_id` 허용(`SEVEN_SCHEMA_CONFIRMED`)이었으며 승인된 1회성 스키마 확장이 실행됨(`d1Written=true`).
+- **D1 post-readback:** `ELEVEN_SOURCE_SCHEMA_VERIFIED`, 11개 source_id(`tasnim`, `govuk`, `guardian-iran`, `dw-world`, `bbc-middle-east`, `aljazeera`, `un-middle-east`, `reuters`, `ap`, `arabnews`, `anadolu`), `beforeRows=44`, `afterRows=44`, `archive39Verified=true`, `r1Preserved=true`. 즉 **기존 데이터 44건 보존과 스키마 확장까지 운영 검증 완료**. R51 과거 시점은 41건이었으며 이번 실행 전 44건으로 증가; 이 증가가 R53 쓰기 때문은 아님.
+- **확정한 원인 범위:** 원본 7개 CHECK가 `arabnews`를 거부하는 실제 운영 제약이었음은 확정. 다만 R50에서 마스킹된 최초 예외의 정확한 위치 자체는 미확정이며 오류를 단정하지 않는다.
+- **미완료:** R53은 기사 INSERT를 수행하지 않았으므로 Arab News 목표 8건에 대한 현재 membership, 게시 결과, API/UI 반영을 **아직 확인하지 않음**. 과거 R51의 0/8을 오늘의 0/8로 간주하지 않는다.
+- **R54 필수 순서:** D1 현재 8개 ID membership와 기존 행/R1 read-only 재조회 → 현재 존재하는 신규 ID는 재작성 금지 → 아직 없는 승인 8건만 기존 R46 원본 증거를 재사용하는 bounded one-shot 게시(필요 시 명시적 재승인) → D1 전체 보존/8개 ID/중복 0 remote readback → 공개 API/UI 확인. R50 기존 CMD 무조건 재실행 금지. unknown write outcome에는 자동 재시도 금지. 신규 schema/산식·배포·스케줄러 변경 금지.
