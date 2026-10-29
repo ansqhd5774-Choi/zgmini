@@ -107,3 +107,21 @@ PC에서 `E:\ZGmini\data\pc-writer\config.json`의 `source`, 마지막 실행 `l
 - 검사: `schtasks` XML 및 조회 상태, 승인 SHA checkout의 Git tracked 상태, 허용된 VBS/CMD/JS의 정적 참조 및 파일 해시, 관련 실행 파일/PID, 잠금 파일 이름·경과 시간, ledger·마지막 Writer source. 동적 실행 경로는 추적되지 않을 수 있으며 이것이 설치 허가를 뜻하지 않는다.
 - R1 도구 자체도 manifest의 파일별 해시를 검증한다. ZIP/manifest 자체 신뢰는 위 **외부 SHA-256**으로 확정한다. Node 문법, Linux 비-Windows 차단, ZIP CRC 검증은 수행했으나 **Windows 현장 동작은 미검증**이다.
 - `STATUS=READONLY_DETAIL_COMPLETED`는 추가 정보 수집의 성공일 뿐이다. 기존 R6 INSTALL은 계속 금지하며 위험 상태의 프로세스·잠금·스케줄러를 수정하지 않는다. 상세 결과를 확인한 후 정확한 최소 후속 조치를 정한다.
+
+## 11. PC 상세 R1 실제 결과와 후속 경로 식별 R2
+
+2026-10-29 받은 `ASSET_R10_BLOCKER_DETAIL_RESULT.txt`의 `STATUS=READONLY_DETAIL_COMPLETED`, `MANIFEST_STATUS=HASH_VERIFIED`를 확인했다. 실제 승인 checkout은 정확히 1개이며 `HEAD=a477ef304425145f559352af4291e437e3b08a2d`, 브랜치는 `codex/pc-auth-boundary-20261027`, `TRACKED_DIRTY=NO`, **`HOOK=ABSENT`**이다.
+
+- 예약 작업 `ZGMINI-PC-Local-Core`는 `wscript.exe` → `run-local-core.vbs`; 작업 디렉터리는 `E:\ZGmini\projects\zgmini-inflation-r37-stage`. task XML의 Enabled 명시가 없었고 CSV 상태 파싱은 `UNPARSED`였다. 이를 비활성 상태로 단정하지 않는다.
+- 정적으로 발견한 6개 허용 스크립트는 `cutover-evidence`의 VBS와 `earnings-risk-provisional-r23`의 dispatch·publication·observation 보조 실행 파일이다. `ROUTE_LITERAL_MATCH=NO`이므로 승인 Writer까지의 직접 호출 경로는 **미확정**. 이 경로가 없다고 단정하지 않는다.
+- Node/WScript 프로세스 14개, `local-cycle.lock` 1개(수정 후 경과 0분), ledger `VERIFIED`, 마지막 Writer 상태 `VERIFIED`. 잠금과 프로세스가 활성 예약 실행과 관련될 수 있으므로 건드리지 않는다.
+
+상세 실행 경로를 더 정확히 식별하기 위해, 같은 승인 범위 내 읽기 전용 R2 도구를 별도로 제공한다.
+
+- ZIP: `ASSET_R10_ROUTE_INVENTORY_R2_20261029.zip` SHA-256 `324ee5c4308d7e535f3f09b136562013c391c8c069cdc7287405481afeab1a21`.
+- manifest: `scripts/pc-writer/asset-r10-route-inventory-r2/package-manifest.json` SHA-256 `d3db6e6eadab4c7acb0503ce7ef84ecb294cd11b9ed1d99f407367ac498c15a2`.
+- 명령: 압축 해제 → `RUN_R10_ROUTE_INVENTORY.cmd` 정확히 1회 → `ASSET_R10_ROUTE_INVENTORY_RESULT.txt` 제출.
+- 지원: 예약 작업 목록·실행 상태·최근 실행·실행 명령 지문, 관련 실행 경로 아래 허용 스크립트 SHA 및 정적 참조, 가능한 경우 WMIC PID·부모 PID·스크립트 파일명만 수집. 명령 인수의 원문 및 비밀값은 기록하지 않는다. WMIC 미설치·접근 실패 시 해당 구간만 `UNAVAILABLE`로 표시한다.
+- 자체 무결성 검증, Node 구문, Linux에서의 안전한 `STOP_WINDOWS_ONLY`, ZIP 압축 무결성은 확인했다. Windows 실행 및 실제 경로 결론은 아직 검증되지 않았다.
+
+**R2도 설치·수집·D1 쓰기 기능은 전혀 없다.** `STATUS=READONLY_INVENTORY_COMPLETED`는 진단 성공일 뿐 설치 가능 판정이 아니다. 실행 경로 확인, 관련 프로세스 소강 및 잠금 해제, 원본 계약·해시 검증 전까지 R6 INSTALL을 실행하지 않는다.
