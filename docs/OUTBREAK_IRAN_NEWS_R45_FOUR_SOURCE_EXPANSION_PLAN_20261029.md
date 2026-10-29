@@ -191,3 +191,5 @@
 - **PC 단일 실행기:** `scripts/iran-progress/IRAN_NEWS_R53_SCHEMA_EXPAND_ONCE_20261029.cmd`은 고정 소스 SHA `26521032c1041ac51d61c4b9b7ed1b35514bf8e5`의 7개 파일을 Git Blob 검증한 뒤 Node 6개 테스트→D1 read-only preflight→승인 범위의 정확히 한 번의 구조 변경과 post-readback을 실행. 결과 `IRAN_NEWS_R53_SCHEMA_EXPAND_RESULT.txt`; 기존 파일이 있으면 재실행 차단. 원본 R46/R49/R50/R51 로그를 별도로 옮길 필요 없음.
 - **상태:** SOURCE/LOCAL_FIXTURE_PASS, **PC_RUNTIME_PENDING**, **D1_SCHEMA_UNCHANGED**, 신규 Arab News **0/8** 상태 유지. R53 마이그레이션 성공은 뉴스 8건 게시·사이트 배포 성공이 아님.
 - **NEXT:** 사용자의 R53 CMD 단일 실행 결과 TXT 확인. 운영 D1 스키마 11개·기존 41건/R1 보존 readback PASS인 경우에만 R51 0/8 재확인 후 기존 R50을 무조건 재실행하지 않고 승인된 후속 신규 기사 게시 경로를 설계한다. 기존 7개 소스/11개 API UI와 latest main 파일별 drift를 확인해 선택 반영·실제 공개 검증.
+
+- **다운로드 패키지:** `scripts/iran-progress/IRAN_NEWS_R53_SCHEMA_EXPAND_ONCE_20261029.zip`은 위 고정 PIN CMD 1개만 포함하는 ZIP으로, 압축 테스트 PASS. 소스 7개는 CMD가 검증된 GitHub commit에서 직접 내려받는다. 이전 R46/R49/R50/R51 로그를 포함하지 않아도 된다.
