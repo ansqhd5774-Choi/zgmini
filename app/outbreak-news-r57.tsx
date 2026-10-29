@@ -2,9 +2,12 @@
 
 import {useEffect,useRef,useState} from "react";
 import {ChevronDown,ExternalLink,Newspaper} from "lucide-react";
+import {useStoredIndex} from "../components/use-stored-index";
 import {needsKoreanTranslation,translateEnglishNewsText} from "../lib/iran-progress/browser-news-translation-r1.mjs";
 import {isPlaceholderNewsSummary,newsPageSize,visibleNewsLimit} from "../lib/iran-progress/news-ui-r1.mjs";
 import {sourceRightsAttribution} from "../lib/iran-progress/news-source-rights-r2.mjs";
+import {IranNewsEvaluationCard,validAnalysis,type NewsAnalysisItem,type NewsAnalysisPayload} from "./outbreak-news-metadata-r41";
+import styles from "./outbreak-news-evaluation-r2.module.css";
 
 /**
  * UI-only contract. Feed items must come from the separately verified news pipeline.
@@ -49,6 +52,13 @@ export default function OutbreakNewsUI({eventId,items=[],newsState="ready"}:{eve
  const [translated,setTranslated]=useState<Record<string,string>>({});
  const attemptedTranslations=useRef(new Set<string>());
  const mounted=useRef(true);
+ const {payload:analysisPayload}=useStoredIndex<NewsAnalysisPayload>(
+  "/api/outbreak-news/iran/analysis-r1",null,eventId==="iran"&&items.length>0
+ );
+ const approvedAnalyses=analysisPayload?.version==="IRAN_NEWS_ANALYSIS_R1"&&
+  (analysisPayload.status==="READY"||analysisPayload.status==="PARTIAL")&&
+  Array.isArray(analysisPayload.items)?analysisPayload.items:[];
+ const analysisById=new Map<string,NewsAnalysisItem>(approvedAnalyses.map(analysis=>[analysis.id,analysis]));
  useEffect(()=>{mounted.current=true;return()=>{mounted.current=false;};},[]);
  useEffect(()=>{setFilter("all");setVisiblePages(1);},[eventId]);
  useEffect(()=>{
@@ -95,13 +105,15 @@ export default function OutbreakNewsUI({eventId,items=[],newsState="ready"}:{eve
    </div>
   </header>
   <div className="ob57-news-list" aria-live="polite">
-   {visible.length?visible.map(item=>{const title=translated[`${eventId}:${item.id}:title:${item.title}`]??item.title;
+   {visible.length?visible.map(item=>{const candidate=analysisById.get(item.id);
+    const analysis=eventId==="iran"&&validAnalysis(candidate,item)?candidate:undefined;
+    const title=analysis?.titleKo?.trim()||translated[`${eventId}:${item.id}:title:${item.title}`]||item.title;
     const summary=translated[`${eventId}:${item.id}:summary:${item.summary}`]??item.summary;
     const rights=sourceRightsAttribution(item);
-    return <article className="ob57-news-item" key={item.id}>
+    return <article className={`ob57-news-item${analysis?` ${styles.articleReady}`:""}`} key={item.id} data-analysis-status={analysis?"READY":"PENDING"}>
     <div className="ob57-news-meta"><strong>{item.source}</strong><time dateTime={item.publishedAt}>{kstPublicationDate(item.publishedAt)}</time></div>
     <h4 title={title!==item.title?`영문 원제목: ${item.title}`:undefined}>{title}</h4>
-    <p>{isPlaceholderNewsSummary(summary)?"기사 핵심 요약 미제공 · 원문 확인 필요":summary}</p>
+    {analysis?<IranNewsEvaluationCard analysis={analysis}/>:<p>{isPlaceholderNewsSummary(summary)?"기사 핵심 요약 미제공 · 원문 확인 필요":summary}</p>}
     {rights&&<small className="ob57-news-licence"><a href={rights.url} target="_blank" rel="noopener noreferrer">{rights.label}</a></small>}
     <div className="ob57-news-foot"><span className="ob57-impact" data-impact={item.impact}>{labels[item.impact]}</span><a href={item.sourceUrl} target="_blank" rel="noopener noreferrer" title="기사 원문 보기" aria-label={`${item.source} 기사 원문 보기: ${title}`}><ExternalLink size={15} aria-hidden="true"/></a></div>
    </article>;}):<div className="ob57-news-empty" role="status">
