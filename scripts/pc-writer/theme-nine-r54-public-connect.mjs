@@ -4,7 +4,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import {createHash} from 'node:crypto';
-import {fileURLToPath} from 'node:url';
+import {fileURLToPath,pathToFileURL} from 'node:url';
 import {stageCurrentNineR48} from './theme-nine-r48-stage-current.mjs';
 import {stageNineR51Current} from './theme-nine-r51-stage-current.mjs';
 import {buildNineR48PrivatePublicationCandidate} from './theme-nine-r48-r47-bridge.mjs';
@@ -14,12 +14,12 @@ import {buildNineR51PrivateProvisionalOverlay,
 import {buildNineR54PublicRecord} from './theme-nine-r54-public-record.mjs';
 import {verifyNineR54Production} from './theme-nine-r54-deployment-gate.mjs';
 import {createNineR54D1Query} from './theme-nine-r54-d1-client.mjs';
-import {biotechCloudflareTokenR7} from './theme-biotech-auth-r7.mjs';
 import {publishNineR48D1} from './theme-nine-r48-d1-publication.mjs';
 import {addVerifiedNineR37,THEME_NINE_R37_ROSTER} from '../../worker/theme-nine-r37-public.mjs';
 
 const here=path.dirname(fileURLToPath(import.meta.url));
 const sha=b=>createHash('sha256').update(b).digest('hex');
+const APPROVED_SEVEN_AUTH_SHA='9b1f952f720abe0d6e631ad8fac908cfd51b00575690e9abea8cd09f1a6a4bd3';
 const need=(ok,code)=>{
  if(!ok)throw Object.assign(new Error('THEME_NINE_R54_'+code),
   {code:'THEME_NINE_R54_'+code});
@@ -34,6 +34,25 @@ const safeFile=(dir,filename)=>{
  return fs.readFileSync(p);
 };
 const same=(a,b)=>JSON.stringify(a)===JSON.stringify(b);
+
+// R80's first subsequent live R54 run stopped at the optional R7 Wrangler
+// lookup BEFORE any D1 read/write. Reuse precisely the previously installed,
+// SHA-verified R8 -> original seven-theme credential resolver. Do not log,
+// persist or issue a token, and never invoke the seven-theme publisher.
+export async function approvedNineR54SevenToken({dataRoot='E:/ZGmini/data',
+ expectedAuthSha256=APPROVED_SEVEN_AUTH_SHA,importer=url=>import(url)}={}){
+ const home=fs.realpathSync(path.join(dataRoot,'themes','biotech','source-r8'));
+ const file=path.resolve(home,'scripts','pc-writer','theme-biotech-seven-auth-r8.mjs');
+ need(file.startsWith(home+path.sep)&&fs.statSync(file).isFile()&&
+  !fs.lstatSync(file).isSymbolicLink()&&fs.realpathSync(file)===file&&
+  sha(fs.readFileSync(file))===expectedAuthSha256,'SEVEN_AUTH_SOURCE_NOT_APPROVED');
+ const loaded=await importer(pathToFileURL(file).href);
+ need(typeof loaded?.biotechApprovedSevenTokenR8==='function',
+  'SEVEN_AUTH_ADAPTER_MISSING');
+ const token=await loaded.biotechApprovedSevenTokenR8({dataRoot});
+ need(typeof token==='string'&&token.length>8,'SEVEN_AUTH_TOKEN_UNAVAILABLE');
+ return token;
+}
 
 // Reconstruct a persisted R48 candidate from its immutable R47 ETF/NINE
 // pair and the approved roster/AUM evidence. This independently verifies
@@ -111,7 +130,7 @@ async function fetchPublic({fetchImpl=fetch,now=Date.now()}={}){
 
 export async function runNineR54PublicConnect({dataRoot='E:/ZGmini/data',
  configDirectory=path.resolve(here,'../../config'),now=Date.now(),
- publisherConsent=false,fetchImpl=fetch,tokenFn=biotechCloudflareTokenR7,
+ publisherConsent=false,fetchImpl=fetch,tokenFn=approvedNineR54SevenToken,
  stageR48=stageCurrentNineR48,stageR51=stageNineR51Current,
  gate=verifyNineR54Production,queryFactory=createNineR54D1Query}={}){
  need(publisherConsent===true,'EXPLICIT_PUBLISHER_CONSENT_REQUIRED');
@@ -178,7 +197,8 @@ export async function runNineR54PublicConnect({dataRoot='E:/ZGmini/data',
  // and its exact source must match what this PC publisher validated.
  const deployment=await gate({readerBytes:fs.readFileSync(path.resolve(here,
   '../../worker/theme-nine-r37-public.mjs')),fetchImpl});
- const query=queryFactory({dataRoot:root,tokenFn,fetchImpl});
+ const approvedToken=await tokenFn({dataRoot:root});
+ const query=queryFactory({dataRoot:root,tokenFn:()=>approvedToken,fetchImpl});
  const readSql="SELECT body,stored_at FROM public_feed_snapshots_v1 WHERE kind='output' AND feed_key=? AND snapshot_key='current'";
  const before=(await query(readSql,['theme-legacy-nine-r37'],{write:false})).results?.[0];
  const result=await publishNineR48D1({query,record,publicBase,now,
