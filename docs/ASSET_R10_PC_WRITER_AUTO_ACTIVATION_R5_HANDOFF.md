@@ -37,3 +37,8 @@
 - [PR #893](https://github.com/ansqhd5774-Choi/zgmini/pull/893)
 - [PC Writer 운영 계약](https://github.com/ansqhd5774-Choi/zgmini/blob/main/docs/PC_WRITER_R2.md)
 - [PC 저장 경로 계약](https://github.com/ansqhd5774-Choi/zgmini/blob/main/docs/PC_STORAGE_E_DRIVE.md)
+
+## R6 CMD 선택 적용 인수인계 (2026-10-29)
+- 실행·단계별 STOP·manifest·해시·복원 기준: [ASSET_R10_CMD_ACTIVATION_CONTRACT.md](https://github.com/ansqhd5774-Choi/zgmini/blob/codex/api-site-integration-r1-20261026/docs/ASSET_R10_CMD_ACTIVATION_CONTRACT.md).
+- 중앙 실행 기준 원본: [CMD_EXECUTION_PLAYBOOK.md](https://github.com/ansqhd5774-Choi/zgmini/blob/b4a2345179277ff8f0834ac9d5fc1f73251b4d4a/docs/CMD_EXECUTION_PLAYBOOK.md).
+- 해당 ZIP의 PREFLIGHT/INSTALL/VERIFY는 독립 단계이며, 실제 PC 설치와 정규 D1 readback은 결과 TXT로 확인하기 전까지 미검증이다.

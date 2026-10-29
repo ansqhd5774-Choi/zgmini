@@ -249,3 +249,7 @@ candidate -> Production 전환 전 모두 PASS:
 - 새 테마는 독립 수집→저장→계산→확정/잠정 게시→D1 readback→공개 API/UI와 다음 정규 실행 검증까지 연결해야 운영 완료다. 기존 테마 수집 목록에 자동 포함된다고 가정하지 않는다.
 - 경로 검사: `node scripts/pc-writer/theme-data-inventory.mjs`. `UNREGISTERED/MISSING/BLOCKED`를 숨기거나 기존 점수를 최신으로 다시 저장하지 않는다.
 - 다른 테마의 실패가 정상 테마의 확정/잠정 게시를 막지 않게 한다. 과거 관측일과 결측을 보존하고 산식·권리 검증을 약화하지 않는다.
+
+## 22. R10 CMD 재사용 원본
+- 중앙 CMD 기준: https://github.com/ansqhd5774-Choi/zgmini/blob/b4a2345179277ff8f0834ac9d5fc1f73251b4d4a/docs/CMD_EXECUTION_PLAYBOOK.md
+- R10 선택 적용 명세: https://github.com/ansqhd5774-Choi/zgmini/blob/codex/api-site-integration-r1-20261026/docs/ASSET_R10_CMD_ACTIVATION_CONTRACT.md
