@@ -91,3 +91,9 @@ The tests exercise genuine five-point readiness, an intentionally missing breadt
   - `tests/asset-bubble-r10-history-archive-r4.test.mjs`: source tamper, five quarter mismatch, date/source digest mismatch, D1 raw lineage mismatch, zero-vs-null retention. Local pure regression 8/8 PASS. PC runtime and D1 application not yet executed.
 - Selective PR [#887](https://github.com/ansqhd5774-Choi/zgmini/pull/887) from latest main, 4 exact source+test files only. **Pending CI/merge and Cloudflare Git delivery**; do not run the R4 CMD until a main production-ready source with R4 files is confirmed.
 - Next: GitHub CI PASS and selective merge; verify Cloudflare Git-linked service if it builds; run approved PC R4 once; inspect `ASSET_R10_1Y_HISTORY_D1_R4_RESULT_*.txt` for `READBACK_VERIFIED` (or exact `ALREADY_STORED`); separately confirm public `/api/asset-bubble-history` PARTIAL; then selectively wire the detailed UI without touching R10 formula or scored API.
+
+### R4 selective deployment result
+
+- GitHub PR [#887](https://github.com/ansqhd5774-Choi/zgmini/pull/887) GitHub check **success**, mergeable; selectively squash-merged to `main` at exact SHA `d4b1959727db6943bb6eb4b012a9f3510d4cc5e0`. Main reread verified all four exact R4 file SHA blobs. This DOES NOT prove Cloudflare ready or PC/D1 apply; public reader was previously deployed independently with #877.
+- R4 delivery ZIP `ASSET_R10_1Y_HISTORY_D1_ARCHIVED_R4_20261029.zip` includes approved archived PC audit `ASSET_R10_1Y_HISTORY_READONLY_RESULT_29981_21772.txt` **outside GitHub**, CMD, instructions. User must extract together, invoke once, and send `ASSET_R10_1Y_HISTORY_D1_R4_RESULT_*.txt`. NO automatic retry if result unknown.
+- Remains pending: actual authorized PC run, exact D1 readback on only `detail:asset-bubble-history:r1`, public `PARTIAL` response, then selective UI wiring and PC/mobile verification. The current chart is still two observations until those gates pass.
