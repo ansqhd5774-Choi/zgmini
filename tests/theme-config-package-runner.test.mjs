@@ -6,7 +6,7 @@ import path from 'node:path';
 import {pathToFileURL} from 'node:url';
 import {execFileSync} from 'node:child_process';
 import {digest} from '../scripts/pc-writer/theme-config-registry.mjs';
-import {PACKAGE_FILES,PACKAGE_SCHEMA,PACKAGE_REPOSITORY} from '../scripts/pc-writer/theme-config-package-runner.mjs';
+import {PACKAGE_FILES,PACKAGE_SCHEMA,PACKAGE_REPOSITORY,parseTaskStateCsv} from '../scripts/pc-writer/theme-config-package-runner.mjs';
 
 const repo=path.resolve(import.meta.dirname,'..');
 const sourceSha='a'.repeat(40);
@@ -24,6 +24,20 @@ const hashes=root=>{
  };
  walk(root);return entries;
 };
+
+test('native Task Scheduler CSV accepts only exact ready state and task identity',()=>{
+ assert.equal(parseTaskStateCsv(Buffer.from('"\\\\ZGMINI-PC-Configured-Themes","10/30/2026 1:00:00 PM","Ready"\r\n')),3);
+ assert.equal(parseTaskStateCsv(Buffer.from('"\\\\ZGMINI-PC-Configured-Themes","2026-10-30 13:00:00","준비"\r\n')),3);
+ const koreanPrefix=Buffer.from('"\\\\ZGMINI-PC-Configured-Themes","2026-10-30 13:00:00","');
+ assert.equal(parseTaskStateCsv(Buffer.concat([koreanPrefix,
+  Buffer.from([0xC1,0xD8,0xBA,0xF1]),Buffer.from('"\r\n')])),3);
+ assert.equal(parseTaskStateCsv(Buffer.from('"\\\\ZGMINI-PC-Configured-Themes","N/A","Running"\r\n')),4);
+ assert.equal(parseTaskStateCsv(Buffer.from('"\\\\ZGMINI-PC-Configured-Themes","N/A","Disabled"\r\n')),1);
+ assert.throws(()=>parseTaskStateCsv(Buffer.from('"\\\\ZGMINI-PC-Configured-Themes","N/A","Unknown"')),
+  /PACKAGE_TASK_CSV_STATE_UNRECOGNIZED/);
+ assert.throws(()=>parseTaskStateCsv(Buffer.from('"\\\\OTHER-TASK","N/A","Ready"')),
+  /PACKAGE_TASK_CSV_STATE_UNRECOGNIZED/);
+});
 
 async function fixture(t){
  const base=fs.mkdtempSync(path.join(os.tmpdir(),'zgmini-한글 공백 package-'));

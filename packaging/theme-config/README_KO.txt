@@ -61,3 +61,10 @@ ZGMINI 테마 공통 도구 — 자동 게시 모듈 1회 전환 (Windows CMD)
   THEME_TASK_TIMEOUT_DIAG_RESULT.txt를 전달하세요.
 - 이 진단은 기존 설치·전환·예약 변경 없이 작업 상태와 XML 조회를
   각각 최대 12초 검사합니다. 결과 확인 전 PREFLIGHT/INSTALL 금지.
+
+9. TASK_STATE_ERROR=ETIMEDOUT, TASK_XML_QUERY=COMMAND_OK로 확인된 경우
+- 이 패키지 버전의 PREFLIGHT는 지연된 cscript COM 상태 조회 대신
+  Windows 기본 schtasks CSV를 읽어 작업의 실행 상태를 확인합니다.
+- 예약 작업이 Ready/준비가 아니거나 출력 언어/구조를 확인할 수 없으면 STOP합니다.
+- 기존 실패 폴더에서는 재실행하지 말고 이 버전을 새 빈 폴더에 풀어
+  RUN_PREFLIGHT.cmd부터 정확히 1회씩 진행하세요.

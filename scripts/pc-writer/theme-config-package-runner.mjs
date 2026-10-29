@@ -114,12 +114,46 @@ export function verifyConfiguredPackage(packageRoot=packageHere){
 const taskXmlWindows=()=>execFileSync('schtasks',
  ['/Query','/TN',PACKAGE_TASK,'/XML'],
  {encoding:'utf8',windowsHide:true,stdio:['ignore','pipe','pipe'],timeout:12000});
-const taskStateWindows=root=>{
- const program=path.join(root,'scripts','pc-writer','theme-config-task-state.js');
- const output=execFileSync('cscript.exe',['//NoLogo',program],
-  {encoding:'utf8',windowsHide:true,stdio:['ignore','pipe','pipe'],timeout:12000}).trim();
- need(/^ZG_TASK_STATE=[0-4]$/.test(output),'PACKAGE_TASK_STATE_UNKNOWN');
- return Number(output.slice(-1));
+const csvFields=line=>{
+ const fields=[];let value='',quoted=false;
+ for(let i=0;i<line.length;i++){
+  const c=line[i];
+  if(c==='"'){
+   if(quoted&&line[i+1]==='"'){value+='"';i++;}
+   else quoted=!quoted;
+  }else if(c===','&&!quoted){fields.push(value);value='';}
+  else value+=c;
+ }
+ need(!quoted,'PACKAGE_TASK_CSV_UNCLOSED');
+ fields.push(value);
+ return fields;
+};
+export function parseTaskStateCsv(bytes){
+ need(Buffer.isBuffer(bytes),'PACKAGE_TASK_CSV_BYTES');
+ const candidates=[bytes.toString('utf8'),
+  new TextDecoder('euc-kr').decode(bytes)];
+ for(const decoded of candidates){
+  const rows=decoded.replace(/^\uFEFF/,'').trim().split(/\r?\n/).filter(Boolean);
+  if(rows.length!==1)continue;
+  let fields;try{fields=csvFields(rows[0]);}catch{continue;}
+  if(fields.length!==3)continue;
+  const name=fields[0].replace(/^\\+/,'').trim();
+  if(name.toLowerCase()!==PACKAGE_TASK.toLowerCase())continue;
+  const state=fields[2].normalize('NFKC').trim().toLowerCase();
+  if(['ready','준비','준비됨','실행 준비','실행 준비 완료'].includes(state))return 3;
+  if(['running','실행 중','실행중'].includes(state))return 4;
+  if(['queued','대기 중','대기중'].includes(state))return 2;
+  if(['disabled','사용 안 함','사용 안함'].includes(state))return 1;
+ }
+ fail('PACKAGE_TASK_CSV_STATE_UNRECOGNIZED');
+}
+const taskStateWindows=()=>{
+ // Native schtasks query is independently proven responsive on this PC.
+ // The COM-based cscript status probe timed out while /Query /XML succeeded.
+ const bytes=execFileSync('schtasks',
+  ['/Query','/TN',PACKAGE_TASK,'/FO','CSV','/NH'],
+  {encoding:'buffer',windowsHide:true,stdio:['ignore','pipe','pipe'],timeout:12000});
+ return parseTaskStateCsv(bytes);
 };
 const nodeWindows=()=>{
  need(fs.statSync(PACKAGE_NODE).isFile(),'PACKAGE_NODE_NOT_FOUND');
@@ -165,7 +199,7 @@ const backupNames=home=>{
 
 export function inspectConfiguredPackage({
  packageRoot=packageHere,dataRoot=PACKAGE_DATA_ROOT,platform=process.platform,
- getTaskXml=taskXmlWindows,getTaskState=()=>taskStateWindows(packageRoot),
+ getTaskXml=taskXmlWindows,getTaskState=taskStateWindows,
  checkNode=nodeWindows
 }={}){
  need(platform==='win32','PACKAGE_WINDOWS_REQUIRED');
