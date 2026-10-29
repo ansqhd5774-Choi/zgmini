@@ -106,3 +106,15 @@ R75는 기존 R48을 **한 번** 호출하며 R48 종료 0을 점수/운영 갱�
 - R54는 D1 readback 뒤 `addVerifiedNineR37`로 서버 시뮬레이션하고 공개 API 이력·잠정 scores의 정확한 일치를 한 번 검사한다. 종료 코드 1이 바로 원본 수집 실패라는 의미는 아니다. **R54를 재실행하지 말고 기존 세부 로그 단일 파일** `THEME_NINE_R54_CYCLE_27035_7384.txt`의 `publicDateMatched`, `publicScoresMatched`, `publicProvisionalScoresMatched`, `dbStatus`, `d1Writes`를 확인한다. 비밀 토큰/원본 데이터 없이 상태 필드만 전달하면 된다.
 - 원인 분리: (a) 한 번의 검사 시점에서 공개 API 아직 갱신되지 않은 지연, (b) R37 공개 eligibility의 D1/public sidecar 불일치, (c) Worker D1 binding/배포 반영 미일치. 위 로그와 날짜별 공개 readback으로 구분할 것. R37 정확 일치/권리/시간 가드를 임의 완화하거나 기존 정상 7개/두 전용 수집 경로를 변경하지 않는다.
 - 기존 우주·위성/데이터센터·전력 PC 10/27 원본 누락은 여전히 별도 복구 과제. 공개 10테마 자동 갱신 및 다음 정규 실행 성공 판정 금지.
+
+
+## R80 — R79 원인 확정과 동일 날짜 잠정치 CAS 최소 복구 (2026-10-30 KST)
+
+- 사용자 세부 로그 `THEME_NINE_R54_CYCLE_27035_7384.txt`의 `D1_VERIFIED_AWAIT_PUBLIC_API_REFRESH`, `d1Writes=0`, `dbStatus=UNCHANGED`, `publicDateMatched=true`, `publicScoresMatched=false`, `publicProvisionalScoresMatched=true`, `rawFilesShaVerified=245`, `themesValidated=9`를 근거로 확인했다. R79는 성공으로 판정하지 않는다.
+- 최초 원인: 승인 기존 `theme-nine-r48-d1-publication.mjs`의 동일 확정 관측일 분기가 `themes`만 같으면 즉시 `UNCHANGED`를 반환했다. 바이오 R8 뒤 공개 기존 잠정 sidecar가 바뀌어도 D1 R37 행의 `provisionalLineage`를 최신 실제 공개 잠정치로 CAS 갱신하지 못했다. 공개 R37의 엄격한 완전 일치 가드가 정상적으로 채택을 거부한 것이다.
+- 최소 보수: 같은 관측일에 `themes` 확정 이력과 나머지 불변 기록이 정확히 같고, 기존/신규 모두 `EXISTING_PUBLIC_PROVISIONAL_AS_PUBLISHED`인 경우에만 이미 승인된 공개 잠정치의 정확한 재동기화를 허용한다. `eligibleNineR37`가 먼저 실제 공개 날짜·점수·권리·신선도·테마 구성을 검증하고 기존 CAS 기대 스탬프/본문 조건 및 readback은 유지한다. 확정값·원자료 해시·ETF·산식·권리·로스터 불일치나 동일 잠정치는 각각 STOP/NOOP. 가짜 점수/날짜 없음.
+- 기존 작업 브랜치 소스 커밋: 게시기 `acdc16f4b565adde9de7e855b446c84b54edca38` 및 회귀 테스트 `57fcc1e6fdecca38158bfbb04afdc7b4c5c93a5d`. 기존 승인 source SHA `d6391dd2653889e5e72dcac42c0503ef9064d85c714f53be6e8021eada80d1f9` → 수정 SHA `7a10fe41710dbc1a21c9f3e343c538cd96b6c5695b683f04dce48af85ede6e7e`. 관련 회귀 테스트 파일 4개 통과.
+- PC 패키지 `THEME_TEN_R80_PATCH_R54_ONCE_20261030.zip` (SHA-256 `fa1612630734d253427a7904518ba835a843de9b798cc5fac5b6259581581fa8`): `THEME_TEN_R80_PATCH_R54_ONCE.cmd`, `theme-ten-r80-rebase-once.mjs`, 정확히 위 SHA 게시기 단일 파일, `README_KO.txt`. 원 브랜치 보조 실행기·CMD·테스트 등록: `6d2b684a8c2c2105f784f3911c365de42a0b6d83`, `6814a053220f42c6abd2dd45f33324bf56aa7512`, `5bf1fb9020cbd936135af49fd4db60df0e763062`.
+- 한국시간 10:55~14:35 기존 작업 보호 구간 외에서 Windows PC 새 폴더에 압축을 풀고 CMD **정확히 1회 실행**한다. 설치된 R78 R51·R37 SHA, 공개 READY/10개/확정 10/27, 해당 R48 후보, 기존 동의·잠금·게시기 SHA를 모두 검사한다. 승인 이전 파일을 `.R80_BACKUP`으로 보존, 승인된 R54만 1회 호출. 바이오 R8 재실행·원자료 수집·예약 변경 없음.
+- 원래 R54는 D1 기록을 쓴 후에도 공개 캐시 갱신 대기 시 종료 코드 1을 반환할 수 있다. R80은 새 R54 로그/실제 D1 쓰기/공개 R37 revision·확정일·10개를 함께 확인하며, 공개 반영을 확인하더라도 상태를 `R80_PUBLIC_R37_VERIFIED_NEXT_REGULAR_PENDING`으로 기록한다. 실제 사용자 PC 결과 전에는 설치·D1·공개/UI 성공으로 보고하지 않는다.
+- **별도 미완료:** 우주·위성 및 데이터센터·전력 10/27·28 전용 원본 수집→계산→D1→공개 차트, 기존 예약 작업의 다음 정규 실행 로그와 재조회. R80은 이 두 경로를 임의로 변경하지 않는다. 10/28 공급자 원본 부재는 사용자 원본 재수집 검증 전까지 보정 금지.
