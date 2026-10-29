@@ -107,3 +107,10 @@ PC 설치본: `E:/ZGmini/data/pc-writer/theme-config-tool`
 - **후보 검증:** Reader/차트 Node 8/8 PASS, TypeScript `npm run typecheck` PASS, `npm run build` PASS. 빌드 라우트에 `/api/theme-configured` 존재. 사용자 PC Runtime·Cloudflare hosted build·Production 검증은 별도다.
 - **실제 공개 응답:** `https://zgmini.kr/api/theme-fear-greed`는 `READY`, 10개 테마, `modelRevision=null`; `https://zgmini.kr/api/theme-configured`는 HTTP 404. 소스 후보만 준비했으며 실제 `main` 병합·Cloudflare 배포·D1 쓰기 0건이다.
 - **다음 공개 연결 게이트:** 본 전용 브랜치는 main과 크게 갈라져 있으므로 전체 PR 병합 금지. 최신 main 선택 반영을 위한 별도 좁은 PR head가 필요한 경우 사용자의 **신규 브랜치 생성 금지 예외**를 먼저 받아야 한다. 예외 승인 전까지 기존 브랜치/운영 환경을 보존하며 배포하지 않는다. 첫 공통 Reader/UI 배포 후에도 승인된 실테마와 실제 D1 readback 없이 신규 차트 공개 성공을 선언하지 않는다.
+
+## 2026-10-29 사용자 승인 1회성 공개 Reader/UI 통합 PR — 작업 기준 복귀
+
+- 사용자가 **이번 목적에 한해 신규 브랜치 1회 생성**을 승인했다. 전용 브랜치 `codex/theme-configured-public-ui-integration-20261029`는 공개 Reader/API/UI의 8개 파일 선택 통합 목적에만 사용하며, 다른 개발 작업을 추가하지 않는다.
+- 기준 main `b3b2528cdb67852776d86291bc80dc21fc4013ce`에서 정확히 1커밋 `8aa473c72394e0729edf0df6e2407cd30d2eba3a`만 추가했다. 원격 tree `5a71a58c3accea54923e68daa3708551f5407ca1`이 격리 로컬 검증 후보 tree와 일치한다. GitHub 비교/readback에 표시된 파일은 정확히 8개(신규 6, 기존 변경 2), 299행 추가·삭제 0이며 R32와 기존 10개 테마는 변경하지 않았다.
+- **초안 PR #894:** https://github.com/ansqhd5774-Choi/zgmini/pull/894 — `main` 대상으로 생성했으나 **미병합·미배포**. 최초 로컬 Node 테스트 8/8, typecheck, build PASS와 별개로 Cloudflare 실제 배포 및 신규 테마 D1 검증은 미실시다. 13:00 관찰은 사용자 지시대로 보류한다.
+- PR 초안을 제출하는 것으로 이번 통합 브랜치의 한정 목적을 마쳤다. **후속 개발·인수인계 작업 기준은 기존 `codex/theme-fear-greed-integration-20261025`로 복귀한다.** PR 승인·병합 및 Git 연동 배포는 별도 승인 없이 실행하지 않는다.
