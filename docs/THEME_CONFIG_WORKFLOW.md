@@ -96,3 +96,14 @@ PC 설치본: `E:/ZGmini/data/pc-writer/theme-config-tool`
 - 실제 공개 GET 확인: `https://zgmini.kr/api/theme-fear-greed`는 HTTP 200, `status=READY`, 10개 테마; `https://zgmini.kr/api/theme-configured`는 HTTP 404. 따라서 신규 Reader는 현재 공개되지 않았다. 본 확인에서는 D1 읽기/쓰기, PC 설치, 테마 등록·승인 생성, Scheduler 변경, 배포를 수행하지 않았다.
 - 남은 **일회성 연결**: (1) PC 현지에서 `theme-config-upgrade.mjs --upgrade-scheduled`의 manifest/SHA·잠금·예약 XML을 검증하고 13:00 공통 예약 CMD 하나만 안전하게 전환한 뒤 `AUTO_PUBLISH_UPGRADE_RESULT.json` 확인, (2) 최신 main 기준 위의 최소 파일만 PR 선택 반영하고 Cloudflare Git 연동 exact SHA 빌드/배포·공개 GET 검증, (3) 사용자와 검증용 실테마 및 ETF 2종을 확정한 후 비공개 등록·별도 권리/공개 승인·실제 저장 결과→D1 CAS/readback→UI·다음 정규 실행 검증. 등록/승인이 0개면 신규 차트가 숨겨지는 것이 정상이다.
 - 현재 **운영 상태: `PC_UPGRADE_NOT_VERIFIED / CONFIGURED_PUBLIC_API_NOT_DEPLOYED / LIVE_THEME_NOT_SELECTED`**. 사용자 지시에 따라 새로운 브랜치를 만들지 않았고, 기존 main 전체 교체나 direct Wrangler 배포도 수행하지 않았다. 기존 10개 테마·R32·R73/R48/R47·기존 Scheduler/DB를 수정하지 않았다.
+
+## 2026-10-29 후속 실PC 설치 증거와 최신 main 공개 Reader 준비
+
+이 단락은 위의 과거 `PC_UPGRADE_NOT_VERIFIED` 상태 이후 사용자 제공 Windows 실행 결과와 최신 main 분리 검증이다. 기존 기록을 덮어쓰지 않는다.
+
+- **실PC 공통 예약 CMD 설치 완료:** 사용자 제공 `PACKAGE_RESULT(2).txt`에 `PREFLIGHT_PASS` 및 `INSTALL_STATUS=CONFIGURED_AUTO_PUBLISH_UPGRADE_INSTALLED`. 설치 패키지 고정 소스 SHA `3e94327573dc492c882ee3fa8c8d7435b480f139`, 새 불변 버전 `d7ee6a050a8533c8`, 새 CMD SHA-256 `49a4761d085c4dc67d22a1396921724f21ae0ebbac20c65896bd94d586f649c5`. 기존 CMD 백업 readback, 예약 XML 불변, 실제 설치 중 Provider/D1 호출 0, 복원 불필요. 이는 **설치·CMD 전환 증거**이며 13:00 정규 실행이나 실제 새 테마의 D1 게시 증거가 아니다.
+- **사용자 지시로 정규 예약 실행 검증은 보류:** 신규 실테마 등록 0개 상태이며 무승인 샘플/공개 승인 생성 금지. 이후 정규 로그 확인은 설치 다시 실행이나 Scheduler 재등록 없이 읽기 전용으로 수행한다.
+- **최신 공개 개발 기준:** `main=b3b2528cdb67852776d86291bc80dc21fc4013ce`, 원 작업 브랜치 개발 소스 SHA `3e94327573dc492c882ee3fa8c8d7435b480f139`에서 별도 detached 최신-main 후보에 **공개 영역 8개 경로만** 선택 적용. 새 `/api/theme-configured` Route·Reader, 동적 UI, 점수 이력 변환과 테스트를 추가하고 기존 `page.tsx`에는 import/섹션만, `theme-detail.css`에는 설정형 테마 클래스만 추가. 기존 10개 Reader·차트 계산·R32·PC 예약을 수정하지 않는다.
+- **후보 검증:** Reader/차트 Node 8/8 PASS, TypeScript `npm run typecheck` PASS, `npm run build` PASS. 빌드 라우트에 `/api/theme-configured` 존재. 사용자 PC Runtime·Cloudflare hosted build·Production 검증은 별도다.
+- **실제 공개 응답:** `https://zgmini.kr/api/theme-fear-greed`는 `READY`, 10개 테마, `modelRevision=null`; `https://zgmini.kr/api/theme-configured`는 HTTP 404. 소스 후보만 준비했으며 실제 `main` 병합·Cloudflare 배포·D1 쓰기 0건이다.
+- **다음 공개 연결 게이트:** 본 전용 브랜치는 main과 크게 갈라져 있으므로 전체 PR 병합 금지. 최신 main 선택 반영을 위한 별도 좁은 PR head가 필요한 경우 사용자의 **신규 브랜치 생성 금지 예외**를 먼저 받아야 한다. 예외 승인 전까지 기존 브랜치/운영 환경을 보존하며 배포하지 않는다. 첫 공통 Reader/UI 배포 후에도 승인된 실테마와 실제 D1 readback 없이 신규 차트 공개 성공을 선언하지 않는다.
