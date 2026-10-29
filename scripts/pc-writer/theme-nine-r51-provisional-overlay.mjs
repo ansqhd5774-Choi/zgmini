@@ -89,9 +89,12 @@ export function buildNineR51ExistingPublicProvisionalOverlay({confirmed,publicBa
     !publicBase.methodologyVersion||typeof publicBase.version!=='string')
     fail('PUBLIC_LEGACY_ANCHOR');
   const visible=new Set(publicBase.themes.map(t=>t.theme));
-  let previous=baseDate;
+  // The existing public feed may retain an earlier provisional session
+  // after its confirmed anchor advances. Preserve that published history;
+  // only require the public provisional points themselves to be ordered.
+  let previous=null;
   const points=pending.map((point,i)=>{
-    if(!validDate(point?.date)||point.date<previous||
+    if(!validDate(point?.date)||
       (i>0&&point.date<=previous)||
       !point.scores||typeof point.scores!=='object'||
       Array.isArray(point.scores)||

@@ -296,3 +296,51 @@ test('R51 stages the exact published 26/27 subsets from confirmed R32 alone',asy
  assert.equal(eligibleNineR37(published,drifted,{now,storedAt:now-1000}),false);
  assert.equal((await addVerifiedNineR37(db,drifted,{now})).modelRevision,undefined);
 });
+
+test('R77 regression: advanced 27 Oct confirmed anchor retains 26/27 public provisional unchanged',async t=>{
+ const dir=fs.mkdtempSync(path.join(os.tmpdir(),'r77-public-anchor-'));
+ t.after(()=>fs.rmSync(dir,{recursive:true,force:true}));
+ const input=path.join(dir,'themes','legacy-nine-r48-private-candidate');
+ fs.mkdirSync(input,{recursive:true});
+ const bytes=Buffer.from(JSON.stringify(later,null,2)+'\n');
+ const digest=createHash('sha256').update(bytes).digest('hex').slice(0,16);
+ fs.writeFileSync(path.join(input,
+  `THEME_NINE_R48_PRIVATE_CANDIDATE_2026-10-27_${digest}.json`),bytes);
+ const existing={...publicBase,observationDate:'2026-10-27',
+  confirmedObservationDate:'2026-10-27',
+  themes:visible.map(t=>({...t,history:later.themes[0].history})),
+  provisional:{asOf:'2026-10-29T14:59:00Z',points:[
+   {date:'2026-10-26',scores:{'바이오·신약':24.93452,
+    '우주·위성':47.35703,'데이터센터·전력':14.38294}},
+   {date:'2026-10-27',scores:{'로봇·자동화':23.48016,
+    '클라우드·SaaS':64.06944,'자율주행':24.27183,
+    '원전·SMR':30.76786,'방산':50.70437,
+    '핀테크':59.90079,'사이버보안':66.4504}}]}};
+ const snapshot=structuredClone(existing);
+ const stage=await stageNineR51Current({dataRoot:dir,publicBase:existing});
+ assert.equal(stage.status,'R51_PRIVATE_PROVISIONAL_STAGED_NOT_PUBLISHED');
+ assert.equal(stage.confirmedDate,'2026-10-27');
+ assert.deepEqual(stage.provisionalDates,['2026-10-26','2026-10-27']);
+ assert.equal(stage.r32ProvisionalScoreCount,0);
+ const overlay=JSON.parse(fs.readFileSync(stage.candidatePath,'utf8'));
+ assert.deepEqual(overlay.provisional,existing.provisional);
+ const now=Date.parse('2026-10-29T15:00:00Z');
+ const approved={...overlay,status:'READY',publicationAuthorized:true,
+  upstreamCommercialRightsVerified:true,derivedLicenseVerified:true,
+  sourcePriceReconciled:true,sourceManifestVerified:true,privateReplayVerified:true,
+  sourceStoredAt:'2026-10-29T14:58:00Z',publishedAt:'2026-10-29T14:59:00Z'};
+ assert.equal(eligibleNineR37(approved,existing,{now,storedAt:now-1000}),true);
+ const db={prepare(){return {bind(){return {async first(){return {
+  body:JSON.stringify(approved),stored_at:now-1000};}};}};}};
+ const displayed=await addVerifiedNineR37(db,existing,{now});
+ assert.equal(displayed.modelRevision,THEME_NINE_R37_VERSION);
+ assert.deepEqual(displayed.provisional,existing.provisional);
+ assert.deepEqual(existing,snapshot);
+ const outOfOrder=structuredClone(existing);
+ outOfOrder.provisional.points.reverse();
+ assert.throws(()=>buildNineR51ExistingPublicProvisionalOverlay({
+  confirmed:later,publicBase:outOfOrder}),/PUBLIC_LEGACY_PROVISIONAL_CONTRACT/);
+ const changed=structuredClone(existing);
+ changed.provisional.points[1].scores['방산']+=1;
+ assert.equal(eligibleNineR37(approved,changed,{now,storedAt:now-1000}),false);
+});
