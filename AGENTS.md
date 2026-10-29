@@ -148,6 +148,8 @@ ZGMINI PLUGIN & EXECUTION RULES — COMPACT R5 FINAL
 - 시안만 검토하거나 디자인 의견을 묻는 요청은 실제 수정·병합·배포 승인으로 간주하지 않는다. 실제 UI 변경 요청에는 위 **UI 변경 자동배포 상시 승인(2026-10-27)**을 적용해 해당 승인 범위 내에서 PR 병합과 Cloudflare 자동 배포까지 진행한다. 범위 밖 변경은 별도 승인이 필요하다.
 
 ## 13. DigitalOcean / RDC / Windows
+- **작업 방식 선택 공통 원본**: `codex/theme-fear-greed-integration-20261025:docs/CMD_EXECUTION_PLAYBOOK.md` ([GitHub 원본](https://github.com/ansqhd5774-Choi/zgmini/blob/codex/theme-fear-greed-integration-20261025/docs/CMD_EXECUTION_PLAYBOOK.md)). 이 브랜치에 공통 본문을 복제하지 않는다. 기존 명령 재사용, 단계별 CMD/Node helper, 고정 SHA ZIP, 선택 적용, checkpoint 재개, 사용자 1회 실행 중 실제 목적·승인 범위에 맞는 방법을 선택한다. 패키지 검증·PC 설치·D1 readback·공개 운영을 별도 상태로 보고하고, 승인 없는 스케줄러·산식·DB·배포 변경을 하지 않는다.
+- **이란 뉴스 분석 작업별 실행 명세**: `docs/OUTBREAK_IRAN_NEWS_AI_AUTO_ANALYSIS_R1_20261029.md`의 「실행 방식 및 R3.1 인수인계」 절을 적용한다. 중앙 공통 문서의 복사본을 이 브랜치에 만들지 않는다.
 - DigitalOcean NON-DEFAULT. 비용 발생 리소스 생성 전 승인.
 - RDC 사용·실행·설치·연결·Online 요구 금지. 로컬 파일/Git/CMD는 로컬 Codex, 로그인·GUI는 사용 가능한 Computer Use를 사용한다.
 - 일반 채팅의 로컬 접근 제한은 AUTOMATION_BLOCKED이며 PC writer OFFLINE을 뜻하지 않는다.
