@@ -255,3 +255,15 @@
 - **GitHub 상태:** 이 재검증 당시 `main=8a7634a5358cb19280725fe29a977ba4feb44be8`; 이란 브랜치의 미반영 reader/lib/container와 테스트를 선별 반영할 후보는 준비됨. `main`의 최신 AI 분석/번역 UI 파일을 브랜치 전체 복사로 덮어쓰지 않는다.
 - **실제 STOP 게이트:** 현재 일반챗 연결에서 Cloudflare Git Integration의 연결 repo/branch와 exact 배포 상태에 대한 관리 권한·인증된 조회 수단이 없음. `CLOUDFLARE_API_TOKEN`, `CF_API_TOKEN` 등 일반 런타임 변수도 부재를 확인했지만 이를 운영 Cloudflare 연결 해제로 단정하지 않는다. 배포 Authority Gate를 검증하지 못했으므로 main selective write/자동 배포는 실행하지 않음. **Cloudflare 공식 대시보드에서 연결 repo=`ansqhd5774-Choi/zgmini`, branch=`main`, 진행 중 배포 여부를 확인한 뒤** 최신 main SHA/file blob 재조회 → 3개 코드+기존 39건 fixture 테스트의 필요한 차이만 선택 적용 → exact Build/Deployment → API/UI readback을 수행한다.
 - **금지/범위:** R50/R53/R54/R55 CMD, D1 insert, 기존 수집/점수·스케줄러·DNS, 전체 브랜치 병합, 새로운 임시 설치 ZIP을 반복하지 않는다.
+
+
+## 23. R41 11소스 GitHub main 자동 배포·브라우저 실측 (2026-10-29 KST)
+
+- **출처/브랜치:** 작업 브랜치 `codex/outbreak-iran-news-retention-r1-20261026` (`5af4e13488d7acac774d3ff280ade9e0f224c5e8` 기준 준비 코드), 운영 반영 `main` (`8a7634a5358cb19280725fe29a977ba4feb44be8` → `b3b2528cdb67852776d86291bc80dc21fc4013ce`). 신규 브랜치 생성·기존 브랜치 전체 병합 없이 선택 파일 5개를 기존 main tree에 적용하는 단일 fast-forward commit으로 반영. PR 경유가 아닌 선택 반영이므로 공통 PR 경로와 구별해 기록한다.
+- **변경 파일 5개:** `lib/iran-progress/news-metadata-r41.mjs`, `worker/iran-news-metadata-public-r41.mjs`, `app/outbreak-news-container-r1.tsx`, `tests/iran-news-r45-api-coverage.test.mjs`, `tests/iran-news-metadata-r41.test.mjs`. 기존 main의 AI 해석·자동 번역 구현 파일은 미수정. 독립 로컬 2개 테스트 파일 실행 PASS(하위 케이스 9개: 5+4, 기존 이전 결과도 PASS).
+- **배포 Authority 검증:** 브라우저에서 실제 Cloudflare Workers 서비스 `zgmini-migration-candidate-r5`의 설정 확인: Git repository `ansqhd5774-Choi/zgmini`, Production branch `main`, Build `npm ci && npm run candidate:build:ci`, Deploy `npm run candidate:deploy:ci`, Build watch include `*`; 기존 Production 도메인 `zgmini.kr`. Sites/Wrangler 우회 없음.
+- **자동 빌드/배포 실측:** 변경 commit `b3b2528cdb67852776d86291bc80dc21fc4013ce`에 대해 Cloudflare build ID `5be49293-47c9-40af-8630-c49b07f82864`, 최종 **Ready 100%**, 소요 1m43s, 신규 deployment/version `9af413f9`. 단순 source commit을 배포 완료라고 해석하지 않고 Production 배포 목록과 exact commit 일치를 확인함.
+- **공개 API 실측:** `/api/outbreak-news/iran/r41`에서 `version=IRAN_NEWS_METADATA_R41`, `status=READY`, `itemCount=48` (기존 40→48), `sourceCount=8` (기존 7→8), `configuredSourceCount=11`, `requiredSourceCount=0`, `Arab News=8건`. 실제 D1 52행의 전체 수량과 공개 API의 14일 유효 노출 48건은 서로 다른 지표. Reuters/AP/Anadolu는 구성만 완료되고 공개 기사 관측 없음.
+- **공개 UI/브라우저 디버깅:** `https://zgmini.kr/outbreak/?event=iran`을 실제 Chrome 브라우저에서 갱신해 주요 뉴스 `48건`, Arab News 카드 8건, 기존 AI 핵심 사실 및 자동 번역 제목이 유지되는 것을 DOM·스크린샷으로 확인. `뉴스 더보기` 조작 후 8건 모두 관측, 브라우저 오류 로그 0건.
+- **남은 품질 이슈:** Arab News 8건 중 확인된 **최소 1건**은 이란 전쟁과 무관한 `Saudi actor Yaqoub Alfarhan stars in new Netflix horror show set in 1970s Kuwait` 연예 기사. 이는 운영 게시 성공과 별개의 **기사 주제 적합성 필터 누락**이며, 사실 검증된 8건을 전부 관련 기사로 취급해서는 안 된다. 별도 검토 및 승인된 비파괴 정정 경로로 처리해야 하며 이번 단계에서 D1 삭제/수정은 하지 않았다.
+- **실행하지 않음/미검증:** R50/R53/R54/R55 CMD 재실행, D1 쓰기, 점수 계산 및 예약 작업 변경, DNS 변경, 강제 재배포·롤백 없음. Reuters/AP/Anadolu 추가 수집, 다음 정규 PC 주기, 모든 기사 내용의 주제 적합성은 미검증. 배포와 기능 노출은 완료지만 11개 매체 모두 실제 기사 확보 완료는 아니다.
