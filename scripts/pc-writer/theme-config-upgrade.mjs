@@ -10,6 +10,13 @@ import {configuredScheduledCommand,installConfiguredTool} from './theme-config-i
 const fileHere=fileURLToPath(import.meta.url);
 const taskName='ZGMINI-PC-Configured-Themes';
 const requiredOldModule='scripts/pc-writer/theme-config-tool.mjs';
+const requiredNewModules=[requiredOldModule,
+ 'scripts/pc-writer/theme-config-auto-publish.mjs',
+ 'scripts/pc-writer/theme-config-publication-preflight.mjs',
+ 'scripts/pc-writer/theme-config-publication-d1.mjs',
+ 'scripts/pc-writer/theme-nine-r54-d1-client.mjs',
+ 'scripts/pc-writer/theme-biotech-auth-r7.mjs',
+ 'worker/public-display-freshness.mjs'];
 const readFile=file=>{
  ensure(fs.lstatSync(file).isFile()&&!fs.lstatSync(file).isSymbolicLink(),
   'CONFIG_UPGRADE_FILE_REDIRECT');
@@ -78,8 +85,14 @@ export function upgradeConfiguredSchedule({dataRoot,sourceSha,
  // one or a launcher. No provider GET, D1 access, or task registration.
  const bundle=stageBundle({dataRoot,sourceSha,stageOnly:true,registerTask:false});
  ensure(bundle.status==='CONFIG_BUNDLE_STAGED_NO_LAUNCHER_CHANGE'&&
-  bundle.home===home&&/^[a-f0-9]{16}$/.test(bundle.version??''),
+  bundle.home===home&&/^[a-f0-9]{16}$/.test(bundle.version??'')&&
+  bundle.manifest&&requiredNewModules.every(p=>
+   /^[a-f0-9]{64}$/.test(bundle.manifest[p]??'')),
   'CONFIG_UPGRADE_STAGE_RESULT');
+ const stagedVersion=safeDirectory(home,'versions/'+bundle.version);
+ for(const p of requiredNewModules)
+  ensure(digest(readFile(path.join(stagedVersion,p)))===bundle.manifest[p],
+   'CONFIG_UPGRADE_STAGED_BUNDLE_DRIFT');
  const expected=Buffer.from(configuredScheduledCommand({
   dataRoot,home,version:bundle.version}));
  ensure(digest(readFile(scheduled))===digest(previous),
