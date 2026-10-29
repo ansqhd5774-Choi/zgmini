@@ -75,17 +75,52 @@ function jsonLdArticles(html){
 
 /** Tasnim pages without an unambiguous articleBody are rejected, never scraped as navigation text. */
 export function tasnimR26Body(candidate,html){
- exactUrl(candidate);
+ const url=exactUrl(candidate);
  if(candidate.sourceId!=='tasnim'||typeof html!=='string'||html.length>MAX_ARTICLE_BYTES)
   throw Error('NEWS_R26_TASNIM_BODY_INVALID');
- const found=jsonLdArticles(html).filter(article=>{
+ const articles=jsonLdArticles(html);
+ const found=articles.filter(article=>{
   const headline=decodeHtmlEntities(String(article.headline??'')).trim();
   return headline===candidate.originalTitle;
  });
- if(found.length!==1)throw Error('NEWS_R26_TASNIM_ARTICLE_UNVERIFIED');
- const article=found[0];
- if(typeof article.articleBody!=='string')throw Error('NEWS_R26_TASNIM_BODY_MISSING');
- const body=plainArticleBody(article.articleBody);
+ // A NewsArticle record that contradicts the page identity is never ignored.
+ if(found.length>1||(articles.length&&found.length!==1))
+  throw Error('NEWS_R26_TASNIM_ARTICLE_UNVERIFIED');
+ if(found.length===1&&typeof found[0].articleBody==='string'){
+  const body=plainArticleBody(found[0].articleBody);
+  if(!body)throw Error('NEWS_R26_TASNIM_BODY_MISSING');
+  return body;
+ }
+ // The live English Tasnim site (October 2026) renders article text in
+ // <article class="single-news panel-print-box"><div class="story">, not
+ // JSON-LD articleBody. Verify the exact H1, URL article ID and one article
+ // container before extracting paragraphs. Navigation and recommendations
+ // reside outside this container and must never be sent to the model.
+ const containers=[...html.matchAll(/<article\b[^>]*class=["'][^"']*\bsingle-news\b[^"']*\bpanel-print-box\b[^"']*["'][^>]*>([\s\S]*?)<\/article>/gi)];
+ if(containers.length!==1)throw Error('NEWS_R26_TASNIM_ARTICLE_UNVERIFIED');
+ const article=containers[0][1];
+ const titles=[...article.matchAll(/<h1\b[^>]*class=["'][^"']*\btitle\b[^"']*["'][^>]*>([\s\S]*?)<\/h1>/gi)];
+ const articleId=url.pathname.split('/')[6];
+ const footerIds=[...article.matchAll(/<div\b[^>]*class=["']footer["'][^>]*data-id-code=["'](\d+)["'][^>]*>/gi)];
+ if(titles.length!==1||decodeHtmlEntities(titles[0][1].replace(/<[^>]+>/g,' '))
+    .replace(/\s+/g,' ').trim()!==candidate.originalTitle||
+    footerIds.length!==1||footerIds[0][1]!==articleId)
+  throw Error('NEWS_R26_TASNIM_ARTICLE_UNVERIFIED');
+ const storyStart=/<div\b[^>]*class=["'](?:story|[^"']*\sstory)(?:\s[^"']*)?["'][^>]*>/i.exec(article);
+ const footerStart=/<div\b[^>]*class=["']footer["'][^>]*>/i.exec(article);
+ if(!storyStart||!footerStart||storyStart.index>=footerStart.index)
+  throw Error('NEWS_R26_TASNIM_BODY_MISSING');
+ const story=article.slice(storyStart.index+storyStart[0].length,footerStart.index);
+ // Stop at the first known end-of-story controls, excluding unrelated widgets.
+ const end=/<div\b[^>]*(?:aria-live=["']polite["']|id=["']clearfix["'])/i.exec(story);
+ const paragraphs=[...(end?story.slice(0,end.index):story).matchAll(/<p\b[^>]*>([\s\S]*?)<\/p>/gi)]
+  .map(match=>plainArticleBody(match[1])??decodeHtmlEntities(match[1].replace(/<[^>]+>/g,' ')).replace(/\s+/g,' ').trim())
+  .filter(Boolean);
+ const leads=[...article.matchAll(/<h3\b[^>]*class=["'][^"']*\blead\b[^"']*["'][^>]*>([\s\S]*?)<\/h3>/gi)];
+ if(leads.length!==1||paragraphs.length<1)
+  throw Error('NEWS_R26_TASNIM_BODY_MISSING');
+ const lead=decodeHtmlEntities(leads[0][1].replace(/<[^>]+>/g,' ')).replace(/\s+/g,' ').trim();
+ const body=plainArticleBody([lead,...paragraphs].join(' '));
  if(!body)throw Error('NEWS_R26_TASNIM_BODY_MISSING');
  return body;
 }
