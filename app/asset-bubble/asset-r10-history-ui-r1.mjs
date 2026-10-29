@@ -1,6 +1,7 @@
 // Add verified dated historical raw observations only after the existing
 // six-factor score/raw join has succeeded. No score changes or interpolation.
 import {validateAssetR10History} from '../../worker/asset-bubble-r10-history-r1.mjs';
+import {sameR10StoredSourceOrContent} from './asset-r10-source-vintage-r2.mjs';
 const near=(a,b)=>typeof a==='number'&&Number.isFinite(a)
  &&typeof b==='number'&&Number.isFinite(b)&&Math.abs(a-b)<1e-7;
 
@@ -11,9 +12,7 @@ export function mergeAssetR10HistoryForUi(scoredWithRaw,history){
   ||scoredWithRaw.methodologyVersion!=='ASSET_BUBBLE_R10_CANDIDATE'
   ||scoredWithRaw.historyMode!=='CURRENT_VINTAGE_ONLY'
   ||scoredWithRaw.rightsStatus!==parsed.rightsStatus
-  ||scoredWithRaw.sourceVersion!==parsed.sourceVersion
-  ||scoredWithRaw.sourceStoredAt!==parsed.sourceStoredAt
-  ||scoredWithRaw.asOfDate!==parsed.asOfDate
+  ||!sameR10StoredSourceOrContent(scoredWithRaw,parsed)
   ||scoredWithRaw.scoreObservationQuarter!==parsed.scoreObservationQuarter
   ||!near(scoredWithRaw.score,parsed.approvedScore)
   ||!Array.isArray(scoredWithRaw.indicators)
