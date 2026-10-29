@@ -33,7 +33,8 @@ function validatePrepared(preflight,now){
   c.publicationAuthorizationBasis!=='LOCAL_OPERATOR_ATTESTATION_NOT_INDEPENDENT_LEGAL_VERIFICATION'||
   typeof c.themeId!=='string'||!(/^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/).test(c.themeId)||
   c.themeId.length>48||typeof c.theme!=='string'||!c.theme.trim()||
-  c.theme.length>60||/[^\x20-\x7e\u0080-\uffff]/.test(c.theme)||
+  c.theme.length>60||c.theme.trim()!==c.theme||
+  /[<>\x00-\x1f\x7f]/.test(c.theme)||
   c.benchmark!=='SPY'||c.methodologyVersion!=='ADAPTIVE_R2_PAIR_R3'||
   !Array.isArray(c.etfs)||c.etfs.length!==2||new Set(c.etfs).size!==2||
   c.etfs.some(e=>typeof e!=='string'||!/^[A-Z]{1,6}$/.test(e)||e==='SPY')||
