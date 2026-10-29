@@ -44,3 +44,13 @@ test('only read-only SELECT statements; no D1 writable adapter or mutation metho
  assert.doesNotMatch(code,/\.run\(\)|\.batch\(|INSERT\s+INTO|UPDATE\s+market_public_snapshots_v1|DELETE\s+FROM/i);
  assert.equal((code.match(/\.first\(\)/g)||[]).length,2);
 });
+
+test('R3 CMD only runs the pinned read-only diagnostic from existing work branch',()=>{
+ const cmd=fs.readFileSync(path.resolve(path.dirname(fileURLToPath(import.meta.url)),
+  '../scripts/pc-writer/ASSET_R10_1Y_HISTORY_D1_LINEAGE_READONLY_R3.cmd'),'utf8');
+ assert.match(cmd,/--branch codex\/api-site-integration-r1-20261026/);
+ assert.match(cmd,/f75fe9e5f3737959d05f13f55fcde0b34d95b646/);
+ assert.match(cmd,/39c2f3bc94eea4bb706889a074661e2f03b1924e/);
+ assert.match(cmd,/--read-only/);
+ assert.doesNotMatch(cmd,/--apply|--confirm-asset-r10-history-d1-write|wrangler deploy|git\s+reset|git\s+clean/i);
+});
