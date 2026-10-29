@@ -180,3 +180,14 @@
 - **R52 실행기:** `scripts/iran-progress/IRAN_NEWS_R52_READONLY_DIAG_20261029.cmd`. 고정 PIN `c35c8caf5c2d11f107f99c7f78cb987d7c43ab87`, 필수 원격 소스 15개 Git Blob 확인(연결 소스 정적 SHA 15/15 일치), Node 회귀 테스트 및 PC D1 SELECT 진단. 결과 파일 `IRAN_NEWS_R52_PREWRITE_DIAG_RESULT.txt` 신규 생성; 기존 로그 덮어쓰기·자동 재실행 금지. 사용자에게 제공한 `R52_DIAG.zip`에는 CMD + 원본 R46/R49/R50/R51 TXT 4개를 묶었으며 ZIP CRC, CMD Git Blob SHA 일치 확인됨.
 - **검증 상태:** R52 소스/테스트 GitHub 반영 및 ZIP 검증 완료. R52 신규 5개 테스트는 **실제 PC에서 아직 미실행**, D1 R52 조회도 미실행. R51 0/8 실측만 PASS. D1 쓰기·main 병합·배포 미실행.
 - **NEXT:** R52 실결과의 단계별 `firstFail` 확인 → 정확한 최초 실패 코드와 영향 범위만 최소 수정 → R51의 0/8 저장 상태 재확인 후 별도 승인된 신규 1회성 게시로 재개. 운영 source/계정/D1·R1 보존을 유지하고 실패 원인 없이는 R50 CMD 재실행 금지.
+
+## 16. R53 — 11개 매체 D1 스키마 확장 승인 및 안전 실행 준비 (2026-10-29)
+
+- **사용자 승인:** R41 기존 테이블의 허용 매체를 기존 7개에서 Reuters/AP/Arab News/Anadolu 포함 11개로 확장하는 A안을 승인함. 별도 브랜치를 만들지 않음. 원본 기사·R1·점수·정규 수집 주기·배포는 변경하지 않음.
+- **확인된 코드 결함:** R41 최초 D1 생성 SQL `db/migrations/iran-news-r41/0001_article_metadata.sql`은 `source_id CHECK IN(기존 7개)`이고 R45/R50 신규 기사 `source_id=arabnews`를 사용함. 기존 모의 R50 테스트는 실제 7개 제한 스키마가 없어 놓쳤음. 동일 원본 SQL의 메모리 DB에서 Arab News INSERT 실패 및 0행을 재현했지만 **운영 D1 테이블의 실제 정의는 미조회**이므로 Root Cause 최종 확정은 R53 preflight 대기.
+- **R53 코드:** `scripts/iran-progress/news-metadata-schema-expand-r53.mjs`은 현재 D1 `sqlite_master` 스키마/인덱스/뷰, R41 기존 행 전체, 최초 R41 manifest 39개 ID/source/URL/title/발행일, R1 body hash/storedAt을 **SELECT만**으로 검증한다. 예상 7개 스키마와 다르거나 예기치 않은 의존 객체가 있으면 mutation 전 중단. 11개로 이미 확장된 상태이면 검증만 하고 재쓰기하지 않음.
+- **승인 범위 쓰기:** 정상 7개 스키마면 운영 PC `E:\\ZGmini\\data\\pc-writer\\schema-backups`에 기존 전행+R1 백업을 `wx`로 생성한 후 사전 재조회로 drift 방지. D1 **한 배치** 안에서 신규 11개 허용 테이블 생성→기존 전행 복사→기존 R41 테이블 교체→원래 인덱스 재생성. 마지막으로 모든 기존 ID/10개 필드와 R1 hash/storedAt 불변을 재조회. 실패·쓰기 결과 불명확 시 자동 재시도 금지, 원격 readback 먼저.
+- **실제 스키마 테스트:** `tests/iran-news-r53-schema-expand.test.mjs`는 원본 `0001_article_metadata.sql`을 직접 사용하는 메모리 DB와 41개 기존 행 fixture로 검증. 원래 Arab News 거부, 7→11 전환 및 원본/R1 보존, 재실행 무쓰기, 트리거/원본 변경 가드, D1 배치 명령 순서 **6/6 PASS (로컬 Node 24, fixture)**. PC Node 22와 운영 D1 실행은 아직 미검증.
+- **PC 단일 실행기:** `scripts/iran-progress/IRAN_NEWS_R53_SCHEMA_EXPAND_ONCE_20261029.cmd`은 고정 소스 SHA `26521032c1041ac51d61c4b9b7ed1b35514bf8e5`의 7개 파일을 Git Blob 검증한 뒤 Node 6개 테스트→D1 read-only preflight→승인 범위의 정확히 한 번의 구조 변경과 post-readback을 실행. 결과 `IRAN_NEWS_R53_SCHEMA_EXPAND_RESULT.txt`; 기존 파일이 있으면 재실행 차단. 원본 R46/R49/R50/R51 로그를 별도로 옮길 필요 없음.
+- **상태:** SOURCE/LOCAL_FIXTURE_PASS, **PC_RUNTIME_PENDING**, **D1_SCHEMA_UNCHANGED**, 신규 Arab News **0/8** 상태 유지. R53 마이그레이션 성공은 뉴스 8건 게시·사이트 배포 성공이 아님.
+- **NEXT:** 사용자의 R53 CMD 단일 실행 결과 TXT 확인. 운영 D1 스키마 11개·기존 41건/R1 보존 readback PASS인 경우에만 R51 0/8 재확인 후 기존 R50을 무조건 재실행하지 않고 승인된 후속 신규 기사 게시 경로를 설계한다. 기존 7개 소스/11개 API UI와 latest main 파일별 drift를 확인해 선택 반영·실제 공개 검증.
