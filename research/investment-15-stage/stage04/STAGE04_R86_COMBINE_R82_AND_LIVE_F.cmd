@@ -12,11 +12,15 @@ if not exist "%RUNNER%" (
   echo R86_ERROR=RUNNER_NOT_INSTALLED
   goto :failed
 )
+set "ZG_NODE=E:\ZGmini\runtime\node.exe"
+if exist "%ZG_NODE%" goto :node_ready
 where node >nul 2>&1
 if errorlevel 1 (
   echo R86_ERROR=NODE_NOT_FOUND
   goto :failed
 )
+set "ZG_NODE=node"
+:node_ready
 
 if not defined INPUT (
   if exist "%BASE%R72_OLLAMA_FORECAST_PIPELINE_RESULT.json" (
@@ -39,7 +43,7 @@ set "OUT=%BASE%STAGE04_R86_NUMERIC_%RANDOM%_%RANDOM%"
 echo R86_MODE=READ_ONLY_EXISTING_R82_PLUS_LIVE_PUBLIC_FEEDS
 echo R86_NO_OLLAMA_RERUN=TRUE
 echo R86_INPUT=%INPUT%
-node "%RUNNER%" --r82 "%INPUT%" --json "%OUT%.json" --md "%OUT%.md"
+"%ZG_NODE%" "%RUNNER%" --r82 "%INPUT%" --json "%OUT%.json" --md "%OUT%.md"
 if errorlevel 1 goto :failed
 
 echo R86_STATUS=COMPLETED_WITH_APPROVAL_GATES
