@@ -246,6 +246,33 @@ function safeModelRetryHint(draft,article,error){
  return 'Write one Korean keyPointKo (15-160 chars), 2-3 distinct factual keyFactsKo strings (12-170 chars each), and a grounded summaryKo and interpretationKo. Use only source-supported numbers and evidence.';
 }
 
+async function r41FallbackStage(fetcher,payload){
+ // Gemma 4B can hit Ollama's repeat-token guard even for the smaller R2
+ // fallback stages. Give that specific failure ONE bounded second chance;
+ // unrelated HTTP errors still fail immediately and no raw model error is logged.
+ for(let attempt=0;attempt<2;attempt++){
+  const options=attempt===0?payload.options:{...payload.options,
+   temperature:0.2,num_predict:Math.min(350,payload.options.num_predict),
+   repeat_penalty:1.35,repeat_last_n:64};
+  const response=await fetcher('http://127.0.0.1:11434/api/generate',{
+   method:'POST',headers:{'content-type':'application/json'},
+   body:JSON.stringify({...payload,options}),signal:AbortSignal.timeout(90000)});
+  if(response?.ok)return response;
+  const status=Number(response?.status);
+  if(attempt===0&&status===500){
+   let detail='';
+   try{
+    const failure=await response.json();
+    detail=typeof failure?.error==='string'?failure.error:'';
+   }catch{}
+   if(/prediction aborted, token repeat limit reached/i.test(detail))continue;
+  }
+  throw Error(Number.isInteger(status)&&status>=400&&status<=599?
+   `NEWS_R41_ANALYSIS_OLLAMA_HTTP_${status}`:'NEWS_R41_ANALYSIS_OLLAMA_FAILED');
+ }
+ throw Error('NEWS_R41_ANALYSIS_OLLAMA_HTTP_500');
+}
+
 export async function generateR41ModelAnalysis(article,{fetcher=fetch,model='gemma3:4b'}={}){
  if(typeof article?.articleBody!=='string'||article.articleBody.length>18000||
     article.articleBody.trim().length<120||typeof article.originalTitle!=='string'||
@@ -322,15 +349,8 @@ export async function generateR41ModelAnalysis(article,{fetcher=fetch,model='gem
  // quote, Korean-length, duplicate-fact and source-number gates.
  const fallbackOptions={temperature:0,num_predict:650,
   repeat_penalty:1.2,repeat_last_n:128};
- const baseResponse=await fetcher('http://127.0.0.1:11434/api/generate',{
-  method:'POST',headers:{'content-type':'application/json'},
-  body:JSON.stringify({model,system:BASE_SYSTEM,prompt,format:BASE_SCHEMA,
-   stream:false,options:fallbackOptions}),signal:AbortSignal.timeout(90000)});
- if(!baseResponse?.ok){
-  const status=Number(baseResponse?.status);
-  throw Error(Number.isInteger(status)&&status>=400&&status<=599?
-   `NEWS_R41_ANALYSIS_OLLAMA_HTTP_${status}`:'NEWS_R41_ANALYSIS_OLLAMA_FAILED');
- }
+ const baseResponse=await r41FallbackStage(fetcher,{model,system:BASE_SYSTEM,prompt,
+  format:BASE_SCHEMA,stream:false,options:fallbackOptions});
  let base;
  try{base=JSON.parse((await baseResponse.json()).response);}catch{
   throw lastValidationError??Error('NEWS_R41_ANALYSIS_OLLAMA_RESPONSE_INVALID');
@@ -340,17 +360,9 @@ export async function generateR41ModelAnalysis(article,{fetcher=fetch,model='gem
   safeR41ModelShape('base-invalid',base);
   throw Error('NEWS_R41_ANALYSIS_MODEL_OUTPUT_INVALID');
  }
- const factsResponse=await fetcher('http://127.0.0.1:11434/api/generate',{
-  method:'POST',headers:{'content-type':'application/json'},
-  body:JSON.stringify({model,system:FACTS_SYSTEM,prompt,
-   format:FACTS_SCHEMA,stream:false,options:{temperature:0,
-    num_predict:350,repeat_penalty:1.2,repeat_last_n:128}}),
-  signal:AbortSignal.timeout(90000)});
- if(!factsResponse?.ok){
-  const status=Number(factsResponse?.status);
-  throw Error(Number.isInteger(status)&&status>=400&&status<=599?
-   `NEWS_R41_ANALYSIS_OLLAMA_HTTP_${status}`:'NEWS_R41_ANALYSIS_OLLAMA_FAILED');
- }
+ const factsResponse=await r41FallbackStage(fetcher,{model,system:FACTS_SYSTEM,prompt,
+  format:FACTS_SCHEMA,stream:false,options:{temperature:0,
+   num_predict:350,repeat_penalty:1.2,repeat_last_n:128}});
  let facts;
  try{facts=JSON.parse((await factsResponse.json()).response);}catch{
   throw Error('NEWS_R41_ANALYSIS_OLLAMA_RESPONSE_INVALID');
@@ -368,19 +380,12 @@ export async function generateR41ModelAnalysis(article,{fetcher=fetch,model='gem
  const evidencePrompt=JSON.stringify({originalTitle:article.originalTitle,
   keyPointKo:core.keyPointKo,keyFactsKo:core.keyFactsKo,summaryKo:core.summaryKo,
   quoteCandidates:quoteCandidates.map((quote,index)=>({id:index+1,text:quote}))});
- const quoteResponse=await fetcher('http://127.0.0.1:11434/api/generate',{
-  method:'POST',headers:{'content-type':'application/json'},
-  body:JSON.stringify({model,system:QUOTE_ONLY_SYSTEM,prompt:evidencePrompt,
-   format:{...QUOTE_ONLY_SCHEMA,properties:{supportingQuoteIds:{
-    ...QUOTE_ONLY_SCHEMA.properties.supportingQuoteIds,
-    items:{type:'integer',minimum:1,maximum:quoteCandidates.length}}}},
-   stream:false,options:{temperature:0,num_predict:120}}),
-  signal:AbortSignal.timeout(90000)});
- if(!quoteResponse?.ok){
-  const status=Number(quoteResponse?.status);
-  throw Error(Number.isInteger(status)&&status>=400&&status<=599?
-   `NEWS_R41_ANALYSIS_OLLAMA_HTTP_${status}`:'NEWS_R41_ANALYSIS_OLLAMA_FAILED');
- }
+ const quoteResponse=await r41FallbackStage(fetcher,{model,system:QUOTE_ONLY_SYSTEM,
+  prompt:evidencePrompt,
+  format:{...QUOTE_ONLY_SCHEMA,properties:{supportingQuoteIds:{
+   ...QUOTE_ONLY_SCHEMA.properties.supportingQuoteIds,
+   items:{type:'integer',minimum:1,maximum:quoteCandidates.length}}}},
+  stream:false,options:{temperature:0,num_predict:120}});
  let proof;
  try{proof=JSON.parse((await quoteResponse.json()).response);}catch{
   throw Error('NEWS_R41_ANALYSIS_OLLAMA_RESPONSE_INVALID');
