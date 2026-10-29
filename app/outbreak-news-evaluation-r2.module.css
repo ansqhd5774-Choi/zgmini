@@ -1,0 +1,58 @@
+/* Iran R41 AI annotations only. Existing timelines, other events and R5 stay unchanged. */
+.evaluation{
+ grid-area:desc;display:flex;flex-direction:column;gap:10px;min-width:0;
+ margin:7px 0 0;
+}
+.keyPointBox{
+ display:flex;flex-direction:column;gap:7px;min-width:0;
+ padding:11px 12px;border:1px solid #365f75;border-left:3px solid #61c9f2;
+ border-radius:6px;background:#102e40;
+}
+.sectionLabel{font-size:11px;font-weight:850;letter-spacing:.01em;color:#9fe5ff}
+.keyPoint{
+ font-size:14px;line-height:1.6;font-weight:800;color:#f4fbff;
+ word-break:keep-all;overflow-wrap:anywhere;
+}
+.factsList{
+ list-style:disc outside;margin:2px 0 0;padding:0 0 0 18px;
+ display:flex;flex-direction:column;gap:5px;color:#e2eff6;
+ font-size:13px;line-height:1.65;word-break:keep-all;overflow-wrap:anywhere;
+}
+.factsList li{padding-left:2px}
+.whyBox{
+ min-width:0;padding:10px 12px;background:#0a2939;
+ border:1px solid #294e60;border-radius:6px;
+}
+.whyLabel{display:block;margin:0 0 5px;color:#a8e3fd;font-size:12px;font-weight:800}
+.analysisMeta{color:#a7c1cf;font-size:10px;line-height:1.5}
+.fullSummary{padding:0 2px;color:#c6dce8}
+.fullSummary summary{
+ width:max-content;max-width:100%;font-size:12px;font-weight:750;
+ line-height:1.6;color:#bde6fb;cursor:pointer;
+}
+.fullSummary summary:focus-visible{outline:2px solid #78ccea;outline-offset:3px}
+.pendingText{color:#d3e1e9}
+
+/* Override the existing small/clamped news p rules for the new R41 analysis only. */
+:global(.ob-events) :global(.ob55-iran-parity) .articleReady :global(h4){
+ font-size:14px;line-height:1.55;margin:7px 0 5px;
+}
+:global(.ob-events) :global(.ob55-iran-parity) .articleReady .evaluation :global(p){
+ display:block;margin:0;overflow:visible;white-space:normal;
+ -webkit-line-clamp:unset;-webkit-box-orient:initial;
+ font-size:13px;line-height:1.7;word-break:keep-all;overflow-wrap:anywhere;
+}
+:global(.ob-events) :global(.ob55-iran-parity) .articleReady .keyPointBox .legacySummary{
+ font-size:13.5px;color:#f0f8fc;
+}
+:global(.ob-events) :global(.ob55-iran-parity) .articleReady .whyBox .interpretation{
+ font-size:13.5px;color:#e0edf5;
+}
+:global(.ob-events) :global(.ob55-iran-parity) .articleReady .fullSummary :global(p){
+ margin-top:7px;color:#d6e6ef;
+}
+@media(max-width:700px){
+ .keyPointBox{padding:10px 11px}
+ .whyBox{padding:10px 11px}
+ .factsList{font-size:13px}
+}

@@ -16,6 +16,8 @@ function compileMetadata(){
  const nativeRequire=createRequire(path);
  new Function('require','module','exports',code)(id=>{
   if(id==='lucide-react')return {ExternalLink:()=>null,Newspaper:()=>null,ChevronDown:()=>null};
+  if(id==='./outbreak-news-evaluation-r2.module.css')return new Proxy({},
+   {get:(_target,name)=>String(name)});
   // The production component uses the shared stored-index hook; SSR tests
   // substitute an empty read result without making network requests.
   if(id==='../components/use-stored-index')return {
