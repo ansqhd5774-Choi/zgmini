@@ -178,6 +178,13 @@ test('Ollama request is fixed to local endpoint and rejects unsupported output',
  assert.deepEqual(generated.supportingQuotes,[quote]);
 });
 
+test('Ollama server failures expose only a bounded numeric status',async()=>{
+ await assert.rejects(generateR41ModelAnalysis({originalTitle:item.title,articleBody},
+  {fetcher:async()=>({ok:false,status:503,
+   text:async()=>'/private/secret: model not ready'})}),
+  /NEWS_R41_ANALYSIS_OLLAMA_HTTP_503/);
+});
+
 test('source evidence backlog is explicit; no false ready status',async()=>{
  const second={...item,sourceUrl:'https://www.gov.uk/government/news/iran-outlook-2',
   title:'Iran situation second detailed report'};
@@ -187,4 +194,60 @@ test('source evidence backlog is explicit; no false ready status',async()=>{
    evidenceCollector:async()=>({items:[]}),generator:async()=>proposal});
  assert.equal(rows.publicResult.pending.length,2);
  assert.equal(rows.publicResult.pending[1].reason,'ANALYSIS_BACKLOG');
+});
+
+test('rights-restricted headlines never consume limited analysis slots',async()=>{
+ const restricted=Array.from({length:25},(_,index)=>{
+  const sourceUrl=`https://www.bbc.com/news/articles/iran-coverage-${index}`;
+  return {id:createHash('sha256').update(sourceUrl).digest('hex'),sourceUrl,
+   title:`Iran regional developments detailed update ${index}`,publishedAt:item.publishedAt};
+ });
+ let collected=0,generated=0;
+ const result=await runR41AnalysisCycle({items:[...restricted,item]},
+  {now,modelDigest:'digest-1',maxNew:1,
+   evidenceCollector:async rows=>{
+    collected++;
+    assert.deepEqual(rows.map(row=>row.id),[item.id]);
+    return {items:[{sourceId:'govuk',sourceUrl,
+     originalTitle:item.title,publishedAt:item.publishedAt,articleBody}]};
+   },generator:async()=>{generated++;return proposal;}});
+ assert.equal(collected,1);
+ assert.equal(generated,1);
+ assert.deepEqual(result.publicResult.items.map(row=>row.id),[item.id]);
+ assert.equal(result.report.rightsRestricted,25);
+ assert.equal(result.report.backlog,0);
+ assert.equal(result.report.attempted,1);
+ assert.ok(result.publicResult.pending.every(row=>row.reason==='SOURCE_RIGHTS_RESTRICTED'));
+});
+
+test('repeated failures rotate through all eligible articles without dropping history',async()=>{
+ const articles=Array.from({length:4},(_,index)=>{
+  const sourceUrl=`https://www.gov.uk/government/news/iran-detailed-${index}`;
+  return {id:createHash('sha256').update(sourceUrl).digest('hex'),sourceUrl,
+   title:`Iran diplomacy detailed official report ${index}`,publishedAt:item.publishedAt};
+ });
+ const attempted=[];
+ let cache=null;
+ for(let round=0;round<4;round++){
+  const result=await runR41AnalysisCycle({items:articles},
+   {now:now+round*600000,cache,modelDigest:'digest-1',maxNew:1,
+    evidenceCollector:async rows=>{
+     attempted.push(rows[0].id);
+     return {items:[]};
+    },generator:async()=>{throw Error('generator must not see absent evidence');}});
+  assert.equal(result.report.backlog,3);
+  assert.equal(result.publicResult.items.length,0);
+  assert.equal(result.publicResult.pending.length,4);
+  assert.equal(result.privateCache.attempts.length,round+1);
+  assert.equal(result.publicResult.pending.filter(row=>
+   row.reason==='ARTICLE_BODY_EVIDENCE_UNAVAILABLE').length,1);
+  cache=result.privateCache;
+ }
+ assert.deepEqual(attempted,articles.map(row=>row.id));
+ const fifth=await runR41AnalysisCycle({items:articles},
+  {now:now+2400000,cache,modelDigest:'digest-1',maxNew:1,
+   evidenceCollector:async rows=>{
+    assert.equal(rows[0].id,articles[0].id);return {items:[]};
+   }});
+ assert.equal(fifth.privateCache.attempts.length,4);
 });
