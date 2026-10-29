@@ -1,7 +1,9 @@
 // R73: automatically resume only the verified transient HTTP 502 checkpoint.
 // An existing R48 private cycle is retried at most 3 times, with >=60s between
 // batches. It never changes a schedule, publishes D1 or deletes raw data.
+import fs from 'node:fs';
 import path from 'node:path';
+import {spawnSync} from 'node:child_process';
 import {fileURLToPath} from 'node:url';
 import {inspectR72Checkpoint,recoverR72Checkpoint} from
   './theme-nine-r72-transient-checkpoint-recover.mjs';
@@ -11,6 +13,33 @@ import {r71Preflight,runR71PrivateRecovery} from
 const DEFAULT_MAX_ATTEMPTS=3;
 const RETRY_INTERVAL_MS=60_000;
 const sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms));
+const ROOT='E:/ZGmini/data/pc-writer/theme-nine-r48';
+const ACTION=path.join(ROOT,'THEME_NINE_R48_PRIVATE_CYCLE.cmd');
+const LOCK='E:/ZGmini/data/themes/legacy-nine-r35-delta/state/delta.lock';
+
+export function r73ScheduledPreflight({now=new Date(),exists=fs.existsSync,
+  requiredPreflight=r71Preflight}={}){
+  const required=requiredPreflight({now});
+  const h=Object.fromEntries(new Intl.DateTimeFormat('en-US',{
+    timeZone:'Asia/Seoul',hour:'2-digit',minute:'2-digit',hourCycle:'h23',
+  }).formatToParts(now).filter(x=>['hour','minute'].includes(x.type))
+    .map(x=>[x.type,Number(x.value)]));
+  const minute=h.hour*60+h.minute;
+  // This mode is reserved for the EXISTING 11:30 scheduler action.
+  const insidePrivateSlot=minute>=680&&minute<=735;
+  return {canRun:required.allRequiredPresent&&insidePrivateSlot&&
+    exists(ACTION)&&!exists(LOCK),insidePrivateSlot};
+}
+
+export function runR73ScheduledR48({run=spawnSync}={}){
+  const result=run('cmd.exe',['/d','/c',ACTION],{
+    encoding:null,timeout:25*60*1000,windowsHide:true,cwd:ROOT,
+    maxBuffer:8*1024*1024});
+  return {existingPrivateCommandExit:result.status,
+    status:result.status===0&&!result.error?
+      'R71_EXISTING_PRIVATE_RUN_RETURNED_ZERO':'R71_EXISTING_PRIVATE_RUN_NONZERO',
+    processError:result.error?.code??null};
+}
 
 export async function runR73PrivateAutoRetry({
   inspect=()=>inspectR72Checkpoint({allowNoFailure:true}),
@@ -64,14 +93,20 @@ export async function runR73PrivateAutoRetry({
 
 if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.url)){
   try{
-    if(process.argv.length!==3||process.argv[2]!=='--run-private')
+    if(process.argv.length!==3||!
+      ['--run-private','--scheduled-private'].includes(process.argv[2]))
       throw Object.assign(new Error('R73_USAGE'),{code:'R73_USAGE'});
     if(process.platform!=='win32')
       throw Object.assign(new Error('R73_WINDOWS_PC_REQUIRED'),
         {code:'R73_WINDOWS_PC_REQUIRED'});
-    const result=await runR73PrivateAutoRetry();
+    const scheduled=process.argv[2]==='--scheduled-private';
+    const result=await runR73PrivateAutoRetry(scheduled?{
+      preflight:r73ScheduledPreflight,
+      recover:()=>recoverR72Checkpoint({preflightFn:r73ScheduledPreflight}),
+      run:runR73ScheduledR48,
+    }:{});
     process.stdout.write(JSON.stringify({report:'THEME_NINE_R73_AUTO_HTTP502',
-      ...result},null,2)+'\n');
+      mode:scheduled?'EXISTING_1130_SCHEDULED':'MANUAL',...result},null,2)+'\n');
     if(result.status.startsWith('STOP_'))process.exitCode=2;
   }catch(error){
     process.stderr.write(JSON.stringify({status:'STOP_R73_ABORTED',
