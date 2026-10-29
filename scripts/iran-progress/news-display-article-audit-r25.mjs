@@ -5,6 +5,7 @@ import {fileURLToPath} from 'node:url';
 import {boundedRead} from './sources.mjs';
 import {auditIranMultisourceCollectionR24,newsR24SourceUrl} from './news-display-multisource-audit-r24.mjs';
 import {matchesIranTwoStageKeywordsR38} from './news-display-discover-r1.mjs';
+import {inspectR45Article} from './news-four-source-probe-r45.mjs';
 import {kstDayWindow,kstNewsDay,NEWS_PC_RETENTION_DAYS} from '../../lib/iran-progress/news-display-r1.mjs';
 
 const MAX_ARTICLES=70;
@@ -181,6 +182,23 @@ export function inspectIranArticleR25(candidate,body,{now=Date.now()}={}){
  if(!Number.isSafeInteger(now)||!sourceId||typeof sourceUrl!=='string'||
   newsR24SourceUrl(sourceId,sourceUrl)!==sourceUrl)
   throw Error('R25_CANDIDATE_INVALID');
+ if(sourceId==='arabnews'){
+  const checked=inspectR45Article(sourceId,sourceUrl,body,{now,days:30});
+  const success=checked.status==='ARTICLE_METADATA_REVIEWED';
+  // Read-only metadata. Even inspected editorial text is never returned to the
+  // private candidate cache or publicly published from this path.
+  return {sourceId,sourceUrl,status:checked.status,
+   originalTitle:checked.title??null,originalTitleVerified:!!checked.title,
+   publisherDeclaredPublishedAt:checked.publishedAt??null,
+   publicationDateEvidence:checked.dateEvidence??null,
+   originalPublicationIndependentlyVerified:false,
+   withinRetentionWindow:success?true:null,
+   articleBodyAccessible:checked.bodyCharacterCount>0,
+   bodyCharacterCount:checked.bodyCharacterCount??0,
+   articleBodyEvidence:checked.bodyEvidence??'NONE',
+   scopeVerifiedFromArticle:success,
+   rightsVerified:false,displayEligible:false,translationModified:false};
+ }
  if(sourceId==='govuk'){
   let content;
   try{content=typeof body==='string'?JSON.parse(body):body;}catch{return {sourceId,sourceUrl,status:'ARTICLE_FORMAT_INVALID'};}
