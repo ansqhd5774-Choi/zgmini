@@ -160,3 +160,16 @@ R75는 기존 R48을 **한 번** 호출하며 R48 종료 0을 점수/운영 갱�
 - 사용자가 새 폴더에서 3파일 ZIP 압축 해제 후 CMD **한 번** 실행한다. 반환 `THEME_TEN_R82_DIAG_RESULT_*.txt`를 받아 각 경로의 마지막 PASS/첫 FAIL을 확정한다. 진단기는 공급자 조회·원자료 수집/계산·D1 게시·스케줄 변경 모두 하지 않는다. 다음 정규 11:30/13:30 검증도 별도 단계다.
 - `node --test tests/theme-ten-r82-optional-runtime-readonly.test.mjs` PASS, ZIP `unzip -t` PASS, Windows CMD ASCII/CRLF 확인. 패키지 `THEME_TEN_R82_OPTIONAL_RUNTIME_READONLY_20261030.zip` SHA-256 `54ce1c33fe203c8fa4cdfa63045bd2b856de4dbd48d886db315f3b86e72837e5`, Node 파일 SHA-256 `63c60244b916b8bdcc0c30ad1fa182e8046dec8bc7b0121be6c629fbc319bad8`.
 - 상태: **R82 코드/테스트/ZIP/브랜치 등록 완료, Windows PC 진단 실행 미실시**. 기존 10개·ETF·R37 산식·승인 SHA·예약·D1/공개 기록 변경 0. PC 로그 없이 전용 수집 복구 완료 주장 금지.
+
+
+## R82 실제 PC 진단 및 R83 기존 R5 실행 CMD 복구 준비 (2026-10-30 KST)
+
+- 실PC 파일 `THEME_TEN_R82_DIAG_RESULT_4538_27314.txt`: UTC `2026-10-29T16:42:40.954Z`. 승인 R82 SHA 검증 성공, provider/D1/원본/task writes 모두 0.
+- **데이터센터·전력 FIRST FAIL**: 기존 `ZGMINI-PC-Theme-Data-Center-Power`가 매일 14:00 CalendarTrigger 1개·승인 `DATA_CENTER_POWER_R5_SCHEDULED.cmd` Action을 보유. 10/29 14:00 최근 실행 결과 코드 **1**. 해당 Action이 지정한 실제 CMD `RUNNER_MISSING`, 옆의 scheduled log `NOT_FOUND`. R76의 Desktop 가정이 아니라 **실제 Task XML 경로 확인**에서 발견. 예약 자체를 삭제·수정하지 않으며 설치 파일의 경로와 내용을 복구하는 것이 첫 단계.
+- **우주·위성 FIRST FAIL**: Task Scheduler 전체 이름 검색 정상 완료(`spaceTaskEnumerationComplete=true`)했으나 Space/Satellite 전용 작업 **0개**. 승인 R14은 10/23 끝나는 수동 missing-only collector이고 상시 R5 해당물이 아니다. 기존 R47 11:30 원본은 별도 연구 9개이며 이 전용 4 ETF 원시매니페스트 자동 갱신의 입증이 아니다. 신규 작업·기존 스케줄 재설계는 승인 없이 하지 않는다.
+- 실제 매니페스트: 우주 UFO(2p), NASA(1p), WARP(1p), ROKT(1p) 모두 최종 10/23. 데이터센터 DTCR(4p), GRID(4p), SPY(5p) 모두 10/23. R82은 매니페스트 자체 SHA만 계산했고 각 raw 가격 파일의 SHA 재검증은 하지 않았다.
+- 체크포인트: 우주 R14 최신 수정 10/25 `failed=false`, 데이터센터 최신 collection end=10/26, 최신 수정 10/26, `failed=false`. **checkpoint가 실패가 아니므로 원본이 최신이라는 뜻은 아니다**. 예약 실행 파일이 없어 새 수집을 호출할 수 없는 상태가 관측됐다.
+- 다른 기존 작업: R47 11:30 task 최근 결과 0, R54 13:30 task 최근 결과 0(각각 과거 실행이며 **R81 이후 다음 정규 실행 성공 증거 아님**). 바이오 14:00 task 최근 결과 1; 별도 로그·정규 재시도 확인 필요. 네 작업 설정/CalendarTrigger `Enabled=UNSPECIFIED`는 명시 비활성을 뜻하지 않는다.
+- R83 패키지 `THEME_TEN_R83_DC_RUNNER_RESTORE_ONCE_20261030.zip` SHA-256 `11ad70122e5ee0cda8d1ed0a1163bc56fc51710b77ad87975a28a0ed1447b9af`. 원 브랜치 파일 `theme-ten-r83-dc-runner-restore.mjs`, `THEME_TEN_R83_DC_RUNNER_RESTORE_ONCE.cmd`, `tests/theme-ten-r83-dc-runner-restore.test.mjs`, `docs/THEME_TEN_R83_DC_RUNNER_RESTORE_KO.txt` 및 ZIP 안 기존 승인 `theme-data-center-power-task-r5.mjs`.
+- R83은 기존 R5 생성기 바이트/ SHA `836e73a4b85bff70fad4185f7221ebc8824ca2ea8026388c7eb12e2b51bcb823`, R5 생성기 SHA `197ef4760931d787d8857a4579e13b6f94d5d1bd2c5c20424ce685e60c8f1426`, 기존 승인 R3 게시기 SHA `3c81e6b29003939eed6ad631cfdaf81a836abd4f7f4dfba3fee03796f7d7ac96`, 원래 Task XML Action·14:00 및 디렉터리·lock·보호시간을 모두 대조한다. 정확히 누락된 R5 runner만 `wx` 생성·readback하고, 이미 승인된 R3 `--once --collect` **비공개** 실행을 한 번 시도한다. R5 Task Scheduler 정의, 7개 정상 테마, ETF/점수/권리 기준 변경 0; D1/공개 쓰기 0.
+- `node --test tests/theme-ten-r83-dc-runner-restore.test.mjs tests/theme-data-center-power-task-r5.test.mjs` PASS, R83 ZIP `unzip -t` PASS, CMD ASCII+CRLF. 아직 Windows 실행 미확인. 실PC 결과 `THEME_TEN_R83_DC_RESTORE_RESULT_*.txt` 수신 후 해당 실패 단계와 원시매니페스트 최종 관측일을 검증해야 함. 그 이후에야 데이터센터 공개 권리/D1, 우주 원자료 운영 연결 및 11:30/13:30/14:00 정규 실행 증거를 별도 진행한다.
