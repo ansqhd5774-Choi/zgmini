@@ -15,11 +15,11 @@ export default function OutbreakNewsContainer({eventId}:{eventId:string}){
   return()=>window.clearInterval(timer);
  },[]);
  const {payload,loading,error}=useStoredIndex<{status:string;items:OutbreakNewsItem[]}>("/api/outbreak-news/iran");
- // R41 is an independent, metadata-only read model. Never replace working R1
- // while its migration, seven-source coverage or reader are still unavailable.
+ // R41 is an independent metadata-only read model. Keep the R1 fallback
+ // for unavailable/empty R41 responses, not for normal zero-news sources.
  const newer=useStoredIndex<{status:string;sourceCount:number;itemCount:number;
   items:IranNewsMetadataItemR41[]}>("/api/outbreak-news/iran/r41");
- if(newer.payload?.status==="READY"&&newer.payload.sourceCount===7&&
+ if(newer.payload?.status==="READY"&&
   newer.payload.itemCount>0&&Array.isArray(newer.payload.items)&&
   newer.payload.items.length===newer.payload.itemCount)
   return <OutbreakNewsMetadataR41 eventId={eventId} items={newer.payload.items}/>;
