@@ -318,9 +318,10 @@ test('fallback output without verbatim source proof remains blocked',async()=>{
  assert.equal(calls,4);
 });
 
-test('small local model can recover via separate structured facts and exact quote IDs',async()=>{
+test('small local model can recover via separate base, facts and exact quote IDs',async()=>{
  const payloads=[];
  const {supportingQuotes,...core}=proposal;
+ const {keyPointKo,keyFactsKo,...base}=core;
  const result=await generateR41ModelAnalysis({originalTitle:item.title,articleBody},
   {fetcher:async(_,options)=>{
    const payload=JSON.parse(options.body);
@@ -329,7 +330,9 @@ test('small local model can recover via separate structured facts and exact quot
     json:async()=>({response:JSON.stringify({...proposal,
      supportingQuotes:['invented evidence absent in article']})})};
    if(payloads.length===4)return {ok:true,
-    json:async()=>({response:JSON.stringify(core)})};
+    json:async()=>({response:JSON.stringify(base)})};
+   if(payloads.length===5)return {ok:true,
+    json:async()=>({response:JSON.stringify({keyPointKo,keyFactsKo})})};
    const inputs=JSON.parse(payload.prompt);
    assert.ok(inputs.quoteCandidates.some(row=>row.text===quote));
    assert.equal(payload.format.properties.supportingQuoteIds.items.maximum,
@@ -337,23 +340,25 @@ test('small local model can recover via separate structured facts and exact quot
    return {ok:true,json:async()=>({response:JSON.stringify({
     supportingQuoteIds:[inputs.quoteCandidates.find(row=>row.text===quote).id]})})};
   }});
- assert.equal(payloads.length,5);
+ assert.equal(payloads.length,6);
  assert.deepEqual(result.supportingQuotes,[quote]);
  assert.deepEqual(result.keyFactsKo,proposal.keyFactsKo);
- assert.equal(payloads[3].format.required.length,6);
- assert.equal(payloads[4].format.required.length,1);
+ assert.equal(payloads[3].format.required.length,4);
+ assert.equal(payloads[4].format.required.length,2);
+ assert.equal(payloads[5].format.required.length,1);
 });
 
-test('two-step fallback never publishes source-unsupported numbers',async()=>{
+test('three-step fallback never publishes source-unsupported numbers',async()=>{
  let calls=0;
  const {supportingQuotes,...core}=proposal;
+ const {keyPointKo,keyFactsKo,...base}=core;
  await assert.rejects(generateR41ModelAnalysis({originalTitle:item.title,articleBody},
   {fetcher:async()=>({ok:true,json:async()=>({response:JSON.stringify(
    ++calls<=3?{...proposal,supportingQuotes:['invented source evidence']}:
-   {...core,keyFactsKo:[core.keyFactsKo[0],
+   calls===4?base:{keyPointKo,keyFactsKo:[keyFactsKo[0],
     '회의에 999명이 참석했다는 공식 발표가 있었다.']})})})}),
   /NEWS_R41_ANALYSIS_NEW_NUMBER/);
- assert.equal(calls,4);
+ assert.equal(calls,5);
 });
 
 test('source evidence backlog is explicit; no false ready status',async()=>{
