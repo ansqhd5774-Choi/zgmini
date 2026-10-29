@@ -16,7 +16,7 @@ export type IranNewsMetadataItemR41={
 };
 
 type NewsAnalysisImpact="positive"|"negative"|"neutral";
-type NewsAnalysisItem={
+export type NewsAnalysisItem={
  id:string;
  sourceUrl:string;
  titleKo?:string;
@@ -30,7 +30,7 @@ type NewsAnalysisItem={
  evidenceUrls:string[];
  model?:string;
 };
-type NewsAnalysisPayload={
+export type NewsAnalysisPayload={
  version:"IRAN_NEWS_ANALYSIS_R1";
  publishedAt:number;
  status:"READY"|"PARTIAL"|"PENDING"|"STALE"|"UNAVAILABLE";
@@ -48,7 +48,7 @@ const kstDate=(value:string)=>{
 };
 
 /** Never attach an unrelated, malformed, or unsupported AI result to an article. */
-const validAnalysis=(item:NewsAnalysisItem|undefined,article:IranNewsMetadataItemR41)=>Boolean(
+export const validAnalysis=(item:NewsAnalysisItem|undefined,article:IranNewsMetadataItemR41)=>Boolean(
  item&&item.analysisStatus==="READY"&&item.id===article.id&&item.sourceUrl===article.sourceUrl&&
  typeof item.summaryKo==="string"&&item.summaryKo.trim()&&
  typeof item.interpretationKo==="string"&&item.interpretationKo.trim()&&
@@ -61,6 +61,28 @@ const validAnalysis=(item:NewsAnalysisItem|undefined,article:IranNewsMetadataIte
  Array.isArray(item.evidenceUrls)&&item.evidenceUrls.length>0&&
  item.evidenceUrls.every(url=>typeof url==="string"&&/^https:\/\//i.test(url))
 );
+
+export function IranNewsEvaluationCard({analysis}:{analysis:NewsAnalysisItem}){
+ const hasKeyFacts=Boolean(analysis.keyPointKo&&analysis.keyFactsKo?.length);
+ return <div className={styles.evaluation}>
+  <div className={styles.keyPointBox}>
+   <span className={styles.sectionLabel}>핵심 사실</span>
+   {hasKeyFacts?<>
+    <strong className={styles.keyPoint}>{analysis.keyPointKo}</strong>
+    <ul className={styles.factsList}>{analysis.keyFactsKo!.map((fact,index)=><li key={`${index}:${fact}`}>{fact}</li>)}</ul>
+   </>:<p className={styles.legacySummary}>{analysis.summaryKo}</p>}
+  </div>
+  <div className={styles.whyBox}>
+   <strong className={styles.whyLabel}>왜 중요한가?</strong>
+   <p className={styles.interpretation}>{analysis.interpretationKo}</p>
+  </div>
+  {hasKeyFacts&&<details className={styles.fullSummary}>
+   <summary>기사 요약 자세히 보기</summary>
+   <p>{analysis.summaryKo}</p>
+  </details>}
+  <small className={styles.analysisMeta}>AI 잠정 평가 · {kstDate(new Date(analysis.analyzedAt).toISOString())} 분석 · 사실과 해석 구분</small>
+ </div>;
+}
 
 export default function OutbreakNewsMetadataR41({eventId,items}:{eventId:string;items:IranNewsMetadataItemR41[]}){
  const [expanded,setExpanded]=useState(false);
@@ -109,31 +131,11 @@ export default function OutbreakNewsMetadataR41({eventId,items}:{eventId:string;
     const candidate=analysisById.get(item.id);
     const analysis=validAnalysis(candidate,item)?candidate:undefined;
     const title=analysis?.titleKo?.trim()||translatedTitles[`${eventId}:${item.id}:title:${item.title}`]||item.title;
-    const hasKeyFacts=analysis&&analysis.keyPointKo&&analysis.keyFactsKo?.length;
     return <article className={`ob57-news-item${analysis?` ${styles.articleReady}`:""}`} key={item.id} data-analysis-status={analysis?"READY":"PENDING"}>
      <div className="ob57-news-meta"><strong>{item.source}</strong>
       <time dateTime={item.publishedAt}>{kstDate(item.publishedAt)}</time></div>
      <h4 title={title!==item.title?`영문 원제목: ${item.title}`:undefined}>{title}</h4>
-     <div className={styles.evaluation}>
-      {analysis?<>
-       <div className={styles.keyPointBox}>
-        <span className={styles.sectionLabel}>핵심 사실</span>
-        {hasKeyFacts?<>
-         <strong className={styles.keyPoint}>{analysis.keyPointKo}</strong>
-         <ul className={styles.factsList}>{analysis.keyFactsKo!.map((fact,index)=><li key={`${index}:${fact}`}>{fact}</li>)}</ul>
-        </>:<p className={styles.legacySummary}>{analysis.summaryKo}</p>}
-       </div>
-       <div className={styles.whyBox}>
-        <strong className={styles.whyLabel}>왜 중요한가?</strong>
-        <p className={styles.interpretation}>{analysis.interpretationKo}</p>
-       </div>
-       {hasKeyFacts&&<details className={styles.fullSummary}>
-        <summary>기사 요약 자세히 보기</summary>
-        <p>{analysis.summaryKo}</p>
-       </details>}
-       <small className={styles.analysisMeta}>AI 잠정 평가 · {kstDate(new Date(analysis.analyzedAt).toISOString())} 분석 · 사실과 해석 구분</small>
-      </>:<p className={styles.pendingText}>자동 평가·해석 대기 중입니다. 원문 기사를 확인할 수 있습니다.</p>}
-     </div>
+     {analysis?<IranNewsEvaluationCard analysis={analysis}/>:<div className={styles.evaluation}><p className={styles.pendingText}>자동 평가·해석 대기 중입니다. 원문 기사를 확인할 수 있습니다.</p></div>}
      <div className="ob57-news-foot">
       {analysis?<span className="ob57-impact" data-impact={analysis.impact}>{impactLabels[analysis.impact]}</span>:<span>분석 대기</span>}
       <div className="ob57-news-actions">
