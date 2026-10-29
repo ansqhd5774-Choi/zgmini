@@ -219,3 +219,13 @@
 - **R55:** `scripts/iran-progress/IRAN_NEWS_R55_RECOVERY_PUBLISH_ONCE_20261029.cmd`를 **같은 브랜치**에 추가. 이전 R54 pre-write 결과의 SHA256 및 R46/R49 두 증거 SHA256 3개를 개별 확인하고, R54 동일 PIN 소스 14개 Git Blob·테스트 8개·D1 11 ID read-only·실제 신규 8 ID membership 순으로 검증. 전부 미저장일 때만 기존 R54 구현의 단일 D1 INSERT 8건과 원격 readback으로 진행; 이미 전부 저장/부분 저장/불일치면 무쓰기 또는 STOP. 새 결과 `IRAN_NEWS_R55_RECOVERY_PUBLISH_RESULT.txt`로 분리하여 과거 실패 기록을 보존.
 - **ZIP 배포:** `IRAN_NEWS_R55_RECOVERY_COMPLETE_20261029.zip`에 R55 CMD 및 R54 실패 로그, R46/R49 원본 TXT **4개 파일**을 포함하고 ZIP CRC 전체 PASS. ZIP은 원본 증거를 포함하므로 **GitHub에는 올리지 않고 사용자 파일 다운로드로 제공**. 새 빈 폴더에 압축을 푼 뒤 R55 CMD만 1회 실행.
 - **현재 상태:** R55 소스/원본 증거 파서/패키지 검증 완료, **R55 PC_RUNTIME_PENDING**, **신규 8건 D1 게시 미실행**, API·UI 반영 대기. 실패하면 재실행 없이 결과를 먼저 원격 재조회해 판단.
+
+
+## 20. R55 실제 8건 원격 게시 성공 및 공개 Reader/UI 불일치 (2026-10-29 KST)
+
+- **사용자 PC R55 원본:** `IRAN_NEWS_R55_RECOVERY_PUBLISH_RESULT.txt`. R54 이전 무쓰기 실패 증거, 원본 R46/R49 파일 3개 SHA256 검증, source 14/14 확인, Node 회귀 **8/8 PASS**. 실제 운영 D1 스키마 조회 44행/Arab News 0, 신규 정확한 8개 ID membership 0/8을 확인한 후 단일 atomic INSERT 1회 실행.
+- **운영 D1 post-readback PASS:** `EIGHT_D1_ROWS_VERIFIED_PUBLIC_API_PENDING`, 기존 전체 `44` → 신규 `52`, Arab News 목표 8/8 새 행, 원본 archive39 보존, R1 동일, 점수/스케줄/배포 변경 없음. `d1Written=true`, `deployed=false`, `retryAutomatically=false`. **R54·R55 게시 CMD를 다시 실행하지 않는다.**
+- **실제 공개 API 읽기 전용 검증:** 2026-10-29 KST `GET https://zgmini.kr/api/outbreak-news/iran/r41` 응답 HTTP 200, `version=IRAN_NEWS_METADATA_R41`, `status=READY`, `sourceCount=7`, `requiredSourceCount=7`, `itemCount=40`. 공개 응답에서 Arab News 8건은 표시되지 않음. **D1 저장 완료 ≠ 공개 API/UI 통합 완료**.
+- **확정한 코드 원인:** GitHub `main`의 `lib/iran-progress/news-metadata-r41.mjs`가 여전히 7 sourceId만 유효 검증하므로 신규 `arabnews`는 `visibleIranMetadataRowsR41`에서 제외. `worker/iran-news-metadata-public-r41.mjs`는 allSeven/requiredSourceCount=7 계약, `app/outbreak-news-container-r1.tsx`는 sourceCount===7 하드코딩으로 R41 UI 선택 제한. 이는 신규 8행 D1 저장 실패가 아님.
+- **브랜치 대응:** 기존 브랜치에 11개 허용 `lib`, sourceCount 실제값/READY-if-any `worker`는 기구현. `app/outbreak-news-container-r1.tsx`를 2026-10-29 당시 최신 `main`(평가 UI/번역 연계 포함) 기반으로 갱신하되 7개 고정 조건만 제거(브랜치 커밋 `03f86c4cfd3c95ac005d55640fd6a803eb66b433`). 다른 브랜치 생성 없음.
+- **미완료 게이트:** 최신 main의 변경을 보존하여 `lib/worker/container`와 회귀 테스트를 파일별 selective recovery해야 함. Cloudflare Git integration repo/main, 정확한 deployment, 빌드·공개 API/UI 최종 확인이 필요. 이 단계에서는 main/Cloudflare 배포/DNS/점수·스케줄 변경 없음. 운영 연결 게이트가 확인되지 않으면 배포했다고 보고하지 않는다.
