@@ -269,6 +269,51 @@
         {"organization": "영국 국방부", "sourceDate": "2026-10-20", "dateKind": "PUBLISHED", "url": "https://www.gov.uk/government/news/operational-update-20-october-uk-military-support-to-the-kingdom-of-saudi-arabia"}
       ],
       "status": "SOURCE_VERIFIED_CANDIDATE"
+    },
+    {
+      "id": "OFFICIAL-20261018-01",
+      "eventDate": "2026-10-18",
+      "titleKo": "이집트, 사우디 방어 지원 방침 발표하고 예멘 공격 참여는 부인",
+      "facts": [
+        {
+          "textKo": "이집트 대통령실은 10월 18일 국가방위위원회가 사우디아라비아 안보와 영토를 지키기 위한 가능한 지원을 제공하고 외교적 긴장 완화 노력을 강화하기로 했다고 발표했습니다.",
+          "sourceIndexes": [
+            0
+          ]
+        },
+        {
+          "textKo": "10월 21일 엘시시 대통령은 이집트 군의 역할이 사우디 영토 방어에 있으며 예멘에 대한 공격을 포함하지 않는다고 설명했습니다.",
+          "sourceIndexes": [
+            1
+          ]
+        },
+        {
+          "textKo": "두 발표는 방어 지원 방침과 활동 범위에 대한 이집트 당국의 설명이며, 실제 병력 규모나 교전 여부가 별도로 확인됐다는 의미는 아닙니다.",
+          "sourceIndexes": [
+            0,
+            1
+          ]
+        }
+      ],
+      "interpretationKo": "이집트가 사우디 방어에 관여하겠다는 입장은 지역 안보 대응의 확대를 보여줍니다. 동시에 대통령은 예멘 공격에 참여하지 않는다는 제한을 밝혔습니다. 지원 발표만으로 새로운 공격이 발생했다고 계산하지 않습니다.",
+      "signal": "mixed",
+      "signalReasonKo": "방어 지원 의사와 추가 군사 관여 가능성은 위험 요인이지만 공격 작전 불참 입장을 함께 확인해 복합 신호로 분류합니다.",
+      "evidenceLevel": "MULTIPLE_PRIMARY_STATEMENTS",
+      "sourceEvidence": [
+        {
+          "organization": "이집트 대통령실 국가방위위원회 발표",
+          "sourceDate": "2026-10-18",
+          "dateKind": "PUBLISHED",
+          "url": "https://www.presidency.eg/en/%D9%82%D8%B3%D9%85-%D8%A7%D9%84%D8%A3%D8%AE%D8%A8%D8%A7%D8%B1/%D8%A3%D8%AE%D8%A8%D8%A7%D8%B1-%D8%B1%D8%A6%D8%A7%D8%B3%D9%8A%D8%A9/news18102026"
+        },
+        {
+          "organization": "이집트 대통령실 대통령 발언",
+          "sourceDate": "2026-10-21",
+          "dateKind": "PUBLISHED",
+          "url": "https://www.presidency.eg/en/%D9%82%D8%B3%D9%85-%D8%A7%D9%84%D8%A3%D8%AE%D8%A8%D8%A7%D8%B1/%D8%A3%D8%AE%D8%A8%D8%A7%D8%B1-%D8%B1%D8%A6%D8%A7%D8%B3%D9%8A%D8%A9/news21102026/"
+        }
+      ],
+      "status": "SOURCE_VERIFIED_CANDIDATE"
     }
   ]
 }
