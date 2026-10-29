@@ -39,7 +39,9 @@ test('R41 prepares exactly 39 verified rows and never invents body, summary or i
  assert.equal(rows.length,39);
  assert.equal(new Set(rows.map(row=>row.articleId)).size,39);
  assert.equal(new Set(rows.map(row=>row.sourceUrl)).size,39);
- assert.deepEqual([...new Set(rows.map(row=>row.sourceId))].sort(),[...IRAN_NEWS_METADATA_SOURCE_IDS_R41].sort());
+ assert.deepEqual([...new Set(rows.map(row=>row.sourceId))].sort(),['tasnim','govuk','guardian-iran',
+  'dw-world','bbc-middle-east','aljazeera','un-middle-east'].sort());
+ assert.equal(IRAN_NEWS_METADATA_SOURCE_IDS_R41.length,11);
  assert.ok(rows.every(row=>row.bodyVerified&&row.twoStageKeywordsVerified));
  assert.ok(rows.every(row=>row.articleId.length===64&&!Object.hasOwn(row,'summary')&&
   !Object.hasOwn(row,'impact')&&!Object.hasOwn(row,'body')));
