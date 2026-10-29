@@ -120,3 +120,14 @@
 - 고정 SHA Windows CMD \`scripts/iran-progress/IRAN_NEWS_R47_D1_PREFLIGHT_READONLY_20261029.cmd\` 생성. 소스 \`9c5e3b2dbdfc7749bfa9510ee446b9d4cf47b2a5\`에서 9개 파일을 개별 Git Blob SHA1 검증하고 테스트 통과 시 PC writer 기존 설정/OAuth를 사용해 **D1 SELECT만** 실행. 동일 폴더에 기존 \`IRAN_NEWS_R45_R46_TEST_RESULT.txt\`가 있어야 한다. 결과 \`IRAN_NEWS_R47_D1_PREFLIGHT_RESULT.txt\`. 기존 결과 존재 시 재실행 거부.
 - 최초 로그 기준 Python/Node 파일 파싱 검사에서 Arab News 8개를 검출했으나 **이는 실제 D1 read-back이 아니다**. R47 실행·실제 D1 저장·main 반영·Cloudflare 배포·운영 UI 확인은 아직 미완료.
 - 다음 실행: R47 PC 읽기 전용 사전검사 1회 → 기존 39행/8개 신규 ID 상태 확인 → 결과가 PRELIGHT_READY로 확인될 경우에만 해당 승인 범위의 신규 기사 증분 저장 설계 및 원격 read-back → 최신 main과의 drift 점검 후 최소 파일 배포. 임의 재수집·기존 일회성 R42/R44 재실행 금지.
+
+## 10. R47 실제 D1 오류 → R48 원인 분리 (2026-10-29)
+
+- 사용자 제출 `IRAN_NEWS_R47_D1_PREFLIGHT_RESULT.txt`: 고정 소스 9개 검증, fixture/Node 테스트 **4/4 PASS**, 실제 D1 preflight 진입 후 `R47_ORIGINAL_39_BASELINE_MISMATCH` 발생. `D1_WRITES=DISABLED`, `FINAL_STATUS=R47_PREFLIGHT_NOT_READY_NO_D1_WRITE`. 이는 D1 7개 초기 출처에 속한 행이 **정확히 39건**이 아니라는 판정이며, 39개 과거 기사 ID가 삭제되었다는 증거가 아니다.
+- LAST PASS: R47 원격 D1 조회 진입 및 R1 identity check(후속 실패 위치가 원본 39개 소스 기준이므로). FIRST FAIL: 7개 초기 출처 행 수==39 및 7개 출처가 모두 존재한다는 결합 검사. 원인: **미확정**; 출처 행 추가·기존 39개 ID 누락·기존 출처 대체 등 구분 필요.
+- R47 코드의 고정 39행 assertion을 임의로 제거하지 않고, 실제 DB를 보존한 채 조회 전용 R48 진단을 추가.
+- `scripts/iran-progress/news-metadata-baseline-diagnose-r48.mjs`: 기존 승인 39건 manifest의 URL-SHA256 개별 ID와 D1 해당 ID를 직접 대조하며, 7개 초기 출처/신규 출처별 총 행 수, 초기 39개 보존·누락 건수, URL/source ID 변경 건수, 원본 제목·발표시각 정정 건수, R1 버전·저장시각·본문 SHA256만 출력. **기사 원문/URL 목록/인증키를 로그에 출력하지 않음. D1은 SELECT 세 종류만 실행.**
+- `scripts/iran-progress/news-metadata-baseline-diagnose-r48.test.mjs`: 39건 그대로, 원본 39건 보존+신규/기존 출처 추가, 일부 누락, ID 출처 변경, 제목 정정의 모의 경로 5개. 동일 Node v22 소스와 원격 Git Blob 동일성 기준 **5/5 PASS**; 이는 모의 테스트로 실제 D1 검사 결과가 아님.
+- `scripts/iran-progress/IRAN_NEWS_R48_BASELINE_READONLY_20261029.cmd`: 정확한 소스 SHA `f020b2f1ed0adc58fcfab97fb4f821820f2ae547`의 6개 파일을 Git Blob 해시 검증해 사용자 PC에서 테스트→원격 D1 SELECT를 실행. 기존 `E:\ZGmini\runtime\node.exe`와 기존 writer 설정·인증 사용. 로그 파일 `IRAN_NEWS_R48_BASELINE_READONLY_RESULT.txt`. 동일 로그가 이미 있으면 자동 재실행 금지.
+- 운영 R41 / D1 쓰기, R1, 점수, 스케줄, GitHub main/배포 상태 **이번 작업에서 변경 안 함**. R48 PC 원격 실행 아직 **미실행**.
+- NEXT: R48 결과에서 `original39Present`, `original39Missing`, `oldSourceRows`, `newSourceRows`, `sources[]`를 확인. 39개 원본 ID 전부 보존된 경우에만 기존 소스 count==39 Gate를 보존 검증으로 최소 수정 검토. 실제 누락 또는 identity drift가 있으면 게시 중단 및 해당 데이터 손실 원인을 별도 조사. 신규 R46 8건 쓰기·재조회와 main 최소 변경 자동 배포는 그 후에 수행.
