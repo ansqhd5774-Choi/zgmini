@@ -149,3 +149,14 @@ R75는 기존 R48을 **한 번** 호출하며 R48 종료 0을 점수/운영 갱�
 - 별도 읽기 전용 HTTPS 요청으로 공개 `https://zgmini.kr/api/theme-fear-greed/?r81_verify=20261030T020000` 독립 재확인: `READY`, 10개, 확정 10/27, R37 revision 존재. 방법 식별자 `ETF_ONLY_T40_R20_V40_ADAPTIVE_R2_DATED_ISSUER_AUM_R32`는 기존 `worker/theme-nine-r37-public.mjs`의 `THEME_NINE_R37_METHOD`와 일치한다. 바이오 10/27(점수 34.68369), 우주 10/23(44.65075), 데이터센터 10/23(12.32143). 최신 수치/모델은 운영 readback이며 기존 원시값을 임의로 고친 증거가 아니다.
 - **완료한 범위:** R54 인증 + D1 1회 쓰기/readback + 공개 R37 재채택. 변경 신규 테마 0, 산식 0, 예약 0, 원시값 재기입 0.
 - **미완료 별도 경로:** 우주·위성 4개 ETF 및 데이터센터·전력 3개 전용 PC 원시매니페스트의 10/23 이후 수집→해당 기존 승인 계산→전용 D1→공개 차트. 먼저 예약 실행의 **실제 승인 PC 경로·실행 로그·공급자 10/27/28 현재 제공 여부**를 읽기 전용으로 추적하고, 원본이 존재하는 날짜만 보수 복구한다. 다음 기존 11:30 수집/13:30 게시 정규 실행 결과도 별도 확보. 그 전 **10개 테마 일괄 매일 갱신 완료를 선언하지 않는다**.
+
+
+## R82 — 우주·위성/데이터센터·전력 실제 PC 경로 읽기 전용 진단 (2026-10-30 KST)
+
+- R81로 10개 테마 R37 확정일 10/27 및 D1/공개 재채택은 검증 완료했지만 우주·위성/데이터센터·전력 전용 원자료는 10/23에서 정지되어 있다. 해당 두 테마를 모두 완료 처리하지 않는다.
+- 기존 `theme-space-satellite-r14-missing-only.mjs`는 수집 종료 상수 `2026-10-23`을 가진 **수동 누락 복구 경로**로, 10/27·28 전용 원자료의 상시 수집을 입증하지 못한다. 기존 우주 예약 실행기가 있는지 먼저 점검한다.
+- 데이터센터 R5는 `ZGMINI-PC-Theme-Data-Center-Power` 기존 예약 작업을 사용하며, 실행 폴더 안에 `DATA_CENTER_POWER_R5_SCHEDULED_RESULT.txt` 로그를 남기는 구조다. R76의 Desktop 기본 경로 `NOT_FOUND`는 실제 예약 실행 파일의 중단을 의미하지 않는다. 작업 XML의 Action 경로를 해석해 실제 adjacent 로그와 실행기 SHA를 조사한다.
+- R82는 위 두 전용 경로와 기존 R47·R54·바이오 예약 작업의 `schtasks` XML/요약, 경로 존재/파일 SHA, 전용 원자료 manifest 최종 관측일, 상태 checkpoint의 오류 코드만 **읽기 전용**으로 추출한다. 원시 가격·인증·DB 본문 및 전체 PC 작업 목록은 출력하지 않는다. 스크립트 `scripts/pc-writer/theme-ten-r82-optional-runtime-readonly.mjs`, 실행기 `scripts/pc-writer/THEME_TEN_R82_OPTIONAL_RUNTIME_READONLY.cmd`, 안내 `docs/THEME_TEN_R82_OPTIONAL_RUNTIME_READONLY_KO.txt`, 테스트 `tests/theme-ten-r82-optional-runtime-readonly.test.mjs`를 기존 브랜치에 등록했다.
+- 사용자가 새 폴더에서 3파일 ZIP 압축 해제 후 CMD **한 번** 실행한다. 반환 `THEME_TEN_R82_DIAG_RESULT_*.txt`를 받아 각 경로의 마지막 PASS/첫 FAIL을 확정한다. 진단기는 공급자 조회·원자료 수집/계산·D1 게시·스케줄 변경 모두 하지 않는다. 다음 정규 11:30/13:30 검증도 별도 단계다.
+- `node --test tests/theme-ten-r82-optional-runtime-readonly.test.mjs` PASS, ZIP `unzip -t` PASS, Windows CMD ASCII/CRLF 확인. 패키지 `THEME_TEN_R82_OPTIONAL_RUNTIME_READONLY_20261030.zip` SHA-256 `54ce1c33fe203c8fa4cdfa63045bd2b856de4dbd48d886db315f3b86e72837e5`, Node 파일 SHA-256 `63c60244b916b8bdcc0c30ad1fa182e8046dec8bc7b0121be6c629fbc319bad8`.
+- 상태: **R82 코드/테스트/ZIP/브랜치 등록 완료, Windows PC 진단 실행 미실시**. 기존 10개·ETF·R37 산식·승인 SHA·예약·D1/공개 기록 변경 0. PC 로그 없이 전용 수집 복구 완료 주장 금지.
