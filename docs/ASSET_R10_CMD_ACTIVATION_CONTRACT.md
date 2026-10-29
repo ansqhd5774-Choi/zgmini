@@ -95,3 +95,15 @@ PC에서 `E:\ZGmini\data\pc-writer\config.json`의 `source`, 마지막 실행 `l
 | `D1_READBACK / NEXT_CYCLE` | 별도 운영 증거 대기 |
 
 문제가 발생하면 결과 TXT에서 `LAST PASS`, `FIRST FAIL`, 정확한 `ERROR_CODE`, 변형·복원 여부를 회수한 뒤 **최소 변경만** 재승인한다.
+
+## 10. R6 PC PREFLIGHT 후속 확인 — 읽기 전용 상세 도구 R1
+
+실제 PC에서 2026-10-29 생성한 `ASSET_R10_CMD_PREFLIGHT_RESULT.txt`를 확인했다. `STATUS=STOP`, 첫 중단 원인은 `STOP_SCHEDULER_NOT_CONFIRMED`였다. 승인 Writer HEAD, `config.source`, 마지막 Writer source는 모두 `a477ef304425145f559352af4291e437e3b08a2d`로 일치했고 ledger는 `VERIFIED`였다. 다만 작업 XML에서 활성화 태그가 검출되지 않아 `TASK_ENABLED=UNKNOWN`, 예약 실행 경로는 `wscript.exe` → `run-local-core.vbs`(작업 디렉터리 `E:\ZGmini\projects\zgmini-inflation-r37-stage`)여서 승인 checkout까지의 간접 연결은 미확정이다. `STOP_NODE_PROCESS_AMBIGUOUS`, `STOP_LOCK_PRESENT`도 기록되었다.
+
+- 이 결과만으로 스케줄러가 실제 비활성인지, Node 프로세스가 Writer에 속하는지, 잠금이 유효한지 단정하지 않는다.
+- 후속 ZIP: `ASSET_R10_R6_BLOCKER_DETAIL_R1_20261029.zip` / SHA-256 `9f2469172282633bd9f1f0f99173f4bb268a6f498c6d629bd3ed922f83a6c770`.
+- manifest: `scripts/pc-writer/asset-r10-cmd-r6-detail/package-manifest.json` / SHA-256 `f1131a2b951272cf33382b46f1a6dca7c3631579637ff5a0b1bfdc1e6c1d9686`.
+- 실행: 새 폴더에 압축 해제 → `RUN_R10_BLOCKER_DETAIL.cmd` 정확히 1회 → `ASSET_R10_BLOCKER_DETAIL_RESULT.txt` 반환. PC 상태는 읽기 전용이고 결과 TXT만 패키지 폴더에 기록한다.
+- 검사: `schtasks` XML 및 조회 상태, 승인 SHA checkout의 Git tracked 상태, 허용된 VBS/CMD/JS의 정적 참조 및 파일 해시, 관련 실행 파일/PID, 잠금 파일 이름·경과 시간, ledger·마지막 Writer source. 동적 실행 경로는 추적되지 않을 수 있으며 이것이 설치 허가를 뜻하지 않는다.
+- R1 도구 자체도 manifest의 파일별 해시를 검증한다. ZIP/manifest 자체 신뢰는 위 **외부 SHA-256**으로 확정한다. Node 문법, Linux 비-Windows 차단, ZIP CRC 검증은 수행했으나 **Windows 현장 동작은 미검증**이다.
+- `STATUS=READONLY_DETAIL_COMPLETED`는 추가 정보 수집의 성공일 뿐이다. 기존 R6 INSTALL은 계속 금지하며 위험 상태의 프로세스·잠금·스케줄러를 수정하지 않는다. 상세 결과를 확인한 후 정확한 최소 후속 조치를 정한다.

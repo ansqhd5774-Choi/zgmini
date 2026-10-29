@@ -1,0 +1,27 @@
+{
+  "version": "R10-R6-DETAIL-R1",
+  "kind": "read-only-r6-preflight-blocker-diagnostic",
+  "repository": "ansqhd5774-Choi/zgmini",
+  "targetBranch": "codex/api-site-integration-r1-20261026",
+  "approvedWriterSha": "a477ef304425145f559352af4291e437e3b08a2d",
+  "r10MergedSourceSha": "8a7634a5358cb19280725fe29a977ba4feb44be8",
+  "previousPackageVersion": "R10-R6",
+  "entrypoint": "RUN_R10_BLOCKER_DETAIL.cmd",
+  "runtime": ["Windows cmd.exe", "Node.js >=18", "schtasks.exe", "tasklist.exe", "git.exe"],
+  "writes": ["ASSET_R10_BLOCKER_DETAIL_RESULT.txt (package folder only)"],
+  "prohibited": ["Writer execution", "scheduled task changes", "lock removal", "D1 publication", "website deployment"],
+  "files": [
+    {
+      "path": "RUN_R10_BLOCKER_DETAIL.cmd",
+      "sha256": "7acda7c80f29aa04c8c7f838389e2dd2a855eecb40561bb3c296e4258f458735"
+    },
+    {
+      "path": "r10-blocker-detail.mjs",
+      "sha256": "7f486d36321fae87e07b013673b581f9767905c063dc01dbc1bbc4277ce19bf7"
+    },
+    {
+      "path": "README_KO.txt",
+      "sha256": "9c524c8e233982f6a501434062cdb4f67a6b820fce390f01a0534c82bef91f9c"
+    }
+  ]
+}
