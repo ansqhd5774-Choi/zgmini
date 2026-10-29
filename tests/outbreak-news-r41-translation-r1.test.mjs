@@ -16,6 +16,11 @@ function compileMetadata(){
  const nativeRequire=createRequire(path);
  new Function('require','module','exports',code)(id=>{
   if(id==='lucide-react')return {ExternalLink:()=>null,Newspaper:()=>null,ChevronDown:()=>null};
+  // The production component uses the shared stored-index hook; SSR tests
+  // substitute an empty read result without making network requests.
+  if(id==='../components/use-stored-index')return {
+   useStoredIndex:()=>({payload:null,loading:false,error:null})
+  };
   if(id==='../lib/iran-progress/browser-news-translation-r1.mjs')return {
    needsKoreanTranslation:value=>/[A-Za-z]{3,}/.test(value)&&!/[가-힣]/.test(value),
    translateEnglishNewsText:async()=>{throw Error('SSR must not request translation');}
