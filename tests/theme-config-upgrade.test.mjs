@@ -29,8 +29,22 @@ function setup(t){
  let stageCalls=0;
  const stageBundle=()=>{
   stageCalls++;
+  const required=['scripts/pc-writer/theme-config-tool.mjs',
+   'scripts/pc-writer/theme-config-auto-publish.mjs',
+   'scripts/pc-writer/theme-config-publication-preflight.mjs',
+   'scripts/pc-writer/theme-config-publication-d1.mjs',
+   'scripts/pc-writer/theme-nine-r54-d1-client.mjs',
+   'scripts/pc-writer/theme-biotech-auth-r7.mjs',
+   'worker/public-display-freshness.mjs'];
+  const manifest={};
+  for(const rel of required){
+   const bytes=Buffer.from(`staged ${rel}\n`),
+    dest=path.join(home,'versions','b'.repeat(16),rel);
+   fs.mkdirSync(path.dirname(dest),{recursive:true});
+   fs.writeFileSync(dest,bytes);manifest[rel]=digest(bytes);
+  }
   return {status:'CONFIG_BUNDLE_STAGED_NO_LAUNCHER_CHANGE',
-   home,sourceSha,version:'b'.repeat(16)};
+   home,sourceSha,version:'b'.repeat(16),manifest};
  };
  const run=overrides=>upgradeConfiguredSchedule({dataRoot,sourceSha,
   platform:'win32',getTaskXml:()=>taskXml,stageBundle,
