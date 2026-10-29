@@ -27,7 +27,8 @@ export function r42VerifiedRows({now=Date.now(),readFile=fs.readFileSync}={}){
    createHash('sha256').update(row.sourceUrl).digest('hex')!==row.articleId)||
   new Set(rows.map(row=>row.articleId)).size!==39||
   new Set(rows.map(row=>row.sourceUrl)).size!==39||
-  IRAN_NEWS_METADATA_SOURCE_IDS_R41.some(id=>!rows.some(row=>row.sourceId===id)))
+  ['tasnim','govuk','guardian-iran','dw-world','bbc-middle-east',
+   'aljazeera','un-middle-east'].some(id=>!rows.some(row=>row.sourceId===id)))
   throw Error('R42_STAGING_MANIFEST_INVALID');
  return rows;
 }
