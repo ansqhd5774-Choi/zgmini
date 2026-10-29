@@ -151,3 +151,11 @@
 - **금지/영향:** R50은 신규 테이블/컬럼/TTL/산식/수집 스케줄을 생성하거나 변경하지 않고, R1 snapshot이나 원자료·점수 DB를 쓰지 않는다. Cloudflare 배포·사이트 공개는 전혀 실행하지 않는다. 8개 통과는 기존 R38 키워드 검증의 결과이며 뉴스 목적과의 개별 관련성 평가를 새로 추가하지 않는다.
 - **R50 현재 상태:** 소스/테스트/CMD GitHub 브랜치 반영·해시 확인 완료, **실제 운영 PC R50 실행·D1 삽입·원격 post-write readback은 아직 미실행**. 49행은 예상 검산 수치일 뿐 실 DB 행 수로 주장하지 않는다. 결과 불명확 시 D1 재조회로 확인 후 재시도 여부를 결정한다.
 - **다음:** 사용자가 한 번 R50 CMD 실행 후 결과 TXT 제출 → D1 8행 실제 저장/원본 보존 여부 확인 → 최신 main 대비 최소 파일만 검토·반영 → Cloudflare Git Integration exact deploy 및 API/UI 8건 표시 확인. 브랜치 전체 병합·직접 Wrangler Production Deploy 금지.
+
+## 13. R50 최초 실행 사전 중단과 안전 재개 (2026-10-29)
+
+- 사용자 제출 `IRAN_NEWS_R50_D1_PUBLISH_RESULT.txt`: 5행, `PINNED_SOURCE=35af18a7f1033b54867890944e66edf18348bdd0`, `FINAL_STATUS=R46_LOG_MISSING`. **소스 다운로드/모의 테스트/운영 D1 쓰기 전에 중단**. 반복 실행 금지 방침 유지.
+- R46과 R49 원본 검증 TXT는 모두 앞선 사용자 업로드에 있으며 `NODE_TESTS=PASS` 및 `MEMBERSHIP_TESTS=PASS`, `R49_PREFLIGHT_READY`를 확인한 파일들이다. ZIP로 해당 원본과 최초 R50 실패 로그를 묶어 재제공함. 임의로 원본 로그 내용을 변경하지 않음.
+- 새로운 `scripts/iran-progress/IRAN_NEWS_R50_RECOVERY_ONLY_AFTER_MISSING_R46_20261029.cmd`는 최초 R50 결과가 **정확한 pre-write R46_LOG_MISSING 원본 SHA256** (`2baeac299b5d4a9d49d8d75f9f9ad4fa4cb74702eb09f41abca9cbc2cc86fb4c`)일 때만 새 실행으로 진행한다. 새 결과 `IRAN_NEWS_R50_RECOVERY_PUBLISH_RESULT.txt`를 생성하므로 기존 결과 보존. 기존 R50 pinned source/12 file SHA1 검사/7개 모의 테스트/실제 저장 전 readback 및 unknown outcome STOP 유지.
+- 재개 ZIP `IRAN_NEWS_R50_RECOVERY_COMPLETE_20261029.zip`: 위 전용 CMD, `IRAN_NEWS_R45_R46_TEST_RESULT.txt`, `IRAN_NEWS_R49_MEMBERSHIP_PREFLIGHT_RESULT.txt`, `IRAN_NEWS_R50_D1_PUBLISH_RESULT.txt` 네 파일을 루트에 저장. 압축 무결성 검증 및 GitHub CMD blob `b634b5d0c89bd7a1870cded52451c4a0c529d480` 일치 검증 완료.
+- **상태:** 최초 R50 D1 쓰기 0 확인. 복구 CMD는 작성/검증되었으나 PC 실게시 및 D1 신규 8건 재조회는 아직 미실행. 사용자 PC에서 새 빈 폴더에 ZIP을 풀어 CMD 1회 실행하고 결과 TXT 제출. 이전 실패 결과 삭제/덮어쓰기 금지.
