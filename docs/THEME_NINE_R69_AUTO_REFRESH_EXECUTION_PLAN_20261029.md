@@ -77,3 +77,28 @@ GetMarketHistory 공식 Coverage는 미국 주식·ETF 데이터가 **최소 48�
 - GitHub 운영본은 `main`, 작업은 `codex/theme-fear-greed-integration-20261025`; Cloudflare Git 연동 자동 빌드와 실제 운영 배포는 [Workers Builds 공식 문서](https://developers.cloudflare.com/workers/ci-cd/builds/)대로 별도 검증한다.
 
 > **현재의 정확한 다음 행동:** 스케줄러·R47/R54 최신 로그를 안전하게 수집하고, 이미 제공 중인 27일 ETF 실자료를 기존 비공개 체인으로 검증한다. 28일은 GetMarketHistory 원천에 없는 동안 ‘미수집’으로 표시한다.
+
+## E. R69 실PC 결과 수신 및 R70 후속 진단 — 2026-10-29 13:45 KST
+
+사용자가 제출한 `THEME_NINE_R69_SCHEDULE_READONLY_27909_8326.txt`를 읽었다. 이 파일은 PC 예약 작업과 로그를 **읽기만** 했으며 D1/공급자/예약 작업을 변경하지 않았다.
+
+| 구분 | R69 증거 | 판정 |
+| --- | --- | --- |
+| PC 시간대 | `timezoneIsKorea=true` | PASS |
+| 11:30 비공개 작업 | 실행 시각 `10/29 11:44:50`, 최종 결과 `null` | 시작 기록 존재; 완료·성공 미확정 |
+| 비공개 R48 최근 로그 | `10/28 17:16:15Z` = **10/29 02:16:15 KST** | 최근 실행 시각보다 **약 9시간 29분 이전**, 원인 진단 필요 |
+| 13:30 공개 작업 | 실행 시각 `10/29 13:30:01`, 최종 결과 `0` | Windows 실행 정상 종료 |
+| 공개 R54 최근 로그 | `10/29 04:30:19Z` = `10/29 13:30:19 KST`, `PUBLIC_API_VERIFIED` | 공개 API 검증 성공; `d1Writes=0`이므로 **새 날짜 게시 증거 아님** |
+| 두 작업 설정 | 작업명/시각/기본 실행 명령 일치; `InteractiveToken`; 배터리 제한 2종 true; `StartWhenAvailable=false` | 미실행·놓친 실행을 보충하지 못할 위험. 설정 자체가 오늘 누락의 확정 원인은 아님 |
+
+**현재 주된 미해결 문제:** `11:44` 사적 수집 작업이 실제 어느 경로에서 어떤 파일을 만들었는지, 최신 R47 데이터 기준일이 27일로 확장됐는지 확인되지 않았다. 13:30 공개 작업의 정상 종료와 `PUBLIC_API_VERIFIED`만으로 자동 데이터 갱신 성공을 선언하지 않는다.
+
+후속 **R70 읽기 전용** 도구를 준비했다.
+
+- `scripts/pc-writer/THEME_NINE_R70_CYCLE_CORRELATION_READONLY.cmd`
+- `scripts/pc-writer/theme-nine-r70-cycle-correlation-readonly.mjs`
+- 기존 R69 코드 `scripts/pc-writer/theme-nine-r69-schedule-readonly.mjs`를 같은 폴더에 둔다.
+- 정확한 등록 실행 파일의 **허용된 E: 경로 일치 여부**와 R47·R48·R54 각 최근 3개 로그의 생성 시각·안전한 상태 코드·원시 개수·최근 거래일을 비교한다. 원본 가격, 토큰, 사용자 계정명, 전체 절대 경로는 보고서에 노출하지 않는다.
+- 운영 작업 수정·공급자 GET·D1 읽기/쓰기를 하지 않으며 CMD 실행 로그 이름은 `THEME_NINE_R70_CYCLE_READONLY_*.txt`이다.
+
+**이후 게이트:** R70 로그에 실행 경로·시간 일치 실패가 확인되면 정확한 대상을 백업하는 설치 개선안을 별도 검토한다. 이미 동작하는 작업을 임의로 삭제·재생성하지 않는다. 그리고 27일 원시자료는 SPY 단독이 아닌 승인 63개 ETF 전체 수집·R32 집계·R54 날짜 정렬까지 통과해야 공개 확정일 상승으로 인정한다.
