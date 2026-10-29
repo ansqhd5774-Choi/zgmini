@@ -17,7 +17,7 @@ const xml=(cmd,at='T11:30:00')=>
 test('R73 audits only exact existing 11:30 R48 task action',()=>{
   assert.equal(auditR73ExistingTaskXml(xml('THEME_NINE_R48_PRIVATE_CYCLE.cmd'),
     {target:root}).status,'EXACT_R48');
-  assert.equal(auditR73ExistingTaskXml(xml('THEME_NINE_R73_AUTO_HTTP502_PRIVATE.cmd'),
+  assert.equal(auditR73ExistingTaskXml(xml('THEME_NINE_R73_SCHEDULED_PRIVATE.cmd'),
     {target:root}).status,'ALREADY_R73');
 });
 
