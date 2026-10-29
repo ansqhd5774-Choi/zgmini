@@ -71,3 +71,12 @@
 - **변경 금지:** R3/R5 점수·원장·분류 가감점, R1 기존 스냅샷, 기타 뉴스/테마, Cloudflare Cron/Queue/DNS, 인증 키, 스케줄 간격.
 - **우선순위:** `R45-A` 실측 → `R45-B` 수집기 → `R45-C` 증분 저장 → `R45-D` 안전한 화면 → `R45-E` 자동배포 검증.
 - **이 문서의 상태:** 작업 계획 브랜치 반영 단계. 신규 4개 매체의 자동 수집·39건 이외 D1 신규 저장·11개 매체 사이트 공개 **아직 미실행**.
+
+## 5. 2026-10-29 R45-B 병렬 개발 1차 결과
+
+- **독립 수집 프로브 구현:** `scripts/iran-progress/news-four-source-probe-r45.mjs`. Reuters/AP/Arab News/Anadolu 네 공식 목록을 `Promise.all`로 병렬 조회하며, source 별 성공/실패를 격리한다. HTTPS 도메인·기사 경로·publisher date ISO 형식·본문 존재·최근 14개 KST 날짜·기존 승인 2단계 키워드(1차 OR, 2차 OR)를 확인한다.
+- **회귀 테스트:** `tests/iran-news-four-source-r45.test.mjs` 4개 테스트. Node 22 동일 소스 코드 로컬 모의 시험 4/4 PASS; GitHub 원격 소스 blob `4b1d29a0ab37d97a777c273d6d0ee95d3912365d`가 시험본과 일치함. 이 증거는 **모의 fixture**이지 실 사이트 HTTP/PC 검증이 아니다.
+- **PC 읽기 전용 실행기:** `scripts/iran-progress/IRAN_NEWS_R45_LIVE_READONLY_20261029.cmd`. 고정 GitHub SHA `dd33dc2310c700676af43917f57527d4692199ea`에서 위 프로브만 내려받고 기존 `E:\ZGmini\runtime\node.exe`로 실행. CMD 옆 `IRAN_NEWS_R45_LIVE_READONLY_RESULT.txt`에 시작부터 기록하고 기존 결과를 덮어쓰지 않는다. 실제 Windows 실행은 **미검증**.
+- **운영 변경 없음:** 신규 4개 소스는 정규 R26 출처 레지스트리·R24/R25 운영 호출·R41 공개 API에 **아직 연결하지 않음**. R1 뉴스 키·R41 39행·현재 7개 공개 출처·R3/R5 점수·기존 6시간 작업·Cloudflare 배포 불변.
+- **순서:** R45 PC HTTP 실측(출처별 목록·원문·발행일·본문) → 검증된 매체별 파서 추가 → R24/R25·R26 레지스트리 및 R41 신규 출처 유효성 검사와 기존 7개 READY 보존 회귀 → D1 신규 행 UPSERT/read-back → GitHub main 최소 변경 자동배포 및 API/UI 실제 확인. 실 PC 소스 응답 없이 11개 수집/공개 완료라고 보고하지 않는다.
+- **GitHub 드리프트:** 계획 작성 이후 본 전용 브랜치와 main에는 다수의 상이한 커밋이 존재한다. 전용 브랜치 전체 병합 금지; 확정 범위에 한해 선택 반영한다.
