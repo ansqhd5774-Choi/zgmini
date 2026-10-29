@@ -122,3 +122,14 @@ PC 설치본: `E:/ZGmini/data/pc-writer/theme-config-tool`
 - 기존 10개 레거시 등록 ID/명칭과 겹치지 않는 **배터리 기술** 후보(`battery-technology`, ETF `LIT`+`BATT`, 기준 `SPY`, `ADAPTIVE_R2_PAIR_R3`, 관측 시작 제안 `2025-10-29`)를 조회만 했다. Global X LIT 및 Amplify BATT 발행사 공개 자료에서 ETF 테마·기존 출시 사실을 확인했으나 실제 PC 공급처의 역사 가격 조회는 하지 않았다.
 - 현재 `validateDefinition()`과 10개 레거시 충돌 검사는 **`CANDIDATE_STATIC_PREFLIGHT_PASS`**. 실제 테마 선택, PC 등록, 공급처 데이터, 계산, 공개 승인, D1 게시, 공개 UI 반영은 **전부 0**. 정적 통과가 공급처·권리·운영 성공은 아니다.
 - 사용자에게 첫 실테마/ETF 조합을 확정받기 전에는 파일을 등록하거나 승인 기록을 만들지 않는다. PR #894 CI baseline blocker 및 공개 첫 배포도 별도 게이트로 유지한다.
+
+
+## 2026-10-29 PR #894 검증·GitHub 자동배포 실증
+
+- 사용자 최신 승인에 따라 기준 실패와 신규 변경 영향을 분리했다. PR #894의 `check` job `123469820480`와 동일 기준 `main=b3b2528c`의 job `123460417321`은 모두 이란 뉴스 R41/R42의 `R41_QUALIFIED_COUNT_OR_SOURCE_MISMATCH` 및 `R42_STAGING_MANIFEST_INVALID` 오류가 발생했다. 해당 테스트/이란 뉴스 파일은 PR 8개 변경 파일이 아니다. 기존 CI 오류를 감추거나 비활성화하지 않고 별도 후속 정비 대상으로 보존한다.
+- PR #894의 `ui` job `123469820052`는 `tests/fear-greed-education-browser-r4.mjs`의 모바일 한국 소개문 가시성 검증에서 실패했다. 동일 기준 main의 변경되지 않은 `app/fear-greed/korea/korea-layout-parity-r1.css` 에서는 760px 이하에서 미확장 `.zg-fg-intro`를 `display:none`으로 숨긴다. CI 테스트는 확장 없이 가시성을 기다리므로 기존 CSS/테스트 계약 불일치다. PR은 한국 페이지·CSS·테스트를 수정하지 않았다.
+- 해당 PR의 공개 Reader/차트 단위 테스트와 diff 검증은 PASS. 정확히 8개 파일(추가 6, 기존 파일에 줄 추가 2). 이후 main에 추가된 시장 캘린더 4개 변경과 경로 충돌 없음. 이번 8개 파일에서 유발된 CI 실패는 발견되지 않았다.
+- **PR #894 사용자 승인 병합 완료:** `main` 병합 SHA `93b241c7c2a3e297c34c40544efe8f5f5a867937`. GitHub에 연결된 Cloudflare `Workers Builds: zgmini-migration-candidate-r5` 해당 exact SHA 빌드 **success**. main의 `check`는 기존 이란 뉴스 회귀 실패가 이어지나 `verify`와 `notify`는 success. 기존 CI 실패를 임의 수정하지 않았다.
+- **실제 공개 조회 확인:** `https://zgmini.kr/api/theme-configured`는 이전 404에서 HTTP 200, `{status:PENDING,version:ZGMINI_CONFIGURED_THEMES_READER_V1,themes:[]}` 로 전환됐다. `https://zgmini.kr/api/theme-fear-greed`는 HTTP 200/READY; 브라우저 `/theme-fear-greed/`에서 공개 10개·기존 순위/차트 렌더링을 확인했다. `.zg-tfg-configured`는 0개로, 승인 게시 레코드가 없어 숨김이 정상이다. 코드/공개 Reader 배포는 완료, **실신규테마 운영 연결은 미완료**.
+- PC 기존 사용자 첨부 `PACKAGE_RESULT(2).txt`에서 `INSTALL_STATUS=CONFIGURED_AUTO_PUBLISH_UPGRADE_INSTALLED`, `REGISTERED_THEMES_EXISTING=0`, `D1_WRITES=0`, 예약 XML 변경 없음. 이 결과는 설치 당시의 증거이며 현재 PC 작업 실행·승인·D1 게시·readback 증거는 아니다.
+- **NEXT:** 사용자와 실제 첫 테마·ETF 2종을 확정(배터리 기술/LIT+BATT는 아직 미확정 후보). 별도 공개 권리/운영자 승인 후 기존 공통 등록·수집·계산을 PC에서 수행하여 **실제 source SHA·calculation proof → publication preflight → D1 CAS write → exact readback → 공개 API READY/실제 점수 → 화면 차트 → 다음 정규 실행**을 차례로 확인한다. 공개 승인 0건일 때 테스트용 승인이나 D1 샘플 값을 만들지 않는다. 기존 10개/R32/예약 XML, 최초 1회 한정 통합 브랜치는 보존하며 후속 작업 브랜치는 `codex/theme-fear-greed-integration-20261025` 유지.
