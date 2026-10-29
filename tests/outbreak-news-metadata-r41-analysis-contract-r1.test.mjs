@@ -21,13 +21,26 @@ test('R41 metadata cards read only the separate provisional analysis API',()=>{
 
 test('AI analysis is marked provisional; unassessed news remain visible',()=>{
  assert.match(source,/AI 잠정 평가/);
- assert.match(source,/className="ob57-news-evaluation" style=\{\{gridArea:"desc",minWidth:0\}\}/);
+ assert.match(source,/className=\{styles\.evaluation\}/);
+ assert.match(source,/keyPointKo/);
+ assert.match(source,/keyFactsKo/);
+ assert.match(source,/핵심 사실/);
+ assert.match(source,/왜 중요한가\?/);
+ assert.match(source,/기사 요약 자세히 보기/);
  assert.match(source,/analysis\.summaryKo/);
  assert.match(source,/analysis\.interpretationKo/);
- assert.match(source,/style=\{\{marginTop:4\}\}>해석:/);
  assert.match(source,/분석 대기/);
  assert.match(source,/R5 전쟁 심리 점수 산식에 반영하지 않습니다/);
  assert.match(source,/target="_blank" rel="noopener noreferrer" title="원문 기사 사이트 열기"/);
+});
+
+test('analysis cards use accessible R41-only larger text without global CSS changes',()=>{
+ const css=readFileSync(new URL('../app/outbreak-news-evaluation-r2.module.css',import.meta.url),'utf8');
+ assert.match(css,/font-size:14px/);
+ assert.match(css,/font-size:13\.5px/);
+ assert.match(css,/:focus-visible/);
+ assert.match(css,/\.articleReady/);
+ assert.doesNotMatch(css,/display:none|visibility:hidden/);
 });
 
 test('existing Korean title translation and pagination remain intact',()=>{
@@ -36,4 +49,18 @@ test('existing Korean title translation and pagination remain intact',()=>{
  assert.match(source,/expanded\?items:items\.slice\(0,10\)/);
  assert.match(source,/뉴스 더보기/);
  assert.match(source,/MyMemory/);
+});
+
+test('the actual Iran news renderer mounts the evaluated card without losing current filters and links',()=>{
+ const current=readFileSync(new URL('../app/outbreak-news-r57.tsx',import.meta.url),'utf8');
+ const container=readFileSync(new URL('../app/outbreak-news-container-r1.tsx',import.meta.url),'utf8');
+ assert.match(container,/<OutbreakNewsUI eventId=\{eventId\} items=\{items\}/);
+ assert.match(current,/IranNewsEvaluationCard,validAnalysis/);
+ assert.match(current,/eventId==="iran"&&items\.length>0/);
+ assert.match(current,/analysis\?<IranNewsEvaluationCard analysis=\{analysis\}\/>/);
+ assert.match(current,/data-analysis-status=\{analysis\?"READY":"PENDING"\}/);
+ assert.match(current,/newsPageSize\(wide\)/);
+ assert.match(current,/sourceRightsAttribution\(item\)/);
+ assert.match(current,/aria-label=\{`\$\{item\.source\} 기사 원문 보기/);
+ assert.match(current,/role="group" aria-label="뉴스 영향 필터"/);
 });
