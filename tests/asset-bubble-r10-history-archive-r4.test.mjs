@@ -1,3 +1,4 @@
+import fs from 'node:fs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {parseAssetR10ArchivedAuditLog,validateArchivedAssetR10AgainstCurrent,
@@ -74,4 +75,14 @@ test('R4 exactly compares all six D1 raw factors including previous dates',()=>{
 test('R4 preserves genuine zero rather than manufacturing a null',()=>{
  const a=snapshot();a.factors[3].points[2].value=0;
  assert.equal(validateArchivedAssetR10AgainstCurrent(a,current(a)),a);
+});
+
+test('R4 CMD pins checksum of actual R4 runner rather than retired R1 runner',()=>{
+ const cmd=fs.readFileSync(new URL('../scripts/pc-writer/ASSET_R10_1Y_HISTORY_D1_APPLY_R4.cmd',import.meta.url),'utf8');
+ const expected='hash-object scripts/pc-writer/ASSET_R10_1Y_HISTORY_ARCHIVED_D1_ONE_SHOT_R4.mjs';
+ assert.equal(cmd.split(expected).length-1,1);
+ assert.doesNotMatch(cmd,/hash-object scripts\/pc-writer\/ASSET_R10_1Y_HISTORY_D1_ONE_SHOT_R1\.mjs/);
+ assert.match(cmd,/413bd96d27887a3620794a81da0f5899c4fe7c1a/);
+ assert.match(cmd,/--dry-run/);
+ assert.equal((cmd.match(/--apply --confirm-asset-r10-history-d1-write/g)||[]).length,1);
 });
