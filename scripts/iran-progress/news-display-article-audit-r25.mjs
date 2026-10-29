@@ -5,6 +5,7 @@ import {fileURLToPath} from 'node:url';
 import {boundedRead} from './sources.mjs';
 import {auditIranMultisourceCollectionR24,newsR24SourceUrl} from './news-display-multisource-audit-r24.mjs';
 import {matchesIranTwoStageKeywordsR38} from './news-two-stage-keywords-r38.mjs';
+import {iranNewsOffTopicReasonR1} from '../../lib/iran-progress/news-offtopic-exclusions-r1.mjs';
 import {kstDayWindow,kstNewsDay,NEWS_PC_RETENTION_DAYS} from '../../lib/iran-progress/news-display-r1.mjs';
 
 const MAX_ARTICLES=70;
@@ -162,12 +163,13 @@ function assessedArticle({sourceId,sourceUrl,title,publishedAt,dateEvidence,body
  const titleVerified=!!title&&title.length<=500;
  const bodyVerified=body.trim().length>0;
  // Relevance requires only one primary and one secondary keyword across title/body.
- const scopeVerified=matchesIranTwoStageKeywordsR38([title,body].join(' '));
+ const offTopicReason=iranNewsOffTopicReasonR1(title);
+ const scopeVerified=matchesIranTwoStageKeywordsR38([title,body].join(' '))&&!offTopicReason;
  const {start,end}=kstDayWindow(now,NEWS_PC_RETENTION_DAYS);
  const dateKey=publishedAt?kstNewsDay(Date.parse(publishedAt)):null;
  const withinRetentionWindow=dateKey===null?null:dateKey>=start&&dateKey<=end;
  const status=!titleVerified?'TITLE_UNVERIFIED':!publishedAt?'FIRST_PUBLICATION_UNVERIFIED':
-  !bodyVerified?'ARTICLE_BODY_UNVERIFIED':!scopeVerified?'ARTICLE_OUT_OF_SCOPE':
+  !bodyVerified?'ARTICLE_BODY_UNVERIFIED':!scopeVerified?(offTopicReason?'ARTICLE_BLOCKED_OFF_TOPIC':'ARTICLE_OUT_OF_SCOPE'):
    !withinRetentionWindow?'OUTSIDE_30_DAY_WINDOW':'ARTICLE_METADATA_REVIEWED';
  return {sourceId,sourceUrl,status,originalTitle:titleVerified?title:null,
   originalTitleVerified:titleVerified,publisherDeclaredPublishedAt:publishedAt,
@@ -175,6 +177,7 @@ function assessedArticle({sourceId,sourceUrl,title,publishedAt,dateEvidence,body
   withinRetentionWindow,
   articleBodyAccessible:bodyVerified,bodyCharacterCount:body.length,
   articleBodyEvidence:bodyEvidence,scopeVerifiedFromArticle:scopeVerified,
+  offTopicReason,
   rightsVerified:false,displayEligible:false,translationModified:false};
 }
 
