@@ -2,6 +2,8 @@
 
 ## 목표
 
+공통 CMD 대안 선택은 [CMD_EXECUTION_PLAYBOOK.md](CMD_EXECUTION_PLAYBOOK.md), 현재 도구의 일반챗용 1회 전환 패키지 지시문은 [THEME_CONFIG_CMD_PACKAGE_TASK.md](THEME_CONFIG_CMD_PACKAGE_TASK.md)를 따른다. 개별 브랜치를 모두 수정하는 방식 대신 이 중앙 원본을 참조한다.
+
 기존 공급처와 승인 산식을 쓰는 새 테마마다 일반챗 → 개별 코드/ZIP → Codex 설치를 반복하지 않는다. 일반챗은 데이터 전용 설정을 준비하고, 설치된 PC 공통 도구가 검증·등록·수집·계산한다. 새로운 API·미승인 산식은 이 흐름으로 위장하지 않는다.
 
 저장소: `ansqhd5774-Choi/zgmini`  

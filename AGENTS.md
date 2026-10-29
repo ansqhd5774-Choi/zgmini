@@ -119,6 +119,7 @@ ZGMINI PLUGIN & EXECUTION RULES — COMPACT R5 FINAL
 - SEO 데이터로 Runtime 오류 판정 금지.
 
 ## 13. DigitalOcean / RDC / Windows
+- 모든 브랜치의 CMD/일반챗 작업 방식은 공통 원본 `codex/theme-fear-greed-integration-20261025:docs/CMD_EXECUTION_PLAYBOOK.md`를 함께 확인한다. 기존 실행기 호출·Git 검증 checkout·독립 ZIP+manifest·단계별 전환·bounded/resume·사용자 1회 실행 등 목표에 맞는 방식을 검토하며, PC 직접 접근 불가만으로 무조건 Codex 작업을 요구하지 않는다. 문서 참조를 위해 다른 브랜치 HEAD를 일괄 변경하지 않는다. 보호 검사·승인·인증 제한을 우회하는 수단으로 CMD를 사용하지 않는다.
 - DigitalOcean NON-DEFAULT. 비용 발생 리소스 생성 전 승인.
 - RDC 사용·실행·설치·연결·Online 요구 금지. 로컬 파일/Git/CMD는 로컬 Codex, 로그인·GUI는 사용 가능한 Computer Use를 사용한다.
 - 일반 채팅의 로컬 접근 제한은 AUTOMATION_BLOCKED이며 PC writer OFFLINE을 뜻하지 않는다.
