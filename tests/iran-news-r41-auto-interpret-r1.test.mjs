@@ -217,8 +217,51 @@ test('HTTP 200 with malformed evidence quote retries with a fixed corrective hin
  assert.equal(result.impact,'neutral');
  assert.equal(payloads.length,2);
  assert.equal(payloads[0].prompt.includes('CORRECTION REQUIRED'),false);
- assert.match(payloads[1].prompt,/CORRECTION REQUIRED: Copy each supportingQuotes/);
+ assert.match(payloads[1].prompt,/CORRECTION REQUIRED: Select 1-3 DISTINCT integer supportingQuoteIds/);
+ assert.equal(payloads[1].format.properties.supportingQuoteIds.type,'array');
  assert.ok(!payloads[1].prompt.includes('a fabricated quote not in source'));
+});
+
+test('bounded fallback lets the model select exact source quote IDs instead of paraphrasing',async()=>{
+ const requests=[];
+ const {supportingQuotes,...draft}=proposal;
+ const result=await generateR41ModelAnalysis({originalTitle:item.title,articleBody},
+  {fetcher:async(_,options)=>{
+   const request=JSON.parse(options.body);
+   requests.push(request);
+   if(requests.length===1)return {ok:false,status:500,
+    json:async()=>({error:'prediction aborted, token repeat limit reached'})};
+   const input=JSON.parse(request.prompt.split('\n\nCORRECTION REQUIRED:')[0]);
+   assert.ok(input.quoteCandidates.length>=2);
+   assert.ok(input.quoteCandidates.every((row,index)=>row.id===index+1&&
+    articleBody.includes(row.text)));
+   return {ok:true,json:async()=>({response:JSON.stringify({
+    ...draft,supportingQuoteIds:[2],
+   })})};
+  }});
+ assert.equal(requests.length,2);
+ assert.deepEqual(result.supportingQuotes,[quote]);
+ assert.equal(result.summaryKo,proposal.summaryKo);
+});
+
+test('model cannot select a fabricated or out-of-range quote ID',async()=>{
+ const {supportingQuotes,...draft}=proposal;
+ let calls=0;
+ await assert.rejects(generateR41ModelAnalysis({originalTitle:item.title,articleBody},
+  {fetcher:async()=>{calls++;return {ok:true,json:async()=>({response:JSON.stringify({
+   ...draft,supportingQuoteIds:[999],
+  })})};}}),/NEWS_R41_ANALYSIS_MODEL_OUTPUT_INVALID/);
+ assert.equal(calls,3);
+});
+
+test('model cannot select duplicate quote IDs as separate proof',async()=>{
+ const {supportingQuotes,...draft}=proposal;
+ let calls=0;
+ await assert.rejects(generateR41ModelAnalysis({originalTitle:item.title,articleBody},
+  {fetcher:async()=>{calls++;return {ok:true,json:async()=>({response:JSON.stringify({
+   ...draft,supportingQuoteIds:[1,1],
+  })})};}}),/NEWS_R41_ANALYSIS_MODEL_OUTPUT_INVALID/);
+ assert.equal(calls,3);
 });
 
 test('invalid JSON can recover on a bounded retry but no evidence gate is bypassed',async()=>{
