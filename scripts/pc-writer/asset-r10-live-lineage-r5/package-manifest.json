@@ -1,0 +1,25 @@
+{
+  "schema": "zgmini-asset-r10-lineage-r5",
+  "approvedSource": "a477ef304425145f559352af4291e437e3b08a2d",
+  "repository": "ansqhd5774-Choi/zgmini",
+  "branch": "codex/api-site-integration-r1-20261026",
+  "scope": "READONLY_PC_PROCESS_LINEAGE_AND_PUBLICATION_GATE",
+  "files": [
+    {
+      "path": "r10-live-lineage-readonly.mjs",
+      "sha256": "c106c6196708c80c5c1a6a54ebb89798f74a607294f027d69aee5275b1c288cf"
+    },
+    {
+      "path": "RUN_R10_LINEAGE_READONLY.cmd",
+      "sha256": "f77e79bfe25ca5b94e70c12ee100051ec07487134a31062e5fb1e726dee206bd"
+    },
+    {
+      "path": "README_KO.txt",
+      "sha256": "48773a049210b28ce2d0dd4ecb96c22e5e97fe2ef62bf08e1941830236e311dd"
+    },
+    {
+      "path": "tests/r10-live-lineage-readonly.test.mjs",
+      "sha256": "d0cbf9483d6c0f7e6edf24e8d6b8de5b108fc844c1a4604f77402afd61052533"
+    }
+  ]
+}

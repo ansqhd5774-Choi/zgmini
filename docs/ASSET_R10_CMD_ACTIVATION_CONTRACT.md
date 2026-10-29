@@ -198,3 +198,18 @@ R4 사용자 Windows 스크린샷에서 `C:\nvm4w\nodejs\node.exe`가 현재 Win
 - **결론: R6 INSTALL 실행 불가.** 승인 checkout에 코드를 삽입하거나 config.source를 전환하지 않았다. 예약 작업·프로세스·잠금·원장·D1은 변경하지 않았다.
 
 다음 작업은 예약 구성 변경이나 임의 프로세스 종료가 아니라 **실제 정규 Writer 호출 출처의 런타임 증거** 확인이다. 정규 실행 로그 또는 PID의 부모-자식 실행 증거가 확보되고, 별도의 안전한 유휴 시점에서 lock/ledger/source를 다시 확인한 경우에만 선택 적용 여부를 재판정한다. `AFTER_SHA=NOT_APPLIED`, `HOOK_STATUS=ABSENT`, `R10_SIDECAR_RAW/HISTORY=NOT_OBSERVED`, `D1_READBACK/NEXT_CYCLE=NOT_VERIFIED`로 유지한다.
+
+## 16. R5 실제 부모 실행 경로·게시 분기 판독 패키지 — 미설치
+
+R4의 정적 연결 검사는 실제 `local-cycle.mjs`의 부모 실행 경로를 확정하지 못했다. 또한 현재 브랜치의 `local-cycle.mjs`에서 `run-local.mjs` 호출은 `lane==='core' && publishAllowed` 조건에 종속된다. 최근 마지막 Writer 성공 기록만으로 **정규 Core 작업이 Writer 게시를 매번 호출한다고 판단할 수 없다**.
+
+이를 보완하기 위해 기존 검사 결과와 소스만을 재사용하는 읽기 전용 R5 패키지를 준비했다.
+
+- ZIP: `ASSET_R10_LIVE_LINEAGE_READONLY_R5_20261030.zip`, SHA-256 `e262cd7b19d0a7e17057242730e8a896df5c33cc94bca547507ffa97c2b2d1b5`.
+- manifest: `scripts/pc-writer/asset-r10-live-lineage-r5/package-manifest.json`, SHA-256 `0fa06adb4de32f39bf09a2d7857966bc371074ff884844b41b465db2b90dd726`.
+- `RUN_R10_LINEAGE_READONLY.cmd` 1회 실행 → 같은 폴더의 `ASSET_R10_LINEAGE_RESULT.txt` 제출. 런처 실패 시 `ASSET_R10_LINEAGE_LAUNCH_RESULT.txt`만 제출.
+- 조회 내용: `local-cycle.lock` PID와 살아 있는 `local-cycle.mjs`·`run-local.mjs`의 부모 PID·실행 역할·`--korea`/`--publish` 플래그, 부모 PID 재사용에 대한 생성시각 방어, 기존 Core/Korea/비활성 Writer 예약 상태, 최신 `local-cycle-last-run`의 lane·publishAllowed·publicationExit, 승인 source/ledger/R10 훅 존재 여부. **프로세스 명령줄 원문·비밀값은 결과에 기록하지 않는다.**
+- 대상 프로세스를 중단/대기/실행하지 않고, scheduler/VBS/config/잠금/SQLite/D1/source를 변경하지 않는다. Windows 사용자 CMD는 기존 검증된 `E:\ZGmini\runtime\node.exe`를 직접 호출한다.
+- 코드 단위 회귀검사 5건, package hash self-check, Linux 비-Windows STOP, ZIP CRC 검증 통과. **Windows 현장 실행은 아직 하지 않았다.**
+
+R5는 `CORE_VBS_TO_PUBLISH_CYCLE_OBSERVED`를 포착하더라도 **설치 승인으로 승격하지 않는다**. 프로세스가 없거나 부모가 먼저 종료한 경우에는 실행 출처가 여전히 미확정일 수 있다. 정규 Writer 연결 증명과 유휴·잠금 안전 검증이 완료되지 않은 상태에서는 R6 `RUN_INSTALL.cmd`를 실행하지 않는다. 만약 Core의 실제 예약 경로가 승인 Writer 게시를 호출하지 않는 것으로 확정되면, 기존 제한을 벗어나는 예약/VBS/R38 경로 변경을 임의 수행하지 않고 사용자에게 최소 변경 범위 승인을 요청한다.
