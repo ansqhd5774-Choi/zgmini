@@ -145,7 +145,8 @@ function articleBody(html,sourceId,schema){
  if(fallback)return {text:fallback,evidence:'PUBLISHER_EDITORIAL_BODY'};
  return {text:'',evidence:'NO_VERIFIED_EDITORIAL_BODY'};
 }
-export function inspectR45Article(sourceId,url,html,{now=Date.now()}={}){
+export function inspectR45Article(sourceId,url,html,{now=Date.now(),days=14}={}){
+ if(!Number.isSafeInteger(now)||![14,30].includes(days))throw Error('R45_ARTICLE_WINDOW_INVALID');
  if(!normalizeR45ArticleUrl(sourceId,url)||typeof html!=='string'||html.length>MAX_HTML||
   !/<html\b|<!doctype html/i.test(html))return {sourceId,url,status:'ARTICLE_FORMAT_INVALID'};
  const schema=articleJsonLd(html);
@@ -158,7 +159,7 @@ export function inspectR45Article(sourceId,url,html,{now=Date.now()}={}){
  const offsetDays=validDate?(Date.parse(kstDate(now)+'T00:00:00Z')-Date.parse(kstDate(when)+'T00:00:00Z'))/86400_000:null;
  const status=!title||title.length>500?'TITLE_UNVERIFIED':!validDate?'FIRST_PUBLICATION_UNVERIFIED':
   !text?'ARTICLE_BODY_UNVERIFIED':!PRIMARY.test(title+' '+text)||!SECONDARY.test(title+' '+text)?'ARTICLE_OUT_OF_SCOPE':
-   offsetDays<0||offsetDays>=14?'OUTSIDE_14_DAY_WINDOW':'ARTICLE_METADATA_REVIEWED';
+   offsetDays<0||offsetDays>=days?(days===14?'OUTSIDE_14_DAY_WINDOW':'OUTSIDE_30_DAY_WINDOW'):'ARTICLE_METADATA_REVIEWED';
  return {sourceId,url,status,bodyEvidence,dateEvidence:rawDate?'PUBLISHER_DECLARED_ZONED_DATE':'NONE',
   ...(status==='ARTICLE_METADATA_REVIEWED'?{title,publishedAt:new Date(when).toISOString()}:{}),
   rightsVerified:false,displayEligible:false};
