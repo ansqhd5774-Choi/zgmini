@@ -265,7 +265,7 @@ test('model cannot select a fabricated or out-of-range quote ID',async()=>{
   {fetcher:async()=>{calls++;return {ok:true,json:async()=>({response:JSON.stringify({
    ...draft,supportingQuoteIds:[999],
   })})};}}),/NEWS_R41_ANALYSIS_MODEL_OUTPUT_INVALID/);
- assert.equal(calls,3);
+ assert.equal(calls,4);
 });
 
 test('model cannot select duplicate quote IDs as separate proof',async()=>{
@@ -275,7 +275,7 @@ test('model cannot select duplicate quote IDs as separate proof',async()=>{
   {fetcher:async()=>{calls++;return {ok:true,json:async()=>({response:JSON.stringify({
    ...draft,supportingQuoteIds:[1,1],
   })})};}}),/NEWS_R41_ANALYSIS_MODEL_OUTPUT_INVALID/);
- assert.equal(calls,3);
+ assert.equal(calls,4);
 });
 
 test('invalid JSON can recover on a bounded retry but no evidence gate is bypassed',async()=>{
@@ -287,13 +287,13 @@ test('invalid JSON can recover on a bounded retry but no evidence gate is bypass
  assert.equal(calls,2);
 });
 
-test('three HTTP 200 model outputs with fabricated quotes are all rejected',async()=>{
+test('invalid evidence across all structured attempts remains blocked',async()=>{
  let calls=0;
  await assert.rejects(generateR41ModelAnalysis({originalTitle:item.title,articleBody},
   {fetcher:async()=>{calls++;return {ok:true,json:async()=>({response:JSON.stringify({
    ...proposal,supportingQuotes:['fabricated proof never present in source'],
   })})};}}),/NEWS_R41_ANALYSIS_MODEL_OUTPUT_INVALID/);
- assert.equal(calls,3);
+ assert.equal(calls,4);
 });
 
 test('unrelated HTTP 500 never triggers retry or leaks the raw response',async()=>{
@@ -315,7 +315,45 @@ test('fallback output without verbatim source proof remains blocked',async()=>{
    return {ok:true,json:async()=>({response:JSON.stringify({...proposal,
     supportingQuotes:['a quote not found in verified source evidence']})})};
   }}),/NEWS_R41_ANALYSIS_MODEL_OUTPUT_INVALID/);
- assert.equal(calls,3);
+ assert.equal(calls,4);
+});
+
+test('small local model can recover via separate structured facts and exact quote IDs',async()=>{
+ const payloads=[];
+ const {supportingQuotes,...core}=proposal;
+ const result=await generateR41ModelAnalysis({originalTitle:item.title,articleBody},
+  {fetcher:async(_,options)=>{
+   const payload=JSON.parse(options.body);
+   payloads.push(payload);
+   if(payloads.length<=3)return {ok:true,
+    json:async()=>({response:JSON.stringify({...proposal,
+     supportingQuotes:['invented evidence absent in article']})})};
+   if(payloads.length===4)return {ok:true,
+    json:async()=>({response:JSON.stringify(core)})};
+   const inputs=JSON.parse(payload.prompt);
+   assert.ok(inputs.quoteCandidates.some(row=>row.text===quote));
+   assert.equal(payload.format.properties.supportingQuoteIds.items.maximum,
+    inputs.quoteCandidates.length);
+   return {ok:true,json:async()=>({response:JSON.stringify({
+    supportingQuoteIds:[inputs.quoteCandidates.find(row=>row.text===quote).id]})})};
+  }});
+ assert.equal(payloads.length,5);
+ assert.deepEqual(result.supportingQuotes,[quote]);
+ assert.deepEqual(result.keyFactsKo,proposal.keyFactsKo);
+ assert.equal(payloads[3].format.required.length,6);
+ assert.equal(payloads[4].format.required.length,1);
+});
+
+test('two-step fallback never publishes source-unsupported numbers',async()=>{
+ let calls=0;
+ const {supportingQuotes,...core}=proposal;
+ await assert.rejects(generateR41ModelAnalysis({originalTitle:item.title,articleBody},
+  {fetcher:async()=>({ok:true,json:async()=>({response:JSON.stringify(
+   ++calls<=3?{...proposal,supportingQuotes:['invented source evidence']}:
+   {...core,keyFactsKo:[core.keyFactsKo[0],
+    '회의에 999명이 참석했다는 공식 발표가 있었다.']})})})}),
+  /NEWS_R41_ANALYSIS_NEW_NUMBER/);
+ assert.equal(calls,4);
 });
 
 test('source evidence backlog is explicit; no false ready status',async()=>{
