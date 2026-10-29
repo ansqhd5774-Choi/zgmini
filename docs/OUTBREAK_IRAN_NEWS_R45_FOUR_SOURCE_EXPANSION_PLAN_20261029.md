@@ -229,3 +229,18 @@
 - **확정한 코드 원인:** GitHub `main`의 `lib/iran-progress/news-metadata-r41.mjs`가 여전히 7 sourceId만 유효 검증하므로 신규 `arabnews`는 `visibleIranMetadataRowsR41`에서 제외. `worker/iran-news-metadata-public-r41.mjs`는 allSeven/requiredSourceCount=7 계약, `app/outbreak-news-container-r1.tsx`는 sourceCount===7 하드코딩으로 R41 UI 선택 제한. 이는 신규 8행 D1 저장 실패가 아님.
 - **브랜치 대응:** 기존 브랜치에 11개 허용 `lib`, sourceCount 실제값/READY-if-any `worker`는 기구현. `app/outbreak-news-container-r1.tsx`를 2026-10-29 당시 최신 `main`(평가 UI/번역 연계 포함) 기반으로 갱신하되 7개 고정 조건만 제거(브랜치 커밋 `03f86c4cfd3c95ac005d55640fd6a803eb66b433`). 다른 브랜치 생성 없음.
 - **미완료 게이트:** 최신 main의 변경을 보존하여 `lib/worker/container`와 회귀 테스트를 파일별 selective recovery해야 함. Cloudflare Git integration repo/main, 정확한 deployment, 빌드·공개 API/UI 최종 확인이 필요. 이 단계에서는 main/Cloudflare 배포/DNS/점수·스케줄 변경 없음. 운영 연결 게이트가 확인되지 않으면 배포했다고 보고하지 않는다.
+
+
+## 21. 작업별 실행 방식·패키지 결정 (2026-10-29)
+
+- **중앙 공통 기준:** [CMD_EXECUTION_PLAYBOOK.md](https://github.com/ansqhd5774-Choi/zgmini/blob/codex/theme-fear-greed-integration-20261025/docs/CMD_EXECUTION_PLAYBOOK.md). 공통 전문을 이 문서·브랜치에 복제하지 않는다. 이 절은 **이란 R41 11개 매체 확장 작업만의 실행 명세**이다.
+- **개발 기준:** `ansqhd5774-Choi/zgmini` 최신 `main`과 기존 브랜치 `codex/outbreak-iran-news-retention-r1-20261026`를 각 단계에서 원격 재조회한다. 중앙 지침 기준 커밋은 `5869af6a60a93ea64b9253d80794ecbda9102372`; 이는 다른 브랜치의 운영 소스 SHA가 아니다. 사용자 PC 운영 checkout/예약 등록 SHA는 여기서 직접 검사하지 않았으며 R55 PIN과 동일하다고 추정하지 않는다.
+- **사용자 승인 범위:** 기존 7개를 보존한 11개 매체 sourceId 지원, 검증된 Arab News 메타데이터 8건의 R41 D1 저장, 후속 공개 reader/UI 최소 연결. 점수·R1 원장·기존 스케줄러·DNS·배포 방식 변경은 승인하지 않았다. Reuters/AP/Anadolu의 미검증 기사를 숫자나 데이터로 보충하지 않는다.
+- **기존 실행기/검증기:** `news-metadata-schema-expand-r53.mjs`(11개 CHECK 확장), `news-metadata-publish-r54.mjs`(8개 원자적 INSERT/조회), `IRAN_NEWS_R55_RECOVERY_PUBLISH_ONCE_20261029.cmd`(원본 R46/R49 증거 복구 후 사용자 PC 1회 실행). R55 실측 `44→52`, `8/8`, archive39/R1 보존 PASS; 이미 완료된 D1 쓰기 작업에 **새 CMD 또는 재게시 패키지가 필요하지 않다**. 이 CMD들의 재실행 금지.
+- **현재 남은 작업에 선택한 방식:** **GitHub 파일별 selective recovery + 테스트 + 별도 Cloudflare Git Integration 배포/공개 검증**. R41의 `lib/iran-progress/news-metadata-r41.mjs`, `worker/iran-news-metadata-public-r41.mjs`, `app/outbreak-news-container-r1.tsx`의 승인된 11개 대응 부분만 최신 main에 맞춰 검토한다. 최신 main의 UI 분석/번역/페이징 코드는 유지한다. PC용 ZIP/CMD로 main 반영이나 Cloudflare 배포를 대체하지 않는다.
+- **PREFLIGHT:** 최신 main SHA, 이 브랜치 최신 SHA, 3개 대상 파일의 현재 Blob SHA, 기존 R41 API contract, 중앙 실행 기준, 실제 Cloudflare 연결 repo/branch(main) 및 진행 중 build/deployment 확인. 서로 다르거나 확인할 수 없으면 그 게이트는 **미검증**으로 두고 임의 배포하지 않는다.
+- **STAGE/TEST:** 7개 고정 sourceId 필터 제거와 11개 registry만 반영한다. 기존 39개 R41 fixture는 원본 7개만 포함하므로 신규 11개 지원 여부와 구 7개 fixture 보존을 각각 테스트한다. `status=READY`는 1개 이상의 유효 기사, 출처별 0건은 오류가 아니다. R1 fallback, AI 잠정 평가와 제목 번역의 렌더 경로를 보존한다. 데이터 삭제·D1 재게시·스키마 재생성 없이 회귀 검증한다.
+- **APPLY/VERIFY:** 적용 시 각 파일의 **예상 기존 Blob SHA**가 실제 main과 일치할 때만 선별 변경한다. main 최신 변동 시 stale overwrite STOP. Cloudflare build/deployment ID, API `/api/outbreak-news/iran/r41`의 `configuredSourceCount=11`/Arab News 기사 표시, 실제 `/outbreak/?event=iran` UI 및 R1·점수 비변경을 각각 확인한다. GitHub commit 성공·fixture PASS·HTTP 200만으로 Production 완료를 선언하지 않는다.
+- **막혔을 때:** 일반챗에서 PC/D1 직접 접근이 막힌 것은 운영 실패가 아니다. 추가 PC 조사가 진짜 필요할 때에만 승인된 기존 조회 실행기를 우선 사용하고, 불가능하면 소스 SHA/의존/manifest/한국어 안내가 검증된 일회성 ZIP+CMD/Node helper를 제공한다. 잠금/실행 중 상태 검사, 예상 기존 해시, 백업 및 SHA, readback, STOP 후 무단 재실행 금지를 유지한다. 수집 backfill이 필요하면 기존 checkpoint의 bounded resume를 검토한다.
+- **증거 구분:** R55 = PC 테스트·운영 D1 INSERT/readback 완료. 공개 API는 직전 조사에서 HTTP 200이지만 7개 매체만 반환되어 **UI/API 신규 반영 실패**. GitHub 브랜치의 11개 대응 소스는 Production 배포 증거가 아니다. 새 main/Cloudflare 반영과 다음 정규 수집은 검증 완료 전까지 미완료로 보고한다.
+- **사용자 실행 안내:** 현재 이 작업에 추가 로컬 실행은 **0회**이다. 향후 사용자 실행이 필요해지면 목적·변경범위·정확한 폴더/파일·입력·실행 횟수·기대값·STOP 조건·금지사항·회수할 최소 결과 10개를 함께 제공한다. 기존 R53/R54/R55·R50 배치의 재실행, 잠금 삭제, 데이터 초기화, 인증 우회는 금지한다.
