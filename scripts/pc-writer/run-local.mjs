@@ -212,6 +212,19 @@ try{
    if(!check||hash(JSON.parse(check.body).payload)!==hash(envelope.payload))throw Error('LOCAL_PROJECTION_PUBLICATION_MISMATCH');
    });
   }
+  // Independently publish the two already-approved R10 display-only D1 sidecars.
+  // The scored R10 projection must have passed its own publication/readback;
+  // missing/stale content aborts this side lane, not other domains.
+  if(report.assetR10?.status==='READY'){
+   await attemptOutput(report,'asset-r10-sidecars-publication',async()=>{
+    const r10=readAssetR10Projection(base);
+    if(r10.status!=='READY')throw Error('ASSET_R10_SIDECAR_RELEASE_NOT_READY');
+    const {publishAssetR10Sidecars}=await import('./asset-r10-sidecar-auto-publication-r1.mjs');
+    report.assetR10Sidecars=await publishAssetR10Sidecars({
+     pcHome:base,remote,coreDb:config.core,scored:r10.payload,
+    });
+   });
+  }
   // Reuse the existing public snapshot table; publish only the bounded display score.
   await attemptOutput(report,'rate-sentiment-publication',async()=>{report.rateSentiment.publication=(await publishPublicRateSentiment(remote,config.core,rateSentiment)).status;});
   try{report.stagflation.publication=(await publishStagflation(remote,config.core,stagflation)).status;}catch(error){report.stagflation.publication='UNVERIFIED';report.stagflation.reason=/^STAGFLATION_[A-Z_]+$/.test(error.message??'')?error.message:'STAGFLATION_PUBLICATION_FAILED';}
