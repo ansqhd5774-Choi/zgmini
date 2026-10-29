@@ -185,6 +185,47 @@ test('Ollama server failures expose only a bounded numeric status',async()=>{
   /NEWS_R41_ANALYSIS_OLLAMA_HTTP_503/);
 });
 
+test('repeat-token HTTP 500 retries with anti-loop settings then JSON fallback',async()=>{
+ const payloads=[];
+ const generated=await generateR41ModelAnalysis({originalTitle:item.title,articleBody},
+  {fetcher:async(_,options)=>{
+   const payload=JSON.parse(options.body);
+   payloads.push(payload);
+   if(payloads.length<3)return {ok:false,status:500,
+    json:async()=>({error:'prediction aborted, token repeat limit reached'})};
+   return {ok:true,json:async()=>({response:JSON.stringify(proposal)})};
+  }});
+ assert.equal(generated.impact,'neutral');
+ assert.equal(payloads.length,3);
+ assert.equal(payloads[0].options.temperature,0);
+ assert.equal(payloads[1].options.num_predict,650);
+ assert.equal(payloads[1].options.repeat_penalty,1.2);
+ assert.equal(payloads[2].format,'json');
+ assert.ok(payloads.every(payload=>payload.model==='gemma3:4b'));
+});
+
+test('unrelated HTTP 500 never triggers retry or leaks the raw response',async()=>{
+ let calls=0;
+ await assert.rejects(generateR41ModelAnalysis({originalTitle:item.title,articleBody},
+  {fetcher:async()=>{calls++;return {ok:false,status:500,
+   json:async()=>({error:'C:\\private\\model-file missing'})};}}),
+  /NEWS_R41_ANALYSIS_OLLAMA_HTTP_500/);
+ assert.equal(calls,1);
+});
+
+test('fallback output without verbatim source proof remains blocked',async()=>{
+ let calls=0;
+ await assert.rejects(generateR41ModelAnalysis({originalTitle:item.title,articleBody},
+  {fetcher:async()=>{
+   calls++;
+   if(calls<3)return {ok:false,status:500,
+    json:async()=>({error:'prediction aborted, token repeat limit reached'})};
+   return {ok:true,json:async()=>({response:JSON.stringify({...proposal,
+    supportingQuotes:['a quote not found in verified source evidence']})})};
+  }}),/NEWS_R41_ANALYSIS_MODEL_OUTPUT_INVALID/);
+ assert.equal(calls,3);
+});
+
 test('source evidence backlog is explicit; no false ready status',async()=>{
  const second={...item,sourceUrl:'https://www.gov.uk/government/news/iran-outlook-2',
   title:'Iran situation second detailed report'};
