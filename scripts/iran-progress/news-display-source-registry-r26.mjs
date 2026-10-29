@@ -9,6 +9,10 @@ export const IRAN_DISPLAY_FEEDS_R26=Object.freeze([
  {id:'bbc-middle-east',url:'https://feeds.bbci.co.uk/news/world/middle_east/rss.xml',kind:'xml'},
  {id:'aljazeera',url:'https://www.aljazeera.com/xml/rss/all.xml',kind:'xml'},
  {id:'un-middle-east',url:'https://news.un.org/feed/subscribe/en/news/region/middle-east/feed/rss.xml',kind:'xml'},
- // R45: publisher page and zoned date validated on PC; other new sources remain probe-only.
- {id:'arabnews',url:'https://www.arabnews.com/middle-east',kind:'html'},
 ].map(spec=>Object.freeze(spec)));
+
+// R45 opt-in private source review only. The existing 7-source scheduled
+// R26 registry is unchanged until the new source's isolated runtime gate passes.
+export const IRAN_DISPLAY_FEEDS_R45_OPTIONAL=Object.freeze([
+ Object.freeze({id:'arabnews',url:'https://www.arabnews.com/middle-east',kind:'html'}),
+]);
