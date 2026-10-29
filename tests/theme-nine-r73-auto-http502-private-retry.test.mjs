@@ -1,6 +1,6 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {runR73PrivateAutoRetry} from
+import {runR73PrivateAutoRetry,r73ScheduledPreflight,runR73ScheduledR48} from
   '../scripts/pc-writer/theme-nine-r73-auto-http502-private-retry.mjs';
 
 const preflight=()=>({canRun:true});
@@ -56,4 +56,29 @@ test('R73 stops before any request when the PC task overlap gate is closed',asyn
     run:()=>{runs++;return goodRun();},report:()=>{}});
   assert.equal(result.status,'STOP_R73_PC_PREFLIGHT');
   assert.equal(runs,0);
+});
+
+test('R73 scheduled mode accepts 11:30 and rejects 13:30 while manual is gated',()=>{
+  const requiredPreflight=()=>({allRequiredPresent:true,nearScheduledTask:true});
+  const exists=p=>!p.endsWith('delta.lock');
+  const accepted=r73ScheduledPreflight({
+    now:new Date('2026-10-29T02:30:00.000Z'),requiredPreflight,exists});
+  assert.equal(accepted.canRun,true);
+  const rejected=r73ScheduledPreflight({
+    now:new Date('2026-10-29T04:30:00.000Z'),requiredPreflight,exists});
+  assert.equal(rejected.canRun,false);
+  const locked=r73ScheduledPreflight({now:new Date('2026-10-29T02:30:00.000Z'),
+    requiredPreflight,exists:()=>true});
+  assert.equal(locked.canRun,false);
+});
+
+test('R73 scheduled mode calls existing R48 directly, not the manual R71 guard',()=>{
+  const record=[];
+  const result=runR73ScheduledR48({run:(program,args)=>{
+    record.push([program,args]);return {status:0,error:null};
+  }});
+  assert.equal(record.length,1);
+  assert.equal(record[0][0],'cmd.exe');
+  assert.equal(record[0][1][2].endsWith('THEME_NINE_R48_PRIVATE_CYCLE.cmd'),true);
+  assert.equal(result.existingPrivateCommandExit,0);
 });
