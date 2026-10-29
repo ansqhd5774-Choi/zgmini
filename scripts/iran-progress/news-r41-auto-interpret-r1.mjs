@@ -482,6 +482,15 @@ export async function runR41AnalysisCycle(feed,{
   !supplied.has(article.sourceUrl))).eligible;
  const fetched=directCandidates.length?
   await evidenceCollector(directCandidates,{maxArticles:maxNew}):{items:[],failures:[]};
+ // Private diagnostics retain reason codes only: no article bodies, source
+ // URLs, credentials, or model prompts are emitted by the cycle report.
+ const sourceFailureBreakdown={};
+ for(const failure of fetched.failures??[]){
+  const reason=typeof failure?.reason==='string'&&
+   /^NEWS_R26_[A-Z0-9_]{2,75}$/.test(failure.reason)?failure.reason:
+   'NEWS_R26_SOURCE_FETCH_FAILED';
+  sourceFailureBreakdown[reason]=(sourceFailureBreakdown[reason]??0)+1;
+ }
  const bodyMap=new Map(supplied);
  for(const row of fetched.items??[]){
   const source=incoming.find(article=>article.sourceUrl===row.sourceUrl);
@@ -533,6 +542,7 @@ export async function runR41AnalysisCycle(feed,{
    attempts:remainingAttempts},
   report:{feedCount:articles.length,ready:items.length,newReady:ready.length-(articles.length-toGenerate.length),
    pending:pending.length,backlog:backlog.length,attempted:incoming.length,
+   directlyFetched:Math.max(0,bodyMap.size-supplied.size),sourceFailureBreakdown,
    rightsRestricted:pending.filter(row=>row.reason==='SOURCE_RIGHTS_RESTRICTED').length,
    sourceEvidenceUnavailable:pending.filter(
     row=>row.reason==='ARTICLE_BODY_EVIDENCE_UNAVAILABLE').length,
