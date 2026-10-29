@@ -26,3 +26,21 @@
 R44가 밝힌 2,640개 티커 규모에서는 EarningsAPI 무료 월간 1,000회 단건 조회로 전체 자동 갱신 불가. FMP 무료 배치 전체 사용권 확인 전 가정 금지. R45 접근/스키마 테스트 확인 후 SEC bulk+기존 가격 자료 등 무료·허용 공급 경로를 검토하며 **전체 issuer coverage와 공개 파생 중요도 이용 허가** 검증 후 자동화 실시.
 
 Source on `codex/ui-improvements`; PC 실행 결과 미수신, 운영 시총 점수 전환 미적용, 데이터베이스·배포 변경 없음.
+
+
+## R45 실제 PC 결과 (2026-10-29, 사용자 제출 파일)
+- `AUDIT=MARKET_CALENDAR_R45_PROVIDER_ACCESS`; `status=R45_BOUNDED_PROBE_COMPLETED`.
+- `providerRequests=3`, `dbWrites=0`, `d1Writes=0`, `credentialsExposed=false`, `rawDataLogged=false`.
+- FMP_BATCH: HTTP 200 / CAP_FIELD_PRESENT / observedSymbols=2 / validSymbols=2 / hasAsOfDate=true.
+- FMP_SINGLE: HTTP 200 / CAP_FIELD_PRESENT / observedSymbols=1 / validSymbols=1 / hasAsOfDate=true.
+- EARNINGS_PROFILE: HTTP 200 / CAP_FIELD_PRESENT / observedSymbols=1 / validSymbols=1 / hasAsOfDate=false.
+- `fullCoverageValidated=false`, `publicDisplayLicenseValidated=false`. **2,640개 종목 일괄 자동수집과 운영 반영 성공을 의미하지 않음.**
+
+## R46 최소 호출 검증 계획
+- R44 로컬 14일 HTML-only 저장본(2,640건/2,640개 고유 티커)에서 최대 25개 티커를 결정적으로 추출해 FMP batch 요청 **정확히 최대 1회**만 수행.
+- Windows 1회 CMD 결과 `MARKET_CALENDAR_R46_FMP_BATCH_PILOT_RESULT.txt`에는 반환 건수/결측/중복/관측일 범위/별표 구간 집계만 기록하고 개별 원시 시가총액·API 키·요청 URL을 기록하지 않는다.
+- PC SQLite 읽기 전용, DB/D1/운영 UI/스케줄러/호출 주기/TTL 변경 없음. 12초 제한·응답 크기 256KB·실패 시 재시도 0회·결과 파일 중복 생성 STOP.
+- `/mnt/data/MARKET_CALENDAR_R46_FMP_BATCH_PILOT_20261029.zip` 패키지를 사용자에게 제공(대화별 전달물; GitHub 운영 파일/등록 작업 아님).
+- 샘플 표본 결과가 25/25라도 실제 전체 2,640개 ticker 커버리지, 다른 통화 정규화, issuer 단위 시총, 공개 파생 결과의 라이선스는 **여전히 미검증**.
+- R46 로컬 모의 테스트 7/7 PASS. 사용자 PC 실측은 **NOT RUN**.
+- 참고: https://site.financialmodelingprep.com/developer/docs/stable/batch-market-cap / https://site.financialmodelingprep.com/pricing-plans (일괄·대량 제공 상위 티어 및 표시/재배포 별도 라이선스 주의).
