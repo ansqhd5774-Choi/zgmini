@@ -106,3 +106,12 @@ test('보고 결과는 실제 관측일·원래 지표 단위·M4 미확정 상�
   assert.match(report,/M4·공식 순위·테마 최종 확정: 미승인\/NULL/);
   assert.match(report,/우주·위성.*연구/);
 });
+
+test('Windows CMD는 Node 인수에 역슬래시로 끝나는 따옴표 폴더 경로를 전달하지 않는다',async()=>{
+  const cmd=await readFile(resolve(fileURLToPath(new URL('.',import.meta.url)),'STAGE04_R88_REUSE_EXISTING.cmd'),'ascii');
+  assert.match(cmd,/set "ARCHIVE_DIR=%~dp0\."/);
+  assert.match(cmd,/--archive-dir "%ARCHIVE_DIR%" --json "%OUT_JSON%"/);
+  assert.doesNotMatch(cmd,/--archive-dir "%~dp0"/);
+  assert.ok(cmd.includes('\r\n'));
+  assert.ok(!cmd.replace(/\r\n/g,'').includes('\n'));
+});
