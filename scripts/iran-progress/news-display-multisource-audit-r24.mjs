@@ -4,6 +4,7 @@ import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {boundedRead} from './sources.mjs';
 import {IRAN_DISPLAY_FEEDS_R26} from './news-display-source-registry-r26.mjs';
+import {discoverR45ArticleUrls,normalizeR45ArticleUrl} from './news-four-source-probe-r45.mjs';
 import {parseGovUkNewsCandidates} from './news-display-discover-r1.mjs';
 
 const ACCEPTED_HOSTS=Object.freeze({
@@ -15,6 +16,7 @@ const ACCEPTED_HOSTS=Object.freeze({
  'dw-world':['www.dw.com'],
  'bbc-middle-east':['www.bbc.com','www.bbc.co.uk','www.bbci.co.uk'],
  aljazeera:['www.aljazeera.com'],
+ arabnews:['www.arabnews.com'],
  'un-middle-east':['news.un.org'],
 });
 const XML_BLOCK=/<(?:item|entry)\b[^>]*>[\s\S]*?<\/(?:item|entry)>/gi;
@@ -61,6 +63,7 @@ export function newsR24SourceUrl(sourceId,value){
    url.hostname==='www.iaea.org'&&!url.port)url.protocol='https:';
   if(url.protocol!=='https:'||url.username||url.password||url.port||url.hash||
    !ACCEPTED_HOSTS[sourceId]?.includes(url.hostname)||url.href.length>2000)return null;
+  if(sourceId==='arabnews'&&normalizeR45ArticleUrl(sourceId,url.href)!==url.href)return null;
   // UN RSS links use an official /feed/view/ redirect to the canonical story.
   // Normalize only that exact publisher path, without following a remote redirect.
   if(sourceId==='un-middle-east'&&/^\/feed\/view\/en\/story\//.test(url.pathname))
@@ -116,6 +119,17 @@ export function parseIranMultisourceFeedR24(sourceId,kind,body){
   }
   return {rawEntries:blocks.length,records};
  }
+ if(kind==='html'&&sourceId==='arabnews'){
+  // Official listing URLs are discovery hints only. Article details and
+  // verified publication date are independently checked by R25.
+  const links=discoverR45ArticleUrls(sourceId,body,50);
+  return {rawEntries:links.length,records:links.map(sourceUrl=>({
+   sourceUrl,feedTitle:null,feedDescription:'',topicHint:'',
+   feedPublishedAt:null,feedUpdatedAt:null,
+   timestampStatus:'ARTICLE_DETAIL_AND_FIRST_PUBLICATION_REQUIRED',
+   discoveryOrigin:'ARABNEWS_OFFICIAL_LISTING_UNSCOPED_R45',
+  }))};
+ }
  if(kind==='html'&&sourceId==='tasnim'){
   if(!/<html\b|<!doctype html/i.test(body))throw Error('R24_FEED_FORMAT_INVALID');
   const matches=[...body.matchAll(/\bhref\s*=\s*["'](\/en\/news\/\d{4}\/\d{2}\/\d{2}\/\d+\/[a-z0-9-]+)["']/gi)];
@@ -164,7 +178,7 @@ export function parseIranMultisourceFeedR24(sourceId,kind,body){
 
 export async function auditIranMultisourceCollectionR24({now=Date.now(),fetcher=fetch,
  feeds=IRAN_MULTISOURCE_FEEDS_R24}={}){
- if(!Number.isSafeInteger(now)||!Array.isArray(feeds)||!feeds.length||feeds.length>7||
+ if(!Number.isSafeInteger(now)||!Array.isArray(feeds)||!feeds.length||feeds.length>11||
   feeds.some(spec=>![...IRAN_MULTISOURCE_FEEDS_R24,...RETIRED_IAEA_DIAGNOSTIC_FEEDS].some(approved=>
    approved.id===spec.id&&approved.url===spec.url&&approved.kind===spec.kind)))
   throw Error('R24_SOURCE_REGISTRY_INVALID');
@@ -192,7 +206,8 @@ export async function auditIranMultisourceCollectionR24({now=Date.now(),fetcher=
   }
   let topicMatches=0,queuedForReview=0,duplicates=0;
   for(const record of result.records.slice(0,MAX_CANDIDATES_PER_FEED)){
-   if(record.discoveryOrigin!=='IAEA_OFFICIAL_HOMEPAGE_UNSCOPED_R34'&&
+   if(!['IAEA_OFFICIAL_HOMEPAGE_UNSCOPED_R34',
+    'ARABNEWS_OFFICIAL_LISTING_UNSCOPED_R45'].includes(record.discoveryOrigin)&&
     !matchesIranTopicR24([record.feedTitle,record.feedDescription,
      record.topicHint].join(' ')))continue;
    topicMatches++;
