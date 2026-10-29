@@ -28,6 +28,20 @@ const govApi={base_path:new URL(govUrl).pathname,title:govTitle,first_published_
 const tasnimHtml=`<html><nav>Navigation links should never enter the summary.</nav>
 <script type="application/ld+json">${JSON.stringify({'@type':'NewsArticle',
  headline:tasnimTitle,articleBody:tasnimBody})}</script></html>`;
+const tasnimLiveHtml=`<html><nav>Navigation links should never enter the summary.</nav>
+<article class="single-news panel-print-box">
+ <h1 class="title">${tasnimTitle} </h1>
+ <h3 class="lead text-justify">The Iranian president urged regional energy cooperation at the summit and discussed gas infrastructure.</h3>
+ <div class="story" data-readmoretitle="Read more">
+  <div class="hideTag"><a href="/en/service/1192/politics">Politics</a></div>
+  <p>Officials discussed technical exchanges and a possible consultation mechanism, but no final agreement was announced.</p>
+  <p>Iran's president urged members to expand cooperation in strategic management and technical operations.</p>
+  <div><div aria-live="polite">&nbsp;</div></div>
+ </div>
+ <div class="footer" data-author-code="R42340/P" data-id-code="3733799">Article footer</div>
+</article>
+<section class="sidebar"><article class="box-item"><p>Unrelated sidebar claims must not be analyzed.</p></article></section>
+</html>`;
 
 test('GOV.UK Content API body extracted only when published date and title are exact',()=>{
  assert.ok(govUkR26Body({sourceId:gov.sourceId,sourceUrl:gov.sourceUrl,
@@ -49,6 +63,22 @@ test('Tasnim only accepts a unique NewsArticle body; page furniture and unrelate
  assert.throws(()=>tasnimR26Body(candidate,tasnimHtml.replace(tasnimTitle,'Different article')),
   /NEWS_R26_TASNIM_ARTICLE_UNVERIFIED/);
  assert.throws(()=>tasnimR26Body(candidate,tasnimHtml+tasnimHtml),
+  /NEWS_R26_TASNIM_ARTICLE_UNVERIFIED/);
+});
+
+test('Tasnim live story markup is accepted with exact H1 and URL ID, excluding page furniture',()=>{
+ const candidate=queue.reviewQueue.find(item=>item.sourceId==='tasnim');
+ const text=tasnimR26Body(candidate,tasnimLiveHtml);
+ assert.match(text,/Iranian president urged regional energy cooperation/);
+ assert.match(text,/no final agreement was announced/);
+ assert.doesNotMatch(text,/Navigation links|Unrelated sidebar|Article footer|Politics/);
+ assert.throws(()=>tasnimR26Body(candidate,tasnimLiveHtml.replace(tasnimTitle,'Different headline')),
+  /NEWS_R26_TASNIM_ARTICLE_UNVERIFIED/);
+ assert.throws(()=>tasnimR26Body(candidate,tasnimLiveHtml.replace('data-id-code="3733799"','data-id-code="123"')),
+  /NEWS_R26_TASNIM_ARTICLE_UNVERIFIED/);
+ assert.throws(()=>tasnimR26Body(candidate,tasnimLiveHtml.replace('<div class="story"','<div class="not-story"')),
+  /NEWS_R26_TASNIM_BODY_MISSING/);
+ assert.throws(()=>tasnimR26Body(candidate,tasnimLiveHtml+tasnimLiveHtml),
   /NEWS_R26_TASNIM_ARTICLE_UNVERIFIED/);
 });
 
