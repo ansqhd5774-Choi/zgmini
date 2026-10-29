@@ -18,7 +18,7 @@ if not exist "%R48_SCRIPT%" (
   pause
   exit /b 3
 )
-"E:\ZGmini\runtime\node.exe" "%R48_SCRIPT%" "E:\ZGmini\data\pc-writer" "%~dp0"
+"E:\ZGmini\runtime\node.exe" "%R48_SCRIPT%" "E:\ZGmini\data\pc-writer" "%~dp0."
 set "RC=%ERRORLEVEL%"
 echo.
 echo Result: %~dp0MARKET_CALENDAR_R48_OFFLINE_QUALITY_RESULT.txt

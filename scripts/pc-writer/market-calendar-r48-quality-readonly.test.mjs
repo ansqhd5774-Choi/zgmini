@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
+import {fileURLToPath} from 'node:url';
 import {DatabaseSync} from 'node:sqlite';
 import {parseCalendar,mapIssuerCandidates,inspectSecShares,latestPriceBars,auditPc,runPc} from './market-calendar-r48-quality-readonly.mjs';
 
@@ -84,4 +85,15 @@ test('end-to-end local SQLite and files remain untouched and output contains agg
   assert.doesNotMatch(text,/AAPL|1000000|currentClose|200(?:\D|$)/);assert.match(text,/gradeableTickerCount=0/);
   assert.equal(runPc({pcHome:base,asOf,outputDir:out}).status,'R48_RESULT_ALREADY_EXISTS_STOP');
  }finally{fs.rmSync(tmp,{recursive:true,force:true});}
+});
+test('Windows CMD output directory argument does not end in a backslash before quote',()=>{
+ const dir=path.dirname(fileURLToPath(import.meta.url));
+ const candidates=[path.join(dir,'MARKET_CALENDAR_R48_OFFLINE_QUALITY.cmd'),path.resolve(dir,'..','..','MARKET_CALENDAR_R48_OFFLINE_QUALITY.cmd')];
+ const cmd=candidates.find(fs.existsSync);
+ assert.ok(cmd,'R48 CMD must be present');
+ const source=fs.readFileSync(cmd,'utf8');
+ const invocation=source.split(/\r?\n/).find(line=>line.startsWith('"E:\\ZGmini\\runtime\\node.exe"'));
+ assert.ok(invocation,'expected Windows Node invocation');
+ assert.match(invocation,/"%~dp0\."$/);
+ assert.doesNotMatch(invocation,/"%~dp0"$/);
 });

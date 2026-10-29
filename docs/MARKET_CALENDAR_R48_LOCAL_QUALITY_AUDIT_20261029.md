@@ -34,7 +34,8 @@ R47 수치는 파일 **존재와 멤버십**만 확인했다. 시가총액 산�
 
 ## 검증과 상태
 
-- Node 내장 테스트 11개(로컬 SQLite 통합 fixture 포함)와 구문 검사 수행. PC E: 원자료 실제 실행은 **NOT RUN**.
+- Node 내장 테스트 12개(로컬 SQLite 통합 fixture·Windows CMD 인자 회귀 검사 포함)와 구문 검사 수행. PC E: 원자료 실제 성공 검증은 **NOT RUN**.
+- R48 FIX1: 최초 PC 실행에서 결과 경로에 불필요한 `"`가 삽입되어 `ENOENT`가 발생. 원인: CMD의 마지막 인자 `"%~dp0"`가 끝의 `\` 때문에 Windows 실행 인자 파서에서 닫는 따옴표를 이스케이프 처리함. **`"%~dp0."`로 변경**하여 인자 끝을 `.`로 만들고 원래 폴더에 정규화되게 함. 최초 실행은 결과 파일 쓰기에서 실패했으며 원본 데이터 수정·게시는 없음. 수정 후 PC 재실행 결과는 아직 없음.
 - GitHub 소스/스크립트 준비와 PC 실행은 구분. R48 결과를 받은 뒤 유효 SEC share fact · IEX 종가가 얼마나 겹치는지 확인.
 - DB/D1 쓰기·수집·게시·스케줄러·운영 UI 별표 변경 **없음**.
 
@@ -44,3 +45,4 @@ R47 수치는 파일 **존재와 멤버십**만 확인했다. 시가총액 산�
 - SEC XBRL Guide (2026-10-23): https://www.sec.gov/files/edgar/filer-information/specifications/xbrl-guide-2026-10-23.pdf
 - Alpaca Historical Bars: https://docs.alpaca.markets/us/reference/stockbars
 - FMP 공개 파생 사용권: https://site.financialmodelingprep.com/insights/platform/can-you-use-fmp-data-in-a-public-app-website-or-client-dashboard
+- Windows C 인자 파서의 trailing backslash/quote 규칙: https://learn.microsoft.com/en-us/cpp/c-language/parsing-c-command-line-arguments
