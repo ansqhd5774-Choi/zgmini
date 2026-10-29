@@ -10,9 +10,9 @@ const clone=()=>structuredClone(sample);
 test('independent official evidence candidates stay isolated from R41 and R5',()=>{
  assert.equal(validateIranOfficialNewsBriefsR1(sample),true);
  assert.deepEqual(summarizeIranOfficialNewsBriefsR1(sample),{
-  version:'IRAN_OFFICIAL_NEWS_BRIEFS_R1',asOfDate:'2026-10-29',candidateCount:3,
+  version:'IRAN_OFFICIAL_NEWS_BRIEFS_R1',asOfDate:'2026-10-29',candidateCount:5,
   publicationAuthorized:false,officialEvidenceOnly:true,articleReadyCountDelta:0,
-  r5ScoreChanges:0,signals:{diplomatic_positive:2,risk_increase:1,mixed:0,neutral:0},
+  r5ScoreChanges:0,signals:{diplomatic_positive:3,risk_increase:2,mixed:0,neutral:0},
  });
 });
 
@@ -32,7 +32,8 @@ test('reject non-official links, query manipulation, duplicate events and invali
   changed=>{changed.items[0].id=changed.items[1].id;},
   changed=>{changed.items[0].signal='negative';},
   changed=>{changed.items[1].evidenceLevel='MULTIPLE_PRIMARY_STATEMENTS';},
-  changed=>{changed.items[1].sourceEvidence[0].publicationDate='2026-02-30';},
+  changed=>{changed.items[1].sourceEvidence[0].sourceDate='2026-02-30';},
+  changed=>{changed.items[1].sourceEvidence[0].dateKind='UNVERIFIED';},
   changed=>{changed.items[1].facts=[];},
   changed=>{changed.items[1].facts[0].sourceIndexes=[2];},
  ];
