@@ -80,3 +80,16 @@
 - **운영 변경 없음:** 신규 4개 소스는 정규 R26 출처 레지스트리·R24/R25 운영 호출·R41 공개 API에 **아직 연결하지 않음**. R1 뉴스 키·R41 39행·현재 7개 공개 출처·R3/R5 점수·기존 6시간 작업·Cloudflare 배포 불변.
 - **순서:** R45 PC HTTP 실측(출처별 목록·원문·발행일·본문) → 검증된 매체별 파서 추가 → R24/R25·R26 레지스트리 및 R41 신규 출처 유효성 검사와 기존 7개 READY 보존 회귀 → D1 신규 행 UPSERT/read-back → GitHub main 최소 변경 자동배포 및 API/UI 실제 확인. 실 PC 소스 응답 없이 11개 수집/공개 완료라고 보고하지 않는다.
 - **GitHub 드리프트:** 계획 작성 이후 본 전용 브랜치와 main에는 다수의 상이한 커밋이 존재한다. 전용 브랜치 전체 병합 금지; 확정 범위에 한해 선택 반영한다.
+
+## 6. R45 FIX1 실제 PC 실측과 R45-B/C/D 코드 진행 (2026-10-29)
+
+- **원본 증거:** 사용자가 제출한 `IRAN_NEWS_R45_FIX1_RESULT.txt`, checkedAt `2026-10-29T04:57:08.970Z`, `SOURCE_COMMIT=50115a57bfde25f9f8681a0a28dde9b525f0d174`, `R45_GIT_BLOB_IDENTITY=PASS`, `FINAL_STATUS=READ_ONLY_PROBE_FINISHED`. 이 종료 상태는 읽기 전용 probe 실행 완료이며 4개 매체 모두 기사 검증 성공이라는 뜻은 아니다.
+- Reuters: 공식 목록 `HTTP_401`, 0건. AP: 공식 목록 `HTTP_403`, 0건. 접근 제한 우회·중복 호출 금지.
+- Arab News: 공식 목록 8건, 원문 본문·정확한 시간대 출판시각·2단계 키워드 검증 **4건 PASS**, 범위 제외 4건. `ARTICLE_METADATA_REVIEWED` 4건은 **미게시 검토 후보**, `rightsVerified=false`, `displayEligible=false`.
+- Anadolu: 공식 목록 8건, 기사 JSON-LD 본문 확인 8건. 그러나 공식 최초 발행 **정확한 시간·시간대 미확인**으로 8건 `FIRST_PUBLICATION_UNVERIFIED`. 웹 원문은 게시 **날짜** 자체를 보여주지만 날짜-only를 임의 UTC 00:00으로 변경하지 않고 해당 신규 공개를 보류한다.
+- **R45-B 소스:** `news-display-source-registry-r26.mjs`의 운영 기본 7개를 유지하고 `IRAN_DISPLAY_FEEDS_R45_OPTIONAL`로 Arab News를 분리. `news-display-multisource-audit-r24.mjs`에 출처 공식 링크 발견·URL 허용 목록 추가. `news-display-article-audit-r25.mjs`에서 출처별 본문·발행일·2단계 키워드 검증을 30일 창으로 재사용. 기존 `R26` 정기 기본 수집·R3/R5 점수·스케줄러 변경 없음.
+- **R45-C 준비:** `lib/iran-progress/news-metadata-r41.mjs`에 승인 4개 매체 허용 호스트/표시명 등록. 기존 39행 재현용 `R41` staging은 고정 기존 7개 기준을 보존하고 새 기사와 혼동하지 않는다. **신규 4건의 실제 PC/D1 저장 및 UP﻿SERT/read-back 미실행**.
+- **R45-D 소스:** `worker/iran-news-metadata-public-r41.mjs`에서 모든 출처가 오늘 기사 1건 이상 있어야 READY라는 조건 제거, `READY`=실제로 유효한 기사 1건 이상, `PENDING`=최근 14일 유효 기사 0건, `UNAVAILABLE`=실제 DB 읽기 오류. `sourceCount`는 실제 기사 출처 수, `configuredSourceCount`는 현재 승인 등록 11개. `app/outbreak-news-container-r1.tsx`의 하드코딩된 7개 비교 제거. **브랜치 소스 변경만, 사이트 미배포**.
+- **회귀 테스트 소스:** 기존 `tests/iran-news-metadata-r41.test.mjs`에서 역사적 원본 7개 fixture 유지, 신규 `tests/iran-news-r45-optional-integration.test.mjs`와 `tests/iran-news-r45-api-coverage.test.mjs` 추가. 최신 전체 Node 테스트·CI/PR은 **미실행/미검증**, PASS라고 주장하지 않는다.
+- **다음 게이트:** 확장 수집기를 기존 PC 후행 스케줄에 활성화하기 전 ① 선택적 Arab News R24/R25 통합 테스트 실실행, ② 4건 개별 기사 메타데이터 저장 규격 재확인, ③ 기존 7개 30일 캐시/39개 D1 원본 불변 검증, ④ 신규 R41 D1 증분 UPSERT/read-back, ⑤ main 최신 변경 대비 최소 파일 회수 및 Git Integration 배포/API/UI 검증. Anadolu는 먼저 발행시각의 **공식 출처 근거** 확보.
+- **실행 상태:** R45-A PC source partial confirmed; R45-B source staged **NOT_INSTALLED**; R45-C/D branch source only **NOT_DEPLOYED**; R45-E **NOT_RUN**.
