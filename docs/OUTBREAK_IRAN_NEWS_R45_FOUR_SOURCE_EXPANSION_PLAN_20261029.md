@@ -101,3 +101,11 @@
 - `tests/iran-news-r45-incremental.test.mjs`에 정규 행 변환, 미검증 날짜·범위·중복 거부, 빈 기사 무쓰기, 기존 R41 D1 호출 인터페이스에 대한 모의 시험을 **추가했다. 실제 CI/Node 실행 증거는 아직 없음**.
 - `main`과 전용 브랜치가 크게 분기돼 있으므로 승인된 최소 파일만 충돌 확인 후 회수할 것. 운영 승인 SHA·PC 적용 상태·Cloudflare 배포는 별도 점검 전 자동 변경 금지.
 - 상태: **R45-C SOURCE_STAGED_NOT_RUN**. 기존 D1 39개/공개 35개 유지; 신규 기사 D1 저장 미실행. NEXT는 실제 동등 Node 통합 테스트 PASS 및 PC 승인 source preflight 확인 후 쓰기 시도 전 readback 기준선 확보.
+
+## 8. R46 통합 테스트 및 실수집 확인 준비 (2026-10-29 KST)
+
+- **R45-C 코드:** `scripts/iran-progress/news-metadata-incremental-r45.mjs`. 검증된 Arab News만 R41 메타데이터로 변환하고 기존 단일 기사 ID/UPSERT/read-back을 사용. `tests/iran-news-r45-incremental.test.mjs` 추가. 다만 해당 테스트 자체는 아직 원격/PC 런타임에서 실행되지 않았음.
+- **R46 현장 테스트 실행기:** `scripts/iran-progress/IRAN_NEWS_R46_TEST_AND_PROBE_READONLY_20261029.cmd`. 고정 소스 commit `485c9a08b37270b5cc35260829e81adda3e19bc7`에서 필요한 20개 파일을 임시 전용 디렉터리에 다운로드하고 각 Git Blob SHA1을 직접 검사한다. 기존 승인 `E:\ZGmini\runtime\node.exe`로 Node 테스트 파일 6개(R41 기존 데이터 보존, R45 파서/수집/공개/API/증분 D1 mock)를 실행한다. 전부 PASS면 **선택형 Arab News R24→R25 실원문 수집 read-only probe**를 수행하고 같은 위치에 `IRAN_NEWS_R45_R46_TEST_RESULT.txt`를 생성. 기존 파일이 있다면 재실행하지 않는다.
+- **금지 동작:** 테스트 실행기는 운영 source checkout 설치·변경, 원자료/PC 캐시, D1 write, 공개 R1 키, 스케줄러, 점수·배포 변경을 수행하지 않는다. 메모리 DB 테스트의 일회성 fixture INSERT는 운영 D1 작업이 아니다.
+- **현재 Gate:** Remote source/launcher committed and inspected; **R46 PC Node test execution PENDING**, `R45-C` real D1 write/read-back PENDING, site deployment PENDING. `git main`과 기존 작업 브랜치 차이가 커 전체 병합 금지, 검증 후 파일별 최신 main 적용.
+- **후속 필수 액션:** PC의 R46 CMD 결과 파일을 확인하여 LAST PASS/FIRST FAIL을 확정. 자동 게시 전에 운영 PC 승인된 writer source SHA/config/checkpoint, 실제 D1 39행 기준선 재조회, R45 신규 기사 승인 범위를 확인하고 멱등 증분 게시. 기사 0건이나 일부 Source 실패가 기존 39행을 삭제하거나 기존 7개 UI를 감추지 않도록 검증한다.
