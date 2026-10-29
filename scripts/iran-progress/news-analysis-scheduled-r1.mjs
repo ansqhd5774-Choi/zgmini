@@ -90,7 +90,14 @@ export function runScheduledIranNewsAnalysisR1({
    break;
   }
  }
- if(report.status==='IN_PROGRESS')report.status='PUBLISHED_READBACK_VERIFIED';
+ if(report.status==='IN_PROGRESS'){
+  const publication=report.steps.find(step=>step.name==='PUBLISH')?.status;
+  // Remote-newer preserves an already published snapshot. It must never be
+  // reported as this cycle having published its staged analysis.
+  report.status=publication==='VERIFIED'?'PUBLISHED_READBACK_VERIFIED':
+   publication==='UNCHANGED'?'ALREADY_PUBLISHED_VERIFIED':
+   'REMOTE_NEWER_PRESERVED';
+ }
  report.finishedAt=Date.now();
  safeReportFile(files.lastRun,report);
  return report;
@@ -101,7 +108,8 @@ if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.ur
   if(process.argv.length!==2)throw Error('ANALYSIS_R1_SCHEDULED_ARGS_INVALID');
   const result=runScheduledIranNewsAnalysisR1();
   console.log(JSON.stringify(result));
-  if(result.status!=='PUBLISHED_READBACK_VERIFIED')process.exitCode=1;
+  if(!['PUBLISHED_READBACK_VERIFIED','ALREADY_PUBLISHED_VERIFIED'].includes(result.status))
+   process.exitCode=1;
  }catch(error){
   console.error(JSON.stringify({status:'ANALYSIS_R1_SCHEDULED_FAILED',reason:error.message}));
   process.exitCode=1;
