@@ -4,6 +4,7 @@ import {useEffect,useRef,useState} from "react";
 import {ExternalLink,Newspaper,ChevronDown} from "lucide-react";
 import {useStoredIndex} from "../components/use-stored-index";
 import {needsKoreanTranslation,translateEnglishNewsText} from "../lib/iran-progress/browser-news-translation-r1.mjs";
+import styles from "./outbreak-news-evaluation-r2.module.css";
 
 /** Publisher metadata is managed separately from AI analysis and the R5 score. */
 export type IranNewsMetadataItemR41={
@@ -19,6 +20,8 @@ type NewsAnalysisItem={
  id:string;
  sourceUrl:string;
  titleKo?:string;
+ keyPointKo?:string;
+ keyFactsKo?:string[];
  summaryKo:string;
  interpretationKo:string;
  impact:NewsAnalysisImpact;
@@ -49,6 +52,10 @@ const validAnalysis=(item:NewsAnalysisItem|undefined,article:IranNewsMetadataIte
  item&&item.analysisStatus==="READY"&&item.id===article.id&&item.sourceUrl===article.sourceUrl&&
  typeof item.summaryKo==="string"&&item.summaryKo.trim()&&
  typeof item.interpretationKo==="string"&&item.interpretationKo.trim()&&
+ (item.keyPointKo===undefined&&item.keyFactsKo===undefined||
+  typeof item.keyPointKo==="string"&&item.keyPointKo.trim().length>=15&&
+  Array.isArray(item.keyFactsKo)&&item.keyFactsKo.length>=2&&item.keyFactsKo.length<=3&&
+  item.keyFactsKo.every(fact=>typeof fact==="string"&&fact.trim().length>=12))&&
  Number.isSafeInteger(item.analyzedAt)&&item.analyzedAt>0&&
  Object.prototype.hasOwnProperty.call(impactLabels,item.impact)&&
  Array.isArray(item.evidenceUrls)&&item.evidenceUrls.length>0&&
@@ -102,16 +109,30 @@ export default function OutbreakNewsMetadataR41({eventId,items}:{eventId:string;
     const candidate=analysisById.get(item.id);
     const analysis=validAnalysis(candidate,item)?candidate:undefined;
     const title=analysis?.titleKo?.trim()||translatedTitles[`${eventId}:${item.id}:title:${item.title}`]||item.title;
-    return <article className="ob57-news-item" key={item.id} data-analysis-status={analysis?"READY":"PENDING"}>
+    const hasKeyFacts=analysis&&analysis.keyPointKo&&analysis.keyFactsKo?.length;
+    return <article className={`ob57-news-item${analysis?` ${styles.articleReady}`:""}`} key={item.id} data-analysis-status={analysis?"READY":"PENDING"}>
      <div className="ob57-news-meta"><strong>{item.source}</strong>
       <time dateTime={item.publishedAt}>{kstDate(item.publishedAt)}</time></div>
      <h4 title={title!==item.title?`영문 원제목: ${item.title}`:undefined}>{title}</h4>
-     <div className="ob57-news-evaluation" style={{gridArea:"desc",minWidth:0}}>
+     <div className={styles.evaluation}>
       {analysis?<>
-       <small className="ob57-news-licence">AI 잠정 평가 · {kstDate(new Date(analysis.analyzedAt).toISOString())} 분석</small>
-       <p>{analysis.summaryKo}</p>
-       <p style={{marginTop:4}}>해석: {analysis.interpretationKo}</p>
-      </>:<p>자동 평가·해석 대기 중입니다. 원문 기사를 확인할 수 있습니다.</p>}
+       <div className={styles.keyPointBox}>
+        <span className={styles.sectionLabel}>핵심 사실</span>
+        {hasKeyFacts?<>
+         <strong className={styles.keyPoint}>{analysis.keyPointKo}</strong>
+         <ul className={styles.factsList}>{analysis.keyFactsKo!.map((fact,index)=><li key={`${index}:${fact}`}>{fact}</li>)}</ul>
+        </>:<p className={styles.legacySummary}>{analysis.summaryKo}</p>}
+       </div>
+       <div className={styles.whyBox}>
+        <strong className={styles.whyLabel}>왜 중요한가?</strong>
+        <p className={styles.interpretation}>{analysis.interpretationKo}</p>
+       </div>
+       {hasKeyFacts&&<details className={styles.fullSummary}>
+        <summary>기사 요약 자세히 보기</summary>
+        <p>{analysis.summaryKo}</p>
+       </details>}
+       <small className={styles.analysisMeta}>AI 잠정 평가 · {kstDate(new Date(analysis.analyzedAt).toISOString())} 분석 · 사실과 해석 구분</small>
+      </>:<p className={styles.pendingText}>자동 평가·해석 대기 중입니다. 원문 기사를 확인할 수 있습니다.</p>}
      </div>
      <div className="ob57-news-foot">
       {analysis?<span className="ob57-impact" data-impact={analysis.impact}>{impactLabels[analysis.impact]}</span>:<span>분석 대기</span>}
