@@ -93,3 +93,11 @@
 - **회귀 테스트 소스:** 기존 `tests/iran-news-metadata-r41.test.mjs`에서 역사적 원본 7개 fixture 유지, 신규 `tests/iran-news-r45-optional-integration.test.mjs`와 `tests/iran-news-r45-api-coverage.test.mjs` 추가. 최신 전체 Node 테스트·CI/PR은 **미실행/미검증**, PASS라고 주장하지 않는다.
 - **다음 게이트:** 확장 수집기를 기존 PC 후행 스케줄에 활성화하기 전 ① 선택적 Arab News R24/R25 통합 테스트 실실행, ② 4건 개별 기사 메타데이터 저장 규격 재확인, ③ 기존 7개 30일 캐시/39개 D1 원본 불변 검증, ④ 신규 R41 D1 증분 UPSERT/read-back, ⑤ main 최신 변경 대비 최소 파일 회수 및 Git Integration 배포/API/UI 검증. Anadolu는 먼저 발행시각의 **공식 출처 근거** 확보.
 - **실행 상태:** R45-A PC source partial confirmed; R45-B source staged **NOT_INSTALLED**; R45-C/D branch source only **NOT_DEPLOYED**; R45-E **NOT_RUN**.
+
+## 7. R45-C 증분 게시 코드 추가 (2026-10-29)
+
+- `scripts/iran-progress/news-metadata-incremental-r45.mjs` 신규. R25 보고서의 `ARTICLE_METADATA_REVIEWED` 상태 중 **실제로 PC 검증된 Arab News만** 수용하며, URL SHA256 기사 ID·본문/키워드/발행일/checkedAt 유효성을 검증해 R41 행으로 변환한다. AP/Reuters/Anadolu는 현재 차단·정확한 출판시각 미검증으로 제외한다.
+- 저장은 기존 `stageIranNewsMetadataR41`의 D1 멱등 UPSERT 및 배치 read-back을 사용한다. 공개 R1 키, 점수 DB, 스케줄을 접근하지 않는다. 보고서에 적격 신규 기사 0건이면 D1 동작 자체를 호출하지 않는다.
+- `tests/iran-news-r45-incremental.test.mjs`에 정규 행 변환, 미검증 날짜·범위·중복 거부, 빈 기사 무쓰기, 기존 R41 D1 호출 인터페이스에 대한 모의 시험을 **추가했다. 실제 CI/Node 실행 증거는 아직 없음**.
+- `main`과 전용 브랜치가 크게 분기돼 있으므로 승인된 최소 파일만 충돌 확인 후 회수할 것. 운영 승인 SHA·PC 적용 상태·Cloudflare 배포는 별도 점검 전 자동 변경 금지.
+- 상태: **R45-C SOURCE_STAGED_NOT_RUN**. 기존 D1 39개/공개 35개 유지; 신규 기사 D1 저장 미실행. NEXT는 실제 동등 Node 통합 테스트 PASS 및 PC 승인 source preflight 확인 후 쓰기 시도 전 readback 기준선 확보.
