@@ -139,24 +139,46 @@ export async function generateR41ModelAnalysis(article,{fetcher=fetch,model='gem
     article.articleBody.trim().length<120||typeof article.originalTitle!=='string'||
     !/^[a-zA-Z0-9_.:-]{2,80}$/.test(model))
   throw Error('NEWS_R41_ANALYSIS_OLLAMA_INPUT_INVALID');
- const response=await fetcher('http://127.0.0.1:11434/api/generate',{
-  method:'POST',headers:{'content-type':'application/json'},
-  body:JSON.stringify({model,system:SYSTEM,
-   prompt:JSON.stringify({originalTitle:article.originalTitle,articleBody:article.articleBody}),
-   format:JSON_SCHEMA,stream:false,options:{temperature:0,num_predict:1100}}),
-  signal:AbortSignal.timeout(90000)});
- // The HTTP status is diagnostic, but neither server text nor system paths
- // should ever become public pending reasons.
- if(!response?.ok){
-  const status=Number(response?.status);
-  throw Error(Number.isInteger(status)&&status>=400&&status<=599?
-   `NEWS_R41_ANALYSIS_OLLAMA_HTTP_${status}`:'NEWS_R41_ANALYSIS_OLLAMA_FAILED');
+ const prompt=JSON.stringify({originalTitle:article.originalTitle,articleBody:article.articleBody});
+ // Ollama's repeat-token guard can abort a long structured response with
+ // HTTP 500 even when the same model handles short schema requests. Retry
+ // only that confirmed failure, with bounded output and repetition controls.
+ // The last attempt uses JSON mode; all attempts must pass the SAME strict
+ // evidence, number and quote checks before anything is publishable.
+ const modes=[
+  {format:JSON_SCHEMA,options:{temperature:0,num_predict:1100}},
+  {format:JSON_SCHEMA,options:{temperature:0.25,num_predict:650,
+   repeat_penalty:1.2,repeat_last_n:128}},
+  {format:'json',options:{temperature:0.3,num_predict:650,
+   repeat_penalty:1.2,repeat_last_n:128}},
+ ];
+ for(let index=0;index<modes.length;index++){
+  const {format,options}=modes[index];
+  const response=await fetcher('http://127.0.0.1:11434/api/generate',{
+   method:'POST',headers:{'content-type':'application/json'},
+   body:JSON.stringify({model,system:SYSTEM,prompt,format,stream:false,options}),
+   signal:AbortSignal.timeout(90000)});
+  // Never expose model-server text, paths, or prompts in public reasons.
+  if(!response?.ok){
+   const status=Number(response?.status);
+   if(status===500&&index<modes.length-1){
+    let message='';
+    try{
+     const failure=await response.json();
+     message=typeof failure?.error==='string'?failure.error:'';
+    }catch{}
+    if(/prediction aborted, token repeat limit reached/i.test(message))continue;
+   }
+   throw Error(Number.isInteger(status)&&status>=400&&status<=599?
+    `NEWS_R41_ANALYSIS_OLLAMA_HTTP_${status}`:'NEWS_R41_ANALYSIS_OLLAMA_FAILED');
+  }
+  let draft;
+  try{draft=JSON.parse((await response.json()).response);}catch{
+   throw Error('NEWS_R41_ANALYSIS_OLLAMA_RESPONSE_INVALID');
+  }
+  return {...validateR41ModelAnalysis(draft,article),supportingQuotes:draft.supportingQuotes};
  }
- let draft;
- try{draft=JSON.parse((await response.json()).response);}catch{
-  throw Error('NEWS_R41_ANALYSIS_OLLAMA_RESPONSE_INVALID');
- }
- return {...validateR41ModelAnalysis(draft,article),supportingQuotes:draft.supportingQuotes};
+ throw Error('NEWS_R41_ANALYSIS_OLLAMA_HTTP_500');
 }
 
 /** Existing R26 source extractors are read-only and require exact article metadata. */
