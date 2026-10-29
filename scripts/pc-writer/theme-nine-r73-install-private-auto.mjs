@@ -11,9 +11,10 @@ const HERE=path.dirname(fileURLToPath(import.meta.url));
 const TARGET='E:/ZGmini/data/pc-writer/theme-nine-r48';
 const TASK='ZGMINI-PC-Theme-Nine-R47-Private';
 const ORIGINAL='THEME_NINE_R48_PRIVATE_CYCLE.cmd';
-const UPDATED='THEME_NINE_R73_AUTO_HTTP502_PRIVATE.cmd';
+const UPDATED='THEME_NINE_R73_SCHEDULED_PRIVATE.cmd';
 const FILES=[
   UPDATED,
+  'THEME_NINE_R73_AUTO_HTTP502_PRIVATE.cmd',
   'theme-nine-r73-auto-http502-private-retry.mjs',
   'theme-nine-r72-transient-checkpoint-recover.mjs',
   'theme-nine-r71-private-recovery-once.mjs',
