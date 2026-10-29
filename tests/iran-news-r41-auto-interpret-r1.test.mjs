@@ -15,6 +15,11 @@ const articleBody='The foreign ministers of Iran and neighboring countries met o
 const quote='They did not sign a ceasefire or announce a final agreement.';
 const proposal={
  titleKo:'이란과 주변국 외무장관, 지역 외교 대화 방안 논의',
+ keyPointKo:'이란과 주변국 외무장관들이 지역 외교 대화를 논의했지만 합의는 발표하지 않았다.',
+ keyFactsKo:[
+  '이란과 주변국 외무장관들이 향후 외교 대화 방안을 논의했다.',
+  '이번 회의에서는 휴전 협정이나 최종 합의가 체결되지 않았다.',
+ ],
  summaryKo:'이란과 주변국 외무장관들은 향후 지역 대화를 위한 외교적 선택지를 논의했다. 이번 회의에서 최종 합의나 휴전 협정이 체결됐다는 발표는 없었다.',
  interpretationKo:'협의가 계속된다는 점은 대화 채널이 유지되고 있음을 보여준다. 다만 합의가 발표되지 않아 긴장 완화를 확정할 수는 없다.',
  impact:'neutral',supportingQuotes:[quote],
@@ -117,6 +122,8 @@ test('verified source text yields a provisional interpretation, no scores or pri
  assert.deepEqual(published.evidenceUrls,[sourceUrl]);
  assert.equal(published.analysisStatus,'READY');
  assert.equal(published.impact,'neutral');
+ assert.equal(published.keyPointKo,proposal.keyPointKo);
+ assert.deepEqual(published.keyFactsKo,proposal.keyFactsKo);
  assert.equal(published.summaryKo,proposal.summaryKo);
  assert.ok(!('supportingQuotes' in published));
  assert.ok(!('sourceTextSha256' in published));
@@ -150,6 +157,12 @@ test('evidence changes, model changes and proof failures cannot reuse a stale an
  assert.throws(()=>validateR41ModelAnalysis({...proposal,summaryKo:
   proposal.summaryKo+' 999명 사망'},
   {originalTitle:item.title,articleBody}),/NEWS_R41_ANALYSIS_NEW_NUMBER/);
+ assert.throws(()=>validateR41ModelAnalysis({...proposal,keyFactsKo:[
+  proposal.keyFactsKo[0], '회의에서 999명이 사망했다는 발표가 있었다.',
+ ]},{originalTitle:item.title,articleBody}),/NEWS_R41_ANALYSIS_NEW_NUMBER/);
+ assert.throws(()=>validateR41ModelAnalysis({...proposal,keyFactsKo:[
+  proposal.keyFactsKo[0],proposal.keyFactsKo[0],
+ ]},{originalTitle:item.title,articleBody}),/NEWS_R41_ANALYSIS_MODEL_OUTPUT_INVALID/);
 });
 
 test('arbitrary model error text never leaks into public pending reason',async()=>{
@@ -175,6 +188,7 @@ test('Ollama request is fixed to local endpoint and rejects unsupported output',
   }});
  assert.equal(calls,1);
  assert.equal(generated.summaryKo,proposal.summaryKo);
+ assert.equal(generated.keyPointKo,proposal.keyPointKo);
  assert.deepEqual(generated.supportingQuotes,[quote]);
 });
 
