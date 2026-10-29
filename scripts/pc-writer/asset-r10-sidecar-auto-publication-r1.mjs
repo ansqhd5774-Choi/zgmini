@@ -1,5 +1,6 @@
 // R10 sidecar publication on the existing approved PC Writer --publish lane.
 // The scored projection is the gate; no provider input, formula or scheduler work.
+import {isDeepStrictEqual} from 'node:util';
 import {assetR10PcPreflight} from './ASSET_R10_RAW_PREFLIGHT_R1.mjs';
 import {assetR10OneYearPcAudit} from './ASSET_R10_1Y_HISTORY_READONLY_R1.mjs';
 import {ASSET_R10_RAW_KEY,toAssetR10RawPayload,validateAssetR10Raw,assetR10RawWriter}
@@ -8,7 +9,7 @@ import {ASSET_R10_HISTORY_KEY,toAssetR10HistoryPayload,validateAssetR10History,a
  from '../../worker/asset-bubble-r10-history-r1.mjs';
 import {PUBLIC_PROJECTION_KEYS} from '../../worker/market-public-projection-store.mjs';
 
-const exact=(a,b)=>JSON.stringify(a)===JSON.stringify(b);
+const exact=isDeepStrictEqual;
 const near=(a,b)=>typeof a==='number'&&Number.isFinite(a)
  &&typeof b==='number'&&Number.isFinite(b)&&Math.abs(a-b)<1e-7;
 const contentDigest=v=>{
