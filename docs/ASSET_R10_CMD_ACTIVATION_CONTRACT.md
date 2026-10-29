@@ -213,3 +213,25 @@ R4의 정적 연결 검사는 실제 `local-cycle.mjs`의 부모 실행 경로�
 - 코드 단위 회귀검사 5건, package hash self-check, Linux 비-Windows STOP, ZIP CRC 검증 통과. **Windows 현장 실행은 아직 하지 않았다.**
 
 R5는 `CORE_VBS_TO_PUBLISH_CYCLE_OBSERVED`를 포착하더라도 **설치 승인으로 승격하지 않는다**. 프로세스가 없거나 부모가 먼저 종료한 경우에는 실행 출처가 여전히 미확정일 수 있다. 정규 Writer 연결 증명과 유휴·잠금 안전 검증이 완료되지 않은 상태에서는 R6 `RUN_INSTALL.cmd`를 실행하지 않는다. 만약 Core의 실제 예약 경로가 승인 Writer 게시를 호출하지 않는 것으로 확정되면, 기존 제한을 벗어나는 예약/VBS/R38 경로 변경을 임의 수행하지 않고 사용자에게 최소 변경 범위 승인을 요청한다.
+
+## 17. R5 현장 증명과 R7 선택 설치 게이트 개정
+
+2026-10-30 KST 사용자가 전달한 `ASSET_R10_LINEAGE_RESULT.txt`의 `STATUS=READONLY_LINEAGE_COMPLETED`, manifest `HASH_VERIFIED`를 확인했다. **R4의 정적 경로 미확정과 달리 실제 Core → Writer 실행 경로가 런타임 PID 계보로 확인됐다.**
+
+- 정규 Core VBS(`wscript`, PID 34080/35468) → 승인 Writer checkout의 `local-cycle.mjs --publish`(PID 24872) → `run-local.mjs --publish`(PID 32452). `CYCLE_0_ROUTE_ASSESSMENT`와 `WRITER_0_ROUTE_ASSESSMENT` 모두 `CORE_VBS_TO_PUBLISH_CYCLE_OBSERVED`.
+- 최근 완료된 Core 주기: `2026-10-29T15:47:10.530Z`, `lane=core`, `publishRequested=YES`, `publishAllowed=YES`, `publicationExit=0`, `status=COMPLETE`. 별도 마지막 Writer 실행 `2026-10-29T15:50:08.249Z`, `status=VERIFIED`.
+- 운영 source HEAD/config/마지막 Writer source가 승인 `a477ef...` 일치, tracked dirty `NO`, ledger `VERIFIED`, **R10 훅 `ABSENT`**.
+- 검사 시점에는 Core task `Running`, Korea task `Ready`, 기존 Writer task `Disabled`; `local-cycle.lock` 존재 및 살아 있는 PID 일치. **따라서 R5는 경로 증거이지 설치 허가가 아니다.**
+
+이 관찰을 바탕으로 정적 문자열이 없다는 이유로 계속 STOP하는 R6 설치기를 **별도 보존된 R7 설치기**로 최소 개정했다. 기존 R6 ZIP/코드를 덮어쓰거나 현장 승인 source를 변경하지 않았다.
+
+- R7 ZIP: `ASSET_R10_AUTO_CMD_R7_FINAL_20261030.zip` SHA-256 `41dfcd6a4ac9e9c4528fe20e11f4ef5749332fb0ec3cfeb359f76482a375da0d`.
+- manifest: `scripts/pc-writer/asset-r10-cmd-r7/package-manifest.json` SHA-256 `967969962757ffd62f36731f9c127028e8efbf6a66c073e6bc650473f1a08b39`.
+- 실제 설치 전 Core 예약 `wscript.exe`와 고정 VBS 경로, `run-local-core.vbs` SHA-256 `bb3e11c0b5c8da07162b1c824e7b52e7a7c2f987c079f29713211a2413932b01` 재확인. R5의 과거 PID만으로 현재 유휴·실행 안전 판정을 대체하지 않는다.
+- Core와 Korea 두 예약 작업 모두 `Ready`/Enabled, 승인 Writer 관련 프로세스가 없음, 모든 `.lock` 부재, ledger 안전, 다음 Core 시작까지 120초 이상 남았을 때만 `READY_FOR_INSTALL`. 신뢰할 수 없는 프로세스 명령줄은 STOP. 설치 중에도 재확인하고, Git commit 후 config.source 변경 직전에는 30초 안전 여유를 별도로 검사한다.
+- PREFLIGHT는 Core 실행 중/잠금/다음 실행이 임박한 **전형적인 일시적 상태만** 최대 8분, 10초 간격으로 읽기 전용 재조회한다. 타임아웃은 STOP이며 설치 자동 실행은 하지 않는다. 소스 SHA/의존성/예약 파일 해시 불일치 등의 구조 오류는 기다리지 않고 중단한다.
+- Windows CMD 3개 모두 기존 고정 Node `E:\ZGmini\runtime\node.exe`만 사용한다. PATH의 호환되지 않는 Node로 폴백하지 않는다.
+- R7의 PC 백업·영수증은 R7 전용 파일명(`r7-...`, `asset-r10-cmd-r7-install-receipt.json`)으로 R6 결과와 분리된다. 설치 시에도 기존 승인 checkout `run-local.mjs` 한 곳의 훅과 누락된 동일 SHA 의존 파일만 선택 적용한다. 기존 예약/VBS/수집기/DB/D1/산식/Cloudflare는 변경하지 않는다.
+- 오프라인 회귀시험: R7 설치기 8건 + PR #893 sidecar 9건 **총 17건 PASS**, Linux 실행 차단, ZIP 무결성, Git 없는 압축본 테스트. **Windows R7 실제 PREFLIGHT/INSTALL 및 정규 D1 readback은 아직 하지 않았다.**
+
+PC 실행 지침: 새 빈 폴더에 R7 ZIP을 압축 해제 → `RUN_PREFLIGHT.cmd` 1회. `STATUS=READY_FOR_INSTALL`인 경우에만 `RUN_INSTALL.cmd` 1회; 아니면 결과 TXT를 제출하고 설치 중단. 설치 성공 시 `PC_SOURCE_INSTALLED_AWAIT_NORMAL_CYCLE`은 코드 설치일 뿐 자동 갱신 완료가 아니다. 다음 두 정규 주기에서 `RUN_VERIFY.cmd`와 각각의 R10 raw/history D1 readback을 분리하여 재확인한다.
