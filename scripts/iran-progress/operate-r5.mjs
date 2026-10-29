@@ -13,7 +13,7 @@ import {buildIranR5Public,validateIranR5Public} from '../../lib/iran-progress/da
 import {independentlyCorroboratedR5Positives} from '../../lib/iran-progress/verified-positive-r5.mjs';
 import {publishIranR5Provisional} from './publication.mjs';
 import {withIranPublishedUpdates} from './published-updates-r1.mjs';
-import {syncScoreNewsInput} from './score-news-input-r1.mjs';
+import {syncPublishedNewsInput,PUBLISHED_NEWS_CHECKPOINT} from './published-news-score-input-r1.mjs';
 import {client,credential} from '../pc-writer/d1.mjs';
 
 /**
@@ -91,7 +91,13 @@ export function calculateOperationalR5(store,{now=Date.now(),evidencePolicy='BAL
  if(!legacyReady&&!newsReady)throw Error('R5_SOURCE_COLLECTION_UNREADY');
  const checked=newsReady?newsInput.collectionCheckedAt:legacyChecked;
  const collectionStatus=newsReady?'ANALYZED_NO_CHANGE':checkpoint.status;
- const articles=storedR3Candidates(store),resolution=resolveR3Events(articles);
+ const publishedInput=store.getCheckpoint(PUBLISHED_NEWS_CHECKPOINT);
+ const allArticles=storedR3Candidates(store);
+ // Keep the established historical baseline. After cutover, private collector
+ // receipts cannot introduce new R5 events without public-news admission.
+ const articles=publishedInput?allArticles.filter(e=>
+  publishedInput.baselineEventKeys.includes(e.eventKey)||publishedInput.admittedUrls.includes(e.sourceUrl)):allArticles;
+ const resolution=resolveR3Events(articles);
  const unique=independentlyCorroboratedR5Positives(resolution.accepted,articles);
  const firstSeen=new Map(),revisionCount=new Map(),versionsByUrl=new Map();
  for(const row of store.db.prepare("SELECT body,stored_at FROM sources WHERE id LIKE 'news-metadata:%' ORDER BY stored_at,id").all()){
@@ -140,9 +146,12 @@ if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.ur
   if(!store.claim(owner,Date.now()))throw Error('R5_EXISTING_COLLECTION_LEASE_HELD');
   const now=Date.now();
   // Optional new input cannot erase or block the last valid scoring receipts.
-  if(fs.existsSync(path.join(base,'news-display-candidates-r26.json'))){
-   try{syncScoreNewsInput(store,base,{now,dryRun:mode==='--preview'});}
-   catch(error){console.error(JSON.stringify({scoreNewsInput:'PRESERVED_PREVIOUS_INPUT',reason:/^IRAN_SCORE_NEWS_[A-Z_]+$/.test(error.message)?error.message:'IRAN_SCORE_NEWS_READ_FAILED'}));}
+  {
+   try{await syncPublishedNewsInput(store,{now,dryRun:mode==='--preview'});}
+   catch(error){
+    if(!store.getCheckpoint(PUBLISHED_NEWS_CHECKPOINT))throw error;
+    console.error(JSON.stringify({scoreNewsInput:'PRESERVED_PREVIOUS_INPUT',reason:/^IRAN_PUBLISHED_NEWS_[A-Z_]+$/.test(error.message)?error.message:'IRAN_PUBLISHED_NEWS_READ_FAILED'}));
+   }
   }
   const {body,shadow}=calculateOperationalR5(store,{now});
   if(mode==='--preview')console.log(JSON.stringify({status:'SHADOW_PREVIEW',
