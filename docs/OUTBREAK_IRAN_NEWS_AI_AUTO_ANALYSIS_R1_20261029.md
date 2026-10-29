@@ -55,3 +55,36 @@
 - PC의 독립 예약 작업은 **별도**다. 클라우드 UI 배포만으로 Windows 주기 실행이 설치되지 않는다.
 - 테스트: 뉴스 분석/권리/게시/공개 reader/UI 계약/스케줄러 단위 검사. 실제 운영 완료는 GitHub main SHA, Cloudflare 빌드·정확한 배포, PC 작업 실행, D1 독립 키 readback, 공개 API 및 뉴스 카드 검증을 각각 확인해야 한다.
 - 실패 시 원본 수집기·R5 점수는 그대로 둔다. 신규 작업만 비활성화해 원인 분석하고, 신규 D1 스냅샷의 마지막 검증값은 보존한다.
+
+## 실행 방식 및 R3.1 인수인계 (2026-10-29)
+
+### 기준과 승인 범위
+
+- 공통 실행 방식 선택 기준은 **별도 중앙 원본** `codex/theme-fear-greed-integration-20261025:docs/CMD_EXECUTION_PLAYBOOK.md`를 참조한다. 이 문서는 이란 뉴스 분석 **작업별 명세**이며 중앙 지침을 복제하지 않는다.
+- 작업 저장소/브랜치: `ansqhd5774-Choi/zgmini` / `codex/ui-improvements`. PC 운영 승인 checkout `E:\ZGmini\projects\iran-news-analysis-r1-56eec668`, 데이터 `E:\ZGmini\data\iran-progress-r13`는 **R3 사용자 실행 로그에서 관측한 경로**이며, 개발 브랜치의 최신 SHA가 그대로 설치되었다고 추정하지 않는다.
+- 허용 목표: 이미 게시된 AI 잠정 분석 보존, 검증 가능한 추가 기사 분석, 독립 D1 키 readback. 원문 이용권한 해제, R41 수집기 변경, R5 심리 점수 변경, 작업 스케줄러 수정, Cloudflare 배포·main 병합은 이 실행 승인에 포함되지 않는다. **기사 분석 완료 후 자동화 개선을 별도 작업**으로 진행한다.
+
+### 이미 존재하는 명령·도구 재사용
+
+| 역할 | 기존 파일·실제 확인된 CLI |
+| --- | --- |
+| Node 환경 | `scripts/resolve-local-node.cmd` (로컬 `%NODE%` 지정) |
+| 예약 작업 상태만 확인 | `node scripts/iran-progress/news-analysis-schedule-r1.mjs --inspect` |
+| 분리된 분석·캐시 미리보기 | `news-r41-auto-interpret-r1.mjs --mode=cycle --feed-url=https://zgmini.kr/api/outbreak-news/iran/r41 --cache=<개인 임시 캐시> --output=<개인 임시 결과> --model=gemma3:4b --max-new=16` |
+| 결과 검증 | `news-analysis-r3-pc-check.mjs preview <기존 stage> <새 stage>` |
+| D1 쓰기 전 검사 | `news-analysis-publication-r1.mjs --input=<검증된 stage> --mode=dry-run` |
+| 승인된 신규 자료 게시와 결과 재확인 | `news-analysis-publication-r1.mjs --input=<검증된 stage> --mode=publish`, `news-analysis-r3-pc-check.mjs publish <게시 로그> <기대 READY 수>` |
+
+위 옵션은 현재 코드가 실제 지원하는 인수만 기재했다. 새 CMD를 만들기 전에 위 도구를 우선 재사용하고, 복잡한 JSON·해시 검증은 Node helper에서 수행한다. Git 없는 PC용 ZIP을 새로 제공할 때는 **고정 source commit, 파일별 SHA-256 manifest, 모든 정적·동적 의존 코드, 한국어 절차, 결과 파일**을 포함하고 패키지 자체 검산과 승인 소스 대조를 구별한다. 실행 중 작업이나 잠금 상태를 알 수 없으면 임의 종료·삭제·재실행하지 않고 중단해 확인한다.
+
+### 현재 관측 증거, 선택 적용, STOP
+
+- 사용자 제공 `IRAN_NEWS_ANALYSIS_R3_RESULT.txt`: `FINAL_STATUS=R3_READBACK_VERIFIED`, R41 총 **40건**, READY **4건**, pending **36건**(권한 제한 35, Ollama 오류 1). `EXISTING_TASK_VERIFIED`는 **기존 10분 작업의 설정 확인**이지 40건 분석 성공이 아니다. 이 개인 운영 로그·본문·비밀값은 Git에 넣지 않는다.
+- R3.1의 **선택 적용 대상은 단 하나**: `scripts/iran-progress/news-r41-auto-interpret-r1.mjs`. 운영 PC의 예상 기존 SHA-256 `2affa5c9ffb31aae2c9ec405a00dbca2adc51cd3289dee186720ee4449bbe333`, 변경 후보 SHA-256 `434c5baa191c32da6bbb1b6e42c4e789bea6ea617e236c1f8a574c3f14d7d711`. 후보 파일의 GitHub 개별 반영 커밋 `f9f9c541af21e8596654b384fda35fbbea927be6`. R3.1 사용자용 실행 CMD 개별 반영 커밋 `f9c4c17c21981280ebc6185a22074226b8028c46`. 서로 다른 커밋과 PC 설치 SHA를 혼동하지 않는다.
+- 구버전 해시 불일치, 의존 파일 누락, 기존 READY 유실, 예약 작업 설정 변동, 잠금/동시 실행, 게시 결과 불확실 시 **STOP**. 적용 전 백업과 해시 검증, 검증된 stage와 D1 readback 확인을 우선한다. 원격 쓰기 결과가 불확실하면 즉시 재전송하지 않고 먼저 D1 현재값을 확인한다. 정상 자료를 빈 결과로 덮어쓰지 않는다.
+- R3.1 ZIP의 파일 단위 해시 검증은 구현되어 있지만 **고정 source commit + 전체 의존 파일 manifest를 포함한 새 공통 패키지 기준은 아직 별도 검증되지 않았다**. 따라서 R3.1의 GitHub 코드 작성·단위 테스트 통과와 운영 PC 설치·Ollama 처리·D1 게시·공개 반영 성공을 구별한다. 필요 시 기존 실행기의 PRECHECK/APPLY/VERIFY를 나눠 보강하되 설치기만 반복 생산하지 않는다.
+- 현재 차단 35건은 보도사 AI 이용권한 문제이며 CMD 전환으로 해제할 수 없다. 별도 승인된 독립 공식출처 사실 분석 또는 매체의 명시적 이용허락 없이 본문 AI 분석을 시작하지 않는다.
+
+### 사용자 실행 및 종료 보고 계약
+
+현재 ZIP의 PC 실행이 필요한 경우, 매번 **실행 목적·준비 상태·열 폴더·정확한 CMD·입력·1회 실행 횟수·정상 결과·STOP 조건·금지행동·다시 보낼 최소 결과 파일**을 빠짐없이 안내한다. 사용자 임의 재시도·다른 CMD 실행·예약 작업 변경을 지시하지 않는다. 결과 보고 시 코드/테스트, ZIP 구성, 실제 PC 설치, 수집/분석, D1 write/readback, 공개 UI, 다음 정규 실행을 독립적으로 표시한다. 전체 뉴스 분석이 실제 검증되기 전에는 자동화 개선 완료를 선언하지 않는다.
