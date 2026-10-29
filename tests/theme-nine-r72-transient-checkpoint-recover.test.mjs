@@ -47,7 +47,7 @@ test('R72 inspects exact 502 failure and preserves all 35 raw pages',t=>{
   assert.equal(info.sourceFailure,'STOP_HTTP_502');
   assert.equal(info.completedSymbols,35);
   assert.equal(info.manifestPagesVerified,35);
-  assert.equal(info.cooldownComplete,true);
+  assert.equal(info.ageMinutes,20);
 });
 
 test('R72 backs up only one checkpoint, then clears 502 marker without adding delta-*.json',t=>{
@@ -64,20 +64,25 @@ test('R72 backs up only one checkpoint, then clears 502 marker without adding de
   const state=JSON.parse(fs.readFileSync(f.statePath));
   assert.equal(state.failure,undefined);
   assert.equal(state.failedAt,undefined);
+  assert.equal(inspectR72Checkpoint({home:f.home,
+    now:new Date('2026-10-29T05:31:00Z'),allowNoFailure:true}).noFailed,true);
   for(const [rel,digest] of f.rawHashes)
     assert.equal(sha(fs.readFileSync(path.join(f.home,rel))),digest);
   assert.equal(sha(fs.readFileSync(path.join(f.home,'raw-manifest.json'))),f.manifestSha);
 });
 
-test('R72 rejects unknown failure, any live lock, or too-early recovery',t=>{
+test('R72 rejects unknown failure or any live lock, without arbitrary 15min wait',t=>{
   const f=fixture(t,{failure:'REQUEST_OUTCOME_UNKNOWN'});
   assert.throws(()=>inspectR72Checkpoint({home:f.home,
     now:new Date('2026-10-29T05:30:00Z')}),{code:'R72_FAILURE_NOT_EXACT_HTTP_502'});
   const state=JSON.parse(fs.readFileSync(f.statePath));
   state.failure='STOP_HTTP_502';
   fs.writeFileSync(f.statePath,JSON.stringify(state));
-  assert.equal(inspectR72Checkpoint({home:f.home,
-    now:new Date('2026-10-29T05:14:00Z')}).cooldownComplete,false);
+  const immediate=recoverR72Checkpoint({home:f.home,
+    now:new Date('2026-10-29T05:09:10Z'),preflightFn:()=>({canRun:true})});
+  assert.equal(immediate.status,'R72_502_CHECKPOINT_RECOVERED_WITH_BACKUP');
+  state.failure='STOP_HTTP_502';
+  fs.writeFileSync(f.statePath,JSON.stringify(state));
   fs.writeFileSync(path.join(f.home,'state','delta.lock'),'');
   assert.throws(()=>inspectR72Checkpoint({home:f.home,
     now:new Date('2026-10-29T05:30:00Z')}),{code:'R72_ACTIVE_COLLECTION_LOCK_PRESENT'});
