@@ -46,7 +46,7 @@
 .mc-day.selected{background:var(--zg-gold,#FFD166);color:#071a29}
 .mc-day.selected small{color:#26384b}
 .mc-day.today{outline:1px solid var(--zg-gold,#FFD166);outline-offset:-1px}
-.mc-head,.mc-row{display:grid;grid-template-columns:66px 83px 67px 45px minmax(205px,1fr) 70px 70px 70px 104px;align-items:center;column-gap:8px}
+.mc-head,.mc-row{display:grid;grid-template-columns:66px 83px 67px 45px 49px minmax(185px,1fr) 70px 70px 70px 104px;align-items:center;column-gap:8px}
 .mc-head{min-height:39px;padding:0 19px;background:#123246;color:#8eabba;font-size:10px;font-weight:800}
 .mc-head span:nth-last-child(-n+4){text-align:right}
 .mc-data-state{margin:0;padding:8px 19px;background:#1d3541;color:#acc4d1;font-size:10px}
@@ -59,6 +59,9 @@
 .mc-date small{font-size:10px;font-weight:500;color:#8aa9bb}
 .mc-time{font-size:11px;color:#c2d6e2;white-space:nowrap;font-variant-numeric:tabular-nums}
 .mc-country{font-size:11px;color:#ccdfeb}
+.mc-kind{display:inline-flex;align-items:center;justify-content:center;justify-self:start;width:max-content;white-space:nowrap;min-width:35px;padding:3px 6px;border-radius:3px;font-size:10px;font-weight:800;line-height:1.2}
+.mc-kind-indicator{background:#453365;color:#DCC1FF}
+.mc-kind-earnings{background:#174B68;color:#8DDCFF}
 .mc-importance-heading{display:inline-flex;align-items:center;gap:4px;color:var(--zg-gold,#FFD166);white-space:nowrap}
 .mc-importance{display:inline-flex;align-items:center;gap:2px;color:var(--zg-gold,#FFD166);white-space:nowrap;min-width:0}
 .mc-event{display:flex;align-items:center;flex-wrap:wrap;gap:4px 7px;min-width:0;line-height:1.45}
@@ -80,7 +83,7 @@
 .mc-note{margin-top:12px;background:var(--zg-panel-raised,#102A3E);border-radius:4px;padding:13px 15px;color:#bccfd9;font-size:11px;line-height:1.65}
 @media(max-width:1190px){
  .mc-frame{width:min(1500px,calc(100% - 28px))}
- .mc-head,.mc-row{grid-template-columns:56px 73px 62px 39px minmax(170px,1fr) 62px 62px 62px 92px;column-gap:6px}
+ .mc-head,.mc-row{grid-template-columns:56px 73px 62px 39px 45px minmax(155px,1fr) 62px 62px 62px 92px;column-gap:6px}
  .mc-controls{padding:13px 14px}
  .mc-head,.mc-row{padding-left:12px;padding-right:12px}
  .mc-week,.mc-calendar-strip{padding-left:13px;padding-right:13px}
@@ -88,6 +91,10 @@
  .mc-importance svg{width:11px;height:11px}
 }
 @media(max-width:880px){.mc-search{flex-basis:210px}.mc-range{margin-left:0}}
+@media(min-width:701px) and (max-width:800px){
+  .mc-head,.mc-row{grid-template-columns:45px 62px 54px 33px 39px minmax(135px,1fr) 51px 51px 51px 78px;column-gap:4px;padding-left:8px;padding-right:8px}
+  .mc-event>a{font-size:10px}
+}
 @media(max-width:700px){
  .mc-frame{width:calc(100% - 20px);padding-top:18px}
  .mc-hero{align-items:flex-start;margin-bottom:14px}
@@ -111,7 +118,8 @@
  .mc-date{grid-column:2;grid-row:1;font-size:11px}
  .mc-time{grid-column:3;grid-row:1;text-align:right;font-size:10px}
  .mc-remaining{grid-column:4;grid-row:1;font-size:10px}
- .mc-country{grid-column:1/5;grid-row:2;font-size:10px}
+ .mc-country{grid-column:1/3;grid-row:2;font-size:10px}
+  .mc-kind{grid-column:3/5;grid-row:2;justify-self:end;font-size:10px}
  .mc-event{grid-column:1/5;grid-row:3;margin:1px 0 5px}
  .mc-event>a{font-size:12px}
  .mc-number{grid-row:4;background:#102d40;border-radius:3px;padding:7px 8px;text-align:left;font-size:12px}
