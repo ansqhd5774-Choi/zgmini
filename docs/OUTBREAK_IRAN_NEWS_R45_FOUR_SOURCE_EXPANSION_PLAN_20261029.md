@@ -109,3 +109,14 @@
 - **금지 동작:** 테스트 실행기는 운영 source checkout 설치·변경, 원자료/PC 캐시, D1 write, 공개 R1 키, 스케줄러, 점수·배포 변경을 수행하지 않는다. 메모리 DB 테스트의 일회성 fixture INSERT는 운영 D1 작업이 아니다.
 - **현재 Gate:** Remote source/launcher committed and inspected; **R46 PC Node test execution PENDING**, `R45-C` real D1 write/read-back PENDING, site deployment PENDING. `git main`과 기존 작업 브랜치 차이가 커 전체 병합 금지, 검증 후 파일별 최신 main 적용.
 - **후속 필수 액션:** PC의 R46 CMD 결과 파일을 확인하여 LAST PASS/FIRST FAIL을 확정. 자동 게시 전에 운영 PC 승인된 writer source SHA/config/checkpoint, 실제 D1 39행 기준선 재조회, R45 신규 기사 승인 범위를 확인하고 멱등 증분 게시. 기사 0건이나 일부 Source 실패가 기존 39행을 삭제하거나 기존 7개 UI를 감추지 않도록 검증한다.
+
+
+## 9. R46 실제 PASS / R47 D1 읽기 전용 사전검사 준비 (2026-10-29)
+
+- 사용자 PC 원본 증거 \`IRAN_NEWS_R45_R46_TEST_RESULT.txt\` 확인: 고정 소스 \`485c9a08b37270b5cc35260829e81adda3e19bc7\` 20개 Blob 일치, Node 통합 시험 **21 PASS / 0 FAIL**, Arab News 목록 22개, 원문·출판시각·현행 2단계 키워드 적격 8개, 범위 제외 13개, ARTICLE_FETCH_FAILED 1개. 종료 \`R46_TESTS_PASS_PROBE_RECORDED\`; 기존 DB·PC 후보·스케줄·공개 반영 쓰기 없음.
+- 신규 적격 8개는 현행 R38 키워드 기준 통과를 의미한다. 별도 기사 품질 보증이 아니다. Netflix 연예·선거·일반 에너지 기사처럼 뉴스 목적과의 관련성이 낮아 보이는 제목도 포함된다. **승인 없는 2단계 산식/키워드 조건 변경 및 자동 제외 금지**. 원문 재검토 필요성 별도 기록.
+- 신규 \`scripts/iran-progress/news-metadata-preflight-r47.mjs\`는 R46 원본 실행 로그·21 PASS·고정 소스·8건 적격 메타데이터·제약된 sourceId 검증 후 기존 R41 신규행 변환기를 사용한다. 운영 D1 **읽기 전용**으로 R1 스냅샷 버전·stored_at 및 기존 7출처 39행을 재조회해 기준선 SHA256을 산출한다. 8개 ID의 미저장/이미 저장/부분 저장/충돌을 구분하며 임의 재시도하지 않는다.
+- 신규 \`tests/iran-news-r47-preflight.test.mjs\`에 임시 fixture 기반 R46 로그 검사, 원격 D1 READ 쿼리만 호출, 기존 39행 보존, 중복·기존 저장·충돌 판정의 회귀 시험 추가. 원격 Node 실제 테스트 실행은 **아직 미검증**. 수집 원본 R46 로그를 GitHub에 업로드하지 않음.
+- 고정 SHA Windows CMD \`scripts/iran-progress/IRAN_NEWS_R47_D1_PREFLIGHT_READONLY_20261029.cmd\` 생성. 소스 \`9c5e3b2dbdfc7749bfa9510ee446b9d4cf47b2a5\`에서 9개 파일을 개별 Git Blob SHA1 검증하고 테스트 통과 시 PC writer 기존 설정/OAuth를 사용해 **D1 SELECT만** 실행. 동일 폴더에 기존 \`IRAN_NEWS_R45_R46_TEST_RESULT.txt\`가 있어야 한다. 결과 \`IRAN_NEWS_R47_D1_PREFLIGHT_RESULT.txt\`. 기존 결과 존재 시 재실행 거부.
+- 최초 로그 기준 Python/Node 파일 파싱 검사에서 Arab News 8개를 검출했으나 **이는 실제 D1 read-back이 아니다**. R47 실행·실제 D1 저장·main 반영·Cloudflare 배포·운영 UI 확인은 아직 미완료.
+- 다음 실행: R47 PC 읽기 전용 사전검사 1회 → 기존 39행/8개 신규 ID 상태 확인 → 결과가 PRELIGHT_READY로 확인될 경우에만 해당 승인 범위의 신규 기사 증분 저장 설계 및 원격 read-back → 최신 main과의 drift 점검 후 최소 파일 배포. 임의 재수집·기존 일회성 R42/R44 재실행 금지.
