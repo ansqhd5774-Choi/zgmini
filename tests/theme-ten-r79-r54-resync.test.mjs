@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {r79Plan} from './theme-ten-r79-r54-resync.mjs';
+import {r79Plan} from '../scripts/pc-writer/theme-ten-r79-r54-resync.mjs';
 
 const candidateDates=['2026-10-27'];
 const base={status:'READY',themes:Array(10).fill({}),
