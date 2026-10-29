@@ -62,3 +62,12 @@ The existing public `/api/asset-bubble-raw` sidecar contains **only two genuine 
 `node --test tests/asset-r10-one-year-readonly-r1.test.mjs tests/asset-r10-raw-readonly-r1.test.mjs`
 
 The tests exercise genuine five-point readiness, an intentionally missing breadth month, score parity failure, no future observations, and read-only source constraints.
+
+
+## R2 publication-launcher recovery (2026-10-29)
+
+- PC R1 evidence: `ASSET_R10_1Y_HISTORY_D1_RESULT_3848_6278.txt`. `PASS_DRY_RUN` for six factors, five full and breadth partial; then `APPLY_EXIT_CODE=1`, `ERROR=ASSET_R10_HISTORY_D1_OPERATION_FAILED`, `WRAPPER_RESULT=STOPPED_NO_RETRY`. There was **no successful write/readback**. The public history API still reported `PENDING/STORED_PROJECTION_PENDING` after the attempt. Do not infer D1 completion from the dry run.
+- Root cause in source: R1 launches the one-shot from `codex/api-site-integration-r1-20261026`, but its existing `EARNINGS_R4_C_D1_DUAL_SOURCE_GATES.mjs` independently requires a clean isolated **`main`** publisher with matching `origin/main` remote HEAD. This is a source-gate failure before the existing-raw D1 comparison/write; no relaxation of this security gate is permitted.
+- **R2 corrected command:** `scripts/pc-writer/ASSET_R10_1Y_HISTORY_D1_APPLY_R2.cmd` on the **same existing work branch**. It clones latest `main` into an isolated TEMP publisher, checks exact publisher/reader/auditor blobs, runs approved PC dry-run, and uses an independent clone of the existing working branch solely for the proven operational-checkout discovery helper. It verifies latest remote `main` again immediately before apply, then invokes the original one-key audited publisher **once**, without retries. Existing D1 raw key, scores, SQLite, source config, scheduler, API, UI and deployments remain untouched by this launcher itself.
+- Local static regression: `node --test tests/asset-r10-history-r2-launcher.test.mjs` **4/4 PASS**; compares isolation/clone scope, pinned source hashes, main-drift check, dry-run/apply ordering, and fail-closed behavior. This is not a Windows/PC integration execution or a D1 result.
+- **Pending operating gate:** on the approved PC run R2 at most once and send only `ASSET_R10_1Y_HISTORY_D1_R2_RESULT_*.txt`. On `APPLY_EXIT_CODE != 0`, stop and read the D1 state before further attempts. `READBACK_VERIFIED` or validated `ALREADY_STORED` plus public `PARTIAL` history API must precede UI chart history wiring. Keep 5/5 real quarters for five factors and 3/5 for breadth; never invent 2025-Q2/Q3 breadth observations.
