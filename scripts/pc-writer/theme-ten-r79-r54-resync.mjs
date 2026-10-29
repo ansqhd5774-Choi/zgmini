@@ -22,7 +22,9 @@ const KST=new Intl.DateTimeFormat('en-GB',{
 
 export function r79Plan({base,candidateDates=[],now=new Date()}={}){
   const clock=KST.format(now),[h,m]=clock.split(':').map(Number),minutes=h*60+m;
-  if(minutes>=675&&minutes<=855)return {allowed:false,reason:'SCHEDULE_PROTECTION_WINDOW'};
+  // R54 may run for up to 20 minutes. Include a buffer on both sides of
+  // the existing 11:15–14:15 reservation; never alter the tasks themselves.
+  if(minutes>=655&&minutes<=875)return {allowed:false,reason:'SCHEDULE_PROTECTION_WINDOW'};
   if(base?.status!=='READY'||!Array.isArray(base.themes)||base.themes.length!==10||
     !/^20\d\d-\d\d-\d\d$/.test(base.confirmedObservationDate??''))
     return {allowed:false,reason:'PUBLIC_BASE_NOT_READY'};
