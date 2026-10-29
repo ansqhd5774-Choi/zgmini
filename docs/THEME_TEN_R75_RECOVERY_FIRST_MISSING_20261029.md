@@ -85,3 +85,13 @@ R75는 기존 R48을 **한 번** 호출하며 R48 종료 0을 점수/운영 갱�
 - R75 원본 대조에서 우주·위성 4개(UFO/NASA/WARP/ROKT) 및 데이터센터·전력 3개(DTCR/GRID/SPY) 로컬 전용 원시매니페스트는 10/23에서 멈췄다. 공급자 10/27 행은 당시 존재했고 **최초 누락은 전용 PC 수집**이다. 10/28 행 0개는 10/29 조회 당시 증거이므로 다음 수집 시 신규 공급 여부를 다시 확인한다.
 - **남은 일:** (1) 다음 기존 승인 R54 게시가 바이오 후 갱신된 잠정 sidecar를 정확히 읽어 R37 revision을 재게시할 수 있는지 단 한 번 확인, (2) 우주·위성/데이터센터·전력의 기존 승인 PC 전용 수집 경로·권리·원본 SHA 확인 후 27일 이후 실제 수집, (3) 전용 계산→D1 readback→공개 API/차트→다음 정규 실행 확인. 정규 실행까지 완료했다는 주장은 아직 할 수 없음.
 - Windows 작업 `Settings.Enabled`와 `CalendarTrigger.Enabled`의 XML 값 `UNSPECIFIED`는 명시적 비활성 상태가 아니다. 변경 금지. 수집·게시 권한과 승인한 기존 ETF·산식 모두 보존.
+
+
+## R79 후속 — 바이오 R8 이후 R54 단독 재동기화 패키지
+
+- 근거: R78 실제 PC에서 R54 직후 `modelRevision=THEME_LEGACY_NINE_R37_PUBLIC_V1`, 이어진 바이오 R8 갱신 직후 `modelRevision=null`이었다. 이 두 단계의 시계열은 **R37 레코드가 기존 공개 잠정 sidecar와 정확히 일치해야 한다는 가드**와 일관된다. D1 raw readback을 생략한 추론이므로 결론은 재검증 후 확정한다.
+- 원 브랜치에 `scripts/pc-writer/THEME_TEN_R79_R54_ONLY_ONCE.cmd`, `scripts/pc-writer/theme-ten-r79-r54-resync.mjs`, `tests/theme-ten-r79-r54-resync.test.mjs` 등록. 별도 배포/개별 테마 추가는 없다.
+- 1회용 ZIP `THEME_TEN_R79_R54_ONLY_ONCE_R2_20261030.zip`은 CMD·도우미·한국어 안내 3개 파일. PC의 새 독립 폴더에서 CMD를 1회 실행한다. R79는 기존 **R54만** 호출하고 바이오 R8을 다시 호출하지 않는다.
+- 실행 게이트: 한국시간 10:55~14:35 예약 보호, 공개 `READY`·기존 10개 테마, 확정일과 승인 R48 개인 후보 정확히 일치, R54 기존 동의 파일, 개인 수집 lock 없음, PC에 설치된 R78 R51/R37 두 SHA 정확히 일치. 이미 R37 버전이면 D1 쓰지 않고 종료.
+- R54 종료 코드 0과 별개로 다시 공개 API `modelRevision=THEME_LEGACY_NINE_R37_PUBLIC_V1` 및 확정일 일치 재확인. 완료 상태도 `NEXT_REGULAR_PENDING`으로 명시하여 정규 실행 검증과 구분한다.
+- 우주·위성/데이터센터·전력은 원본 10/27 수집 누락이 먼저이므로 R79에서 **어떤 원자료·전용 계산·D1 게시도 시도하지 않는다**. 전용 Windows 작업 실제 실행 경로·승인 collector 확인 후 별도 최소 복구한다. 다음 정규 실행 로그와 실제 화면 날짜까지 확인하기 전 운영 복구 완료 판정 금지.
