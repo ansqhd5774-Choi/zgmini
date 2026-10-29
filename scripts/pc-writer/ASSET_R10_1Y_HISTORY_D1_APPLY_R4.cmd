@@ -67,7 +67,7 @@ if not exist "%RUNNER%" (
  >> "%LOG%" echo ERROR=MAIN_HISTORY_ONE_SHOT_MISSING
  goto :failed
 )
-for /f "delims=" %%H in ('git -C "%PUBLISHER%" hash-object scripts/pc-writer/ASSET_R10_1Y_HISTORY_D1_ONE_SHOT_R1.mjs') do set "RUNNER_HASH=%%H"
+for /f "delims=" %%H in ('git -C "%PUBLISHER%" hash-object scripts/pc-writer/ASSET_R10_1Y_HISTORY_ARCHIVED_D1_ONE_SHOT_R4.mjs') do set "RUNNER_HASH=%%H"
 if /I not "%RUNNER_HASH%"=="413bd96d27887a3620794a81da0f5899c4fe7c1a" (
  >> "%LOG%" echo ERROR=HISTORY_ONE_SHOT_SHA_DRIFT
  goto :failed
