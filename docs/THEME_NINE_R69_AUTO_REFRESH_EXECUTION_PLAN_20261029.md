@@ -29,7 +29,7 @@ GetMarketHistory 공식 Coverage는 미국 주식·ETF 데이터가 **최소 48�
 ### 2단계 — Windows 예약 작업 실운영 증거 확보 (진행)
 
 1. PC 11:30 개인 수집 작업 `ZGMINI-PC-Theme-Nine-R47-Private`, 13:30 게시 작업 `ZGMINI-PC-Theme-Nine-R54-Public` 각각 `schtasks /Query /V /FO LIST`, `/XML`로 **실제 Last Run Time, Last Result, Next Run Time, 실행 계정, Action 경로, StartWhenAvailable, Battery 옵션**을 확인한다.
-2. 기존 작업 및 원자료에 영향 없는 **R69 읽기 전용 CMD 진단 파일**을 추가한다. 민감한 Windows 사용자 이름·자격 증명·Cloudflare 토큰·원시 가격 데이터를 공개 Git 로그에 올리지 않는다.
+2. 기존 작업 및 원자료에 영향 없는 **R69 읽기 전용 CMD 진단 파일**을 추가했다: `scripts/pc-writer/THEME_NINE_R69_SCHEDULE_READONLY.cmd`와 같은 폴더의 `theme-nine-r69-schedule-readonly.mjs`. `node --test tests/theme-nine-r69-schedule-readonly.test.mjs` 통과. 민감한 Windows 사용자 이름·자격 증명·Cloudflare 토큰·원시 가격 데이터를 공개 Git 로그에 올리지 않는다. **Windows 실PC 첫 실행 검증은 아직 남았다.**
 3. `THEME_NINE_R47_RECURRING_PRIVATE_UPDATE_*.txt`, `THEME_NINE_R48_PRIVATE_CYCLE_*.txt`, `THEME_NINE_R54_CYCLE_*.txt`의 최신 실제 실행 경과를 대조한다. **예약 존재만으로 실행 성공을 인정하지 않는다.**
 4. 배터리 옵션과 `StartWhenAvailable` 부재는 자동 갱신 누락 가능성을 키우지만, 실제 미실행의 **확정 원인**으로 단정하기 전 2·3항의 PC 증거를 확인한다.
 
@@ -65,6 +65,7 @@ GetMarketHistory 공식 Coverage는 미국 주식·ETF 데이터가 **최소 48�
 | 28일 SPY 원가격 가용성 | **SOURCE_PENDING** (조회 0개) |
 | 두 Windows 작업 실제 29일 정규 실행 | **PC 스케줄러 실행 결과 필요** |
 | 예약 누락/배터리 옵션 운영 영향 | **진단 필요**, 미승인 예약 변경 없음 |
+| R69 안전 진단 CMD·로직·테스트 작성 | **브랜치 저장 PASS**; 기존 Reader/R54 테스트 포함 8개 파일 PASS. Windows 실PC 실행 전 |
 | 새 날짜 D1 readback·공개 일치 | **새 수집·정렬까지 대기** |
 
 ## D. 변경 금지 계약과 참고 문서
