@@ -1,6 +1,6 @@
 {
   "schema": "zgmini-r10-writer-origin-r4",
-  "version": "R10-WRITER-ORIGIN-READONLY-R4",
+  "version": "R10-WRITER-ORIGIN-READONLY-R4-FIX1",
   "repository": "ansqhd5774-Choi/zgmini",
   "branch": "codex/api-site-integration-r1-20261026",
   "approvedSource": "a477ef304425145f559352af4291e437e3b08a2d",
@@ -8,8 +8,8 @@
   "runtime": ["Windows", "Node.js >=22", "Git", "PowerShell with optional Get-CimInstance/Get-ScheduledTask"],
   "entrypoints": {"preflight":"RUN_R10_WRITER_ORIGIN_READONLY.cmd", "install":"NOT_PROVIDED", "verify":"ASSET_R10_WRITER_ORIGIN_RESULT.txt"},
   "files": [
-    {"path":"RUN_R10_WRITER_ORIGIN_READONLY.cmd","sha256":"7cb8d793ad4d626a87930277e20a784afca4b37fd6404278a73394d9f73d97f1"},
+    {"path":"RUN_R10_WRITER_ORIGIN_READONLY.cmd","sha256":"63d382e95e80d0f96d3c310e752abfa9eb3cc2f203cdb7e474de26377db1ab0b"},
     {"path":"r10-writer-origin-readonly.mjs","sha256":"fe4c992b686af7e272692625d4a06e05ec29aa4c5bc718eafd8fcdc57c59ec60"},
-    {"path":"README_KO.txt","sha256":"ee196b4e3454dba4ab3e9c5f226f391856b905867b0901931e43114842bc027b"}
+    {"path":"README_KO.txt","sha256":"81ca49bd55604864682bb7863dce05a8fac80ac2db1c0e33162ad8699de327fe"}
   ]
 }

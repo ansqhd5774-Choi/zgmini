@@ -165,3 +165,13 @@ PC에서 `E:\ZGmini\data\pc-writer\config.json`의 `source`, 마지막 실행 `l
 - 오프라인 3개 구조 회귀 시험, Node 구문, manifest 자체 해시, Linux 비-Windows 중단, ZIP CRC 및 CMD CRLF 확인. **실제 Windows R4 실행과 PC 운영 적용은 미검증**.
 
 운영 source 설치 여부는 실행 경로 검증과 안전한 소강 시점 확인 후 결정한다. 운영 중인 잠금을 삭제하거나 실행 PID를 중단시키지 않고, 기존 스케줄러/VBS를 재구성하지 않는다.
+
+## 14. R4 실행기 Node 경로 오류 보정 — FIX1
+
+R4 사용자 Windows 스크린샷에서 `C:\nvm4w\nodejs\node.exe`가 현재 Windows와 호환되지 않아 **진단 JS 자체가 실행되지 않은 것**이 확인되었다. 운영 R10이나 Writer의 장애로 분류하지 않는다. 원래 R3에서 정상 실행한 `E:\ZGmini\runtime\node.exe` 고정 경로를 R4 CMD에서도 재사용하도록 **런처 파일만** 수정한다.
+
+- 새 ZIP: `ASSET_R10_WRITER_ORIGIN_READONLY_R4_FIX1_20261029.zip`, SHA-256 `abc64ef55d9fdac87608d66dd164b1c80ba10db9179c0c69193a67e3c184f878`.
+- 새 manifest SHA-256: `9d915c400c1d794261ac72ec87422af9213f1207e0addf3de7677c13b2bf85c1`.
+- CMD는 PATH의 `node.exe`를 더 이상 사용하지 않는다. 고정 Node가 없거나 `--version` 실행 실패 시 `ASSET_R10_WRITER_ORIGIN_LAUNCH_RESULT.txt`에 `STOP_PINNED_NODE_MISSING` 또는 `STOP_PINNED_NODE_INCOMPATIBLE`을 기록하고 중단한다. 임의 설치·런타임 교체·PATH 변경을 하지 않는다.
+- 진단 helper와 대상 조회 범위, 승인 source, R10 구현·검증 계약은 R4와 동일하다. 기존 `R4` ZIP 대신 새 `R4_FIX1`을 **새 폴더에** 압축 해제하고 CMD 1회 실행한다.
+- Linux fixture 테스트는 Node 고정 경로 CMD의 Windows 실행을 증명하지 않는다. 실 Windows에서 수정 런처의 성공 여부는 사용자 결과 TXT로 확인한다. INSTALL·D1·스케줄러·VBS 변경 없음.

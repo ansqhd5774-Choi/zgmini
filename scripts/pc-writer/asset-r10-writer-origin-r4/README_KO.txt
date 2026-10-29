@@ -7,7 +7,10 @@ ZGMINI ASSET R10 Writer 실제 호출 경로 읽기 전용 진단 R4
 실행 전: 기존 R10 R6 INSTALL을 실행하지 마십시오.
 패키지 ZIP 전체를 E: 드라이브 등 임의의 새 폴더에 압축 해제합니다.
 파일을 한 폴더 안에 두고 RUN_R10_WRITER_ORIGIN_READONLY.cmd를 정확히 1회 실행합니다.
-입력하는 값은 없습니다. Node.js, Git, PowerShell이 있는 기존 Windows PC에서 실행합니다.
+입력하는 값은 없습니다. Git, PowerShell이 있는 기존 Windows PC에서 실행합니다.
+Node는 이전 R3에서 사용한 E:\ZGmini\runtime\node.exe만 사용합니다.
+C:\nvm4w\nodejs\node.exe 등 PATH의 다른 Node는 호출하지 않습니다.
+해당 Node가 없거나 실행할 수 없으면 INSTALL 없이 LAUNCH_RESULT에 STOP을 기록합니다.
 공백/한글 폴더명도 지원합니다. 작업 중 창이 열려 결과 파일 경로를 알려줍니다.
 
 결과: 같은 폴더의 ASSET_R10_WRITER_ORIGIN_RESULT.txt 하나만 대화로 보내주세요.
