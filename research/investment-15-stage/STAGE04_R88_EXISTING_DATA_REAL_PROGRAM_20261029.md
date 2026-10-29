@@ -36,3 +36,10 @@ node research/investment-15-stage/stage04/stage04-r88-existing-results-bridge.mj
 4. 게시·자동매매: 수행하지 않음.
 
 **다음 단계:** 미연결 1단계 독립 시장 점수의 실제 저장 결과 연결, Stage04 G/D/M4 산식 승인 후 기존 실측을 이용해 계산. 동일 공식 원천의 산업 실측 재수집은 이번 연결 작업에 포함하지 않음.
+
+## Windows 첫 사용자 실행 실패와 R88 FIX1 (2026-10-29)
+
+- **확인된 실제 Windows 오류:** 기존 CMD의 `--archive-dir "%~dp0"`에 전달된 `%~dp0`이 `\\`로 끝나 Windows/Node 인수 파싱에서 닫는 큰따옴표를 이스케이프했다. 결과적으로 뒤의 `--json ... --md ...`이 archive-dir 문자열로 합쳐졌고, 프로그램은 존재하지 않는 `...json --md ...md\\STAGE04_SAME_VINTAGE_VALIDATION_R3_20261025.md`를 열려고 하여 `ENOENT`가 발생했다.
+- **수정:** `set "ARCHIVE_DIR=%~dp0."`를 사용하고 `--archive-dir "%ARCHIVE_DIR%"`로 전달한다. 실제 폴더와 동일한 경로이면서 인수가 `\\`로 끝나지 않는다.
+- **검증:** CMD ASCII/CRLF 유지, 회귀 테스트 **9/9**, 수정된 `--archive-dir <folder>/.` 옵션으로 실보존 R86 + R15/R3 오프라인 결합 **21/21, 관측 7/9, YoY 5/9, 가속도 3/9** 재검증. Windows 사용자 PC 재실행 결과는 아직 받지 않았다.
+- **변경 제한:** 자료·산식·API·Ollama·M4·거래와 무관한 실행 인수만 수정했다. 기존 전용 브랜치를 유지했다.
