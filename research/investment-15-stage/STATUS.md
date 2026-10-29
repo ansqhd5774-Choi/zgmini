@@ -2,6 +2,8 @@
 
 > **현행 R89(2026-10-29):** Stage04 산업 실측·YoY·가속도 및 G/D/M4 수집·산식·실행기 제거. 연계 Stage05 R80 실측, M4/S5 자동 점수 게이트도 폐기. 유지: 21개 전망 CAGR, 시장·섹터·테마 F, Stage01 별도 시장 점수, Stage03 승인 9개/우주 연구 전용, 사용자 `FINAL_CONFIRMED`. [현재 기준](STAGE04_THEME_SELECTION_RULES_R83_20261029.md) · [삭제 내역](STAGE04_R89_REMOVE_REALIZED_INDUSTRY_YOY_ACCEL_20261029.md). 아래 과거 기록은 현행 실행 기준이 아니다.
 
+> **공통 실행 지침:** [중앙 CMD 실행 방식 선택 기준](https://github.com/ansqhd5774-Choi/zgmini/blob/codex/theme-fear-greed-integration-20261025/docs/CMD_EXECUTION_PLAYBOOK.md). 이 문서의 상태·증거 기록은 코드/패키지/PC 실행/저장/D1/배포/다음 정규 실행을 구분하며, 사용자 승인 없이 운영 도구·스케줄러를 전환하지 않는다.
+
 상태값: `EXISTING_INPUT` 기존 ZGMINI 입력, `DESIGNED` 설계 보관, `CODE_PRESENT` R25 코드 보관, `PARTIAL` 외부 원문/실행 검증 일부 완료, `NOT_VERIFIED` 본 브랜치에서 검증하지 않음.
 
 | 단계 | 작업 | 현재 확인 가능한 근거 | 상태 |

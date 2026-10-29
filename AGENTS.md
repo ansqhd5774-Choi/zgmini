@@ -35,6 +35,12 @@ ZGMINI PLUGIN & EXECUTION RULES — COMPACT R5 FINAL
 - GitHub와 관계없는 작업은 `작업 브랜치: 해당 없음 (GitHub 변경 없음)`으로 명시한다. 브랜치를 조회하지 못했다면 추측하지 말고 `미확인`으로 보고한다.
 - 보고 전에 원격 브랜치 존재와 반영 커밋을 확인한다. 미실행·미배포·미병합 상태를 완료로 표현하지 않는다.
 
+## 1.2 실행 방식·패키지 선택 — 중앙 공통 기준 (2026-10-29)
+
+- 공통 실행 지침의 단일 원본은 [`docs/CMD_EXECUTION_PLAYBOOK.md`](https://github.com/ansqhd5774-Choi/zgmini/blob/codex/theme-fear-greed-integration-20261025/docs/CMD_EXECUTION_PLAYBOOK.md) (`codex/theme-fear-greed-integration-20261025`)이다. 이 브랜치에 전문을 복제하지 않는다.
+- 각 작업 착수 시 원본 지침과 이 브랜치의 작업별 실행 명세를 함께 확인한다. 승인 범위·기존 실행기·실제 PC 승인 SHA·누락 필수 단계를 확인하고, CMD 한 개 강제 없이 기존 실행기/단계별 CMD/Node helper/독립 ZIP/선택 적용/checkpoint 이어하기/공식 GUI 중 적합한 방식을 사용한다.
+- 적용 전 대상·예상 SHA·잠금·백업을 확인하고 불일치 시 STOP한다. 검증된 최소 변경·정확한 readback·필요 시 검증된 복원을 따르며 강제종료/잠금 우회/DB 초기화/스케줄러 변경/포괄 배포는 별도 승인 없이 금지한다.
+- 코드·패키지·사용자 PC 설치·수집·계산·D1·배포·공개 Runtime·다음 정규 실행을 서로 다른 결과로 기록한다. 사용자 실행이 필요하면 목적·파일·횟수·입력·기대값·STOP·금지행동·회수할 최소 결과를 구체화한다.
 ## 2. Cloudflare — DEPLOYMENT CONTROL PLANE — ACTIVE
 - 기본 경로:
   `GitHub latest main -> Cloudflare Git integration -> Build -> exact Deployment -> Production 검증`

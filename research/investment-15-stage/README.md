@@ -2,6 +2,8 @@
 
 > **현행 R89(2026-10-29):** 사용자 지시로 공식 산업 실측·YoY·성장 가속도, G1/G2/G/D/M4 관련 산식·프로그램·기준을 제거했다. Stage04 현행 입력은 **21개 전망 CAGR·시장/섹터/테마 F** 및 사용자 최종 테마 선정이다. Stage05의 M4/S5 점수 연계도 폐기. [R89 적용 내역](STAGE04_R89_REMOVE_REALIZED_INDUSTRY_YOY_ACCEL_20261029.md) · [현행 선정 기준](STAGE04_THEME_SELECTION_RULES_R83_20261029.md). 아래 R2/R8~R22/R68~R80 수치 및 실행기 링크는 **역사 기록**이며 현행 개발·실행 기준이 아니다.
 
+> **공통 실행 방식 지침(중앙 원본):** [CMD 실행 방식·패키지 선택 기준](https://github.com/ansqhd5774-Choi/zgmini/blob/codex/theme-fear-greed-integration-20261025/docs/CMD_EXECUTION_PLAYBOOK.md) (`codex/theme-fear-greed-integration-20261025`). 이 브랜치에 전문을 복제하지 않는다. 작업별 범위·보존/STOP 기준은 [R89 결정 기록](STAGE04_R89_REMOVE_REALIZED_INDUSTRY_YOY_ACCEL_20261029.md)과 현행 단계 계약을 따른다. 향후 PC 작업은 기존 실행기·의존성·승인 SHA부터 확인하고, 패키지 제작/설치/운영 성과를 별도로 보고한다.
+
 기준일: 2026-10-27 (KST)  
 브랜치: `codex/investment-15-stage-m2-r25-20261025`  
 작업 범위: **Ollama가 독립 실행할 15단계 투자 분석 프로그램 개발**, 기존 연구·정량 검증·Windows M2 실행 패키지 이력 보존. 운영 ZGMINI 코드 및 주문 기능 변경 없음.
