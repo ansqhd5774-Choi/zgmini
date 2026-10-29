@@ -348,6 +348,32 @@ test('small local model can recover via separate base, facts and exact quote IDs
  assert.equal(payloads[5].format.required.length,1);
 });
 
+test('fallback model stage retries only a confirmed token-repeat HTTP 500 once',async()=>{
+ const {supportingQuotes,...core}=proposal;
+ const {keyPointKo,keyFactsKo,...base}=core;
+ const calls=[];
+ const result=await generateR41ModelAnalysis({originalTitle:item.title,articleBody},
+  {fetcher:async(_,options)=>{
+   const request=JSON.parse(options.body);
+   calls.push(request);
+   if(calls.length<=3)return {ok:true,json:async()=>({response:JSON.stringify({
+    ...proposal,supportingQuotes:['invented quote']})})};
+   if(calls.length===4)return {ok:false,status:500,
+    json:async()=>({error:'prediction aborted, token repeat limit reached'})};
+   if(calls.length===5)return {ok:true,json:async()=>({response:JSON.stringify(base)})};
+   if(calls.length===6)return {ok:true,json:async()=>({response:
+    JSON.stringify({keyPointKo,keyFactsKo})})};
+   const candidates=JSON.parse(request.prompt).quoteCandidates;
+   return {ok:true,json:async()=>({response:JSON.stringify({supportingQuoteIds:[
+    candidates.find(row=>row.text===quote).id]})})};
+  }});
+ assert.equal(result.impact,'neutral');
+ assert.equal(calls.length,7);
+ assert.equal(calls[4].options.repeat_penalty,1.35);
+ assert.equal(calls[4].options.repeat_last_n,64);
+ assert.deepEqual(result.supportingQuotes,[quote]);
+});
+
 test('three-step fallback never publishes source-unsupported numbers',async()=>{
  let calls=0;
  const {supportingQuotes,...core}=proposal;
