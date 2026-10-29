@@ -210,3 +210,12 @@
 - **PC 실행기:** `scripts/iran-progress/IRAN_NEWS_R54_EIGHT_PUBLISH_ONCE_20261029.cmd`와 `.zip`(CMD 1개, ZIP CRC PASS). 고정 소스 PIN `d4b9630dda46fd721a38358b0237afd4632b4765`, Git Blob 14개 검사 → 8개 테스트 → 현재 D1 11개 스키마 읽기 전용 확인 → 원본 R46/R49 로그로 8개 정확 ID 재조회 → 조건 충족 시 1회 D1 INSERT/readback. 이전 R50 CMD 실행 금지. 이전 R50 복구용 폴더의 `IRAN_NEWS_R45_R46_TEST_RESULT.txt`와 `IRAN_NEWS_R49_MEMBERSHIP_PREFLIGHT_RESULT.txt`를 **같은 폴더**에 두어야 하며 로그 내용은 Git에 올리지 않음.
 - **중복 실행 방지:** `IRAN_NEWS_R54_EIGHT_PUBLISH_RESULT.txt`가 이미 있으면 CMD는 작업 전에 중단. 쓰기 이후 오류는 저장 여부가 불명확할 수 있으므로, 임의 재실행 없이 결과 제출 후 원격 readback으로 판단.
 - **현 상태:** R54 SOURCE/LOCAL_TEST_PASS, GITHUB_BRANCH_REFLECTED, **PC_RUNTIME_PENDING**, **R54_D1_WRITE_NOT_EXECUTED**, API/UI/Production 검증 대기. 기존 main/Production 자동 변경 없음. R54 로컬 실행 후 D1 결과 및 사이트 실제 노출을 후속 검증한다.
+
+## 19. R54 실제 PC 읽기 전용 결과 및 R55 자기완결 복구 ZIP (2026-10-29)
+
+- **R54 실로그:** 사용자 제공 `IRAN_NEWS_R54_EIGHT_PUBLISH_RESULT.txt`; 고정 PIN `d4b9630dda46fd721a38358b0237afd4632b4765`, 소스 14/14 검증, Node SQLite 테스트 **8/8 PASS**, 실제 D1 `SCHEMA_VERIFIED_EIGHT_IDS_UNCHECKED`, `existingRows=44`, `arabNewsRows=0`, 최초 39건/R1 보존. `FINAL_STATUS=R46_EVIDENCE_MISSING_NO_WRITE`. **D1 쓰기 단계는 진입하지 않음.** Arab News 전체 0행이지만 정확한 8개 ID membership은 아직 R54에서 확인되지 않음.
+- **실패 원인:** R54 ZIP은 CMD만 포함하여 필수 R46/R49 원본 TXT가 같은 폴더에 없어 안전 중단한 **실행 패키징·의존 파일 배치 문제**. 원본 11매체 D1 스키마·Node 테스트는 정상. 기존 R54 CMD 재실행 금지.
+- **과거 검증 파일 회수:** 사용자가 과거 제출한 R46·R49 라이브러리 보존본을 동일한 파일명으로 회수. 기존 R47/R50 검증 파서에 넣어 **R46 8건, R49 기대 8건, checkedAt 일치, 기준 39건** 확인. 이 원본 로그를 공개 Git 저장소에는 올리지 않음.
+- **R55:** `scripts/iran-progress/IRAN_NEWS_R55_RECOVERY_PUBLISH_ONCE_20261029.cmd`를 **같은 브랜치**에 추가. 이전 R54 pre-write 결과의 SHA256 및 R46/R49 두 증거 SHA256 3개를 개별 확인하고, R54 동일 PIN 소스 14개 Git Blob·테스트 8개·D1 11 ID read-only·실제 신규 8 ID membership 순으로 검증. 전부 미저장일 때만 기존 R54 구현의 단일 D1 INSERT 8건과 원격 readback으로 진행; 이미 전부 저장/부분 저장/불일치면 무쓰기 또는 STOP. 새 결과 `IRAN_NEWS_R55_RECOVERY_PUBLISH_RESULT.txt`로 분리하여 과거 실패 기록을 보존.
+- **ZIP 배포:** `IRAN_NEWS_R55_RECOVERY_COMPLETE_20261029.zip`에 R55 CMD 및 R54 실패 로그, R46/R49 원본 TXT **4개 파일**을 포함하고 ZIP CRC 전체 PASS. ZIP은 원본 증거를 포함하므로 **GitHub에는 올리지 않고 사용자 파일 다운로드로 제공**. 새 빈 폴더에 압축을 푼 뒤 R55 CMD만 1회 실행.
+- **현재 상태:** R55 소스/원본 증거 파서/패키지 검증 완료, **R55 PC_RUNTIME_PENDING**, **신규 8건 D1 게시 미실행**, API·UI 반영 대기. 실패하면 재실행 없이 결과를 먼저 원격 재조회해 판단.
