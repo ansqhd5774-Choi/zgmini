@@ -145,3 +145,23 @@ PC에서 `E:\ZGmini\data\pc-writer\config.json`의 `source`, 마지막 실행 `l
 - 코드/manifest/ZIP 정적 검사 및 Linux 비-Windows 차단은 수행; 실제 Windows 운용 결과는 아직 미검증. 구조상 문자열 탐지가 곧 실제 분기 실행 증거는 아니다.
 
 현재 `BEFORE_SHA=a477ef...`, `AFTER_SHA=NOT_APPLIED`, `HOOK_STATUS=ABSENT`, 설치 승인 `NO`는 유지한다. R3 결과를 대조해 실제 Core 게시 호출 관계를 확인하고, 기존 설치기 `Local-Core` 경로 판정의 정확한 개선 범위만 결정한다. 과잉 차단을 해제하려고 잠금·프로세스·스케줄러 보호를 우회하지 않는다.
+
+## 13. R3 실측 및 실제 Writer 호출 출처 식별 R4 (읽기 전용)
+
+2026-10-29 사용자가 제출한 `ASSET_R10_CORE_ROUTE_PROOF_RESULT.txt`는 `READONLY_CORE_ROUTE_COMPLETED`, manifest `HASH_VERIFIED`였다. Windows에서 확인한 결과는 다음과 같다.
+
+- 승인 Writer/config.source/마지막 Writer source 모두 `a477ef304425145f559352af4291e437e3b08a2d`, checkout `TRACKED_DIRTY=NO`, R10 훅 **미설치**.
+- Local-Core 예약 VBS `run-local-core.vbs` SHA-256 `bb3e11c0...` 일치. 내부에 `local-cycle.mjs`, `run-local.mjs`, `--publish`, 승인 Writer checkout 문자열 모두 **없고**, R38 earnings dispatch를 참조한다. 따라서 기존 R6 설치기의 **Core → 승인 Writer 직접 연결 가정은 성립하지 않는다**.
+- Local-Korea VBS `run-local-korea.vbs` SHA-256 `df558149...` 일치. `local-cycle.mjs`·`--publish`·`--korea`가 있지만 `local-cycle.mjs`의 `lane==='core'&&publishAllowed` 게시 조건으로 Korea lane은 게시하지 않는다. **정적 참조를 Writer 실행 증명으로 사용하지 않는다.**
+- `local-cycle.lock` 존재, 경과 약 2분, PID `31912` 존재. 프로세스 **정체는 미검증**. `local-writer-last-run.at=2026-10-29T13:25:08.565Z`, 상태 `VERIFIED`. 실행 기록의 SHA 일치는 호출 경로의 증거가 아니다.
+
+한 번에 필요한 범위를 좁혀 후속 **읽기 전용** R4 패키지를 만든다.
+
+- ZIP: `ASSET_R10_WRITER_ORIGIN_READONLY_R4_20261029.zip`; SHA-256 `f73f88ec9f5275e17dae4d916061d3a0990831fb95a4717facbd307d01617f19`.
+- manifest: `scripts/pc-writer/asset-r10-writer-origin-r4/package-manifest.json`; SHA-256 `b32d1ce698d79c7782e3b5ad44622ae659e215d3001c95122c6cdb7ef2834d5c`.
+- 명령: 압축 해제 → `RUN_R10_WRITER_ORIGIN_READONLY.cmd` **1회** → `ASSET_R10_WRITER_ORIGIN_RESULT.txt` 제출. 입력 없음.
+- 진단 범위: R2에서 고정한 Core VBS와 R38/R31/R33/R22/R21 모듈의 SHA·호출 키워드·후속 파일명만 확인; `Get-ScheduledTask` 상태, `Get-CimInstance` 프로세스 유형과 잠금 PID 일치/생성시각, 승인 checkout HEAD/dirty, config/last-run/ledger 비교. 원문 코드·프로세스 명령 전체·환경변수·인증정보는 출력하지 않는다. PowerShell 조회가 제한되면 `UNAVAILABLE`로 남긴다.
+- 정적 검사는 실제 호출 보증이 아니므로 `WRITER_ROUTE=UNPROVEN`, `INSTALL_AUTHORIZATION=NO`가 기본이다. 잠금 존재, 게시 원장 SUBMITTING, 소스 차이, 파일 해시 차이 시 **설치 금지**. 기존 R6 INSTALL도 계속 금지한다.
+- 오프라인 3개 구조 회귀 시험, Node 구문, manifest 자체 해시, Linux 비-Windows 중단, ZIP CRC 및 CMD CRLF 확인. **실제 Windows R4 실행과 PC 운영 적용은 미검증**.
+
+운영 source 설치 여부는 실행 경로 검증과 안전한 소강 시점 확인 후 결정한다. 운영 중인 잠금을 삭제하거나 실행 PID를 중단시키지 않고, 기존 스케줄러/VBS를 재구성하지 않는다.
