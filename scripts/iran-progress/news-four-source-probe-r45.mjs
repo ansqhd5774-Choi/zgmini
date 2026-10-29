@@ -183,9 +183,11 @@ export async function probeIranFourPublishersR45({fetcher=fetch,now=Date.now(),l
    catch(e){return {sourceId:spec.id,url,status:'ARTICLE_FETCH_FAILED',reason:String(e?.message).slice(0,48)};}
   }));
   const verified=inspected.filter(a=>a.status==='ARTICLE_METADATA_REVIEWED');
-  const errors=inspected.filter(a=>/FAILED|INVALID/.test(a.status)).length;
+  const errors=inspected.filter(a=>/FAILED|INVALID|UNVERIFIED/.test(a.status)).length;
+  const articleStatuses=Object.fromEntries([...new Set(inspected.map(a=>a.status))].map(
+   key=>[key,inspected.filter(a=>a.status===key).length]));
   return {sourceId:spec.id,status:!urls.length?'NO_ITEMS':errors?'PARTIAL':'READ',
-   feedRead:true,candidates:urls.length,articleVerified:verified.length,eligible14Day:verified.length,errors,
+   feedRead:true,candidates:urls.length,articleVerified:verified.length,eligible14Day:verified.length,errors,articleStatuses,
    articles:inspected.map(a=>({...a,rightsVerified:false,displayEligible:false}))};
  }));
  return {version:'IRAN_NEWS_R45_FOUR_SOURCE_READ_ONLY',status:sources.some(s=>s.status!=='READ')?'PARTIAL_REVIEW_REQUIRED':'READ_ONLY_REVIEW_REQUIRED',
