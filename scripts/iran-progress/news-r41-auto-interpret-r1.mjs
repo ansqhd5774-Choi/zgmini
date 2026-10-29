@@ -134,6 +134,22 @@ export function validateR41ModelAnalysis(draft,{originalTitle,articleBody}){
   interpretationKo:draft.interpretationKo.trim(),impact:draft.impact};
 }
 
+function safeModelRetryHint(draft,article,error){
+ // Hints contain fixed instructions only; never echo untrusted model output.
+ if(error?.message==='NEWS_R41_ANALYSIS_NEW_NUMBER')
+  return 'Remove any numbers that are not present in the provided originalTitle or articleBody.';
+ if(!draft||typeof draft!=='object'||Array.isArray(draft)||
+    Object.keys(draft).sort().join(',')!==
+     'impact,interpretationKo,summaryKo,supportingQuotes,titleKo')
+  return 'Return exactly these five JSON keys: titleKo, summaryKo, interpretationKo, impact, supportingQuotes. No other keys.';
+ if(!Array.isArray(draft.supportingQuotes)||draft.supportingQuotes.length<1||
+    draft.supportingQuotes.length>3||draft.supportingQuotes.some(quote=>
+     typeof quote!=='string'||quote.length<12||quote.length>400||
+     !article.articleBody.includes(quote)))
+  return 'Copy each supportingQuotes value as an EXACT contiguous 12-400 character substring from articleBody, including identical spaces and punctuation.';
+ return 'Write Korean titleKo (8-180 chars), Korean factual summaryKo (45-750 chars), Korean cautious interpretationKo (25-550 chars). Use only supported evidence and a valid positive, negative, or neutral impact.';
+}
+
 export async function generateR41ModelAnalysis(article,{fetcher=fetch,model='gemma3:4b'}={}){
  if(typeof article?.articleBody!=='string'||article.articleBody.length>18000||
     article.articleBody.trim().length<120||typeof article.originalTitle!=='string'||
@@ -152,11 +168,14 @@ export async function generateR41ModelAnalysis(article,{fetcher=fetch,model='gem
   {format:'json',options:{temperature:0.3,num_predict:650,
    repeat_penalty:1.2,repeat_last_n:128}},
  ];
+ let retryHint='';
  for(let index=0;index<modes.length;index++){
   const {format,options}=modes[index];
   const response=await fetcher('http://127.0.0.1:11434/api/generate',{
    method:'POST',headers:{'content-type':'application/json'},
-   body:JSON.stringify({model,system:SYSTEM,prompt,format,stream:false,options}),
+   body:JSON.stringify({model,system:SYSTEM,
+    prompt:retryHint?`${prompt}\n\nCORRECTION REQUIRED: ${retryHint}`:prompt,
+    format,stream:false,options}),
    signal:AbortSignal.timeout(90000)});
   // Never expose model-server text, paths, or prompts in public reasons.
   if(!response?.ok){
@@ -174,9 +193,19 @@ export async function generateR41ModelAnalysis(article,{fetcher=fetch,model='gem
   }
   let draft;
   try{draft=JSON.parse((await response.json()).response);}catch{
+   if(index<modes.length-1){
+    retryHint='Return one syntactically valid JSON object only. Do not use markdown fences or extra text.';
+    continue;
+   }
    throw Error('NEWS_R41_ANALYSIS_OLLAMA_RESPONSE_INVALID');
   }
-  return {...validateR41ModelAnalysis(draft,article),supportingQuotes:draft.supportingQuotes};
+  try{
+   return {...validateR41ModelAnalysis(draft,article),supportingQuotes:draft.supportingQuotes};
+  }catch(error){
+   if(!['NEWS_R41_ANALYSIS_MODEL_OUTPUT_INVALID','NEWS_R41_ANALYSIS_NEW_NUMBER']
+    .includes(error?.message)||index===modes.length-1)throw error;
+   retryHint=safeModelRetryHint(draft,article,error);
+  }
  }
  throw Error('NEWS_R41_ANALYSIS_OLLAMA_HTTP_500');
 }
