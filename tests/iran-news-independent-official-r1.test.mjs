@@ -10,9 +10,9 @@ const clone=()=>structuredClone(sample);
 test('independent official evidence candidates stay isolated from R41 and R5',()=>{
  assert.equal(validateIranOfficialNewsBriefsR1(sample),true);
  assert.deepEqual(summarizeIranOfficialNewsBriefsR1(sample),{
-  version:'IRAN_OFFICIAL_NEWS_BRIEFS_R1',asOfDate:'2026-10-29',candidateCount:16,
+  version:'IRAN_OFFICIAL_NEWS_BRIEFS_R1',asOfDate:'2026-10-29',candidateCount:17,
   publicationAuthorized:false,officialEvidenceOnly:true,articleReadyCountDelta:0,
-  r5ScoreChanges:0,signals:{diplomatic_positive:5,risk_persistent:2,risk_increase:5,mixed:2,neutral:2},
+  r5ScoreChanges:0,signals:{diplomatic_positive:6,risk_persistent:2,risk_increase:5,mixed:2,neutral:2},
  });
 });
 
@@ -42,7 +42,7 @@ test('reject non-official links, query manipulation, duplicate events and invali
 });
 
 test('each candidate is anchored in official-source evidence with unique IDs and event dates',()=>{
- assert.equal(sample.items.length,16);
+ assert.equal(sample.items.length,17);
  const known=new Set();
  for(const item of sample.items){
   assert.equal(known.has(item.id),false,item.id);
