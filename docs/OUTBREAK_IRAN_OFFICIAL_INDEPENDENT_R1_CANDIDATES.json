@@ -20,12 +20,14 @@
       "sourceEvidence": [
         {
           "organization": "영국 외무부",
-          "publicationDate": "2026-10-27",
+          "sourceDate": "2026-10-27",
+          "dateKind": "PUBLISHED",
           "url": "https://www.gov.uk/government/speeches/iran-must-allow-the-return-of-iaea-inspectors-to-all-nuclear-sites"
         },
         {
           "organization": "독일 연방외무부",
-          "publicationDate": "2026-10-26",
+          "sourceDate": "2026-10-26",
+          "dateKind": "PUBLISHED",
           "url": "https://new-york-un.diplo.de/un-en/2807972-2807972"
         }
       ],
@@ -47,7 +49,8 @@
       "sourceEvidence": [
         {
           "organization": "카타르 외교부",
-          "publicationDate": "2026-10-27",
+          "sourceDate": "2026-10-27",
+          "dateKind": "PUBLISHED",
           "url": "https://mofa.gov.qa/en/qatar/latest-articles/latest-news/details/2026/10/27/qatar-calls-for-new-regional-security-framework-based-on-state-sovereignty-respect"
         }
       ],
@@ -69,8 +72,55 @@
       "sourceEvidence": [
         {
           "organization": "영국 외무부 공동 발표",
-          "publicationDate": "2026-10-24",
+          "sourceDate": "2026-10-24",
+          "dateKind": "PUBLISHED",
           "url": "https://www.gov.uk/government/news/joint-press-release-on-the-r4-ministerial-meeting-in-istanbul"
+        }
+      ],
+      "status": "SOURCE_VERIFIED_CANDIDATE"
+    },
+    {
+      "id": "OFFICIAL-20261023-02",
+      "eventDate": "2026-10-23",
+      "titleKo": "국제해사기구, 10월 중순 호르무즈 주변 상선 피해 사례 계속 확인",
+      "facts": [
+        {"textKo": "국제해사기구의 10월 27일 기준 확인 목록에는 23일 오만 리마 인근에서 선박 레오노라 코산이 피해를 입은 사례가 포함돼 있습니다.", "sourceIndexes": [0]},
+        {"textKo": "같은 공식 목록에는 20일 호르무즈 해협의 알 다스마와 이라크 알파우 인근의 소이아가 피해를 입었다고 기록돼 있습니다.", "sourceIndexes": [0]},
+        {"textKo": "18일 아랍에미리트 인근 지프 바라쿠다 선박 피해 사례에서는 선원 한 명의 부상도 확인됐다고 기록돼 있습니다.", "sourceIndexes": [0]}
+      ],
+      "interpretationKo": "외교적 대화가 진행되는 기간에도 상선 피해가 지속됐다는 점은 해상 위험이 해소되지 않았다는 근거입니다. 국제해사기구 자료는 선박 피해를 확인하지만 이 사건들의 가해 주체를 이란이라고 확정하지는 않습니다.",
+      "signal": "risk_increase",
+      "signalReasonKo": "서로 다른 날짜에 상선 피해가 이어진 것으로 확인됐으므로 실제 해상 안전 위험을 부정 신호로 분류했습니다.",
+      "evidenceLevel": "ONE_PRIMARY_STATEMENT",
+      "sourceEvidence": [
+        {
+          "organization": "국제해사기구",
+          "sourceDate": "2026-10-27",
+          "dateKind": "AS_OF",
+          "url": "https://www.imo.org/en/mediacentre/hottopics/pages/middle-east-highlighted-incidents.aspx"
+        }
+      ],
+      "status": "SOURCE_VERIFIED_CANDIDATE"
+    },
+    {
+      "id": "OFFICIAL-20261021-01",
+      "eventDate": "2026-10-21",
+      "titleKo": "영국과 오만, 호르무즈 항행 안전과 지역 안정 협력 재확인",
+      "facts": [
+        {"textKo": "영국과 오만은 10월 20일부터 22일까지 이어진 국빈 방문 기간에 양국의 지역 안정 및 안보 협력 우선 과제를 논의했습니다.", "sourceIndexes": [0]},
+        {"textKo": "10월 23일 발표된 공동성명은 호르무즈 해협에서 해상 안전과 항행의 자유, 국제해운의 안전한 통행이 중요하다고 명시했습니다.", "sourceIndexes": [0]},
+        {"textKo": "두 정부는 중동 지역의 평화적 분쟁 해결과 다자 협력을 강화하겠다는 원칙을 함께 밝혔습니다.", "sourceIndexes": [0]}
+      ],
+      "interpretationKo": "양국이 항행 안전과 외교적 해결을 지지한다는 공식 합의는 안정화 방향의 신호입니다. 그러나 성명만으로 선박 공격 감소나 항로 정상화가 이뤄졌다고 판단할 수는 없습니다.",
+      "signal": "diplomatic_positive",
+      "signalReasonKo": "양국 정부가 지역 안정 및 안전 항행을 위한 협력을 공식적으로 확인한 사실을 긍정 신호로 기록했습니다.",
+      "evidenceLevel": "ONE_PRIMARY_STATEMENT",
+      "sourceEvidence": [
+        {
+          "organization": "영국 총리실",
+          "sourceDate": "2026-10-23",
+          "dateKind": "PUBLISHED",
+          "url": "https://www.gov.uk/government/news/uk-oman-joint-statement-on-omani-state-visit"
         }
       ],
       "status": "SOURCE_VERIFIED_CANDIDATE"
