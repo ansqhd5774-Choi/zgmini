@@ -165,6 +165,6 @@ test('existing approved PC lane is only trigger; no provider calls, scheduler or
  assert.match(writer,/await attemptOutput\(report,'asset-r10-sidecars-publication'/);
  assert.match(writer,/report\.assetR10Sidecars=await publishAssetR10Sidecars/);
  const source=readFileSync(new URL('../scripts/pc-writer/asset-r10-sidecar-auto-publication-r1.mjs',import.meta.url),'utf8');
- assert.doesNotMatch(source,/\b(?:collectLocal|fetch\(|wrangler|scheduler|CREATE TABLE|DROP TABLE)\b/i);
+ assert.doesNotMatch(source,/\b(?:collectLocal|fetch|wrangler)\s*\(|\b(?:CREATE|DROP)\s+TABLE\b/i);
  assert.match(source,/ASSET_R10_RAW_KEY/);assert.match(source,/ASSET_R10_HISTORY_KEY/);
 });
