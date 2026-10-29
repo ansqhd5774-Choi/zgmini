@@ -244,3 +244,14 @@
 - **막혔을 때:** 일반챗에서 PC/D1 직접 접근이 막힌 것은 운영 실패가 아니다. 추가 PC 조사가 진짜 필요할 때에만 승인된 기존 조회 실행기를 우선 사용하고, 불가능하면 소스 SHA/의존/manifest/한국어 안내가 검증된 일회성 ZIP+CMD/Node helper를 제공한다. 잠금/실행 중 상태 검사, 예상 기존 해시, 백업 및 SHA, readback, STOP 후 무단 재실행 금지를 유지한다. 수집 backfill이 필요하면 기존 checkpoint의 bounded resume를 검토한다.
 - **증거 구분:** R55 = PC 테스트·운영 D1 INSERT/readback 완료. 공개 API는 직전 조사에서 HTTP 200이지만 7개 매체만 반환되어 **UI/API 신규 반영 실패**. GitHub 브랜치의 11개 대응 소스는 Production 배포 증거가 아니다. 새 main/Cloudflare 반영과 다음 정규 수집은 검증 완료 전까지 미완료로 보고한다.
 - **사용자 실행 안내:** 현재 이 작업에 추가 로컬 실행은 **0회**이다. 향후 사용자 실행이 필요해지면 목적·변경범위·정확한 폴더/파일·입력·실행 횟수·기대값·STOP 조건·금지사항·회수할 최소 결과 10개를 함께 제공한다. 기존 R53/R54/R55·R50 배치의 재실행, 잠금 삭제, 데이터 초기화, 인증 우회는 금지한다.
+
+
+## 22. 공개 R41 준비 검증 및 실제 남은 게이트 (2026-10-29 KST)
+
+- **기존 브랜치 추가 회귀 검사:** `tests/iran-news-r45-api-coverage.test.mjs`에 기존 7매체 행과 Arab News 8건의 공존, `sourceCount=2`/configured11, R41 UI 선택시 sourceCount===7 의존 제거, R1 fallback 유지 확인 추가. Node 24의 실제 로컬 테스트 5/5 PASS. 브랜치 테스트 코드만 추가하고 운영 데이터는 쓰지 않음.
+- **R41 과거 동작 검사:** 기존 브랜치 `tests/iran-news-metadata-r41.test.mjs`의 39개 원본 staging/readback/유효성·원본 API 35건을 동일 소스·7-ID 초기 SQL fixture로 4/4 PASS. 신규 11 source registry 때문에 과거 7소스 fixture를 깨지 않음을 확인. 합계 **9/9 로컬 테스트 PASS**이며 이것을 Cloudflare Runtime PASS라고 부르지 않는다.
+- **실제 승인 R46 표본 재검사:** 과거 사용자가 제출한 R46 원본 8개 메타데이터에서 URL SHA256/원문 발행시각/검증 플래그/checkedAt를 복원하고 현 11 source `validIranMetadataRowR41` 검증. **8/8 공개 모델 유효**, 발행시각 범위 2026-10-27 19:27:50Z~2026-10-29 07:20:13Z. 다만 이는 로컬 유효성 검증이며 D1 새 8건의 실제 public API 반환 증거는 아니다.
+- **운영 API 재조회:** `https://zgmini.kr/api/outbreak-news/iran/r41` GET 결과 `status=READY`, `sourceCount=7`, `requiredSourceCount=7`, `configuredSourceCount` 부재, `itemCount=40`, Arab News 0건. 메인 소스의 7매체 검증·UI 게이트가 운영 반영되지 않은 상태와 일치. 8건 INSERT를 다시 실행하는 해결책은 아니다.
+- **GitHub 상태:** 이 재검증 당시 `main=8a7634a5358cb19280725fe29a977ba4feb44be8`; 이란 브랜치의 미반영 reader/lib/container와 테스트를 선별 반영할 후보는 준비됨. `main`의 최신 AI 분석/번역 UI 파일을 브랜치 전체 복사로 덮어쓰지 않는다.
+- **실제 STOP 게이트:** 현재 일반챗 연결에서 Cloudflare Git Integration의 연결 repo/branch와 exact 배포 상태에 대한 관리 권한·인증된 조회 수단이 없음. `CLOUDFLARE_API_TOKEN`, `CF_API_TOKEN` 등 일반 런타임 변수도 부재를 확인했지만 이를 운영 Cloudflare 연결 해제로 단정하지 않는다. 배포 Authority Gate를 검증하지 못했으므로 main selective write/자동 배포는 실행하지 않음. **Cloudflare 공식 대시보드에서 연결 repo=`ansqhd5774-Choi/zgmini`, branch=`main`, 진행 중 배포 여부를 확인한 뒤** 최신 main SHA/file blob 재조회 → 3개 코드+기존 39건 fixture 테스트의 필요한 차이만 선택 적용 → exact Build/Deployment → API/UI readback을 수행한다.
+- **금지/범위:** R50/R53/R54/R55 CMD, D1 insert, 기존 수집/점수·스케줄러·DNS, 전체 브랜치 병합, 새로운 임시 설치 ZIP을 반복하지 않는다.
