@@ -116,3 +116,9 @@ PC 설치본: `E:/ZGmini/data/pc-writer/theme-config-tool`
 - PR 초안을 제출하는 것으로 이번 통합 브랜치의 한정 목적을 마쳤다. **후속 개발·인수인계 작업 기준은 기존 `codex/theme-fear-greed-integration-20261025`로 복귀한다.** PR 승인·병합 및 Git 연동 배포는 별도 승인 없이 실행하지 않는다.
 - **PR #894 CI 게이트:** GitHub Actions의 `check` 작업은 Build·Type check 통과 후 기존 이란 뉴스 R41/R42 회귀검사에서 `R41_QUALIFIED_COUNT_OR_SOURCE_MISMATCH` / `R42_STAGING_MANIFEST_INVALID`로 실패했다. 이 테스트·스크립트·증거 파일은 본 8개 경로 변경에 포함되지 않았고, 로컬 동일 소스에서도 R41 오류를 재현했다. unrelated 회귀/증거 계약을 통합 목적 브랜치에서 고치거나 CI를 우회하지 않는다. `ui` 작업 결과는 추후 별도 readback이 필요하다. 따라서 PR은 **초안·CI 미통과·미병합·미배포**로 유지한다.
 - **추가 PR UI·main 기준선 확인:** `ui` 작업도 기존 `tests/fear-greed-education-browser-r4.mjs`의 `.zg-fg-korea .zg-fg-intro` 요소 가시성 30초 timeout으로 실패했고 Korea 페이지/테스트는 PR 변경 파일이 아니다. 동일 기준 main `b3b2528c`의 `check` 역시 실패로 확인되어 R41/R42 회귀 문제는 baseline에도 존재한다. PR #894 설명에 두 CI 차단 사유를 추가했으며 검사를 무효화하거나 타 작업 영역의 코드를 이 PR에 넣지 않는다.
+
+## 2026-10-29 첫 실테마 후보 읽기 전용 사전검토 — 사용자 미확정
+
+- 기존 10개 레거시 등록 ID/명칭과 겹치지 않는 **배터리 기술** 후보(`battery-technology`, ETF `LIT`+`BATT`, 기준 `SPY`, `ADAPTIVE_R2_PAIR_R3`, 관측 시작 제안 `2025-10-29`)를 조회만 했다. Global X LIT 및 Amplify BATT 발행사 공개 자료에서 ETF 테마·기존 출시 사실을 확인했으나 실제 PC 공급처의 역사 가격 조회는 하지 않았다.
+- 현재 `validateDefinition()`과 10개 레거시 충돌 검사는 **`CANDIDATE_STATIC_PREFLIGHT_PASS`**. 실제 테마 선택, PC 등록, 공급처 데이터, 계산, 공개 승인, D1 게시, 공개 UI 반영은 **전부 0**. 정적 통과가 공급처·권리·운영 성공은 아니다.
+- 사용자에게 첫 실테마/ETF 조합을 확정받기 전에는 파일을 등록하거나 승인 기록을 만들지 않는다. PR #894 CI baseline blocker 및 공개 첫 배포도 별도 게이트로 유지한다.
