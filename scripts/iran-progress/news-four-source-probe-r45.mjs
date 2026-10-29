@@ -2,6 +2,7 @@
 // Source URLs are discovery hints. Only publisher article pages provide dates and content.
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
+import {iranNewsOffTopicReasonR1} from '../../lib/iran-progress/news-offtopic-exclusions-r1.mjs';
 
 export const IRAN_NEWS_R45_SOURCES=Object.freeze([
  Object.freeze({id:'reuters',name:'Reuters',listing:'https://www.reuters.com/world/middle-east/',hosts:['www.reuters.com']}),
@@ -155,12 +156,14 @@ export function inspectR45Article(sourceId,url,html,{now=Date.now(),days=14}={})
  const title=htmlText(schema?.headline??meta(html,['og:title','twitter:title'])??
   html.match(/<h1\b[^>]*>([\s\S]*?)<\/h1\s*>/i)?.[1]??'');
  const {text,evidence:bodyEvidence}=articleBody(html,sourceId,schema);
+ const offTopicReason=iranNewsOffTopicReasonR1(title);
  const validDate=Number.isFinite(when)&&when<=now+300_000&&when>=0;
  const offsetDays=validDate?(Date.parse(kstDate(now)+'T00:00:00Z')-Date.parse(kstDate(when)+'T00:00:00Z'))/86400_000:null;
  const status=!title||title.length>500?'TITLE_UNVERIFIED':!validDate?'FIRST_PUBLICATION_UNVERIFIED':
   !text?'ARTICLE_BODY_UNVERIFIED':!PRIMARY.test(title+' '+text)||!SECONDARY.test(title+' '+text)?'ARTICLE_OUT_OF_SCOPE':
+   offTopicReason?'ARTICLE_BLOCKED_OFF_TOPIC':
    offsetDays<0||offsetDays>=days?(days===14?'OUTSIDE_14_DAY_WINDOW':'OUTSIDE_30_DAY_WINDOW'):'ARTICLE_METADATA_REVIEWED';
- return {sourceId,url,status,bodyEvidence,bodyCharacterCount:text.length,
+ return {sourceId,url,status,offTopicReason,bodyEvidence,bodyCharacterCount:text.length,
   dateEvidence:rawDate?'PUBLISHER_DECLARED_ZONED_DATE':'NONE',
   ...(status==='ARTICLE_METADATA_REVIEWED'?{title,publishedAt:new Date(when).toISOString()}:{}),
   rightsVerified:false,displayEligible:false};
