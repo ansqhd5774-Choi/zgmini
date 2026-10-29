@@ -13,7 +13,7 @@ function trusted(item){
  try{const u=new URL(item.sourceUrl);return u.protocol==='https:'&&!u.port&&!u.username&&!u.password&&HOSTS[item.sourceId]?.includes(u.hostname);}
  catch{return false;}
 }
-export function planScoreNewsInput(store,cache,status,{now=Date.now()}={}){
+export function planScoreNewsInput(store,cache,status,{now=Date.now(),classify=classifyR3Article}={}){
  if(!Number.isSafeInteger(now)||cache?.version!=='IRAN_NEWS_COLLECTION_R26'||
   !Number.isSafeInteger(cache.updatedAt)||cache.updatedAt>now||now-cache.updatedAt>86400000||
   !Array.isArray(cache.items)||cache.items.length<1||cache.items.length>700)
@@ -46,7 +46,7 @@ export function planScoreNewsInput(store,cache,status,{now=Date.now()}={}){
    held.push({id:item.id,sourceId:item.sourceId,reason:'EXISTING_URL_REVISION_REQUIRES_REVIEW'});continue;}
   const article={sourceUrl:item.sourceUrl,title:item.originalTitle,summary:'',
    date:new Date(at).toISOString().slice(0,10),claimVerification:'SINGLE_SOURCE_REPORT'};
-  const event=classifyR3Article(article);
+  const event=classify(article);
   if(!event.accepted){counts.unmatched++;continue;}
   // First observation is NOW, not publication/cache-update time. Old backlog
   // needs review instead of rewriting previous scores or charging old attacks today.

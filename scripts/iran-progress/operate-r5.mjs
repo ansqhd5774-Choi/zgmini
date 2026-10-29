@@ -14,6 +14,7 @@ import {independentlyCorroboratedR5Positives} from '../../lib/iran-progress/veri
 import {publishIranR5Provisional} from './publication.mjs';
 import {withIranPublishedUpdates} from './published-updates-r1.mjs';
 import {syncPublishedNewsInput,PUBLISHED_NEWS_CHECKPOINT} from './published-news-score-input-r1.mjs';
+import {classifyPublishedScoreArticle} from '../../lib/iran-progress/published-event-r1.mjs';
 import {client,credential} from '../pc-writer/d1.mjs';
 
 /**
@@ -93,6 +94,11 @@ export function calculateOperationalR5(store,{now=Date.now(),evidencePolicy='BAL
  const collectionStatus=newsReady?'ANALYZED_NO_CHANGE':checkpoint.status;
  const publishedInput=store.getCheckpoint(PUBLISHED_NEWS_CHECKPOINT);
  const allArticles=storedR3Candidates(store);
+ if(publishedInput)for(const row of store.db.prepare("SELECT body FROM sources WHERE id LIKE 'news-metadata:%' ORDER BY stored_at,id").all()){
+  const article=JSON.parse(row.body);
+  if(!publishedInput.admittedUrls.includes(article.sourceUrl)||allArticles.some(e=>e.sourceUrl===article.sourceUrl))continue;
+  const event=classifyPublishedScoreArticle(article);if(event.accepted)allArticles.push(event);
+ }
  // Keep the established historical baseline. After cutover, private collector
  // receipts cannot introduce new R5 events without public-news admission.
  const articles=publishedInput?allArticles.filter(e=>
@@ -133,6 +139,7 @@ export function calculateOperationalR5(store,{now=Date.now(),evidencePolicy='BAL
   now,possibleDuplicateCount:resolution.held.length,collectionCheckedAt:checked,
   sourceStoredAt:Math.max(...input.map(e=>e.sourceStoredAt)),
  });
+ if(publishedInput?.eventClassifierVersion)dailyBody.publishedNewsClassifierVersion=publishedInput.eventClassifierVersion;
  const body=withIranPublishedUpdates(store,dailyBody);
  return {body,shadow};
 }
