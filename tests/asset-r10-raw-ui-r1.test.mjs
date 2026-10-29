@@ -63,7 +63,9 @@ test('asset view identifies two actual observations, not a fabricated one-year h
  const chart=readFileSync(new URL('../app/inflation/inflation-mini-chart.tsx',import.meta.url),'utf8');
  assert.ok(panel.includes('실제 저장된 이전·현재 2개 관측값'));
  assert.ok(!panel.includes('미니차트(1Y)'));
- assert.equal((panel.match(/periodLabel="실제 저장된 관측 2개"/g)||[]).length,2);
+ assert.equal((panel.match(/periodLabel=\{row\?\.trendPeriodLabel\?\?"실제 저장된 관측 2개"\}/g)||[]).length,2);
+ assert.match(panel,/mergeAssetR10HistoryForUi\(mergeAssetR10RawForUi\(payload,raw\),history\)/);
+ assert.match(panel,/시장폭 괴리는 과거 2개 분기가 누락/);
  assert.ok(chart.includes('periodLabel="최근 1년"'));
  assert.ok(chart.includes('${data[0].date} ~ ${data.at(-1)?.date}'));
 });
