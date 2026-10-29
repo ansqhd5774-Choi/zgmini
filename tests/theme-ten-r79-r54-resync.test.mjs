@@ -15,6 +15,10 @@ test('R79 blocks the existing 11:15–14:15 KST task window',()=>{
   assert.deepEqual(r79Plan({base,candidateDates,
     now:new Date('2026-10-30T03:00:00Z')}),
   {allowed:false,reason:'SCHEDULE_PROTECTION_WINDOW'});
+  assert.equal(r79Plan({base,candidateDates,
+    now:new Date('2026-10-30T02:00:00Z')}).reason,'SCHEDULE_PROTECTION_WINDOW');
+  assert.equal(r79Plan({base,candidateDates,
+    now:new Date('2026-10-30T05:30:00Z')}).reason,'SCHEDULE_PROTECTION_WINDOW');
 });
 test('R79 refuses missing date-matched private candidate',()=>{
   assert.deepEqual(r79Plan({base,candidateDates:[],now:outside}),
