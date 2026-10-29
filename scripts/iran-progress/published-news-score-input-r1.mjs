@@ -6,7 +6,7 @@ import {storedR3Candidates} from './operate-r3.mjs';
 import {validIranNewsSnapshot,readIranNewsSnapshot} from '../../lib/iran-progress/news-display-r1.mjs';
 import {IRAN_NEWS_METADATA_VERSION_R41,IRAN_NEWS_METADATA_SOURCES_R41,canonicalIranMetadataUrlR41} from '../../lib/iran-progress/news-metadata-r41.mjs';
 import {kstCalendarDate} from '../../lib/iran-progress/chart-history.mjs';
-import {classifyR3Article} from '../../lib/iran-progress/reference-flow-r3.mjs';
+import {classifyPublishedScoreArticle} from '../../lib/iran-progress/published-event-r1.mjs';
 
 export const PUBLISHED_NEWS_CHECKPOINT='score-published-news-input-r1';
 const BASE='https://zgmini.kr';
@@ -37,7 +37,7 @@ export function planPublishedNewsInput(store,r41,r1,{now=Date.now()}={}){
  });
  // Reuse existing original-title classification, duplicate and old-backlog gates.
  // now is an intake timestamp, NOT a claim that collection was freshly verified.
- const intake=planScoreNewsInput(store,{version:'IRAN_NEWS_COLLECTION_R26',updatedAt:now,items},null,{now});
+ const intake=planScoreNewsInput(store,{version:'IRAN_NEWS_COLLECTION_R26',updatedAt:now,items},null,{now,classify:classifyPublishedScoreArticle});
  const previous=store.getCheckpoint(PUBLISHED_NEWS_CHECKPOINT);
  if(previous&&(previous.version!=='IRAN_PUBLISHED_NEWS_SCORE_INPUT_R1'||
   !Array.isArray(previous.baselineEventKeys)||!Array.isArray(previous.admittedUrls)||
@@ -48,13 +48,17 @@ export function planPublishedNewsInput(store,r41,r1,{now=Date.now()}={}){
  // Admit it only after publication, with unchanged title and the same age gate.
  for(const item of items){
   const lag=(Date.parse(kstCalendarDate(now)+'T00:00:00Z')-Date.parse(item.publisherDeclaredPublishedAt.slice(0,10)+'T00:00:00Z'))/86400000;
-  const event=classifyR3Article({sourceUrl:item.sourceUrl,title:item.originalTitle,summary:'',date:item.publisherDeclaredPublishedAt.slice(0,10)});
+  const event=classifyPublishedScoreArticle({sourceUrl:item.sourceUrl,title:item.originalTitle,summary:'',date:item.publisherDeclaredPublishedAt.slice(0,10)});
   if(event.accepted&&lag>=0&&lag<=1&&!intake.held.some(x=>x.id===item.id))admitted.add(item.sourceUrl);
  }
- return {...intake,version:'IRAN_PUBLISHED_NEWS_SCORE_INPUT_R1',endpoint:selected.endpoint,
+ return {...intake,version:'IRAN_PUBLISHED_NEWS_SCORE_INPUT_R1',eventClassifierVersion:'IRAN_PUBLISHED_EVENT_RULES_R1',endpoint:selected.endpoint,
   snapshotHash:hash(selected),cutoverAt:previous?.cutoverAt??now,
   baselineEventKeys:previous?.baselineEventKeys??storedR3Candidates(store).map(e=>e.eventKey),
-  admittedUrls:[...admitted].sort()};
+  admittedUrls:[...admitted].sort(),articleResults:items.map(item=>{
+   const held=intake.held.find(x=>x.id===item.id);
+   const event=classifyPublishedScoreArticle({sourceUrl:item.sourceUrl,title:item.originalTitle,summary:'',date:item.publisherDeclaredPublishedAt.slice(0,10)});
+   return {id:item.id,sourceUrl:item.sourceUrl,status:held?'HELD':!event.accepted?'NO_NEW_SCORABLE_EVENT':intake.planned.some(x=>x.candidateId===item.id)?'NEW_ACCEPTED':'EXISTING_OR_DUPLICATE',reason:held?.reason??event.reason,rule:event.rule??null};
+  })};
 }
 export function applyPublishedNewsInput(store,plan,{now=Date.now(),dryRun=true}={}){
  if(dryRun)return plan;
@@ -72,7 +76,7 @@ export function applyPublishedNewsInput(store,plan,{now=Date.now(),dryRun=true}=
  }catch(error){store.db.exec('ROLLBACK');throw error;}
  return plan;
 }
-export async function syncPublishedNewsInput(store,{now=Date.now(),dryRun=true,fetchImpl=fetch}={}){
+export async function readPublishedNews({now=Date.now(),fetchImpl=fetch}={}){
  const read=async endpoint=>{
   try{
    const response=await fetchImpl(BASE+endpoint,{headers:{'cache-control':'no-cache'},signal:AbortSignal.timeout(20000)});
@@ -84,5 +88,11 @@ export async function syncPublishedNewsInput(store,{now=Date.now(),dryRun=true,f
  const r41=await read('/api/outbreak-news/iran/r41');
  const useR41=r41?.status==='READY'&&r41.sourceCount===7&&r41.itemCount>0&&Array.isArray(r41.items)&&r41.items.length===r41.itemCount;
  const r1=useR41?null:await read('/api/outbreak-news/iran');
+ const selected=selectPublishedNews(r41,r1,{now});
+ if(!selected.items.length)throw Error('IRAN_PUBLISHED_NEWS_EMPTY');
+ return {r41,r1,selected,snapshotHash:hash(selected)};
+}
+export async function syncPublishedNewsInput(store,{now=Date.now(),dryRun=true,fetchImpl=fetch}={}){
+ const {r41,r1}=await readPublishedNews({now,fetchImpl});
  return applyPublishedNewsInput(store,planPublishedNewsInput(store,r41,r1,{now}),{now,dryRun});
 }

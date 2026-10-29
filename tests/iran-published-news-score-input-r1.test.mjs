@@ -67,3 +67,15 @@ test('a privately saved URL is admitted only when published; repeats do not rese
  applyPublishedNewsInput(store,plan,{now:now+2,dryRun:false});
  assert.equal(store.db.prepare('SELECT stored_at FROM sources WHERE id=?').get('news-metadata:'+hash(receipt)).stored_at,now+1);
 });
+test('previously missed ongoing peace proposal reaches the R5 calculation once',t=>{
+ const store=fixture(t),a=item('peace-plan','Gulf states working on multipart peace deal to avert renewal of US-Iran war');
+ const plan=planPublishedNewsInput(store,r41([a]),null,{now});
+ assert.equal(plan.planned.length,1);assert.equal(plan.articleResults[0].status,'NEW_ACCEPTED');
+ applyPublishedNewsInput(store,plan,{now,dryRun:false});
+ store.checkpoint('score-news-input-last-run-r1',{version:'IRAN_SCORE_NEWS_INPUT_R1',freshnessEligible:true,collectionCheckedAt:now,checkedAt:now,sourcesVerifiedThisRun:7});
+ const first=calculateOperationalR5(store,{now});
+ assert.equal(first.body.acceptedEventCount,1);assert.ok(first.body.score>13&&first.body.score<14);
+ assert.equal(first.body.publishedNewsClassifierVersion,'IRAN_PUBLISHED_EVENT_RULES_R1');
+ applyPublishedNewsInput(store,planPublishedNewsInput(store,r41([a]),null,{now:now+1}),{now:now+1,dryRun:false});
+ assert.equal(calculateOperationalR5(store,{now:now+2}).body.score,first.body.score);
+});
