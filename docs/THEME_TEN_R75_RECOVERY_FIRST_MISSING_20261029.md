@@ -173,3 +173,13 @@ R75는 기존 R48을 **한 번** 호출하며 R48 종료 0을 점수/운영 갱�
 - R83 패키지 `THEME_TEN_R83_DC_RUNNER_RESTORE_ONCE_20261030.zip` SHA-256 `11ad70122e5ee0cda8d1ed0a1163bc56fc51710b77ad87975a28a0ed1447b9af`. 원 브랜치 파일 `theme-ten-r83-dc-runner-restore.mjs`, `THEME_TEN_R83_DC_RUNNER_RESTORE_ONCE.cmd`, `tests/theme-ten-r83-dc-runner-restore.test.mjs`, `docs/THEME_TEN_R83_DC_RUNNER_RESTORE_KO.txt` 및 ZIP 안 기존 승인 `theme-data-center-power-task-r5.mjs`.
 - R83은 기존 R5 생성기 바이트/ SHA `836e73a4b85bff70fad4185f7221ebc8824ca2ea8026388c7eb12e2b51bcb823`, R5 생성기 SHA `197ef4760931d787d8857a4579e13b6f94d5d1bd2c5c20424ce685e60c8f1426`, 기존 승인 R3 게시기 SHA `3c81e6b29003939eed6ad631cfdaf81a836abd4f7f4dfba3fee03796f7d7ac96`, 원래 Task XML Action·14:00 및 디렉터리·lock·보호시간을 모두 대조한다. 정확히 누락된 R5 runner만 `wx` 생성·readback하고, 이미 승인된 R3 `--once --collect` **비공개** 실행을 한 번 시도한다. R5 Task Scheduler 정의, 7개 정상 테마, ETF/점수/권리 기준 변경 0; D1/공개 쓰기 0.
 - `node --test tests/theme-ten-r83-dc-runner-restore.test.mjs tests/theme-data-center-power-task-r5.test.mjs` PASS, R83 ZIP `unzip -t` PASS, CMD ASCII+CRLF. 아직 Windows 실행 미확인. 실PC 결과 `THEME_TEN_R83_DC_RESTORE_RESULT_*.txt` 수신 후 해당 실패 단계와 원시매니페스트 최종 관측일을 검증해야 함. 그 이후에야 데이터센터 공개 권리/D1, 우주 원자료 운영 연결 및 11:30/13:30/14:00 정규 실행 증거를 별도 진행한다.
+
+
+## R83 실제 PC 성공 — 데이터센터 전용 비공개 원자료 10/27 복구 (2026-10-30 KST)
+
+- 사용자 원본 `THEME_TEN_R83_DC_RESTORE_RESULT_6873_11945.txt`, `inspectedAt=2026-10-29T16:54:36.432Z`. Windows SHA 게이트 통과: `R83_AND_R5_SOURCE_SHA256_VERIFIED=YES`.
+- 기존 Task XML SHA `7dc87cfec58f86267ef803b0345dc5ac447355b2a1fdd4e07235376547819c6d`에서 실제 R5 실행 경로 확인. `runnerCreated=1`, `runnerState=MISSING_R5_RUNNER_RESTORED`, 승인 CMD SHA `836e73a4b85bff70fad4185f7221ebc8824ca2ea8026388c7eb12e2b51bcb823` 읽어 재확인. **기존 14:00 예약 트리거·Task 정의 변경 0**.
+- 기존 승인 R3 비공개 `--once --collect` 실제 PC 실행: exit 0, `PRIVATE_CANDIDATE_VERIFIED_NOT_PUBLISHED`, 실제 관측일 **2026-10-27**, 무료 원본 공급처 3회 호출, D1 writes 0. 실행 후 전용 원시매니페스트의 `DTCR`/`GRID`/`SPY` 각 `latestObservationDate=2026-10-27`. 원래 10/23 정지였던 세 심볼이 27일로 진전.
+- 완료 범위는 **R5 실행 파일 복원 + R3 원가격 원본 수집 및 비공개 계산**이다. 다음 정규 14:00 예약 실구동 PASS, 공개 D1·API·차트 최신화, 우주·위성 수집 운영은 확인되지 않았다. 결과만으로 운영 완료 선언 금지.
+- 기존 `theme-data-center-power-r6-publish.cmd`의 공개 경로는 **인간의 명시적인 `ACCEPT` 위험 인수 동의 필수**. `--publish --accept-anonymous-license-risk`를 수동 호출하고 기존 runner를 비공개→공개 예약용으로 바꾸는 단계는 R83에서 수행하지 않았다. 2026-10-29 발효 GetMarketHistory 공식 이용약관 §5는 재구성 불가능한 파생 지표 배포를 조건부 허용하지만, 라이선스 조건이 `account is in good standing`인 점과 익명 무료 요청에 대한 권한을 이 PC 로그로 증명하지 못했다. 사용자에게 해당 위험/승인 범위를 명시해 선택받기 전 D1·자동 공개 게시 금지. 문서 https://getmarkethistory.com/docs/terms.
+- 우주·위성 전용 예약 0개는 R82에서 확인. R14은 10/23 고정 missing-only다. 원료 확장·상시 자동 수집은 기존 공개 10개/산식 보존과 별도 권리·일정 승인 게이트로 다룬다. 기존 바이오 14:00 예약 이전 결과 1은 정규 재실행 로그로 별도 원인 검증.
