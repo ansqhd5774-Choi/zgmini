@@ -124,6 +124,151 @@
         }
       ],
       "status": "SOURCE_VERIFIED_CANDIDATE"
+    },
+    {
+      "id": "OFFICIAL-20261028-01",
+      "eventDate": "2026-10-28",
+      "titleKo": "오만과 파키스탄 외교장관, 지역 긴장 완화 관련 협의 지속",
+      "facts": [
+        {"textKo": "오만 외교부는 10월 28일 오만 외교장관이 파키스탄 부총리 겸 외교장관으로부터 전화를 받았다고 발표했습니다.", "sourceIndexes": [0]},
+        {"textKo": "양측은 지역 정세와 안보 및 안정을 위한 외교적 노력에 관해 의견을 교환했다고 밝혔습니다.", "sourceIndexes": [0]},
+        {"textKo": "두 장관은 상호 관심 사안에 대한 조율과 협의를 이어가는 것이 중요하다고 강조했습니다.", "sourceIndexes": [0]}
+      ],
+      "interpretationKo": "이란 관련 중재가 진행되는 시기에 오만과 파키스탄 사이의 별도 외교 접촉이 유지된 사실을 기록합니다. 다만 발표에는 합의안 수락이나 긴장 완화의 실질적 성과가 제시되지 않았습니다.",
+      "signal": "diplomatic_positive",
+      "signalReasonKo": "실제 외교장관 간 통화와 협의 지속 의사가 확인됐지만 구체적인 합의 성과까지 확정하지 않습니다.",
+      "evidenceLevel": "ONE_PRIMARY_STATEMENT",
+      "sourceEvidence": [
+        {"organization": "오만 외교부", "sourceDate": "2026-10-28", "dateKind": "PUBLISHED", "url": "https://www.fm.gov.om/en/62528/"}
+      ],
+      "status": "SOURCE_VERIFIED_CANDIDATE"
+    },
+    {
+      "id": "OFFICIAL-20261026-01",
+      "eventDate": "2026-10-26",
+      "titleKo": "사우디 외교부, 이란 방문 대표단의 지역 긴장 완화 목적 발표",
+      "facts": [
+        {"textKo": "사우디 외교부는 10월 26일 자국 국방장관과 메카 공동방위협정 회원국 대표단이 이란 테헤란을 방문해 이란 고위 당국자들을 만난다고 발표했습니다.", "sourceIndexes": [0]},
+        {"textKo": "사우디 외교부는 방문 목적이 현재 위기의 긴장을 낮추고 외교적 해법을 장려하며 카타르와 파키스탄의 중재를 지원하는 데 있다고 설명했습니다.", "sourceIndexes": [0]},
+        {"textKo": "사우디 외교부는 군사적 재격화를 방지할 협상 채널의 필요성을 강조했지만 방문 결과로 체결된 합의를 발표하지는 않았습니다.", "sourceIndexes": [0]}
+      ],
+      "interpretationKo": "여러 국가의 고위급 대표단이 테헤란에서 협의를 추진한 것은 외교적 접촉의 구체적인 행동입니다. 그러나 방문 목적을 알린 성명만으로 이후 회담 성과나 당사국들의 최종 동의를 확인할 수는 없습니다.",
+      "signal": "diplomatic_positive",
+      "signalReasonKo": "공식 외교부가 고위급 방문과 대화 목적을 발표한 사실을 긍정 신호로 보되 회담 타결을 주장하지 않습니다.",
+      "evidenceLevel": "ONE_PRIMARY_STATEMENT",
+      "sourceEvidence": [
+        {"organization": "사우디아라비아 외교부 발표를 전한 사우디 통신사", "sourceDate": "2026-10-26", "dateKind": "PUBLISHED", "url": "https://www.spa.gov.sa/w2710555"}
+      ],
+      "status": "SOURCE_VERIFIED_CANDIDATE"
+    },
+    {
+      "id": "OFFICIAL-20261026-02",
+      "eventDate": "2026-10-26",
+      "titleKo": "오만 외교장관, 이란을 포함한 걸프 8개국 지역안보 협정 제안",
+      "facts": [
+        {"textKo": "오만 외교장관은 10월 26일 영국 케임브리지에서 걸프협력회의 6개국과 이란 및 이라크를 포괄하는 지역안보 구상을 제시했습니다.", "sourceIndexes": [0]},
+        {"textKo": "연설에서 오만 외교장관은 8개국 간 불가침 협약을 지역안보의 목표로 제안하고 대화를 시작하자고 촉구했습니다.", "sourceIndexes": [0]},
+        {"textKo": "오만 외교장관은 호르무즈 해협의 자유로운 항행을 위한 오만과 이란의 협상 이력을 언급했지만 새 불가침 협약의 체결을 발표하지는 않았습니다.", "sourceIndexes": [0]}
+      ],
+      "interpretationKo": "이란을 배제하지 않는 안보체제와 불가침 협약을 제안한 것은 외교 정책의 방향을 보여줍니다. 다만 새 제안이 실제 합의로 이행된 것은 아니므로 위험이 이미 감소했다고 평가하지 않습니다.",
+      "signal": "neutral",
+      "signalReasonKo": "정책 구상과 대화 제안이 확인됐으나 상대국의 수락이나 안전 상황의 변화가 아직 확인되지 않았습니다.",
+      "evidenceLevel": "ONE_PRIMARY_STATEMENT",
+      "sourceEvidence": [
+        {"organization": "오만 외교부 공개 외교장관 연설문", "sourceDate": "2026-10-26", "dateKind": "PUBLISHED", "url": "https://www.fm.gov.om/en/62165/"}
+      ],
+      "status": "SOURCE_VERIFIED_CANDIDATE"
+    },
+    {
+      "id": "OFFICIAL-20261026-03",
+      "eventDate": "2026-10-26",
+      "titleKo": "사우디 주도 연합군, 예멘 내 후티 미사일 기반시설 군사작전 발표",
+      "facts": [
+        {"textKo": "사우디 주도 연합군 대변인은 10월 26일 후티의 반복적인 미사일 및 무인기 공격에 대응해 예멘 내 군사작전을 실시했다고 발표했습니다.", "sourceIndexes": [0]},
+        {"textKo": "연합군은 이번 작전에서 탄도미사일 저장용 터널 다섯 곳과 발사대 네 기, 미사일 저장시설 한 곳을 파괴하거나 무력화했다고 주장했습니다.", "sourceIndexes": [0]},
+        {"textKo": "연합군은 민간인 보호를 위한 방어 조치라고 설명했지만 피해 규모와 파괴 성과에 대한 독립적인 현장 확인 자료는 해당 발표에 포함되지 않았습니다.", "sourceIndexes": [0]}
+      ],
+      "interpretationKo": "연합군이 보복 성격의 군사작전을 공식 발표한 점은 지역에서 군사적 충돌 위험이 계속 현실화되고 있음을 보여줍니다. 다만 작전 성과는 연합군의 발표이므로 독립적으로 검증된 피해로 취급하지 않습니다.",
+      "signal": "risk_increase",
+      "signalReasonKo": "새 군사작전 실시를 당국이 발표했다는 사실을 위험 증가 신호로 분류하고 공격 성과는 확인되지 않은 주장으로 남깁니다.",
+      "evidenceLevel": "ONE_PRIMARY_STATEMENT",
+      "sourceEvidence": [
+        {"organization": "사우디 주도 연합군 대변인 발표를 전한 사우디 통신사", "sourceDate": "2026-10-26", "dateKind": "PUBLISHED", "url": "https://www.spa.gov.sa/N2710316"}
+      ],
+      "status": "SOURCE_VERIFIED_CANDIDATE"
+    },
+    {
+      "id": "OFFICIAL-20261026-04",
+      "eventDate": "2026-10-26",
+      "titleKo": "유엔 사무총장, 미국과 이란의 군사적 재격화 위험 경고",
+      "facts": [
+        {"textKo": "유엔 사무총장은 10월 26일 이집트 카이로 기자회견에서 미국과 이란 간 갈등에 대한 이집트의 중재 역할을 언급했습니다.", "sourceIndexes": [0]},
+        {"textKo": "사무총장은 현재의 군사적 위협 발언이 실제 공격으로 이어지면 지역 정세가 통제하기 어려울 수 있다며 최대한의 자제와 외교적 해법을 촉구했습니다.", "sourceIndexes": [0]},
+        {"textKo": "호르무즈 해협과 바브엘만데브 해협에서 국제법에 따른 항행 권리와 자유가 복원돼야 한다는 입장도 밝혔습니다.", "sourceIndexes": [0]}
+      ],
+      "interpretationKo": "유엔은 외교적 중재가 필요하다고 강조하면서 군사적 위협이 다시 커질 가능성을 경고했습니다. 이는 위험에 대한 공식적 평가이지 같은 날 새 군사공격이 발생했다는 독립적인 확인은 아닙니다.",
+      "signal": "risk_persistent",
+      "signalReasonKo": "군사적 재격화 가능성에 대한 경고를 기록하되 실제 추가 충돌이 발생한 것으로 해석하지 않습니다.",
+      "evidenceLevel": "ONE_PRIMARY_STATEMENT",
+      "sourceEvidence": [
+        {"organization": "유엔 사무총장실 공식 발언문", "sourceDate": "2026-10-26", "dateKind": "PUBLISHED", "url": "https://egypt.un.org/en/325175-secretary-general-remarks-press"}
+      ],
+      "status": "SOURCE_VERIFIED_CANDIDATE"
+    },
+    {
+      "id": "OFFICIAL-20261025-01",
+      "eventDate": "2026-10-25",
+      "titleKo": "사우디 연합군, 이틀 동안 여러 지역을 향한 미사일 요격 발표",
+      "facts": [
+        {"textKo": "사우디 주도 연합군은 10월 24일 타이프와 얀부를 향한 후티의 탄도미사일 두 발을 요격했다고 발표했습니다.", "sourceIndexes": [0]},
+        {"textKo": "연합군은 다음 날인 25일 카미스 무샤이트를 향한 순항미사일 한 발도 요격했다고 발표했습니다.", "sourceIndexes": [1]},
+        {"textKo": "두 발표는 각각 다른 날짜와 공격 지역을 명시하며 실제 피해나 사망자가 발생했다고 확정하지는 않았습니다.", "sourceIndexes": [0, 1]}
+      ],
+      "interpretationKo": "24일과 25일에 걸쳐 새로운 미사일 발사 및 요격이 공식 발표됐다는 점은 공격 시도가 지속됐음을 보여줍니다. 요격 발표만으로 지상 시설 피해나 사상자 발생을 추정하지 않습니다.",
+      "signal": "risk_increase",
+      "signalReasonKo": "단순 위협 성명이 아닌 서로 다른 날짜의 구체적인 미사일 공격 시도가 새롭게 발표된 점을 반영했습니다.",
+      "evidenceLevel": "MULTIPLE_PRIMARY_STATEMENTS",
+      "sourceEvidence": [
+        {"organization": "사우디 주도 연합군 발표를 전한 사우디 통신사", "sourceDate": "2026-10-24", "dateKind": "PUBLISHED", "url": "https://www.spa.gov.sa/en/N2709057"},
+        {"organization": "사우디 주도 연합군 발표를 전한 사우디 통신사", "sourceDate": "2026-10-25", "dateKind": "PUBLISHED", "url": "https://www.spa.gov.sa/en/N2709554"}
+      ],
+      "status": "SOURCE_VERIFIED_CANDIDATE"
+    },
+    {
+      "id": "OFFICIAL-20261022-01",
+      "eventDate": "2026-10-22",
+      "titleKo": "오만 외교부와 국제해운회의소, 상선 항로 안전 문제 협의",
+      "facts": [
+        {"textKo": "오만 외교부는 10월 22일 자국 특임대사가 국제해운회의소 사무총장과 회담했다고 발표했습니다.", "sourceIndexes": [0]},
+        {"textKo": "양측은 국제해양법에 따른 항행의 자유와 해상 교통로의 안전, 국제 물류망의 연속성에 대해 논의했습니다.", "sourceIndexes": [0]},
+        {"textKo": "오만 측은 상선 선원 보호와 국제 해운기관과의 협력 의지를 밝혔지만 새로운 안전 항로의 개통이나 통행 정상화를 발표하지는 않았습니다.", "sourceIndexes": [0]}
+      ],
+      "interpretationKo": "해운업계와 연안국 사이의 실무급 협의는 교통로 안전을 위한 외교적 대응이 계속됨을 보여줍니다. 그러나 회담 개최 자체가 상선 피해 감소를 입증하지는 못하므로 방향성은 중립으로 둡니다.",
+      "signal": "neutral",
+      "signalReasonKo": "실제 회담은 열렸지만 새 통행보장 조치나 항로 안전 개선이 확인되지 않았기 때문입니다.",
+      "evidenceLevel": "ONE_PRIMARY_STATEMENT",
+      "sourceEvidence": [
+        {"organization": "오만 외교부", "sourceDate": "2026-10-22", "dateKind": "PUBLISHED", "url": "https://www.fm.gov.om/en/61978/"}
+      ],
+      "status": "SOURCE_VERIFIED_CANDIDATE"
+    },
+    {
+      "id": "OFFICIAL-20261020-01",
+      "eventDate": "2026-10-20",
+      "titleKo": "영국 국방부, 사우디에 추가 방공 지원과 방어용 전투기 임무 계획 발표",
+      "facts": [
+        {"textKo": "영국 국방부는 10월 20일 사우디아라비아에 추가적인 방어 목적의 군사 지원을 제공하겠다고 발표했습니다.", "sourceIndexes": [0]},
+        {"textKo": "영국 정부는 타이푼 전투기의 방어적 영공 보호 임무와 군수 수송 지원, 현지 군사고문 지원 계획을 설명했습니다.", "sourceIndexes": [0]},
+        {"textKo": "영국 국방부는 전투기가 후티에 대한 공격 임무에는 참여하지 않을 것이라고 명시했습니다.", "sourceIndexes": [0]}
+      ],
+      "interpretationKo": "외부 국가의 방공 지원 강화 계획은 사우디에 대한 공격 위협이 지속된다는 현실과 방어 대응의 확대를 함께 보여줍니다. 다만 계획 발표일에 전투기 임무가 이미 수행됐다고 단정할 수 없습니다.",
+      "signal": "mixed",
+      "signalReasonKo": "지속되는 미사일 위협은 위험 요인이지만 공표된 조치는 공격이 아닌 방어 지원이라는 양면성을 갖습니다.",
+      "evidenceLevel": "ONE_PRIMARY_STATEMENT",
+      "sourceEvidence": [
+        {"organization": "영국 국방부", "sourceDate": "2026-10-20", "dateKind": "PUBLISHED", "url": "https://www.gov.uk/government/news/operational-update-20-october-uk-military-support-to-the-kingdom-of-saudi-arabia"}
+      ],
+      "status": "SOURCE_VERIFIED_CANDIDATE"
     }
   ]
 }
