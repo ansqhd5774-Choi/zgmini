@@ -58,18 +58,27 @@ test('R73 stops before any request when the PC task overlap gate is closed',asyn
   assert.equal(runs,0);
 });
 
-test('R73 scheduled mode accepts 11:30 and rejects 13:30 while manual is gated',()=>{
-  const requiredPreflight=()=>({allRequiredPresent:true,nearScheduledTask:true});
+test('R73 scheduled mode accepts 11:30, and manual invocation at 16:20',()=>{
+  const requiredPreflight=()=>({allRequiredPresent:true,canRun:false});
   const exists=p=>!p.endsWith('delta.lock');
   const accepted=r73ScheduledPreflight({
     now:new Date('2026-10-29T02:30:00.000Z'),requiredPreflight,exists});
   assert.equal(accepted.canRun,true);
+  assert.equal(accepted.reason,'READY');
+  const manual=r73ScheduledPreflight({
+    now:new Date('2026-10-29T07:20:00.000Z'),
+    requiredPreflight:()=>({allRequiredPresent:true,canRun:true}),exists});
+  assert.equal(manual.canRun,true);
+  assert.equal(manual.insidePrivateSlot,false);
+  assert.equal(manual.manualSlotAllowed,true);
   const rejected=r73ScheduledPreflight({
     now:new Date('2026-10-29T04:30:00.000Z'),requiredPreflight,exists});
   assert.equal(rejected.canRun,false);
+  assert.equal(rejected.reason,'KNOWN_SCHEDULE_OVERLAP');
   const locked=r73ScheduledPreflight({now:new Date('2026-10-29T02:30:00.000Z'),
     requiredPreflight,exists:()=>true});
   assert.equal(locked.canRun,false);
+  assert.equal(locked.reason,'PRIVATE_COLLECTION_ACTIVE');
 });
 
 test('R73 scheduled mode calls existing R48 directly, not the manual R71 guard',()=>{
