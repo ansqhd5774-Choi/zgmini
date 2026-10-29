@@ -30,13 +30,13 @@
 - R50의 목적은 **이미 PC에 저장된 SEC ZIP과 Alpaca 주가 후보의 품질 확인**이다. 현재 PC의 Git checkout·승인 실행 SHA를 직접 확인할 권한이 없으므로 독립 ZIP + 얇은 CMD + Node 도구를 선택했다. Git checkout을 임의 변경하거나 신규 설치기를 만들지 않는다.
 - 기존 도구 재사용: `market-calendar-r48-quality-readonly.mjs`의 저장 캘린더 해석·주식 수 후보 검증·주가 검사 함수, `market-calendar-r49-sec-map-bulk-readonly.mjs`의 SEC 공식 매핑 파서. R50은 ZIP 엔트리 본문 검사와 **모든 기존 주가 파일** 집계 기능만 추가한다.
 - 고정 실행 코드 출처: `87c62a2427ce4aa7d2096d08e796bc908cb16b44` (`codex/ui-improvements`, R50 신규 4개 파일 최초 반영). 현재 개발 브랜치 HEAD나 `main`이 이후 변경되더라도 이 SHA를 임의의 PC 운영 승인 SHA로 간주하지 않는다.
-- 별도 설치·적용·백업·롤백 단계는 **없음**(읽기 전용). 기존 PC `E:\\ZGmini\\data\\pc-writer`의 SQLite, SEC ZIP·매핑 JSON, Alpaca 증분 가격 파일을 읽고 실행 폴더에 결과 TXT 1개만 생성한다. 기존 실행 파일·DB·D1·예약 작업을 수정하지 않는다.
+- 별도 설치·적용·백업·롤백 단계는 **없음**(읽기 전용). 기존 PC `E:\ZGmini\data\pc-writer`의 SQLite, SEC ZIP·매핑 JSON, Alpaca 증분 가격 파일을 읽고 실행 폴더에 결과 TXT 1개만 생성한다. 기존 실행 파일·DB·D1·예약 작업을 수정하지 않는다.
 - Git checkout이 없는 PC에는 고정 코드와 **동일 상대 경로의 정적 import**, 고정 소스 SHA, SHA-256 파일별 manifest, 한국어 설명이 있는 ZIP을 제공한다. ZIP 내부 SHA 비교만으로 출처를 검증한 것으로 보고하지 않고 GitHub 고정 SHA의 파일별 blob과 별도로 대조한다.
 
 ## 실행/STOP/결과 계약
 
 1. 새 빈 폴더에 R50 ZIP을 풀고 `MARKET_CALENDAR_R50_BULK_FACTS.cmd`를 **한 번만** 실행한다. 입력값·인증정보를 대화나 CMD에 제공하지 않는다.
-2. 필요 조건: 승인 Node `E:\\ZGmini\\runtime\\node.exe`, 원본 PC SQLite, SEC 매핑 JSON과 `companyfacts.zip`, 기존 Alpaca 가격 폴더(없으면 정직하게 보고). 압축 파일과 같은 폴더에 필수 JS 모듈이 모두 있어야 한다.
+2. 필요 조건: 승인 Node `E:\ZGmini\runtime\node.exe`, 원본 PC SQLite, SEC 매핑 JSON과 `companyfacts.zip`, 기존 Alpaca 가격 폴더(없으면 정직하게 보고). 압축 파일과 같은 폴더에 필수 JS 모듈이 모두 있어야 한다.
 3. 정상 도구 종료: `STATUS=R50_BULK_AND_PRICE_READONLY_COMPLETE`, 생성 파일 `MARKET_CALENDAR_R50_BULK_FACTS_RESULT.txt`. 이 상태는 **분석 절차 완료**를 뜻하며 주가 충분·시가총액 검증·별표 갱신 성공을 뜻하지 않는다.
 4. 결과 파일 선존재, Node/스크립트 누락, 원본 DB/SEC 매핑/ZIP 손상, 오류 종료는 **STOP**이다. 임의 재실행·데이터 삭제·잠금 해제·DB 초기화·스케줄러 변경을 하지 않는다.
 5. 실행 결과 TXT만 회수한다. 개별 기업 원자료·비밀정보를 보고서에 기록하지 않는다. PC 실측 결과가 도착해야 다음 단계(회사별 클래스 검증, 주가 누락 보완, 대량 작업 chunk/checkpoint 필요 여부)를 결정한다.
