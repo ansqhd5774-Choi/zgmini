@@ -19,8 +19,7 @@ function htmlText(value){
   .replace(/\s+/g,' ').trim();
 }
 function attr(tag,key){
- const escaped=key.replace(/[.*+?^$\{\}()|[\]\\]/g,'\\$&');
- const m=tag.match(new RegExp('(?:^|\\s)'+escaped+'\\s*=\\s*(?:"([^"]*)"|\'([^\']*)\'|([^\\s>]+))','i'));
+ const m=tag.match(new RegExp(String.raw`(?:^|\s)`+key+String.raw`\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))`,'i'));
  return m?htmlText(m[1]??m[2]??m[3]):null;
 }
 function meta(html,keys){
