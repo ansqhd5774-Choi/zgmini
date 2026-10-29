@@ -93,7 +93,9 @@ async function main(){
  const archiveRows=validateArchiveR48(fs.readFileSync(manifestPath,'utf8'));
  const config=JSON.parse(fs.readFileSync(path.join(os.homedir(),'.zgmini','pc-writer','config.json'),'utf8'));
  const {client,credential}=await import('../pc-writer/d1.mjs');
- console.log(JSON.stringify(await diagnoseIranNewsD1R48({remote:client(config,credential(BASE)),db:config.core,archiveRows})));
+ const diagnostic=await diagnoseIranNewsD1R48({remote:client(config,credential(BASE)),db:config.core,archiveRows});
+ console.log(JSON.stringify(diagnostic));
+ if(diagnostic.original39Missing||diagnostic.original39IdentityChanged)process.exitCode=2;
 }
 if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.url))
  main().catch(err=>{const reason=/^R48_[A-Z0-9_]+$/.test(err?.message??'')?err.message:'R48_REMOTE_DIAGNOSTIC_UNAVAILABLE';
