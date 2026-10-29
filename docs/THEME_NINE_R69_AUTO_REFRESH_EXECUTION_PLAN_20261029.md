@@ -182,3 +182,11 @@ FIX2는 `r73ScheduledPreflight`를 변경한다. 승인된 11:30 예약 시간�
 전용 업데이터 `THEME_NINE_R73_FIX2_APPLY_AND_RUN.cmd`는 이전 R73 배포 파일의 정확한 SHA만 허용하고 기존 모듈을 `.bak`로 백업·새 SHA 확인 후 업그레이드한다. 기존 단일 11:30 작업의 등록 명령이 R48이라면 사용자 승인 Windows 권한으로만 R73 예약 래퍼로 변경하고, R73이라면 건드리지 않는다. 변경 전/후 트리거·사용자·설정은 일치 검사한다. `schtasks /Change` 실패 시 Windows 권한 오류인지 기타 실패인지 안전한 원인 분류와 실제 종료 코드를 기록한다. 자동 승인/권한 우회/작업 삭제·재생성·새 브랜치 생성 없음.
 
 검증: 로컬 단위 테스트는 R73 11:30 예약, 오후 16:20 수동 예약 래퍼 실행, 13:30 중복 일정 차단, 실제 lock 차단, 502 제한 재시도/429 미재시도를 검사한다. **PC 실제 적용·R48 63 ETF 수집·11:30 다음 예약·R54 D1·공개 API 갱신은 여전히 실PC 로그 후 별도 판정**한다.
+
+## K. FIX2 PC 작업 변경 실패와 Windows 원문 오류 진단 — 2026-10-29
+
+사용자 `THEME_NINE_R73_FIX2_27075_30016.txt`: `scriptUpdated=true`, `taskActionStillOriginal=true`, `WINDOWS_TASK_CHANGE_FAILED`, `exitCode=1`, `d1Writes=0`, `publicWrites=0`. 사용자가 **관리자 권한으로 실행했다**고 확인했으므로 단순 비관리자 실행을 원인으로 반복 설명하거나 기다리도록 요구하지 않는다. 실제 Windows 스케줄러 메시지를 누락시킨 설치기 로깅 결함이 근본적인 진단 차단이다.
+
+이를 위해 `THEME_NINE_R73_NATIVE_TASK_AND_PRIVATE.cmd` 및 `theme-nine-r73-native-error-and-apply.mjs`를 준비했다. 기존 단일 작업의 XML이 **정확한 원본 R48 또는 R73 실행 경로와 11:30 트리거**인지 읽기 확인하고, R48인 경우에만 이전 XML 백업 후 같은 작업의 실행 명령 변경을 정확히 한 번 요청한다. Windows의 실제 종료 코드와 stdout/stderr 문구를 경로/계정명을 익명화하여 기록한다. 변경 실패 시에도 성공으로 가장하지 않고 기존 R73 **수동 비공개 수집을 독립 실행**하여 공급자/체크포인트 검증을 더 이상 묶어두지 않는다. Windows 작업을 삭제/재생성하거나 다른 권한으로 우회하지 않는다.
+
+검증: Node 테스트에서 정상 작업 변경 후 XML readback, `exitCode=1` 시 네이티브 `Access is denied` 기록과 원본 액션 보존, 로그의 경로/계정 비노출 3개 검증 통과. 실제 Windows API 성공 여부, 관리자 권한 구성이 작업 ACL에 적절한지, 63 ETF 완료, 공개 D1 게시 여부는 사용자 실PC 로그 수령 전까지 미확정.
