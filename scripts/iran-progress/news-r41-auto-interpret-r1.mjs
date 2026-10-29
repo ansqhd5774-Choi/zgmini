@@ -145,7 +145,13 @@ export async function generateR41ModelAnalysis(article,{fetcher=fetch,model='gem
    prompt:JSON.stringify({originalTitle:article.originalTitle,articleBody:article.articleBody}),
    format:JSON_SCHEMA,stream:false,options:{temperature:0,num_predict:1100}}),
   signal:AbortSignal.timeout(90000)});
- if(!response?.ok)throw Error('NEWS_R41_ANALYSIS_OLLAMA_FAILED');
+ // The HTTP status is diagnostic, but neither server text nor system paths
+ // should ever become public pending reasons.
+ if(!response?.ok){
+  const status=Number(response?.status);
+  throw Error(Number.isInteger(status)&&status>=400&&status<=599?
+   `NEWS_R41_ANALYSIS_OLLAMA_HTTP_${status}`:'NEWS_R41_ANALYSIS_OLLAMA_FAILED');
+ }
  let draft;
  try{draft=JSON.parse((await response.json()).response);}catch{
   throw Error('NEWS_R41_ANALYSIS_OLLAMA_RESPONSE_INVALID');
@@ -188,17 +194,26 @@ export async function runR41AnalysisCycle(feed,{
     !/^[a-zA-Z0-9_.:-]{2,80}$/.test(model))
   throw Error('NEWS_R41_ANALYSIS_CYCLE_INVALID');
  const supplied=validateR41ArticleEvidence(externalEvidence,articles);
- const cacheEntries=new Map();
+ const cacheEntries=new Map(),attempts=new Map();
  if(cache!=null){
   if(cache.version!==R41_ANALYSIS_CACHE_VERSION||!Array.isArray(cache.entries)||
-     cache.entries.length>1200)throw Error('NEWS_R41_ANALYSIS_CACHE_INVALID');
+     cache.entries.length>1200||
+     (cache.attempts!=null&&(!Array.isArray(cache.attempts)||cache.attempts.length>700)))
+   throw Error('NEWS_R41_ANALYSIS_CACHE_INVALID');
   for(const entry of cache.entries){
    if(!entry||typeof entry.id!=='string'||cacheEntries.has(entry.id))
     throw Error('NEWS_R41_ANALYSIS_CACHE_INVALID');
    cacheEntries.set(entry.id,entry);
   }
+  for(const entry of cache.attempts??[]){
+   if(!entry||typeof entry.id!=='string'||!/^[a-f0-9]{64}$/.test(entry.id)||
+      attempts.has(entry.id)||!Number.isSafeInteger(entry.lastAttemptAt)||
+      entry.lastAttemptAt<1||entry.lastAttemptAt>now+60000)
+    throw Error('NEWS_R41_ANALYSIS_CACHE_INVALID');
+   attempts.set(entry.id,entry.lastAttemptAt);
+  }
  }
- const ready=[],pending=[],toGenerate=[];
+ const ready=[],toGenerate=[],pendingReasons=new Map();
  for(const article of articles){
   const old=cacheEntries.get(article.id);
   const suppliedBody=supplied.get(article.sourceUrl);
@@ -207,7 +222,22 @@ export async function runR41AnalysisCycle(feed,{
   if(reuse)ready.push(old);
   else toGenerate.push(article);
  }
- const incoming=toGenerate.slice(0,maxNew),backlog=toGenerate.slice(maxNew);
+ // Rights-restricted articles are not actionable work. Never let them consume
+ // analysis slots or starve permitted sources further down the public feed.
+ const eligible=[];
+ for(const article of toGenerate){
+  if(supplied.has(article.sourceUrl)||
+     r41SourceRightsPolicy(article.sourceId,article.sourceUrl).directlyFetchable)
+   eligible.push(article);
+  else pendingReasons.set(article.id,'SOURCE_RIGHTS_RESTRICTED');
+ }
+ // Failed eligible articles are retried, but the least-recently attempted
+ // candidates run first. A bad article or an offline model cannot pin the
+ // first maxNew slots on every scheduled cycle.
+ const queue=eligible.map((article,index)=>({article,index,
+  attemptedAt:attempts.get(article.id)??0})).sort((a,b)=>
+  a.attemptedAt-b.attemptedAt||a.index-b.index).map(row=>row.article);
+ const incoming=queue.slice(0,maxNew),backlog=queue.slice(maxNew);
  const directCandidates=r41DirectEvidenceCandidates(incoming.filter(article=>
   !supplied.has(article.sourceUrl))).eligible;
  const fetched=directCandidates.length?
@@ -221,11 +251,10 @@ export async function runR41AnalysisCycle(feed,{
    bodyMap.set(source.sourceUrl,row.articleBody.trim());
  }
  for(const article of incoming){
+  attempts.set(article.id,now);
   const articleBody=bodyMap.get(article.sourceUrl);
   if(!articleBody){
-   const direct=r41SourceRightsPolicy(article.sourceId,article.sourceUrl).directlyFetchable;
-   pending.push({id:article.id,reason:direct?
-    'ARTICLE_BODY_EVIDENCE_UNAVAILABLE':'SOURCE_RIGHTS_RESTRICTED'});
+   pendingReasons.set(article.id,'ARTICLE_BODY_EVIDENCE_UNAVAILABLE');
    continue;
   }
   try{
@@ -237,10 +266,13 @@ export async function runR41AnalysisCycle(feed,{
     originalTitle:article.originalTitle,publishedAt:article.publishedAt,
     sourceTextSha256:sha256(articleBody),promptVersion:R41_ANALYSIS_PROMPT_VERSION,
     ...safe,model,modelDigest,analyzedAt:now});
-  }catch(error){pending.push({id:article.id,reason:safeFailureReason(error)});}
+  }catch(error){pendingReasons.set(article.id,safeFailureReason(error));}
  }
- for(const article of backlog)pending.push({id:article.id,reason:'ANALYSIS_BACKLOG'});
+ for(const article of backlog)pendingReasons.set(article.id,'ANALYSIS_BACKLOG');
  const byId=new Map(ready.map(entry=>[entry.id,entry]));
+ const pending=articles.filter(article=>!byId.has(article.id)).map(article=>({
+  id:article.id,reason:pendingReasons.get(article.id)??'ANALYSIS_BACKLOG',
+ }));
  const inFeed=new Set(articles.map(article=>article.id));
  const entries=[...cacheEntries.values()].filter(entry=>
   !inFeed.has(entry.id)&&Number.isSafeInteger(entry.analyzedAt)&&
@@ -253,10 +285,15 @@ export async function runR41AnalysisCycle(feed,{
    impact:entry.impact,analysisStatus:'READY',analyzedAt:entry.analyzedAt,
    evidenceUrls:[article.sourceUrl],model:entry.model};
  });
+ const remainingAttempts=[...attempts].filter(([id])=>inFeed.has(id)&&!byId.has(id))
+  .map(([id,lastAttemptAt])=>({id,lastAttemptAt}));
  return {publicResult:{version:R41_ANALYSIS_VERSION,publishedAt:now,items,pending},
-  privateCache:{version:R41_ANALYSIS_CACHE_VERSION,updatedAt:now,entries},
+  privateCache:{version:R41_ANALYSIS_CACHE_VERSION,updatedAt:now,entries,
+   attempts:remainingAttempts},
   report:{feedCount:articles.length,ready:items.length,newReady:ready.length-(articles.length-toGenerate.length),
-   pending:pending.length,backlog:backlog.length,sourceEvidenceUnavailable:pending.filter(
+   pending:pending.length,backlog:backlog.length,attempted:incoming.length,
+   rightsRestricted:pending.filter(row=>row.reason==='SOURCE_RIGHTS_RESTRICTED').length,
+   sourceEvidenceUnavailable:pending.filter(
     row=>row.reason==='ARTICLE_BODY_EVIDENCE_UNAVAILABLE').length,
    r5ScoreChanges:0,collectorChanges:0,publicWriteAttempted:false}};
 }
