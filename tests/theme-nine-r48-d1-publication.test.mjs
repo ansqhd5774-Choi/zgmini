@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import {createHash} from 'node:crypto';
 import {publishNineR48D1} from '../scripts/pc-writer/theme-nine-r48-d1-publication.mjs';
 import {THEME_NINE_R37_KEY,THEME_NINE_R37_METHOD,THEME_NINE_R37_ROSTER,
  THEME_NINE_R37_ROSTER_SHA,THEME_NINE_R37_VERSION}
@@ -94,5 +95,68 @@ test('compare-and-swap mismatch prevents any D1 write',async()=>{
  const db=fake(allowed);
  await assert.rejects(publishNineR48D1({query:db.query,record:allowed,
    publicBase:baseline,now,expectedStoredAt:123}),/D1_CAS_EXPECTED_STAMP/);
+ assert.equal(db.calls.filter(c=>c.write).length,0);
+});
+
+const digest=x=>createHash('sha256').update(JSON.stringify(x)).digest('hex');
+function legacyProvisional(score){
+ const provisional={asOf:'2026-10-27T01:00:00Z',
+  points:[{date:'2026-10-26',scores:{'바이오·신약':score}}]};
+ const base={...baseline,phase:'PROVISIONAL',version:'PUBLIC_TEN_V1',
+  methodologyVersion:'ETF_ONLY_T40_R20_V40_PAIR50',sourceVersion:'R179',
+  provisional};
+ const record={...allowed,phase:'PROVISIONAL',provisional,
+  provisionalLegacyMethodologyVersion:base.methodologyVersion,
+  provisionalLegacySourceVersion:base.sourceVersion,
+  candidateFileSha256:'0'.repeat(64),
+  provisionalLineage:{source:'EXISTING_PUBLIC_PROVISIONAL_AS_PUBLISHED',
+   confirmedCandidateSha256:'1'.repeat(64),latestCandidateSha256:null,
+   confirmedObservationDate:'2026-10-26',latestObservationDate:'2026-10-26',
+   publicVersion:base.version,publicProvisionalEndDate:'2026-10-26',
+   publicProvisionalPointsSha256:digest(provisional.points),
+   sameMethodology:false,overlappingHistoryIdentical:true}};
+ return {base,record};
+}
+
+test('same confirmed date: an approved biotech provisional change CAS-rebases R37 only',async()=>{
+ const old=legacyProvisional(43),newer=legacyProvisional(44);
+ newer.record.provisionalLineage={...newer.record.provisionalLineage,
+  publicProvisionalPointsSha256:digest(newer.record.provisional.points)};
+ newer.record.candidateFileSha256='2'.repeat(64);
+ newer.record.publishedAt='2026-10-27T02:00:00Z';
+ const db=fake(old.record);
+ const out=await publishNineR48D1({query:db.query,record:newer.record,
+  publicBase:newer.base,now,expectedStoredAt:now-1000});
+ assert.equal(out.status,'WRITTEN_AND_READBACK_VERIFIED');
+ assert.equal(out.written,1);
+ assert.equal(db.calls.filter(c=>c.write).length,1);
+ assert.deepEqual(JSON.parse(db.row.body).themes,old.record.themes);
+ assert.deepEqual(JSON.parse(db.row.body).provisional,newer.record.provisional);
+});
+
+test('same date never rewrites raw lineage, licensing or nonlegacy provisional mode',async()=>{
+ const old=legacyProvisional(43),newer=legacyProvisional(44);
+ const changes=[
+  {rawManifestSha256:'9'.repeat(64)},
+  {licensingRiskAcceptedByPublisher:true},
+  {provisionalLegacySourceVersion:'UNAPPROVED_CHANGED_SOURCE'},
+  {provisionalLineage:{...newer.record.provisionalLineage,source:'R47_R48_SAME_PRICE_MODE_EXISTING_SCORES'}},
+ ];
+ for(const changed of changes){
+  const db=fake(old.record);
+  await assert.rejects(publishNineR48D1({query:db.query,
+   record:{...newer.record,...changed},publicBase:newer.base,now,
+   expectedStoredAt:now-1000}),
+  /D1_SAME_DATE_REBASE_SCOPE_DENIED|PUBLICATION_EVIDENCE_OR_BASE_NOT_READY/);
+  assert.equal(db.calls.filter(c=>c.write).length,0);
+ }
+});
+
+test('unchanged provisional scores do not churn same-day D1 even if publication timestamp differs',async()=>{
+ const original=legacyProvisional(44),db=fake(original.record);
+ const sameScores={...original.record,publishedAt:'2026-10-27T02:00:00Z'};
+ const out=await publishNineR48D1({query:db.query,record:sameScores,
+  publicBase:original.base,now,expectedStoredAt:now-1000});
+ assert.equal(out.status,'UNCHANGED');
  assert.equal(db.calls.filter(c=>c.write).length,0);
 });
