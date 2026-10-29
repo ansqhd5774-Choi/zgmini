@@ -27,11 +27,13 @@ export async function storedIranNewsMetadataR41Response(request,{db,now=Date.now
  }));
  const visible=visibleIranMetadataRowsR41(rows,{now,days:14});
  const sourcesWithArticles=new Set(visible.map(item=>item.sourceId));
- const allSeven=IRAN_NEWS_METADATA_SOURCE_IDS_R41.every(id=>sourcesWithArticles.has(id));
+ // A source with zero news today is not an API failure. Coverage is factual,
+ // not an all-publishers gate that hides previously verified articles.
  const payload={version:IRAN_NEWS_METADATA_VERSION_R41,
-  status:!visible.length?'PENDING':allSeven?'READY':'PARTIAL',
+  status:!visible.length?'PENDING':'READY',
   asOfDate:kstNewsDay(now),displayDays:14,
-  sourceCount:sourcesWithArticles.size,requiredSourceCount:7,
+  sourceCount:sourcesWithArticles.size,requiredSourceCount:0,
+  configuredSourceCount:IRAN_NEWS_METADATA_SOURCE_IDS_R41.length,
   itemCount:visible.length,
   items:visible.map(item=>({id:item.articleId,source:item.source,
    title:item.title,publishedAt:item.publishedAt,sourceUrl:item.sourceUrl})),
