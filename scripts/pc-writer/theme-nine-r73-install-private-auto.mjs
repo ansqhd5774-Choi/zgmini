@@ -35,19 +35,24 @@ export function auditR73ExistingTaskXml(xml,{target=TARGET}={}){
   if(typeof xml!=='string'||!xml.includes('schemas.microsoft.com/windows/2004/02/mit/task'))
     fail('WINDOWS_TASK_XML');
   const action=decodeXml(xmlSection(xml,'Actions'));
-  const source=path.win32.join(target,ORIGINAL);
-  const replacement=path.win32.join(target,UPDATED);
-  const originalCount=action.split(source).length-1;
-  const replacementCount=action.split(replacement).length-1;
-  if((action.match(/<Exec(?:\s|>)/g)??[]).length!==1||
-     !action.includes('<Command>cmd.exe</Command>')||
-     !action.includes('/d /c')||
-     (originalCount!==1||replacementCount!==0)&&
-     (replacementCount!==1||originalCount!==0))fail('UNEXPECTED_TASK_ACTION');
+  const command=action.match(/<Command>([\s\S]*?)<\/Command>/i)?.[1]?.trim();
+  const argument=action.match(/<Arguments>([\s\S]*?)<\/Arguments>/i)?.[1]?.trim()??'';
+  const normalized=s=>String(s).replaceAll('/','\\').toLowerCase();
+  const source=normalized(path.win32.join(target,ORIGINAL));
+  const replacement=normalized(path.win32.join(target,UPDATED));
+  const commandNorm=normalized(command);
+  const argsNorm=argument.replaceAll('"','').replace(/\s+/g,' ').trim().toLowerCase();
+  const pathArg=argsNorm.startsWith('/d /c ')?normalized(argsNorm.slice(6)):null;
+  const direct=commandNorm===source||commandNorm===replacement;
+  const wrapped=(commandNorm==='cmd.exe'||commandNorm.endsWith('\\cmd.exe'))&&
+    (pathArg===source||pathArg===replacement);
+  if((action.match(/<Exec(?:\s|>)/gi)??[]).length!==1||
+     !(direct&&!argsNorm||wrapped))fail('UNEXPECTED_TASK_ACTION');
+  const updated=commandNorm===replacement||pathArg===replacement;
   const trigger=decodeXml(xmlSection(xml,'Triggers'));
   if(!trigger.includes('T11:30:00')||!trigger.includes('<DaysInterval>1</DaysInterval>'))
     fail('UNEXPECTED_TASK_TRIGGER');
-  return {status:replacementCount===1?'ALREADY_R73':'EXACT_R48',
+  return {status:updated?'ALREADY_R73':'EXACT_R48',
     task:TASK,privateOnly:true,scheduledAt:'11:30_KST'};
 }
 
@@ -98,7 +103,7 @@ export function installR73PrivateRetry({source=HERE,target=TARGET}={}){
   fs.writeFileSync(backup,before.stdout,{flag:'wx'});
   if(sha(fs.readFileSync(backup))!==sha(Buffer.from(before.stdout)))
     fail('TASK_BACKUP_READBACK');
-  const action=`cmd.exe /d /c ""${path.win32.join(root,UPDATED)}""`;
+  const action=path.win32.join(root,UPDATED); // same direct .cmd style as R50
   const changed=execute('schtasks',['/Change','/TN',TASK,'/TR',action]);
   if(changed.status!==0)fail('TASK_ACTION_CHANGE_DENIED');
   const after=execute('schtasks',['/Query','/TN',TASK,'/XML']);
