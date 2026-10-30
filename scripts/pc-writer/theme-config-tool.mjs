@@ -2,17 +2,12 @@ import fs from 'node:fs';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {createInterface} from 'node:readline/promises';
-import {readDefinition,readRegistered,registerDefinition,safeDirectory,ensure,digest,validDate} from './theme-config-registry.mjs';
+import {readDefinition,readRegistered,registerDefinition,safeDirectory,ensure,digest,validDate,listRegistered} from './theme-config-registry.mjs';
 import {collectConfigured} from './theme-optional-collect.mjs';
 import {scoreRegistered} from './theme-config-score.mjs';
 const root=()=>process.env.ZGMINI_DATA_ROOT??'E:/ZGmini/data';
 const legacy=()=>JSON.parse(fs.readFileSync(new URL('../../config/theme-data-registry.json',import.meta.url)));
-export function listRegistered(dataRoot){
- const dir=path.join(fs.realpathSync(dataRoot),'theme-config','definitions');
- if(!fs.existsSync(dir))return [];
- safeDirectory(dataRoot,'theme-config/definitions');
- return fs.readdirSync(dir).sort().map(n=>{ensure(/^[a-z][a-z0-9-]*\.json$/.test(n),'CONFIG_REGISTRY_UNEXPECTED_FILE');return readRegistered(dataRoot,n.slice(0,-5));});
-}
+export {listRegistered};
 export function planRegistered(dataRoot,id){
  const r=readRegistered(dataRoot,id),home=path.join(fs.realpathSync(dataRoot),'themes',r.internalId);
  let score=null;

@@ -3,6 +3,7 @@
 // Neither a new task nor a per-theme launcher is created here.
 import fs from 'node:fs';
 import path from 'node:path';
+import {listRegistered} from './theme-config-registry.mjs';
 
 const READ="SELECT body,stored_at FROM public_feed_snapshots_v1 WHERE kind='output' AND feed_key=? AND snapshot_key='current'";
 const errorCode=e=>typeof e?.code==='string'?e.code:'CONFIGURED_PUBLICATION_UNEXPECTED';
@@ -16,8 +17,7 @@ const secureDirectory=dir=>{
 export async function runConfiguredAutoPublish({dataRoot,now=Date.now(),
  registrations=null,preflight=null,publish=null,queryFactory=null,tokenFn=null,readCapabilities=null}={}){
  ensure(Number.isSafeInteger(now)&&now>0,'CONFIG_PUBLIC_SCHEDULE_CLOCK');
- const entries=registrations??
-  (await import('./theme-config-tool.mjs')).listRegistered(dataRoot);
+ const entries=registrations??listRegistered(dataRoot);
  if(!entries.length)return {status:'NO_REGISTERED_THEMES',
   registered:0,approvalFiles:0,eligible:0,d1Queries:0,d1Writes:0,providerCalls:0,results:[]};
  const root=fs.realpathSync(dataRoot);

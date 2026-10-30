@@ -51,6 +51,8 @@ checkpoint는 등록·실행·모드 fingerprint에 묶고 CAS로 저장한다. 
 - 위 항목은 구현/fixture/실데이터 shadow 증거다. 이 단락 작성 시점의 실제 PC 갱신·main 선별 배포·첫 실신규테마 D1 게시·자연 예약은 별도 결과가 필요하다.
 - 실제 저장 보조 API를 통한 공통 잠정 어댑터도 기존 R88 공개8개 테마의 10/29 점수·가중치와 완전 일치했다. 같은 실데이터 증거 파일에 별도 provisional 항목으로 기록했다.
 - 공통 목록/계획 조회는 저장된 SHA/definition/source에 맞는 산출물 메타데이터를 읽으며 계산을 재실행하지 않는다. 실제 재계산과 구분한다. 전체 일일 요청 예산은 resource-policy 설정으로 분리하고 기본4회는 보존했다. 예산 부족 시 전체 테마를 줄이지 않고 cursor로 이어가며 대기를 성공 갱신으로 보고하지 않는다.
+- 실제 설치본의 공통 예약 entry 수동 검증 중 Node 종료13(`unsettled top-level await`)을 발견했다. 자동게시/사전검사가 실행 중 CLI에서 목록 함수를 다시 import하는 순환이 원인이고 과거 d7ee 설치 로그에도 존재했다. 목록 발견을 registry 하위 모듈로 옮겨 제거했으며 격리 설치본의 실제 `--scheduled` subprocess 종료0·무등록/무쓰기 결과를 회귀검사에 추가했다. 수정 설치 후 같은 실제 entry 검증 결과는 후속 증거로 기록한다.
+- 추가 기존 R32 standalone CMD 회귀에서 payload/source SHA 불일치 1건이 확인됐다. 91bfffc 이후 해당 계산기/CMD/테스트 diff는 없고 canonical Git snapshot에서도 동일하다. 이번 공통 패키지는 그 CMD를 실행하지 않으며 승인 R32 소스와 실데이터 동등성은 확인됐다. 기존 offline CMD 정합성 문제를 신규 산식/Provider 장애로 분류하지 않는다.
 
 아래 항목은 앞선 구현 단계의 이력이며, 현재 연결 완료 여부는 위 단락 및 후속 실제 실행 증거로 판단한다.
 

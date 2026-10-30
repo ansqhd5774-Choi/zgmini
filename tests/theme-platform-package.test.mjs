@@ -15,6 +15,10 @@ test('existing installer stages complete common CLI and inspect runs offline',t=
  assert.ok(result.manifest['scripts/pc-writer/theme-platform.mjs']);
  assert.ok(result.manifest['scripts/pc-writer/theme-platform-policy.mjs']);
  assert.ok(report.delegation.every(r=>r.decision==='PROCEED'));
+ const scheduled=JSON.parse(execFileSync(process.execPath,[runner,'--scheduled'],{encoding:'utf8',windowsHide:true,
+  env:{...process.env,ZGMINI_DATA_ROOT:root},timeout:15000}));
+ assert.equal(scheduled.status,'NO_REGISTERED_THEMES');assert.equal(scheduled.publicConnection.status,'NO_REGISTERED_THEMES');
+ assert.equal(scheduled.d1Writes,0);
 });
 test('missing local dependency is detected at package build, not user execution',t=>{
  const root=fs.mkdtempSync(path.join(os.tmpdir(),'theme-platform-import-'));t.after(()=>fs.rmSync(root,{recursive:true}));

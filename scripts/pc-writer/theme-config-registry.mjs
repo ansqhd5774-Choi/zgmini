@@ -88,3 +88,11 @@ export function readRegistered(dataRoot,id){
  const definition=readDefinition(file);ensure(definition.id===id,'CONFIG_IDENTITY');
  return {definition,sha256:digest(fs.readFileSync(file)),internalId:'registered-'+id};
 }
+// Shared discovery lives below every CLI/auto/preflight caller. Importing an
+// executing top-level-await CLI from its own post-step would deadlock Node.
+export function listRegistered(dataRoot){
+ const dir=path.join(fs.realpathSync(dataRoot),'theme-config','definitions');
+ if(!fs.existsSync(dir))return [];
+ safeDirectory(dataRoot,'theme-config/definitions');
+ return fs.readdirSync(dir).sort().map(n=>{ensure(/^[a-z][a-z0-9-]*\.json$/.test(n),'CONFIG_REGISTRY_UNEXPECTED_FILE');return readRegistered(dataRoot,n.slice(0,-5));});
+}

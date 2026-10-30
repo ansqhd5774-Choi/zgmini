@@ -2,9 +2,8 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
-import {readRegistered,safeDirectory,ensure,digest,validDate} from './theme-config-registry.mjs';
+import {readRegistered,safeDirectory,ensure,digest,validDate,listRegistered} from './theme-config-registry.mjs';
 import {scoreRegistered} from './theme-config-score.mjs';
-import {listRegistered} from './theme-config-tool.mjs';
 import {PUBLIC_DISPLAY_MAX_AGE_MS} from '../../worker/public-display-freshness.mjs';
 import {CONFIGURED_V2} from '../../worker/theme-configured-r32-contract.mjs';
 export const CONFIGURED_PUBLIC_VERSION='ZGMINI_CONFIGURED_THEME_PUBLIC_V1';
