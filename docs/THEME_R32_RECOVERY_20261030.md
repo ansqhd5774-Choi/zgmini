@@ -47,3 +47,7 @@
 - 페이지 반영은 아직 미완료. 전용 브랜치 전체를 main에 병합하지 말고 이번 검증된 patch만 선별해야 한다.
 - 다음: 선별 통합 경로 확정 → 최신 main 위 검증·PR → Git 자동배포 → 기존 PC 게시 코드의 exact deployed source gate 유지 아래 전환 → 승인 범위의 D1/readback·실제 10개 화면 확인. R6 보류는 별도 유지.
 - 과거 R83/R87 진단의 날짜·실행 미완료를 현재 상태로 반복 사용하지 않는다. 이번 실제 checkpoint·산출 파일이 새 비공개 완료 증거다.
+
+### 선별 웹 후보 검증 추가
+
+최신 main 위에 서버 Reader/API 3개·테스트 2개·이 문서만 선별한 6파일 후보를 준비했다. 해당 테스트 16개, TypeScript, 실제 `vinext build`가 통과했다. 기존 브랜치 전체 병합이나 새 브랜치 생성·배포는 하지 않았다. R54 패키지 검사에서는 Windows autocrlf 표현만 Git의 LF 소스로 정규화하며, 실제 포함 payload SHA 및 CMD CRLF 검사는 그대로 유지한다.

@@ -28,6 +28,11 @@ test('R54 is a portable SHA-checked standalone one-file Windows CMD',()=>{
   const bytes=Buffer.from(cmd.slice(begin+head.length,end)
    .replace(/[^A-Za-z0-9+/=]/g,''),'base64');
   assert.equal(sha(bytes),expected,name);
-  assert.deepEqual(bytes,fs.readFileSync(path.join(root,name)),name);
+  // Git stores module/JSON sources with LF; Windows autocrlf checkouts may
+  // contain CRLF. The embedded payload remains SHA-checked byte-for-byte.
+  const source=fs.readFileSync(path.join(root,name));
+  const canonical=name.endsWith('.cmd')?source:
+   Buffer.from(source.toString('utf8').replace(/\r\n/g,'\n'));
+  assert.deepEqual(bytes,canonical,name);
  }
 });
