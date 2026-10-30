@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import {readThemeEtfOnly,THEME_ETF_ONLY_PUBLIC_KEY,THEME_ETF_ONLY_PUBLIC_VERSION,THEME_ETF_ONLY_METHOD} from '../worker/theme-etf-only-public.mjs';
 import {
  addVerifiedNineR37,eligibleNineR37,THEME_NINE_R37_KEY,
  THEME_NINE_R37_METHOD,THEME_NINE_R37_ROSTER,
@@ -132,8 +133,45 @@ test('the public first provisional day may equal the confirmed anchor',async()=>
   ['2026-10-23','2026-10-26']);
 });
 
-test('a newer legacy date can never be overwritten by an older R37 score',async()=>{
+test('a newer legacy writer cannot revert a valid R32 publication to the old formula or relabel its date',async()=>{
  const newBase={...baseline,observationDate:'2026-10-26',confirmedObservationDate:'2026-10-26',
   themes:baseline.themes.map(t=>({...t,history:t.history.map((p,i)=>i===251?{...p,date:'2026-10-26'}:p)}))};
- assert.equal(await addVerifiedNineR37(db(ready),newBase,{now}),newBase);
+ const result=await addVerifiedNineR37(db(ready),newBase,{now});
+ assert.equal(result.modelRevision,THEME_NINE_R37_VERSION);
+ assert.equal(result.methodologyVersion,THEME_NINE_R37_METHOD);
+ assert.equal(result.confirmedObservationDate,'2026-10-23');
+ assert.equal(result.themes[0].history.at(-1).date,'2026-10-23');
+ assert.deepEqual(result.themes[0].etfs,THEME_NINE_R37_ROSTER[0].etfs);
+ assert.deepEqual(result.themes.at(-2),newBase.themes.at(-2));
+ assert.deepEqual(result.themes.at(-1),newBase.themes.at(-1));
+ // Strict publisher validation still requires current-day alignment.
+ assert.equal(eligibleNineR37(ready,newBase,{now,storedAt:now-1000}),false);
+});
+
+test('independent R32 anchor still rejects forged future dates, broken histories and missing approval',async()=>{
+ for(const edit of [{observationDate:'2026-10-28'},
+  {publicationAuthorized:false},{sourceManifestVerified:false},
+  {privateReplayVerified:false},{themes:ready.themes.map((t,i)=>i? t:{...t,history:t.history.slice(1)})}]){
+  assert.equal(await addVerifiedNineR37(db({...ready,...edit}),baseline,{now}),baseline);
+ }
+});
+
+test('publication-base read skips only R32 while ordinary requests still use approved R32',async()=>{
+ const seed={version:THEME_ETF_ONLY_PUBLIC_VERSION,status:'READY',methodologyVersion:THEME_ETF_ONLY_METHOD,
+  publicationAuthorized:true,upstreamCommercialRightsVerified:true,derivedLicenseVerified:true,individualStocksUsed:0,
+  scoreMethod:'ETF_ONLY_PROXY',sourcePriceMode:'UNADJUSTED_HOURLY_CLOSE_PROXY_DISCLOSED',
+  weights:{trend:.4,relativeStrength:.2,volatility:.4},pairWeight:.5,
+  sourceVersion:'seed',sourceStoredAt:ready.sourceStoredAt,publishedAt:ready.publishedAt,
+  observationDate:ready.observationDate,themes:baseline.themes.slice(0,7).map((t,i)=>({...t,etfs:THEME_NINE_R37_ROSTER[i].etfs.slice(0,2),latestScore:50}))};
+ let r32Reads=0;
+ const source={prepare(sql){return {bind(key){return {async first(){
+  if(sql.includes('market_public_snapshots_v1')&&key===THEME_ETF_ONLY_PUBLIC_KEY)return {body:JSON.stringify(seed),stored_at:now-1000};
+  if(key===THEME_NINE_R37_KEY){r32Reads++;return {body:JSON.stringify(ready),stored_at:now-1000};}
+  return null;
+ }}}}}};
+ const reference=await(await readThemeEtfOnly(source,{now,includeNineR37:false})).json();
+ assert.equal(reference.methodologyVersion,THEME_ETF_ONLY_METHOD);assert.equal(r32Reads,0);
+ const visible=await(await readThemeEtfOnly(source,{now})).json();
+ assert.equal(visible.modelRevision,THEME_NINE_R37_VERSION);assert.equal(r32Reads,1);
+ assert.deepEqual(visible.themes[0].etfs,THEME_NINE_R37_ROSTER[0].etfs);
 });
