@@ -11,7 +11,7 @@ import "./usa-mobile-r8.css";
 import "./usa-score-stats-r11.css";
 
 const title = "미국 공포탐욕지수·공탐 지수 | CNN 공포지수·미국 증시 - ZGmini";
-const description = "미국 CNN 공포탐욕지수의 점수·관측일·기간별 차트와 7개 구성요소를 확인하세요. 미국 주식 공포지수·공탐지수, S&P500 모멘텀·VIX(빅스) 변동성·풋콜비율로 미장 투자심리를 함께 살펴봅니다.";
+const description = "미국 CNN 공포탐욕지수의 점수·관측일·기간별 차트와 7개 구성요소를 확인하세요. 나스닥 주가지수와 구별되는 미국 주식 공포지수·공탐지수로, S&P500 모멘텀·VIX(빅스) 변동성·풋콜비율 등 투자심리 구성요소를 살펴봅니다.";
 const url = "https://zgmini.kr/fear-greed/usa/";
 export const metadata: Metadata = {
   title, description, alternates:{canonical:url},
