@@ -57,7 +57,7 @@ test("renders SEO metadata for all 36 public pages in the Workers runtime", asyn
     }
 
     const rootHead=headOf(rootHtml);
-    assert.ok(rootHead.includes("<title>ZGmini 지그미니 | 공포탐욕지수·공탐 지수·미국 증시·경제지표</title>"));
+    assert.ok(rootHead.includes("<title>미국 주식·한국 증시 공포탐욕지수·경제지표 | ZGmini</title>"));
     assert.ok(hasDescription(rootHead));
     assert.ok(hasRobots(rootHead));
     assert.ok(hasSocialTitle(rootHead));
