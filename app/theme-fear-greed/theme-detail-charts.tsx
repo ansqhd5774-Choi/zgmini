@@ -26,7 +26,8 @@ function acceptedThemes(feed:PublicThemeFeed|null):Theme[]{
  const provisional=feed.phase==='PROVISIONAL'&&Array.isArray(feed.provisional?.points)?feed.provisional.points:[];
  return feed.themes.flatMap(item=>{
   const index=CATALOG.findIndex(t=>t.name===item?.theme);
-  if((index<0&&!item.configured)||!validScore(item.score)||!Array.isArray(item.history)||!item.history.length||item.history.length>252)return [];
+  if((index<0&&!item.configured)||!validScore(item.score)||!Array.isArray(item.history)||
+   (!item.configured&&item.history.length!==252)||(item.configured&&(!item.history.length||item.history.length>252)))return [];
   const allowMissing=item.configured||item.theme==='우주·위성';
   if(!item.history.every((p,i)=>validDate(p?.date)&&
    (validScore(p?.score)||(allowMissing&&p?.score===null))&&
