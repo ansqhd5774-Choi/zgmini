@@ -125,8 +125,12 @@ test('Git-free Hangul and spaces: one preflight then one existing upgrade; old t
 test('Git-free command invocation does not call git rev-parse in the package',async t=>{
  const f=await fixture(t);
  const runner=path.join(f.packageRoot,'scripts','pc-writer','theme-config-package-runner.mjs');
+ // Exercise the unsupported-platform CLI gate deterministically on Windows
+ // too. Never let this fixture probe the developer's real E:/ PC operation.
+ const loader=path.join(path.dirname(f.packageRoot),'unsupported-platform.mjs');
+ fs.writeFileSync(loader,"Object.defineProperty(process,'platform',{value:'fixture-unsupported'});\n");
  let output='';
- try{output=execFileSync(process.execPath,[runner,'--preflight'],
+ try{output=execFileSync(process.execPath,['--import',pathToFileURL(loader).href,runner,'--preflight'],
   {cwd:f.packageRoot,encoding:'utf8'});}
  catch(e){output=e.stdout?.toString()??'';}
  assert.match(output,/"reason":"PACKAGE_WINDOWS_REQUIRED"/);

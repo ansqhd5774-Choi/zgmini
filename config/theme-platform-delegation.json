@@ -1,0 +1,15 @@
+{
+  "schema": "ZGMINI_THEME_DELEGATION_V1",
+  "authority": "USER_THEME_PLATFORM_WORK_AUTHORIZATION_20261031",
+  "purpose": "FUTURE_THEMES_COMMON_MANAGEMENT_NOT_DATA_CENTER_REPAIR",
+  "actions": ["inspect", "validate", "plan", "private-register", "collect", "calculate", "shadow", "test", "document", "push-existing-branch", "publish", "activate"],
+  "workBranch": "codex/theme-fear-greed-integration-20261025",
+  "publicationRequiresExistingVerifiedEvidence": true,
+  "createsProviderEntitlement": false,
+  "createsThemeSelectionApproval": false,
+  "grantsAdministrativeAccess": false,
+  "newPaidResourceAuthorized": false,
+  "destructiveChangesAuthorized": false,
+  "themeCountLimit": null,
+  "etfCountLimit": null
+}

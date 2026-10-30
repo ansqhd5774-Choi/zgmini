@@ -6,7 +6,7 @@ import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {execFileSync} from 'node:child_process';
 import {digest,safeDirectory} from './theme-config-registry.mjs';
-import {configuredScheduledCommand} from './theme-config-install.mjs';
+import {configuredScheduledCommand,configuredDependencyClosure} from './theme-config-install.mjs';
 import {upgradeConfiguredSchedule} from './theme-config-upgrade.mjs';
 
 export const PACKAGE_SCHEMA='ZGMINI_THEME_CONFIG_UPGRADE_PACKAGE_V1';
@@ -14,7 +14,7 @@ export const PACKAGE_REPOSITORY='ansqhd5774-Choi/zgmini';
 export const PACKAGE_TASK='ZGMINI-PC-Configured-Themes';
 export const PACKAGE_DATA_ROOT='E:/ZGmini/data';
 export const PACKAGE_NODE='E:/ZGmini/runtime/node.exe';
-export const PACKAGE_FILES=[
+export const PACKAGE_FILES=configuredDependencyClosure([
  'RUN_PREFLIGHT.cmd','RUN_INSTALL.cmd','RUN_DIAGNOSE.cmd','README_KO.txt',
  'scripts/pc-writer/theme-config-package-runner.mjs',
  'scripts/pc-writer/theme-config-timeout-diagnose.mjs',
@@ -24,6 +24,7 @@ export const PACKAGE_FILES=[
  'scripts/pc-writer/theme-config-registry.mjs',
  'scripts/pc-writer/theme-config-score.mjs',
  'scripts/pc-writer/theme-config-tool.mjs',
+ 'scripts/pc-writer/theme-platform-store.mjs',
  'scripts/pc-writer/theme-optional-collect.mjs',
  'scripts/pc-writer/theme-optional-adaptive-r2.mjs',
  'scripts/pc-writer/theme-optional-pair-weight-r3.mjs',
@@ -36,10 +37,16 @@ export const PACKAGE_FILES=[
  'scripts/pc-writer/theme-nine-r54-d1-client.mjs',
  'scripts/pc-writer/theme-biotech-auth-r7.mjs',
  'worker/public-display-freshness.mjs',
+ 'worker/theme-configured-public.mjs',
  'config/theme-data-registry.json',
+ 'config/theme-nine-r20-approved-candidates.json',
+ 'config/theme-platform-delegation.json',
  'examples/theme-registration.template.json',
  'docs/THEME_CONFIG_TOOL.md',
-].sort();
+ 'docs/THEME_PLATFORM_STANDARD.md',
+ 'docs/THEME_ONBOARDING_PLAYBOOK.md',
+ 'docs/CMD_EXECUTION_PLAYBOOK.md',
+]);
 const packageHere=fileURLToPath(new URL('../../',import.meta.url));
 const fail=code=>{throw Object.assign(new Error(code),{code});};
 const need=(ok,code)=>{if(!ok)fail(code);};

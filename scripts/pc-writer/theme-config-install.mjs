@@ -6,6 +6,23 @@ import {fileURLToPath} from 'node:url';
 import {execFileSync} from 'node:child_process';
 import {digest,ensure,safeDirectory} from './theme-config-registry.mjs';
 const repo=fileURLToPath(new URL('../../',import.meta.url));
+// Reuse the existing package builder. Local module dependencies follow their
+// imports instead of requiring a hand-maintained per-theme bundle list.
+export function configuredDependencyClosure(initial,{root=repo}={}){
+ const files=new Set(initial),queue=[...initial];
+ for(let i=0;i<queue.length;i++){
+  const name=queue[i];if(!/\.[cm]?js$/.test(name))continue;
+  const source=fs.readFileSync(path.join(root,name),'utf8');
+  for(const match of source.matchAll(/(?:from\s*|import\s*(?:\(\s*)?)["'](\.[^"']+)["']/g)){
+   const resolved=path.resolve(root,path.dirname(name),match[1]);
+   const relative=path.relative(root,resolved).replaceAll('\\','/');
+   ensure(relative&&!relative.startsWith('../')&&!path.isAbsolute(relative),'CONFIG_BUNDLE_DEPENDENCY_ESCAPE');
+   ensure(fs.existsSync(resolved)&&fs.statSync(resolved).isFile(),'CONFIG_BUNDLE_DEPENDENCY_MISSING');
+   if(!files.has(relative)){files.add(relative);queue.push(relative);}
+  }
+ }
+ return [...files].sort();
+}
 export function configuredScheduledCommand({dataRoot,home,version}){
  const runner=path.join(home,'versions',version,'scripts','pc-writer','theme-config-tool.mjs');
  return ['@echo off','setlocal EnableExtensions DisableDelayedExpansion',
@@ -16,7 +33,8 @@ export function configuredScheduledCommand({dataRoot,home,version}){
 export function installConfiguredTool({dataRoot,sourceSha,registerTask=false,stageOnly=false}={}){
  ensure(!stageOnly||!registerTask,'CONFIG_STAGE_CANNOT_REGISTER_TASK');
  ensure(/^[a-f0-9]{40}$/.test(sourceSha??''),'CONFIG_INSTALL_SOURCE_SHA');
- const files=['theme-config-registry.mjs','theme-config-score.mjs','theme-config-tool.mjs',
+ let files=['theme-config-registry.mjs','theme-config-score.mjs','theme-config-tool.mjs',
+  'theme-platform-store.mjs',
   'theme-optional-collect.mjs','theme-optional-adaptive-r2.mjs',
   'theme-optional-pair-weight-r3.mjs','theme-space-satellite-adaptive-r2.mjs',
   'theme-shared-spy-readonly-r1.mjs','theme-optional-score-r188.mjs',
@@ -24,7 +42,11 @@ export function installConfiguredTool({dataRoot,sourceSha,registerTask=false,sta
   'theme-config-auto-publish.mjs','theme-nine-r54-d1-client.mjs',
   'theme-biotech-auth-r7.mjs'].map(n=>'scripts/pc-writer/'+n);
  files.push('worker/public-display-freshness.mjs');
+ files.push('worker/theme-configured-public.mjs');
  files.push('config/theme-data-registry.json','examples/theme-registration.template.json','docs/THEME_CONFIG_TOOL.md');
+ files.push('config/theme-nine-r20-approved-candidates.json','config/theme-platform-delegation.json',
+  'docs/THEME_PLATFORM_STANDARD.md','docs/THEME_ONBOARDING_PLAYBOOK.md','docs/CMD_EXECUTION_PLAYBOOK.md');
+ files=configuredDependencyClosure(files);
  const manifest=Object.fromEntries(files.map(f=>[f,digest(fs.readFileSync(path.join(repo,f)))]));
  const version=digest(JSON.stringify(manifest)).slice(0,16),home=safeDirectory(dataRoot,'pc-writer/theme-config-tool',{create:true});
  const relative='versions/'+version,versionDir=safeDirectory(home,relative,{create:true});

@@ -2,6 +2,7 @@
 // never the number of registered themes. Existing approved formula is reused.
 import {createHash} from 'node:crypto';
 import {mixNineR32Date} from './theme-nine-r32-private-aggregate.mjs';
+import {decideThemeAction} from './theme-platform-policy.mjs';
 
 export const R32='ETF_ONLY_T40_R20_V40_ADAPTIVE_R2_DATED_ISSUER_AUM_R32';
 export const STAGES=['source','calculate','validate','publish','readback','public'];
@@ -77,7 +78,7 @@ export const FORMULAS=Object.freeze({[R32]:scoreR32Theme});
 // return a durable artifact hash; no success is inferred from HTTP or exit code.
 // Adapters are versioned code bindings, never executable paths from user JSON.
 export async function runThemeBatch({registry,adapters,store,runKey,mode='private',
- maxStages=Infinity,after=null,formulas=FORMULAS}={}){
+ maxStages=Infinity,after=null,formulas=FORMULAS,grant=null}={}){
  validateThemeRegistry(registry,{formulas});
  need(['private','public'].includes(mode)&&typeof runKey==='string'&&runKey,'THEME_RUN_CONTRACT');
  need(maxStages===Infinity||Number.isSafeInteger(maxStages)&&maxStages>0,'THEME_RUN_BUDGET');
@@ -99,6 +100,12 @@ export async function runThemeBatch({registry,adapters,store,runKey,mode='privat
    const handler=adapters[stage];need(typeof handler==='function','THEME_ADAPTER_MISSING_'+stage);
    const effectKey=identity({fingerprint,key,stage});
    try{
+    if(stage==='publish'){
+     need(grant,'THEME_PUBLIC_DELEGATION_REQUIRED');
+     const decision=decideThemeAction({action:'publish',grant,
+      context:checkpoint.completed.validate.publicationContext??{}});
+     need(decision.decision==='PROCEED',decision.reason);
+    }
     executed++;
     const proof=await handler({theme,kind,stage,effectKey,completed:structuredClone(checkpoint.completed),mode});
     need(proof?.status==='VERIFIED'&&hash(proof.artifactSha256),'THEME_STAGE_NOT_VERIFIED');

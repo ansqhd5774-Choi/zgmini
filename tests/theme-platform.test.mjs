@@ -48,8 +48,15 @@ test('wrong calculator version fails before any publication',async()=>{
  assert.equal(out.status,'PARTIAL');assert.equal(publications,0);
 });
 test('public proof must refer to exact calculated artifact, not only matching numeric scores',async()=>{
- const out=await runThemeBatch({registry:registry(1),mode:'public',adapters:adapters({publish:async({theme})=>({status:'VERIFIED',artifactSha256:'a'.repeat(64),methodologyVersion:R32,definitionSha256:identity(theme),calculationSha256:'f'.repeat(64)})}),store:memory(),runKey:'four'});
+ const valid=async({theme,completed})=>({status:'VERIFIED',artifactSha256:'a'.repeat(64),methodologyVersion:R32,definitionSha256:identity(theme),calculationSha256:completed.calculate.artifactSha256,publicationContext:{selectionVerified:true,formulaVerified:true,inputVerified:true,rightsEvidenceValid:true,publicationApprovalValid:true,readerCompatible:true}});
+ const out=await runThemeBatch({registry:registry(1),mode:'public',grant:{schema:'ZGMINI_THEME_DELEGATION_V1',actions:['publish']},adapters:adapters({validate:valid,publish:async({theme})=>({status:'VERIFIED',artifactSha256:'a'.repeat(64),methodologyVersion:R32,definitionSha256:identity(theme),calculationSha256:'f'.repeat(64)})}),store:memory(),runKey:'four'});
  assert.equal(out.results[0].code,'THEME_PROJECTION_CALCULATION_MISMATCH');
+});
+
+test('common public runner checks delegated scope before external write',async()=>{
+ let writes=0;
+ const out=await runThemeBatch({registry:registry(1),mode:'public',adapters:adapters({publish:async()=>{writes++;}}),store:memory(),runKey:'no-public-grant'});
+ assert.equal(writes,0);assert.equal(out.results[0].code,'THEME_PUBLIC_DELEGATION_REQUIRED');
 });
 test('checkpoint failure after effect stops, so uncertain write is not reported successful',async()=>{
  const store={load:async()=>null,save:async()=>{throw Error('DISK_FAILURE');}};

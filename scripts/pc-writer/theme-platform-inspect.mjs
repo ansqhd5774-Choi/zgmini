@@ -5,10 +5,12 @@ import {fileURLToPath} from 'node:url';
 import path from 'node:path';
 import {createHash} from 'node:crypto';
 import {R32} from './theme-platform.mjs';
+import {decideThemeAction,ROUTINE_ACTIONS} from './theme-platform-policy.mjs';
 export function inspectThemePlatform({root=fileURLToPath(new URL('../../',import.meta.url))}={}){
  const read=name=>JSON.parse(fs.readFileSync(path.join(root,name),'utf8'));
  const historic=read('config/theme-data-registry.json');
  const research=read('config/theme-nine-r20-approved-candidates.json');
+ const grant=read('config/theme-platform-delegation.json');
  const researched=new Map(research.groups.map(g=>[g.theme,g]));
  const themes=historic.themes.map(t=>{
   const group=researched.get(t.label);
@@ -30,7 +32,8 @@ export function inspectThemePlatform({root=fileURLToPath(new URL('../../',import
  });
  return {status:'SOURCE_INVENTORY_NOT_RUNTIME_PROOF',themes,
   researchOnly:research.groups.filter(g=>!historic.themes.some(t=>t.label===g.theme)).map(g=>g.theme),
-  checks,providerCalls:0,d1Queries:0,d1Writes:0,schedulerWrites:0};
+  checks,delegation:ROUTINE_ACTIONS.map(action=>({action,...decideThemeAction({action,grant,context:{existingBranch:true,branch:grant.workBranch}})})),
+  providerCalls:0,d1Queries:0,d1Writes:0,schedulerWrites:0};
 }
 if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.url)){
  if(process.argv.length!==3||process.argv[2]!=='--readonly'){console.error('Usage: --readonly');process.exitCode=2;}
