@@ -60,8 +60,8 @@ async function addBiotechSidecars(db,base,opts){
  // Public R37 was written against this complete ten-theme legacy projection.
  // Keep both independent provisional sidecars intact before verifying its
  // byte-for-byte legacy provisional lineage and replacing the eight scores.
- return opts.includeNineR37===false?withDcProvisional:
-  addVerifiedNineR37(db,withDcProvisional,{now:opts.now});
+ if(opts.includeNineR37===false)return withDcProvisional;
+ return addVerifiedNineR37(db,withDcProvisional,{now:opts.now});
 }
 export async function readThemeEtfOnly(db,{now=Date.now(),store=publicFeedStore(db),includeNineR37=true}={}){
  const headers={'cache-control':'no-store','x-robots-tag':'noindex, nofollow','x-content-type-options':'nosniff','x-data-source':'STORED'};

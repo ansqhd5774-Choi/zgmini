@@ -9,5 +9,6 @@ export async function GET(request:Request){
  // The PC publisher compares against the stored pre-overlay calendar, never
  // its own R32 output. Normal visitor requests always retain the R32 overlay.
  const includeNineR37=new URL(request.url).searchParams.get('publication-base')!=='1';
+ if(includeNineR37)return readThemeEtfOnly(runtime.DB_CORE??runtime.DB);
  return readThemeEtfOnly(runtime.DB_CORE??runtime.DB,{includeNineR37});
 }
