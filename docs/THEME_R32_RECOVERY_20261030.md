@@ -2,6 +2,16 @@
 
 ## 현재 상태 — 29일 R32 잠정 연결
 
+### 최종 실PC 실행 증거 (2026-10-30 20:03 KST)
+
+- source `813538a92ac6ef3d7c32432d7fade080db6eb79e` 고정 runtime 71파일 설치 완료. 기존 task XML SHA 전후 동일, 예약 설정 변경 0건.
+- 기존 `THEME_NINE_R54_PUBLIC_CYCLE.cmd`를 수동으로 1회 실행해 정상 종료했다. 선행 R54는 `PUBLIC_API_VERIFIED`, D1 쓰기 1건 및 정확한 readback을 확인했다.
+- 후행 공통 단계는 `TEN_PUBLIC_API_VERIFIED`. DC 확정·우주 확정·8개 R32 잠정·우주 잠정·DC 잠정의 5개 lane 전부 통과했다. 이 후행 단계는 provider 호출 0/D1 쓰기 0으로 동일 입력의 중복 게시를 방지했다.
+- 실행 로그: `E:\ZGmini\data\pc-writer\theme-nine-r54\logs\THEME_NINE_R54_CYCLE_23213_8005.txt`. 후행 결과: `THEME_TEN_R88_RESULT_1793358189518.json`.
+- 공개 10개 전부 10/28 확정 252점 이력과 10/29 잠정 점수의 실제 산출물 대조 및 브라우저 tooltip 검증 완료. 기존 승인 다중 ETF 산식과 구성 유지. 두 API의 가격 모드와 결측 기여자 구분을 유지하며 확정 원자료에 보조 가격을 혼합하지 않는다.
+- 화면 증거: `E:\ZGmini\analysis\theme-ten-28-confirmed.png`, `E:\ZGmini\analysis\theme-ten-29-provisional.png`.
+- 설치/동일 진입 명령의 수동 Runtime 성공은 확인했으며, 다음 자연 예약 트리거에 의한 실행은 아직 미관찰이다. 아래 준비·보류 기록은 각 과거 시점의 기록이다.
+
 - PR899 main `f58ed3c15b2a8b0e87fdaaaddbc012e4bcb665a0`와 PR901 main `cc4f1fd9a4f58f5e4cbb4dbaa8f7476116efa329`의 Cloudflare Git Build 성공 및 실제 공개 API 검증 완료. 10개 전부 10/28 확정 252점 이력을 실제 사적 산출물과 완전 대조했고 10/29 잠정 점수도 전부 일치한다. 결과 `THEME_TEN_R88_PUBLIC_RESULT.json`.
 - R88은 새 확정일 이후 잠정 입력이 부족할 때 기존 2-ETF 잠정치로 회귀하지 않는다. 확정 이력과 정상 optional 테마를 유지한다. PC R54의 실제 API 대조도 동일 R88 sidecar를 읽어 정상 신규 점수를 실패로 오인하지 않도록 수정했다.
 - 기존 R54 실행기 후행 단계용 `theme-ten-r88-auto.mjs`를 준비했다. 현재 공개 R32 확정일을 기준으로, 필요할 때만 기존 DC 3종(기준 SPY 포함)·우주 승인 4종을 최대 7 GET으로 증분 수집한다. 기존 R25/R32 및 optional 승인 산식으로 확정·잠정 계산/키별 CAS/readback/10개 API 대조를 연결한다. source별 가격 모드·원자료 SHA·기여자/결측은 보존한다. 새 태스크나 시각 변경은 없다.
