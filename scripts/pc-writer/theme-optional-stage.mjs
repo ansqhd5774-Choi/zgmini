@@ -36,6 +36,7 @@ const FILES = Object.freeze([
   'worker/theme-history-reference.mjs',
   'worker/theme-etf-only-public.mjs',
   'worker/theme-nine-r37-public.mjs',
+  'worker/theme-nine-r88-provisional.mjs',
   'worker/theme-biotech-optional.mjs',
   'worker/theme-biotech-continuation-r2.mjs',
   'worker/theme-biotech-provisional-r1.mjs',
