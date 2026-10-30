@@ -61,11 +61,24 @@ export async function readConfiguredThemes(db,{now=Date.now()}={}){
    {status:503,headers});
  let rows;
  try{
-  const response=await db.prepare(
-   "SELECT feed_key,body,stored_at FROM public_feed_snapshots_v1 WHERE kind='output' AND feed_key LIKE 'theme-configured:%' AND snapshot_key='current' ORDER BY feed_key LIMIT 200"
-  ).all();
-  if(!Array.isArray(response?.results))throw Error('INVALID_D1_SHAPE');
-  rows=response.results;
+  // 200 is a query page size, never a total number of admitted themes.
+  // Keyset pagination avoids OFFSET skipping rows as registrations grow.
+  rows=[];let cursor='';
+  for(;;){
+   const response=await db.prepare(
+    "SELECT feed_key,body,stored_at FROM public_feed_snapshots_v1 WHERE kind='output' AND feed_key LIKE 'theme-configured:%' AND snapshot_key='current' AND feed_key > ? ORDER BY feed_key LIMIT 200"
+   ).bind(cursor).all();
+   if(!Array.isArray(response?.results))throw Error('INVALID_D1_SHAPE');
+   const page=response.results;
+   let previous=cursor;
+   for(const row of page){
+    if(typeof row.feed_key!=='string'||row.feed_key<=previous)throw Error('INVALID_D1_CURSOR');
+    previous=row.feed_key;
+   }
+   rows.push(...page);
+   if(page.length<200)break;
+   cursor=previous;
+  }
  }catch{
   return Response.json({status:'UNAVAILABLE',reason:'STORED_READ_UNAVAILABLE',
    version:ROUTE_VERSION,themes:[]},{status:503,headers});

@@ -23,7 +23,7 @@ function database(rows=[]){
  const calls=[];
  return {calls,prepare(sql){
   calls.push(sql);
-  return {async all(){return {results:rows};}};
+  return {bind(cursor){return {async all(){return {results:rows.filter(r=>r.feed_key>cursor).sort((a,b)=>a.feed_key.localeCompare(b.feed_key)).slice(0,200)};}};}};
  }};
 }
 const row=(value=record,feedKey=key,at=now-1000)=>({
@@ -73,4 +73,17 @@ test('future source, missing approval or wrong key are invalid',()=>{
  assert.equal(eligibleConfiguredPublic(record,'public:theme-etf-only:r1',now-1000,now),false);
  assert.equal(eligibleConfiguredPublic({...record,publishedAt:'2026-10-30T00:00:00Z'},key,now-1000,now),false);
  assert.equal(eligibleConfiguredPublic({...record,approvalSha256:null},key,now-1000,now),false);
+});
+
+test('all pages are read beyond 200 themes without a total cap',async()=>{
+ const rows=Array.from({length:501},(_,i)=>{const id='theme-'+String(i).padStart(4,'0');return row({...record,themeId:id,theme:id},'theme-configured:'+id);});
+ const db=database(rows);const {body}=await load(db);
+ assert.equal(body.themes.length,501);assert.equal(db.calls.length,3);
+ assert.equal(new Set(body.themes.map(t=>t.id)).size,501);
+});
+
+test('nonadvancing page fails closed instead of infinite loop or partial success',async()=>{
+ const rows=Array.from({length:200},(_,i)=>row(record,'theme-configured:'+i));
+ const db={prepare(){return {bind(){return {async all(){return {results:rows};}};}};}};
+ const {response,body}=await load(db);assert.equal(response.status,503);assert.deepEqual(body.themes,[]);
 });

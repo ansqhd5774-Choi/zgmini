@@ -74,6 +74,10 @@ export async function runConfiguredSchedule({dataRoot,now=new Date(),fetchImpl=f
 }
 async function cli(){
  const [mode,arg,...extra]=process.argv.slice(2);ensure(!extra.length,'CONFIG_USAGE');
+ if(mode==='--platform-inspect'){
+  ensure(!arg,'CONFIG_USAGE');
+  return (await import('./theme-platform-inspect.mjs')).inspectThemePlatform();
+ }
  if(mode==='--validate')return {status:'CONFIG_VALID',definition:readDefinition(arg),providerCalls:0};
  if(mode==='--list'){ensure(!arg,'CONFIG_USAGE');return listRegistered(root()).map(r=>planRegistered(root(),r.definition.id));}
  if(mode==='--register')return registerDefinition({dataRoot:root(),definition:readDefinition(arg),legacyRegistry:legacy()});

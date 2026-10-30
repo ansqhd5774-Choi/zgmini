@@ -133,3 +133,6 @@ PC 설치본: `E:/ZGmini/data/pc-writer/theme-config-tool`
 - **실제 공개 조회 확인:** `https://zgmini.kr/api/theme-configured`는 이전 404에서 HTTP 200, `{status:PENDING,version:ZGMINI_CONFIGURED_THEMES_READER_V1,themes:[]}` 로 전환됐다. `https://zgmini.kr/api/theme-fear-greed`는 HTTP 200/READY; 브라우저 `/theme-fear-greed/`에서 공개 10개·기존 순위/차트 렌더링을 확인했다. `.zg-tfg-configured`는 0개로, 승인 게시 레코드가 없어 숨김이 정상이다. 코드/공개 Reader 배포는 완료, **실신규테마 운영 연결은 미완료**.
 - PC 기존 사용자 첨부 `PACKAGE_RESULT(2).txt`에서 `INSTALL_STATUS=CONFIGURED_AUTO_PUBLISH_UPGRADE_INSTALLED`, `REGISTERED_THEMES_EXISTING=0`, `D1_WRITES=0`, 예약 XML 변경 없음. 이 결과는 설치 당시의 증거이며 현재 PC 작업 실행·승인·D1 게시·readback 증거는 아니다.
 - **NEXT:** 사용자와 실제 첫 테마·ETF 2종을 확정(배터리 기술/LIT+BATT는 아직 미확정 후보). 별도 공개 권리/운영자 승인 후 기존 공통 등록·수집·계산을 PC에서 수행하여 **실제 source SHA·calculation proof → publication preflight → D1 CAS write → exact readback → 공개 API READY/실제 점수 → 화면 차트 → 다음 정규 실행**을 차례로 확인한다. 공개 승인 0건일 때 테스트용 승인이나 D1 샘플 값을 만들지 않는다. 기존 10개/R32/예약 XML, 최초 1회 한정 통합 브랜치는 보존하며 후속 작업 브랜치는 `codex/theme-fear-greed-integration-20261025` 유지.
+# 현행 기준 안내 (2026-10-31)
+
+이 문서의 V1 2종 등록·PAIR profile·개별 승인 예시는 당시 개발/설치 이력이다. 앞으로의 테마 확장 계약과 개수 제한 없는 공통 실행 기준은 [THEME_PLATFORM_STANDARD.md](THEME_PLATFORM_STANDARD.md)를 따른다. 과거 404/미배포/설치대기 기록은 각 기록 시점의 상태이며 현재 Production 판정으로 재사용하지 않는다. V1을 단순 R32로 재표기하지 않는다.
