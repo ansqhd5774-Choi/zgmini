@@ -49,7 +49,7 @@ export function buildMarketCapShadowPreview(display,gradeResult){
    if(total>MAX_EVENTS||typeof html!=='string'||html.length>1600||!html.endsWith('</article>'))return empty('R55_SOURCE_CONTRACT_STOP','DISPLAY_ROW_INVALID');
    const m=ROW.exec(html);
    const matches=[...html.matchAll(IMPACT)];
-   if(!m||matches.length!==1||matches[0][1].length!==matches[0][2].length||
+   if(!m||matches.length!==1||Number(matches[0][1])!==matches[0][2].length||
       !html.includes('<span class=mc-tag-status>예정 · 미확정</span>'))return empty('R55_SOURCE_CONTRACT_STOP','DISPLAY_MARKUP_INVALID');
    const item=gradeByTicker.get(m[1].toUpperCase());
    if(!item||item.status!=='VALIDATED_CANDIDATE_ONLY'){missing++;continue;}

@@ -42,3 +42,13 @@ test('source contract failure is different from no market cap',()=>{
 test('published reader does not accept shadow snapshot status/mode',()=>{
  const r=preview(display(),grade());assert.equal(r.shadow.status==='READY_DISPLAY',false);assert.equal(r.shadow.mode==='OWN_SITE_HTML_ONLY',false);
 });
+
+test('accepts ordinary R31 2-star and 3-star markup when numeric label equals star count',()=>{
+ const source=display([row('GOOG',3),row('ABBV',2)]);
+ const g=grade([item('GOOG',2,'0000000002'),item('ABBV',3,'0000000001')]);
+ const out=preview(source,g);
+ assert.equal(out.status,'R55_PRIVATE_SHADOW_COMPLETE');
+ assert.equal(out.changedRows,2);
+ assert.match(out.shadow.byDay[days[0]][0],/중요도 2">★★/);
+ assert.match(out.shadow.byDay[days[0]][1],/중요도 3">★★★/);
+});
