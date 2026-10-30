@@ -54,7 +54,12 @@ export function dcPowerVersionedD1({dataRoot,fetchImpl=fetch,tokenFn,clock=Date.
     'DC_POWER_R3_PUBLIC_HISTORY_DRIFT');
    if(before.body.observationDate===record.observationDate){
     need(before.body.score===record.score,'DC_POWER_R3_SAME_DATE_SCORE_CHANGED');
-    return {status:'UNCHANGED',changes:0};
+    // A verified append can change the raw manifest/candidate identity without
+    // changing any published price-derived score. Refresh that provenance via
+    // CAS, otherwise the next provisional replay would reject the old anchor.
+    if(before.body.sourceVersion===record.sourceVersion&&
+     before.body.candidateFileSha256===record.candidateFileSha256)
+     return {status:'UNCHANGED',changes:0};
    }
   }
   need((before?.storedAt??null)===(expectedStoredAt??null),

@@ -67,7 +67,9 @@ export async function spaceSatelliteD1R29({dataRoot,tokenFn,fetchImpl=fetch,cloc
    if(before.body.observationDate===record.observationDate){
     need(before.body.score===record.score,
      'SPACE_R29_D1_SAME_DATE_SCORE_CHANGED');
-    return {status:'UNCHANGED',changes:0};
+    if(before.body.sourceVersion===record.sourceVersion&&
+     before.body.candidateFileSha256===record.candidateFileSha256)
+     return {status:'UNCHANGED',changes:0};
    }
   }
   need((before?.storedAt??null)===(expectedStoredAt??null),
