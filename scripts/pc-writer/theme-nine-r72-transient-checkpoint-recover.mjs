@@ -13,7 +13,9 @@ const fail=code=>{throw Object.assign(new Error('R72_'+code),{code:'R72_'+code})
 const statePattern=/^delta-[a-f0-9]{20}\.json$/;
 const rawPattern=/^raw\/[A-Z][A-Z0-9.]{0,11}_[a-f0-9]{64}\.jsonl$/;
 
-export function inspectR72Checkpoint({home=HOME,now=new Date(),allowNoFailure=false}={}){
+export function inspectR72Checkpoint({home=HOME,now=new Date(),allowNoFailure=false,
+ expectedFailure='STOP_HTTP_502'}={}){
+  if(!['STOP_HTTP_502','STOP_HTTP_503'].includes(expectedFailure))fail('UNAPPROVED_TRANSIENT_STATUS');
   if(!fs.existsSync(home))fail('DELTA_HOME_ABSENT');
   const homeReal=fs.realpathSync(home);
   if(fs.existsSync(path.join(homeReal,'state','delta.lock')))
@@ -65,7 +67,7 @@ export function inspectR72Checkpoint({home=HOME,now=new Date(),allowNoFailure=fa
     manifestPagesVerified:indexed.size,allRawPagesShaVerified:true};
   if(failed.length!==1)fail('EXPECTED_ONE_FAILED_CHECKPOINT');
   const selected=failed[0];
-  if(selected.state.failure!=='STOP_HTTP_502'||
+  if(selected.state.failure!==expectedFailure||
      !/20\d{2}-\d{2}-\d{2}T/.test(selected.state.failedAt??''))
     fail('FAILURE_NOT_EXACT_HTTP_502');
   const ageMinutes=Math.floor((now.getTime()-Date.parse(selected.state.failedAt))/60000);
@@ -79,14 +81,17 @@ export function inspectR72Checkpoint({home=HOME,now=new Date(),allowNoFailure=fa
     statePath:selected.statePath,state:selected.state};
 }
 
-export function recoverR72Checkpoint({home=HOME,now=new Date(),
+export function recoverR72Checkpoint({home=HOME,now=new Date(),expectedFailure='STOP_HTTP_502',
   preflightFn=r71Preflight}={}){
   const ready=preflightFn({now});
   if(!ready.canRun)fail('PRIVATE_RUN_PREFLIGHT_NOT_READY');
-  const inspected=inspectR72Checkpoint({home,now});
+  const inspected=inspectR72Checkpoint({home,now,expectedFailure});
   const oldBytes=fs.readFileSync(inspected.statePath);
   // NEVER use .json here: R47 treats every delta-*.json as an active checkpoint.
-  const backup=inspected.statePath+'.r72-backup-'+Date.now()+'.bak';
+  const suffix=expectedFailure==='STOP_HTTP_503'?'.r72-503-backup-':'.r72-backup-';
+  if(expectedFailure==='STOP_HTTP_503'&&fs.readdirSync(path.dirname(inspected.statePath))
+    .some(f=>f.startsWith(path.basename(inspected.statePath)+suffix)))fail('503_REVIEWED_RETRY_ALREADY_USED');
+  const backup=inspected.statePath+suffix+Date.now()+'.bak';
   fs.copyFileSync(inspected.statePath,backup,fs.constants.COPYFILE_EXCL);
   if(sha(fs.readFileSync(backup))!==sha(oldBytes))fail('BACKUP_READBACK');
   const next={...inspected.state};
@@ -100,7 +105,7 @@ export function recoverR72Checkpoint({home=HOME,now=new Date(),
   if(readback.failedAt||readback.failure||
     sha(Buffer.from(JSON.stringify(readback)))!==sha(Buffer.from(JSON.stringify(next))))
     fail('STATE_READBACK');
-  return {status:'R72_502_CHECKPOINT_RECOVERED_WITH_BACKUP',
+  return {status:`R72_${expectedFailure.slice(-3)}_CHECKPOINT_RECOVERED_WITH_BACKUP`,
     target:inspected.targetName,backup: path.basename(backup),
     previousFailure:inspected.sourceFailure,
     manifestPagesVerified:inspected.manifestPagesVerified,

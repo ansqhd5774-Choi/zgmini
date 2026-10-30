@@ -50,6 +50,19 @@ test('R72 inspects exact 502 failure and preserves all 35 raw pages',t=>{
   assert.equal(info.ageMinutes,20);
 });
 
+test('reviewed 503 recovery is explicit, preserves checkpoint and permits only one retry',t=>{
+ const f=fixture(t,{failure:'STOP_HTTP_503'}),now=new Date('2026-10-29T05:30:00Z');
+ assert.throws(()=>inspectR72Checkpoint({home:f.home,now}),{code:'R72_FAILURE_NOT_EXACT_HTTP_502'});
+ const before=JSON.parse(fs.readFileSync(f.statePath));
+ const out=recoverR72Checkpoint({home:f.home,now,expectedFailure:'STOP_HTTP_503',preflightFn:()=>({canRun:true})});
+ assert.equal(out.completedSymbolsPreserved,35);assert.equal(out.rawPagesChanged,0);
+ assert.equal(out.status,'R72_503_CHECKPOINT_RECOVERED_WITH_BACKUP');
+ assert.deepEqual(JSON.parse(fs.readFileSync(f.statePath)).symbols,before.symbols);
+ fs.writeFileSync(f.statePath,JSON.stringify(before));
+ assert.throws(()=>recoverR72Checkpoint({home:f.home,now,expectedFailure:'STOP_HTTP_503',preflightFn:()=>({canRun:true})}),{code:'R72_503_REVIEWED_RETRY_ALREADY_USED'});
+ assert.throws(()=>inspectR72Checkpoint({home:f.home,now,expectedFailure:'STOP_HTTP_403'}),{code:'R72_UNAPPROVED_TRANSIENT_STATUS'});
+});
+
 test('R72 backs up only one checkpoint, then clears 502 marker without adding delta-*.json',t=>{
   const f=fixture(t);
   const result=recoverR72Checkpoint({home:f.home,now:new Date('2026-10-29T05:30:00Z'),

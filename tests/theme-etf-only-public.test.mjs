@@ -58,7 +58,8 @@ test('no row, stale row and read errors yield unavailable, not empty scores',asy
 test('route reads stored data, never performs collection, scoring or writes',()=>{
  const route=fs.readFileSync('app/api/theme-fear-greed/route.ts','utf8');
  const client=fs.readFileSync('app/theme-fear-greed/theme-explorer.tsx','utf8');
- assert.match(route,/readThemeEtfOnly\(runtime\.DB_CORE\?\?runtime\.DB\)/);
+ assert.match(route,/readThemeEtfOnly\(runtime\.DB_CORE\?\?runtime\.DB,\{includeNineR37\}\)/);
+ assert.match(route,/searchParams\.get\('publication-base'\)!=='1'/);
  assert.doesNotMatch(route,/\bfetch\s*\(/);
  assert.match(client,/useStoredIndex<PublicThemeFeed>\('\/api\/theme-fear-greed'\)/);
  assert.match(client,/ETF 전용 3축 연구/);assert.doesNotMatch(client,/ETF 5축 연구 산출/);

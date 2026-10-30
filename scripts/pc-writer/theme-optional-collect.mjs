@@ -12,6 +12,17 @@ export async function collectOptional(options={}){
  if(!pairs[options.themeId])throw Error('COLLECTION_ARGUMENTS');
  return collectPair(options,pairs[options.themeId]);
 }
+// Reuse the bounded append-only collector with the approved four-ETF roster.
+// SPY stays in the existing data-center manifest consumed by the R28 reader.
+// This does not register a configured two-ETF theme or change a scheduler.
+export async function collectApprovedSpace(options={}){
+ const roster=JSON.parse(fs.readFileSync(new URL('./theme-space-satellite-r26-approved-roster.json',import.meta.url),'utf8'));
+ if(roster.theme!=='space-satellite'||roster.selectionApproved!==true||
+  roster.approvedThreePlusWeighting!=='NORMALIZED_DATED_OFFICIAL_AUM'||
+  JSON.stringify(roster.approvedCurrentSymbols)!==JSON.stringify(['UFO','NASA','WARP','ROKT']))
+  throw Error('SPACE_APPROVED_COLLECTION_ROSTER_DRIFT');
+ return collectPair({...options,themeId:'space-satellite',configured:true},roster.approvedCurrentSymbols);
+}
 export async function collectConfigured({dataRoot,id,...options}={}){
  const r=readRegistered(dataRoot,id);
  const root=safeDirectory(dataRoot,'themes',{create:true});

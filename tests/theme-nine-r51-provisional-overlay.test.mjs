@@ -56,6 +56,24 @@ const base=candidate('2026-10-23',dates,50);
 const next=candidate('2026-10-26',recent,65);
 const laterDates=[...recent.slice(1),'2026-10-27'];
 const later=candidate('2026-10-27',laterDates,70);
+test('three separately dated public subsets do not block confirmed R32 staging',()=>{
+ const publicBase={status:'READY',version:'legacy',methodologyVersion:'legacy-pair',
+  observationDate:base.observationDate,confirmedObservationDate:base.observationDate,
+  phase:'PROVISIONAL',themes:base.themes,
+  provisional:{asOf:'2026-10-27',points:[
+   {date:'2026-10-23',scores:{'로봇·자동화':41}},
+   {date:'2026-10-26',scores:{'바이오·신약':42}},
+   {date:'2026-10-27',scores:{'방산':43}}]}};
+ const result=buildNineR51ExistingPublicProvisionalOverlay({confirmed:base,publicBase});
+ assert.deepEqual(result.provisional,publicBase.provisional);
+ assert.deepEqual(result.themes,base.themes);
+ const now=Date.parse('2026-10-28T01:00:00Z');
+ const record={...result,status:'READY',publicationAuthorized:true,
+  upstreamCommercialRightsVerified:true,derivedLicenseVerified:true,
+  sourcePriceReconciled:true,sourceManifestVerified:true,privateReplayVerified:true,
+  sourceStoredAt:new Date(now-2000).toISOString(),publishedAt:new Date(now-1000).toISOString()};
+ assert.equal(eligibleNineR37(record,publicBase,{now,storedAt:now-500}),true);
+});
 for(const item of later.themes){
  const provisional=item.history.find(p=>p.date==='2026-10-26');
  provisional.score=65;
@@ -294,7 +312,12 @@ test('R51 stages the exact published 26/27 subsets from confirmed R32 alone',asy
  const drifted=structuredClone(existing);
  drifted.provisional.points[1].scores['방산']=51;
  assert.equal(eligibleNineR37(published,drifted,{now,storedAt:now-1000}),false);
- assert.equal((await addVerifiedNineR37(db,drifted,{now})).modelRevision,undefined);
+  const refreshed=await addVerifiedNineR37(db,drifted,{now});
+  assert.equal(refreshed.modelRevision,THEME_NINE_R37_VERSION);
+  assert.equal(refreshed.methodologyVersion,THEME_NINE_R37_METHOD);
+  assert.equal(refreshed.themes[0].score,displayed.themes[0].score);
+  assert.deepEqual(refreshed.provisional,drifted.provisional);
+  assert.equal(refreshed.provisionalMethodologyVersion,drifted.methodologyVersion);
 });
 
 test('R77 regression: advanced 27 Oct confirmed anchor retains 26/27 public provisional unchanged',async t=>{

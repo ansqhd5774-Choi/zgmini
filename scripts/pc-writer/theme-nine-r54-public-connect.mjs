@@ -116,8 +116,8 @@ export function verifyNineR54RawManifest({dataRoot,source}={}){
 }
 
 const apiUrl='https://zgmini.kr/api/theme-fear-greed/';
-async function fetchPublic({fetchImpl=fetch,now=Date.now()}={}){
- const url=`${apiUrl}?theme_nine_r54=${now}`;
+async function fetchPublic({fetchImpl=fetch,now=Date.now(),publicationBase=true}={}){
+ const url=`${apiUrl}?${publicationBase?'publication-base=1&':''}theme_nine_r54=${now}`;
  const response=await fetchImpl(url,{method:'GET',redirect:'error',
   headers:{'cache-control':'no-cache',accept:'application/json'},
   signal:AbortSignal.timeout(20000)});
@@ -206,7 +206,7 @@ export async function runNineR54PublicConnect({dataRoot='E:/ZGmini/data',
  const checked=await addVerifiedNineR37({prepare(){return {bind(){return {
   async first(){return {body:JSON.stringify(record),stored_at:now};}};}};}},
   publicBase,{now});
- const live=await fetchPublic({fetchImpl,now:now+1});
+ const live=await fetchPublic({fetchImpl,now:now+1,publicationBase:false});
  const expected=new Map(checked.themes.map(t=>[t.theme,t]));
  const liveByName=new Map(live.themes.map(t=>[t.theme,t]));
  const matched=publicBase.themes.every(t=>{
@@ -219,14 +219,15 @@ export async function runNineR54PublicConnect({dataRoot='E:/ZGmini/data',
  const provisionalScoresMatched=dateMatched&&
   same(live.provisional?.points?.map(p=>p.scores),
    checked.provisional?.points?.map(p=>p.scores));
- return {status:matched&&provisionalScoresMatched?'PUBLIC_API_VERIFIED':'D1_VERIFIED_AWAIT_PUBLIC_API_REFRESH',
+ const r32Visible=live.modelRevision===record.version&&live.methodologyVersion===record.methodologyVersion;
+ return {status:r32Visible&&matched&&provisionalScoresMatched?'PUBLIC_API_VERIFIED':'D1_VERIFIED_AWAIT_PUBLIC_API_REFRESH',
   d1Writes:result.written,dbStatus:result.status,
   productionMainSha:deployment.mainSha,
   sourceDate:latest.observationDate,confirmedDate:record.observationDate,
   provisionalMode:publicLegacy?'PUBLIC_LEGACY_AS_IS':'R32_DATED',
   provisionalDates:record.provisional.points.map(p=>p.date),
   themesValidated:9,historyRows:2268,rawFilesShaVerified:sourceProof.rawFilesShaVerified,
-  publicDateMatched:dateMatched,publicScoresMatched:matched,
+  publicDateMatched:dateMatched,publicScoresMatched:matched,publicR32ModelMatched:r32Visible,
   publicProvisionalScoresMatched:provisionalScoresMatched,
   otherFeedsChanged:false,providerCalls:0};
 }

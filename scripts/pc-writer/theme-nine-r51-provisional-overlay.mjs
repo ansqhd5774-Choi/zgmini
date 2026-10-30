@@ -83,7 +83,7 @@ export function buildNineR51ExistingPublicProvisionalOverlay({confirmed,publicBa
     !Array.isArray(publicBase.themes)||publicBase.themes.length<7||
     !validDate(baseDate)||baseDate!==confirmed.observationDate||
     publicBase.observationDate!==baseDate||
-    !Array.isArray(pending)||pending.length<1||pending.length>2||
+    !Array.isArray(pending)||pending.length<1||pending.length>32||
     !same(publicBase.themes[0]?.history?.map(p=>p.date),confirmedDates)||
     typeof publicBase.methodologyVersion!=='string'||
     !publicBase.methodologyVersion||typeof publicBase.version!=='string')

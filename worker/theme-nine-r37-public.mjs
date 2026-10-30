@@ -50,7 +50,9 @@ function publicationRightsNineR37(record){
  return confirmed||disclosed;
 }
 
-export function eligibleNineR37(record,base,{now=Date.now(),storedAt=now}={}){
+export function eligibleNineR37(record,base,{now=Date.now(),storedAt=now,independentAnchor=false}={}){
+ independentAnchor=independentAnchor&&(record?.phase==='CONFIRMED'||
+  record?.provisionalLineage?.source===R51_PUBLIC_LEGACY_SOURCE);
  if(!base||base.status!=='READY'||!Array.isArray(base.themes)||
   base.themes.length<7||!validDate(base.observationDate)||
   !['CONFIRMED','PROVISIONAL'].includes(base.phase))return false;
@@ -69,8 +71,10 @@ export function eligibleNineR37(record,base,{now=Date.now(),storedAt=now}={}){
   !publicationRightsNineR37(record))return false;
  if(!sha(record.rawManifestSha256)||!sha(record.r25InputSha256)||
   !sha(record.shadowSha256)||!sha(record.officialAumEvidenceSha256)||
-  !validDate(record.observationDate)||record.observationDate!==baseConfirmed||
-  record.phase!==base.phase||!stamp(record.sourceStoredAt)||
+  !validDate(record.observationDate)||
+  (independentAnchor?record.observationDate>baseConfirmed:record.observationDate!==baseConfirmed)||
+  !['CONFIRMED','PROVISIONAL'].includes(record.phase)||
+  (!independentAnchor&&record.phase!==base.phase)||!stamp(record.sourceStoredAt)||
   !stamp(record.publishedAt)||!Number.isSafeInteger(Number(storedAt)))return false;
  if(record.sourceContract==='THEME_NINE_R47_PRIVATE_RECURRING_NINE_THEME_SHADOW_V1'&&
    (!sha(record.baselineManifestSha256)||
@@ -84,9 +88,13 @@ export function eligibleNineR37(record,base,{now=Date.now(),storedAt=now}={}){
   !expectedSymbols.every(k=>validDate(record.officialAumAsOf[k])&&
    record.officialAumAsOf[k]<=record.observationDate))return false;
  if(!Array.isArray(record.themes)||record.themes.length!==9)return false;
- const baseDates=base.themes.find(t=>THEME_NINE_R37_ROSTER.some(x=>x.theme===t.theme))?.history?.map(p=>p.date);
+ // A verified R32 publication owns its observation date and trading calendar.
+ // The legacy writer may advance first; that must not select its old formula.
+ // Never relabel the older R32 observation as the legacy writer's newer day.
+ const baseDates=independentAnchor?record.themes[0]?.history?.map(p=>p.date):
+  base.themes.find(t=>THEME_NINE_R37_ROSTER.some(x=>x.theme===t.theme))?.history?.map(p=>p.date);
  if(!Array.isArray(baseDates)||baseDates.length!==252||
-  baseDates.at(-1)!==baseConfirmed)return false;
+  baseDates.at(-1)!==(independentAnchor?record.observationDate:baseConfirmed))return false;
  for(let i=0;i<THEME_NINE_R37_ROSTER.length;i++){
   const required=THEME_NINE_R37_ROSTER[i],item=record.themes[i];
   if(item?.theme!==required.theme||!same(item.etfs,required.etfs)||
@@ -96,23 +104,23 @@ export function eligibleNineR37(record,base,{now=Date.now(),storedAt=now}={}){
     (j>0&&p.date<=item.history[j-1].date))||
    Math.abs(item.history.at(-1).score-item.score)>0.000001)return false;
  }
- if(base.phase==='PROVISIONAL'){
+ if(record.phase==='PROVISIONAL'){
   const fromBase=base.provisional?.points,fromNew=record.provisional?.points;
-  if(!Array.isArray(fromBase)||!Array.isArray(fromNew)||
-   fromBase.length!==fromNew.length||fromNew.length<1||fromNew.length>2)return false;
+  if(!Array.isArray(fromNew)||fromNew.length<1||fromNew.length>32||
+   (!independentAnchor&&(!Array.isArray(fromBase)||fromBase.length!==fromNew.length)))return false;
   if(record.provisionalLineage?.source===R51_PUBLIC_LEGACY_SOURCE){
    // For the current public contract, 26 Oct has three optional scores and
    // 27 Oct has seven core scores. This mode NEVER recalculates or replaces
    // any legacy provisional score, nor invents an unpublished AI score.
-   if(record.provisionalLegacyMethodologyVersion!==base.methodologyVersion||
-    record.provisionalLegacySourceVersion!==(base.sourceVersion??null)||
+   if((!independentAnchor&&(record.provisionalLegacyMethodologyVersion!==base.methodologyVersion||
+    record.provisionalLegacySourceVersion!==(base.sourceVersion??null)))||
     record.provisionalLineage?.publicVersion!==base.version||
-    record.provisionalLineage?.confirmedObservationDate!==baseConfirmed||
+    record.provisionalLineage?.confirmedObservationDate!==(independentAnchor?record.observationDate:baseConfirmed)||
     record.provisionalLineage?.latestCandidateSha256!==null||
     record.provisionalLineage?.sameMethodology!==false||
     !sha(record.provisionalLineage?.publicProvisionalPointsSha256)||
-    record.provisional?.asOf!==(base.provisional?.asOf??null)||
-    JSON.stringify(fromNew)!==JSON.stringify(fromBase))return false;
+    (!independentAnchor&&(record.provisional?.asOf!==(base.provisional?.asOf??null)||
+    JSON.stringify(fromNew)!==JSON.stringify(fromBase))))return false;
    const visible=new Set(base.themes.map(t=>t.theme));
    // A public legacy provisional point can predate the newly advanced
    // confirmed anchor. Exact public-value equality is required above;
@@ -130,12 +138,12 @@ export function eligibleNineR37(record,base,{now=Date.now(),storedAt=now}={}){
    }
    return true;
   }
-  let prev=baseConfirmed;
+  let prev=independentAnchor?record.observationDate:baseConfirmed;
   for(let i=0;i<fromNew.length;i++){
    const point=fromNew[i];
    // Match the existing R2 public contract: its first provisional day may
    // equal the confirmed anchor. Only subsequent days must increase strictly.
-   if(!validDate(point?.date)||point.date!==fromBase[i]?.date||point.date<prev||
+   if(!validDate(point?.date)||(!independentAnchor&&point.date!==fromBase[i]?.date)||point.date<prev||
     (i>0&&point.date<=prev)||
     !point.scores||typeof point.scores!=='object'||Array.isArray(point.scores)||
     !same(Object.keys(point.scores).sort(),THEME_NINE_R37_ROSTER.map(t=>t.theme).sort())||
@@ -153,19 +161,22 @@ export async function addVerifiedNineR37(db,base,{now=Date.now()}={}){
   .bind(THEME_NINE_R37_KEY).first();}catch{return base;}
  if(!row)return base;
  let record;try{record=JSON.parse(row.body);}catch{return base;}
- if(!eligibleNineR37(record,base,{now,storedAt:Number(row.stored_at)}))return base;
+ if(!eligibleNineR37(record,base,{now,storedAt:Number(row.stored_at),independentAnchor:true}))return base;
  // This is a score migration, not a theme launch. Preserve the exact public
  // roster and ordering: R32 also contains AI, which is not necessarily a
  // public theme in the current ten-theme dashboard.
  const updates=new Map(record.themes.map(t=>[t.theme,t]));
  const visibleNames=new Set(base.themes.map(t=>t.theme));
- const publicLegacy=record.provisionalLineage?.source===R51_PUBLIC_LEGACY_SOURCE;
+ const publicLegacy=record.provisionalLineage?.source===R51_PUBLIC_LEGACY_SOURCE||record.phase==='CONFIRMED';
  const themes=base.themes.map(old=>{
   const t=updates.get(old.theme);
   return t?{theme:t.theme,etfs:[...t.etfs],score:t.score,
+   observationDate:record.observationDate,methodologyVersion:record.methodologyVersion,
    history:t.history.map(p=>({date:p.date,score:p.score}))}:old;
  });
- return {...base,methodologyVersion:record.methodologyVersion,
+ return {...base,observationDate:record.observationDate,
+  confirmedObservationDate:record.observationDate,
+  methodologyVersion:record.methodologyVersion,
   sourceVersion:record.sourceVersion??record.version,
   sourceStoredAt:record.sourceStoredAt,
   themes,

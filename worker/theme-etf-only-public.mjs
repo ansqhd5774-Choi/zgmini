@@ -60,9 +60,10 @@ async function addBiotechSidecars(db,base,opts){
  // Public R37 was written against this complete ten-theme legacy projection.
  // Keep both independent provisional sidecars intact before verifying its
  // byte-for-byte legacy provisional lineage and replacing the eight scores.
- return addVerifiedNineR37(db,withDcProvisional,{now:opts.now});
+ return opts.includeNineR37===false?withDcProvisional:
+  addVerifiedNineR37(db,withDcProvisional,{now:opts.now});
 }
-export async function readThemeEtfOnly(db,{now=Date.now(),store=publicFeedStore(db)}={}){
+export async function readThemeEtfOnly(db,{now=Date.now(),store=publicFeedStore(db),includeNineR37=true}={}){
  const headers={'cache-control':'no-store','x-robots-tag':'noindex, nofollow','x-content-type-options':'nosniff','x-data-source':'STORED'};
  let row=null;
  try{row=await db.prepare('SELECT body,stored_at FROM market_public_snapshots_v1 WHERE snapshot_key=?').bind(THEME_ETF_ONLY_PUBLIC_KEY).first()}
@@ -76,7 +77,7 @@ export async function readThemeEtfOnly(db,{now=Date.now(),store=publicFeedStore(
  let rolling=null;try{rolling=await readRollingPublic(db,record,{now})}catch{}
  if(rolling){
   const withAi=await addVerifiedAiTheme(db,rolling,{now,seed:record});
-  const result=await addBiotechSidecars(db,withAi,{now,seed:record});
+  const result=await addBiotechSidecars(db,withAi,{now,seed:record,includeNineR37});
   return Response.json(result,{headers:{...headers,'cache-control':'public, max-age=60, must-revalidate',
    'x-data-snapshot-at':rolling.sourceStoredAt}});
  }
@@ -101,7 +102,7 @@ export async function readThemeEtfOnly(db,{now=Date.now(),store=publicFeedStore(
  // The immutable core seed is also needed to verify older AI sessions when the
  // optional collector is legitimately behind the seven-theme feed.
  const withAi=await addVerifiedAiTheme(db,result,{now,seed:record});
- const composed=await addBiotechSidecars(db,withAi,{now});
+ const composed=await addBiotechSidecars(db,withAi,{now,includeNineR37});
  return Response.json(composed,{headers:{...headers,'cache-control':'public, max-age=60, must-revalidate',
   'x-data-snapshot-at':new Date(storedAt).toISOString()}});
 }
