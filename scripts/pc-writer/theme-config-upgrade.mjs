@@ -28,13 +28,16 @@ const validRel=p=>typeof p==='string'&&
 
 export function upgradeConfiguredSchedule({dataRoot,sourceSha,
  platform=process.platform,getTaskXml=null,stageBundle=installConfiguredTool,
- now=new Date()}={}){
+ now=new Date(),installedOverride=null,resultFileName='AUTO_PUBLISH_UPGRADE_RESULT.json'}={}){
  ensure(platform==='win32','CONFIG_UPGRADE_WINDOWS_REQUIRED');
  ensure(/^[a-f0-9]{40}$/.test(sourceSha??''),'CONFIG_UPGRADE_SOURCE_SHA');
  ensure(now instanceof Date&&Number.isFinite(now.getTime()),'CONFIG_UPGRADE_CLOCK');
  const home=safeDirectory(dataRoot,'pc-writer/theme-config-tool');
  const oldResultPath=path.join(home,'INSTALL_RESULT.json');
- const oldResult=JSON.parse(readFile(oldResultPath).toString('utf8'));
+ const oldResult=installedOverride??JSON.parse(readFile(oldResultPath).toString('utf8'));
+ ensure(/^AUTO_PUBLISH_UPGRADE_RESULT\.json$|^PLATFORM_UPGRADE_[0-9]+\.json$/.test(resultFileName),'CONFIG_UPGRADE_RESULT_PATH');
+ if(installedOverride)ensure(resultFileName.startsWith('PLATFORM_UPGRADE_')&&
+  installedOverride.authority==='VERIFIED_INSTALLED_SOURCE_MANIFEST','CONFIG_UPGRADE_CURRENT_AUTHORITY');
  ensure(oldResult?.status==='CONFIG_TOOL_INSTALLED'&&oldResult.home===home&&
   /^[a-f0-9]{16}$/.test(oldResult.version??'')&&
   /^[a-f0-9]{40}$/.test(oldResult.sourceSha??'')&&
@@ -78,7 +81,7 @@ export function upgradeConfiguredSchedule({dataRoot,sourceSha,
   taskBefore.includes(path.join(home,'THEME_SCHEDULED.vbs'))&&
   taskBefore.includes('T13:00:00'),
   'CONFIG_UPGRADE_TASK_NOT_APPROVED');
- const upgradeResultFile=path.join(home,'AUTO_PUBLISH_UPGRADE_RESULT.json');
+ const upgradeResultFile=path.join(home,resultFileName);
  ensure(!fs.existsSync(upgradeResultFile),'CONFIG_UPGRADE_ALREADY_ATTEMPTED');
 
  // Staging creates a separate immutable version, never edits the installed
@@ -98,6 +101,7 @@ export function upgradeConfiguredSchedule({dataRoot,sourceSha,
  ensure(digest(readFile(scheduled))===digest(previous),
   'CONFIG_UPGRADE_PREWRITE_DRIFT');
  ensure(inspect()===taskBefore,'CONFIG_UPGRADE_TASK_DRIFT');
+ ensure(!fs.existsSync(state),'CONFIG_UPGRADE_SCHEDULE_LOCK_PRESENT');
  const stamp=now.toISOString().replace(/[-:.TZ]/g,'');
  const backup=safeDirectory(home,'backups/auto-publish-'+stamp,{create:true});
  const backupFile=path.join(backup,'THEME_SCHEDULED.cmd');
@@ -117,6 +121,7 @@ export function upgradeConfiguredSchedule({dataRoot,sourceSha,
   ensure(taskAfter===taskBefore,'CONFIG_UPGRADE_TASK_XML_CHANGED');
   const result={status:'CONFIGURED_AUTO_PUBLISH_UPGRADE_INSTALLED',
    sourceSha,oldVersion:oldResult.version,newVersion:bundle.version,
+   installedManifest:bundle.manifest,
    scheduled,oldSha256:digest(previous),newSha256:digest(expected),
    backup,task:{name:taskName,xmlSha256:digest(taskBefore),changed:false},
    legacyLaunchersChanged:0,providerCalls:0,d1Writes:0,registeredThemesAdded:0};

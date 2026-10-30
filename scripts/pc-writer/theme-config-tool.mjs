@@ -16,10 +16,20 @@ export function listRegistered(dataRoot){
 export function planRegistered(dataRoot,id){
  const r=readRegistered(dataRoot,id),home=path.join(fs.realpathSync(dataRoot),'themes',r.internalId);
  let score=null;
- if(fs.existsSync(path.join(home,'raw-manifest.json')))score=scoreRegistered({dataRoot,registration:r});
- return {status:score?.status??'REGISTERED_AWAITING_SOURCE',id,label:r.definition.label,etfs:r.definition.etfs,
+ const manifest=path.join(home,'raw-manifest.json'),derived=path.join(home,'derived');
+ if(fs.existsSync(manifest)&&fs.existsSync(derived)){
+  const sourceVersion='GMH_MANIFEST_SHA256_'+digest(fs.readFileSync(manifest));
+  for(const name of fs.readdirSync(derived).filter(n=>/^score-[a-f0-9]{64}\.json$/.test(n))){
+   const file=path.join(derived,name);ensure(fs.lstatSync(file).isFile()&&!fs.lstatSync(file).isSymbolicLink(),'CONFIG_DERIVED_REDIRECT');
+   const bytes=fs.readFileSync(file);ensure(digest(bytes)===name.slice(6,-5),'CONFIG_DERIVED_SHA');
+   const stored=JSON.parse(bytes);
+   if(stored.definitionSha256===r.sha256&&stored.sourceVersion===sourceVersion&&stored.profile===r.definition.profile&&
+    (!score||stored.observationDate>score.observationDate))score=stored;
+  }
+ }
+ return {status:score?.status??(fs.existsSync(manifest)?'STORED_SCORE_NOT_READY':'REGISTERED_AWAITING_SOURCE'),id,label:r.definition.label,etfs:r.definition.etfs,
   profile:r.definition.profile,definitionSha256:r.sha256,score:score?.score??null,observationDate:score?.observationDate??null,
-  publicConnection:'NOT_ENABLED',providerCalls:0,d1Writes:0,schedulerWrites:0};
+  publicConnection:'NOT_PROBED_READONLY_LOCAL',evidence:'STORED_METADATA_NOT_REPLAY',providerCalls:0,d1Writes:0,schedulerWrites:0};
 }
 export async function runConfiguredOnce({dataRoot,id,end=new Date().toISOString().slice(0,10),fetchImpl=fetch,maxRequests=4}={}){
  const r=readRegistered(dataRoot,id);ensure(validDate(end)&&end<=new Date().toISOString().slice(0,10)&&end>=r.definition.startDate,'CONFIG_END_DATE');
@@ -34,10 +44,14 @@ export async function runConfiguredOnce({dataRoot,id,end=new Date().toISOString(
   if(fs.existsSync(stateFile))ensure(!fs.lstatSync(stateFile).isSymbolicLink(),'CONFIG_STATE_REDIRECT');
   const state=fs.existsSync(stateFile)?JSON.parse(fs.readFileSync(stateFile,'utf8')):null;
   if(state)ensure(state.definitionSha256===r.sha256&&validDate(state.start)&&validDate(state.end),'CONFIG_STATE_IDENTITY');
-  if(state?.complete&&state.end===end)return {...planRegistered(dataRoot,id),status:'WINDOW_ALREADY_COMMITTED_NEXT_DAY_RECHECK',providerCalls:0};
-  const start=state?.complete?new Date(Date.parse(state.end+'T00:00:00Z')-6*86400000).toISOString().slice(0,10):state?.start??r.definition.startDate;
+  if(state?.complete&&state.end===end){
+   const stored=planRegistered(dataRoot,id);
+   if(stored.status==='PRIVATE_SCORE_READY'||stored.status==='PRIVATE_HISTORY_PENDING')return {...stored,status:'WINDOW_ALREADY_COMMITTED_NEXT_DAY_RECHECK',providerCalls:0};
+  }
+  const replayOnly=state?.complete&&state.end===end;
+  const start=replayOnly?state.start:state?.complete?new Date(Date.parse(state.end+'T00:00:00Z')-6*86400000).toISOString().slice(0,10):state?.start??r.definition.startDate;
   const through=state&&!state.complete?state.end:end;
-  const collection=await collectConfigured({dataRoot,id,start,end:through,maxRequests,fetchImpl});
+  const collection=replayOnly?{status:'PRIVATE_RAW_COLLECTION_COMPLETE',providerCalls:0}:await collectConfigured({dataRoot,id,start,end:through,maxRequests,fetchImpl});
   const next={definitionSha256:r.sha256,start,end:through,complete:collection.status==='PRIVATE_RAW_COLLECTION_COMPLETE',lastStatus:collection.status};
   const tmp=stateFile+'.'+process.pid+'.tmp';fs.writeFileSync(tmp,JSON.stringify(next,null,2)+'\n',{flag:'wx'});fs.renameSync(tmp,stateFile);
   if(!next.complete)return {status:collection.status,id,collection,publicConnection:'NOT_ENABLED',d1Writes:0};
@@ -48,7 +62,13 @@ export async function runConfiguredOnce({dataRoot,id,end=new Date().toISOString(
   return {status:score.status,id,score:score.score,observationDate:score.observationDate,collection,artifactSha256:sha,publicConnection:'NOT_ENABLED',d1Writes:0,schedulerWrites:0};
  }finally{fs.unlinkSync(lock);}
 }
-export async function runConfiguredSchedule({dataRoot,now=new Date(),fetchImpl=fetch}={}){
+export async function runConfiguredSchedule({dataRoot,now=new Date(),fetchImpl=fetch,resourcePolicy=null}={}){
+ const resourceFile=path.join(dataRoot,'theme-config','resource-policy.json');
+ if(!resourcePolicy&&fs.existsSync(resourceFile)){
+  safeDirectory(dataRoot,'theme-config');ensure(!fs.lstatSync(resourceFile).isSymbolicLink(),'CONFIG_RESOURCE_POLICY_REDIRECT');resourcePolicy=JSON.parse(fs.readFileSync(resourceFile,'utf8'));
+ }
+ const dailyBudget=resourcePolicy?.dailyProviderRequests??4;
+ ensure(Number.isSafeInteger(dailyBudget)&&dailyBudget>0,'CONFIG_DAILY_RESOURCE_POLICY');
  const entries=listRegistered(dataRoot);
  if(!entries.length)return {status:'NO_REGISTERED_THEMES',providerCalls:0,d1Writes:0,schedulerWrites:0};
  const dir=safeDirectory(dataRoot,'theme-config/state',{create:true}),lock=path.join(dir,'scheduled.lock');
@@ -61,15 +81,16 @@ export async function runConfiguredSchedule({dataRoot,now=new Date(),fetchImpl=f
   const state={day,calls:prior?.day===day?prior.calls:0,nextId:prior?.nextId??entries[0].definition.id};
   const save=()=>{const tmp=file+'.'+process.pid+'.tmp';fs.writeFileSync(tmp,JSON.stringify(state)+'\n',{flag:'wx'});fs.renameSync(tmp,file);};
   const start=Math.max(0,entries.findIndex(r=>r.definition.id===state.nextId)),results=[];
-  for(let i=0;i<entries.length&&state.calls<4;i++){
+  for(let i=0;i<entries.length&&state.calls<dailyBudget;i++){
    const index=(start+i)%entries.length,r=entries[index];
    state.nextId=entries[(index+1)%entries.length].definition.id;save();
    try{
-    const limitedFetch=async(...args)=>{ensure(state.calls<4,'CONFIG_DAILY_REQUEST_BUDGET');state.calls++;save();return fetchImpl(...args);};
-    results.push(await runConfiguredOnce({dataRoot,id:r.definition.id,end:day,fetchImpl:limitedFetch,maxRequests:4-state.calls}));
+    const limitedFetch=async(...args)=>{ensure(state.calls<dailyBudget,'CONFIG_DAILY_REQUEST_BUDGET');state.calls++;save();return fetchImpl(...args);};
+    results.push(await runConfiguredOnce({dataRoot,id:r.definition.id,end:day,fetchImpl:limitedFetch,maxRequests:Math.min(4,dailyBudget-state.calls)}));
    }catch(e){results.push({id:r.definition.id,status:'STOP',reason:e.code??'CONFIG_SOURCE_OR_IO_ERROR'});}
   }
-  return {status:results.some(r=>r.status.startsWith('STOP'))?'PARTIAL_REVIEW_REQUIRED':'PRIVATE_SCHEDULE_COMPLETED',results,providerCallsToday:state.calls,requestLimitPerUtcDay:4,d1Writes:0,schedulerWrites:0};
+  const waiting=results.length<entries.length||results.some(r=>r.status.startsWith('WAIT')||r.status==='CHECKPOINT_READY_TO_RESUME');
+  return {status:results.some(r=>r.status.startsWith('STOP'))?'PARTIAL_REVIEW_REQUIRED':waiting?'PRIVATE_SCHEDULE_WAITING_SOURCE_OR_BUDGET':'PRIVATE_SCHEDULE_COMPLETED',results,nextId:state.nextId,providerCallsToday:state.calls,requestLimitPerUtcDay:dailyBudget,d1Writes:0,schedulerWrites:0};
  }finally{fs.unlinkSync(lock);}
 }
 async function cli(){

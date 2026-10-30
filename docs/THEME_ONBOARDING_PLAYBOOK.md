@@ -62,7 +62,11 @@
 현재 저장소 공통 source 진단:
 `node scripts/pc-writer/theme-config-tool.mjs --platform-inspect`
 
-현재 새 플랫폼은 등록·R32 집계·checkpoint·정책 판단 기반까지 구현됐다. 설치된 기존 PC V1에 위 명령이 있다고 추정하지 않는다. V1은 2종 profile이다. V2 bridge/패키지/실데이터 검증 전에는 운영 통합 완료라고 말하지 않는다.
+새 테마는 `ZGMINI_THEME_CONFIG_V2`와 기존 R32를 사용한다. 선정 증거는 `ZGMINI_THEME_SELECTION_EVIDENCE_V1`(themeId, selectionApproved, 실제 승인/정책 참조, rows의 ticker/공식 holdingsUrl/providerLookupVerified/operatorGrade), AUM 증거는 `ZGMINI_THEME_AUM_EVIDENCE_V1`(themeId, 실제 승인/정책 참조, datedOfficialAumApproved, rows의 ticker/aumUsd/aumAsOf/공식 sourceUrl)로 보존하고 SHA를 등록 명세에 연결한다. 기존 유효 근거를 재사용하며 샘플 승인 문구를 실제 승인으로 쓰지 않는다.
+
+V2는 별도 원천 가격 수집 함수를 만들지 않고 기존 공통 collector를 호출하고, R25→R32를 사용한다. 기존 공통 예약의 자동 게시가 확정·잠정을 차례로 처리한다. 잠정은 기존 MarketParquet 저장 자료와 검증된 overlap만 사용하고 없으면 정상 대기한다. `examples/theme-registration-r32.template.json`은 개발자용 형식 예시이며 그대로는 검증에 실패한다. 일반챗은 근거가 채워진 완성 JSON과 실행 파일을 제공해야 하며 사용자가 코드/경로/SHA를 직접 편집하도록 요구하지 않는다.
+
+V1은 과거2종 profile 보존용이다. V2가 실제 설치/배포됐는지는 ACTIVE_RUNTIME·설치 SHA·공개 `/api/theme-configured` 지원 정보로 구분한다. 업데이트는 기존 설치기 기반 반복 갱신을 사용하며, 이전 한 번 설치 성공 기록을 삭제해 우회하지 않는다.
 
 수동 실행이 필요한 경우 목적/준비상태/폴더/파일/입력/1회 실행/정상값/STOP 조건/금지행동/보낼 결과를 함께 안내한다. 자동화가 막혔다는 이유로 이미 성공한 Production 검증을 다시 요구하지 않는다.
 

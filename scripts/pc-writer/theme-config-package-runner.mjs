@@ -8,6 +8,7 @@ import {execFileSync} from 'node:child_process';
 import {digest,safeDirectory} from './theme-config-registry.mjs';
 import {configuredScheduledCommand,configuredDependencyClosure} from './theme-config-install.mjs';
 import {upgradeConfiguredSchedule} from './theme-config-upgrade.mjs';
+import {upgradeConfiguredRuntime} from './theme-config-runtime.mjs';
 
 export const PACKAGE_SCHEMA='ZGMINI_THEME_CONFIG_UPGRADE_PACKAGE_V1';
 export const PACKAGE_REPOSITORY='ansqhd5774-Choi/zgmini';
@@ -42,6 +43,7 @@ export const PACKAGE_FILES=configuredDependencyClosure([
  'config/theme-nine-r20-approved-candidates.json',
  'config/theme-platform-delegation.json',
  'examples/theme-registration.template.json',
+ 'examples/theme-registration-r32.template.json',
  'docs/THEME_CONFIG_TOOL.md',
  'docs/THEME_PLATFORM_STANDARD.md',
  'docs/THEME_ONBOARDING_PLAYBOOK.md',
@@ -215,7 +217,8 @@ export function inspectConfiguredPackage({
  need(typeof runtime==='string'&&runtime.startsWith('v'),
   'PACKAGE_NODE_VERSION');
  const home=safeDirectory(dataRoot,'pc-writer/theme-config-tool');
- const installedFile=path.join(home,'INSTALL_RESULT.json');
+ const activeFile=path.join(home,'ACTIVE_RUNTIME.json');
+ const installedFile=fs.existsSync(activeFile)?activeFile:path.join(home,'INSTALL_RESULT.json');
  const installedBytes=readRegular(installedFile);
  let installed;try{installed=JSON.parse(installedBytes);}catch{fail('PACKAGE_OLD_MANIFEST_JSON');}
  need(installed?.status==='CONFIG_TOOL_INSTALLED'&&installed.home===home&&
@@ -239,7 +242,7 @@ export function inspectConfiguredPackage({
  const vbs=readRegular(path.join(home,'THEME_SCHEDULED.vbs'));
  need(vbs.toString('utf8').includes(path.join(home,'THEME_SCHEDULED.cmd')),
   'PACKAGE_OLD_VBS_MISMATCH');
- need(!fs.existsSync(path.join(home,'AUTO_PUBLISH_UPGRADE_RESULT.json')),
+ need(fs.existsSync(activeFile)||!fs.existsSync(path.join(home,'AUTO_PUBLISH_UPGRADE_RESULT.json')),
   'PACKAGE_PRIOR_UPGRADE_RESULT_PRESENT');
  const registered=ensureLocksAbsent(dataRoot);
  const taskState=getTaskState();
@@ -273,7 +276,10 @@ function readback(home,oldSha){
  const cmd=path.join(home,'THEME_SCHEDULED.cmd');
  let current='UNAVAILABLE';
  try{current=digest(readRegular(cmd));}catch{}
- const file=path.join(home,'AUTO_PUBLISH_UPGRADE_RESULT.json');
+ const activeFile=path.join(home,'ACTIVE_RUNTIME.json');
+ const active=fs.existsSync(activeFile)?JSON.parse(readRegular(activeFile)):null;
+ if(active)need(/^PLATFORM_UPGRADE_[0-9]+\.json$/.test(active.upgradeResult),'PACKAGE_ACTIVE_RESULT_PATH');
+ const file=path.join(home,active?.upgradeResult??'AUTO_PUBLISH_UPGRADE_RESULT.json');
  let installed=null;
  if(fs.existsSync(file))try{installed=JSON.parse(readRegular(file));}catch{}
  return {current,oldPreserved:current===oldSha,
@@ -283,7 +289,7 @@ function readback(home,oldSha){
 
 export function runConfiguredPackage({
  mode,packageRoot=packageHere,dataRoot=PACKAGE_DATA_ROOT,
- inspect=inspectConfiguredPackage,upgrade=upgradeConfiguredSchedule,
+ inspect=inspectConfiguredPackage,upgrade=null,
  inspectOptions={},upgradeOptions={}
 }={}){
  const root=path.resolve(packageRoot),output=resultFile(root);
@@ -318,7 +324,9 @@ export function runConfiguredPackage({
    'PACKAGE_PREFLIGHT_STATE_DRIFT');
   fs.appendFileSync(output,lines({INSTALL_ATTEMPTED:'YES'}));
   attemptWritten=true;
-  const r=upgrade({dataRoot,sourceSha:baseline.sourceSha,...upgradeOptions});
+  const selectedUpgrade=upgrade??(fs.existsSync(path.join(baseline.home,'ACTIVE_RUNTIME.json'))?
+   options=>upgradeConfiguredRuntime({...options,getTaskXml:inspectOptions.getTaskXml??taskXmlWindows,getTaskState:inspectOptions.getTaskState??taskStateWindows}):upgradeConfiguredSchedule);
+  const r=selectedUpgrade({dataRoot,sourceSha:baseline.sourceSha,...upgradeOptions});
   need(r?.status==='CONFIGURED_AUTO_PUBLISH_UPGRADE_INSTALLED'&&
    r.sourceSha===baseline.sourceSha&&r.oldVersion===baseline.oldVersion&&
    r.oldSha256===baseline.oldCmdSha256&&r.task?.xmlSha256===baseline.taskXmlSha256&&
@@ -333,7 +341,7 @@ export function runConfiguredPackage({
    NEW_CMD_SHA256:r.newSha256,NEW_VERSION:r.newVersion,
    BACKUP_PATH:r.backup,BACKUP_STATUS:'READBACK_VERIFIED_BY_EXISTING_UPGRADER',
    RESTORE_STATUS:'NOT_REQUIRED',TASK_XML_UNCHANGED:'YES',
-   PC_FILES_CHANGED:'SCHEDULED_CMD_ONLY',D1_WRITES:0,
+   PC_FILES_CHANGED:r.runtimeStatus?'COMMON_SCHEDULE_MANUAL_ENTRIES_AND_ACTIVE_POINTER':'SCHEDULED_CMD_ONLY',D1_WRITES:0,
    PROVIDER_CALLS:0,GITHUB_WRITES:0,SITE_DEPLOYS:0,
    WINDOWS_RUNTIME_STATUS:'WINDOWS_RESULT_REQUIRES_USER_READBACK'
   }));

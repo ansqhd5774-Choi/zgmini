@@ -1,6 +1,6 @@
 // Explicit, bounded private collection. Never scores, publishes, changes tasks or reads secrets.
 import fs from 'node:fs';import path from 'node:path';import {createHash} from 'node:crypto';import {fileURLToPath} from 'node:url';
-import {readRegistered,safeDirectory} from './theme-config-registry.mjs';
+import {readRegistered,safeDirectory,verifyDefinitionSelection} from './theme-config-registry.mjs';
 const hash=b=>createHash('sha256').update(b).digest('hex');
 const pairs={'ai-semiconductor':['SMH','SOXX','SPY'],biotech:['IBB','XBI','SPY'],
  'data-center-power':['DTCR','GRID','SPY']};
@@ -25,6 +25,7 @@ export async function collectApprovedSpace(options={}){
 }
 export async function collectConfigured({dataRoot,id,...options}={}){
  const r=readRegistered(dataRoot,id);
+ verifyDefinitionSelection(dataRoot,r.definition);
  const root=safeDirectory(dataRoot,'themes',{create:true});
  const home=safeDirectory(root,r.internalId,{create:true});
  for(const dir of ['raw','state'])safeDirectory(home,dir,{create:true});

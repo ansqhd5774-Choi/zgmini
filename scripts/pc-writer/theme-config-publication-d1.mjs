@@ -1,6 +1,7 @@
 // Configured themes: opt-in D1 publisher, separate from all legacy feed keys.
 // This module does not obtain credentials, schedule work or collect prices.
 // Use publishConfiguredThemeD1 to re-run local approval/source preflight.
+import {CONFIGURED_R32,CONFIGURED_V2,validR32History,validConfiguredProvisional} from '../../worker/theme-configured-r32-contract.mjs';
 const TABLE='public_feed_snapshots_v1';
 const READ=`SELECT body,stored_at FROM ${TABLE} WHERE kind='output' AND feed_key=? AND snapshot_key='current'`;
 const INSERT=`INSERT INTO ${TABLE}(kind,feed_key,snapshot_key,body,stored_at) VALUES('output',?,'current',?,?) ON CONFLICT(kind,feed_key,snapshot_key) DO NOTHING`;
@@ -28,25 +29,29 @@ function validatePrepared(preflight,now){
   preflight.schedulerWrites!==0||preflight.publicationExecuted!==false)
   fail('PREFLIGHT_REQUIRED');
  const c=preflight.candidate;
- if(!keys(c,candidateKeys)||c.version!=='ZGMINI_CONFIGURED_THEME_PUBLIC_V1'||
+ const v2=c?.version===CONFIGURED_V2;
+ const provisional=v2&&c.phase==='PROVISIONAL';
+ if(!keys(c,[...candidateKeys,...(v2?['selectionEvidenceSha256','aumEvidenceSha256']:[]),...(provisional?['phase','confirmedObservationDate','sourceFiles','sourcePriceMode','sourcePriceReconciled','overlapPriceDifferences']:[])])||(!v2&&c.version!=='ZGMINI_CONFIGURED_THEME_PUBLIC_V1')||
   c.status!=='READY'||c.publicationAuthorized!==true||c.derivedOnlyNoRaw!==true||
   c.publicationAuthorizationBasis!=='LOCAL_OPERATOR_ATTESTATION_NOT_INDEPENDENT_LEGAL_VERIFICATION'||
   typeof c.themeId!=='string'||!(/^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/).test(c.themeId)||
   c.themeId.length>48||typeof c.theme!=='string'||!c.theme.trim()||
   c.theme.length>60||c.theme.trim()!==c.theme||
   /[<>\x00-\x1f\x7f]/.test(c.theme)||
-  c.benchmark!=='SPY'||c.methodologyVersion!=='ADAPTIVE_R2_PAIR_R3'||
-  !Array.isArray(c.etfs)||c.etfs.length!==2||new Set(c.etfs).size!==2||
+  c.benchmark!=='SPY'||c.methodologyVersion!==(v2?CONFIGURED_R32:'ADAPTIVE_R2_PAIR_R3')||
+  !Array.isArray(c.etfs)||(v2?c.etfs.length<1:c.etfs.length!==2)||new Set(c.etfs).size!==c.etfs.length||
   c.etfs.some(e=>typeof e!=='string'||!/^[A-Z]{1,6}$/.test(e)||e==='SPY')||
   ![c.definitionSha256,c.candidateSha256,c.approvalSha256].every(sha)||
   preflight.definitionSha256!==c.definitionSha256||
   preflight.candidateSha256!==c.candidateSha256||
   preflight.approvalSha256!==c.approvalSha256||
-  preflight.feedKey!=='theme-configured:'+c.themeId||
-  typeof c.sourceVersion!=='string'||!/^GMH_MANIFEST_SHA256_[a-f0-9]{64}$/.test(c.sourceVersion)||
+  preflight.feedKey!==(provisional?'theme-configured-provisional:':'theme-configured:')+c.themeId||
+  typeof c.sourceVersion!=='string'||!(provisional?/^R32_PROVISIONAL_SHA256_[a-f0-9]{64}$/:/^GMH_MANIFEST_SHA256_[a-f0-9]{64}$/).test(c.sourceVersion)||
   !date(c.observationDate)||!score(c.score)||
   !Array.isArray(c.history)||c.history.length<1||c.history.length>252)
   fail('CANDIDATE_CONTRACT');
+ if(v2&&(!sha(c.selectionEvidenceSha256)||!sha(c.aumEvidenceSha256)||!validR32History(c)))fail('R32_HISTORY_OR_EVIDENCE');
+ if(provisional&&!validConfiguredProvisional(c))fail('PROVISIONAL_INPUT_CONTRACT');
  const sourceAt=Date.parse(c.sourceStoredAt),observedAt=Date.parse(c.observationDate+'T23:59:59Z');
  if(!Number.isFinite(sourceAt)||sourceAt>now||sourceAt!==Date.parse(preflight.sourceStoredAt)||
   !Number.isFinite(observedAt)||observedAt>now||
@@ -54,7 +59,7 @@ function validatePrepared(preflight,now){
   c.observationDate!==preflight.observationDate)
   fail('SOURCE_STALE_OR_FUTURE');
  let previous='';
- for(const item of c.history){
+ for(const item of v2?[]:c.history){
   if(!keys(item,historyEntryKeys)||!date(item.date)||item.date<=previous||
    (item.score!==null&&!score(item.score))||
    typeof item.status!=='string'||!item.status||item.status.length>80||
@@ -69,7 +74,7 @@ function validatePrepared(preflight,now){
    fail('HISTORY_CONTRACT');
   previous=item.date;
  }
- if(previous!==c.observationDate||
+ if((!v2&&previous!==c.observationDate)||
   Math.abs(c.history.at(-1).score-c.score)>0.000001)
   fail('LATEST_SCORE_MISMATCH');
  return c;

@@ -41,6 +41,19 @@ checkpoint는 등록·실행·모드 fingerprint에 묶고 CAS로 저장한다. 
 
 ## 이번 구현의 실제 상태
 
+### 후속 운영 연결 구현 (2026-10-31)
+
+- 기존 등록기/수집기/점수/게시기/Reader에 `ZGMINI_THEME_CONFIG_V2`를 연결했다. V2는 ETF 개수 상한 없이 선정 근거·공식 AUM SHA를 검증하며, 정확한 기존 `scoreOneR25`와 `mixNineR32Date`를 사용한다. V1을 R32로 재표기하지 않는다.
+- 실제 저장된 R20 연구9개 ×252거래일의 공통 어댑터 결과가 기존 승인 산출물의 점수·기여자·가중치·AUM 정보와 전부 일치했다. 원자료/Provider/D1/예약 쓰기0. 증거: `E:/ZGmini/analysis/THEME_PLATFORM_REAL_SHADOW_RESULT.json`.
+- V2의 잠정 경로도 테마별 파일 추가 없이 기존 SHA-audited EOD reader, 동일 R25/R32, R8 5% overlap guard를 재사용한다. 확정 key와 별도 key에 CAS/readback하며 확정252점은 수정하지 않는다. 날짜는 다음 실제 저장 세션이며 가짜 날짜·가격을 만들지 않는다.
+- 기존 공통 자동 게시기는 공개 Reader의 R32 확정/잠정 지원을 실행당 한 번 확인하고, 미배포면 해당 쓰기만 차단한다. 방문자 Reader는 승인된 V2 결과와 동일 definition/AUM/selection의 잠정만 결합한다.
+- 기존 일회성 설치기 보호는 유지한다. 새 반복 갱신 wrapper는 검증된 현재 manifest/ACTIVE_RUNTIME를 사용하고 공통 예약·수동3개 entry를 같은 불변 버전으로 맞춘다. 이전 설치 기록과 버전은 보존한다. task XML은 변경하지 않는다.
+- 위 항목은 구현/fixture/실데이터 shadow 증거다. 이 단락 작성 시점의 실제 PC 갱신·main 선별 배포·첫 실신규테마 D1 게시·자연 예약은 별도 결과가 필요하다.
+- 실제 저장 보조 API를 통한 공통 잠정 어댑터도 기존 R88 공개8개 테마의 10/29 점수·가중치와 완전 일치했다. 같은 실데이터 증거 파일에 별도 provisional 항목으로 기록했다.
+- 공통 목록/계획 조회는 저장된 SHA/definition/source에 맞는 산출물 메타데이터를 읽으며 계산을 재실행하지 않는다. 실제 재계산과 구분한다. 전체 일일 요청 예산은 resource-policy 설정으로 분리하고 기본4회는 보존했다. 예산 부족 시 전체 테마를 줄이지 않고 cursor로 이어가며 대기를 성공 갱신으로 보고하지 않는다.
+
+아래 항목은 앞선 구현 단계의 이력이며, 현재 연결 완료 여부는 위 단락 및 후속 실제 실행 증거로 판단한다.
+
 - `theme-platform.mjs`: 개수 제한 없는 등록 검증/커버리지/공유 수집 계획/기존 R32 reducer 재사용/재개 가능한 단계 실행.
 - `theme-platform-inspect.mjs --readonly`: 기존 자료와 현재 소스 제약을 읽기 전용 조회. 역사 JSON을 Production 증거로 오인하지 않는다.
 - 저장소의 기존 공통 CLI에서도 `theme-config-tool.mjs --platform-inspect`로 같은 진단을 호출한다. 별도 테마 실행기를 만들지 않는다. 설치 패키지 manifest 확장·설치 Runtime 검증 전에는 이 새 명령을 기존 PC 설치본에서 제공한다고 보고하지 않는다.

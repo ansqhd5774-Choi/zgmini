@@ -14,7 +14,7 @@ const secureDirectory=dir=>{
  return dir;
 };
 export async function runConfiguredAutoPublish({dataRoot,now=Date.now(),
- registrations=null,preflight=null,publish=null,queryFactory=null,tokenFn=null}={}){
+ registrations=null,preflight=null,publish=null,queryFactory=null,tokenFn=null,readCapabilities=null}={}){
  ensure(Number.isSafeInteger(now)&&now>0,'CONFIG_PUBLIC_SCHEDULE_CLOCK');
  const entries=registrations??
   (await import('./theme-config-tool.mjs')).listRegistered(dataRoot);
@@ -29,6 +29,7 @@ export async function runConfiguredAutoPublish({dataRoot,now=Date.now(),
  const dir=secureDirectory(approvals);
  let query=null,queryAttempted=false,queryFailure=null;
  const results=[];let approvalFiles=0,eligible=0,d1Queries=0,d1Writes=0;
+ let r32ReaderReady=null;
  for(const {definition} of entries){
   const id=definition.id,approvalFile=path.join(dir,id+'.json');
   if(!fs.existsSync(approvalFile))continue;
@@ -45,6 +46,17 @@ export async function runConfiguredAutoPublish({dataRoot,now=Date.now(),
    continue;
   }
   eligible++;
+  if(definition.schema==='ZGMINI_THEME_CONFIG_V2'){
+   if(r32ReaderReady===null){
+    try{
+     const capabilities=readCapabilities?await readCapabilities():await (async()=>{
+      const response=await fetch('https://zgmini.kr/api/theme-configured',{redirect:'error',signal:AbortSignal.timeout(20000)});
+      ensure(response.ok,'CONFIG_PUBLIC_READER_HTTP');return response.json();})();
+     r32ReaderReady=capabilities.supportedMethodologies?.includes(definition.profile)===true&&capabilities.supportsSeparateR32Provisional===true;
+    }catch{r32ReaderReady=false;}
+   }
+   if(!r32ReaderReady){results.push({id,status:'PUBLICATION_BLOCKED',reason:'CONFIG_PUBLIC_R32_READER_NOT_DEPLOYED'});continue;}
+  }
   if(!queryAttempted){
    queryAttempted=true;
    try{
@@ -79,6 +91,17 @@ export async function runConfiguredAutoPublish({dataRoot,now=Date.now(),
    d1Writes+=result.written??0;
    results.push({id,status:result.status,
     observationDate:result.observationDate,storedAt:result.storedAt});
+   if(definition.schema==='ZGMINI_THEME_CONFIG_V2'){
+    try{
+     const {publishConfiguredProvisional}=await import('./theme-config-provisional.mjs');
+     const provisional=await publishConfiguredProvisional({dataRoot:root,id,query:measuredQuery,now});
+     d1Writes+=provisional.written??0;
+     results.push({id,phase:'PROVISIONAL',status:provisional.status,observationDate:provisional.observationDate});
+    }catch(e){
+     const reason=errorCode(e),waiting=['CONFIG_PROVISIONAL_SCORE_PENDING','CONFIG_PROVISIONAL_SPY_MISSING'].includes(reason);
+     results.push({id,phase:'PROVISIONAL',status:waiting?'WAIT_PROVISIONAL_INPUT':'PUBLICATION_BLOCKED',reason});
+    }
+   }
   }catch(e){
    results.push({id,status:'PUBLICATION_BLOCKED',reason:errorCode(e)});
   }

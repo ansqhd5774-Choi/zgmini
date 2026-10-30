@@ -27,6 +27,7 @@ function day(x){
  if(typeof x==='number'&&Number.isFinite(x)&&x>100000000000)return new Date(x>100000000000000?x/1000:x).toISOString().slice(0,10);
  return null;
 }
+export {day as normalizeSavedParquetDate};
 function approvedSymbols(roster){
  if(roster?.schema!=='zgmini.theme-nine.r20-approved-three-gate-candidates.v1'||
    roster?.counts?.themes!==9||roster.counts.positions!==64||

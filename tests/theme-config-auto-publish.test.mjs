@@ -84,3 +84,12 @@ test('auth failure is cached, no repeated login attempts for approved entries',a
  assert.deepEqual(result.results.map(x=>x.reason),[
   'PC_CLOUDFLARE_AUTH_UNAVAILABLE','PC_CLOUDFLARE_AUTH_UNAVAILABLE']);
 });
+
+test('undeployed R32 reader blocks only R32 writes before credentials; capability probe is shared',async t=>{
+ const home=root(t);approval(home,'first','second');let probes=0,auth=0;
+ const result=await runConfiguredAutoPublish({dataRoot:home,now,
+  registrations:entries('first','second').map(r=>({definition:{...r.definition,schema:'ZGMINI_THEME_CONFIG_V2',profile:'R32'}})),preflight:passed,
+  readCapabilities:async()=>{probes++;return {supportedMethodologies:[]};},queryFactory:()=>{auth++;}});
+ assert.equal(probes,1);assert.equal(auth,0);assert.equal(result.d1Writes,0);
+ assert.ok(result.results.every(r=>r.reason==='CONFIG_PUBLIC_R32_READER_NOT_DEPLOYED'));
+});

@@ -1,0 +1,13 @@
+{
+  "schema": "ZGMINI_THEME_CONFIG_V2",
+  "id": "replace-with-approved-theme-id",
+  "label": "승인된 테마명으로 교체 — 샘플 등록 금지",
+  "provider": "getmarkethistory",
+  "profile": "ETF_ONLY_T40_R20_V40_ADAPTIVE_R2_DATED_ISSUER_AUM_R32",
+  "etfs": ["REPLACE_WITH_APPROVED_ROSTER"],
+  "benchmark": "SPY",
+  "startDate": "REPLACE_WITH_APPROVED_START_DATE",
+  "selectionEvidence": {"path": "theme-evidence/approved-selection.json", "sha256": "REPLACE_WITH_VERIFIED_FILE_SHA256"},
+  "aumEvidence": {"path": "theme-evidence/official-aum.json", "sha256": "REPLACE_WITH_VERIFIED_FILE_SHA256"},
+  "provisionalPolicy": "GMH_CONFIRMED_MARKETPARQUET_PROVISIONAL_R8_OVERLAP_GUARD"
+}

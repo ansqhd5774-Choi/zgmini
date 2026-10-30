@@ -6,6 +6,7 @@ import {readRegistered,safeDirectory,ensure,digest,validDate} from './theme-conf
 import {scoreRegistered} from './theme-config-score.mjs';
 import {listRegistered} from './theme-config-tool.mjs';
 import {PUBLIC_DISPLAY_MAX_AGE_MS} from '../../worker/public-display-freshness.mjs';
+import {CONFIGURED_V2} from '../../worker/theme-configured-r32-contract.mjs';
 export const CONFIGURED_PUBLIC_VERSION='ZGMINI_CONFIGURED_THEME_PUBLIC_V1';
 const terms='https://getmarkethistory.com/docs/terms';
 const checkFile=file=>ensure(fs.lstatSync(file).isFile()&&!fs.lstatSync(file).isSymbolicLink(),'PUBLIC_PREFLIGHT_FILE_REDIRECT');
@@ -50,9 +51,11 @@ export function preflightConfiguredPublication({dataRoot,id,now=Date.now()}={}){
   const approvalBytes=fs.readFileSync(approvalFile);ensure(approvalBytes.length<=8192,'PUBLIC_APPROVAL_SIZE');
   const approval=JSON.parse(approvalBytes);verifyApproval(approval,r,{now});
   result.approvalSha256=digest(approvalBytes);
-  const candidate={version:CONFIGURED_PUBLIC_VERSION,status:'READY',themeId:d.id,theme:d.label,etfs:[...d.etfs],benchmark:'SPY',methodologyVersion:d.profile,
+  const v2=d.schema==='ZGMINI_THEME_CONFIG_V2';
+  const candidate={version:v2?CONFIGURED_V2:CONFIGURED_PUBLIC_VERSION,status:'READY',themeId:d.id,theme:d.label,etfs:[...d.etfs],benchmark:'SPY',methodologyVersion:d.profile,
    definitionSha256:r.sha256,candidateSha256,approvalSha256:result.approvalSha256,sourceVersion:score.sourceVersion,sourceStoredAt:result.sourceStoredAt,
-   observationDate:score.observationDate,score:score.score,history:score.history.map(p=>({date:p.date,score:p.score,status:p.status,weights:p.weights})),
+   observationDate:score.observationDate,score:score.score,history:v2?structuredClone(score.history):score.history.map(p=>({date:p.date,score:p.score,status:p.status,weights:p.weights})),
+   ...(v2?{selectionEvidenceSha256:score.selectionEvidenceSha256,aumEvidenceSha256:score.aumEvidenceSha256}:{}),
    derivedOnlyNoRaw:true,publicationAuthorized:true,publicationAuthorizationBasis:'LOCAL_OPERATOR_ATTESTATION_NOT_INDEPENDENT_LEGAL_VERIFICATION'};
   return {...result,status:'PREFLIGHT_PASS_NO_REMOTE_ACCESS',stage:'LOCAL_PREPARATION_COMPLETE',feedKey:'theme-configured:'+id,candidate};
  }catch(e){return {...result,reason:e.code??'PUBLIC_PREFLIGHT_LOCAL_SOURCE_INVALID'};}

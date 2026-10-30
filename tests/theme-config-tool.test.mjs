@@ -120,3 +120,13 @@ test('one-shot private cycle readback, same-window dedup and next-day bounded re
  assert.equal(calls,3);
  assert.equal((await runConfiguredOnce({dataRoot:root,id:definition.id,end:'2026-10-29',fetchImpl})).collection.providerCalls,3);
 });
+
+test('resource budget is configurable without changing or capping the registered theme list',async t=>{
+ const home=setup(t);
+ for(let i=0;i<6;i++)register(home,{...definition,id:'batch-'+i,label:'자원 정책 '+i});
+ let calls=0;const fetchImpl=async url=>{calls++;return new Response(JSON.stringify({symbol:url.pathname.split('/').at(-2),timestamp:'2026-10-27T19:00:00Z',close:100})+'\n');};
+ const result=await runConfiguredSchedule({dataRoot:home,now:new Date('2026-10-28T00:00:00Z'),fetchImpl,resourcePolicy:{dailyProviderRequests:12}});
+ assert.equal(calls,12);assert.equal(result.requestLimitPerUtcDay,12);assert.equal(result.results.length,4);
+ assert.equal(result.status,'PRIVATE_SCHEDULE_WAITING_SOURCE_OR_BUDGET');
+ assert.equal(fs.readdirSync(path.join(home,'theme-config/definitions')).length,6);
+});

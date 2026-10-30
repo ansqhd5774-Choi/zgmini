@@ -30,6 +30,10 @@ export function configuredScheduledCommand({dataRoot,home,version}){
   `"E:\\ZGmini\\runtime\\node.exe" "${runner}" --scheduled >>"${path.join(home,'SCHEDULE_HISTORY.log')}" 2>&1`,
   'set "RESULT=%ERRORLEVEL%"','exit /b %RESULT%',''].join('\r\n');
 }
+export function configuredManualCommand({dataRoot,home,version,mode,argument=false}){
+ const runner=path.join(home,'versions',version,'scripts','pc-writer','theme-config-tool.mjs');
+ return ['@echo off','setlocal EnableExtensions DisableDelayedExpansion',`set "ZGMINI_DATA_ROOT=${fs.realpathSync(dataRoot)}"`,`"E:\\ZGmini\\runtime\\node.exe" "${runner}" ${mode}${argument?' "%~1"':''}`,'set "RESULT=%ERRORLEVEL%"','pause','exit /b %RESULT%',''].join('\r\n');
+}
 export function installConfiguredTool({dataRoot,sourceSha,registerTask=false,stageOnly=false}={}){
  ensure(!stageOnly||!registerTask,'CONFIG_STAGE_CANNOT_REGISTER_TASK');
  ensure(/^[a-f0-9]{40}$/.test(sourceSha??''),'CONFIG_INSTALL_SOURCE_SHA');
@@ -46,6 +50,7 @@ export function installConfiguredTool({dataRoot,sourceSha,registerTask=false,sta
  files.push('config/theme-data-registry.json','examples/theme-registration.template.json','docs/THEME_CONFIG_TOOL.md');
  files.push('config/theme-nine-r20-approved-candidates.json','config/theme-platform-delegation.json',
   'docs/THEME_PLATFORM_STANDARD.md','docs/THEME_ONBOARDING_PLAYBOOK.md','docs/CMD_EXECUTION_PLAYBOOK.md');
+ files.push('examples/theme-registration-r32.template.json');
  files=configuredDependencyClosure(files);
  const manifest=Object.fromEntries(files.map(f=>[f,digest(fs.readFileSync(path.join(repo,f)))]));
  const version=digest(JSON.stringify(manifest)).slice(0,16),home=safeDirectory(dataRoot,'pc-writer/theme-config-tool',{create:true});

@@ -4,8 +4,35 @@ import path from 'node:path';
 import {selectRealHourlySessions} from './theme-space-satellite-adaptive-r2.mjs';
 import {scoreAdaptiveTimeline} from './theme-optional-adaptive-r2.mjs';
 import {adaptivePairWeights} from './theme-optional-pair-weight-r3.mjs';
-import {ensure,digest,safeDirectory} from './theme-config-registry.mjs';
-export function scoreRegistered({dataRoot,registration}){
+import {ensure,digest,safeDirectory,readDefinitionEvidence,verifyDefinitionSelection,validDate} from './theme-config-registry.mjs';
+import {scoreR32Theme} from './theme-platform.mjs';
+import {scoreOneR25} from './theme-nine-r25-individual-score.mjs';
+export function scoreConfiguredR32Sessions({definition,sessions,aum,allowDatedOfficialAum=false}){
+ const spySessions=sessions.get(definition.benchmark);
+ ensure(Array.isArray(spySessions)&&spySessions.length,'CONFIG_R32_SPY_REQUIRED');
+ const individual=Object.fromEntries(definition.etfs.map(s=>[s,scoreOneR25({symbol:s,spySessions,ownSessions:sessions.get(s)??[]}).history]));
+ return scoreR32Theme({definition,dates:spySessions.slice(-252).map(p=>p.date),individual,aum,allowDatedOfficialAum});
+}
+export const readConfiguredEvidence=readDefinitionEvidence;
+function scoreR32Registered({dataRoot,registration,daily,dates,manifestBytes}){
+ const {definition:d}=registration;
+ verifyDefinitionSelection(dataRoot,d);
+ const money=readConfiguredEvidence(dataRoot,d.aumEvidence);
+ ensure(money.schema==='ZGMINI_THEME_AUM_EVIDENCE_V1'&&money.themeId===d.id&&
+  typeof money.approvalReference==='string'&&money.approvalReference.trim()&&
+  typeof money.datedOfficialAumApproved==='boolean'&&Array.isArray(money.rows)&&
+  money.rows.length===d.etfs.length&&new Set(money.rows.map(r=>r.ticker)).size===d.etfs.length&&
+  money.rows.every(r=>d.etfs.includes(r.ticker)&&/^https:\/\//.test(r.sourceUrl)&&Number.isFinite(r.aumUsd)&&r.aumUsd>0&&
+   validDate(r.aumAsOf)),'CONFIG_R32_AUM');
+ const scored=scoreConfiguredR32Sessions({definition:d,sessions:new Map([...d.etfs,d.benchmark].map(s=>[s,[...daily[s]].map(([date,close])=>({date,close}))])),
+  aum:Object.fromEntries(money.rows.map(r=>[r.ticker,r])),allowDatedOfficialAum:money.datedOfficialAumApproved});
+ const history=scored.history.slice(-252),last=history.at(-1);
+ return {version:'ZGMINI_CONFIGURED_THEME_PRIVATE_V2',themeId:d.id,label:d.label,etfs:[...d.etfs],benchmark:d.benchmark,profile:d.profile,
+  definitionSha256:registration.sha256,selectionEvidenceSha256:d.selectionEvidence.sha256,aumEvidenceSha256:d.aumEvidence.sha256,
+  sourceVersion:'GMH_MANIFEST_SHA256_'+digest(manifestBytes),status:last?.score!=null?'PRIVATE_SCORE_READY':'PRIVATE_HISTORY_PENDING',
+  observationDate:last?.date??null,score:last?.score??null,history,publicationAuthorized:false,d1Writes:0,schedulerWrites:0};
+}
+export function readConfiguredSessions({dataRoot,registration}){
  const {definition:d,internalId}=registration,symbols=[...d.etfs,'SPY'];
  const home=safeDirectory(dataRoot,'themes/'+internalId),manifestFile=path.join(home,'raw-manifest.json');
  ensure(fs.lstatSync(manifestFile).isFile()&&!fs.lstatSync(manifestFile).isSymbolicLink(),'CONFIG_MANIFEST_REDIRECT');
@@ -28,8 +55,15 @@ export function scoreRegistered({dataRoot,registration}){
   }
  }
  const daily=Object.fromEntries(symbols.map(s=>[s,new Map(selectRealHourlySessions([...tables[s].values()].sort((a,b)=>a.timestamp.localeCompare(b.timestamp))).map(r=>[r.date,r.close]))]));
+ return {daily,manifestBytes:bytes,sessions:new Map(symbols.map(s=>[s,[...daily[s]].map(([date,close])=>({date,close}))]))};
+}
+export function scoreRegistered({dataRoot,registration}){
+ const {definition:d}=registration;
+ const {daily,manifestBytes:bytes}=readConfiguredSessions({dataRoot,registration});
+ const symbols=[...d.etfs,d.benchmark];
  const dates=[...new Set(symbols.flatMap(s=>[...daily[s].keys()]))].sort();
  ensure(!dates.length||dates.at(-1)<='2028-12-31','CONFIG_EARLY_CLOSE_CALENDAR_REVIEW');
+ if(d.schema==='ZGMINI_THEME_CONFIG_V2')return scoreR32Registered({dataRoot,registration,daily,dates,manifestBytes:bytes});
  const timelines=d.etfs.map(s=>scoreAdaptiveTimeline(dates.map(date=>({date,own:daily[s].get(date)??null,spy:daily.SPY.get(date)??null}))));
  const counts=[0,0];
  const history=dates.map((date,i)=>{
