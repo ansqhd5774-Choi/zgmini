@@ -21,13 +21,15 @@ const files=[
  'scripts/pc-writer/theme-nine-r48-d1-publication.mjs',
  'scripts/pc-writer/theme-biotech-auth-r7.mjs',
  'worker/theme-nine-r37-public.mjs',
+ 'worker/theme-nine-r88-provisional.mjs',
  'worker/public-display-freshness.mjs',
  'config/theme-nine-r20-approved-candidates.json',
  'config/theme-nine-r26-official-aum-evidence.json',
  ];
 const hash=b=>createHash('sha256').update(b).digest('hex');
 const bundle=files.map((rel,i)=>({key:'F'+String(i+1).padStart(2,'0'),
- rel,bytes:fs.readFileSync(path.join(root,rel))})).map(item=>({
+ rel,bytes:rel.endsWith('.cmd')?fs.readFileSync(path.join(root,rel)):
+  Buffer.from(fs.readFileSync(path.join(root,rel),'utf8').replace(/\r\n/g,'\n'))})).map(item=>({
  ...item,sha256:hash(item.bytes)}));
 
 // Fail the build if a new local relative import was omitted from the pinned

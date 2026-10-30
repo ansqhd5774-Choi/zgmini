@@ -72,7 +72,7 @@ function parsePage(bytes,symbol,window=null){
   });
 }
 
-export function calculateNineR47PrivateScores({dataRoot,rosterPath,now=new Date()}={}){
+export function calculateNineR47PrivateScores({dataRoot,rosterPath,now=new Date(),onVerifiedSessions=null}={}){
   const audit=auditNineR24({dataRoot,rosterPath});
   if(audit.status!=='AUDIT_READ_ONLY_COMPLETE'||audit.spyLast252Sessions!==252||
      audit.symbolsWithValidDatesOutsideSPY.length)fail('BASE_NOT_READY');
@@ -123,6 +123,13 @@ export function calculateNineR47PrivateScores({dataRoot,rosterPath,now=new Date(
     [symbol,selectRealHourlySessions(data)]));
   const spySessions=sessions.get('SPY');
   if(spySessions.length<252)fail('SPY_252_SESSIONS_MISSING');
+  // Read-only provisional consumers reuse the same SHA-audited sessions;
+  // no source rows, selector, formula or persisted confirmed result changes.
+  if(onVerifiedSessions!==null){
+    if(typeof onVerifiedSessions!=='function')fail('SESSION_OBSERVER_INVALID');
+    onVerifiedSessions(new Map([...sessions].map(([s,rs])=>
+      [s,rs.map(r=>({...r}))])));
+  }
   const spyDates=new Set(spySessions.map(s=>s.date));
   const scored=symbols.map(symbol=>{
     const own=sessions.get(symbol);

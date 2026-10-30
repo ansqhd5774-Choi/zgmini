@@ -7,6 +7,7 @@ import {addVerifiedDcPowerProvisionalR1} from './theme-data-center-power-provisi
 import {addVerifiedSpaceSatellite} from './theme-space-satellite-r1.mjs';
 import {addVerifiedSpaceProvisionalR1} from './theme-space-satellite-provisional-r1.mjs';
 import {addVerifiedNineR37} from './theme-nine-r37-public.mjs';
+import {addVerifiedNineR88} from './theme-nine-r88-provisional.mjs';
 import {readRollingPublic} from './theme-etf-rolling-public.mjs';
 import {PUBLIC_DISPLAY_MAX_AGE_MS} from './public-display-freshness.mjs';
 import {publicFeedStore} from './public-feed-store.mjs';
@@ -78,7 +79,8 @@ export async function readThemeEtfOnly(db,{now=Date.now(),store=publicFeedStore(
  if(rolling){
   const withAi=await addVerifiedAiTheme(db,rolling,{now,seed:record});
   const result=await addBiotechSidecars(db,withAi,{now,seed:record,includeNineR37});
-  return Response.json(result,{headers:{...headers,'cache-control':'public, max-age=60, must-revalidate',
+  const exposed=includeNineR37?await addVerifiedNineR88(db,result,{now}):result;
+  return Response.json(exposed,{headers:{...headers,'cache-control':'public, max-age=60, must-revalidate',
    'x-data-snapshot-at':rolling.sourceStoredAt}});
  }
  const observedAt=Date.parse(record.observationDate+'T23:59:59Z');
@@ -103,6 +105,7 @@ export async function readThemeEtfOnly(db,{now=Date.now(),store=publicFeedStore(
  // optional collector is legitimately behind the seven-theme feed.
  const withAi=await addVerifiedAiTheme(db,result,{now,seed:record});
  const composed=await addBiotechSidecars(db,withAi,{now,includeNineR37});
- return Response.json(composed,{headers:{...headers,'cache-control':'public, max-age=60, must-revalidate',
+ const exposed=includeNineR37?await addVerifiedNineR88(db,composed,{now}):composed;
+ return Response.json(exposed,{headers:{...headers,'cache-control':'public, max-age=60, must-revalidate',
   'x-data-snapshot-at':new Date(storedAt).toISOString()}});
 }

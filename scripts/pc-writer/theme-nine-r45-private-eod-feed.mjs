@@ -148,6 +148,22 @@ async function readAudited(root,raw,date,decoder){
  if(!Array.isArray(rows))fail('DECODER_RESULT_'+date);
  return {rows,digest};
 }
+// Bounded, saved-only input for an explicitly labelled provisional bridge.
+// This does not grant raw-1h compatibility or authorize confirmed publication.
+export async function readNineR45SavedDates({dataRoot=DATA_ROOT,dates,decoder=null}={}){
+ if(!Array.isArray(dates)||dates.length<1||dates.length>3||
+   dates.some((d,i)=>!/^\d{4}-\d{2}-\d{2}$/.test(d)||(i>0&&d<=dates[i-1])))fail('BOUNDED_DATES');
+ const parse=decoder??await parquetDecoder(dataRoot),raw=path.join(dataRoot,
+   'theme-market-history-r131','marketparquet-r165');
+ const rows=new Map(),hashes=new Map(),storedAt=[];
+ for(const d of dates){
+  const {rows:r,digest}=await readAudited(dataRoot,raw,d,parse);
+  rows.set(d,r);hashes.set(d,digest);
+  storedAt.push(fs.statSync(path.join(raw,`etf_daily_${d}.parquet`)).mtime.toISOString());
+ }
+ return {rows,hashes,sourceStoredAt:storedAt.sort().at(-1)};
+}
+
 export async function collectNineR45FromSavedMarketParquet({dataRoot=DATA_ROOT}={}){
  const rosterFile=path.join(HERE,'theme-nine-r20-approved-candidates.json');
  if(!fs.existsSync(rosterFile))fail('APPROVED_ROSTER_FILE_MISSING');

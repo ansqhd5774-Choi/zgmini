@@ -17,6 +17,8 @@ findstr /X /C:"ACCEPT_R54_ANONYMOUS_DERIVED_RISK_20261028" "%R54_CONSENT%" >nul 
 if errorlevel 1 goto :stop
 "%R54_NODE%" "%R54_HOME%\scripts\pc-writer\theme-nine-r54-public-connect.mjs" --once --publish --accept-anonymous-license-risk >>"%R54_LOG%" 2>&1
 if errorlevel 1 goto :stop
+if exist "%R54_HOME%\R88_POST_STEP.cmd" call "%R54_HOME%\R88_POST_STEP.cmd" >>"%R54_LOG%" 2>&1
+if errorlevel 1 goto :stop
 >>"%R54_LOG%" echo RESULT=EXECUTED_CHECK_JSON_STATUS
 exit /b 0
 :stop

@@ -20,7 +20,7 @@ test('R54 is a portable SHA-checked standalone one-file Windows CMD',()=>{
  assert.doesNotMatch(cmd,/\/F\b|schtasks\s+\/Delete/i);
  const specs=[...cmd.matchAll(/'F\d{2}\|[^']+\|[a-f0-9]{64}'/g)]
   .map(m=>m[0].slice(1,-1).split('|'));
- assert.equal(specs.length,15);
+ assert.equal(specs.length,16);
  for(const [key,name,expected] of specs){
   const head=`::R54_${key}_BEGIN`,tail=`::R54_${key}_END`;
   const begin=cmd.lastIndexOf(head),end=cmd.indexOf(tail,begin+head.length);

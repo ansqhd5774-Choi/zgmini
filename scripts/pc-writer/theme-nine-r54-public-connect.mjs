@@ -16,6 +16,7 @@ import {verifyNineR54Production} from './theme-nine-r54-deployment-gate.mjs';
 import {createNineR54D1Query} from './theme-nine-r54-d1-client.mjs';
 import {publishNineR48D1} from './theme-nine-r48-d1-publication.mjs';
 import {addVerifiedNineR37,THEME_NINE_R37_ROSTER} from '../../worker/theme-nine-r37-public.mjs';
+import {addVerifiedNineR88,R88_KEY} from '../../worker/theme-nine-r88-provisional.mjs';
 
 const here=path.dirname(fileURLToPath(import.meta.url));
 const sha=b=>createHash('sha256').update(b).digest('hex');
@@ -34,6 +35,18 @@ const safeFile=(dir,filename)=>{
  return fs.readFileSync(p);
 };
 const same=(a,b)=>JSON.stringify(a)===JSON.stringify(b);
+
+// The deployed R88 overlay intentionally replaces legacy provisional scores.
+// Read that same stored sidecar when checking publication, rather than calling
+// the correct new provisional value an API failure. This path cannot write.
+export async function expectedNineR54WithProvisional({query,base,now=Date.now()}={}){
+ return addVerifiedNineR88({prepare(){return {bind(key){
+  need(key===R88_KEY,'READBACK_PROVISIONAL_KEY_DENIED');
+  return {async first(){return (await query(
+   "SELECT body,stored_at FROM public_feed_snapshots_v1 WHERE kind='output' AND feed_key=? AND snapshot_key='current'",
+   [R88_KEY],{write:false})).results?.[0]??null;}};
+ }};}},base,{now});
+}
 
 // R80's first subsequent live R54 run stopped at the optional R7 Wrangler
 // lookup BEFORE any D1 read/write. Reuse precisely the previously installed,
@@ -203,9 +216,10 @@ export async function runNineR54PublicConnect({dataRoot='E:/ZGmini/data',
  const before=(await query(readSql,['theme-legacy-nine-r37'],{write:false})).results?.[0];
  const result=await publishNineR48D1({query,record,publicBase,now,
   expectedStoredAt:before?Number(before.stored_at):null});
- const checked=await addVerifiedNineR37({prepare(){return {bind(){return {
+ const confirmedChecked=await addVerifiedNineR37({prepare(){return {bind(){return {
   async first(){return {body:JSON.stringify(record),stored_at:now};}};}};}},
   publicBase,{now});
+ const checked=await expectedNineR54WithProvisional({query,base:confirmedChecked,now});
  const live=await fetchPublic({fetchImpl,now:now+1,publicationBase:false});
  const expected=new Map(checked.themes.map(t=>[t.theme,t]));
  const liveByName=new Map(live.themes.map(t=>[t.theme,t]));
