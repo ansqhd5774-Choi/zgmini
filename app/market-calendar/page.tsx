@@ -4,8 +4,8 @@ import {WebPageJsonLd} from '../seo-jsonld';
 import MarketCalendar from './market-calendar-client';
 import './market-calendar.css';
 
-const title='시장 캘린더 | 경제지표·기업 실적 발표 일정 - ZGmini';
-const description='미국 경제지표와 기업 실적 발표 예정일을 주간·월간 달력에서 확인하세요. 중요도 필터로 주요 일정을 살펴보고 공식 발표값·제공원 예정일·확인된 한국시간을 구분합니다.';
+const title='미국 경제지표 발표 일정·주식 실적 캘린더 | ZGmini';
+const description='미국 경제지표 발표 일정과 미국 주식 실적 발표 일정을 주간·월간 시장 캘린더에서 확인하세요. 중요도 필터로 주요 일정을 살펴보고 공식 발표값·제공원 예정일·확인된 한국시간을 구분합니다.';
 const path='/market-calendar/';
 
 export const metadata:Metadata={
