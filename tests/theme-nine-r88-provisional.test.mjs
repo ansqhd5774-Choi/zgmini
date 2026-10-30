@@ -52,8 +52,13 @@ test('R88 rejects source mismatch, stale/future evidence, fake coverage and pair
   r=>r.themes[0].points[0].date='2026-10-28',r=>r.sourcePriceReconciled=true];
  for(const change of changes){const {base,record}=fixture();change(record);assert.equal(validNineR88(record,base,{now}),false);}
 });
-test('R88 missing or corrupt optional sidecar leaves existing public scores available',async()=>{
+test('R88 missing sidecar keeps confirmation and optional scores but never falls back to legacy core provisional',async()=>{
  const {base}=fixture();const result=await addVerifiedNineR88({prepare(){throw Error('missing');}},base,{now});
- assert.strictEqual(result.themes,base.themes);assert.deepEqual(result.provisional,base.provisional);
+ assert.strictEqual(result.themes,base.themes);
+ assert.equal(result.r32ProvisionalStatus,'PENDING');
+ for(const t of R88_PUBLIC_ROSTER)assert.equal(Object.hasOwn(result.provisional.points[0].scores,t.theme),false);
+ assert.equal(result.provisional.points[0].scores['우주·위성'],12);
+ assert.equal(result.provisional.points[0].scores['데이터센터·전력'],12);
+ assert.equal(base.provisional.points[0].scores['핀테크'],12);
  assert.equal(result.r32ProvisionalReaderVersion,R88_VERSION);
 });

@@ -62,7 +62,16 @@ export function validNineR88(record,base,{now=Date.now(),storedAt=now}={}){
 }
 export async function addVerifiedNineR88(db,base,{now=Date.now()}={}){
  if(base?.modelRevision!==THEME_NINE_R37_VERSION)return base;
- base={...base,r32ProvisionalReaderVersion:R88_VERSION};
+ // A missing next-day R32 record must not silently re-enable the legacy
+ // pair formula. Keep confirmed history and optional-theme points, while
+ // leaving unverified core provisional values out of the public projection.
+ const core=new Set(R88_PUBLIC_ROSTER.map(t=>t.theme));
+ const pending=(base.provisional?.points??[]).map(p=>({...p,
+  scores:Object.fromEntries(Object.entries(p.scores??{}).filter(([name])=>!core.has(name)))}))
+  .filter(p=>Object.keys(p.scores).length);
+ base={...base,r32ProvisionalReaderVersion:R88_VERSION,r32ProvisionalStatus:'PENDING',
+  phase:pending.length?'PROVISIONAL':'CONFIRMED',
+  provisional:{...base.provisional,points:pending}};
  let row,record;
  try{row=await db.prepare("SELECT body,stored_at FROM public_feed_snapshots_v1 WHERE kind='output' AND feed_key=? AND snapshot_key='current'")
   .bind(R88_KEY).first();if(!row)return base;record=JSON.parse(row.body);}catch{return base;}
@@ -72,7 +81,7 @@ export async function addVerifiedNineR88(db,base,{now=Date.now()}={}){
   const existing=indexed.get(p.date)??{date:p.date,scores:{}};
   existing.scores[t.theme]=p.score;indexed.set(p.date,existing);
  }
- return {...base,phase:'PROVISIONAL',provisional:{...base.provisional,
+ return {...base,phase:'PROVISIONAL',r32ProvisionalStatus:'READY',provisional:{...base.provisional,
   asOf:record.asOf,points:[...indexed.values()].sort((a,b)=>a.date.localeCompare(b.date))},
   provisionalMethodologyByTheme:{...base.provisionalMethodologyByTheme,
    ...Object.fromEntries(record.themes.map(t=>[t.theme,{methodologyVersion:record.methodologyVersion,
