@@ -252,6 +252,10 @@ try{
    if(check?.stored_at!==row.stored_at||check?.body!==row.body)throw Error('LOCAL_FEED_PUBLICATION_MISMATCH');
    });
   }
+  await attemptOutput(report,'cnn-observed-archive',async()=>{
+   const {publishCnnObservedArchive}=await import('./cnn-observed-archive-publication-r1.mjs');
+   report.cnnObservedArchive=await publishCnnObservedArchive(core,remote,config.core);
+  });
   await attemptOutput(report,'arrows',async()=>{report.scoreArrows=await publishCoreArrowState(remote,config.core);});
   report.remote=remote.stats;
   save(path.join(base,'local-publication-ledger.json'),{status:report.failures?.length?'PARTIAL':'VERIFIED',source,at:Date.now()});
