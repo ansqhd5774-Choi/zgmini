@@ -21,6 +21,8 @@ ZGMINI PLUGIN & EXECUTION RULES — COMPACT R5 FINAL
 - GitHub 직접 접근 가능 시 불필요한 local clone/RDC 금지.
 - 과거 SHA를 현재값으로 재사용 금지.
 - migration/analysis branch 전체 merge 금지. 검증된 필요한 파일만 selective recovery.
+- **원래 작업 브랜치 유지:** 사용자가 승인한 기존 기능 개발 브랜치가 후속 작업의 기준이다. 배포·`main` 반영용 임시 브랜치를 만들 수는 있으나 해당 배포 범위만 선별해 반영하고, 작업 완료 후 모든 기능 개발은 원래 브랜치에서 이어간다. 임시 브랜치를 새 개발 기준으로 바꾸지 않는다.
+- **분기된 개발 내용 회수:** 양방향 변경 파일·의존성·기존 작업 브랜치의 최신 작업을 먼저 대조한다. 통째 merge, 대상 브랜치 덮어쓰기, 신규 브랜치를 통한 우회 개발을 하지 않는다. 누락·삭제·산식 변화 여부를 검증한 뒤 개별 변경만 반영하고 원본 브랜치 테스트와 신규 기능 테스트를 모두 확인한다.
 
 ## 2. Cloudflare — DEPLOYMENT CONTROL PLANE — ACTIVE
 - 기본 경로:
