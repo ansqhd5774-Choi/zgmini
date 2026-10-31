@@ -292,3 +292,15 @@ R10은 `publication-guard.mjs`를 절대 교체하지 않으며 고정 PR #893 G
 - ZIP 28개 파일 바이트·manifest 27개 해시·압축 해제본 Node 22.16.0 회귀시험 23건 PASS; 비-Windows `STOP_WINDOWS_ONLY` 확인. **Windows R10 실측은 아직 없음**.
 - 기존 `asset-r10-cmd-r9` 포함 모든 기존 패키지 보존. 코드/테스트/manifest는 `scripts/pc-writer/asset-r10-cmd-r10/`에 저장.
 - 실행: 새 폴더 압축 해제 → `RUN_PREFLIGHT.cmd` 정확히 1회 → 결과 `ASSET_R10_CMD_PREFLIGHT_RESULT.txt` 회수. 현장 검증 이전 `RUN_INSTALL.cmd` 실행 금지. 배포/스케줄러/D1/PC Writer는 변경하지 않았다.
+
+## 22. R10 Windows READY/LOCK 표시 불일치 및 R11 보호 (2026-10-31)
+
+PC R10 `ASSET_R10_CMD_PREFLIGHT_RESULT(4).txt`는 `STATUS=READY_FOR_INSTALL`과 `LOCK_STATUS=STOP_LOCK_PRESENT`를 함께 보고했다. `HOOK_STATUS=READY_TO_PATCH`, `TRACKED_DIRTY=NO`, `PROCESS_STATUS=CLEAR`, `LEDGER_STATUS=VERIFIED`, `DEPENDENCY_STATUS=MATCHED_WITH_MISSING`, `MANIFEST_STATUS=HASH_VERIFIED`, `AFTER_SHA=NOT_APPLIED`. Writer와 Guard는 코드 전체 일치 + 허용된 EOL 차이로 검증됐고, 기존 의존성의 EOL variant 9건이 확인됐다. 잠금의 최초 발견 이후 `assertIdle`에서 해소됐을 수 있으나 실제 변화 시점·소유자는 별도 확증되지 않았다. 따라서 R10 결과만으로 INSTALL 실행을 권하지 않는다.
+
+R11은 기존 R10 코드/산식/소스/DB/스케줄러를 유지하며, `assertIdle`가 실제로 읽은 잠금과 ledger 결과를 보고서에 다시 기록한다. 수 분 걸리는 파일/의존성 검사 뒤에도 **최종 유휴 상태 재조회 및 READY 결과 정합성 검사**를 통과해야 `READY_FOR_INSTALL`이다. `RUN_INSTALL.cmd`는 새 호출 시 기존 preflight + 설치 직전 추가 라이브 검사를 수행한다. 기존 잠금을 삭제하지 않으며 제어 작업을 끄거나 중단하지 않는다.
+
+- 새 ZIP: `ASSET_R10_AUTO_CMD_R11_VERIFIED_20261031.zip`, SHA-256 `b3c065c0c2c8e9a85f67f782227defb163068f9322909ec50f2d69720ca4219c`.
+- ZIP 28개 파일 바이트 대조 및 27개 manifest SHA-256 PASS. Manifest SHA-256: `fb51ea06206dd0900b7fe0aa5bf0d8ba70b52b0f5fea6d002ccdde01261a1000`.
+- Node 22.16.0 압축 해제본 회귀시험 **25개 PASS**; 비-Windows `STOP_WINDOWS_ONLY` 검증 PASS. Windows R11 실측/설치/정규 주기/D1 readback **미검증**.
+- 기존 R10 버전 보존. 작업 브랜치 새 경로 `scripts/pc-writer/asset-r10-cmd-r11/`.
+- 다음 PC 실행: 새 폴더 압축 해제 후 `RUN_PREFLIGHT.cmd` 정확히 1회; 결과 확인 전 INSTALL 금지. STOP이면 잠금/프로세스를 수동 제거하지 않는다.
