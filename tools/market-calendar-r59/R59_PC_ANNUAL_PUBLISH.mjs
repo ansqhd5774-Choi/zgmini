@@ -64,12 +64,14 @@ export async function publication({privateFile,pcHome=PC,rootResolver=taskRoot,r
  const head=execFileSync('git',['rev-parse','HEAD'],{cwd:root,windowsHide:true,timeout:12000,encoding:'utf8'}).trim();
  if(!/^[a-f0-9]{40}$/.test(head)||config?.source!==head||config.collectionTarget!=='pc'||config.enabled!==true)
   throw Error('R59_PC_SOURCE_CONFIG_DRIFT_STOP');
- const lockFile=path.join(pcHome,'local-cycle.lock');
+ // Annual grades are a different D1 output key and a manually triggered lane.
+ // Never block/modify the continuously scheduled PC Core collection lock.
+ const lockFile=path.join(pcHome,'annual-fhs-r3.manual.lock');
  let locked=false;
  try{
   const fd=fs.openSync(lockFile,'wx');locked=true;
   try{fs.writeFileSync(fd,JSON.stringify({pid:process.pid,purpose:'annual-fhs-r3-manual-publication'}))}finally{fs.closeSync(fd)}
- }catch(error){if(error?.code==='EEXIST')throw Error('R59_CORE_LOCK_BUSY_STOP');throw error}
+ }catch(error){if(error?.code==='EEXIST')throw Error('R59_ANNUAL_PUBLISH_LOCK_BUSY_STOP');throw error}
  try{
   const remote=remoteFactory?await remoteFactory({root,config}):await (async()=>{
    const {client,credential}=await import(pathToFileURL(path.join(root,'scripts','pc-writer','d1.mjs')).href);
@@ -102,7 +104,7 @@ if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.ur
    result.sourceSelection=located.method;
   }catch(e){
    const status=code(e);
-   const beforeWrite=/^R59_(?:SOURCE_|PRIVATE_|PUBLIC_READER_|READER_PROBE_|PUBLIC_PAYLOAD_|FHS_PUBLIC_)/.test(status);
+   const beforeWrite=/^R59_(?:SOURCE_|PRIVATE_|PUBLIC_READER_|READER_PROBE_|PUBLIC_PAYLOAD_|FHS_PUBLIC_|ANNUAL_PUBLISH_LOCK_BUSY_STOP)/.test(status);
    result={status,dbWrites:beforeWrite?0:null,doNotRerunBeforeReadback:!beforeWrite};
   }
   fs.writeFileSync(RESULT,['AUDIT=MARKET_CALENDAR_R59',...Object.entries(result).map(([k,v])=>`${k}=${JSON.stringify(v)}`)].join('\r\n')+'\r\n',{flag:'wx'});
