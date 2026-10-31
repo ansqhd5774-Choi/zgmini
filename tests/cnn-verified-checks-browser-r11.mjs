@@ -51,7 +51,8 @@ try{
   await page.waitForFunction(()=>document.querySelector('.zg-fg-us .cnn-history-chart-hitbox path.recharts-area-curve')?.getAttribute('d')?.length>15,null,{timeout:20000});
   const d=await usaChart.locator('path.recharts-area-curve').getAttribute('d');
   assert.ok(d?.startsWith('M')&&d.includes('C'),'Same-score timeline SVG curve rendered');
-  const axis=await usaChart.locator('.recharts-xAxis .recharts-cartesian-axis-tick-value').allTextContents();
+  // Recharts 3 renders X-axis labels in a sibling tick-label layer (known UI audit V4).
+  const axis=await usaChart.locator('.recharts-xAxis-tick-labels .recharts-cartesian-axis-tick-value, .recharts-xAxis .recharts-cartesian-axis-tick-value').allTextContents();
   console.log('CNN_AXIS_LABELS '+width+' '+JSON.stringify(axis));
   await usaChart.scrollIntoViewIfNeeded();
   await page.screenshot({path:'artifacts/cnn-verified-checks/cnn-1d-'+width+'.png'});
