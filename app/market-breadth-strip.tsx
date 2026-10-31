@@ -1,6 +1,9 @@
+"use client";
 import styles from "./market-breadth-strip.module.css";
+import {useStoredIndex} from "../components/use-stored-index";
+import {validUsBreadthRecord} from "../lib/market-breadth/us-public-r1.mjs";
 
-/** The UI accepts verified counts later; it intentionally does not fetch data. */
+/** Verified issue-direction counts; only the US stored-output route is enabled. */
 export type MarketBreadthCounts = {
   rising: number;
   unchanged: number;
@@ -10,6 +13,12 @@ export type MarketBreadthCounts = {
 type MarketBreadthStripProps = {
   market: "usa" | "korea";
   counts?: MarketBreadthCounts | null;
+};
+
+type UsaBreadthRecord = {
+  market: "usa";
+  observationDate: string;
+  counts: MarketBreadthCounts;
 };
 
 const numberFormat = new Intl.NumberFormat("ko-KR");
@@ -33,7 +42,12 @@ function normalizedCounts(counts?: MarketBreadthCounts | null) {
 
 export function MarketBreadthStrip({ market, counts }: MarketBreadthStripProps) {
   const name = market === "usa" ? "미국" : "한국";
-  const data = normalizedCounts(counts);
+  const {payload} = useStoredIndex<UsaBreadthRecord>(
+    "/api/market-breadth?market=usa", null, market === "usa" && counts === undefined
+  );
+  const stored = market === "usa" && validUsBreadthRecord(payload) ? payload : null;
+  const data = normalizedCounts(counts === undefined ? stored?.counts : counts);
+  const sourceInfo = stored && counts === undefined ? `S&P 500 · ${stored.observationDate} 기준` : null;
   const dominance = !data || Math.abs(data.risingPct - data.fallingPct) < 5
     ? "none"
     : data.risingPct > data.fallingPct ? "up" : "down";
@@ -45,10 +59,11 @@ export function MarketBreadthStrip({ market, counts }: MarketBreadthStripProps) 
   ] as const;
 
   return (
-    <section className={styles.root} aria-label={`${name} 등락 지수${data ? "" : ", 데이터 연결 예정"}`} data-market={market}>
+    <section className={styles.root} aria-label={`${name} 등락 지수${sourceInfo ? `, ${sourceInfo}` : data ? "" : ", 데이터 연결 예정"}`} title={sourceInfo ?? undefined} data-market={market}>
       <div className={styles.stats}>
         <div className={styles.heading}>
           <strong>{name} 등락 지수</strong>
+          {data && sourceInfo && <small className={styles.pending}>{stored!.observationDate.slice(5).replace('-', '.')}</small>}
           {!data && <small className={styles.pending}>연결 예정</small>}
         </div>
         {columns.map(({ key, label, symbol, count, pct }) => (
