@@ -4080,3 +4080,20 @@ body .zg-r55-market .zg-r55-shell[data-expanded="false"] article.zg-r55-card>.zg
     grid-template-columns:minmax(0,1fr);
   }
 }
+
+/* The US-only six-period rail expands LEFT into its chart column. Its right
+   edge and existing button heights remain fixed; Korea keeps its old rail. */
+@media (min-width:960px){
+  .zg-dashboard[data-view="dashboard"] .usa-target-card.fg-shared-shell .fg-analysis-slot{
+    grid-template-columns:minmax(0,1fr) 60px;
+  }
+  .zg-dashboard[data-view="dashboard"] .usa-target-card.fg-shared-shell .fg-period-slot{
+    width:60px;min-width:60px;max-width:60px;
+  }
+  .zg-dashboard[data-view="dashboard"] .usa-target-card.fg-shared-shell .fg-period-slot .cnn-period-toolbar[data-usa-one-day="true"]{
+    width:56px;min-width:56px;max-width:56px;
+  }
+  .zg-dashboard[data-view="dashboard"] .usa-target-card.fg-shared-shell .fg-period-slot .cnn-period-toolbar[data-usa-one-day="true"] .cnn-period-button{
+    width:54px;min-width:54px;max-width:54px;
+  }
+}
