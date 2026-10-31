@@ -631,3 +631,12 @@
     border-top:1px dashed rgba(42,91,131,.72);
   }
 }
+
+/* USA-only: the existing segmented period group gains one in-flow 1D cell.
+   Match the Korean group's border, gap and button size; keep the right edge,
+   30px total bar height and all six controls inside the rounded border. */
+@media(max-width:959px){
+ .zg-dashboard[data-view="dashboard"] .fg-card.fg-shared-shell:has(.cnn-period-toolbar[data-usa-one-day="true"]){
+  --mobile-period-width:calc(6 * var(--zg-ui-period-width) + 2px);
+ }
+}
