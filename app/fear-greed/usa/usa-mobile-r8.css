@@ -594,23 +594,39 @@
   .zg-fg-us .zg-fg-guide-short { display: inline; }
   .zg-fg-us .zg-fg-buying-guide-link svg { display: none; }
 }
-/* US-only 1D: the existing five square period controls keep their exact
- * position and geometry. Place the one extra square LEFT of the first button,
- * leaving the rail's right edge, overall height and Korean controls untouched. */
+
+/* USA detail: six 28px square buttons remain inside one 30x170px rounded
+ * rail. The 176px chart/period slot is unchanged, and no button is absolute. */
 .zg-fg-us .usa-target-card.fg-shared-shell .fg-period-slot .cnn-period-toolbar[data-usa-one-day="true"]{
-  position:relative;
-  overflow:visible;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  box-sizing:border-box;
+  width:30px;
+  min-width:30px;
+  max-width:30px;
+  height:170px;
+  min-height:170px;
+  max-height:170px;
+  gap:0;
+  margin:0;
+  border:1px solid var(--zg-control-border);
+  border-radius:6px;
+  overflow:hidden;
 }
-.zg-fg-us .usa-target-card.fg-shared-shell .fg-period-slot .cnn-period-toolbar[data-usa-one-day="true"] .cnn-period-button:first-child{
-  position:absolute;
-  top:0;
-  right:calc(100% + 4px);
-  z-index:2;
-  width:32px;
-  min-width:32px;
-  max-width:32px;
-  height:32px;
-  min-height:32px;
-  max-height:32px;
-  flex:0 0 32px;
+.zg-fg-us .usa-target-card.fg-shared-shell .fg-period-slot .cnn-period-toolbar[data-usa-one-day="true"] .cnn-period-button{
+  position:static;
+  flex:0 0 28px;
+  box-sizing:border-box;
+  width:28px;
+  min-width:28px;
+  max-width:28px;
+  height:28px;
+  min-height:28px;
+  max-height:28px;
+  margin:0;
+  padding:0;
+  border:0;
+  border-radius:0;
 }
