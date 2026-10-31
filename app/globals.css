@@ -4081,9 +4081,10 @@ body .zg-r55-market .zg-r55-shell[data-expanded="false"] article.zg-r55-card>.zg
   }
 }
 
-/* The US-only six-period rail expands LEFT into its chart column. Its right
-   edge and existing button heights remain fixed; Korea keeps its old rail. */
-@media (min-width:960px){
+/* Wide US cards use a VERTICAL six-period rail. Size this by CARD width, not
+   viewport width, so compact phone/tablet cards retain their horizontal bar.
+   Expand left into the chart; keep the right edge and button heights fixed. */
+@container fg-shared (min-width:501px){
   .zg-dashboard[data-view="dashboard"] .fg-card.fg-shared-shell:has(.cnn-period-toolbar[data-usa-one-day="true"]) .fg-analysis-slot{
     grid-template-columns:minmax(0,1fr) 60px;
   }
@@ -4095,5 +4096,29 @@ body .zg-r55-market .zg-r55-shell[data-expanded="false"] article.zg-r55-card>.zg
   }
   .zg-dashboard[data-view="dashboard"] .fg-card.fg-shared-shell:has(.cnn-period-toolbar[data-usa-one-day="true"]) .fg-period-slot .cnn-period-toolbar[data-usa-one-day="true"] .cnn-period-button{
     width:54px;min-width:54px;max-width:54px;
+  }
+}
+
+/* Compact dashboard cards use a HORIZONTAL period bar (container width <=500px),
+   so the wide-screen 60px rail never affects phone layouts. Widen only the US
+   six-button row; retain its previous right endpoint and 26px button height.
+   Previous row width: 6 * 26px + 5 * 5px = 181px. */
+@container fg-shared (max-width:500px){
+  .zg-dashboard[data-view="dashboard"] .fg-card.fg-shared-shell:has(.cnn-period-toolbar[data-usa-one-day="true"]) .fg-period-slot{
+    --zg-usa-compact-period-width:clamp(30px,9.5cqi,34px);
+    justify-items:end;
+    box-sizing:border-box;
+    padding-inline-end:max(0px,calc((100% - 181px)/2));
+  }
+  .zg-dashboard[data-view="dashboard"] .fg-card.fg-shared-shell:has(.cnn-period-toolbar[data-usa-one-day="true"]) .fg-period-slot .cnn-period-toolbar[data-usa-one-day="true"]{
+    width:max-content;
+    min-width:max-content;
+    max-width:none;
+  }
+  .zg-dashboard[data-view="dashboard"] .fg-card.fg-shared-shell:has(.cnn-period-toolbar[data-usa-one-day="true"]) .fg-period-slot .cnn-period-toolbar[data-usa-one-day="true"] .cnn-period-button{
+    width:var(--zg-usa-compact-period-width);
+    min-width:var(--zg-usa-compact-period-width);
+    max-width:var(--zg-usa-compact-period-width);
+    flex:0 0 var(--zg-usa-compact-period-width);
   }
 }
