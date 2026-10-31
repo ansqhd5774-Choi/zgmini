@@ -317,3 +317,15 @@ R12는 기존 R11 one-shot의 중복 preflight 문제를 보완한다. R12 `RUN_
 - 28개 manifest 대상 파일 + manifest 1개 ZIP 무결성 PASS, 기존 payload/CMD byte identity PASS, Node 오프라인 회귀시험 **28/28 PASS**, 비-Windows preflight/install `STOP_WINDOWS_ONLY` PASS.
 - 기존 R11/one-shot 패키지는 변경하지 않았고, 브랜치 경로는 `scripts/pc-writer/asset-r10-cmd-r12/`. Windows COM/WMI 동작 및 실제 설치/정규 D1/두 주기: **미검증**.
 - PC 다음 조치: 새 폴더 압축 해제 → `RUN_INSTALL.cmd` **1회만 실행** (별도 PRE-FLIGHT/one-shot CMD 선행 금지). 오류나 결과 불명확 시 재실행 금지, `ASSET_R10_CMD_INSTALL_RESULT.txt` 제출. 성공 후 `RUN_VERIFY.cmd` 및 별도 D1/API readback 필요.
+
+## 24. R12 PC Scheduler COM 조회 STOP 및 R13 표준 출력 복구 (2026-10-31)
+
+실제 PC `ASSET_R10_CMD_INSTALL_RESULT(3).txt` 결과: `STATUS=STOP`, `ERROR_CODE=STOP_SCHEDULER_LIVE_QUERY_FAILED`. 최초 상태에서 `LOCK_STATUS=STOP_LOCK_PRESENT`, `BEFORE_SHA=a477ef304425145f559352af4291e437e3b08a2d`, `AFTER_SHA=NOT_APPLIED`, `TEST_STATUS=NOT_RUN`, `BACKUP_STATUS=NOT_CREATED`, `D1_READBACK=NOT_TESTED`. 안전 중단으로 기존 운영 소스 미변경. 조회 자체 실패한 이유의 실제 PC stdout은 보고서에 없으므로 단일 원인 확정은 금지.
+
+R12 소스에는 `cscript.exe //Nologo //B windows-runtime-readonly.vbs tasks`가 있고 스크립트는 `WScript.Echo TASK|...`로 Task Scheduler COM 상태를 출력한다. `//B`는 WScript.Echo 표시까지 억제할 수 있으므로, **R13은 정확히 해당 옵션을 제거하고 `//Nologo //T:15`를 사용**한다. 모든 원본 source/잠금/ledger/프로세스/next-run-margin 검사는 유지. 형식 오류·COM 오류·잠금은 여전히 STOP, 유휴 시간이 없으면 8분 bounded stop. 다른 수집·산식·예약 작업·D1·DNS·배포 미변경.
+
+- 검증 ZIP: `ASSET_R10_AUTO_CMD_R13_VERIFIED_20261031.zip`, SHA-256 `0d1e86b33af2db5f386817e94c029f54178f02bfc00a36ff770a075bbf98e56a`.
+- Manifest SHA-256: `f7b4cc7727be5baf9654ea1a107c7c437ad145c63bf7172cb44f7c47d0d16663`.
+- ZIP 29개 파일 및 28개 manifest 해시 PASS, 기존 R12 payload·CMD·VBS byte-identity PASS, Node 22.16.0 오프라인 테스트 **30/30 PASS**. Windows 실제 검증/설치/정규 주기/D1 readback은 미실행.
+- 새 경로 `scripts/pc-writer/asset-r10-cmd-r13/`로 추가하여 R12 보존.
+- PC 다음 조치: R13 ZIP 새 폴더에 압축 해제 후 `RUN_INSTALL.cmd` 정확히 1회, 결과 `ASSET_R10_CMD_INSTALL_RESULT.txt` 제출. 반복 실행 및 작업 잠금 삭제/예약 변경 금지.

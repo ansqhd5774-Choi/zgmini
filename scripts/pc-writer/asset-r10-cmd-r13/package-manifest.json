@@ -1,0 +1,234 @@
+{
+  "schema": "zgmini-r10-cmd-r13-v1",
+  "version": "R13",
+  "generatedFor": "asset-bubble-r10-single-call-windowed-CMD-native-install-stdout-fix",
+  "sourceSha": "8a7634a5358cb19280725fe29a977ba4feb44be8",
+  "sourcePullRequest": 893,
+  "approvedBaselineSha": "a477ef304425145f559352af4291e437e3b08a2d",
+  "expectedOldRunLocal": {
+    "path": "scripts/pc-writer/run-local.mjs",
+    "gitRef": "a477ef304425145f559352af4291e437e3b08a2d:scripts/pc-writer/run-local.mjs",
+    "gitBlobSha": "RUNTIME_VERIFIED_FROM_PC_GIT_OBJECT",
+    "sha256": "RUNTIME_VERIFIED_FROM_PC_GIT_OBJECT",
+    "reason": "the approved baseline Git commit is unavailable to this GitHub connection; never guess an old file hash"
+  },
+  "expectedAfter": {
+    "sha256": "DERIVED_AT_PC_FROM_VERIFIED_BASE_PLUS_PINNED_HOOK",
+    "commit": "NEW_LOCAL_COMMIT_AFTER_ALLOWLISTED_TESTS"
+  },
+  "runtime": {
+    "windows": "Windows CMD only",
+    "node": ">=22.13.0",
+    "git": "required only in existing approved PC checkout",
+    "npmPackages": "none in ZIP",
+    "scheduler": "ZGMINI-PC-Local-Core",
+    "pcHome": "E:\\ZGmini\\data\\pc-writer"
+  },
+  "runtimeRouteProof": {
+    "observedAt": "2026-10-29T15:52:27Z",
+    "observed": "core-vbs -> local-cycle --publish -> run-local --publish",
+    "pinnedCoreVbsSha256": "bb3e11c0b5c8da07162b1c824e7b52e7a7c2f987c079f29713211a2413932b01",
+    "gate": "actual processes absent, core and korea tasks ready, core next run at least 120 seconds away, lock absent, ledger safe"
+  },
+  "baselineEolGate": {
+    "allowed": "LF, CRLF, or mixed LF/CRLF only when Git blob normalized text exactly equals worktree normalized text and tracked clean; no standalone CR",
+    "content": "100% character, whitespace, and newline sequence except CR in CRLF identical",
+    "patch": "inserts only pinned hunk, preserves every pre-existing byte and EOL sequence",
+    "diagnosis": "2026-10-31 Windows R8 STOP_WRITER_MIXED_LINE_ENDINGS, not evidence of actual content drift"
+  },
+  "entrypoints": {
+    "preflight": "RUN_PREFLIGHT.cmd",
+    "install": "RUN_INSTALL.cmd",
+    "verify": "RUN_VERIFY.cmd"
+  },
+  "centralDocument": "https://github.com/ansqhd5774-Choi/zgmini/blob/codex/theme-fear-greed-integration-20261025/docs/CMD_EXECUTION_PLAYBOOK.md",
+  "files": [
+    {
+      "path": "hook-spec.json",
+      "sha256": "2530f7ae1857395054a8603e6950b27598d16d2bd0965fe897a1677c07a8082e",
+      "role": "runner-and-integrity"
+    },
+    {
+      "path": "payload/lib/diagnostic-layer/asset-bubble-r10-1y-history-readonly-r1.mjs",
+      "sha256": "fde8d16d5d3ec0434bfb6d8511ed0c2102e17662bb7667d1e4f83a8bde64cfad",
+      "role": "install-if-missing-else-verify-exact",
+      "gitBlobSha": "f9835178e3d1da4a523ed600e8fce032e5d8351e"
+    },
+    {
+      "path": "payload/lib/diagnostic-layer/asset-bubble-r10-candidate.mjs",
+      "sha256": "c3940f43b8adcc152434603aed17b0d42def32de747abe305cbae44a05372b93",
+      "role": "install-if-missing-else-verify-exact",
+      "gitBlobSha": "9f4d9bf04f4ce4095d24a351dc865ae0cac8d975"
+    },
+    {
+      "path": "payload/lib/diagnostic-layer/asset-bubble-r10-evaluation.mjs",
+      "sha256": "984ea1ddc0c5f63db1d4b4a28acc3906eb684be424afd279ef90464961c26396",
+      "role": "install-if-missing-else-verify-exact",
+      "gitBlobSha": "e761f91de4ea0de924e00838dab8670a469c56a3"
+    },
+    {
+      "path": "payload/lib/diagnostic-layer/asset-bubble-r10-raw-evidence-r1.mjs",
+      "sha256": "2d56786eb2a7e93ca5e7daf97cd743253fcab9bf2282e651e164957d20858282",
+      "role": "install-if-missing-else-verify-exact",
+      "gitBlobSha": "29e5e793961a49fe9ab87f77de77e0eca6132da8"
+    },
+    {
+      "path": "payload/lib/diagnostic-layer/asset-bubble-r9-components.mjs",
+      "sha256": "cbc7f1b0fb2167e2a72d32c539ba545b055d7f3d779382cc297252f8c5ee7cc0",
+      "role": "install-if-missing-else-verify-exact",
+      "gitBlobSha": "c2ecb67610fbcdba310cac36c7c4624f818e0a75"
+    },
+    {
+      "path": "payload/lib/diagnostic-layer/batch-a-components.mjs",
+      "sha256": "11dd80d61c2873b940cc7f45293fc044cb0c833e308d167edc7aabe418ea3041",
+      "role": "install-if-missing-else-verify-exact",
+      "gitBlobSha": "18f70f6098552396fe8c6b1b910a6ed6fe247b8b"
+    },
+    {
+      "path": "payload/lib/diagnostic-layer/model.mjs",
+      "sha256": "7299bcba6b679a050c1aab23fc8152743ba26904aa26b5c57fb41ec35533b1b7",
+      "role": "install-if-missing-else-verify-exact",
+      "gitBlobSha": "3b9fa2f053e168e217927f0ff2ae97c189a304de"
+    },
+    {
+      "path": "payload/lib/diagnostic-layer/series-math.mjs",
+      "sha256": "d120f3f14c600efa3c44110886ddd9b23eb16c134f95677061dfafbeea4aa48c",
+      "role": "install-if-missing-else-verify-exact",
+      "gitBlobSha": "ad8accb7b7a64b93a8e446c783b7772720c13d64"
+    },
+    {
+      "path": "payload/scripts/pc-writer/ASSET_R10_1Y_HISTORY_READONLY_R1.mjs",
+      "sha256": "0b1416b71347db9319a281caf743a5f8f785b8b8893b90a19aecd65b04fc0c81",
+      "role": "install-if-missing-else-verify-exact",
+      "gitBlobSha": "c02af8c557baf9f41ff2f59d21f2ffb446334ec0"
+    },
+    {
+      "path": "payload/scripts/pc-writer/ASSET_R10_RAW_PREFLIGHT_R1.mjs",
+      "sha256": "7f008d462aa98ec455699a3cac82d74a96aae5d5de0633ed91a5162a68cdc109",
+      "role": "install-if-missing-else-verify-exact",
+      "gitBlobSha": "66ae83d5b7989a92de73bdfa380f9cdd2b217353"
+    },
+    {
+      "path": "payload/scripts/pc-writer/asset-r10-sidecar-auto-publication-r1.mjs",
+      "sha256": "6fa1401f78f3d01e0baeb6b6d9c5d8807ac98e9b908792fc0990b9d4e9e51ff0",
+      "role": "install-if-missing-else-verify-exact",
+      "gitBlobSha": "21bb47151363c4d6b15aa2f653540d038879fdcc"
+    },
+    {
+      "path": "payload/scripts/pc-writer/asset-r10-storage.mjs",
+      "sha256": "bcbfb963fc49563623f2c674dc1e8ac140b7f0c5b00ed5d2e79ce02b287b69ac",
+      "role": "install-if-missing-else-verify-exact",
+      "gitBlobSha": "7912bc672b82228f4f879419e38f47094fdefed5"
+    },
+    {
+      "path": "payload/scripts/pc-writer/publication-guard.mjs",
+      "sha256": "fbda8148d7be37cc311b4ca91bdaf984478b28b05e0aba34d8bf7293fd3ad510",
+      "role": "existing-runtime-contract-verify-only",
+      "gitBlobSha": "5a408f65ac2bd3412097c8fc7b259a7fac3cb9b5"
+    },
+    {
+      "path": "payload/scripts/pc-writer/run-local.mjs",
+      "sha256": "3c607715e4c0fab420cbf948d253e75f2e7f7301f84cee500c937eca1df313dc",
+      "role": "reference-only-pinned-main",
+      "gitBlobSha": "918f7ce694ff967bd9e4fd940bf8ed3fb8f871dd"
+    },
+    {
+      "path": "payload/tests/asset-r10-sidecar-auto-publication-r1.test.mjs",
+      "sha256": "a64e7d5b9e219110fd623cef55ffeea2d935398b6e927055b474822e078727ff",
+      "role": "runtime-regression-test",
+      "gitBlobSha": "a12706caa16266ff8509346901a1f0d64a9cc996"
+    },
+    {
+      "path": "payload/worker/asset-bubble-r10-history-r1.mjs",
+      "sha256": "1552911bcd47ed7d6a306899cd34b5a39a4bab88abb4dc3f4a673a370e227712",
+      "role": "install-if-missing-else-verify-exact",
+      "gitBlobSha": "6749a1f6a767a3a5f5cda3258870f46658cb8640"
+    },
+    {
+      "path": "payload/worker/asset-bubble-r10-raw-r1.mjs",
+      "sha256": "2597131e41d28572d092fb51d4921335b9fb3f51416ffc05a7684acffa6493b7",
+      "role": "install-if-missing-else-verify-exact",
+      "gitBlobSha": "35c321df10b90072cec044abe181d180aa2c349e"
+    },
+    {
+      "path": "payload/worker/market-public-projection-store.mjs",
+      "sha256": "fcd3987be265986ef6576ec9a4e2894dec4b7bef27ab1781ce586c98593e4881",
+      "role": "install-if-missing-else-verify-exact",
+      "gitBlobSha": "9c3057b2b8836ebb44ee59803b722e365a073b72"
+    },
+    {
+      "path": "payload/worker/public-display-freshness.mjs",
+      "sha256": "83f374589e94ba8bf94475f122ef323b8bce566a42aded166a1ff80bc6b4b964",
+      "role": "install-if-missing-else-verify-exact",
+      "gitBlobSha": "c6614ab73d4fe322e7901119b512ba908deb7f6d"
+    },
+    {
+      "path": "r10-ops.mjs",
+      "sha256": "2a214c15b1c9e9e6560316815dce6254cde4c83002db1e87bfe605b5e556e164",
+      "role": "runner-and-integrity"
+    },
+    {
+      "path": "README_KO.txt",
+      "sha256": "aea3e949c209eff3131dab700b51ca0e8d18cf513b895eccd011a848812ea94a",
+      "role": "runner-and-integrity"
+    },
+    {
+      "path": "RUN_INSTALL.cmd",
+      "sha256": "11a74598f478b8c4dab4675f3e19a5f7c356d0ffa631c9ac7da6f1842495ccd6",
+      "role": "runner-and-integrity"
+    },
+    {
+      "path": "RUN_PREFLIGHT.cmd",
+      "sha256": "94439cc18381bb9bff49cd47f8f059891475d588dfc73a8cda0039c76bcdf6a8",
+      "role": "runner-and-integrity"
+    },
+    {
+      "path": "RUN_VERIFY.cmd",
+      "sha256": "d8fd69b121e41866882db72e831e1c02773e2f3baf44b61aa215578a4baec508",
+      "role": "runner-and-integrity"
+    },
+    {
+      "path": "tests/fixtures/run-local-pr893-base.mjs",
+      "sha256": "679229f5e53ba7e30b3a2dba15f9938d6c525d3324903afee909a9b169196d05",
+      "role": "package-test"
+    },
+    {
+      "path": "tests/r10-cmd-helper.test.mjs",
+      "sha256": "b0d07fb9d1db0f00b432ac365337e688c3859c116abd01840234e665a00081d2",
+      "role": "package-test"
+    },
+    {
+      "path": "windows-runtime-readonly.vbs",
+      "sha256": "e27eb8877b612df0b1a78eca8264bda3df967a957a4a481c80ed71b921bbf039"
+    }
+  ],
+  "existingDependencyEolGate": {
+    "allowed": "byte-exact or exact UTF-8 content after only CRLF-to-LF equivalence",
+    "required": "pinned PR #893 package verified, tracked clean source, existing tracked files only",
+    "stop": "any other content/whitespace/encoding drift; never overwrite existing files"
+  },
+  "liveIdleEvidenceGate": {
+    "failure": "R10 Windows PREFLIGHT STATUS=READY_FOR_INSTALL with LOCK_STATUS=STOP_LOCK_PRESENT",
+    "remediation": "update lock and ledger from same final assertIdle snapshot; recheck all safety gates after expensive source checks and again on install; stop if any unsafe",
+    "protected": [
+      "approved SHA",
+      "existing schedule",
+      "lock file",
+      "data and D1",
+      "formula",
+      "publication guard"
+    ]
+  },
+  "nativeWindowsGate": {
+    "interface": "cscript VBScript TaskScheduler COM and WMI read only",
+    "noPowerShell": true,
+    "installWindowMarginSeconds": 230,
+    "maxWaitMinutes": 8,
+    "repeatInstallAttempts": 0
+  },
+  "nativeWindowsStdoutFix": {
+    "cause": "R12 cscript //B suppresses WScript.Echo TASK output; parser received no reliable rows",
+    "change": "//Nologo //T:15, no //B; all safety gates retained",
+    "executionProof": "OFFLINE_ONLY_WINDOWS_NOT_VERIFIED"
+  }
+}
