@@ -81,7 +81,9 @@ test('US-only 1D button and observed ranges reuse the current chart; Korea gets 
  assert.match(cnn,/<MarketPeriodControls[\s\S]*?includeOneDay\s*\/>/);
  assert.match(cnn,/observedRanges=\{observedRanges\}/);
  assert.match(cnn,/formatTooltipLabel=\{selectedPeriod==="1D"\|\|archiveHistory\.length>=2\?intradayLabel:dateLabel\}/);
-  assert.match(cnn,/archiveHistory\.length>=2\?archiveHistory:allIntraday/);
+  assert.match(cnn,/archiveHistory\.length>=2\?combinedObserved:allIntraday/);
+  assert.match(cnn,/daily\.filter\(point=>!observedDays\.has/);
+  assert.match(cnn,/const maxTime=end\?\?Number\.POSITIVE_INFINITY/);
  assert.doesNotMatch(kr,/includeOneDay/);
  assert.match(controls,/data-usa-one-day=/);
  assert.doesNotMatch(shared,/key:\s*["']1D["']/);
