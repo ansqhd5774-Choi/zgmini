@@ -66,8 +66,10 @@ function run(){
   fs.copyFileSync(path.join(source,file),output,fs.constants.COPYFILE_EXCL);
  }
  log('INSTALL','FILES_VERIFIED');
+ const entry=path.join(target,'us-scheduled.mjs');
+ const syntax=spawnSync(node,['--check',entry],{windowsHide:true,stdio:'ignore',timeout:10000});
+ if(syntax.status!==0)throw Error('INSTALLED_ENTRY_SYNTAX_FAILED');
  if(current.status!==0){
-  const entry=path.join(target,'us-scheduled.mjs');
   const command=`${node} ${entry}`;
   const created=spawnSync('schtasks.exe',['/Create','/SC','DAILY','/ST','21:00','/TN',TASK,'/TR',command],{
    windowsHide:true,encoding:'utf8',timeout:20000,
