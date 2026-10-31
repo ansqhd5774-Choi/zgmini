@@ -28,7 +28,10 @@ export function readR43LocalImportance({
  try{
   const file=path.join(base,R43_LOCAL_OUTPUT);
   if(!fs.existsSync(file)||fs.statSync(file).size>2_000_000)return null;
-  return r43ImportanceIndex(JSON.parse(fs.readFileSync(file,'utf8')),{now});
+  const data=JSON.parse(fs.readFileSync(file,'utf8'));
+  if(data?.sourceProvenance!=='APPROVED_PC_STORED_DATA'||
+    data?.sourceRightsReviewed!==true||data?.marketCapApiUsed!==false)return null;
+  return r43ImportanceIndex(data,{now});
  }catch{return null;}
 }
 
