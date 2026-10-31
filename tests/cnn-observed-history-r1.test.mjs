@@ -80,7 +80,8 @@ test('US-only 1D button and observed ranges reuse the current chart; Korea gets 
  const store=read('worker/public-feed-store.mjs');
  assert.match(cnn,/<MarketPeriodControls[\s\S]*?includeOneDay\s*\/>/);
  assert.match(cnn,/observedRanges=\{observedRanges\}/);
- assert.match(cnn,/selectedPeriod==="1D"\?intradayLabel:dateLabel/);
+ assert.match(cnn,/formatTooltipLabel=\{selectedPeriod==="1D"\|\|archiveHistory\.length>=2\?intradayLabel:dateLabel\}/);
+  assert.match(cnn,/archiveHistory\.length>=2\?archiveHistory:allIntraday/);
  assert.doesNotMatch(kr,/includeOneDay/);
  assert.match(controls,/data-usa-one-day=/);
  assert.doesNotMatch(shared,/key:\s*["']1D["']/);

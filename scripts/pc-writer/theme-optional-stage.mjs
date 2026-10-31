@@ -49,6 +49,7 @@ const FILES = Object.freeze([
   'worker/public-feed-store.mjs',
   'worker/public-feed-input-safety.mjs',
   'lib/cnn-index.mjs',
+  'lib/cnn-observed-archive-r1.mjs',
   'worker/public-display-freshness.mjs',
   'lib/market-score/theme-etf-provisional.mjs',
 ]);

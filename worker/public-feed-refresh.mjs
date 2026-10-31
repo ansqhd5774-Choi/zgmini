@@ -29,9 +29,13 @@ export async function refreshPublicFeeds({env,collectors,now=Date.now(),store,lo
     const body=await response.json();
     if(body.status==='fallback'||body.status==='FAILED'||body.status==='unavailable')throw Error('INVALID_OUTPUT');
     if(!acceptsStoredUpdate(previous?.body,body))throw Error('OBSERVATION_REGRESSION');
-    // The existing PC-stored public CNN output carries a bounded observed-score
-    // timeline. Other feeds, including Korea, retain their existing contract.
-    await store.writeOutput(key,key==='fear-greed'?mergeCnnObservedHistory(previous?.body,body,now):body,now);
+    // Archive only verified, distinct CNN observation timestamps. Do this
+    // before advancing the current snapshot, so failures can safely retry.
+    // Other feeds and Korean market data do not enter this archive.
+    const output=key==='fear-greed'?mergeCnnObservedHistory(previous?.body,body,now):body;
+    if(key==='fear-greed'&&typeof store.appendVerifiedObservations==='function')
+      await store.appendVerifiedObservations(output,now);
+    await store.writeOutput(key,output,now);
     await locks.finish(attempt,token,now,'COMPLETE');results.push({key,status:'COMPLETE'});
    }catch(error){await locks.finish(attempt,token,now,'FAILED');results.push({key,status:'FAILED',...(Array.isArray(error?.providerDiagnostics)?{providers:error.providerDiagnostics}: {})})}
   }}
