@@ -5,9 +5,10 @@ import {execFileSync,spawnSync} from 'node:child_process';
 import {DatabaseSync} from 'node:sqlite';
 import {fileURLToPath,pathToFileURL} from 'node:url';
 import {prepareUsBreadth,publishUsBreadth} from './scripts/pc-writer/market-breadth-us-r1.mjs';
+import {mayAuditStoredUsBreadth} from './manual-collector-policy.mjs';
 
 const source=path.dirname(fileURLToPath(import.meta.url));
-const reportPath=path.join(source,'US_BREADTH_PC_R5_MANUAL_RESULT.txt');
+const reportPath=path.join(source,'US_BREADTH_PC_R6_MANUAL_RESULT.txt');
 const home=process.env.ZGMINI_PC_HOME??'E:\\ZGmini\\data\\pc-writer';
 const root='E:\\ZGmini\\projects\\zgmini-earnings-history-pc-release';
 const result={at:new Date().toISOString(),mode:'MANUAL_ON_DEMAND',market:'US_ONLY',
@@ -64,11 +65,16 @@ async function run(){
   }).find(row=>row?.job==='breadth'&&typeof row?.status==='string');
   const latest=childReport??readJSON(path.join(home,'local-collection-last-run.json'));
   const at=Date.parse(latest?.at??'');
-  set('collectorJob',safeCode(latest?.job));
+  set('collectorJob',latest?.job==='breadth'?'breadth':'UNCLASSIFIED');
   set('collectorStatus',safeCode(latest?.status));
+  set('collectorSourceStatus',safeCode(latest?.sourceStatus));
+  if(typeof latest?.reason==='string')set('collectorReason',safeCode(latest.reason));
   if(latest?.job!=='breadth'||(!childReport&&(!Number.isFinite(at)||at<started-2000)))
     throw Error('COLLECTOR_RUN_NOT_VERIFIED');
-  if(latest.status!=='COMPLETE'){
+  // The approved collector intentionally skips a repeat of a successful B1 run.
+  // That is not evidence that the separate US counts were ever published.
+  // Only an audited latest-session snapshot below may authorize publication.
+  if(!mayAuditStoredUsBreadth(latest)){
     set('status','WAIT_COLLECTOR');
     return;
   }
@@ -76,6 +82,10 @@ async function run(){
   let db,prepared;
   try{
     db=new DatabaseSync(path.join(home,'storage','core.sqlite'),{readOnly:true});
+    try{
+      const prior=db.prepare('SELECT MAX(trade_date) latest FROM market_score_breadth_b1_r3_universe_v1').get();
+      set('latestStoredTradeDate',prior?.latest??null);
+    }catch{set('latestStoredTradeDate','UNAVAILABLE');}
     prepared=await prepareUsBreadth(adapter(db));
   }finally{try{db?.close();}catch{}}
   set('expectedDate',prepared.expectedDate??prepared.body?.observationDate??null);
@@ -103,7 +113,7 @@ async function run(){
 try{await run();}
 catch(error){set('status','FAILED');set('reason',safeCode(error?.message));process.exitCode=1;}
 finally{
-  const lines=['REPORT=US_BREADTH_PC_R5_MANUAL','MARKET=US_ONLY',
+  const lines=['REPORT=US_BREADTH_PC_R6_MANUAL','MARKET=US_ONLY',
     ...Object.entries(result).map(([key,value])=>`${key}=${String(value??'NULL').replace(/[\r\n]/g,' ').slice(0,150)}`)];
   try{fs.writeFileSync(reportPath,lines.join('\r\n')+'\r\n','utf8');}
   catch{process.exitCode=2;}
