@@ -16,6 +16,12 @@ const folder=path.dirname(fileURLToPath(import.meta.url));
 const reportPath=path.join(folder,'US_BREADTH_PC_R10_ONE_YEAR_BACKFILL_RESULT.txt');
 const evidencePath=path.join(folder,'US_BREADTH_PC_R9_HISTORY_COVERAGE_RESULT.txt');
 const evidenceSha256='4fc6688d326c21145a2c35ce3dbb951851b3a5bdbd507f8e64b271efe3dac47d';
+// R7/R8 ran these two pure R1 contract modules from the self-contained ZIP.
+// The approved PC checkout is independently versioned and need not contain them.
+const pinnedLocalModules={
+  'lib/market-breadth/compute.mjs':'25d50550b7e3ab8abadf90fc78e8dd3c3f37b6f7a0b72f2e0b11482c8c9c7c10',
+  'lib/market-breadth/us-public-r1.mjs':'f0b092af381413b8d7b02baf5750388cb384e9e53e6b3f3a362be781efe6382b',
+};
 const home=process.env.ZGMINI_PC_HOME??'E:\\ZGmini\\data\\pc-writer';
 const root=process.env.ZGMINI_PC_REPO??'E:\\ZGmini\\projects\\zgmini-earnings-history-pc-release';
 const tables={
@@ -27,7 +33,7 @@ const cols='trade_date,ticker,previous_date,previous_close,current_close,current
 const result={report:'US_BREADTH_PC_R10_ONE_YEAR_BACKFILL',atUTC:new Date().toISOString(),
   mode:'VERIFIED_STORED_DATA_DATED_KEYS_ONLY',pcSQLiteWritten:false,
   currentKeyWritten:false,collectorsRun:false,schedulerChanged:false,
-  market:'usa',runnerRevision:'R10_1_STAGE_DIAGNOSTIC',status:'STARTED'};
+  market:'usa',runnerRevision:'R10_2_PINNED_PACKAGE_MODULES',status:'STARTED'};
 const set=(key,value)=>{result[key]=value;};
 function save(){
   const lines=Object.entries(result).map(([key,value])=>`${key}=${String(value??'NULL').replace(/[\r\n\t]/g,' ').slice(0,350)}`);
@@ -79,6 +85,15 @@ function outsideScheduledWindow(){
   return kst<20*60+30||kst>21*60+30;
 }
 function sourceModule(rel){return import(pathToFileURL(path.join(root,...rel.split('/'))).href);}
+function packageModule(rel){
+  const expected=pinnedLocalModules[rel];
+  if(!expected)throw Error('PACKAGE_MODULE_NOT_ALLOWLISTED');
+  const file=path.join(folder,...rel.split('/'));
+  let body;
+  try{body=fs.readFileSync(file);}catch{throw Error('PACKAGE_MODULE_MISSING');}
+  if(createHash('sha256').update(body).digest('hex')!==expected)throw Error('PACKAGE_MODULE_SHA256_MISMATCH');
+  return import(pathToFileURL(file).href);
+}
 function hasTable(db,name){return Boolean(db.prepare("SELECT 1 FROM sqlite_master WHERE type='table' AND name=?").get(name));}
 function rows(db,name,date){return db.prepare(`SELECT ${cols} FROM ${name} WHERE trade_date=?`).all(date);}
 
@@ -99,7 +114,6 @@ async function execute(){
   try{
     execFileSync('git',['-C',root,'diff','--quiet','HEAD','--',
       'scripts/pc-writer/breadth-r10-v9-shadow/audit.mjs',
-      'lib/market-breadth/compute.mjs','lib/market-breadth/us-public-r1.mjs',
       'lib/market-score/breadth-b1-r3-calendar.mjs','scripts/pc-writer/d1.mjs'],{
       windowsHide:true,timeout:12000,stdio:['ignore','ignore','ignore'],
     });
@@ -108,10 +122,18 @@ async function execute(){
     throw Error('APPROVED_MODULE_GIT_CHECK_FAILED');
   }
   checkpoint('IMPORT_APPROVED_MODULES');
+  for(const [code,rel] of [
+    ['SOURCE_AUDIT','scripts/pc-writer/breadth-r10-v9-shadow/audit.mjs'],
+    ['MARKET_CALENDAR','lib/market-score/breadth-b1-r3-calendar.mjs'],
+    ['D1_CLIENT','scripts/pc-writer/d1.mjs'],
+  ]){
+    if(!fs.existsSync(path.join(root,...rel.split('/'))))throw Error(`APPROVED_${code}_MODULE_MISSING`);
+  }
+  set('moduleStrategy','PINNED_PACKAGE_FORMULA_AND_APPROVED_PC_AUDIT_CALENDAR_D1');
   const [{auditDay,eligibleRows},{calculateMarketBreadthCounts},contract,{latestCompletedSession},d1]=await Promise.all([
     sourceModule('scripts/pc-writer/breadth-r10-v9-shadow/audit.mjs'),
-    sourceModule('lib/market-breadth/compute.mjs'),
-    sourceModule('lib/market-breadth/us-public-r1.mjs'),
+    packageModule('lib/market-breadth/compute.mjs'),
+    packageModule('lib/market-breadth/us-public-r1.mjs'),
     sourceModule('lib/market-score/breadth-b1-r3-calendar.mjs'),
     sourceModule('scripts/pc-writer/d1.mjs'),
   ]);
