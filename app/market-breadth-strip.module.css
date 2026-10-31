@@ -1,0 +1,160 @@
+.root {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 4px;
+  height: 41px;
+  min-width: 0;
+  box-sizing: border-box;
+  padding: 5px var(--fg-shared-pad, 9px) 6px;
+  border-top: 1px solid var(--zg-border);
+  color: var(--zg-text);
+}
+
+.stats {
+  display: grid;
+  grid-template-columns: minmax(96px, 1.35fr) repeat(3, minmax(0, 1fr));
+  gap: 5px;
+  align-items: center;
+  min-width: 0;
+  height: 17px;
+}
+
+.heading {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+.heading strong {
+  font-size: 11px;
+  letter-spacing: -0.35px;
+  font-weight: 800;
+}
+
+.pending {
+  color: var(--zg-text-meta);
+  font-size: 9px;
+  font-weight: 500;
+}
+
+.stat {
+  display: flex;
+  align-items: baseline;
+  justify-content: flex-end;
+  gap: 2px;
+  white-space: nowrap;
+  min-width: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.symbol {
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.count {
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.percent {
+  font-size: 9px;
+  font-weight: 600;
+}
+
+.up, .rising { color: var(--zg-positive); }
+.flat, .unchanged { color: var(--zg-text-meta); }
+.down, .falling { color: var(--zg-danger); }
+
+.track {
+  display: flex;
+  position: relative;
+  width: 100%;
+  min-width: 0;
+  height: 8px;
+  overflow: hidden;
+  border-radius: 6px;
+  background: var(--zg-border);
+}
+
+.track > span {
+  position: relative;
+  display: block;
+  height: 100%;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.rising { background: var(--zg-positive); }
+.unchanged { background: var(--zg-text-meta); }
+.falling { background: var(--zg-danger); }
+
+.track::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  z-index: 1;
+  width: 2px;
+  background: var(--zg-text);
+  transform: translateX(-50%);
+}
+
+/* Only the dominant filled segment shines, always towards the middle. */
+.track[data-dominance="up"] .rising::before,
+.track[data-dominance="down"] .falling::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  pointer-events: none;
+  background: linear-gradient(90deg,
+    transparent 28%,
+    rgba(255,255,255,.18) 40%,
+    rgba(255,255,255,.85) 50%,
+    rgba(255,255,255,.18) 60%,
+    transparent 72%);
+}
+
+.track[data-dominance="up"] .rising::before {
+  animation: breadth-inward-up 4.2s linear infinite;
+}
+
+.track[data-dominance="down"] .falling::before {
+  animation: breadth-inward-down 4.2s linear infinite;
+}
+
+@keyframes breadth-inward-up {
+  0%, 6% { transform: translateX(-100%); opacity: 0; }
+  10% { opacity: .95; }
+  40% { transform: translateX(100%); opacity: .95; }
+  44%, 100% { transform: translateX(100%); opacity: 0; }
+}
+
+@keyframes breadth-inward-down {
+  0%, 6% { transform: translateX(100%); opacity: 0; }
+  10% { opacity: .95; }
+  40% { transform: translateX(-100%); opacity: .95; }
+  44%, 100% { transform: translateX(-100%); opacity: 0; }
+}
+
+@container fg-shared (max-width: 500px) {
+  .stats { grid-template-columns: minmax(78px, 1.2fr) repeat(3, minmax(0, 1fr)); gap: 3px; }
+  .heading strong { font-size: 10px; }
+  .pending { font-size: 8px; }
+  .count { font-size: 10px; }
+  .percent { display: none; }
+}
+
+@container fg-shared (max-width: 320px) {
+  .pending { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .track[data-dominance="up"] .rising::before,
+  .track[data-dominance="down"] .falling::before { animation: none; }
+}
