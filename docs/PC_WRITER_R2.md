@@ -17,7 +17,7 @@ Node 24 이상을 사용한다. `seed-local.mjs`는 기존 금융 테이블을 �
 
 `collect-local.mjs`는 기존 수집기를 로컬 SQLite에 연결한다. 한 번에 public feed 1개 또는 market job 1개이며, `--korea`는 기존 maxDates=1 규칙을 유지한다. 공급자 실패 때 마지막 정상 저장 자료를 유지한다.
 
-`run-local.mjs`는 키 없이 로컬 저장 데이터만 계산한다. 계산 중 네트워크 접근은 차단한다. `--publish`는 활성 설정·clean source와 승인 소스의 게시 계약 호환성을 요구한다. 전체 Git SHA 일치는 요구하지 않는다. `worker/`, `lib/`, 운영용 `scripts/pc-writer/`, package manifest/lock 변경은 검토 대상으로 보호한다. UI·콘텐츠·연구 backfill/backtest 변경은 게시를 막지 않는다. config.source와 로컬 origin/main 양쪽에 대해 게시 관련 파일을 비교한다. 원격 main 조회 실패 또는 로컬 origin/main 갱신 지연은 별도 상태이며 이 비교는 마지막으로 가져온 main 기준이다.
+`run-local.mjs`는 키 없이 로컬 저장 데이터만 계산한다. 계산 중 네트워크 접근은 차단한다. `--publish`는 활성 설정·clean source와 승인 소스의 게시 계약 호환성을 요구한다. 전체 Git SHA 일치는 요구하지 않는다. `worker/`, `lib/`, 운영용 `scripts/pc-writer/`, package manifest/lock 변경은 검토 대상으로 보호한다. UI·콘텐츠·연구 backfill/backtest 변경은 게시를 막지 않는다. 현재 구현의 publicationCompatibility는 실제 실행 소스와 config.source의 승인 소스 간 게시 관련 파일만 비교한다. 개발 origin/main의 차이를 운영 source drift로 오인하지 않는다. 승인 범위 밖의 실질적 실행 소스 변경은 차단한다.
 
 공개 점수, 상세 projection, public feed output, 한국시장 산출 snapshot만 원격에 게시하고 재조회한다. `SUBMITTING`이 남으면 원격 lease와 현재 시장 결과를 읽는다. 활성 게시가 있거나 read-back 실패/충돌이면 보류한다. 조회가 성공하면 기존 기록을 보존한 `READBACK_RECOVERED`로 전환하고 다음 게시에서 각 결과를 조정한다. 이것은 전체 게시 완료를 뜻하지 않는다. 최신 원격 시장/projection/feed는 덮어쓰지 않는다. 성공한 전체 게시만 VERIFIED다.
 
@@ -26,6 +26,8 @@ Node 24 이상을 사용한다. `seed-local.mjs`는 기존 금융 테이블을 �
 한국시장 snapshot은 FK가 참조하는 해당 날짜의 실제 로컬 COMPLETE 확인 메타데이터와 함께 원자적 batch로 게시한다. 원자료 종목 행은 업로드하지 않는다. 확인 메타데이터가 없으면 임의 count/date를 생성하지 않고 실패한다. 기존 날짜 기록은 덮어쓰지 않는다.
 
 `local-cycle.mjs`는 단일 PID 잠금으로 수집과 계산·게시를 순서대로 실행한다. `quota-runner.mjs`는 이 실행 경로를 감싸 수집·게시 결과를 기록한다. 실제 진입점은 현재 등록 작업·launcher·config로 확인한다.
+
+**Core 5분 잠금/설치 충돌·COM 조회 실패·보조 lane 연결·실행기 드리프트**를 진단할 때는 [PC Core 5분 충돌 대응 Runbook](PC_CORE_5MIN_CONFLICT_RUNBOOK.md)을 우선 적용한다. 2026-10-31 R7은 최초 로컬 저장·D1 재조회까지 성공했으나 정규 실행의 지속 누적은 별도 검증 대상이다.
 
 `install-local.mjs`는 같은 SHA의 실제 VERIFIED 결과 이후에만 Windows 예약 작업을 등록한다. 현재 설치 코드는 `local-cycle.mjs` launcher를 생성하므로, 운영 quota runner launcher를 유지보수 목적으로 재등록하는 도구로 실행하지 않는다. `install.mjs`는 이전 writer 설치용이며 이전 경로 수정 목적으로 실행하지 않는다.
 
