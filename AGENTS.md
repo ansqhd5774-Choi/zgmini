@@ -249,6 +249,10 @@ candidate -> Production 전환 전 모두 PASS:
 - 개인 PC 경로는 운영 배치 기록이며 모든 환경의 하드코딩 기본값이 아니다. 기존 경로 설정과 junction 호환을 보존한다.
 - 경로 이전만으로 운영 source·산식·TTL·DB 구조·작업 주기·배포·DNS를 변경하지 않는다.
 
+## 20-1. PC Core 5분 충돌·잠금 대응 (2026-10-31 검증 기록)
+- Core 5분 정규 작업과 수동/보조 작업의 충돌 대응은 [docs/PC_CORE_5MIN_CONFLICT_RUNBOOK.md](docs/PC_CORE_5MIN_CONFLICT_RUNBOOK.md)를 **먼저 확인**한다. R4~R7 원인·최소 확인 절차·별도 lock 대안·등록 Task 실제 실행기 추적·D1 readback 및 정규 재검증을 명시한다.
+- 잠금 파일 임의 삭제·Core PID 강제 종료·원치 않는 예약 작업 재등록/활성화·개발 main으로 운영 소스 자동 교체 금지. R7 초기 저장/D1 게시 성공을 이후 15분 자동 누적 PASS로 확대하지 않는다.
+
 ## 21. 테마 추가·자동 갱신 인수인계
 - 테마 작업은 `docs/THEME_DATA_OPERATIONS.md`와 `config/theme-data-registry.json`을 따른다.
 - 수집기·계산기·게시기·테스트는 GitHub에 저장하고, 실행 PC의 승인 SHA 및 실행 파일 경로를 별도로 기록한다. 채팅 첨부 ZIP이나 임시 폴더만을 유일한 소스로 두지 않는다.
