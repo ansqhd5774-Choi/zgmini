@@ -1,10 +1,25 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+import {createHash} from 'node:crypto';
 import {publishDatedBreadthOnly} from '../tools/us-market-breadth-r1/history-backfill-r10-core.mjs';
 import {validUsBreadthRecord,US_BREADTH_DAILY_KEY_PREFIX,US_BREADTH_CURRENT_KEY,US_BREADTH_SOURCE}
   from '../lib/market-breadth/us-public-r1.mjs';
 
 const now=Date.parse('2026-10-31T06:00:00Z');
+
+test('R10.2 pins the same packaged calculation and contract modules used by R7/R8',()=>{
+  const runner=readFileSync(new URL('../tools/us-market-breadth-r1/history-backfill-r10.mjs',import.meta.url),'utf8');
+  for(const relative of ['compute.mjs','us-public-r1.mjs']){
+    const path=`lib/market-breadth/${relative}`;
+    const content=readFileSync(new URL(`../${path}`,import.meta.url));
+    const sha=createHash('sha256').update(content).digest('hex');
+    assert.ok(runner.includes(`'${path}':'${sha}'`),`unpinned package file: ${path}`);
+    assert.ok(runner.includes(`packageModule('${path}')`));
+    assert.ok(!runner.includes(`sourceModule('${path}')`));
+  }
+  assert.match(runner,/PINNED_PACKAGE_FORMULA_AND_APPROVED_PC_AUDIT_CALENDAR_D1/);
+});
 function record(date,up=250){
   return {version:1,universe:'SP500',source:US_BREADTH_SOURCE,
     calculatedAt:new Date(now).toISOString(),market:'usa',
