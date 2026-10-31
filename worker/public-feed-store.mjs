@@ -1,5 +1,6 @@
 import {PUBLIC_DISPLAY_MAX_AGE_MS} from './public-display-freshness.mjs';
 import {assertFeedInput,assertFeedOutput} from './public-feed-input-safety.mjs';
+import {CNN_OBSERVED_ARCHIVE_KEY,mergeCnnArchivedDay,groupVerifiedCnnObservations} from '../lib/cnn-observed-archive-r1.mjs';
 // Public reads have no collector dependency and never initialize or write tables.
 export const FEED_POLICY=Object.freeze({
  'fear-greed':{intervalMs:15*60000,maxAgeMs:PUBLIC_DISPLAY_MAX_AGE_MS},
@@ -23,6 +24,24 @@ export function publicFeedStore(db){
   readInput:key=>read('input',key), readOutput:key=>read('output',key),
   readAttempt:key=>read('attempt',key),writeAttempt:(key,now)=>write('attempt',key,{status:'ATTEMPTED'},now),
   writeInput:(key,body,now)=>write('input',key,body,now),writeOutput:(key,body,now)=>write('output',key,body,now),
+  // Uses the already-existing table in PC core.sqlite; no new DB schema or
+  // additional provider request. Only observed public scores enter this lane.
+  async appendVerifiedObservations(body,now){
+   const groups=groupVerifiedCnnObservations(body,now);
+   let appended=0;
+   for(const [date,points] of groups){
+    const row=await db.prepare("SELECT body FROM public_feed_snapshots_v1 WHERE kind='output' AND feed_key=? AND snapshot_key=?")
+      .bind(CNN_OBSERVED_ARCHIVE_KEY,date).first();
+    const merged=mergeCnnArchivedDay(row?JSON.parse(row.body):null,date,points,now);
+    if(!merged.changed)continue;
+    const encoded=JSON.stringify(merged.body);
+    if(new TextEncoder().encode(encoded).length>1800000)throw Error('CNN_ARCHIVE_STORAGE_LIMIT');
+    await db.prepare("INSERT INTO public_feed_snapshots_v1(kind,feed_key,snapshot_key,body,stored_at) VALUES('output',?,?,?,?) ON CONFLICT(kind,feed_key,snapshot_key) DO UPDATE SET body=excluded.body,stored_at=excluded.stored_at WHERE excluded.stored_at>=public_feed_snapshots_v1.stored_at")
+      .bind(CNN_OBSERVED_ARCHIVE_KEY,date,encoded,now).run();
+    appended+=1;
+   }
+   return {updatedDays:appended};
+  },
  };
 }
 export async function readPublicFeedHealth(db){
