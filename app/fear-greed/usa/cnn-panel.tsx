@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { DEFAULT_MARKET_PERIOD, getMarketPeriodConfig, type MarketPeriod } from "../../market-card-shared";
 import { MarketPeriodControls } from "../../market-period-controls";
 import { FearGreedCardShell } from "../../fear-greed-card-shell";
@@ -464,8 +464,22 @@ function buildMarketInsight({
 export default function CnnPanel({ showEducation = false, showBreadth = false }: { showEducation?: boolean; showBreadth?: boolean }) {
   const {payload,loading}=useStoredIndex<IndexPayload>("/api/fear-greed");
   const [selectedPeriod, setSelectedPeriod] = useState<UsaPeriod>(DEFAULT_MARKET_PERIOD);
-
-
+  // Stored public-score archive, never a provider fetch. The current 1D and
+  // daily charts remain available until a verified archive window is published.
+  const [archived, setArchived] = useState<{period: UsaPeriod; points: ObservedScorePoint[]}|null>(null);
+  useEffect(()=>{
+    const controller=new AbortController();
+    fetch(`/api/fear-greed/observations?period=${selectedPeriod}`,{signal:controller.signal})
+      .then(async response=>response.ok?response.json():null)
+      .then(data=>{
+        if(controller.signal.aborted)return;
+        setArchived(data?.status==="READY"&&data?.period===selectedPeriod&&Array.isArray(data.points)
+          ? {period:selectedPeriod,points:data.points}
+          : null);
+      })
+      .catch(()=>{if(!controller.signal.aborted)setArchived(null)});
+    return ()=>controller.abort();
+  },[selectedPeriod]);
 
 
   const score = typeof payload?.score === "number" && Number.isFinite(payload.score) ? payload.score : null;
@@ -474,17 +488,22 @@ export default function CnnPanel({ showEducation = false, showBreadth = false }:
   const allIntraday = useMemo(() => observedSidecarReady
     ? normalizeHistory((payload?.intradayObservations ?? []).map(point=>({timestamp:point.observedAt,score:point.score})))
     : [], [observedSidecarReady,payload?.intradayObservations]);
+  const archiveHistory=useMemo(() => archived?.period===selectedPeriod
+    ? normalizeHistory(archived.points.map(point=>({timestamp:point.observedAt,score:point.score})))
+    : [], [archived,selectedPeriod]);
   const history = useMemo(() => {
     if (selectedPeriod === "1D") {
-      const lastDay=allIntraday.at(-1)?.date.slice(0,10);
-      return lastDay ? allIntraday.filter(point=>point.date.slice(0,10)===lastDay) : [];
+      const intraday=archiveHistory.length>=2?archiveHistory:allIntraday;
+      const lastDay=intraday.at(-1)?.date.slice(0,10);
+      return lastDay ? intraday.filter(point=>point.date.slice(0,10)===lastDay) : [];
     }
+    if(archiveHistory.length>=2)return archiveHistory;
     const selected = getMarketPeriodConfig(selectedPeriod);
     const end = allHistory.at(-1)?.time;
     return end ? allHistory.filter((point) => point.time >= end - selected.days * 86400000) : allHistory;
-  }, [allHistory, allIntraday, selectedPeriod]);
+  }, [allHistory, allIntraday, archiveHistory, selectedPeriod]);
   const observedRanges = useMemo(() => {
-    if (!observedSidecarReady || selectedPeriod === "1D") return [];
+    if (!observedSidecarReady || selectedPeriod === "1D" || archiveHistory.length>=2) return [];
     const ranges = new Map((payload?.dailyObservedRanges ?? []).map(row=>[row.date,row]));
     return history.flatMap(point=>{
       const row=ranges.get(point.date.slice(0,10));
@@ -492,7 +511,7 @@ export default function CnnPanel({ showEducation = false, showBreadth = false }:
         && row.low.score>=0 && row.high.score<=100 && row.low.score<=row.high.score
         ? [{date:point.date,low:row.low.score,high:row.high.score}] : [];
     });
-  }, [observedSidecarReady,payload?.dailyObservedRanges,history,selectedPeriod]);
+  }, [observedSidecarReady,payload?.dailyObservedRanges,history,selectedPeriod,archiveHistory]);
 
   // CNN's previous_close is the authoritative baseline for a live score.
   // The most recent chart point can equal today's score.
@@ -673,7 +692,7 @@ export default function CnnPanel({ showEducation = false, showBreadth = false }:
         latestPoint={latestHistoryPoint}
         instanceKey={selectedPeriod}
         gradientId="cnn-fill"
-        formatTooltipLabel={selectedPeriod==="1D"?intradayLabel:dateLabel}
+        formatTooltipLabel={selectedPeriod==="1D"||archiveHistory.length>=2?intradayLabel:dateLabel}
         emptyLabel={selectedPeriod==="1D"?"시간별 관측값이 2개 이상 쌓이면 1일 추이가 표시됩니다":"이력 없음"}
       />}
       breadth={showBreadth && !showEducation ? <MarketBreadthStrip market="usa"/> : undefined}
