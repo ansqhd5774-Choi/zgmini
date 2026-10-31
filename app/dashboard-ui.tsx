@@ -248,7 +248,7 @@ export const CompositeMarketSection=memo(function CompositeMarketSection({demo}:
    <div className="zg-section-heading zg-r55-risk-heading zg-r55-risk-heading-desktop">{riskHeading}</div>
    <div className="zg-r55-header-controls">
    <div className="zg-r55-period" role="group" aria-label="종합 시장 점수 추이 기간" title={hasDatedHistory?'제공된 관측 마지막 날짜 기준':'날짜가 있는 추이 데이터 제공 시 이용 가능'}>
-    {[{label:'1일',days:1},...marketPeriods].map(p=><button key={p.label} type="button" disabled={!hasDatedHistory} aria-pressed={periodDays===p.days} onClick={()=>setPeriodDays(p.days)}>{p.label}</button>)}
+    {marketPeriods.map(p=><button key={p.label} type="button" disabled={!hasDatedHistory} aria-pressed={periodDays===p.days} onClick={()=>setPeriodDays(p.days)}>{p.label}</button>)}
    </div>
    <button type="button" className="zg-r55-expand" aria-label={expanded?'전체 접기':'전체 펼침'} title={expanded?'전체 접기':'전체 펼침'} aria-expanded={expanded} onClick={toggle}>
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M8 3H3v5M16 3h5v5M8 21H3v-5M16 21h5v-5"/></svg>
