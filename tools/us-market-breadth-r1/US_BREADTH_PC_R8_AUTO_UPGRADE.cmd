@@ -5,7 +5,7 @@ set "REPORT=%PACKAGE%US_BREADTH_PC_R8_AUTO_UPGRADE_RESULT.txt"
 if not exist "%PACKAGE%upgrade-auto-r8.mjs" goto missing_package
 if not exist "%PACKAGE%us-scheduled.mjs" goto missing_package
 if not exist "E:\ZGmini\runtime\node.exe" goto missing_node
-"E:\ZGmini\runtime\node.exe" "%PACKAGE%upgrade-auto-r8.mjs" "%PACKAGE%" > "%PACKAGE%US_BREADTH_PC_R8_AUTO_NODE_OUTPUT.txt" 2>&1
+"E:\ZGmini\runtime\node.exe" "%PACKAGE%upgrade-auto-r8.mjs" > "%PACKAGE%US_BREADTH_PC_R8_AUTO_NODE_OUTPUT.txt" 2>&1
 set "CODE=%ERRORLEVEL%"
 if not exist "%REPORT%" > "%REPORT%" echo REPORT=US_BREADTH_PC_R8_AUTO_UPGRADE_LAUNCH
 >> "%REPORT%" echo LAUNCH_EXIT_CODE=%CODE%
