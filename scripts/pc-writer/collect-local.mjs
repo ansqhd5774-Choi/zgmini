@@ -10,11 +10,17 @@ import {collectConsumptionR5} from './consumption-r5.mjs';
 import {overdueRateJob} from './rate-refresh-priority.mjs';
 import {collectSectorFearGreedR3EtfIncremental} from './sector-fear-greed-r3-etf-incremental.mjs';
 import {collectReleaseCalendar} from './release-calendar.mjs';
+import {captureR45MarketParquetPair} from './market-calendar-r45-marketparquet-capture.mjs';
 
 export async function collectLocal(base,{lane='core',importOnly=false,job=null}={}){
  const core=localDatabase(path.join(base,'storage','core.sqlite'));
  const history=localDatabase(path.join(base,'storage','history.sqlite'));
  const env={...loadLocalProviders(base),DB:core,DB_CORE:core,DB_HISTORY:history,ZGMINI_COMPUTE_TARGET:'pc'};
+ let r45Capture={status:'NOT_OBSERVED'};
+ env.R45_MARKETPARQUET_SNAPSHOT_OBSERVER=async snapshot=>{
+  try{r45Capture=captureR45MarketParquetPair({base,...snapshot});}
+  catch{r45Capture={status:'R45_CAPTURE_FAILED_PRESERVE_B1'};}
+ };
  const hooks=installLocalRuntime(env);
  const originalFetch=globalThis.fetch,providers={};
  const quota=createQuotaFetch({base,originalFetch});
@@ -51,6 +57,10 @@ export async function collectLocal(base,{lane='core',importOnly=false,job=null}=
   }
   // Reports contain statuses only; provider URLs, credentials, and exception messages are excluded.
   const report={at:new Date().toISOString(),lane,status:result.status,job:result.job??null,attempted:result.attempted??null,feeds:result.feeds?.map(({key,status})=>({key,status})),sectorFearGreedEtf:{status:sectorFearGreedEtf.status,providerRequests:sectorFearGreedEtf.providerRequests??0,commonLatest:sectorFearGreedEtf.commonLatest??null,code:sectorFearGreedEtf.code??sectorFearGreedEtf.error??null},providers,quota:quota.summary()};
+  report.marketCalendarR45={status:r45Capture.status,previous:r45Capture.previous?.status??null,
+   current:r45Capture.current?.status??null,previousTickerCount:r45Capture.previous?.tickerCount??null,
+   currentTickerCount:r45Capture.current?.tickerCount??null,providerCallsAdded:0,
+   dbWrites:0,remoteWrites:0,published:false};
   for(const key of ['phase','reason','sourceStatus'])if(typeof result?.[key]==='string'&&/^[A-Za-z0-9_.:-]{1,120}$/.test(result[key]))report[key]=result[key];
   report.releaseCalendar=releaseCalendar;
   save(path.join(base,'local-collection-last-run.json'),report);
