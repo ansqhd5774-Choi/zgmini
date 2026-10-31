@@ -23,6 +23,7 @@ type HistoryPoint = {
 
 type UsaPeriod = MarketPeriod | "1D";
 type ObservedScorePoint = { observedAt: string; score: number };
+type CheckedScorePoint = {checkedAt:string;sourceObservedAt:string;score:number};
 type ObservedDailyRange = {
   date: string;
   first: ObservedScorePoint;
@@ -466,16 +467,16 @@ export default function CnnPanel({ showEducation = false, showBreadth = false }:
   const [selectedPeriod, setSelectedPeriod] = useState<UsaPeriod>(DEFAULT_MARKET_PERIOD);
   // Stored public-score archive, never a provider fetch. The current 1D and
   // daily charts remain available until a verified archive window is published.
-  const [archived, setArchived] = useState<{period: UsaPeriod; points: ObservedScorePoint[]}|null>(null);
+  const [archived, setArchived] = useState<{period: UsaPeriod; points: ObservedScorePoint[]; checkedPoints: CheckedScorePoint[]}|null>(null);
   useEffect(()=>{
     const controller=new AbortController();
     fetch(`/api/fear-greed/observations?period=${selectedPeriod}`,{signal:controller.signal})
       .then(async response=>response.ok?response.json():null)
       .then((response:unknown)=>{
         if(controller.signal.aborted)return;
-        const data=response as {status?:string;period?:string;points?:ObservedScorePoint[]} | null;
+        const data=response as {status?:string;period?:string;points?:ObservedScorePoint[];checkedPoints?:CheckedScorePoint[]} | null;
         setArchived(data?.status==="READY"&&data?.period===selectedPeriod&&Array.isArray(data.points)
-          ? {period:selectedPeriod,points:data.points}
+          ? {period:selectedPeriod,points:data.points,checkedPoints:Array.isArray(data.checkedPoints)?data.checkedPoints:[]}
           : null);
       })
       .catch(()=>{if(!controller.signal.aborted)setArchived(null)});
@@ -489,8 +490,12 @@ export default function CnnPanel({ showEducation = false, showBreadth = false }:
   const allIntraday = useMemo(() => observedSidecarReady
     ? normalizeHistory((payload?.intradayObservations ?? []).map(point=>({timestamp:point.observedAt,score:point.score})))
     : [], [observedSidecarReady,payload?.intradayObservations]);
+  // After two real successful PC feed checks, the 1D/long-term chart uses their checkedAt time.
+  // CNN sourceObservedAt stays separate and is never invented or rewritten.
   const archiveHistory=useMemo(() => archived?.period===selectedPeriod
-    ? normalizeHistory(archived.points.map(point=>({timestamp:point.observedAt,score:point.score})))
+    ? normalizeHistory((archived.checkedPoints.length>=2
+        ? archived.checkedPoints.map(point=>({timestamp:point.checkedAt,score:point.score}))
+        : archived.points.map(point=>({timestamp:point.observedAt,score:point.score}))))
     : [], [archived,selectedPeriod]);
   // Archive is an addition to existing real daily closes, not a replacement.
   // When an intraday date exists, use its real individual points instead of
@@ -502,7 +507,8 @@ export default function CnnPanel({ showEducation = false, showBreadth = false }:
   const history = useMemo(() => {
     if (selectedPeriod === "1D") {
       const intraday=archiveHistory.length>=2?combinedObserved:allIntraday;
-      const lastDay=allIntraday.at(-1)?.date.slice(0,10)??intraday.at(-1)?.date.slice(0,10);
+      const lastDay=archived?.checkedPoints?.length>=2?archiveHistory.at(-1)?.date.slice(0,10)
+        : (allIntraday.at(-1)?.date.slice(0,10)??intraday.at(-1)?.date.slice(0,10));
       return lastDay ? intraday.filter(point=>point.date.slice(0,10)===lastDay) : [];
     }
     const selected = getMarketPeriodConfig(selectedPeriod);
