@@ -2805,6 +2805,7 @@ html,body{overflow-x:hidden}
 .fg-card.fg-shared-shell .fg-period-slot .cnn-period-button:nth-child(3)::after{content:"3M"}
 .fg-card.fg-shared-shell .fg-period-slot .cnn-period-button:nth-child(4)::after{content:"6M"}
 .fg-card.fg-shared-shell .fg-period-slot .cnn-period-button:nth-child(5)::after{content:"1Y"}
+.fg-card.fg-shared-shell .fg-period-slot .cnn-period-toolbar[data-usa-one-day="true"] .cnn-period-button::after{content:attr(data-period-short)}
 .fg-card.fg-shared-shell .fg-period-slot .cnn-period-button[aria-pressed=true]::after{font-weight:900}
 
 /* Default / wide card mode: vertical rail on the right.
