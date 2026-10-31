@@ -68,7 +68,7 @@ test('R3 shadow report can validate a matching attack without writing R5',async(
  assert.ok(!JSON.stringify(preview).includes(quote));
 });
 
-test('confirmed fatality-first headline remains staged without bypassing original R5 collection gate',async t=>{
+test('confirmed fatality-first headline stays read-only without bypassing original R5 collection gate',async t=>{
  const tempDir=fs.mkdtempSync(path.join(os.tmpdir(),'iran-r3-casualty-r5-'));
  const store=openStore(path.join(tempDir,'iran.sqlite'));
  t.after(()=>{store.close();fs.rmSync(tempDir,{recursive:true,force:true});});
@@ -87,13 +87,14 @@ test('confirmed fatality-first headline remains staged without bypassing origina
  const plan=planPublishedNewsInput(store,feed,null,args);
  assert.equal(plan.planned.length,1);
  assert.equal(plan.articleResults[0].rule,'MILITARY_ATTACK');
- applyPublishedNewsInput(store,plan,{now:at,dryRun:false});
+ assert.throws(()=>applyPublishedNewsInput(store,plan,{now:at,dryRun:false}),
+  /IRAN_PUBLISHED_NEWS_OPERATIONAL_WRITE_NOT_APPROVED/);
  store.checkpoint('score-news-input-last-run-r1',{version:'IRAN_SCORE_NEWS_INPUT_R1',
   freshnessEligible:true,collectionCheckedAt:at,checkedAt:at,sourcesVerifiedThisRun:7});
  assert.throws(()=>calculateOperationalR5(store,{now:at}),/R5_SOURCE_COLLECTION_UNREADY/);
- applyPublishedNewsInput(store,planPublishedNewsInput(store,feed,null,
-  {...args,now:at+1000}),{now:at+1000,dryRun:false});
- assert.equal(store.db.prepare("SELECT COUNT(*) AS n FROM sources WHERE id LIKE 'news-metadata:%'").get().n,1);
+ assert.throws(()=>applyPublishedNewsInput(store,planPublishedNewsInput(store,feed,null,
+  {...args,now:at+1000}),{now:at+1000,dryRun:false}),/OPERATIONAL_WRITE_NOT_APPROVED/);
+ assert.equal(store.db.prepare("SELECT COUNT(*) AS n FROM sources WHERE id LIKE 'news-metadata:%'").get().n,0);
  assert.throws(()=>calculateOperationalR5(store,{now:at+2000}),/R5_SOURCE_COLLECTION_UNREADY/);
 });
 

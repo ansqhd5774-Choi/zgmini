@@ -3,7 +3,7 @@ import os from 'node:os';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {randomUUID} from 'node:crypto';
-import {openStore} from './store.mjs';
+import {openStore,hash} from './store.mjs';
 import {storedR3Candidates,resolveR3Events} from './operate-r3.mjs';
 import {R3_FEEDS} from './continuous-news-r3.mjs';
 import {CLASSIFIER_VERSION,classifyR3Article} from '../../lib/iran-progress/reference-flow-r3.mjs';
@@ -69,7 +69,7 @@ export function assertR5ProvisionalPublicationReady(shadow,body,{now=Date.now()}
     body.acceptedEventCount!==shadow.eventCount)
   throw Error('R5_PROVISIONAL_PUBLICATION_GATE_FAILED');
 }
-export function calculateOperationalR5(store,{now=Date.now(),evidencePolicy='BALANCED_REPORTED_STAGES_R5_2'}={}){
+function calculateR5FromStore(store,{now=Date.now(),evidencePolicy='BALANCED_REPORTED_STAGES_R5_2'}={},previewArticles=[]){
  const checkpoint=store.getCheckpoint('continuous-news-last-run-r3');
  const checked=checkpoint?.lastDiscoverySuccessAt;
  if(!Number.isSafeInteger(checked)||checked>now||now-checked>86400000||
@@ -79,7 +79,14 @@ export function calculateOperationalR5(store,{now=Date.now(),evidencePolicy='BAL
   new Set(checkpoint.feeds.map(f=>f.id)).size!==R3_FEEDS.length||
   !['UPDATED','ANALYZED_NO_CHANGE','NO_NEW_ARTICLES'].includes(checkpoint.status))
   throw Error('R5_SOURCE_COLLECTION_UNREADY');
- const articles=storedR3Candidates(store),resolution=resolveR3Events(articles);
+ const stored=storedR3Candidates(store);
+ // Extra news exists only in this read-only calculation. It must never be
+ // persisted as an R3 receipt, passed to the publish CLI or treated as fresh
+ // discovery evidence.
+ const articles=[...stored,...previewArticles.map(article=>classifyR3Article(article))];
+ if(articles.slice(stored.length).some(event=>event.accepted!==true))
+  throw Error('R5_PREVIEW_ARTICLE_NOT_CLASSIFIED');
+ const resolution=resolveR3Events(articles);
  const unique=independentlyCorroboratedR5Positives(resolution.accepted,articles);
  const firstSeen=new Map(),revisionCount=new Map(),versionsByUrl=new Map();
  for(const row of store.db.prepare("SELECT body,stored_at FROM sources WHERE id LIKE 'news-metadata:%' ORDER BY stored_at,id").all()){
@@ -92,6 +99,12 @@ export function calculateOperationalR5(store,{now=Date.now(),evidencePolicy='BAL
    const versions=versionsByUrl.get(a.sourceUrl)??[];
    versions.push(a);versionsByUrl.set(a.sourceUrl,versions);
   }
+ }
+ for(const article of previewArticles){
+  if(firstSeen.has(article.sourceUrl)||revisionCount.has(article.sourceUrl))
+   throw Error('R5_PREVIEW_EXISTING_URL_REQUIRES_REVIEW');
+  firstSeen.set(article.sourceUrl,now);
+  revisionCount.set(article.sourceUrl,1);
  }
  if(unique.length===0)throw Error('R5_NO_STORED_ACCEPTED_EVENTS');
  if(unique.some(e=>!firstSeen.has(e.sourceUrl)))
@@ -116,6 +129,33 @@ export function calculateOperationalR5(store,{now=Date.now(),evidencePolicy='BAL
   sourceStoredAt:Math.max(...input.map(e=>e.sourceStoredAt)),
  });
  return {body,shadow};
+}
+export function calculateOperationalR5(store,options={}){
+ return calculateR5FromStore(store,options);
+}
+/** Opt-in, in-memory R5 comparison. Never writes a source, checkpoint or D1. */
+export function previewOperationalR5WithEnglishEvidence(store,planned,{now=Date.now(),
+ evidencePolicy='BALANCED_REPORTED_STAGES_R5_2'}={}){
+ if(!Array.isArray(planned)||planned.length>50||!Number.isSafeInteger(now))
+  throw Error('R5_PREVIEW_INPUT_INVALID');
+ const urls=new Set();
+ const articles=planned.map(candidate=>{
+  const article=candidate?.article;
+  if(typeof article?.sourceUrl!=='string'||urls.has(article.sourceUrl)||
+   typeof article.title!=='string'||article.summary!==''||
+   article.claimVerification!=='SINGLE_SOURCE_REPORT'||
+   candidate.receiptHash!==hash(article)||
+   !Number.isSafeInteger(Date.parse(article.date+'T00:00:00Z')))
+   throw Error('R5_PREVIEW_RECEIPT_INVALID');
+  urls.add(article.sourceUrl);
+  return article;
+ });
+ const baseline=calculateOperationalR5(store,{now,evidencePolicy});
+ if(!articles.length)return {baseline,projected:baseline,previewArticleCount:0,
+  publicWrite:false,checkpointWrite:false};
+ const projected=calculateR5FromStore(store,{now,evidencePolicy},articles);
+ return {baseline,projected,previewArticleCount:articles.length,
+  publicWrite:false,checkpointWrite:false};
 }
 if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.url)){
  const mode=process.argv[2];

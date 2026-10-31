@@ -124,19 +124,12 @@ export function planPublishedNewsInput(store,r41,r1,{now=Date.now(),
 }
 export function applyPublishedNewsInput(store,plan,{now=Date.now(),dryRun=true}={}){
  if(dryRun)return plan;
- store.db.exec('BEGIN IMMEDIATE');
- try{
-  for(const item of plan.planned){
-   store.putSource(item.id,item.article,now);
-   const provenance={version:plan.version,endpoint:plan.endpoint,snapshotHash:plan.snapshotHash,
-    receiptHash:item.receiptHash,publisherPublishedAt:item.publisherPublishedAt};
-   store.putSource('score-published-news-provenance:'+hash(provenance),provenance,now);
-  }
-  const {planned,...report}=plan;
-  store.checkpoint(PUBLISHED_NEWS_CHECKPOINT,report);
-  store.db.exec('COMMIT');
- }catch(error){store.db.exec('ROLLBACK');throw error;}
- return plan;
+ // R5's live reader scans ALL news-metadata:* receipts. Inserting a published
+ // article here would silently bypass English-source proof when the unrelated
+ // R3 collector later becomes healthy. Only the read-only R6 projection may
+ // consume this plan until a separately approved, provenance-gated promotion
+ // path exists. Keep all operational tables/checkpoints unchanged.
+ throw Error('IRAN_PUBLISHED_NEWS_OPERATIONAL_WRITE_NOT_APPROVED');
 }
 export async function readPublishedNews({now=Date.now(),fetchImpl=fetch}={}){
  const read=async endpoint=>{

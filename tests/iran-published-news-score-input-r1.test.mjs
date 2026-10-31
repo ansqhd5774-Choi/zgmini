@@ -64,11 +64,12 @@ test('confirmed English proof can be staged but never bypasses original R5 colle
  assert.equal(plan.planned.length,1);
  assert.equal(plan.planned[0].article.title,a.title);
  assert.equal(plan.aiScorePolicy,strict.aiScorePolicy);
- applyPublishedNewsInput(store,plan,{now,dryRun:false});
+ assert.throws(()=>applyPublishedNewsInput(store,plan,{now,dryRun:false}),
+  /IRAN_PUBLISHED_NEWS_OPERATIONAL_WRITE_NOT_APPROVED/);
  store.checkpoint('score-news-input-last-run-r1',{version:'IRAN_SCORE_NEWS_INPUT_R1',
   freshnessEligible:true,collectionCheckedAt:now,checkedAt:now,sourcesVerifiedThisRun:7});
  assert.throws(()=>calculateOperationalR5(store,{now}),/R5_SOURCE_COLLECTION_UNREADY/);
- assert.equal(store.db.prepare("SELECT COUNT(*) AS n FROM sources WHERE id LIKE 'news-metadata:%'").get().n,1);
+ assert.equal(store.db.prepare("SELECT COUNT(*) AS n FROM sources WHERE id LIKE 'news-metadata:%'").get().n,0);
 });
 test('failed or empty published responses never fall back to private candidates or mutate checkpoints',async t=>{
  const store=fixture(t);store.checkpoint(PUBLISHED_NEWS_CHECKPOINT,{version:'IRAN_PUBLISHED_NEWS_SCORE_INPUT_R1',cutoverAt:now,baselineEventKeys:[],admittedUrls:[]});
@@ -77,55 +78,58 @@ test('failed or empty published responses never fall back to private candidates 
  assert.throws(()=>planPublishedNewsInput(store,null,r1([]),{now}),/EMPTY/);
  assert.deepEqual(store.getCheckpoint(PUBLISHED_NEWS_CHECKPOINT),before);
 });
-test('published admission survives display expiry while R5 source health gate remains closed',t=>{
+test('published admission is planned without R5 persistence while the source gate remains closed',t=>{
  const store=fixture(t),a=item();
- applyPublishedNewsInput(store,planPublishedNewsInput(store,r41([a]),null,{now}),{now,dryRun:false});
+ assert.deepEqual(planPublishedNewsInput(store,r41([a]),null,{now}).admittedUrls,[a.sourceUrl]);
  store.checkpoint('score-news-input-last-run-r1',{version:'IRAN_SCORE_NEWS_INPUT_R1',freshnessEligible:true,collectionCheckedAt:now,checkedAt:now,sourcesVerifiedThisRun:7});
  assert.throws(()=>calculateOperationalR5(store,{now}),/R5_SOURCE_COLLECTION_UNREADY/);
  const privateArticle={sourceUrl:'https://www.gov.uk/government/news/private-attack',title:'Iran fired missiles at Saudi base',summary:'',date:'2026-10-29'};
  store.putSource('news-metadata:'+hash(privateArticle),privateArticle,now+1);
  assert.throws(()=>calculateOperationalR5(store,{now:now+2}),/R5_SOURCE_COLLECTION_UNREADY/);
  const plan=planPublishedNewsInput(store,r41([item('unmatched','Iran and Saudi officials issued a statement')]),null,{now:now+3});
- assert.deepEqual(plan.admittedUrls,[a.sourceUrl]);
- applyPublishedNewsInput(store,plan,{now:now+3,dryRun:false});
+ assert.deepEqual(plan.admittedUrls,[]);
+ assert.throws(()=>applyPublishedNewsInput(store,plan,{now:now+3,dryRun:false}),
+  /OPERATIONAL_WRITE_NOT_APPROVED/);
  assert.throws(()=>calculateOperationalR5(store,{now:now+4}),/R5_SOURCE_COLLECTION_UNREADY/);
 });
-test('existing historical baseline survives cutover; old backlog held and transaction rollback is atomic',t=>{
+test('existing historical baseline survives cutover; old backlog held and writes remain blocked',t=>{
  const store=fixture(t),old={sourceUrl:item('baseline').sourceUrl,title:item().title,summary:'',date:'2026-10-28'};
  store.putSource('news-metadata:'+hash(old),old,now-86400000);
  const late={...item('old-attack','Iran fired missiles at Saudi base'),publishedAt:'2026-10-24T02:00:00.000Z'};
  const plan=planPublishedNewsInput(store,r41([item(),late]),null,{now});
  assert.equal(plan.baselineEventKeys.length,1);assert.equal(plan.held[0].reason,'OLDER_PUBLICATION_REQUIRES_REVIEW');
- const put=store.putSource;store.putSource=(id,...args)=>{if(id.startsWith('score-published-news-provenance:'))throw Error('DISK_FAILURE');return put(id,...args);};
- assert.throws(()=>applyPublishedNewsInput(store,plan,{now,dryRun:false}),/DISK_FAILURE/);
+ assert.throws(()=>applyPublishedNewsInput(store,plan,{now,dryRun:false}),/OPERATIONAL_WRITE_NOT_APPROVED/);
  assert.equal(store.getCheckpoint(PUBLISHED_NEWS_CHECKPOINT),null);
  assert.equal(store.db.prepare('SELECT COUNT(*) n FROM sources').get().n,1);
 });
 test('a privately saved URL is admitted only when published; repeats do not reset first observation',t=>{
  const store=fixture(t),initial=item();
- applyPublishedNewsInput(store,planPublishedNewsInput(store,r41([initial]),null,{now}),{now,dryRun:false});
+ store.checkpoint(PUBLISHED_NEWS_CHECKPOINT,{version:'IRAN_PUBLISHED_NEWS_SCORE_INPUT_R1',
+  cutoverAt:now,baselineEventKeys:[],admittedUrls:[initial.sourceUrl]});
  const next=item('later','Iran and Saudi officials rejected a peace proposal');
  const receipt={sourceUrl:next.sourceUrl,title:next.title,summary:'',date:'2026-10-29',claimVerification:'SINGLE_SOURCE_REPORT'};
  store.putSource('news-metadata:'+hash(receipt),receipt,now+1);
  assert.ok(!store.getCheckpoint(PUBLISHED_NEWS_CHECKPOINT).admittedUrls.includes(next.sourceUrl));
  const plan=planPublishedNewsInput(store,r41([next]),null,{now:now+2});
  assert.equal(plan.planned.length,0);assert.ok(plan.admittedUrls.includes(next.sourceUrl));
- applyPublishedNewsInput(store,plan,{now:now+2,dryRun:false});
+ assert.throws(()=>applyPublishedNewsInput(store,plan,{now:now+2,dryRun:false}),
+  /OPERATIONAL_WRITE_NOT_APPROVED/);
  assert.equal(store.db.prepare('SELECT stored_at FROM sources WHERE id=?').get('news-metadata:'+hash(receipt)).stored_at,now+1);
 });
-test('previously missed ongoing peace proposal is staged once without activating R5',t=>{
+test('previously missed ongoing peace proposal is planned, never silently stored in R5',t=>{
  const store=fixture(t),a=item('peace-plan',
   'Gulf states working on multipart peace deal to avert renewal of US-Iran war');
  const plan=planPublishedNewsInput(store,r41([a]),null,{now});
  assert.equal(plan.planned.length,1);
  assert.equal(plan.articleResults[0].status,'NEW_ACCEPTED');
- applyPublishedNewsInput(store,plan,{now,dryRun:false});
+ assert.throws(()=>applyPublishedNewsInput(store,plan,{now,dryRun:false}),
+  /OPERATIONAL_WRITE_NOT_APPROVED/);
  store.checkpoint('score-news-input-last-run-r1',{version:'IRAN_SCORE_NEWS_INPUT_R1',
   freshnessEligible:true,collectionCheckedAt:now,checkedAt:now,sourcesVerifiedThisRun:7});
  assert.equal(plan.eventClassifierVersion,'IRAN_PUBLISHED_EVENT_RULES_R1');
  const repeat=planPublishedNewsInput(store,r41([a]),null,{now:now+1});
- assert.equal(repeat.planned.length,0);
- applyPublishedNewsInput(store,repeat,{now:now+1,dryRun:false});
- assert.equal(store.db.prepare("SELECT COUNT(*) AS n FROM sources WHERE id LIKE 'news-metadata:%'").get().n,1);
+ assert.equal(repeat.planned.length,1);
+ assert.deepEqual(applyPublishedNewsInput(store,repeat,{now:now+1,dryRun:true}),repeat);
+ assert.equal(store.db.prepare("SELECT COUNT(*) AS n FROM sources WHERE id LIKE 'news-metadata:%'").get().n,0);
  assert.throws(()=>calculateOperationalR5(store,{now:now+2}),/R5_SOURCE_COLLECTION_UNREADY/);
 });

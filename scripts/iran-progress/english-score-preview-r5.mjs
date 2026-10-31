@@ -4,6 +4,8 @@
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {previewEnglishScoreEvidenceR2} from './english-score-preview-r2.mjs';
+import {runEnglishScorePCPreview} from './news-r41-english-score-evidence-r1.mjs';
+import {directEnglishR41ArticleEvidenceR2} from './tasnim-english-body-r2.mjs';
 import {matchingEnglishEventQuotes,generateBoundEnglishScoreEvidence}
  from './english-score-bound-quote-r3.mjs';
 
@@ -16,6 +18,16 @@ export const previewEnglishScoreEvidenceR5=options=>previewEnglishScoreEvidenceR
  quotePreflight:article=>matchingEnglishEventQuotes(article).length>0,
  includeDiagnosticDetails:true,includeRuleDiagnostics:true,
  defaultGenerator:targetedEventGenerator,
+});
+
+// The R6 in-memory score bridge needs the *validated proof objects* rather
+// than the sanitized R5 console report. It uses the exact same R5 checks.
+export const runEnglishScoreEvidenceR5Raw=(feed,options={})=>runEnglishScorePCPreview(feed,{
+ ...options,eventPreflight:true,
+ quotePreflight:article=>matchingEnglishEventQuotes(article).length>0,
+ includeDiagnosticDetails:true,includeRuleDiagnostics:true,
+ evidenceCollector:options.evidenceCollector??directEnglishR41ArticleEvidenceR2,
+ generator:options.generator??targetedEventGenerator,
 });
 
 if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.url)){
