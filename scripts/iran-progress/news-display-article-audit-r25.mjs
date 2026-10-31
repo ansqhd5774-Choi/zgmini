@@ -163,7 +163,7 @@ function assessedArticle({sourceId,sourceUrl,title,publishedAt,dateEvidence,body
  const titleVerified=!!title&&title.length<=500;
  const bodyVerified=body.trim().length>0;
  // Relevance requires only one primary and one secondary keyword across title/body.
- const offTopicReason=iranNewsOffTopicReasonR1(title);
+ const offTopicReason=iranNewsOffTopicReasonR1(title,sourceUrl);
  const scopeVerified=matchesIranTwoStageKeywordsR38([title,body].join(' '))&&!offTopicReason;
  const {start,end}=kstDayWindow(now,NEWS_PC_RETENTION_DAYS);
  const dateKey=publishedAt?kstNewsDay(Date.parse(publishedAt)):null;
