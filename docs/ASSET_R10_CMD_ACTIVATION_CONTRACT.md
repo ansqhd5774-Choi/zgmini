@@ -255,3 +255,16 @@ PC 실행 지침: 새 빈 폴더에 R7 ZIP을 압축 해제 → `RUN_PREFLIGHT.c
 - R8 테스트: 설치기 10건 + PR #893 sidecar 9건, 총 19건 PASS. ZIP CRC 검사 통과. Windows 실제 PREFLIGHT/INSTALL 결과는 아직 미확인이다.
 
 **현재 실행 지침:** 새 빈 폴더에 R8 ZIP 압축 해제 → `RUN_PREFLIGHT.cmd` **1회** → `ASSET_R10_CMD_PREFLIGHT_RESULT.txt` 제출. `STATUS=READY_FOR_INSTALL`라도 먼저 이 실 PC 결과에서 `WRITER_WORKTREE_EOL`, `WRITER_GIT_BLOB_EOL`, `WRITER_BASELINE_EQUIVALENCE`, 의존성·잠금 상태를 확인할 때까지 **INSTALL 실행 보류**. 중단 시 기존 R7 INSTALL이나 강제 소스 변경으로 우회하지 않는다. 새 테마·산식·예약·원장·DB·D1·Cloudflare는 변경하지 않는다.
+
+## 19. R8 ZIP 재구성·검증 (2026-10-31)
+
+직전 GitHub R8 커밋 `a22fd92b4d727ec5d2b36b36d985f27294da9a8a`의 소스를 R7 검증 ZIP과 고정 R8 파일별 SHA-256을 대조해 독립 실행용 ZIP으로 재구성했다. GitHub의 R8 manifest는 변경하지 않았고, **동일한 27개 manifest 대상 파일 + manifest 1개**만 ZIP에 포함했다.
+
+- 다운로드 파일: `ASSET_R10_AUTO_CMD_R8_VERIFIED_20261031.zip`
+- **이번에 실제 생성·검증한 ZIP SHA-256:** `b45c770323001135e4237a392c3149d488edcc54df02af64adbd1605cfdfbd66`
+- 기존 문서 18절의 `ASSET_R10_AUTO_CMD_R8_20261030.zip`과 SHA-256 `5a2be996...`는 **이전 패키징 기록**으로 유지한다. 새 ZIP의 검증에 사용하지 않는다. 두 ZIP의 압축 바이트가 동일하다고 주장하지 않는다.
+- GitHub R8 manifest 원본 SHA-256: `8e737a42d02680785ca323f86a8e9be5eef7fc7b2adf3c31b1b0027f1953c230` (이번 ZIP 내 manifest와 일치)
+- manifest 내 파일 27개 SHA-256 검증 **PASS**, ZIP CRC/압축 해제 바이트 일치 **PASS**, Node 22.16.0에서 압축 해제본 회귀시험 19건 **PASS**. 비-Windows 실행은 `STOP_WINDOWS_ONLY`로 안전 중단 확인.
+- 실제 Windows 운영 PC에서 PREFLIGHT/INSTALL/두 정규 주기/D1 개별 재조회: **미실행·미검증**.
+
+**현장 절차:** 새 빈 폴더에 `ASSET_R10_AUTO_CMD_R8_VERIFIED_20261031.zip` 압축 해제 → `RUN_PREFLIGHT.cmd` 정확히 한 번 실행 → `ASSET_R10_CMD_PREFLIGHT_RESULT.txt` 제출. 특히 `WRITER_BASELINE_EQUIVALENCE`, `WRITER_WORKTREE_EOL`, `WRITER_GIT_BLOB_EOL`, `DEPENDENCY_STATUS`, 잠금·프로세스·스케줄러 상태를 확인하기 전 `RUN_INSTALL.cmd` 실행 금지. 원본/내용 차이가 계속 감지되면 우회하지 않고 `STOP` 상태를 보존한다.
