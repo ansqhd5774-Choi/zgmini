@@ -471,8 +471,9 @@ export default function CnnPanel({ showEducation = false, showBreadth = false }:
     const controller=new AbortController();
     fetch(`/api/fear-greed/observations?period=${selectedPeriod}`,{signal:controller.signal})
       .then(async response=>response.ok?response.json():null)
-      .then(data=>{
+      .then((response:unknown)=>{
         if(controller.signal.aborted)return;
+        const data=response as {status?:string;period?:string;points?:ObservedScorePoint[]} | null;
         setArchived(data?.status==="READY"&&data?.period===selectedPeriod&&Array.isArray(data.points)
           ? {period:selectedPeriod,points:data.points}
           : null);
