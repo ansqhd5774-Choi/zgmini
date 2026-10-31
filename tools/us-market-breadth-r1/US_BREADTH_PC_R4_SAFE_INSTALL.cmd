@@ -18,10 +18,15 @@ if not exist "%NODE%" goto missing_node
 if errorlevel 1 goto invalid_node
 
 echo [INFO] Running Windows US breadth installer.
-"%NODE%" "%PACKAGE%safe-install.mjs" "%PACKAGE%"
+"%NODE%" "%PACKAGE%safe-install.mjs" > "%PACKAGE%US_BREADTH_PC_R4_NODE_OUTPUT.txt" 2>&1
 set "CODE=%ERRORLEVEL%"
 if not exist "%REPORT%" > "%REPORT%" echo REPORT=US_BREADTH_PC_R4_INSTALL_RESULT
 >> "%REPORT%" echo LAUNCH_EXIT_CODE=%CODE%
+if not "%CODE%"=="0" (
+  >> "%REPORT%" echo NODE_ERROR_BEGIN
+  type "%PACKAGE%US_BREADTH_PC_R4_NODE_OUTPUT.txt" >> "%REPORT%"
+  >> "%REPORT%" echo NODE_ERROR_END
+)
 echo [INFO] Report: "%REPORT%"
 if not "%CODE%"=="0" echo [STOP] Installation incomplete; see report and error above.
 pause
