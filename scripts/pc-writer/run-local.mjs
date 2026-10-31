@@ -66,6 +66,11 @@ try{
  const {projectionWriter}=await import('../../worker/projection-runtime-r52.mjs');
  const {PUBLIC_PROJECTION_KEYS}=await import('../../worker/market-public-projection-store.mjs');
  const now=Date.now();
+ // Independent US breadth count from already stored and verified source rows.
+ await attemptOutput(report,'us-breadth-calculation',async()=>{
+  const {prepareUsBreadth}=await import('./market-breadth-us-r1.mjs');
+  report.usBreadth=await prepareUsBreadth(core,{now:new Date(now)});
+ });
  const marketReady=await attemptOutput(report,'market',async()=>{
  const body=await calculateMarket(root,core,now);
  // Reuse the published daily score history already read for the overall chart.
@@ -198,6 +203,12 @@ try{
    report.market={...report.market,...(previous>now?{status:'REMOTE_NEWER_PRESERVED',storedAt:previous}:await publishMarket(remote,config.core,read(path.join(base,'local-market-result.json')),now,lease,previous,path.join(base,'local-market-ledger.json')))};
   }finally{await releaseMarket(remote,config.core,lease);}
   });
+  // US-only stored display counts; source gaps preserve the prior verified record.
+  if(report.usBreadth?.prepared)await attemptOutput(report,'us-breadth-publication',async()=>{
+   const {publishUsBreadth}=await import('./market-breadth-us-r1.mjs');
+   report.usBreadth.publication=await publishUsBreadth(remote,config.core,report.usBreadth,{now});
+  });
+  else report.usBreadth={...(report.usBreadth??{status:'UNAVAILABLE'}),publication:'SKIPPED_NOT_READY'};
   // Explicit allowlist: publish display outputs only, never provider input/history rows.
   for(const {id,status} of report.projections){
    if(status!=='LOCAL_READY')continue;
