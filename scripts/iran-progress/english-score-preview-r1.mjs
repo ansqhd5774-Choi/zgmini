@@ -6,7 +6,8 @@ import {readPublishedNews} from './published-news-score-input-r1.mjs';
 import {runEnglishScorePCPreview} from './news-r41-english-score-evidence-r1.mjs';
 
 export async function previewEnglishScoreEvidence({now=Date.now(),fetchImpl=fetch,
- maxNew=16,evidenceCollector,generator,defaultGenerator,ollamaFetch=fetch}={}){
+ maxNew=16,evidenceCollector,generator,defaultGenerator,ollamaFetch=fetch,
+ eventPreflight=false,quotePreflight=null,includeDiagnosticDetails=false}={}){
  if(!generator){
   // A successful file/API run is not evidence that local Ollama is active.
   let modelReady=false;
@@ -24,7 +25,7 @@ export async function previewEnglishScoreEvidence({now=Date.now(),fetchImpl=fetc
  const {r41,selected}=await readPublishedNews({now,fetchImpl});
  if(selected.endpoint!=='/api/outbreak-news/iran/r41')
   throw Error('IRAN_ENGLISH_SCORE_R41_FEED_UNAVAILABLE');
- const options={now,maxNew};
+ const options={now,maxNew,eventPreflight,quotePreflight,includeDiagnosticDetails};
  if(evidenceCollector)options.evidenceCollector=evidenceCollector;
  if(generator)options.generator=generator;
  else if(defaultGenerator)options.generator=defaultGenerator;
@@ -45,18 +46,31 @@ export async function previewEnglishScoreEvidence({now=Date.now(),fetchImpl=fetc
   sourceUnavailable:count('RIGHTS_CHECKED_BODY_NOT_AVAILABLE'),
   sourceFailureReasons,
   inferenceFailures:report.pending.length-count('SOURCE_RIGHTS_RESTRICTED')-
-   count('RIGHTS_CHECKED_BODY_NOT_AVAILABLE')-count('ANALYSIS_BACKLOG'),
+   count('RIGHTS_CHECKED_BODY_NOT_AVAILABLE')-count('ANALYSIS_BACKLOG')-
+   count('ORIGINAL_TITLE_NO_APPROVED_EVENT')-count('NO_MATCHING_EVENT_QUOTE'),
   backlog:count('ANALYSIS_BACKLOG'),
+  ...(includeDiagnosticDetails?{
+   screenedOutNoEvent:count('ORIGINAL_TITLE_NO_APPROVED_EVENT'),
+   heldNoMatchingQuote:count('NO_MATCHING_EVENT_QUOTE'),
+   inferenceFailureCodes:Object.fromEntries([...new Set(report.pending.filter(item=>
+    item.reason.startsWith('IRAN_ENGLISH_SCORE_')).map(item=>item.diagnosticCode??item.reason))]
+    .sort().map(code=>[code,report.pending.filter(item=>
+     (item.diagnosticCode??item.reason)===code).length])),
+  }:{}),
   verifiedRules:report.items.filter(item=>item.status==='EVIDENCE_CONFIRMED')
    .map(item=>({rule:item.rule,delta:item.delta,sourceUrl:item.sourceUrl})),
   articleResults:[
    ...report.items.map(item=>({source:metadataById.get(item.id)?.source??null,
     sourceUrl:item.sourceUrl,status:item.status,reason:item.reason??null,
-    rule:item.rule??null,delta:item.delta??null})),
+    rule:item.rule??null,delta:item.delta??null,
+    ...(includeDiagnosticDetails?{modelStageStatus:item.stageStatus}:{}),
+   })),
    ...report.pending.map(item=>({source:metadataById.get(item.id)?.source??null,
     sourceUrl:metadataById.get(item.id)?.sourceUrl??null,
     status:'PENDING',reason:item.reason,
-    sourceFailure:item.sourceFailure??null,rule:null,delta:null})),
+    sourceFailure:item.sourceFailure??null,rule:null,delta:null,
+    ...(includeDiagnosticDetails?{diagnosticCode:item.diagnosticCode??null}:{}),
+   })),
   ].sort((a,b)=>a.sourceUrl.localeCompare(b.sourceUrl)),
   publicWrite:false,r5ScoreChanges:0};
 }

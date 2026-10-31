@@ -45,13 +45,18 @@ node scripts\iran-progress\english-score-preview-r1.mjs --preview
 - **R3 사건 인식 보완(2026-10-31):** 실제 Tasnim 기사 제목 `At Least 14 Killed in Saudi Strikes on Yemen As Attacks Reach 101 in 24 Hours`는 전형적인 **사망자 먼저 → 공격 나중** 문장이라 기존 R3 공격 정규식에서 빠져 있었다. `lib/iran-progress/reference-flow-r3.mjs`의 기존 `MILITARY_ATTACK` 조건에 이 순서만 추가했다. 기존 범주·가중치·점수(`MILITARY_ATTACK`, `-12`)와 기타 점수 산식은 변경하지 않는다. 미래 가정, 공격 계획, 부정 표현 및 단순 경고는 계속 구분하여 보류하거나 기존 경고 점수만 적용한다. 검증은 *보도된 사실에 대한 원문 증거 확인*이지 사건을 독립적으로 사실 확정하는 과정이 아니다.
 - **R3 Ollama 인용 보강:** R3 영문 사건 규칙에 부합하고 원문 본문에 실제 존재하는 영어 문장만 최대 12개 `supportingQuote` 후보로 만든다. 후보가 있으면 Ollama 공식 JSON Schema `enum` 선택값으로 제한한다. 응답은 이 제약과 무관하게 기존 결정론적 R3 근거·행위자·장소 검증을 다시 통과해야 한다. 후보가 없으면 자동 승인하거나 R5로 보내지 않는다. 기존 R1·R2 및 일반 Ollama 코드 경로는 유지된다.
 - **R3 PC 그림자 프리뷰:** `scripts\iran-progress\IRAN_ENGLISH_SCORE_R3_PREVIEW.cmd`를 실행한 뒤 **`IRAN_ENGLISH_SCORE_R3_PREVIEW_RESULT.txt`**를 제출한다. 원문 수집 경로는 R2와 같고 영문 점수 근거 선택만 보강한다. 파일에는 본문·인용문 대신 모델 호출 수·확인 상태·실패 코드를 기록하며 `publicWrite=false`, `r5ScoreChanges=0`을 유지한다. 원본 R1·R2 프리뷰와 예약 작업·기존 PC SQLite·공개 API·D1은 변경하지 않는다.
+- **R3 PC 실제 결과(2026-10-31):** R41 67건·8개 출처, 허용 원문 7건, 모델 호출 7건 중 구조 검증 통과 3건·`IRAN_ENGLISH_SCORE_EVIDENCE_MODEL_INVALID` 4건, 원문 수집 실패 0건, 권리 보류 60건, `EVIDENCE_CONFIRMED=0`건. 구조 검증 성공한 3건 중 GOV.UK 1건과 Tasnim 1건은 기존 R3 제목에 점수 대상 사건이 없어서 보류, **사망자 우선 표현의 Tasnim 공습 1건은 `EVENT_NOT_VERIFIED_AS_OCCURRED`**로 보류됐다. 해당 기사 한 건도 실제 발생 사실이 독립적으로 증명됐다는 뜻이 아니며, R5 점수는 변경되지 않았다.
+- **R4 단계별 개선(2026-10-31):** 기존 R3 제목 분류를 로컬에서 먼저 실행해 사건이 없는 기사는 `ORIGINAL_TITLE_NO_APPROVED_EVENT`로 명시적으로 보류한다. 권리 제한을 풀지 않으며, 사건 없는 기사 본문을 불필요하게 가져오거나 Ollama에 넘기지 않는다. 사건 있는 기사라도 원문에 같은 단계·주체의 직접 인용 후보가 없으면 `NO_MATCHING_EVENT_QUOTE`로 모델 호출 없이 보류한다. 기존 R1·R2·R3 실행 경로 기본값은 변경하지 않는다.
+- **R4 보도 단계 정의:** Ollama의 `REPORTED_COMPLETED`는 **출처가 이미 발생한 사건이라고 보도했다는 뜻**이며, 실제 사실을 독립적으로 확정한다는 뜻이 아니라고 명시한다. 사건의 발생 자체를 부정하거나 서로 상충하는 근거가 있는 경우, 계획·가능성·미래 가정과 함께 기존 보류 규칙을 유지한다. 이 조정은 모델 프롬프트의 의미 명확화일 뿐 **기존 R5 점수·가중치·단계 규칙을 바꾸지 않는다**.
+- **R4 안전 진단:** 본문·모델 출력·인용문을 저장하지 않고 `screenedOutNoEvent`, `heldNoMatchingQuote`, `inferenceFailureCodes`, 기사별 `diagnosticCode`, `modelStageStatus` 등 **정해진 진단 코드**만 추가로 출력한다. 모델이 없는 경우 기존 `BLOCKED` 게이트를 그대로 유지하고, 인용문이 존재해도 검증 규칙을 우회하지 않는다. 과거 R3 실제 7건 중 로컬 제목 재검사 결과는 **6건 사전 보류 / 공습 1건 모델 대상**이다. 이는 코드상의 선별 결과이며 PC 모델 최종 판정은 R4 실행으로 확인해야 한다.
+- **R4 PC 그림자 프리뷰:** `scripts\iran-progress\IRAN_ENGLISH_SCORE_R4_PREVIEW.cmd`를 실행한 뒤 **`IRAN_ENGLISH_SCORE_R4_PREVIEW_RESULT.txt`**를 제출한다. 기존 원장·예약 작업·공개 점수·D1에 쓰지 않으며 `publicWrite=false`, `r5ScoreChanges=0`이다. `FINAL_STATUS=ENGLISH_SCORE_R4_SHADOW_NO_PUBLISH`를 확인하기 전에는 완료를 선언하지 않는다.
 - Ollama 실제 모델 설치·실행, 자동 실행 스케줄/PC SQLite/Cloudflare D1 쓰기/공개 점수 반영 검증은 별도 운영 게이트가 필요하다. 테스트 PASS만으로 운영 적용 성공을 선언하지 않는다.
 - 일부 매체의 본문 이용 권리가 제한되어 있으므로 **67개 기사 모두의 AI 검증은 보장되지 않는다**. 결측은 중립/완화 점수로 간주하지 않는다.
 
 ## 회귀 테스트
 
 ```bash
-node --test tests/iran-news-r41-english-score-evidence-r1.test.mjs tests/iran-published-news-score-input-r1.test.mjs tests/iran-news-r41-auto-interpret-r1.test.mjs tests/iran-r5-publication-reality-guard.test.mjs tests/iran-score-news-input-r1.test.mjs tests/iran-tasnim-html-shape-r1.test.mjs tests/iran-tasnim-english-body-r2.test.mjs tests/iran-r3-casualty-headline-r1.test.mjs tests/iran-english-bound-quote-r3.test.mjs
+node --test tests/iran-news-r41-english-score-evidence-r1.test.mjs tests/iran-published-news-score-input-r1.test.mjs tests/iran-news-r41-auto-interpret-r1.test.mjs tests/iran-r5-publication-reality-guard.test.mjs tests/iran-score-news-input-r1.test.mjs tests/iran-tasnim-html-shape-r1.test.mjs tests/iran-tasnim-english-body-r2.test.mjs tests/iran-r3-casualty-headline-r1.test.mjs tests/iran-english-bound-quote-r3.test.mjs tests/iran-english-score-preview-r4.test.mjs
 ```
 
 다음 운영 단계: 최신 `main` 소스와 PC 승인 SHA 비교 → 승인된 영문 본문 수집 경로와 동일 PC 영문 Ollama 프리뷰 연결 → 샘플 기사별 원문·사건·중복·R5 점수 차이 대조 → 별도 운영 승인/검증 후 공개 점수 반영.
