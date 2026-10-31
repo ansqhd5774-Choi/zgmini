@@ -113,7 +113,8 @@ test('US mobile 1D joins the same rounded period bar without detaching buttons',
  assert.ok(detail.includes('grid-template-rows: 176px;'));
  assert.ok(detail.includes('width:30px;\n  min-width:30px;\n  max-width:30px;\n  height:170px;'));
  assert.ok(detail.includes('border-radius:6px;\n  overflow:hidden;'));
- assert.ok(detail.includes('position:static;\n  flex:0 0 28px;'));
+ // Buttons are relatively positioned so their absolute ::after labels cannot capture neighboring clicks.
+ assert.ok(detail.includes('position:relative;\n  flex:0 0 28px;'));
  assert.ok(!detail.includes('right:calc(100% + 4px)'));
  assert.ok(!detail.includes('.zg-fg-korea'));
 });
