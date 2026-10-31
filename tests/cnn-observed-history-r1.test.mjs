@@ -88,20 +88,29 @@ test('US-only 1D button and observed ranges reuse the current chart; Korea gets 
  assert.match(store,/intervalMs:15\*60000/);
 });
 
-test('US one-day extends LEFT as a square; existing period rail remains unchanged',()=>{
- const detail=readFileSync(new URL('../app/fear-greed/usa/usa-mobile-r8.css',import.meta.url),'utf8');
- const dashboard=readFileSync(new URL('../app/globals.css',import.meta.url),'utf8');
- const controls=readFileSync(new URL('../app/market-period-controls.tsx',import.meta.url),'utf8');
+test('US mobile 1D joins the same rounded period bar without detaching buttons',()=>{
+ const read=p=>readFileSync(new URL('../'+p,import.meta.url),'utf8');
+ const detail=read('app/fear-greed/usa/usa-mobile-r8.css');
+ const dashboard=read('app/globals.css');
+ const responsive=read('app/responsive.css');
+ const controls=read('app/market-period-controls.tsx');
  assert.ok(controls.includes('includeOneDay ? [{ key: "1D"'));
- assert.ok(detail.includes('grid-template-columns: minmax(0, 1fr) 36px;'));
- assert.ok(detail.includes('right:calc(100% + 4px);'));
- assert.ok(detail.includes('width:32px;\n  min-width:32px;\n  max-width:32px;\n  height:32px;'));
- assert.ok(detail.includes('height: 176px;'));
- assert.ok(!detail.includes('grid-template-columns: minmax(0, 1fr) 60px;'));
- assert.ok(dashboard.includes('right:calc(100% + 4px);'));
- assert.ok(dashboard.includes('width:28px;\n    min-width:28px;\n    max-width:28px;\n    height:26px;'));
- assert.ok(dashboard.includes('right:calc(100% + var(--fg-shared-period-gap));'));
- assert.ok(dashboard.includes('width:26px;\n    min-width:26px;\n    max-width:26px;\n    height:26px;'));
+ // The unchanged Korea mobile row uses five 28px cells.
+ assert.ok(responsive.includes('--mobile-period-width:calc(5 * var(--zg-ui-period-width) + 2px)'));
+ assert.ok(responsive.includes('--zg-ui-period-width:28px'));
+ // Only the USA card reserves exactly one extra cell on the LEFT.
+ assert.ok(responsive.includes('.fg-card.fg-shared-shell:has(.cnn-period-toolbar[data-usa-one-day="true"])'));
+ assert.ok(responsive.includes('--mobile-period-width:calc(6 * var(--zg-ui-period-width) + 2px)'));
+ // The existing compact bar itself owns the rounded outline and equal gaps.
+ assert.ok(responsive.includes('gap:0;border:1px solid #31506d;border-radius:6px;overflow:hidden;'));
+ assert.ok(responsive.includes('height:calc(var(--zg-ui-period-height) + 2px)'));
+ assert.ok(!dashboard.includes('right:calc(100% + 4px)'));
  assert.ok(!dashboard.includes('--zg-usa-compact-period-width'));
+ // USA detail page also keeps all six squares inside a rounded 176px rail.
+ assert.ok(detail.includes('grid-template-rows: 176px;'));
+ assert.ok(detail.includes('width:30px;\n  min-width:30px;\n  max-width:30px;\n  height:170px;'));
+ assert.ok(detail.includes('border-radius:6px;\n  overflow:hidden;'));
+ assert.ok(detail.includes('position:static;\n  flex:0 0 28px;'));
+ assert.ok(!detail.includes('right:calc(100% + 4px)'));
  assert.ok(!detail.includes('.zg-fg-korea'));
 });
