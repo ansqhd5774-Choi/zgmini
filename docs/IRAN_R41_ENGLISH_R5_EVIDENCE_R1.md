@@ -32,6 +32,9 @@
 node scripts\iran-progress\english-score-preview-r1.mjs --preview
 ```
 
+또는 저장소의 `scripts\iran-progress\IRAN_ENGLISH_SCORE_R1_PREVIEW.cmd`를 실행하면 기존 Node 선택기를 이용하고, 같은 폴더의 `IRAN_ENGLISH_SCORE_R1_PREVIEW_RESULT.txt`에 기사별 검증 상태와 실패 원인을 기록한다. 이 CMD는 예약 작업·D1·PC 원장·공개 점수를 변경하지 않는다. 분석용 기사 본문과 AI 인용문을 결과 파일에 기록하지 않는다.
+
+- 프리뷰 시작 전에 로컬 Ollama의 `gemma3:4b` 설치 상태를 확인하며, 모델이 없거나 서버가 중지된 경우 **성공으로 표시하지 않고 BLOCKED** 처리한다.
 - 결과 `evidenceConfirmed`는 **근거 확인 건수**이지 공개 R5 점수 변경 건수가 아니다. `r5ScoreChanges`는 실제 게시 전까지 0이다. 정상 동작이라도 원문 이용권한이 없는 항목은 보류한다.
 - Ollama 실제 모델 설치·실행, 자동 실행 스케줄/PC SQLite/Cloudflare D1 쓰기/공개 점수 반영 검증은 별도 운영 게이트가 필요하다. 테스트 PASS만으로 운영 적용 성공을 선언하지 않는다.
 - 일부 매체의 본문 이용 권리가 제한되어 있으므로 **67개 기사 모두의 AI 검증은 보장되지 않는다**. 결측은 중립/완화 점수로 간주하지 않는다.
