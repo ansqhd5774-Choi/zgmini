@@ -72,5 +72,8 @@ test('R43 local PC runner does not write until rights, universe and command opt 
   assert.equal(done.status,'READY_LOCAL_RANKED');
   assert.equal(done.topCount,132);
   assert.ok(fs.existsSync(path.join(dir,'local-market-calendar-r43-ranked.json')));
+  const persisted=JSON.parse(fs.readFileSync(path.join(dir,'local-market-calendar-r43-ranked.json'),'utf8'));
+  assert.equal(persisted.sourceRightsReviewed,true);
+  assert.equal(persisted.marketCapApiUsed,false);
  } finally {fs.rmSync(dir,{recursive:true,force:true});}
 });
