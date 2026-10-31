@@ -38,13 +38,14 @@ node scripts\iran-progress\english-score-preview-r1.mjs --preview
 - 결과 `evidenceConfirmed`는 **근거 확인 건수**이지 공개 R5 점수 변경 건수가 아니다. `r5ScoreChanges`는 실제 게시 전까지 0이다. 정상 동작이라도 원문 이용권한이 없는 항목은 보류한다.
 - 2026-10-31 첫 Windows 실행: R41 67건/8개 출처 중 `evidenceConfirmed=0`, `evidenceHeld=1`, 권리 보류 60건, 원문 본문 확보 실패 6건. GOV.UK 1건은 원문 검증 후 `ORIGINAL_TITLE_NO_APPROVED_EVENT`로 보류됐으므로 **모델이 전혀 호출되지 않았다는 의미는 아니다**. 이 실행으로 R5 점수는 변경되지 않았다.
 - 후속 읽기 전용 진단: `modelCallsAttempted`, `modelCallsSucceeded`, `sourceFailureReasons`, 기사별 `sourceFailure`를 추가하여 올라마 추론 성공 여부와 Tasnim 6건의 본문 수집 실패 원인을 분리한다. `sourceFailure`에는 기존 실패 코드만 기록하며 기사 본문·인용문은 포함하지 않는다. 라이선스 보류 60건을 임의로 승인하지 않는다.
+- **Tasnim 본문 구조 확인 단계:** 6건 모두 제목 확인 후 `NEWS_R26_TASNIM_BODY_MISSING`으로 멈췄다. 기존 수집기는 JSON-LD `articleBody`가 있어야 하므로, 실제 기사 페이지에서 해당 필드가 누락됐는지 또는 다른 HTML 요소에 들어 있는지를 읽기 전용으로 확인한다. 기존 `scripts\iran-progress\IRAN_TASNIM_HTML_SHAPE_R1.cmd`를 PC에서 실행하고 `IRAN_TASNIM_HTML_SHAPE_R1_RESULT.txt`를 제출한다. 이 진단은 기사 URL, HTML 크기, JSON-LD 기사 개수·제목 일치 건수·`articleBody` 자료형/문자 수, 후보 요소의 태그·클래스·ID, 문단 개수만 기록한다. **본문 문장과 HTML 원문 자체는 출력·저장하지 않는다.** 해당 결과로 안전한 본문 추출 기준을 확인하기 전에는 추출 규칙을 추측하거나 점수 입력을 변경하지 않는다.
 - Ollama 실제 모델 설치·실행, 자동 실행 스케줄/PC SQLite/Cloudflare D1 쓰기/공개 점수 반영 검증은 별도 운영 게이트가 필요하다. 테스트 PASS만으로 운영 적용 성공을 선언하지 않는다.
 - 일부 매체의 본문 이용 권리가 제한되어 있으므로 **67개 기사 모두의 AI 검증은 보장되지 않는다**. 결측은 중립/완화 점수로 간주하지 않는다.
 
 ## 회귀 테스트
 
 ```bash
-node --test tests/iran-news-r41-english-score-evidence-r1.test.mjs tests/iran-published-news-score-input-r1.test.mjs tests/iran-news-r41-auto-interpret-r1.test.mjs tests/iran-r5-publication-reality-guard.test.mjs tests/iran-score-news-input-r1.test.mjs
+node --test tests/iran-news-r41-english-score-evidence-r1.test.mjs tests/iran-published-news-score-input-r1.test.mjs tests/iran-news-r41-auto-interpret-r1.test.mjs tests/iran-r5-publication-reality-guard.test.mjs tests/iran-score-news-input-r1.test.mjs tests/iran-tasnim-html-shape-r1.test.mjs
 ```
 
 다음 운영 단계: 최신 `main` 소스와 PC 승인 SHA 비교 → 승인된 영문 본문 수집 경로와 동일 PC 영문 Ollama 프리뷰 연결 → 샘플 기사별 원문·사건·중복·R5 점수 차이 대조 → 별도 운영 승인/검증 후 공개 점수 반영.
