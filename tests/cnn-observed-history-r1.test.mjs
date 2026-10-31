@@ -95,6 +95,10 @@ test('six US period buttons widen toward the chart without growing the rail heig
  assert.match(mobile,/\.cnn-period-toolbar\[data-usa-one-day="true"\] \{\s*width: 56px;[\s\S]*?height: 176px;/);
  assert.match(mobile,/\.cnn-period-toolbar\[data-usa-one-day="true"\] \.cnn-period-button \{\s*width: 56px;[\s\S]*?height: 25px;/);
  assert.match(dashboard,/\.fg-card\.fg-shared-shell:has\(\.cnn-period-toolbar\[data-usa-one-day="true"\]\) \.fg-analysis-slot\{\s*grid-template-columns:minmax\(0,1fr\) 60px;/);
+ assert.match(dashboard,/@container fg-shared \(min-width:501px\)\{/);
+ assert.match(dashboard,/@container fg-shared \(max-width:500px\)\{[\s\S]*?--zg-usa-compact-period-width:clamp\(30px,9\.5cqi,34px\);/);
+ assert.match(dashboard,/padding-inline-end:max\(0px,calc\(\(100% - 181px\)\/2\)\);/);
+ assert.match(dashboard,/\.cnn-period-toolbar\[data-usa-one-day="true"\] \.cnn-period-button\{\s*width:var\(--zg-usa-compact-period-width\);/);
  assert.doesNotMatch(dashboard,/\.usa-target-card/);
  assert.doesNotMatch(mobile,/\.zg-fg-korea/);
 });
