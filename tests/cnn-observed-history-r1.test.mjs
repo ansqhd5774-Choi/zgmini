@@ -87,3 +87,14 @@ test('US-only 1D button and observed ranges reuse the current chart; Korea gets 
  assert.match(css,/data-usa-one-day="true"/);
  assert.match(store,/intervalMs:15\*60000/);
 });
+
+test('six US period buttons widen toward the chart without growing the rail height',()=>{
+ const mobile=readFileSync(new URL('../app/fear-greed/usa/usa-mobile-r8.css',import.meta.url),'utf8');
+ const dashboard=readFileSync(new URL('../app/globals.css',import.meta.url),'utf8');
+ assert.match(mobile,/grid-template-columns: minmax\(0, 1fr\) 60px;/);
+ assert.match(mobile,/\.cnn-period-toolbar\[data-usa-one-day="true"\] \{\s*width: 56px;[\s\S]*?height: 176px;/);
+ assert.match(mobile,/\.cnn-period-toolbar\[data-usa-one-day="true"\] \.cnn-period-button \{\s*width: 56px;[\s\S]*?height: 25px;/);
+ assert.match(dashboard,/\.fg-card\.fg-shared-shell:has\(\.cnn-period-toolbar\[data-usa-one-day="true"\]\) \.fg-analysis-slot\{\s*grid-template-columns:minmax\(0,1fr\) 60px;/);
+ assert.doesNotMatch(dashboard,/\.usa-target-card/);
+ assert.doesNotMatch(mobile,/\.zg-fg-korea/);
+});
