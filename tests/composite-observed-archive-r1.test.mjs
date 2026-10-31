@@ -95,7 +95,10 @@ test('existing formula, refresh schedule, Korea and current publication remain u
  const api=read('app/api/market-score/observations/route.ts');
  assert.match(writer,/composite-archive-local/);
  assert.match(writer,/composite-observed-publication/);
- assert.match(page,/label:'1일',days:1/);
+ // 1D was already present before the archive feature: reuse it, never add a duplicate 1일 control.
+ assert.match(page,/const marketPeriods=\[\{label:'1D',days:1\}/);
+ assert.match(page,/\{marketPeriods\.map\(p=><button/);
+ assert.doesNotMatch(page,/\{label:'1일',days:1\}/);
  assert.match(page,/mergeCompositeObservedDisplay/);
  assert.match(api,/timeMeaning:'PC_CALCULATED_AT'/);
  assert.doesNotMatch(api,/https:\/\/production\.dataviz\.cnn\.io|fetch\('https:/);
