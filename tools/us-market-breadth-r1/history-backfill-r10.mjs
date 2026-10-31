@@ -27,18 +27,25 @@ const cols='trade_date,ticker,previous_date,previous_close,current_close,current
 const result={report:'US_BREADTH_PC_R10_ONE_YEAR_BACKFILL',atUTC:new Date().toISOString(),
   mode:'VERIFIED_STORED_DATA_DATED_KEYS_ONLY',pcSQLiteWritten:false,
   currentKeyWritten:false,collectorsRun:false,schedulerChanged:false,
-  market:'usa',status:'STARTED'};
+  market:'usa',runnerRevision:'R10_1_STAGE_DIAGNOSTIC',status:'STARTED'};
 const set=(key,value)=>{result[key]=value;};
 function save(){
   const lines=Object.entries(result).map(([key,value])=>`${key}=${String(value??'NULL').replace(/[\r\n\t]/g,' ').slice(0,350)}`);
   fs.writeFileSync(reportPath,lines.join('\r\n')+'\r\n','utf8');
 }
+function checkpoint(stage){set('stage',stage);save();}
 function git(args){return execFileSync('git',['-C',root,...args],{
   encoding:'utf8',windowsHide:true,timeout:12000,stdio:['ignore','pipe','ignore'],
 }).trim();}
 function safeError(error){
   const value=String(error?.message??'');
-  return /^[A-Z0-9_-]{1,100}$/.test(value)?value:'UNCLASSIFIED_RUNTIME_ERROR';
+  if(/^[A-Z0-9_-]{1,100}$/.test(value))return value;
+  if(error?.code==='ERR_MODULE_NOT_FOUND')return 'MODULE_NOT_FOUND';
+  if(error?.name==='TypeError')return 'RUNTIME_TYPE_ERROR';
+  if(error?.name==='SyntaxError')return 'RUNTIME_SYNTAX_ERROR';
+  if(error?.name==='RangeError')return 'RUNTIME_RANGE_ERROR';
+  if(Number.isInteger(error?.status))return 'CHILD_PROCESS_FAILED';
+  return 'UNCLASSIFIED_RUNTIME_ERROR';
 }
 function parseR9(){
   const file=fs.readFileSync(evidencePath);
@@ -76,21 +83,31 @@ function hasTable(db,name){return Boolean(db.prepare("SELECT 1 FROM sqlite_maste
 function rows(db,name,date){return db.prepare(`SELECT ${cols} FROM ${name} WHERE trade_date=?`).all(date);}
 
 async function execute(){
+  checkpoint('CHECK_RUNTIME');
   if(process.platform!=='win32'||Number(process.versions.node.split('.')[0])<24)throw Error('WINDOWS_NODE_24_REQUIRED');
   if(!process.execPath.toLowerCase().startsWith('e:\\zgmini\\runtime\\'))throw Error('APPROVED_NODE_NOT_SELECTED');
   if(!outsideScheduledWindow())throw Error('PC_SCHEDULE_TIME_WINDOW_BLOCKED');
+  checkpoint('CHECK_R9_EVIDENCE');
   const evidence=parseR9();
+  checkpoint('CHECK_PC_CONFIG_AND_SHA');
   const config=JSON.parse(fs.readFileSync(path.join(home,'config.json'),'utf8'));
   if(config.enabled!==true||config.collectionTarget!=='pc'||!config.core)throw Error('PC_CONFIG_NOT_APPROVED');
   const sha=git(['rev-parse','HEAD']);
   if(config.source!==sha||sha!==evidence.sourceSha)throw Error('APPROVED_PC_SOURCE_CHANGED_SINCE_R9');
   set('pcSourceSha',sha);
-  execFileSync('git',['-C',root,'diff','--quiet','HEAD','--',
-    'scripts/pc-writer/breadth-r10-v9-shadow/audit.mjs',
-    'lib/market-breadth/compute.mjs','lib/market-breadth/us-public-r1.mjs',
-    'lib/market-score/breadth-b1-r3-calendar.mjs','scripts/pc-writer/d1.mjs'],{
-    windowsHide:true,timeout:12000,stdio:['ignore','ignore','ignore'],
-  });
+  checkpoint('CHECK_APPROVED_MODULE_WORKTREE');
+  try{
+    execFileSync('git',['-C',root,'diff','--quiet','HEAD','--',
+      'scripts/pc-writer/breadth-r10-v9-shadow/audit.mjs',
+      'lib/market-breadth/compute.mjs','lib/market-breadth/us-public-r1.mjs',
+      'lib/market-score/breadth-b1-r3-calendar.mjs','scripts/pc-writer/d1.mjs'],{
+      windowsHide:true,timeout:12000,stdio:['ignore','ignore','ignore'],
+    });
+  }catch(error){
+    if(error?.status===1)throw Error('APPROVED_MODULE_WORKTREE_MODIFIED');
+    throw Error('APPROVED_MODULE_GIT_CHECK_FAILED');
+  }
+  checkpoint('IMPORT_APPROVED_MODULES');
   const [{auditDay,eligibleRows},{calculateMarketBreadthCounts},contract,{latestCompletedSession},d1]=await Promise.all([
     sourceModule('scripts/pc-writer/breadth-r10-v9-shadow/audit.mjs'),
     sourceModule('lib/market-breadth/compute.mjs'),
@@ -100,15 +117,20 @@ async function execute(){
   ]);
   if([auditDay,eligibleRows,calculateMarketBreadthCounts,contract.validUsBreadthRecord,
     latestCompletedSession,d1.client,d1.credential].some(fn=>typeof fn!=='function'))throw Error('APPROVED_MODULE_INTERFACE_MISSING');
+  checkpoint('CHECK_MARKET_CALENDAR');
   if(latestCompletedSession(new Date())<'2026-10-30')throw Error('R9_LAST_SESSION_IN_FUTURE');
   set('windowStart','2025-10-30');set('windowEnd','2026-10-30');
   const corePath=path.join(home,'storage','core.sqlite');
   let database;const prepared=[];
   try{
+    checkpoint('OPEN_PC_SQLITE_READ_ONLY');
     database=new DatabaseSync(corePath,{readOnly:true});
+    checkpoint('VERIFY_SOURCE_TABLES');
     for(const name of Object.values(tables))if(!hasTable(database,name))throw Error('PC_SOURCE_TABLE_MISSING');
+    checkpoint('REVERIFY_248_SOURCE_DATES');
     for(const item of evidence.days){
       const date=item.date;
+      set('lastAttemptDate',date);
       const universeRow=database.prepare(`SELECT trade_date,members_json,member_count FROM ${tables.universe} WHERE trade_date=?`).get(date);
       let members;
       try{members=JSON.parse(universeRow?.members_json);}catch{throw Error(`UNIVERSE_JSON_CHANGED_${date}`);}
@@ -130,8 +152,10 @@ async function execute(){
         calculatedAt:new Date().toISOString(),market:'usa',...calculated};
       if(!contract.validUsBreadthRecord(body))throw Error('PUBLICATION_RECORD_INVALID');
       prepared.push(body);
+      if(prepared.length%25===0){set('lastVerifiedDate',date);set('sourceAuditProgress',prepared.length);save();}
     }
     // Diagnostic only: explain the four R9 gaps without trying to fabricate them.
+    checkpoint('DIAGNOSE_FOUR_MISSING_DATES');
     for(const date of ['2026-03-26','2026-03-27','2026-09-23','2026-10-14']){
       const key=`gap_${date.replaceAll('-','_')}`;
       const r=database.prepare(`SELECT trade_date,members_json,member_count FROM ${tables.universe} WHERE trade_date=?`).get(date);
@@ -145,13 +169,14 @@ async function execute(){
     }
   }finally{try{database?.close();}catch{}}
   set('sourceAuditStatus','ALL_R9_DAYS_REVERIFIED');set('sourceAuditVerifiedDays',prepared.length);
-  save();
+  checkpoint('D1_CURRENT_KEY_READ_BEFORE');
   // Every historical observation was checked before acquiring remote credentials.
   const remote=d1.client(config,()=>d1.credential(root));
   const getCurrent=()=>remote.query(config.core,'SELECT body,stored_at FROM market_public_snapshots_v1 WHERE snapshot_key=?',[
     contract.US_BREADTH_CURRENT_KEY]);
   const before=(await getCurrent()).results?.[0]??null;
   if(!before||!contract.validUsBreadthRecord(JSON.parse(before.body)))throw Error('REMOTE_CURRENT_NOT_VERIFIED');
+  checkpoint('D1_DAILY_KEYS_PREFLIGHT_AND_WRITE');
   const outcome=await publishDatedBreadthOnly(remote,config.core,prepared,{
     validRecord:contract.validUsBreadthRecord,now:Date.now(),batchSize:20,
     onProgress:progress=>{
@@ -159,14 +184,24 @@ async function execute(){
       set('published',progress.published);set('pending',progress.pending);save();
     },
   });
+  checkpoint('D1_CURRENT_KEY_READ_AFTER');
   const after=(await getCurrent()).results?.[0]??null;
   set('currentKeyUnchanged',after?.body===before.body&&Number(after?.stored_at)===Number(before.stored_at));
   set('status',outcome.status);
   set('verifiedDays',outcome.verified);
   set('remainingUnverifiedDays',4);
   set('remainingDates','2026-03-26,2026-03-27,2026-09-23,2026-10-14');
+  checkpoint('COMPLETE');
 }
 
 try{save();await execute();}
-catch(error){set('status','FAILED');set('errorCode',safeError(error));process.exitCode=1;}
+catch(error){
+  set('status','FAILED');set('errorCode',safeError(error));
+  const name=String(error?.name??'');
+  if(/^[A-Za-z]+Error$/.test(name))set('errorClass',name);
+  const code=String(error?.code??'');
+  if(/^[A-Z_][A-Z_0-9]{2,64}$/.test(code))set('errorNativeCode',code);
+  if(Number.isInteger(error?.status))set('childExitStatus',error.status);
+  process.exitCode=1;
+}
 finally{try{save();}catch{process.exitCode=2;}console.log(`BACKFILL_STATUS=${result.status}`);console.log(`RESULT_FILE=${reportPath}`);}
