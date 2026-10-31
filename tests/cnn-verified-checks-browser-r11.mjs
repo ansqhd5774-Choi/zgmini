@@ -45,13 +45,16 @@ try{
    return {period:btn.getAttribute('data-period-short'),x:b.x,y:b.y,width:b.width,height:b.height,hit:hit?.closest('button')?.getAttribute('data-period-short')??null,flex:getComputedStyle(btn).flex};
   }));
   console.log('CNN_PERIOD_GEOMETRY '+width+' '+JSON.stringify(geometry));
-  await usa1d.focus();
-  await usa1d.press('Enter');
+  assert.ok(geometry.every(x=>x.hit===x.period),'Each CNN period button must own its pointer hitbox');
+  await usa1d.click();
   const usaChart=page.locator('.zg-fg-us .cnn-history-chart-hitbox');
   await page.waitForFunction(()=>document.querySelector('.zg-fg-us .cnn-history-chart-hitbox path.recharts-area-curve')?.getAttribute('d')?.length>15,null,{timeout:20000});
   const d=await usaChart.locator('path.recharts-area-curve').getAttribute('d');
   assert.ok(d?.startsWith('M')&&d.includes('C'),'Same-score timeline SVG curve rendered');
   const axis=await usaChart.locator('.recharts-xAxis .recharts-cartesian-axis-tick-value').allTextContents();
+  console.log('CNN_AXIS_LABELS '+width+' '+JSON.stringify(axis));
+  await usaChart.scrollIntoViewIfNeeded();
+  await page.screenshot({path:'artifacts/cnn-verified-checks/cnn-1d-'+width+'.png'});
   assert.ok(axis.some(s=>s.includes('09:35')),'First PC confirmation time visible');
   assert.ok(axis.some(s=>s.includes('10:15')),'Last PC confirmation time visible');
   assert.equal(await usa1d.getAttribute('aria-pressed'),'true');
