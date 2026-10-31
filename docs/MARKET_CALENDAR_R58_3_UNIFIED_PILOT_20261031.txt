@@ -1,0 +1,16 @@
+ZGMINI R58.3 SEC FHS-R3 — ONE ZIP / ONE CMD / READ-ONLY DATA
+
+이 패키지는 이전 R58.1 코드 전체와 단일 실행기를 포함합니다.
+기존 진단 ZIP이나 R58.1 파일을 복사하지 마십시오.
+
+1. 기존 R58 실행 프로세스가 종료됐는지 확인합니다. 기존 폴더의 PRIVATE_SHADOW.json은 그대로 보존합니다.
+2. 새 빈 폴더에 이 ZIP만 전체 압축 해제합니다. ZIP 안에서 CMD를 실행하지 않습니다.
+3. MARKET_CALENDAR_R58_3_RUN.cmd를 한 번 실행합니다.
+4. MARKET_CALENDAR_R58_3_RESULT.txt가 생성되면 해당 파일만 공유합니다.
+5. PRIVATE_SHADOW.json 및 TRACE_LOCAL.txt는 PC에만 보관합니다.
+6. 오류/STOP/기존 결과가 있으면 중단하고 임의 삭제나 재실행을 하지 마십시오.
+
+평가에 사용되는 E:\ZGmini\data\pc-writer\ 아래 SEC ZIP/SQLite는 읽기 전용입니다.
+산식·기존 공개 중요도 별표·DB·D1·GitHub 운영·배포·스케줄러 변경 없음.
+부족한 업종/현금 가용성 검증 때문에 계산된 별표는 비공개 잠정 후보입니다.
+실제 PC 성공 여부는 R58_3_RESULT.txt 결과로 확인합니다.
