@@ -616,7 +616,8 @@
   overflow:hidden;
 }
 .zg-fg-us .usa-target-card.fg-shared-shell .fg-period-slot .cnn-period-toolbar[data-usa-one-day="true"] .cnn-period-button{
-  position:static;
+  /* Localize the absolute ::after label to its own button; otherwise the last label covers all six controls. */
+  position:relative;
   flex:0 0 28px;
   box-sizing:border-box;
   width:28px;
