@@ -1,0 +1,17 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {scoreFhsR3} from './fhs-r3-score.mjs';
+const base={fiscalEnd:'2025-12-31',previousFiscalEnd:'2024-12-31',filedAt:'2026-02-15',assets:200,previousAssets:180,currentAssets:100,currentLiabilities:50,cash:30,totalLiabilities:95,operatingCashFlow:30,previousOperatingCashFlow:10};
+const asOf='2026-10-31';
+const run=(delta={},opts={})=>scoreFhsR3({...base,...delta},{asOf,...opts});
+test('R3 exact original 20+15+25+40 full score and 3 stars',()=>{let v=run({currentAssets:120,currentLiabilities:60,cash:40,totalLiabilities:100,operatingCashFlow:25});assert.equal(v.score,100);assert.equal(v.stars,3);assert.equal(v.status,'PROVISIONAL_UNVERIFIED');});
+test('boundaries for current ratio, cash ratio and liabilities ratio',()=>{let v=run({currentAssets:75,currentLiabilities:50,cash:12.5,totalLiabilities:150,operatingCashFlow:5});assert.equal(v.breakdown.currentRatio,20);assert.equal(v.breakdown.cashRatio,10);assert.equal(v.breakdown.liabilitiesToAssets,17);assert.equal(v.breakdown.ocfToAverageAssets,12);});
+test('FCF and interest not required; missing NOT zero',()=>{assert.equal(run({totalLiabilities:null}).stars,null);assert.equal(run({cash:undefined}).reason,'MISSING_OR_INVALID_CASH');});
+test('operating cash flow negative both years caps to 2',()=>{const v=run({assets:200,previousAssets:180,currentAssets:180,currentLiabilities:50,cash:90,totalLiabilities:60,operatingCashFlow:-1,previousOperatingCashFlow:-1});assert.equal(v.risk.twoYearNegative,true);assert.equal(v.stars,2);});
+test('runway < 12 months caps at 1 including zero cash',()=>{const v=run({assets:200,previousAssets:180,currentAssets:100,currentLiabilities:50,cash:2,totalLiabilities:50,operatingCashFlow:-5});assert.equal(v.risk.runwayBelow12,true);assert.equal(v.stars,1);});
+test('liabilities > assets with negative cash flow caps at 1',()=>{const v=run({totalLiabilities:220,currentLiabilities:50,operatingCashFlow:-1,previousOperatingCashFlow:8,cash:80,currentAssets:100});assert.equal(v.risk.insolventAndBurning,true);assert.equal(v.stars,1);});
+test('zero current liabilities cannot be silently given perfect score',()=>{const v=run({currentLiabilities:0});assert.equal(v.status,'UNRATED');});
+test('future filings, stale 550-day annual and period mismatch fail closed',()=>{assert.equal(run({filedAt:'2026-11-01'}).stars,null);assert.equal(run({fiscalEnd:'2023-12-31'}).stars,null);assert.equal(run({previousFiscalEnd:'2025-10-01'}).stars,null);});
+test('bank or unknown sector never produces verified shadow',()=>{const v=run();assert.equal(v.status,'PROVISIONAL_UNVERIFIED');let w=run({}, {sectorClassification:'BANK_VERIFIED',cashUnrestrictedVerified:true,filingContextVerified:true});assert.equal(w.status,'UNRATED');assert.equal(w.reason,'SECTOR_MODEL_EXCLUDED');assert.equal(w.publishReady,false);});
+test('explicit sector and cash context can verify SHADOW only, not public',()=>{const v=run({}, {sectorClassification:'NON_FINANCIAL_VERIFIED',cashUnrestrictedVerified:true,filingContextVerified:true});assert.equal(v.status,'VERIFIED_SHADOW_ONLY');assert.equal(v.publishReady,false);});
+test('negative debt and cash above current assets rejected; zero debt explicitly valid',()=>{assert.equal(run({totalLiabilities:-1}).stars,null);assert.equal(run({cash:120}).stars,null);const v=run({totalLiabilities:0,currentLiabilities:0});assert.equal(v.status,'UNRATED');});
