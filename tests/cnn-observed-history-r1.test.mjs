@@ -88,13 +88,20 @@ test('US-only 1D button and observed ranges reuse the current chart; Korea gets 
  assert.match(store,/intervalMs:15\*60000/);
 });
 
-test('six US period buttons widen toward the chart without growing the rail height',()=>{
- const mobile=readFileSync(new URL('../app/fear-greed/usa/usa-mobile-r8.css',import.meta.url),'utf8');
+test('US one-day extends LEFT as a square; existing period rail remains unchanged',()=>{
+ const detail=readFileSync(new URL('../app/fear-greed/usa/usa-mobile-r8.css',import.meta.url),'utf8');
  const dashboard=readFileSync(new URL('../app/globals.css',import.meta.url),'utf8');
- assert.match(mobile,/grid-template-columns: minmax\(0, 1fr\) 60px;/);
- assert.match(mobile,/\.cnn-period-toolbar\[data-usa-one-day="true"\] \{\s*width: 56px;[\s\S]*?height: 176px;/);
- assert.match(mobile,/\.cnn-period-toolbar\[data-usa-one-day="true"\] \.cnn-period-button \{\s*width: 56px;[\s\S]*?height: 25px;/);
- assert.match(dashboard,/\.fg-card\.fg-shared-shell:has\(\.cnn-period-toolbar\[data-usa-one-day="true"\]\) \.fg-analysis-slot\{\s*grid-template-columns:minmax\(0,1fr\) 60px;/);
- assert.doesNotMatch(dashboard,/\.usa-target-card/);
- assert.doesNotMatch(mobile,/\.zg-fg-korea/);
+ const controls=readFileSync(new URL('../app/market-period-controls.tsx',import.meta.url),'utf8');
+ assert.ok(controls.includes('includeOneDay ? [{ key: "1D"'));
+ assert.ok(detail.includes('grid-template-columns: minmax(0, 1fr) 36px;'));
+ assert.ok(detail.includes('right:calc(100% + 4px);'));
+ assert.ok(detail.includes('width:32px;\n  min-width:32px;\n  max-width:32px;\n  height:32px;'));
+ assert.ok(detail.includes('height: 176px;'));
+ assert.ok(!detail.includes('grid-template-columns: minmax(0, 1fr) 60px;'));
+ assert.ok(dashboard.includes('right:calc(100% + 4px);'));
+ assert.ok(dashboard.includes('width:28px;\n    min-width:28px;\n    max-width:28px;\n    height:26px;'));
+ assert.ok(dashboard.includes('right:calc(100% + var(--fg-shared-period-gap));'));
+ assert.ok(dashboard.includes('width:26px;\n    min-width:26px;\n    max-width:26px;\n    height:26px;'));
+ assert.ok(!dashboard.includes('--zg-usa-compact-period-width'));
+ assert.ok(!detail.includes('.zg-fg-korea'));
 });
