@@ -9,7 +9,7 @@ test("Korea detailed card alone opts into USA-style score statistics",()=>{
  const home=read("app/country-fear-greed.tsx");
  const card=read("app/korea-composite-view.tsx");
  assert.match(detail,/<KoreanCountryCard detail\/>/);
- assert.match(home,/<KoreanCountryCard\/>/);
+ assert.match(home,/<KoreanCountryCard\s+showBreadth\s*\/>/);
  assert.match(card,/scoreAside=\{detail \?/);
  assert.match(card,/showHeaderDate=\{detail\}/);
  assert.match(card,/mobileInlineDayDelta:detail/);

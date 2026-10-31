@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { DEFAULT_MARKET_PERIOD, getMarketPeriodConfig, type MarketPeriod } from "../../market-card-shared";
 import { MarketPeriodControls } from "../../market-period-controls";
 import { FearGreedCardShell } from "../../fear-greed-card-shell";
+import { MarketBreadthStrip } from "../../market-breadth-strip";
 import { MarketCardInsight } from "../../market-card-insight";
 import { MarketFearGreedChart } from "../../market-fear-greed-chart";
 import {fearGreedStateColor} from '../../../lib/fear-greed-state-color.mjs';
@@ -427,7 +428,7 @@ function buildMarketInsight({
   return `${stage} 구간에서 뚜렷한 방향 변화는 확인되지 않습니다.`;
 }
 
-export default function CnnPanel({ showEducation = false }: { showEducation?: boolean }) {
+export default function CnnPanel({ showEducation = false, showBreadth = false }: { showEducation?: boolean; showBreadth?: boolean }) {
   const {payload,loading}=useStoredIndex<IndexPayload>("/api/fear-greed");
   const [selectedPeriod, setSelectedPeriod] = useState<MarketPeriod>(DEFAULT_MARKET_PERIOD);
 
@@ -620,6 +621,7 @@ export default function CnnPanel({ showEducation = false }: { showEducation?: bo
         gradientId="cnn-fill"
         formatTooltipLabel={dateLabel}
       />}
+      breadth={showBreadth && !showEducation ? <MarketBreadthStrip market="usa"/> : undefined}
       detailHref={showEducation ? undefined : "/fear-greed/usa/"}
       footer={{
         href: "https://www.cnn.com/markets/fear-and-greed",

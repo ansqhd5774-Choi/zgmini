@@ -8,8 +8,8 @@ const country=fs.readFileSync(new URL("../app/country-fear-greed.tsx",import.met
 const css=fs.readFileSync(new URL("../public/styles/fear-greed-education-r1.css",import.meta.url),"utf8");
 
 test("Fear & Greed education stays scoped to the USA detail page",()=>{
-  assert.match(panel,/function CnnPanel\(\{ showEducation = false \}/);
-  assert.match(country,/<CnnPanel\s*\/>/);
+  assert.match(panel,/function CnnPanel\(\{ showEducation = false(?:, showBreadth = false)? \}/);
+  assert.match(country,/<CnnPanel\s+showBreadth\s*\/>/);
   assert.doesNotMatch(country,/showEducation/);
   assert.match(detail,/<CnnPanel showEducation\s*\/>/);
   assert.match(detail,/rel="stylesheet" href="\/styles\/fear-greed-education-r1\.css"/);
