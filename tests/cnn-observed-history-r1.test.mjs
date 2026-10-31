@@ -94,6 +94,7 @@ test('six US period buttons widen toward the chart without growing the rail heig
  assert.match(mobile,/grid-template-columns: minmax\(0, 1fr\) 60px;/);
  assert.match(mobile,/\.cnn-period-toolbar\[data-usa-one-day="true"\] \{\s*width: 56px;[\s\S]*?height: 176px;/);
  assert.match(mobile,/\.cnn-period-toolbar\[data-usa-one-day="true"\] \.cnn-period-button \{\s*width: 56px;[\s\S]*?height: 25px;/);
- assert.match(dashboard,/\.usa-target-card\.fg-shared-shell \.fg-analysis-slot\{\s*grid-template-columns:minmax\(0,1fr\) 60px;/);
+ assert.match(dashboard,/\.fg-card\.fg-shared-shell:has\(\.cnn-period-toolbar\[data-usa-one-day="true"\]\) \.fg-analysis-slot\{\s*grid-template-columns:minmax\(0,1fr\) 60px;/);
+ assert.doesNotMatch(dashboard,/\.usa-target-card/);
  assert.doesNotMatch(mobile,/\.zg-fg-korea/);
 });
