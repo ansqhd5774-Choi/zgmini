@@ -1,5 +1,5 @@
 import test from 'node:test';import assert from 'node:assert/strict';
-import {validateFhsAnnualSnapshot,publishableFhsAnnualFromPrivate,getFhsAnnualGrade} from './market-calendar-fhs-r3-public.mjs';
+import {validateFhsAnnualSnapshot,publishableFhsAnnualFromPrivate,getFhsAnnualGrade} from '../lib/market-calendar-fhs-r3-public.mjs';
 const row=(ticker,stars,score)=>({ticker,version:'ZGMINI-FHS-R3',asOf:'2026-10-31',status:'PROVISIONAL_UNVERIFIED',publishReady:false,sectorVerified:false,cashUnrestrictedVerified:false,filingContextVerified:false,score,stars});
 const input=()=>({version:'ZGMINI-FHS-R3',status:'PRIVATE_PROVISIONAL_ONLY',publishReady:false,asOf:'2026-10-31',sourceStoredAt:1793332803791,recordCount:3,items:[row('AAPL',3,80),row('GOOG',2,51),row('NNE',1,10)]});
 test('derives only score and grade from private stored candidate, no raw SEC financials',()=>{const result=publishableFhsAnnualFromPrivate(input());assert.equal(result.recordCount,3);assert.deepEqual(result.grades.AAPL,[3,80]);assert.equal(JSON.stringify(result).includes('risk'),false)});
