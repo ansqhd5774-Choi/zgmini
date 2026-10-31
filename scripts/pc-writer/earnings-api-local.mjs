@@ -1,12 +1,17 @@
 // R29: runs inside the existing PC Core cycle, private SQLite inputs only.
 // The publisher selects kind='output'; this module never writes that kind.
+import fs from 'node:fs';
+import path from 'node:path';
+import os from 'node:os';
 import {publicFeedStore} from '../../worker/public-feed-store.mjs';
 import {collectEarningsApiWindow,earningsApiWindow} from '../../lib/earnings-api-calendar.mjs';
 import {readEarningsApiPrivateProjection,EARNINGS_API_R30_PRIVATE_KEY} from '../../lib/earnings-api-private-projection.mjs';
 import {earningsDisplaySnapshot,EARNINGS_API_DISPLAY_KEY} from '../../lib/earnings-api-display.mjs';
+import {r43ImportanceIndex} from '../../lib/market-calendar-r43-issuer-rank.mjs';
 
 const KEY='release-calendar';
 const STATUS_KEY=`${KEY}:earnings-api:status`;
+const R43_LOCAL_OUTPUT='local-market-calendar-r43-ranked.json';
 const rights=Object.freeze({
  automatedFetch:true,pcStorage:true,publicDisplay:false,redistribution:false,
  commercialUse:false,reviewedAt:'2026-10-28',
@@ -14,9 +19,23 @@ const rights=Object.freeze({
  evidenceNote:'Provider documentation explicitly describes daily sync and storing responses by date and reporting time bucket.'
 });
 
+// Only a complete, licensed, fresh PC-local full-universe rank can replace
+// the interim static issuer importance. No network access or DB writes here.
+export function readR43LocalImportance({
+  base=process.env.ZGMINI_PC_HOME??path.join(os.homedir(),'.zgmini','pc-writer'),
+  now=Date.now(),
+}={}){
+ try{
+  const file=path.join(base,R43_LOCAL_OUTPUT);
+  if(!fs.existsSync(file)||fs.statSync(file).size>2_000_000)return null;
+  return r43ImportanceIndex(JSON.parse(fs.readFileSync(file,'utf8')),{now});
+ }catch{return null;}
+}
+
 // R33: derive a display-only output from a previously stored R30 private input.
 // No provider API request, new table, public raw input or calendar promotion.
-export async function replayCachedEarningsDisplay({store,now=Date.now(),sourceState}={}){
+export async function replayCachedEarningsDisplay({store,now=Date.now(),sourceState,
+ importanceIndex=readR43LocalImportance({now})}={}){
  if(!store||typeof store.readInput!=='function'||typeof store.readOutput!=='function'||
   typeof store.writeOutput!=='function'||!Number.isFinite(now))
   return {status:'CACHE_REPLAY_DEPENDENCY_INVALID',providerRequests:0};
@@ -42,7 +61,7 @@ export async function replayCachedEarningsDisplay({store,now=Date.now(),sourceSt
   if(!Number.isFinite(at)||at>now+300000||now-at>48*3600000||
    !Array.isArray(projection.coveredDays)||!projection.coveredDays.includes(days[0]))
    return {status:'CACHE_EXPIRED_OR_OUT_OF_WINDOW',providerRequests:0};
-  const display=earningsDisplaySnapshot(projection);
+  const display=earningsDisplaySnapshot(projection,{importanceIndex});
   const prior=(await store.readOutput(EARNINGS_API_DISPLAY_KEY))?.body;
   if(prior?.status==='READY_DISPLAY'&&JSON.stringify(prior)===JSON.stringify(display))
    return {status:'DISPLAY_ALREADY_READY',providerRequests:0,
@@ -89,3 +108,4 @@ export async function collectEarningsApiLocal({db,apiKey,now=Date.now(),fetchImp
   providerRequests:result.providerRequests,skipped:result.skipped??false,
   publicationStatus:'HELD_UNCONFIRMED',projectionStatus,projectionCount,displayStatus};
 }
+
