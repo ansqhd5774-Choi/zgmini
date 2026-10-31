@@ -80,7 +80,10 @@ test('US-only 1D button and observed ranges reuse the current chart; Korea gets 
  const store=read('worker/public-feed-store.mjs');
  assert.match(cnn,/<MarketPeriodControls[\s\S]*?includeOneDay\s*\/>/);
  assert.match(cnn,/observedRanges=\{observedRanges\}/);
- assert.match(cnn,/formatTooltipLabel=\{selectedPeriod==="1D"\|\|archiveHistory\.length>=2\?intradayLabel:dateLabel\}/);
+  // The original source tooltip remains the fallback, but genuine PC check time is explicitly labeled.
+  assert.ok(cnn.includes('formatTooltipLabel={selectedPeriod==="1D"&&(archived?.checkedPoints?.length??0)>=2'));
+  assert.ok(cnn.includes('`PC 확인 ${intradayLabel(value)}`'));
+  assert.ok(cnn.includes('(selectedPeriod==="1D"||archiveHistory.length>=2?intradayLabel:dateLabel)'));
   assert.match(cnn,/archiveHistory\.length>=2\?combinedObserved:allIntraday/);
   assert.match(cnn,/daily\.filter\(point=>!observedDays\.has/);
   assert.match(cnn,/const maxTime=end\?\?Number\.POSITIVE_INFINITY/);

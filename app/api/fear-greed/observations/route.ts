@@ -36,9 +36,34 @@ export async function GET(request:Request){
    byTime.set(key,{observedAt:key,score:point.score});
   }
  }
+
+ // Successful PC verification records are separate from CNN's original observations.
+ // Never treat a repeat of an unchanged CNN timestamp as a newly published CNN observation.
+ const checkedRows=await env.DB.prepare("SELECT snapshot_key,body FROM public_feed_snapshots_v1 WHERE kind='output' AND feed_key='fear-greed-verified-checks' AND snapshot_key BETWEEN ? AND ? ORDER BY snapshot_key ASC LIMIT 371")
+   .bind(start,end).all<{snapshot_key:string,body:string}>();
+ const checkedByTime=new Map<string,{checkedAt:string,sourceObservedAt:string,score:number}>();
+ for(const row of checkedRows.results??[]){
+  let entry:any;
+  try{entry=JSON.parse(row.body)}catch{return Response.json({status:'STORED_CHECKS_INVALID'},{status:503});}
+  if(entry?.version!=='CNN_VERIFIED_CHECKS_R1'||entry.date!==row.snapshot_key||!Array.isArray(entry.checks))
+   return Response.json({status:'STORED_CHECKS_INVALID'},{status:503});
+  for(const item of entry.checks){
+   const at=Date.parse(item?.checkedAt??''),original=Date.parse(item?.sourceObservedAt??'');
+   if(!Number.isFinite(at)||!Number.isFinite(original)||new Date(at).toISOString()!==item.checkedAt||new Date(original).toISOString()!==item.sourceObservedAt||
+      new Date(at).toISOString().slice(0,10)!==row.snapshot_key||original>at+300000||
+      !Number.isFinite(item.score)||item.score<0||item.score>100||item.sourceStoredAt!==at)
+    return Response.json({status:'STORED_CHECKS_INVALID'},{status:503});
+   checkedByTime.set(item.checkedAt,{checkedAt:item.checkedAt,sourceObservedAt:item.sourceObservedAt,score:item.score});
+  }
+ }
+ const allChecks=[...checkedByTime.values()].sort((a,b)=>a.checkedAt.localeCompare(b.checkedAt));
+ const checkedPoints=(custom||period==='1D'||period==='1W'?allChecks:
+  sampleCnnObservedPoints(allChecks.map(p=>({...p,observedAt:p.checkedAt})))
+   .map(({checkedAt,sourceObservedAt,score})=>({checkedAt,sourceObservedAt,score})));
+
  const all=[...byTime.values()].sort((a,b)=>a.observedAt.localeCompare(b.observedAt));
  const points=custom||period==='1D'||period==='1W'?all:sampleCnnObservedPoints(all);
- return Response.json({status:all.length?'READY':'PENDING',version:CNN_OBSERVED_ARCHIVE_VERSION,period,range:{start,end},availableDays:validDays,totalObservedPoints:all.length,sampled:points.length<all.length,points},{
+ return Response.json({status:all.length||allChecks.length?'READY':'PENDING',version:CNN_OBSERVED_ARCHIVE_VERSION,period,range:{start,end},availableDays:validDays,totalObservedPoints:all.length,sampled:points.length<all.length,points,verifiedCheckCount:allChecks.length,checkedPoints,checkTimeMeaning:'PC_VERIFIED_STORED_AT'},{
   headers:{'cache-control':'public, max-age=60, must-revalidate','x-data-source':'STORED','x-content-type-options':'nosniff'}
  });
 }
