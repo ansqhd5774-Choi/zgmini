@@ -19,6 +19,7 @@ import {breadthB1R4PreviousSessionDelta as breadthPreviousSessionDelta} from '..
 import {marketTrendWindowR1} from '../lib/market-score/market-trend-window-r1.mjs';
 import {miniTrendGeometry} from '../lib/market-score/mini-trend-geometry.mjs';
 import {amplifyCompositeDisplayScore,amplifyCompositeDisplayTrend} from '../lib/market-score/composite-display-sensitivity-r1.mjs';
+import {mergeCompositeObservedDisplay} from '../lib/market-score/composite-observed-display-r1.mjs';
 import {ContentHelp} from './content-help';
 import {HELP,HelpText} from './help-copy';
 export type DashboardPoint={label:string;value:number};
@@ -142,6 +143,21 @@ export const CompositeMarketSection=memo(function CompositeMarketSection({demo}:
  const arrowDelta=useScoreArrowDelta();
  const [expanded,setExpanded]=useState(false);
  const [periodDays,setPeriodDays]=useState(365);
+ const [compositeArchive,setCompositeArchive]=useState<{days:number;points:Array<{observedAt:string;score:number}>}|null>(null);
+ useEffect(()=>{
+  const label=periodDays<=1?'1D':periodDays<=7?'1W':periodDays<=31?'1M':periodDays<=93?'3M':periodDays<=186?'6M':'1Y';
+  const stop=startStoredRefresh(async(signal:AbortSignal)=>{
+   try{
+    const response=await fetch('/api/market-score/observations?period='+label,{signal});
+    if(!response.ok)return;
+    const data=await response.json() as {status?:string;period?:string;points?:Array<{observedAt:string;score:number}>};
+    if(signal.aborted)return;
+    setCompositeArchive(data.status==='READY'&&data.period===label&&Array.isArray(data.points)
+     ?{days:periodDays,points:data.points}:null);
+   }catch{/* Keep the last stored archive during transient failures. */}
+  });
+  return stop;
+ },[periodDays]);
  const [market,setMarket]=useState<MarketScoreResponse|null>(null);
  const [marketLoading,setMarketLoading]=useState(true);
  const [marketError,setMarketError]=useState<string|null>(null);
@@ -204,8 +220,17 @@ export const CompositeMarketSection=memo(function CompositeMarketSection({demo}:
  const readyDomains=market?.dataQuality?.readyDomains??0;
  const totalDomains=market?.dataQuality?.totalDomains??12;
  const coverageWeight=market?.dataQuality?.coverageWeight??0;
- const overallTrend=useMemo(()=>marketTrendWindow(amplifyCompositeDisplayTrend(normalizeMarketTrendPoints(market?.overall?.trend)),periodDays),[market?.overall?.trend,periodDays]);
- const hasDatedHistory=useMemo(()=>[market?.overall?.trend,...(market?.domains??[]).map(d=>d.trend)].some(data=>marketTrendWindow(normalizeMarketTrendPoints(data),365).length>1),[market?.overall?.trend,market?.domains]);
+ const overallTrend=useMemo(()=>{
+  const daily=marketTrendWindow(amplifyCompositeDisplayTrend(normalizeMarketTrendPoints(market?.overall?.trend)),periodDays);
+  const archived=compositeArchive?.days===periodDays?compositeArchive.points.flatMap(point=>{
+   const display=amplifyCompositeDisplayScore(point.score);
+   return display===null||!Number.isFinite(Date.parse(point.observedAt))?[]:[{label:point.observedAt,value:display}];
+  }):[];
+  return mergeCompositeObservedDisplay(daily,archived,periodDays);
+ },[market?.overall?.trend,compositeArchive,periodDays]);
+ const hasDatedHistory=useMemo(()=>overallTrend.length>1||
+  [market?.overall?.trend,...(market?.domains??[]).map(d=>d.trend)].some(data=>marketTrendWindow(normalizeMarketTrendPoints(data),365).length>1),
+  [market?.overall?.trend,market?.domains,overallTrend]);
  // Independent diagnostic responses and arrow expiry do not change these histories.
  const domainChartTrends=useMemo(()=>r55DomainIds.map(id=>{
   const domain=market?.domains?.find(d=>d.id===id);
@@ -223,7 +248,7 @@ export const CompositeMarketSection=memo(function CompositeMarketSection({demo}:
    <div className="zg-section-heading zg-r55-risk-heading zg-r55-risk-heading-desktop">{riskHeading}</div>
    <div className="zg-r55-header-controls">
    <div className="zg-r55-period" role="group" aria-label="종합 시장 점수 추이 기간" title={hasDatedHistory?'제공된 관측 마지막 날짜 기준':'날짜가 있는 추이 데이터 제공 시 이용 가능'}>
-    {marketPeriods.map(p=><button key={p.label} type="button" disabled={!hasDatedHistory} aria-pressed={periodDays===p.days} onClick={()=>setPeriodDays(p.days)}>{p.label}</button>)}
+    {[{label:'1일',days:1},...marketPeriods].map(p=><button key={p.label} type="button" disabled={!hasDatedHistory} aria-pressed={periodDays===p.days} onClick={()=>setPeriodDays(p.days)}>{p.label}</button>)}
    </div>
    <button type="button" className="zg-r55-expand" aria-label={expanded?'전체 접기':'전체 펼침'} title={expanded?'전체 접기':'전체 펼침'} aria-expanded={expanded} onClick={toggle}>
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M8 3H3v5M16 3h5v5M8 21H3v-5M16 21h5v-5"/></svg>

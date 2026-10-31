@@ -37,6 +37,11 @@ function summaryAxisConfig(points:Array<DashboardPoint&{ts:number}>,periodDays:n
  const labels=new Map<number,string>();
  const add=(point:DashboardPoint&{ts:number},label:string)=>labels.set(point.ts,label);
  if(!points.length)return {ticks:[] as number[],labels};
+ if(periodDays<=1){
+  const clock=new Intl.DateTimeFormat('ko-KR',{timeZone:'Asia/Seoul',hour:'2-digit',minute:'2-digit',hour12:false});
+  for(const point of sampleSummaryPoints(points,5))add(point,clock.format(new Date(point.ts)));
+  return {ticks:[...labels.keys()],labels};
+ }
  if(periodDays<=30){
   const count=periodDays<=7?4:5;
   for(const point of sampleSummaryPoints(points,count)){
@@ -99,7 +104,9 @@ const SummaryTrend=memo(function SummaryTrend({data,label,color,periodDays}:{dat
       const parts=summaryDateParts(Number(tooltipLabel));
       const value=point?.value;
       return <div className="cnn-history-tooltip">
-       <span>{parts?`${parts.year}. ${parts.monthText}. ${parts.dayText}.`:point?.label??'—'}</span>
+       <span>{point?.label?.includes('T')
+        ?new Intl.DateTimeFormat('ko-KR',{timeZone:'Asia/Seoul',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false}).format(new Date(point.ts))+' (계산 시각)'
+        :parts?`${parts.year}. ${parts.monthText}. ${parts.dayText}.`:point?.label??'—'}</span>
        <strong style={{color:typeof value==='number'&&Number.isFinite(value)?scoreColor(value):'#94a3b8'}}>{typeof value==='number'&&Number.isFinite(value)?value.toFixed(1):'—'}</strong>
       </div>;
      }}
