@@ -86,3 +86,29 @@ test('R35 calendar controls apply same star selection to official rows and vendo
  assert.doesNotMatch(page,/미연결 기업 실적과 한국 일정은 제공하지 않습니다/);
  assert.match(page,/중요도 필터/);
 });
+
+test('R42 provisional five issuer exceptions become three-star candidates without changing other tiers',()=>{
+ const tickers=['BRK.A','ARM','ANET','SHOP','DE'];
+ const state=snapshot([...tickers.map(ticker=>event(ticker,days[0],'after_market',false,ticker)),
+  event('AMD',days[0],'after_market',true,'AMD')]);
+ assert.equal(state.recordCount,6);
+ assert.equal(display(state,{importance:3}).count,5);
+ assert.equal(display(state,{importance:2}).count,1);
+ assert.equal(display(state,{importance:1}).count,0);
+ const old=state.byDay[days[0]].find(html=>html.includes('data-search="arm arm"'));
+ state.byDay[days[0]]=state.byDay[days[0]].map(html=>html===old?
+  html.replace('중요도 3">★★★','중요도 1">★'):html);
+ assert.equal(display(state,{importance:3}).count,5); // stored HTML upgraded at read
+});
+
+test('R42 Berkshire share classes merge by issuer, with both tickers searchable',()=>{
+ const state=snapshot([event('BRK.A',days[0],'after_market',false,'Berkshire Hathaway'),
+  event('BRK.B',days[0],'after_market',false,'Berkshire Hathaway')]);
+ assert.equal(state.recordCount,2); // source observations preserved
+ const result=display(state,{importance:3});
+ assert.equal(result.count,1);
+ assert.match(result.html,/BRK\.A·BRK\.B/);
+ assert.equal(display(state,{query:'BRK.A'}).count,1);
+ assert.equal(display(state,{query:'BRK.B'}).count,1);
+ assert.doesNotMatch(result.html,/동일 날짜 정보 상충/);
+});
