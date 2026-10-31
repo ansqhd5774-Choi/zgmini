@@ -62,13 +62,36 @@ export function runOnce({pcHome=PC,outputDir=path.dirname(fileURLToPath(import.m
  try{fs.writeFileSync(txt,output,{flag:'wx',encoding:'utf8'});}catch(err){try{fs.unlinkSync(privateFile);}catch{}throw err;}
  return {status:report.status,aggregateFile:txt,privateFile};
 }
+// CLI error reporting: preserve the original audit artifacts; never overwrite a
+// result or private score. A failed audit is an explicit STOP, not a success.
+function cliFailure(code,outputDir,asOf){
+ const txt=path.join(outputDir,TXT),privateFile=path.join(outputDir,PRIVATE);
+ const data={status:code,asOf:validDay(asOf)?asOf:null,version:FHS_R3_VERSION,
+  executionComplete:false,privateShadowFilePresent:fs.existsSync(privateFile),
+  existingResultFilePresent:fs.existsSync(txt),providerRequests:0,dbWrites:0,d1Writes:0,
+  publicImportanceStarsChanged:false,note:'FAILED_READONLY_RUN; NO_SCORE_VERIFIED; DO_NOT_OVERWRITE_EXISTING_ARTIFACTS'};
+ const output=['AUDIT=MARKET_CALENDAR_R58_FHS_R3',...Object.entries(data).map(([k,v])=>`${k}=${JSON.stringify(v)}`)].join('\r\n')+'\r\n';
+ try{
+  if(fs.existsSync(txt))return false;
+  fs.writeFileSync(txt,output,{flag:'wx',encoding:'utf8'});
+  return true;
+ }catch{return false;}
+}
 const self=process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.url);
 if(self){
+ const pcHome=process.argv[2]||PC;
+ const outputDir=process.argv[3]||path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
+ const asOf=new Date(Date.now()+9*3600000).toISOString().slice(0,10);
  try{
-  const result=runOnce({pcHome:process.argv[2]||PC,outputDir:process.argv[3]||path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..')});
+  const result=runOnce({pcHome,outputDir,asOf});
   process.stdout.write(`STATUS=${result.status}\nRESULT_FILE=${TXT}\nPRIVATE_FILE_STAYS_ON_PC=${PRIVATE}\n`);
  }catch(error){
-  const code=/^[A-Z0-9_]+$/.test(String(error.message))?error.message:'R58_UNEXPECTED_LOCAL_ERROR_STOP';
-  process.stdout.write(`STATUS=${code}\n`);process.exitCode=2;
+  const message=String(error?.message??'');
+  const code=/^[A-Z0-9_]+$/.test(message)?message:
+   /^[A-Z0-9_]+$/.test(String(error?.code??''))?`R58_IO_${error.code}_STOP`:
+   'R58_UNEXPECTED_LOCAL_ERROR_STOP';
+  const written=cliFailure(code,outputDir,asOf);
+  process.stdout.write(`STATUS=${code}\nFAILURE_REPORT_WRITTEN=${written}\nRESULT_FILE=${TXT}\n`);
+  process.exitCode=2;
  }
 }
