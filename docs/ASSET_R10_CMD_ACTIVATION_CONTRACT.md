@@ -268,3 +268,15 @@ PC 실행 지침: 새 빈 폴더에 R7 ZIP을 압축 해제 → `RUN_PREFLIGHT.c
 - 실제 Windows 운영 PC에서 PREFLIGHT/INSTALL/두 정규 주기/D1 개별 재조회: **미실행·미검증**.
 
 **현장 절차:** 새 빈 폴더에 `ASSET_R10_AUTO_CMD_R8_VERIFIED_20261031.zip` 압축 해제 → `RUN_PREFLIGHT.cmd` 정확히 한 번 실행 → `ASSET_R10_CMD_PREFLIGHT_RESULT.txt` 제출. 특히 `WRITER_BASELINE_EQUIVALENCE`, `WRITER_WORKTREE_EOL`, `WRITER_GIT_BLOB_EOL`, `DEPENDENCY_STATUS`, 잠금·프로세스·스케줄러 상태를 확인하기 전 `RUN_INSTALL.cmd` 실행 금지. 원본/내용 차이가 계속 감지되면 우회하지 않고 `STOP` 상태를 보존한다.
+
+## 20. R8 PC 혼합 줄바꿈 STOP 및 R9 최소 보정 (2026-10-31)
+
+2026-10-31 제출된 R8 PC `ASSET_R10_CMD_PREFLIGHT_RESULT(2).txt`는 `STATUS=STOP`, `ERROR_CODE=STOP_WRITER_MIXED_LINE_ENDINGS`. 승인 HEAD/config/last Writer 모두 `a477ef...`, tracked dirty `NO`, Core/Korea `Ready`, process `CLEAR`, lock `CLEAR`, ledger `VERIFIED`. `AFTER_SHA=NOT_APPLIED`, R10 설치·D1 확인은 미실시. 혼합 줄바꿈의 원본/checkout 중 어느 쪽에 존재하는지는 미확정이며 이 결과만으로 코드 동등성은 입증되지 않았다.
+
+R9은 원본 안전 검사를 삭제하지 않고 `git show a477ef...:scripts/pc-writer/run-local.mjs`와 작업 파일의 모든 문자·공백·내용을 실제 비교한다. `CRLF`에서 `CR`만 제거한 정규화 결과가 100% 같고 tracked clean·승인 경로·scheduler·lock·ledger·의존성 조건이 모두 충족되어야 `READY_FOR_INSTALL`이다. 단독 CR은 STOP. 신규 R10 훅은 앵커 바로 앞에 삽입하며 **기존 파일의 모든 줄바꿈 바이트를 그대로 보존**한다. 출력에 양쪽 CRLF/LF 개수·EOL 종류를 기록한다.
+
+- 패키지: `ASSET_R10_AUTO_CMD_R9_VERIFIED_20261031.zip` SHA-256 `f67a2fe21430cb29c5db549e690b659a747a85d0e0ee87062bd1bbe9d49b23e5`.
+- manifest SHA-256 `bf9ab604b0c9cf86680f15e86b6395575655bb1a8b394c67f1c459358827c0ba`.
+- ZIP 내 manifest 대상 파일 27개 + manifest 1개, 파일별 SHA 및 ZIP CRC 검사 PASS, 압축 해제본 Node 22.16.0 테스트 총 **21건 PASS**, 비-Windows `STOP_WINDOWS_ONLY` 확인.
+- 소스는 같은 브랜치의 `scripts/pc-writer/asset-r10-cmd-r9/` (R8과 R7은 보존).
+- **다음 PC 조치:** 새 폴더에 압축 해제 → `RUN_PREFLIGHT.cmd` 1회 → `ASSET_R10_CMD_PREFLIGHT_RESULT.txt` 제출. **실 PC R9 결과 확인 전 INSTALL 금지**. 완료/게시/D1 검증으로 표기 금지.
