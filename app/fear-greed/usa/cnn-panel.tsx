@@ -492,27 +492,41 @@ export default function CnnPanel({ showEducation = false, showBreadth = false }:
   const archiveHistory=useMemo(() => archived?.period===selectedPeriod
     ? normalizeHistory(archived.points.map(point=>({timestamp:point.observedAt,score:point.score})))
     : [], [archived,selectedPeriod]);
+  // Archive is an addition to existing real daily closes, not a replacement.
+  // When an intraday date exists, use its real individual points instead of
+  // drawing a second daily point on top. Unrecorded dates keep CNN daily data.
+  const combinedObserved=useMemo(()=>{
+    const byTime=new Map([...archiveHistory,...allIntraday].map(point=>[point.date,point]));
+    return [...byTime.values()].sort((a,b)=>a.time-b.time);
+  },[archiveHistory,allIntraday]);
   const history = useMemo(() => {
     if (selectedPeriod === "1D") {
-      const intraday=archiveHistory.length>=2?archiveHistory:allIntraday;
-      const lastDay=intraday.at(-1)?.date.slice(0,10);
+      const intraday=archiveHistory.length>=2?combinedObserved:allIntraday;
+      const lastDay=allIntraday.at(-1)?.date.slice(0,10)??intraday.at(-1)?.date.slice(0,10);
       return lastDay ? intraday.filter(point=>point.date.slice(0,10)===lastDay) : [];
     }
-    if(archiveHistory.length>=2)return archiveHistory;
     const selected = getMarketPeriodConfig(selectedPeriod);
-    const end = allHistory.at(-1)?.time;
-    return end ? allHistory.filter((point) => point.time >= end - selected.days * 86400000) : allHistory;
-  }, [allHistory, allIntraday, archiveHistory, selectedPeriod]);
+    const end = allHistory.at(-1)?.time ?? combinedObserved.at(-1)?.time;
+    const start = end===undefined?null:end-selected.days*86400000;
+    const maxTime=end??Number.POSITIVE_INFINITY;
+    const daily = start===null?allHistory:allHistory.filter(point=>point.time>=start&&point.time<=maxTime);
+    if(archiveHistory.length<2)return daily;
+    const actual = start===null?combinedObserved:combinedObserved.filter(point=>point.time>=start&&point.time<=maxTime);
+    const observedDays=new Set(actual.map(point=>point.date.slice(0,10)));
+    return [...daily.filter(point=>!observedDays.has(point.date.slice(0,10))),...actual]
+      .sort((a,b)=>a.time-b.time);
+  }, [allHistory, allIntraday, archiveHistory, combinedObserved, selectedPeriod]);
   const observedRanges = useMemo(() => {
-    if (!observedSidecarReady || selectedPeriod === "1D" || archiveHistory.length>=2) return [];
+    if (!observedSidecarReady || selectedPeriod === "1D") return [];
+    const observedDays=new Set(archiveHistory.length>=2?combinedObserved.map(p=>p.date.slice(0,10)):[]);
     const ranges = new Map((payload?.dailyObservedRanges ?? []).map(row=>[row.date,row]));
     return history.flatMap(point=>{
-      const row=ranges.get(point.date.slice(0,10));
+      const row=observedDays.has(point.date.slice(0,10))?undefined:ranges.get(point.date.slice(0,10));
       return row && Number.isFinite(row.low?.score) && Number.isFinite(row.high?.score)
         && row.low.score>=0 && row.high.score<=100 && row.low.score<=row.high.score
         ? [{date:point.date,low:row.low.score,high:row.high.score}] : [];
     });
-  }, [observedSidecarReady,payload?.dailyObservedRanges,history,selectedPeriod,archiveHistory]);
+  }, [observedSidecarReady,payload?.dailyObservedRanges,history,selectedPeriod,archiveHistory,combinedObserved]);
 
   // CNN's previous_close is the authoritative baseline for a live score.
   // The most recent chart point can equal today's score.
