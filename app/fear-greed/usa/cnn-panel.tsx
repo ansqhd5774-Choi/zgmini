@@ -512,7 +512,10 @@ export default function CnnPanel({ showEducation = false, showBreadth = false }:
       return lastDay ? intraday.filter(point=>point.date.slice(0,10)===lastDay) : [];
     }
     const selected = getMarketPeriodConfig(selectedPeriod);
-    const end = allHistory.at(-1)?.time ?? combinedObserved.at(-1)?.time;
+    // A verified PC check can be later than the unchanged CNN closing observation.
+    const checkedEnd=archived?.checkedPoints?.length>=2?archiveHistory.at(-1)?.time:undefined;
+    const dailyEnd=allHistory.at(-1)?.time;
+    const end=checkedEnd===undefined?(dailyEnd??combinedObserved.at(-1)?.time):Math.max(dailyEnd??checkedEnd,checkedEnd);
     const start = end===undefined?null:end-selected.days*86400000;
     const maxTime=end??Number.POSITIVE_INFINITY;
     const daily = start===null?allHistory:allHistory.filter(point=>point.time>=start&&point.time<=maxTime);
@@ -713,7 +716,9 @@ export default function CnnPanel({ showEducation = false, showBreadth = false }:
         latestPoint={latestHistoryPoint}
         instanceKey={selectedPeriod}
         gradientId="cnn-fill"
-        formatTooltipLabel={selectedPeriod==="1D"||archiveHistory.length>=2?intradayLabel:dateLabel}
+        formatTooltipLabel={selectedPeriod==="1D"&&archived?.checkedPoints?.length>=2
+          ? (value:string)=>`PC 확인 ${intradayLabel(value)}`
+          : (selectedPeriod==="1D"||archiveHistory.length>=2?intradayLabel:dateLabel)}
         emptyLabel={selectedPeriod==="1D"?"시간별 관측값이 2개 이상 쌓이면 1일 추이가 표시됩니다":"이력 없음"}
       />}
       breadth={showBreadth && !showEducation ? <MarketBreadthStrip market="usa"/> : undefined}
