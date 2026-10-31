@@ -122,6 +122,10 @@ try{
  };
  });
  if(!marketReady)report.market={status:'PREVIOUS_RELEASE_PRESERVED'};
+ if(marketReady)await attemptOutput(report,'composite-archive-local',async()=>{
+  const {appendCompositeObservedFromCurrent}=await import('./composite-observed-archive-r1.mjs');
+  report.compositeObserved=await appendCompositeObservedFromCurrent(core,now);
+ });
  // Rate sentiment is a separate stored-data score; never modify the approved Rate R3 domain.
  const {preparePublicRateSentiment,publishPublicRateSentiment}=await import('./rate-sentiment-publication.mjs');
  let rateSentiment={status:'UNAVAILABLE'};await attemptOutput(report,'rate-sentiment-calculation',async()=>{rateSentiment=await preparePublicRateSentiment(core,now);});
@@ -202,6 +206,10 @@ try{
    const previous=(await remote.query(config.core,"SELECT stored_at FROM market_public_snapshots_v1 WHERE snapshot_key='current'")).results[0]?.stored_at;
    report.market={...report.market,...(previous>now?{status:'REMOTE_NEWER_PRESERVED',storedAt:previous}:await publishMarket(remote,config.core,read(path.join(base,'local-market-result.json')),now,lease,previous,path.join(base,'local-market-ledger.json')))};
   }finally{await releaseMarket(remote,config.core,lease);}
+  });
+  await attemptOutput(report,'composite-observed-publication',async()=>{
+   const {publishCompositeObservedArchive}=await import('./composite-observed-archive-r1.mjs');
+   report.compositeObservedPublication=await publishCompositeObservedArchive(core,remote,config.core);
   });
   // US-only stored display counts; source gaps preserve the prior verified record.
   if(report.usBreadth?.prepared)await attemptOutput(report,'us-breadth-publication',async()=>{
