@@ -117,6 +117,10 @@ try{
  };
  });
  if(!marketReady)report.market={status:'PREVIOUS_RELEASE_PRESERVED'};
+ if(marketReady)await attemptOutput(report,'composite-archive-local',async()=>{
+  const {appendCompositeObservedFromCurrent}=await import('./composite-observed-archive-r1.mjs');
+  report.compositeObserved=await appendCompositeObservedFromCurrent(core,now);
+ });
  // Rate sentiment is a separate stored-data score; never modify the approved Rate R3 domain.
  const {preparePublicRateSentiment,publishPublicRateSentiment}=await import('./rate-sentiment-publication.mjs');
  let rateSentiment={status:'UNAVAILABLE'};await attemptOutput(report,'rate-sentiment-calculation',async()=>{rateSentiment=await preparePublicRateSentiment(core,now);});
@@ -240,6 +244,10 @@ try{
     if(check?.composite_json!==koreaOutput.composite_json||check?.factors_json!==koreaOutput.factors_json)throw Error('LOCAL_KOREA_PUBLICATION_MISMATCH');
    }
   }
+  });
+  await attemptOutput(report,'composite-observed-publication',async()=>{
+   const {publishCompositeObservedArchive}=await import('./composite-observed-archive-r1.mjs');
+   report.compositeObservedPublication=await publishCompositeObservedArchive(core,remote,config.core);
   });
   const outputs=(await core.prepare("SELECT * FROM public_feed_snapshots_v1 WHERE kind='output' AND snapshot_key='current'").all()).results;
   for(const row of outputs){
