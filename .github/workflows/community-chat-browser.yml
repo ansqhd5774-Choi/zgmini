@@ -94,6 +94,8 @@ jobs:
           done
           tail -n 120 /tmp/zgmini-chat-vite.log
           exit 1
+      - name: Validate mock CNN verified checks and composite 1D charts in real browser
+        run: node tests/cnn-verified-checks-browser-r11.mjs
       - name: Validate introduction before hydration and dismissal preferences
         run: node tests/about-intro-bootstrap-browser-r6.mjs
       - name: Validate chat UI at 390, 768, 1440 and 1920 px with mocked backend
@@ -104,8 +106,6 @@ jobs:
         run: node tests/outbreak-scenarios-browser-r51.mjs
       - name: Validate deferred dashboard modules and account settings with isolated fixtures
         run: node tests/dashboard-deferred-ui-browser-r1.mjs
-      - name: Validate mock CNN verified checks and composite 1D charts in real browser
-        run: node tests/cnn-verified-checks-browser-r11.mjs
       - name: Validate route-specific education styles and mobile layout
         run: node tests/fear-greed-education-browser-r4.mjs
       - name: Validate dashboard history period changes and newer snapshot refresh

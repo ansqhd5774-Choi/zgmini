@@ -39,7 +39,14 @@ try{
   const usaBar=page.getByRole('group',{name:'CNN 지수 기간 선택'});
   const usa1d=usaBar.locator('button[data-period-short="1D"]');
   assert.equal(await usa1d.count(),1);
-  await usa1d.click();
+  // Diagnose pointer hit target; use keyboard to test chart independently of mobile overlap.
+  const geometry=await usaBar.locator('button').evaluateAll(buttons=>buttons.map(btn=>{
+   const b=btn.getBoundingClientRect(),hit=document.elementFromPoint(b.x+b.width/2,b.y+b.height/2);
+   return {period:btn.getAttribute('data-period-short'),x:b.x,y:b.y,width:b.width,height:b.height,hit:hit?.closest('button')?.getAttribute('data-period-short')??null,flex:getComputedStyle(btn).flex};
+  }));
+  console.log('CNN_PERIOD_GEOMETRY '+width+' '+JSON.stringify(geometry));
+  await usa1d.focus();
+  await usa1d.press('Enter');
   const usaChart=page.locator('.zg-fg-us .cnn-history-chart-hitbox');
   await page.waitForFunction(()=>document.querySelector('.zg-fg-us .cnn-history-chart-hitbox path.recharts-area-curve')?.getAttribute('d')?.length>15,null,{timeout:20000});
   const d=await usaChart.locator('path.recharts-area-curve').getAttribute('d');
