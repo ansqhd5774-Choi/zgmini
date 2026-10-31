@@ -6,6 +6,8 @@ import {execFileSync,spawnSync} from 'node:child_process';
 import {pathToFileURL,fileURLToPath} from 'node:url';
 import {DatabaseSync} from 'node:sqlite';
 import {prepareUsBreadth,publishUsBreadth} from './scripts/pc-writer/market-breadth-us-r1.mjs';
+import {mayAuditStoredUsBreadth} from './manual-collector-policy.mjs';
+import {needsOneFreshSourceAttempt,attemptFreshUsSource} from './manual-source-refresh.mjs';
 
 const here=path.dirname(fileURLToPath(import.meta.url));
 const home=process.env.ZGMINI_PC_HOME??'E:\\ZGmini\\data\\pc-writer';
@@ -57,20 +59,36 @@ async function run(){
  }).find(value=>value?.job==='breadth'&&typeof value?.status==='string');
  const latest=childReport??readJSON(path.join(home,'local-collection-last-run.json'));
  const when=Date.parse(latest?.at??'');
- record('collectorJob',safeCode(latest?.job));
+ record('collectorJob',latest?.job==='breadth'?'breadth':'UNCLASSIFIED');
  record('collectorStatus',safeCode(latest?.status));
+ record('collectorSourceStatus',safeCode(latest?.sourceStatus));
  if(latest?.job!=='breadth'||(!childReport&&(!Number.isFinite(when)||when<started-2000)))throw Error('COLLECTOR_RUN_NOT_VERIFIED');
- if(latest?.status!=='COMPLETE'){
+ if(!mayAuditStoredUsBreadth(latest)){
   record('status','WAIT_COLLECTOR');
   return;
  }
 
- let db;
- let prepared;
- try{
-  db=new DatabaseSync(path.join(home,'storage','core.sqlite'),{readOnly:true});
-  prepared=await prepareUsBreadth(localAdapter(db));
- }finally{try{db?.close();}catch{}}
+ const inspect=async()=>{
+  let db,latestStoredTradeDate=null;
+  try{
+   db=new DatabaseSync(path.join(home,'storage','core.sqlite'),{readOnly:true});
+   try{
+    latestStoredTradeDate=db.prepare('SELECT MAX(trade_date) latest FROM market_score_breadth_b1_r3_universe_v1').get()?.latest??null;
+   }catch{latestStoredTradeDate='UNAVAILABLE';}
+   return {prepared:await prepareUsBreadth(localAdapter(db)),latestStoredTradeDate};
+  }finally{try{db?.close();}catch{}}
+ };
+ let {prepared,latestStoredTradeDate}=await inspect();
+ record('latestStoredTradeDate',latestStoredTradeDate);
+ if(needsOneFreshSourceAttempt({collection:latest,prepared,latestStoredTradeDate})){
+  record('sourceRefreshAttempted',true);
+  const refreshed=await attemptFreshUsSource({root,home,asOfDate:new Date().toISOString().slice(0,10)});
+  record('sourceRefreshStatus',safeCode(refreshed.status));
+  record('sourceRefreshTradeDate',refreshed.tradeDate);
+  record('sourceRefreshProviderRequests',refreshed.providerRequests);
+  ({prepared,latestStoredTradeDate}=await inspect());
+  record('latestStoredTradeDate',latestStoredTradeDate);
+ }else record('sourceRefreshAttempted',false);
  record('expectedDate',prepared.expectedDate??prepared.body?.observationDate??null);
  record('calculationStatus',safeCode(prepared.status));
  if(!prepared.prepared){record('status','WAIT_VERIFIED_SOURCE');return;}
