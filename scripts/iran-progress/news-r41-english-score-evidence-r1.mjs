@@ -94,7 +94,8 @@ export async function runEnglishScoreShadow(feed,{now=Date.now(),externalEvidenc
   throw Error('IRAN_ENGLISH_SCORE_SHADOW_OPTIONS_INVALID');
  const articles=validateR41MetadataFeed(feed,{now});
  const bodyMap=validateR41ArticleEvidence(externalEvidence,articles);
- const items=[],pending=[];
+ const items=[],pending=[],bodyFailures=new Map();
+ let modelCallsAttempted=0,modelCallsSucceeded=0;
  const permitted=articles.filter(article=>article.sourceId&&r41SourceRightsPolicy(
   article.sourceId,article.sourceUrl).directlyFetchable);
  const permittedNow=permitted.slice(0,maxNew);
@@ -109,6 +110,11 @@ export async function runEnglishScoreShadow(feed,{now=Date.now(),externalEvidenc
     typeof row.articleBody==='string'&&row.articleBody.trim().length>=120&&
     row.articleBody.length<=18000)bodyMap.set(original.sourceUrl,row.articleBody.trim());
   }
+  for(const failure of collected?.failures??[]){
+   if(permittedNow.some(article=>article.id===failure?.id)&&
+      typeof failure.reason==='string'&&/^[A-Z][A-Z0-9_]{1,79}$/.test(failure.reason))
+    bodyFailures.set(failure.id,failure.reason);
+  }
  }
  for(const article of permittedNow){
   const articleBody=bodyMap.get(article.sourceUrl);
@@ -118,13 +124,16 @@ export async function runEnglishScoreShadow(feed,{now=Date.now(),externalEvidenc
   const direct=article.sourceId&&r41SourceRightsPolicy(article.sourceId,
    article.sourceUrl).directlyFetchable;
   if(!articleBody||!direct){pending.push({id:article.id,
-   reason:'RIGHTS_CHECKED_BODY_NOT_AVAILABLE'});continue;}
+   reason:'RIGHTS_CHECKED_BODY_NOT_AVAILABLE',
+   sourceFailure:bodyFailures.get(article.id)??null});continue;}
   try{
    const input={...article,articleBody};
+   modelCallsAttempted++;
    const generated=await generator(input);
    // Injected generators cannot bypass the proof requirement: they must
    // provide the original draft for a second deterministic validation.
    const checked=validateEnglishScoreEvidence(generated.draft??generated,input);
+   modelCallsSucceeded++;
    items.push({id:article.id,...checked});
   }catch(error){pending.push({id:article.id,reason:/^IRAN_ENGLISH_SCORE_[A-Z_]+$/.test(error?.message)?
    error.message:'IRAN_ENGLISH_SCORE_GENERATION_FAILED'});}
@@ -135,6 +144,7 @@ export async function runEnglishScoreShadow(feed,{now=Date.now(),externalEvidenc
   pending.push({id:article.id,reason:'SOURCE_RIGHTS_RESTRICTED'});
  return {version:ENGLISH_SCORE_EVIDENCE_VERSION,asOf:now,
   status:'SHADOW_ONLY',publicWrite:false,r5ScoreChanges:0,
+  modelCallsAttempted,modelCallsSucceeded,
   items,pending};
 }
 

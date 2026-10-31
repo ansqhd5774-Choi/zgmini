@@ -29,14 +29,20 @@ export async function previewEnglishScoreEvidence({now=Date.now(),fetchImpl=fetc
  if(generator)options.generator=generator;
  const report=await runEnglishScorePCPreview(r41,options);
  const count=reason=>report.pending.filter(item=>item.reason===reason).length;
+ const sourceFailureReasons={};
+ for(const item of report.pending)if(item.sourceFailure)
+  sourceFailureReasons[item.sourceFailure]=(sourceFailureReasons[item.sourceFailure]??0)+1;
  const metadataById=new Map(r41.items.map(item=>[item.id,item]));
  return {status:'SHADOW_PREVIEW',version:report.version,
   checkedAt:new Date(now).toISOString(),
   sourceCount:r41.sourceCount,newsCount:r41.itemCount,
   evidenceConfirmed:report.items.filter(item=>item.status==='EVIDENCE_CONFIRMED').length,
   evidenceHeld:report.items.filter(item=>item.status==='HELD').length,
+  modelCallsAttempted:report.modelCallsAttempted,
+  modelCallsSucceeded:report.modelCallsSucceeded,
   rightsRestricted:count('SOURCE_RIGHTS_RESTRICTED'),
   sourceUnavailable:count('RIGHTS_CHECKED_BODY_NOT_AVAILABLE'),
+  sourceFailureReasons,
   inferenceFailures:report.pending.length-count('SOURCE_RIGHTS_RESTRICTED')-
    count('RIGHTS_CHECKED_BODY_NOT_AVAILABLE')-count('ANALYSIS_BACKLOG'),
   backlog:count('ANALYSIS_BACKLOG'),
@@ -48,7 +54,8 @@ export async function previewEnglishScoreEvidence({now=Date.now(),fetchImpl=fetc
     rule:item.rule??null,delta:item.delta??null})),
    ...report.pending.map(item=>({source:metadataById.get(item.id)?.source??null,
     sourceUrl:metadataById.get(item.id)?.sourceUrl??null,
-    status:'PENDING',reason:item.reason,rule:null,delta:null})),
+    status:'PENDING',reason:item.reason,
+    sourceFailure:item.sourceFailure??null,rule:null,delta:null})),
   ].sort((a,b)=>a.sourceUrl.localeCompare(b.sourceUrl)),
   publicWrite:false,r5ScoreChanges:0};
 }

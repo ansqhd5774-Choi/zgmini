@@ -83,6 +83,39 @@ test('rights-checked source evidence is required; shadow never writes score',asy
  assert.equal(scored.r5ScoreChanges,0);
  assert.equal(scored.publicWrite,false);
  assert.equal(scored.status,'SHADOW_ONLY');
+ assert.equal(scored.modelCallsAttempted,1);
+ assert.equal(scored.modelCallsSucceeded,1);
+});
+test('PC preview identifies source fetch failures without inventing a score',async()=>{
+ const result=await previewEnglishScoreEvidence({now,
+  fetchImpl:async()=>new Response(JSON.stringify({version:'IRAN_NEWS_METADATA_R41',
+   status:'READY',sourceCount:1,itemCount:1,displayDays:14,items:[item]}),{status:200}),
+  evidenceCollector:async()=>({items:[],failures:[{id:item.id,
+   reason:'NEWS_R26_SOURCE_FETCH_FAILED'}]}),
+  generator:async()=>{throw Error('Model must not run without article evidence');},
+ });
+ assert.equal(result.sourceUnavailable,1);
+ assert.equal(result.modelCallsAttempted,0);
+ assert.equal(result.modelCallsSucceeded,0);
+ assert.deepEqual(result.sourceFailureReasons,{NEWS_R26_SOURCE_FETCH_FAILED:1});
+ assert.equal(result.articleResults[0].sourceFailure,'NEWS_R26_SOURCE_FETCH_FAILED');
+ assert.equal(result.r5ScoreChanges,0);
+});
+test('A held evidence verdict can be a successful Ollama call, not an inference failure',async()=>{
+ const title='Iran must allow the return of IAEA inspectors to all nuclear sites';
+ const text='The UK representative urged Iran to allow international inspectors to visit nuclear sites. '+
+  'The statement raised concerns over ongoing nuclear verification disputes in the region.';
+ const report=await runEnglishScoreShadow({items:[{...item,title}]},{now,
+  externalEvidence:{version:evidence.version,items:[{...evidence.items[0],
+   originalTitle:title,articleBody:text}]},
+  generator:async()=>({eventRule:'NONE',stageStatus:'NO_EVENT',
+   supportingQuote:'The UK representative urged Iran to allow international inspectors to visit nuclear sites.'}),
+ });
+ assert.equal(report.items[0].status,'HELD');
+ assert.equal(report.items[0].reason,'ORIGINAL_TITLE_NO_APPROVED_EVENT');
+ assert.equal(report.modelCallsAttempted,1);
+ assert.equal(report.modelCallsSucceeded,1);
+ assert.equal(report.r5ScoreChanges,0);
 });
 test('PC preview collects eligible English originals and has no score or public writes',async()=>{
  let collected=0;
