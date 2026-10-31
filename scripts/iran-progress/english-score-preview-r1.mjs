@@ -6,7 +6,7 @@ import {readPublishedNews} from './published-news-score-input-r1.mjs';
 import {runEnglishScorePCPreview} from './news-r41-english-score-evidence-r1.mjs';
 
 export async function previewEnglishScoreEvidence({now=Date.now(),fetchImpl=fetch,
- maxNew=16,evidenceCollector,generator,ollamaFetch=fetch}={}){
+ maxNew=16,evidenceCollector,generator,defaultGenerator,ollamaFetch=fetch}={}){
  if(!generator){
   // A successful file/API run is not evidence that local Ollama is active.
   let modelReady=false;
@@ -27,6 +27,7 @@ export async function previewEnglishScoreEvidence({now=Date.now(),fetchImpl=fetc
  const options={now,maxNew};
  if(evidenceCollector)options.evidenceCollector=evidenceCollector;
  if(generator)options.generator=generator;
+ else if(defaultGenerator)options.generator=defaultGenerator;
  const report=await runEnglishScorePCPreview(r41,options);
  const count=reason=>report.pending.filter(item=>item.reason===reason).length;
  const sourceFailureReasons={};

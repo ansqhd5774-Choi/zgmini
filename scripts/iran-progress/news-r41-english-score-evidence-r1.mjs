@@ -67,16 +67,27 @@ export function validateEnglishScoreEvidence(draft,article){
 }
 
 export async function generateEnglishScoreEvidence(article,{
- fetcher=fetch,model='gemma3:4b',timeoutMs=90000,
+ fetcher=fetch,model='gemma3:4b',timeoutMs=90000,quoteCandidates=null,
 }={}){
  if(!/^[a-zA-Z0-9_.:-]{2,80}$/.test(model)||
   !Number.isSafeInteger(timeoutMs)||timeoutMs<1000||timeoutMs>120000)
   throw Error('IRAN_ENGLISH_SCORE_OLLAMA_OPTIONS_INVALID');
+ if(quoteCandidates!==null&&(!Array.isArray(quoteCandidates)||
+  quoteCandidates.length<1||quoteCandidates.length>12||
+  new Set(quoteCandidates).size!==quoteCandidates.length||
+  quoteCandidates.some(quote=>typeof quote!=='string'||quote.length<16||
+   quote.length>500||!article?.articleBody?.includes(quote))))
+  throw Error('IRAN_ENGLISH_SCORE_QUOTE_OPTIONS_INVALID');
+ // Structured-output enums constrain copying; the independent validator still
+ // requires a verbatim source quote, same stage and matching actor/location.
+ const format=quoteCandidates===null?SCHEMA:{...SCHEMA,properties:{...SCHEMA.properties,
+  supportingQuote:{type:'string',enum:quoteCandidates}}};
  const response=await fetcher('http://127.0.0.1:11434/api/generate',{
   method:'POST',headers:{'content-type':'application/json'},
-  body:JSON.stringify({model,system:SYSTEM,
+  body:JSON.stringify({model,system:SYSTEM+(quoteCandidates===null?'':
+   ' supportingQuote MUST be exactly one of the provided schema enum strings.'),
    prompt:JSON.stringify({originalTitle:article.originalTitle,articleBody:article.articleBody}),
-   format:SCHEMA,stream:false,options:{temperature:0,num_predict:400}}),
+   format,stream:false,options:{temperature:0,num_predict:400}}),
   signal:AbortSignal.timeout(timeoutMs),
  });
  if(!response?.ok)throw Error('IRAN_ENGLISH_SCORE_OLLAMA_FAILED');
