@@ -594,3 +594,18 @@
   .zg-fg-us .zg-fg-guide-short { display: inline; }
   .zg-fg-us .zg-fg-buying-guide-link svg { display: none; }
 }
+/* Six US-only periods fit the original mobile rail; Korea remains five. */
+@media (max-width: 760px) {
+  .zg-fg-us .usa-target-card.fg-shared-shell .fg-period-slot .cnn-period-toolbar[data-usa-one-day="true"] {
+    height: 176px;
+    min-height: 176px;
+    max-height: 176px;
+    gap: 4px;
+  }
+  .zg-fg-us .usa-target-card.fg-shared-shell .fg-period-slot .cnn-period-toolbar[data-usa-one-day="true"] .cnn-period-button {
+    flex: 0 0 25px;
+    height: 25px;
+    min-height: 25px;
+    max-height: 25px;
+  }
+}

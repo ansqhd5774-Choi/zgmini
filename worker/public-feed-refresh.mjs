@@ -1,6 +1,7 @@
 import {FEED_POLICY,publicFeedStore} from './public-feed-store.mjs';
 import {marketOperationalStore} from './market-operational-store.mjs';
 import {acceptsStoredUpdate} from '../lib/market-score/live-refresh.mjs';
+import {mergeCnnObservedHistory} from '../lib/cnn-observed-history-r1.mjs';
 
 // Authenticated scheduler only. Independent source failures retain last good output.
 /** @param {{env?:import('./runtime-contracts').DataEnv,collectors?:Record<string,(store:ReturnType<typeof publicFeedStore>,now:number)=>Promise<unknown>>,now?:number,store?:ReturnType<typeof publicFeedStore>,locks?:ReturnType<typeof marketOperationalStore>,maxFeedsPerRun?:number}} [options] */
@@ -28,7 +29,9 @@ export async function refreshPublicFeeds({env,collectors,now=Date.now(),store,lo
     const body=await response.json();
     if(body.status==='fallback'||body.status==='FAILED'||body.status==='unavailable')throw Error('INVALID_OUTPUT');
     if(!acceptsStoredUpdate(previous?.body,body))throw Error('OBSERVATION_REGRESSION');
-    await store.writeOutput(key,body,now);
+    // The existing PC-stored public CNN output carries a bounded observed-score
+    // timeline. Other feeds, including Korea, retain their existing contract.
+    await store.writeOutput(key,key==='fear-greed'?mergeCnnObservedHistory(previous?.body,body,now):body,now);
     await locks.finish(attempt,token,now,'COMPLETE');results.push({key,status:'COMPLETE'});
    }catch(error){await locks.finish(attempt,token,now,'FAILED');results.push({key,status:'FAILED',...(Array.isArray(error?.providerDiagnostics)?{providers:error.providerDiagnostics}: {})})}
   }}
