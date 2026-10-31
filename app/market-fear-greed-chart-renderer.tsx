@@ -17,7 +17,7 @@ import {
 } from 'recharts';
 
 import {MarketChartAnimationContext} from './market-chart-animation-context';
-import type {MarketFearGreedChartPoint,MarketFearGreedChartValidPoint} from './market-fear-greed-chart';
+import type {MarketFearGreedChartPoint,MarketFearGreedChartValidPoint,MarketObservedRange} from './market-fear-greed-chart';
 
 function usePrefersReducedMotion() {
   const [reduced, setReduced] = useState(false);
@@ -54,6 +54,7 @@ export function MarketFearGreedChart({
   showExtrema = false,
   axisTickInterval = 0,
   marketScoreBands = false,
+  observedRanges = [],
 }: {
   data: MarketFearGreedChartPoint[];
   axisTicks: string[];
@@ -72,11 +73,13 @@ export function MarketFearGreedChart({
   showExtrema?: boolean;
   axisTickInterval?: 0 | 'preserveStartEnd';
   marketScoreBands?: boolean;
+  observedRanges?: MarketObservedRange[];
 }) {
   const mobileAxisRight=useDashboardMobileAxis();
   const animate=useContext(MarketChartAnimationContext);
   const prefersReducedMotion = usePrefersReducedMotion();
   const extrema=compact||!showExtrema?[]:chartExtrema(data.map(p=>({date:/^\d{8}$/.test(p.date)?`${p.date.slice(0,4)}-${p.date.slice(4,6)}-${p.date.slice(6,8)}`:p.date.slice(0,10),value:p.score})));
+  const rangeByDate=new Map(observedRanges.map(row=>[row.date,row]));
 
   if (data.length === 0 || (!compact && data.length === 1)) {
     return <div className="cnn-chart-empty"><CircleAlert size={18}/><span>{emptyLabel}</span></div>;
@@ -164,9 +167,11 @@ export function MarketFearGreedChart({
           const tooltipValue = typeof rawTooltipValue === 'number' && Number.isFinite(rawTooltipValue)
             ? rawTooltipValue
             : null;
+          const observedRange=rangeByDate.get(String(tooltipLabel));
           return <div className="cnn-history-tooltip">
             <span>{formatTooltipLabel(String(tooltipLabel))}</span>
             <strong style={{color:marketScoreBands?(tooltipValue===null?'#94a3b8':tooltipValue<25?'#ef4444':tooltipValue<40?'#f59e0b':tooltipValue<60?'#94a3b8':tooltipValue<75?'#22c55e':'#10b981'):fearGreedStateColor(tooltipValue===null?'확인 불가':tooltipValue<45?'공포':tooltipValue<=55?'중립':'탐욕')}}>{tooltipValue === null ? '—' : tooltipValue.toFixed(1)}</strong>
+            {observedRange&&<small>실제 수집 최저 {observedRange.low.toFixed(1)} · 최고 {observedRange.high.toFixed(1)}</small>}
           </div>;
         }}
       />
@@ -185,6 +190,11 @@ export function MarketFearGreedChart({
         animationDuration={950}
         animationEasing="ease-out"
       />
+      {observedRanges.filter(row=>row.high>row.low).map(row=><ReferenceLine
+        key={`cnn-observed-range-${instanceKey}-${row.date}`}
+        segment={[{x:row.date,y:row.low},{x:row.date,y:row.high}]}
+        stroke={color} strokeWidth={1.6} strokeOpacity={.76} ifOverflow="hidden"
+      />)}
       {lineSegments?.map((segment,i)=><ReferenceLine key={`segment-${instanceKey}-${i}-${segment.to.date}`}
         segment={[{x:segment.from.date,y:segment.from.score},{x:segment.to.date,y:segment.to.score}]}
         stroke={color} strokeWidth={2.2} strokeDasharray={segment.dashed ? '5 5' : undefined}
