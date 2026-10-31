@@ -7,7 +7,7 @@ export async function GET(request:Request){
   const url=new URL(request.url);
   if(url.searchParams.get('market')!=='usa')return Response.json({reason:'MARKET_NOT_AVAILABLE'},{status:404});
   let row:{body:string;stored_at:number}|null=null;
-  try{row=await env.DB.prepare('SELECT body,stored_at FROM market_public_snapshots_v1 WHERE snapshot_key=?').bind(US_BREADTH_CURRENT_KEY).first() as typeof row;}
+  try{row=await env.DB.prepare('SELECT body,stored_at FROM market_public_snapshots_v1 WHERE snapshot_key=?').bind(US_BREADTH_CURRENT_KEY).first() as {body:string;stored_at:number}|null;}
   catch{return Response.json({reason:'STORED_OUTPUT_UNAVAILABLE'},{status:503,headers:{'Cache-Control':'no-store'}});}
   let record:unknown;
   try{record=row?.body?JSON.parse(row.body):null;}catch{return Response.json({reason:'INVALID_STORED_OUTPUT'},{status:503,headers:{'Cache-Control':'no-store'}});}
