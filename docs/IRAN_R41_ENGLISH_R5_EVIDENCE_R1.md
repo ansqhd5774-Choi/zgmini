@@ -50,6 +50,10 @@ node scripts\iran-progress\english-score-preview-r1.mjs --preview
 - **R4 보도 단계 정의:** Ollama의 `REPORTED_COMPLETED`는 **출처가 이미 발생한 사건이라고 보도했다는 뜻**이며, 실제 사실을 독립적으로 확정한다는 뜻이 아니라고 명시한다. 사건의 발생 자체를 부정하거나 서로 상충하는 근거가 있는 경우, 계획·가능성·미래 가정과 함께 기존 보류 규칙을 유지한다. 이 조정은 모델 프롬프트의 의미 명확화일 뿐 **기존 R5 점수·가중치·단계 규칙을 바꾸지 않는다**.
 - **R4 안전 진단:** 본문·모델 출력·인용문을 저장하지 않고 `screenedOutNoEvent`, `heldNoMatchingQuote`, `inferenceFailureCodes`, 기사별 `diagnosticCode`, `modelStageStatus` 등 **정해진 진단 코드**만 추가로 출력한다. 모델이 없는 경우 기존 `BLOCKED` 게이트를 그대로 유지하고, 인용문이 존재해도 검증 규칙을 우회하지 않는다. 과거 R3 실제 7건 중 로컬 제목 재검사 결과는 **6건 사전 보류 / 공습 1건 모델 대상**이다. 이는 코드상의 선별 결과이며 PC 모델 최종 판정은 R4 실행으로 확인해야 한다.
 - **R4 PC 그림자 프리뷰:** `scripts\iran-progress\IRAN_ENGLISH_SCORE_R4_PREVIEW.cmd`를 실행한 뒤 **`IRAN_ENGLISH_SCORE_R4_PREVIEW_RESULT.txt`**를 제출한다. 기존 원장·예약 작업·공개 점수·D1에 쓰지 않으며 `publicWrite=false`, `r5ScoreChanges=0`이다. `FINAL_STATUS=ENGLISH_SCORE_R4_SHADOW_NO_PUBLISH`를 확인하기 전에는 완료를 선언하지 않는다.
+- **R4 PC 실제 결과(2026-10-31):** R41 67건·8개 출처, 권리 보류 60건, 사건 없는 제목 6건 사전 제외, 모델 호출 1건·응답 성공 1건, 추론 오류 0건이었다. Tasnim의 2026-10-29 사우디·예멘 공습 보도는 `modelStageStatus=REPORTED_COMPLETED`였으나 `MODEL_STAGE_CONFLICT`로 보류되었다. 즉 발생 여부 인식은 개선됐지만 사건 유형은 기존 결정론적 R3 제목 규칙과 충돌했다. **확정 0건·R5 점수 변경 0건**이며, 기존 R4 출력만으로 모델이 구체적으로 어떤 사건 유형을 선택했는지는 알 수 없다.
+- **R5 사건 유형 단일가설 검증(읽기 전용):** `scripts/iran-progress/english-score-preview-r5.mjs`는 기존 R4의 제목·인용문 사전 선별과 보도 단계 정의를 유지하며, R3 제목 분류로 검증 대상 `proposedEventRule`을 **하나만** 제안한다. Ollama JSON Schema `eventRule`을 **`NONE` 또는 해당 제안 규칙**만 선택하도록 제한한다. `NONE`은 모델의 거부권이며 자동 승인·점수 추가가 아니다. 모델에 주어진 영문 기사 본문과 원문 인용문은 여전히 신뢰되지 않는 증거로 취급하고, 응답 후 기존 `validateEnglishScoreEvidence`가 원문 정확 일치, 발생 단계, 제목-인용문 R3 규칙 동일성, 행위자·장소 일치 여부를 독립적으로 다시 검증한다. 모델이 `REPORTED_COMPLETED`를 반환해도 기사 자체의 독립적인 진위 확인으로 해석하지 않는다.
+- **R5 판정 충돌 진단:** 기사별 `expectedEventRule`(로컬 R3 분류)과 `modelEventRule`(Ollama 선택값)을 R5에서만 기록한다. 둘 다 고정된 사건 규칙 식별자이며 본문·모델 인용문·원문 텍스트·임의 자유서술을 출력하지 않는다. `MODEL_STAGE_CONFLICT`가 다시 나면 어떤 유형에서 불일치했는지 확인할 수 있다. R1~R4 기본 출력은 유지한다.
+- **R5 PC 그림자 프리뷰:** `scripts/iran-progress/IRAN_ENGLISH_SCORE_R5_PREVIEW.cmd`를 기존 승인 PC의 같은 저장소 경로에서 수동 실행한다. 같은 폴더에 `IRAN_ENGLISH_SCORE_R5_PREVIEW_RESULT.txt`가 생성되며, 콘솔과 파일에 `FINAL_STATUS=ENGLISH_SCORE_R5_SHADOW_NO_PUBLISH`가 기록돼야 테스트 실행이 정상 종료된 것이다. 이 값은 공개 점수 반영이나 증거 확정을 의미하지 않는다. `publicWrite=false`, `r5ScoreChanges=0`을 유지하며 예약 작업, Windows 설정, 기존 PC SQLite, D1, 공개 API, 사이트 번역은 변경하지 않는다. **PC 실행은 아직 별도 확인이 필요하다.**
 - Ollama 실제 모델 설치·실행, 자동 실행 스케줄/PC SQLite/Cloudflare D1 쓰기/공개 점수 반영 검증은 별도 운영 게이트가 필요하다. 테스트 PASS만으로 운영 적용 성공을 선언하지 않는다.
 - 일부 매체의 본문 이용 권리가 제한되어 있으므로 **67개 기사 모두의 AI 검증은 보장되지 않는다**. 결측은 중립/완화 점수로 간주하지 않는다.
 
@@ -57,6 +61,7 @@ node scripts\iran-progress\english-score-preview-r1.mjs --preview
 
 ```bash
 node --test tests/iran-news-r41-english-score-evidence-r1.test.mjs tests/iran-published-news-score-input-r1.test.mjs tests/iran-news-r41-auto-interpret-r1.test.mjs tests/iran-r5-publication-reality-guard.test.mjs tests/iran-score-news-input-r1.test.mjs tests/iran-tasnim-html-shape-r1.test.mjs tests/iran-tasnim-english-body-r2.test.mjs tests/iran-r3-casualty-headline-r1.test.mjs tests/iran-english-bound-quote-r3.test.mjs tests/iran-english-score-preview-r4.test.mjs
+node --test tests/iran-english-score-preview-r5.test.mjs
 ```
 
 다음 운영 단계: 최신 `main` 소스와 PC 승인 SHA 비교 → 승인된 영문 본문 수집 경로와 동일 PC 영문 Ollama 프리뷰 연결 → 샘플 기사별 원문·사건·중복·R5 점수 차이 대조 → 별도 운영 승인/검증 후 공개 점수 반영.

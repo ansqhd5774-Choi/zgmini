@@ -7,7 +7,8 @@ import {runEnglishScorePCPreview} from './news-r41-english-score-evidence-r1.mjs
 
 export async function previewEnglishScoreEvidence({now=Date.now(),fetchImpl=fetch,
  maxNew=16,evidenceCollector,generator,defaultGenerator,ollamaFetch=fetch,
- eventPreflight=false,quotePreflight=null,includeDiagnosticDetails=false}={}){
+ eventPreflight=false,quotePreflight=null,includeDiagnosticDetails=false,
+ includeRuleDiagnostics=false}={}){
  if(!generator){
   // A successful file/API run is not evidence that local Ollama is active.
   let modelReady=false;
@@ -25,7 +26,8 @@ export async function previewEnglishScoreEvidence({now=Date.now(),fetchImpl=fetc
  const {r41,selected}=await readPublishedNews({now,fetchImpl});
  if(selected.endpoint!=='/api/outbreak-news/iran/r41')
   throw Error('IRAN_ENGLISH_SCORE_R41_FEED_UNAVAILABLE');
- const options={now,maxNew,eventPreflight,quotePreflight,includeDiagnosticDetails};
+ const options={now,maxNew,eventPreflight,quotePreflight,includeDiagnosticDetails,
+  includeRuleDiagnostics};
  if(evidenceCollector)options.evidenceCollector=evidenceCollector;
  if(generator)options.generator=generator;
  else if(defaultGenerator)options.generator=defaultGenerator;
@@ -64,6 +66,10 @@ export async function previewEnglishScoreEvidence({now=Date.now(),fetchImpl=fetc
     sourceUrl:item.sourceUrl,status:item.status,reason:item.reason??null,
     rule:item.rule??null,delta:item.delta??null,
     ...(includeDiagnosticDetails?{modelStageStatus:item.stageStatus}:{}),
+    ...(includeRuleDiagnostics?{
+     expectedEventRule:item.expectedEventRule??null,
+     modelEventRule:item.eventRule??null,
+    }:{}),
    })),
    ...report.pending.map(item=>({source:metadataById.get(item.id)?.source??null,
     sourceUrl:metadataById.get(item.id)?.sourceUrl??null,
