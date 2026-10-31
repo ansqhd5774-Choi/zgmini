@@ -1,0 +1,13 @@
+{
+  "sourceSha": "8a7634a5358cb19280725fe29a977ba4feb44be8",
+  "approvedBaselineSha": "a477ef304425145f559352af4291e437e3b08a2d",
+  "runLocalPath": "scripts/pc-writer/run-local.mjs",
+  "anchor": "  // Reuse the existing public snapshot table; publish only the bounded display score.",
+  "hunk": "  // Independently publish the two already-approved R10 display-only D1 sidecars.\n  // The scored R10 projection must have passed its own publication/readback;\n  // missing/stale content aborts this side lane, not other domains.\n  if(report.assetR10?.status==='READY'){\n   await attemptOutput(report,'asset-r10-sidecars-publication',async()=>{\n    const r10=readAssetR10Projection(base);\n    if(r10.status!=='READY')throw Error('ASSET_R10_SIDECAR_RELEASE_NOT_READY');\n    const {publishAssetR10Sidecars}=await import('./asset-r10-sidecar-auto-publication-r1.mjs');\n    report.assetR10Sidecars=await publishAssetR10Sidecars({\n     pcHome:base,remote,coreDb:config.core,scored:r10.payload,\n    });\n   });\n  }\n",
+  "prelude": "   if(!check||hash(JSON.parse(check.body).payload)!==hash(envelope.payload))throw Error('LOCAL_PROJECTION_PUBLICATION_MISMATCH');\n   });\n  }\n",
+  "requiredTokens": [
+    "publicationCompatibility(root,config.source,source,main)",
+    "await projectionWriter(remote.adapter(config.core,{allowWrites:true})).write",
+    "await attemptOutput(report,'rate-sentiment-publication'"
+  ]
+}

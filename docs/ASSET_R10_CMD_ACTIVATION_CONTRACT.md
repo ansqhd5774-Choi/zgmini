@@ -280,3 +280,15 @@ R9은 원본 안전 검사를 삭제하지 않고 `git show a477ef...:scripts/pc
 - ZIP 내 manifest 대상 파일 27개 + manifest 1개, 파일별 SHA 및 ZIP CRC 검사 PASS, 압축 해제본 Node 22.16.0 테스트 총 **21건 PASS**, 비-Windows `STOP_WINDOWS_ONLY` 확인.
 - 소스는 같은 브랜치의 `scripts/pc-writer/asset-r10-cmd-r9/` (R8과 R7은 보존).
 - **다음 PC 조치:** 새 폴더에 압축 해제 → `RUN_PREFLIGHT.cmd` 1회 → `ASSET_R10_CMD_PREFLIGHT_RESULT.txt` 제출. **실 PC R9 결과 확인 전 INSTALL 금지**. 완료/게시/D1 검증으로 표기 금지.
+
+## 21. R9 운영 PREFLIGHT 중단 및 R10 게시 호환성 파일 EOL 검사 (2026-10-31)
+
+R9 PC 결과 `ASSET_R10_CMD_PREFLIGHT_RESULT(3).txt`: `STATUS=STOP`, `ERROR_CODE=STOP_PUBLICATION_COMPATIBILITY_HASH_MISMATCH`. 승인 HEAD/config/source `a477ef304425145f559352af4291e437e3b08a2d`, `TRACKED_DIRTY=NO`, Writer 본문 `EXACT_CONTENT_WITH_ALLOWED_EOL` (worktree CRLF 244/LF 1, Git LF 245), `HOOK_STATUS=READY_TO_PATCH`, Core/Korea Ready, 프로세스·잠금 CLEAR, ledger VERIFIED. `AFTER_SHA=NOT_APPLIED`, 백업·테스트·D1 및 설치 미실행. Guard 바이트 SHA 불일치는 EOL 때문인지 **미확정**.
+
+R10은 `publication-guard.mjs`를 절대 교체하지 않으며 고정 PR #893 Guard와 실제 파일의 UTF-8 텍스트 전체를 비교한다. byte-exact 우선, 불일치 시 CRLF의 CR만 제외한 **정확한 전체 텍스트 일치** 및 standalone CR/비정상 UTF-8 부재에만 한정해 통과시킨다. 이 기준은 이미 존재하는 동일 SHA 의존 파일에도 적용하며, 기존 tracked clean, 승인 source, Core/Korea 유휴, 잠금·프로세스·ledger·스케줄러 STOP 조건은 유지한다. 새로운 진단 필드: `PUBLICATION_GUARD_EQUIVALENCE`, `PUBLICATION_GUARD_EOL`, `DEPENDENCY_EOL_VARIANTS`. 코드·공백 차이는 `STOP_PUBLICATION_COMPATIBILITY_CONTENT_MISMATCH` 또는 `STOP_DEPENDENCY_CONTENT_MISMATCH`로 차단한다.
+
+- R10 ZIP: `ASSET_R10_AUTO_CMD_R10_VERIFIED_20261031.zip`, SHA-256 `d8401a005b60fd149876efccbba24eb26ab82a9830e15717e81948aa4f2cd7d3`.
+- Manifest SHA-256: `32f6e5ef8ba2350b45d13711c9ba0ff1b4ec93d4de4b911d42a5703c45f30833`.
+- ZIP 28개 파일 바이트·manifest 27개 해시·압축 해제본 Node 22.16.0 회귀시험 23건 PASS; 비-Windows `STOP_WINDOWS_ONLY` 확인. **Windows R10 실측은 아직 없음**.
+- 기존 `asset-r10-cmd-r9` 포함 모든 기존 패키지 보존. 코드/테스트/manifest는 `scripts/pc-writer/asset-r10-cmd-r10/`에 저장.
+- 실행: 새 폴더 압축 해제 → `RUN_PREFLIGHT.cmd` 정확히 1회 → 결과 `ASSET_R10_CMD_PREFLIGHT_RESULT.txt` 회수. 현장 검증 이전 `RUN_INSTALL.cmd` 실행 금지. 배포/스케줄러/D1/PC Writer는 변경하지 않았다.
