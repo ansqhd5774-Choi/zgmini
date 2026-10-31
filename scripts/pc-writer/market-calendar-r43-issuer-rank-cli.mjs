@@ -28,11 +28,13 @@ export function runR43Local({base = process.env.ZGMINI_PC_HOME ?? path.join(os.h
     return {...report, reason:result.reason, coverage:result.coverage};
   if (!r43ImportanceIndex(result, {now}))
     return {...report, reason:'R43_INPUT_STALE_OR_RANK_INTEGRITY_FAILED', coverage:result.coverage};
+  const certified={...result,sourceProvenance:source.provenance,
+    sourceRightsReviewed:true,marketCapApiUsed:false};
   if (write) {
     const outputPath = path.join(base, outputName);
     const tmp = outputPath + '.tmp-' + process.pid;
     // An already existing output is preserved until a complete validated result exists.
-    fs.writeFileSync(tmp, JSON.stringify(result));
+    fs.writeFileSync(tmp, JSON.stringify(certified));
     fs.renameSync(tmp, outputPath);
     const check = JSON.parse(fs.readFileSync(outputPath, 'utf8'));
     if (!r43ImportanceIndex(check, {now}))
