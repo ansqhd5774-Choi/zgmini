@@ -304,3 +304,16 @@ R11은 기존 R10 코드/산식/소스/DB/스케줄러를 유지하며, `assertI
 - Node 22.16.0 압축 해제본 회귀시험 **25개 PASS**; 비-Windows `STOP_WINDOWS_ONLY` 검증 PASS. Windows R11 실측/설치/정규 주기/D1 readback **미검증**.
 - 기존 R10 버전 보존. 작업 브랜치 새 경로 `scripts/pc-writer/asset-r10-cmd-r11/`.
 - 다음 PC 실행: 새 폴더 압축 해제 후 `RUN_PREFLIGHT.cmd` 정확히 1회; 결과 확인 전 INSTALL 금지. STOP이면 잠금/프로세스를 수동 제거하지 않는다.
+
+## 23. R11 one-shot 설치 중단 및 R12 단일 호출·CMD 기본 인터페이스 개선 (2026-10-31)
+
+사용자 PC `ASSET_R10_CMD_INSTALL_RESULT(2).txt`는 `STATUS=STOP_INSTALL_FAILED`, `ERROR_CODE=STOP_CORE_NEXT_RUN_TOO_NEAR`, `CORE_NEXT_RUN_MARGIN_SEC=118` (기준 120초), `BEFORE_SHA=a477ef...`, `AFTER_SHA=NOT_APPLIED`, `BACKUP_STATUS=VERIFIED_LOCAL_ONLY`, `RESTORE_STATUS=PRECOMMIT_FILES_RESTORED`. Core/Korea Ready, lock/process CLEAR, ledger VERIFIED이며 R10 설치와 D1 원격 검증은 미실행. 이 결과는 기존 운영 장애가 아니라 설치 중 안전 게이트 중단이다.
+
+R12는 기존 R11 one-shot의 중복 preflight 문제를 보완한다. R12 `RUN_INSTALL.cmd`는 단독으로 source/route/manifest/ledger 검사를 실행하고, Core 예약 작업까지 최소 **230초** 남은 유휴 상태를 **최대 8분** 찾는다. 조건을 못 찾으면 소스를 변경하지 않고 STOP; 예약 작업을 끄거나 lock을 제거하지 않는다. 검사 완료 후 한 번만 설치하며 소스 수정/테스트 후에도 기존 120초 보호를 유지하고 다시 재검사한다. **Windows 상태 조회에서 금지된 PowerShell 호출을 제거**, CMD에서 `cscript.exe`로 실행하는 허용된 기본 Windows `Schedule.Service` COM 및 `Win32_Process` WMI 읽기 전용 보조 스크립트로 대체했다. 출력에는 작업 상태와 대상 프로세스 활동 여부만 남긴다.
+
+- 패키지: `ASSET_R10_AUTO_CMD_R12_VERIFIED_20261031.zip`.
+- ZIP SHA-256: `fbc35b8a1da4e280fc8760572d3b7e52eff74b6ee6ed42c4de2e414d897dde33`.
+- Manifest SHA-256: `91a3020b24dfad05b539d7ea505f43f3c64b8eeb2031aa8125acd3fe26fb8c3a`.
+- 28개 manifest 대상 파일 + manifest 1개 ZIP 무결성 PASS, 기존 payload/CMD byte identity PASS, Node 오프라인 회귀시험 **28/28 PASS**, 비-Windows preflight/install `STOP_WINDOWS_ONLY` PASS.
+- 기존 R11/one-shot 패키지는 변경하지 않았고, 브랜치 경로는 `scripts/pc-writer/asset-r10-cmd-r12/`. Windows COM/WMI 동작 및 실제 설치/정규 D1/두 주기: **미검증**.
+- PC 다음 조치: 새 폴더 압축 해제 → `RUN_INSTALL.cmd` **1회만 실행** (별도 PRE-FLIGHT/one-shot CMD 선행 금지). 오류나 결과 불명확 시 재실행 금지, `ASSET_R10_CMD_INSTALL_RESULT.txt` 제출. 성공 후 `RUN_VERIFY.cmd` 및 별도 D1/API readback 필요.
