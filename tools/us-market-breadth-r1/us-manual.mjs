@@ -6,9 +6,10 @@ import {DatabaseSync} from 'node:sqlite';
 import {fileURLToPath,pathToFileURL} from 'node:url';
 import {prepareUsBreadth,publishUsBreadth} from './scripts/pc-writer/market-breadth-us-r1.mjs';
 import {mayAuditStoredUsBreadth} from './manual-collector-policy.mjs';
+import {needsOneFreshSourceAttempt,attemptFreshUsSource} from './manual-source-refresh.mjs';
 
 const source=path.dirname(fileURLToPath(import.meta.url));
-const reportPath=path.join(source,'US_BREADTH_PC_R6_MANUAL_RESULT.txt');
+const reportPath=path.join(source,'US_BREADTH_PC_R7_MANUAL_RESULT.txt');
 const home=process.env.ZGMINI_PC_HOME??'E:\\ZGmini\\data\\pc-writer';
 const root='E:\\ZGmini\\projects\\zgmini-earnings-history-pc-release';
 const result={at:new Date().toISOString(),mode:'MANUAL_ON_DEMAND',market:'US_ONLY',
@@ -79,15 +80,28 @@ async function run(){
     return;
   }
 
-  let db,prepared;
-  try{
-    db=new DatabaseSync(path.join(home,'storage','core.sqlite'),{readOnly:true});
+  const inspect=async()=>{
+    let db,latestStoredTradeDate=null;
     try{
-      const prior=db.prepare('SELECT MAX(trade_date) latest FROM market_score_breadth_b1_r3_universe_v1').get();
-      set('latestStoredTradeDate',prior?.latest??null);
-    }catch{set('latestStoredTradeDate','UNAVAILABLE');}
-    prepared=await prepareUsBreadth(adapter(db));
-  }finally{try{db?.close();}catch{}}
+      db=new DatabaseSync(path.join(home,'storage','core.sqlite'),{readOnly:true});
+      try{
+        latestStoredTradeDate=db.prepare('SELECT MAX(trade_date) latest FROM market_score_breadth_b1_r3_universe_v1').get()?.latest??null;
+      }catch{latestStoredTradeDate='UNAVAILABLE';}
+      const prepared=await prepareUsBreadth(adapter(db));
+      return {prepared,latestStoredTradeDate};
+    }finally{try{db?.close();}catch{}}
+  };
+  let {prepared,latestStoredTradeDate}=await inspect();
+  set('latestStoredTradeDate',latestStoredTradeDate);
+  if(needsOneFreshSourceAttempt({collection:latest,prepared,latestStoredTradeDate})){
+    set('sourceRefreshAttempted',true);
+    const refreshed=await attemptFreshUsSource({root,home,asOfDate:new Date().toISOString().slice(0,10)});
+    set('sourceRefreshStatus',safeCode(refreshed.status));
+    set('sourceRefreshTradeDate',refreshed.tradeDate);
+    set('sourceRefreshProviderRequests',refreshed.providerRequests);
+    ({prepared,latestStoredTradeDate}=await inspect());
+    set('latestStoredTradeDate',latestStoredTradeDate);
+  }else set('sourceRefreshAttempted',false);
   set('expectedDate',prepared.expectedDate??prepared.body?.observationDate??null);
   set('calculationStatus',safeCode(prepared.status));
   if(!prepared.prepared){
@@ -113,7 +127,7 @@ async function run(){
 try{await run();}
 catch(error){set('status','FAILED');set('reason',safeCode(error?.message));process.exitCode=1;}
 finally{
-  const lines=['REPORT=US_BREADTH_PC_R6_MANUAL','MARKET=US_ONLY',
+  const lines=['REPORT=US_BREADTH_PC_R7_MANUAL','MARKET=US_ONLY',
     ...Object.entries(result).map(([key,value])=>`${key}=${String(value??'NULL').replace(/[\r\n]/g,' ').slice(0,150)}`)];
   try{fs.writeFileSync(reportPath,lines.join('\r\n')+'\r\n','utf8');}
   catch{process.exitCode=2;}
