@@ -54,10 +54,14 @@
 .historyRisingLine { stroke: var(--zg-positive); }
 .historyFallingLine { stroke: var(--zg-danger); }
 .historyUnchangedLine { stroke: var(--zg-text-meta); }
+.historyNetPositiveBar { fill: var(--zg-positive); opacity: .84; }
+.historyNetNegativeBar { fill: var(--zg-danger); opacity: .84; }
+.historyNetNeutralBar { fill: var(--zg-text-meta); opacity: .84; }
 .historyCursor { stroke: var(--zg-text-meta); stroke-dasharray: 2 4; vector-effect: non-scaling-stroke; }
 .historyRisingDot, .historyFallingDot { stroke: var(--zg-text); stroke-width: 1; vector-effect: non-scaling-stroke; }
 .historyRisingDot { fill: var(--zg-positive); }
 .historyFallingDot { fill: var(--zg-danger); }
+.historyNetNeutralDot { fill: var(--zg-text-meta); stroke: var(--zg-text); stroke-width: 1; vector-effect: non-scaling-stroke; }
 .historyDates { grid-column: 2; color: var(--zg-text-meta); font-size: 9px; font-variant-numeric: tabular-nums; }
 .historySlider { display: block; width: calc(100% - 37px); margin: 8px 0 9px 37px; accent-color: var(--zg-text-meta); }
 .historyEmpty { padding: 20px 4px; color: var(--zg-text-meta); font-size: 11px; line-height: 1.5; }
