@@ -1,6 +1,8 @@
 @echo off
 setlocal EnableExtensions DisableDelayedExpansion
-set "RESULT=%TEMP%\US_BREADTH_R26_NODE_DIAG_%RANDOM%_%RANDOM%.txt"
+set "RESULT_DIR=%USERPROFILE%\Downloads"
+if not exist "%RESULT_DIR%\" set "RESULT_DIR=%TEMP%"
+set "RESULT=%RESULT_DIR%\US_BREADTH_R26_NODE_DIAG_%RANDOM%_%RANDOM%.txt"
 
 (
   echo ZGMINI US BREADTH R26 NODE DIAGNOSTIC
