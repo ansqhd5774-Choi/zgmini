@@ -164,9 +164,9 @@ export default function EconomicDetailPanel({id}:{id:EconomicDomainId}){
  };
  const hasVerifiedPeriodComparisons=Object.values(periods).some(value=>typeof value==="number"&&Number.isFinite(value));
  const comparisons=[{label:"1주",value:periods.week??null},{label:"1개월",value:periods.month??null},{label:"3개월",value:periods.threeMonth??null},{label:"6개월",value:periods.sixMonth??null},{label:"1년",value:periods.year??null}];
- const storedObservations=(domain?.indicators??[]).filter((row):row is Indicator=>Boolean(row&&typeof row==="object"));
- const observations=id==="employment"?employmentListRows(employmentData?.indicators??[]):storedObservations;
- const scored=storedObservations.filter(item=>item.status==="READY"&&validScore(item.score));
+ const observations=(domain?.indicators??[]).filter((row):row is Indicator=>Boolean(row&&typeof row==="object"));
+ const displayObservations=id==="employment"?employmentListRows(employmentData?.indicators??[]):observations;
+ const scored=observations.filter(item=>item.status==="READY"&&validScore(item.score));
  const ranked=[...scored].sort((a,b)=>(b.score??0)-(a.score??0));
  const highCount=Math.min(3,Math.ceil(ranked.length/2)),lowCount=Math.min(3,Math.floor(ranked.length/2));
  const strongest=ranked.slice(0,highCount);
@@ -214,13 +214,13 @@ export default function EconomicDetailPanel({id}:{id:EconomicDomainId}){
    <div className="economic-reading-strips"><span><b>점수 읽기</b>{config.reading}</span><span><b>시장과의 관계</b>{config.impact}</span></div>
   </section>
   <section className="inflation-indicator-section inflation-r2-indicators economic-indicators" aria-labelledby={"economic-"+id+"-indicators"}>
-   <header><div><p className="cnn-eyebrow">ECONOMIC INDICATORS</p><h2 id={"economic-"+id+"-indicators"}>{config.name} 구성 지표 ({id==="growth"?observations.length+"/24":observations.length}개)</h2></div><p>{id==="employment"?employmentData?`R6 저장 원자료 · 1년 차트 ${employmentData.summary.chartReadyFeatures}/29개 (과거 이력 ${employmentData.summary.chartPartialFeatures}개) · 최근 평가 ${employmentData.summary.recentlyScoredFeatures}/29개. 상단 점수는 별도 저장값입니다.`:employmentLoading?"R6 공개 저장값 확인 중":"R6 공개 저장값 게시 대기 · 수치는 확인된 값만 표시":<>승인된 저장 지표만 표시합니다. 이전 원자료·공식 다음 발표일·미니차트가 없으면 <b>—</b>로 구분하며 임의로 보완하지 않습니다.</>}{id==="growth"&&observations.length!==24?" 산출요인 24개 중 아직 공개되지 않은 항목이 있습니다.":""}</p></header>
+   <header><div><p className="cnn-eyebrow">ECONOMIC INDICATORS</p><h2 id={"economic-"+id+"-indicators"}>{config.name} 구성 지표 ({id==="employment"?<>{displayObservations.length}개</>:<>{id==="growth"?observations.length+"/24":observations.length}개</>})</h2></div><p>{id==="employment"?employmentData?`R6 저장 원자료 · 1년 차트 ${employmentData.summary.chartReadyFeatures}/29개 (과거 이력 ${employmentData.summary.chartPartialFeatures}개) · 최근 평가 ${employmentData.summary.recentlyScoredFeatures}/29개. 상단 점수는 별도 저장값입니다.`:employmentLoading?"R6 공개 저장값 확인 중":"R6 공개 저장값 게시 대기 · 수치는 확인된 값만 표시":<>승인된 저장 지표만 표시합니다. 이전 원자료·공식 다음 발표일·미니차트가 없으면 <b>—</b>로 구분하며 임의로 보완하지 않습니다.</>}{id==="growth"&&observations.length!==24?" 산출요인 24개 중 아직 공개되지 않은 항목이 있습니다.":""}</p></header>
    {(error||(id==="employment"&&employmentError))&&<p className="economic-data-notice" role="status">최근 데이터 조회가 지연되고 있습니다. 저장 자료는 갱신 확인 후 표시됩니다.</p>}
    <div className="inflation-table-wrap inflation-r2-table-wrap">
     <table className="inflation-indicator-table inflation-indicator-table-r2 economic-table">
      <colgroup>{Array.from({length:10},(_,i)=><col key={i}/>)}</colgroup>
      <thead><tr><th>☆</th><th>지표</th><th>내용</th><th>평가 기준</th><th>이전 원값</th><th>현재 원값/점수</th><th>발표</th><th>판단</th><th>미니차트(1Y)</th><th>ⓘ</th></tr></thead>
-     <tbody>{observations.map((item,i)=>{
+     <tbody>{displayObservations.map((item,i)=>{
       const name=indicatorLabel(item,id,i),idKey=item.id??name,part=validScore(item.score)&&(item.scoreStatus??item.status)==="READY"&&item.rawStatus!=="STALE"?item.score:null,j=judgement(part),mini=indicatorTrend(item);
       const present=currentPresentation(item),previous=(item.rawStatus==="READY"||item.rawStatus==="STALE"||item.status==="READY")?textValue(item.previousValue,item.unit):"—";
       return <tr key={idKey+"-"+i} data-judgement={j.tone}>
@@ -239,7 +239,7 @@ export default function EconomicDetailPanel({id}:{id:EconomicDomainId}){
     </table>
    </div>
    <div className="inflation-r2-mobile-list">
-    {observations.map((item,i)=>{
+    {displayObservations.map((item,i)=>{
      const name=indicatorLabel(item,id,i),idKey=item.id??name,part=validScore(item.score)&&(item.scoreStatus??item.status)==="READY"&&item.rawStatus!=="STALE"?item.score:null,j=judgement(part),mini=indicatorTrend(item);
      return <article className="inflation-r2-mobile-card" key={idKey+"-"+i} data-judgement={j.tone}>
       <div className="inflation-r2-mobile-head"><div className="economic-mobile-name"><EconomicFavoriteButton domainId={id} indicatorId={idKey} label={name}/><div><strong>{name}</strong><small>{technicalSource(item.source)}</small></div></div><div className="inflation-r2-mobile-actions"><span className="inflation-judgement">{j.name}</span><IndicatorHelp item={item} title={name}/></div></div>
@@ -250,7 +250,7 @@ export default function EconomicDetailPanel({id}:{id:EconomicDomainId}){
      </article>;
     })}
    </div>
-   {!loading&&!observations.length&&<p className="economic-data-notice">구성 지표가 아직 저장되지 않았습니다. 없는 항목을 가상의 지표로 채우지 않습니다.</p>}
+   {!loading&&!displayObservations.length&&<p className="economic-data-notice">구성 지표가 아직 저장되지 않았습니다. 없는 항목을 가상의 지표로 채우지 않습니다.</p>}
   </section>
   <a className="cnn-return-cta economic-back-button" href="/">← 메인 대시보드로 돌아가기</a>
  </div>;
