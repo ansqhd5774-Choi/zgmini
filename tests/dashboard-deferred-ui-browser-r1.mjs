@@ -55,4 +55,47 @@ try{
   console.log(`PASS dashboard deferred UI ${width}px signedIn=${signedIn}`);
   await page.close();
  }
+
+ // Read-only live production visual check after the mobile tooltip layer fix.
+ // No mocks, API writes, login, data collection, or change to the public site.
+ const live=await browser.newPage({
+  viewport:{width:390,height:844},
+  deviceScaleFactor:2,
+  isMobile:true,
+  hasTouch:true,
+ });
+ await live.addInitScript(()=>{
+  try{sessionStorage.setItem('zgmini-about-intro-dismissed-r1','1');}catch{}
+ });
+ try{
+  await live.goto('https://zgmini.kr/',{waitUntil:'domcontentloaded',timeout:60000});
+  await live.locator('.zg-dashboard[data-view="dashboard"]').waitFor({state:'visible',timeout:30000});
+  for(const market of ['usa','korea']){
+   const card=live.locator(market==='usa'?'.usa-target-card':'.korea-target-card');
+   const svg=card.locator('svg.recharts-surface').first();
+   await svg.waitFor({state:'visible',timeout:30000});
+   await card.locator('.recharts-area-curve').first().waitFor({state:'attached',timeout:20000});
+   const rect=await svg.boundingBox();
+   assert.ok(rect&&rect.width>80&&rect.height>40,market+' chart visible');
+   const tooltip=card.locator('.recharts-tooltip-wrapper .cnn-history-tooltip');
+   for(const xFraction of [.4,.6,.3]){
+    await live.mouse.move(rect.x+rect.width*xFraction,rect.y+rect.height*.5);
+    if(await tooltip.isVisible())break;
+   }
+   await tooltip.waitFor({state:'visible',timeout:10000});
+   const surface=await tooltip.evaluate(el=>{
+    const wrapper=el.closest('.recharts-tooltip-wrapper');
+    const tip=getComputedStyle(el),layer=wrapper?getComputedStyle(wrapper):null;
+    const box=el.getBoundingClientRect(), chart=el.closest('.fg-card')?.getBoundingClientRect();
+    return {background:tip.backgroundColor,opacity:tip.opacity,layer:layer?.zIndex,
+      width:box.width,height:box.height,cardWidth:chart?.width??0};
+   });
+   assert.equal(surface.background,'rgb(7, 26, 41)',market+' desktop-matched opaque tooltip');
+   assert.equal(surface.opacity,'1',market+' tooltip opacity');
+   assert.equal(surface.layer,'5',market+' mobile tooltip sits above translated SVG');
+   assert.ok(surface.width>40&&surface.height>25,market+' tooltip is readable');
+   await live.screenshot({path:`artifacts/dashboard-deferred-ui/production-mobile-fg-${market}-390.png`,animations:'disabled'});
+   console.log('PASS production mobile sentiment tooltip '+market+' '+JSON.stringify(surface));
+  }
+ }finally{await live.close();}
 }finally{await browser.close();}
