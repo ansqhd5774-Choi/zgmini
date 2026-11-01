@@ -7,10 +7,14 @@ const base=process.env.CHAT_PREVIEW_URL??'http://127.0.0.1:5173';
 mkdirSync('artifacts/dashboard-deferred-ui',{recursive:true});
 const browser=await chromium.launch({headless:true,args:['--no-sandbox']});
 const sampleHistory=Array.from({length:90},(_,i)=>({date:new Date(Date.UTC(2026,7,1)+i*86400000).toISOString().slice(0,10),score:45+Math.sin(i/8)*12}));
+const breadthHistory={market:'usa',universe:'SP500',window:'1Y',from:'2025-10-30',to:'2026-10-30',
+ records:Array.from({length:366},(_,i)=>({observationDate:new Date(Date.UTC(2025,9,30)+i*86400000).toISOString().slice(0,10),
+  eligibleCount:500,counts:{rising:250+i%20,unchanged:0,falling:250-i%20}}))};
 try{
  for(const width of [390,1440])for(const signedIn of [false,true]){
   const page=await browser.newPage({viewport:{width,height:900},hasTouch:width===390});
   const modules=[],errors=[];
+  let breadthHistoryRequests=0;
   page.on('request',request=>modules.push(new URL(request.url()).pathname));
   page.on('pageerror',error=>errors.push(error.message));
   await page.addInitScript(()=>sessionStorage.setItem('zgmini-about-intro-dismissed-r1','1'));
@@ -21,6 +25,7 @@ try{
     :path==='/api/favorites'?{favorites:[]}
     :path==='/api/market-data'?{status:'fallback',updatedAt:'',indicators:{},summary:[]}
     :path==='/api/fear-greed'?{status:'verified',score:34.5,rating:'공포',observedAt:'2026-10-30T12:00:00Z',history:sampleHistory}
+    :path==='/api/market-breadth/history'?(breadthHistoryRequests++,breadthHistory)
     :{status:'UNAVAILABLE'};
    return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(payload)});
   });
@@ -79,6 +84,25 @@ try{
    await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
    await tip.waitFor({state:'hidden',timeout:3000});
    console.log('PASS mobile chart tooltip disappears on touch release');
+
+   const breadth=page.locator('.usa-target-card .fg-breadth-slot');
+   await breadth.locator('button[aria-expanded="false"]').click();
+   const detail=breadth.locator('[role="region"]');
+   await detail.locator('svg[role="img"]').waitFor({state:'visible',timeout:5000});
+   const windows=[['3M',93,'3개월'],['1M',31,'1개월'],['1W',7,'1주'],['1D',1,'1일'],['6M',186,'6개월'],['1Y',366,'1년'],['3M',93,'3개월']];
+   for(const [period,days,label] of windows){
+    await page.locator(`.usa-target-card .cnn-period-button[data-period-short="${period}"]`).click();
+    const from=period==='1Y'?breadthHistory.from:new Date(Date.UTC(2026,9,30)-(days-1)*86400000).toISOString().slice(0,10);
+    const expected=from.replaceAll('-','.');
+    await page.waitForFunction(value=>document.querySelector('.usa-target-card .fg-breadth-slot [role="region"] time')?.textContent===value,
+     expected,{timeout:5000});
+    const dates=await detail.locator('time').allTextContents();
+    assert.deepEqual(dates,[expected,'2026.10.30'],period+' breadth dates follow CNN selection');
+    const aria=await detail.locator('svg[role="img"]').getAttribute('aria-label');
+    assert.ok(aria?.includes(`${label} 이력`)&&aria.includes(`${days}개 거래일`),period+' breadth record window');
+   }
+   assert.equal(breadthHistoryRequests,1,'Period switching filters fetched 1Y history without new API calls');
+   console.log('PASS breadth chart matches 1D/1W/1M/3M/6M/1Y market period with one history request');
   }
 
   if(signedIn){
