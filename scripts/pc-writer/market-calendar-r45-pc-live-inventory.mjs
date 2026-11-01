@@ -23,14 +23,89 @@ function literalVbsRun(line){
  return {command:literal.slice(1,-1).replaceAll('""','"'),
   syntax:'BARE_LITERAL'};
 }
+// A deliberately tiny constant-expression interpreter. No VBScript is run:
+// only strings, already-known string assignments, '&', and printable Chr(n)
+// are allowed. Unsupported expressions remain UNKNOWN.
+function staticVbsString(expression,vars){
+ if(typeof expression!=='string'||expression.length>8192)return null;
+ let pos=0,value='',pieces=0,needValue=true;
+ const token=/\s*(?:"((?:""|[^"])*)"|Chr\s*\(\s*(\d+)\s*\)|([a-z_][a-z0-9_]*)|(&))\s*/iy;
+ while(pos<expression.length){
+  token.lastIndex=pos;
+  const m=token.exec(expression);
+  if(!m||m.index!==pos)return null;
+  pos=token.lastIndex;
+  if(m[4]){if(needValue)return null;needValue=true;continue;}
+  if(!needValue)return null;
+  let part;
+  if(m[1]!==undefined)part=m[1].replaceAll('""','"');
+  else if(m[2]!==undefined){
+   const code=Number(m[2]);
+   if(!Number.isInteger(code)||code<32||code>126)return null;
+   part=String.fromCharCode(code);
+  }else part=vars.get(m[3].toLowerCase());
+  if(typeof part!=='string')return null;
+  value+=part;pieces++;needValue=false;
+  if(value.length>4096||pieces>96)return null;
+ }
+ return needValue?null:value;
+}
+function staticVbsRunCandidates(body){
+ const vars=new Map(),runs=[];
+ const active=body.split(/\r?\n/).filter(l=>!/^\s*(?:'|Rem\b)/i.test(l));
+ for(const line of active){
+  const assignment=line.match(/^\s*(?:Const\s+)?([a-z_][a-z0-9_]*)\s*=\s*(.*?)\s*(?:'.*)?$/i);
+  if(assignment){
+   const name=assignment[1].toLowerCase();
+   const evaluated=staticVbsString(assignment[2],vars);
+   if(evaluated===null)vars.delete(name);else vars.set(name,evaluated);
+  }
+  if(!/\.\s*Run\b/i.test(line))continue;
+  const strict=literalVbsRun(line);
+  if(strict){runs.push({...strict,staticResolution:false});continue;}
+  const expr=line.match(/\.\s*Run\s*(?:\(\s*(.*?)\s*,\s*\d+\s*,\s*True\s*\)|\s+(.+?)\s*,\s*\d+\s*,\s*True)\s*(?:'.*)?$/i);
+  const resolved=expr?staticVbsString(expr[1]??expr[2],vars):null;
+  runs.push(resolved===null?null:{command:resolved,syntax:'STATIC_CONST_EXPRESSION',staticResolution:true});
+ }
+ return runs;
+}
+function anonymousVbsOutline(body){
+ const names=new Map();let next=0;
+ const words=new Set(['set','dim','const','if','then','else','end','on','error','resume','next',
+  'createobject','wscript','shell','run','exec','quit','chr','replace','environ','call',
+  'true','false','not','and','or','exit','function','sub']);
+ return body.split(/\r?\n/).filter(x=>x.trim()).slice(0,32).map(line=>{
+  const output=[];
+  for(const m of line.matchAll(/"(?:""|[^"])*"|[a-z_][a-z0-9_]*|\d+|\S/gi)){
+   const v=m[0];
+   if(v.startsWith('"')){
+    const s=v.toLowerCase();
+    output.push(/\.mjs/.test(s)?'STRING_MJS':/\.vbs/.test(s)?'STRING_VBS':
+     /\.exe/.test(s)?'STRING_EXE':/[\\/]/.test(s)?'STRING_PATH':'STRING_LITERAL');
+   }else if(/^[a-z_]/i.test(v)){
+    const key=v.toLowerCase();
+    if(key==='rem'&&output.length===0){output.push('COMMENT');break;}
+    if(words.has(key))output.push(key.toUpperCase());
+    else{if(!names.has(key))names.set(key,`VAR${++next}`);output.push(names.get(key));}
+   }else if(/^\d/.test(v))output.push('N');
+   else if(v==="'"){output.push('COMMENT');break;}
+   else output.push(/[=():.,&+\-\\/]/.test(v)?v:'SYMBOL');
+   if(output.length>=60){output.push('TRUNCATED');break;}
+  }
+  return output.join(' ').slice(0,210);
+ });
+}
 function safeVbsShape(body){
  const active=body.split(/\r?\n/).filter(l=>!/^\s*(?:'|Rem\b)/i.test(l));
  const runLines=active.filter(x=>/\.\s*Run\b/i.test(x));
  const strict=runLines.map(literalVbsRun);
+ const derived=staticVbsRunCandidates(body);
  return {
   sourceLineCount:body.split(/\r?\n/).length,
   runCount:runLines.length,
   literalRunCount:strict.filter(Boolean).length,
+  staticResolvedRunCount:derived.filter(x=>x?.staticResolution).length,
+  unresolvedRunCount:derived.filter(x=>!x).length,
   bareLiteralRunCount:strict.filter(x=>x?.syntax==='BARE_LITERAL').length,
   execMethodCount:active.filter(x=>/\.\s*Exec\b/i.test(x)).length,
   dynamicRunPresent:strict.some(x=>!x),
@@ -42,7 +117,8 @@ function safeVbsShape(body){
   environMentioned:/\bEnviron\s*\(/i.test(body),
   chrMentioned:/\bChr\s*\(/i.test(body),
   hasConcat:body.includes('&'),
-  commands:strict.filter(Boolean),
+  anonymousOutline:derived.some(x=>!x)?anonymousVbsOutline(body):null,
+  commands:derived,
  };
 }
 function tokenizeR50Command(value){
@@ -155,15 +231,15 @@ export function traceLiveCore(xml,{readFile=readLimited,maxDepth=4}={}){
   }
   const body=bytes.toString('utf8');
   const shape=safeVbsShape(body);
-  const runs=shape.commands.map(x=>x.command);
+  const runs=shape.commands.map(x=>x?.command??null);
   out.coreVbsCount++;
   const {commands:unused,...safeShape}=shape;
   out.coreChain.push({depth,sha256:digest,...safeShape});
-  if(shape.runCount===0||shape.dynamicRunPresent){
+  if(shape.runCount===0||!runs[0]){
    out.status='CORE_RUN_SHAPE_UNVERIFIED';return out;
   }
-  out.auxiliaryRunCount+=runs.length-1;
-  out.knownArchiveRunSeen||=runs.slice(1).some(x=>/archive-run\.mjs/i.test(x));
+  out.auxiliaryRunCount+=shape.runCount-1;
+  out.knownArchiveRunSeen||=runs.slice(1).some(x=>typeof x==='string'&&/archive-run\.mjs/i.test(x));
   const first=coreCommand(runs[0]);
   if(first.type==='VBS'){active=first.file;continue;}
   if(first.type!=='NODE'){
@@ -178,7 +254,8 @@ export function traceLiveCore(xml,{readFile=readLimited,maxDepth=4}={}){
   out.entryName=mod.basename(first.file);
   out.root=root;
   out.rootWorktreeId=hash(norm(root)).slice(0,12);
-  out.status='CORE_CHAIN_TRACED_READ_ONLY';
+  out.status=out.coreChain.some(s=>s.staticResolvedRunCount>0||s.unresolvedRunCount>0)?
+   'CORE_CHAIN_STATICALLY_TRACED_REVIEW_REQUIRED':'CORE_CHAIN_TRACED_READ_ONLY';
   return out;
  }
  out.status='CORE_VBS_DEPTH_LIMIT';return out;
@@ -201,7 +278,7 @@ export function runLiveR45Inventory({
  taskXml=queryCoreTask,readFile=readLimited,gitCall=git,
  allowNonWindows=false,lockCheck=lockSummary,
 }={}){
- const result={audit:'MARKET_CALENDAR_R45_PC_LIVE_INVENTORY_R3',
+ const result={audit:'MARKET_CALENDAR_R45_PC_LIVE_INVENTORY_R4',
   at:new Date().toISOString(),decision:'INVENTORY_INCOMPLETE_REVIEW_REQUIRED',
   readOnly:true,pcFilesChanged:0,schedulerChanged:false,providerCalls:0,
   dbWrites:0,published:false,taskStatus:null,launcherStatus:null,
@@ -260,8 +337,10 @@ export function runLiveR45Inventory({
    result.collectorBlob===OFF_BLOB&&!hasObserver?'OFF_EXACT_BRANCH':
    hasObserver?'PRESENT_DIFFERENT_BLOB_REVIEW':'UNRECOGNIZED_REVIEW';
   if(result.configMatchesHead&&result.protectedTrackedClean&&result.collectorMatchesHead){
-   result.decision=result.r45Observer==='OFF_EXACT_BRANCH'?
-    'OBSERVER_ALREADY_OFF_NO_PC_CHANGE':'INVENTORY_TRACED_REVIEW_REQUIRED';
+   result.decision=chain.status==='CORE_CHAIN_STATICALLY_TRACED_REVIEW_REQUIRED'?
+    'INVENTORY_STATIC_ORIGIN_REVIEW_REQUIRED':
+    result.r45Observer==='OFF_EXACT_BRANCH'?
+     'OBSERVER_ALREADY_OFF_NO_PC_CHANGE':'INVENTORY_TRACED_REVIEW_REQUIRED';
   }
  }catch{result.decision='INVENTORY_GIT_OR_COLLECTOR_UNVERIFIED_REVIEW_REQUIRED';}
  return result;
@@ -270,14 +349,15 @@ export function runLiveR45Inventory({
 if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.url)){
  if(process.argv.some(a=>a==='--apply'||a.startsWith('--write')||a.startsWith('--delete'))||
   process.argv.slice(2).some(a=>!a.startsWith('--base='))){
-  console.log(JSON.stringify({audit:'MARKET_CALENDAR_R45_PC_LIVE_INVENTORY_R3',
+  console.log(JSON.stringify({audit:'MARKET_CALENDAR_R45_PC_LIVE_INVENTORY_R4',
    decision:'READ_ONLY_ARGUMENTS_ONLY_STOP',readOnly:true,pcFilesChanged:0}));
   process.exitCode=2;
  }else{
   const arg=process.argv.find(a=>a.startsWith('--base='));
   const result=runLiveR45Inventory(arg?{base:arg.slice(7)}:{});
   console.log(JSON.stringify(result));
-  if(!['INVENTORY_TRACED_REVIEW_REQUIRED','OBSERVER_ALREADY_OFF_NO_PC_CHANGE'].includes(result.decision))
+  if(!['INVENTORY_TRACED_REVIEW_REQUIRED','OBSERVER_ALREADY_OFF_NO_PC_CHANGE',
+   'INVENTORY_STATIC_ORIGIN_REVIEW_REQUIRED'].includes(result.decision))
    process.exitCode=2;
  }
 }

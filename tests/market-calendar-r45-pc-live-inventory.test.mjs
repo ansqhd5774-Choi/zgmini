@@ -84,6 +84,31 @@ test('R1-compatible parenthesized Run accepts prefixed assignment in outer VBS',
  assert.equal(result.pcFilesChanged,0);
 });
 
+test('Chr(34) and constant concatenation resolve a dynamic Core command without VBScript execution',()=>{
+ const t=setup();
+ t.map.set(nested,Buffer.from([
+  'Set shell = CreateObject("WScript.Shell")',
+  'Const q = Chr(34)',
+  'n = "/runtime/" & "node.exe"',
+  's = "/private/mock-zgmini/scripts" & "/pc-writer/local-cycle.mjs"',
+  'command = q & n & q & " " & q & s & q',
+  'shell.Run command, 0, True',
+  'unknown = Environ("SECRET_VALUE")',
+  'shell.Run unknown, 0, True',
+  'shell.Run command, 0, True',
+ ].join('\n')));
+ const result=runLiveR45Inventory(t.options);
+ assert.equal(result.launcherStatus,'CORE_CHAIN_STATICALLY_TRACED_REVIEW_REQUIRED');
+ assert.equal(result.entryName,'local-cycle.mjs');
+ assert.equal(result.sourceHead,head);
+ assert.equal(result.coreChainShape[1].staticResolvedRunCount,2);
+ assert.equal(result.coreChainShape[1].unresolvedRunCount,1);
+ assert.equal(result.coreChainShape[1].literalRunCount,0);
+ assert.equal(result.decision,'INVENTORY_STATIC_ORIGIN_REVIEW_REQUIRED');
+ assert.doesNotMatch(JSON.stringify(result),/SECRET_VALUE|\/private\/mock-zgmini/);
+ assert.equal(result.pcFilesChanged,0);
+});
+
 test('live inventory reports current Task, launcher, config, checkout and R45 without writes',()=>{
  const t=setup();
  const before=[...t.map].map(([key,value])=>[key,Buffer.from(value)]);

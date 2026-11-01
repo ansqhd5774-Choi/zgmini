@@ -1,5 +1,16 @@
-ZGMINI R45: LIVE CORE TASK INVENTORY FIX3 - READ ONLY
+ZGMINI R45: LIVE CORE TASK INVENTORY FIX4 - READ ONLY
 Branch: codex/zgmini-gpt-workspace-20261025
+
+FIX4 NOTE (2026-11-01)
+  PC R3 confirmed the inner 20-line VBS has three dynamically assembled Run
+  commands, with Chr() and concatenation. The repository does not contain
+  that private PC launcher. FIX4 safely resolves only literal expressions,
+  prior string assignments, printable Chr(n), and '&' without running code.
+  Non-constant expressions stay unresolved. Any remaining unknown VBS is
+  described by anonymized syntax tokens, never by raw commands or paths.
+  A static result still requires source/config validation and is NOT an
+  approval for any PC source or Task change.
+  Use a NEW extraction folder and upload only the resulting report TXT.
 
 FIX3 NOTE (2026-11-01)
   FIX2 tightened the parenthesized Run rule and stopped at the outer wrapper
