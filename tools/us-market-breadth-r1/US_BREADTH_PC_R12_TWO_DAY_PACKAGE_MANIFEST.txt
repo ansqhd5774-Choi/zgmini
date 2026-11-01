@@ -1,0 +1,24 @@
+ZGMINI US BREADTH — R12 TWO-DAY CANONICAL R5 RECOVERY
+Branch: codex/ui-improvements (unchanged)
+Approved Windows PC source SHA: 43e0ffa392a9e655bcb4ca7b151c26ad43567e14
+Targets only: 2026-03-26,2026-03-27
+Method: exact R5 row selection from stored PC source, frozen audit, dated-key D1 append and readback.
+Archived R4 and R5 PC versions: PRESERVED
+Current D1 public snapshot key: READ-ONLY
+All other dated keys: NO WRITES
+
+Archive entries and SHA256:
+  history-recover-r12.mjs 7002a19cec3c06f975832d71b5551699fa237ac7a29a1641f9472c0525c4fcac
+  history-recover-r12-core.mjs fbcec33a81006dad941ec29df90d43760f3c41103a05a47458fa1ac044dda4c6
+  history-backfill-r10-core.mjs 20cbd6f6895880840ea93dad0e1d303ec1164254dbf13dcb5ed06e110e5765d6
+  US_BREADTH_PC_R12_TWO_DAY_RECOVERY.cmd 5c9154296a7159f19253710e08d6de6cf737c757bbe16651aee55ef3cbd3cae5
+  US_BREADTH_PC_R12_TWO_DAY_RECOVERY_README_KO.txt 7e779af26ce662bafd2d5d51e8458d6144ac9f26d51fc38c8054d7ecdade1710
+  US_BREADTH_PC_R11_FOUR_GAP_READONLY_RESULT.txt c38105c0e46e8ebe7000cb3814eaf196c2586974b8e2db4cc736fea6972d138b
+  lib/market-breadth/compute.mjs 25d50550b7e3ab8abadf90fc78e8dd3c3f37b6f7a0b72f2e0b11482c8c9c7c10
+  lib/market-breadth/us-public-r1.mjs f0b092af381413b8d7b02baf5750388cb384e9e53e6b3f3a362be781efe6382b
+
+GitHub source commit (latest R12 README): e48f2bafe1d1522cf472076b4d88beed7987103e
+Tests: 4 Node test suites passed, R12 script syntax check passed.
+PC live run: PENDING USER ONE-SHOT EXECUTION.
+
+After execution, upload US_BREADTH_PC_R12_TWO_DAY_RECOVERY_RESULT.txt.
