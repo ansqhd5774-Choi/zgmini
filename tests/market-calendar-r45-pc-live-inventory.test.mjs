@@ -72,6 +72,18 @@ test('valid bare VBScript Run literal resolves the same Core without executing c
  assert.equal(result.pcFilesChanged,0);
 });
 
+test('R1-compatible parenthesized Run accepts prefixed assignment in outer VBS',()=>{
+ const t=setup();
+ const original=t.map.get(outer).toString('utf8');
+ t.map.set(outer,Buffer.from(original.replaceAll('shell.Run (','result = shell.Run (')));
+ const result=runLiveR45Inventory(t.options);
+ assert.equal(result.launcherStatus,'CORE_CHAIN_TRACED_READ_ONLY');
+ assert.equal(result.coreVbsCount,2);
+ assert.equal(result.coreChainShape[0].literalRunCount,2);
+ assert.equal(result.knownArchiveRunSeen,true);
+ assert.equal(result.pcFilesChanged,0);
+});
+
 test('live inventory reports current Task, launcher, config, checkout and R45 without writes',()=>{
  const t=setup();
  const before=[...t.map].map(([key,value])=>[key,Buffer.from(value)]);

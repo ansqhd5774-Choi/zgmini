@@ -10,11 +10,18 @@ import {fileURLToPath} from 'node:url';
 // recognizing both valid VBScript Run syntaxes without approving source drift.
 const R50_APPROVED_WRAPPER_SHA256='f05deb73cbadf831d7d3a9875bfbd13356d4ab21803fe9b7944a3f2ae6a5499d';
 function literalVbsRun(line){
- const m=line.match(/^\s*(?:Call\s+)?[a-z_][a-z0-9_]*\s*\.\s*Run\s*(?:\(\s*("(?:""|[^"])*")\s*,\s*\d+\s*,\s*True\s*\)|("(?:""|[^"])*")\s*,\s*\d+\s*,\s*True)\s*(?:'.*)?$/i);
+ // Keep the historical R50 parenthesized matching rule byte-for-byte in
+ // meaning: real wrappers can prefix Run with an assignment/other statement.
+ const original=line.match(/\.\s*Run\s*\(\s*("(?:""|[^"])*")\s*,\s*\d+\s*,\s*True\s*\)/i);
+ if(original)return {command:original[1].slice(1,-1).replaceAll('""','"'),
+  syntax:'PAREN_LITERAL'};
+ // A non-parenthesized Run statement is admitted only when the entire
+ // active line has an exact literal command and fixed numeric/True args.
+ const m=line.match(/^\s*[a-z_][a-z0-9_]*\s*\.\s*Run\s+("(?:""|[^"])*")\s*,\s*\d+\s*,\s*True\s*(?:'.*)?$/i);
  if(!m)return null;
- const literal=m[1]??m[2];
+ const literal=m[1];
  return {command:literal.slice(1,-1).replaceAll('""','"'),
-  syntax:m[1]?'PAREN_LITERAL':'BARE_LITERAL'};
+  syntax:'BARE_LITERAL'};
 }
 function safeVbsShape(body){
  const active=body.split(/\r?\n/).filter(l=>!/^\s*(?:'|Rem\b)/i.test(l));
@@ -194,7 +201,7 @@ export function runLiveR45Inventory({
  taskXml=queryCoreTask,readFile=readLimited,gitCall=git,
  allowNonWindows=false,lockCheck=lockSummary,
 }={}){
- const result={audit:'MARKET_CALENDAR_R45_PC_LIVE_INVENTORY_R2',
+ const result={audit:'MARKET_CALENDAR_R45_PC_LIVE_INVENTORY_R3',
   at:new Date().toISOString(),decision:'INVENTORY_INCOMPLETE_REVIEW_REQUIRED',
   readOnly:true,pcFilesChanged:0,schedulerChanged:false,providerCalls:0,
   dbWrites:0,published:false,taskStatus:null,launcherStatus:null,
@@ -263,7 +270,7 @@ export function runLiveR45Inventory({
 if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.url)){
  if(process.argv.some(a=>a==='--apply'||a.startsWith('--write')||a.startsWith('--delete'))||
   process.argv.slice(2).some(a=>!a.startsWith('--base='))){
-  console.log(JSON.stringify({audit:'MARKET_CALENDAR_R45_PC_LIVE_INVENTORY_R2',
+  console.log(JSON.stringify({audit:'MARKET_CALENDAR_R45_PC_LIVE_INVENTORY_R3',
    decision:'READ_ONLY_ARGUMENTS_ONLY_STOP',readOnly:true,pcFilesChanged:0}));
   process.exitCode=2;
  }else{

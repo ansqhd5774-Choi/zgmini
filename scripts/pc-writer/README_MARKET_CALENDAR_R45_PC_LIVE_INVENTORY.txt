@@ -1,5 +1,12 @@
-ZGMINI R45: LIVE CORE TASK INVENTORY FIX2 - READ ONLY
+ZGMINI R45: LIVE CORE TASK INVENTORY FIX3 - READ ONLY
 Branch: codex/zgmini-gpt-workspace-20261025
+
+FIX3 NOTE (2026-11-01)
+  FIX2 tightened the parenthesized Run rule and stopped at the outer wrapper
+  that R1 had already traced. FIX3 restores the original R50/R1 parentheses
+  recognizer, plus the additional strict bare-literal recognizer and
+  anonymized nested shape output. It does not change the user's PC Core.
+  Use a NEW extraction folder and upload only the resulting report TXT.
 
 FIX2 NOTE (2026-11-01)
   Previous R1 report found two VBS files, but stopped on the inner VBS with

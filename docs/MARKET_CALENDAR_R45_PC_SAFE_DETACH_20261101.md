@@ -65,3 +65,10 @@
 - 내부 VBS에서 `CORE_RUN_SHAPE_UNVERIFIED`여서 실제 실행기·HEAD·collector blob·R45 옵저버 연결 여부는 `null` 또는 `UNKNOWN`이며, `INVENTORY_INCOMPLETE_REVIEW_REQUIRED`로 멈췄다. Task/설정/DB 변경 0을 확인했다.
 - FIX2 점검은 VBScript의 괄호 없는 `Shell.Run "literal", 0, True` 구문을 추가 지원하고, 여전히 정적으로 확인할 수 없는 실행형은 단순 **익명화 구문 특징**(`coreChainShape`)만 기록한다. 어떠한 동적 변수 명령도 실행하거나 신뢰된 root로 추정하지 않는다.
 - FIX2 보고 후 PC 승인 source 및 작업 트리 일치를 확인하기 전에는 기존 R45 해제 패키지의 `--apply` 금지, Core 5분·R7 보조 wrapper 유지.
+
+### 2026-11-01 FIX2 실제 결과 및 FIX3 회귀 수정
+
+- 사용자 PC FIX2 결과(`2026-11-01T14:15:28.934Z`)에서는 `pt5mInTaskXml=true`, `coreLock=PID_EXISTS_NOT_PROVEN_ACTIVE`, 현재 config SHA 동일, 원격/PC 변경 0이다.
+- FIX2 `CORE_RUN_SHAPE_UNVERIFIED`는 외부 VBS `depth=0`에서 발생했다. 앞선 R1이 같은 외부 VBS에서 두 `Run`을 검증하고 내부 VBS까지 추적했던 사실과 달라 **FIX2 파서 회귀**로 판단한다. 회귀 때문에 `knownArchiveRunSeen=false`가 나왔을 뿐 R7 보조 작업이 제거됐다는 증거가 아니다.
+- FIX3는 기존 R50/R1의 괄호형 `Run` 정규식과 정확히 동등한 검사로 복원하고, FIX2에서 추가한 괄호 없는 `Run` 지원은 별도 엄격한 전행 일치로 유지한다. 소스/경로·Task XML·명령 원문은 보고서에 기록하지 않는다.
+- FIX3에서도 동적 명령을 검증할 수 없다면 익명화된 `coreChainShape`만 기록하고 STOP. 그 결과를 PC source 승인이나 R45 변경 허가로 확대하지 않는다.
