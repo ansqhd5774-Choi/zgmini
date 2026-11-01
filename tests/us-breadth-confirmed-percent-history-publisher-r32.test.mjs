@@ -145,8 +145,8 @@ test('R32 preserves equal/newer, unknown or corrupt D1 rows without overwrite',a
 
 test('R38 permits only a legitimate next-session sliding-window extension with exact shared percentages',async()=>{
  const former=prepareVerifiedPercentHistoryR32(preview(249,'2026-10-30'),{now}).body;
- const forwardNow=Date.parse('2026-11-04T12:00:00Z');
- const source=preview(249,'2026-11-03');
+ const forwardNow=Date.parse('2026-11-03T12:00:00Z');
+ const source=preview(249,'2026-11-02');
  const prepared=prepareVerifiedPercentHistoryR32(source,{now:forwardNow});
  assert.equal(prepared.ok,true);
  assert.equal(prepared.body.points[0].date>former.points[0].date,true);
@@ -157,7 +157,7 @@ test('R38 permits only a legitimate next-session sliding-window extension with e
  assert.equal(d1.calls.filter(c=>c.type==='write').length,1);
  assert.equal(d1.calls.filter(c=>c.type==='read').length,2);
  const after=JSON.parse(d1.record().body);
- assert.equal(after.lastDate,'2026-11-03');
+ assert.equal(after.lastDate,'2026-11-02');
  const formerByDate=new Map(former.points.map(point=>[point.date,point]));
  for(const point of after.points){
   const old=formerByDate.get(point.date);
@@ -167,8 +167,8 @@ test('R38 permits only a legitimate next-session sliding-window extension with e
 
 test('R38 permits an approved one-day append from 249 to 250 without changing any prior point',async()=>{
  const former=prepareVerifiedPercentHistoryR32(preview(249,'2026-10-30'),{now}).body;
- const forwardNow=Date.parse('2026-11-04T12:00:00Z');
- const source=preview(250,'2026-11-03');
+ const forwardNow=Date.parse('2026-11-03T12:00:00Z');
+ const source=preview(250,'2026-11-02');
  const prepared=prepareVerifiedPercentHistoryR32(source,{now:forwardNow});
  assert.equal(prepared.ok,true);
  assert.equal(prepared.body.points.length,250);
@@ -179,14 +179,14 @@ test('R38 permits an approved one-day append from 249 to 250 without changing an
  assert.equal(result.status,'VERIFIED_PERCENT_HISTORY_FINAL');
  const after=JSON.parse(d1.record().body);
  assert.deepEqual(after.points.slice(0,249),former.points);
- assert.equal(after.points.at(-1).date,'2026-11-03');
+ assert.equal(after.points.at(-1).date,'2026-11-02');
  assert.equal(d1.calls.filter(c=>c.type==='write').length,1);
 });
 
 test('R38 rejects a changed overlapping percent without D1 write even for approved newer preview SHA',async()=>{
  const former=prepareVerifiedPercentHistoryR32(preview(),{now}).body;
- const forwardNow=Date.parse('2026-11-04T12:00:00Z');
- const source=preview(249,'2026-11-03');
+ const forwardNow=Date.parse('2026-11-03T12:00:00Z');
+ const source=preview(249,'2026-11-02');
  const point=source.chart.points[10];
  point.rising++;
  point.falling--;
@@ -205,8 +205,8 @@ test('R38 rejects a changed overlapping percent without D1 write even for approv
 });
 
 test('R38 rejects a disjoint future window and altered prior lineage without D1 write',async()=>{
- const forwardNow=Date.parse('2026-11-04T12:00:00Z');
- const source=preview(249,'2026-11-03');
+ const forwardNow=Date.parse('2026-11-03T12:00:00Z');
+ const source=preview(249,'2026-11-02');
  const approved=prepareVerifiedPercentHistoryR32(source,{now:forwardNow}).evidenceSha256;
  const former=prepareVerifiedPercentHistoryR32(preview(249,'2025-01-02'),
   {now:Date.parse('2025-01-03T12:00:00Z')}).body;
