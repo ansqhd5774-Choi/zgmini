@@ -44,6 +44,9 @@
 }
 .details[hidden] { display: none; }
 .historyChart { min-width: 0; }
+.historyNetHeading { display: flex; justify-content: space-between; align-items: baseline; gap: 6px; padding: 1px 2px 5px 37px; font-size: 10px; font-variant-numeric: tabular-nums; }
+.historyNetHeading strong { font-weight: 700; }
+.historyNetHeading span { font-weight: 800; white-space: nowrap; }
 .historyDates { display: flex; align-items: center; justify-content: space-between; gap: 9px; flex-wrap: wrap; }
 .historyPlot { display: grid; grid-template-columns: 32px minmax(0,1fr); gap: 5px; align-items: stretch; min-width: 0; }
 .historyPercentAxis { display: flex; height: 160px; flex-direction: column; justify-content: space-between; padding-block: 6px 10px; box-sizing: border-box; color: var(--zg-text-meta); font-size: 9px; text-align: right; }
@@ -54,10 +57,14 @@
 .historyRisingLine { stroke: var(--zg-positive); }
 .historyFallingLine { stroke: var(--zg-danger); }
 .historyUnchangedLine { stroke: var(--zg-text-meta); }
+.historyNetPositiveBar { fill: var(--zg-positive); opacity: .84; }
+.historyNetNegativeBar { fill: var(--zg-danger); opacity: .84; }
+.historyNetNeutralBar { fill: var(--zg-text-meta); opacity: .84; }
 .historyCursor { stroke: var(--zg-text-meta); stroke-dasharray: 2 4; vector-effect: non-scaling-stroke; }
 .historyRisingDot, .historyFallingDot { stroke: var(--zg-text); stroke-width: 1; vector-effect: non-scaling-stroke; }
 .historyRisingDot { fill: var(--zg-positive); }
 .historyFallingDot { fill: var(--zg-danger); }
+.historyNetNeutralDot { fill: var(--zg-text-meta); stroke: var(--zg-text); stroke-width: 1; vector-effect: non-scaling-stroke; }
 .historyDates { grid-column: 2; color: var(--zg-text-meta); font-size: 9px; font-variant-numeric: tabular-nums; }
 .historySvgWrap { position: relative; min-width: 0; }
 .historyPlot svg { touch-action: pan-y; cursor: crosshair; }

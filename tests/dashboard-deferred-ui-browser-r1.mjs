@@ -9,7 +9,7 @@ const browser=await chromium.launch({headless:true,args:['--no-sandbox']});
 const sampleHistory=Array.from({length:90},(_,i)=>({date:new Date(Date.UTC(2026,7,1)+i*86400000).toISOString().slice(0,10),score:45+Math.sin(i/8)*12}));
 const breadthHistory={market:'usa',universe:'SP500',window:'1Y',from:'2025-10-30',to:'2026-10-30',
  records:Array.from({length:366},(_,i)=>({observationDate:new Date(Date.UTC(2025,9,30)+i*86400000).toISOString().slice(0,10),
-  eligibleCount:500,counts:{rising:250+i%20,unchanged:0,falling:250-i%20}}))};
+  eligibleCount:500,counts:{rising:240+(i%12<5?45:-45),unchanged:20,falling:240-(i%12<5?45:-45)}}))};
 try{
  for(const width of [390,1440])for(const signedIn of [false,true]){
   const page=await browser.newPage({viewport:{width,height:900},hasTouch:width===390});
@@ -88,7 +88,14 @@ try{
    const breadth=page.locator('.usa-target-card .fg-breadth-slot');
    await breadth.locator('button[aria-expanded="false"]').click();
    const detail=breadth.locator('[role="region"]');
-   await detail.locator('svg[role="img"]').waitFor({state:'visible',timeout:5000});
+   const breadthSvg=detail.locator('svg[role="img"]');
+   await breadthSvg.waitFor({state:'visible',timeout:5000});
+   const netBars=detail.locator('rect[class*="historyNetPositiveBar"],rect[class*="historyNetNegativeBar"]');
+   assert.ok(await detail.locator('rect[class*="historyNetPositiveBar"]').count()>0,'Green bars show rising dominance');
+   assert.ok(await detail.locator('rect[class*="historyNetNegativeBar"]').count()>0,'Red bars show falling dominance');
+   assert.match(await detail.locator('[class*="historyNetHeading"]').innerText(),/하락 우세 -18\.0%p/,'Latest net dominance is immediately readable above the chart');
+   assert.equal(await detail.locator('line[class*="historyMidline"]').count(),1,'One visible zero baseline separates positive and negative dominance');
+   assert.equal(await detail.locator('path[class*="historyRisingLine"],path[class*="historyFallingLine"]').count(),0,'Old opposing percentage lines are removed');
    const windows=[['3M',93,'3개월'],['1M',31,'1개월'],['1W',7,'1주'],['1D',1,'1일'],['6M',186,'6개월'],['1Y',366,'1년'],['3M',93,'3개월']];
    for(const [period,days,label] of windows){
     await page.locator(`.usa-target-card .cnn-period-button[data-period-short="${period}"]`).click();
@@ -98,11 +105,19 @@ try{
      expected,{timeout:5000});
     const dates=await detail.locator('time').allTextContents();
     assert.deepEqual(dates,[expected,'2026.10.30'],period+' breadth dates follow CNN selection');
-    const aria=await detail.locator('svg[role="img"]').getAttribute('aria-label');
-    assert.ok(aria?.includes(`${label} 이력`)&&aria.includes(`${days}개 거래일`),period+' breadth record window');
+    const aria=await breadthSvg.getAttribute('aria-label');
+    assert.ok(aria?.includes('상승·하락 우세도')&&aria.includes(`${label} 이력`)&&aria.includes(`저장된 ${days}개 거래일`),period+' net breadth chart window and label');
+    assert.equal(await netBars.count(),days,period+' renders one signed net bar per stored daily observation');
+    if(period==='1D')assert.equal(await detail.locator('rect[class*="historyNetNegativeBar"]').count(),1,'Latest day is negative even with unchanged issues present');
    }
    assert.equal(breadthHistoryRequests,1,'Period switching filters fetched 1Y history without new API calls');
-   console.log('PASS breadth chart matches 1D/1W/1M/3M/6M/1Y market period with one history request');
+   await breadthSvg.hover({position:{x:140,y:65}});
+   const netTooltip=detail.locator('[role="status"]');
+   await netTooltip.waitFor({state:'visible',timeout:4000});
+   assert.match(await netTooltip.innerText(),/우세/,'Pointer tooltip announces dominance');
+   assert.match(await netTooltip.innerText(),/[+-]?18\.0%p/,'Tooltip calculates net from raw counts with unchanged issues in denominator');
+   assert.match(await netTooltip.innerText(),/보합/,'Tooltip retains unchanged issue detail');
+   console.log('PASS net breadth zero-baseline bars, pointer tooltip and 1D/1W/1M/3M/6M/1Y periods with one history request');
   }
 
   if(signedIn){
