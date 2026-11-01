@@ -18,6 +18,20 @@ const TICKER=/^[A-Z0-9][A-Z0-9.\-]{0,11}$/;
 const sha=x=>createHash('sha256').update(x).digest('hex');
 const fail=code=>{throw Error(code)};
 function file(p){try{return fs.statSync(p).isFile()}catch{return false}}
+function reviewedTradingSessionsValid(sessions,asOf){
+ if(!Array.isArray(sessions)||sessions.length!==21||sessions[0]!==asOf||
+  new Set(sessions).size!==21)return false;
+ return sessions.every((day,i)=>{
+  if(typeof day!=='string'||!DAY.test(day))return false;
+  const millis=Date.parse(day+'T00:00:00Z');
+  if(!Number.isFinite(millis)||new Date(millis).toISOString().slice(0,10)!==day)return false;
+  const weekday=new Date(millis).getUTCDay();
+  if(weekday===0||weekday===6)return false;
+  if(!i)return true;
+  const gap=Date.parse(sessions[i-1]+'T00:00:00Z')-millis;
+  return gap>0&&gap<=5*86400000;
+ });
+}
 function checkedJson(p,maxBytes){
  if(!file(p))fail('R43_MANUAL_INPUT_MISSING_STOP');
  const size=fs.statSync(p).size;
@@ -46,8 +60,7 @@ function dynamicExpectedFromReviewedRoster(input,approvedUniverse){
   Date.parse(input.asOf+'T00:00:00Z')-Date.parse(u.reviewedAsOf+'T00:00:00Z')>90*86400000||
   u.expectedEligibleIssuers!==input.expectedEligibleIssuers||
   u.marketSessionsReviewed!==true||
-  !Array.isArray(u.reviewedTradingSessions)||u.reviewedTradingSessions.length!==21||
-  u.reviewedTradingSessions[0]!==input.asOf||
+  !reviewedTradingSessionsValid(u.reviewedTradingSessions,input.asOf)||
   !Array.isArray(u.members)||u.members.length<2500||u.members.length>25000||
   !Array.isArray(input.rows)||input.rows.length!==u.members.length)
   fail('R43_MANUAL_APPROVED_UNIVERSE_CONTRACT_STOP');
