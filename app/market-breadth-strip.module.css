@@ -201,7 +201,7 @@
   .percent { display: none; }
 }
 
-@container fg-shared (max-width: 320px) {
+@container fg-shared (max-width: 420px) {\n  .stats[data-provisional="true"] { grid-template-columns: minmax(150px, 1.4fr) repeat(3, minmax(0, .55fr)); }\n}\n\n@container fg-shared (max-width: 320px) {
   .pending { display: none; }
 }
 
