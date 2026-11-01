@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {rankR43Issuers, r43ImportanceIndex} from '../lib/market-calendar-r43-issuer-rank.mjs';
+import {rankR43Issuers, r43ImportanceIndex, R43_ANNUAL_MANUAL_MAX_AGE_DAYS} from '../lib/market-calendar-r43-issuer-rank.mjs';
 
 // Synthetic fixtures guard the scoring contract. They do NOT reproduce the
 // user's 500-stock reference list or independently validate 77.3% / 81.1%.
@@ -52,9 +52,11 @@ test('500-reference subset is valid for research comparison, not for an operatio
   assert.equal(result.topCount, 0);
 });
 
-test('R43 has seven-day validity, separate from annual manual FHS-R3', () => {
+test('R43 annual manual snapshot remains valid through 400 days and expires after', () => {
   const rows = Array.from({length: 2634}, (_, i) => stock(i));
   const result = rankR43Issuers(rows, {asOf: day});
-  assert.ok(r43ImportanceIndex(result, {now: Date.parse('2026-11-02T00:00:00Z')}));
-  assert.equal(r43ImportanceIndex(result, {now: Date.parse('2026-11-10T00:00:00Z')}), null);
+  const at = Date.parse(day + 'T00:00:00Z');
+  assert.equal(R43_ANNUAL_MANUAL_MAX_AGE_DAYS, 400);
+  assert.ok(r43ImportanceIndex(result, {now: at + 400 * 86400000}));
+  assert.equal(r43ImportanceIndex(result, {now: at + 401 * 86400000}), null);
 });

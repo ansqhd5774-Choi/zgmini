@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {rankR43Issuers,selectR43ReviewedExceptions,
+import {rankR43Issuers,r43ImportanceIndex,selectR43ReviewedExceptions,
  R43_REVIEWED_EXCEPTION_POLICY} from '../lib/market-calendar-r43-issuer-rank.mjs';
 import {makeR43MarketImportanceDisplay,r43MarketImportanceDisplayIndex,
  withR43MarketImportanceBadge,R43_MARKET_IMPORTANCE_PUBLIC_KEY} from '../lib/market-calendar-r43-display-overlay.mjs';
@@ -41,7 +41,11 @@ test('missing, tampered, or stale R43 compact output cannot produce a badge',()=
  const compact=makeR43MarketImportanceDisplay(rank,{now});
  const index=r43MarketImportanceDisplayIndex(compact,{now});
  assert.equal(r43MarketImportanceDisplayIndex(null,{now}),null);
- assert.equal(r43MarketImportanceDisplayIndex(compact,{now:Date.parse('2026-12-01T00:00:00Z')}),null);
+ assert.ok(r43MarketImportanceDisplayIndex(compact,{now:Date.parse('2026-12-01T00:00:00Z')}),
+   'annual manual data must remain visible beyond a seven-day window');
+ assert.ok(r43ImportanceIndex(rank,{now:Date.parse('2026-12-01T00:00:00Z')}));
+ assert.equal(r43MarketImportanceDisplayIndex(compact,{now:Date.parse('2028-01-01T00:00:00Z')}),null);
+ assert.equal(r43ImportanceIndex(rank,{now:Date.parse('2028-01-01T00:00:00Z')}),null);
  assert.equal(r43MarketImportanceDisplayIndex({...compact,topCount:133},{now}),null);
  assert.equal(r43MarketImportanceDisplayIndex({...compact,priceVolumeCoverage:.1},{now}),null);
  assert.equal(r43MarketImportanceDisplayIndex({...compact,selected:[...compact.selected.slice(1),compact.selected[1]]},{now}),null);
