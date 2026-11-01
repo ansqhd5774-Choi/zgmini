@@ -102,3 +102,11 @@
 - 초기 패키지는 `MARKET_CALENDAR_R45_PC_CURRENT_DETACH.cmd --apply`를 사용자가 직접 명령창에서 실행하게 했고, CLI 전제 검사 실패 시 TXT 없이 종료하는 경로가 존재했다. 실행 증거를 전달하기 어렵다는 사용자 피드백으로 **운영자 UX 결함**으로 분류했다.
 - 개선 패키지는 별도 `MARKET_CALENDAR_R45_PC_APPLY_ONE_CLICK.cmd`로 명시적 1회 적용을 요청한다. 이는 새 압축 해제 폴더에서 자동 읽기 전용 preflight → READY 확인 → 기존 보호된 `--apply`를 순서대로 호출한다. 창을 `pause`로 유지하며 사용자가 **정확히 어느 TXT를 업로드할지** 보여 준다. 기존 결과를 덮어쓰지 않으며 Core 잠금/Task/DB/산식 검사를 우회하지 않는다.
 - 내부 CMD의 Node 미존재, helper 누락, preflight STOP 경로도 파일 1개(`PREFLIGHT_RESULT.txt` 또는 `APPLY_RESULT.txt`)로 실패 코드를 남긴다. 명령창·PowerShell·관리자권한 안내 없이 ZIP 전체 해제 후 더블클릭만 요구한다. 현재 패키지용 합성 테스트 통과와 실제 Windows 적용 성공은 구분하며, PC에서 새 `APPLY_RESULT.txt`를 받기 전에는 `PC_R45_OBSERVER_DISABLED`로 기록하지 않는다.
+
+### 2026-11-02 사용자 PC 실제 원클릭 적용 결과
+
+- 새 원클릭 패키지의 사전점검 결과 시각 `2026-11-01T15:04:23.558Z`: `R45_CURRENT_PREFLIGHT_READY_NO_CHANGES`, `canonicalMatchesHead=true`, `lineEndings=CRLF`, `changedFiles=[]`.
+- 사용자 PC 적용 결과 시각 `2026-11-01T15:04:24.870Z`: **`phase=INSTALLED`, `decision=R45_CURRENT_INSTALLED_PC_LOCAL_ONLY`**, `backupCreated=true`, `sourceCommitted=true`, 수정 파일 정확히 `scripts/pc-writer/collect-local.mjs` 한 개.
+- PC 승인·로컬 소스는 `76373239406eef471904807840e1c77b2653b7e4` → **`a23c12cc8dd3238fa59adb417a4fdd5fce1bd57e`**. 적용 로직은 새 HEAD를 `config.source`에 반영한 뒤 재조회하여 성공으로 종료했다. 이 SHA는 **PC 로컬 전용**이며 GitHub 작업 브랜치 HEAD와 동일하지 않다.
+- `lockStateBefore=FREE`, `schedulerChanged=false`, `forcedCoreRun=false`, `providerCalls=0`, `dbWrites=0`, `published=false`, `gitPushed=false`. Core 5분 Task/launcher/R7 보조 실행·B1/MarketParquet 공급자·기존 저장 데이터·FHS-R3 연 1회 수동 수집 계약은 변경하지 않았다.
+- **PC R45 Core 옵저버 분리는 설치 검증 완료.** 단, 이 결과에는 적용 후 **다음 정규 Core 자연 실행의 성공 여부**가 없으므로 Core 장기 정상 동작까지 PASS로 확대하지 않는다. Core 잠금 강제 해제·정규 실행 강제 호출·동일 패키지 재실행은 필요하지 않다. R43 ★★★ 시장 중요도 연구 산식과 공개 등급은 별도 미변경 상태로 유지한다.
