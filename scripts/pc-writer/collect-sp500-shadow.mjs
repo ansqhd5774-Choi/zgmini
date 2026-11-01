@@ -29,8 +29,25 @@ export function parseSp500FredPayload(payload,{asOf}={}){
     rows.push({observationDate:row.date,value});
   }
   rows.sort((a,b)=>a.observationDate.localeCompare(b.observationDate));
+  if(rows.some((row,i)=>i>0&&row.observationDate===rows[i-1].observationDate))throw new Error("SP500_FRED_DUPLICATE_DATE");
   if(rows.length<250)throw new Error("SP500_FRED_HISTORY_SHORT");
   return rows;
+}
+
+// FRED's ten-year request window moves with the calendar. An earlier verified
+// observation must not disappear from local storage solely because it fell
+// outside a later request window. Within the returned window FRED is authoritative
+// about current-vintage revisions, including removed or corrected observations.
+export function mergeSp500ShadowHistory(previousRows,incomingRows){
+  if(!Array.isArray(previousRows)||!previousRows.length)return incomingRows;
+  const previousLast=previousRows.at(-1)?.observationDate;
+  const incomingLast=incomingRows.at(-1)?.observationDate;
+  // Never erase already verified recent prices when the provider responds with
+  // an older or incomplete window. Keep the prior checkpoint for investigation.
+  if(validDate(previousLast)&&validDate(incomingLast)&&incomingLast<previousLast)
+    throw new Error('SP500_FRED_OBSERVATION_REGRESSION');
+  const first=incomingRows[0]?.observationDate;
+  return [...previousRows.filter(row=>validDate(row?.observationDate)&&row.observationDate<first),...incomingRows];
 }
 
 export async function collectSp500Shadow(base=process.env.ZGMINI_PC_HOME??DEFAULT_BASE,{asOf=new Date().toISOString().slice(0,10)}={}){
@@ -58,14 +75,22 @@ export async function collectSp500Shadow(base=process.env.ZGMINI_PC_HOME??DEFAUL
     const response=await globalThis.fetch(url,{headers:{accept:"application/json"}});
     report.providerCalls=1;
     if(!response.ok)throw new Error(response.status===429?"SP500_FRED_QUOTA":"SP500_FRED_HTTP");
-    const rows=parseSp500FredPayload(await response.json(),{asOf});
-    await marketOperationalStore(core).writeInput(BATCH_KEY,{
+    const fetched=parseSp500FredPayload(await response.json(),{asOf});
+    const store=marketOperationalStore(core);
+    const previous=await store.readInput(BATCH_KEY);
+    const previousRows=previous?.body?.series?.SP500;
+    const rows=mergeSp500ShadowHistory(previousRows,fetched);
+    const changed=!Array.isArray(previousRows)||JSON.stringify(previousRows)!==JSON.stringify(rows);
+    const storedAt=changed?Date.now():previous.storedAt;
+    if(changed)await store.writeInput(BATCH_KEY,{
       series:{SP500:rows},
       source:"FRED SP500",
       historyMode:"CURRENT_VINTAGE_MARKET_PRICE",
       storedForShadowOnly:true,
-    },Date.now());
-    report.status="STORED";
+    },storedAt);
+    report.status=changed?"STORED":"UNCHANGED";
+    report.dataChanged=changed;
+    report.sourceStoredAt=storedAt;
     report.rows=rows.length;
     report.first=rows[0].observationDate;
     report.last=rows.at(-1).observationDate;
