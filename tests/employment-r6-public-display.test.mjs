@@ -57,6 +57,18 @@ test("public R6 display validates 29 approved IDs, provenance and score/raw sepa
   assert(!validEmploymentR6PublicDisplay(wrongScore));
   const wrongDate=structuredClone(body);wrongDate.indicators[0].history=[{date:"2027-01-01",value:99}];
   assert(!validEmploymentR6PublicDisplay(wrongDate));
+  const missingQuarter=structuredClone(body);delete missingQuarter.window.recentQuarterStart;
+  assert(!validEmploymentR6PublicDisplay(missingQuarter));
+  const extendedQuarter=structuredClone(body);extendedQuarter.window.recentQuarterStart="2025-01-01";
+  assert(!validEmploymentR6PublicDisplay(extendedQuarter));
+  const shiftedYear=structuredClone(body);shiftedYear.window.start="2024-11-01";
+  assert(!validEmploymentR6PublicDisplay(shiftedYear));
+  const fakeRecent=structuredClone(body);
+  delete fakeRecent.window.recentQuarterStart;
+  fakeRecent.indicators[0].rawStatus="READY";
+  fakeRecent.indicators[0].value=4.2;
+  fakeRecent.indicators[0].observationDate="2025-01-31";
+  assert(!validEmploymentR6PublicDisplay(fakeRecent));
 });
 
 test("visitor GET reads a single verified D1 public row; never fetches provider data",async()=>{

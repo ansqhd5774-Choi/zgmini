@@ -2,6 +2,7 @@ import {
   EMPLOYMENT_R6_FEATURES,
   EMPLOYMENT_R6_FORMULA_HASH,
 } from "../lib/market-score/employment-r6-formula.mjs";
+import {employmentR6OneYearStart,employmentR6RecentQuarterStart} from "../lib/market-score/employment-r6-window.mjs";
 
 export const EMPLOYMENT_R6_PUBLIC_DISPLAY_KEY="detail:employment-r6:one-year:v1";
 const validDate=s=>typeof s==="string"&&/^\d{4}-\d{2}-\d{2}$/.test(s)
@@ -17,11 +18,15 @@ export function validEmploymentR6PublicDisplay(body){
     ||body.formulaHash!==EMPLOYMENT_R6_FORMULA_HASH
     ||!validDate(body.asOfDate)
     ||!validDate(body.window?.start)
+    ||!validDate(body.window?.recentQuarterStart)
     ||body.window?.end!==body.asOfDate
     ||!Number.isSafeInteger(body.sourceStoredAt)
     ||body.sourceStoredAt<=0
     ||!Array.isArray(body.indicators)
     ||body.indicators.length!==EMPLOYMENT_R6_FEATURES.length)return false;
+  const asOfMs=Date.parse(body.asOfDate+"T00:00:00Z");
+  if(body.window.start!==employmentR6OneYearStart(asOfMs)
+    ||body.window.recentQuarterStart!==employmentR6RecentQuarterStart(asOfMs))return false;
   return body.indicators.every((item,i)=>{
     if(!item||item.id!==EMPLOYMENT_R6_FEATURES[i].id
       ||!["READY","STALE","UNAVAILABLE"].includes(item.rawStatus)

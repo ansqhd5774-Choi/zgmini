@@ -62,3 +62,14 @@ test("invalid dates and unknown storage provenance are rejected",()=>{
   assert.throws(()=>buildEmploymentR6OneYearReadModel([],{asOfDate:"2026-11-31"}),/AS_OF_INVALID_DATE/);
   assert.throws(()=>buildEmploymentR6OneYearReadModel([],{asOfDate:"2026-11-01",sourceStoredAt:Date.parse("2026-12-01")}),/SOURCE_STORED_AT_INVALID/);
 });
+
+test("one-year window clamps leap-day to February 28 and keeps a real 92-day quarter",()=>{
+  const leap=buildEmploymentR6OneYearReadModel([],{asOfDate:"2024-02-29"});
+  assert.deepEqual(leap.window,{
+    start:"2023-02-28",end:"2024-02-29",recentQuarterStart:"2023-11-29",
+  });
+  const regular=buildEmploymentR6OneYearReadModel([],{asOfDate:"2026-11-01"});
+  assert.deepEqual(regular.window,{
+    start:"2025-11-01",end:"2026-11-01",recentQuarterStart:"2026-08-01",
+  });
+});
