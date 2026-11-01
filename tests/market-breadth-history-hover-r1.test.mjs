@@ -44,3 +44,27 @@ test('existing chart geometry and no-invented-gap line construction remain uncha
   assert.match(chart, /history\.records/);
   assert.match(chart, /eligibleCount/);
 });
+
+
+test('breadth tooltip tracks the pointer, flips away from edges and clamps to the actual plot dimensions', () => {
+  assert.match(chart, /lastPointerRef/);
+  assert.match(chart, /useLayoutEffect/);
+  assert.match(chart, /const plot = plotRef\.current;/);
+  assert.match(chart, /const bounds = plot\.getBoundingClientRect\(\)/);
+  assert.match(chart, /tip\.getBoundingClientRect\(\)/);
+  assert.match(chart, /rightSide \+ tipBounds\.width \+ margin <= bounds\.width/);
+  assert.match(chart, /leftSide >= margin/);
+  assert.match(chart, /Math\.max\(margin, bounds\.width - tipBounds\.width - margin\)/);
+  assert.match(chart, /Math\.max\(margin, bounds\.height - tipBounds\.height - margin\)/);
+  assert.match(chart, /positionTooltip\(clientX, clientY\)/);
+  assert.match(chart, /setPointer\(event\.clientX, event\.clientY\)/);
+  assert.doesNotMatch(css, /\.historyTooltip\s*\{[^}]*right:\s*6px/s);
+  assert.match(css, /\.historyTooltip\s*\{[^}]*visibility:\s*hidden/s);
+});
+
+test('keyboard inspection anchors the same floating tooltip to the selected stored point', () => {
+  assert.match(chart, /setKeyboardPointer\(event\.currentTarget, next\)/);
+  assert.match(chart, /setKeyboardPointer\(event\.currentTarget, index\)/);
+  assert.match(chart, /scaleX\(record\.observationDate\)/);
+  assert.match(chart, /scaleY\(asPct\(record, 'rising'\)\)/);
+});
