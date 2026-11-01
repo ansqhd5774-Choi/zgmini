@@ -87,3 +87,11 @@
 - FIX5에서는 첫 명령이 Node MJS 보조 실행이고 **두 번째 이후의 `Run` 중 단 하나에서만 리터럴 절대 `.vbs` 경로를 참조할 때**, 그 파일을 읽기 전용 후보로 따라간다. 다른 경로를 추정하지 않으며, 후보 사용 여부와 순번만 기록한다. 상태는 `CORE_CHAIN_CANDIDATE_TRACED_REVIEW_REQUIRED`로 표시하고 실제 승인·동작 검증과 구분한다.
 - `config.source=76373239406eef471904807840e1c77b2653b7e4`는 GitHub 공개 저장소의 커밋 조회에서 확인되지 않았다(404). 운영 PC 로컬 커밋일 수 있으므로 메인과 다르다는 이유로 교체하지 않는다. PC HEAD와 `config.source`를 현장에서 대조하기 전에는 변경하지 않는다.
 - 이 과정에서 사용자 PC Task, launcher, lock, 예약 주기, 원자료, R45 옵저버, 기존 FHS 등급은 미변경이다.
+
+### 2026-11-01 FIX5 실제 결과 — PC R45 해제 사전 점검 준비
+
+- 사용자 PC FIX5 결과(`2026-11-01T14:38:24.856Z`)는 3단 VBS 체인 및 `local-cycle.mjs`를 확인했다. 작업 트리 ID `d0a4b3cb8b95`, 실제 HEAD와 `config.source` **양쪽 모두** `76373239406eef471904807840e1c77b2653b7e4`, 보호 소스 tracked clean이다.
+- 수집기 작업 파일의 raw Git-blob 방식 SHA1은 `b7fe36348e5faab717a15d056cf72d2f5f64359c`이고 `r45Observer=PRESENT_DIFFERENT_BLOB_REVIEW`다. `collectorMatchesHead=false`는 raw 작업 파일의 Git blob과 HEAD 오브젝트가 다름을 뜻하며, Git clean과 함께 기록됐다. CRLF 또는 Git text filter로 인한 정상 변환인지 실제 변경인지 아직 확정하지 않는다.
+- 새 `market-calendar-r45-pc-current-detach.mjs` 기본 실행은 읽기 전용이며, **Git `hash-object --path`로 worktree 필터를 반영한 canonical SHA와 `HEAD:collect-local.mjs`를 직접 비교**한다. 두 값이 일치해야 R45 세 블록을 현재 코드에서 정확히 분리할 수 있는지 검사한다. 특정 예전 R56 collector blob을 강제하지 않고 현행 PC의 관측 raw blob/HEAD/실행기 해시를 모두 게이트로 묶는다.
+- `--apply`는 별도의 `R45_CURRENT_PREFLIGHT_READY_NO_CHANGES`가 있어야만 가능하고, 수동 승인 후 PC Core 잠금이 즉시 FREE일 때 소유권 검증 잠금 아래 단일 파일 백업·정확한 R45 3블록 제거·1파일 로컬 Git commit·config.source readback을 수행하도록 준비했다. Core launcher·R7 후속 작업·주기·B1/MarketParquet·연 1회 수동 FHS와 기존 자료는 변경하지 않는다.
+- **현재는 도구 작성과 개발 합성 검증만 완료**. PC 기본 preflight 결과도 아직 받지 않았으므로 사용자 PC 실제 R45 비활성화는 완료 상태가 아니다. 기존 R45 FIX1 `--apply`는 사용 금지다.
