@@ -1,6 +1,6 @@
 "use client";
 
-import {useId, useState, type KeyboardEvent as ReactKeyboardEvent, type PointerEvent as ReactPointerEvent} from 'react';
+import {useId, useLayoutEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type PointerEvent as ReactPointerEvent} from 'react';
 import styles from './market-breadth-strip.module.css';
 
 export type UsBreadthHistoryRecord = {
@@ -26,7 +26,39 @@ const countLabel = new Intl.NumberFormat('ko-KR');
 export function MarketBreadthHistoryChart({history}: {history: UsBreadthHistory}) {
   const [selected, setSelected] = useState<number | null>(null);
   const tooltipId = useId();
+  const plotRef = useRef<HTMLDivElement>(null);
+  const tooltipRef = useRef<HTMLDivElement>(null);
+  const lastPointerRef = useRef<{clientX: number; clientY: number} | null>(null);
   const records = history.records;
+
+  // Resolve the floating box against real DOM rectangles, not image pixels or assumed widths.
+  const positionTooltip = (clientX: number, clientY: number) => {
+    const plot = plotRef.current;
+    const tip = tooltipRef.current;
+    if (!plot || !tip) return;
+    const bounds = plot.getBoundingClientRect();
+    const tipBounds = tip.getBoundingClientRect();
+    const margin = 6;
+    const pointerGap = 12;
+    const pointerX = clientX - bounds.left;
+    const pointerY = clientY - bounds.top;
+    const rightSide = pointerX + pointerGap;
+    const leftSide = pointerX - tipBounds.width - pointerGap;
+    const preferredLeft = rightSide + tipBounds.width + margin <= bounds.width
+      ? rightSide : leftSide >= margin ? leftSide : rightSide;
+    const maxLeft = Math.max(margin, bounds.width - tipBounds.width - margin);
+    const maxTop = Math.max(margin, bounds.height - tipBounds.height - margin);
+    tip.style.left = `${Math.min(maxLeft, Math.max(margin, preferredLeft))}px`;
+    tip.style.top = `${Math.min(maxTop, Math.max(margin, pointerY - tipBounds.height / 2))}px`;
+    tip.style.visibility = 'visible';
+  };
+
+  // The first pointer event mounts the tooltip; measure and position it before paint.
+  useLayoutEffect(() => {
+    if (selected !== null && lastPointerRef.current) {
+      positionTooltip(lastPointerRef.current.clientX, lastPointerRef.current.clientY);
+    }
+  }, [selected]);
   if (!records.length) return <p className={styles.historyEmpty}>아직 보관된 확정치 이력이 없습니다. 데이터가 게시되면 실제 거래일별로 누적됩니다.</p>;
 
   const minTime = dateMs(history.from);
@@ -44,7 +76,21 @@ export function MarketBreadthHistoryChart({history}: {history: UsBreadthHistory}
   const x = scaleX(focused.observationDate);
   const showFlat = records.some(record => record.counts.unchanged > 0);
 
+  const setPointer = (clientX: number, clientY: number) => {
+    lastPointerRef.current = {clientX, clientY};
+    positionTooltip(clientX, clientY);
+  };
+  const setKeyboardPointer = (svg: SVGSVGElement, index: number) => {
+    const bounds = svg.getBoundingClientRect();
+    const record = records[index];
+    if (!record) return;
+    setPointer(
+      bounds.left + scaleX(record.observationDate) / 600 * bounds.width,
+      bounds.top + scaleY(asPct(record, 'rising')) / 160 * bounds.height
+    );
+  };
   const selectAtPointer = (event: ReactPointerEvent<SVGSVGElement>) => {
+    setPointer(event.clientX, event.clientY);
     const bounds = event.currentTarget.getBoundingClientRect();
     if (!bounds.width) return;
     // Map browser CSS pixels through the actual rendered SVG width, never a screenshot.
@@ -72,21 +118,26 @@ export function MarketBreadthHistoryChart({history}: {history: UsBreadthHistory}
     }
     event.preventDefault();
     setSelected(next);
+    setKeyboardPointer(event.currentTarget, next);
   };
 
   return <div className={styles.historyChart}>
     <div className={styles.historyPlot}>
       <div className={styles.historyPercentAxis} aria-hidden="true"><span>100%</span><span>50%</span><span>0%</span></div>
-      <div className={styles.historySvgWrap}>
+      <div className={styles.historySvgWrap} ref={plotRef}>
         <svg viewBox="0 0 600 160" preserveAspectRatio="none" role="img" tabIndex={0}
           aria-label={`S&P 500 상승·하락 종목 비율 1년 이력. 저장된 ${records.length}개 거래일. 마우스 또는 터치로 날짜별 수치를 확인하고, 키보드 좌우 방향키로 이동할 수 있습니다.`}
           aria-describedby={selected !== null ? tooltipId : undefined}
           onPointerEnter={selectAtPointer}
           onPointerMove={selectAtPointer}
           onPointerDown={selectAtPointer}
-          onPointerLeave={event => {if (event.pointerType !== 'touch') setSelected(null);}}
-          onFocus={() => setSelected(value => value ?? records.length - 1)}
-          onBlur={() => setSelected(null)}
+          onPointerLeave={event => {if (event.pointerType !== 'touch') {lastPointerRef.current = null; setSelected(null);}}}
+          onFocus={event => {
+            const index = Math.min(selected ?? records.length - 1, records.length - 1);
+            setSelected(index);
+            setKeyboardPointer(event.currentTarget, index);
+          }}
+          onBlur={() => {lastPointerRef.current = null; setSelected(null);}}
           onKeyDown={selectAtKeyboard}>
           {[0, 50, 100].map(value => <line key={value} x1={plot.left} x2={plot.right} y1={scaleY(value)} y2={scaleY(value)} className={value === 50 ? styles.historyMidline : styles.historyGridline}/>)}
           <rect x={plot.left} y={plot.top} width={plot.right - plot.left} height={plot.bottom - plot.top} fill="transparent" pointerEvents="all"/>
@@ -97,7 +148,7 @@ export function MarketBreadthHistoryChart({history}: {history: UsBreadthHistory}
           <circle cx={x} cy={scaleY(asPct(focused, 'rising'))} r="4" className={styles.historyRisingDot}/>
           <circle cx={x} cy={scaleY(asPct(focused, 'falling'))} r="4" className={styles.historyFallingDot}/>
         </svg>
-        {selected !== null && <div id={tooltipId} className={styles.historyTooltip} role="status">
+        {selected !== null && <div id={tooltipId} ref={tooltipRef} className={styles.historyTooltip} role="status">
           <time dateTime={focused.observationDate}>{dateLabel(focused.observationDate)}</time>
           <div><span className={styles.up}>▲ 상승</span><strong>{countLabel.format(focused.counts.rising)}개 ({asPct(focused, 'rising').toFixed(1)}%)</strong></div>
           <div><span className={styles.flat}>― 보합</span><strong>{countLabel.format(focused.counts.unchanged)}개 ({asPct(focused, 'unchanged').toFixed(1)}%)</strong></div>
