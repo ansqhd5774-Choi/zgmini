@@ -25,11 +25,13 @@ R42 임시 검토 예외: **BRK, ARM, ANET, SHOP, DE**. 이 다섯 기업에 대
 - `scripts/pc-writer/collect-local.mjs`가 R45 MarketParquet 보관 옵저버를 **기본 Core 수집에서 자동 등록하지 않도록** 작업 브랜치에서 되돌린다. 기존 B1 정상 수집 로직과 제공자 호출량은 변경하지 않는다. 과거 R45 연구 파일·모듈은 삭제하지 않는다.
 - `scripts/pc-writer/market-calendar-r43-issuer-rank-cli.mjs`는 입력 검증과 **메모리 내 드라이런**만 허용한다. 종전 `--write-local` 및 함수의 `write:true`는 `R43_LOCAL_ACTIVATION_NOT_APPROVED`로 차단하고, 런타임이 읽을 수 있는 `local-market-calendar-r43-ranked.json`을 쓰지 않는다.
 - `lib/market-calendar-r43-issuer-rank.mjs`의 산식, 132개 선정 규칙 및 기존 연구 결과는 변경하지 않는다.
-- `main/lib/earnings-api-display.mjs`는 **연간 FHS 표시 구현**을 보유한다. 반면 이 작업 브랜치의 과거 `lib/earnings-api-display.mjs`에는 R43 중요도 인덱스 경로가 있어 **그 파일을 main에 통째로 병합하면 FHS 표시를 잃을 수 있다**. 따라서 이 브랜치의 화면 표시 코드를 main으로 가져가거나 배포하지 않는다.
+- 초기 진단 시 작업 브랜치의 `lib/earnings-api-display.mjs`는 R43 중요도 인덱스를 주입하면서 `main`의 연간 FHS 표시 구현을 누락하고 있었다. 후속 수정에서 `main`의 FHS reader·API route·표시 동작을 **선택 회수**하고, 브랜치 R42의 5개 임시 화면 fallback과 BRK 주식 종류 통합만 보존한다. **연간 FHS 입력이 있으면 FHS가 우선**하며 R43 실험 결과는 별 표시를 덮어쓰지 않는다.
+- `scripts/pc-writer/earnings-api-local.mjs`의 기존 R43 결과 파일 자동 읽기를 제거한다. 과거 PC에 `local-market-calendar-r43-ranked.json` 파일이 존재해도 새 브랜치 소스에서는 실적 화면으로 전달하지 않는다. 변경은 해당 브랜치 소스에 한정된다.
 
 ## 적용 범위와 남은 결정
 
 - **이번 커밋은 GitHub 작업 브랜치의 코드와 문서에만 적용**한다. PC에 이미 별도 승인으로 설치된 R45 옵저버(R56 FIX1)는 이 커밋만으로 멈추지 않는다. 실제 PC에서 제거·비활성화하려면 현재 PC 파일·5분 Core 잠금 규칙을 확인한 후 별도 보호 적용이 필요하며, 이 보고서로 원격 적용 성공을 주장하지 않는다.
+- 후속 보호 도구 `scripts/pc-writer/market-calendar-r45-pc-detach.mjs`는 정확한 R56 PC 승인 SHA·원본 파일 blob 확인, Core 잠금 안전 검사, 단일 파일 백업·로컬 커밋 및 `config.source` 재확인을 지원한다. **기본은 읽기 전용**이며 실제 PC에서 실행하거나 설치하지 않았다. 세부 사항은 `docs/MARKET_CALENDAR_R45_PC_SAFE_DETACH_20261101.md` 참고.
 - `main`의 연 1회 FHS-R3 수동 실행·공개 경로 및 공개 등급은 건드리지 않는다. DB/스케줄/API/신규 PC 파일 변경 없음.
 - 시장 중요도에 ★★★ 5% 제한을 적용할지, 어떤 입력과 예외를 정식 채택할지, 재무건전성 등급과 어떤 화면에서 분리해 보여줄지는 **별도 설계·승인 사항**이다. 실험상 높은 일치율이 운영 산식 채택을 자동으로 의미하지 않는다.
 - 기존 시장 중요도 연구 문서의 `R59` 명칭은 역사적 기록이며, `main`의 연간 FHS 수동 공개 `R59`와 무관하다. 새 작업에서는 두 경로를 명시적으로 구별한다.
@@ -39,3 +41,4 @@ R42 임시 검토 예외: **BRK, ARM, ANET, SHOP, DE**. 이 다섯 기업에 대
 1. 연구 CLI에서 정상 입력 드라이런은 `READY_DRY_RUN`, 기존 `write:true`는 `BLOCKED`이고 결과 파일이 없어야 한다.
 2. 브랜치의 Core 수집기에 R45 옵저버를 자동 주입하는 코드가 없어야 한다.
 3. `main` HEAD, PC, D1, 공개 사이트 및 연간 FHS 등급이 불변이어야 한다.
+4. 연간 FHS 입력 시 3/2/1 등급·미평가 `—`가 R42 fallback/R43 실험보다 우선해야 하며, FHS 입력이 없을 때만 기존 임시 화면 fallback을 적용한다.
