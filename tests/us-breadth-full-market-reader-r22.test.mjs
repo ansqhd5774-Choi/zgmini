@@ -40,12 +40,38 @@ test('staging candidate never passes as final; approved final can expose 6506 co
   assert.equal(validFullMarketPublicRecord(final),true);
   const queried=[];
   const selected=await readFullMarketPublicCurrent(async key=>{queried.push(key);
-    return {body:JSON.stringify(final),stored_at:now-15_000};},{now});
+    return key===US_FULL_MARKET_PUBLIC_KEY||key===US_FULL_MARKET_PUBLIC_DAILY_PREFIX+date
+      ?{body:JSON.stringify(final),stored_at:now-15_000}:null;},{now});
   assert.equal(selected.ok,true);
   assert.equal(selected.httpStatus,200);
   assert.equal(selected.body.expectedCount,6506);
   assert.equal(selected.body.imputedUnchangedCount,189);
-  assert.deepEqual(queried,[US_FULL_MARKET_PUBLIC_KEY]);
+  assert.deepEqual(queried,[US_FULL_MARKET_PUBLIC_KEY,US_FULL_MARKET_PUBLIC_DAILY_PREFIX+date]);
+});
+
+test('partial current-only publication cannot masquerade as verified full-market final',async()=>{
+  const current={body:JSON.stringify(final),stored_at:now-15_000};
+  const selected=await readFullMarketPublicCurrent(async key=>
+    key===US_FULL_MARKET_PUBLIC_KEY?current:null,{now});
+  assert.equal(selected.ok,false);
+  assert.equal(selected.httpStatus,503);
+  assert.equal(selected.reason,'FULL_MARKET_DAILY_NOT_PUBLISHED');
+});
+
+test('same-day daily mismatch, stored time mismatch and read failure fail closed',async()=>{
+  const current={body:JSON.stringify(final),stored_at:now-15_000};
+  const read=async daily=>readFullMarketPublicCurrent(async key=>
+    key===US_FULL_MARKET_PUBLIC_KEY?current:daily,{now});
+  assert.equal((await read({...current,body:JSON.stringify({...final,expectedCount:6505})})).reason,
+    'FULL_MARKET_DAILY_MISMATCH');
+  assert.equal((await read({...current,stored_at:now-14_000})).reason,
+    'FULL_MARKET_DAILY_MISMATCH');
+  const failed=await readFullMarketPublicCurrent(async key=>{
+    if(key===US_FULL_MARKET_PUBLIC_KEY)return current;
+    throw Error('D1 unavailable');
+  },{now});
+  assert.equal(failed.httpStatus,503);
+  assert.equal(failed.reason,'FULL_MARKET_DAILY_READ_UNAVAILABLE');
 });
 
 test('no final row, staging in final key, future timestamp, stale day fail closed',async()=>{
