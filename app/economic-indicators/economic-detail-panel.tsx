@@ -56,35 +56,35 @@ const indicatorLabel=(item:Indicator,domainId:string,index:number)=>item.label??
 // Presentation-only R6 list. It does not change the currently stored R54 score,
 // invoke providers, or equate a historical R54 factor with a different R6 one.
 const EMPLOYMENT_R6_PUBLIC_LIST=[
- {id:"U3_UNEMPLOYMENT",label:"실업률 U3",source:"BLS CPS / LNS14000000",description:"경제활동인구 중 실업자가 차지하는 비율로, 공식 실업률과 노동시장 여유를 나타냅니다.",criterionLabel:"10년 백분위 · 낮을수록 긍정 · 7%"},
- {id:"U6_UNEMPLOYMENT",label:"광의실업률 U6",source:"BLS CPS / LNS13327709",description:"실업자 외에 한계근로자와 경제적 이유의 시간제 근로자까지 반영한 광의 노동저활용률입니다.",criterionLabel:"10년 백분위 · 낮을수록 긍정 · 5%"},
- {id:"LFPR",label:"경제활동참가율",source:"BLS CPS / LNS11300000",description:"16세 이상 민간 비시설 인구 중 취업자와 실업자를 합친 경제활동인구의 비율입니다.",criterionLabel:"10년 백분위 · 높을수록 긍정 · 4%"},
- {id:"EPOP",label:"고용률",source:"BLS CPS / LNS12300000",description:"16세 이상 민간 비시설 인구 중 실제 취업자가 차지하는 비율입니다.",criterionLabel:"10년 백분위 · 높을수록 긍정 · 4%"},
- {id:"PAYEMS_MOM",label:"비농업고용 월간 증감",source:"BLS CES / CES0000000001",description:"비농업 사업체의 고용 인원이 전월보다 얼마나 늘거나 줄었는지 나타냅니다.",criterionLabel:"월간 증감의 10년 백분위 · 높을수록 긍정 · 4%"},
- {id:"PAYEMS_3M_AVG",label:"비농업고용 3개월 평균 증감",source:"BLS CES / CES0000000001",description:"비농업고용 전월 증감의 최근 3개월 평균으로 일시적 변동을 완화합니다.",criterionLabel:"3개월 평균의 10년 백분위 · 높을수록 긍정 · 6%"},
- {id:"PAYEMS_ACCEL",label:"비농업고용 증가 가속도",source:"BLS CES / CES0000000001",description:"3개월 평균 비농업고용 증감이 전월보다 얼마나 개선되거나 둔화했는지 측정합니다.",criterionLabel:"3개월 평균 변화의 10년 백분위 · 높을수록 긍정 · 4%"},
- {id:"AVG_WEEKLY_HOURS",label:"민간 평균 주당 근로시간",source:"BLS CES / CES0500000002",description:"민간 부문 근로자의 평균 주당 근로시간으로 기업의 노동 수요 강도를 살핍니다.",criterionLabel:"10년 백분위 · 높을수록 긍정 · 3%"},
- {id:"TEMP_HELP",label:"임시직 고용",source:"BLS CES / CES6056132001",description:"임시 인력공급업 고용 수준으로 기업의 유연한 인력 수요 변화를 관찰합니다.",criterionLabel:"10년 백분위 · 높을수록 긍정 · 3%"},
- {id:"INITIAL_CLAIMS",label:"신규 실업수당 청구",source:"DOL / 전국 주간 청구",description:"한 주 동안 새로 접수된 실업보험 청구 건수로 최근 해고 압력을 가늠합니다.",criterionLabel:"주간 청구의 10년 백분위 · 낮을수록 긍정 · 3%"},
- {id:"INITIAL_CLAIMS_4W",label:"신규 실업수당 청구 4주 평균",source:"DOL / 전국 주간 청구",description:"신규 실업보험 청구 건수의 4주 이동평균으로 주간 변동을 완화합니다.",criterionLabel:"4주 평균의 10년 백분위 · 낮을수록 긍정 · 5%"},
- {id:"CONTINUED_CLAIMS",label:"계속 실업수당 청구",source:"DOL / 전국 주간 청구",description:"실업보험을 계속 청구하는 수급자 수로 재취업 여건과 실업 지속성을 관찰합니다.",criterionLabel:"10년 백분위 · 낮을수록 긍정 · 4%"},
- {id:"IUR",label:"실업보험 수급률",source:"DOL / 전국 주간 청구",description:"실업보험 적용 고용 대비 계속 실업보험 청구자의 비율입니다.",criterionLabel:"10년 백분위 · 낮을수록 긍정 · 4%"},
- {id:"STATE_CLAIMS_BREADTH",label:"주별 실업수당 확산도",source:"DOL ETA 539 / 주별 청구",description:"50개 주와 DC의 신규 청구 4주 평균이 52주 전보다 증가한 지역의 비율입니다.",criterionLabel:"청구 증가 지역 비율의 10년 백분위 · 낮을수록 긍정 · 4%"},
- {id:"JOLTS_OPENINGS_RATE",label:"JOLTS 구인율",source:"BLS JOLTS / JOR",description:"기업의 전체 일자리 가운데 아직 채용되지 않은 구인 공석의 비율입니다.",criterionLabel:"10년 백분위 · 높을수록 긍정 · 4.5%"},
- {id:"JOLTS_HIRES_RATE",label:"JOLTS 채용률",source:"BLS JOLTS / HIR",description:"한 달 동안 실제 채용된 인원의 비율로 노동 수요의 실현 정도를 나타냅니다.",criterionLabel:"10년 백분위 · 높을수록 긍정 · 4.5%"},
- {id:"JOLTS_QUITS_RATE",label:"JOLTS 자발적 퇴직률",source:"BLS JOLTS / QUR",description:"근로자가 자발적으로 퇴사한 비율로 다른 일자리를 찾을 자신감을 가늠합니다.",criterionLabel:"10년 백분위 · 높을수록 긍정 · 3%"},
- {id:"JOLTS_LAYOFFS_RATE",label:"JOLTS 해고율",source:"BLS JOLTS / LDR",description:"기업이 근로자를 해고하거나 감원한 비율로 고용 축소 압력을 나타냅니다.",criterionLabel:"10년 백분위 · 낮을수록 긍정 · 3%"},
- {id:"AHE_YOY",label:"평균 시간당 임금 전년 대비",source:"BLS CES / CES0500000003",description:"민간 부문 평균 시간당 임금의 12개월 전 대비 증가율입니다.",criterionLabel:"전년 대비 증가율의 10년 백분위 · 중간 수준 긍정 · 2.5%"},
- {id:"ECI_12M",label:"고용비용지수 ECI 12개월 변화",source:"BLS ECI / CIU1010000000000A",description:"임금과 복리후생을 포함한 고용비용지수 총보상의 12개월 변화율입니다.",criterionLabel:"12개월 변화율의 10년 백분위 · 중간 수준 긍정 · 2.5%"},
- {id:"INDUSTRY_DIFFUSION_3M",label:"산업별 고용 확산지수",source:"BLS CES / CES0500000022",description:"최근 3개월의 고용 증가가 민간 산업 전반에 얼마나 넓게 퍼졌는지 보여주는 지수입니다.",criterionLabel:"10년 백분위 · 높을수록 긍정 · 4.5%"},
- {id:"STATE_EMP_DIFFUSION_3M",label:"주별 고용 확산지수",source:"BLS CES State & Area",description:"최근 3개월 동안 고용 증가가 미국 여러 주로 얼마나 확산됐는지 나타내는 지수입니다.",criterionLabel:"10년 백분위 · 높을수록 긍정 · 6%"},
- {id:"MSA_EMP_DIFFUSION_3M",label:"도시권 고용 확산지수",source:"BLS CES State & Area",description:"최근 3개월 동안 고용 증가가 여러 대도시 통계권역으로 얼마나 확산됐는지 나타냅니다.",criterionLabel:"10년 백분위 · 높을수록 긍정 · 4.5%"},
- {id:"BED_GROSS_GAINS_RATE",label:"BED 총고용 증가율",source:"BLS BED",description:"사업체 신설과 확장으로 발생한 총 일자리 증가율입니다.",criterionLabel:"분기별 10년 백분위 · 높을수록 긍정 · 1%"},
- {id:"BED_GROSS_LOSSES_RATE",label:"BED 총고용 감소율",source:"BLS BED",description:"사업체 폐업과 축소로 사라진 총 일자리 감소율입니다.",criterionLabel:"분기별 10년 백분위 · 낮을수록 긍정 · 1%"},
- {id:"BED_NET_GROSS_RATE",label:"BED 순고용 증감률",source:"BLS BED",description:"총 일자리 증가율에서 총 일자리 감소율을 뺀 순고용 증감률입니다.",criterionLabel:"증가율−감소율의 10년 백분위 · 높을수록 긍정 · 1%"},
- {id:"BED_SMALL_FIRM_NET",label:"BED 소기업 순고용",source:"BLS BED",description:"승인된 소기업 4개 규모 구간의 총 일자리 증가 인원에서 감소 인원을 뺀 값입니다.",criterionLabel:"소기업 순증감의 10년 백분위 · 높을수록 긍정 · 0.75%"},
- {id:"BED_STATE_BREADTH",label:"BED 주별 고용 확산도",source:"BLS BED",description:"50개 주와 DC에서 일자리 증가가 감소보다 많은 지역의 비율입니다.",criterionLabel:"순증가 지역 비율의 10년 백분위 · 높을수록 긍정 · 0.75%"},
- {id:"BED_BIRTH_DEATH_NET",label:"BED 사업체 탄생·소멸 순변화",source:"BLS BED",description:"새로 탄생한 사업체의 비율에서 소멸한 사업체의 비율을 뺀 순변화입니다.",criterionLabel:"탄생률−소멸률의 10년 백분위 · 높을수록 긍정 · 0.5%"},
+ {id:"U3_UNEMPLOYMENT",label:"실업률 U3",source:"BLS CPS / LNS14000000",description:"경제활동인구 중 실업자 비율",criterionLabel:"낮을수록 좋음 · 7%"},
+ {id:"U6_UNEMPLOYMENT",label:"광의실업률 U6",source:"BLS CPS / LNS13327709",description:"실업·잠재구직자·비자발적 시간제 비율",criterionLabel:"낮을수록 좋음 · 5%"},
+ {id:"LFPR",label:"경제활동참가율",source:"BLS CPS / LNS11300000",description:"노동시장 참여 인구 비율",criterionLabel:"높을수록 좋음 · 4%"},
+ {id:"EPOP",label:"고용률",source:"BLS CPS / LNS12300000",description:"16세 이상 인구 중 취업자 비율",criterionLabel:"높을수록 좋음 · 4%"},
+ {id:"PAYEMS_MOM",label:"비농업고용 월간 증감",source:"BLS CES / CES0000000001",description:"비농업 일자리의 전월 증감",criterionLabel:"높을수록 좋음 · 4%"},
+ {id:"PAYEMS_3M_AVG",label:"비농업고용 3개월 평균 증감",source:"BLS CES / CES0000000001",description:"비농업 일자리 증감의 3개월 평균",criterionLabel:"높을수록 좋음 · 6%"},
+ {id:"PAYEMS_ACCEL",label:"비농업고용 증가 가속도",source:"BLS CES / CES0000000001",description:"3개월 평균 고용 증감의 변화",criterionLabel:"높을수록 좋음 · 4%"},
+ {id:"AVG_WEEKLY_HOURS",label:"민간 평균 주당 근로시간",source:"BLS CES / CES0500000002",description:"민간 근로자 주당 평균 근로시간",criterionLabel:"높을수록 좋음 · 3%"},
+ {id:"TEMP_HELP",label:"임시직 고용",source:"BLS CES / CES6056132001",description:"임시 인력공급업 고용 인원",criterionLabel:"높을수록 좋음 · 3%"},
+ {id:"INITIAL_CLAIMS",label:"신규 실업수당 청구",source:"DOL / 전국 주간 청구",description:"주간 신규 실업보험 청구 건수",criterionLabel:"낮을수록 좋음 · 3%"},
+ {id:"INITIAL_CLAIMS_4W",label:"신규 실업수당 청구 4주 평균",source:"DOL / 전국 주간 청구",description:"신규 청구 건수의 4주 평균",criterionLabel:"낮을수록 좋음 · 5%"},
+ {id:"CONTINUED_CLAIMS",label:"계속 실업수당 청구",source:"DOL / 전국 주간 청구",description:"실업보험 계속 청구자 수",criterionLabel:"낮을수록 좋음 · 4%"},
+ {id:"IUR",label:"실업보험 수급률",source:"DOL / 전국 주간 청구",description:"보험 적용 고용 대비 수급 비율",criterionLabel:"낮을수록 좋음 · 4%"},
+ {id:"STATE_CLAIMS_BREADTH",label:"주별 실업수당 확산도",source:"DOL ETA 539 / 주별 청구",description:"전년 대비 청구 증가 주의 비율",criterionLabel:"낮을수록 좋음 · 4%"},
+ {id:"JOLTS_OPENINGS_RATE",label:"JOLTS 구인율",source:"BLS JOLTS / JOR",description:"월말 미충원 구인 공석 비율",criterionLabel:"높을수록 좋음 · 4.5%"},
+ {id:"JOLTS_HIRES_RATE",label:"JOLTS 채용률",source:"BLS JOLTS / HIR",description:"월간 채용 인원 비율",criterionLabel:"높을수록 좋음 · 4.5%"},
+ {id:"JOLTS_QUITS_RATE",label:"JOLTS 자발적 퇴직률",source:"BLS JOLTS / QUR",description:"자발적 퇴직자 비율",criterionLabel:"높을수록 좋음 · 3%"},
+ {id:"JOLTS_LAYOFFS_RATE",label:"JOLTS 해고율",source:"BLS JOLTS / LDR",description:"해고·감원된 근로자 비율",criterionLabel:"낮을수록 좋음 · 3%"},
+ {id:"AHE_YOY",label:"평균 시간당 임금 전년 대비",source:"BLS CES / CES0500000003",description:"시간당 임금의 전년 대비 증가율",criterionLabel:"중간이 좋음 · 2.5%"},
+ {id:"ECI_12M",label:"고용비용지수 ECI 12개월 변화",source:"BLS ECI / CIU1010000000000A",description:"총보상 고용비용의 12개월 변화율",criterionLabel:"중간이 좋음 · 2.5%"},
+ {id:"INDUSTRY_DIFFUSION_3M",label:"산업별 고용 확산지수",source:"BLS CES / CES0500000022",description:"산업 전반의 3개월 고용 증가 확산",criterionLabel:"높을수록 좋음 · 4.5%"},
+ {id:"STATE_EMP_DIFFUSION_3M",label:"주별 고용 확산지수",source:"BLS CES State & Area",description:"주별 3개월 고용 증가 확산",criterionLabel:"높을수록 좋음 · 6%"},
+ {id:"MSA_EMP_DIFFUSION_3M",label:"도시권 고용 확산지수",source:"BLS CES State & Area",description:"대도시권별 3개월 고용 증가 확산",criterionLabel:"높을수록 좋음 · 4.5%"},
+ {id:"BED_GROSS_GAINS_RATE",label:"BED 총고용 증가율",source:"BLS BED",description:"사업체 확장·신설 일자리 증가율",criterionLabel:"높을수록 좋음 · 1%"},
+ {id:"BED_GROSS_LOSSES_RATE",label:"BED 총고용 감소율",source:"BLS BED",description:"사업체 축소·폐업 일자리 감소율",criterionLabel:"낮을수록 좋음 · 1%"},
+ {id:"BED_NET_GROSS_RATE",label:"BED 순고용 증감률",source:"BLS BED",description:"총 일자리 증가율−감소율",criterionLabel:"높을수록 좋음 · 1%"},
+ {id:"BED_SMALL_FIRM_NET",label:"BED 소기업 순고용",source:"BLS BED",description:"소기업 일자리 순증감",criterionLabel:"높을수록 좋음 · 0.75%"},
+ {id:"BED_STATE_BREADTH",label:"BED 주별 고용 확산도",source:"BLS BED",description:"일자리 순증가 주의 비율",criterionLabel:"높을수록 좋음 · 0.75%"},
+ {id:"BED_BIRTH_DEATH_NET",label:"BED 사업체 탄생·소멸 순변화",source:"BLS BED",description:"사업체 탄생률−소멸률",criterionLabel:"높을수록 좋음 · 0.5%"},
 ] as const;
 
 function employmentListRows(stored:Indicator[]):Indicator[]{
@@ -203,7 +203,7 @@ export default function EconomicDetailPanel({id}:{id:EconomicDomainId}){
    <div className="economic-reading-strips"><span><b>점수 읽기</b>{config.reading}</span><span><b>시장과의 관계</b>{config.impact}</span></div>
   </section>
   <section className="inflation-indicator-section inflation-r2-indicators economic-indicators" aria-labelledby={"economic-"+id+"-indicators"}>
-   <header><div><p className="cnn-eyebrow">ECONOMIC INDICATORS</p><h2 id={"economic-"+id+"-indicators"}>{config.name} 구성 지표 ({id==="growth"?observations.length+"/24":observations.length}개)</h2></div><p>{id==="employment"?"승인된 R6 산식의 29개 지표 목록입니다. 상단의 현재 점수는 기존 저장 결과이며, 29개 산식 연결 여부와 별개입니다. ":"승인된 저장 지표만 표시합니다. "}이전 원자료·공식 다음 발표일·미니차트가 없으면 <b>—</b>로 구분하며 임의로 보완하지 않습니다.{id==="growth"&&observations.length!==24?" 산출요인 24개 중 아직 공개되지 않은 항목이 있습니다.":""}</p></header>
+   <header><div><p className="cnn-eyebrow">ECONOMIC INDICATORS</p><h2 id={"economic-"+id+"-indicators"}>{config.name} 구성 지표 ({id==="growth"?observations.length+"/24":observations.length}개)</h2></div><p>{id==="employment"?"R6 구성 목록 · 10년 백분위 평가 · %는 가중치. 상단 점수는 별도 저장값이며, 미확보 데이터는 —로 표시합니다.":<>승인된 저장 지표만 표시합니다. 이전 원자료·공식 다음 발표일·미니차트가 없으면 <b>—</b>로 구분하며 임의로 보완하지 않습니다.</>}{id==="growth"&&observations.length!==24?" 산출요인 24개 중 아직 공개되지 않은 항목이 있습니다.":""}</p></header>
    {error&&<p className="economic-data-notice" role="status">최근 데이터 조회가 지연되고 있습니다. 저장 자료는 갱신 확인 후 표시됩니다.</p>}
    <div className="inflation-table-wrap inflation-r2-table-wrap">
     <table className="inflation-indicator-table inflation-indicator-table-r2 economic-table">
