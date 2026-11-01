@@ -6,15 +6,24 @@ PURPOSE
   read-only inventory. R45 remains in the collector while the PC checkout
   source has advanced. Never restore the old R56 checkout or launcher.
 
-IMPORTANT: TWO SEPARATE MANUAL ACTIONS
-  1. Extract this ZIP into a NEW folder OUTSIDE the PC Git project.
-  2. Run MARKET_CALENDAR_R45_PC_CURRENT_DETACH.cmd with no arguments.
-     The first run is READ-ONLY and creates one PREFLIGHT_RESULT.txt.
-  3. Share this preflight result for review BEFORE any apply.
-  4. Only after review and a READY decision, the operator may explicitly
-     run MARKET_CALENDAR_R45_PC_CURRENT_DETACH.cmd --apply in the SAME folder.
-     This creates APPLY_RESULT.txt, preserves a private local backup,
-     changes exactly collect-local.mjs, commits locally, and updates source.
+PC OPERATOR: ONE-CLICK APPLY (ONLY AFTER CHATGPT REVIEWED YOUR READY RESULT)
+  1. Extract the ENTIRE ZIP into a NEW folder OUTSIDE the PC Git project.
+     Do NOT copy any CMD or JS file to a Core Task or project directory.
+  2. Double-click MARKET_CALENDAR_R45_PC_APPLY_ONE_CLICK.cmd.
+     No terminal commands or manual arguments are required.
+     This explicitly requests local-only APPLY, and first runs a fresh
+     READ-ONLY preflight in the NEW folder. It applies ONLY if READY.
+  3. The window stays open. Upload the EXACT TXT file shown after
+     SEND THIS TXT FILE TO CHATGPT. If stopped before apply, upload the
+     PREFLIGHT_RESULT.txt or ONE_CLICK_RESULT.txt instead.
+  4. Do not rerun after an ambiguous outcome. Existing reports are
+     preserved and will not be overwritten in the same folder.
+
+ALTERNATE TWO-STAGE OPERATOR FLOW
+  Run MARKET_CALENDAR_R45_PC_CURRENT_DETACH.cmd with no arguments to
+  create PREFLIGHT_RESULT.txt (read-only), then have it reviewed. Once
+  specifically approved, run the CMD with --apply in the SAME folder.
+  Both successful and pre-Node error paths now save a TXT result.
 
 GUARDS
   - Exact current PC source HEAD, worktree ID, three VBS hashes, and raw
@@ -31,5 +40,6 @@ GUARDS
     push, or public rating changes. Existing R45 archives are preserved.
   - Errors after local Git commit require human readback/recovery.
 
-Do not run --apply solely because the package exists or because a prior
-inventory identified a R45 marker. Read the preflight result first.
+Do not double-click the APPLY_ONE_CLICK file merely because the package
+exists. It is intended only after the earlier PC preflight READY result
+has been reviewed and explicit apply has been approved.

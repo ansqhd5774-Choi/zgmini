@@ -95,3 +95,10 @@
 - 새 `market-calendar-r45-pc-current-detach.mjs` 기본 실행은 읽기 전용이며, **Git `hash-object --path`로 worktree 필터를 반영한 canonical SHA와 `HEAD:collect-local.mjs`를 직접 비교**한다. 두 값이 일치해야 R45 세 블록을 현재 코드에서 정확히 분리할 수 있는지 검사한다. 특정 예전 R56 collector blob을 강제하지 않고 현행 PC의 관측 raw blob/HEAD/실행기 해시를 모두 게이트로 묶는다.
 - `--apply`는 별도의 `R45_CURRENT_PREFLIGHT_READY_NO_CHANGES`가 있어야만 가능하고, 수동 승인 후 PC Core 잠금이 즉시 FREE일 때 소유권 검증 잠금 아래 단일 파일 백업·정확한 R45 3블록 제거·1파일 로컬 Git commit·config.source readback을 수행하도록 준비했다. Core launcher·R7 후속 작업·주기·B1/MarketParquet·연 1회 수동 FHS와 기존 자료는 변경하지 않는다.
 - **현재는 도구 작성과 개발 합성 검증만 완료**. PC 기본 preflight 결과도 아직 받지 않았으므로 사용자 PC 실제 R45 비활성화는 완료 상태가 아니다. 기존 R45 FIX1 `--apply`는 사용 금지다.
+
+### 2026-11-01 현행 preflight READY 및 원클릭 전달 경로 개선
+
+- 사용자 PC가 업로드한 `MARKET_CALENDAR_R45_PC_CURRENT_PREFLIGHT_RESULT.txt` (`2026-11-01T14:50:54.116Z`)는 `R45_CURRENT_PREFLIGHT_READY_NO_CHANGES`, `configMatchesHead=true`, `canonicalMatchesHead=true`, `lineEndings=CRLF`, `changedFiles=[]`를 기록했다. 이전 raw SHA와 Git HEAD blob 차이는 Windows 줄바꿈 정규화로 설명된다. **아직 PC R45 해제가 실행되거나 확정된 것은 아니다.**
+- 초기 패키지는 `MARKET_CALENDAR_R45_PC_CURRENT_DETACH.cmd --apply`를 사용자가 직접 명령창에서 실행하게 했고, CLI 전제 검사 실패 시 TXT 없이 종료하는 경로가 존재했다. 실행 증거를 전달하기 어렵다는 사용자 피드백으로 **운영자 UX 결함**으로 분류했다.
+- 개선 패키지는 별도 `MARKET_CALENDAR_R45_PC_APPLY_ONE_CLICK.cmd`로 명시적 1회 적용을 요청한다. 이는 새 압축 해제 폴더에서 자동 읽기 전용 preflight → READY 확인 → 기존 보호된 `--apply`를 순서대로 호출한다. 창을 `pause`로 유지하며 사용자가 **정확히 어느 TXT를 업로드할지** 보여 준다. 기존 결과를 덮어쓰지 않으며 Core 잠금/Task/DB/산식 검사를 우회하지 않는다.
+- 내부 CMD의 Node 미존재, helper 누락, preflight STOP 경로도 파일 1개(`PREFLIGHT_RESULT.txt` 또는 `APPLY_RESULT.txt`)로 실패 코드를 남긴다. 명령창·PowerShell·관리자권한 안내 없이 ZIP 전체 해제 후 더블클릭만 요구한다. 현재 패키지용 합성 테스트 통과와 실제 Windows 적용 성공은 구분하며, PC에서 새 `APPLY_RESULT.txt`를 받기 전에는 `PC_R45_OBSERVER_DISABLED`로 기록하지 않는다.
