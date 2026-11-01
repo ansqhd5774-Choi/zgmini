@@ -1,0 +1,117 @@
+import assert from "node:assert/strict";
+import { createHash } from "node:crypto";
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
+import { DatabaseSync } from "node:sqlite";
+import test from "node:test";
+
+import { auditEmploymentR6Database } from "../scripts/pc-writer/employment-r6-coverage-readonly.mjs";
+import { EMPLOYMENT_R6_FORMULA_HASH } from "../lib/market-score/employment-r6-formula.mjs";
+
+const asOfDate = "2026-11-01";
+const digest = file => createHash("sha256").update(fs.readFileSync(file)).digest("hex");
+
+function fixture(t) {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "zgmini-r6-ro-test-"));
+  t.after(() => fs.rmSync(dir, { recursive: true, force: true }));
+  const dbPath = path.join(dir, "core.sqlite");
+  const db = new DatabaseSync(dbPath);
+  return { db, dbPath };
+}
+
+test("missing file is reported without being created", async t => {
+  const { db, dbPath } = fixture(t);
+  db.close();
+  fs.unlinkSync(dbPath);
+  await assert.rejects(auditEmploymentR6Database({ dbPath, asOfDate }), /DB_FILE_NOT_FOUND/);
+  assert.equal(fs.existsSync(dbPath), false);
+});
+
+test("empty existing database reports missing tables as no evidence, not zero coverage", async t => {
+  const { db, dbPath } = fixture(t);
+  db.close();
+  const before = digest(dbPath);
+  const result = await auditEmploymentR6Database({ dbPath, asOfDate });
+  assert.equal(result.summary.requiredFeatures, 29);
+  assert.equal(result.summary.sourceSeriesWithCurrentRows, null);
+  assert.equal(result.summary.formulaReferenceReadyFeatures, null);
+  assert.equal(result.summary.verifiedScorePointsInOneYear, null);
+  assert.equal(result.features.length, 29);
+  assert.equal(result.features[0].historyReferenceStatus, "NO_PIT_TABLE_EVIDENCE");
+  assert.equal(result.summary.oneYearChartDataCandidate, false);
+  assert.equal(result.providerRequestsMadeByAudit, 0);
+  assert.equal(result.databaseWritesMadeByAudit, 0);
+  assert.equal(digest(dbPath), before);
+});
+
+test("PIT history and stored READY dates are measured separately from raw sources", async t => {
+  const { db, dbPath } = fixture(t);
+  db.exec(`CREATE TABLE market_score_employment_r4_shadow_current_v1 (
+    logical_series_id TEXT, observation_date TEXT, geography_code TEXT, retrieved_at TEXT
+  );
+  CREATE TABLE market_score_employment_r4_shadow_history_v1 (
+    logical_series_id TEXT, observation_date TEXT, geography_code TEXT, geography_type TEXT,
+    retrieved_at TEXT, available_at TEXT, value REAL, source_hash TEXT, history_id INTEGER
+  );
+  CREATE TABLE market_score_employment_r6_feature_history_v1 (
+    feature_id TEXT, score_as_of TEXT, status TEXT
+  );
+  CREATE TABLE market_score_employment_r6_read_model_v1 (
+    version_id TEXT, score_as_of TEXT, status TEXT, formula_hash TEXT, ready_at TEXT
+  );
+  CREATE TABLE market_score_employment_r6_read_pointer_v1 (
+    pointer_key TEXT, version_id TEXT, updated_at TEXT
+  );`);
+  db.prepare(`INSERT INTO market_score_employment_r4_shadow_current_v1 VALUES (?, ?, ?, ?)`)
+    .run("U3_UNEMPLOYMENT_RATE", "2026-10-31", "US", "2026-11-01T00:00:00.000Z");
+  db.prepare(`INSERT INTO market_score_employment_r4_shadow_history_v1 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+    .run("U3_UNEMPLOYMENT_RATE", "2026-10-31", "US", "NATIONAL", "2026-11-01T00:00:00.000Z", "2026-11-01T00:00:00.000Z", 4.3, "sha-test", 1);
+  db.prepare(`INSERT INTO market_score_employment_r6_feature_history_v1 VALUES (?, ?, ?)`)
+    .run("U3_UNEMPLOYMENT", "2026-10-31T00:00:00.000Z", "PARTIAL_HISTORY");
+  for (const [i, date] of ["2026-07-15", "2026-10-01", "2026-10-29"].entries()) {
+    db.prepare(`INSERT INTO market_score_employment_r6_read_model_v1 VALUES (?, ?, ?, ?, ?)`)
+      .run(`model-${i}`, `${date}T00:00:00.000Z`, "READY", EMPLOYMENT_R6_FORMULA_HASH, `${date}T00:05:00.000Z`);
+  }
+  db.prepare(`INSERT INTO market_score_employment_r6_read_pointer_v1 VALUES (?, ?, ?)`)
+    .run("CURRENT", "model-2", "2026-10-29T00:05:00.000Z");
+  db.close();
+  const before = digest(dbPath);
+
+  const result = await auditEmploymentR6Database({ dbPath, asOfDate });
+  assert.equal(result.summary.sourceSeriesWithCurrentRows, 1);
+  assert.equal(result.summary.sourceSeriesWithHistoryRevisions, 1);
+  assert.equal(result.summary.formulaReferenceReadyFeatures, 0);
+  assert.equal(result.summary.formulaReferenceIncompleteFeatures, 29);
+  assert.equal(result.summary.verifiedScorePointsInRecentQuarter, 2);
+  assert.equal(result.summary.verifiedScorePointsInOneYear, 3);
+  assert.equal(result.summary.oneYearChartDataCandidate, true);
+  assert.equal(result.summary.actualPublicChartVerified, false);
+  assert.equal(result.logicalSeries.find(x => x.id === "U3_UNEMPLOYMENT_RATE").recentQuarterObservationRows, 1);
+  assert.equal(result.features.find(x => x.featureId === "U3_UNEMPLOYMENT").historyReferenceStatus, "PARTIAL_HISTORY");
+  assert.equal(result.features.find(x => x.featureId === "U3_UNEMPLOYMENT").recentQuarterStoredFeatureRows, 1);
+  assert.equal(result.currentPointer.status, "READY");
+  assert.equal(digest(dbPath), before);
+});
+
+test("invalid as-of date is rejected before opening the database", async t => {
+  const { db, dbPath } = fixture(t);
+  db.close();
+  await assert.rejects(auditEmploymentR6Database({ dbPath, asOfDate: "2026-02-30" }), /AS_OF_INVALID_DATE/);
+});
+
+test("a single recent score point is insufficient to establish recent-quarter chart coverage", async t => {
+  const { db, dbPath } = fixture(t);
+  db.exec(`CREATE TABLE market_score_employment_r6_read_model_v1 (
+    score_as_of TEXT, status TEXT, formula_hash TEXT, ready_at TEXT
+  )`);
+  db.prepare(`INSERT INTO market_score_employment_r6_read_model_v1 VALUES (?, ?, ?, ?)`)
+    .run("2026-01-31T00:00:00.000Z", "READY", EMPLOYMENT_R6_FORMULA_HASH, "2026-01-31T00:01:00.000Z");
+  db.prepare(`INSERT INTO market_score_employment_r6_read_model_v1 VALUES (?, ?, ?, ?)`)
+    .run("2026-10-31T00:00:00.000Z", "READY", EMPLOYMENT_R6_FORMULA_HASH, "2026-10-31T00:01:00.000Z");
+  db.close();
+  const result = await auditEmploymentR6Database({ dbPath, asOfDate });
+  assert.equal(result.summary.verifiedScorePointsInOneYear, 2);
+  assert.equal(result.summary.verifiedScorePointsInRecentQuarter, 1);
+  assert.equal(result.summary.oneYearChartDataCandidate, false);
+});
