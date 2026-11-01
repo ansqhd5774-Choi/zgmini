@@ -32,6 +32,14 @@
 4. `main`과 지정 브랜치는 크게 발산하여 전체 병합 금지다. 최신 `main` 기준 신규 선택 회수 PR 브랜치도 공식 지침상 별도 사용자 승인 전에는 생성하지 않는다. **브랜치 코드 반영과 Production 공개는 다른 단계**다.
 5. SEO 점검: `/market-calendar/`의 검색 의도는 미국 시장 일정·기업 실적이다. 이번 변경은 화면 안의 조건부 R43 표시만 다루며 title, description, H1은 **NO_CHANGE**. GSC/실제 배포 검색결과 성과는 검증하지 않아 `NO_GSC_EVIDENCE`이다.
 
+## 수동 전용 게시 준비 코드
+
+- 구현: `tools/market-calendar-r43/R43_PC_MANUAL_PUBLISH.mjs`. **자동 실행/예약 등록/CLI 엔트리포인트가 없다.** PC에 설치·실행한 기록이 없으며 이번 GitHub 커밋은 D1 데이터와 공개 화면을 변경하지 않는다.
+- PC의 명시적 승인 저장 원자료만 사용한다. `permissionForDerivedScores: true`, `marketCapApiUsed: false`, 12~512자의 `rightsReviewReference`, 전 모집단·거래일·상대거래량 검사를 통과해야 한다. 500표본만으로는 게시할 수 없다.
+- 기존 승인 PC `config.source`와 실제 Git HEAD 일치, 배포된 시장 중요도 reader 헤더 `x-zgmini-r43-reader: ZGMINI-R43-MARKET-IMPORTANCE`, 별도 수동 lock을 확인한다.
+- 통과한 경우에만 거래 원자료가 없는 파생 결과를 **별도 D1 출력 키**에 수동 1회 게시·동일 본문 재조회한다. 기존 FHS 등급·Core·Writer·스케줄러·다른 D1 키를 변경하지 않는다.
+- 실 PC에서 해당 게시기를 실행하거나 권리 증거를 임의로 생성하지 않는다. 적법한 입력과 새 reader가 준비되지 않으면 `R43_*_STOP`으로 종료한다.
+
 ## 검증 기준
 
 - R43 기본 모델의 가중치·백분위·정원 유지, 다섯 예외의 5% 정원 내 선택, 중복 발행사 합산을 로컬 테스트로 검증한다.
