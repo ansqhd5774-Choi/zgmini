@@ -66,6 +66,7 @@ try{
    const netBars=detail.locator('rect[class*="historyNetPositiveBar"],rect[class*="historyNetNegativeBar"]');
    assert.ok(await detail.locator('rect[class*="historyNetPositiveBar"]').count()>0,'Green bars show rising dominance');
    assert.ok(await detail.locator('rect[class*="historyNetNegativeBar"]').count()>0,'Red bars show falling dominance');
+   assert.match(await detail.locator('[class*="historyNetHeading"]').innerText(),/하락 우세 -18\.0%p/,'Latest net dominance is immediately readable above the chart');
    assert.equal(await detail.locator('line[class*="historyMidline"]').count(),1,'One visible zero baseline separates positive and negative dominance');
    assert.equal(await detail.locator('path[class*="historyRisingLine"],path[class*="historyFallingLine"]').count(),0,'Old opposing percentage lines are removed');
    const windows=[['3M',93,'3개월'],['1M',31,'1개월'],['1W',7,'1주'],['1D',1,'1일'],['6M',186,'6개월'],['1Y',366,'1년'],['3M',93,'3개월']];
