@@ -40,3 +40,14 @@ test('desktop risk title shares the composite heading row without taking card sp
   assert.match(desktop,/#market \.zg-r55-heading>\.zg-r55-header-controls\{\s*grid-column:2;\s*grid-row:1/);
   assert.match(desktop,/#market \.zg-r55-risk-panel \.zg-r55-risk-heading-inline\{\s*display:none;/);
 });
+
+
+test('mobile USA and Korea sentiment tooltips paint above the translated SVG without changing desktop styles',()=>{
+  const mobileLayer=css.split('/* Mobile dashboard USA/Korea tooltip parity:')[1]?.split('/* Desktop market overview: equal-width composite and risk panels.')[0];
+  assert.ok(mobileLayer,'mobile-only tooltip layer section exists');
+  assert.match(mobileLayer,/@media \(max-width:959px\)\{/);
+  assert.match(mobileLayer,/\.zg-dashboard\[data-view="dashboard"\] \.zg-country-panel-grid :is\(\.usa-target-card,\.korea-target-card\) \.recharts-tooltip-wrapper\{\s*z-index:5;\s*\}/);
+  assert.doesNotMatch(mobileLayer,/recharts-surface|opacity|transform|pointer-events/);
+  const sourceTooltip=readFileSync(new URL('../app/globals.css',import.meta.url),'utf8');
+  assert.match(sourceTooltip,/\.cnn-history-tooltip\{[^}]*background:#071a29;/);
+});
