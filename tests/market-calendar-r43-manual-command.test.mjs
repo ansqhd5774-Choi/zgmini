@@ -22,6 +22,7 @@ test('unknown/duplicate args never proceed to private inputs or D1',()=>{
  assert.throws(()=>parseR43ManualArgs(['--publish','--confirm-r43-once','--unsafe','--pc-home',pc,'--repo-root',repo]),/UNKNOWN_ARGUMENT/);
  assert.throws(()=>parseR43ManualArgs(['--pc-home',pc,'--pc-home',pc,'--repo-root',repo]),/ARGUMENT_INVALID/);
  assert.throws(()=>parseR43ManualArgs(['--preflight','--publish','--confirm-r43-once','--pc-home',pc,'--repo-root',repo]),/MODE_CONFLICT/);
+ assert.throws(()=>parseR43ManualArgs(['--pc-home',pc,'--repo-root',repo,'--input',`${pc}/other.json`]),/UNKNOWN_ARGUMENT/);
 });
 
 test('help is safe without PC sources or network',async()=>{
