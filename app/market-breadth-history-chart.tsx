@@ -40,30 +40,30 @@ export function MarketBreadthHistoryChart({history, period}: {history: UsBreadth
   if (!records.length) return <p className={styles.historyEmpty}>선택한 {periodLabel} 기간에 보관된 확정치 이력이 없습니다.</p>;
 
   const scaleX = (day: string) => maxTime <= minTime ? (plot.left + plot.right) / 2 : plot.left + (dateMs(day) - minTime) / (maxTime - minTime) * (plot.right - plot.left);
-  const scaleY = (percentage: number) => plot.bottom - percentage / 100 * (plot.bottom - plot.top);
-  const asPct = (record: UsBreadthHistoryRecord, key: keyof UsBreadthHistoryRecord['counts']) => 100 * record.counts[key] / record.eligibleCount;
-  const line = (key: keyof UsBreadthHistoryRecord['counts']) => records.map((record, i) => {
-    const previous = records[i - 1];
-    const dayGap = previous ? (dateMs(record.observationDate) - dateMs(previous.observationDate)) / 86_400_000 : Infinity;
-    return `${dayGap > 5 ? 'M' : 'L'}${scaleX(record.observationDate).toFixed(2)},${scaleY(asPct(record, key)).toFixed(2)}`;
-  }).join(' ');
+  const net = (record: UsBreadthHistoryRecord) => 100 * (record.counts.rising - record.counts.falling) / record.eligibleCount;
+  const bound = Math.min(100, Math.max(20, Math.ceil(Math.max(...records.map(record => Math.abs(net(record)))) / 10) * 10));
+  const scaleY = (value: number) => plot.top + (bound - value) / (2 * bound) * (plot.bottom - plot.top);
+  const baseline = scaleY(0);
+  const barWidth = Math.min(8, Math.max(1.25, maxTime > minTime ? 0.7 * (plot.right - plot.left) * dayMs / (maxTime - minTime) : 8));
   const at = Math.min(selected ?? records.length - 1, records.length - 1);
   const focused = records[at];
   const x = scaleX(focused.observationDate);
-  const showFlat = records.some(record => record.counts.unchanged > 0);
+  const focusedNet = net(focused);
 
   return <div className={styles.historyChart}>
     <div className={styles.historyPlot}>
-      <div className={styles.historyPercentAxis} aria-hidden="true"><span>100%</span><span>50%</span><span>0%</span></div>
+      <div className={styles.historyPercentAxis} aria-hidden="true"><span>+{bound}</span><span>0%p</span><span>−{bound}</span></div>
       <svg viewBox="0 0 600 160" preserveAspectRatio="none" role="img"
-        aria-label={`S&P 500 상승·하락 종목 비율의 ${periodLabel} 이력. 실제 보관된 ${records.length}개 거래일만 표시하며, 누락된 구간은 연결하지 않습니다.`}>
-        {[0, 50, 100].map(value => <line key={value} x1={plot.left} x2={plot.right} y1={scaleY(value)} y2={scaleY(value)} className={value === 50 ? styles.historyMidline : styles.historyGridline}/>)}
-        <path d={line('rising')} className={styles.historyRisingLine}/>
-        {showFlat && <path d={line('unchanged')} className={styles.historyUnchangedLine}/>}
-        <path d={line('falling')} className={styles.historyFallingLine}/>
+        aria-label={`S&P 500 일별 상승·하락 우세도 ${periodLabel} 이력. 저장된 ${records.length}개 거래일. 0%p 위는 상승 우세, 아래는 하락 우세이며 보합 종목도 분모에 포함됩니다.`}>
+        {[-bound, 0, bound].map(value => <line key={value} x1={plot.left} x2={plot.right} y1={scaleY(value)} y2={scaleY(value)} className={value === 0 ? styles.historyMidline : styles.historyGridline}/>)}
+        {records.map(record => {
+          const value = net(record);
+          const y = scaleY(value);
+          return <rect key={record.observationDate} x={scaleX(record.observationDate) - barWidth / 2} y={Math.min(y, baseline)} width={barWidth}
+            height={Math.max(1, Math.abs(y - baseline))} className={value > 0 ? styles.historyNetPositiveBar : value < 0 ? styles.historyNetNegativeBar : styles.historyNetNeutralBar}/>;
+        })}
         <line x1={x} x2={x} y1={plot.top} y2={plot.bottom} className={styles.historyCursor}/>
-        <circle cx={x} cy={scaleY(asPct(focused, 'rising'))} r="4" className={styles.historyRisingDot}/>
-        <circle cx={x} cy={scaleY(asPct(focused, 'falling'))} r="4" className={styles.historyFallingDot}/>
+        <circle cx={x} cy={scaleY(focusedNet)} r="4" className={focusedNet > 0 ? styles.historyRisingDot : focusedNet < 0 ? styles.historyFallingDot : styles.historyNetNeutralDot}/>
       </svg>
       <div className={styles.historyDates}><time>{dateLabel(from)}</time><time>{dateLabel(history.to)}</time></div>
     </div>
