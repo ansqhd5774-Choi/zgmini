@@ -109,6 +109,31 @@ test('Chr(34) and constant concatenation resolve a dynamic Core command without 
  assert.equal(result.pcFilesChanged,0);
 });
 
+test('postprocessor first and Core VBS second are traced only as a read-only literal-path candidate',()=>{
+ const t=setup();
+ const inner=`${root}/inner-core.vbs`;
+ t.map.set(nested,Buffer.from([
+  'Set sh = CreateObject("WScript.Shell")',
+  'q = Chr(34)',
+  'aux = q & "/runtime/node.exe" & q & " " & q & "/private/mock-zgmini/archive-run.mjs" & q',
+  'firstExit = sh.Run(aux, 0, True)',
+  'host = sh.ExpandEnvironmentStrings("%NODE_HOME%") & "\\node.exe"',
+  `inner = "${inner}"`,
+  'secondExit = sh.Run(Chr(34) & host & Chr(34) & " " & inner, 0, True)',
+  'thirdExit = sh.Run(aux, 0, True)',
+ ].join('\n')));
+ t.map.set(inner,Buffer.from(`Set sh = CreateObject("WScript.Shell")\n${run(`"/runtime/node.exe" "${entry}"`)}\n`));
+ const result=runLiveR45Inventory(t.options);
+ assert.equal(result.launcherStatus,'CORE_CHAIN_CANDIDATE_TRACED_REVIEW_REQUIRED');
+ assert.equal(result.referencedCandidateUsed,true);
+ assert.equal(result.candidateRunOrdinal,2);
+ assert.equal(result.coreVbsCount,3);
+ assert.equal(result.sourceHead,head);
+ assert.equal(result.decision,'INVENTORY_STATIC_ORIGIN_REVIEW_REQUIRED');
+ assert.equal(result.pcFilesChanged,0);
+ assert.doesNotMatch(JSON.stringify(result),/NODE_HOME|archive-run\.mjs|\/private\/mock-zgmini/);
+});
+
 test('live inventory reports current Task, launcher, config, checkout and R45 without writes',()=>{
  const t=setup();
  const before=[...t.map].map(([key,value])=>[key,Buffer.from(value)]);

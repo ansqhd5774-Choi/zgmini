@@ -1,5 +1,14 @@
-ZGMINI R45: LIVE CORE TASK INVENTORY FIX4 - READ ONLY
+ZGMINI R45: LIVE CORE TASK INVENTORY FIX5 - READ ONLY
 Branch: codex/zgmini-gpt-workspace-20261025
+
+FIX5 NOTE (2026-11-01)
+  R4 observed an auxiliary Node command first, and a VBS Core candidate in
+  the second Run. The previous tool assumed that the first Run was Core.
+  FIX5 follows a single, literal, absolute second-Run VBS reference ONLY when
+  the first command is a Node MJS helper. It marks such a result as an
+  UNAPPROVED read-only candidate, even if the reported source appears clean.
+  It never runs commands or approves a PC change.
+  Extract into a NEW folder. Share only the result TXT.
 
 FIX4 NOTE (2026-11-01)
   PC R3 confirmed the inner 20-line VBS has three dynamically assembled Run

@@ -64,8 +64,21 @@ function staticVbsRunCandidates(body){
   const strict=literalVbsRun(line);
   if(strict){runs.push({...strict,staticResolution:false});continue;}
   const expr=line.match(/\.\s*Run\s*(?:\(\s*(.*?)\s*,\s*\d+\s*,\s*True\s*\)|\s+(.+?)\s*,\s*\d+\s*,\s*True)\s*(?:'.*)?$/i);
-  const resolved=expr?staticVbsString(expr[1]??expr[2],vars):null;
-  runs.push(resolved===null?null:{command:resolved,syntax:'STATIC_CONST_EXPRESSION',staticResolution:true});
+  const source=expr?expr[1]??expr[2]:null;
+  const resolved=source?staticVbsString(source,vars):null;
+  if(resolved!==null){
+   runs.push({command:resolved,syntax:'STATIC_CONST_EXPRESSION',staticResolution:true});
+   continue;
+  }
+  // When an actual command has non-constant pieces (e.g. an environment-
+  // expanded host), a separate quoted VBS script path may still be a literal.
+  // It is a read-only *candidate*, never an approved executable origin.
+  const mentions=source?[...source.matchAll(/\b[a-z_][a-z0-9_]*\b/gi)]
+   .map(x=>x[0].toLowerCase()):[];
+  const candidates=[...new Set(mentions.map(name=>vars.get(name)).filter(value=>
+   typeof value==='string'&&/^(?:[a-z]:[\\/]|\/)/i.test(value)&&/\.vbs$/i.test(value)))];
+  runs.push(candidates.length===1?{command:null,staticResolution:false,
+   referencedVbsCandidate:absolute(candidates[0])}:null);
  }
  return runs;
 }
@@ -105,7 +118,8 @@ function safeVbsShape(body){
   runCount:runLines.length,
   literalRunCount:strict.filter(Boolean).length,
   staticResolvedRunCount:derived.filter(x=>x?.staticResolution).length,
-  unresolvedRunCount:derived.filter(x=>!x).length,
+  unresolvedRunCount:derived.filter(x=>!x?.command).length,
+  referencedVbsCandidateCount:derived.filter(x=>x?.referencedVbsCandidate).length,
   bareLiteralRunCount:strict.filter(x=>x?.syntax==='BARE_LITERAL').length,
   execMethodCount:active.filter(x=>/\.\s*Exec\b/i.test(x)).length,
   dynamicRunPresent:strict.some(x=>!x),
@@ -213,7 +227,8 @@ export function traceLiveCore(xml,{readFile=readLimited,maxDepth=4}={}){
   intervalObserved:parsed.intervalObserved??null,outerSha256:null,
   legacyR50OuterHashMatched:null,coreVbsCount:0,coreChain:[],
   auxiliaryRunCount:0,knownArchiveRunSeen:false,entryName:null,root:null,
-  rootWorktreeId:null};
+  rootWorktreeId:null,referencedCandidateUsed:false,
+  candidateRunOrdinal:null};
  if(!parsed.wrapper)return out;
  let active=parsed.wrapper;
  const seen=new Set();
@@ -243,6 +258,19 @@ export function traceLiveCore(xml,{readFile=readLimited,maxDepth=4}={}){
   const first=coreCommand(runs[0]);
   if(first.type==='VBS'){active=first.file;continue;}
   if(first.type!=='NODE'){
+   const firstTokens=tokenizeR50Command(runs[0]);
+   const firstIsNodeHelper=firstTokens?.length>=2&&
+    /(?:^|[\\/])node\.exe$/i.test(firstTokens[0])&&
+    firstTokens.slice(1).some(x=>/\.mjs$/i.test(x));
+   const candidates=shape.commands.slice(1).map((command,index)=>({
+    file:command?.referencedVbsCandidate,index:index+1
+   })).filter(x=>x.file);
+   if(firstIsNodeHelper&&candidates.length===1&&!seen.has(norm(candidates[0].file))){
+    active=candidates[0].file;
+    out.referencedCandidateUsed=true;
+    out.candidateRunOrdinal=candidates[0].index+1;
+    continue;
+   }
    out.status='CORE_FIRST_RUN_UNRECOGNIZED';return out;
   }
   const nodeBytes=readFile(first.file,5242880);
@@ -254,7 +282,9 @@ export function traceLiveCore(xml,{readFile=readLimited,maxDepth=4}={}){
   out.entryName=mod.basename(first.file);
   out.root=root;
   out.rootWorktreeId=hash(norm(root)).slice(0,12);
-  out.status=out.coreChain.some(s=>s.staticResolvedRunCount>0||s.unresolvedRunCount>0)?
+  out.status=out.referencedCandidateUsed?
+   'CORE_CHAIN_CANDIDATE_TRACED_REVIEW_REQUIRED':
+   out.coreChain.some(s=>s.staticResolvedRunCount>0||s.unresolvedRunCount>0)?
    'CORE_CHAIN_STATICALLY_TRACED_REVIEW_REQUIRED':'CORE_CHAIN_TRACED_READ_ONLY';
   return out;
  }
@@ -278,13 +308,13 @@ export function runLiveR45Inventory({
  taskXml=queryCoreTask,readFile=readLimited,gitCall=git,
  allowNonWindows=false,lockCheck=lockSummary,
 }={}){
- const result={audit:'MARKET_CALENDAR_R45_PC_LIVE_INVENTORY_R4',
+ const result={audit:'MARKET_CALENDAR_R45_PC_LIVE_INVENTORY_R5',
   at:new Date().toISOString(),decision:'INVENTORY_INCOMPLETE_REVIEW_REQUIRED',
   readOnly:true,pcFilesChanged:0,schedulerChanged:false,providerCalls:0,
   dbWrites:0,published:false,taskStatus:null,launcherStatus:null,
   legacyR50OuterHashMatched:null,actualOuterSha256:null,
   pt5mInTaskXml:null,intervalObserved:null,coreVbsCount:0,
-  coreChainShape:[],
+  coreChainShape:[],referencedCandidateUsed:false,candidateRunOrdinal:null,
   auxiliaryRunCount:0,knownArchiveRunSeen:false,entryName:null,
   worktreeId:null,sourceHead:null,configSource:null,configMatchesHead:null,
   oldR56SourceMatched:null,protectedTrackedClean:null,collectorBlob:null,
@@ -303,6 +333,8 @@ export function runLiveR45Inventory({
  result.intervalObserved=chain.intervalObserved;
  result.coreVbsCount=chain.coreVbsCount;
  result.coreChainShape=chain.coreChain;
+ result.referencedCandidateUsed=chain.referencedCandidateUsed;
+ result.candidateRunOrdinal=chain.candidateRunOrdinal;
  result.auxiliaryRunCount=chain.auxiliaryRunCount;
  result.knownArchiveRunSeen=chain.knownArchiveRunSeen;
  result.entryName=chain.entryName;
@@ -337,7 +369,8 @@ export function runLiveR45Inventory({
    result.collectorBlob===OFF_BLOB&&!hasObserver?'OFF_EXACT_BRANCH':
    hasObserver?'PRESENT_DIFFERENT_BLOB_REVIEW':'UNRECOGNIZED_REVIEW';
   if(result.configMatchesHead&&result.protectedTrackedClean&&result.collectorMatchesHead){
-   result.decision=chain.status==='CORE_CHAIN_STATICALLY_TRACED_REVIEW_REQUIRED'?
+   result.decision=['CORE_CHAIN_STATICALLY_TRACED_REVIEW_REQUIRED',
+    'CORE_CHAIN_CANDIDATE_TRACED_REVIEW_REQUIRED'].includes(chain.status)?
     'INVENTORY_STATIC_ORIGIN_REVIEW_REQUIRED':
     result.r45Observer==='OFF_EXACT_BRANCH'?
      'OBSERVER_ALREADY_OFF_NO_PC_CHANGE':'INVENTORY_TRACED_REVIEW_REQUIRED';
@@ -349,7 +382,7 @@ export function runLiveR45Inventory({
 if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.url)){
  if(process.argv.some(a=>a==='--apply'||a.startsWith('--write')||a.startsWith('--delete'))||
   process.argv.slice(2).some(a=>!a.startsWith('--base='))){
-  console.log(JSON.stringify({audit:'MARKET_CALENDAR_R45_PC_LIVE_INVENTORY_R4',
+  console.log(JSON.stringify({audit:'MARKET_CALENDAR_R45_PC_LIVE_INVENTORY_R5',
    decision:'READ_ONLY_ARGUMENTS_ONLY_STOP',readOnly:true,pcFilesChanged:0}));
   process.exitCode=2;
  }else{
