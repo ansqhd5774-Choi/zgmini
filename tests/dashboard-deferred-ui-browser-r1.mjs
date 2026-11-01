@@ -31,6 +31,34 @@ try{
   });
   assert.equal(header.overlap,false,'Market title and guide remain separate');
   assert.equal(header.overflow,false,'Dashboard has no horizontal overflow');
+
+  // Regression: the October breadth inline grid override must not override
+  // the previously approved mobile dashboard row height (112px).
+  const marketLayout=await page.evaluate(()=>['usa','korea'].map(market=>{
+   const card=document.querySelector('.'+market+'-target-card.fg-shared-shell');
+   if(!card)return {market,missing:true};
+   const score=card.querySelector('.fg-score-slot')?.getBoundingClientRect();
+   const chart=card.querySelector('.fg-chart-slot')?.getBoundingClientRect();
+   const breadth=card.querySelector('.fg-breadth-slot')?.getBoundingClientRect();
+   const rows=getComputedStyle(card).gridTemplateRows.trim().split(/\s+/).map(Number.parseFloat);
+   return {market,missing:false,inlineGridRows:card.style.gridTemplateRows,
+    rows,scoreHeight:score?.height??0,chartHeight:chart?.height??0,
+    breadthGap:breadth&&chart?breadth.top-chart.bottom:null};
+  }));
+  for(const m of marketLayout){
+   assert.equal(m.missing,false,m.market+' market card exists');
+   assert.equal(m.inlineGridRows,'',m.market+' no obsolete breadth inline row override');
+   assert.ok(m.breadthGap!==null&&Math.abs(m.breadthGap)<3,m.market+' breadth touches chart with no empty grid gap');
+   if(width===390){
+    assert.ok(Math.abs(m.rows[1]-112)<1,m.market+' mobile grid preserves pre-breadth 112px row');
+    assert.ok(Math.abs(m.scoreHeight-112)<1,m.market+' mobile score remains 112px');
+    assert.ok(Math.abs(m.chartHeight-112)<1,m.market+' mobile chart remains 112px');
+   }else{
+    assert.ok(Math.abs(m.rows[1]-142)<1,m.market+' desktop content row remains 142px');
+   }
+  }
+  console.log('PASS rollback original rows '+width+'px signedIn='+signedIn+': '+JSON.stringify(marketLayout));
+
   if(signedIn){
    const trigger=page.getByRole('button',{name:'사용자 설정',exact:true});
    await trigger.waitFor({state:'visible',timeout:15000});
