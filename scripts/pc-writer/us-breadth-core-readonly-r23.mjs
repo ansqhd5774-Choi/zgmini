@@ -37,8 +37,10 @@ export function summarizeUsBreadthCoreEvidence({config,taskXml,taskError,head,di
  const started=Date.parse(quota?.at??''),ended=Date.parse(cycle?.at??'');
  const elapsedMs=Number.isFinite(started)&&Number.isFinite(ended)&&ended>=started?ended-started:null;
  const slotEnd=output?.slotEndUtc??null;
- const publishedAt=iso(early?.at)?early.at:null;
- const publishLagMs=slotEnd&&publishedAt?Date.parse(publishedAt)-Date.parse(slotEnd):null;
+ // The early report's `at` is only its START, not D1 publication time.
+ const earlyCompletedAt=iso(early?.completedAt)?early.completedAt:null;
+ const attemptFinishedLagMs=slotEnd&&earlyCompletedAt?
+  Date.parse(earlyCompletedAt)-Date.parse(slotEnd):null;
  const remoteRecord=remote?.body;
  const remoteValid=validUsIexProvisional(remoteRecord);
  const remoteSameSlot=remoteValid&&remoteRecord.slotEndUtc===slotEnd;
@@ -59,7 +61,7 @@ export function summarizeUsBreadthCoreEvidence({config,taskXml,taskError,head,di
    missingCount:output?.missingCount??null,collectionStatus:output?.collectionStatus??null,
    collectorStatus:cycle?.usProvisional?.status??null,
    earlyStatus:early?.status??null,earlyVerified,
-   earlyReportedAt:publishedAt,publishLagMs},
+   earlyCompletedAt,attemptFinishedLagMs},
   d1:{queried:remote!==undefined||remoteError!==undefined,
    error:remoteError??null,valid:remote===undefined?null:remoteValid,
    sameSlot:remote===undefined?null:remoteSameSlot,

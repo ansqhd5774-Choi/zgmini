@@ -21,7 +21,7 @@ test('read-only Core evidence retains missing IEX, checks D1 same slot and never
   quota:{at:'2026-10-30T14:00:50Z',status:'COMPLETE'},
   cycle:{at:'2026-10-30T14:03:00Z',status:'COMPLETE',usProvisional:{status:'LOCAL_READY'}},
   sidecar:{output,raw:{members,prices:'DO_NOT_PRINT'}},
-  early:{at:'2026-10-30T14:02:00Z',status:'VERIFIED'},
+  early:{at:'2026-10-30T14:01:00Z',completedAt:'2026-10-30T14:02:00Z',status:'VERIFIED'},
   remote:{body:output,stored_at:Date.parse('2026-10-30T14:02:00Z')}});
  assert.equal(result.task.triggerPT5M,true);
  assert.equal(result.task.ignoreNew,true);
@@ -31,7 +31,7 @@ test('read-only Core evidence retains missing IEX, checks D1 same slot and never
  assert.deepEqual([result.provisional.observedCount,result.provisional.missingCount],[100,403]);
  assert.equal(result.provisional.earlyVerified,true);
  assert.equal(result.d1.sameSlot,true);
- assert.equal(result.provisional.publishLagMs,120_000);
+ assert.equal(result.provisional.attemptFinishedLagMs,120_000);
  assert.doesNotMatch(JSON.stringify(result),/DO_NOT_PRINT|"T0"|"prices"|"members"/);
 });
 

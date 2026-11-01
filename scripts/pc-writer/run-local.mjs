@@ -63,6 +63,7 @@ if(process.argv.includes('--us-provisional-only')){
   report.error=/^[A-Z][A-Z0-9_]{1,100}$/.test(error?.message??'')?error.message:'US_PROVISIONAL_EARLY_PUBLICATION_FAILED';
   process.exitCode=1;
  }
+ report.completedAt=new Date().toISOString();
  save(path.join(base,'local-us-breadth-provisional-early-last-run.json'),report);
  fs.writeSync(1,JSON.stringify(report)+'\n');
  process.exit(process.exitCode??0);
