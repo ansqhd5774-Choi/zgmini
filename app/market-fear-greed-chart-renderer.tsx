@@ -78,6 +78,7 @@ export function MarketFearGreedChart({
   const mobileAxisRight=useDashboardMobileAxis();
   const animate=useContext(MarketChartAnimationContext);
   const prefersReducedMotion = usePrefersReducedMotion();
+  const [touchReleased, setTouchReleased] = useState(false);
   const extrema=compact||!showExtrema?[]:chartExtrema(data.map(p=>({date:/^\d{8}$/.test(p.date)?`${p.date.slice(0,4)}-${p.date.slice(4,6)}-${p.date.slice(6,8)}`:p.date.slice(0,10),value:p.score})));
   const rangeByDate=new Map(observedRanges.map(row=>[row.date,row]));
 
@@ -88,6 +89,10 @@ export function MarketFearGreedChart({
   return <div
     className="cnn-history-chart-hitbox"
     onMouseDown={event=>event.preventDefault()}
+    onTouchStart={() => setTouchReleased(false)}
+    onTouchEnd={() => setTouchReleased(true)}
+    onTouchCancel={() => setTouchReleased(true)}
+    onPointerMove={event => { if (event.pointerType === 'mouse') setTouchReleased(false); }}
   >
     <ResponsiveContainer width="100%" height="100%" initialDimension={{width:1,height:1}}>
     <AreaChart data={data} accessibilityLayer={false} tabIndex={-1} margin={compact ? {top:6,right:6,left:6,bottom:6} : mobileAxisRight ? {top:10,right:6,left:8,bottom:0} : { top: 6, right: 14, left: 0, bottom: 4 }}>
@@ -159,6 +164,7 @@ export function MarketFearGreedChart({
         ifOverflow="visible"
       /> : null}
       <Tooltip
+        active={touchReleased ? false : undefined}
         isAnimationActive="auto"
         cursor={{ stroke: 'var(--zg-chart-crosshair,#aab2bc)', strokeDasharray: '3 4' }}
         content={({ active, payload: tooltipPayload, label: tooltipLabel }) => {
