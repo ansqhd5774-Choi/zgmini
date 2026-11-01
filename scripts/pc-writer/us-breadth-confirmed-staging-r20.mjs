@@ -69,6 +69,7 @@ export async function prepareFullMarketStaging({approvedSourceRoot,manifest,now=
  const candidate=calculateFullMarketConfirmedCandidate({
   observationDate:manifest.current.date,previousDate:manifest.previous.date,
   currentRows:current.rows,previousRows:previous.rows,
+  missingPricePolicy:'MISSING_AS_UNCHANGED',
  });
  if(candidate.status!=='CALCULATED_UNPUBLISHED')
   return {status:'FULL_MARKET_CANDIDATE_NOT_READY',prepared:false,reason:candidate.status,
@@ -79,6 +80,10 @@ export async function prepareFullMarketStaging({approvedSourceRoot,manifest,now=
   calculatedAt:parsedNow.toISOString(),observationDate:candidate.observationDate,
   previousDate:candidate.previousDate,expectedCount:candidate.expectedCount,
   eligibleCount:candidate.eligibleCount,missingCount:candidate.missingCount,
+  observedComparableCount:candidate.observedComparableCount,
+  observedUnchangedCount:candidate.observedUnchangedCount,
+  imputedUnchangedCount:candidate.imputedUnchangedCount,
+  sourcePairCoverage:candidate.sourcePairCoverage,
   coverage:candidate.coverage,counts:candidate.counts,
   sourceEvidence:{verification:'SAVED_PARQUET_MANIFEST_SHA256_READBACK',
    current:current.evidence,previous:previous.evidence}};

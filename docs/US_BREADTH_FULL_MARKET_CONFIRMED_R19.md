@@ -7,7 +7,7 @@
 - `lib/market-breadth/us-marketparquet-confirmed-r2.mjs`의 `calculateFullMarketConfirmedCandidate`는 **이미 저장되어 확인된 두 거래일 일봉**을 매개변수로 받아 종목별 상승·보합·하락을 계산한다.
 - MarketParquet 공식 일봉의 `date` 또는 과거 `timestamp`, `symbol`, `asset_type`, `close`, `volume`을 사용한다. Stock만 포함하고 ETF·`-DELISTED`는 제외한다. 동일 기준 분할 조정·배당 비조정 가격만 비교한다.
 - 당일 유효 주식 종목 수가 `expectedCount`이다. 원천 일봉의 전체 종목 수를 6,500으로 고정하지 않는다. 전일 값이 없는 종목은 미관측으로 구분한다.
-- 확정치의 기존 **98% 커버리지 기준**은 유지한다. **잠정치에는 적용하지 않는다.**
+- 이 문서의 R19 `STRICT` 기본 모드는 당시 사용하던 **98% 실제 가격 쌍** 검증을 유지한다. 단, 2026-11-01 사용자가 신규 전체시장 확정치 R2에 명시적으로 승인한 `MISSING_AS_UNCHANGED` 모드에서는 전일 가격이 없는 종목을 보합으로 집계하고, `imputedUnchangedCount`와 `sourcePairCoverage`를 따로 기록한다. R1의 기존 250거래일 기록과 잠정치에는 이를 적용하지 않는다.
 
 ## 현재 코드 상태
 

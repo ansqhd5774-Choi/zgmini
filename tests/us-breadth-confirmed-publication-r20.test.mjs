@@ -65,14 +65,29 @@ test('no source manifest, incomplete source and digest mismatch prevent preparat
  assert.equal(mismatch.reason,'SAVED_PARQUET_SHA_MISMATCH');
 });
 
-test('98% confirmed coverage gates staging; no provisional-style partial publication',async t=>{
+test('new full-market policy counts missing prior prices as disclosed unchanged without source-pair gate',async t=>{
  const f=fixture(t,{previousCount:6300});
  const result=await prepareFullMarketStaging({approvedSourceRoot:f.root,manifest:f.manifest,readParquet:f.reader});
- assert.equal(result.prepared,false);
- assert.equal(result.status,'FULL_MARKET_CANDIDATE_NOT_READY');
- assert.equal(result.reason,'INSUFFICIENT_CONFIRMED_COVERAGE');
- assert.equal(result.expectedCount,6500);
- assert.equal(result.eligibleCount,6300);
+ assert.equal(result.prepared,true);
+ assert.equal(result.body.expectedCount,6500);
+ assert.equal(result.body.eligibleCount,6500);
+ assert.equal(result.body.observedComparableCount,6300);
+ assert.equal(result.body.imputedUnchangedCount,200);
+ assert.equal(result.body.counts.unchanged,3350);
+ assert.equal(result.body.observedUnchangedCount,3150);
+ assert.equal(result.body.sourcePairCoverage,6300/6500);
+ assert.equal(result.body.coverage,1);
+ assert.equal(validFullMarketStagingRecord(result.body),true);
+});
+
+test('tampered source-pair/imputed-flat evidence fails staging validation',async t=>{
+ const f=fixture(t,{previousCount:6300});
+ const prepared=await prepareFullMarketStaging({approvedSourceRoot:f.root,manifest:f.manifest,readParquet:f.reader});
+ const body=prepared.body;
+ assert.equal(validFullMarketStagingRecord({...body,imputedUnchangedCount:0}),false);
+ assert.equal(validFullMarketStagingRecord({...body,observedComparableCount:6500}),false);
+ assert.equal(validFullMarketStagingRecord({...body,observedUnchangedCount:3151}),false);
+ assert.equal(validFullMarketStagingRecord({...body,sourcePairCoverage:1}),false);
 });
 
 test('path traversal and source outside approved root rejected, without creation',async t=>{

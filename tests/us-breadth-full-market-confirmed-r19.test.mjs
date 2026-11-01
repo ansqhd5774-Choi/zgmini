@@ -38,6 +38,34 @@ test('confirmed 98% coverage still applies to full source, never to provisional'
   assert.equal(failing.counts,null);
 });
 
+test('user-approved R2 policy counts missing previous quotes as disclosed flat, without 98% pair gate',()=>{
+  const current=rows(today);
+  for(let i=0;i<3000;i++)current[i].close=101;
+  for(let i=3000;i<6000;i++)current[i].close=99;
+  const r=calculateFullMarketConfirmedCandidate({observationDate:today,previousDate:prev,
+    currentRows:current,previousRows:rows(prev,6250),missingPricePolicy:'MISSING_AS_UNCHANGED'});
+  assert.equal(r.status,'CALCULATED_UNPUBLISHED');
+  assert.equal(r.expectedCount,6500);
+  assert.equal(r.observedComparableCount,6250);
+  assert.equal(r.imputedUnchangedCount,250);
+  assert.equal(r.sourcePairCoverage,6250/6500);
+  assert.deepEqual(r.counts,{rising:3000,unchanged:500,falling:3000});
+  assert.equal(r.observedUnchangedCount,250);
+  assert.equal(r.eligibleCount,6500);
+  assert.equal(r.coverage,1);
+  assert.equal(r.publicationAllowed,false);
+  assert.equal(validUsBreadthRecord(r),false);
+  assert.equal(validUsIexProvisional(r),false);
+});
+
+test('user-approved missing-is-flat policy does not hide invalid stored prices',()=>{
+  const current=rows(today);current[0].close=null;
+  const bad=calculateFullMarketConfirmedCandidate({observationDate:today,previousDate:prev,
+    currentRows:current,previousRows:rows(prev),missingPricePolicy:'MISSING_AS_UNCHANGED'});
+  assert.equal(bad.status,'INVALID_STORED_PRICE');
+  assert.equal(bad.publicationAllowed,false);
+});
+
 test('ETF and delisted records excluded; missing previous prices never unchanged',()=>{
   const current=[...rows(today,3),{date:today,symbol:'ETF',asset_type:'ETF',close:100,volume:1},
     {date:today,symbol:'OLD-DELISTED',asset_type:'Stock',close:20,volume:0}];
