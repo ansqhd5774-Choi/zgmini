@@ -45,7 +45,7 @@ try{
     const breadthRect=breadth?.getBoundingClientRect();
     return {market,missing:false,
       variable:style.getPropertyValue('--fg-shared-content-h').trim(),
-      rows:style.gridTemplateRows.trim().split(/\\s+/).map(Number.parseFloat),
+      rows:style.gridTemplateRows.trim().split(/\s+/).map(Number.parseFloat),
       chartHeight:chartRect?.height??0,
       scoreHeight:score?.getBoundingClientRect().height??0,
       breadthGap:breadthRect&&chartRect?breadthRect.top-chartRect.bottom:null
