@@ -727,7 +727,7 @@ export default function CnnPanel({ showEducation = false, showBreadth = false }:
           : (selectedPeriod==="1D"||archiveHistory.length>=2?intradayLabel:dateLabel)}
         emptyLabel={selectedPeriod==="1D"?"시간별 관측값이 2개 이상 쌓이면 1일 추이가 표시됩니다":"이력 없음"}
       />}
-      breadth={showBreadth && !showEducation ? <MarketBreadthStrip market="usa"/> : undefined}
+      breadth={showBreadth && !showEducation ? <MarketBreadthStrip market="usa" period={selectedPeriod}/> : undefined}
       detailHref={showEducation ? undefined : "/fear-greed/usa/"}
       footer={{
         href: "https://www.cnn.com/markets/fear-and-greed",
