@@ -83,6 +83,7 @@ export function MarketBreadthHistoryChart({history, period}: {history: UsBreadth
   const focused = records[at];
   const x = scaleX(focused.observationDate);
   const focusedNet = net(focused);
+  const latestNet = net(records[records.length - 1]);
   const asPct = (record: UsBreadthHistoryRecord, key: keyof UsBreadthHistoryRecord['counts']) => 100 * record.counts[key] / record.eligibleCount;
 
   const setPointer = (clientX: number, clientY: number) => {
@@ -131,6 +132,9 @@ export function MarketBreadthHistoryChart({history, period}: {history: UsBreadth
   };
 
   return <div className={styles.historyChart}>
+    <div className={styles.historyNetHeading}><strong>일별 상승−하락 우세도</strong>
+      <span className={latestNet > 0 ? styles.up : latestNet < 0 ? styles.down : styles.flat}>{latestNet > 0 ? '▲ 상승 우세' : latestNet < 0 ? '▼ 하락 우세' : '― 균형'} {latestNet > 0 ? '+' : ''}{latestNet.toFixed(1)}%p</span>
+    </div>
     <div className={styles.historyPlot}>
       <div className={styles.historyPercentAxis} aria-hidden="true"><span>+{bound}</span><span>0%p</span><span>−{bound}</span></div>
       <div className={styles.historySvgWrap} ref={plotRef}>
