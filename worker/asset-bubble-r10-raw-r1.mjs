@@ -151,8 +151,16 @@ export function assetR10RawWriter(db){
    if(old.sourceStoredAt===payload.sourceStoredAt
     &&old.sourceVersion!==payload.sourceVersion)
     throw Error('ASSET_R10_RAW_CONFLICTING_VERSION');
-   if(old.sourceVersion===payload.sourceVersion
-    &&JSON.stringify(old.factors)===JSON.stringify(payload.factors))
+   if(old.asOfDate>payload.asOfDate)throw Error('ASSET_R10_RAW_SUPERSEDED');
+   const samePayload=JSON.stringify(old)===JSON.stringify(payload);
+   // An as-of-only refresh is valid even when the source checkpoint is unchanged.
+   // Reject changed observations at the same source checkpoint.
+   if(old.sourceStoredAt===payload.sourceStoredAt
+    &&old.sourceVersion===payload.sourceVersion
+    &&!samePayload
+    &&JSON.stringify({...old,asOfDate:payload.asOfDate})!==JSON.stringify(payload))
+    throw Error('ASSET_R10_RAW_CONFLICTING_CONTENT');
+   if(samePayload)
     return {status:'ALREADY_STORED',key:ASSET_R10_RAW_KEY,storedAt:Number(previous.stored_at)};
   }
   const body=JSON.stringify({payload,projection:{status:'READY',
