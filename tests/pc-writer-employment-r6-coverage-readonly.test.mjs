@@ -6,7 +6,11 @@ import path from "node:path";
 import { DatabaseSync } from "node:sqlite";
 import test from "node:test";
 
-import { auditEmploymentR6Database } from "../scripts/pc-writer/employment-r6-coverage-readonly.mjs";
+import {
+  auditEmploymentR6Database,
+  formatCoverageSummary,
+  saveCoverageReport,
+} from "../scripts/pc-writer/employment-r6-coverage-readonly.mjs";
 import { EMPLOYMENT_R6_FORMULA_HASH } from "../lib/market-score/employment-r6-formula.mjs";
 
 const asOfDate = "2026-11-01";
@@ -134,5 +138,39 @@ test("Windows CMD launchers use main's Node resolver and ASCII CRLF without BOM"
   assert.match(launcher.toString("ascii"), /call "%~dp0\.\.\\resolve-local-node\.cmd"/);
   assert.match(launcher.toString("ascii"), /if defined ZGMINI_PC_HOME/);
   assert.match(launcher.toString("ascii"), /\.zgmini\\pc-writer\\storage\\core\.sqlite/);
+  assert.match(launcher.toString("ascii"), /--output-dir "%~dp0\."/);
   assert.doesNotMatch(launcher.toString("ascii"), /schtasks|install-local|git pull|CREATE TABLE/i);
+});
+
+test("audit creates result TXT and JSON next to launcher without altering SQLite", async t => {
+  const { db, dbPath } = fixture(t);
+  db.close();
+  const before = digest(dbPath);
+  const report = await auditEmploymentR6Database({ dbPath, asOfDate });
+  const output = saveCoverageReport({
+    outputDir: path.dirname(dbPath), report, now: new Date("2026-11-01T12:30:05.123Z"),
+  });
+  assert.ok(fs.existsSync(output.textPath));
+  assert.ok(fs.existsSync(output.jsonPath));
+  const summary = fs.readFileSync(output.textPath, "utf8");
+  assert.match(summary, /STATUS: AUDIT_COMPLETED/);
+  assert.match(summary, /SOURCE_SERIES_WITH_ROWS: NO_RUNTIME_EVIDENCE/);
+  assert.match(summary, /FEATURE STATUS \(29\)/);
+  assert.equal((summary.match(/\d{2} \| /g) ?? []).length, 29);
+  assert.match(formatCoverageSummary(report), /RECENT_QUARTER_READY_SCORE_DATES:/);
+  const json = JSON.parse(fs.readFileSync(output.jsonPath, "utf8"));
+  assert.equal(json.features.length, 29);
+  assert.equal(digest(dbPath), before);
+});
+
+test("a blocked audit writes a readable failure log, even without a DB", t => {
+  const { db, dbPath } = fixture(t);
+  db.close();
+  const output = saveCoverageReport({
+    outputDir: path.dirname(dbPath), error: new Error("DB_FILE_NOT_FOUND"),
+    now: new Date("2026-11-01T12:31:05.123Z"),
+  });
+  assert.match(fs.readFileSync(output.textPath, "utf8"), /STATUS: AUTOMATION_BLOCKED/);
+  assert.match(fs.readFileSync(output.textPath, "utf8"), /DB_FILE_NOT_FOUND/);
+  assert.equal(JSON.parse(fs.readFileSync(output.jsonPath, "utf8")).status, "AUTOMATION_BLOCKED");
 });

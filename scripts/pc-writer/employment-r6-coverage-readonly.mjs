@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 // R6 data evidence only. No provider calls, schema initialization, writes, or scoring persistence.
 import fs from "node:fs";
+import path from "node:path";
 import { DatabaseSync } from "node:sqlite";
 import { pathToFileURL } from "node:url";
 
@@ -213,16 +214,87 @@ function parseArguments(args) {
   for (let i = 0; i < args.length; i++) {
     if (args[i] === "--db" && args[i + 1]) options.dbPath = args[++i];
     else if (args[i] === "--as-of" && args[i + 1]) options.asOfDate = args[++i];
+    else if (args[i] === "--output-dir" && args[i + 1]) options.outputDir = args[++i];
     else throw new TypeError(`UNKNOWN_OR_INCOMPLETE_ARGUMENT:${args[i]}`);
   }
   return options;
 }
 
+const displayCount = value => value == null ? "NO_RUNTIME_EVIDENCE" : String(value);
+
+export function formatCoverageSummary(report) {
+  const s = report.summary;
+  return [
+    "ZGMINI EMPLOYMENT R6 - PC READ-ONLY COVERAGE",
+    "STATUS: AUDIT_COMPLETED (not a live score or chart verification)",
+    `AS_OF: ${report.asOf}`,
+    `SOURCE_SERIES_WITH_ROWS: ${displayCount(s.sourceSeriesWithCurrentRows)} / 29`,
+    `SOURCE_SERIES_WITH_PIT_HISTORY: ${displayCount(s.sourceSeriesWithHistoryRevisions)} / 29`,
+    `TEN_YEAR_REFERENCE_READY_FEATURES: ${displayCount(s.formulaReferenceReadyFeatures)} / 29`,
+    `RECENT_QUARTER_READY_SCORE_DATES: ${displayCount(s.verifiedScorePointsInRecentQuarter)}`,
+    `ONE_YEAR_READY_SCORE_DATES: ${displayCount(s.verifiedScorePointsInOneYear)}`,
+    `ONE_YEAR_CHART_STORED_DATA_CANDIDATE: ${s.oneYearChartDataCandidate ? "YES" : "NO"}`,
+    "PUBLIC_CHART_VERIFIED: NO",
+    "RECENT_QUARTER_PRIORITY: YES; older visible chart gaps may remain, scoring reference gaps may not.",
+    "",
+    "FEATURE STATUS (29)",
+    ...report.features.map(f => [
+      String(f.index).padStart(2, "0"), f.featureId, f.historyReferenceStatus,
+      `latest=${f.latestComputedObservation ?? "NONE"}`,
+      `first_missing=${f.firstMissingReferenceDate ?? "NONE"}`,
+      `quarter_stored=${displayCount(f.recentQuarterStoredFeatureRows)}`,
+    ].join(" | ")),
+    "",
+    "This report is based on the existing local SQLite file. Provider calls=0, DB writes=0.",
+  ].join("\r\n") + "\r\n";
+}
+
+/** Write report artifacts next to the standalone launcher, never into the DB or Git. */
+export function saveCoverageReport({ outputDir, report = null, error = null, now = new Date() } = {}) {
+  if (!outputDir || !fs.existsSync(outputDir) || !fs.statSync(outputDir).isDirectory()) {
+    throw new TypeError("OUTPUT_DIRECTORY_NOT_FOUND");
+  }
+  const stamp = now.toISOString().replace(/[-:]/g, "").replace(".", "_");
+  const base = `EMPLOYMENT_R6_COVERAGE_${stamp}_${process.pid}`;
+  const jsonPath = path.join(outputDir, `${base}.json`);
+  const textPath = path.join(outputDir, `${base}.txt`);
+  const payload = report ?? {
+    kind: "EMPLOYMENT_R6_PC_LOCAL_COVERAGE_READONLY_R1",
+    status: "AUTOMATION_BLOCKED",
+    error: String(error?.message ?? error ?? "UNKNOWN_ERROR"),
+    providerRequestsMadeByAudit: 0,
+    databaseWritesMadeByAudit: 0,
+  };
+  const summary = report ? formatCoverageSummary(report) : [
+    "ZGMINI EMPLOYMENT R6 - PC READ-ONLY COVERAGE",
+    "STATUS: AUTOMATION_BLOCKED",
+    `ERROR: ${payload.error}`,
+    "Provider calls=0, DB writes=0.",
+    "",
+  ].join("\r\n");
+  fs.writeFileSync(textPath, summary, { encoding: "utf8", flag: "wx" });
+  fs.writeFileSync(jsonPath, `${JSON.stringify(payload, null, 2)}\n`, { encoding: "utf8", flag: "wx" });
+  return { textPath, jsonPath };
+}
+
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  let options;
   try {
-    const report = await auditEmploymentR6Database(parseArguments(process.argv.slice(2)));
-    process.stdout.write(`${JSON.stringify(report, null, 2)}\n`);
+    options = parseArguments(process.argv.slice(2));
+    const report = await auditEmploymentR6Database(options);
+    if (options.outputDir) {
+      const paths = saveCoverageReport({ outputDir: options.outputDir, report });
+      process.stdout.write(`AUDIT_COMPLETED\nRESULT_TXT: ${paths.textPath}\nRESULT_JSON: ${paths.jsonPath}\n`);
+    } else process.stdout.write(`${JSON.stringify(report, null, 2)}\n`);
   } catch (error) {
+    if (options?.outputDir) {
+      try {
+        const paths = saveCoverageReport({ outputDir: options.outputDir, error });
+        process.stderr.write(`RESULT_TXT: ${paths.textPath}\nRESULT_JSON: ${paths.jsonPath}\n`);
+      } catch (saveError) {
+        process.stderr.write(`REPORT_SAVE_FAILED: ${saveError.message}\n`);
+      }
+    }
     process.stderr.write(`${error.message}\n`);
     process.exitCode = 2;
   }
