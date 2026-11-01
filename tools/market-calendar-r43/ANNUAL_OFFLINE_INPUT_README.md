@@ -47,3 +47,27 @@ console.log({asOf: input.asOf, count: input.rows.length});
 산출값은 개인 PC에서만 사용하는 `local-market-calendar-r43-input.json` 내용과 호환하며, `expectedEligibleIssuers` 및 `approvedUniverseSha256`을 함께 보존한다. 실제 게시기는 이 승인 roster를 별도로 다시 읽어 무결성과 권리를 재검증해야 한다. **변환 도구 자체는 파일도 저장하지 않는다.** 수동 보안 저장 및 R43 D1 게시에는 별도 승인된 사용자 동작이 필요하다.
 
 기존 PC Core 5분 주기/Writer/FHS 연 1회 수동 수집은 불변이다. 원본 MarketParquet OHLCV 파일과 생성된 PC 비공개 입력 JSON을 GitHub, D1 공개 데이터 또는 사이트에 업로드하지 않는다. 공개 가능한 것은 허용된 비가역 파생 결과(선정 발행사/★★★)뿐이다.
+
+## R43 수동 게시의 실행 진입점
+
+최신 R43 `local-market-calendar-r43-input.json`과 별도로 검토한
+`local-market-calendar-r43-reviewed-issuers.json`을 승인된 PC 비공개 Writer 폴더에
+보관한 **이후에만** `R43_MANUAL_RUN.mjs`를 실행한다. 이 명령은 정규 Core,
+Windows 예약 작업, 기존 FHS 점수 또는 시가총액 API를 변경하지 않는다.
+
+Windows CMD에서 (실제 승인된 repo 경로에 맞게 수정):
+
+```cmd
+"E:\ZGmini\runtime\node.exe" "E:\ZGmini\projects\zgmini\tools\market-calendar-r43\R43_MANUAL_RUN.mjs" --preflight --pc-home "E:\ZGmini\data\pc-writer" --repo-root "E:\ZGmini\projects\zgmini"
+```
+
+`R43_LOCAL_PREFLIGHT_READY_NOT_PUBLISHED`가 나와도 **D1에는 아무것도 게시되지 않는다.**
+실제 게시가 승인된 경우에만 동일 명령에서 `--preflight`를
+`--publish --confirm-r43-once`로 교체해 **한 번만** 실행한다. 게시기는
+PC 승인 SHA·권리 참조·모집단 서명·R43 공개 Reader·개별 잠금·D1 재조회를
+다시 확인한다. R43 키 이외에는 쓰지 않고, 기존 FHS ★ 등급은 변경하지 않는다.
+
+**현재 PC 관측일 0일·승인 발행사 목록 미확보 상태에서는 preflight가 STOP하는
+것이 정상이다.** 이 경우 승인 없는 가짜 입력, 외부 종목 리스트나 임의 점수로
+우회하지 않는다. 파서의 실제 무료 Parquet 1일 표본 디코딩 여부와 운영용
+전체 21거래일 수집·게시 완료 여부는 별도로 기록한다.
