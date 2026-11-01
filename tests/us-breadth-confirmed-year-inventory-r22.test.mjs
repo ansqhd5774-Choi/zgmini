@@ -54,6 +54,42 @@ test('complete local sha ledger is still not independent provider proof or R21-a
   assert.deepEqual(fs.readdirSync(f.stockRoot).sort(),before);
 });
 
+test('isolated R2 stock_daily audit root is visible without altering legacy roots',t=>{
+  const f=fixture(t);
+  const isolated=path.join(f.dataRoot,'us-breadth-confirmed-r2','marketparquet-stock-daily');
+  fs.mkdirSync(isolated,{recursive:true});
+  for(const date of f.dates){
+    const file=path.join(isolated,`stock_daily_${date}.parquet`);
+    fs.writeFileSync(file,data);
+    fs.writeFileSync(file.replace(/\.parquet$/,'.audit.json'),JSON.stringify({
+      date,source:'MARKETPARQUET_STOCK_DAILY_OFFICIAL_SIGNED_DOWNLOAD',
+      complete:true,sha256:sha}));
+  }
+  const report=auditFullMarketYearInventory({...f,now,sessionCount:3});
+  assert.equal(report.localComplete,true);
+  assert.equal(report.found,4);
+  assert.equal(report.localAuditShaMatched,4);
+  assert.equal(report.providerAuthenticityVerified,false);
+  assert.equal(report.providerCalls,0);
+  assert.deepEqual(fs.readdirSync(f.stockRoot),[]);
+});
+
+test('isolated R2 root junction outside data root is rejected before any trust',t=>{
+  const f=fixture(t);
+  const external=fs.mkdtempSync(path.join(os.tmpdir(),'zgmini-year-r2-external-'));
+  t.after(()=>fs.rmSync(external,{recursive:true,force:true}));
+  const parent=path.join(f.dataRoot,'us-breadth-confirmed-r2');
+  fs.mkdirSync(parent);
+  fs.symlinkSync(external,path.join(parent,'marketparquet-stock-daily'),'dir');
+  const report=auditFullMarketYearInventory({...f,now,sessionCount:3});
+  assert.equal(report.status,'LOCAL_YEAR_INVENTORY_INCOMPLETE');
+  assert.equal(report.localComplete,false);
+  assert.equal(report.reason,'R2_ROOT_OUTSIDE_DATA_ROOT');
+  assert.deepEqual(report.sourceIssues,['R2_ROOT_OUTSIDE_DATA_ROOT']);
+  assert.equal(report.localWrites,0);
+  assert.equal(report.providerCalls,0);
+});
+
 test('missing dates and absent SHA audits are separately reported without creating files',t=>{
   const f=fixture(t);
   f.write(f.dates[0],{audited:false});f.write(f.dates.at(-1));

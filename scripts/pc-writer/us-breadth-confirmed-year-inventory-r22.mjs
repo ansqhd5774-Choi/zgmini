@@ -15,6 +15,8 @@ const safeFileStat=file=>{
   catch(error){if(error?.code==='ENOENT')return null;throw error;}
 };
 const knownRoots=(dataRoot,pcHome)=>[...new Set([
+  // R30 isolated full-stock daily acquisition: never mix with the legacy R1 key.
+  path.join(dataRoot,'us-breadth-confirmed-r2','marketparquet-stock-daily'),
   path.join(dataRoot,'theme-market-history-r131','marketparquet-r165'),
   path.join(dataRoot,'theme-market-history-r131','marketparquet-r167'),
   path.join(dataRoot,'theme-market-history-r131','raw'),
@@ -104,6 +106,24 @@ export function auditFullMarketYearInventory({dataRoot,pcHome,now=new Date(),
     schedulerChanges:0,requestedDates:dates.length,firstDate:dates[0],lastDate:dates.at(-1),
     searchedRoots:roots,days:{},found:0,localAuditShaMatched:0,missingDates:[],
     localAuditMissingDates:[],sourceIssues:[]};
+  // The R2 location is newly managed by this feature. Its *root itself* must
+  // remain inside the real E: data root even if a junction/symlink was planted.
+  // Older PC roots retain their existing junction compatibility policy.
+  const r2Root=path.join(dataRoot,'us-breadth-confirmed-r2','marketparquet-stock-daily');
+  if(roots.includes(r2Root)){
+    try{
+      const realData=fs.realpathSync(dataRoot);
+      const realR2=fs.realpathSync(r2Root);
+      if(!realR2.startsWith(realData+path.sep))throw Error('R2_ROOT_OUTSIDE_DATA_ROOT');
+    }catch{
+      report.sourceIssues.push('R2_ROOT_OUTSIDE_DATA_ROOT');
+      report.status='LOCAL_YEAR_INVENTORY_INCOMPLETE';
+      report.localComplete=false;
+      report.approvedR21ManifestEntries=null;
+      report.reason='R2_ROOT_OUTSIDE_DATA_ROOT';
+      return report;
+    }
+  }
   for(const date of dates){
     const paths=[];
     try{
