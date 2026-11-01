@@ -25,6 +25,7 @@ export function mergeCheckDay(previous,date,sample){
  }
  if(checks.length>96)throw Error('CNN_R9_DAY_CAP');
  const last=checks.at(-1),delta=last?sample.sourceStoredAt-last.sourceStoredAt:Infinity;
+ if(last&&last.score===sample.score&&last.sourceObservedAt===sample.sourceObservedAt)return {changed:false,reason:'UNCHANGED_SOURCE_OBSERVATION',body:previous};
  if(last&&delta<=0)return {changed:false,reason:'UNCHANGED_OR_OLDER_STORED_SNAPSHOT',body:previous};
  if(last&&delta<FIFTEEN)return {changed:false,reason:'BELOW_APPROVED_15M_CADENCE',body:previous};
  if(checks.length>=96)throw Error('CNN_R9_DAY_CAP');
@@ -39,6 +40,11 @@ export function captureVerifiedCheck(db,cnnRow,now=Date.now(),{dryRun=false}={})
  const date=sample.checkedAt.slice(0,10);
  const row=get(db,"SELECT body,stored_at FROM public_feed_snapshots_v1 WHERE kind='output' AND feed_key=? AND snapshot_key=?",[CHECK_KEY,date]);
  const prior=row?JSON.parse(row.body):null;
+ // Across dates, use the last actual verified check rather than a calendar reset.
+ const previousRow=prior?null:get(db,"SELECT body FROM public_feed_snapshots_v1 WHERE kind='output' AND feed_key=? AND snapshot_key<? ORDER BY snapshot_key DESC LIMIT 1",[CHECK_KEY,date]);
+ const previousCheck=prior?.checks?.at(-1)??(previousRow?JSON.parse(previousRow.body).checks?.at(-1):null);
+ if(previousCheck?.score===sample.score&&previousCheck?.sourceObservedAt===sample.sourceObservedAt)
+  return {status:'UNCHANGED',reason:'UNCHANGED_SOURCE_OBSERVATION',date,points:prior?.checks?.length??0,checkedAt:sample.checkedAt};
  const merged=mergeCheckDay(prior,date,sample);
  if(!merged.changed)return {status:'UNCHANGED',reason:merged.reason,date,points:prior.checks.length,checkedAt:sample.checkedAt};
  if(dryRun)return {status:'DRY_RUN',date,points:merged.body.checks.length,checkedAt:sample.checkedAt};

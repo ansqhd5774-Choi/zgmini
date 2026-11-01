@@ -8,6 +8,10 @@ export async function appendCompositeObservedFromCurrent(db,expectedAt){
  const sample=compositeSampleFromVerified(JSON.parse(row.body),expectedAt);
  const date=sample.calculatedAt.slice(0,10),key=COMPOSITE_OBSERVED_PREFIX+date;
  const prior=await db.prepare("SELECT body,stored_at FROM market_public_snapshots_v1 WHERE snapshot_key=?").bind(key).first();
+ // Compare with the last stored point across UTC date boundaries as well.
+ const previousRow=prior?null:await db.prepare("SELECT body FROM market_public_snapshots_v1 WHERE snapshot_key LIKE 'composite-observed:%' AND snapshot_key<? ORDER BY snapshot_key DESC LIMIT 1").bind(key).first();
+ const lastStored=prior?JSON.parse(prior.body).points.at(-1):previousRow?JSON.parse(previousRow.body).points?.at(-1):null;
+ if(lastStored?.signature===sample.signature)return {status:'UNCHANGED',date,points:prior?JSON.parse(prior.body).points.length:0};
  const merged=mergeCompositeObservedDay(prior?JSON.parse(prior.body):null,date,sample);
  if(!merged.changed)return {status:'UNCHANGED',date,points:prior?JSON.parse(prior.body).points.length:0};
  const encoded=JSON.stringify(merged.body);

@@ -20,13 +20,13 @@ test('observations preserve actual calculation times and only verified scores',(
  assert.equal(firstDay.body.points.length,1);
  const unchangedScore=mergeCompositeObservedDay(firstDay.body,'2026-10-31',
   compositeSampleFromVerified(calc(40),at('2026-10-31T12:15:00Z')));
- assert.equal(unchangedScore.changed,true);
+ assert.equal(unchangedScore.changed,false);
  assert.equal(mergeCompositeObservedDay(firstDay.body,'2026-10-31',
   compositeSampleFromVerified(calc(40.5),at('2026-10-31T12:05:00Z'))).changed,false);
- const later=mergeCompositeObservedDay(unchangedScore.body,'2026-10-31',
+ const later=mergeCompositeObservedDay(firstDay.body,'2026-10-31',
   compositeSampleFromVerified(calc(40.5),at('2026-10-31T12:30:00Z')));
  assert.equal(later.changed,true);
- assert.deepEqual(later.body.points.map(x=>x.score),[40,40,40.5]);
+ assert.deepEqual(later.body.points.map(x=>x.score),[40,40.5]);
  assert.throws(()=>compositeSampleFromVerified({...calc(),overall:{status:'PARTIAL',score:42}},at('2026-10-31T12:15:00Z')),/UNVERIFIED/);
 });
 
@@ -41,12 +41,12 @@ test('PC core.sqlite retains archived daily row separately from current and exis
  assert.equal((await appendCompositeObservedFromCurrent(db,now)).status,'LOCAL_STORED');
  now+=15*60000;
  await put(calc(40));
- assert.equal((await appendCompositeObservedFromCurrent(db,now)).status,'LOCAL_STORED');
+ assert.equal((await appendCompositeObservedFromCurrent(db,now)).status,'UNCHANGED');
  now+=15*60000;
  await put(calc(45));
- assert.equal((await appendCompositeObservedFromCurrent(db,now)).points,3);
+ assert.equal((await appendCompositeObservedFromCurrent(db,now)).points,2);
  const archived=await db.prepare("SELECT body FROM market_public_snapshots_v1 WHERE snapshot_key=?").bind('composite-observed:2026-10-31').first();
- assert.deepEqual(JSON.parse(archived.body).points.map(p=>p.score),[40,40,45]);
+ assert.deepEqual(JSON.parse(archived.body).points.map(p=>p.score),[40,45]);
  assert.equal(JSON.parse((await db.prepare("SELECT body FROM market_public_snapshots_v1 WHERE snapshot_key='current'").first()).body).overall.score,45);
 });
 
