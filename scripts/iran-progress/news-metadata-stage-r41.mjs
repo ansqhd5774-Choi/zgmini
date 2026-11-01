@@ -3,7 +3,7 @@ import {createHash} from 'node:crypto';
 import {readFile,writeFile} from 'node:fs/promises';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
-import {IRAN_NEWS_METADATA_SOURCE_IDS_R41,IRAN_NEWS_METADATA_SOURCES_R41,
+import {IRAN_NEWS_R40_AUDITED_SOURCE_IDS,IRAN_NEWS_METADATA_SOURCES_R41,
  validIranMetadataRowR41} from '../../lib/iran-progress/news-metadata-r41.mjs';
 
 export const IRAN_NEWS_R41_UPSERT_SQL=`INSERT INTO iran_news_article_metadata_r41
@@ -42,7 +42,7 @@ export function prepareIranNewsMetadataR41(report,{now=Date.now()}={}){
   seen.add(articleId);rows.push(row);
  }
  if(rows.length!==report.qualified30Days||
-  IRAN_NEWS_METADATA_SOURCE_IDS_R41.some(id=>!rows.some(row=>row.sourceId===id)))
+  IRAN_NEWS_R40_AUDITED_SOURCE_IDS.some(id=>!rows.some(row=>row.sourceId===id)))
   throw Error('R41_QUALIFIED_COUNT_OR_SOURCE_MISMATCH');
  return rows.sort((a,b)=>b.publishedAt.localeCompare(a.publishedAt)||a.articleId.localeCompare(b.articleId));
 }
