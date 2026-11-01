@@ -1,0 +1,26 @@
+ZGMINI — R11 FOUR-GAP READ-ONLY DIAGNOSTIC PACKAGE
+Package revision: R11
+Work branch: codex/ui-improvements (unchanged)
+Approved PC source SHA: 43e0ffa392a9e655bcb4ca7b151c26ad43567e14
+Published observations: 248 of 252 US trading days
+Gap dates: 2026-03-26, 2026-03-27, 2026-09-23, 2026-10-14
+Mode: READ_ONLY_NO_FETCH_NO_INSTALL_NO_PUBLISH_NO_SCHEDULE_CHANGE
+
+Files in ZIP (flat, same directory):
+  four-gap-diagnosis-r11.mjs
+    SHA256: 8907053bb6b98b4a14296ef5e46b54234775e809982eef90d05e501441572627
+    GitHub commit: 52470c88c8413922fc23ab5185c95fb2bda51a0e
+  US_BREADTH_PC_R11_FOUR_GAP_READONLY.cmd
+    SHA256: ed93b184391fb281ee10d375a4dc85f82141f471fa9c8737f14ae14c12345b1
+    GitHub commit: 4f6fafaf18364885f4b7323f80fffc59e38e6473
+  US_BREADTH_PC_R11_FOUR_GAP_README_KO.txt
+    SHA256: f0ad12d0996ea1959b40d5ea8bbbab93a7e9c7f465ae311769b7c67a0f7038ed
+    GitHub commit: e0c8835fbdffba0ef889572b0ecfc5a570c6d206
+  US_BREADTH_PC_R9_HISTORY_COVERAGE_RESULT.txt
+    SHA256: 4fc6688d326c21145a2c35ce3dbb951851b3a5bdbd507f8e64b271efe3dac47d
+
+Execute one time on the approved Windows PC, then upload:
+  US_BREADTH_PC_R11_FOUR_GAP_READONLY_RESULT.txt
+
+The tool makes no modifications to PC source, the PC database, schedules,
+published 248 historical observations, or the current-day public record.
