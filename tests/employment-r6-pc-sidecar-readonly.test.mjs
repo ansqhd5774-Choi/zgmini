@@ -4,7 +4,7 @@ import os from "node:os";
 import path from "node:path";
 import {DatabaseSync} from "node:sqlite";
 import {test} from "node:test";
-import {stageEmploymentR6OneYear} from "../scripts/pc-writer/employment-r6-one-year-stage.mjs";
+import {optionsFrom,stageEmploymentR6OneYear} from "../scripts/pc-writer/employment-r6-one-year-stage.mjs";
 
 const TABLE="market_score_employment_r4_shadow_history_v1";
 function fixture(file,rows){
@@ -46,4 +46,35 @@ test("one-year display combines approved Core + isolated candidate read-only, se
   assert.equal(coreOnly.indicators[0].value,4.9);
   assert.equal(coreOnly.summary.sourceFeatures,2);
   assert.deepEqual([fs.statSync(core).size,fs.statSync(candidate).size],before);
+});
+
+test("candidate DB and PUBLISH cannot be combined, even if the candidate exists",()=>{
+  const dir=fs.mkdtempSync(path.join(os.tmpdir(),"zgmini-r6-no-candidate-publish-"));
+  const core=path.join(dir,"core.sqlite");
+  const candidate=path.join(dir,"EMPLOYMENT_R6_CANDIDATE.sqlite");
+  fixture(core,[]);
+  fixture(candidate,[]);
+  const before=[fs.statSync(core).size,fs.statSync(candidate).size];
+  assert.throws(
+    ()=>optionsFrom(["--db",core,"--candidate-db",candidate,"--output-dir",dir,"--publish"]),
+    /CANDIDATE_PUBLICATION_NOT_APPROVED/,
+  );
+  assert.throws(
+    ()=>optionsFrom(["--publish","--output-dir",dir,"--candidate-db",candidate,"--db",core]),
+    /CANDIDATE_PUBLICATION_NOT_APPROVED/,
+  );
+  // Research staging remains available; the Core-only publication path is parsed normally.
+  assert.equal(optionsFrom(["--db",core,"--candidate-db",candidate,"--output-dir",dir]).publish,false);
+  assert.equal(optionsFrom(["--db",core,"--output-dir",dir,"--publish"]).publish,true);
+  assert.deepEqual([fs.statSync(core).size,fs.statSync(candidate).size],before);
+});
+
+test("Windows PUBLISH CMD fails closed when an isolated candidate is present",()=>{
+  const cmd=fs.readFileSync(new URL("../scripts/pc-writer/employment-r6-one-year-display.cmd",import.meta.url),"utf8");
+  const publish=cmd.split(/^:publish\r?$/m)[1];
+  assert.ok(publish,"PUBLISH CMD branch is present");
+  assert.match(publish,/if exist "%~dp0EMPLOYMENT_R6_CANDIDATE\.sqlite"/);
+  assert.match(publish,/CANDIDATE_PUBLICATION_NOT_APPROVED/);
+  assert.doesNotMatch(publish,/--candidate-db/);
+  assert.match(publish,/--db "%EMP_R6_CORE%" --output-dir "%~dp0\." --publish/);
 });

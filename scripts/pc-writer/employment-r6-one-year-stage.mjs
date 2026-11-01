@@ -19,7 +19,7 @@ const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),"../..");
 const safeDate=value=>typeof value==="string"&&/^\d{4}-\d{2}-\d{2}$/.test(value);
 const nowIso=()=>new Date().toISOString();
 
-function optionsFrom(args){
+export function optionsFrom(args){
   const result={publish:false};
   for(let i=0;i<args.length;i++){
     const token=args[i];
@@ -30,6 +30,9 @@ function optionsFrom(args){
     }
     throw Error("INVALID_ARGUMENT");
   }
+  // An isolated research candidate is never an approved PC publication source.
+  // Reject the combination before opening either database or contacting D1.
+  if(result.publish&&result.candidateDbPath)throw Error("CANDIDATE_PUBLICATION_NOT_APPROVED");
   if(typeof result.dbPath!=="string"||!path.isAbsolute(result.dbPath)
     ||typeof result.outputDir!=="string"||!path.isAbsolute(result.outputDir)
     ||!fs.existsSync(result.outputDir)||!fs.statSync(result.outputDir).isDirectory()){

@@ -34,8 +34,8 @@ exit /b %errorlevel%
 :publish
 echo [R6] PUBLISH: only the approved PC public display output is sent to D1.
 if exist "%~dp0EMPLOYMENT_R6_CANDIDATE.sqlite" (
-  "%NODE%" "%~dp0employment-r6-one-year-stage.mjs" --db "%EMP_R6_CORE%" --candidate-db "%~dp0EMPLOYMENT_R6_CANDIDATE.sqlite" --output-dir "%~dp0." --publish
-  exit /b %errorlevel%
+  echo [BLOCKED] CANDIDATE_PUBLICATION_NOT_APPROVED: isolated research DB requires separate lineage approval.
+  exit /b 2
 )
 "%NODE%" "%~dp0employment-r6-one-year-stage.mjs" --db "%EMP_R6_CORE%" --output-dir "%~dp0." --publish
 exit /b %errorlevel%
