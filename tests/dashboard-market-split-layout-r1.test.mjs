@@ -62,3 +62,11 @@ test('mobile US and Korea fear greed charts restore the original 120px chart and
  assert.doesNotMatch(block,/\.fg-card\.fg-shared-shell \.fg-chart-slot\{height:112px\}/);
  assert.match(css,/\.fg-card\.fg-shared-shell \.fg-chart-slot\{grid-column:4;grid-row:2;width:100%;height:120px;min-height:0\}/);
 });
+
+test('mobile breadth cards override the inline grid row variable without affecting desktop',()=>{
+ const shell=readFileSync(new URL('../app/fear-greed-card-shell.tsx',import.meta.url),'utf8');
+ assert.match(shell,/gridTemplateRows:'auto var\(--fg-shared-content-h\) auto auto'/);
+ assert.match(css,/@media\(max-width:959px\)\{[\s\S]*?\.fg-card\.fg-shared-shell\{--fg-shared-content-h:120px;--fg-shared-left:124px;grid-template-rows:auto 120px auto\}/);
+ const matched=css.match(/--fg-shared-content-h:120px/g)??[];
+ assert.equal(matched.length,1,'exactly one scoped mobile override');
+});
