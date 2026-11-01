@@ -3,6 +3,66 @@
 @import "tw-animate-css";
 @import "../vendor/shadcn-tailwind-4.13.0.css";
 
+/* Fixtures and prose are not runtime utility-class sources. */
+@source not "../tests";
+@source not "../docs";
+/* Preserve the existing catalog's public animation/scroll utility contract. */
+@source inline("scrollbar-thin scrollbar-none scrollbar-gutter-stable scroll-fade-b shimmer animate-in");
+/* Unimported starter UI: guarded by tailwind-runtime-sources-r7.test.mjs. */
+@source not "../components/ui/alert-dialog.tsx";
+@source not "../components/ui/alert.tsx";
+@source not "../components/ui/aspect-ratio.tsx";
+@source not "../components/ui/attachment.tsx";
+@source not "../components/ui/avatar.tsx";
+@source not "../components/ui/breadcrumb.tsx";
+@source not "../components/ui/bubble.tsx";
+@source not "../components/ui/button-group.tsx";
+@source not "../components/ui/calendar.tsx";
+@source not "../components/ui/card.tsx";
+@source not "../components/ui/carousel.tsx";
+@source not "../components/ui/chart.tsx";
+@source not "../components/ui/checkbox.tsx";
+@source not "../components/ui/collapsible.tsx";
+@source not "../components/ui/combobox.tsx";
+@source not "../components/ui/command.tsx";
+@source not "../components/ui/context-menu.tsx";
+@source not "../components/ui/dialog.tsx";
+@source not "../components/ui/direction.tsx";
+@source not "../components/ui/drawer.tsx";
+@source not "../components/ui/dropdown-menu.tsx";
+@source not "../components/ui/empty.tsx";
+@source not "../components/ui/field.tsx";
+@source not "../components/ui/form.tsx";
+@source not "../components/ui/hover-card.tsx";
+@source not "../components/ui/input-group.tsx";
+@source not "../components/ui/input-otp.tsx";
+@source not "../components/ui/input.tsx";
+@source not "../components/ui/item.tsx";
+@source not "../components/ui/kbd.tsx";
+@source not "../components/ui/label.tsx";
+@source not "../components/ui/marker.tsx";
+@source not "../components/ui/menubar.tsx";
+@source not "../components/ui/message-scroller.tsx";
+@source not "../components/ui/message.tsx";
+@source not "../components/ui/native-select.tsx";
+@source not "../components/ui/navigation-menu.tsx";
+@source not "../components/ui/pagination.tsx";
+@source not "../components/ui/popover.tsx";
+@source not "../components/ui/radio-group.tsx";
+@source not "../components/ui/resizable.tsx";
+@source not "../components/ui/scroll-area.tsx";
+@source not "../components/ui/separator.tsx";
+@source not "../components/ui/sidebar.tsx";
+@source not "../components/ui/skeleton.tsx";
+@source not "../components/ui/slider.tsx";
+@source not "../components/ui/spinner.tsx";
+@source not "../components/ui/switch.tsx";
+@source not "../components/ui/table.tsx";
+@source not "../components/ui/textarea.tsx";
+@source not "../components/ui/toggle-group.tsx";
+@source not "../components/ui/toggle.tsx";
+@source not "../components/ui/tooltip.tsx";
+
 @utility scrollbar-thin {
   scrollbar-width: thin;
 }
@@ -2026,6 +2086,7 @@ html,body{overflow-x:hidden}
 
 .cnn-history-tooltip{
   min-width:92px;
+  text-align:center;
   border:1px solid var(--zg-border);
   border-radius:4px;
   background:#071a29;
@@ -2744,6 +2805,7 @@ html,body{overflow-x:hidden}
 .fg-card.fg-shared-shell .fg-period-slot .cnn-period-button:nth-child(3)::after{content:"3M"}
 .fg-card.fg-shared-shell .fg-period-slot .cnn-period-button:nth-child(4)::after{content:"6M"}
 .fg-card.fg-shared-shell .fg-period-slot .cnn-period-button:nth-child(5)::after{content:"1Y"}
+.fg-card.fg-shared-shell .fg-period-slot .cnn-period-toolbar[data-usa-one-day="true"] .cnn-period-button::after{content:attr(data-period-short)}
 .fg-card.fg-shared-shell .fg-period-slot .cnn-period-button[aria-pressed=true]::after{font-weight:900}
 
 /* Default / wide card mode: vertical rail on the right.
@@ -3265,7 +3327,7 @@ body .zg-r55-market .zg-r55-shell[data-expanded="false"] article.zg-r55-card>.zg
   /* Existing shared-shell minimums are retained; only dashboard density changes. */
   .zg-dashboard[data-view="dashboard"] .fg-card.fg-shared-shell{--fg-shared-header-h:48px;--fg-shared-content-h:142px;--fg-shared-footer-h:28px;--fg-shared-pad:8px;--fg-shared-gap:8px;--fg-shared-period-size:24px;--fg-shared-period-gap:4px;--fg-shared-period-rail:32px;--fg-shared-comparison-h:32px;--fg-shared-date-h:12px;--fg-shared-analysis-gap:8px;--fg-shared-left:32%}
   .zg-dashboard[data-view="dashboard"] .fg-card.fg-shared-shell .fg-header-slot .cnn-panel-heading{padding-block:4px;gap:8px}
-  .zg-dashboard[data-view="dashboard"] .fg-card.fg-shared-shell .fg-analysis-slot{padding-top:8px;grid-template-columns:minmax(0,1fr) 32px;column-gap:8px;grid-template-rows:24px minmax(0,1fr);row-gap:8px;align-items:start}
+  .zg-dashboard[data-view="dashboard"] .fg-card.fg-shared-shell .fg-analysis-slot{padding-top:8px;grid-template-columns:minmax(0,1fr) 32px;column-gap:8px;grid-template-rows:8px minmax(0,1fr);row-gap:8px;align-items:start}
   .zg-dashboard[data-view="dashboard"] .fg-card.fg-shared-shell .cnn-market-title{gap:8px}
   .zg-dashboard[data-view="dashboard"] .cnn-market-title p:last-child{margin-top:4px}
   .zg-dashboard[data-view="dashboard"] .fg-card.fg-shared-shell .cnn-score-orb-hero{row-gap:0}
@@ -3775,691 +3837,6 @@ body .zg-r55-market .zg-r55-shell[data-expanded="false"] article.zg-r55-card>.zg
 }
 
 
-/* FEAR_GREED_EDU_R1 */
-.cnn-education-panel{
-  margin-top:24px;
-  border:1px solid var(--zg-border);
-  border-radius:8px;
-  background:#071a29;
-  padding:24px;
-  color:var(--zg-text);
-}
-.cnn-education-header{
-  display:grid;
-  grid-template-columns:minmax(0,1fr) auto;
-  align-items:start;
-  gap:24px;
-}
-.cnn-education-header h1{
-  margin-top:4px;
-  font-size:clamp(20px,2.2vw,28px);
-  line-height:1.25;
-  font-weight:800;
-}
-.cnn-education-header>div:first-child>p:last-child{
-  max-width:720px;
-  margin-top:8px;
-  color:var(--zg-text-secondary);
-  font-size:13px;
-  line-height:1.65;
-}
-.cnn-education-status{
-  min-width:144px;
-  border-left:1px solid var(--zg-border);
-  padding-left:20px;
-  text-align:right;
-}
-.cnn-education-status strong{
-  display:block;
-  font-size:24px;
-  line-height:1.1;
-}
-.cnn-education-status span{
-  display:block;
-  margin-top:4px;
-  color:var(--zg-text-meta);
-  font-size:12px;
-}
-.cnn-method-strip{
-  display:grid;
-  grid-template-columns:1fr 24px 1fr 24px 1fr;
-  align-items:center;
-  gap:8px;
-  margin-top:24px;
-  border:1px solid var(--zg-border);
-  background:#061722;
-  padding:16px;
-}
-.cnn-method-strip>div{
-  min-width:0;
-}
-.cnn-method-strip strong,
-.cnn-method-strip span{
-  display:block;
-}
-.cnn-method-strip strong{
-  font-size:13px;
-}
-.cnn-method-strip span{
-  margin-top:4px;
-  color:var(--zg-text-meta);
-  font-size:12px;
-  line-height:1.45;
-}
-.cnn-method-strip>b{
-  color:var(--zg-text-meta);
-  text-align:center;
-  font-size:16px;
-}
-.cnn-component-education-grid{
-  display:grid;
-  grid-template-columns:repeat(2,minmax(0,1fr));
-  gap:16px;
-  margin-top:20px;
-}
-.cnn-education-card{
-  min-width:0;
-  border:1px solid var(--zg-border);
-  border-radius:8px;
-  background:#061722;
-  padding:20px;
-}
-.cnn-education-card-head{
-  display:grid;
-  grid-template-columns:32px minmax(0,1fr) auto;
-  align-items:start;
-  gap:12px;
-}
-.cnn-component-number{
-  display:grid;
-  width:32px;
-  height:32px;
-  place-items:center;
-  border:1px solid #2d536d;
-  color:#bcd0e0;
-  font-size:12px;
-  font-weight:800;
-}
-.cnn-education-card-head h2{
-  font-size:17px;
-  line-height:1.25;
-  font-weight:800;
-}
-.cnn-education-card-head p{
-  margin-top:4px;
-  color:var(--zg-text-secondary);
-  font-size:12px;
-  line-height:1.45;
-}
-.cnn-component-rating{
-  min-height:24px;
-  border:1px solid #36536a;
-  border-radius:4px;
-  padding:4px 8px;
-  color:#c9d8e5;
-  font-size:12px;
-  font-weight:750;
-  white-space:nowrap;
-}
-.cnn-education-card[data-tone="fear"] .cnn-component-rating{
-  border-color:#8f4650;
-  color:#ff9ca3;
-}
-.cnn-education-card[data-tone="greed"] .cnn-component-rating{
-  border-color:#2f785f;
-  color:#78ddb2;
-}
-.cnn-component-meaning{
-  min-height:44px;
-  margin-top:16px;
-  color:var(--zg-text-secondary);
-  font-size:13px;
-  line-height:1.65;
-}
-.cnn-component-metrics{
-  display:grid;
-  grid-template-columns:repeat(2,minmax(0,1fr));
-  gap:8px;
-  margin-top:16px;
-}
-.cnn-component-metrics>div{
-  min-width:0;
-  border-top:1px solid #19384c;
-  padding-top:8px;
-}
-.cnn-component-metrics span,
-.cnn-component-metrics strong{
-  display:block;
-}
-.cnn-component-metrics span{
-  color:var(--zg-text-meta);
-  font-size:12px;
-}
-.cnn-component-metrics strong{
-  margin-top:4px;
-  overflow-wrap:anywhere;
-  font-size:16px;
-  line-height:1.3;
-}
-.cnn-component-metrics .cnn-component-score{
-  grid-column:1/-1;
-  border-top-color:#2e526a;
-}
-.cnn-component-metrics .cnn-component-score strong{
-  font-size:18px;
-}
-.cnn-component-direction{
-  display:grid;
-  grid-template-columns:repeat(2,minmax(0,1fr));
-  gap:8px;
-  margin-top:16px;
-}
-.cnn-component-direction span{
-  border:1px solid #19384c;
-  padding:8px;
-  color:var(--zg-text-secondary);
-  font-size:12px;
-  line-height:1.45;
-}
-.cnn-component-direction b{
-  display:block;
-  margin-bottom:4px;
-  color:var(--zg-text);
-  font-size:12px;
-}
-.cnn-component-interpretation{
-  margin-top:16px;
-  border-left:4px solid #36536a;
-  padding:4px 0 4px 12px;
-}
-.cnn-education-card[data-tone="fear"] .cnn-component-interpretation{
-  border-left-color:#c75b67;
-}
-.cnn-education-card[data-tone="greed"] .cnn-component-interpretation{
-  border-left-color:#38a77e;
-}
-.cnn-component-interpretation>strong{
-  font-size:13px;
-}
-.cnn-component-interpretation p{
-  margin-top:4px;
-  color:#d7e2ec;
-  font-size:13px;
-  line-height:1.55;
-}
-.cnn-component-interpretation small{
-  display:block;
-  margin-top:4px;
-  color:var(--zg-text-meta);
-  font-size:12px;
-}
-.cnn-education-note{
-  margin-top:20px;
-  border:1px solid #2d536d;
-  background:#081f30;
-  padding:16px;
-}
-.cnn-education-note strong{
-  font-size:14px;
-}
-.cnn-education-note p{
-  margin-top:4px;
-  color:var(--zg-text-secondary);
-  font-size:13px;
-  line-height:1.6;
-}
-.cnn-education-panel .cnn-return-cta{
-  margin-top:20px;
-}
-
-@media(max-width:767px){
-  .cnn-education-panel{
-    margin-top:16px;
-    padding:16px;
-  }
-  .cnn-education-header{
-    grid-template-columns:1fr;
-    gap:16px;
-  }
-  .cnn-education-status{
-    min-width:0;
-    border-left:0;
-    border-top:1px solid var(--zg-border);
-    padding:12px 0 0;
-    text-align:left;
-  }
-  .cnn-method-strip{
-    grid-template-columns:1fr;
-    gap:8px;
-    padding:12px;
-  }
-  .cnn-method-strip>b{
-    transform:rotate(90deg);
-  }
-  .cnn-component-education-grid{
-    grid-template-columns:1fr;
-    gap:12px;
-  }
-  .cnn-education-card{
-    padding:16px;
-  }
-  .cnn-education-card-head{
-    grid-template-columns:32px minmax(0,1fr);
-  }
-  .cnn-component-rating{
-    grid-column:2;
-    justify-self:start;
-  }
-  .cnn-component-meaning{
-    min-height:0;
-  }
-}
-
-@media(max-width:430px){
-  .cnn-component-metrics,
-  .cnn-component-direction{
-    grid-template-columns:1fr;
-  }
-  .cnn-component-metrics .cnn-component-score{
-    grid-column:auto;
-  }
-}
-
-
-/* FEAR_GREED_EDU_R1_SCORE_GUIDE */
-.cnn-score-guide{
-  display:grid;
-  grid-template-columns:25fr 20fr 11fr 20fr 25fr;
-  margin-top:12px;
-  overflow:hidden;
-  border:1px solid var(--zg-border);
-  border-radius:6px;
-}
-.cnn-score-guide span{
-  min-width:0;
-  padding:8px 6px;
-  text-align:center;
-  border-right:1px solid rgba(255,255,255,.08);
-}
-.cnn-score-guide span:last-child{border-right:0}
-.cnn-score-guide span:nth-child(1){background:rgba(143,31,47,.28)}
-.cnn-score-guide span:nth-child(2){background:rgba(242,85,90,.18)}
-.cnn-score-guide span:nth-child(3){background:rgba(154,168,182,.14)}
-.cnn-score-guide span:nth-child(4){background:rgba(88,200,138,.13)}
-.cnn-score-guide span:nth-child(5){background:rgba(21,134,94,.22)}
-.cnn-score-guide b,
-.cnn-score-guide small{
-  display:block;
-}
-.cnn-score-guide b{
-  font-size:11px;
-  line-height:1.2;
-  color:var(--zg-text);
-}
-.cnn-score-guide small{
-  margin-top:3px;
-  font-size:10px;
-  line-height:1.25;
-  color:var(--zg-text-secondary);
-}
-.cnn-component-scorebar{
-  margin-top:12px;
-}
-.cnn-component-scorebar-track{
-  position:relative;
-  height:8px;
-  border-radius:999px;
-  background:linear-gradient(
-    90deg,
-    #8f1f2f 0 25%,
-    #f2555a 25% 45%,
-    #9aa8b6 45% 55%,
-    #58c88a 55% 75%,
-    #15865e 75% 100%
-  );
-}
-.cnn-component-scorebar-track i{
-  position:absolute;
-  top:50%;
-  width:12px;
-  height:12px;
-  border:2px solid #fff;
-  border-radius:50%;
-  background:#071a29;
-  transform:translate(-50%,-50%);
-  box-shadow:0 0 0 2px rgba(3,18,29,.65);
-}
-.cnn-component-scorebar-ticks{
-  display:flex;
-  justify-content:space-between;
-  margin-top:5px;
-  color:var(--zg-text-meta);
-  font-size:9px;
-  line-height:1;
-}
-
-@media(max-width:767px){
-  .cnn-score-guide span{
-    padding:7px 3px;
-  }
-  .cnn-score-guide b{
-    font-size:10px;
-  }
-  .cnn-score-guide small{
-    font-size:9px;
-  }
-}
-
-/* FEAR_GREED_EDU_LAYOUT_R1 */
-@media(min-width:768px){
-  .cnn-component-education-grid>.cnn-education-card[data-layout="wide"]{
-    grid-column:1/-1;
-  }
-}
-@media(max-width:767px){
-  .cnn-component-education-grid>.cnn-education-card[data-layout="wide"]{
-    grid-column:auto;
-  }
-}
-
-
-/* FEAR_GREED_EDU_READING_R1 */
-.cnn-scale-note{
-  margin-top:12px;
-  border-left:4px solid #f4b942;
-  background:#081f30;
-  padding:10px 12px;
-  color:var(--zg-text-secondary);
-  font-size:12px;
-  line-height:1.6;
-}
-.cnn-scale-note strong{
-  color:#ffd166;
-}
-.cnn-component-reading-grid{
-  display:grid;
-  grid-template-columns:1fr;
-  gap:8px;
-  margin-top:16px;
-}
-.cnn-component-reading{
-  min-width:0;
-  border:1px solid #19384c;
-  background:#071b29;
-  padding:10px 12px;
-}
-.cnn-component-reading>strong{
-  display:block;
-  font-size:12px;
-  line-height:1.3;
-}
-.cnn-component-reading p{
-  margin-top:4px;
-  color:#d7e2ec;
-  font-size:12px;
-  line-height:1.6;
-}
-.cnn-component-reading small{
-  display:block;
-  margin-top:4px;
-  color:var(--zg-text-meta);
-  font-size:11px;
-  line-height:1.4;
-}
-.cnn-component-reading.is-raw{
-  border-left:4px solid #4b6f88;
-}
-.cnn-component-reading.is-score{
-  border-left:4px solid #36536a;
-}
-.cnn-education-card[data-tone="fear"] .cnn-component-reading.is-score{
-  border-left-color:#c75b67;
-}
-.cnn-education-card[data-tone="greed"] .cnn-component-reading.is-score{
-  border-left-color:#38a77e;
-}
-
-
-/* FEAR_GREED_EDU_FORMULA_R1 */
-.cnn-composite-formula{
-  display:grid;
-  grid-template-columns:1fr auto 1fr auto 1fr;
-  align-items:center;
-  gap:10px;
-  margin-top:12px;
-  border:1px solid var(--zg-border);
-  background:#061722;
-  padding:12px;
-}
-.cnn-composite-formula>div{
-  min-width:0;
-  text-align:center;
-}
-.cnn-composite-formula span,
-.cnn-composite-formula strong{
-  display:block;
-}
-.cnn-composite-formula span{
-  color:var(--zg-text-meta);
-  font-size:11px;
-  line-height:1.3;
-}
-.cnn-composite-formula strong{
-  margin-top:4px;
-  font-size:18px;
-  line-height:1.2;
-}
-.cnn-composite-formula>b{
-  color:var(--zg-text-meta);
-  font-size:15px;
-}
-.cnn-composite-formula .is-total{
-  border-left:1px solid #2d536d;
-  padding-left:10px;
-}
-.cnn-composite-formula .is-total strong{
-  color:#ffd166;
-}
-.cnn-composite-caption{
-  margin-top:6px;
-  color:var(--zg-text-meta);
-  font-size:11px;
-  line-height:1.5;
-}
-
-@media(max-width:767px){
-  .cnn-composite-formula{
-    grid-template-columns:1fr auto 1fr;
-    gap:8px;
-  }
-  .cnn-composite-formula>b:nth-of-type(2){
-    display:none;
-  }
-  .cnn-composite-formula .is-total{
-    grid-column:1/-1;
-    border-left:0;
-    border-top:1px solid #2d536d;
-    padding:8px 0 0;
-  }
-}
-
-
-/* FEAR_GREED_EDU_READABILITY_R1 */
-@media(min-width:768px){
-  .cnn-component-reading-grid{
-    grid-template-columns:repeat(2,minmax(0,1fr));
-  }
-}
-.cnn-score-guide b{
-  font-size:12px;
-}
-.cnn-score-guide small{
-  font-size:11px;
-}
-.cnn-component-scorebar-ticks{
-  font-size:11px;
-}
-@media(max-width:767px){
-  .cnn-component-reading-grid{
-    grid-template-columns:1fr;
-  }
-  .cnn-score-guide b,
-  .cnn-score-guide small{
-    font-size:11px;
-  }
-  .cnn-component-scorebar-ticks{
-    font-size:11px;
-  }
-}
-
-
-/* FEAR_GREED_EDU_OVERVIEW_R1 */
-.cnn-component-overview{
-  margin-top:16px;
-  border:1px solid var(--zg-border);
-  background:#061722;
-}
-.cnn-component-overview-head{
-  display:flex;
-  align-items:end;
-  justify-content:space-between;
-  gap:16px;
-  padding:14px 16px;
-  border-bottom:1px solid #19384c;
-}
-.cnn-component-overview-head h2{
-  margin-top:3px;
-  font-size:15px;
-  line-height:1.3;
-  font-weight:800;
-}
-.cnn-component-overview-head>span{
-  max-width:360px;
-  color:var(--zg-text-meta);
-  font-size:11px;
-  line-height:1.45;
-  text-align:right;
-}
-.cnn-component-overview-list{
-  display:grid;
-}
-.cnn-component-overview-row{
-  display:grid;
-  grid-template-columns:minmax(180px,1.4fr) minmax(120px,1fr) 92px 108px;
-  align-items:center;
-  min-height:52px;
-  border-bottom:1px solid #19384c;
-}
-.cnn-component-overview-row:last-child{
-  border-bottom:0;
-}
-.cnn-component-overview-row>div{
-  min-width:0;
-  padding:8px 12px;
-}
-.cnn-component-overview-name{
-  display:flex;
-  align-items:center;
-  gap:10px;
-}
-.cnn-component-overview-name>span{
-  display:grid;
-  width:28px;
-  height:28px;
-  place-items:center;
-  border:1px solid #2d536d;
-  color:#bcd0e0;
-  font-size:11px;
-  font-weight:800;
-  flex:none;
-}
-.cnn-component-overview-name strong{
-  font-size:13px;
-  line-height:1.3;
-}
-.cnn-component-overview-value,
-.cnn-component-overview-score,
-.cnn-component-overview-rating{
-  border-left:1px solid #19384c;
-}
-.cnn-component-overview-row small{
-  display:block;
-  color:var(--zg-text-meta);
-  font-size:10px;
-  line-height:1.2;
-}
-.cnn-component-overview-row strong{
-  display:block;
-  margin-top:3px;
-}
-.cnn-component-overview-value strong{
-  font-size:14px;
-  line-height:1.25;
-}
-.cnn-component-overview-score strong{
-  font-size:15px;
-  line-height:1.2;
-}
-.cnn-component-overview-rating strong{
-  font-size:12px;
-  line-height:1.25;
-}
-.cnn-component-overview-row[data-tone="fear"] .cnn-component-overview-rating strong{
-  color:#ff9ca3;
-}
-.cnn-component-overview-row[data-tone="greed"] .cnn-component-overview-rating strong{
-  color:#78ddb2;
-}
-
-@media(max-width:767px){
-  .cnn-component-overview-head{
-    display:block;
-    padding:12px;
-  }
-  .cnn-component-overview-head>span{
-    display:block;
-    max-width:none;
-    margin-top:6px;
-    text-align:left;
-  }
-  .cnn-component-overview-row{
-    grid-template-columns:minmax(0,1fr) auto;
-    min-height:0;
-  }
-  .cnn-component-overview-row>div{
-    padding:8px 10px;
-  }
-  .cnn-component-overview-name{
-    grid-column:1/-1;
-    border-bottom:1px solid rgba(25,56,76,.72);
-  }
-  .cnn-component-overview-value,
-  .cnn-component-overview-score,
-  .cnn-component-overview-rating{
-    border-left:0;
-  }
-  .cnn-component-overview-value{
-    grid-column:1;
-  }
-  .cnn-component-overview-score{
-    grid-column:2;
-    text-align:right;
-  }
-  .cnn-component-overview-rating{
-    grid-column:1/-1;
-    padding-top:0 !important;
-  }
-  .cnn-component-overview-rating small{
-    display:inline;
-    margin-right:8px;
-  }
-  .cnn-component-overview-rating strong{
-    display:inline;
-    margin-top:0;
-  }
-}
-
-
 /* MINI_CHART_R3 — card sparkline focus/outline suppression only. */
 .zg-r55-card .zg-spark .recharts-wrapper:focus,
 .zg-r55-card .zg-spark .recharts-wrapper:focus-visible,
@@ -4567,4 +3944,139 @@ body .zg-r55-market .zg-r55-shell[data-expanded="false"] article.zg-r55-card>.zg
 .zg-r55-summary-chart .zg-r55-mini-chart :focus-visible{
   outline:0!important;
   box-shadow:none!important;
+}
+
+/* EC12 NAV R1 — make all 12 economic labels clearly clickable and unobstructed.
+   Existing card background expansion and separate risk-title links are preserved. */
+.zg-dashboard[data-view="dashboard"] .zg-r55-card-head h3{position:relative;z-index:2}
+.zg-dashboard[data-view="dashboard"] .zg-r55-card-title-link{
+ display:inline-flex;align-items:center;gap:2px;max-width:100%;min-height:20px;
+ color:inherit;text-decoration:none;cursor:pointer;pointer-events:auto;
+ touch-action:manipulation;position:relative;z-index:3;white-space:nowrap
+}
+.zg-dashboard[data-view="dashboard"] .zg-r55-card-title-link svg{flex:none;color:#fabc42;opacity:.85}
+.zg-dashboard[data-view="dashboard"] .zg-r55-card-title-link:hover{text-decoration:underline;text-underline-offset:2px}
+.zg-dashboard[data-view="dashboard"] .zg-r55-card-title-link:focus-visible{outline:2px solid #fabc42;outline-offset:2px}
+
+.zg-earnings-provisional-summary{display:block;margin-top:4px;font-size:10px;line-height:1.4;color:#fbbf24;text-align:right;white-space:normal}.zg-earnings-provisional-summary span{color:#94a3b8}
+
+/* EC12 R2: separate the help affordance from economic titles.
+   Keep the compact chart's width and height unchanged. */
+@media (min-width:960px){
+ .zg-dashboard[data-view="dashboard"] .zg-r55-card-head{
+  position:relative;
+  display:block;
+  box-sizing:border-box;
+  width:100%;
+  padding-left:15px;
+ }
+ .zg-dashboard[data-view="dashboard"] .zg-r55-card-head>span:last-child{
+  position:absolute;
+  top:0;
+  left:-7px;
+  width:20px;
+  height:20px;
+  order:0;
+ }
+ .zg-dashboard[data-view="dashboard"] .zg-r55-shell[data-expanded="false"] .zg-r55-card-head>span:last-child{top:-5px}
+ .zg-dashboard[data-view="dashboard"] .zg-r55-card-head h3{
+  font-size:13px;
+  letter-spacing:-.55px;
+  line-height:20px;
+ }
+ .zg-dashboard[data-view="dashboard"] .zg-r55-card-title-link{
+  text-decoration-line:underline;
+  text-decoration-style:dotted;
+  text-decoration-color:rgba(167,196,220,.65);
+  text-underline-offset:2px;
+ }
+}
+
+/* EC12 R3: compact, collapsed cards keep help at the far top-left and
+   keep the entire mini-chart unobstructed. This specificity must beat
+   the unqualified flex layout even if the CSS bundler hoists @media. */
+.zg-dashboard[data-view="dashboard"] .zg-r55-shell[data-expanded="false"] .zg-r55-card-head{
+  position:relative;
+  display:block;
+  box-sizing:border-box;
+  width:100%;
+  padding-left:13px;
+}
+.zg-dashboard[data-view="dashboard"] .zg-r55-shell[data-expanded="false"] .zg-r55-card-head>span:last-child{
+  position:absolute;
+  top:-6px;
+  left:-8px;
+  width:20px;
+  height:20px;
+  order:0;
+}
+.zg-dashboard[data-view="dashboard"] .zg-r55-shell[data-expanded="false"] .zg-r55-card-head h3{
+  font-size:13px;
+  letter-spacing:-.55px;
+  line-height:20px;
+}
+.zg-dashboard[data-view="dashboard"] .zg-r55-shell[data-expanded="false"] .zg-r55-card-title-link{
+  text-decoration-line:underline;
+  text-decoration-style:dotted;
+  text-decoration-color:rgba(167,196,220,.65);
+  text-underline-offset:2px;
+}
+
+/* EC12 R6: restore the original inline 13px arrow beside the label.
+   Both folded and unfolded cards use the same title/help geometry. */
+.zg-dashboard[data-view="dashboard"] .zg-r55-shell[data-expanded] .zg-r55-card-head{
+  position:relative;
+  display:block;
+  box-sizing:border-box;
+  width:100%;
+  padding-left:24px;
+}
+.zg-dashboard[data-view="dashboard"] .zg-r55-shell[data-expanded] .zg-r55-card-head>span:last-child{
+  position:absolute;
+  top:-2px;
+  left:-8px;
+  width:20px;
+  height:20px;
+  order:0;
+}
+.zg-dashboard[data-view="dashboard"] .zg-r55-shell[data-expanded] .zg-r55-card-head h3{
+  font-size:14px;
+  letter-spacing:-.4px;
+  line-height:20px;
+  overflow:visible;
+  transform:none;
+}
+.zg-dashboard[data-view="dashboard"] .zg-r55-shell[data-expanded] .zg-r55-card-title-link{
+  display:inline-flex;
+  align-items:center;
+  gap:2px;
+  text-decoration:none;
+}
+.zg-dashboard[data-view="dashboard"] .zg-r55-shell[data-expanded] .zg-r55-card-title-link .zg-r55-title-arrow{
+  position:static;
+  top:auto;
+  right:auto;
+  width:13px;
+  height:13px;
+  flex:none;
+  pointer-events:none;
+  color:#fabc42;
+  opacity:.85;
+}
+/* Preserve 6 columns at wide desktop; allow sufficient heading+plot space
+   at narrow desktop/tablet/mobile sizes without shrinking the plot. */
+@media (min-width:960px) and (max-width:1279px){
+  .zg-dashboard[data-view="dashboard"] .zg-r55-card-grid{
+    grid-template-columns:repeat(4,minmax(0,1fr));
+  }
+}
+@media (min-width:1280px) and (max-width:1599px){
+  .zg-dashboard[data-view="dashboard"] .zg-r55-card-grid{
+    grid-template-columns:repeat(5,minmax(0,1fr));
+  }
+}
+@media (max-width:540px){
+  .zg-dashboard[data-view="dashboard"] .zg-r55-card-grid{
+    grid-template-columns:minmax(0,1fr);
+  }
 }

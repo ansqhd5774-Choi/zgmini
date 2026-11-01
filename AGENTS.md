@@ -8,11 +8,12 @@ ZGMINI PLUGIN & EXECUTION RULES — COMPACT R5 FINAL
 - 실제 다음 작업을 막는 경우만 BLOCKER.
 - 유효 Evidence 재사용. identity/contract 변경 시 해당 Gate만 재검증.
 - 무료 우선. 유료·종량제는 무료 대안이 충분하면 사용 금지.
-- 우선순위: 프로젝트 지침 > 이후 사용자 명시 승인 최신 운영 변경 > live tool/API Evidence > 최신 유효 Evidence > 과거 대화/메모리.
+- 상위 시스템·보안 제한을 준수한다. 동일 범위에서는 사용자의 최신 명시 지시·승인이 과거 프로젝트 지침보다 우선한다.
 - 지침과 최신 승인 contract 충돌 시 실행 중단 후 최신 contract 기준으로 지침 갱신.
 
 ## 1. GitHub — SOURCE OF TRUTH
 - 기준 소스는 GitHub 최신 `main`.
+- 개발 main, PC 운영 승인 SHA, 실제 실행·배포 SHA를 구분한다. PC 운영 source는 config·작업 등록·실행 기록으로 확인하며 main과 다르다는 이유만으로 교체하지 않는다.
 - 작업 전 remote main SHA / work-base SHA 확인.
 - 작업 중 main 변경 시 source drift 확인, stale overwrite 금지.
 - 목표에 필요한 최소 파일만 수정.
@@ -21,10 +22,30 @@ ZGMINI PLUGIN & EXECUTION RULES — COMPACT R5 FINAL
 - 과거 SHA를 현재값으로 재사용 금지.
 - migration/analysis branch 전체 merge 금지. 검증된 필요한 파일만 selective recovery.
 
+## 1.1 작업 결과 보고 — 브랜치 명시 의무 (2026-10-27, 상시 적용)
+
+- **ZGMINI UI 작업 전용 브랜치: `codex/ui-improvements`.** UI 디자인·반응형·배지·아웃브레이크 표시 수정은 이 기존 브랜치에서만 수행한다. 별도 `ui/*`, `codex/*` 임시 브랜치 생성 금지. 다른 담당 업무의 전용 브랜치에 적용하지 않는다.
+- `main`은 운영 소스이므로, UI 전용 브랜치의 변경을 검증·승인된 PR 없이 임의로 직접 적용하지 않는다. 서로 갈라진 이력은 양쪽 고유 커밋을 보존하는 병합으로 복구하고, 덮어쓰기나 강제 ref 이동을 금지한다.
+
+- **모든 개발·조사·점검·수정 작업의 결과 보고에는 `작업 브랜치`를 반드시 명시한다.** 1회성 요청이 아니라 ZGMINI 전체 프로젝트에 계속 적용하는 공통 보고 규칙이다.
+- 작업 착수 전 실제 저장소·사용자가 지정한 기존 전용 브랜치·해당 브랜치의 최신 HEAD SHA·적용 계획서를 확인한다. 임의의 새 개인/실험/조사 브랜치를 만들지 않는다. 지정 브랜치와 다른 곳에서 작업하게 될 상황이면 먼저 중단하여 보고한다.
+- 작업 완료·부분 완료·실패·차단 보고에 아래 항목을 빠짐없이 기재한다:
+  1. **저장소:** `owner/repo`
+  2. **작업 브랜치:** 실제 읽고 변경한 브랜치의 정확한 이름 (사용자가 지정한 전용 브랜치와 불일치하면 별도 명시)
+  3. **GitHub 반영:** `반영 완료/미반영/읽기 전용`, 반영했다면 실제 **커밋 SHA**
+  4. **작업 내용과 검증:** 변경 파일·검사 결과 및 남은 장애, 실행/배포 여부를 구분
+- 둘 이상의 기존 브랜치를 읽거나 수정한 경우 역할(`기준/작업/반영`)과 각각의 브랜치를 구별해 보고한다. `main`과 작업 브랜치, 로컬 실행 SHA 및 배포 SHA를 혼동하지 않는다.
+- GitHub와 관계없는 작업은 `작업 브랜치: 해당 없음 (GitHub 변경 없음)`으로 명시한다. 브랜치를 조회하지 못했다면 추측하지 말고 `미확인`으로 보고한다.
+- 보고 전에 원격 브랜치 존재와 반영 커밋을 확인한다. 미실행·미배포·미병합 상태를 완료로 표현하지 않는다.
+
 ## 2. Cloudflare — DEPLOYMENT CONTROL PLANE — ACTIVE
 - 기본 경로:
   `GitHub latest main -> Cloudflare Git integration -> Build -> exact Deployment -> Production 검증`
 - GitHub main이 Production source authority.
+- **ZGMINI 배포 실행 방식(상시): 기존 작업 전용 브랜치에서 승인된 변경을 PR로 `main`에 병합하고, 연결된 Cloudflare Git integration의 자동 빌드·자동 배포를 사용한다.** 별도의 수동 Wrangler/Sites Production 배포나 임시 배포 브랜치를 만들지 않는다.
+- UI 전용 브랜치는 `codex/ui-improvements`를 유지한다. 이 브랜치에 커밋하는 것과 Production 자동배포 완료는 다르며, `main` 병합 전 PR 변경 파일·범위를 확인하여 미승인 작업을 함께 배포하지 않는다.
+- **UI 변경 자동배포 상시 승인(2026-10-27):** 사용자가 실제 UI 수정·반영·구현을 요청한 경우, `codex/ui-improvements` 전용 브랜치에서 수정·검증한 뒤 관련 변경 파일만 PR로 `main`에 병합하고 Cloudflare Git 연동 **자동 배포 완료와 공개 화면 확인까지** 연속 수행한다. 매번 별도의 자동배포 재승인을 요청하지 않는다. 단, 사용자가 시안·제안·검토만 요구하거나 배포 보류를 명시한 경우, 범위를 벗어난 변경·실패한 배포 게이트·새 권한 또는 유료/파괴적 조치는 이 상시 승인에 포함하지 않는다.
+- 자동배포 후 `main` 병합 SHA, Cloudflare의 해당 Build/Deployment 상태·로그, 실제 `https://zgmini.kr/` 공개 화면을 각각 점검하고 결과를 보고한다. 자동배포 설정·배포 ID·상태를 확인할 수 없으면 완료라고 보고하지 않는다.
 - Git integration 연결 전 자동배포 존재 추정 금지.
 - Build 성공 ≠ Production 정상.
 - building/pending 중 불필요한 새 배포 금지.
@@ -59,11 +80,10 @@ ZGMINI PLUGIN & EXECUTION RULES — COMPACT R5 FINAL
 불일치 시 배포 중단.
 
 ## 6. Cloudflare / D1 / Queue — RUNTIME
-- D1 기본 DB. Supabase 교체/중복저장 금지(승인 제외).
+- PC SQLite는 원자료·수집 이력·계산 저장소, D1은 공개 결과와 승인된 최소 제어 저장소다. 일반 계산은 원격 원자료에 의존하지 않는다. Supabase 교체/중복저장 금지(승인 제외).
 - API=저장 전용, 산식=저장 데이터 전용.
 - 승인 산식/가중치/정규화/지표 계약 변경 금지.
-- Runtime 우선순위:
-  `Cloudflare build/deployment > Worker logs > D1 read > Queue state > PostHog > source`
+- 실제 Runtime·저장/API 응답을 build/deployment 준비 상태와 구분한다. 배포 성공만으로 Runtime 정상 판정 금지.
 - public HTTP만으로 D1/Queue 정상 추정 금지.
 - D1 write는 read-back Evidence 확인.
 - Build / Worker / D1 / Queue / Cron 성공을 각각 구분.
@@ -118,10 +138,19 @@ ZGMINI PLUGIN & EXECUTION RULES — COMPACT R5 FINAL
 - SEO: GSC Wizard 우선, `payment_required`면 반복 금지. Windsor fallback 허용.
 - SEO 데이터로 Runtime 오류 판정 금지.
 
+## 12-1. UI 시안 승인 ≠ 임시 색상·기능 변경 승인
+- 적용 범위: ZGMINI의 HTML·이미지·독립 시안 및 실제 UI 개발 전체. 특히 `/fear-greed/usa/`의 모바일 화면 개선.
+- 사용자가 시안을 승인하더라도 **명시한 배치·크기·간격·반응형 구조만 승인**한 것으로 본다. 시안 임시 팔레트, 배경, 테두리, 글꼴, 차트/점수 색상을 실제 사이트에 이식할 권한은 아니다. 색상 변경은 대상·기존값·제안값을 별도 제시하고 명시 승인을 받는다.
+- 운영 반영은 시안 CSS를 통째로 복사하지 않고, 실제 운영 화면 및 기존 컴포넌트의 색상 변수·상태별 색상·차트·점수 표시를 먼저 확인한 후 승인된 레이아웃 속성만 최소 수정한다.
+- `/fear-greed/usa/`: PC 레이아웃과 기존 스타일을 보존한다. 모바일은 공포탐욕 숫자와 차트를 핵심으로 유지하고 7개 구성요소는 압축한다. 한 화면에서 읽는 것이 목표이나, 차트를 과도하게 확대하거나 목록을 확대·잘라 내거나 화면 밖 콘텐츠를 `overflow:hidden`으로 감추어 달성했다고 보고하지 않는다. 실제 기기 높이별 검증 전 시안 배치는 미확정이다.
+- 기존 `FearGreedCardShell`, `MarketScoreOrb`, `MarketPeriodControls`, `MarketFearGreedChart`, `FactorAnalysisR2`의 데이터·산식·상태·상호작용·접근성·SEO 연결을 유지한다. 독립 HTML의 임시 차트·숫자로 운영 코드를 대체하지 않는다.
+- 적용 전·후 Git diff로 **색상·배경·테두리·폰트·차트 표현의 무승인 변경이 0건인지** 점검한다. 무승인 변경 발견 시 수정·배포 중단 후 복원하고 다시 검증한다.
+- 시안만 검토하거나 디자인 의견을 묻는 요청은 실제 수정·병합·배포 승인으로 간주하지 않는다. 실제 UI 변경 요청에는 위 **UI 변경 자동배포 상시 승인(2026-10-27)**을 적용해 해당 승인 범위 내에서 PR 병합과 Cloudflare 자동 배포까지 진행한다. 범위 밖 변경은 별도 승인이 필요하다.
+
 ## 13. DigitalOcean / RDC / Windows
 - DigitalOcean NON-DEFAULT. 비용 발생 리소스 생성 전 승인.
-- RDC LAST RESORT. GitHub/Cloudflare/Plugin 가능 작업에 사용 금지.
-- RDC는 PC-local/CMD/local Codex 상태 등에만 사용.
+- RDC 사용·실행·설치·연결·Online 요구 금지. 로컬 파일/Git/CMD는 로컬 Codex, 로그인·GUI는 사용 가능한 Computer Use를 사용한다.
+- 일반 채팅의 로컬 접근 제한은 AUTOMATION_BLOCKED이며 PC writer OFFLINE을 뜻하지 않는다.
 - offline/quota 소진 시 반복 polling 금지.
 - Windows는 CMD-only. PowerShell/WSL 임의 사용 금지.
 - CMD: 경로 quote, `%~dp0`, ASCII+CRLF, BOM 없음.
@@ -129,9 +158,9 @@ ZGMINI PLUGIN & EXECUTION RULES — COMPACT R5 FINAL
 - token/secret/password는 memory-only, Evidence 저장 금지.
 
 ## 14. 실행 우선순위
-- 소스: GitHub > RDC.
+- 개발 소스: GitHub latest main. PC 운영 소스: 승인 config·작업 등록·실행 기록.
 - 배포: `GitHub main -> Cloudflare Git integration -> Build -> exact Deployment -> Production`.
-- Runtime: `Cloudflare deployment/build > Worker logs > D1 > Queue > PostHog > source`.
+- Runtime: 실제 실행·API/저장 증거 우선. build/deploy와 Runtime 검증을 구분한다.
 - D1: Cloudflare D1 read > public 추정 금지.
 - UI: Figma > Production 실제 화면 > GitHub CSS/DOM.
 - 문서/API: Context7 > 공식문서 > 추정 금지.
@@ -171,7 +200,7 @@ candidate -> Production 전환 전 모두 PASS:
 - 최종 전환 시 Cloudflare DNS/HTTPS 정상
 - Runtime 오류 없음 또는 목표 무관함이 Evidence로 증명
 - 요청 기능 실제 동작
-- 임시 workaround/debug endpoint/우회 스크립트/credential 파일 0.
+- 임시 workaround/debug endpoint/우회 스크립트 정리. 정상 운영용 로컬 키 파일은 보존하고 Git·배포·Evidence에 포함하지 않는다.
 
 ## 17. 비용 / Evidence / FAIL
 - 무료 우선: GitHub, Cloudflare Free/read API, PostHog Free, Context7, Web, 공식문서.
@@ -192,15 +221,43 @@ candidate -> Production 전환 전 모두 PASS:
 - schema/parser 오류와 외부 서비스 오류를 구분.
 
 ## 19. ACTIVE CONTRACT
+- 2026-10-18 사용자 승인: 이란·주변 분쟁 보도 흐름 R3의 수집 범위·분류·출처 다변화 개편을 반영한다. docs/IRAN_REFERENCE_FLOW_R3.md를 따른다. R1/R2 원장·공개 key는 보존하며 R3 별도 key/checkpoint를 사용한다. 기존 비중·단계 가감점·표시1배를 유지하고 요격은 −4로 구분한다. 미관측·포화·부분 실패를 표시하며 AIS 장애를 완화 또는 뉴스 갱신 중단으로 처리하지 않는다. reader 배포 및 검산·readback 후 운영 전환한다.
+- 2026-10-15 사용자 승인: 점수 상승·하락 화살표는 실제 공개 점수 변동 시각부터 24시간만 표시한다. 점수 비교 기준·산식·데이터 갱신 주기·유효기간은 유지한다. 동일 점수 재수집·게시·새로고침은 화살표 시간을 연장하지 않는다. 상세 계약은 docs/SCORE_ARROW_24H.md를 따른다.
+- 2026-10-15 사용자 승인: 이란 참고 흐름 R2를 운영 시험한다. docs/IRAN_REFERENCE_FLOW_R2.md의 단계별 가감점·기존 5영역 비중·표시 1배를 적용한다. R1 원장과 공개 키는 보존한다. R2는 별도 키·checkpoint를 사용하며 공개 reader 배포 확인 후 게시한다. 출처 실패·분석 대기·중복 후보를 성공이나 종전 확인으로 표시하지 않는다.
+- 2026-10-10 최신 승인 작업: 소비 R5 5영역(D30/Y25/L15/H20/B10) 전환을 진행한다. docs/CONSUMPTION_R5.md의 비중·정규화·발표일 계약을 따른다. 실데이터 연결 및 검증 완료 전에는 R4 운영 결과를 R5로 표기하거나 후보 결과를 배포하지 않는다. R3/R4 이력은 보존한다.
+- 2026-10-10 사용자 확정: 소비 R4는 월간 실질 PCE 최근 3개월 연율 70% + 전년 대비 30%이다. 각 증가율 g를 clip(50+10g,0,100)으로 변환한다. 추가 민감도·가속도 합산은 없다. 소득·저축·연체 등은 보조 정보로 분리한다. 기존 R3 저장 이력은 보존하고 R4 월간 이력과 연결하지 않는다. 상세 계약은 docs/CONSUMPTION_R4.md를 따른다.
+- 2026-10-09 최신 사용자 승인: 이란 아웃브레이크 1차는 기사 기반 참고 흐름 점수로 제공한다. 임시 기준점 50에서 고정 규칙으로 확전은 하락, 완화는 상승시킨다. 기존 5개 영역 가중치는 유지한다. 엄격한 R1.3 공식 종전 판정과 분리하며 종전 확률로 표시하지 않는다. 최근 14일 차트는 보도일 기준 재구성임을 명시하고, 수집 실패는 마지막 값 보존·갱신 지연으로 처리한다. 이 참고 모델의 출시 조건에 AIS 완전 검증이나 공식 종전 확인을 추가하지 않는다.
 - SOURCE OF TRUTH: GitHub latest main
 - DEPLOYMENT CONTROL PLANE: Cloudflare
 - DEFAULT DEPLOY: GitHub main -> Cloudflare Git integration -> Build -> Deployment -> Production
 - RUNTIME: Cloudflare Workers
-- DB: Cloudflare D1
+- DB: PC SQLite 원자료·이력·계산 / Cloudflare D1 공개 결과·승인 최소 제어
 - QUEUE: Cloudflare Queues(승인 contract만)
-- SCHEDULER: Cloudflare Cron 또는 승인 외부 scheduler
+- SCHEDULER: Windows 작업 ZGMINI-PC-Local-Core / ZGMINI-PC-Local-Korea / ZGMINI-PC-Iran-Progress-R13. 기존 ZGMINI-PC-Writer는 비활성 복구용이다. Cloudflare Cron=0, ZGMINI_COLLECTION_TARGET=pc, ZGMINI_COMPUTE_TARGET=pc 유지. 승인 없는 원격 수집·계산 스케줄러 재활성화 금지.
 - 2026-10-05 최신 승인: PC가 API 수집·원자료 저장·시장/Korea/projection 계산을 담당한다. Cloudflare에는 공개 결과만 게시한다. PC 게시 검증 후 Cloudflare Cron 수집을 중지한다. `docs/PC_WRITER_R2.md`가 이전 R1의 수집 위치 계약을 대체한다. 산식/TTL/원격 DB 스키마/DNS 계약은 변경하지 않는다. RDC는 사용하지 않는다.
 - DOMAIN/DNS AUTHORITY: Cloudflare
 - OPENAI SITES: DEPLOYMENT RETIRED
 - DIRECT WRANGLER PROD DEPLOY: DEFAULT DENY
 - SUPABASE: DEFAULT DENY
+
+## 20. E: 이전 후 로컬 경로 계약
+- 현재 운영 경로·복구 정책은 `docs/PC_STORAGE_E_DRIVE.md`를 따른다.
+- 프로젝트 `E:\ZGmini\projects\`, 데이터 `E:\ZGmini\data\`, writer `E:\ZGmini\data\pc-writer\`, 이란 `E:\ZGmini\data\iran-progress-r13\`, Node `E:\ZGmini\runtime\node.exe`.
+- 기존 C: 프로젝트 경로와 `%USERPROFILE%\.zgmini`는 호환용 junction이다. 문자열만으로 미이전 판정·일괄 치환하지 않는다. 실제 대상을 확인한다.
+- junction 삭제·C: 운영 폴더 재생성·DB/checkpoint 초기화 금지. E: 접근 실패 시 빈 DB나 C: 대체 저장소를 만들지 않는다.
+- PC·로그인 세션·인터넷·E: 연결이 운영 조건이다. 채팅·Codex 창·RDC Online은 조건이 아니다.
+- 개인 PC 경로는 운영 배치 기록이며 모든 환경의 하드코딩 기본값이 아니다. 기존 경로 설정과 junction 호환을 보존한다.
+- 경로 이전만으로 운영 source·산식·TTL·DB 구조·작업 주기·배포·DNS를 변경하지 않는다.
+
+## 20-1. PC Core 5분 충돌·잠금 대응 (2026-10-31 검증 기록)
+- Core 5분 정규 작업과 수동/보조 작업의 충돌 대응은 [docs/PC_CORE_5MIN_CONFLICT_RUNBOOK.md](docs/PC_CORE_5MIN_CONFLICT_RUNBOOK.md)를 **먼저 확인**한다. R4~R7 원인·최소 확인 절차·별도 lock 대안·등록 Task 실제 실행기 추적·D1 readback 및 정규 재검증을 명시한다.
+- 잠금 파일 임의 삭제·Core PID 강제 종료·원치 않는 예약 작업 재등록/활성화·개발 main으로 운영 소스 자동 교체 금지. R7 초기 저장/D1 게시 성공을 이후 15분 자동 누적 PASS로 확대하지 않는다.
+
+## 21. 테마 추가·자동 갱신 인수인계
+- 테마 작업은 `docs/THEME_DATA_OPERATIONS.md`와 `config/theme-data-registry.json`을 따른다.
+- 수집기·계산기·게시기·테스트는 GitHub에 저장하고, 실행 PC의 승인 SHA 및 실행 파일 경로를 별도로 기록한다. 채팅 첨부 ZIP이나 임시 폴더만을 유일한 소스로 두지 않는다.
+- 원자료는 E:의 승인 데이터 경로에 보존하고 원자료 manifest에 실제 상대 경로·SHA256·출처·수집 시각·관측 기간·가격 모드·스키마를 기록한다. 원자료·키·설정 비밀값은 Git에 올리지 않는다.
+- D1 점수, 개인 PC 결과 파일, 원자료, 실행 코드는 서로 대체물이 아니다. 소재 미확인 항목을 경로 추정으로 채우지 않는다.
+- 새 테마는 독립 수집→저장→계산→확정/잠정 게시→D1 readback→공개 API/UI와 다음 정규 실행 검증까지 연결해야 운영 완료다. 기존 테마 수집 목록에 자동 포함된다고 가정하지 않는다.
+- 경로 검사: `node scripts/pc-writer/theme-data-inventory.mjs`. `UNREGISTERED/MISSING/BLOCKED`를 숨기거나 기존 점수를 최신으로 다시 저장하지 않는다.
+- 다른 테마의 실패가 정상 테마의 확정/잠정 게시를 막지 않게 한다. 과거 관측일과 결측을 보존하고 산식·권리 검증을 약화하지 않는다.

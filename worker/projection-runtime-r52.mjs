@@ -1,5 +1,6 @@
+import {PUBLIC_DISPLAY_MAX_AGE_MS} from './public-display-freshness.mjs';
 import {PUBLIC_PROJECTION_KEYS,publicProjectionStore} from './market-public-projection-store.mjs';
-export const PROJECTION_CADENCE_MS=Object.freeze({inflation:45*86400000,recession:45*86400000,liquidityCrisis:8*86400000,creditRisk:2*86400000,earningsRecession:100*86400000,assetBubble:100*86400000,debtRisk:100*86400000,supplyShock:8*86400000,koreaFearGreed:8*86400000});
+export const PROJECTION_CADENCE_MS=Object.freeze({inflation:PUBLIC_DISPLAY_MAX_AGE_MS,recession:PUBLIC_DISPLAY_MAX_AGE_MS,liquidityCrisis:PUBLIC_DISPLAY_MAX_AGE_MS,creditRisk:PUBLIC_DISPLAY_MAX_AGE_MS,earningsRecession:PUBLIC_DISPLAY_MAX_AGE_MS,assetBubble:PUBLIC_DISPLAY_MAX_AGE_MS,debtRisk:PUBLIC_DISPLAY_MAX_AGE_MS,supplyShock:PUBLIC_DISPLAY_MAX_AGE_MS,koreaFearGreed:PUBLIC_DISPLAY_MAX_AGE_MS});
 export const PROJECTION_ROUTES=Object.freeze(Object.fromEntries(Object.keys(PUBLIC_PROJECTION_KEYS).map(id=>[id==='koreaFearGreed'?'/api/indicators/korea-funds':'/api/'+PUBLIC_PROJECTION_KEYS[id].split(':')[1]+'-detail',id])));
 export async function readProjectionResponse(request,readOnlyCore,id,{now=Date.now()}={}){
  if(!['GET','HEAD'].includes(request.method))return Response.json({reason:'METHOD_NOT_ALLOWED'},{status:405});

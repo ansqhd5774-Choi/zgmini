@@ -3,6 +3,7 @@ import { precomputeEmploymentR6ReadModel } from "../lib/market-score/employment-
 
 const sortedUnique = values => [...new Set((values ?? []).map(x => String(x ?? "").trim()).filter(Boolean))].sort();
 
+/** @param {{env?:import('./runtime-contracts').DataEnv,now?:()=>Date,collector?:typeof runEmploymentR6CollectionStep,precompute?:typeof precomputeEmploymentR6ReadModel}} [options] */
 export async function runEmploymentR6Producer({
   env,
   now = () => new Date(),

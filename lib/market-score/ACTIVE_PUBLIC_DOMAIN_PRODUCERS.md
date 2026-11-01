@@ -17,7 +17,7 @@ Policy:
 - missing component => PARTIAL / null;
 - no missing-weight renormalization.
 
-## B1 Breadth — ACTIVE / R5
+## B1 Breadth — ACTIVE / R5 R2 (2026-10-10)
 
 Storage / collection:
 - existing B1-R3 D1 tables and store-only collector remain preserved;
@@ -38,7 +38,7 @@ Four active B1-R5 factors:
 3. EMA5(DailyBreadthScore)
 4. EMA20(DailyBreadthScore)
 
-Final B1-R5 score:
+Raw B1-R5 four-factor score:
 ```
 B1R5 =
     0.30 * AdvanceRatioScore
@@ -47,7 +47,7 @@ B1R5 =
   + 0.20 * EMA20(DailyBreadthScore)
 ```
 
-The R5 decomposition is algebraically equivalent to the approved R4 score, so activation does not introduce a score discontinuity. It replaces the two coverage diagnostics in the public four-detail slot with actual scoring factors.
+The raw decomposition remains algebraically equivalent to R4. R5 R2 applies EMA3 to this final raw score (alpha = 0.5); the displayed score, trend and existing 8% composite slot all use that final EMA3. The four details retain their raw factor values. This changes historical displayed scores and reduces noise with possible response delay; it is not a probability. Both raw and final EMA restart after a missing trading session. Original stored price/volume history is preserved.
 
 Public four-detail IDs:
 - breadth-41: 상승종목비율

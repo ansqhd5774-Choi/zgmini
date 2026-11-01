@@ -1,0 +1,115 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+
+const read=path=>readFileSync(path,'utf8');
+
+test('technical SEO sitemap includes every public route with truthful lastmod values',()=>{
+  const sitemap=read('public/sitemap.xml');
+  assert.equal((sitemap.match(/<url>/g)||[]).length,36);
+  for(const route of ["/about/","/sector-fear-greed/","/theme-fear-greed/","/stagflation-risk/","/credit-risk/","/debt-risk/","/inflation/","/recession/","/earnings-recession/","/asset-bubble/","/supply-shock/","/economic-indicators/inflation/","/economic-indicators/employment/","/economic-indicators/rates/","/economic-indicators/credit/","/economic-indicators/growth/","/economic-indicators/consumption/","/economic-indicators/earnings/","/economic-indicators/liquidity/","/economic-indicators/fund-flows/","/economic-indicators/breadth/","/economic-indicators/dollar-fx/","/economic-indicators/commodities/","/fear-greed/usa/","/fear-greed/korea/"])
+    assert.ok(sitemap.includes(`<loc>https://zgmini.kr${route}</loc><lastmod>2026-10-25</lastmod>`),route);
+  for(const route of ["/","/outbreak/","/guides/fear-greed-buying/","/guides/cpi-pce-release/","/guides/fomc/"])
+    assert.ok(sitemap.includes(`<loc>https://zgmini.kr${route}</loc><lastmod>2026-10-26</lastmod>`),route);
+  for(const route of ["/usage/","/data-sources/","/investment-notice/"])
+    assert.ok(sitemap.includes(`<loc>https://zgmini.kr${route}</loc><lastmod>2026-10-22</lastmod>`),route);
+  for(const route of ['/risk-indicators/','/economic-indicators/'])
+    assert.ok(sitemap.includes(`<loc>https://zgmini.kr${route}</loc><lastmod>2026-10-25</lastmod>`),route);
+});
+
+test('sector detail has dedicated social metadata and WebPage schema',()=>{
+  const page=read('app/sector-fear-greed/page.tsx');
+  assert.match(page,/openGraph:\{title,description,url,type:'website',siteName:'ZGmini'/);
+  assert.match(page,/twitter:\{card:'summary_large_image',title,description,images:\[image\]\}/);
+  assert.match(page,/robots:\{index:true,follow:true\}/);
+  assert.match(page,/<WebPageJsonLd/);
+  const guide=read('components/investor-search-guide.tsx');
+  const copy=read('lib/investor-search-content.ts');
+  assert.match(page,/<InvestorSearchGuide id="investor-search-sector-fear-greed" copy=\{SECTOR_INVESTOR_SEARCH\} collapsible wideLast\/>/);
+  assert.match(guide,/<details className="group/);
+  assert.match(guide,/<summary className=/);
+  assert.match(guide,/aria-label="관련 주식 투자 지표와 발표 안내"/);
+  assert.match(copy,/heading:"미국 섹터별 공포·탐욕 투자 가이드"/);
+});
+
+test('economic indicator guide shares the sector collapsible header and retains its links',()=>{
+  const page=read('app/economic-indicators/page.tsx');
+  const guide=read('components/investor-search-guide.tsx');
+  const copy=read('lib/investor-search-content.ts');
+  assert.match(page,/<InvestorSearchGuide id="investor-search-economic-hub" copy=\{ECONOMICHUB_INVESTOR_SEARCH\} collapsible\/>/);
+  assert.match(guide,/<details className="group/);
+  assert.match(guide,/<summary className="flex min-h-10/);
+  assert.match(guide,/<BookOpen size=\{16\}/);
+  assert.match(guide,/<ChevronsDown size=\{16\}/);
+  assert.match(guide,/<DashboardSearchContent copy=\{copy\} wideLast=\{wideLast\}\/>/);
+  for(const route of ['/guides/cpi-pce-release/','/guides/fomc/','/recession/']) assert.ok(copy.includes(route));
+});
+
+test('risk indicator guide shares the sector collapsible header and retains its links',()=>{
+  const page=read('app/risk-indicators/page.tsx');
+  const guide=read('components/investor-search-guide.tsx');
+  const copy=read('lib/investor-search-content.ts');
+  const css=read('app/risk-indicators/risk-indicators.css');
+  assert.match(page,/<div className="zg-risk-landing-inner" style=\{\{paddingTop:0,paddingBottom:32\}\}>/);
+  assert.doesNotMatch(page,/max-w-6xl/);
+  assert.match(css,/\.zg-risk-landing-inner\{max-width:1470px;margin:0 auto;padding:27px 42px 42px\}/);
+  assert.match(css,/\.zg-risk-landing-inner\{padding-left:26px;padding-right:26px\}/);
+  assert.match(css,/\.zg-risk-landing-inner\{padding:20px 13px 29px\}/);
+  assert.match(page,/<InvestorSearchGuide id="investor-search-risk-hub" copy=\{RISKHUB_INVESTOR_SEARCH\} collapsible\/>/);
+  assert.match(guide,/<details className="group/);
+  assert.match(guide,/<summary className="flex min-h-10/);
+  assert.match(guide,/<BookOpen size=\{16\}/);
+  assert.match(guide,/<ChevronsDown size=\{16\}/);
+  assert.match(copy,/"heading": "미국 증시 위험을 함께 살펴보기"/);
+  for(const route of ['/fear-greed/usa/','/economic-indicators/','/guides/fear-greed-buying/']) assert.ok(copy.includes(route));
+});
+
+test('market details share WebPage JSON-LD and related links are capped at four',()=>{
+  const notes=read('app/detail-investor-notes.tsx');
+  const guide=read('app/detail-reading-guide.tsx');
+  assert.match(notes,/WebPageJsonLd/);
+  assert.match(notes,/path=\{paths\[topic\]\}/);
+  assert.match(guide,/related\.slice\(0,4\)/);
+});
+
+test('all three search guides emit Article structured data with truthful publication and modification dates',()=>{
+  const shell=read('app/guides/guide-page.tsx');
+  const jsonld=read('app/seo-jsonld.tsx');
+  assert.match(shell,/ArticleJsonLd/);
+  assert.match(shell,/WebPageJsonLd/);
+  assert.match(shell,/datePublished='2026-10-07'/);
+  assert.match(shell,/dateModified='2026-10-07'/);
+  assert.match(shell,/datePublished=\{datePublished\}/);
+  assert.match(shell,/dateModified=\{dateModified\}/);
+  assert.match(jsonld,/datePublished,/);
+  assert.match(jsonld,/dateModified,/);
+
+  const fear=read('app/guides/fear-greed-buying/page.tsx');
+  const cpi=read('app/guides/cpi-pce-release/page.tsx');
+  const fomc=read('app/guides/fomc/page.tsx');
+  assert.match(fear,/const path='\/guides\/fear-greed-buying\/'/);
+  assert.match(fear,/dateModified="2026-10-25"/);
+  assert.match(cpi,/const path='\/guides\/cpi-pce-release\/'/);
+  assert.match(cpi,/미국 CPI·PCE 발표 일정·한국시간 \| 물가지수 발표일·발표시간/);
+  assert.match(cpi,/dateModified="2026-10-26"/);
+  assert.match(fomc,/const path='\/guides\/fomc\/'/);
+  assert.match(fomc,/연준 금리 발표일·발표시간 \| FOMC 일정·한국시간/);
+  assert.match(fomc,/dateModified="2026-10-25"/);
+});
+
+test('homepage structured data strengthens ZGmini site and organization identity',()=>{
+  const layout=read('app/layout.tsx');
+  assert.match(layout,/alternateName: \["지그미니", "zgmini\.kr"\]/);
+  assert.match(layout,/"https:\/\/shareyourstartup\.com\/s\/zgmini"/);
+  assert.match(layout,/"https:\/\/twelve\.tools\/zgmini-kr"/);
+  assert.doesNotMatch(layout,/thesaasdir/i);
+});
+
+test('robots policy remains unchanged and meta keywords are not introduced',()=>{
+  const robots=read('public/robots.txt');
+  assert.match(robots,/Sitemap: https:\/\/zgmini\.kr\/sitemap\.xml/);
+  const checked=[
+    'app/layout.tsx','app/sector-fear-greed/page.tsx','app/guides/guide-page.tsx','app/detail-investor-notes.tsx',
+  ];
+  for(const file of checked) assert.doesNotMatch(read(file),/\bkeywords\s*:/i,file);
+});

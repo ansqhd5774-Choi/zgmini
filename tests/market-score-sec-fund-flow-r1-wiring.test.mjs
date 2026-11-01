@@ -14,6 +14,6 @@ test("R54 collection stores only normalized registeredFundFlowRows",()=>{
  assert.match(collector,/registeredFundFlowRows\s*:\s*fundFlows\?\.status\s*===\s*'READY_CURRENT_VINTAGE_RAW'\s*\?\s*fundFlows\.rows\s*:\s*\[\]/s);
 });
 test("R54 is the active stored-data scoring path and collector never scores",()=>{
- assert.match(marketScore,/buildFundFlowR54\(\s*collected\?\.external\?\.registeredFundFlowRows\s*\?\?\s*\[\]/s);
+ assert.match(marketScore,/compute\(buildFundFlowR54,\s*\s*collected\?\.external\?\.registeredFundFlowRows\s*\?\?\s*\[\]/s);
  assert.doesNotMatch(collector,/buildFundFlowR54/);
 });

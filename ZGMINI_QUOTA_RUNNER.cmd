@@ -11,15 +11,8 @@ if not exist "%RUNNER%" (
   exit /b 2
 )
 
-if exist "%ProgramFiles%\nodejs\node.exe" (
-  set "NODE=%ProgramFiles%\nodejs\node.exe"
-) else if exist "%LOCALAPPDATA%\Programs\nodejs\node.exe" (
-  set "NODE=%LOCALAPPDATA%\Programs\nodejs\node.exe"
-) else (
-  echo [BLOCKED] Supported Node.js was not found.
-  echo Install or use the project Node.js runtime, then run this file again.
-  exit /b 2
-)
+call "%~dp0scripts\resolve-local-node.cmd"
+if errorlevel 1 exit /b 2
 
 if /I "%~1"=="plan" goto plan
 if /I "%~1"=="observe" goto observe

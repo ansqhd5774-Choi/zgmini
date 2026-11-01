@@ -26,7 +26,7 @@ test('Batch A registry contains all evidence-locked FRED series', () => {
     'GDP','BOGZ1LM793164115Q','BOGZ1LM103164115Q','BOGZ1FL153064486Q',
     'BOGZ1FA153064475Q','BOGZ1FL153064475Q',
     'B471RC1Q027SBEA','A455RC1Q027SBEA','A464RC1Q027SBEA',
-    'MCOILWTICO','MCOILBRENTEU','GASREGCOVM',
+    'MCOILWTICO','MCOILBRENTEU','GASREGCOVM','DTWEXBGS','NFCICREDIT',
   ];
   assert.deepEqual([...BATCH_A_FRED_SERIES_IDS].sort(), [...required].sort());
 });
@@ -199,7 +199,7 @@ test('BEA cross-check mappings preserve only approved selectors', () => {
 
 test('Batch A coverage reports no fabricated historical availability', () => {
   const c = batchARegistryCoverage();
-  assert.equal(c.fredSeries,38);
+  assert.equal(c.fredSeries,41);
   assert.equal(c.blsCrossChecks,4);
   assert.equal(c.beaCrossChecks,2);
   assert.equal(c.releaseDateFabricated,false);

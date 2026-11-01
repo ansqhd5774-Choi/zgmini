@@ -236,6 +236,7 @@ function probeJson(body, status = 200) {
   );
 }
 
+/** @param {{authenticate?:()=>Promise<{email?:string|null,userId?:string}|null>,env?:import('./runtime-contracts').DataEnv,probeImpl?:typeof runGrowthR2ForwardRuntimeProbe,fetchImpl?:typeof fetch,now?:()=>Date}} [options] */
 export function createGrowthR2ForwardRuntimeProbeHandler({
   authenticate,
   env,

@@ -1,16 +1,31 @@
 import handler from 'vinext/server/app-router-entry';
+import {communityChatApi,isCommunityChatPath} from './community-chat-api-r1.mjs';
 import {candidate2dbWorker} from './candidate-2db-guard.mjs';
+import {EARNINGS_C_ROUTE,readEarningsCompanionResponse} from './earnings-companion-c-r4.mjs';
+import {BEA_UNIT_ROUTE,readBeaUnitResponse} from './earnings-bea-unit-profit-r1.mjs';
+import {BEA_MFG_ROUTE,readBeaMfgResponse} from './earnings-bea-manufacturing-profit-r1.mjs';
+import {RISK_R4_RAW_ROUTE,readRiskFourRawResponse} from './earnings-risk-four-raw-r1.mjs';
+import {ASSET_R10_RAW_ROUTE,readAssetR10RawResponse} from './asset-bubble-r10-raw-r1.mjs';
+import {ASSET_R10_HISTORY_ROUTE,readAssetR10HistoryResponse} from './asset-bubble-r10-history-r1.mjs';
 import {staticShell} from './candidate-shell-r7.mjs';
 import {PROJECTION_ROUTES,readProjectionResponse} from './projection-runtime-r52.mjs';
 import {readPublicFeedHealth} from './public-feed-store.mjs';
 import {readCollectionHealth} from './collection-health.mjs';
 import {rssResponse} from './rss-feed.mjs';
 import rssXml from '../public/rss.xml?raw';
-const http=candidate2dbWorker({async fetch(request,env,ctx){
+import type {CandidateEnv,CandidateReadEnv,WorkerContext,ProjectionJob} from './runtime-contracts';
+const http=candidate2dbWorker({async fetch(request:Request,env:CandidateReadEnv,ctx:WorkerContext){
  const feed=rssResponse(request,rssXml);if(feed)return feed;
  const path=decodeURIComponent(new URL(request.url).pathname).replace(/\/+/g,'/').replace(/\/$/,'')||'/';
+ if(env.ASSETS&&new URL(request.url).pathname==='/yandex_358205050d151bde.html'&&(request.method==='GET'||request.method==='HEAD'))return env.ASSETS.fetch(request);
  const id=PROJECTION_ROUTES[path];
  if(id)return readProjectionResponse(request,env.DB_CORE,id);
+ if(path===EARNINGS_C_ROUTE)return readEarningsCompanionResponse(request,env.DB_CORE);
+  if(path===BEA_UNIT_ROUTE)return readBeaUnitResponse(request,env.DB_CORE);
+ if(path===BEA_MFG_ROUTE)return readBeaMfgResponse(request,env.DB_CORE);
+ if(path===RISK_R4_RAW_ROUTE)return readRiskFourRawResponse(request,env.DB_CORE);
+ if(path===ASSET_R10_RAW_ROUTE)return readAssetR10RawResponse(request,env.DB_CORE);
+ if(path===ASSET_R10_HISTORY_ROUTE)return readAssetR10HistoryResponse(request,env.DB_CORE);
  if(path==='/api/data-health')return readPublicFeedHealth(env.DB_CORE);
  if(path==='/api/collection-health')return readCollectionHealth(env.DB_CORE);
  const shell=await staticShell(request,env);if(shell)return shell;
@@ -18,11 +33,15 @@ const http=candidate2dbWorker({async fetch(request,env,ctx){
  if(path==='/api/session')return Response.json({user:null});
  return handler.fetch(request,env,ctx);
 }});
-export default Object.freeze({...http,async scheduled(controller,native,ctx){
+export default Object.freeze({...http,async fetch(request:Request,native:CandidateEnv & {DB_COMMUNITY?:D1Database},ctx:WorkerContext){
+ const path=new URL(request.url).pathname;
+ if(isCommunityChatPath(path))return communityChatApi(request,native);
+ return http.fetch(request,native,ctx);
+},async scheduled(controller:ScheduledController,native:CandidateEnv,ctx:WorkerContext){
  const {runCandidateWriter}=await import('./candidate-writer-r1.mjs');
  const result=await runCandidateWriter(controller,native).catch(error=>({status:'ERROR',lane:'scheduled',reason:'WRITER_EXECUTION_FAILED',errorName:/^[A-Za-z]{1,40}$/.test(error?.name??'')?error.name:'Error',errorCode:/^[A-Z][A-Z0-9_]{1,80}$/.test(error?.message??'')?error.message:/no such table/i.test(error?.message??'')?'D1_TABLE_MISSING':'UNCLASSIFIED'}));
  console.log('CANDIDATE_WRITER_R2',JSON.stringify(result));
-},async queue(batch,native,ctx){
+},async queue(batch:MessageBatch<ProjectionJob>,native:CandidateEnv,ctx:WorkerContext){
  for(const message of batch.messages??[]){const job=message.body;if(job&&typeof job.id==='string'&&/^[A-Za-z]{1,32}$/.test(job.id)&&Number.isFinite(job.sourceStoredAt))console.log('R60_PROJECTION_BEGIN',JSON.stringify({id:job.id,sourceStoredAt:job.sourceStoredAt,stage:'before-consumer-import'}));}
  const {consumeProjectionBatch}=await import('./projection-queue-r52.ts');
  const result=await consumeProjectionBatch(batch,native,ctx);

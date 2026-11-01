@@ -1,0 +1,25 @@
+/* Keep the inflation mobile title and data basis date on the same top row. */
+@media(max-width:767px){
+ .fg-card.fg-shared-shell.inflation-target-card .fg-header-slot .cnn-panel-heading{
+  grid-template-columns:minmax(0,1fr) auto;
+  column-gap:10px;
+  align-items:start;
+ }
+ .fg-card.fg-shared-shell.inflation-target-card .cnn-market-title{
+  grid-column:1;
+  grid-row:1;
+  min-width:0;
+ }
+ .fg-card.fg-shared-shell.inflation-target-card .cnn-source{
+  grid-column:2;
+  grid-row:1;
+  align-self:start;
+  justify-self:end;
+  align-items:flex-end;
+  margin:0;
+  padding:0;
+  max-width:none;
+  text-align:right;
+  white-space:nowrap;
+ }
+}

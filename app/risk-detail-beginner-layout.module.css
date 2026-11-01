@@ -1,0 +1,11 @@
+.layout{
+ display:flex;
+ flex-direction:column;
+ min-width:0;
+}
+.layout>*{order:3;min-width:0}
+.layout>:global(.cnn-reference-panel){order:1}
+.layout>:global([data-testid^="beginner-risk-guide-"]){order:2}
+.layout>:global(.inflation-explainer){order:4}
+.layout>:global(.inflation-indicator-section){order:5}
+.layout>:global(.cnn-return-cta){order:6}

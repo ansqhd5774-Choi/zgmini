@@ -1,11 +1,19 @@
 "use client";
+import {useStoredIndex} from '../../components/use-stored-index';
+import {ContentHelp} from '../content-help';
+import {HelpText} from '../help-copy';
 
-import {useEffect,useMemo,useRef,useState,type FocusEvent} from "react";
-import {Info} from "lucide-react";
+import {useMemo} from "react";
 import {MarketCardHeader} from "../market-card-header";
 import {MarketScoreOrb} from "../market-score-orb";
 import {MarketTrendFrame} from "../market-trend-frame";
 import {MarketFearGreedChart,type MarketFearGreedChartPoint,type MarketFearGreedChartValidPoint} from "../market-fear-greed-chart";
+import {InflationFavoriteButton,InflationFavoriteHeaderIcon} from "./inflation-favorite-button";
+import {InflationMiniChart,type InflationMiniTrendPoint} from "./inflation-mini-chart";
+import "./inflation-indicator-r2.css";
+import "./inflation-score-comparisons-r1.css";
+import "./inflation-hero-typography-r1.css";
+import "../shared-risk-indicator-width-r1.css";
 
 type FeatureRow={
   observationDate:string|null;
@@ -15,6 +23,17 @@ type FeatureRow={
   scale:number|null;
   risk:number|null;
   score:number|null;
+  previousObservationDate?:string|null;
+  previousAvailableAt?:string|null;
+  previousValue?:number|null;
+  trend?:InflationMiniTrendPoint[];
+};
+type InflationScoreComparisons={
+  week?:number|null;
+  month?:number|null;
+  threeMonth?:number|null;
+  sixMonth?:number|null;
+  year?:number|null;
 };
 type InflationPayload={
   status:string;
@@ -26,14 +45,19 @@ type InflationPayload={
   axes?:Record<string,number|null>;
   features?:Record<string,FeatureRow|null>;
   trend?:Array<{label:string;value:number}>;
+  scoreComparisons?:InflationScoreComparisons;
 };
 
+type ReleaseScheduleKey="PCE"|"CPI"|"PPI"|"IMPORT"|"EMPLOYMENT"|"ECI"|"PRODUCTIVITY"|"INDPRO"|null;
+type ReleaseUrgency="unknown"|"distant"|"month"|"fortnight"|"week"|"imminent";
 type FeatureMeta={
  label:string;
  content:string;
  unit:string;
  note:string;
  criterion:"TWO"|"ZERO"|"PAST_MEDIAN"|"PAST_MEDIAN_ABS";
+ cadence:"월간"|"분기";
+ schedule:ReleaseScheduleKey;
  help:string;
 };
 
@@ -43,22 +67,36 @@ const featureOrder=[
 ] as const;
 
 const featureMeta:Record<string,FeatureMeta>={
- CORE_PCE:{label:"Core PCE",content:"연준이 중시하는 기조 소비물가",unit:"%",note:"YoY · 초기발표",criterion:"TWO",help:"2%에 가까울수록 물가 안정에 긍정적입니다. 2%에서 멀어질수록 기조 물가 압력이 남아 있는 것으로 봅니다."},
- CORE_CPI:{label:"Core CPI",content:"식품·에너지를 제외한 소비자물가",unit:"%",note:"YoY",criterion:"TWO",help:"2% 근처가 안정 방향입니다. 현재 수준이 높더라도 최근 값이 둔화하면 개선 방향으로 해석할 수 있습니다."},
- CORE_CPI_3M:{label:"Core CPI 3M",content:"최근 3개월의 기조 물가 속도",unit:"%",note:"3개월 연율",criterion:"TWO",help:"최근 물가 속도를 빠르게 확인하는 지표입니다. 2% 부근으로 낮아질수록 긍정적이고 재가속하면 부정적입니다."},
- MEDIAN_CPI:{label:"Median CPI",content:"품목별 중간값으로 본 끈적한 물가",unit:"%",note:"3개월 연율",criterion:"TWO",help:"극단적인 가격 변동 영향을 줄여 기조 물가를 봅니다. 2% 근처로 둔화할수록 긍정적입니다."},
- TRIM16_CPI:{label:"16% Trimmed Mean CPI",content:"가격 급등락 품목을 제거한 기조 물가",unit:"%",note:"3개월 연율",criterion:"TWO",help:"이상치 영향을 줄인 물가입니다. 2%에 가까워질수록 광범위한 물가 압력이 완화되는 방향입니다."},
- HEADLINE_PCE:{label:"Headline PCE",content:"전체 개인소비지출 물가",unit:"%",note:"YoY · 초기발표",criterion:"TWO",help:"식품·에너지를 포함한 전체 소비물가입니다. 2% 부근이 안정 방향이며 크게 높으면 부정적입니다."},
- INF_EXPECT:{label:"5Y 기대 인플레이션",content:"시장이 예상하는 중기 물가 수준",unit:"%",note:"수준",criterion:"TWO",help:"기대 인플레이션이 2% 근처에서 안정되면 긍정적입니다. 지속 상승하면 물가 기대 고착 위험으로 봅니다."},
- PPI_FINAL:{label:"PPI Final Demand",content:"최종수요 생산자 가격 압력",unit:"%",note:"3개월 연율",criterion:"PAST_MEDIAN",help:"생산단계 가격 상승률이 과거 정상 범위보다 높아질수록 향후 소비자물가 압력에 부정적입니다."},
- PPI_CORE_FD:{label:"Core PPI Final Demand",content:"식품·에너지 등을 제외한 생산자물가",unit:"%",note:"3개월 연율",criterion:"PAST_MEDIAN",help:"기조 생산비용 압력을 봅니다. 과거 중앙값보다 크게 높으면 부정적이고 낮아지면 긍정적입니다."},
- IMPORT_EX_FUEL:{label:"수입물가 ex Fuel",content:"연료를 제외한 수입 가격 압력",unit:"%",note:"YoY",criterion:"PAST_MEDIAN",help:"수입가격이 과거 정상 범위보다 높아지면 국내 물가로 전가될 가능성이 있어 부정적으로 해석합니다."},
- WTI:{label:"WTI",content:"국제유가의 단기 비용 압력",unit:"%",note:"3개월 변화",criterion:"ZERO",help:"3개월 유가 변화가 0% 근처면 안정적입니다. 급등할수록 에너지와 운송비를 통해 물가 압력이 커질 수 있습니다."},
- GASOLINE:{label:"미국 휘발유",content:"소비자가 체감하는 에너지 가격",unit:"%",note:"3개월 변화",criterion:"ZERO",help:"3개월 변화율이 0% 근처면 안정 방향입니다. 빠른 상승은 소비자물가와 기대인플레이션에 부정적입니다."},
- WAGE_YOY:{label:"평균 시간당 임금",content:"임금에서 오는 서비스 물가 압력",unit:"%",note:"YoY",criterion:"PAST_MEDIAN",help:"임금 상승률이 과거 정상 범위를 크게 웃돌면 서비스 물가가 오래 유지될 수 있어 부정적입니다."},
- ECI_COST:{label:"Employment Cost Index",content:"임금·복리후생을 포함한 고용비용",unit:"%",note:"YoY",criterion:"PAST_MEDIAN",help:"기업의 전체 노동비용을 봅니다. 과거 중앙값을 크게 웃도는 상승률은 지속적인 물가 압력으로 해석합니다."},
- UNIT_LABOR_COST:{label:"Unit Labor Cost",content:"생산 한 단위당 노동비용",unit:"",note:"저장값",criterion:"PAST_MEDIAN",help:"단위노동비용이 과거 정상 범위보다 높아지면 기업의 가격 전가 압력이 커질 수 있습니다."},
- INDPRO:{label:"산업생산",content:"수요·생산 활동의 물가 배경",unit:"%",note:"3개월 연율",criterion:"PAST_MEDIAN_ABS",help:"수요 환경은 너무 강하거나 너무 약한 극단 모두 위험으로 봅니다. 과거 중앙 수준에 가까울수록 안정적으로 평가합니다."},
+ CORE_PCE:{label:"Core PCE",content:"미국 중앙은행이 특히 살피는 식품·에너지 제외 물가",unit:"%",note:"YoY · 초기발표",criterion:"TWO",cadence:"월간",schedule:"PCE",help:"2%에 가까울수록 물가 안정에 긍정적입니다. 2%에서 멀어질수록 기조 물가 압력이 남아 있는 것으로 봅니다."},
+ CORE_CPI:{label:"Core CPI",content:"식품·에너지를 제외한 소비자물가",unit:"%",note:"YoY",criterion:"TWO",cadence:"월간",schedule:"CPI",help:"2% 근처가 안정 방향입니다. 현재 수준이 높더라도 최근 값이 둔화하면 개선 방향으로 해석할 수 있습니다."},
+ CORE_CPI_3M:{label:"Core CPI 3M",content:"최근 3개월의 기조 물가 속도",unit:"%",note:"3개월 연율",criterion:"TWO",cadence:"월간",schedule:"CPI",help:"최근 물가 속도를 빠르게 확인하는 지표입니다. 2% 부근으로 낮아질수록 긍정적이고 재가속하면 부정적입니다."},
+ MEDIAN_CPI:{label:"Median CPI",content:"가격이 크게 튀는 품목의 영향을 줄여 본 물가",unit:"%",note:"3개월 연율",criterion:"TWO",cadence:"월간",schedule:"CPI",help:"일부 품목의 큰 가격 변화에 덜 흔들리는 물가 지표예요. 미국 클리블랜드 연방준비은행이 소비자물가 자료로 계산하며, 상승 속도가 2% 근처로 낮아지면 안정에 유리해요."},
+ TRIM16_CPI:{label:"16% Trimmed Mean CPI",content:"가격이 크게 오르내린 일부 품목을 뺀 물가",unit:"%",note:"3개월 연율",criterion:"TWO",cadence:"월간",schedule:"CPI",help:"가격이 유난히 많이 오르거나 내린 품목을 일부 빼고 물가 흐름을 봐요. 미국 클리블랜드 연방준비은행이 계산하며, 2%에 가까워지면 여러 품목의 물가 부담이 줄어드는 방향이에요."},
+ HEADLINE_PCE:{label:"Headline PCE",content:"전체 개인소비지출 물가",unit:"%",note:"YoY · 초기발표",criterion:"TWO",cadence:"월간",schedule:"PCE",help:"식품·에너지를 포함한 전체 소비물가입니다. 2% 부근이 안정 방향이며 크게 높으면 부정적입니다."},
+ INF_EXPECT:{label:"5Y 기대 인플레이션",content:"시장이 예상하는 앞으로 5년간의 물가 상승률",unit:"%",note:"수준",criterion:"TWO",cadence:"월간",schedule:null,help:"Cleveland Fed의 월간 기대 인플레이션 추정치입니다. 2% 근처에서 안정되면 긍정적이며 공식 다음 공개일이 없으면 일정 미정으로 표시합니다."},
+ PPI_FINAL:{label:"PPI Final Demand",content:"기업이 파는 상품·서비스 가격의 변화",unit:"%",note:"3개월 연율",criterion:"PAST_MEDIAN",cadence:"월간",schedule:"PPI",help:"생산단계 가격 상승률이 과거 정상 범위보다 높아질수록 향후 소비자물가 압력에 부정적입니다."},
+ PPI_CORE_FD:{label:"Core PPI Final Demand",content:"식품·에너지 등을 제외한 생산자물가",unit:"%",note:"3개월 연율",criterion:"PAST_MEDIAN",cadence:"월간",schedule:"PPI",help:"식품·에너지 등의 가격 변동을 일부 제외한 기업 판매가격을 봐요. 과거의 가운데 수준보다 많이 오르면 물가에 부담이 될 수 있어요."},
+ IMPORT_EX_FUEL:{label:"수입물가 ex Fuel",content:"연료를 제외한 수입 가격 압력",unit:"%",note:"YoY",criterion:"PAST_MEDIAN",cadence:"월간",schedule:"IMPORT",help:"수입가격이 과거 정상 범위보다 높아지면 국내 물가로 전가될 가능성이 있어 부정적으로 해석합니다."},
+ WTI:{label:"WTI",content:"국제유가의 단기 비용 압력",unit:"%",note:"3개월 변화",criterion:"ZERO",cadence:"월간",schedule:null,help:"저장된 EIA/FRED 월간 WTI를 사용합니다. 3개월 변화가 0% 근처면 안정적이며 공식 다음 공개일을 확인할 수 없으면 일정 미정으로 표시합니다."},
+ GASOLINE:{label:"미국 휘발유",content:"소비자가 체감하는 에너지 가격",unit:"%",note:"3개월 변화",criterion:"ZERO",cadence:"월간",schedule:null,help:"저장된 EIA/FRED 월간 휘발유 가격을 사용합니다. 3개월 변화율이 0% 근처면 안정 방향이며 공식 다음 공개일을 확인할 수 없으면 일정 미정으로 표시합니다."},
+ WAGE_YOY:{label:"평균 시간당 임금",content:"임금에서 오는 서비스 물가 압력",unit:"%",note:"YoY",criterion:"PAST_MEDIAN",cadence:"월간",schedule:"EMPLOYMENT",help:"임금 상승률이 과거 정상 범위를 크게 웃돌면 서비스 물가가 오래 유지될 수 있어 부정적입니다."},
+ ECI_COST:{label:"Employment Cost Index",content:"월급과 복지비를 포함한 기업의 인건비",unit:"%",note:"YoY",criterion:"PAST_MEDIAN",cadence:"분기",schedule:"ECI",help:"기업이 직원에게 쓰는 임금과 복지비를 함께 살펴봐요. 이 비용이 과거에 비해 지나치게 빨리 늘면 물가 상승 부담이 이어질 수 있어요."},
+ UNIT_LABOR_COST:{label:"Unit Labor Cost",content:"상품·서비스 한 단위를 만드는 데 드는 인건비",unit:"",note:"저장값",criterion:"PAST_MEDIAN",cadence:"분기",schedule:"PRODUCTIVITY",help:"단위노동비용이 과거 정상 범위보다 높아지면 기업의 가격 전가 압력이 커질 수 있습니다."},
+ INDPRO:{label:"산업생산",content:"공장 등에서 생산 활동이 얼마나 변했는지",unit:"%",note:"3개월 연율",criterion:"PAST_MEDIAN_ABS",cadence:"월간",schedule:"INDPRO",help:"수요 환경은 너무 강하거나 너무 약한 극단 모두 위험으로 봅니다. 과거 중앙 수준에 가까울수록 안정적으로 평가합니다."},
+};
+
+// Official calendars verified 2026-10-16:
+// BEA Personal Income and Outlays; BLS CPI/PPI/Import Prices/Employment/ECI/Productivity;
+// Federal Reserve G.17 Industrial Production. Unknown provider dates stay "일정 미정".
+const releaseSchedules:Record<Exclude<ReleaseScheduleKey,null>,string[]>={
+ PCE:["2026-10-29","2026-11-25","2026-12-23","2027-01-28","2027-02-25","2027-03-31","2027-04-29","2027-05-27"],
+ CPI:["2026-11-10","2026-12-10","2027-01-13","2027-02-11","2027-03-10","2027-04-13","2027-05-12","2027-06-10","2027-07-14","2027-08-11","2027-09-14","2027-10-14","2027-11-10","2027-12-10"],
+ PPI:["2026-11-13","2026-12-15","2027-01-14","2027-02-12","2027-03-12","2027-04-14","2027-05-13","2027-06-11","2027-07-15","2027-08-10","2027-09-10","2027-10-15","2027-11-12","2027-12-15"],
+ IMPORT:["2026-11-17","2026-12-17","2027-01-15","2027-02-17","2027-03-17","2027-04-16","2027-05-14","2027-06-16","2027-07-16","2027-08-13","2027-09-17","2027-10-19","2027-11-16","2027-12-16"],
+ EMPLOYMENT:["2026-11-06","2026-12-04","2027-01-08","2027-02-05","2027-03-05","2027-04-02","2027-05-07","2027-06-04","2027-07-02","2027-08-06","2027-09-03","2027-10-08","2027-11-05"],
+ ECI:["2026-10-30","2027-01-29","2027-04-30","2027-07-30","2027-10-29"],
+ PRODUCTIVITY:["2026-11-05","2026-12-08","2027-02-04","2027-03-04","2027-05-06","2027-06-03","2027-08-05","2027-09-02","2027-11-04","2027-12-07"],
+ INDPRO:["2026-10-16","2026-11-17","2026-12-16","2027-01-15","2027-02-17","2027-03-15","2027-04-15","2027-05-17","2027-06-16","2027-07-16","2027-08-17","2027-09-16","2027-10-18","2027-11-17","2027-12-16"],
 };
 
 const developmentCandidates=[
@@ -75,13 +113,54 @@ function dateLabel(value?:string|null){
  const d=new Date(value.length===10?value+"T00:00:00Z":value);
  return Number.isFinite(d.getTime())?new Intl.DateTimeFormat("ko-KR",{dateStyle:"medium",timeZone:"Asia/Seoul"}).format(d):value;
 }
+function shortDateLabel(value:string){
+ const [,month,day]=value.split("-");
+ return `${month}.${day}`;
+}
+function kstTodayKey(){
+ const parts=new Intl.DateTimeFormat("en-US",{timeZone:"Asia/Seoul",year:"numeric",month:"2-digit",day:"2-digit"}).formatToParts(new Date());
+ const get=(type:string)=>parts.find(part=>part.type===type)?.value??"";
+ return `${get("year")}-${get("month")}-${get("day")}`;
+}
+function daysBetween(from:string,to:string){
+ return Math.round((Date.parse(to+"T00:00:00Z")-Date.parse(from+"T00:00:00Z"))/86400000);
+}
+function releaseUrgency(days:number|null):ReleaseUrgency{
+ if(days===null)return "unknown";
+ if(days<=3)return "imminent";
+ if(days<=7)return "week";
+ if(days<=14)return "fortnight";
+ if(days<=30)return "month";
+ return "distant";
+}
+function releaseInfo(feature:string,today:string){
+ const meta=featureMeta[feature];
+ const next=meta.schedule?releaseSchedules[meta.schedule].find(date=>date>=today)??null:null;
+ const days=next?daysBetween(today,next):null;
+ return {
+  cadence:meta.cadence,
+  next,
+  countdown:days===null?"일정 미정":days===0?"오늘":`D-${days}`,
+  urgency:releaseUrgency(days),
+ };
+}
+// Higher scores mean lower observed inflation pressure, not a probability.
+const inflationRiskAxes=[
+ {id:"TARGET_STABILITY",label:"목표 대비 안정성",meaning:"근원 PCE·근원 CPI의 목표 대비 괴리"},
+ {id:"UNDERLYING_MOMENTUM",label:"기조 물가의 지속성",meaning:"최근 근원 물가 속도와 폭넓은 기조 변화"},
+ {id:"HEADLINE_PRESSURE",label:"전체 물가 압력",meaning:"식품·에너지 포함 PCE 상승 압력"},
+ {id:"EXPECTATIONS",label:"기대 인플레이션",meaning:"앞으로의 물가 상승 기대가 안정적인지"},
+ {id:"SUPPLY_PIPELINE",label:"공급·원가 압력",meaning:"생산자·수입·에너지 비용의 부담"},
+ {id:"LABOR_COST_PERSISTENCE",label:"노동비용 지속성",meaning:"임금·고용비용·단위노동비용 압력"},
+ {id:"DEMAND_CONTEXT",label:"수요 환경",meaning:"산업생산을 통한 수요 여건의 극단 신호"},
+] as const;
 function stage(score:number|null|undefined){
  if(typeof score!=="number"||!Number.isFinite(score))return "확인 필요";
  if(score>=75)return "매우 안정";
  if(score>=60)return "안정";
  if(score>=45)return "중립";
- if(score>=25)return "물가 압력";
- return "강한 물가 압력";
+ if(score>=25)return "인플레이션 압력";
+ return "높은 인플레이션 압력";
 }
 function judgement(score:number|null|undefined){
  if(typeof score!=="number"||!Number.isFinite(score))return {label:"확인 필요",tone:"neutral"};
@@ -89,50 +168,28 @@ function judgement(score:number|null|undefined){
  if(score>=45)return {label:"중립",tone:"neutral"};
  return {label:"부정",tone:"negative"};
 }
-function formatRaw(feature:string,row:FeatureRow|null|undefined){
- if(!row||typeof row.value!=="number"||!Number.isFinite(row.value))return "—";
- const meta=featureMeta[feature],digits=Math.abs(row.value)>=100?1:2;
- return `${row.value.toFixed(digits)}${meta?.unit??""}`;
+function formatFeatureValue(feature:string,value:number|null|undefined){
+ if(typeof value!=="number"||!Number.isFinite(value))return "—";
+ const meta=featureMeta[feature],digits=Math.abs(value)>=100?1:2;
+ return `${value.toFixed(digits)}${meta?.unit??""}`;
 }
+function formatRaw(feature:string,row:FeatureRow|null|undefined){return formatFeatureValue(feature,row?.value);}
+function formatPrevious(feature:string,row:FeatureRow|null|undefined){return formatFeatureValue(feature,row?.previousValue);}
 function formatCriterion(feature:string,row:FeatureRow|null|undefined){
  const meta=featureMeta[feature];
- if(meta.criterion==="TWO")return "2% 근처";
- if(meta.criterion==="ZERO")return "0% 근처";
+ if(meta.criterion==="TWO")return "목표 2%";
+ if(meta.criterion==="ZERO")return "중립 0%";
  if(typeof row?.center==="number"&&Number.isFinite(row.center)){
   const value=row.center.toFixed(Math.abs(row.center)>=10?1:2);
-  return meta.criterion==="PAST_MEDIAN_ABS"?`과거 중앙값 ${value} 근처`:`과거 중앙값 ${value} 이하·근처`;
+  return `중앙값 ${value}${meta.unit}`;
  }
- return meta.criterion==="PAST_MEDIAN_ABS"?"과거 정상 범위":"과거 중앙값 이하·근처";
+ return meta.criterion==="PAST_MEDIAN_ABS"?"중앙값 기준":"중앙값 이하";
 }
 
-function HelpTip({label,text}:{label:string;text:string}){
- const [open,setOpen]=useState(false);
- const root=useRef<HTMLSpanElement>(null);
- useEffect(()=>{
-  if(!open)return;
-  const close=(event:PointerEvent)=>{if(!root.current?.contains(event.target as Node))setOpen(false)};
-  document.addEventListener("pointerdown",close);
-  return()=>document.removeEventListener("pointerdown",close);
- },[open]);
- const blur=(event:FocusEvent<HTMLSpanElement>)=>{if(!event.currentTarget.contains(event.relatedTarget))setOpen(false)};
- return <span ref={root} className="inflation-help" onMouseEnter={()=>setOpen(true)} onMouseLeave={()=>setOpen(false)} onBlur={blur}>
-  <button type="button" aria-label={`${label} 해석 방향`} aria-expanded={open} onFocus={()=>setOpen(true)} onClick={event=>{event.stopPropagation();setOpen(v=>!v)}}><Info size={14}/></button>
-  {open?<span role="tooltip"><strong>해석 방향</strong>{text}</span>:null}
- </span>;
-}
+function HelpTip({label,text}:{label:string;text:string}){return <ContentHelp label={label+' 도움말'}><HelpText copy={{meaning:text,reading:'원자료의 단위와 기준선, 발표일을 함께 확인하세요. 원자료의 상승·하락과 시장 평가 점수의 상승·하락은 서로 다를 수 있습니다.',note:'자료가 없거나 개발 중인 항목은 숫자를 표시하지 않습니다. 「—」는 0이 아닙니다.'}}/></ContentHelp>;}
 
 export default function InflationPanel(){
- const [payload,setPayload]=useState<InflationPayload|null>(null);
- const [loading,setLoading]=useState(true);
-
-
- useEffect(()=>{
-  const controller=new AbortController();
-  fetch("/api/inflation-detail",{cache:"no-store",signal:controller.signal})
-   .then(async r=>{if(!r.ok)throw Error();return r.json() as Promise<InflationPayload>})
-   .then(setPayload).catch(()=>setPayload(null)).finally(()=>setLoading(false));
-  return()=>controller.abort();
- },[]);
+ const {payload,loading}=useStoredIndex<InflationPayload>('/api/inflation-detail');
 
  const score=typeof payload?.score==="number"&&Number.isFinite(payload.score)?payload.score:null;
  const allTrend=useMemo(()=>Array.isArray(payload?.trend)?payload!.trend!.filter(p=>typeof p.value==="number"&&Number.isFinite(p.value)):[],[payload?.trend]);
@@ -141,67 +198,126 @@ export default function InflationPanel(){
  const latestPoint:MarketFearGreedChartValidPoint|null=latest&&typeof latest.score==="number"?{date:latest.date,score:latest.score}:null;
  const axisLabels=new Map(trend.map(p=>[p.date,p.date.slice(5,7)]));
  const axisTicks=trend.filter((_,i)=>i===0||i===trend.length-1||i%2===0).map(p=>p.date);
- const previous=allTrend.at(-2)?.value,threeMonth=allTrend.at(-4)?.value;
- const previousDelta=score!==null&&typeof previous==="number"?score-previous:null;
- const threeMonthDelta=score!==null&&typeof threeMonth==="number"?score-threeMonth:null;
+ const scoreComparisonItems=[
+  {label:"1주",value:payload?.scoreComparisons?.week??null},
+  {label:"1개월",value:payload?.scoreComparisons?.month??null},
+  {label:"3개월",value:payload?.scoreComparisons?.threeMonth??null},
+  {label:"6개월",value:payload?.scoreComparisons?.sixMonth??null},
+  {label:"1년",value:payload?.scoreComparisons?.year??null},
+ ] as const;
  const features=payload?.features??{};
+ const today=kstTodayKey();
 
  return <>
   <section className="cnn-reference-panel fg-card fg-shared-shell inflation-target-card" data-testid="inflation-detail-hero" data-market-state={loading?"loading":score===null?"unavailable":"ready"} aria-busy={loading}>
    <div className="fg-header-slot">
-    <MarketCardHeader flag="/flags/us.svg" eyebrow="ZGMINI INFLATION R2" title="미국 인플레이션" description="Stored PIT History" dateLabel="데이터 기준일" date={dateLabel(payload?.asOfDate)} source={payload?.methodologyVersion??"INFLATION_R2"}/>
+    <MarketCardHeader flag="/flags/us.svg" eyebrow="ZGMINI INFLATION R2" title="미국 인플레이션 위험" description="위험 신호의 안정성 · 초기발표 저장 자료" dateLabel="데이터 기준일" date={dateLabel(payload?.asOfDate)} source={payload?.methodologyVersion??"INFLATION_R2"}/>
    </div>
    <div className="fg-content-slot">
     <div className="fg-score-slot">
-     <MarketScoreOrb score={loading||score===null?"—":score.toFixed(1)} state={loading?"확인 중":stage(score)} variant="hero" dayDelta={previousDelta} periodDelta={threeMonthDelta} periodLabel="3개월 대비" dayLabel="전월 대비" comparisonAriaLabel="인플레이션 안정성 점수 변화" metaDate={dateLabel(payload?.asOfDate)}/>
+     <MarketScoreOrb score={loading||score===null?"—":score.toFixed(1)} state={loading?"확인 중":stage(score)} variant="hero" comparisonItems={scoreComparisonItems} comparisonAriaLabel="인플레이션 압력 완화 점수 변화" metaDate={dateLabel(payload?.asOfDate)}/>
     </div>
     <MarketTrendFrame className="fg-analysis-slot">
-     <div className="fg-chart-slot"><div className="fg-renderer"><MarketFearGreedChart data={trend} axisTicks={axisTicks} axisLabels={axisLabels} latestPoint={latestPoint} instanceKey="1Y" gradientId="inflation-fill" formatTooltipLabel={dateLabel} emptyLabel={loading?"확인 중":"이력 없음"}/></div></div>
+     <div className="fg-chart-slot"><div className="fg-renderer"><MarketFearGreedChart showExtrema data={trend} axisTicks={axisTicks} axisLabels={axisLabels} latestPoint={latestPoint} instanceKey="1Y" gradientId="inflation-fill" formatTooltipLabel={dateLabel} emptyLabel={loading?"확인 중":"이력 없음"}/></div></div>
     </MarketTrendFrame>
    </div>
-   <div className="fg-footer-slot"><div className="cnn-panel-note"><span>데이터 출처</span><strong>저장된 초기발표 이력만 사용 · Live fallback 없음</strong></div></div>
+   <div className="fg-footer-slot"><div className="cnn-panel-note"><span>데이터 출처</span><strong>저장된 초기발표 이력만 사용 · 실시간 대체 조회 없음</strong></div></div>
   </section>
 
   <section className="inflation-explainer" aria-labelledby="inflation-what-title">
-   <p className="cnn-eyebrow">WHAT IS INFLATION?</p>
-   <h1 id="inflation-what-title">인플레이션이란?</h1>
-   <p>인플레이션은 상품과 서비스의 전반적인 가격 수준이 지속적으로 오르는 현상입니다. 한두 품목의 가격만 보는 것이 아니라 소비자물가, 생산자물가, 임금, 에너지, 기대인플레이션처럼 서로 다른 지표가 같은 방향으로 움직이는지 함께 확인해야 합니다.</p>
+   <p className="cnn-eyebrow">INFLATION RISK</p>
+   <h1 id="inflation-what-title">인플레이션 압력은 다시 커지고 있을까?</h1>
+   <p>이 진단은 물가상승률 하나를 보여주는 페이지가 아닙니다. <mark className="zg-inflation-keymark">기조 물가의 재가속과 압력이 오래 지속될 신호</mark>를 생산자 가격·기대 인플레이션·임금·에너지·수요 환경까지 살펴 평가합니다. <strong>점수가 높으면 관측된 압력 신호가 비교적 안정적</strong>이고, 낮으면 여러 영역에서 부담이 크다는 뜻입니다. 발생 확률이나 매매 신호는 아닙니다.</p>
    <div className="inflation-direction-strip">
-    <span><b>물가 압력</b>기조 물가↑ · 비용↑ · 임금↑ · 기대물가↑</span>
-    <span><b>물가 안정</b>2% 목표 접근 · 비용 안정 · 기대물가 안정</span>
+    <span><b>압력 확대 신호</b>기조 재가속 · 기대 상승 · 원가·임금 부담</span>
+    <span><b>압력 완화 신호</b>목표 근접 · 기대 안정 · 비용 압력 둔화</span>
    </div>
   </section>
 
-  <section className="inflation-indicator-section" aria-labelledby="inflation-indicator-title">
+  <section className="inflation-r2-axis-section" aria-labelledby="inflation-r2-axis-title">
    <header>
-    <div><p className="cnn-eyebrow">INFLATION INDICATORS</p><h2 id="inflation-indicator-title">인플레이션 분석 지표</h2></div>
-    <p>기준과 현재값을 비교해 <b>긍정 / 중립 / 부정</b>으로 단순화했습니다. ⓘ에서 해석 방향을 확인할 수 있습니다.</p>
+    <div><p className="cnn-eyebrow">R2 RISK AXES</p><h2 id="inflation-r2-axis-title">인플레이션 위험 평가 · 7개 축</h2></div>
+    <p>16개 입력지표를 7개 영역으로 종합한 저장 평가점수입니다. 높은 점수는 해당 영역의 압력 신호가 상대적으로 낮은 방향입니다.</p>
    </header>
-   <div className="inflation-table-wrap">
-    <table className="inflation-indicator-table">
-     <thead><tr><th>지표</th><th>내용</th><th>기준</th><th>현재</th><th>판단</th><th><span className="sr-only">도움말</span>ⓘ</th></tr></thead>
+   <div className="inflation-r2-axis-grid">
+    {inflationRiskAxes.map(axis=>{
+     const value=payload?.axes?.[axis.id];
+     const ready=payload?.status==="READY"&&typeof value==="number"&&Number.isFinite(value)&&value>=0&&value<=100;
+     return <article key={axis.id} className="inflation-r2-axis-item">
+      <div className="inflation-r2-axis-top"><h3>{axis.label}</h3><strong aria-label={axis.label+" 평가점수 "+(ready?value.toFixed(1)+"점":"미확인")}>{ready?value.toFixed(1):"—"}</strong></div>
+      <p>{axis.meaning}</p>
+     </article>;
+    })}
+   </div>
+   <p className="inflation-r2-axis-note">이 점수는 12대 경제지표의 <a href="/economic-indicators/inflation/">물가</a>(별도 4요소 산식)와 다릅니다. 0~100점은 상승률이나 향후 위험 발생 확률이 아닙니다.</p>
+  </section>
+
+  <section className="inflation-indicator-section inflation-r2-indicators" aria-labelledby="inflation-indicator-title">
+   <header>
+    <div><p className="cnn-eyebrow">INFLATION R2 INPUTS</p><h2 id="inflation-indicator-title">위험 신호의 근거 · 16개 입력지표</h2></div>
+    <p>위 7개 평가 축에 실제 반영되는 원자료입니다. 이전·현재 값과 발표일을 비교해 <b>압력의 원인</b>을 확인하세요. 지표별 판단은 저장 평가점수이며 숫자 자체는 물가상승률·가격·비용 등 각기 다른 단위입니다.</p>
+   </header>
+
+   <div className="inflation-table-wrap inflation-r2-table-wrap">
+    <table className="inflation-indicator-table inflation-indicator-table-r2">
+    <colgroup>{Array.from({length:10},(_,i)=><col key={i}/>)}</colgroup>
+     <thead><tr><th className="inflation-r2-favorite-head"><span className="sr-only">즐겨찾기</span><InflationFavoriteHeaderIcon/></th><th>지표</th><th>내용</th><th>기준</th><th>이전</th><th>현재</th><th>발표</th><th>판단</th><th>미니차트(1Y)</th><th><span className="sr-only">도움말</span>ⓘ</th></tr></thead>
      <tbody>
       {featureOrder.map(feature=>{
-       const row=features[feature],meta=featureMeta[feature],result=judgement(row?.score);
+       const row=features[feature],meta=featureMeta[feature],result=judgement(row?.score),release=releaseInfo(feature,today);
        return <tr key={feature} data-judgement={result.tone}>
+        <td className="inflation-r2-favorite-cell"><InflationFavoriteButton id={feature} label={meta.label}/></td>
         <th scope="row"><strong>{meta.label}</strong><small>{meta.note}</small></th>
         <td>{meta.content}</td>
-        <td>{formatCriterion(feature,row)}</td>
-        <td><strong>{formatRaw(feature,row)}</strong><small>{dateLabel(row?.observationDate)}</small></td>
+        <td className="inflation-r2-criterion">{formatCriterion(feature,row)}</td>
+        <td className="inflation-r2-value"><strong>{formatPrevious(feature,row)}</strong><small>{dateLabel(row?.previousAvailableAt)}</small></td>
+        <td className="inflation-r2-value"><strong>{formatRaw(feature,row)}</strong><small>{dateLabel(row?.availableAt)}</small></td>
+        <td className={`inflation-r2-release release-${release.urgency}`}><strong>{release.cadence}</strong><small>{release.next?`${shortDateLabel(release.next)} · ${release.countdown}`:release.countdown}</small></td>
         <td><span className="inflation-judgement">{result.label}</span></td>
+        <td className="inflation-r2-spark-cell"><InflationMiniChart label={meta.label} points={row?.trend}/></td>
         <td><HelpTip label={meta.label} text={meta.help}/></td>
        </tr>;
       })}
       {developmentCandidates.map(item=><tr key={item.label} data-development="true">
+       <td className="inflation-r2-favorite-cell"><InflationFavoriteButton id={`development:${item.label}`} label={item.label}/></td>
        <th scope="row"><strong>{item.label}</strong></th>
        <td>{item.content}</td>
        <td>{item.criterion}</td>
-       <td>—</td>
+       <td>—</td><td>—</td><td>—</td>
        <td><span className="inflation-judgement is-development">개발중</span></td>
+       <td className="inflation-r2-spark-cell">—</td>
        <td><HelpTip label={item.label} text={`${item.help} 현재 ZGmini 데이터 연결 개발 중입니다.`}/></td>
       </tr>)}
      </tbody>
     </table>
+   </div>
+
+   <div className="inflation-r2-mobile-list">
+    {featureOrder.map(feature=>{
+     const row=features[feature],meta=featureMeta[feature],result=judgement(row?.score),release=releaseInfo(feature,today);
+     return <article className="inflation-r2-mobile-card" key={feature} data-judgement={result.tone}>
+      <div className="inflation-r2-mobile-head">
+       <div className="inflation-r2-mobile-title"><InflationFavoriteButton id={feature} label={meta.label}/><div><strong>{meta.label}</strong><small>{meta.note}</small></div></div>
+       <div className="inflation-r2-mobile-actions"><span className="inflation-judgement">{result.label}</span><HelpTip label={meta.label} text={meta.help}/></div>
+      </div>
+      <p className="inflation-r2-mobile-content">{meta.content}</p>
+      <p className="inflation-r2-mobile-criterion"><span>기준</span>{formatCriterion(feature,row)}</p>
+      <div className="inflation-r2-mobile-spark"><span>미니차트(1Y)</span><InflationMiniChart label={meta.label} points={row?.trend}/></div>
+      <div className="inflation-r2-mobile-metrics">
+       <div><span>이전</span><strong>{formatPrevious(feature,row)}</strong><small>{dateLabel(row?.previousAvailableAt)}</small></div>
+       <div><span>현재</span><strong>{formatRaw(feature,row)}</strong><small>{dateLabel(row?.availableAt)}</small></div>
+       <div className={`release-${release.urgency}`}><span>발표</span><strong>{release.cadence}</strong><small>{release.next?`${shortDateLabel(release.next)} · ${release.countdown}`:release.countdown}</small></div>
+      </div>
+     </article>;
+    })}
+    {developmentCandidates.map(item=><article className="inflation-r2-mobile-card is-development" key={item.label}>
+     <div className="inflation-r2-mobile-head">
+      <div className="inflation-r2-mobile-title"><InflationFavoriteButton id={`development:${item.label}`} label={item.label}/><div><strong>{item.label}</strong></div></div>
+      <div className="inflation-r2-mobile-actions"><span className="inflation-judgement is-development">개발중</span><HelpTip label={item.label} text={`${item.help} 현재 ZGmini 데이터 연결 개발 중입니다.`}/></div>
+     </div>
+     <p className="inflation-r2-mobile-content">{item.content}</p>
+     <p className="inflation-r2-mobile-criterion"><span>기준</span>{item.criterion}</p>
+    </article>)}
    </div>
   </section>
 

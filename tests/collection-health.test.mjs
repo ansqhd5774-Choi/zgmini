@@ -1,7 +1,48 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import {recordCollectionChecks,readCollectionChecks} from '../scripts/pc-writer/collection-checks.mjs';
 import {collectionHealthSummary,readCollectionHealth,COLLECTION_WINDOW_MS} from '../worker/collection-health.mjs';
 const now=Date.UTC(2026,9,6,14);
+
+test('development primary remains in owner evidence but never changes public operating counts',async()=>{
+ for(const outcome of ['success','failure','unknown']){
+  const body=collectionHealthSummary([{id:'job:earnings',checkedAt:now-1,outcome:'success'},{id:'job:themePrimary',checkedAt:now-1,outcome},{id:'job:themeSecondary',checkedAt:null,outcome:'unknown'}],now);
+  const stored=JSON.stringify(body),db={prepare(){return {bind(){return {first:async()=>({body:stored})}}}}};
+  const publicBody=await(await readCollectionHealth(db,now+1)).json();
+  assert.equal(publicBody.total,1);assert.equal(publicBody.normal,1);assert.equal(publicBody.status,'healthy');assert.deepEqual(publicBody.items.map(x=>x.id),['job:earnings']);
+  assert.equal(body.items.length,3);assert.equal(body.items[1].outcome,outcome);assert.equal(JSON.stringify(body),stored);
+ }
+ const body=collectionHealthSummary([{id:'job:earnings',checkedAt:now-1,outcome:'failure'},{id:'job:themePrimary',checkedAt:now-1,outcome:'success'}],now);
+ const db={prepare(){return {bind(){return {first:async()=>({body:JSON.stringify(body)})}}}}};
+ const result=await(await readCollectionHealth(db,now+1)).json();assert.equal(result.total,1);assert.equal(result.failed,1);assert.equal(result.status,'partial');
+});
+
+test('retired placeholder is excluded from stored summaries without hiding real failures',async()=>{
+ const good=Array.from({length:27},(_,i)=>({id:`job:${i}`,checkedAt:now-100,outcome:'success'}));
+ for(const failing of [false,true]){
+  const entries=good.map((x,i)=>failing&&i===0?{...x,outcome:'failure'}:x);
+  const body=collectionHealthSummary([...entries,{id:'job:themeSecondary',checkedAt:null,outcome:'unknown'}],now);
+  assert.equal(body.total,28);
+  const db={prepare(){return {bind(){return {first:async()=>({body:JSON.stringify(body)})}}}}};
+  const value=await(await readCollectionHealth(db,now+1)).json();
+  assert.equal(value.total,27);assert.equal(value.normal,failing?26:27);assert.equal(value.failed,failing?1:0);assert.equal(value.unknown,0);assert.equal(value.status,failing?'partial':'healthy');assert(!value.items.some(x=>x.id==='job:themeSecondary'));
+ }
+});
+
+test('public original status retains all 28 jobs across success, failure, unknown and expiry',async()=>{
+ const entries=Array.from({length:28},(_,i)=>({id:`job:${i}`,checkedAt:now-100,outcome:'success'}));
+ for(const [entry,status,count] of [[entries[27],'healthy',28],[{id:'job:27',checkedAt:now-100,outcome:'failure'},'partial',27],[{id:'job:27',checkedAt:null,outcome:'unknown'},'unknown',27]]){
+  const body=collectionHealthSummary([...entries.slice(0,27),entry],now);
+  let queries=0;
+  const db={prepare(){queries++;return {bind(){return {first:async()=>({body:JSON.stringify(body)})}}}}};
+  const value=await(await readCollectionHealth(db,now+1)).json();
+  assert.equal(value.total,28);assert.equal(value.normal,count);assert.equal(value.status,status);assert.equal(queries,1);
+  const expired=await(await readCollectionHealth(db,now+COLLECTION_WINDOW_MS)).json();assert.equal(expired.total,28);assert.equal(expired.normal,0);assert.equal(expired.status,'unknown');
+ }
+});
 test('only completed recent storage counts; old, future, failed and missing do not',()=>{
  const result=collectionHealthSummary([{id:'good',storedAt:now-1,complete:true},{id:'old',storedAt:now-COLLECTION_WINDOW_MS,complete:true},{id:'future',storedAt:now+1,complete:true},{id:'failed',storedAt:now,complete:false},{id:'missing',storedAt:null,complete:true}],now);
  assert.equal(result.normal,1);assert.equal(result.total,5);assert.equal(result.status,'unknown');
@@ -29,4 +70,24 @@ test('visitor preserves failure and independent check timestamp',async()=>{
  const db={prepare(){return {bind(){return {first:async()=>({body:JSON.stringify(body)})}}}}};
  const value=await (await readCollectionHealth(db,now+1)).json();
  assert.equal(value.failed,1);assert.equal(value.status,'partial');assert.equal(value.items[0].storedAt,0);
+});
+test('eight day success survives later failure and expires at the boundary',async()=>{
+ const lastSuccessAt=now-7*24*60*60*1000;
+ const body=collectionHealthSummary([{id:'a',checkedAt:now-1,outcome:'failure',lastSuccessAt}],now);
+ assert.equal(body.normal,1);assert.equal(body.failed,0);assert.equal(body.recentFailures,1);assert.equal(body.windowHours,192);
+ assert.equal(body.status,'partial');assert.equal(body.latestFailed,1);
+ const db={prepare(){return {bind(){return {first:async()=>({body:JSON.stringify(body)})}}}}};
+ assert.equal((await (await readCollectionHealth(db,now+1)).json()).normal,1);
+ assert.equal(collectionHealthSummary(body.items,lastSuccessAt+COLLECTION_WINDOW_MS).failed,1);
+ assert.equal(collectionHealthSummary([{id:'future',lastSuccessAt:now+1,outcome:'failure',checkedAt:now}],now).normal,0);
+});
+test('check recorder preserves last success on failure and ignores cache hits',()=>{
+ const base=fs.mkdtempSync(path.join(os.tmpdir(),'collection-health-'));
+ try{
+  recordCollectionChecks(base,{at:new Date(now-100).toISOString(),job:'macro',status:'COMPLETE',providers:{fred:{requests:1}}});
+  recordCollectionChecks(base,{at:new Date(now).toISOString(),job:'macro',status:'FAILED'});
+  recordCollectionChecks(base,{at:new Date(now+1).toISOString(),job:'macro',status:'COMPLETE',providers:{}});
+  const check=readCollectionChecks(base)['job:macro'];
+  assert.equal(check.lastSuccessAt,now-100);assert.equal(check.outcome,'failure');assert.equal(check.checkedAt,now);
+ }finally{fs.rmSync(base,{recursive:true,force:true});}
 });

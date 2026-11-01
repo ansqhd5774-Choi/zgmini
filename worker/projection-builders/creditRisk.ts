@@ -1,6 +1,8 @@
 import {scoreCmdiComponentsR1} from "../../lib/diagnostic-layer/r1-diagnostic-pipeline.mjs";
 import {buildBondVolatilityR6} from "./liquidity-optimized-components.mjs";
 import {creditRiskDefense} from "../../lib/diagnostic-layer/model.mjs";
+import {enrichLiquidityDisplayRows,liquidityStoredScoreComparisons} from "./liquidity-stored-history.mjs";
+import {withVerifiedCurrentCreditPoint} from "./credit-current-score-anchor.mjs";
 
 const finite=(v:unknown):v is number=>typeof v==="number"&&Number.isFinite(v);
 const validDate=(v:unknown):v is string=>typeof v==="string"&&/^\d{4}-\d{2}-\d{2}$/.test(v);
@@ -77,15 +79,35 @@ export function buildProjection({inputs,snapshot,publicSnapshot,e1,nowIso}:any){
   point("bond30y","미국 30년물 변동성",y30?.score??null,y30?.rv20??null,"bp",y30?.observationDate??null,"U.S. Treasury / Federal Reserve Board H.15"),
  ];
 
+ // These fields are additive presentation data drawn only from the saved input rows.
+ // The existing R1 four-component credit score and published score are unchanged.
+ const sources=[
+  [cmdi??[],(row:any)=>row.raw?.hy],
+  [cmdi??[],(row:any)=>row.raw?.ig],
+  [cmdi??[],(row:any)=>row.raw?.market],
+  [[],(row:any)=>null], // Aggregate bond row has no approved raw numerical display value.
+  [[],(row:any)=>null], // NFCI public snapshot does not supply a verified 1Y source series.
+  [bond.legs?.y2??[],(row:any)=>row.rv20],
+  [bond.legs?.y5??[],(row:any)=>row.rv20],
+  [bond.legs?.y10??[],(row:any)=>row.rv20],
+  [bond.legs?.y30??[],(row:any)=>row.rv20],
+ ];
+ const display=enrichLiquidityDisplayRows([...core,...supplementals],sources,asOf);
+ const scoreMatch=score!==null&&recalculated?.status==="READY"&&finite(recalculated.score)&&Math.abs(score-recalculated.score)<1e-9;
+ // Append only the verified published current score as an actual as-of snapshot.
+ // Older stored observations, component weights and score calculation are unchanged.
+ const displayTrend=withVerifiedCurrentCreditPoint(trend,asOf,score,scoreMatch);
+ const scoreComparisons=liquidityStoredScoreComparisons(displayTrend,asOf,score);
+
  return {
   status:score===null?"PARTIAL":"READY",
   score,
   recalculatedScore:recalculated?.status==="READY"?recalculated.score:null,
-  scoreMatch:score!==null&&recalculated?.status==="READY"&&finite(recalculated.score)?Math.abs(score-recalculated.score)<1e-9:false,
+  scoreMatch,
   asOfDate:asOf,
   methodologyVersion:"CREDIT_RISK_DIAGNOSTIC_R1",
   historyMode:"CURRENT_VINTAGE_DERIVED_1Y",
   lookAheadSafe:false,
-  core,supplementals,trend,
+  core:display.slice(0,4),supplementals:display.slice(4),trend:displayTrend,scoreComparisons,
  };
 }

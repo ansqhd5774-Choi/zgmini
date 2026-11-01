@@ -1,3 +1,4 @@
+import {marketChartSource} from './helpers/market-chart-source.mjs';
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
@@ -8,7 +9,7 @@ test("K1 extracts USA presentation into an opt-in shared shell", async () => {
   const [shell, panel, chart, insight, css] = await Promise.all([
     read("app/fear-greed-card-shell.tsx"),
     read("app/fear-greed/usa/cnn-panel.tsx"),
-    read("app/market-fear-greed-chart.tsx"),
+    marketChartSource(),
     read("app/market-card-insight.tsx"),
     read("app/globals.css"),
   ]);
@@ -24,7 +25,7 @@ test("K1 extracts USA presentation into an opt-in shared shell", async () => {
 
   assert.match(chart, /accessibilityLayer/);
   assert.match(chart, /prefers-reduced-motion: reduce/);
-  assert.match(chart, /ticks=\{\[0, 50, 75, 100\]\}/);
+  assert.match(chart, /ticks=\{\[0, 25, 50, 75, 100\]\}/);
   assert.match(chart, /ReferenceArea y1=\{0\} y2=\{25\}/);
   assert.match(chart, /ReferenceLine y=\{75\}/);
   assert.match(chart, /cnn-latest-point/);
@@ -48,8 +49,11 @@ test("K1 extracts USA presentation into an opt-in shared shell", async () => {
 
 test("K1 leaves USA data semantics in the USA adapter", async () => {
   const panel = await read("app/fear-greed/usa/cnn-panel.tsx");
-  assert.match(panel, /fetch\("\/api\/fear-greed"/);
-  assert.match(panel, /previousHistoryBaseline\(allHistory, payload\?\.observedAt\)/);
+  assert.match(panel, /import\s*\{useStoredIndex\}\s*from\s*['"]\.\.\/\.\.\/\.\.\/components\/use-stored-index['"]/);
+  assert.match(panel, /useStoredIndex<IndexPayload>\("\/api\/fear-greed"\)/);
+  assert.match(panel, /const previousClose = payload\?\.previous\?\.close/);
+  assert.match(panel, /Number\.isFinite\(previousClose\)/);
+  assert.doesNotMatch(panel, /previousHistoryBaseline\(/);
   assert.match(panel, /historicalBaseline\(allHistory, targetTime\)/);
   assert.match(panel, /const marketInsight = buildMarketInsight\(/);
   assert.match(panel, /score !== null && dayBaseline !== null \? score - dayBaseline : null/);

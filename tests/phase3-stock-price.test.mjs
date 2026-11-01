@@ -3,7 +3,24 @@ import assert from 'node:assert/strict';
 import {parseStockPricePage,summarizeStockRows,createPhase3Handler,parseUpstreamError,canonicalServiceKey,PHASE3_POLICY} from '../worker/phase3-korea-stock-price.mjs';
 const page=(rows,total=rows.length)=>({response:{header:{resultCode:'00'},body:{totalCount:total,items:{item:rows}}}});
 test('stock price parser and summary preserve zero and market categories',()=>{const rows=[{basDt:'20260911',srtnCd:'1',mrktCtg:'KOSPI',clpr:'0'},{basDt:'20260911',srtnCd:'2',mrktCtg:'KOSDAQ',clpr:'10'}];const p=parseStockPricePage(page(rows));assert.equal(p.ok,true);const s=summarizeStockRows(p.rows);assert.deepEqual(s.countByMarket,{KOSPI:1,KOSDAQ:1});assert.equal(s.fieldQuality.clpr.numericCount,2);});
-test('stock price diagnostic fails safely without secret and expires',async()=>{const h=createPhase3Handler();const r=await h(new Request('https://local.test/api/internal/phase3-korea-stock-price-check'),{});const d=await r.json();assert.equal(d.status,'BLOCKED');assert.equal(d.secret.fscApiKeyPresent,false);});
-test('runtime handler selects injected fetch without exposing credentials',async()=>{let calls=0;const h=createPhase3Handler({runtime:true,fetch:async()=>{calls++;return Response.json(page([{basDt:'20260911',srtnCd:'1',mrktCtg:'KOSPI',clpr:'1'}]));}});const d=await(await h(new Request('https://local.test/api/internal/phase3-korea-stock-price-check'),{FSC_API_KEY:'fixture-secret'})).json();assert.equal(calls,2);assert.equal(d.stockPrice.status,'SUCCESS');assert.equal(JSON.stringify(d).includes('fixture-secret'),false);});
+test('stock price diagnostic fails safely without secret during its valid period',async t=>{
+ t.mock.timers.enable({apis:['Date'],now:Date.parse('2026-09-13T00:00:00Z')});
+ const h=createPhase3Handler(),r=await h(new Request('https://local.test/api/internal/phase3-korea-stock-price-check'),{});assert.equal(r.status,200);
+ const d=await r.json();assert.equal(d.status,'BLOCKED');assert.equal(d.secret.fscApiKeyPresent,false);
+});
+test('runtime handler selects injected fetch without exposing credentials',async t=>{
+ t.mock.timers.enable({apis:['Date'],now:Date.parse('2026-09-13T00:00:00Z')});
+ let calls=0;const h=createPhase3Handler({runtime:true,fetch:async()=>{calls++;return Response.json(page([{basDt:'20260911',srtnCd:'1',mrktCtg:'KOSPI',clpr:'1'}]));}});
+ const response=await h(new Request('https://local.test/api/internal/phase3-korea-stock-price-check'),{FSC_API_KEY:'fixture-secret'});assert.equal(response.status,200);
+ const d=await response.json();assert.equal(calls,2);assert.equal(d.stockPrice.status,'SUCCESS');assert.equal(JSON.stringify(d).includes('fixture-secret'),false);
+});
+test('stock price diagnostic closes at expiry even with a credential and runtime fetch',async t=>{
+ assert.equal(PHASE3_POLICY.expiresAt,'2026-10-11T00:00:00Z');
+ const expiry=Date.parse(PHASE3_POLICY.expiresAt);t.mock.timers.enable({apis:['Date'],now:expiry-1});
+ let calls=0;const h=createPhase3Handler({runtime:true,fetch:()=>{calls++;assert.fail('expired diagnostic must not fetch');}});
+ const request=new Request('https://local.test/api/internal/phase3-korea-stock-price-check');assert.equal((await h(request,{})).status,200);
+ for(const at of [expiry,expiry+86400000]){t.mock.timers.setTime(at);const response=await h(request,{FSC_API_KEY:'fixture-secret'});assert.equal(response.status,410);const body=await response.json();assert.equal(body.error,'EXPIRED');assert.equal(JSON.stringify(body).includes('fixture-secret'),false);}
+ assert.equal(calls,0);
+});
 test('upstream errors expose only safe code and redacted message',()=>{const d=parseUpstreamError('<OpenAPI_ServiceResponse><returnReasonCode>SERVICE_KEY_IS_NOT_REGISTERED_ERROR</returnReasonCode><returnReason>bad serviceKey=secret</returnReason></OpenAPI_ServiceResponse>','application/xml');assert.equal(d.upstreamErrorCode,'SERVICE_KEY_IS_NOT_REGISTERED_ERROR');assert.equal(d.reason,'SERVICE_KEY_NOT_REGISTERED');assert.equal(d.upstreamErrorMessage.includes('secret'),false);});
 test('V2 endpoint and key canonicalization are fixed',()=>{assert.equal(PHASE3_POLICY.operation,'getStockPriceInfo_V2');assert.equal(PHASE3_POLICY.service,'GetStockSecuritiesInfoService_V2');assert.equal(canonicalServiceKey('abc%2B%2F123%3D%3D'),'abc+/123==');assert.equal(canonicalServiceKey('abc+/123=='),'abc+/123==');});

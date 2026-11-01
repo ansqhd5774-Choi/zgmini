@@ -1,0 +1,59 @@
+/* Risk-detail side rails only. Does not change dashboard or eight risk scoring views. */
+body:has(.zg-risk-side-rails-root){background:#03121d}
+.zg-risk-side-rails-root{--zg-risk-edge:clamp(12px,1vw,20px);--zg-risk-nav-width:240px;--zg-risk-chat-width:300px;--zg-risk-top:calc(var(--zg-site-header-height,64px) + 14px);font-family:inherit}
+.zg-risk-side-rail{position:fixed;z-index:105;top:var(--zg-risk-top);height:calc(100dvh - var(--zg-risk-top) - 14px);min-height:260px;border:1px solid rgba(40,95,124,.58);border-radius:9px;background:rgba(5,28,44,.92);box-shadow:0 12px 26px rgba(0,0,0,.16);color:#e8f2f9;overflow:hidden}
+.zg-risk-side-left{left:var(--zg-risk-edge);width:var(--zg-risk-nav-width);display:flex;flex-direction:column;padding:13px 11px;overflow-y:auto;scrollbar-width:thin}
+.zg-risk-side-right{right:var(--zg-risk-edge);width:var(--zg-risk-chat-width)}
+.zg-risk-side-head{display:flex;align-items:center;gap:10px;padding:7px 7px 2px;color:#55dcc9}
+.zg-risk-side-head strong{color:#f1f6fb;font-size:17px;font-weight:750}
+.zg-risk-rail-close{display:none}
+.zg-risk-side-intro{font-size:11px;line-height:1.6;color:#aec5d6;padding:8px 7px 11px}
+.zg-risk-side-left nav{display:grid;gap:4px}
+.zg-risk-side-link{display:flex;align-items:center;gap:12px;min-height:48px;padding:0 12px;border:1px solid transparent;border-radius:6px;color:#dbeaf4;text-decoration:none;font-size:13px;font-weight:650;transition:background .15s ease,border-color .15s ease}
+.zg-risk-side-link>svg:first-child{flex:none;color:#9bc3d5}
+.zg-risk-side-link>span{flex:1;min-width:0}
+.zg-risk-side-link>svg:last-child{flex:none;opacity:.85}
+.zg-risk-side-link:hover,.zg-risk-side-link:focus-visible{background:rgba(21,74,92,.8);border-color:rgba(54,175,178,.5)}
+.zg-risk-side-link.is-current{background:rgba(12,88,94,.48);border-color:rgba(21,185,160,.55);box-shadow:inset 3px 0 #22d8b6;color:#51e6d0}
+.zg-risk-side-link.is-current>svg:first-child{color:#38e5cb}
+.zg-risk-side-link:focus-visible,.zg-risk-side-action:focus-visible,.zg-risk-rail-close:focus-visible{outline:2px solid #37e6d1;outline-offset:2px}
+.zg-risk-side-actions{display:none}
+.zg-risk-side-veil{display:none}
+.zg-risk-side-right .zg-community-root{height:100%;--zg-chat-accent:#35ddc9;--zg-chat-panel:rgba(5,28,44,.86);--zg-chat-card:rgba(12,45,67,.8);--zg-chat-page:#041726}
+.zg-risk-side-right .zg-community-panel{position:relative;inset:auto;right:auto;bottom:auto;width:100%;height:100%;max-height:none;border:0;border-radius:0;background:transparent;box-shadow:none}
+.zg-risk-side-right .zg-community-head{min-height:57px}
+.zg-risk-side-right .zg-community-head button{display:none}
+.zg-risk-side-right .zg-community-head strong{font-size:15px}
+.zg-risk-side-right .zg-community-item{background:rgba(17,53,74,.78)}
+.zg-risk-side-right .zg-community-toggle{display:none}
+@media(min-width:1650px){
+ .zg-risk-side-rails-root+main{width:calc(100% - 670px);max-width:1152px;margin-left:auto;margin-right:auto;transform:translateX(-30px);min-width:0}
+ .zg-risk-side-rails-root+main>div{width:100%;max-width:none}
+}
+@media(max-width:1649px){
+ .zg-risk-side-rail{z-index:133;top:calc(var(--zg-site-header-height,64px) + 10px);height:min(66dvh,650px);min-height:0;max-height:calc(100dvh - var(--zg-site-header-height,64px) - 82px);background:rgba(5,28,44,.82);backdrop-filter:blur(9px);-webkit-backdrop-filter:blur(9px);transition:transform .22s ease,opacity .22s ease,visibility .22s ease}
+ .zg-risk-side-left{left:10px;width:min(278px,78vw);transform:translateX(calc(-100% - 12px))}
+ .zg-risk-side-right{right:10px;width:min(330px,82vw);transform:translateX(calc(100% + 12px))}
+ .zg-risk-side-rail[data-open="false"]{visibility:hidden;opacity:0;pointer-events:none}
+ .zg-risk-side-rail[data-open="true"]{visibility:visible;opacity:1;transform:translateX(0)}
+ .zg-risk-rail-close{margin-left:auto;display:grid;place-items:center;width:30px;height:30px;color:#bcd4e5;background:transparent;border:0;cursor:pointer}
+ .zg-risk-side-right .zg-community-head button{display:grid}
+ .zg-risk-side-actions{display:block}
+ .zg-risk-side-action{position:fixed;bottom:max(14px,env(safe-area-inset-bottom));z-index:136;display:grid;place-items:center;width:48px;height:48px;border:1px solid rgba(28,222,198,.78);border-radius:12px;background:rgba(4,32,49,.9);color:#3ae7cf;box-shadow:0 4px 16px rgba(0,0,0,.45);cursor:pointer}
+ .zg-risk-side-action.is-left{left:12px}
+ .zg-risk-side-action.is-right{right:12px}
+ .zg-risk-side-action[aria-expanded="true"]{background:rgba(8,101,98,.95);color:#e9fffc}
+ .zg-risk-side-veil{display:block;position:fixed;inset:var(--zg-site-header-height,64px) 0 0;z-index:130;border:0;background:rgba(0,16,27,.13);cursor:default}
+ .zg-risk-side-right .zg-community-panel{height:100%}
+}
+@media(max-width:600px){
+ .zg-risk-side-rail{top:calc(var(--zg-site-header-height,64px) + 6px);height:min(65dvh,570px);max-height:calc(100dvh - var(--zg-site-header-height,64px) - 76px)}
+ .zg-risk-side-left{left:7px;width:min(284px,78vw)}
+ .zg-risk-side-right{right:7px;width:min(320px,82vw)}
+ .zg-risk-side-action{bottom:max(16px,env(safe-area-inset-bottom));width:46px;height:46px}
+ .zg-risk-side-action.is-left{left:12px}
+ .zg-risk-side-action.is-right{right:12px}
+}
+@media(prefers-reduced-motion:reduce){
+ .zg-risk-side-rail,.zg-risk-side-link{transition:none!important}
+}

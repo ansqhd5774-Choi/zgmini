@@ -1,3 +1,4 @@
+import {marketChartSource} from './helpers/market-chart-source.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
@@ -34,7 +35,8 @@ test('K2 Korean card wires Revision 7 only without USA coupling',()=>{
   assert.match(ui,/c\?\.observationDate/);
   assert.match(ui,/c\?\.sourceAttribution/);
   assert.match(ui,/Revision 7/);
-  assert.match(ui,/7개 시장심리 지표 동일가중/);
+  assert.match(ui,/componentModelLabel\(composite/);
+  assert.match(ui,/composite\.methodologyVersion==='kr-fg-cnn-r7-1\.0\.0'/);
   assert.match(ui,/buildKoreaInsight/);
   assert.match(ui,/dayLabel:"이전 대비"/);
   assert.match(ui,/comparisonAriaLabel:"한국 공포탐욕 변화량"/);
@@ -62,7 +64,7 @@ test('K2 period and daily changes are derived from Korea history, never copied f
 });
 
 test('shared chart preserves null Korea history gaps',()=>{
-  const chart=read('app/market-fear-greed-chart.tsx');
+  const chart=marketChartSource();
   assert.match(chart,/score: number \| null/);
   assert.match(chart,/connectNulls=\{false\}/);
   assert.match(chart,/rawTooltipValue/);
@@ -73,7 +75,7 @@ test('shared score orb allows Korea previous-observation semantics without chang
   const shell=read('app/fear-greed-card-shell.tsx');
   assert.match(orb,/dayLabel = '전일 대비'/);
   assert.match(orb,/comparisonAriaLabel = 'CNN 공포탐욕 변화량'/);
-  assert.match(orb,/<span>\{dayLabel\}<\/span>/);
+  assert.match(orb,/<span aria-label=\{dayLabel\}>\{dayLabel\.replace/);
   assert.match(shell,/dayLabel\?: string/);
   assert.match(shell,/comparisonAriaLabel\?: string/);
 });

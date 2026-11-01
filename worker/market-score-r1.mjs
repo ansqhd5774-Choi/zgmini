@@ -1,9 +1,10 @@
 import {createProgressiveComputationCache} from './market-score-computation-cache.mjs';
 import {buildCompositeMarketScore} from "../lib/market-score/composite-model-r1.mjs";
+import {buildLegacyMarketInflationDomain} from "../lib/market-score/inflation-legacy-public-domain.mjs";
 import {buildCmR1DomainResults} from "../lib/market-score/domain-adapter-r1.mjs";
 import {buildConsumptionC1} from "../lib/market-score/public-domain-producers-r1.mjs";
 import {buildCommoditiesK1R2} from "../lib/market-score/public-domain-producers-r2.mjs";
-import {loadStoredConsumptionC1R3} from "./consumption-r3-history-reader.mjs";
+import {loadStoredConsumptionR5} from "./consumption-r5-reader.mjs";
 import {loadEmploymentR54CandidateFromStored,EMPLOYMENT_R54_METHOD} from "../lib/market-score/employment-r54-candidate.mjs";
 import {
   buildDollarFxR54,
@@ -12,6 +13,7 @@ import {
 import {buildRateR3} from "../lib/market-score/rate-r3.mjs";
 import {buildCreditR2} from "../lib/market-score/credit-r2.mjs";
 import {loadStoredInflationR2Domain} from "./inflation-r2-reader.mjs";
+import {INFLATION_R2_METHOD_REVISION} from "../lib/diagnostic-layer/inflation-r2-stored.mjs";
 import {readBreadthB1R5StoredPublicDomainR1,buildBreadthB1R5UnavailablePublicDomain} from "../lib/market-score/breadth-b1-r5-worker-domain.mjs";
 import {
   INFLATION_SCORING_SERIES,
@@ -58,7 +60,7 @@ export function projectInflationMethodologyVersion(compositeDomains=[],sourceDom
 }
 
 function inflationR2Partial(reason="INFLATION_R2_STORAGE_PENDING"){
-  return {status:"PARTIAL",score:null,missingFactors:[reason],indicators:[],trend:[],freshness:"STORED_INITIAL_RELEASE_HISTORY_ONLY",updatedAt:null,methodologyVersion:"INFLATION_R2_R29_56",interpretation:"Inflation R2: stored PIT history only; live fallback forbidden"};
+  return {status:"PARTIAL",score:null,missingFactors:[reason],indicators:[],trend:[],freshness:"STORED_INITIAL_RELEASE_HISTORY_ONLY",updatedAt:null,methodologyVersion:INFLATION_R2_METHOD_REVISION,interpretation:"Inflation R2: stored PIT history only; live fallback forbidden"};
 }
 
 function employmentR54Partial(reason="EMPLOYMENT_R54_STORAGE_PENDING",asOf=null){
@@ -73,7 +75,7 @@ export function createMarketScoreR1Handler({
   now=()=>new Date(),
   collectBreadthDomain=readBreadthB1R5StoredPublicDomainR1,
 
-  loadConsumptionDomain=loadStoredConsumptionC1R3,
+  loadConsumptionDomain=loadStoredConsumptionR5,
   loadInflationDomain=loadStoredInflationR2Domain,
   loadLiquidityHistory=loadLiquidityActiveHistory,
   loadGrowthDomain=loadStoredGrowthR2PublicDomainR1,
@@ -146,7 +148,7 @@ export function createMarketScoreR1Handler({
         : buildBreadthB1R5UnavailablePublicDomain("B1_R5_RUNTIME_UNAVAILABLE",asOf,instant.toISOString());
       const consumptionDomain=consumptionState.status==="fulfilled"
         ? consumptionState.value
-        : {status:"PARTIAL",score:null,missingFactors:["C1_R3_STORAGE_READ_FAILED"],indicators:[],trend:[],freshness:"STORED_CALCULATION_HISTORY_ONLY",updatedAt:null,methodologyVersion:"R3.45P",interpretation:"C1-R3.45P: stored calculation history only; live fallback forbidden"};
+        : {status:"PARTIAL",score:null,missingFactors:["CONSUMPTION_R5_STORAGE_READ_FAILED"],indicators:[],trend:[],freshness:"STORED_MONTHLY_R5",updatedAt:null,methodologyVersion:"CONSUMPTION_R5",interpretation:"Consumption R5: stored data only; live fallback forbidden"};
       const growthDomain=growthState.status==="fulfilled"
         ? growthState.value
         : {status:"NOT_READY",score:null,coverage:0,requiredCoverage:24,missingFactors:["GROWTH_R2_STORAGE_READ_FAILED"],staleFactors:[],methodologyVersion:"GROWTH_R2_G16_CANDIDATE_R1"};
@@ -181,7 +183,13 @@ function composeMarketSnapshot({liquidityHistory,collected,storedInflation,infla
       const scoringExternal={...(collected?.external??{})};
       delete scoringExternal.inflationExpectationsRows;
       const storedEarnings=scoringExternal?.publicDomainScores?.earnings;
-      scoringExternal.earningsScores=storedEarnings?.status==="READY"?{
+      const riskEvidence=scoringExternal?.earningsRiskEvidence?.status==="READY"
+        ?scoringExternal.earningsRiskEvidence:null;
+      // Independent stored 4-factor scorer (PC only) takes precedence over
+      // leftover legacy compatibility fields in the E1-R5 economic domain.
+      scoringExternal.earningsScores=riskEvidence?Object.fromEntries(
+        riskEvidence.factors.map(row=>[row.id,row.score])
+      ):storedEarnings?.status==="READY"?{
         epsGrowth:finite(storedEarnings?.components?.epsGrowth?.score)?storedEarnings.components.epsGrowth.score:null,
         margin:finite(storedEarnings?.components?.margin?.score)?storedEarnings.components.margin.score:null,
         revenueGrowth:finite(storedEarnings?.components?.revenueGrowth?.score)?storedEarnings.components.revenueGrowth.score:null,
@@ -236,7 +244,7 @@ function composeMarketSnapshot({liquidityHistory,collected,storedInflation,infla
 
       const approvedPublicDomains={
         ...(collected?.external?.publicDomainScores??{}),
-        inflation:inflationR2Domain,
+        inflation:buildLegacyMarketInflationDomain(diagnostic,asOf),
         consumption:consumptionDomain,
         growth:growthDomain,
         commodities:compute(buildCommoditiesK1R2,{
@@ -277,9 +285,11 @@ function composeMarketSnapshot({liquidityHistory,collected,storedInflation,infla
           ? {...domain,methodologyVersion:growthDomain?.methodologyVersion??"GROWTH_R2_G16_CANDIDATE_R1"}
           : domain)}
         : growthR2CompositeBase;
-      const publicCompositeDomains=projectInflationMethodologyVersion(composite.domains,domains);
+      const publicCompositeDomains=projectInflationMethodologyVersion(composite.domains,domains).map(domain=>domain.id==='consumption'
+        ? {...domain,methodologyVersion:consumptionDomain?.methodologyVersion??'CONSUMPTION_R5',asOfDate:asOf,historyMode:'CURRENT_VINTAGE_ONLY',lookAheadSafe:false}
+        : domain);
 
-      return {
+      const publicResult={
         status:"SUCCESS",
         modelVersion:composite.modelVersion,
         asOfDate:asOf,
@@ -294,4 +304,36 @@ function composeMarketSnapshot({liquidityHistory,collected,storedInflation,infla
           limitations:diagnostic?.limitations??{},
         },
       };
+      // Eight-risk earnings diagnostic: preserve the original four scorer inputs
+      // separately from the thirteen-factor E1-R5 economic domain. The input
+      // components are legacy E1-R4 compatibility scores; never assign E1-R5's
+      // evaluation date to these individual observations.
+      const risk=publicResult.diagnostics8.earningsRecessionDefense;
+      if(risk&&risk.status==="READY"){
+        const ids=["epsGrowth","margin","revenueGrowth","earningsGrowthBreadth"];
+        const inputs=scoringExternal?.earningsScores??{};
+        risk.methodologyVersion="EARNINGS_RECESSION_DIAGNOSTIC_R1";
+        // R3 FIX1 source replay verified the latest 2026-06-30
+        // four-factor score as 84.6875; this runtime check prevents a later
+        // mismatched source period from silently labeling stale inputs.
+        const validEvidence=riskEvidence?.methodologyVersion==="E1-R4"&&
+          ids.every(id=>finite(inputs[id])&&inputs[id]>=0&&inputs[id]<=100)&&
+          finite(riskEvidence?.score)&&Math.abs(riskEvidence.score-risk.score)<1e-7;
+        risk.riskFactorsSource=validEvidence?"E1_R4_STORED_PC_REPLAY":"E1_R4_LEGACY_COMPATIBILITY";
+        risk.riskFactors=ids.map(id=>{
+          const value=inputs[id];
+          return {id,status:finite(value)&&value>=0&&value<=100?"READY":"PARTIAL",
+            score:finite(value)&&value>=0&&value<=100?value:null,
+            observationDate:validEvidence?riskEvidence.financialPeriodEnd:null};
+        });
+        if(validEvidence){
+          risk.financialPeriodEnd=riskEvidence.financialPeriodEnd;
+          risk.sourceStoredAt=riskEvidence.sourceStoredAt??null;
+          risk.historyMode="CURRENT_VINTAGE_NOT_PIT";
+          risk.riskHistoryKind=riskEvidence.historyKind;
+          risk.riskTrend=riskEvidence.periodTrend;
+        }
+      }
+      return publicResult;
+
 }

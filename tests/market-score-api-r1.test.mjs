@@ -56,7 +56,7 @@ test("public market-score returns truthful PARTIAL without renormalization",asyn
   const commodities=body.domains.find(x=>x.id==="commodities");
   assert.equal(consumption.status,"PARTIAL");
   assert.equal(consumption.score,null);
-  assert.equal(breadth.status,"UNAVAILABLE");
+  assert.equal(breadth.status,"PARTIAL");
   assert.equal(breadth.score,null);
   assert.equal(commodities.status,"PARTIAL");
   assert.equal(commodities.score,null);

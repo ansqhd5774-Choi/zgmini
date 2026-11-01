@@ -41,6 +41,7 @@ function normalizedRow(row) {
   };
 }
 
+/** @param {D1Database|undefined} db @param {{asOf?:string,seriesIds?:readonly string[]}} [options] @returns {Promise<{status:string,source:string,asOf:string,series:Record<string,ReturnType<typeof normalizedRow>[]>,snapshots:Record<string,unknown>,missing:string[],issues:string[],lookAheadSafe:boolean}>} */
 export async function loadStoredInflationPitSeries(db, {
   asOf,
   seriesIds = INFLATION_PIT_SERIES,
@@ -59,6 +60,7 @@ export async function loadStoredInflationPitSeries(db, {
     };
   }
 
+  /** @type {Record<string,ReturnType<typeof normalizedRow>[]>} */
   const series = {};
   const snapshots = {};
   const missing = [];

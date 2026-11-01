@@ -1,0 +1,44 @@
+/* Keep the recession mobile title and data basis date on the same top row. */
+@media(max-width:767px){
+ a[aria-label="메인 대시보드로 돌아가기"]{
+  position:fixed!important;
+  top:max(16px,env(safe-area-inset-top))!important;
+  left:max(16px,env(safe-area-inset-left))!important;
+  z-index:9999!important;
+  background:rgba(11,34,51,.64)!important;
+  border-color:rgba(147,197,253,.78)!important;
+  color:#eff6ff!important;
+  opacity:1!important;
+  box-shadow:0 0 0 1px rgba(147,197,253,.16),0 4px 14px rgba(0,0,0,.26)!important;
+  animation:recession-back-pulse 2.4s ease-in-out infinite;
+ }
+ @keyframes recession-back-pulse{
+  0%,100%{box-shadow:0 0 0 1px rgba(147,197,253,.16),0 4px 14px rgba(0,0,0,.26)}
+  50%{box-shadow:0 0 0 4px rgba(96,165,250,.18),0 0 18px rgba(96,165,250,.34),0 4px 14px rgba(0,0,0,.26)}
+ }
+ @media(prefers-reduced-motion:reduce){
+  a[aria-label="메인 대시보드로 돌아가기"]{animation:none!important}
+ }
+ .fg-card.fg-shared-shell.recession-target-card .fg-header-slot .cnn-panel-heading{
+  grid-template-columns:minmax(0,1fr) auto;
+  column-gap:10px;
+  align-items:start;
+ }
+ .fg-card.fg-shared-shell.recession-target-card .cnn-market-title{
+  grid-column:1;
+  grid-row:1;
+  min-width:0;
+ }
+ .fg-card.fg-shared-shell.recession-target-card .cnn-source{
+  grid-column:2;
+  grid-row:1;
+  align-self:start;
+  justify-self:end;
+  align-items:flex-end;
+  margin:0;
+  padding:0;
+  max-width:none;
+  text-align:right;
+  white-space:nowrap;
+ }
+}

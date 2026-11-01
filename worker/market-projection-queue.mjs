@@ -1,9 +1,11 @@
 import {PUBLIC_PROJECTION_KEYS} from './market-public-projection-store.mjs';
 
 export const PROJECTION_QUEUE_VERSION='PUBLIC_PROJECTION_QUEUE_R1';
+/** @type {readonly import('./runtime-contracts').ProjectionId[]} */
 export const PROJECTION_IDS=Object.freeze(Object.keys(PUBLIC_PROJECTION_KEYS));
 const ID_SET=new Set(PROJECTION_IDS);
 
+/** @returns {Readonly<import('./runtime-contracts').ProjectionJob>} */
 export function normalizeProjectionJob(message){
   const body=message?.body??message;
   if(!body||typeof body!=='object'||Object.keys(body).some(key=>!['id','sourceVersion','sourceStoredAt'].includes(key)))throw Error('INVALID_MESSAGE_FIELDS');
@@ -16,6 +18,7 @@ export function normalizeProjectionJob(message){
   return Object.freeze({id,sourceVersion,sourceStoredAt});
 }
 
+/** @param {{buildProjection?:(job:import('./runtime-contracts').ProjectionJob,env:unknown)=>Promise<{body:object,storedAt?:number}>,writeProjection?:(id:import('./runtime-contracts').ProjectionId,body:object,storedAt:number,env:unknown)=>Promise<unknown>,now?:()=>number}} [options] */
 export function createProjectionQueueConsumer({buildProjection,writeProjection,now=Date.now}={}){
   if(typeof buildProjection!=='function'||typeof writeProjection!=='function')throw Error('INVALID_QUEUE_CONFIGURATION');
   return async function consume(batch,env,ctx){

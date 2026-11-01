@@ -1,0 +1,84 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import {fileURLToPath,pathToFileURL} from 'node:url';
+import {fetchSnapshot,filesForStage,sourceTreeRoot,stageOnPc,stageSnapshot} from '../scripts/pc-writer/theme-optional-stage.mjs';
+
+const here=path.dirname(fileURLToPath(import.meta.url));
+const repo=path.resolve(here,'..');
+const sha='a'.repeat(40);
+const fixtureFetch=async url=>{
+  if(url.endsWith('/commits/main'))return {ok:true,json:async()=>({sha})};
+  const relative=filesForStage().find(file=>url.endsWith('/'+file));
+  assert.ok(relative,`unexpected request: ${url}`);
+  return {ok:true,arrayBuffer:async()=>fs.readFileSync(path.join(repo,relative))};
+};
+
+test('snapshot pins one GitHub commit and includes every imported dependency',async()=>{
+  const snapshot=await fetchSnapshot({fetchImpl:fixtureFetch});
+  assert.equal(snapshot.sha,sha);
+  assert.equal(snapshot.assets.length,43);
+  assert.ok(snapshot.assets.some(x=>x.path==='lib/cnn-observed-archive-r1.mjs'));
+  assert.ok(snapshot.assets.some(x=>x.path==='worker/theme-nine-r88-provisional.mjs'));
+  assert.ok(snapshot.assets.some(x=>x.path==='worker/theme-space-satellite-provisional-r1.mjs'));
+  assert.ok(snapshot.assets.some(x=>x.path==='worker/theme-data-center-power-provisional-r1.mjs'));
+  assert.ok(snapshot.assets.some(x=>x.path==='worker/theme-space-satellite-r1.mjs'));
+  assert.ok(snapshot.assets.some(x=>x.path==='worker/theme-space-satellite-r2.mjs'));
+  assert.ok(snapshot.assets.some(x=>x.path==='worker/public-feed-input-safety.mjs'));
+  assert.ok(snapshot.assets.some(x=>x.path==='lib/cnn-index.mjs'));
+  assert.ok(snapshot.assets.every(x=>/^[a-f0-9]{64}$/.test(x.sha256)));
+  assert.ok(snapshot.assets.some(x=>x.path==='worker/theme-history-reference.mjs'));
+  assert.ok(snapshot.assets.some(x=>x.path==='worker/theme-etf-only-public.mjs'));
+  assert.ok(snapshot.assets.some(x=>x.path==='worker/theme-nine-r37-public.mjs'));
+  assert.ok(snapshot.assets.some(x=>x.path==='scripts/pc-writer/theme-ai-task-mirror-r1.mjs'));
+  assert.ok(snapshot.assets.some(x=>x.path==='scripts/pc-writer/theme-ai-marketparquet-readonly-r1.mjs'));
+  assert.ok(snapshot.assets.some(x=>x.path==='scripts/pc-writer/theme-ai-marketparquet-provisional-r2.mjs'));
+  assert.ok(snapshot.assets.some(x=>x.path==='scripts/pc-writer/theme-data-center-power-r1.mjs'));
+  assert.ok(snapshot.assets.some(x=>x.path==='scripts/pc-writer/theme-data-center-power-r1.cmd'));
+  assert.ok(snapshot.assets.some(x=>x.path==='worker/theme-data-center-power-r1.mjs'));
+  assert.ok(snapshot.assets.some(x=>x.path==='scripts/pc-writer/theme-data-center-power-gate-r6.mjs'));
+  assert.ok(snapshot.assets.some(x=>x.path==='scripts/pc-writer/theme-data-center-power-cutover-r6.mjs'));
+});
+
+test('staged release imports its actual PC cycle with all transitive dependencies',async t=>{
+  const root=fs.mkdtempSync(path.join(os.tmpdir(),'zgmini-theme-import-'));
+  t.after(()=>fs.rmSync(root,{recursive:true,force:true}));
+  const snapshot=await fetchSnapshot({fetchImpl:fixtureFetch});
+  const staged=stageSnapshot({projectsRoot:root,snapshot});
+  const entry=path.join(staged.destination,'scripts','pc-writer','theme-optional-cycle.mjs');
+  const cycle=await import(pathToFileURL(entry).href);
+  assert.equal(typeof cycle.diagnoseAiReader,'function');
+  assert.equal(typeof cycle.runOptionalTheme,'function');
+});
+
+test('existing release is verified and never overwritten',async t=>{
+  const root=fs.mkdtempSync(path.join(os.tmpdir(),'zgmini-theme-stage-'));
+  t.after(()=>fs.rmSync(root,{recursive:true,force:true}));
+  const snapshot=await fetchSnapshot({fetchImpl:fixtureFetch});
+  assert.equal(stageSnapshot({projectsRoot:root,snapshot}).mode,'STAGED_NEW_RELEASE');
+  assert.equal(stageSnapshot({projectsRoot:root,snapshot}).mode,'ALREADY_STAGED_VERIFIED');
+  const file=path.join(sourceTreeRoot(root,sha),'scripts','pc-writer','theme-optional-cycle.cmd');
+  fs.appendFileSync(file,'tampered');
+  assert.throws(()=>stageSnapshot({projectsRoot:root,snapshot}),/EXISTING_RELEASE_HASH_MISMATCH/);
+});
+
+test('PC staging does not schedule, collect, or write D1 and records missing manifests',async t=>{
+  const base=fs.mkdtempSync(path.join(os.tmpdir(),'zgmini-stage-input-'));
+  t.after(()=>fs.rmSync(base,{recursive:true,force:true}));
+  const projects=path.join(base,'projects'),data=path.join(base,'data'),node=path.join(base,'node.exe');
+  fs.mkdirSync(projects);fs.mkdirSync(data);fs.writeFileSync(node,'node fixture');
+  const result=await stageOnPc({projectsRoot:projects,dataRoot:data,nodeExecutable:node,fetchImpl:fixtureFetch});
+  assert.equal(result.sourceSha,sha);
+  assert.equal(result.aiRawManifest,'MANIFEST_MISSING');
+  assert.equal(result.biotechRawManifest,'MANIFEST_MISSING');
+  assert.equal(result.taskWrites,0);
+  assert.equal(result.d1Writes,0);
+  assert.equal(result.providerCalls,0);
+  assert.ok(fs.existsSync(path.join(result.sourcePath,'source-manifest.json')));
+});
+
+test('only 40-character lowercase source SHA is accepted',()=>{
+  assert.throws(()=>sourceTreeRoot('E:/ZGmini/projects','../../foo'),/SOURCE_SHA_INVALID/);
+});

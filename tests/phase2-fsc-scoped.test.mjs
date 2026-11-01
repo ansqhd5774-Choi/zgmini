@@ -31,6 +31,24 @@ test('incomplete fetch cannot publish a partial score',()=>{const r=scopedIndica
 test('exactly two operations; no BOK KOSIS CMA requests with all secrets',async()=>{let calls=0;const c=context(),fetch=c.fetch;c.fetch=async u=>{calls++;return fetch(u);};const r=await runFscScoped({FSC_API_KEY:'fixture-key',BOK_API_KEY:'fixture-bok',KOSIS_API_KEY:'fixture-kosis'},c);assert.equal(calls,2);assert.equal(r.calculationReady,true);assert.equal(r.excludedDependencies.BOK.rightsStatus,'UNCONFIRMED');assert.equal(r.excludedDependencies.BOK.productionEligible,false);});
 test('BOK input, secret and cache changes have no impact',async()=>{const a=await runFscScoped({FSC_API_KEY:'fixture-key'},context());const b=await runFscScoped({FSC_API_KEY:'fixture-key',BOK_API_KEY:'different'},{...context(),bokCache:{score:99},bokInput:[99],runBokResearch:()=>assert.fail()});assert.deepEqual(a,b);});
 test('no raw data, upstream response, scores history or credential fields escape',async()=>{const c=context();c.fetch=async()=>Response.json(page(rows(320).map(r=>({...r,secret:'DO_NOT_EXPOSE',url:'https://credential.invalid',score:99}))));const r=await runFscScoped({FSC_API_KEY:'fixture-PRIVATE-key'},c);const text=JSON.stringify(r);for(const s of ['DO_NOT_EXPOSE','credential.invalid','fixture-PRIVATE-key','"points"','"correlations"','"methodology"'])assert.ok(!text.includes(s),s);assert.equal(r.compositeScore,null);assert.equal(r.finalWeights,null);assert.equal(r.runtimeVerified,false);assert.equal(r.releaseReady,false);});
-test('cache is profile/version-specific, acquisition time survives cache read',async()=>{let calls=0;const c=context(),f=c.fetch;c.fetch=async u=>{calls++;return f(u);};const handler=createResearchHandler(c),request=new Request('https://local.test/api/internal/phase2-korea-history-check');const a=await(await handler(request,{FSC_API_KEY:'fixture-key'})).json();const b=await(await handler(request,{FSC_API_KEY:'fixture-key',BOK_API_KEY:'different'})).json();assert.equal(calls,2);assert.equal(a.profile,SCOPED_PROFILE);assert.equal(b.analysisVersion,SCOPED_VERSION);assert.equal(b.fromCache,true);assert.equal(b.indicators.credit.fetchedAt,a.indicators.credit.fetchedAt);assert.equal(b.methodology,undefined);});
+test('cache is profile/version-specific, acquisition time survives cache read',async t=>{
+ let at=Date.parse(options.fetchedAt);t.mock.timers.enable({apis:['Date'],now:at});
+ let calls=0;const c=context(),f=c.fetch;c.clock=()=>new Date(at);c.fetch=async u=>{calls++;return f(u);};
+ const handler=createResearchHandler(c),request=new Request('https://local.test/api/internal/phase2-korea-history-check');
+ const first=await handler(request,{FSC_API_KEY:'fixture-key'});assert.equal(first.status,200);const a=await first.json();assert.equal(a.fromCache,false);
+ at+=60000;t.mock.timers.setTime(at);
+ const second=await handler(request,{FSC_API_KEY:'fixture-key',BOK_API_KEY:'different'});assert.equal(second.status,200);const b=await second.json();
+ assert.equal(calls,2);assert.equal(a.profile,SCOPED_PROFILE);assert.equal(b.analysisVersion,SCOPED_VERSION);assert.equal(b.fromCache,true);assert.equal(b.indicators.credit.fetchedAt,a.indicators.credit.fetchedAt);assert.equal(b.methodology,undefined);
+ at+=RESEARCH_POLICY.cacheMs;t.mock.timers.setTime(at);
+ const refreshed=await handler(request,{FSC_API_KEY:'fixture-key'});assert.equal(refreshed.status,200);const fresh=await refreshed.json();
+ assert.equal(fresh.fromCache,false);assert.equal(calls,4);assert.notEqual(fresh.indicators.credit.fetchedAt,a.indicators.credit.fetchedAt);
+});
+test('research expiry cannot be bypassed by a still-fresh cached response',async t=>{
+ assert.equal(RESEARCH_POLICY.expiresAt,'2026-10-11T00:00:00Z');
+ const expiry=Date.parse(RESEARCH_POLICY.expiresAt);t.mock.timers.enable({apis:['Date'],now:expiry-1000});
+ let calls=0;const c=context(),f=c.fetch;c.fetch=async u=>{calls++;return f(u);};const h=createResearchHandler(c),request=new Request('https://local.test/api/internal/phase2-korea-history-check');
+ assert.equal((await h(request,{FSC_API_KEY:'fixture-key'})).status,200);assert.equal(calls,2);
+ t.mock.timers.setTime(expiry);const response=await h(request,{FSC_API_KEY:'fixture-key'});assert.equal(response.status,410);assert.equal((await response.json()).errorType,'RESEARCH_EXPIRED');assert.equal(calls,2);
+});
 test('query cannot enable legacy research and performs zero requests',async()=>{const h=createResearchHandler({fetch:()=>assert.fail('fetch')});assert.equal((await h(new Request('https://local.test/?profile=legacy'),{})).status,400);});
 test('method/expiry protection unchanged',async()=>{const h=createResearchHandler({fetch:()=>assert.fail('fetch')});assert.equal((await h(new Request('https://local.test/',{method:'POST'}),{})).status,405);const old=Date.now;try{Date.now=()=>Date.parse(RESEARCH_POLICY.expiresAt);assert.equal((await h(new Request('https://local.test/'),{})).status,410);}finally{Date.now=old;}});

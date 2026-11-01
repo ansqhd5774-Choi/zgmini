@@ -12,6 +12,14 @@ test("R6 MarketParquet date and ticker resolution is deterministic",()=>{
   assert.equal(previousMarketSession("2026-09-28"),"2026-09-25");
   assert.deepEqual(marketParquetTickerCandidates("BRK.B"),["BRK.B","BRK-B","BRKB"]);
 });
+
+test("historical timestamp partitions and current date partitions produce the same actual pair",()=>{
+ const input={symbols:["AAPL"],tradeDate:"2026-03-27",previousDate:"2026-03-26"};
+ const out=buildMarketParquetPairs({...input,currentRows:[{date:new Date("2026-03-27T00:00:00Z"),symbol:"AAPL",close:101,volume:123}],previousRows:[{timestamp:new Date("2026-03-26T00:00:00Z"),symbol:"AAPL",close:100,volume:120}]});
+ assert.equal(out.coverage,1);assert.equal(out.pairs[0].previousClose,100);assert.equal(out.pairs[0].currentVolume,123);
+ const wrong=buildMarketParquetPairs({...input,currentRows:[{date:"2026-03-26",timestamp:"2026-03-27",symbol:"AAPL",close:101,volume:123}],previousRows:[{timestamp:"2026-03-26",symbol:"AAPL",close:100,volume:120}]});
+ assert.equal(wrong.pairs.length,0);
+});
 test("R6 builds stored price-volume pairs without changing B1 inputs",()=>{
   const out=buildMarketParquetPairs({
     symbols:["AAPL","BRK.B"],

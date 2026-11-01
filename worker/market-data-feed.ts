@@ -2,6 +2,7 @@ import { payrollChanges } from "../lib/market-data/semantics.mjs";
 import { fetchMarketFred as fetchFred } from "../lib/market-data/fred-market-provider.mjs";
 import { fetchBlsWithFallback as fetchBls } from "../lib/market-data/live-fallback.mjs";
 type Point = { date: string; value: number };
+type StoredFredResult = Awaited<ReturnType<typeof fetchFred>> & {name:string};
 type ChartPoint = { label: string; value: number };
 type Direction = "up" | "down" | "flat";
 type Signal = "positive" | "negative" | "neutral";
@@ -189,12 +190,12 @@ export async function collectMarketDataFeed(env: any, store: any, now: number) {
     fetchBls({ key, fredKey: bindings.FRED_API_KEY?.trim() }),
     Promise.all(Object.entries(FRED_SERIES).map(async ([name, id]) => ({ name, id, ...await fetchFred(id, { key: bindings.FRED_API_KEY?.trim() }) }))),
   ]);
-  await store.writeInput("market-data", {blsRows:[...blsResult.data], blsStatus:blsResult.status, fredResults}, now);
+  await store.writeInput("market-data", {blsRows:[...blsResult.data], blsStatus:blsResult.status, missingObservations:blsResult.missingObservations??[], fredResults}, now);
   const saved = await store.readInput("market-data");
   if(!saved || saved.storedAt !== now) throw Error("INPUT_READBACK_FAILED");
   const bls = new Map<string, Point[]>(saved.body.blsRows);
   if (blsResult.status !== "SUCCESS") warnings.push("BLS");
-  const fred = new Map<string, Point[]>(saved.body.fredResults.filter(r => r.status === "SUCCESS").map(r => [r.name, r.data]));
+  const fred = new Map<string, Point[]>(saved.body.fredResults.filter((r:StoredFredResult) => r.status === "SUCCESS").map((r:StoredFredResult) => [r.name, r.data]));
   if (fredResults.some(r => r.status !== "SUCCESS")) warnings.push("FRED");
   console.info("MARKET_DATA_PROVIDERS", JSON.stringify({
     durationMs: Date.now()-started,

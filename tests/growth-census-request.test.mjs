@@ -1,0 +1,12 @@
+import test from 'node:test';import assert from 'node:assert/strict';
+import {requestGrowthCensusJson} from '../lib/market-score/growth-r2-census-request.mjs';
+const url='https://api.census.gov/data/timeseries/eits/m3?category_code=MTM&key=test-only-placeholder';
+test('timeout retries exactly once and returns only the successful response with real attempt count',async()=>{let calls=0;const waits=[];const r=await requestGrowthCensusJson(async()=>{if(++calls===1)throw new DOMException('timeout','TimeoutError');return Response.json([['cell_value'],['123']]);},url,{}, {wait:async ms=>waits.push(ms)});assert.equal(calls,2);assert.equal(r.requestCount,2);assert.deepEqual(r.json,[['cell_value'],['123']]);assert.deepEqual(waits,[750]);});
+test('persistent transport failure stops after two calls and never exposes a credential-bearing URL',async()=>{let calls=0;await assert.rejects(()=>requestGrowthCensusJson(async()=>{calls++;throw Error('LOCAL_PROVIDER_NETWORK_ERROR');},url,{}, {wait:async()=>{}}),e=>e.code==='GROWTH_CENSUS_TRANSPORT_FAILED'&&!e.message.includes('key=')&&!e.message.includes('http'));assert.equal(calls,2);});
+test('temporary HTTP response is retried but quota, auth, invalid JSON and aborted requests are not',async()=>{
+ let calls=0;const r=await requestGrowthCensusJson(async()=>++calls===1?new Response('busy',{status:503}):Response.json([]),url,{}, {wait:async()=>{}});assert.equal(r.requestCount,2);assert.equal(calls,2);
+ for(const status of [400,401,403,429]){let count=0;await assert.rejects(()=>requestGrowthCensusJson(async()=>{count++;return new Response('not available',{status});},url,{}, {wait:async()=>{}}));assert.equal(count,1);}
+ let invalid=0;await assert.rejects(()=>requestGrowthCensusJson(async()=>{invalid++;return new Response('not JSON');},url),/INVALID_JSON/);assert.equal(invalid,1);
+ const ctrl=new AbortController();ctrl.abort();let aborted=0;await assert.rejects(()=>requestGrowthCensusJson(async()=>{aborted++;throw new DOMException('stopped','AbortError');},url,{signal:ctrl.signal}));assert.equal(aborted,1);
+});
+test('ordinary Census responses keep one request; other providers and writes are rejected',async()=>{let count=0;const r=await requestGrowthCensusJson(async()=>{count++;return Response.json([]);},url);assert.equal(count,1);assert.equal(r.requestCount,1);await assert.rejects(()=>requestGrowthCensusJson(fetch,'https://api.bls.gov/publicAPI/v2/timeseries/data/'),/NOT_ALLOWED/);await assert.rejects(()=>requestGrowthCensusJson(fetch,url,{method:'POST'}),/NOT_ALLOWED/);});

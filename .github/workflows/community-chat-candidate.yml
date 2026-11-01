@@ -1,0 +1,43 @@
+name: Community Chat Candidate Build (Read Only)
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'worker/community-chat-api-r1.mjs'
+      - 'worker/candidate-r52.ts'
+      - 'app/api/community/**'
+      - 'app/api/internal/community/**'
+      - 'components/community-chat.*'
+      - 'lib/community-chat-r1.mjs'
+      - 'tests/community-chat*.test.mjs'
+      - 'docs/community-chat-migrations/**'
+      - '.github/workflows/community-chat-candidate.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  candidate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      CI: 'true'
+      NEXT_TELEMETRY_DISABLED: '1'
+      CLOUDFLARE_LOAD_DEV_VARS_FROM_DOT_ENV: 'false'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - name: Install locked dependencies
+        run: npm ci
+      - name: Community-specific regression tests
+        run: node --test tests/community-chat*.test.mjs
+      - name: Compile production candidate Worker without deployment
+        run: node node_modules/vite/bin/vite.js build --config vite.candidate-r52.config.ts
+      - name: Check isolated binding and existing financial read guard in compiled bundle
+        run: |
+          node --input-type=module -e 'import {readFileSync} from "node:fs";import assert from "node:assert/strict";const s=readFileSync("dist/server/index.js","utf8");for(const x of ["CANDIDATE_WRITE_DISABLED","DB_COMMUNITY","DB_CORE","DB_HISTORY","siteverify"])assert(s.includes(x),"compiled bundle missing "+x);console.log("PASS: financial guard + separate chat handler compiled")'

@@ -1,0 +1,9 @@
+.zg-chart-fixed-axis{position:absolute;inset:0;pointer-events:none;color:#96aabd;font-family:inherit;font-size:9px;font-weight:400;line-height:12px}
+.zg-chart-fixed-axis>span{position:absolute;transform:translate(-100%,-50%)}
+.zg-chart-fixed-axis>b{position:absolute;bottom:0;font-size:9px;font-weight:400;line-height:12px}
+.ob-summary-chart-frame{position:relative}
+.ob-summary-chart-frame>svg{display:block;width:100%;height:100%}
+.ob-summary-chart-frame>svg text{display:none}
+.ob-iran-chart>svg{display:block;width:100%;height:auto}
+.zg-sector-chart-plot{position:relative}
+.zg-sector-chart-plot>.zg-chart-empty-svg text{display:none}

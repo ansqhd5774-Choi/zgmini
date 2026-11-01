@@ -6,19 +6,29 @@ import {loadLocalProviders,installLocalRuntime} from './local-env.mjs';
 import {save} from './d1.mjs';
 import {createQuotaFetch} from './quota-fetch.mjs';
 import {recordCollectionChecks} from './collection-checks.mjs';
+import {appendCollectionEvent,appendProviderFailure} from './collection-events.mjs';
+import {safeMacroDiagnostic} from '../../worker/macro-result-contract-r61.mjs';
+import {safeCollectionFailure} from '../../worker/collection-failure-diagnostic.mjs';
+import {alertCollectionReport,dueCollectionRecovery} from './local-data-alert.mjs';
+import {collectConsumptionR5} from './consumption-r5.mjs';
+import {overdueRateJob} from './rate-refresh-priority.mjs';
+import {collectSectorFearGreedR3EtfIncremental} from './sector-fear-greed-r3-etf-incremental.mjs';
+import {collectReleaseCalendar} from './release-calendar.mjs';
 
-export async function collectLocal(base,{lane='core',importOnly=false}={}){
+export async function collectLocal(base,{lane='core',importOnly=false,job=null}={}){
  const core=localDatabase(path.join(base,'storage','core.sqlite'));
  const history=localDatabase(path.join(base,'storage','history.sqlite'));
  const env={...loadLocalProviders(base),DB:core,DB_CORE:core,DB_HISTORY:history,ZGMINI_COMPUTE_TARGET:'pc'};
  const hooks=installLocalRuntime(env);
  const originalFetch=globalThis.fetch,providers={};
+ let providerDiagnosticWriteFailures=0;
+ const recordProviderFailure=(input,event)=>{try{appendProviderFailure(base,input,event);}catch{providerDiagnosticWriteFailures++;}};
  const quota=createQuotaFetch({base,originalFetch});
  globalThis.fetch=async(input,init)=>{
   const host=new URL(typeof input==='string'||input instanceof URL?input:input.url).hostname;
   const item=providers[host]??={requests:0,statuses:{}};item.requests++;
-  try{const response=await quota.fetch(input,init);item.statuses[response.status]=(item.statuses[response.status]??0)+1;return response;}
-  catch(error){const status=error?.code??'NETWORK_ERROR';item.statuses[status]=(item.statuses[status]??0)+1;if(error?.code==='PROVIDER_QUOTA_GUARD')throw error;throw Error('LOCAL_PROVIDER_NETWORK_ERROR');}
+  try{const response=await quota.fetch(input,init);item.statuses[response.status]=(item.statuses[response.status]??0)+1;if(!response.ok)recordProviderFailure(input,{phase:'HTTP',httpStatus:response.status});return response;}
+  catch(error){recordProviderFailure(input,{phase:'FETCH',error});const status=error?.code==='PROVIDER_QUOTA_GUARD'?'PROVIDER_QUOTA_GUARD':'NETWORK_ERROR';item.statuses[status]=(item.statuses[status]??0)+1;if(error?.code==='PROVIDER_QUOTA_GUARD')throw error;const failure=Error('LOCAL_PROVIDER_NETWORK_ERROR');failure.code='LOCAL_PROVIDER_NETWORK_ERROR';throw failure;}
  };
  try{
   const {runPublicFeeds}=await import('../../worker/public-feed-collectors.ts');
@@ -26,21 +36,48 @@ export async function collectLocal(base,{lane='core',importOnly=false}={}){
   const {refreshKoreaRev7}=await import('../../worker/korea-rev7-refresh.mjs');
   const {Rev7D1Store}=await import('../../worker/korea-rev7-d1.mjs');
   if(importOnly)return {status:'LOCAL_IMPORT_PASS'};
-  let result;
+  let result,releaseCalendar={status:'SKIPPED_KOREA_LANE',providerRequests:0},sectorFearGreedEtf={status:'SKIPPED_KOREA_LANE',providerRequests:0};
   if(lane==='korea')result=await refreshKoreaRev7({env:{...env,DB:history},store:new Rev7D1Store(history,{leaseMs:600000}),now:new Date(),maxDates:1,deferCalculation:true});
   else{
-   const feed=await runPublicFeeds({env,maxFeedsPerRun:1});
-   result=feed.attempted>0||feed.status!=='COMPLETE'?{...feed,lane:'public-feed'}:await runMarketOperationalRefresh({env,now:Date.now(),fetchImpl:globalThis.fetch,calculate:async()=>({calculation:'PC_PENDING'})});
+   // Independent calendar failures cannot block market collection/publication.
+   try{releaseCalendar=await collectReleaseCalendar(core,{fetchImpl:globalThis.fetch});}catch{releaseCalendar={status:'FAILED_PRESERVE_EXISTING',providerRequests:0};}
+   try{
+    sectorFearGreedEtf=await collectSectorFearGreedR3EtfIncremental(base,{fetchImpl:globalThis.fetch,now:Date.now()});
+   }catch(error){
+    sectorFearGreedEtf={status:'FAILED_PRESERVE_EXISTING',providerRequests:0,code:/^[A-Z0-9_:.-]+$/.test(error?.code??error?.message??'')?(error.code??error.message):'SECTOR_FEAR_GREED_R3_ETF_COLLECTION_FAILED'};
+   }
+   const collectors={consumption:()=>collectConsumptionR5({db:core,fetchImpl:globalThis.fetch})};
+   const now=Date.now();
+   job??=await overdueRateJob(core,now);
+   job??=dueCollectionRecovery(base,now);
+   if(job)result=await runMarketOperationalRefresh({env,job,now,fetchImpl:globalThis.fetch,collectors,calculate:async()=>({calculation:'PC_PENDING'})});
+   else{
+    const feed=await runPublicFeeds({env,maxFeedsPerRun:1});
+    result=feed.attempted>0||feed.status!=='COMPLETE'?{...feed,lane:'public-feed'}:await runMarketOperationalRefresh({env,now:Date.now(),fetchImpl:globalThis.fetch,collectors,calculate:async()=>({calculation:'PC_PENDING'})});
+   }
   }
-  // Reports contain statuses only; provider URLs and exception messages are excluded.
-  const report={at:new Date().toISOString(),lane,status:result.status,job:result.job??null,attempted:result.attempted??null,feeds:result.feeds?.map(({key,status})=>({key,status})),providers,quota:quota.summary()};
+  // Reports contain statuses only; provider URLs, credentials, and exception messages are excluded.
+  const report={at:new Date().toISOString(),lane,status:result.status,job:result.job??null,attempted:result.attempted??null,feeds:result.feeds?.map(({key,status})=>({key,status})),sectorFearGreedEtf:{status:sectorFearGreedEtf.status,providerRequests:sectorFearGreedEtf.providerRequests??0,commonLatest:sectorFearGreedEtf.commonLatest??null,code:sectorFearGreedEtf.code??sectorFearGreedEtf.error??null},providers,quota:quota.summary()};
   for(const key of ['phase','reason','sourceStatus'])if(typeof result?.[key]==='string'&&/^[A-Za-z0-9_.:-]{1,120}$/.test(result[key]))report[key]=result[key];
+  report.releaseCalendar=releaseCalendar;
+  if(result.failureDiagnostic)report.failureDiagnostic=result.failureDiagnostic;
+  if(result?.sourceDiagnostic?.provider==='BLS')report.sourceDiagnostic=result.sourceDiagnostic;
+  if(result?.sourceDiagnostic?.provider==='FRED')report.sourceDiagnostic=safeMacroDiagnostic(result.sourceDiagnostic);
+  if(result.job==='earnings'&&result?.sourceDiagnostic?.provider==='WIKIPEDIA'&&result.sourceDiagnostic.stage==='UNIVERSE_REQUEST'&&Number.isInteger(result.sourceDiagnostic.httpStatus))
+   report.sourceDiagnostic={provider:'WIKIPEDIA',stage:'UNIVERSE_REQUEST',httpStatus:result.sourceDiagnostic.httpStatus};
+  report.providerDiagnosticWriteFailures=providerDiagnosticWriteFailures;
+  appendCollectionEvent(base,report);
   save(path.join(base,'local-collection-last-run.json'),report);
   recordCollectionChecks(base,report);
+  try{alertCollectionReport(base,report);}catch{console.warn('LOCAL_DATA_ALERT_RECORD_FAILED');}
   return report;
  }finally{globalThis.fetch=originalFetch;hooks.deregister();core.close();history.close();}
 }
 if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.url)){
- try{console.log(JSON.stringify(await collectLocal(process.env.ZGMINI_PC_HOME??path.join(os.homedir(),'.zgmini','pc-writer'),{lane:process.argv.includes('--korea')?'korea':'core',importOnly:process.argv.includes('--import-only')})));}
- catch(error){console.log(JSON.stringify({status:'FAILED',code:error.code??'LOCAL_COLLECTION_FAILED',...(process.argv.includes('--import-only')?{importError:error.message}:{})}));process.exitCode=1;}
+ try{
+  const jobArg=process.argv.find(arg=>arg.startsWith('--job='));
+  const job=jobArg?jobArg.slice('--job='.length):null;
+  console.log(JSON.stringify(await collectLocal(process.env.ZGMINI_PC_HOME??path.join(os.homedir(),'.zgmini','pc-writer'),{lane:process.argv.includes('--korea')?'korea':'core',importOnly:process.argv.includes('--import-only'),job})));
+ }
+ catch(error){const report={at:new Date().toISOString(),lane:process.argv.includes('--korea')?'korea':'core',status:'FAILED',reason:'LOCAL_COLLECTION_FAILED',failureDiagnostic:safeCollectionFailure(error)};try{appendCollectionEvent(process.env.ZGMINI_PC_HOME??path.join(os.homedir(),'.zgmini','pc-writer'),report);}catch{}console.log(JSON.stringify({...report,...(process.argv.includes('--import-only')?{importError:error.message}:{})}));process.exitCode=1;}
 }

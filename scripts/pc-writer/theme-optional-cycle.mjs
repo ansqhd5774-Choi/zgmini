@@ -1,0 +1,478 @@
+// Opt-in PC cycle for the two optional ETF themes. Nothing runs on import.
+// A failed optional theme never changes the original seven-theme pipeline.
+import fs from 'node:fs';
+import path from 'node:path';
+import {createHash} from 'node:crypto';
+import {fileURLToPath,pathToFileURL} from 'node:url';
+import {collectOptional} from './theme-optional-collect.mjs';
+import {auditOptionalPrices} from './theme-optional-audit.mjs';
+import {buildAiProvisionalFromExistingSeven} from './theme-ai-marketparquet-provisional-r2.mjs';
+import {containedFile,inspectManifest} from './theme-data-inventory.mjs';
+import {eligibleAiTheme,AI_THEME_PUBLIC_KEY,AI_THEME_PUBLIC_VERSION} from '../../worker/theme-ai-semiconductor-optional.mjs';
+import {themeHistoryReference} from '../../worker/theme-history-reference.mjs';
+import {THEME_ETF_ONLY_PUBLIC_KEY,THEME_ETF_ONLY_PAIRS,validateThemeEtfOnlyPublic} from '../../worker/theme-etf-only-public.mjs';
+import {THEME_ETF_ROLLING_KEY,THEME_ETF_ROLLING_VERSION,validRollingPublic} from '../../worker/theme-etf-rolling-public.mjs';
+import {THEME_ETF_PROVISIONAL_KEY,validThemeEtfProvisional} from '../../lib/market-score/theme-etf-provisional.mjs';
+import {PUBLIC_DISPLAY_MAX_AGE_MS} from '../../worker/public-display-freshness.mjs';
+
+const DATA_ROOT='E:/ZGmini/data';
+const FEED='https://zgmini.kr/api/theme-fear-greed/';
+const GMH='https://getmarkethistory.com';
+const METHOD='ETF_ONLY_T40_R20_V40_PAIR50';
+const PRICE_MODE='UNADJUSTED_15_NY_HOURLY_PROXY_WITH_OFFICIAL_EARLY_CLOSE_12';
+const TARGETS=['ai-semiconductor','biotech'];
+const date=s=>typeof s==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(s)&&new Date(s+'T00:00:00Z').toISOString().slice(0,10)===s;
+const sha=b=>createHash('sha256').update(b).digest('hex');
+const fail=reason=>{throw Object.assign(new Error(reason),{code:reason});};
+const ensure=(v,reason)=>{if(!v)fail(reason);};
+const ymd=(d)=>new Date(d).toISOString().slice(0,10);
+const minusDays=(d,n)=>ymd(new Date(Date.parse(d+'T00:00:00Z')-n*86400000));
+const equal=(a,b)=>Array.isArray(a)&&Array.isArray(b)&&a.length===b.length&&a.every((v,i)=>v===b[i]);
+
+// Read-only diagnostic for the existing public reader predicate. This never
+// relaxes eligibility, estimates a missing score, or changes the public worker.
+export function aiReaderRejectionReason(record,reference,{now=Date.now()}={}){
+ const base={...reference,themes:reference?.themes?.slice(0,7)};
+ if(eligibleAiTheme(record,base,{now,storedAt:now}))return 'PASS';
+ if(base.status!=='READY'||base.themes?.length!==7||!date(base.observationDate)||base.themes[0]?.history?.length!==252)
+  return 'PUBLIC_READER_BASE_NOT_READY';
+ if(record.observationDate!==base.observationDate)return 'PUBLIC_READER_OBSERVATION_DATE_MISMATCH';
+ if(record.history?.length!==252)return 'PUBLIC_READER_HISTORY_LENGTH_MISMATCH';
+ if(record.history.some((p,i)=>p?.date!==base.themes[0].history[i]?.date))return 'PUBLIC_READER_HISTORY_CALENDAR_MISMATCH';
+ const pending=base.phase==='PROVISIONAL'?base.provisional?.points??[]:[];
+ const actual=record.provisional?.points??[];
+ if(!equal(pending.map(p=>p?.date),actual.map(p=>p?.date)))return 'PUBLIC_READER_PROVISIONAL_DATES_MISSING';
+ if(record.phase!==(pending.length?'PROVISIONAL':'CONFIRMED'))return 'PUBLIC_READER_PHASE_MISMATCH';
+ return 'PUBLIC_READER_OTHER_GATE_REJECTED';
+}
+
+export function collectWindow(manifest,reference,themeId,now=Date.now()){
+ ensure(TARGETS.includes(themeId)&&manifest?.themeId===themeId&&Array.isArray(manifest.files),'MANIFEST_INVALID');
+ ensure(reference?.status==='READY'&&date(reference.observationDate),'REFERENCE_UNAVAILABLE');
+ const symbols=themeId==='ai-semiconductor'?['SMH','SOXX','SPY']:['IBB','XBI','SPY'];
+ const latest=symbols.map(s=>manifest.files.filter(f=>f.path.startsWith('raw/'+s+'_')&&date(f.observationThrough)).map(f=>f.observationThrough).sort().at(-1));
+ ensure(latest.every(date),'MANIFEST_SYMBOL_MISSING');
+ const from=minusDays(latest.sort()[0],6),provisional=reference.provisional?.points??[];
+ ensure(Array.isArray(provisional)&&provisional.every(p=>date(p.date)),'REFERENCE_PROVISIONAL_INVALID');
+ // AI's public reader may keep the same provisional end date for several days.
+ // A completed collection checkpoint is keyed by start/end; a static end date
+ // would silently skip all new provider requests on every subsequent daily run.
+ // Extend only the requested range to the UTC run date. This never creates or
+ // forecasts a price bar; only actual provider rows enter the SHA manifest.
+ const runDate=new Date(now);
+ ensure(Number.isFinite(runDate.getTime()),'COLLECTION_CLOCK_INVALID');
+ const through=[reference.observationDate,...provisional.map(p=>p.date),
+  ...(themeId==='ai-semiconductor'?[runDate.toISOString().slice(0,10)]:[])].sort().at(-1);
+ ensure(through>=from,'COLLECTION_WINDOW_INVALID');
+ ensure(through<='2028-12-31','NYSE_EARLY_CLOSE_CALENDAR_REVALIDATION_REQUIRED');
+ return {start:from,end:through};
+}
+
+export function validateStoredReference(themeId,prior,reference){
+ ensure(TARGETS.includes(themeId),'THEME_NOT_ALLOWED');
+ ensure(prior?.status==='READY'&&prior.methodologyVersion===METHOD&&Array.isArray(prior.history)&&prior.history.length===252&&date(prior.observationDate),'PRIOR_D1_CONTRACT');
+ ensure(prior.history.at(-1)?.date===prior.observationDate&&prior.history.every((p,i)=>date(p.date)&&Number.isFinite(p.score)&&p.score>=0&&p.score<=100&&(i===0||p.date>prior.history[i-1].date)),'PRIOR_HISTORY_INTEGRITY');
+ ensure(reference?.status==='READY'&&reference.methodologyVersion===METHOD&&date(reference.observationDate)&&Array.isArray(reference.themes),'PUBLIC_REFERENCE_CONTRACT');
+ ensure(prior.observationDate<=reference.observationDate,'PRIOR_AHEAD_OF_PUBLIC');
+ if(themeId==='ai-semiconductor')ensure(prior.theme==='AI 반도체'&&equal(prior.etfs,['SMH','SOXX'])&&reference.themes.length>=7,'AI_IDENTITY');
+ if(themeId==='biotech')ensure(prior.etfs?.join(',')==='IBB,XBI'&&reference.themes.length>=8,'BIOTECH_IDENTITY');
+}
+
+// The optional AI feed may be one or more actual sessions behind the core
+// feed. Validate its full 252-date calendar against the exact historical core
+// seed + rolling history, just as the public reader does. Never shift prices
+// or weaken the reader's 252-point eligibility checks to fill a missing date.
+export function aiCandidateReference(base,seed,observationDate){
+ ensure(date(observationDate)&&date(base?.observationDate)&&observationDate<=base.observationDate,'AI_OBSERVATION_DATE_INVALID');
+ if(observationDate===base.observationDate)return base;
+ ensure(seed&&validateThemeEtfOnlyPublic(seed),'AI_HISTORICAL_SEED_NOT_VERIFIED');
+ const historical=themeHistoryReference(base,seed,observationDate);
+ ensure(historical?.themes?.length===7,'AI_HISTORICAL_252_REFERENCE_MISSING');
+ return historical;
+}
+
+export function buildAiCandidate({audit,prior,reference,manifest,manifestBytes,now=Date.now()}){
+ ensure(audit?.status==='PRIVATE_CANDIDATE_PARITY_VERIFIED'&&audit.audit?.maxDifference===0,'SCORE_DRIFT_REVIEW_REQUIRED');
+ ensure(audit.themeId==='ai-semiconductor'&&reference.themes?.length>=7,'AI_AUDIT_IDENTITY');
+ // Historical publication rights do not transfer to a different provider.
+ ensure(prior.publicationAuthorized===true&&prior.upstreamCommercialRightsVerified===true&&prior.derivedLicenseVerified===true&&prior.localBarsVerified===true&&prior.sourcePriceReconciled===true,'RIGHTS_OR_PRICE_APPROVAL_REQUIRED');
+ ensure(prior.sourcePriceMode===PRICE_MODE&&prior.methodologyVersion===METHOD,'METHOD_OR_PRICE_MODE_DRIFT');
+ ensure(/^(R187_SHA256|GMH_MANIFEST_SHA256)_[a-f0-9]{64}$/.test(prior.sourceVersion??''),'PREVIOUS_APPROVED_PRICE_SOURCE_UNKNOWN');
+ ensure(manifest.files.length>0&&manifest.files.every(f=>f.source===GMH),'SOURCE_PROVIDER_CHANGED');
+ const attested=manifest.files.filter(f=>f.observationThrough>=audit.observationDate);
+ const present=['SMH','SOXX','SPY'].map(s=>attested.filter(f=>f.path.startsWith('raw/'+s+'_')).map(f=>Date.parse(f.collectedAt)).filter(Number.isFinite));
+ ensure(present.every(a=>a.length),'NEW_OBSERVATION_PROVENANCE_MISSING');
+ // The oldest receipt time among the bars used for the newest day is the conservative timestamp.
+ const sourceStoredAt=new Date(Math.min(...present.map(a=>Math.max(...a)))).toISOString();
+ ensure(Date.parse(sourceStoredAt)<=now&&now-Date.parse(sourceStoredAt)<8*86400000,'SOURCE_STALE');
+ const nowIso=new Date(now).toISOString();
+ const record={status:'READY',version:AI_THEME_PUBLIC_VERSION,theme:'AI 반도체',etfs:['SMH','SOXX'],
+  methodologyVersion:METHOD,scoreMethod:'ETF_ONLY_PROXY',individualStocksUsed:0,
+  sourcePriceMode:PRICE_MODE,sourceStoredAtKind:'VERIFIED_LOCAL_MARKET_BARS',sourceTimestampBasis:'MANIFEST_GET_REQUEST_AT',
+  sourceVersion:'GMH_MANIFEST_SHA256_'+sha(manifestBytes),sourceStoredAt,publishedAt:nowIso,asOf:nowIso,
+  publicationAuthorized:prior.publicationAuthorized,upstreamCommercialRightsVerified:prior.upstreamCommercialRightsVerified,
+  derivedLicenseVerified:prior.derivedLicenseVerified,localBarsVerified:true,sourcePriceReconciled:true,
+  observationDate:audit.observationDate,score:audit.score,history:audit.history,
+  phase:(reference.provisional?.points?.length??0)?'PROVISIONAL':'CONFIRMED',provisional:audit.provisional,
+  ...(audit.provisional?.lineage?{provisionalLineage:audit.provisional.lineage}:{})};
+ ensure(eligibleAiTheme(record,{...reference,themes:reference.themes.slice(0,7)},{now,storedAt:now}),
+  aiReaderRejectionReason(record,reference,{now}));
+ return record;
+}
+
+// Do not transfer GMH rights flags to the second provider. Require the exact
+// existing seven-theme rolling publisher's source/rights attestation for the
+// same confirmed and provisional dates, even though no raw is published.
+export function verifySevenProvisionalAuthority(rolling,reference){
+ const expected=(reference?.phase==='PROVISIONAL'?reference.provisional?.points??[]:[]).map(p=>p.date);
+ ensure(rolling?.status==='READY'&&rolling.version===THEME_ETF_ROLLING_VERSION&&
+  rolling.publicationAuthorized===true&&rolling.upstreamCommercialRightsVerified===true&&
+  rolling.derivedLicenseVerified===true&&rolling.sourcePriceReconciled===true&&
+  rolling.lineage?.primarySource==='GETMARKETHISTORY_1H_CLOSE'&&
+  rolling.lineage?.secondarySource==='MARKETPARQUET_ETF_DAILY_SPLIT_ADJUSTED'&&
+  rolling.lineage?.secondaryPendingCount===expected.length&&
+  rolling.observationDate===reference.observationDate&&
+  equal((rolling.provisional?.points??[]).map(p=>p.date),expected)&&
+  rolling.lineage?.latestCompletedSession===expected.at(-1),'AI_SEVEN_SECONDARY_RIGHTS_OR_LINEAGE_UNVERIFIED');
+ return true;
+}
+
+// The public API is a UNION of theme-specific provisional dates: biotech can
+// add 22 Oct even when the original seven have confirmed 22 Oct and only a 23
+// Oct provisional. Recover the exact seven-core projection by the actual seven
+// score keys and confirmed date; never count an optional theme's point as a
+// seven-core market observation.
+export function sevenCoreReference(feed){
+ ensure(feed?.status==='READY'&&Array.isArray(feed.themes)&&feed.themes.length>=7&&
+  date(feed.observationDate),'PUBLIC_SEVEN_REFERENCE_MISSING');
+ const themes=feed.themes.slice(0,7),names=THEME_ETF_ONLY_PAIRS.map(t=>t.theme);
+ ensure(themes.every((t,i)=>t.theme===names[i]),'PUBLIC_SEVEN_THEME_IDENTITY_MISMATCH');
+ const all=feed.provisional?.points??[];
+ ensure(Array.isArray(all),'PUBLIC_PROVISIONAL_SCHEMA_INVALID');
+ const points=all.filter(p=>date(p?.date)&&p.date>feed.observationDate&&
+  names.every(name=>Number.isFinite(p?.scores?.[name])&&p.scores[name]>=0&&p.scores[name]<=100))
+  .map(p=>({date:p.date,scores:Object.fromEntries(names.map(name=>[name,p.scores[name]]))}));
+ ensure(points.length<=2&&points.every((p,i)=>i===0||p.date>points[i-1].date),
+  'PUBLIC_SEVEN_PROVISIONAL_DATES_INVALID');
+ return {...feed,themes,phase:points.length?'PROVISIONAL':'CONFIRMED',
+  provisional:{...feed.provisional,points}};
+}
+
+// The public reader can select either rolling R178 or the immutable R144 seed
+// plus its provisional sidecar. Report every authority gate separately before
+// selecting a source. Never use public score equality as a license substitute.
+export async function diagnoseSevenProvisionalLane({dataRoot,storage=null,readPublic=api,now=Date.now}={}){
+ const result={report:'AI_SEVEN_PROVISIONAL_AUTHORITY_READONLY_R3',status:'STARTED',
+  providerCalls:0,d1Writes:0,schedulerWrites:0,reason:null};
+ try{
+  const db=storage??await cloudflareD1({dataRoot}),feed=await readPublic();
+  ensure(feed?.status==='READY'&&feed.themes?.length>=7,'PUBLIC_SEVEN_REFERENCE_MISSING');
+  const reference=sevenCoreReference(feed),clock=now();
+  const pending=reference.phase==='PROVISIONAL'?(reference.provisional?.points??[]).map(p=>p.date):[];
+  result.publicReference={phase:reference.phase,confirmedDate:reference.observationDate,
+   visibleUnionDates:(feed.provisional?.points??[]).map(p=>p.date),pendingDates:pending};
+  const fetchOptional=async key=>{try{
+   const row=await db.read(key);return {body:row.body,storedAt:row.storedAt,error:null};
+  }catch{return {body:null,storedAt:null,error:'D1_OUTPUT_NOT_READABLE'};}};
+  const [roll,side]=await Promise.all([fetchOptional(THEME_ETF_ROLLING_KEY),fetchOptional(THEME_ETF_PROVISIONAL_KEY)]);
+  let seed=null,seedError=null;
+  try{seed=await db.readSeed();}catch{seedError='D1_IMMUTABLE_SEED_NOT_READABLE';}
+  result.immutableSeed={available:!!seed,error:seedError,confirmedDate:seed?.observationDate??null};
+  const r=roll.body;
+  const gates={
+   ready:r?.status==='READY',version:r?.version===THEME_ETF_ROLLING_VERSION,
+   publicationAuthorized:r?.publicationAuthorized===true,
+   upstreamCommercialRightsVerified:r?.upstreamCommercialRightsVerified===true,
+   derivedLicenseVerified:r?.derivedLicenseVerified===true,
+   sourcePriceReconciled:r?.sourcePriceReconciled===true,
+   primarySource:r?.lineage?.primarySource==='GETMARKETHISTORY_1H_CLOSE',
+   secondarySource:r?.lineage?.secondarySource==='MARKETPARQUET_ETF_DAILY_SPLIT_ADJUSTED',
+   pendingCount:r?.lineage?.secondaryPendingCount===pending.length,
+   confirmedDate:r?.observationDate===reference.observationDate,
+   pendingDates:equal((r?.provisional?.points??[]).map(p=>p.date),pending),
+   latestSession:r?.lineage?.latestCompletedSession===pending.at(-1),
+  };
+  const rollingRowFresh=Number.isSafeInteger(roll.storedAt)&&roll.storedAt<=clock&&
+   clock-roll.storedAt<PUBLIC_DISPLAY_MAX_AGE_MS;
+  const rollingValid=rollingRowFresh&&!!seed&&!!r&&await validRollingPublic(r,seed,{now:clock});
+  const scoreMatches=(themes,points,confirmed)=>confirmed===reference.observationDate&&
+   Array.isArray(themes)&&themes.length===7&&themes.every((t,i)=>
+    t.theme===reference.themes[i].theme&&t.score===reference.themes[i].score&&
+    equal(t.history?.map(p=>p.date),reference.themes[i].history?.map(p=>p.date))&&
+    equal(t.history?.map(p=>p.score),reference.themes[i].history?.map(p=>p.score)))&&
+   equal(points?.map(p=>p.date)??[],pending)&&
+   (points??[]).every((p,i)=>reference.themes.every(t=>p.scores?.[t.theme]===reference.provisional?.points?.[i]?.scores?.[t.theme]));
+  const rollingMatches=rollingValid&&scoreMatches(r.themes,r.provisional?.points??[],r.observationDate);
+  result.rolling={available:!!r,error:roll.error,observationDate:r?.observationDate??null,
+   pendingDates:(r?.provisional?.points??[]).map(p=>p.date),latestSession:r?.lineage?.latestCompletedSession??null,
+   secondarySourceName:r?.lineage?.secondarySource??null,gates,
+   allAuthorityGatesPass:Object.values(gates).every(Boolean),storedRowFresh:rollingRowFresh,
+   readerValidatorPass:rollingValid,
+   exactPublicScoreMatch:rollingMatches};
+  const p=side.body;
+  const fallbackRowValid=Number.isSafeInteger(side.storedAt)&&side.storedAt<=clock;
+  const fallbackValid=fallbackRowValid&&!!seed&&!!p&&
+   validThemeEtfProvisional(p,seed.observationDate,{now:clock,themes:seed.themes});
+  const fallbackSeedMatches=!!seed&&reference.observationDate===seed.observationDate&&
+   seed.themes.every((t,i)=>t.theme===reference.themes[i].theme&&
+    t.latestScore===reference.themes[i].score&&
+    equal(t.history?.map(p=>p.date),reference.themes[i].history?.map(p=>p.date))&&
+    equal(t.history?.map(p=>p.score),reference.themes[i].history?.map(p=>p.score)));
+  const fallbackMatches=fallbackValid&&fallbackSeedMatches&&
+   equal(p.points.map(z=>z.date),pending)&&p.points.every((z,i)=>
+    reference.themes.every(t=>z.scores?.[t.theme]===reference.provisional?.points?.[i]?.scores?.[t.theme]));
+  result.fallback={available:!!p,error:side.error,sourceName:p?.sourceName??null,
+   confirmedDate:p?.confirmedObservationDate??null,pendingDates:(p?.points??[]).map(x=>x.date),
+   rights:{publicationAuthorized:p?.publicationAuthorized===true,
+    upstreamCommercialRightsVerified:p?.upstreamCommercialRightsVerified===true,
+    derivedLicenseVerified:p?.derivedLicenseVerified===true,
+    sourcePriceReconciled:p?.sourcePriceReconciled===true},
+   storedRowValid:fallbackRowValid,readerValidatorPass:fallbackValid,
+   seedScoresMatch:fallbackSeedMatches,exactPublicScoreMatch:fallbackMatches};
+  result.activeLane=rollingMatches?'ROLLING_R178':fallbackMatches?'SEED_PLUS_PROVISIONAL_SIDECAR':
+   'UNVERIFIED_NO_PUBLIC_SCORE_PARITY';
+  result.status='READONLY_REPORTED';
+ }catch(e){result.status='BLOCKED';result.reason=e?.code??'UNKNOWN_ERROR';}
+ return result;
+}
+
+function config(dataRoot){
+ const cfg=JSON.parse(fs.readFileSync(path.join(dataRoot,'pc-writer','config.json'),'utf8'));
+ ensure(/^[a-f0-9]{32}$/.test(cfg.account)&&/^[a-f0-9-]{36}$/.test(cfg.core),'PC_D1_CONFIG_INVALID');
+ return cfg;
+}
+// The successful biotech R8 auth bridge resolves the approved original seven
+// publisher's source, then calls its d1.credential(repo). AI follows that
+// exact existing chain, without executing the publisher or changing its tasks.
+export const AI_APPROVED_SEVEN_CORE_SHA256='f9ea0a1bfaf52909b7a434b65ba93887f56660bc979a3cb7e0992597bc9f3b68';
+export async function aiApprovedSevenTokenR1({
+ dataRoot=DATA_ROOT,expectedCoreSha256=AI_APPROVED_SEVEN_CORE_SHA256,
+ importer=url=>import(url),
+}={}){
+ const home=path.join(dataRoot,'theme-market-history-r131','marketparquet-r167');
+ const core=path.join(home,'r179-publish-core.mjs');
+ ensure(fs.existsSync(core),'AI_APPROVED_SEVEN_CORE_MISSING');
+ ensure(sha(fs.readFileSync(core))===expectedCoreSha256,'AI_APPROVED_SEVEN_CORE_CHANGED');
+ const cfgPath=path.join(dataRoot,'pc-writer','config.json');
+ ensure(fs.existsSync(cfgPath),'AI_APPROVED_PC_CONFIG_MISSING');
+ const cfg=JSON.parse(fs.readFileSync(cfgPath,'utf8'));
+ ensure(cfg.enabled===true&&cfg.collectionTarget==='pc'&&/^[a-f0-9]{40}$/.test(cfg.source??''),
+  'AI_APPROVED_OPERATING_SOURCE_MISMATCH');
+ const source=await importer(pathToFileURL(path.join(home,'r175-source.mjs')).href);
+ ensure(typeof source.resolvePublisherSource==='function','AI_APPROVED_SOURCE_RESOLVER_MISSING');
+ const auditFile=path.join(dataRoot,'themes','ai-semiconductor','state','r1-seven-source-audit.json');
+ const selected=source.resolvePublisherSource(cfg,{auditFile});
+ ensure(typeof selected?.root==='string'&&selected.root.length>0&&
+  /^[a-f0-9]{40}$/.test(selected.head??''),'AI_APPROVED_SOURCE_NOT_VERIFIED');
+ const client=await importer(pathToFileURL(path.join(selected.root,'scripts','pc-writer','d1.mjs')).href);
+ ensure(typeof client.credential==='function','AI_APPROVED_D1_AUTH_MODULE_MISSING');
+ let token;
+ try{token=client.credential(selected.root);}
+ catch{fail('AI_APPROVED_SEVEN_CREDENTIAL_FAILED');}
+ ensure(typeof token==='string'&&token.length>0,'AI_APPROVED_D1_AUTH_UNAVAILABLE');
+ return token; // Memory only; never print or persist credentials.
+}
+// The seven-theme publisher already owns the verified PC authentication path.
+// Reuse it directly, as the biotech R8 auth bridge did successfully. The
+// rejected optional-only Wrangler PATH/TOML guessing path is not used.
+export async function cloudflareD1({dataRoot,fetchImpl=fetch,tokenFn=aiApprovedSevenTokenR1}={}){
+ const cfg=config(dataRoot),secret=await tokenFn({dataRoot});let writeAttempted=false;
+ const query=async(sql,params)=>{
+  let response;try{response=await fetchImpl(`https://api.cloudflare.com/client/v4/accounts/${cfg.account}/d1/database/${cfg.core}/query`,{
+   method:'POST',headers:{Authorization:`Bearer ${secret}`,'content-type':'application/json'},
+   body:JSON.stringify({batch:[{sql,params}]}),signal:AbortSignal.timeout(30000),redirect:'error'});
+  }catch{fail(writeAttempted?'D1_WRITE_OUTCOME_UNKNOWN':'D1_READ_FAILED');}
+  let body;try{body=await response.json()}catch{fail(writeAttempted?'D1_WRITE_OUTCOME_UNKNOWN':'D1_BAD_RESPONSE');}
+  ensure(response.ok&&body.success!==false&&body.result?.length===1&&body.result[0].success!==false,writeAttempted?'D1_WRITE_OUTCOME_UNKNOWN':'D1_QUERY_FAILED');
+  return body.result[0];
+ };
+ const sql="SELECT body,stored_at FROM public_feed_snapshots_v1 WHERE kind='output' AND feed_key=? AND snapshot_key='current'";
+ return {
+  async read(key){const row=(await query(sql,[key])).results?.[0];ensure(row?.body&&Number.isSafeInteger(Number(row.stored_at)),'D1_PRIOR_MISSING');return {body:JSON.parse(row.body),storedAt:Number(row.stored_at)};},
+   async readSeed(){
+    const row=(await query('SELECT body,stored_at FROM market_public_snapshots_v1 WHERE snapshot_key=?',[THEME_ETF_ONLY_PUBLIC_KEY])).results?.[0];
+    ensure(row?.body&&Number.isSafeInteger(Number(row.stored_at)),'AI_HISTORICAL_SEED_NOT_FOUND');
+    let seed;try{seed=JSON.parse(row.body)}catch{fail('AI_HISTORICAL_SEED_INVALID_JSON');}
+    ensure(validateThemeEtfOnlyPublic(seed),'AI_HISTORICAL_SEED_NOT_VERIFIED');
+    return seed;
+   },
+  async replace(key,record,previousStoredAt){
+   const body=JSON.stringify(record),storedAt=Date.now();ensure(storedAt>previousStoredAt,'D1_CLOCK_REGRESSION');
+   writeAttempted=true;
+   const result=await query("UPDATE public_feed_snapshots_v1 SET body=?,stored_at=? WHERE kind='output' AND feed_key=? AND snapshot_key='current' AND stored_at=?",[body,storedAt,key,previousStoredAt]);
+   ensure(result.meta?.changes===1,'D1_COMPARE_AND_SWAP_FAILED');
+   const row=(await query(sql,[key])).results?.[0];ensure(row?.body===body&&Number(row.stored_at)===storedAt,'D1_READBACK_MISMATCH');
+   return {storedAt};
+  }
+ };
+}
+
+const api=async(fetchImpl=fetch)=>{
+ const res=await fetchImpl(FEED+'?optional_cycle='+Date.now(),{headers:{'cache-control':'no-cache'},signal:AbortSignal.timeout(20000)});
+ ensure(res.ok,'PUBLIC_API_NOT_READY');const value=await res.json();ensure(value.status==='READY','PUBLIC_API_NOT_READY');return value;
+};
+export async function runOptionalTheme({themeId,dataRoot,readPublic=api,storage=null,collect=collectOptional,
+ audit=auditOptionalPrices,secondary=buildAiProvisionalFromExistingSeven,allowPublish=false,now=Date.now}={}){
+ const result={themeId,status:'STARTED',providerCalls:0,d1Writes:0,publicVerified:false,reason:null};
+ try{
+  ensure(TARGETS.includes(themeId),'UNREGISTERED_THEME');
+  ensure(fs.existsSync(dataRoot),'E_DATA_ROOT_UNAVAILABLE');
+  const db=storage??await cloudflareD1({dataRoot});const publicFeed=await readPublic();
+  const base=themeId==='ai-semiconductor'?sevenCoreReference(publicFeed):
+   {...publicFeed,themes:publicFeed.themes.slice(0,8)};
+  const key=themeId==='ai-semiconductor'?AI_THEME_PUBLIC_KEY:'theme-biotech-optional-r1';
+  const previous=await db.read(key);validateStoredReference(themeId,previous.body,base);
+  const relative=`themes/${themeId}/raw-manifest.json`;
+  ensure(inspectManifest(dataRoot,relative,themeId).status==='SHA_VERIFIED','RAW_MANIFEST_INVALID');
+  const file=containedFile(dataRoot,relative),manifest=JSON.parse(fs.readFileSync(file,'utf8'));
+  const window=collectWindow(manifest,base,themeId,now());
+  const gathering=await collect({dataRoot,themeId,start:window.start,end:window.end});result.providerCalls=gathering.providerCalls;
+  ensure(gathering.status==='PRIVATE_RAW_COLLECTION_COMPLETE','COLLECTION_'+gathering.status);
+  ensure(inspectManifest(dataRoot,relative,themeId).status==='SHA_VERIFIED','RAW_MANIFEST_AFTER_COLLECTION_INVALID');
+  const useSecondary=themeId==='ai-semiconductor'&&base.phase==='PROVISIONAL'&&
+   (base.provisional?.points?.length??0)>0;
+  const checked=audit({themeId,dataRoot,reference:base,priorRecord:previous.body,
+   includePrivatePrices:useSecondary});
+  result.scoreDifference=checked.audit.maxDifference;result.observationDate=checked.observationDate;
+  ensure(checked.status==='PRIVATE_CANDIDATE_PARITY_VERIFIED','SCORE_DRIFT_REVIEW_REQUIRED');
+  if(themeId==='biotech')fail('BIOTECH_ORIGINAL_R3_AND_RIGHTS_REVIEW_REQUIRED');
+   if(useSecondary){
+    let seven;try{seven=(await db.read(THEME_ETF_ROLLING_KEY)).body;}
+    catch{fail('AI_SEVEN_ROLLING_D1_AUTHORITY_NOT_FOUND');}
+    verifySevenProvisionalAuthority(seven,base);
+    const derived=await secondary({dataRoot,checked,reference:base,now:now()});
+    ensure(derived.status==='PRIVATE_PROVISIONAL_SCORES_VERIFIED'&&Array.isArray(derived.points)&&
+     derived.points.length===(base.provisional?.points?.length??0)&&
+     equal(derived.points.map(p=>p.date),base.provisional.points.map(p=>p.date))&&
+     derived.lineage?.source==='MARKETPARQUET_ETF_DAILY_SPLIT_ADJUSTED',
+     'AI_SECONDARY_CANDIDATE_INVALID');
+    checked.provisional={points:derived.points,lineage:derived.lineage};
+    result.provisionalDates=derived.points.map(p=>p.date);
+    result.provisionalScores=derived.points.map(p=>p.score);
+    result.sourcePriceMaxOverlapDifference=derived.lineage.maxOverlapDifference;
+   }
+   const historicalSeed=checked.observationDate<base.observationDate
+    ?(typeof db.readSeed==='function'?await db.readSeed():null):null;
+   const candidateReference=aiCandidateReference(base,historicalSeed,checked.observationDate);
+   const verifiedManifest=fs.readFileSync(file);const record=buildAiCandidate({audit:checked,prior:previous.body,reference:candidateReference,manifest:JSON.parse(verifiedManifest),manifestBytes:verifiedManifest,now:now()});
+  const previouslyPublished={phase:previous.body.phase,observationDate:previous.body.observationDate,score:previous.body.score,
+   history:previous.body.history,provisional:previous.body.provisional??{points:[]}};
+  const newPublic={phase:record.phase,observationDate:record.observationDate,score:record.score,
+   history:record.history,provisional:record.provisional??{points:[]}};
+  if(JSON.stringify(previouslyPublished)===JSON.stringify(newPublic)){
+   result.status='UNCHANGED_NO_WRITE';return result;
+  }
+  if(!allowPublish){result.status='CANDIDATE_VERIFIED_NOT_PUBLISHED';return result;}
+  await db.replace(key,record,previous.storedAt);result.d1Writes=1;
+  const refreshed=await readPublic();
+  const found=refreshed.themes?.find(t=>t.theme==='AI 반도체');
+  ensure(found&&found.score===record.score&&equal(found.history?.map(p=>p.date),record.history.map(p=>p.date)),'D1_VERIFIED_PUBLIC_PENDING');
+  if(useSecondary){
+   const published=new Map((refreshed.provisional?.points??[]).map(p=>[p.date,p.scores?.['AI 반도체']]));
+   ensure(record.provisional.points.every(p=>published.get(p.date)===p.score),
+    'D1_VERIFIED_PROVISIONAL_PUBLIC_PENDING');
+  }
+  result.publicVerified=true;result.status='PUBLIC_VERIFIED';return result;
+ }catch(e){result.status='BLOCKED';result.reason=e?.code??'UNKNOWN_ERROR';return result;}
+}
+
+// One-shot diagnostics re-evaluate existing SHA-verified local bars. There are
+// no provider requests, D1 writes, scheduler actions or E: state-file writes.
+export async function diagnoseAiReader({dataRoot,readPublic=api,storage=null,audit=auditOptionalPrices,now=Date.now}={}){
+ const result={report:'THEME_AI_READER_READONLY_DIAGNOSTIC_R1',themeId:'ai-semiconductor',status:'STARTED',
+  providerCalls:0,d1Writes:0,schedulerWrites:0,reason:null};
+ try{
+  ensure(fs.existsSync(dataRoot),'E_DATA_ROOT_UNAVAILABLE');
+  const db=storage??await cloudflareD1({dataRoot}),publicFeed=await readPublic();
+  const reference=sevenCoreReference(publicFeed);
+  const previous=await db.read(AI_THEME_PUBLIC_KEY);
+  validateStoredReference('ai-semiconductor',previous.body,reference);
+  const relative='themes/ai-semiconductor/raw-manifest.json';
+  ensure(inspectManifest(dataRoot,relative,'ai-semiconductor').status==='SHA_VERIFIED','RAW_MANIFEST_INVALID');
+  const file=containedFile(dataRoot,relative),manifestBytes=fs.readFileSync(file);
+  const checked=audit({themeId:'ai-semiconductor',dataRoot,reference,priorRecord:previous.body});
+  result.publicObservationDate=reference.observationDate;
+  result.publicHistoryLastDate=reference.themes[0]?.history?.at(-1)?.date??null;
+  result.localObservationDate=checked.observationDate;
+   result.latestCommonSourceDate=checked.audit?.latestCommon??null;
+  result.scoreDifference=checked.audit?.maxDifference??null;
+  result.publicPhase=reference.phase;
+  result.publicProvisionalDates=reference.phase==='PROVISIONAL'?(reference.provisional?.points??[]).map(p=>p.date):[];
+  result.localProvisionalDates=(checked.provisional?.points??[]).map(p=>p.date);
+  result.localAuditStatus=checked.status;
+  ensure(checked.status==='PRIVATE_CANDIDATE_PARITY_VERIFIED','SCORE_DRIFT_REVIEW_REQUIRED');
+   const historicalSeed=checked.observationDate<reference.observationDate
+    ?(typeof db.readSeed==='function'?await db.readSeed():null):null;
+   const candidateReference=aiCandidateReference(reference,historicalSeed,checked.observationDate);
+   buildAiCandidate({audit:checked,prior:previous.body,reference:candidateReference,manifest:JSON.parse(manifestBytes),manifestBytes,now:now()});
+  result.status='PUBLIC_READER_CANDIDATE_VERIFIED_NO_PUBLICATION';
+ }catch(e){result.status='BLOCKED';result.reason=e?.code??'UNKNOWN_ERROR';}
+ return result;
+}
+
+export async function diagnoseBiotechParity({dataRoot,readPublic=api,storage=null,audit=auditOptionalPrices}={}){
+ const result={report:'THEME_BIOTECH_PARITY_READONLY_DIAGNOSTIC_R1',themeId:'biotech',status:'STARTED',
+  providerCalls:0,d1Writes:0,schedulerWrites:0,reason:null};
+ try{
+  ensure(fs.existsSync(dataRoot),'E_DATA_ROOT_UNAVAILABLE');
+  const db=storage??await cloudflareD1({dataRoot}),publicFeed=await readPublic();
+  const reference={...publicFeed,themes:publicFeed.themes?.slice(0,8)};
+  const previous=await db.read('theme-biotech-optional-r1');
+  validateStoredReference('biotech',previous.body,reference);
+  ensure(inspectManifest(dataRoot,'themes/biotech/raw-manifest.json','biotech').status==='SHA_VERIFIED','RAW_MANIFEST_INVALID');
+  const checked=audit({themeId:'biotech',dataRoot,reference,priorRecord:previous.body});
+  result.publicObservationDate=reference.observationDate;
+  result.previousObservationDate=previous.body.observationDate;
+  result.localObservationDate=checked.observationDate;
+  result.scoreDifference=checked.audit?.maxDifference??null;
+  result.commonSessions=checked.audit?.commonSessions??null;
+  result.sourceOverlapBars=checked.audit?.sourceOverlapBars??null;
+  result.missingProvisionalDates=checked.audit?.missingProvisionalDates??[];
+  const previousScores=new Map(previous.body.history.map(p=>[p.date,p.score]));
+  const matched=checked.history.filter(p=>previousScores.has(p.date));
+  const drifts=matched.map(p=>({date:p.date,difference:Number(Math.abs(p.score-previousScores.get(p.date)).toFixed(5))}))
+   .filter(p=>p.difference>0).sort((a,b)=>b.difference-a.difference);
+  result.overlappingHistoryDates=matched.length;
+  result.overlappingChangedDates=drifts.length;
+  result.largestOverlappingDifferences=drifts.slice(0,5);
+  result.localAuditStatus=checked.status;
+  ensure(checked.status==='PRIVATE_CANDIDATE_PARITY_VERIFIED','SCORE_DRIFT_REVIEW_REQUIRED');
+  // Even matching bars do not authorize biotech publication: the separate R3
+  // methodology and commercial-data rights review must be completed first.
+  fail('BIOTECH_ORIGINAL_R3_AND_RIGHTS_REVIEW_REQUIRED');
+ }catch(e){result.status='BLOCKED';result.reason=e?.code??'UNKNOWN_ERROR';}
+ return result;
+}
+
+function saveCycleResult(dataRoot,themeId,result){
+ const root=fs.realpathSync(dataRoot),dir=path.join(root,'themes',themeId,'state');
+ ensure(fs.existsSync(dir)&&fs.realpathSync(dir).startsWith(root+path.sep),'STATE_DIRECTORY_MISSING');
+ const dest=path.join(dir,'cycle-last.json'),tmp=dest+'.'+process.pid+'.tmp';
+ const payload={...result,recordedAt:new Date().toISOString(),secretFieldsWritten:0};
+ fs.writeFileSync(tmp,JSON.stringify(payload,null,2)+'\n',{flag:'wx'});
+ try{fs.renameSync(tmp,dest)}finally{if(fs.existsSync(tmp))fs.unlinkSync(tmp);}
+}
+
+if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.url)){
+ const args=process.argv.slice(2),diagnose=args.length===2&&args[0]==='--diagnose'&&['ai-semiconductor','biotech'].includes(args[1]);
+ const sevenLane=args.length===1&&args[0]==='--diagnose-seven-lane';
+ const valid=diagnose||sevenLane||(args[0]==='--once'&&['ai-semiconductor','biotech','all'].includes(args[1])&&args.slice(2).every(x=>x==='--publish'));
+ if(!valid){console.log('Usage: node theme-optional-cycle.mjs --once <ai-semiconductor|biotech|all> [--publish] OR --diagnose <ai-semiconductor|biotech> OR --diagnose-seven-lane');process.exitCode=2;}
+ else if(sevenLane){
+  const result=await diagnoseSevenProvisionalLane({dataRoot:process.env.ZGMINI_DATA_ROOT??DATA_ROOT});
+  console.log(JSON.stringify(result));if(result.status==='BLOCKED')process.exitCode=1;
+ }
+ else if(diagnose){
+  const dataRoot=process.env.ZGMINI_DATA_ROOT??DATA_ROOT;
+  const result=args[1]==='ai-semiconductor'?await diagnoseAiReader({dataRoot}):await diagnoseBiotechParity({dataRoot});
+  console.log(JSON.stringify(result));if(result.status==='BLOCKED')process.exitCode=1;
+ }
+ else{
+  const dataRoot=process.env.ZGMINI_DATA_ROOT??DATA_ROOT;
+  const ids=args[1]==='all'?TARGETS:[args[1]];
+  for(const themeId of ids){const result=await runOptionalTheme({themeId,dataRoot,allowPublish:args.includes('--publish')});
+   try{saveCycleResult(dataRoot,themeId,result);}catch{console.error('OPTIONAL_CYCLE_RESULT_NOT_SAVED');process.exitCode=1;}
+   console.log(JSON.stringify(result));if(result.status==='BLOCKED')process.exitCode=1;
+  }
+ }
+}

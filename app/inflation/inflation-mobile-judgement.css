@@ -1,0 +1,18 @@
+/* Inflation indicator judgement colors on the mobile card layout. */
+@media(max-width:767px){
+ .inflation-r2-mobile-card[data-judgement="positive"] .inflation-judgement{
+  border-color:rgba(34,197,94,.48);
+  background:rgba(34,197,94,.12);
+  color:#77e59c;
+ }
+ .inflation-r2-mobile-card[data-judgement="negative"] .inflation-judgement{
+  border-color:rgba(248,113,113,.48);
+  background:rgba(248,113,113,.12);
+  color:#ff9a9a;
+ }
+ .inflation-r2-mobile-card[data-judgement="neutral"] .inflation-judgement{
+  border-color:rgba(148,163,184,.4);
+  background:rgba(148,163,184,.1);
+  color:#cbd5e1;
+ }
+}

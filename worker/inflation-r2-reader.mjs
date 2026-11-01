@@ -1,9 +1,11 @@
+import {inflationR2PublicAxisIndicators} from "../lib/market-score/inflation-r2-axis-display-r1.mjs";
 import {INFLATION_PIT_SERIES} from "./inflation-pit-backfill.mjs";
 import {loadStoredInflationPitSeries} from "./inflation-pit-reader.mjs";
 import {INFLATION_PCE_PC1_MODE,INFLATION_PCE_PC1_SERIES} from "./inflation-pce-pc1-store.mjs";
 import {
   buildInflationR2StoredHistory,
   calculateInflationR2At,
+  snapshotInflationR2Features,
   INFLATION_R2_METHOD_REVISION,
 } from "../lib/diagnostic-layer/inflation-r2-stored.mjs";
 
@@ -72,14 +74,63 @@ async function loadPc1Series(db,{asOf}={}){
   }
   return {series,snapshots,missing,issues};
 }
-function monthEnds(asOf,count=12){
+export function completedMonthEnds(asOf,count=13){
   const end=new Date(`${asOf}T00:00:00Z`),out=[];
   for(let offset=count-1;offset>=0;offset-=1){
-    const d=new Date(Date.UTC(end.getUTCFullYear(),end.getUTCMonth()-offset+1,0));
+    const d=new Date(Date.UTC(end.getUTCFullYear(),end.getUTCMonth()-offset,0));
     out.push(d.toISOString().slice(0,10));
   }
   return out;
 }
+export async function loadStoredInflationR2Analysis(db,{asOf}={}){
+  if(!validDate(asOf))throw new Error("INFLATION_R2_ASOF_INVALID");
+  if(!db||typeof db.prepare!=="function")return {status:"PARTIAL",reason:"INFLATION_R2_DB_UNAVAILABLE"};
+  const [pit,pc1]=await Promise.all([
+    loadStoredInflationPitSeries(db,{asOf,seriesIds:[...INFLATION_PIT_SERIES]}),
+    loadPc1Series(db,{asOf}),
+  ]);
+  if(pit.status!=="READY_STORED_PIT_HISTORY")return {status:"PARTIAL",reason:"INFLATION_R2_PIT_INCOMPLETE"};
+  if(pc1.missing.length||pc1.issues.length)return {status:"PARTIAL",reason:"INFLATION_R2_PCE_PC1_INCOMPLETE"};
+  const history=buildInflationR2StoredHistory({pitSeries:pit.series,pcePc1:pc1.series});
+  const current=calculateInflationR2At(history,asOf);
+  if(current.status!=="READY")return {status:"PARTIAL",reason:"INFLATION_R2_COMPONENT_MISSING",missing:current.missing??[]};
+  return {
+    status:"READY",
+    asOf,
+    methodologyVersion:INFLATION_R2_METHOD_REVISION,
+    features:snapshotInflationR2Features(history,asOf),
+    axes:current.axes,
+    score:current.score,
+    providerRequests:0,
+    source:"LOCAL_STORED_PIT_HISTORY",
+  };
+}
+
+export async function loadStoredInflationR2AnalysisTimeline(db,{asOf,dates=[]}={}){
+  if(!validDate(asOf))throw new Error("INFLATION_R2_ASOF_INVALID");
+  if(!Array.isArray(dates)||dates.some(date=>!validDate(date)||date>asOf))throw new Error("INFLATION_R2_TIMELINE_DATES_INVALID");
+  if(!db||typeof db.prepare!=="function")return {status:"PARTIAL",reason:"INFLATION_R2_DB_UNAVAILABLE",rows:[]};
+  const [pit,pc1]=await Promise.all([
+    loadStoredInflationPitSeries(db,{asOf,seriesIds:[...INFLATION_PIT_SERIES]}),
+    loadPc1Series(db,{asOf}),
+  ]);
+  if(pit.status!=="READY_STORED_PIT_HISTORY")return {status:"PARTIAL",reason:"INFLATION_R2_PIT_INCOMPLETE",rows:[]};
+  if(pc1.missing.length||pc1.issues.length)return {status:"PARTIAL",reason:"INFLATION_R2_PCE_PC1_INCOMPLETE",rows:[]};
+  const history=buildInflationR2StoredHistory({pitSeries:pit.series,pcePc1:pc1.series});
+  const rows=[];
+  for(const date of dates){
+    const current=calculateInflationR2At(history,date);
+    if(current.status!=="READY")continue;
+    rows.push({
+      date,
+      score:current.score,
+      axes:current.axes,
+      features:snapshotInflationR2Features(history,date),
+    });
+  }
+  return {status:"READY",rows,providerRequests:0,source:"LOCAL_STORED_PIT_HISTORY"};
+}
+
 function partial(reason,extra={}){
   return {
     status:"PARTIAL",
@@ -114,16 +165,15 @@ export async function loadStoredInflationR2Domain(db,{asOf}={}){
   if(current.status!=="READY"){
     return partial("INFLATION_R2_COMPONENT_MISSING",{missingFactors:current.missing,axes:current.axes});
   }
-  const labels=[
-    ["목표안정","TARGET_STABILITY"],
-    ["기조모멘텀","UNDERLYING_MOMENTUM"],
-    ["기대인플레","EXPECTATIONS"],
-    ["공급압력","SUPPLY_PIPELINE"],
-  ];
-  const trend=monthEnds(asOf,12)
+  const trend=completedMonthEnds(asOf,13)
     .map(date=>({date,result:calculateInflationR2At(history,date)}))
     .filter(item=>item.result.status==="READY")
     .map(item=>({label:item.date,value:item.result.score}));
+  if(current.status==="READY"&&finite(current.score)){
+    const index=trend.findIndex(item=>item.label===asOf);
+    if(index>=0)trend.splice(index,1,{label:asOf,value:current.score});
+    else trend.push({label:asOf,value:current.score});
+  }
   const retrievedAts=[
     ...Object.values(pit.snapshots??{}).map(item=>item?.retrievedAt),
     ...Object.values(pc1.snapshots??{}).map(item=>item?.retrievedAt),
@@ -133,14 +183,7 @@ export async function loadStoredInflationR2Domain(db,{asOf}={}){
     status:"READY",
     score:current.score,
     missingFactors:[],
-    indicators:labels.map(([name,axis])=>({
-      name,
-      status:"READY",
-      score:current.axes[axis],
-      asOfDate:asOf,
-      source:"STORED_PIT_HISTORY",
-      freshness:"INITIAL_RELEASE_ONLY",
-    })),
+    indicators:inflationR2PublicAxisIndicators(current.axes,asOf),
     trend,
     freshness:"STORED_INITIAL_RELEASE_HISTORY_ONLY",
     updatedAt:retrievedAts.at(-1)??null,

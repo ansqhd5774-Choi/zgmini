@@ -1,0 +1,69 @@
+/* Liquidity detail: inflation/recession table parity, limited to this page. */
+.liquidity-r2-indicators .liquidity-indicator-table-r2{width:100%;min-width:1080px!important;table-layout:fixed}
+.liquidity-r2-indicators .liquidity-indicator-table-r2 th,
+.liquidity-r2-indicators .liquidity-indicator-table-r2 td{text-align:center;padding:11px 7px;overflow-wrap:normal}
+.liquidity-r2-indicators .liquidity-indicator-table-r2 col.liquidity-col-favorite{width:4%}
+.liquidity-r2-indicators .liquidity-indicator-table-r2 col.liquidity-col-name{width:14%}
+.liquidity-r2-indicators .liquidity-indicator-table-r2 col.liquidity-col-content{width:17%}
+.liquidity-r2-indicators .liquidity-indicator-table-r2 col.liquidity-col-criterion{width:12%}
+.liquidity-r2-indicators .liquidity-indicator-table-r2 col.liquidity-col-previous{width:9%}
+.liquidity-r2-indicators .liquidity-indicator-table-r2 col.liquidity-col-current{width:9%}
+.liquidity-r2-indicators .liquidity-indicator-table-r2 col.liquidity-col-release{width:10%}
+.liquidity-r2-indicators .liquidity-indicator-table-r2 col.liquidity-col-judgement{width:7%}
+.liquidity-r2-indicators .liquidity-indicator-table-r2 col.liquidity-col-spark{width:13%}
+.liquidity-r2-indicators .liquidity-indicator-table-r2 col.liquidity-col-help{width:5%}
+.liquidity-r2-indicators .liquidity-indicator-table-r2 tbody th{width:auto;overflow-wrap:anywhere}
+.liquidity-r2-indicators .liquidity-indicator-table-r2 td:nth-child(2),
+.liquidity-r2-indicators .liquidity-indicator-table-r2 td:nth-child(3),
+.liquidity-r2-indicators .liquidity-indicator-table-r2 td:nth-child(4),
+.liquidity-r2-indicators .liquidity-indicator-table-r2 td:nth-child(5),
+.liquidity-r2-indicators .liquidity-indicator-table-r2 td:last-child{width:auto}
+.liquidity-r2-criterion{color:#f2f7fa;line-height:1.4}
+.liquidity-r2-value strong,.liquidity-r2-release strong{display:block;color:#f2f7fa;font-size:12px}
+.liquidity-r2-value small,.liquidity-r2-release small{display:block;margin-top:3px;white-space:nowrap}
+.liquidity-r2-spark-cell{padding-left:7px!important;padding-right:7px!important}
+.liquidity-r2-spark-cell .inflation-mini-chart{width:112px;max-width:100%;height:32px}
+.liquidity-r2-spark-cell .inflation-mini-chart-empty{min-width:0;max-width:100%}
+.liquidity-r2-indicators [data-judgement="positive"] .inflation-mini-chart-line{stroke:#77e59c}
+.liquidity-r2-indicators [data-judgement="neutral"] .inflation-mini-chart-line{stroke:#cbd5e1}
+.liquidity-r2-indicators [data-judgement="negative"] .inflation-mini-chart-line{stroke:#ff9a9a}
+.liquidity-r2-mobile-list{display:none}
+.liquidity-r2-indicators .liquidity-indicator-table-r2 tr[data-development="true"]{opacity:.82}
+.liquidity-crisis-target-card .cnn-score-observed-date{display:none}
+.liquidity-crisis-target-card .cnn-score-comparisons.is-multi{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));width:100%;max-width:360px;margin-inline:auto}
+.liquidity-crisis-target-card .cnn-score-comparisons.is-multi .cnn-score-comparison{display:grid;grid-template-columns:minmax(0,1fr);grid-template-rows:auto auto;place-items:center;min-width:0;gap:2px;padding:0 4px;text-align:center}
+.liquidity-crisis-target-card .cnn-score-comparisons.is-multi .cnn-score-comparison+.cnn-score-comparison{border-left:1px solid rgba(80,112,137,.55)}
+.liquidity-crisis-target-card .cnn-score-comparisons.is-multi .cnn-score-comparison>span,
+.liquidity-crisis-target-card .cnn-score-comparisons.is-multi .cnn-score-comparison>strong{display:block;min-width:0;width:100%;white-space:nowrap;text-align:center}
+@media(max-width:767px){
+ .liquidity-r2-indicators{padding:14px}
+ .liquidity-r2-indicators .liquidity-r2-table-wrap{display:none}
+ .liquidity-r2-mobile-list{display:grid;gap:8px}
+ .liquidity-r2-mobile-card{min-width:0;padding:12px;border:1px solid rgba(68,103,133,.3);background:rgba(4,18,31,.5)}
+ .liquidity-r2-mobile-card.is-development{opacity:.82}
+ .liquidity-r2-mobile-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+ .liquidity-r2-mobile-head>div:first-child{min-width:0}
+ .liquidity-r2-mobile-title{display:flex;align-items:flex-start;gap:6px;min-width:0}
+ .liquidity-r2-mobile-title>div{min-width:0}
+ .liquidity-r2-mobile-title strong{display:block;color:#eef5fa;font-size:12px;line-height:1.35;overflow-wrap:anywhere}
+ .liquidity-r2-mobile-title small{display:block;margin-top:2px;color:#7891a6;font-size:9px}
+ .liquidity-r2-mobile-actions{display:flex;align-items:center;gap:3px;flex:0 0 auto}
+ .liquidity-r2-mobile-actions .inflation-judgement{min-width:52px;height:22px;padding:0 7px;font-size:10px}
+ .liquidity-r2-mobile-content{margin:8px 0 0;color:#b9cad8;font-size:11px;line-height:1.45}
+ .liquidity-r2-mobile-criterion{display:flex;align-items:center;gap:7px;margin:6px 0 0;color:#d4e0e9;font-size:10px}
+ .liquidity-r2-mobile-criterion span{color:#7891a6;font-weight:700}
+ .liquidity-r2-mobile-spark{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:8px;padding-top:8px;border-top:1px solid rgba(68,103,133,.24)}
+ .liquidity-r2-mobile-spark>span{color:#7891a6;font-size:9px;font-weight:700;flex:0 0 auto}
+ .liquidity-r2-mobile-spark .inflation-mini-chart{width:148px;max-width:56vw;height:30px;margin:0}
+ .liquidity-r2-mobile-metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));margin-top:10px;border-top:1px solid rgba(68,103,133,.24)}
+ .liquidity-r2-mobile-metrics>div{min-width:0;padding:8px 4px 0;text-align:center}
+ .liquidity-r2-mobile-metrics>div+div{border-left:1px solid rgba(68,103,133,.24)}
+ .liquidity-r2-mobile-metrics span,.liquidity-r2-mobile-metrics strong,.liquidity-r2-mobile-metrics small{display:block;min-width:0}
+ .liquidity-r2-mobile-metrics span{color:#7891a6;font-size:9px;font-weight:700}
+ .liquidity-r2-mobile-metrics strong{margin-top:3px;color:#f2f7fa;font-size:11px;white-space:nowrap}
+ .liquidity-r2-mobile-metrics small{margin-top:2px;color:#7891a6;font-size:9px;overflow-wrap:anywhere}
+ .fg-card.fg-shared-shell.liquidity-crisis-target-card .cnn-score-comparisons.is-multi{width:100%;max-width:none}
+ .fg-card.fg-shared-shell.liquidity-crisis-target-card .cnn-score-comparisons.is-multi .cnn-score-comparison{padding:0 1px;gap:1px}
+ .fg-card.fg-shared-shell.liquidity-crisis-target-card .cnn-score-comparisons.is-multi .cnn-score-comparison>span{font-size:8px;line-height:1}
+ .fg-card.fg-shared-shell.liquidity-crisis-target-card .cnn-score-comparisons.is-multi .cnn-score-comparison>strong{font-size:9.5px;line-height:1}
+}

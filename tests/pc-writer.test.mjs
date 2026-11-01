@@ -4,6 +4,7 @@ import fs from 'node:fs';
 import {DatabaseSync} from 'node:sqlite';
 import {readonly,client} from '../scripts/pc-writer/d1.mjs';
 import {marketPlan} from '../scripts/pc-writer/publish.mjs';
+import {DOMAIN_WEIGHTS} from '../lib/market-score/composite-model-r1.mjs';
 import {readBreadthB1R5StoredScore} from '../lib/market-score/breadth-b1-r5-reader.mjs';
 
 test('readonly transport rejects mutations and stacked statements',()=>{
@@ -19,7 +20,7 @@ test('stored breadth reads existing schema without any initialization write',asy
  assert.equal(out.status,'PARTIAL');assert.deepEqual(out.missing,['B1_R4_STORED_COVERAGE_MISSING']);assert.ok(queries.length>0);
 });
 function database(){const db=new DatabaseSync(':memory:');db.exec('CREATE TABLE market_collection_jobs_v1(job TEXT PRIMARY KEY,lease_id TEXT,lease_until INTEGER); CREATE TABLE market_public_snapshots_v1(snapshot_key TEXT PRIMARY KEY,body TEXT,stored_at INTEGER);');db.prepare('INSERT INTO market_collection_jobs_v1 VALUES(?,?,?)').run('pipeline','owner',Date.now()+60000);db.prepare('INSERT INTO market_public_snapshots_v1 VALUES(?,?,?)').run('current','{}',10);return db;}
-const body={status:'SUCCESS',domains:Array.from({length:12},()=>({status:'PARTIAL'}))};
+const body={status:'SUCCESS',overall:{status:'READY',score:0,trend:[{label:'2026-10-23',value:0}]},domains:DOMAIN_WEIGHTS.map(d=>({id:d.id,status:'READY',score:0}))};
 function execute(db,plan){db.exec('BEGIN');try{for(const item of plan)db.prepare(item.sql).run(...item.params);db.exec('COMMIT');}catch(error){db.exec('ROLLBACK');throw error;}}
 test('publication is guarded by the existing pipeline lease and prior generation',()=>{
  const db=database();assert.throws(()=>execute(db,marketPlan(body,20,'other',10)));
@@ -53,13 +54,55 @@ test('local writer preserves liquidity coverage evidence through publish',()=>{
  const src=fs.readFileSync(new URL('../scripts/pc-writer/run-local.mjs',import.meta.url),'utf8');
  assert.match(src,/LIQUIDITY_1Y_COVERAGE/);
  assert.match(src,/liquidityCoverage/);
- assert.match(src,/report\.market=\{\.\.\.report\.market,\.\.\.await publishMarket/);
+ assert.match(src,/report\.market=\{\.\.\.report\.market,\.\.\.\(previous>now\?\{status:'REMOTE_NEWER_PRESERVED',storedAt:previous\}:await publishMarket/);
  assert.match(src,/console\.warn=originalWarn/);
 });
 
-test('local cycle blocks publication after collection error',()=>{
+test('local cycle separates collection failure from validated stored publication',()=>{
  const src=fs.readFileSync(new URL('../scripts/pc-writer/local-cycle.mjs',import.meta.url),'utf8');
- assert.match(src,/collectionFailed=collection\.status!==0/);
- assert.match(src,/COLLECTION_FAILED_PUBLISH_BLOCKED/);
- assert.match(src,/publishSkipped/);
+ assert.match(src,/collectionPublicationPolicy/);
+ assert.match(src,/COMPLETE_WITH_COLLECTION_GAPS/);
+ assert.match(src,/--collection-degraded/);
+ const writer=fs.readFileSync(new URL('../scripts/pc-writer/run-local.mjs',import.meta.url),'utf8');
+ assert.match(writer,/assertCompleteMarket\(body\)/);
+ assert.match(writer,/if\(marketReady\)/);
+ assert.match(writer,/PREVIOUS_RELEASE_PRESERVED/);
+ assert.match(writer,/VERIFIED_WITH_GAPS/);
+});
+
+
+test('local core cycle automatically accumulates prospective dollar evidence without gating publication',()=>{
+ const src=fs.readFileSync(new URL('../scripts/pc-writer/local-cycle.mjs',import.meta.url),'utf8');
+ assert.match(src,/lane==='core'/);
+ assert.match(src,/dollar-prospective-forward-r1\.mjs/);
+ assert.match(src,/local-dollar-prospective-last-run\.json/);
+ assert.match(src,/researchProspective/);
+ assert.match(src,/nonBlocking:true/);
+ assert.match(src,/SKIPPED_KOREA_LANE/);
+ assert.match(src,/if\(publication\.status!==0\)process\.exitCode=1/);
+ assert.doesNotMatch(src,/if\(prospective\.status!==0\)process\.exitCode=1/);
+});
+
+
+test('local core cycle automatically accumulates prospective index-fund flow evidence without gating publication',()=>{
+ const src=fs.readFileSync(new URL('../scripts/pc-writer/local-cycle.mjs',import.meta.url),'utf8');
+ assert.match(src,/fund-flow-index-prospective-r1\.mjs/);
+ assert.match(src,/local-fund-flow-index-prospective-last-run\.json/);
+ assert.match(src,/researchFundFlowProspective/);
+ assert.match(src,/nonBlocking:true/);
+ assert.match(src,/observedReleaseDate/);
+ assert.doesNotMatch(src,/if\(fundFlowProspective\.status!==0\)process\.exitCode=1/);
+ assert.match(src,/if\(publication\.status!==0\)process\.exitCode=1/);
+});
+
+
+test('local core cycle automatically accumulates prospective Breadth R7 PIT evidence without gating publication',()=>{
+ const src=fs.readFileSync(new URL('../scripts/pc-writer/local-cycle.mjs',import.meta.url),'utf8');
+ assert.match(src,/breadth-r7-prospective-r1\.mjs/);
+ assert.match(src,/local-breadth-r7-prospective-last-run\.json/);
+ assert.match(src,/researchBreadthProspective/);
+ assert.match(src,/nonBlocking:true/);
+ assert.match(src,/pitRefreshed/);
+ assert.doesNotMatch(src,/if\(breadthProspective\.status!==0\)process\.exitCode=1/);
+ assert.match(src,/if\(publication\.status!==0\)process\.exitCode=1/);
 });

@@ -5,13 +5,14 @@ import fs from "node:fs";
 const panel=fs.readFileSync(new URL("../app/fear-greed/usa/cnn-panel.tsx",import.meta.url),"utf8");
 const detail=fs.readFileSync(new URL("../app/fear-greed/usa/page.tsx",import.meta.url),"utf8");
 const country=fs.readFileSync(new URL("../app/country-fear-greed.tsx",import.meta.url),"utf8");
-const css=fs.readFileSync(new URL("../app/globals.css",import.meta.url),"utf8");
+const css=fs.readFileSync(new URL("../public/styles/fear-greed-education-r1.css",import.meta.url),"utf8");
 
 test("Fear & Greed education stays scoped to the USA detail page",()=>{
-  assert.match(panel,/function CnnPanel\(\{ showEducation = false \}/);
-  assert.match(country,/<CnnPanel\s*\/>/);
+  assert.match(panel,/function CnnPanel\(\{ showEducation = false(?:, showBreadth = false)? \}/);
+  assert.match(country,/<CnnPanel\s+showBreadth\s*\/>/);
   assert.doesNotMatch(country,/showEducation/);
   assert.match(detail,/<CnnPanel showEducation\s*\/>/);
+  assert.match(detail,/rel="stylesheet" href="\/styles\/fear-greed-education-r1\.css"/);
 });
 
 test("seven-component overview remains present and data-driven",()=>{
@@ -35,4 +36,11 @@ test("overview has explicit responsive presentation",()=>{
   assert.match(css,/\.cnn-component-overview-row\{/);
   assert.match(css,/grid-template-columns:minmax\(180px,1\.4fr\) minmax\(120px,1fr\) 92px 108px/);
   assert.match(css,/@media\(max-width:767px\)[\s\S]*\.cnn-component-overview-row\{[\s\S]*grid-template-columns:minmax\(0,1fr\) auto/);
+});
+
+test("dashboard heading remains clean while the abbreviated SEO keyword stays in the explanation",()=>{
+  assert.match(country,/<h1 id="global-title"[^>]*>[\s\S]*?\n\s+공포·탐욕\s*\n/);
+  assert.doesNotMatch(country,/공포·탐욕\s*\(공탐\)/);
+  assert.match(country,/공포·탐욕 지수는 투자자의 시장 심리를 보여줍니다/);
+  assert.match(country,/공탐 지수/);
 });

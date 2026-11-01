@@ -7,6 +7,7 @@ const key=(env,names)=>names.map(n=>env?.[n]).find(v=>typeof v==='string'&&v.tri
 
 // Bounded forward collection; the existing historical anchor is never reset.
 // Raw data is committed first. Calculation failure resumes from stored rows.
+/** @param {{env?:import('./runtime-contracts').DataEnv,store?:import('./korea-rev7-d1.mjs').Rev7D1Store,fetchDate?:typeof fetchRev7Date,calculate?:typeof calculateRev7,now?:Date,maxDates?:number,deferCalculation?:boolean}} [options] */
 export async function refreshKoreaRev7({env,store,fetchDate=fetchRev7Date,calculate=calculateRev7,now=new Date(),maxDates=1,deferCalculation=false}={}){
  const krxKey=key(env,['KRX_API_KEY','KRX_AUTH_KEY','KRX_OPEN_API_KEY','KRX_OPENAPI_KEY']);
  const bokKey=key(env,['BOK_API_KEY','ECOS_API_KEY','BOK_ECOS_API_KEY']);

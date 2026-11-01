@@ -4,7 +4,8 @@ import {observedSourceEnv,readProjectionCheckpoint,readProjectionCheckpoints} fr
 import {builders} from './projection-builders.ts';
 import {loadProjectionSource} from './projection-source-r52.mjs';
 import {projectionWriter} from './projection-runtime-r52.mjs';
-export async function enqueueProjectionIds(native,ids,{sourceSucceeded,skipReady=true}={}){
+import type {CandidateEnv,WorkerContext,ProjectionId,ProjectionJob} from './runtime-contracts';
+export async function enqueueProjectionIds(native:CandidateEnv,ids:readonly ProjectionId[],{sourceSucceeded,skipReady=true}:{sourceSucceeded?:boolean;skipReady?:boolean}={}){
  if(sourceSucceeded!==true)throw Error('SOURCE_SUCCESS_REQUIRED');
  if(!native.PUBLIC_PROJECTION_QUEUE?.sendBatch)throw Error('QUEUE_UNAVAILABLE');
  const selected=[...new Set(ids??[])];
@@ -25,11 +26,11 @@ export async function enqueueProjectionIds(native,ids,{sourceSucceeded,skipReady
  await native.PUBLIC_PROJECTION_QUEUE.sendBatch(jobs.map(body=>({body})));
  return {sent:jobs.length,skipped};
 }
-export async function enqueueAfterStoredSourceSuccess(native,{sourceSucceeded}){
+export async function enqueueAfterStoredSourceSuccess(native:CandidateEnv,{sourceSucceeded}:{sourceSucceeded:boolean}){
  return enqueueProjectionIds(native,PROJECTION_IDS,{sourceSucceeded,skipReady:true});
 }
-export async function consumeProjectionBatch(batch,native,ctx){
- const observed=observedSourceEnv(native),writer=projectionWriter(native.DB_CORE),jobs=new Map();
+export async function consumeProjectionBatch(batch:MessageBatch<ProjectionJob>,native:CandidateEnv,ctx:WorkerContext){
+ const observed=observedSourceEnv(native),writer=projectionWriter(native.DB_CORE),jobs=new Map<ProjectionId,ProjectionJob>();
  const consume=createProjectionQueueConsumer({buildProjection:async(job)=>{
   jobs.set(job.id,job);
   console.log('R60_PROJECTION_BEGIN',JSON.stringify({id:job.id,sourceStoredAt:job.sourceStoredAt}));

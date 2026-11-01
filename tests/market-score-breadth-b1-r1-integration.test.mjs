@@ -67,7 +67,7 @@ test("B1-R1 PARTIAL/null stays PARTIAL/null in CM-R1 and never fabricates zero",
   assert.equal(out.score,null);
 });
 
-test("existing public API handler accepts B1 through external.publicDomainScores.breadth",async()=>{
+test("public API prefers its explicit stored breadth reader over legacy external scores",async()=>{
   const breadth=readyBreadth();
   const rows=(n=84,start=100)=>Array.from({length:n},(_,i)=>({
     observationDate:`${2019+Math.floor(i/12)}-${String(i%12+1).padStart(2,"0")}-01`,
@@ -89,7 +89,7 @@ test("existing public API handler accepts B1 through external.publicDomainScores
     },
     external:{
       registeredFundFlowRows:rows(24,.2),
-      publicDomainScores:{breadth},
+      publicDomainScores:{breadth:{...breadth,score:99}},
     },
   });
   const orchestrate=()=>({
@@ -104,7 +104,7 @@ test("existing public API handler accepts B1 through external.publicDomainScores
   });
 
   const handler=createMarketScoreR1Handler({
-    env:{},collectInputs,orchestrate,
+    env:{},collectInputs,orchestrate,collectBreadthDomain:async()=>breadth,
     now:()=>new Date("2026-09-22T00:00:00.000Z"),
   });
   const response=await handler(new Request("https://zgmini.kr/api/market-score"));

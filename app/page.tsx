@@ -1,37 +1,55 @@
 "use client";
-import {CompositeMarketSection,ScenarioSection,StrengthPanel} from "./dashboard-ui";
+import {CompositeMarketSection,ScenarioSection} from "./dashboard-ui";
+import DeferredDashboardCharts from '../components/deferred-dashboard-charts';
+import {OutbreakSummary} from './outbreak-events';
 
 
-import { useEffect, useMemo, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from "react";
+import { lazy, Suspense, useEffect, useMemo, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from "react";
 import {
   Activity, ArrowDownRight, ArrowRight, ArrowUpRight, CalendarDays,
   CheckCircle2, ChevronLeft, ChevronRight, CircleAlert, Clock3, Database, Fuel, Gauge, Info,
   LineChart as LineChartIcon, LogOut, Map as MapIcon, Settings2, ShieldCheck,
   Sparkles, Star, TrendingDown, TrendingUp, UserRound, Zap,
 } from "lucide-react";
-import {
-  Area, AreaChart, CartesianGrid, Line, LineChart, ReferenceLine,
-  ResponsiveContainer, Tooltip, XAxis, YAxis,
-} from "recharts";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
-} from "@/components/ui/select";
-import {
-  Accordion, AccordionContent, AccordionItem, AccordionTrigger,
-} from "@/components/ui/accordion";
-import {
-  Sheet, SheetContent, SheetDescription, SheetFooter, SheetHeader,
-  SheetTitle, SheetTrigger,
-} from "@/components/ui/sheet";
 import { Toaster } from "@/components/ui/sonner";
 import { toast } from "sonner";
 import CountryFearGreed from "./country-fear-greed";
-import CorePceRow from "./core-pce-row";
-import CollectionHealthIndicator from "@/components/collection-health-indicator";
+import SiteHeader from "@/components/site-header";
+import SiteFooter from "@/components/site-footer";
+import InvestorSearchGuide from "@/components/investor-search-guide";
+import {DASHBOARD_INVESTOR_SEARCH} from "@/lib/investor-search-content";
+import DashboardSideRails from "@/components/dashboard-side-rails";
+
+// These controls belong to secondary views or authenticated account settings.
+// Keep their modules out of the anonymous dashboard's initial dependency graph.
+const CorePceRow=lazy(()=>import('./core-pce-row'));
+const Tabs=lazy(()=>import('@/components/ui/tabs').then(m=>({default:m.Tabs})));
+const TabsList=lazy(()=>import('@/components/ui/tabs').then(m=>({default:m.TabsList})));
+const TabsTrigger=lazy(()=>import('@/components/ui/tabs').then(m=>({default:m.TabsTrigger})));
+const Select=lazy(()=>import('@/components/ui/select').then(m=>({default:m.Select})));
+const SelectContent=lazy(()=>import('@/components/ui/select').then(m=>({default:m.SelectContent})));
+const SelectItem=lazy(()=>import('@/components/ui/select').then(m=>({default:m.SelectItem})));
+const SelectTrigger=lazy(()=>import('@/components/ui/select').then(m=>({default:m.SelectTrigger})));
+const SelectValue=lazy(()=>import('@/components/ui/select').then(m=>({default:m.SelectValue})));
+const Accordion=lazy(()=>import('@/components/ui/accordion').then(m=>({default:m.Accordion})));
+const AccordionContent=lazy(()=>import('@/components/ui/accordion').then(m=>({default:m.AccordionContent})));
+const AccordionItem=lazy(()=>import('@/components/ui/accordion').then(m=>({default:m.AccordionItem})));
+const AccordionTrigger=lazy(()=>import('@/components/ui/accordion').then(m=>({default:m.AccordionTrigger})));
+const Sheet=lazy(()=>import('@/components/ui/sheet').then(m=>({default:m.Sheet})));
+const SheetContent=lazy(()=>import('@/components/ui/sheet').then(m=>({default:m.SheetContent})));
+const SheetDescription=lazy(()=>import('@/components/ui/sheet').then(m=>({default:m.SheetDescription})));
+const SheetFooter=lazy(()=>import('@/components/ui/sheet').then(m=>({default:m.SheetFooter})));
+const SheetHeader=lazy(()=>import('@/components/ui/sheet').then(m=>({default:m.SheetHeader})));
+const SheetTitle=lazy(()=>import('@/components/ui/sheet').then(m=>({default:m.SheetTitle})));
+const SheetTrigger=lazy(()=>import('@/components/ui/sheet').then(m=>({default:m.SheetTrigger})));
+
+const MiniIndicatorPlot=lazy(()=>import('../components/dashboard-secondary-plots').then(m=>({default:m.MiniIndicatorPlot})));
+const SentimentPlot=lazy(()=>import('../components/dashboard-secondary-plots').then(m=>({default:m.SentimentPlot})));
+const IndicatorPlot=lazy(()=>import('../components/dashboard-secondary-plots').then(m=>({default:m.IndicatorPlot})));
+const SummaryPlot=lazy(()=>import('../components/dashboard-secondary-plots').then(m=>({default:m.SummaryPlot})));
 
 type Direction = "up" | "down" | "flat";
 type Signal = "positive" | "negative" | "neutral";
@@ -270,7 +288,7 @@ const themeSentiment: SentimentItem[] = [
   {name:"원전·SMR",score:54,data:makeSeries([61,58,55,51,48,52,56,53,55,57,52,54])},
   {name:"자율주행",score:49,data:makeSeries([57,54,51,48,52,50,46,49,51,47,48,49])},
   {name:"전고체 배터리",score:46,data:makeSeries([55,51,48,45,42,44,47,49,45,43,44,46])},
-  {name:"바이오테크",score:43,data:makeSeries([49,47,45,42,40,43,46,44,41,42,45,43])},
+  {name:"바이오·신약",score:43,data:makeSeries([49,47,45,42,40,43,46,44,41,42,45,43])},
   {name:"수소",score:34,data:makeSeries([52,48,44,41,38,35,32,36,39,35,33,34])},
   {name:"태양광",score:31,data:makeSeries([47,44,41,38,35,32,29,33,36,32,30,31])},
   {name:"드론·UAM",score:65,data:makeSeries([38,41,45,48,52,55,58,61,59,62,64,65])},
@@ -309,7 +327,7 @@ const volatilityByKind: Record<SentimentKind, Record<string, string>> = {
     "정보기술":"베타 1.28","커뮤니케이션":"베타 1.16","임의소비재":"베타 1.14","산업재":"베타 1.05","금융":"베타 1.02","유틸리티":"베타 0.63","헬스케어":"베타 0.78","소재":"베타 1.03","에너지":"베타 1.12","필수소비재":"베타 0.58","부동산":"베타 0.91",
   },
   theme: {
-    "AI 반도체":"베타 1.62","데이터센터 전력":"베타 1.41","양자컴퓨팅":"베타 2.18","로봇·자동화":"베타 1.37","우주·위성":"베타 1.74","사이버보안":"베타 1.19","원전·SMR":"베타 1.46","자율주행":"베타 1.71","전고체 배터리":"베타 1.58","바이오테크":"베타 1.32","수소":"베타 1.69","태양광":"베타 1.54",
+    "AI 반도체":"베타 1.62","데이터센터 전력":"베타 1.41","양자컴퓨팅":"베타 2.18","로봇·자동화":"베타 1.37","우주·위성":"베타 1.74","사이버보안":"베타 1.19","원전·SMR":"베타 1.46","자율주행":"베타 1.71","전고체 배터리":"베타 1.58","바이오·신약":"베타 1.32","수소":"베타 1.69","태양광":"베타 1.54",
     "드론·UAM":"베타 1.83","의료기기":"베타 0.86","디지털헬스":"베타 1.24","K-콘텐츠·드라마":"베타 1.07","게임·e스포츠":"베타 1.31","방산":"베타 0.92","클라우드·SaaS":"베타 1.29","핀테크":"베타 1.43","블록체인·디지털자산":"베타 2.04","AR·VR":"베타 1.66","휴머노이드":"베타 1.89","핵융합":"베타 1.77","탄소포집":"베타 1.38","희토류·핵심광물":"베타 1.21","데이터센터 액체냉각":"베타 1.35","실리콘 포토닉스":"베타 1.52","AI 신약개발":"베타 1.47","자원 재활용":"베타 1.09",
   },
 };
@@ -431,12 +449,7 @@ function MiniIndicatorChart({ item }: { item: Indicator }) {
   const color = item.signal === "positive" ? "#059669" : item.signal === "negative" ? "#e11d48" : "#64748b";
   return (
     <div className="h-12 w-28" aria-label={`${item.name} 미니 추이, ${item.benchmarkLabel}`}>
-      <ResponsiveContainer width="100%" height="100%">
-        <LineChart data={item.chart} margin={{top:5,right:3,bottom:5,left:3}}>
-          <ReferenceLine y={item.benchmark} stroke="#94a3b8" strokeDasharray="3 3" ifOverflow="extendDomain" />
-          <Line type="monotone" dataKey="value" stroke={color} strokeWidth={2.2} dot={false} isAnimationActive={false} />
-        </LineChart>
-      </ResponsiveContainer>
+      <MiniIndicatorPlot item={item}/>
     </div>
   );
 }
@@ -461,12 +474,7 @@ function SentimentCard({ item, period, kind, favorite, onToggle }: { item: Senti
       <div className="mt-3 grid grid-cols-[54px_minmax(0,1fr)] items-end gap-3">
         <div className="sentiment-score" aria-label={`${item.name} ${stage} ${item.score}점`}><strong className="block text-3xl font-black text-slate-950">{item.score}</strong></div>
         <div className="h-14" aria-label={`${item.name} ${period} 공포 탐욕 추세`}>
-          <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={visible} margin={{top:5,right:2,left:2,bottom:3}}>
-              <defs><linearGradient id={`sentiment-${kind}-${item.name.replace(/[^a-zA-Z0-9가-힣]/g, "")}`} x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={color} stopOpacity={0.28}/><stop offset="100%" stopColor={color} stopOpacity={0.02}/></linearGradient></defs>
-              <Area type="monotone" dataKey="value" stroke={color} strokeWidth={2.2} fill={`url(#sentiment-${kind}-${item.name.replace(/[^a-zA-Z0-9가-힣]/g, "")})`} dot={false} isAnimationActive={false}/>
-            </AreaChart>
-          </ResponsiveContainer>
+          <SentimentPlot visible={visible} color={color} kind={kind} item={item}/>
         </div>
       </div>
       <ScoreRail score={item.score} sentiment label={`${item.name} 공포 탐욕 지수`} />
@@ -723,17 +731,7 @@ function IndicatorDetail({ item, period }: { item: Indicator; period: Period }) 
       </div>
       <div className="grid gap-5 p-5 xl:grid-cols-[minmax(0,1.7fr)_minmax(320px,0.75fr)]">
         <div className="h-72 w-full" aria-label={`${item.name} ${period} 과거 흐름`}>
-          <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={visible} margin={{top:18,right:20,left:-12,bottom:0}}>
-              <defs><linearGradient id={`macro-${item.id}`} x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#2463eb" stopOpacity={0.28}/><stop offset="100%" stopColor="#2463eb" stopOpacity={0.02}/></linearGradient></defs>
-              <CartesianGrid stroke="#cbd5e1" strokeDasharray="3 3" vertical={false}/>
-              <XAxis dataKey="label" axisLine={false} tickLine={false} tick={{fill:"#64748b",fontSize:12}}/>
-              <YAxis axisLine={false} tickLine={false} tick={{fill:"#64748b",fontSize:12}} domain={([min,max]) => [Math.min(Number(min), item.benchmark - Math.max(1, Math.abs(item.benchmark)*0.15)), Math.max(Number(max), item.benchmark + Math.max(1, Math.abs(item.benchmark)*0.15))]}/>
-              <ReferenceLine y={item.benchmark} stroke="#e11d48" strokeWidth={1.5} strokeDasharray="5 4" ifOverflow="extendDomain" label={{value:`기준 ${item.benchmark}`,position:"insideTopRight",fill:"#be123c",fontSize:12}}/>
-              <Tooltip formatter={(value) => [`${value} ${item.unit}`, item.name]} contentStyle={{borderRadius:0,border:"1px solid #94a3b8",boxShadow:"0 8px 24px rgba(15,35,65,.12)"}}/>
-              <Area type="monotone" dataKey="value" stroke="#2463eb" strokeWidth={2.8} fill={`url(#macro-${item.id})`} activeDot={{r:5}}/>
-            </AreaChart>
-          </ResponsiveContainer>
+          <IndicatorPlot visible={visible} item={item}/>
         </div>
         <div>
           <div className="grid grid-cols-3 gap-px border border-slate-300 bg-slate-300">
@@ -766,17 +764,14 @@ function SummaryMiniChart({ data, period, score, label }: { data: ChartPoint[]; 
   const visible = getVisibleSeries(data, period);
   return (
     <div className="mt-3 h-12 w-full" aria-label={`${label} ${period} 미니 차트`}>
-      <ResponsiveContainer width="100%" height="100%">
-        <AreaChart data={visible} margin={{top:4,right:1,left:1,bottom:2}}>
-          <Area type="monotone" dataKey="value" stroke={color} strokeWidth={2.4} fill={color} fillOpacity={0.1} dot={false} isAnimationActive={false}/>
-        </AreaChart>
-      </ResponsiveContainer>
+      <SummaryPlot visible={visible} color={color}/>
     </div>
   );
 }
 
 export default function Home() {
-  const [view,setView]=useState("dashboard");
+  // Outbreak now owns its own route and document; the homepage remains the dashboard.
+  const [view]=useState("dashboard");
   const [category, setCategory] = useState<(typeof categories)[number]>("전체");
   const [countryFilter, setCountryFilter] = useState<Set<"ALL" | CountryCode>>(new Set(["ALL"]));
   const [importanceLevels, setImportanceLevels] = useState<Set<number>>(new Set());
@@ -920,25 +915,11 @@ export default function Home() {
 
   return (
     <main className="zg-app zg-dashboard min-h-screen" data-testid="dashboard-root" data-view={view}>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{__html: JSON.stringify({ "@context": "https://schema.org",        "@type": "WebPage",       "@id": "https://zgmini.kr/#webpage",       url: "https://zgmini.kr/",       name: "공포탐욕지수 한눈에 | 미국·한국 차트 - ZGmini",       description: "미국·한국 공포탐욕지수와 기간별 차트, 주요 경제지표를 한곳에서 살펴보세요.",       isPartOf: { "@id": "https://zgmini.kr/#website" },       about: { "@id": "https://zgmini.kr/#organization" },       inLanguage: "ko-KR",      }).replace(/</g, "\\u003c")}}/>
-      <header className="zg-header text-white">
-        <div className="zg-header-inner">
-          {/* Full document navigation resets the dashboard view. */}
-          {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
-          <a href="/" aria-label="ZGmini 대시보드로 이동" className="flex min-w-0 items-center gap-3 rounded-xl focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white">
-            <div className="min-w-0"><img src="/zgmini-name.png" alt="ZGmini" width={1920} height={540} className="h-auto w-36 max-w-full rounded mix-blend-lighten sm:w-44" /></div>
-          </a>
-          <nav aria-label="주 메뉴"><button aria-current={view==='dashboard'?'page':undefined} onClick={()=>setView('dashboard')}>대시보드</button><button aria-current={view==='scenarios'?'page':undefined} onClick={()=>setView('scenarios')}>아웃브레이크</button></nav>
-          <div className="zg-header-tools">
-            <div className="zg-toolbar zg-toolbar-header">
-              <div className="header-update">
-                <CollectionHealthIndicator/>
-              </div>
-            </div>
-            <div className="zg-account-tools">
-              {sessionLoading ? (
+      <script type="application/ld+json" dangerouslySetInnerHTML={{__html: JSON.stringify({ "@context": "https://schema.org",        "@type": "WebPage",       "@id": "https://zgmini.kr/#webpage",       url: "https://zgmini.kr/",       name: "ZGmini 지그미니 | 미국·한국 공포탐욕지수와 경제지표",       description: "미국·한국 공포탐욕지수의 최근 점수와 기간별 차트를 확인하세요. 물가·고용·금리 등 주요 경제지표와 데이터 관측일을 함께 제공합니다.",       isPartOf: { "@id": "https://zgmini.kr/#website" },       about: { "@id": "https://zgmini.kr/#organization" },       inLanguage: "ko-KR",      }).replace(/</g, "\\u003c")}}/>
+      <SiteHeader accountTools={sessionLoading ? (
                 <span className="hidden text-xs text-slate-400 sm:inline">계정 확인 중</span>
               ) : user ? (
+                <Suspense fallback={<span className="text-xs text-slate-400">설정 준비 중</span>}>
                 <Sheet>
                   <SheetTrigger asChild>
                     <Button className="rounded-none border border-white/20 bg-white/10 text-white hover:bg-white/20 zg-header-icon-action" aria-label="사용자 설정" title="사용자 설정">
@@ -970,23 +951,21 @@ export default function Home() {
                     </SheetFooter>
                   </SheetContent>
                 </Sheet>
-              ) : null}
-            </div>
-          </div>
-        </div>
-      </header>
+                </Suspense>
+              ) : null}/>
 
+      {view==="dashboard"&&<DashboardSideRails accountFavorites={favoriteItems.map(({kind,item})=>({key:sentimentKey(kind,item.name),label:item.name,group:kind==="sector"?"섹터 · 예시":"테마 · 예시",href:kind==="sector"?"/sector-fear-greed/":"/theme-fear-greed/",exampleScore:item.score}))}/>}
       <div className="zg-container">
         {view!=='dashboard'&&<div className="zg-data-notice zg-data-notice-compact" role="status"><Info size={16}/><span>{marketDataLoading?'경제지표를 불러오고 있습니다.':marketData?.status==='live'?'공식 자료와 ZGmini 자체 계산값을 표시합니다.':marketDataError?'데이터 연결 지연 · 마지막 정상 수신값을 표시합니다.':'일부 지표 갱신 지연 · 마지막 정상 수신값을 유지합니다.'}</span></div>}
         {(view==='dashboard'||view==='countries')&&<CountryFearGreed/>}
         {view==='dashboard'&&<>
-          <CompositeMarketSection items={displaySummaryItems} points={periodPoints[period]} demo={false} loading={marketDataLoading}/>
+          <CompositeMarketSection demo={false}/>
           <div className="zg-dashboard-secondary">
-            <ScenarioSection/>
-            <div id="strength" className="zg-strength-grid zg-strength-grid-compact">{(['sector','theme'] as const).map(kind=><StrengthPanel key={kind} title={kind==='sector'?'섹터 순위 (예시)':'테마 순위 (예시)'} items={kind==='sector'?sectorSentiment:themeSentiment} points={periodPoints[period]} onAll={()=>setView('strength')} onFavorite={user?name=>{const item=(kind==='sector'?sectorSentiment:themeSentiment).find(x=>x.name===name);if(item)void toggleFavorite(kind,item);}:undefined} isFavorite={name=>favorites.has(sentimentKey(kind,name))}/>)}</div>
+            <OutbreakSummary onOpen={id=>{window.location.assign('/outbreak/?event='+encodeURIComponent(id));}}/>
+            <DeferredDashboardCharts/>
           </div>
         </>}
-        {view==='scenarios'&&<ScenarioSection/>}
+        <Suspense fallback={<p role="status">선택한 화면을 불러오는 중입니다.</p>}>
         {view!=='dashboard' && favoriteItems.length > 0 && (
           <section className="mt-6" aria-labelledby="favorite-title">
             <div className="mb-3 flex items-center gap-2"><Star className="size-5 fill-amber-300 text-amber-300"/><h2 id="favorite-title" className="text-xl font-extrabold tracking-[-0.03em] text-white">내 즐겨찾기</h2></div>
@@ -1046,7 +1025,10 @@ export default function Home() {
         </section>}
         {view==='strength'&&<><SentimentSection title="섹터별 심리 점수 · 예시" description="실제 지수가 아닌 예시 점수·추세·베타 · CNN 지수와 무관" items={sectorSentiment} period={period} kind="sector" favorites={favorites} onToggle={user ? toggleFavorite : undefined}/>
         <SentimentSection title="테마별 심리 점수 · 예시" description="실제 지수가 아닌 예시 점수·추세·베타 · CNN 지수와 무관" items={themeSentiment} period={period} kind="theme" favorites={favorites} onToggle={user ? toggleFavorite : undefined}/></>}
+        </Suspense>
+        {view==='dashboard'&&<InvestorSearchGuide id="investor-search-dashboard" copy={DASHBOARD_INVESTOR_SEARCH} collapsible/>}
       </div>
+      {view==='dashboard'&&<SiteFooter/>}
       {view!=='dashboard'&&<footer className="zg-footer">ZGmini · 공식 자료와 독자 모델을 연결합니다. 투자 권유가 아니며, 예시 데이터는 별도로 표시합니다.</footer>}
       <Toaster richColors position="bottom-right"/>
     </main>

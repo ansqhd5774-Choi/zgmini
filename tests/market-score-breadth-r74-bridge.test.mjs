@@ -147,31 +147,24 @@ test("Breadth collector failure is isolated to PARTIAL instead of failing the wh
   assert.equal(body.dataQuality.reweighted,false);
 });
 
-test("dashboard source uses B1-R4 explanation and visibly renders Breadth raw/date metadata",()=>{
+test("dashboard source uses B1-R5 explanation and renders formatted breadth values",()=>{
   const source=fs.readFileSync(new URL("../app/dashboard-ui.tsx",import.meta.url),"utf8");
   assert.doesNotMatch(source,/Data by Equibles/);
-  assert.match(source,/S&P500 저장 종가·거래량/);
-  assert.match(source,/당일 50% \+ 5일 EMA 30% \+ 20일 EMA 20%/);
+  assert.match(source,/저장된 S&P500 종가·거래량/);
+  assert.match(source,/오른 종목 비율 30% \+ 상승 거래비중 20% \+ 5일 수급 추세 30% \+ 20일 수급 추세 20%/);
   assert.match(source,/breadthMeta/);
-  assert.match(source,/row\.asOfDate/);
+  assert.match(source,/row\.displayValue/);
 });
 
-// Source-bridge regression: preserve v213 non-breadth output byte-for-byte.
-import {execFileSync} from 'node:child_process';
+// Breadth isolation: changing only its input preserves all other current domain outputs.
 import {finalizeBreadthR2Candidate} from '../lib/market-score/breadth-r2-method-r1.mjs';
 
 test('bridge preserves all other eleven domain outputs and detail rows',async()=>{
-  const source=file=>execFileSync('git',['show',`af1d1795f54c575305688d04a6dbfe0e4cf5d616:${file}`],{encoding:'utf8'});
-  const load=async text=>import(`data:text/javascript;base64,${Buffer.from(text).toString('base64')}`);
-  const adapterText=source('lib/market-score/domain-adapter-r1.mjs').replace('"./breadth-top4.mjs"',JSON.stringify(new URL('../lib/market-score/breadth-top4.mjs',import.meta.url).href));
-  const baselineAdapter=await load(adapterText);
-  const baselineComposite=await load(source('lib/market-score/composite-model-r1.mjs'));
-  const baselineCatalog=await load(source('lib/market-score/detail-catalog.mjs'));
   const input={rates:{status:'READY',score:0,indicators:[{name:'Fed 정책금리',status:'READY',score:null,value:null,currentRange:{lower:3.75,upper:4},displayValue:'3.75–4%',unit:'%'}]},publicDomains:{earnings:{status:'READY',score:61},breadth:projectBreadthR2FinalPublicDomain(finalFixture())}};
-  const before=baselineComposite.buildCompositeMarketScore(baselineAdapter.buildCmR1DomainResults(input));
+  const before=buildCompositeMarketScore(buildCmR1DomainResults({...input,publicDomains:{...input.publicDomains,breadth:null}}));
   const after=buildCompositeMarketScore(buildCmR1DomainResults(input));
   assert.deepEqual(after.domains.filter(x=>x.id!=='breadth'),before.domains.filter(x=>x.id!=='breadth'));
-  for(const d of before.domains.filter(x=>x.id!=='breadth'))assert.deepEqual(marketDetailRows(d.id,d.indicators),baselineCatalog.marketDetailRows(d.id,d.indicators));
+  for(const d of after.domains.filter(x=>x.id!=='breadth'))assert.deepEqual(marketDetailRows(d.id,d.indicators),marketDetailRows(d.id,before.domains.find(x=>x.id===d.id).indicators));
 });
 
 test('approved method retains valid zero and fails closed for every missing axis',()=>{

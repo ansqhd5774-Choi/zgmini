@@ -1,10 +1,9 @@
-.zg-collection-health{position:relative;color:#94a3b8}
+.zg-collection-health{position:relative;color:#f5b942}
 .zg-header-tools .zg-toolbar-header>.header-update:has(.zg-collection-health){overflow:visible}
 .zg-header-tools .zg-toolbar-header .zg-collection-health>button{min-width:36px;min-height:36px;width:36px;height:36px;background:transparent;border:1px solid currentColor;border-radius:6px;color:inherit}
 .zg-header-tools .zg-toolbar-header .zg-collection-health>button svg{color:inherit;width:18px;height:18px}
 .zg-collection-health.healthy{color:#10b981}
-.zg-collection-health.partial{color:#f5b942}
-.zg-collection-health.stale,.zg-collection-health.unknown{color:#94a3b8}
+.zg-collection-health.partial,.zg-collection-health.stale,.zg-collection-health.unknown{color:#f5b942}
 .zg-collection-health>button{display:grid;place-items:center;width:36px;height:36px;border:1px solid currentColor;border-radius:6px;background:transparent;cursor:pointer}
 .zg-collection-health>button:focus-visible{outline:2px solid #fff;outline-offset:3px}
 .zg-collection-health.partial>button svg{animation:zg-collection-pulse 2.5s ease-in-out infinite}

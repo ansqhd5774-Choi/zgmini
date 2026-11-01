@@ -1,0 +1,340 @@
+{
+  "version": 3,
+  "reviewedAt": "2026-10-25",
+  "basis": "제공 기능·기존 사용자 표현·공개 검색 결과에서 확인한 편집용 검색어 예시. 검색량·순위 측정값이 아님.",
+  "pages": [
+    {
+      "path": "/",
+      "queries": [
+        "미국 증시",
+        "미국 주식 지표",
+        "주식시장 투자심리",
+        "공포와 탐욕",
+        "공포탐욕지수",
+        "공탐",
+        "공탐지수",
+        "종합 시장 점수",
+        "주식 매수 타이밍",
+        "경제지표"
+      ]
+    },
+    {
+      "path": "/fear-greed/usa/",
+      "queries": [
+        "미국 공탐",
+        "미국 공탐지수",
+        "CNN 공포지수",
+        "미국 공포탐욕지수",
+        "미장 공탐",
+        "VIX 지수",
+        "빅스 지수",
+        "풋콜비율",
+        "S&P500 투자심리"
+      ]
+    },
+    {
+      "path": "/fear-greed/korea/",
+      "queries": [
+        "한국 공탐",
+        "한국 공탐지수",
+        "한국 공포지수",
+        "국장 공탐",
+        "코스피 공포지수",
+        "코스피 공포탐욕지수",
+        "국내 주식 투자심리",
+        "VKOSPI200"
+      ]
+    },
+    {
+      "path": "/risk-indicators/",
+      "queries": [
+        "미국 경제 위험",
+        "주식시장 위험 지표",
+        "미국 경기침체 위험",
+        "미국 경제 위기",
+        "증시 급락 위험"
+      ]
+    },
+    {
+      "path": "/economic-indicators/",
+      "queries": [
+        "미국 경제지표",
+        "주식 투자 경제지표",
+        "미국 주요 경제지표",
+        "경제지표 보는 법",
+        "미국 증시 지표"
+      ]
+    },
+    {
+      "path": "/sector-fear-greed/",
+      "queries": [
+        "미국 섹터별 공탐",
+        "업종별 공포탐욕지수",
+        "섹터 ETF 투자심리",
+        "미국 업종별 강세",
+        "섹터 로테이션",
+        "GICS 11개 섹터"
+      ]
+    },
+    {
+      "path": "/theme-fear-greed/",
+      "queries": [
+        "테마 공탐",
+        "테마별 공포탐욕지수",
+        "AI 반도체 ETF",
+        "로봇 ETF",
+        "바이오 ETF",
+        "방산 ETF",
+        "원전 SMR ETF",
+        "클라우드 ETF",
+        "사이버보안 ETF",
+        "핀테크 ETF",
+        "자율주행 ETF"
+      ]
+    },
+    {
+      "path": "/inflation/",
+      "queries": [
+        "미국 인플레이션",
+        "인플레이션 위험",
+        "근원 물가",
+        "물가 재상승",
+        "디스인플레이션",
+        "기대인플레이션"
+      ]
+    },
+    {
+      "path": "/recession/",
+      "queries": [
+        "미국 경기침체",
+        "리세션",
+        "샴의 법칙",
+        "Sahm Rule",
+        "장단기 금리차",
+        "장단기 금리차 역전",
+        "미국 GDP와 침체"
+      ]
+    },
+    {
+      "path": "/stagflation-risk/",
+      "queries": [
+        "스태그플레이션",
+        "스태그플레이션 뜻",
+        "고물가 경기침체",
+        "스태그플레이션 주식"
+      ]
+    },
+    {
+      "path": "/credit-risk/",
+      "queries": [
+        "미국 신용위험",
+        "신용경색",
+        "회사채 신용 스트레스",
+        "하이일드",
+        "투자등급 회사채",
+        "CMDI"
+      ]
+    },
+    {
+      "path": "/earnings-recession/",
+      "queries": [
+        "미국 실적 침체",
+        "기업 실적 둔화",
+        "EPS 성장",
+        "영업이익률",
+        "earnings recession"
+      ]
+    },
+    {
+      "path": "/asset-bubble/",
+      "queries": [
+        "미국 자산 버블",
+        "주식 거품",
+        "주식 고평가",
+        "증시 과열",
+        "밸류에이션 부담",
+        "버블 붕괴"
+      ]
+    },
+    {
+      "path": "/debt-risk/",
+      "queries": [
+        "미국 부채 위험",
+        "미국 가계 부채",
+        "미국 기업 부채",
+        "DSR",
+        "원리금 상환 부담"
+      ]
+    },
+    {
+      "path": "/supply-shock/",
+      "queries": [
+        "공급 충격",
+        "공급망 차질",
+        "유가 급등 위험",
+        "원자재 쇼크",
+        "에너지 비용 압력"
+      ]
+    },
+    {
+      "path": "/guides/fear-greed-buying/",
+      "queries": [
+        "주식 매수 타이밍",
+        "공탐지수 매수 기준",
+        "공포탐욕지수 매수",
+        "극단적 공포 매수",
+        "주식 저점 판단",
+        "분할매수 판단"
+      ]
+    },
+    {
+      "path": "/guides/cpi-pce-release/",
+      "queries": [
+        "미국 CPI 발표일",
+        "CPI 발표 시간",
+        "CPI 한국시간",
+        "PCE 발표 일정",
+        "PCE 발표 한국시간",
+        "소비자물가지수 발표일",
+        "근원 CPI 예상치",
+        "전월 대비 전년 대비"
+      ]
+    },
+    {
+      "path": "/guides/fomc/",
+      "queries": [
+        "연준 금리 발표일",
+        "연준 금리 발표 시간",
+        "미국 기준금리 발표일",
+        "미국 금리 발표 한국시간",
+        "FOMC 일정",
+        "FOMC 한국시간",
+        "금리 결정 기자회견",
+        "금리 발표 일정"
+      ]
+    },
+    {
+      "path": "/economic-indicators/inflation/",
+      "queries": [
+        "미국 물가지표",
+        "CPI",
+        "PCE",
+        "소비자물가지수",
+        "근원 CPI",
+        "근원 PCE"
+      ]
+    },
+    {
+      "path": "/economic-indicators/employment/",
+      "queries": [
+        "미국 고용지표",
+        "비농업고용",
+        "NFP",
+        "미국 실업률",
+        "신규 실업수당"
+      ]
+    },
+    {
+      "path": "/economic-indicators/rates/",
+      "queries": [
+        "미국 기준금리",
+        "미국 국채금리",
+        "미국 10년물 금리",
+        "실질금리",
+        "연준 금리"
+      ]
+    },
+    {
+      "path": "/economic-indicators/credit/",
+      "queries": [
+        "미국 회사채",
+        "하이일드 회사채",
+        "투자등급 회사채",
+        "신용여건",
+        "채권 변동성"
+      ]
+    },
+    {
+      "path": "/economic-indicators/growth/",
+      "queries": [
+        "미국 경기지표",
+        "산업생산",
+        "신규주문",
+        "경기 둔화",
+        "실물경기"
+      ]
+    },
+    {
+      "path": "/economic-indicators/consumption/",
+      "queries": [
+        "미국 소비지표",
+        "개인소비지출",
+        "실질소비",
+        "미국 소비와 소득"
+      ]
+    },
+    {
+      "path": "/economic-indicators/earnings/",
+      "queries": [
+        "미국 기업 실적",
+        "주당순이익",
+        "EPS",
+        "매출 성장",
+        "영업이익률",
+        "현금흐름"
+      ]
+    },
+    {
+      "path": "/economic-indicators/liquidity/",
+      "queries": [
+        "미국 유동성",
+        "M2 통화량",
+        "은행 준비금",
+        "TGA",
+        "역레포",
+        "ON RRP",
+        "연준 유동성"
+      ]
+    },
+    {
+      "path": "/economic-indicators/fund-flows/",
+      "queries": [
+        "펀드 자금흐름",
+        "자금 유입",
+        "자금 유출",
+        "펀드 순유입",
+        "환매 압력"
+      ]
+    },
+    {
+      "path": "/economic-indicators/breadth/",
+      "queries": [
+        "미국 증시 수급",
+        "시장 폭",
+        "상승 종목",
+        "거래비중",
+        "market breadth"
+      ]
+    },
+    {
+      "path": "/economic-indicators/dollar-fx/",
+      "queries": [
+        "미국 달러지수",
+        "달러 강세",
+        "달러 약세",
+        "달러 종합지수"
+      ]
+    },
+    {
+      "path": "/economic-indicators/commodities/",
+      "queries": [
+        "국제유가",
+        "WTI",
+        "브렌트유",
+        "Brent",
+        "구리 가격",
+        "원자재 지표"
+      ]
+    }
+  ]
+}

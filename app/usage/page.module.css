@@ -1,0 +1,32 @@
+.page {
+  min-height: 100vh;
+  background: #10171c;
+  color: #f0f4f8;
+  font-family: Pretendard, 'Noto Sans KR', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
+}
+
+.content {
+  width: min(1124px, calc(100% - 64px));
+  margin: 0 auto;
+  padding: 40px 0 26px;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.brand { display: inline-flex; align-items: center; flex: 0 0 auto; }
+.brand img { display: block; width: 128px; height: auto; }
+.brand:focus-visible { outline: 2px solid #50e8ba; outline-offset: 4px; }
+.eyebrow { color: #c0cbd2; font-size: 13px; letter-spacing: .01em; white-space: nowrap; }
+.eyebrow span { display: inline-block; margin: 0 11px; opacity: .55; }
+
+@media (max-width: 760px) {
+  .content { width: min(100% - 36px, 580px); padding-top: 25px; }
+  .brand img { width: 112px; }
+  .eyebrow { font-size: 11px; }
+  .eyebrow span { margin: 0 6px; }
+}

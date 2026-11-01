@@ -1,5 +1,6 @@
 import {extractRetail} from "./consumption-r3-census-lib.mjs";
 import {extractStable9Adaptive} from "./consumption-r3-nyfed-lib.mjs";
+import {unzipSelected} from '../lib/diagnostic-layer/xlsx-lite.mjs';
 
 const finite=Number.isFinite;
 const validDate=v=>typeof v==="string"&&/^\d{4}-\d{2}-\d{2}$/.test(v);
@@ -102,7 +103,14 @@ async function getBytes(fetchImpl,url){
   if(!r.ok)throw new Error(`C1_R3_HTTP_${r.status}:${url}`);
   return Buffer.from(await r.arrayBuffer());
 }
-function parseAlfredCurrent(buf,seriesId,scoreDate){
+export async function parseAlfredCurrent(buf,seriesId,scoreDate){
+  if(buf[0]===0x50&&buf[1]===0x4b){
+    const entries=await unzipSelected(buf,{include:name=>name.endsWith('.csv'),maxEntries:32,maxTotalBytes:20000000});
+    const column=`${seriesId}_${scoreDate.replaceAll('-','')}`;
+    const matches=[...entries.values()].filter(bytes=>csvLine(Buffer.from(bytes).toString('utf8').replace(/^\uFEFF/,'').split(/\r?\n/)[0]).includes(column));
+    if(matches.length!==1)throw new Error(`ALFRED_CURRENT_COLUMN_MISSING:${seriesId}:${scoreDate}`);
+    buf=Buffer.from(matches[0]);
+  }
   const text=buf.toString("utf8").replace(/^\uFEFF/,"");
   const lines=text.trim().split(/\r?\n/),head=csvLine(lines[0]||"");
   const col=`${seriesId}_${scoreDate.replaceAll("-","")}`,idx=head.indexOf(col);
@@ -147,7 +155,7 @@ export async function collectConsumptionR3NormalizedSources({
     attempts.push({sourceKey:src.sourceKey,url:src.url});
     const buf=await getBytes(fetchImpl,src.url);
     if(src.provider==="ALFRED"){
-      payloads[src.sourceKey]=parseAlfredCurrent(buf,src.seriesId,scoreDate);
+      payloads[src.sourceKey]=await parseAlfredCurrent(buf,src.seriesId,scoreDate);
     }else if(src.provider==="CENSUS"){
       const z=extractRetail(buf,src.observationMonth);
       payloads[src.sourceKey]={provider:"CENSUS",modelQuarter:plan.quarter,observationMonth:src.observationMonth,metrics:z.metrics};

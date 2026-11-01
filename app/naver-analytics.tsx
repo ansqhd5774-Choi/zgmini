@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import {afterFirstLoadIdle} from '../lib/noncritical-startup.mjs';
 
 type AnalyticsWindow = Window & {
   wcs_add?: Record<string, string>;
@@ -14,6 +15,8 @@ export default function NaverAnalytics() {
     const analytics = window as AnalyticsWindow;
     // The shared layout and React Strict Mode must not load or count twice.
     if (analytics.zgminiNaverAnalyticsStarted) return;
+    return afterFirstLoadIdle(window,()=>{
+    if (analytics.zgminiNaverAnalyticsStarted) return;
     analytics.zgminiNaverAnalyticsStarted = true;
     analytics.wcs_add = analytics.wcs_add || {};
     analytics.wcs_add.wa = "18bc5d104a33b20";
@@ -21,10 +24,12 @@ export default function NaverAnalytics() {
     const script = document.createElement("script");
     script.src = "https://wcs.pstatic.net/wcslog.js";
     script.async = true;
+    script.fetchPriority = "low";
     script.onload = () => {
       if (analytics.wcs && analytics.wcs_do) analytics.wcs_do();
     };
     document.body.appendChild(script);
+    });
   }, []);
 
   return null;

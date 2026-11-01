@@ -1,3 +1,4 @@
+import {PUBLIC_DISPLAY_MAX_AGE_MS} from './public-display-freshness.mjs';
 export const PUBLIC_PROJECTION_KEYS=Object.freeze({
   inflation:'detail:inflation:v1',
   recession:'detail:recession:v1',
@@ -37,7 +38,7 @@ export function publicProjectionStore(db,{onRead}={}){
   });
 }
 
-export async function storedProjectionResponse(request,{store,key,maxAgeMs=36*3600000,now=Date.now()}={}){
+export async function storedProjectionResponse(request,{store,key,maxAgeMs=PUBLIC_DISPLAY_MAX_AGE_MS,now=Date.now()}={}){
   const headers={'cache-control':'no-store','x-robots-tag':'noindex','x-content-type-options':'nosniff','x-public-projection':'STORED'};
   if(request.method!=='GET')return Response.json({status:'FAILED',reason:'METHOD_NOT_ALLOWED'},{status:405,headers});
   let row;try{row=await store.read(key)}catch{}

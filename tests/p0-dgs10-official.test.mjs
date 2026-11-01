@@ -1,3 +1,4 @@
+import {marketDataFeedFixtureSource} from './market-data-feed-fixture.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -25,7 +26,7 @@ test('HTTP failure returns safely without CSV retry',async()=>{
  let n=0;const r=await fetchMarketFred('DGS10',{key,now,fetchImpl:async()=>{n++;return new Response(key,{status:503});}});assert.equal(n,1);assert.equal(r.status,'HTTP_ERROR');assert.deepEqual(r.data,[]);assert.ok(!JSON.stringify(r).includes(key));
 });
 test('existing 10Y consumer receives raw percent, no transformation',async()=>{
- const route=fs.readFileSync(new URL('../app/api/market-data/route.ts',import.meta.url),'utf8');
- const direct=new Function(ts.transpile(route.replace(/^import .*;\r?\n/gm,'').replace('export async function GET','async function GET'),{target:ts.ScriptTarget.ES2022,module:ts.ModuleKind.None})+';return makeDirectIndicator;')();
+ const route=marketDataFeedFixtureSource();
+ const direct=new Function(ts.transpile(route.replace(/^import .*;\r?\n/gm,'').replace('export async function collectMarketDataFeed','async function collectMarketDataFeed'),{target:ts.ScriptTarget.ES2022,module:ts.ModuleKind.None})+';return makeDirectIndicator;')();
  const r=await run(rows()), out=direct(r.data,{suffix:'%'});assert.equal(out.currentValue,4.95);assert.equal(out.previousValue,4.9);assert.equal(out.currentDate,'2026-09-10');assert.equal(out.previousDate,'2026-09-08');
 });

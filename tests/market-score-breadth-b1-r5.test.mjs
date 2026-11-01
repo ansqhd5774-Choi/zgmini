@@ -1,10 +1,27 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import {composeBreadthB1R5Score,readBreadthB1R5StoredScore} from "../lib/market-score/breadth-b1-r5-reader.mjs";
+import {composeBreadthB1R5Score,readBreadthB1R5StoredScore,smoothBreadthFinalSeries} from "../lib/market-score/breadth-b1-r5-reader.mjs";
 import {projectBreadthB1R5PublicDomain,assertBreadthB1R5PublicContract} from "../lib/market-score/breadth-b1-r5-worker-domain.mjs";
 import {B1_R5_METHOD} from "../lib/market-score/breadth-b1-r5-contract.mjs";
 
 const near=(actual,expected,eps=1e-9)=>assert.ok(Math.abs(actual-expected)<=eps,`expected ${actual} ~= ${expected}`);
+
+test("final EMA3 responds immediately to a shock and retains an ongoing change",()=>{
+ const out=smoothBreadthFinalSeries([{label:"2026-10-01",value:80},{label:"2026-10-02",value:20},{label:"2026-10-05",value:20},{label:"2026-10-06",value:20}]);
+ assert.deepEqual(out.map(x=>x.value),[80,50,35,27.5]);
+});
+test("missing trading sessions reset final EMA without invented observations",()=>{
+ const out=smoothBreadthFinalSeries([{label:"2026-10-01",value:80},{label:"2026-10-05",value:20}]);
+ assert.deepEqual(out.map(x=>x.value),[80,20]);
+ assert.throws(()=>smoothBreadthFinalSeries([{label:"2026-10-01",value:null}]));
+ assert.throws(()=>smoothBreadthFinalSeries([{label:"2026-10-01",value:50},{label:"2026-10-01",value:60}]));
+ assert.throws(()=>smoothBreadthFinalSeries([{label:"2026-10-03",value:50}]));
+ assert.throws(()=>smoothBreadthFinalSeries([{label:"2026-02-30",value:50}]));
+});
+test("public score and final trend use the same EMA while raw factors are retained",async()=>{
+ const out=await readBreadthB1R5StoredScore({storedR4Reader:async()=>({status:"READY",score:20,observationDate:"2026-10-02",components:{advanceRatio:.2,advanceValueShare:.2},smoothing:{ema5:20,ema20:20},trend:[{label:"2026-10-01",value:80},{label:"2026-10-02",value:20}]})});
+ near(out.score,50);near(out.trend.at(-1).value,out.score);near(out.smoothing.rawScore,20);near(out.factors.ema5,20);assert.equal(out.smoothing.finalPeriod,3);
+});
 
 test("R5 is explicit four-factor breadth scoring",()=>{
   const out=composeBreadthB1R5Score({advanceRatio:.62,advanceValueShare:.58,ema5:61,ema20:57});

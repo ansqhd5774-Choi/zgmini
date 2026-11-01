@@ -1,8 +1,11 @@
 import {liquidityHistoryRow} from '../../worker/market-score-response-store.mjs';
 import {LIQUIDITY_ACTIVE_HISTORY_METHOD} from '../../worker/liquidity-active-history-reader.mjs';
 import {hash,save} from './d1.mjs';
+import {assertCompleteMarket} from './market-publication-safety.mjs';
+import {transientD1Failure} from './d1-transient.mjs';
 
 export function marketPlan(body,now,lease,previous){
+ assertCompleteMarket(body);
  if(body?.status!=='SUCCESS'||body.domains?.length!==12||!Number.isSafeInteger(now)||!lease)throw Error('INVALID_MARKET_PUBLICATION');
  const encoded=JSON.stringify(body),plan=[];
  plan.push({sql:"SELECT CASE WHEN EXISTS(SELECT 1 FROM market_collection_jobs_v1 WHERE job='pipeline' AND lease_id=? AND lease_until>?) AND COALESCE((SELECT stored_at FROM market_public_snapshots_v1 WHERE snapshot_key='current'),-1)=? THEN 1 ELSE json('PC_SOURCE_OR_LEASE_CHANGED') END AS guarded",params:[lease,Date.now(),previous??-1]});
@@ -14,13 +17,24 @@ export function marketPlan(body,now,lease,previous){
 
 export async function claimMarket(client,db){
  const now=Date.now(),id=crypto.randomUUID();
- await client.request(db,[{sql:"INSERT INTO market_collection_jobs_v1(job,lease_id,lease_until,finished_at,status) VALUES('pipeline',?,?,?,'RUNNING') ON CONFLICT(job) DO UPDATE SET lease_id=excluded.lease_id,lease_until=excluded.lease_until,finished_at=excluded.finished_at,status=excluded.status WHERE market_collection_jobs_v1.lease_until<=?",params:[id,now+180000,now,now]}]);
- const row=(await client.query(db,"SELECT lease_id FROM market_collection_jobs_v1 WHERE job='pipeline'")).results?.[0];
+ let writeError;
+ try{await client.request(db,[{sql:"INSERT INTO market_collection_jobs_v1(job,lease_id,lease_until,finished_at,status) VALUES('pipeline',?,?,?,'RUNNING') ON CONFLICT(job) DO UPDATE SET lease_id=excluded.lease_id,lease_until=excluded.lease_until,finished_at=excluded.finished_at,status=excluded.status WHERE market_collection_jobs_v1.lease_until<=?",params:[id,now+180000,now,now]}]);}catch(error){if(!transientD1Failure(error))throw error;writeError=error;}
+ const row=(await client.query(db,"SELECT lease_id,lease_until FROM market_collection_jobs_v1 WHERE job='pipeline'")).results?.[0];
+ if(writeError){if(row?.lease_id!==id||!(row.lease_until>Date.now()))throw writeError;if(client.stats)client.stats.leaseClaimRecovered=(client.stats.leaseClaimRecovered??0)+1;}
  return row?.lease_id===id?id:null;
 }
-export async function releaseMarket(client,db,id){await client.request(db,[{sql:"UPDATE market_collection_jobs_v1 SET lease_id=NULL,lease_until=0,status='IDLE',finished_at=? WHERE job='pipeline' AND lease_id=?",params:[Date.now(),id]}]);}
+export async function releaseMarket(client,db,id){
+ try{await client.request(db,[{sql:"UPDATE market_collection_jobs_v1 SET lease_id=NULL,lease_until=0,status='IDLE',finished_at=? WHERE job='pipeline' AND lease_id=?",params:[Date.now(),id]}]);}
+ catch(error){
+  if(!transientD1Failure(error))throw error;
+  const row=(await client.query(db,"SELECT lease_id FROM market_collection_jobs_v1 WHERE job='pipeline'")).results?.[0];
+  if(row?.lease_id===id)throw error;
+  if(client.stats)client.stats.leaseReleaseRecovered=(client.stats.leaseReleaseRecovered??0)+1;
+ }
+}
 
 export async function publishMarket(client,db,body,now,lease,previous,file){
+ assertCompleteMarket(body);
  const pending={status:'SUBMITTING',storedAt:now,bodyHash:hash(body)};save(file,pending);
  let writeError;try{await client.request(db,marketPlan(body,now,lease,previous));}catch(error){writeError=error;}
  // A timeout is not permission to repeat a mutation: always read back first.

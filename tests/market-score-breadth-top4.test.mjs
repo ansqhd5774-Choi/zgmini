@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import {buildCmR1DomainResults} from "../lib/market-score/domain-adapter-r1.mjs";
-const domain=breadth=>buildCmR1DomainResults({publicDomains:{breadth}}).find(d=>d.id==="breadth");
+import {breadthTop4} from "../lib/market-score/breadth-top4.mjs";
+const domain=breadth=>({score:breadth?.score??null,indicators:breadthTop4(breadth)});
 test("B1 READY does not fabricate four normalized factors",()=>{
   const d=domain({status:"READY",score:65,components:{advanceRatio:.625,advanceValueShare:.6875}});
   assert.equal(d.score,65);

@@ -3,9 +3,19 @@ import assert from 'node:assert/strict';
 import {marketDetailRows} from '../lib/market-score/detail-catalog.mjs';
 const ids=['inflation','employment','rates','credit','growth','consumption','earnings','liquidity','fundFlows','breadth','dollarFx','commodities'];
 test('detail catalog preserves the legacy one-row fund-flow snapshot until R54 indicators arrive',()=>{
- const rows=ids.flatMap(id=>marketDetailRows(id));assert.equal(rows.length,45);
- assert.equal(new Set(rows.map(r=>r.label)).size,45);
+ // R4 replaces the four legacy consumption rows with two score factors and one explanatory row.
+ const rows=ids.flatMap(id=>marketDetailRows(id));assert.equal(rows.length,44);
+ assert.equal(new Set(rows.map(r=>r.label)).size,44);
  assert.ok(rows.every(r=>r.score===null&&r.value===null));
+});
+test('consumption R4 exposes two score factors and unscored acceleration',()=>{
+ const rows=marketDetailRows('consumption',[
+  {name:'실질 소비 최근 3개월',status:'READY',score:70,value:2,unit:'% 연율'},
+  {name:'실질 소비 전년 대비',status:'READY',score:60,value:1,unit:'%'},
+  {name:'소비 가속·둔화',status:'READY',score:null,value:0,unit:'%p'},
+ ]);
+ assert.deepEqual(rows.map(row=>row.score),[70,60,null]);
+ assert.equal(rows[2].raw,true);assert.equal(rows[2].value,0);
 });
 test('commodity values are matched by identity, never by array position',()=>{
  const rows=marketDetailRows('commodities',[{name:'휘발유',status:'READY',score:51},{name:'WTI',status:'READY',score:0},{name:'구리',status:'READY',score:33}]);
@@ -18,10 +28,21 @@ test('unavailable or ambiguous values are not substituted and R53 raw display re
  assert.equal(marketDetailRows('inflation',[{name:'목표안정',status:'READY',score:65},{name:'목표안정',status:'READY',score:66}])[0].score,null);
 });
 test('verified breadth raw values preserve zero and units',()=>{
- const r=marketDetailRows('breadth',[{name:'상승 종목 비율',status:'READY',value:0,unit:'%'}])[1];
+ const r=marketDetailRows('breadth',[{name:'주식공급 폭',status:'READY',value:0,unit:'%'}])[1];
  assert.equal(r.value,0);assert.equal(r.unit,'%');assert.equal(r.raw,true);assert.equal(r.score,null);
 });
 
+test('E1-R5 earnings dashboard exposes only four representative rows by stable id',()=>{
+ const indicators=Array.from({length:13},(_,index)=>({
+  id:`S${index+1}`,name:`legacy-name-${index+1}`,status:'READY',score:index+10,
+  value:index+0.5,unit:'점',asOfDate:'2026-10-16',source:'fixture',
+ }));
+ const rows=marketDetailRows('earnings',indicators);
+ assert.equal(rows.length,4);
+ assert.deepEqual(rows.map(row=>row.label),['주당이익 성장','매출 성장률','이익 증가 종목','영업이익률']);
+ assert.deepEqual(rows.map(row=>row.score),[10,11,16,12]);
+ assert.ok(rows.every(row=>row.asOfDate==='2026-10-16'&&row.source==='fixture'));
+});
 
 test('Growth R2 representative UI rows map by stable feature id',()=>{
  const rows=marketDetailRows('growth',[
@@ -34,7 +55,6 @@ test('Growth R2 representative UI rows map by stable feature id',()=>{
  assert.deepEqual(rows.map(r=>r.score),[52,47,41,38]);
  assert.deepEqual(rows.map(r=>r.asOfDate),['2026-08-01','2026-08-01','2026-08-01','2026-08-01']);
 });
-
 
 test('RATE R3 detail rows display scores while preserving raw metadata',()=>{
  const rows=marketDetailRows('rates',[
@@ -55,11 +75,10 @@ test('B1-R5 detail rows use new stable ids and formula factors',()=>{
   {id:'breadth-41',name:'상승종목비율',status:'READY',score:62.5,value:62.5,unit:'%'},
   {id:'breadth-43',name:'5일 수급 EMA',status:'READY',score:60,value:60,unit:'점'},
  ]);
- assert.deepEqual(rows.map(r=>r.label),['상승종목비율','상승거래대금비율','5일 수급 EMA','20일 수급 EMA']);
+ assert.deepEqual(rows.map(r=>r.label),['오른 종목 비율','상승 거래비중','5일 수급 추세','20일 수급 추세']);
  assert.deepEqual(rows.map(r=>r.score),[62.5,59,60,58]);
  assert.deepEqual(rows.map(r=>r.unit),['%','%','점','점']);
 });
-
 
 test('Employment R54 detail rows map by stable factor id',()=>{
  const rows=marketDetailRows('employment',[
@@ -71,4 +90,27 @@ test('Employment R54 detail rows map by stable factor id',()=>{
  assert.deepEqual(rows.map(r=>r.label),['실업률','일자리 증가세','실업수당 신청','지역 고용 개선']);
  assert.deepEqual(rows.map(r=>r.score),[70,75,68,80]);
  assert.deepEqual(rows.map(r=>r.value),[4.2,145,220000,80]);
+});
+
+test('original four-factor inflation dashboard rows use approved stable IDs, not obsolete R2 labels',()=>{
+ const indicators=[
+  {id:'inflationExpectations',name:'다른 이름',status:'READY',score:43.0297,observationDate:'2026-10-01'},
+  {id:'cpi',name:'다른 이름',status:'READY',score:55.8784,observationDate:'2026-08-01'},
+  {id:'corePce',name:'다른 이름',status:'READY',score:43.5625,observationDate:'2026-08-01'},
+  {id:'coreCpi',name:'다른 이름',status:'READY',score:97.9054,observationDate:'2026-08-01'},
+ ];
+ const result=marketDetailRows('inflation',indicators);
+ assert.deepEqual(result.map(r=>r.label),['근원 PCE','근원 CPI','소비자물가','기대 인플레이션']);
+ assert.deepEqual(result.map(r=>r.score),[43.5625,97.9054,55.8784,43.0297]);
+ assert.deepEqual(result.map(r=>r.asOfDate),['2026-08-01','2026-08-01','2026-08-01','2026-10-01']);
+ assert.ok(result.every(r=>r.raw===false));
+});
+test('missing or duplicate original inflation IDs never reuse a different factor',()=>{
+ const rows=marketDetailRows('inflation',[
+  {id:'corePce',status:'READY',score:0},
+  {id:'coreCpi',status:'READY',score:70},
+  {id:'coreCpi',status:'READY',score:75},
+  {id:'inflationExpectations',status:'PARTIAL',score:55},
+ ]);
+ assert.deepEqual(rows.map(r=>r.score),[0,null,null,null]);
 });

@@ -37,6 +37,7 @@ async function requestOne(endpoint, apiKey, fetchImpl, timeoutMs) {
   } finally { clearTimeout(timer); }
 }
 
+/** @param {{apiKey?:string|null,fetchImpl?:typeof fetch,timeoutMs?:number}} [options] */
 export async function runFmpRuntimeProbe({ apiKey, fetchImpl=fetch, timeoutMs=8000 }={}) {
   if (!apiKey || typeof apiKey !== "string") return {
     status:"SECRET_MISSING", secretPresent:false, keyAccepted:false, providerRequestCount:0, endpoints:[], scope:"AUTH_AND_ENDPOINT_ACCESS_ONLY"

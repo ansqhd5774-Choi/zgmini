@@ -1,0 +1,376 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ZGMINI 미국 공포탐욕지수 — R7 모바일 균형형 디자인 시안</title>
+  <style>
+    :root{color-scheme:dark;--bg:#07151e;--panel:#0b2331;--panel2:#102e3d;--head:#122f40;--stroke:#294957;--muted:#94b2c0;--text:#eaf4f9;--aqua:#85d4dc;--red:#ec6978;--amber:#e6b85f}
+    *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,"Malgun Gothic",sans-serif;font-size:12px}a{color:inherit;text-decoration:none}button{font:inherit;cursor:pointer}button:focus-visible,a:focus-visible{outline:2px solid var(--aqua);outline-offset:3px}
+    .sitebar{height:57px;background:#06111b;border-bottom:1px solid #173442;display:flex;align-items:center;gap:28px;padding:0 max(20px,calc((100vw - 1392px)/2));white-space:nowrap}
+    .brand{font-size:23px;letter-spacing:-.07em;font-weight:900}.brand i{font-style:normal;color:#66c9d0}.sitebar nav{display:flex;gap:23px;color:#a9c0ca;font-size:12px;font-weight:700}.sitebar nav a:hover{color:#fff}
+    .notice{background:#1d4050;border-bottom:1px solid #497384;color:#e8fbff;padding:11px 18px;text-align:center;font-size:12px;line-height:1.7}.notice strong{color:#b4f2f6}
+    .wrap{max-width:1392px;margin:auto;padding:16px 20px 70px}
+    .intro{display:grid;grid-template-columns:minmax(0,1fr) minmax(390px,.77fr);gap:9px 28px;align-items:center;background:linear-gradient(115deg,#102e3b,#0c2532 58%,#0a1e2b);padding:23px 27px;box-shadow:inset 3px 0 #69c4cf;margin-bottom:14px}
+    .eyebrow{font-size:10px;letter-spacing:.13em;color:#78c2cc;font-weight:850}.intro h1{font-size:36px;letter-spacing:-.05em;line-height:1.22;margin:0}.intro p{color:#bdd2dd;line-height:1.8;margin:0;max-width:740px}
+    .tabs{display:flex;justify-content:flex-end;gap:7px}.tabs a{background:#123748;padding:11px 17px;color:#bfd4de;font-weight:750}.tabs a.active{background:#1a5060;color:white;box-shadow:inset 0 -2px #8bdfe2}
+    .intro .guide{justify-self:end;color:#ffc975;font-weight:800;font-size:12px}.facts{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px}.facts span{padding:11px 10px;background:#061c2ab0;min-width:0}.facts b{display:block;font-size:18px}.facts small{display:block;color:#8daebd;font-size:9px;letter-spacing:.04em;margin-top:4px}
+    .hero{background:var(--panel);border:1px solid var(--stroke);border-top:2px solid #477c8c}.herohead{display:flex;align-items:center;justify-content:space-between;gap:20px;padding:16px 22px;border-bottom:1px solid #1f4452}.market{display:flex;align-items:center;gap:12px}.flag{font-size:24px}.market h2{margin:0;font-size:18px}.market small{display:block;margin-top:5px;color:#8daebc;font-size:11px}.verified{font-size:11px;color:#9dc9cd;padding:7px 10px;background:#153747}.herobody{display:grid;grid-template-columns:320px minmax(0,1fr);min-height:300px}
+    .scored{padding:23px 21px;border-right:1px solid #244858;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center}.score-placeholder{width:100%;height:98px;background:#112d3b;border:1px dashed #456676;display:grid;place-items:center;padding:12px;color:#9fbdc9;font-size:12px;font-weight:700;line-height:1.6}
+    .score-label{position:relative;margin-top:12px;z-index:1;font-weight:900;font-size:25px;line-height:1}.score-label small{display:block;margin-top:6px;font-size:11px;color:#90b3c1;font-weight:700}.scored .placeholder{margin-top:18px;background:#143342;padding:11px 10px;width:100%;font-size:11px;line-height:1.8;color:#b0c8d4}.source-hint{color:#8eaebb;font-size:10px;margin-top:9px}.source-hint b{color:#e1eaf0}
+    .trend{padding:18px 18px 14px;min-width:0;display:flex;flex-direction:column}.trendtop{display:flex;align-items:center;justify-content:space-between;gap:10px}.trendtop h3{margin:0;font-size:14px}.period{display:flex;gap:5px}.period button{min-width:38px;height:32px;border:1px solid #31576a;background:#0e2a3b;color:#aec4ce;border-radius:4px}.period button.selected{background:#c5933d;color:#13222c;font-weight:850;border-color:#c5933d}.chart-place{min-height:200px;flex:1;margin-top:14px;position:relative;background:linear-gradient(0deg,transparent 24.8%,#29465180 25%,transparent 25.2%,transparent 49.8%,#29465180 50%,transparent 50.2%,transparent 74.8%,#29465180 75%,transparent 75.2%),linear-gradient(#0b2634,#0d2b39);display:grid;place-items:center;overflow:hidden}.chart-place:before{content:"";position:absolute;inset:0;background:repeating-linear-gradient(90deg,transparent 0 calc(25% - 1px),#23425070 calc(25% - 1px) 25%);opacity:.4}.chart-place .chart-text{z-index:1;text-align:center;line-height:1.9;color:#c1d5dc;padding:16px;background:#102c3acb;max-width:500px}.chart-text b{font-size:15px;display:block;color:#e6f5fa}.chart-text small{display:block;font-size:11px;color:#9cb5c1}.herofoot{border-top:1px solid #294a59;padding:10px 21px;display:flex;justify-content:space-between;align-items:center;color:#8faebb;font-size:11px}.herofoot a{color:#8bd3d9}
+    .factors{margin-top:13px}.sectionhead{display:flex;align-items:center;justify-content:space-between;padding:18px 22px;background:#0d2938;box-shadow:inset 3px 0 #4fa1b1;gap:16px}.sectionhead h2{font-size:20px;margin:5px 0}.sectionhead p{margin:0;color:#9eb7c3;line-height:1.6}.coverage{padding:11px 16px;background:#16404c;white-space:nowrap;text-align:center}.coverage b{display:block;font-size:18px}.coverage small{display:block;margin-top:3px;color:#a8c7cf}.tablebox{margin-top:6px;background:#0b2230;padding-bottom:10px}table{border-collapse:collapse;width:100%;table-layout:fixed}th{padding:13px 18px;background:#122f40;color:#a8c3d1;text-align:left;font-size:11px}th:nth-child(1){width:29%}th:nth-child(2){width:20%}th:nth-child(3){width:18%}th:nth-child(4){width:15%}th:nth-child(5){width:18%}td{padding:13px 18px;border-bottom:1px solid #234250;color:#dbe8ee;vertical-align:middle}tr.factor:hover{background:#163b4b}tr.factor[data-open="true"]{background:#1b4352}.factor-name{display:grid;grid-template-columns:25px minmax(0,1fr) 18px;column-gap:10px;align-items:center;width:100%;text-align:left;background:none;border:0;color:#eff9fb;min-height:37px;padding:0}.factor-name small{grid-row:1/3;color:#70b8c5;font-weight:800}.factor-name b{grid-column:2;font-size:13px}.factor-name em{grid-column:2;font-size:11px;font-style:normal;color:#8ba9b9;margin-top:3px}.factor-name i{grid-column:3;grid-row:1/3;font-style:normal;font-size:16px;color:#9fdae0;border:1px solid #3e6571;width:19px;height:19px;text-align:center;line-height:17px}.data-slot{color:#9eb9c5;font-size:11px}.state-slot{display:inline-block;padding:6px 8px;background:#214353;color:#9fc1cb;font-size:11px}.under{padding:11px 18px;color:#9eb9c4;font-size:11px;line-height:1.6}.details{background:#102f3d}.details[hidden]{display:none}.details>td{padding:0;border-bottom:2px solid #5c9da9}.details-content{padding:18px 21px;display:grid;grid-template-columns:245px minmax(0,1fr);gap:16px}.details-content h3{margin:4px 0 7px;font-size:16px}.details-content p{font-size:11px;line-height:1.8;color:#adc4cd;margin:0}.details-facts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}.details-facts section{background:#173b49;padding:15px;min-width:0}.details-facts small{font-size:10px;color:#acc4cd}.details-facts b{display:block;font-size:13px;margin:7px 0}.details-facts p{font-size:10px}
+    .notes{margin-top:10px;display:grid;grid-template-columns:minmax(0,1.65fr) minmax(270px,.9fr);gap:10px}.notes article{padding:17px 18px;background:#102b39}.notes h3{font-size:14px;margin:0 0 12px}.notes p{font-size:11px;line-height:1.7;color:#a8c1ce;margin:10px 0 0}.signals{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.signal{display:flex;align-items:center;gap:9px;padding-top:9px;border-top:1px solid #345566}.signal b{display:grid;place-items:center;width:25px;height:25px;background:#3c313b;color:#f5a3ae;flex:none}.signal span{font-size:11px;color:#b5d0db}.notes dl{display:grid;gap:6px;margin:0}.notes dl>div{display:grid;grid-template-columns:105px 1fr;gap:8px;border-bottom:1px solid #315062;padding:5px 0}.notes dt{color:#87afbf}.notes dd{margin:0;color:#d9ebf2}
+    .extended{margin-top:13px;background:#143444;padding:16px 18px;color:#d3edf0;font-size:12px;font-weight:800}.seo{margin-top:27px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.seo>header{grid-column:1/-1;padding:18px 20px;background:#0d2938}.seo>header h2{margin:4px 0;font-size:17px}.seo>article{padding:20px;background:#0d2837;border-top:2px solid #3b7483}.seo h3{font-size:14px;margin:0 0 10px}.seo p{color:#abc4d0;line-height:1.9;margin:0;font-size:12px}.bottom{margin-top:27px;text-align:center;color:#90aebd;line-height:2}.bottom a{display:inline-block;padding:10px 17px;margin-top:12px;background:#1a5364;color:#e6faff;font-weight:800}
+    @media(max-width:1060px){.intro{grid-template-columns:1fr}.tabs,.intro .guide{justify-self:start}.notes{grid-template-columns:1fr}}
+    .notice-mobile{display:none}
+    @media(max-width:760px){
+      .sitebar{height:42px;padding:0 11px}.brand{font-size:20px}.sitebar nav{display:none}
+      .notice{padding:6px 11px;text-align:left;font-size:10px;line-height:1.45}.notice-desktop{display:none}.notice-mobile{display:block}
+      .wrap{padding:7px 7px 30px}
+      .intro{display:flex;flex-direction:column;align-items:stretch;padding:11px 12px;gap:7px;margin-bottom:7px}
+      .intro .eyebrow{order:1;font-size:9px;letter-spacing:.08em}
+      .intro h1{order:2;font-size:23px;line-height:1.1}
+      .intro .tabs{order:3;display:grid;grid-template-columns:1fr 1fr;gap:5px;justify-self:stretch}
+      .tabs a{text-align:center;padding:8px 9px;font-size:11px}
+      .intro p{order:4;font-size:11px;line-height:1.5}
+      .intro .guide{order:5;justify-self:start;font-size:11px}
+      .intro .facts{order:6;grid-template-columns:repeat(4,minmax(0,1fr));gap:3px}
+      .facts span{text-align:center;padding:6px 2px}.facts b{font-size:13px}
+      .facts small{font-size:8px;letter-spacing:0;margin-top:2px}
+      .herohead{gap:7px;padding:8px 10px}.market{gap:7px}.flag{font-size:18px}
+      .market h2{font-size:14px}.market small{margin-top:2px;font-size:9px}
+      .verified{font-size:0;padding:6px 7px}.verified:after{content:"원본 연결 유지";font-size:10px}
+      .herobody{grid-template-columns:1fr;min-height:0}
+      .scored{display:grid;grid-template-columns:108px minmax(0,1fr);grid-template-rows:auto auto auto;gap:4px 10px;align-items:center;border-right:0;border-bottom:1px solid #244858;padding:10px;text-align:left}
+      .score-placeholder{grid-column:1;grid-row:1/4;height:101px;padding:8px;font-size:11px;text-align:center}
+      .score-label{grid-column:2;grid-row:1;margin:0;font-size:24px;text-align:left}
+      .score-label small{margin-top:3px;font-size:10px}
+      .scored .placeholder{grid-column:2;grid-row:2;margin:0;padding:6px 7px;width:100%;font-size:10px;line-height:1.4}
+      .source-hint{grid-column:2;grid-row:3;margin:0;font-size:9px}
+      .trend{padding:9px 10px 8px}.trendtop{flex-direction:column;align-items:stretch;gap:7px}
+      .trendtop h3{font-size:12px}.period{gap:4px;justify-content:space-between}
+      .period button{flex:1;min-width:0;height:30px}.chart-place{min-height:132px;margin-top:8px}
+      .chart-place .chart-text{padding:8px;line-height:1.45}.chart-text b{font-size:12px}
+      .chart-text small{font-size:10px}.herofoot{padding:8px 10px;gap:7px;font-size:9px}
+      .herofoot a{white-space:nowrap}
+      .factors{margin-top:7px}.sectionhead{padding:10px 11px;gap:9px}
+      .sectionhead .eyebrow{font-size:9px}.sectionhead h2{font-size:16px;margin:3px 0}
+      .sectionhead p{font-size:10px;line-height:1.35}
+      .coverage{padding:6px 8px}.coverage b{font-size:14px}.coverage small{font-size:9px}
+      .tablebox{padding:4px 4px 1px;margin-top:3px}
+      .tablebox table,.tablebox tbody{display:block}.tablebox thead{display:none}
+      tr.factor{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));background:#112f3e;margin-bottom:4px}
+      tr.factor td{display:block;min-width:0;padding:6px 5px;border:0;overflow-wrap:anywhere;font-size:10px;line-height:1.3}
+      tr.factor td:first-child{grid-column:1/-1;padding:6px 9px;border-bottom:1px solid #315263}
+      tr.factor td:not(:first-child){border-right:1px solid #264756}
+      tr.factor td:last-child{border-right:0}
+      tr.factor td:not(:first-child):before{content:attr(data-label);display:block;font-size:9px;color:#94b6c2;margin-bottom:3px}
+      .factor-name{grid-template-columns:20px minmax(0,1fr) 19px;column-gap:5px;min-height:36px}
+      .factor-name b{font-size:12px}.factor-name em{font-size:10px;margin-top:2px}
+      .factor-name i{width:19px;height:19px;line-height:17px}
+      .data-slot,.state-slot{font-size:10px}.state-slot{padding:0;background:transparent}
+      .under{padding:6px 7px;font-size:10px;line-height:1.5;margin:0}
+      tr.details{display:block;margin-top:-4px;margin-bottom:4px}tr.details>td{display:block}
+      .details-content{grid-template-columns:1fr;padding:10px;gap:7px}
+      .details-content h3{margin:3px 0;font-size:13px}.details-content p{line-height:1.5}
+      .details-facts{grid-template-columns:repeat(2,minmax(0,1fr));gap:5px}
+      .details-facts section{padding:8px}.details-facts section:last-child{grid-column:1/-1}
+      .details-facts b{font-size:11px;margin:4px 0}.details-facts p{font-size:10px}
+      .notes{margin-top:6px;gap:5px}.notes article{padding:10px 11px}
+      .notes h3{margin-bottom:8px;font-size:12px}
+      .notes .signals{grid-template-columns:repeat(3,minmax(0,1fr));gap:5px}
+      .signal{align-items:flex-start;gap:5px;padding-top:6px}.signal b{width:19px;height:19px}
+      .signal span{font-size:10px;line-height:1.4}.notes p{margin-top:7px;line-height:1.5}
+      .extended{margin-top:6px;padding:10px 11px;font-size:11px}
+      .seo{grid-template-columns:1fr;gap:5px;margin-top:14px}
+      .seo>header{grid-column:auto;padding:10px 12px}
+      .seo>article{padding:11px 12px}.seo h3{font-size:12px;margin-bottom:6px}
+      .seo p{font-size:11px;line-height:1.65}
+      .bottom{margin-top:14px;line-height:1.6;font-size:10px}
+      .bottom a{margin-top:8px;padding:9px 11px}
+    }
+    @media(max-width:350px){
+      .scored{grid-template-columns:93px minmax(0,1fr)}
+      .score-placeholder{height:95px;font-size:10px}
+      tr.factor{grid-template-columns:repeat(2,minmax(0,1fr))}
+      .notice{font-size:9px}
+    }
+    /* R5 mobile viewport: one-screen overview, original desktop layout untouched. */
+    .mobile-guide-trigger,.mobile-dialog{display:none}
+    @media(max-width:760px){
+      html,body{height:100%;min-height:0}
+      body{height:100dvh;display:flex;flex-direction:column;overflow:hidden}
+      .sitebar{flex:none;height:38px}
+      .notice{flex:none;padding:5px 10px;font-size:10px;line-height:1.3}
+      .wrap{width:100%;flex:1;min-height:0;overflow:hidden;display:grid;grid-template-rows:auto auto minmax(0,1fr);gap:4px;padding:4px 6px 6px}
+      .intro{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 7px;align-items:center;padding:6px 8px;margin:0}
+      .intro .eyebrow,.intro p,.intro .guide,.intro .facts{display:none}
+      .intro h1{order:initial;grid-column:1;grid-row:1;font-size:19px;white-space:nowrap}
+      .intro .tabs{order:initial;grid-column:1/-1;grid-row:2;display:grid;grid-template-columns:1fr 1fr;gap:4px}
+      .tabs a{padding:5px 7px;font-size:11px}
+      .mobile-guide-trigger{display:block;grid-column:2;grid-row:1;border:1px solid #447b89;background:#133849;color:#bceaf0;padding:5px 10px;border-radius:4px;font-size:11px;font-weight:800}
+      .hero{min-height:0}
+      .herohead,.herofoot{display:none}
+      .herobody{display:grid;grid-template-columns:1fr;min-height:0}
+      .scored{grid-template-columns:88px minmax(0,1fr);grid-template-rows:auto auto auto;gap:2px 8px;padding:6px 8px}
+      .score-placeholder{height:66px;font-size:10px;line-height:1.3;padding:4px}
+      .score-label{font-size:21px}.score-label small{font-size:9px}
+      .scored .placeholder{font-size:9px;padding:3px 5px;line-height:1.25}
+      .source-hint{font-size:9px}
+      .trend{padding:5px 8px 6px}
+      .trendtop{flex-direction:row;align-items:center;gap:6px}
+      .trendtop h3{font-size:10px;white-space:nowrap}
+      .period{margin-left:auto;gap:3px}
+      .period button{height:25px;min-width:31px;font-size:10px}
+      .chart-place{height:clamp(68px,11dvh,105px);min-height:0;flex:none;margin-top:4px}
+      .chart-place .chart-text{padding:4px;line-height:1.3}
+      .chart-text b{font-size:11px}
+      .chart-text small{display:none}
+      .factors{min-height:0;margin:0;display:flex;flex-direction:column;overflow:hidden}
+      .sectionhead{flex:none;padding:5px 8px;gap:5px}
+      .sectionhead .eyebrow,.sectionhead p{display:none}
+      .sectionhead h2{margin:0;font-size:13px}
+      .coverage{padding:3px 6px}
+      .coverage b{font-size:11px}
+      .coverage small{display:none}
+      .tablebox{flex:1;min-height:0;margin:0;padding:3px;background:#0b2230;display:flex;flex-direction:column}
+      .tablebox table{flex:1;min-height:0;height:100%;display:block}
+      .tablebox tbody{height:100%;min-height:0;display:grid;grid-template-rows:repeat(7,minmax(0,1fr));gap:3px}
+      tr.factor{min-height:0;height:100%;margin:0;display:grid;grid-template-columns:minmax(0,1.9fr) minmax(0,.54fr) minmax(0,.7fr);align-items:stretch;background:#112f3e}
+      tr.factor td{min-width:0;padding:2px 4px;border:0;font-size:10px;line-height:1.15}
+      tr.factor td:first-child{grid-column:auto;padding:2px 5px;border:0}
+      tr.factor td:nth-child(2),tr.factor td:nth-child(5){display:none}
+      tr.factor td:nth-child(3),tr.factor td:nth-child(4){display:flex;flex-direction:column;justify-content:center;text-align:center;align-items:center;border-left:1px solid #264756}
+      tr.factor td:not(:first-child):before{font-size:9px;margin-bottom:2px}
+      .factor-name{height:100%;min-height:0;grid-template-columns:17px minmax(0,1fr) 19px;gap:2px}
+      .factor-name small{font-size:9px}
+      .factor-name b{font-size:11px;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+      .factor-name em{display:none}
+      .factor-name i{width:18px;height:18px;line-height:16px;font-size:13px}
+      tr.factor .data-slot,tr.factor .state-slot{font-size:0;background:none;padding:0}
+      tr.factor .data-slot:after,tr.factor .state-slot:after{content:"—";font-size:12px;color:#b5c7d0}
+      tr.details{display:none!important}
+      .tablebox .under,.notes,.extended,.seo,.bottom{display:none}
+      .mobile-dialog[open]{display:block;position:fixed;inset:auto 10px 14px;width:calc(100% - 20px);max-width:540px;max-height:calc(100dvh - 40px);margin:auto;border:1px solid #478390;background:#102f3e;color:#eaf4f9;padding:0;border-radius:8px;overflow:auto;box-shadow:0 20px 70px #0009}
+      .mobile-dialog::backdrop{background:#010c13bd}
+      .mobile-dialog>header{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:11px 13px;border-bottom:1px solid #345464;background:#153b49;position:sticky;top:0;z-index:2}
+      .mobile-dialog>header b{font-size:14px}
+      .mobile-dialog>header button{font-size:12px;color:#d7f2f5;border:1px solid #567d88;background:#184858;border-radius:4px;min-height:34px;padding:5px 11px}
+      .mobile-dialog .details-content{display:grid;grid-template-columns:1fr;padding:12px;gap:10px}
+      .mobile-dialog .details-facts{grid-template-columns:repeat(2,minmax(0,1fr))}
+      .mobile-dialog .details-facts section:last-child{grid-column:1/-1}
+      .mobile-factor-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px;padding:10px 12px 0}
+      .mobile-factor-fields section{background:#1a4150;padding:9px;min-width:0}
+      .mobile-factor-fields small{display:block;color:#9bbcc8;font-size:10px;margin-bottom:5px}
+      .mobile-factor-fields b{font-size:12px;color:#eaf4f9;overflow-wrap:anywhere}
+      .mobile-dialog .notes{display:grid;grid-template-columns:1fr;margin:0;gap:6px;padding:9px}
+      .mobile-dialog .seo{display:grid;grid-template-columns:1fr;gap:6px;margin:0;padding:9px}
+      .mobile-dialog .seo>header{grid-column:auto}
+      .mobile-dialog .mobile-guide-link{display:block;background:#225667;padding:10px;margin:9px;color:#d2eff1;text-align:center;font-weight:800}
+    }
+    @media(max-width:760px) and (max-height:660px){
+      .sitebar{height:34px}
+      .notice{padding:3px 8px;font-size:9px}
+      .intro{padding:3px 7px;gap:2px}
+      .intro h1{font-size:17px}
+      .tabs a{padding:3px 6px}
+      .scored{padding:4px 7px}
+      .score-placeholder{height:48px;font-size:9px}
+      .score-label{font-size:17px}
+      .scored .placeholder{line-height:1.15}
+      .source-hint{display:none}
+      .trend{padding:3px 7px 4px}
+      .period button{height:23px}
+      .chart-place{height:65px}
+      .sectionhead{padding:3px 7px}
+      .tablebox{padding:2px}
+      .tablebox tbody{gap:2px}
+    }
+    /* R6 hierarchy correction: market score/chart primary, 7 rows secondary. */
+    @media(max-width:760px){
+      .wrap{grid-template-rows:auto minmax(0,1fr) auto}
+      .hero{display:flex;flex-direction:column;min-height:0;overflow:hidden}
+      .herobody{display:flex;flex-direction:column;flex:1;min-height:0}
+      .scored{flex:none;grid-template-columns:clamp(96px,26vw,142px) minmax(0,1fr);gap:4px 12px;padding:clamp(7px,1.3dvh,16px) 12px}
+      .score-placeholder{height:clamp(78px,11dvh,130px);font-size:12px;line-height:1.45}
+      .score-label{font-size:clamp(34px,5dvh,54px);font-weight:950}
+      .score-label small{font-size:11px;margin-top:6px}
+      .scored .placeholder{font-size:11px;padding:7px 9px;line-height:1.45}
+      .source-hint{font-size:10px;display:block}
+      .trend{flex:1;min-height:0;padding:8px 10px 10px}
+      .trendtop{flex:none}
+      .trendtop h3{font-size:13px}
+      .period button{height:28px}
+      .chart-place{flex:1;height:auto;min-height:90px;margin-top:8px}
+      .chart-text b{font-size:13px}
+      .factors{height:auto;min-height:0;flex:none}
+      .sectionhead{padding:7px 10px}
+      .sectionhead h2{font-size:13px}
+      .tablebox{flex:none;padding:3px}
+      .tablebox table{flex:none;height:auto}
+      .tablebox tbody{height:auto;display:flex;flex-direction:column;gap:2px}
+      tr.factor{height:clamp(35px,4.7dvh,43px);flex:none;grid-template-columns:minmax(0,2fr) minmax(0,.55fr) minmax(0,.72fr)}
+      tr.factor td:first-child{padding:3px 9px}
+      .factor-name{display:flex;flex-direction:row;align-items:center;gap:8px;height:100%;min-height:0}
+      .factor-name small{font-size:10px;flex:none}
+      .factor-name b{font-size:12px;flex:1;min-width:0}
+      .factor-name i{margin-left:auto;flex:none}
+      tr.factor td:not(:first-child):before{margin-bottom:2px}
+      .data-slot,.state-slot{line-height:1}
+    }
+    @media(max-width:760px) and (max-height:710px){
+      .intro{padding:3px 7px;gap:2px}
+      .tabs a{padding:3px 6px}
+      .scored{padding:5px 8px;grid-template-columns:88px minmax(0,1fr);gap:2px 8px}
+      .score-placeholder{height:66px;font-size:10px}
+      .score-label{font-size:31px}
+      .score-label small{font-size:9px;margin-top:3px}
+      .scored .placeholder{font-size:9px;padding:4px 6px;line-height:1.25}
+      .source-hint{font-size:9px}
+      .trend{padding:4px 7px 5px}
+      .period button{height:23px}
+      .chart-place{margin-top:4px;min-height:65px}
+      .sectionhead{padding:4px 7px}
+      tr.factor{height:34px}
+      .factor-name b{font-size:11px}
+    }
+    /* R7: no flex-fill for the chart. Fixed, bounded budget for each block. */
+    @media(max-width:760px){
+      .wrap{display:flex;flex-direction:column;gap:5px}
+      .intro{flex:none}
+      .hero{flex:none;display:block;overflow:visible}
+      .herobody{display:flex;flex-direction:column;flex:none}
+      .scored{flex:none;padding:8px 11px;grid-template-columns:clamp(91px,24vw,132px) minmax(0,1fr);gap:4px 10px}
+      .score-placeholder{height:clamp(76px,12dvh,132px);font-size:11px}
+      .score-label{font-size:clamp(30px,4.5dvh,50px)}
+      .scored .placeholder{font-size:10px;padding:6px 7px}
+      .trend{flex:none;display:flex;flex-direction:column;min-height:0;padding:7px 9px 9px}
+      .trendtop{flex:none}
+      .chart-place{flex:none;height:clamp(116px,20dvh,235px);min-height:0;max-height:235px;margin-top:6px}
+      .factors{flex:none;height:auto;overflow:visible}
+      .tablebox{flex:none}
+      tr.factor{height:clamp(34px,4.5dvh,46px)}
+    }
+    @media(max-width:760px) and (max-height:740px){
+      .wrap{gap:3px;padding:3px 5px 4px}
+      .scored{padding:4px 7px}
+      .score-placeholder{height:72px;font-size:10px}
+      .score-label{font-size:31px}
+      .trend{padding:4px 7px 5px}
+      .chart-place{height:clamp(102px,17dvh,130px);margin-top:4px}
+      tr.factor{height:33px}
+      .sectionhead{padding:4px 7px}
+    }
+    @media(max-width:760px) and (max-height:620px){
+      .sitebar{height:32px}
+      .notice{font-size:9px;padding:3px 7px}
+      .intro{padding:2px 5px}
+      .score-placeholder{height:58px}
+      .scored .placeholder{padding:2px 5px}
+      .source-hint{display:none}
+      .trendtop h3{font-size:11px}
+      .period button{height:22px}
+      .chart-place{height:94px}
+      tr.factor{height:30px}
+    }
+  </style>
+</head>
+<body>
+  <div class="sitebar"><a class="brand" href="https://zgmini.kr/" target="_blank" rel="noopener">ZG<i>M</i>INI</a><nav aria-label="주 메뉴"><a href="https://zgmini.kr/" target="_blank">대시보드</a><a href="https://zgmini.kr/risk-indicators/" target="_blank">위험 지표</a><a href="https://zgmini.kr/economic-indicators/" target="_blank">경제 지표</a><a href="https://zgmini.kr/sector-fear-greed/" target="_blank">섹터 공포·탐욕</a><a href="https://zgmini.kr/theme-fear-greed/" target="_blank">테마 공포·탐욕</a></nav></div>
+  <div class="notice"><span class="notice-desktop"><strong>R7 디자인 검토용 HTML</strong> · 아래의 — 표시는 의도적인 자리 표시자입니다. 실제 점수·게이지·차트는 새로 만들지 않으며 운영 페이지의 기존 연결 컴포넌트를 사용합니다. <a href="https://zgmini.kr/fear-greed/usa/" target="_blank" rel="noopener" style="text-decoration:underline">실제 연결된 페이지 보기</a></span><span class="notice-mobile"><strong>R7 디자인 시안</strong> · 점수·차트는 원본 연결을 유지합니다. <a href="https://zgmini.kr/fear-greed/usa/" target="_blank" rel="noopener" style="text-decoration:underline">운영 페이지 ↗</a></span></div>
+  <main class="wrap">
+    <header class="intro">
+      <span class="eyebrow">CNN FEAR &amp; GREED · US STOCK MARKET</span>
+      <nav class="tabs"><a class="active" href="https://zgmini.kr/fear-greed/usa/" target="_blank">미국 · CNN</a><a href="https://zgmini.kr/fear-greed/korea/" target="_blank">한국 · ZGmini</a></nav>
+      <h1>미국 공포탐욕지수</h1><a class="guide" href="https://zgmini.kr/guides/fear-greed-buying/" target="_blank">▤ 공포·탐욕 매수 판단 가이드 ↗</a><button type="button" class="mobile-guide-trigger" aria-haspopup="dialog" aria-controls="mobile-guide-dialog">설명 보기</button>
+      <p>미국 공탐 지수는 CNN이 제공하는 미국 주식시장 공포·탐욕지수를 줄여 부르는 말입니다. 종합점수와 실제 관측일, 7개 구성요소를 확인하세요.</p>
+      <div class="facts"><span><b>7</b><small>COMPONENTS</small></span><span><b>CNN</b><small>OFFICIAL INDEX</small></span><span><b>0–100</b><small>SCALE</small></span><span><b>US</b><small>MARKET</small></span></div>
+    </header>
+    <section class="hero" aria-label="기존 원본 점수와 차트가 유지되는 위치">
+      <header class="herohead"><div class="market"><span class="flag">🇺🇸</span><div><h2>미국 시장</h2><small>S&amp;P 500 · NASDAQ</small></div></div><div class="verified">CNN 원본 데이터 컴포넌트 유지</div></header>
+      <div class="herobody"><div class="scored"><div class="score-placeholder">기존 게이지 컴포넌트<br>원본 위치 유지</div><div class="score-label">—<small>원본 점수·상태 표시</small></div><div class="placeholder">전일 대비 — &nbsp; | &nbsp; 기간 대비 —<br>기존 계산값을 그대로 사용합니다.</div><div class="source-hint">관측일 <b>원본 API 기준</b></div></div>
+      <div class="trend"><div class="trendtop"><h3>미국 공포탐욕지수 추세</h3><div class="period" aria-label="기간 버튼 배치"><button type="button">1W</button><button type="button">1M</button><button type="button" class="selected">3M</button><button type="button">6M</button><button type="button">1Y</button></div></div><div class="chart-place"><div class="chart-text"><b>기존 실시간 차트가 그대로 표시될 영역</b><small>이 HTML에는 임의의 차트 선·과거값을 만들지 않았습니다.</small><small>실제 적용에서는 기존 `MarketFearGreedChart` 사용</small></div></div></div></div>
+      <footer class="herofoot"><span>◉ 기존 데이터 연결·관측일·툴팁 유지</span><a href="https://zgmini.kr/fear-greed/usa/" target="_blank" rel="noopener">실제 차트 확인 ↗</a></footer>
+    </section>
+    <section class="factors" aria-labelledby="factor-title"><header class="sectionhead"><div><span class="eyebrow">FACTOR MONITOR · CNN USA</span><h2 id="factor-title">7개 구성요소 상세 분석</h2><p>원시값과 CNN 환산점수, 관측일을 서로 구분합니다. 각 행을 누르면 상세 설명이 펼쳐집니다.</p></div><div class="coverage"><b>7 / 7</b><small>구성요소 구조</small></div></header>
+      <div class="tablebox"><table><thead><tr><th>구성요소</th><th>현재 원시값</th><th>환산점수</th><th>상태</th><th>관측 기준</th></tr></thead><tbody id="factor-body"></tbody></table><p class="under">실제 운영 화면에서는 기존 CNN 데이터 연결로 숫자·상태·관측일을 표시합니다. 결측값을 0점으로 대체하지 않습니다.</p></div>
+      <div class="notes"><article><h3>공포 방향 주요 신호</h3><div class="signals"><div class="signal"><b>1</b><span>기존 점수로<br>자동 정렬</span></div><div class="signal"><b>2</b><span>기존 점수로<br>자동 정렬</span></div><div class="signal"><b>3</b><span>기존 점수로<br>자동 정렬</span></div></div><p>실제 화면에서는 확인된 개별 점수가 낮은 순서로 표시됩니다. 새로운 기여도나 매매 신호를 만들지 않습니다.</p></article><article><h3>데이터 신뢰도</h3><dl><div><dt>출처</dt><dd>CNN Business</dd></div><div><dt>종합 관측 기준</dt><dd>원본 관측일 연결</dd></div><div><dt>구성요소</dt><dd>7개 원본 필드 재사용</dd></div></dl><p>종합점수와 구성요소별 관측 시각이 다를 수 있습니다.</p></article></div>
+      <div class="extended">＋ 7개 구성요소의 원시값·비교 기준·산출 원리 자세히 보기 (기존 원본 교육 콘텐츠 유지)</div>
+    </section>
+    <section class="seo"><header><span class="eyebrow">MARKET READING GUIDE</span><h2>미국 공포탐욕지수 확인 순서</h2><p>실제 적용에서는 기존 SEO 본문과 안내 콘텐츠를 모두 유지합니다.</p></header><article><h3>01 점수와 관측일을 함께 확인하세요</h3><p>차트의 점수는 해당 관측일의 투자심리를 보여줍니다. 방문한 날짜와 데이터 관측일이 같다는 뜻은 아닙니다. 현재 점수, 관측일, 선택한 기간의 흐름을 함께 확인하고, 원본 확인 필요나 이력 없음 상태에서는 확인되지 않은 값을 해석하지 마세요.</p></article><article><h3>02 CNN 지수와 ZGmini 한국 지수의 차이</h3><p>미국 상세는 CNN이 제공한 종합값을 표시하고, 아래에서 7개 구성요소의 원시값과 CNN 환산점수를 설명합니다. 한국 상세는 ZGmini 자체 지표입니다. 두 지수는 입력 시장과 산출 방식이 달라 같은 점수라고 동일한 투자 상황을 뜻하지 않습니다.</p></article></section>
+    <footer class="bottom">시안은 데이터·산식·API·자동 갱신과 분리된 <strong>레이아웃 검토 문서</strong>이며 운영 페이지를 대체하지 않습니다.<div><a href="https://zgmini.kr/fear-greed/usa/" target="_blank" rel="noopener">기존 연결된 미국 공포탐욕 페이지 보기 ↗</a></div></footer>
+  </main>
+  <dialog id="mobile-factor-dialog" class="mobile-dialog" aria-labelledby="mobile-factor-title"><header><b id="mobile-factor-title">구성요소 상세</b><button type="button" data-close-dialog>닫기 ×</button></header><div id="mobile-factor-content"></div></dialog>
+  <dialog id="mobile-guide-dialog" class="mobile-dialog" aria-labelledby="mobile-guide-title"><header><b id="mobile-guide-title">지수 해석과 데이터 안내</b><button type="button" data-close-dialog>닫기 ×</button></header><div id="mobile-guide-content"></div></dialog>
+  <script>
+    // Static label/description inventory only. There are intentionally NO hardcoded scores,
+    // copied market history, request stubs, new APIs, calculations or drawn market chart.
+    const factors = [
+      ["market-momentum","시장 모멘텀","S&P 500","S&P 500 지수를 125거래일 이동평균과 비교해 시장의 큰 추세를 확인합니다.","125일 평균 아래","125일 평균 위"],
+      ["stock-price-strength","주가 강도","52주 신고가·신저가 강도","NYSE에서 52주 신고가와 신저가의 힘을 비교해 시장 내부의 강도를 봅니다.","신저가 우세","신고가 우세"],
+      ["stock-price-breadth","시장 폭","McClellan Volume Summation","상승 종목과 하락 종목의 거래량 차이를 누적해 상승 참여가 넓은지 확인합니다.","하락 거래량 우세","상승 거래량 우세"],
+      ["put-call-options","풋/콜 옵션","Put / Call 비율","최근 옵션 시장에서 풋과 콜 수요의 균형을 봅니다. 풋 비중이 커질수록 방어 심리가 강해집니다.","비율 상승","비율 하락"],
+      ["market-volatility","시장 변동성","VIX","S&P 500 옵션에 반영된 예상 변동성인 VIX를 50일 평균과 비교합니다.","VIX가 평균보다 높음","VIX가 평균보다 낮음"],
+      ["junk-bond-demand","정크본드 수요","고위험-투자등급 스프레드","고위험 회사채와 투자등급 회사채의 금리 차이로 신용위험에 대한 보상 요구를 확인합니다.","스프레드 확대","스프레드 축소"],
+      ["safe-haven-demand","안전자산 수요","20일 주식-국채 수익률 차","최근 20거래일 주식과 미국 국채의 수익률 차이로 위험자산 선호를 확인합니다.","국채 상대우위","주식 상대우위"]
+    ];
+    const tableBody = document.getElementById('factor-body');
+    factors.forEach(([id,name,metric,meaning,fear,greed],index) => {
+      const row = document.createElement('tr');
+      row.className = 'factor';
+      row.dataset.open = 'false';
+      row.innerHTML = `<td><button class="factor-name" type="button" aria-expanded="false" aria-controls="detail-${id}"><small>${String(index+1).padStart(2,'0')}</small><b>${name}</b><em>${metric}</em><i aria-hidden="true">+</i></button></td><td data-label="원시값"><span class="data-slot">원본 API 표시</span></td><td data-label="환산점수"><span class="data-slot">원본 API 표시</span></td><td data-label="상태"><span class="state-slot">원본 상태 표시</span></td><td data-label="관측 기준"><span class="data-slot">원본 관측일</span></td>`;
+      const detail = document.createElement('tr');
+      detail.className = 'details';
+      detail.id = `detail-${id}`;
+      detail.hidden = true;
+      detail.innerHTML = `<td colspan="5"><div class="details-content"><div><span class="eyebrow">SELECTED SIGNAL</span><h3>${name}</h3><p>${meaning}</p></div><div class="details-facts"><section><small>관측 항목</small><b>${metric}</b><p>공포 방향: ${fear}<br>탐욕 방향: ${greed}</p></section><section><small>원시값 / 비교 기준</small><b>기존 필드 그대로 표시</b><p>지표별 단위를 변경하지 않습니다.</p></section><section><small>환산점수 / 관측일</small><b>원본 데이터 재사용</b><p>확인되지 않은 수치를 만들지 않습니다.</p></section></div></div></td>`;
+      tableBody.append(row,detail);
+      row.querySelector('button').addEventListener('click',()=>{
+        if(window.matchMedia('(max-width:760px)').matches){
+          const dialog=document.getElementById('mobile-factor-dialog');
+          document.getElementById('mobile-factor-title').textContent=name;
+          const fields=document.createElement('div');
+          fields.className='mobile-factor-fields';
+          row.querySelectorAll('td[data-label]').forEach(cell=>{
+            const section=document.createElement('section');
+            const label=document.createElement('small');
+            const value=document.createElement('b');
+            label.textContent=cell.dataset.label;
+            value.textContent=cell.textContent;
+            section.append(label,value);
+            fields.append(section);
+          });
+          document.getElementById('mobile-factor-content').replaceChildren(fields,detail.querySelector('.details-content').cloneNode(true));
+          dialog.showModal();
+          return;
+        }
+        const open = detail.hidden;
+        tableBody.querySelectorAll('tr.details').forEach(r => {r.hidden=true;r.previousElementSibling.dataset.open='false';const b=r.previousElementSibling.querySelector('button');b.setAttribute('aria-expanded','false');b.querySelector('i').textContent='+';});
+        detail.hidden=!open;
+        row.dataset.open=String(open);
+        row.querySelector('button').setAttribute('aria-expanded',String(open));
+        row.querySelector('i').textContent=open?'−':'+';
+      });
+    });
+    // Period controls in the visual preview only demonstrate size/placement.
+    document.querySelectorAll('.period button').forEach(button=>button.addEventListener('click',()=>{
+      document.querySelector('.period button.selected')?.classList.remove('selected');
+      button.classList.add('selected');
+    }));
+    const guideContent=document.getElementById('mobile-guide-content');
+    guideContent.append(document.querySelector('.notes').cloneNode(true),document.querySelector('.seo').cloneNode(true));
+    const guideLink=document.createElement('a');
+    guideLink.className='mobile-guide-link';
+    guideLink.href='https://zgmini.kr/guides/fear-greed-buying/';
+    guideLink.target='_blank';
+    guideLink.rel='noopener';
+    guideLink.textContent='공포·탐욕 매수 판단 가이드 ↗';
+    guideContent.append(guideLink);
+    document.querySelector('.mobile-guide-trigger').addEventListener('click',()=>document.getElementById('mobile-guide-dialog').showModal());
+    document.querySelectorAll('[data-close-dialog]').forEach(button=>button.addEventListener('click',()=>button.closest('dialog').close()));
+    document.querySelectorAll('.mobile-dialog').forEach(dialog=>dialog.addEventListener('click',event=>{if(event.target===dialog)dialog.close()}));
+  </script>
+</body>
+</html>

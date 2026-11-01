@@ -95,6 +95,7 @@ async function defaultFinishClaim(db,{scoreDate,attemptDate,claimKey,status,fini
   ]);
 }
 
+/** @param {{env?:import('./runtime-contracts').DataEnv,asOf?:string,fetchImpl?:typeof fetch,now?:()=>Date,maxSourcesPerRun?:number,dependencies?:{hasCompleteCalculation?:typeof defaultHasCompleteCalculation,sourceKeysMissing?:typeof sourceKeysMissingForScoreDate,claimBatch?:typeof defaultClaimBatch,finishClaim?:typeof defaultFinishClaim,collectSources?:typeof collectConsumptionR3NormalizedSources,persistSources?:typeof persistConsumptionR3SourcePayloads,refreshFromStored?:typeof refreshConsumptionR3FromStored}}} [options] */
 export async function runConsumptionR3OperationalRefresh({
   env,
   asOf,

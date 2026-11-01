@@ -1,0 +1,89 @@
+.zg-fomc-bar{position:relative;height:24px;min-height:24px;box-sizing:border-box;display:flex;align-items:center;justify-content:center;background:#ffc43d;color:#061b29;border-top:1px solid #ffdb7b;font-size:12px;line-height:1;isolation:isolate}
+.zg-fomc-center{display:flex;align-items:center;justify-content:center;gap:10px;white-space:nowrap;padding:0 36px;max-width:100%;height:100%;box-sizing:border-box}
+.zg-fomc-center strong{font-size:12px;font-weight:800;color:#061b29;letter-spacing:-.3px}
+.zg-fomc-bank{width:18px;height:18px;flex:none}
+.zg-fomc-center time{font-size:11px;font-weight:650;font-variant-numeric:tabular-nums}
+.zg-fomc-flag{position:absolute;right:8px;top:4px;width:24px;height:15px;object-fit:cover;box-shadow:0 0 0 1px #061b2926}
+.zg-fomc-clock,.zg-fomc-clock-inner,.zg-fomc-pair{display:inline-flex;align-items:center;gap:2px}
+.zg-fomc-clock{height:19px}
+.zg-fomc-clock-inner>b{font-size:12px;font-weight:800;padding:0 1px}
+.zg-fomc-day{margin:0 3px 0 1px;font-size:11px;font-weight:750}
+.zg-fomc-digit{position:relative;display:inline-block;perspective:90px;width:11px;height:18px;overflow:hidden;border-radius:2px;background:#061b29;color:#fff;font:750 14px/18px ui-monospace,SFMono-Regular,Consolas,monospace;text-align:center;box-shadow:inset 0 1px 1px #ffffff29,0 1px 1px #061b2933;font-variant-numeric:tabular-nums}
+.zg-fomc-digit:after{position:absolute;content:'';left:0;right:0;top:50%;height:1px;background:#0008;z-index:4}
+.zg-fomc-flip{position:absolute;inset:0;pointer-events:none}
+.zg-fomc-old,.zg-fomc-new{position:absolute;inset:0;background:#061b29;backface-visibility:hidden}
+.zg-fomc-old{clip-path:inset(0 0 50% 0);animation:zg-fomc-flip-top .22s ease-in forwards}
+.zg-fomc-new{clip-path:inset(50% 0 0 0);animation:zg-fomc-flip-bottom .22s .22s ease-out both}
+.zg-fomc-pending,.zg-fomc-reached{font-size:11px;font-weight:650}
+@keyframes zg-fomc-flip-top{to{transform:rotateX(-90deg)}}
+@keyframes zg-fomc-flip-bottom{from{transform:rotateX(90deg)}to{transform:rotateX(0)}}
+@media(min-width:1024px){.zg-fomc-bar{height:30px;min-height:30px;font-size:14px}.zg-fomc-center{gap:12px;padding:0 44px}.zg-fomc-center strong{font-size:14px}.zg-fomc-bank{width:22px;height:22px}.zg-fomc-center time{font-size:13px}.zg-fomc-flag{top:5px;width:30px;height:19px}.zg-fomc-clock{height:25px}.zg-fomc-digit{width:14px;height:24px;font-size:17px;line-height:24px}.zg-fomc-clock-inner>b{font-size:15px}.zg-fomc-day,.zg-fomc-pending,.zg-fomc-reached{font-size:13px}}
+@media(max-width:600px){.zg-fomc-center{gap:5px;padding:0 29px}.zg-fomc-center strong{font-size:11px}.zg-fomc-bank{width:14px;height:14px}.zg-fomc-center time{font-size:10px}.zg-fomc-zone{font-size:9px}.zg-fomc-flag{width:20px;height:13px;right:5px;top:5px}.zg-fomc-digit{width:9px;font-size:12px}.zg-fomc-clock-inner,.zg-fomc-pair{gap:1px}.zg-fomc-clock-inner>b{padding:0}.zg-fomc-day{font-size:10px;margin-right:2px}.zg-fomc-reached{max-width:125px;white-space:normal;font-size:10px;line-height:11px}}
+@media(max-width:359px){.zg-fomc-bank{display:none}.zg-fomc-center{gap:4px}.zg-fomc-zone{display:none}.zg-fomc-center strong{font-size:10px}}
+@media(prefers-reduced-motion:reduce){.zg-fomc-flip{display:none}}
+
+/* FOMC dropdown: additive only; the original 24px/30px bar, center alignment and flip clock are unchanged. */
+.zg-fomc-bar{cursor:pointer;user-select:none}
+.zg-fomc-bar:focus-visible{outline:2px solid #fff;outline-offset:-3px}
+.zg-fomc-bar.zg-fomc-expanded{z-index:30}
+.zg-schedule-dropdown{position:absolute;top:100%;left:0;width:100%;z-index:10;box-sizing:border-box;background:#071c2b;border:1px solid #315366;border-top:2px solid #d69b25;box-shadow:0 10px 24px #0008;color:#edf4fa;white-space:normal;cursor:default}
+.zg-schedule-dropdown[hidden]{display:none}
+.zg-schedule-heading{height:30px;display:flex;align-items:center;justify-content:space-between;gap:5px;padding:0 9px 0 10px;border-bottom:1px solid #233e50}
+.zg-schedule-heading strong{font-size:11px;color:#f1f6fa;white-space:nowrap}
+.zg-schedule-heading span{font-size:10px;color:#92b0c1;white-space:nowrap}
+.zg-schedule-list{max-height:228px;overflow-y:auto;scrollbar-width:thin;scrollbar-color:#385c6e #0b2535}
+.zg-schedule-item{height:37px;min-height:37px;max-height:37px;box-sizing:border-box;display:grid;grid-template-columns:30px minmax(0,1fr) 94px 86px;gap:5px;align-items:center;padding:4px 7px;border-bottom:1px solid #203c4e}
+.zg-schedule-item:last-child{border-bottom:0}
+.zg-schedule-kind{display:inline-flex;align-items:center;justify-content:center;height:19px;font-size:10px;border:1px solid #397794;background:#103348;color:#98def7;font-weight:700}
+.zg-schedule-kind.is-earnings{border-color:#7461a7;background:#252240;color:#d3c3ff}
+.zg-schedule-kind.is-fed{border-color:#b48726;background:#362c14;color:#ffdb82}
+.zg-schedule-name{display:flex;align-items:center;justify-content:center;gap:4px;min-width:0;line-height:14px;color:#e8f4fb;font-weight:700;font-size:11px}
+.zg-schedule-name-text{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:center}
+.zg-schedule-company-logo{display:block;flex:none;width:14px;height:14px;max-width:14px;max-height:14px;min-width:14px;min-height:14px;overflow:visible}
+.zg-schedule-ticker-fallback{display:inline-flex;flex:none;align-items:center;justify-content:center;width:14px;height:14px;min-width:14px;max-width:14px;background:#24465b;border-radius:2px;color:#cbe0f4;font-size:7px;line-height:14px;font-weight:850;letter-spacing:-.6px}
+.zg-schedule-date{text-align:center;white-space:nowrap;font-size:10px;color:#a6c3d5;font-variant-numeric:tabular-nums;letter-spacing:-.15px}
+.zg-schedule-weekday{font-weight:750}
+.zg-schedule-weekday[data-day="일"]{color:#ff6a7a}
+.zg-schedule-weekday[data-day="월"]{color:#83c9ff}
+.zg-schedule-weekday[data-day="화"]{color:#ffa85e}
+.zg-schedule-weekday[data-day="수"]{color:#73dcb4}
+.zg-schedule-weekday[data-day="목"]{color:#f3d46a}
+.zg-schedule-weekday[data-day="금"]{color:#c3a3ff}
+.zg-schedule-weekday[data-day="토"]{color:#61d7e1}
+.zg-schedule-remaining{justify-self:stretch;display:block;text-align:center;white-space:nowrap;font:800 11px/1.2 Consolas,monospace;color:#ffe09a;background:#0d3044;padding:5px 2px;font-variant-numeric:tabular-nums}
+.zg-schedule-number{color:#ffe09a;font-weight:850}
+.zg-schedule-separator{color:#86b4d1;font-weight:700}
+.zg-schedule-foot{padding:7px 10px;font-size:9px;line-height:1.5;color:#92adbd;background:#0a2231}
+.zg-schedule-foot a{color:#a7cfe3;text-decoration:underline}
+.zg-schedule-empty{padding:12px;text-align:center;color:#a3bccc;font-size:11px}
+@media(min-width:601px){
+ .zg-schedule-dropdown{width:calc(100% - 24px);max-width:564px;left:50%;transform:translateX(-50%)}
+ .zg-schedule-heading{height:33px;justify-content:center;gap:14px;padding:0 10px}
+ .zg-schedule-list{max-height:242px}
+ .zg-schedule-item{height:34px;min-height:34px;max-height:34px;grid-template-columns:48px 224px 112px 126px;justify-content:center;column-gap:7px;padding:5px 7px}
+ .zg-schedule-item>.zg-schedule-kind,.zg-schedule-item>.zg-schedule-name,.zg-schedule-item>.zg-schedule-date,.zg-schedule-item>.zg-schedule-remaining{justify-self:stretch;width:100%;min-width:0;max-width:none;text-align:center}
+ .zg-schedule-kind{font-size:11px}
+ .zg-schedule-name{font-size:12px}
+ .zg-schedule-date{font-size:11px}
+ .zg-schedule-remaining{font-size:12px}
+}
+@media(max-width:359px){
+ .zg-schedule-item{grid-template-columns:28px minmax(0,1fr) 94px 86px;gap:3px;padding:4px 4px}
+ .zg-schedule-name{font-size:10px}
+ .zg-schedule-name-text{white-space:normal;word-break:keep-all;overflow-wrap:anywhere;overflow:visible;text-overflow:clip;line-height:12px;max-height:24px;text-align:center}
+ .zg-schedule-date{font-size:9px}
+ .zg-schedule-remaining{font-size:11px;padding:5px 2px}
+}
+
+/* Disclosure arrows remain at the edges of a centered 470px content zone, not at the full desktop viewport edges. Bar/digit/row dimensions stay unchanged. */
+.zg-fomc-toggle-icon{position:absolute;top:50%;transform:translateY(-50%);width:16px;height:16px;color:#061b29;pointer-events:none;opacity:.96}
+.zg-fomc-toggle-left{left:max(9px,calc(50% - 235px))}
+.zg-fomc-toggle-right{right:max(9px,calc(50% - 235px))}
+@media(min-width:1024px){.zg-fomc-toggle-icon{width:19px;height:19px}.zg-fomc-toggle-left{left:max(12px,calc(50% - 235px))}.zg-fomc-toggle-right{right:max(12px,calc(50% - 235px))}}
+@media(max-width:359px){.zg-fomc-toggle-icon{width:14px;height:14px}.zg-fomc-toggle-left{left:6px}.zg-fomc-toggle-right{right:6px}}
+.zg-schedule-number.zg-fomc-day-2{color:#ffb555}
+.zg-schedule-number.zg-fomc-day-1{color:#ff797e}
+.zg-schedule-number.zg-fomc-day-0{color:#ff526b}
+.zg-fomc-clock.zg-fomc-day-2 .zg-fomc-clock-inner>.zg-fomc-pair:first-child .zg-fomc-digit{color:#ffb555}
+.zg-fomc-clock.zg-fomc-day-1 .zg-fomc-clock-inner>.zg-fomc-pair:first-child .zg-fomc-digit{color:#ff797e}
+.zg-fomc-clock.zg-fomc-day-0 .zg-fomc-clock-inner>.zg-fomc-pair:first-child .zg-fomc-digit{color:#ff526b}

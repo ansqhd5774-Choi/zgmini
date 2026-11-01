@@ -2,6 +2,7 @@ import {timingSafeEqual} from 'node:crypto';
 import {refreshKoreaRev7} from './korea-rev7-refresh.mjs';
 
 // Dedicated scheduler credential; owner-session refresh remains separate.
+/** @param {Request} request @param {import('./runtime-contracts').DataEnv} env @param {import('./runtime-contracts').SchedulerOptions} [options] */
 export async function koreaRev7ExternalScheduler(request,env,{refresh=refreshKoreaRev7,ctx,responseBudgetMs=20000,logTag='KOREA_REV7_EXTERNAL'}={}){
  const reply=(body,status)=>Response.json(body,{status,headers:{'cache-control':'no-store','x-robots-tag':'noindex'}});
  if(request.method!=='POST')return reply({status:'METHOD_NOT_ALLOWED'},405);

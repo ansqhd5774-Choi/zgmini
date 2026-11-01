@@ -1,5 +1,7 @@
 import {runPublicFeeds} from "./public-feed-collectors";
 import {readPublicFeed,readPublicFeedHealth} from "./public-feed-store.mjs";
+import {storedRateSentimentResponse} from "./rate-sentiment-public.mjs";
+import {storedScoreArrowResponse} from './score-arrow-public.mjs';
 /// <reference types="vite/client" />
 import { fredApiShadow } from "./p0-fred-api-shadow.mjs";
 import { fredBlsShadow } from "./p0-fred-bls-shadow.mjs";
@@ -9,6 +11,7 @@ import { productionFredProbe } from "./p0-production-fred-probe.mjs";
 import { handleImageOptimization, DEFAULT_DEVICE_SIZES, DEFAULT_IMAGE_SIZES } from "vinext/server/image-optimization";
 import handler from "vinext/server/app-router-entry";
 import sitemapXml from "../public/sitemap.xml?raw";
+import {canonicalHttpsRedirect} from "./canonical-https-redirect.mjs";
 import { phase1KoreaDataCheck } from "./phase1-korea.mjs";
 import { phase2KoreaHistoryCheck } from "./phase2-korea-history.mjs";
 import { koreaFunds } from "./korea-funds.mjs";
@@ -73,7 +76,7 @@ export async function runMarketExternalRefresh(args:any){
   }
 
   const marketStartedAt=Date.now();
-  const result=await runMarketOperationalRefresh(args).catch(()=>({status:'ERROR'}));
+  const result=await runMarketOperationalRefresh(args).catch(():import('./runtime-contracts').OperationalResult=>({status:'ERROR'}));
   const marketMs=Date.now()-marketStartedAt;
   console.log('MARKET_EXTERNAL_STAGE',JSON.stringify({
     stage:'market',
@@ -97,6 +100,8 @@ export async function runMarketExternalRefresh(args:any){
 
 const worker = {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
+    const canonicalRedirect=canonicalHttpsRedirect(request);
+    if(canonicalRedirect) return canonicalRedirect;
     const url = new URL(request.url);
     if (url.pathname.replace(/\/$/, '') === '/api/internal/korea-rev7-scheduled') return koreaRev7ExternalScheduler(request, runtimeEnv, {ctx});
     if (url.pathname.replace(/\/$/, '') === '/api/internal/market-scheduled') return koreaRev7ExternalScheduler(request, runtimeEnv, {ctx,refresh:runMarketExternalRefresh,responseBudgetMs:5000,logTag:'MARKET_EXTERNAL'});
@@ -108,6 +113,8 @@ const worker = {
     if (url.pathname === "/api/internal/p0-bls-transport-check") return blsDiagnostic(request, env, { importMetaProd: import.meta.env.PROD, nodeEnv: typeof process !== "undefined" ? process.env.NODE_ENV : undefined, workerContext: ctx, workerUserAgent: typeof navigator !== "undefined" ? navigator.userAgent : undefined });
     if (url.pathname === "/api/indicators/korea-funds") return koreaFunds(request, env);
     if (url.pathname === "/api/core-pce") return readPublicFeed(runtimeEnv.DB, "core-pce");
+    if (url.pathname === "/api/rate-sentiment") return storedRateSentimentResponse(request,{db:runtimeEnv.DB});
+    if (url.pathname === '/api/score-arrow-state') return storedScoreArrowResponse(request,{db:runtimeEnv.DB});
     if (url.pathname === "/api/data-health") return readPublicFeedHealth(runtimeEnv.DB);
     if (url.pathname === "/api/internal/phase1-korea-data-check") return phase1KoreaDataCheck(request, env);
     if (url.pathname === "/api/internal/phase2-korea-history-check") return phase2KoreaHistoryCheck(request, env);
@@ -171,9 +178,9 @@ const worker = {
       console.log("MARKET_OP_R1_CRON", JSON.stringify({
         cron: controller.cron,
         status: result?.status ?? null,
-        job: result?.job ?? null,
-        sourceStatus: result?.sourceStatus ?? null,
-        readyDomains: result?.readyDomains ?? null,
+        job: result?.job??null,
+        sourceStatus: result?.sourceStatus??null,
+        readyDomains: result?.readyDomains??null,
       }));
       return;
     }

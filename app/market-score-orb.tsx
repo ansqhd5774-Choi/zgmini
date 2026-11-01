@@ -1,8 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Gauge } from 'lucide-react';
 import {fearGreedStateColor} from '../lib/fear-greed-state-color.mjs';
+import {clampedAnimationProgress} from '../lib/animation-progress.mjs';
+import {useScoreArrows} from '../components/score-arrow-provider';
+import {LiveScoreValue} from '../components/live-score-value';
 
 type ScoreVariant = 'compact' | 'hero';
+type ScoreComparisonItem = {label:string;value?:number|null};
 
 const GAUGE_CENTER_X = 110;
 const GAUGE_CENTER_Y = 112;
@@ -32,6 +36,15 @@ const CNN_GAUGE_BANDS = [
   { key: 'neutral', start: 45, end: 55, color: '#9aa8b6' },
   { key: 'greed', start: 55, end: 75, color: '#58c88a' },
   { key: 'extreme-greed', start: 75, end: 100, color: '#15865e' },
+] as const;
+
+// Presentation-only dashboard bands; the CNN gauge remains the default for existing risk pages.
+const MARKET_SCORE_GAUGE_BANDS = [
+  { key: 'market-danger', start: 0, end: 25, color: '#ef4444' },
+  { key: 'market-caution', start: 25, end: 40, color: '#f59e0b' },
+  { key: 'market-neutral', start: 40, end: 60, color: '#94a3b8' },
+  { key: 'market-positive', start: 60, end: 75, color: '#22c55e' },
+  { key: 'market-stable', start: 75, end: 100, color: '#10b981' },
 ] as const;
 
 
@@ -94,10 +107,11 @@ function useAnimatedNumber(
     }
 
     let frame = 0;
-    const startedAt = performance.now();
+    let startedAt: number | null = null;
 
     const tick = (now: number) => {
-      const progress = Math.min(1, (now - startedAt) / duration);
+      if (startedAt === null) startedAt = now;
+      const progress = clampedAnimationProgress(now,startedAt,duration);
       const eased = 1 - Math.pow(1 - progress, 3);
       const next = start + (target - start) * eased;
 
@@ -129,6 +143,14 @@ function useAnimatedNumber(
   return display ?? target;
 }
 
+function ScoreComparisonCell({item}:{item:ScoreComparisonItem}){
+  const animated=useAnimatedNumber(item.value,{enabled:true,duration:520,startFromZero:true});
+  return <div className={`cnn-score-comparison is-${deltaDirection(animated)}`}>
+    <span aria-label={`${item.label} 변화폭`}>{item.label}</span>
+    <strong>{formatDelta(animated)}</strong>
+  </div>;
+}
+
 
 export function MarketScoreOrb({
   score,
@@ -141,6 +163,11 @@ export function MarketScoreOrb({
   metaDate,
   dayLabel = '전일 대비',
   comparisonAriaLabel = 'CNN 공포탐욕 변화량',
+  comparisonItems,
+  arrowId,
+  marketScoreBands = false,
+  inlineDayDelta = false,
+  mobileInlineDayDelta = false,
 }: {
   score: string;
   state: string;
@@ -152,7 +179,13 @@ export function MarketScoreOrb({
   metaDate?: string;
   dayLabel?: string;
   comparisonAriaLabel?: string;
+  comparisonItems?: readonly ScoreComparisonItem[];
+  arrowId?: string;
+  marketScoreBands?: boolean;
+  inlineDayDelta?: boolean;
+  mobileInlineDayDelta?: boolean;
 }) {
+  const arrows=useScoreArrows(),showArrows=arrowId?arrows(arrowId,numericScore(score)):false;
   const tone = state.includes('공포') ? 'is-fear' : state.includes('탐욕') ? 'is-greed' : '';
   const ariaLabel = [caption, `${score}점`, state].filter(Boolean).join(' ');
   const targetScore = useMemo(() => numericScore(score), [score]);
@@ -174,12 +207,15 @@ export function MarketScoreOrb({
 
   const displayScore = animatedScore === null ? score : animatedScore.toFixed(1);
   const [wholeScore, decimalScore = ''] = displayScore.includes('.') ? displayScore.split('.', 2) : [displayScore, ''];
+  const showMetaDate = Boolean(metaDate) && comparisonAriaLabel !== '인플레이션 안정성 점수 변화' && !inlineDayDelta;
+  const hasComparisonItems=Array.isArray(comparisonItems)&&comparisonItems.length>0;
 
   if (variant === 'hero') {
     const value = animatedScore;
     const marker = value === null ? null : gaugePoint(value, 84);
 
-    const ticks = [0, 25, 45, 50, 55, 75, 100].map((tick) => ({
+    const gaugeBands = marketScoreBands ? MARKET_SCORE_GAUGE_BANDS : CNN_GAUGE_BANDS;
+    const ticks = (marketScoreBands ? [0, 25, 40, 50, 60, 75, 100] : [0, 25, 45, 50, 55, 75, 100]).map((tick) => ({
       tick,
       inner: gaugePoint(tick, tick === 50 ? 70 : 72),
       outer: gaugePoint(tick, 96),
@@ -189,6 +225,10 @@ export function MarketScoreOrb({
     return (
       <div className={`cnn-score-orb cnn-score-orb-hero ${tone}`} role="group" aria-live="polite" aria-label={ariaLabel}>
         <div className="cnn-spectrum-gauge">
+          <div className="cnn-linear-gauge" aria-hidden="true">
+            {gaugeBands.map((band) => <div key={band.key} className="cnn-linear-band" style={{width:`${band.end-band.start}%`,background:band.color}}/>)}
+            {value !== null ? <div className="cnn-linear-marker" style={{left:`${Math.max(0,Math.min(100,value))}%`}}/> : null}
+          </div>
           <svg viewBox="0 0 220 142" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
             <defs>
               <linearGradient id="cnn-spectrum-gradient" x1="26" y1="0" x2="194" y2="0" gradientUnits="userSpaceOnUse">
@@ -206,7 +246,7 @@ export function MarketScoreOrb({
             </defs>
 
             <path className="cnn-spectrum-backdrop" d="M 26 112 A 84 84 0 0 1 194 112"/>
-            {CNN_GAUGE_BANDS.map((band) => (
+            {gaugeBands.map((band) => (
               <path
                 key={band.key}
                 className={`cnn-spectrum-band is-${band.key}`}
@@ -253,33 +293,42 @@ export function MarketScoreOrb({
           </svg>
 
           <div className="cnn-spectrum-center">
-            <strong className="cnn-score-value" style={{color:fearGreedStateColor(state)}}>
+            <LiveScoreValue value={targetScore} className="cnn-score-value" style={{color:fearGreedStateColor(state)}}>
               <span className="cnn-score-whole">{wholeScore}</span>
               {decimalScore ? <span className="cnn-score-fraction">.{decimalScore}</span> : null}
-            </strong>
+            </LiveScoreValue>
             <span style={{color:fearGreedStateColor(state)}}>{state}</span>
+            {(inlineDayDelta || mobileInlineDayDelta) ? <span className={`cnn-score-inline-day${mobileInlineDayDelta && !inlineDayDelta ? ' cnn-score-inline-day-mobile' : ''}`} aria-label={`${dayLabel} ${formatDelta(animatedDayDelta)}점`}>
+              <span>{dayLabel}</span>
+              <strong className={`is-${deltaDirection(animatedDayDelta)}`}>
+                {formatDelta(animatedDayDelta)}
+                {showArrows && (deltaDirection(animatedDayDelta) === 'up' ? <i aria-hidden="true">▲</i> : deltaDirection(animatedDayDelta) === 'down' ? <i aria-hidden="true">▼</i> : null)}
+              </strong>
+            </span> : null}
             {caption ? <small>{caption}</small> : null}
           </div>
         </div>
 
-        <div className="cnn-score-comparisons" aria-label={comparisonAriaLabel}>
-          <div className={`cnn-score-comparison is-${deltaDirection(animatedDayDelta)}`}>
-            <span aria-label={dayLabel}>{dayLabel.replace(/ 대비$/, "")}</span>
-            <strong>
-              {formatDelta(animatedDayDelta)}
-              {deltaDirection(animatedDayDelta) === 'up' ? <i aria-hidden="true">▲</i> : deltaDirection(animatedDayDelta) === 'down' ? <i aria-hidden="true">▼</i> : null}
-            </strong>
-          </div>
-          <div className="cnn-score-comparison-divider" aria-hidden="true"/>
-          <div className={`cnn-score-comparison is-${deltaDirection(animatedPeriodDelta)}`}>
-            <span aria-label={periodLabel ?? '기간 대비'}>{(periodLabel ?? '기간 대비').replace(/ 대비$/, '')}</span>
-            <strong>
-              {formatDelta(animatedPeriodDelta)}
-              {deltaDirection(animatedPeriodDelta) === 'up' ? <i aria-hidden="true">▲</i> : deltaDirection(animatedPeriodDelta) === 'down' ? <i aria-hidden="true">▼</i> : null}
-            </strong>
-          </div>
-        </div>
-        {metaDate ? <div className="cnn-score-observed-date">{metaDate}</div> : null}
+        {!inlineDayDelta ? <div className={`cnn-score-comparisons${hasComparisonItems?' is-multi':''}`} aria-label={comparisonAriaLabel} title={hasComparisonItems||showArrows?undefined:'화살표는 최근 24시간 내 확인된 점수 변동이 있을 때 표시합니다.'}>
+          {hasComparisonItems ? comparisonItems!.map(item=><ScoreComparisonCell key={item.label} item={item}/>) : <>
+            <div className={`cnn-score-comparison is-${deltaDirection(animatedDayDelta)}`}>
+              <span aria-label={dayLabel}>{dayLabel.replace(/ 대비$/, "")}</span>
+              <strong>
+                {formatDelta(animatedDayDelta)}
+                {showArrows&&(deltaDirection(animatedDayDelta) === 'up' ? <i aria-hidden="true">▲</i> : deltaDirection(animatedDayDelta) === 'down' ? <i aria-hidden="true">▼</i> : null)}
+              </strong>
+            </div>
+            <div className="cnn-score-comparison-divider" aria-hidden="true"/>
+            <div className={`cnn-score-comparison is-${deltaDirection(animatedPeriodDelta)}`}>
+              <span aria-label={periodLabel ?? '기간 대비'}>{(periodLabel ?? '기간 대비').replace(/ 대비$/, '')}</span>
+              <strong>
+                {formatDelta(animatedPeriodDelta)}
+                {showArrows&&(deltaDirection(animatedPeriodDelta) === 'up' ? <i aria-hidden="true">▲</i> : deltaDirection(animatedPeriodDelta) === 'down' ? <i aria-hidden="true">▼</i> : null)}
+              </strong>
+            </div>
+          </>}
+        </div> : null}
+        {showMetaDate ? <div className="cnn-score-observed-date">{metaDate}</div> : null}
       </div>
     );
   }

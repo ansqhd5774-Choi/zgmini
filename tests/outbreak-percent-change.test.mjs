@@ -1,0 +1,3 @@
+import test from 'node:test';import assert from 'node:assert/strict';import {percentChange} from '../lib/iran-progress/percent-change.mjs';
+test('percentage changes use previous score rather than point difference',()=>{assert.equal(percentChange(105,100),5);assert.equal(percentChange(95,100),-5);assert.equal(percentChange(50,50),0);assert.equal(percentChange(30.92,27.77),11.3);});
+test('missing and zero denominator are unavailable while current zero is valid',()=>{assert.equal(percentChange(5,0),null);assert.equal(percentChange(null,5),null);assert.equal(percentChange(5,null),null);assert.equal(percentChange(0,5),-100);});

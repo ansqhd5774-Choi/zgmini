@@ -49,7 +49,7 @@ test('missing NFCICREDIT fails closed without reweighting',()=>{
 test('credit detail catalog shows four component scores in approved order',()=>{
  const r=buildCreditR2(inputs());
  const rows=marketDetailRows('credit',r.indicators);
- assert.deepEqual(rows.map(x=>x.label),['HY 신용 스트레스','IG 신용 스트레스','신용여건','채권 변동성']);
+ assert.deepEqual(rows.map(x=>x.label),['고위험 회사채','우량 회사채','신용여건','채권 변동성']);
  assert.deepEqual(rows.map(x=>x.score),r.indicators.map(x=>x.score));
  assert.ok(rows.every(x=>x.raw===false));
 });

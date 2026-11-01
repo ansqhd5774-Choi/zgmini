@@ -115,6 +115,16 @@ test('NY Fed missing endpoints never become zero; true zero remains available',(
   assert.deepEqual(parsed.DFEDTARU,[{observationDate:'2026-09-21',value:0.25}]);
 });
 
+test('a successful EFFR transport without target endpoints is not complete rate input',async()=>{
+ const nominal='Time Period,RIFLGFCM03_N.B,RIFLGFCY02_N.B,RIFLGFCY10_N.B\n2026-09-21,4,4,4';
+ const real='Time Period,RIFLGFCY10_XII_N.B\n2026-09-21,2';
+ const fetchImpl=async input=>String(input).includes('markets.newyorkfed.org')
+  ?Response.json({refRates:[{effectiveDate:'2026-09-21',type:'EFFR',percentRate:4}]})
+  :new Response(String(input).includes('series=0b98')?real:nominal);
+ const out=await collectRateR2Inputs({asOf,fetchImpl});
+ assert.equal(out.rateR2.status,'PARTIAL');assert.deepEqual(out.rateR2.missing,['DFEDTARL','DFEDTARU']);
+});
+
 test('scheduled RATE_R2 collector preserves the official provider and stored-only score path',async()=>{
   const route=await readFile(new URL('../app/api/market-score/route.ts',import.meta.url),'utf8');
   const scheduled=await readFile(new URL('../worker/market-operational-refresh.mjs',import.meta.url),'utf8');

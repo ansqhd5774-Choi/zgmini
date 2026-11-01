@@ -1,0 +1,30 @@
+/* Three approved risk detail tables share one desktop grid. Display-only.
+   Keep the 1090px floor small enough to fit the approved ~1110px content area;
+   below this width the scroll container (and mobile cards) retain access to columns.
+   Higher specificity intentionally supersedes legacy per-topic cell widths. */
+:is(.inflation-r2-indicators,.recession-r2-indicators,.liquidity-r2-indicators) .inflation-table-wrap{
+ min-width:0;
+ max-width:100%;
+ overflow-x:auto;
+}
+:is(.inflation-r2-indicators,.recession-r2-indicators,.liquidity-r2-indicators) .inflation-table-wrap table.inflation-indicator-table:is(.inflation-indicator-table-r2,.recession-indicator-table-r2,.liquidity-indicator-table-r2){
+ width:100%;
+ min-width:1090px!important;
+ table-layout:fixed;
+}
+/* Existing :nth-child/!important cell widths are intentionally neutralized.
+   Column sizes are determined by colgroup, not unrelated topic-specific rules. */
+:is(.inflation-r2-indicators,.recession-r2-indicators,.liquidity-r2-indicators) .inflation-table-wrap table.inflation-indicator-table:is(.inflation-indicator-table-r2,.recession-indicator-table-r2,.liquidity-indicator-table-r2) :is(th,td){
+ width:auto!important;
+ box-sizing:border-box;
+}
+:is(.inflation-r2-indicators,.recession-r2-indicators,.liquidity-r2-indicators) .inflation-table-wrap table.inflation-indicator-table:is(.inflation-indicator-table-r2,.recession-indicator-table-r2,.liquidity-indicator-table-r2) col:nth-child(1){width:4%!important;}
+:is(.inflation-r2-indicators,.recession-r2-indicators,.liquidity-r2-indicators) .inflation-table-wrap table.inflation-indicator-table:is(.inflation-indicator-table-r2,.recession-indicator-table-r2,.liquidity-indicator-table-r2) col:nth-child(2){width:15%!important;}
+:is(.inflation-r2-indicators,.recession-r2-indicators,.liquidity-r2-indicators) .inflation-table-wrap table.inflation-indicator-table:is(.inflation-indicator-table-r2,.recession-indicator-table-r2,.liquidity-indicator-table-r2) col:nth-child(3){width:17%!important;}
+:is(.inflation-r2-indicators,.recession-r2-indicators,.liquidity-r2-indicators) .inflation-table-wrap table.inflation-indicator-table:is(.inflation-indicator-table-r2,.recession-indicator-table-r2,.liquidity-indicator-table-r2) col:nth-child(4){width:11%!important;}
+:is(.inflation-r2-indicators,.recession-r2-indicators,.liquidity-r2-indicators) .inflation-table-wrap table.inflation-indicator-table:is(.inflation-indicator-table-r2,.recession-indicator-table-r2,.liquidity-indicator-table-r2) col:nth-child(5){width:10%!important;}
+:is(.inflation-r2-indicators,.recession-r2-indicators,.liquidity-r2-indicators) .inflation-table-wrap table.inflation-indicator-table:is(.inflation-indicator-table-r2,.recession-indicator-table-r2,.liquidity-indicator-table-r2) col:nth-child(6){width:10%!important;}
+:is(.inflation-r2-indicators,.recession-r2-indicators,.liquidity-r2-indicators) .inflation-table-wrap table.inflation-indicator-table:is(.inflation-indicator-table-r2,.recession-indicator-table-r2,.liquidity-indicator-table-r2) col:nth-child(7){width:10%!important;}
+:is(.inflation-r2-indicators,.recession-r2-indicators,.liquidity-r2-indicators) .inflation-table-wrap table.inflation-indicator-table:is(.inflation-indicator-table-r2,.recession-indicator-table-r2,.liquidity-indicator-table-r2) col:nth-child(8){width:7%!important;}
+:is(.inflation-r2-indicators,.recession-r2-indicators,.liquidity-r2-indicators) .inflation-table-wrap table.inflation-indicator-table:is(.inflation-indicator-table-r2,.recession-indicator-table-r2,.liquidity-indicator-table-r2) col:nth-child(9){width:12%!important;}
+:is(.inflation-r2-indicators,.recession-r2-indicators,.liquidity-r2-indicators) .inflation-table-wrap table.inflation-indicator-table:is(.inflation-indicator-table-r2,.recession-indicator-table-r2,.liquidity-indicator-table-r2) col:nth-child(10){width:4%!important;}

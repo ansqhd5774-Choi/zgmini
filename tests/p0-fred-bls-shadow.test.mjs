@@ -1,3 +1,4 @@
+import {marketDataFeedFixtureSource} from './market-data-feed-fixture.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -31,7 +32,7 @@ for (const id of Object.keys(SHADOW_SERIES)) test(`${id}: CSV parses, metadata a
   if (id === 'ppi') {assert.equal(result.revisionSensitive, true); assert.equal(result.vintagePolicy, 'LATEST_AVAILABLE'); assert.notEqual(result.mappingClassification, 'EXACT_SOURCE_MAPPING');}
 });
 test('CPI/PPI calendar YoY matches unchanged production function', () => {
-  const src = fs.readFileSync('app/api/market-data/route.ts', 'utf8').replace(/^import .*;\r?\n/gm, '').replace('export async function GET', 'async function GET');
+  const src = marketDataFeedFixtureSource().replace(/^import .*;\r?\n/gm, '').replace('export async function collectMarketDataFeed', 'async function collectMarketDataFeed');
   const makeYoy = new Function(ts.transpile(src, {target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.None}) + ';return makeYoyIndicator;')();
   for (const id of ['cpi', 'ppi']) {
     const p = points().reverse(), result = normalizeShadowSeries(id, p, options), baseline = makeYoy(p.reverse(), {});
@@ -142,7 +143,7 @@ test('method, query and diagnostic expiry block all upstream calls', async () =>
   assert.equal(calls, 0);
 });
 test('public market-data route does not import shadow provider', () => {
-  const source = fs.readFileSync('app/api/market-data/route.ts', 'utf8');
+  const source = marketDataFeedFixtureSource();
   assert.ok(!source.includes('fred-bls-shadow')); assert.ok(!source.includes('SHADOW_SERIES'));
   const worker = fs.readFileSync('worker/index.ts', 'utf8');
   assert.ok(worker.includes('url.pathname === "/api/internal/p0-fred-bls-shadow-check"'));

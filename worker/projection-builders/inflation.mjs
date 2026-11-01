@@ -16,6 +16,47 @@ function monthEnds(asOf,count=12){
   }
   return out;
 }
+function oneYearStart(asOf){
+  const end=new Date(`${asOf}T00:00:00Z`);
+  return new Date(Date.UTC(end.getUTCFullYear()-1,end.getUTCMonth(),end.getUTCDate())).toISOString().slice(0,10);
+}
+function shiftCalendarDate(asOf,{days=0,months=0,years=0}={}){
+  if(!validDate(asOf))return null;
+  const [year,month,day]=asOf.split("-").map(Number);
+  if(days){
+    const date=new Date(Date.UTC(year,month-1,day-days));
+    return date.toISOString().slice(0,10);
+  }
+  const totalMonths=(year-years)*12+(month-1)-months;
+  const targetYear=Math.floor(totalMonths/12);
+  const targetMonth=((totalMonths%12)+12)%12;
+  const lastDay=new Date(Date.UTC(targetYear,targetMonth+1,0)).getUTCDate();
+  return new Date(Date.UTC(targetYear,targetMonth,Math.min(day,lastDay))).toISOString().slice(0,10);
+}
+export function inflationScoreComparisonDates(asOf){
+  return {
+    week:shiftCalendarDate(asOf,{days:7}),
+    month:shiftCalendarDate(asOf,{months:1}),
+    threeMonth:shiftCalendarDate(asOf,{months:3}),
+    sixMonth:shiftCalendarDate(asOf,{months:6}),
+    year:shiftCalendarDate(asOf,{years:1}),
+  };
+}
+export function buildInflationScoreComparisons(history,asOf,currentScore){
+  const dates=inflationScoreComparisonDates(asOf);
+  return Object.fromEntries(Object.entries(dates).map(([key,date])=>{
+    if(!date||!finite(currentScore))return [key,null];
+    const prior=calculateInflationR2At(history,date);
+    return [key,prior.status==="READY"&&finite(prior.score)?currentScore-prior.score:null];
+  }));
+}
+export function buildFeatureTrend1Y(rows=[],asOf){
+  if(!validDate(asOf))return [];
+  const start=oneYearStart(asOf);
+  return (Array.isArray(rows)?rows:[])
+    .filter(row=>validDate(row?.availableAt)&&row.availableAt>=start&&row.availableAt<=asOf&&finite(row?.value))
+    .map(row=>({date:validDate(row?.observationDate)?row.observationDate:row.availableAt,value:row.value}));
+}
 function partial(reason,extra={}){
   return {
     status:"PARTIAL",
@@ -23,6 +64,7 @@ function partial(reason,extra={}){
     missingFactors:[reason],
     indicators:[],
     trend:[],
+    scoreComparisons:{week:null,month:null,threeMonth:null,sixMonth:null,year:null},
     freshness:"STORED_INITIAL_RELEASE_HISTORY_ONLY",
     updatedAt:null,
     methodologyVersion:INFLATION_R2_METHOD_REVISION,
@@ -39,6 +81,29 @@ export const INFLATION_R2_READER_CONTRACT=Object.freeze({
   networkRequests:0,
   providerRequests:0,
 });
+function previousFeatureRow(rows=[],asOf,current){
+  let previous=null;
+  for(const row of rows){
+    if(row.availableAt>asOf)break;
+    if(current&&row.observationDate===current.observationDate&&row.availableAt===current.availableAt)break;
+    previous=row;
+  }
+  return previous;
+}
+function withPreviousFeatures(history,features,asOf){
+  return Object.fromEntries(Object.entries(features).map(([feature,row])=>{
+    if(!row)return [feature,row];
+    const rows=history?.[feature]??[];
+    const previous=previousFeatureRow(rows,asOf,row);
+    return [feature,{
+      ...row,
+      previousObservationDate:previous?.observationDate??null,
+      previousAvailableAt:previous?.availableAt??null,
+      previousValue:finite(previous?.value)?previous.value:null,
+      trend:buildFeatureTrend1Y(rows,asOf),
+    }];
+  }));
+}
 export function buildProjection({pit,pc1,asOf}){
 if(pit.status!=="READY_STORED_PIT_HISTORY"){
     return partial("INFLATION_R2_PIT_INCOMPLETE",{storage:{pitStatus:pit.status,pc1Missing:pc1.missing}});
@@ -49,7 +114,7 @@ if(pit.status!=="READY_STORED_PIT_HISTORY"){
 
   const history=buildInflationR2StoredHistory({pitSeries:pit.series,pcePc1:pc1.series});
   const current=calculateInflationR2At(history,asOf);
-  const features=snapshotInflationR2Features(history,asOf);
+  const features=withPreviousFeatures(history,snapshotInflationR2Features(history,asOf),asOf);
   if(current.status!=="READY"){
     return partial("INFLATION_R2_COMPONENT_MISSING",{missingFactors:current.missing,axes:current.axes});
   }
@@ -63,6 +128,7 @@ if(pit.status!=="READY_STORED_PIT_HISTORY"){
     .map(date=>({date,result:calculateInflationR2At(history,date)}))
     .filter(item=>item.result.status==="READY")
     .map(item=>({label:item.date,value:item.result.score}));
+  const scoreComparisons=buildInflationScoreComparisons(history,asOf,current.score);
   const retrievedAts=[
     ...Object.values(pit.snapshots??{}).map(item=>item?.retrievedAt),
     ...Object.values(pc1.snapshots??{}).map(item=>item?.retrievedAt),
@@ -81,6 +147,7 @@ if(pit.status!=="READY_STORED_PIT_HISTORY"){
       freshness:"INITIAL_RELEASE_ONLY",
     })),
     trend,
+    scoreComparisons,
     freshness:"STORED_INITIAL_RELEASE_HISTORY_ONLY",
     updatedAt:retrievedAts.at(-1)??null,
     asOfDate:asOf,

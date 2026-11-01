@@ -1,13 +1,15 @@
 "use client";
-import {useMemo,useState} from 'react';
-import {LineChart,Line,ResponsiveContainer,Tooltip,XAxis,YAxis,CartesianGrid} from 'recharts';
+import {lazy,Suspense,useMemo,useState} from 'react';
 import {useKoreaFunds,type Composite} from './korea-funds-store';
 import {DEFAULT_KOREA_MARKET_PERIOD,getMarketPeriodConfig,getMarketPeriodDays,type MarketPeriod} from './market-card-shared';
 import {MarketPeriodControls} from './market-period-controls';
 import {FearGreedCardShell} from './fear-greed-card-shell';
+import {MarketBreadthStrip} from './market-breadth-strip';
 import {MarketCardInsight} from './market-card-insight';
 import {MarketFearGreedChart,type MarketFearGreedChartPoint,type MarketFearGreedChartValidPoint} from './market-fear-greed-chart';
 import {fearGreedStateColor} from '../lib/fear-greed-state-color.mjs';
+
+const KoreaCompositePlot=lazy(()=>import('../components/korea-composite-plot'));
 
 export const formatDate=(s:string|null)=>s?`${s.slice(0,4)}-${s.slice(4,6)}-${s.slice(6,8)}`:'—';
 const time=(d:string)=>Date.parse(`${formatDate(d)}T00:00:00Z`);
@@ -206,11 +208,7 @@ export function CompositeChart({
   else setInternalPeriod(nextPeriod);
  };
 
- const chart=<ResponsiveContainer width="100%" height="100%" initialDimension={{width:1,height:1}}><LineChart data={rows} accessibilityLayer margin={{top:8,right:8,left:mini?0:-20,bottom:4}}>
-   {!mini&&<CartesianGrid vertical={false} stroke="var(--zg-chart-grid,#365269)" strokeDasharray="3 5" strokeWidth={1}/>}<XAxis hide={mini} type="number" dataKey="time" domain={['dataMin','dataMax']} tickFormatter={v=>new Date(v).toISOString().slice(0,10)} minTickGap={40} axisLine={{stroke:'var(--zg-chart-axis,#60798d)',strokeWidth:1}} tickLine={false} tick={{fontSize:11,fill:"var(--zg-text-meta,#8fa8bb)"}}/><YAxis hide={mini} axisLine={false} tickLine={false} domain={[0,100]} ticks={[0,50,100]} tick={{fontSize:11,fill:"var(--zg-text-meta,#8fa8bb)"}}/>
-   <Tooltip content={({active,payload})=>{const p=payload?.[0]?.payload;return active&&p?<div className="rounded border bg-white p-2 text-sm text-slate-900">{formatDate(p.date)}<br/>{p.displayScore===null?'자료 없음':`${p.displayScore.toFixed(1)}점 · ${p.stageLabel}`}</div>:null;}}/>
-   <Line type="linear" dataKey="score" stroke={colors[item.stageCode??'']??'#64748b'} dot={false} connectNulls={false} isAnimationActive={false}/>
-  </LineChart></ResponsiveContainer>;
+ const chart=<Suspense fallback={null}><KoreaCompositePlot rows={rows} mini={mini} color={colors[item.stageCode??'']??'#64748b'}/></Suspense>;
 
  if(slot){
   return <div className="fg-chart-renderer" aria-label="한국 공포탐욕 추이 0~100점">{chart}</div>;
@@ -238,7 +236,7 @@ export function KoreaCompositeView({detail=false}:{detail?:boolean}){
  </div>;
 }
 
-export function KoreanCountryCard(){
+export function KoreanCountryCard({detail=false,showBreadth=false}:{detail?:boolean;showBreadth?:boolean}={}){
  const {composite:c,loading}=useKoreaFunds();
  const [selectedPeriod,setSelectedPeriod]=useState<MarketPeriod>(DEFAULT_KOREA_MARKET_PERIOD);
  const valid=typeof c?.displayScore==='number'&&Number.isFinite(c.displayScore);
@@ -259,6 +257,31 @@ export function KoreanCountryCard(){
   [allHistory,c?.observationDate,selectedPeriod],
  );
  const score=valid?c!.displayScore!:null;
+ // Match the USA detail card's 52-week statistics without inventing values
+ // when the stored Korean series does not cover the comparison window.
+ const extrema52Week=useMemo(()=>{
+  if(!detail||score===null||!c?.observationDate||observedTime===null||!Number.isFinite(observedTime))return null;
+  const start=observedTime-364*86400000;
+  const historyInWindow=validHistory(allHistory).filter(point=>point.time>=start&&point.time<=observedTime);
+  if(historyInWindow.length<180||!allHistory.length||
+   historyInWindow[0].time>start+7*86400000||
+   historyInWindow[historyInWindow.length-1].time<observedTime-7*86400000)return null;
+  const points=[...historyInWindow,{date:c.observationDate,time:observedTime,score}];
+  let highest=points[0],lowest=points[0];
+  for(const point of points){
+   if(point.score>=highest.score)highest=point;
+   if(point.score<=lowest.score)lowest=point;
+  }
+  return {highest,lowest};
+ },[allHistory,c?.observationDate,detail,observedTime,score]);
+ const fixedPeriodChanges=useMemo(
+  ()=>!detail?[]:(["1W","1M","3M","6M","1Y"] as const).map((period,index)=>{
+   const labels=["1주","1개월","3개월","6개월","1년"];
+   const baseline=historicalBaseline(allHistory,targetPeriodTime(c?.observationDate,period));
+   return {label:labels[index],delta:score!==null&&baseline!==null?score-baseline:null};
+  }),
+  [allHistory,c?.observationDate,detail,score],
+ );
  const dayDelta=score!==null&&dayBaseline!==null?score-dayBaseline:null;
  const periodDelta=score!==null&&periodBaseline!==null?score-periodBaseline:null;
  const periodLabel=periodComparisonLabels[selectedPeriod];
@@ -273,6 +296,7 @@ export function KoreanCountryCard(){
   testId="kr-composite"
   marketState={loading?'loading':!c?'empty':valid?c.status.toLowerCase():'unavailable'}
   busy={loading}
+  showHeaderDate={detail}
   header={{
    flag:"/flags/kr.svg",
    eyebrow:"ZGMINI KOREA FEAR & GREED",
@@ -283,7 +307,7 @@ export function KoreanCountryCard(){
    source,
    rightContent:<MarketCardInsight text={insight}/>,
   }}
-  score={{
+  score={{arrowId:"korea",
    value:loading||score===null?'—':score.toFixed(1),
    state:loading?'확인 중':valid?(c!.stageLabel??'확인 불가'):c?.status==='WARMUP'?'준비 중':'확인 불가',
    caption:"",
@@ -294,13 +318,38 @@ export function KoreanCountryCard(){
    metaDate:cardDate(c?.observationDate),
    dayLabel:"이전 대비",
    comparisonAriaLabel:"한국 공포탐욕 변화량",
+   mobileInlineDayDelta:detail,
   }}
+  scoreAside={detail ? <div className="korea-score-stats" aria-label="한국 공포탐욕 52주 최고 최저와 기간별 점수 변동">
+   <div className="korea-score-extremes">
+    {([
+      {label:"52주 최고",point:extrema52Week?.highest??null,tone:"high"},
+      {label:"52주 최저",point:extrema52Week?.lowest??null,tone:"low"},
+    ]).map(({label,point,tone})=><div className={`korea-score-stat is-${tone}`} key={tone}>
+      <span className="korea-score-stat-label">{label}</span>
+      <strong className="korea-score-stat-value">{point?point.score.toFixed(1):"—"}</strong>
+      {point?<time className="korea-score-stat-date" dateTime={formatDate(point.date)}>{point.date.slice(0,4)}.{point.date.slice(4,6)}.{point.date.slice(6,8)}</time>
+        :<small className="korea-score-stat-date">—</small>}
+    </div>)}
+   </div>
+   <div className="korea-score-changes">
+    {fixedPeriodChanges.map(({label,delta})=>{
+      const direction=delta===null||Math.abs(delta)<0.05?"neutral":delta>0?"positive":"negative";
+      const rounded=delta===null?"—":(Math.abs(delta)<0.05?0:delta).toFixed(1);
+      return <div className={`korea-score-stat is-${direction}`} key={label}>
+        <span className="korea-score-stat-label">{label}</span>
+        <strong className="korea-score-stat-value">{delta!==null&&delta>=0.05?"+":""}{rounded}{direction==="positive"?<small aria-hidden="true">▲</small>:direction==="negative"?<small aria-hidden="true">▼</small>:null}</strong>
+      </div>;
+    })}
+   </div>
+  </div> : undefined}
   period={<MarketPeriodControls
    activeKey={selectedPeriod}
    onChange={setSelectedPeriod}
    ariaLabel="한국 공포탐욕 차트 기간"
   />}
   chart={<MarketFearGreedChart
+   showExtrema
    color={fearGreedStateColor(loading?'확인 중':valid?(c!.stageLabel??'확인 불가'):'확인 불가')}
    data={chartHistory}
    axisTicks={chartAxis.ticks}
@@ -311,6 +360,7 @@ export function KoreanCountryCard(){
    formatTooltipLabel={value=>formatDate(value)}
    emptyLabel={loading?'확인 중':c?.status==='WARMUP'?'계산 준비 중':'공통 관측 이력 없음'}
   />}
+  breadth={showBreadth && !detail ? <MarketBreadthStrip market="korea"/> : undefined}
   footer={{
    href:"/fear-greed/korea/",
    label:"자세히",

@@ -15,13 +15,30 @@ export function mergeStoredCompositeTrend({
 }={}){
   const byDate=new Map();
 
+  // Recover the already published curve before layering reconstructed/current
+  // points. A new methodology can have a shorter reconstruction window; that
+  // must not erase the historical values saved by previous publications.
+  const snapshots=(Array.isArray(storedSnapshots)?storedSnapshots:[])
+    .slice().sort((a,b)=>(a?.storedAt??0)-(b?.storedAt??0)
+      ||String(a?.date??'').localeCompare(String(b?.date??'')));
+  for(const snapshot of snapshots){
+    if(snapshot?.body?.overall?.status!=="READY")continue;
+    const cutoff=validDate(snapshot?.date)?snapshot.date:currentDate;
+    for(const point of Array.isArray(snapshot.body.overall.trend)?snapshot.body.overall.trend:[]){
+      const date=pointDate(point);
+      const value=finiteScore(point?.value)?point.value:finiteScore(point?.score)?point.score:null;
+      if(date&&value!==null&&(!validDate(cutoff)||date<=cutoff)
+        &&(!validDate(currentDate)||date<=currentDate))byDate.set(date,{label:date,value});
+    }
+  }
+
   for(const point of Array.isArray(legacyTrend)?legacyTrend:[]){
     const date=pointDate(point);
     const value=finiteScore(point?.value)?point.value:finiteScore(point?.score)?point.score:null;
-    if(date&&value!==null)byDate.set(date,{label:date,value});
+    if(date&&value!==null&&!byDate.has(date))byDate.set(date,{label:date,value});
   }
 
-  for(const snapshot of Array.isArray(storedSnapshots)?storedSnapshots:[]){
+  for(const snapshot of snapshots){
     const date=validDate(snapshot?.date)?snapshot.date:pointDate(snapshot);
     const value=finiteScore(snapshot?.score)
       ? snapshot.score

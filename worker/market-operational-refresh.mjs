@@ -1,6 +1,11 @@
 import {collectDiagnosticLiveInputs,fetchBisBulkDataset} from './diagnostic-v1-canary.mjs';
+import {bisInputField,validBisInput} from './bis-input-policy.mjs';
+import {validCreditInput} from './credit-input-policy.mjs';
+import {groupedInputValid,hasObservations} from './collection-input-safety.mjs';
+import {assertCompleteMarket} from './market-publication-validation.mjs';
+import {collectionDisposition} from './collection-result-contract.mjs';
 import {fetchDiagnosticFredSeries} from '../lib/diagnostic-layer/official-macro-adapters.mjs';
-import {collectRateR2Inputs} from '../lib/market-score/rate-r2-provider.mjs';
+import {collectRateR2Inputs,RATE_R2_PROVIDER_CONTRACT} from '../lib/market-score/rate-r2-provider.mjs';
 import {collectBreadthB1R3StoreOnlyR1} from '../lib/market-score/breadth-b1-r3-worker-domain.mjs';
 import {readBreadthB1R5StoredPublicDomainR1} from '../lib/market-score/breadth-b1-r5-worker-domain.mjs';
 import {collectInflationR2StoreOnly} from './inflation-r2-collector.mjs';
@@ -12,16 +17,26 @@ import {createMarketScoreR1Handler} from './market-score-r1.mjs';
 import {buildStoredDiagnostic} from './stored-diagnostic-r61.mjs';
 import {marketOperationalStore,readStoredMarketInputs} from './market-operational-store.mjs';
 import {writeProjectionMacroSlices} from './projection-input-writer-r60.mjs';
-import {macroCollectionReadiness,mergeSuccessfulMacroCredit} from './macro-result-contract-r61.mjs';
+import {macroCollectionReadiness,mergeSuccessfulMacroCredit,safeMacroDiagnostic} from './macro-result-contract-r61.mjs';
 import {mergeStoredCompositeTrend,oneYearHistoryStart} from './composite-history.mjs';
 
-export const MARKET_COLLECTION_JOBS=Object.freeze(['macroCredit','macro','rates','credit','supply','fundFlows','bisDsr','bisTc','earnings','consumption','breadth','inflation','employment','growth']);
+import {MARKET_COLLECTION_JOBS} from './market-collection-jobs.mjs';
+export {MARKET_COLLECTION_JOBS};
 const SOURCE_GROUPS={macro:['fetchFred'],credit:['fetchOfr','fetchCmdi'],supply:['fetchGscpi','fetchCopper'],fundFlows:['fetchFundFlows']};
 const EXTERNAL_KEYS={macro:['publicDomainScores'],credit:['dvpRepoRows','triPartyRepoRows','cmdiRows'],supply:['gscpiRows','copperRows'],fundFlows:['registeredFundFlowRows']};
 async function collectGroup(args,group){
  const adapters=Object.fromEntries(['fetchFred','fetchOfr','fetchCmdi','fetchGscpi','fetchCopper','fetchFundFlows','fetchBis'].filter(key=>!SOURCE_GROUPS[group].includes(key)).map(key=>[key,async()=>({status:'SKIPPED_JOB'})]));
  const out=await collectDiagnosticLiveInputs({...args,requestCap:48,adapters});
- return {...(group==='macro'?{series:out.series,inputSettled:out.inputSettled,providerSummary:{fred:out.providerSummary?.fred}}:{}),external:Object.fromEntries(EXTERNAL_KEYS[group].map(key=>[key,out.external[key]]))};
+ const providerSummary=group==='macro'
+  ?{fred:out.providerSummary?.fred}
+  :group==='fundFlows'
+   ?{secFundFlows:out.providerSummary?.secFundFlows}
+   :undefined;
+ return {
+  ...(group==='macro'?{series:out.series,inputSettled:out.inputSettled}:{}),
+  ...(providerSummary?{providerSummary}:{}),
+  external:Object.fromEntries(EXTERNAL_KEYS[group].map(key=>[key,out.external[key]])),
+ };
 }
 const unavailableFetch=async()=>{throw Error('SCORE_CALCULATION_NETWORK_FORBIDDEN')};
 export async function calculateStoredMarketScore(env,store,now){
@@ -41,9 +56,11 @@ export async function calculateStoredMarketScore(env,store,now){
    currentDate:body.asOfDate??new Date(now).toISOString().slice(0,10),
   });
  }
+ assertCompleteMarket(body);
  await store.writeScore(body,now);
  return {readyDomains:body.dataQuality?.readyDomains??body.domains.filter(x=>x.status==='READY').length};
 }
+/** @param {{env?:import('./runtime-contracts').DataEnv,store?:ReturnType<typeof marketOperationalStore>,now?:number}} [options] @returns {Promise<import('./runtime-contracts').OperationalResult>} */
 export async function refreshStoredMarketScoreSnapshot({env,store,now=Date.now()}={}){
  if(!env?.DB&&!store)return {status:'CONFIGURATION_MISSING'};
  store??=marketOperationalStore(env.DB);
@@ -51,7 +68,7 @@ export async function refreshStoredMarketScoreSnapshot({env,store,now=Date.now()
   const result=await calculateStoredMarketScore(env,store,now);
   return {status:'COMPLETE',providerRequests:0,...result};
  }catch(error){
-  const reason=['STORED_CALCULATION_FAILED','SCORE_CONTRACT_FAILED'].includes(error?.message)?error.message:'STORED_PRECOMPUTE_FAILED';
+  const reason=['STORED_CALCULATION_FAILED','SCORE_CONTRACT_FAILED','MARKET_REQUIRED_SCORE_MISSING','MARKET_REQUIRED_TREND_MISSING'].includes(error?.message)?error.message:'STORED_PRECOMPUTE_FAILED';
   return {status:'ERROR',providerRequests:0,reason};
  }
 }
@@ -60,6 +77,7 @@ function boundedFetch(fetchImpl){return async(input,init={})=>{
  const signal=init.signal?AbortSignal.any([init.signal,timeout]):timeout;
  return Reflect.apply(fetchImpl,globalThis,[input,{...init,signal}]);
 };}
+/** @param {{env?:import('./runtime-contracts').DataEnv,job?:string,store?:ReturnType<typeof marketOperationalStore>,now?:number,fetchImpl?:typeof fetch,collectors?:Record<string,(args:{env:import('./runtime-contracts').DataEnv,asOf:string,fetchImpl:typeof fetch})=>Promise<unknown>>,calculate?:typeof calculateStoredMarketScore}} [options] @returns {Promise<import('./runtime-contracts').OperationalResult>} */
 export async function runMarketOperationalRefresh({env,job,store,now=Date.now(),fetchImpl=globalThis.fetch,collectors={},calculate=calculateStoredMarketScore}={}){
  if(!env?.DB&&!store)return {status:'CONFIGURATION_MISSING'};
  if(job&&!MARKET_COLLECTION_JOBS.includes(job))return {status:'INVALID_JOB'};
@@ -81,8 +99,8 @@ export async function runMarketOperationalRefresh({env,job,store,now=Date.now(),
    credit:()=>collectGroup(args,'credit'),
    supply:()=>collectGroup(args,'supply'),
    fundFlows:()=>collectGroup(args,'fundFlows'),
-   bisDsr:async()=>{const r=await fetchBisBulkDataset('WS_DSR',{fetchImpl:requestFetch,country:'US'});return {status:r.status,external:{bisDsrParsed:r.parsed}}},
-   bisTc:async()=>{const r=await fetchBisBulkDataset('WS_TC',{fetchImpl:requestFetch,country:'US'});return {status:r.status,external:{bisDebtGdpParsed:r.parsed}}},
+   bisDsr:async()=>{const r=await fetchBisBulkDataset('WS_DSR',{fetchImpl:requestFetch,country:'US'});return {status:r.status,diagnostic:r.diagnostic,external:{bisDsrParsed:r.parsed}}},
+   bisTc:async()=>{const r=await fetchBisBulkDataset('WS_TC',{fetchImpl:requestFetch,country:'US'});return {status:r.status,diagnostic:r.diagnostic,external:{bisDebtGdpParsed:r.parsed}}},
    rates:()=>collectRateR2Inputs(args),
    earnings:()=>collectEarningsE1R4ToStore({...args,db:env.DB}),
    consumption:()=>runConsumptionR3OperationalRefresh({...args,maxSourcesPerRun:1}),
@@ -101,16 +119,40 @@ export async function runMarketOperationalRefresh({env,job,store,now=Date.now(),
    for(const item of fred?.failed??[]){const status=/^[A-Z0-9_]{1,64}$/.test(item?.status??'')?item.status:'UNKNOWN';failures[status]=(failures[status]??0)+1;}
    console.warn('R60_MACRO_SOURCE_FAILED',JSON.stringify({...macroReadiness,failures}));
    await store.finish(selected,jobLease,now,'SOURCE_FAILED');
-   return {status:'SOURCE_FAILED',job:selected,reason:macroReadiness.reason};
+   return {status:'SOURCE_FAILED',job:selected,reason:macroReadiness.reason,sourceDiagnostic:safeMacroDiagnostic({provider:'FRED',...macroReadiness,failed:fred?.failed??[]})};
   }
   const collectedStatus=collected?.status??collected?.rateR2?.status;
-  if(selected==='macroCredit'&&(collectedStatus!=='READY_CURRENT_VINTAGE'||!collected?.series?.NFCICREDIT?.length)){
+  if(!groupedInputValid(selected,collected)){
+   await store.finish(selected,jobLease,now,'SOURCE_FAILED');
+   return {status:'SOURCE_FAILED',job:selected,reason:'REQUIRED_INPUT_EMPTY_OR_INVALID'};
+  }
+  if(selected==='credit'&&!validCreditInput(collected)){
+   await store.finish(selected,jobLease,now,'SOURCE_FAILED');
+   return {status:'SOURCE_FAILED',job:selected,reason:'CREDIT_INPUT_NOT_VALID'};
+  }
+  if(selected==='rates'&&(collected?.rateR2?.status!=='READY'||RATE_R2_PROVIDER_CONTRACT.requiredSeries.some(id=>!collected?.rateR2?.series?.[id]?.some(row=>typeof row?.value==='number'&&Number.isFinite(row.value)&&typeof row?.observationDate==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(row.observationDate)&&row.observationDate<=asOf)))){
+   await store.finish(selected,jobLease,now,'SOURCE_FAILED');
+   return {status:'SOURCE_FAILED',job:selected,sourceStatus:collectedStatus,reason:'RATES_INPUT_NOT_READY'};
+  }
+  if(bisInputField(selected)&&(collectedStatus!=='READY_CURRENT_VINTAGE_RAW'||!validBisInput(selected,collected))){
+   await store.finish(selected,jobLease,now,'SOURCE_FAILED');
+   return {status:'SOURCE_FAILED',job:selected,sourceStatus:collectedStatus,reason:'BIS_INPUT_NOT_VALID',diagnostic:collected?.diagnostic};
+  }
+  if(selected==='macroCredit'&&(collectedStatus!=='READY_CURRENT_VINTAGE'||!hasObservations(collected?.series?.NFCICREDIT))){
    await store.finish(selected,jobLease,now,'SOURCE_FAILED');
    return {status:'SOURCE_FAILED',job:selected,reason:'MACRO_CREDIT_NOT_READY'};
   }
   if(/^(FAIL|FAILED|ERROR|CONFIGURATION_MISSING|UNAVAILABLE)$/.test(collectedStatus??'')){
    await store.finish(selected,jobLease,now,'SOURCE_FAILED');
-   return {status:'SOURCE_FAILED',job:selected,sourceStatus:collectedStatus};
+   const d=collected?.sourceDiagnostic;
+   const sourceDiagnostic=selected==='earnings'&&collected?.failureCode==='WIKIPEDIA_UNIVERSE_REQUEST_FAILED'&&d?.provider==='WIKIPEDIA'&&d.stage==='UNIVERSE_REQUEST'&&Number.isInteger(d.httpStatus)&&d.httpStatus>=100&&d.httpStatus<=599
+    ?{provider:'WIKIPEDIA',stage:'UNIVERSE_REQUEST',httpStatus:d.httpStatus}:null;
+   return {status:'SOURCE_FAILED',job:selected,sourceStatus:collectedStatus,...(sourceDiagnostic?{sourceDiagnostic}:{})};
+  }
+  const disposition=collectionDisposition(selected,collectedStatus);
+  if(disposition!=='COMPLETE'){
+   await store.finish(selected,jobLease,now,disposition);
+   return {status:disposition,job:selected,sourceStatus:collectedStatus??'UNKNOWN'};
   }
   if(['macroCredit','macro','rates','credit','supply','fundFlows','bisDsr','bisTc'].includes(selected)){
    phase='STORE';
@@ -132,7 +174,11 @@ export async function runMarketOperationalRefresh({env,job,store,now=Date.now(),
   return {status:finalStatus,job:selected,sourceStatus,...result};
  }catch(error){
   if(jobLease)await store.finish(selected,jobLease,now,`${phase}_FAILED`).catch(()=>{});
-  const reason=['INPUT_STORAGE_LIMIT','STORED_CALCULATION_FAILED','SCORE_CONTRACT_FAILED'].includes(error?.message)?error.message:(String(error?.message??'').match(/^GROWTH_R2_[A-Z0-9_]+/)?.[0]??null);
-  return {status:'ERROR',job:selected,phase,...(reason?{reason}:{})};
+  const reason=['INPUT_STORAGE_LIMIT','INPUT_NOT_VALID','STORED_CALCULATION_FAILED','SCORE_CONTRACT_FAILED','MARKET_REQUIRED_SCORE_MISSING','MARKET_REQUIRED_TREND_MISSING'].includes(error?.message)?error.message:(String(error?.message??'').match(/^GROWTH_R2_[A-Z0-9_]+/)?.[0]??null);
+  const source=error?.sourceDiagnostic;
+  const sourceDiagnostic=source?.provider==='BLS'&&Number.isInteger(source.attempts)&&source.attempts>=1&&source.attempts<=2
+   ?{provider:'BLS',httpStatus:Number.isInteger(source.httpStatus)?source.httpStatus:null,attempts:source.attempts,registered:source.registered===true}:null;
+  return {status:'ERROR',job:selected,phase,...(reason?{reason}:{}),failureDiagnostic:safeCollectionFailure(error),...(sourceDiagnostic?{sourceDiagnostic}:{})};
  }finally{await store.finish('pipeline',lease,now,'IDLE')}
 }
+import {safeCollectionFailure} from './collection-failure-diagnostic.mjs';
