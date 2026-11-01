@@ -30,6 +30,30 @@ const count=value=>Number.isSafeInteger(value)&&value>=0;
 const pct=value=>typeof value==='number'&&Number.isFinite(value)&&value>=0&&value<=100;
 const roundPct=value=>Number(value.toFixed(8));
 const fail=status=>({status,publicationAllowed:false,remoteWrites:0,schedulerChanges:0,d1Writes:0});
+const immutableHistoryFields=['version','market','phase','status','publicationStage',
+ 'source','universe','methodologyVersion','priceMode'];
+
+/**
+ * An authorized forward update may append new sessions and slide the oldest
+ * chart date off the 249/250-day public window. It must not rewrite any date
+ * still shared with the previously published, independently verified history.
+ * An entirely disjoint replacement would erase the existing chain of evidence.
+ */
+function forwardHistoryCompatibility(previous,next){
+ if(immutableHistoryFields.some(field=>previous[field]!==next[field]))
+  return 'HISTORY_PERCENT_LINEAGE_CONFLICT_PRESERVED';
+ const oldPoints=new Map(previous.points.map(p=>[p.date,p]));
+ let shared=0;
+ for(const point of next.points){
+  const old=oldPoints.get(point.date);
+  if(!old)continue;
+  shared++;
+  if(old.risingPct!==point.risingPct||old.fallingPct!==point.fallingPct
+    ||old.unchangedPct!==point.unchangedPct)
+   return 'HISTORY_PERCENT_OVERLAP_CONFLICT_PRESERVED';
+ }
+ return shared?'FORWARD_HISTORY_COMPATIBLE':'HISTORY_PERCENT_NO_OVERLAP_PRESERVED';
+}
 
 /**
  * Bound to R25's *raw verified calculation*, not to a caller-created
@@ -134,6 +158,8 @@ export async function publishVerifiedPercentHistoryR32(remote,database,verifiedP
     &&JSON.stringify(previous.points)===JSON.stringify(body.points);
    return fail(same?'HISTORY_PERCENT_ALREADY_PUBLISHED':'SAME_DAY_HISTORY_CONFLICT_PRESERVED');
   }
+  const compatibility=forwardHistoryCompatibility(previous,body);
+  if(compatibility!=='FORWARD_HISTORY_COMPATIBLE')return fail(compatibility);
  }
 
  const encoded=JSON.stringify(body);

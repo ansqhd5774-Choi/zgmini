@@ -143,6 +143,90 @@ test('R32 preserves equal/newer, unknown or corrupt D1 rows without overwrite',a
  }
 });
 
+test('R38 permits only a legitimate next-session sliding-window extension with exact shared percentages',async()=>{
+ const former=prepareVerifiedPercentHistoryR32(preview(249,'2026-10-30'),{now}).body;
+ const forwardNow=Date.parse('2026-11-04T12:00:00Z');
+ const source=preview(249,'2026-11-03');
+ const prepared=prepareVerifiedPercentHistoryR32(source,{now:forwardNow});
+ assert.equal(prepared.ok,true);
+ assert.equal(prepared.body.points[0].date>former.points[0].date,true);
+ const d1=mockD1({body:JSON.stringify(former),stored_at:now-1});
+ const result=await publishVerifiedPercentHistoryR32(d1.remote,'db',source,
+  {now:forwardNow,finalWriteEnabled:true,approvedPreviewSha256:prepared.evidenceSha256});
+ assert.equal(result.status,'VERIFIED_PERCENT_HISTORY_FINAL');
+ assert.equal(d1.calls.filter(c=>c.type==='write').length,1);
+ assert.equal(d1.calls.filter(c=>c.type==='read').length,2);
+ const after=JSON.parse(d1.record().body);
+ assert.equal(after.lastDate,'2026-11-03');
+ const formerByDate=new Map(former.points.map(point=>[point.date,point]));
+ for(const point of after.points){
+  const old=formerByDate.get(point.date);
+  if(old)assert.deepEqual(point,old);
+ }
+});
+
+test('R38 permits an approved one-day append from 249 to 250 without changing any prior point',async()=>{
+ const former=prepareVerifiedPercentHistoryR32(preview(249,'2026-10-30'),{now}).body;
+ const forwardNow=Date.parse('2026-11-04T12:00:00Z');
+ const source=preview(250,'2026-11-03');
+ const prepared=prepareVerifiedPercentHistoryR32(source,{now:forwardNow});
+ assert.equal(prepared.ok,true);
+ assert.equal(prepared.body.points.length,250);
+ assert.equal(prepared.body.firstDate,former.firstDate);
+ const d1=mockD1({body:JSON.stringify(former),stored_at:now-1});
+ const result=await publishVerifiedPercentHistoryR32(d1.remote,'db',source,
+  {now:forwardNow,finalWriteEnabled:true,approvedPreviewSha256:prepared.evidenceSha256});
+ assert.equal(result.status,'VERIFIED_PERCENT_HISTORY_FINAL');
+ const after=JSON.parse(d1.record().body);
+ assert.deepEqual(after.points.slice(0,249),former.points);
+ assert.equal(after.points.at(-1).date,'2026-11-03');
+ assert.equal(d1.calls.filter(c=>c.type==='write').length,1);
+});
+
+test('R38 rejects a changed overlapping percent without D1 write even for approved newer preview SHA',async()=>{
+ const former=prepareVerifiedPercentHistoryR32(preview(),{now}).body;
+ const forwardNow=Date.parse('2026-11-04T12:00:00Z');
+ const source=preview(249,'2026-11-03');
+ const point=source.chart.points[10];
+ point.rising++;
+ point.falling--;
+ point.risingPct=100*point.rising/total;
+ point.fallingPct=100*point.falling/total;
+ const prepared=prepareVerifiedPercentHistoryR32(source,{now:forwardNow});
+ assert.equal(prepared.ok,true);
+ const initial={body:JSON.stringify(former),stored_at:now-1};
+ const d1=mockD1(initial);
+ const result=await publishVerifiedPercentHistoryR32(d1.remote,'db',source,
+  {now:forwardNow,finalWriteEnabled:true,approvedPreviewSha256:prepared.evidenceSha256});
+ assert.equal(result.status,'HISTORY_PERCENT_OVERLAP_CONFLICT_PRESERVED');
+ assert.equal(result.d1Writes,0);
+ assert.equal(d1.calls.filter(c=>c.type==='write').length,0);
+ assert.deepEqual(d1.record(),initial);
+});
+
+test('R38 rejects a disjoint future window and altered prior lineage without D1 write',async()=>{
+ const forwardNow=Date.parse('2026-11-04T12:00:00Z');
+ const source=preview(249,'2026-11-03');
+ const approved=prepareVerifiedPercentHistoryR32(source,{now:forwardNow}).evidenceSha256;
+ const former=prepareVerifiedPercentHistoryR32(preview(249,'2025-01-02'),
+  {now:Date.parse('2025-01-03T12:00:00Z')}).body;
+ assert.equal(validFullMarketPercentHistoryRecord(former),true);
+ for(const [prior,status] of [
+  [former,'HISTORY_PERCENT_NO_OVERLAP_PRESERVED'],
+  [{...former,phase:'PROVISIONAL'},'UNKNOWN_HISTORY_RECORD_PRESERVED'],
+  [{...former,source:'ANOTHER_PROVIDER'},'UNKNOWN_HISTORY_RECORD_PRESERVED'],
+ ]){
+  const original={body:JSON.stringify(prior),stored_at:now-1};
+  const d1=mockD1(original);
+  const result=await publishVerifiedPercentHistoryR32(d1.remote,'db',source,
+   {now:forwardNow,finalWriteEnabled:true,approvedPreviewSha256:approved});
+  assert.equal(result.status,status);
+  assert.equal(result.d1Writes,0);
+  assert.equal(d1.calls.filter(c=>c.type==='write').length,0);
+  assert.deepEqual(d1.record(),original);
+ }
+});
+
 test('R32 fails closed on D1 CAS/readback collision and does not claim successful publication',async()=>{
  const source=preview();
  const approved=prepareVerifiedPercentHistoryR32(source,{now}).evidenceSha256;
