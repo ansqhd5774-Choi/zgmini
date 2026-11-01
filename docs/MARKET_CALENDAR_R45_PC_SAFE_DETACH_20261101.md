@@ -48,3 +48,12 @@
 | 개발 GitHub 커밋만 존재 | `PC 적용 완료`가 **아님** |
 
 **주의:** 본 개발 도구가 PC를 원격으로 수정하지 않는다. 승인된 E: 경로·실제 실행 명령이 현장 점검과 일치하지 않으면 패키지를 무리하게 재실행하지 않는다.
+
+## 2026-11-01 후속 — 현행 실행기 읽기 전용 점검 우선
+
+- 두 번의 R45 해제 preflight는 `R45_DETACH_CORE_LAUNCHER_CHANGED_STOP`으로 안전 중단됐다. FIX1에서 `R51_OUTER_WRAPPER_CHANGED`, `originCoreVbsCount=0`, `configSourceMatchesApproved=false`가 확인됐으나 **현재 PC Core 장애·사용자 임의 변경·R45 연결 유무를 증명하지 않는다**.
+- `main`의 `PC_CORE_5MIN_CONFLICT_RUNBOOK.md`는 R7에서 기존 Core Task의 보조 래퍼 연결이 성공했음을 기록한다. 이전 R51의 *고정 해시를 현재 승인 실행기라고 간주해 자동 해제하는 방식은 보류*한다.
+- `scripts/pc-writer/market-calendar-r45-pc-live-inventory.mjs`와 `MARKET_CALENDAR_R45_PC_LIVE_INVENTORY.cmd`를 **실제 PC 작업 트리 밖에서** 한 번 실행한다. Task XML → 등록 외부 VBS → 첫 번째 Core VBS/Node 실행기를 읽기만 하며, 외부/중첩 VBS의 SHA256, 구 R50 해시의 역사적 일치 여부, 실제 Git HEAD/`config.source`, 보호 경로 clean, `collect-local.mjs` Git blob/R45 옵저버 상태를 비밀값·경로 없이 기록한다. 생성물은 패키지 폴더의 결과 TXT 한 개다.
+- `INVENTORY_TRACED_REVIEW_REQUIRED`나 `OBSERVER_ALREADY_OFF_NO_PC_CHANGE`는 **진단 완료**일 뿐 설치 승인이나 Core 정상 실행 증명이 아니다. 현재 실행 체인과 승인 운영 소스·수집 보고서의 출처를 대조하고, R45가 이미 꺼져 있으면 **변경 없이 종료**한다.
+- R45가 실제로 연결돼 있고 정확한 대상 소스도 확인된 경우에만 기존 Core 5분·R7 보조 래퍼·B1/MarketParquet·연간 수동 FHS를 유지하는 1파일 해제 변경을 별도로 준비한다. 이전 FIX1 패키지의 `--apply`를 현행 해시 불일치 상태에서 재시도하지 않는다.
+- 이 단계에서는 `main`/PC Task/launcher/config/DB/D1/API·공개 등급을 변경하지 않는다. Windows 실제 재점검 결과는 아직 받지 않았으며 **PC 적용 완료로 표시하지 않는다**.
