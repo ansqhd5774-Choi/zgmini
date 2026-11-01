@@ -112,11 +112,11 @@ export function auditR58R43Shadow({shadow,reference,now=Date.now()}={}){
 
 export function runR58ShadowAudit({
  base=process.env.ZGMINI_PC_HOME??path.join(os.homedir(),'.zgmini','pc-writer'),
- now=Date.now(),referenceName=R58_REFERENCE_FILE,
+ now=Date.now(),referenceName=R58_REFERENCE_FILE,shadow=null,
 }={}){
- const shadow=buildR57R43Shadow({base,now});
- if(shadow.status!=='READY_SHADOW')return {method:R58_METHOD,status:'BLOCKED',
-  reason:'R58_R57_SHADOW_NOT_READY',shadowReason:shadow.reason,...readOnly()};
+ const evaluated=shadow??buildR57R43Shadow({base,now});
+ if(evaluated.status!=='READY_SHADOW')return {method:R58_METHOD,status:'BLOCKED',
+  reason:'R58_R57_SHADOW_NOT_READY',shadowReason:evaluated.reason,...readOnly()};
  if(referenceName!==R58_REFERENCE_FILE||!path.isAbsolute(base))
   return {method:R58_METHOD,status:'BLOCKED',reason:'R58_REFERENCE_PATH_INVALID',...readOnly()};
  const file=path.join(base,referenceName);
@@ -130,7 +130,7 @@ export function runR58ShadowAudit({
   reference=JSON.parse(fs.readFileSync(file,'utf8'));
  }catch{return {method:R58_METHOD,status:'BLOCKED',
   reason:'R58_REFERENCE_FILE_INVALID',...readOnly()};}
- return auditR58R43Shadow({shadow,reference,now});
+ return auditR58R43Shadow({shadow:evaluated,reference,now});
 }
 
 if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.url)){
