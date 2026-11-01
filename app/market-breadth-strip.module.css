@@ -59,7 +59,32 @@
 .historyRisingDot { fill: var(--zg-positive); }
 .historyFallingDot { fill: var(--zg-danger); }
 .historyDates { grid-column: 2; color: var(--zg-text-meta); font-size: 9px; font-variant-numeric: tabular-nums; }
-.historySlider { display: block; width: calc(100% - 37px); margin: 8px 0 9px 37px; accent-color: var(--zg-text-meta); }
+.historySvgWrap { position: relative; min-width: 0; }
+.historyPlot svg { touch-action: pan-y; cursor: crosshair; }
+.historyPlot svg:focus-visible { outline: 2px solid var(--zg-text); outline-offset: 2px; border-radius: 3px; }
+.historyTooltip {
+  position: absolute;
+  left: 0;
+  top: 0;
+  visibility: hidden;
+  z-index: 1;
+  display: grid;
+  gap: 3px;
+  width: max-content;
+  max-width: calc(100% - 12px);
+  padding: 6px 8px;
+  border: 1px solid var(--zg-border);
+  border-radius: 6px;
+  background: #071c2e;
+  color: var(--zg-text);
+  box-shadow: 0 4px 12px rgba(0,0,0,.22);
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+  pointer-events: none;
+}
+.historyTooltip time { font-weight: 800; margin-bottom: 2px; }
+.historyTooltip div { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; white-space: nowrap; }
+.historyTooltip div strong { font-weight: 700; }
 .historyEmpty { padding: 20px 4px; color: var(--zg-text-meta); font-size: 11px; line-height: 1.5; }
 
 .stats {

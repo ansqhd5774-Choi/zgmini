@@ -14,6 +14,12 @@ export type MarketFearGreedChartValidPoint = {
   score: number;
 };
 
+export type MarketObservedRange = {
+  date: string;
+  low: number;
+  high: number;
+};
+
 
 export type MarketFearGreedChartProps = {
   data: MarketFearGreedChartPoint[];
@@ -33,6 +39,7 @@ export type MarketFearGreedChartProps = {
   showExtrema?: boolean;
   axisTickInterval?: 0 | 'preserveStartEnd';
   marketScoreBands?: boolean;
+  observedRanges?: MarketObservedRange[];
 };
 const Renderer=lazy(()=>import('./market-fear-greed-chart-renderer'));
 export function MarketFearGreedChart(props:MarketFearGreedChartProps){

@@ -19,6 +19,7 @@ import {breadthB1R4PreviousSessionDelta as breadthPreviousSessionDelta} from '..
 import {marketTrendWindowR1} from '../lib/market-score/market-trend-window-r1.mjs';
 import {miniTrendGeometry} from '../lib/market-score/mini-trend-geometry.mjs';
 import {amplifyCompositeDisplayScore,amplifyCompositeDisplayTrend} from '../lib/market-score/composite-display-sensitivity-r1.mjs';
+import {mergeCompositeObservedDisplay} from '../lib/market-score/composite-observed-display-r1.mjs';
 import {ContentHelp} from './content-help';
 import {HELP,HelpText} from './help-copy';
 export type DashboardPoint={label:string;value:number};
@@ -142,6 +143,21 @@ export const CompositeMarketSection=memo(function CompositeMarketSection({demo}:
  const arrowDelta=useScoreArrowDelta();
  const [expanded,setExpanded]=useState(false);
  const [periodDays,setPeriodDays]=useState(365);
+ const [compositeArchive,setCompositeArchive]=useState<{days:number;points:Array<{observedAt:string;score:number}>}|null>(null);
+ useEffect(()=>{
+  const label=periodDays<=1?'1D':periodDays<=7?'1W':periodDays<=31?'1M':periodDays<=93?'3M':periodDays<=186?'6M':'1Y';
+  const stop=startStoredRefresh(async(signal:AbortSignal)=>{
+   try{
+    const response=await fetch('/api/market-score/observations?period='+label,{signal});
+    if(!response.ok)return;
+    const data=await response.json() as {status?:string;period?:string;points?:Array<{observedAt:string;score:number}>};
+    if(signal.aborted)return;
+    setCompositeArchive(data.status==='READY'&&data.period===label&&Array.isArray(data.points)
+     ?{days:periodDays,points:data.points}:null);
+   }catch{/* Keep the last stored archive during transient failures. */}
+  });
+  return stop;
+ },[periodDays]);
  const [market,setMarket]=useState<MarketScoreResponse|null>(null);
  const [marketLoading,setMarketLoading]=useState(true);
  const [marketError,setMarketError]=useState<string|null>(null);
@@ -204,8 +220,17 @@ export const CompositeMarketSection=memo(function CompositeMarketSection({demo}:
  const readyDomains=market?.dataQuality?.readyDomains??0;
  const totalDomains=market?.dataQuality?.totalDomains??12;
  const coverageWeight=market?.dataQuality?.coverageWeight??0;
- const overallTrend=useMemo(()=>marketTrendWindow(amplifyCompositeDisplayTrend(normalizeMarketTrendPoints(market?.overall?.trend)),periodDays),[market?.overall?.trend,periodDays]);
- const hasDatedHistory=useMemo(()=>[market?.overall?.trend,...(market?.domains??[]).map(d=>d.trend)].some(data=>marketTrendWindow(normalizeMarketTrendPoints(data),365).length>1),[market?.overall?.trend,market?.domains]);
+ const overallTrend=useMemo(()=>{
+  const daily=marketTrendWindow(amplifyCompositeDisplayTrend(normalizeMarketTrendPoints(market?.overall?.trend)),periodDays);
+  const archived=compositeArchive?.days===periodDays?compositeArchive.points.flatMap(point=>{
+   const display=amplifyCompositeDisplayScore(point.score);
+   return display===null||!Number.isFinite(Date.parse(point.observedAt))?[]:[{label:point.observedAt,value:display}];
+  }):[];
+  return mergeCompositeObservedDisplay(daily,archived,periodDays);
+ },[market?.overall?.trend,compositeArchive,periodDays]);
+ const hasDatedHistory=useMemo(()=>overallTrend.length>1||
+  [market?.overall?.trend,...(market?.domains??[]).map(d=>d.trend)].some(data=>marketTrendWindow(normalizeMarketTrendPoints(data),365).length>1),
+  [market?.overall?.trend,market?.domains,overallTrend]);
  // Independent diagnostic responses and arrow expiry do not change these histories.
  const domainChartTrends=useMemo(()=>r55DomainIds.map(id=>{
   const domain=market?.domains?.find(d=>d.id===id);

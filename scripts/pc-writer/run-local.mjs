@@ -122,6 +122,10 @@ try{
  };
  });
  if(!marketReady)report.market={status:'PREVIOUS_RELEASE_PRESERVED'};
+ if(marketReady)await attemptOutput(report,'composite-archive-local',async()=>{
+  const {appendCompositeObservedFromCurrent}=await import('./composite-observed-archive-r1.mjs');
+  report.compositeObserved=await appendCompositeObservedFromCurrent(core,now);
+ });
  // Rate sentiment is a separate stored-data score; never modify the approved Rate R3 domain.
  const {preparePublicRateSentiment,publishPublicRateSentiment}=await import('./rate-sentiment-publication.mjs');
  let rateSentiment={status:'UNAVAILABLE'};await attemptOutput(report,'rate-sentiment-calculation',async()=>{rateSentiment=await preparePublicRateSentiment(core,now);});
@@ -203,6 +207,10 @@ try{
    report.market={...report.market,...(previous>now?{status:'REMOTE_NEWER_PRESERVED',storedAt:previous}:await publishMarket(remote,config.core,read(path.join(base,'local-market-result.json')),now,lease,previous,path.join(base,'local-market-ledger.json')))};
   }finally{await releaseMarket(remote,config.core,lease);}
   });
+  await attemptOutput(report,'composite-observed-publication',async()=>{
+   const {publishCompositeObservedArchive}=await import('./composite-observed-archive-r1.mjs');
+   report.compositeObservedPublication=await publishCompositeObservedArchive(core,remote,config.core);
+  });
   // US-only stored display counts; source gaps preserve the prior verified record.
   if(report.usBreadth?.prepared)await attemptOutput(report,'us-breadth-publication',async()=>{
    const {publishUsBreadth}=await import('./market-breadth-us-r1.mjs');
@@ -263,6 +271,12 @@ try{
    if(check?.stored_at!==row.stored_at||check?.body!==row.body)throw Error('LOCAL_FEED_PUBLICATION_MISMATCH');
    });
   }
+  // Independent, bounded publication lane for PC-archived real CNN scores.
+  // A missing archive is valid until a new verified observation is collected.
+  await attemptOutput(report,'cnn-observed-archive',async()=>{
+   const {publishCnnObservedArchive}=await import('./cnn-observed-archive-publication-r1.mjs');
+   report.cnnObservedArchive=await publishCnnObservedArchive(core,remote,config.core);
+  });
   await attemptOutput(report,'arrows',async()=>{report.scoreArrows=await publishCoreArrowState(remote,config.core);});
   report.remote=remote.stats;
   save(path.join(base,'local-publication-ledger.json'),{status:report.failures?.length?'PARTIAL':'VERIFIED',source,at:Date.now()});
