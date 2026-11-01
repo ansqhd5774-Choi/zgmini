@@ -2,6 +2,9 @@
 
 import {useId, useLayoutEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type PointerEvent as ReactPointerEvent} from 'react';
 import styles from './market-breadth-strip.module.css';
+import {getMarketPeriodConfig, getMarketPeriodDays, type MarketPeriod} from './market-card-shared';
+
+export type MarketBreadthPeriod = MarketPeriod | '1D';
 
 export type UsBreadthHistoryRecord = {
   observationDate: string;
@@ -22,14 +25,23 @@ const plot = {left: 8, right: 592, top: 12, bottom: 146};
 const dateMs = (day: string) => Date.parse(`${day}T00:00:00Z`);
 const dateLabel = (day: string) => day.replaceAll('-', '.');
 const countLabel = new Intl.NumberFormat('ko-KR');
+const dayMs = 86_400_000;
 
-export function MarketBreadthHistoryChart({history}: {history: UsBreadthHistory}) {
+export function MarketBreadthHistoryChart({history, period}: {history: UsBreadthHistory; period: MarketBreadthPeriod}) {
   const [selected, setSelected] = useState<number | null>(null);
   const tooltipId = useId();
   const plotRef = useRef<HTMLDivElement>(null);
   const tooltipRef = useRef<HTMLDivElement>(null);
   const lastPointerRef = useRef<{clientX: number; clientY: number} | null>(null);
-  const records = history.records;
+  const days = period === '1D' ? 1 : getMarketPeriodDays(period);
+  const periodLabel = period === '1D' ? '1일' : getMarketPeriodConfig(period).label;
+  const maxTime = dateMs(history.to);
+  const minTime = period === '1Y' ? dateMs(history.from) : maxTime - (days - 1) * dayMs;
+  const from = period === '1Y' ? history.from : new Date(minTime).toISOString().slice(0, 10);
+  const records = history.records.filter(record => {
+    const time = dateMs(record.observationDate);
+    return time >= minTime && time <= maxTime;
+  });
 
   // Resolve the floating box against real DOM rectangles, not image pixels or assumed widths.
   const positionTooltip = (clientX: number, clientY: number) => {
@@ -59,11 +71,9 @@ export function MarketBreadthHistoryChart({history}: {history: UsBreadthHistory}
       positionTooltip(lastPointerRef.current.clientX, lastPointerRef.current.clientY);
     }
   }, [selected]);
-  if (!records.length) return <p className={styles.historyEmpty}>아직 보관된 확정치 이력이 없습니다. 데이터가 게시되면 실제 거래일별로 누적됩니다.</p>;
+  if (!records.length) return <p className={styles.historyEmpty}>선택한 {periodLabel} 기간에 보관된 확정치 이력이 없습니다.</p>;
 
-  const minTime = dateMs(history.from);
-  const maxTime = dateMs(history.to);
-  const scaleX = (day: string) => plot.left + (dateMs(day) - minTime) / Math.max(1, maxTime - minTime) * (plot.right - plot.left);
+  const scaleX = (day: string) => maxTime <= minTime ? (plot.left + plot.right) / 2 : plot.left + (dateMs(day) - minTime) / (maxTime - minTime) * (plot.right - plot.left);
   const scaleY = (percentage: number) => plot.bottom - percentage / 100 * (plot.bottom - plot.top);
   const asPct = (record: UsBreadthHistoryRecord, key: keyof UsBreadthHistoryRecord['counts']) => 100 * record.counts[key] / record.eligibleCount;
   const line = (key: keyof UsBreadthHistoryRecord['counts']) => records.map((record, i) => {
@@ -126,7 +136,7 @@ export function MarketBreadthHistoryChart({history}: {history: UsBreadthHistory}
       <div className={styles.historyPercentAxis} aria-hidden="true"><span>100%</span><span>50%</span><span>0%</span></div>
       <div className={styles.historySvgWrap} ref={plotRef}>
         <svg viewBox="0 0 600 160" preserveAspectRatio="none" role="img" tabIndex={0}
-          aria-label={`S&P 500 상승·하락 종목 비율 1년 이력. 저장된 ${records.length}개 거래일. 마우스 또는 터치로 날짜별 수치를 확인하고, 키보드 좌우 방향키로 이동할 수 있습니다.`}
+          aria-label={`S&P 500 상승·하락 종목 비율 ${periodLabel} 이력. 저장된 ${records.length}개 거래일. 마우스 또는 터치로 날짜별 수치를 확인하고, 키보드 좌우 방향키로 이동할 수 있습니다.`}
           aria-describedby={selected !== null ? tooltipId : undefined}
           onPointerEnter={selectAtPointer}
           onPointerMove={selectAtPointer}
@@ -155,7 +165,7 @@ export function MarketBreadthHistoryChart({history}: {history: UsBreadthHistory}
           <div><span className={styles.down}>▼ 하락</span><strong>{countLabel.format(focused.counts.falling)}개 ({asPct(focused, 'falling').toFixed(1)}%)</strong></div>
         </div>}
       </div>
-      <div className={styles.historyDates}><time>{dateLabel(history.from)}</time><time>{dateLabel(history.to)}</time></div>
+      <div className={styles.historyDates}><time>{dateLabel(from)}</time><time>{dateLabel(history.to)}</time></div>
     </div>
   </div>;
 }
