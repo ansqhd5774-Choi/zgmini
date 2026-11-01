@@ -8,8 +8,6 @@ import {fileURLToPath} from 'node:url';
 import {resolveR51CoreOrigin} from './market-calendar-r51-core-origin.mjs';
 
 const OLD_SOURCE='1afc5c7bb28c9d87acf03d85fe20ae3c45013fd3';
-const OLD_PROVIDER_SHA='db0fc1cd7e733ec651a9fdd75d8ff369771aea89180bebf7c5ede4664d11b3da';
-const NEW_PROVIDER_SHA='66d26f0dda30a5d0ac85274c3e537e9e31ede7178b1edf799cad64f21c3335f7';
 const WORKTREE_ID='d0a4b3cb8b95';
 const TARGET='lib/market-score/breadth-b1-r6-marketparquet-provider.mjs';
 const PROTECTED=['lib','worker','scripts/pc-writer','package.json','package-lock.json'];
@@ -79,7 +77,8 @@ export async function runR56PcApply({
   changedFiles:[],providerCallsAdded:0,forcedCollection:false,published:false,
   dbWrites:0,schedulerChanged:false,gitPushed:false,backupCreated:false,newSource:null};
  let root=null,head=null,configFile=null,configBytes=null,config=null,target=null;
- let before=null,after=null,lockFile=null,token=null,ownsLock=false,backupDir=null;
+ let before=null,after=null,beforeHash=null,afterHash=null;
+ let lockFile=null,token=null,ownsLock=false,backupDir=null;
  let modified=false,committed=false;
  try{
   if(process.platform!=='win32'&&!allowNonWindows)stop('R56_WINDOWS_ONLY_STOP');
@@ -100,9 +99,16 @@ export async function runR56PcApply({
   if(gitCall(root,['status','--porcelain','--untracked-files=no','--',...PROTECTED]))
    stop('R56_PROTECTED_SOURCE_DIRTY_STOP');
   target=path.join(root,...TARGET.split('/'));before=fs.readFileSync(target);
-  if(sha(before)!==OLD_PROVIDER_SHA)stop('R56_PROVIDER_SOURCE_CHANGED_STOP');
-  after=Buffer.from(patchR56Provider(before.toString('utf8')),'utf8');
-  if(sha(after)!==NEW_PROVIDER_SHA)stop('R56_PATCH_HASH_MISMATCH_STOP');
+  // A clean approved PC commit may contain other valid provider changes.
+  // Patch only two unique R45 anchors in the exact bytes found on that PC.
+  // Full-file replacement by a packaged copy is forbidden.
+  const source=before.toString('utf8');
+  if(!Buffer.from(source,'utf8').equals(before))
+   stop('R56_PROVIDER_ENCODING_UNVERIFIED_STOP');
+  beforeHash=sha(before);
+  after=Buffer.from(patchR56Provider(source),'utf8');
+  afterHash=sha(after);
+  if(after.equals(before))stop('R56_PATCH_EMPTY_STOP');
   gitCall(root,['var','GIT_AUTHOR_IDENT']);gitCall(root,['var','GIT_COMMITTER_IDENT']);
   output.phase='PREFLIGHT_READY';
   if(!apply){output.decision='R56_PREFLIGHT_READY_NO_CHANGES';return output;}
@@ -141,13 +147,13 @@ export async function runR56PcApply({
   fs.mkdirSync(backupDir,{recursive:true,mode:0o700});
   fs.copyFileSync(target,path.join(backupDir,'provider.mjs'));
   fs.copyFileSync(configFile,path.join(backupDir,'config.json'));
-  if(sha(fs.readFileSync(path.join(backupDir,'provider.mjs')))!==OLD_PROVIDER_SHA||
+  if(sha(fs.readFileSync(path.join(backupDir,'provider.mjs')))!==beforeHash||
    !fs.readFileSync(path.join(backupDir,'config.json')).equals(configBytes))
    stop('R56_BACKUP_READBACK_FAILED_STOP');
   output.backupCreated=true;output.backupId=path.basename(backupDir);
   output.phase='PATCH';modified=true;
   fs.writeFileSync(target,after);
-  if(sha(fs.readFileSync(target))!==NEW_PROVIDER_SHA)stop('R56_PROVIDER_READBACK_FAILED_STOP');
+  if(sha(fs.readFileSync(target))!==afterHash)stop('R56_PROVIDER_READBACK_FAILED_STOP');
   output.changedFiles=[TARGET];
   output.phase='LOCAL_GIT_COMMIT';
   gitCall(root,['add','--',TARGET]);
@@ -173,7 +179,7 @@ export async function runR56PcApply({
   if(modified&&!committed&&output.backupCreated){
    try{
     fs.copyFileSync(path.join(backupDir,'provider.mjs'),target);
-    if(sha(fs.readFileSync(target))!==OLD_PROVIDER_SHA)throw Error('ROLLBACK_HASH');
+    if(sha(fs.readFileSync(target))!==beforeHash)throw Error('ROLLBACK_HASH');
     gitCall(root,['restore','--staged','--',TARGET]);
     if(gitCall(root,['status','--porcelain','--',TARGET]))throw Error('ROLLBACK_STATUS');
     output.changedFiles=[];output.rolledBack=true;

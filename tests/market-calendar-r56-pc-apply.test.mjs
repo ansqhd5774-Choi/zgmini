@@ -30,12 +30,12 @@ const old=updated
   '  // Its failure cannot change B1 source coverage, scoring, or fallbacks.\n'+
   '  if(typeof snapshotObserver==="function"&&built.coverage>=B1_R3_MIN_COVERAGE){');
 
-function fixture(){
+function fixture(providerSource=old){
  const dir=fs.mkdtempSync(path.join(os.tmpdir(),'zgmini-r56-'));
  const base=path.join(dir,'data'),root=path.join(dir,'core');
  const target=path.join(root,...relative.split('/'));
  fs.mkdirSync(base,{recursive:true});fs.mkdirSync(path.dirname(target),{recursive:true});
- fs.writeFileSync(target,old);fs.writeFileSync(path.join(base,'config.json'),JSON.stringify({
+ fs.writeFileSync(target,providerSource);fs.writeFileSync(path.join(base,'config.json'),JSON.stringify({
   source:head,enabled:true,collectionTarget:'pc',
  }));
  let current=head;
@@ -85,6 +85,28 @@ test('R56 guarded one-file apply changes source and config without collection',a
   assert.equal(fs.readFileSync(f.target,'utf8'),updated);
   assert.equal(JSON.parse(fs.readFileSync(path.join(f.base,'config.json'),'utf8')).source,afterHead);
   assert.equal(fs.existsSync(path.join(f.base,'local-cycle.lock')),false);
+ }finally{fs.rmSync(f.dir,{recursive:true,force:true});}
+});
+test('R56 preserves unrelated clean approved provider changes while patching only R45 anchors',async()=>{
+ const variant='// Another approved provider diagnostic; preserve verbatim.\n'+old;
+ assert.notEqual(hash(variant),hash(old));
+ const f=fixture(variant);
+ try{
+  const out=await runR56PcApply({...f.opts,apply:true,waitMs:0});
+  assert.equal(out.decision,'R56_PC_R45_PASSIVE_CAPTURE_INSTALLED');
+  assert.equal(fs.readFileSync(f.target,'utf8'),patchR56Provider(variant));
+  assert.equal(fs.existsSync(path.join(f.base,'local-cycle.lock')),false);
+ }finally{fs.rmSync(f.dir,{recursive:true,force:true});}
+});
+test('R56 stops unchanged if the required R45 source anchors differ',async()=>{
+ const variant=old.replace('&&built.coverage>=B1_R3_MIN_COVERAGE','&&unexpectedGate');
+ const f=fixture(variant);
+ try{
+  const out=await runR56PcApply({...f.opts,apply:true,waitMs:0});
+  assert.equal(out.decision,'R56_PATCH_ANCHOR_MISSING_OR_DUPLICATE_STOP');
+  assert.equal(out.backupCreated,false);
+  assert.equal(fs.readFileSync(f.target,'utf8'),variant);
+  assert.equal(JSON.parse(fs.readFileSync(path.join(f.base,'config.json'),'utf8')).source,head);
  }finally{fs.rmSync(f.dir,{recursive:true,force:true});}
 });
 test('R56 preserves an active Core lock and refuses to modify PC files',async()=>{
