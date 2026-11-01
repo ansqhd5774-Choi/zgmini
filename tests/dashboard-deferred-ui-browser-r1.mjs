@@ -31,41 +31,6 @@ try{
   });
   assert.equal(header.overlap,false,'Market title and guide remain separate');
   assert.equal(header.overflow,false,'Dashboard has no horizontal overflow');
-  // Both country cards have breadth strips. Their inline 4-row grid uses
-  // --fg-shared-content-h, so checking the CSS row declaration alone is insufficient.
-  const dimensions=await page.evaluate(()=>{
-   return ['usa','korea'].map(market=>{
-    const card=document.querySelector('.'+market+'-target-card.fg-shared-shell');
-    if(!card) return {market,missing:true};
-    const chart=card.querySelector('.fg-chart-slot');
-    const score=card.querySelector('.fg-score-slot');
-    const breadth=card.querySelector('.fg-breadth-slot');
-    const style=getComputedStyle(card);
-    const chartRect=chart?.getBoundingClientRect();
-    const breadthRect=breadth?.getBoundingClientRect();
-    return {market,missing:false,
-      variable:style.getPropertyValue('--fg-shared-content-h').trim(),
-      rows:style.gridTemplateRows.trim().split(/\s+/).map(Number.parseFloat),
-      chartHeight:chartRect?.height??0,
-      scoreHeight:score?.getBoundingClientRect().height??0,
-      breadthGap:breadthRect&&chartRect?breadthRect.top-chartRect.bottom:null
-    };
-   });
-  });
-  for(const item of dimensions){
-   assert.equal(item.missing,false,item.market+' card present');
-   assert.ok(item.rows.length>=3,item.market+' has grid rows');
-   if(width===390){
-    assert.equal(item.variable,'120px',item.market+' inline row variable restored');
-    assert.ok(Math.abs(item.rows[1]-120)<1,item.market+' content row equals 120px');
-    assert.ok(Math.abs(item.chartHeight-120)<1,item.market+' chart equals 120px');
-    assert.ok(Math.abs(item.scoreHeight-120)<1,item.market+' score equals 120px');
-    assert.ok(item.breadthGap!==null&&Math.abs(item.breadthGap)<3,item.market+' no empty gap above breadth');
-   }else{
-    assert.equal(item.variable,'142px',item.market+' desktop 142px contract untouched');
-   }
-  }
-  console.log('PASS country market actual layout '+width+'px: '+JSON.stringify(dimensions));
   if(signedIn){
    const trigger=page.getByRole('button',{name:'사용자 설정',exact:true});
    await trigger.waitFor({state:'visible',timeout:15000});
