@@ -13,7 +13,7 @@ const SOURCE=/^[a-f0-9]{40}$/i;
 
 export function parseR43ManualArgs(argv){
  if(argv.length===1&&argv[0]==='--help')return {help:true};
- const values={},names=new Set(['--pc-home','--repo-root','--input']);
+ const values={},names=new Set(['--pc-home','--repo-root']);
  let mode='preflight',modeSeen=false,confirmed=false;
  for(let i=0;i<argv.length;i++){
   const arg=argv[i];
@@ -32,15 +32,14 @@ export function parseR43ManualArgs(argv){
  }
  if(!values['--pc-home']||!values['--repo-root']||
   !path.isAbsolute(values['--pc-home'])||
-  !path.isAbsolute(values['--repo-root'])||
-  values['--input']&&!path.isAbsolute(values['--input']))
+  !path.isAbsolute(values['--repo-root']))
   stop('R43_MANUAL_COMMAND_APPROVED_ABSOLUTE_PATHS_REQUIRED');
  if(mode==='publish'&&!confirmed)
   stop('R43_MANUAL_COMMAND_EXPLICIT_CONFIRMATION_REQUIRED');
  if(mode!=='publish'&&confirmed)
   stop('R43_MANUAL_COMMAND_CONFIRMATION_WITHOUT_PUBLISH_STOP');
  return {mode,pcHome:values['--pc-home'],repoRoot:values['--repo-root'],
-  inputPath:values['--input']??path.join(values['--pc-home'],DEFAULT_INPUT)};
+  inputPath:path.join(values['--pc-home'],DEFAULT_INPUT)};
 }
 
 function readPrivateJson(file,maxBytes){
@@ -57,8 +56,8 @@ export function preflightR43ManualCommand(options,{now=Date.now()}={}){
  const input=readPrivateJson(options.inputPath,8_000_000);
  const rosterRequired=Object.hasOwn(input,'expectedEligibleIssuers')||
   Object.hasOwn(input,'approvedUniverseSha256');
- const approvedUniverse=rosterRequired?
-  readPrivateJson(path.join(options.pcHome,ROSTER),8_000_000):null;
+ if(!rosterRequired)stop('R43_MANUAL_COMMAND_APPROVED_UNIVERSE_REQUIRED_STOP');
+ const approvedUniverse=readPrivateJson(path.join(options.pcHome,ROSTER),8_000_000);
  const compact=prepareR43ManualSnapshot(input,{now,approvedUniverse});
  const config=readPrivateJson(path.join(options.pcHome,'config.json'),64_000);
  if(config.collectionTarget!=='pc'||config.enabled!==true||
