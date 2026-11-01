@@ -64,8 +64,9 @@
 .historyPlot svg:focus-visible { outline: 2px solid var(--zg-text); outline-offset: 2px; border-radius: 3px; }
 .historyTooltip {
   position: absolute;
-  top: 6px;
-  right: 6px;
+  left: 0;
+  top: 0;
+  visibility: hidden;
   z-index: 1;
   display: grid;
   gap: 3px;
