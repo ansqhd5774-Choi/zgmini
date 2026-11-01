@@ -12,3 +12,8 @@ test('R10 failed calculation preserves last release even if old payload still re
   assert.equal(preservePreviousR10({inputInstalled:true,calculationStatus:R10_RECALCULATED_STATUS,projectionStatus:'PARTIAL'}),true);
   assert.equal(preservePreviousR10({inputInstalled:true,calculationStatus:null,projectionStatus:'READY'}),true);
 });
+
+test('R10 preserves a valid existing release if the input research file is missing',()=>{
+  assert.equal(preservePreviousR10({inputInstalled:false,calculationStatus:null,projectionStatus:'READY'}),true);
+  assert.equal(preservePreviousR10({inputInstalled:false,calculationStatus:null,projectionStatus:'PENDING'}),false);
+});
