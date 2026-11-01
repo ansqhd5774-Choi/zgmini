@@ -35,6 +35,7 @@ export function summarizeUsBreadthCoreEvidence({config,taskXml,taskError,head,di
   // The actual VBS -> dispatcher -> Core chain requires separate read-only tracing.
   actionChainVerified:false};
  const started=Date.parse(quota?.at??''),ended=Date.parse(cycle?.at??'');
+ const lastCycleStale=Number.isFinite(started)&&Number.isFinite(ended)&&ended<started;
  const elapsedMs=Number.isFinite(started)&&Number.isFinite(ended)&&ended>=started?ended-started:null;
  const slotEnd=output?.slotEndUtc??null;
  // The early report's `at` is only its START, not D1 publication time.
@@ -44,9 +45,15 @@ export function summarizeUsBreadthCoreEvidence({config,taskXml,taskError,head,di
  const remoteRecord=remote?.body;
  const remoteValid=validUsIexProvisional(remoteRecord);
  const remoteSameSlot=remoteValid&&remoteRecord.slotEndUtc===slotEnd;
+ const remoteBodyExactMatch=remoteValid&&output!==null&&
+  JSON.stringify(remoteRecord)===JSON.stringify(output);
  const remoteStoredAt=Number(remote?.stored_at);
  const remoteStoredAtValid=Number.isSafeInteger(remoteStoredAt)&&remoteStoredAt>0;
- const earlyVerified=early?.status==='VERIFIED'&&(early?.exit===undefined||early?.exit===0);
+ const remoteStoredAtAfterSlot=remoteStoredAtValid&&slotEnd!==null&&
+  remoteStoredAt>=Date.parse(slotEnd);
+ const earlyForCurrentSlot=!!slotEnd&&early?.slotEndUtc===slotEnd;
+ const earlyVerified=earlyForCurrentSlot&&early?.status==='VERIFIED'&&
+  (early?.exit===undefined||early?.exit===0);
  return {status:'READ_ONLY_EVIDENCE_NOT_OPERATIONAL_APPROVAL',
   task,source:{configSha:sha(config?.source)?config.source:null,headSha:sha(head)?head:null,
    sourceMatches:sha(config?.source)&&sha(head)?config.source===head:null,
@@ -55,16 +62,18 @@ export function summarizeUsBreadthCoreEvidence({config,taskXml,taskError,head,di
   core:{quotaAt:iso(quota?.at)?quota.at:null,quotaStatus:quota?.status??null,
    cycleAt:iso(cycle?.at)?cycle.at:null,cycleStatus:cycle?.status??null,
    collectionStatus:collection?.status??null,writerStatus:writer?.status??null,
-   ledgerStatus:ledger?.status??null,elapsedMs,
+   ledgerStatus:ledger?.status??null,lastCycleStale,elapsedMs,
    maySkip15MinSlots:elapsedMs!==null?elapsedMs>=15*60_000:null},
   provisional:{slotEndUtc:slotEnd,observedCount:output?.observedCount??null,
    missingCount:output?.missingCount??null,collectionStatus:output?.collectionStatus??null,
    collectorStatus:cycle?.usProvisional?.status??null,
-   earlyStatus:early?.status??null,earlyVerified,
+   earlyStatus:early?.status??null,earlyForCurrentSlot,earlyVerified,
    earlyCompletedAt,attemptFinishedLagMs},
   d1:{queried:remote!==undefined||remoteError!==undefined,
    error:remoteError??null,valid:remote===undefined?null:remoteValid,
    sameSlot:remote===undefined?null:remoteSameSlot,
+   bodyExactMatch:remote===undefined?null:remoteBodyExactMatch,
+   storedAtAfterSlot:remote===undefined?null:remoteStoredAtAfterSlot,
    storedAt:remoteStoredAtValid?new Date(remoteStoredAt).toISOString():null},
   conclusion:'At least three consecutive natural NY 15-minute slots plus actual Task action chain and D1 readback are required.'};
 }

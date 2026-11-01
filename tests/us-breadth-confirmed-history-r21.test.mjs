@@ -5,6 +5,7 @@ import os from 'node:os';
 import path from 'node:path';
 import {createHash} from 'node:crypto';
 import {prepareFullMarketYearPreview} from '../scripts/pc-writer/us-breadth-confirmed-history-r21.mjs';
+import {prepareFullMarketStaging} from '../scripts/pc-writer/us-breadth-confirmed-staging-r20.mjs';
 import {US_BREADTH_CURRENT_KEY,US_BREADTH_DAILY_KEY_PREFIX} from '../lib/market-breadth/us-public-r1.mjs';
 import {US_FULL_MARKET_STAGING_KEY} from '../lib/market-breadth/us-marketparquet-confirmed-public-r2.mjs';
 
@@ -61,4 +62,31 @@ test('source corruption and insufficient 250-session manifest reject history',as
   assert.equal(result.status,'HISTORY_SOURCE_NOT_VERIFIED');
   assert.equal(result.prepared,false);
   assert.equal('points' in result,false);
+});
+
+test('full-market candidate accepts old timestamp and new date daily rows across 2026-03-27 schema cutover',async t=>{
+  const root=fs.mkdtempSync(path.join(os.tmpdir(),'zgmini-r21-schema-'));
+  t.after(()=>fs.rmSync(root,{recursive:true,force:true}));
+  const days=['2026-03-26','2026-03-27'];
+  const entries=days.map((date,i)=>{
+    const file=path.join(root,`stock_daily_${date}.parquet`);
+    const bytes=Buffer.from(`PAR1:SCHEMA:${i}:PAR1`);
+    fs.writeFileSync(file,bytes);
+    return {date,provider:'MarketParquet',feed:'stock_daily',complete:true,
+      priceMode:'SPLIT_ADJUSTED_DIVIDEND_UNADJUSTED',path:file,
+      sha256:createHash('sha256').update(bytes).digest('hex'),rowCount:6500};
+  });
+  const readParquet=async bytes=>{
+    const i=Number(bytes.toString().match(/SCHEMA:(\d+)/)[1]);
+    return Array.from({length:6500},(_,j)=>({
+      ...(i===0?{timestamp:new Date('2026-03-26T04:00:00.000Z')}:{date:'2026-03-27'}),
+      symbol:`S${j}`,asset_type:'Stock',close:i?101:100,volume:1000,
+    }));
+  };
+  const actual=await prepareFullMarketStaging({approvedSourceRoot:root,
+    manifest:{previous:entries[0],current:entries[1]},readParquet,
+    now:new Date('2026-03-28T00:00:00Z')});
+  assert.equal(actual.prepared,true);
+  assert.equal(actual.body.expectedCount,6500);
+  assert.deepEqual(actual.body.counts,{rising:6500,unchanged:0,falling:0});
 });
