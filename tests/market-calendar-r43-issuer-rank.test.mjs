@@ -55,7 +55,7 @@ test('R43 refuses the 500-only benchmark, date drift, and unverified exclusions'
  assert.throws(()=>rankR43Issuers([stock(1,{tradeDate:'2026-10-29'})],{asOf:day}),/R43_MIXED_OR_STALE_TRADE_DATE/);
 });
 
-test('R43 local PC runner does not write until rights, universe and command opt in are verified',()=>{
+test('R43 local PC runner remains read-only even with the legacy write opt-in',()=>{
  const dir=fs.mkdtempSync(path.join(os.tmpdir(),'zgmini-r43-'));
  try {
   assert.equal(runR43Local({base:dir,now}).reason,'R43_FULL_UNIVERSE_INPUT_MISSING');
@@ -68,12 +68,10 @@ test('R43 local PC runner does not write until rights, universe and command opt 
   fs.writeFileSync(file,JSON.stringify(source));
   assert.equal(runR43Local({base:dir,now}).status,'READY_DRY_RUN');
   assert.equal(fs.existsSync(path.join(dir,'local-market-calendar-r43-ranked.json')),false);
-  const done=runR43Local({base:dir,now,write:true});
-  assert.equal(done.status,'READY_LOCAL_RANKED');
-  assert.equal(done.topCount,132);
-  assert.ok(fs.existsSync(path.join(dir,'local-market-calendar-r43-ranked.json')));
-  const persisted=JSON.parse(fs.readFileSync(path.join(dir,'local-market-calendar-r43-ranked.json'),'utf8'));
-  assert.equal(persisted.sourceRightsReviewed,true);
-  assert.equal(persisted.marketCapApiUsed,false);
+  const blocked=runR43Local({base:dir,now,write:true});
+  assert.equal(blocked.status,'BLOCKED');
+  assert.equal(blocked.reason,'R43_LOCAL_ACTIVATION_NOT_APPROVED');
+  assert.equal(blocked.outputWritten,false);
+  assert.equal(fs.existsSync(path.join(dir,'local-market-calendar-r43-ranked.json')),false);
  } finally {fs.rmSync(dir,{recursive:true,force:true});}
 });
