@@ -1,5 +1,12 @@
-ZGMINI R45: LIVE CORE TASK INVENTORY - READ ONLY
+ZGMINI R45: LIVE CORE TASK INVENTORY FIX2 - READ ONLY
 Branch: codex/zgmini-gpt-workspace-20261025
+
+FIX2 NOTE (2026-11-01)
+  Previous R1 report found two VBS files, but stopped on the inner VBS with
+  CORE_RUN_SHAPE_UNVERIFIED. FIX2 understands two literal VBScript Run forms
+  and adds only bounded, anonymized syntax counts/hints for unresolved code.
+  It still never treats observed launcher or config hashes as approval.
+  Extract into a NEW folder; do not reuse the first package report.
 
 PURPOSE
   Identify the CURRENT Core Task -> outer VBS -> nested Core dispatcher,
@@ -19,6 +26,8 @@ PROTECTIONS
   Task/launcher, change config/source, delete locks, edit DB/D1, or publish.
   It DOES NOT grant permission to install or detach anything.
   Wrapper file hashes and Git SHAs are evidence, not current approval stamps.
+  If the shape remains unresolved, report the anonymized coreChainShape only;
+  do not paste raw VBS, Task XML, environment values or Git configs.
   Current worktree configuration and exact file diff require separate review.
 
   The CMD wrapper writes ONE local report in the extracted package directory.

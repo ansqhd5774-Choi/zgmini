@@ -6,20 +6,37 @@ import {createHash} from 'node:crypto';
 import {execFileSync} from 'node:child_process';
 import {fileURLToPath} from 'node:url';
 // The tiny literal-only VBS parser is kept self-contained for a portable,
-// read-only CMD package. It matches R50's parsing restrictions, without
-// treating R50's historical wrapper hash as an approval requirement.
+// read-only CMD package. It preserves R50's literal-only restrictions, while
+// recognizing both valid VBScript Run syntaxes without approving source drift.
 const R50_APPROVED_WRAPPER_SHA256='f05deb73cbadf831d7d3a9875bfbd13356d4ab21803fe9b7944a3f2ae6a5499d';
-function extractR50RunLiterals(source){
- if(typeof source!=='string')return [];
- const active=source.split(/\r?\n/).filter(l=>!/^\s*(?:'|Rem\b)/i.test(l));
- const runs=[];
- for(const line of active){
-  if(!/\.\s*Run\s*\(/i.test(line))continue;
-  const match=line.match(/\.\s*Run\s*\(\s*("(?:""|[^"])*")\s*,\s*\d+\s*,\s*True\s*\)/i);
-  if(!match)return [];
-  runs.push(match[1].slice(1,-1).replaceAll('""','"'));
- }
- return runs;
+function literalVbsRun(line){
+ const m=line.match(/^\s*(?:Call\s+)?[a-z_][a-z0-9_]*\s*\.\s*Run\s*(?:\(\s*("(?:""|[^"])*")\s*,\s*\d+\s*,\s*True\s*\)|("(?:""|[^"])*")\s*,\s*\d+\s*,\s*True)\s*(?:'.*)?$/i);
+ if(!m)return null;
+ const literal=m[1]??m[2];
+ return {command:literal.slice(1,-1).replaceAll('""','"'),
+  syntax:m[1]?'PAREN_LITERAL':'BARE_LITERAL'};
+}
+function safeVbsShape(body){
+ const active=body.split(/\r?\n/).filter(l=>!/^\s*(?:'|Rem\b)/i.test(l));
+ const runLines=active.filter(x=>/\.\s*Run\b/i.test(x));
+ const strict=runLines.map(literalVbsRun);
+ return {
+  sourceLineCount:body.split(/\r?\n/).length,
+  runCount:runLines.length,
+  literalRunCount:strict.filter(Boolean).length,
+  bareLiteralRunCount:strict.filter(x=>x?.syntax==='BARE_LITERAL').length,
+  execMethodCount:active.filter(x=>/\.\s*Exec\b/i.test(x)).length,
+  dynamicRunPresent:strict.some(x=>!x),
+  nodeExeMentioned:/node\.exe/i.test(body),
+  projectScriptsMentioned:/scripts[\\/]pc-writer/i.test(body),
+  localCycleMentioned:/local-cycle/i.test(body),
+  quotaRunnerMentioned:/quota-runner/i.test(body),
+  cmdMentioned:/\.cmd\b/i.test(body),
+  environMentioned:/\bEnviron\s*\(/i.test(body),
+  chrMentioned:/\bChr\s*\(/i.test(body),
+  hasConcat:body.includes('&'),
+  commands:strict.filter(Boolean),
+ };
 }
 function tokenizeR50Command(value){
  if(typeof value!=='string'||!value||value.length>4096||/[\r\n;&|<>%!^]/.test(value))return null;
@@ -130,12 +147,14 @@ export function traceLiveCore(xml,{readFile=readLimited,maxDepth=4}={}){
    out.legacyR50OuterHashMatched=digest===R50_APPROVED_WRAPPER_SHA256;
   }
   const body=bytes.toString('utf8');
-  const activeLines=body.split(/\r?\n/).filter(x=>!/^(?:\s*'|\s*Rem\b)/i.test(x));
-  const count=activeLines.filter(x=>/\.\s*Run\s*\(/i.test(x)).length;
-  const runs=extractR50RunLiterals(body);
+  const shape=safeVbsShape(body);
+  const runs=shape.commands.map(x=>x.command);
   out.coreVbsCount++;
-  out.coreChain.push({depth,sha256:digest,runCount:count});
-  if(count===0||runs.length!==count){out.status='CORE_RUN_SHAPE_UNVERIFIED';return out;}
+  const {commands:unused,...safeShape}=shape;
+  out.coreChain.push({depth,sha256:digest,...safeShape});
+  if(shape.runCount===0||shape.dynamicRunPresent){
+   out.status='CORE_RUN_SHAPE_UNVERIFIED';return out;
+  }
   out.auxiliaryRunCount+=runs.length-1;
   out.knownArchiveRunSeen||=runs.slice(1).some(x=>/archive-run\.mjs/i.test(x));
   const first=coreCommand(runs[0]);
@@ -175,12 +194,13 @@ export function runLiveR45Inventory({
  taskXml=queryCoreTask,readFile=readLimited,gitCall=git,
  allowNonWindows=false,lockCheck=lockSummary,
 }={}){
- const result={audit:'MARKET_CALENDAR_R45_PC_LIVE_INVENTORY_R1',
+ const result={audit:'MARKET_CALENDAR_R45_PC_LIVE_INVENTORY_R2',
   at:new Date().toISOString(),decision:'INVENTORY_INCOMPLETE_REVIEW_REQUIRED',
   readOnly:true,pcFilesChanged:0,schedulerChanged:false,providerCalls:0,
   dbWrites:0,published:false,taskStatus:null,launcherStatus:null,
   legacyR50OuterHashMatched:null,actualOuterSha256:null,
   pt5mInTaskXml:null,intervalObserved:null,coreVbsCount:0,
+  coreChainShape:[],
   auxiliaryRunCount:0,knownArchiveRunSeen:false,entryName:null,
   worktreeId:null,sourceHead:null,configSource:null,configMatchesHead:null,
   oldR56SourceMatched:null,protectedTrackedClean:null,collectorBlob:null,
@@ -198,6 +218,7 @@ export function runLiveR45Inventory({
  result.pt5mInTaskXml=chain.pt5mInTaskXml;
  result.intervalObserved=chain.intervalObserved;
  result.coreVbsCount=chain.coreVbsCount;
+ result.coreChainShape=chain.coreChain;
  result.auxiliaryRunCount=chain.auxiliaryRunCount;
  result.knownArchiveRunSeen=chain.knownArchiveRunSeen;
  result.entryName=chain.entryName;
@@ -242,7 +263,7 @@ export function runLiveR45Inventory({
 if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.url)){
  if(process.argv.some(a=>a==='--apply'||a.startsWith('--write')||a.startsWith('--delete'))||
   process.argv.slice(2).some(a=>!a.startsWith('--base='))){
-  console.log(JSON.stringify({audit:'MARKET_CALENDAR_R45_PC_LIVE_INVENTORY_R1',
+  console.log(JSON.stringify({audit:'MARKET_CALENDAR_R45_PC_LIVE_INVENTORY_R2',
    decision:'READ_ONLY_ARGUMENTS_ONLY_STOP',readOnly:true,pcFilesChanged:0}));
   process.exitCode=2;
  }else{

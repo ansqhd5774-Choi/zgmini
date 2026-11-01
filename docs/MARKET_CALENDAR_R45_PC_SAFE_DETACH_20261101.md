@@ -57,3 +57,11 @@
 - `INVENTORY_TRACED_REVIEW_REQUIRED`나 `OBSERVER_ALREADY_OFF_NO_PC_CHANGE`는 **진단 완료**일 뿐 설치 승인이나 Core 정상 실행 증명이 아니다. 현재 실행 체인과 승인 운영 소스·수집 보고서의 출처를 대조하고, R45가 이미 꺼져 있으면 **변경 없이 종료**한다.
 - R45가 실제로 연결돼 있고 정확한 대상 소스도 확인된 경우에만 기존 Core 5분·R7 보조 래퍼·B1/MarketParquet·연간 수동 FHS를 유지하는 1파일 해제 변경을 별도로 준비한다. 이전 FIX1 패키지의 `--apply`를 현행 해시 불일치 상태에서 재시도하지 않는다.
 - 이 단계에서는 `main`/PC Task/launcher/config/DB/D1/API·공개 등급을 변경하지 않는다. Windows 실제 재점검 결과는 아직 받지 않았으며 **PC 적용 완료로 표시하지 않는다**.
+
+### 2026-11-01 실제 PC R1 점검 결과 및 FIX2
+
+- 사용자 PC 결과 `MARKET_CALENDAR_R45_PC_LIVE_INVENTORY_RESULT.txt` (`2026-11-01T14:04:52.842Z`)는 `taskStatus=TASK_QUERY_OK`, `pt5mInTaskXml=true`, `coreLock=FREE`, `coreVbsCount=2`, `auxiliaryRunCount=1`, `knownArchiveRunSeen=true`를 확인했다.
+- 런처 SHA256 `9d5bc3429cd74813207cfc393eb04eff11a78106096964b80bf7833440385b7c`, 현재 `config.source=76373239406eef471904807840e1c77b2653b7e4`이다. 구 R50 해시와 R56 승인 SHA가 다르다는 사실만으로 장애·무단 변경으로 단정하지 않는다.
+- 내부 VBS에서 `CORE_RUN_SHAPE_UNVERIFIED`여서 실제 실행기·HEAD·collector blob·R45 옵저버 연결 여부는 `null` 또는 `UNKNOWN`이며, `INVENTORY_INCOMPLETE_REVIEW_REQUIRED`로 멈췄다. Task/설정/DB 변경 0을 확인했다.
+- FIX2 점검은 VBScript의 괄호 없는 `Shell.Run "literal", 0, True` 구문을 추가 지원하고, 여전히 정적으로 확인할 수 없는 실행형은 단순 **익명화 구문 특징**(`coreChainShape`)만 기록한다. 어떠한 동적 변수 명령도 실행하거나 신뢰된 root로 추정하지 않는다.
+- FIX2 보고 후 PC 승인 source 및 작업 트리 일치를 확인하기 전에는 기존 R45 해제 패키지의 `--apply` 금지, Core 5분·R7 보조 wrapper 유지.

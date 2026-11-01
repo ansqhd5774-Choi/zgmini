@@ -18,6 +18,7 @@ const oldSource='154c5ac25120ecf8292b630ca9b1e30edad1ed75';
 const approved=fs.readFileSync(fileURLToPath(new URL('../scripts/pc-writer/collect-local.mjs',import.meta.url)));
 const xml=`<Task><Triggers><CalendarTrigger><Repetition><Interval>PT5M</Interval></Repetition></CalendarTrigger></Triggers><Actions><Exec><Command>wscript.exe</Command><Arguments>"${outer}"</Arguments></Exec></Actions></Task>`;
 const run=text=>`shell.Run ("${text.replaceAll('"','""')}", 0, True)`;
+const bareRun=text=>`shell.Run "${text.replaceAll('"','""')}", 0, True`;
 const blob=bytes=>createHash('sha1').update(Buffer.from(`blob ${bytes.length}\0`)).update(bytes).digest('hex');
 
 function setup({r45=false,configHead=head,dirty=false,coreRun=run(`"/runtime/node.exe" "${entry}"`)}={}){
@@ -60,6 +61,17 @@ test('actual two-layer Core wrapper is traced without requiring obsolete R50 has
  assert.equal(chain.entryName,'local-cycle.mjs');
 });
 
+test('valid bare VBScript Run literal resolves the same Core without executing commands',()=>{
+ const t=setup({coreRun:bareRun(`"/runtime/node.exe" "${entry}"`)});
+ const result=runLiveR45Inventory(t.options);
+ assert.equal(result.launcherStatus,'CORE_CHAIN_TRACED_READ_ONLY');
+ assert.equal(result.decision,'OBSERVER_ALREADY_OFF_NO_PC_CHANGE');
+ assert.equal(result.coreVbsCount,2);
+ assert.equal(result.coreChainShape[1].bareLiteralRunCount,1);
+ assert.equal(result.coreChainShape[1].dynamicRunPresent,false);
+ assert.equal(result.pcFilesChanged,0);
+});
+
 test('live inventory reports current Task, launcher, config, checkout and R45 without writes',()=>{
  const t=setup();
  const before=[...t.map].map(([key,value])=>[key,Buffer.from(value)]);
@@ -100,11 +112,14 @@ test('config drift and tracked dirt cannot be mistaken for approved state',()=>{
 });
 
 test('dynamic or altered first Run is never executed or guessed',()=>{
- const t=setup({coreRun:'shell.Run someVariable, 0, True'});
+ const t=setup({coreRun:'shell.Run someVariable & "PRIVATE_KEY_VALUE", 0, True'});
  const result=runLiveR45Inventory(t.options);
  assert.equal(result.launcherStatus,'CORE_RUN_SHAPE_UNVERIFIED');
+ assert.equal(result.coreChainShape[1].dynamicRunPresent,true);
+ assert.equal(result.coreChainShape[1].hasConcat,true);
  assert.equal(result.sourceHead,null);
  assert.equal(result.decision,'INVENTORY_INCOMPLETE_REVIEW_REQUIRED');
+ assert.doesNotMatch(JSON.stringify(result),/PRIVATE_KEY_VALUE|someVariable/);
 });
 
 test('CLI refuses --apply before querying PC or touching data',()=>{
