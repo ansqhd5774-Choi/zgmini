@@ -1,6 +1,6 @@
 # R43 연 1회 수동 입력 준비기 — 오프라인 전용
 
-**상태:** 코드·합성 테스트만 검증. 사용자 PC의 실제 일별 Parquet 파싱과 2,634개 적격 발행사 확보는 `NOT_VERIFIED`. 이 코드는 다운로드/수집/게시/스케줄러 실행을 수행하지 않는다.
+**상태:** 코드·합성 테스트는 검증. 공식 무료 Parquet **단일일(2026-10-29) 6,473행**은 `hyparquet@1.31.2`로 직접 디코딩 PASS. 사용자 PC의 실제 21거래일 변환, 2,634개 내외 승인 발행사 확보 및 공개 게시는 `NOT_VERIFIED`. 이 코드는 다운로드/수집/게시/스케줄러 실행을 수행하지 않는다.
 
 ## 입력 경로 A — 이미 저장된 R45 비공개 JSON 21거래일
 
@@ -30,7 +30,7 @@ console.log({asOf: input.asOf, count: input.rows.length});
 ```
 
 - 21개 파일명은 `YYYY-MM-DD.parquet`이며 날짜별 SHA256, `PAR1` 파일 시그니처, 날짜/종목/가격/거래량을 검증한다.
-- Parquet 디코더는 실행 시에만 `hyparquet`를 불러온다. 프로젝트는 `hyparquet@1.31.2`를 의존성으로 선언하지만 현재 scratch에는 설치돼 있지 않다. **실제 Parquet 코덱/DATE·timestamp 디코딩 실측은 아직 안 했다.**
+- Parquet 디코더는 실행 시에만 `hyparquet`를 불러온다. 프로젝트 의존성은 `hyparquet@1.31.2`이다. 2026-11-01 검증에서 공급자 공개 `stock_daily/2026-10-29.parquet`(231,871바이트, 6,473행)를 해당 버전으로 직접 읽었고 `date`는 정상 `Date`, `asset_type='Stock'`, `close/volume`은 숫자로 반환됐다. **이 단일 파일 실측은 PC Windows 환경의 21일 전체 변환·권리 승인·D1 게시 PASS를 뜻하지 않는다.** 원시 표본은 저장소에 추가하지 않는다.
 - `manifest` 필수: `version:1`, `method:'R43_MANUAL_MARKETPARQUET_21DAY_R1'`, `source:'MARKETPARQUET_FREE_SAMPLE'`, `licenseUrl:'https://marketparquet.com/license'`, `manualCollection:true`, `derivedStatisticsAllowed:true`, `redistribution:false`, 동일 권리 검토 참조 `rightsReviewReference`, `files:[{date,file,sha256}]` 정확히 21개.
 
 ## 승인 발행사 목록 요구 사항
