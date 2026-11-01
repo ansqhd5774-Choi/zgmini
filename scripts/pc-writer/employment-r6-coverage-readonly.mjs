@@ -207,7 +207,9 @@ export async function auditEmploymentR6Database({ dbPath, asOfDate = isoDate(Dat
 }
 
 function parseArguments(args) {
-  const options = { dbPath: process.platform === "win32" ? "E:\\ZGmini\\data\\pc-writer\\storage\\core.sqlite" : undefined };
+  // Never infer a PC-specific drive or create a replacement DB. The launcher
+  // resolves the existing approved home; direct invocation must pass --db.
+  const options = {};
   for (let i = 0; i < args.length; i++) {
     if (args[i] === "--db" && args[i + 1]) options.dbPath = args[++i];
     else if (args[i] === "--as-of" && args[i + 1]) options.asOfDate = args[++i];

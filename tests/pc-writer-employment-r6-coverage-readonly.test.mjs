@@ -115,3 +115,24 @@ test("a single recent score point is insufficient to establish recent-quarter ch
   assert.equal(result.summary.verifiedScorePointsInRecentQuarter, 1);
   assert.equal(result.summary.oneYearChartDataCandidate, false);
 });
+
+test("audit requires an explicit source path; it never assumes an E: database", async () => {
+  await assert.rejects(auditEmploymentR6Database({ asOfDate }), /DB_PATH_REQUIRED/);
+  const source = fs.readFileSync(new URL("../scripts/pc-writer/employment-r6-coverage-readonly.mjs", import.meta.url), "utf8");
+  assert.doesNotMatch(source, /E:\\\\ZGmini/);
+});
+
+test("Windows CMD launchers use main's Node resolver and ASCII CRLF without BOM", () => {
+  const resolver = fs.readFileSync(new URL("../scripts/resolve-local-node.cmd", import.meta.url));
+  const launcher = fs.readFileSync(new URL("../scripts/pc-writer/employment-r6-coverage-readonly.cmd", import.meta.url));
+  for (const contents of [resolver, launcher]) {
+    assert.equal(contents.subarray(0, 3).equals(Buffer.from([0xef, 0xbb, 0xbf])), false);
+    assert.ok([...contents].every(byte => byte <= 127), "CMD must be ASCII");
+    assert.equal(/(?<!\r)\n/.test(contents.toString("ascii")), false, "CMD must have CRLF line endings");
+  }
+  assert.match(resolver.toString("ascii"), /Node\.js 24\+/);
+  assert.match(launcher.toString("ascii"), /call "%~dp0\.\.\\resolve-local-node\.cmd"/);
+  assert.match(launcher.toString("ascii"), /if defined ZGMINI_PC_HOME/);
+  assert.match(launcher.toString("ascii"), /\.zgmini\\pc-writer\\storage\\core\.sqlite/);
+  assert.doesNotMatch(launcher.toString("ascii"), /schtasks|install-local|git pull|CREATE TABLE/i);
+});
