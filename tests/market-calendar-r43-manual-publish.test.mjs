@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import {createHash} from 'node:crypto';
 import {publishR43MarketImportanceOnce,prepareR43ManualSnapshot,
  verifyR43ReaderDeployed} from '../tools/market-calendar-r43/R43_PC_MANUAL_PUBLISH.mjs';
 import {r43MarketImportanceDisplayIndex,
@@ -10,6 +11,7 @@ import {r43MarketImportanceDisplayIndex,
 
 const asOf=new Date().toISOString().slice(0,10),sourceSha='a'.repeat(40);
 const tickers=['BRK.A','ARM','ANET','SHOP','DE'];
+const sha=x=>createHash('sha256').update(x).digest('hex');
 const source=()=>({version:1,asOf,provenance:'APPROVED_PC_STORED_DATA',
  marketCapApiUsed:false,permissionForDerivedScores:true,
  rightsReviewReference:'TEST_ONLY_APPROVED_DERIVED_RIGHTS_20261102',
@@ -18,6 +20,24 @@ const source=()=>({version:1,asOf,provenance:'APPROVED_PC_STORED_DATA',
   price:100+i,volume:100+i,relativeVolume:1+i/100,
   eps:1+i/100,dividendYield:i/10000,epsGrowthPct:i%30,dailyChangePct:i%5,
  }))});
+function dynamicSource(count=2580){
+ const input=source();
+ input.rows=Array.from({length:count},(_,i)=>({
+  ...input.rows[i],issuerId:i<5?tickers[i]:'Z'+i,
+ }));
+ const roster={version:1,method:'R57_REVIEWED_ISSUER_MEMBERSHIP_R1',
+  universeReviewed:true,reviewedAsOf:asOf,marketCapApiUsed:false,
+  permissionForDerivedScores:true,rightsReviewReference:input.rightsReviewReference,
+  marketSessionsReviewed:true,reviewedTradingSessions:[asOf,...Array.from({length:20},(_,i)=>
+   new Date(Date.parse(asOf+'T00:00:00Z')-(i+1)*86400000).toISOString().slice(0,10))],
+  expectedEligibleIssuers:count,fundamentalsVerified:true,
+  members:input.rows.map(row=>({ticker:row.ticker,issuerId:row.issuerId,eligible:true,
+   dividendYield:row.dividendYield,eps:row.eps,epsGrowthPct:row.epsGrowthPct})),
+ };
+ input.expectedEligibleIssuers=count;
+ input.approvedUniverseSha256=sha(JSON.stringify(roster));
+ return {input,roster};
+}
 function fixture(){
  const root=fs.mkdtempSync(path.join(os.tmpdir(),'zgmini-r43-test-'));
  const pcHome=path.join(root,'pc'),repoRoot=path.join(root,'repo');
@@ -111,4 +131,38 @@ test('blocked public reader cannot publish and the FHS key is untouched',async()
 test('source must cover the approved full universe, not just the 500 benchmark',()=>{
  const input=source();input.rows=input.rows.slice(0,500);
  assert.throws(()=>prepareR43ManualSnapshot(input),/R43_MANUAL_UNIVERSE_OR_DATE_STOP/);
+});
+
+test('dynamic eligible denominator requires a separately reviewed exact roster and SHA attestation',()=>{
+ const {input,roster}=dynamicSource(2580);
+ assert.equal(prepareR43ManualSnapshot(input,{approvedUniverse:roster}).topCount,129);
+ assert.throws(()=>prepareR43ManualSnapshot(input),
+  /R43_MANUAL_APPROVED_UNIVERSE_ATTESTATION_STOP/);
+ assert.throws(()=>prepareR43ManualSnapshot({...input,expectedEligibleIssuers:2634},{approvedUniverse:roster}),
+  /R43_MANUAL_APPROVED_UNIVERSE_CONTRACT_STOP/);
+ const altered={...input,rows:input.rows.map((row,i)=>i===10?{...row,eligible:false}:row)};
+ assert.throws(()=>prepareR43ManualSnapshot(altered,{approvedUniverse:roster}),
+  /R43_MANUAL_APPROVED_UNIVERSE_ROWS_STOP/);
+ const alteredRoster={...roster,members:roster.members.slice(1)};
+ assert.throws(()=>prepareR43ManualSnapshot(input,{approvedUniverse:alteredRoster}),
+  /R43_MANUAL_APPROVED_UNIVERSE_ATTESTATION_STOP/);
+});
+
+test('manual publisher reads dynamic roster from approved PC path before D1 calls',async()=>{
+ const f=fixture(),r=fakeRemote();
+ try{
+  const {input,roster}=dynamicSource(2580);
+  const inputFile=path.join(f.pcHome,'local-market-calendar-r43-input.json');
+  const rosterFile=path.join(f.pcHome,'local-market-calendar-r43-reviewed-issuers.json');
+  fs.writeFileSync(inputFile,JSON.stringify(input));
+  await assert.rejects(publishR43MarketImportanceOnce(options(f,r)),
+   /R43_MANUAL_APPROVED_UNIVERSE_FILE_STOP/);
+  assert.equal(r.writes,0);assert.equal(r.reads,0);
+  fs.writeFileSync(rosterFile,JSON.stringify(roster));
+  const published=await publishR43MarketImportanceOnce(options(f,r));
+  assert.equal(published.status,'R43_D1_PUBLISHED_AND_READBACK');
+  assert.equal(published.issuerCount,2580);
+  assert.equal(published.selected,129);
+  assert.equal(r.writes,1);
+ }finally{f.cleanup()}
 });
