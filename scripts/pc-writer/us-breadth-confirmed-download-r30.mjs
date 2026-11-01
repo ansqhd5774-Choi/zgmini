@@ -1,5 +1,7 @@
 /**
- * R30: opt-in, isolated stock_daily raw-byte staging for confirmed breadth R2.
+ * R31: opt-in, isolated stock_daily raw-byte staging for confirmed breadth R2.
+ * The oldest missing comparison-baseline day does NOT block staging 250 real
+ * consecutive files. It only reduces the preview to 249 actual comparisons.
  * No Core scheduler, D1, legacy R1, provisional or publication side effects.
  * A local SHA256 audit is NOT proof of provider authenticity: run independent R24.
  */
@@ -24,7 +26,7 @@ const SOURCE='MARKETPARQUET_STOCK_DAILY_OFFICIAL_PRESIGNED';
 const hash=buffer=>createHash('sha256').update(buffer).digest('hex');
 
 const summary=(mode,status,extra={})=>({
- revision:'US_BREADTH_CONFIRMED_DOWNLOAD_R30',mode,status,
+ revision:'US_BREADTH_CONFIRMED_DOWNLOAD_R31',mode,status,
  publicationAllowed:false,providerAuthenticityVerified:false,providerShaProvided:false,
  remoteWrites:0,schedulerChanges:0,manifestCalls:0,downloadCalls:0,
  stagedDates:0,resumedDates:0,localFileWrites:0,...extra,
@@ -126,7 +128,8 @@ function storeExclusive(destination,bytes){
 }
 
 /**
- * In production use 250 to request precisely 251 completed NYSE sessions.
+ * In production use 250 to request up to 251 completed NYSE sessions.
+ * If the earliest date is absent, retain all 250 consecutive real source days.
  * The sessionCount override is solely for network-free, small mock tests.
  */
 export async function stageConfirmedStockDailyR30({
@@ -162,11 +165,27 @@ export async function stageConfirmedStockDailyR30({
   firstAvailableDate:availability.firstAvailableDate,
   lastAvailableDate:availability.lastAvailableDate,
   firstMissingDate:availability.firstMissingDate};
- if(availability.missingDatesCount)return summary(mode,'PROVIDER_YEAR_PARTIAL',available);
- const checked=validateMarketParquetManifest(manifest,dates);
+ // Missing a single oldest baseline file changes the available number of
+ // comparison points, not whether authentic 250 daily source files can be
+ // collected. Interior gaps or fewer than 250 files still fail closed.
+ const oldestOnlyMissing=availability.missingDatesCount===1
+  &&availability.firstMissingDate===dates[0]
+  &&availability.availableDates===dates.length-1;
+ if(availability.missingDatesCount!==0&&!oldestOnlyMissing)
+  return summary(mode,'PROVIDER_YEAR_GAPPED',available);
+ const selectedDates=oldestOnlyMissing?dates.slice(1):dates;
+ if(selectedDates.length<sessionCount)
+  return summary(mode,'PROVIDER_SOURCE_TOO_SHORT',available);
+ // This only narrows the validation view; the actual provider response and
+ // its authenticated requested range are never rewritten or represented as
+ // though the provider had returned a different answer.
+ const checked=validateMarketParquetManifest({...manifest,
+  start:selectedDates[0],end:selectedDates.at(-1)},selectedDates);
  if(!checked.ok)return summary(mode,checked.reason,available);
  const total=checked.files.reduce((sum,item)=>sum+item.file_size_bytes,0);
  if(total>MAX_YEAR_BYTES)return summary(mode,'PROVIDER_YEAR_TOO_LARGE',available);
+ available.sourceDatesToStage=selectedDates.length;
+ available.comparisonPointsPossible=selectedDates.length-1;
  if(mode==='PLAN_ONLY')return summary(mode,'READY_TO_STAGE',available);
 
  const paths=knownStagingRoot(dataRoot);
@@ -214,7 +233,7 @@ export async function stageConfirmedStockDailyR30({
    if(hash(reread)!==digest||!validParquet(reread,entry.file_size_bytes))
     return summary(mode,'STAGING_READBACK_MISMATCH',{
      ...counters,firstFailDate:entry.date});
-   const audit={revision:'US_BREADTH_CONFIRMED_DOWNLOAD_R30',source:SOURCE,
+   const audit={revision:'US_BREADTH_CONFIRMED_DOWNLOAD_R31',source:SOURCE,
     provider:'MarketParquet',feed:'stock_daily',priceMode:US_FULL_MARKET_PRICE_MODE,
     relativePath:`${NAMESPACE}/${RAW_DIR}/${entry.filename}`,
     date:entry.date,sha256:digest,bytes:raw.length,complete:true,

@@ -92,11 +92,15 @@ export function publicYearPreviewSummary(result){
 }
 
 if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.url)){
- if(process.argv.length!==3||process.argv[2]!=='--preview-only')
-  throw Error('EXPLICIT_PREVIEW_ONLY_ARGUMENT_REQUIRED');
+ if(process.argv.length!==3||!['--preview-only','--preview-available'].includes(process.argv[2]))
+  throw Error('EXPLICIT_PREVIEW_MODE_ARGUMENT_REQUIRED');
+ // --preview-available uses 250 actual source days to produce 249 comparisons.
+ // The original 250-point preview contract remains unchanged and separate.
+ const availableOnly=process.argv[2]==='--preview-available';
  const result=await prepareProviderVerifiedYearPreview({
   dataRoot:process.env.ZGMINI_DATA_ROOT??'E:/ZGmini/data',
   pcHome:process.env.ZGMINI_PC_HOME??path.join(os.homedir(),'.zgmini','pc-writer'),
+  sessionCount:availableOnly?US_FULL_MARKET_YEAR_SESSIONS-1:US_FULL_MARKET_YEAR_SESSIONS,
  });
  process.stdout.write(JSON.stringify(publicYearPreviewSummary(result))+'\n');
 }

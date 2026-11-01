@@ -65,15 +65,75 @@ test('R30 explicit plan-only uses one official manifest GET, never downloads or 
  }finally{temp.cleanup();}
 });
 
-test('R30 partial year fails closed before any downloads or filesystem writes',async()=>{
+test('R31 missing oldest baseline still downloads all consecutive real available days',async()=>{
  const temp=root();try{
   const network=fakeNetwork({body:manifest(dates.slice(1))});
   const report=await run(temp.dir,network.fetchImpl);
-  assert.equal(report.status,'PROVIDER_YEAR_PARTIAL');
+  assert.equal(report.status,'STAGING_COMPLETE_LOCAL_ONLY');
   assert.equal(report.firstMissingDate,dates[0]);
   assert.equal(report.missingDatesCount,1);
+  assert.equal(report.sourceDatesToStage,2);
+  assert.equal(report.comparisonPointsPossible,1);
+  assert.equal(report.stagedDates,2);
+  assert.equal(report.downloadCalls,2);
+  assert.equal(network.calls.length,3);
+  assert.equal(fs.existsSync(path.dirname(target(temp.dir,dates[0]))),true);
+  assert.equal(fs.existsSync(target(temp.dir,dates[0])),false);
+  assert.equal(fs.existsSync(target(temp.dir,dates[1])),true);
+  assert.equal(fs.existsSync(target(temp.dir,dates[2])),true);
+ }finally{temp.cleanup();}
+});
+
+test('R31 plan reports the 250-source-day option without any downloads or writes',async()=>{
+ const temp=root();try{
+  const network=fakeNetwork({body:manifest(dates.slice(1))});
+  const report=await run(temp.dir,network.fetchImpl,'PLAN_ONLY');
+  assert.equal(report.status,'READY_TO_STAGE');
+  assert.equal(report.sourceDatesToStage,2);
+  assert.equal(report.comparisonPointsPossible,1);
+  assert.equal(report.localFileWrites,0);
+  assert.equal(report.downloadCalls,0);
   assert.equal(network.calls.length,1);
-  assert.equal(fs.existsSync(path.dirname(target(temp.dir,dates[0]))),false);
+  assert.equal(fs.existsSync(path.join(temp.dir,'us-breadth-confirmed-r2')),false);
+ }finally{temp.cleanup();}
+});
+
+test('R31 actual 251-request / 250-available manifest is READY_TO_STAGE with no writes',async()=>{
+ const temp=root();try{
+  const expected=fullMarketYearSessions({now,sessionCount:250});
+  const files=expected.slice(1).map(date=>({date,
+   filename:`stock_daily_${date}.parquet`,file_size_bytes:bytes.length,
+   download_url:signed(date)}));
+  const body={asset_type:'stock_daily',start:expected[0],end:expected.at(-1),
+   file_count:files.length,files};
+  let calls=0;
+  const report=await stageConfirmedStockDailyR30({mode:'PLAN_ONLY',
+   dataRoot:temp.dir,pcHome:path.join(temp.dir,'unused'),apiKey:'test-key',now,
+   sessionCount:250,fetchImpl:async()=>{calls++;return manifestResponse(body);}});
+  assert.equal(report.status,'READY_TO_STAGE');
+  assert.equal(report.availableDates,250);
+  assert.equal(report.sourceDatesToStage,250);
+  assert.equal(report.comparisonPointsPossible,249);
+  assert.equal(report.missingDatesCount,1);
+  assert.equal(report.firstMissingDate,expected[0]);
+  assert.equal(report.downloadCalls,0);
+  assert.equal(report.localFileWrites,0);
+  assert.equal(calls,1);
+  assert.equal(fs.existsSync(path.join(temp.dir,'us-breadth-confirmed-r2')),false);
+ }finally{temp.cleanup();}
+});
+
+test('R31 never skips an interior daily gap or accepts fewer than 250 days',async()=>{
+ const temp=root();try{
+  for(const selected of [[dates[0],dates[2]],[dates[2]]]){
+   const network=fakeNetwork({body:manifest(selected)});
+   const report=await run(temp.dir,network.fetchImpl);
+   assert.equal(report.status,'PROVIDER_YEAR_GAPPED');
+   assert.equal(report.downloadCalls,0);
+   assert.equal(report.localFileWrites,0);
+   assert.equal(network.calls.length,1);
+  }
+  assert.equal(fs.existsSync(path.join(temp.dir,'us-breadth-confirmed-r2')),false);
  }finally{temp.cleanup();}
 });
 
