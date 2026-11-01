@@ -556,6 +556,14 @@
   }
 }
 
+/* Mobile dashboard USA/Korea tooltip parity: the translated SVG creates a
+   stacking context. Keep the existing opaque desktop tooltip above the lines. */
+@media (max-width:959px){
+  .zg-dashboard[data-view="dashboard"] .zg-country-panel-grid :is(.usa-target-card,.korea-target-card) .recharts-tooltip-wrapper{
+    z-index:5;
+  }
+}
+
 /* Desktop market overview: equal-width composite and risk panels.
    Keep the twelve economic domains below both panels at full width. */
 @container marketShell (min-width:960px){
