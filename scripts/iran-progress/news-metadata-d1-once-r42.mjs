@@ -8,7 +8,7 @@ import {createHash} from 'node:crypto';
 import {fileURLToPath} from 'node:url';
 import {stageIranNewsMetadataR41} from './news-metadata-stage-r41.mjs';
 import {visibleIranMetadataRowsR41,validIranMetadataRowR41,
- IRAN_NEWS_R40_AUDITED_SOURCE_IDS} from '../../lib/iran-progress/news-metadata-r41.mjs';
+ IRAN_NEWS_METADATA_SOURCE_IDS_R41} from '../../lib/iran-progress/news-metadata-r41.mjs';
 
 const ROOT=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../..');
 const R1_KEY='public:iran-progress:news:iran:r1';
@@ -27,7 +27,7 @@ export function r42VerifiedRows({now=Date.now(),readFile=fs.readFileSync}={}){
    createHash('sha256').update(row.sourceUrl).digest('hex')!==row.articleId)||
   new Set(rows.map(row=>row.articleId)).size!==39||
   new Set(rows.map(row=>row.sourceUrl)).size!==39||
-  IRAN_NEWS_R40_AUDITED_SOURCE_IDS.some(id=>!rows.some(row=>row.sourceId===id)))
+  IRAN_NEWS_METADATA_SOURCE_IDS_R41.some(id=>!rows.some(row=>row.sourceId===id)))
   throw Error('R42_STAGING_MANIFEST_INVALID');
  return rows;
 }

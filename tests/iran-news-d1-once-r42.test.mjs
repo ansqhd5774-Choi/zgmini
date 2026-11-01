@@ -38,7 +38,7 @@ test('R42 preflight is read-only, identifies 39 verified news rows and seven sou
  const x=fixture();try{
   const r=await r42Preflight({remote:x.remote,db:'core',now});
   assert.equal(r.status,'PREFLIGHT_READ_ONLY');
-  assert.equal(r.rows,39);assert.equal(r.displayRows,34);assert.equal(r.sources,7);
+  assert.equal(r.rows,39);assert.equal(r.displayRows,35);assert.equal(r.sources,7);
   assert.equal(x.writes.length,0);
   assert.equal(x.db.prepare("SELECT COUNT(*) as n FROM sqlite_master WHERE name='iran_news_article_metadata_r41'").get().n,0);
  }finally{x.close()}
@@ -47,11 +47,11 @@ test('R42 preflight is read-only, identifies 39 verified news rows and seven sou
 test('R42 writes 39 rows once, reads back all rows and never alters the R1 snapshot',async()=>{
  const x=fixture();try{
   const before=x.identity();
-  const f=async()=>new Response(JSON.stringify({status:'READY',sourceCount:7,itemCount:34,items:Array(34).fill({})}));
+  const f=async()=>new Response(JSON.stringify({status:'READY',sourceCount:7,itemCount:35,items:Array(35).fill({})}));
   const r=await r42StoreOnce({remote:x.remote,db:'core',now,fetcher:f});
   assert.equal(r.status,'D1_AND_PUBLIC_API_VERIFIED');
-  assert.equal(r.d1RowsVerified,39);assert.equal(r.displayRows,34);
-  assert.equal(r.sourceCount,7);assert.equal(r.apiCount,34);
+  assert.equal(r.d1RowsVerified,39);assert.equal(r.displayRows,35);
+  assert.equal(r.sourceCount,7);assert.equal(r.apiCount,35);
   assert.equal(x.writes.length,2);
   assert.equal(x.db.prepare('SELECT COUNT(*) AS n FROM iran_news_article_metadata_r41').get().n,39);
   assert.deepEqual(x.identity(),before);
