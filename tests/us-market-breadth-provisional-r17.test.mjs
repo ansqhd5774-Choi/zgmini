@@ -71,6 +71,19 @@ test('paginated collection continues by token and reports bounded incomplete pag
   assert.equal(short.pageComplete,false);
 });
 
+test('Alpaca inclusive end cannot overwrite last completed 15-minute bar with an unfinished bar',async()=>{
+  const finished={t:'2026-10-30T13:45:00Z',c:101,v:10};
+  const unfinished={t:'2026-10-30T14:00:00Z',c:999,v:1};
+  let calls=0;
+  const result=await fetchIexWindow({symbols:['T0'],timeframe:'15Min',
+    start:'2026-10-30T13:30:00Z',end:'2026-10-30T14:00:00Z',auth,
+    maxRequests:1,fetchImpl:async()=>{calls++;return {ok:true,json:async()=>({
+      bars:{T0:[finished,unfinished]},next_page_token:null})};}});
+  assert.equal(calls,1);
+  assert.equal(result.pageComplete,true);
+  assert.deepEqual(result.bars.T0,finished);
+});
+
 test('one rolling PC sidecar stores raw first, calculates separately, gates 15m repeats',async t=>{
   const dir=fs.mkdtempSync(path.join(os.tmpdir(),'us-iex-r17-'));
   t.after(()=>fs.rmSync(dir,{recursive:true,force:true}));

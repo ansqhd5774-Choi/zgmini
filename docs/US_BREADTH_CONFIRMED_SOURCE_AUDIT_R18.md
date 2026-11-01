@@ -17,8 +17,11 @@
 
 - 실제 PC에서 실행할 경우 **표준 출력에만 JSON 요약**을 출력한다. E: 결과 파일, 진단 기록, 자동 스케줄러, D1 게시를 만들지 않는다.
 - 기존 `core.sqlite`를 읽기 전용으로 열어 최근 두 거래일의 B1 저장 종목 수와 로컬 공개 결과 정보를 확인한다.
-- 기존 `E:\ZGmini\data\theme-market-history-r131\marketparquet-r165` 등의 제한된 **승인된 보관 경로**에서 최신/전 거래일 `stock_daily_YYYY-MM-DD.parquet` 또는 하위 날짜 파일을 찾는다. ETF 파일을 주식 전체 원자료로 간주하지 않는다.
+- 기존 `E:\ZGmini\data\theme-market-history-r131\marketparquet-r165`, `...\marketparquet-r167`, `...\raw`, `E:\ZGmini\data\pc-writer` 및 실제 `ZGMINI_PC_HOME` 등 제한된 **알려진 운영 경로만** 살핀다. `stock_daily_YYYY-MM-DD.parquet`와 `by_date/stock_daily/YYYY/YYYY-MM-DD.parquet`, `stock_daily/YYYY/YYYY-MM-DD.parquet`를 탐색한다. E: 전체 재귀 검색은 하지 않으며 ETF 파일을 주식 전체 원자료로 간주하지 않는다.
 - 실제 저장 파일을 찾으면 그 안의 날짜·`asset_type=stock`·중복·상장폐지 접미사·가격/거래량을 검사해 적격 후보 수와 양일 종목 교집합 수를 출력한다. 개별 종목 가격과 개인 API 키는 출력하지 않는다.
+- 파일 SHA256을 출력하고, 같은 파일의 기존 `.audit.json` 또는 `marketparquet-r167` 감사를 발견하면 날짜·source·complete·SHA256 일치를 확인한다. 감사 불일치/훼손은 즉시 후보 계산 차단. 감사 파일이 없으면 `LOCAL_AUDIT_NOT_FOUND`로 구분한다. **일치하는 로컬 감사만으로 MarketParquet 원본의 진위·전체 다운로드 완전성을 입증한 것은 아니다.** 따라서 `providerAuthenticityVerified=false`이며 공개 승인은 여전히 불가하다.
+- 두 원본 날짜를 읽을 수 있으면 R19 전체 시장 확정치 **후보**도 함께 계산한다. `publicationAllowed=false`이며 기존 확정 키와 이력은 쓰지 않는다.
+- Parquet 해독은 저장소의 `hyparquet`를 우선 사용하고, 해당 설치가 없으면 이미 운영 중인 R167의 승인된 디코더를 읽기 전용으로 재사용한다. 디코더 설치·다운로드는 하지 않는다.
 - 두 파일이 없으면 `FULL_MARKET_SOURCE_NOT_YET_VERIFIED`로 보고한다. 이 상태에서 503을 6500으로 임의 변경하거나 새로운 확정치를 발행하지 않는다.
 
 ## 후속 단계 게이트

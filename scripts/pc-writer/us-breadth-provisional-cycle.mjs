@@ -52,6 +52,11 @@ export async function fetchIexWindow({symbols,timeframe,start,end,auth,fetchImpl
           !Number.isFinite(b.c)||b.c<=0||!Number.isFinite(b.v)||b.v<0)
           throw Error('US_PROVISIONAL_BARS_INVALID');
         rows++;
+        // Alpaca's `end` is inclusive. At a 15-minute boundary it can include
+        // the *new*, unfinished interval; retaining that as "latest" would
+        // hide the last completed bar for this symbol in the 15m calculation.
+        if(timeframe==='15Min'&&(Date.parse(b.t)<Date.parse(start)||
+          Date.parse(b.t)+15*60_000>Date.parse(end)))continue;
         if(!latest[symbol]||Date.parse(b.t)>Date.parse(latest[symbol].t))
           latest[symbol]={t:b.t,c:b.c,v:b.v};
         else if(Date.parse(b.t)===Date.parse(latest[symbol].t)&&

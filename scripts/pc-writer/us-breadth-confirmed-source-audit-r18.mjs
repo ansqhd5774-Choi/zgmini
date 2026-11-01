@@ -2,7 +2,8 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
-import {fileURLToPath} from 'node:url';
+import {createHash} from 'node:crypto';
+import {fileURLToPath,pathToFileURL} from 'node:url';
 import {DatabaseSync} from 'node:sqlite';
 import {latestCompletedSession} from '../../lib/market-score/breadth-b1-r3-calendar.mjs';
 import {previousMarketSession} from '../../lib/market-score/breadth-b1-r6-marketparquet-provider.mjs';
@@ -35,8 +36,20 @@ export function summarizeStockDaily(rows,tradeDate){
   return {stockRows,activeValidSymbols:valid.size,delisted,duplicate,invalid,wrongDate,symbols:valid};
 }
 
-async function defaultReadParquet(file){
-  const {parquetReadObjects}=await import('hyparquet');
+async function defaultReadParquet(file,{dataRoot,pcHome}={}){
+  let decoder;
+  try{decoder=await import('hyparquet');}
+  catch{
+    const existing=[
+      path.join(dataRoot,'theme-market-history-r131','marketparquet-r167','node_modules','hyparquet','src','index.js'),
+      path.join(pcHome,'node_modules','hyparquet','src','index.js'),
+    ].find(candidate=>fs.existsSync(candidate));
+    if(!existing)throw Error('EXISTING_HYPARQUET_DECODER_UNAVAILABLE');
+    decoder=await import(pathToFileURL(fs.realpathSync(existing)).href);
+  }
+  const parquetReadObjects=decoder?.parquetReadObjects;
+  if(typeof parquetReadObjects!=='function')throw Error('EXISTING_HYPARQUET_DECODER_INVALID');
+  if(fs.statSync(file).size>30_000_000)throw Error('PARQUET_FILE_TOO_LARGE');
   const bytes=fs.readFileSync(file);
   if(bytes.byteLength<12||bytes.byteLength>30_000_000||bytes.toString('ascii',0,4)!=='PAR1')
     throw Error('PARQUET_FILE_INVALID');
@@ -49,26 +62,63 @@ async function defaultReadParquet(file){
 }
 
 function existingStockDailyFiles(dataRoot,pcHome,dates){
-  const roots=[
+  // Only known operational roots; no recursive walk of E: or personal folders.
+  const roots=[...new Set([
     path.join(dataRoot,'theme-market-history-r131','marketparquet-r165'),
     path.join(dataRoot,'theme-market-history-r131','marketparquet-r167'),
+    path.join(dataRoot,'theme-market-history-r131','raw'),
     path.join(dataRoot,'marketparquet'),
+    path.join(dataRoot,'pc-writer'),
+    pcHome,
     path.join(pcHome,'marketparquet'),
     path.join(pcHome,'raw','marketparquet'),
-  ];
-  const found=new Map();
+  ])];
+  const found=new Map(),searchedRoots=[];
   for(const root of roots){
     if(!fs.existsSync(root))continue;
+    searchedRoots.push(root);
     for(const date of dates){
       if(found.has(date))continue;
+      const year=date.slice(0,4);
       for(const file of [path.join(root,`stock_daily_${date}.parquet`),
         path.join(root,'stock_daily',`${date}.parquet`),
-        path.join(root,'stock_daily',`stock_daily_${date}.parquet`)]){
-        if(fs.existsSync(file)&&fs.statSync(file).isFile()){found.set(date,file);break;}
+        path.join(root,'stock_daily',`stock_daily_${date}.parquet`),
+        path.join(root,'stock_daily',year,`${date}.parquet`),
+        path.join(root,'by_date','stock_daily',year,`${date}.parquet`)]){
+        try{if(fs.statSync(file).isFile()){found.set(date,file);break;}}
+        catch(error){if(error?.code!=='ENOENT')throw error;}
       }
     }
   }
-  return found;
+  return {found,searchedRoots};
+}
+
+function sourceAuditCandidates(file){
+  const base=file.endsWith('.parquet')?file.slice(0,-8):file;
+  const candidates=[base+'.audit.json'];
+  const sep=path.sep;
+  const name=sep+'marketparquet-r165'+sep;
+  if(file.includes(name))candidates.push(file.replace(name,sep+'marketparquet-r167'+sep).replace(/\.parquet$/,'.audit.json'));
+  return [...new Set(candidates)];
+}
+
+function existingFileAudit(file,date){
+  // A local SHA audit supports tamper detection; it does not authenticate the provider.
+  const stat=fs.statSync(file);
+  if(!stat.isFile()||stat.size<12||stat.size>30_000_000)
+    return {status:'SOURCE_FILE_SIZE_INVALID',bytes:stat.size};
+  const digest=createHash('sha256').update(fs.readFileSync(file)).digest('hex');
+  const auditFile=sourceAuditCandidates(file).find(f=>fs.existsSync(f));
+  if(!auditFile)return {status:'LOCAL_AUDIT_NOT_FOUND',bytes:stat.size,sha256:digest};
+  let audit;
+  try{audit=JSON.parse(fs.readFileSync(auditFile,'utf8'));}
+  catch{return {status:'LOCAL_AUDIT_UNREADABLE',auditFile,bytes:stat.size,sha256:digest};}
+  const sameSource=typeof audit?.source==='string'&&/MARKETPARQUET.*STOCK|STOCK.*MARKETPARQUET/i.test(audit.source);
+  if(audit?.date!==date||audit?.sha256!==digest||audit?.complete!==true||!sameSource)
+    return {status:'LOCAL_AUDIT_MISMATCH',auditFile,bytes:stat.size,sha256:digest,
+      auditDate:audit?.date??null,auditComplete:audit?.complete===true,auditSource:typeof audit?.source==='string'?audit.source:null};
+  return {status:'LOCAL_AUDIT_SHA_MATCH',auditFile,bytes:stat.size,sha256:digest,
+    auditSource:audit.source};
 }
 
 function inspectCoreDb(file,dates){
@@ -110,16 +160,22 @@ export async function auditConfirmedSource({dataRoot,pcHome,now=new Date(),readP
   const report={revision:'US_BREADTH_CONFIRMED_SOURCE_AUDIT_R18',mode:'READ_ONLY',
     providerCalls:0,remoteWrites:0,localWrites:0,schedulerChanges:0,
     dates,core:inspectCoreDb(path.join(pcHome,'storage','core.sqlite'),dates),raw:{}};
-  const found=existingStockDailyFiles(dataRoot,pcHome,dates);
+  const {found,searchedRoots}=existingStockDailyFiles(dataRoot,pcHome,dates);
+  report.searchedRoots=searchedRoots;
+  report.searchScope='KNOWN_APPROVED_PATHS_ONLY_NOT_GLOBAL_E_DRIVE';
   const symbols=new Map(),loadedRows=new Map();
   for(const date of dates){
     const file=found.get(date);
     if(!file){report.raw[date]={status:'STORED_STOCK_DAILY_NOT_FOUND'};continue;}
     try{
-      const rows=await readParquet(file);
+      const fileAudit=existingFileAudit(file,date);
+      if(['LOCAL_AUDIT_MISMATCH','LOCAL_AUDIT_UNREADABLE','SOURCE_FILE_SIZE_INVALID'].includes(fileAudit.status)){
+        report.raw[date]={status:'SOURCE_AUDIT_FAILED',file,fileAudit};continue;
+      }
+      const rows=await readParquet(file,{dataRoot,pcHome});
       const result=summarizeStockDaily(rows,date);
       report.raw[date]={status:result.duplicate?'DUPLICATE_SOURCE_SYMBOL':'INSPECTED',
-        file,stockRows:result.stockRows,activeValidSymbols:result.activeValidSymbols,
+        file,fileAudit,stockRows:result.stockRows,activeValidSymbols:result.activeValidSymbols,
         delisted:result.delisted,duplicate:result.duplicate,invalid:result.invalid,wrongDate:result.wrongDate};
       symbols.set(date,result.symbols);
       loadedRows.set(date,rows);
@@ -134,6 +190,8 @@ export async function auditConfirmedSource({dataRoot,pcHome,now=new Date(),readP
       currentRows:loadedRows.get(current),previousRows:loadedRows.get(previous)});
   }else report.pairedActiveSymbols=null;
   if(!report.confirmedCandidate)report.confirmedCandidate={status:'WAITING_FOR_FULL_MARKET_SOURCE',publicationAllowed:false};
+  report.localAuditShaMatched=dates.every(d=>report.raw[d]?.fileAudit?.status==='LOCAL_AUDIT_SHA_MATCH');
+  report.providerAuthenticityVerified=false;
   report.status=dates.every(d=>report.raw[d]?.status==='INSPECTED')?'STORED_PAIR_INSPECTED':'FULL_MARKET_SOURCE_NOT_YET_VERIFIED';
   return report;
 }
