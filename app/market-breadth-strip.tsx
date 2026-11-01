@@ -1,13 +1,11 @@
 "use client";
 import {useEffect, useId, useState} from "react";
 import styles from "./market-breadth-strip.module.css";
-import {useStoredIndex} from "../components/use-stored-index";
 import {startStoredRefresh} from "../lib/market-score/live-refresh.mjs";
-import {validUsBreadthRecord} from "../lib/market-breadth/us-public-r1.mjs";
 import {MarketBreadthHistoryChart, type MarketBreadthPeriod, type UsBreadthHistory} from "./market-breadth-history-chart";
 import {getMarketPeriodConfig} from "./market-card-shared";
 
-/** Verified issue-direction counts; only the US stored-output route is enabled. */
+/** Optional non-US input; US confirmed and provisional are strictly percentage-only public feeds. */
 export type MarketBreadthCounts = {
   rising: number;
   unchanged: number;
@@ -20,36 +18,31 @@ type MarketBreadthStripProps = {
   period?: MarketBreadthPeriod;
 };
 
-type UsaBreadthRecord = {
-  market: "usa";
-  observationDate: string;
-  counts: MarketBreadthCounts;
-};
-
 type UsaIexProvisionalRecord = {
+  market: "usa";
   phase: "PROVISIONAL";
+  status: "PROVISIONAL";
   source: "ALPACA_IEX_15MIN_SPLIT";
   observationDate: string;
   slotEndUtc: string;
-  expectedCount: number;
-  observedCount: number;
-  missingCount: number;
   collectionStatus: "COMPLETE" | "INCOMPLETE_PAGINATION";
-  counts: MarketBreadthCounts;
+  risingPct: number;
+  fallingPct: number;
+  unchangedPct: number;
+  unobservedPct: number;
 };
 
-/** IEX current-only display gate; never apply the confirmed 98% coverage rule. */
+const validPercent = (n: unknown): n is number => typeof n === "number" && Number.isFinite(n) && n >= 0 && n <= 100;
+const near100 = (...parts: number[]) => Math.abs(parts.reduce((sum, n) => sum + n, 0) - 100) <= 0.2;
+
+/** IEX current-only public-percent gate; no confirmed-source coverage or direction requirements. */
 function currentIexProvisional(value: unknown): value is UsaIexProvisionalRecord {
   if (!value || typeof value !== "object") return false;
   const record = value as UsaIexProvisionalRecord;
-  if (record.phase !== "PROVISIONAL" || record.source !== "ALPACA_IEX_15MIN_SPLIT" ||
-    !Number.isSafeInteger(record.expectedCount) || record.expectedCount < 490 || record.expectedCount > 520 ||
-    !Number.isSafeInteger(record.observedCount) || record.observedCount < 0 ||
-    !Number.isSafeInteger(record.missingCount) || record.missingCount < 0 ||
-    record.observedCount + record.missingCount !== record.expectedCount ||
-    !record.counts || ![record.counts.rising, record.counts.unchanged, record.counts.falling]
-      .every(n => Number.isSafeInteger(n) && n >= 0) ||
-    record.counts.rising + record.counts.unchanged + record.counts.falling !== record.observedCount ||
+  if (record.market !== "usa" || record.phase !== "PROVISIONAL" || record.status !== "PROVISIONAL" ||
+    record.source !== "ALPACA_IEX_15MIN_SPLIT" ||
+    ![record.risingPct, record.fallingPct, record.unchangedPct, record.unobservedPct].every(validPercent) ||
+    !near100(record.risingPct, record.fallingPct, record.unchangedPct, record.unobservedPct) ||
     !["COMPLETE", "INCOMPLETE_PAGINATION"].includes(record.collectionStatus)) return false;
   const stamp = Date.parse(record.slotEndUtc);
   const age = Date.now() - stamp;
@@ -59,8 +52,6 @@ function currentIexProvisional(value: unknown): value is UsaIexProvisionalRecord
   }).formatToParts(new Date()).map(part => [part.type, part.value]));
   return record.observationDate === `${ny.year}-${ny.month}-${ny.day}`;
 }
-
-const numberFormat = new Intl.NumberFormat("ko-KR");
 
 function normalizedCounts(counts?: MarketBreadthCounts | null) {
   if (!counts) return null;
@@ -79,6 +70,21 @@ function normalizedCounts(counts?: MarketBreadthCounts | null) {
   };
 }
 
+function validConfirmedHistory(value: unknown): value is UsBreadthHistory {
+  if (!value || typeof value !== "object") return false;
+  const body = value as UsBreadthHistory;
+  if (body.version !== 2 || body.market !== "usa" || body.phase !== "CONFIRMED" ||
+    body.status !== "READY" || body.publicationStage !== "PUBLIC_FINAL" ||
+    body.source !== "MARKETPARQUET_STOCK_DAILY" || body.universe !== "US_MARKETPARQUET_ACTIVE_STOCKS" ||
+    !Array.isArray(body.points) || body.points.length < 249 || body.points.length > 250 ||
+    typeof body.firstDate !== "string" || typeof body.lastDate !== "string") return false;
+  return body.points.every((point, i) => point !== null && typeof point === "object" && /^\d{4}-\d{2}-\d{2}$/.test(point.date) &&
+    (!i || body.points[i - 1].date < point.date) &&
+    [point.risingPct, point.fallingPct, point.unchangedPct].every(validPercent) &&
+    near100(point.risingPct, point.fallingPct, point.unchangedPct)) &&
+    body.firstDate === body.points[0].date && body.lastDate === body.points[body.points.length - 1].date;
+}
+
 export function MarketBreadthStrip({ market, counts, period = '1Y' }: MarketBreadthStripProps) {
   const panelId = useId();
   const [expanded, setExpanded] = useState(false);
@@ -90,7 +96,7 @@ export function MarketBreadthStrip({ market, counts, period = '1Y' }: MarketBrea
   const periodLabel = period === '1D' ? '1일' : getMarketPeriodConfig(period).label;
 
   useEffect(() => {
-    if (market !== "usa" || counts !== undefined) return;
+    if (market !== "usa") return;
     let active = true;
     const stop = startStoredRefresh(async (signal: AbortSignal) => {
       try {
@@ -107,32 +113,31 @@ export function MarketBreadthStrip({ market, counts, period = '1Y' }: MarketBrea
       }
     });
     return () => { active = false; stop(); };
-  }, [market, counts]);
-  const {payload} = useStoredIndex<UsaBreadthRecord>(
-    "/api/market-breadth?market=usa", null, market === "usa" && counts === undefined
-  );
-  const stored = market === "usa" && validUsBreadthRecord(payload) ? payload : null;
-  const activeProvisional = market === "usa" && counts === undefined && currentIexProvisional(provisional)
+  }, [market]);
+  const activeProvisional = market === "usa" && currentIexProvisional(provisional)
     ? provisional : null;
-  const data = normalizedCounts(counts === undefined ? activeProvisional?.counts ?? stored?.counts : counts);
+  const lastConfirmed = market === "usa" && history ? history.points[history.points.length - 1] : null;
+  const data = market === "usa"
+    ? activeProvisional ?? lastConfirmed ?? null
+    : normalizedCounts(counts);
   const sourceInfo = activeProvisional
-    ? `장중 잠정 · Alpaca IEX 15분 · 관측 ${activeProvisional.observedCount}/${activeProvisional.expectedCount} · 미관측 ${activeProvisional.missingCount} · 뉴욕 ${new Intl.DateTimeFormat("ko-KR", {timeZone:"America/New_York", hour:"2-digit", minute:"2-digit", hour12:false}).format(new Date(activeProvisional.slotEndUtc))} 기준${activeProvisional.collectionStatus === "INCOMPLETE_PAGINATION" ? " · 페이지 일부 미수집" : ""}`
-    : stored && counts === undefined ? `기존 S&P 500 확정 기록 · ${stored.observationDate} 기준 (전체 미국 시장 확정치와 별개)` : null;
+    ? `장중 잠정 · Alpaca IEX 15분 · 뉴욕 ${new Intl.DateTimeFormat("ko-KR", {timeZone:"America/New_York", hour:"2-digit", minute:"2-digit", hour12:false}).format(new Date(activeProvisional.slotEndUtc))} 기준 · 미관측 ${activeProvisional.unobservedPct.toFixed(1)}%${activeProvisional.collectionStatus === "INCOMPLETE_PAGINATION" ? " · 페이지 일부 미수집" : ""}`
+    : lastConfirmed ? `MarketParquet R2 확정 이력 · ${history!.lastDate} 기준 (현재 장중 수치 아님)` : null;
   const sourceBadge = activeProvisional
-    ? `${activeProvisional.observedCount}/${activeProvisional.expectedCount}·미${activeProvisional.missingCount}·${new Intl.DateTimeFormat("en-US", {timeZone:"America/New_York", hour:"2-digit", minute:"2-digit", hour12:false}).format(new Date(activeProvisional.slotEndUtc))}`
-    : stored && counts === undefined ? `기존 S&P500 · ${stored.observationDate.slice(5).replace("-", ".")}` : null;
-  const canExpand = market === "usa" && counts === undefined;
+    ? `IEX·15분·${new Intl.DateTimeFormat("en-US", {timeZone:"America/New_York", hour:"2-digit", minute:"2-digit", hour12:false}).format(new Date(activeProvisional.slotEndUtc))}`
+    : lastConfirmed ? `R2 확정 · ${history!.lastDate.slice(5).replace("-", ".")}` : null;
+  const canExpand = market === "usa";
 
   useEffect(() => {
-    if (!expanded || !canExpand) return;
+    if (!canExpand) return;
     const controller = new AbortController();
     setHistoryLoading(true);
     setHistoryError(false);
-    fetch('/api/market-breadth/history?market=usa', {cache: 'no-store', signal: controller.signal})
+    fetch('/api/market-breadth-r2-history?market=usa', {cache: 'no-store', signal: controller.signal})
       .then(async response => {
         if (!response.ok) throw new Error('HISTORY_UNAVAILABLE');
-        const body: UsBreadthHistory = await response.json();
-        if (body.market !== 'usa' || body.universe !== 'SP500' || body.window !== '1Y' || !Array.isArray(body.records))
+        const body: unknown = await response.json();
+        if (!validConfirmedHistory(body))
           throw new Error('INVALID_HISTORY_RESPONSE');
         return body;
       })
@@ -140,30 +145,29 @@ export function MarketBreadthStrip({ market, counts, period = '1Y' }: MarketBrea
       .catch(() => { if (!controller.signal.aborted) setHistoryError(true); })
       .finally(() => { if (!controller.signal.aborted) setHistoryLoading(false); });
     return () => controller.abort();
-  }, [expanded, canExpand]);
+  }, [canExpand]);
   const dominance = !data || Math.abs(data.risingPct - data.fallingPct) < 5
     ? "none"
     : data.risingPct > data.fallingPct ? "up" : "down";
 
   const columns = [
-    { key: "up", label: "상승", symbol: "▲", count: data?.rising, pct: data?.risingPct },
-    { key: "flat", label: "보합", symbol: "―", count: data?.unchanged, pct: data?.unchangedPct },
-    { key: "down", label: "하락", symbol: "▼", count: data?.falling, pct: data?.fallingPct },
+    { key: "up", label: "상승", symbol: "▲", pct: data?.risingPct },
+    { key: "flat", label: "보합", symbol: "―", pct: data?.unchangedPct },
+    { key: "down", label: "하락", symbol: "▼", pct: data?.fallingPct },
   ] as const;
 
   const summary = <>
       <div className={styles.stats} data-provisional={activeProvisional ? "true" : undefined}>
         <div className={styles.heading}>
-          <strong>{activeProvisional ? `${name} 잠정` : `${name} 등락 ${stored && counts === undefined ? "S&P" : "지수"}`}</strong>
+          <strong>{activeProvisional ? `${name} 잠정` : `${name} 등락 지수`}</strong>
           {sourceBadge && <small className={styles.pending} title={sourceInfo ?? undefined} style={{display:"block",minWidth:0,flex:"1 1 0",overflow:"hidden",textOverflow:"ellipsis"}}>{sourceBadge}</small>}
           {!data && !activeProvisional && <small className={styles.pending}>연결 예정</small>}
           {canExpand && <span className={styles.toggleArrow} aria-hidden="true">{expanded ? '▴' : '▾'}</span>}
         </div>
-        {columns.map(({ key, label, symbol, count, pct }) => (
-          <div className={`${styles.stat} ${styles[key]}`} key={key} aria-label={`${label}: ${count === undefined ? "미제공" : `${numberFormat.format(count)}개, ${pct!.toFixed(1)}%`}`}>
+        {columns.map(({ key, label, symbol, pct }) => (
+          <div className={`${styles.stat} ${styles[key]}`} key={key} aria-label={`${label}: ${pct === undefined ? "미제공" : `${pct.toFixed(1)}%`}`}>
             <span className={styles.symbol} aria-hidden="true">{symbol}</span>
-            <span className={styles.count}>{count === undefined ? "—" : numberFormat.format(count)}</span>
-            <span className={styles.percent}>({pct === undefined ? "—" : `${pct.toFixed(1)}%`})</span>
+            <span className={styles.percent}>{pct === undefined ? "—" : `${pct.toFixed(1)}%`}</span>
           </div>
         ))}
       </div>
@@ -172,8 +176,8 @@ export function MarketBreadthStrip({ market, counts, period = '1Y' }: MarketBrea
         data-dominance={dominance}
         role="img"
         aria-label={data
-          ? `상승 ${data.risingPct.toFixed(1)}%, 보합 ${data.unchangedPct.toFixed(1)}%, 하락 ${data.fallingPct.toFixed(1)}%`
-          : "실제 등락 종목 데이터는 아직 연결되지 않았습니다"}
+          ? `상승 ${data.risingPct.toFixed(1)}%, 보합 ${data.unchangedPct.toFixed(1)}%, 하락 ${data.fallingPct.toFixed(1)}%${activeProvisional ? `, 미관측 ${activeProvisional.unobservedPct.toFixed(1)}%` : ""}`
+          : "검증된 등락 비율을 아직 표시할 수 없습니다"}
       >
         {data && <>
           <span className={styles.rising} style={{width:`${data.risingPct}%`}}/>
@@ -187,10 +191,10 @@ export function MarketBreadthStrip({ market, counts, period = '1Y' }: MarketBrea
     <section className={styles.root} data-expanded={expanded && canExpand} aria-label={`${name} 등락 지수${sourceInfo ? `, ${sourceInfo}` : data ? "" : ", 데이터 연결 예정"}`} title={sourceInfo ?? undefined} data-market={market}>
       {canExpand ? <button type="button" className={styles.summaryButton}
         aria-expanded={expanded} aria-controls={panelId}
-        aria-label={`기존 S&P 500 확정치 ${periodLabel} 이력 ${expanded ? '접기' : '펼치기'}`}
+        aria-label={`MarketParquet R2 확정 비율 ${periodLabel} 이력 ${expanded ? '접기' : '펼치기'}`}
         onClick={() => setExpanded(value => !value)}>{summary}</button>
         : <div className={styles.summaryStatic}>{summary}</div>}
-      {canExpand && <div id={panelId} className={styles.details} role="region" aria-label={`기존 S&P 500 확정치 ${periodLabel} 차트`} hidden={!expanded}>
+      {canExpand && <div id={panelId} className={styles.details} role="region" aria-label={`MarketParquet R2 확정 비율 ${periodLabel} 차트`} hidden={!expanded}>
         {historyLoading && <p className={styles.historyEmpty} role="status">확정치 이력을 불러오는 중입니다.</p>}
         {!historyLoading && historyError && <p className={styles.historyEmpty} role="alert">저장된 이력을 불러오지 못했습니다. 접었다 다시 펼쳐 재시도할 수 있습니다.</p>}
         {!historyLoading && !historyError && history && <MarketBreadthHistoryChart key={period} history={history} period={period}/>}

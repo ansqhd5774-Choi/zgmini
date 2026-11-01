@@ -1,24 +1,29 @@
 "use client";
 
-import {useState} from 'react';
+import {useId, useLayoutEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type PointerEvent as ReactPointerEvent} from 'react';
 import styles from './market-breadth-strip.module.css';
 import {getMarketPeriodConfig, getMarketPeriodDays, type MarketPeriod} from './market-card-shared';
 
 export type MarketBreadthPeriod = MarketPeriod | '1D';
 
 export type UsBreadthHistoryRecord = {
-  observationDate: string;
-  eligibleCount: number;
-  counts: {rising: number; unchanged: number; falling: number};
+  date: string;
+  risingPct: number;
+  fallingPct: number;
+  unchangedPct: number;
 };
 
 export type UsBreadthHistory = {
+  version: 2;
   market: 'usa';
-  universe: 'SP500';
-  window: '1Y';
-  from: string;
-  to: string;
-  records: UsBreadthHistoryRecord[];
+  phase: 'CONFIRMED';
+  status: 'READY';
+  publicationStage: 'PUBLIC_FINAL';
+  source: 'MARKETPARQUET_STOCK_DAILY';
+  universe: 'US_MARKETPARQUET_ACTIVE_STOCKS';
+  firstDate: string;
+  lastDate: string;
+  points: UsBreadthHistoryRecord[];
 };
 
 const plot = {left: 8, right: 592, top: 12, bottom: 146};
@@ -28,28 +33,86 @@ const dayMs = 86_400_000;
 
 export function MarketBreadthHistoryChart({history, period}: {history: UsBreadthHistory; period: MarketBreadthPeriod}) {
   const [selected, setSelected] = useState<number | null>(null);
+  const tooltipId = useId();
+  const plotRef = useRef<HTMLDivElement>(null);
+  const tooltipRef = useRef<HTMLDivElement>(null);
+  const lastPointerRef = useRef<{clientX: number; clientY: number} | null>(null);
   const days = period === '1D' ? 1 : getMarketPeriodDays(period);
   const periodLabel = period === '1D' ? '1일' : getMarketPeriodConfig(period).label;
-  const maxTime = dateMs(history.to);
-  const minTime = period === '1Y' ? dateMs(history.from) : maxTime - (days - 1) * dayMs;
-  const from = period === '1Y' ? history.from : new Date(minTime).toISOString().slice(0, 10);
-  const records = history.records.filter(record => {
-    const time = dateMs(record.observationDate);
+  const maxTime = dateMs(history.lastDate);
+  const minTime = period === '1Y' ? dateMs(history.firstDate) : maxTime - (days - 1) * dayMs;
+  const from = period === '1Y' ? history.firstDate : new Date(minTime).toISOString().slice(0, 10);
+  const records = history.points.filter(record => {
+    const time = dateMs(record.date);
     return time >= minTime && time <= maxTime;
   });
+  // Keep main's pointer-follow positioning based on actual DOM rectangles.
+  const positionTooltip = (clientX: number, clientY: number) => {
+    const box = plotRef.current;
+    const tip = tooltipRef.current;
+    if (!box || !tip) return;
+    const bounds = box.getBoundingClientRect();
+    const tipBounds = tip.getBoundingClientRect();
+    const margin = 6, gap = 12;
+    const pointerX = clientX - bounds.left, pointerY = clientY - bounds.top;
+    const right = pointerX + gap;
+    const left = pointerX - tipBounds.width - gap;
+    const preferred = right + tipBounds.width + margin <= bounds.width ? right : left >= margin ? left : right;
+    tip.style.left = `${Math.min(Math.max(margin, bounds.width - tipBounds.width - margin), Math.max(margin, preferred))}px`;
+    tip.style.top = `${Math.min(Math.max(margin, bounds.height - tipBounds.height - margin), Math.max(margin, pointerY - tipBounds.height / 2))}px`;
+    tip.style.visibility = 'visible';
+  };
+  useLayoutEffect(() => {
+    if (selected !== null && lastPointerRef.current) positionTooltip(lastPointerRef.current.clientX, lastPointerRef.current.clientY);
+  }, [selected]);
   if (!records.length) return <p className={styles.historyEmpty}>선택한 {periodLabel} 기간에 보관된 확정치 이력이 없습니다.</p>;
 
   const scaleX = (day: string) => maxTime <= minTime ? (plot.left + plot.right) / 2 : plot.left + (dateMs(day) - minTime) / (maxTime - minTime) * (plot.right - plot.left);
-  const net = (record: UsBreadthHistoryRecord) => 100 * (record.counts.rising - record.counts.falling) / record.eligibleCount;
+  const net = (record: UsBreadthHistoryRecord) => record.risingPct - record.fallingPct;
   const bound = Math.min(100, Math.max(20, Math.ceil(Math.max(...records.map(record => Math.abs(net(record)))) / 10) * 10));
   const scaleY = (value: number) => plot.top + (bound - value) / (2 * bound) * (plot.bottom - plot.top);
   const baseline = scaleY(0);
   const barWidth = Math.min(8, Math.max(1.25, maxTime > minTime ? 0.7 * (plot.right - plot.left) * dayMs / (maxTime - minTime) : 8));
   const at = Math.min(selected ?? records.length - 1, records.length - 1);
   const focused = records[at];
-  const x = scaleX(focused.observationDate);
+  const x = scaleX(focused.date);
   const focusedNet = net(focused);
   const latestNet = net(records[records.length - 1]);
+  const setPointer = (clientX: number, clientY: number) => {
+    lastPointerRef.current = {clientX, clientY};
+    positionTooltip(clientX, clientY);
+  };
+  const setKeyboardPointer = (svg: SVGSVGElement, index: number) => {
+    const bounds = svg.getBoundingClientRect();
+    const record = records[index];
+    if (!record) return;
+    setPointer(bounds.left + scaleX(record.date) / 600 * bounds.width, bounds.top + scaleY(net(record)) / 160 * bounds.height);
+  };
+  const selectAtPointer = (event: ReactPointerEvent<SVGSVGElement>) => {
+    setPointer(event.clientX, event.clientY);
+    const bounds = event.currentTarget.getBoundingClientRect();
+    if (!bounds.width) return;
+    const svgX = Math.max(0, Math.min(600, (event.clientX - bounds.left) / bounds.width * 600));
+    let nearest = 0, distance = Infinity;
+    for (let i = 0; i < records.length; i++) {
+      const current = Math.abs(scaleX(records[i].date) - svgX);
+      if (current < distance) {distance = current; nearest = i;}
+    }
+    setSelected(nearest);
+  };
+  const selectAtKeyboard = (event: ReactKeyboardEvent<SVGSVGElement>) => {
+    let next: number;
+    switch (event.key) {
+      case 'ArrowLeft': next = Math.max(0, at - 1); break;
+      case 'ArrowRight': next = Math.min(records.length - 1, at + 1); break;
+      case 'Home': next = 0; break;
+      case 'End': next = records.length - 1; break;
+      default: return;
+    }
+    event.preventDefault();
+    setSelected(next);
+    setKeyboardPointer(event.currentTarget, next);
+  };
 
   return <div className={styles.historyChart}>
     <div className={styles.historyNetHeading}><strong>일별 상승−하락 우세도</strong>
@@ -57,21 +120,37 @@ export function MarketBreadthHistoryChart({history, period}: {history: UsBreadth
     </div>
     <div className={styles.historyPlot}>
       <div className={styles.historyPercentAxis} aria-hidden="true"><span>+{bound}</span><span>0%p</span><span>−{bound}</span></div>
-      <svg viewBox="0 0 600 160" preserveAspectRatio="none" role="img"
-        aria-label={`S&P 500 일별 상승·하락 우세도 ${periodLabel} 이력. 저장된 ${records.length}개 거래일. 0%p 위는 상승 우세, 아래는 하락 우세이며 보합 종목도 분모에 포함됩니다.`}>
+      <div className={styles.historySvgWrap} ref={plotRef}>
+      <svg viewBox="0 0 600 160" preserveAspectRatio="none" role="img" tabIndex={0}
+        aria-label={`MarketParquet R2 일별 상승·하락 우세도 ${periodLabel} 확정 비율 이력. 0%p 위는 상승 우세, 아래는 하락 우세입니다. 마우스·터치 또는 키보드 좌우 방향키로 거래일별 비율을 확인할 수 있습니다.`}
+        aria-describedby={selected !== null ? tooltipId : undefined}
+        onPointerEnter={selectAtPointer} onPointerMove={selectAtPointer} onPointerDown={selectAtPointer}
+        onPointerLeave={event => {if (event.pointerType !== 'touch') {lastPointerRef.current = null; setSelected(null);}}}
+        onFocus={event => {const index = Math.min(selected ?? records.length - 1, records.length - 1); setSelected(index); setKeyboardPointer(event.currentTarget, index);}}
+        onBlur={() => {lastPointerRef.current = null; setSelected(null);}}
+        onKeyDown={selectAtKeyboard}>
         {[-bound, 0, bound].map(value => <line key={value} x1={plot.left} x2={plot.right} y1={scaleY(value)} y2={scaleY(value)} className={value === 0 ? styles.historyMidline : styles.historyGridline}/>)}
+        <rect x={plot.left} y={plot.top} width={plot.right - plot.left} height={plot.bottom - plot.top} fill="transparent" pointerEvents="all"/>
         {records.map(record => {
           const value = net(record);
           const y = scaleY(value);
-          return <rect key={record.observationDate} x={scaleX(record.observationDate) - barWidth / 2} y={Math.min(y, baseline)} width={barWidth}
+          return <rect key={record.date} x={scaleX(record.date) - barWidth / 2} y={Math.min(y, baseline)} width={barWidth}
             height={Math.max(1, Math.abs(y - baseline))} className={value > 0 ? styles.historyNetPositiveBar : value < 0 ? styles.historyNetNegativeBar : styles.historyNetNeutralBar}/>;
         })}
         <line x1={x} x2={x} y1={plot.top} y2={plot.bottom} className={styles.historyCursor}/>
         <circle cx={x} cy={scaleY(focusedNet)} r="4" className={focusedNet > 0 ? styles.historyRisingDot : focusedNet < 0 ? styles.historyFallingDot : styles.historyNetNeutralDot}/>
       </svg>
-      <div className={styles.historyDates}><time>{dateLabel(from)}</time><time>{dateLabel(history.to)}</time></div>
+      {selected !== null && <div id={tooltipId} ref={tooltipRef} className={styles.historyTooltip} role="status">
+        <time dateTime={focused.date}>{dateLabel(focused.date)}</time>
+        <div><span className={focusedNet > 0 ? styles.up : focusedNet < 0 ? styles.down : styles.flat}>{focusedNet > 0 ? '▲ 상승 우세' : focusedNet < 0 ? '▼ 하락 우세' : '― 균형'}</span><strong>{focusedNet > 0 ? '+' : ''}{focusedNet.toFixed(1)}%p</strong></div>
+        <div><span className={styles.up}>▲ 상승</span><strong>{focused.risingPct.toFixed(1)}%</strong></div>
+        <div><span className={styles.flat}>― 보합</span><strong>{focused.unchangedPct.toFixed(1)}%</strong></div>
+        <div><span className={styles.down}>▼ 하락</span><strong>{focused.fallingPct.toFixed(1)}%</strong></div>
+      </div>}
+      </div>
+      <div className={styles.historyDates}><time>{dateLabel(from)}</time><time>{dateLabel(history.lastDate)}</time></div>
     </div>
     <input className={styles.historySlider} type="range" min="0" max={Math.max(0, records.length - 1)} step="1" value={at}
-      onChange={event => setSelected(Number(event.currentTarget.value))} aria-label="확정치 이력 거래일 선택" disabled={records.length < 2}/>
+      onChange={event => setSelected(Number(event.currentTarget.value))} aria-label="R2 확정 비율 이력 거래일 선택" disabled={records.length < 2}/>
   </div>;
 }
