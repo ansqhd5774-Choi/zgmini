@@ -100,6 +100,20 @@ function inputRows(snapshots,members,asOf){
  });
 }
 
+function optionalFieldCoverage(rows){
+ const eligible=rows.filter(row=>row.eligible===true);
+ const of=predicate=>{
+  const observed=eligible.filter(predicate).length;
+  return {observed,eligibleTickers:eligible.length,
+   fraction:eligible.length?observed/eligible.length:0};
+ };
+ return {
+  dividendYield:of(row=>finite(row.dividendYield)),
+  positiveEps:of(row=>finite(row.eps)&&row.eps>0),
+  epsGrowthPct:of(row=>finite(row.epsGrowthPct)),
+ };
+}
+
 export function buildR57R43Shadow({
  base=process.env.ZGMINI_PC_HOME??path.join(os.homedir(),'.zgmini','pc-writer'),
  now=Date.now(),membershipName=R57_REVIEWED_UNIVERSE,
@@ -136,6 +150,7 @@ export function buildR57R43Shadow({
   const snapshots=selected.map(date=>readDay(dir,date));
   const rows=inputRows(snapshots,members,asOf);
   const rank=rankR43Issuers(rows,{asOf,expectedEligibleIssuers});
+  result.optionalFieldCoverage=optionalFieldCoverage(rows);
   result.eligibleIssuers=rank.coverage?.eligibleIssuers??0;
   result.coverage=rank.coverage;
   if(rank.status!=='READY_SHADOW'){

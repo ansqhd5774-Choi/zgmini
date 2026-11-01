@@ -62,6 +62,9 @@ test('R57 combines reviewed share classes and excludes China company without pub
   assert.equal(r.topCount,132);
   assert.equal(r.eligibleIssuers,2633);
   assert.equal(r.coverage.relativeVolume,1);
+  assert.equal(r.optionalFieldCoverage.dividendYield.fraction,0);
+  assert.equal(r.optionalFieldCoverage.positiveEps.fraction,0);
+  assert.equal(r.optionalFieldCoverage.epsGrowthPct.fraction,0);
   assert.equal(r.rankings.filter(x=>x.importance===3).length,132);
   assert.equal(r.rankings.some(x=>x.tickers.includes('BABA')),false);
   const alphabet=r.rankings.find(x=>x.issuerId==='ALPHABET');
