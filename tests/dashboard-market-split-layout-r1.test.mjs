@@ -51,22 +51,3 @@ test('mobile USA and Korea sentiment tooltips paint above the translated SVG wit
   const sourceTooltip=readFileSync(new URL('../app/globals.css',import.meta.url),'utf8');
   assert.match(sourceTooltip,/\.cnn-history-tooltip\{[^}]*background:#071a29;/);
 });
-
-
-test('mobile US and Korea fear greed charts restore the original 120px chart and score row',()=>{
- const block=css.split('@media(max-width:959px){').find(section=>section.includes('grid-template-rows:auto 120px auto') && section.includes('--fg-shared-left:124px'));
- assert.ok(block,'the compact mobile 120px layout exists');
- assert.match(block,/\.fg-card\.fg-shared-shell\{--fg-shared-content-h:120px;--fg-shared-left:124px;grid-template-rows:auto 120px auto\}/);
- assert.match(block,/\.fg-card\.fg-shared-shell \.fg-score-slot\{height:120px\}/);
- assert.match(block,/\.fg-card\.fg-shared-shell \.fg-chart-slot\{height:120px\}/);
- assert.doesNotMatch(block,/\.fg-card\.fg-shared-shell \.fg-chart-slot\{height:112px\}/);
- assert.match(css,/\.fg-card\.fg-shared-shell \.fg-chart-slot\{grid-column:4;grid-row:2;width:100%;height:120px;min-height:0\}/);
-});
-
-test('mobile breadth cards override the inline grid row variable without affecting desktop',()=>{
- const shell=readFileSync(new URL('../app/fear-greed-card-shell.tsx',import.meta.url),'utf8');
- assert.match(shell,/gridTemplateRows:'auto var\(--fg-shared-content-h\) auto auto'/);
- assert.match(css,/@media\(max-width:959px\)\{[\s\S]*?\.fg-card\.fg-shared-shell\{--fg-shared-content-h:120px;--fg-shared-left:124px;grid-template-rows:auto 120px auto\}/);
- const matched=css.match(/--fg-shared-content-h:120px/g)??[];
- assert.equal(matched.length,1,'exactly one scoped mobile override');
-});

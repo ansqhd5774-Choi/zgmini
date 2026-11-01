@@ -378,9 +378,9 @@
  .zg-dashboard[data-view="dashboard"] .fg-card.fg-shared-shell .cnn-spectrum-gauge svg{display:none}
  .zg-dashboard[data-view="dashboard"] .fg-card.fg-shared-shell .cnn-spectrum-gauge{display:flex;align-items:center;justify-content:center}
  .zg-dashboard[data-view="dashboard"] .fg-card.fg-shared-shell .cnn-spectrum-center{position:static;transform:none;width:100%}
- .zg-dashboard[data-view="dashboard"] .fg-card.fg-shared-shell{--fg-shared-content-h:120px;--fg-shared-left:124px;grid-template-rows:auto 120px auto}
- .zg-dashboard[data-view="dashboard"] .fg-card.fg-shared-shell .fg-score-slot{height:120px}
- .zg-dashboard[data-view="dashboard"] .fg-card.fg-shared-shell .fg-chart-slot{height:120px}
+ .zg-dashboard[data-view="dashboard"] .fg-card.fg-shared-shell{--fg-shared-left:124px;grid-template-rows:auto 112px auto}
+ .zg-dashboard[data-view="dashboard"] .fg-card.fg-shared-shell .fg-score-slot{height:112px}
+ .zg-dashboard[data-view="dashboard"] .fg-card.fg-shared-shell .fg-chart-slot{height:112px}
  .zg-dashboard[data-view="dashboard"] .fg-card.fg-shared-shell .fg-score-slot .cnn-score-orb{grid-template-columns:minmax(0,1fr);grid-template-rows:44px minmax(0,1fr);width:124px;height:104px;padding:6px 0;box-sizing:border-box;border:0;border-radius:0;background:transparent;align-content:stretch;row-gap:0}
  .zg-dashboard[data-view="dashboard"] .fg-card.fg-shared-shell .cnn-spectrum-gauge{grid-column:1;grid-row:1;width:100%;min-width:0;max-width:none;height:44px}
  .zg-dashboard[data-view="dashboard"] .fg-card.fg-shared-shell .cnn-spectrum-center{flex-direction:row;gap:6px}
