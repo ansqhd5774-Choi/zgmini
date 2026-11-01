@@ -71,6 +71,11 @@ try{
   const {prepareUsBreadth}=await import('./market-breadth-us-r1.mjs');
   report.usBreadth=await prepareUsBreadth(core,{now:new Date(now)});
  });
+ // Separate IEX provisional sidecar. The calculation lane never calls Alpaca.
+ await attemptOutput(report,'us-breadth-provisional-calculation',async()=>{
+  const {prepareUsProvisional}=await import('./us-breadth-provisional-publication.mjs');
+  report.usProvisional=prepareUsProvisional(base,{now});
+ });
  const marketReady=await attemptOutput(report,'market',async()=>{
  const body=await calculateMarket(root,core,now);
  // Reuse the published daily score history already read for the overall chart.
@@ -209,6 +214,11 @@ try{
    report.usBreadth.publication=await publishUsBreadth(remote,config.core,report.usBreadth,{now});
   });
   else report.usBreadth={...(report.usBreadth??{status:'UNAVAILABLE'}),publication:'SKIPPED_NOT_READY'};
+  if(report.usProvisional?.prepared)await attemptOutput(report,'us-breadth-provisional-publication',async()=>{
+   const {publishUsProvisional}=await import('./us-breadth-provisional-publication.mjs');
+   report.usProvisional.publication=await publishUsProvisional(remote,config.core,report.usProvisional,{now});
+  });
+  else report.usProvisional={...(report.usProvisional??{status:'UNAVAILABLE'}),publication:'SKIPPED_NOT_READY'};
   // Explicit allowlist: publish display outputs only, never provider input/history rows.
   for(const {id,status} of report.projections){
    if(status!=='LOCAL_READY')continue;

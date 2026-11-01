@@ -15,7 +15,9 @@ export function auxiliaryInputCheckpoint(base){
   const supply=fs.existsSync(file)?fs.readFileSync(file,'utf8'):null;
   const alpacaFile=path.join(base,'asset-r10-alpaca','incremental-checkpoint.json');
   const alpaca=fs.existsSync(alpacaFile)?fs.readFileSync(alpacaFile,'utf8'):null;
-  return createHash('sha256').update(JSON.stringify({outputs,supply,alpaca})).digest('hex');
+  const provisionalFile=path.join(base,'local-us-breadth-iex-provisional.json');
+  const usProvisional=fs.existsSync(provisionalFile)?fs.readFileSync(provisionalFile,'utf8'):null;
+  return createHash('sha256').update(JSON.stringify({outputs,supply,alpaca,usProvisional})).digest('hex');
  }catch{return null;}finally{db?.close();}
 }
 

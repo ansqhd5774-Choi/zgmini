@@ -31,7 +31,7 @@ try{
  const publicationPolicy=collectionPublicationPolicy({requested:publishRequested,collectionExit:collection.status,collectionStatus:collectionReport?.status,quotaGuarded});
  const publishAllowed=publicationPolicy.publishAllowed;
  const publishSkipped=null;
- let supplyR10=null,alpacaIncremental=null,sectorFearGreedR3=null,sectorFearGreedR3Report=null;
+ let supplyR10=null,alpacaIncremental=null,sectorFearGreedR3=null,sectorFearGreedR3Report=null,usProvisional=null;
  const {publication,progressive}=await progressivePublication({
   enabled:lane==='core'&&publishAllowed,
   publish:async({early})=>{
@@ -40,6 +40,13 @@ try{
   },
   checkpoint:()=>auxiliaryInputCheckpoint(base),
   collectAuxiliary:async()=>{
+  if(lane==='core'){
+   // Prioritize the 15m interval before longer auxiliary/backfill tasks.
+   const provisional=spawnSync(process.execPath,[path.join(here,'us-breadth-provisional-cycle.mjs')],
+    {windowsHide:true,stdio:['ignore','pipe','pipe'],timeout:5*60000});
+   try{usProvisional=JSON.parse(provisional.stdout.toString());}
+   catch{usProvisional={status:'EXECUTION_NOT_VERIFIED',exit:provisional.status??null};}
+  }
   supplyR10=lane==='core'?await collectSupplyR10(base):{status:'SKIPPED_KOREA_LANE'};
  if(lane==='core'){
   try{const result=await collectAlpacaIncremental(base);alpacaIncremental={status:result.status,runRequests:result.runRequests??0};}
@@ -176,7 +183,7 @@ try{
   sectors:sectorFearGreedR3Report?.sectors??null,
   error:sectorFearGreedR3Report?.error??(sectorFearGreedR3?.error?.code??null),
  }:{nonBlocking:true,status:'SKIPPED_KOREA_LANE'};
- const report={at:new Date().toISOString(),lane,collectionExit:collection.status,collectionStatus:collectionReport?.status??null,supplyR10,alpacaIncremental,sectorFearGreed,researchBreadthR10V9Shadow,publicationExit:publication.status,publishRequested,publishSkipped,publicationPolicy,progressive,researchProspective,researchFundFlowProspective,researchBreadthProspective,researchEarningsR5OfficialRefresh,researchEarningsRiskProvisionalR23,researchEarningsR5Prospective,status:publication.status===0?(publicationPolicy.collectionDegraded?'COMPLETE_WITH_COLLECTION_GAPS':'COMPLETE'):'PUBLICATION_NOT_VERIFIED'};
+ const report={at:new Date().toISOString(),lane,collectionExit:collection.status,collectionStatus:collectionReport?.status??null,supplyR10,alpacaIncremental,usProvisional,sectorFearGreed,researchBreadthR10V9Shadow,publicationExit:publication.status,publishRequested,publishSkipped,publicationPolicy,progressive,researchProspective,researchFundFlowProspective,researchBreadthProspective,researchEarningsR5OfficialRefresh,researchEarningsRiskProvisionalR23,researchEarningsR5Prospective,status:publication.status===0?(publicationPolicy.collectionDegraded?'COMPLETE_WITH_COLLECTION_GAPS':'COMPLETE'):'PUBLICATION_NOT_VERIFIED'};
  save(path.join(base,'local-cycle-last-run.json'),report);console.log(JSON.stringify(report));
  if(publishRequested)try{updateDataAlert(base,{key:'publication',failed:publication.status!==0});}catch{console.warn('LOCAL_DATA_ALERT_RECORD_FAILED');}
  if(publication.status!==0)process.exitCode=1;
