@@ -63,7 +63,7 @@ export function inspectR10BreadthIncremental({approvedPit,officialPit,baseGroups
  if(!overlap)return stop('PIT_OVERLAP_EVIDENCE_MISSING');
  if(officialPit.last<=approvedPit.verifiedThrough)return stop('NO_NEW_OFFICIAL_PIT_SESSIONS',{overlapChecked:overlap});
 
- const prices=new Map(),baseSymbols=new Set();let originalRows=0,incrementalRows=0;
+ const prices=new Map(),baseSymbols=new Set(),incrementalKeys=new Set(),unmappedIncrementalKeys=new Set(),badAsOfKeys=new Set();let originalRows=0,incrementalRows=0;
  const addPrice=(row,incremental)=>{
   if(!validTicker(row?.ticker)||!validDate(row?.tradeDate)||!Number.isFinite(row?.currentClose)||row.currentClose<=0||
     (incremental&&(row.source!=='ALPACA'||row.feed!=='iex'||row.adjustmentStatus!=='split')))
@@ -71,7 +71,15 @@ export function inspectR10BreadthIncremental({approvedPit,officialPit,baseGroups
   const key=row.ticker+'|'+row.tradeDate;
   if(prices.has(key)&&prices.get(key)!==row.currentClose)return 'ALPACA_PRICE_CONFLICT';
   prices.set(key,row.currentClose);
-  if(!incremental)baseSymbols.add(row.ticker);
+  if(incremental){
+   incrementalKeys.add(key);
+   if(row.asof==='-'&&row.symbolMappingMode==='UNMAPPED_ASOF_DASH'){
+    if(!badAsOfKeys.has(key))unmappedIncrementalKeys.add(key);
+   }else{
+    badAsOfKeys.add(key);
+    unmappedIncrementalKeys.delete(key);
+   }
+  }else baseSymbols.add(row.ticker);
   return null;
  };
  for(const group of baseGroups){
@@ -92,8 +100,16 @@ export function inspectR10BreadthIncremental({approvedPit,officialPit,baseGroups
   if(!members)return stop('PIT_MONTH_END_SESSION_MISSING',{month,expectedDate:last});
   const historyDates=dates.filter(date=>date<=last).slice(-200);
   if(historyDates.length!==200)return stop('PIT_200_SESSION_WINDOW_MISSING',{month});
-  const unknown=members.filter(ticker=>!baseSymbols.has(ticker));
+  // A new member can advance to *research-only* coverage only when all
+  // 200 sessions were collected with explicit unmapped Alpaca asof='-'.
+  // An unlabeled 200-day response may contain relabeled former tickers.
+  const unknown=members.filter(ticker=>!baseSymbols.has(ticker)&&
+   !historyDates.every(date=>incrementalKeys.has(ticker+'|'+date)));
   if(unknown.length)return stop('PIT_NEW_SYMBOL_BACKFILL_REQUIRED',{month,missingSymbolCount:unknown.length,missingSymbols:unknown.slice(0,20)});
+  const unmappedMissing=members.filter(ticker=>!baseSymbols.has(ticker)&&
+   !historyDates.every(date=>unmappedIncrementalKeys.has(ticker+'|'+date)));
+  if(unmappedMissing.length)return stop('PIT_NEW_SYMBOL_ASOF_PROVENANCE_REQUIRED',{
+   month,missingSymbolCount:unmappedMissing.length,missingSymbols:unmappedMissing.slice(0,20)});
   let valid200=0;
   for(const ticker of members){
    if(priceWindowQuarantined(ticker,historyDates))continue;

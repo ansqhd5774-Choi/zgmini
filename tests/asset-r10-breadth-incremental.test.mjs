@@ -79,3 +79,41 @@ test('research-only PIT without the official verification flags is rejected',()=
  assert.equal(result.status,'OFFICIAL_PIT_NOT_VERIFIED');
  assert.equal(result.canPromote,false);
 });
+
+const newMemberUniverse=[...members.slice(0,-1),'NEW'];
+const newMemberPit={...officialPit,currentMemberHash:memberHash(newMemberUniverse),
+ universes:officialPit.universes.map(row=>row.tradeDate>'2026-09-30'?{
+  ...row,members:newMemberUniverse,
+ }:row)};
+const newMember200=sessions.slice(-200).map(tradeDate=>({ticker:'NEW',tradeDate,currentClose:100,
+ source:'ALPACA',feed:'iex',adjustmentStatus:'split',asof:'-',symbolMappingMode:'UNMAPPED_ASOF_DASH'}));
+const withNewMember=rows=>inspectR10BreadthIncremental({...subject,officialPit:newMemberPit,
+ incrementalGroups:[newRows,rows]});
+
+test('new member full 200-session explicit unmapped Alpaca backfill is research-only',()=>{
+ const result=withNewMember(newMember200);
+ assert.equal(result.status,'CANDIDATE_INPUTS_VALIDATED_AUDIT_PENDING');
+ assert.equal(result.candidateRows[0].coverage,1);
+ assert.equal(result.productionEligible,false);
+ assert.equal(result.canPromote,false);
+});
+
+test('new member one historical price missing remains blocked',()=>{
+ const result=withNewMember(newMember200.slice(1));
+ assert.equal(result.status,'PIT_NEW_SYMBOL_BACKFILL_REQUIRED');
+ assert.equal(result.canPromote,false);
+});
+
+test('new member 200 rows without unmapped asof provenance remain blocked',()=>{
+ const rows=newMember200.map(({asof,symbolMappingMode,...row})=>row);
+ const result=withNewMember(rows);
+ assert.equal(result.status,'PIT_NEW_SYMBOL_ASOF_PROVENANCE_REQUIRED');
+ assert.equal(result.canPromote,false);
+});
+
+test('equal-price mapped duplicate does not launder new member asof provenance',()=>{
+ const mapped={...newMember200[0],asof:'2026-11-01'};
+ const result=withNewMember([...newMember200,mapped]);
+ assert.equal(result.status,'PIT_NEW_SYMBOL_ASOF_PROVENANCE_REQUIRED');
+ assert.equal(result.canPromote,false);
+});
