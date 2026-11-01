@@ -5,6 +5,7 @@ import os from 'node:os';
 import path from 'node:path';
 import {collectUsBreadthProvisional,fetchIexWindow,US_PROVISIONAL_FILE} from '../scripts/pc-writer/us-breadth-provisional-cycle.mjs';
 import {calculateUsIexProvisional,currentUsIexProvisional,usProvisionalSlot,validUsIexProvisional,
+  usIexPublicPercentOnly,
   US_BREADTH_PROVISIONAL_KEY} from '../lib/market-breadth/us-provisional-r1.mjs';
 import {prepareUsProvisional,publishUsProvisional} from '../scripts/pc-writer/us-breadth-provisional-publication.mjs';
 
@@ -50,6 +51,18 @@ test('100/503 IEX observations are valid; 403 remain missing, never unchanged',(
   assert.equal(record.coverage,100/503);
   assert.equal(record.status,'PROVISIONAL');
   assert.equal(validUsIexProvisional(record),true);
+  const publicView=usIexPublicPercentOnly(record);
+  assert.equal(publicView.phase,'PROVISIONAL');
+  assert.ok(Math.abs(publicView.risingPct-60/503*100)<1e-9);
+  assert.ok(Math.abs(publicView.fallingPct-30/503*100)<1e-9);
+  assert.ok(Math.abs(publicView.unchangedPct-10/503*100)<1e-9);
+  assert.ok(Math.abs(publicView.unobservedPct-403/503*100)<1e-9);
+  assert.ok(Math.abs(publicView.risingPct+publicView.fallingPct+
+    publicView.unchangedPct+publicView.unobservedPct-100)<1e-9);
+  for(const excluded of ['expectedCount','counts','observedCount','missingCount',
+    'sessionPriceObservedCount','referenceObservedCount','coverage'])
+    assert.equal(Object.hasOwn(publicView,excluded),false,excluded);
+  assert.equal(usIexPublicPercentOnly({...record,observedCount:503}),null);
   assert.equal(currentUsIexProvisional(record,at+60_000),true);
   assert.equal(currentUsIexProvisional(record,at+3_600_000),false);
   assert.equal(validUsIexProvisional({...record,missingCount:0}),false);

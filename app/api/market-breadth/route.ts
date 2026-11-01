@@ -1,7 +1,7 @@
 import {env} from 'cloudflare:workers';
 import {latestCompletedSession} from '../../../lib/market-score/breadth-b1-r3-calendar.mjs';
 import {US_BREADTH_CURRENT_KEY,validUsBreadthRecord} from '../../../lib/market-breadth/us-public-r1.mjs';
-import {US_BREADTH_PROVISIONAL_KEY,currentUsIexProvisional} from '../../../lib/market-breadth/us-provisional-r1.mjs';
+import {US_BREADTH_PROVISIONAL_KEY,currentUsIexProvisional,usIexPublicPercentOnly} from '../../../lib/market-breadth/us-provisional-r1.mjs';
 import {readFullMarketPublicCurrent} from '../../../lib/market-breadth/us-marketparquet-confirmed-reader-r2.mjs';
 
 // R2 full-market read alias is independent. The default confirmed endpoint
@@ -29,7 +29,7 @@ async function provisionalGET(){
   if(!Number.isSafeInteger(stamp)||stamp<=0||stamp>Date.now()+60_000)
     return Response.json({reason:'PROVISIONAL_INVALID_PUBLICATION_TIME'},
       {status:503,headers:{'Cache-Control':'no-store'}});
-  return Response.json(record,{headers:{'Cache-Control':'no-store',
+  return Response.json(usIexPublicPercentOnly(record),{headers:{'Cache-Control':'no-store',
     'x-data-snapshot-at':new Date(stamp).toISOString()}});
 }
 
