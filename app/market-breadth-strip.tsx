@@ -3,7 +3,8 @@ import {useEffect, useId, useState} from "react";
 import styles from "./market-breadth-strip.module.css";
 import {useStoredIndex} from "../components/use-stored-index";
 import {validUsBreadthRecord} from "../lib/market-breadth/us-public-r1.mjs";
-import {MarketBreadthHistoryChart, type UsBreadthHistory} from "./market-breadth-history-chart";
+import {MarketBreadthHistoryChart, type MarketBreadthPeriod, type UsBreadthHistory} from "./market-breadth-history-chart";
+import {getMarketPeriodConfig} from "./market-card-shared";
 
 /** Verified issue-direction counts; only the US stored-output route is enabled. */
 export type MarketBreadthCounts = {
@@ -15,6 +16,7 @@ export type MarketBreadthCounts = {
 type MarketBreadthStripProps = {
   market: "usa" | "korea";
   counts?: MarketBreadthCounts | null;
+  period?: MarketBreadthPeriod;
 };
 
 type UsaBreadthRecord = {
@@ -42,13 +44,14 @@ function normalizedCounts(counts?: MarketBreadthCounts | null) {
   };
 }
 
-export function MarketBreadthStrip({ market, counts }: MarketBreadthStripProps) {
+export function MarketBreadthStrip({ market, counts, period = '1Y' }: MarketBreadthStripProps) {
   const panelId = useId();
   const [expanded, setExpanded] = useState(false);
   const [history, setHistory] = useState<UsBreadthHistory | null>(null);
   const [historyLoading, setHistoryLoading] = useState(false);
   const [historyError, setHistoryError] = useState(false);
   const name = market === "usa" ? "미국" : "한국";
+  const periodLabel = period === '1D' ? '1일' : getMarketPeriodConfig(period).label;
   const {payload} = useStoredIndex<UsaBreadthRecord>(
     "/api/market-breadth?market=usa", null, market === "usa" && counts === undefined
   );
@@ -121,13 +124,13 @@ export function MarketBreadthStrip({ market, counts }: MarketBreadthStripProps) 
     <section className={styles.root} data-expanded={expanded && canExpand} aria-label={`${name} 등락 지수${sourceInfo ? `, ${sourceInfo}` : data ? "" : ", 데이터 연결 예정"}`} title={sourceInfo ?? undefined} data-market={market}>
       {canExpand ? <button type="button" className={styles.summaryButton}
         aria-expanded={expanded} aria-controls={panelId}
-        aria-label={`미국 등락 지수 1년 확정치 이력 ${expanded ? '접기' : '펼치기'}`}
+        aria-label={`미국 등락 지수 ${periodLabel} 확정치 이력 ${expanded ? '접기' : '펼치기'}`}
         onClick={() => setExpanded(value => !value)}>{summary}</button>
         : <div className={styles.summaryStatic}>{summary}</div>}
-      {canExpand && <div id={panelId} className={styles.details} role="region" aria-label="미국 등락 지수 1년 확정치 차트" hidden={!expanded}>
+      {canExpand && <div id={panelId} className={styles.details} role="region" aria-label={`미국 등락 지수 ${periodLabel} 확정치 차트`} hidden={!expanded}>
         {historyLoading && <p className={styles.historyEmpty} role="status">확정치 이력을 불러오는 중입니다.</p>}
         {!historyLoading && historyError && <p className={styles.historyEmpty} role="alert">저장된 이력을 불러오지 못했습니다. 접었다 다시 펼쳐 재시도할 수 있습니다.</p>}
-        {!historyLoading && !historyError && history && <MarketBreadthHistoryChart history={history}/>}
+        {!historyLoading && !historyError && history && <MarketBreadthHistoryChart key={period} history={history} period={period}/>}
       </div>}
     </section>
   );
