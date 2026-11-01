@@ -23,6 +23,7 @@
 
 ## PC 적용 전/후 구분
 
+- **휴대용 실행 패키지:** `MARKET_CALENDAR_R45_PC_DETACH_20261101.zip`은 R45 해제 도구, R51 Core 실행기 분석기와 그 의존 모듈, `MARKET_CALENDAR_R45_PC_DETACH.cmd`, 사용 안내를 포함한다. **기존 PC Git 작업 트리 밖의 새 폴더**에 압축을 푼다. 아무 인수 없이 CMD를 실행하면 읽기 전용 사전 점검이며, `R45_DETACH_PREFLIGHT_READY_NO_CHANGES`를 확인한 뒤 **같은 폴더**에서만 `MARKET_CALENDAR_R45_PC_DETACH.cmd --apply`를 실행할 수 있다. 두 실행의 결과는 패키지 폴더에 각각 한 개의 TXT로 보존하며, 덮어쓰지 않는다. 이 파일들을 PC 프로젝트 내부에 복사하거나 Core 실행기로 등록하지 않는다.
 - 개발 검증: `node --test tests/market-calendar-r45-pc-detach.test.mjs`로 정확한 파일 변환, 드라이런 무변경, 변경된 HEAD 차단, Core 잠금 점유 시 무변경, 합성 적용·readback·재실행 무변경 확인.
 - 실제 PC 사용자 적용: 현재 PC가 **승인 HEAD 그대로**이고 실제 Core가 실행 중이 아닐 때, 이미 등록된 실행기·설정 경로를 읽기 전용으로 먼저 대조하고 기존 Node/CMD 환경에서 위 스크립트를 호출한다. 프리플라이트 `R45_DETACH_PREFLIGHT_READY_NO_CHANGES` 없이 `--apply`를 실행하지 않는다.
 - 실제 PC 적용 결과를 본 뒤만 `PC_R45_OBSERVER_DISABLED`라고 기록한다. 공급자 데이터를 강제 수집하여 확인할 필요는 없다. 기존 E: 저장본은 삭제하지 않고 보존한다.
