@@ -9,6 +9,8 @@ const validDate=s=>typeof s==="string"&&/^\d{4}-\d{2}-\d{2}$/.test(s)
   &&Number.isFinite(Date.parse(s+"T00:00:00Z"))
   &&new Date(s+"T00:00:00Z").toISOString().slice(0,10)===s;
 const finite=n=>typeof n==="number"&&Number.isFinite(n);
+const validRetrievedAt=s=>typeof s==="string"&&Number.isFinite(Date.parse(s))
+  &&new Date(s).toISOString()===s;
 const validPoint=(point,start,end)=>point&&validDate(point.date)
   &&point.date>=start&&point.date<=end&&finite(point.value);
 
@@ -32,13 +34,16 @@ export function validEmploymentR6PublicDisplay(body){
       ||!["READY","STALE","UNAVAILABLE"].includes(item.rawStatus)
       ||!["READY","PARTIAL_HISTORY","PARTIAL_MISSING"].includes(item.scoreStatus)
       ||!["READY","PARTIAL","UNAVAILABLE"].includes(item.chartStatus)
+      ||item.retrievedAt===undefined
+      ||(item.retrievedAt!==null&&(!validRetrievedAt(item.retrievedAt)
+        ||Date.parse(item.retrievedAt)>body.sourceStoredAt))
       ||!Array.isArray(item.history)||item.history.length>400
       ||!item.history.every(p=>validPoint(p,body.window.start,body.asOfDate)))return false;
     const vals=item.history.map(p=>p.date);
     if(vals.some((d,j)=>j>0&&d<=vals[j-1]))return false;
     if(item.scoreStatus==="READY"?!finite(item.score)||item.score<0||item.score>100:item.score!==null)return false;
     if(item.rawStatus!=="UNAVAILABLE"&&(!finite(item.value)||!validDate(item.observationDate)
-      ||item.observationDate>body.asOfDate))return false;
+      ||item.observationDate>body.asOfDate||item.retrievedAt===null))return false;
     if(item.rawStatus==="READY"&&item.observationDate<body.window.recentQuarterStart)return false;
     return true;
   });

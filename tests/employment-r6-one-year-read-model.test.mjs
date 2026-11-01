@@ -73,3 +73,18 @@ test("one-year window clamps leap-day to February 28 and keeps a real 92-day qua
     start:"2025-11-01",end:"2026-11-01",recentQuarterStart:"2026-08-01",
   });
 });
+
+test("source access date follows verified raw inputs, not observation or publication date",()=>{
+  const rows=[
+    {...row("PAYEMS_LEVEL","2026-08-31",159000),retrievedAt:"2026-10-01T09:00:00.000Z"},
+    {...row("PAYEMS_LEVEL","2026-09-30",159100),retrievedAt:"2026-10-10T10:00:00.000Z"},
+  ];
+  const result=buildEmploymentR6OneYearReadModel(rows,{asOfDate:"2026-11-01"});
+  const payroll=result.indicators.find(x=>x.id==="PAYEMS_MOM");
+  assert.equal(payroll.value,100);
+  assert.equal(payroll.retrievedAt,"2026-10-10T10:00:00.000Z");
+  assert.equal(result.indicators[0].retrievedAt,null);
+  rows[0].retrievedAt=null;
+  assert.equal(buildEmploymentR6OneYearReadModel(rows,{asOfDate:"2026-11-01"})
+    .indicators.find(x=>x.id==="PAYEMS_MOM").retrievedAt,null);
+});

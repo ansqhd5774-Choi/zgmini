@@ -18,6 +18,7 @@ type Indicator={
  chartStatus?:"READY"|"PARTIAL"|"UNAVAILABLE";recentQuarterPointCount?:number;
  value?:number|null;unit?:string;displayValue?:string|null;formattedValue?:string|null;
  observationDate?:string|null;asOfDate?:string|null;availableAt?:string|null;
+ retrievedAt?:string|null;
  previousValue?:number|null;previousObservationDate?:string|null;
  criterion?:string|null;criterionLabel?:string|null;
  source?:string|null;sourceUrl?:string|null;description?:string|null;content?:string|null;
@@ -127,6 +128,7 @@ function IndicatorHelp({item,title}:{item:Indicator;title:string}){
  return <ContentHelp label={title+" 도움말"}><p>{indicatorDescription(item,title)}</p>
   <p>원자료와 0~100점은 서로 다른 값입니다. 결측은 0점이 아닙니다.</p>
   <p>관측일: {dateLabel(item.observationDate??item.asOfDate)} · 출처: {technicalSource(item.source)}</p>
+  {item.retrievedAt&&<p>원천 최종 조회일: {dateLabel(item.retrievedAt)}</p>}
   {href&&<a href={href} target="_blank" rel="noopener noreferrer">공개 원문 열기 ↗</a>}
  </ContentHelp>;
 }
@@ -250,6 +252,7 @@ export default function EconomicDetailPanel({id}:{id:EconomicDomainId}){
      </article>;
     })}
    </div>
+   {id==="employment"&&<p className="economic-reason-note">출처: 미국 BLS·DOL 공식 통계. 지표별 원천 조회일은 ⓘ에서 확인할 수 있습니다. 가공 지표와 점수는 ZGMINI의 분석입니다. <a href="https://www.bls.gov/developers/termsOfService.htm" target="_blank" rel="noopener noreferrer">BLS API 이용약관</a>: “BLS.gov cannot vouch for the data or analyses derived from these data after the data have been retrieved from BLS.gov.”</p>}
    {!loading&&!displayObservations.length&&<p className="economic-data-notice">구성 지표가 아직 저장되지 않았습니다. 없는 항목을 가상의 지표로 채우지 않습니다.</p>}
   </section>
   <a className="cnn-return-cta economic-back-button" href="/">← 메인 대시보드로 돌아가기</a>
