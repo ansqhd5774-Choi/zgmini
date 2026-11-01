@@ -3327,7 +3327,7 @@ body .zg-r55-market .zg-r55-shell[data-expanded="false"] article.zg-r55-card>.zg
   /* Existing shared-shell minimums are retained; only dashboard density changes. */
   .zg-dashboard[data-view="dashboard"] .fg-card.fg-shared-shell{--fg-shared-header-h:48px;--fg-shared-content-h:142px;--fg-shared-footer-h:28px;--fg-shared-pad:8px;--fg-shared-gap:8px;--fg-shared-period-size:24px;--fg-shared-period-gap:4px;--fg-shared-period-rail:32px;--fg-shared-comparison-h:32px;--fg-shared-date-h:12px;--fg-shared-analysis-gap:8px;--fg-shared-left:32%}
   .zg-dashboard[data-view="dashboard"] .fg-card.fg-shared-shell .fg-header-slot .cnn-panel-heading{padding-block:4px;gap:8px}
-  .zg-dashboard[data-view="dashboard"] .fg-card.fg-shared-shell .fg-analysis-slot{padding-top:8px;grid-template-columns:minmax(0,1fr) 32px;column-gap:8px;grid-template-rows:24px minmax(0,1fr);row-gap:8px;align-items:start}
+  .zg-dashboard[data-view="dashboard"] .fg-card.fg-shared-shell .fg-analysis-slot{padding-top:8px;grid-template-columns:minmax(0,1fr) 32px;column-gap:8px;grid-template-rows:8px minmax(0,1fr);row-gap:8px;align-items:start}
   .zg-dashboard[data-view="dashboard"] .fg-card.fg-shared-shell .cnn-market-title{gap:8px}
   .zg-dashboard[data-view="dashboard"] .cnn-market-title p:last-child{margin-top:4px}
   .zg-dashboard[data-view="dashboard"] .fg-card.fg-shared-shell .cnn-score-orb-hero{row-gap:0}
