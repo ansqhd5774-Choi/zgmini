@@ -1,12 +1,30 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
 import {previousMarketSession} from '../lib/market-score/breadth-b1-r6-marketparquet-provider.mjs';
 import {prepareVerifiedPercentHistoryR32} from '../scripts/pc-writer/us-breadth-confirmed-percent-history-publisher-r32.mjs';
-import {r33CliOptions,runUsBreadthPercentHistoryR33}
+import {loadApprovedHistoryD1R33,r33CliOptions,runUsBreadthPercentHistoryR33}
  from '../scripts/pc-writer/us-breadth-confirmed-percent-history-runner-r33.mjs';
 
 const now=Date.parse('2026-11-01T12:30:00Z');
 const total=6400;
+
+test('R37 D1 correction routes R2 percent history to core public table role only',async t=>{
+ const pcHome=fs.mkdtempSync(path.join(os.tmpdir(),'zgmini-us-r37-core-'));
+ t.after(()=>fs.rmSync(pcHome,{recursive:true,force:true}));
+ const config={account:'a'.repeat(32),
+  core:'11111111-1111-1111-1111-111111111111',
+  history:'22222222-2222-2222-2222-222222222222'};
+ fs.writeFileSync(path.join(pcHome,'config.json'),JSON.stringify(config));
+ const result=await loadApprovedHistoryD1R33({pcHome});
+ assert.equal(result.database,config.core);
+ assert.notEqual(result.database,config.history);
+ assert.equal(typeof result.remote.query,'function');
+ assert.equal(result.remote.stats.queries,0);
+ assert.equal(result.remote.stats.rowsWritten,0);
+});
 
 function verifiedFixture(){
  const dates=['2026-10-30'];

@@ -30,13 +30,17 @@ function checkedInputs(options){
  return true;
 }
 
-/** Only opened after explicit approved publication gates, never in inspect. */
+/**
+ * Only opened after explicit approved publication gates, never in inspect.
+ * R36 operator D1 probe confirmed market_public_snapshots_v1 is on config.core,
+ * not config.history. This R2-only publisher must use the approved public DB.
+ */
 export async function loadApprovedHistoryD1R33({pcHome}){
  const config=JSON.parse(fs.readFileSync(path.join(pcHome,'config.json'),'utf8'));
  if(!config||typeof config.history!=='string'||typeof config.core!=='string')
   throw Error('R33_D1_HISTORY_CONFIG_UNAVAILABLE');
  const {client,credential}=await import('./d1.mjs');
- return {remote:client(config,()=>credential(pathRoot)),database:config.history};
+ return {remote:client(config,()=>credential(pathRoot)),database:config.core};
 }
 
 /**
