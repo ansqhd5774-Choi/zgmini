@@ -22,14 +22,19 @@ const source=()=>({version:1,asOf,provenance:'APPROVED_PC_STORED_DATA',
  }))});
 function dynamicSource(count=2580){
  const input=source();
+ const days=[];
+ for(let day=Date.parse(asOf+'T00:00:00Z');days.length<21;day-=86400000){
+  const weekday=new Date(day).getUTCDay();
+  if(weekday!==0&&weekday!==6)days.push(new Date(day).toISOString().slice(0,10));
+ }
+ input.asOf=days[0];
  input.rows=Array.from({length:count},(_,i)=>({
-  ...input.rows[i],issuerId:i<5?tickers[i]:'Z'+i,
+  ...input.rows[i],tradeDate:days[0],issuerId:i<5?tickers[i]:'Z'+i,
  }));
  const roster={version:1,method:'R57_REVIEWED_ISSUER_MEMBERSHIP_R1',
-  universeReviewed:true,reviewedAsOf:asOf,marketCapApiUsed:false,
+  universeReviewed:true,reviewedAsOf:days[0],marketCapApiUsed:false,
   permissionForDerivedScores:true,rightsReviewReference:input.rightsReviewReference,
-  marketSessionsReviewed:true,reviewedTradingSessions:[asOf,...Array.from({length:20},(_,i)=>
-   new Date(Date.parse(asOf+'T00:00:00Z')-(i+1)*86400000).toISOString().slice(0,10))],
+  marketSessionsReviewed:true,reviewedTradingSessions:days,
   expectedEligibleIssuers:count,fundamentalsVerified:true,
   members:input.rows.map(row=>({ticker:row.ticker,issuerId:row.issuerId,eligible:true,
    dividendYield:row.dividendYield,eps:row.eps,epsGrowthPct:row.epsGrowthPct})),
@@ -146,6 +151,21 @@ test('dynamic eligible denominator requires a separately reviewed exact roster a
  const alteredRoster={...roster,members:roster.members.slice(1)};
  assert.throws(()=>prepareR43ManualSnapshot(input,{approvedUniverse:alteredRoster}),
   /R43_MANUAL_APPROVED_UNIVERSE_ATTESTATION_STOP/);
+});
+
+test('reviewed 21-session roster rejects duplicates, reversed order and weekends',()=>{
+ const {input,roster}=dynamicSource(2580);
+ const tampered=[
+  [roster.reviewedTradingSessions[0],...roster.reviewedTradingSessions.slice(0,20)],
+  [...roster.reviewedTradingSessions].reverse(),
+  [roster.reviewedTradingSessions[0],...Array(20).fill('2026-11-01')],
+ ];
+ for(const reviewedTradingSessions of tampered){
+  const changed={...roster,reviewedTradingSessions};
+  const changedInput={...input,approvedUniverseSha256:sha(JSON.stringify(changed))};
+  assert.throws(()=>prepareR43ManualSnapshot(changedInput,{approvedUniverse:changed}),
+   /R43_MANUAL_APPROVED_UNIVERSE_CONTRACT_STOP/);
+ }
 });
 
 test('manual publisher reads dynamic roster from approved PC path before D1 calls',async()=>{
