@@ -15,6 +15,8 @@
 
 ### Windows CMD 실행 전 확인 (R26, 2026-11-01)
 
+**결과 파일을 공유할 때:** `tools/us-market-breadth-r1/US_BREADTH_R26_NODE_DIAG.cmd`를 PC에서 실행한다. 현재 CMD 작업 폴더가 프로젝트가 아니어도, Node가 고장 났어도 실행 가능한 **Node 비의존 읽기 전용 진단**이다. 결과는 `%TEMP%\US_BREADTH_R26_NODE_DIAG_...txt`에 저장되고 메모장으로 열린다. 그 `.txt`만 채팅에 첨부하면 된다. 배치 파일은 API 키·환경변수 전체·예약 작업 Action을 로그에 수집하지 않으며, Node 설치·PATH·예약 작업·D1·원본을 변경하지 않는다. 결과에는 시스템 경로·프로젝트 폴더명이 포함될 수 있으니 공유 전 확인한다.
+
 아래는 모두 **읽기 전용**이다. 먼저 실제 PC의 예약 작업 `ZGMINI-PC-Local-Core` Action, 승인된 `config.source`, 프로젝트 경로가 일치하는지 확인한다. 역사적 `E:` 경로를 현재 설치·승인 SHA의 증거로 대신하지 않는다.
 
 ```cmd
