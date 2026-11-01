@@ -6,9 +6,10 @@ import {chromium} from 'playwright';
 const base=process.env.CHAT_PREVIEW_URL??'http://127.0.0.1:5173';
 mkdirSync('artifacts/dashboard-deferred-ui',{recursive:true});
 const browser=await chromium.launch({headless:true,args:['--no-sandbox']});
+const sampleHistory=Array.from({length:90},(_,i)=>({date:new Date(Date.UTC(2026,7,1)+i*86400000).toISOString().slice(0,10),score:45+Math.sin(i/8)*12}));
 try{
  for(const width of [390,1440])for(const signedIn of [false,true]){
-  const page=await browser.newPage({viewport:{width,height:900}});
+  const page=await browser.newPage({viewport:{width,height:900},hasTouch:width===390});
   const modules=[],errors=[];
   page.on('request',request=>modules.push(new URL(request.url()).pathname));
   page.on('pageerror',error=>errors.push(error.message));
@@ -19,6 +20,7 @@ try{
    const payload=path==='/api/session'?{user:signedIn?{displayName:'UI fixture',email:'fixture@example.invalid'}:null}
     :path==='/api/favorites'?{favorites:[]}
     :path==='/api/market-data'?{status:'fallback',updatedAt:'',indicators:{},summary:[]}
+    :path==='/api/fear-greed'?{status:'verified',score:34.5,rating:'공포',observedAt:'2026-10-30T12:00:00Z',history:sampleHistory}
     :{status:'UNAVAILABLE'};
    return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(payload)});
   });
@@ -31,6 +33,23 @@ try{
   });
   assert.equal(header.overlap,false,'Market title and guide remain separate');
   assert.equal(header.overflow,false,'Dashboard has no horizontal overflow');
+  if(width===390&&!signedIn){
+   await page.locator('.usa-target-card path.recharts-area-curve').waitFor({state:'visible',timeout:15000});
+   const chart=page.locator('.usa-target-card .recharts-surface').first();
+   await chart.waitFor({state:'visible',timeout:15000});
+   const box=await chart.boundingBox();
+   assert.ok(box&&box.width>100,'USA mobile chart is rendered');
+   const x=box.x+box.width*0.5,y=box.y+box.height*0.5;
+   const cdp=await page.context().newCDPSession(page);
+   const tip=page.locator('.usa-target-card .cnn-history-tooltip');
+   await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x,y}]});
+   await cdp.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{x:x+12,y}]});
+   await tip.waitFor({state:'visible',timeout:5000});
+   await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
+   await tip.waitFor({state:'hidden',timeout:3000});
+   console.log('PASS mobile chart tooltip disappears on touch release');
+  }
+
   if(signedIn){
    const trigger=page.getByRole('button',{name:'사용자 설정',exact:true});
    await trigger.waitFor({state:'visible',timeout:15000});
