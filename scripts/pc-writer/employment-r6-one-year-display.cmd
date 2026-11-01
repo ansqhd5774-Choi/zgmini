@@ -24,10 +24,18 @@ exit /b 2
 
 :stage
 echo [R6] STAGE: no PC source DB or remote D1 writes.
+if exist "%~dp0EMPLOYMENT_R6_CANDIDATE.sqlite" (
+  "%NODE%" "%~dp0employment-r6-one-year-stage.mjs" --db "%EMP_R6_CORE%" --candidate-db "%~dp0EMPLOYMENT_R6_CANDIDATE.sqlite" --output-dir "%~dp0."
+  exit /b %errorlevel%
+)
 "%NODE%" "%~dp0employment-r6-one-year-stage.mjs" --db "%EMP_R6_CORE%" --output-dir "%~dp0."
 exit /b %errorlevel%
 
 :publish
 echo [R6] PUBLISH: only the approved PC public display output is sent to D1.
+if exist "%~dp0EMPLOYMENT_R6_CANDIDATE.sqlite" (
+  "%NODE%" "%~dp0employment-r6-one-year-stage.mjs" --db "%EMP_R6_CORE%" --candidate-db "%~dp0EMPLOYMENT_R6_CANDIDATE.sqlite" --output-dir "%~dp0." --publish
+  exit /b %errorlevel%
+)
 "%NODE%" "%~dp0employment-r6-one-year-stage.mjs" --db "%EMP_R6_CORE%" --output-dir "%~dp0." --publish
 exit /b %errorlevel%

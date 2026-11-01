@@ -7,7 +7,7 @@ import {execFileSync} from "node:child_process";
 import {DatabaseSync} from "node:sqlite";
 import {fileURLToPath,pathToFileURL} from "node:url";
 
-import {createEmploymentR6ObservationReader} from "../../lib/market-score/employment-r6-observation-reader.mjs";
+import {createEmploymentR6ObservationReader,selectAsOfRevisions} from "../../lib/market-score/employment-r6-observation-reader.mjs";
 import {buildEmploymentR6OneYearReadModel} from "../../lib/market-score/employment-r6-one-year-read-model.mjs";
 import {
   EMPLOYMENT_R6_PUBLIC_DISPLAY_KEY,
@@ -24,8 +24,8 @@ function optionsFrom(args){
   for(let i=0;i<args.length;i++){
     const token=args[i];
     if(token==="--publish"){result.publish=true;continue;}
-    if(["--db","--output-dir","--as-of"].includes(token)&&args[i+1]){
-      result[token==="--db"?"dbPath":token==="--output-dir"?"outputDir":"asOfDate"]=args[++i];
+    if(["--db","--output-dir","--as-of","--candidate-db"].includes(token)&&args[i+1]){
+      result[token==="--db"?"dbPath":token==="--output-dir"?"outputDir":token==="--candidate-db"?"candidateDbPath":"asOfDate"]=args[++i];
       continue;
     }
     throw Error("INVALID_ARGUMENT");
@@ -41,26 +41,42 @@ function optionsFrom(args){
     throw Error("INVALID_AS_OF_DATE");
   }
   if(result.asOfDate>nowIso().slice(0,10))throw Error("FUTURE_AS_OF_FORBIDDEN");
+  if(result.candidateDbPath){
+    const expected=path.join(result.outputDir,"EMPLOYMENT_R6_CANDIDATE.sqlite");
+    if(!path.isAbsolute(result.candidateDbPath)
+      ||path.normalize(result.candidateDbPath)!==path.normalize(expected)
+      ||!fs.existsSync(expected)||!fs.statSync(expected).isFile()
+      ||fs.realpathSync(expected)===fs.realpathSync(result.dbPath)){
+      throw Error("ISOLATED_CANDIDATE_DB_REQUIRED");
+    }
+  }
   return result;
 }
 
-export async function stageEmploymentR6OneYear({dbPath,asOfDate}){
+function readAsOf(db,knownAsOf){
+  return createEmploymentR6ObservationReader({
+    prepare:sql=>({bind:(...params)=>({all:async()=>({results:db.prepare(sql).all(...params)})})}),
+  }).loadAsOf(knownAsOf);
+}
+
+export async function stageEmploymentR6OneYear({dbPath,asOfDate,candidateDbPath=null}){
   if(!fs.existsSync(dbPath)||!fs.statSync(dbPath).isFile())throw Error("PC_SOURCE_DB_NOT_FOUND");
   const db=new DatabaseSync(dbPath,{readOnly:true});
+  const candidate=candidateDbPath?new DatabaseSync(candidateDbPath,{readOnly:true}):null;
   try{
     const asOfEnd=asOfDate+"T23:59:59.999Z";
     const current=nowIso();
     const knownAsOf=asOfEnd<current?asOfEnd:current;
-    const observations=await createEmploymentR6ObservationReader({
-      prepare:sql=>({bind:(...params)=>({all:async()=>({results:db.prepare(sql).all(...params)})})}),
-    }).loadAsOf(knownAsOf);
+    const coreRows=await readAsOf(db,knownAsOf);
+    const additional=candidate?await readAsOf(candidate,knownAsOf):[];
+    const observations=additional.length?selectAsOfRevisions([...coreRows,...additional],knownAsOf):coreRows;
     const retrieved=observations.map(x=>Date.parse(x.retrievedAt??"")).filter(Number.isFinite);
     if(!retrieved.length)throw Error("NO_VERIFIED_PIT_OBSERVATIONS");
     const sourceStoredAt=Math.max(...retrieved);
     const body=buildEmploymentR6OneYearReadModel(observations,{asOfDate,sourceStoredAt});
     if(!validEmploymentR6PublicDisplay(body))throw Error("PUBLIC_DISPLAY_VALIDATION_FAILED");
     return body;
-  }finally{db.close();}
+  }finally{db.close();candidate?.close();}
 }
 
 // The existing PC publisher's D1 schema/key class is reused. Only the public
@@ -101,7 +117,7 @@ function pcPublisher(dbPath){
   return {remote:client(config,credential(root)),dbId:config.core,source};
 }
 
-function saveReport(dir,body,publication,error){
+function saveReport(dir,body,publication,error,{candidateDbUsed=false}={}){
   const suffix=nowIso().replace(/[-:.]/g,"")+"_"+process.pid;
   const basename="EMPLOYMENT_R6_ONE_YEAR_"+suffix;
   const summary=body?.summary??null;
@@ -109,6 +125,7 @@ function saveReport(dir,body,publication,error){
     kind:"EMPLOYMENT_R6_ONE_YEAR_STAGE_REPORT_R1",generatedAt:nowIso(),
     stageStatus:error?"FAILED":"STAGED",publicationStatus:publication?.status??"NOT_REQUESTED",
     error:error?.message??null,asOfDate:body?.asOfDate??null,
+    sourceMode:candidateDbUsed?"CORE_PLUS_ISOLATED_CANDIDATE_READONLY":"CORE_ONLY_READONLY",
     summary,sourceStoredAt:body?.sourceStoredAt??null,
     dbWritesByStage:0,providerCallsByStage:0,
     remoteWritten:publication?.status==="VERIFIED",
@@ -118,6 +135,7 @@ function saveReport(dir,body,publication,error){
     "STATUS: "+report.stageStatus,
     "PUBLICATION: "+report.publicationStatus,
     "AS_OF: "+(report.asOfDate??"NO_EVIDENCE"),
+    "SOURCE_MODE: "+report.sourceMode,
     "RAW_FEATURES: "+(summary?.sourceFeatures??0)+" / 29",
     "RECENT_QUARTER: "+(summary?.recentlyObservedFeatures??0)+" / 29",
     "ONE_YEAR_CHART_READY: "+(summary?.chartReadyFeatures??0)+" / 29",
@@ -147,7 +165,7 @@ if(process.argv[1]&&import.meta.url===pathToFileURL(process.argv[1]).href){
   }catch(error){problem=error;process.exitCode=2;}
   if(args?.outputDir){
     try{
-      const paths=saveReport(args.outputDir,body,publication,problem);
+      const paths=saveReport(args.outputDir,body,publication,problem,{candidateDbUsed:Boolean(args.candidateDbPath)});
       process.stdout.write("RESULT_TXT: "+paths.txtPath+"\nRESULT_JSON: "+paths.jsonPath+"\n");
     }catch(error){process.stderr.write("REPORT_SAVE_FAILED: "+error.message+"\n");process.exitCode=2;}
   }
