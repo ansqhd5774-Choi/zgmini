@@ -56,7 +56,7 @@ test('mobile USA and Korea sentiment tooltips paint above the translated SVG wit
 test('mobile US and Korea fear greed charts restore the original 120px chart and score row',()=>{
  const block=css.split('@media(max-width:959px){').find(section=>section.includes('grid-template-rows:auto 120px auto') && section.includes('--fg-shared-left:124px'));
  assert.ok(block,'the compact mobile 120px layout exists');
- assert.match(block,/\.fg-card\.fg-shared-shell\{--fg-shared-left:124px;grid-template-rows:auto 120px auto\}/);
+ assert.match(block,/\.fg-card\.fg-shared-shell\{--fg-shared-content-h:120px;--fg-shared-left:124px;grid-template-rows:auto 120px auto\}/);
  assert.match(block,/\.fg-card\.fg-shared-shell \.fg-score-slot\{height:120px\}/);
  assert.match(block,/\.fg-card\.fg-shared-shell \.fg-chart-slot\{height:120px\}/);
  assert.doesNotMatch(block,/\.fg-card\.fg-shared-shell \.fg-chart-slot\{height:112px\}/);
