@@ -32,6 +32,10 @@ test('source inventory reports actual ~6500 without converting SP500 counts to 6
   assert.equal(report.core.universeCount['2026-10-30'],503);
   assert.equal(report.raw['2026-10-30'].activeValidSymbols,6500);
   assert.equal(report.pairedActiveSymbols,6500);
+  assert.equal(report.confirmedCandidate.status,'CALCULATED_UNPUBLISHED');
+  assert.equal(report.confirmedCandidate.expectedCount,6500);
+  assert.equal(report.confirmedCandidate.eligibleCount,6500);
+  assert.equal(report.confirmedCandidate.publicationAllowed,false);
   assert.deepEqual(fs.readdirSync(archive).sort(),before);
   assert.equal(report.providerCalls,0);
   assert.equal(report.localWrites,0);
@@ -46,6 +50,7 @@ test('absent full-market source gives honest missing status without creating dir
   const result=await auditConfirmedSource({dataRoot,pcHome,now});
   assert.equal(result.status,'FULL_MARKET_SOURCE_NOT_YET_VERIFIED');
   assert.equal(result.pairedActiveSymbols,null);
+  assert.equal(result.confirmedCandidate.status,'WAITING_FOR_FULL_MARKET_SOURCE');
   assert.equal(result.core.status,'CORE_SQLITE_NOT_FOUND');
   assert.deepEqual(fs.readdirSync(dataRoot),before);
 });

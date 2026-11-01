@@ -6,6 +6,7 @@ import {fileURLToPath} from 'node:url';
 import {DatabaseSync} from 'node:sqlite';
 import {latestCompletedSession} from '../../lib/market-score/breadth-b1-r3-calendar.mjs';
 import {previousMarketSession} from '../../lib/market-score/breadth-b1-r6-marketparquet-provider.mjs';
+import {calculateFullMarketConfirmedCandidate} from '../../lib/market-breadth/us-marketparquet-confirmed-r2.mjs';
 
 const dateOf=value=>{
   if(value instanceof Date)return Number.isFinite(value.valueOf())?value.toISOString().slice(0,10):null;
@@ -110,7 +111,7 @@ export async function auditConfirmedSource({dataRoot,pcHome,now=new Date(),readP
     providerCalls:0,remoteWrites:0,localWrites:0,schedulerChanges:0,
     dates,core:inspectCoreDb(path.join(pcHome,'storage','core.sqlite'),dates),raw:{}};
   const found=existingStockDailyFiles(dataRoot,pcHome,dates);
-  const symbols=new Map();
+  const symbols=new Map(),loadedRows=new Map();
   for(const date of dates){
     const file=found.get(date);
     if(!file){report.raw[date]={status:'STORED_STOCK_DAILY_NOT_FOUND'};continue;}
@@ -121,13 +122,18 @@ export async function auditConfirmedSource({dataRoot,pcHome,now=new Date(),readP
         file,stockRows:result.stockRows,activeValidSymbols:result.activeValidSymbols,
         delisted:result.delisted,duplicate:result.duplicate,invalid:result.invalid,wrongDate:result.wrongDate};
       symbols.set(date,result.symbols);
+      loadedRows.set(date,rows);
     }catch(error){report.raw[date]={status:'STORED_PARQUET_READ_FAILED',file,
       reason:String(error?.message??error).slice(0,90)};}
   }
   if(symbols.size===2){
     const previousSymbols=symbols.get(previous),currentSymbols=symbols.get(current);
     report.pairedActiveSymbols=[...currentSymbols].filter(s=>previousSymbols.has(s)).length;
+    report.confirmedCandidate=calculateFullMarketConfirmedCandidate({
+      observationDate:current,previousDate:previous,
+      currentRows:loadedRows.get(current),previousRows:loadedRows.get(previous)});
   }else report.pairedActiveSymbols=null;
+  if(!report.confirmedCandidate)report.confirmedCandidate={status:'WAITING_FOR_FULL_MARKET_SOURCE',publicationAllowed:false};
   report.status=dates.every(d=>report.raw[d]?.status==='INSPECTED')?'STORED_PAIR_INSPECTED':'FULL_MARKET_SOURCE_NOT_YET_VERIFIED';
   return report;
 }
