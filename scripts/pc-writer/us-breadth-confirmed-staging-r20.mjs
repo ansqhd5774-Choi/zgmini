@@ -12,7 +12,7 @@ const digest=bytes=>createHash('sha256').update(bytes).digest('hex');
 const SOURCE='MarketParquet';
 const isDay=s=>typeof s==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(s);
 
-async function decodeStoredParquet(bytes){
+export async function decodeStoredParquet(bytes){
  const {parquetReadObjects}=await import('hyparquet');
  const arrayBuffer=bytes.buffer.slice(bytes.byteOffset,bytes.byteOffset+bytes.byteLength);
  try{return await parquetReadObjects({file:arrayBuffer,columns:['date','symbol','asset_type','close','volume']});}
