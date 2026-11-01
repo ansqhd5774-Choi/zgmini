@@ -13,11 +13,31 @@
 
 새 보조 검사: `scripts/pc-writer/us-breadth-confirmed-provider-manifest-r24.mjs`.
 
+### Windows CMD 실행 전 확인 (R26, 2026-11-01)
+
+아래는 모두 **읽기 전용**이다. 먼저 실제 PC의 예약 작업 `ZGMINI-PC-Local-Core` Action, 승인된 `config.source`, 프로젝트 경로가 일치하는지 확인한다. 역사적 `E:` 경로를 현재 설치·승인 SHA의 증거로 대신하지 않는다.
+
 ```cmd
-node scripts\pc-writer\us-breadth-confirmed-provider-manifest-r24.mjs --inspect
-node scripts\pc-writer\us-breadth-confirmed-provider-manifest-r24.mjs --verify-provider
+schtasks /Query /TN "ZGMINI-PC-Local-Core" /V /FO LIST
+where node.exe
+dir "E:\ZGmini\runtime\node.exe"
+"E:\ZGmini\runtime\node.exe" --version
+dir /b /ad "E:\ZGmini\projects"
 ```
 
+예약 작업 조회 결과는 해당 작업의 **실제 Action 경로를 확인하는 참고**다. `config.source`·해당 경로의 소스 커밋까지 대조하기 전에는 새 소스를 설치하거나 예약 작업을 다시 등록하지 않는다. 공유할 때는 명령에 비밀값이 섞이지 않았는지 확인한다.
+
+`where node.exe`의 첫 결과가 `C:\nvm4w\nodejs\node.exe`이고 Windows가 `지원되지 않는 16비트 응용 프로그램`을 표시하더라도 **R24 코드나 MarketParquet 검증 실패는 아니다**. 이 단계에서는 Node 실행조차 시작되지 않은 것이다. 실행 파일이 손상됐는지·링크 대상이 잘못됐는지는 별도 확인이 필요하다. 운영 지침의 E: 전용 Node가 실제로 존재하고 `v24` 이상으로 실행되는 경우에만 다음 단계로 이동한다. E: Node 실행도 실패하면 여기서 중단한다. Node/nvm 재설치, PATH 변경, Core 예약 작업 변경은 이 진단 범위에 없다.
+
+**현재 승인된 프로젝트 루트로 CMD에서 이동한 후**, 다음 파일 존재부터 확인한다. 예시 경로를 추정해 `cd`하지 않는다. 파일이 없으면 승인 source의 파일 반영 상태를 조사하며 운영 작업을 임의 교체하지 않는다.
+
+```cmd
+dir "scripts\pc-writer\us-breadth-confirmed-provider-manifest-r24.mjs"
+"E:\ZGmini\runtime\node.exe" "scripts\pc-writer\us-breadth-confirmed-provider-manifest-r24.mjs" --inspect
+```
+
+- CMD 프롬프트가 `C:\Users\...>`라면 아직 프로젝트 루트가 아니다. 그 위치에서 `scripts\...` 상대경로를 실행하지 않는다.
+- `--inspect`의 JSON 상태를 먼저 확인한다. **251일 로컬 원본과 기존 audit 기록이 완전한 경우에만** 별도 검토 후 `"E:\ZGmini\runtime\node.exe" "scripts\pc-writer\us-breadth-confirmed-provider-manifest-r24.mjs" --verify-provider`를 고려한다. 이를 통해 실제 공급자 원본 251회 검증 네트워크 요청이 발생할 수 있다.
 - `--inspect`: 현 PC 운영 저장소의 R22 인벤토리를 읽기 전용 요약. 네트워크 요청·파일/DB/스케줄 변경 0.
 - `--verify-provider`: 먼저 R22 승인 경로 아래 **251개의 중복 없는 Parquet + 기존 `.audit.json` SHA 일치**가 실제로 확인되어야 진행한다. 없다면 즉시 `LOCAL_YEAR_INVENTORY_INCOMPLETE`이고 공급자 호출 0.
 - 기존 PC `providers.env`의 `MARKETPARQUET_API_KEY` 또는 실행 환경에 이미 설정된 같은 변수를 사용한다. 없으면 `PROVIDER_API_KEY_NOT_CONFIGURED`로 중단한다. 새 키 생성·로그 출력·자격증명 파일 수정은 하지 않는다.

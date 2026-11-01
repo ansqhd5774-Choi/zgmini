@@ -10,9 +10,14 @@
 
 ## 신규 읽기 전용 진입점
 
+Windows CMD에서는 먼저 [R24 문서의 R26 Node·현재 프로젝트 루트 확인](US_BREADTH_CONFIRMED_PROVIDER_PROVENANCE_R24.md#windows-cmd-실행-전-확인-r26-2026-11-01)을 완료한다. bare `node`가 잘못된 `nvm4w` 실행기를 가리키거나 프롬프트가 `C:\Users\...>`라면 실행하지 않는다. `E:\ZGmini\runtime\node.exe`가 존재하며 Node 24 이상이고 **실제 승인 source에 이 R25 파일이 있는 경우에만**, 해당 프로젝트 루트에서 다음 명령을 실행한다.
+
 ```cmd
-node scripts\pc-writer\us-breadth-confirmed-year-preview-r25.mjs --preview-only
+dir "scripts\pc-writer\us-breadth-confirmed-year-preview-r25.mjs"
+"E:\ZGmini\runtime\node.exe" "scripts\pc-writer\us-breadth-confirmed-year-preview-r25.mjs" --preview-only
 ```
+
+E: 경로는 현 운영 PC의 문서화된 전용 Node 위치이며, 현재 프로젝트 및 PC 운영 승인 SHA를 확인했다는 뜻이 아니다. Node 자체가 실행되지 않으면 R25/MarketParquet/251파일 장애로 분류하지 않는다. R25는 251개 공급자 원본을 새로 조회할 수 있으므로 R24 `--inspect`의 실제 PC 결과를 먼저 검토한다. 기존 Node/PATH/작업/원본/DB를 바꾸지 않는다.
 
 1. [R24 공급자 교차검증](US_BREADTH_CONFIRMED_PROVIDER_PROVENANCE_R24.md)의 251개 로컬 파일/감사 기록 검증을 먼저 실행한다. 인증된 공급자 manifest와 **서명 URL에서 다시 받은 전체 원본의 바이트·크기·SHA**가 로컬 파일에 일치해야 한다. 공급자 manifest에 SHA가 있다는 뜻이 아니다.
 2. `PROVIDER_BYTES_MATCHED_ALL_DATES`와 정확히 251개 후보가 확인된 경우에만 **동일 프로세스 메모리**에서 R21 계산기를 명시적으로 호출한다. 보안상 원본·토큰·서명 URL·종목별 가격은 결과에 넣지 않는다.
