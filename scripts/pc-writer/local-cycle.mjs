@@ -22,6 +22,16 @@ if(fs.existsSync(file)){
 fs.writeFileSync(file,JSON.stringify({pid:process.pid,at:Date.now()}),{flag:'wx'});
 try{
  const lane=process.argv.includes('--korea')?'korea':'core';
+ let usProvisional=null;
+ if(lane==='core'){
+  // The existing Core task runs every five minutes; collect the completed
+  // 15-minute IEX slot before potentially long general collection/publication.
+  // The R17 collector owns its slot deduplication and never touches R1 history.
+  const provisional=spawnSync(process.execPath,[path.join(here,'us-breadth-provisional-cycle.mjs')],
+   {windowsHide:true,stdio:['ignore','pipe','pipe'],timeout:5*60000});
+  try{usProvisional=JSON.parse(provisional.stdout.toString());}
+  catch{usProvisional={status:'EXECUTION_NOT_VERIFIED',exit:provisional.status??null};}
+ }
  const collection=spawnSync(process.execPath,[path.join(here,'collect-local.mjs'),...(lane==='korea'?['--korea']:[])],{windowsHide:true,stdio:['ignore','pipe','pipe'],timeout:30*60000});
  try{updateDataAlert(base,{key:'collection',failed:collection.status!==0});}catch{console.warn('LOCAL_DATA_ALERT_RECORD_FAILED');}
  // A provider failure retains stored good data; publication still reads local storage.
@@ -31,7 +41,7 @@ try{
  const publicationPolicy=collectionPublicationPolicy({requested:publishRequested,collectionExit:collection.status,collectionStatus:collectionReport?.status,quotaGuarded});
  const publishAllowed=publicationPolicy.publishAllowed;
  const publishSkipped=null;
- let supplyR10=null,alpacaIncremental=null,sectorFearGreedR3=null,sectorFearGreedR3Report=null,usProvisional=null;
+ let supplyR10=null,alpacaIncremental=null,sectorFearGreedR3=null,sectorFearGreedR3Report=null;
  const {publication,progressive}=await progressivePublication({
   enabled:lane==='core'&&publishAllowed,
   publish:async({early})=>{
@@ -40,13 +50,6 @@ try{
   },
   checkpoint:()=>auxiliaryInputCheckpoint(base),
   collectAuxiliary:async()=>{
-  if(lane==='core'){
-   // Prioritize the 15m interval before longer auxiliary/backfill tasks.
-   const provisional=spawnSync(process.execPath,[path.join(here,'us-breadth-provisional-cycle.mjs')],
-    {windowsHide:true,stdio:['ignore','pipe','pipe'],timeout:5*60000});
-   try{usProvisional=JSON.parse(provisional.stdout.toString());}
-   catch{usProvisional={status:'EXECUTION_NOT_VERIFIED',exit:provisional.status??null};}
-  }
   supplyR10=lane==='core'?await collectSupplyR10(base):{status:'SKIPPED_KOREA_LANE'};
  if(lane==='core'){
   try{const result=await collectAlpacaIncremental(base);alpacaIncremental={status:result.status,runRequests:result.runRequests??0};}
