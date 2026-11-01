@@ -4,7 +4,7 @@ import {US_FULL_MARKET_STAGING_KEY} from '../lib/market-breadth/us-marketparquet
 import {US_BREADTH_CURRENT_KEY,US_BREADTH_DAILY_KEY_PREFIX} from '../lib/market-breadth/us-public-r1.mjs';
 import {US_BREADTH_PROVISIONAL_KEY} from '../lib/market-breadth/us-provisional-r1.mjs';
 import {US_FULL_MARKET_PUBLIC_KEY,US_FULL_MARKET_PUBLIC_DAILY_PREFIX,
-  validFullMarketPublicRecord,readFullMarketPublicCurrent}
+  validFullMarketPublicRecord,fullMarketPublicPercentOnly,readFullMarketPublicCurrent}
   from '../lib/market-breadth/us-marketparquet-confirmed-reader-r2.mjs';
 
 const date='2026-10-30',prior='2026-10-29',now=Date.parse('2026-10-30T22:00:00Z');
@@ -35,7 +35,7 @@ test('public full-market reader has keys isolated from 503 R1, IEX and staging',
   assert.equal(US_FULL_MARKET_PUBLIC_DAILY_PREFIX.startsWith(US_BREADTH_DAILY_KEY_PREFIX),false);
 });
 
-test('staging candidate never passes as final; approved final can expose 6506 counts',async()=>{
+test('staging candidate never passes as final; approved final exposes percentages only',async()=>{
   assert.equal(validFullMarketPublicRecord(candidate),false);
   assert.equal(validFullMarketPublicRecord(final),true);
   const queried=[];
@@ -44,9 +44,24 @@ test('staging candidate never passes as final; approved final can expose 6506 co
       ?{body:JSON.stringify(final),stored_at:now-15_000}:null;},{now});
   assert.equal(selected.ok,true);
   assert.equal(selected.httpStatus,200);
-  assert.equal(selected.body.expectedCount,6506);
-  assert.equal(selected.body.imputedUnchangedCount,189);
+  assert.equal(selected.body.risingPct,1719/6506*100);
+  assert.equal(selected.body.fallingPct,4410/6506*100);
+  assert.equal(selected.body.unchangedPct,377/6506*100);
+  assert.deepEqual(Object.keys(selected.body).sort(),[
+    'market','phase','status','publicationStage','source','universe',
+    'methodologyVersion','observationDate','previousDate',
+    'risingPct','fallingPct','unchangedPct'].sort());
+  assert.doesNotMatch(JSON.stringify(selected.body),/expectedCount|counts|imputed|observed|eligible|missing|sourceEvidence/);
   assert.deepEqual(queried,[US_FULL_MARKET_PUBLIC_KEY,US_FULL_MARKET_PUBLIC_DAILY_PREFIX+date]);
+});
+
+test('percent-only projection refuses unverified staging and preserves internal audit',()=>{
+ assert.equal(fullMarketPublicPercentOnly(candidate),null);
+ assert.equal(final.expectedCount,6506);
+ assert.equal(final.imputedUnchangedCount,189);
+ const shown=fullMarketPublicPercentOnly(final);
+ assert.ok(Math.abs(shown.risingPct+shown.fallingPct+shown.unchangedPct-100)<1e-9);
+ assert.equal('counts' in shown,false);
 });
 
 test('partial current-only publication cannot masquerade as verified full-market final',async()=>{

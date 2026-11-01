@@ -88,7 +88,11 @@ export function publicYearPreviewSummary(result){
   providerAuthenticityVerified:true,providerCalls:result.providerCalls,
   source:chart.source,methodologyVersion:chart.methodologyVersion,
   sessionCount:chart.sessionCount,firstDate:chart.firstDate,lastDate:chart.lastDate,
-  points:chart.points};
+  // Percentage-only user-facing chart. Raw counts remain in the in-memory
+  // verified calculation for internal integrity checks; none are emitted.
+  points:chart.points.map(({date,risingPct,fallingPct,unchangedPct})=>({
+    date,risingPct,fallingPct,unchangedPct,
+  }))};
 }
 
 if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.url)){

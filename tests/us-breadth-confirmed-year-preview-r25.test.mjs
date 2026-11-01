@@ -67,6 +67,9 @@ test('verified provider files yield 3 unpublished R2 chart points with missing-p
  const visible=JSON.stringify(publicYearPreviewSummary(report));
  assert.doesNotMatch(visible,/stock_daily_\d{4}-\d{2}-\d{2}\.parquet|SECRET|X-Amz-Signature/i);
  assert.equal(publicYearPreviewSummary(report).points.length,3);
+ assert.deepEqual(Object.keys(publicYearPreviewSummary(report).points[0]).sort(),
+  ['date','risingPct','fallingPct','unchangedPct'].sort());
+ assert.doesNotMatch(visible,/expectedCount|imputedUnchangedCount|observedComparableCount|"counts"/);
  assert.notEqual(US_BREADTH_CURRENT_KEY,'public:market-breadth-confirmed-r2:usa:current');
  assert.equal(US_BREADTH_DAILY_KEY_PREFIX.startsWith('public:market-breadth-confirmed-r2:'),false);
 });
