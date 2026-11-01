@@ -42,8 +42,12 @@ try{
    const x=box.x+box.width*0.5,y=box.y+box.height*0.5;
    const cdp=await page.context().newCDPSession(page);
    const tip=page.locator('.usa-target-card .cnn-history-tooltip');
-   await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x,y}]});
-   await cdp.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{x:x+12,y}]});
+   await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x,y,id:1}]});
+   await page.waitForTimeout(120);
+   await cdp.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{x:x+12,y,id:1}]});
+   await page.waitForTimeout(120);
+   await cdp.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{x:x+24,y,id:1}]});
+   await page.waitForTimeout(120);
    await tip.waitFor({state:'visible',timeout:5000});
    await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
    await tip.waitFor({state:'hidden',timeout:3000});
