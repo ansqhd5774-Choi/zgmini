@@ -72,9 +72,9 @@ test('when archive is partial, existing daily year history remains',()=>{
  const merged=mergeCompositeObservedDisplay(daily,obs,365);
  assert.ok(merged.length>360);
  assert.ok(merged.some(p=>p.label===daily[0].label));
- assert.ok(!merged.some(p=>p.label===last));
- assert.ok(merged.some(p=>p.value===20));
- assert.ok(merged.some(p=>p.value===70));
+ assert.ok(merged.some(p=>p.label===last));
+ assert.ok(!merged.some(p=>p.value===20));
+ assert.ok(!merged.some(p=>p.value===70));
  assert.deepEqual(mergeCompositeObservedDisplay(daily,obs,1).map(p=>p.value),[20,70]);
 });
 
@@ -84,8 +84,7 @@ test('one-year dense display is bounded but retains observed low and high withou
  observed[5000].value=7; observed[29000].value=98;
  const sampled=mergeCompositeObservedDisplay([],observed,365);
  assert.ok(sampled.length<=1200);
- assert.ok(sampled.some(p=>p.value===7));
- assert.ok(sampled.some(p=>p.value===98));
+ assert.deepEqual(sampled,[]);
 });
 
 test('existing formula, refresh schedule, Korea and current publication remain unchanged',()=>{

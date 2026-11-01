@@ -511,6 +511,12 @@ export default function CnnPanel({ showEducation = false, showBreadth = false }:
         : (allIntraday.at(-1)?.date.slice(0,10)??intraday.at(-1)?.date.slice(0,10));
       return lastDay ? intraday.filter(point=>point.date.slice(0,10)===lastDay) : [];
     }
+    // Long ranges use the existing CNN daily closes only.
+    if (selectedPeriod === "6M" || selectedPeriod === "1Y") {
+      const selected = getMarketPeriodConfig(selectedPeriod);
+      const end = allHistory.at(-1)?.time;
+      return end === undefined ? [] : allHistory.filter(point => point.time >= end - selected.days * 86400000 && point.time <= end);
+    }
     const selected = getMarketPeriodConfig(selectedPeriod);
     // A verified PC check can be later than the unchanged CNN closing observation.
     const checkedEnd=(archived?.checkedPoints?.length??0)>=2?archiveHistory.at(-1)?.time:undefined;
