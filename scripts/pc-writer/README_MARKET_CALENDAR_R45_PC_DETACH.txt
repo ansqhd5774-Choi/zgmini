@@ -6,6 +6,15 @@ PURPOSE
   five-minute PC Core collector. Keep B1, provider, Core Task, schedules,
   data files, R43 research, and annual manual FHS-R3 untouched.
 
+FIX1 PREFLIGHT DIAGNOSTIC (2026-11-01)
+  The previous read-only preflight stopped safely with
+  R45_DETACH_CORE_LAUNCHER_CHANGED_STOP. No files were changed.
+  FIX1 keeps the same hard stop and reports the underlying R51 origin status,
+  outer-wrapper checksum match, bounded VBS count and whether the existing
+  config.source matches the previously approved R56 source. No Task XML,
+  commands, paths, config body or secrets are included.
+  Unpack this FIX1 package into a NEW folder; do not reuse old result files.
+
 PREPARATION
   1. Extract the entire ZIP to a NEW folder OUTSIDE the PC project worktree.
      Do not copy these scripts into E:\ZGmini\projects\ or run git pull.

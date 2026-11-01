@@ -101,7 +101,23 @@ export async function runR45PcDetach({
  try{
   if(process.platform!=='win32'&&!allowNonWindows)stop('R45_DETACH_WINDOWS_ONLY_STOP');
   if(Number(process.versions.node.split('.')[0])<24)stop('R45_DETACH_NODE_24_REQUIRED_STOP');
+  // This hint is read-only even if launcher resolution fails. Publish no
+  // config body, paths, provider settings or credentials in diagnostics.
+  out.configSourceMatchesApproved=null;
+  try{
+   const hintPath=path.join(base,'config.json'),stat=fs.statSync(hintPath);
+   if(stat.isFile()&&stat.size>0&&stat.size<=65536){
+    const hint=JSON.parse(fs.readFileSync(hintPath,'utf8'));
+    out.configSourceMatchesApproved=asSource(hint?.source)===APPROVED_SOURCE;
+   }
+  }catch{/* No config evidence before trusted Task-origin resolution. */}
   const origin=await resolveCore(taskXml());
+  // R51 deliberately rejects wrapper drift. Expose only bounded, non-secret
+  // contract status, never the scheduled command, filesystem paths or Task XML.
+  out.originStatus=typeof origin?.status==='string'&&/^R5[01]_[A-Z0-9_]{3,100}$/.test(origin.status)?origin.status:'R45_ORIGIN_STATUS_UNAVAILABLE';
+  out.originWorktreeId=typeof origin?.rootWorktreeId==='string'&&/^[a-f0-9]{12}$/.test(origin.rootWorktreeId)?origin.rootWorktreeId:null;
+  out.originOuterHashMatched=origin?.outerHashMatched===true;
+  out.originCoreVbsCount=Number.isInteger(origin?.coreVbsCount)&&origin.coreVbsCount>=0&&origin.coreVbsCount<=3?origin.coreVbsCount:null;
   if(origin?.status!=='R51_SCHEDULED_CORE_ORIGIN_RESOLVED'||!origin.root||
    origin.rootWorktreeId!==WORKTREE_ID)stop('R45_DETACH_CORE_LAUNCHER_CHANGED_STOP');
   root=origin.root;out.worktreeId=origin.rootWorktreeId;

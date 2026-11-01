@@ -32,6 +32,13 @@
 
 ## 안전 중단 기준
 
+### 2026-11-01 FIX1 — 실제 사전 점검 안전 중단
+
+- 사용자 PC가 제공한 `2026-11-01T13:02:10.635Z` 사전 점검에서 `R45_DETACH_CORE_LAUNCHER_CHANGED_STOP`이 확인되었다. `changedFiles=[]`, `backupCreated=false`, 추가 호출·수집·DB·작업·공개 변경 0이었다.
+- 이 결과만으로 **실제 Core 실행기가 변경됐다고 확정할 수 없다**. 기존 R51 진단기의 고정된 바깥 VBS 해시·명령 형태 검사와 현재 Task 실행기를 구별할 근거가 아직 없다.
+- FIX1은 승인을 완화하지 않고 기존 STOP을 유지하면서 `originStatus`, `originOuterHashMatched`, `originCoreVbsCount`, `originWorktreeId`, `configSourceMatchesApproved`만 비밀값 없이 기록한다. 이 상태가 확인되기 전까지 `--apply` 금지.
+- 기존 PC 수집·임시 R43 자료 확인을 위해 별도 API 호출·정규 Core 강제 재실행·21일 대기는 필요하지 않다.
+
 | 상황 | 결과 |
 | --- | --- |
 | PC HEAD가 R56 FIX1 성공 SHA와 다르거나 config.source가 다름 | STOP, 승인 소스 재확인 (새 PC 변경을 덮지 않음) |

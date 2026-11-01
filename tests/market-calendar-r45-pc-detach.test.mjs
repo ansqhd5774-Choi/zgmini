@@ -99,6 +99,26 @@ test('R45 PC detach refuses unapproved source or live Core lock without touching
  }finally{fs.rmSync(t.root,{recursive:true,force:true});}
 });
 
+test('R45 PC detach identifies R51 launcher drift without exposing task contents or writing',async()=>{
+ const t=setup();
+ try{
+  const before=fs.readFileSync(t.target);
+  const result=await runR45PcDetach({...t.stub,
+   resolveCore:async()=>({status:'R51_OUTER_WRAPPER_CHANGED',root:null,
+    rootWorktreeId:null,outerHashMatched:false,coreVbsCount:0})});
+  assert.equal(result.decision,'R45_DETACH_CORE_LAUNCHER_CHANGED_STOP');
+  assert.equal(result.originStatus,'R51_OUTER_WRAPPER_CHANGED');
+  assert.equal(result.originOuterHashMatched,false);
+  assert.equal(result.originCoreVbsCount,0);
+  assert.equal(result.configSourceMatchesApproved,true);
+  assert.equal(result.changedFiles.length,0);
+  assert.equal(result.backupCreated,false);
+  assert.equal(fs.existsSync(path.join(t.base,'local-cycle.lock')),false);
+  assert.deepEqual(fs.readFileSync(t.target),before);
+  assert.doesNotMatch(JSON.stringify(result),new RegExp(t.root.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')));
+ }finally{fs.rmSync(t.root,{recursive:true,force:true});}
+});
+
 test('R45 PC detach applies exactly one local file with backup, commit and source readback',async()=>{
  const t=setup();
  try{
