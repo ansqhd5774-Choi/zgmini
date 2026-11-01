@@ -38,6 +38,7 @@
 - PC의 명시적 승인 저장 원자료만 사용한다. `permissionForDerivedScores: true`, `marketCapApiUsed: false`, 12~512자의 `rightsReviewReference`, 전 모집단·거래일·상대거래량 검사를 통과해야 한다. 500표본만으로는 게시할 수 없다.
 - 기존 승인 PC `config.source`와 실제 Git HEAD 일치, 배포된 시장 중요도 reader 헤더 `x-zgmini-r43-reader: ZGMINI-R43-MARKET-IMPORTANCE`, 별도 수동 lock을 확인한다.
 - 통과한 경우에만 거래 원자료가 없는 파생 결과를 **별도 D1 출력 키**에 수동 1회 게시·동일 본문 재조회한다. 기존 FHS 등급·Core·Writer·스케줄러·다른 D1 키를 변경하지 않는다.
+- R43도 추가 자동 수집 없이 **연 1회 수동 갱신**한다. 게시 데이터에는 기준일을 남기고, reader는 기준일 이후 400일까지 표시(연간 일정의 약 한 달 유예)하며 이후에는 기존 FHS-R3 화면을 그대로 유지한 채 R43 보조 배지만 숨긴다.
 - 실 PC에서 해당 게시기를 실행하거나 권리 증거를 임의로 생성하지 않는다. 적법한 입력과 새 reader가 준비되지 않으면 `R43_*_STOP`으로 종료한다.
 
 ## 검증 기준
