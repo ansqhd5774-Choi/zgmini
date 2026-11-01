@@ -128,6 +128,36 @@ test('new historical observation or input digest requires write, with no backdat
   sourceStoredAt:storedAt+2000,asOfDate:'2026-10-29'};
  assert.equal(equivalentR10Sidecar(data.raw,newDigest,'raw'),false);
 });
+test('same source version with newer stored timestamp refreshes both sidecars',async()=>{
+ const data=samples(),mock=fakeRemote(data.scored);
+ await publish(data,mock.remote);
+ data.raw.sourceStoredAt+=60_000;
+ data.history.sourceStoredAt+=60_000;
+ data.scored.sourceStoredAt+=60_000;
+ mock.storeRow(PUBLIC_PROJECTION_KEYS.assetBubble,data.scored);
+ const result=await publish(data,mock.remote);
+ assert.deepEqual(result.keys,{raw:'READBACK_VERIFIED',history:'READBACK_VERIFIED'});
+ assert.equal(mock.getWrites(),4);
+ for(const key of [ASSET_R10_RAW_KEY,ASSET_R10_HISTORY_KEY]){
+  const row=JSON.parse(mock.rows.get(key).body);
+  assert.equal(row.payload.sourceStoredAt,data.raw.sourceStoredAt);
+ }
+});
+
+test('same source checkpoint can refresh as-of date, not observation values',async()=>{
+ const data=samples(),mock=fakeRemote(data.scored);
+ await publish(data,mock.remote);
+ for(const x of [data.raw,data.history,data.scored])x.asOfDate='2026-10-29';
+ mock.storeRow(PUBLIC_PROJECTION_KEYS.assetBubble,data.scored);
+ const result=await publish(data,mock.remote);
+ assert.deepEqual(result.keys,{raw:'READBACK_VERIFIED',history:'READBACK_VERIFIED'});
+ assert.equal(mock.getWrites(),4);
+ data.raw.factors[0].value+=.25;
+ data.history.factors[0].points[4].value+=.25;
+ await assert.rejects(publish(data,mock.remote),/ASSET_R10_RAW_CONFLICTING_CONTENT/);
+ assert.equal(mock.getWrites(),4);
+});
+
 test('score not yet remotely verified stops before either sidecar write',async()=>{
  const data=samples();const mock=fakeRemote({...data.scored,score:41});
  await assert.rejects(publish(data,mock.remote),/LOCAL_LINEAGE_MISMATCH/);
