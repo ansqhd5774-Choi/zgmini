@@ -47,6 +47,8 @@ test('future official memberships cannot silently change an already approved ove
  const result=inspectR10BreadthIncremental({...subject,officialPit:changed});
  assert.equal(result.status,'PIT_OVERLAP_MEMBERSHIP_DRIFT');
  assert.equal(result.firstMismatchDate,'2026-09-30');
+ assert.equal(result.identityAuditStatus,'PIT_ADDITIONAL_MEMBERSHIP_DRIFT');
+ assert.equal(result.identityAuditCounts.other,1);
  assert.equal(result.canPromote,false);
 });
 
@@ -115,5 +117,39 @@ test('equal-price mapped duplicate does not launder new member asof provenance',
  const mapped={...newMember200[0],asof:'2026-11-01'};
  const result=withNewMember([...newMember200,mapped]);
  assert.equal(result.status,'PIT_NEW_SYMBOL_ASOF_PROVENANCE_REQUIRED');
+ assert.equal(result.canPromote,false);
+});
+
+test('PSKY versus SKYD drift reports bounded identity context and never relaxes STOP',()=>{
+ const approvedMembers=[...members.slice(0,-1),'PSKY'];
+ const officialMembers=[...members.slice(0,-1),'SKYD'];
+ const approval={verifiedThrough:'2026-09-30',eligibleUniverses:[
+  {tradeDate:'2026-09-30',memberCount:490,members:approvedMembers}]};
+ const official={...officialPit,currentMemberHash:memberHash(officialMembers),
+  universes:officialPit.universes.map(row=>({...row,members:officialMembers,memberCount:490}))};
+ const before=JSON.stringify({approval,official});
+ const result=inspectR10BreadthIncremental({...subject,approvedPit:approval,officialPit:official});
+ assert.equal(result.status,'PIT_OVERLAP_MEMBERSHIP_DRIFT');
+ assert.equal(result.firstMismatchDate,'2026-09-30');
+ assert.equal(result.identityAuditStatus,'PIT_LABEL_IDENTITY_AUDITED_NOT_PROMOTABLE');
+ assert.equal(result.identityAuditCounts.backcast,1);
+ assert.equal(result.identityAuditCounts.other,0);
+ assert.equal(result.canPromote,false);
+ assert.equal(result.productionEligible,false);
+ assert.equal(result.candidateRows,undefined);
+ assert.equal(JSON.stringify({approval,official}),before);
+});
+
+test('PSKY/SKYD diagnostic does not mask simultaneous unrelated member drift',()=>{
+ const approvedMembers=[...members.slice(0,-2),'PSKY','OTHERA'];
+ const officialMembers=[...members.slice(0,-2),'SKYD','OTHERB'];
+ const approval={verifiedThrough:'2026-09-30',eligibleUniverses:[
+  {tradeDate:'2026-09-30',memberCount:490,members:approvedMembers}]};
+ const official={...officialPit,currentMemberHash:memberHash(officialMembers),
+  universes:officialPit.universes.map(row=>({...row,members:officialMembers,memberCount:490}))};
+ const result=inspectR10BreadthIncremental({...subject,approvedPit:approval,officialPit:official});
+ assert.equal(result.status,'PIT_OVERLAP_MEMBERSHIP_DRIFT');
+ assert.equal(result.identityAuditStatus,'PIT_ADDITIONAL_MEMBERSHIP_DRIFT');
+ assert.equal(result.identityAuditCounts.other,1);
  assert.equal(result.canPromote,false);
 });

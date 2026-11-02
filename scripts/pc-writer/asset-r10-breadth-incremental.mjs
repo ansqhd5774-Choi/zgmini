@@ -5,6 +5,7 @@ import {createHash} from 'node:crypto';
 import {fileURLToPath} from 'node:url';
 import {isMarketSession} from '../../lib/market-score/breadth-b1-r3-calendar.mjs';
 import {priceWindowQuarantined} from '../../lib/market-score/asset-r10-price-quarantine.mjs';
+import {auditR10PitIdentityLabels} from './asset-r10-pit-identity-audit-r1.mjs';
 
 // The approved R10 files remain immutable here. This diagnostic never promotes a
 // research-only R7 PIT universe or an Alpaca incremental download to publication.
@@ -56,8 +57,14 @@ export function inspectR10BreadthIncremental({approvedPit,officialPit,baseGroups
   const official=universes.get(row.tradeDate);
   if(official){
    overlap++;
-   if(fingerprint(uniqueSorted(row.members))!==fingerprint(official))
-    return stop('PIT_OVERLAP_MEMBERSHIP_DRIFT',{firstMismatchDate:row.tradeDate,overlapChecked:overlap});
+   if(fingerprint(uniqueSorted(row.members))!==fingerprint(official)){
+    const audit=auditR10PitIdentityLabels({approvedPit,officialPit});
+    return stop('PIT_OVERLAP_MEMBERSHIP_DRIFT',{
+     firstMismatchDate:row.tradeDate,overlapChecked:overlap,
+     identityAuditStatus:audit.status,identityAuditCounts:audit.counts??null,
+     identityAuditRequires:audit.requires??[],
+    });
+   }
   }
  }
  if(!overlap)return stop('PIT_OVERLAP_EVIDENCE_MISSING');
