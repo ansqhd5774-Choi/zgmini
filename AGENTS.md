@@ -266,3 +266,10 @@ candidate -> Production 전환 전 모두 PASS:
 - 새 테마는 독립 수집→저장→계산→확정/잠정 게시→D1 readback→공개 API/UI와 다음 정규 실행 검증까지 연결해야 운영 완료다. 기존 테마 수집 목록에 자동 포함된다고 가정하지 않는다.
 - 경로 검사: `node scripts/pc-writer/theme-data-inventory.mjs`. `UNREGISTERED/MISSING/BLOCKED`를 숨기거나 기존 점수를 최신으로 다시 저장하지 않는다.
 - 다른 테마의 실패가 정상 테마의 확정/잠정 게시를 막지 않게 한다. 과거 관측일과 결측을 보존하고 산식·권리 검증을 약화하지 않는다.
+
+## 22. Core 공유 API 한도 보호 — Alpaca 적용 게이트 (2026-11-02)
+- Core 5분은 **실행 시작 주기**이며 공급자 API 호출 주기가 아니다. 기존 Task/launcher/`local-cycle.lock`/승인 PC source/원자료/D1 계약을 한도 조절 목적으로 변경하지 않는다.
+- 동일 Alpaca 계정을 쓰는 모든 독립 Node·자식 프로세스·수동 수집기는 승인된 **같은 PC 데이터 루트**로 `docs/ALPACA_SHARED_QUOTA_R1.md`의 공통 예약에 참여해야 한다. 이미 래핑된 `collect-local.mjs` fetch는 중복 래핑하지 않는다.
+- Basic 200회/분 기준 최근 60초 120회 주의·140회 강제 제한·서버 잔여 최소 60회 보호를 적용한다. 응답 헤더가 더 엄격하면 따른다. 429 및 quota guard는 즉시 반복하지 않고 원자료·체크포인트를 유지해 다음 정상 기회에 이월한다.
+- 오프라인 테스트와 운영 PC 실제 계정 요청량 실측은 분리한다. 미연결 Alpaca 호출자가 하나라도 있으면 **계정 전체 30% 보호 PASS 금지**. 요청 전 차단과 요청 후 원장 기록 실패의 실제 API 호출 수는 구분한다.
+- 필수 운영 검증: 승인 source/Task Action→실행기, 같은 `base`, 호출자 전수, 60초 원장·remote header, 기존 raw 보존, 자연 Core 2회와 D1/API 재조회. 상세 안전 절차는 `docs/PC_CORE_5MIN_CONFLICT_RUNBOOK.md` 및 `docs/ALPACA_SHARED_QUOTA_R1.md`를 따른다.
