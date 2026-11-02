@@ -62,7 +62,7 @@ test('one metric absent in all reports is not filled by an estimate',()=>{
   base.releases[3].revenueEstimate=1e12;
   const result=run([base]);
   assert.equal(result.status,'BLOCKED');
-  assert.equal(result.reason,'ER1_RELEASE_COVERAGE_INSUFFICIENT');
+  assert.equal(result.reason,'ER1_NO_SCOREABLE_ISSUERS');
   assert.equal(result.coverage.unscoreableReasons.ER1_METRIC_OBSERVATIONS_INSUFFICIENT,1);
   assert.deepEqual(result.rankings,[]);
 });
@@ -122,13 +122,29 @@ test('four internally valid announcements from years ago are stale',()=>{
   assert.equal(result.coverage.unscoreableReasons.ER1_STALE_RELEASE_WINDOW,1);
 });
 
-test('metric coverage below 98% blocks instead of publishing a shortened population',()=>{
+test('missing actuals remain missing and cannot veto scored issuers of a reviewed universe',()=>{
   const rows=Array.from({length:100},(_,i)=>row(`T${i+1}`));
   for(let i=0;i<3;i++)rows[i]=row(`T${i+1}`,[null,null,null,null],[null,null,null,null]);
   const result=run(rows);
   assert.equal(result.coverage.earnings,.97);
-  assert.equal(result.status,'BLOCKED');
+  assert.equal(result.status,'READY_SHADOW');
+  assert.equal(result.coverage.reviewedEligibleIssuers,100);
+  assert.equal(result.rankings.length,97);
   assert.equal(result.star3Count,0);
+});
+
+test('838 saved actuals within 2634 completely reviewed issuers yield 838 rankings, 1796 missing',()=>{
+  const reported=Array.from({length:838},(_,i)=>row(`A${i+1}`,[i+1,i+1,i+1,i+1]));
+  const notReported=Array.from({length:2634-838},(_,i)=>({...row(`M${i+1}`),releases:[]}));
+  const result=run([...reported,...notReported],2634);
+  assert.equal(result.status,'READY_SHADOW');
+  assert.equal(result.coverage.universe,1);
+  assert.equal(result.coverage.scoreableIssuers,838);
+  assert.equal(result.coverage.earnings,838/2634);
+  assert.equal(result.coverage.unscoreableReasons.ER1_RELEASE_HISTORY_INSUFFICIENT,1796);
+  assert.equal(result.rankings.length,838);
+  assert.equal(result.star3Count,42);
+  assert.equal(result.rankings.some(r=>r.issuerId==='M1'),false);
 });
 
 test('latest four completed dated records exclude fifth event and current-day estimate',()=>{
