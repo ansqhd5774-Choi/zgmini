@@ -114,3 +114,66 @@ test("source access date follows verified raw inputs, not observation or publica
   assert.equal(buildEmploymentR6OneYearReadModel(rows,{asOfDate:"2026-11-01"})
     .indicators.find(x=>x.id==="PAYEMS_MOM").retrievedAt,null);
 });
+
+test("missing a payroll month cannot become a fabricated latest monthly change, 3M mean, or acceleration",()=>{
+  const raw=[
+    ["2026-04-30",90],["2026-05-31",100],["2026-06-30",110],
+    ["2026-07-31",120],["2026-08-31",130],["2026-10-31",160],
+  ].map(([date,value])=>row("PAYEMS_LEVEL",date,value));
+  const result=buildEmploymentR6OneYearReadModel(raw,{asOfDate:"2026-11-01"});
+  for(const [id,value] of [["PAYEMS_MOM",10],["PAYEMS_3M_AVG",10],["PAYEMS_ACCEL",0]]){
+    const item=result.indicators.find(x=>x.id===id);
+    assert.equal(item.value,value,id);
+    assert.equal(item.observationDate,"2026-08-31",id);
+    assert.equal(item.scoreStatus,"PARTIAL_HISTORY",id);
+    assert(!item.history.some(p=>p.date==="2026-10-31"),id+" must never treat two months as one");
+  }
+  // After collection resumes, three genuine consecutive monthly deltas are
+  // required again before the 3M average becomes available.
+  const resumed=[
+    ...raw,row("PAYEMS_LEVEL","2026-11-30",170),
+    row("PAYEMS_LEVEL","2026-12-31",180),row("PAYEMS_LEVEL","2027-01-31",190),
+  ];
+  const later=buildEmploymentR6OneYearReadModel(resumed,{asOfDate:"2027-02-01"});
+  const mean=later.indicators.find(x=>x.id==="PAYEMS_3M_AVG");
+  assert.equal(mean.observationDate,"2027-01-31");
+  assert(!mean.history.some(p=>["2026-10-31","2026-11-30","2026-12-31"].includes(p.date)));
+});
+
+test("hourly earnings year-over-year comparison uses the matching calendar month, never the 12th available row",()=>{
+  const ahe=[];
+  for(let month=1;month<=12;month++){
+    if(month===2)continue;
+    const date=new Date(Date.UTC(2025,month,0)).toISOString().slice(0,10);
+    ahe.push(row("AHE_TOTAL_PRIVATE",date,100+month));
+  }
+  ahe.push(row("AHE_TOTAL_PRIVATE","2026-01-31",150));
+  ahe.push(row("AHE_TOTAL_PRIVATE","2026-02-28",151));
+  const item=buildEmploymentR6OneYearReadModel(ahe,{asOfDate:"2026-03-01"})
+    .indicators.find(x=>x.id==="AHE_YOY");
+  assert.equal(item.observationDate,"2026-01-31");
+  assert(Math.abs(item.value-(100*(150/101-1)))<1e-9);
+  assert(!item.history.some(p=>p.date==="2026-02-28"));
+});
+
+test("ETA 539 breadth refuses 52-observed-week substitutions when a whole calendar week is absent",()=>{
+  const all=[];
+  const start=Date.UTC(2025,7,2),week=7*86400000;
+  for(let i=0;i<60;i++){
+    const date=new Date(start+i*week).toISOString().slice(0,10);
+    for(let s=0;s<51;s++){
+      all.push({...row("STATE_INITIAL_CLAIMS",date,100+s),
+        geographyType:"STATE",geographyCode:"S"+String(s).padStart(2,"0"),
+        sourceHash:"S"+s+":"+date});
+    }
+  }
+  const dense=buildEmploymentR6OneYearReadModel(all,{asOfDate:"2026-11-01"})
+    .indicators.find(x=>x.id==="STATE_CLAIMS_BREADTH");
+  assert.equal(dense.rawStatus,"READY");
+  const missingWeek=new Date(start+10*week).toISOString().slice(0,10);
+  const gap=buildEmploymentR6OneYearReadModel(
+    all.filter(p=>p.observationDate!==missingWeek),{asOfDate:"2026-11-01"},
+  ).indicators.find(x=>x.id==="STATE_CLAIMS_BREADTH");
+  assert.equal(gap.rawStatus,"UNAVAILABLE");
+  assert.equal(gap.value,null);
+});
