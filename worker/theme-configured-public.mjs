@@ -30,7 +30,7 @@ export function eligibleConfiguredPublic(record,key,storedAt,now=Date.now()){
   !(provisional?/^R32_PROVISIONAL_SHA256_[a-f0-9]{64}$/:/^GMH_MANIFEST_SHA256_[a-f0-9]{64}$/).test(record.sourceVersion??'')||
   !Array.isArray(record.etfs)||(v2?record.etfs.length<1:record.etfs.length!==2)||
   new Set(record.etfs).size!==record.etfs.length||
-  record.etfs.some(s=>typeof s!=='string'||!/^[A-Z]{1,6}$/.test(s)||s==='SPY')||
+  record.etfs.some(s=>typeof s!=='string'||!(v2?/^[A-Z][A-Z0-9.]{0,11}$/:/^[A-Z]{1,6}$/).test(s)||s==='SPY')||
   !validDate(record.observationDate)||!validStamp(record.sourceStoredAt)||
   !validStamp(record.publishedAt)||!validScore(record.score)||
   !Array.isArray(record.history)||record.history.length<1||record.history.length>252||
