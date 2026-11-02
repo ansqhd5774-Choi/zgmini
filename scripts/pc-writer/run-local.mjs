@@ -51,9 +51,9 @@ if(process.argv.includes('--us-provisional-only')){
   const prepared=prepareUsProvisional(base);
   report.inputStatus=prepared.status;
   if(prepared.prepared){
-   const remote=client(config,()=>credential(root),{onDiagnostic:diagnostic=>
+   const provisionalRemote=client(config,()=>credential(root),{onDiagnostic:diagnostic=>
     appendD1Diagnostic(base,{runAt:report.at,source},diagnostic)});
-   report.publication=await publishUsProvisional(remote,config.core,prepared);
+   report.publication=await publishUsProvisional(provisionalRemote,config.core,prepared);
    report.status=['VERIFIED','ALREADY_VERIFIED'].includes(report.publication.status)?'VERIFIED':report.publication.status;
    report.slotEndUtc=prepared.body.slotEndUtc;
    report.observedCount=prepared.body.observedCount;
