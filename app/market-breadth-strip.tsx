@@ -32,6 +32,20 @@ type UsaIexProvisionalRecord = {
   unobservedPct: number;
 };
 
+type UsaConfirmedR2Record = {
+  market: "usa";
+  phase: "CONFIRMED";
+  status: "READY";
+  publicationStage: "PUBLIC_FINAL";
+  source: "MARKETPARQUET_STOCK_DAILY";
+  universe: "US_MARKETPARQUET_ACTIVE_STOCKS";
+  observationDate: string;
+  previousDate: string;
+  risingPct: number;
+  fallingPct: number;
+  unchangedPct: number;
+};
+
 const validPercent = (n: unknown): n is number => typeof n === "number" && Number.isFinite(n) && n >= 0 && n <= 100;
 const near100 = (...parts: number[]) => Math.abs(parts.reduce((sum, n) => sum + n, 0) - 100) <= 0.2;
 
@@ -51,6 +65,21 @@ function currentIexProvisional(value: unknown): value is UsaIexProvisionalRecord
     timeZone: "America/New_York", year: "numeric", month: "2-digit", day: "2-digit"
   }).formatToParts(new Date()).map(part => [part.type, part.value]));
   return record.observationDate === `${ny.year}-${ny.month}-${ny.day}`;
+}
+
+/** An independently published MarketParquet current; never accept legacy R1 counts. */
+function validConfirmedCurrent(value: unknown): value is UsaConfirmedR2Record {
+  if (!value || typeof value !== "object") return false;
+  const record = value as UsaConfirmedR2Record;
+  return record.market === "usa" && record.phase === "CONFIRMED" &&
+    record.status === "READY" && record.publicationStage === "PUBLIC_FINAL" &&
+    record.source === "MARKETPARQUET_STOCK_DAILY" &&
+    record.universe === "US_MARKETPARQUET_ACTIVE_STOCKS" &&
+    /^\d{4}-\d{2}-\d{2}$/.test(record.observationDate) &&
+    /^\d{4}-\d{2}-\d{2}$/.test(record.previousDate) &&
+    record.previousDate < record.observationDate &&
+    [record.risingPct, record.fallingPct, record.unchangedPct].every(validPercent) &&
+    near100(record.risingPct, record.fallingPct, record.unchangedPct);
 }
 
 function normalizedCounts(counts?: MarketBreadthCounts | null) {
@@ -92,40 +121,50 @@ export function MarketBreadthStrip({ market, counts, period = '1Y' }: MarketBrea
   const [historyLoading, setHistoryLoading] = useState(false);
   const [historyError, setHistoryError] = useState(false);
   const [provisional, setProvisional] = useState<UsaIexProvisionalRecord | null>(null);
+  const [confirmed, setConfirmed] = useState<UsaConfirmedR2Record | null>(null);
   const name = market === "usa" ? "미국" : "한국";
   const periodLabel = period === '1D' ? '1일' : getMarketPeriodConfig(period).label;
 
   useEffect(() => {
     if (market !== "usa") return;
     let active = true;
-    const stop = startStoredRefresh(async (signal: AbortSignal) => {
+    const readPercent = async (phase: "provisional" | "confirmed-r2", signal: AbortSignal): Promise<unknown> => {
       try {
-        const response = await fetch("/api/market-breadth?market=usa&phase=provisional", {
+        const response = await fetch(`/api/market-breadth?market=usa&phase=${phase}`, {
           cache: "no-store", signal
         });
-        if (!active || signal.aborted) return;
-        if (!response.ok) { setProvisional(null); return; }
-        const body: unknown = await response.json();
-        if (active && !signal.aborted) setProvisional(currentIexProvisional(body) ? body : null);
+        return response.ok ? await response.json() as unknown : null;
       } catch {
-        // 503, network loss and session expiry must never leave a stale provisional figure.
-        if (active && !signal.aborted) setProvisional(null);
+        return null;
       }
+    };
+    const stop = startStoredRefresh(async (signal: AbortSignal) => {
+      // Independent read-only API requests; one failed phase must not hide the other.
+      const [iexBody, currentBody] = await Promise.all([
+        readPercent("provisional", signal), readPercent("confirmed-r2", signal)
+      ]);
+      if (!active || signal.aborted) return;
+      setProvisional(currentIexProvisional(iexBody) ? iexBody : null);
+      setConfirmed(validConfirmedCurrent(currentBody) ? currentBody : null);
     });
     return () => { active = false; stop(); };
   }, [market]);
   const activeProvisional = market === "usa" && currentIexProvisional(provisional)
     ? provisional : null;
-  const lastConfirmed = market === "usa" && history ? history.points[history.points.length - 1] : null;
+  const activeConfirmed = market === "usa" && validConfirmedCurrent(confirmed)
+    ? confirmed : null;
+  const lastHistory = market === "usa" && history ? history.points[history.points.length - 1] : null;
   const data = market === "usa"
-    ? activeProvisional ?? lastConfirmed ?? null
+    ? activeProvisional ?? activeConfirmed ?? lastHistory ?? null
     : normalizedCounts(counts);
   const sourceInfo = activeProvisional
     ? `장중 잠정 · Alpaca IEX 15분 · 뉴욕 ${new Intl.DateTimeFormat("ko-KR", {timeZone:"America/New_York", hour:"2-digit", minute:"2-digit", hour12:false}).format(new Date(activeProvisional.slotEndUtc))} 기준 · 미관측 ${activeProvisional.unobservedPct.toFixed(1)}%${activeProvisional.collectionStatus === "INCOMPLETE_PAGINATION" ? " · 페이지 일부 미수집" : ""}`
-    : lastConfirmed ? `MarketParquet R2 확정 이력 · ${history!.lastDate} 기준 (현재 장중 수치 아님)` : null;
+    : activeConfirmed ? `MarketParquet R2 마감 확정 · ${activeConfirmed.observationDate} 기준 (현재 장중 수치 아님)`
+    : lastHistory ? `MarketParquet R2 확정 이력 · ${history!.lastDate} 기준 (현재 장중 수치 아님)` : null;
   const sourceBadge = activeProvisional
     ? `IEX·15분·${new Intl.DateTimeFormat("en-US", {timeZone:"America/New_York", hour:"2-digit", minute:"2-digit", hour12:false}).format(new Date(activeProvisional.slotEndUtc))}`
-    : lastConfirmed ? `R2 확정 · ${history!.lastDate.slice(5).replace("-", ".")}` : null;
+    : activeConfirmed ? `R2 확정 · ${activeConfirmed.observationDate.slice(5).replace("-", ".")}`
+    : lastHistory ? `R2 이력 · ${history!.lastDate.slice(5).replace("-", ".")}` : null;
   const canExpand = market === "usa";
 
   useEffect(() => {
