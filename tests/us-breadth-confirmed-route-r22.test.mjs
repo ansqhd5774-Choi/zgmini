@@ -43,3 +43,18 @@ test('explicit R2 and IEX phases short-circuit before the legacy R1 reader',()=>
   assert.match(iex,/Response\.json\(usIexPublicPercentOnly\(record\)/);
   assert.doesNotMatch(iex,/US_BREADTH_CURRENT_KEY|validUsBreadthRecord|fullMarketConfirmedR2GET/);
 });
+
+test('native CORE binding is preferred and all three phases fail closed when missing',()=>{
+  const helper=route.slice(route.indexOf('function coreSnapshotsDb()'),
+    route.indexOf('// R2 full-market read alias'));
+  assert.match(helper,/native\.DB_CORE\?\?native\.DB/);
+  assert.doesNotMatch(helper,/(?:native|env)\.DB_HISTORY/);
+  assert.equal((route.match(/const db=coreSnapshotsDb\(\);/g)||[]).length,3);
+  assert.equal((route.match(/db\.prepare\('SELECT body,stored_at FROM market_public_snapshots_v1/g)||[]).length,3);
+  assert.doesNotMatch(route,/env\.DB\.prepare/);
+  for(const status of ['FULL_MARKET_CORE_DATABASE_UNAVAILABLE','PROVISIONAL_STORED_OUTPUT_UNAVAILABLE','STORED_OUTPUT_UNAVAILABLE'])
+    assert.match(route,new RegExp("reason:'"+status+"'"));
+  const get=route.slice(route.indexOf('export async function GET(request:Request){'));
+  assert.ok(get.indexOf("if(phase!==null&&phase!=='confirmed')")<
+    get.indexOf('const db=coreSnapshotsDb();'));
+});

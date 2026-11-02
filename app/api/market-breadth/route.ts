@@ -4,11 +4,21 @@ import {US_BREADTH_CURRENT_KEY,validUsBreadthRecord} from '../../../lib/market-b
 import {US_BREADTH_PROVISIONAL_KEY,currentUsIexProvisional,usIexPublicPercentOnly} from '../../../lib/market-breadth/us-provisional-r1.mjs';
 import {readFullMarketPublicCurrent} from '../../../lib/market-breadth/us-marketparquet-confirmed-reader-r2.mjs';
 
+// The candidate binds the public snapshot table as DB_CORE; legacy Worker
+// deployments may still provide DB. Never route public snapshots to DB_HISTORY.
+function coreSnapshotsDb():D1Database|undefined{
+  const native=env as unknown as {DB_CORE?:D1Database;DB?:D1Database};
+  return native.DB_CORE??native.DB;
+}
+
 // R2 full-market read alias is independent. The default confirmed endpoint
 // retains the existing R1 503-stock history until R2 operational approval.
 async function fullMarketConfirmedR2GET(){
+  const db=coreSnapshotsDb();
+  if(!db)return Response.json({reason:'FULL_MARKET_CORE_DATABASE_UNAVAILABLE'},
+    {status:503,headers:{'Cache-Control':'no-store'}});
   const result=await readFullMarketPublicCurrent(async (key:string)=>
-    env.DB.prepare('SELECT body,stored_at FROM market_public_snapshots_v1 WHERE snapshot_key=?')
+    db.prepare('SELECT body,stored_at FROM market_public_snapshots_v1 WHERE snapshot_key=?')
       .bind(key).first() as Promise<{body:string;stored_at:number}|null>);
   if('reason' in result)return Response.json({reason:result.reason},
     {status:503,headers:{'Cache-Control':'no-store'}});
@@ -16,8 +26,11 @@ async function fullMarketConfirmedR2GET(){
 }
 
 async function provisionalGET(){
+  const db=coreSnapshotsDb();
+  if(!db)return Response.json({reason:'PROVISIONAL_STORED_OUTPUT_UNAVAILABLE'},
+    {status:503,headers:{'Cache-Control':'no-store'}});
   let row:{body:string;stored_at:number}|null=null;
-  try{row=await env.DB.prepare('SELECT body,stored_at FROM market_public_snapshots_v1 WHERE snapshot_key=?')
+  try{row=await db.prepare('SELECT body,stored_at FROM market_public_snapshots_v1 WHERE snapshot_key=?')
     .bind(US_BREADTH_PROVISIONAL_KEY).first() as {body:string;stored_at:number}|null;}
   catch{return Response.json({reason:'PROVISIONAL_STORED_OUTPUT_UNAVAILABLE'},{status:503,headers:{'Cache-Control':'no-store'}});}
   let record:unknown;
@@ -41,8 +54,11 @@ export async function GET(request:Request){
   if(phase==='provisional')return provisionalGET();
   if(phase==='confirmed-r2')return fullMarketConfirmedR2GET();
   if(phase!==null&&phase!=='confirmed')return Response.json({reason:'PHASE_NOT_AVAILABLE'},{status:404});
+  const db=coreSnapshotsDb();
+  if(!db)return Response.json({reason:'STORED_OUTPUT_UNAVAILABLE'},
+    {status:503,headers:{'Cache-Control':'no-store'}});
   let row:{body:string;stored_at:number}|null=null;
-  try{row=await env.DB.prepare('SELECT body,stored_at FROM market_public_snapshots_v1 WHERE snapshot_key=?').bind(US_BREADTH_CURRENT_KEY).first() as {body:string;stored_at:number}|null;}
+  try{row=await db.prepare('SELECT body,stored_at FROM market_public_snapshots_v1 WHERE snapshot_key=?').bind(US_BREADTH_CURRENT_KEY).first() as {body:string;stored_at:number}|null;}
   catch{return Response.json({reason:'STORED_OUTPUT_UNAVAILABLE'},{status:503,headers:{'Cache-Control':'no-store'}});}
   let record:unknown;
   try{record=row?.body?JSON.parse(row.body):null;}catch{return Response.json({reason:'INVALID_STORED_OUTPUT'},{status:503,headers:{'Cache-Control':'no-store'}});}
