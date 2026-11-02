@@ -152,7 +152,7 @@ test('Alpaca is enforced at 140 even when general quota mode is observe',()=>wit
  assert.equal(sent,140);
 }));
 
-test('ETF Core-injected fetch is guarded, while its standalone default fetch can bypass',()=>withFixture(async base=>{
+test('ETF Core-injected and standalone fetch both block at shared 140 cap',()=>withFixture(async base=>{
  fs.writeFileSync(path.join(base,'providers.env'),
   'APCA_API_KEY_ID=MOCK_ONLY\nAPCA_API_SECRET_KEY=MOCK_ONLY\n');
  fs.writeFileSync(path.join(base,'local-sector-fear-greed-r1-iex-price-history.json'),
@@ -165,14 +165,37 @@ test('ETF Core-injected fetch is guarded, while its standalone default fetch can
  const prefill=createQuotaFetch({base,mode:'observe',
   originalFetch:async()=>new Response(null,{status:200})}).fetch;
  for(let i=0;i<140;i++)await prefill(quotaUrl);
- await assert.rejects(collectSectorFearGreedR3EtfIncremental(base,{fetchImpl:shared,
-  now:Date.parse('2026-11-02T13:00:00Z')}));
+ const core=await collectSectorFearGreedR3EtfIncremental(base,{fetchImpl:shared,
+  fetchAlreadyQuotaProtected:true,now:Date.parse('2026-11-02T13:00:00Z')});
+ assert.equal(core.status,'DEFERRED_QUOTA');
+ assert.equal(core.providerRequests,0);
  assert.equal(sent,0,'Core-injected quota wrapper must stop before provider HTTP');
  const originalFetch=globalThis.fetch;
  try{
   globalThis.fetch=mockedHttp;
-  await assert.rejects(collectSectorFearGreedR3EtfIncremental(base,{
-   now:Date.parse('2026-11-02T13:00:00Z')}));
+  const standalone=await collectSectorFearGreedR3EtfIncremental(base,{
+   now:Date.parse('2026-11-02T13:00:00Z')});
+  assert.equal(standalone.status,'DEFERRED_QUOTA');
+  assert.equal(standalone.providerRequests,0);
  }finally{globalThis.fetch=originalFetch;}
- assert.equal(sent,1,'standalone default fetch currently bypasses quota wrapper');
+ assert.equal(sent,0,'standalone fetch must also guard before HTTP');
+}));
+
+test('ETF Core injected wrapper counts one reserved HTTP 429, not two',()=>withFixture(async base=>{
+ fs.writeFileSync(path.join(base,'providers.env'),
+  'APCA_API_KEY_ID=MOCK_ONLY\nAPCA_API_SECRET_KEY=MOCK_ONLY\n');
+ fs.writeFileSync(path.join(base,'local-sector-fear-greed-r1-iex-price-history.json'),
+  JSON.stringify({series:Object.fromEntries(SECTOR_FEAR_GREED_R3_BENCHMARKS.map(ticker=>
+   [ticker,[{date:'2026-10-29',close:100,volume:10}]]))}));
+ let sent=0;
+ const shared=createQuotaFetch({base,mode:'enforce',originalFetch:async()=>{
+  sent++;return new Response(null,{status:429});
+ }}).fetch;
+ const report=await collectSectorFearGreedR3EtfIncremental(base,{fetchImpl:shared,
+  fetchAlreadyQuotaProtected:true,now:Date.parse('2026-11-02T13:00:00Z')});
+ assert.equal(report.status,'DEFERRED_QUOTA');
+ assert.equal(report.providerRequests,1);
+ assert.equal(sent,1);
+ const ledger=JSON.parse(fs.readFileSync(path.join(base,'alpaca-quota-ledger.json'),'utf8'));
+ assert.equal(ledger.requestTimes.length,1,'one quota reservation per actual HTTP');
 }));
