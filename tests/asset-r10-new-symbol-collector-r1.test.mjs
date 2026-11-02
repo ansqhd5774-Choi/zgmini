@@ -136,6 +136,21 @@ test('syntactically hashed but invalid security-effective window cannot fetch',a
  assert.equal(calls,0);
 });
 
+test('forged canonical dot-directory ticker cannot escape immutable research root',async t=>{
+ const base=fixture(t);let calls=0;
+ const ticker='..',provenance={...plan.provenance,
+  identities:[{...plan.provenance.identities[0],ticker}]};
+ const req=plan.requests[0],params={...req.params,symbols:ticker};
+ const url=new URL(req.url);url.searchParams.set('symbols',ticker);
+ const requests=[{...req,ticker,params,url:url.toString()}];
+ const forged={...plan,requests,provenance};
+ forged.auditDigest=sha(JSON.stringify({provenance,requests,window:plan.expectedSessions}));
+ const r=await invoke(base,async()=>{calls++;throw Error('NOT_EXPECTED');},
+  {plan:forged,authorization:{...authorization,approvedAuditDigest:forged.auditDigest}});
+ assert.equal(r.status,'STOP_RESEARCH_PLAN_SEMANTICS_INVALID');
+ assert.equal(calls,0);assert.equal(fs.existsSync(path.join(base,'asset-r10-alpaca')),false);
+});
+
 test('provider failures, malformed JSON, and budget exhaustion leave no staged evidence',async t=>{
  const base=fixture(t);
  assert.equal((await invoke(base,fakeFetch({},429))).status,'STOP_RESEARCH_PROVIDER_HTTP');

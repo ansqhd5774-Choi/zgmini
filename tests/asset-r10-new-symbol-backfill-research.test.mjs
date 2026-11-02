@@ -77,6 +77,19 @@ test('rejects unsafe request scope and unverified session window',()=>{
  assert.equal(planNewSymbolBackfill({...input,sessions:[...sessions.slice(0,-1),sessions.at(-2)]}).status,'STOP_VERIFIED_SESSION_WINDOW_MISSING');
 });
 
+test('rejects traversal-style ticker directory components and accepts real class tickers',()=>{
+ for(const candidate of ['.','..','-','../TWLO','TWLO/..']){
+  const request=planNewSymbolBackfill({...input,missingSymbols:[candidate],
+    identities:[{...identity,ticker:candidate}]});
+  assert.equal(request.status,'STOP_NEW_SYMBOL_SCOPE_INVALID',candidate);
+ }
+ for(const candidate of ['BRK.B','BF.B','BRK-B']){
+  const request=planNewSymbolBackfill({...input,missingSymbols:[candidate],
+    identities:[{...identity,ticker:candidate}]});
+  assert.equal(request.status,'RESEARCH_REQUESTS_PREPARED_NO_PROVIDER_CALLS',candidate);
+ }
+});
+
 test('accepts 200 distinct verified responses for research only',()=>{
  const r=inspectBackfillPages({plan,pagesByTicker:pages()});
  assert.equal(r.status,'RESEARCH_PRICES_200_SESSIONS_VALIDATED_AUDIT_PENDING');

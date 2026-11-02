@@ -38,6 +38,40 @@ function classifyDate(date){
  return 'APPROVED_PSKY_LABEL_AFTER_SKYD_RENAME';
 }
 
+// Trading-symbol evidence is NOT S&P 500 membership evidence. In particular,
+// the 2025 merger created a new CUSIP and involved an election for holders;
+// neither ticker substitution nor a split-only OHLC adjustment bridges it.
+// This date-bound description is suitable for selecting research queries only.
+export function describeR10TimeEffectiveSecurity(tradeDate){
+ if(!isoDate(tradeDate))return stop('PIT_SECURITY_DATE_INVALID');
+ const beforeMerger=tradeDate<R10_IDENTITY_EVIDENCE.mergedClassB.firstTradeDate;
+ const beforeRename=tradeDate<R10_IDENTITY_EVIDENCE.renamedClassB.firstTradeDate;
+ const evidence=beforeMerger?R10_IDENTITY_EVIDENCE.legacyClassB:
+  beforeRename?R10_IDENTITY_EVIDENCE.mergedClassB:R10_IDENTITY_EVIDENCE.renamedClassB;
+ return stop('PIT_SECURITY_TIME_WINDOW_RESEARCH_ONLY',{
+  tradeDate,marketTicker:evidence.ticker,
+  // The cited SEC rename filing does not establish a post-rename CUSIP.
+  cusip:beforeRename?evidence.cusip:null,
+  corporateAction:beforeMerger?'PRE_MERGER_LEGACY_SECURITY':
+   beforeRename?'POST_MERGER_NEW_SECURITY':'POST_RENAME_TICKER',
+  source:evidence.source,
+  sp500MembershipVerified:false,
+  priceContinuityAllowed:false,
+  syntheticTickerAliasAllowed:false,
+  requires:beforeMerger?[
+   'OFFICIAL_SP500_PRE_MERGER_MEMBERSHIP_AND_CUSIP',
+   'PARA_TO_PSKY_CORPORATE_ACTION_PRICE_RIGHTS',
+   'ALPACA_EXPLICIT_ASOF_UNMAPPED_PRICE_PROVENANCE',
+  ]:beforeRename?[
+   'OFFICIAL_SP500_MERGED_SECURITY_MEMBERSHIP',
+   'ALPACA_EXPLICIT_ASOF_UNMAPPED_PRICE_PROVENANCE',
+  ]:[
+   'OFFICIAL_SP500_POST_RENAME_MEMBERSHIP',
+   'POST_RENAME_CUSIP_AND_PRICE_PROVENANCE',
+  ],
+ });
+}
+
 // Exact member comparison remains authoritative for any operational decision.
 // A single PSKY/SKYD substitution is *diagnosed*, never silently normalized.
 export function auditR10PitIdentityLabels({approvedPit,officialPit}={}){
@@ -68,8 +102,12 @@ export function auditR10PitIdentityLabels({approvedPit,officialPit}={}){
   if(kind==='PRE_MERGER_SECURITY_IDENTITY_UNRESOLVED')counts.preMerger++;
   else if(kind==='RENAME_LABEL_BACKCAST_SUSPECT')counts.backcast++;
   else counts.postRename++;
-  if(samples.length<12)samples.push({date,kind,approvedOnly:'PSKY',officialOnly:'SKYD',
-    priceContinuityAllowed:false,membershipRepaired:false});
+  if(samples.length<12){
+   const window=describeR10TimeEffectiveSecurity(date);
+   samples.push({date,kind,approvedOnly:'PSKY',officialOnly:'SKYD',
+    expectedMarketTicker:window.marketTicker,expectedSecurityCusip:window.cusip,
+    membershipVerified:false,priceContinuityAllowed:false,membershipRepaired:false});
+  }
  }
  if(!overlapDates.length)return stop('PIT_OVERLAP_MISSING');
  const overlapFirst=overlapDates[0],overlapLast=overlapDates.at(-1);

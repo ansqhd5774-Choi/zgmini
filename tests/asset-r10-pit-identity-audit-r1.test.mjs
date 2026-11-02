@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createHash} from 'node:crypto';
-import {auditR10PitIdentityLabels,R10_IDENTITY_EVIDENCE} from '../scripts/pc-writer/asset-r10-pit-identity-audit-r1.mjs';
+import {auditR10PitIdentityLabels,R10_IDENTITY_EVIDENCE,describeR10TimeEffectiveSecurity} from '../scripts/pc-writer/asset-r10-pit-identity-audit-r1.mjs';
 
 const baseSymbols=Array.from({length:499},(_,i)=>`T${String(i).padStart(3,'0')}`);
 const add=(symbol)=>[...baseSymbols,symbol];
@@ -45,6 +45,48 @@ test('official Nasdaq corporate-action CUSIPs and effective dates remain distinc
  assert.equal(R10_IDENTITY_EVIDENCE.mergedClassB.firstTradeDate,'2025-08-07');
  assert.equal(R10_IDENTITY_EVIDENCE.renamedClassB.firstTradeDate,'2026-10-06');
  assert.notEqual(R10_IDENTITY_EVIDENCE.legacyClassB.cusip,R10_IDENTITY_EVIDENCE.mergedClassB.cusip);
+});
+
+test('time-effective trading identities enforce all three historical event boundaries without promoting membership',()=>{
+ const cases=[
+  ['2024-10-07','PARA','92556H206','PRE_MERGER_LEGACY_SECURITY'],
+  ['2025-08-06','PARA','92556H206','PRE_MERGER_LEGACY_SECURITY'],
+  ['2025-08-07','PSKY','69932A204','POST_MERGER_NEW_SECURITY'],
+  ['2026-10-05','PSKY','69932A204','POST_MERGER_NEW_SECURITY'],
+  ['2026-10-06','SKYD',null,'POST_RENAME_TICKER'],
+  ['2026-11-02','SKYD',null,'POST_RENAME_TICKER'],
+ ];
+ for(const [date,symbol,cusip,corporateAction] of cases){
+  const r=describeR10TimeEffectiveSecurity(date);
+  readonly(r);
+  assert.equal(r.status,'PIT_SECURITY_TIME_WINDOW_RESEARCH_ONLY');
+  assert.equal(r.tradeDate,date);
+  assert.equal(r.marketTicker,symbol);
+  assert.equal(r.cusip,cusip);
+  assert.equal(r.corporateAction,corporateAction);
+  assert.equal(r.syntheticTickerAliasAllowed,false);
+  assert.equal(r.sp500MembershipVerified,false);
+  assert.equal(r.priceContinuityAllowed,false);
+  assert.ok(r.requires.length>=2);
+ }
+});
+
+test('invalid and impossible security dates fail closed with no source or publication authority',()=>{
+ for(const date of [null,'','2025-02-30','2025-8-7','2025-13-01',42]){
+  const r=describeR10TimeEffectiveSecurity(date);
+  readonly(r);
+  assert.equal(r.status,'PIT_SECURITY_DATE_INVALID');
+  assert.equal(r.marketTicker,undefined);
+ }
+});
+
+test('identity audit samples expose dated security identity while retaining 501-day mismatch stop',()=>{
+ const r=auditR10PitIdentityLabels(fixtures(['2025-08-06','2025-08-07','2026-10-06']));
+ readonly(r);
+ assert.equal(r.status,'PIT_LABEL_IDENTITY_AUDITED_NOT_PROMOTABLE');
+ assert.deepEqual(r.samples.map(s=>s.expectedMarketTicker),['PARA','PSKY','SKYD']);
+ assert.deepEqual(r.samples.map(s=>s.expectedSecurityCusip),['92556H206','69932A204',null]);
+ assert.ok(r.samples.every(s=>s.membershipVerified===false&&s.membershipRepaired===false));
 });
 
 test('pre-merger 2024-10-07 through 2025-08-06 remains unresolved, not PARA auto-backfill',()=>{

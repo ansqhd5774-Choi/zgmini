@@ -5,7 +5,10 @@ import {createHash} from 'node:crypto';
 export const R10_NEW_SYMBOL_BACKFILL_METHOD='R10_B_NEW_SYMBOL_ASOF_UNMAPPED_RESEARCH_R1';
 const SHA=/^[a-f0-9]{64}$/;
 const DATE=/^\d{4}-\d{2}-\d{2}$/;
-const TICKER=/^[A-Z0-9.\-]{1,15}$/;
+// A ticker is also used as a research-only directory component. In particular
+// "." and ".." are never symbols: accepting them would permit path traversal.
+// Keep genuine dot-class tickers (BRK.B, BF.B) and hyphenated tickers.
+const TICKER=/^[A-Z0-9][A-Z0-9.\-]{0,14}$/;
 const stamp=value=>createHash('sha256').update(JSON.stringify(value)).digest('hex');
 const dateValid=value=>typeof value==='string'&&DATE.test(value)&&
  !Number.isNaN(Date.parse(value+'T00:00:00Z'))&&
