@@ -38,6 +38,22 @@ test('only 15-minute completed NY sessions collect; weekend, holiday and preopen
   assert.equal(usProvisionalSlot(Date.parse('2026-10-30T20:16:00Z')),null);
 });
 
+test('NYSE published 1 p.m. cash-equity early close stops IEX provisional slots after the final settled bar',()=>{
+  // Nov 27 2026 (EST), Dec 24 2026 (EST): official NYSE early-close dates.
+  for(const date of ['2026-11-27','2026-12-24']){
+    const last=usProvisionalSlot(Date.parse(`${date}T18:01:00Z`));
+    assert.equal(last?.slotEndUtc,`${date}T18:00:00.000Z`);
+    assert.equal(usProvisionalSlot(Date.parse(`${date}T18:15:00Z`)),null);
+    assert.equal(usProvisionalSlot(Date.parse(`${date}T19:01:00Z`)),null);
+  }
+  // July 3, 2028 early close is in daylight saving time, 17:00 UTC.
+  assert.equal(usProvisionalSlot(Date.parse('2028-07-03T17:01:00Z'))?.slotEndUtc,
+    '2028-07-03T17:00:00.000Z');
+  assert.equal(usProvisionalSlot(Date.parse('2028-07-03T17:15:00Z')),null);
+  assert.equal(usProvisionalSlot(Date.parse('2026-11-30T19:01:00Z'))?.slotEndUtc,
+    '2026-11-30T19:00:00.000Z'); // Regular Monday remains open.
+});
+
 test('100/503 IEX observations are valid; 403 remain missing, never unchanged',()=>{
   const raw={members,priorDate:'2026-10-29',observationDate:'2026-10-30',
     sessionStartUtc:'2026-10-30T13:30:00Z',slotEndUtc:'2026-10-30T14:00:00Z',
