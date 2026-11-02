@@ -40,7 +40,7 @@ export function readConfiguredSessions({dataRoot,registration}){
  ensure(manifest.version===1&&manifest.themeId===internalId&&Array.isArray(manifest.files),'CONFIG_MANIFEST_IDENTITY');
  const tables=Object.fromEntries(symbols.map(s=>[s,new Map()]));
  for(const f of manifest.files){
-  const match=/^raw\/([A-Z]{1,6})_([a-f0-9]{64})\.jsonl$/.exec(f.path??'');
+  const match=/^raw\/([A-Z][A-Z0-9.]{0,11})_([a-f0-9]{64})\.jsonl$/.exec(f.path??'');
   ensure(match&&symbols.includes(match[1])&&match[2]===f.sha256,'CONFIG_RAW_PATH');
   ensure(f.source==='https://getmarkethistory.com'&&f.priceMode==='RAW_UNADJUSTED_1H_NOT_OFFICIAL_CLOSE','CONFIG_RAW_MODE');
   const raw=safeDirectory(home,'raw'),file=path.join(raw,path.basename(f.path));

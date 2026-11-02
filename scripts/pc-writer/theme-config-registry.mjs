@@ -15,7 +15,7 @@ export function validateDefinition(input){
  ensure(typeof input.id==='string'&&/^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/.test(input.id)&&input.id.length<=48,'CONFIG_ID');
  ensure(typeof input.label==='string'&&input.label.trim()===input.label&&input.label.length>0&&input.label.length<=60&&!/[\x00-\x1f\x7f<>]/.test(input.label),'CONFIG_LABEL');
  ensure(input.provider==='getmarkethistory'&&input.profile===(v2?R32:'ADAPTIVE_R2_PAIR_R3')&&input.benchmark==='SPY','CONFIG_UNSUPPORTED_PROVIDER_OR_FORMULA');
- ensure(Array.isArray(input.etfs)&&(v2?input.etfs.length>0:input.etfs.length===2)&&input.etfs.every(x=>typeof x==='string'&&/^[A-Z]{1,6}$/.test(x)&&x!=='SPY')&&new Set(input.etfs).size===input.etfs.length,v2?'CONFIG_DISTINCT_ETFS_REQUIRED':'CONFIG_TWO_DISTINCT_ETFS_REQUIRED');
+ ensure(Array.isArray(input.etfs)&&(v2?input.etfs.length>0:input.etfs.length===2)&&input.etfs.every(x=>typeof x==='string'&&(v2?/^[A-Z][A-Z0-9.]{0,11}$/:/^[A-Z]{1,6}$/).test(x)&&x!=='SPY')&&new Set(input.etfs).size===input.etfs.length,v2?'CONFIG_DISTINCT_ETFS_REQUIRED':'CONFIG_TWO_DISTINCT_ETFS_REQUIRED');
  if(v2)for(const field of ['selectionEvidence','aumEvidence']){
   const ref=input[field];ensure(ref&&Object.keys(ref).length===2&&typeof ref.path==='string'&&
    /^[a-zA-Z0-9_-]+(?:\/[a-zA-Z0-9_.-]+)+\.json$/.test(ref.path)&&

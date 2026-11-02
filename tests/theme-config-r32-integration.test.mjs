@@ -3,6 +3,8 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import {pathToFileURL} from 'node:url';
+import {installConfiguredTool} from '../scripts/pc-writer/theme-config-install.mjs';
 import {R32} from '../scripts/pc-writer/theme-platform.mjs';
 import {digest,registerDefinition,readRegistered,validateDefinition} from '../scripts/pc-writer/theme-config-registry.mjs';
 import {scoreRegistered,readConfiguredSessions} from '../scripts/pc-writer/theme-config-score.mjs';
@@ -34,12 +36,16 @@ function fixture(t){
  write('theme-config/public-approvals/fixture-r32.json',{schema:'ZGMINI_CONFIGURED_PUBLIC_APPROVAL_V1',themeId:definition.id,definitionSha256:registration.sha256,profile:R32,etfs,benchmark:'SPY',selectionReviewed:true,publicationAuthorized:true,derivedOnlyNoRaw:true,rights:{mode:'VERIFIED_DERIVED_PUBLICATION_RIGHTS',termsUrl:'https://getmarkethistory.com/docs/terms',evidenceReference:'UNIT_FIXTURE_ONLY'},approvedAt:'2026-10-30T11:00:00Z',expiresAt:'2026-11-10T00:00:00Z'});
  return {root,definition,score};
 }
-test('existing registration/scoring uses approved R32 without per-theme code or fixed ETF count',t=>{
- const {definition,score}=fixture(t);assert.equal(score.profile,R32);assert.equal(score.status,'PRIVATE_SCORE_READY');assert.equal(score.history.length,252);
+test('existing registration/scoring uses approved R32 without per-theme code or fixed ETF count',async t=>{
+ const {root,definition,score}=fixture(t);assert.equal(score.profile,R32);assert.equal(score.status,'PRIVATE_SCORE_READY');assert.equal(score.history.length,252);
  assert.equal(score.history.at(-1).mode,'NORMALIZED_DATED_OFFICIAL_AUM_THREE_PLUS');
  assert.deepEqual(score.history.at(-1).weightsPercent,{AAA:16.666667,BBB:33.333333,CCC:50});
  const many={...definition,etfs:Array.from({length:1001},(_,i)=>String.fromCharCode(65+Math.floor(i/676),65+Math.floor(i/26)%26,65+i%26))};
  assert.equal(validateDefinition(many).etfs.length,1001);
+ assert.deepEqual(validateDefinition({...definition,etfs:['A1.X']}).etfs,['A1.X']);
+ const bundle=installConfiguredTool({dataRoot:root,sourceSha:'a'.repeat(40),stageOnly:true});
+ const module=await import(pathToFileURL(path.join(bundle.home,'versions',bundle.version,'scripts/pc-writer/theme-config-score.mjs')).href);
+ assert.deepEqual(module.scoreRegistered({dataRoot:root,registration:readRegistered(root,definition.id)}),score);
 });
 test('common preflight -> existing CAS publisher -> actual Reader contract -> duplicate no-write',async t=>{
  const {root,score}=fixture(t);let row=null,writes=0;

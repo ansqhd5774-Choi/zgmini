@@ -51,7 +51,7 @@ async function collectPair({dataRoot,themeId,start,end,maxRequests=4,fetchImpl=f
   let manifest=fs.existsSync(manifestFile)?JSON.parse(fs.readFileSync(manifestFile,'utf8')):{version:1,themeId,files:[]};
   if(manifest.version!==1||manifest.themeId!==themeId||!Array.isArray(manifest.files))throw Error('MANIFEST_IDENTITY');
   // Previously committed page files must remain intact before resuming.
-  for(const s of symbols)for(const f of state.symbols[s].files){if(!/^raw\/[A-Z]+_[a-f0-9]{64}\.jsonl$/.test(f.path)||hash(fs.readFileSync(path.join(home,f.path)))!==f.sha256)throw Error('CHECKPOINT_RAW_HASH');}
+  for(const s of symbols)for(const f of state.symbols[s].files){if(!/^raw\/[A-Z][A-Z0-9.]{0,11}_[a-f0-9]{64}\.jsonl$/.test(f.path)||hash(fs.readFileSync(path.join(home,f.path)))!==f.sha256)throw Error('CHECKPOINT_RAW_HASH');}
   for(const symbol of symbols){
    const checkpoint=state.symbols[symbol];
    while(!checkpoint.complete&&report.providerCalls<maxRequests){

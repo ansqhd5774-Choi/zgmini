@@ -40,7 +40,7 @@ function validatePrepared(preflight,now){
   /[<>\x00-\x1f\x7f]/.test(c.theme)||
   c.benchmark!=='SPY'||c.methodologyVersion!==(v2?CONFIGURED_R32:'ADAPTIVE_R2_PAIR_R3')||
   !Array.isArray(c.etfs)||(v2?c.etfs.length<1:c.etfs.length!==2)||new Set(c.etfs).size!==c.etfs.length||
-  c.etfs.some(e=>typeof e!=='string'||!/^[A-Z]{1,6}$/.test(e)||e==='SPY')||
+  c.etfs.some(e=>typeof e!=='string'||!(v2?/^[A-Z][A-Z0-9.]{0,11}$/:/^[A-Z]{1,6}$/).test(e)||e==='SPY')||
   ![c.definitionSha256,c.candidateSha256,c.approvalSha256].every(sha)||
   preflight.definitionSha256!==c.definitionSha256||
   preflight.candidateSha256!==c.candidateSha256||

@@ -12,6 +12,13 @@ const need=(ok,code)=>{if(!ok)throw Object.assign(new Error(code),{code});};
 const git=(args,opts={})=>execFileSync('git',args,{cwd:repositoryRoot,...opts});
 const sourcePath=rel=>['RUN_PREFLIGHT.cmd','RUN_INSTALL.cmd','RUN_DIAGNOSE.cmd','README_KO.txt'].includes(rel)?
  'packaging/theme-config/'+rel:rel;
+export function canonicalPackageBytes(working,expected){
+ const utf8=b=>Buffer.from(b.toString('utf8'),'utf8').equals(b);
+ const normalized=b=>Buffer.from(b.toString('utf8').replaceAll('\r\n','\n'),'utf8');
+ need(working.equals(expected)||utf8(working)&&utf8(expected)&&normalized(working).equals(normalized(expected)),
+  'PACKAGE_GIT_SOURCE_BYTE_DRIFT');
+ return expected; // Package pinned Git bytes, not the normalized working copy.
+}
 const importedPaths=source=>{
  const imports=[];
  const regex=/(?:\bfrom\s*|\bimport\s*|\bimport\(\s*)['"]([^'"]+)['"]/g;
@@ -45,7 +52,7 @@ export function buildConfiguredPackage({sourceSha,outputDir}={}){
   const sourceRel=sourcePath(rel),file=path.join(repositoryRoot,sourceRel);
   const expected=git(['show',sourceSha+':'+sourceRel]);
   let bytes=fs.readFileSync(file);
-  need(bytes.equals(expected),'PACKAGE_GIT_SOURCE_BYTE_DRIFT');
+  bytes=canonicalPackageBytes(bytes,expected);
   if(rel.endsWith('.cmd')){
    need(!bytes.includes(0)&&bytes.every(b=>b<128),
     'PACKAGE_CMD_NOT_ASCII');
@@ -74,7 +81,7 @@ export function buildConfiguredPackage({sourceSha,outputDir}={}){
  fs.utimesSync(path.join(root,'package-manifest.json'),epoch,epoch);
  for(const dir of [...dirs].sort((a,b)=>b.length-a.length))fs.utimesSync(dir,epoch,epoch);
  const zipPath=path.join(outputDir,name+'.zip');
- execFileSync('zip',['-q','-X','-r',zipPath,name],{
+ execFileSync(process.platform==='win32'?'tar.exe':'zip',process.platform==='win32'?['-a','-cf',zipPath,name]:['-q','-X','-r',zipPath,name],{
   cwd:outputDir,stdio:['ignore','pipe','pipe'],timeout:30000});
  const result={status:'PACKAGE_BUILT_NO_PC_WRITES',sourceSha,sourceTreeSha:treeSha,
   zipPath,zipSha256:digest(fs.readFileSync(zipPath)),manifestSha256:digest(manifestBytes),
