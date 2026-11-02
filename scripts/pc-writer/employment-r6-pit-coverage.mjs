@@ -98,7 +98,8 @@ export function auditEmploymentR6PitCoverage({dbPath,candidateDbPath=null,asOfDa
     const history=sourceRows(core,T.observationHistory,asOfDate);
     const candidates=candidate?sourceRows(candidate,T.observationHistory,asOfDate):null;
     const candidateCurrent=candidate?sourceRows(candidate,T.observationCurrent,asOfDate):null;
-    const currentKeys=new Map((current??[]).map(row=>[identity(row),row]));
+    const currentKeys=new Map((current??[]).filter(row=>isKnownAsOf(row,asOfDate))
+      .map(row=>[identity(row),row]));
     const historyKeys=historyIndex(history,asOfDate);
     const candidateKeys=historyIndex(candidates,asOfDate);
     const candidateCurrentKeys=new Map((candidateCurrent??[]).filter(row=>isKnownAsOf(row,asOfDate))

@@ -66,6 +66,23 @@ test("future candidate availability does not backfill past PIT evidence",()=>{
   assert.equal(after.missingKeysWithMatchingCandidateValueAndHash,1);
 });
 
+test("future-retrieved Core CURRENT cannot inflate an earlier PIT history gap",()=>{
+  const dir=fs.mkdtempSync(path.join(os.tmpdir(),"zgmini-r6-pit-core-future-"));
+  const core=path.join(dir,"core.sqlite");
+  const future={...observation("AL",100,"h1",{available:"2026-10-26T00:00:00.000Z"}),
+    retrieved:"2026-11-03T01:00:00.000Z"};
+  fixture(core,{current:[future]});
+  const beforeHash=digest(core);
+  const before=auditEmploymentR6PitCoverage({dbPath:core,asOfDate:"2026-11-02"});
+  assert.equal(before.coreCurrentRows,1);
+  assert.equal(before.coreCurrentKeys,0);
+  assert.equal(before.coreCurrentKeysMissingHistory,0);
+  const after=auditEmploymentR6PitCoverage({dbPath:core,asOfDate:"2026-11-03"});
+  assert.equal(after.coreCurrentKeys,1);
+  assert.equal(after.coreCurrentKeysMissingHistory,1);
+  assert.equal(digest(core),beforeHash);
+});
+
 test("candidate cannot equal Core and absence of tables remains NO_EVIDENCE",()=>{
   const dir=fs.mkdtempSync(path.join(os.tmpdir(),"zgmini-r6-pit-missing-"));
   const core=path.join(dir,"core.sqlite");

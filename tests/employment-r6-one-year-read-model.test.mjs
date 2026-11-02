@@ -71,6 +71,8 @@ test("historical PIT selection never leaks a revision retrieved after the score 
   const cutoff="2026-11-02T23:59:59.999Z";
   assert.deepEqual(selectAsOfRevisions([prior,later],cutoff).map(x=>x.value),[4.1]);
   assert.deepEqual(selectAsOfRevisions([later],cutoff),[]);
+  assert.deepEqual(selectAsOfRevisions([{...prior,retrievedAt:null}],cutoff),[]);
+  assert.deepEqual(selectAsOfRevisions([{...prior,retrievedAt:"invalid"}],cutoff),[]);
   assert.deepEqual(selectAsOfRevisions([prior,later],"2026-11-03T23:59:59.999Z")
     .map(x=>x.value),[4.2]);
 });
