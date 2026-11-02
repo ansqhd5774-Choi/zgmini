@@ -14,6 +14,7 @@ import {
   validEmploymentR6PublicDisplay,
 } from "../../worker/employment-r6-public-display.mjs";
 import {client,credential,hash,read} from "./d1.mjs";
+import {auditEmploymentR6PitCoverage} from "./employment-r6-pit-coverage.mjs";
 
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),"../..");
 const safeDate=value=>typeof value==="string"&&/^\d{4}-\d{2}-\d{2}$/.test(value);
@@ -120,7 +121,7 @@ function pcPublisher(dbPath){
   return {remote:client(config,credential(root)),dbId:config.core,source};
 }
 
-function saveReport(dir,body,publication,error,{candidateDbUsed=false}={}){
+function saveReport(dir,body,publication,error,{candidateDbUsed=false,pitCoverage=null}={}){
   const suffix=nowIso().replace(/[-:.]/g,"")+"_"+process.pid;
   const basename="EMPLOYMENT_R6_ONE_YEAR_"+suffix;
   const summary=body?.summary??null;
@@ -129,7 +130,7 @@ function saveReport(dir,body,publication,error,{candidateDbUsed=false}={}){
     stageStatus:error?"FAILED":"STAGED",publicationStatus:publication?.status??"NOT_REQUESTED",
     error:error?.message??null,asOfDate:body?.asOfDate??null,
     sourceMode:candidateDbUsed?"CORE_PLUS_ISOLATED_CANDIDATE_READONLY":"CORE_ONLY_READONLY",
-    summary,sourceStoredAt:body?.sourceStoredAt??null,
+    summary,sourceStoredAt:body?.sourceStoredAt??null,pitCoverage,
     dbWritesByStage:0,providerCallsByStage:0,
     remoteWritten:publication?.status==="VERIFIED",
   };
@@ -145,6 +146,8 @@ function saveReport(dir,body,publication,error,{candidateDbUsed=false}={}){
     "ONE_YEAR_CHART_PARTIAL: "+(summary?.chartPartialFeatures??0)+" / 29",
     "FORMULA_SCORE_READY: "+(summary?.scoredFeatures??0)+" / 29",
     "RECENT_FORMULA_SCORE_READY: "+(summary?.recentlyScoredFeatures??0)+" / 29",
+    "CORE_CURRENT_WITHOUT_PIT_HISTORY: "+(pitCoverage?.coreCurrentKeysMissingHistory??"NO_EVIDENCE"),
+    "CANDIDATE_MATCHING_MISSING_KEYS: "+(pitCoverage?.missingKeysWithMatchingCandidateValueAndHash??"NO_EVIDENCE"),
     "ERROR: "+(report.error??"NONE"),
     "PC_SOURCE_DB_WRITES: 0",
     "PROVIDER_REQUESTS: 0",
@@ -157,10 +160,11 @@ function saveReport(dir,body,publication,error,{candidateDbUsed=false}={}){
 }
 
 if(process.argv[1]&&import.meta.url===pathToFileURL(process.argv[1]).href){
-  let args,body=null,publication=null,problem=null;
+  let args,body=null,publication=null,problem=null,pitCoverage=null;
   try{
     args=optionsFrom(process.argv.slice(2));
     body=await stageEmploymentR6OneYear(args);
+    if(!args.publish)pitCoverage=auditEmploymentR6PitCoverage(args);
     if(args.publish){
       const {remote,dbId}=pcPublisher(args.dbPath);
       publication=await publishEmploymentR6OneYear({body,remote,dbId});
@@ -168,7 +172,9 @@ if(process.argv[1]&&import.meta.url===pathToFileURL(process.argv[1]).href){
   }catch(error){problem=error;process.exitCode=2;}
   if(args?.outputDir){
     try{
-      const paths=saveReport(args.outputDir,body,publication,problem,{candidateDbUsed:Boolean(args.candidateDbPath)});
+      const paths=saveReport(args.outputDir,body,publication,problem,{
+        candidateDbUsed:Boolean(args.candidateDbPath),pitCoverage,
+      });
       process.stdout.write("RESULT_TXT: "+paths.txtPath+"\nRESULT_JSON: "+paths.jsonPath+"\n");
     }catch(error){process.stderr.write("REPORT_SAVE_FAILED: "+error.message+"\n");process.exitCode=2;}
   }
