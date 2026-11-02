@@ -1,5 +1,6 @@
 import fs from 'node:fs';import path from 'node:path';import os from 'node:os';import {fileURLToPath} from 'node:url';
 import {loadLocalProviders} from './local-env.mjs';
+import {createQuotaFetch} from './quota-fetch.mjs';
 import {localDatabase} from './local-db.mjs';
 import {publicFeedStore} from '../../worker/public-feed-store.mjs';
 import {loadSectorFearGreedR3RollingInputs} from './sector-fear-greed-r3-rolling-local.mjs';
@@ -28,12 +29,12 @@ export function calculateSectorProvisional(inputs,snapshot){
  if(result.observationDate!==date)throw Error('SECTOR_PROVISIONAL_AXES_NOT_ALIGNED');
  return {status:'READY',phase:'PROVISIONAL',source:'ALPACA_IEX_SPLIT',delayMinutes:null,asOf,updatedAt:snapshot.retrievedAt,observationDate:date,point:result.history.at(-1),coverage:{expected:members.length,observed:members.length},methodologyVersion:result.methodologyVersion};
 }
-export async function runSectorProvisional(base,{now=Date.now(),fetchImpl=fetch,snapshot=null,write=false}={}){
+export async function runSectorProvisional(base,{now=Date.now(),fetchImpl=fetch,snapshot=null,write=false,loadInputs=loadSectorFearGreedR3RollingInputs}={}){
  const reportFile=path.join(base,'local-sector-provisional-last-run.json');const report={at:new Date(now).toISOString(),status:'SKIPPED',providerCalls:0};
  if(!snapshot&&!provisionalCollectionWindow(now))return {...report,reason:'OUTSIDE_REGULAR_SESSION_DELAYED_WINDOW'};
  if(!snapshot&&fs.existsSync(reportFile)){const old=JSON.parse(fs.readFileSync(reportFile,'utf8'));if(now-Date.parse(old.at)>=0&&now-Date.parse(old.at)<5*60000)return {...report,status:'CACHED'};}
  try{
-  const inputs=loadSectorFearGreedR3RollingInputs(base);
+  const inputs=loadInputs(base);
   const date=newYorkClock(now).date;
   if(inputs.diagnostics.stockLastDate>=date)return {...report,status:'CONFIRMED_INPUT_PRESENT'};
   if(!snapshot){
@@ -44,8 +45,12 @@ export async function runSectorProvisional(base,{now=Date.now(),fetchImpl=fetch,
    // Midnight UTC is before the US regular session in both DST regimes.
    const anchorDate=inputs.diagnostics.stockLastDate;
    url.search=new URLSearchParams({symbols:symbols.join(','),timeframe:'1Day',start:anchorDate+'T00:00:00Z',end:asOf,feed:'iex',adjustment:'split',limit:'10000'});
+   // This CLI runs in its own Node process, outside collect-local's wrapped fetch.
+   // Reserve against the same PC data root as R10 before every Alpaca request.
+   const sharedFetch=createQuotaFetch({base,originalFetch:fetchImpl,mode:'enforce'}).fetch;
    report.providerCalls=1;
-   const r=await fetchImpl(url,{headers:{'APCA-API-KEY-ID':env.APCA_API_KEY_ID,'APCA-API-SECRET-KEY':env.APCA_API_SECRET_KEY},signal:AbortSignal.timeout(20000)});
+   const r=await sharedFetch(url,{headers:{'APCA-API-KEY-ID':env.APCA_API_KEY_ID,'APCA-API-SECRET-KEY':env.APCA_API_SECRET_KEY},signal:AbortSignal.timeout(20000)});
+   if(r.status===429){const error=Error('SECTOR_PROVISIONAL_HTTP_429');error.code='SECTOR_PROVISIONAL_QUOTA_DEFER';throw error;}
    if(!r.ok)throw Error('SECTOR_PROVISIONAL_HTTP_'+r.status);const body=await r.json();if(body.next_page_token)throw Error('SECTOR_PROVISIONAL_PAGE_BUDGET');
    snapshot={date,asOf,retrievedAt:new Date(now).toISOString(),anchorDate,bars:body.bars};
   }
@@ -54,7 +59,16 @@ export async function runSectorProvisional(base,{now=Date.now(),fetchImpl=fetch,
   const output=calculateSectorProvisional(inputs,snapshot);
   if(write){const db=localDatabase(path.join(base,'storage','core.sqlite'));try{const store=publicFeedStore(db);await store.writeOutput(SECTOR_PROVISIONAL_KEY,output,now);const check=await store.readOutput(SECTOR_PROVISIONAL_KEY);if(JSON.stringify(check?.body)!==JSON.stringify(output))throw Error('SECTOR_PROVISIONAL_READBACK_FAILED');}finally{db.close();}}
   Object.assign(report,{status:write?'LOCAL_READY':'CHECK_READY',observationDate:output.observationDate,asOf:output.asOf,coverage:output.coverage,output});
- }catch(e){Object.assign(report,{status:'FAILED_PREVIOUS_CONFIRMED_PRESERVED',error:/^SECTOR_[A-Z0-9_]+$/.test(e.message)?e.message:'SECTOR_PROVISIONAL_FAILED'});}
+ }catch(e){
+  if(e?.code==='PROVIDER_QUOTA_GUARD')Object.assign(report,{
+   status:'DEFERRED_QUOTA',
+   reason:e.requestReserved?'ALPACA_LEDGER_UPDATE_UNVERIFIED':'ALPACA_SHARED_QUOTA_GUARD',
+   // A post-response ledger failure can carry this guard after one real call.
+   providerCalls:e.requestReserved?1:0,
+  });
+  else if(e?.code==='SECTOR_PROVISIONAL_QUOTA_DEFER')Object.assign(report,{status:'DEFERRED_QUOTA',reason:'ALPACA_HTTP_429'});
+  else Object.assign(report,{status:'FAILED_PREVIOUS_CONFIRMED_PRESERVED',error:/^SECTOR_[A-Z0-9_]+$/.test(e.message)?e.message:'SECTOR_PROVISIONAL_FAILED'});
+ }
  if(write)save(reportFile,{...report,output:undefined});return report;
 }
 if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.url)){
