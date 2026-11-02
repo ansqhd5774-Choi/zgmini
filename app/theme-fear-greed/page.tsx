@@ -3,7 +3,6 @@ import {THEME_INVESTOR_SEARCH} from '../../lib/investor-search-content';
 import type {Metadata} from 'next';
 import SiteHeader from '../../components/site-header';
 import ThemeDetailCharts from './theme-detail-charts';
-import ConfiguredThemeSection from './configured-theme-section';
 import {WebPageJsonLd} from '../seo-jsonld';
 import '../sector-fear-greed/sector-detail.css';
 import './theme-detail.css';
@@ -13,6 +12,5 @@ export const metadata:Metadata={title,description,alternates:{canonical:'https:/
 export default function ThemeFearGreedPage(){return <><SiteHeader/><main className="zg-sector-detail zg-theme-detail"><WebPageJsonLd name={title} description={description} path="/theme-fear-greed/"/><div className="zg-sector-detail-inner">
  <header className="zg-sector-detail-hero"><h1>테마별 공포·탐욕</h1><p>테마 공탐은 ETF 기반 공포탐욕지수입니다. 공개 점수와 1년 추이를 비교하며, 준비 중인 항목은 점수를 제공하지 않습니다.</p></header>
  <ThemeDetailCharts/>
- <ConfiguredThemeSection/>
  <InvestorSearchGuide id="investor-search-theme-fear-greed" copy={THEME_INVESTOR_SEARCH} collapsible/>
  </div></main></>;}
