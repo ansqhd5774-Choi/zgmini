@@ -83,6 +83,20 @@ export async function stageEmploymentR6OneYear({dbPath,asOfDate,candidateDbPath=
   }finally{db.close();candidate?.close();}
 }
 
+/** Keep PIT diagnostics even when no verified observation can build a chart. */
+export async function stageEmploymentR6OneYearWithPitAudit(args){
+  let pitCoverage=null,pitCoverageError=null,body=null,error=null;
+  try{pitCoverage=auditEmploymentR6PitCoverage(args);}
+  catch(failure){
+    const code=String(failure?.message??"");
+    pitCoverageError=/^[A-Z0-9_]+$/.test(code)?code:"PIT_AUDIT_READ_FAILED";
+  }
+  try{body=await stageEmploymentR6OneYear(args);}
+  catch(failure){error=failure;}
+  if(!error&&pitCoverageError)error=Error(pitCoverageError);
+  return {body,pitCoverage,pitCoverageError,error};
+}
+
 // The existing PC publisher's D1 schema/key class is reused. Only the public
 // display payload is sent; provider inputs, PIT history and credentials remain PC-local.
 export async function publishEmploymentR6OneYear({body,remote,dbId,now=Date.now()}){
@@ -121,16 +135,16 @@ function pcPublisher(dbPath){
   return {remote:client(config,credential(root)),dbId:config.core,source};
 }
 
-function saveReport(dir,body,publication,error,{candidateDbUsed=false,pitCoverage=null}={}){
+export function saveReport(dir,body,publication,error,{candidateDbUsed=false,pitCoverage=null,pitCoverageError=null,asOfDate=null}={}){
   const suffix=nowIso().replace(/[-:.]/g,"")+"_"+process.pid;
   const basename="EMPLOYMENT_R6_ONE_YEAR_"+suffix;
   const summary=body?.summary??null;
   const report={
     kind:"EMPLOYMENT_R6_ONE_YEAR_STAGE_REPORT_R1",generatedAt:nowIso(),
     stageStatus:error?"FAILED":"STAGED",publicationStatus:publication?.status??"NOT_REQUESTED",
-    error:error?.message??null,asOfDate:body?.asOfDate??null,
+    error:error?.message??null,asOfDate:body?.asOfDate??asOfDate,
     sourceMode:candidateDbUsed?"CORE_PLUS_ISOLATED_CANDIDATE_READONLY":"CORE_ONLY_READONLY",
-    summary,sourceStoredAt:body?.sourceStoredAt??null,pitCoverage,
+    summary,sourceStoredAt:body?.sourceStoredAt??null,pitCoverage,pitCoverageError,
     dbWritesByStage:0,providerCallsByStage:0,
     remoteWritten:publication?.status==="VERIFIED",
   };
@@ -153,6 +167,7 @@ function saveReport(dir,body,publication,error,{candidateDbUsed=false,pitCoverag
     "CANDIDATE_OVERLAP_CONFLICTS: "+(pitCoverage?.candidateOverlapConflictingKeys??"NO_EVIDENCE"),
     "CANDIDATE_OVERLAP_UNVERIFIED: "+(pitCoverage?.candidateOverlapUnverifiedKeys??"NO_EVIDENCE"),
     "CORE_HISTORY_UNMATCHED_CANDIDATE: "+(pitCoverage?.coreMissingHistoryKeysWithoutConsistentCandidateMetadata??"NO_EVIDENCE"),
+    "PIT_AUDIT_ERROR: "+(pitCoverageError??"NONE"),
     "ERROR: "+(report.error??"NONE"),
     "PC_SOURCE_DB_WRITES: 0",
     "PROVIDER_REQUESTS: 0",
@@ -165,12 +180,15 @@ function saveReport(dir,body,publication,error,{candidateDbUsed=false,pitCoverag
 }
 
 if(process.argv[1]&&import.meta.url===pathToFileURL(process.argv[1]).href){
-  let args,body=null,publication=null,problem=null,pitCoverage=null;
+  let args,body=null,publication=null,problem=null,pitCoverage=null,pitCoverageError=null;
   try{
     args=optionsFrom(process.argv.slice(2));
-    body=await stageEmploymentR6OneYear(args);
-    if(!args.publish)pitCoverage=auditEmploymentR6PitCoverage(args);
-    if(args.publish){
+    if(!args.publish){
+      const diagnostic=await stageEmploymentR6OneYearWithPitAudit(args);
+      ({body,pitCoverage,pitCoverageError}=diagnostic);
+      if(diagnostic.error)throw diagnostic.error;
+    }else{
+      body=await stageEmploymentR6OneYear(args);
       const {remote,dbId}=pcPublisher(args.dbPath);
       publication=await publishEmploymentR6OneYear({body,remote,dbId});
     }
@@ -178,7 +196,7 @@ if(process.argv[1]&&import.meta.url===pathToFileURL(process.argv[1]).href){
   if(args?.outputDir){
     try{
       const paths=saveReport(args.outputDir,body,publication,problem,{
-        candidateDbUsed:Boolean(args.candidateDbPath),pitCoverage,
+        candidateDbUsed:Boolean(args.candidateDbPath),pitCoverage,pitCoverageError,asOfDate:args.asOfDate,
       });
       process.stdout.write("RESULT_TXT: "+paths.txtPath+"\nRESULT_JSON: "+paths.jsonPath+"\n");
     }catch(error){process.stderr.write("REPORT_SAVE_FAILED: "+error.message+"\n");process.exitCode=2;}

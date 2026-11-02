@@ -4,7 +4,7 @@ import os from "node:os";
 import path from "node:path";
 import {DatabaseSync} from "node:sqlite";
 import {test} from "node:test";
-import {optionsFrom,stageEmploymentR6OneYear} from "../scripts/pc-writer/employment-r6-one-year-stage.mjs";
+import {optionsFrom,saveReport,stageEmploymentR6OneYear,stageEmploymentR6OneYearWithPitAudit} from "../scripts/pc-writer/employment-r6-one-year-stage.mjs";
 
 const TABLE="market_score_employment_r4_shadow_history_v1";
 function fixture(file,rows){
@@ -77,4 +77,34 @@ test("Windows PUBLISH CMD fails closed when an isolated candidate is present",()
   assert.match(publish,/CANDIDATE_PUBLICATION_NOT_APPROVED/);
   assert.doesNotMatch(publish,/--candidate-db/);
   assert.match(publish,/--db "%EMP_R6_CORE%" --output-dir "%~dp0\." --publish/);
+});
+
+test("failed 1Y stage can still write read-only PIT missing-history counts to TXT and JSON",async()=>{
+  const dir=fs.mkdtempSync(path.join(os.tmpdir(),"zgmini-r6-stage-missing-history-"));
+  const core=path.join(dir,"core.sqlite");
+  fixture(core,[]);
+  const db=new DatabaseSync(core);
+  try{
+    db.exec(`CREATE TABLE market_score_employment_r4_shadow_current_v1(
+      logical_series_id TEXT,geography_type TEXT,geography_code TEXT,
+      observation_date TEXT,retrieved_at TEXT,available_at TEXT,value REAL,source_hash TEXT
+    )`);
+    db.prepare(`INSERT INTO market_score_employment_r4_shadow_current_v1
+      VALUES(?,?,?,?,?,?,?,?)`).run("STATE_INITIAL_CLAIMS","STATE","AL",
+      "2026-10-24","2026-10-29T10:00:00.000Z",null,100,"a".repeat(64));
+  }finally{db.close();}
+  const original=fs.readFileSync(core);
+  const diagnostic=await stageEmploymentR6OneYearWithPitAudit({dbPath:core,asOfDate:"2026-11-02"});
+  assert.equal(diagnostic.error?.message,"NO_VERIFIED_PIT_OBSERVATIONS");
+  const paths=saveReport(dir,diagnostic.body,null,diagnostic.error,{...diagnostic,asOfDate:"2026-11-02"});
+  const {report}=JSON.parse(fs.readFileSync(paths.jsonPath,"utf8"));
+  assert.equal(report.stageStatus,"FAILED");
+  assert.equal(report.asOfDate,"2026-11-02");
+  assert.equal(report.pitCoverage.coreCurrentKeysMissingHistory,1);
+  assert.equal(report.pitCoverage.coreCurrentRows,1);
+  assert.equal(report.pitCoverageError,null);
+  const txt=fs.readFileSync(paths.txtPath,"utf8");
+  assert.match(txt,/CORE_CURRENT_WITHOUT_PIT_HISTORY: 1/);
+  assert.match(txt,/PIT_AUDIT_ERROR: NONE/);
+  assert.deepEqual(fs.readFileSync(core),original);
 });
