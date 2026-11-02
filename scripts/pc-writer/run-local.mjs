@@ -38,6 +38,37 @@ if(publish){
  if(blocked)throw Error(blocked.status);
  execFileSync('git',['diff','--quiet','HEAD','--','worker','lib','scripts/pc-writer'],{cwd:root,stdio:'pipe',windowsHide:true});
 }
+// A bounded, provisional-only invocation of the already approved Writer.
+// It shares the normal source/config/clean checks above, but does not wait for
+// Core SQLite projections, market publication, or the shared market lease.
+// Only the independent IEX D1 key may be written; the normal Writer ledger is
+// deliberately left to the full run-local invocation.
+if(process.argv.includes('--us-provisional-only')){
+ const report={at:new Date().toISOString(),source,lane:'US_IEX_PROVISIONAL_EARLY',status:'NOT_ATTEMPTED'};
+ try{
+  if(!publish)throw Error('US_PROVISIONAL_PUBLISH_FLAG_REQUIRED');
+  const {prepareUsProvisional,publishUsProvisional}=await import('./us-breadth-provisional-publication.mjs');
+  const prepared=prepareUsProvisional(base);
+  report.inputStatus=prepared.status;
+  if(prepared.prepared){
+   const remote=client(config,()=>credential(root),{onDiagnostic:diagnostic=>
+    appendD1Diagnostic(base,{runAt:report.at,source},diagnostic)});
+   report.publication=await publishUsProvisional(remote,config.core,prepared);
+   report.status=['VERIFIED','ALREADY_VERIFIED'].includes(report.publication.status)?'VERIFIED':report.publication.status;
+   report.slotEndUtc=prepared.body.slotEndUtc;
+   report.observedCount=prepared.body.observedCount;
+   report.missingCount=prepared.body.missingCount;
+  }else report.status='SKIPPED_NOT_READY';
+ }catch(error){
+  report.status='FAILED';
+  report.error=/^[A-Z][A-Z0-9_]{1,100}$/.test(error?.message??'')?error.message:'US_PROVISIONAL_EARLY_PUBLICATION_FAILED';
+  process.exitCode=1;
+ }
+ report.completedAt=new Date().toISOString();
+ save(path.join(base,'local-us-breadth-provisional-early-last-run.json'),report);
+ fs.writeSync(1,JSON.stringify(report)+'\n');
+ process.exit(process.exitCode??0);
+}
 const seed=read(path.join(base,'local-seed-progress.json'));
 if(!Object.keys(seed).length||Object.values(seed).some(x=>!x.complete))throw Error('LOCAL_SEED_INCOMPLETE');
 const core=localDatabase(path.join(base,'storage','core.sqlite'));
@@ -71,6 +102,11 @@ try{
  await attemptOutput(report,'us-breadth-calculation',async()=>{
   const {prepareUsBreadth}=await import('./market-breadth-us-r1.mjs');
   report.usBreadth=await prepareUsBreadth(core,{now:new Date(now)});
+ });
+ // Separate IEX provisional sidecar. The calculation lane never calls Alpaca.
+ await attemptOutput(report,'us-breadth-provisional-calculation',async()=>{
+  const {prepareUsProvisional}=await import('./us-breadth-provisional-publication.mjs');
+  report.usProvisional=prepareUsProvisional(base,{now});
  });
  const marketReady=await attemptOutput(report,'market',async()=>{
  const body=await calculateMarket(root,core,now);
@@ -228,6 +264,11 @@ try{
    report.usBreadth.publication=await publishUsBreadth(remote,config.core,report.usBreadth,{now});
   });
   else report.usBreadth={...(report.usBreadth??{status:'UNAVAILABLE'}),publication:'SKIPPED_NOT_READY'};
+  if(report.usProvisional?.prepared)await attemptOutput(report,'us-breadth-provisional-publication',async()=>{
+   const {publishUsProvisional}=await import('./us-breadth-provisional-publication.mjs');
+   report.usProvisional.publication=await publishUsProvisional(remote,config.core,report.usProvisional,{now});
+  });
+  else report.usProvisional={...(report.usProvisional??{status:'UNAVAILABLE'}),publication:'SKIPPED_NOT_READY'};
   // Explicit allowlist: publish display outputs only, never provider input/history rows.
   for(const {id,status} of report.projections){
    if(status!=='LOCAL_READY')continue;
