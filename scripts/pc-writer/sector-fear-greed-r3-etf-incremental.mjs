@@ -3,9 +3,10 @@ import os from 'node:os';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {loadLocalProviders} from './local-env.mjs';
+import {createQuotaFetch} from './quota-fetch.mjs';
 import {SECTOR_FEAR_GREED_R3_BENCHMARKS} from '../../lib/market-score/sector-fear-greed-r3-rolling.mjs';
 
-const DEFAULT_BASE=path.join(os.homedir(),'.zgmini','pc-writer');
+const DEFAULT_BASE=process.env.ZGMINI_PC_HOME??path.join(os.homedir(),'.zgmini','pc-writer');
 export const SECTOR_FEAR_GREED_R3_ETF_INCREMENTAL_METHOD='SECTOR-FEAR-GREED-R3-ALPACA-IEX-INCREMENTAL-V1';
 export const SECTOR_FEAR_GREED_R3_ETF_INCREMENTAL_FILE='local-sector-fear-greed-r3-etf-incremental.json';
 const IEX_FILE='local-sector-fear-greed-r1-iex-price-history.json';
@@ -61,7 +62,7 @@ function buildUrl(start,end,token){
   if(token)url.searchParams.set('page_token',token);
   return url;
 }
-export async function collectSectorFearGreedR3EtfIncremental(base=DEFAULT_BASE,{fetchImpl=globalThis.fetch,now=Date.now()}={}){
+export async function collectSectorFearGreedR3EtfIncremental(base=DEFAULT_BASE,{fetchImpl=globalThis.fetch,now=Date.now(),fetchAlreadyQuotaProtected=false}={}){
   const reportPath=path.join(base,REPORT_FILE),outputPath=path.join(base,SECTOR_FEAR_GREED_R3_ETF_INCREMENTAL_FILE);
   const priorReport=readJson(reportPath);
   const end=day(now-24*60*60*1000);
@@ -78,15 +79,19 @@ export async function collectSectorFearGreedR3EtfIncremental(base=DEFAULT_BASE,{
     const env=loadLocalProviders(base),key=env.APCA_API_KEY_ID,secret=env.APCA_API_SECRET_KEY;
     if(!key||!secret)throw Error('SECTOR_FEAR_GREED_R3_ETF_ALPACA_CREDENTIALS_MISSING');
     if(typeof fetchImpl!=='function')throw Error('SECTOR_FEAR_GREED_R3_ETF_FETCH_UNAVAILABLE');
+    // collect-local passes an already quota-wrapped fetch. Independent CLI
+    // invocations must reserve in the same approved PC data root themselves.
+    const quotaFetch=fetchAlreadyQuotaProtected?fetchImpl:createQuotaFetch({base,originalFetch:fetchImpl,mode:'enforce'}).fetch;
     const bars=Object.fromEntries(SECTOR_FEAR_GREED_R3_BENCHMARKS.map(t=>[t,[]]));
     let token=null;
     do{
       report.providerRequests++;
       if(report.providerRequests>MAX_REQUESTS)throw Error('SECTOR_FEAR_GREED_R3_ETF_REQUEST_LIMIT');
-      const response=await fetchImpl(buildUrl(anchor,end,token),{
+      const response=await quotaFetch(buildUrl(anchor,end,token),{
         headers:{'APCA-API-KEY-ID':key,'APCA-API-SECRET-KEY':secret,accept:'application/json'},
         signal:AbortSignal.timeout(20000),
       });
+      if(response.status===429){const error=Error('SECTOR_FEAR_GREED_R3_ETF_HTTP_429');error.code='SECTOR_ETF_QUOTA_DEFER';throw error;}
       if(!response.ok)throw Error(`SECTOR_FEAR_GREED_R3_ETF_HTTP_${response.status}`);
       const body=await response.json();
       if(!body?.bars||typeof body.bars!=='object')throw Error('SECTOR_FEAR_GREED_R3_ETF_INVALID_RESPONSE');
@@ -134,10 +139,16 @@ export async function collectSectorFearGreedR3EtfIncremental(base=DEFAULT_BASE,{
     report.commonLatest=commonLatest;report.rows=Object.values(series).reduce((n,x)=>n+x.length,0);
     report.revisedRows=revisions.length;
   }catch(error){
-    report.error=/^[A-Z0-9_:.-]+$/.test(error?.message??'')?error.message:'SECTOR_FEAR_GREED_R3_ETF_COLLECTION_FAILED';
+    if(error?.code==='PROVIDER_QUOTA_GUARD'){
+      if(!error.requestReserved)report.providerRequests=Math.max(0,report.providerRequests-1);
+      report.status='DEFERRED_QUOTA';
+      report.reason=error.requestReserved?'ALPACA_LEDGER_UPDATE_UNVERIFIED':'ALPACA_SHARED_QUOTA_GUARD';
+    }else if(error?.code==='SECTOR_ETF_QUOTA_DEFER'){
+      report.status='DEFERRED_QUOTA';report.reason='ALPACA_HTTP_429';
+    }else report.error=/^[A-Z0-9_:.-]+$/.test(error?.message??'')?error.message:'SECTOR_FEAR_GREED_R3_ETF_COLLECTION_FAILED';
   }
   saveJson(reportPath,report);
-  if(!report.storageVerified)throw Object.assign(Error(report.error),{code:report.error});
+  if(!report.storageVerified&&report.status!=='DEFERRED_QUOTA')throw Object.assign(Error(report.error),{code:report.error});
   return report;
 }
 
