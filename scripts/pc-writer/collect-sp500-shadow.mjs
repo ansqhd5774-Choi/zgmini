@@ -1,4 +1,5 @@
 import path from "node:path";
+import fs from "node:fs";
 import os from "node:os";
 import {fileURLToPath} from "node:url";
 import {localDatabase} from "./local-db.mjs";
@@ -10,6 +11,7 @@ import {save} from "./d1.mjs";
 const DEFAULT_BASE=path.join(os.homedir(),".zgmini","pc-writer");
 const REPORT_NAME="local-sp500-shadow-collection-last-run.json";
 const BATCH_KEY="shadowSp500Benchmark";
+export const SP500_FETCH_TIMEOUT_MS=20_000;
 const validDate=value=>typeof value==="string"&&/^\d{4}-\d{2}-\d{2}$/.test(value);
 const finite=value=>typeof value==="number"&&Number.isFinite(value);
 
@@ -50,15 +52,26 @@ export function mergeSp500ShadowHistory(previousRows,incomingRows){
   return [...previousRows.filter(row=>validDate(row?.observationDate)&&row.observationDate<first),...incomingRows];
 }
 
-export async function collectSp500Shadow(base=process.env.ZGMINI_PC_HOME??DEFAULT_BASE,{asOf=new Date().toISOString().slice(0,10)}={}){
+export async function collectSp500Shadow(base=process.env.ZGMINI_PC_HOME??DEFAULT_BASE,{
+  asOf=new Date().toISOString().slice(0,10),
+  fetchTimeoutMs=SP500_FETCH_TIMEOUT_MS,
+}={}){
   if(!validDate(asOf))throw new Error("SP500_ASOF_INVALID");
+  // A missing approved PC root or database is an installation fault. No
+  // implicit database/root creation or network attempt is allowed.
+  try{
+    if(!fs.statSync(base).isDirectory()||!fs.statSync(path.join(base,"storage","core.sqlite")).isFile())
+      throw new Error("SP500_LOCAL_STORAGE_MISSING");
+  }catch{throw new Error("SP500_LOCAL_STORAGE_MISSING");}
+  const timeoutMs=Number.isSafeInteger(fetchTimeoutMs)&&fetchTimeoutMs>0
+    ?Math.min(fetchTimeoutMs,SP500_FETCH_TIMEOUT_MS)
+    :SP500_FETCH_TIMEOUT_MS;
   const env=loadLocalProviders(base);
   const key=String(env?.FRED_API_KEY??"").trim();
   if(!key)throw new Error("FRED_API_KEY_MISSING");
   const core=localDatabase(path.join(base,"storage","core.sqlite"));
   const originalFetch=globalThis.fetch;
   const quota=createQuotaFetch({base,originalFetch,mode:"enforce"});
-  globalThis.fetch=quota.fetch;
   const report={version:1,status:"RUNNING",at:new Date().toISOString(),asOf,noPublish:true,dbSchemaChanged:false,providerCalls:0,rows:0};
   try{
     const url=new URL("https://api.stlouisfed.org/fred/series/observations");
@@ -72,7 +85,10 @@ export async function collectSp500Shadow(base=process.env.ZGMINI_PC_HOME??DEFAUL
       observation_end:asOf,
       limit:"100000",
     });
-    const response=await globalThis.fetch(url,{headers:{accept:"application/json"}});
+    const response=await quota.fetch(url,{
+      headers:{accept:"application/json"},
+      signal:AbortSignal.timeout(timeoutMs),
+    });
     report.providerCalls=1;
     if(!response.ok)throw new Error(response.status===429?"SP500_FRED_QUOTA":"SP500_FRED_HTTP");
     const fetched=parseSp500FredPayload(await response.json(),{asOf});
@@ -102,7 +118,6 @@ export async function collectSp500Shadow(base=process.env.ZGMINI_PC_HOME??DEFAUL
     report.quota=quota.summary();
     throw error;
   }finally{
-    globalThis.fetch=originalFetch;
     core.close();
     save(path.join(base,REPORT_NAME),report);
   }
