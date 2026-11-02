@@ -66,7 +66,7 @@ test('missing credential and HTTP 429 both stop without retries or Core changes'
   }finally{fs.rmSync(root,{recursive:true,force:true});}
 });
 
-test('three retained days survive an invalid fourth day; raw quarantined, no extra refetch',async()=>{
+test('three retained days and a single malformed row: keep valid rows, no refetch',async()=>{
   const root=fs.mkdtempSync(path.join(os.tmpdir(),'er1-capture-partial-'));
   try{
     const dayRoot=path.join(root,'er1-input','days');
@@ -79,7 +79,8 @@ test('three retained days survive an invalid fourth day; raw quarantined, no ext
       calls++;
       const day=new URL(url).searchParams.get('date');
       const body=day===dates[3]?{
-        date:day,pre:[{symbol:'ABC/W',eps:undefined,revenue:'unsupported'}],
+        date:day,pre:[{symbol:'BBB',eps:0,revenue:0},
+          {symbol:'ABC/W',eps:undefined,revenue:'unsupported'}],
         after:[],notSupplied:[],
       }:fakeDay(day);
       return new Response(JSON.stringify(body),{status:200});
@@ -91,13 +92,16 @@ test('three retained days survive an invalid fourth day; raw quarantined, no ext
     assert.equal(first.retainedDayFiles,3);
     assert.equal(first.newDayFiles,2);
     assert.equal(first.savedDayCount,5);
-    assert.equal(first.verifiedDayCount,4);
-    assert.equal(first.quarantinedDays.length,1);
-    assert.equal(first.quarantinedDays[0].date,dates[3]);
-    assert.equal(first.quarantinedDays[0].invalidSymbols,1);
-    assert.equal(first.quarantinedDays[0].missingEPSFields,1);
-    assert.equal(first.quarantinedDays[0].invalidRevenueValues,1);
-    assert.equal(first.uniqueSymbolsWithBoth,1);
+    assert.equal(first.verifiedDayCount,5);
+    assert.equal(first.quarantinedDays.length,0);
+    assert.equal(first.recoveredDays.length,1);
+    assert.equal(first.recoveredDays[0].date,dates[3]);
+    assert.equal(first.recoveredDays[0].invalidSymbols,1);
+    assert.equal(first.recoveredDays[0].missingEPSFields,1);
+    assert.equal(first.recoveredDays[0].invalidRevenueValues,1);
+    assert.equal(first.recoveredDays[0].excludedEvents,1);
+    assert.equal(first.excludedEvents,1);
+    assert.equal(first.uniqueSymbolsWithBoth,2);
     assert.equal(calls,2);
     assert.doesNotMatch(JSON.stringify(first),/ABC\/W|PRIVATE_TEST|unsupported/);
     assert.equal(fs.existsSync(path.join(dayRoot,dates[3]+'.json')),true);
@@ -106,5 +110,63 @@ test('three retained days survive an invalid fourth day; raw quarantined, no ext
     assert.equal(repeat.status,'ER1_PRIVATE_SAMPLE_PARTIAL');
     assert.equal(repeat.providerRequests,0);
     assert.equal(repeat.retainedDayFiles,5);
+    assert.equal(repeat.recoveredDays.length,1);
+    assert.equal(repeat.uniqueSymbolsWithBoth,2);
+  }finally{fs.rmSync(root,{recursive:true,force:true});}
+});
+
+test('one invalid revenue among 173 events: only that event is excluded',async()=>{
+  const root=fs.mkdtempSync(path.join(os.tmpdir(),'er1-capture-173-'));
+  try{
+    const days=recentNYBusinessDays(now).dates;
+    const folder=path.join(root,'er1-input','days');
+    fs.mkdirSync(folder,{recursive:true});
+    for(const day of days){
+      const events=day===days[3]?Array.from({length:173},(_,i)=>({
+        symbol:'S'+String(i).padStart(3,'0'),eps:i===172?null:1,
+        revenue:i===172?'invalid':i,
+      })):[];
+      const body={date:day,pre:events,after:[],notSupplied:[]};
+      fs.writeFileSync(path.join(folder,day+'.json'),JSON.stringify({
+        storedAt:'2026-11-02T16:00:00Z',body}));
+    }
+    const result=await runER1MinimalCapture({pcHome:root,now,env:{},readOnly:true,
+      fetcher:async()=>{throw Error('NO_NETWORK_ALLOWED')}});
+    assert.equal(result.status,'ER1_PRIVATE_SAMPLE_PARTIAL');
+    assert.equal(result.providerRequests,0);
+    assert.equal(result.retainedDayFiles,5);
+    assert.equal(result.dbWrites,0);
+    assert.equal(result.d1Writes,0);
+    assert.equal(fs.existsSync(path.join(root,'er1-input','er1-manual-capture.lock')),false);
+    assert.equal(result.savedDayCount,5);
+    assert.equal(result.verifiedDayCount,5);
+    assert.equal(result.recoveredDays.length,1);
+    assert.equal(result.recoveredDays[0].totalEvents,173);
+    assert.equal(result.excludedEvents,1);
+    assert.equal(result.uniqueSymbolsWithBoth,172);
+    assert.equal(result.quarantinedDays.length,0);
+    assert.doesNotMatch(JSON.stringify(result),/S000|S172|"invalid"/);
+  }finally{fs.rmSync(root,{recursive:true,force:true});}
+});
+
+test('invalid day structure stays quarantined, never accepted by row filtering',async()=>{
+  const root=fs.mkdtempSync(path.join(os.tmpdir(),'er1-capture-structure-'));
+  try{
+    const days=recentNYBusinessDays(now).dates;
+    const folder=path.join(root,'er1-input','days');
+    fs.mkdirSync(folder,{recursive:true});
+    for(const day of days){
+      const body=day===days[3]?{date:day,pre:[fakeDay(day).pre[0]],after:[],
+        notSupplied:null}:fakeDay(day);
+      fs.writeFileSync(path.join(folder,day+'.json'),JSON.stringify({
+        storedAt:'2026-11-02T16:00:00Z',body}));
+    }
+    const result=await runER1MinimalCapture({pcHome:root,now,env:{},
+      fetcher:async()=>{throw Error('NO_NETWORK_ALLOWED')}});
+    assert.equal(result.status,'ER1_PRIVATE_SAMPLE_PARTIAL');
+    assert.equal(result.verifiedDayCount,4);
+    assert.equal(result.quarantinedDays[0].code,'ER1_CALENDAR_DAY_INVALID');
+    assert.equal(result.recoveredDays.length,0);
+    assert.equal(result.providerRequests,0);
   }finally{fs.rmSync(root,{recursive:true,force:true});}
 });
