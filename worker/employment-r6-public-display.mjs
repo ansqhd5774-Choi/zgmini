@@ -29,6 +29,17 @@ export function validEmploymentR6PublicDisplay(body){
   const asOfMs=Date.parse(body.asOfDate+"T00:00:00Z");
   if(body.window.start!==employmentR6OneYearStart(asOfMs)
     ||body.window.recentQuarterStart!==employmentR6RecentQuarterStart(asOfMs))return false;
+  const summaryCounts={
+    sourceFeatures:body.indicators.filter(item=>item?.rawStatus!=="UNAVAILABLE").length,
+    recentlyObservedFeatures:body.indicators.filter(item=>item?.rawStatus==="READY").length,
+    chartReadyFeatures:body.indicators.filter(item=>item?.chartStatus==="READY").length,
+    chartPartialFeatures:body.indicators.filter(item=>item?.chartStatus==="PARTIAL").length,
+    scoredFeatures:body.indicators.filter(item=>item?.scoreStatus==="READY").length,
+    recentlyScoredFeatures:body.indicators.filter(item=>item?.scoreStatus==="READY"&&item?.rawStatus==="READY").length,
+  };
+  if(!body.summary||!Object.entries(summaryCounts).every(([key,count])=>
+    Number.isInteger(body.summary[key])&&body.summary[key]===count
+    &&count>=0&&count<=EMPLOYMENT_R6_FEATURES.length))return false;
   return body.indicators.every((item,i)=>{
     if(!item||item.id!==EMPLOYMENT_R6_FEATURES[i].id
       ||!["READY","STALE","UNAVAILABLE"].includes(item.rawStatus)
@@ -61,13 +72,15 @@ export async function employmentR6StoredDisplayResponse(request,db,{now=Date.now
   if(!row)return Response.json({status:"UNAVAILABLE",reason:"STORED_PUBLICATION_PENDING"},{status:503,headers});
   let body;
   try{body=JSON.parse(row.body);}catch{
-    return Response.json({status:"UNAVAILABLE",reason:"INVALID_STORED_BODY"},{status:503,headers});
+    return Response.json({status:"UNAVAILABLE",reason:"INVALID_STORED_BODY_STALE"},{status:503,headers});
   }
   const publishedAt=Number(row.stored_at);
   if(!validEmploymentR6PublicDisplay(body)||!Number.isSafeInteger(publishedAt)
-    ||publishedAt>now||body.sourceStoredAt>publishedAt
-    ||publishedAt<now-8*86400000){
-    return Response.json({status:"UNAVAILABLE",reason:"STORED_PUBLICATION_UNVERIFIED"},{status:503,headers});
+    ||publishedAt>now||body.sourceStoredAt>publishedAt){
+    return Response.json({status:"UNAVAILABLE",reason:"STORED_PUBLICATION_STALE"},{status:503,headers});
+  }
+  if(publishedAt<now-8*86400000){
+    return Response.json({status:"UNAVAILABLE",reason:"STORED_PUBLICATION_EXPIRED"},{status:503,headers});
   }
   headers["cache-control"]="public, max-age=60, must-revalidate";
   headers["x-data-snapshot-at"]=new Date(publishedAt).toISOString();

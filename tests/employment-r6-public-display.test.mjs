@@ -77,6 +77,12 @@ test("public R6 display validates 29 approved IDs, provenance and score/raw sepa
   missingAccessDate.indicators[0].value=4.2;
   missingAccessDate.indicators[0].observationDate="2026-09-30";
   assert(!validEmploymentR6PublicDisplay(missingAccessDate));
+  const noSummary=structuredClone(body);delete noSummary.summary;
+  assert(!validEmploymentR6PublicDisplay(noSummary));
+  const falseSummary=structuredClone(body);falseSummary.summary.chartReadyFeatures=29;
+  assert(!validEmploymentR6PublicDisplay(falseSummary));
+  const fractionalSummary=structuredClone(body);fractionalSummary.summary.scoredFeatures=0.5;
+  assert(!validEmploymentR6PublicDisplay(fractionalSummary));
 });
 
 test("visitor GET reads a single verified D1 public row; never fetches provider data",async()=>{
@@ -95,7 +101,14 @@ test("visitor GET reads a single verified D1 public row; never fetches provider 
     assert.equal(response.headers.get("x-data-snapshot-at"),new Date(now).toISOString());
     const stale=await employmentR6StoredDisplayResponse(new Request("https://zgmini.kr/api/employment-r6/observations"),db({body:JSON.stringify(body),stored_at:now}),{now:now+9*86400000});
     assert.equal(stale.status,503);
-    assert.equal((await stale.json()).reason,"STORED_PUBLICATION_UNVERIFIED");
+    assert.equal((await stale.json()).reason,"STORED_PUBLICATION_EXPIRED");
+    const invalidSummary=structuredClone(body);delete invalidSummary.summary;
+    const invalid=await employmentR6StoredDisplayResponse(new Request("https://zgmini.kr/api/employment-r6/observations"),db({body:JSON.stringify(invalidSummary),stored_at:now}),{now:now+5000});
+    assert.equal(invalid.status,503);
+    assert.equal((await invalid.json()).reason,"STORED_PUBLICATION_STALE");
+    const malformed=await employmentR6StoredDisplayResponse(new Request("https://zgmini.kr/api/employment-r6/observations"),db({body:"{",stored_at:now}),{now:now+5000});
+    assert.equal(malformed.status,503);
+    assert.equal((await malformed.json()).reason,"INVALID_STORED_BODY_STALE");
     const missing=await employmentR6StoredDisplayResponse(new Request("https://zgmini.kr/api/employment-r6/observations"),db(null),{now});
     assert.equal(missing.status,503);
     assert.equal((await missing.json()).reason,"STORED_PUBLICATION_PENDING");
