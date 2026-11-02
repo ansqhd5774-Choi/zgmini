@@ -14,9 +14,6 @@ const SHA=/^[a-f\d]{40}$/i;
 const WIN_ABS=/^[a-z]:\\/i;
 const LEAF=/^([a-z]:\\[^\r\n<>"|*?]+)\\scripts\\pc-writer\\(local-cycle|quota-runner|run-local|collect-local)\.mjs$/i;
 const SCRIPT=/([a-z]:[\\/][^"'\r\n<>|*?]+?\.(?:vbs|cmd|mjs))/gi;
-// Existing R34/R59 PC tools also recognize a literal runner on a separate
-// VBScript assignment line. Restrict this fallback to approved runner names.
-const STATIC_RUNNER=/([a-z]:[\\/][^"'\r\n<>]*?[\\/]scripts[\\/]pc-writer[\\/](?:local-cycle|quota-runner|run-local|collect-local)\.mjs)/gi;
 const fail=code=>{throw Object.assign(new Error(code),{code});};
 const ensure=(value,code)=>{if(!value)fail(code);};
 
@@ -53,6 +50,41 @@ function only(paths,code){
 const absolute=value=>typeof value==='string'&&WIN_ABS.test(value)&&W.isAbsolute(value)
   &&!/[<>"|*?\r\n]/.test(value)&&!value.includes('%')&&!value.includes('!');
 function references(line){return [...line.matchAll(SCRIPT)].map(m=>W.normalize(m[1].trim()));}
+
+// A Core Task can run auxiliary jobs before/after its original VBS launcher.
+// Follow only a unique, statically referenced launcher that is demonstrably
+// used by a Run/call invocation. A decoy assignment is not an executable path.
+function invokedPath(lines,target){
+  const normalized=W.normalize(target).toLowerCase();
+  const linkedVariables=new Set();
+  for(const line of lines){
+    const match=/^\s*([a-z_]\w*)\s*=\s*(.+)$/i.exec(line);
+    if(match){
+      const variable=match[1].toLowerCase(),expression=match[2];
+      // Follow assignment order; a later dynamic reassignment revokes trust.
+      const linked=references(expression).some(p=>p.toLowerCase()===normalized)||
+        [...linkedVariables].some(name=>new RegExp('\\b'+name+'\\b','i').test(expression));
+      if(linked)linkedVariables.add(variable);
+      else linkedVariables.delete(variable);
+    }
+    if(!/\.Run\s*\(?|\.Exec\s*\(?|^\s*(?:call\b|node(?:\.exe)?\b)/i.test(line))continue;
+    if(references(line).some(p=>p.toLowerCase()===normalized)||
+      [...linkedVariables].some(variable=>new RegExp('\\b'+variable+'\\b','i').test(line)))return true;
+  }
+  return false;
+}
+
+function followedReference(lines){
+  const all=[...new Map(lines.flatMap(references)
+    .map(p=>[p.toLowerCase(),p])).values()];
+  const vbs=all.filter(p=>/\.vbs$/i.test(p));
+  const core=all.filter(p=>LEAF.test(p));
+  const allowed=vbs.length?vbs:core;
+  ensure(allowed.length===1,'TASK_SOURCE_UNRESOLVED');
+  if(vbs.length)ensure(core.length===0,'TASK_SOURCE_UNRESOLVED');
+  ensure(invokedPath(lines,allowed[0]),'TASK_SOURCE_UNRESOLVED');
+  return allowed[0];
+}
 
 function taskEntrypoint(xml){
   ensure(typeof xml==='string'&&xml.length<2*1024*1024,'TASK_XML_UNREADABLE');
@@ -104,23 +136,8 @@ function followLauncher(initial,{readFile,exists},diagnostic){
     ensure(Buffer.byteLength(bytes)<65536,'TASK_SOURCE_UNRESOLVED');
     const text=decode(bytes);
     const lines=text.split(/\r?\n/).filter(line=>!/^[\s]*(?:rem\b|::|')/i.test(line));
-    const runnable=lines.filter(line=>/\.Run\s*\(|\bcall\s+|\bnode(?:\.exe)?\b|%NODE%|"[^\r\n]*\.exe"/i.test(line));
     diagnostic.step=`HOP_${depth+1}_${kind}_REFERENCES`;
-    ensure(runnable.length===1,'TASK_SOURCE_UNRESOLVED');
-    let refs=runnable.flatMap(references);
-    // Historical R38 wrapper has one literal origin, but never assume its
-    // October checkout: read the *currently registered* wrapper's own value.
-    if(refs.length===0&&/\.vbs$/i.test(current)&&text.includes('ZGMINI_R38_WRAPPER_V1')){
-      const origins=[...text.matchAll(/^\s*origin\s*=\s*"((?:[^"\r\n]|"")*)"\s*(?:'.*)?$/gim)];
-      if(origins.length===1&&/\borigin\b/i.test(runnable.join('\n')))
-        refs=[origins[0][1].replaceAll('""','"')];
-    }
-    if(refs.length===0&&/\.vbs$/i.test(current)){
-      // Literal script path can be assigned first, then executed as a variable.
-      // A unique static path is evidence only if the script has one runnable line.
-      refs=[...lines.join('\n').matchAll(STATIC_RUNNER)].map(m=>m[1]);
-    }
-    current=only(refs,'TASK_SOURCE_UNRESOLVED');
+    current=followedReference(lines);
   }
   fail('TASK_SOURCE_UNRESOLVED');
 }

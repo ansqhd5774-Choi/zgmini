@@ -77,6 +77,63 @@ test('R38 origin VBS with a static runner assignment resolves like the existing 
   assert.equal(found.diagnosticStep,'CANDIDATE_VERIFIED_READONLY');
 });
 
+test('registered R7 with two Run calls and R38 with three follows only the verified VBS chain',()=>{
+  const r38=String.raw`E:\Launchers\approved-r38.vbs`;
+  const original=String.raw`E:\Launchers\original-core.vbs`;
+  const archive=String.raw`E:\Archive\archive-run.mjs`;
+  const auxiliary=String.raw`E:\Auxiliary\health-check.mjs`;
+  const r7=`' R7_CORE_WRAPPER\r\n`+
+    `Set shell = CreateObject("WScript.Shell")\r\n`+
+    `nextCore = "${r38}"\r\n`+
+    `auxiliary = """${archive}"""\r\n`+
+    `status = shell.Run(nextCore, 0, True)\r\n`+
+    `shell.Run(auxiliary, 0, True)\r\n`;
+  const {opts,files}=fixture({vbs:r7});
+  files.set(key(r38),`' ZGMINI_R38_WRAPPER_V1\r\n`+
+    `origin = "${original}"\r\n`+
+    `extra = """${auxiliary}"""\r\n`+
+    `shell.Run("echo preparation", 0, True)\r\n`+
+    `shell.Run(extra, 0, True)\r\n`+
+    `WScript.Quit shell.Run(origin, 0, True)\r\n`);
+  files.set(key(original),`Set shell = CreateObject("WScript.Shell")\r\n`+
+    `command = """${runner}"""\r\nWScript.Quit shell.Run(command, 0, True)\r\n`);
+  assert.deepEqual(locateEmploymentR6Candidate({...opts,includeDiagnosticStep:true}),{
+    status:'CANDIDATE_FOUND_READONLY',candidateDbPath:candidate,
+    diagnosticStep:'CANDIDATE_VERIFIED_READONLY',
+  });
+});
+
+test('uninvoked VBS assignment must not be mistaken for the active Core',()=>{
+  const uninvoked=String.raw`E:\Launchers\decoy.vbs`;
+  const {opts,files}=fixture({vbs:`decoy = "${uninvoked}"\r\n`+
+    `shell.Run(commandFromRegistry, 0, True)\r\n`});
+  files.set(key(uninvoked),`shell.Run("""${runner}""", 0, True)\r\n`);
+  assert.equal(locateEmploymentR6Candidate(opts).status,'TASK_SOURCE_UNRESOLVED');
+});
+
+test('late or overwritten assignments cannot retroactively approve a launcher',()=>{
+  const staticVbs=String.raw`E:\Launchers\static.vbs`;
+  const after=fixture({vbs:`shell.Run(origin, 0, True)\r\norigin = "${staticVbs}"\r\n`});
+  const overwritten=fixture({vbs:`origin = "${staticVbs}"\r\n`+
+    `origin = commandFromRegistry\r\nshell.Run(origin, 0, True)\r\n`});
+  assert.equal(locateEmploymentR6Candidate(after.opts).status,'TASK_SOURCE_UNRESOLVED');
+  assert.equal(locateEmploymentR6Candidate(overwritten.opts).status,'TASK_SOURCE_UNRESOLVED');
+});
+
+test('multiple runnable VBS paths cannot select a Core by path order',()=>{
+  const first=String.raw`E:\Launchers\first.vbs`;
+  const second=String.raw`E:\Launchers\second.vbs`;
+  const {opts}=fixture({vbs:`shell.Run("${first}", 0, True)\r\n`+
+    `shell.Run("${second}", 0, True)\r\n`});
+  assert.equal(locateEmploymentR6Candidate(opts).status,'TASK_SOURCE_UNRESOLVED');
+});
+
+test('auxiliary Run cannot approve an unrelated Core runner assignment',()=>{
+  const {opts}=fixture({vbs:`runCore = """${runner}"""\r\n`+
+    `shell.Run("node.exe auxiliary.mjs", 0, True)\r\n`});
+  assert.equal(locateEmploymentR6Candidate(opts).status,'TASK_SOURCE_UNRESOLVED');
+});
+
 test('diagnostic step reveals a failing hop but never a PC path or script contents',()=>{
   const {opts}=fixture({vbs:'WScript.Quit shell.Run(commandFromRegistry, 0, True)\r\n'});
   const found=locateEmploymentR6Candidate({...opts,includeDiagnosticStep:true});
