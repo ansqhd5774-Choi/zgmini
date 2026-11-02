@@ -28,7 +28,7 @@ if exist "%~dp0EMPLOYMENT_R6_CANDIDATE.sqlite" (
   "%NODE%" "%~dp0employment-r6-one-year-stage.mjs" --db "%EMP_R6_CORE%" --candidate-db "%~dp0EMPLOYMENT_R6_CANDIDATE.sqlite" --output-dir "%~dp0."
   exit /b %errorlevel%
 )
-"%NODE%" "%~dp0employment-r6-one-year-stage.mjs" --db "%EMP_R6_CORE%" --output-dir "%~dp0."
+"%NODE%" "%~dp0employment-r6-one-year-stage.mjs" --db "%EMP_R6_CORE%" --output-dir "%~dp0." --discover-approved-candidate
 exit /b %errorlevel%
 
 :publish

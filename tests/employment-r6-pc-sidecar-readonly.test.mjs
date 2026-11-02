@@ -66,6 +66,15 @@ test("candidate DB and PUBLISH cannot be combined, even if the candidate exists"
   // Research staging remains available; the Core-only publication path is parsed normally.
   assert.equal(optionsFrom(["--db",core,"--candidate-db",candidate,"--output-dir",dir]).publish,false);
   assert.equal(optionsFrom(["--db",core,"--output-dir",dir,"--publish"]).publish,true);
+  assert.equal(optionsFrom(["--db",core,"--output-dir",dir,"--discover-approved-candidate"]).discoverApprovedCandidate,true);
+  assert.throws(
+    ()=>optionsFrom(["--db",core,"--output-dir",dir,"--discover-approved-candidate","--publish"]),
+    /CANDIDATE_PUBLICATION_NOT_APPROVED/,
+  );
+  assert.throws(
+    ()=>optionsFrom(["--db",core,"--candidate-db",candidate,"--output-dir",dir,"--discover-approved-candidate"]),
+    /CANDIDATE_DISCOVERY_ARGUMENT_CONFLICT/,
+  );
   assert.deepEqual([fs.statSync(core).size,fs.statSync(candidate).size],before);
 });
 
@@ -77,6 +86,9 @@ test("Windows PUBLISH CMD fails closed when an isolated candidate is present",()
   assert.match(publish,/CANDIDATE_PUBLICATION_NOT_APPROVED/);
   assert.doesNotMatch(publish,/--candidate-db/);
   assert.match(publish,/--db "%EMP_R6_CORE%" --output-dir "%~dp0\." --publish/);
+  assert.doesNotMatch(publish,/--discover-approved-candidate/);
+  const stage=cmd.split(/^:stage\r?$/m)[1].split(/^:publish\r?$/m)[0];
+  assert.match(stage,/--discover-approved-candidate/);
 });
 
 test("failed 1Y stage can still write read-only PIT missing-history counts to TXT and JSON",async()=>{

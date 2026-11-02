@@ -15,16 +15,18 @@ import {
 } from "../../worker/employment-r6-public-display.mjs";
 import {client,credential,hash,read} from "./d1.mjs";
 import {auditEmploymentR6PitCoverage} from "./employment-r6-pit-coverage.mjs";
+import {locateEmploymentR6Candidate} from "./employment-r6-candidate-locator.mjs";
 
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),"../..");
 const safeDate=value=>typeof value==="string"&&/^\d{4}-\d{2}-\d{2}$/.test(value);
 const nowIso=()=>new Date().toISOString();
 
 export function optionsFrom(args){
-  const result={publish:false};
+  const result={publish:false,discoverApprovedCandidate:false};
   for(let i=0;i<args.length;i++){
     const token=args[i];
     if(token==="--publish"){result.publish=true;continue;}
+    if(token==="--discover-approved-candidate"){result.discoverApprovedCandidate=true;continue;}
     if(["--db","--output-dir","--as-of","--candidate-db"].includes(token)&&args[i+1]){
       result[token==="--db"?"dbPath":token==="--output-dir"?"outputDir":token==="--candidate-db"?"candidateDbPath":"asOfDate"]=args[++i];
       continue;
@@ -33,7 +35,8 @@ export function optionsFrom(args){
   }
   // An isolated research candidate is never an approved PC publication source.
   // Reject the combination before opening either database or contacting D1.
-  if(result.publish&&result.candidateDbPath)throw Error("CANDIDATE_PUBLICATION_NOT_APPROVED");
+  if(result.publish&&(result.candidateDbPath||result.discoverApprovedCandidate))throw Error("CANDIDATE_PUBLICATION_NOT_APPROVED");
+  if(result.candidateDbPath&&result.discoverApprovedCandidate)throw Error("CANDIDATE_DISCOVERY_ARGUMENT_CONFLICT");
   if(typeof result.dbPath!=="string"||!path.isAbsolute(result.dbPath)
     ||typeof result.outputDir!=="string"||!path.isAbsolute(result.outputDir)
     ||!fs.existsSync(result.outputDir)||!fs.statSync(result.outputDir).isDirectory()){
@@ -135,7 +138,7 @@ function pcPublisher(dbPath){
   return {remote:client(config,credential(root)),dbId:config.core,source};
 }
 
-export function saveReport(dir,body,publication,error,{candidateDbUsed=false,pitCoverage=null,pitCoverageError=null,asOfDate=null}={}){
+export function saveReport(dir,body,publication,error,{candidateDbUsed=false,pitCoverage=null,pitCoverageError=null,asOfDate=null,candidateDiscoveryStatus="NOT_REQUESTED"}={}){
   const suffix=nowIso().replace(/[-:.]/g,"")+"_"+process.pid;
   const basename="EMPLOYMENT_R6_ONE_YEAR_"+suffix;
   const summary=body?.summary??null;
@@ -145,6 +148,7 @@ export function saveReport(dir,body,publication,error,{candidateDbUsed=false,pit
     error:error?.message??null,asOfDate:body?.asOfDate??asOfDate,
     sourceMode:candidateDbUsed?"CORE_PLUS_ISOLATED_CANDIDATE_READONLY":"CORE_ONLY_READONLY",
     summary,sourceStoredAt:body?.sourceStoredAt??null,pitCoverage,pitCoverageError,
+    candidateDiscoveryStatus,
     dbWritesByStage:0,providerCallsByStage:0,
     remoteWritten:publication?.status==="VERIFIED",
   };
@@ -154,6 +158,7 @@ export function saveReport(dir,body,publication,error,{candidateDbUsed=false,pit
     "PUBLICATION: "+report.publicationStatus,
     "AS_OF: "+(report.asOfDate??"NO_EVIDENCE"),
     "SOURCE_MODE: "+report.sourceMode,
+    "CANDIDATE_DISCOVERY: "+report.candidateDiscoveryStatus,
     "RAW_FEATURES: "+(summary?.sourceFeatures??0)+" / 29",
     "RECENT_QUARTER: "+(summary?.recentlyObservedFeatures??0)+" / 29",
     "ONE_YEAR_CHART_READY: "+(summary?.chartReadyFeatures??0)+" / 29",
@@ -181,9 +186,18 @@ export function saveReport(dir,body,publication,error,{candidateDbUsed=false,pit
 
 if(process.argv[1]&&import.meta.url===pathToFileURL(process.argv[1]).href){
   let args,body=null,publication=null,problem=null,pitCoverage=null,pitCoverageError=null;
+  let candidateDiscoveryStatus="NOT_REQUESTED";
   try{
     args=optionsFrom(process.argv.slice(2));
     if(!args.publish){
+      if(args.discoverApprovedCandidate){
+        const discovery=locateEmploymentR6Candidate({
+          outputDir:args.outputDir,coreDbPath:args.dbPath,
+          pcHome:process.env.ZGMINI_PC_HOME??path.join(os.homedir(),".zgmini","pc-writer"),
+        });
+        candidateDiscoveryStatus=discovery.status;
+        if(discovery.candidateDbPath)args.candidateDbPath=discovery.candidateDbPath;
+      }
       const diagnostic=await stageEmploymentR6OneYearWithPitAudit(args);
       ({body,pitCoverage,pitCoverageError}=diagnostic);
       if(diagnostic.error)throw diagnostic.error;
@@ -197,6 +211,7 @@ if(process.argv[1]&&import.meta.url===pathToFileURL(process.argv[1]).href){
     try{
       const paths=saveReport(args.outputDir,body,publication,problem,{
         candidateDbUsed:Boolean(args.candidateDbPath),pitCoverage,pitCoverageError,asOfDate:args.asOfDate,
+        candidateDiscoveryStatus,
       });
       process.stdout.write("RESULT_TXT: "+paths.txtPath+"\nRESULT_JSON: "+paths.jsonPath+"\n");
     }catch(error){process.stderr.write("REPORT_SAVE_FAILED: "+error.message+"\n");process.exitCode=2;}
