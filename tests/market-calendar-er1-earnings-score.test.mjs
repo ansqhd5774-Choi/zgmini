@@ -3,10 +3,10 @@ import assert from 'node:assert/strict';
 import {scoreER1Issuers, ER1_METHOD, ER1_STAR3_THRESHOLD} from
   '../lib/market-calendar-er1-earnings-score.mjs';
 
-const days=['2025-12-31','2026-03-31','2026-06-30','2026-09-30'];
+const days=['2025-10-30','2026-01-29','2026-04-30','2026-07-30'];
 const row=(id, revenues=[100,100,100,100], eps=[1,1,1,1])=>({
-  eligible:true, issuerId:id, tickers:[id],
-  quarters:days.map((quarterEnd,i)=>({quarterEnd,revenue:revenues[i],eps:eps[i]})),
+  eligible:true, issuerId:id, tickers:[id], earningsSymbol:id,
+  releases:days.map((date,i)=>({date,symbol:id,revenue:revenues[i],eps:eps[i]})),
 });
 const run=(rows,expectedEligibleIssuers=rows.length)=>scoreER1Issuers(rows,{
   asOf:'2026-11-02',expectedEligibleIssuers,
@@ -27,27 +27,27 @@ test('ER1 fixed 97 threshold uses cross-sectional revenue percentiles, never for
   assert.ok(lossResult.rankings.find(r=>r.issuerId==='T100').score<97);
 });
 
-test('one missing quarter keeps company scoreable without generating a fake actual',()=>{
+test('one missing release metric keeps company scoreable without a fake actual',()=>{
   const result=run([row('AAA',[100,null,120,140],[1,null,2,3])]);
   assert.equal(result.status,'READY_SHADOW');
   assert.equal(result.coverage.earnings,1);
-  assert.equal(result.rankings[0].epsQuarters,3);
-  assert.equal(result.rankings[0].revenueQuarters,3);
+  assert.equal(result.rankings[0].epsReleases,3);
+  assert.equal(result.rankings[0].revenueReleases,3);
   assert.equal(result.rankings[0].score,70);
 });
 
-test('two missing quarters use the two real values, including loss-making EPS',()=>{
+test('two missing release metrics use the two real values, including loss-making EPS',()=>{
   const result=run([row('AAA',[100,null,140,null],[-1,null,2,null])]);
   assert.equal(result.status,'READY_SHADOW');
-  assert.equal(result.rankings[0].epsQuarters,2);
-  assert.equal(result.rankings[0].revenueQuarters,2);
+  assert.equal(result.rankings[0].epsReleases,2);
+  assert.equal(result.rankings[0].revenueReleases,2);
   assert.ok(Math.abs(result.rankings[0].score-(30+40*(.5*(1+.5/1.5))))<1e-10);
 });
 
-test('one available quarter blocks publication and does not generate any grades',()=>{
+test('one available report blocks publication and does not generate any grades',()=>{
   const result=run([row('AAA',[null,null,null,140],[null,null,null,2])]);
   assert.equal(result.status,'BLOCKED');
-  assert.equal(result.reason,'ER1_QUARTER_COVERAGE_INSUFFICIENT');
+  assert.equal(result.reason,'ER1_RELEASE_COVERAGE_INSUFFICIENT');
   assert.equal(result.star3Count,0);
   assert.deepEqual(result.rankings,[]);
 });
@@ -56,8 +56,8 @@ test('zero is a real EPS or revenue observation; missing is only explicit null',
   const zero=run([row('AAA',[0,0,0,0],[0,0,0,0])]);
   assert.equal(zero.status,'READY_SHADOW');
   assert.equal(zero.rankings[0].score,50);
-  assert.throws(()=>run([row('AAA',[100,100,100,undefined])]),/ER1_QUARTER_VALUE_INVALID/);
-  assert.throws(()=>run([row('AAA',[100,100,100,-1])]),/ER1_QUARTER_VALUE_INVALID/);
+  assert.throws(()=>run([row('AAA',[100,100,100,undefined])]),/ER1_RELEASE_VALUE_INVALID/);
+  assert.throws(()=>run([row('AAA',[100,100,100,-1])]),/ER1_RELEASE_VALUE_INVALID/);
 });
 
 test('a missing approved issuer or unverified eligibility cannot be hidden in ranking',()=>{
@@ -69,29 +69,39 @@ test('a missing approved issuer or unverified eligibility cannot be hidden in ra
 });
 
 test('same-company share classes are not silently counted as independent issuers',()=>{
-  const alphabet={...row('ALPHABET'),tickers:['GOOG','GOOGL']};
+  const alphabet={...row('ALPHABET'),tickers:['GOOG','GOOGL'],
+    earningsSymbol:'GOOG',releases:row('ALPHABET').releases.map(x=>({...x,symbol:'GOOG'}))};
   assert.equal(run([alphabet]).coverage.reviewedEligibleIssuers,1);
   assert.throws(()=>run([
-    {...row('A'),tickers:['GOOG']},
-    {...row('B'),tickers:['GOOGL']},
+    {...row('A'),tickers:['GOOG'],earningsSymbol:'GOOG',
+      releases:row('A').releases.map(x=>({...x,symbol:'GOOG'}))},
+    {...row('B'),tickers:['GOOGL'],earningsSymbol:'GOOGL',
+      releases:row('B').releases.map(x=>({...x,symbol:'GOOGL'}))},
   ]),/ER1_SHARE_CLASS_SPLIT/);
 });
 
-test('bad quarter sequence and future quarter values fail closed',()=>{
+test('incomplete, irregular and future-dated releases cannot silently score',()=>{
   const input=row('AAA');
-  assert.throws(()=>run([{...input,quarters:input.quarters.slice(0,3)}]),
-    /ER1_FOUR_QUARTER_SLOTS_REQUIRED/);
-  assert.throws(()=>run([{...input,quarters:input.quarters.map((q,i)=>i===0?
-    {...q,quarterEnd:'2026-12-31'}:q)}]),/ER1_QUARTER_DATE_INVALID/);
-  assert.throws(()=>run([{...input,quarters:input.quarters.map((q,i)=>i===0?
-    {...q,quarterEnd:'2024-01-01'}:q)}]),/ER1_QUARTER_SEQUENCE_INVALID/);
+  const few=run([{...input,releases:input.releases.slice(0,3)}]);
+  assert.equal(few.status,'BLOCKED');
+  assert.equal(few.coverage.unscoreableReasons.ER1_RELEASE_HISTORY_INSUFFICIENT,1);
+  const future=run([{...input,releases:input.releases.map((q,i)=>i===0?
+    {...q,date:'2026-12-31'}:q)}]);
+  assert.equal(future.status,'BLOCKED');
+  assert.equal(future.coverage.unscoreableReasons.ER1_RELEASE_HISTORY_INSUFFICIENT,1);
+  const irregular=run([{...input,releases:input.releases.map((q,i)=>i===0?
+    {...q,date:'2025-01-01'}:q)}]);
+  assert.equal(irregular.status,'BLOCKED');
+  assert.equal(irregular.coverage.unscoreableReasons.ER1_RELEASE_SEQUENCE_INVALID,1);
 });
 
-test('four internally valid quarters from years ago are stale, not READY_SHADOW',()=>{
+test('four internally valid announcements from years ago are stale',()=>{
   const stale=row('AAA');
-  const oldDays=['2015-12-31','2016-03-31','2016-06-30','2016-09-30'];
-  stale.quarters=stale.quarters.map((q,i)=>({...q,quarterEnd:oldDays[i]}));
-  assert.throws(()=>run([stale]),/ER1_STALE_QUARTER_WINDOW_STOP/);
+  const oldDays=['2015-10-30','2016-01-29','2016-04-30','2016-07-30'];
+  stale.releases=stale.releases.map((q,i)=>({...q,date:oldDays[i]}));
+  const result=run([stale]);
+  assert.equal(result.status,'BLOCKED');
+  assert.equal(result.coverage.unscoreableReasons.ER1_STALE_RELEASE_WINDOW,1);
 });
 
 test('metric coverage below 98% blocks instead of publishing a shortened population',()=>{
@@ -101,4 +111,50 @@ test('metric coverage below 98% blocks instead of publishing a shortened populat
   assert.equal(result.coverage.earnings,.97);
   assert.equal(result.status,'BLOCKED');
   assert.equal(result.star3Count,0);
+});
+
+test('latest four completed dated records exclude fifth event and current-day estimate',()=>{
+  const base=row('AAA');
+  const older={date:'2025-07-30',symbol:'AAA',eps:999,revenue:999999};
+  const today={date:'2026-11-02',symbol:'AAA',eps:100,revenue:1e12};
+  const later={date:'2026-11-04',symbol:'AAA',eps:null,revenue:null,
+    epsEstimate:5,revenueEstimate:1e12};
+  const result=run([{...base,releases:[today,older,later,...base.releases.reverse()]}]);
+  assert.equal(result.status,'READY_SHADOW');
+  assert.equal(result.rankings[0].epsReleases,4);
+  assert.equal(result.rankings[0].score,run([row('AAA')]).rankings[0].score);
+});
+
+test('a null-null past report remains a latest-four slot, never shifted to fifth',()=>{
+  const base=row('AAA');
+  const recent={date:'2026-10-29',symbol:'AAA',eps:null,revenue:null,
+    epsEstimate:1e5,revenueEstimate:1e15};
+  const reportSet=[recent,...base.releases];
+  const result=run([{...base,releases:reportSet}]);
+  assert.equal(result.status,'READY_SHADOW');
+  assert.equal(result.rankings[0].epsReleases,3);
+  assert.equal(result.rankings[0].revenueReleases,3);
+  const missing=[recent,...base.releases.map((r,i)=>i===3?{
+    ...r,eps:null,revenue:null}:r)];
+  const two=run([{...base,releases:missing}]);
+  assert.equal(two.rankings[0].epsReleases,2);
+  assert.equal(two.rankings[0].revenueReleases,2);
+});
+
+test('duplicate identical release dates deduplicate; contradictory actuals fail closed',()=>{
+  const base=row('AAA');
+  const duplicate=[base.releases[0],...base.releases];
+  assert.equal(run([{...base,releases:duplicate}]).status,'READY_SHADOW');
+  const conflicting=[{...base.releases[0],eps:3},...base.releases];
+  assert.throws(()=>run([{...base,releases:conflicting}]),/ER1_RELEASE_DUPLICATE_CONFLICT/);
+});
+
+test('actual field validation rejects estimates, unrecognized source, or quarterEnd alias',()=>{
+  const base=row('AAA');
+  assert.throws(()=>run([{...base,releases:base.releases.map((x,i)=>i===0?{
+    ...x,eps:undefined}:x)}]),/ER1_RELEASE_VALUE_INVALID/);
+  assert.throws(()=>run([{...base,releases:base.releases.map((x,i)=>i===0?{
+    ...x,symbol:'OTHER'}:x)}]),/ER1_RELEASE_RECORD_INVALID/);
+  assert.throws(()=>run([{...base,earningsSymbol:'OTHER'}]),/ER1_RELEASE_SOURCE_REQUIRED/);
+  assert.throws(()=>run([{...base,releases:undefined,quarters:[]}]),/ER1_RELEASE_SOURCE_REQUIRED/);
 });
