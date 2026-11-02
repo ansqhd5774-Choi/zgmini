@@ -179,3 +179,17 @@ test('120-page ceiling defers then resumes at page 121 without re-fetching pages
  assert.equal(JSON.parse(fs.readFileSync(path.join(dir,'incremental',`${start}-${end}-group-01.json`),'utf8')).length,125);
  assert.equal(JSON.parse(fs.readFileSync(path.join(dir,'incremental-checkpoint.json'),'utf8')).through,end);
 });
+
+test('approved 20-hour completed-window recheck is not suppressed by page-resume state',async()=>{
+ const firstAt=Date.parse('2026-11-02T00:30:00Z');
+ const {base,dir}=prepare(firstAt);
+ let calls=0;
+ const fetchImpl=async()=>{calls++;return {ok:true,status:200,headers:headers(200),
+  json:async()=>({bars:{ABC:[{t:'2026-11-01T00:00:00Z',c:10,v:100}]},next_page_token:null})};};
+ const first=await collectAlpacaIncremental(base,{now:firstAt,fetchImpl,wait:async()=>{}});
+ assert.equal(first.status,'COLLECTED_PENDING_VALIDATION');
+ const second=await collectAlpacaIncremental(base,{now:firstAt+21*3600000,fetchImpl,wait:async()=>{}});
+ assert.equal(second.status,'COLLECTED_PENDING_VALIDATION');
+ assert.equal(calls,2);
+ assert.equal(fs.existsSync(path.join(dir,'incremental-progress.json')),true);
+});

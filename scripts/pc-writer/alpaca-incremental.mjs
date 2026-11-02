@@ -25,7 +25,10 @@ export async function collectAlpacaIncremental(base,{fetchImpl=fetch,now=Date.no
   const progressFile=path.join(dir,'incremental-progress.json');
   const groupFingerprint=hash(groups.map(g=>[g.name,g.symbols]));
   let progress;try{progress=read(progressFile);}catch{throw Error('ALPACA_PROGRESS_INVALID');}
-  if(progress?.version!==1||progress?.start!==start||progress?.end!==end||progress?.groupFingerprint!==groupFingerprint)
+  // A successfully completed same-date window may be rechecked after its
+  // original 20-hour cache expires. Resumption must not suppress that policy.
+  const completedWindowRecheck=old?.storageVerified===true&&storedThrough===end;
+  if(completedWindowRecheck||progress?.version!==1||progress?.start!==start||progress?.end!==end||progress?.groupFingerprint!==groupFingerprint)
    progress={version:1,start,end,groupFingerprint,completed:{},active:null};
   if(!progress.completed||typeof progress.completed!=='object')throw Error('ALPACA_PROGRESS_INVALID');
   for(const group of groups){
