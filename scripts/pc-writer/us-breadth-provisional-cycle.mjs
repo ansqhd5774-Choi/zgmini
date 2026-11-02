@@ -5,6 +5,7 @@ import os from 'node:os';
 import {DatabaseSync} from 'node:sqlite';
 import {fileURLToPath} from 'node:url';
 import {loadLocalProviders} from './local-env.mjs';
+import {createQuotaFetch} from './quota-fetch.mjs';
 import {read,save} from './d1.mjs';
 import {calculateUsIexProvisional,usProvisionalSlot,validUsIexProvisional} from '../../lib/market-breadth/us-provisional-r1.mjs';
 
@@ -87,6 +88,11 @@ export async function collectUsBreadthProvisional(base,{now=Date.now(),fetchImpl
     const members=membersOverride??storedUniverse(base,slot.priorDate);
     const auth=authOverride??loadLocalProviders(base);
     if(!auth.APCA_API_KEY_ID||!auth.APCA_API_SECRET_KEY)throw Error('US_PROVISIONAL_CREDENTIALS_MISSING');
+    // This collector is spawned as an independent Node process by Core.
+    // Count only calls that reached the original fetch, not rejected reservations.
+    const sharedFetch=createQuotaFetch({base,originalFetch:async(input,init)=>{
+      providerCalls++;return fetchImpl(input,init);
+    },mode:'enforce'}).fetch;
     const sameUniverse=old?.raw?.priorDate===slot.priorDate&&
       JSON.stringify(old.raw.members)===JSON.stringify(members);
     let reference;
@@ -95,13 +101,11 @@ export async function collectUsBreadthProvisional(base,{now=Date.now(),fetchImpl
     }else{
       reference=await fetchIexWindow({symbols:members,timeframe:'1Day',
         start:slot.priorDate+'T00:00:00Z',end:slot.observationDate+'T00:00:00Z',
-        auth,fetchImpl,maxRequests:Math.min(8,maxRequests-1)});
-      providerCalls+=reference.requests;
+        auth,fetchImpl:sharedFetch,maxRequests:Math.min(8,maxRequests-1)});
     }
     const current=await fetchIexWindow({symbols:members,timeframe:'15Min',
-      start:slot.sessionStartUtc,end:slot.slotEndUtc,auth,fetchImpl,
+      start:slot.sessionStartUtc,end:slot.slotEndUtc,auth,fetchImpl:sharedFetch,
       maxRequests:maxRequests-providerCalls});
-    providerCalls+=current.requests;
     const raw={members,priorDate:slot.priorDate,observationDate:slot.observationDate,
       sessionStartUtc:slot.sessionStartUtc,slotEndUtc:slot.slotEndUtc,
       referenceBars:reference.bars,currentBars:current.bars,
@@ -121,11 +125,14 @@ export async function collectUsBreadthProvisional(base,{now=Date.now(),fetchImpl
       expectedCount:output.expectedCount,missingCount:output.missingCount};
   }catch(error){
     // Errors are retry-throttled to the next 15-minute slot, never an old confirmed overwrite.
+    const deferred=error?.code==='PROVIDER_QUOTA_GUARD'||error?.message==='US_PROVISIONAL_HTTP_429';
     const current=fs.existsSync(file)?read(file):old;
     save(file,{...(current??{version:1}),lastAttemptSlot:slot.slotKey,
-      attemptedAt:new Date(now).toISOString(),attemptStatus:'FAILED'});
-    return {status:'FAILED_PREVIOUS_PROVISIONAL_PRESERVED',providerCalls,
-      code:/^US_PROVISIONAL_[A-Z0-9_]+$/.test(error.message)?error.message:'US_PROVISIONAL_COLLECTION_FAILED'};
+      attemptedAt:new Date(now).toISOString(),attemptStatus:deferred?'DEFERRED_QUOTA':'FAILED'});
+    return {status:deferred?'DEFERRED_QUOTA':'FAILED_PREVIOUS_PROVISIONAL_PRESERVED',providerCalls,
+      code:error?.code==='PROVIDER_QUOTA_GUARD'?
+        (error.requestReserved?'US_PROVISIONAL_LEDGER_UPDATE_UNVERIFIED':'US_PROVISIONAL_QUOTA_GUARD'):
+        /^US_PROVISIONAL_[A-Z0-9_]+$/.test(error?.message??'')?error.message:'US_PROVISIONAL_COLLECTION_FAILED'};
   }
 }
 
