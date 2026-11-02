@@ -1,5 +1,5 @@
 /**
- * R47: strictly read-only Windows Core Task action -> executed launcher trace.
+ * R47 FIX2: strictly read-only Windows Core Task action -> launcher trace.
  * Unlike R39's broad textual project candidates, examine executable script
  * statements only. Never print XML, paths, commands, config, credentials or
  * wrapper bodies. This is static provenance, NOT evidence of a live run.
@@ -17,7 +17,7 @@ const HOME=String.raw`E:\ZGmini\data\pc-writer`;
 const PROJECTS=String.raw`E:\ZGmini\projects`;
 const SHA=/^[a-f0-9]{40}$/i;
 const normalized=value=>path.win32.normalize(String(value??'').replaceAll('/','\\'));
-const result=(status,detail={})=>({revision:'US_BREADTH_CORE_EXECUTION_TRACE_R47',
+const result=(status,detail={})=>({revision:'US_BREADTH_CORE_EXECUTION_TRACE_R47_FIX2',
   mode:'READ_ONLY_TASK_EXECUTABLE_STATEMENTS',status,staticChainVerified:false,
   liveExecutionVerified:false,providerCalls:0,d1Reads:0,d1Writes:0,
   localWrites:0,taskChanges:0,lockPidActions:0,...detail});
@@ -100,14 +100,24 @@ export function traceCoreExecutionR47({taskXml,config,readScript=()=>null,
     executableScriptReferences:scan.executablePaths.length,
     nonExecutingScriptReferences:scan.commentOrNonExecutingReferences,
     dynamicCommandPresent:scan.hasDynamic,
-    approvedShaMatch:null,gitClean:null,projectFingerprint:null};
+    approvedShaMatch:null,gitClean:null,projectFingerprint:null,
+    coreEntrypointCandidates:0,auxiliaryExecutableReferences:0};
   if(scan.hasDynamic)return result('DYNAMIC_EXECUTION_NOT_PROVEN',evidence);
-  if(scan.executionLines!==1||scan.executablePaths.length!==1)
+  const single=scan.executionLines===1&&scan.executablePaths.length===1;
+  const dual=scan.executionLines===2&&scan.executablePaths.length===2;
+  if(!single&&!dual)
     return result('EXECUTABLE_ENTRY_NOT_UNIQUE',evidence);
-  if(!scan.recognizedDirectLaunch)
+  if(single&&!scan.recognizedDirectLaunch)
     return result('INDIRECT_OR_CONDITIONAL_LAUNCH_NOT_PROVEN',evidence);
-  const project=projectForEntry(scan.executablePaths[0]);
-  if(!project)return result('EXECUTABLE_ENTRY_NOT_CORE_LOCAL_CYCLE',evidence);
+  // An installed auxiliary wrapper may contain two executable statements.
+  // Identify a unique *candidate* Core source without asserting either ran.
+  const projects=scan.executablePaths.map(projectForEntry).filter(Boolean);
+  evidence.coreEntrypointCandidates=projects.length;
+  evidence.auxiliaryExecutableReferences=scan.executablePaths.length-projects.length;
+  if(projects.length!==1)
+    return result(dual?'DUAL_EXECUTABLE_CORE_TARGET_AMBIGUOUS':
+      'EXECUTABLE_ENTRY_NOT_CORE_LOCAL_CYCLE',evidence);
+  const project=projects[0];
   evidence.projectFingerprint=createHash('sha256')
     .update(project.toLowerCase()).digest('hex').slice(0,12);
   let git;
@@ -119,6 +129,7 @@ export function traceCoreExecutionR47({taskXml,config,readScript=()=>null,
   if(evidence.approvedShaMatch!==true||evidence.gitClean!==true||!configOK)
     return result('PC_SOURCE_CONFIG_OR_CLEAN_NOT_VERIFIED',{...evidence,
       configEnabled:config?.enabled===true,configTargetPc:config?.collectionTarget==='pc'});
+  if(dual)return result('CORE_SOURCE_MATCHED_AUXILIARY_EXECUTION_UNVERIFIED',evidence);
   // R38 origin relation may be dynamically dispatched; do not assert it ran.
   if(r38)return result('R38_ORIGIN_CANDIDATE_NEEDS_LAUNCH_PROOF',evidence);
   return result('APPROVED_CORE_STATIC_ACTION_CHAIN',{
@@ -158,5 +169,6 @@ if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.ur
     ?inspectCoreExecutionR47():result('EXPLICIT_INSPECT_ONLY_FLAG_REQUIRED');
   process.stdout.write(JSON.stringify(output)+'\n');
   if(!['APPROVED_CORE_STATIC_ACTION_CHAIN',
-    'R38_ORIGIN_CANDIDATE_NEEDS_LAUNCH_PROOF'].includes(output.status))process.exitCode=2;
+    'R38_ORIGIN_CANDIDATE_NEEDS_LAUNCH_PROOF',
+    'CORE_SOURCE_MATCHED_AUXILIARY_EXECUTION_UNVERIFIED'].includes(output.status))process.exitCode=2;
 }

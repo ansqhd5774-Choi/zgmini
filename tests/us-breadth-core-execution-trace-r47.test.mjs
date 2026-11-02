@@ -52,10 +52,27 @@ test('R47 ignores comment-only projects and proves one registered executable ent
 test('R47 rejects multiple active executable branches, not merely text matches',()=>{
   const source=launcher+`WScript.Quit shell.Run("""E:\\ZGmini\\runtime\\node.exe"" ""${other}"" --publish", 0, True)\r\n`;
   const r=inspect(source);
-  assert.equal(r.status,'EXECUTABLE_ENTRY_NOT_UNIQUE');
+  assert.equal(r.status,'DUAL_EXECUTABLE_CORE_TARGET_AMBIGUOUS');
   assert.equal(r.executableInvocationLines,2);
   assert.equal(r.executableScriptReferences,2);
+  assert.equal(r.coreEntrypointCandidates,2);
   assert.equal(r.staticChainVerified,false);
+  noEffects(r);
+});
+
+test('R47 FIX2 recognizes a unique Core source and a second auxiliary invocation',()=>{
+  const auxiliary=String.raw`E:\ZGmini\projects\earnings-helper\scripts\pc-writer\earnings-r7.mjs`;
+  const second=`WScript.Quit shell.Run("""E:\\ZGmini\\runtime\\node.exe"" ""${auxiliary}"" --publish", 0, True)\r\n`;
+  const r=inspect(launcher+second);
+  assert.equal(r.revision,'US_BREADTH_CORE_EXECUTION_TRACE_R47_FIX2');
+  assert.equal(r.status,'CORE_SOURCE_MATCHED_AUXILIARY_EXECUTION_UNVERIFIED');
+  assert.equal(r.executableInvocationLines,2);
+  assert.equal(r.coreEntrypointCandidates,1);
+  assert.equal(r.auxiliaryExecutableReferences,1);
+  assert.equal(r.approvedShaMatch,true);
+  assert.equal(r.gitClean,true);
+  assert.equal(r.staticChainVerified,false,'dual-lane static scan never proves live execution');
+  assert.equal(JSON.stringify(r).includes('earnings-helper'),false);
   noEffects(r);
 });
 
@@ -111,6 +128,19 @@ test('R47 portable CMD remains ASCII CRLF and writes TXT strictly beside CMD',()
   assert.equal(/(^|[^\r])\n/.test(bytes.toString('ascii')),false);
   const cmd=bytes.toString('ascii');
   assert.match(cmd,/set "RESULT=%~dp0US_BREADTH_R47_CORE_TRACE_[^"]+\.txt"/);
+  assert.match(cmd,/E:\\ZGmini\\runtime\\node\.exe/);
+  assert.match(cmd,/--inspect-only/);
+  assert.match(cmd,/LOG_LOCATION=NEXT_TO_CMD/);
+  assert.doesNotMatch(cmd,/schtasks\s+\/(?:Change|Create|Delete)|--publish|%TEMP%|%USERPROFILE%/i);
+});
+
+test('R47 FIX2 portable CMD is self-contained, read-only and logs next to CMD',()=>{
+  const bytes=fs.readFileSync(path.join(repo,
+    'tools/us-market-breadth-r1/US_BREADTH_R47_FIX2_CORE_TRACE_READONLY.cmd'));
+  assert.equal(bytes.some(x=>x>127),false);
+  const cmd=bytes.toString('ascii');
+  assert.equal(/(^|[^\r])\n/.test(cmd),false);
+  assert.match(cmd,/set "RESULT=%~dp0US_BREADTH_R47_FIX2_CORE_TRACE_/);
   assert.match(cmd,/E:\\ZGmini\\runtime\\node\.exe/);
   assert.match(cmd,/--inspect-only/);
   assert.match(cmd,/LOG_LOCATION=NEXT_TO_CMD/);
