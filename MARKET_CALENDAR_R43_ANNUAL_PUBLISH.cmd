@@ -12,6 +12,10 @@ if exist "%ZGM_R43_RESULT%" (
 )
 set "ZGM_R43_PC_HOME=E:\ZGmini\data\pc-writer"
 if defined ZGMINI_PC_HOME set "ZGM_R43_PC_HOME=%ZGMINI_PC_HOME%"
+rem Optional: identify the existing approved PC checkout, separate from this R43 helper.
+rem The Node runner still requires its git HEAD to equal PC config.source.
+if defined ZGMINI_R43_APPROVED_REPO_ROOT set "ZGM_R43_REPO_ROOT=%ZGMINI_R43_APPROVED_REPO_ROOT%"
+if "%ZGM_R43_REPO_ROOT:~-1%"=="\" set "ZGM_R43_REPO_ROOT=%ZGM_R43_REPO_ROOT%."
 rem Trailing backslash in argv quotes can affect Node on Windows.
 if "%ZGM_R43_PC_HOME:~-1%"=="\" set "ZGM_R43_PC_HOME=%ZGM_R43_PC_HOME%."
 if not exist "%ZGM_R43_ROOT%scripts\resolve-local-node.cmd" goto missing_resolver
