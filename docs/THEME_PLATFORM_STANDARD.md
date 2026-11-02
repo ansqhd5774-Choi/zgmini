@@ -39,34 +39,28 @@ checkpoint는 등록·실행·모드 fingerprint에 묶고 CAS로 저장한다. 
 새 버전은 저장 입력으로 shadow 계산→기존 승인 결과 동등성/의도된 차이 검사→선별 전환한다. 기존10개를 삭제·초기화하지 않는다.
 새 공통 코드가 있다는 사실을 운영이 연결됐다는 뜻으로 사용하지 않는다. 현재 테마를 bridge하는 실행·게시·Reader 어댑터와 자연 예약 증거가 있어야 운영 통합 완료다.
 
-## 이번 구현의 실제 상태
+## 실제 구현·설치 상태 — 2026-11-02
 
-### 후속 운영 연결 구현 (2026-10-31)
+- V2 등록→기존 공통 collector→승인된 scoreOneR25/mixNineR32Date→별도 확정/잠정 CAS 게시→readback 연결을 구현했다. V1은 과거 계약으로 보존한다. 신규 선정·AUM 증거의 SHA를 확인하고 테마/ETF 수의 사업상 상한은 두지 않는다.
+- 실제 저장 R20 연구9개×252거래일의 점수·기여자·가중치·AUM이 승인 산출물과 일치했다. 저장 보조 API의 공개8개 10/29 잠정 결과도 기존 R88 결과와 일치했다. 증거: E:/ZGmini/analysis/THEME_PLATFORM_REAL_SHADOW_RESULT.json. 재수집·원자료/D1 변경 없이 검산했다.
+- 공통 관련 테스트 87/87 통과. 설치된 불변 bundle의 실제 scorer 재생, 1001개 등록, Reader 501개 pagination, cursor/resume, CAS/readback, 실패 격리, Windows Git-free 패키지를 포함한다. 웹 Reader/결합/기존 화면 23/23 및 TypeScript·vinext build도 통과했다. fixture와 실제 게시 증거를 혼동하지 않는다.
+- PC 설치 source: 9cad027530230d5b4f97707a9707ab97866dd1d6, ACTIVE_RUNTIME version: 0b1ed5d35888b0e0. 예약 CMD와 수동3개 entry를 같은 버전으로 갱신했고 기존 Task XML은 동일하다. 실제 THEME_SCHEDULED.cmd 수동 진입 종료0. 등록0이므로 Provider/D1 쓰기0이다. 증거: E:/ZGmini/analysis/THEME_PLATFORM_FINAL_LOCAL_EVIDENCE.json.
+- portable ZIP을 생성하고 새 폴더에 압축 해제하여 47개 파일 manifest를 재검증했다. ZIP SHA: 5cc910df992b210df62f30900475631d81df3b8c4820be01f6394cfb09aa1d0a. ZIP은 source SHA와 함께 검증하며 해시 일치만으로 신뢰 원천을 대신하지 않는다.
+- 공통 CLI 순환 import에 의한 실제 종료13은 registry 하위 모듈로 목록 발견을 옮겨 해결했고 동일 entry 종료0으로 확인했다. 과거 설치 성공만으로 실행 성공이라 판단하지 않는다.
+- 기존 R32 standalone CMD payload/source SHA 불일치 1건은 공통 실행 경로 외의 과거 문제다. 승인 계산기 자체는 변경하지 않았고 실데이터 동등성이 확인됐다. NON_BLOCKING으로 남기며 검사를 약화하지 않는다.
+- 웹 선별 PR #902를 main에 병합했다. 병합 SHA: `2b0407f7c87418280b3a2503611c7e578ed89cf7`. Cloudflare Git 자동빌드 `8b3353db-42a5-4034-8121-c99c00e81297` 성공. main AGENTS.md에도 이 전용 브랜치의 공통 기준/실행 지침/위임 정책 참조를 등록했다.
+- Production `/api/theme-configured`: HTTP200, R32 및 별도 잠정 지원 정보 확인. 등록0이므로 PENDING/0건이며 실패가 아니다. 기존 `/api/theme-fear-greed`: READY/10개, 배포 직전·직후 themes 전체 객체가 동일했다. 증거: `E:/ZGmini/analysis/THEME_PLATFORM_PUBLIC_BEFORE.json`, `THEME_PLATFORM_PUBLIC_AFTER.json`.
+- 실제 Production 390×844·1440×1000에서 기존10개 순위/차트와 동적 공개 개수 표시를 확인했다. 문서 폭은 각각375/1425로 viewport보다 작았다. 임시 크기 override는 복원했다. 화면 증거: `E:/ZGmini/analysis/theme-platform-production-mobile.png`, `theme-platform-production-pc.png`.
+- CI 전체 성공으로 보고하지 않는다. 최신 main과 동일한 경제지표 검사2건 실패와, 변경 전 run41440711029에서도 확인된 dashboard-deferred-ui-browser-r1.mjs:93의 등락 SVG 대기 실패를 분리했다. 해당 경제/대시보드 파일은 이번 PR에서 수정하지 않았다. 테마 관련23검사·TypeScript·build 및 실제 테마 화면은 통과했다.
 
-- 기존 등록기/수집기/점수/게시기/Reader에 `ZGMINI_THEME_CONFIG_V2`를 연결했다. V2는 ETF 개수 상한 없이 선정 근거·공식 AUM SHA를 검증하며, 정확한 기존 `scoreOneR25`와 `mixNineR32Date`를 사용한다. V1을 R32로 재표기하지 않는다.
-- 실제 저장된 R20 연구9개 ×252거래일의 공통 어댑터 결과가 기존 승인 산출물의 점수·기여자·가중치·AUM 정보와 전부 일치했다. 원자료/Provider/D1/예약 쓰기0. 증거: `E:/ZGmini/analysis/THEME_PLATFORM_REAL_SHADOW_RESULT.json`.
-- V2의 잠정 경로도 테마별 파일 추가 없이 기존 SHA-audited EOD reader, 동일 R25/R32, R8 5% overlap guard를 재사용한다. 확정 key와 별도 key에 CAS/readback하며 확정252점은 수정하지 않는다. 날짜는 다음 실제 저장 세션이며 가짜 날짜·가격을 만들지 않는다.
-- 기존 공통 자동 게시기는 공개 Reader의 R32 확정/잠정 지원을 실행당 한 번 확인하고, 미배포면 해당 쓰기만 차단한다. 방문자 Reader는 승인된 V2 결과와 동일 definition/AUM/selection의 잠정만 결합한다.
-- 기존 일회성 설치기 보호는 유지한다. 새 반복 갱신 wrapper는 검증된 현재 manifest/ACTIVE_RUNTIME를 사용하고 공통 예약·수동3개 entry를 같은 불변 버전으로 맞춘다. 이전 설치 기록과 버전은 보존한다. task XML은 변경하지 않는다.
-- 위 항목은 구현/fixture/실데이터 shadow 증거다. 이 단락 작성 시점의 실제 PC 갱신·main 선별 배포·첫 실신규테마 D1 게시·자연 예약은 별도 결과가 필요하다.
-- 실제 저장 보조 API를 통한 공통 잠정 어댑터도 기존 R88 공개8개 테마의 10/29 점수·가중치와 완전 일치했다. 같은 실데이터 증거 파일에 별도 provisional 항목으로 기록했다.
-- 공통 목록/계획 조회는 저장된 SHA/definition/source에 맞는 산출물 메타데이터를 읽으며 계산을 재실행하지 않는다. 실제 재계산과 구분한다. 전체 일일 요청 예산은 resource-policy 설정으로 분리하고 기본4회는 보존했다. 예산 부족 시 전체 테마를 줄이지 않고 cursor로 이어가며 대기를 성공 갱신으로 보고하지 않는다.
-- 실제 설치본의 공통 예약 entry 수동 검증 중 Node 종료13(`unsettled top-level await`)을 발견했다. 자동게시/사전검사가 실행 중 CLI에서 목록 함수를 다시 import하는 순환이 원인이고 과거 d7ee 설치 로그에도 존재했다. 목록 발견을 registry 하위 모듈로 옮겨 제거했으며 격리 설치본의 실제 `--scheduled` subprocess 종료0·무등록/무쓰기 결과를 회귀검사에 추가했다. 수정 설치 후 같은 실제 entry 검증 결과는 후속 증거로 기록한다.
-- 추가 기존 R32 standalone CMD 회귀에서 payload/source SHA 불일치 1건이 확인됐다. 91bfffc 이후 해당 계산기/CMD/테스트 diff는 없고 canonical Git snapshot에서도 동일하다. 이번 공통 패키지는 그 CMD를 실행하지 않으며 승인 R32 소스와 실데이터 동등성은 확인됐다. 기존 offline CMD 정합성 문제를 신규 산식/Provider 장애로 분류하지 않는다.
+## 완료 범위와 남은 운영 증거
 
-아래 항목은 앞선 구현 단계의 이력이며, 현재 연결 완료 여부는 위 단락 및 후속 실제 실행 증거로 판단한다.
-
-- `theme-platform.mjs`: 개수 제한 없는 등록 검증/커버리지/공유 수집 계획/기존 R32 reducer 재사용/재개 가능한 단계 실행.
-- `theme-platform-inspect.mjs --readonly`: 기존 자료와 현재 소스 제약을 읽기 전용 조회. 역사 JSON을 Production 증거로 오인하지 않는다.
-- 저장소의 기존 공통 CLI에서도 `theme-config-tool.mjs --platform-inspect`로 같은 진단을 호출한다. 별도 테마 실행기를 만들지 않는다. 설치 패키지 manifest 확장·설치 Runtime 검증 전에는 이 새 명령을 기존 PC 설치본에서 제공한다고 보고하지 않는다.
-- `theme-platform-store.mjs`: revision별 증거 보존, CAS·fsync·readback·손상 시 fail-closed 저장. 가격 원자료/D1/스케줄러를 변경하지 않는다.
-- 1001테마 등록 및 51테마 bounded/resume 포함 단위검사 10개 통과. fixture 증거이며 운영 전환 성공이 아니다.
-- 기존 설정형 경로는 정확히2종·PAIR profile이 남아 있다. 아직 이 경로를 R32 V2로 교체하지 않았다. Reader의 전체200개 잘림은 keyset pagination으로 수정했으며 501개/페이지 정체 회귀검사가 통과했다. 페이지200행은 전체 상한이 아니다. 아직 Production 배포하지 않았다.
-- 다음 필수 작업: 승인 입력·산출물 파일 저장/CAS 어댑터→기존 수집·게시기/Reader bridge→설치 패키지 의존성 manifest 및 공통 진단 연결→실제 저장 자료 shadow 검증→선별 운영 전환. 데이터센터 입력 조사·전환은 이 구조 검증 뒤 별도 수행한다.
-- PC 설치/D1 쓰기/스케줄러/Production 변경은 이번 구현 단계에서 수행하지 않았다.
-- 2026-10-31 후속: 통상 작업 위임/공개 전 evidence gate를 정책 코드로 연결했다. 기존 설치기와 Git-free 패키지는 로컬 import 의존성을 자동 포함하며 새 진단 명령을 임시 격리 설치본에서 실행해 검증했다. 단순 문서 작성만으로 실제 권한이 변경됐다고 주장하지 않는다.
-- 위임/공통실행/저장/Reader/기존 등록·게시/설치·Git-free 패키지의 관련 69개 검사가 모두 통과했다. Windows에서 기존 비Windows 전용 CLI 테스트가 실제 운영 E:를 조회하던 문제를 fixture preloader로 격리했으며 기대한 중단 조건은 유지했다.
-- 공통 실행·저장 신규13검사와 기존 등록/자동게시/Reader 회귀를 합한 47/47 단위검사 통과. 테스트 데이터와 운영 데이터 검증을 구분한다.
+- 신규 테마는 완성된 V2 등록 JSON·선정 근거·AUM을 기존 공통 도구에 전달한다. 새로운 테마별 CMD·예약·API/UI 코드는 기본 요구사항이 아니다. 실제 비용/권리/인증/범위 변경만 별도 결정한다.
+- 현재 신규 등록 테마0이다. 임의 테마나 샘플 D1을 만들어 첫 실제 신규 테마 게시 성공을 주장하지 않는다. 첫 승인 테마의 실제 Provider→D1→UI 증거는 해당 등록 때 남긴다.
+- 최신 설치 이후 자연 예약 실행은 아직 관찰하지 않았다. 수동 entry 성공과 구분한다. 기존 공개10개의 운영 경로 전체가 V2 등록기로 이관됐다고 주장하지 않는다.
+- 현재 지원 산식은 승인 R32다. 다른 새 산식은 명시적 공통 코드 바인딩·동일 입력 shadow·회귀 검증이 필요하다. JSON이 임의 코드를 실행하거나 모든 미개발 산식을 자동 구현하는 구조가 아니다.
+- 등록 definition은 불변이다. ETF/AUM/산식 변경은 기존 definition을 몰래 수정하지 말고 명시적인 revision 및 전환 검증으로 처리한다.
+- 데이터센터 R32 전환 누락은 이 공통 체계가 갖춰진 뒤 별도 수행한다. 이번 완료를 데이터센터 R32 적용 완료로 보고하지 않는다.
 
 ## 과거 자료와 공통 참조
 
