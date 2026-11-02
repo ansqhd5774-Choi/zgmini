@@ -38,12 +38,23 @@ function monthsBetween(first,last){
  }
  return out;
 }
-function validDailyQuality(rows,asOfDate){
+function validDailyQuality(rows,asOfDate,approvedBHistory){
  if(!Array.isArray(rows)||!rows.length||rows.length>1500)return false;
+ // An existing, well-formed approved ledger is the only boundary that permits
+ // preserving the known 2025-01-09 Carter closure as a non-scored historical
+ // source row. The date must precede the first locked quarter. All its other
+ // date/order/arithmetic checks still apply, and no future closure is exempt.
+ const firstLockedQuarter=approvedBHistory?.[0]?.quarter;
+ const firstLockedMonth=QUARTER.test(firstLockedQuarter??'')?
+  firstLockedQuarter.slice(0,4)+'-'+
+   String((Number(firstLockedQuarter.at(-1))-1)*3+1).padStart(2,'0')+'-01':null;
+ const oldClosureAllowed=date=>date==='2025-01-09'&&firstLockedMonth!==null&&
+  date<firstLockedMonth;
  let prior='';
  for(const r of rows){
   if(!validDate(r?.observationDate)||r.observationDate<=prior||
-     r.observationDate>asOfDate||!session(r.observationDate)||
+     r.observationDate>asOfDate||
+     !(session(r.observationDate)||oldClosureAllowed(r.observationDate))||
      !Number.isInteger(r.members)||r.members<490||r.members>520||
      !Number.isInteger(r.valid200)||r.valid200<0||r.valid200>r.members||
      !Number.isInteger(r.above200)||r.above200<0||r.above200>r.valid200||
@@ -84,7 +95,8 @@ function findAtOrBefore(rows,date){
 export function replayStoredR10BMonthly({qualityRows,sp500Rows,asOfDate,
  approvedBHistory=null}={}){
  if(!validDate(asOfDate))return stop('STOP_REPLAY_ASOF_DATE_INVALID');
- if(!validDailyQuality(qualityRows,asOfDate))return stop('STOP_REPLAY_DAILY_QUALITY_INVALID');
+ if(!validDailyQuality(qualityRows,asOfDate,approvedBHistory))
+  return stop('STOP_REPLAY_DAILY_QUALITY_INVALID');
  if(!validBenchmark(sp500Rows,asOfDate))return stop('STOP_REPLAY_SP500_BENCHMARK_INVALID');
  if(approvedBHistory!==null&&(!Array.isArray(approvedBHistory)||
     approvedBHistory.length===0||approvedBHistory.length>40||
@@ -95,6 +107,9 @@ export function replayStoredR10BMonthly({qualityRows,sp500Rows,asOfDate,
 
  const returns=[],participations=[],daily=[];
  for(const row of qualityRows){
+  // The original source row remains in qualityRowsSha256; it is never a
+  // tradable observation or a 252-pair/B-score input.
+  if(row.observationDate==='2025-01-09')continue;
   if(row.participation===null)continue;
   const date=row.observationDate;
   const yearEarlier=String(Number(date.slice(0,4))-1)+date.slice(4);
