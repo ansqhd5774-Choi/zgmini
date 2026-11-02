@@ -33,6 +33,20 @@ test('official calendar daily groups join to latest four earnings reports, estim
   assert.equal(result.rankings[0].score,70);
 });
 
+test('a single saved day with one EPS and revenue actual scores without backfill',()=>{
+  const indexed=indexSavedER1CalendarDays([
+    daily('2026-07-30',[e('AAA',2.5,1200000000)]),
+  ],{asOf:'2026-11-02'});
+  assert.equal(indexed.storedDayCount,1);
+  const scored=scoreER1Issuers([{
+    issuerId:'AAA',tickers:['AAA'],earningsSymbol:'AAA',eligible:true,
+    releases:indexed.releasesBySymbol.AAA,
+  }],{asOf:'2026-11-02',expectedEligibleIssuers:1});
+  assert.equal(scored.status,'READY_SHADOW');
+  assert.equal(scored.rankings[0].epsReleases,1);
+  assert.equal(scored.rankings[0].revenueReleases,1);
+});
+
 test('past null/null date is retained and cannot be replaced by fifth older report',()=>{
   const dates=['2025-07-30','2025-10-30','2026-01-29','2026-04-30','2026-07-30'];
   const days=dates.map((date,i)=>daily(date,[e('AAA',i===4?null:1,i===4?null:10)]));
