@@ -2,7 +2,8 @@
 // Never update the BLS companion keys, E1-R4 scores, or collect data in a Worker.
 export const QFR_SNAPSHOT_KEY='detail:earnings-recession-indicators:census-qfr-mfg-margin:v1';
 export const QFR_SCHEMA='earnings-companion-c-qfr-r1-v1';
-const URL='https://www.census.gov/econ_getzippedfile/?programCode=QFR';
+export const QFR_ROUTE='/api/earnings-recession-census-qfr-margin';
+const CENSUS_URL='https://www.census.gov/econ_getzippedfile/?programCode=QFR';
 const DATASET='QFR_MFG_US_NSA_AFTER_TAX_MARGIN';
 const ID='census_qfr_manufacturing_after_tax_margin_nsa';
 const DAY=86_400_000;
@@ -51,7 +52,7 @@ export function validateQfrCompanionPayload(payload,{now=Date.now()}={}){
   if(row.indicatorId!==ID||row.name!=='미국 제조업 세후이익률'
     ||row.category!=='PROFITABILITY'||row.kind!=='DERIVED'
     ||row.provider!=='CENSUS'||row.publisher!=='U.S. Census Bureau'
-    ||row.dataset!==DATASET||row.sourceURL!==URL||row.frequency!=='QUARTERLY'
+    ||row.dataset!==DATASET||row.sourceURL!==CENSUS_URL||row.frequency!=='QUARTERLY'
     ||row.adjustment!=='NSA'||row.unit!=='PERCENT'
     ||row.changeUnit!=='PERCENTAGE_POINTS'
     ||row.method!=='AFTER_TAX_PROFIT_DIVIDED_BY_NET_SALES'||row.status!=='READY'
@@ -105,6 +106,31 @@ function verifyEnvelope(record,{now}){
     ||p.builtAt>now||Number(record.stored_at)!==p.builtAt)
     fail('QFR_D1_EXISTING_INVALID');
   return envelope;
+}
+
+// Public Worker access is stored-only and read-only. Incomplete or expired
+// checkpoints must not be presented as a current official Census release.
+const publicHeaders={'cache-control':'no-store','x-robots-tag':'noindex',
+  'x-content-type-options':'nosniff','content-type':'application/json; charset=utf-8',
+  'x-public-projection':'STORED'};
+export async function readQfrCompanionResponse(request,core,{now=Date.now()}={}){
+  const reply=(body,status=200)=>new Response(request.method==='HEAD'?null:JSON.stringify(body),
+    {status,headers:publicHeaders});
+  if(!['GET','HEAD'].includes(request.method))return reply({reason:'METHOD_NOT_ALLOWED'},405);
+  if(new URL(request.url).search)return reply({reason:'QUERY_NOT_ALLOWED'},400);
+  if(!core?.prepare)return reply({status:'unavailable',reason:'PROJECTION_READ_UNAVAILABLE'},503);
+  let record;
+  try{record=await core.prepare(
+    'SELECT body,stored_at FROM market_public_snapshots_v1 WHERE snapshot_key=?')
+    .bind(QFR_SNAPSHOT_KEY).first();}
+  catch{return reply({status:'unavailable',reason:'PROJECTION_READ_UNAVAILABLE'},503);}
+  if(!record)return reply({status:'unavailable',reason:'STORED_PROJECTION_PENDING'},503);
+  try{
+    const {payload}=verifyEnvelope(record,{now});
+    const freshness=qfrCompanionFreshness(payload.rows[0],{now});
+    if(freshness.status!=='FRESH')return reply({status:'unavailable',reason:freshness.reason},503);
+    return reply({...payload,freshness});
+  }catch{return reply({status:'unavailable',reason:'STORED_PROJECTION_INVALID'},503);}
 }
 
 // Only a user-approved, PC-side manual publisher may call this writer.
