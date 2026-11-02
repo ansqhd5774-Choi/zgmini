@@ -11,12 +11,14 @@ import {preflightStoredR10PitQuarantine,reportR10PcPreflightArgs} from '../scrip
 const symbols=Array.from({length:489},(_,i)=>`T${String(i).padStart(4,'0')}`);
 const hash=value=>createHash('sha256').update(JSON.stringify([...value].sort())).digest('hex');
 const dates=[];
-for(let day=new Date('2026-01-01T00:00:00Z');day.toISOString().slice(0,10)<='2026-10-30';day.setUTCDate(day.getUTCDate()+1)){
+for(let day=new Date('2024-01-01T00:00:00Z');day.toISOString().slice(0,10)<='2026-10-30';day.setUTCDate(day.getUTCDate()+1)){
  const date=day.toISOString().slice(0,10);
  if(isMarketSession(date))dates.push(date);
 }
-const sessions=dates.slice(-205);
+const sessions=dates.slice(-520);
+const pricedSessions=sessions.slice(-205);
 assert.equal(sessions.at(-1),'2026-10-30');
+assert.equal(sessions.length,520);
 
 function fixture(t,{withSqlite=true}={}){
  const base=fs.mkdtempSync(path.join(os.tmpdir(),'r10-pit-pc-readonly-'));
@@ -29,6 +31,7 @@ function fixture(t,{withSqlite=true}={}){
  const officialPit={status:'READY',membershipLookAheadSafe:true,
   currentUniverseSurvivorshipBiasRemoved:true,publicMutation:false,eventDigest:'a'.repeat(64),
   currentDate:'2026-10-30',first:sessions[0],last:sessions.at(-1),
+  targetSessions:sessions.length,
   currentMemberHash:hash(officialMembers),
   universes:sessions.map(tradeDate=>({tradeDate,members:officialMembers,memberCount:490}))};
  const write=(name,body)=>fs.writeFileSync(path.join(base,name),JSON.stringify(body));
@@ -36,7 +39,7 @@ function fixture(t,{withSqlite=true}={}){
  write('local-breadth-r7-pit-universe.json',officialPit);
  write('local-breadth-r7-prospective-last-run.json',{
   status:'READY',at:'2026-11-02T04:30:00.000Z',pitRefreshed:true,secret:'DO_NOT_PRINT'});
- const rows=sessions.flatMap(tradeDate=>symbols.map(ticker=>({ticker,tradeDate,currentClose:100})));
+ const rows=pricedSessions.flatMap(tradeDate=>symbols.map(ticker=>({ticker,tradeDate,currentClose:100})));
  fs.writeFileSync(path.join(alpaca,'group-0001.json'),JSON.stringify(rows.filter(r=>r.tradeDate<='2026-09-30')));
  fs.writeFileSync(path.join(alpaca,'incremental','2026-09-30-2026-10-30-group-0001.json'),
   JSON.stringify(rows.filter(r=>r.tradeDate>'2026-09-30').map(row=>({...row,
@@ -94,6 +97,30 @@ test('missing SQLite is not mistaken for current PIT',t=>{
  zeroMutations(result);
  assert.equal(result.status,'STOP_SQLITE_UNIVERSE_DATE_UNVERIFIED');
  assert.equal(result.pitRefreshEvidence.sqliteStatus,'STOP_SQLITE_UNIVERSE_UNAVAILABLE');
+});
+
+test('a PIT file with only 500 sessions cannot claim a verified 501-day lineage',t=>{
+ const x=fixture(t),file=path.join(x.base,'local-breadth-r7-pit-universe.json');
+ const shortened=x.officialPit.universes.slice(-500);
+ fs.writeFileSync(file,JSON.stringify({...x.officialPit,first:shortened[0].tradeDate,
+  targetSessions:shortened.length,universes:shortened}));
+ const result=preflightStoredR10PitQuarantine({base:x.base,asOfDate:'2026-11-02'});
+ zeroMutations(result);
+ assert.equal(result.status,'STOP_PIT_501_SESSION_LINEAGE_UNVERIFIED');
+ assert.equal(result.pitWindowCount,500);
+ assert.equal(result.candidateRows,undefined);
+});
+
+test('an internal missing market session invalidates an otherwise complete PIT window',t=>{
+ const x=fixture(t),file=path.join(x.base,'local-breadth-r7-pit-universe.json');
+ const withGap=x.officialPit.universes.filter((row,i)=>i!==200);
+ fs.writeFileSync(file,JSON.stringify({...x.officialPit,first:withGap[0].tradeDate,
+  targetSessions:withGap.length,universes:withGap}));
+ const result=preflightStoredR10PitQuarantine({base:x.base,asOfDate:'2026-11-02'});
+ zeroMutations(result);
+ assert.equal(result.status,'STOP_PIT_501_SESSION_LINEAGE_UNVERIFIED');
+ assert.equal(result.pitWindowCount,519);
+ assert.equal(result.candidateRows,undefined);
 });
 
 test('explicit absolute PC root and canonical as-of date are required',t=>{

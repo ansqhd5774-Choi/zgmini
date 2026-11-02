@@ -1,12 +1,14 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createHash} from 'node:crypto';
+import {isMarketSession} from '../lib/market-score/breadth-b1-r3-calendar.mjs';
 import {planNewSymbolBackfill,inspectBackfillPages} from '../scripts/pc-writer/asset-r10-new-symbol-backfill-research.mjs';
 
 const hash=x=>createHash('sha256').update(JSON.stringify(x)).digest('hex');
 const sessions=[];
 for(let day=new Date('2025-01-01T00:00:00Z');sessions.length<205;day.setUTCDate(day.getUTCDate()+1)){
- if(day.getUTCDay()>0&&day.getUTCDay()<6)sessions.push(day.toISOString().slice(0,10));
+ const date=day.toISOString().slice(0,10);
+ if(isMarketSession(date))sessions.push(date);
 }
 const throughDate=sessions.at(-1),asOfDate='2026-11-02';
 const proof={status:'PIT_TIME_EFFECTIVE_IDENTITIES_VERIFIED',isResearchOnly:true,eventDigest:'b'.repeat(64)};
@@ -53,6 +55,35 @@ test('invalid calendar dates are rejected without silent UTC normalization',()=>
  assert.equal(planNewSymbolBackfill({...input,throughDate:'2026-02-30'}).status,'STOP_DATE_SCOPE_INVALID');
  assert.equal(planNewSymbolBackfill({...input,sessions:sessions.map(d=>d==='2025-03-03'?'2025-02-30':d)}).status,
   'STOP_VERIFIED_SESSION_WINDOW_MISSING');
+});
+
+test('research planning requires 200 consecutive exchange sessions, including holidays',()=>{
+ const last200=sessions.slice(-200);
+ const holiday='2025-07-04';
+ assert.ok(!isMarketSession(holiday));
+ const swap=[...sessions];
+ const holidayIndex=swap.findIndex(date=>date>holiday);
+ // Inject a July 4 public market holiday while retaining sorted dates.
+ swap.splice(holidayIndex,0,holiday);
+ assert.equal(planNewSymbolBackfill({...input,sessions:swap,throughDate:swap.at(-1)}).status,
+  'STOP_VERIFIED_SESSION_WINDOW_MISSING');
+ const gap=[...sessions];gap.splice(gap.length-80,1);
+ assert.equal(planNewSymbolBackfill({...input,sessions:gap,throughDate:gap.at(-1)}).status,
+  'STOP_VERIFIED_SESSION_WINDOW_MISSING');
+ assert.equal(last200.length,200);
+});
+
+test('bar timestamps must be RFC3339 and resolve to the expected exchange date',()=>{
+ const first=bars[0].t.slice(0,10);
+ for(const invalid of [first+'BAD',first+'T25:30:00Z',first+'T14:61:00Z',
+  first+'T14:30:00-25:00']){
+  const forged=[{...bars[0],t:invalid},...bars.slice(1)];
+  assert.equal(inspectBackfillPages({plan,pagesByTicker:pages(responseFor(forged))}).status,
+   'STOP_ALPACA_BAR_OR_DUPLICATE_INVALID',invalid);
+ }
+ const rfc3339=[{...bars[0],t:first+'T00:00:00-04:00'},...bars.slice(1)];
+ assert.equal(inspectBackfillPages({plan,pagesByTicker:pages(responseFor(rfc3339))}).status,
+  'RESEARCH_PRICES_200_SESSIONS_VALIDATED_AUDIT_PENDING');
 });
 
 test('200-session historical identity cannot cross a rename or issuer validity boundary',()=>{

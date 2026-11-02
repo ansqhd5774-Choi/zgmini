@@ -3,6 +3,7 @@ import path from 'node:path';
 import {createHash} from 'node:crypto';
 import {fileURLToPath} from 'node:url';
 import {DatabaseSync} from 'node:sqlite';
+import {isMarketSession} from '../../lib/market-score/breadth-b1-r3-calendar.mjs';
 import {inspectR10BreadthIncremental,R10_RESEARCH_IDENTITY_QUARANTINE} from './asset-r10-breadth-incremental.mjs';
 
 // Run directly from an approved PC source checkout with an explicit data root.
@@ -13,6 +14,31 @@ const validDate=d=>typeof d==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(d)&&
   !Number.isNaN(Date.parse(d+'T00:00:00Z'))&&
   new Date(d+'T00:00:00Z').toISOString().slice(0,10)===d;
 const digest=b=>createHash('sha256').update(b).digest('hex');
+function previousMarketSession(date){
+ let value=Date.parse(date+'T00:00:00Z');
+ for(let n=0;n<10;n++){
+  value-=86400000;
+  const candidate=new Date(value).toISOString().slice(0,10);
+  if(isMarketSession(candidate))return candidate;
+ }
+ return null;
+}
+// R7's approved builder emits 520 consecutive market sessions. R38's pure
+// researcher accepts 200+, so a PC preflight must separately demand the
+// 501-session PIT evidence window used by the operator's lineage audit.
+function validAuditedPitWindow(pit){
+ const universes=pit?.universes;
+ if(!Array.isArray(universes)||universes.length<501||
+    !Number.isInteger(pit.targetSessions)||pit.targetSessions!==universes.length)
+  return false;
+ const dates=universes.map(row=>row?.tradeDate);
+ if(dates.some(date=>!validDate(date))||dates[0]!==pit.first||
+    dates.at(-1)!==pit.last||dates.at(-1)!==pit.currentDate)return false;
+ for(let i=1;i<dates.length;i++){
+  if(previousMarketSession(dates[i])!==dates[i-1])return false;
+ }
+ return true;
+}
 const stop=(status,more={})=>({revision:R10_PC_QUARANTINE_PREFLIGHT,status,
   readOnly:true,canPromote:false,productionEligible:false,
   providerCalls:0,pcInputWrites:0,sqliteWrites:0,d1Reads:0,d1Writes:0,
@@ -83,6 +109,9 @@ export function preflightStoredR10PitQuarantine({base,asOfDate}={}){
    return stop('STOP_SQLITE_UNIVERSE_DATE_UNVERIFIED',{pitRefreshEvidence});
   if(official.parsed?.currentDate!==sqliteUniverse.date)
    return stop('STOP_PIT_NOT_CURRENT_WITH_SQLITE',{pitRefreshEvidence});
+  if(!validAuditedPitWindow(official.parsed))
+   return stop('STOP_PIT_501_SESSION_LINEAGE_UNVERIFIED',{pitRefreshEvidence,
+    pitWindowCount:Array.isArray(official.parsed?.universes)?official.parsed.universes.length:null});
   const alpaca=path.join(root,'asset-r10-alpaca');
   const baseFiles=listJson(alpaca,/^group-\d+\.json$/,64);
   if(!baseFiles.length)return stop('STOP_APPROVED_PRICE_GROUPS_MISSING');

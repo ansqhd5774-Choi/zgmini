@@ -1,4 +1,5 @@
 import {createHash} from 'node:crypto';
+import {isMarketSession} from '../../lib/market-score/breadth-b1-r3-calendar.mjs';
 
 // A pure R10 research helper: no fetch, filesystem, environment, SQLite or D1.
 // It cannot promote data. The approved market-breadth formula remains unchanged.
@@ -15,6 +16,32 @@ const dateValid=value=>typeof value==='string'&&DATE.test(value)&&
  new Date(value+'T00:00:00Z').toISOString().slice(0,10)===value;
 const stop=(status,extras={})=>({status,method:R10_NEW_SYMBOL_BACKFILL_METHOD,canPromote:false,productionEligible:false,providerRequests:0,...extras});
 
+// Treat "200 sessions" as 200 consecutive actual market-session dates, not
+// merely 200 arbitrary sorted YYYY-MM-DD values. This is a research input
+// check and does not replace independent PIT or exchange-holiday evidence.
+function completeMarketSessionWindow(window){
+ if(window.some(date=>!isMarketSession(date)))return false;
+ let cursor=window[0],index=0;
+ for(let guard=0;guard<400&&index<window.length;guard++){
+  if(isMarketSession(cursor)){
+   if(cursor!==window[index])return false;
+   index++;
+  }
+  cursor=new Date(Date.parse(cursor+'T00:00:00Z')+86400000).toISOString().slice(0,10);
+ }
+ return index===window.length;
+}
+
+function verifiedBarDate(value){
+ if(typeof value!=='string')return null;
+ // Alpaca documents RFC-3339 nanosecond timestamps. Both Z and explicit
+ // UTC offsets are valid, provided they resolve to the same exchange date.
+ const match=value.match(/^(\d{4}-\d{2}-\d{2})T(\d{2}):(\d{2}):(\d{2})(?:\.\d{1,9})?(Z|[+-]\d{2}:\d{2})$/);
+ if(!match||!dateValid(match[1])||Number(match[2])>23||Number(match[3])>59||Number(match[4])>59||
+    !Number.isFinite(Date.parse(value))||new Date(value).toISOString().slice(0,10)!==match[1])return null;
+ return match[1];
+}
+
 /**
  * Only prepares bounded, operator-inspectable API requests. The caller must
  * independently establish PIT membership, date-effective issuer identity and
@@ -25,6 +52,7 @@ export function planNewSymbolBackfill({sessions=[],throughDate,asOfDate,missingS
   return stop('STOP_DATE_SCOPE_INVALID');
  if(!Array.isArray(sessions)||sessions.length<200||sessions.some((v,i)=>!dateValid(v)||(i>0&&v<=sessions[i-1]))||
     sessions.at(-1)!==throughDate)return stop('STOP_VERIFIED_SESSION_WINDOW_MISSING');
+ if(!completeMarketSessionWindow(sessions.slice(-200)))return stop('STOP_VERIFIED_SESSION_WINDOW_MISSING');
  if(pitProof?.status!=='PIT_TIME_EFFECTIVE_IDENTITIES_VERIFIED'||!SHA.test(pitProof?.eventDigest??'')||
     pitProof?.isResearchOnly!==true)return stop('STOP_TIME_EFFECTIVE_PIT_PROOF_MISSING');
  if(providerPolicy?.rightsStatus!=='ALPACA_IEX_RESEARCH_RETRIEVAL_APPROVED'||
@@ -106,8 +134,8 @@ export function inspectBackfillPages({plan,pagesByTicker={}}={}){
    if(!SHA.test(item.responseSha256??'')||item.responseSha256!==stamp(item.response))
     return stop('STOP_ALPACA_RESPONSE_HASH_MISMATCH',{ticker,page:index});
    for(const bar of item.response.bars[ticker]){
-    const tradeDate=String(bar?.t??'').slice(0,10);
-    if(!expected.has(tradeDate)||!Number.isFinite(bar?.c)||bar.c<=0||
+    const tradeDate=verifiedBarDate(bar?.t);
+    if(!tradeDate||!expected.has(tradeDate)||!Number.isFinite(bar?.c)||bar.c<=0||
        !Number.isFinite(bar?.v)||bar.v<0||seen.has(tradeDate))
       return stop('STOP_ALPACA_BAR_OR_DUPLICATE_INVALID',{ticker,page:index});
     seen.add(tradeDate);

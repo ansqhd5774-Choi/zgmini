@@ -3,13 +3,15 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import {isMarketSession} from '../lib/market-score/breadth-b1-r3-calendar.mjs';
 import {planNewSymbolBackfill} from '../scripts/pc-writer/asset-r10-new-symbol-backfill-research.mjs';
 import {stageR10NewSymbolBars} from '../scripts/pc-writer/asset-r10-new-symbol-collector-r1.mjs';
 import {verifyR10ResearchCapture} from '../scripts/pc-writer/asset-r10-research-capture-readback-r1.mjs';
 
 const sessions=[];
 for(let day=new Date('2025-01-01T00:00:00Z');sessions.length<205;day.setUTCDate(day.getUTCDate()+1)){
- if(day.getUTCDay()>0&&day.getUTCDay()<6)sessions.push(day.toISOString().slice(0,10));
+ const date=day.toISOString().slice(0,10);
+ if(isMarketSession(date))sessions.push(date);
 }
 const plan=planNewSymbolBackfill({sessions,throughDate:sessions.at(-1),asOfDate:'2026-11-02',
  missingSymbols:['TWLO'],pitProof:{status:'PIT_TIME_EFFECTIVE_IDENTITIES_VERIFIED',
