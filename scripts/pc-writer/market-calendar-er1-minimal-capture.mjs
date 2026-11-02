@@ -8,6 +8,8 @@ import {indexSavedER1CalendarDays} from '../../lib/market-calendar-er1-calendar-
 
 const DEFAULT_PC_HOME=String.raw`E:\ZGmini\data\pc-writer`;
 const MAX_DATES=5;
+const MAX_BOUNDED_DATES=50;
+const MAX_BOUNDED_NEW_REQUESTS=45;
 const MAX_RESPONSE_BYTES=2_000_000;
 const stop=code=>{throw Error(code)};
 const dateOnly=x=>x.toISOString().slice(0,10);
@@ -20,7 +22,7 @@ function newYorkDay(now){
 }
 
 export function recentNYBusinessDays(now,count=MAX_DATES){
-  if(!Number.isFinite(now)||!Number.isInteger(count)||count<1||count>MAX_DATES)
+  if(!Number.isFinite(now)||!Number.isInteger(count)||count<1||count>MAX_BOUNDED_DATES)
     stop('ER1_DATE_PLAN_INVALID');
   const today=newYorkDay(now),result=[];
   for(let t=Date.parse(today+'T00:00:00Z')-86400000;result.length<count;t-=86400000){
@@ -118,13 +120,17 @@ function savedData(file,day,asOf){
 /** Manual, private, bounded run. A read-only verified universe is still mandatory
  * before ranking or publication. fetcher and clock are injected for local tests. */
 export async function runER1MinimalCapture({pcHome=DEFAULT_PC_HOME,now=Date.now(),
-  fetcher=globalThis.fetch,env=process.env,readOnly=false}={}){
-  const plan=recentNYBusinessDays(now),dir=path.join(pcHome,'er1-input','days');
+  fetcher=globalThis.fetch,env=process.env,readOnly=false,
+  dateCount=MAX_DATES,maxNewRequests=MAX_DATES}={}){
+  if(!Number.isInteger(maxNewRequests)||maxNewRequests<0||
+    maxNewRequests>MAX_BOUNDED_NEW_REQUESTS)stop('ER1_REQUEST_BUDGET_INVALID');
+  const plan=recentNYBusinessDays(now,dateCount),dir=path.join(pcHome,'er1-input','days');
   const report={audit:readOnly?'ER1_SAVED_ROW_RECOVERY_R3_20261102':
     'ER1_MINIMAL_MANUAL_CAPTURE_20261102',status:'STARTED',
     asOf:plan.asOf,targetDates:plan.dates,providerRequests:0,providerRetries:0,
     dbWrites:0,d1Writes:0,coreChanges:0,scheduleChanges:0,
     newDayFiles:0,retainedDayFiles:0,savedDayCount:0,verifiedDayCount:0,
+    targetedDayCount:plan.dates.length,missingDayCount:0,
     quarantinedDays:[],recoveredDays:[],excludedEvents:0,
     symbolsWithEPS:0,symbolsWithRevenue:0,uniqueSymbolsWithBoth:0,
     approvedUniverseVerified:false,publicReady:false};
@@ -147,6 +153,7 @@ export async function runER1MinimalCapture({pcHome=DEFAULT_PC_HOME,now=Date.now(
       if(fs.existsSync(file)){
         savedData(file,day,plan.asOf);report.retainedDayFiles++;continue;
       }
+      if(report.providerRequests>=maxNewRequests)continue;
       // Exactly one request per missing date, never retry; 429 stops immediately.
       report.providerRequests++;
       let response;
@@ -207,6 +214,7 @@ export async function runER1MinimalCapture({pcHome=DEFAULT_PC_HOME,now=Date.now(
     }
     report.verifiedDayCount=verified.length;
     if(readOnly)report.retainedDayFiles=report.savedDayCount;
+    report.missingDayCount=plan.dates.length-report.savedDayCount;
     const index=indexSavedER1CalendarDays(verified,{asOf:plan.asOf});
     for(const records of Object.values(index.releasesBySymbol)){
       const eps=records.some(x=>x.eps!==null),revenue=records.some(x=>x.revenue!==null);
@@ -214,7 +222,8 @@ export async function runER1MinimalCapture({pcHome=DEFAULT_PC_HOME,now=Date.now(
       if(revenue)report.symbolsWithRevenue++;
       if(eps&&revenue)report.uniqueSymbolsWithBoth++;
     }
-    if(report.status==='STARTED')report.status=report.quarantinedDays.length||report.excludedEvents?
+    if(report.status==='STARTED')report.status=report.quarantinedDays.length||
+      report.excludedEvents||report.missingDayCount?
       'ER1_PRIVATE_SAMPLE_PARTIAL':report.uniqueSymbolsWithBoth?
         'ER1_PRIVATE_SAMPLE_SAVED':'ER1_PRIVATE_SAMPLE_NO_ACTUALS';
   }catch{if(report.status==='STARTED')report.status='ER1_SAVED_SAMPLE_VALIDATION_STOP'}
@@ -226,12 +235,15 @@ if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.ur
   if(!resultFile){console.error('ER1_RESULT_PATH_REQUIRED');process.exitCode=2;}
   else{
     const readOnly=process.argv[3]==='--r3-readonly';
-    if(process.argv[3]&&!readOnly){console.error('ER1_MODE_INVALID');process.exitCode=2;}
+    const bounded=process.argv[3]==='--r4-bounded';
+    if(process.argv[3]&&!readOnly&&!bounded){console.error('ER1_MODE_INVALID');process.exitCode=2;}
     else{
     // A read-only snapshot diagnostic is pinned to the user-provided R2 date.
     // It never asks the provider for new days if the user runs it later.
     const report=await runER1MinimalCapture(readOnly?{
-      now:Date.parse('2026-11-02T16:00:00Z'),readOnly:true}:{});
+      now:Date.parse('2026-11-02T16:00:00Z'),readOnly:true}:
+      bounded?{dateCount:MAX_BOUNDED_DATES,
+        maxNewRequests:MAX_BOUNDED_NEW_REQUESTS}:{});
     fs.writeFileSync(resultFile,Object.entries(report).map(([k,v])=>
       `${k.toUpperCase()}=${JSON.stringify(v)}`).join('\r\n')+'\r\n','utf8');
     console.log('STATUS='+report.status+'\nRESULT_FILE='+resultFile);
