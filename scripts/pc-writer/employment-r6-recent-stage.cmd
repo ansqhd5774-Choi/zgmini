@@ -15,7 +15,13 @@ if defined ZGMINI_PC_HOME (
 ) else (
   set "EMP_R6_CORE=%USERPROFILE%\.zgmini\pc-writer\storage\core.sqlite"
 )
-if not "%~1"=="" set "EMP_R6_CORE=%~1"
+set "EMP_R6_STAGE_MODE="
+if /I "%~1"=="ONE_YEAR" (
+  set "EMP_R6_STAGE_MODE=--one-year"
+) else (
+  if not "%~1"=="" set "EMP_R6_CORE=%~1"
+  if /I "%~2"=="ONE_YEAR" set "EMP_R6_STAGE_MODE=--one-year"
+)
 
-"%NODE%" "%~dp0employment-r6-recent-stage.mjs" --db "%EMP_R6_CORE%" --output-dir "%~dp0."
+"%NODE%" "%~dp0employment-r6-recent-stage.mjs" --db "%EMP_R6_CORE%" --output-dir "%~dp0." %EMP_R6_STAGE_MODE%
 exit /b %errorlevel%

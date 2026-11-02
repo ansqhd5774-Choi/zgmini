@@ -16,6 +16,11 @@ export const RECENT_GROUPS = Object.freeze([
   "BLS_JOLTS",
   "BLS_ECI",
 ]);
+export const ONE_YEAR_GROUPS = Object.freeze([
+  ...RECENT_GROUPS,
+  "BLS_STATE_MSA",
+  "BLS_BED",
+]);
 
 const CANDIDATE_FILE = "EMPLOYMENT_R6_CANDIDATE.sqlite";
 const RESULT_BASE = "EMPLOYMENT_R6_RECENT_STAGE_RESULT";
@@ -51,7 +56,15 @@ function validatePaths({ coreDbPath, outputDir, candidateDbPath }) {
   return { core, output, candidate };
 }
 
-function missingBaseline(report) {
+function missingBaseline(report, scope) {
+  if (scope === "ONE_YEAR") {
+    // One-year staging covers all six approved provider groups, including
+    // state/metro diffusion and BED. Unknown Core coverage is not zero.
+    if (!report.tables?.observationCurrent) throw new Error("CORE_COVERAGE_TABLE_UNAVAILABLE");
+    return [...new Set((report.sourceGroupCoverage ?? [])
+      .filter(group => ONE_YEAR_GROUPS.includes(group.groupName))
+      .flatMap(group => group.missingSourceSeries ?? []))].sort();
+  }
   return [...new Set(report.features
     .filter(f => f.historyReferenceStatus === "PARTIAL_MISSING")
     .flatMap(f => f.missingSourceSeries ?? []))].filter(id => TARGET_SERIES.has(id)).sort();
@@ -93,6 +106,7 @@ export function formatRecentStageResult(report) {
     "ZGMINI EMPLOYMENT R6 - ISOLATED RECENT SOURCE STAGE",
     `STATUS: ${report.status}`,
     `AS_OF: ${report.asOf ?? "NONE"}`,
+    `SCOPE: ${report.scope ?? "RECENT"}`,
     "APPROVED_PC_CORE_DB_WRITES: 0",
     "PC_CORE_TASK_OR_SCHEDULER_CHANGES: 0",
     "D1_WRITES: 0",
@@ -102,6 +116,7 @@ export function formatRecentStageResult(report) {
     `MISSING_SOURCE_SERIES_STAGED: ${report.stagedMissingSourceSeries ?? "NO_EVIDENCE"}`,
     `MISSING_SERIES_WITH_QUARTER_OBSERVATIONS: ${report.stagedQuarterSourceSeries ?? "NO_EVIDENCE"}`,
     `PROVIDER_REQUESTS_THIS_RUN: ${report.providerRequests ?? 0}`,
+    `CANDIDATE_ONLY_1Y_CHART_READY: ${report.candidateMiniChartReadyFeatures ?? "NO_EVIDENCE"} / 29`,
     `ERROR: ${report.error ?? "NONE"}`,
     "",
     "COLLECTION GROUPS",
@@ -123,6 +138,7 @@ export async function stageEmploymentR6Recent({
   now = () => new Date(),
   fetchImpl = globalThis.fetch,
   collector = runEmploymentR6CollectionStep,
+  scope = "RECENT",
 } = {}) {
   const report = {
     kind: "EMPLOYMENT_R6_RECENT_STAGE_CANDIDATE_R1",
@@ -133,10 +149,12 @@ export async function stageEmploymentR6Recent({
     providerRequests: 0,
     approvedCoreDbWrites: 0,
     remoteWrites: 0,
+    scope,
   };
   let lockFd = null;
   let lockPath = null;
   try {
+    if (!["RECENT", "ONE_YEAR"].includes(scope)) throw new Error("INVALID_STAGE_SCOPE");
     const paths = validatePaths({ coreDbPath, outputDir, candidateDbPath });
     lockPath = path.join(paths.output, LOCK_FILE);
     try { lockFd = fs.openSync(lockPath, "wx"); }
@@ -149,13 +167,15 @@ export async function stageEmploymentR6Recent({
     const baseline = await auditEmploymentR6Database({ dbPath: paths.core, asOfDate: report.asOf });
     report.baselineSourceSeriesWithRows = baseline.summary.sourceSeriesWithCurrentRows;
     report.baselineReferenceReadyFeatures = baseline.summary.formulaReferenceReadyFeatures;
-    report.baselineMissingSourceSeries = missingBaseline(baseline);
+    report.baselineMissingSourceSeries = missingBaseline(baseline, scope);
 
     let db;
     try {
       db = localDatabase(paths.candidate);
       const result = await collector({
-        env: { DB: db }, db, fetchImpl, now, mode: "RELEASE", groups: RECENT_GROUPS,
+        env: { DB: db }, db, fetchImpl, now,
+        mode: scope === "ONE_YEAR" ? "ONE_YEAR" : "RELEASE",
+        groups: scope === "ONE_YEAR" ? ONE_YEAR_GROUPS : RECENT_GROUPS,
       });
       report.providerRequests = Number(result.providerRequests ?? 0);
       report.collectionStatus = result.status ?? "UNKNOWN";
@@ -180,6 +200,7 @@ export async function stageEmploymentR6Recent({
 
     const staged = await auditEmploymentR6Database({ dbPath: paths.candidate, asOfDate: report.asOf });
     report.candidateSourceSeriesWithRows = staged.summary.sourceSeriesWithCurrentRows;
+    report.candidateMiniChartReadyFeatures = staged.summary.oneYearMiniChartReadyFeatures;
     report.sourceEvidence = observedAfter(staged, report.baselineMissingSourceSeries);
     report.stagedMissingSourceSeries = report.sourceEvidence.filter(s => s.sourceRows > 0).length;
     report.stagedQuarterSourceSeries = report.sourceEvidence.filter(s => s.recentQuarterObservationRows > 0).length;
@@ -212,6 +233,7 @@ function parseArguments(args) {
   for (let i = 0; i < args.length; i++) {
     if (args[i] === "--db" && args[i + 1]) out.coreDbPath = args[++i];
     else if (args[i] === "--output-dir" && args[i + 1]) out.outputDir = args[++i];
+    else if (args[i] === "--one-year") out.scope = "ONE_YEAR";
     else throw new Error("ARGUMENT_INVALID");
   }
   return out;

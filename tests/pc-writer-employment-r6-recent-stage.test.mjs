@@ -6,9 +6,10 @@ import path from "node:path";
 import { DatabaseSync } from "node:sqlite";
 
 import { localDatabase } from "../scripts/pc-writer/local-db.mjs";
-import { stageEmploymentR6Recent, RECENT_GROUPS } from "../scripts/pc-writer/employment-r6-recent-stage.mjs";
+import { stageEmploymentR6Recent, RECENT_GROUPS, ONE_YEAR_GROUPS } from "../scripts/pc-writer/employment-r6-recent-stage.mjs";
 import { createEmploymentR4ShadowStore } from "../lib/market-score/employment-r4-shadow-store.mjs";
-import { createEmploymentR6Provider, parseBlsR6Rows, parseDolNationalClaimsXml } from "../lib/market-score/employment-r6-provider.mjs";
+import { createEmploymentR6Provider, parseBlsR6Rows, parseDolNationalClaimsXml, planBlsYearWindows, expectedBlsCallsForGroup } from "../lib/market-score/employment-r6-provider.mjs";
+import { EMPLOYMENT_R6_API_BUDGET } from "../lib/market-score/employment-r6-contract.mjs";
 import { EMPLOYMENT_R4_CORE_STATES } from "../lib/market-score/employment-r4-shadow-contract.mjs";
 
 function fixture() {
@@ -28,8 +29,8 @@ function blsPayload(ids) {
     Results: { series: ids.map((seriesID, i) => ({
       seriesID,
       data: [
-        { year: "2026", period: seriesID.startsWith("CI") ? "Q03" : "M09", value: String(50 + i), footnotes: [] },
-        { year: "2026", period: seriesID.startsWith("CI") ? "Q02" : "M08", value: String(49 + i), footnotes: [] },
+        { year: "2026", period: seriesID.startsWith("CI") ? "Q03" : seriesID.startsWith("BD") ? "Q01" : "M09", value: String(50 + i), footnotes: [] },
+        { year: seriesID.startsWith("BD") ? "2025" : "2026", period: seriesID.startsWith("CI") ? "Q02" : seriesID.startsWith("BD") ? "Q04" : "M08", value: String(49 + i), footnotes: [] },
       ],
     })) },
   };
@@ -43,8 +44,10 @@ function claimsCsv() {
 
 function mockFetch() {
   const calls = [];
+  const requests = [];
   const fetch = async (url, options = {}) => {
     calls.push(String(url));
+    requests.push({ url: String(url), body: options.body ?? null });
     let body;
     if (String(url).includes("api.bls.gov")) body = JSON.stringify(blsPayload(JSON.parse(options.body).seriesid));
     else if (String(url).includes("report.asp")) body = `<?xml version="1.0"?><weeks>
@@ -53,8 +56,38 @@ function mockFetch() {
     else body = claimsCsv();
     return { ok: true, status: 200, headers: { get: () => "text/plain" }, text: async () => body };
   };
-  return { fetch, calls };
+  return { fetch, calls, requests };
 }
+
+test("one-year BLS staging requests 2024-2026 in one window, not a score backfill", () => {
+  assert.deepEqual(planBlsYearWindows({ mode: "ONE_YEAR", currentYear: 2026 }), [
+    { startyear: "2024", endyear: "2026" },
+  ]);
+  const expectedBlsCalls = ONE_YEAR_GROUPS.reduce((sum, group) =>
+    sum + expectedBlsCallsForGroup(group, { mode: "ONE_YEAR" }), 0);
+  assert.equal(expectedBlsCalls, 9);
+  assert.ok(expectedBlsCalls < EMPLOYMENT_R6_API_BUDGET.blsUnregisteredDailyQueries);
+});
+
+test("one-year DOL staging retains 112 weekly periods for year-over-year state breadth", async () => {
+  const { fetch, calls } = mockFetch();
+  const provider = createEmploymentR6Provider({ now: () => new Date("2026-11-01T10:00:00Z"), fetchImpl: fetch });
+  const result = await provider.fetchDolClaims({ mode: "ONE_YEAR", currentYear: 2026 });
+  assert.equal(result.snapshots[1].detail.historyWeeks, 112);
+  assert.equal(result.requestCount, 2);
+  assert.equal(calls.length, 2);
+});
+
+test("one-year opt-in CMD preserves ASCII CRLF and existing default launch", () => {
+  const bytes = fs.readFileSync(new URL("../scripts/pc-writer/employment-r6-recent-stage.cmd", import.meta.url));
+  const source = bytes.toString("ascii");
+  assert.equal(bytes.subarray(0, 3).equals(Buffer.from([0xef, 0xbb, 0xbf])), false);
+  assert.ok([...bytes].every(b => b <= 127));
+  assert.equal(/(?<!\r)\n/.test(source), false);
+  assert.match(source, /if \/I "%~1"=="ONE_YEAR"/);
+  assert.match(source, /employment-r6-recent-stage\.mjs" --db/);
+  assert.doesNotMatch(source, /schtasks|git pull|local-cycle\.lock/i);
+});
 
 test("empty BLS value or returned series with no valid rows remains missing, never zero", () => {
   const requestedSeriesIds = ["LNS14000000"];
@@ -162,6 +195,73 @@ test("manual recent stage writes candidate only, retains core file and reports 1
     "EMPLOYMENT_R6_RECENT_STAGE_RESULT.json",
     "EMPLOYMENT_R6_RECENT_STAGE_RESULT.txt",
   ]);
+});
+
+test("opt-in 1Y stage includes state/metro and BED in isolated candidate, no duplicate same-day provider calls", async t => {
+  const f = fixture();
+  t.after(f.cleanup);
+  await createEmploymentR4ShadowStore(f.db).initialize();
+  f.db.close();
+  const before = fs.readFileSync(f.coreDbPath);
+  const { fetch, requests } = mockFetch();
+  const now = () => new Date("2026-11-01T10:00:00Z");
+  const result = await stageEmploymentR6Recent({
+    coreDbPath: f.coreDbPath, outputDir: f.outputDir, scope: "ONE_YEAR", now, fetchImpl: fetch,
+  });
+  assert.deepEqual(ONE_YEAR_GROUPS, [
+    ...RECENT_GROUPS, "BLS_STATE_MSA", "BLS_BED",
+  ]);
+  assert.equal(result.scope, "ONE_YEAR");
+  assert.equal(result.baselineMissingSourceSeries.length, 29);
+  assert.equal(result.groups.length, 6);
+  assert.deepEqual(result.groups.map(g => g.groupName), ONE_YEAR_GROUPS);
+  assert.equal(result.providerRequests, 11, JSON.stringify(result.groups));
+  assert.equal(requests.length, 11);
+  const bls = requests.filter(r => r.url.includes("api.bls.gov"));
+  assert.equal(bls.length, 9);
+  assert.ok(bls.every(r => {
+    const body = JSON.parse(r.body);
+    return body.startyear === "2024" && body.endyear === "2026";
+  }));
+  assert.ok(result.groups.some(g => g.groupName === "BLS_STATE_MSA"));
+  assert.ok(result.groups.some(g => g.groupName === "BLS_BED"));
+  assert.equal(result.approvedCoreDbWrites, 0);
+  assert.equal(result.remoteWrites, 0);
+  assert.deepEqual(fs.readFileSync(f.coreDbPath), before);
+  const stageText = fs.readFileSync(path.join(f.outputDir, "EMPLOYMENT_R6_RECENT_STAGE_RESULT.txt"), "utf8");
+  assert.match(stageText, /SCOPE: ONE_YEAR/);
+  assert.match(stageText, /D1_WRITES: 0/);
+
+  const repeated = await stageEmploymentR6Recent({
+    coreDbPath: f.coreDbPath, outputDir: f.outputDir, scope: "ONE_YEAR", now,
+    fetchImpl: () => { throw new Error("SAME_DAY_REPEAT_FORBIDDEN"); },
+  });
+  assert.equal(repeated.providerRequests, 0);
+  assert.ok(repeated.plannedGroups.every(g => g.status === "ONE_YEAR_ALREADY_ATTEMPTED"));
+  assert.deepEqual(fs.readFileSync(f.coreDbPath), before);
+});
+
+test("recent-first stage can be extended to all 29 sources without replacing the candidate or Core", async t => {
+  const f = fixture();
+  t.after(f.cleanup);
+  await createEmploymentR4ShadowStore(f.db).initialize();
+  f.db.close();
+  const before = fs.readFileSync(f.coreDbPath);
+  const first = mockFetch();
+  const now = () => new Date("2026-11-01T10:00:00Z");
+  const recent = await stageEmploymentR6Recent({
+    coreDbPath: f.coreDbPath, outputDir: f.outputDir, now, fetchImpl: first.fetch,
+  });
+  assert.equal(recent.groups.length, 4);
+  const second = mockFetch();
+  const full = await stageEmploymentR6Recent({
+    coreDbPath: f.coreDbPath, outputDir: f.outputDir, now, fetchImpl: second.fetch, scope: "ONE_YEAR",
+  });
+  assert.equal(full.baselineMissingSourceSeries.length, 29);
+  assert.equal(full.stagedMissingSourceSeries, 29);
+  assert.equal(full.candidateSourceSeriesWithRows, 29);
+  assert.equal(full.providerRequests, 11);
+  assert.deepEqual(fs.readFileSync(f.coreDbPath), before);
 });
 
 test("missing approved core DB blocks without creating replacement candidate", async t => {
