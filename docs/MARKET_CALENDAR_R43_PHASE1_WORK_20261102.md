@@ -29,15 +29,15 @@
 1. R43 공개용 키는 기존 `market-calendar:fhs-r3-annual`과 별도이며, 원자료·시가총액 대신 허용된 발행사 식별자·★★★ 선별 결과만 포함한다.
 2. 운영 입력 부재·무결성 오류·공개 파생 결과의 사용 권리 미검증 시 임의 132개를 생성하거나 별표를 노출하지 않는다.
 3. PC 저장/수집·D1 데이터 게시·Core 예약 실행·FHS-R3 연간 수동 작업을 이 코드 변경만으로 건드리지 않는다.
-4. `main`과 지정 브랜치는 크게 발산하여 전체 병합 금지다. 최신 `main` 기준 신규 선택 회수 PR 브랜치도 공식 지침상 별도 사용자 승인 전에는 생성하지 않는다. **브랜치 코드 반영과 Production 공개는 다른 단계**다.
+4. `main`과 지정 브랜치는 크게 발산하여 전체 병합 금지다. R43 연간 입력·수동 실행기 등 필요한 11개 파일은 **PR #947을 통해 선택적으로 `main`에 반영**됐다. 원 작업 브랜치의 이후 CMD 경로 수정은 아직 `main`에 별도 반영되지 않았다. **코드 배포와 R43 전 종목 파생 데이터의 D1 게시는 다른 단계**다.
 5. SEO 점검: `/market-calendar/`의 검색 의도는 미국 시장 일정·기업 실적이다. 이번 변경은 화면 안의 조건부 R43 표시만 다루며 title, description, H1은 **NO_CHANGE**. GSC/실제 배포 검색결과 성과는 검증하지 않아 `NO_GSC_EVIDENCE`이다.
 
 ## 수동 전용 게시 준비 코드
 
-- 구현: `tools/market-calendar-r43/R43_PC_MANUAL_PUBLISH.mjs`. **자동 실행/예약 등록/CLI 엔트리포인트가 없다.** PC에 설치·실행한 기록이 없으며 이번 GitHub 커밋은 D1 데이터와 공개 화면을 변경하지 않는다.
+- 구현: `tools/market-calendar-r43/R43_PC_MANUAL_PUBLISH.mjs`와 독립 CLI `R43_MANUAL_RUN.mjs`; 수동 CMD `MARKET_CALENDAR_R43_ANNUAL_INPUT_PREPARE.cmd`, `MARKET_CALENDAR_R43_ANNUAL_PREFLIGHT.cmd`, `MARKET_CALENDAR_R43_ANNUAL_PUBLISH.cmd`를 사용한다. PR #947의 선택 반영으로 11개 관련 파일이 `main`에 있으나 **Core·예약 작업에 연결되지 않았고 실제 Windows PC 수동 실행·D1 게시 성공은 미검증**이다.
 - PC의 명시적 승인 저장 원자료만 사용한다. `permissionForDerivedScores: true`, `marketCapApiUsed: false`, 12~512자의 `rightsReviewReference`, 전 모집단·거래일·상대거래량 검사를 통과해야 한다. 500표본만으로는 게시할 수 없다.
-- 기존 승인 PC `config.source`와 실제 Git HEAD 일치, 배포된 시장 중요도 reader 헤더 `x-zgmini-r43-reader: ZGMINI-R43-MARKET-IMPORTANCE`, 별도 수동 lock을 확인한다.
-- 통과한 경우에만 거래 원자료가 없는 파생 결과를 **별도 D1 출력 키**에 수동 1회 게시·동일 본문 재조회한다. 기존 FHS 등급·Core·Writer·스케줄러·다른 D1 키를 변경하지 않는다.
+- 수동 CLI의 `--repo-root`에 전달한 **PC 승인 저장소 Git HEAD**는 PC `config.source`와 정확히 일치해야 한다. 공개 reader 헤더 `x-zgmini-r43-reader: ZGMINI-R43-MARKET-IMPORTANCE`, 별도 수동 lock도 확인한다. 원 작업 브랜치의 CMD는 선택 환경변수 `ZGMINI_R43_APPROVED_REPO_ROOT`를 사용해 승인 PC 저장소 경로를 실행기 체크아웃과 분리할 수 있으나, **이 비교는 R43 helper JS 실행기 자체의 코드 SHA·운영 승인을 보증하지 않는다.** 별도 체크아웃의 helper를 실제 PC에서 실행하기 전에 해당 helper 버전과 승인 범위를 별도로 확인해야 한다.
+- 통과한 경우에만 거래 원자료가 없는 파생 결과를 D1 `public_feed_snapshots_v1`의 `(kind='output',feed_key='market-calendar:market-importance-r43-public',snapshot_key='current')`에 수동 1회 게시·동일 본문 재조회한다. 기존 FHS 등급·Core·Writer·스케줄러·다른 D1 키를 변경하지 않는다. 2026-11-02 웹디버그로 해당 D1 테이블 155개 행을 마지막 페이지까지 확인했을 때 이 R43 키는 없었다. **reader 코드의 배포와 R43 등급 데이터의 실게시를 혼동하지 않는다.**
 - R43도 추가 자동 수집 없이 **연 1회 수동 갱신**한다. 게시 데이터에는 기준일을 남기고, reader는 기준일 이후 400일까지 표시(연간 일정의 약 한 달 유예)하며 이후에는 기존 FHS-R3 화면을 그대로 유지한 채 R43 보조 배지만 숨긴다.
 - 실 PC에서 해당 게시기를 실행하거나 권리 증거를 임의로 생성하지 않는다. 적법한 입력과 새 reader가 준비되지 않으면 `R43_*_STOP`으로 종료한다.
 
