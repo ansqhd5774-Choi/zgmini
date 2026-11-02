@@ -13,6 +13,7 @@ import {attachStoredDomainScoreComparisons,sameVerifiedLineage} from './market-s
 import {publicationCompatibility,recoverPublication,appendPublicationEvent} from './publication-guard.mjs';
 import {koreaPublicationPlan} from './korea-publication.mjs';
 import {readAssetR10Projection} from './asset-r10-projection.mjs';
+import {preservePreviousR10,R10_RECALCULATED_STATUS} from './asset-r10-refresh-gate.mjs';
 import {buildSupplyR10} from './supply-r10.mjs';
 import {acceptsStoredUpdate} from '../../lib/market-score/live-refresh.mjs';
 import {publishCoreArrowState} from './score-arrow-publication.mjs';
@@ -66,6 +67,11 @@ try{
  const {projectionWriter}=await import('../../worker/projection-runtime-r52.mjs');
  const {PUBLIC_PROJECTION_KEYS}=await import('../../worker/market-public-projection-store.mjs');
  const now=Date.now();
+ // Independent US breadth count from already stored and verified source rows.
+ await attemptOutput(report,'us-breadth-calculation',async()=>{
+  const {prepareUsBreadth}=await import('./market-breadth-us-r1.mjs');
+  report.usBreadth=await prepareUsBreadth(core,{now:new Date(now)});
+ });
  const marketReady=await attemptOutput(report,'market',async()=>{
  const body=await calculateMarket(root,core,now);
  // Reuse the published daily score history already read for the overall chart.
@@ -117,6 +123,10 @@ try{
  };
  });
  if(!marketReady)report.market={status:'PREVIOUS_RELEASE_PRESERVED'};
+ if(marketReady)await attemptOutput(report,'composite-archive-local',async()=>{
+  const {appendCompositeObservedFromCurrent}=await import('./composite-observed-archive-r1.mjs');
+  report.compositeObserved=await appendCompositeObservedFromCurrent(core,now);
+ });
  // Rate sentiment is a separate stored-data score; never modify the approved Rate R3 domain.
  const {preparePublicRateSentiment,publishPublicRateSentiment}=await import('./rate-sentiment-publication.mjs');
  let rateSentiment={status:'UNAVAILABLE'};await attemptOutput(report,'rate-sentiment-calculation',async()=>{rateSentiment=await preparePublicRateSentiment(core,now);});
@@ -142,9 +152,12 @@ try{
   await attemptOutput(report,'projection:'+id,async()=>{
   // Recompute only from saved inputs when the R10 input set is installed.
   // No provider fetch, and failure preserves the previous valid release file.
-  if(id==='assetBubble'&&fs.existsSync(path.join(base,'local-asset-bubble-r10-breadth-research.json'))){
-   try{execFileSync(process.execPath,[path.join(root,'scripts/pc-writer/build-asset-r10-release.mjs')],{cwd:root,stdio:'pipe',windowsHide:true});}
-   catch{report.assetR10Calculation={status:'FAILED_PREVIOUS_RELEASE_PRESERVED'};}
+  const r10InputInstalled=id==='assetBubble'&&fs.existsSync(path.join(base,'local-asset-bubble-r10-breadth-research.json'));
+  if(r10InputInstalled){
+   try{
+    execFileSync(process.execPath,[path.join(root,'scripts/pc-writer/build-asset-r10-release.mjs')],{cwd:root,stdio:'pipe',windowsHide:true});
+    report.assetR10Calculation={status:R10_RECALCULATED_STATUS};
+   }catch{report.assetR10Calculation={status:'FAILED_PREVIOUS_RELEASE_PRESERVED'};}
   }
   const scope={...env,DB:id==='koreaFearGreed'?history:core};
   let r10=null;
@@ -154,6 +167,13 @@ try{
   }
   if(id==='supplyShock'&&r10)report.supplyR10={status:r10.status,reason:r10.reason??null,score:r10.payload?.score??null,scoreObservationMonth:r10.payload?.scoreObservationMonth??null};
   if(id==='assetBubble'&&r10)report.assetR10={status:r10.status,reason:r10.reason??null,reasons:r10.reasons??[]};
+  // A valid *previous* release is not proof that the current R10 calculation
+  // succeeded. Keep it intact, but never stamp or republish it as fresh.
+  if(preservePreviousR10({inputInstalled:r10InputInstalled,calculationStatus:report.assetR10Calculation?.status,projectionStatus:r10?.status})){
+   report.assetR10={status:'PREVIOUS_RELEASE_PRESERVED',reason:report.assetR10Calculation?.status==='FAILED_PREVIOUS_RELEASE_PRESERVED'?'R10_RELEASE_CALCULATION_FAILED':'R10_RELEASE_NOT_READY'};
+   report.projections.push({id,status:'PREVIOUS_RELEASE_PRESERVED'});
+   return;
+  }
   if(id==='supplyShock'&&r10?.status!=='READY'){
    report.projections.push({id,status:'PREVIOUS_RELEASE_PRESERVED'});
    return;
@@ -198,6 +218,16 @@ try{
    report.market={...report.market,...(previous>now?{status:'REMOTE_NEWER_PRESERVED',storedAt:previous}:await publishMarket(remote,config.core,read(path.join(base,'local-market-result.json')),now,lease,previous,path.join(base,'local-market-ledger.json')))};
   }finally{await releaseMarket(remote,config.core,lease);}
   });
+  await attemptOutput(report,'composite-observed-publication',async()=>{
+   const {publishCompositeObservedArchive}=await import('./composite-observed-archive-r1.mjs');
+   report.compositeObservedPublication=await publishCompositeObservedArchive(core,remote,config.core);
+  });
+  // US-only stored display counts; source gaps preserve the prior verified record.
+  if(report.usBreadth?.prepared)await attemptOutput(report,'us-breadth-publication',async()=>{
+   const {publishUsBreadth}=await import('./market-breadth-us-r1.mjs');
+   report.usBreadth.publication=await publishUsBreadth(remote,config.core,report.usBreadth,{now});
+  });
+  else report.usBreadth={...(report.usBreadth??{status:'UNAVAILABLE'}),publication:'SKIPPED_NOT_READY'};
   // Explicit allowlist: publish display outputs only, never provider input/history rows.
   for(const {id,status} of report.projections){
    if(status!=='LOCAL_READY')continue;
@@ -252,6 +282,12 @@ try{
    if(check?.stored_at!==row.stored_at||check?.body!==row.body)throw Error('LOCAL_FEED_PUBLICATION_MISMATCH');
    });
   }
+  // Independent, bounded publication lane for PC-archived real CNN scores.
+  // A missing archive is valid until a new verified observation is collected.
+  await attemptOutput(report,'cnn-observed-archive',async()=>{
+   const {publishCnnObservedArchive}=await import('./cnn-observed-archive-publication-r1.mjs');
+   report.cnnObservedArchive=await publishCnnObservedArchive(core,remote,config.core);
+  });
   await attemptOutput(report,'arrows',async()=>{report.scoreArrows=await publishCoreArrowState(remote,config.core);});
   report.remote=remote.stats;
   save(path.join(base,'local-publication-ledger.json'),{status:report.failures?.length?'PARTIAL':'VERIFIED',source,at:Date.now()});

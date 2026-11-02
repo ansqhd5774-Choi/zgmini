@@ -78,7 +78,9 @@ test('R35 importance filter applies to selected-day HTML and whole-range counts'
 test('R35 calendar controls apply same star selection to official rows and vendor HTML',()=>{
  const client=fs.readFileSync(fileURLToPath(new URL('../app/market-calendar/market-calendar-client.tsx',import.meta.url)),'utf8');
  const vendor=fs.readFileSync(fileURLToPath(new URL('../app/market-calendar/earnings-display-client.tsx',import.meta.url)),'utf8');
- assert.match(client,/aria-label="중요도 필터"/);
+ assert.match(client,/aria-label="별등급 필터: 경제지표 시장 영향도, 기업 실적 연간 재무건전성/);
+ assert.match(client,/R43 시장 중요도 배지는 필터 대상 아님/);
+ assert.match(client,/mc-importance-heading[^\n]+별등급/);
  assert.match(client,/importance\.includes\(row\.importance\)/);
  assert.match(client,/importance=\{importance\}/);
  assert.match(vendor,/params\.set\('importance',importance\.join\(','\)\)/);

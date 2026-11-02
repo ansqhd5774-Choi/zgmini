@@ -47,3 +47,38 @@ test('reviewed Alphabet duplicate handling and non-HTML payloads stay safe',()=>
  assert.deepEqual(earningsBannerRows('{"events":[]}',now),[]);
  assert.deepEqual(earningsBannerRows('<article><script>alert(1)</script></article>',now),[]);
 });
+
+test('banner recognizes R59 FHS-R3 annual three-star HTML but excludes two-star and unrated earnings',()=>{
+ const at='2026-10-31T04:55:00Z',when=Date.parse(at),start='2026-10-31';
+ const coveredDays=Array.from({length:14},(_,i)=>new Date(Date.parse(start+'T00:00:00Z')+i*86400000).toISOString().slice(0,10));
+ const events=[
+  {ticker:'ADEA',company:'Adeia Inc.',date:'2026-11-02',marketSession:'after_market'},
+  {ticker:'NVDA',company:'NVIDIA Corporation',date:'2026-11-02',marketSession:'after_market'},
+  {ticker:'ZM',company:'Zoom Communications, Inc.',date:'2026-11-02',marketSession:'after_market'}
+ ].map(e=>({...e,time:null,verification:'VENDOR_UNVERIFIED',source:'earnings-api'}));
+ const projection={status:'READY_PRIVATE',scope:'PC_PRIVATE',publicDisplay:false,redistribution:false,
+  publicationStatus:'HELD_UNCONFIRMED',coveredDays,events,recordCount:events.length,
+  priorityCount:0,checkedAt:at};
+ const annual={status:'READY_R3_PROVISIONAL',version:'ZGMINI-FHS-R3',asOf:'2026-10-31',
+  sourceStoredAt:1793332803791,recordCount:2,grades:{ADEA:[3,91],NVDA:[2,63]}};
+ const display=earningsDisplaySnapshot(projection);
+ const rendered=earningsDisplayHtml(display,{start,end:coveredDays.at(-1),importance:3},annual);
+ assert.equal(rendered.count,1);
+ assert.match(rendered.html,/aria-label="재무건전성 별 3개"/);
+ const rows=earningsBannerRows(rendered.html,when);
+ assert.deepEqual(rows.map(row=>row.ticker),['ADEA']);
+ assert.equal(rows[0].kind,'실적');
+ assert.equal(rows[0].importance,3);
+ assert.equal(marketCalendarBannerRows(when,null,rendered.html)[0].ticker,'ADEA');
+});
+test('banner matches legacy three-star format but never accepts a false R3 two-star tag',()=>{
+ const time=Date.parse('2026-10-31T04:55:00Z');
+ const hdr='<div class="mc-week mc-vendor-week"><strong>2026-11-02 · 기업 실적</strong></div>';
+ const article=importance=>'<article class="mc-row mc-vendor-row" data-search="adea adeia inc.">'+
+  importance+'<div class=mc-event><span>Adeia Inc. (ADEA)</span></div>'+
+  '<time class=mc-time>장후</time></article>';
+ const prior=article('<div class=mc-importance aria-label="중요도 3">★★★</div>');
+ const notThree=article('<div class="mc-importance" aria-label="재무건전성 별 2개" title="ZGMINI 재무건전성 잠정평가 · 2026-10-31 기준">★★</div>');
+ assert.equal(earningsBannerRows(hdr+prior,time).length,1);
+ assert.deepEqual(earningsBannerRows(hdr+notThree,time),[]);
+});

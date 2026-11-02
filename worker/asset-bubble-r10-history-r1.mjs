@@ -133,11 +133,17 @@ export function assetR10HistoryWriter(db){
    if(old.sourceStoredAt===payload.sourceStoredAt
     &&old.sourceVersion!==payload.sourceVersion)
     throw Error('ASSET_R10_HISTORY_CONFLICTING_VERSION');
-   if(old.sourceVersion===payload.sourceVersion){
-    if(!equal(old,payload))throw Error('ASSET_R10_HISTORY_CONFLICTING_CONTENT');
-    return {status:'ALREADY_STORED',key:ASSET_R10_HISTORY_KEY,
-     storedAt:Number(previousRow.stored_at)};
-   }
+   if(old.asOfDate>payload.asOfDate)throw Error('ASSET_R10_HISTORY_SUPERSEDED');
+   const identical=equal(old,payload);
+   // SourceVersion can be stable across newer sourceStoredAt values.
+   // At an unchanged checkpoint permit only an as-of-date metadata refresh.
+   if(old.sourceStoredAt===payload.sourceStoredAt
+    &&old.sourceVersion===payload.sourceVersion
+    &&!identical
+    &&!equal({...old,asOfDate:payload.asOfDate},payload))
+    throw Error('ASSET_R10_HISTORY_CONFLICTING_CONTENT');
+   if(identical)return {status:'ALREADY_STORED',key:ASSET_R10_HISTORY_KEY,
+    storedAt:Number(previousRow.stored_at)};
   }
   const body=JSON.stringify({payload,projection:{status:'READY',
    sourceVersion:payload.sourceVersion,sourceStoredAt:payload.sourceStoredAt,

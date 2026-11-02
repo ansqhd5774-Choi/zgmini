@@ -53,6 +53,51 @@ const indicatorDescription=(item:Indicator,label:string)=>item.content??item.des
 const approvedGrowthLabels:Record<string,string>={G010:"제조업 신규주문",G019:"산업생산",G035:"비농업고용 증감",G060:"신규 사업체 신청"};
 const indicatorLabel=(item:Indicator,domainId:string,index:number)=>item.label??item.name??(domainId==="growth"&&item.id?approvedGrowthLabels[item.id]:undefined)??item.id??"구성 지표 "+(index+1);
 
+// Presentation-only R6 list. It does not change the currently stored R54 score,
+// invoke providers, or equate a historical R54 factor with a different R6 one.
+const EMPLOYMENT_R6_PUBLIC_LIST=[
+ {id:"U3_UNEMPLOYMENT",label:"실업률 U3",source:"BLS CPS / LNS14000000",description:"경제활동인구 중 실업자 비율",criterionLabel:"낮을수록 좋음 · 7%"},
+ {id:"U6_UNEMPLOYMENT",label:"광의실업률 U6",source:"BLS CPS / LNS13327709",description:"실업·잠재구직자·비자발적 시간제 비율",criterionLabel:"낮을수록 좋음 · 5%"},
+ {id:"LFPR",label:"경제활동참가율",source:"BLS CPS / LNS11300000",description:"노동시장 참여 인구 비율",criterionLabel:"높을수록 좋음 · 4%"},
+ {id:"EPOP",label:"고용률",source:"BLS CPS / LNS12300000",description:"16세 이상 인구 중 취업자 비율",criterionLabel:"높을수록 좋음 · 4%"},
+ {id:"PAYEMS_MOM",label:"비농업고용 월간 증감",source:"BLS CES / CES0000000001",description:"비농업 일자리의 전월 증감",criterionLabel:"높을수록 좋음 · 4%"},
+ {id:"PAYEMS_3M_AVG",label:"비농업고용 3개월 평균 증감",source:"BLS CES / CES0000000001",description:"비농업 일자리 증감의 3개월 평균",criterionLabel:"높을수록 좋음 · 6%"},
+ {id:"PAYEMS_ACCEL",label:"비농업고용 증가 가속도",source:"BLS CES / CES0000000001",description:"3개월 평균 고용 증감의 변화",criterionLabel:"높을수록 좋음 · 4%"},
+ {id:"AVG_WEEKLY_HOURS",label:"민간 평균 주당 근로시간",source:"BLS CES / CES0500000002",description:"민간 근로자 주당 평균 근로시간",criterionLabel:"높을수록 좋음 · 3%"},
+ {id:"TEMP_HELP",label:"임시직 고용",source:"BLS CES / CES6056132001",description:"임시 인력공급업 고용 인원",criterionLabel:"높을수록 좋음 · 3%"},
+ {id:"INITIAL_CLAIMS",label:"신규 실업수당 청구",source:"DOL / 전국 주간 청구",description:"주간 신규 실업보험 청구 건수",criterionLabel:"낮을수록 좋음 · 3%"},
+ {id:"INITIAL_CLAIMS_4W",label:"신규 실업수당 청구 4주 평균",source:"DOL / 전국 주간 청구",description:"신규 청구 건수의 4주 평균",criterionLabel:"낮을수록 좋음 · 5%"},
+ {id:"CONTINUED_CLAIMS",label:"계속 실업수당 청구",source:"DOL / 전국 주간 청구",description:"실업보험 계속 청구자 수",criterionLabel:"낮을수록 좋음 · 4%"},
+ {id:"IUR",label:"실업보험 수급률",source:"DOL / 전국 주간 청구",description:"보험 적용 고용 대비 수급 비율",criterionLabel:"낮을수록 좋음 · 4%"},
+ {id:"STATE_CLAIMS_BREADTH",label:"주별 실업수당 확산도",source:"DOL ETA 539 / 주별 청구",description:"전년 대비 청구 증가 주의 비율",criterionLabel:"낮을수록 좋음 · 4%"},
+ {id:"JOLTS_OPENINGS_RATE",label:"JOLTS 구인율",source:"BLS JOLTS / JOR",description:"월말 미충원 구인 공석 비율",criterionLabel:"높을수록 좋음 · 4.5%"},
+ {id:"JOLTS_HIRES_RATE",label:"JOLTS 채용률",source:"BLS JOLTS / HIR",description:"월간 채용 인원 비율",criterionLabel:"높을수록 좋음 · 4.5%"},
+ {id:"JOLTS_QUITS_RATE",label:"JOLTS 자발적 퇴직률",source:"BLS JOLTS / QUR",description:"자발적 퇴직자 비율",criterionLabel:"높을수록 좋음 · 3%"},
+ {id:"JOLTS_LAYOFFS_RATE",label:"JOLTS 해고율",source:"BLS JOLTS / LDR",description:"해고·감원된 근로자 비율",criterionLabel:"낮을수록 좋음 · 3%"},
+ {id:"AHE_YOY",label:"평균 시간당 임금 전년 대비",source:"BLS CES / CES0500000003",description:"시간당 임금의 전년 대비 증가율",criterionLabel:"중간이 좋음 · 2.5%"},
+ {id:"ECI_12M",label:"고용비용지수 ECI 12개월 변화",source:"BLS ECI / CIU1010000000000A",description:"총보상 고용비용의 12개월 변화율",criterionLabel:"중간이 좋음 · 2.5%"},
+ {id:"INDUSTRY_DIFFUSION_3M",label:"산업별 고용 확산지수",source:"BLS CES / CES0500000022",description:"산업 전반의 3개월 고용 증가 확산",criterionLabel:"높을수록 좋음 · 4.5%"},
+ {id:"STATE_EMP_DIFFUSION_3M",label:"주별 고용 확산지수",source:"BLS CES State & Area",description:"주별 3개월 고용 증가 확산",criterionLabel:"높을수록 좋음 · 6%"},
+ {id:"MSA_EMP_DIFFUSION_3M",label:"도시권 고용 확산지수",source:"BLS CES State & Area",description:"대도시권별 3개월 고용 증가 확산",criterionLabel:"높을수록 좋음 · 4.5%"},
+ {id:"BED_GROSS_GAINS_RATE",label:"BED 총고용 증가율",source:"BLS BED",description:"사업체 확장·신설 일자리 증가율",criterionLabel:"높을수록 좋음 · 1%"},
+ {id:"BED_GROSS_LOSSES_RATE",label:"BED 총고용 감소율",source:"BLS BED",description:"사업체 축소·폐업 일자리 감소율",criterionLabel:"낮을수록 좋음 · 1%"},
+ {id:"BED_NET_GROSS_RATE",label:"BED 순고용 증감률",source:"BLS BED",description:"총 일자리 증가율−감소율",criterionLabel:"높을수록 좋음 · 1%"},
+ {id:"BED_SMALL_FIRM_NET",label:"BED 소기업 순고용",source:"BLS BED",description:"소기업 일자리 순증감",criterionLabel:"높을수록 좋음 · 0.75%"},
+ {id:"BED_STATE_BREADTH",label:"BED 주별 고용 확산도",source:"BLS BED",description:"일자리 순증가 주의 비율",criterionLabel:"높을수록 좋음 · 0.75%"},
+ {id:"BED_BIRTH_DEATH_NET",label:"BED 사업체 탄생·소멸 순변화",source:"BLS BED",description:"사업체 탄생률−소멸률",criterionLabel:"높을수록 좋음 · 0.5%"},
+] as const;
+
+function employmentListRows(stored:Indicator[]):Indicator[]{
+ const byR6Id=new Map(stored.filter(item=>typeof item.id==="string").map(item=>[item.id!,item]));
+ return EMPLOYMENT_R6_PUBLIC_LIST.map(item=>{
+  const saved=byR6Id.get(item.id);
+  return saved?{...saved,id:item.id,label:item.label,content:item.description,criterionLabel:item.criterionLabel}:{
+   id:item.id,label:item.label,source:item.source,status:"PENDING",criterionLabel:item.criterionLabel,
+   content:item.description,
+  };
+ });
+}
+
 function normalizeTrend(points:Point[]|undefined){
  const byDay=new Map<string,number>();
  for(const p of Array.isArray(points)?points:[]){
@@ -108,8 +153,9 @@ export default function EconomicDetailPanel({id}:{id:EconomicDomainId}){
  };
  const hasVerifiedPeriodComparisons=Object.values(periods).some(value=>typeof value==="number"&&Number.isFinite(value));
  const comparisons=[{label:"1주",value:periods.week??null},{label:"1개월",value:periods.month??null},{label:"3개월",value:periods.threeMonth??null},{label:"6개월",value:periods.sixMonth??null},{label:"1년",value:periods.year??null}];
- const observations=(domain?.indicators??[]).filter((row):row is Indicator=>Boolean(row&&typeof row==="object"));
- const scored=observations.filter(item=>item.status==="READY"&&validScore(item.score));
+ const storedObservations=(domain?.indicators??[]).filter((row):row is Indicator=>Boolean(row&&typeof row==="object"));
+ const observations=id==="employment"?employmentListRows(storedObservations):storedObservations;
+ const scored=storedObservations.filter(item=>item.status==="READY"&&validScore(item.score));
  const ranked=[...scored].sort((a,b)=>(b.score??0)-(a.score??0));
  const highCount=Math.min(3,Math.ceil(ranked.length/2)),lowCount=Math.min(3,Math.floor(ranked.length/2));
  const strongest=ranked.slice(0,highCount);
@@ -157,7 +203,7 @@ export default function EconomicDetailPanel({id}:{id:EconomicDomainId}){
    <div className="economic-reading-strips"><span><b>점수 읽기</b>{config.reading}</span><span><b>시장과의 관계</b>{config.impact}</span></div>
   </section>
   <section className="inflation-indicator-section inflation-r2-indicators economic-indicators" aria-labelledby={"economic-"+id+"-indicators"}>
-   <header><div><p className="cnn-eyebrow">ECONOMIC INDICATORS</p><h2 id={"economic-"+id+"-indicators"}>{config.name} 구성 지표 ({id==="growth"?observations.length+"/24":observations.length}개)</h2></div><p>승인된 저장 지표만 표시합니다. 이전 원자료·공식 다음 발표일·미니차트가 없으면 <b>—</b>로 구분하며 임의로 보완하지 않습니다.{id==="growth"&&observations.length!==24?" 산출요인 24개 중 아직 공개되지 않은 항목이 있습니다.":""}</p></header>
+   <header><div><p className="cnn-eyebrow">ECONOMIC INDICATORS</p><h2 id={"economic-"+id+"-indicators"}>{config.name} 구성 지표 ({id==="growth"?observations.length+"/24":observations.length}개)</h2></div><p>{id==="employment"?"R6 구성 목록 · 10년 백분위 평가 · %는 가중치. 상단 점수는 별도 저장값이며, 미확보 데이터는 —로 표시합니다.":<>승인된 저장 지표만 표시합니다. 이전 원자료·공식 다음 발표일·미니차트가 없으면 <b>—</b>로 구분하며 임의로 보완하지 않습니다.</>}{id==="growth"&&observations.length!==24?" 산출요인 24개 중 아직 공개되지 않은 항목이 있습니다.":""}</p></header>
    {error&&<p className="economic-data-notice" role="status">최근 데이터 조회가 지연되고 있습니다. 저장 자료는 갱신 확인 후 표시됩니다.</p>}
    <div className="inflation-table-wrap inflation-r2-table-wrap">
     <table className="inflation-indicator-table inflation-indicator-table-r2 economic-table">

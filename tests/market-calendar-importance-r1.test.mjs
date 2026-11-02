@@ -41,7 +41,7 @@ test('calendar date button drives the actual row filter and stars precede dates'
  assert.match(client,/className="mc-importance" role="img"/);
  assert.match(client,/Array\.from\(\{length:row\.importance\}/);
  assert.ok(client.indexOf('<div className="mc-importance"')<client.indexOf('<div className="mc-date"'));
- assert.match(client,/>중요도<\/span><span>날짜<\/span>/);
+ assert.match(client,/>별등급<\/span><span>날짜<\/span>/);
  assert.match(css,/\.mc-importance-heading/);
  assert.match(css,/\.mc-day\.today\{outline:/);
  assert.match(css,/\.mc-day\.selected\{background:/);

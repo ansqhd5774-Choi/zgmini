@@ -4,6 +4,7 @@ import {useKoreaFunds,type Composite} from './korea-funds-store';
 import {DEFAULT_KOREA_MARKET_PERIOD,getMarketPeriodConfig,getMarketPeriodDays,type MarketPeriod} from './market-card-shared';
 import {MarketPeriodControls} from './market-period-controls';
 import {FearGreedCardShell} from './fear-greed-card-shell';
+import {MarketBreadthStrip} from './market-breadth-strip';
 import {MarketCardInsight} from './market-card-insight';
 import {MarketFearGreedChart,type MarketFearGreedChartPoint,type MarketFearGreedChartValidPoint} from './market-fear-greed-chart';
 import {fearGreedStateColor} from '../lib/fear-greed-state-color.mjs';
@@ -235,7 +236,7 @@ export function KoreaCompositeView({detail=false}:{detail?:boolean}){
  </div>;
 }
 
-export function KoreanCountryCard({detail=false}:{detail?:boolean}={}){
+export function KoreanCountryCard({detail=false,showBreadth=false}:{detail?:boolean;showBreadth?:boolean}={}){
  const {composite:c,loading}=useKoreaFunds();
  const [selectedPeriod,setSelectedPeriod]=useState<MarketPeriod>(DEFAULT_KOREA_MARKET_PERIOD);
  const valid=typeof c?.displayScore==='number'&&Number.isFinite(c.displayScore);
@@ -359,6 +360,7 @@ export function KoreanCountryCard({detail=false}:{detail?:boolean}={}){
    formatTooltipLabel={value=>formatDate(value)}
    emptyLabel={loading?'확인 중':c?.status==='WARMUP'?'계산 준비 중':'공통 관측 이력 없음'}
   />}
+  breadth={showBreadth && !detail ? <MarketBreadthStrip market="korea"/> : undefined}
   footer={{
    href:"/fear-greed/korea/",
    label:"자세히",
