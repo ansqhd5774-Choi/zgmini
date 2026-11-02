@@ -10,9 +10,9 @@ The authority remains GitHub `main` `AGENTS.md` §20-1 and `docs/PC_CORE_5MIN_CO
 
 ## One-click Windows operator procedure
 
-1. Unzip `US_BREADTH_R39_CORE_ACTION_READONLY.zip` anywhere convenient (for example Downloads), preserving its internal `scripts\pc-writer\` directory.
-2. Double-click `US_BREADTH_R39_CORE_ACTION_READONLY.cmd` at the ZIP extraction root. It invokes only `E:\ZGmini\runtime\node.exe`; it does not use the broken PATH `node`.
-3. Upload the created `US_BREADTH_R39_CORE_ACTION_*.txt` from `%USERPROFILE%\Downloads` (or `%TEMP%` fallback). No `E:` data or logs are created. The TXT contains only status fields; never upload `config.json`, Task XML, launcher source, D1 credentials or raw provider data.
+1. Extract the **entire** `US_BREADTH_R39_CORE_ACTION_READONLY.zip` into a writable folder (for example a new Downloads subfolder), keeping `US_BREADTH_R39_CORE_ACTION_READONLY.cmd` beside its `scripts\pc-writer\` subdirectory. Do not run the CMD from inside the ZIP.
+2. Double-click the extracted `US_BREADTH_R39_CORE_ACTION_READONLY.cmd`. It invokes only `E:\ZGmini\runtime\node.exe`; it does not use the broken PATH `node`.
+3. Upload `US_BREADTH_R39_CORE_ACTION_*.txt` from **the same extracted folder as the CMD** (`%~dp0`). The log contains `LOG_LOCATION=NEXT_TO_CMD` and the CMD displays the full TXT path before opening it in Notepad. There is no Downloads-root or `%TEMP%` fallback: if the folder is not writable, extract the ZIP into a writable folder and run the CMD there. No `E:` data or logs are created. The TXT contains only status fields; never upload `config.json`, Task XML, launcher source, D1 credentials or raw provider data.
 
 The script calls **only** `schtasks.exe /Query /TN ZGMINI-PC-Local-Core /XML`, `git rev-parse HEAD`, `git --no-optional-locks status --porcelain`, and bounded local reads of config, explicit registered E launcher references, and latest IEX/early/cycle summaries. It does not call MarketParquet, Alpaca, D1, or public APIs. It does not create/modify a Task, source checkout, lock, PID, E log, database, or D1 row.
 
