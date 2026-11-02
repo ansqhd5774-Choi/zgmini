@@ -114,6 +114,13 @@ test('missing coverage is null, not a zero or silently shrinking member denomina
  assert.equal(r.pairedObservationCount,x.qualityRows.length-1);
 });
 
+test('eligible 98% participation cannot be silently dropped as a null',()=>{
+ const x=fixture();x.qualityRows[3].participation=null;
+ assert.equal(assess(x).status,'STOP_REPLAY_DAILY_QUALITY_INVALID');
+ const y=fixture();y.qualityRows[3].participation=undefined;
+ assert.equal(assess(y).status,'STOP_REPLAY_DAILY_QUALITY_INVALID');
+});
+
 test('non-session, duplicate and future quality dates fail closed',()=>{
  const a=fixture();a.qualityRows[0].observationDate='2024-09-07';
  assert.equal(assess(a).status,'STOP_REPLAY_DAILY_QUALITY_INVALID');
@@ -130,6 +137,31 @@ test('benchmark duplicate, zero and backward dates fail before score calculation
  assert.equal(assess(b).status,'STOP_REPLAY_SP500_BENCHMARK_INVALID');
  const c=fixture();c.sp500Rows.at(-1).observationDate='2027-01-04';
  assert.equal(assess(c).status,'STOP_REPLAY_SP500_BENCHMARK_INVALID');
+});
+
+test('non-market benchmark observation never contributes a fabricated 12-month return',()=>{
+ const x=fixture();
+ x.sp500Rows[0].observationDate='2023-08-05';
+ assert.equal(assess(x).status,'STOP_REPLAY_SP500_BENCHMARK_INVALID');
+ const y=fixture();
+ const index=y.sp500Rows.findIndex(r=>r.observationDate==='2025-01-10');
+ y.sp500Rows[index].observationDate='2025-01-09';
+ assert.equal(assess(y).status,'STOP_REPLAY_SP500_BENCHMARK_INVALID');
+});
+
+test('February 29 replay retains the legacy last-observation prior-year boundary',()=>{
+ const qualityRows=[{observationDate:'2024-02-29',members:500,valid200:500,
+  above200:250,coverage:1,participation:0.5}];
+ const sp500Rows=[
+  {observationDate:'2023-02-28',value:100},
+  {observationDate:'2023-03-01',value:999},
+  {observationDate:'2024-02-29',value:200},
+ ];
+ const result=assess({qualityRows,sp500Rows,asOfDate:'2024-04-01'});
+ assert.equal(result.status,'RESEARCH_B_REPLAY_NO_APPROVED_BASELINE');
+ assert.equal(result.pairedObservationCount,1);
+ assert.equal(result.firstScoredObservationDate,null);
+ assert.ok(result.quarters.every(q=>q.breadthDivergence===null));
 });
 
 test('historic baseline with a manufactured early B value is rejected',()=>{

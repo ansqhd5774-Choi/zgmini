@@ -48,9 +48,13 @@ function validDailyQuality(rows,asOfDate){
      !Number.isInteger(r.valid200)||r.valid200<0||r.valid200>r.members||
      !Number.isInteger(r.above200)||r.above200<0||r.above200>r.valid200||
      !near(r.coverage,r.valid200/r.members))return false;
-  if(r.participation!==null&&
-     (r.valid200===0||r.coverage<ASSET_R10_B_CONTRACT.coverageThreshold||
-      !near(r.participation,r.above200/r.valid200)))return false;
+  const eligible=r.coverage>=ASSET_R10_B_CONTRACT.coverageThreshold;
+  // The approved quality writer emits a score exactly when the fixed
+  // denominator passes 98%. A missing score above that threshold is not an
+  // innocuous null: it would silently remove a real paired observation.
+  if(eligible?
+    (r.valid200===0||!near(r.participation,r.above200/r.valid200)):
+    r.participation!==null)return false;
   prior=r.observationDate;
  }
  return true;
@@ -59,7 +63,8 @@ function validBenchmark(rows,asOfDate){
  if(!Array.isArray(rows)||!rows.length||rows.length>2200)return false;
  let prior='';
  for(const row of rows){
-  if(!validDate(row?.observationDate)||row.observationDate<=prior||
+  if(!validDate(row?.observationDate)||!session(row.observationDate)||
+     row.observationDate<=prior||
      row.observationDate>asOfDate||!Number.isFinite(row.value)||row.value<=0)return false;
   prior=row.observationDate;
  }
