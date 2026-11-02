@@ -41,6 +41,29 @@ test('838 are NOT sufficient for the approved full eligible universe unless cove
  assert.throws(()=>makeER1PublicDisplay(blocked),/ER1_ONLY_VALIDATED_COMPLETE_RESULT/);
 });
 
+test('full 2634 approved roster with 838 actuals displays 838 scores, unknown issuers as literal hyphen',async()=>{
+ const missing=Array.from({length:2634-838},(_,i)=>({eligible:true,
+  issuerId:`M${i}`,tickers:[`M${i}`],earningsSymbol:`M${i}`,releases:[]}));
+ const candidate=scoreER1Issuers([...sampleRows,...missing],{
+  asOf:'2026-11-02',expectedEligibleIssuers:2634});
+ assert.equal(candidate.status,'READY_SHADOW');
+ assert.equal(candidate.coverage.earnings,838/2634);
+ assert.equal(candidate.rankings.length,838);
+ assert.equal(candidate.star3Count,42);
+ const scores=makeER1PublicDisplay(candidate);
+ assert.ok(validateER1PublicDisplay(scores));
+ const state=earningsDisplaySnapshot(projection([event('X837'),event('M0'),event('NVDA')]));
+ state.byDay[day]=state.byDay[day].map(html=>html.replace(
+  '<div class=mc-importance aria-label="기업 실적 점수 없음">-</div>',
+  '<div class=mc-importance aria-label="중요도 3">★★★</div>'));
+ const html=await earningsDisplayResponse(state,url,scores).text();
+ assert.equal((html.match(/>★★★<\/div>/g)??[]).length,1);
+ assert.equal((html.match(/aria-label="기업 실적 점수 없음">-<\/div>/g)??[]).length,2);
+ const filtered=earningsDisplayResponse(state,url+'&importance=3',scores);
+ assert.equal(filtered.headers.get('x-display-count'),'1');
+ assert.match(await filtered.text(),/X837/);
+});
+
 test('saved legacy stars are removed, scored issuers show 97-point ER1 result, missing show literal hyphen',async()=>{
  const candidate=scoreER1Issuers(sampleRows,{asOf:'2026-11-02',expectedEligibleIssuers:838});
  const publicDerived=makeER1PublicDisplay(candidate);
