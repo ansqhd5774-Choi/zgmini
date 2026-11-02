@@ -74,7 +74,10 @@ export function MarketBreadthHistoryChart({history, period}: {history: UsBreadth
   }, [selected]);
   if (!records.length) return <p className={styles.historyEmpty}>선택한 {periodLabel} 기간에 보관된 확정치 이력이 없습니다.</p>;
 
-  const scaleX = (day: string) => maxTime <= minTime ? (plot.left + plot.right) / 2 : plot.left + (dateMs(day) - minTime) / (maxTime - minTime) * (plot.right - plot.left);
+  // Filter by calendar period, but give each real trading session equal X-axis spacing.
+  const indexByDate = new Map(records.map((record, index) => [record.observationDate, index]));
+  const scaleX = (day: string) => records.length <= 1 ? (plot.left + plot.right) / 2
+    : plot.left + (indexByDate.get(day) ?? 0) / (records.length - 1) * (plot.right - plot.left);
   const net = (record: UsBreadthHistoryRecord) => 100 * (record.counts.rising - record.counts.falling) / record.eligibleCount;
   // The rolling value is derived from full history before filtering the viewed period.
   const fiveSessionMean = trailingFiveSessionBreadthMean(history.records.map(record => ({date: record.observationDate, value: net(record)})));
@@ -93,7 +96,7 @@ export function MarketBreadthHistoryChart({history, period}: {history: UsBreadth
     previousTrendDate = point.date;
   }
   const baseline = scaleY(0);
-  const barWidth = Math.min(8, Math.max(1.25, maxTime > minTime ? 0.7 * (plot.right - plot.left) * dayMs / (maxTime - minTime) : 8));
+  const barWidth = Math.min(8, Math.max(1.25, records.length > 1 ? 0.7 * (plot.right - plot.left) / (records.length - 1) : 8));
   const at = Math.min(selected ?? records.length - 1, records.length - 1);
   const focused = records[at];
   const x = scaleX(focused.observationDate);
