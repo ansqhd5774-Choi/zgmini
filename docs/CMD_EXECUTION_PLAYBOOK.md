@@ -101,3 +101,9 @@ PACKAGE/
 # 테마 작업의 최신 연결 기준 — 2026-10-31
 
 신규 테마와 산식 일괄 전환의 위임 범위·장벽 대응·재승인 생략 기준은 [THEME_ONBOARDING_PLAYBOOK.md](THEME_ONBOARDING_PLAYBOOK.md)를 따른다. 이미 승인된 작업을 반복 승인받지 않으며, PC 접근 제한만으로 일반챗 작업 불가라고 판단하지 않는다. 현재 공통 모듈/패키지 구현 상태는 [THEME_PLATFORM_STANDARD.md](THEME_PLATFORM_STANDARD.md)를 확인한다. 이 링크를 다른 브랜치에서 참조하고 문서 배포만을 위해 모든 브랜치 HEAD를 변경하지 않는다.
+# PC 자동 요청 우선 경로 — 2026-11-02
+
+ZGMINI 전용 Self-hosted Runner가 설치된 PC의 A급 허용 작업은 비공개 `ansqhd5774-Choi/zgmini-pc-control`의 `docs/GENERAL_CHAT_START.md`를 읽고 `pc-job` Issue를 직접 생성한다. 결과 댓글과 TXT/JSON을 연결 GitHub 도구로 회수한다. 이 경로가 가능하면 사용자에게 CMD 실행·파일 전달을 반복 요구하지 않는다.
+
+6개 대화는 서로 다른 requestId/chatId로 요청하며 작업 공간·임시 폴더·출력·원장을 분리한다. 공유 제어 저장소 결과 쓰기는 전용 잠금으로 직렬화한다. 임의 CMD 문자열·미승인 executable·운영 변경은 허용하지 않는다. heavy 자원 대기/일시 Offline을 운영 실패로 단정하지 않는다. 아래 기존 CMD/ZIP/수동 경로는 승인된 작업이 허용목록 밖이거나 연결 도구를 사용할 수 없을 때의 대안으로 유지한다.
+

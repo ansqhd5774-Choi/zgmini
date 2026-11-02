@@ -1,5 +1,10 @@
 ZGMINI PLUGIN & EXECUTION RULES — COMPACT R5 FINAL
 
+## PC 자동 실행 공통 진입 — 2026-11-02
+- 일반챗의 승인된 A급 PC 진단/검사는 비공개 `ansqhd5774-Choi/zgmini-pc-control`의 `docs/GENERAL_CHAT_START.md`를 먼저 읽고 `pc-job` Issue JSON으로 직접 요청한 뒤 결과 댓글/TXT/JSON까지 확인한다. GitHub 연결 도구로 실제 요청·회수를 검증했다. 로컬 직접 접근 부재만으로 CMD 수동 전달·Codex 전환을 요구하지 않는다.
+- 이 경로는 고정 허용목록·검증된 executable SHA만 실행한다. 임의 shell/후보코드 실행이나 기존 Core/DB/운영 source/예약 변경을 승인한 것이 아니다. 운영 변경(B)과 관리자 작업(C)은 별도 승인 계약을 따른다. 6좌석 작업 폴더/결과/원장을 분리하고 공유 결과 게시는 전용 잠금으로 직렬화한다. 자원 대기는 실제 서비스 장애와 구분한다.
+- 사용 지침·운영 상태 정본은 제어 저장소 README 및 INSTALLATION_RESULT 문서다. 테마 공통 기준은 아래 기존 정본을 유지한다. 새 브랜치마다 Runner를 재설치하지 않는다.
+
 ## 테마 확장 작업 최신 기준 — 2026-10-31
 - 신규 테마/산식 작업의 권한·중단조건·일반챗 실행 경로는 `docs/THEME_ONBOARDING_PLAYBOOK.md`와 `config/theme-platform-delegation.json`을 함께 따른다. 승인 범위 안의 통상 작업은 재승인 없이 진행하고 범위 밖 결정만 질문한다. 이 위임을 자격증명/권리증거/관리자권한으로 해석하지 않는다.
 - 테마 공통 개발·검증·운영 기준은 `docs/THEME_PLATFORM_STANDARD.md`를 우선 참조한다. R18~R33은 같은 R32 개편 연속 작업이다. PAIR50과 R32를 ETF 개수로 판정하지 않는다.
