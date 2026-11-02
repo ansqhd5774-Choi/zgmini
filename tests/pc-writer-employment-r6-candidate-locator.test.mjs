@@ -103,6 +103,145 @@ test('registered R7 with two Run calls and R38 with three follows only the verif
   });
 });
 
+// A Windows Core Task may contain multiple auxiliary Run calls. The synthetic
+// wrappers below model the observed R7(2 calls) -> R38(3 calls) shape, while
+// every read remains injected and no installed task, SQLite file or API is used.
+function multiCallR7R38(origin,{r38Body,approvedSource=source,clean=true}={}){
+  const r38=String.raw`E:\Launchers\approved-r38.vbs`;
+  const archive=String.raw`E:\Archive\archive-run.mjs`;
+  const {opts,files}=fixture({approvedSource,clean,vbs:
+    `' R7_CORE_WRAPPER\r\nSet shell = CreateObject("WScript.Shell")\r\n`+
+    `nextCore = "${r38}"\r\nauxiliary = """${archive}"""\r\n`+
+    `shell.Run(nextCore, 0, True)\r\nshell.Run(auxiliary, 0, True)\r\n`});
+  const defaultR38=`' ZGMINI_R38_WRAPPER_V1\r\nSet shell = CreateObject("WScript.Shell")\r\n`+
+    `origin = "${origin}"\r\n`+
+    `shell.Run("echo preparation", 0, True)\r\n`+
+    `shell.Run("echo health", 0, True)\r\n`+
+    `shell.Run(origin, 0, True)\r\n`;
+  files.set(key(r38),r38Body??defaultR38);
+  return {opts,files,r38,archive};
+}
+
+test('R7(2 Run) -> R38(3 Run) -> R7 cycle is classified without guessing a Core source',()=>{
+  const {opts}=multiCallR7R38(wrapper);
+  const result=locateEmploymentR6Candidate({...opts,includeDiagnosticStep:true});
+  assert.deepEqual(result,{status:'TASK_SOURCE_UNRESOLVED',candidateDbPath:null,
+    diagnosticStep:'HOP_3_VBS_CYCLE_TO_HOP_1'});
+  assert.doesNotMatch(JSON.stringify(result),/Launchers|Verified|E:\\|core\.sqlite/i);
+});
+
+test('R7(2 Run) -> R38(3 Run) -> R38 self-reference is classified',()=>{
+  const r38=String.raw`E:\Launchers\approved-r38.vbs`;
+  const {opts}=multiCallR7R38(r38);
+  assert.deepEqual(locateEmploymentR6Candidate({...opts,includeDiagnosticStep:true}),{
+    status:'TASK_SOURCE_UNRESOLVED',candidateDbPath:null,
+    diagnosticStep:'HOP_3_VBS_CYCLE_TO_HOP_2',
+  });
+});
+
+test('R7 -> R38 -> non-existent VBS reports only a bounded diagnostic code',()=>{
+  const {opts}=multiCallR7R38(String.raw`E:\Launchers\missing-origin.vbs`);
+  assert.deepEqual(locateEmploymentR6Candidate({...opts,includeDiagnosticStep:true}),{
+    status:'TASK_SOURCE_UNRESOLVED',candidateDbPath:null,
+    diagnosticStep:'HOP_3_VBS_FILE_NOT_FOUND',
+  });
+});
+
+test('R7 -> R38 -> invalid absolute VBS target remains blocked',()=>{
+  const {opts}=multiCallR7R38(String.raw`E:\Launchers\%UNRESOLVED%\origin.vbs`);
+  assert.deepEqual(locateEmploymentR6Candidate({...opts,includeDiagnosticStep:true}),{
+    status:'TASK_SOURCE_UNRESOLVED',candidateDbPath:null,
+    diagnosticStep:'HOP_3_VBS_INVALID_PATH',
+  });
+});
+
+test('unmarked VBS decoy does not outrank a uniquely invoked verified Core runner',()=>{
+  const archive=String.raw`E:\Archive\archive-run.mjs`;
+  const {opts}=multiCallR7R38(wrapper,{r38Body:
+    `' AUXILIARY_WRAPPER\r\nSet shell = CreateObject("WScript.Shell")\r\n`+
+    `oldWrapper = "${wrapper}"\r\n`+
+    `core = """${runner}"""\r\nauxiliary = """${archive}"""\r\n`+
+    `shell.Run("echo preparation", 0, True)\r\n`+
+    `shell.Run(auxiliary, 0, True)\r\n`+
+    `shell.Run(core, 0, True)\r\n`});
+  assert.deepEqual(locateEmploymentR6Candidate({...opts,includeDiagnosticStep:true}),{
+    status:'CANDIDATE_FOUND_READONLY',candidateDbPath:candidate,
+    diagnosticStep:'CANDIDATE_VERIFIED_READONLY',
+  });
+});
+
+test('R38 invoked cycle plus invoked Core runner remains ambiguous and fails closed',()=>{
+  const archive=String.raw`E:\Archive\archive-run.mjs`;
+  const {opts}=multiCallR7R38(wrapper,{r38Body:
+    `' ZGMINI_R38_WRAPPER_V1\r\nSet shell = CreateObject("WScript.Shell")\r\n`+
+    `origin = "${wrapper}"\r\n`+
+    `core = """${runner}"""\r\nauxiliary = """${archive}"""\r\n`+
+    `shell.Run(origin, 0, True)\r\n`+
+    `shell.Run(auxiliary, 0, True)\r\n`+
+    `shell.Run(core, 0, True)\r\n`});
+  const result=locateEmploymentR6Candidate({...opts,includeDiagnosticStep:true});
+  assert.equal(result.status,'TASK_SOURCE_UNRESOLVED');
+  assert.equal(result.candidateDbPath,null);
+  assert.equal(result.diagnosticStep,'HOP_2_VBS_R38_ORIGIN_NOT_VERIFIED');
+});
+
+test('valid R7/R38 launcher cannot bypass source SHA approval or dirty checkout gate',()=>{
+  const original=String.raw`E:\Launchers\original-core.vbs`;
+  const approved=multiCallR7R38(original,{approvedSource:'b'.repeat(40)});
+  const dirty=multiCallR7R38(original,{clean:false});
+  for(const {files} of [approved,dirty]){
+    files.set(key(original),`Set shell = CreateObject("WScript.Shell")\r\n`+
+      `WScript.Quit shell.Run("""${runner}""", 0, True)\r\n`);
+  }
+  assert.equal(locateEmploymentR6Candidate(approved.opts).status,'TASK_SOURCE_NOT_APPROVED');
+  assert.equal(locateEmploymentR6Candidate(dirty.opts).status,'TASK_SOURCE_NOT_APPROVED');
+});
+
+test('R38 marker requires a runnable origin assignment despite other valid Core calls',()=>{
+  const {opts}=multiCallR7R38(wrapper,{r38Body:
+    `' ZGMINI_R38_WRAPPER_V1\r\nSet shell = CreateObject("WScript.Shell")\r\n`+
+    `origin = "${wrapper}"\r\ncore = """${runner}"""\r\n`+
+    `shell.Run("echo preparation", 0, True)\r\n`+
+    `shell.Run("echo health", 0, True)\r\n`+
+    `shell.Run(core, 0, True)\r\n`});
+  const result=locateEmploymentR6Candidate({...opts,includeDiagnosticStep:true});
+  assert.equal(result.status,'TASK_SOURCE_UNRESOLVED');
+  assert.equal(result.diagnosticStep,'HOP_2_VBS_R38_ORIGIN_NOT_VERIFIED');
+});
+
+test('R38 origin absent and duplicated are diagnosed separately from missing files',()=>{
+  const validOrigin=String.raw`E:\Launchers\original-core.vbs`;
+  const variants=[
+    `' ZGMINI_R38_WRAPPER_V1\r\n`+
+      `shell.Run("echo preparation", 0, True)\r\n`+
+      `shell.Run("echo health", 0, True)\r\n`+
+      `shell.Run("echo no origin", 0, True)\r\n`,
+    `' ZGMINI_R38_WRAPPER_V1\r\n`+
+      `origin = "${validOrigin}"\r\norigin = "${validOrigin}"\r\n`+
+      `shell.Run("echo preparation", 0, True)\r\n`+
+      `shell.Run("echo health", 0, True)\r\n`+
+      `shell.Run(origin, 0, True)\r\n`,
+  ];
+  for(const r38Body of variants){
+    const {opts}=multiCallR7R38(validOrigin,{r38Body});
+    assert.deepEqual(locateEmploymentR6Candidate({...opts,includeDiagnosticStep:true}),{
+      status:'TASK_SOURCE_UNRESOLVED',candidateDbPath:null,
+      diagnosticStep:'HOP_2_VBS_R38_ORIGIN_NOT_VERIFIED',
+    });
+  }
+});
+
+test('unresolved launcher does not touch source approval, database validation or candidate files',()=>{
+  const {opts}=multiCallR7R38(wrapper);
+  const visited=[];
+  opts.testInject.gitHead=()=>{throw Error('GIT_HEAD_NOT_ALLOWED');};
+  opts.testInject.gitClean=()=>{throw Error('GIT_CLEAN_NOT_ALLOWED');};
+  opts.testInject.validateDb=()=>{throw Error('DB_VALIDATION_NOT_ALLOWED');};
+  opts.testInject.realpath=p=>{visited.push(p);throw Error('REALPATH_NOT_ALLOWED');};
+  assert.equal(locateEmploymentR6Candidate(opts).status,'TASK_SOURCE_UNRESOLVED');
+  assert.deepEqual(visited,[]);
+});
+
 test('uninvoked VBS assignment must not be mistaken for the active Core',()=>{
   const uninvoked=String.raw`E:\Launchers\decoy.vbs`;
   const {opts,files}=fixture({vbs:`decoy = "${uninvoked}"\r\n`+

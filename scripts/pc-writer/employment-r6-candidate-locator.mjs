@@ -74,16 +74,39 @@ function invokedPath(lines,target){
   return false;
 }
 
-function followedReference(lines){
+function followedReference(lines,{r38=false,diagnostic}={}){
   const all=[...new Map(lines.flatMap(references)
     .map(p=>[p.toLowerCase(),p])).values()];
   const vbs=all.filter(p=>/\.vbs$/i.test(p));
   const core=all.filter(p=>LEAF.test(p));
-  const allowed=vbs.length?vbs:core;
-  ensure(allowed.length===1,'TASK_SOURCE_UNRESOLVED');
-  if(vbs.length)ensure(core.length===0,'TASK_SOURCE_UNRESOLVED');
-  ensure(invokedPath(lines,allowed[0]),'TASK_SOURCE_UNRESOLVED');
-  return allowed[0];
+  // R38 has a documented origin launcher contract (see the existing R34
+  // Core-task resolver). Merely mentioning a VBS does not prove that a Run
+  // call executes it. Require exactly one live origin edge, never the first
+  // VBS or MJS mentioned in a multi-Run wrapper.
+  if(r38){
+    const rejectOrigin=()=>{
+      if(diagnostic)diagnostic.step=diagnostic.step.replace(/_REFERENCES$/,
+        '_R38_ORIGIN_NOT_VERIFIED');
+      fail('TASK_SOURCE_UNRESOLVED');
+    };
+    const origins=lines.flatMap(line=>{
+      const match=/^\s*origin\s*=\s*"((?:[^"\r\n]|"")*)"\s*(?:'[^\r\n]*)?$/i.exec(line);
+      return match?[W.normalize(match[1].replaceAll('""','"'))]:[];
+    });
+    // Preserve the common hop check as the sole path-validation gate so the
+    // diagnostic can identify an invalid origin without exposing its value.
+    if(origins.length!==1)rejectOrigin();
+    if(!(vbs.length===1&&vbs[0].toLowerCase()===origins[0].toLowerCase()&&
+      core.length===0&&invokedPath(lines,origins[0])))rejectOrigin();
+    return origins[0];
+  }
+  // An unrelated static VBS variable must not take precedence over an
+  // explicitly invoked Core runner. Multiple runnable targets or known
+  // Core-root assignments remain ambiguous and are intentionally blocked.
+  ensure(core.length<=1,'TASK_SOURCE_UNRESOLVED');
+  const invoked=[...vbs,...core].filter(p=>invokedPath(lines,p));
+  ensure(invoked.length===1,'TASK_SOURCE_UNRESOLVED');
+  return invoked[0];
 }
 
 function taskEntrypoint(xml){
@@ -117,15 +140,25 @@ function taskEntrypoint(xml){
 
 function followLauncher(initial,{readFile,exists},diagnostic){
   let current=initial;
-  const visited=new Set();
+  const visited=new Map();
   for(let depth=0;depth<5;depth++){
     const kind=/\.mjs$/i.test(current)?'MJS':/\.vbs$/i.test(current)?'VBS':/\.cmd$/i.test(current)?'CMD':'OTHER';
-    diagnostic.step=`HOP_${depth+1}_${kind}_CHECK`;
-    ensure(absolute(current),'TASK_SOURCE_UNRESOLVED');
-    ensure(exists(current),'TASK_SOURCE_UNRESOLVED');
-    const key=current.toLowerCase();
-    ensure(!visited.has(key),'TASK_SOURCE_UNRESOLVED');
-    visited.add(key);
+    const hop=`HOP_${depth+1}_${kind}`;
+    diagnostic.step=`${hop}_CHECK`;
+    if(!absolute(current)){
+      diagnostic.step=`${hop}_INVALID_PATH`;
+      fail('TASK_SOURCE_UNRESOLVED');
+    }
+    if(!exists(current)){
+      diagnostic.step=`${hop}_FILE_NOT_FOUND`;
+      fail('TASK_SOURCE_UNRESOLVED');
+    }
+    const key=W.normalize(current).toLowerCase();
+    if(visited.has(key)){
+      diagnostic.step=`${hop}_CYCLE_TO_HOP_${visited.get(key)}`;
+      fail('TASK_SOURCE_UNRESOLVED');
+    }
+    visited.set(key,depth+1);
     if(/\.mjs$/i.test(current)){
       const match=LEAF.exec(current);
       ensure(match,'TASK_SOURCE_UNRESOLVED');
@@ -136,8 +169,8 @@ function followLauncher(initial,{readFile,exists},diagnostic){
     ensure(Buffer.byteLength(bytes)<65536,'TASK_SOURCE_UNRESOLVED');
     const text=decode(bytes);
     const lines=text.split(/\r?\n/).filter(line=>!/^[\s]*(?:rem\b|::|')/i.test(line));
-    diagnostic.step=`HOP_${depth+1}_${kind}_REFERENCES`;
-    current=followedReference(lines);
+    diagnostic.step=`${hop}_REFERENCES`;
+    current=followedReference(lines,{r38:text.includes('ZGMINI_R38_WRAPPER_V1'),diagnostic});
   }
   fail('TASK_SOURCE_UNRESOLVED');
 }
