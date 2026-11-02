@@ -90,6 +90,15 @@ try{
     assert.ok(aria?.includes('MarketParquet R2 일별 상승·하락 우세도')&&aria.includes(`${label} 확정 비율 이력`),period+' R2 percent-only chart window and label');
     const expectedPoints=breadthPoints.filter(point=>point.date>=from&&point.date<=breadthHistory.lastDate).length;
     assert.equal(await netBars.count(),expectedPoints,period+' renders one signed net bar per real provided daily observation');
+    if(expectedPoints>2){
+     const positions=await netBars.evaluateAll(bars=>bars.map(bar=>Number(bar.getAttribute('x'))));
+     const gaps=positions.slice(1).map((x,i)=>x-positions[i]);
+     assert.ok(gaps.every(gap=>gap>0)&&Math.max(...gaps)-Math.min(...gaps)<0.001,period+' bars use uniform trading-session spacing across weekends');
+     const trendPath=await detail.locator('path[class*="historyTrendLine"]').first().getAttribute('d');
+     const trendXs=Array.from(trendPath?.matchAll(/[ML]([\d.]+),[\d.]+/g)??[],match=>Number(match[1]));
+     const widths=await netBars.evaluateAll(bars=>bars.map(bar=>Number(bar.getAttribute('width'))));
+     assert.ok(trendXs.length>0&&trendXs.every(x=>positions.some((barX,i)=>Math.abs(x-barX-widths[i]/2)<0.02)),period+' trend line aligns with trading-session bars');
+    }
     if(period==='1D'){
      assert.equal(await detail.locator('rect[class*="historyNetNegativeBar"]').count(),1,'Latest day is negative even with unchanged issues present');
      assert.equal(await detail.locator('circle[class*="historyTrendDot"]').count(),1,'One-day period exposes the prior-week mean as a dot');
