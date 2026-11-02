@@ -1,8 +1,7 @@
 @echo off
 setlocal EnableExtensions DisableDelayedExpansion
-set "RESULT_DIR=%USERPROFILE%\Downloads"
-if not exist "%RESULT_DIR%\" set "RESULT_DIR=%TEMP%"
-set "RESULT=%RESULT_DIR%\US_BREADTH_R39_CORE_ACTION_%RANDOM%_%RANDOM%.txt"
+rem Save beside this CMD so the operator can attach the log directly.
+set "RESULT=%~dp0US_BREADTH_R39_CORE_ACTION_%RANDOM%_%RANDOM%.txt"
 set "SCRIPT=%~dp0scripts\pc-writer\us-breadth-core-action-readonly-r39.mjs"
 
 (
@@ -14,9 +13,17 @@ set "SCRIPT=%~dp0scripts\pc-writer\us-breadth-core-action-readonly-r39.mjs"
   echo PROVIDER_CALLS=0
   echo CORE_TASK_CHANGES=0
   echo LOCK_PID_ACTIONS=0
+  echo LOG_LOCATION=NEXT_TO_CMD
   echo.
   echo [R39_CORE_ACTION_RESULT]
 ) 1>"%RESULT%" 2>&1
+
+if not exist "%RESULT%" (
+  echo ERROR: The TXT could not be created beside the CMD.
+  echo Extract the ZIP into your Downloads folder, then run the CMD again.
+  pause
+  exit /b 1
+)
 
 if not exist "E:\ZGmini\runtime\node.exe" (
   echo APPROVED_E_NODE_NOT_FOUND>>"%RESULT%"
