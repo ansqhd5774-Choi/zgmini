@@ -46,6 +46,11 @@ function savedDayFile(dir,day){return path.join(dir,day+'.json')}
 
 const TICKER=/^[A-Z0-9][A-Z0-9.\-]{0,11}$/;
 const finite=x=>typeof x==='number'&&Number.isFinite(x);
+const validEvent=event=>event&&typeof event==='object'&&!Array.isArray(event)&&
+  TICKER.test(event.symbol)&&Object.hasOwn(event,'eps')&&
+  Object.hasOwn(event,'revenue')&&
+  (event.eps===null||finite(event.eps))&&
+  (event.revenue===null||(finite(event.revenue)&&event.revenue>=0));
 
 // Diagnostics are metadata ONLY: never record a symbol, raw actual, or vendor body.
 // An unsupported day remains privately saved and is excluded from score inputs.
@@ -83,22 +88,50 @@ function savedData(file,day,asOf){
   let saved;
   try{saved=JSON.parse(fs.readFileSync(file,'utf8'));}catch{stop('ER1_SAVED_DAY_JSON_INVALID')}
   if(saved?.body?.date!==day)stop('ER1_SAVED_DAY_MISMATCH');
-  return {saved,diagnostics:dayDiagnostics(saved,day,asOf)};
+  const diagnostics=dayDiagnostics(saved,day,asOf);
+  if(diagnostics.valid)return {verifiedInput:saved,diagnostics};
+  // A single malformed vendor value must not discard an otherwise valid day.
+  // Keep the immutable raw file, reject bad rows entirely (no value coercion),
+  // and validate the sanitized IN-MEMORY copy against the same strict adapter.
+  if(diagnostics.code==='ER1_CALENDAR_EVENT_INVALID'){
+    const filtered={...saved,body:{...saved.body}};
+    let excludedEvents=0;
+    for(const group of ['pre','after','notSupplied']){
+      if(!Array.isArray(saved.body?.[group]))return {verifiedInput:null,diagnostics};
+      filtered.body[group]=saved.body[group].filter(event=>{
+        const valid=validEvent(event);
+        if(!valid)excludedEvents++;
+        return valid;
+      });
+    }
+    if(excludedEvents){
+      try{
+        indexSavedER1CalendarDays([filtered],{asOf});
+        return {verifiedInput:filtered,diagnostics:{...diagnostics,
+          valid:true,recovered:true,excludedEvents}};
+      }catch{} // Structural/conflict errors still quarantine the entire day.
+    }
+  }
+  return {verifiedInput:null,diagnostics};
 }
 
 /** Manual, private, bounded run. A read-only verified universe is still mandatory
  * before ranking or publication. fetcher and clock are injected for local tests. */
 export async function runER1MinimalCapture({pcHome=DEFAULT_PC_HOME,now=Date.now(),
-  fetcher=globalThis.fetch,env=process.env}={}){
+  fetcher=globalThis.fetch,env=process.env,readOnly=false}={}){
   const plan=recentNYBusinessDays(now),dir=path.join(pcHome,'er1-input','days');
-  const report={audit:'ER1_MINIMAL_MANUAL_CAPTURE_20261102',status:'STARTED',
+  const report={audit:readOnly?'ER1_SAVED_ROW_RECOVERY_R3_20261102':
+    'ER1_MINIMAL_MANUAL_CAPTURE_20261102',status:'STARTED',
     asOf:plan.asOf,targetDates:plan.dates,providerRequests:0,providerRetries:0,
     dbWrites:0,d1Writes:0,coreChanges:0,scheduleChanges:0,
     newDayFiles:0,retainedDayFiles:0,savedDayCount:0,verifiedDayCount:0,
-    quarantinedDays:[],
+    quarantinedDays:[],recoveredDays:[],excludedEvents:0,
     symbolsWithEPS:0,symbolsWithRevenue:0,uniqueSymbolsWithBoth:0,
     approvedUniverseVerified:false,publicReady:false};
   if(!fs.existsSync(pcHome))return {...report,status:'ER1_PC_HOME_MISSING_STOP'};
+  if(readOnly&&!fs.existsSync(dir))
+    return {...report,status:'ER1_SAVED_SNAPSHOT_MISSING_STOP'};
+  if(!readOnly){
   let key=null;
   try{key=configuredKey(pcHome,env);}catch{return {...report,status:'ER1_PROVIDER_CONFIG_INVALID_STOP'}}
   // No new API request unless the existing PC configuration already owns a key.
@@ -148,6 +181,7 @@ export async function runER1MinimalCapture({pcHome=DEFAULT_PC_HOME,now=Date.now(
     try{fs.closeSync(fd);}catch{report.status='ER1_MANUAL_LOCK_RELEASE_FAILED'}
     try{fs.unlinkSync(lock);}catch{report.status='ER1_MANUAL_LOCK_RELEASE_FAILED'}
   }
+  }
   // Read existing private snapshots only. Even a partially interrupted run
   // reports saved data; no raw fields or symbol identifiers leave the PC.
   try{
@@ -156,11 +190,23 @@ export async function runER1MinimalCapture({pcHome=DEFAULT_PC_HOME,now=Date.now(
       const file=savedDayFile(dir,day);
       if(!fs.existsSync(file))continue;
       report.savedDayCount++;
-      const {saved,diagnostics}=savedData(file,day,plan.asOf);
-      if(diagnostics.valid)verified.push(saved);
-      else report.quarantinedDays.push(diagnostics);
+      const {verifiedInput,diagnostics}=savedData(file,day,plan.asOf);
+      if(verifiedInput){
+        verified.push(verifiedInput);
+        if(diagnostics.recovered){
+          report.excludedEvents+=diagnostics.excludedEvents;
+          report.recoveredDays.push({date:day,code:diagnostics.code,
+            totalEvents:diagnostics.events,excludedEvents:diagnostics.excludedEvents,
+            invalidRevenueValues:diagnostics.invalidRevenueValues,
+            invalidEPSValues:diagnostics.invalidEPSValues,
+            invalidSymbols:diagnostics.invalidSymbols,
+            missingEPSFields:diagnostics.missingEPSFields,
+            missingRevenueFields:diagnostics.missingRevenueFields});
+        }
+      }else report.quarantinedDays.push(diagnostics);
     }
     report.verifiedDayCount=verified.length;
+    if(readOnly)report.retainedDayFiles=report.savedDayCount;
     const index=indexSavedER1CalendarDays(verified,{asOf:plan.asOf});
     for(const records of Object.values(index.releasesBySymbol)){
       const eps=records.some(x=>x.eps!==null),revenue=records.some(x=>x.revenue!==null);
@@ -168,7 +214,7 @@ export async function runER1MinimalCapture({pcHome=DEFAULT_PC_HOME,now=Date.now(
       if(revenue)report.symbolsWithRevenue++;
       if(eps&&revenue)report.uniqueSymbolsWithBoth++;
     }
-    if(report.status==='STARTED')report.status=report.quarantinedDays.length?
+    if(report.status==='STARTED')report.status=report.quarantinedDays.length||report.excludedEvents?
       'ER1_PRIVATE_SAMPLE_PARTIAL':report.uniqueSymbolsWithBoth?
         'ER1_PRIVATE_SAMPLE_SAVED':'ER1_PRIVATE_SAMPLE_NO_ACTUALS';
   }catch{if(report.status==='STARTED')report.status='ER1_SAVED_SAMPLE_VALIDATION_STOP'}
@@ -179,12 +225,19 @@ if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.ur
   const resultFile=process.argv[2];
   if(!resultFile){console.error('ER1_RESULT_PATH_REQUIRED');process.exitCode=2;}
   else{
-    const report=await runER1MinimalCapture();
+    const readOnly=process.argv[3]==='--r3-readonly';
+    if(process.argv[3]&&!readOnly){console.error('ER1_MODE_INVALID');process.exitCode=2;}
+    else{
+    // A read-only snapshot diagnostic is pinned to the user-provided R2 date.
+    // It never asks the provider for new days if the user runs it later.
+    const report=await runER1MinimalCapture(readOnly?{
+      now:Date.parse('2026-11-02T16:00:00Z'),readOnly:true}:{});
     fs.writeFileSync(resultFile,Object.entries(report).map(([k,v])=>
       `${k.toUpperCase()}=${JSON.stringify(v)}`).join('\r\n')+'\r\n','utf8');
     console.log('STATUS='+report.status+'\nRESULT_FILE='+resultFile);
     if(report.status!=='ER1_PRIVATE_SAMPLE_PARTIAL'&&
       report.status!=='ER1_PRIVATE_SAMPLE_SAVED'&&
       report.status!=='ER1_PRIVATE_SAMPLE_NO_ACTUALS')process.exitCode=1;
+    }
   }
 }
