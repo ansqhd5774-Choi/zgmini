@@ -38,9 +38,11 @@ test('keyboard users can inspect the same actual trading dates and mobile vertic
   assert.doesNotMatch(css, /\.historySlider/);
 });
 
-test('existing chart geometry and no-invented-gap line construction remain unchanged', () => {
+test('chart preserves plot geometry, equal trading-session spacing, and breaks on long missing-data gaps', () => {
   assert.match(chart, /const plot = \{left: 8, right: 592, top: 12, bottom: 146\}/);
-  assert.match(chart, /dayGap > 5 \? 'M' : 'L'/);
+  assert.match(chart, /const indexByDate = new Map\(records\.map/);
+  assert.match(chart, /indexByDate\.get\(day\)/);
+  assert.match(chart, /dateMs\(point\.date\) - dateMs\(previousTrendDate\) <= 4 \* dayMs \? 'L' : 'M'/);
   assert.match(chart, /history\.records/);
   assert.match(chart, /eligibleCount/);
 });
@@ -66,5 +68,6 @@ test('keyboard inspection anchors the same floating tooltip to the selected stor
   assert.match(chart, /setKeyboardPointer\(event\.currentTarget, next\)/);
   assert.match(chart, /setKeyboardPointer\(event\.currentTarget, index\)/);
   assert.match(chart, /scaleX\(record\.observationDate\)/);
-  assert.match(chart, /scaleY\(asPct\(record, 'rising'\)\)/);
+  assert.match(chart, /scaleY\(net\(record\)\)/);
+  assert.match(chart, /cy=\{scaleY\(focusedNet\)\}/);
 });
