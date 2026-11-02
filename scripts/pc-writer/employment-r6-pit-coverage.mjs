@@ -71,6 +71,10 @@ const latestRevision=rows=>(rows??[]).reduce((best,row)=>{
   if(b<a)return best;
   return String(row.source_hash??"")>String(best.source_hash??"")?row:best;
 },null);
+const endReadSnapshot=(db,active)=>{
+  if(!db)return;
+  try{if(active)db.exec("ROLLBACK");}finally{db.close();}
+};
 
 export function auditEmploymentR6PitCoverage({dbPath,candidateDbPath=null,asOfDate,
   beforeReadOnlyOpen=null,afterReadOnlyOpen=null,onSqliteOpened=null}={}){
@@ -80,7 +84,7 @@ export function auditEmploymentR6PitCoverage({dbPath,candidateDbPath=null,asOfDa
     throw Error("PIT_AUDIT_CANDIDATE_NOT_FOUND");
   if(candidateDbPath&&fs.realpathSync(candidateDbPath)===fs.realpathSync(dbPath))
     throw Error("PIT_AUDIT_CANDIDATE_IS_CORE");
-  let core=null,candidate=null;
+  let core=null,candidate=null,coreSnapshot=false,candidateSnapshot=false;
   try{
     beforeReadOnlyOpen?.(dbPath);
     core=new DatabaseSync(dbPath,{readOnly:true});
@@ -94,10 +98,21 @@ export function auditEmploymentR6PitCoverage({dbPath,candidateDbPath=null,asOfDa
       onSqliteOpened?.(candidateDbPath);
       afterReadOnlyOpen?.(candidateDbPath);
     }
+    // CURRENT and HISTORY must describe one committed snapshot per database,
+    // even while the PC's existing WAL writer continues collecting data.
+    core.exec("BEGIN");coreSnapshot=true;
+    core.prepare("SELECT COUNT(*) AS total FROM sqlite_master").get();
+    if(candidate){
+      candidate.exec("BEGIN");candidateSnapshot=true;
+      candidate.prepare("SELECT COUNT(*) AS total FROM sqlite_master").get();
+    }
     const current=sourceRows(core,T.observationCurrent,asOfDate);
     const history=sourceRows(core,T.observationHistory,asOfDate);
     const candidates=candidate?sourceRows(candidate,T.observationHistory,asOfDate):null;
     const candidateCurrent=candidate?sourceRows(candidate,T.observationCurrent,asOfDate):null;
+    // Release read locks before comparing lineage, which may be CPU-heavy.
+    core.exec("ROLLBACK");coreSnapshot=false;
+    if(candidate){candidate.exec("ROLLBACK");candidateSnapshot=false;}
     const currentKeys=new Map((current??[]).filter(row=>isKnownAsOf(row,asOfDate))
       .map(row=>[identity(row),row]));
     const historyKeys=historyIndex(history,asOfDate);
@@ -176,5 +191,8 @@ export function auditEmploymentR6PitCoverage({dbPath,candidateDbPath=null,asOfDa
       missingBySeries:current!==null&&history!==null?[...missingBySeries.values()].sort((a,b)=>a.id.localeCompare(b.id)):null,
       promotionApproved:false,coreWrites:0,providerCalls:0,
     };
-  }finally{core?.close();candidate?.close();}
+  }finally{
+    try{endReadSnapshot(candidate,candidateSnapshot);}
+    finally{endReadSnapshot(core,coreSnapshot);}
+  }
 }

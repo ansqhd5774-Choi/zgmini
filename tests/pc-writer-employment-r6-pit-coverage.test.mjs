@@ -107,6 +107,75 @@ test("candidate open failure still leaves the Core reader usable for later audit
   assert.equal(digest(core),before);
 });
 
+test("WAL PIT audit ignores uncommitted writes and releases its read snapshot",()=>{
+  const dir=fs.mkdtempSync(path.join(os.tmpdir(),"zgmini-r6-pit-wal-snapshot-"));
+  const core=path.join(dir,"core.sqlite");
+  const u3=observation("US",4.0,"a".repeat(64),{id:"U3_UNEMPLOYMENT_RATE"});
+  const al=observation("AL",100,"b".repeat(64));
+  fixture(core,{current:[u3],history:[u3]});
+  const writer=new DatabaseSync(core,{timeout:2000});
+  try{
+    assert.equal(writer.prepare("PRAGMA journal_mode=WAL").get().journal_mode,"wal");
+    writer.exec("BEGIN IMMEDIATE");
+    const insert=table=>writer.prepare(`INSERT INTO ${table} VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)`)
+      .run(al.id,"STATE",al.region,al.date,al.hash,al.value,null,
+        "2026-10-25T10:00:00.000Z","DOL_ETA","ETA539:C3","READY_CORE_51",
+        "HISTORICAL_CURRENT_OR_REVISED_PROVIDER_HISTORY","{}");
+    insert(T.observationCurrent);
+    insert(T.observationHistory);
+    const before=auditEmploymentR6PitCoverage({dbPath:core,asOfDate:"2026-11-02"});
+    assert.equal(before.coreCurrentRows,1);
+    assert.equal(before.coreHistoryRevisions,1);
+    writer.exec("COMMIT");
+    const after=auditEmploymentR6PitCoverage({dbPath:core,asOfDate:"2026-11-02"});
+    assert.equal(after.coreCurrentRows,2);
+    assert.equal(after.coreHistoryRevisions,2);
+    assert.equal(after.coreCurrentKeysMissingHistory,0);
+  }finally{
+    if(writer.isTransaction)writer.exec("ROLLBACK");
+    writer.close();
+  }
+});
+
+test("WAL PIT audit keeps CURRENT and HISTORY on one snapshot across writer COMMIT",()=>{
+  const dir=fs.mkdtempSync(path.join(os.tmpdir(),"zgmini-r6-pit-mid-commit-"));
+  const core=path.join(dir,"core.sqlite");
+  const beforeRow=observation("US",4.0,"a".repeat(64),{id:"U3_UNEMPLOYMENT_RATE"});
+  const afterRow=observation("AL",100,"b".repeat(64));
+  fixture(core,{current:[beforeRow],history:[beforeRow]});
+  const writer=new DatabaseSync(core,{timeout:2000});
+  const originalPrepare=DatabaseSync.prototype.prepare;
+  let committedBetweenReads=false;
+  try{
+    assert.equal(writer.prepare("PRAGMA journal_mode=WAL").get().journal_mode,"wal");
+    const insert=table=>writer.prepare(`INSERT INTO ${table} VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)`);
+    const insertCurrent=insert(T.observationCurrent),insertHistory=insert(T.observationHistory);
+    DatabaseSync.prototype.prepare=function(sql){
+      if(!committedBetweenReads&&sql.includes(`FROM ${T.observationHistory}`)){
+        committedBetweenReads=true;
+        writer.exec("BEGIN IMMEDIATE");
+        for(const statement of [insertCurrent,insertHistory])statement.run(
+          afterRow.id,"STATE",afterRow.region,afterRow.date,afterRow.hash,afterRow.value,null,
+          "2026-10-25T10:00:00.000Z","DOL_ETA","ETA539:C3","READY_CORE_51",
+          "HISTORICAL_CURRENT_OR_REVISED_PROVIDER_HISTORY","{}");
+        writer.exec("COMMIT");
+      }
+      return originalPrepare.call(this,sql);
+    };
+    const atStart=auditEmploymentR6PitCoverage({dbPath:core,asOfDate:"2026-11-02"});
+    assert.equal(committedBetweenReads,true);
+    assert.equal(atStart.coreCurrentRows,1);
+    assert.equal(atStart.coreHistoryRevisions,1);
+    const after=auditEmploymentR6PitCoverage({dbPath:core,asOfDate:"2026-11-02"});
+    assert.equal(after.coreCurrentRows,2);
+    assert.equal(after.coreHistoryRevisions,2);
+  }finally{
+    DatabaseSync.prototype.prepare=originalPrepare;
+    if(writer.isTransaction)writer.exec("ROLLBACK");
+    writer.close();
+  }
+});
+
 test("candidate reconciliation preview classifies new, matching, and conflicting source keys without writes",()=>{
   const dir=fs.mkdtempSync(path.join(os.tmpdir(),"zgmini-r6-pit-reconcile-"));
   const core=path.join(dir,"core.sqlite"),candidate=path.join(dir,"EMPLOYMENT_R6_CANDIDATE.sqlite");
