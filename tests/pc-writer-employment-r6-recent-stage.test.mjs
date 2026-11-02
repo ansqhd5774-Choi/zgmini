@@ -96,6 +96,32 @@ test("DOL national response with no four national claim rows is explicitly PARTI
   assert.ok(result.rows.length >= 51);
 });
 
+test("DOL national values cannot hide an ETA539 response with no complete state week", async () => {
+  const national = `<?xml version="1.0"?><weeks><week>
+    <weekEnded>10/24/2026</weekEnded>
+    <InitialClaims><SA>220000</SA><SA4WK>225000</SA4WK></InitialClaims>
+    <ContinuedClaims><SA>1900000</SA></ContinuedClaims>
+    <IUR><SA>1.2</SA></IUR>
+  </week></weeks>`;
+  for (const stateCsv of [
+    "st,rptdate,c1,c2,c3,c8\n",
+    claimsCsv().split("\n").slice(0, -1).join("\n"),
+  ]) {
+    const provider = createEmploymentR6Provider({
+      now: () => new Date("2026-11-01T01:00:00Z"),
+      fetchImpl: async url => ({
+        ok: true, status: 200, headers: { get: () => "text/plain" },
+        text: async () => String(url).includes("report.asp") ? national : stateCsv,
+      }),
+    });
+    const result = await provider.fetchDolClaims({ currentYear: 2026 });
+    assert.equal(result.requestCount, 2);
+    assert.equal(result.snapshots.length, 2);
+    assert.deepEqual(result.missingSeries, ["STATE_INITIAL_CLAIMS"]);
+    assert.equal(result.rows.length, 4);
+  }
+});
+
 test("manual recent stage writes candidate only, retains core file and reports 18 source series", async t => {
   const f = fixture();
   t.after(f.cleanup);
