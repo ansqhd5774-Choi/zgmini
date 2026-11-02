@@ -18,7 +18,7 @@ type FilterImportance='all'|1|2|3;
 type OfficialEvent={id:string;date:string;title:string;source:string;sourceUrl:string};
 type SourceState={status:string;checkedAt?:string|null;issuers?:Record<string,{status:string;checkedAt?:string|null}>};
 type CalendarFeed={status:string;updatedAt?:string;sources?:Record<string,SourceState>;events?:OfficialEvent[]};
-type CalendarRow={key:string;date:string;at:string|null;name:string;country:Country;category:string;kind:EventKind;actual:string|null;forecast:string|null;previous:string|null;major:boolean;importance:number;source:string;sourceUrl:string;checkedAt:string|null;status:'scheduled'|'released';fresh:boolean};
+type CalendarRow={key:string;date:string;at:string|null;name:string;country:Country;category:string;kind:EventKind;actual:string|null;forecast:string|null;previous:string|null;major:boolean;importance:number|null;source:string;sourceUrl:string;checkedAt:string|null;status:'scheduled'|'released';fresh:boolean};
 
 const dayLabels=['일','월','화','수','목','금','토'];
 const sourceNames:Record<string,string>={bls:'BLS',bea:'BEA',fed:'연준',fed_calendar:'연준',census:'Census',eia:'EIA',usda:'USDA',cftc:'CFTC',treasury:'미국 재무부',tic:'미국 재무부 TIC',earnings:'기업 공식 IR'};
@@ -126,7 +126,7 @@ function mergeOfficial(feed:CalendarFeed|null):CalendarRow[]{
   // Existing verified actuals supersede past date-only schedule placeholders.
   const hasActual=manual.some(row=>row.status==='released'&&row.date===item.date&&((item.id==='cpi'&&row.source==='BLS')||(item.id==='pce'&&row.source==='BEA')));
   if(hasActual)continue;
-  fromFeed.push({key:`official-${duplicate}`,date:displayDate,at:eventAt,name:officialName(item,meta.name),country:'US',category:earningsEvent?category:meta.category,kind:earningsEvent?'earnings':'economic',actual:null,forecast:null,previous:null,major:meta.major,importance:earningsEvent?1:releaseImportance(item.id,item.title),source:sourceNames[item.source]??item.source,sourceUrl:item.sourceUrl,checkedAt:timed?.checkedAt??checkedAt,fresh:timed?false:fresh,status:'scheduled'});
+  fromFeed.push({key:`official-${duplicate}`,date:displayDate,at:eventAt,name:officialName(item,meta.name),country:'US',category:earningsEvent?category:meta.category,kind:earningsEvent?'earnings':'economic',actual:null,forecast:null,previous:null,major:meta.major,importance:earningsEvent?null:releaseImportance(item.id,item.title),source:sourceNames[item.source]??item.source,sourceUrl:item.sourceUrl,checkedAt:timed?.checkedAt??checkedAt,fresh:timed?false:fresh,status:'scheduled'});
  }
  const scheduledIds=new Set(fromFeed.map(row=>row.key.slice('official-'.length)));
  return [...fromFeed,...manual.filter(row=>row.status==='released'||!scheduledIds.has(`${row.key.split('-')[1]}:${row.date}`))];
@@ -228,7 +228,7 @@ export default function MarketCalendar(){
    {byWeek.map(([weekStart,rows])=><div key={weekStart}>
     <div className="mc-week"><strong>{activeDate?`${Number(activeDate.slice(5,7))}월 ${Number(activeDate.slice(8,10))}일`:weekTitle(weekStart)}</strong><span>{rows.length}개 일정</span></div>
     {rows.map((row,index)=>{const remain=remaining(row);const firstOfDay=rows.findIndex(item=>item.date===row.date)===index;return <article key={row.key} id={firstOfDay?`mc-day-${row.date}`:undefined} className="mc-row">
-     <div className="mc-importance" role="img" aria-label={`중요도 별 ${row.importance}개`} title={`ZGMINI 예상 시장 영향도 ${row.importance}단계`}>{Array.from({length:row.importance},(_,i)=><Star key={i} size={13} strokeWidth={1.5} fill="currentColor" aria-hidden="true"/>)}</div>
+     {row.importance===null?<div className="mc-importance" aria-label="기업 실적 점수 없음" title="기업 실적 등급 자료 없음">-</div>:<div className="mc-importance" role="img" aria-label={`중요도 별 ${row.importance}개`} title={`ZGMINI 예상 시장 영향도 ${row.importance}단계`}>{Array.from({length:row.importance},(_,i)=><Star key={i} size={13} strokeWidth={1.5} fill="currentColor" aria-hidden="true"/>)}</div>}
      <div className="mc-date">{dateCaption(row.date)} <small>{dayLabels[parseDay(row.date).getUTCDay()]}</small></div>
      <time className="mc-time" dateTime={row.at??row.date}>{row.at?kstTime(row.at):'미정'}</time>
      <span className="mc-country">{row.country==='US'?'미국':'한국'}</span>
