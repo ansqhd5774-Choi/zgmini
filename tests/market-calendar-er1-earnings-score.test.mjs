@@ -5,12 +5,10 @@ import {scoreER1Issuers, ER1_METHOD, ER1_STAR3_THRESHOLD} from
 
 const days=['2025-10-30','2026-01-29','2026-04-30','2026-07-30'];
 const row=(id, revenues=[100,100,100,100], eps=[1,1,1,1])=>({
-  eligible:true, issuerId:id, tickers:[id], earningsSymbol:id,
+  issuerId:id, tickers:[id], earningsSymbol:id,
   releases:days.map((date,i)=>({date,symbol:id,revenue:revenues[i],eps:eps[i]})),
 });
-const run=(rows,expectedEligibleIssuers=rows.length)=>scoreER1Issuers(rows,{
-  asOf:'2026-11-02',expectedEligibleIssuers,
-});
+const run=rows=>scoreER1Issuers(rows,{asOf:'2026-11-02'});
 
 test('ER1 fixed 97 threshold uses cross-sectional revenue percentiles, never forces 5%',()=>{
   const rows=Array.from({length:100},(_,i)=>row(`T${i+1}`,Array(4).fill(i+1)));
@@ -30,7 +28,7 @@ test('ER1 fixed 97 threshold uses cross-sectional revenue percentiles, never for
 test('one missing release metric keeps company scoreable without a fake actual',()=>{
   const result=run([row('AAA',[100,null,120,140],[1,null,2,3])]);
   assert.equal(result.status,'READY_SHADOW');
-  assert.equal(result.coverage.earnings,1);
+  assert.equal(result.coverage.scoreableIssuers,1);
   assert.equal(result.rankings[0].epsReleases,3);
   assert.equal(result.rankings[0].revenueReleases,3);
   assert.equal(result.rankings[0].score,70);
@@ -75,18 +73,17 @@ test('zero is a real EPS or revenue observation; missing is only explicit null',
   assert.throws(()=>run([row('AAA',[100,100,100,-1])]),/ER1_RELEASE_VALUE_INVALID/);
 });
 
-test('a missing approved issuer or unverified eligibility cannot be hidden in ranking',()=>{
-  const result=run([row('AAA')],2);
-  assert.equal(result.status,'BLOCKED');
-  assert.equal(result.reason,'ER1_APPROVED_UNIVERSE_INCOMPLETE');
-  assert.throws(()=>run([{...row('AAA'),eligible:'PENDING'}]),/ER1_APPROVED_ISSUER_REQUIRED/);
-  assert.throws(()=>run([row('AAA'),row('AAA')]),/ER1_APPROVED_ISSUER_REQUIRED/);
+test('observed actuals score without a roster, while legacy eligibility and duplicates are rejected',()=>{
+  assert.equal(run([row('AAA')]).status,'READY_SHADOW');
+  assert.throws(()=>run([{...row('AAA'),eligible:'PENDING'}]),/ER1_OBSERVED_ISSUER_INVALID/);
+  assert.throws(()=>run([row('AAA'),row('AAA')]),/ER1_OBSERVED_ISSUER_INVALID/);
 });
 
 test('same-company share classes are not silently counted as independent issuers',()=>{
   const alphabet={...row('ALPHABET'),tickers:['GOOG','GOOGL'],
     earningsSymbol:'GOOG',releases:row('ALPHABET').releases.map(x=>({...x,symbol:'GOOG'}))};
-  assert.equal(run([alphabet]).coverage.reviewedEligibleIssuers,1);
+  assert.equal(run([alphabet]).coverage.observedIssuers,1);
+  assert.equal(run([alphabet]).coverage.inputSymbols,2);
   assert.throws(()=>run([
     {...row('A'),tickers:['GOOG'],earningsSymbol:'GOOG',
       releases:row('A').releases.map(x=>({...x,symbol:'GOOG'}))},
@@ -122,25 +119,27 @@ test('four internally valid announcements from years ago are stale',()=>{
   assert.equal(result.coverage.unscoreableReasons.ER1_STALE_RELEASE_WINDOW,1);
 });
 
-test('missing actuals remain missing and cannot veto scored issuers of a reviewed universe',()=>{
+test('missing actuals remain missing and cannot veto scores in the observed cohort',()=>{
   const rows=Array.from({length:100},(_,i)=>row(`T${i+1}`));
   for(let i=0;i<3;i++)rows[i]=row(`T${i+1}`,[null,null,null,null],[null,null,null,null]);
   const result=run(rows);
-  assert.equal(result.coverage.earnings,.97);
   assert.equal(result.status,'READY_SHADOW');
-  assert.equal(result.coverage.reviewedEligibleIssuers,100);
+  assert.equal(result.coverage.inputSymbols,100);
+  assert.equal(result.coverage.observedIssuers,100);
+  assert.equal(result.coverage.scoreableIssuers,97);
+  assert.equal(result.coverage.unscoreableReasons.ER1_METRIC_OBSERVATIONS_INSUFFICIENT,3);
   assert.equal(result.rankings.length,97);
   assert.equal(result.star3Count,0);
 });
 
-test('838 saved actuals within 2634 completely reviewed issuers yield 838 rankings, 1796 missing',()=>{
+test('838 simulated saved actuals and 1796 absent observations yield only 838 rankings',()=>{
   const reported=Array.from({length:838},(_,i)=>row(`A${i+1}`,[i+1,i+1,i+1,i+1]));
   const notReported=Array.from({length:2634-838},(_,i)=>({...row(`M${i+1}`),releases:[]}));
-  const result=run([...reported,...notReported],2634);
+  const result=run([...reported,...notReported]);
   assert.equal(result.status,'READY_SHADOW');
-  assert.equal(result.coverage.universe,1);
+  assert.equal(result.coverage.observedIssuers,2634);
+  assert.equal(result.coverage.inputSymbols,2634);
   assert.equal(result.coverage.scoreableIssuers,838);
-  assert.equal(result.coverage.earnings,838/2634);
   assert.equal(result.coverage.unscoreableReasons.ER1_RELEASE_HISTORY_INSUFFICIENT,1796);
   assert.equal(result.rankings.length,838);
   assert.equal(result.star3Count,42);
@@ -207,7 +206,7 @@ test('2634 synthetic issuers: 97-point threshold, loss-maker and missing-data st
     const result=run(sample);
     assert.equal(result.status,'READY_SHADOW');
     assert.equal(result.star3Count,132);
-    assert.equal(result.coverage.earnings,1);
+    assert.equal(result.coverage.scoreableIssuers,n);
   }
   const loss=base.map((r,i)=>i===n-1?row(`S${i+1}`,[n,n,n,n],[-1,-1,-1,-1]):r);
   assert.equal(run(loss).star3Count,131);
@@ -215,11 +214,10 @@ test('2634 synthetic issuers: 97-point threshold, loss-maker and missing-data st
   assert.equal(run(equal).star3Count,0);
 });
 
-test('the mandatory 98% approved-population gate cannot be weakened via options',()=>{
-  assert.throws(()=>scoreER1Issuers([row('AAA')],{
-    asOf:'2026-11-02',expectedEligibleIssuers:100,minCoverage:.2,
-  }),/ER1_INPUT_CONFIG_INVALID/);
-  const overflow=run([row('AAA'),row('BBB')],1);
-  assert.equal(overflow.status,'BLOCKED');
-  assert.equal(overflow.reason,'ER1_APPROVED_UNIVERSE_INCOMPLETE');
+test('no invented market denominator or roster gate; empty cohort fails closed',()=>{
+  const observed=run([row('AAA'),row('BBB')]);
+  assert.equal(observed.status,'READY_SHADOW');
+  assert.deepEqual(Object.keys(observed.coverage).sort(),
+    ['inputSymbols','observedIssuers','scoreableIssuers','unscoreableReasons'].sort());
+  assert.throws(()=>run([]),/ER1_INPUT_CONFIG_INVALID/);
 });
