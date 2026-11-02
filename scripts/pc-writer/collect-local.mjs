@@ -42,7 +42,7 @@ export async function collectLocal(base,{lane='core',importOnly=false,job=null}=
    // Independent calendar failures cannot block market collection/publication.
    try{releaseCalendar=await collectReleaseCalendar(core,{fetchImpl:globalThis.fetch});}catch{releaseCalendar={status:'FAILED_PRESERVE_EXISTING',providerRequests:0};}
    try{
-    sectorFearGreedEtf=await collectSectorFearGreedR3EtfIncremental(base,{fetchImpl:globalThis.fetch,now:Date.now()});
+    sectorFearGreedEtf=await collectSectorFearGreedR3EtfIncremental(base,{fetchImpl:globalThis.fetch,fetchAlreadyQuotaProtected:true,now:Date.now()});
    }catch(error){
     sectorFearGreedEtf={status:'FAILED_PRESERVE_EXISTING',providerRequests:0,code:/^[A-Z0-9_:.-]+$/.test(error?.code??error?.message??'')?(error.code??error.message):'SECTOR_FEAR_GREED_R3_ETF_COLLECTION_FAILED'};
    }

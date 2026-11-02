@@ -36,15 +36,15 @@ try {
 - `alpaca-quota-reservation.lock`: Alpaca 전용 아주 짧은 예약 잠금. 기존 `local-cycle.lock`, Task, PID, 예약 주기와 무관하다. 잠금 소유 PID가 종료됐음이 확인되고 5분 이상 오래된 경우만 회수한다. 상태가 불명확하면 요청을 중단한다.
 - `asset-r10-alpaca/incremental-progress.json`: R10의 미완료 페이지 이어받기용 로컬 전송 제어 파일. 확정 점수의 입력이 아니며, 전체 유효 그룹을 완료하기 전 `incremental-checkpoint.json`의 `through`를 전진시키지 않는다.
 
-## 호출 경로 및 2026-11-02 섹터 연결 후보
+## 호출 경로 및 2026-11-02 독립 CLI 보완
 
-| 경로 | `main` PR #953 기준 | 이번 작업 브랜치 후보 |
+| 경로 | `main` 반영 상태 | 이번 독립 CLI 보완 |
 |---|---|---|
-| `alpaca-incremental.mjs` | 공통 quotaFetch 연결됨 | 기존 R10 보호 코드 재사용 |
-| `sector-fear-greed-r3-etf-incremental.mjs` | `collect-local.mjs`의 래핑된 fetch를 받는 경로에서만 보호 | 이 경로는 중복 래핑하지 않음 |
-| `sector-provisional-cycle.mjs` | 별도 Node 프로세스의 직접 Alpaca fetch로 **미연결** | 승인된 동일 `base`와 `mode:'enforce'`로 보호 연결, 429/guard는 `DEFERRED_QUOTA` |
+| `alpaca-incremental.mjs` | PR #953: 공통 quotaFetch 연결 | 재사용, 변경 없음 |
+| `sector-provisional-cycle.mjs` | PR #954: 독립 Node quotaFetch 연결 | 재사용, 변경 없음 |
+| `sector-fear-greed-r3-etf-incremental.mjs` | `collect-local.mjs`가 전달한 래핑 fetch 경로만 보호 | 독립 CLI 직접 실행도 같은 `base`의 `mode:'enforce'` 예약. `collect-local`은 `fetchAlreadyQuotaProtected:true`로 중복 예약 방지 |
 
-이 표의 마지막 열은 `codex/api-site-integration-r1-20261026` 작업 사본의 코드·모의시험 상태다. **해당 변경이 최신 `main`과 Windows PC에 반영됐다는 뜻은 아니다.** 다른 담당자의 독립 수집·연구 호출도 전수 확인해야 한다.
+PR #953·#954는 `main` 반영 완료이며, 마지막 열의 ETF 독립 CLI 보완은 별도 선별 작업이다. **`main` 반영과 실제 Windows PC 승인 source 배포는 별개**다. 독립 실행은 `ZGMINI_PC_HOME`이 운영 Core와 같은 승인 루트를 가리키는지 확인해야 한다. 미설정 시 구형 홈 기본 경로로 돌아갈 수 있으므로 그 상태로 계정 전체 보호 PASS를 선언하지 않는다. 다른 담당자의 독립 수집·연구 호출도 전수 확인해야 한다.
 
 ## Core 운영 방침 추가 게이트 — 실행기·수집기·계정 한도 분리
 
@@ -57,7 +57,8 @@ try {
 ## 검증 및 단계 구분
 
 - 오프라인: 기존 quota 회귀시험과 Alpaca 독립 1/2/3프로세스 부하시험, 429·서버 헤더·120페이지 이후 121페이지 재개를 모두 검증한다.
-- 이번 섹터 연결 후보: `tests/sector-provisional-quota.test.mjs`의 모의시험 4개는 140회 공유 상한 소진 → 추가 호출 0회, 429 → `DEFERRED_QUOTA`, 전송 뒤 원장 실패 → 호출 1회로 집계, 기타 503 → 기존 확정치 보존을 검증한다. 실제 Windows PC·Alpaca 호출은 0이다.
+- PR #954 연결: `tests/sector-provisional-quota.test.mjs`의 모의시험 4개는 140회 공유 상한 소진 → 추가 호출 0회, 429 → `DEFERRED_QUOTA`, 전송 뒤 원장 실패 → 호출 1회로 집계, 기타 503 → 기존 확정치 보존을 검증한다.
+- 추가 ETF 독립 CLI 보완: `tests/sector-etf-quota.test.mjs`는 140회 차단, 429 이월, 전송 후 원장 실패 및 `collect-local`의 중복 예약 방지 4개를 임시 루트에서 검증한다. 실제 Windows PC·Alpaca 호출은 0이다.
 - GitHub 작업 브랜치 커밋만으로 실제 Windows PC 코드가 교체되거나 Alpaca 계정 잔여가 보호됐다고 판정하지 않는다.
 - 다음 승인된 PC 적용·원격 연결 후에는 API 호출량/잔여 헤더, 60초 원장, 확정 원자료 보존, 기존 Core Task 주기, 다음 정규 실행을 분리 검증한다.
 
