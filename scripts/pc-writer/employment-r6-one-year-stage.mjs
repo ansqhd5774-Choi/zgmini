@@ -20,23 +20,57 @@ import {locateEmploymentR6Candidate} from "./employment-r6-candidate-locator.mjs
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),"../..");
 const safeDate=value=>typeof value==="string"&&/^\d{4}-\d{2}-\d{2}$/.test(value);
 const nowIso=()=>new Date().toISOString();
+const candidateBasename="EMPLOYMENT_R6_CANDIDATE.sqlite";
+
+// An explicit candidate may live beside a prior isolated collection CMD. Its
+// location is supplied by the operator, never found by scanning arbitrary
+// drives. Validate identity before any read, including Core aliases/hardlinks.
+function validateExternalCandidatePath(candidatePath,coreDbPath){
+  if(typeof candidatePath!=="string"||!path.isAbsolute(candidatePath)
+    ||path.basename(candidatePath)!==candidateBasename){
+    throw Error("EXTERNAL_CANDIDATE_PATH_INVALID");
+  }
+  try{
+    const candidateReal=fs.realpathSync.native(candidatePath);
+    const coreReal=fs.realpathSync.native(coreDbPath);
+    const candidateStat=fs.statSync(candidateReal,{bigint:true});
+    const coreStat=fs.statSync(coreReal,{bigint:true});
+    if(!candidateStat.isFile()||!coreStat.isFile()
+      ||path.basename(candidateReal)!==candidateBasename){
+      throw Error("EXTERNAL_CANDIDATE_FILE_INVALID");
+    }
+    if(candidateReal===coreReal
+      ||(candidateStat.dev===coreStat.dev&&candidateStat.ino===coreStat.ino)){
+      throw Error("CANDIDATE_CORE_FILE_ALIAS_FORBIDDEN");
+    }
+  }catch(error){
+    if(/^(EXTERNAL_CANDIDATE_FILE_INVALID|CANDIDATE_CORE_FILE_ALIAS_FORBIDDEN)$/.test(error?.message))throw error;
+    // OS errors may embed the private PC path; never propagate their message.
+    throw Error("EXTERNAL_CANDIDATE_FILE_UNAVAILABLE");
+  }
+}
 
 export function optionsFrom(args){
   const result={publish:false,discoverApprovedCandidate:false};
+  const seen=new Set();
   for(let i=0;i<args.length;i++){
     const token=args[i];
+    if(seen.has(token))throw Error("DUPLICATE_ARGUMENT");
+    seen.add(token);
     if(token==="--publish"){result.publish=true;continue;}
     if(token==="--discover-approved-candidate"){result.discoverApprovedCandidate=true;continue;}
-    if(["--db","--output-dir","--as-of","--candidate-db"].includes(token)&&args[i+1]){
-      result[token==="--db"?"dbPath":token==="--output-dir"?"outputDir":token==="--candidate-db"?"candidateDbPath":"asOfDate"]=args[++i];
+    if(["--db","--output-dir","--as-of","--candidate-db","--candidate-db-external"].includes(token)&&args[i+1]){
+      result[token==="--db"?"dbPath":token==="--output-dir"?"outputDir":token==="--candidate-db"?"candidateDbPath":token==="--candidate-db-external"?"candidateDbExternalPath":"asOfDate"]=args[++i];
       continue;
     }
     throw Error("INVALID_ARGUMENT");
   }
   // An isolated research candidate is never an approved PC publication source.
   // Reject the combination before opening either database or contacting D1.
-  if(result.publish&&(result.candidateDbPath||result.discoverApprovedCandidate))throw Error("CANDIDATE_PUBLICATION_NOT_APPROVED");
-  if(result.candidateDbPath&&result.discoverApprovedCandidate)throw Error("CANDIDATE_DISCOVERY_ARGUMENT_CONFLICT");
+  if(result.publish&&(result.candidateDbPath||result.candidateDbExternalPath||result.discoverApprovedCandidate))throw Error("CANDIDATE_PUBLICATION_NOT_APPROVED");
+  if([result.candidateDbPath,result.candidateDbExternalPath,result.discoverApprovedCandidate].filter(Boolean).length>1){
+    throw Error("CANDIDATE_DISCOVERY_ARGUMENT_CONFLICT");
+  }
   if(typeof result.dbPath!=="string"||!path.isAbsolute(result.dbPath)
     ||typeof result.outputDir!=="string"||!path.isAbsolute(result.outputDir)
     ||!fs.existsSync(result.outputDir)||!fs.statSync(result.outputDir).isDirectory()){
@@ -49,13 +83,19 @@ export function optionsFrom(args){
   }
   if(result.asOfDate>nowIso().slice(0,10))throw Error("FUTURE_AS_OF_FORBIDDEN");
   if(result.candidateDbPath){
-    const expected=path.join(result.outputDir,"EMPLOYMENT_R6_CANDIDATE.sqlite");
+    const expected=path.join(result.outputDir,candidateBasename);
     if(!path.isAbsolute(result.candidateDbPath)
       ||path.normalize(result.candidateDbPath)!==path.normalize(expected)
       ||!fs.existsSync(expected)||!fs.statSync(expected).isFile()
       ||fs.realpathSync(expected)===fs.realpathSync(result.dbPath)){
       throw Error("ISOLATED_CANDIDATE_DB_REQUIRED");
     }
+  }
+  if(result.candidateDbExternalPath){
+    validateExternalCandidatePath(result.candidateDbExternalPath,result.dbPath);
+    result.candidateDbPath=result.candidateDbExternalPath;
+    result.candidateDbExternal=true;
+    delete result.candidateDbExternalPath;
   }
   return result;
 }
@@ -69,8 +109,9 @@ function readAsOf(db,knownAsOf){
 export async function stageEmploymentR6OneYear({dbPath,asOfDate,candidateDbPath=null}){
   if(!fs.existsSync(dbPath)||!fs.statSync(dbPath).isFile())throw Error("PC_SOURCE_DB_NOT_FOUND");
   const db=new DatabaseSync(dbPath,{readOnly:true});
-  const candidate=candidateDbPath?new DatabaseSync(candidateDbPath,{readOnly:true}):null;
+  let candidate=null;
   try{
+    candidate=candidateDbPath?new DatabaseSync(candidateDbPath,{readOnly:true}):null;
     const asOfEnd=asOfDate+"T23:59:59.999Z";
     const current=nowIso();
     const knownAsOf=asOfEnd<current?asOfEnd:current;
@@ -191,6 +232,10 @@ if(process.argv[1]&&import.meta.url===pathToFileURL(process.argv[1]).href){
   try{
     args=optionsFrom(process.argv.slice(2));
     if(!args.publish){
+      if(args.candidateDbExternal){
+        candidateDiscoveryStatus="EXPLICIT_CANDIDATE_READONLY";
+        candidateDiscoveryStep="EXTERNAL_CANDIDATE_FILE_VALIDATED";
+      }
       if(args.discoverApprovedCandidate){
         const discovery=locateEmploymentR6Candidate({
           outputDir:args.outputDir,coreDbPath:args.dbPath,
@@ -209,7 +254,14 @@ if(process.argv[1]&&import.meta.url===pathToFileURL(process.argv[1]).href){
       const {remote,dbId}=pcPublisher(args.dbPath);
       publication=await publishEmploymentR6OneYear({body,remote,dbId});
     }
-  }catch(error){problem=error;process.exitCode=2;}
+  }catch(error){
+    // SQLite or filesystem exceptions can contain absolute source paths.
+    // External candidate errors must be a stable, path-free diagnostic code.
+    const message=String(error?.message??"");
+    problem=args?.candidateDbExternal&&!/^[A-Z0-9_]+$/.test(message)
+      ?Error("EXTERNAL_CANDIDATE_READ_FAILED"):error;
+    process.exitCode=2;
+  }
   if(args?.outputDir){
     try{
       const paths=saveReport(args.outputDir,body,publication,problem,{
