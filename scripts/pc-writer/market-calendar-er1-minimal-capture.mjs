@@ -44,14 +44,46 @@ function configuredKey(pcHome,env){
 
 function savedDayFile(dir,day){return path.join(dir,day+'.json')}
 
+const TICKER=/^[A-Z0-9][A-Z0-9.\-]{0,11}$/;
+const finite=x=>typeof x==='number'&&Number.isFinite(x);
+
+// Diagnostics are metadata ONLY: never record a symbol, raw actual, or vendor body.
+// An unsupported day remains privately saved and is excluded from score inputs.
+function dayDiagnostics(saved,day,asOf){
+  let failure=null;
+  try{indexSavedER1CalendarDays([saved],{asOf});}
+  catch(error){failure=/^ER1_[A-Z0-9_]+$/.test(error?.message??'')?
+    error.message:'ER1_DAY_UNEXPECTED_INVALID';}
+  if(!failure)return {valid:true};
+  const counts={events:0,invalidSymbols:0,missingEPSFields:0,
+    missingRevenueFields:0,invalidEPSValues:0,invalidRevenueValues:0,
+    malformedEvents:0};
+  for(const group of ['pre','after','notSupplied']){
+    const rows=saved?.body?.[group];
+    if(!Array.isArray(rows))continue;
+    for(const event of rows){
+      counts.events++;
+      if(!event||typeof event!=='object'||Array.isArray(event)){
+        counts.malformedEvents++;continue;
+      }
+      if(!TICKER.test(event.symbol))counts.invalidSymbols++;
+      if(!Object.hasOwn(event,'eps'))counts.missingEPSFields++;
+      if(!Object.hasOwn(event,'revenue'))counts.missingRevenueFields++;
+      if(event.eps!==null&&!finite(event.eps))counts.invalidEPSValues++;
+      if(event.revenue!==null&&(!finite(event.revenue)||event.revenue<0))
+        counts.invalidRevenueValues++;
+    }
+  }
+  return {valid:false,date:day,code:failure,...counts};
+}
+
 function savedData(file,day,asOf){
   const stat=fs.statSync(file);
   if(stat.size<20||stat.size>MAX_RESPONSE_BYTES)stop('ER1_SAVED_DAY_SIZE_INVALID');
   let saved;
   try{saved=JSON.parse(fs.readFileSync(file,'utf8'));}catch{stop('ER1_SAVED_DAY_JSON_INVALID')}
   if(saved?.body?.date!==day)stop('ER1_SAVED_DAY_MISMATCH');
-  indexSavedER1CalendarDays([saved],{asOf});
-  return saved;
+  return {saved,diagnostics:dayDiagnostics(saved,day,asOf)};
 }
 
 /** Manual, private, bounded run. A read-only verified universe is still mandatory
@@ -62,7 +94,8 @@ export async function runER1MinimalCapture({pcHome=DEFAULT_PC_HOME,now=Date.now(
   const report={audit:'ER1_MINIMAL_MANUAL_CAPTURE_20261102',status:'STARTED',
     asOf:plan.asOf,targetDates:plan.dates,providerRequests:0,providerRetries:0,
     dbWrites:0,d1Writes:0,coreChanges:0,scheduleChanges:0,
-    newDayFiles:0,retainedDayFiles:0,savedDayCount:0,
+    newDayFiles:0,retainedDayFiles:0,savedDayCount:0,verifiedDayCount:0,
+    quarantinedDays:[],
     symbolsWithEPS:0,symbolsWithRevenue:0,uniqueSymbolsWithBoth:0,
     approvedUniverseVerified:false,publicReady:false};
   if(!fs.existsSync(pcHome))return {...report,status:'ER1_PC_HOME_MISSING_STOP'};
@@ -102,22 +135,11 @@ export async function runER1MinimalCapture({pcHome=DEFAULT_PC_HOME,now=Date.now(
       try{body=JSON.parse(raw);}catch{stop('ER1_PROVIDER_JSON_INVALID')}
       if(body?.date!==day)stop('ER1_PROVIDER_DAY_MISMATCH');
       const storedAt=new Date(now).toISOString(),saved={storedAt,body};
-      indexSavedER1CalendarDays([saved],{asOf:plan.asOf});
-      // Exclusive create only, in an isolated private directory. No overwrite.
+      // Store vendor response once, BEFORE row validation. Malformed rows will
+      // be quarantined by metadata and not silently refetched or scored.
       fs.writeFileSync(file,JSON.stringify(saved)+'\n',{encoding:'utf8',flag:'wx'});
       report.newDayFiles++;
     }
-    const all=plan.dates.map(day=>savedData(savedDayFile(dir,day),day,plan.asOf));
-    const index=indexSavedER1CalendarDays(all,{asOf:plan.asOf});
-    report.savedDayCount=index.storedDayCount;
-    for(const records of Object.values(index.releasesBySymbol)){
-      const eps=records.some(x=>x.eps!==null),revenue=records.some(x=>x.revenue!==null);
-      if(eps)report.symbolsWithEPS++;
-      if(revenue)report.symbolsWithRevenue++;
-      if(eps&&revenue)report.uniqueSymbolsWithBoth++;
-    }
-    report.status=report.uniqueSymbolsWithBoth?'ER1_PRIVATE_SAMPLE_SAVED':
-      'ER1_PRIVATE_SAMPLE_NO_ACTUALS';
   }catch(error){
     // Error messages are deliberately reduced to known enums; never log URLs/keys.
     const label=String(error?.message??'');
@@ -126,6 +148,30 @@ export async function runER1MinimalCapture({pcHome=DEFAULT_PC_HOME,now=Date.now(
     try{fs.closeSync(fd);}catch{report.status='ER1_MANUAL_LOCK_RELEASE_FAILED'}
     try{fs.unlinkSync(lock);}catch{report.status='ER1_MANUAL_LOCK_RELEASE_FAILED'}
   }
+  // Read existing private snapshots only. Even a partially interrupted run
+  // reports saved data; no raw fields or symbol identifiers leave the PC.
+  try{
+    const verified=[];
+    for(const day of plan.dates){
+      const file=savedDayFile(dir,day);
+      if(!fs.existsSync(file))continue;
+      report.savedDayCount++;
+      const {saved,diagnostics}=savedData(file,day,plan.asOf);
+      if(diagnostics.valid)verified.push(saved);
+      else report.quarantinedDays.push(diagnostics);
+    }
+    report.verifiedDayCount=verified.length;
+    const index=indexSavedER1CalendarDays(verified,{asOf:plan.asOf});
+    for(const records of Object.values(index.releasesBySymbol)){
+      const eps=records.some(x=>x.eps!==null),revenue=records.some(x=>x.revenue!==null);
+      if(eps)report.symbolsWithEPS++;
+      if(revenue)report.symbolsWithRevenue++;
+      if(eps&&revenue)report.uniqueSymbolsWithBoth++;
+    }
+    if(report.status==='STARTED')report.status=report.quarantinedDays.length?
+      'ER1_PRIVATE_SAMPLE_PARTIAL':report.uniqueSymbolsWithBoth?
+        'ER1_PRIVATE_SAMPLE_SAVED':'ER1_PRIVATE_SAMPLE_NO_ACTUALS';
+  }catch{if(report.status==='STARTED')report.status='ER1_SAVED_SAMPLE_VALIDATION_STOP'}
   return report;
 }
 
@@ -137,7 +183,8 @@ if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.ur
     fs.writeFileSync(resultFile,Object.entries(report).map(([k,v])=>
       `${k.toUpperCase()}=${JSON.stringify(v)}`).join('\r\n')+'\r\n','utf8');
     console.log('STATUS='+report.status+'\nRESULT_FILE='+resultFile);
-    if(report.status!=='ER1_PRIVATE_SAMPLE_SAVED'&&
+    if(report.status!=='ER1_PRIVATE_SAMPLE_PARTIAL'&&
+      report.status!=='ER1_PRIVATE_SAMPLE_SAVED'&&
       report.status!=='ER1_PRIVATE_SAMPLE_NO_ACTUALS')process.exitCode=1;
   }
 }
