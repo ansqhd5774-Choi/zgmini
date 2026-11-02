@@ -3,6 +3,7 @@
 import {useId, useLayoutEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type PointerEvent as ReactPointerEvent} from 'react';
 import styles from './market-breadth-strip.module.css';
 import {getMarketPeriodConfig, getMarketPeriodDays, type MarketPeriod} from './market-card-shared';
+import {trailingFiveSessionBreadthMean} from './market-breadth-trend';
 
 export type MarketBreadthPeriod = MarketPeriod | '1D';
 
@@ -75,14 +76,29 @@ export function MarketBreadthHistoryChart({history, period}: {history: UsBreadth
 
   const scaleX = (day: string) => maxTime <= minTime ? (plot.left + plot.right) / 2 : plot.left + (dateMs(day) - minTime) / (maxTime - minTime) * (plot.right - plot.left);
   const net = (record: UsBreadthHistoryRecord) => 100 * (record.counts.rising - record.counts.falling) / record.eligibleCount;
-  const bound = Math.min(100, Math.max(20, Math.ceil(Math.max(...records.map(record => Math.abs(net(record)))) / 10) * 10));
+  // The rolling value is derived from full history before filtering the viewed period.
+  const fiveSessionMean = trailingFiveSessionBreadthMean(history.records.map(record => ({date: record.observationDate, value: net(record)})));
+  const trendPoints = records.flatMap(record => {
+    const value = fiveSessionMean.get(record.observationDate);
+    return value === undefined ? [] : [{date: record.observationDate, value}];
+  });
+  const bound = Math.min(100, Math.max(20, Math.ceil(Math.max(...records.map(record => Math.abs(net(record))), ...trendPoints.map(point => Math.abs(point.value))) / 10) * 10));
   const scaleY = (value: number) => plot.top + (bound - value) / (2 * bound) * (plot.bottom - plot.top);
+  const trendPaths: string[] = [];
+  let previousTrendDate: string | null = null;
+  for (const point of trendPoints) {
+    const command = previousTrendDate !== null && dateMs(point.date) - dateMs(previousTrendDate) <= 4 * dayMs ? 'L' : 'M';
+    if (command === 'M') trendPaths.push('');
+    trendPaths[trendPaths.length - 1] += `${command}${scaleX(point.date).toFixed(2)},${scaleY(point.value).toFixed(2)} `;
+    previousTrendDate = point.date;
+  }
   const baseline = scaleY(0);
   const barWidth = Math.min(8, Math.max(1.25, maxTime > minTime ? 0.7 * (plot.right - plot.left) * dayMs / (maxTime - minTime) : 8));
   const at = Math.min(selected ?? records.length - 1, records.length - 1);
   const focused = records[at];
   const x = scaleX(focused.observationDate);
   const focusedNet = net(focused);
+  const focusedMean = fiveSessionMean.get(focused.observationDate);
   const latestNet = net(records[records.length - 1]);
   const asPct = (record: UsBreadthHistoryRecord, key: keyof UsBreadthHistoryRecord['counts']) => 100 * record.counts[key] / record.eligibleCount;
 
@@ -135,11 +151,12 @@ export function MarketBreadthHistoryChart({history, period}: {history: UsBreadth
     <div className={styles.historyNetHeading}><strong>일별 상승−하락 우세도</strong>
       <span className={latestNet > 0 ? styles.up : latestNet < 0 ? styles.down : styles.flat}>{latestNet > 0 ? '▲ 상승 우세' : latestNet < 0 ? '▼ 하락 우세' : '― 균형'} {latestNet > 0 ? '+' : ''}{latestNet.toFixed(1)}%p</span>
     </div>
+    <div className={styles.historyTrendLegend}><span aria-hidden="true"/>5거래일 평균 · 후행 SMA</div>
     <div className={styles.historyPlot}>
       <div className={styles.historyPercentAxis} aria-hidden="true"><span>+{bound}</span><span>0%p</span><span>−{bound}</span></div>
       <div className={styles.historySvgWrap} ref={plotRef}>
         <svg viewBox="0 0 600 160" preserveAspectRatio="none" role="img" tabIndex={0}
-          aria-label={`S&P 500 일별 상승·하락 우세도 ${periodLabel} 이력. 저장된 ${records.length}개 거래일. 0%p 위는 상승 우세, 아래는 하락 우세입니다. 마우스 또는 터치로 날짜별 수치를 확인하고, 키보드 좌우 방향키로 이동할 수 있습니다.`}
+          aria-label={`S&P 500 일별 상승·하락 우세도 ${periodLabel} 이력과 5거래일 후행 단순이동평균. 저장된 ${records.length}개 거래일. 0%p 위는 상승 우세, 아래는 하락 우세입니다. 마우스 또는 터치로 날짜별 수치를 확인하고, 키보드 좌우 방향키로 이동할 수 있습니다.`}
           aria-describedby={selected !== null ? tooltipId : undefined}
           onPointerEnter={selectAtPointer}
           onPointerMove={selectAtPointer}
@@ -160,12 +177,15 @@ export function MarketBreadthHistoryChart({history, period}: {history: UsBreadth
             return <rect key={record.observationDate} x={scaleX(record.observationDate) - barWidth / 2} y={Math.min(y, baseline)} width={barWidth}
               height={Math.max(1, Math.abs(y - baseline))} className={value > 0 ? styles.historyNetPositiveBar : value < 0 ? styles.historyNetNegativeBar : styles.historyNetNeutralBar}/>;
           })}
+          {trendPaths.map((path, index) => <path key={index} d={path.trim()} className={styles.historyTrendLine} pointerEvents="none"/>)}
+          {trendPoints.length === 1 && <circle cx={scaleX(trendPoints[0].date)} cy={scaleY(trendPoints[0].value)} r="3" className={styles.historyTrendDot} pointerEvents="none"/>}
           <line x1={x} x2={x} y1={plot.top} y2={plot.bottom} className={styles.historyCursor}/>
           <circle cx={x} cy={scaleY(focusedNet)} r="4" className={focusedNet > 0 ? styles.historyRisingDot : focusedNet < 0 ? styles.historyFallingDot : styles.historyNetNeutralDot}/>
         </svg>
         {selected !== null && <div id={tooltipId} ref={tooltipRef} className={styles.historyTooltip} role="status">
           <time dateTime={focused.observationDate}>{dateLabel(focused.observationDate)}</time>
           <div><span className={focusedNet > 0 ? styles.up : focusedNet < 0 ? styles.down : styles.flat}>{focusedNet > 0 ? '▲ 상승 우세' : focusedNet < 0 ? '▼ 하락 우세' : '― 균형'}</span><strong>{focusedNet > 0 ? '+' : ''}{focusedNet.toFixed(1)}%p</strong></div>
+          <div><span className={styles.historyTrendValue}>5거래일 평균</span><strong>{focusedMean === undefined ? '자료 부족' : `${focusedMean > 0 ? '+' : ''}${focusedMean.toFixed(1)}%p`}</strong></div>
           <div><span className={styles.up}>▲ 상승</span><strong>{countLabel.format(focused.counts.rising)}개 ({asPct(focused, 'rising').toFixed(1)}%)</strong></div>
           <div><span className={styles.flat}>― 보합</span><strong>{countLabel.format(focused.counts.unchanged)}개 ({asPct(focused, 'unchanged').toFixed(1)}%)</strong></div>
           <div><span className={styles.down}>▼ 하락</span><strong>{countLabel.format(focused.counts.falling)}개 ({asPct(focused, 'falling').toFixed(1)}%)</strong></div>

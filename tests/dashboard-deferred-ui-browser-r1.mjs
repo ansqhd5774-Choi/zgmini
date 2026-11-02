@@ -95,6 +95,8 @@ try{
    assert.ok(await detail.locator('rect[class*="historyNetNegativeBar"]').count()>0,'Red bars show falling dominance');
    assert.match(await detail.locator('[class*="historyNetHeading"]').innerText(),/하락 우세 -18\.0%p/,'Latest net dominance is immediately readable above the chart');
    assert.equal(await detail.locator('line[class*="historyMidline"]').count(),1,'One visible zero baseline separates positive and negative dominance');
+   assert.match(await detail.locator('[class*="historyTrendLegend"]').innerText(),/5거래일 평균 · 후행 SMA/,'Five-session trailing SMA is identified');
+   assert.ok(await detail.locator('path[class*="historyTrendLine"]').count()>0,'Market breadth bars have a moving-average overlay');
    assert.equal(await detail.locator('path[class*="historyRisingLine"],path[class*="historyFallingLine"]').count(),0,'Old opposing percentage lines are removed');
    const windows=[['3M',93,'3개월'],['1M',31,'1개월'],['1W',7,'1주'],['1D',1,'1일'],['6M',186,'6개월'],['1Y',366,'1년'],['3M',93,'3개월']];
    for(const [period,days,label] of windows){
@@ -108,7 +110,14 @@ try{
     const aria=await breadthSvg.getAttribute('aria-label');
     assert.ok(aria?.includes('상승·하락 우세도')&&aria.includes(`${label} 이력`)&&aria.includes(`저장된 ${days}개 거래일`),period+' net breadth chart window and label');
     assert.equal(await netBars.count(),days,period+' renders one signed net bar per stored daily observation');
-    if(period==='1D')assert.equal(await detail.locator('rect[class*="historyNetNegativeBar"]').count(),1,'Latest day is negative even with unchanged issues present');
+    if(period==='1D'){
+     assert.equal(await detail.locator('rect[class*="historyNetNegativeBar"]').count(),1,'Latest day is negative even with unchanged issues present');
+     assert.equal(await detail.locator('circle[class*="historyTrendDot"]').count(),1,'One-day period shows its five-session average as a dot');
+     await breadthSvg.focus();
+     const latestFive=breadthHistory.records.slice(-5);
+     const expectedMean=latestFive.reduce((sum,record)=>sum+100*(record.counts.rising-record.counts.falling)/record.eligibleCount,0)/5;
+     assert.ok((await detail.locator('[class*="historyTooltip"] div').filter({hasText:'5거래일 평균'}).innerText()).includes(`${expectedMean>0?'+':''}${expectedMean.toFixed(1)}%p`),'One-day mean uses five previous sessions');
+    }
    }
    assert.equal(breadthHistoryRequests,1,'Period switching filters fetched 1Y history without new API calls');
    await breadthSvg.hover({position:{x:140,y:65}});
@@ -117,6 +126,7 @@ try{
    assert.match(await netTooltip.innerText(),/우세/,'Pointer tooltip announces dominance');
    assert.match(await netTooltip.innerText(),/[+-]?18\.0%p/,'Tooltip calculates net from raw counts with unchanged issues in denominator');
    assert.match(await netTooltip.innerText(),/보합/,'Tooltip retains unchanged issue detail');
+   assert.match(await netTooltip.innerText(),/5거래일 평균/,'Pointer tooltip retains the five-session trend');
    console.log('PASS net breadth zero-baseline bars, pointer tooltip and 1D/1W/1M/3M/6M/1Y periods with one history request');
   }
 
