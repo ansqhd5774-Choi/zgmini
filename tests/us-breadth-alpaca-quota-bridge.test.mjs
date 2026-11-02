@@ -3,8 +3,12 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import {spawn,spawnSync} from 'node:child_process';
+import {fileURLToPath} from 'node:url';
 import {createQuotaFetch} from '../scripts/pc-writer/quota-fetch.mjs';
 import {collectUsBreadthProvisional,US_PROVISIONAL_FILE} from '../scripts/pc-writer/us-breadth-provisional-cycle.mjs';
+import {collectSectorFearGreedR3EtfIncremental} from '../scripts/pc-writer/sector-fear-greed-r3-etf-incremental.mjs';
+import {SECTOR_FEAR_GREED_R3_BENCHMARKS} from '../lib/market-score/sector-fear-greed-r3-rolling.mjs';
 
 const at=Date.parse('2026-10-30T14:01:00Z');
 const auth={APCA_API_KEY_ID:'MOCK_ONLY',APCA_API_SECRET_KEY:'MOCK_ONLY'};
@@ -90,4 +94,85 @@ test('nonquota Alpaca 503 keeps original failure category without updating raw',
  assert.equal(out.providerCalls,1);
  assert.deepEqual(rawAfter(base).raw,previous.raw);
  assert.deepEqual(rawAfter(base).output,previous.output);
+}));
+
+function runQuotaNode(base,attempts,mode='observe'){
+ const fixture=fileURLToPath(new URL('./fixtures/alpaca-quota-mock-process.mjs',import.meta.url));
+ return new Promise((resolve,reject)=>{
+  const child=spawn(process.execPath,[fixture,base,String(attempts),mode],
+   {windowsHide:true,stdio:['ignore','pipe','pipe']});
+  let out='',err='';
+  child.stdout.on('data',buffer=>{out+=buffer.toString();});
+  child.stderr.on('data',buffer=>{err+=buffer.toString();});
+  child.once('error',reject);
+  // 'close' waits for stdout/stderr pipes to drain; 'exit' can race the JSON.
+  child.once('close',code=>{
+   if(code!==0)return reject(Error(`ISOLATED_QUOTA_CHILD_FAILED:${code}:${err.slice(0,250)}`));
+   try{resolve(JSON.parse(out));}catch(error){reject(Error(`QUOTA_CHILD_OUTPUT_INVALID:${JSON.stringify({out,err,code})}`));}
+  });
+ });
+}
+
+test('three independent mock Node processes share 140 reservations even in observe mode',async t=>{
+ // Some restricted sandboxes return exit 0 for nested Node without executing
+ // its script. Do not report a false quota failure in that environment.
+ const probe=spawnSync(process.execPath,['--eval','process.stdout.write("NESTED_NODE_READY")'],
+  {encoding:'utf8',windowsHide:true});
+ if(probe.error?.code==='EPERM'){
+  t.skip('sandbox forbids nested Node; run three top-level mock workers');
+  return;
+ }
+ assert.ifError(probe.error);
+ assert.equal(probe.status,0);
+ assert.equal(probe.stdout,'NESTED_NODE_READY');
+ await withFixture(async base=>{
+ // Wait for every subprocess before fixture deletion, including on a child error.
+ const outcomes=await Promise.allSettled(Array.from({length:3},()=>runQuotaNode(base,180,'observe')));
+ assert.ok(outcomes.every(outcome=>outcome.status==='fulfilled'),
+  outcomes.map(outcome=>outcome.status==='rejected'?String(outcome.reason):'PASS').join('; '));
+ const nodes=outcomes.map(outcome=>outcome.value);
+ const sent=nodes.reduce((sum,item)=>sum+item.sent,0);
+ const guarded=nodes.reduce((sum,item)=>sum+item.guarded,0);
+ assert.equal(sent,140);
+ assert.equal(guarded,400);
+ assert.equal(sent+guarded,540);
+ const ledger=JSON.parse(fs.readFileSync(path.join(base,'alpaca-quota-ledger.json'),'utf8'));
+ assert.equal(ledger.requestTimes.length,140);
+ });
+});
+
+test('Alpaca is enforced at 140 even when general quota mode is observe',()=>withFixture(async base=>{
+ let sent=0;
+ const quota=createQuotaFetch({base,mode:'observe',originalFetch:async()=>{
+  sent++;return new Response(null,{status:200});
+ }});
+ for(let i=0;i<140;i++)await quota.fetch(quotaUrl);
+ await assert.rejects(quota.fetch(quotaUrl),error=>
+  error.code==='PROVIDER_QUOTA_GUARD'&&error.reason==='ALPACA_LOCAL_140');
+ assert.equal(sent,140);
+}));
+
+test('ETF Core-injected fetch is guarded, while its standalone default fetch can bypass',()=>withFixture(async base=>{
+ fs.writeFileSync(path.join(base,'providers.env'),
+  'APCA_API_KEY_ID=MOCK_ONLY\nAPCA_API_SECRET_KEY=MOCK_ONLY\n');
+ fs.writeFileSync(path.join(base,'local-sector-fear-greed-r1-iex-price-history.json'),
+  JSON.stringify({series:Object.fromEntries(SECTOR_FEAR_GREED_R3_BENCHMARKS.map(ticker=>
+   [ticker,[{date:'2026-10-29',close:100,volume:10}]]))}));
+ let sent=0;
+ const mockedHttp=async()=>{sent++;return new Response(null,{status:429});};
+ const shared=createQuotaFetch({base,mode:'observe',originalFetch:mockedHttp}).fetch;
+ // Preload through the real guard without sending any provider request.
+ const prefill=createQuotaFetch({base,mode:'observe',
+  originalFetch:async()=>new Response(null,{status:200})}).fetch;
+ for(let i=0;i<140;i++)await prefill(quotaUrl);
+ await assert.rejects(collectSectorFearGreedR3EtfIncremental(base,{fetchImpl:shared,
+  now:Date.parse('2026-11-02T13:00:00Z')}));
+ assert.equal(sent,0,'Core-injected quota wrapper must stop before provider HTTP');
+ const originalFetch=globalThis.fetch;
+ try{
+  globalThis.fetch=mockedHttp;
+  await assert.rejects(collectSectorFearGreedR3EtfIncremental(base,{
+   now:Date.parse('2026-11-02T13:00:00Z')}));
+ }finally{globalThis.fetch=originalFetch;}
+ assert.equal(sent,1,'standalone default fetch currently bypasses quota wrapper');
 }));
