@@ -70,7 +70,7 @@ test('manifest ticker path traversal and source lineage are rejected',async t=>{
  manifest.files[0].relativePath='../approved-price.json';
  fs.writeFileSync(f,JSON.stringify(manifest));
  assert.equal(verifyR10ResearchCapture({base,plan}).status,'STOP_RESEARCH_FILE_LINEAGE_INVALID');
- manifest.files[0].relativePath='TWLO/page-001.json';
+ manifest.files[0].relativePath=path.join('TWLO','page-001.json');
  manifest.sourceRightsEvidenceSha256='f'.repeat(64);
  fs.writeFileSync(f,JSON.stringify(manifest));
  assert.equal(verifyR10ResearchCapture({base,plan}).status,'STOP_RESEARCH_MANIFEST_INVALID');
@@ -96,7 +96,64 @@ test('proof plan substitution cannot read a different captured identity',async t
  const base=fixture(t);await stage(base);
  const forged={...plan,provenance:{...plan.provenance,
   providerPolicy:{...plan.provenance.providerPolicy,rightsEvidenceSha256:'f'.repeat(64)}}};
- assert.equal(verifyR10ResearchCapture({base,plan:forged}).status,'STOP_RESEARCH_MANIFEST_INVALID');
+ assert.equal(verifyR10ResearchCapture({base,plan:forged}).status,'STOP_RESEARCH_PLAN_SNAPSHOT_MISMATCH');
+});
+
+test('immutable plan snapshot allows a later offline cycle to verify without the original plan',async t=>{
+ const base=fixture(t),capture=await stage(base);
+ assert.equal(capture.status,'RESEARCH_CAPTURED_NOT_PROMOTABLE');
+ const manifest=JSON.parse(fs.readFileSync(path.join(research(base),'manifest.json'),'utf8'));
+ assert.equal(manifest.planSnapshot.auditDigest,plan.auditDigest);
+ assert.equal(manifest.planSnapshot.requests[0].params.asof,'-');
+ assert.equal(manifest.planSnapshot.expectedSessions.length,200);
+ assert.equal(manifest.planSnapshot.provenance.providerPolicy.approvedRequestCap,2);
+ assert.equal(Object.hasOwn(manifest.planSnapshot,'credentials'),false);
+ assert.equal(Object.hasOwn(manifest.planSnapshot,'authorization'),false);
+ assert.equal(JSON.stringify(manifest).includes('SECRET_KEY_ID'),false);
+ assert.equal(JSON.stringify(manifest).includes('SECRET_KEY_VALUE'),false);
+ const verified=verifyR10ResearchCapture({base,auditDigest:plan.auditDigest});
+ assert.equal(verified.status,'STAGED_RESEARCH_READBACK_VERIFIED_NOT_PROMOTABLE');
+ assert.equal(verified.manifestSha256,capture.manifestSha256);
+ assert.equal(verified.canPromote,false);assert.equal(verified.d1Writes,0);
+ assert.equal(verified.providerRequests,0);
+ assert.equal(verifyR10ResearchCapture({base,plan,auditDigest:'f'.repeat(64)}).status,
+  'STOP_RESEARCH_READBACK_SCOPE_INVALID');
+});
+
+test('plan snapshot digest tampering is detected independently of price-page hashes',async t=>{
+ const base=fixture(t);await stage(base);
+ const f=path.join(research(base),'manifest.json');
+ const manifest=JSON.parse(fs.readFileSync(f,'utf8'));
+ manifest.planSnapshot.provenance.providerPolicy.rightsEvidenceSha256='f'.repeat(64);
+ fs.writeFileSync(f,JSON.stringify(manifest));
+ const r=verifyR10ResearchCapture({base,auditDigest:plan.auditDigest});
+ assert.equal(r.status,'STOP_RESEARCH_PLAN_SNAPSHOT_HASH_MISMATCH');
+ assert.equal(r.canPromote,false);
+});
+
+test('forged plan snapshot with recomputed SHA fails semantic reconstruction',async t=>{
+ const base=fixture(t);await stage(base);
+ const f=path.join(research(base),'manifest.json');
+ const manifest=JSON.parse(fs.readFileSync(f,'utf8'));
+ manifest.planSnapshot.requests[0].params.asof='2026-11-02';
+ const {createHash}=await import('node:crypto');
+ manifest.planSnapshotSha256=createHash('sha256').update(JSON.stringify(manifest.planSnapshot)).digest('hex');
+ fs.writeFileSync(f,JSON.stringify(manifest));
+ const r=verifyR10ResearchCapture({base,auditDigest:plan.auditDigest});
+ assert.equal(r.status,'STOP_RESEARCH_PLAN_SEMANTICS_INVALID');
+ assert.equal(r.releaseWrites,0);
+});
+
+test('legacy R36 snapshotless capture requires original verified plan',async t=>{
+ const base=fixture(t);await stage(base);
+ const f=path.join(research(base),'manifest.json');
+ const manifest=JSON.parse(fs.readFileSync(f,'utf8'));
+ delete manifest.planSnapshot;delete manifest.planSnapshotSha256;
+ fs.writeFileSync(f,JSON.stringify(manifest));
+ assert.equal(verifyR10ResearchCapture({base,auditDigest:plan.auditDigest}).status,
+  'STOP_RESEARCH_PLAN_SNAPSHOT_MISSING');
+ assert.equal(verifyR10ResearchCapture({base,plan}).status,
+  'STAGED_RESEARCH_READBACK_VERIFIED_NOT_PROMOTABLE');
 });
 
 test('forged dot-path ticker is rejected before any file read',t=>{

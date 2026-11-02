@@ -105,8 +105,15 @@ export async function stageR10NewSymbolBars({plan,base,authorization,credentials
   return result(inspected.status,{providerRequests,missingCount:inspected.missingCount??null});
 
  const root=path.dirname(destination);
+ // Save only the canonical request/provenance contract (never credentials,
+ // authorization, provider headers, or ambient environment). A later offline
+ // PC cycle can reconstruct and audit these raw bytes without an in-memory plan.
+ const planSnapshot={auditDigest:plan.auditDigest,requestCount:plan.requestCount,
+  requests:plan.requests,expectedSessions:plan.expectedSessions,
+  provenance:plan.provenance};
  const manifest={schemaVersion:'ASSET_R10_ALPACA_UNMAPPED_RESEARCH_CAPTURE_R1',
   planAuditDigest:plan.auditDigest,collectedAt:new Date(now).toISOString(),
+  planSnapshot,planSnapshotSha256:digest(planSnapshot),
   source:'ALPACA',feed:'iex',adjustment:'split',asof:'-',
   observationStart:plan.expectedSessions[0],observationEnd:plan.expectedSessions.at(-1),
   sourceRightsEvidenceSha256:plan.provenance.providerPolicy.rightsEvidenceSha256,

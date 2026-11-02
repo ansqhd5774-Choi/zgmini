@@ -82,6 +82,47 @@ function existingHistoryUntouched(approved,candidate,priorQuarter){
  return true;
 }
 
+// R38 may research an unpriced *slot*, not rename PSKY/SKYD or repair PIT.
+// The original 500-ish member denominator is preserved. Such evidence can
+// support a research review packet only, never a production promotion permit.
+function quarantineLineageMatches(quarantine,pit,quarterMaturity){
+ if(quarantine?.status!=='CANDIDATE_WITH_ONE_UNRESOLVED_SECURITY_RESEARCH_ONLY'||
+    quarantine.canPromote!==false||quarantine.productionEligible!==false||
+    quarantine.identityAuditStatus!=='PIT_LABEL_IDENTITY_AUDITED_NOT_PROMOTABLE'||
+    !Array.isArray(quarantine.unresolvedSymbols)||
+    quarantine.unresolvedSymbols.length!==1||quarantine.unresolvedSymbols[0]!=='SKYD'||
+    !Array.isArray(quarantine.candidateRows)||quarantine.candidateRows.length<3||
+    !Number.isInteger(quarantine.overlapChecked)||quarantine.overlapChecked<1||
+    !Number.isInteger(quarantine.quarantinedOverlapDays)||quarantine.quarantinedOverlapDays<1||
+    !SHA.test(quarantine.officialPitDigest??'')||
+    pit?.status!=='PIT_LABEL_IDENTITY_AUDITED_NOT_PROMOTABLE'||
+    !SHA.test(pit.sourceEventDigest??'')||
+    !SHA.test(pit.approvedMemberSeriesHash??'')||
+    !SHA.test(pit.officialMemberSeriesHash??'')||
+    pit.sourceEventDigest!==quarantine.officialPitDigest||
+    pit.overlapDays!==quarantine.overlapChecked||
+    pit.counts?.other!==0||
+    pit.counts.preMerger+pit.counts.backcast+pit.counts.postRename!==quarantine.quarantinedOverlapDays||
+    pit.counts.preMerger+pit.counts.backcast+pit.counts.postRename<1)
+  return false;
+
+ const byDate=new Map();
+ for(const row of quarantine.candidateRows){
+  if(!validDate(row?.observationDate)||byDate.has(row.observationDate)||
+     !Number.isInteger(row.memberCount)||row.memberCount<490||row.memberCount>520||
+     !Number.isInteger(row.valid200)||row.valid200<0||row.valid200>=row.memberCount||
+     row.unresolvedIdentityCount!==1||
+     row.coverage!==row.valid200/row.memberCount||row.coverage<.98)
+    return false;
+  byDate.set(row.observationDate,row);
+ }
+ return quarterMaturity.months.every(month=>{
+  const row=byDate.get(month.lastExpectedSession);
+  return !!row&&row.memberCount===month.memberCount&&
+    row.valid200===month.validPriceWindowMembers;
+ });
+}
+
 /**
  * Verify lineage/replay evidence before even submitting a research candidate
  * for operator review. All proof objects are independently produced upstream.
@@ -90,7 +131,7 @@ function existingHistoryUntouched(approved,candidate,priorQuarter){
 export function assessR10ReleaseLineageGate({
   approvedRelease,candidateRelease,approvedBHistory,candidateBHistory,
   pitProof,researchReadback,priceBasisProof,calculationReplay,
-  quarterMaturity,asOfDate,
+  quarterMaturity,asOfDate,identityQuarantineResearch=null,
 }={}){
  if(!validDate(asOfDate)||!validQuarter(approvedRelease?.scoreObservationQuarter)||
     !validQuarter(candidateRelease?.scoreObservationQuarter)||
@@ -143,10 +184,18 @@ export function assessR10ReleaseLineageGate({
  const average=quarterMaturity.months.reduce((n,m)=>n+m.researchSafetyScore,0)/3;
  if(Math.abs(average-candidate.get(q))>1e-9)
   return stop('STOP_B_QUARTER_ARITHMETIC_PARITY');
- if(pitProof?.status!=='PIT_TIME_EFFECTIVE_IDENTITIES_VERIFIED'||
-    !SHA.test(pitProof.eventDigest??'')||!SHA.test(pitProof.memberSeriesDigest??'')||
-    pitProof.membershipLookAheadSafe!==true)
+ const strictPit=pitProof?.status==='PIT_TIME_EFFECTIVE_IDENTITIES_VERIFIED'&&
+    SHA.test(pitProof.eventDigest??'')&&SHA.test(pitProof.memberSeriesDigest??'')&&
+    pitProof.membershipLookAheadSafe===true;
+ const quarantinedPit=identityQuarantineResearch!==null&&
+    quarantineLineageMatches(identityQuarantineResearch,pitProof,quarterMaturity);
+ // Never silently discard an explicitly submitted (possibly forged)
+ // quarantine receipt, even if a separate strict PIT proof is present.
+ if(identityQuarantineResearch!==null&&!quarantinedPit)
+  return stop('STOP_RESEARCH_QUARANTINE_LINEAGE_INVALID');
+ if(!strictPit&&!quarantinedPit)
   return stop('STOP_TIME_EFFECTIVE_PIT_PROOF_MISSING');
+ const pitEventDigest=strictPit?pitProof.eventDigest:pitProof.sourceEventDigest;
  if(researchReadback?.status!=='STAGED_RESEARCH_READBACK_VERIFIED_NOT_PROMOTABLE'||
     researchReadback.canPromote!==false||researchReadback.productionEligible!==false||
     !SHA.test(researchReadback.planAuditDigest??'')||
@@ -157,26 +206,30 @@ export function assessR10ReleaseLineageGate({
  if(priceBasisProof?.status!=='PRICE_BASIS_AND_RIGHTS_INDEPENDENTLY_REVIEWED'||
     priceBasisProof.planAuditDigest!==researchReadback.planAuditDigest||
     priceBasisProof.manifestSha256!==researchReadback.manifestSha256||
-    priceBasisProof.pitEventDigest!==pitProof.eventDigest||
+    priceBasisProof.pitEventDigest!==pitEventDigest||
     !SHA.test(priceBasisProof.rightsEvidenceSha256??'')||
     !SHA.test(priceBasisProof.corporateActionPriceBasisSha256??''))
   return stop('STOP_PRICE_RIGHTS_OR_CORPORATE_ACTION_PROOF_MISSING');
  const replayBody={candidateRelease,candidateBHistory,quarterMaturity};
  if(calculationReplay?.status!=='R10_APPROVED_FORMULA_REPLAY_INDEPENDENTLY_VERIFIED'||
     calculationReplay.candidateDigest!==fingerprint(replayBody)||
-    calculationReplay.pitEventDigest!==pitProof.eventDigest||
+    calculationReplay.pitEventDigest!==pitEventDigest||
     calculationReplay.manifestSha256!==researchReadback.manifestSha256||
     calculationReplay.recomputedScore!==candidateRelease.score||
     calculationReplay.recomputedBScore!==candidate.get(q))
   return stop('STOP_R10_FORMULA_REPLAY_OR_SCORE_PARITY_MISSING');
  // Deliberate boundary: this audit cannot authorize an installation, provider
  // collection, replacement of the approved three B files, or D1 publication.
- return stop('REVIEW_PACKET_READY_NOT_AUTOPROMOTABLE',{
+ return stop(quarantinedPit?'REVIEW_PACKET_UNRESOLVED_PIT_SLOT_NOT_AUTOPROMOTABLE':
+   'REVIEW_PACKET_READY_NOT_AUTOPROMOTABLE',{
   approvedQuarter:approvedRelease.scoreObservationQuarter,candidateQuarter:q,
   candidateScore:candidateRelease.score,candidateBScore:candidate.get(q),
   sourceVersion:candidateRelease.sourceVersion,
   researchManifestSha256:researchReadback.manifestSha256,
   candidateDigest:fingerprint(replayBody),
-  nextAction:'INDEPENDENT_OPERATOR_REVIEW_AND_APPROVED_PC_INSTALL_REQUIRED',
+  ...(quarantinedPit?{unresolvedIdentitySymbols:identityQuarantineResearch.unresolvedSymbols,
+    quarantinedOverlapDays:identityQuarantineResearch.quarantinedOverlapDays,
+    nextAction:'VERIFY_UNRESOLVED_PIT_SLOT_AND_APPROVED_PRICE_RIGHTS_BEFORE_PC_INSTALL'}:
+   {nextAction:'INDEPENDENT_OPERATOR_REVIEW_AND_APPROVED_PC_INSTALL_REQUIRED'}),
  });
 }

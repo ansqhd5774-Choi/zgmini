@@ -18,10 +18,10 @@ export async function collectAlpacaIncremental(base,{fetchImpl=fetch,now=Date.no
   const output=path.join(dir,'incremental');fs.mkdirSync(output,{recursive:true});
   for(const group of groups){let token=null;const rows=[];do{
    if(report.runRequests>=120)throw Error('ALPACA_RUN_BUDGET');if(report.runRequests)await wait(1000);
-   const url=new URL('https://data.alpaca.markets/v2/stocks/bars');url.search=new URLSearchParams({symbols:group.symbols.join(','),timeframe:'1Day',start:start+'T00:00:00Z',end:end+'T23:59:59Z',feed:'iex',adjustment:'split',limit:'10000',...(token?{page_token:token}:{})});
+   const url=new URL('https://data.alpaca.markets/v2/stocks/bars');url.search=new URLSearchParams({symbols:group.symbols.join(','),timeframe:'1Day',start:start+'T00:00:00Z',end:end+'T23:59:59Z',feed:'iex',adjustment:'split',asof:'-',limit:'10000',...(token?{page_token:token}:{})});
    report.runRequests++;const r=await fetchImpl(url,{headers:{'APCA-API-KEY-ID':env.APCA_API_KEY_ID,'APCA-API-SECRET-KEY':env.APCA_API_SECRET_KEY},signal:AbortSignal.timeout(20000)});
    if(!r.ok)throw Error('ALPACA_HTTP_'+r.status);const body=await r.json();if(!body.bars||typeof body.bars!=='object')throw Error('ALPACA_INVALID_RESPONSE');
-   for(const [ticker,bars]of Object.entries(body.bars))for(const b of bars){if(!group.symbols.includes(ticker)||!Number.isFinite(b.c)||b.c<=0||!Number.isFinite(b.v)||b.v<0||!/^\d{4}-\d{2}-\d{2}/.test(b.t))throw Error('ALPACA_INVALID_BAR');rows.push({ticker,tradeDate:b.t.slice(0,10),currentClose:b.c,currentVolume:b.v,source:'ALPACA',feed:'iex',adjustmentStatus:'split'});}
+   for(const [ticker,bars]of Object.entries(body.bars))for(const b of bars){if(!group.symbols.includes(ticker)||!Number.isFinite(b.c)||b.c<=0||!Number.isFinite(b.v)||b.v<0||!/^\d{4}-\d{2}-\d{2}/.test(b.t))throw Error('ALPACA_INVALID_BAR');rows.push({ticker,tradeDate:b.t.slice(0,10),currentClose:b.c,currentVolume:b.v,source:'ALPACA',feed:'iex',adjustmentStatus:'split',asof:'-',symbolMappingMode:'UNMAPPED_ASOF_DASH'});}
    token=body.next_page_token??null;
   }while(token);const saved=path.join(output,`${start}-${end}-${group.name}`);save(saved,rows);if(JSON.stringify(read(saved))!==JSON.stringify(rows))throw Error('ALPACA_READBACK_FAILED');report.completedGroups++;}
   save(checkpoint,{through:end});report.status='COLLECTED_PENDING_VALIDATION';report.storageVerified=true;

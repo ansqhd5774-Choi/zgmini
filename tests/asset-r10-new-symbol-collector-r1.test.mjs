@@ -70,6 +70,11 @@ test('captures exact raw wire SHA and immutable source/rights manifest outside a
  const manifest=JSON.parse(fs.readFileSync(path.join(target(base),'manifest.json'),'utf8'));
  assert.equal(manifest.source,'ALPACA');assert.equal(manifest.asof,'-');
  assert.equal(manifest.sourceRightsEvidenceSha256,'a'.repeat(64));
+ assert.equal(manifest.planSnapshot.auditDigest,plan.auditDigest);
+ assert.equal(manifest.planSnapshot.expectedSessions.length,200);
+ assert.equal(manifest.planSnapshotSha256,sha(JSON.stringify(manifest.planSnapshot)));
+ assert.equal(Object.hasOwn(manifest.planSnapshot,'authorization'),false);
+ assert.equal(Object.hasOwn(manifest.planSnapshot,'credentials'),false);
  assert.equal(manifest.files[0].sha256,sha(wire));
  const stored=fs.readFileSync(path.join(target(base),manifest.files[0].relativePath),'utf8');
  assert.equal(stored,wire);

@@ -58,6 +58,25 @@ function replay(ctx){
 }
 const status=value=>assessR10ReleaseLineageGate(value).status;
 
+function quarantined(){
+ const v=make(),months=v.quarterMaturity.months;
+ v.pitProof={status:'PIT_LABEL_IDENTITY_AUDITED_NOT_PROMOTABLE',
+  sourceEventDigest:H,approvedMemberSeriesHash:J,officialMemberSeriesHash:K,
+  overlapDays:501,counts:{preMerger:200,backcast:301,postRename:0,exact:0,other:0}};
+ v.identityQuarantineResearch={
+  status:'CANDIDATE_WITH_ONE_UNRESOLVED_SECURITY_RESEARCH_ONLY',
+  canPromote:false,productionEligible:false,
+  officialPitDigest:H,overlapChecked:501,quarantinedOverlapDays:501,
+  identityAuditStatus:'PIT_LABEL_IDENTITY_AUDITED_NOT_PROMOTABLE',
+  unresolvedSymbols:['SKYD'],
+  candidateRows:months.map(month=>({observationDate:month.lastExpectedSession,
+   memberCount:month.memberCount,valid200:month.validPriceWindowMembers,
+   coverage:month.validPriceWindowMembers/month.memberCount,unresolvedIdentityCount:1})),
+ };
+ replay(v);v.calculationReplay.pitEventDigest=H;
+ return v;
+}
+
 test('valid independently replayed packet is STILL never a promotion permit',()=>{
  const result=assessR10ReleaseLineageGate(make());
  assert.equal(result.status,'REVIEW_PACKET_READY_NOT_AUTOPROMOTABLE');
@@ -150,4 +169,64 @@ test('replay score parity rejects stale or tampered candidate',()=>{
 test('future or invalid dates do not pass a runtime checkpoint',()=>{
  const v=make();v.asOfDate='2026-20-50';
  assert.equal(status(v),'STOP_RELEASE_BASELINE_INVALID');
+});
+
+test('R38 quarantined identity research can reach review only, never publish or alter approved B',()=>{
+ const v=quarantined(),snapshot=structuredClone(v),result=assessR10ReleaseLineageGate(v);
+ assert.equal(result.status,'REVIEW_PACKET_UNRESOLVED_PIT_SLOT_NOT_AUTOPROMOTABLE');
+ assert.equal(result.canPromote,false);assert.equal(result.productionEligible,false);
+ assert.deepEqual(result.unresolvedIdentitySymbols,['SKYD']);
+ assert.equal(result.quarantinedOverlapDays,501);
+ assert.equal(result.candidateScore,25);assert.equal(result.candidateBScore,30);
+ for(const field of ['approvedInputWrites','releaseWrites','sqliteWrites','d1Writes','providerRequests'])
+  assert.equal(result[field],0);
+ assert.deepEqual(v,snapshot);
+});
+test('unverified R38 overlap proof cannot bypass strict PIT gate',()=>{
+ const v=quarantined();delete v.identityQuarantineResearch;
+ assert.equal(status(v),'STOP_TIME_EFFECTIVE_PIT_PROOF_MISSING');
+});
+test('quarantine never hides a second independent membership drift',()=>{
+ const v=quarantined();v.pitProof.counts.other=1;
+ assert.equal(status(v),'STOP_RESEARCH_QUARANTINE_LINEAGE_INVALID');
+});
+test('quarantine event digest and exact 501-day overlap must match original PIT audit',()=>{
+ const v=quarantined();v.identityQuarantineResearch.officialPitDigest=J;
+ assert.equal(status(v),'STOP_RESEARCH_QUARANTINE_LINEAGE_INVALID');
+ v.identityQuarantineResearch.officialPitDigest=H;
+ v.identityQuarantineResearch.quarantinedOverlapDays=500;
+ assert.equal(status(v),'STOP_RESEARCH_QUARANTINE_LINEAGE_INVALID');
+});
+test('quarantined member is included in fixed denominator but not valid-price numerator',()=>{
+ const v=quarantined();v.identityQuarantineResearch.candidateRows[0].valid200++;
+ assert.equal(status(v),'STOP_RESEARCH_QUARANTINE_LINEAGE_INVALID');
+ const x=quarantined();x.identityQuarantineResearch.candidateRows[0].unresolvedIdentityCount=0;
+ assert.equal(status(x),'STOP_RESEARCH_QUARANTINE_LINEAGE_INVALID');
+});
+test('quarantine cannot make 97-percent coverage a completed quarter',()=>{
+ const v=quarantined();v.quarterMaturity.months[0].validPriceWindowMembers=480;
+ replay(v);v.calculationReplay.pitEventDigest=H;
+ assert.equal(status(v),'STOP_B_200MA_252PAIR_THREE_MONTH_EVIDENCE');
+});
+test('quarantined PIT still needs the full 200-session and 252-pair monthly proofs',()=>{
+ const v=quarantined();v.quarterMaturity.months[2].windowSessions=199;
+ replay(v);v.calculationReplay.pitEventDigest=H;
+ assert.equal(status(v),'STOP_B_200MA_252PAIR_THREE_MONTH_EVIDENCE');
+ const w=quarantined();w.quarterMaturity.months[1].rankObservations=251;
+ replay(w);w.calculationReplay.pitEventDigest=H;
+ assert.equal(status(w),'STOP_B_200MA_252PAIR_THREE_MONTH_EVIDENCE');
+});
+test('quarantined PIT does not waive immutable Alpaca readback or independent price rights',()=>{
+ const v=quarantined();v.researchReadback.status='NOT_CAPTURED';
+ assert.equal(status(v),'STOP_IMMUTABLE_RESEARCH_READBACK_MISSING');
+ const w=quarantined();w.priceBasisProof.manifestSha256=J;
+ assert.equal(status(w),'STOP_PRICE_RIGHTS_OR_CORPORATE_ACTION_PROOF_MISSING');
+});
+test('quarantine result cannot promote with a forged independent score replay',()=>{
+ const v=quarantined();v.calculationReplay.recomputedScore=26;
+ assert.equal(status(v),'STOP_R10_FORMULA_REPLAY_OR_SCORE_PARITY_MISSING');
+});
+test('invalid optional quarantine receipt is never ignored behind otherwise strict PIT proof',()=>{
+ const v=make();v.identityQuarantineResearch={status:'CANDIDATE_WITH_ONE_UNRESOLVED_SECURITY_RESEARCH_ONLY'};
+ assert.equal(status(v),'STOP_RESEARCH_QUARANTINE_LINEAGE_INVALID');
 });
