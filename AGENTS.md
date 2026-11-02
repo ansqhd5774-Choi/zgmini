@@ -1,5 +1,10 @@
 ZGMINI PLUGIN & EXECUTION RULES — COMPACT R5 FINAL
 
+## 테마 확장 공통 기준
+- 신규 테마·산식 작업의 정본은 기존 전용 브랜치 `codex/theme-fear-greed-integration-20261025`의 `docs/THEME_PLATFORM_STANDARD.md`, `docs/THEME_ONBOARDING_PLAYBOOK.md`, `config/theme-platform-delegation.json`이다. 일반챗·CMD 실행 방식은 같은 브랜치 `docs/CMD_EXECUTION_PLAYBOOK.md`를 함께 참조한다. 전체 브랜치에 중복 커밋하지 않고 이 공통 원본을 확인한다.
+- R18→R33은 같은 R32 개발·적용 작업이다. 테마 수·ETF 후보 수의 사업상 최대/목표 개수를 두지 않는다. 승인 범위의 통상 등록·검증·운영 작업은 반복 승인 없이 진행하되 기술·권리·인증 검증을 우회하지 않는다.
+- PAIR50 복귀·산식 임의 변경·테마별 별도 실행기/예약의 무분별한 추가를 피하고 공통 V2 등록·R25/R32·확정/잠정 게시 경로를 재사용한다. 기존 공개10개의 보호와 데이터센터 R32 전환 누락은 별도로 구분한다.
+
 ## 0. 최상위 원칙
 - 승인된 산식·데이터 구조·Revision·작업 기준 최우선.
 - 승인 없는 구조/DB/배포방식/산식/DNS 변경 금지.
