@@ -13,6 +13,8 @@ if exist "%ZGM_R43_RESULT%" (
 )
 set "ZGM_R43_PC_HOME=E:\ZGmini\data\pc-writer"
 if defined ZGMINI_PC_HOME set "ZGM_R43_PC_HOME=%ZGMINI_PC_HOME%"
+rem A terminal backslash can escape the closing argv quote for Node.
+if "%ZGM_R43_PC_HOME:~-1%"=="\" set "ZGM_R43_PC_HOME=%ZGM_R43_PC_HOME%."
 if not exist "%ZGM_R43_ROOT%scripts\resolve-local-node.cmd" goto missing_resolver
 if not exist "%ZGM_R43_ROOT%tools\market-calendar-r43\R43_MANUAL_RUN.mjs" goto missing_runner
 call "%ZGM_R43_ROOT%scripts\resolve-local-node.cmd" > "%ZGM_R43_RESULT%" 2>&1
