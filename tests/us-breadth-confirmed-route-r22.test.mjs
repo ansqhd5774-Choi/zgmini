@@ -14,3 +14,32 @@ test('R2 confirmed is a separate stored-only read alias and default R1 503 route
   assert.match(route,/if\(phase!==null&&phase!=='confirmed'\)/);
   assert.doesNotMatch(route,/STAGING_KEY|publishFullMarketStaging|promoteVerifiedFullMarketStaging/);
 });
+
+test('explicit R2 and IEX phases short-circuit before the legacy R1 reader',()=>{
+  const get=route.slice(route.indexOf('export async function GET(request:Request){'));
+  const order=[
+    "const phase=url.searchParams.get('phase');",
+    "if(phase==='provisional')return provisionalGET();",
+    "if(phase==='confirmed-r2')return fullMarketConfirmedR2GET();",
+    "if(phase!==null&&phase!=='confirmed')",
+    'bind(US_BREADTH_CURRENT_KEY)',
+  ].map(needle=>get.indexOf(needle));
+  assert.ok(order.every((position,index)=>position>=0&&
+    (index===0||position>order[index-1])),
+  'explicit phases must return before the legacy R1 snapshot read');
+
+  const r2Start=route.indexOf('async function fullMarketConfirmedR2GET(){');
+  const iexStart=route.indexOf('async function provisionalGET(){');
+  const visitorStart=route.indexOf('// Visitor read-only:');
+  assert.ok(r2Start>=0&&iexStart>r2Start&&visitorStart>iexStart);
+  const r2=route.slice(r2Start,iexStart);
+  assert.match(r2,/readFullMarketPublicCurrent\(/);
+  assert.match(r2,/if\('reason' in result\)return Response\.json\(\{reason:result\.reason\}/);
+  assert.match(r2,/\{status:503,headers:/);
+  assert.doesNotMatch(r2,/US_BREADTH_CURRENT_KEY|validUsBreadthRecord|provisionalGET/);
+
+  const iex=route.slice(iexStart,visitorStart);
+  assert.match(iex,/bind\(US_BREADTH_PROVISIONAL_KEY\)/);
+  assert.match(iex,/Response\.json\(usIexPublicPercentOnly\(record\)/);
+  assert.doesNotMatch(iex,/US_BREADTH_CURRENT_KEY|validUsBreadthRecord|fullMarketConfirmedR2GET/);
+});
