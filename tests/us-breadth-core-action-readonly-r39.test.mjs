@@ -73,13 +73,15 @@ test('ambiguous and unapproved Task actions fail without E drive project scannin
  assert.equal(outside.status,'WRAPPER_UNREADABLE_OR_UNAPPROVED');
 });
 
-test('portable operator CMD uses approved E node, Downloads TXT and read-only command',()=>{
+test('portable operator CMD uses approved E node, next-to-CMD TXT and read-only command',()=>{
  const script=fs.readFileSync(path.join(root,'tools/us-market-breadth-r1/US_BREADTH_R39_CORE_ACTION_READONLY.cmd'));
  const cmd=script.toString('ascii');
  assert.equal(script.some(byte=>byte>127),false);
  assert.equal(/(^|[^\r])\n/.test(cmd),false,'ASCII CRLF only');
  assert.match(cmd,/E:\\ZGmini\\runtime\\node\.exe/i);
- assert.match(cmd,/%USERPROFILE%\\Downloads/i);
+ assert.match(cmd,/set "RESULT=%~dp0US_BREADTH_R39_CORE_ACTION_%RANDOM%_%RANDOM%\.txt"/i);
+ assert.match(cmd,/LOG_LOCATION=NEXT_TO_CMD/);
+ assert.doesNotMatch(cmd,/%USERPROFILE%\\Downloads|%TEMP%/i);
  assert.match(cmd,/%~dp0scripts\\pc-writer\\us-breadth-core-action-readonly-r39\.mjs/i);
  assert.match(cmd,/--inspect-only/i);
  assert.doesNotMatch(cmd,/schtasks\s+\/(?:Change|Create|Delete)|--publish|node scripts/i);
