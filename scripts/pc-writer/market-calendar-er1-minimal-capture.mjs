@@ -117,6 +117,10 @@ function savedData(file,day,asOf){
   return {verifiedInput:null,diagnostics};
 }
 
+// Reuse the exact saved-row validation/recovery path for offline ER1 scoring.
+// Reads private files only; it never fetches or changes a vendor response.
+export {savedData as readER1SavedDay};
+
 /** Manual, private, bounded run. A read-only verified universe is still mandatory
  * before ranking or publication. fetcher and clock are injected for local tests. */
 export async function runER1MinimalCapture({pcHome=DEFAULT_PC_HOME,now=Date.now(),

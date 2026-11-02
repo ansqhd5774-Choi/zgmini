@@ -18,7 +18,8 @@ type FilterImportance='all'|1|2|3;
 type OfficialEvent={id:string;date:string;title:string;source:string;sourceUrl:string};
 type SourceState={status:string;checkedAt?:string|null;issuers?:Record<string,{status:string;checkedAt?:string|null}>};
 type CalendarFeed={status:string;updatedAt?:string;sources?:Record<string,SourceState>;events?:OfficialEvent[]};
-type CalendarRow={key:string;date:string;at:string|null;name:string;country:Country;category:string;kind:EventKind;actual:string|null;forecast:string|null;previous:string|null;major:boolean;importance:number|null;source:string;sourceUrl:string;checkedAt:string|null;status:'scheduled'|'released';fresh:boolean};
+type ER1ScoreDisplay={asOf:string;scores:Record<string,number>};
+type CalendarRow={key:string;date:string;at:string|null;name:string;country:Country;category:string;kind:EventKind;actual:string|null;forecast:string|null;previous:string|null;major:boolean;importance:number|null;er1Score?:number|null;er1AsOf?:string|null;source:string;sourceUrl:string;checkedAt:string|null;status:'scheduled'|'released';fresh:boolean};
 
 const dayLabels=['일','월','화','수','목','금','토'];
 const sourceNames:Record<string,string>={bls:'BLS',bea:'BEA',fed:'연준',fed_calendar:'연준',census:'Census',eia:'EIA',usda:'USDA',cftc:'CFTC',treasury:'미국 재무부',tic:'미국 재무부 TIC',earnings:'기업 공식 IR'};
@@ -71,6 +72,8 @@ const elapsed=(deadline:string,nowMs:number)=>{
 const diffDays=(a:string,b:string)=>Math.round((parseDay(a).getTime()-parseDay(b).getTime())/86400000);
 const dateCaption=(key:string)=>`${Number(key.slice(5,7))}.${key.slice(8,10)}`;
 const weekTitle=(start:string)=>`${Number(start.slice(5,7))}월 ${Math.ceil(Number(start.slice(8,10))/7)}주차`;
+// Truncate rather than round: a 96.999-point issuer must not read as 97.00.
+const displayER1Points=(score:number)=>(Math.trunc(score*100)/100).toFixed(2);
 const officialName=(item:OfficialEvent,defaultName:string)=>{
  if(item.id==='cftc-cot')return /Holiday-delayed/i.test(item.title)?`${defaultName} · 공휴일 지연`:defaultName;
  if(item.id!=='gdp')return defaultName;
@@ -92,7 +95,7 @@ function snapshotRows():CalendarRow[]{
  return [...scheduled,...released];
 }
 
-function mergeOfficial(feed:CalendarFeed|null):CalendarRow[]{
+function mergeOfficial(feed:CalendarFeed|null,er1:ER1ScoreDisplay|null=null):CalendarRow[]{
  const manual=snapshotRows();
  if(!feed?.events?.length)return manual;
  const fromFeed:CalendarRow[]=[];
@@ -126,7 +129,12 @@ function mergeOfficial(feed:CalendarFeed|null):CalendarRow[]{
   // Existing verified actuals supersede past date-only schedule placeholders.
   const hasActual=manual.some(row=>row.status==='released'&&row.date===item.date&&((item.id==='cpi'&&row.source==='BLS')||(item.id==='pce'&&row.source==='BEA')));
   if(hasActual)continue;
-  fromFeed.push({key:`official-${duplicate}`,date:displayDate,at:eventAt,name:officialName(item,meta.name),country:'US',category:earningsEvent?category:meta.category,kind:earningsEvent?'earnings':'economic',actual:null,forecast:null,previous:null,major:meta.major,importance:earningsEvent?null:releaseImportance(item.id,item.title),source:sourceNames[item.source]??item.source,sourceUrl:item.sourceUrl,checkedAt:timed?.checkedAt??checkedAt,fresh:timed?false:fresh,status:'scheduled'});
+  // Only ticker-shaped IDs can join ER1. Opaque provider identifiers are never
+  // mapped to a company, guessed from its name, or used to fill a missing grade.
+  const tickerId=earningsEvent?/^earnings-(?:release|call)-([a-z0-9.\-]{1,10})-20\d\d-q[1-4]$/.exec(item.id)?.[1]?.toUpperCase():null;
+  const candidate=tickerId&&er1&&Object.hasOwn(er1.scores,tickerId)?er1.scores[tickerId]:null;
+  const er1Score=typeof candidate==='number'&&Number.isFinite(candidate)&&candidate>=0&&candidate<=100?candidate:null;
+  fromFeed.push({key:`official-${duplicate}`,date:displayDate,at:eventAt,name:officialName(item,meta.name),country:'US',category:earningsEvent?category:meta.category,kind:earningsEvent?'earnings':'economic',actual:null,forecast:null,previous:null,major:meta.major,importance:earningsEvent?(er1Score!==null&&er1Score>=97?3:null):releaseImportance(item.id,item.title),er1Score:earningsEvent?er1Score:undefined,er1AsOf:er1Score!==null?er1?.asOf:null,source:sourceNames[item.source]??item.source,sourceUrl:item.sourceUrl,checkedAt:timed?.checkedAt??checkedAt,fresh:timed?false:fresh,status:'scheduled'});
  }
  const scheduledIds=new Set(fromFeed.map(row=>row.key.slice('official-'.length)));
  return [...fromFeed,...manual.filter(row=>row.status==='released'||!scheduledIds.has(`${row.key.split('-')[1]}:${row.date}`))];
@@ -135,6 +143,7 @@ function mergeOfficial(feed:CalendarFeed|null):CalendarRow[]{
 export default function MarketCalendar(){
  const [feed,setFeed]=useState<CalendarFeed|null>(null);
  const [loadState,setLoadState]=useState<'loading'|'ready'|'error'>('loading');
+ const [er1Scores,setER1Scores]=useState<ER1ScoreDisplay|null>(null);
  const [today,setToday]=useState('2026-10-26'); // Hydration-safe placeholder, replaced with real KST date on mount.
  const [selected,setSelected]=useState('2026-10-26');
  const [activeDate,setActiveDate]=useState<string|null>(null);
@@ -157,11 +166,24 @@ export default function MarketCalendar(){
   }).then(data=>{if(!controller.signal.aborted){setFeed(data);setLoadState('ready');}}).catch(()=>{
    if(!controller.signal.aborted)setLoadState('error');
   });
+  // Public derived scores only; failure is a normal missing-data state.
+  fetch('/api/earnings-er1-score-display',{signal:controller.signal,cache:'no-store'})
+   .then(async res=>{
+    if(res.status===204)return null;
+    if(!res.ok)throw Error('ER1_SCORE_DISPLAY_UNAVAILABLE');
+    const data=await res.json();
+    if(data?.status!=='READY_ER1_DISPLAY'||data.threshold!==97||
+      typeof data.asOf!=='string'||!validDate(data.asOf)||
+      !data.scores||typeof data.scores!=='object'||Array.isArray(data.scores))
+      throw Error('ER1_SCORE_DISPLAY_INVALID');
+    return {asOf:data.asOf,scores:data.scores as Record<string,number>};
+   }).then(data=>{if(!controller.signal.aborted)setER1Scores(data);})
+   .catch(()=>{if(!controller.signal.aborted)setER1Scores(null);});
   return()=>{window.clearInterval(timer);controller.abort();};
  },[]);
 
  const range=useMemo(()=>view==='week'?{start:monday(selected),end:plusDays(monday(selected),6)}:{start:monthStart(selected),end:monthEnd(selected)},[selected,view]);
- const allRows=useMemo(()=>mergeOfficial(feed),[feed]);
+ const allRows=useMemo(()=>mergeOfficial(feed,er1Scores),[feed,er1Scores]);
  const periodRows=useMemo(()=>allRows.filter(row=>row.date>=range.start&&row.date<=range.end&&(kind==='all'||row.kind===kind)&&(country==='all'||row.country===country)&&(importance==='all'||row.importance===importance)&&(!query||`${row.name} ${row.category} ${row.source} ${row.country}`.toLowerCase().includes(query.trim().toLowerCase()))).sort((a,b)=>a.date.localeCompare(b.date)||(a.at??'').localeCompare(b.at??'')||a.name.localeCompare(b.name)),[allRows,range,kind,country,importance,query]);
  const filtered=useMemo(()=>rowsForSelectedDay(periodRows,activeDate) as CalendarRow[],[periodRows,activeDate]);
  const days=useMemo(()=>Array.from({length:diffDays(range.end,range.start)+1},(_,i)=>plusDays(range.start,i)),[range]);
@@ -228,7 +250,7 @@ export default function MarketCalendar(){
    {byWeek.map(([weekStart,rows])=><div key={weekStart}>
     <div className="mc-week"><strong>{activeDate?`${Number(activeDate.slice(5,7))}월 ${Number(activeDate.slice(8,10))}일`:weekTitle(weekStart)}</strong><span>{rows.length}개 일정</span></div>
     {rows.map((row,index)=>{const remain=remaining(row);const firstOfDay=rows.findIndex(item=>item.date===row.date)===index;return <article key={row.key} id={firstOfDay?`mc-day-${row.date}`:undefined} className="mc-row">
-     {row.importance===null?<div className="mc-importance" aria-label="기업 실적 점수 없음" title="기업 실적 등급 자료 없음">-</div>:<div className="mc-importance" role="img" aria-label={`중요도 별 ${row.importance}개`} title={`ZGMINI 예상 시장 영향도 ${row.importance}단계`}>{Array.from({length:row.importance},(_,i)=><Star key={i} size={13} strokeWidth={1.5} fill="currentColor" aria-hidden="true"/>)}</div>}
+     {row.er1Score!==undefined&&row.er1Score!==null?<div className="mc-importance" aria-label={`기업 실적 점수 ${displayER1Points(row.er1Score)}점`} title={`ER1 실제 EPS·매출 · ${row.er1AsOf} 기준 · ★★★ 97점 이상`}>{row.importance===3?'★★★':`${displayER1Points(row.er1Score)}점`}</div>:row.importance===null?<div className="mc-importance" aria-label="기업 실적 점수 없음" title="기업 실적 등급 자료 없음">-</div>:<div className="mc-importance" role="img" aria-label={`중요도 별 ${row.importance}개`} title={`ZGMINI 예상 시장 영향도 ${row.importance}단계`}>{Array.from({length:row.importance},(_,i)=><Star key={i} size={13} strokeWidth={1.5} fill="currentColor" aria-hidden="true"/>)}</div>}
      <div className="mc-date">{dateCaption(row.date)} <small>{dayLabels[parseDay(row.date).getUTCDay()]}</small></div>
      <time className="mc-time" dateTime={row.at??row.date}>{row.at?kstTime(row.at):'미정'}</time>
      <span className="mc-country">{row.country==='US'?'미국':'한국'}</span>

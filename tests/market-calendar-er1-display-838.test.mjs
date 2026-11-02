@@ -53,7 +53,7 @@ test('saved legacy stars are removed, scored issuers show 97-point ER1 result, m
  const html=await full.text();
  assert.equal((html.match(/>★★★<\/div>/g)??[]).length,1);
  assert.equal((html.match(/aria-label="기업 실적 점수 없음">-<\/div>/g)??[]).length,1);
- assert.match(html,/기업 실적 점수 40\.04점/);
+ assert.match(html,/기업 실적 점수 40\.03점/);
  assert.doesNotMatch(html,/재무건전성|시장 중요도|중요도 [123]/);
  const filtered=earningsDisplayResponse(state,url+'&importance=3',publicDerived);
  assert.equal(filtered.headers.get('x-display-count'),'1');
@@ -80,9 +80,32 @@ test('absent, incomplete or tampered score snapshots never restore old FHS/R43 s
  }
 });
 
+test('public snapshot gate rejects stale dates, extra private raw fields and false coverage',()=>{
+ const result=scoreER1Issuers(sampleRows,{asOf:'2026-11-02',expectedEligibleIssuers:838});
+ const valid=makeER1PublicDisplay(result);
+ assert.equal(validateER1PublicDisplay({...valid,rawRevenueVendor:{X0:123}}),null);
+ assert.equal(validateER1PublicDisplay({...valid,asOf:'2024-11-02'}),null);
+ assert.equal(validateER1PublicDisplay({...valid,coverage:{...valid.coverage,universe:.98}}),null);
+ assert.ok(validateER1PublicDisplay(valid));
+});
+
+test('scores just below 97 do not round up into the ★★★ display threshold',async()=>{
+ const result=scoreER1Issuers(sampleRows,{asOf:'2026-11-02',expectedEligibleIssuers:838});
+ const valid=makeER1PublicDisplay(result);
+ const match=valid.scores.find(row=>row.tickers.includes('X0'));
+ match.score=96.995;
+ valid.star3Count=valid.scores.filter(row=>row.score>=97).length;
+ const state=earningsDisplaySnapshot(projection([event('X0')]));
+ const html=await earningsDisplayResponse(state,url,valid).text();
+ assert.match(html,/96\.99점/);
+ assert.doesNotMatch(html,/★★★<\/div>/);
+ assert.equal(earningsDisplayResponse(state,url+'&importance=3',valid)
+  .headers.get('x-display-count'),'0');
+});
+
 test('official-feed earnings without an ER1 score also use hyphen and are excluded from star filters',()=>{
  const source=fs.readFileSync(new URL('../app/market-calendar/market-calendar-client.tsx',import.meta.url),'utf8');
- assert.match(source,/importance:earningsEvent\?null:releaseImportance/);
+ assert.match(source,/er1Score:earningsEvent\?er1Score:undefined/);
  assert.match(source,/row\.importance===null\?<div className="mc-importance"/);
  const route=fs.readFileSync(new URL('../app/api/earnings-calendar-display/route.ts',import.meta.url),'utf8');
  assert.match(route,/ER1_EARNINGS_DISPLAY_PUBLIC_KEY/);
