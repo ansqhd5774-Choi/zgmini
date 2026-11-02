@@ -44,26 +44,26 @@ export function parseR43ManualArgs(argv){
   inputPath:path.join(values['--pc-home'],DEFAULT_INPUT)};
 }
 
-function readPrivateJson(file,maxBytes){
+function readPrivateJson(file,maxBytes,purpose){
  let stat;
  try{stat=fs.lstatSync(file)}
- catch{stop('R43_MANUAL_COMMAND_PRIVATE_FILE_MISSING_STOP')}
+ catch{stop('R43_MANUAL_COMMAND_'+purpose+'_FILE_MISSING_STOP')}
  if(!stat.isFile()||stat.size<50||stat.size>maxBytes)
-  stop('R43_MANUAL_COMMAND_PRIVATE_FILE_INVALID_STOP');
+  stop('R43_MANUAL_COMMAND_'+purpose+'_FILE_INVALID_STOP');
  try{return JSON.parse(fs.readFileSync(file,'utf8'))}
- catch{stop('R43_MANUAL_COMMAND_PRIVATE_JSON_INVALID_STOP')}
+ catch{stop('R43_MANUAL_COMMAND_'+purpose+'_JSON_INVALID_STOP')}
 }
 
 export function preflightR43ManualCommand(options,{now=Date.now()}={}){
- const input=readPrivateJson(options.inputPath,8_000_000);
+ const input=readPrivateJson(options.inputPath,8_000_000,'INPUT');
  const rosterRequired=Object.hasOwn(input,'expectedEligibleIssuers')||
   Object.hasOwn(input,'approvedUniverseSha256');
  if(!rosterRequired)stop('R43_MANUAL_COMMAND_APPROVED_UNIVERSE_REQUIRED_STOP');
- const approvedUniverse=readPrivateJson(path.join(options.pcHome,ROSTER),8_000_000);
+ const approvedUniverse=readPrivateJson(path.join(options.pcHome,ROSTER),8_000_000,'ROSTER');
  const precomputedRVSource=input.relativeVolumeSourceMode===PRECOMPUTED_RV_MODE?
-  readPrivateJson(path.join(options.pcHome,PRECOMPUTED_RV_SOURCE),8_000_000):null;
+  readPrivateJson(path.join(options.pcHome,PRECOMPUTED_RV_SOURCE),8_000_000,'RV_PROOF'):null;
  const compact=prepareR43ManualSnapshot(input,{now,approvedUniverse,precomputedRVSource});
- const config=readPrivateJson(path.join(options.pcHome,'config.json'),64_000);
+ const config=readPrivateJson(path.join(options.pcHome,'config.json'),64_000,'CONFIG');
  if(config.collectionTarget!=='pc'||config.enabled!==true||
   typeof config.core!=='string'||!config.core.trim()||
   typeof config.source!=='string'||!SOURCE.test(config.source))
