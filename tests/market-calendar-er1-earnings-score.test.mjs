@@ -44,11 +44,26 @@ test('two missing release metrics use the two real values, including loss-making
   assert.ok(Math.abs(result.rankings[0].score-(30+40*(.5*(1+.5/1.5))))<1e-10);
 });
 
-test('one available report blocks publication and does not generate any grades',()=>{
-  const result=run([row('AAA',[null,null,null,140],[null,null,null,2])]);
+test('one actual EPS and one actual revenue are enough; four releases are not required',()=>{
+  const one=run([row('AAA',[null,null,null,140],[null,null,null,2])]);
+  assert.equal(one.status,'READY_SHADOW');
+  assert.equal(one.rankings[0].epsReleases,1);
+  assert.equal(one.rankings[0].revenueReleases,1);
+  const onlyOneDated={...row('AAA'),releases:row('AAA').releases.slice(-1)};
+  const sparse=run([onlyOneDated]);
+  assert.equal(sparse.status,'READY_SHADOW');
+  assert.equal(sparse.rankings[0].epsReleases,1);
+  assert.equal(sparse.rankings[0].revenueReleases,1);
+  assert.equal(sparse.rankings[0].score,70);
+});
+
+test('one metric absent in all reports is not filled by an estimate',()=>{
+  const base=row('AAA',[null,null,null,null],[null,null,null,2]);
+  base.releases[3].revenueEstimate=1e12;
+  const result=run([base]);
   assert.equal(result.status,'BLOCKED');
   assert.equal(result.reason,'ER1_RELEASE_COVERAGE_INSUFFICIENT');
-  assert.equal(result.star3Count,0);
+  assert.equal(result.coverage.unscoreableReasons.ER1_METRIC_OBSERVATIONS_INSUFFICIENT,1);
   assert.deepEqual(result.rankings,[]);
 });
 
@@ -80,19 +95,22 @@ test('same-company share classes are not silently counted as independent issuers
   ]),/ER1_SHARE_CLASS_SPLIT/);
 });
 
-test('incomplete, irregular and future-dated releases cannot silently score',()=>{
+test('one to three releases score; irregular, same-day and future dates are guarded',()=>{
   const input=row('AAA');
-  const few=run([{...input,releases:input.releases.slice(0,3)}]);
-  assert.equal(few.status,'BLOCKED');
-  assert.equal(few.coverage.unscoreableReasons.ER1_RELEASE_HISTORY_INSUFFICIENT,1);
+  const few=run([{...input,releases:input.releases.slice(1)}]);
+  assert.equal(few.status,'READY_SHADOW');
+  assert.equal(few.rankings[0].epsReleases,3);
   const future=run([{...input,releases:input.releases.map((q,i)=>i===0?
     {...q,date:'2026-12-31'}:q)}]);
-  assert.equal(future.status,'BLOCKED');
-  assert.equal(future.coverage.unscoreableReasons.ER1_RELEASE_HISTORY_INSUFFICIENT,1);
+  assert.equal(future.status,'READY_SHADOW');
+  assert.equal(future.rankings[0].epsReleases,3);
   const irregular=run([{...input,releases:input.releases.map((q,i)=>i===0?
     {...q,date:'2025-01-01'}:q)}]);
   assert.equal(irregular.status,'BLOCKED');
   assert.equal(irregular.coverage.unscoreableReasons.ER1_RELEASE_SEQUENCE_INVALID,1);
+  const onlyToday=run([{...input,releases:[{date:'2026-11-02',symbol:'AAA',eps:99,revenue:1e12}]}]);
+  assert.equal(onlyToday.status,'BLOCKED');
+  assert.equal(onlyToday.coverage.unscoreableReasons.ER1_RELEASE_HISTORY_INSUFFICIENT,1);
 });
 
 test('four internally valid announcements from years ago are stale',()=>{
@@ -106,7 +124,7 @@ test('four internally valid announcements from years ago are stale',()=>{
 
 test('metric coverage below 98% blocks instead of publishing a shortened population',()=>{
   const rows=Array.from({length:100},(_,i)=>row(`T${i+1}`));
-  for(let i=0;i<3;i++)rows[i]=row(`T${i+1}`,[null,null,null,10],[null,null,null,1]);
+  for(let i=0;i<3;i++)rows[i]=row(`T${i+1}`,[null,null,null,null],[null,null,null,null]);
   const result=run(rows);
   assert.equal(result.coverage.earnings,.97);
   assert.equal(result.status,'BLOCKED');
@@ -168,7 +186,8 @@ test('2634 synthetic issuers: 97-point threshold, loss-maker and missing-data st
     {...x,eps:null,revenue:null}:x)}));
   const twoMissing=base.map(r=>({...r,releases:r.releases.map((x,i)=>i===1||i===2?
     {...x,eps:null,revenue:null}:x)}));
-  for(const sample of [oneMissing,twoMissing]){
+  const threeMissing=base.map(r=>({...r,releases:r.releases.slice(-1)}));
+  for(const sample of [oneMissing,twoMissing,threeMissing]){
     const result=run(sample);
     assert.equal(result.status,'READY_SHADOW');
     assert.equal(result.star3Count,132);
