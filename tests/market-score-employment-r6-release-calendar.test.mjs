@@ -5,6 +5,7 @@ import {
   latestFixedReleaseAt,
   releasePlanForGroup,
 } from "../lib/market-score/employment-r6-scheduler.mjs";
+import {parseBlsR6Rows} from "../lib/market-score/employment-r6-provider.mjs";
 
 test("official DOL Thanksgiving Wednesday supersedes the normal Thursday release",()=>{
   assert.equal(latestDolClaimsReleaseAt("2026-11-25T13:29:59Z").toISOString(),"2026-11-19T13:30:00.000Z");
@@ -40,4 +41,24 @@ test("mixed state and metro group recognizes both published 2026 release days",(
   assert.equal(latestFixedReleaseAt("BLS_STATE_MSA","2026-11-20T15:00:00Z").toISOString(),"2026-11-20T15:00:00.000Z");
   assert.equal(latestFixedReleaseAt("BLS_STATE_MSA","2026-12-02T15:00:00Z").toISOString(),"2026-12-02T15:00:00.000Z");
   assert.equal(releasePlanForGroup("BLS_STATE_MSA",{now:"2026-11-21T18:00:00Z"}).status,"DUE");
+});
+
+test("state/metro combined fetch keeps each source's actual release date stable",()=>{
+  const payload={Results:{series:[
+    {seriesID:"SMS00000000000000022",data:[{year:"2026",period:"M10",value:"50.0"}]},
+    {seriesID:"SMS99999990000000022",data:[{year:"2026",period:"M09",value:"48.0"}]},
+  ]}};
+  const parse=releaseAt=>parseBlsR6Rows(payload,{
+    releaseGroup:"BLS_STATE_MSA",releaseAt,retrievedAt:"2026-12-03T18:00:00.000Z",
+  }).rows;
+  const stateDay=parse("2026-11-20T15:00:00.000Z");
+  const metroDay=parse("2026-12-02T15:00:00.000Z");
+  const released=(rows,id)=>rows.find(x=>x.providerSeriesId===id)?.releaseDate;
+  assert.equal(released(stateDay,"SMS00000000000000022"),"2026-11-20T15:00:00.000Z");
+  assert.equal(released(stateDay,"SMS99999990000000022"),"2026-10-28T14:00:00.000Z");
+  assert.equal(released(metroDay,"SMS00000000000000022"),"2026-11-20T15:00:00.000Z");
+  assert.equal(released(metroDay,"SMS99999990000000022"),"2026-12-02T15:00:00.000Z");
+  // The unchanged state observation must not acquire a synthetic metro-date revision.
+  assert.equal(stateDay[0].value,metroDay[0].value);
+  assert.equal(stateDay[0].releaseDate,metroDay[0].releaseDate);
 });
