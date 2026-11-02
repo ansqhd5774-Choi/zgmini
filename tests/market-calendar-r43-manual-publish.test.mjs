@@ -6,6 +6,7 @@ import path from 'node:path';
 import {createHash} from 'node:crypto';
 import {publishR43MarketImportanceOnce,prepareR43ManualSnapshot,
  verifyR43ReaderDeployed} from '../tools/market-calendar-r43/R43_PC_MANUAL_PUBLISH.mjs';
+import {preflightR43ManualCommand} from '../tools/market-calendar-r43/R43_MANUAL_RUN.mjs';
 import {r43MarketImportanceDisplayIndex,
  R43_MARKET_IMPORTANCE_PUBLIC_KEY} from '../lib/market-calendar-r43-display-overlay.mjs';
 
@@ -91,6 +92,28 @@ function fakeRemote(){
 }
 const options=(f,remote,overrides={})=>({...f,readerGate:async()=>true,
  headResolver:()=>sourceSha,remoteFactory:async()=>remote,...overrides});
+
+test('R43 preflight identifies the missing private input, roster, config and RV proof without paths',()=>{
+ const f=fixture();
+ const inputPath=path.join(f.pcHome,'local-market-calendar-r43-input.json');
+ const rosterPath=path.join(f.pcHome,'local-market-calendar-r43-reviewed-issuers.json');
+ const configPath=path.join(f.pcHome,'config.json');
+ const command={pcHome:f.pcHome,repoRoot:f.repoRoot,inputPath};
+ try{
+  fs.unlinkSync(inputPath);
+  assert.throws(()=>preflightR43ManualCommand(command),/R43_MANUAL_COMMAND_INPUT_FILE_MISSING_STOP/);
+  const {input,roster}=dynamicSource();
+  fs.writeFileSync(inputPath,JSON.stringify(input));
+  assert.throws(()=>preflightR43ManualCommand(command),/R43_MANUAL_COMMAND_ROSTER_FILE_MISSING_STOP/);
+  fs.writeFileSync(rosterPath,JSON.stringify(roster));
+  fs.unlinkSync(configPath);
+  assert.throws(()=>preflightR43ManualCommand(command),/R43_MANUAL_COMMAND_CONFIG_FILE_MISSING_STOP/);
+  const precomputed=precomputedSource();
+  fs.writeFileSync(inputPath,JSON.stringify(precomputed.input));
+  fs.writeFileSync(rosterPath,JSON.stringify(precomputed.roster));
+  assert.throws(()=>preflightR43ManualCommand(command),/R43_MANUAL_COMMAND_RV_PROOF_FILE_MISSING_STOP/);
+ }finally{f.cleanup()}
+});
 
 test('manual publisher writes ONLY one compact R43 D1 output with readback and is idempotent',async()=>{
  const f=fixture(),r=fakeRemote();
