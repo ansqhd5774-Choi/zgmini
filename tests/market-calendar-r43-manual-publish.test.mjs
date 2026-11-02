@@ -43,6 +43,23 @@ function dynamicSource(count=2580){
  input.approvedUniverseSha256=sha(JSON.stringify(roster));
  return {input,roster};
 }
+function precomputedSource(count=2580){
+ const {input,roster}=dynamicSource(count);
+ delete roster.marketSessionsReviewed;
+ delete roster.reviewedTradingSessions;
+ input.relativeVolumeSourceMode='APPROVED_PC_STORED_PRECOMPUTED_RV_R1';
+ const sourceReference='TEST_APPROVED_PC_SNAPSHOT_STORED_WITH_RV_20261102';
+ const proof={version:1,method:input.relativeVolumeSourceMode,
+  provenance:'APPROVED_PC_STORED_DATA',asOf:input.asOf,sourceReference,
+  marketCapApiUsed:false,permissionForDerivedScores:true,
+  rightsReviewReference:input.rightsReviewReference,
+  rows:structuredClone(input.rows)};
+ roster.precomputedRelativeVolume={mode:input.relativeVolumeSourceMode,
+  reviewed:true,asOf:input.asOf,sourceReference,
+  rowsSha256:sha(JSON.stringify(proof.rows))};
+ input.approvedUniverseSha256=sha(JSON.stringify(roster));
+ return {input,roster,proof};
+}
 function fixture(){
  const root=fs.mkdtempSync(path.join(os.tmpdir(),'zgmini-r43-test-'));
  const pcHome=path.join(root,'pc'),repoRoot=path.join(root,'repo');
@@ -182,6 +199,59 @@ test('manual publisher reads dynamic roster from approved PC path before D1 call
   const published=await publishR43MarketImportanceOnce(options(f,r));
   assert.equal(published.status,'R43_D1_PUBLISHED_AND_READBACK');
   assert.equal(published.issuerCount,2580);
+  assert.equal(published.selected,129);
+  assert.equal(r.writes,1);
+ }finally{f.cleanup()}
+});
+
+test('verified precomputed PC relative volume ranks full issuer population without 21 raw sessions',()=>{
+ const {input,roster,proof}=precomputedSource();
+ assert.equal(Object.hasOwn(roster,'reviewedTradingSessions'),false);
+ const result=prepareR43ManualSnapshot(input,{
+  approvedUniverse:roster,precomputedRVSource:proof});
+ assert.equal(result.eligibleIssuers,2580);
+ assert.equal(result.topCount,129);
+ assert.equal(result.relativeVolumeCoverage,1);
+});
+
+test('precomputed RV source must be an independently stored, exact reviewed input',()=>{
+ const {input,roster,proof}=precomputedSource();
+ assert.throws(()=>prepareR43ManualSnapshot(input,{approvedUniverse:roster}),
+  /R43_MANUAL_APPROVED_UNIVERSE_CONTRACT_STOP/);
+ const changed=structuredClone(proof);
+ changed.rows[11].relativeVolume+=.01;
+ assert.throws(()=>prepareR43ManualSnapshot(input,{
+  approvedUniverse:roster,precomputedRVSource:changed}),
+  /R43_MANUAL_APPROVED_UNIVERSE_CONTRACT_STOP/);
+ const wrongDate={...proof,asOf:'2026-01-01'};
+ assert.throws(()=>prepareR43ManualSnapshot(input,{
+  approvedUniverse:roster,precomputedRVSource:wrongDate}),
+  /R43_MANUAL_APPROVED_UNIVERSE_CONTRACT_STOP/);
+ const impostor={...proof,permissionForDerivedScores:false};
+ assert.throws(()=>prepareR43ManualSnapshot(input,{
+  approvedUniverse:roster,precomputedRVSource:impostor}),
+  /R43_MANUAL_APPROVED_UNIVERSE_CONTRACT_STOP/);
+ const alteredRoster={...roster,precomputedRelativeVolume:{
+  ...roster.precomputedRelativeVolume,sourceReference:'UNREVIEWED_SOURCE'}};
+ assert.throws(()=>prepareR43ManualSnapshot({...input,
+  approvedUniverseSha256:sha(JSON.stringify(alteredRoster))},{
+  approvedUniverse:alteredRoster,precomputedRVSource:proof}),
+  /R43_MANUAL_APPROVED_UNIVERSE_CONTRACT_STOP/);
+});
+
+test('manual publisher precomputed RV mode refuses missing separate stored source before D1',async()=>{
+ const f=fixture(),r=fakeRemote();
+ try{
+  const {input,roster,proof}=precomputedSource();
+  fs.writeFileSync(path.join(f.pcHome,'local-market-calendar-r43-input.json'),JSON.stringify(input));
+  fs.writeFileSync(path.join(f.pcHome,'local-market-calendar-r43-reviewed-issuers.json'),JSON.stringify(roster));
+  await assert.rejects(publishR43MarketImportanceOnce(options(f,r)),
+   /R43_MANUAL_INPUT_MISSING_STOP/);
+  assert.equal(r.reads,0);assert.equal(r.writes,0);
+  fs.writeFileSync(path.join(f.pcHome,'local-market-calendar-r43-precomputed-rv-stored.json'),
+   JSON.stringify(proof));
+  const published=await publishR43MarketImportanceOnce(options(f,r));
+  assert.equal(published.status,'R43_D1_PUBLISHED_AND_READBACK');
   assert.equal(published.selected,129);
   assert.equal(r.writes,1);
  }finally{f.cleanup()}
