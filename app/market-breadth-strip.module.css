@@ -47,6 +47,9 @@
 .historyNetHeading { display: flex; justify-content: space-between; align-items: baseline; gap: 6px; padding: 1px 2px 5px 37px; font-size: 10px; font-variant-numeric: tabular-nums; }
 .historyNetHeading strong { font-weight: 700; }
 .historyNetHeading span { font-weight: 800; white-space: nowrap; }
+.historyTrendLegend { display: flex; align-items: center; gap: 5px; margin: 0 0 3px 37px; color: var(--zg-text-meta); font-size: 9px; line-height: 1.2; }
+.historyTrendLegend span { width: 14px; border-top: 2px solid var(--zg-gold); }
+.historyTrendValue { color: var(--zg-gold); }
 .historyDates { display: flex; align-items: center; justify-content: space-between; gap: 9px; flex-wrap: wrap; }
 .historyPlot { display: grid; grid-template-columns: 32px minmax(0,1fr); gap: 5px; align-items: stretch; min-width: 0; }
 .historyPercentAxis { display: flex; height: 160px; flex-direction: column; justify-content: space-between; padding-block: 6px 10px; box-sizing: border-box; color: var(--zg-text-meta); font-size: 9px; text-align: right; }
@@ -79,6 +82,8 @@
 .historyTooltip div strong { font-weight: 700; }
 .historyGridline { stroke: var(--zg-border); stroke-width: 1; vector-effect: non-scaling-stroke; }
 .historyMidline { stroke: var(--zg-text-meta); stroke-width: 1; stroke-dasharray: 4 6; opacity: .7; vector-effect: non-scaling-stroke; }
+.historyTrendLine { fill: none; stroke: var(--zg-gold); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; vector-effect: non-scaling-stroke; }
+.historyTrendDot { fill: var(--zg-gold); stroke: var(--zg-panel); stroke-width: 1; vector-effect: non-scaling-stroke; }
 .historyRisingLine, .historyFallingLine, .historyUnchangedLine { fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
 .historyRisingLine { stroke: var(--zg-positive); }
 .historyFallingLine { stroke: var(--zg-danger); }
