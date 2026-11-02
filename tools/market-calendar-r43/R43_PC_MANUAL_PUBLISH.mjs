@@ -12,6 +12,8 @@ import {makeR43MarketImportanceDisplay,r43MarketImportanceDisplayIndex,
 
 const DEFAULT_INPUT='local-market-calendar-r43-input.json';
 const APPROVED_ROSTER='local-market-calendar-r43-reviewed-issuers.json';
+const PRECOMPUTED_RV_SOURCE='local-market-calendar-r43-precomputed-rv-stored.json';
+const PRECOMPUTED_RV_MODE='APPROVED_PC_STORED_PRECOMPUTED_RV_R1';
 const READER_HEADER='ZGMINI-R43-MARKET-IMPORTANCE';
 const DAY=/^20\d\d-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12]\d|3[01])$/;
 const TICKER=/^[A-Z0-9][A-Z0-9.\-]{0,11}$/;
@@ -40,7 +42,32 @@ function checkedJson(p,maxBytes){
  catch{fail('R43_MANUAL_JSON_INVALID_STOP')}
 }
 
-function dynamicExpectedFromReviewedRoster(input,approvedUniverse){
+function verifiedPrecomputedRV(input,universe,proof){
+ const evidence=universe?.precomputedRelativeVolume;
+ if(input?.relativeVolumeSourceMode!==PRECOMPUTED_RV_MODE||
+  evidence?.mode!==PRECOMPUTED_RV_MODE||
+  evidence.reviewed!==true||
+  typeof evidence.sourceReference!=='string'||
+  evidence.sourceReference.trim().length<12||evidence.sourceReference.length>512||
+  typeof evidence.rowsSha256!=='string'||!/^[a-f0-9]{64}$/.test(evidence.rowsSha256)||
+  evidence.asOf!==input.asOf||
+  proof?.version!==1||proof.method!==PRECOMPUTED_RV_MODE||
+  proof.provenance!=='APPROVED_PC_STORED_DATA'||
+  proof.asOf!==input.asOf||
+  proof.sourceReference!==evidence.sourceReference||
+  proof.marketCapApiUsed!==false||
+  proof.permissionForDerivedScores!==true||
+  proof.rightsReviewReference!==input.rightsReviewReference||
+  !Array.isArray(proof.rows)||
+  proof.rows.length!==input.rows.length)return false;
+ // A separately persisted, reviewed PC source must match the exact scored rows.
+ // A self-declared source flag or hash on the input alone is never sufficient.
+ const actual=sha(JSON.stringify(proof.rows));
+ return actual===evidence.rowsSha256&&
+  actual===sha(JSON.stringify(input.rows));
+}
+
+function dynamicExpectedFromReviewedRoster(input,approvedUniverse,{precomputedRVSource=null}={}){
  const supplied=Object.hasOwn(input,'expectedEligibleIssuers')||
    Object.hasOwn(input,'approvedUniverseSha256');
  if(!supplied)return null; // Preserve the explicitly pre-existing 2634 legacy path.
@@ -59,8 +86,10 @@ function dynamicExpectedFromReviewedRoster(input,approvedUniverse){
   !DAY.test(u.reviewedAsOf)||u.reviewedAsOf>input.asOf||
   Date.parse(input.asOf+'T00:00:00Z')-Date.parse(u.reviewedAsOf+'T00:00:00Z')>90*86400000||
   u.expectedEligibleIssuers!==input.expectedEligibleIssuers||
-  u.marketSessionsReviewed!==true||
-  !reviewedTradingSessionsValid(u.reviewedTradingSessions,input.asOf)||
+  !(input.relativeVolumeSourceMode===undefined&&
+      u.marketSessionsReviewed===true&&
+      reviewedTradingSessionsValid(u.reviewedTradingSessions,input.asOf) ||
+    verifiedPrecomputedRV(input,u,precomputedRVSource))||
   !Array.isArray(u.members)||u.members.length<2500||u.members.length>25000||
   !Array.isArray(input.rows)||input.rows.length!==u.members.length)
   fail('R43_MANUAL_APPROVED_UNIVERSE_CONTRACT_STOP');
@@ -98,7 +127,7 @@ function dynamicExpectedFromReviewedRoster(input,approvedUniverse){
  return u.expectedEligibleIssuers; // Independent reviewed roster, never input alone.
 }
 
-export function prepareR43ManualSnapshot(input,{now=Date.now(),approvedUniverse=null}={}){
+export function prepareR43ManualSnapshot(input,{now=Date.now(),approvedUniverse=null,precomputedRVSource=null}={}){
  if(input?.version!==1||input.provenance!=='APPROVED_PC_STORED_DATA'||
   input.marketCapApiUsed!==false||input.permissionForDerivedScores!==true||
   typeof input.rightsReviewReference!=='string'||
@@ -106,7 +135,12 @@ export function prepareR43ManualSnapshot(input,{now=Date.now(),approvedUniverse=
   !DAY.test(input.asOf)||!Array.isArray(input.rows)||
   input.rows.length<100||input.rows.length>12000)
   fail('R43_MANUAL_SOURCE_RIGHTS_UNVERIFIED_STOP');
- const expectedEligibleIssuers=dynamicExpectedFromReviewedRoster(input,approvedUniverse);
+ if(input.relativeVolumeSourceMode!==undefined&&
+  (input.relativeVolumeSourceMode!==PRECOMPUTED_RV_MODE||
+   !Object.hasOwn(input,'approvedUniverseSha256')||
+   !Object.hasOwn(input,'expectedEligibleIssuers')))
+  fail('R43_MANUAL_PRECOMPUTED_RV_ROSTER_REQUIRED_STOP');
+ const expectedEligibleIssuers=dynamicExpectedFromReviewedRoster(input,approvedUniverse,{precomputedRVSource});
  let base,ranked;
  try{base=rankR43Issuers(input.rows,{asOf:input.asOf,
   ...(expectedEligibleIssuers===null?{}:{expectedEligibleIssuers})})}
@@ -153,7 +187,11 @@ export async function publishR43MarketImportanceOnce({
  // The review roster comes from a fixed, separately approved PC file.
  // Never follow an input-supplied roster path or trust its count alone.
  const approvedUniverse=dynamic?checkedJson(rosterFile,8_000_000):null;
- const snapshot=prepareR43ManualSnapshot(input,{now,approvedUniverse});
+ // Only the explicit annual precomputed-RV mode reads this second PC-local
+ // source snapshot; 21 daily raw files are never needed by this mode.
+ const precomputedRVSource=input.relativeVolumeSourceMode===PRECOMPUTED_RV_MODE?
+  checkedJson(path.join(pcHome,PRECOMPUTED_RV_SOURCE),8_000_000):null;
+ const snapshot=prepareR43ManualSnapshot(input,{now,approvedUniverse,precomputedRVSource});
  const body=JSON.stringify(snapshot),digest=sha(body);
  if(Buffer.byteLength(body,'utf8')>1_750_000)fail('R43_MANUAL_PUBLIC_PAYLOAD_SIZE_STOP');
  const config=checkedJson(path.join(pcHome,'config.json'),64_000);
