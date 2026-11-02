@@ -74,6 +74,8 @@ try{
    assert.ok(await detail.locator('rect[class*="historyNetNegativeBar"]').count()>0,'Red bars show falling dominance');
    assert.match(await detail.locator('[class*="historyNetHeading"]').innerText(),/하락 우세 -18\.0%p/,'Latest net dominance is immediately readable above the chart');
    assert.equal(await detail.locator('line[class*="historyMidline"]').count(),1,'One visible zero baseline separates positive and negative dominance');
+   assert.match(await detail.locator('[class*="historyTrendLegend"]').innerText(),/5거래일 평균 · 후행 SMA/,'A one-trading-week trailing mean is explicitly labeled');
+   assert.ok(await detail.locator('path[class*="historyTrendLine"]').count()>0,'Gold moving average overlays the net breadth bars');
    assert.equal(await detail.locator('path[class*="historyRisingLine"],path[class*="historyFallingLine"]').count(),0,'Old opposing percentage lines are removed');
    const windows=[['3M',93,'3개월'],['1M',31,'1개월'],['1W',7,'1주'],['1D',1,'1일'],['6M',186,'6개월'],['1Y',366,'1년'],['3M',93,'3개월']];
    for(const [period,days,label] of windows){
@@ -88,13 +90,21 @@ try{
     assert.ok(aria?.includes('MarketParquet R2 일별 상승·하락 우세도')&&aria.includes(`${label} 확정 비율 이력`),period+' R2 percent-only chart window and label');
     const expectedPoints=breadthPoints.filter(point=>point.date>=from&&point.date<=breadthHistory.lastDate).length;
     assert.equal(await netBars.count(),expectedPoints,period+' renders one signed net bar per real provided daily observation');
-    if(period==='1D')assert.equal(await detail.locator('rect[class*="historyNetNegativeBar"]').count(),1,'Latest day is negative even with unchanged issues present');
+    if(period==='1D'){
+     assert.equal(await detail.locator('rect[class*="historyNetNegativeBar"]').count(),1,'Latest day is negative even with unchanged issues present');
+     assert.equal(await detail.locator('circle[class*="historyTrendDot"]').count(),1,'One-day period exposes the prior-week mean as a dot');
+     await breadthSvg.focus();
+     const lastFive=breadthPoints.slice(-5);
+     const expectedMean=lastFive.reduce((sum,point)=>sum+point.risingPct-point.fallingPct,0)/5;
+     assert.ok((await detail.locator('[class*="historyTooltip"] div').filter({hasText:'5거래일 평균'}).innerText()).includes(`${expectedMean>0?'+':''}${expectedMean.toFixed(1)}%p`),'One-day tooltip uses five prior observed sessions, not a single-point average');
+    }
    }
    assert.equal(breadthHistoryRequests,1,'Period switching filters fetched 1Y history without new API calls');
    await breadthSvg.focus();
    await page.keyboard.press('Home');
    assert.equal(await detail.locator('[class*="historyTooltip"] time').getAttribute('datetime'),breadthPoints.filter(point=>point.date>=new Date(Date.UTC(2026,9,30)-(93-1)*86400000).toISOString().slice(0,10))[0].date,'Home selects earliest available R2 day');
    assert.doesNotMatch(await detail.locator('[class*="historyTooltip"]').innerText(),/\d+개|503|6500/,'Tooltip never exposes stock counts');
+   assert.match(await detail.locator('[class*="historyTooltip"]').innerText(),/5거래일 평균/,'Keyboard tooltip includes the trend mean');
    console.log('PASS net breadth zero-baseline bars show positive/negative dominance for 1D/1W/1M/3M/6M/1Y with one history request');
   }
 
