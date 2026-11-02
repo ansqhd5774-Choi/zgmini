@@ -170,3 +170,47 @@ test('invalid day structure stays quarantined, never accepted by row filtering',
     assert.equal(result.providerRequests,0);
   }finally{fs.rmSync(root,{recursive:true,force:true});}
 });
+
+test('bounded 50-business-day backfill uses exactly 45 new calls, no retries or extra history',async()=>{
+  const root=fs.mkdtempSync(path.join(os.tmpdir(),'er1-bounded-backfill-'));
+  try{
+    const dates=recentNYBusinessDays(now,50).dates;
+    const dayRoot=path.join(root,'er1-input','days');
+    fs.mkdirSync(dayRoot,{recursive:true});
+    for(const day of dates.slice(0,5))fs.writeFileSync(path.join(dayRoot,day+'.json'),
+      JSON.stringify({storedAt:'2026-11-02T16:00:00Z',body:fakeDay(day)}));
+    let calls=0;
+    const fetcher=async url=>{
+      calls++;
+      const day=new URL(url).searchParams.get('date');
+      assert.equal(dates.includes(day),true);
+      return new Response(JSON.stringify(fakeDay(day)),{status:200});
+    };
+    const first=await runER1MinimalCapture({pcHome:root,now,
+      env:{EARNINGS_API_KEY:'SECRET'},dateCount:50,maxNewRequests:45,fetcher});
+    assert.equal(first.status,'ER1_PRIVATE_SAMPLE_SAVED');
+    assert.equal(first.providerRequests,45);
+    assert.equal(first.providerRetries,0);
+    assert.equal(first.newDayFiles,45);
+    assert.equal(first.retainedDayFiles,5);
+    assert.equal(first.savedDayCount,50);
+    assert.equal(first.missingDayCount,0);
+    assert.equal(first.uniqueSymbolsWithBoth,1);
+    assert.equal(calls,45);
+    const second=await runER1MinimalCapture({pcHome:root,now,
+      env:{},dateCount:50,maxNewRequests:45,
+      fetcher:async()=>{throw Error('DO_NOT_REFETCH')}});
+    assert.equal(second.providerRequests,0);
+    assert.equal(second.retainedDayFiles,50);
+    assert.equal(second.uniqueSymbolsWithBoth,1);
+  }finally{fs.rmSync(root,{recursive:true,force:true});}
+});
+
+test('backfill request budget never exceeds free-account conservative cap',async()=>{
+  const root=fs.mkdtempSync(path.join(os.tmpdir(),'er1-bounded-limit-'));
+  try{
+    await assert.rejects(runER1MinimalCapture({pcHome:root,now,
+      dateCount:50,maxNewRequests:46}),/ER1_REQUEST_BUDGET_INVALID/);
+    assert.equal(fs.existsSync(path.join(root,'er1-input')),false);
+  }finally{fs.rmSync(root,{recursive:true,force:true});}
+});
