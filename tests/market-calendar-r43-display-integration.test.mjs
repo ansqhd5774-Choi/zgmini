@@ -18,7 +18,7 @@ const projection=events=>({status:'READY_PRIVATE',scope:'PC_PRIVATE',publicDispl
  checkedAt:'2026-10-31T10:00:00Z',recordCount:events.length,
  priorityCount:events.filter(x=>x.priority).length,events});
 
-test('R43 remains research-only; annual FHS overrides both M7 and R42 five-issuer fallback',async()=>{
+test('ER1 replaces old annual FHS and R42 fallback, including the importance filter',async()=>{
  const ranked=rankR43Issuers(rows,{asOf});
  assert.equal(ranked.topCount,132);
  const index=r43ImportanceIndex(ranked,{now});
@@ -26,7 +26,7 @@ test('R43 remains research-only; annual FHS overrides both M7 and R42 five-issue
  const display=earningsDisplaySnapshot(projection([event('NVDA',true),event('ABBV'),event('ARM'),event('ZM')]),
   {importanceIndex:index}); // Historical integration argument must have no effect.
  assert.equal(Object.hasOwn(display,'impactModel'),false);
- assert.equal(earningsDisplayHtml(display,{start:day,end:day,importance:3}).count,2);
+ assert.equal(earningsDisplayHtml(display,{start:day,end:day,importance:3}).count,0);
 
  const annual=validateFhsAnnualSnapshot({status:'READY_R3_PROVISIONAL',version:'ZGMINI-FHS-R3',
   asOf:day,sourceStoredAt:1793332803791,recordCount:2,grades:{NVDA:[1,31],ABBV:[3,90]}});
@@ -34,8 +34,7 @@ test('R43 remains research-only; annual FHS overrides both M7 and R42 five-issue
   `https://zgmini.kr/api/earnings-calendar-display?start=${day}&end=${day}&importance=3`,annual);
  assert.equal(result.status,200);
  const html=await result.text();
- assert.match(html,/ABBV/);
- assert.match(html,/재무건전성 별 3개/);
+ assert.equal(html,'');
  assert.doesNotMatch(html,/NVDA/);
  assert.doesNotMatch(html,/ARM/);
 });
