@@ -46,7 +46,7 @@ test('provider errors never advance checkpoint or forge evidence rows',async t=>
   assert.equal(url.searchParams.get('asof'),'-');
   return Response.json({error:'mock'}, {status:429});
  }});
- assert.equal(result.status,'BLOCKED');assert.equal(result.errorCode,'ALPACA_HTTP_429');
+ assert.equal(result.status,'DEFERRED_QUOTA');assert.equal(result.errorCode,'ALPACA_RATE_LIMITED');
  assert.deepEqual(JSON.parse(fs.readFileSync(path.join(dir,'checkpoint.json'),'utf8')),{end:'2026-10-05'});
  assert.equal(fs.existsSync(path.join(dir,'incremental','2026-10-05-2026-10-10-group-000.json')),false);
 });
