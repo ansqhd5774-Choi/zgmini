@@ -49,20 +49,40 @@ export function storedR10BLockedFiveQuarters({quality,breadth,release}={}){
     release.indicators.length!==6)return null;
  const approved=release.indicators.find(f=>f.id==='breadthDivergence');
  if(approved?.status!=='READY'||!Number.isFinite(approved.score))return null;
+ // The five-quarter replay starts at this quarter's first month. An old
+ // quality/score record for the 2025-01-09 Carter mourning closure is outside
+ // that replay window when the approved Release is 2026-Q2. Preserve the
+ // original source rows and strict date/order/value checks, but never treat
+ // the known closure as an eligible market-session observation. All other
+ // off-session dates remain invalid, including the closure if in-window.
+ const startQuarter=shiftQuarter(q,-4);
+ const firstLockedMonth=startQuarter.slice(0,4)+'-'+
+  String((Number(startQuarter.at(-1))-1)*3+1).padStart(2,'0')+'-01';
+ const exemptOldClosure=date=>date==='2025-01-09'&&date<firstLockedMonth;
  const qualityMap=new Map(),scores=new Map();let lastQuality='',lastScore='';
  for(const row of quality.rows){
   const date=row?.observationDate;
-  if(!validDate(date)||date<=lastQuality||!session(date)||
+  if(!validDate(date)||date<=lastQuality||
      !Number.isFinite(row?.coverage)||row.coverage<0||row.coverage>1)return null;
-  qualityMap.set(date,row);lastQuality=date;
+  lastQuality=date;
+  if(!session(date)){
+   if(exemptOldClosure(date))continue;
+   return null;
+  }
+  qualityMap.set(date,row);
  }
  for(const row of breadth.rows){
   const date=row?.observationDate;
-  if(!validDate(date)||date<=lastScore||!session(date))return null;
+  if(!validDate(date)||date<=lastScore)return null;
   if(row.researchSafetyScore!==null&&
      (!Number.isFinite(row.researchSafetyScore)||row.researchSafetyScore<0||
       row.researchSafetyScore>100||!Number.isInteger(row.rankObservations)))return null;
-  scores.set(date,row);lastScore=date;
+  lastScore=date;
+  if(!session(date)){
+   if(exemptOldClosure(date))continue;
+   return null;
+  }
+  scores.set(date,row);
  }
  const quarters=[];
  for(let offset=-4;offset<=0;offset++){
