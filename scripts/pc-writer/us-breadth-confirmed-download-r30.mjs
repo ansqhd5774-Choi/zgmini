@@ -128,19 +128,29 @@ function storeExclusive(destination,bytes){
 }
 
 /**
- * In production use 250 to request up to 251 completed NYSE sessions.
- * If the earliest date is absent, retain all 250 consecutive real source days.
- * The sessionCount override is solely for network-free, small mock tests.
+ * YEAR preserves the approved R31 rolling-history collector unchanged.
+ * DAILY_PAIR requests only the two most recent completed NYSE sessions and is
+ * separately gated for source-only acquisition. Neither mode publishes D1 or
+ * changes Core; the sessionCount override is only for YEAR test fixtures.
  */
 export async function stageConfirmedStockDailyR30({
  mode='PLAN_ONLY',dataRoot,pcHome,apiKey=process.env.MARKETPARQUET_API_KEY,
  now=new Date(),sessionCount=250,fetchImpl=fetch,
+ collectionWindow='YEAR',allowDailyPairSourceWrite=false,
 }={}){
  if(mode!=='PLAN_ONLY'&&mode!=='DOWNLOAD_STAGING')return summary(mode,'EXPLICIT_MODE_REQUIRED');
+ if(!['YEAR','DAILY_PAIR'].includes(collectionWindow))
+  return summary(mode,'COLLECTION_WINDOW_INVALID');
+ if(collectionWindow==='DAILY_PAIR'&&mode==='DOWNLOAD_STAGING'
+  &&allowDailyPairSourceWrite!==true)
+  return summary(mode,'DAILY_PAIR_SOURCE_WRITE_APPROVAL_REQUIRED',{
+   collectionWindow,manifestCalls:0,downloadCalls:0,localFileWrites:0});
+ const windowSessionCount=collectionWindow==='DAILY_PAIR'?1:sessionCount;
  let dates;
- try{dates=fullMarketYearSessions({now,sessionCount});}
+ try{dates=fullMarketYearSessions({now,sessionCount:windowSessionCount});}
  catch{return summary(mode,'TRADING_SESSIONS_UNAVAILABLE');}
- const scope={requestedDates:dates.length,firstDate:dates[0],lastDate:dates.at(-1)};
+ const scope={collectionWindow,requestedDates:dates.length,
+  firstDate:dates[0],lastDate:dates.at(-1)};
  if(!apiKey){try{apiKey=loadLocalProviders(pcHome).MARKETPARQUET_API_KEY;}catch{}}
  if(typeof apiKey!=='string'||!apiKey.trim())
   return summary(mode,'PROVIDER_API_KEY_NOT_CONFIGURED',scope);
@@ -165,16 +175,19 @@ export async function stageConfirmedStockDailyR30({
   firstAvailableDate:availability.firstAvailableDate,
   lastAvailableDate:availability.lastAvailableDate,
   firstMissingDate:availability.firstMissingDate};
- // Missing a single oldest baseline file changes the available number of
- // comparison points, not whether authentic 250 daily source files can be
- // collected. Interior gaps or fewer than 250 files still fail closed.
+ // Daily acquisition cannot treat either half of the latest comparison pair
+ // as an optional history baseline. Unlike YEAR, require both provider files.
+ if(collectionWindow==='DAILY_PAIR'&&availability.missingDatesCount!==0)
+  return summary(mode,'PROVIDER_LATEST_PAIR_INCOMPLETE',available);
+ // YEAR: missing a single oldest baseline file changes the available number
+ // of comparisons, not whether authentic 250 daily files can be collected.
  const oldestOnlyMissing=availability.missingDatesCount===1
   &&availability.firstMissingDate===dates[0]
   &&availability.availableDates===dates.length-1;
  if(availability.missingDatesCount!==0&&!oldestOnlyMissing)
   return summary(mode,'PROVIDER_YEAR_GAPPED',available);
  const selectedDates=oldestOnlyMissing?dates.slice(1):dates;
- if(selectedDates.length<sessionCount)
+ if(selectedDates.length<windowSessionCount)
   return summary(mode,'PROVIDER_SOURCE_TOO_SHORT',available);
  // This only narrows the validation view; the actual provider response and
  // its authenticated requested range are never rewritten or represented as
@@ -249,11 +262,27 @@ export async function stageConfirmedStockDailyR30({
  return summary(mode,'STAGING_COMPLETE_LOCAL_ONLY',counters);
 }
 
+/** The new daily CLI cannot enable an E: source write without separate Y. */
+export function r45DailyPairCliArgs(argv,{operatorConfirmation}={}){
+ if(!Array.isArray(argv)||argv.length!==1)return null;
+ if(argv[0]==='--plan-only')return {mode:'PLAN_ONLY',collectionWindow:'YEAR'};
+ if(argv[0]==='--download-staging')
+  return {mode:'DOWNLOAD_STAGING',collectionWindow:'YEAR'};
+ if(argv[0]==='--plan-latest-pair')
+  return {mode:'PLAN_ONLY',collectionWindow:'DAILY_PAIR'};
+ if(argv[0]==='--download-latest-pair-approved'
+  &&operatorConfirmation==='Y')
+  return {mode:'DOWNLOAD_STAGING',collectionWindow:'DAILY_PAIR',
+   allowDailyPairSourceWrite:true};
+ return null;
+}
+
 if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.url)){
- if(process.argv.length!==3||!['--plan-only','--download-staging'].includes(process.argv[2]))
-  throw Error('EXPLICIT_R30_PLAN_OR_STAGING_ARGUMENT_REQUIRED');
+ const cli=r45DailyPairCliArgs(process.argv.slice(2),{
+  operatorConfirmation:process.env.US_BREADTH_R45_OPERATOR_CONFIRMATION});
+ if(!cli)throw Error('EXPLICIT_R31_OR_APPROVED_R45_SOURCE_COLLECTION_REQUIRED');
  const report=await stageConfirmedStockDailyR30({
-  mode:process.argv[2]==='--download-staging'?'DOWNLOAD_STAGING':'PLAN_ONLY',
+  ...cli,
   dataRoot:process.env.ZGMINI_DATA_ROOT??'E:/ZGmini/data',
   pcHome:process.env.ZGMINI_PC_HOME??path.join(os.homedir(),'.zgmini','pc-writer'),
  });
