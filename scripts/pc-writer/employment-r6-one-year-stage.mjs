@@ -138,7 +138,7 @@ function pcPublisher(dbPath){
   return {remote:client(config,credential(root)),dbId:config.core,source};
 }
 
-export function saveReport(dir,body,publication,error,{candidateDbUsed=false,pitCoverage=null,pitCoverageError=null,asOfDate=null,candidateDiscoveryStatus="NOT_REQUESTED"}={}){
+export function saveReport(dir,body,publication,error,{candidateDbUsed=false,pitCoverage=null,pitCoverageError=null,asOfDate=null,candidateDiscoveryStatus="NOT_REQUESTED",candidateDiscoveryStep="NOT_REQUESTED"}={}){
   const suffix=nowIso().replace(/[-:.]/g,"")+"_"+process.pid;
   const basename="EMPLOYMENT_R6_ONE_YEAR_"+suffix;
   const summary=body?.summary??null;
@@ -148,7 +148,7 @@ export function saveReport(dir,body,publication,error,{candidateDbUsed=false,pit
     error:error?.message??null,asOfDate:body?.asOfDate??asOfDate,
     sourceMode:candidateDbUsed?"CORE_PLUS_ISOLATED_CANDIDATE_READONLY":"CORE_ONLY_READONLY",
     summary,sourceStoredAt:body?.sourceStoredAt??null,pitCoverage,pitCoverageError,
-    candidateDiscoveryStatus,
+    candidateDiscoveryStatus,candidateDiscoveryStep,
     dbWritesByStage:0,providerCallsByStage:0,
     remoteWritten:publication?.status==="VERIFIED",
   };
@@ -159,6 +159,7 @@ export function saveReport(dir,body,publication,error,{candidateDbUsed=false,pit
     "AS_OF: "+(report.asOfDate??"NO_EVIDENCE"),
     "SOURCE_MODE: "+report.sourceMode,
     "CANDIDATE_DISCOVERY: "+report.candidateDiscoveryStatus,
+    "CANDIDATE_DISCOVERY_STEP: "+report.candidateDiscoveryStep,
     "RAW_FEATURES: "+(summary?.sourceFeatures??0)+" / 29",
     "RECENT_QUARTER: "+(summary?.recentlyObservedFeatures??0)+" / 29",
     "ONE_YEAR_CHART_READY: "+(summary?.chartReadyFeatures??0)+" / 29",
@@ -186,7 +187,7 @@ export function saveReport(dir,body,publication,error,{candidateDbUsed=false,pit
 
 if(process.argv[1]&&import.meta.url===pathToFileURL(process.argv[1]).href){
   let args,body=null,publication=null,problem=null,pitCoverage=null,pitCoverageError=null;
-  let candidateDiscoveryStatus="NOT_REQUESTED";
+  let candidateDiscoveryStatus="NOT_REQUESTED",candidateDiscoveryStep="NOT_REQUESTED";
   try{
     args=optionsFrom(process.argv.slice(2));
     if(!args.publish){
@@ -194,8 +195,10 @@ if(process.argv[1]&&import.meta.url===pathToFileURL(process.argv[1]).href){
         const discovery=locateEmploymentR6Candidate({
           outputDir:args.outputDir,coreDbPath:args.dbPath,
           pcHome:process.env.ZGMINI_PC_HOME??path.join(os.homedir(),".zgmini","pc-writer"),
+          includeDiagnosticStep:true,
         });
         candidateDiscoveryStatus=discovery.status;
+        candidateDiscoveryStep=discovery.diagnosticStep;
         if(discovery.candidateDbPath)args.candidateDbPath=discovery.candidateDbPath;
       }
       const diagnostic=await stageEmploymentR6OneYearWithPitAudit(args);
@@ -211,7 +214,7 @@ if(process.argv[1]&&import.meta.url===pathToFileURL(process.argv[1]).href){
     try{
       const paths=saveReport(args.outputDir,body,publication,problem,{
         candidateDbUsed:Boolean(args.candidateDbPath),pitCoverage,pitCoverageError,asOfDate:args.asOfDate,
-        candidateDiscoveryStatus,
+        candidateDiscoveryStatus,candidateDiscoveryStep,
       });
       process.stdout.write("RESULT_TXT: "+paths.txtPath+"\nRESULT_JSON: "+paths.jsonPath+"\n");
     }catch(error){process.stderr.write("REPORT_SAVE_FAILED: "+error.message+"\n");process.exitCode=2;}

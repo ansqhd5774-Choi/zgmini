@@ -65,6 +65,33 @@ test('R38 static wrapper may resolve one additional launcher, never arbitrary pa
   assert.equal(locateEmploymentR6Candidate(opts).status,'CANDIDATE_FOUND_READONLY');
 });
 
+test('R38 origin VBS with a static runner assignment resolves like the existing R34 parser',()=>{
+  const nested=String.raw`E:\Launchers\original-core.vbs`;
+  const {opts,files}=fixture({vbs:`' ZGMINI_R38_WRAPPER_V1\r\n`+
+    `origin = "${nested}"\r\nWScript.Quit shell.Run(origin, 0, True)\r\n`});
+  files.set(key(nested),`Set shell = CreateObject("WScript.Shell")\r\n`+
+    `command = """${runner}"""\r\nWScript.Quit shell.Run(command, 0, True)\r\n`);
+  const found=locateEmploymentR6Candidate({...opts,includeDiagnosticStep:true});
+  assert.equal(found.status,'CANDIDATE_FOUND_READONLY');
+  assert.equal(found.candidateDbPath,candidate);
+  assert.equal(found.diagnosticStep,'CANDIDATE_VERIFIED_READONLY');
+});
+
+test('diagnostic step reveals a failing hop but never a PC path or script contents',()=>{
+  const {opts}=fixture({vbs:'WScript.Quit shell.Run(commandFromRegistry, 0, True)\r\n'});
+  const found=locateEmploymentR6Candidate({...opts,includeDiagnosticStep:true});
+  assert.equal(found.status,'TASK_SOURCE_UNRESOLVED');
+  assert.equal(found.diagnosticStep,'HOP_1_VBS_REFERENCES');
+  assert.doesNotMatch(JSON.stringify(found),/Verified|Launchers|Registry|E:\\|core\.sqlite/i);
+});
+
+test('ambiguous static runner assignments remain blocked',()=>{
+  const other=String.raw`E:\Verified\other-core\scripts\pc-writer\quota-runner.mjs`;
+  const {opts}=fixture({vbs:`command = """${runner}"""\r\n`+
+    `alternative = """${other}"""\r\nWScript.Quit shell.Run(command, 0, True)\r\n`});
+  assert.equal(locateEmploymentR6Candidate(opts).status,'TASK_SOURCE_UNRESOLVED');
+});
+
 test('both candidate locations with different physical files are ambiguous',()=>{
   const {opts}=fixture({zipFile:true});
   assert.deepEqual(locateEmploymentR6Candidate(opts),{

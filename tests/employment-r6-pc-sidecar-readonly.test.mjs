@@ -118,5 +118,13 @@ test("failed 1Y stage can still write read-only PIT missing-history counts to TX
   const txt=fs.readFileSync(paths.txtPath,"utf8");
   assert.match(txt,/CORE_CURRENT_WITHOUT_PIT_HISTORY: 1/);
   assert.match(txt,/PIT_AUDIT_ERROR: NONE/);
+  const traceDir=path.join(dir,"traced");
+  fs.mkdirSync(traceDir);
+  const traced=saveReport(traceDir,diagnostic.body,null,diagnostic.error,{
+    ...diagnostic,asOfDate:"2026-11-02",candidateDiscoveryStatus:"TASK_SOURCE_UNRESOLVED",
+    candidateDiscoveryStep:"HOP_2_VBS_REFERENCES",
+  });
+  assert.match(fs.readFileSync(traced.txtPath,"utf8"),
+    /CANDIDATE_DISCOVERY_STEP: HOP_2_VBS_REFERENCES/);
   assert.deepEqual(fs.readFileSync(core),original);
 });

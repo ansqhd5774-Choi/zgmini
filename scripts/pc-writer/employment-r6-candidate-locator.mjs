@@ -14,6 +14,9 @@ const SHA=/^[a-f\d]{40}$/i;
 const WIN_ABS=/^[a-z]:\\/i;
 const LEAF=/^([a-z]:\\[^\r\n<>"|*?]+)\\scripts\\pc-writer\\(local-cycle|quota-runner|run-local|collect-local)\.mjs$/i;
 const SCRIPT=/([a-z]:[\\/][^"'\r\n<>|*?]+?\.(?:vbs|cmd|mjs))/gi;
+// Existing R34/R59 PC tools also recognize a literal runner on a separate
+// VBScript assignment line. Restrict this fallback to approved runner names.
+const STATIC_RUNNER=/([a-z]:[\\/][^"'\r\n<>]*?[\\/]scripts[\\/]pc-writer[\\/](?:local-cycle|quota-runner|run-local|collect-local)\.mjs)/gi;
 const fail=code=>{throw Object.assign(new Error(code),{code});};
 const ensure=(value,code)=>{if(!value)fail(code);};
 
@@ -80,10 +83,12 @@ function taskEntrypoint(xml){
   return W.normalize(command);
 }
 
-function followLauncher(initial,{readFile,exists}){
+function followLauncher(initial,{readFile,exists},diagnostic){
   let current=initial;
   const visited=new Set();
   for(let depth=0;depth<5;depth++){
+    const kind=/\.mjs$/i.test(current)?'MJS':/\.vbs$/i.test(current)?'VBS':/\.cmd$/i.test(current)?'CMD':'OTHER';
+    diagnostic.step=`HOP_${depth+1}_${kind}_CHECK`;
     ensure(absolute(current),'TASK_SOURCE_UNRESOLVED');
     ensure(exists(current),'TASK_SOURCE_UNRESOLVED');
     const key=current.toLowerCase();
@@ -100,13 +105,20 @@ function followLauncher(initial,{readFile,exists}){
     const text=decode(bytes);
     const lines=text.split(/\r?\n/).filter(line=>!/^[\s]*(?:rem\b|::|')/i.test(line));
     const runnable=lines.filter(line=>/\.Run\s*\(|\bcall\s+|\bnode(?:\.exe)?\b|%NODE%|"[^\r\n]*\.exe"/i.test(line));
+    diagnostic.step=`HOP_${depth+1}_${kind}_REFERENCES`;
     ensure(runnable.length===1,'TASK_SOURCE_UNRESOLVED');
     let refs=runnable.flatMap(references);
     // Historical R38 wrapper has one literal origin, but never assume its
     // October checkout: read the *currently registered* wrapper's own value.
     if(refs.length===0&&/\.vbs$/i.test(current)&&text.includes('ZGMINI_R38_WRAPPER_V1')){
-      const origins=[...text.matchAll(/^\s*origin\s*=\s*"([^"\r\n]+)"\s*(?:'.*)?$/gim)];
-      if(origins.length===1&&/\borigin\b/i.test(runnable.join('\n')))refs=[origins[0][1]];
+      const origins=[...text.matchAll(/^\s*origin\s*=\s*"((?:[^"\r\n]|"")*)"\s*(?:'.*)?$/gim)];
+      if(origins.length===1&&/\borigin\b/i.test(runnable.join('\n')))
+        refs=[origins[0][1].replaceAll('""','"')];
+    }
+    if(refs.length===0&&/\.vbs$/i.test(current)){
+      // Literal script path can be assigned first, then executed as a variable.
+      // A unique static path is evidence only if the script has one runnable line.
+      refs=[...lines.join('\n').matchAll(STATIC_RUNNER)].map(m=>m[1]);
     }
     current=only(refs,'TASK_SOURCE_UNRESOLVED');
   }
@@ -132,7 +144,9 @@ function verifySqlite(candidate){
  * testInject is solely for deterministic, side-effect-free path/task tests.
  */
 export function locateEmploymentR6Candidate({outputDir,coreDbPath,pcHome,
-  testInject={}}={}){
+  testInject={},includeDiagnosticStep=false}={}){
+  // Fixed codes only: do not return launcher paths, Task XML or config secrets.
+  const diagnostic={step:'INPUT'};
   const io={
     readTaskXml:queryTask,
     readFile:file=>fs.readFileSync(file),
@@ -151,20 +165,25 @@ export function locateEmploymentR6Candidate({outputDir,coreDbPath,pcHome,
     validateDb:verifySqlite,
     ...testInject,
   };
-  const done=(status,candidateDbPath=null)=>({status,candidateDbPath});
+  const done=(status,candidateDbPath=null)=>({status,candidateDbPath,
+    ...(includeDiagnosticStep?{diagnosticStep:diagnostic.step}:{})});
   try{
     // With no trusted Windows PC context, never infer an E: source root.
     const home=pcHome??process.env.ZGMINI_PC_HOME??
       (process.platform==='win32'&&process.env.USERPROFILE?
         W.join(process.env.USERPROFILE,'.zgmini','pc-writer'):null);
     ensure(absolute(outputDir)&&absolute(coreDbPath)&&absolute(home),'LOCATOR_INPUT_UNVERIFIED');
+    diagnostic.step='TASK_QUERY';
     const xml=decode(io.readTaskXml());
-    const root=followLauncher(taskEntrypoint(xml),io);
+    diagnostic.step='TASK_ACTION';
+    const root=followLauncher(taskEntrypoint(xml),io,diagnostic);
+    diagnostic.step='PC_SOURCE_APPROVAL';
     const approved=JSON.parse(decode(io.readFile(W.join(home,'config.json'))));
     const source=io.gitHead(root);
     ensure(SHA.test(source)&&approved?.source===source&&approved?.enabled===true
       &&approved?.collectionTarget==='pc'&&io.gitClean(root)===true,
       'TASK_SOURCE_NOT_APPROVED');
+    diagnostic.step='CANDIDATE_LIST';
     const candidates=[W.join(outputDir,NAME),W.join(root,'scripts','pc-writer',NAME)]
       .filter(file=>io.exists(file));
     ensure(io.exists(coreDbPath)&&io.exists(W.join(home,'storage','core.sqlite'))&&
@@ -172,6 +191,7 @@ export function locateEmploymentR6Candidate({outputDir,coreDbPath,pcHome,
         W.normalize(io.realpath(W.join(home,'storage','core.sqlite'))).toLowerCase(),
       'CORE_DB_UNVERIFIED');
     if(candidates.length===0)return done('CANDIDATE_NOT_FOUND');
+    diagnostic.step='CANDIDATE_IDENTITY';
     const located=new Map();
     for(const file of candidates){
       const real=io.realpath(file);
@@ -182,7 +202,9 @@ export function locateEmploymentR6Candidate({outputDir,coreDbPath,pcHome,
     const candidate=located.values().next().value;
     ensure(W.normalize(io.realpath(coreDbPath)).toLowerCase()!==
       W.normalize(io.realpath(candidate)).toLowerCase(),'CANDIDATE_IS_CORE_DB');
+    diagnostic.step='CANDIDATE_DB_VALIDATION';
     ensure(io.validateDb(candidate)===true,'CANDIDATE_DB_INVALID');
+    diagnostic.step='CANDIDATE_VERIFIED_READONLY';
     return done('CANDIDATE_FOUND_READONLY',candidate);
   }catch(error){
     const known=new Set(['LOCATOR_INPUT_UNVERIFIED','TASK_XML_UNREADABLE',
