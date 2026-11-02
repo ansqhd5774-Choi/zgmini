@@ -9,6 +9,8 @@ import {prepareR43ManualSnapshot,publishR43MarketImportanceOnce} from './R43_PC_
 const stop=code=>{throw Error(code)};
 const DEFAULT_INPUT='local-market-calendar-r43-input.json';
 const ROSTER='local-market-calendar-r43-reviewed-issuers.json';
+const PRECOMPUTED_RV_SOURCE='local-market-calendar-r43-precomputed-rv-stored.json';
+const PRECOMPUTED_RV_MODE='APPROVED_PC_STORED_PRECOMPUTED_RV_R1';
 const SOURCE=/^[a-f0-9]{40}$/i;
 
 export function parseR43ManualArgs(argv){
@@ -58,7 +60,9 @@ export function preflightR43ManualCommand(options,{now=Date.now()}={}){
   Object.hasOwn(input,'approvedUniverseSha256');
  if(!rosterRequired)stop('R43_MANUAL_COMMAND_APPROVED_UNIVERSE_REQUIRED_STOP');
  const approvedUniverse=readPrivateJson(path.join(options.pcHome,ROSTER),8_000_000);
- const compact=prepareR43ManualSnapshot(input,{now,approvedUniverse});
+ const precomputedRVSource=input.relativeVolumeSourceMode===PRECOMPUTED_RV_MODE?
+  readPrivateJson(path.join(options.pcHome,PRECOMPUTED_RV_SOURCE),8_000_000):null;
+ const compact=prepareR43ManualSnapshot(input,{now,approvedUniverse,precomputedRVSource});
  const config=readPrivateJson(path.join(options.pcHome,'config.json'),64_000);
  if(config.collectionTarget!=='pc'||config.enabled!==true||
   typeof config.core!=='string'||!config.core.trim()||
