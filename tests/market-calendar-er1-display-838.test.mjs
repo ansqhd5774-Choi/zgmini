@@ -16,14 +16,15 @@ const projection=events=>({status:'READY_PRIVATE',scope:'PC_PRIVATE',
  checkedAt:'2026-10-30T10:00:00Z',coveredDays:dates,recordCount:events.length,
  priorityCount:events.length,events});
 const url=`https://zgmini.kr/api/earnings-calendar-display?start=${day}&end=${day}`;
-const sampleRows=Array.from({length:838},(_,i)=>({eligible:true,
+const sampleRows=Array.from({length:838},(_,i)=>({
  issuerId:`X${i}`,tickers:[`X${i}`],earningsSymbol:`X${i}`,
  releases:[{date:'2026-10-30',symbol:`X${i}`,eps:1,revenue:i+1}]}));
 
-test('838 simulated issuers are scored at the approved 97-point threshold, without forced top 5%',()=>{
- const candidate=scoreER1Issuers(sampleRows,{asOf:'2026-11-02',expectedEligibleIssuers:838});
+test('838 simulated observed symbols are scored at the fixed 97-point threshold',()=>{
+ const candidate=scoreER1Issuers(sampleRows,{asOf:'2026-11-02'});
  assert.equal(candidate.status,'READY_SHADOW');
  assert.equal(candidate.coverage.scoreableIssuers,838);
+ assert.equal(candidate.coverage.inputSymbols,838);
  assert.equal(candidate.star3Count,42);
  const publicDerived=makeER1PublicDisplay(candidate);
  assert.equal(publicDerived.recordCount,838);
@@ -34,20 +35,22 @@ test('838 simulated issuers are scored at the approved 97-point threshold, witho
  assert.equal(ER1_EARNINGS_DISPLAY_PUBLIC_KEY,'market-calendar:earnings-er1-score-public');
 });
 
-test('838 are NOT sufficient for the approved full eligible universe unless coverage is independently verified',()=>{
- const blocked=scoreER1Issuers(sampleRows,{asOf:'2026-11-02',expectedEligibleIssuers:2634});
- assert.equal(blocked.status,'BLOCKED');
- assert.equal(blocked.rankings.length,0);
- assert.throws(()=>makeER1PublicDisplay(blocked),/ER1_ONLY_VALIDATED_COMPLETE_RESULT/);
+test('saved observed-symbol comparison does not assert or require a full market roster',()=>{
+ const observed=scoreER1Issuers(sampleRows,{asOf:'2026-11-02'});
+ assert.equal(observed.status,'READY_SHADOW');
+ assert.equal(observed.coverage.observedIssuers,838);
+ assert.equal(Object.hasOwn(observed.coverage,'expectedEligibleIssuers'),false);
+ assert.ok(validateER1PublicDisplay(makeER1PublicDisplay(observed)));
 });
 
-test('full 2634 approved roster with 838 actuals displays 838 scores, unknown issuers as literal hyphen',async()=>{
- const missing=Array.from({length:2634-838},(_,i)=>({eligible:true,
+test('838 actuals plus unavailable symbols display score only for actuals, others as hyphen',async()=>{
+ const missing=Array.from({length:3},(_,i)=>({
   issuerId:`M${i}`,tickers:[`M${i}`],earningsSymbol:`M${i}`,releases:[]}));
- const candidate=scoreER1Issuers([...sampleRows,...missing],{
-  asOf:'2026-11-02',expectedEligibleIssuers:2634});
+ const candidate=scoreER1Issuers([...sampleRows,...missing],{asOf:'2026-11-02'});
  assert.equal(candidate.status,'READY_SHADOW');
- assert.equal(candidate.coverage.earnings,838/2634);
+ assert.equal(candidate.coverage.inputSymbols,841);
+ assert.equal(candidate.coverage.scoreableIssuers,838);
+ assert.equal(candidate.coverage.unscoreableReasons.ER1_RELEASE_HISTORY_INSUFFICIENT,3);
  assert.equal(candidate.rankings.length,838);
  assert.equal(candidate.star3Count,42);
  const scores=makeER1PublicDisplay(candidate);
@@ -65,7 +68,7 @@ test('full 2634 approved roster with 838 actuals displays 838 scores, unknown is
 });
 
 test('saved legacy stars are removed, scored issuers show 97-point ER1 result, missing show literal hyphen',async()=>{
- const candidate=scoreER1Issuers(sampleRows,{asOf:'2026-11-02',expectedEligibleIssuers:838});
+ const candidate=scoreER1Issuers(sampleRows,{asOf:'2026-11-02'});
  const publicDerived=makeER1PublicDisplay(candidate);
  const state=earningsDisplaySnapshot(projection([event('X837'),event('X0'),event('NVDA')]));
  state.byDay[day]=state.byDay[day].map(html=>html.replace(
@@ -90,7 +93,7 @@ test('absent, incomplete or tampered score snapshots never restore old FHS/R43 s
  state.byDay[day]=state.byDay[day].map(html=>html.replace(
   '<div class=mc-importance aria-label="기업 실적 점수 없음">-</div>',
   '<div class=mc-importance aria-label="중요도 3">★★★</div>'));
- const candidate=scoreER1Issuers(sampleRows,{asOf:'2026-11-02',expectedEligibleIssuers:838});
+ const candidate=scoreER1Issuers(sampleRows,{asOf:'2026-11-02'});
  const publicDerived=makeER1PublicDisplay(candidate);
  const bad={...publicDerived,star3Count:1};
  assert.equal(validateER1PublicDisplay(bad),null);
@@ -103,17 +106,18 @@ test('absent, incomplete or tampered score snapshots never restore old FHS/R43 s
  }
 });
 
-test('public snapshot gate rejects stale dates, extra private raw fields and false coverage',()=>{
- const result=scoreER1Issuers(sampleRows,{asOf:'2026-11-02',expectedEligibleIssuers:838});
+test('public snapshot gate rejects stale dates, raw fields and false observed-symbol counts',()=>{
+ const result=scoreER1Issuers(sampleRows,{asOf:'2026-11-02'});
  const valid=makeER1PublicDisplay(result);
  assert.equal(validateER1PublicDisplay({...valid,rawRevenueVendor:{X0:123}}),null);
  assert.equal(validateER1PublicDisplay({...valid,asOf:'2024-11-02'}),null);
- assert.equal(validateER1PublicDisplay({...valid,coverage:{...valid.coverage,universe:.98}}),null);
+ assert.equal(validateER1PublicDisplay({...valid,coverage:{...valid.coverage,inputSymbols:700}}),null);
+ assert.equal(validateER1PublicDisplay({...valid,coverage:{...valid.coverage,observedIssuers:839}}),null);
  assert.ok(validateER1PublicDisplay(valid));
 });
 
 test('scores just below 97 do not round up into the ★★★ display threshold',async()=>{
- const result=scoreER1Issuers(sampleRows,{asOf:'2026-11-02',expectedEligibleIssuers:838});
+ const result=scoreER1Issuers(sampleRows,{asOf:'2026-11-02'});
  const valid=makeER1PublicDisplay(result);
  const match=valid.scores.find(row=>row.tickers.includes('X0'));
  match.score=96.995;
