@@ -13,11 +13,58 @@ import {
 import { computeAllFeaturePoints } from "../../lib/market-score/employment-r6-feature-engine.mjs";
 import { createEmploymentR6ObservationReader } from "../../lib/market-score/employment-r6-observation-reader.mjs";
 import { buildEmploymentR6OneYearReadModel } from "../../lib/market-score/employment-r6-one-year-read-model.mjs";
-import { EMPLOYMENT_R6_TABLES } from "../../lib/market-score/employment-r6-contract.mjs";
+import {
+  EMPLOYMENT_R6_BLS_SERIES,
+  EMPLOYMENT_R6_GROUPS,
+  EMPLOYMENT_R6_TABLES,
+} from "../../lib/market-score/employment-r6-contract.mjs";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const SERIES = EMPLOYMENT_R6_REQUIRED_LOGICAL_SERIES;
 const TABLES = EMPLOYMENT_R6_TABLES;
+const DOL_SERIES = new Set([
+  "INITIAL_CLAIMS", "INITIAL_CLAIMS_4W", "CONTINUED_CLAIMS",
+  "INSURED_UNEMPLOYMENT_RATE", "STATE_INITIAL_CLAIMS",
+]);
+
+// Read-only routing evidence, not permission to fetch, backfill, or publish.
+const GROUP_FOR_SOURCE = new Map();
+for (const [groupName, group] of Object.entries(EMPLOYMENT_R6_GROUPS)) {
+  if (group.kind !== "BLS") continue;
+  for (const seriesId of group.seriesIds ?? []) {
+    const logical = EMPLOYMENT_R6_BLS_SERIES[seriesId]?.logicalSeriesId;
+    if (logical && SERIES.includes(logical)) GROUP_FOR_SOURCE.set(logical, groupName);
+  }
+}
+for (const source of SERIES) {
+  if (DOL_SERIES.has(source)) GROUP_FOR_SOURCE.set(source, "DOL_UI_WEEKLY_CLAIMS");
+  if (source.startsWith("BED_")) GROUP_FOR_SOURCE.set(source, "BLS_BED");
+}
+if (SERIES.some(source => !GROUP_FOR_SOURCE.has(source))) {
+  throw new Error("EMPLOYMENT_R6_SOURCE_GROUP_UNMAPPED");
+}
+
+function sourceGroupCoverage(logicalSeries, features, { currentTableExists } = {}) {
+  return Object.keys(EMPLOYMENT_R6_GROUPS).map(groupName => {
+    const sources = logicalSeries.filter(row => GROUP_FOR_SOURCE.get(row.id) === groupName);
+    const sourceIds = new Set(sources.map(row => row.id));
+    const dependentFeatures = features.filter(row => row.sourceSeries.some(id => sourceIds.has(id)));
+    const missing = currentTableExists ? sources.filter(row => row.currentRows === 0).map(row => row.id) : null;
+    return {
+      groupName,
+      requiredSourceSeries: sources.length,
+      sourceSeriesWithRows: currentTableExists ? sources.filter(row => row.currentRows > 0).length : null,
+      missingSourceSeries: missing,
+      sourceSeriesWithRecentQuarterRows: currentTableExists
+        ? sources.filter(row => row.recentQuarterObservationRows > 0).length : null,
+      dependentFeatures: dependentFeatures.length,
+      oneYearChartNotReadyFeatures: dependentFeatures.filter(row => row.oneYearMiniChartStatus !== "READY")
+        .map(row => row.featureId),
+      // A BED observation may be months old on its actual publication day.
+      publicationLagCaution: groupName === "BLS_BED",
+    };
+  });
+}
 
 function parseAsOf(date) {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date ?? "")) throw new TypeError("AS_OF_EXPECTED_YYYY_MM_DD");
@@ -164,6 +211,7 @@ export async function auditEmploymentR6Database({ dbPath, asOfDate = isoDate(Dat
         miniChartRawStatus: chart?.rawStatus ?? "NO_PIT_TABLE_EVIDENCE",
       };
     });
+    const groups = sourceGroupCoverage(logicalSeries, features, { currentTableExists: currentFound });
 
     const models = tables.has(TABLES.readModel)
       ? storedModels(db, `${asOfDate}T23:59:59.999Z`, quarterStart, yearStart)
@@ -204,10 +252,12 @@ export async function auditEmploymentR6Database({ dbPath, asOfDate = isoDate(Dat
         quarterObservationRows: "Observation-date count only; publication lag varies, especially BED. Zero is not automatically stale.",
         chart: "READY model dates are evidence of stored score points, not a deployed 1-year chart or complete historical PIT coverage.",
         miniChart: "One-year mini-chart states are derived from approved Core PIT observations; they are not proof of D1 publication or live rendering.",
+        groups: "Source group gaps are READ_ONLY collection priorities, not permission to call providers. BED recent-quarter gaps require publication-lag review.",
         noEvidenceIsNotZero: true,
       },
       logicalSeries,
       features,
+      sourceGroupCoverage: groups,
       storedModels: models,
       currentPointer: pointer ? {
         scoreAsOf: pointer.score_as_of,
@@ -268,6 +318,16 @@ export function formatCoverageSummary(report) {
       `mini_1y_points=${displayCount(f.oneYearMiniChartPointCount)}`,
       `mini_q_points=${displayCount(f.recentQuarterMiniChartPointCount)}`,
     ].join(" | ")),
+    "",
+    "SOURCE GROUP GAPS (READ ONLY; NO COLLECTION)",
+    ...(report.sourceGroupCoverage ?? []).map(group => [
+      group.groupName,
+      `source=${displayCount(group.sourceSeriesWithRows)}/${group.requiredSourceSeries}`,
+      `recent_quarter_sources=${displayCount(group.sourceSeriesWithRecentQuarterRows)}`,
+      `missing=${group.missingSourceSeries?.join(",") || (group.missingSourceSeries === null ? "NO_RUNTIME_EVIDENCE" : "NONE")}`,
+      `mini_1y_not_ready=${group.oneYearChartNotReadyFeatures.length}`,
+      group.publicationLagCaution ? "BED_PUBLICATION_LAG_CHECK_REQUIRED" : "",
+    ].filter(Boolean).join(" | ")),
     "",
     "This report is based on the existing local SQLite file. Provider calls=0, DB writes=0.",
   ].join("\r\n") + "\r\n";

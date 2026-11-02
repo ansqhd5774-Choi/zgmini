@@ -47,6 +47,10 @@ test("empty existing database reports missing tables as no evidence, not zero co
   assert.equal(result.features[0].historyReferenceStatus, "NO_PIT_TABLE_EVIDENCE");
   assert.equal(result.features[0].oneYearMiniChartStatus, "NO_PIT_TABLE_EVIDENCE");
   assert.equal(result.summary.oneYearChartDataCandidate, false);
+  assert.equal(result.sourceGroupCoverage.length, 6);
+  assert.equal(result.sourceGroupCoverage.reduce((n, group) => n + group.requiredSourceSeries, 0), 29);
+  assert.ok(result.sourceGroupCoverage.every(group => group.sourceSeriesWithRows === null
+    && group.sourceSeriesWithRecentQuarterRows === null && group.missingSourceSeries === null));
   assert.equal(result.providerRequestsMadeByAudit, 0);
   assert.equal(result.databaseWritesMadeByAudit, 0);
   assert.equal(digest(dbPath), before);
@@ -99,6 +103,14 @@ test("PIT history and stored READY dates are measured separately from raw source
   assert.equal(result.summary.recentlyObservedMiniChartFeatures, 1);
   assert.equal(result.summary.actualPublicChartVerified, false);
   assert.equal(result.logicalSeries.find(x => x.id === "U3_UNEMPLOYMENT_RATE").recentQuarterObservationRows, 1);
+  const employmentGroup = result.sourceGroupCoverage.find(group => group.groupName === "BLS_EMPLOYMENT_SITUATION");
+  assert.equal(employmentGroup.sourceSeriesWithRows, 1);
+  assert.equal(employmentGroup.sourceSeriesWithRecentQuarterRows, 1);
+  assert.ok(!employmentGroup.missingSourceSeries.includes("U3_UNEMPLOYMENT_RATE"));
+  assert.ok(employmentGroup.missingSourceSeries.includes("U6_UNEMPLOYMENT_RATE"));
+  const bedGroup = result.sourceGroupCoverage.find(group => group.groupName === "BLS_BED");
+  assert.equal(bedGroup.sourceSeriesWithRows, 0);
+  assert.equal(bedGroup.publicationLagCaution, true);
   assert.equal(result.features.find(x => x.featureId === "U3_UNEMPLOYMENT").historyReferenceStatus, "PARTIAL_HISTORY");
   assert.equal(result.features.find(x => x.featureId === "U3_UNEMPLOYMENT").oneYearMiniChartStatus, "UNAVAILABLE");
   assert.equal(result.features.find(x => x.featureId === "U3_UNEMPLOYMENT").recentQuarterMiniChartPointCount, 1);
@@ -209,6 +221,9 @@ test("audit creates result TXT and JSON next to launcher without altering SQLite
   assert.match(summary, /SOURCE_SERIES_WITH_ROWS: NO_RUNTIME_EVIDENCE/);
   assert.match(summary, /ONE_YEAR_RAW_MINICHART_READY_FEATURES: NO_RUNTIME_EVIDENCE/);
   assert.match(summary, /FEATURE STATUS \(29\)/);
+  assert.match(summary, /SOURCE GROUP GAPS \(READ ONLY; NO COLLECTION\)/);
+  assert.match(summary, /BLS_BED \| source=NO_RUNTIME_EVIDENCE/);
+  assert.match(summary, /BED_PUBLICATION_LAG_CHECK_REQUIRED/);
   assert.match(summary, /mini_1y=NO_PIT_TABLE_EVIDENCE/);
   assert.equal((summary.match(/\d{2} \| /g) ?? []).length, 29);
   assert.match(formatCoverageSummary(report), /RECENT_QUARTER_READY_SCORE_DATES:/);
