@@ -41,8 +41,11 @@ test("empty existing database reports missing tables as no evidence, not zero co
   assert.equal(result.summary.sourceSeriesWithCurrentRows, null);
   assert.equal(result.summary.formulaReferenceReadyFeatures, null);
   assert.equal(result.summary.verifiedScorePointsInOneYear, null);
+  assert.equal(result.summary.oneYearMiniChartReadyFeatures, null);
+  assert.equal(result.summary.oneYearMiniChartUnavailableFeatures, null);
   assert.equal(result.features.length, 29);
   assert.equal(result.features[0].historyReferenceStatus, "NO_PIT_TABLE_EVIDENCE");
+  assert.equal(result.features[0].oneYearMiniChartStatus, "NO_PIT_TABLE_EVIDENCE");
   assert.equal(result.summary.oneYearChartDataCandidate, false);
   assert.equal(result.providerRequestsMadeByAudit, 0);
   assert.equal(result.databaseWritesMadeByAudit, 0);
@@ -90,11 +93,60 @@ test("PIT history and stored READY dates are measured separately from raw source
   assert.equal(result.summary.verifiedScorePointsInRecentQuarter, 2);
   assert.equal(result.summary.verifiedScorePointsInOneYear, 3);
   assert.equal(result.summary.oneYearChartDataCandidate, true);
+  assert.equal(result.summary.oneYearMiniChartReadyFeatures, 0);
+  assert.equal(result.summary.oneYearMiniChartPartialFeatures, 0);
+  assert.equal(result.summary.oneYearMiniChartUnavailableFeatures, 29);
+  assert.equal(result.summary.recentlyObservedMiniChartFeatures, 1);
   assert.equal(result.summary.actualPublicChartVerified, false);
   assert.equal(result.logicalSeries.find(x => x.id === "U3_UNEMPLOYMENT_RATE").recentQuarterObservationRows, 1);
   assert.equal(result.features.find(x => x.featureId === "U3_UNEMPLOYMENT").historyReferenceStatus, "PARTIAL_HISTORY");
+  assert.equal(result.features.find(x => x.featureId === "U3_UNEMPLOYMENT").oneYearMiniChartStatus, "UNAVAILABLE");
+  assert.equal(result.features.find(x => x.featureId === "U3_UNEMPLOYMENT").recentQuarterMiniChartPointCount, 1);
   assert.equal(result.features.find(x => x.featureId === "U3_UNEMPLOYMENT").recentQuarterStoredFeatureRows, 1);
   assert.equal(result.currentPointer.status, "READY");
+  assert.equal(digest(dbPath), before);
+});
+
+test("per-feature 1Y mini-charts distinguish a recent READY source from historical PARTIAL", async t => {
+  const { db, dbPath } = fixture(t);
+  db.exec(`CREATE TABLE market_score_employment_r4_shadow_history_v1 (
+    logical_series_id TEXT, observation_date TEXT, geography_code TEXT, geography_type TEXT,
+    retrieved_at TEXT, available_at TEXT, value REAL, source_hash TEXT, history_id INTEGER
+  );`);
+  const insert = db.prepare(`INSERT INTO market_score_employment_r4_shadow_history_v1
+    VALUES (?, ?, 'US', 'NATIONAL', ?, ?, ?, ?, ?)`);
+  const rows = [
+    ["U3_UNEMPLOYMENT_RATE", "2025-10-31", 4.9],
+    ["U3_UNEMPLOYMENT_RATE", "2025-11-30", 4.8],
+    ["U3_UNEMPLOYMENT_RATE", "2026-08-31", 4.5],
+    ["U3_UNEMPLOYMENT_RATE", "2026-10-31", 4.3],
+    ["U6_UNEMPLOYMENT_RATE", "2025-10-31", 8.1],
+    ["U6_UNEMPLOYMENT_RATE", "2025-11-30", 8.0],
+    ["U6_UNEMPLOYMENT_RATE", "2026-02-28", 7.9],
+  ];
+  for (const [i, [series, date, value]] of rows.entries()) {
+    const seen = "2026-11-01T00:00:00.000Z";
+    insert.run(series, date, seen, seen, value, `${series}:${date}`, i + 1);
+  }
+  db.close();
+  const before = digest(dbPath);
+
+  const report = await auditEmploymentR6Database({ dbPath, asOfDate });
+  const u3 = report.features.find(x => x.featureId === "U3_UNEMPLOYMENT");
+  const u6 = report.features.find(x => x.featureId === "U6_UNEMPLOYMENT");
+  assert.equal(report.summary.oneYearMiniChartReadyFeatures, 1);
+  assert.equal(report.summary.oneYearMiniChartPartialFeatures, 1);
+  assert.equal(report.summary.oneYearMiniChartUnavailableFeatures, 27);
+  assert.equal(report.summary.recentlyObservedMiniChartFeatures, 1);
+  assert.equal(u3.oneYearMiniChartStatus, "READY");
+  assert.equal(u3.oneYearMiniChartPointCount, 3);
+  assert.equal(u3.recentQuarterMiniChartPointCount, 2);
+  assert.equal(u6.oneYearMiniChartStatus, "PARTIAL");
+  assert.equal(u6.oneYearMiniChartPointCount, 2);
+  assert.equal(u6.recentQuarterMiniChartPointCount, 0);
+  assert.equal(report.summary.actualPublicChartVerified, false);
+  assert.equal(report.providerRequestsMadeByAudit, 0);
+  assert.equal(report.databaseWritesMadeByAudit, 0);
   assert.equal(digest(dbPath), before);
 });
 
@@ -155,7 +207,9 @@ test("audit creates result TXT and JSON next to launcher without altering SQLite
   const summary = fs.readFileSync(output.textPath, "utf8");
   assert.match(summary, /STATUS: AUDIT_COMPLETED/);
   assert.match(summary, /SOURCE_SERIES_WITH_ROWS: NO_RUNTIME_EVIDENCE/);
+  assert.match(summary, /ONE_YEAR_RAW_MINICHART_READY_FEATURES: NO_RUNTIME_EVIDENCE/);
   assert.match(summary, /FEATURE STATUS \(29\)/);
+  assert.match(summary, /mini_1y=NO_PIT_TABLE_EVIDENCE/);
   assert.equal((summary.match(/\d{2} \| /g) ?? []).length, 29);
   assert.match(formatCoverageSummary(report), /RECENT_QUARTER_READY_SCORE_DATES:/);
   const json = JSON.parse(fs.readFileSync(output.jsonPath, "utf8"));

@@ -12,6 +12,7 @@ import {
 } from "../../lib/market-score/employment-r6-formula.mjs";
 import { computeAllFeaturePoints } from "../../lib/market-score/employment-r6-feature-engine.mjs";
 import { createEmploymentR6ObservationReader } from "../../lib/market-score/employment-r6-observation-reader.mjs";
+import { buildEmploymentR6OneYearReadModel } from "../../lib/market-score/employment-r6-one-year-read-model.mjs";
 import { EMPLOYMENT_R6_TABLES } from "../../lib/market-score/employment-r6-contract.mjs";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -122,6 +123,11 @@ export async function auditEmploymentR6Database({ dbPath, asOfDate = isoDate(Dat
     const computed = observations === null ? null : byId(
       computeAllFeaturePoints(observations).map(r => ({ ...r, feature_id: r.featureId })),
     );
+    // The public 1Y mini-chart is derived from the feature's stored raw PIT
+    // observations, not from READY score-model dates. This audit does not publish.
+    const miniChart = observations === null ? null
+      : buildEmploymentR6OneYearReadModel(observations, { asOfDate });
+    const miniChartById = new Map((miniChart?.indicators ?? []).map(item => [item.id, item]));
 
     const logicalSeries = SERIES.map(id => {
       const cur = current.get(id);
@@ -141,6 +147,7 @@ export async function auditEmploymentR6Database({ dbPath, asOfDate = isoDate(Dat
     const features = EMPLOYMENT_R6_FEATURES.map(def => {
       const result = computed?.get(def.id);
       const stored = snapshots.get(def.id);
+      const chart = miniChartById.get(def.id);
       return {
         index: def.n, featureId: def.id, family: def.family, frequency: def.freq,
         sourceSeries: def.logical,
@@ -151,6 +158,10 @@ export async function auditEmploymentR6Database({ dbPath, asOfDate = isoDate(Dat
         recentQuarterReadyFeatureRows: stored?.quarter_ready_rows ?? (tables.has(TABLES.featureHistory) ? 0 : null),
         lastStoredFeatureAsOf: stored?.last_score_as_of ?? null,
         missingSourceSeries: currentFound ? def.logical.filter(id => !current.has(id)) : null,
+        oneYearMiniChartStatus: chart?.chartStatus ?? "NO_PIT_TABLE_EVIDENCE",
+        oneYearMiniChartPointCount: chart?.chartPointCount ?? null,
+        recentQuarterMiniChartPointCount: chart?.recentQuarterPointCount ?? null,
+        miniChartRawStatus: chart?.rawStatus ?? "NO_PIT_TABLE_EVIDENCE",
       };
     });
 
@@ -180,6 +191,11 @@ export async function auditEmploymentR6Database({ dbPath, asOfDate = isoDate(Dat
         verifiedScorePointsInRecentQuarter: models?.recentQuarterStoredPointCount ?? null,
         verifiedScorePointsInOneYear: models?.oneYearStoredPointCount ?? null,
         oneYearChartDataCandidate: models?.chartStoredDataCandidate ?? false,
+        oneYearMiniChartReadyFeatures: miniChart?.summary.chartReadyFeatures ?? null,
+        oneYearMiniChartPartialFeatures: miniChart?.summary.chartPartialFeatures ?? null,
+        oneYearMiniChartUnavailableFeatures: miniChart
+          ? features.filter(f => f.oneYearMiniChartStatus === "UNAVAILABLE").length : null,
+        recentlyObservedMiniChartFeatures: miniChart?.summary.recentlyObservedFeatures ?? null,
         actualPublicChartVerified: false,
       },
       interpretation: {
@@ -187,6 +203,7 @@ export async function auditEmploymentR6Database({ dbPath, asOfDate = isoDate(Dat
         sourceRows: "Current-table counts are inventory, NOT point-in-time proof for historical as-of dates.",
         quarterObservationRows: "Observation-date count only; publication lag varies, especially BED. Zero is not automatically stale.",
         chart: "READY model dates are evidence of stored score points, not a deployed 1-year chart or complete historical PIT coverage.",
+        miniChart: "One-year mini-chart states are derived from approved Core PIT observations; they are not proof of D1 publication or live rendering.",
         noEvidenceIsNotZero: true,
       },
       logicalSeries,
@@ -234,6 +251,10 @@ export function formatCoverageSummary(report) {
     `RECENT_QUARTER_READY_SCORE_DATES: ${displayCount(s.verifiedScorePointsInRecentQuarter)}`,
     `ONE_YEAR_READY_SCORE_DATES: ${displayCount(s.verifiedScorePointsInOneYear)}`,
     `ONE_YEAR_CHART_STORED_DATA_CANDIDATE: ${s.oneYearChartDataCandidate ? "YES" : "NO"}`,
+    `ONE_YEAR_RAW_MINICHART_READY_FEATURES: ${displayCount(s.oneYearMiniChartReadyFeatures)} / 29`,
+    `ONE_YEAR_RAW_MINICHART_PARTIAL_FEATURES: ${displayCount(s.oneYearMiniChartPartialFeatures)} / 29`,
+    `ONE_YEAR_RAW_MINICHART_UNAVAILABLE_FEATURES: ${displayCount(s.oneYearMiniChartUnavailableFeatures)} / 29`,
+    `RECENT_QUARTER_RAW_MINICHART_OBSERVED_FEATURES: ${displayCount(s.recentlyObservedMiniChartFeatures)} / 29`,
     "PUBLIC_CHART_VERIFIED: NO",
     "RECENT_QUARTER_PRIORITY: YES; older visible chart gaps may remain, scoring reference gaps may not.",
     "",
@@ -243,6 +264,9 @@ export function formatCoverageSummary(report) {
       `latest=${f.latestComputedObservation ?? "NONE"}`,
       `first_missing=${f.firstMissingReferenceDate ?? "NONE"}`,
       `quarter_stored=${displayCount(f.recentQuarterStoredFeatureRows)}`,
+      `mini_1y=${f.oneYearMiniChartStatus}`,
+      `mini_1y_points=${displayCount(f.oneYearMiniChartPointCount)}`,
+      `mini_q_points=${displayCount(f.recentQuarterMiniChartPointCount)}`,
     ].join(" | ")),
     "",
     "This report is based on the existing local SQLite file. Provider calls=0, DB writes=0.",
