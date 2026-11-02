@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createHash} from 'node:crypto';
 import {isMarketSession} from '../lib/market-score/breadth-b1-r3-calendar.mjs';
-import {inspectR10BreadthIncremental} from '../scripts/pc-writer/asset-r10-breadth-incremental.mjs';
+import {inspectR10BreadthIncremental,R10_RESEARCH_IDENTITY_QUARANTINE} from '../scripts/pc-writer/asset-r10-breadth-incremental.mjs';
 
 const members=Array.from({length:490},(_,i)=>'T'+String(i).padStart(4,'0'));
 const memberHash=list=>createHash('sha256').update(JSON.stringify([...list].sort())).digest('hex');
@@ -152,4 +152,70 @@ test('PSKY/SKYD diagnostic does not mask simultaneous unrelated member drift',()
  assert.equal(result.identityAuditStatus,'PIT_ADDITIONAL_MEMBERSHIP_DRIFT');
  assert.equal(result.identityAuditCounts.other,1);
  assert.equal(result.canPromote,false);
+});
+
+function oneUnresolvedSlotSubject(){
+ const stable=members.slice(0,-1),oldApproved=[...stable,'PSKY'],officialMembers=[...stable,'SKYD'];
+ const approval={verifiedThrough:'2026-09-30',eligibleUniverses:[
+  {tradeDate:'2026-09-30',memberCount:490,members:oldApproved}]};
+ const official={...officialPit,currentMemberHash:memberHash(officialMembers),
+  universes:officialPit.universes.map(row=>({...row,members:officialMembers,memberCount:490}))};
+ const safeOld=oldRows.filter(row=>stable.includes(row.ticker));
+ const safeIncremental=newRows.filter(row=>stable.includes(row.ticker));
+ return {...subject,approvedPit:approval,officialPit:official,
+  baseGroups:[safeOld],incrementalGroups:[safeIncremental],
+  identityQuarantineMode:R10_RESEARCH_IDENTITY_QUARANTINE};
+}
+
+test('opt-in one-slot identity quarantine preserves denominator and never aliases a security',()=>{
+ const input=oneUnresolvedSlotSubject(),before=JSON.stringify(input);
+ const result=inspectR10BreadthIncremental(input);
+ assert.equal(result.status,'CANDIDATE_WITH_ONE_UNRESOLVED_SECURITY_RESEARCH_ONLY');
+ assert.equal(result.canPromote,false);assert.equal(result.productionEligible,false);
+ assert.equal(result.quarantinedOverlapDays,1);
+ assert.deepEqual(result.unresolvedSymbols,['SKYD']);
+ assert.deepEqual(result.candidateRows,[{observationDate:'2026-10-30',memberCount:490,
+  valid200:489,coverage:489/490,unresolvedIdentityCount:1}]);
+ assert.equal(JSON.stringify(input),before);
+});
+
+test('untrusted mapped SKYD prices do not fill the unresolved historical identity slot',()=>{
+ const input=oneUnresolvedSlotSubject();
+ const ambiguous=sessions.map(tradeDate=>({ticker:'SKYD',tradeDate,currentClose:777,
+  source:'ALPACA',feed:'iex',adjustmentStatus:'split'}));
+ input.incrementalGroups.push(ambiguous);
+ const result=inspectR10BreadthIncremental(input);
+ assert.equal(result.status,'CANDIDATE_WITH_ONE_UNRESOLVED_SECURITY_RESEARCH_ONLY');
+ assert.equal(result.candidateRows[0].valid200,489);
+ assert.equal(result.candidateRows[0].memberCount,490);
+});
+
+test('quarantine does not weaken the real 98 percent member coverage requirement',()=>{
+ const input=oneUnresolvedSlotSubject(),missing=new Set(members.slice(0,10));
+ // Retain a genuine old price for each ticker so the independent new-symbol
+ // provenance gate passes; the 200-session coverage gate must still reject.
+ input.baseGroups[0]=input.baseGroups[0].filter(row=>!missing.has(row.ticker)||
+  row.tradeDate===sessions[0]);
+ input.incrementalGroups[0]=input.incrementalGroups[0].filter(row=>!missing.has(row.ticker));
+ const result=inspectR10BreadthIncremental(input);
+ assert.equal(result.status,'PIT_PRICE_200MA_COVERAGE_INSUFFICIENT');
+ assert.equal(result.memberCount,490);assert.equal(result.valid200,479);
+ assert.equal(result.canPromote,false);
+});
+
+test('even with explicit quarantine, any second independent membership drift is STOP',()=>{
+ const input=oneUnresolvedSlotSubject();
+ const index=input.officialPit.universes.findIndex(row=>row.tradeDate==='2026-09-30');
+ input.officialPit.universes[index]={...input.officialPit.universes[index],
+  members:[...input.officialPit.universes[index].members.slice(0,-2),'DRIFT','SKYD']};
+ const result=inspectR10BreadthIncremental(input);
+ assert.equal(result.status,'PIT_OVERLAP_MEMBERSHIP_DRIFT');
+ assert.equal(result.canPromote,false);
+});
+
+test('a random quarantine flag remains strict and cannot suppress identity STOP',()=>{
+ const input=oneUnresolvedSlotSubject();input.identityQuarantineMode='AUTO_REPAIR';
+ const result=inspectR10BreadthIncremental(input);
+ assert.equal(result.status,'PIT_OVERLAP_MEMBERSHIP_DRIFT');
+ assert.equal(result.candidateRows,undefined);
 });

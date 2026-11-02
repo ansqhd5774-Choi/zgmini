@@ -15,6 +15,7 @@ const validTicker=value=>typeof value==='string'&&/^[A-Z0-9.\-]{1,15}$/.test(val
 const fingerprint=value=>createHash('sha256').update(JSON.stringify(value)).digest('hex');
 const memberDigest=members=>fingerprint([...members].sort());
 const uniqueSorted=members=>[...new Set(members)].sort();
+export const R10_RESEARCH_IDENTITY_QUARANTINE='RESEARCH_ONLY_ONE_UNKNOWN_SECURITY_SLOT_R1';
 
 function stop(code,more={}){return {status:code,productionEligible:false,canPromote:false,...more};}
 function validMembers(members){return Array.isArray(members)&&members.length>=490&&members.length<=520&&members.every(validTicker)&&new Set(members).size===members.length;}
@@ -32,7 +33,8 @@ function monthEndSession(month){
 
 // Pure read-only preflight: requires the original approved R10 membership to
 // remain exactly consistent wherever the newer official PIT series overlaps.
-export function inspectR10BreadthIncremental({approvedPit,officialPit,baseGroups=[],incrementalGroups=[],asOfDate}={}){
+export function inspectR10BreadthIncremental({approvedPit,officialPit,baseGroups=[],incrementalGroups=[],asOfDate,
+ identityQuarantineMode=null}={}){
  if(!validDate(asOfDate))return stop('INVALID_ASOF_DATE');
  if(!approvedPit||!validDate(approvedPit.verifiedThrough)||!Array.isArray(approvedPit.eligibleUniverses)||!approvedPit.eligibleUniverses.length)
   return stop('R10_APPROVED_PIT_MISSING');
@@ -49,7 +51,8 @@ export function inspectR10BreadthIncremental({approvedPit,officialPit,baseGroups
   return stop('OFFICIAL_PIT_SESSION_WINDOW_INVALID');
  if(officialPit.currentMemberHash!==memberDigest(universes.get(officialPit.last)))
   return stop('OFFICIAL_PIT_ANCHOR_HASH_INVALID');
- const approvedDates=new Set();let overlap=0;
+ const approvedDates=new Set();let overlap=0,quarantinedOverlapDays=0;
+ const unresolvedSymbols=new Set();let identityAudit=null;
  for(const row of approvedPit.eligibleUniverses){
   if(!validDate(row?.tradeDate)||!validMembers(row.members)||approvedDates.has(row.tradeDate)||row.tradeDate>approvedPit.verifiedThrough)
    return stop('R10_APPROVED_PIT_ROWS_INVALID');
@@ -58,12 +61,24 @@ export function inspectR10BreadthIncremental({approvedPit,officialPit,baseGroups
   if(official){
    overlap++;
    if(fingerprint(uniqueSorted(row.members))!==fingerprint(official)){
-    const audit=auditR10PitIdentityLabels({approvedPit,officialPit});
-    return stop('PIT_OVERLAP_MEMBERSHIP_DRIFT',{
-     firstMismatchDate:row.tradeDate,overlapChecked:overlap,
-     identityAuditStatus:audit.status,identityAuditCounts:audit.counts??null,
-     identityAuditRequires:audit.requires??[],
-    });
+    identityAudit??=auditR10PitIdentityLabels({approvedPit,officialPit});
+    const approvedSet=new Set(row.members),officialSet=new Set(official);
+    const approvedOnly=row.members.filter(symbol=>!officialSet.has(symbol));
+    const officialOnly=official.filter(symbol=>!approvedSet.has(symbol));
+    const oneUnresolvedSlot=approvedOnly.length===1&&approvedOnly[0]==='PSKY'&&
+      officialOnly.length===1&&officialOnly[0]==='SKYD'&&row.members.length===official.length;
+    if(identityQuarantineMode!==R10_RESEARCH_IDENTITY_QUARANTINE||!oneUnresolvedSlot||
+       identityAudit.status!=='PIT_LABEL_IDENTITY_AUDITED_NOT_PROMOTABLE'||
+       identityAudit.counts?.other!==0){
+      return stop('PIT_OVERLAP_MEMBERSHIP_DRIFT',{
+       firstMismatchDate:row.tradeDate,overlapChecked:overlap,
+       identityAuditStatus:identityAudit.status,identityAuditCounts:identityAudit.counts??null,
+       identityAuditRequires:identityAudit.requires??[],
+      });
+    }
+    // This is a missing-price quarantine, not a PSKY/SKYD equivalence or
+    // an assertion that either security was an index member at this date.
+    unresolvedSymbols.add('SKYD');quarantinedOverlapDays++;
    }
   }
  }
@@ -110,28 +125,37 @@ export function inspectR10BreadthIncremental({approvedPit,officialPit,baseGroups
   // A new member can advance to *research-only* coverage only when all
   // 200 sessions were collected with explicit unmapped Alpaca asof='-'.
   // An unlabeled 200-day response may contain relabeled former tickers.
-  const unknown=members.filter(ticker=>!baseSymbols.has(ticker)&&
+  const unknown=members.filter(ticker=>!unresolvedSymbols.has(ticker)&&!baseSymbols.has(ticker)&&
    !historyDates.every(date=>incrementalKeys.has(ticker+'|'+date)));
   if(unknown.length)return stop('PIT_NEW_SYMBOL_BACKFILL_REQUIRED',{month,missingSymbolCount:unknown.length,missingSymbols:unknown.slice(0,20)});
-  const unmappedMissing=members.filter(ticker=>!baseSymbols.has(ticker)&&
+  const unmappedMissing=members.filter(ticker=>!unresolvedSymbols.has(ticker)&&!baseSymbols.has(ticker)&&
    !historyDates.every(date=>unmappedIncrementalKeys.has(ticker+'|'+date)));
   if(unmappedMissing.length)return stop('PIT_NEW_SYMBOL_ASOF_PROVENANCE_REQUIRED',{
    month,missingSymbolCount:unmappedMissing.length,missingSymbols:unmappedMissing.slice(0,20)});
   let valid200=0;
   for(const ticker of members){
+   if(unresolvedSymbols.has(ticker))continue;
    if(priceWindowQuarantined(ticker,historyDates))continue;
    if(historyDates.every(date=>prices.has(ticker+'|'+date)))valid200++;
   }
   const coverage=valid200/members.length;
   if(coverage<.98)return stop('PIT_PRICE_200MA_COVERAGE_INSUFFICIENT',{month,observationDate:last,valid200,memberCount:members.length,coverage});
-  candidateRows.push({observationDate:last,memberCount:members.length,valid200,coverage});
+  candidateRows.push({observationDate:last,memberCount:members.length,valid200,coverage,
+   ...(unresolvedSymbols.size?{unresolvedIdentityCount:members.filter(t=>unresolvedSymbols.has(t)).length}:{}),
+  });
  }
 
  // Full PIT source, adjusted-price audit and existing 252-pair R10 calculation
  // must still complete before an operator may promote this private candidate.
- return stop('CANDIDATE_INPUTS_VALIDATED_AUDIT_PENDING',{
+ return stop(unresolvedSymbols.size?'CANDIDATE_WITH_ONE_UNRESOLVED_SECURITY_RESEARCH_ONLY':
+   'CANDIDATE_INPUTS_VALIDATED_AUDIT_PENDING',{
   overlapChecked:overlap,officialLast:officialPit.last,originalRows,incrementalRows,
   candidateRows,officialPitDigest:officialPit.eventDigest,
+  ...(unresolvedSymbols.size?{quarantinedOverlapDays,
+   unresolvedSymbols:uniqueSorted(unresolvedSymbols),
+   identityAuditStatus:identityAudit.status,
+   requires:['PRICE_RIGHTS_AND_PIT_IDENTITY_OPERATOR_REVIEW','APPROVED_B_LEDGER_REPLAY'],
+  }:{}),
  });
 }
 
