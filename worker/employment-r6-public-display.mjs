@@ -45,6 +45,9 @@ export function validEmploymentR6PublicDisplay(body){
       ||!["READY","STALE","UNAVAILABLE"].includes(item.rawStatus)
       ||!["READY","PARTIAL_HISTORY","PARTIAL_MISSING"].includes(item.scoreStatus)
       ||!["READY","PARTIAL","UNAVAILABLE"].includes(item.chartStatus)
+      ||!["주간(ET)","주간 관측","월간(ET)","분기(ET)"].includes(item.releaseCadence)
+      ||(item.nextReleaseDate!==null&&(!validDate(item.nextReleaseDate)
+        ||item.nextReleaseDate<=body.asOfDate))
       ||item.retrievedAt===undefined
       ||(item.retrievedAt!==null&&(!validRetrievedAt(item.retrievedAt)
         ||Date.parse(item.retrievedAt)>body.sourceStoredAt))

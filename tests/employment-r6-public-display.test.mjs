@@ -83,6 +83,12 @@ test("public R6 display validates 29 approved IDs, provenance and score/raw sepa
   assert(!validEmploymentR6PublicDisplay(falseSummary));
   const fractionalSummary=structuredClone(body);fractionalSummary.summary.scoredFeatures=0.5;
   assert(!validEmploymentR6PublicDisplay(fractionalSummary));
+  const fabricatedRelease=structuredClone(body);
+  fabricatedRelease.indicators[0].nextReleaseDate="2026-01-01";
+  assert(!validEmploymentR6PublicDisplay(fabricatedRelease));
+  const invalidCadence=structuredClone(body);
+  invalidCadence.indicators[0].releaseCadence="daily-guessed";
+  assert(!validEmploymentR6PublicDisplay(invalidCadence));
 });
 
 test("visitor GET reads a single verified D1 public row; never fetches provider data",async()=>{

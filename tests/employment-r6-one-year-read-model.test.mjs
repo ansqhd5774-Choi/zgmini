@@ -74,6 +74,32 @@ test("one-year window clamps leap-day to February 28 and keeps a real 92-day qua
   });
 });
 
+test("all 29 features show only confirmed ET release dates, with ETA539 dates withheld",()=>{
+  const payload=buildEmploymentR6OneYearReadModel([],{asOfDate:"2026-11-02"});
+  const byId=new Map(payload.indicators.map(x=>[x.id,x]));
+  const cases=[
+    ["U3_UNEMPLOYMENT","월간(ET)","2026-11-06"],
+    ["AHE_YOY","월간(ET)","2026-11-06"],
+    ["INDUSTRY_DIFFUSION_3M","월간(ET)","2026-11-06"],
+    ["INITIAL_CLAIMS","주간(ET)","2026-11-05"],
+    ["STATE_CLAIMS_BREADTH","주간 관측",null],
+    ["JOLTS_OPENINGS_RATE","월간(ET)","2026-11-03"],
+    ["ECI_12M","분기(ET)","2027-01-29"],
+    ["STATE_EMP_DIFFUSION_3M","월간(ET)","2026-11-20"],
+    ["MSA_EMP_DIFFUSION_3M","월간(ET)","2026-12-02"],
+    ["BED_GROSS_GAINS_RATE","분기(ET)","2027-01-27"],
+  ];
+  for(const [id,cadence,nextDate] of cases){
+    assert.equal(byId.get(id)?.releaseCadence,cadence,id);
+    assert.equal(byId.get(id)?.nextReleaseDate,nextDate,id);
+  }
+  assert.equal(payload.indicators.length,29);
+  assert.equal(payload.indicators.filter(x=>x.nextReleaseDate!==null).length,28);
+  const later=buildEmploymentR6OneYearReadModel([],{asOfDate:"2027-02-01"});
+  assert.equal(later.indicators.find(x=>x.id==="JOLTS_OPENINGS_RATE").nextReleaseDate,null);
+  assert.equal(later.indicators.find(x=>x.id==="MSA_EMP_DIFFUSION_3M").nextReleaseDate,null);
+});
+
 test("source access date follows verified raw inputs, not observation or publication date",()=>{
   const rows=[
     {...row("PAYEMS_LEVEL","2026-08-31",159000),retrievedAt:"2026-10-01T09:00:00.000Z"},

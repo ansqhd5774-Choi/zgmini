@@ -3,6 +3,7 @@ import {test} from "node:test";
 import {
   latestDolClaimsReleaseAt,
   latestFixedReleaseAt,
+  nextDolClaimsReleaseAt,
   releasePlanForGroup,
 } from "../lib/market-score/employment-r6-scheduler.mjs";
 import {parseBlsR6Rows} from "../lib/market-score/employment-r6-provider.mjs";
@@ -29,12 +30,21 @@ test("DOL official 2027 Veterans Day and Thanksgiving exceptions preserve ET tim
   assert.equal(latestDolClaimsReleaseAt("2027-11-25T16:00:00Z").toISOString(),"2027-11-24T13:30:00.000Z");
 });
 
+test("future DOL dates respect the same official Wednesday exceptions and stop beyond 2027",()=>{
+  assert.equal(nextDolClaimsReleaseAt("2026-11-02T23:59:59Z").toISOString(),"2026-11-05T13:30:00.000Z");
+  assert.equal(nextDolClaimsReleaseAt("2026-11-24T23:59:59Z").toISOString(),"2026-11-25T13:30:00.000Z");
+  assert.equal(nextDolClaimsReleaseAt("2027-11-09T23:59:59Z").toISOString(),"2027-11-10T13:30:00.000Z");
+  assert.equal(nextDolClaimsReleaseAt("2028-01-01T00:00:00Z"),null);
+});
+
 test("2027 BLS Employment Situation and ECI use official dates without guessing other groups",()=>{
   assert.equal(latestFixedReleaseAt("BLS_EMPLOYMENT_SITUATION","2027-01-08T13:30:00Z").toISOString(),"2027-01-08T13:30:00.000Z");
   assert.equal(latestFixedReleaseAt("BLS_ECI","2027-01-29T13:30:00Z").toISOString(),"2027-01-29T13:30:00.000Z");
   assert.equal(releasePlanForGroup("BLS_EMPLOYMENT_SITUATION",{now:"2027-01-09T16:00:00Z"}).status,"DUE");
   // No official 2027 JOLTS calendar has been published: no fabricated new event.
   assert.equal(latestFixedReleaseAt("BLS_JOLTS","2027-02-01T16:00:00Z").toISOString(),"2026-12-01T15:00:00.000Z");
+  assert.equal(latestFixedReleaseAt("BLS_BED","2027-01-27T15:00:00Z").toISOString(),"2027-01-27T15:00:00.000Z");
+  assert.equal(releasePlanForGroup("BLS_BED",{now:"2027-01-28T18:00:00Z"}).status,"DUE");
 });
 
 test("mixed state and metro group recognizes both published 2026 release days",()=>{
