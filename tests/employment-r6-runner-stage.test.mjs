@@ -7,7 +7,8 @@ import {DatabaseSync} from "node:sqlite";
 import {test} from "node:test";
 
 import {
-  inspectWalSidecars,projectEmploymentR6RunnerResult,runnerOptionsFrom,runEmploymentR6Runner,
+  inspectWalSidecars,captureWalSidecarSeal,assertWalSidecarSeal,
+  projectEmploymentR6RunnerResult,runnerOptionsFrom,runEmploymentR6Runner,
 } from "../scripts/pc-writer/employment-r6-runner-stage.mjs";
 import {stageEmploymentR6OneYear} from "../scripts/pc-writer/employment-r6-one-year-stage.mjs";
 
@@ -119,6 +120,20 @@ test("uppercase private exception text is not mistaken for a public diagnostic c
   assert.doesNotMatch(JSON.stringify(report),/PRIVATE_TOKEN_MUST_NOT_LEAK/);
 });
 
+test("SQLite-open evidence remains true when both PIT audit and stage fail after opening",async t=>{
+  const env=environment(t);
+  fixture(env.core);fixture(env.candidate);
+  const db=new DatabaseSync(env.core);
+  try{db.exec(`CREATE TABLE market_score_employment_r4_shadow_current_v1 (logical_series_id TEXT)`);}
+  finally{db.close();}
+  const result=await runEmploymentR6Runner(argv(env));
+  assert.equal(result.status,"FAIL");
+  const report=JSON.parse(fs.readFileSync(path.join(env.output,result.reportFile+".json"),"utf8"));
+  assert.equal(report.sqliteOpened,true);
+  assert.equal(report.pitAuditError,"PIT_AUDIT_READ_FAILED");
+  assert.equal(report.status,"FAIL");
+});
+
 test("WAL read-only open is fail-closed before SQLite can create missing sidecars",async t=>{
   const env=environment(t);fixture(env.core,{wal:true});fixture(env.candidate,{row:true});
   const filesBefore=fs.readdirSync(env.dir).sort();
@@ -153,6 +168,18 @@ test("already-present WAL sidecars permit a bounded read without claiming zero d
   assert.equal(report.walPreflight.coreWalMode,true);
   assert.equal(report.walPreflight.coreWalSidecarsPreexisting,true);
   assert.equal(report.operationalDirectoryWrites,"NOT_ASSERTED");
+});
+
+test("WAL seal catches sidecar disappearance/replacement before a second read",t=>{
+  const env=environment(t);
+  const writer=new DatabaseSync(env.core);
+  writer.exec("PRAGMA journal_mode=WAL; CREATE TABLE sealed(value TEXT)");
+  const seal=captureWalSidecarSeal(env.core);
+  assert.doesNotThrow(()=>assertWalSidecarSeal(env.core,seal));
+  writer.close();
+  assert.throws(()=>assertWalSidecarSeal(env.core,seal),/WAL_SIDECAR_NOT_READY|WAL_SIDECAR_CHANGED/);
+  assert.equal(fs.existsSync(env.core+"-wal"),false);
+  assert.equal(fs.existsSync(env.core+"-shm"),false);
 });
 
 test("Core hardlink candidate, missing file and malformed SQLite cannot trigger candidate read",async t=>{

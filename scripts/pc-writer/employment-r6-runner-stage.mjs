@@ -37,9 +37,10 @@ const SAFE_ERRORS=new Set([
   "RUNNER_R6_ISOLATED_CANDIDATE_REQUIRED","RUNNER_R6_SQLITE_HEADER_INVALID",
   "RUNNER_R6_SQLITE_INSPECTION_FAILED","RUNNER_R6_PUBLIC_DISPLAY_INVALID",
   "RUNNER_R6_INDICATOR_COUNT_INVALID","RUNNER_R6_INDICATOR_STATUS_INVALID",
-  "RUNNER_R6_REPORT_TOO_LARGE","WAL_SIDECAR_NOT_READY",
+  "RUNNER_R6_REPORT_TOO_LARGE","WAL_SIDECAR_NOT_READY","WAL_SIDECAR_CHANGED",
   "EXTERNAL_CANDIDATE_PATH_INVALID","EXTERNAL_CANDIDATE_FILE_INVALID",
-  "EXTERNAL_CANDIDATE_FILE_UNAVAILABLE","CANDIDATE_CORE_FILE_ALIAS_FORBIDDEN",
+  "EXTERNAL_CANDIDATE_FILE_UNAVAILABLE","EXTERNAL_CANDIDATE_FILE_CHANGED",
+  "CANDIDATE_CORE_FILE_ALIAS_FORBIDDEN",
   "CANDIDATE_PUBLICATION_NOT_APPROVED","CANDIDATE_DISCOVERY_ARGUMENT_CONFLICT",
   "EXISTING_ABSOLUTE_DB_AND_OUTPUT_DIR_REQUIRED","INVALID_AS_OF_DATE",
   "FUTURE_AS_OF_FORBIDDEN","PC_SOURCE_DB_NOT_FOUND",
@@ -93,6 +94,35 @@ export function inspectWalSidecars(dbPath){
   }finally{if(file!==undefined)fs.closeSync(file);}
 }
 
+function fileIdentity(file){
+  try{
+    const stat=fs.statSync(file,{bigint:true});
+    if(!stat.isFile())throw Error("WAL_SIDECAR_NOT_READY");
+    return {dev:stat.dev,ino:stat.ino};
+  }catch{throw Error("WAL_SIDECAR_NOT_READY");}
+}
+
+// Recheck both sidecar existence and file identity around *each* SQLite open.
+// This detects replacement/rotation, but does not claim an atomic Windows
+// sidecar lock: an OS-level writer can still race between checks.
+export function captureWalSidecarSeal(dbPath){
+  const preflight=inspectWalSidecars(dbPath);
+  return {preflight,sqlite:fileIdentity(dbPath),
+    wal:preflight.walMode?fileIdentity(dbPath+"-wal"):null,
+    shm:preflight.walMode?fileIdentity(dbPath+"-shm"):null};
+}
+
+export function assertWalSidecarSeal(dbPath,expected){
+  const actual=captureWalSidecarSeal(dbPath);
+  const same=(a,b)=>a===null&&b===null
+    ||Boolean(a&&b&&a.dev===b.dev&&a.ino===b.ino);
+  if(actual.preflight.walMode!==expected.preflight.walMode
+    ||!same(actual.sqlite,expected.sqlite)
+    ||!same(actual.wal,expected.wal)||!same(actual.shm,expected.shm)){
+    throw Error("WAL_SIDECAR_CHANGED");
+  }
+}
+
 function projectPit(pitCoverage){
   const pit={};
   for(const field of PIT_COUNTS)pit[field]=safeCount(pitCoverage?.[field]);
@@ -101,14 +131,15 @@ function projectPit(pitCoverage){
   return pit;
 }
 
-export function projectEmploymentR6RunnerResult({body=null,pitCoverage=null,pitCoverageError=null,error=null,wal=null}={}){
+export function projectEmploymentR6RunnerResult({body=null,pitCoverage=null,pitCoverageError=null,
+  error=null,wal=null,sqliteOpened=false}={}){
   if(!error&&(!body||!validEmploymentR6PublicDisplay(body))){
     throw Error("RUNNER_R6_PUBLIC_DISPLAY_INVALID");
   }
   const failure=error?safeCode(error?.message):null;
   const result={
     kind:"EMPLOYMENT_R6_RUNNER_READONLY_REPORT_V1",
-    status:failure?(failure==="WAL_SIDECAR_NOT_READY"?"BLOCKED":"FAIL"):"PASS",
+    status:failure?(["WAL_SIDECAR_NOT_READY","WAL_SIDECAR_CHANGED"].includes(failure)?"BLOCKED":"FAIL"):"PASS",
     code:failure??"EMPLOYMENT_R6_READONLY_STAGE_COMPLETED",
     asOfDate:/^\d{4}-\d{2}-\d{2}$/.test(body?.asOfDate??"")?body.asOfDate:null,
     dataStatus:body?.status==="READY"?"READY":body?.status==="PARTIAL"?"PARTIAL":"NO_RUNTIME_EVIDENCE",
@@ -121,7 +152,7 @@ export function projectEmploymentR6RunnerResult({body=null,pitCoverage=null,pitC
     indicators:[],
     promotionApproved:false,
     publicationStatus:"NOT_REQUESTED",
-    sqliteOpened:body!==null||pitCoverage!==null,
+    sqliteOpened:sqliteOpened===true,
     providerCalls:0,
     d1Writes:0,
     // A read-only SQLite connection can still touch WAL sidecar files.
@@ -182,13 +213,23 @@ export async function runEmploymentR6Runner(argv){
   try{options=runnerOptionsFrom(argv);}catch(error){
     return {status:"BLOCKED",code:safeCode(error?.message),reportFile:null};
   }
-  let report;
+  let report,sqliteOpened=false;
   try{
-    const wal={core:inspectWalSidecars(options.dbPath),candidate:inspectWalSidecars(options.candidateDbPath)};
-    const diagnostic=await stageEmploymentR6OneYearWithPitAudit(options);
-    report=projectEmploymentR6RunnerResult({...diagnostic,wal});
+    const coreSeal=captureWalSidecarSeal(options.dbPath);
+    const candidateSeal=captureWalSidecarSeal(options.candidateDbPath);
+    const wal={core:coreSeal.preflight,candidate:candidateSeal.preflight};
+    const check=dbPath=>{
+      if(dbPath===options.dbPath)assertWalSidecarSeal(dbPath,coreSeal);
+      else if(dbPath===options.candidateDbPath)assertWalSidecarSeal(dbPath,candidateSeal);
+      else throw Error("RUNNER_R6_ARGUMENT_NOT_ALLOWED");
+    };
+    const diagnostic=await stageEmploymentR6OneYearWithPitAudit({...options,
+      beforeReadOnlyOpen:check,afterReadOnlyOpen:check,
+      onSqliteOpened:()=>{sqliteOpened=true;},
+    });
+    report=projectEmploymentR6RunnerResult({...diagnostic,wal,sqliteOpened});
   }catch(error){
-    report=projectEmploymentR6RunnerResult({error});
+    report=projectEmploymentR6RunnerResult({error,sqliteOpened});
   }
   let reportFile=null;
   try{reportFile=writeRunnerReport(options.outputDir,report);}

@@ -212,6 +212,20 @@ test("external candidate rejects Core aliases through symlink, realpath and inod
     error=>/^[A-Z0-9_]+$/.test(error.message));
 });
 
+test("external candidate file identity is sealed against parse-to-open substitution",async t=>{
+  const env=environment(t);
+  fixture(env.core,[]);fixture(env.external,[]);
+  const common=["--db",env.core,"--output-dir",env.outputDir,"--as-of",AS_OF,
+    "--candidate-db-external",env.external];
+  const parsed=optionsFrom(common);
+  fs.unlinkSync(env.external);
+  fs.linkSync(env.core,env.external);
+  await assert.rejects(stageEmploymentR6OneYear(parsed),/CANDIDATE_CORE_FILE_ALIAS_FORBIDDEN/);
+  fs.unlinkSync(env.external);
+  fixture(env.external,[]);
+  await assert.rejects(stageEmploymentR6OneYear(parsed),/EXTERNAL_CANDIDATE_FILE_CHANGED/);
+});
+
 test("Windows CMD passes one explicit STAGE candidate to Node but blocks external PUBLISH",()=>{
   const cmd=fs.readFileSync(new URL("../scripts/pc-writer/employment-r6-one-year-display.cmd",import.meta.url),"utf8");
   const stage=cmd.split(/^:stage\r?$/m)[1]?.split(/^:publish\r?$/m)[0];

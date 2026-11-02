@@ -25,7 +25,7 @@ const candidateBasename="EMPLOYMENT_R6_CANDIDATE.sqlite";
 // An explicit candidate may live beside a prior isolated collection CMD. Its
 // location is supplied by the operator, never found by scanning arbitrary
 // drives. Validate identity before any read, including Core aliases/hardlinks.
-function validateExternalCandidatePath(candidatePath,coreDbPath){
+function validateExternalCandidatePath(candidatePath,coreDbPath,expectedIdentity=null){
   if(typeof candidatePath!=="string"||!path.isAbsolute(candidatePath)
     ||path.basename(candidatePath)!==candidateBasename){
     throw Error("EXTERNAL_CANDIDATE_PATH_INVALID");
@@ -43,8 +43,14 @@ function validateExternalCandidatePath(candidatePath,coreDbPath){
       ||(candidateStat.dev===coreStat.dev&&candidateStat.ino===coreStat.ino)){
       throw Error("CANDIDATE_CORE_FILE_ALIAS_FORBIDDEN");
     }
+    const identity={realpath:candidateReal,dev:candidateStat.dev,ino:candidateStat.ino,
+      size:candidateStat.size,mtimeNs:candidateStat.mtimeNs};
+    if(expectedIdentity&&Object.keys(identity).some(key=>identity[key]!==expectedIdentity[key])){
+      throw Error("EXTERNAL_CANDIDATE_FILE_CHANGED");
+    }
+    return identity;
   }catch(error){
-    if(/^(EXTERNAL_CANDIDATE_FILE_INVALID|CANDIDATE_CORE_FILE_ALIAS_FORBIDDEN)$/.test(error?.message))throw error;
+    if(/^(EXTERNAL_CANDIDATE_FILE_INVALID|CANDIDATE_CORE_FILE_ALIAS_FORBIDDEN|EXTERNAL_CANDIDATE_FILE_CHANGED)$/.test(error?.message))throw error;
     // OS errors may embed the private PC path; never propagate their message.
     throw Error("EXTERNAL_CANDIDATE_FILE_UNAVAILABLE");
   }
@@ -92,7 +98,7 @@ export function optionsFrom(args){
     }
   }
   if(result.candidateDbExternalPath){
-    validateExternalCandidatePath(result.candidateDbExternalPath,result.dbPath);
+    result.candidateIdentity=validateExternalCandidatePath(result.candidateDbExternalPath,result.dbPath);
     result.candidateDbPath=result.candidateDbExternalPath;
     result.candidateDbExternal=true;
     delete result.candidateDbExternalPath;
@@ -106,12 +112,23 @@ function readAsOf(db,knownAsOf){
   }).loadAsOf(knownAsOf);
 }
 
-export async function stageEmploymentR6OneYear({dbPath,asOfDate,candidateDbPath=null}){
+export async function stageEmploymentR6OneYear({dbPath,asOfDate,candidateDbPath=null,
+  candidateDbExternal=false,candidateIdentity=null,beforeReadOnlyOpen=null,
+  afterReadOnlyOpen=null,onSqliteOpened=null}){
   if(!fs.existsSync(dbPath)||!fs.statSync(dbPath).isFile())throw Error("PC_SOURCE_DB_NOT_FOUND");
-  const db=new DatabaseSync(dbPath,{readOnly:true});
-  let candidate=null;
+  let db=null,candidate=null;
   try{
-    candidate=candidateDbPath?new DatabaseSync(candidateDbPath,{readOnly:true}):null;
+    beforeReadOnlyOpen?.(dbPath);
+    db=new DatabaseSync(dbPath,{readOnly:true});
+    onSqliteOpened?.(dbPath);
+    afterReadOnlyOpen?.(dbPath);
+    if(candidateDbPath){
+      if(candidateDbExternal)validateExternalCandidatePath(candidateDbPath,dbPath,candidateIdentity);
+      beforeReadOnlyOpen?.(candidateDbPath);
+      candidate=new DatabaseSync(candidateDbPath,{readOnly:true});
+      onSqliteOpened?.(candidateDbPath);
+      afterReadOnlyOpen?.(candidateDbPath);
+    }
     const asOfEnd=asOfDate+"T23:59:59.999Z";
     const current=nowIso();
     const knownAsOf=asOfEnd<current?asOfEnd:current;
@@ -124,18 +141,24 @@ export async function stageEmploymentR6OneYear({dbPath,asOfDate,candidateDbPath=
     const body=buildEmploymentR6OneYearReadModel(observations,{asOfDate,sourceStoredAt});
     if(!validEmploymentR6PublicDisplay(body))throw Error("PUBLIC_DISPLAY_VALIDATION_FAILED");
     return body;
-  }finally{db.close();candidate?.close();}
+  }finally{db?.close();candidate?.close();}
 }
 
 /** Keep PIT diagnostics even when no verified observation can build a chart. */
 export async function stageEmploymentR6OneYearWithPitAudit(args){
   let pitCoverage=null,pitCoverageError=null,body=null,error=null;
-  try{pitCoverage=auditEmploymentR6PitCoverage(args);}
+  const guarded={...args,beforeReadOnlyOpen:dbPath=>{
+    if(args.candidateDbExternal&&dbPath===args.candidateDbPath){
+      validateExternalCandidatePath(dbPath,args.dbPath,args.candidateIdentity);
+    }
+    args.beforeReadOnlyOpen?.(dbPath);
+  }};
+  try{pitCoverage=auditEmploymentR6PitCoverage(guarded);}
   catch(failure){
     const code=String(failure?.message??"");
     pitCoverageError=/^[A-Z0-9_]+$/.test(code)?code:"PIT_AUDIT_READ_FAILED";
   }
-  try{body=await stageEmploymentR6OneYear(args);}
+  try{body=await stageEmploymentR6OneYear(guarded);}
   catch(failure){error=failure;}
   if(!error&&pitCoverageError)error=Error(pitCoverageError);
   return {body,pitCoverage,pitCoverageError,error};

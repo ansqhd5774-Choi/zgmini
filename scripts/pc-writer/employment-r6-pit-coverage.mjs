@@ -72,19 +72,28 @@ const latestRevision=rows=>(rows??[]).reduce((best,row)=>{
   return String(row.source_hash??"")>String(best.source_hash??"")?row:best;
 },null);
 
-export function auditEmploymentR6PitCoverage({dbPath,candidateDbPath=null,asOfDate}={}){
+export function auditEmploymentR6PitCoverage({dbPath,candidateDbPath=null,asOfDate,
+  beforeReadOnlyOpen=null,afterReadOnlyOpen=null,onSqliteOpened=null}={}){
   if(!validAsOf(asOfDate))throw Error("PIT_AUDIT_AS_OF_INVALID");
   if(typeof dbPath!=="string"||!fs.existsSync(dbPath))throw Error("PIT_AUDIT_CORE_NOT_FOUND");
   if(candidateDbPath&&(typeof candidateDbPath!=="string"||!fs.existsSync(candidateDbPath)))
     throw Error("PIT_AUDIT_CANDIDATE_NOT_FOUND");
   if(candidateDbPath&&fs.realpathSync(candidateDbPath)===fs.realpathSync(dbPath))
     throw Error("PIT_AUDIT_CANDIDATE_IS_CORE");
-  const core=new DatabaseSync(dbPath,{readOnly:true});
-  let candidate=null;
+  let core=null,candidate=null;
   try{
+    beforeReadOnlyOpen?.(dbPath);
+    core=new DatabaseSync(dbPath,{readOnly:true});
+    onSqliteOpened?.(dbPath);
+    afterReadOnlyOpen?.(dbPath);
     // If the isolated candidate cannot be opened, still close the already
     // opened Core reader before the caller handles the diagnostic failure.
-    candidate=candidateDbPath?new DatabaseSync(candidateDbPath,{readOnly:true}):null;
+    if(candidateDbPath){
+      beforeReadOnlyOpen?.(candidateDbPath);
+      candidate=new DatabaseSync(candidateDbPath,{readOnly:true});
+      onSqliteOpened?.(candidateDbPath);
+      afterReadOnlyOpen?.(candidateDbPath);
+    }
     const current=sourceRows(core,T.observationCurrent,asOfDate);
     const history=sourceRows(core,T.observationHistory,asOfDate);
     const candidates=candidate?sourceRows(candidate,T.observationHistory,asOfDate):null;
@@ -166,5 +175,5 @@ export function auditEmploymentR6PitCoverage({dbPath,candidateDbPath=null,asOfDa
       missingBySeries:current!==null&&history!==null?[...missingBySeries.values()].sort((a,b)=>a.id.localeCompare(b.id)):null,
       promotionApproved:false,coreWrites:0,providerCalls:0,
     };
-  }finally{core.close();candidate?.close();}
+  }finally{core?.close();candidate?.close();}
 }
