@@ -37,6 +37,28 @@ test("parser emits stored-history-class rows only; collector owns forward promot
   assert.ok(out.rows.every(x=>x.availableAt===null));
 });
 
+test("BED parser keeps actual zero but never invents zero for blank or suppressed observations",async()=>{
+  const [missingId,validId]=EMPLOYMENT_R4_BED_SERIES_IDS.slice(0,2);
+  const response={status:"REQUEST_SUCCEEDED",Results:{series:[
+    {seriesID:missingId,data:[
+      {year:"2026",period:"Q01",value:""},
+      {year:"2025",period:"Q04",value:null},
+      {year:"2025",period:"Q03",value:"N/A"},
+    ]},
+    {seriesID:validId,data:[
+      {year:"2026",period:"Q01",value:"0"},
+      {year:"2025",period:"Q04",value:"1,200"},
+      {year:"2025",period:"Q03",value:" "},
+    ]},
+  ]}};
+  const result=await parseBlsBedShadowRows(response,{
+    retrievedAt:"2026-11-01T10:00:00Z",requestedSeriesIds:[missingId,validId],
+  });
+  assert.equal(result.rows.length,2);
+  assert.deepEqual(result.rows.map(row=>row.value).sort((a,b)=>a-b),[0,1200]);
+  assert.deepEqual(result.meta.missingSeries,[missingId]);
+});
+
 test("provider batches 114 series into five sequential API requests and never scores",async()=>{
   const calls=[];
   const fetchImpl=async(url,init)=>{
