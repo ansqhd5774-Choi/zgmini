@@ -9,7 +9,8 @@ const browser=await chromium.launch({headless:true,args:['--no-sandbox']});
 const sampleHistory=Array.from({length:90},(_,i)=>({date:new Date(Date.UTC(2026,7,1)+i*86400000).toISOString().slice(0,10),score:45+Math.sin(i/8)*12}));
 const breadthHistory={market:'usa',universe:'SP500',window:'1Y',from:'2025-10-30',to:'2026-10-30',
  records:Array.from({length:366},(_,i)=>({observationDate:new Date(Date.UTC(2025,9,30)+i*86400000).toISOString().slice(0,10),
-  eligibleCount:500,counts:{rising:240+(i%12<5?45:-45),unchanged:20,falling:240-(i%12<5?45:-45)}}))};
+  eligibleCount:500,counts:{rising:240+(i%12<5?45:-45),unchanged:20,falling:240-(i%12<5?45:-45)}}))
+  .filter(record=>![0,6].includes(new Date(record.observationDate+'T00:00:00Z').getUTCDay()))};
 try{
  for(const width of [390,1440])for(const signedIn of [false,true]){
   const page=await browser.newPage({viewport:{width,height:900},hasTouch:width===390});
@@ -108,8 +109,18 @@ try{
     const dates=await detail.locator('time').allTextContents();
     assert.deepEqual(dates,[expected,'2026.10.30'],period+' breadth dates follow CNN selection');
     const aria=await breadthSvg.getAttribute('aria-label');
-    assert.ok(aria?.includes('상승·하락 우세도')&&aria.includes(`${label} 이력`)&&aria.includes(`저장된 ${days}개 거래일`),period+' net breadth chart window and label');
-    assert.equal(await netBars.count(),days,period+' renders one signed net bar per stored daily observation');
+    const expectedPoints=breadthHistory.records.filter(record=>record.observationDate>=from&&record.observationDate<=breadthHistory.to).length;
+    assert.ok(aria?.includes('상승·하락 우세도')&&aria.includes(`${label} 이력`)&&aria.includes(`저장된 ${expectedPoints}개 거래일`),period+' net breadth chart window and label');
+    assert.equal(await netBars.count(),expectedPoints,period+' renders one signed net bar per stored trading session');
+    if(expectedPoints>2){
+     const positions=await netBars.evaluateAll(bars=>bars.map(bar=>Number(bar.getAttribute('x'))));
+     const gaps=positions.slice(1).map((x,i)=>x-positions[i]);
+     assert.ok(gaps.every(gap=>gap>0)&&Math.max(...gaps)-Math.min(...gaps)<0.001,period+' X axis removes weekend gaps');
+     const trendPath=await detail.locator('path[class*="historyTrendLine"]').first().getAttribute('d');
+     const trendXs=Array.from(trendPath?.matchAll(/[ML]([\d.]+),[\d.]+/g)??[],match=>Number(match[1]));
+     const widths=await netBars.evaluateAll(bars=>bars.map(bar=>Number(bar.getAttribute('width'))));
+     assert.ok(trendXs.length>0&&trendXs.every(x=>positions.some((barX,i)=>Math.abs(x-barX-widths[i]/2)<0.02)),period+' trend overlay aligns with trading sessions');
+    }
     if(period==='1D'){
      assert.equal(await detail.locator('rect[class*="historyNetNegativeBar"]').count(),1,'Latest day is negative even with unchanged issues present');
      assert.equal(await detail.locator('circle[class*="historyTrendDot"]').count(),1,'One-day period shows its five-session average as a dot');
