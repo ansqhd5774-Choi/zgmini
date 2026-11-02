@@ -87,6 +87,13 @@ test('bad quarter sequence and future quarter values fail closed',()=>{
     {...q,quarterEnd:'2024-01-01'}:q)}]),/ER1_QUARTER_SEQUENCE_INVALID/);
 });
 
+test('four internally valid quarters from years ago are stale, not READY_SHADOW',()=>{
+  const stale=row('AAA');
+  const oldDays=['2015-12-31','2016-03-31','2016-06-30','2016-09-30'];
+  stale.quarters=stale.quarters.map((q,i)=>({...q,quarterEnd:oldDays[i]}));
+  assert.throws(()=>run([stale]),/ER1_STALE_QUARTER_WINDOW_STOP/);
+});
+
 test('metric coverage below 98% blocks instead of publishing a shortened population',()=>{
   const rows=Array.from({length:100},(_,i)=>row(`T${i+1}`));
   for(let i=0;i<3;i++)rows[i]=row(`T${i+1}`,[null,null,null,10],[null,null,null,1]);
