@@ -66,6 +66,16 @@ type BeaUnitPayload={
   value:number;previousValue:number;change:number;history:BeaUnitPoint[];
  };
 };
+type QfrPoint={period:string;value:number};
+type QfrPayload={
+ schemaVersion:string;status:string;historicalMode:string;observedThrough:string;
+ freshness?:{status:string;reason:string|null};
+ rows?:Array<{
+  indicatorId:string;status:string;unit:string;adjustment:string;changeUnit:string;
+  observationPeriod:string;previousPeriod:string;value:number;previousValue:number;
+  change:number;history:QfrPoint[];
+ }>;
+};
 type BeaMfgHistoryPoint={period:string;periodEnd:string;profitsBillionsUsdAnnualRate:number};
 type BeaMfgPayload={
  schemaVersion:string;status:string;historicalMode:string;
@@ -132,6 +142,18 @@ const unitUsable=(payload:BeaUnitPayload|null|undefined)=>Boolean(
 );
 const unitFormat=(value:number|null|undefined)=>finiteCost(value)?"$"+value.toFixed(3):"—";
 const unitChange=(value:number|null|undefined)=>finiteCost(value)?(value>0?"+":"")+value.toFixed(3)+"달러":"—";
+const qfrUsable=(payload:QfrPayload|null|undefined)=>Boolean(
+ payload?.schemaVersion==="earnings-companion-c-qfr-r1-v1"&&payload.status==="READY"&&
+ payload.historicalMode==="CURRENT_RETRIEVAL_NOT_PIT"&&payload.freshness?.status==="FRESH"&&
+ payload.rows?.length===1&&payload.rows[0].indicatorId==="census_qfr_manufacturing_after_tax_margin_nsa"&&
+ payload.rows[0].status==="READY"&&payload.rows[0].unit==="PERCENT"&&
+ payload.rows[0].adjustment==="NSA"&&payload.rows[0].changeUnit==="PERCENTAGE_POINTS"&&
+ payload.rows[0].observationPeriod===payload.observedThrough&&
+ finiteCost(payload.rows[0].value)&&finiteCost(payload.rows[0].previousValue)&&
+ finiteCost(payload.rows[0].change)&&Array.isArray(payload.rows[0].history)&&
+ payload.rows[0].history.length===5&&payload.rows[0].history.every(point=>
+  /^\d{4}-Q[1-4]$/.test(point.period)&&finiteCost(point.value))
+);
 const mfgProfitFormat=(value:number|null|undefined)=>finiteCost(value)?
  value.toLocaleString("ko-KR",{minimumFractionDigits:2,maximumFractionDigits:2})+" 십억 달러":"—";
 const mfgYoYFormat=(value:number|null|undefined)=>finiteCost(value)?
@@ -207,9 +229,14 @@ export default function EarningsRiskOnlyPanel(){
   useStoredIndex<CostPayload>("/api/earnings-recession-indicators");
   const {payload:unitPayload,loading:unitLoading,error:unitError}=
    useStoredIndex<BeaUnitPayload>("/api/earnings-recession-bea-unit-profit");
+  const {payload:qfrPayload,loading:qfrLoading,error:qfrError}=
+   useStoredIndex<QfrPayload>("/api/earnings-recession-census-qfr-margin");
   const unitReady=unitUsable(unitPayload);
   const unitRow=unitReady?unitPayload?.indicator:null;
   const unitStatus=unitLoading?"연결 확인 중":unitReady?"연결 완료":unitError?"자료 확인 대기":"자료 확인 대기";
+  const qfrReady=qfrUsable(qfrPayload);
+  const qfrRow=qfrReady?qfrPayload?.rows?.[0]:null;
+  const qfrStatus=qfrLoading?"연결 확인 중":qfrReady?"연결 완료":qfrError?"자료 확인 대기":"자료 확인 대기";
   const {payload:mfgPayload}=useStoredIndex<BeaMfgPayload>("/api/earnings-recession-bea-manufacturing-profit");
   const mfgReady=mfgUsable(mfgPayload);
   const mfgRow=mfgReady?mfgPayload?.indicator:null;
@@ -312,7 +339,7 @@ export default function EarningsRiskOnlyPanel(){
   <section className="inflation-indicator-section earnings-r2-indicators" aria-labelledby="earnings-risk-factor-title">
    <header><div><p className="cnn-eyebrow">EARNINGS RECESSION RISK FACTORS</p>
     <h2 id="earnings-risk-factor-title">실적 침체 분석 지표</h2></div>
-     <p>기존 4개는 {riskRawReady?"저장된 SEC 재무 원자료 수치와 기존 진단 점수를 구분":"기존 실적 침체 방어 진단 점수"}하여 표시합니다. 추가 5개는 BLS 비용 압력 원자료, {mfgReady?"3개":"2개"}는 BEA 기업이익 원자료입니다. 추가 원자료는 진단 점수에 합산하지 않습니다. <span className="earnings-r2-cost-status" role="status">SEC 원자료 {riskRawReady?"4/4 연결":"게시 확인 대기"} · {costStatus} · BEA 기업이익 {beaReady?"연결 완료":"자료 확인 대기"} · BEA 단위이익 {unitStatus}</span></p>
+     <p>기존 4개는 {riskRawReady?"저장된 SEC 재무 원자료 수치와 기존 진단 점수를 구분":"기존 실적 침체 방어 진단 점수"}하여 표시합니다. 추가 5개는 BLS 비용 압력 원자료, {mfgReady?"3개":"2개"}는 BEA 기업이익 원자료입니다. 추가 원자료와 Census QFR 제조업 세후이익률은 진단 점수에 합산하지 않습니다. <span className="earnings-r2-cost-status" role="status">SEC 원자료 {riskRawReady?"4/4 연결":"게시 확인 대기"} · {costStatus} · BEA 기업이익 {beaReady?"연결 완료":"자료 확인 대기"} · BEA 단위이익 {unitStatus} · Census QFR {qfrStatus}</span></p>
    </header>
    <div className="inflation-table-wrap earnings-r2-table-wrap"><table className="inflation-indicator-table earnings-r2-table">
     <colgroup><col className="earnings-col-favorite"/><col className="earnings-col-name"/><col className="earnings-col-content"/><col className="earnings-col-criterion"/><col className="earnings-col-prior"/><col className="earnings-col-current"/><col className="earnings-col-release"/><col className="earnings-col-judgement"/><col className="earnings-col-spark"/><col className="earnings-col-help"/></colgroup>
@@ -379,6 +406,24 @@ export default function EarningsRiskOnlyPanel(){
        <p>BEA NIPA 표 1.15의 비금융기업 단위이익(A463RD)입니다. 실질 총부가가치 한 단위당 이익을 달러로 표시합니다. 이익률(%)이나 전년 대비 성장률이 아닙니다.</p>
        <p>최근 저장한 원자료의 개정분을 보여주며 발표 당시 확정 자료(PIT)는 아닙니다. 실적 침체 방어 점수에도 합산하지 않습니다.</p>
        <a href="https://fred.stlouisfed.org/series/A463RD3Q052SBEA" target="_blank" rel="noopener noreferrer">BEA·FRED 원자료</a>
+      </ContentHelp></td>
+     </tr>
+     <tr className="earnings-r2-cost-row" data-source="census-qfr-margin">
+      <td><EarningsFavoriteButton id="census_qfr_manufacturing_after_tax_margin_nsa" label="미국 제조업 세후이익률"/></td>
+      <th scope="row">미국 제조업 세후이익률</th>
+      <td>제조업 세후이익 ÷ 순매출액 · 계절조정 전(NSA)</td>
+      <td>Census QFR 참고<small>점수 미반영</small></td>
+      <td className="earnings-r2-prior">{qfrReady?costFormat(qfrRow?.previousValue,"PERCENT"):"—"}</td>
+      <td className="earnings-r2-value"><strong>{qfrReady?costFormat(qfrRow?.value,"PERCENT"):"—"}</strong>
+       <small>직전 분기 대비 {qfrReady?costChange(qfrRow?.change,"PERCENT"):"—"}</small></td>
+      <td className="earnings-r2-release"><strong>—</strong>
+       <small>관측 {qfrReady?qfrRow?.observationPeriod:"—"}</small></td>
+      <td>{qfrReady?"참고":"확인 대기"}</td>
+      <td className="earnings-r2-spark">{qfrReady&&qfrRow?<CostSpark history={qfrRow.history} label="미국 제조업 세후이익률 최근 5개 분기 관측 추이"/>:"—"}</td>
+      <td><ContentHelp label="미국 제조업 세후이익률 도움말">
+       <p>미국 Census QFR 제조업의 세후이익을 순매출액으로 나눈 비율(%)입니다. 직전 분기 대비 차이는 퍼센트포인트(%p)입니다. 계절조정 전(NSA)이며 진단 점수에는 합산하지 않습니다.</p>
+       <p>수집 시점 기준 개정 자료로 발표 당시 원본(PIT)은 아닙니다. 공식 발표일은 확인되지 않아 표시하지 않습니다.</p>
+       <a href="https://www.census.gov/econ_getzippedfile/?programCode=QFR" target="_blank" rel="noopener noreferrer">Census QFR 원자료</a>
       </ContentHelp></td>
      </tr>
      {mfgReady&&mfgRow&&<tr className="earnings-r2-cost-row" data-source="bea-manufacturing-profit">
@@ -471,6 +516,26 @@ export default function EarningsRiskOnlyPanel(){
        <span>최근 이력</span>{unitReady&&unitRow?<CostSpark history={unitRow.history} label="BEA 비금융기업 단위이익 최근 5개 분기 추이"/>:<span className="earnings-r2-cost-chart-empty">이력 확인 필요</span>}
       </div>
      </article>
+     <article className="earnings-r2-mobile-card earnings-r2-cost-mobile-card" data-source="census-qfr-margin">
+      <div className="earnings-r2-mobile-head"><div className="earnings-r2-mobile-title">
+       <EarningsFavoriteButton id="census_qfr_manufacturing_after_tax_margin_nsa" label="미국 제조업 세후이익률"/><div>
+        <strong>미국 제조업 세후이익률</strong><small>Census QFR · 계절조정 전(NSA) · 점수 미반영</small>
+       </div></div><ContentHelp label="미국 제조업 세후이익률 도움말">
+        <p>제조업 세후이익을 순매출액으로 나눈 비율(%)입니다. 분기 대비 차이는 %p이며 저장 당시 개정분으로 발표 당시 원본(PIT)은 아닙니다. 진단 점수에는 합산하지 않습니다.</p>
+        <a href="https://www.census.gov/econ_getzippedfile/?programCode=QFR" target="_blank" rel="noopener noreferrer">Census QFR 원자료</a>
+       </ContentHelp></div>
+      <p className="earnings-r2-mobile-content">미국 제조업의 세후이익 ÷ 순매출액</p>
+      <div className="earnings-r2-mobile-metrics">
+       <div><span>이전 분기</span><strong>{qfrReady?costFormat(qfrRow?.previousValue,"PERCENT"):"—"}</strong></div>
+       <div><span>현재</span><strong>{qfrReady?costFormat(qfrRow?.value,"PERCENT"):"—"}</strong>
+        <small>변동 {qfrReady?costChange(qfrRow?.change,"PERCENT"):"—"}</small></div>
+       <div><span>관측 분기</span><strong>{qfrReady?qfrRow?.observationPeriod:"—"}</strong>
+        <small>{qfrReady?"분기 원자료":"자료 확인 대기"}</small></div>
+      </div>
+      <div className="earnings-r2-mobile-spark">
+       <span>최근 이력</span>{qfrReady&&qfrRow?<CostSpark history={qfrRow.history} label="미국 제조업 세후이익률 최근 5개 분기 추이"/>:<span className="earnings-r2-cost-chart-empty">이력 확인 필요</span>}
+      </div>
+     </article>
      {mfgReady&&mfgRow&&<article className="earnings-r2-mobile-card earnings-r2-cost-mobile-card" data-source="bea-manufacturing-profit">
       <div className="earnings-r2-mobile-head"><div className="earnings-r2-mobile-title">
        <EarningsFavoriteButton id="bea_manufacturing_corporate_profits_yoy" label="미국 제조업 기업이익 증가율"/><div>
@@ -490,7 +555,7 @@ export default function EarningsRiskOnlyPanel(){
        <span>최근 이력</span><CostSpark history={mfgHistory} label="BEA 제조업 기업이익 최근 5개 분기 금액 추이"/>
       </div>
      </article>}</div>
-    <p className="earnings-r2-cost-footnote">BLS 저장 관측값은 수집 당시의 자료로, 잠정 추정치나 위험 점수가 아닙니다. 같은 시계열의 상승률과 지수를 각각 표시한 항목은 별도의 독립 근거로 계산하지 않습니다. BEA 기업이익 변화율은 일반 전년비 성장률과 다른 대칭 변화율이며, BEA 비금융기업 단위이익은 달러/실질 부가가치 단위로 표시합니다. 모두 저장 당시 개정분이며 진단 점수에는 반영하지 않습니다. {mfgReady?"제조업 기업이익은 재고평가 조정분의 일반 전년비 증가율이며, 금액은 십억 달러·계절조정 연율(SAAR)입니다.":""}</p>
+    <p className="earnings-r2-cost-footnote">BLS 저장 관측값은 수집 당시의 자료로, 잠정 추정치나 위험 점수가 아닙니다. 같은 시계열의 상승률과 지수를 각각 표시한 항목은 별도의 독립 근거로 계산하지 않습니다. BEA 기업이익 변화율은 일반 전년비 성장률과 다른 대칭 변화율이며, BEA 비금융기업 단위이익은 달러/실질 부가가치 단위로 표시합니다. Census QFR 제조업 세후이익률은 계절조정 전 비율(%)이며 전 분기 대비 차이는 %p입니다. 모두 저장 당시 개정분이며 진단 점수에는 반영하지 않습니다. {mfgReady?"제조업 기업이익은 재고평가 조정분의 일반 전년비 증가율이며, 금액은 십억 달러·계절조정 연율(SAAR)입니다.":""}</p>
   </section>
   <a className="cnn-return-cta" href="/">← 메인 대시보드로 돌아가기</a>
  </>;

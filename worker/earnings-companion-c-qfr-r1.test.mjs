@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {QFR_SNAPSHOT_KEY,QFR_SCHEMA,validateQfrCompanionPayload,
-  qfrCompanionFreshness,qfrCompanionWriter} from './earnings-companion-c-qfr-r1.mjs';
+import {QFR_ROUTE,QFR_SNAPSHOT_KEY,QFR_SCHEMA,validateQfrCompanionPayload,
+  qfrCompanionFreshness,qfrCompanionWriter,readQfrCompanionResponse} from './earnings-companion-c-qfr-r1.mjs';
 
 const NOW=Date.parse('2026-10-28T02:00:00.000Z');
 const SOURCE=Date.parse('2026-10-27T14:52:13.108Z');
@@ -102,4 +102,41 @@ test('stale source cannot write, even if schema itself remains structurally vali
   const db=fakeD1();
   await assert.rejects(qfrCompanionWriter(db).write(p,{storedAt:oldNow}),/QFR_D1_SOURCE_STALE/);
   assert.equal(db.queries.filter(x=>x.kind==='WRITE').length,0);
+});
+test('public Census route serves only verified, fresh stored projections via read-only GET/HEAD',async()=>{
+  assert.equal(QFR_ROUTE,'/api/earnings-recession-census-qfr-margin');
+  const db=fakeD1(),request=new Request('https://zgmini.kr'+QFR_ROUTE);
+  const missing=await readQfrCompanionResponse(request,db,{now:NOW});
+  assert.equal(missing.status,503);
+  assert.equal((await missing.json()).reason,'STORED_PROJECTION_PENDING');
+  await qfrCompanionWriter(db).write(fixture(),{storedAt:NOW-1000});
+  const before=db.queries.filter(x=>x.kind==='WRITE').length;
+  const ready=await readQfrCompanionResponse(request,db,{now:NOW});
+  assert.equal(ready.status,200);
+  assert.equal(ready.headers.get('x-public-projection'),'STORED');
+  const response=await ready.json();
+  assert.equal(response.rows[0].value,points[4].value);
+  assert.equal(response.rows[0].releaseDate,null);
+  assert.equal(response.freshness.status,'FRESH');
+  assert.equal(db.queries.filter(x=>x.kind==='WRITE').length,before);
+  const head=await readQfrCompanionResponse(new Request(request.url,{method:'HEAD'}),db,{now:NOW});
+  assert.equal(head.status,200);
+  assert.equal(await head.text(),'');
+  assert.equal((await readQfrCompanionResponse(new Request(request.url,{method:'POST'}),db,{now:NOW})).status,405);
+  assert.equal((await readQfrCompanionResponse(new Request(request.url+'?force=1'),db,{now:NOW})).status,400);
+});
+test('public Census route fails closed on stale, corrupt and inaccessible checkpoints',async()=>{
+  const db=fakeD1(),request=new Request('https://zgmini.kr'+QFR_ROUTE);
+  await qfrCompanionWriter(db).write(fixture(),{storedAt:NOW-1000});
+  const stale=await readQfrCompanionResponse(request,db,{now:SOURCE+166*86_400_000});
+  assert.equal(stale.status,503);
+  assert.equal((await stale.json()).reason,'SOURCE_RETRIEVAL_EXPIRED');
+  db.records.set(QFR_SNAPSHOT_KEY,{body:'{"unexpected":"content"}',stored_at:NOW-1000});
+  const invalid=await readQfrCompanionResponse(request,db,{now:NOW});
+  assert.equal(invalid.status,503);
+  assert.equal((await invalid.json()).reason,'STORED_PROJECTION_INVALID');
+  const unavailable=await readQfrCompanionResponse(request,null,{now:NOW});
+  assert.equal(unavailable.status,503);
+  assert.equal((await unavailable.json()).reason,'PROJECTION_READ_UNAVAILABLE');
+  assert.equal(db.queries.filter(x=>x.kind==='WRITE').length,1);
 });
