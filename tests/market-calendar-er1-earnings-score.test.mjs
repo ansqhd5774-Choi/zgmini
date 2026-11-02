@@ -158,3 +158,33 @@ test('actual field validation rejects estimates, unrecognized source, or quarter
   assert.throws(()=>run([{...base,earningsSymbol:'OTHER'}]),/ER1_RELEASE_SOURCE_REQUIRED/);
   assert.throws(()=>run([{...base,releases:undefined,quarters:[]}]),/ER1_RELEASE_SOURCE_REQUIRED/);
 });
+
+test('2634 synthetic issuers: 97-point threshold, loss-maker and missing-data stress',()=>{
+  const n=2634;
+  const base=Array.from({length:n},(_,i)=>row(`S${i+1}`,[i+1,i+1,i+1,i+1]));
+  const original=run(base);
+  assert.equal(original.star3Count,132);
+  const oneMissing=base.map(r=>({...r,releases:r.releases.map((x,i)=>i===1?
+    {...x,eps:null,revenue:null}:x)}));
+  const twoMissing=base.map(r=>({...r,releases:r.releases.map((x,i)=>i===1||i===2?
+    {...x,eps:null,revenue:null}:x)}));
+  for(const sample of [oneMissing,twoMissing]){
+    const result=run(sample);
+    assert.equal(result.status,'READY_SHADOW');
+    assert.equal(result.star3Count,132);
+    assert.equal(result.coverage.earnings,1);
+  }
+  const loss=base.map((r,i)=>i===n-1?row(`S${i+1}`,[n,n,n,n],[-1,-1,-1,-1]):r);
+  assert.equal(run(loss).star3Count,131);
+  const equal=base.map((r,i)=>row(`S${i+1}`));
+  assert.equal(run(equal).star3Count,0);
+});
+
+test('the mandatory 98% approved-population gate cannot be weakened via options',()=>{
+  assert.throws(()=>scoreER1Issuers([row('AAA')],{
+    asOf:'2026-11-02',expectedEligibleIssuers:100,minCoverage:.2,
+  }),/ER1_INPUT_CONFIG_INVALID/);
+  const overflow=run([row('AAA'),row('BBB')],1);
+  assert.equal(overflow.status,'BLOCKED');
+  assert.equal(overflow.reason,'ER1_APPROVED_UNIVERSE_INCOMPLETE');
+});
