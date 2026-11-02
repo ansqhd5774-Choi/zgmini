@@ -5,6 +5,7 @@ const day=24*hour;
 // Provider limits are operational guardrails, not scoring or storage rules.
 // null means the supplied source did not publish a reliable hard quota.
 export const PROVIDER_QUOTA_POLICY=Object.freeze({
+ ALPACA:Object.freeze({label:'Alpaca Market Data Basic',hard:true,perMinute:140,warningPerMinute:120,protectedRemaining:60,alwaysEnforce:true,limitSource:'Alpaca Basic 200/min with 30% reserved'}),
  FRED:Object.freeze({label:'FRED/ALFRED',hard:true,perMinute:120,minIntervalMs:500,limitSource:'provider-report'}),
  BLS:Object.freeze({label:'BLS registered v2',hard:true,per10Sec:50,perDay:500,minIntervalMs:200,limitSource:'provider-report'}),
  BEA:Object.freeze({label:'BEA',hard:true,perMinute:100,maxErrorPerMinute:30,minIntervalMs:300,limitSource:'provider-report'}),
@@ -24,6 +25,7 @@ export const PROVIDER_QUOTA_POLICY=Object.freeze({
 });
 
 const HOSTS=[
+ ['data.alpaca.markets','ALPACA'],
  ['api.stlouisfed.org','FRED'],['fred.stlouisfed.org','FRED'],
  ['api.bls.gov','BLS'],['apps.bea.gov','BEA'],
  ['api.census.gov','CENSUS'],['api.eia.gov','EIA'],
