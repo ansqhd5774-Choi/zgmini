@@ -65,3 +65,46 @@ test('missing credential and HTTP 429 both stop without retries or Core changes'
     assert.equal(fs.existsSync(path.join(root,'er1-input','er1-manual-capture.lock')),false);
   }finally{fs.rmSync(root,{recursive:true,force:true});}
 });
+
+test('three retained days survive an invalid fourth day; raw quarantined, no extra refetch',async()=>{
+  const root=fs.mkdtempSync(path.join(os.tmpdir(),'er1-capture-partial-'));
+  try{
+    const dayRoot=path.join(root,'er1-input','days');
+    fs.mkdirSync(dayRoot,{recursive:true});
+    const dates=recentNYBusinessDays(now).dates;
+    for(const day of dates.slice(0,3))fs.writeFileSync(path.join(dayRoot,day+'.json'),
+      JSON.stringify({storedAt:'2026-11-02T16:00:00Z',body:fakeDay(day)}));
+    let calls=0;
+    const fetcher=async url=>{
+      calls++;
+      const day=new URL(url).searchParams.get('date');
+      const body=day===dates[3]?{
+        date:day,pre:[{symbol:'ABC/W',eps:undefined,revenue:'unsupported'}],
+        after:[],notSupplied:[],
+      }:fakeDay(day);
+      return new Response(JSON.stringify(body),{status:200});
+    };
+    const first=await runER1MinimalCapture({pcHome:root,now,
+      env:{EARNINGS_API_KEY:'PRIVATE_TEST'},fetcher});
+    assert.equal(first.status,'ER1_PRIVATE_SAMPLE_PARTIAL');
+    assert.equal(first.providerRequests,2);
+    assert.equal(first.retainedDayFiles,3);
+    assert.equal(first.newDayFiles,2);
+    assert.equal(first.savedDayCount,5);
+    assert.equal(first.verifiedDayCount,4);
+    assert.equal(first.quarantinedDays.length,1);
+    assert.equal(first.quarantinedDays[0].date,dates[3]);
+    assert.equal(first.quarantinedDays[0].invalidSymbols,1);
+    assert.equal(first.quarantinedDays[0].missingEPSFields,1);
+    assert.equal(first.quarantinedDays[0].invalidRevenueValues,1);
+    assert.equal(first.uniqueSymbolsWithBoth,1);
+    assert.equal(calls,2);
+    assert.doesNotMatch(JSON.stringify(first),/ABC\/W|PRIVATE_TEST|unsupported/);
+    assert.equal(fs.existsSync(path.join(dayRoot,dates[3]+'.json')),true);
+    const repeat=await runER1MinimalCapture({pcHome:root,now,env:{},
+      fetcher:async()=>{throw Error('SHOULD_NOT_REFETCH')}});
+    assert.equal(repeat.status,'ER1_PRIVATE_SAMPLE_PARTIAL');
+    assert.equal(repeat.providerRequests,0);
+    assert.equal(repeat.retainedDayFiles,5);
+  }finally{fs.rmSync(root,{recursive:true,force:true});}
+});
