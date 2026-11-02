@@ -58,6 +58,23 @@ test("null and blank stored API values are missing, not manufactured zeroes",()=
   assert.equal(selectAsOfRevisions(raw,"2026-11-01T23:59:59Z").length,0);
 });
 
+test("historical PIT selection never leaks a revision retrieved after the score as-of",()=>{
+  const common={
+    logicalSeriesId:"U3_UNEMPLOYMENT_RATE",observationDate:"2026-10-31",
+    geographyCode:"US",geographyType:"NATIONAL",
+    availableAt:"2026-11-01T09:00:00.000Z",
+  };
+  const prior={...common,value:4.1,sourceHash:"prior",
+    retrievedAt:"2026-11-01T09:30:00.000Z"};
+  const later={...common,value:4.2,sourceHash:"later",
+    retrievedAt:"2026-11-03T09:30:00.000Z"};
+  const cutoff="2026-11-02T23:59:59.999Z";
+  assert.deepEqual(selectAsOfRevisions([prior,later],cutoff).map(x=>x.value),[4.1]);
+  assert.deepEqual(selectAsOfRevisions([later],cutoff),[]);
+  assert.deepEqual(selectAsOfRevisions([prior,later],"2026-11-03T23:59:59.999Z")
+    .map(x=>x.value),[4.2]);
+});
+
 test("invalid dates and unknown storage provenance are rejected",()=>{
   assert.throws(()=>buildEmploymentR6OneYearReadModel([],{asOfDate:"2026-11-31"}),/AS_OF_INVALID_DATE/);
   assert.throws(()=>buildEmploymentR6OneYearReadModel([],{asOfDate:"2026-11-01",sourceStoredAt:Date.parse("2026-12-01")}),/SOURCE_STORED_AT_INVALID/);
