@@ -2,10 +2,17 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import {collectSp500Shadow} from './collect-sp500-shadow.mjs';
+import {loadLocalProviders} from './local-env.mjs';
 
 const DEFAULT_BASE=path.join(os.homedir(),'.zgmini','pc-writer');
 const REFRESH_FILE='local-asset-r10-sp500-refresh-last-run.json';
 const LEGACY_REPORT='local-sp500-shadow-collection-last-run.json';
+const AUTHORIZATION_ENV='ZGMINI_R10_SP500_REFRESH_APPROVED';
+const sourceRefreshApproved=base=>{
+  if(process.env[AUTHORIZATION_ENV]==='1')return true;
+  try{return loadLocalProviders(base)?.[AUTHORIZATION_ENV]==='1';}
+  catch{return false;}
+};
 export const SP500_SUCCESS_CACHE_MS=24*60*60*1000;
 export const SP500_FAILURE_BACKOFF_MS=2*60*60*1000;
 
@@ -31,7 +38,22 @@ export function sp500ShadowRefreshDecision(last,{now=Date.now()}={}){
   };
 }
 
-export async function refreshSp500ShadowIfDue(base=process.env.ZGMINI_PC_HOME??DEFAULT_BASE,{now=Date.now(),collector=collectSp500Shadow}={}){
+export async function refreshSp500ShadowIfDue(base=process.env.ZGMINI_PC_HOME??DEFAULT_BASE,{
+  now=Date.now(),
+  collector=collectSp500Shadow,
+  authorized=sourceRefreshApproved(base),
+}={}){
+  // The Task may run on a machine that has not approved source access.
+  // Never query a provider or alter an existing checkpoint until opted in.
+  if(!authorized)return {status:'SKIPPED_SOURCE_NOT_APPROVED',providerRequests:0};
+  let baseReady=false;
+  let storageReady=false;
+  try{
+    baseReady=fs.statSync(base).isDirectory();
+    if(baseReady)storageReady=fs.statSync(path.join(base,'storage','core.sqlite')).isFile();
+  }catch{/* Missing/inaccessible roots must not be created by a scheduled cycle. */}
+  if(!baseReady)return {status:'STOP_PC_ROOT_NOT_READY',providerRequests:0};
+  if(!storageReady)return {status:'STOP_CORE_DB_NOT_READY',providerRequests:0};
   const file=path.join(base,REFRESH_FILE);
   const previous=safeRead(file)??safeRead(path.join(base,LEGACY_REPORT));
   const decision=sp500ShadowRefreshDecision(previous,{now});
@@ -55,7 +77,6 @@ export async function refreshSp500ShadowIfDue(base=process.env.ZGMINI_PC_HOME??D
       observationDate:previous?.observationDate??previous?.last??null,
       sourceStoredAt:previous?.sourceStoredAt??null};
   }
-  fs.mkdirSync(base,{recursive:true});
   const temporary=file+'.tmp';
   fs.writeFileSync(temporary,JSON.stringify(report)+'\n');
   fs.renameSync(temporary,file);
