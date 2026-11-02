@@ -105,3 +105,25 @@
 - 확정치: 본 R13~R16 진단에서 변경 없음.
 - R16 PC 재실행 결과: 수신 전. 단, 이 결과를 또다시 '확정치 일치' Gate로 쓰지 않는다.
 - 문서 커밋 SHA와 브랜치 최신 SHA는 새 대화에서 재조회하여 업데이트한다.
+
+
+## 8. 2026-11-03 진행 상태 보충 — 이전 R16 인계 상태를 대체
+
+이 절은 2026-11-01 당시의 위 진단 기록을 지우지 않고, 이후 완료 증거와 남은 운영 단계를 구분한다. 최신 공통 자동화 지침 정본은 `ansqhd5774-Choi/zgmini-pc-control/docs/PC_AUTOMATION_STANDARD.md`이다.
+
+- **전용 개발 브랜치:** `codex/us-breadth-public-r1-20261031`. R17 수집·계산·공통 Alpaca 제한 연결, 잠정치 별도 게시 및 회귀시험은 개발 완료. 배포 전용 선별 PR은 [#957](https://github.com/ansqhd5774-Choi/zgmini/pull/957)이다. 이 PR은 기존 Core의 타 담당자 SP500 shadow/R10 보호/복합지표 코드를 보존한 6개 파일 범위이며, 개발 브랜치와 별개로 Draft 상태를 유지한다.
+- **실제 CI 증거:** [Node.js CI #41506905115](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/41506905115)에서 빌드·타입 검사·미국 등락 지수·공통 한도 테스트·PC 게시 복구·Cloudflare 조회 계약 PASS. 전체 CI 실패 2건은 같은 `main` 기준에서도 발생하는 경제지표 기존 테스트이며 **전체 CI를 PASS라고 쓰지 않는다**.
+- **잠정치 계약:** 뉴욕 정규장 완료된 15분 봉 사용, 서머타임·조기폐장·중복 슬롯 검증, 표본 미관측 허용. 잠정치에는 R2 98% 확보·방향 일치 검증을 요구하지 않는다. R2 확정치와 R1 250거래일 이력은 무수정. 잠정치 D1 키는 `public:market-breadth-provisional-r1:usa`로 분리된다.
+- **최신 공개 표시 계약:** 2026-11-02 사용자의 후속 지시에 따라 **종목 개수는 공개 데이터·화면에서 생략하고 비율(%)로만 표현**한다. 관측되지 않은 종목은 임의 보합으로 숨기지 않고 별도 미관측 비율로 보존하는 현 R17 구현이며, 공개 API에는 상승·하락·보합·미관측 비율만 반환한다. 위 2절의 과거 '관측 개수 명시'와 4절의 개수 표시 안내는 당시 기록이고 현재 공개 계약으로 사용하지 않는다.
+- **Alpaca 공통 한도:** 기존 `quota-fetch.mjs` 공통 원장에 미국 잠정치가 참여하도록 연결. 분당 200회 계정의 최근 60초 140회 상한/120회 경고/60회 보호 목표. 다른 같은 계정 호출자까지 모두 공통 원장에 참여해야 계정 전체 30% 보호를 보장할 수 있다.
+- **현재 운영 증거:** 2026-11-03 공개 웹 화면은 잠정치가 아닌 **2026-10-30 MarketParquet R2 확정 비율**을 표시했다. 코드 준비/CI 통과만으로 PC 설치·실제 15분 수집·D1 게시·Production Runtime을 성공이라고 판정하지 않는다.
+- **PC 제어 정본:** `zgmini-pc-control`의 2026-11-03 Controller 자동 업데이트는 [Issue #44](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/44)와 [진단 #45](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/45)에서 PASS. 설치 Controller `b77a333db9d3445394ff4267949a79b6054126cf`, 유지보수기 `c96d4ac0fd2fefeee28118decd9698b4b18636e3`. 기존 완료된 설치/갱신/진단을 재실행하지 않는다.
+- **운영 소스 미적용:** #45 마지막 관측 PC Core 승인 소스는 `a23c12cc8dd3238fa59adb417a4fdd5fce1bd57e`; 후보 Git SHA와 다르다. 현재 `pc-job` 허용목록에는 US 운영 소스 설치가 없고 `mutationsEnabled:false`. 검증된 `pc-maintenance`는 Controller 갱신만 허용하며 **운영 소스 교체에 사용 금지**.
+
+### 남은 필수 실행과 STOP
+
+1. 다른 작업자 운영 파일을 수정하지 않는 독립 **US 전용 B급 PC 소스 인계 계약**을 마련한다. 현재 실제 Core Action/승인 source와 Git 후보의 정확한 경로·변경 파일 해시를 확인한다. Core task/lock을 삭제·수정하거나 다른 collector를 덮어쓰지 않는다.
+2. 읽기 전용 진단과 Windows 격리 모의 설치·백업·검산·복구 확인 후, 별도 승인된 source 변경만 Core 유휴·자원 잠금 조건에 맞춰 적용한다. 일반 `pc-job`에 임의 shell/SQL을 보내거나 Controller 갱신 경로로 운영 소스를 우회하지 않는다.
+3. 실제 뉴욕 장중 자연 발생 15분 슬롯의 수집/원자료 저장/로컬 계산/잠정 D1 게시·재조회, 공개 API 최신성 및 PC·모바일 비율 표시를 검증한다. 별도 스케줄러·DB 구조·MarketParquet 확정치·기존 이력은 변경하지 않는다.
+
+이 단계에서 Runtime 실패를 확인한 것은 아니며, **미설치 운영 경로는 `AUTOMATION_BLOCKED`**다. 독립 조사와 테스트는 계속하되 B급 새 운영 변경은 해당 승인/담당 배정 없이 실행하지 않는다.
