@@ -80,8 +80,11 @@ export function auditEmploymentR6PitCoverage({dbPath,candidateDbPath=null,asOfDa
   if(candidateDbPath&&fs.realpathSync(candidateDbPath)===fs.realpathSync(dbPath))
     throw Error("PIT_AUDIT_CANDIDATE_IS_CORE");
   const core=new DatabaseSync(dbPath,{readOnly:true});
-  const candidate=candidateDbPath?new DatabaseSync(candidateDbPath,{readOnly:true}):null;
+  let candidate=null;
   try{
+    // If the isolated candidate cannot be opened, still close the already
+    // opened Core reader before the caller handles the diagnostic failure.
+    candidate=candidateDbPath?new DatabaseSync(candidateDbPath,{readOnly:true}):null;
     const current=sourceRows(core,T.observationCurrent,asOfDate);
     const history=sourceRows(core,T.observationHistory,asOfDate);
     const candidates=candidate?sourceRows(candidate,T.observationHistory,asOfDate):null;

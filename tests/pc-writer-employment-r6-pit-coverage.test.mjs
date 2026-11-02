@@ -77,6 +77,19 @@ test("candidate cannot equal Core and absence of tables remains NO_EVIDENCE",()=
   assert.equal(out.missingKeysWithCandidateHistory,null);
 });
 
+test("candidate open failure still leaves the Core reader usable for later audits",()=>{
+  const dir=fs.mkdtempSync(path.join(os.tmpdir(),"zgmini-r6-pit-open-error-"));
+  const core=path.join(dir,"core.sqlite"),candidate=path.join(dir,"EMPLOYMENT_R6_CANDIDATE.sqlite");
+  fixture(core,{});
+  // An existing directory passes the path-exists check but cannot open as SQLite.
+  fs.mkdirSync(candidate);
+  const before=digest(core);
+  assert.throws(()=>auditEmploymentR6PitCoverage({dbPath:core,candidateDbPath:candidate,asOfDate:"2026-11-02"}));
+  const recovered=auditEmploymentR6PitCoverage({dbPath:core,asOfDate:"2026-11-02"});
+  assert.equal(recovered.coreCurrentRows,0);
+  assert.equal(digest(core),before);
+});
+
 test("candidate reconciliation preview classifies new, matching, and conflicting source keys without writes",()=>{
   const dir=fs.mkdtempSync(path.join(os.tmpdir(),"zgmini-r6-pit-reconcile-"));
   const core=path.join(dir,"core.sqlite"),candidate=path.join(dir,"EMPLOYMENT_R6_CANDIDATE.sqlite");
