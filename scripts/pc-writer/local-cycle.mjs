@@ -6,6 +6,7 @@ import {spawnSync} from 'node:child_process';
 import {save,read} from './d1.mjs';
 import {collectSupplyR10} from './supply-r10.mjs';
 import {collectAlpacaIncremental} from './alpaca-incremental.mjs';
+import {refreshSp500ShadowIfDue} from './asset-r10-sp500-refresh.mjs';
 import {dispatchEarningsRiskProvisionalR23} from './earnings-risk-provisional-r23-hook.mjs';
 import {collectionPublicationPolicy} from './collection-publication-policy.mjs';
 import {progressivePublication,auxiliaryInputCheckpoint} from './progressive-publication.mjs';
@@ -31,7 +32,7 @@ try{
  const publicationPolicy=collectionPublicationPolicy({requested:publishRequested,collectionExit:collection.status,collectionStatus:collectionReport?.status,quotaGuarded});
  const publishAllowed=publicationPolicy.publishAllowed;
  const publishSkipped=null;
- let supplyR10=null,alpacaIncremental=null,sectorFearGreedR3=null,sectorFearGreedR3Report=null;
+ let supplyR10=null,alpacaIncremental=null,sp500Shadow=null,sectorFearGreedR3=null,sectorFearGreedR3Report=null;
  const {publication,progressive}=await progressivePublication({
   enabled:lane==='core'&&publishAllowed,
   publish:async({early})=>{
@@ -42,6 +43,14 @@ try{
   collectAuxiliary:async()=>{
   supplyR10=lane==='core'?await collectSupplyR10(base):{status:'SKIPPED_KOREA_LANE'};
  if(lane==='core'){
+  // Refresh R10's saved benchmark input on its own bounded cadence.
+  // A source failure cannot interrupt the existing Core publication lane.
+  try{
+   const result=await refreshSp500ShadowIfDue(base);
+   sp500Shadow={status:result.status,providerRequests:result.providerRequests===null?null:result.providerRequests??0,observationDate:result.observationDate??null};
+  }catch{
+   sp500Shadow={status:'FAILED_PREVIOUS_INPUTS_PRESERVED',providerRequests:null};
+  }
   try{const result=await collectAlpacaIncremental(base);alpacaIncremental={status:result.status,runRequests:result.runRequests??0};}
   catch{alpacaIncremental={status:'FAILED_PREVIOUS_INPUTS_PRESERVED',runRequests:null};}
  }
@@ -176,7 +185,7 @@ try{
   sectors:sectorFearGreedR3Report?.sectors??null,
   error:sectorFearGreedR3Report?.error??(sectorFearGreedR3?.error?.code??null),
  }:{nonBlocking:true,status:'SKIPPED_KOREA_LANE'};
- const report={at:new Date().toISOString(),lane,collectionExit:collection.status,collectionStatus:collectionReport?.status??null,supplyR10,alpacaIncremental,sectorFearGreed,researchBreadthR10V9Shadow,publicationExit:publication.status,publishRequested,publishSkipped,publicationPolicy,progressive,researchProspective,researchFundFlowProspective,researchBreadthProspective,researchEarningsR5OfficialRefresh,researchEarningsRiskProvisionalR23,researchEarningsR5Prospective,status:publication.status===0?(publicationPolicy.collectionDegraded?'COMPLETE_WITH_COLLECTION_GAPS':'COMPLETE'):'PUBLICATION_NOT_VERIFIED'};
+ const report={at:new Date().toISOString(),lane,collectionExit:collection.status,collectionStatus:collectionReport?.status??null,supplyR10,alpacaIncremental,sp500Shadow,sectorFearGreed,researchBreadthR10V9Shadow,publicationExit:publication.status,publishRequested,publishSkipped,publicationPolicy,progressive,researchProspective,researchFundFlowProspective,researchBreadthProspective,researchEarningsR5OfficialRefresh,researchEarningsRiskProvisionalR23,researchEarningsR5Prospective,status:publication.status===0?(publicationPolicy.collectionDegraded?'COMPLETE_WITH_COLLECTION_GAPS':'COMPLETE'):'PUBLICATION_NOT_VERIFIED'};
  save(path.join(base,'local-cycle-last-run.json'),report);console.log(JSON.stringify(report));
  if(publishRequested)try{updateDataAlert(base,{key:'publication',failed:publication.status!==0});}catch{console.warn('LOCAL_DATA_ALERT_RECORD_FAILED');}
  if(publication.status!==0)process.exitCode=1;
