@@ -57,7 +57,14 @@ test("state/metro combined fetch keeps each source's actual release date stable"
   assert.equal(released(stateDay,"SMS00000000000000022"),"2026-11-20T15:00:00.000Z");
   assert.equal(released(stateDay,"SMS99999990000000022"),"2026-10-28T14:00:00.000Z");
   assert.equal(released(metroDay,"SMS00000000000000022"),"2026-11-20T15:00:00.000Z");
-  assert.equal(released(metroDay,"SMS99999990000000022"),"2026-12-02T15:00:00.000Z");
+  // API still reports September in December: this remains October's release.
+  assert.equal(released(metroDay,"SMS99999990000000022"),"2026-10-28T14:00:00.000Z");
+  const advanced=structuredClone(payload);
+  advanced.Results.series[1].data=[{year:"2026",period:"M10",value:"49.0"}];
+  const advancedRows=parseBlsR6Rows(advanced,{
+    releaseGroup:"BLS_STATE_MSA",releaseAt:"2026-12-02T15:00:00.000Z",retrievedAt:"2026-12-03T18:00:00.000Z",
+  }).rows;
+  assert.equal(released(advancedRows,"SMS99999990000000022"),"2026-12-02T15:00:00.000Z");
   // The unchanged state observation must not acquire a synthetic metro-date revision.
   assert.equal(stateDay[0].value,metroDay[0].value);
   assert.equal(stateDay[0].releaseDate,metroDay[0].releaseDate);
