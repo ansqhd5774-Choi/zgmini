@@ -17,7 +17,7 @@ import {
 } from 'recharts';
 
 import {MarketChartAnimationContext} from './market-chart-animation-context';
-import type {MarketFearGreedChartPoint,MarketFearGreedChartValidPoint,MarketObservedRange} from './market-fear-greed-chart';
+import type {MarketFearGreedChartPoint,MarketFearGreedChartValidPoint,MarketObservedRange,MarketChartTimeAxis} from './market-fear-greed-chart';
 
 function usePrefersReducedMotion() {
   const [reduced, setReduced] = useState(false);
@@ -55,6 +55,7 @@ export function MarketFearGreedChart({
   axisTickInterval = 0,
   marketScoreBands = false,
   observedRanges = [],
+  timeAxis,
 }: {
   data: MarketFearGreedChartPoint[];
   axisTicks: string[];
@@ -74,6 +75,7 @@ export function MarketFearGreedChart({
   axisTickInterval?: 0 | 'preserveStartEnd';
   marketScoreBands?: boolean;
   observedRanges?: MarketObservedRange[];
+  timeAxis?: MarketChartTimeAxis;
 }) {
   const mobileAxisRight=useDashboardMobileAxis();
   const animate=useContext(MarketChartAnimationContext);
@@ -81,6 +83,8 @@ export function MarketFearGreedChart({
   const [touchReleased, setTouchReleased] = useState(false);
   const extrema=compact||!showExtrema?[]:chartExtrema(data.map(p=>({date:/^\d{8}$/.test(p.date)?`${p.date.slice(0,4)}-${p.date.slice(4,6)}-${p.date.slice(6,8)}`:p.date.slice(0,10),value:p.score})));
   const rangeByDate=new Map(observedRanges.map(row=>[row.date,row]));
+  const chartX=(date:string)=>timeAxis?Date.parse(date):date;
+  const chartData=timeAxis?data.map(point=>({...point,chartTime:Date.parse(point.date)})):data;
 
   if (data.length === 0 || (!compact && data.length === 1)) {
     return <div className="cnn-chart-empty"><CircleAlert size={18}/><span>{emptyLabel}</span></div>;
@@ -95,7 +99,7 @@ export function MarketFearGreedChart({
     onPointerMove={event => { if (event.pointerType === 'mouse') setTouchReleased(false); }}
   >
     <ResponsiveContainer width="100%" height="100%" initialDimension={{width:1,height:1}}>
-    <AreaChart data={data} accessibilityLayer={false} tabIndex={-1} margin={compact ? {top:6,right:6,left:6,bottom:6} : mobileAxisRight ? {top:10,right:6,left:8,bottom:0} : { top: 6, right: 14, left: 0, bottom: 4 }}>
+    <AreaChart data={chartData} accessibilityLayer={false} tabIndex={-1} margin={compact ? {top:6,right:6,left:6,bottom:6} : mobileAxisRight ? {top:10,right:6,left:8,bottom:0} : { top: 6, right: 14, left: 0, bottom: 4 }}>
       <defs>
         <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stopColor={color} stopOpacity=".6"/>
@@ -104,13 +108,17 @@ export function MarketFearGreedChart({
       </defs>
       <XAxis
         hide={compact}
-        dataKey="date"
-        ticks={axisTicks}
+        dataKey={timeAxis?"chartTime":"date"}
+        type={timeAxis?"number":"category"}
+        scale={timeAxis?"time":"auto"}
+        domain={timeAxis?.domain}
+        allowDataOverflow={Boolean(timeAxis)}
+        ticks={timeAxis?.ticks??axisTicks}
         interval={axisTickInterval}
         axisLine={false}
         tickLine={false}
         tickMargin={5}
-        tickFormatter={(value) => axisLabels.get(String(value)) ?? ''}
+        tickFormatter={(value) => timeAxis?timeAxis.labels.get(Number(value))??'':axisLabels.get(String(value))??''}
         tick={{ fill: 'var(--zg-text-meta,#a8bcd0)', fontSize: 9 }}
       />
       {compact ? <YAxis orientation={mobileAxisRight?"right":"left"}
@@ -155,7 +163,7 @@ export function MarketFearGreedChart({
       {latestPoint ? <ReferenceDot
         key={`latest-${instanceKey}-${latestPoint.date}-${latestPoint.score}`}
         className="cnn-latest-point"
-        x={latestPoint.date}
+        x={chartX(latestPoint.date)}
         y={latestPoint.score}
         r={compact ? 3 : 4.4}
         fill={color}
@@ -173,9 +181,11 @@ export function MarketFearGreedChart({
           const tooltipValue = typeof rawTooltipValue === 'number' && Number.isFinite(rawTooltipValue)
             ? rawTooltipValue
             : null;
-          const observedRange=rangeByDate.get(String(tooltipLabel));
+          const sourceLabel=timeAxis&&typeof tooltipPayload[0]?.payload?.date==='string'
+            ? tooltipPayload[0].payload.date : String(tooltipLabel);
+          const observedRange=rangeByDate.get(sourceLabel);
           return <div className="cnn-history-tooltip">
-            <span>{formatTooltipLabel(String(tooltipLabel))}</span>
+            <span>{formatTooltipLabel(sourceLabel)}</span>
             <strong style={{color:marketScoreBands?(tooltipValue===null?'#94a3b8':tooltipValue<25?'#ef4444':tooltipValue<40?'#f59e0b':tooltipValue<60?'#94a3b8':tooltipValue<75?'#22c55e':'#10b981'):fearGreedStateColor(tooltipValue===null?'확인 불가':tooltipValue<45?'공포':tooltipValue<=55?'중립':'탐욕')}}>{tooltipValue === null ? '—' : tooltipValue.toFixed(1)}</strong>
             {observedRange&&<small>실제 수집 최저 {observedRange.low.toFixed(1)} · 최고 {observedRange.high.toFixed(1)}</small>}
           </div>;
@@ -198,15 +208,15 @@ export function MarketFearGreedChart({
       />
       {observedRanges.filter(row=>row.high>row.low).map(row=><ReferenceLine
         key={`cnn-observed-range-${instanceKey}-${row.date}`}
-        segment={[{x:row.date,y:row.low},{x:row.date,y:row.high}]}
+        segment={[{x:chartX(row.date),y:row.low},{x:chartX(row.date),y:row.high}]}
         stroke={color} strokeWidth={1.6} strokeOpacity={.76} ifOverflow="hidden"
       />)}
       {lineSegments?.map((segment,i)=><ReferenceLine key={`segment-${instanceKey}-${i}-${segment.to.date}`}
-        segment={[{x:segment.from.date,y:segment.from.score},{x:segment.to.date,y:segment.to.score}]}
+        segment={[{x:chartX(segment.from.date),y:segment.from.score},{x:chartX(segment.to.date),y:segment.to.score}]}
         stroke={color} strokeWidth={2.2} strokeDasharray={segment.dashed ? '5 5' : undefined}
         ifOverflow="hidden"/>)}
-      {gapGuides.map(guide=><ReferenceLine key={`missing-guide-${guide.from.date}-${guide.to.date}`} segment={[{x:guide.from.date,y:guide.from.score},{x:guide.to.date,y:guide.to.score}]} stroke={color} strokeWidth={1.6} strokeDasharray="4 5" strokeOpacity={0.65} ifOverflow="hidden"/>)}
-      {extrema.map(point=><ReferenceDot key={'extreme-'+point.kind} x={data[point.index].date} y={point.value} ifOverflow="visible" shape={<ChartExtremumPoint point={point} peerIndex={extrema.find(p=>p.kind!==point.kind)?.index} samples={data.map(p=>({x:p.date,value:p.score}))} count={data.length} color={color}/>}/>)}
+      {gapGuides.map(guide=><ReferenceLine key={`missing-guide-${guide.from.date}-${guide.to.date}`} segment={[{x:chartX(guide.from.date),y:guide.from.score},{x:chartX(guide.to.date),y:guide.to.score}]} stroke={color} strokeWidth={1.6} strokeDasharray="4 5" strokeOpacity={0.65} ifOverflow="hidden"/>)}
+      {extrema.map(point=><ReferenceDot key={'extreme-'+point.kind} x={chartX(data[point.index].date)} y={point.value} ifOverflow="visible" shape={<ChartExtremumPoint point={point} peerIndex={extrema.find(p=>p.kind!==point.kind)?.index} samples={data.map(p=>({x:chartX(p.date),value:p.score}))} count={data.length} color={color}/>}/>)}
     </AreaChart>
     </ResponsiveContainer>
   </div>;
