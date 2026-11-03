@@ -147,6 +147,12 @@ export async function runDec31Capture({pcHome=PC_HOME,fetcher=fetch,env=process.
         report.sourceStoredAt=item.storedAt;
     }
     report.coveredDayCount=known.size;
+    // Valid empty vendor responses do not satisfy calendar-data acquisition.
+    // Preserve the empty raw snapshots but do not classify them as business PASS.
+    if(report.status==='PASS'&&report.records===0){
+      report.status='PARTIAL';
+      report.code='DEC31_NO_EARNINGS_EVENTS_IN_PROVIDER_RESPONSES';
+    }
     try{core?.close?.()}catch{}
     if(fd!==null)try{fs.closeSync(fd)}catch{}
     if(locked)try{fs.unlinkSync(lock)}catch{report.status='STATE_UNKNOWN';report.code='DEC31_LOCK_RELEASE_STOP'}
