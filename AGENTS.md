@@ -1,5 +1,9 @@
 ZGMINI PLUGIN & EXECUTION RULES — COMPACT R5 FINAL
 
+## 테마 확장·산식 일괄 관리 — 2026-11-03
+- docs/THEME_SCALE_AND_METHODOLOGY_WORKFLOW.md를 따른다. 목적은 향후 모든 테마의 설정 기반 추가와 공통 버전별 산식 일괄 관리다. 특정 테마 복구로 목적을 축소하지 않는다. 테마·ETF 후보 수 상한을 두지 않고 자원 정책은 cursor/resume으로 처리한다.
+- 신규 테마별 CMD/예약/API/Reader/차트를 복제하지 않는다. 기존 공통 코드와 정상 결과를 재사용한다. 과거 운영 개수·미완료 snapshot을 현재 상태로 적용해 성공 작업을 재개하지 않는다. PC 공통 필수 절차 상시 승인은 zgmini-pc-control 최신 정본을 따르며 개별 업무의 게시·배포 범위는 기존 승인을 재사용한다.
+
 ## PC 자동 실행 공통 진입 — 2026-11-02
 - 일반챗의 승인된 A급 PC 진단/검사는 비공개 `ansqhd5774-Choi/zgmini-pc-control`의 `docs/GENERAL_CHAT_START.md`를 먼저 읽고 `pc-job` Issue JSON으로 직접 요청한 뒤 결과 댓글/TXT/JSON까지 확인한다. GitHub 연결 도구로 실제 요청·회수를 검증했다. 로컬 직접 접근 부재만으로 CMD 수동 전달·Codex 전환을 요구하지 않는다.
 - 이 경로는 고정 허용목록·검증된 executable SHA만 실행한다. 임의 shell/후보코드 실행이나 기존 Core/DB/운영 source/예약 변경을 승인한 것이 아니다. 운영 변경(B)과 관리자 작업(C)은 별도 승인 계약을 따른다. 6좌석 작업 폴더/결과/원장을 분리하고 공유 결과 게시는 전용 잠금으로 직렬화한다. 자원 대기는 실제 서비스 장애와 구분한다.
