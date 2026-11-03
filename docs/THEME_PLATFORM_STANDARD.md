@@ -1,5 +1,9 @@
 # 테마 공통 운영 기준 (2026-10-31)
 
+## 테마 확장·산식 일괄 관리 최신 지침 — 2026-11-03
+
+[THEME_SCALE_AND_METHODOLOGY_WORKFLOW.md](THEME_SCALE_AND_METHODOLOGY_WORKFLOW.md)를 함께 따른다. 신규 테마는 설정으로 추가하고 산식은 공통 버전 바인딩으로 전체/선택 적용한다. 테마·ETF 수량 상한과 테마별 파이프라인 복제는 두지 않는다. 아래 운영 상태·개수·미완료 항목은 각 기록 시점의 snapshot이며 현재 완료 상태를 취소하거나 재작업을 요구하는 기준이 아니다.
+
 ## 목적과 범위
 
 신규 작업 실행·기존 승인 재사용·장벽별 대응은 [THEME_ONBOARDING_PLAYBOOK.md](THEME_ONBOARDING_PLAYBOOK.md)를 따른다. 위임 정책은 `theme-platform-policy.mjs`가 판단하며 기술 검증이나 실제 서비스 권한을 우회하지 않는다.
