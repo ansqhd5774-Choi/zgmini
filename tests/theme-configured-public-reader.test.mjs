@@ -115,13 +115,23 @@ test('R32 public contract marks stored confirmed score separately from READY pro
   {feed_key:'theme-configured:ai-software',body:JSON.stringify(r32),stored_at:clock-1000},
   {feed_key:'theme-configured-provisional:ai-software',body:JSON.stringify(provisional),stored_at:clock-1000},
  ];
- const db={prepare(sql){
-  const prefix=sql.includes("theme-configured-provisional:")?
-   'theme-configured-provisional:':'theme-configured:';
-  return {bind(cursor){return {async all(){return {results:rows.filter(r=>
-   r.feed_key.startsWith(prefix)&&r.feed_key>cursor).sort((a,b)=>
-   a.feed_key.localeCompare(b.feed_key)).slice(0,200)};}};}}};
- }};
+ const db={
+  prepare(sql){
+   const prefix=sql.includes("theme-configured-provisional:")?
+    'theme-configured-provisional:':'theme-configured:';
+   return {
+    bind(cursor){
+     return {
+      async all(){
+       const results=rows.filter(r=>r.feed_key.startsWith(prefix)&&r.feed_key>cursor)
+        .sort((a,b)=>a.feed_key.localeCompare(b.feed_key)).slice(0,200);
+       return {results};
+      }
+     };
+    }
+   };
+  }
+ };
  assert.equal(eligibleConfiguredPublic(r32,'theme-configured:ai-software',clock-1000,clock),true);
  assert.equal(eligibleConfiguredPublic(provisional,'theme-configured-provisional:ai-software',clock-1000,clock),true);
  const response=await readConfiguredThemes(db,{now:clock});
