@@ -1,8 +1,12 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {DecemberEventsFromSaved,buildDecemberDisplay,syncDecemberD1} from '../scripts/pc-writer/market-calendar-dec31-publish.mjs';
+import fs from 'node:fs';
+import path from 'node:path';
+import os from 'node:os';
+import {DecemberEventsFromSaved,buildDecemberDisplay,syncDecemberD1,resolveApprovedProjectSource} from '../scripts/pc-writer/market-calendar-dec31-publish.mjs';
 import {withDec2026Display,validDec2026Display} from '../lib/market-calendar-dec2026-display.mjs';
 import {earningsDisplayHtml,earningsDisplayResponse} from '../lib/earnings-api-display.mjs';
+import {ER1_METHOD} from '../lib/market-calendar-er1-earnings-score.mjs';
 
 const groups={
  '01':'BOX CRWD ASAN OKTA GTLB NTAP',
@@ -33,6 +37,13 @@ test('38 PC-only vendor rows become 31-day sanitized HTML without estimates',()=
  assert.equal(html.count,38);
  assert.equal(html.html.includes('예정 · 미확정'),true);
  assert.equal(html.html.includes('★★★'),false);
+ const grades={status:'READY_ER1_PUBLIC',method:ER1_METHOD,asOf:'2026-11-03',
+  threshold:97,coverage:{inputSymbols:1,observedIssuers:1,scoreableIssuers:1,unscoreableReasons:{}},
+  recordCount:1,star3Count:1,scores:[{issuerId:'BOX',tickers:['BOX'],score:98.5}]};
+ const graded=earningsDisplayHtml(snapshot,{start:'2026-12-01',end:'2026-12-31'},grades);
+ assert.match(graded.html,/★★★/);
+ assert.match(graded.html,/기업 실적 점수 98\.50점/);
+ assert.equal(earningsDisplayHtml(snapshot,{start:'2026-12-01',end:'2026-12-31',importance:3},grades).count,1);
  const merged=withDec2026Display({status:'READY_DISPLAY',mode:'OWN_SITE_HTML_ONLY',
   rawVendorJsonExposed:false,publicJsonFeed:false,redistribution:false,
   coveredDays:['2026-11-30','2026-12-01'],byDay:{'2026-11-30':[],'2026-12-01':[]}},snapshot);
@@ -57,4 +68,20 @@ test('D1 publisher writes one isolated key and verifies remote readback',async()
  assert.equal(a.decision,'DEC31_PUBLISH_D1_VERIFIED');
  assert.equal(b.decision,'DEC31_PUBLISH_D1_ALREADY_MATCHED');
  assert.deepEqual(writes,['market-calendar:earnings-dec2026-display-html']);
+});
+
+test('operating source fallback verifies exact PC-evidenced path, SHA and clean state',()=>{
+ const root=fs.mkdtempSync(path.join(os.tmpdir(),'zgmini-dec31-source-'));
+ try{
+  const repo=path.join(root,'zgmini-earnings-history-pc-release');
+  fs.mkdirSync(path.join(repo,'scripts','pc-writer'),{recursive:true});
+  fs.writeFileSync(path.join(repo,'scripts','pc-writer','d1.mjs'),'// fixture only');
+  fs.writeFileSync(path.join(repo,'scripts','pc-writer','local-cycle.mjs'),'// fixture only');
+  const sha='a'.repeat(40);
+  const check=(expectedSha=sha,getDirty=()=>'',getHead=()=>sha)=>
+   resolveApprovedProjectSource({projects:root,expectedSha,getHead,getDirty});
+  assert.equal(check(),repo);
+  assert.throws(()=>check('b'.repeat(40)),/DEC31_PUBLISH_PROJECT_SOURCE_OR_DIRTY_STOP/);
+  assert.throws(()=>check(sha,()=> ' M local-cycle.mjs'),/DEC31_PUBLISH_PROJECT_SOURCE_OR_DIRTY_STOP/);
+ }finally{fs.rmSync(root,{recursive:true,force:true});}
 });
