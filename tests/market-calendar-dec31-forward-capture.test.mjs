@@ -63,3 +63,18 @@ test('on rate limit stop and protect completed days without retry',async()=>with
   assert.equal(calls,4);
   assert.equal(fs.readdirSync(path.join(root,'er1-input','dec31-forward-days')).length,3);
 }));
+
+test('31 successful empty responses are not a complete earnings calendar',async()=>withRoot(async root=>{
+  let calls=0;
+  const report=await runDec31Capture({pcHome:root,clock,lookupCore:mockCore(new Set()),
+    fetcher:async url=>{calls++;return {ok:true,status:200,
+      text:async()=>JSON.stringify({date:new URL(url).searchParams.get('date'),
+        pre:[],after:[],notSupplied:[]})};},
+    env:{EARNINGS_API_KEY:'local-mock-key'}});
+  assert.equal(report.coveredDayCount,31);
+  assert.equal(report.providerCalls,31);
+  assert.equal(report.records,0);
+  assert.equal(report.status,'PARTIAL');
+  assert.equal(report.code,'DEC31_NO_EARNINGS_EVENTS_IN_PROVIDER_RESPONSES');
+  assert.equal(calls,31);
+}));
