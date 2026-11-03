@@ -125,6 +125,34 @@ const head=root=>execFileSync('git',['rev-parse','HEAD'],{
  stdio:['ignore','pipe','ignore']}).trim();
 const pause=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 
+// R38 task XML can use a newer wrapper than the legacy R34 path parser.
+// If so, resolve only from the approved E: project tree and exact config SHA.
+// Do not create a checkout, touch the scheduler, or choose an ambiguous clone.
+export function resolveApprovedProjectSource({projects=String.raw`E:\ZGmini\projects`,
+ expectedSha,getHead=head}={}){
+ if(!/^[0-9a-f]{40}$/.test(expectedSha??'')||!fs.existsSync(projects))
+  stop('DEC31_PUBLISH_PROJECT_ROOT_INVALID');
+ const queue=[[projects,0]],matches=[];let scanned=0;
+ while(queue.length){
+  const [dir,depth]=queue.shift();
+  if(++scanned>300)stop('DEC31_PUBLISH_PROJECT_SCAN_BOUNDED_STOP');
+  if(depth>0){
+   const d1=path.join(dir,'scripts','pc-writer','d1.mjs');
+   if(fs.existsSync(d1)&&fs.lstatSync(d1).isFile()){
+    try{if(getHead(dir)===expectedSha)matches.push(dir);}catch{}
+   }
+  }
+  if(depth>=3)continue;
+  for(const entry of fs.readdirSync(dir,{withFileTypes:true})){
+   if(entry.isDirectory()&&!entry.isSymbolicLink()&&entry.name!=='legacy'&&
+    entry.name!=='node_modules'&&entry.name!=='.git')queue.push([path.join(dir,entry.name),depth+1]);
+  }
+ }
+ if(matches.length!==1)stop(matches.length>1?'DEC31_PUBLISH_PROJECT_ROOT_AMBIGUOUS_STOP':
+  'DEC31_PUBLISH_APPROVED_PROJECT_SOURCE_NOT_FOUND');
+ return matches[0];
+}
+
 export async function runPublish({pcHome=PC_HOME,getRoot=()=>coreRootFromTask(coreTaskXml()),
  getHead=head,remoteFactory,clock=()=>Date.now(),sleep=pause}={}){
  const report={schema:'ZGMINI_DEC31_HTML_PUBLISH_V1',status:'BLOCKED',
@@ -148,9 +176,10 @@ export async function runPublish({pcHome=PC_HOME,getRoot=()=>coreRootFromTask(co
   if(!fs.existsSync(local))fs.writeFileSync(local,body,{flag:'wx'});
   if(fs.readFileSync(local,'utf8')!==body)stop('DEC31_PUBLISH_LOCAL_READBACK_STOP');
   report.localHtmlSha256=digest(body);
-  const root=getRoot();
-  if(!root||!fs.existsSync(root))stop('DEC31_PUBLISH_CORE_ROOT_MISSING');
   const config=JSON.parse(fs.readFileSync(path.join(pcHome,'config.json'),'utf8'));
+  const taskRoot=getRoot();
+  const root=taskRoot&&fs.existsSync(taskRoot)?taskRoot:
+   resolveApprovedProjectSource({expectedSha:config.source,getHead});
   if(config.source!==getHead(root)||config.collectionTarget!=='pc'||
    config.enabled!==true||!config.core)stop('DEC31_PUBLISH_CORE_SOURCE_CONFIG_STOP');
   lock=path.join(pcHome,'local-cycle.lock');
