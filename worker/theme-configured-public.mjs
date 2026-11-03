@@ -96,7 +96,8 @@ export async function readConfiguredThemes(db,{now=Date.now()}={}){
   themes.push({id:record.themeId,theme:record.theme,etfs:[...record.etfs],
    methodologyVersion:record.methodologyVersion,observationDate:record.observationDate,
    sourceStoredAt:record.sourceStoredAt,score:record.score,
-   history:record.history.map(p=>({date:p.date,score:p.score,status:p.status??p.mode}))});
+   history:record.history.map(p=>({date:p.date,score:p.score,status:p.status??p.mode,
+    ...(record.version===CONFIGURED_V2?{phase:'CONFIRMED'}:{})}))});
  }
  // Optional sidecar failures do not hide a verified confirmed result.
  if(r32Records.size){
@@ -111,7 +112,7 @@ export async function readConfiguredThemes(db,{now=Date.now()}={}){
    if(provisional&&provisional.definitionSha256===confirmed.definitionSha256&&provisional.confirmedObservationDate===confirmed.observationDate&&
     provisional.methodologyVersion===confirmed.methodologyVersion&&provisional.selectionEvidenceSha256===confirmed.selectionEvidenceSha256&&
     provisional.aumEvidenceSha256===confirmed.aumEvidenceSha256){
-    theme.provisionalStatus='READY';theme.provisional={date:provisional.observationDate,score:provisional.score,
+    theme.provisionalStatus='READY';theme.provisional={date:provisional.observationDate,score:provisional.score,phase:'PROVISIONAL',
      methodologyVersion:provisional.methodologyVersion,sourcePriceMode:provisional.sourcePriceMode,
      sourcePriceReconciled:false,etfs:provisional.history.at(-1).contributingETFs};
    }
