@@ -4,7 +4,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
-import {scoreER1Issuers} from '../../lib/market-calendar-er1-earnings-score.mjs';
+import {scoreER1Issuers,uniqueIssuerAlias} from '../../lib/market-calendar-er1-earnings-score.mjs';
 import {makeER1PublicDisplay} from '../../lib/market-calendar-er1-public-display.mjs';
 
 const DEFAULT_PC_HOME = String.raw`E:\ZGmini\data\pc-writer`;
@@ -70,6 +70,35 @@ function readObservedCohort(pcHome,asOf) {
  return {observations,sourceDays,recoveredRows};
 }
 
+// Compare every stored report before treating different share classes as one
+// issuer. EPS is per share and may legitimately differ by share class; never
+// choose one class's actuals over another class's conflicting observations.
+function buildIssuerRows(observations){
+ const issuers=new Map();
+ for(const [symbol,releases] of observations){
+  const issuerId=uniqueIssuerAlias(symbol);
+  if(!issuers.has(issuerId))issuers.set(issuerId,[]);
+  issuers.get(issuerId).push({symbol,releases});
+ }
+ const rows=[];
+ let shareClassGroups=0,shareClassConflicts=0;
+ for(const [issuerId,classes] of issuers){
+  classes.sort((a,b)=>a.symbol.localeCompare(b.symbol));
+  const primary=classes[0];
+  if(classes.length>1)shareClassGroups++;
+  const verified=classes.every(({releases})=>
+   releases.length===primary.releases.length&&releases.every((event,i)=>{
+    const original=primary.releases[i];
+    return event.date===original.date&&event.eps===original.eps&&
+     event.revenue===original.revenue;
+   }));
+  if(!verified)shareClassConflicts++;
+  rows.push({issuerId,tickers:classes.map(({symbol})=>symbol),
+   earningsSymbol:primary.symbol,releases:verified?primary.releases:[]});
+ }
+ return {rows,shareClassGroups,shareClassConflicts};
+}
+
 /** Score only actual, previously stored EPS+revenue observations.
  * The count checks the saved input; it never invents an issuer population.
  * No output is overwritten, and no raw earnings field is publicly emitted.
@@ -80,6 +109,7 @@ export function runER1SavedScore({pcHome=DEFAULT_PC_HOME,asOf=ER1_ASOF,
  const report={status:'BLOCKED',reason:null,asOf,providerRequests:0,
   dbWrites:0,d1Writes:0,sourceDays:0,recoveredRows:0,
   inputSymbols:0,symbolsWithBoth:0,scoreableIssuers:0,
+  shareClassGroups:0,shareClassConflicts:0,
   star3Count:0,outputCreated:false};
  try {
   if(asOf!==ER1_ASOF || !Number.isInteger(expectedObservedSymbols) ||
@@ -98,12 +128,20 @@ export function runER1SavedScore({pcHome=DEFAULT_PC_HOME,asOf=ER1_ASOF,
   if(report.symbolsWithBoth!==expectedObservedSymbols)
    stop('ER1_SAVED_SYMBOL_COUNT_MISMATCH_STOP');
 
-  // Each saved calendar symbol is an observation, never an approved roster entry.
-  // The scoring helper rejects duplicates and known share-class split collisions.
-  const rows=observations.map(([symbol,releases])=>({
-   issuerId:symbol,tickers:[symbol],earningsSymbol:symbol,releases,
-  }));
+  // Class labels are observations, not separate companies. Only identical
+  // actual histories may be merged; conflicting classes remain unscored.
+  const {rows,shareClassGroups,shareClassConflicts}=buildIssuerRows(observations);
+  report.shareClassGroups=shareClassGroups;
+  report.shareClassConflicts=shareClassConflicts;
   const result=scoreER1Issuers(rows,{asOf});
+  if(shareClassConflicts){
+   const reasons=result.coverage?.unscoreableReasons;
+   const missing=reasons?.ER1_RELEASE_HISTORY_INSUFFICIENT??0;
+   if(missing<shareClassConflicts)stop('ER1_SHARE_CLASS_COVERAGE_MISMATCH_STOP');
+   if(missing===shareClassConflicts)delete reasons.ER1_RELEASE_HISTORY_INSUFFICIENT;
+   else reasons.ER1_RELEASE_HISTORY_INSUFFICIENT-=shareClassConflicts;
+   reasons.ER1_SHARE_CLASS_SOURCE_CONFLICT=shareClassConflicts;
+  }
   report.scoreableIssuers=result.coverage?.scoreableIssuers??0;
   if(result.status!=='READY_SHADOW') stop(result.reason);
   const published=makeER1PublicDisplay(result);

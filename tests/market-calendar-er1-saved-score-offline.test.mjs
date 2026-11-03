@@ -8,13 +8,20 @@ import {validateER1PublicDisplay} from '../lib/market-calendar-er1-public-displa
 
 const days=['2026-10-26','2026-10-27','2026-10-28','2026-10-29','2026-10-30'];
 
-function fixture({count=838,extraEPSOnly=0,shareClassCollision=false}={}) {
+function fixture({count=838,extraEPSOnly=0,shareClassCollision=false,
+ shareClassSymbols=['GOOG','GOOGL'],shareClassMetricConflict=false}={}) {
  const root=fs.mkdtempSync(path.join(os.tmpdir(),'zgmini-er1-observed-only-'));
  const dayDir=path.join(root,'er1-input','days');
  fs.mkdirSync(dayDir,{recursive:true});
  const tickers=Array.from({length:count},(_,i)=>`T${i}`);
- if(shareClassCollision){tickers[count-2]='GOOG';tickers[count-1]='GOOGL';}
+ if(shareClassCollision){
+  tickers[count-2]=shareClassSymbols[0];tickers[count-1]=shareClassSymbols[1];
+ }
  const observations=tickers.map((symbol,i)=>({symbol,eps:1,revenue:i+1}));
+ if(shareClassCollision){
+  observations[count-1].revenue=observations[count-2].revenue;
+  if(shareClassMetricConflict)observations[count-1].eps=2;
+ }
  for(let i=0;i<extraEPSOnly;i++)
   observations.push({symbol:`X${i}`,eps:1,revenue:null});
  for(const day of days){
@@ -80,14 +87,65 @@ test('source count drift blocks without writing public scores',()=>{
  }finally{f.cleanup()}
 });
 
-test('known separate share classes cannot be counted as two independent issuers',()=>{
+test('identical GOOG/GOOGL actuals count once, with one score on both tickers',()=>{
  const f=fixture({shareClassCollision:true});
  try{
   const report=f.run();
-  assert.equal(report.status,'BLOCKED');
-  assert.equal(report.reason,'ER1_SHARE_CLASS_SPLIT');
-  assert.equal(fs.existsSync(f.outputPath),false);
+  assert.equal(report.status,'READY_ER1_PC_DERIVED',report.reason);
+  assert.equal(report.inputSymbols,838);
+  assert.equal(report.symbolsWithBoth,838);
+  assert.equal(report.shareClassGroups,1);
+  assert.equal(report.shareClassConflicts,0);
+  assert.equal(report.scoreableIssuers,837);
+  const output=JSON.parse(fs.readFileSync(f.outputPath,'utf8'));
+  assert.ok(validateER1PublicDisplay(output));
+  assert.equal(output.recordCount,837);
+  const alphabet=output.scores.find(s=>s.issuerId==='ALPHABET');
+  assert.deepEqual(alphabet.tickers,['GOOG','GOOGL']);
+  assert.ok(Number.isFinite(alphabet.score));
+  assert.equal(output.scores.some(s=>s.issuerId==='GOOG'||s.issuerId==='GOOGL'),false);
  }finally{f.cleanup()}
+});
+
+test('PC-shaped 875 symbols / 838 paired metrics preserve unrelated scores',()=>{
+ const f=fixture({extraEPSOnly:37,shareClassCollision:true});
+ try{
+  const report=f.run();
+  assert.equal(report.status,'READY_ER1_PC_DERIVED',report.reason);
+  assert.equal(report.inputSymbols,875);
+  assert.equal(report.symbolsWithBoth,838);
+  assert.equal(report.scoreableIssuers,837);
+  assert.equal(report.shareClassGroups,1);
+  assert.equal(report.shareClassConflicts,0);
+  const output=JSON.parse(fs.readFileSync(f.outputPath,'utf8'));
+  assert.ok(validateER1PublicDisplay(output));
+  assert.equal(output.coverage.inputSymbols,875);
+  assert.equal(output.coverage.observedIssuers,874);
+  assert.equal(output.coverage.scoreableIssuers,837);
+  assert.equal(output.coverage.unscoreableReasons.ER1_METRIC_OBSERVATIONS_INSUFFICIENT,37);
+ }finally{f.cleanup()}
+});
+
+test('different actual EPS on share classes quarantines only that issuer',()=>{
+ for(const pair of [['GOOG','GOOGL'],['BRK.A','BRK.B']]){
+  const f=fixture({shareClassCollision:true,shareClassSymbols:pair,
+   shareClassMetricConflict:true});
+  try{
+   const report=f.run();
+   assert.equal(report.status,'READY_ER1_PC_DERIVED',report.reason);
+   assert.equal(report.shareClassGroups,1);
+   assert.equal(report.shareClassConflicts,1);
+   assert.equal(report.scoreableIssuers,836);
+   const output=JSON.parse(fs.readFileSync(f.outputPath,'utf8'));
+   assert.ok(validateER1PublicDisplay(output));
+   assert.equal(output.coverage.inputSymbols,838);
+   assert.equal(output.coverage.observedIssuers,837);
+   assert.equal(output.coverage.scoreableIssuers,836);
+   assert.equal(output.coverage.unscoreableReasons.ER1_SHARE_CLASS_SOURCE_CONFLICT,1);
+   assert.ok(!output.scores.some(row=>row.tickers.some(t=>pair.includes(t))));
+   assert.ok(output.scores.some(row=>row.tickers.includes('T0')));
+  }finally{f.cleanup()}
+ }
 });
 
 test('contradictory saved actuals block without creating an output',()=>{
