@@ -41,6 +41,15 @@
 - 현재 공개 게시 파일 `theme-config/public-approvals/ai-software.json`은 만들지 않음. 공식 [GMH 2026-10-29 발효 약관](https://getmarkethistory.com/docs/terms)의 파생 데이터 조건, 계정 유효성, 실제 operator 공개 승인/definitionSHA를 등록·계산 후 확인해야 함. 선정을 게시권/공개권 증거로 대체 금지.
 - `--scheduled`의 `prior.calls<=4` 검사는 실제 운영 `dailyProviderRequests>4`이고 재실행 경로에 닿을 때에만 `dailyBudget`와의 비교로 최소 수정. 무관하면 이번 작업에서 수정하지 않음.
 
+## 실행 연계 — 현재 LAST PASS / FIRST FAIL (2026-11-04)
+
+- **LAST PASS:** 선정·AUM/V2 JSON 3파일 GitHub 저장 및 원격 바이트 재조회, 새 4 ETF 공급처 exact `/symbols` 조회, 기존 V2 입력 shape 시뮬레이션 7/7 (실제 CLI/PC 검사와 구분).
+- **FIRST NOT RUN (AUTOMATION_BLOCKED):** PC `E:/ZGmini/data/theme-evidence/` 증거 파일 배치 및 공용 `--register` 실행. 현재 채팅 실행 환경에 Windows E: 저장소 직접 파일 접근이 없고, 제어 저장소 `config/operations.json`은 `mutationsEnabled=false`; A급 `pc-job`에는 V2 등록·자료 배치·수집·D1 게시 명령이 없음. 미허용 operation이나 임의 shell로 우회하지 않음.
+- **기존 설치 경로:** 개발 source의 `theme-config-install.mjs`는 공용 `THEME_REGISTER.cmd`, `THEME_UPDATE.cmd`, `THEME_LIST.cmd`, `THEME_SCHEDULED.cmd`를 생성한다. 이전 설치 기록은 존재하나 오늘 실PC 경로는 미조회. 새로운 테마별 CMD를 만들 필요 없음.
+- **NEXT:** 기존 승인된 Windows 로컬 Codex/공용 운영 경로로 JSON 3개를 정확한 PC 지정 위치로 복사·SHA 검증→기존 `--register` 한 번→`--scheduled` budget/checkpoint 점검→실 저장 원가격 검증→확정·잠정 결과 독립 확인. 운영 게시 전에는 operator 공개 승인·GMH 파생 표시 권리·등록SHA·유효기간의 기존 preflight를 통과시킨 후 D1 CAS/readback·UI·자연예약을 순차 검증.
+- **오늘 공개 Reader 재조회:** `/api/theme-configured` HTTP 응답 `PENDING`, `themes:[]`, R32 및 별도 잠정 지원 `true`. 공개 페이지 기존 10개, 기준일 2026-10-28. **작업 브랜치 증거 추가만으로 공개나 PC 자동 갱신이 이루어진 것은 아님.**
+- 과거 Controller #123 설치/ #124 사후검사는 성공으로 재사용. 이번 신규 테마 등록을 위해 Controller 전체 재설치나 관련 없는 Core 진단을 반복하지 않음. `4회` 예산 문제는 실제 정책·재조회 경로 확인 시에만 최소 수정.
+
 ## 이전 공식 ETF 후보 조사 — 역사 근거 (수량 상한 없음)
 
 | ETF | AI 소프트웨어 테마 적합성 | 공식 보유 근거 | AUM 근거 및 기준일 | 필수 후속 |
