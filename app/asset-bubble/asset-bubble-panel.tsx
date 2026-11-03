@@ -1,6 +1,6 @@
 "use client";
 import {useStoredIndex} from '../../components/use-stored-index';
-import {mergeAssetR10RawForUi} from './asset-r10-raw-ui-r1.mjs';
+import {mergeAssetR10RawForUi,mergeAssetR10LatestForUi} from './asset-r10-raw-ui-r1.mjs';
 import {mergeAssetR10HistoryForUi} from './asset-r10-history-ui-r1.mjs';
 import {ContentHelp} from '../content-help';
 import {HelpText} from '../help-copy';
@@ -18,9 +18,10 @@ import "./asset-indicator-r2.css";
 import "../risk-last3-hero-parity-r2.css";
 import "../shared-risk-indicator-width-r1.css";
 
-type Row={id:string;name:string;status:string;score:number|null;value:number|null;unit:string;observationDate:string|null;source:string;weight:number;previousValue?:number|null;previousObservationDate?:string|null;trend?:Array<{date:string;value:number}>;nextReleaseDate?:string|null;trendPeriodLabel?:string;historyStatus?:'READY_1Y'|'PARTIAL_1Y'};
+type LatestObservation={quarter:string;value:number;observationDate:string;previousValue:number;previousObservationDate:string};
+type Row={id:string;name:string;status:string;score:number|null;value:number|null;unit:string;observationDate:string|null;source:string;weight:number;previousValue?:number|null;previousObservationDate?:string|null;latestObservation?:LatestObservation;trend?:Array<{date:string;value:number}>;nextReleaseDate?:string|null;trendPeriodLabel?:string;historyStatus?:'READY_1Y'|'PARTIAL_1Y'};
 export type Payload={status:string;score:number|null;asOfDate?:string|null;methodologyVersion?:string;missingFactors?:string[];indicators?:Row[];trend?:Array<{label:string;value:number}>;diagnosticQuarter?:string|null;scoreObservationQuarter?:string|null;sourceVersion?:string;sourceStoredAt?:number|null;historyMode?:string;rightsStatus?:string;publicationPolicy?:string;notes?:string[];scoreComparisons?:{week?:number|null;month?:number|null;threeMonth?:number|null;sixMonth?:number|null;year?:number|null}};
-type RawPayload={schemaVersion:string;status:string;sourceVersion:string;sourceStoredAt:number;asOfDate:string;scoreObservationQuarter:string;rightsStatus:string;diagnosticScore:number;factors:Array<{id:string;score:number;value:number;previousValue:number|null;observationDate:string;previousObservationDate:string|null;unit:string;source:string}>};
+type RawPayload={schemaVersion:string;status:string;sourceVersion:string;sourceStoredAt:number;asOfDate:string;scoreObservationQuarter:string;rightsStatus:string;diagnosticScore:number;factors:Array<{id:string;score:number;value:number;previousValue:number|null;observationDate:string;previousObservationDate:string|null;unit:string;source:string;latestObservation?:LatestObservation}>};
 type HistoryPayload={schemaVersion:string;status:string;sourceVersion?:string;sourceStoredAt?:number;factors?:unknown[]};
 const meta:Record<string,{label:string;content:string;criterion:string;help:string}>={
  valuationPressure:{label:"밸류에이션 압력",content:"주식시장 가치가 명목 GDP 대비 얼마나 높은지 측정",criterion:"장기분포 대비 낮을수록 양호",help:"금융·비금융 상장주식 가치 합계를 명목 GDP와 비교합니다. 장기 분포에서 밸류에이션 압력이 높을수록 버블 위험이 커져 안전점수는 낮아집니다."},
@@ -41,7 +42,10 @@ const dev=[
 function dateLabel(v?:string|null){if(!v)return "—";const d=new Date(v.length===10?v+"T00:00:00Z":v);return Number.isFinite(d.getTime())?new Intl.DateTimeFormat("ko-KR",{dateStyle:"medium",timeZone:"Asia/Seoul"}).format(d):v}
 function stage(s:number|null|undefined){if(typeof s!=="number"||!Number.isFinite(s))return "데이터 준비 중";if(s>=75)return "매우 양호";if(s>=60)return "양호";if(s>=45)return "중립";if(s>=25)return "버블 주의";return "버블 위험"}
 function judge(s:number|null|undefined,status?:string){if(status!=="READY"||typeof s!=="number"||!Number.isFinite(s))return {label:"데이터 준비 중",tone:"neutral"};if(s>=60)return {label:"긍정",tone:"positive"};if(s>=45)return {label:"중립",tone:"neutral"};return {label:"부정",tone:"negative"}}
-function fmt(r:Row|null|undefined){if(!r||typeof r.value!=="number"||!Number.isFinite(r.value))return "—";const n=Math.abs(r.value)>=100?1:3;return r.value.toFixed(n)+(r.unit?" "+r.unit:"")}
+function fmt(r:Row|null|undefined){const value=r?.latestObservation?.value??r?.value;if(typeof value!=="number"||!Number.isFinite(value))return "—";const n=Math.abs(value)>=100?1:3;return value.toFixed(n)+(r?.unit?" "+r.unit:"")}
+const displayedPrevious=(r:Row|null|undefined)=>r?.latestObservation?.previousValue??r?.previousValue;
+const displayedPreviousDate=(r:Row|null|undefined)=>r?.latestObservation?.previousObservationDate??r?.previousObservationDate;
+const displayedDate=(r:Row|null|undefined)=>r?.latestObservation?.observationDate??r?.observationDate;
 function fmtValue(value:number|null|undefined,unit?:string|null){if(typeof value!=="number"||!Number.isFinite(value))return "—";const n=Math.abs(value)>=100?1:3;return value.toFixed(n)+(unit?" "+unit:"")}
 function releaseLabel(value?:string|null){return value&&Number.isFinite(Date.parse(value))?dateLabel(value):"—"}
 const sourceLabels:Record<string,string>={
@@ -60,6 +64,7 @@ export default function AssetBubblePanel({initialPayload}:{initialPayload?:Paylo
  const {payload:raw}=useStoredIndex<RawPayload>('/api/asset-bubble-raw',null,payload?.status==='READY'&&payload?.methodologyVersion==='ASSET_BUBBLE_R10_CANDIDATE');
  const {payload:history}=useStoredIndex<HistoryPayload>('/api/asset-bubble-history',null,payload?.status==='READY'&&payload?.methodologyVersion==='ASSET_BUBBLE_R10_CANDIDATE');
  const displayPayload=useMemo(()=>mergeAssetR10HistoryForUi(mergeAssetR10RawForUi(payload,raw),history) as Payload|null,[payload,raw,history]);
+ const displayedObservations=useMemo(()=>mergeAssetR10LatestForUi(displayPayload,raw) as Payload|null,[displayPayload,raw]);
  const candidate=payload?.methodologyVersion==='ASSET_BUBBLE_R10_CANDIDATE';
  const publishedCurrentVintage=payload?.publicationPolicy==='USER_APPROVED_CURRENT_VINTAGE_UNVERIFIED_SOURCES';
  const score=(!candidate||payload?.status==='READY')&&typeof payload?.score==="number"&&Number.isFinite(payload.score)?payload.score:null;
@@ -77,9 +82,10 @@ export default function AssetBubblePanel({initialPayload}:{initialPayload?:Paylo
   {label:"6개월",value:storedComparison?.sixMonth??null},
   {label:"1년",value:storedComparison?.year??null},
  ];
- const rows=new Map((displayPayload?.indicators??[]).map(x=>[x.id,x]));
+ const rows=new Map((displayedObservations?.indicators??[]).map(x=>[x.id,x]));
  const fullYearFactors=order.filter(id=>rows.get(id)?.historyStatus==='READY_1Y').length;
  const partialHistoryFactors=order.filter(id=>rows.get(id)?.historyStatus==='PARTIAL_1Y').length;
+ const breadthTrendCount=rows.get('breadthDivergence')?.trend?.length??3;
  return <>
   <section className="cnn-reference-panel fg-card fg-shared-shell asset-bubble-target-card" data-testid="asset-bubble-detail-hero" data-market-state={loading?"loading":score===null?"unavailable":"ready"} aria-busy={loading}>
    <div className="fg-header-slot"><MarketCardHeader flag="/flags/us.svg" eyebrow={candidate?(publishedCurrentVintage?'ZGMINI ASSET BUBBLE R10 · 참고 지표':'ZGMINI ASSET BUBBLE R10 · 연구 후보'):'ZGMINI ASSET BUBBLE R9'} title="미국 자산 버블" description="저장된 현재 개정 자료 기반" dateLabel="데이터 기준일" date={dateLabel(payload?.asOfDate)} source={payload?.methodologyVersion??"ASSET_BUBBLE_R9"}/></div>
@@ -96,7 +102,7 @@ export default function AssetBubblePanel({initialPayload}:{initialPayload?:Paylo
    <div className="inflation-direction-strip"><span><b>버블 위험</b>고평가↑ · 가격가속↑ · 위험자산 쏠림↑ · 투기자금↑</span><span><b>안정 방향</b>밸류에이션 안정 · 폭넓은 상승 · 유동성 과잉 완화</span></div>
   </section>
   <section className="inflation-indicator-section asset-r2-indicators" aria-labelledby="asset-bubble-indicator-title">
-    <header><div><p className="cnn-eyebrow">ASSET BUBBLE INDICATORS</p><h2 id="asset-bubble-indicator-title">자산 버블 분석 지표</h2></div><p>{fullYearFactors===5&&partialHistoryFactors===1?'관측 추이는 실제 저장된 5개 분기 원자료를 표시합니다. 시장폭 괴리는 과거 2개 분기가 누락되어 3개 분기만 표시합니다.':'관측 추이는 실제 저장된 이전·현재 2개 관측값의 변화이며, 완전한 1년 이력은 아닙니다.'} 발표일은 확인된 일정만 표시합니다. 자료가 없는 칸의 <b>—</b>는 0이 아닙니다. 판단은 구성 안전점수 기준입니다.</p></header>
+    <header><div><p className="cnn-eyebrow">ASSET BUBBLE INDICATORS</p><h2 id="asset-bubble-indicator-title">자산 버블 분석 지표</h2></div><p>{fullYearFactors===5&&partialHistoryFactors===1?`관측 추이는 실제 저장된 5개 분기 원자료를 표시합니다. 시장폭 괴리는 과거 2개 분기가 누락되어 ${breadthTrendCount}개 분기만 표시합니다.`:'관측 추이는 실제 저장된 이전·현재 2개 관측값의 변화이며, 완전한 1년 이력은 아닙니다.'} 발표일은 확인된 일정만 표시합니다. 자료가 없는 칸의 <b>—</b>는 0이 아닙니다. 판단은 구성 안전점수 기준입니다.</p></header>
 
    <div className="inflation-table-wrap asset-r2-table-wrap"><table className="inflation-indicator-table asset-indicator-table-r2">
     <colgroup><col className="asset-col-favorite"/><col className="asset-col-name"/><col className="asset-col-content"/><col className="asset-col-criterion"/><col className="asset-col-previous"/><col className="asset-col-current"/><col className="asset-col-release"/><col className="asset-col-judgement"/><col className="asset-col-spark"/><col className="asset-col-help"/></colgroup>
@@ -106,8 +112,8 @@ export default function AssetBubblePanel({initialPayload}:{initialPayload?:Paylo
       <td><AssetFavoriteButton id={id} label={m.label}/></td>
       <th scope="row"><strong>{m.label}</strong><small>{row?.status==="READY"?"저장 데이터":"자료 확인 중"}</small></th>
       <td>{m.content}</td><td className="asset-r2-criterion">{m.criterion}</td>
-      <td className="asset-r2-value"><strong>{fmtValue(row?.previousValue,row?.unit)}</strong><small>{dateLabel(row?.previousObservationDate)}</small></td>
-      <td className="asset-r2-value"><strong>{fmt(row)}</strong><small>{dateLabel(row?.observationDate)}</small>{sourceLabel(row?.source)&&<small>{sourceLabel(row?.source)}</small>}</td>
+      <td className="asset-r2-value"><strong>{fmtValue(displayedPrevious(row),row?.unit)}</strong><small>{dateLabel(displayedPreviousDate(row))}</small></td>
+      <td className="asset-r2-value"><strong>{fmt(row)}</strong><small>{dateLabel(displayedDate(row))}</small>{sourceLabel(row?.source)&&<small>{sourceLabel(row?.source)}</small>}</td>
       <td className="asset-r2-release"><strong>{releaseLabel(row?.nextReleaseDate)}</strong><small>확인된 일정만</small></td>
       <td><span className="inflation-judgement">{j.label}</span></td>
        <td className="asset-r2-spark-cell"><InflationMiniChart label={m.label} points={row?.trend} periodLabel={row?.trendPeriodLabel??"실제 저장된 관측 2개"}/>{row?.trendPeriodLabel&&<small className="asset-r2-spark-caption">{row.trendPeriodLabel}</small>}</td>
@@ -128,8 +134,8 @@ export default function AssetBubblePanel({initialPayload}:{initialPayload?:Paylo
      <p className="asset-r2-mobile-criterion"><span>기준</span>{m.criterion}</p>
       <div className="asset-r2-mobile-spark"><span>{row?.historyStatus==="READY_1Y"?"1년 관측 추이":row?.historyStatus==="PARTIAL_1Y"?"부분 관측 추이":"관측 추이"}</span><InflationMiniChart label={m.label} points={row?.trend} periodLabel={row?.trendPeriodLabel??"실제 저장된 관측 2개"}/></div>
      <div className="asset-r2-mobile-metrics">
-      <div><span>이전</span><strong>{fmtValue(row?.previousValue,row?.unit)}</strong><small>{dateLabel(row?.previousObservationDate)}</small></div>
-      <div><span>현재</span><strong>{fmt(row)}</strong><small>{dateLabel(row?.observationDate)}</small>{sourceLabel(row?.source)&&<small>{sourceLabel(row?.source)}</small>}</div>
+      <div><span>이전</span><strong>{fmtValue(displayedPrevious(row),row?.unit)}</strong><small>{dateLabel(displayedPreviousDate(row))}</small></div>
+      <div><span>현재</span><strong>{fmt(row)}</strong><small>{dateLabel(displayedDate(row))}</small>{sourceLabel(row?.source)&&<small>{sourceLabel(row?.source)}</small>}</div>
       <div><span>발표</span><strong>{releaseLabel(row?.nextReleaseDate)}</strong><small>확인된 일정만</small></div>
      </div>
     </article>})}
