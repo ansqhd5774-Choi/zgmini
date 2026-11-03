@@ -1,0 +1,33 @@
+{
+  "schema": "ZGMINI_THEME_AUM_EVIDENCE_V1",
+  "themeId": "ai-software",
+  "approvalReference": "EXISTING_APPROVED_R32_DATED_ISSUER_AUM_METHOD_PLUS_USER_CHAT_2026-11-04_FOUR_ETF_SELECTION",
+  "datedOfficialAumApproved": true,
+  "rows": [
+    {
+      "ticker": "WISE",
+      "aumUsd": 33584626,
+      "aumAsOf": "2026-06-30",
+      "sourceUrl": "https://www.sec.gov/Archives/edgar/data/1976322/000089418926022854/generativeai.htm"
+    },
+    {
+      "ticker": "IGV",
+      "aumUsd": 12759062022,
+      "aumAsOf": "2026-11-02",
+      "sourceUrl": "https://www.ishares.com/us/products/239771/ishares-north-american-techsoftware-etf"
+    },
+    {
+      "ticker": "XSW",
+      "aumUsd": 491530000,
+      "aumAsOf": "2026-11-02",
+      "sourceUrl": "https://www.ssga.com/us/en/individual/etfs/state-street-spdr-sp-software-services-etf-xsw",
+      "reportedPrecision": "USD_0.01_MILLION"
+    },
+    {
+      "ticker": "AIQ",
+      "aumUsd": 9547163886,
+      "aumAsOf": "2026-11-02",
+      "sourceUrl": "https://www.globalxetfs.com/funds/aiq"
+    }
+  ]
+}
