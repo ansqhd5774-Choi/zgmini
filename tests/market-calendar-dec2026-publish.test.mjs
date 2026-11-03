@@ -1,6 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {DecemberEventsFromSaved,buildDecemberDisplay,syncDecemberD1} from '../scripts/pc-writer/market-calendar-dec31-publish.mjs';
+import fs from 'node:fs';
+import path from 'node:path';
+import os from 'node:os';
+import {DecemberEventsFromSaved,buildDecemberDisplay,syncDecemberD1,resolveApprovedProjectSource} from '../scripts/pc-writer/market-calendar-dec31-publish.mjs';
 import {withDec2026Display,validDec2026Display} from '../lib/market-calendar-dec2026-display.mjs';
 import {earningsDisplayHtml,earningsDisplayResponse} from '../lib/earnings-api-display.mjs';
 
@@ -57,4 +60,22 @@ test('D1 publisher writes one isolated key and verifies remote readback',async()
  assert.equal(a.decision,'DEC31_PUBLISH_D1_VERIFIED');
  assert.equal(b.decision,'DEC31_PUBLISH_D1_ALREADY_MATCHED');
  assert.deepEqual(writes,['market-calendar:earnings-dec2026-display-html']);
+});
+
+test('operating source fallback binds to one exact approved SHA and rejects ambiguity',()=>{
+ const root=fs.mkdtempSync(path.join(os.tmpdir(),'zgmini-dec31-source-'));
+ try{
+  const repo=path.join(root,'current');
+  fs.mkdirSync(path.join(repo,'scripts','pc-writer'),{recursive:true});
+  fs.writeFileSync(path.join(repo,'scripts','pc-writer','d1.mjs'),'// fixture only');
+  const sha='a'.repeat(40);
+  assert.equal(resolveApprovedProjectSource({projects:root,expectedSha:sha,getHead:()=>sha}),repo);
+  assert.throws(()=>resolveApprovedProjectSource({projects:root,expectedSha:'b'.repeat(40),getHead:()=>sha}),
+   /DEC31_PUBLISH_APPROVED_PROJECT_SOURCE_NOT_FOUND/);
+  const second=path.join(root,'second');
+  fs.mkdirSync(path.join(second,'scripts','pc-writer'),{recursive:true});
+  fs.writeFileSync(path.join(second,'scripts','pc-writer','d1.mjs'),'// fixture only');
+  assert.throws(()=>resolveApprovedProjectSource({projects:root,expectedSha:sha,getHead:()=>sha}),
+   /DEC31_PUBLISH_PROJECT_ROOT_AMBIGUOUS_STOP/);
+ }finally{fs.rmSync(root,{recursive:true,force:true});}
 });
