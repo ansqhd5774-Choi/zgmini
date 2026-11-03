@@ -87,3 +87,52 @@ test('nonadvancing page fails closed instead of infinite loop or partial success
  const db={prepare(){return {bind(){return {async all(){return {results:rows};}};}};}};
  const {response,body}=await load(db);assert.equal(response.status,503);assert.deepEqual(body.themes,[]);
 });
+
+
+test('R32 public contract marks stored confirmed score separately from READY provisional sidecar',async()=>{
+ const clock=Date.parse('2026-10-30T04:00:00Z');
+ const h='f'.repeat(64);
+ const r32={...record,version:'ZGMINI_CONFIGURED_THEME_PUBLIC_V2',
+  themeId:'ai-software',theme:'AI 소프트웨어',etfs:['WISE'],methodologyVersion:
+   'ETF_ONLY_T40_R20_V40_ADAPTIVE_R2_DATED_ISSUER_AUM_R32',
+  observationDate:'2026-10-28',score:60,
+  sourceVersion:'GMH_MANIFEST_SHA256_'+h,
+  sourceStoredAt:'2026-10-30T02:00:00.000Z',publishedAt:'2026-10-30T03:00:00.000Z',
+  selectionEvidenceSha256:'e'.repeat(64),aumEvidenceSha256:'d'.repeat(64),
+  history:[{date:'2026-10-28',score:60,mode:'NORMALIZED_DATED_OFFICIAL_AUM_THREE_PLUS',
+   contributingETFs:['WISE'],weightsPercent:{WISE:100},issuerAumAsOf:{WISE:'2026-10-27'},
+   datedOfficialAumUsed:true,excluded:[]}]};
+ const provisional={...r32,phase:'PROVISIONAL',observationDate:'2026-10-29',score:61,
+  confirmedObservationDate:'2026-10-28',sourceVersion:'R32_PROVISIONAL_SHA256_'+h,
+  sourcePriceMode:'GMH_RAW_PLUS_MARKETPARQUET_SPLIT_ADJUSTED_PROVISIONAL',
+  sourcePriceReconciled:false,
+  sourceFiles:[{date:'2026-10-28',sha256:h},{date:'2026-10-29',sha256:h}],
+  overlapPriceDifferences:{SPY:0,WISE:0.003},
+  history:[{date:'2026-10-29',score:61,mode:'PROVISIONAL',
+   contributingETFs:['WISE'],weightsPercent:{WISE:100},issuerAumAsOf:{WISE:'2026-10-27'},
+   datedOfficialAumUsed:false,excluded:[]}]};
+ const rows=[
+  {feed_key:'theme-configured:ai-software',body:JSON.stringify(r32),stored_at:clock-1000},
+  {feed_key:'theme-configured-provisional:ai-software',body:JSON.stringify(provisional),stored_at:clock-1000},
+ ];
+ const db={prepare(sql){
+  const prefix=sql.includes("theme-configured-provisional:")?
+   'theme-configured-provisional:':'theme-configured:';
+  return {bind(cursor){return {async all(){return {results:rows.filter(r=>
+   r.feed_key.startsWith(prefix)&&r.feed_key>cursor).sort((a,b)=>
+   a.feed_key.localeCompare(b.feed_key)).slice(0,200)};}};}}};
+ }};
+ assert.equal(eligibleConfiguredPublic(r32,'theme-configured:ai-software',clock-1000,clock),true);
+ assert.equal(eligibleConfiguredPublic(provisional,'theme-configured-provisional:ai-software',clock-1000,clock),true);
+ const response=await readConfiguredThemes(db,{now:clock});
+ assert.equal(response.status,200);
+ const body=await response.json();
+ assert.equal(body.themes.length,1);
+ const theme=body.themes[0];
+ assert.equal(theme.score,60);
+ assert.equal(theme.history[0].status,'NORMALIZED_DATED_OFFICIAL_AUM_THREE_PLUS');
+ assert.equal(theme.history[0].phase,'CONFIRMED');
+ assert.equal(theme.provisionalStatus,'READY');
+ assert.deepEqual({date:theme.provisional.date,score:theme.provisional.score,
+  phase:theme.provisional.phase},{date:'2026-10-29',score:61,phase:'PROVISIONAL'});
+});
