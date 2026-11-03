@@ -11,10 +11,10 @@ import {publishER1Once,verifyER1ReaderDeployed} from
 
 const asOf='2026-11-02',now=Date.parse('2026-11-02T12:00:00Z');
 const source='a'.repeat(40);
-const rows=Array.from({length:838},(_,i)=>({eligible:true,issuerId:`T${i}`,
+const rows=Array.from({length:838},(_,i)=>({issuerId:`T${i}`,
  tickers:[`T${i}`],earningsSymbol:`T${i}`,
  releases:[{date:'2026-10-30',symbol:`T${i}`,eps:1,revenue:i+1}]}));
-const publicDerived=makeER1PublicDisplay(scoreER1Issuers(rows,{asOf,expectedEligibleIssuers:838}));
+const publicDerived=makeER1PublicDisplay(scoreER1Issuers(rows,{asOf}));
 
 function fixture(data=publicDerived){
  const root=fs.mkdtempSync(path.join(os.tmpdir(),'zg-er1-publish-'));
@@ -62,7 +62,7 @@ test('ER1 838 synthetic derived scores publish one D1 key with exact readback an
  }finally{f.cleanup()}
 });
 
-test('unreviewed / stale / raw-metric payloads stop before reader and D1 activity',async()=>{
+test('inconsistent / stale / raw-metric payloads stop before reader and D1 activity',async()=>{
  for(const bad of [
   {...publicDerived,rawRevenueVendor:{T0:123}},
   {...publicDerived,asOf:'2024-11-02'},

@@ -21,10 +21,10 @@ test('official-calendar ER1 bridge joins only ticker-shaped event IDs, never opa
 });
 
 test('only validated derived score map is served; no raw EPS or revenue fields',()=>{
- const rows=Array.from({length:100},(_,i)=>({eligible:true,issuerId:`T${i}`,
+ const rows=Array.from({length:100},(_,i)=>({issuerId:`T${i}`,
   tickers:[`T${i}`],earningsSymbol:`T${i}`,
   releases:[{date:'2026-10-30',symbol:`T${i}`,eps:1,revenue:100+i}]}));
- const scored=scoreER1Issuers(rows,{asOf:'2026-11-02',expectedEligibleIssuers:100});
+ const scored=scoreER1Issuers(rows,{asOf:'2026-11-02'});
  const publicDerived=makeER1PublicDisplay(scored);
  const valid=validateER1PublicDisplay(publicDerived);
  assert.equal(valid.index.size,100);
@@ -48,5 +48,5 @@ test('missing scores are hyphen; scored below 97 show points and scores 97+ show
  assert.match(client,/useMemo\(\(\)=>mergeOfficial\(feed,er1Scores\),\[feed,er1Scores\]\)/);
  assert.match(client,/fetch\('\/api\/earnings-er1-score-display'/);
  assert.match(client,/if\(res\.status===204\)return null/);
- assert.match(client,/importance==='all'\|\|row\.importance===importance/);
+ assert.match(client,/importance===null\|\|\(row\.importance!==null&&importance\.includes\(row\.importance\)\)/);
 });
