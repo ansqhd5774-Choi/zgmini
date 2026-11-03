@@ -3,6 +3,7 @@
 import {useEffect,useMemo,useRef,useState} from 'react';
 import {ChevronLeft,ChevronRight,Search,Star} from 'lucide-react';
 import {releaseImportance,rowsForSelectedDay} from '../../lib/market-calendar-importance.mjs';
+import {toggleStarImportance} from '../../lib/market-calendar-importance-toggle.mjs';
 import {collapseCrossSourceTradeDuplicates} from '../../lib/market-calendar-cross-source-dedupe.mjs';
 import {cftcCotReleaseAt} from '../../lib/market-calendar-cftc-time.mjs';
 import {ticReleaseAt} from '../../lib/market-calendar-tic-time.mjs';
@@ -14,7 +15,7 @@ type Country='US'|'KR';
 type View='week'|'month';
 type FilterKind='all'|EventKind;
 type FilterCountry='all'|Country;
-type FilterImportance='all'|1|2|3;
+type FilterImportance=number[]|null;
 type OfficialEvent={id:string;date:string;title:string;source:string;sourceUrl:string};
 type SourceState={status:string;checkedAt?:string|null;issuers?:Record<string,{status:string;checkedAt?:string|null}>};
 type CalendarFeed={status:string;updatedAt?:string;sources?:Record<string,SourceState>;events?:OfficialEvent[]};
@@ -148,9 +149,9 @@ export default function MarketCalendar(){
  const [selected,setSelected]=useState('2026-10-26');
  const [activeDate,setActiveDate]=useState<string|null>(null);
  const [view,setView]=useState<View>('week');
- const [kind,setKind]=useState<FilterKind>('economic');
+ const [kind,setKind]=useState<FilterKind>('all');
  const [country,setCountry]=useState<FilterCountry>('all');
- const [importance,setImportance]=useState<FilterImportance>('all');
+ const [importance,setImportance]=useState<FilterImportance>(null);
  const [query,setQuery]=useState('');
  const [vendorCounts,setVendorCounts]=useState<Record<string,number>>({});
  const [nowMs,setNowMs]=useState(0);
@@ -184,7 +185,7 @@ export default function MarketCalendar(){
 
  const range=useMemo(()=>view==='week'?{start:monday(selected),end:plusDays(monday(selected),6)}:{start:monthStart(selected),end:monthEnd(selected)},[selected,view]);
  const allRows=useMemo(()=>mergeOfficial(feed,er1Scores),[feed,er1Scores]);
- const periodRows=useMemo(()=>allRows.filter(row=>row.date>=range.start&&row.date<=range.end&&(kind==='all'||row.kind===kind)&&(country==='all'||row.country===country)&&(importance==='all'||row.importance===importance)&&(!query||`${row.name} ${row.category} ${row.source} ${row.country}`.toLowerCase().includes(query.trim().toLowerCase()))).sort((a,b)=>a.date.localeCompare(b.date)||(a.at??'').localeCompare(b.at??'')||a.name.localeCompare(b.name)),[allRows,range,kind,country,importance,query]);
+ const periodRows=useMemo(()=>allRows.filter(row=>row.date>=range.start&&row.date<=range.end&&(kind==='all'||row.kind===kind)&&(country==='all'||row.country===country)&&(importance===null||(row.importance!==null&&importance.includes(row.importance)))&&(!query||`${row.name} ${row.category} ${row.source} ${row.country}`.toLowerCase().includes(query.trim().toLowerCase()))).sort((a,b)=>a.date.localeCompare(b.date)||(a.at??'').localeCompare(b.at??'')||a.name.localeCompare(b.name)),[allRows,range,kind,country,importance,query]);
  const filtered=useMemo(()=>rowsForSelectedDay(periodRows,activeDate) as CalendarRow[],[periodRows,activeDate]);
  const days=useMemo(()=>Array.from({length:diffDays(range.end,range.start)+1},(_,i)=>plusDays(range.start,i)),[range]);
  const vendorCount=useMemo(()=>activeDate?vendorCounts[activeDate]??0:Object.values(vendorCounts).reduce((sum,n)=>sum+n,0),[vendorCounts,activeDate]);
@@ -224,7 +225,13 @@ export default function MarketCalendar(){
     {([['all','전체'],['US','미국'],['KR','한국']] as const).map(([key,label])=><button key={key} type="button" className={country===key?'active':''} onClick={()=>setCountry(key)} aria-pressed={country===key}>{label}</button>)}
    </div></div>
    <div className="mc-filter"><span className="mc-filter-label">중요도</span><div className="mc-pills" role="group" aria-label="중요도 필터">
-    {([['all','전체'],[3,'★★★'],[2,'★★'],[1,'★']] as const).map(([key,label])=><button key={key} type="button" className={importance===key?'active':''} onClick={()=>setImportance(key)} aria-pressed={importance===key} aria-label={key==='all'?'모든 중요도':`중요도 별 ${key}개`}>{label}</button>)}
+    {([['all','전체'],[3,'★★★'],[2,'★★'],[1,'★']] as const).map(([key,label])=>{
+     const active=key==='all'?importance===null:importance?.includes(key)??false;
+     return <button key={key} type="button" className={active?'active':''} onClick={()=>{
+      if(key==='all'){setImportance(null);return;}
+      setImportance(current=>toggleStarImportance(current,key));
+     }} aria-pressed={active} aria-label={key==='all'?'모든 별등급':`별등급 ${key}개 (경제지표 영향도·기업 실적 ER1 점수)`}>{label}</button>;
+    })}
    </div></div>
    <div className="mc-range" role="group" aria-label="기간 선택과 이동">
     <button type="button" className={view==='week'?'active':''} aria-pressed={view==='week'} onClick={()=>{setView('week');setActiveDate(null);}}>주간</button>
@@ -241,7 +248,7 @@ export default function MarketCalendar(){
     {days.map(key=><button type="button" key={key} aria-label={`${key.slice(0,4)}년 ${Number(key.slice(5,7))}월 ${Number(key.slice(8))}일`} aria-pressed={activeDate===key} className={`mc-day ${activeDate===key?'selected':''} ${today===key?'today':''} ${shownDates.has(key)?'has-event':''}`} onClick={()=>{setSelected(key);setActiveDate(current=>current===key?null:key);}}><strong>{Number(key.slice(8,10))}</strong><small>{dayLabels[parseDay(key).getUTCDay()]}</small></button>)}
    </div>
   </div>
-  <div className="mc-head" aria-hidden="true"><span className="mc-importance-heading" title="발표 예상 시장 영향도: 별 1개 일반, 2개 관심, 3개 핵심"><Star size={12} fill="currentColor" aria-hidden="true"/>중요도</span><span>날짜</span><span>시간</span><span>국가</span><span>발표 일정</span><span>발표</span><span>예상</span><span>이전</span><span>남은 시간</span></div>
+  <div className="mc-head" aria-hidden="true"><span className="mc-importance-heading" title="경제지표: 예상 시장 영향도 / 기업 실적: ER1 실제 EPS·매출 점수, ★★★ 97점 이상"><Star size={12} fill="currentColor" aria-hidden="true"/>별등급</span><span>날짜</span><span>시간</span><span>국가</span><span>발표 일정</span><span>발표</span><span>예상</span><span>이전</span><span>남은 시간</span></div>
   <div className="mc-results" aria-live="polite">
    <EarningsDisplayClient start={range.start} end={range.end} activeDate={activeDate} query={query} importance={importance} enabled={(kind==='all'||kind==='earnings')&&country!=='KR'} onCounts={setVendorCounts}/>
    {loadState!=='ready'&&<p className="mc-data-state">{loadState==='loading'?'공식 일정 저장본 확인 중':'공식 일정 저장본 조회 실패'} · 수동 확인 자료와 분리하여 표시합니다.</p>}

@@ -2,7 +2,7 @@
 
 import {useEffect,useState} from 'react';
 
-type Props={start:string;end:string;activeDate:string|null;query:string;importance:'all'|1|2|3;enabled:boolean;
+type Props={start:string;end:string;activeDate:string|null;query:string;importance:number[]|null;enabled:boolean;
  onCounts:(counts:Record<string,number>)=>void};
 
 export default function EarningsDisplayClient({start,end,activeDate,query,importance,enabled,onCounts}:Props){
@@ -13,7 +13,7 @@ export default function EarningsDisplayClient({start,end,activeDate,query,import
   const controller=new AbortController();
   const params=new URLSearchParams({start,end,q:query.slice(0,80)});
   if(activeDate)params.set('day',activeDate);
-  if(importance!=='all')params.set('importance',String(importance));
+  if(importance!==null)params.set('importance',importance.join(','));
   setState('pending');
   fetch(`/api/earnings-calendar-display?${params}`,{signal:controller.signal,cache:'no-store'})
    .then(async response=>{
