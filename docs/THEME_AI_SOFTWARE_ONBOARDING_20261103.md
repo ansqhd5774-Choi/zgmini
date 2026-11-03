@@ -6,7 +6,7 @@
 - 테마 ID: `ai-software`, 표시명: `AI 소프트웨어`. **사용자는 2026-11-04 WISE·IGV·XSW·AIQ 4종 선정을 명시 승인**했다. 단, 이 문서는 여전히 실제 PC V2 등록 definition이나 게시 승인 파일이 아니다.
 - 기존 `docs/THEME_PLATFORM_STANDARD.md`, `docs/THEME_ONBOARDING_PLAYBOOK.md`, 승인 R25/R32 및 `ZGMINI_THEME_CONFIG_V2` 재사용. 새 산식·수집기·예약·CMD·API·차트·D1 테이블 추가 없음.
 - 2026-11-03 공개 화면 실측: `/theme-fear-greed/` 기준일 2026-10-28, 기존 공개 10개. `/api/theme-configured`는 `PENDING`, 빈 `themes`이며 R32 및 별도 잠정 지원을 명시. 이는 **공개 상태**이지 PC의 실제 V2 설치/등록 목록 증거는 아니다.
-- 현재 단계: 4종 구성 선정 승인 완료, ETF별 등록 3조건·dated AUM 연결과 실제 PC 승인 실행 경로 검증 중. 실제 V2 등록·PC 수집·계산·D1 쓰기·새 테마 공개·정규 예약 갱신은 수행 증거가 없다.
+- 현재 단계: 4종 선정 및 기존 R19 3조건 검증 완료. 공식 dated AUM·선정 증거와 V2 정의 파일을 작업 브랜치에 준비·재조회함. **PC 파일 설치·실제 `--register`·원가격 수집·계산·D1·공개·정규 예약 갱신은 아직 수행 증거 없음.**
 
 ## 최종 선정 — 사용자 승인 2026-11-04
 
@@ -21,6 +21,25 @@
 - 점수 기준(이전 비교): AI 소프트웨어 주제 부합도 35점, 실제 소프트웨어 산업 비중 30점, PLTR/SOUN 노출 20점, 하드웨어 혼입 최소화 10점, 자료 최신성 5점. 점수는 후보 비교용이며 R32 산식 가중치가 아니다.
 - WISE의 공식 2026-06-30 AUM은 $33,584,626, XSW의 2026-11-02 AUM은 약 $491.53M으로 개인 ETF 일반 선호선 $1B 미만이다. **현재 테마 V2 3조건은 공식 holdings·GMH exact symbol·운용사 C+이므로 이를 새 테마 등록 Gate로 임의 추가하지 않는다.** 실제 dated issuer AUM은 R32 입력 증거로 보존하며 승인 범위를 확인한다.
 - 사용자가 승인한 4종을 자동 교체·누락시키지 않는다. 각 3조건의 미검증 상태를 PASS로 위조하지 않는다. 확정치와 잠정치 검증은 별개이고 어느 한쪽 결측이 다른 쪽 정상 결과를 차단하지 않도록 기존 계약을 따른다.
+
+## 신규 선정 4종의 실제 V2 증거 (2026-11-04)
+
+| ETF | GMH 공식 `/api/v1/symbols?source=stocks&timeframe=1m&prefix=` 직접 조회 | 운용사 내부 등급 | 기존 3조건 |
+| --- | --- | --- | --- |
+| WISE | exact symbol, 분봉 카탈로그 11,960행, 첫 2023-12-08 | Themes Management Company LLC, SEC CRD323861, 93점·5년미만 상한으로 B | PASS |
+| IGV | exact symbol, 902,008행, 첫 2016-01-04 | 기존 R19 B·80점 | PASS |
+| XSW | exact symbol, 45,314행, 첫 2016-01-04 | 기존 R19 B·89점 | PASS |
+| AIQ | exact symbol, 377,113행, 첫 2016-01-04 | 기존 R19 A·100점 | PASS |
+
+- **증거 수준:** 웹디버그로 공급처 API 실제 JSON의 `symbols[].symbol===ticker`와 `rows>0` 확인. 분봉 카탈로그의 `rows`는 PC 저장 1시간봉/252거래일 수집 성공이나 가격 정합성 검사를 대신하지 않음. WISE 운용사 SEC 2026-03-05 Form ADV Item11 Yes 0개 확인: [공식 PDF](https://reports.adviserinfo.sec.gov/reports/ADV/323861/PDF/323861.pdf).
+- **작업 브랜치에 준비·원격 동일 바이트 재조회:**
+  - [선정 증거](../theme-evidence/ai-software-selection.json) `sha256=362d0766b7049970b8dc8eb13dba8579096efbe0f8fcb66b25477b0260a49aa0`
+  - [날짜별 공식 AUM](../theme-evidence/ai-software-aum.json) `sha256=0eaf631b3c2d629bbf24650c81075b767619385f45431b146ce5d4e6f496f701`
+  - [R32 V2 정의](../config/theme-ai-software-v2.json) 등록 정규화 바이트 계획 SHA `a09f5e65c4aa74d2bd79730d558c40df286651b6e2a41a1d5fb1a5c56d6c192d`, `startDate=2024-11-01` (188일 준비·252일 출력 초기 수집용 기술 범위; 현행 산식 불변).
+- 저장소 파일은 PC 운영 데이터 폴더에 **미설치**. 실제 설치 시 `E:/ZGmini/data/theme-evidence/...` 에 동등 바이트를 설치·SHA 재조회하고 기존 `theme-config-tool.mjs --register`로 비공개 등록해야 함. 신규 테마 전용 CMD·Scheduler·계산기·API·D1 테이블·화면을 만들지 않음.
+- **AUM 분포 참고:** 현행 공식 dated AUM 단순 정규화 예시 WISE 0.1471%, IGV 55.8840%, XSW 2.1529%, AIQ 41.8161%. 테마 적합성 점수는 R32 산식 입력이 아님. XSW AUM 공식 반올림치(0.01M 단위), WISE 2026-06-30 기준 값은 날짜를 보존한다. 실제 R32 계산 결과는 저장 원가격/기여자·가중치 조건 통과 전까지 추정하지 않음.
+- 현재 공개 게시 파일 `theme-config/public-approvals/ai-software.json`은 만들지 않음. 공식 [GMH 2026-10-29 발효 약관](https://getmarkethistory.com/docs/terms)의 파생 데이터 조건, 계정 유효성, 실제 operator 공개 승인/definitionSHA를 등록·계산 후 확인해야 함. 선정을 게시권/공개권 증거로 대체 금지.
+- `--scheduled`의 `prior.calls<=4` 검사는 실제 운영 `dailyProviderRequests>4`이고 재실행 경로에 닿을 때에만 `dailyBudget`와의 비교로 최소 수정. 무관하면 이번 작업에서 수정하지 않음.
 
 ## 이전 공식 ETF 후보 조사 — 역사 근거 (수량 상한 없음)
 
@@ -49,9 +68,9 @@
 ## 다음 11단계 진행 상태
 
 1. 테마 범위·기존 증거 회수: **완료(재사용)**, 외부 출처·R19/R20/R26 확보.
-2. ETF 후보 조사·3조건·AUM: **후보 비교 완료 / 최종 4종 기술 적격성 확인 중**. 특히 WISE·IGV·XSW의 GMH exact ticker와 운용사 C+ 미확인.
+2. ETF 후보 조사·3조건·AUM: **4종 공식 holdings·GMH exact ticker·운용사 C+ 통과**, dated issuer AUM 4행 근거 작성·재조회. 실제 1시간봉 가격 확보는 별개.
 3. 실제 적합 ETF 명단과 선정 승인: **사용자 승인 완료(2026-11-04)** — WISE, IGV, XSW, AIQ. 이 승인은 3조건·권리·공개 게시 증거를 대체하지 않음.
-4. V2 등록 명세 및 선정/AUM 증거 SHA 연결: **대기**, 선택 승인 확보. 다만 공식 exact ticker/법적 adviser/dated AUM 각 행 PASS 후 증거 바이트 SHA 및 완성 V2 JSON 연결.
+4. V2 등록 명세 및 선정/AUM 증거 SHA 연결: **GitHub 증거 2개/V2 정의 작성·SHA 재조회 완료**. 실제 PC 데이터 폴더 설치와 `--register` 성공은 미수행.
 5. 공통 입력 의존성·예산·기존 저장 원자료 계획: **기존 planner·collector 재사용**, 실제 새 theme plan 미실행.
 6. 공통 확정 원가격 수집 및 체크포인트: **미실행**.
 7. 기존 R25/R32 비공개 계산·동등성/가중치 검증: **미실행**.
