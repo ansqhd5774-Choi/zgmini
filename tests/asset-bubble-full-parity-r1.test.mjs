@@ -34,7 +34,8 @@ test("ten-column table and mobile cards preserve six live identifiers, four pend
  assert.equal((panel.match(/order\.map\(/g)||[]).length,2);
  assert.equal((panel.match(/dev\.map\(/g)||[]).length,2);
  assert.equal((panel.match(/points=\{row\?\.trend\}/g)||[]).length,2);
- assert.equal((panel.match(/fmtValue\(row\?\.previousValue,row\?\.unit\)/g)||[]).length,2);
+ assert.match(panel,/const displayedPrevious=\(r:Row\|null\|undefined\)=>r\?\.latestObservation\?\.previousValue\?\?r\?\.previousValue/);
+ assert.equal((panel.match(/fmtValue\(displayedPrevious\(row\),row\?\.unit\)/g)||[]).length,2);
  assert.match(panel,/data-development="true"/);
  assert.match(css,/min-width:1090px!important/);
  assert.match(css,/@media\(max-width:767px\)/);
