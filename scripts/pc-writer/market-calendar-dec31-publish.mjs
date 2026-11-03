@@ -125,32 +125,28 @@ const head=root=>execFileSync('git',['rev-parse','HEAD'],{
  stdio:['ignore','pipe','ignore']}).trim();
 const pause=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 
-// R38 task XML can use a newer wrapper than the legacy R34 path parser.
-// If so, resolve only from the approved E: project tree and exact config SHA.
-// Do not create a checkout, touch the scheduler, or choose an ambiguous clone.
+// Read-only PC evidence #191 (2026-11-04): exact historical checkout HEAD,
+// clean tracked files and most recent Writer checkpoint all match config.source.
+// Resolve that fixed checkout only; never enumerate a massive projects tree.
 export function resolveApprovedProjectSource({projects=String.raw`E:\ZGmini\projects`,
- expectedSha,getHead=head}={}){
+ expectedSha,getHead=head,getDirty=root=>execFileSync('git',['status','--porcelain',
+ '--untracked-files=no'],{cwd:root,encoding:'utf8',windowsHide:true,timeout:15000,
+ stdio:['ignore','pipe','ignore']}).trim()}={}){
  if(!/^[0-9a-f]{40}$/.test(expectedSha??'')||!fs.existsSync(projects))
   stop('DEC31_PUBLISH_PROJECT_ROOT_INVALID');
- const queue=[[projects,0]],matches=[];let scanned=0;
- while(queue.length){
-  const [dir,depth]=queue.shift();
-  if(++scanned>300)stop('DEC31_PUBLISH_PROJECT_SCAN_BOUNDED_STOP');
-  if(depth>0){
-   const d1=path.join(dir,'scripts','pc-writer','d1.mjs');
-   if(fs.existsSync(d1)&&fs.lstatSync(d1).isFile()){
-    try{if(getHead(dir)===expectedSha)matches.push(dir);}catch{}
-   }
-  }
-  if(depth>=3)continue;
-  for(const entry of fs.readdirSync(dir,{withFileTypes:true})){
-   if(entry.isDirectory()&&!entry.isSymbolicLink()&&entry.name!=='legacy'&&
-    entry.name!=='node_modules'&&entry.name!=='.git')queue.push([path.join(dir,entry.name),depth+1]);
-  }
- }
- if(matches.length!==1)stop(matches.length>1?'DEC31_PUBLISH_PROJECT_ROOT_AMBIGUOUS_STOP':
-  'DEC31_PUBLISH_APPROVED_PROJECT_SOURCE_NOT_FOUND');
- return matches[0];
+ const dir=path.join(projects,'zgmini-earnings-history-pc-release');
+ if(!fs.existsSync(dir))stop('DEC31_PUBLISH_APPROVED_PROJECT_SOURCE_NOT_FOUND');
+ const parent=fs.realpathSync.native(projects);
+ const real=fs.realpathSync.native(dir);
+ if(path.dirname(real).toLowerCase()!==parent.toLowerCase())
+  stop('DEC31_PUBLISH_PROJECT_OUTSIDE_APPROVED_ROOT');
+ if(!fs.existsSync(path.join(real,'scripts','pc-writer','local-cycle.mjs')))
+  stop('DEC31_PUBLISH_SOURCE_MARKER_MISSING');
+ if(!fs.existsSync(path.join(real,'scripts','pc-writer','d1.mjs')))
+  stop('DEC31_PUBLISH_D1_MODULE_MISSING');
+ if(getHead(real)!==expectedSha||getDirty(real)!=='')
+  stop('DEC31_PUBLISH_PROJECT_SOURCE_OR_DIRTY_STOP');
+ return real;
 }
 
 export async function runPublish({pcHome=PC_HOME,getRoot=()=>coreRootFromTask(coreTaskXml()),
@@ -182,14 +178,12 @@ export async function runPublish({pcHome=PC_HOME,getRoot=()=>coreRootFromTask(co
    resolveApprovedProjectSource({expectedSha:config.source,getHead});
   if(config.source!==getHead(root)||config.collectionTarget!=='pc'||
    config.enabled!==true||!config.core)stop('DEC31_PUBLISH_CORE_SOURCE_CONFIG_STOP');
-  lock=path.join(pcHome,'local-cycle.lock');
-  const started=clock();
-  while(true){
-   try{fd=fs.openSync(lock,'wx');break;}catch(e){
-    if(e.code!=='EEXIST')throw e;
-    if(clock()-started>9*60000)stop('DEC31_PUBLISH_CORE_LOCK_TIMEOUT_STOP');
-    await sleep(10000);
-   }
+  // This job reads private files and writes one new D1 key, never shared Core
+  // SQLite or existing feeds. Use its own lock; do not acquire/delete Core lock.
+  lock=path.join(pcHome,'dec31-html-publish.lock');
+  try{fd=fs.openSync(lock,'wx');}catch(e){
+   if(e.code==='EEXIST')stop('DEC31_PUBLISH_INDEPENDENT_LOCK_BUSY_STOP');
+   throw e;
   }
   fs.writeFileSync(fd,JSON.stringify({pid:process.pid,purpose:'dec31-html-only-d1-output'}));
   if(config.source!==getHead(root))stop('DEC31_PUBLISH_SOURCE_AFTER_LOCK_STOP');
