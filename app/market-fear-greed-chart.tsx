@@ -20,6 +20,12 @@ export type MarketObservedRange = {
   high: number;
 };
 
+// Opt-in continuous timeline; other consumers retain their categorical X axis.
+export type MarketChartTimeAxis = {
+  domain: [number, number];
+  ticks: number[];
+  labels: ReadonlyMap<number, string>;
+};
 
 export type MarketFearGreedChartProps = {
   data: MarketFearGreedChartPoint[];
@@ -40,6 +46,7 @@ export type MarketFearGreedChartProps = {
   axisTickInterval?: 0 | 'preserveStartEnd';
   marketScoreBands?: boolean;
   observedRanges?: MarketObservedRange[];
+  timeAxis?: MarketChartTimeAxis;
 };
 const Renderer=lazy(()=>import('./market-fear-greed-chart-renderer'));
 export function MarketFearGreedChart(props:MarketFearGreedChartProps){
