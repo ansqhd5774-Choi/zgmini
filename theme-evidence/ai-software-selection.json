@@ -1,0 +1,41 @@
+{
+  "schema": "ZGMINI_THEME_SELECTION_EVIDENCE_V1",
+  "themeId": "ai-software",
+  "selectionApproved": true,
+  "approvalReference": "USER_CHAT_2026-11-04_AI_SOFTWARE_WISE_IGV_XSW_AIQ_SELECTION_APPROVED",
+  "rows": [
+    {
+      "ticker": "WISE",
+      "holdingsUrl": "https://www.sec.gov/Archives/edgar/data/1976322/000089418926022854/generativeai.htm",
+      "providerLookupVerified": true,
+      "operatorGrade": "B",
+      "providerLookupUrl": "https://getmarkethistory.com/api/v1/symbols?source=stocks&timeframe=1m&prefix=WISE&limit=25",
+      "catalogRows": 11960,
+      "operatorGradeEvidence": "https://reports.adviserinfo.sec.gov/reports/ADV/323861/PDF/323861.pdf"
+    },
+    {
+      "ticker": "IGV",
+      "holdingsUrl": "https://www.ishares.com/us/products/239771/ishares-north-american-techsoftware-etf",
+      "providerLookupVerified": true,
+      "operatorGrade": "B",
+      "providerLookupUrl": "https://getmarkethistory.com/api/v1/symbols?source=stocks&timeframe=1m&prefix=IGV&limit=25",
+      "catalogRows": 902008
+    },
+    {
+      "ticker": "XSW",
+      "holdingsUrl": "https://www.ssga.com/us/en/individual/etfs/state-street-spdr-sp-software-services-etf-xsw",
+      "providerLookupVerified": true,
+      "operatorGrade": "B",
+      "providerLookupUrl": "https://getmarkethistory.com/api/v1/symbols?source=stocks&timeframe=1m&prefix=XSW&limit=25",
+      "catalogRows": 45314
+    },
+    {
+      "ticker": "AIQ",
+      "holdingsUrl": "https://www.globalxetfs.com/funds/aiq",
+      "providerLookupVerified": true,
+      "operatorGrade": "A",
+      "providerLookupUrl": "https://getmarkethistory.com/api/v1/symbols?source=stocks&timeframe=1m&prefix=AIQ&limit=25",
+      "catalogRows": 377113
+    }
+  ]
+}
