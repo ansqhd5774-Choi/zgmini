@@ -1,0 +1,24 @@
+{
+  "schema": "ZGMINI_THEME_CONFIG_V2",
+  "id": "ai-software",
+  "label": "AI 소프트웨어",
+  "provider": "getmarkethistory",
+  "profile": "ETF_ONLY_T40_R20_V40_ADAPTIVE_R2_DATED_ISSUER_AUM_R32",
+  "etfs": [
+    "WISE",
+    "IGV",
+    "XSW",
+    "AIQ"
+  ],
+  "benchmark": "SPY",
+  "startDate": "2024-11-01",
+  "selectionEvidence": {
+    "path": "theme-evidence/ai-software-selection.json",
+    "sha256": "362d0766b7049970b8dc8eb13dba8579096efbe0f8fcb66b25477b0260a49aa0"
+  },
+  "aumEvidence": {
+    "path": "theme-evidence/ai-software-aum.json",
+    "sha256": "0eaf631b3c2d629bbf24650c81075b767619385f45431b146ce5d4e6f496f701"
+  },
+  "provisionalPolicy": "GMH_CONFIRMED_MARKETPARQUET_PROVISIONAL_R8_OVERLAP_GUARD"
+}
