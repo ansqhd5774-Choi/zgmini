@@ -1,5 +1,7 @@
 # 신규 테마·산식 작업 공통 실행 지침
 
+최신 확장·일괄 전환 절차는 [THEME_SCALE_AND_METHODOLOGY_WORKFLOW.md](THEME_SCALE_AND_METHODOLOGY_WORKFLOW.md)를 따른다. 공통 V2 구현을 먼저 재사용하고 부족한 공통 기능만 보완한다. PC 공통 필수 절차의 상시 승인은 제어 저장소 최신 정본을 적용하며 특정 기능 계약을 전체 작업 제한으로 확대하지 않는다.
+
 정본 브랜치: `codex/theme-fear-greed-integration-20261025`.
 정의·구조 계약: [THEME_PLATFORM_STANDARD.md](THEME_PLATFORM_STANDARD.md).
 실행 선택: [CMD_EXECUTION_PLAYBOOK.md](CMD_EXECUTION_PLAYBOOK.md).
