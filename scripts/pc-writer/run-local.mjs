@@ -288,6 +288,18 @@ try{
    const {publishCnnObservedArchive}=await import('./cnn-observed-archive-publication-r1.mjs');
    report.cnnObservedArchive=await publishCnnObservedArchive(core,remote,config.core);
   });
+  // Explicit opt-in only. R6 reads the approved Core and publishes a separate
+  // stored 1Y snapshot; its failure cannot interrupt existing market outputs.
+  report.employmentR6OneYear={status:'DISABLED'};
+  if(config.employmentR6OneYearAutoPublication===true){
+   await attemptOutput(report,'employment-r6-one-year-publication',async()=>{
+    const {runEmploymentR6AutoPublication}=await import('./employment-r6-auto-publication.mjs');
+    report.employmentR6OneYear=await runEmploymentR6AutoPublication({
+     enabled:true,pcHome:base,approvedSource:config.source,runningSource:source,
+     remote,dbId:config.core,now,
+    });
+   });
+  }
   await attemptOutput(report,'arrows',async()=>{report.scoreArrows=await publishCoreArrowState(remote,config.core);});
   report.remote=remote.stats;
   save(path.join(base,'local-publication-ledger.json'),{status:report.failures?.length?'PARTIAL':'VERIFIED',source,at:Date.now()});

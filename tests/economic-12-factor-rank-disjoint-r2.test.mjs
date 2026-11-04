@@ -17,7 +17,10 @@ test("economic higher/lower factors are disjoint even when fewer than six compon
  }
 });
 test("economic reasons are relative comparisons of only available published factors, never claimed causal weight",()=>{
- assert.match(src,/observations\.filter\(item=>item\.status==="READY"&&validScore\(item\.score\)\)/);
+ const scoredSource=src.match(/const scored=(\w+)\.filter\(item=>item\.status==="READY"&&validScore\(item\.score\)\)/);
+ assert.ok(scoredSource,"ranking only accepts READY indicators with validated scores");
+ assert.match(src,new RegExp(`const ${scoredSource[1]}=\\(domain\\?\\.indicators\\?\\?\\[\\]\\)\\.filter\\(`),
+  "ranking must use the stored domain indicators, not the employment display-only list");
  assert.match(src,/각 지표의 높고 낮음은 최종 점수에 미친 가중 기여도를 뜻하지 않습니다/);
  assert.doesNotMatch(src,/const score = weighted|Math\.random\(\)/);
 });
