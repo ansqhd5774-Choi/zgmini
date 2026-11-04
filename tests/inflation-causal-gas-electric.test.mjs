@@ -73,7 +73,10 @@ test('wrong or missing EIA nationwide state facet stops before actual data reque
 test('EIA IND nationwide monthly price exact facet and unit stored privately',()=>temp(async ({base})=>{
   const calls=[];const quotaFetch=async url=>{
     calls.push(String(url));
-    return Response.json(calls.length===1?facetFixture():electricFixture());
+    if(calls.length===1)return Response.json(facetFixture());
+    const current=electricFixture();
+    current.response.data.forEach(row=>{row['price-units']='cents per kilowatt-hour'});
+    return Response.json(current);
   };
   const got=await collectIndustrialElectricity({base,eiaKey:'fixture',quotaFetch,
     now:new Date('2026-11-04T06:00:00.000Z')});
