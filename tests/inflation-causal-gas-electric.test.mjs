@@ -150,3 +150,10 @@ test('symlink private destination is denied and outside data stays intact',()=>t
   await assert.rejects(collectGas({base,fredKey:'fixture',quotaFetch:async()=>Response.json(gasFixture())}),/PRIVATE_OUTPUT_PATH_UNSAFE/);
   assert.equal(fs.readdirSync(elsewhere).length,0);
 }));
+
+
+test('EIA nationwide US facet official U.S. Total label is accepted, other regions remain denied',()=>{
+  assert.equal(confirmEiaUsIndustrialFacet({response:{facets:[{id:'US',name:'U.S. Total'}]}}),true);
+  assert.throws(()=>confirmEiaUsIndustrialFacet({response:{facets:[{id:'CA',name:'U.S. Total'}]}}),/EIA_US_NATIONAL_FACET_UNVERIFIED/);
+  assert.throws(()=>confirmEiaUsIndustrialFacet({response:{facets:[{id:'US',name:'Unknown Region'}]}}),/EIA_US_NATIONAL_FACET_UNVERIFIED/);
+});
