@@ -25,6 +25,44 @@ test('parse official ECI release-list table, not hardcoded calendar dates',()=>{
   assert.equal(varied[0].date,'2028-07-28');
 });
 
+test('a malformed historical ECI row cannot discard a valid future official date',()=>{
+ const html=fixture([
+  ['Third Quarter 2025','Feb. 31, 2026','08:30 AM'],
+  ['Fourth Quarter 2026','Jan. 29, 2027','08:30 AM'],
+ ]);
+ const parsed=parseEciReleasePage(html,{today});
+ assert.deepEqual(parsed.map(x=>x.date),['2027-01-29']);
+ const resolved=resolveEciNextRelease({calendar:calendar([]),today,now,pageHtml:html,pageCheckedAt:checkedAt});
+ assert.equal(resolved.status,'CONFIRMED');
+ assert.equal(resolved.date,'2027-01-29');
+});
+
+test('a malformed possible future row cannot cause selection of a later future release',()=>{
+ const html=fixture([
+  ['Fourth Quarter 2026','Feb. 31, 2027','08:30 AM'],
+  ['First Quarter 2027','Apr. 30, 2027','08:30 AM'],
+ ]);
+ assert.throws(()=>parseEciReleasePage(html,{today}),/ECI_SCHEDULE_ROW_INVALID/);
+ const result=resolveEciNextRelease({calendar:calendar([]),today,now,pageHtml:html,pageCheckedAt:checkedAt});
+ assert.equal(result.status,'FALLBACK_PARSE_FAILED');
+ assert.equal(result.date,null);
+ const contradictoryPeriod=fixture([
+  ['Fourth Quarter 2027','Feb. 31, 2026','08:30 AM'],
+  ['First Quarter 2027','Apr. 30, 2027','08:30 AM'],
+ ]);
+ assert.throws(()=>parseEciReleasePage(contradictoryPeriod,{today}),/ECI_SCHEDULE_ROW_INVALID/);
+});
+
+test('ECI header order or semantically equivalent reference title does not block a valid date',()=>{
+ const reordered=fixture([
+  ['Fourth Quarter 2026','Jan. 29, 2027','08:30 AM'],
+ ]).replace('<th>Reference Month</th><th>Release Date</th>',
+  '<th>Release Date</th><th>Reference Period</th>')
+  .replace('<td>Fourth Quarter 2026</td><td>Jan. 29, 2027</td>',
+   '<td>Jan. 29, 2027</td><td>Fourth Quarter 2026</td>');
+ assert.equal(parseEciReleasePage(reordered)[0].date,'2027-01-29');
+});
+
 test('fresh existing ICS future event wins; fallback is skipped, even if page invalid',()=>{
   const result=resolveEciNextRelease({calendar:calendar([
     {id:'eci',source:'bls',date:'2027-01-29',sourceUrl:'https://www.bls.gov/schedule/'},
