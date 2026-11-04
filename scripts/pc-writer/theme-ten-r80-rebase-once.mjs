@@ -5,6 +5,7 @@ import path from 'node:path';
 import {createHash} from 'node:crypto';
 import {spawnSync} from 'node:child_process';
 import {fileURLToPath} from 'node:url';
+import {withR54SourceLeaseSync} from './r54-source-lease.mjs';
 
 const HERE=path.dirname(fileURLToPath(import.meta.url));
 const DATA='E:/ZGmini/data';
@@ -66,7 +67,10 @@ function latestR54(folder){
   d1Writes:count===undefined?null:Number(count),
   publicScoresMatched:t.match(/"publicScoresMatched"\s*:\s*(true|false)/)?.[1]??null};
 }
-export function pinnedInstall({home=HOME,payload=HERE}={}){
+export function pinnedInstall(options={}){
+ return withR54SourceLeaseSync(()=>pinnedInstallUnprotected(options));
+}
+function pinnedInstallUnprotected({home=HOME,payload=HERE}={}){
  const root=fs.realpathSync(home);
  const dest=path.resolve(root,PATCH),src=path.resolve(payload,PATCH);
  if(!dest.startsWith(root+path.sep)||fs.lstatSync(dest).isSymbolicLink()||
