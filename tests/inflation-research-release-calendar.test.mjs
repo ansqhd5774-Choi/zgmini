@@ -16,6 +16,9 @@ const EVENTS=[
   {id:'productivity',source:'bls',date:'2026-11-12'},
   {id:'import-export-prices',source:'bls',date:'2026-11-16'},
   {id:'pce',source:'bea',date:'2026-11-25'},
+  {id:'eia-epm',source:'eia_epm',date:'2026-11-24'},
+  {id:'nyfed-gscpi',source:'nyfed',date:'2026-11-09'},
+  {id:'nyfed-sce',source:'nyfed',date:'2026-11-10'},
 ];
 const sample=(sourceStates={},events=EVENTS)=>({
   status:'READY',
@@ -23,16 +26,21 @@ const sample=(sourceStates={},events=EVENTS)=>({
   events,
 });
 
-test('all 13 mapped research IDs select the correct existing official BLS/BEA event',()=>{
+test('all 16 mapped research IDs select their matching official BLS/BEA/EIA/NYFed event',()=>{
   const expectations={
     '5':'2026-11-17','6':'2026-11-17','7':'2026-11-17','8':'2026-11-17',
     '9':'2026-11-17','10':'2026-11-17','11':'2026-11-17',
     '12':'2026-11-06','13':'2026-11-13','14':'2026-11-12',
     '19':'2026-11-16','25':'2026-11-17','26':'2026-11-25',
+    '4':'2026-11-24','21':'2026-11-09','31':'2026-11-10',
   };
-  assert.equal(Object.keys(INFLATION_RESEARCH_RELEASE_MAPPING).length,13);
+  assert.equal(Object.keys(INFLATION_RESEARCH_RELEASE_MAPPING).length,16);
+  const withFutureSources=sample({
+    eia_epm:{status:'READY',checkedAt:CHECKED},
+    nyfed:{status:'READY',checkedAt:CHECKED},
+  });
   for(const [id,expected] of Object.entries(expectations)){
-    const actual=inflationResearchReleaseInfo(id,sample(),TODAY,NOW);
+    const actual=inflationResearchReleaseInfo(id,withFutureSources,TODAY,NOW);
     assert.equal(actual.status,'CONFIRMED',`research #${id}`);
     assert.equal(actual.nextReleaseDate,expected,`research #${id}`);
     assert.equal(actual.basis,'official',`research #${id}`);
@@ -83,7 +91,7 @@ test('missing calendar, source state, malformed event and reference dates never 
   assert.equal(inflationResearchReleaseInfo('14',sample(),'2026-02-30',NOW).status,'INVALID_REFERENCE_DATE');
 });
 
-test('three daily/spot rows and three not-yet-connected sources are explicitly distinguished',()=>{
+test('three daily/spot rows and three currently missing optional sources are explicitly distinguished',()=>{
   const cases={
     '1':'UNSCHEDULED_SPOT','3':'UNSCHEDULED_DAILY','18':'UNSCHEDULED_DAILY',
     '4':'SOURCE_NOT_CONNECTED','21':'SOURCE_NOT_CONNECTED','31':'SOURCE_NOT_CONNECTED',
@@ -94,4 +102,34 @@ test('three daily/spot rows and three not-yet-connected sources are explicitly d
     assert.equal(answer.nextReleaseDate,null,`research #${id}`);
   }
   assert.equal(inflationResearchReleaseInfo('999',sample(),TODAY,NOW).status,'UNKNOWN_RESEARCH_ID');
+});
+
+test('future EIA/NYFed source activation needs no code mapping change',()=>{
+  const events=[
+    {id:'eia-epm',source:'eia_epm',date:'2026-11-24'},
+    {id:'nyfed-gscpi',source:'nyfed',date:'2026-11-09'},
+    {id:'nyfed-sce',source:'nyfed',date:'2026-11-10'},
+  ];
+  const states={
+    eia_epm:{status:'READY',checkedAt:CHECKED},
+    nyfed:{status:'READY',checkedAt:CHECKED},
+  };
+  for(const [id,expected] of [['4','2026-11-24'],['21','2026-11-09'],['31','2026-11-10']]){
+    const missing=inflationResearchReleaseInfo(id,sample(),TODAY,NOW);
+    assert.equal(missing.status,'SOURCE_NOT_CONNECTED');
+    assert.equal(missing.text,'공식 일정 자동 연결 전');
+    const connected=inflationResearchReleaseInfo(id,sample(states,events),TODAY,NOW);
+    assert.equal(connected.status,'CONFIRMED');
+    assert.equal(connected.nextReleaseDate,expected);
+    assert.equal(connected.basis,'official');
+  }
+});
+
+test('newly linked sources obey the same source failure and freshness protections',()=>{
+  const failed=sample({nyfed:{status:'SOURCE_FAILED',checkedAt:CHECKED}});
+  assert.equal(inflationResearchReleaseInfo('21',failed,TODAY,NOW).status,'SOURCE_FAILED');
+  const stale=sample({eia_epm:{status:'READY',checkedAt:new Date(NOW-49*3600000).toISOString()}});
+  assert.equal(inflationResearchReleaseInfo('4',stale,TODAY,NOW).status,'SOURCE_STALE');
+  const readyNoEvents=sample({nyfed:{status:'READY',checkedAt:CHECKED}},[]);
+  assert.equal(inflationResearchReleaseInfo('31',readyNoEvents,TODAY,NOW).status,'NO_CONFIRMED');
 });
