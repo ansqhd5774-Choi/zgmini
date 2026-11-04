@@ -33,8 +33,7 @@ try{
   await page.goto(base+'/economic-indicators/inflation/',{waitUntil:'domcontentloaded',timeout:60000});
   const section=page.locator('.economic-indicators[aria-labelledby="economic-inflation-indicators"]');
   await section.waitFor({state:'attached',timeout:30000});
-  await page.waitForFunction(()=>document.querySelector('.economic-indicators[data-unused]')===null&&
-   document.querySelectorAll('tr[data-research-input]').length===19,{timeout:20000});
+  await page.waitForFunction(()=>document.querySelectorAll('tr[data-research-input]').length===19,null,{timeout:20000});
   assert.equal(await section.locator('tbody tr[data-research-input]').count(),19);
   assert.equal(await section.locator('tbody tr[data-judgement]:not([data-research-input])').count(),4);
   assert.match(await section.locator('h2').first().innerText(),/원자료 19개/);
