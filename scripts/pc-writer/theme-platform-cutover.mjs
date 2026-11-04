@@ -35,3 +35,27 @@ export function verifyThemeCutover({legacy,candidates}){
  }
  return {status:results.every(row=>row.status==='VERIFIED')?'CUTOVER_INPUTS_VERIFIED':'CUTOVER_BLOCKED',results};
 }
+
+ // Keep the old history in the cutover artifact. The public projection can
+ // still select its normal rolling window without destroying that archive.
+export function stageThemeCutover({legacy,candidates}){
+ ensure(Array.isArray(legacy)&&Array.isArray(candidates),'THEME_CUTOVER_ROWS_REQUIRED');
+ const byId=new Map(candidates.map(row=>[row.id,row]));
+ ensure(byId.size===candidates.length,'THEME_CUTOVER_INVALID_OR_DUPLICATE_ID');
+ const staged=legacy.flatMap(prior=>{
+  const candidate=byId.get(prior.id);
+  if(!candidate)return [];
+  ensure(Array.isArray(prior.history)&&Array.isArray(candidate.history),'THEME_CUTOVER_HISTORY_REQUIRED');
+  const points=new Map();
+  for(const point of [...prior.history,...candidate.history]){
+   ensure(validDate(point?.date)&&Number.isFinite(point.score),'THEME_CUTOVER_INVALID_POINT');
+   ensure(!points.has(point.date)||points.get(point.date).score===point.score,'THEME_CUTOVER_CONFIRMED_CONFLICT');
+   points.set(point.date,point);
+  }
+  const history=[...points.values()].sort((a,b)=>a.date.localeCompare(b.date));
+  const provisional=candidate.provisional??prior.provisional;
+  return [{...candidate,history,...(provisional?{provisional}:{})}];
+ });
+ const verification=verifyThemeCutover({legacy,candidates:staged});
+ return {...verification,...(verification.status==='CUTOVER_INPUTS_VERIFIED'?{candidates:staged}:{})};
+}

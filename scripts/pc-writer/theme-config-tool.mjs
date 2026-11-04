@@ -98,10 +98,11 @@ async function cli(){
   ensure(!arg,'CONFIG_USAGE');
   return (await import('./theme-platform-inspect.mjs')).inspectThemePlatform();
  }
- if(mode==='--verify-cutover'){
+ if(mode==='--verify-cutover'||mode==='--stage-cutover'){
   ensure(arg,'CONFIG_USAGE');
-  const {verifyThemeCutover}=await import('./theme-platform-cutover.mjs');
-  return verifyThemeCutover(JSON.parse(fs.readFileSync(arg,'utf8')));
+  const {verifyThemeCutover,stageThemeCutover}=await import('./theme-platform-cutover.mjs');
+  const input=JSON.parse(fs.readFileSync(arg,'utf8'));
+  return mode==='--stage-cutover'?stageThemeCutover(input):verifyThemeCutover(input);
  }
  if(mode==='--validate')return {status:'CONFIG_VALID',definition:readDefinition(arg),providerCalls:0};
  if(mode==='--list'){ensure(!arg,'CONFIG_USAGE');return listRegistered(root()).map(r=>planRegistered(root(),r.definition.id));}
