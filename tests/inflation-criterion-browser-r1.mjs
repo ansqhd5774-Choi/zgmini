@@ -44,9 +44,9 @@ try{
     'desktop column '+label);
   }
   const first=section.locator('tbody tr[data-research-input="research-1"]');
-  assert.match(await first.locator('td').nth(3).innerText(),/에너지 원가 압력/);
-  assert.match(await first.locator('td').nth(4).innerText(),/120\.4.*USD\/배럴/);
-  const current=await first.locator('td').nth(5).innerText();
+  assert.match(await first.locator('td').nth(2).innerText(),/에너지 원가 압력/);
+  assert.match(await first.locator('td').nth(3).innerText(),/120\.4.*USD\/배럴/);
+  const current=await first.locator('td').nth(4).innerText();
   assert.match(current,/124\.8.*USD\/배럴/);
   assert.match(current,/2026/);
   assert.match(current,/FRED\/EIA/);
