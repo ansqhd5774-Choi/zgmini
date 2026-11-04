@@ -108,7 +108,9 @@ export async function publishInflation19Auto({
   validate??=publicModule.validateInflationCausalPublic;
   writerFactory??=publicModule.inflationCausalPublicWriter;
  }
- const preview=await previewFn(canonicalHome);
+ // The existing preview owns an exact Win32 E: path contract. realpathSync.native
+ // may return a \\?\-prefixed canonical path, which that preview rejects.
+ const preview=await previewFn(process.platform==='win32'?INFL19_PC_HOME:canonicalHome);
  if(preview?.status!=='PASS_READONLY'||preview.ready!==19||
   preview.payload?.status!=='READY')
   return {status:'SKIPPED_INPUTS_NOT_READY',ready:preview?.ready??0,

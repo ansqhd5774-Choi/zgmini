@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import {publishInflation19Auto,stageAndVerify,INFL19_PUBLIC_KEY}
+import {publishInflation19Auto,stageAndVerify,INFL19_PUBLIC_KEY,INFL19_PC_HOME}
  from './inflation-causal-public-auto-publication-r1.mjs';
 
 const IDS=['1','3','4','5','6','7','8','9','10','11','12','13','14','18','19','21','25','26','31'];
@@ -73,7 +73,7 @@ test('existing junction is resolved to canonical home before preview',async t=>{
    return {status:'PASS_READONLY',ready:19,payload:f.current,
     providerCalls:0,coreWrites:0,dbWrites:0,d1Writes:0,schedulerWrites:0};
   },validate,writerFactory:()=>({write:()=>{throw Error('UNEXPECTED_WRITE')}})});
- assert.equal(received,fs.realpathSync.native(f.home));
+ assert.equal(received,process.platform==='win32'?INFL19_PC_HOME:fs.realpathSync.native(f.home));
  assert.equal(result.status,'SKIPPED_METADATA_ONLY');
 });
 
