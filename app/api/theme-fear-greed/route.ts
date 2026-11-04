@@ -1,5 +1,4 @@
 import {env} from 'cloudflare:workers';
-import {readUnifiedPublicThemes} from '../../../worker/theme-unified-public.mjs';
 import {readThemeEtfOnly} from '../../../worker/theme-etf-only-public.mjs';
 
 // Stored D1 GET only: no provider, calculation, mutation, or publication.
@@ -10,7 +9,6 @@ export async function GET(request:Request){
  // The PC publisher compares against the stored pre-overlay calendar, never
  // its own R32 output. Normal visitor requests always retain the R32 overlay.
  const includeNineR37=new URL(request.url).searchParams.get('publication-base')!=='1';
- const db=runtime.DB_CORE??runtime.DB;
- if(!includeNineR37)return readThemeEtfOnly(db,{includeNineR37});
- return readUnifiedPublicThemes(db);
+ if(includeNineR37)return readThemeEtfOnly(runtime.DB_CORE??runtime.DB);
+ return readThemeEtfOnly(runtime.DB_CORE??runtime.DB,{includeNineR37});
 }
