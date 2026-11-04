@@ -81,7 +81,10 @@ test('scheduled collection has a durable global daily request budget and rotates
  let calls=0;const fetchImpl=async url=>{calls++;return new Response(JSON.stringify({symbol:url.pathname.split('/').at(-2),timestamp:'2026-10-27T19:00:00Z',close:100})+'\n');};
  const now=new Date('2026-10-29T00:00:00Z');
  const first=await runConfiguredSchedule({dataRoot:root,now,fetchImpl});assert.equal(first.providerCallsToday,4);assert.equal(calls,4);
- await runConfiguredSchedule({dataRoot:root,now,fetchImpl});assert.equal(calls,4);
+ const exhausted=await runConfiguredSchedule({dataRoot:root,now,fetchImpl});assert.equal(calls,4);
+ assert.equal(exhausted.results.length,0);
+ assert.deepEqual(exhausted.coverage.map(item=>item.id),first.coverage.map(item=>item.id));
+ assert.ok(exhausted.coverage.length>0&&exhausted.coverage.every(item=>item.status==='WAIT_DAILY_PROVIDER_BUDGET'));
  const next=await runConfiguredSchedule({dataRoot:root,now:new Date('2026-10-30T00:00:00Z'),fetchImpl});
  assert.ok(next.providerCallsToday<=4);assert.equal(next.d1Writes,0);
 });

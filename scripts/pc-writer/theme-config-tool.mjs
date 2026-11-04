@@ -84,8 +84,12 @@ export async function runConfiguredSchedule({dataRoot,now=new Date(),fetchImpl=f
     results.push(await runConfiguredOnce({dataRoot,id:r.definition.id,end:day,fetchImpl:limitedFetch,maxRequests:Math.min(4,dailyBudget-state.calls)}));
    }catch(e){results.push({id:r.definition.id,status:'STOP',reason:e.code??'CONFIG_SOURCE_OR_IO_ERROR'});}
   }
-  const waiting=results.length<entries.length||results.some(r=>r.status.startsWith('WAIT')||r.status==='CHECKPOINT_READY_TO_RESUME');
-  return {status:results.some(r=>r.status.startsWith('STOP'))?'PARTIAL_REVIEW_REQUIRED':waiting?'PRIVATE_SCHEDULE_WAITING_SOURCE_OR_BUDGET':'PRIVATE_SCHEDULE_COMPLETED',results,nextId:state.nextId,providerCallsToday:state.calls,requestLimitPerUtcDay:dailyBudget,d1Writes:0,schedulerWrites:0};
+  const attempted=new Map(results.map(result=>[result.id,result.status]));
+  const coverage=entries.map(({definition:{id}})=>({
+   id,status:attempted.get(id)??'WAIT_DAILY_PROVIDER_BUDGET',
+  }));
+  const waiting=coverage.some(r=>r.status.startsWith('WAIT')||r.status==='CHECKPOINT_READY_TO_RESUME'||r.status==='PRIVATE_HISTORY_PENDING');
+  return {status:results.some(r=>r.status.startsWith('STOP'))?'PARTIAL_REVIEW_REQUIRED':waiting?'PRIVATE_SCHEDULE_WAITING_SOURCE_OR_BUDGET':'PRIVATE_SCHEDULE_COMPLETED',results,coverage,nextId:state.nextId,providerCallsToday:state.calls,requestLimitPerUtcDay:dailyBudget,d1Writes:0,schedulerWrites:0};
  }finally{fs.unlinkSync(lock);}
 }
 async function cli(){
