@@ -9,7 +9,7 @@ const browser=await chromium.launch({headless:true,args:['--no-sandbox']});
 const errors=[];
 const sourceRows=INFLATION_CAUSAL_19.map(meta=>({
  id:meta.id,series:meta.series,unit:meta.unit,status:'READY',
- value:124.8,previousValue:120.4,observationDate:'2026-09',
+ value:meta.id==='3'?115:124.8,previousValue:120.4,observationDate:'2026-09',
  previousObservationDate:'2026-08',availableAt:'2026-10-10T00:00:00Z',
  sourceStoredAt:'2026-11-04T00:00:00Z',
  history:[{date:'2026-08',value:120.4},{date:'2026-09',value:124.8}]
@@ -44,18 +44,29 @@ try{
     'desktop column '+label);
   }
   const first=section.locator('tbody tr[data-research-input="research-1"]');
-  assert.match(await first.locator('td').nth(2).innerText(),/에너지 원가 압력/);
+  assert.match(await first.locator('td').nth(2).innerText(),/에너지원가↑/);
   assert.match(await first.locator('td').nth(3).innerText(),/120\.4.*USD\/배럴/);
   const current=await first.locator('td').nth(4).innerText();
   assert.match(current,/124\.8.*USD\/배럴/);
-  assert.match(current,/2026/);
+  assert.match(current,/2026년 9월 관측/);
   assert.match(current,/FRED\/EIA/);
+  assert.equal(await first.getAttribute('data-judgement'),'negative');
+  assert.match(await first.locator('td').nth(3).innerText(),/2026년 8월 관측/);
+  const gas=section.locator('tbody tr[data-research-input="research-3"]');
+  assert.equal(await gas.getAttribute('data-judgement'),'positive');
+  const usd=section.locator('tbody tr[data-research-input="research-18"]');
+  assert.equal(await usd.getAttribute('data-judgement'),'neutral');
+  const svgStroke=async(row)=>row.locator('.inflation-mini-chart-line').evaluate(el=>getComputedStyle(el).stroke);
+  assert.equal(await svgStroke(first),'rgb(255, 154, 154)');
+  assert.equal(await svgStroke(gas),'rgb(119, 229, 156)');
   assert.equal(await section.locator('.inflation-r2-mobile-list article[data-research-input]').count(),19);
   const firstMobile=section.locator('.inflation-r2-mobile-list article[data-research-input="research-1"]');
-  assert.match(await firstMobile.locator('.inflation-r2-mobile-criterion').innerText(),/에너지 원가 압력/);
+  assert.match(await firstMobile.locator('.inflation-r2-mobile-criterion').innerText(),/에너지원가↑/);
   assert.match(await firstMobile.locator('.inflation-r2-mobile-metrics').innerText(),/120\.4/);
   assert.match(await firstMobile.locator('.inflation-r2-mobile-metrics').innerText(),/124\.8/);
   assert.match(await firstMobile.locator('.inflation-r2-mobile-metrics').innerText(),/FRED\/EIA/);
+  assert.equal(await firstMobile.getAttribute('data-judgement'),'negative');
+  assert.equal(await svgStroke(firstMobile),'rgb(255, 154, 154)');
   const dialog=page.locator('dialog[aria-labelledby="zg-about-popup-title"]');
   if(await dialog.isVisible()){
    const close=dialog.getByRole('button',{name:'닫기',exact:true});

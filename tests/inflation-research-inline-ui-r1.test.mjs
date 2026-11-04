@@ -29,8 +29,16 @@ test('inflation table and mobile cards use criterion / previous / current wordin
  assert.match(file,/id==="inflation"\?"기준":"평가 기준"/);
  assert.match(file,/id==="inflation"\?"이전":"이전 원값"/);
  assert.match(file,/id==="inflation"\?"현재":"현재 원값\/점수"/);
- assert.match(file,/dateLabel\(item.previousObservationDate\)/);
- assert.match(file,/isResearch&&item.sourceDisplay&&<small>\{item.sourceDisplay\}<\/small>/);
- assert.equal((file.match(/isResearch&&item\.sourceDisplay&&<small>/g)||[]).length,2);
+ assert.match(file,/observedPeriodLabel\(item,item.previousObservationDate\)/);
+ assert.match(file,/isResearch&&item.sourceDisplay&&<small title=/);
+ assert.equal((file.match(/isResearch&&item\.sourceDisplay&&<small title=/g)||[]).length,2);
  assert.match(file,/const scored=storedObservations\.filter/);
+});
+
+test('research judgment is independent of R2 score and colors are existing positive/negative chart tones',()=>{
+ assert.equal((file.match(/item\.researchJudgement\?\?/g)||[]).length,2);
+ assert.match(file,/researchObservationPeriod\(date,item.releaseCadence\)/);
+ const spark=fs.readFileSync(path.resolve('app/inflation/inflation-mini-chart-r1.css'),'utf8');
+ assert.match(spark,/\[data-judgement="positive"\].*inflation-mini-chart-line/);
+ assert.match(spark,/\[data-judgement="negative"\].*inflation-mini-chart-line/);
 });
