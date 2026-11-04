@@ -51,12 +51,20 @@ test('source version and timestamp cannot claim future or unknown lineage',()=>{
 });
 function fakeDb(){
  let saved=null;const calls=[];
- return {calls,prepare(sql){return {bind(...params){
- calls.push({sql,params});
  return {
-  async first(){return saved},
-  async run(){saved={body:params[1],stored_at:params[2]};return {meta:{changes:1}}}
- }}}}}};
+  calls,
+  prepare(sql){
+   return {
+    bind(...params){
+     calls.push({sql,params});
+     return {
+      async first(){return saved;},
+      async run(){saved={body:params[1],stored_at:params[2]};return {meta:{changes:1}};}
+     };
+    }
+   };
+  }
+ };
 }
 test('GET/HEAD only read the independent D1 key; never call providers',async()=>{
  const db=fakeDb(),url='https://example.test'+INFLATION_CAUSAL_PUBLIC_ROUTE;
