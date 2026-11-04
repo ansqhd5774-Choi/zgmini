@@ -101,8 +101,11 @@ export function normalizeEiaIndustrial(raw){
       months.has(item.period)||!Number.isFinite(Number(item.price))||
       String(item.price??'').trim()===''||Number(item.price)<0)
       fail('EIA_ROW_INVALID_OR_MIXED_FACET');
+    // EIA's current API dashboard uses "cents per kilowatt-hour"; its older
+    // technical examples use "cents per kilowatthour". Both mean cents/kWh.
     const unit=item['price-units'];
-    if(unit!=='cents per kilowatthour')fail('EIA_PRICE_UNITS_CHANGED');
+    if(!['cents per kilowatthour','cents per kilowatt-hour'].includes(unit))
+      fail('EIA_PRICE_UNITS_CHANGED');
     months.add(item.period);
     observations.push({month:item.period,value:Number(item.price),unit:'cents_per_kWh'});
   }
