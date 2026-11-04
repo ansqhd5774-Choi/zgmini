@@ -6,7 +6,7 @@ import {THEME_GROUPS} from '../../components/market-explorer-catalog';
 import {useStoredIndex} from '../../components/use-stored-index';
 
 type Point={date:string;score:number};
-type ThemeScore={theme:string;etfs:string[];score:number;history:Point[]};
+type ThemeScore={id?:string;provisional?:Point;theme:string;etfs:string[];score:number;history:Point[]};
 type PublicThemeFeed={status:string;observationDate?:string;phase?:string;themes?:ThemeScore[];provisional?:{points:{date:string;scores:Record<string,number>}[]}};
 type Theme={name:string;group:string;color:string;key:string;etfs:string[];points:Point[];provisionalFrom:number;score:number;date:string};
 const CATALOG=THEME_GROUPS.flatMap(g=>g.items.map(name=>({name,group:g.name})));
@@ -23,14 +23,17 @@ function acceptedThemes(feed:PublicThemeFeed|null):Theme[]{
  const provisional=feed.phase==='PROVISIONAL'&&Array.isArray(feed.provisional?.points)?feed.provisional.points:[];
  return feed.themes.flatMap(item=>{
   const index=CATALOG.findIndex(t=>t.name===item?.theme);
-  if(index<0||!validScore(item.score)||!Array.isArray(item.history)||item.history.length!==252)return [];
+  if((index<0&&!item.id)||!validScore(item.score)||!Array.isArray(item.history)||!item.history.length||(!item.id&&item.history.length!==252))return [];
   if(!item.history.every((p,i)=>validDate(p?.date)&&validScore(p?.score)&&(!i||p.date>item.history[i-1].date)))return [];
-  if(Math.abs(item.history[251].score-item.score)>0.000001)return [];
+  if(Math.abs(item.history.at(-1)!.score-item.score)>0.000001)return [];
   const points=item.history.map(p=>({...p})),provisionalFrom=points.length;
   for(const extra of provisional){
    if(validDate(extra?.date)&&extra.date>points[points.length-1].date&&validScore(extra.scores?.[item.theme]))points.push({date:extra.date,score:extra.scores[item.theme]});
   }
-  return [{name:item.theme,group:CATALOG[index].group,color:COLORS[index%COLORS.length],key:'theme_'+index,etfs:Array.isArray(item.etfs)?item.etfs:[],points,provisionalFrom,score:points.at(-1)!.score,date:points.at(-1)!.date}];
+  const extra=item.provisional;
+  if(extra&&validDate(extra.date)&&extra.date>points.at(-1)!.date&&validScore(extra.score))points.push({date:extra.date,score:extra.score});
+  const colorIndex=index<0?Array.from(item.id!).reduce((sum,char)=>sum+char.charCodeAt(0),0):index;
+  return [{name:item.theme,group:CATALOG[index]?.group??'기타',color:COLORS[colorIndex%COLORS.length],key:item.id?'configured_'+item.id:'theme_'+index,etfs:Array.isArray(item.etfs)?item.etfs:[],points,provisionalFrom,score:points.at(-1)!.score,date:points.at(-1)!.date}];
  }).sort((a,b)=>b.score-a.score||a.name.localeCompare(b.name,'ko'));
 }
 function comparisonDate(date:string,months:number,days:number){
@@ -100,7 +103,7 @@ export default function ThemeDetailCharts(){
   dash:active.points.length>active.provisionalFrom&&p.date>=active.points[active.provisionalFrom-1]?.date?p.score:null,
  })): [];
  return <div className="zg-sfg-content zg-tfg-content">
-  <p className="zg-sfg-as-of">{ready.length?'기준일 '+(payload?.observationDate??ready[0].date).replaceAll('-','.')+' · 공개 '+ready.length+'개 / 전체 '+CATALOG.length+'개':'전체 '+CATALOG.length+'개 테마'}</p>
+  <p className="zg-sfg-as-of">{ready.length?'기준일 '+(payload?.observationDate??ready[0].date).replaceAll('-','.')+' · 공개 '+ready.length+'개 / 전체 '+(ready.length+CATALOG.filter(t=>!available.has(t.name)).length)+'개':'전체 '+CATALOG.length+'개 테마'}</p>
   <div className="zg-tfg-toolbar"><div className="zg-explorer-filters" role="group" aria-label="테마 분류">{['전체',...THEME_GROUPS.map(g=>g.name)].map(name=><button type="button" key={name} aria-pressed={group===name} onClick={()=>setGroup(name)}>{name}</button>)}</div><label className="zg-explorer-search"><Search size={16}/><input aria-label="테마 검색" type="search" value={query} onChange={e=>setQuery(e.target.value)} placeholder="테마 검색"/></label></div>
   {ready.length?<>
    <section className="zg-sfg-ranking" aria-label="공개 테마 투자심리 순위">

@@ -1,4 +1,5 @@
 import {env} from 'cloudflare:workers';
+import {readConfiguredThemes} from '../../../worker/theme-configured-public.mjs';
 import {readThemeEtfOnly} from '../../../worker/theme-etf-only-public.mjs';
 
 // Stored D1 GET only: no provider, calculation, mutation, or publication.
@@ -9,6 +10,23 @@ export async function GET(request:Request){
  // The PC publisher compares against the stored pre-overlay calendar, never
  // its own R32 output. Normal visitor requests always retain the R32 overlay.
  const includeNineR37=new URL(request.url).searchParams.get('publication-base')!=='1';
- if(includeNineR37)return readThemeEtfOnly(runtime.DB_CORE??runtime.DB);
- return readThemeEtfOnly(runtime.DB_CORE??runtime.DB,{includeNineR37});
+ const db=runtime.DB_CORE??runtime.DB;
+ if(!includeNineR37)return readThemeEtfOnly(db,{includeNineR37});
+ const [legacy,configured]=await Promise.all([readThemeEtfOnly(db),readConfiguredThemes(db)]);
+ if(!configured.ok)return legacy;
+ const {themes}=await configured.json();
+ if(!themes.length)return legacy;
+ const base=legacy.ok?await legacy.clone().json():{themes:[]};
+ const ids=new Set<string>();
+ const labels=new Set<string>(base.themes.map((theme:{theme:string})=>theme.theme));
+ const added=themes.filter((theme:{id:string;theme:string})=>{
+  if(ids.has(theme.id)||labels.has(theme.theme))return false;
+  ids.add(theme.id);
+  labels.add(theme.theme);
+  return true;
+ });
+ if(!added.length)return legacy;
+ const headers=new Headers(legacy.headers);
+ headers.delete('content-length');
+ return Response.json({...base,status:'READY',themes:[...base.themes,...added]},{headers});
 }
