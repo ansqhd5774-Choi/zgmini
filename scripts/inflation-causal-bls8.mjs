@@ -10,6 +10,7 @@ export const BLS8_IDS=Object.freeze([
 ]);
 export const BLS8_ENDPOINT='https://api.bls.gov/publicAPI/v2/timeseries/data/';
 export const BLS8_OUTPUT_RELATIVE=path.join('inflation-causal-r1','bls-ppi8.json');
+const MAX_RESPONSE_BYTES=4_000_000;
 
 const sha256=value=>createHash('sha256').update(value).digest('hex');
 const failure=code=>Object.assign(Error(code),{code});
@@ -100,10 +101,23 @@ export async function collectInflationCausalBls8({base,blsKey,quotaFetch,now=new
  const begin=startYear??year-19;
  if(!Number.isInteger(begin)||begin>year||begin<year-19)throw failure('BLS_20_YEAR_RANGE_EXCEEDED');
  const body=JSON.stringify({seriesid:BLS8_IDS,startyear:String(begin),endyear:String(year),registrationkey:blsKey.trim()});
- const response=await quotaFetch(BLS8_ENDPOINT,{method:'POST',headers:{'content-type':'application/json'},body,signal:AbortSignal.timeout(20_000)});
+ const response=await quotaFetch(BLS8_ENDPOINT,{method:'POST',redirect:'manual',
+  headers:{'content-type':'application/json'},body,signal:AbortSignal.timeout(20_000)});
+ if(response?.status>=300&&response.status<400)throw failure('BLS_REDIRECT_DENIED');
  if(!response?.ok)throw failure(`BLS_HTTP_${Number.isInteger(response?.status)?response.status:'FAILED'}`);
  let responseText;
- try{responseText=await response.text();}catch{throw failure('BLS_RESPONSE_READ_FAILED');}
+ try{
+  if(response.body?.getReader){
+   const reader=response.body.getReader(),parts=[];let size=0;
+   for(;;){const {done,value}=await reader.read();if(done)break;
+    size+=value.byteLength;if(size>MAX_RESPONSE_BYTES){await reader.cancel();throw failure('BLS_RESPONSE_TOO_LARGE');}
+    parts.push(Buffer.from(value));}
+   responseText=Buffer.concat(parts).toString('utf8');
+  }else{
+   responseText=await response.text();
+   if(Buffer.byteLength(responseText)>MAX_RESPONSE_BYTES)throw failure('BLS_RESPONSE_TOO_LARGE');
+  }
+ }catch(error){if(error?.code==='BLS_RESPONSE_TOO_LARGE')throw error;throw failure('BLS_RESPONSE_READ_FAILED');}
  let payload;
  try{payload=JSON.parse(responseText);}catch{throw failure('BLS_JSON_INVALID');}
  const incoming=normalizeBls8Response(payload); // Validate ALL 8 before even opening output for write.
