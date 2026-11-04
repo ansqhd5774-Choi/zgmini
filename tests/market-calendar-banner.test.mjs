@@ -11,6 +11,10 @@ const er1={status:'READY_ER1_PUBLIC',method:ER1_METHOD,asOf:'2026-10-29',
   scoreableIssuers:er1Rows.length,unscoreableReasons:{}},
  scores:er1Rows.map(([issuerId,score])=>({issuerId,
   tickers:issuerId==='ALPHABET'?['GOOG','GOOGL']:[issuerId],score}))};
+// November's independently published cohort is mandatory for November dates;
+// an October score cannot grade a November earnings row by fallback.
+const novemberER1={...er1,asOf:'2026-10-31',
+ scores:er1.scores.map(row=>({...row,tickers:[...row.tickers]}))};
 const calendar={status:'READY',sources:{bls:{status:'READY',checkedAt:new Date(now).toISOString()},bea:{status:'READY',checkedAt:new Date(now).toISOString()}},events:[
  {id:'pce',date:'2026-10-29',title:'Personal Income and Outlays',source:'bea',sourceUrl:'https://www.bea.gov/news/schedule'},
  {id:'employment',date:'2026-11-06',title:'Employment Situation',source:'bls',sourceUrl:'https://www.bls.gov/schedule/'},
@@ -20,7 +24,7 @@ const calendar={status:'READY',sources:{bls:{status:'READY',checkedAt:new Date(n
 function html(events){
  const coveredDays=Array.from({length:14},(_,i)=>new Date(Date.parse('2026-10-29T00:00:00Z')+i*86400000).toISOString().slice(0,10));
  const projection={status:'READY_PRIVATE',scope:'PC_PRIVATE',publicDisplay:false,redistribution:false,publicationStatus:'HELD_UNCONFIRMED',coveredDays,events:events.map(e=>({date:'2026-10-29',company:'Company & Co.',marketSession:'after_market',time:null,verification:'VENDOR_UNVERIFIED',source:'earnings-api',...e})),recordCount:events.length,checkedAt:new Date(now).toISOString()};
- return earningsDisplayHtml(earningsDisplaySnapshot(projection),{start:coveredDays[0],end:coveredDays.at(-1),importance:3},er1).html;
+ return earningsDisplayHtml(earningsDisplaySnapshot(projection),{start:coveredDays[0],end:coveredDays.at(-1),importance:3},er1,null,novemberER1).html;
 }
 test('banner consumes the exact reviewed earnings HTML, not a manual company roster',()=>{
  const rows=earningsBannerRows(html([{ticker:'AMZN'},{ticker:'AAPL',date:'2026-11-02'},{ticker:'KO',priority:true}]),now);
@@ -68,7 +72,9 @@ test('banner recognizes ER1 >=97 only and excludes old FHS and unrated earnings'
   publicationStatus:'HELD_UNCONFIRMED',coveredDays,events,recordCount:events.length,
   priorityCount:0,checkedAt:at};
  const display=earningsDisplaySnapshot(projection);
- const rendered=earningsDisplayHtml(display,{start,end:coveredDays.at(-1),importance:3},er1);
+ const unpublished=earningsDisplayHtml(display,{start,end:coveredDays.at(-1),importance:3},er1);
+ assert.equal(unpublished.count,0,'October generic ER1 must never grade November without its own cohort');
+ const rendered=earningsDisplayHtml(display,{start,end:coveredDays.at(-1),importance:3},er1,null,novemberER1);
  assert.equal(rendered.count,1);
  assert.match(rendered.html,/aria-label="기업 실적 점수 99\.00점"/);
  const rows=earningsBannerRows(rendered.html,when);
