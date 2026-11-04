@@ -3,6 +3,8 @@ import assert from 'node:assert/strict';
 import {novemberEventsFromSaved,buildNovemberDisplay,buildImmutableNovemberBody,syncNovemberD1} from '../scripts/pc-writer/market-calendar-nov30-publish.mjs';
 import {NOV2026_EARNINGS_HTML_KEY,validNov2026Display,withNov2026Display} from '../lib/market-calendar-nov2026-display.mjs';
 import {earningsDisplayHtml,earningsDisplayResponse,earningsDisplaySnapshot} from '../lib/earnings-api-display.mjs';
+import {withDec2026Display} from '../lib/market-calendar-dec2026-display.mjs';
+import {buildDecemberDisplay} from '../scripts/pc-writer/market-calendar-dec31-publish.mjs';
 
 const DAYS=Array.from({length:30},(_,i)=>`2026-11-${String(i+1).padStart(2,'0')}`);
 const storedAt=new Date().toISOString();
@@ -65,6 +67,11 @@ test('current rolling day wins same ticker, November saved days survive, Decembe
  assert.match(row,/Live Current Winner/);
  assert.equal(merged.byDay['2026-11-01'].length>0,true);
  assert.equal(withNov2026Display(rolling,null),rolling);
+ const december=buildDecemberDisplay([{date:'2026-12-03',ticker:'DEC',company:'December Inc',
+  marketSession:'unknown',time:null,verification:'VENDOR_UNVERIFIED',source:'earnings-api'}],storedAt);
+ const both=withDec2026Display(merged,december);
+ assert.equal(both.coveredDays.length,61);
+ assert.equal(earningsDisplayHtml(both,{start:'2026-11-01',end:'2026-12-31'}).count,3052);
 });
 
 test('D1 isolated November one-key upsert and remote exact readback; idempotent',async()=>{
