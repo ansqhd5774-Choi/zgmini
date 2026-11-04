@@ -19,7 +19,7 @@ type Indicator={
  observationDate?:string|null;asOfDate?:string|null;availableAt?:string|null;
  previousValue?:number|null;previousObservationDate?:string|null;
  criterion?:string|null;criterionLabel?:string|null;
- source?:string|null;sourceUrl?:string|null;description?:string|null;content?:string|null;
+ source?:string|null;sourceDisplay?:string|null;sourceUrl?:string|null;description?:string|null;content?:string|null;
  history?:Point[];trend?:Point[];
  releaseCadence?:string|null;nextReleaseDate?:string|null;nextRelease?:string|null;
 };
@@ -215,7 +215,7 @@ export default function EconomicDetailPanel({id}:{id:EconomicDomainId}){
    <div className="inflation-table-wrap inflation-r2-table-wrap">
     <table className="inflation-indicator-table inflation-indicator-table-r2 economic-table">
      <colgroup>{Array.from({length:10},(_,i)=><col key={i}/>)}</colgroup>
-     <thead><tr><th>☆</th><th>지표</th><th>내용</th><th>평가 기준</th><th>이전 원값</th><th>현재 원값/점수</th><th>발표</th><th>판단</th><th>미니차트(1Y)</th><th>ⓘ</th></tr></thead>
+     <thead><tr><th>☆</th><th>지표</th><th>내용</th><th>{id==="inflation"?"기준":"평가 기준"}</th><th>{id==="inflation"?"이전":"이전 원값"}</th><th>{id==="inflation"?"현재":"현재 원값/점수"}</th><th>발표</th><th>판단</th><th>미니차트(1Y)</th><th>ⓘ</th></tr></thead>
      <tbody>{displayObservations.map((item,i)=>{
       const name=indicatorLabel(item,id,i),idKey=item.id??name,part=validScore(item.score)&&item.status==="READY"?item.score:null,isResearch=id==="inflation"&&i<researchRows.length,j=isResearch?{name:"미평가",tone:"neutral"}:judgement(part),mini=indicatorTrend(item);
       const present=currentPresentation(item),previous=item.status==="READY"?textValue(item.previousValue,item.unit):"—";
@@ -227,7 +227,7 @@ export default function EconomicDetailPanel({id}:{id:EconomicDomainId}){
        <td>{indicatorDescription(item,name)}</td>
        <td>{item.criterionLabel??item.criterion??"저장 평가점수"}</td>
        <td className="inflation-r2-value"><strong>{previous}</strong><small>{dateLabel(item.previousObservationDate)}</small></td>
-       <td className="inflation-r2-value" data-value-kind={present.type}><strong>{present.value}</strong><small>{present.detail}</small></td>
+       <td className="inflation-r2-value" data-value-kind={present.type}><strong>{present.value}</strong><small>{present.detail}</small>{isResearch&&item.sourceDisplay&&<small>{item.sourceDisplay}</small>}</td>
        <td className="inflation-r2-release"><strong>{item.releaseCadence??"—"}</strong><small>{dateLabel(item.nextReleaseDate??item.nextRelease)}</small></td>
        <td><span className="inflation-judgement">{j.name}</span></td>
        <td className="inflation-r2-spark-cell"><InflationMiniChart label={name} points={mini}/></td>
@@ -247,7 +247,7 @@ export default function EconomicDetailPanel({id}:{id:EconomicDomainId}){
       <p className="inflation-r2-mobile-content">{indicatorDescription(item,name)}</p>
       <p className="inflation-r2-mobile-criterion"><span>기준</span>{item.criterionLabel??item.criterion??"저장 평가점수"}</p>
       <div className="inflation-r2-mobile-spark"><span>미니차트(1Y)</span><InflationMiniChart label={name} points={mini}/></div>
-      <div className="inflation-r2-mobile-metrics"><div><span>이전 원값</span><strong>{item.status==="READY"?textValue(item.previousValue,item.unit):"—"}</strong><small>{dateLabel(item.previousObservationDate)}</small></div><div><span>현재 원값/점수</span><strong>{currentPresentation(item).value}</strong><small>{currentPresentation(item).detail}</small></div><div><span>발표</span><strong>{item.releaseCadence??"—"}</strong><small>{dateLabel(item.nextReleaseDate??item.nextRelease)}</small></div></div>
+      <div className="inflation-r2-mobile-metrics"><div><span>{id==="inflation"?"이전":"이전 원값"}</span><strong>{item.status==="READY"?textValue(item.previousValue,item.unit):"—"}</strong><small>{dateLabel(item.previousObservationDate)}</small></div><div><span>{id==="inflation"?"현재":"현재 원값/점수"}</span><strong>{currentPresentation(item).value}</strong><small>{currentPresentation(item).detail}</small>{isResearch&&item.sourceDisplay&&<small>{item.sourceDisplay}</small>}</div><div><span>발표</span><strong>{item.releaseCadence??"—"}</strong><small>{dateLabel(item.nextReleaseDate??item.nextRelease)}</small></div></div>
       </article>
      </Fragment>;
     })}
