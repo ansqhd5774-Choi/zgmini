@@ -7,6 +7,7 @@ import {scoreER1Issuers} from '../lib/market-calendar-er1-earnings-score.mjs';
 import {makeER1PublicDisplay,validateER1PublicDisplay} from '../lib/market-calendar-er1-public-display.mjs';
 import {
  NOV2026_ER1_PUBLIC_KEY,selectFutureNovemberSymbols,validateVendorActual,
+ inspectVendorActual,
  syncNovemberER1D1,runNovemberProbePublish
 } from '../scripts/pc-writer/market-calendar-nov30-er1-probe-publish.mjs';
 
@@ -75,6 +76,48 @@ test('only complete numeric actual fields are allowed; estimates are not substit
   epsEstimate:2,revenueEstimate:300}],'AAA'),/NOV30_ER1_VENDOR_ACTUAL_INVALID/);
  assert.throws(()=>validateVendorActual([{symbol:'AAA',date:'2026-10-10',
   eps:2,revenue:-1}],'AAA'),/NOV30_ER1_VENDOR_ACTUAL_INVALID/);
+});
+test('one malformed historical row is isolated without inventing EPS or revenue',()=>{
+ const mixed=[...ACTUAL('AAA'),{symbol:'AAA',date:'2026-01-20',
+  epsEstimate:2.1,revenueEstimate:13000000}];
+ const inspected=inspectVendorActual(mixed,'AAA');
+ assert.equal(inspected.rows.length,3);
+ assert.equal(inspected.rejectedRows,1);
+ assert.ok(inspected.rows.every(x=>!Object.hasOwn(x,'epsEstimate')));
+ assert.throws(()=>validateVendorActual(mixed,'AAA'),
+  /NOV30_ER1_VENDOR_ACTUAL_INVALID/);
+});
+test('pilot continues with valid history and records partial private preview',async t=>{
+ const f=fixture(t);let calls=0;const d1=mockD1();
+ const report=await runNovemberProbePublish({
+  pcHome:f.root,requireWindows:false,clock:()=>NOV_NOW,
+  env:{EARNINGS_API_KEY:'test_test_key_123'},calendarLoader:async()=>EVENTS,
+  scorer:mockScore,publicSerializer:mockPublic,
+  remoteFactory:async()=>({remote:d1.remote,core:'fixture'}),
+  fetcher:async url=>{
+   calls++;const symbol=new URL(url).searchParams.get('symbol');
+   const body=ACTUAL(symbol);
+   if(symbol==='BBB')body.push({symbol,date:'2026-03-04',
+    epsEstimate:2,revenueEstimate:4000000});
+   return {status:200,ok:true,text:async()=>JSON.stringify(body)};
+  }
+ });
+ assert.equal(report.status,'PARTIAL',report.code);
+ assert.equal(report.code,'NOV30_ER1_PARTIAL_PREVIEW_VERIFIED');
+ assert.equal(report.rejectedActualRows,1);
+ assert.equal(report.isolatedSymbols,0);
+ assert.equal(report.stagedActualSymbols,3);
+ assert.ok(report.scoreableIssuers>=1);
+ assert.equal(report.d1Writes,0);
+ assert.equal(d1.getWrites(),0);assert.equal(calls,3);
+ const stored=JSON.parse(fs.readFileSync(path.join(f.input,
+  'nov30-er1-probe','BBB.json'),'utf8'));
+ assert.equal(stored.validation.validRows,3);
+ assert.equal(stored.validation.rejectedRows,1);
+ assert.ok(stored.body.some(x=>Object.hasOwn(x,'epsEstimate')));
+ const result=JSON.parse(fs.readFileSync(path.join(f.input,
+  'nov30-er1-probe-derived','current.json'),'utf8'));
+ assert.equal(result.recordCount,3);
 });
 test('pilot reuses existing, calls provider at most twice and never publishes D1',async t=>{
  const f=fixture(t),d1=mockD1();let calls=0;
@@ -161,3 +204,4 @@ test('dedicated D1 write refuses newer remote data',async()=>{
  await assert.rejects(syncNovemberER1D1({remote,core:'fixture',body:'new',storedAt:NOV_NOW}),
   /NOV30_ER1_D1_NEWER_PRESERVED/);
 });
+
