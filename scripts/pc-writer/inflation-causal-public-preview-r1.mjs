@@ -192,7 +192,7 @@ if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.ur
    providerCalls:0,dbWrites:0,coreWrites:0,d1Writes:0,schedulerWrites:0};
  }catch(e){
   output={status:'BLOCKED',
-   code:/^INFL19_[A-Z0-9_]{2,80}$/.test(e?.message??'')?e.message:'INFL19_PREVIEW_UNAVAILABLE',
+   code:/^(?:INFL19_|INFLATION_CAUSAL_PUBLIC_)[A-Z0-9_]{2,80}$/.test(e?.message??'')?e.message:'INFL19_PREVIEW_UNAVAILABLE',
    providerCalls:0,dbWrites:0,coreWrites:0,d1Writes:0,schedulerWrites:0};
  }
  console.log(JSON.stringify(output));
