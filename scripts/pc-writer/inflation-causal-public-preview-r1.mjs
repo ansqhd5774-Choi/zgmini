@@ -119,9 +119,9 @@ function readPit(db,meta){
  for(const hash of hashes){
   if(!/^[a-f0-9]{64}$/.test(hash))throw Error('INFL19_PIT_CHUNK_HASH');
   const item=statement.get(name,hash),part=JSON.parse(item?.payload_json??'null');
-  if(!Array.isArray(part)||part.length!==item?.row_count)throw Error('INFL19_PIT_CHUNK_INVALID');
+  if(!Array.isArray(part)||part.length!==Number(item?.row_count))throw Error('INFL19_PIT_CHUNK_INVALID');
   rows.push(...part.filter(x=>stamp(x?.availableAt)&&
-   Date.parse(x.availableAt)<=Date.parse(row.retrieved_at)));
+   Date.parse(x.availableAt)<=new Date(row.retrieved_at).getTime()));
  }
  if(rows.length<2)throw Error('INFL19_PIT_ROWS_MISSING');
  return summarize(meta,rows,row.retrieved_at);
@@ -166,10 +166,12 @@ export function previewInflation19(root,{openDb=file=>new DatabaseSync(file,{rea
  const indicators=INFLATION_CAUSAL_19.map(m=>records[m.id]??absent(m));
  const filled=indicators.filter(x=>x.status==='READY');
  const at=Math.max(...filled.map(x=>Date.parse(x.sourceStoredAt)),0);
+ if(!at)return {status:'PENDING',code:'INFL19_PUBLIC_INPUTS_UNAVAILABLE',ready:0,
+  missing,providerCalls:0,dbWrites:0,d1Writes:0,coreWrites:0,schedulerWrites:0,payload:null};
  const payload={schemaVersion:INFLATION_CAUSAL_PUBLIC_SCHEMA,
   status:filled.length===19?'READY':'PARTIAL',score:null,
   sourceVersion:'INFL19_PRESENTATION_'+digest(JSON.stringify(indicators)),
-  sourceStoredAt:at||now,indicators};
+  sourceStoredAt:at,indicators};
  validateInflationCausalPublic(payload,{now});
  return {status:'PASS_READONLY',code:'INFL19_PUBLIC_PREVIEW',
   ready:filled.length,missing,providerCalls:0,dbWrites:0,d1Writes:0,
