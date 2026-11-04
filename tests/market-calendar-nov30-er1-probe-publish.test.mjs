@@ -3,6 +3,8 @@ import {test} from 'node:test';
 import fs from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
+import {scoreER1Issuers} from '../lib/market-calendar-er1-earnings-score.mjs';
+import {makeER1PublicDisplay,validateER1PublicDisplay} from '../lib/market-calendar-er1-public-display.mjs';
 import {
  NOV2026_ER1_PUBLIC_KEY,selectFutureNovemberSymbols,validateVendorActual,
  syncNovemberER1D1,runNovemberProbePublish
@@ -96,6 +98,34 @@ test('pilot reuses existing, calls provider at most twice and never publishes D1
  assert.equal(b.reusedActualSymbols,3);assert.equal(b.d1Writes,0);
  assert.equal(calls,2);assert.equal(d1.getWrites(),0);
 });
+test('unchanged ER1 scorer and serializer produce valid private preview from saved actuals',async t=>{
+ const f=fixture(t),asOf='2026-11-04',now=Date.parse(asOf+'T20:00:00Z');
+ const events=[{date:'2026-11-06',ticker:'AAA'},{date:'2026-11-07',ticker:'BBB'},
+  {date:'2026-11-08',ticker:'CCC'}];
+ const dates=['2026-10-20','2026-07-20','2026-04-20','2026-01-20'];
+ for(let i=0;i<3;i++){
+  const symbol=['AAA','BBB','CCC'][i];
+  const body=dates.map((date,k)=>({symbol,date,eps:1.2+i,revenue:1e7+i*1e6-k*1e5}));
+  const dir=path.join(f.input,'dec31-symbol-probe');fs.mkdirSync(dir,{recursive:true});
+  fs.writeFileSync(path.join(dir,symbol+'.json'),JSON.stringify({storedAt:
+   '2026-11-03T12:00:00Z',body}),{flag:'wx'});
+ }
+ let networkCalls=0;
+ const report=await runNovemberProbePublish({pcHome:f.root,requireWindows:false,
+  clock:()=>now,calendarLoader:async()=>events,scorer:scoreER1Issuers,
+  publicSerializer:makeER1PublicDisplay,fetcher:async()=>{
+   networkCalls++;throw Error('network should remain unused');
+  }});
+ assert.equal(report.status,'PASS',report.code);assert.equal(networkCalls,0);
+ assert.equal(report.scoreableIssuers,3);assert.equal(report.star3Count,0);
+ assert.equal(report.d1Writes,0);
+ const derived=JSON.parse(fs.readFileSync(path.join(f.input,
+  'nov30-er1-probe-derived','current.json'),'utf8'));
+ assert.ok(validateER1PublicDisplay(derived,{now}));
+ assert.equal(derived.method,'ER1_RELEASE1TO4_REVENUE_EPS_FIXED_97_20261102');
+ assert.ok(derived.scores.every(row=>row.score<97));
+ assert.ok(!JSON.stringify(derived).includes('10000000'));
+});
 test('separate D1 helper uses isolated key with exact readback and no duplicate write',async()=>{
  const d1=mockD1(),body='{"status":"fixture","score":79.5}';
  const first=await syncNovemberER1D1({remote:d1.remote,core:'fixture',body,storedAt:NOV_NOW});
@@ -118,7 +148,7 @@ test('429 keeps prior stage for resume and never publishes partial candidate',as
     {ok:false,status:429};
   }
  });
- assert.equal(report.status,'BLOCKED');
+ assert.equal(report.status,'PARTIAL');
  assert.equal(report.code,'NOV30_ER1_PROVIDER_QUOTA_STOP');
  assert.equal(report.providerCalls,2);assert.equal(report.stagedActualSymbols,1);
  assert.equal(d1.getWrites(),0);
