@@ -102,7 +102,9 @@ async function cli(){
   ensure(arg,'CONFIG_USAGE');
   const {verifyThemeOwnershipPlan}=await import('./theme-platform-cutover.mjs');
   const {stagedPath,expectedStageSha256,bindings}=JSON.parse(fs.readFileSync(arg,'utf8'));
-  return verifyThemeOwnershipPlan({staged:fs.readFileSync(stagedPath),expectedStageSha256,bindings});
+  const evidenceById=new Map(bindings.filter(binding=>binding.approvalEvidencePath)
+   .map(binding=>[binding.id,fs.readFileSync(binding.approvalEvidencePath)]));
+  return verifyThemeOwnershipPlan({staged:fs.readFileSync(stagedPath),expectedStageSha256,bindings,evidenceById});
  }
  if(mode==='--verify-cutover'||mode==='--stage-cutover'){
   ensure(arg,'CONFIG_USAGE');

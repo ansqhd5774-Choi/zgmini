@@ -34,10 +34,13 @@ test('staging preserves rolled-off confirmed points and separate provisional dat
 test('ownership plan checks every candidate and binds it to immutable staged bytes',()=>{
  const staged=Buffer.from(JSON.stringify(stageThemeCutover({legacy:[prior],candidates:[prior]})));
  const expectedStageSha256=createHash('sha256').update(staged).digest('hex');
+ const evidence=Buffer.from('fixture approval bytes');
+ const evidenceById=new Map([[prior.id,evidence]]);
  const binding={id:prior.id,methodologyVersion:prior.methodologyVersion,legacyWriter:'r54',
-  targetWriter:'configured-themes',publicationKeys:{confirmed:'r37',provisional:'r88'},approvalEvidenceSha256:'a'.repeat(64)};
- assert.equal(verifyThemeOwnershipPlan({staged,expectedStageSha256,bindings:[binding]}).status,'OWNERSHIP_PLAN_VERIFIED');
+  targetWriter:'configured-themes',publicationKeys:{confirmed:'r37',provisional:'r88'},approvalEvidenceSha256:createHash('sha256').update(evidence).digest('hex')};
+ assert.equal(verifyThemeOwnershipPlan({staged,expectedStageSha256,bindings:[binding],evidenceById}).status,'OWNERSHIP_PLAN_VERIFIED');
  assert.equal(verifyThemeOwnershipPlan({staged,expectedStageSha256,bindings:[]}).results[0].reason,'EXISTING_WRITER_BINDING_MISSING');
  assert.equal(verifyThemeOwnershipPlan({staged,expectedStageSha256,bindings:[{...binding,approvalEvidenceSha256:null}]}).results[0].reason,'EXISTING_APPROVAL_EVIDENCE_MISSING');
+ assert.equal(verifyThemeOwnershipPlan({staged,expectedStageSha256,bindings:[binding]}).results[0].reason,'EXISTING_APPROVAL_EVIDENCE_UNVERIFIED');
  assert.throws(()=>verifyThemeOwnershipPlan({staged,expectedStageSha256:'0'.repeat(64),bindings:[binding]}),/STAGE_SHA/);
 });

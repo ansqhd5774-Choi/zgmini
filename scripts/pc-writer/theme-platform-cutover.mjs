@@ -62,7 +62,7 @@ export function stageThemeCutover({legacy,candidates}){
 
  // Transfer definitions bind existing evidence to one reviewed writer plan.
  // A staged score or a public response alone cannot grant publication rights.
-export function verifyThemeOwnershipPlan({staged,expectedStageSha256,bindings}){
+export function verifyThemeOwnershipPlan({staged,expectedStageSha256,bindings,evidenceById=new Map()}){
  ensure(Buffer.isBuffer(staged)&&digest(staged)===expectedStageSha256,'THEME_CUTOVER_STAGE_SHA');
  const artifact=JSON.parse(staged.toString('utf8'));
  ensure(artifact.status==='CUTOVER_INPUTS_VERIFIED'&&Array.isArray(artifact.candidates)&&artifact.candidates.length>0,'THEME_CUTOVER_STAGE_NOT_VERIFIED');
@@ -80,6 +80,8 @@ export function verifyThemeOwnershipPlan({staged,expectedStageSha256,bindings}){
    !['confirmed','provisional'].every(kind=>typeof binding.publicationKeys?.[kind]==='string'&&binding.publicationKeys[kind]))
    reason='WRITER_OR_PUBLICATION_KEY_MISSING';
   else if(!/^[a-f0-9]{64}$/.test(binding.approvalEvidenceSha256??''))reason='EXISTING_APPROVAL_EVIDENCE_MISSING';
+  else if(!Buffer.isBuffer(evidenceById.get(candidate.id))||digest(evidenceById.get(candidate.id))!==binding.approvalEvidenceSha256)
+   reason='EXISTING_APPROVAL_EVIDENCE_UNVERIFIED';
   return {id:candidate.id,status:reason?'BLOCKED':'PLAN_VERIFIED',...(reason?{reason}:{})};
  });
  return {status:results.every(result=>result.status==='PLAN_VERIFIED')?'OWNERSHIP_PLAN_VERIFIED':'OWNERSHIP_PLAN_BLOCKED',results};
