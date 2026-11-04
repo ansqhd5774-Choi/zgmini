@@ -5,55 +5,52 @@ import {makeER1PublicDisplay} from '../lib/market-calendar-er1-public-display.mj
 import {earningsDisplaySnapshot,earningsDisplayHtml} from '../lib/earnings-api-display.mjs';
 import {NOV2026_ER1_PUBLIC_KEY} from '../lib/market-calendar-nov2026-display.mjs';
 
-const dates=Array.from({length:14},(_,i)=>new Date(Date.parse('2026-10-28T00:00:00Z')+i*86400000).toISOString().slice(0,10));
-const event=(date)=>({date,ticker:'X0',company:'Example X0',marketSession:'after_market',time:null,
-  verification:'VENDOR_UNVERIFIED',source:'earnings-api'});
-const snap=earningsDisplaySnapshot({status:'READY_PRIVATE',scope:'PC_PRIVATE',publicDisplay:false,
-  redistribution:false,publicationStatus:'HELD_UNCONFIRMED',checkedAt:'2026-10-28T10:00:00Z',
-  coveredDays:dates,events:[event('2026-10-30'),event('2026-11-02')],recordCount:2,priorityCount:0});
+const event=date=>({date,ticker:'X0',company:'Example X0',marketSession:'after_market',time:null,
+ verification:'VENDOR_UNVERIFIED',source:'earnings-api'});
+const rolling=(from,events)=>{
+ const coveredDays=Array.from({length:14},(_,i)=>new Date(Date.parse(from+'T00:00:00Z')+i*86400000).toISOString().slice(0,10));
+ return earningsDisplaySnapshot({status:'READY_PRIVATE',scope:'PC_PRIVATE',publicDisplay:false,
+  redistribution:false,publicationStatus:'HELD_UNCONFIRMED',checkedAt:from+'T10:00:00Z',
+  coveredDays,events:events.map(event),recordCount:events.length,priorityCount:0});
+};
 const rows=reverse=>Array.from({length:20},(_,i)=>({issuerId:`X${i}`,tickers:[`X${i}`],
-  earningsSymbol:`X${i}`,releases:[{date:'2026-10-15',symbol:`X${i}`,eps:1,revenue:reverse?20-i:i+1}]}));
+ earningsSymbol:`X${i}`,releases:[{date:'2026-10-15',symbol:`X${i}`,eps:1,
+  revenue:reverse?20-i:i+1}]}));
+const make=reverse=>makeER1PublicDisplay(scoreER1Issuers(rows(reverse),{asOf:'2026-11-04'}));
+const grade=(html,score)=>assert.match(html,new RegExp(`기업 실적 점수 ${score.toFixed(2)}점`));
+const missing=html=>assert.match(html,/aria-label="기업 실적 점수 없음">-<\/div>/);
 
-test('November derived cohort selects only November while October retains prior cohort',()=>{
-  const prior=makeER1PublicDisplay(scoreER1Issuers(rows(false),{asOf:'2026-11-01'}));
-  const november=makeER1PublicDisplay(scoreER1Issuers(rows(true),{asOf:'2026-11-01'}));
-  const priorScore=prior.scores.find(x=>x.issuerId==='X0').score;
-  const novScore=november.scores.find(x=>x.issuerId==='X0').score;
-  assert.notEqual(priorScore,novScore,'test cohorts must distinguish scores');
-  assert.equal(NOV2026_ER1_PUBLIC_KEY,'market-calendar:earnings-nov2026-er1-score-public');
-  const oct=earningsDisplayHtml(snap,{start:'2026-10-30',end:'2026-10-30'},prior,null,november);
-  const nov=earningsDisplayHtml(snap,{start:'2026-11-02',end:'2026-11-02'},prior,null,november);
-  assert.match(oct.html,new RegExp(`기업 실적 점수 ${priorScore.toFixed(2)}점`));
-  assert.match(nov.html,new RegExp(`기업 실적 점수 ${novScore.toFixed(2)}점`));
-  assert.doesNotMatch(oct.html,new RegExp(`기업 실적 점수 ${novScore.toFixed(2)}점`));
-  assert.doesNotMatch(nov.html,new RegExp(`기업 실적 점수 ${priorScore.toFixed(2)}점`));
-  const missing=earningsDisplayHtml(snap,{start:'2026-11-02',end:'2026-11-02'},prior,null,null);
-  assert.match(missing.html,/aria-label="기업 실적 점수 없음">-<\/div>/,
-    'explicit missing November cohort must not silently reuse the October grade');
-  const notYetEnabled=earningsDisplayHtml(snap,{start:'2026-11-02',end:'2026-11-02'},prior);
-  assert.match(notYetEnabled.html,new RegExp(`기업 실적 점수 ${priorScore.toFixed(2)}점`),
-    'existing reader behavior is preserved until November cohort rollout');
-  const malformed=earningsDisplayHtml(snap,{start:'2026-11-02',end:'2026-11-02'},prior,null,
-    {...november,asOf:'2030-01-01'});
-  assert.match(malformed.html,/aria-label="기업 실적 점수 없음">-<\/div>/,
-    'rejected future snapshot must not leak an older October score');
-  const afterFirstRelease=earningsDisplayHtml(snap,{start:'2026-11-02',end:'2026-11-02'},prior,null,
-    {...november,asOf:'2026-11-04'});
-  assert.match(afterFirstRelease.html,/aria-label="기업 실적 점수 없음">-<\/div>/,
-    'post-event November cohort must not rewrite pre-event ratings');
+test('November PIT protects elapsed and same-day events while scoring upcoming ones',()=>{
+ const snap=rolling('2026-10-28',['2026-10-30','2026-11-02','2026-11-04','2026-11-06']);
+ const prior=make(false),november=make(true);
+ const priorScore=prior.scores.find(x=>x.issuerId==='X0').score;
+ const novScore=november.scores.find(x=>x.issuerId==='X0').score;
+ assert.notEqual(priorScore,novScore,'cohorts must distinguish scores');
+ assert.equal(NOV2026_ER1_PUBLIC_KEY,'market-calendar:earnings-nov2026-er1-score-public');
+ grade(earningsDisplayHtml(snap,{start:'2026-10-30',end:'2026-10-30'},prior,null,november).html,priorScore);
+ missing(earningsDisplayHtml(snap,{start:'2026-11-02',end:'2026-11-02'},prior,null,november).html);
+ missing(earningsDisplayHtml(snap,{start:'2026-11-04',end:'2026-11-04'},prior,null,november).html);
+ const upcoming=earningsDisplayHtml(snap,{start:'2026-11-06',end:'2026-11-06'},prior,null,november).html;
+ grade(upcoming,novScore);
+ assert.doesNotMatch(upcoming,new RegExp(`기업 실적 점수 ${priorScore.toFixed(2)}점`));
+ const filtered=earningsDisplayHtml(snap,{start:'2026-11-02',end:'2026-11-06',importance:3},prior,null,november);
+ assert.equal(filtered.count,novScore>=97?1:0,'★★★ filter includes only eligible future ratings');
 });
 
-test('December score selection is unchanged by November cohort',()=>{
-  const day=Array.from({length:14},(_,i)=>new Date(Date.parse('2026-11-27T00:00:00Z')+i*86400000).toISOString().slice(0,10));
-  const future=earningsDisplaySnapshot({status:'READY_PRIVATE',scope:'PC_PRIVATE',publicDisplay:false,
-    redistribution:false,publicationStatus:'HELD_UNCONFIRMED',checkedAt:'2026-11-27T10:00:00Z',
-    coveredDays:day,events:[event('2026-11-30'),event('2026-12-03')],recordCount:2,priorityCount:0});
-  const prior=makeER1PublicDisplay(scoreER1Issuers(rows(false),{asOf:'2026-11-01'}));
-  const december=makeER1PublicDisplay(scoreER1Issuers(rows(true),{asOf:'2026-11-01'}));
-  const novemberScore=prior.scores.find(x=>x.issuerId==='X0').score;
-  const decemberScore=december.scores.find(x=>x.issuerId==='X0').score;
-  const nov=earningsDisplayHtml(future,{start:'2026-11-30',end:'2026-11-30'},prior,december,prior);
-  const dec=earningsDisplayHtml(future,{start:'2026-12-03',end:'2026-12-03'},prior,december,prior);
-  assert.match(nov.html,new RegExp(`기업 실적 점수 ${novemberScore.toFixed(2)}점`));
-  assert.match(dec.html,new RegExp(`기업 실적 점수 ${decemberScore.toFixed(2)}점`));
+test('Missing or invalid November cohort never falls back to October score',()=>{
+ const snap=rolling('2026-10-28',['2026-11-06']),prior=make(false),november=make(true);
+ for(const candidate of [null,{...november,asOf:'2030-01-01'}]){
+  missing(earningsDisplayHtml(snap,{start:'2026-11-06',end:'2026-11-06'},prior,null,candidate).html);
+ }
+ const score=prior.scores.find(x=>x.issuerId==='X0').score;
+ grade(earningsDisplayHtml(snap,{start:'2026-11-06',end:'2026-11-06'},prior).html,score);
+});
+
+test('December score selection remains separate from November',()=>{
+ const snap=rolling('2026-11-27',['2026-11-30','2026-12-03']);
+ const prior=make(false),december=make(true);
+ const novScore=prior.scores.find(x=>x.issuerId==='X0').score;
+ const decScore=december.scores.find(x=>x.issuerId==='X0').score;
+ grade(earningsDisplayHtml(snap,{start:'2026-11-30',end:'2026-11-30'},prior,december,prior).html,novScore);
+ grade(earningsDisplayHtml(snap,{start:'2026-12-03',end:'2026-12-03'},prior,december,prior).html,decScore);
 });
