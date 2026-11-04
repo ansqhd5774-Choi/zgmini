@@ -261,7 +261,12 @@ export async function runNovemberProbePublish({
    report.d1ReadbackSha256=sha256(body);
    report.status='PASS';report.code=published.code;
   }
- }catch(e){report.code=codeOf(e)}
+ }catch(e){
+  report.code=codeOf(e);
+  // Keep already verified private checkpoint visible on quota/provider stops.
+  // PARTIAL is not a successful score and never allows public publication.
+  if(report.stagedActualSymbols>0)report.status='PARTIAL';
+ }
  finally{if(fd!==null){try{fs.closeSync(fd);fs.unlinkSync(lock)}
   catch{report.status='STATE_UNKNOWN';report.code='NOV30_ER1_LOCK_RELEASE_STOP'}}}
  return report;
