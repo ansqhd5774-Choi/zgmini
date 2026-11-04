@@ -31,6 +31,9 @@ export function verifyTenR88Public(feed,{confirmedDate,provisionalDate}={}){
     Number.isFinite(score)&&score>=0&&score<=100;
   });
 }
+export function r88ProvisionalLanes({provisionalDate,provisionalWait,steps}){
+ return provisionalDate?steps:steps.map(([lane])=>[lane,async()=>({status:provisionalWait})]);
+}
 export async function runTenR88Lanes({steps}={}){
  // Independent errors are recorded per lane; optional failure must not
  // prevent the remaining approved themes from updating.
@@ -62,8 +65,8 @@ export async function runTenR88Auto({dataRoot='E:/ZGmini/data',
  }).sort();
  // This bridge is one actual trading session ahead, not a calendar-date
  // label or arbitrary backfill across missing intermediate sessions.
- if(pending.length!==1)return {...report,status:pending.length?'WAIT_CONFIRMED_REFRESH':'WAIT_PROVISIONAL_SOURCE',confirmedDate};
- const provisionalDate=pending[0];
+ const provisionalDate=pending.length===1?pending[0]:null;
+ const provisionalWait=pending.length?'WAIT_CONFIRMED_REFRESH':'WAIT_PROVISIONAL_SOURCE';
  const token=await approvedNineR54SevenToken({dataRoot});
  const tokenFn=()=>token;
  const query=allowPublish?createNineR54D1Query({dataRoot,tokenFn}):null;
@@ -93,6 +96,7 @@ export async function runTenR88Auto({dataRoot='E:/ZGmini/data',
    if(candidate.scoreAsOf!==confirmedDate)return {status:'WAIT_CONFIRMED_SOURCE',observationDate:candidate.scoreAsOf};
    return runSpacePublishR32({dataRoot,allowPublish,tokenFn});
   }],
+  ...r88ProvisionalLanes({provisionalDate,provisionalWait,steps:[
   ['R32_PROVISIONAL',async()=>{
    const latest=await readPublic();
    const staged=await buildNineR88FromStorage({dataRoot,configDirectory,base:latest,targetDate:provisionalDate});
@@ -101,6 +105,7 @@ export async function runTenR88Auto({dataRoot='E:/ZGmini/data',
   }],
   ['SPACE_PROVISIONAL',()=>runSpaceR8({dataRoot,allowPublish,tokenFn,publicRead:readPublic})],
   ['DATA_CENTER_PROVISIONAL',()=>runDcPowerR8({dataRoot,allowPublish,tokenFn,publicRead:readPublic})],
+  ]}),
  ];
  report.lanes=await runTenR88Lanes({steps});
  report.d1Writes=report.lanes.reduce((n,r)=>n+(r.d1Writes??0),0);

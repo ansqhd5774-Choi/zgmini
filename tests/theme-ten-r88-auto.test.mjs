@@ -16,3 +16,16 @@ test('ten-theme completion requires every actual confirmed date and provisional 
  const absent=structuredClone(base);delete absent.provisional.points[0].scores['데이터센터·전력'];assert.equal(verifyTenR88Public(absent,dates),false);
  const legacy=structuredClone(base);legacy.r32ProvisionalStatus='PENDING';assert.equal(verifyTenR88Public(legacy,dates),false);
 });
+
+test('missing provisional input does not skip independent confirmed lanes',async()=>{
+ const {r88ProvisionalLanes,runTenR88Lanes}=await import('../scripts/pc-writer/theme-ten-r88-auto.mjs');
+ for(const status of ['WAIT_PROVISIONAL_SOURCE','WAIT_CONFIRMED_REFRESH']){
+  const out=await runTenR88Lanes({steps:[
+   ['DATA_CENTER_CONFIRMED',async()=>({status:'PUBLIC_API_VERIFIED'})],
+   ...r88ProvisionalLanes({provisionalDate:null,provisionalWait:status,steps:[
+    ['R32_PROVISIONAL',async()=>{throw Error('must not execute');}],
+   ]}),
+  ]});
+  assert.deepEqual(out,[{lane:'DATA_CENTER_CONFIRMED',status:'PUBLIC_API_VERIFIED'},{lane:'R32_PROVISIONAL',status}]);
+ }
+});
