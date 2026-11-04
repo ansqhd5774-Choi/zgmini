@@ -36,7 +36,7 @@ function readJson(root,relative,max=8_000_000){
  const file=path.join(root,...relative.split('/'));
  return JSON.parse(regular(file,max).toString('utf8'));
 }
-function summarize(meta,data,sourceStoredAt,{dateField}={}){
+export function summarize(meta,data,sourceStoredAt,{dateField}={}){
  if(!Array.isArray(data)||data.length<2||data.length>25000||!stamp(sourceStoredAt))
   throw Error('INFL19_SOURCE_ROWS_INVALID');
  const ordered=[],seen=new Set();
