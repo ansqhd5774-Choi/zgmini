@@ -1,6 +1,7 @@
 ZGMINI PLUGIN & EXECUTION RULES — COMPACT R5 FINAL
 
 ## 테마 갱신 장애 작업 시작 기준
+- [전체 공개 테마 인식과 갱신 완료 조건](docs/THEME_SCALE_AND_METHODOLOGY_WORKFLOW.md#전체-공개-테마-인식과-갱신-완료-조건)을 적용한다. 기존·신규 공개 테마를 동일 등록 목록에서 발견하고, 실행 결과·공개 API의 ID와 테마별 확정/잠정 관측일을 대조한다.
 - [현재 운영 공급처와 복구 범위](docs/THEME_NINE_LIVE_ARCHITECTURE.md#현재-운영-공급처와-복구-범위)를 먼저 확인한다. R32, GetMarketHistory 확정치 48시간, MarketParquet 잠정치 24시간을 유지한다. Alpaca 재조사·추가·교체·fallback은 별도 사용자 지시가 있을 때만 시작한다.
 
 ## 테마 확장·산식 일괄 관리 — 2026-11-03
