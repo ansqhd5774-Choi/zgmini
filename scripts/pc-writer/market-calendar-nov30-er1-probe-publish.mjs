@@ -13,11 +13,13 @@ export const NOV2026_ER1_PUBLIC_KEY='market-calendar:earnings-nov2026-er1-score-
 const PC_HOME='E:\\ZGmini\\data\\pc-writer';
 const ENDPOINT='https://api.earningsapi.com/v1/earnings';
 const MAX_SYMBOLS=3;
+const BATCH20_SYMBOLS=20;
+const BATCH20_MAX_GET=17;
 const MAX_VENDOR_BYTES=2_000_000;
 const MAX_LOCAL_BYTES=2_500_000;
 const SYMBOL=/^[A-Z0-9][A-Z0-9.\-]{0,11}$/;
 const DATE=/^20\d\d-\d\d-\d\d$/;
-const VALID_FOLDERS=['nov30-er1-probe','dec31-symbol-probe','dec31-symbol-batch-a'];
+const VALID_FOLDERS=['nov30-er1-batch20','nov30-er1-probe','dec31-symbol-probe','dec31-symbol-batch-a'];
 const sha256=body=>createHash('sha256').update(body).digest('hex');
 const stop=code=>{throw Error(code)};
 const codeOf=e=>/^NOV30_ER1_[A-Z0-9_]+$/.test(String(e?.message))?
@@ -43,8 +45,9 @@ function providerKey(pcHome,env){
 
 // Source events MUST come from the existing saved PC November calendar.
 // No manually invented ticker, whole-market roster or provider lookup.
-export function selectFutureNovemberSymbols(events,asOf){
- if(!Array.isArray(events)||!validDay(asOf)||events.length>5000)
+export function selectFutureNovemberSymbols(events,asOf,limit=MAX_SYMBOLS){
+ if(!Array.isArray(events)||!validDay(asOf)||events.length>5000||
+  ![MAX_SYMBOLS,BATCH20_SYMBOLS].includes(limit))
   stop('NOV30_ER1_CALENDAR_INPUT_INVALID');
  const found=new Map();
  for(const row of events){
@@ -56,7 +59,7 @@ export function selectFutureNovemberSymbols(events,asOf){
   }
  }
  return [...found].sort((a,b)=>a[1].localeCompare(b[1])||
-  a[0].localeCompare(b[0])).slice(0,MAX_SYMBOLS).map(([symbol])=>symbol);
+  a[0].localeCompare(b[0])).slice(0,limit).map(([symbol])=>symbol);
 }
 
 export function validateVendorActual(body,symbol){
@@ -91,8 +94,8 @@ function existingActual(pcHome,symbol){
  }
  return null;
 }
-async function fetchAndStage(pcHome,symbol,{key,fetcher,clock}){
- const folder=path.join(pcHome,'er1-input','nov30-er1-probe');
+async function fetchAndStage(pcHome,symbol,{key,fetcher,clock,stageFolder='nov30-er1-probe'}){
+ const folder=path.join(pcHome,'er1-input',stageFolder);
  fs.mkdirSync(folder,{recursive:true});
  const target=path.join(folder,symbol+'.json');
  if(fs.existsSync(target))return readStored(target,symbol);
@@ -192,26 +195,34 @@ export async function syncNovemberER1D1({remote,core,body,storedAt}){
 export async function runNovemberProbePublish({
  pcHome=PC_HOME,clock=Date.now,env=process.env,fetcher=fetch,
  calendarLoader=loadNovemberEvents,scorer,publicSerializer,remoteFactory=getRemote,
- requireWindows=true,publish=false
+ requireWindows=true,publish=false,candidateLimit=MAX_SYMBOLS,
+ providerRequestLimit=MAX_SYMBOLS,outputTag='nov30-er1-probe'
 }={}){
- const report={schema:'ZGMINI_NOV30_ER1_PROBE_PUBLISH_V1',status:'BLOCKED',
-  code:'NOV30_ER1_NOT_STARTED',pilotOnly:!publish,candidateLimit:MAX_SYMBOLS,selectedSymbols:0,
+ const batch20=candidateLimit===BATCH20_SYMBOLS&&
+  providerRequestLimit===BATCH20_MAX_GET&&outputTag==='nov30-er1-batch20';
+ const pilot=candidateLimit===MAX_SYMBOLS&&providerRequestLimit===MAX_SYMBOLS&&
+  outputTag==='nov30-er1-probe';
+ const report={schema:batch20?'ZGMINI_NOV30_ER1_BATCH20_V1':
+  'ZGMINI_NOV30_ER1_PROBE_PUBLISH_V1',status:'BLOCKED',
+  code:'NOV30_ER1_NOT_STARTED',pilotOnly:!publish,candidateLimit,providerRequestLimit,
+  selectedSymbols:0,
   providerCalls:0,reusedActualSymbols:0,stagedActualSymbols:0,
-  scoreableIssuers:0,star3Count:0,coreWrites:0,existingFeedWrites:0,
+  scoreableIssuers:0,star3Count:0,highestScore:null,coreWrites:0,existingFeedWrites:0,
   schedulerWrites:0,rawRowsPublic:0,d1Writes:0};
  let fd=null,lock=null;
  try{
+  if((!pilot&&!batch20)||(batch20&&publish))stop('NOV30_ER1_BATCH_CONTRACT_STOP');
   if(requireWindows&&process.platform!=='win32')stop('NOV30_ER1_WINDOWS_ONLY');
   if(!path.isAbsolute(pcHome)||!fs.existsSync(pcHome))
    stop('NOV30_ER1_PC_HOME_INVALID');
   const now=clock(),asOf=new Date(now).toISOString().slice(0,10);
   if(asOf<'2026-11-01'||asOf>'2026-11-30')
    stop('NOV30_ER1_EXECUTION_DATE_STOP');
-  const events=await calendarLoader(pcHome),symbols=selectFutureNovemberSymbols(events,asOf);
+  const events=await calendarLoader(pcHome),symbols=selectFutureNovemberSymbols(events,asOf,candidateLimit);
   report.selectedSymbols=symbols.length;report.asOf=asOf;
   if(!symbols.length)stop('NOV30_ER1_NO_FUTURE_CALENDAR_SYMBOLS');
   const parent=path.join(pcHome,'er1-input');
-  lock=path.join(parent,'nov30-er1-probe-publish.lock');
+  lock=path.join(parent,outputTag+'-publish.lock');
   try{fd=fs.openSync(lock,'wx')}catch{stop('NOV30_ER1_INDEPENDENT_LOCK_BUSY')}
   fs.writeFileSync(fd,JSON.stringify({pid:process.pid,purpose:'nov30-er1-probe-publish'}));
   const found=new Map();let latest=0;
@@ -219,11 +230,13 @@ export async function runNovemberProbePublish({
    let actual=existingActual(pcHome,symbol);
    if(actual)report.reusedActualSymbols++;
    else{
+    if(report.providerCalls>=providerRequestLimit)
+     stop('NOV30_ER1_PROVIDER_BUDGET_STOP');
     const key=providerKey(pcHome,env);
     if(typeof key!=='string'||key.length<8||/\s/.test(key))
      stop('NOV30_ER1_PROVIDER_KEY_UNAVAILABLE');
     report.providerCalls++;
-    actual=await fetchAndStage(pcHome,symbol,{key,fetcher,clock});
+    actual=await fetchAndStage(pcHome,symbol,{key,fetcher,clock,stageFolder:outputTag});
     report.stagedActualSymbols++;
    }
    latest=Math.max(latest,Date.parse(actual.storedAt));
@@ -239,7 +252,7 @@ export async function runNovemberProbePublish({
   const publicResult=serialize(scored),body=JSON.stringify(publicResult);
   if(Buffer.byteLength(body,'utf8')>100000)
    stop('NOV30_ER1_PUBLIC_SIZE_STOP');
-  const outDir=path.join(parent,'nov30-er1-probe-derived');
+  const outDir=path.join(parent,outputTag+'-derived');
   fs.mkdirSync(outDir,{recursive:true});
   const out=path.join(outDir,'current.json');
   if(fs.existsSync(out)&&fs.readFileSync(out,'utf8')!==body)
@@ -248,6 +261,7 @@ export async function runNovemberProbePublish({
   if(fs.readFileSync(out,'utf8')!==body)stop('NOV30_ER1_LOCAL_DERIVED_READBACK_STOP');
   report.scoreableIssuers=publicResult.recordCount;
   report.star3Count=publicResult.star3Count;
+  report.highestScore=scored.rankings?.[0]?.score??null;
   report.sourceStoredAt=new Date(latest).toISOString();
   report.localScoreSha256=sha256(body);
   if(!publish){
