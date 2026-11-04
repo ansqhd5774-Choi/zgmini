@@ -30,6 +30,8 @@
 
 ## 공통 실행과 장애
 
+갱신 복구 시 [현재 운영 공급처와 복구 범위](THEME_NINE_LIVE_ARCHITECTURE.md#현재-운영-공급처와-복구-범위)를 적용한다. 브랜치의 실제 실행 코드, 완료된 실PC 증거, 현재 설치본을 대조한 뒤 첫 미완료 단계부터 재개한다.
+
 source→calculate→validate→publish→readback→public의 동일 단계로 테마와 확정/잠정을 처리한다. private 모드는 validate에서 끝난다.
 공유 공급처·가격모드·입력정책·symbol이 같을 때만 수집 계획을 통합한다. 다른 가격모드를 합치지 않는다.
 checkpoint는 등록·실행·모드 fingerprint에 묶고 CAS로 저장한다. 검증된 단계를 재실행하지 않는다. 외부 부작용은 stable effectKey와 기존 게시기 CAS/readback으로 중복을 막는다.

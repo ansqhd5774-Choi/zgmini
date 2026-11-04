@@ -1,5 +1,8 @@
 ZGMINI PLUGIN & EXECUTION RULES — COMPACT R5 FINAL
 
+## 테마 갱신 장애 작업 시작 기준
+- [현재 운영 공급처와 복구 범위](docs/THEME_NINE_LIVE_ARCHITECTURE.md#현재-운영-공급처와-복구-범위)를 먼저 확인한다. R32, GetMarketHistory 확정치 48시간, MarketParquet 잠정치 24시간을 유지한다. Alpaca 재조사·추가·교체·fallback은 별도 사용자 지시가 있을 때만 시작한다.
+
 ## 테마 확장·산식 일괄 관리 — 2026-11-03
 - docs/THEME_SCALE_AND_METHODOLOGY_WORKFLOW.md를 따른다. 목적은 향후 모든 테마의 설정 기반 추가와 공통 버전별 산식 일괄 관리다. 특정 테마 복구로 목적을 축소하지 않는다. 테마·ETF 후보 수 상한을 두지 않고 자원 정책은 cursor/resume으로 처리한다.
 - 신규 테마별 CMD/예약/API/Reader/차트를 복제하지 않는다. 기존 공통 코드와 정상 결과를 재사용한다. 과거 운영 개수·미완료 snapshot을 현재 상태로 적용해 성공 작업을 재개하지 않는다. PC 공통 필수 절차 상시 승인은 zgmini-pc-control 최신 정본을 따르며 개별 업무의 게시·배포 범위는 기존 승인을 재사용한다.
