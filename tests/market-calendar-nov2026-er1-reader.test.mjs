@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
 import {scoreER1Issuers} from '../lib/market-calendar-er1-earnings-score.mjs';
 import {makeER1PublicDisplay} from '../lib/market-calendar-er1-public-display.mjs';
 import {earningsDisplaySnapshot,earningsDisplayHtml} from '../lib/earnings-api-display.mjs';
@@ -52,4 +53,13 @@ test('December score selection remains separate from November',()=>{
  const decScore=december.scores.find(x=>x.issuerId==='X0').score;
  grade(earningsDisplayHtml(snap,{start:'2026-11-30',end:'2026-11-30'},prior,december,prior).html,novScore);
  grade(earningsDisplayHtml(snap,{start:'2026-12-03',end:'2026-12-03'},prior,december,prior).html,decScore);
+});
+
+test('actual API route reads the November key separately and sends it to the ER1 reader',()=>{
+ const route=readFileSync(new URL('../app/api/earnings-calendar-display/route.ts',import.meta.url),'utf8');
+ assert.match(route,/NOV2026_ER1_PUBLIC_KEY,withNov2026Display/);
+ assert.match(route,/store\.readOutput\(NOV2026_ER1_PUBLIC_KEY\)/);
+ assert.match(route,/request\.url,er1,decemberER1,novemberER1\)/);
+ assert.match(route,/store\.readOutput\(ER1_EARNINGS_DISPLAY_PUBLIC_KEY\)/);
+ assert.match(route,/store\.readOutput\(DEC2026_ER1_PUBLIC_KEY\)/);
 });
