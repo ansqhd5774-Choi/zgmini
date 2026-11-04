@@ -15,11 +15,15 @@ const ENDPOINT='https://api.earningsapi.com/v1/earnings';
 const MAX_SYMBOLS=3;
 const BATCH20_SYMBOLS=20;
 const BATCH20_MAX_GET=17;
+const FULL_MAX_GET=17;
 const MAX_VENDOR_BYTES=2_000_000;
 const MAX_LOCAL_BYTES=2_500_000;
+// D1 row max is 2 MB; permit a full-month derived payload above pilot 100 KB.
+const MAX_FULL_DERIVED_BYTES=1_000_000;
 const SYMBOL=/^[A-Z0-9][A-Z0-9.\-]{0,11}$/;
 const DATE=/^20\d\d-\d\d-\d\d$/;
-const VALID_FOLDERS=['nov30-er1-batch20','nov30-er1-probe','dec31-symbol-probe','dec31-symbol-batch-a'];
+const VALID_FOLDERS=['nov30-er1-batch20','nov30-er1-probe',
+ 'nov30-er1-full','dec31-symbol-probe','dec31-symbol-batch-a'];
 const sha256=body=>createHash('sha256').update(body).digest('hex');
 const stop=code=>{throw Error(code)};
 const codeOf=e=>/^NOV30_ER1_[A-Z0-9_]+$/.test(String(e?.message))?
@@ -28,15 +32,16 @@ const codeOf=e=>/^NOV30_ER1_[A-Z0-9_]+$/.test(String(e?.message))?
 // A growing November cohort legitimately changes its relative ER1 scores.
 // Preserve each verified version, then atomically replace only the current
 // pointer. An already recorded digest must never change its contents.
-export function saveNovemberER1Derived(outDir,body){
- if(typeof body!=='string'||Buffer.byteLength(body,'utf8')>100000)
+export function saveNovemberER1Derived(outDir,body,maxBytes=100000){
+ if(![100000,MAX_FULL_DERIVED_BYTES].includes(maxBytes)||
+  typeof body!=='string'||Buffer.byteLength(body,'utf8')>maxBytes)
   stop('NOV30_ER1_LOCAL_DERIVED_BODY_INVALID');
  try{JSON.parse(body)}catch{stop('NOV30_ER1_LOCAL_DERIVED_BODY_INVALID')}
  fs.mkdirSync(outDir,{recursive:true});
  const current=path.join(outDir,'current.json');
  let old=null;
  if(fs.existsSync(current)){
-  if(!safeFile(current,100000))stop('NOV30_ER1_LOCAL_DERIVED_CURRENT_INVALID');
+  if(!safeFile(current,maxBytes))stop('NOV30_ER1_LOCAL_DERIVED_CURRENT_INVALID');
   old=fs.readFileSync(current,'utf8');
   try{JSON.parse(old)}catch{stop('NOV30_ER1_LOCAL_DERIVED_CURRENT_INVALID')}
  }
@@ -45,7 +50,7 @@ export function saveNovemberER1Derived(outDir,body){
  const snapshot=raw=>{
   const file=path.join(versions,sha256(raw)+'.json');
   if(fs.existsSync(file)){
-   if(!safeFile(file,100000)||fs.readFileSync(file,'utf8')!==raw)
+   if(!safeFile(file,maxBytes)||fs.readFileSync(file,'utf8')!==raw)
     stop('NOV30_ER1_LOCAL_DERIVED_VERSION_DRIFT_STOP');
    return;
   }
@@ -64,7 +69,7 @@ export function saveNovemberER1Derived(outDir,body){
    fs.renameSync(temp,current);
   }finally{if(fs.existsSync(temp))fs.unlinkSync(temp)}
  }
- if(!safeFile(current,100000)||fs.readFileSync(current,'utf8')!==body)
+ if(!safeFile(current,maxBytes)||fs.readFileSync(current,'utf8')!==body)
   stop('NOV30_ER1_LOCAL_DERIVED_READBACK_STOP');
  return sha256(body);
 }
@@ -91,7 +96,7 @@ function providerKey(pcHome,env){
 // No manually invented ticker, whole-market roster or provider lookup.
 export function selectFutureNovemberSymbols(events,asOf,limit=MAX_SYMBOLS){
  if(!Array.isArray(events)||!validDay(asOf)||events.length>5000||
-  ![MAX_SYMBOLS,BATCH20_SYMBOLS].includes(limit))
+  ![MAX_SYMBOLS,BATCH20_SYMBOLS,null].includes(limit))
   stop('NOV30_ER1_CALENDAR_INPUT_INVALID');
  const found=new Map();
  for(const row of events){
@@ -102,8 +107,27 @@ export function selectFutureNovemberSymbols(events,asOf,limit=MAX_SYMBOLS){
    if(!old||row.date<old)found.set(row.ticker,row.date);
   }
  }
- return [...found].sort((a,b)=>a[1].localeCompare(b[1])||
-  a[0].localeCompare(b[0])).slice(0,limit).map(([symbol])=>symbol);
+ const sorted=[...found].sort((a,b)=>a[1].localeCompare(b[1])||
+  a[0].localeCompare(b[0]));
+ return (limit===null?sorted:sorted.slice(0,limit)).map(([symbol])=>symbol);
+}
+
+// The scorer already defines two share-class issuer aliases. Keep one
+// earnings source per issuer, while making both valid tickers share its score.
+// A deterministic lexical ticker is chosen, never the most favorable EPS.
+function savedIssuerRows(found){
+ const byIssuer=new Map();
+ for(const [symbol,actuals] of found){
+  const issuerId=symbol==='GOOG'||symbol==='GOOGL'?'ALPHABET':
+   /^BRK[.\-][AB]$/.test(symbol)?'BERKSHIRE':symbol;
+  const group=byIssuer.get(issuerId)??[];
+  group.push({symbol,actuals});byIssuer.set(issuerId,group);
+ }
+ return [...byIssuer].map(([issuerId,group])=>{
+  group.sort((a,b)=>a.symbol.localeCompare(b.symbol));
+  return {issuerId,tickers:group.map(row=>row.symbol),
+   earningsSymbol:group[0].symbol,releases:group[0].actuals};
+ });
 }
 
 function actualRowValid(raw,symbol){
@@ -264,16 +288,22 @@ export async function runNovemberProbePublish({
   providerRequestLimit===BATCH20_MAX_GET&&outputTag==='nov30-er1-batch20';
  const pilot=candidateLimit===MAX_SYMBOLS&&providerRequestLimit===MAX_SYMBOLS&&
   outputTag==='nov30-er1-probe';
- const report={schema:batch20?'ZGMINI_NOV30_ER1_BATCH20_V1':
+ // Fixed reusable private entry: each run fetches at most 17 missing histories.
+ // Subsequent runs reuse the verified files and eventually score the FULL set.
+ const full=candidateLimit===null&&providerRequestLimit===FULL_MAX_GET&&
+  outputTag==='nov30-er1-full';
+ const report={schema:full?'ZGMINI_NOV30_ER1_FULL_PRIVATE_V1':
+  batch20?'ZGMINI_NOV30_ER1_BATCH20_V1':
   'ZGMINI_NOV30_ER1_PROBE_PUBLISH_V1',status:'BLOCKED',
   code:'NOV30_ER1_NOT_STARTED',pilotOnly:!publish,candidateLimit,providerRequestLimit,
-  selectedSymbols:0,rejectedActualRows:0,isolatedSymbols:0,
+  selectedSymbols:0,missingActualSymbols:0,rejectedActualRows:0,isolatedSymbols:0,
   providerCalls:0,reusedActualSymbols:0,stagedActualSymbols:0,
   scoreableIssuers:0,star3Count:0,highestScore:null,coreWrites:0,existingFeedWrites:0,
   schedulerWrites:0,rawRowsPublic:0,d1Writes:0};
  let fd=null,lock=null;
  try{
-  if((!pilot&&!batch20)||(batch20&&publish))stop('NOV30_ER1_BATCH_CONTRACT_STOP');
+  if((!pilot&&!batch20&&!full)||((batch20||full)&&publish))
+   stop('NOV30_ER1_BATCH_CONTRACT_STOP');
   if(requireWindows&&process.platform!=='win32')stop('NOV30_ER1_WINDOWS_ONLY');
   if(!path.isAbsolute(pcHome)||!fs.existsSync(pcHome))
    stop('NOV30_ER1_PC_HOME_INVALID');
@@ -282,6 +312,7 @@ export async function runNovemberProbePublish({
    stop('NOV30_ER1_EXECUTION_DATE_STOP');
   const events=await calendarLoader(pcHome),symbols=selectFutureNovemberSymbols(events,asOf,candidateLimit);
   report.selectedSymbols=symbols.length;report.asOf=asOf;
+  if(full)report.candidateSetSha256=sha256(JSON.stringify(symbols));
   if(!symbols.length)stop('NOV30_ER1_NO_FUTURE_CALENDAR_SYMBOLS');
   const parent=path.join(pcHome,'er1-input');
   lock=path.join(parent,outputTag+'-publish.lock');
@@ -311,21 +342,25 @@ export async function runNovemberProbePublish({
     report.stagedActualSymbols++;
    }
    report.rejectedActualRows+=actual.rejectedRows??0;
-   if(!actual.actuals.length){report.isolatedSymbols++;continue}
+  // A successfully observed empty history is a valid missing observation,
+  // not a broken provider response. The unchanged scorer records its reason.
+  if(!actual.actuals.length&&!full){report.isolatedSymbols++;continue}
    latest=Math.max(latest,Date.parse(actual.storedAt));
    found.set(symbol,actual.actuals);
   }
-  const rows=[...found.keys()].map(symbol=>({issuerId:symbol,tickers:[symbol],
-   earningsSymbol:symbol,releases:found.get(symbol)}));
+  const rows=full?savedIssuerRows(found):[...found.keys()].map(symbol=>({
+   issuerId:symbol,tickers:[symbol],earningsSymbol:symbol,
+   releases:found.get(symbol)}));
   const calc=scorer??(await import('../../lib/market-calendar-er1-earnings-score.mjs')).scoreER1Issuers;
   const serialize=publicSerializer??(await import('../../lib/market-calendar-er1-public-display.mjs')).makeER1PublicDisplay;
   const scored=calc(rows,{asOf});
   if(scored?.status!=='READY_SHADOW'||!scored.coverage?.scoreableIssuers)
    stop('NOV30_ER1_NO_SCOREABLE_ACTUALS');
   const publicResult=serialize(scored),body=JSON.stringify(publicResult);
-  if(Buffer.byteLength(body,'utf8')>100000)
+  if(Buffer.byteLength(body,'utf8')>(full?MAX_FULL_DERIVED_BYTES:100000))
    stop('NOV30_ER1_PUBLIC_SIZE_STOP');
-  saveNovemberER1Derived(path.join(parent,outputTag+'-derived'),body);
+  const derivedDir=path.join(parent,outputTag+'-derived');
+  saveNovemberER1Derived(derivedDir,body,full?MAX_FULL_DERIVED_BYTES:100000);
   report.scoreableIssuers=publicResult.recordCount;
   report.star3Count=publicResult.star3Count;
   report.highestScore=scored.rankings?.[0]?.score??null;
@@ -336,6 +371,32 @@ export async function runNovemberProbePublish({
    report.status=incomplete?'PARTIAL':'PASS';
    report.code=incomplete?'NOV30_ER1_PARTIAL_PREVIEW_VERIFIED':
     'NOV30_ER1_PILOT_PREVIEW_VERIFIED';
+   if(full&&!incomplete){
+    if(report.reusedActualSymbols+report.stagedActualSymbols!==symbols.length||
+     publicResult.coverage?.inputSymbols!==symbols.length||
+     publicResult.coverage?.observedIssuers!==rows.length)
+     stop('NOV30_ER1_FULL_COHORT_INCOMPLETE_STOP');
+    const manifest={schema:'ZGMINI_NOV30_ER1_FULL_PRIVATE_V1',
+     status:'PASS',pilotOnly:true,asOf,selectedSymbols:symbols.length,
+     scoreableIssuers:report.scoreableIssuers,missingActualSymbols:0,
+     isolatedSymbols:0,rejectedActualRows:0,
+     candidateSetSha256:report.candidateSetSha256,
+     localScoreSha256:report.localScoreSha256,
+     sourceStoredAt:report.sourceStoredAt,completedAt:new Date(now).toISOString()};
+    const manifestFile=path.join(derivedDir,'complete-manifest.json');
+    const manifestBody=JSON.stringify(manifest)+'\n';
+    const temp=manifestFile+'.part-'+process.pid+'-'+Date.now();
+    try{
+     fs.writeFileSync(temp,manifestBody,{flag:'wx'});
+     if(fs.readFileSync(temp,'utf8')!==manifestBody)
+      stop('NOV30_ER1_FULL_MANIFEST_STAGE_STOP');
+     fs.renameSync(temp,manifestFile);
+    }finally{if(fs.existsSync(temp))fs.unlinkSync(temp)}
+    if(!safeFile(manifestFile,65536)||
+     fs.readFileSync(manifestFile,'utf8')!==manifestBody)
+     stop('NOV30_ER1_FULL_MANIFEST_READBACK_STOP');
+    report.completeManifest='nov30-er1-full-derived/complete-manifest.json';
+   }
   }else{
    if(incomplete)stop('NOV30_ER1_PARTIAL_PUBLISH_STOP');
    // Only a separately approved exact B publish entry may opt into this
@@ -350,10 +411,14 @@ export async function runNovemberProbePublish({
   report.code=codeOf(e);
   // Keep already verified private checkpoint visible on quota/provider stops.
   // PARTIAL is not a successful score and never allows public publication.
-  if(report.stagedActualSymbols>0)report.status='PARTIAL';
+  if(report.stagedActualSymbols>0||full&&report.reusedActualSymbols>0)
+   report.status='PARTIAL';
+ }finally{
+  if(full)report.missingActualSymbols=Math.max(0,
+   report.selectedSymbols-report.reusedActualSymbols-report.stagedActualSymbols);
+  if(fd!==null){try{fs.closeSync(fd);fs.unlinkSync(lock)}
+   catch{report.status='STATE_UNKNOWN';report.code='NOV30_ER1_LOCK_RELEASE_STOP'}}
  }
- finally{if(fd!==null){try{fs.closeSync(fd);fs.unlinkSync(lock)}
-  catch{report.status='STATE_UNKNOWN';report.code='NOV30_ER1_LOCK_RELEASE_STOP'}}}
  return report;
 }
 
