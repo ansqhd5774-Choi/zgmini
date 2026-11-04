@@ -19,7 +19,7 @@ type Indicator={
  observationDate?:string|null;asOfDate?:string|null;availableAt?:string|null;
  previousValue?:number|null;previousObservationDate?:string|null;
  criterion?:string|null;criterionLabel?:string|null;
- source?:string|null;sourceDisplay?:string|null;sourceStoredAt?:string|null;availableAt?:string|null;sourceUrl?:string|null;description?:string|null;content?:string|null;
+ source?:string|null;sourceDisplay?:string|null;sourceStoredAt?:string|null;sourceUrl?:string|null;description?:string|null;content?:string|null;
  researchJudgement?:{name:string;tone:"positive"|"negative"|"neutral"|"missing"};
  history?:Point[];trend?:Point[];
  releaseCadence?:string|null;nextReleaseDate?:string|null;nextRelease?:string|null;
