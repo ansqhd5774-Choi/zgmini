@@ -62,20 +62,27 @@ export function selectFutureNovemberSymbols(events,asOf,limit=MAX_SYMBOLS){
   a[0].localeCompare(b[0])).slice(0,limit).map(([symbol])=>symbol);
 }
 
-export function validateVendorActual(body,symbol){
+function actualRowValid(raw,symbol){
+ return raw&&typeof raw==='object'&&!Array.isArray(raw)&&
+  raw.symbol===symbol&&validDay(raw.date)&&
+  Object.hasOwn(raw,'eps')&&Object.hasOwn(raw,'revenue')&&
+  (raw.eps===null||typeof raw.eps==='number'&&Number.isFinite(raw.eps))&&
+  (raw.revenue===null||typeof raw.revenue==='number'&&
+   Number.isFinite(raw.revenue)&&raw.revenue>=0);
+}
+export function inspectVendorActual(body,symbol){
  if(!SYMBOL.test(symbol)||!Array.isArray(body)||body.length>1000)
   stop('NOV30_ER1_VENDOR_SHAPE_INVALID');
- const rows=[];
+ const rows=[];let rejectedRows=0;
  for(const raw of body){
-  if(!raw||typeof raw!=='object'||Array.isArray(raw)||raw.symbol!==symbol||
-   !validDay(raw.date)||!Object.hasOwn(raw,'eps')||
-   !Object.hasOwn(raw,'revenue')||
-   !(raw.eps===null||typeof raw.eps==='number'&&Number.isFinite(raw.eps))||
-   !(raw.revenue===null||typeof raw.revenue==='number'&&
-    Number.isFinite(raw.revenue)&&raw.revenue>=0))
-   stop('NOV30_ER1_VENDOR_ACTUAL_INVALID');
+  if(!actualRowValid(raw,symbol)){rejectedRows++;continue}
   rows.push({symbol,date:raw.date,eps:raw.eps,revenue:raw.revenue});
  }
+ return {rows,rejectedRows};
+}
+export function validateVendorActual(body,symbol){
+ const {rows,rejectedRows}=inspectVendorActual(body,symbol);
+ if(rejectedRows)stop('NOV30_ER1_VENDOR_ACTUAL_INVALID');
  return rows;
 }
 function readStored(file,symbol){
@@ -84,8 +91,16 @@ function readStored(file,symbol){
  catch{stop('NOV30_ER1_STORED_JSON_INVALID')}
  if(!Number.isFinite(Date.parse(saved?.storedAt)))
   stop('NOV30_ER1_STORED_DATE_INVALID');
- const actuals=validateVendorActual(saved.body,symbol);
- return {storedAt:saved.storedAt,actuals};
+ const checked=inspectVendorActual(saved.body,symbol);
+ if(saved.validation===undefined){
+  // Existing archives were written under the strict all-rows contract.
+  if(checked.rejectedRows)stop('NOV30_ER1_STORED_ACTUAL_INVALID');
+ }else if(!saved.validation||typeof saved.validation!=='object'||
+  saved.validation.validRows!==checked.rows.length||
+  saved.validation.rejectedRows!==checked.rejectedRows)
+  stop('NOV30_ER1_STORED_VALIDATION_INVALID');
+ return {storedAt:saved.storedAt,actuals:checked.rows,
+  rejectedRows:checked.rejectedRows};
 }
 export function existingActual(pcHome,symbol){
  for(const folder of VALID_FOLDERS){
@@ -111,22 +126,25 @@ async function fetchAndStage(pcHome,symbol,{key,fetcher,clock,stageFolder='nov30
  if(typeof bytes!=='string'||Buffer.byteLength(bytes,'utf8')>MAX_VENDOR_BYTES)
   stop('NOV30_ER1_PROVIDER_SIZE_STOP');
  let body;try{body=JSON.parse(bytes)}catch{stop('NOV30_ER1_PROVIDER_JSON_STOP')}
- const expected=validateVendorActual(body,symbol);
+ const expected=inspectVendorActual(body,symbol);
  const storedAt=new Date(clock()).toISOString();
  // Write a complete sibling then rename inside the same private directory.
  // One independently locked lane owns this exact path; never replace a saved file.
  const temp=target+'.part-'+process.pid+'-'+Date.now();
  try{
-  fs.writeFileSync(temp,JSON.stringify({storedAt,body})+'\n',
+  fs.writeFileSync(temp,JSON.stringify({storedAt,body,validation:{
+   validRows:expected.rows.length,rejectedRows:expected.rejectedRows}})+'\n',
    {encoding:'utf8',flag:'wx'});
   const staged=readStored(temp,symbol);
-  if(JSON.stringify(staged.actuals)!==JSON.stringify(expected)||
+  if(JSON.stringify(staged.actuals)!==JSON.stringify(expected.rows)||
+   staged.rejectedRows!==expected.rejectedRows||
    staged.storedAt!==storedAt)stop('NOV30_ER1_LOCAL_STAGE_VERIFY_STOP');
   if(fs.existsSync(target))stop('NOV30_ER1_CONCURRENT_STAGE_STOP');
   fs.renameSync(temp,target);
  }finally{if(fs.existsSync(temp))fs.unlinkSync(temp)}
  const actual=readStored(target,symbol);
- if(JSON.stringify(actual.actuals)!==JSON.stringify(expected)||
+ if(JSON.stringify(actual.actuals)!==JSON.stringify(expected.rows)||
+  actual.rejectedRows!==expected.rejectedRows||
   actual.storedAt!==storedAt)stop('NOV30_ER1_LOCAL_READBACK_STOP');
  return actual;
 }
@@ -205,7 +223,7 @@ export async function runNovemberProbePublish({
  const report={schema:batch20?'ZGMINI_NOV30_ER1_BATCH20_V1':
   'ZGMINI_NOV30_ER1_PROBE_PUBLISH_V1',status:'BLOCKED',
   code:'NOV30_ER1_NOT_STARTED',pilotOnly:!publish,candidateLimit,providerRequestLimit,
-  selectedSymbols:0,
+  selectedSymbols:0,rejectedActualRows:0,isolatedSymbols:0,
   providerCalls:0,reusedActualSymbols:0,stagedActualSymbols:0,
   scoreableIssuers:0,star3Count:0,highestScore:null,coreWrites:0,existingFeedWrites:0,
   schedulerWrites:0,rawRowsPublic:0,d1Writes:0};
@@ -236,13 +254,24 @@ export async function runNovemberProbePublish({
     if(typeof key!=='string'||key.length<8||/\s/.test(key))
      stop('NOV30_ER1_PROVIDER_KEY_UNAVAILABLE');
     report.providerCalls++;
-    actual=await fetchAndStage(pcHome,symbol,{key,fetcher,clock,stageFolder:outputTag});
+    try{actual=await fetchAndStage(pcHome,symbol,{
+     key,fetcher,clock,stageFolder:outputTag})}
+    catch(e){
+     // A malformed response belongs to this symbol, not the entire batch.
+     // Quota/auth/network and any storage integrity error still stop the lane.
+     if(codeOf(e)==='NOV30_ER1_VENDOR_SHAPE_INVALID'){
+      report.isolatedSymbols++;continue;
+     }
+     throw e;
+    }
     report.stagedActualSymbols++;
    }
+   report.rejectedActualRows+=actual.rejectedRows??0;
+   if(!actual.actuals.length){report.isolatedSymbols++;continue}
    latest=Math.max(latest,Date.parse(actual.storedAt));
    found.set(symbol,actual.actuals);
   }
-  const rows=symbols.map(symbol=>({issuerId:symbol,tickers:[symbol],
+  const rows=[...found.keys()].map(symbol=>({issuerId:symbol,tickers:[symbol],
    earningsSymbol:symbol,releases:found.get(symbol)}));
   const calc=scorer??(await import('../../lib/market-calendar-er1-earnings-score.mjs')).scoreER1Issuers;
   const serialize=publicSerializer??(await import('../../lib/market-calendar-er1-public-display.mjs')).makeER1PublicDisplay;
@@ -264,9 +293,13 @@ export async function runNovemberProbePublish({
   report.highestScore=scored.rankings?.[0]?.score??null;
   report.sourceStoredAt=new Date(latest).toISOString();
   report.localScoreSha256=sha256(body);
+  const incomplete=report.isolatedSymbols>0||report.rejectedActualRows>0;
   if(!publish){
-   report.status='PASS';report.code='NOV30_ER1_PILOT_PREVIEW_VERIFIED';
+   report.status=incomplete?'PARTIAL':'PASS';
+   report.code=incomplete?'NOV30_ER1_PARTIAL_PREVIEW_VERIFIED':
+    'NOV30_ER1_PILOT_PREVIEW_VERIFIED';
   }else{
+   if(incomplete)stop('NOV30_ER1_PARTIAL_PUBLISH_STOP');
    // Only a separately approved exact B publish entry may opt into this
    // helper. The installed fixed pilot entry never provides that option.
    const {remote,core}=await remoteFactory(pcHome);
@@ -299,3 +332,4 @@ if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.ur
   if(result.status!=='PASS')process.exitCode=1;
  }
 }
+
