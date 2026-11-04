@@ -13,7 +13,7 @@ test('PC summarizer uses observed values only; zero is not missing',()=>{
  const r=summarize(first,rows,stored);
  assert.equal(r.status,'READY');assert.equal(r.value,0);
  assert.equal(r.previousValue,1.4);assert.equal(r.observationDate,'2026-09-01');
- assert.equal(r.sourceStoredAt,stored);assert.equal(r.history.length,2);
+ assert.equal(r.sourceStoredAt,new Date(stored).toISOString());assert.equal(r.history.length,2);
 });
 test('PC summarizer rejects blank values, duplicate dates and absent provenance',()=>{
  const r=[{date:'2026-08-01',value:1},{date:'2026-09-01',value:2}];
