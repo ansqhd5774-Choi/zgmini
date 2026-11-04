@@ -38,15 +38,32 @@ test('NYFed monthly calendar maps exact GSCPI and SCE names without confusing SC
  ]);
 });
 
-test('NYFed parser fails closed on incorrect page, missing main releases and cancellations',()=>{
+test('NYFed parser distinguishes wrong pages from valid months without the target releases',()=>{
  assert.throws(()=>parseNyfedInflationReleaseMonth(nyfed,{year:2026,month:12}),/NYFED_MONTH_MISMATCH/);
  assert.throws(()=>parseNyfedInflationReleaseMonth(nyfed,{year:2026,month:13}),/NYFED_MONTH_INVALID/);
  const unrelated=nyfed.replace('Global Supply Chain Pressure Index (GSCPI)','Other Survey').replace('Survey of Consumer Expectations','SCE Labor Market Survey');
- assert.throws(()=>parseNyfedInflationReleaseMonth(unrelated,{year:2026,month:11}),/NYFED_INFLATION_EVENTS_EMPTY/);
+ assert.deepEqual(parseNyfedInflationReleaseMonth(unrelated,{year:2026,month:11}),[]);
  const cancelled=nyfed.replace('Global Supply Chain Pressure Index (GSCPI)','Global Supply Chain Pressure Index (GSCPI) - Cancelled').replace('Survey of Consumer Expectations','Survey of Consumer Expectations - Postponed');
- assert.throws(()=>parseNyfedInflationReleaseMonth(cancelled,{year:2026,month:11}),/NYFED_INFLATION_EVENTS_EMPTY/);
+ assert.deepEqual(parseNyfedInflationReleaseMonth(cancelled,{year:2026,month:11}),[]);
  const crossed=nyfed.replace('<a href=\'/gscpi\'>Global Supply Chain Pressure Index (GSCPI)</a>','<del><a href=\'/gscpi\'>Global Supply Chain Pressure Index (GSCPI)</a></del>');
  assert.deepEqual(parseNyfedInflationReleaseMonth(crossed,{year:2026,month:11}).map(x=>x.id),['nyfed-sce']);
+ assert.throws(()=>parseNyfedInflationReleaseMonth('<h2>November 2026</h2><table><tr><td>Other</td></tr></table>',{year:2026,month:11}),/NYFED_CALENDAR_DAYS_MISSING/);
+});
+
+test('NYFed cancel markers are per-event, not per-day, and month controls may move',()=>{
+ const restructured=nyfed.replace('<a>PREVIOUS MONTH</a> NOVEMBER 2026 <a>NEXT MONTH</a>',
+  '<h2>NOVEMBER 2026</h2><a>NEXT MONTH</a><a>PREVIOUS MONTH</a>');
+ assert.equal(parseNyfedInflationReleaseMonth(restructured,{year:2026,month:11}).length,2);
+
+ const unrelatedCrossed=nyfed.replace('<a href=\'/gscpi\'>Global Supply Chain Pressure Index (GSCPI)</a>',
+  '<del><a>Other Report</a></del><a href=\'/gscpi\'>Global Supply Chain Pressure Index (GSCPI)</a>');
+ assert.deepEqual(parseNyfedInflationReleaseMonth(unrelatedCrossed,{year:2026,month:11}).map(x=>x.id),
+  ['nyfed-gscpi','nyfed-sce']);
+
+ const sameDay=nyfed.replace('<a href=\'/gscpi\'>Global Supply Chain Pressure Index (GSCPI)</a>',
+  '<del><a href=\'/gscpi\'>Global Supply Chain Pressure Index (GSCPI)</a></del><a href="/sce">Survey of Consumer Expectations</a>');
+ assert.deepEqual(parseNyfedInflationReleaseMonth(sameDay,{year:2026,month:11}).map(x=>[x.id,x.date]),
+  [['nyfed-sce','2026-11-05'],['nyfed-sce','2026-11-09']]);
 });
 
 test('NYFed URL lookup uses eastern current/next month including year rollover',()=>{
