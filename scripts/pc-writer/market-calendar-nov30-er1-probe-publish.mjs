@@ -25,6 +25,50 @@ const stop=code=>{throw Error(code)};
 const codeOf=e=>/^NOV30_ER1_[A-Z0-9_]+$/.test(String(e?.message))?
   e.message:'NOV30_ER1_UNEXPECTED_STOP';
 
+// A growing November cohort legitimately changes its relative ER1 scores.
+// Preserve each verified version, then atomically replace only the current
+// pointer. An already recorded digest must never change its contents.
+export function saveNovemberER1Derived(outDir,body){
+ if(typeof body!=='string'||Buffer.byteLength(body,'utf8')>100000)
+  stop('NOV30_ER1_LOCAL_DERIVED_BODY_INVALID');
+ try{JSON.parse(body)}catch{stop('NOV30_ER1_LOCAL_DERIVED_BODY_INVALID')}
+ fs.mkdirSync(outDir,{recursive:true});
+ const current=path.join(outDir,'current.json');
+ let old=null;
+ if(fs.existsSync(current)){
+  if(!safeFile(current,100000))stop('NOV30_ER1_LOCAL_DERIVED_CURRENT_INVALID');
+  old=fs.readFileSync(current,'utf8');
+  try{JSON.parse(old)}catch{stop('NOV30_ER1_LOCAL_DERIVED_CURRENT_INVALID')}
+ }
+ const versions=path.join(outDir,'versions');
+ fs.mkdirSync(versions,{recursive:true});
+ const snapshot=raw=>{
+  const file=path.join(versions,sha256(raw)+'.json');
+  if(fs.existsSync(file)){
+   if(!safeFile(file,100000)||fs.readFileSync(file,'utf8')!==raw)
+    stop('NOV30_ER1_LOCAL_DERIVED_VERSION_DRIFT_STOP');
+   return;
+  }
+  fs.writeFileSync(file,raw,{flag:'wx'});
+  if(fs.readFileSync(file,'utf8')!==raw)
+   stop('NOV30_ER1_LOCAL_DERIVED_VERSION_READBACK_STOP');
+ };
+ if(old!==null)snapshot(old);
+ snapshot(body);
+ if(old!==body){
+  const temp=current+'.part-'+process.pid+'-'+Date.now();
+  try{
+   fs.writeFileSync(temp,body,{flag:'wx'});
+   if(fs.readFileSync(temp,'utf8')!==body)
+    stop('NOV30_ER1_LOCAL_DERIVED_STAGE_READBACK_STOP');
+   fs.renameSync(temp,current);
+  }finally{if(fs.existsSync(temp))fs.unlinkSync(temp)}
+ }
+ if(!safeFile(current,100000)||fs.readFileSync(current,'utf8')!==body)
+  stop('NOV30_ER1_LOCAL_DERIVED_READBACK_STOP');
+ return sha256(body);
+}
+
 function validDay(day){
  return typeof day==='string'&&DATE.test(day)&&
   !Number.isNaN(Date.parse(day+'T00:00:00Z'))&&
@@ -281,13 +325,7 @@ export async function runNovemberProbePublish({
   const publicResult=serialize(scored),body=JSON.stringify(publicResult);
   if(Buffer.byteLength(body,'utf8')>100000)
    stop('NOV30_ER1_PUBLIC_SIZE_STOP');
-  const outDir=path.join(parent,outputTag+'-derived');
-  fs.mkdirSync(outDir,{recursive:true});
-  const out=path.join(outDir,'current.json');
-  if(fs.existsSync(out)&&fs.readFileSync(out,'utf8')!==body)
-   stop('NOV30_ER1_LOCAL_DERIVED_DRIFT_STOP');
-  if(!fs.existsSync(out))fs.writeFileSync(out,body,{flag:'wx'});
-  if(fs.readFileSync(out,'utf8')!==body)stop('NOV30_ER1_LOCAL_DERIVED_READBACK_STOP');
+  saveNovemberER1Derived(path.join(parent,outputTag+'-derived'),body);
   report.scoreableIssuers=publicResult.recordCount;
   report.star3Count=publicResult.star3Count;
   report.highestScore=scored.rankings?.[0]?.score??null;
