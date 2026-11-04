@@ -87,7 +87,7 @@ function readStored(file,symbol){
  const actuals=validateVendorActual(saved.body,symbol);
  return {storedAt:saved.storedAt,actuals};
 }
-function existingActual(pcHome,symbol){
+export function existingActual(pcHome,symbol){
  for(const folder of VALID_FOLDERS){
   const file=path.join(pcHome,'er1-input',folder,symbol+'.json');
   if(fs.existsSync(file))return readStored(file,symbol);
@@ -133,7 +133,7 @@ async function fetchAndStage(pcHome,symbol,{key,fetcher,clock,stageFolder='nov30
 
 // Dependency-injected to test with fixtures: production source is the existing
 // approved 30-day local reconstruction, never an incoming request argument.
-async function loadNovemberEvents(pcHome){
+export async function loadNovemberEvents(pcHome){
  const {DatabaseSync}=await import('node:sqlite');
  const {novemberEventsFromSaved}=await import('./market-calendar-nov30-publish.mjs');
  const dbPath=path.join(pcHome,'storage','core.sqlite');
