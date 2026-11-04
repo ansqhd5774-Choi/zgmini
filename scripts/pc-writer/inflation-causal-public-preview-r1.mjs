@@ -53,7 +53,10 @@ export function summarize(meta,data,sourceStoredAt,{dateField}={}){
  const cutoff=new Date((last.date.length===7?last.date+'-01':last.date)+'T00:00:00Z');
  cutoff.setUTCFullYear(cutoff.getUTCFullYear()-1);
  const months=[...byMonth.values()].filter(x=>x.date>=cutoff.toISOString().slice(0,7)).slice(-13);
- const availableAt=stamp(last.availableAt);
+ // An unavailable or untyped release timestamp is null, not a Unix-zero date.
+ // Do not reinterpret numeric provider metadata as JavaScript milliseconds.
+ const availableAt=typeof last.availableAt==='string'&&/^20\d\d-\d\d-\d\d/.test(last.availableAt)
+  ?stamp(last.availableAt):null;
  return {id:meta.id,series:meta.series,unit:meta.unit,status:'READY',
   value:last.value,previousValue:prev.value,observationDate:last.date,
   previousObservationDate:prev.date,availableAt,
@@ -93,23 +96,32 @@ function readSce(root){
   throw Error('INFL19_SCE_ROWS');
  return summarize(INFLATION_CAUSAL_19.find(x=>x.id==='31'),doc.observations,meta.fetchedAt);
 }
-function readSupply(root,id){
+export function readSupply(root,id){
  const gscpi=id==='21',rel=gscpi?'supply-r10/gscpi.json':'supply-r10/DPCERA3M086SBEA.json';
  const doc=readJson(root,rel);
  if(gscpi&&doc.source!=='NY_FED_GSCPI')throw Error('INFL19_GSCPI_SOURCE');
  const manifest=readJson(root,'supply-r10/extra-manifest.json',65536);
  const sourceId=gscpi?'gscpi':'DPCERA3M086SBEA';
  const m=Array.isArray(manifest)?manifest.find(x=>x.id===sourceId&&x.status==='STORED'):null;
- if(!m||!Array.isArray(doc.rows)||!m.storedAt&&!doc.sourceStoredAt&&!doc.storedAt)
-  throw Error('INFL19_SUPPLY_PROVENANCE');
- return summarize(INFLATION_CAUSAL_19.find(x=>x.id===id),doc.rows,
-  doc.sourceStoredAt??doc.storedAt??m.storedAt);
+ const rows=gscpi?doc?.rows:(Array.isArray(doc)?doc:doc?.rows);
+ if(!m||!Array.isArray(rows)||rows.length<2)throw Error('INFL19_SUPPLY_PROVENANCE');
+ const rawFile=path.join(root,'supply-r10',sourceId+(gscpi?'.xlsx':'.csv'));
+ const rawStat=fs.lstatSync(rawFile);
+ if(!rawStat.isFile()||rawStat.isSymbolicLink()||rawStat.size<1||rawStat.size>8_000_000)
+  throw Error('INFL19_SUPPLY_RAW_NOT_VERIFIED');
+ // The collector stores parsed JSON without a provider-stored timestamp.
+ // File mtime is the observed local write time, NEVER the release/observation date.
+ const jsonStat=fs.lstatSync(path.join(root,...rel.split('/')));
+ if(!jsonStat.isFile()||jsonStat.isSymbolicLink()||!Number.isFinite(jsonStat.mtimeMs))
+  throw Error('INFL19_SUPPLY_LOCAL_STORED_AT_UNVERIFIED');
+ const storedAt=doc?.sourceStoredAt??doc?.storedAt??m.storedAt??jsonStat.mtimeMs;
+ return summarize(INFLATION_CAUSAL_19.find(x=>x.id===id),rows,storedAt);
 }
 function readPit(db,meta){
  const name=PIT.get(meta.id);
  const row=db.prepare(`SELECT retrieved_at,history_mode,chunk_hashes_json,row_count
   FROM api_history_snapshots_v1 WHERE provider='FRED' AND dataset=?
-  ORDER BY retrieved_at DESC LIMIT 1`).get(name);
+  AND history_mode='INITIAL_RELEASE_ONLY' ORDER BY retrieved_at DESC LIMIT 1`).get(name);
  if(!row||row.history_mode!=='INITIAL_RELEASE_ONLY'||!stamp(row.retrieved_at))
   throw Error('INFL19_PIT_PROVENANCE');
  const hashes=JSON.parse(row.chunk_hashes_json);
@@ -127,17 +139,20 @@ function readPit(db,meta){
  if(rows.length<2)throw Error('INFL19_PIT_ROWS_MISSING');
  return summarize(meta,rows,row.retrieved_at);
 }
-function readDollar(db){
+export function readMacroSeries(db,id,series){
+ if(![['1','MCOILWTICO'],['18','DTWEXBGS']].some(([a,b])=>a===id&&b===series))
+  throw Error('INFL19_MACRO_SERIES_DENIED');
  const row=db.prepare(`SELECT body,stored_at FROM market_input_batches_v1
   WHERE batch_key LIKE 'macro:%' ORDER BY stored_at DESC LIMIT 1`).get();
  if(!row||typeof row.body!=='string')throw Error('INFL19_MACRO_MISSING');
  const body=row.body.startsWith('gzip:')?
   gunzipSync(Buffer.from(row.body.slice(5),'base64'),{maxOutputLength:30_000_000}).toString('utf8'):
   row.body;
- const doc=JSON.parse(body),rows=doc?.series?.DTWEXBGS;
- if(!Array.isArray(rows))throw Error('INFL19_DOLLAR_MISSING');
- return summarize(INFLATION_CAUSAL_19.find(x=>x.id==='18'),rows,Number(row.stored_at));
+ const doc=JSON.parse(body),rows=doc?.series?.[series];
+ if(!Array.isArray(rows))throw Error('INFL19_MACRO_SERIES_MISSING');
+ return summarize(INFLATION_CAUSAL_19.find(x=>x.id===id),rows,Number(row.stored_at));
 }
+function readDollar(db){return readMacroSeries(db,'18','DTWEXBGS');}
 export function previewInflation19(root,{openDb=file=>new DatabaseSync(file,{readOnly:true,timeout:1000}),
  now=Date.now()}={}){
  if(typeof root!=='string'||!path.isAbsolute(root)||
@@ -159,7 +174,14 @@ export function previewInflation19(root,{openDb=file=>new DatabaseSync(file,{rea
   const file=path.join(root,'storage','core.sqlite');
   db=openDb(file);db.exec('PRAGMA query_only=ON');
   for(const meta of INFLATION_CAUSAL_19){
-   if(PIT.has(meta.id))attempt(meta.id,()=>readPit(db,meta));
+   if(PIT.has(meta.id))attempt(meta.id,()=>{
+    try{return readPit(db,meta);}
+    catch(error){
+     if(meta.id==='1'&&error?.message==='INFL19_PIT_PROVENANCE')
+      return readMacroSeries(db,'1','MCOILWTICO');
+     throw error;
+    }
+   });
   }
   attempt('18',()=>readDollar(db));
  }catch(e){for(const id of [...PIT.keys(),'18'])if(!records[id])missing[id]='INFL19_DB_UNAVAILABLE';}
