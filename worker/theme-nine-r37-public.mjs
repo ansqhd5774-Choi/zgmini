@@ -136,7 +136,7 @@ export function eligibleNineR37(record,base,{now=Date.now(),storedAt=now,indepen
      !point.scores||typeof point.scores!=='object'||
      Array.isArray(point.scores)||!Object.keys(point.scores).length||
      Object.entries(point.scores).some(([name,value])=>
-       !visible.has(name)||!score(value)))return false;
+       (!visible.has(name)&&!(independentAnchor&&name==='데이터센터·전력'))||!score(value)))return false;
     prev=point.date;
    }
    return true;

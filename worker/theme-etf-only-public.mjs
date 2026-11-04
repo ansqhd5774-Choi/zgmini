@@ -62,7 +62,16 @@ async function addBiotechSidecars(db,base,opts){
  // Keep both independent provisional sidecars intact before verifying its
  // byte-for-byte legacy provisional lineage and replacing the eight scores.
  if(opts.includeNineR37===false)return withDcProvisional;
- return addVerifiedNineR37(db,withDcProvisional,{now:opts.now});
+ const advanced=await addVerifiedNineR37(db,withDcProvisional,{now:opts.now});
+ if(advanced.observationDate<=withDcProvisional.observationDate)return advanced;
+ // Optional records can now match the independently verified newer anchor.
+ // Keep the original pre-overlay projection for the publication-base caller.
+ const currentDc=await addVerifiedDcPower(db,advanced,{now:opts.now});
+ const currentSpace=await addVerifiedSpaceSatellite(db,currentDc,{now:opts.now});
+ const spaceProvisional=currentSpace===currentDc?currentSpace:
+  await addVerifiedSpaceProvisionalR1(db,currentSpace,{now:opts.now});
+ return currentDc===advanced?spaceProvisional:
+  addVerifiedDcPowerProvisionalR1(db,spaceProvisional,{now:opts.now});
 }
 export async function readThemeEtfOnly(db,{now=Date.now(),store=publicFeedStore(db),includeNineR37=true}={}){
  const headers={'cache-control':'no-store','x-robots-tag':'noindex, nofollow','x-content-type-options':'nosniff','x-data-source':'STORED'};
