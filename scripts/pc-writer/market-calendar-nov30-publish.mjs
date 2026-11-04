@@ -1,4 +1,4 @@
-// B one-shot from the already-saved November day records to a separate HTML-only D1 key.
+// B one-shot from saved November days to two separate 15-day HTML-only D1 keys.
 // NO provider calls, Core SQLite writes, existing rolling-feed writes, or schedule changes.
 import fs from 'node:fs';
 import path from 'node:path';
@@ -7,12 +7,15 @@ import {execFileSync} from 'node:child_process';
 import {DatabaseSync} from 'node:sqlite';
 import {fileURLToPath,pathToFileURL} from 'node:url';
 import {earningsDisplaySnapshot} from '../../lib/earnings-api-display.mjs';
-import {NOV2026_EARNINGS_HTML_KEY,validNov2026Display} from '../../lib/market-calendar-nov2026-display.mjs';
+import {NOV2026_EARNINGS_HTML_H1_KEY,NOV2026_EARNINGS_HTML_H2_KEY,
+ validNov2026HalfDisplay} from '../../lib/market-calendar-nov2026-display.mjs';
 import {coreRootFromTask} from './market-calendar-r34-earnings-sync.mjs';
 import {resolveApprovedProjectSource} from './market-calendar-dec31-publish.mjs';
 
 const PC_HOME=String.raw`E:\ZGmini\data\pc-writer`;
 const START='2026-11-01',END='2026-11-30';
+// Mirrors worker/public-feed-store.mjs writeOutput's 1,800,000-byte guard.
+const PUBLIC_FEED_STORAGE_MAX_BYTES=1_800_000;
 const DAYS=Array.from({length:30},(_,i)=>`2026-11-${String(i+1).padStart(2,'0')}`);
 const RAW_DIR='nov30-forward-days';
 const digest=value=>createHash('sha256').update(value).digest('hex');
@@ -89,7 +92,7 @@ export function novemberEventsFromSaved({core,saved}){
  return {events,coreDays,privateDays,latestStoredAt:new Date(newest).toISOString()};
 }
 
-export function buildNovemberDisplay(events,checkedAt){
+export function buildNovemberHalves(events,checkedAt){
  if(!Array.isArray(events)||events.length<1||events.length>5000||
   !Number.isFinite(Date.parse(checkedAt)))stop('NOV30_PUBLISH_BUILD_INPUT_STOP');
  const byDay={};
@@ -104,41 +107,59 @@ export function buildNovemberDisplay(events,checkedAt){
    checkedAt,coveredDays,recordCount:subset.length,priorityCount:0,events:subset});
   for(const day of coveredDays)if(validDay(day))byDay[day]=rendered.byDay[day];
  }
- const result={status:'READY_DISPLAY',mode:'OWN_SITE_HTML_ONLY',
-  rawVendorJsonExposed:false,publicJsonFeed:false,redistribution:false,
-  checkedAt,coveredDays:DAYS,recordCount:events.length,priorityCount:0,byDay};
- if(!validNov2026Display(result))stop('NOV30_PUBLISH_HTML_CONTRACT_STOP');
- return result;
+ const batchId=digest(JSON.stringify(DAYS.map(day=>[day,byDay[day]])));
+ return [1,2].map(half=>{
+  const coveredDays=DAYS.slice((half-1)*15,half*15);
+  const halfByDay=Object.fromEntries(coveredDays.map(day=>[day,byDay[day]]));
+  const result={status:'READY_DISPLAY',mode:'OWN_SITE_HTML_ONLY',
+   rawVendorJsonExposed:false,publicJsonFeed:false,redistribution:false,
+   checkedAt,batchId,coveredDays,
+   recordCount:Object.values(halfByDay).reduce((n,rows)=>n+rows.length,0),
+   priorityCount:0,byDay:halfByDay};
+  if(!validNov2026HalfDisplay(result,half))
+   stop('NOV30_PUBLISH_HTML_CONTRACT_STOP');
+  return result;
+ });
 }
 
-export function buildImmutableNovemberBody(events,{existingBody=null,checkedAt}={}){
- let previousSnapshot;
- if(existingBody!==null){
-  try{previousSnapshot=JSON.parse(existingBody)}
+export function buildImmutableNovemberBodies(events,{existingBodies=[null,null],checkedAt}={}){
+ if(!Array.isArray(existingBodies)||existingBodies.length!==2)
+  stop('NOV30_PUBLISH_EXISTING_LOCAL_INVALID_STOP');
+ const previous=existingBodies.map((body,i)=>{
+  if(body===null)return null;
+  let snapshot;try{snapshot=JSON.parse(body)}
   catch{stop('NOV30_PUBLISH_EXISTING_LOCAL_INVALID_STOP')}
-  if(!validNov2026Display(previousSnapshot))
+  if(!validNov2026HalfDisplay(snapshot,i+1))
    stop('NOV30_PUBLISH_EXISTING_LOCAL_INVALID_STOP');
- }
- const body=JSON.stringify(buildNovemberDisplay(events,previousSnapshot?.checkedAt??checkedAt));
- if(existingBody!==null&&existingBody!==body)
-  stop('NOV30_PUBLISH_LOCAL_INPUT_DRIFT_STOP');
- if(Buffer.byteLength(body,'utf8')>1_900_000)
-  stop('NOV30_PUBLISH_HTML_SIZE_OR_SHAPE_STOP');
- return body;
+  return snapshot;
+ });
+ const previousTimes=previous.filter(Boolean).map(x=>x.checkedAt);
+ if(new Set(previousTimes).size>1)stop('NOV30_PUBLISH_EXISTING_PAIR_DRIFT_STOP');
+ const halves=buildNovemberHalves(events,previousTimes[0]??checkedAt);
+ return halves.map((snapshot,i)=>{
+  const body=JSON.stringify(snapshot);
+  if(existingBodies[i]!==null&&existingBodies[i]!==body)
+   stop('NOV30_PUBLISH_LOCAL_INPUT_DRIFT_STOP');
+  if(Buffer.byteLength(body,'utf8')>PUBLIC_FEED_STORAGE_MAX_BYTES)
+   stop('NOV30_PUBLISH_HTML_SIZE_OR_SHAPE_STOP');
+  return body;
+ });
 }
 
-export async function syncNovemberD1({remote,core,body,storedAt}){
+export async function syncNovemberD1({remote,core,key,body,storedAt}){
  // Existing D1 stored_at contract is numeric epoch milliseconds (R34).
  if(!Number.isSafeInteger(storedAt)||storedAt<=0)
   stop('NOV30_PUBLISH_D1_TIMESTAMP_INVALID_STOP');
+ if(![NOV2026_EARNINGS_HTML_H1_KEY,NOV2026_EARNINGS_HTML_H2_KEY].includes(key))
+  stop('NOV30_PUBLISH_D1_KEY_INVALID_STOP');
  const sql="SELECT body,stored_at FROM public_feed_snapshots_v1 WHERE kind='output' AND feed_key=? AND snapshot_key='current'";
- const current=(await remote.query(core,sql,[NOV2026_EARNINGS_HTML_KEY])).results?.[0];
+ const current=(await remote.query(core,sql,[key])).results?.[0];
  if(current?.body===body)return {decision:'NOV30_PUBLISH_D1_ALREADY_MATCHED',dbWrite:false};
  if(current&&current.stored_at>=storedAt)stop('NOV30_PUBLISH_D1_NEWER_PRESERVED_STOP');
  await remote.request(core,[{sql:
   "INSERT INTO public_feed_snapshots_v1(kind,feed_key,snapshot_key,body,stored_at) VALUES('output',?,'current',?,?) ON CONFLICT(kind,feed_key,snapshot_key) DO UPDATE SET body=excluded.body,stored_at=excluded.stored_at WHERE excluded.stored_at>public_feed_snapshots_v1.stored_at",
-  params:[NOV2026_EARNINGS_HTML_KEY,body,storedAt]}]);
- const actual=(await remote.query(core,sql,[NOV2026_EARNINGS_HTML_KEY])).results?.[0];
+  params:[key,body,storedAt]}]);
+ const actual=(await remote.query(core,sql,[key])).results?.[0];
  if(actual?.body!==body||actual?.stored_at!==storedAt)stop('NOV30_PUBLISH_D1_READBACK_STOP');
  return {decision:'NOV30_PUBLISH_D1_VERIFIED',dbWrite:true};
 }
@@ -171,18 +192,24 @@ export async function runPublish({pcHome=PC_HOME,readCore=coreReadOnly,
   const now=clock(),isoNow=new Date(now).toISOString();
   const folder=path.join(pcHome,'er1-input','nov30-html-publish');
   fs.mkdirSync(folder,{recursive:true});
-  const local=path.join(folder,'current.json');
-  // Reusing a previous one-shot result validates all source-derived HTML rows.
-  const previous=fs.existsSync(local)?fs.readFileSync(local,'utf8'):null;
-  const body=buildImmutableNovemberBody(saved.events,
-   {existingBody:previous,checkedAt:isoNow});
-  const snapshot=JSON.parse(body);
-  if(!validNov2026Display(snapshot)||snapshot.recordCount!==saved.events.length||
-   Buffer.byteLength(body,'utf8')>1_900_000)
+  const local=[1,2].map(half=>path.join(folder,`current-h${half}.json`));
+  const previous=local.map(file=>fs.existsSync(file)?fs.readFileSync(file,'utf8'):null);
+  const bodies=buildImmutableNovemberBodies(saved.events,
+   {existingBodies:previous,checkedAt:isoNow});
+  const halves=bodies.map(JSON.parse);
+  if(halves.reduce((n,s)=>n+s.recordCount,0)!==saved.events.length||
+   halves[0].batchId!==halves[1].batchId||
+   halves[0].checkedAt!==halves[1].checkedAt)
    stop('NOV30_PUBLISH_HTML_SIZE_OR_SHAPE_STOP');
-  if(!fs.existsSync(local))fs.writeFileSync(local,body,{flag:'wx'});
-  if(fs.readFileSync(local,'utf8')!==body)stop('NOV30_PUBLISH_LOCAL_READBACK_STOP');
-  report.localHtmlSha256=digest(body);
+  for(let i=0;i<2;i++){
+   if(previous[i]===null)fs.writeFileSync(local[i],bodies[i],{flag:'wx'});
+   if(fs.readFileSync(local[i],'utf8')!==bodies[i])
+    stop('NOV30_PUBLISH_LOCAL_READBACK_STOP');
+  }
+  report.publicationBatchId=halves[0].batchId;
+  report.localHtmlSha256H1=digest(bodies[0]);
+  report.localHtmlSha256H2=digest(bodies[1]);
+  report.halfRecordCounts=halves.map(s=>s.recordCount);
   core.close();core=null;
   const config=JSON.parse(fs.readFileSync(path.join(pcHome,'config.json'),'utf8'));
   const candidate=getRoot();
@@ -199,9 +226,16 @@ export async function runPublish({pcHome=PC_HOME,readCore=coreReadOnly,
    return client(config,credential(root));
   });
   const remote=await factory();
-  const result=await syncNovemberD1({remote,core:config.core,body,storedAt:now});
-  report.status='PASS';report.code=result.decision;
-  report.d1Writes=Number(result.dbWrite);report.d1ReadbackSha256=digest(body);
+  const keys=[NOV2026_EARNINGS_HTML_H1_KEY,NOV2026_EARNINGS_HTML_H2_KEY];
+  for(let i=0;i<2;i++){
+   const verified=await syncNovemberD1({remote,core:config.core,key:keys[i],
+    body:bodies[i],storedAt:now});
+   report.d1Writes+=Number(verified.dbWrite);
+   report[`d1ReadbackSha256H${i+1}`]=digest(bodies[i]);
+  }
+  report.status='PASS';
+  report.code=report.d1Writes?'NOV30_PUBLISH_D1_BOTH_VERIFIED':
+   'NOV30_PUBLISH_D1_BOTH_ALREADY_MATCHED';
  }catch(e){report.code=reportError(e)}
  finally{
   try{core?.close()}catch{}
