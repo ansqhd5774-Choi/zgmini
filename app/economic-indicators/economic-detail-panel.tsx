@@ -10,6 +10,7 @@ import {MarketFearGreedChart,type MarketFearGreedChartPoint,type MarketFearGreed
 import {InflationMiniChart,type InflationMiniTrendPoint} from "../inflation/inflation-mini-chart";
 import {ContentHelp} from "../content-help";
 import {EconomicFavoriteButton} from "./economic-favorite-button";
+import InflationResearchInputs from "./inflation-research-inputs";
 
 type Point={date?:string;label?:string;score?:number|null;value?:number|null;breakBefore?:boolean};
 type Indicator={
@@ -241,6 +242,7 @@ export default function EconomicDetailPanel({id}:{id:EconomicDomainId}){
    </div>
    {!loading&&!observations.length&&<p className="economic-data-notice">구성 지표가 아직 저장되지 않았습니다. 없는 항목을 가상의 지표로 채우지 않습니다.</p>}
   </section>
+  {id==="inflation"&&<InflationResearchInputs/>}
   <a className="cnn-return-cta economic-back-button" href="/">← 메인 대시보드로 돌아가기</a>
  </div>;
 }
