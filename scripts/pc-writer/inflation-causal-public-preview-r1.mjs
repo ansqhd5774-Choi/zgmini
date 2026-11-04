@@ -164,6 +164,21 @@ export function previewInflation19(root,{openDb=file=>new DatabaseSync(file,{rea
   attempt('18',()=>readDollar(db));
  }catch(e){for(const id of [...PIT.keys(),'18'])if(!records[id])missing[id]='INFL19_DB_UNAVAILABLE';}
  finally{try{db?.close();}catch{}}
+ // Check each collected row against the public contract independently.
+ // A bad research row remains PENDING; valid rows retain their stored evidence.
+ const collected=INFLATION_CAUSAL_19.map(m=>records[m.id]).filter(Boolean);
+ const probeAt=Math.max(0,...collected.map(r=>Date.parse(r.sourceStoredAt)));
+ for(const r of collected){
+  const probe={schemaVersion:INFLATION_CAUSAL_PUBLIC_SCHEMA,status:'PARTIAL',
+   score:null,sourceVersion:'INFL19_INDIVIDUAL_PREFLIGHT_V1',sourceStoredAt:probeAt,
+   indicators:INFLATION_CAUSAL_19.map(m=>m.id===r.id?r:absent(m))};
+  try{validateInflationCausalPublic(probe,{now});}
+  catch(error){
+   missing[r.id]=error?.message==='INFLATION_CAUSAL_PUBLIC_READY_INVALID'
+    ?'INFL19_READY_CONTRACT_INVALID':'INFL19_PUBLIC_CONTRACT_INVALID';
+   delete records[r.id];
+  }
+ }
  const indicators=INFLATION_CAUSAL_19.map(m=>records[m.id]??absent(m));
  const filled=indicators.filter(x=>x.status==='READY');
  const at=Math.max(...filled.map(x=>Date.parse(x.sourceStoredAt)),0);
