@@ -80,7 +80,7 @@ export function confirmEiaUsIndustrialFacet(raw){
   const options=raw?.response?.facets;
   if(!Array.isArray(options)||options.length>1000)fail('EIA_STATE_METADATA_INVALID');
   const us=options.find(x=>x?.id==='US');
-  if(!us||!/(united states|^u\.s\.$|^us$)/i.test(String(us.name??us.alias??'')))
+  if(!us||!/^(united states|u\.s\.|u\.s\. total|us)$/i.test(String(us.name??us.alias??'')))
     fail('EIA_US_NATIONAL_FACET_UNVERIFIED');
   return true;
 }
