@@ -28,6 +28,7 @@ test('BLS PPI eight series 1 POST, 20 years, sorted monthly, M13 excluded, PC fi
   calls++;
   assert.equal(url,BLS8_ENDPOINT);
   assert.equal(init.method,'POST');
+  assert.equal(init.redirect,'manual');
   const req=JSON.parse(init.body);
   assert.deepEqual(req.seriesid,BLS8_IDS);
   assert.equal(req.startyear,'2007');assert.equal(req.endyear,'2026');
@@ -70,6 +71,23 @@ test('HTTP 503 does not retry and preserves previous valid input',async t=>{
  let calls=0;
  await assert.rejects(collectInflationCausalBls8(opts(f.base,async()=>{calls++;return response(null,503);})),{code:'BLS_HTTP_503'});
  assert.equal(calls,1);assert.equal(fs.readFileSync(f.file,'utf8'),before);
+});
+
+test('POST redirect is refused to protect the private registration key',async t=>{
+ const f=fixture();t.after(f.cleanup);
+ let calls=0;
+ await assert.rejects(collectInflationCausalBls8(opts(f.base,async()=>{
+  calls++;return {status:307,ok:false};
+ })),{code:'BLS_REDIRECT_DENIED'});
+ assert.equal(calls,1);assert.equal(fs.existsSync(f.file),false);
+});
+
+test('oversized response is refused without writing partial source',async t=>{
+ const f=fixture();t.after(f.cleanup);
+ await assert.rejects(collectInflationCausalBls8(opts(f.base,async()=>({ok:true,status:200,
+  text:async()=> 'a'.repeat(4_000_001)
+ }))),{code:'BLS_RESPONSE_TOO_LARGE'});
+ assert.equal(fs.existsSync(f.file),false);
 });
 
 test('quota guard rejects, no retry and prior input preserved',async t=>{
