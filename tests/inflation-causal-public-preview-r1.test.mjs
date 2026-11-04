@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import {INFLATION_CAUSAL_19} from '../lib/inflation-causal-public-catalog.mjs';
-import {summarize,previewInflation19} from '../scripts/pc-writer/inflation-causal-public-preview-r1.mjs';
+import {summarize,previewInflation19,readSupply,readMacroSeries} from '../scripts/pc-writer/inflation-causal-public-preview-r1.mjs';
 
 const first=INFLATION_CAUSAL_19[0];
 const stored='2026-11-04T09:00:00Z';
@@ -41,4 +41,48 @@ test('empty research PC storage does not invent sourceStoredAt or publish fake R
   assert.equal(p.ready,0);assert.equal(p.providerCalls,0);
   assert.equal(p.d1Writes,0);assert.equal(p.dbWrites,0);
  }finally{fs.rmSync(temp,{recursive:true,force:true});}
+});
+
+test('supply reader respects original parsed GSCPI object and real saved-file mtime',()=>{
+ const temp=fs.mkdtempSync(path.join(os.tmpdir(),'infl19-supply-'));
+ try{
+  const dir=path.join(temp,'supply-r10');fs.mkdirSync(dir);
+  const rows=[{observationDate:'2026-08-01',value:0.2},{observationDate:'2026-09-01',value:0.1}];
+  fs.writeFileSync(path.join(dir,'gscpi.json'),JSON.stringify({source:'NY_FED_GSCPI',rows}));
+  fs.writeFileSync(path.join(dir,'gscpi.xlsx'),'immutable original archive fixture');
+  fs.writeFileSync(path.join(dir,'extra-manifest.json'),JSON.stringify([{id:'gscpi',status:'STORED'}]));
+  fs.utimesSync(path.join(dir,'gscpi.json'),new Date('2026-10-01T10:00:00Z'),new Date('2026-10-01T10:00:00Z'));
+  const r=readSupply(temp,'21');
+  assert.equal(r.value,0.1);assert.equal(r.previousValue,0.2);
+  assert.equal(r.observationDate,'2026-09-01');
+  assert.equal(r.sourceStoredAt,'2026-10-01T10:00:00.000Z');
+ }finally{fs.rmSync(temp,{recursive:true,force:true});}
+});
+test('real PCE supply archive is a plain parsed array, not a rows property',()=>{
+ const temp=fs.mkdtempSync(path.join(os.tmpdir(),'infl19-pce-'));
+ try{
+  const dir=path.join(temp,'supply-r10');fs.mkdirSync(dir);
+  fs.writeFileSync(path.join(dir,'DPCERA3M086SBEA.json'),JSON.stringify([
+   {observationDate:'2026-08-01',value:100},{observationDate:'2026-09-01',value:101}]));
+  fs.writeFileSync(path.join(dir,'DPCERA3M086SBEA.csv'),'DATE,DPCERA3M086SBEA');
+  fs.writeFileSync(path.join(dir,'extra-manifest.json'),JSON.stringify([{id:'DPCERA3M086SBEA',status:'STORED'}]));
+  const r=readSupply(temp,'26');
+  assert.equal(r.value,101);assert.equal(r.previousValue,100);
+  fs.unlinkSync(path.join(dir,'DPCERA3M086SBEA.csv'));
+  assert.throws(()=>readSupply(temp,'26'));
+ }finally{fs.rmSync(temp,{recursive:true,force:true});}
+});
+test('macro oil fallback reads only approved MCOILWTICO series and preserves saved timestamp',()=>{
+ const t=Date.parse('2026-10-05T00:00:00Z');
+ const fixture={series:{MCOILWTICO:[{date:'2026-08-01',value:70},{date:'2026-09-01',value:75}]}};
+ const db={prepare:()=>({get:()=>({body:JSON.stringify(fixture),stored_at:t})})};
+ const r=readMacroSeries(db,'1','MCOILWTICO');
+ assert.equal(r.value,75);assert.equal(r.sourceStoredAt,'2026-10-05T00:00:00.000Z');
+ assert.throws(()=>readMacroSeries(db,'1','DTWEXBGS'),/MACRO_SERIES_DENIED/);
+});
+test('untyped numeric availability stays null instead of a misleading 1970 release date',()=>{
+ const r=summarize(first,[
+  {date:'2026-08-01',value:10,availableAt:0},
+  {date:'2026-09-01',value:11,availableAt:0}],stored);
+ assert.equal(r.availableAt,null);
 });
