@@ -88,6 +88,59 @@ test('429 midway preserves partial verified raw checkpoint and does not calculat
  assert.ok(fs.existsSync(path.join(f.input,'nov30-er1-batch20','B04.json')));
  assert.ok(!fs.existsSync(path.join(f.input,'nov30-er1-batch20-derived','current.json')));
 });
+test('one entirely invalid symbol does not discard nineteen verified symbols',async t=>{
+ const f=fixture(t);initialCache(f);let calls=0;
+ const result=await runNovemberBatch20Private({
+  pcHome:f.root,requireWindows:false,clock:()=>NOW,
+  calendarLoader:async()=>EVENTS,scorer:scoreER1Issuers,
+  publicSerializer:makeER1PublicDisplay,
+  env:{EARNINGS_API_KEY:'test_secret_only_fixture'},
+  fetcher:async url=>{
+   calls++;const symbol=new URL(url).searchParams.get('symbol');
+   const body=raw(symbol);
+   if(symbol==='B13')for(const row of body)row.eps='unverified';
+   return {status:200,ok:true,text:async()=>JSON.stringify(body)};
+  }
+ });
+ assert.equal(result.status,'PARTIAL',result.code);
+ assert.equal(result.code,'NOV30_ER1_PARTIAL_PREVIEW_VERIFIED');
+ assert.equal(result.providerCalls,17);assert.equal(calls,17);
+ assert.equal(result.reusedActualSymbols,3);
+ assert.equal(result.stagedActualSymbols,17);
+ assert.equal(result.rejectedActualRows,4);
+ assert.equal(result.isolatedSymbols,1);
+ assert.equal(result.scoreableIssuers,19);
+ assert.equal(result.d1Writes,0);
+ const bad=JSON.parse(fs.readFileSync(path.join(f.input,
+  'nov30-er1-batch20','B13.json'),'utf8'));
+ assert.equal(bad.validation.validRows,0);
+ assert.equal(bad.validation.rejectedRows,4);
+ const preview=JSON.parse(fs.readFileSync(path.join(f.input,
+  'nov30-er1-batch20-derived','current.json'),'utf8'));
+ assert.equal(preview.recordCount,19);
+});
+test('one structurally invalid provider body is isolated and other symbols continue',async t=>{
+ const f=fixture(t);initialCache(f);let calls=0;
+ const result=await runNovemberBatch20Private({
+  pcHome:f.root,requireWindows:false,clock:()=>NOW,
+  calendarLoader:async()=>EVENTS,scorer:scoreER1Issuers,
+  publicSerializer:makeER1PublicDisplay,
+  env:{EARNINGS_API_KEY:'test_secret_only_fixture'},
+  fetcher:async url=>{
+   calls++;const symbol=new URL(url).searchParams.get('symbol');
+   return {status:200,ok:true,text:async()=>JSON.stringify(
+    symbol==='B13'?{error:'invalid shape'}:raw(symbol))};
+  }
+ });
+ assert.equal(result.status,'PARTIAL',result.code);
+ assert.equal(result.isolatedSymbols,1);
+ assert.equal(result.rejectedActualRows,0);
+ assert.equal(result.stagedActualSymbols,16);
+ assert.equal(result.scoreableIssuers,19);
+ assert.equal(result.providerCalls,17);assert.equal(calls,17);
+ assert.ok(!fs.existsSync(path.join(f.input,'nov30-er1-batch20','B13.json')));
+ assert.equal(result.d1Writes,0);
+});
 test('missing pilot cache never exceeds 17 new provider requests',async t=>{
  const f=fixture(t);let calls=0;
  const result=await runNovemberBatch20Private({
@@ -107,3 +160,4 @@ test('missing pilot cache never exceeds 17 new provider requests',async t=>{
  assert.equal(calls,17);
  assert.equal(result.d1Writes,0);
 });
+
