@@ -1,4 +1,4 @@
-// Candidate only, OFF by default in run-local.mjs.
+// Approved single-key publication hook in the existing run-local.mjs lane.
 // Uses the existing PC Writer --publish lane and its approved D1 client.
 // No new provider calls, score writes, SQLite writes, or scheduling.
 import fs from 'node:fs';
@@ -96,7 +96,7 @@ export async function publishInflation19Auto({
  pcHome,remote,coreDb,now=Date.now(),previewFn,validate,writerFactory,
  stageFn=stageAndVerify,
 }={}){
- approvedHome(pcHome);
+ const canonicalHome=approvedHome(pcHome);
  if(!remote?.query||!remote?.adapter||!coreDb||!Number.isSafeInteger(now))
   fail('INFL19_AUTO_ARGUMENTS_DENIED');
  if(!previewFn){
@@ -108,7 +108,7 @@ export async function publishInflation19Auto({
   validate??=publicModule.validateInflationCausalPublic;
   writerFactory??=publicModule.inflationCausalPublicWriter;
  }
- const preview=await previewFn(pcHome);
+ const preview=await previewFn(canonicalHome);
  if(preview?.status!=='PASS_READONLY'||preview.ready!==19||
   preview.payload?.status!=='READY')
   return {status:'SKIPPED_INPUTS_NOT_READY',ready:preview?.ready??0,
@@ -141,7 +141,7 @@ export async function publishInflation19Auto({
   fail('INFL19_AUTO_CHECKPOINT_CONFLICT');
  // Only this derived, bounded public projection is written on the PC.
  // Provider files, SQLite and all four original scored series remain untouched.
- const ready=await stageFn(pcHome,payload,{now,validate});
+ const ready=await stageFn(canonicalHome,payload,{now,validate});
  if(!isDeepStrictEqual(ready,payload))
   fail('INFL19_AUTO_STAGE_PAYLOAD_MISMATCH');
  const db=remote.adapter(coreDb,{allowWrites:true});

@@ -53,11 +53,28 @@ function fixture(t,{prior=payload('b',NOW-2000),current=payload(),previewReady=1
  return {run,counts:()=>({writes,queries,stages}),remote,current,home};
 }
 
-test('auto integration is present but explicit feature gate stays OFF',()=>{
+test('approved inflation-only auto integration is active in publication lane',()=>{
  const file=fs.readFileSync(new URL('./run-local.mjs',import.meta.url),'utf8');
- assert.match(file,/INFLATION_19_AUTO_PUBLICATION_APPROVED=false/);
+ assert.match(file,/INFLATION_19_AUTO_PUBLICATION_APPROVED=true/);
  assert.match(file,/if\(INFLATION_19_AUTO_PUBLICATION_APPROVED\)/);
  assert.match(file,/attemptOutput\(report,'inflation-19-publication'/);
+});
+
+test('existing junction is resolved to canonical home before preview',async t=>{
+ const f=fixture(t);
+ const parent=fs.mkdtempSync(path.join(os.tmpdir(),'infl19-home-alias-'));
+ t.after(()=>fs.rmSync(parent,{recursive:true,force:true}));
+ const alias=path.join(parent,'compat-home');
+ fs.symlinkSync(f.home,alias,'junction');
+ let received=null;
+ const result=await publishInflation19Auto({pcHome:alias,remote:f.remote,
+  coreDb:'core',now:NOW,previewFn:canonical=>{
+   received=canonical;
+   return {status:'PASS_READONLY',ready:19,payload:f.current,
+    providerCalls:0,coreWrites:0,dbWrites:0,d1Writes:0,schedulerWrites:0};
+  },validate,writerFactory:()=>({write:()=>{throw Error('UNEXPECTED_WRITE')}})});
+ assert.equal(received,fs.realpathSync.native(f.home));
+ assert.equal(result.status,'SKIPPED_METADATA_ONLY');
 });
 
 test('incomplete PC source preserves remote without a write',async t=>{

@@ -31,7 +31,7 @@ const base=process.env.ZGMINI_PC_HOME??path.join(os.homedir(),'.zgmini','pc-writ
 const publish=process.argv.includes('--publish');
 // Candidate only: recurring inflation research sidecar writes require their own
 // approved publication scope and exact installed-source manifest before enablement.
-const INFLATION_19_AUTO_PUBLICATION_APPROVED=false;
+const INFLATION_19_AUTO_PUBLICATION_APPROVED=true;
 const config=read(path.join(base,'config.json'));
 const source=execFileSync('git',['rev-parse','HEAD'],{cwd:root,encoding:'utf8',windowsHide:true}).trim();
 if(publish){
