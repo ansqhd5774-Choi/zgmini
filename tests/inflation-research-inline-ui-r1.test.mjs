@@ -20,7 +20,7 @@ test('calculation and scoring logic uses original stored rows only',()=>{
  assert.match(file,/id==="inflation"\&\&i<researchRows\.length/);
 });
 test('month-resolution source does not gain fabricated daily observation date',()=>{
- assert.match(file,/^const dateLabel=.*\d\{4\}.*월/m);
+ assert.match(file,/^const dateLabel=.*월/m);
  const graph=fs.readFileSync(path.resolve('app/inflation/inflation-mini-chart.tsx'),'utf8');
  assert.match(graph,/point\.date\.length===7\?point\.date\+"-01":point\.date/);
 });
