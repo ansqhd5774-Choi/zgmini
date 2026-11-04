@@ -31,7 +31,7 @@ test('inflation table and mobile cards use criterion / previous / current wordin
  assert.match(file,/id==="inflation"\?"현재":"현재 원값\/점수"/);
  assert.match(file,/observedPeriodLabel\(item,item.previousObservationDate\)/);
  assert.match(file,/isResearch&&item.sourceDisplay&&<small title=/);
- assert.equal((file.match(/isResearch&&item\.sourceDisplay&&<small>/g)||[]).length,2);
+ assert.equal((file.match(/isResearch&&item\.sourceDisplay&&<small title=/g)||[]).length,2);
  assert.match(file,/const scored=storedObservations\.filter/);
 });
 
