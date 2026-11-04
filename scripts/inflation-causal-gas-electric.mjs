@@ -80,7 +80,10 @@ export function confirmEiaUsIndustrialFacet(raw){
   const options=raw?.response?.facets;
   if(!Array.isArray(options)||options.length>1000)fail('EIA_STATE_METADATA_INVALID');
   const us=options.find(x=>x?.id==='US');
-  if(!us||!/(united states|^u\.s\.$|^us$)/i.test(String(us.name??us.alias??'')))
+  // EIA labels the US national aggregate as "U.S. Total" in facet metadata.
+  // Admit explicit national synonyms only; never accept territories or regions.
+  const name=String(us?.name??us?.alias??'').trim().toUpperCase();
+  if(!us||!['UNITED STATES','UNITED STATES TOTAL','U.S.','U.S. TOTAL','US','US TOTAL'].includes(name))
     fail('EIA_US_NATIONAL_FACET_UNVERIFIED');
   return true;
 }
