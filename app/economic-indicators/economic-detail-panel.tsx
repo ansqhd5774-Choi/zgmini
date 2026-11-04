@@ -1,5 +1,5 @@
 "use client";
-import {useMemo,type CSSProperties} from "react";
+import {Fragment,useMemo,type CSSProperties} from "react";
 import {useStoredIndex} from "../../components/use-stored-index";
 import {economicDetailById,type EconomicDomainId} from "../../lib/economic-detail-catalog";
 import {liquidityStoredScoreComparisons} from "../../worker/projection-builders/liquidity-stored-history.mjs";
@@ -10,7 +10,7 @@ import {MarketFearGreedChart,type MarketFearGreedChartPoint,type MarketFearGreed
 import {InflationMiniChart,type InflationMiniTrendPoint} from "../inflation/inflation-mini-chart";
 import {ContentHelp} from "../content-help";
 import {EconomicFavoriteButton} from "./economic-favorite-button";
-import InflationResearchInputs from "./inflation-research-inputs";
+import {buildResearchInputRows} from "../../lib/inflation-research-table-rows.mjs";
 
 type Point={date?:string;label?:string;score?:number|null;value?:number|null;breakBefore?:boolean};
 type Indicator={
@@ -31,10 +31,11 @@ type Domain={
  scoreComparisons?:{week?:number|null;month?:number|null;threeMonth?:number|null;sixMonth?:number|null;year?:number|null};
 };
 type Snapshot={status:string;asOfDate?:string|null;domains?:Domain[]};
+type ResearchSnapshot={schemaVersion?:string;status?:string;indicators?:Array<Record<string,unknown>>};
 const dated=(s:unknown):s is string=>typeof s==="string"&&/^\d{4}-\d{2}-\d{2}$/.test(s)&&!Number.isNaN(Date.parse(s+"T00:00:00Z"));
 const finite=(n:unknown):n is number=>typeof n==="number"&&Number.isFinite(n);
 const validScore=(n:unknown):n is number=>finite(n)&&n>=0&&n<=100;
-const dateLabel=(s?:string|null)=>typeof s==="string"&&/^\d{4}-\d{2}-\d{2}/.test(s)?s.slice(0,10).replaceAll("-",". ")+".":"—";
+const dateLabel=(s?:string|null)=>typeof s==="string"&&/^\d{4}-(0[1-9]|1[0-2])$/.test(s)?s.replace("-", ". ")+"월":typeof s==="string"&&/^\d{4}-\d{2}-\d{2}/.test(s)?s.slice(0,10).replaceAll("-",". ")+".":"—";
 // Match existing dashboard score bands; same score must have same meaning and line color.
 const tone=(score:number|null)=>score===null?"#94a3b8":score<25?"#ef4444":score<40?"#f59e0b":score<60?"#94a3b8":score<75?"#22c55e":"#10b981";
 const stage=(score:number|null)=>score===null?"확인 필요":score<25?"위험":score<40?"주의":score<60?"중립":score<75?"양호":"안정";
@@ -111,7 +112,7 @@ function indicatorTrend(item:Indicator):InflationMiniTrendPoint[]{
  const rows=Array.isArray(item.trend)?item.trend:Array.isArray(item.history)?item.history:[];
  return rows.flatMap(p=>{
   const date=p?.date??p?.label,value=p?.value??p?.score;
-  return dated(date)&&finite(value)?[{date,value,breakBefore:p.breakBefore===true}]:[];
+  return (dated(date)||(typeof date==="string"&&/^\d{4}-(0[1-9]|1[0-2])$/.test(date)))&&finite(value)?[{date,value,breakBefore:p.breakBefore===true}]:[];
  });
 }
 function IndicatorHelp({item,title}:{item:Indicator;title:string}){
@@ -125,6 +126,7 @@ function IndicatorHelp({item,title}:{item:Indicator;title:string}){
 export default function EconomicDetailPanel({id}:{id:EconomicDomainId}){
  const config=economicDetailById(id)!;
  const {payload,loading,error}=useStoredIndex<Snapshot>("/api/market-score");
+ const {payload:researchPayload,loading:researchLoading,error:researchError}=useStoredIndex<ResearchSnapshot>("/api/inflation-causal-inputs",null,id==="inflation");
  const domain=payload?.domains?.find(item=>item.id===id);
  const score=domain?.status==="READY"&&validScore(domain.score)?domain.score:null;
  const history=useMemo(()=>normalizeTrend(domain?.trend),[domain?.trend]);
@@ -156,6 +158,9 @@ export default function EconomicDetailPanel({id}:{id:EconomicDomainId}){
  const comparisons=[{label:"1주",value:periods.week??null},{label:"1개월",value:periods.month??null},{label:"3개월",value:periods.threeMonth??null},{label:"6개월",value:periods.sixMonth??null},{label:"1년",value:periods.year??null}];
  const storedObservations=(domain?.indicators??[]).filter((row):row is Indicator=>Boolean(row&&typeof row==="object"));
  const observations=id==="employment"?employmentListRows(storedObservations):storedObservations;
+ const researchRows=id==="inflation"?(buildResearchInputRows(researchPayload) as Indicator[]):[];
+ const displayObservations=id==="inflation"?[...researchRows,...observations]:observations;
+ const researchReady=researchRows.filter(x=>x.status==="READY").length;
  const scored=storedObservations.filter(item=>item.status==="READY"&&validScore(item.score));
  const ranked=[...scored].sort((a,b)=>(b.score??0)-(a.score??0));
  const highCount=Math.min(3,Math.ceil(ranked.length/2)),lowCount=Math.min(3,Math.floor(ranked.length/2));
@@ -204,16 +209,19 @@ export default function EconomicDetailPanel({id}:{id:EconomicDomainId}){
    <div className="economic-reading-strips"><span><b>점수 읽기</b>{config.reading}</span><span><b>시장과의 관계</b>{config.impact}</span></div>
   </section>
   <section className="inflation-indicator-section inflation-r2-indicators economic-indicators" aria-labelledby={"economic-"+id+"-indicators"}>
-   <header><div><p className="cnn-eyebrow">ECONOMIC INDICATORS</p><h2 id={"economic-"+id+"-indicators"}>{config.name} 구성 지표 ({id==="growth"?observations.length+"/24":observations.length}개)</h2></div><p>{id==="employment"?"R6 구성 목록 · 10년 백분위 평가 · %는 가중치. 상단 점수는 별도 저장값이며, 미확보 데이터는 —로 표시합니다.":<>승인된 저장 지표만 표시합니다. 이전 원자료·공식 다음 발표일·미니차트가 없으면 <b>—</b>로 구분하며 임의로 보완하지 않습니다.</>}{id==="growth"&&observations.length!==24?" 산출요인 24개 중 아직 공개되지 않은 항목이 있습니다.":""}</p></header>
+   <header><div><p className="cnn-eyebrow">ECONOMIC INDICATORS</p><h2 id={"economic-"+id+"-indicators"}>{id==="inflation"?"물가 관련 지표 (원자료 19개 · 기존 평가 "+observations.length+"개)":config.name+" 구성 지표 ("+(id==="growth"?observations.length+"/24":observations.length)+"개)"}</h2></div><p>{id==="employment"?"R6 구성 목록 · 10년 백분위 평가 · %는 가중치. 상단 점수는 별도 저장값이며, 미확보 데이터는 —로 표시합니다.":id==="inflation"?<>19개는 수집된 <b>연구용 원자료</b>이며 30개 후보 중 최종 선정이 아닙니다. 기존 4개 저장 평가점수와 산식을 유지합니다. 미확보 값은 <b>—</b>로 표시합니다.</>:<>승인된 저장 지표만 표시합니다. 이전 원자료·공식 다음 발표일·미니차트가 없으면 <b>—</b>로 구분하며 임의로 보완하지 않습니다.</>}{id==="growth"&&observations.length!==24?" 산출요인 24개 중 아직 공개되지 않은 항목이 있습니다.":""}</p></header>
    {error&&<p className="economic-data-notice" role="status">최근 데이터 조회가 지연되고 있습니다. 저장 자료는 갱신 확인 후 표시됩니다.</p>}
+   {id==="inflation"&&(researchError||researchLoading)&&<p className="economic-data-notice" role="status">{researchLoading?"연구용 원자료 19개 공개값 확인 중":"연구용 원자료 공개값 조회가 지연됩니다. 기존 평가점수는 유지됩니다."}</p>}
    <div className="inflation-table-wrap inflation-r2-table-wrap">
     <table className="inflation-indicator-table inflation-indicator-table-r2 economic-table">
      <colgroup>{Array.from({length:10},(_,i)=><col key={i}/>)}</colgroup>
      <thead><tr><th>☆</th><th>지표</th><th>내용</th><th>평가 기준</th><th>이전 원값</th><th>현재 원값/점수</th><th>발표</th><th>판단</th><th>미니차트(1Y)</th><th>ⓘ</th></tr></thead>
-     <tbody>{observations.map((item,i)=>{
-      const name=indicatorLabel(item,id,i),idKey=item.id??name,part=validScore(item.score)&&item.status==="READY"?item.score:null,j=judgement(part),mini=indicatorTrend(item);
+     <tbody>{displayObservations.map((item,i)=>{
+      const name=indicatorLabel(item,id,i),idKey=item.id??name,part=validScore(item.score)&&item.status==="READY"?item.score:null,isResearch=id==="inflation"&&i<researchRows.length,j=isResearch?{name:"미평가",tone:"neutral"}:judgement(part),mini=indicatorTrend(item);
       const present=currentPresentation(item),previous=item.status==="READY"?textValue(item.previousValue,item.unit):"—";
-      return <tr key={idKey+"-"+i} data-judgement={j.tone}>
+      return <Fragment key={idKey+"-"+i}>
+       {id==="inflation"&&(i===0||i===researchRows.length)&&<tr className="economic-research-group-row"><td colSpan={10}>{i===0?"수집 원자료 19개 · 연구용 · "+researchReady+"/19 공개 확인 (최종 선정 전)":"기존 평가점수 "+observations.length+"개 · 현행 산식 유지"}</td></tr>}
+       <tr data-judgement={j.tone} data-research-input={isResearch?item.id:undefined}>
        <td><EconomicFavoriteButton domainId={id} indicatorId={idKey} label={name}/></td>
        <th scope="row"><strong>{name}</strong><small>{technicalSource(item.source)}</small></th>
        <td>{indicatorDescription(item,name)}</td>
@@ -224,25 +232,28 @@ export default function EconomicDetailPanel({id}:{id:EconomicDomainId}){
        <td><span className="inflation-judgement">{j.name}</span></td>
        <td className="inflation-r2-spark-cell"><InflationMiniChart label={name} points={mini}/></td>
        <td><IndicatorHelp item={item} title={name}/></td>
-      </tr>;
+       </tr>
+      </Fragment>;
      })}</tbody>
     </table>
    </div>
    <div className="inflation-r2-mobile-list">
-    {observations.map((item,i)=>{
-     const name=indicatorLabel(item,id,i),idKey=item.id??name,part=validScore(item.score)&&item.status==="READY"?item.score:null,j=judgement(part),mini=indicatorTrend(item);
-     return <article className="inflation-r2-mobile-card" key={idKey+"-"+i} data-judgement={j.tone}>
+    {displayObservations.map((item,i)=>{
+     const name=indicatorLabel(item,id,i),idKey=item.id??name,part=validScore(item.score)&&item.status==="READY"?item.score:null,isResearch=id==="inflation"&&i<researchRows.length,j=isResearch?{name:"미평가",tone:"neutral"}:judgement(part),mini=indicatorTrend(item);
+     return <Fragment key={idKey+"-"+i}>
+      {id==="inflation"&&(i===0||i===researchRows.length)&&<p className="economic-research-mobile-group">{i===0?"수집 원자료 19개 · 연구용 · "+researchReady+"/19 공개 확인":"기존 평가점수 "+observations.length+"개 · 현행 산식 유지"}</p>}
+      <article className="inflation-r2-mobile-card" data-judgement={j.tone} data-research-input={isResearch?item.id:undefined}>
       <div className="inflation-r2-mobile-head"><div className="economic-mobile-name"><EconomicFavoriteButton domainId={id} indicatorId={idKey} label={name}/><div><strong>{name}</strong><small>{technicalSource(item.source)}</small></div></div><div className="inflation-r2-mobile-actions"><span className="inflation-judgement">{j.name}</span><IndicatorHelp item={item} title={name}/></div></div>
       <p className="inflation-r2-mobile-content">{indicatorDescription(item,name)}</p>
       <p className="inflation-r2-mobile-criterion"><span>기준</span>{item.criterionLabel??item.criterion??"저장 평가점수"}</p>
       <div className="inflation-r2-mobile-spark"><span>미니차트(1Y)</span><InflationMiniChart label={name} points={mini}/></div>
       <div className="inflation-r2-mobile-metrics"><div><span>이전 원값</span><strong>{item.status==="READY"?textValue(item.previousValue,item.unit):"—"}</strong><small>{dateLabel(item.previousObservationDate)}</small></div><div><span>현재 원값/점수</span><strong>{currentPresentation(item).value}</strong><small>{currentPresentation(item).detail}</small></div><div><span>발표</span><strong>{item.releaseCadence??"—"}</strong><small>{dateLabel(item.nextReleaseDate??item.nextRelease)}</small></div></div>
-     </article>;
+      </article>
+     </Fragment>;
     })}
    </div>
    {!loading&&!observations.length&&<p className="economic-data-notice">구성 지표가 아직 저장되지 않았습니다. 없는 항목을 가상의 지표로 채우지 않습니다.</p>}
   </section>
-  {id==="inflation"&&<InflationResearchInputs/>}
   <a className="cnn-return-cta economic-back-button" href="/">← 메인 대시보드로 돌아가기</a>
  </div>;
 }
