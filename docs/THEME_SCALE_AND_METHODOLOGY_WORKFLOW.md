@@ -49,6 +49,27 @@ R18→R19→R20→R23→R25→R26→R32→R33은 같은 R32 프로젝트다. 기
 
 먼저 현재 공통 코드·V2 등록·운영 어댑터와 실제 연결을 필요한 범위에서 대조한다. 구현돼 검증된 기능은 재개발하지 않는다. 부족한 공통 기능만 목록화하고 영향·우선순위와 연결 지점을 정한다.
 
+### 기존 공개 테마 이관 입력과 게시 경로
+
+아래는 이관에 사용할 기존 경로의 매핑이다. 공통 예약은 등록된 ID를 순회하며 이 표의 개수로 실행 범위를 제한하지 않는다. 공개 이력과 입력 정책은 테마별로 승계한다.
+
+| 기존 공개 ID | 승인 입력 근거 | 현재 게시 경로 |
+| --- | --- | --- |
+| robotics | R20 로봇·자동화, R32 날짜별 AUM | R54/R37 확정, R88 잠정 |
+| cloud-saas | R20 클라우드·SaaS, R32 날짜별 AUM | R54/R37 확정, R88 잠정 |
+| autonomous-driving | R20 자율주행, R32 날짜별 AUM | R54/R37 확정, R88 잠정 |
+| nuclear-smr | R20 원전·SMR, R32 날짜별 AUM | R54/R37 확정, R88 잠정 |
+| defense | R20 방산, R32 날짜별 AUM | R54/R37 확정, R88 잠정 |
+| fintech | R20 핀테크, R32 날짜별 AUM | R54/R37 확정, R88 잠정 |
+| cybersecurity | R20 사이버보안, R32 날짜별 AUM | R54/R37 확정, R88 잠정 |
+| biotech | R20 바이오·신약, R32 날짜별 AUM | R54/R37 및 기존 바이오 어댑터 |
+| data-center-power | 현재 공개 Reader의 DTCR·GRID, SPY, PAIR50. R20 연구 명단에는 없음 | `theme-data-center-power-r1` 및 `theme-data-center-power-provisional-r1` |
+| space-satellite | 별도 R26 승인 명단과 R23 날짜별 AUM, R32 이력의 날짜별 단일 ETF 처리 정책 | `theme-space-satellite-r2` 우선 및 기존 R1 호환, `theme-space-satellite-provisional-r1` |
+
+- 공통 8개의 후보와 AUM 근거는 `config/theme-nine-r20-approved-candidates.json` 및 `config/theme-nine-r32-dated-aum-approval.json`에 있다. 기존 R37 확정 key는 `theme-legacy-nine-r37`, R88 잠정 key는 `theme-nine-r32-provisional-r88`이다. AI·반도체 연구 결과는 공개 전환 승인 전까지 공개 대상에 넣지 않는다.
+- V2 일반 등록은 기존 ID·이름과의 충돌을 차단하며 신규 R32 프로필을 요구한다. 기존 테마에는 현재 방법론과 이력을 보존하는 이관 계약이 필요하다. 특히 데이터센터 기존 PAIR50을 R32로 표기하거나 우주·위성의 과거 기여 정책을 신규 등록 규칙으로 덮어쓰지 않는다.
+- 공통 게시 소유권을 넘기기 전에 기존 공개 이력과 shadow 출력, 테마별 게시 key 및 현재 writer를 검산한다. 공통 예약이 해당 ID를 실제 처리하고 D1 재조회까지 확인한 뒤 기존 쓰기 경로를 정리한다. 개발 중인 비공개 테마는 기존 공개 테마 이관의 선행 조건에 포함하지 않는다.
+
 ### 전체 공개 테마 인식과 갱신 완료 조건
 
 - 기존 공개 테마와 이후 공개 승인된 신규 테마는 같은 등록 계약의 고유 ID로 인식한다. 등록 목록에서 실행·게시 대상 및 API 예상 ID 집합을 동적으로 산출한다. 기존 8개·별도 2개 같은 고정 그룹이나 고정 개수로 실행 범위를 정하지 않는다. 비공개 등록은 내부 처리 상태에 포함하되 공개 집합에는 공개 승인 이후 포함한다.
