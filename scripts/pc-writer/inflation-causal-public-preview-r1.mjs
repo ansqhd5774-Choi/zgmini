@@ -2,6 +2,7 @@
 // presentation *candidate*. No provider API calls, DB writes, D1 writes, or score.
 import fs from 'node:fs';
 import path from 'node:path';
+import {fileURLToPath} from 'node:url';
 import {gunzipSync} from 'node:zlib';
 import {createHash} from 'node:crypto';
 import {DatabaseSync} from 'node:sqlite';
@@ -176,4 +177,24 @@ export function previewInflation19(root,{openDb=file=>new DatabaseSync(file,{rea
  return {status:'PASS_READONLY',code:'INFL19_PUBLIC_PREVIEW',
   ready:filled.length,missing,providerCalls:0,dbWrites:0,d1Writes:0,
   coreWrites:0,schedulerWrites:0,payload};
+}
+
+if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.url)){
+ let output;
+ try{
+  if(process.argv.length!==2)throw Error('INFL19_ARGS_DENIED');
+  const result=previewInflation19(APPROVED);
+  output={status:result.status,code:result.code,ready:result.ready,
+   missing:result.missing,
+   latest:Object.fromEntries((result.payload?.indicators??[])
+    .filter(x=>x.status==='READY').map(x=>[x.id,x.observationDate])),
+   sourceVersion:result.payload?.sourceVersion??null,
+   providerCalls:0,dbWrites:0,coreWrites:0,d1Writes:0,schedulerWrites:0};
+ }catch(e){
+  output={status:'BLOCKED',
+   code:/^INFL19_[A-Z0-9_]{2,80}$/.test(e?.message??'')?e.message:'INFL19_PREVIEW_UNAVAILABLE',
+   providerCalls:0,dbWrites:0,coreWrites:0,d1Writes:0,schedulerWrites:0};
+ }
+ console.log(JSON.stringify(output));
+ if(output.status!=='PASS_READONLY')process.exitCode=1;
 }
