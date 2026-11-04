@@ -16,7 +16,7 @@ function cleaned(points:InflationMiniTrendPoint[]|undefined){
 }
 function pathFor(points:InflationMiniTrendPoint[]){
  const times=points.map((point,index)=>{
-  const time=Date.parse(`${point.date}T00:00:00Z`);
+  const time=Date.parse(`${point.date.length===7?point.date+"-01":point.date}T00:00:00Z`);
   return Number.isFinite(time)?time:index;
  });
  const minX=Math.min(...times),maxX=Math.max(...times),rangeX=maxX-minX||1;
