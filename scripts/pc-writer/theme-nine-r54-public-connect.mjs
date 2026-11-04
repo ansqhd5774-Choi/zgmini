@@ -106,7 +106,31 @@ export function verifyNineR54RawManifest({dataRoot,source}={}){
  let verifiedPages=0;
  for(const [folder,hash] of chunks){
   const home=fs.realpathSync(path.join(dataRoot,'themes',folder));
-  const bytes=safeFile(home,'raw-manifest.json');
+  const current=safeFile(home,'raw-manifest.json');
+  const archiveDir=path.join(home,'manifest-history');
+  const archiveName=`raw-manifest-${hash}.json`;
+  let bytes=sha(current)===hash?current:null;
+  if(!bytes&&fs.existsSync(archiveDir)){
+   need(fs.realpathSync(archiveDir)===path.resolve(archiveDir),
+    'SOURCE_MANIFEST_ARCHIVE_REDIRECT');
+   if(fs.existsSync(path.join(archiveDir,archiveName)))
+    bytes=safeFile(archiveDir,archiveName);
+  }
+  if(!bytes){
+   // R23/R35 append immutable raw-page references and serialize the same
+   // metadata and ordered files array. A historical prefix is admissible
+   // ONLY if its exact original JSON bytes reproduce the candidate's SHA.
+   // This is a cryptographic recovery, not a current-hash substitution.
+   const currentManifest=JSON.parse(current.toString('utf8'));
+   need(Array.isArray(currentManifest.files),'SOURCE_MANIFEST_NO_PAGES');
+   let matches=0;
+   for(let count=1;count<=currentManifest.files.length;count++){
+    const candidate=Buffer.from(JSON.stringify({...currentManifest,
+     files:currentManifest.files.slice(0,count)},null,2)+'\n');
+    if(sha(candidate)===hash){bytes=candidate;matches++;}
+   }
+   need(matches===1,'SOURCE_MANIFEST_SHA_DRIFT');
+  }
   need(sha(bytes)===hash,'SOURCE_MANIFEST_SHA_DRIFT');
   const manifest=JSON.parse(bytes.toString('utf8'));
   need(Array.isArray(manifest.files)&&manifest.files.length>0,
@@ -123,6 +147,15 @@ export function verifyNineR54RawManifest({dataRoot,source}={}){
     'SOURCE_RAW_PAGE_SHA_DRIFT');
    verifiedPages++;
   }
+  // Archive only SHA-verified historical bytes and SHA-verified raw pages.
+  // No live manifest is replaced; repeated runs read the immutable archive.
+  if(!fs.existsSync(archiveDir))fs.mkdirSync(archiveDir);
+  need(fs.realpathSync(archiveDir)===path.resolve(archiveDir),
+   'SOURCE_MANIFEST_ARCHIVE_REDIRECT');
+  const archived=path.join(archiveDir,archiveName);
+  if(!fs.existsSync(archived))fs.writeFileSync(archived,bytes,{flag:'wx'});
+  need(sha(safeFile(archiveDir,archiveName))===hash,
+   'SOURCE_MANIFEST_ARCHIVE_SHA_DRIFT');
  }
  need(verifiedPages>=64,'SOURCE_RAW_COVERAGE');
  return {sourceManifestVerified:true,rawFilesShaVerified:verifiedPages};
@@ -153,7 +186,8 @@ export async function runNineR54PublicConnect({dataRoot='E:/ZGmini/data',
  const staged=stageR48({dataRoot,configDirectory});
  need(staged?.status==='R48_PRIVATE_CANDIDATE_STAGED_NOT_PUBLISHED',
   'R48_PRIVATE_STAGE_FAILED');
- const provisional=await stageR51({dataRoot,publicBase,fetchImpl});
+ const provisional=await stageR51({dataRoot,publicBase,fetchImpl,
+  advanceConfirmed:true});
  if(provisional?.status?.startsWith('WAIT_'))return {
   status:provisional.status,reason:'R51_SCORE_DATES_NOT_YET_AVAILABLE',
   confirmedDate:provisional.confirmedDate??null,
@@ -188,7 +222,9 @@ export async function runNineR54PublicConnect({dataRoot='E:/ZGmini/data',
  const latest=publicLegacy?original:
   readR48(overlay.provisionalLineage?.latestCandidateSha256);
  const replay=publicLegacy?
-  buildNineR51ExistingPublicProvisionalOverlay({confirmed:original,publicBase}):
+  buildNineR51ExistingPublicProvisionalOverlay({confirmed:original,publicBase,
+   independentAnchor:original.observationDate>
+    (publicBase.confirmedObservationDate??publicBase.observationDate)}):
   buildNineR51PrivateProvisionalOverlay({confirmed:original,latest,publicBase});
  need(same(replay,overlay),'R51_PRIVATE_PROVISIONAL_REPLAY_DRIFT');
  const first=verifyNineR54PrivatePair({dataRoot:root,configDirectory,candidate:original});

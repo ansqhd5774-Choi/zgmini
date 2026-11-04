@@ -31,6 +31,8 @@ export function buildNineR54PublicRecord({candidate,candidateSha256,
  need(Number.isSafeInteger(now)&&now>0&&
   Number.isFinite(Date.parse(sourceStoredAt))&&
   Date.parse(sourceStoredAt)<=now,'SOURCE_CLOCK_INVALID');
+ need(Date.parse(candidate.observationDate+'T00:00:00Z')<=now,
+  'FUTURE_CONFIRMED_DATE');
  const stamp=new Date(now).toISOString();
  const record={...candidate,status:'READY',
   sourceStoredAt,publishedAt:stamp,
@@ -43,7 +45,9 @@ export function buildNineR54PublicRecord({candidate,candidateSha256,
   upstreamCommercialRightsVerified:false,derivedLicenseVerified:false,
   sourcePriceReconciled:false,licensingRiskAcceptedByPublisher:true,
   rightsBasis:BASIS,sourceTermsUrl:TERMS};
- need(eligibleNineR37(record,publicBase,{now,storedAt:now}),
+ const publicConfirmed=publicBase?.confirmedObservationDate??publicBase?.observationDate;
+ need(eligibleNineR37(record,publicBase,{now,storedAt:now,
+  independentAnchor:record.observationDate>publicConfirmed}),
   'PUBLIC_R37_READER_INELIGIBLE');
  return record;
 }

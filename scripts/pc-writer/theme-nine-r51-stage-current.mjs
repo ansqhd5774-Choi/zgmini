@@ -24,9 +24,13 @@ const safeFile=(dir,name)=>{
 };
 
 export async function stageNineR51Current({dataRoot='E:/ZGmini/data',
-  publicBase=null,fetchImpl=fetch,provisionalMode='PUBLIC_LEGACY_AS_IS'}={}){
+  publicBase=null,fetchImpl=fetch,provisionalMode='PUBLIC_LEGACY_AS_IS',
+  advanceConfirmed=false}={}){
   if(!['PUBLIC_LEGACY_AS_IS','R32_DATED'].includes(provisionalMode))
     fail('PROVISIONAL_MODE_INVALID');
+  if(typeof advanceConfirmed!=='boolean'||
+     (advanceConfirmed&&provisionalMode!=='PUBLIC_LEGACY_AS_IS'))
+    fail('CONFIRMED_ADVANCE_MODE_INVALID');
   if(!publicBase){
     // Fixed, unauthenticated same-site public read. No API key or raw data GET.
     const response=await fetchImpl(publicUrl,{method:'GET',redirect:'error',
@@ -54,7 +58,12 @@ export async function stageNineR51Current({dataRoot='E:/ZGmini/data',
     if(options.length>1)fail('R48_CANDIDATE_DATE_AMBIGUOUS');
     return options[0]??null;
   };
-  const confirmedFile=one(base);
+  const allDates=[...new Set(files.map(n=>n.match(fmt)[1]))].sort();
+  // Only the R54 verified regular publisher opts into a new confirmed date.
+  // Ordinary R51 staging still anchors to the existing public confirmed day.
+  const selectedConfirmedDate=advanceConfirmed?
+    allDates.filter(d=>d>=base).at(-1)??base:base;
+  const confirmedFile=one(selectedConfirmedDate);
   // A later R48 run can contain the public provisional day in its 252-day
   // history. Choose the earliest SHA-verified candidate at/after that day.
   // The pure overlay independently verifies every requested date and that
@@ -70,19 +79,21 @@ export async function stageNineR51Current({dataRoot='E:/ZGmini/data',
     d1Writes:0,publicationWrites:0};
   const confirmed=safeFile(dir,confirmedFile),latest=safeFile(dir,latestFile);
   const overlay=provisionalMode==='PUBLIC_LEGACY_AS_IS'?
-    buildNineR51ExistingPublicProvisionalOverlay({confirmed,publicBase}):
+    buildNineR51ExistingPublicProvisionalOverlay({confirmed,publicBase,
+      independentAnchor:advanceConfirmed&&confirmed.observationDate>base}):
     buildNineR51PrivateProvisionalOverlay({confirmed,latest,publicBase});
   const bytes=Buffer.from(JSON.stringify(overlay,null,2)+'\n');
   const outputDir=path.join(root,'themes','legacy-nine-r51-private-provisional');
   fs.mkdirSync(outputDir,{recursive:true});
   if(fs.realpathSync(outputDir)!==path.resolve(outputDir))fail('STAGE_REDIRECT');
-  const name=`THEME_NINE_R51_PRIVATE_PROVISIONAL_${base}_${final}_${sha(bytes).slice(0,16)}.json`;
+  const name=`THEME_NINE_R51_PRIVATE_PROVISIONAL_${confirmed.observationDate}_${final}_${sha(bytes).slice(0,16)}.json`;
   const target=path.join(outputDir,name);
   if(fs.existsSync(target)){
     if(sha(fs.readFileSync(target))!==sha(bytes))fail('EXISTING_STAGE_DRIFT');
   }else fs.writeFileSync(target,bytes,{flag:'wx'});
   return {status:'R51_PRIVATE_PROVISIONAL_STAGED_NOT_PUBLISHED',
-    confirmedDate:base,provisionalDates:overlay.provisional.points.map(p=>p.date),
+    confirmedDate:confirmed.observationDate,
+    provisionalDates:overlay.provisional.points.map(p=>p.date),
     latestR48SourceDate:latest.observationDate,
     themeCount:9,provisionalMode,
     scoreCount:overlay.provisional.points.reduce((n,p)=>n+Object.keys(p.scores).length,0),

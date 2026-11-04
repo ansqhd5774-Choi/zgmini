@@ -82,9 +82,31 @@ test('R54 blocks missing consent, false verification and date misalignment',()=>
   {candidateSha256:'INVALID'},
   {candidate:{...candidate,publicationAuthorized:true}},
   {candidate:{...candidate,sourcePriceMode:'OFFICIAL_CLOSE'}},
+  {candidate:{...candidate,observationDate:'2026-11-30'}},
   {publicBase:{...base,observationDate:'2026-10-27',confirmedObservationDate:'2026-10-27'}},
  ])assert.throws(()=>buildNineR54PublicRecord({...args,...changes}),
   /THEME_NINE_R54_/);
+});
+
+test('R54 validates a newer independently confirmed date without relabelling older public provisional',()=>{
+ const publishedBase={...base,version:'THEME_ETF_ONLY_R144_252_PUBLIC_V1',
+  methodologyVersion:'ETF_ONLY_T40_R20_V40_PAIR50',
+  sourceVersion:'OLDER_PUBLIC_SOURCE'};
+ const fresh={...candidate,phase:'CONFIRMED',observationDate:'2026-10-30',
+  themes:candidate.themes.map(t=>({...t,
+   history:[...t.history.slice(0,-1),{date:'2026-10-30',score:t.score}]}))};
+ const overlay=buildNineR51ExistingPublicProvisionalOverlay({
+  confirmed:fresh,publicBase:publishedBase,independentAnchor:true});
+ const futureNow=Date.parse('2026-10-31T05:00:00Z');
+ const record=buildNineR54PublicRecord({...args,candidate:overlay,
+  publicBase:publishedBase,now:futureNow,
+  sourceStoredAt:new Date(futureNow-4000).toISOString()});
+ assert.equal(record.observationDate,'2026-10-30');
+ assert.deepEqual(record.provisional,publishedBase.provisional);
+ assert.equal(eligibleNineR37(record,publishedBase,
+  {now:futureNow,storedAt:futureNow,independentAnchor:true}),true);
+ assert.equal(eligibleNineR37(record,publishedBase,
+  {now:futureNow,storedAt:futureNow}),false);
 });
 
 test('Cloudflare gate matches the exact deployed main source and worker check',async()=>{

@@ -75,16 +75,20 @@ function verify(candidate){
 // provisional dates (3 on 26 Oct, 7 on 27 Oct). These published numbers
 // are NOT R32 scores. Carry them through byte-for-byte in value and key order
 // while R32 replaces only the independently verified confirmed histories.
-export function buildNineR51ExistingPublicProvisionalOverlay({confirmed,publicBase}={}){
+export function buildNineR51ExistingPublicProvisionalOverlay({confirmed,publicBase,
+  independentAnchor=false}={}){
   const confirmedDates=verify(confirmed);
   const baseDate=publicBase?.confirmedObservationDate??publicBase?.observationDate;
   const pending=publicBase?.provisional?.points;
   if(publicBase?.status!=='READY'||publicBase.phase!=='PROVISIONAL'||
     !Array.isArray(publicBase.themes)||publicBase.themes.length<7||
-    !validDate(baseDate)||baseDate!==confirmed.observationDate||
+    !validDate(baseDate)||
+    (independentAnchor?confirmed.observationDate<=baseDate:
+      baseDate!==confirmed.observationDate)||
     publicBase.observationDate!==baseDate||
     !Array.isArray(pending)||pending.length<1||pending.length>32||
-    !same(publicBase.themes[0]?.history?.map(p=>p.date),confirmedDates)||
+    (!independentAnchor&&
+      !same(publicBase.themes[0]?.history?.map(p=>p.date),confirmedDates))||
     typeof publicBase.methodologyVersion!=='string'||
     !publicBase.methodologyVersion||typeof publicBase.version!=='string')
     fail('PUBLIC_LEGACY_ANCHOR');
@@ -111,7 +115,8 @@ export function buildNineR51ExistingPublicProvisionalOverlay({confirmed,publicBa
     provisionalLegacySourceVersion:publicBase.sourceVersion??null,
     provisionalLineage:{source:R51_PUBLIC_LEGACY_SOURCE,
       confirmedCandidateSha256:sha(confirmed),latestCandidateSha256:null,
-      confirmedObservationDate:baseDate,latestObservationDate:baseDate,
+      confirmedObservationDate:confirmed.observationDate,
+      latestObservationDate:confirmed.observationDate,
       publicVersion:publicBase.version,
       publicProvisionalEndDate:previous,
       publicProvisionalPointsSha256:sha(points),

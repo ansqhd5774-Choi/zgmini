@@ -72,7 +72,7 @@ export function eligibleNineR37(record,base,{now=Date.now(),storedAt=now,indepen
  if(!sha(record.rawManifestSha256)||!sha(record.r25InputSha256)||
   !sha(record.shadowSha256)||!sha(record.officialAumEvidenceSha256)||
   !validDate(record.observationDate)||
-  (independentAnchor?record.observationDate>baseConfirmed:record.observationDate!==baseConfirmed)||
+  (independentAnchor?record.observationDate<baseConfirmed:record.observationDate!==baseConfirmed)||
   !['CONFIRMED','PROVISIONAL'].includes(record.phase)||
   (!independentAnchor&&record.phase!==base.phase)||!stamp(record.sourceStoredAt)||
   !stamp(record.publishedAt)||!Number.isSafeInteger(Number(storedAt)))return false;

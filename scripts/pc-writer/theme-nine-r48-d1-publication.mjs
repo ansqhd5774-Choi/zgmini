@@ -23,7 +23,9 @@ export async function publishNineR48D1({query,record,publicBase,now=Date.now(),
     fail('D1_ADAPTER_OR_CLOCK');
   // The live public feed must be supplied by the caller. Never synthesize
   // it from a local private candidate to circumvent same-day/phase checks.
-  if(!eligibleNineR37(record,publicBase,{now,storedAt:now}))
+  const publicConfirmed=publicBase?.confirmedObservationDate??publicBase?.observationDate;
+  if(!eligibleNineR37(record,publicBase,{now,storedAt:now,
+    independentAnchor:record.observationDate>publicConfirmed}))
     fail('PUBLICATION_EVIDENCE_OR_BASE_NOT_READY');
   if(record.sourceContract==='THEME_NINE_R47_PRIVATE_RECURRING_NINE_THEME_SHADOW_V1'&&
     (!hashes.every(k=>/^[a-f0-9]{64}$/.test(record[k]))||

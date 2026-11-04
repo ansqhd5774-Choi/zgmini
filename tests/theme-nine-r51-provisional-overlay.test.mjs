@@ -367,3 +367,36 @@ test('R77 regression: advanced 27 Oct confirmed anchor retains 26/27 public prov
  changed.provisional.points[1].scores['방산']+=1;
  assert.equal(eligibleNineR37(approved,changed,{now,storedAt:now-1000}),false);
 });
+
+test('R54 regular refresh selects latest R48 confirmed session while preserving published legacy provisional',async t=>{
+ const dir=fs.mkdtempSync(path.join(os.tmpdir(),'r54-advance-confirmed-'));
+ t.after(()=>fs.rmSync(dir,{recursive:true,force:true}));
+ const input=path.join(dir,'themes','legacy-nine-r48-private-candidate');
+ fs.mkdirSync(input,{recursive:true});
+ const d28=Array.from({length:252},(_,i)=>new Date(
+  Date.parse('2026-10-28T00:00:00Z')-(251-i)*86400000).toISOString().slice(0,10));
+ const d30=Array.from({length:252},(_,i)=>new Date(
+  Date.parse('2026-10-30T00:00:00Z')-(251-i)*86400000).toISOString().slice(0,10));
+ const old=candidate('2026-10-28',d28,50),fresh=candidate('2026-10-30',d30,60);
+ for(const row of fresh.themes)for(const point of row.history)
+  if(point.date<='2026-10-28')point.score=50;
+ for(const record of [old,fresh]){
+  const bytes=Buffer.from(JSON.stringify(record,null,2)+'\n');
+  fs.writeFileSync(path.join(input,
+   `THEME_NINE_R48_PRIVATE_CANDIDATE_${record.observationDate}_${createHash('sha256').update(bytes).digest('hex').slice(0,16)}.json`),bytes);
+ }
+ const published={...publicBase,observationDate:'2026-10-28',
+  confirmedObservationDate:'2026-10-28',
+  themes:visible.map(t=>({...t,history:old.themes[0].history})),
+  provisional:{asOf:'2026-10-30T00:00:00Z',points:[
+   {date:'2026-10-29',scores:{'방산':47}}]}};
+ const result=await stageNineR51Current({dataRoot:dir,publicBase:published,
+  advanceConfirmed:true});
+ assert.equal(result.status,'R51_PRIVATE_PROVISIONAL_STAGED_NOT_PUBLISHED');
+ assert.equal(result.confirmedDate,'2026-10-30');
+ assert.equal(result.latestR48SourceDate,'2026-10-30');
+ const stored=JSON.parse(fs.readFileSync(result.candidatePath,'utf8'));
+ assert.equal(stored.observationDate,'2026-10-30');
+ assert.equal(stored.provisionalLineage.confirmedObservationDate,'2026-10-30');
+ assert.deepEqual(stored.provisional,published.provisional);
+});

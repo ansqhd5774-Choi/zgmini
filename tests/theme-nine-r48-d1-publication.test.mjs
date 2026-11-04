@@ -160,3 +160,22 @@ test('unchanged provisional scores do not churn same-day D1 even if publication 
  assert.equal(out.status,'UNCHANGED');
  assert.equal(db.calls.filter(c=>c.write).length,0);
 });
+
+test('new verified R32 confirmed session advances D1 anchor while preserving older public provisional',async()=>{
+ const old=legacyProvisional(44),db=fake(old.record);
+ const newDates=[...dates.slice(2),'2026-10-27','2026-10-28'];
+ const updated={...old.record,observationDate:'2026-10-28',
+  sourceStoredAt:'2026-10-29T01:00:00Z',
+  publishedAt:'2026-10-29T02:00:00Z',
+  themes:old.record.themes.map(t=>({...t,
+   history:newDates.map(date=>({date,score:51}))})),
+  provisionalLineage:{...old.record.provisionalLineage,
+   confirmedObservationDate:'2026-10-28',latestObservationDate:'2026-10-28'}};
+ const when=Date.parse('2026-10-29T03:00:00Z');
+ const out=await publishNineR48D1({query:db.query,record:updated,
+  publicBase:old.base,now:when,expectedStoredAt:now-1000});
+ assert.equal(out.status,'WRITTEN_AND_READBACK_VERIFIED');
+ assert.equal(out.observationDate,'2026-10-28');
+ assert.deepEqual(JSON.parse(db.row.body).provisional,old.record.provisional);
+ assert.equal(db.calls.filter(c=>c.write).length,1);
+});
