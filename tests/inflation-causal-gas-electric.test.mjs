@@ -126,6 +126,9 @@ test('EIA incomplete pagination, mixed sector and unexpected unit all fail befor
 
 test('EIA metadata accepts only explicit US geographic national aggregate',()=>{
   assert.equal(confirmEiaUsIndustrialFacet(facetFixture()),true);
+  assert.equal(confirmEiaUsIndustrialFacet({response:{facets:[{id:'US',name:'U.S. Total'}]}}),true);
+  assert.equal(confirmEiaUsIndustrialFacet({response:{facets:[{id:'US',name:'United States Total'}]}}),true);
+  assert.throws(()=>confirmEiaUsIndustrialFacet({response:{facets:[{id:'US',name:'U.S. Virgin Islands'}]}}),/US_NATIONAL_FACET_UNVERIFIED/);
   assert.throws(()=>confirmEiaUsIndustrialFacet({response:{facets:[{id:'NY',name:'New York'}]}}),/US_NATIONAL_FACET_UNVERIFIED/);
 });
 
