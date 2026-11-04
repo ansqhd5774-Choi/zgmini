@@ -11,6 +11,7 @@ import {InflationMiniChart,type InflationMiniTrendPoint} from "../inflation/infl
 import {ContentHelp} from "../content-help";
 import {EconomicFavoriteButton} from "./economic-favorite-button";
 import {buildResearchInputRows,researchObservationPeriod} from "../../lib/inflation-research-table-rows.mjs";
+import {inflationResearchReleaseInfo} from "../../lib/inflation-research-release-calendar.mjs";
 
 type Point={date?:string;label?:string;score?:number|null;value?:number|null;breakBefore?:boolean};
 type Indicator={
@@ -23,6 +24,7 @@ type Indicator={
  researchJudgement?:{name:string;tone:"positive"|"negative"|"neutral"|"missing"};
  history?:Point[];trend?:Point[];
  releaseCadence?:string|null;nextReleaseDate?:string|null;nextRelease?:string|null;
+ releaseNotice?:string|null;releaseSourceUrl?:string|null;
 };
 type Domain={
  id:string;status?:string;score?:number|null;state?:string;
@@ -33,6 +35,7 @@ type Domain={
 };
 type Snapshot={status:string;asOfDate?:string|null;domains?:Domain[]};
 type ResearchSnapshot={schemaVersion?:string;status?:string;indicators?:Array<Record<string,unknown>>};
+type ReleaseCalendar={sources?:Record<string,{status?:string;checkedAt?:string|null}>;events?:Array<{id?:string;source?:string;date?:string;sourceUrl?:string}>};
 const dated=(s:unknown):s is string=>typeof s==="string"&&/^\d{4}-\d{2}-\d{2}$/.test(s)&&!Number.isNaN(Date.parse(s+"T00:00:00Z"));
 const finite=(n:unknown):n is number=>typeof n==="number"&&Number.isFinite(n);
 const validScore=(n:unknown):n is number=>finite(n)&&n>=0&&n<=100;
@@ -129,6 +132,7 @@ export default function EconomicDetailPanel({id}:{id:EconomicDomainId}){
  const config=economicDetailById(id)!;
  const {payload,loading,error}=useStoredIndex<Snapshot>("/api/market-score");
  const {payload:researchPayload,loading:researchLoading,error:researchError}=useStoredIndex<ResearchSnapshot>("/api/inflation-causal-inputs",null,id==="inflation");
+ const {payload:releaseCalendar}=useStoredIndex<ReleaseCalendar>("/api/release-calendar",null,id==="inflation");
  const domain=payload?.domains?.find(item=>item.id===id);
  const score=domain?.status==="READY"&&validScore(domain.score)?domain.score:null;
  const history=useMemo(()=>normalizeTrend(domain?.trend),[domain?.trend]);
@@ -160,7 +164,12 @@ export default function EconomicDetailPanel({id}:{id:EconomicDomainId}){
  const comparisons=[{label:"1주",value:periods.week??null},{label:"1개월",value:periods.month??null},{label:"3개월",value:periods.threeMonth??null},{label:"6개월",value:periods.sixMonth??null},{label:"1년",value:periods.year??null}];
  const storedObservations=(domain?.indicators??[]).filter((row):row is Indicator=>Boolean(row&&typeof row==="object"));
  const observations=id==="employment"?employmentListRows(storedObservations):storedObservations;
- const researchRows=id==="inflation"?(buildResearchInputRows(researchPayload) as Indicator[]):[];
+ const easternParts=new Intl.DateTimeFormat("en-US",{timeZone:"America/New_York",year:"numeric",month:"2-digit",day:"2-digit"}).formatToParts(new Date());
+ const easternToday=["year","month","day"].map(part=>easternParts.find(item=>item.type===part)?.value??"").join("-");
+ const researchRows=id==="inflation"?(buildResearchInputRows(researchPayload) as Indicator[]).map(item=>{
+  const release=inflationResearchReleaseInfo(item.id?.replace(/^research-/,"")??"",releaseCalendar,easternToday);
+  return {...item,nextReleaseDate:release.nextReleaseDate,releaseNotice:release.text,releaseSourceUrl:release.sourceUrl};
+ }):[];
  const displayObservations=id==="inflation"?[...researchRows,...observations]:observations;
  const researchReady=researchRows.filter(x=>x.status==="READY").length;
  const scored=storedObservations.filter(item=>item.status==="READY"&&validScore(item.score));
@@ -230,7 +239,7 @@ export default function EconomicDetailPanel({id}:{id:EconomicDomainId}){
        <td>{item.criterionLabel??item.criterion??"저장 평가점수"}</td>
        <td className="inflation-r2-value"><strong>{previous}</strong><small>{observedPeriodLabel(item,item.previousObservationDate)}</small></td>
        <td className="inflation-r2-value" data-value-kind={present.type}><strong>{present.value}</strong><small>{present.detail}</small>{isResearch&&item.sourceDisplay&&<small title={item.sourceStoredAt?"PC 저장: "+dateLabel(item.sourceStoredAt.slice(0,10)):"원자료 제공처"}>{item.sourceDisplay}</small>}</td>
-       <td className="inflation-r2-release"><strong>{item.releaseCadence??"—"}</strong><small>{dateLabel(item.nextReleaseDate??item.nextRelease)}</small></td>
+       <td className="inflation-r2-release"><strong>{item.releaseCadence??"—"}</strong><small>{item.releaseNotice?(item.releaseSourceUrl?<a href={item.releaseSourceUrl} target="_blank" rel="noopener noreferrer" title="공식 발표 일정 · 미국 현지 날짜">{item.releaseNotice}</a>:item.releaseNotice):dateLabel(item.nextReleaseDate??item.nextRelease)}</small></td>
        <td><span className="inflation-judgement">{j.name}</span></td>
        <td className="inflation-r2-spark-cell"><InflationMiniChart label={name} points={mini}/></td>
        <td><IndicatorHelp item={item} title={name}/></td>
@@ -249,7 +258,7 @@ export default function EconomicDetailPanel({id}:{id:EconomicDomainId}){
       <p className="inflation-r2-mobile-content">{indicatorDescription(item,name)}</p>
       <p className="inflation-r2-mobile-criterion"><span>기준</span>{item.criterionLabel??item.criterion??"저장 평가점수"}</p>
       <div className="inflation-r2-mobile-spark"><span>미니차트(1Y)</span><InflationMiniChart label={name} points={mini}/></div>
-      <div className="inflation-r2-mobile-metrics"><div><span>{id==="inflation"?"이전":"이전 원값"}</span><strong>{item.status==="READY"?textValue(item.previousValue,item.unit):"—"}</strong><small>{observedPeriodLabel(item,item.previousObservationDate)}</small></div><div><span>{id==="inflation"?"현재":"현재 원값/점수"}</span><strong>{currentPresentation(item).value}</strong><small>{currentPresentation(item).detail}</small>{isResearch&&item.sourceDisplay&&<small title={item.sourceStoredAt?"PC 저장: "+dateLabel(item.sourceStoredAt.slice(0,10)):"원자료 제공처"}>{item.sourceDisplay}</small>}</div><div><span>발표</span><strong>{item.releaseCadence??"—"}</strong><small>{dateLabel(item.nextReleaseDate??item.nextRelease)}</small></div></div>
+      <div className="inflation-r2-mobile-metrics"><div><span>{id==="inflation"?"이전":"이전 원값"}</span><strong>{item.status==="READY"?textValue(item.previousValue,item.unit):"—"}</strong><small>{observedPeriodLabel(item,item.previousObservationDate)}</small></div><div><span>{id==="inflation"?"현재":"현재 원값/점수"}</span><strong>{currentPresentation(item).value}</strong><small>{currentPresentation(item).detail}</small>{isResearch&&item.sourceDisplay&&<small title={item.sourceStoredAt?"PC 저장: "+dateLabel(item.sourceStoredAt.slice(0,10)):"원자료 제공처"}>{item.sourceDisplay}</small>}</div><div><span>발표</span><strong>{item.releaseCadence??"—"}</strong><small>{item.releaseNotice?(item.releaseSourceUrl?<a href={item.releaseSourceUrl} target="_blank" rel="noopener noreferrer" title="공식 발표 일정 · 미국 현지 날짜">{item.releaseNotice}</a>:item.releaseNotice):dateLabel(item.nextReleaseDate??item.nextRelease)}</small></div></div>
       </article>
      </Fragment>;
     })}
