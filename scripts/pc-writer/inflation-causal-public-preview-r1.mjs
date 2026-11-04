@@ -174,8 +174,27 @@ export function previewInflation19(root,{openDb=file=>new DatabaseSync(file,{rea
    indicators:INFLATION_CAUSAL_19.map(m=>m.id===r.id?r:absent(m))};
   try{validateInflationCausalPublic(probe,{now});}
   catch(error){
-   missing[r.id]=error?.message==='INFLATION_CAUSAL_PUBLIC_READY_INVALID'
-    ?'INFL19_READY_CONTRACT_INVALID':'INFL19_PUBLIC_CONTRACT_INVALID';
+   const strictDate=s=>date(s)&&new Date(Date.parse(s.length===7?s+'-01':s))
+    .toISOString().slice(0,s.length)===s;
+   const strictIso=s=>typeof s==='string'&&/^20\d\d-\d\d-\d\dT\d\d:\d\d:\d\d/.test(s)
+    &&Number.isFinite(Date.parse(s));
+   let reason='INFL19_READY_CONTRACT_INVALID';
+   if(!finite(r.value))reason='INFL19_READY_VALUE_INVALID';
+   else if(!strictDate(r.observationDate))reason='INFL19_READY_DATE_INVALID';
+   else if(!strictIso(r.sourceStoredAt))reason='INFL19_READY_SOURCE_TIME_INVALID';
+   else if(r.availableAt!=null&&!strictIso(r.availableAt))reason='INFL19_READY_AVAILABLE_TIME_INVALID';
+   else if(!(r.previousValue===null||finite(r.previousValue))||
+    !(r.previousObservationDate===null||strictDate(r.previousObservationDate))||
+    (r.previousValue===null)!==(r.previousObservationDate===null)||
+    (r.previousObservationDate!==null&&r.previousObservationDate>=r.observationDate))
+    reason='INFL19_READY_PREVIOUS_INVALID';
+   else if(!Array.isArray(r.history)||r.history.length>13||r.history.some((p,i)=>
+    !strictDate(p.date)||!finite(p.value)||p.date>r.observationDate||
+    (i>0&&p.date<=r.history[i-1].date)))
+    reason='INFL19_READY_HISTORY_INVALID';
+   else if(error?.message!=='INFLATION_CAUSAL_PUBLIC_READY_INVALID')
+    reason='INFL19_READY_GLOBAL_CONTRACT_INVALID';
+   missing[r.id]=reason;
    delete records[r.id];
   }
  }
