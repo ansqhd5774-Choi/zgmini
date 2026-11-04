@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import {verifyThemeCutover,stageThemeCutover} from '../scripts/pc-writer/theme-platform-cutover.mjs';
+import {createHash} from 'node:crypto';
+import {verifyThemeCutover,stageThemeCutover,verifyThemeOwnershipPlan} from '../scripts/pc-writer/theme-platform-cutover.mjs';
 
 const prior={id:'robotics',methodologyVersion:'R32',etfs:['BOTZ'],history:[{date:'2026-10-30',score:42}],
  provisional:{date:'2026-11-02',score:45}};
@@ -29,4 +30,14 @@ test('staging preserves rolled-off confirmed points and separate provisional dat
  assert.deepEqual(result.candidates[0].history,[...prior.history,...newer.history]);
  assert.deepEqual(result.candidates[0].provisional,prior.provisional);
  assert.throws(()=>stageThemeCutover({legacy:[prior],candidates:[{...prior,history:[{...prior.history[0],score:1}]}]}),/CONFIRMED_CONFLICT/);
+});
+test('ownership plan checks every candidate and binds it to immutable staged bytes',()=>{
+ const staged=Buffer.from(JSON.stringify(stageThemeCutover({legacy:[prior],candidates:[prior]})));
+ const expectedStageSha256=createHash('sha256').update(staged).digest('hex');
+ const binding={id:prior.id,methodologyVersion:prior.methodologyVersion,legacyWriter:'r54',
+  targetWriter:'configured-themes',publicationKeys:{confirmed:'r37',provisional:'r88'},approvalEvidenceSha256:'a'.repeat(64)};
+ assert.equal(verifyThemeOwnershipPlan({staged,expectedStageSha256,bindings:[binding]}).status,'OWNERSHIP_PLAN_VERIFIED');
+ assert.equal(verifyThemeOwnershipPlan({staged,expectedStageSha256,bindings:[]}).results[0].reason,'EXISTING_WRITER_BINDING_MISSING');
+ assert.equal(verifyThemeOwnershipPlan({staged,expectedStageSha256,bindings:[{...binding,approvalEvidenceSha256:null}]}).results[0].reason,'EXISTING_APPROVAL_EVIDENCE_MISSING');
+ assert.throws(()=>verifyThemeOwnershipPlan({staged,expectedStageSha256:'0'.repeat(64),bindings:[binding]}),/STAGE_SHA/);
 });

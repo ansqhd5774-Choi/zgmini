@@ -1,4 +1,4 @@
-import {ensure,validDate} from './theme-config-registry.mjs';
+import {digest,ensure,validDate} from './theme-config-registry.mjs';
 
 // Check the cutover candidate against the existing public feed before changing
 // writer ownership. Each candidate must use the same canonical public ID.
@@ -58,4 +58,29 @@ export function stageThemeCutover({legacy,candidates}){
  });
  const verification=verifyThemeCutover({legacy,candidates:staged});
  return {...verification,...(verification.status==='CUTOVER_INPUTS_VERIFIED'?{candidates:staged}:{})};
+}
+
+ // Transfer definitions bind existing evidence to one reviewed writer plan.
+ // A staged score or a public response alone cannot grant publication rights.
+export function verifyThemeOwnershipPlan({staged,expectedStageSha256,bindings}){
+ ensure(Buffer.isBuffer(staged)&&digest(staged)===expectedStageSha256,'THEME_CUTOVER_STAGE_SHA');
+ const artifact=JSON.parse(staged.toString('utf8'));
+ ensure(artifact.status==='CUTOVER_INPUTS_VERIFIED'&&Array.isArray(artifact.candidates)&&artifact.candidates.length>0,'THEME_CUTOVER_STAGE_NOT_VERIFIED');
+ ensure(Array.isArray(bindings),'THEME_CUTOVER_BINDINGS_REQUIRED');
+ const ids=new Map(bindings.map(binding=>[binding.id,binding]));
+ ensure(ids.size===bindings.length,'THEME_CUTOVER_DUPLICATE_BINDING');
+ const candidateIds=new Set(artifact.candidates.map(candidate=>candidate.id));
+ ensure(candidateIds.size===artifact.candidates.length&&[...ids.keys()].every(id=>candidateIds.has(id)),'THEME_CUTOVER_BINDING_SCOPE');
+ const results=artifact.candidates.map(candidate=>{
+  const binding=ids.get(candidate.id);
+  let reason;
+  if(!binding)reason='EXISTING_WRITER_BINDING_MISSING';
+  else if(binding.methodologyVersion!==candidate.methodologyVersion)reason='METHODOLOGY_MISMATCH';
+  else if(typeof binding.legacyWriter!=='string'||!binding.legacyWriter||binding.targetWriter!=='configured-themes'||
+   !['confirmed','provisional'].every(kind=>typeof binding.publicationKeys?.[kind]==='string'&&binding.publicationKeys[kind]))
+   reason='WRITER_OR_PUBLICATION_KEY_MISSING';
+  else if(!/^[a-f0-9]{64}$/.test(binding.approvalEvidenceSha256??''))reason='EXISTING_APPROVAL_EVIDENCE_MISSING';
+  return {id:candidate.id,status:reason?'BLOCKED':'PLAN_VERIFIED',...(reason?{reason}:{})};
+ });
+ return {status:results.every(result=>result.status==='PLAN_VERIFIED')?'OWNERSHIP_PLAN_VERIFIED':'OWNERSHIP_PLAN_BLOCKED',results};
 }

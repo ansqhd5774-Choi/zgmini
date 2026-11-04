@@ -98,6 +98,12 @@ async function cli(){
   ensure(!arg,'CONFIG_USAGE');
   return (await import('./theme-platform-inspect.mjs')).inspectThemePlatform();
  }
+ if(mode==='--verify-cutover-ownership'){
+  ensure(arg,'CONFIG_USAGE');
+  const {verifyThemeOwnershipPlan}=await import('./theme-platform-cutover.mjs');
+  const {stagedPath,expectedStageSha256,bindings}=JSON.parse(fs.readFileSync(arg,'utf8'));
+  return verifyThemeOwnershipPlan({staged:fs.readFileSync(stagedPath),expectedStageSha256,bindings});
+ }
  if(mode==='--verify-cutover'||mode==='--stage-cutover'){
   ensure(arg,'CONFIG_USAGE');
   const {verifyThemeCutover,stageThemeCutover}=await import('./theme-platform-cutover.mjs');
