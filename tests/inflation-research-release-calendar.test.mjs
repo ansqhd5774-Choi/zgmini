@@ -66,22 +66,44 @@ test('READY source without any future matching event does not invent a date',()=
   assert.equal(answer.nextReleaseDate,null);
 });
 
-test('latest SOURCE_FAILED state blocks preserved former events from posing as current',()=>{
+test('source failure preserves a previously verified future event but clearly labels it as last known',()=>{
   const answer=inflationResearchReleaseInfo('14',sample({bls:{status:'SOURCE_FAILED',checkedAt:CHECKED}},EVENTS),TODAY,NOW);
-  assert.equal(answer.status,'SOURCE_FAILED');
-  assert.equal(answer.nextReleaseDate,null);
+  assert.equal(answer.status,'LAST_CONFIRMED_SOURCE_FAILED');
+  assert.equal(answer.nextReleaseDate,'2026-11-12');
+  assert.equal(answer.basis,'last-official-source-failed');
+  assert.match(answer.text,/마지막 확인.*조회 실패/);
+  assert.doesNotMatch(answer.text,/· 공식$/);
 });
 
-test('48h freshness boundary and invalid/future checkedAt are enforced',()=>{
+test('48h freshness is a warning, not a hard delete of valid future official events',()=>{
   const exact=new Date(NOW-48*60*60*1000).toISOString();
   const old=new Date(NOW-48*60*60*1000-1).toISOString();
   const future=new Date(NOW+1000).toISOString();
   assert.equal(inflationResearchReleaseInfo('5',sample({bls:{status:'READY',checkedAt:exact}}),TODAY,NOW).status,'CONFIRMED');
-  for(const checkedAt of [old,future,null,'not-a-date']){
+  const preserved=inflationResearchReleaseInfo('5',sample({bls:{status:'READY',checkedAt:old}}),TODAY,NOW);
+  assert.equal(preserved.status,'LAST_CONFIRMED_STALE');
+  assert.equal(preserved.nextReleaseDate,'2026-11-17');
+  assert.equal(preserved.basis,'last-official-stale');
+  assert.match(preserved.text,/마지막 확인.*갱신 지연/);
+  for(const checkedAt of [future,null,'not-a-date']){
     const answer=inflationResearchReleaseInfo('5',sample({bls:{status:'READY',checkedAt}}),TODAY,NOW);
     assert.equal(answer.status,'SOURCE_STALE');
     assert.equal(answer.nextReleaseDate,null);
   }
+});
+
+test('expired events, missing prior verification, and mismatched sources never masquerade as last known dates',()=>{
+  const old=new Date(NOW-49*3600000).toISOString();
+  const events=[{id:'ppi',source:'bls',date:'2026-11-04'},
+    {id:'ppi',source:'bea',date:'2026-11-17'}];
+  for(const status of ['READY','SOURCE_FAILED']){
+    const answer=inflationResearchReleaseInfo('5',sample({bls:{status,checkedAt:old}},events),TODAY,NOW);
+    assert.equal(answer.nextReleaseDate,null);
+    assert.equal(answer.status,status==='READY'?'SOURCE_STALE':'SOURCE_FAILED');
+  }
+  const withoutChecked=inflationResearchReleaseInfo('5',sample({bls:{status:'SOURCE_FAILED',checkedAt:null}}),TODAY,NOW);
+  assert.equal(withoutChecked.status,'SOURCE_FAILED');
+  assert.equal(withoutChecked.nextReleaseDate,null);
 });
 
 test('missing calendar, source state, malformed event and reference dates never create fake official dates',()=>{
@@ -125,11 +147,15 @@ test('future EIA/NYFed source activation needs no code mapping change',()=>{
   }
 });
 
-test('newly linked sources obey the same source failure and freshness protections',()=>{
+test('newly linked sources preserve only previously verified dates and label failure or staleness',()=>{
   const failed=sample({nyfed:{status:'SOURCE_FAILED',checkedAt:CHECKED}});
-  assert.equal(inflationResearchReleaseInfo('21',failed,TODAY,NOW).status,'SOURCE_FAILED');
+  const oldNyfed=inflationResearchReleaseInfo('21',failed,TODAY,NOW);
+  assert.equal(oldNyfed.status,'LAST_CONFIRMED_SOURCE_FAILED');
+  assert.equal(oldNyfed.nextReleaseDate,'2026-11-09');
   const stale=sample({eia_epm:{status:'READY',checkedAt:new Date(NOW-49*3600000).toISOString()}});
-  assert.equal(inflationResearchReleaseInfo('4',stale,TODAY,NOW).status,'SOURCE_STALE');
+  const oldEia=inflationResearchReleaseInfo('4',stale,TODAY,NOW);
+  assert.equal(oldEia.status,'LAST_CONFIRMED_STALE');
+  assert.equal(oldEia.nextReleaseDate,'2026-11-24');
   const readyNoEvents=sample({nyfed:{status:'READY',checkedAt:CHECKED}},[]);
   assert.equal(inflationResearchReleaseInfo('31',readyNoEvents,TODAY,NOW).status,'NO_CONFIRMED');
 });
