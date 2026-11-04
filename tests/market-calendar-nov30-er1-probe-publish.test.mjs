@@ -8,7 +8,7 @@ import {makeER1PublicDisplay,validateER1PublicDisplay} from '../lib/market-calen
 import {
  NOV2026_ER1_PUBLIC_KEY,selectFutureNovemberSymbols,validateVendorActual,
  inspectVendorActual,
- syncNovemberER1D1,runNovemberProbePublish
+ syncNovemberER1D1,runNovemberProbePublish,saveNovemberER1Derived
 } from '../scripts/pc-writer/market-calendar-nov30-er1-probe-publish.mjs';
 
 const NOV_NOW=Date.parse('2026-11-05T08:00:00Z');
@@ -69,6 +69,22 @@ test('November future-only selection is deterministic and capped at three',()=>{
  assert.deepEqual(selectFutureNovemberSymbols(EVENTS,'2026-11-29'),[]);
  assert.throws(()=>selectFutureNovemberSymbols([{date:'2026-11-33',ticker:'XXX'}],
   '2026-11-05'),/NOV30_ER1_CALENDAR_ROW_INVALID/);
+});
+test('a changed relative score preserves the previous immutable version and advances current',t=>{
+ const {input}=fixture(t),dir=path.join(input,'nov30-er1-probe-derived');
+ const first=JSON.stringify({method:'approved',scores:[{ticker:'AAA',score:70}]});
+ const second=JSON.stringify({method:'approved',scores:[{ticker:'AAA',score:78}]});
+ const oldSha=saveNovemberER1Derived(dir,first);
+ const newSha=saveNovemberER1Derived(dir,second);
+ assert.notEqual(newSha,oldSha);
+ assert.equal(fs.readFileSync(path.join(dir,'current.json'),'utf8'),second);
+ assert.equal(fs.readFileSync(path.join(dir,'versions',oldSha+'.json'),'utf8'),first);
+ assert.equal(fs.readFileSync(path.join(dir,'versions',newSha+'.json'),'utf8'),second);
+ assert.equal(saveNovemberER1Derived(dir,second),newSha);
+ fs.writeFileSync(path.join(dir,'versions',oldSha+'.json'),'tampered');
+ assert.throws(()=>saveNovemberER1Derived(dir,first),
+  /NOV30_ER1_LOCAL_DERIVED_VERSION_DRIFT_STOP/);
+ assert.equal(fs.readFileSync(path.join(dir,'current.json'),'utf8'),second);
 });
 test('only complete numeric actual fields are allowed; estimates are not substituted',()=>{
  assert.equal(validateVendorActual(ACTUAL('AAA'),'AAA').length,3);
