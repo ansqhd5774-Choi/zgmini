@@ -98,6 +98,11 @@ async function cli(){
   ensure(!arg,'CONFIG_USAGE');
   return (await import('./theme-platform-inspect.mjs')).inspectThemePlatform();
  }
+ if(mode==='--verify-cutover'){
+  ensure(arg,'CONFIG_USAGE');
+  const {verifyThemeCutover}=await import('./theme-platform-cutover.mjs');
+  return verifyThemeCutover(JSON.parse(fs.readFileSync(arg,'utf8')));
+ }
  if(mode==='--validate')return {status:'CONFIG_VALID',definition:readDefinition(arg),providerCalls:0};
  if(mode==='--list'){ensure(!arg,'CONFIG_USAGE');return listRegistered(root()).map(r=>planRegistered(root(),r.definition.id));}
  if(mode==='--register')return registerDefinition({dataRoot:root(),definition:readDefinition(arg),legacyRegistry:legacy()});
