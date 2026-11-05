@@ -170,7 +170,7 @@ export default function EconomicDetailPanel({id}:{id:EconomicDomainId}){
   const release=inflationResearchReleaseInfo(item.id?.replace(/^research-/,"")??"",releaseCalendar,easternToday);
    return {...item,nextReleaseDate:release.nextReleaseDate,releaseNotice:release.text,releaseShortNotice:release.shortText,releaseSourceUrl:release.sourceUrl};
  }):[];
- const displayObservations=id==="inflation"?[...researchRows,...observations]:observations;
+ const displayObservations=id==="inflation"?researchRows:observations;
  const researchReady=researchRows.filter(x=>x.status==="READY").length;
  const scored=storedObservations.filter(item=>item.status==="READY"&&validScore(item.score));
  const ranked=[...scored].sort((a,b)=>(b.score??0)-(a.score??0));
@@ -220,9 +220,9 @@ export default function EconomicDetailPanel({id}:{id:EconomicDomainId}){
    <div className="economic-reading-strips"><span><b>점수 읽기</b>{config.reading}</span><span><b>시장과의 관계</b>{config.impact}</span></div>
   </section>
   <section className="inflation-indicator-section inflation-r2-indicators economic-indicators" aria-labelledby={"economic-"+id+"-indicators"}>
-   <header><div><p className="cnn-eyebrow">ECONOMIC INDICATORS</p><h2 id={"economic-"+id+"-indicators"}>{id==="inflation"?"물가 관련 지표 (원자료 19개 · 기존 평가 "+observations.length+"개)":<>{config.name} 구성 지표 ({id==="growth"?observations.length+"/24":observations.length}개)</>}</h2></div><p>{id==="employment"?"R6 구성 목록 · 10년 백분위 평가 · %는 가중치. 상단 점수는 별도 저장값이며, 미확보 데이터는 —로 표시합니다.":id==="inflation"?<>연구용 원자료 19개 · 판정은 <b>직전 관측값 대비 잠정 방향</b>이며 공식 점수가 아닙니다. 월·분기 표기는 관측기간입니다. 기존 평가 4개의 산식은 별개입니다.</>:<>승인된 저장 지표만 표시합니다. 이전 원자료·공식 다음 발표일·미니차트가 없으면 <b>—</b>로 구분하며 임의로 보완하지 않습니다.</>}{id==="growth"&&observations.length!==24?" 산출요인 24개 중 아직 공개되지 않은 항목이 있습니다.":""}</p></header>
+   <header><div><p className="cnn-eyebrow">ECONOMIC INDICATORS</p><h2 id={"economic-"+id+"-indicators"}>{id==="inflation"?"물가 관련 지표 (원자료 19개)":<>{config.name} 구성 지표 ({id==="growth"?observations.length+"/24":observations.length}개)</>}</h2></div><p>{id==="employment"?"R6 구성 목록 · 10년 백분위 평가 · %는 가중치. 상단 점수는 별도 저장값이며, 미확보 데이터는 —로 표시합니다.":id==="inflation"?<>연구용 원자료 19개 · 판단은 <b>직전 관측값 대비 참고 방향</b>이며 공식 점수가 아닙니다.</>:<>승인된 저장 지표만 표시합니다. 이전 원자료·공식 다음 발표일·미니차트가 없으면 <b>—</b>로 구분하며 임의로 보완하지 않습니다.</>}{id==="growth"&&observations.length!==24?" 산출요인 24개 중 아직 공개되지 않은 항목이 있습니다.":""}</p></header>
    {error&&<p className="economic-data-notice" role="status">최근 데이터 조회가 지연되고 있습니다. 저장 자료는 갱신 확인 후 표시됩니다.</p>}
-   {id==="inflation"&&(researchError||researchLoading)&&<p className="economic-data-notice" role="status">{researchLoading?"연구용 원자료 19개 공개값 확인 중":"연구용 원자료 공개값 조회가 지연됩니다. 기존 평가점수는 유지됩니다."}</p>}
+   {id==="inflation"&&(researchError||researchLoading)&&<p className="economic-data-notice" role="status">{researchLoading?"연구용 원자료 19개 공개값 확인 중":"연구용 원자료 조회가 지연됩니다. 종합점수는 유지됩니다."}</p>}
    <div className="inflation-table-wrap inflation-r2-table-wrap">
     <table className="inflation-indicator-table inflation-indicator-table-r2 economic-table">
      <colgroup>{Array.from({length:10},(_,i)=><col key={i}/>)}</colgroup>
@@ -231,7 +231,7 @@ export default function EconomicDetailPanel({id}:{id:EconomicDomainId}){
        const name=indicatorLabel(item,id,i),idKey=item.id??name,part=validScore(item.score)&&item.status==="READY"?item.score:null,isResearch=id==="inflation"&&i<researchRows.length,j=isResearch?item.researchJudgement??{name:"—",tone:"missing"}:judgement(part),mini=indicatorTrend(item);
       const present=currentPresentation(item),previous=item.status==="READY"?textValue(item.previousValue,item.unit):"—";
       return <Fragment key={idKey+"-"+i}>
-       {id==="inflation"&&(i===0||i===researchRows.length)&&<tr className="economic-research-group-row"><td colSpan={10}>{i===0?"수집 원자료 19개 · 연구용 · "+researchReady+"/19 공개 확인 (최종 선정 전)":"기존 평가점수 "+observations.length+"개 · 현행 산식 유지"}</td></tr>}
+       {id==="inflation"&&i===0&&<tr className="economic-research-group-row"><td colSpan={10}>{"수집 원자료 19개 · 연구용 · "+researchReady+"/19 공개 확인 (최종 선정 전)"}</td></tr>}
        <tr data-judgement={j.tone} data-research-input={isResearch?item.id:undefined}>
        <td><EconomicFavoriteButton domainId={id} indicatorId={idKey} label={name}/></td>
        <th scope="row"><strong>{name}</strong><small>{technicalSource(item.source)}</small></th>
@@ -252,7 +252,7 @@ export default function EconomicDetailPanel({id}:{id:EconomicDomainId}){
     {displayObservations.map((item,i)=>{
       const name=indicatorLabel(item,id,i),idKey=item.id??name,part=validScore(item.score)&&item.status==="READY"?item.score:null,isResearch=id==="inflation"&&i<researchRows.length,j=isResearch?item.researchJudgement??{name:"—",tone:"missing"}:judgement(part),mini=indicatorTrend(item);
      return <Fragment key={idKey+"-"+i}>
-      {id==="inflation"&&(i===0||i===researchRows.length)&&<p className="economic-research-mobile-group">{i===0?"수집 원자료 19개 · 연구용 · "+researchReady+"/19 공개 확인":"기존 평가점수 "+observations.length+"개 · 현행 산식 유지"}</p>}
+      {id==="inflation"&&i===0&&<p className="economic-research-mobile-group">{"수집 원자료 19개 · 연구용 · "+researchReady+"/19 공개 확인"}</p>}
       <article className="inflation-r2-mobile-card" data-judgement={j.tone} data-research-input={isResearch?item.id:undefined}>
       <div className="inflation-r2-mobile-head"><div className="economic-mobile-name"><EconomicFavoriteButton domainId={id} indicatorId={idKey} label={name}/><div><strong>{name}</strong><small>{technicalSource(item.source)}</small></div></div><div className="inflation-r2-mobile-actions"><span className="inflation-judgement">{j.name}</span><IndicatorHelp item={item} title={name}/></div></div>
       <p className="inflation-r2-mobile-content">{indicatorDescription(item,name)}</p>
@@ -263,7 +263,7 @@ export default function EconomicDetailPanel({id}:{id:EconomicDomainId}){
      </Fragment>;
     })}
    </div>
-   {!loading&&!observations.length&&<p className="economic-data-notice">구성 지표가 아직 저장되지 않았습니다. 없는 항목을 가상의 지표로 채우지 않습니다.</p>}
+   {!loading&&id!=="inflation"&&!observations.length&&<p className="economic-data-notice">구성 지표가 아직 저장되지 않았습니다. 없는 항목을 가상의 지표로 채우지 않습니다.</p>}
   </section>
   <a className="cnn-return-cta economic-back-button" href="/">← 메인 대시보드로 돌아가기</a>
  </div>;
