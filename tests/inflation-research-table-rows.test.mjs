@@ -48,14 +48,14 @@ test('all 19 inputs expose an individual non-scoring criterion without inventing
 test('research-only pressure direction uses observed prior/current, not 0–100 scores',()=>{
  const risk=researchDirectionalJudgement('1',95,101);
  const ease=researchDirectionalJudgement('1',101,95);
- assert.deepEqual(risk,{name:'상방 신호',tone:'negative'});
- assert.deepEqual(ease,{name:'완화 신호',tone:'positive'});
- assert.deepEqual(researchDirectionalJudgement('1',0,0),{name:'변화 없음',tone:'neutral'});
+ assert.deepEqual(risk,{name:'부정',tone:'negative'});
+ assert.deepEqual(ease,{name:'긍정',tone:'positive'});
+ assert.deepEqual(researchDirectionalJudgement('1',0,0),{name:'중립',tone:'neutral'});
  assert.equal(researchDirectionalJudgement('1',null,99).tone,'missing');
- assert.deepEqual(researchDirectionalJudgement('18',101,102),{name:'방향 미검증',tone:'neutral'});
+ assert.deepEqual(researchDirectionalJudgement('18',101,102),{name:'—',tone:'neutral'});
  const report=buildResearchInputRows(data());
  assert(report.every(x=>x.score===null&&x.researchJudgement&& (x.id==='research-18'?x.researchJudgement.tone==='neutral':x.researchJudgement.tone==='positive')));
- assert.equal(report[13].researchJudgement.tone,'neutral'); // USD is explicitly conditional.
+ assert.equal(report[13].researchJudgement.name,'—'); // USD direction is unverified; no neutral verdict is printed.
 });
 test('period starts are labeled observation month or quarter, never a fictitious release date',()=>{
  assert.equal(researchObservationPeriod('2026-09-01','월간'),'2026년 9월 관측');
