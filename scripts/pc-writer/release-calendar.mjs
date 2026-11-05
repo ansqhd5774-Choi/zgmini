@@ -34,7 +34,13 @@ export async function collectReleaseCalendar(db,{now=Date.now(),fetchImpl=fetch}
     if(!parsed.length)throw Error('CALENDAR_EVENTS_EMPTY');
     const previousEvents=previous?.body?.events??[];
     const preserved=previousEvents.filter(e=>e.source===source&&missed.includes(e.sourceUrl));
-    sources[source]={status:'READY',checkedAt:new Date(now).toISOString(),sourceUrl:spec.page,...(missed.length?{partial:true,attemptedAt:new Date(now).toISOString()}: {})};
+    // A failed month must not promote an older preserved date to newly verified.
+    // Existing readers understand SOURCE_FAILED and label any retained date as
+    // last-confirmed, while the successfully fetched month stays stored.
+    sources[source]=missed.length
+     ?{status:'SOURCE_FAILED',checkedAt:previous?.body?.sources?.[source]?.checkedAt??null,
+       attemptedAt:new Date(now).toISOString(),sourceUrl:spec.page,partial:true}
+     :{status:'READY',checkedAt:new Date(now).toISOString(),sourceUrl:spec.page};
     events.push(...parsed,...preserved);
    }catch{
     sources[source]={status:'SOURCE_FAILED',checkedAt:previous?.body?.sources?.[source]?.checkedAt??null,attemptedAt:new Date(now).toISOString(),sourceUrl:spec.page};
