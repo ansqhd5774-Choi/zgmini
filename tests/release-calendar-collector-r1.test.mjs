@@ -55,7 +55,8 @@ test('NY Fed next-month fetch failure keeps current official events and prior ve
   const result=await collectReleaseCalendar(db,{now,fetchImpl});
   assert.equal(result.status,'PARTIAL');assert.equal(calls,7);
   const output=(await store.readOutput('release-calendar')).body;
-  assert.equal(output.sources.nyfed.status,'READY');assert.equal(output.sources.nyfed.partial,true);
+  assert.equal(output.sources.nyfed.status,'SOURCE_FAILED');assert.equal(output.sources.nyfed.partial,true);
+  assert.equal(output.sources.nyfed.checkedAt,new Date(now-3600000).toISOString());
   assert.equal(output.events.some(e=>e.source==='nyfed'&&e.id==='nyfed-gscpi'&&e.date==='2026-11-05'),true);
   assert.equal(output.events.some(e=>e.source==='nyfed'&&e.id==='nyfed-gscpi'&&e.date==='2026-12-04'),true);
   assert.equal(output.events.some(e=>e.source==='eia_epm'&&e.id==='eia-epm'),true);
