@@ -35,6 +35,7 @@ try{
   await section.waitFor({state:'attached',timeout:30000});
   await page.waitForFunction(()=>document.querySelectorAll('tbody tr[data-research-input]').length===19&&
    document.querySelectorAll('tbody tr[data-judgement]:not([data-research-input])').length===0,null,{timeout:30000});
+  await page.waitForFunction(()=>{const row=document.querySelector('tbody tr[data-research-input="research-1"]');return row?.getAttribute('data-judgement')==='negative'&&row.querySelectorAll('td')[3]?.textContent?.includes('120.4');},null,{timeout:30000});
   assert.equal(await section.locator('tbody tr[data-research-input]').count(),19);
   assert.equal(await section.locator('tbody tr[data-judgement]:not([data-research-input])').count(),0);
   assert.equal(await section.locator('tbody tr.economic-research-group-row').count(),1);
