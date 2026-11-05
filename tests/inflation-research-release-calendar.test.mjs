@@ -159,3 +159,18 @@ test('newly linked sources preserve only previously verified dates and label fai
   const readyNoEvents=sample({nyfed:{status:'READY',checkedAt:CHECKED}},[]);
   assert.equal(inflationResearchReleaseInfo('31',readyNoEvents,TODAY,NOW).status,'NO_CONFIRMED');
 });
+
+test('compact labels fit the UI without discarding full schedule status details',()=>{
+ const confirmed=inflationResearchReleaseInfo('5',sample(),TODAY,NOW);
+ assert.equal(confirmed.shortText,'11.17');
+ assert.equal(confirmed.text,'11.17 · 공식');
+ assert.equal(inflationResearchReleaseInfo('1',sample(),TODAY,NOW).shortText,'정기 없음');
+ assert.equal(inflationResearchReleaseInfo('4',sample(),TODAY,NOW).shortText,'미연결');
+ assert.equal(inflationResearchReleaseInfo('13',sample({},[]),TODAY,NOW).shortText,'일정 미정');
+ const failed=inflationResearchReleaseInfo('5',sample({bls:{status:'SOURCE_FAILED',checkedAt:CHECKED}}),TODAY,NOW);
+ assert.equal(failed.shortText,'11.17 · 실패');
+ assert.match(failed.text,/마지막 확인.*조회 실패/);
+ const stale=inflationResearchReleaseInfo('5',sample({bls:{status:'READY',checkedAt:new Date(NOW-49*3600000).toISOString()}}),TODAY,NOW);
+ assert.equal(stale.shortText,'11.17 · 지연');
+ assert.match(stale.text,/마지막 확인.*갱신 지연/);
+});
