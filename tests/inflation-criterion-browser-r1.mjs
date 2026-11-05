@@ -34,9 +34,12 @@ try{
   const section=page.locator('.economic-indicators[aria-labelledby="economic-inflation-indicators"]');
   await section.waitFor({state:'attached',timeout:30000});
   await page.waitForFunction(()=>document.querySelectorAll('tbody tr[data-research-input]').length===19&&
-   document.querySelectorAll('tbody tr[data-judgement]:not([data-research-input])').length===4,null,{timeout:30000});
+   document.querySelectorAll('tbody tr[data-judgement]:not([data-research-input])').length===0,null,{timeout:30000});
+  await page.waitForFunction(()=>{const row=document.querySelector('tbody tr[data-research-input="research-1"]');return row?.getAttribute('data-judgement')==='negative'&&row.querySelectorAll('td')[3]?.textContent?.includes('120.4');},null,{timeout:30000});
   assert.equal(await section.locator('tbody tr[data-research-input]').count(),19);
-  assert.equal(await section.locator('tbody tr[data-judgement]:not([data-research-input])').count(),4);
+  assert.equal(await section.locator('tbody tr[data-judgement]:not([data-research-input])').count(),0);
+  assert.equal(await section.locator('tbody tr.economic-research-group-row').count(),1);
+  assert.doesNotMatch(await section.innerText(),/기존 평가점수 4개/);
   assert.match(await section.locator('h2').first().innerText(),/원자료 19개/);
   const table=section.locator('table').first();
   for(const label of ['기준','이전','현재']){
@@ -60,6 +63,8 @@ try{
   assert.equal(await svgStroke(first),'rgb(255, 154, 154)');
   assert.equal(await svgStroke(gas),'rgb(119, 229, 156)');
   assert.equal(await section.locator('.inflation-r2-mobile-list article[data-research-input]').count(),19);
+  assert.equal(await section.locator('.inflation-r2-mobile-list article:not([data-research-input])').count(),0);
+  assert.equal(await section.locator('.economic-research-mobile-group').count(),1);
   const firstMobile=section.locator('.inflation-r2-mobile-list article[data-research-input="research-1"]');
   assert.match(await firstMobile.locator('.inflation-r2-mobile-criterion').innerText(),/에너지원가↑/);
   assert.match(await firstMobile.locator('.inflation-r2-mobile-metrics').innerText(),/120\.4/);
