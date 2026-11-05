@@ -52,10 +52,10 @@ test('research-only pressure direction uses observed prior/current, not 0–100 
  assert.deepEqual(ease,{name:'긍정',tone:'positive'});
  assert.deepEqual(researchDirectionalJudgement('1',0,0),{name:'중립',tone:'neutral'});
  assert.equal(researchDirectionalJudgement('1',null,99).tone,'missing');
- assert.deepEqual(researchDirectionalJudgement('18',101,102),{name:'—',tone:'missing'});
+ assert.deepEqual(researchDirectionalJudgement('18',101,102),{name:'—',tone:'neutral'});
  const report=buildResearchInputRows(data());
- assert(report.every(x=>x.score===null&&x.researchJudgement&& (x.id==='research-18'?x.researchJudgement.tone==='missing':x.researchJudgement.tone==='positive')));
- assert.equal(report[13].researchJudgement.tone,'missing'); // USD direction is unverified, not neutral.
+ assert(report.every(x=>x.score===null&&x.researchJudgement&& (x.id==='research-18'?x.researchJudgement.tone==='neutral':x.researchJudgement.tone==='positive')));
+ assert.equal(report[13].researchJudgement.name,'—'); // USD direction is unverified; no neutral verdict is printed.
 });
 test('period starts are labeled observation month or quarter, never a fictitious release date',()=>{
  assert.equal(researchObservationPeriod('2026-09-01','월간'),'2026년 9월 관측');
