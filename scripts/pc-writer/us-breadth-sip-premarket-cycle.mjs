@@ -48,7 +48,7 @@ export async function collectUsSipPremarket(base,{now=Date.now(),fetchImpl=fetch
   try{
     if(!Number.isInteger(maxRequests)||maxRequests<2||maxRequests>US_PROVISIONAL_MAX_REQUESTS)
       throw Error('US_PROVISIONAL_BUDGET_INVALID');
-    const {members,universeAsOfDate}=membersOverride!==null?
+    const {members,universeAsOfDate}=membersOverride!=null?
       {members:membersOverride,universeAsOfDate:null}:
       storedSipPremarketUniverse(base,slot.priorDate);
     const auth=authOverride??loadLocalProviders(base);
