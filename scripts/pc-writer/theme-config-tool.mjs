@@ -114,9 +114,11 @@ async function cli(){
   // One explicit private replay using already stored sources and approved
   // public readback. No new scheduler, publisher or provider collection.
   const {runStoredOperationalPrivate,createStoredD1FeedReader,
+   createTransientThemeCheckpointStore,
    readStoredPublicR32Base}=await import('./theme-platform-stored-run.mjs');
   const dataRoot=root();
   return runStoredOperationalPrivate({dataRoot,
+   store:createTransientThemeCheckpointStore(),
    readFeed:createStoredD1FeedReader({dataRoot}),
    readPublicBase:()=>readStoredPublicR32Base()});
  }

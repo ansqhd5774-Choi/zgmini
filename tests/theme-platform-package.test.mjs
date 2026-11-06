@@ -42,10 +42,15 @@ test('existing installer stages complete common CLI and inspect runs offline',as
  const shadow=spawnSync(process.execPath,[runner,'--platform-shadow'],{encoding:'utf8',windowsHide:true,
   env:{...process.env,ZGMINI_DATA_ROOT:root},timeout:15000});
  assert.equal(shadow.status,2,'unverified saved inputs must not yield successful shadow exit');
- const failed=JSON.parse(shadow.stderr.trim());
- assert.equal(failed.status,'STOP');
+ const failed=JSON.parse(shadow.stderr.trim()||shadow.stdout.trim());
+ assert.ok(['STOP','PARTIAL'].includes(failed.status));
  assert.equal(failed.d1Writes,0);
  assert.equal(failed.schedulerWrites,0);
+ if(failed.status==='PARTIAL'){
+  assert.equal(failed.checkpointPersistence,'TRANSIENT_MEMORY_ONLY');
+  assert.equal(failed.coverage.public.status,'PARTIAL');
+ }
+ assert.equal(fs.existsSync(path.join(root,'theme-platform')),false);
 });
 test('missing local dependency is detected at package build, not user execution',t=>{
  const root=fs.mkdtempSync(path.join(os.tmpdir(),'theme-platform-import-'));t.after(()=>fs.rmSync(root,{recursive:true}));

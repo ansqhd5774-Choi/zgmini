@@ -88,7 +88,7 @@ export function createVerifiedOptionalProvisionalCalculator({readFeed,
   // different inspection time cannot turn an identical candidate into drift.
   const builder=group==='data-center'?buildDc:buildSpace;
   const replay=await builder({dataRoot,confirmed,now:Date.parse(published.asOf),
-   decoder});
+   decoder,targetObservationDate:published.observationDate});
   need(replay?.status==='PRIVATE_PROVISIONAL_CANDIDATE'&&replay.record,
    'THEME_OPTIONAL_PROVISIONAL_REPLAY_NOT_READY');
   need(JSON.stringify(replay.record)===JSON.stringify(published),

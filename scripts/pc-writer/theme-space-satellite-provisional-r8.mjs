@@ -50,16 +50,21 @@ async function existingHyparquet({dataRoot,location}){
  check(false,'SPACE_R8_APPROVED_EXISTING_PARQUET_DECODER_MISSING');
 }
 
-export async function readSpaceParquetR8(dataRoot,{confirmedDate,decoder}={}){
+export async function readSpaceParquetR8(dataRoot,{confirmedDate,decoder,targetObservationDate=null}={}){
  check(date(confirmedDate),'SPACE_R8_CONFIRMED_DATE_INVALID');
+ check(targetObservationDate===null||date(targetObservationDate)&&targetObservationDate>confirmedDate,
+  'SPACE_R8_HISTORICAL_TARGET_DATE_INVALID');
  const parent=path.join(dataRoot,'theme-market-history-r131');
  const archive=path.join(parent,'marketparquet-r165');
  const audits=path.join(parent,'marketparquet-r167');
  check(fs.existsSync(archive)&&fs.existsSync(audits),'SPACE_R8_SAVED_SEVEN_ARCHIVE_MISSING');
  const files=fs.readdirSync(archive).filter(n=>/^etf_daily_\d{4}-\d{2}-\d{2}\.parquet$/.test(n))
-  .map(name=>({name,date:name.slice(10,20)})).filter(x=>x.date>=confirmedDate)
+  .map(name=>({name,date:name.slice(10,20)})).filter(x=>x.date>=confirmedDate&&
+   (targetObservationDate===null||x.date<=targetObservationDate))
   .sort((a,b)=>a.date.localeCompare(b.date));
  if(files[0]?.date!==confirmedDate)return {status:'NO_VERIFIED_BASE_OVERLAP',dates:[]};
+ if(targetObservationDate!==null&&files.at(-1)?.date!==targetObservationDate)
+  return {status:'HISTORICAL_TARGET_DATE_NOT_SAVED',dates:[]};
  if(files.length>3)return {status:'CONFIRMED_REFRESH_NEEDED_FOR_BACKLOG',dates:[]};
  const target=files.slice(0,3);
  const columns=['date','symbol','asset_type','close'];
@@ -193,12 +198,14 @@ export function calculateSpaceProvisionalR8({confirmed,roster,evidence,original,
  return {status:'PRIVATE_PROVISIONAL_CANDIDATE',record:result,points:outputs};
 }
 
-export async function buildSpaceProvisionalFromStorageR8({dataRoot,confirmed,now=Date.now(),decoder}={}){
+export async function buildSpaceProvisionalFromStorageR8({dataRoot,confirmed,now=Date.now(),decoder,
+ targetObservationDate=null}={}){
  const roster=JSON.parse(fs.readFileSync(rosterPath,'utf8'));
  const evidence=JSON.parse(fs.readFileSync(aumPath,'utf8'));
  const original=readApprovedSpacePrices({dataRoot,symbols:roster.approvedCurrentSymbols});
  const spy=readVerifiedSharedSpy({dataRoot,sourceTheme:'data-center-power'});
- const parquet=await readSpaceParquetR8(dataRoot,{confirmedDate:confirmed.observationDate,decoder});
+ const parquet=await readSpaceParquetR8(dataRoot,{confirmedDate:confirmed.observationDate,
+  decoder,targetObservationDate});
  if(parquet.status!=='VERIFIED')return parquet;
  return calculateSpaceProvisionalR8({confirmed,roster,evidence,original,spy,parquet,now});
 }

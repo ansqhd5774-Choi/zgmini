@@ -21,6 +21,22 @@ const EXISTING_KEYS=new Set([
  'theme-data-center-power-r1','theme-data-center-power-provisional-r1',
  'theme-space-satellite-r2','theme-space-satellite-provisional-r1']);
 
+// A single explicit shadow inspection is allowed to read existing PC data but
+// must not create an E: checkpoint. Resume evidence for production batches
+// remains the existing durable checkpoint store; this is strictly ephemeral.
+export function createTransientThemeCheckpointStore(){
+ const snapshots=new Map();
+ return {persistence:'TRANSIENT_MEMORY_ONLY',
+  load:async key=>structuredClone(snapshots.get(key)??null),
+  save:async(key,state,expectedRevision)=>{
+   need(/^[a-f0-9]{64}$/.test(key)&&state?.fingerprint===key&&
+    state.revision===expectedRevision+1,'THEME_TRANSIENT_CHECKPOINT_IDENTITY');
+   need((snapshots.get(key)?.revision??0)===expectedRevision,
+    'THEME_TRANSIENT_CHECKPOINT_CAS_CONFLICT');
+   snapshots.set(key,structuredClone(state));
+  }};
+}
+
 export async function readStoredPublicR32Base({fetchImpl=fetch,now=Date.now()}={}){
  need(Number.isSafeInteger(now)&&now>0,'THEME_STORED_PUBLIC_CLOCK');
  // Existing public Reader is the source for modelRevision/R88 projection;
@@ -38,10 +54,14 @@ export async function readStoredPublicR32Base({fetchImpl=fetch,now=Date.now()}={
 
 export function createStoredD1FeedReader({dataRoot,query=null}={}){
  need(typeof dataRoot==='string'&&dataRoot,'THEME_STORED_DATA_ROOT');
- const approvedQuery=query??createNineR54D1Query({dataRoot,tokenFn:biotechCloudflareTokenR7});
- need(typeof approvedQuery==='function','THEME_STORED_PUBLIC_QUERY_REQUIRED');
+ // Defer credential/config resolution until an optional family actually
+ // requests one of its existing keys. A missing D1 token must not prevent
+ // local R37/other confirmed replay from starting.
+ let approvedQuery=query;
  return async key=>{
   need(EXISTING_KEYS.has(key),'THEME_STORED_D1_FEED_NOT_APPROVED');
+  approvedQuery??=createNineR54D1Query({dataRoot,tokenFn:biotechCloudflareTokenR7});
+  need(typeof approvedQuery==='function','THEME_STORED_PUBLIC_QUERY_REQUIRED');
   const result=await approvedQuery(READ,[key],{write:false});
   need(Array.isArray(result?.results)&&result.results.length<=1,
    'THEME_STORED_D1_READ_RESPONSE_INVALID');
@@ -146,6 +166,9 @@ export async function runStoredOperationalPrivate({dataRoot,
   // Default adapters consume saved inputs; the checkpoint itself is written.
   sourceMode:adapters!==null?'CUSTOM_ADAPTER_UNVERIFIED':
    readFeed===null?'EXISTING_LOCAL_SAVED_ONLY':'SAVED_PLUS_PUBLIC_API_AND_D1_READS',
+  providerCalls:adapters===null?0:'CUSTOM_ADAPTER_UNVERIFIED',d1Writes:0,
+  checkpointPersistence:store===null?'DURABLE_PC_REVISION_HISTORY':
+   store.persistence??'INJECTED_STORE_UNSPECIFIED',
   publicConnection:'NOT_ACTIVATED',d1Reads,publicApiReads,schedulerWrites:0};
 }
 

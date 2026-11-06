@@ -5,7 +5,8 @@ import os from 'node:os';
 import path from 'node:path';
 import {identity} from '../scripts/pc-writer/theme-platform.mjs';
 import {storedInputFingerprint,runStoredOperationalPrivate,replayCheckedStore,
- createStoredD1FeedReader,readStoredPublicR32Base} from
+ createStoredD1FeedReader,readStoredPublicR32Base,
+ createTransientThemeCheckpointStore} from
  '../scripts/pc-writer/theme-platform-stored-run.mjs';
 
 const memory=()=>{let state;return {load:async()=>structuredClone(state),
@@ -26,6 +27,28 @@ test('private common entrypoint handles 10 without writing D1 or creating a sche
  assert.equal(result.publicConnection,'NOT_ACTIVATED');
  assert.equal(result.schedulerWrites,0);
  assert.equal(result.inputFingerprint.length,64);
+});
+
+test('one-shot shadow replays all themes with CAS only in memory and leaves PC data unchanged',async t=>{
+ const root=fs.mkdtempSync(path.join(os.tmpdir(),'theme-transient-shadow-'));
+ t.after(()=>fs.rmSync(root,{recursive:true}));
+ const store=createTransientThemeCheckpointStore();
+ const result=await runStoredOperationalPrivate({dataRoot:root,adapters:handlers,store});
+ assert.equal(result.status,'COMPLETE');
+ assert.equal(result.checkpointPersistence,'TRANSIENT_MEMORY_ONLY');
+ assert.equal(fs.existsSync(path.join(root,'theme-platform')),false);
+ assert.equal(fs.existsSync(path.join(root,'theme-config')),false);
+ assert.equal(result.executed,60);
+});
+
+test('in-memory shadow checkpoint still rejects a conflicting revision',async()=>{
+ const store=createTransientThemeCheckpointStore(),key='a'.repeat(64);
+ await store.save(key,{fingerprint:key,revision:1,tasks:{}},0);
+ const loaded=await store.load(key);
+ loaded.tasks['one:confirmed']={completed:{}};
+ assert.equal((await store.load(key)).tasks['one:confirmed'],undefined);
+ await assert.rejects(store.save(key,{fingerprint:key,revision:2,tasks:{}},0),
+  /THEME_TRANSIENT_CHECKPOINT_CAS_CONFLICT|THEME_TRANSIENT_CHECKPOINT_IDENTITY/);
 });
 
 test('run identity follows actual stored-manifest SHA rather than one fixed daily ID',t=>{
@@ -82,6 +105,13 @@ test('approved fixed-key public reader issues SELECT only and returns D1 readbac
  assert.deepEqual(calls[0].options,{write:false});
  await assert.rejects(read('another-account-secret'),/THEME_STORED_D1_FEED_NOT_APPROVED/);
  assert.equal(calls.length,1);
+});
+
+test('public D1 reader initializes lazily and cannot block unrelated saved calculations',async()=>{
+ const read=createStoredD1FeedReader({dataRoot:'does-not-read-before-first-key'});
+ await assert.rejects(read('unauthorized'),/THEME_STORED_D1_FEED_NOT_APPROVED/);
+ // No config.json, token or D1 client is required until one approved key is read.
+ assert.equal(typeof read,'function');
 });
 
 test('R88 reads the existing public API projection rather than manufacturing D1 metadata',async()=>{

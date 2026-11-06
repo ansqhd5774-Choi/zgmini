@@ -146,7 +146,19 @@ export async function runOperationalPrivateBatch({sources,registrations=[],adapt
  const registry=buildOperationalRegistry({sources,registrations});
  const run=await runThemeBatch({registry,adapters,store,runKey,maxStages,after,
   mode:'private',formulas:OPERATIONAL_METHODS});
+ const coverage=Object.fromEntries([['public',true],['private',false]].map(([scope,isPublic])=>{
+  const ids=new Set(registry.themes.filter(t=>t.public===isPublic&&t.enabled).map(t=>t.id));
+  const expectedPhases=ids.size*2;
+  const observed=run.results.filter(row=>ids.has(row.id));
+  const complete=observed.filter(row=>row.status==='COMPLETE').length;
+  const blocked=observed.filter(row=>row.status==='BLOCKED').length;
+  return [scope,{status:!expectedPhases?'NOT_APPLICABLE':blocked?'PARTIAL':
+   complete===expectedPhases?'COMPLETE':run.status==='RUNNING'?'RUNNING':'INCOMPLETE',
+   themes:ids.size,expectedPhases,complete,blocked,
+   pending:expectedPhases-complete-blocked}];
+ }));
  return {...run,publicTargetIds:registry.themes.filter(t=>t.public).map(t=>t.id),
+  coverage,
   physicalFeedGroups:planPhysicalFeeds(registry).length,
   providerCalls:'REQUIRES_ADAPTER_METERING',d1Writes:'NOT_REQUESTED_BY_PLATFORM'};
 }

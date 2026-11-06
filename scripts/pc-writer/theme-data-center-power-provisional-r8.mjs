@@ -81,15 +81,20 @@ async function existingDecoder(dataRoot){
  need(false,'DC_R8_APPROVED_EXISTING_PARQUET_DECODER_MISSING');
 }
 
-export async function readDcParquetR8(dataRoot,{confirmedDate,decoder}={}){
+export async function readDcParquetR8(dataRoot,{confirmedDate,decoder,targetObservationDate=null}={}){
  need(date(confirmedDate),'DC_R8_CONFIRMED_DATE_INVALID');
+ need(targetObservationDate===null||date(targetObservationDate)&&targetObservationDate>confirmedDate,
+  'DC_R8_HISTORICAL_TARGET_DATE_INVALID');
  const root=path.join(dataRoot,'theme-market-history-r131');
  const archive=path.join(root,'marketparquet-r165'),audits=path.join(root,'marketparquet-r167');
  need(fs.existsSync(archive)&&fs.existsSync(audits),'DC_R8_SAVED_ARCHIVE_MISSING');
  const files=fs.readdirSync(archive).filter(n=>/^etf_daily_\d{4}-\d{2}-\d{2}\.parquet$/.test(n))
-  .map(name=>({name,date:name.slice(10,20)})).filter(x=>x.date>=confirmedDate)
+  .map(name=>({name,date:name.slice(10,20)})).filter(x=>x.date>=confirmedDate&&
+   (targetObservationDate===null||x.date<=targetObservationDate))
   .sort((a,b)=>a.date.localeCompare(b.date));
  if(files[0]?.date!==confirmedDate)return {status:'NO_VERIFIED_BASE_OVERLAP',dates:[]};
+ if(targetObservationDate!==null&&files.at(-1)?.date!==targetObservationDate)
+  return {status:'HISTORICAL_TARGET_DATE_NOT_SAVED',dates:[]};
  if(files.length>3)return {status:'CONFIRMED_REFRESH_NEEDED_FOR_BACKLOG',dates:[]};
  const mod=decoder??await existingDecoder(dataRoot);
  need(typeof mod?.parquetReadObjects==='function','DC_R8_PARQUET_DECODER_INVALID');
@@ -185,7 +190,8 @@ export function calculateDcProvisionalR8({confirmed,gmh,parquet,now=Date.now()}=
  return {status:'PRIVATE_PROVISIONAL_CANDIDATE',record,points};
 }
 
-export async function buildDcProvisionalFromStorageR8({dataRoot,confirmed,now=Date.now(),decoder}={}){
+export async function buildDcProvisionalFromStorageR8({dataRoot,confirmed,now=Date.now(),decoder,
+ targetObservationDate=null}={}){
  // The immutable confirmed R1 candidate must replay exactly before any append.
  const candidate=calculateDataCenterPower({dataRoot});
  need(candidate.observationDate===confirmed?.observationDate&&
@@ -194,7 +200,8 @@ export async function buildDcProvisionalFromStorageR8({dataRoot,confirmed,now=Da
   candidate.history.every((p,i)=>p.date===confirmed.history[i].date&&
    p.score===confirmed.history[i].score),'DC_R8_CONFIRMED_HISTORY_PARITY_FAILED');
  const gmh=readVerifiedDcGmhR8(dataRoot);
- const parquet=await readDcParquetR8(dataRoot,{confirmedDate:confirmed.observationDate,decoder});
+ const parquet=await readDcParquetR8(dataRoot,{confirmedDate:confirmed.observationDate,
+  decoder,targetObservationDate});
  if(parquet.status!=='VERIFIED')return parquet;
  return calculateDcProvisionalR8({confirmed,gmh,parquet,now});
 }

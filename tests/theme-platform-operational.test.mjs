@@ -75,6 +75,29 @@ test('common batch genuinely traverses all 10 with injected stored proofs, no pu
  assert.equal(first.results.length,20);assert.equal(first.physicalFeedGroups,6);
  assert.equal(writes,0);assert.equal(first.providerCalls,'REQUIRES_ADAPTER_METERING');
  assert.equal(first.d1Writes,'NOT_REQUESTED_BY_PLATFORM');
+ assert.equal(first.coverage.public.status,'COMPLETE');
+ assert.equal(first.coverage.public.complete,20);
+ assert.equal(first.coverage.private.status,'NOT_APPLICABLE');
+});
+
+test('private registered provisional pending never disguises public ten replay success',async()=>{
+ const adapters=mockExistingAdapters();
+ const previous=adapters.validate;
+ adapters.validate=async context=>{
+  if(!context.theme.public&&context.kind==='provisional')
+   throw Object.assign(new Error('PRIVATE_PROVISIONAL_NOT_APPROVED'),
+    {code:'PRIVATE_PROVISIONAL_NOT_APPROVED'});
+  return previous(context);
+ };
+ const result=await runOperationalPrivateBatch({registrations:[registered(0)],
+  adapters,store:fakeStore(),runKey:'public-ten-private-pending'});
+ assert.equal(result.status,'PARTIAL');
+ assert.deepEqual(result.coverage.public,{status:'COMPLETE',themes:10,
+  expectedPhases:20,complete:20,blocked:0,pending:0});
+ assert.deepEqual(result.coverage.private,{status:'PARTIAL',themes:1,
+  expectedPhases:2,complete:1,blocked:1,pending:0});
+ assert.equal(result.results.find(r=>r.id==='custom-0'&&r.kind==='provisional').code,
+  'PRIVATE_PROVISIONAL_NOT_APPROVED');
 });
 
 test('source connector requires real stored proof handlers; no implicit mock adapter',async()=>{

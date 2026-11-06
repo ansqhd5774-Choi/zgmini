@@ -63,9 +63,10 @@ for(const group of ['data-center','space']){
   let builds=0;
   const readFeed=async key=>{reads.push(key);return {body:
    key===theme.operational.physicalFeeds.confirmed?confirmed:record,storedAt};};
-  const build=async({dataRoot,confirmed:input,now:at})=>{
+  const build=async({dataRoot,confirmed:input,now:at,targetObservationDate})=>{
    builds++;assert.equal(dataRoot,'fixture');assert.equal(input,confirmed);
    assert.equal(at,Date.parse(record.asOf));
+   assert.equal(targetObservationDate,record.observationDate);
    return {status:'PRIVATE_PROVISIONAL_CANDIDATE',record};
   };
   const calculate=createVerifiedOptionalProvisionalCalculator({readFeed,now,
