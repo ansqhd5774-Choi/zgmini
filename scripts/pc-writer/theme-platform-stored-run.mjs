@@ -41,7 +41,7 @@ export async function readStoredPublicR32Base({fetchImpl=fetch,now=Date.now()}={
  need(Number.isSafeInteger(now)&&now>0,'THEME_STORED_PUBLIC_CLOCK');
  // Existing public Reader is the source for modelRevision/R88 projection;
  // never manufacture those fields from a raw D1 R37 record.
- const response=await fetchImpl('https://zgmini.kr/api/theme-fear-greed?ten_r88='+now,{
+ const response=await fetchImpl('https://zgmini.kr/api/theme-fear-greed/?ten_r88='+now,{
   headers:{'cache-control':'no-cache'},redirect:'error',
   signal:AbortSignal.timeout(20000)});
  need(response?.ok,'THEME_STORED_PUBLIC_API_UNAVAILABLE');

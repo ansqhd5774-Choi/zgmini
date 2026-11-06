@@ -121,7 +121,7 @@ test('R88 reads the existing public API projection rather than manufacturing D1 
   fetchImpl:async(url,options)=>{urls.push({url,options});return {
    ok:true,json:async()=>publicBody};}});
  assert.deepEqual(body,publicBody);
- assert.match(urls[0].url,/^https:\/\/zgmini\.kr\/api\/theme-fear-greed\?ten_r88=/);
+ assert.match(urls[0].url,/^https:\/\/zgmini\.kr\/api\/theme-fear-greed\/\?ten_r88=/);
  assert.equal(urls[0].options.redirect,'error');
  assert.deepEqual(urls[0].options.headers,{'cache-control':'no-cache'});
 });
