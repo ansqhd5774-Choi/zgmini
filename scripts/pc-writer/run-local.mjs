@@ -58,6 +58,7 @@ if(process.argv.includes('--us-provisional-only')){
      await publishUsProvisional(provisionalRemote,config.core,prepared):
      await sipTools.publishUsSipPremarket(provisionalRemote,config.core,prepared);
    report.feed=iex.prepared?'IEX_REGULAR':'SIP_PREMARKET_DELAYED';
+   if(!iex.prepared)report.lane='US_SIP_PREMARKET_EARLY';
    report.status=['VERIFIED','ALREADY_VERIFIED'].includes(report.publication.status)?'VERIFIED':report.publication.status;
    report.slotEndUtc=prepared.body.slotEndUtc;
    report.observedCount=prepared.body.observedCount;
