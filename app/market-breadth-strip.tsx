@@ -18,11 +18,11 @@ type MarketBreadthStripProps = {
   period?: MarketBreadthPeriod;
 };
 
-type UsaIexProvisionalRecord = {
+type UsaProvisionalRecord = {
   market: "usa";
   phase: "PROVISIONAL";
   status: "PROVISIONAL";
-  source: "ALPACA_IEX_15MIN_SPLIT";
+  source: "ALPACA_IEX_15MIN_SPLIT" | "ALPACA_SIP_PREMARKET_15MIN_DELAYED_SPLIT";
   observationDate: string;
   slotEndUtc: string;
   collectionStatus: "COMPLETE" | "INCOMPLETE_PAGINATION";
@@ -49,22 +49,32 @@ type UsaConfirmedR2Record = {
 const validPercent = (n: unknown): n is number => typeof n === "number" && Number.isFinite(n) && n >= 0 && n <= 100;
 const near100 = (...parts: number[]) => Math.abs(parts.reduce((sum, n) => sum + n, 0) - 100) <= 0.2;
 
-/** IEX current-only public-percent gate; no confirmed-source coverage or direction requirements. */
-function currentIexProvisional(value: unknown): value is UsaIexProvisionalRecord {
+/** Current-only provisional gate, preserving each feed's distinct freshness. */
+function currentUsProvisional(value: unknown): value is UsaProvisionalRecord {
   if (!value || typeof value !== "object") return false;
-  const record = value as UsaIexProvisionalRecord;
+  const record = value as UsaProvisionalRecord;
+  const delayedSip = record.source === "ALPACA_SIP_PREMARKET_15MIN_DELAYED_SPLIT";
   if (record.market !== "usa" || record.phase !== "PROVISIONAL" || record.status !== "PROVISIONAL" ||
-    record.source !== "ALPACA_IEX_15MIN_SPLIT" ||
+    (!delayedSip && record.source !== "ALPACA_IEX_15MIN_SPLIT") ||
     ![record.risingPct, record.fallingPct, record.unchangedPct, record.unobservedPct].every(validPercent) ||
     !near100(record.risingPct, record.fallingPct, record.unchangedPct, record.unobservedPct) ||
     !["COMPLETE", "INCOMPLETE_PAGINATION"].includes(record.collectionStatus)) return false;
   const stamp = Date.parse(record.slotEndUtc);
   const age = Date.now() - stamp;
-  if (!Number.isFinite(stamp) || age < 0 || age > 30 * 60_000) return false;
+  if (!Number.isFinite(stamp) || age < (delayedSip ? 16 * 60_000 : 0) ||
+    age > (delayedSip ? 31 * 60_000 : 30 * 60_000)) return false;
   const ny = Object.fromEntries(new Intl.DateTimeFormat("en-US", {
     timeZone: "America/New_York", year: "numeric", month: "2-digit", day: "2-digit"
   }).formatToParts(new Date()).map(part => [part.type, part.value]));
-  return record.observationDate === `${ny.year}-${ny.month}-${ny.day}`;
+  if (record.observationDate !== `${ny.year}-${ny.month}-${ny.day}`) return false;
+  if (delayedSip) {
+    const time = Object.fromEntries(new Intl.DateTimeFormat("en-US", {
+      timeZone: "America/New_York", hour: "2-digit", minute: "2-digit", hourCycle: "h23"
+    }).formatToParts(new Date()).map(part => [part.type, part.value]));
+    const minutes = Number(time.hour) * 60 + Number(time.minute);
+    return minutes >= 4 * 60 + 31 && minutes <= 9 * 60 + 45;
+  }
+  return true;
 }
 
 /** An independently published MarketParquet current; never accept legacy R1 counts. */
@@ -120,7 +130,7 @@ export function MarketBreadthStrip({ market, counts, period = '1Y' }: MarketBrea
   const [history, setHistory] = useState<UsBreadthHistory | null>(null);
   const [historyLoading, setHistoryLoading] = useState(false);
   const [historyError, setHistoryError] = useState(false);
-  const [provisional, setProvisional] = useState<UsaIexProvisionalRecord | null>(null);
+  const [provisional, setProvisional] = useState<UsaProvisionalRecord | null>(null);
   const [confirmed, setConfirmed] = useState<UsaConfirmedR2Record | null>(null);
   const name = market === "usa" ? "미국" : "한국";
   const periodLabel = period === '1D' ? '1일' : getMarketPeriodConfig(period).label;
@@ -140,16 +150,16 @@ export function MarketBreadthStrip({ market, counts, period = '1Y' }: MarketBrea
     };
     const stop = startStoredRefresh(async (signal: AbortSignal) => {
       // Independent read-only API requests; one failed phase must not hide the other.
-      const [iexBody, currentBody] = await Promise.all([
+      const [provisionalBody, currentBody] = await Promise.all([
         readPercent("provisional", signal), readPercent("confirmed-r2", signal)
       ]);
       if (!active || signal.aborted) return;
-      setProvisional(currentIexProvisional(iexBody) ? iexBody : null);
+      setProvisional(currentUsProvisional(provisionalBody) ? provisionalBody : null);
       setConfirmed(validConfirmedCurrent(currentBody) ? currentBody : null);
     });
     return () => { active = false; stop(); };
   }, [market]);
-  const activeProvisional = market === "usa" && currentIexProvisional(provisional)
+  const activeProvisional = market === "usa" && currentUsProvisional(provisional)
     ? provisional : null;
   const activeConfirmed = market === "usa" && validConfirmedCurrent(confirmed)
     ? confirmed : null;
@@ -158,11 +168,11 @@ export function MarketBreadthStrip({ market, counts, period = '1Y' }: MarketBrea
     ? activeProvisional ?? activeConfirmed ?? lastHistory ?? null
     : normalizedCounts(counts);
   const sourceInfo = activeProvisional
-    ? `장중 잠정 · Alpaca IEX 15분 · 뉴욕 ${new Intl.DateTimeFormat("ko-KR", {timeZone:"America/New_York", hour:"2-digit", minute:"2-digit", hour12:false}).format(new Date(activeProvisional.slotEndUtc))} 기준 · 미관측 ${activeProvisional.unobservedPct.toFixed(1)}%${activeProvisional.collectionStatus === "INCOMPLETE_PAGINATION" ? " · 페이지 일부 미수집" : ""}`
+    ? `${activeProvisional.source === "ALPACA_IEX_15MIN_SPLIT" ? "장중 잠정 · Alpaca IEX 15분" : "장전 잠정 · Alpaca SIP 15분 지연"} · 뉴욕 ${new Intl.DateTimeFormat("ko-KR", {timeZone:"America/New_York", hour:"2-digit", minute:"2-digit", hour12:false}).format(new Date(activeProvisional.slotEndUtc))} 기준 · 미관측 ${activeProvisional.unobservedPct.toFixed(1)}%${activeProvisional.collectionStatus === "INCOMPLETE_PAGINATION" ? " · 페이지 일부 미수집" : ""}`
     : activeConfirmed ? `MarketParquet R2 마감 확정 · ${activeConfirmed.observationDate} 기준 (현재 장중 수치 아님)`
     : lastHistory ? `MarketParquet R2 확정 이력 · ${history!.lastDate} 기준 (현재 장중 수치 아님)` : null;
   const sourceBadge = activeProvisional
-    ? `IEX·15분·${new Intl.DateTimeFormat("en-US", {timeZone:"America/New_York", hour:"2-digit", minute:"2-digit", hour12:false}).format(new Date(activeProvisional.slotEndUtc))}`
+    ? `${activeProvisional.source === "ALPACA_IEX_15MIN_SPLIT" ? "IEX·15분" : "SIP·장전·15분 지연"}·${new Intl.DateTimeFormat("en-US", {timeZone:"America/New_York", hour:"2-digit", minute:"2-digit", hour12:false}).format(new Date(activeProvisional.slotEndUtc))}`
     : activeConfirmed ? `R2 확정 · ${activeConfirmed.observationDate.slice(5).replace("-", ".")}`
     : lastHistory ? `R2 이력 · ${history!.lastDate.slice(5).replace("-", ".")}` : null;
   const canExpand = market === "usa";
