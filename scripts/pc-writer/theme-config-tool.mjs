@@ -25,7 +25,7 @@ export async function loadBundledShadowParquet({
  bundleRoot=fileURLToPath(new URL('../../',import.meta.url)),
  loadModule=href=>import(href)}={}){
  const base=fs.realpathSync(bundleRoot);
- const file=path.join(base,'node_modules','hyparquet','src','index.js');
+ const file=path.join(base,'vendor','hyparquet-1.31.2','src','index.js');
  ensure(fs.existsSync(file),'THEME_SHADOW_BUNDLED_PARQUET_MISSING');
  const resolved=fs.realpathSync(file);
  ensure(resolved.startsWith(base+path.sep)&&

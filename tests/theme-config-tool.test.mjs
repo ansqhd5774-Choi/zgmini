@@ -32,9 +32,12 @@ test('shared shadow decoder is lazy and supports R88 callable and optional R8 ob
 });
 test('shadow decoder reads only an explicit source-bundled package path',async t=>{
  const root=setup(t);
+ const rogue=path.join(root,'node_modules','hyparquet','src');
+ fs.mkdirSync(rogue,{recursive:true});
+ fs.writeFileSync(path.join(rogue,'index.js'),'export const parquetReadObjects = () => []\n');
  await assert.rejects(()=>loadBundledShadowParquet({bundleRoot:root}),
   /THEME_SHADOW_BUNDLED_PARQUET_MISSING/);
- const home=path.join(root,'node_modules','hyparquet','src');
+ const home=path.join(root,'vendor','hyparquet-1.31.2','src');
  fs.mkdirSync(home,{recursive:true});
  const index=path.join(home,'index.js');fs.writeFileSync(index,'export const placeholder = true;\n');
  let observed='';
@@ -45,6 +48,11 @@ test('shadow decoder reads only an explicit source-bundled package path',async t
  assert.equal(observed,pathToFileURL(index).href);
  await assert.rejects(()=>loadBundledShadowParquet({bundleRoot:root,
   loadModule:async()=>({})}),/THEME_SHADOW_BUNDLED_PARQUET_INVALID/);
+});
+test('shadow decoder loads the pinned vendored upstream runtime without npm install',async()=>{
+ const mod=await loadBundledShadowParquet();
+ assert.equal(typeof mod.parquetReadObjects,'function');
+ assert.equal(typeof mod.parquetMetadata,'function');
 });
 test('data-only schema rejects code, traversal, arbitrary formula, weights and duplicate ETFs',()=>{
  assert.deepEqual(validateDefinition(definition),definition);
