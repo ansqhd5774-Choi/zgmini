@@ -1,12 +1,14 @@
 // R29: runs inside the existing PC Core cycle, private SQLite inputs only.
 // The publisher selects kind='output'; this module never writes that kind.
 import {publicFeedStore} from '../../worker/public-feed-store.mjs';
-import {collectEarningsApiWindow,earningsApiWindow} from '../../lib/earnings-api-calendar.mjs';
+import {collectEarningsApiWindow,collectEarningsApiForwardDay,
+ earningsApiWindow} from '../../lib/earnings-api-calendar.mjs';
 import {readEarningsApiPrivateProjection,EARNINGS_API_R30_PRIVATE_KEY} from '../../lib/earnings-api-private-projection.mjs';
 import {earningsDisplaySnapshot,EARNINGS_API_DISPLAY_KEY} from '../../lib/earnings-api-display.mjs';
 
 const KEY='release-calendar';
 const STATUS_KEY=`${KEY}:earnings-api:status`;
+export const FORWARD_STATUS_KEY=`${KEY}:earnings-api:forward-30-status`;
 const rights=Object.freeze({
  automatedFetch:true,pcStorage:true,publicDisplay:false,redistribution:false,
  commercialUse:false,reviewedAt:'2026-10-28',
@@ -88,5 +90,21 @@ export async function collectEarningsApiLocal({db,apiKey,now=Date.now(),fetchImp
  return {status:result.state.status,recordCount:result.state.recordCount??0,
   providerRequests:result.providerRequests,skipped:result.skipped??false,
   publicationStatus:'HELD_UNCONFIRMED',projectionStatus,projectionCount,displayStatus};
+}
+
+// The D+30 observation is separate from R29's existing rolling 14-day display
+// feed. It reuses the same Core cycle, DB input store and provider credentials;
+// no new scheduler, schema, output or scoring rule is introduced.
+export async function collectEarningsApiForwardLocal({db,apiKey,now=Date.now(),
+ fetchImpl=fetch,store=publicFeedStore(db)}={}){
+ if(typeof apiKey!=='string'||apiKey.length<8)
+  return {status:'SKIPPED_NO_KEY',providerRequests:0};
+ const last=await store.readInput(FORWARD_STATUS_KEY);
+ const result=await collectEarningsApiForwardDay({store,key:KEY,now,fetchImpl,apiKey,
+  rights,scope:'pc_private',previous:last?{body:{sources:{earningsApi:last.body}}}:null});
+ if(!result.skipped)await store.writeInput(FORWARD_STATUS_KEY,result.state,now);
+ return {status:result.state.status,providerRequests:result.providerRequests,
+  coveredDays:result.state.coveredDays,skipped:result.skipped??false,
+  publicationStatus:'HELD_UNCONFIRMED'};
 }
 
