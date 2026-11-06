@@ -16,7 +16,7 @@ test('unreported forecast-only issuer is scored, with explicit estimate basis',(
   ],{asOf:day});
   assert.equal(out.status,'READY_SHADOW');
   assert.equal(out.method,FORECAST_METHOD);
-  assert.deepEqual(FORECAST_WEIGHTS,{revenuePercentile:60,epsProfitability:40});
+  assert.deepEqual(FORECAST_WEIGHTS,{revenuePercentile:60,epsCohortPercentile:40});
   assert.equal(FORECAST_STAR3_THRESHOLD,97);
   assert.equal(out.coverage.estimateOnly,2);
   assert.equal(out.coverage.scoreableIssuers,2);
@@ -35,18 +35,28 @@ test('future actual numbers cannot leak into a pre-announcement score',()=>{
   assert.equal(first.rankings[0].basis,'ESTIMATE');
 });
 
-test('forecast EPS and recent historic actual revenue yield MIXED, not missing zero',()=>{
+test('announcement-day issuer is scored from forecast alone, irrespective of actuals',()=>{
+  const row=issuer('TODAY',[future('TODAY',{date:day,
+    eps:12,revenue:99999,epsEstimate:-0.5,revenueEstimate:20})]);
+  const x=scoreER1ForecastIssuers([row],{asOf:day});
+  assert.equal(x.coverage.scoreableIssuers,1);
+  assert.equal(x.rankings[0].basis,'ESTIMATE');
+  assert.equal(x.rankings[0].referenceDate,day);
+});
+
+test('forecast-only scoring never substitutes past actual revenue',()=>{
   const x=scoreER1ForecastIssuers([
     issuer('MIX',[
       future('MIX',{epsEstimate:-0.2,revenueEstimate:null}),
       {symbol:'MIX',date:'2026-09-01',eps:0.6,revenue:100,
         epsEstimate:null,revenueEstimate:null}
-    ])
+    ]),
+    issuer('OK',[future('OK',{epsEstimate:0,revenueEstimate:0})])
   ],{asOf:day});
-  assert.equal(x.coverage.mixed,1);
-  assert.equal(x.rankings[0].epsBasis,'ESTIMATE');
-  assert.equal(x.rankings[0].revenueBasis,'ACTUAL');
+  assert.equal(x.coverage.mixed,0);
+  assert.equal(x.coverage.unscoreableReasons.ER1_FORECAST_METRICS_MISSING,1);
   assert.equal(x.coverage.scoreableIssuers,1);
+  assert.equal(x.rankings[0].issuerId,'OK');
 });
 
 test('absent forecasts and stale actual history remain unscored, not zero',()=>{
@@ -73,13 +83,35 @@ test('strict issuer alias and duplicate input validation still apply',()=>{
   ],{asOf:day}),/ER1_FORECAST_ISSUER_INVALID/);
 });
 
-test('97-point star threshold is still respected with large forecast cohort',()=>{
+test('97-point star threshold is respected when both forecast metrics rank high',()=>{
   const rows=Array.from({length:50},(_,i)=>{
     const ticker='S'+String(i).padStart(3,'0');
-    return issuer(ticker,[future(ticker,{epsEstimate:1,revenueEstimate:i+1})]);
+    return issuer(ticker,[future(ticker,{epsEstimate:i+1,revenueEstimate:i+1})]);
   });
   const scored=scoreER1ForecastIssuers(rows,{asOf:day});
-  assert.equal(scored.rankings[0].score,99.4);
+  assert.equal(scored.rankings[0].score,99);
   assert.equal(scored.rankings[0].importance,3);
-  assert.equal(scored.star3Count,3);
+  assert.equal(scored.star3Count,2);
+});
+
+test('EPS estimates 0.01 and 10 no longer receive the same EPS component',()=>{
+  const x=scoreER1ForecastIssuers([
+    issuer('SMALL',[future('SMALL',{epsEstimate:0.01,revenueEstimate:100})]),
+    issuer('BIG',[future('BIG',{epsEstimate:10,revenueEstimate:100})])
+  ],{asOf:day});
+  assert.equal(x.rankings[0].issuerId,'BIG');
+  assert.equal(x.rankings[0].score,60);
+  assert.equal(x.rankings[1].score,40);
+  assert.equal(x.earningsRankUnit,'RAW_EPS_PER_SHARE_NOT_SPLIT_ADJUSTED');
+});
+
+test('negative, zero and positive EPS estimates are distinct without missing-data zero',()=>{
+  const x=scoreER1ForecastIssuers([
+    issuer('LOSS',[future('LOSS',{epsEstimate:-1,revenueEstimate:100})]),
+    issuer('FLAT',[future('FLAT',{epsEstimate:0,revenueEstimate:100})]),
+    issuer('GAIN',[future('GAIN',{epsEstimate:1,revenueEstimate:100})])
+  ],{asOf:day});
+  const scores=Object.fromEntries(x.rankings.map(r=>[r.issuerId,r.score]));
+  assert.ok(scores.LOSS<scores.FLAT && scores.FLAT<scores.GAIN);
+  assert.ok(scores.LOSS>0);
 });
