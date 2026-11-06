@@ -12,7 +12,7 @@ import {calculateUsIexProvisional,usProvisionalSlot,validUsIexProvisional} from 
 export const US_PROVISIONAL_FILE='local-us-breadth-iex-provisional.json';
 export const US_PROVISIONAL_MAX_REQUESTS=24;
 
-function storedUniverse(base,priorDate){
+export function storedUniverse(base,priorDate){
   const file=path.join(base,'storage','core.sqlite');
   if(!fs.existsSync(file))throw Error('US_PROVISIONAL_DB_MISSING');
   const db=new DatabaseSync(file,{readOnly:true});
@@ -28,15 +28,16 @@ function storedUniverse(base,priorDate){
 }
 
 /** Full pagination or an explicit incomplete marker. Never infer coverage from a page. */
-export async function fetchIexWindow({symbols,timeframe,start,end,auth,fetchImpl,maxRequests}){
-  if(!Array.isArray(symbols)||!symbols.length||!Number.isInteger(maxRequests)||maxRequests<1)
+export async function fetchIexWindow({symbols,timeframe,start,end,auth,fetchImpl,maxRequests,feed='iex'}){
+  if(!Array.isArray(symbols)||!symbols.length||!Number.isInteger(maxRequests)||maxRequests<1||
+    !['iex','sip'].includes(feed))
     throw Error('US_PROVISIONAL_BUDGET_INVALID');
   const allowed=new Set(symbols),latest=Object.create(null);
   let token=null,requests=0,pageComplete=false;
   const seen=new Set();
   while(requests<maxRequests){
     const url=new URL('https://data.alpaca.markets/v2/stocks/bars');
-    url.search=new URLSearchParams({symbols:symbols.join(','),timeframe,start,end,feed:'iex',
+    url.search=new URLSearchParams({symbols:symbols.join(','),timeframe,start,end,feed,
       adjustment:'split',limit:'10000',...(token?{page_token:token}:{})});
     requests++;
     const response=await fetchImpl(url,{headers:{'APCA-API-KEY-ID':auth.APCA_API_KEY_ID,
@@ -138,6 +139,7 @@ export async function collectUsBreadthProvisional(base,{now=Date.now(),fetchImpl
 
 if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.url)){
   const base=process.env.ZGMINI_PC_HOME??path.join(os.homedir(),'.zgmini','pc-writer');
-  const result=await collectUsBreadthProvisional(base);
+  const result=usProvisionalSlot(Date.now())?await collectUsBreadthProvisional(base):
+    await (await import('./us-breadth-sip-premarket-cycle.mjs')).collectUsSipPremarket(base);
   process.stdout.write(JSON.stringify(result)+'\n');
 }

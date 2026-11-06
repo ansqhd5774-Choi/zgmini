@@ -40,19 +40,24 @@ if(publish){
 // A bounded, provisional-only invocation of the already approved Writer.
 // It shares the normal source/config/clean checks above, but does not wait for
 // Core SQLite projections, market publication, or the shared market lease.
-// Only the independent IEX D1 key may be written; the normal Writer ledger is
-// deliberately left to the full run-local invocation.
+// Only independent provisional D1 keys may be written; the normal Writer
+// ledger is deliberately left to the full run-local invocation.
 if(process.argv.includes('--us-provisional-only')){
  const report={at:new Date().toISOString(),source,lane:'US_IEX_PROVISIONAL_EARLY',status:'NOT_ATTEMPTED'};
  try{
   if(!publish)throw Error('US_PROVISIONAL_PUBLISH_FLAG_REQUIRED');
   const {prepareUsProvisional,publishUsProvisional}=await import('./us-breadth-provisional-publication.mjs');
-  const prepared=prepareUsProvisional(base);
+  const iex=prepareUsProvisional(base);
+  const sipTools=iex.prepared?null:await import('./us-breadth-sip-premarket-publication.mjs');
+  const prepared=iex.prepared?iex:sipTools.prepareUsSipPremarket(base);
   report.inputStatus=prepared.status;
   if(prepared.prepared){
    const provisionalRemote=client(config,()=>credential(root),{onDiagnostic:diagnostic=>
     appendD1Diagnostic(base,{runAt:report.at,source},diagnostic)});
-   report.publication=await publishUsProvisional(provisionalRemote,config.core,prepared);
+   report.publication=iex.prepared?
+     await publishUsProvisional(provisionalRemote,config.core,prepared):
+     await sipTools.publishUsSipPremarket(provisionalRemote,config.core,prepared);
+   report.feed=iex.prepared?'IEX_REGULAR':'SIP_PREMARKET_DELAYED';
    report.status=['VERIFIED','ALREADY_VERIFIED'].includes(report.publication.status)?'VERIFIED':report.publication.status;
    report.slotEndUtc=prepared.body.slotEndUtc;
    report.observedCount=prepared.body.observedCount;
