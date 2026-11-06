@@ -23,6 +23,29 @@ if(fs.existsSync(file)){
 fs.writeFileSync(file,JSON.stringify({pid:process.pid,at:Date.now()}),{flag:'wx'});
 try{
  const lane=process.argv.includes('--korea')?'korea':'core';
+ let usProvisional=null;
+ let usProvisionalEarlyPublication=null;
+ if(lane==='core'){
+  // The existing Core task runs every five minutes; collect the completed
+  // 15-minute IEX slot before potentially long general collection/publication.
+  // The R17 collector owns its slot deduplication and never touches R1 history.
+  const provisional=spawnSync(process.execPath,[path.join(here,'us-breadth-provisional-cycle.mjs')],
+   {windowsHide:true,stdio:['ignore','pipe','pipe'],timeout:5*60000});
+  try{usProvisional=JSON.parse(provisional.stdout.toString());}
+  catch{usProvisional={status:'EXECUTION_NOT_VERIFIED',exit:provisional.status??null};}
+  // The existing Writer publishes the completed IEX slot immediately, before
+  // potentially long Core collection/projections. Both paths remain inside
+  // the existing Core lock and registered Task; no new scheduler is created.
+  if(process.argv.includes('--publish')&&
+    ['LOCAL_READY','ALREADY_ATTEMPTED_THIS_SLOT','FAILED_PREVIOUS_PROVISIONAL_PRESERVED'].includes(usProvisional.status)){
+   const early=spawnSync(process.execPath,[path.join(here,'run-local.mjs'),'--publish','--us-provisional-only'],
+    {windowsHide:true,stdio:['ignore','pipe','pipe'],timeout:2*60000});
+   try{usProvisionalEarlyPublication=JSON.parse(early.stdout.toString());}
+   catch{usProvisionalEarlyPublication={status:'EXECUTION_NOT_VERIFIED'};}
+   usProvisionalEarlyPublication.exit=early.status??null;
+   if(early.error)usProvisionalEarlyPublication.error=early.error.code??'EXECUTION_FAILED';
+  }
+ }
  const collection=spawnSync(process.execPath,[path.join(here,'collect-local.mjs'),...(lane==='korea'?['--korea']:[])],{windowsHide:true,stdio:['ignore','pipe','pipe'],timeout:30*60000});
  try{updateDataAlert(base,{key:'collection',failed:collection.status!==0});}catch{console.warn('LOCAL_DATA_ALERT_RECORD_FAILED');}
  // A provider failure retains stored good data; publication still reads local storage.
@@ -185,7 +208,7 @@ try{
   sectors:sectorFearGreedR3Report?.sectors??null,
   error:sectorFearGreedR3Report?.error??(sectorFearGreedR3?.error?.code??null),
  }:{nonBlocking:true,status:'SKIPPED_KOREA_LANE'};
- const report={at:new Date().toISOString(),lane,collectionExit:collection.status,collectionStatus:collectionReport?.status??null,supplyR10,alpacaIncremental,sp500Shadow,sectorFearGreed,researchBreadthR10V9Shadow,publicationExit:publication.status,publishRequested,publishSkipped,publicationPolicy,progressive,researchProspective,researchFundFlowProspective,researchBreadthProspective,researchEarningsR5OfficialRefresh,researchEarningsRiskProvisionalR23,researchEarningsR5Prospective,status:publication.status===0?(publicationPolicy.collectionDegraded?'COMPLETE_WITH_COLLECTION_GAPS':'COMPLETE'):'PUBLICATION_NOT_VERIFIED'};
+ const report={at:new Date().toISOString(),lane,collectionExit:collection.status,collectionStatus:collectionReport?.status??null,supplyR10,alpacaIncremental,sp500Shadow,usProvisional,usProvisionalEarlyPublication,sectorFearGreed,researchBreadthR10V9Shadow,publicationExit:publication.status,publishRequested,publishSkipped,publicationPolicy,progressive,researchProspective,researchFundFlowProspective,researchBreadthProspective,researchEarningsR5OfficialRefresh,researchEarningsRiskProvisionalR23,researchEarningsR5Prospective,status:publication.status===0?(publicationPolicy.collectionDegraded?'COMPLETE_WITH_COLLECTION_GAPS':'COMPLETE'):'PUBLICATION_NOT_VERIFIED'};
  save(path.join(base,'local-cycle-last-run.json'),report);console.log(JSON.stringify(report));
  if(publishRequested)try{updateDataAlert(base,{key:'publication',failed:publication.status!==0});}catch{console.warn('LOCAL_DATA_ALERT_RECORD_FAILED');}
  if(publication.status!==0)process.exitCode=1;
