@@ -3,9 +3,10 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
-import {execFileSync} from 'node:child_process';
+import {pathToFileURL} from 'node:url';
+import {execFileSync,spawnSync} from 'node:child_process';
 import {configuredDependencyClosure,installConfiguredTool} from '../scripts/pc-writer/theme-config-install.mjs';
-test('existing installer stages complete common CLI and inspect runs offline',t=>{
+test('existing installer stages complete common CLI and inspect runs offline',async t=>{
  const root=fs.mkdtempSync(path.join(os.tmpdir(),'theme-platform-package-'));t.after(()=>fs.rmSync(root,{recursive:true}));
  const result=installConfiguredTool({dataRoot:root,sourceSha:'a'.repeat(40),stageOnly:true});
  assert.equal(result.launcherWrites,0);assert.equal(result.taskWrites,0);
@@ -14,6 +15,17 @@ test('existing installer stages complete common CLI and inspect runs offline',t=
  assert.equal(report.status,'SOURCE_INVENTORY_NOT_RUNTIME_PROOF');assert.equal(report.d1Writes,0);
  assert.ok(result.manifest['scripts/pc-writer/theme-platform.mjs']);
  assert.ok(result.manifest['scripts/pc-writer/theme-platform-policy.mjs']);
+ for(const included of ['scripts/pc-writer/theme-platform-stored-run.mjs',
+  'scripts/pc-writer/theme-platform-provisional-r88.mjs',
+  'scripts/pc-writer/theme-platform-provisional-optional.mjs',
+  'config/theme-nine-r26-official-aum-evidence.json',
+  'config/theme-nine-r32-dated-aum-approval.json',
+  'scripts/pc-writer/theme-space-satellite-r23-dated-aum-evidence.json'])
+  assert.ok(result.manifest[included],`bundle omitted ${included}`);
+ const stagedModule=await import(pathToFileURL(path.join(result.home,'versions',result.version,
+  'scripts/pc-writer/theme-platform-stored-run.mjs')).href);
+ assert.equal(typeof stagedModule.runStoredOperationalPrivate,'function');
+ assert.equal(typeof stagedModule.createStoredD1FeedReader,'function');
  assert.ok(report.delegation.every(r=>r.decision==='PROCEED'));
  const scheduled=JSON.parse(execFileSync(process.execPath,[runner,'--scheduled'],{encoding:'utf8',windowsHide:true,
   env:{...process.env,ZGMINI_DATA_ROOT:root},timeout:15000}));
@@ -27,6 +39,13 @@ test('existing installer stages complete common CLI and inspect runs offline',t=
   env:{...process.env,ZGMINI_DATA_ROOT:root},timeout:15000}));
  assert.deepEqual(plan.publicTargetIds,scheduled.platformConnection.publicTargetIds);
  assert.equal(plan.status,'PRIVATE_BINDINGS_PLANNED_NOT_EXECUTED');
+ const shadow=spawnSync(process.execPath,[runner,'--platform-shadow'],{encoding:'utf8',windowsHide:true,
+  env:{...process.env,ZGMINI_DATA_ROOT:root},timeout:15000});
+ assert.equal(shadow.status,2,'unverified saved inputs must not yield successful shadow exit');
+ const failed=JSON.parse(shadow.stderr.trim());
+ assert.equal(failed.status,'STOP');
+ assert.equal(failed.d1Writes,0);
+ assert.equal(failed.schedulerWrites,0);
 });
 test('missing local dependency is detected at package build, not user execution',t=>{
  const root=fs.mkdtempSync(path.join(os.tmpdir(),'theme-platform-import-'));t.after(()=>fs.rmSync(root,{recursive:true}));

@@ -109,6 +109,17 @@ async function cli(){
   // the older per-theme writers or imply platform cutover is installed.
   return planOperationalBatch({dataRoot:root()});
  }
+ if(mode==='--platform-shadow'){
+  ensure(!arg,'CONFIG_USAGE');
+  // One explicit private replay using already stored sources and approved
+  // public readback. No new scheduler, publisher or provider collection.
+  const {runStoredOperationalPrivate,createStoredD1FeedReader,
+   readStoredPublicR32Base}=await import('./theme-platform-stored-run.mjs');
+  const dataRoot=root();
+  return runStoredOperationalPrivate({dataRoot,
+   readFeed:createStoredD1FeedReader({dataRoot}),
+   readPublicBase:()=>readStoredPublicR32Base()});
+ }
  if(mode==='--platform-inspect'){
   ensure(!arg,'CONFIG_USAGE');
   return (await import('./theme-platform-inspect.mjs')).inspectThemePlatform();
@@ -185,6 +196,7 @@ async function cli(){
  ensure(false,'CONFIG_USAGE');
 }
 if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.url)){
- try{const result=await cli();console.log(JSON.stringify(result,null,2));if(result?.status?.startsWith('STOP')||result?.status==='PARTIAL_REVIEW_REQUIRED')process.exitCode=2;}
+ try{const result=await cli();console.log(JSON.stringify(result,null,2));if(result?.status?.startsWith('STOP')||result?.status==='PARTIAL_REVIEW_REQUIRED'||
+  process.argv[2]==='--platform-shadow'&&result?.status!=='COMPLETE')process.exitCode=2;}
  catch(e){console.error(JSON.stringify({status:'STOP',reason:e.code??'CONFIG_INVALID_OR_IO_ERROR',d1Writes:0,schedulerWrites:0}));process.exitCode=2;}
 }

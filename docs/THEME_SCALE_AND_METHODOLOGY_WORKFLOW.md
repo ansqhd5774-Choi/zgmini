@@ -92,6 +92,7 @@ R18→R19→R20→R23→R25→R26→R32→R33은 같은 R32 프로젝트다. 기
 - `theme-platform-provisional-r88.mjs`는 기존 R47의 한 번 계산한 검증 세션·점수·AUM을 공유하고, 실제 공개 R37 기준값 및 보존된 R88 후보 파일을 기반으로 기존 `calculateNineR88()`을 재생한다. SHA·바이트·Reader 계약을 검증하고 R51의 **레거시 PAIR50 잠정치를 R32로 재표기하는 경로를 차단**한다.
 - `theme-platform-provisional-optional.mjs`는 데이터센터·우주의 **기존 D1 확정·잠정 키**를 읽기 전용으로 조회받아 각 기존 R8 계산기로 재생한다. 승인 ETF·산식·252일 확정 이력·출처 SHA·잠정 점수·Reader 신선도를 대조한다. 원자료/파생/D1/예약 변경은 없다.
 - `theme-platform-stored-run.mjs --private-public-readback`은 **새 예약이 아닌 명시적 비공개 실행 옵션**이다. R88은 기존 공개 API의 R32 Reader projection을, optional 2개는 기존 승인된 PC D1 클라이언트의 제한된 `SELECT`와 4개 기존 key만 사용하며 각 조회수를 별도로 기록한다. 공개 API 메타데이터를 D1 원본에 임의 합성하지 않는다. 일반 `--private`는 외부 연결 없이 종전처럼 잠정 기준값 부재를 명시한다.
+- 기존 V2 `theme-config-tool.mjs --platform-shadow`에 **명시적 1회 실행 경로**를 연결했다. 기존 `--scheduled` 동작·13:00 예약·게시 경로는 변경하지 않는다. `theme-config-install.mjs`는 이 실행점의 JS import 의존성과 승인 JSON 근거를 기존 공통 번들에 포함한다. 이는 소스의 실행·패키징 연결이며 PC 운영 설치를 의미하지 않는다.
 - **아직 완료로 판정하지 않는 조건:** 전용 브랜치의 소스·모의 검증만 통과했다. 실제 PC 원자료·D1 기준값을 이 연결부로 재조회한 결과, 등록형 V2의 개별 잠정 정책, 신규 출력 저장과 정규 Writer 소유권 이전, API/UI 최종 반영은 미완이다. 기존 예약을 변경하거나 미래 자연 갱신을 이번 구현의 선행 조건으로 삼지 않는다.
 
 ### 기존 공개 테마 이관 입력과 게시 경로

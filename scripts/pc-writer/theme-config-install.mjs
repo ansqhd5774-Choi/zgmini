@@ -50,6 +50,11 @@ export function installConfiguredTool({dataRoot,sourceSha,registerTask=false,sta
  files.push('config/theme-data-registry.json','examples/theme-registration.template.json','docs/THEME_CONFIG_TOOL.md');
  files.push('config/theme-public-operational-bindings.json');
  files.push('scripts/pc-writer/theme-space-satellite-r26-approved-roster.json');
+ // Stored-only shared shadow replay also reads these approved JSON artifacts
+ // through fs rather than JS imports; include them in the same existing bundle.
+ files.push('config/theme-nine-r26-official-aum-evidence.json',
+  'config/theme-nine-r32-dated-aum-approval.json',
+  'scripts/pc-writer/theme-space-satellite-r23-dated-aum-evidence.json');
  files.push('config/theme-nine-r20-approved-candidates.json','config/theme-platform-delegation.json',
   'docs/THEME_PLATFORM_STANDARD.md','docs/THEME_ONBOARDING_PLAYBOOK.md','docs/CMD_EXECUTION_PLAYBOOK.md');
  files.push('examples/theme-registration-r32.template.json');
