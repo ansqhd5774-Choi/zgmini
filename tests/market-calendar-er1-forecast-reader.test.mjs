@@ -121,5 +121,11 @@ test('existing December actual-only grading keeps its previously approved date b
       null,legacy).text();
     assert.match(html,/기업 실적 점수 99\.00점/);
     assert.match(html,/★★★/);
+    // Original generic ER1 third-argument fallback is still used when a
+    // dedicated December snapshot has not been supplied.
+    const generic=await earningsDisplayResponse(source,
+      'https://zgmini.kr/api/earnings-calendar-display?start=2026-12-01&end=2026-12-01',
+      legacy).text();
+    assert.match(generic,/기업 실적 점수 99\.00점/);
   }finally{Date.now=previousNow;}
 });
