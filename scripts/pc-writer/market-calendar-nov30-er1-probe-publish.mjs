@@ -251,7 +251,7 @@ function getHead(root){
  return execFileSync('git',['rev-parse','HEAD'],{cwd:root,encoding:'utf8',
   windowsHide:true,timeout:15000,stdio:['ignore','pipe','ignore']}).trim();
 }
-async function getRemote(pcHome){
+export async function getRemote(pcHome){
  const config=JSON.parse(fs.readFileSync(path.join(pcHome,'config.json'),'utf8'));
  if(config.collectionTarget!=='pc'||config.enabled!==true||!config.core)
   stop('NOV30_ER1_OPERATION_CONFIG_STOP');
