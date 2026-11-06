@@ -8,11 +8,54 @@ import {listRegistered} from './theme-config-registry.mjs';
 import {identity} from './theme-platform.mjs';
 import {createThemeCheckpointStore} from './theme-platform-store.mjs';
 import {buildOperationalRegistry,runOperationalPrivateBatch} from './theme-platform-operational.mjs';
-import {createStoredOperationalAdapters} from './theme-platform-stored-adapters.mjs';
+import {createStoredOperationalAdapters,createVerifiedStoredProvisionalCalculator}
+ from './theme-platform-stored-adapters.mjs';
+import {createNineR54D1Query} from './theme-nine-r54-d1-client.mjs';
+import {biotechCloudflareTokenR7} from './theme-biotech-auth-r7.mjs';
 
 const sha=bytes=>createHash('sha256').update(bytes).digest('hex');
 const need=(condition,code)=>{if(!condition)throw Object.assign(new Error(code),{code});};
 const repo=fileURLToPath(new URL('../../',import.meta.url));
+const READ="SELECT body,stored_at FROM public_feed_snapshots_v1 WHERE kind='output' AND feed_key=? AND snapshot_key='current'";
+const EXISTING_KEYS=new Set([
+ 'theme-data-center-power-r1','theme-data-center-power-provisional-r1',
+ 'theme-space-satellite-r2','theme-space-satellite-provisional-r1']);
+
+export async function readStoredPublicR32Base({fetchImpl=fetch,now=Date.now()}={}){
+ need(Number.isSafeInteger(now)&&now>0,'THEME_STORED_PUBLIC_CLOCK');
+ // Existing public Reader is the source for modelRevision/R88 projection;
+ // never manufacture those fields from a raw D1 R37 record.
+ const response=await fetchImpl('https://zgmini.kr/api/theme-fear-greed?ten_r88='+now,{
+  headers:{'cache-control':'no-cache'},redirect:'error',
+  signal:AbortSignal.timeout(20000)});
+ need(response?.ok,'THEME_STORED_PUBLIC_API_UNAVAILABLE');
+ const body=await response.json();
+ need(body?.status==='READY'&&typeof body.modelRevision==='string'&&
+  typeof body.r32ProvisionalReaderVersion==='string',
+  'THEME_STORED_PUBLIC_API_SHAPE_INVALID');
+ return body;
+}
+
+export function createStoredD1FeedReader({dataRoot,query=null}={}){
+ need(typeof dataRoot==='string'&&dataRoot,'THEME_STORED_DATA_ROOT');
+ const approvedQuery=query??createNineR54D1Query({dataRoot,tokenFn:biotechCloudflareTokenR7});
+ need(typeof approvedQuery==='function','THEME_STORED_PUBLIC_QUERY_REQUIRED');
+ return async key=>{
+  need(EXISTING_KEYS.has(key),'THEME_STORED_D1_FEED_NOT_APPROVED');
+  const result=await approvedQuery(READ,[key],{write:false});
+  need(Array.isArray(result?.results)&&result.results.length<=1,
+   'THEME_STORED_D1_READ_RESPONSE_INVALID');
+  const row=result.results[0];
+  if(!row)return null;
+  need(typeof row.body==='string'&&Number.isSafeInteger(Number(row.stored_at))&&
+   Number(row.stored_at)>0,'THEME_STORED_D1_RECORD_INVALID');
+  let body;
+  try{body=JSON.parse(row.body);}catch{need(false,'THEME_STORED_D1_RECORD_JSON_INVALID');}
+  need(body&&typeof body==='object'&&!Array.isArray(body),
+   'THEME_STORED_D1_RECORD_BODY_INVALID');
+  return {body,storedAt:Number(row.stored_at)};
+ };
+}
 
 export function storedInputFingerprint({dataRoot,registrations=[]}={}){
  const root=fs.realpathSync(dataRoot);
@@ -75,12 +118,21 @@ export function replayCheckedStore({store,adapters,registry}){
 }
 
 export async function runStoredOperationalPrivate({dataRoot,
- maxStages=Infinity,after=null,now=new Date(),adapters=null,store=null}={}){
+ maxStages=Infinity,after=null,now=new Date(),adapters=null,store=null,
+ readFeed=null,readPublicBase=null,decoder=null}={}){
  need(typeof dataRoot==='string'&&dataRoot,'THEME_STORED_DATA_ROOT');
  need(now instanceof Date&&!Number.isNaN(now.getTime()),'THEME_STORED_CLOCK');
  const registrations=listRegistered(dataRoot);
  const fingerprint=storedInputFingerprint({dataRoot,registrations});
- const actualAdapters=adapters??createStoredOperationalAdapters({dataRoot,now});
+ let d1Reads=0,publicApiReads=0;
+ const measuredRead=readFeed===null?null:async key=>{d1Reads++;return readFeed(key);};
+ const measuredPublic=readPublicBase===null?null:async()=>{
+  publicApiReads++;return readPublicBase();};
+ const provisionalCalculator=measuredRead===null?null:
+  createVerifiedStoredProvisionalCalculator({readFeed:measuredRead,
+   readPublicBase:measuredPublic,now,decoder});
+ const actualAdapters=adapters??createStoredOperationalAdapters({dataRoot,now,
+  provisionalCalculator});
  const actualStore=store??createThemeCheckpointStore({dataRoot});
  const guardedStore=adapters===null?replayCheckedStore({store:actualStore,
   adapters:actualAdapters,registry:buildOperationalRegistry({registrations})}):actualStore;
@@ -92,15 +144,22 @@ export async function runStoredOperationalPrivate({dataRoot,
   maxStages,after});
  return {...output,inputFingerprint:fingerprint,
   // Default adapters consume saved inputs; the checkpoint itself is written.
-  sourceMode:adapters===null?'EXISTING_LOCAL_SAVED_ONLY':'CUSTOM_ADAPTER_UNVERIFIED',
-  publicConnection:'NOT_ACTIVATED',schedulerWrites:0};
+  sourceMode:adapters!==null?'CUSTOM_ADAPTER_UNVERIFIED':
+   readFeed===null?'EXISTING_LOCAL_SAVED_ONLY':'SAVED_PLUS_PUBLIC_API_AND_D1_READS',
+  publicConnection:'NOT_ACTIVATED',d1Reads,publicApiReads,schedulerWrites:0};
 }
 
 if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.url)){
  try{
-  need(process.argv.length===3&&process.argv[2]==='--private','THEME_STORED_USAGE');
+  need(process.argv.length===3&&
+   ['--private','--private-public-readback'].includes(process.argv[2]),
+   'THEME_STORED_USAGE');
+  const dataRoot=process.env.ZGMINI_DATA_ROOT??'E:/ZGmini/data';
+  const readFeed=process.argv[2]==='--private-public-readback'?
+   createStoredD1FeedReader({dataRoot}):null;
+  const readPublicBase=readFeed===null?null:()=>readStoredPublicR32Base();
   const result=await runStoredOperationalPrivate({
-   dataRoot:process.env.ZGMINI_DATA_ROOT??'E:/ZGmini/data'});
+   dataRoot,readFeed,readPublicBase});
   console.log(JSON.stringify(result));
   if(result.status!=='COMPLETE')process.exitCode=2;
  }catch(error){

@@ -1,7 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {planOperationalBatch,runOperationalPrivateBatch} from '../scripts/pc-writer/theme-platform-operational.mjs';
-import {createStoredOperationalAdapters} from '../scripts/pc-writer/theme-platform-stored-adapters.mjs';
+import {createStoredOperationalAdapters,createVerifiedStoredProvisionalCalculator}
+ from '../scripts/pc-writer/theme-platform-stored-adapters.mjs';
 
 const fixtureDate='2026-10-28';
 const history=Array.from({length:252},(_,i)=>({date:new Date(Date.UTC(2025,0,1)+i*86400000).toISOString().slice(0,10),score:50}));
@@ -76,4 +77,34 @@ test('R47 group receives the supplied observation time and never replays for pro
  assert.equal(counts.r37,1);
  assert.equal(result.results.filter(r=>r.kind==='provisional'&&r.status==='COMPLETE').length,10);
  assert.equal(counts.provisional,3);
+});
+
+test('read-only R88 bridge uses one existing public API projection and shared group candidate',async()=>{
+ const registry=planOperationalBatch().registry;
+ const now=new Date('2026-10-30T12:00:00.000Z');
+ const reads=[];let r88Calls=0,publicReads=0;
+ const provisionalCalculator=createVerifiedStoredProvisionalCalculator({now,
+  readFeed:async key=>{reads.push(key);return null;},
+  readPublicBase:async()=>{publicReads++;return {
+   status:'READY',modelRevision:'R37_TEST',r32ProvisionalReaderVersion:'R88_TEST'};},
+  calculateR88:async({confirmedResult,publicBase})=>{
+   r88Calls++;assert.equal(publicBase.status,'READY');
+   assert.equal(confirmedResult.replayContext.source,'SHARED_R47_ONCE');
+   return {artifactSha256,rows:registry.themes.slice(0,8).map(t=>({
+    label:t.label,etfs:t.etfs,methodologyVersion:t.methodologyVersion,
+    observationDate:'2026-10-29',confirmedObservationDate:fixtureDate,
+    score:50,points:[{date:'2026-10-29',score:50}],
+    sourceVersion:'VERIFIED_R88_PROVISIONAL'}))};},
+  optionalFactory:()=>async()=>{throw Error('optional not used in this unit test');}});
+ const a=createStoredOperationalAdapters({dataRoot:'fixture',now,
+  calculators:{r37:()=>({...forRows(registry.themes.slice(0,8)),
+   replayContext:{source:'SHARED_R47_ONCE'}})},provisionalCalculator});
+ const selected={...registry,themes:registry.themes.slice(0,8)};
+ const result=await import('../scripts/pc-writer/theme-platform.mjs').then(({runThemeBatch})=>
+  runThemeBatch({registry:selected,adapters:a,store:memory(),runKey:'r37-public-shadow',
+   formulas:{[selected.themes[0].methodologyVersion]:()=>({})}}));
+ assert.equal(result.status,'COMPLETE');
+ assert.deepEqual(reads,[]);
+ assert.equal(publicReads,1);
+ assert.equal(r88Calls,1);
 });

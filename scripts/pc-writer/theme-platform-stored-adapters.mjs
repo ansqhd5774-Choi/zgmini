@@ -13,6 +13,8 @@ import {scoreRegistered} from './theme-config-score.mjs';
 import {readRegistered} from './theme-config-registry.mjs';
 import {R32,identity} from './theme-platform.mjs';
 import {PAIR50,SPACE_R32} from './theme-platform-operational.mjs';
+import {calculateStoredR88} from './theme-platform-provisional-r88.mjs';
+import {createVerifiedOptionalProvisionalCalculator} from './theme-platform-provisional-optional.mjs';
 
 const sha=bytes=>createHash('sha256').update(bytes).digest('hex');
 const need=(ok,code)=>{if(!ok)throw Object.assign(new Error(code),{code});};
@@ -34,7 +36,9 @@ function exactExisting(dataRoot,relative,bytes){
 
 export function calculateStoredR37({dataRoot,configDirectory=path.join(project,'config'),now=new Date()}={}){
  const rosterPath=path.join(configDirectory,'theme-nine-r20-approved-candidates.json');
- const scores=calculateNineR47PrivateScores({dataRoot,rosterPath,now});
+ let sessions;
+ const scores=calculateNineR47PrivateScores({dataRoot,rosterPath,now,
+  onVerifiedSessions:value=>{sessions=value;}});
  const evidence=loadNineR47OfficialEvidence({configDirectory,rosterPath});
  const themes=calculateNineR47PrivateThemes({scores,...evidence});
  const first=pretty(scores),second=pretty(themes);
@@ -45,7 +49,7 @@ export function calculateStoredR37({dataRoot,configDirectory=path.join(project,'
  need(themes.themes?.length===9&&themes.counts?.themes===9&&
   themes.publicationAuthorized===false,'THEME_STORED_R37_CONTRACT');
  const roster=new Map(evidence.roster.groups.map(g=>[g.theme,g.tickers.map(t=>t.ticker)]));
- return {artifactSha256,rows:themes.themes.map(t=>({label:t.theme,
+ return {artifactSha256,replayContext:{scores,evidence,sessions},rows:themes.themes.map(t=>({label:t.theme,
   etfs:roster.get(t.theme),methodologyVersion:R32,
   observationDate:themes.benchmarkDate,score:t.latest?.score,history:t.history,
   sourceVersion:identity(scores.source)}))};
@@ -89,6 +93,33 @@ export function calculateStoredConfigured({dataRoot,id}={}){
  return {artifactSha256,rows:[{label:result.label,etfs:result.etfs,
   methodologyVersion:result.profile,observationDate:result.observationDate,
   score:result.score,history:result.history,sourceVersion:result.sourceVersion}]};
+}
+
+// Existing D1 readers are injected from their approved owner. This bridge is
+// incapable of creating a D1 client, using a token, publishing or scheduling.
+export function createVerifiedStoredProvisionalCalculator({readFeed,readPublicBase,
+ now=new Date(),
+ decoder=null,calculateR88=calculateStoredR88,
+ optionalFactory=createVerifiedOptionalProvisionalCalculator}={}){
+ need(typeof readFeed==='function','THEME_STORED_PUBLIC_READBACK_REQUIRED');
+ need(now instanceof Date&&!Number.isNaN(now.getTime()),'THEME_STORED_CLOCK');
+ const optional=optionalFactory({readFeed,now,decoder});
+ return async({dataRoot,theme,group,confirmedResult}={})=>{
+  if(group==='r37'){
+   // The existing public API projects modelRevision and R88 Reader version;
+   // the raw R37 D1 body lacks those fields and must not impersonate the API.
+   need(typeof readPublicBase==='function','THEME_STORED_R32_PUBLIC_API_REQUIRED');
+   const publicBase=await readPublicBase();
+   need(publicBase?.status==='READY'&&
+    typeof publicBase.modelRevision==='string'&&
+    typeof publicBase.r32ProvisionalReaderVersion==='string',
+    'THEME_STORED_R32_PUBLIC_API_INVALID');
+   return calculateR88({dataRoot,publicBase,confirmedResult,now,decoder});
+  }
+  if(group==='data-center'||group==='space')
+   return optional({dataRoot,theme,group,confirmedResult});
+  need(false,'THEME_STORED_CONFIGURED_PROVISIONAL_PUBLIC_BASE_REQUIRED');
+ };
 }
 
 export function createStoredOperationalAdapters({dataRoot,

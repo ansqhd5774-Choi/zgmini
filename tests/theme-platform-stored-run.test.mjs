@@ -4,7 +4,8 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import {identity} from '../scripts/pc-writer/theme-platform.mjs';
-import {storedInputFingerprint,runStoredOperationalPrivate,replayCheckedStore} from
+import {storedInputFingerprint,runStoredOperationalPrivate,replayCheckedStore,
+ createStoredD1FeedReader,readStoredPublicR32Base} from
  '../scripts/pc-writer/theme-platform-stored-run.mjs';
 
 const memory=()=>{let state;return {load:async()=>structuredClone(state),
@@ -65,4 +66,32 @@ test('checkpoint resume replays stored artifact proof and fails closed if tamper
  assert.deepEqual(await guard.load('key'),state);
  proof='f'.repeat(64);
  await assert.rejects(guard.load('key'),/THEME_STORED_CHECKPOINT_PROOF_STALE/);
+});
+
+test('approved fixed-key public reader issues SELECT only and returns D1 readback without writes',async()=>{
+ const calls=[],body={status:'READY',phase:'CONFIRMED'};
+ const read=createStoredD1FeedReader({dataRoot:'fixture',query:async(sql,params,options)=>{
+  calls.push({sql,params,options});
+  return {results:[{body:JSON.stringify(body),stored_at:Date.parse('2026-10-28T01:00:00Z')}]};
+ }});
+ assert.deepEqual(await read('theme-data-center-power-r1'),{
+  body,storedAt:Date.parse('2026-10-28T01:00:00Z')});
+ assert.equal(calls.length,1);
+ assert.match(calls[0].sql,/^SELECT body,stored_at FROM public_feed_snapshots_v1/);
+ assert.deepEqual(calls[0].params,['theme-data-center-power-r1']);
+ assert.deepEqual(calls[0].options,{write:false});
+ await assert.rejects(read('another-account-secret'),/THEME_STORED_D1_FEED_NOT_APPROVED/);
+ assert.equal(calls.length,1);
+});
+
+test('R88 reads the existing public API projection rather than manufacturing D1 metadata',async()=>{
+ const urls=[],publicBody={status:'READY',modelRevision:'R37_PUBLIC_VERSION',
+  r32ProvisionalReaderVersion:'R88_PUBLIC_VERSION'};
+ const body=await readStoredPublicR32Base({now:Date.parse('2026-10-30T00:00:00Z'),
+  fetchImpl:async(url,options)=>{urls.push({url,options});return {
+   ok:true,json:async()=>publicBody};}});
+ assert.deepEqual(body,publicBody);
+ assert.match(urls[0].url,/^https:\/\/zgmini\.kr\/api\/theme-fear-greed\?ten_r88=/);
+ assert.equal(urls[0].options.redirect,'error');
+ assert.deepEqual(urls[0].options.headers,{'cache-control':'no-cache'});
 });
