@@ -7,7 +7,15 @@ import {collectConfigured} from './theme-optional-collect.mjs';
 import {scoreRegistered} from './theme-config-score.mjs';
 import {planOperationalBatch} from './theme-platform-operational.mjs';
 const root=()=>process.env.ZGMINI_DATA_ROOT??'E:/ZGmini/data';
-const legacy=()=>JSON.parse(fs.readFileSync(new URL('../../config/theme-data-registry.json',import.meta.url)));
+const legacy=()=>{
+ const historic=JSON.parse(fs.readFileSync(new URL('../../config/theme-data-registry.json',import.meta.url)));
+ // The historical registry omitted space-satellite. Registration must still
+ // protect every existing public ID/label without adding a second public list.
+ const publicBindings=JSON.parse(fs.readFileSync(new URL('../../config/theme-public-operational-bindings.json',import.meta.url)));
+ ensure(publicBindings.schema==='ZGMINI_THEME_PUBLIC_OPERATIONAL_BINDINGS_V1'&&
+  Array.isArray(publicBindings.themes),'CONFIG_PUBLIC_ID_REGISTRY_REQUIRED');
+ return {...historic,themes:[...historic.themes,...publicBindings.themes.map(({id,label})=>({id,label}))]};
+};
 export {listRegistered};
 export function planRegistered(dataRoot,id){
  const r=readRegistered(dataRoot,id),home=path.join(fs.realpathSync(dataRoot),'themes',r.internalId);

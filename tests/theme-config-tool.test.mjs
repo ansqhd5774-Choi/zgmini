@@ -26,6 +26,17 @@ test('registration is idempotent, immutable and cannot replace legacy identities
  assert.equal(planRegistered(root,definition.id).status,'REGISTERED_AWAITING_SOURCE');
  assert.equal(fs.existsSync(path.join(root,'themes')),false);
 });
+test('shared CLI registration also protects space-satellite missing from historic registry',t=>{
+ const root=setup(t),definitionPath=path.join(root,'attempt.json');
+ fs.writeFileSync(definitionPath,JSON.stringify({...definition,id:'space-satellite',label:'사칭 테마'}));
+ const invoke=()=>execFileSync(process.execPath,
+  ['scripts/pc-writer/theme-config-tool.mjs','--register',definitionPath],
+  {cwd:new URL('../',import.meta.url),env:{...process.env,ZGMINI_DATA_ROOT:root},
+   encoding:'utf8',stdio:['ignore','pipe','pipe']});
+ assert.throws(invoke,error=>error.status===2&&
+  String(error.stderr).includes('CONFIG_LEGACY_THEME_COLLISION'));
+ assert.equal(fs.existsSync(path.join(root,'theme-config/definitions/space-satellite.json')),false);
+});
 test('junction escape is rejected before creating files outside data root',t=>{
  const root=setup(t),outside=setup(t);fs.symlinkSync(outside,path.join(root,'theme-config'),process.platform==='win32'?'junction':'dir');
  assert.throws(()=>register(root),/DIRECTORY_REDIRECT/);assert.deepEqual(fs.readdirSync(outside),[]);

@@ -6,6 +6,7 @@ import path from 'node:path';
 import {createHash} from 'node:crypto';
 import {collectOptional} from '../scripts/pc-writer/theme-optional-collect.mjs';
 import {calculateDataCenterPower,saveDataCenterPower} from '../scripts/pc-writer/theme-data-center-power-r1.mjs';
+import {calculateStoredDc} from '../scripts/pc-writer/theme-platform-stored-adapters.mjs';
 import {scoreAll252} from '../scripts/pc-writer/theme-optional-score-r188.mjs';
 
 const sha=buffer=>createHash('sha256').update(buffer).digest('hex');
@@ -64,6 +65,10 @@ test('new pair uses exact existing scorer 50:50 on 252 matching saved sessions',
   assert.equal(actual.scheduledWrites,undefined);
   const saved=saveDataCenterPower(root,actual);
   assert.deepEqual(saved,saveDataCenterPower(root,actual)); // deterministic hash/path
+  const reused=calculateStoredDc({dataRoot:root});
+  assert.equal(reused.artifactSha256,saved.sha256);
+  assert.equal(reused.rows[0].methodologyVersion,actual.methodologyVersion);
+  assert.deepEqual(reused.rows[0].history,actual.history);
  }finally{fs.rmSync(root,{recursive:true,force:true});}
 });
 
