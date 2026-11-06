@@ -15,7 +15,7 @@ export async function collectReleaseCalendar(db,{now=Date.now(),fetchImpl=fetch}
   for(const [source,spec] of Object.entries(RELEASE_SOURCES)){
    try{
     const pages=source==='nyfed'?nyFedCalendarPages(now):[{url:spec.url.replace('{year}',String(new Date(now).getUTCFullYear()))}];
-    const parsed=[],missed=[];
+    const parsed=[],missed=[];let parsedPages=0;
     for(const page of pages){
      try{
       requests++;
@@ -26,12 +26,16 @@ export async function collectReleaseCalendar(db,{now=Date.now(),fetchImpl=fetch}
       await store.writeInput(inputKey,{text,sourceUrl:page.url},now);
       const saved=await store.readInput(inputKey);
       parsed.push(...parseReleaseCalendar(saved.body.text,source,page));
+      parsedPages++;
      }catch(error){
       if(source!=='nyfed')throw error;
       missed.push(page.url);
      }
     }
-    if(!parsed.length)throw Error('CALENDAR_EVENTS_EMPTY');
+    // An official NYFed month may legitimately contain no GSCPI/SCE release.
+    // Failed pages are tracked separately; a successfully parsed empty month
+    // is not a provider outage.
+    if(!parsedPages||(!parsed.length&&source!=='nyfed'))throw Error('CALENDAR_EVENTS_EMPTY');
     const previousEvents=previous?.body?.events??[];
     const preserved=previousEvents.filter(e=>e.source===source&&missed.includes(e.sourceUrl));
     // A failed month must not promote an older preserved date to newly verified.
