@@ -66,11 +66,27 @@ async function addBiotechSidecars(db,base,opts){
  if(advanced.observationDate<=withDcProvisional.observationDate)return advanced;
  // Optional records can now match the independently verified newer anchor.
  // Keep the original pre-overlay projection for the publication-base caller.
- const currentDc=await addVerifiedDcPower(db,advanced,{now:opts.now});
+ // Recheck biotech against the verified R37 date before applying R32 scores.
+ // Its initial read may have rejected a valid newer R2 sidecar because the
+ // legacy confirmed date was older. The R37 replay preserves that original
+ // projection's provisional lineage and updates the newly restored theme.
+ const newerBase={...withDcProvisional,observationDate:advanced.observationDate,
+  confirmedObservationDate:advanced.confirmedObservationDate};
+ const renewedBiotech=await addVerifiedBiotechContinuationR2(db,newerBase,{now:opts.now});
+ // Verify the biotech provisional score against its own confirmed PAIR50
+ // sidecar before R37 replaces that confirmed score with the R32 value.
+ const renewedBiotechProvisional=renewedBiotech===newerBase?newerBase:
+  await addVerifiedBiotechProvisionalR1(db,renewedBiotech,{now:opts.now});
+ const replayed=renewedBiotech===newerBase?advanced:
+  await addVerifiedNineR37(db,renewedBiotechProvisional,{now:opts.now});
+ // The second read may fail or the R37 record may expire between reads.
+ // Never expose the temporary anchor with legacy 7-theme histories.
+ const rebased=replayed===renewedBiotechProvisional?advanced:replayed;
+ const currentDc=await addVerifiedDcPower(db,rebased,{now:opts.now});
  const currentSpace=await addVerifiedSpaceSatellite(db,currentDc,{now:opts.now});
  const spaceProvisional=currentSpace===currentDc?currentSpace:
   await addVerifiedSpaceProvisionalR1(db,currentSpace,{now:opts.now});
- return currentDc===advanced?spaceProvisional:
+ return currentDc===rebased?spaceProvisional:
   addVerifiedDcPowerProvisionalR1(db,spaceProvisional,{now:opts.now});
 }
 export async function readThemeEtfOnly(db,{now=Date.now(),store=publicFeedStore(db),includeNineR37=true}={}){

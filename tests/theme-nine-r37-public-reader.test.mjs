@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {readThemeEtfOnly,THEME_ETF_ONLY_PUBLIC_KEY,THEME_ETF_ONLY_PUBLIC_VERSION,THEME_ETF_ONLY_METHOD} from '../worker/theme-etf-only-public.mjs';
+import {readThemeEtfOnly,THEME_ETF_ONLY_PAIRS,THEME_ETF_ONLY_PUBLIC_KEY,THEME_ETF_ONLY_PUBLIC_VERSION,THEME_ETF_ONLY_METHOD} from '../worker/theme-etf-only-public.mjs';
 import {
  addVerifiedNineR37,eligibleNineR37,THEME_NINE_R37_KEY,
  THEME_NINE_R37_METHOD,THEME_NINE_R37_ROSTER,
@@ -52,6 +52,79 @@ test('R37 reader upgrades existing themes without introducing an eleventh theme'
  assert.deepEqual(result.themes.find(t=>t.theme==='바이오·신약').etfs,
   THEME_NINE_R37_ROSTER.at(-1).etfs);
  assert.equal(result.modelRevision,THEME_NINE_R37_VERSION);
+});
+
+test('R54 new R37 anchor rechecks a newer biotech sidecar and keeps R32 methodology',async()=>{
+ const earlierDates=Array.from({length:252},(_,i)=>
+  new Date(Date.parse('2026-10-20T00:00:00Z')-(251-i)*86400000).toISOString().slice(0,10));
+ const biotechDates=Array.from({length:252},(_,i)=>
+  new Date(Date.parse('2026-10-21T00:00:00Z')-(251-i)*86400000).toISOString().slice(0,10));
+ const legacy={status:'READY',version:THEME_ETF_ONLY_PUBLIC_VERSION,
+  methodologyVersion:THEME_ETF_ONLY_METHOD,publicationAuthorized:true,
+  upstreamCommercialRightsVerified:true,derivedLicenseVerified:true,
+  individualStocksUsed:0,scoreMethod:'ETF_ONLY_PROXY',
+  sourcePriceMode:'UNADJUSTED_HOURLY_CLOSE_PROXY_DISCLOSED',
+  weights:{trend:.4,relativeStrength:.2,volatility:.4},pairWeight:.5,
+  sourceVersion:'VERIFIED_LEGACY',sourceStoredAt:'2026-10-27T00:00:00Z',
+  publishedAt:'2026-10-27T00:00:00Z',observationDate:'2026-10-20',
+  themes:THEME_ETF_ONLY_PAIRS.map(t=>({...t,latestScore:40,
+   history:earlierDates.map(date=>({date,score:40}))}))};
+ const biotech={status:'READY',version:'THEME_BIOTECH_GMH_CONTINUATION_R2_PUBLIC_V1',
+  theme:'바이오테크',etfs:['IBB','XBI'],referenceSymbol:'SPY',
+  methodologyVersion:'ETF_ONLY_T40_R20_V40_PAIR50',individualStocksUsed:0,
+  scoreMethod:'ETF_ONLY_PROXY',
+  sourcePriceMode:'UNADJUSTED_15_NY_HOURLY_PROXY_WITH_OFFICIAL_EARLY_CLOSE_12',
+  phase:'CONFIRMED',provisional:{points:[]},publicationAuthorized:true,
+  localBarsVerified:true,derivedOnlyNoRaw:true,licensingRiskAcceptedByPublisher:true,
+  anonymousScopeIndependentlyConfirmed:false,upstreamCommercialRightsVerified:false,
+  derivedLicenseVerified:false,sourcePriceReconciled:false,
+  fullHistoryIndependentlyReconciled:false,
+  rightsBasis:'OFFICIAL_TERMS_DERIVED_WORKS_ANONYMOUS_SCOPE_UNCONFIRMED',
+  sourceTermsUrl:'https://getmarkethistory.com/docs/terms',
+  sourceStoredAtKind:'VERIFIED_LOCAL_MARKET_BARS',
+  sourceTimestampBasis:'MANIFEST_GET_REQUEST_AT',
+  sourceVersion:'GMH_MANIFEST_SHA256_'+sha,
+  candidateRevisionId:'BIOTECH_CONFIRMED_CONTINUATION_R6_'+('a'.repeat(16)),
+  candidateFileSha256:sha,sourceStoredAt:'2026-10-27T00:00:00Z',
+  asOf:'2026-10-27T00:00:00Z',publishedAt:'2026-10-27T00:00:00Z',
+  observationDate:'2026-10-21',score:36,
+  history:biotechDates.map(date=>({date,score:36})),
+  sourceLineage:{mode:'PRESERVED_OLD_PUBLISHED_SCORES_PLUS_NEW_GMH_CONFIRMED',
+   previousPublicObservationDate:'2026-10-19',firstNewDate:'2026-10-20',
+   newPrivateSourceVersion:'GMH_MANIFEST_SHA256_'+sha,
+   sourceReceivedThrough:'2026-10-27T00:00:00Z'},
+  reconciliation:{existingOverlappingDatesPreserved:250,newConfirmedDates:2}};
+ const counts=new Map();
+ let rejectSecondR37=false,r37Reads=0;
+ const store={prepare(sql){return {bind(key){return {async first(){
+  counts.set(key,(counts.get(key)??0)+1);
+  if(sql.includes('market_public_snapshots_v1'))return {body:JSON.stringify(legacy),stored_at:now-1000};
+  if(key===THEME_NINE_R37_KEY){
+   r37Reads++;
+   if(rejectSecondR37&&r37Reads===2)return null;
+  }
+  const value=key===THEME_NINE_R37_KEY?ready:key==='theme-biotech-optional-r2'?biotech:null;
+  return value?{body:JSON.stringify(value),stored_at:now-1000}:null;
+ }};}};}};
+ const baselineResponse=await readThemeEtfOnly(store,{now,includeNineR37:false});
+ const before=await baselineResponse.json();
+ assert.equal(before.themes.length,7);
+ const response=await readThemeEtfOnly(store,{now});
+ const result=await response.json();
+ assert.equal(response.status,200);
+ assert.equal(result.confirmedObservationDate,'2026-10-23');
+ assert.equal(result.themes.length,8);
+ const added=result.themes.find(t=>t.theme==='바이오·신약');
+ assert.equal(added?.score,50);
+ assert.deepEqual(added.etfs,THEME_NINE_R37_ROSTER.at(-1).etfs);
+ assert.equal(result.methodologyVersion,THEME_NINE_R37_METHOD);
+ assert.equal(counts.get('theme-biotech-optional-r2'),3);
+ rejectSecondR37=true;
+ r37Reads=0;
+ const failedReplay=await (await readThemeEtfOnly(store,{now})).json();
+ assert.equal(failedReplay.themes.length,7);
+ assert.equal(failedReplay.confirmedObservationDate,'2026-10-23');
+ assert.deepEqual(failedReplay.themes[0].history.at(-1),{date:'2026-10-23',score:50});
 });
 
 test('already-public AI is upgraded at its existing index',async()=>{
