@@ -40,6 +40,8 @@ export const PACKAGE_FILES=configuredDependencyClosure([
  'worker/public-display-freshness.mjs',
  'worker/theme-configured-public.mjs',
  'config/theme-data-registry.json',
+ 'config/theme-public-operational-bindings.json',
+ 'scripts/pc-writer/theme-space-satellite-r26-approved-roster.json',
  'config/theme-nine-r20-approved-candidates.json',
  'config/theme-platform-delegation.json',
  'examples/theme-registration.template.json',

@@ -5,6 +5,7 @@ import {createInterface} from 'node:readline/promises';
 import {readDefinition,readRegistered,registerDefinition,safeDirectory,ensure,digest,validDate,listRegistered} from './theme-config-registry.mjs';
 import {collectConfigured} from './theme-optional-collect.mjs';
 import {scoreRegistered} from './theme-config-score.mjs';
+import {planOperationalBatch} from './theme-platform-operational.mjs';
 const root=()=>process.env.ZGMINI_DATA_ROOT??'E:/ZGmini/data';
 const legacy=()=>JSON.parse(fs.readFileSync(new URL('../../config/theme-data-registry.json',import.meta.url)));
 export {listRegistered};
@@ -94,6 +95,12 @@ export async function runConfiguredSchedule({dataRoot,now=new Date(),fetchImpl=f
 }
 async function cli(){
  const [mode,arg,...extra]=process.argv.slice(2);ensure(!extra.length,'CONFIG_USAGE');
+ if(mode==='--platform-plan'){
+  ensure(!arg,'CONFIG_USAGE');
+  // Same existing launcher, read-only unified discovery. It must not trigger
+  // the older per-theme writers or imply platform cutover is installed.
+  return planOperationalBatch({dataRoot:root()});
+ }
  if(mode==='--platform-inspect'){
   ensure(!arg,'CONFIG_USAGE');
   return (await import('./theme-platform-inspect.mjs')).inspectThemePlatform();
@@ -122,6 +129,19 @@ async function cli(){
   // This is still the single existing configured-theme scheduled entry.
   // Private collection/calculation runs first with the original UTC 4-GET budget.
   const privateCycle=await runConfiguredSchedule({dataRoot:root()});
+  // Discover all existing public and registered themes through one shared
+  // manifest. Stage 2 is read-only: activation of stored-result handlers and
+  // transfer of D1 writer ownership require their separate cutover proofs.
+  let platform;
+  try{
+   const plan=planOperationalBatch({dataRoot:root()});
+   platform={status:plan.status,publicTargetIds:plan.publicTargetIds,
+    privateRegisteredIds:plan.privateRegisteredIds,
+    physicalFeedGroups:plan.feedGroups.length,
+    uniqueStoredInputPlans:plan.uniqueStoredInputPlans,
+    providerCalls:0,d1Writes:0};
+  }catch(e){platform={status:'PRIVATE_BINDINGS_REVIEW_REQUIRED',
+   reason:e.code??'THEME_PLATFORM_PLAN_IO_ERROR',providerCalls:0,d1Writes:0};}
   let publicCycle;
   try{
    const {runConfiguredAutoPublish}=await import('./theme-config-auto-publish.mjs');
@@ -135,6 +155,7 @@ async function cli(){
     publicCycle.status==='PUBLICATION_PARTIAL_REVIEW_REQUIRED'?
     'PARTIAL_REVIEW_REQUIRED':privateCycle.status,
    privateStatus:privateCycle.status,
+   platformConnection:platform,
    publicConnection:publicCycle,
    d1Writes:publicCycle.d1Writes??0};
  }

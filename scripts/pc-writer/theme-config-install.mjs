@@ -48,6 +48,8 @@ export function installConfiguredTool({dataRoot,sourceSha,registerTask=false,sta
  files.push('worker/public-display-freshness.mjs');
  files.push('worker/theme-configured-public.mjs');
  files.push('config/theme-data-registry.json','examples/theme-registration.template.json','docs/THEME_CONFIG_TOOL.md');
+ files.push('config/theme-public-operational-bindings.json');
+ files.push('scripts/pc-writer/theme-space-satellite-r26-approved-roster.json');
  files.push('config/theme-nine-r20-approved-candidates.json','config/theme-platform-delegation.json',
   'docs/THEME_PLATFORM_STANDARD.md','docs/THEME_ONBOARDING_PLAYBOOK.md','docs/CMD_EXECUTION_PLAYBOOK.md');
  files.push('examples/theme-registration-r32.template.json');

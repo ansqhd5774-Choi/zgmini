@@ -19,6 +19,14 @@ test('existing installer stages complete common CLI and inspect runs offline',t=
   env:{...process.env,ZGMINI_DATA_ROOT:root},timeout:15000}));
  assert.equal(scheduled.status,'NO_REGISTERED_THEMES');assert.equal(scheduled.publicConnection.status,'NO_REGISTERED_THEMES');
  assert.equal(scheduled.d1Writes,0);
+ assert.equal(scheduled.platformConnection.status,'PRIVATE_BINDINGS_PLANNED_NOT_EXECUTED');
+ assert.equal(scheduled.platformConnection.publicTargetIds.length,10);
+ assert.equal(scheduled.platformConnection.physicalFeedGroups,6);
+ assert.equal(scheduled.platformConnection.providerCalls,0);
+ const plan=JSON.parse(execFileSync(process.execPath,[runner,'--platform-plan'],{encoding:'utf8',windowsHide:true,
+  env:{...process.env,ZGMINI_DATA_ROOT:root},timeout:15000}));
+ assert.deepEqual(plan.publicTargetIds,scheduled.platformConnection.publicTargetIds);
+ assert.equal(plan.status,'PRIVATE_BINDINGS_PLANNED_NOT_EXECUTED');
 });
 test('missing local dependency is detected at package build, not user execution',t=>{
  const root=fs.mkdtempSync(path.join(os.tmpdir(),'theme-platform-import-'));t.after(()=>fs.rmSync(root,{recursive:true}));
