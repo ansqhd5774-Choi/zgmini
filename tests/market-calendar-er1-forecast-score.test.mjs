@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {scoreER1ForecastIssuers,FORECAST_METHOD,
-  FORECAST_WEIGHTS,FORECAST_STAR3_THRESHOLD} from './market-calendar-er1-forecast-score.mjs';
+  FORECAST_WEIGHTS,FORECAST_STAR3_THRESHOLD} from '../lib/market-calendar-er1-forecast-score.mjs';
 
 const day='2026-11-06';
 const future=(symbol,extra={})=>({symbol,date:'2026-11-20',
