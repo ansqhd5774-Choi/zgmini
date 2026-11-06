@@ -1,6 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import {fileURLToPath} from 'node:url';
+import {fileURLToPath,pathToFileURL} from 'node:url';
 import {createInterface} from 'node:readline/promises';
 import {readDefinition,readRegistered,registerDefinition,safeDirectory,ensure,digest,validDate,listRegistered} from './theme-config-registry.mjs';
 import {collectConfigured} from './theme-optional-collect.mjs';
@@ -17,6 +17,39 @@ const legacy=()=>{
  return {...historic,themes:[...historic.themes,...publicBindings.themes.map(({id,label})=>({id,label}))]};
 };
 export {listRegistered};
+// The read-only PC shadow may execute only the decoder copied into its
+// B-approved immutable source bundle. Other writers keep their existing
+// dependency lookup; no dynamic scan of unrelated project installations is
+// allowed in this verification mode.
+export async function loadBundledShadowParquet({
+ bundleRoot=fileURLToPath(new URL('../../',import.meta.url)),
+ loadModule=href=>import(href)}={}){
+ const base=fs.realpathSync(bundleRoot);
+ const file=path.join(base,'node_modules','hyparquet','src','index.js');
+ ensure(fs.existsSync(file),'THEME_SHADOW_BUNDLED_PARQUET_MISSING');
+ const resolved=fs.realpathSync(file);
+ ensure(resolved.startsWith(base+path.sep)&&
+  fs.statSync(resolved).isFile()&&!fs.lstatSync(file).isSymbolicLink(),
+  'THEME_SHADOW_BUNDLED_PARQUET_PATH_INVALID');
+ const decoder=await loadModule(pathToFileURL(resolved).href);
+ ensure(typeof decoder?.parquetReadObjects==='function',
+  'THEME_SHADOW_BUNDLED_PARQUET_INVALID');
+ return decoder;
+}
+// R88 expects a callable decoder; the two optional R8 families expect
+// decoder.parquetReadObjects. Share one lazy approved decoder for both forms.
+// Delay the import until saved Parquet is required so confirmed replay can
+// still report meaningful coverage when the pinned package is unavailable.
+export function createBundledShadowDecoder({load=loadBundledShadowParquet}={}){
+ let pending;
+ const decode=async input=>{
+  pending??=load();
+  const decoder=await pending;
+  return decoder.parquetReadObjects(input);
+ };
+ decode.parquetReadObjects=decode;
+ return decode;
+}
 export function planRegistered(dataRoot,id){
  const r=readRegistered(dataRoot,id),home=path.join(fs.realpathSync(dataRoot),'themes',r.internalId);
  let score=null;
@@ -117,9 +150,11 @@ async function cli(){
    createTransientThemeCheckpointStore,
    readStoredPublicR32Base}=await import('./theme-platform-stored-run.mjs');
   const dataRoot=root();
+  const decoder=createBundledShadowDecoder();
   return runStoredOperationalPrivate({dataRoot,
    store:createTransientThemeCheckpointStore(),
    readFeed:createStoredD1FeedReader({dataRoot}),
+   decoder,
    readPublicBase:()=>readStoredPublicR32Base()});
  }
  if(mode==='--platform-inspect'){

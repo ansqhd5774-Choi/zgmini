@@ -3,9 +3,11 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import {pathToFileURL} from 'node:url';
 import {validateDefinition,registerDefinition,readRegistered,digest} from '../scripts/pc-writer/theme-config-registry.mjs';
 import {collectConfigured} from '../scripts/pc-writer/theme-optional-collect.mjs';
-import {planRegistered,runConfiguredOnce,runConfiguredSchedule} from '../scripts/pc-writer/theme-config-tool.mjs';
+import {planRegistered,runConfiguredOnce,runConfiguredSchedule,
+ loadBundledShadowParquet,createBundledShadowDecoder} from '../scripts/pc-writer/theme-config-tool.mjs';
 import {installConfiguredTool} from '../scripts/pc-writer/theme-config-install.mjs';
 import {execFileSync} from 'node:child_process';
 import {scoreRegistered} from '../scripts/pc-writer/theme-config-score.mjs';
@@ -14,6 +16,36 @@ const definition={schema:'ZGMINI_THEME_CONFIG_V1',id:'fixture-theme',label:'검�
 const legacy={themes:[{id:'biotech',label:'바이오·신약'}]};
 function setup(t){const root=fs.mkdtempSync(path.join(os.tmpdir(),'zg-theme-config-'));t.after(()=>fs.rmSync(root,{recursive:true,force:true}));return root;}
 function register(root,d=definition){return registerDefinition({dataRoot:root,definition:d,legacyRegistry:legacy});}
+test('shared shadow decoder is lazy and supports R88 callable and optional R8 object contracts',async()=>{
+ let loads=0;const seen=[];
+ const decode=createBundledShadowDecoder({load:async()=>{
+  loads++;
+  return {parquetReadObjects:async input=>{seen.push(input);return [{date:'2026-10-30'}];}};
+ }});
+ assert.equal(loads,0);
+ assert.equal(decode.parquetReadObjects,decode);
+ assert.deepEqual(await decode({file:new ArrayBuffer(0),columns:['date']}),
+  [{date:'2026-10-30'}]);
+ assert.deepEqual(await decode.parquetReadObjects({file:new ArrayBuffer(0),columns:['symbol']}),
+  [{date:'2026-10-30'}]);
+ assert.equal(loads,1);assert.equal(seen.length,2);
+});
+test('shadow decoder reads only an explicit source-bundled package path',async t=>{
+ const root=setup(t);
+ await assert.rejects(()=>loadBundledShadowParquet({bundleRoot:root}),
+  /THEME_SHADOW_BUNDLED_PARQUET_MISSING/);
+ const home=path.join(root,'node_modules','hyparquet','src');
+ fs.mkdirSync(home,{recursive:true});
+ const index=path.join(home,'index.js');fs.writeFileSync(index,'export const placeholder = true;\n');
+ let observed='';
+ const out=await loadBundledShadowParquet({bundleRoot:root,loadModule:async url=>{
+  observed=url;return {parquetReadObjects:async()=>[]};
+ }});
+ assert.equal(typeof out.parquetReadObjects,'function');
+ assert.equal(observed,pathToFileURL(index).href);
+ await assert.rejects(()=>loadBundledShadowParquet({bundleRoot:root,
+  loadModule:async()=>({})}),/THEME_SHADOW_BUNDLED_PARQUET_INVALID/);
+});
 test('data-only schema rejects code, traversal, arbitrary formula, weights and duplicate ETFs',()=>{
  assert.deepEqual(validateDefinition(definition),definition);
  for(const d of [{...definition,command:'cmd.exe'}, {...definition,id:'../x'}, {...definition,etfs:['AAA','AAA']},{...definition,etfs:['AAA','BBB','CCC']},{...definition,weights:[.7,.3]},{...definition,provider:'https://evil.test'},{...definition,profile:'NEW'},{...definition,benchmark:'QQQ'}])assert.throws(()=>validateDefinition(d));
