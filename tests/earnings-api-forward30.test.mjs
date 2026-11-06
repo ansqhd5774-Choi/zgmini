@@ -4,6 +4,8 @@ import {
  EARNINGS_API_ENDPOINT,earningsApiNewYorkDay,earningsApiForwardDay,
  collectEarningsApiForwardDay,collectEarningsApiWindow
 } from '../lib/earnings-api-calendar.mjs';
+import {collectEarningsApiForwardLocal,FORWARD_STATUS_KEY}
+ from '../scripts/pc-writer/earnings-api-local.mjs';
 
 const rights={automatedFetch:true,pcStorage:true,redistribution:false,
  reviewedAt:'2026-10-28',evidenceUrl:'https://www.earningsapi.com/docs/examples/calendar-backfill-sync',
@@ -109,4 +111,39 @@ test('legacy 14-day contract and checkpoint naming remain unchanged',async()=>{
  assert.equal(result.state.attemptedNyDay,earningsApiNewYorkDay(now));
  assert.deepEqual(result.state.coveredDays,['2026-11-07','2026-11-08']);
  assert.ok(store.rows.has('release-calendar:earnings-api:attempt:2026-11-07'));
+});
+
+test('Core-local D+30 uses one GET then zero, with a separate status and unchanged legacy input',async()=>{
+ const now=Date.parse('2026-11-07T14:00:00Z'),store=makeStore();
+ const legacy={status:'READY',attemptedNyDay:'2026-11-07',recordCount:14,
+  coveredDays:['2026-11-07','2026-11-08']};
+ await store.writeInput('release-calendar:earnings-api:status',legacy);
+ const calls=[];
+ const fetchImpl=async url=>{
+  calls.push(url);
+  return mockResponse(url,new URL(url).searchParams.get('date'));
+ };
+ const args={store,now,fetchImpl,apiKey};
+ const first=await collectEarningsApiForwardLocal(args);
+ const again=await collectEarningsApiForwardLocal(args);
+ assert.equal(first.providerRequests,1);
+ assert.equal(again.providerRequests,0);
+ assert.equal(again.skipped,true);
+ assert.equal(calls.length,1);
+ assert.equal(new URL(calls[0]).searchParams.get('date'),'2026-12-07');
+ assert.equal((await store.readInput(FORWARD_STATUS_KEY)).body.status,'READY');
+ assert.deepEqual((await store.readInput('release-calendar:earnings-api:status')).body,legacy);
+ assert.ok(store.rows.has('release-calendar:earnings-api:2026-12-07'));
+});
+
+test('Core-local D+30 HTTP failure cannot trigger another same-day GET',async()=>{
+ const now=Date.parse('2026-11-07T14:00:00Z'),store=makeStore();
+ let requests=0;
+ const args={store,now,apiKey,fetchImpl:async url=>{
+  requests++;
+  return mockResponse(url,'2026-12-07',{status:503});
+ }};
+ assert.equal((await collectEarningsApiForwardLocal(args)).status,'SOURCE_FAILED');
+ assert.equal((await collectEarningsApiForwardLocal(args)).providerRequests,0);
+ assert.equal(requests,1);
 });
