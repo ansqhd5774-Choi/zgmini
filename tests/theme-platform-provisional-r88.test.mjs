@@ -48,7 +48,7 @@ const injections=(candidate=record())=>({
   return candidate;
  },
  validate:(candidate,publicBase,{now,storedAt})=>{
-  assert.equal(now,observed.getTime());
+  assert.equal(now,Date.parse(asOf));
   assert.equal(storedAt,Date.parse(asOf));
   return true;
  }});
@@ -59,11 +59,22 @@ test('replays one immutable R32 provisional artifact for all eight themes withou
  const result=await calculateStoredR88({dataRoot:root,publicBase:base(),
   confirmedResult:context(),now:observed,...injections()});
  assert.equal(result.artifactSha256,sha);
+ assert.equal(result.currentVisibility,'UNKNOWN_D1_STORED_AT_NOT_READ');
  assert.equal(result.rows.length,8);
  assert.deepEqual(result.rows.map(r=>r.label),R88_PUBLIC_ROSTER.map(r=>r.theme));
  assert.equal(result.rows.every(r=>r.methodologyVersion===THEME_NINE_R37_METHOD&&
   r.observationDate==='2026-10-29'&&r.confirmedObservationDate==='2026-10-28'),true);
  assert.deepEqual(fs.readdirSync(dir),initial);
+});
+
+test('historical R88 replay remains verified after eight-day Reader freshness expires',async t=>{
+ const {root,sha}=setup(t);
+ const result=await calculateStoredR88({dataRoot:root,publicBase:base(),
+  confirmedResult:context(),now:new Date('2026-11-20T07:00:00Z'),...injections()});
+ assert.equal(result.artifactSha256,sha);
+ assert.equal(result.rows.length,8);
+ assert.equal(result.currentVisibility,'UNKNOWN_D1_STORED_AT_NOT_READ');
+ assert.equal(result.historicalReaderContract,'SHAPE_VERIFIED_WITH_REPLAY_CLOCK');
 });
 
 test('blocks legacy PAIR50 base, missing public base and missing cached R47 context',async t=>{

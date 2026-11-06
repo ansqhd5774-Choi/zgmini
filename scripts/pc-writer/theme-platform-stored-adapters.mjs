@@ -169,6 +169,9 @@ export function createStoredOperationalAdapters({dataRoot,
     row.confirmedObservationDate<row.observationDate),
    'THEME_STORED_PROJECTION_MISMATCH');
   return {status:'VERIFIED',artifactSha256:batch.artifactSha256,
+   ...(kind==='provisional'?{
+    historicalReaderContract:batch.historicalReaderContract,
+    currentVisibility:batch.currentVisibility}:{}),
    methodologyVersion:theme.methodologyVersion,
    definitionSha256:identity(theme),
    calculationSha256:completed.calculate?.artifactSha256,

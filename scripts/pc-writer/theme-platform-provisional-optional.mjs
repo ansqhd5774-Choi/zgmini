@@ -95,14 +95,25 @@ export function createVerifiedOptionalProvisionalCalculator({readFeed,
    'THEME_OPTIONAL_PROVISIONAL_D1_REPLAY_MISMATCH');
   const visible={theme:family.label,etfs:family.etfs,score:confirmed.score,
    history:confirmed.history};
-  need(family.validate(published,visible,{now:now.getTime(),
-   storedAt:Number(provisionalRow.storedAt)}),
+  // Preserve the real Reader freshness rule for publication, but separate
+  // historical replay identity from the question of visibility *today*.
+  // Unlike R88, these records include the actual approved D1 stored_at.
+  const storedAt=Number(provisionalRow.storedAt);
+  need(storedAt<=now.getTime(),'THEME_OPTIONAL_D1_FUTURE_PUBLICATION');
+  const replayClock=Math.max(Date.parse(published.asOf),
+   Date.parse(published.sourceStoredAt),storedAt,
+   Date.parse(published.observationDate+'T23:59:59Z'));
+  need(Number.isSafeInteger(replayClock)&&
+   family.validate(published,visible,{now:replayClock,storedAt}),
    'THEME_OPTIONAL_PUBLIC_READER_REJECTED');
+  const currentVisibility=family.validate(published,visible,
+   {now:now.getTime(),storedAt})?'READY':'STALE';
   const point=published.points.at(-1);
   need(point&&score(point.score)&&point.date===published.observationDate&&
    published.methodologyVersion===theme.methodologyVersion,
    'THEME_OPTIONAL_PROVISIONAL_PROJECTION_INVALID');
   return {artifactSha256:sha(Buffer.from(JSON.stringify(published))),
+   historicalReaderContract:'VALID_AT_PUBLISHED_TIME',currentVisibility,
    rows:[{label:family.label,etfs:[...family.etfs],
     methodologyVersion:published.methodologyVersion,
     observationDate:published.observationDate,score:point.score,

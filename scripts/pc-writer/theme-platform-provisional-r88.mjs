@@ -39,8 +39,7 @@ function savedCandidate(dataRoot,{targetDate}={}){
   const asOf=Date.parse(record?.asOf);
   need(Number.isFinite(asOf)&&record.observationDate===match[1]&&
    sha(bytesFor(record))===match[2],'CANDIDATE_CONTENT_MISMATCH');
-  found.push({record,bytes,sha256:match[2],asOf,
-   storedAt:Math.trunc(stat.mtimeMs)});
+  found.push({record,bytes,sha256:match[2],asOf});
  }
  if(!found.length)fail('SAVED_CANDIDATE_NOT_FOUND');
  const selectedDate=targetDate??found.map(f=>f.record.observationDate).sort().at(-1);
@@ -86,9 +85,20 @@ export async function calculateStoredR88({dataRoot,publicBase,confirmedResult,
  need(sha(bytesFor(record))===saved.sha256&&
   Buffer.compare(saved.bytes,bytesFor(record))===0,
   'SAVED_CANDIDATE_REPLAY_MISMATCH');
- need(validate(record,publicBase,{now:now.getTime(),storedAt:saved.storedAt}),
-  'R88_CURRENT_PUBLIC_READER_VALIDATION_FAILED');
- return {artifactSha256:saved.sha256,rows:record.themes.map(t=>({
+ // The public Reader's eight-day freshness gate must not invalidate an
+ // otherwise byte-identical historical replay. Its D1 stored_at is not the
+ // local candidate file's mtime. Check structural Reader compatibility at
+ // the candidate's historical time, but do not claim current visibility
+ // until an actual D1 readback supplies that independent timestamp.
+ const replayClock=Math.max(saved.asOf,Date.parse(record.sourceStoredAt),
+  Date.parse(date+'T23:59:59Z'));
+ need(Number.isSafeInteger(replayClock)&&
+  validate(record,publicBase,{now:replayClock,storedAt:replayClock}),
+  'R88_HISTORICAL_READER_CONTRACT_INVALID');
+ return {artifactSha256:saved.sha256,
+  historicalReaderContract:'SHAPE_VERIFIED_WITH_REPLAY_CLOCK',
+  currentVisibility:'UNKNOWN_D1_STORED_AT_NOT_READ',
+  rows:record.themes.map(t=>({
   label:t.theme,etfs:t.approvedEtfs,methodologyVersion:record.methodologyVersion,
   observationDate:record.observationDate,score:t.points.at(-1)?.score,
   points:t.points,confirmedObservationDate:record.confirmedObservationDate,

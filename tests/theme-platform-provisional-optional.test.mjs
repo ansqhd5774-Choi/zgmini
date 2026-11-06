@@ -76,9 +76,26 @@ for(const group of ['data-center','space']){
   assert.deepEqual(answer.rows[0].etfs,theme.etfs);
   assert.equal(answer.rows[0].observationDate,record.observationDate);
   assert.equal(answer.rows[0].sourceVersion,record.sourceVersion);
+  assert.equal(answer.currentVisibility,'READY');
   assert.deepEqual(reads,[theme.operational.physicalFeeds.confirmed,
    theme.operational.physicalFeeds.provisional]);
   assert.equal(builds,1);
+ });
+}
+
+for(const group of ['data-center','space']){
+ test(group+' old D1 result replays exactly but is not currently displayable',async()=>{
+  const {theme,confirmed,record,confirmedResult}=fixture(group);
+  const calculate=createVerifiedOptionalProvisionalCalculator({
+   now:new Date('2026-11-20T12:00:00Z'),
+   readFeed:async key=>({body:key===theme.operational.physicalFeeds.confirmed?
+    confirmed:record,storedAt}),
+   buildDc:async()=>({status:'PRIVATE_PROVISIONAL_CANDIDATE',record}),
+   buildSpace:async()=>({status:'PRIVATE_PROVISIONAL_CANDIDATE',record})});
+  const answer=await calculate({dataRoot:'fixture',theme,group,confirmedResult});
+  assert.equal(answer.rows.length,1);
+  assert.equal(answer.currentVisibility,'STALE');
+  assert.equal(answer.historicalReaderContract,'VALID_AT_PUBLISHED_TIME');
  });
 }
 
