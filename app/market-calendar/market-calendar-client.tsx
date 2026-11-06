@@ -106,6 +106,8 @@ function mergeOfficial(feed:CalendarFeed|null):CalendarRow[]{
   const eiaEvent=item.source==='eia'&&['eia-wpsr','eia-wngsr','eia-steo'].includes(item.id);
   const eiaEpmEvent=item.source==='eia_epm'&&item.id==='eia-epm';
   const nyfedEvent=item.source==='nyfed'&&['nyfed-gscpi','nyfed-sce'].includes(item.id);
+  // New-source event IDs are accepted only from their matching official provider.
+  if(['eia-epm','nyfed-gscpi','nyfed-sce'].includes(item.id)&&!eiaEpmEvent&&!nyfedEvent)continue;
   const usdaEvent=item.source==='usda'&&item.id==='usda-wasde';
   const cftcEvent=item.source==='cftc'&&item.id==='cftc-cot';
   const treasuryEvent=item.source==='treasury'&&/^treasury-(?:auction|announcement)-[a-z0-9]{9}$/.test(item.id);
