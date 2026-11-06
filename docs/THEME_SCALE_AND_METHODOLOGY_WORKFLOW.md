@@ -93,6 +93,45 @@ R18→R19→R20→R23→R25→R26→R32→R33은 같은 R32 프로젝트다. 기
 - V2 일반 등록은 기존 ID·이름과의 충돌을 차단하며 신규 R32 프로필을 요구한다. 기존 테마에는 현재 방법론과 이력을 보존하는 이관 계약이 필요하다. 특히 데이터센터 기존 PAIR50을 R32로 표기하거나 우주·위성의 과거 기여 정책을 신규 등록 규칙으로 덮어쓰지 않는다.
 - 공통 게시 소유권을 넘기기 전에 기존 공개 이력과 shadow 출력, 테마별 게시 key 및 현재 writer를 검산한다. 공통 예약이 해당 ID를 실제 처리하고 D1 재조회까지 확인한 뒤 기존 쓰기 경로를 정리한다. 개발 중인 비공개 테마는 기존 공개 테마 이관의 선행 조건에 포함하지 않는다.
 
+### 1단계 실측 통합 연결 명세 — 2026-11-07
+
+이 표는 **전용 브랜치 HEAD `752f10e1faf112fe27fc91859a918d0ddb2dfe14`의 소스·기존 실PC 증거**와 **2026-11-07 KST의 공개 API**를 대조한 이관 매핑이다. 각 테마의 현재 D1 레코드 존재·PC 파일 SHA/활성 작업은 이번 단계에서 직접 재조회하지 않았으므로 **현행 런타임 확정과 구별**한다. 목표 공개 명단은 10개이며 2026-11-07 실제 `/api/theme-fear-greed/` 응답은 7개(아래 앞 7개)였다. `status=READY`, `version=THEME_ETF_ONLY_R144_252_PUBLIC_V1`, `methodologyVersion=ETF_ONLY_T40_R20_V40_PAIR50`, 확정일 2026-10-28, 잠정일 2026-10-29, `sourceStoredAt=2026-10-30T05:20:23.441Z`. 누락 3개의 D1 부재/Reader 검증 실패 원인은 **실제 D1 조회 전 미확정**이다.
+
+**공통 경로 약어 (원본과 계산의 책임):**
+
+- **L7**: 레거시 7개 `E:/ZGmini/data/theme-market-history-r131`의 R167/R181 원본·파생 및 R179 점수/R171 게시; `market_public_snapshots_v1 / public:theme-etf-only:r1` 기반, rolling/legacy 잠정 별도. 이는 소스 등록부의 과거 경로이며 현재 설치 SHA는 미조회다.
+- **N8**: R32 연구 9개 중 공개 교집합 8개. PC `themes/legacy-nine-r23` + `themes/legacy-nine-r35-delta` GMH 1h 원가격 → `themes/legacy-nine-r47-private`의 R25 개별·R32 AUM 집계 → `legacy-nine-r48-private-candidate` → `legacy-nine-r51-private-provisional` → R54 CAS/readback. 확정 `theme-legacy-nine-r37`, 잠정 `theme-nine-r32-provisional-r88`는 **8개 테마가 공유하는 물리적 D1 feed key**다. 확인된 코드에서 R88의 잠정 가격 모드는 GMH 원가격 기준선 + 검증된 MarketParquet split-adjusted EOD **별도 잠정**이며 확정 원본을 덮지 않는다.
+- **O**: 독립 optional PC `themes/<id>`의 SHA 원본 및 기존 수집·계산·게시기. 확정 GMH 무보정 시간봉 프록시, 잠정 MarketParquet split-adjusted EOD 보조를 각각 별도 검증한다. 정확한 파일명/작업은 아래 테마별 경로에 적는다.
+- **R**: `worker/theme-etf-only-public.mjs`의 기존 7개 Reader → optional 바이오/데이터센터/우주 sidecar → R37(8개 확정치 치환) → R88(8개 잠정치 치환). `app/api/theme-fear-greed/route.ts`에서 호출. 검증 실패 시 기존 응답을 보존해 **공개 10개 목표가 7개로 줄어들 수 있다**.
+
+| 공개 ID · 이름 | 승인/이관 대상 ETF 및 산식 · 확정/잠정 입력 | 기존 PC 결과→D1 확정/잠정 키→Reader | 공통 엔진 첫 미연결 |
+| --- | --- | --- | --- |
+| `robotics` 로봇·자동화 | N8: BOTZ, ROBO, ROBT, ARKQ, HUMN, RBTX, CBOT / R32; L7: BOTZ, ROBO / PAIR50 | N8 `theme-legacy-nine-r37` / `theme-nine-r32-provisional-r88` → R37/R88; L7 `public:theme-etf-only:r1` → R | N8·L7 단일 ID 이관 정의 및 R37 공유 게시 |
+| `cloud-saas` 클라우드·SaaS | N8: SKYY, CLOU, WCLD, FCLD, CLOD / R32; L7: SKYY, CLOU / PAIR50 | N8 R37/R88 공유 키 → R; L7 `public:theme-etf-only:r1` → R | 동일 |
+| `autonomous-driving` 자율주행 | N8: DRIV, BOTZ, IDRV, HAIL, CABZ, KARS / R32; L7: DRIV, BOTZ / PAIR50 | N8 R37/R88 공유 키 → R; L7 `public:theme-etf-only:r1` → R | 동일 |
+| `nuclear-smr` 원전·SMR | N8: NLR, URA, URNM, NUKZ, URNJ, URAN / R32; L7: NLR, URA / PAIR50 | N8 R37/R88 공유 키 → R; L7 `public:theme-etf-only:r1` → R | 동일 |
+| `defense` 방산 | N8: ITA, SHLD, XAR, PPA, NATO, WR / R32; L7: ITA, SHLD / PAIR50 | N8 R37/R88 공유 키 → R; L7 `public:theme-etf-only:r1` → R | 동일 |
+| `fintech` 핀테크 | N8: FINX, ARKF, IPAY, BPAY, KYC, LATR / R32; L7: FINX, ARKF / PAIR50 | N8 R37/R88 공유 키 → R; L7 `public:theme-etf-only:r1` → R | 동일 |
+| `cybersecurity` 사이버보안 | N8: CIBR, BUG, HACK, IHAK, WCBR, SPAM, PSWD, XA / R32; L7: CIBR, BUG / PAIR50 | N8 R37/R88 공유 키 → R; L7 `public:theme-etf-only:r1` → R | 동일 |
+| `biotech` 바이오·신약 | N8: IBB, XBI, BBH, PBE, GNOM, ARKG, SBIO, FBT, GNMX / R32; O: IBB, XBI / PAIR50 | O `themes/biotech`, R7/R8 → `theme-biotech-optional-r2` (R1 보존), `theme-biotech-provisional-r1`; N8 R37/R88 공유 키 → R | R7/R8·N8의 동일 ID/서로 다른 실제 버전과 Reader 우선순위 연결 |
+| `data-center-power` 데이터센터·전력 | O: DTCR, GRID / **PAIR50** (R32 전환 미승인); 확정 GMH 1h, 잠정 MarketParquet EOD 분리 | O `themes/data-center-power`, `theme-data-center-power-publish-r3.mjs` / `theme-data-center-power-auto-r8.mjs` → `theme-data-center-power-r1` / `theme-data-center-power-provisional-r1` → R | N8 대상 아님. PAIR50을 R32로 일괄 표시하지 않고 O 통합 |
+| `space-satellite` 우주·위성 | O: **UFO, NASA, WARP, ROKT** / `ETF_ONLY_T40_R20_V40_ADAPTIVE_R2_AUM_DATE_ELIGIBLE_SINGLE_R32`; 확정 GMH 1h, 잠정 MarketParquet EOD 분리 | O `themes/space-satellite`, `theme-space-satellite-publish-r32.mjs` / `theme-space-satellite-auto-r8.mjs` → `theme-space-satellite-r2` (R1 호환) / `theme-space-satellite-provisional-r1` → R | 구 `config/theme-data-registry.json`에 ID 자체 없음; O 통합 |
+
+**근거·SHA 및 공개 승인 경계:**
+
+- N8 후보 로스터 기준 SHA-256: `e2ea97ce0ed0bf15cb083237d63d3cf520e090d8bd229a837bad393c3f8b0c6c`. `config/theme-nine-r20-approved-candidates.json`의 Git blob SHA `add5136969262157b377fb3034cbc49199ac61ae`, `config/theme-nine-r26-official-aum-evidence.json`의 Git blob SHA `a9422375ecc8a86583c393ad795c6ca6333e34fe`, `config/theme-nine-r32-dated-aum-approval.json`의 Git blob SHA `f08821af8d92995e0335d1fbae1e1291f2481be7`. **Git blob SHA와 SHA-256은 다른 해시**다. R20/R26/R32 JSON은 최초 **연구/비공개 승인**으로, 공개 게시 권리 자체를 단독 승인한 증거는 아니다. 실제 공개는 기존 R54 승인·CAS/readback 및 과거 `THEME_R32_RECOVERY_20261030.md` 실PC 결과로 구분한다.
+- 우주 승인 ETF 4개 근거 `scripts/pc-writer/theme-space-satellite-r26-approved-roster.json` (Git blob SHA `9c65aa770eddeed8cf94bd0aa906c1fe69020e25`); R32 날짜별 단일 ETF 이력 연속성은 `worker/theme-space-satellite-r2.mjs`에서 별도 검증. 데이터센터는 AUM 근거가 필요한 R32 대상이 아니라 기존 PAIR50 경로로 보존한다.
+- 확정/잠정의 **현재 원자료·승인 SHA/관측일은 D1 및 실제 PC 파일 readback 전 미확정**이며, 과거 실PC 결과를 최신 상태로 재표기하지 않는다.
+- 연구 전용 `ai-semiconductor`는 R20/R37 연구 9개에는 있으나 공개 10개에는 포함하지 않는다. `config/theme-data-registry.json`은 AI를 포함·우주를 누락하며, V2 `registerDefinition()`은 레거시 ID 충돌을 의도적으로 거부하므로 이 파일을 운영 등록부로 복사하거나 V2 검증을 무력화하지 않는다.
+
+**확인된 공통 플랫폼 연결 갭과 2단계 최소 수정 목표:**
+
+1. `theme-platform.mjs:runThemeBatch()`는 검증·중복 input 계획·checkpoint/CAS·부분 실패 격리를 제공하지만, `theme-config-tool.mjs --scheduled`는 `listRegistered()`의 V2 신규 등록만 순회한다. 기존 10개를 포함하는 **공통 실행 호출점이 없다**. 실제 PC 설치본은 별도 확인 항목이다.
+2. 기존 R37은 8개 테마를 **물리적 D1 키 하나**에 게시하지만 `validateThemeRegistry()`는 각 theme/phase의 publication key를 전역 유일하게 요구한다. 이관 정의에는 **고유 논리 처리 ID ↔ 기존 공유 물리 키/레코드 slot** 매핑을 구현하여 동일 피드를 8회 덮어쓰지 않아야 한다. 현재 `FORMULAS`는 R32만 등록하므로 기존 데이터센터 PAIR50·우주 개별 R32 정책은 실제 승인 계산기에 바인딩하고 일괄 R32 재표기를 막는다.
+3. 공개 `/api/theme-fear-greed`는 고정 7개 seed 위 optional/R37/R88을 조건부로 더하지만, 동적 등록 Reader는 별도 `/api/theme-configured`이고 UI에도 별도 섹션이다. 한 공개 목록에서 **정확히 한 번** 노출되도록 합성 Reader/ID 매핑이 필요하다. 기존 `PUBLIC_DISPLAY_MAX_AGE_MS=8일`의 적격성 판정 때문에 optional이 제외될 수 있으나, 이번 7개 관측만으로 D1 데이터 부재·만료 중 특정 원인은 단정할 수 없다.
+4. 2단계 구현 후보는 `scripts/pc-writer/theme-platform.mjs`의 공용 key/버전 binding 확장, `scripts/pc-writer/theme-config-tool.mjs`의 공용 예약 호출, **중앙 어댑터 1개**(예: `theme-platform-operational-adapters.mjs`)의 기존 7+N8+O 소스/계산/게시 매핑과 집중 테스트다. `theme-config-registry.mjs`의 신규 정의 충돌 보호를 제거하지 않는다. 공개 Reader 결합은 4단계의 `worker/theme-etf-only-public.mjs`/기존 동적 Reader 및 UI 중복 점검 범위에서 최소 수정한다.
+5. 3단계 shadow → 4단계 기존 승인 B 경로 PC 설치 → D1 exact readback/공개 API 10개 → 5단계 추가 비공개 테마의 단일 등록·정규 포함 순서로 진행한다. **현재 단계에서 PC B 설치·D1 쓰기·예약 변경은 0**이다.
+
 ### 전체 공개 테마 인식과 갱신 완료 조건
 
 - 기존 공개 테마와 이후 공개 승인된 신규 테마는 같은 등록 계약의 고유 ID로 인식한다. 등록 목록에서 실행·게시 대상 및 API 예상 ID 집합을 동적으로 산출한다. 기존 8개·별도 2개 같은 고정 그룹이나 고정 개수로 실행 범위를 정하지 않는다. 비공개 등록은 내부 처리 상태에 포함하되 공개 집합에는 공개 승인 이후 포함한다.
