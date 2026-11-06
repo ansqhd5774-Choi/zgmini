@@ -1,0 +1,36 @@
+{
+  "schema": "ZGMINI_FG_CNN_SIDECAR_R12_SOURCE_PIN_MANIFEST_V1",
+  "scope": "ONE_SIDECAR_SOURCE_FILE_ONLY",
+  "sourceRepository": "ansqhd5774-Choi/zgmini",
+  "sourceBranch": "codex/usa-fear-greed-change-only-r10-20261101",
+  "target": "E:\\ZGmini\\data\\pc-writer\\archive-sidecar-r7\\archive-run.mjs",
+  "expectedInstalledSha256": "e6966138c99d8bf45382e7aad2f00082102dd0ac4cd1d689ffee71fa2098e892",
+  "targetSha256": "ce07af0b5e8d17625644e204f2815c1f754aff2468bc5434ac13c0dadcecd907",
+  "previousCoreSourceSha": "a23c12cc8dd3238fa59adb417a4fdd5fce1bd57e",
+  "approvedCoreSourceSha": "f7ed1e44957b5a8994163c1f2e5bd23bc1cb9ab5",
+  "substitution": "Exactly one approved source SHA occurrence, unchanged UTF-8 byte length",
+  "backup": "Create exclusive, independently hashed Sidecar backup before atomic replacement; recover only if exact target and backup hashes still match",
+  "preflight": [
+    "Current Core SHA and config.source both equal approvedCoreSourceSha",
+    "Writer and publication verification ledger both agree on approvedCoreSourceSha",
+    "No active Core cycle; bounded idle wait and Sidecar exclusive installation lock",
+    "Exact installed Sidecar hash equals expectedInstalledSha256 or targetSha256",
+    "Helper syntax and candidate Sidecar syntax pass"
+  ],
+  "forbidden": [
+    "Core reinstall",
+    "Controller reinstall",
+    "Database reset or direct manipulation",
+    "Schedule alteration",
+    "Provider call",
+    "D1 write by installer",
+    "Automatic fallback to stale source"
+  ],
+  "operationState": "SOURCE_PREPARED__B_INSTALL_ROUTE_AND_RUNTIME_VERIFICATION_PENDING",
+  "runtimeRequired": [
+    "Sidecar normal execution PASS",
+    "SQLite new original and verified observations",
+    "D1 readback updated",
+    "Public API new timestamp visible"
+  ]
+}
