@@ -124,6 +124,7 @@ export function planReleaseCalendarAdditive({
  const resultLines=sourceLines(moduleCandidate);
  if(resultLines.size!==12||
   [...oldLines].some(([key,line])=>resultLines.get(key)!==line)||
+  [...resultLines.keys()].filter(key=>oldLines.has(key)).join(',')!==[...oldLines.keys()].join(',')||
   ADDITIONS.some(key=>resultLines.get(key)!==featureLines.get(key)))
   fail('CALENDAR_SOURCE_PRESERVATION_FAILED');
  syntaxCheck(moduleCandidate);syntaxCheck(runner.text);
