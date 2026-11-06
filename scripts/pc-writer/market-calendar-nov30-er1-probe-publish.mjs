@@ -251,12 +251,27 @@ function getHead(root){
  return execFileSync('git',['rev-parse','HEAD'],{cwd:root,encoding:'utf8',
   windowsHide:true,timeout:15000,stdio:['ignore','pipe','ignore']}).trim();
 }
+// Only these tracked modules are loaded for the D1 client. Other tracked
+// work in the approved PC checkout must not block an independent ER1 publish.
+// The SHA, approved root and config gates remain enforced by the shared resolver.
+const D1_RUNTIME_FILES=['scripts/pc-writer/d1.mjs',
+ 'scripts/pc-writer/d1-transient.mjs','scripts/pc-writer/d1-diagnostics.mjs'];
+export function getD1RuntimeDirty(root){
+ const git=args=>execFileSync('git',args,{cwd:root,encoding:'utf8',
+  windowsHide:true,timeout:15000,stdio:['ignore','pipe','ignore']}).trim();
+ try{git(['ls-files','--error-unmatch','--',...D1_RUNTIME_FILES])}
+ catch{stop('NOV30_ER1_D1_RUNTIME_SOURCE_UNTRACKED_STOP')}
+ return git(['status','--porcelain','--untracked-files=no','--',
+  ...D1_RUNTIME_FILES]);
+}
+
 export async function getRemote(pcHome){
  const config=JSON.parse(fs.readFileSync(path.join(pcHome,'config.json'),'utf8'));
  if(config.collectionTarget!=='pc'||config.enabled!==true||!config.core)
   stop('NOV30_ER1_OPERATION_CONFIG_STOP');
  const {resolveApprovedProjectSource}=await import('./market-calendar-dec31-publish.mjs');
- const root=resolveApprovedProjectSource({expectedSha:config.source,getHead});
+ const root=resolveApprovedProjectSource({expectedSha:config.source,getHead,
+  getDirty:getD1RuntimeDirty});
  if(getHead(root)!==config.source)stop('NOV30_ER1_OPERATION_SOURCE_STOP');
  const {client,credential}=await import(pathToFileURL(path.join(root,'scripts/pc-writer/d1.mjs')).href);
  return {remote:client(config,credential(root)),core:config.core};
