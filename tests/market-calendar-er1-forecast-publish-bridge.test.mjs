@@ -53,6 +53,21 @@ test('December: same scorer/adapter uses 31 saved days and separate public key',
   assert.equal(out.missingOneStar,1);
 });
 
+test('only missing EPS earns one-star fallback; revenue-only and EPS-only differ',()=>{
+  const days=saved('2026-11');
+  days[24].body.pre=[row('EPSONLY',5,null)];
+  days[25].body.pre=[row('REVONLY',null,999999)];
+  const out=prepareForecastMonth({month:'2026-11',asOf,savedDays:days,
+    adapter:forecastRowsFromSaved,scorer:scoreER1ForecastIssuers,
+    publicSerializer:serialize});
+  assert.equal(out.observedIssuers,6);
+  assert.equal(out.scoreableIssuers,4);
+  assert.equal(out.missingOneStar,2);
+  const scores=JSON.parse(out.body).scores.map(x=>x.issuerId);
+  assert.ok(scores.includes('EPSONLY'));
+  assert.ok(!scores.includes('REVONLY'));
+});
+
 test('incomplete saved 30-day input is blocked before local staging or D1',()=>{
   assert.throws(()=>prepareForecastMonth({month:'2026-11',asOf,
     savedDays:saved('2026-11').slice(0,29),adapter:forecastRowsFromSaved,
