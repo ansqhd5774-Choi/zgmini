@@ -103,3 +103,23 @@ test('December forecast does not rewrite dates preceding the as-of day',async()=
     assert.match(on,/예상 EPS 점수 미산출 · 중요도 1[^>]*>★<\/div>/);
   }finally{Date.now=previousNow;}
 });
+
+test('existing December actual-only grading keeps its previously approved date behavior',async()=>{
+  const coveredDays=Array.from({length:14},(_,i)=>
+    new Date(Date.parse('2026-12-01T00:00:00Z')+i*86400000).toISOString().slice(0,10));
+  const source=display([event('LEGACY','2026-12-01')],coveredDays);
+  const legacy={status:'READY_ER1_PUBLIC',method:ER1_METHOD,asOf:'2026-12-06',
+    threshold:ER1_STAR3_THRESHOLD,
+    coverage:{inputSymbols:1,observedIssuers:1,scoreableIssuers:1,
+      unscoreableReasons:{}},recordCount:1,star3Count:1,
+    scores:[{issuerId:'LEGACY',tickers:['LEGACY'],score:99}]};
+  const previousNow=Date.now;
+  try{
+    Date.now=()=>Date.parse('2026-12-07T00:00:00Z');
+    const html=await earningsDisplayResponse(source,
+      'https://zgmini.kr/api/earnings-calendar-display?start=2026-12-01&end=2026-12-01',
+      null,legacy).text();
+    assert.match(html,/기업 실적 점수 99\.00점/);
+    assert.match(html,/★★★/);
+  }finally{Date.now=previousNow;}
+});
