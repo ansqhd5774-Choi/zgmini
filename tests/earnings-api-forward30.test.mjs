@@ -17,6 +17,13 @@ const makeStore=()=>{
  return {rows,async readInput(id){return rows.get(id)??null;},
   async writeInput(id,body){rows.set(id,{body});}};
 };
+const makeLocks=()=>{
+ let owner=null;
+ return {
+  async claim(){if(owner)return null;owner='test-lease';return owner;},
+  async finish(_job,id){if(owner===id)owner=null;}
+ };
+};
 const fixture=(day)=>JSON.stringify({date:day,
  pre:[{symbol:'AAPL',name:'Apple Inc.',epsEstimate:1.25}],after:[],notSupplied:[]});
 const mockResponse=(url,day,{status=200}={})=>({ok:status===200,status,url,
@@ -123,7 +130,7 @@ test('Core-local D+30 uses one GET then zero, with a separate status and unchang
   calls.push(url);
   return mockResponse(url,new URL(url).searchParams.get('date'));
  };
- const args={store,now,fetchImpl,apiKey};
+ const args={store,now,fetchImpl,apiKey,locks:makeLocks()};
  const first=await collectEarningsApiForwardLocal(args);
  const again=await collectEarningsApiForwardLocal(args);
  assert.equal(first.providerRequests,1);
@@ -139,7 +146,7 @@ test('Core-local D+30 uses one GET then zero, with a separate status and unchang
 test('Core-local D+30 HTTP failure cannot trigger another same-day GET',async()=>{
  const now=Date.parse('2026-11-07T14:00:00Z'),store=makeStore();
  let requests=0;
- const args={store,now,apiKey,fetchImpl:async url=>{
+ const args={store,now,apiKey,locks:makeLocks(),fetchImpl:async url=>{
   requests++;
   return mockResponse(url,'2026-12-07',{status:503});
  }};
@@ -154,10 +161,33 @@ test('an attempt checkpoint without its saved status does not reuse yesterday RE
   {attemptedNyDay:'2026-11-07',sourceUrl:EARNINGS_API_ENDPOINT});
  await store.writeInput(FORWARD_STATUS_KEY,{status:'READY',attemptedNyDay:'2026-11-06',
   checkedAt:'2026-11-06T14:00:00.000Z',coveredDays:['2026-12-06']});
- const result=await collectEarningsApiForwardLocal({store,now,apiKey,
+ const result=await collectEarningsApiForwardLocal({store,now,apiKey,locks:makeLocks(),
   fetchImpl:async()=>{throw Error('GET_MUST_NOT_RUN');}});
  assert.equal(result.providerRequests,0);
  assert.equal(result.status,'SOURCE_FAILED');
  assert.deepEqual((await store.readInput(FORWARD_STATUS_KEY)).body.coveredDays,
   ['2026-12-06']);
+});
+
+test('concurrent Core entrypoints serialize D+30 to one GET without extra scheduling',async()=>{
+ const store=makeStore(),locks=makeLocks(),now=Date.parse('2026-11-07T14:00:00Z');
+ let markEntered,releaseFetch;
+ const entered=new Promise(resolve=>{markEntered=resolve;});
+ const held=new Promise(resolve=>{releaseFetch=resolve;});
+ let requests=0;
+ const args={store,locks,now,apiKey,fetchImpl:async url=>{
+  requests++;markEntered();await held;
+  return mockResponse(url,new URL(url).searchParams.get('date'));
+ }};
+ const first=collectEarningsApiForwardLocal(args);
+ await entered;
+ const overlapping=await collectEarningsApiForwardLocal(args);
+ assert.equal(overlapping.status,'RUNNING');
+ assert.equal(overlapping.providerRequests,0);
+ releaseFetch();
+ const done=await first;
+ assert.equal(done.status,'READY');
+ assert.equal(done.providerRequests,1);
+ assert.equal((await collectEarningsApiForwardLocal(args)).providerRequests,0);
+ assert.equal(requests,1);
 });
