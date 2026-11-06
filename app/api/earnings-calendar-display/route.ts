@@ -1,17 +1,26 @@
 import {env} from 'cloudflare:workers';
 import {publicFeedStore} from '../../../worker/public-feed-store.mjs';
 import {earningsDisplayResponse,EARNINGS_API_DISPLAY_KEY} from '../../../lib/earnings-api-display.mjs';
-import {FHS_R3_PUBLIC_KEY,validateFhsAnnualSnapshot} from '../../../lib/market-calendar-fhs-r3-public.mjs';
-import {R43_MARKET_IMPORTANCE_PUBLIC_KEY} from '../../../lib/market-calendar-r43-display-overlay.mjs';
+import {ER1_EARNINGS_DISPLAY_PUBLIC_KEY} from '../../../lib/market-calendar-er1-public-display.mjs';
+import {DEC2026_EARNINGS_HTML_KEY,DEC2026_ER1_PUBLIC_KEY,withDec2026Display} from '../../../lib/market-calendar-dec2026-display.mjs';
+import {NOV2026_EARNINGS_HTML_H1_KEY,NOV2026_EARNINGS_HTML_H2_KEY,
+ NOV2026_ER1_PUBLIC_KEY,withNov2026Display} from '../../../lib/market-calendar-nov2026-display.mjs';
 
 export async function GET(request:Request){
  const store=publicFeedStore(env.DB);
  let snapshot;try{snapshot=(await store.readOutput(EARNINGS_API_DISPLAY_KEY))?.body;}catch{}
- let annual=null;
- try{const row=(await store.readOutput(FHS_R3_PUBLIC_KEY))?.body;if(row)annual=validateFhsAnnualSnapshot(row);}catch{}
- // R43 is an optional, independently verified derived display snapshot.
- // Absence or invalid data must never change the annual manual FHS grade.
- let r43=null;
- try{r43=(await store.readOutput(R43_MARKET_IMPORTANCE_PUBLIC_KEY))?.body??null;}catch{}
- return earningsDisplayResponse(snapshot,request.url,annual,r43);
+ // December's own-site HTML is an additional sanitized stored output.
+ let december=null;
+ try{december=(await store.readOutput(DEC2026_EARNINGS_HTML_KEY))?.body??null;}catch{}
+ // Both November 15-day HTML parts must be valid and have the same batchId.
+ let novemberH1=null,novemberH2=null;
+ try{novemberH1=(await store.readOutput(NOV2026_EARNINGS_HTML_H1_KEY))?.body??null;}catch{}
+ try{novemberH2=(await store.readOutput(NOV2026_EARNINGS_HTML_H2_KEY))?.body??null;}catch{}
+ // Keep October, November and December ER1 issuer cohorts separate.
+ let er1=null,decemberER1=null,novemberER1=null;
+ try{er1=(await store.readOutput(ER1_EARNINGS_DISPLAY_PUBLIC_KEY))?.body??null;}catch{}
+ try{decemberER1=(await store.readOutput(DEC2026_ER1_PUBLIC_KEY))?.body??null;}catch{}
+ try{novemberER1=(await store.readOutput(NOV2026_ER1_PUBLIC_KEY))?.body??null;}catch{}
+ return earningsDisplayResponse(withDec2026Display(withNov2026Display(snapshot,novemberH1,novemberH2),december),
+  request.url,er1,decemberER1,novemberER1);
 }

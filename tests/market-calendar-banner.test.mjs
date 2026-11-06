@@ -2,7 +2,19 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {earningsDisplayHtml,earningsDisplaySnapshot} from '../lib/earnings-api-display.mjs';
 import {bannerCalendarRange,earningsBannerRows,marketCalendarBannerRows} from '../lib/market-calendar-banner.mjs';
+import {ER1_METHOD} from '../lib/market-calendar-er1-earnings-score.mjs';
 const now=Date.parse('2026-10-29T13:30:00Z');
+const er1Rows=[['AMZN',99],['AAPL',98],['KO',90],['MSFT',97.5],['ADEA',99],['NVDA',92],['ZM',90],['ALPHABET',99]];
+const er1={status:'READY_ER1_PUBLIC',method:ER1_METHOD,asOf:'2026-10-29',
+ threshold:97,recordCount:er1Rows.length,star3Count:5,
+ coverage:{inputSymbols:9,observedIssuers:er1Rows.length,
+  scoreableIssuers:er1Rows.length,unscoreableReasons:{}},
+ scores:er1Rows.map(([issuerId,score])=>({issuerId,
+  tickers:issuerId==='ALPHABET'?['GOOG','GOOGL']:[issuerId],score}))};
+// November's independently published cohort is mandatory for November dates;
+// an October score cannot grade a November earnings row by fallback.
+const novemberER1={...er1,asOf:'2026-10-31',
+ scores:er1.scores.map(row=>({...row,tickers:[...row.tickers]}))};
 const calendar={status:'READY',sources:{bls:{status:'READY',checkedAt:new Date(now).toISOString()},bea:{status:'READY',checkedAt:new Date(now).toISOString()}},events:[
  {id:'pce',date:'2026-10-29',title:'Personal Income and Outlays',source:'bea',sourceUrl:'https://www.bea.gov/news/schedule'},
  {id:'employment',date:'2026-11-06',title:'Employment Situation',source:'bls',sourceUrl:'https://www.bls.gov/schedule/'},
@@ -12,7 +24,7 @@ const calendar={status:'READY',sources:{bls:{status:'READY',checkedAt:new Date(n
 function html(events){
  const coveredDays=Array.from({length:14},(_,i)=>new Date(Date.parse('2026-10-29T00:00:00Z')+i*86400000).toISOString().slice(0,10));
  const projection={status:'READY_PRIVATE',scope:'PC_PRIVATE',publicDisplay:false,redistribution:false,publicationStatus:'HELD_UNCONFIRMED',coveredDays,events:events.map(e=>({date:'2026-10-29',company:'Company & Co.',marketSession:'after_market',time:null,verification:'VENDOR_UNVERIFIED',source:'earnings-api',...e})),recordCount:events.length,checkedAt:new Date(now).toISOString()};
- return earningsDisplayHtml(earningsDisplaySnapshot(projection),{start:coveredDays[0],end:coveredDays.at(-1),importance:3}).html;
+ return earningsDisplayHtml(earningsDisplaySnapshot(projection),{start:coveredDays[0],end:coveredDays.at(-1),importance:3},er1,null,novemberER1).html;
 }
 test('banner consumes the exact reviewed earnings HTML, not a manual company roster',()=>{
  const rows=earningsBannerRows(html([{ticker:'AMZN'},{ticker:'AAPL',date:'2026-11-02'},{ticker:'KO',priority:true}]),now);
@@ -48,7 +60,7 @@ test('reviewed Alphabet duplicate handling and non-HTML payloads stay safe',()=>
  assert.deepEqual(earningsBannerRows('<article><script>alert(1)</script></article>',now),[]);
 });
 
-test('banner recognizes R59 FHS-R3 annual three-star HTML but excludes two-star and unrated earnings',()=>{
+test('banner recognizes ER1 >=97 only and excludes old FHS and unrated earnings',()=>{
  const at='2026-10-31T04:55:00Z',when=Date.parse(at),start='2026-10-31';
  const coveredDays=Array.from({length:14},(_,i)=>new Date(Date.parse(start+'T00:00:00Z')+i*86400000).toISOString().slice(0,10));
  const events=[
@@ -59,19 +71,19 @@ test('banner recognizes R59 FHS-R3 annual three-star HTML but excludes two-star 
  const projection={status:'READY_PRIVATE',scope:'PC_PRIVATE',publicDisplay:false,redistribution:false,
   publicationStatus:'HELD_UNCONFIRMED',coveredDays,events,recordCount:events.length,
   priorityCount:0,checkedAt:at};
- const annual={status:'READY_R3_PROVISIONAL',version:'ZGMINI-FHS-R3',asOf:'2026-10-31',
-  sourceStoredAt:1793332803791,recordCount:2,grades:{ADEA:[3,91],NVDA:[2,63]}};
  const display=earningsDisplaySnapshot(projection);
- const rendered=earningsDisplayHtml(display,{start,end:coveredDays.at(-1),importance:3},annual);
+ const unpublished=earningsDisplayHtml(display,{start,end:coveredDays.at(-1),importance:3},er1);
+ assert.equal(unpublished.count,0,'October generic ER1 must never grade November without its own cohort');
+ const rendered=earningsDisplayHtml(display,{start,end:coveredDays.at(-1),importance:3},er1,null,novemberER1);
  assert.equal(rendered.count,1);
- assert.match(rendered.html,/aria-label="재무건전성 별 3개"/);
+ assert.match(rendered.html,/aria-label="기업 실적 점수 99\.00점"/);
  const rows=earningsBannerRows(rendered.html,when);
  assert.deepEqual(rows.map(row=>row.ticker),['ADEA']);
  assert.equal(rows[0].kind,'실적');
  assert.equal(rows[0].importance,3);
  assert.equal(marketCalendarBannerRows(when,null,rendered.html)[0].ticker,'ADEA');
 });
-test('banner matches legacy three-star format but never accepts a false R3 two-star tag',()=>{
+test('banner rejects old legacy or FHS ★★★; accepts verified ER1 label only',()=>{
  const time=Date.parse('2026-10-31T04:55:00Z');
  const hdr='<div class="mc-week mc-vendor-week"><strong>2026-11-02 · 기업 실적</strong></div>';
  const article=importance=>'<article class="mc-row mc-vendor-row" data-search="adea adeia inc.">'+
@@ -79,6 +91,11 @@ test('banner matches legacy three-star format but never accepts a false R3 two-s
   '<time class=mc-time>장후</time></article>';
  const prior=article('<div class=mc-importance aria-label="중요도 3">★★★</div>');
  const notThree=article('<div class="mc-importance" aria-label="재무건전성 별 2개" title="ZGMINI 재무건전성 잠정평가 · 2026-10-31 기준">★★</div>');
- assert.equal(earningsBannerRows(hdr+prior,time).length,1);
+ const oldFhs=article('<div class=mc-importance aria-label="재무건전성 별 3개">★★★</div>');
+ const scored=score=>article(`<div class=mc-importance aria-label="기업 실적 점수 ${score}점" title="ER1 실제 EPS·매출 · 2026-10-29 기준 · ★★★ 97점 이상">★★★</div>`);
+ assert.equal(earningsBannerRows(hdr+prior,time).length,0);
  assert.deepEqual(earningsBannerRows(hdr+notThree,time),[]);
+ assert.deepEqual(earningsBannerRows(hdr+oldFhs,time),[]);
+ assert.equal(earningsBannerRows(hdr+scored('97.00'),time).length,1);
+ assert.deepEqual(earningsBannerRows(hdr+scored('96.99'),time),[]);
 });

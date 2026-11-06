@@ -148,6 +148,21 @@ test('a newer legacy writer cannot revert a valid R32 publication to the old for
  assert.equal(eligibleNineR37(ready,newBase,{now,storedAt:now-1000}),false);
 });
 
+test('an independently verified newer R32 date advances without rewriting the legacy anchor',async()=>{
+ const newerDate='2026-10-26';
+ const newer={...ready,observationDate:newerDate,
+  themes:ready.themes.map(t=>({...t,history:t.history.map((p,i)=>
+   i===251?{...p,date:newerDate}:p)}))};
+ assert.equal(eligibleNineR37(newer,baseline,
+  {now,storedAt:now-1000,independentAnchor:true}),true);
+ assert.equal(eligibleNineR37(newer,baseline,
+  {now,storedAt:now-1000}),false);
+ const visible=await addVerifiedNineR37(db(newer),baseline,{now});
+ assert.equal(visible.confirmedObservationDate,newerDate);
+ assert.equal(visible.themes[0].history.at(-1).date,newerDate);
+ assert.equal(visible.themes.length,10);
+});
+
 test('independent R32 anchor still rejects forged future dates, broken histories and missing approval',async()=>{
  for(const edit of [{observationDate:'2026-10-28'},
   {publicationAuthorized:false},{sourceManifestVerified:false},

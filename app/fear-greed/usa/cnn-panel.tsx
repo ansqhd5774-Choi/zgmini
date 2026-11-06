@@ -211,6 +211,37 @@ function buildChartAxisTicks(
   return { ticks: [...labels.keys()], labels };
 }
 
+// USA-only continuous X axis: a dense observation day must never occupy more
+// horizontal space than its actual share of the selected calendar window.
+// Tick positions are labels, not new or interpolated score observations.
+function buildChartTimeAxis(points: ReturnType<typeof normalizeHistory>, period: UsaPeriod) {
+  const latest = points.at(-1)?.time;
+  if (latest === undefined || !Number.isFinite(latest)) return undefined;
+  const days = period === "1D" ? 1 : getMarketPeriodConfig(period).days;
+  const domain: [number, number] = [latest - days * 86400000, latest];
+  const count = period === "1D" ? 5 : period === "1W" ? 4 : period === "1M" ? 5
+    : period === "3M" ? 4 : period === "6M" ? 6 : 7;
+  const ticks = Array.from({length: count}, (_, index) =>
+    Math.round(domain[0] + (domain[1] - domain[0]) * index / (count - 1)));
+  const labels = new Map<number, string>();
+  const latestYear = chartDateParts(new Date(latest).toISOString())?.year;
+  for (const tick of ticks) {
+    if (period === "1D") {
+      labels.set(tick, usIntradayClock.format(new Date(tick)));
+      continue;
+    }
+    const parts = chartDateParts(new Date(tick).toISOString());
+    if (!parts) continue;
+    const text = period === "1W" || period === "1M"
+      ? `${parts.monthText}.${parts.dayText}`
+      : period === "1Y" && parts.month === 12 && parts.year !== latestYear
+        ? `${String(parts.year).slice(-2)}.12`
+        : parts.monthText;
+    labels.set(tick, text);
+  }
+  return {domain, ticks, labels};
+}
+
 function normalizeHistory(history: HistoryPoint[] = []) {
   return history.flatMap((point) => {
     const date = point.date ?? point.timestamp;
@@ -610,6 +641,10 @@ export default function CnnPanel({ showEducation = false, showBreadth = false }:
     () => buildChartAxisTicks(history, selectedPeriod),
     [history, selectedPeriod],
   );
+  const chartTimeAxis = useMemo(
+    () => buildChartTimeAxis(history, selectedPeriod),
+    [history, selectedPeriod],
+  );
 
   const stage = label(payload?.rating);
   const status = payload?.status === "verified" && score !== null ? "검증된 CNN 원본" : "원본 확인 필요";
@@ -718,6 +753,7 @@ export default function CnnPanel({ showEducation = false, showBreadth = false }:
         data={history}
         axisTicks={chartAxis.ticks}
         axisLabels={chartAxis.labels}
+        timeAxis={chartTimeAxis}
         observedRanges={observedRanges}
         latestPoint={latestHistoryPoint}
         instanceKey={selectedPeriod}

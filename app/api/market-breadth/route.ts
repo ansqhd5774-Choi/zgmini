@@ -2,6 +2,8 @@ import {env} from 'cloudflare:workers';
 import {latestCompletedSession} from '../../../lib/market-score/breadth-b1-r3-calendar.mjs';
 import {US_BREADTH_CURRENT_KEY,validUsBreadthRecord} from '../../../lib/market-breadth/us-public-r1.mjs';
 import {US_BREADTH_PROVISIONAL_KEY,currentUsIexProvisional,usIexPublicPercentOnly} from '../../../lib/market-breadth/us-provisional-r1.mjs';
+import {US_SIP_PREMARKET_KEY,usSipPremarketSlot,currentUsSipPremarket,
+  usSipPublicPercentOnly} from '../../../lib/market-breadth/us-premarket-sip-r1.mjs';
 import {readFullMarketPublicCurrent} from '../../../lib/market-breadth/us-marketparquet-confirmed-reader-r2.mjs';
 
 // The candidate binds the public snapshot table as DB_CORE; legacy Worker
@@ -36,14 +38,32 @@ async function provisionalGET(){
   let record:unknown;
   try{record=row?.body?JSON.parse(row.body):null;}
   catch{return Response.json({reason:'PROVISIONAL_INVALID_STORED_OUTPUT'},{status:503,headers:{'Cache-Control':'no-store'}});}
-  if(!currentUsIexProvisional(record))return Response.json({reason:'PROVISIONAL_NOT_CURRENT'},
+  if(currentUsIexProvisional(record)){
+    const stamp=Number(row?.stored_at);
+    if(!Number.isSafeInteger(stamp)||stamp<=0||stamp>Date.now()+60_000)
+      return Response.json({reason:'PROVISIONAL_INVALID_PUBLICATION_TIME'},
+        {status:503,headers:{'Cache-Control':'no-store'}});
+    return Response.json(usIexPublicPercentOnly(record),{headers:{'Cache-Control':'no-store',
+      'x-data-snapshot-at':new Date(stamp).toISOString()}});
+  }
+  // SIP is a separate, delayed historical feed. Never substitute it for live IEX.
+  if(!usSipPremarketSlot())return Response.json({reason:'PROVISIONAL_NOT_CURRENT'},
     {status:503,headers:{'Cache-Control':'no-store'}});
-  const stamp=Number(row?.stored_at);
-  if(!Number.isSafeInteger(stamp)||stamp<=0||stamp>Date.now()+60_000)
-    return Response.json({reason:'PROVISIONAL_INVALID_PUBLICATION_TIME'},
+  let sipRow:{body:string;stored_at:number}|null=null;
+  try{sipRow=await db.prepare('SELECT body,stored_at FROM market_public_snapshots_v1 WHERE snapshot_key=?')
+    .bind(US_SIP_PREMARKET_KEY).first() as {body:string;stored_at:number}|null;}
+  catch{return Response.json({reason:'SIP_PREMARKET_STORED_OUTPUT_UNAVAILABLE'},
+    {status:503,headers:{'Cache-Control':'no-store'}});}
+  let sip:unknown;
+  try{sip=sipRow?.body?JSON.parse(sipRow.body):null;}catch{sip=null;}
+  if(!currentUsSipPremarket(sip))return Response.json({reason:'SIP_PREMARKET_NOT_CURRENT'},
+    {status:503,headers:{'Cache-Control':'no-store'}});
+  const sipStamp=Number(sipRow?.stored_at);
+  if(!Number.isSafeInteger(sipStamp)||sipStamp<=0||sipStamp>Date.now()+60_000)
+    return Response.json({reason:'SIP_PREMARKET_INVALID_PUBLICATION_TIME'},
       {status:503,headers:{'Cache-Control':'no-store'}});
-  return Response.json(usIexPublicPercentOnly(record),{headers:{'Cache-Control':'no-store',
-    'x-data-snapshot-at':new Date(stamp).toISOString()}});
+  return Response.json(usSipPublicPercentOnly(sip),{headers:{'Cache-Control':'no-store',
+    'x-data-snapshot-at':new Date(sipStamp).toISOString()}});
 }
 
 // Visitor read-only: no calculation, provider request, remote write, or Korea integration.

@@ -1,0 +1,86 @@
+import assert from 'node:assert/strict';
+import {mkdirSync} from 'node:fs';
+import {chromium} from 'playwright';
+import {INFLATION_CAUSAL_19} from '../lib/inflation-causal-public-catalog.mjs';
+
+const base=process.env.CHAT_PREVIEW_URL??'http://127.0.0.1:5173';
+mkdirSync('artifacts/inflation-criterion-review',{recursive:true});
+const browser=await chromium.launch({headless:true,args:['--no-sandbox']});
+const errors=[];
+const sourceRows=INFLATION_CAUSAL_19.map(meta=>({
+ id:meta.id,series:meta.series,unit:meta.unit,status:'READY',
+ value:meta.id==='3'?115:124.8,previousValue:120.4,observationDate:'2026-09',
+ previousObservationDate:'2026-08',availableAt:'2026-10-10T00:00:00Z',
+ sourceStoredAt:'2026-11-04T00:00:00Z',
+ history:[{date:'2026-08',value:120.4},{date:'2026-09',value:124.8}]
+}));
+const research={schemaVersion:'inflation-causal-public-19-r1-v1',status:'READY',score:null,
+ sourceVersion:'BROWSER_FIXTURE_NOT_PRODUCTION',sourceStoredAt:Date.parse('2026-11-04T00:00:00Z'),
+ indicators:sourceRows};
+const four=['근원 PCE','근원 CPI','소비자물가','기대 인플레이션'].map((name,i)=>({
+ id:'r2-'+i,name,status:'READY',score:50,source:'STORED_PIT_HISTORY'
+}));
+const market={status:'READY',asOfDate:'2026-10-31',
+ domains:[{id:'inflation',status:'READY',score:50,indicators:four,trend:[]}]};
+try{
+ for(const width of [1440,390]){
+  const page=await browser.newPage({viewport:{width,height:900},reducedMotion:'reduce'});
+  page.on('pageerror',error=>errors.push(width+': '+error.message));
+  await page.route('**/api/market-score',route=>route.fulfill({
+   status:200,contentType:'application/json',body:JSON.stringify(market)}));
+  await page.route('**/api/inflation-causal-inputs',route=>route.fulfill({
+   status:200,contentType:'application/json',body:JSON.stringify(research)}));
+  await page.goto(base+'/economic-indicators/inflation/',{waitUntil:'domcontentloaded',timeout:60000});
+  const section=page.locator('.economic-indicators[aria-labelledby="economic-inflation-indicators"]');
+  await section.waitFor({state:'attached',timeout:30000});
+  await page.waitForFunction(()=>document.querySelectorAll('tbody tr[data-research-input]').length===19&&
+   document.querySelectorAll('tbody tr[data-judgement]:not([data-research-input])').length===0,null,{timeout:30000});
+  await page.waitForFunction(()=>{const row=document.querySelector('tbody tr[data-research-input="research-1"]');return row?.getAttribute('data-judgement')==='negative'&&row.querySelectorAll('td')[3]?.textContent?.includes('120.4');},null,{timeout:30000});
+  assert.equal(await section.locator('tbody tr[data-research-input]').count(),19);
+  assert.equal(await section.locator('tbody tr[data-judgement]:not([data-research-input])').count(),0);
+  assert.equal(await section.locator('tbody tr.economic-research-group-row').count(),1);
+  assert.doesNotMatch(await section.innerText(),/기존 평가점수 4개/);
+  assert.match(await section.locator('h2').first().innerText(),/원자료 19개/);
+  const table=section.locator('table').first();
+  for(const label of ['기준','이전','현재']){
+   assert(await table.locator('thead th').allTextContents().then(xs=>xs.includes(label)),
+    'desktop column '+label);
+  }
+  const first=section.locator('tbody tr[data-research-input="research-1"]');
+  assert.match(await first.locator('td').nth(2).innerText(),/에너지원가↑/);
+  assert.match(await first.locator('td').nth(3).innerText(),/120\.4.*USD\/배럴/);
+  const current=await first.locator('td').nth(4).innerText();
+  assert.match(current,/124\.8.*USD\/배럴/);
+  assert.match(current,/2026년 9월 관측/);
+  assert.match(current,/FRED\/EIA/);
+  assert.equal(await first.getAttribute('data-judgement'),'negative');
+  assert.match(await first.locator('td').nth(3).innerText(),/2026년 8월 관측/);
+  const gas=section.locator('tbody tr[data-research-input="research-3"]');
+  assert.equal(await gas.getAttribute('data-judgement'),'positive');
+  const usd=section.locator('tbody tr[data-research-input="research-18"]');
+  assert.equal(await usd.getAttribute('data-judgement'),'neutral');
+  const svgStroke=async(row)=>row.locator('.inflation-mini-chart-line').evaluate(el=>getComputedStyle(el).stroke);
+  assert.equal(await svgStroke(first),'rgb(255, 154, 154)');
+  assert.equal(await svgStroke(gas),'rgb(119, 229, 156)');
+  assert.equal(await section.locator('.inflation-r2-mobile-list article[data-research-input]').count(),19);
+  assert.equal(await section.locator('.inflation-r2-mobile-list article:not([data-research-input])').count(),0);
+  assert.equal(await section.locator('.economic-research-mobile-group').count(),1);
+  const firstMobile=section.locator('.inflation-r2-mobile-list article[data-research-input="research-1"]');
+  assert.match(await firstMobile.locator('.inflation-r2-mobile-criterion').innerText(),/에너지원가↑/);
+  assert.match(await firstMobile.locator('.inflation-r2-mobile-metrics').innerText(),/120\.4/);
+  assert.match(await firstMobile.locator('.inflation-r2-mobile-metrics').innerText(),/124\.8/);
+  assert.match(await firstMobile.locator('.inflation-r2-mobile-metrics').innerText(),/FRED\/EIA/);
+  assert.equal(await firstMobile.getAttribute('data-judgement'),'negative');
+  assert.equal(await svgStroke(firstMobile),'rgb(255, 154, 154)');
+  const dialog=page.locator('dialog[aria-labelledby="zg-about-popup-title"]');
+  if(await dialog.isVisible()){
+   const close=dialog.getByRole('button',{name:'닫기',exact:true});
+   if(await close.count())await close.click();
+  }
+  await section.scrollIntoViewIfNeeded();
+  await page.screenshot({path:'artifacts/inflation-criterion-review/inflation-'+width+'.png',fullPage:false});
+  console.log('PASS inflation criterion previous current date source at '+width+'px');
+  await page.close();
+ }
+ assert.deepEqual(errors,[],'No browser runtime errors');
+}finally{await browser.close();}

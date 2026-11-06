@@ -69,3 +69,14 @@
 .economic-target-card .economic-v9-status strong{font-size:12px;font-weight:800;white-space:nowrap}
 .economic-target-card .economic-v9-status strong[data-move="up"]{color:#4adea6}
 .economic-target-card .economic-v9-status strong[data-move="down"]{color:#fb7185}
+
+/* Inflation research inputs are the first rows of the existing indicator card. */
+.economic-indicators .economic-research-group-row td{
+ background:#103047;color:#a9dcf0;font-size:12px;font-weight:800;
+ text-align:left!important;padding:11px 14px;border-top:1px solid #31536a;
+ white-space:normal;letter-spacing:.01em;
+}
+.economic-indicators .economic-research-mobile-group{
+ margin:6px 0 3px;padding:10px 12px;border:1px solid #31536a;
+ border-radius:8px;background:#103047;color:#a9dcf0;font-weight:800;font-size:12px;
+}

@@ -15,7 +15,7 @@ test('R65 composes all published optional themes and provisional scores before R
   '=await addVerifiedSpaceSatellite(',
   '=await addVerifiedSpaceProvisionalR1(',
   '=await addVerifiedDcPowerProvisionalR1(',
-  'return addVerifiedNineR37(',
+  '=await addVerifiedNineR37(',
  ];
  let previous=-1;
  for(const step of steps){

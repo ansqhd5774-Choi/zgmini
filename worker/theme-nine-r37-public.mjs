@@ -72,7 +72,10 @@ export function eligibleNineR37(record,base,{now=Date.now(),storedAt=now,indepen
  if(!sha(record.rawManifestSha256)||!sha(record.r25InputSha256)||
   !sha(record.shadowSha256)||!sha(record.officialAumEvidenceSha256)||
   !validDate(record.observationDate)||
-  (independentAnchor?record.observationDate>baseConfirmed:record.observationDate!==baseConfirmed)||
+  // Independently verified R32 observations must not be relabelled to match
+  // the legacy writer's date. The D1 publisher enforces no-regression CAS;
+  // the reader accepts either date order and validates the R32 calendar.
+  (!independentAnchor&&record.observationDate!==baseConfirmed)||
   !['CONFIRMED','PROVISIONAL'].includes(record.phase)||
   (!independentAnchor&&record.phase!==base.phase)||!stamp(record.sourceStoredAt)||
   !stamp(record.publishedAt)||!Number.isSafeInteger(Number(storedAt)))return false;
@@ -133,7 +136,7 @@ export function eligibleNineR37(record,base,{now=Date.now(),storedAt=now,indepen
      !point.scores||typeof point.scores!=='object'||
      Array.isArray(point.scores)||!Object.keys(point.scores).length||
      Object.entries(point.scores).some(([name,value])=>
-       !visible.has(name)||!score(value)))return false;
+       (!visible.has(name)&&!(independentAnchor&&['데이터센터·전력','우주·위성'].includes(name)))||!score(value)))return false;
     prev=point.date;
    }
    return true;
