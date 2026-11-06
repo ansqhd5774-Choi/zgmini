@@ -13,7 +13,7 @@
   "preflight": [
     "Current Core SHA and config.source both equal approvedCoreSourceSha",
     "Writer and publication verification ledger both agree on approvedCoreSourceSha",
-    "No active Core cycle; bounded idle wait and Sidecar exclusive installation lock",
+    "Bounded Core idle wait and exclusive lock between R12 installation attempts; Sidecar process itself does not honor installer lock",
     "Exact installed Sidecar hash equals expectedInstalledSha256 or targetSha256",
     "Helper syntax and candidate Sidecar syntax pass"
   ],
@@ -28,9 +28,11 @@
   ],
   "operationState": "SOURCE_PREPARED__B_INSTALL_ROUTE_AND_RUNTIME_VERIFICATION_PENDING",
   "runtimeRequired": [
+    "After installation, observe Sidecar regular execution using the new approved SHA, not an in-flight old copy",
     "Sidecar normal execution PASS",
     "SQLite new original and verified observations",
     "D1 readback updated",
     "Public API new timestamp visible"
-  ]
+  ],
+  "concurrentExecutionNote": "Atomic same-directory rename avoids partial source bytes; an already-started Sidecar may finish using the old in-memory SHA and remain BLOCKED until its next successful regular execution. Installer PASS alone cannot prove no Sidecar overlap or runtime recovery."
 }
