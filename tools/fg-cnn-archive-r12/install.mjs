@@ -32,6 +32,7 @@ const report = [
   `expectedNewSha256=${AFTER_SHA}`,
   `approvedWriterSha=${NEW_APPROVAL}`,
   'scope=ONE_SIDECAR_SOURCE_FILE',
+  `reportPath=${REPORT_PATH}`,
   'providerCalls=0',
   'dbWrites=0',
   'd1Writes=0',
