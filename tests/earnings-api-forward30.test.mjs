@@ -147,3 +147,17 @@ test('Core-local D+30 HTTP failure cannot trigger another same-day GET',async()=
  assert.equal((await collectEarningsApiForwardLocal(args)).providerRequests,0);
  assert.equal(requests,1);
 });
+
+test('an attempt checkpoint without its saved status does not reuse yesterday READY',async()=>{
+ const now=Date.parse('2026-11-07T14:00:00Z'),store=makeStore();
+ await store.writeInput('release-calendar:earnings-api:forward-30-attempt:2026-11-07',
+  {attemptedNyDay:'2026-11-07',sourceUrl:EARNINGS_API_ENDPOINT});
+ await store.writeInput(FORWARD_STATUS_KEY,{status:'READY',attemptedNyDay:'2026-11-06',
+  checkedAt:'2026-11-06T14:00:00.000Z',coveredDays:['2026-12-06']});
+ const result=await collectEarningsApiForwardLocal({store,now,apiKey,
+  fetchImpl:async()=>{throw Error('GET_MUST_NOT_RUN');}});
+ assert.equal(result.providerRequests,0);
+ assert.equal(result.status,'SOURCE_FAILED');
+ assert.deepEqual((await store.readInput(FORWARD_STATUS_KEY)).body.coveredDays,
+  ['2026-12-06']);
+});
