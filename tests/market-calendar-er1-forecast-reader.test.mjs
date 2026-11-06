@@ -47,7 +47,7 @@ test('unscored issuer is one star on announcement day, not an invented 0',async(
   assert.equal(response.status,200);
   const html=await response.text();
   assert.match(html,/예상 EPS 점수 미산출 · 중요도 1[^>]*>★<\/div>/);
-  assert.match(html,/ER1 예상 EPS·매출/);
+  assert.match(html,/ER1 예상 EPS ·/);
   assert.doesNotMatch(html,/기업 실적 점수 0\.00점/);
   const filtered=earningsDisplayResponse(source,request+'&importance=1',
     null,null,score);

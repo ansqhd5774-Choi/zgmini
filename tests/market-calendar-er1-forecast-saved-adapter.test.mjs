@@ -50,7 +50,7 @@ test('share classes collapse to one issuer and select available estimates',()=>{
     .coverage.scoreableIssuers,1);
 });
 
-test('missing forecast is unscored even when historical actuals are supplied',()=>{
+test('EPS alone remains scoreable even when revenue is missing; actuals ignored',()=>{
   const input=forecastRowsFromSaved({asOf,savedDays:[
     data('2026-11-13','pre',[row('ABC',{
       revenueEstimate:null})]),
@@ -60,10 +60,23 @@ test('missing forecast is unscored even when historical actuals are supplied',()
     body:[{symbol:'ABC',date:'2026-09-01',
     eps:0.4,revenue:123}]}}});
   const result=scoreER1ForecastIssuers(input.issuerRows,{asOf});
-  assert.equal(result.coverage.scoreableIssuers,0);
+  assert.equal(result.coverage.scoreableIssuers,1);
   assert.equal(result.coverage.mixed,0);
-  assert.equal(result.coverage.unscoreableReasons.ER1_FORECAST_METRICS_MISSING,2);
+  assert.equal(result.coverage.unscoreableReasons.ER1_FORECAST_EPS_MISSING,1);
+  assert.equal(result.rankings[0].issuerId,'ABC');
   assert.equal(input.issuerRows[0].releases.length,1);
+});
+
+test('share-class source choice prefers available EPS over revenue-only sibling',()=>{
+  const input=forecastRowsFromSaved({asOf,savedDays:[
+    data('2026-11-12','after',[row('GOOG',{
+      epsEstimate:2,revenueEstimate:null}),row('GOOGL',{
+      epsEstimate:null,revenueEstimate:999999})])
+  ]});
+  assert.equal(input.issuerRows[0].earningsSymbol,'GOOG');
+  const score=scoreER1ForecastIssuers(input.issuerRows,{asOf});
+  assert.equal(score.coverage.scoreableIssuers,1);
+  assert.equal(score.rankings[0].issuerId,'ALPHABET');
 });
 
 test('calendar item on as-of day is included with expected EPS',()=>{
