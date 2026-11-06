@@ -3,12 +3,35 @@ import fs from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
 import {fileURLToPath} from 'node:url';
+import {DatabaseSync} from 'node:sqlite';
 import {loadLocalProviders} from './local-env.mjs';
 import {createQuotaFetch} from './quota-fetch.mjs';
 import {read,save} from './d1.mjs';
 import {storedUniverse,fetchIexWindow,US_PROVISIONAL_MAX_REQUESTS} from './us-breadth-provisional-cycle.mjs';
 import {US_SIP_PREMARKET_FILE,usSipPremarketSlot,calculateUsSipPremarket,
   validUsSipPremarket} from '../../lib/market-breadth/us-premarket-sip-r1.mjs';
+
+/** The membership snapshot can predate the prior closing-price session.
+ * Reuse the exact-date IEX validator and only fall back on an absent snapshot.
+ * Do not change the priorDate used for SIP reference prices.
+ */
+export function storedSipPremarketUniverse(base,priorDate){
+  try{
+    return {members:storedUniverse(base,priorDate),universeAsOfDate:priorDate};
+  }catch(error){
+    if(error?.message!=='US_PROVISIONAL_UNIVERSE_MISSING')throw error;
+  }
+  const file=path.join(base,'storage','core.sqlite');
+  const db=new DatabaseSync(file,{readOnly:true});
+  let row;
+  try{
+    row=db.prepare('SELECT trade_date FROM market_score_breadth_b1_r3_universe_v1 WHERE trade_date<=? ORDER BY trade_date DESC LIMIT 1').get(priorDate);
+  }finally{db.close();}
+  if(!row)throw Error('US_PROVISIONAL_UNIVERSE_MISSING');
+  if(typeof row.trade_date!=='string'||!/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(row.trade_date)||
+    row.trade_date>=priorDate)throw Error('US_PROVISIONAL_UNIVERSE_INVALID');
+  return {members:storedUniverse(base,row.trade_date),universeAsOfDate:row.trade_date};
+}
 
 export async function collectUsSipPremarket(base,{now=Date.now(),fetchImpl=fetch,
   maxRequests=US_PROVISIONAL_MAX_REQUESTS,membersOverride=null,authOverride=null}={}){
@@ -25,7 +48,9 @@ export async function collectUsSipPremarket(base,{now=Date.now(),fetchImpl=fetch
   try{
     if(!Number.isInteger(maxRequests)||maxRequests<2||maxRequests>US_PROVISIONAL_MAX_REQUESTS)
       throw Error('US_PROVISIONAL_BUDGET_INVALID');
-    const members=membersOverride??storedUniverse(base,slot.priorDate);
+    const {members,universeAsOfDate}=membersOverride!=null?
+      {members:membersOverride,universeAsOfDate:null}:
+      storedSipPremarketUniverse(base,slot.priorDate);
     const auth=authOverride??loadLocalProviders(base);
     if(!auth.APCA_API_KEY_ID||!auth.APCA_API_SECRET_KEY)
       throw Error('US_PROVISIONAL_CREDENTIALS_MISSING');
@@ -42,7 +67,7 @@ export async function collectUsSipPremarket(base,{now=Date.now(),fetchImpl=fetch
     const current=await fetchIexWindow({symbols:members,timeframe:'15Min',feed:'sip',
       start:slot.sessionStartUtc,end:slot.slotEndUtc,auth,fetchImpl:sharedFetch,
       maxRequests:maxRequests-providerCalls});
-    const raw={members,priorDate:slot.priorDate,observationDate:slot.observationDate,
+    const raw={members,universeAsOfDate,priorDate:slot.priorDate,observationDate:slot.observationDate,
       sessionStartUtc:slot.sessionStartUtc,slotEndUtc:slot.slotEndUtc,
       referenceBars:reference.bars,currentBars:current.bars,
       referencePageComplete:reference.pageComplete,currentPageComplete:current.pageComplete,
@@ -59,6 +84,7 @@ export async function collectUsSipPremarket(base,{now=Date.now(),fetchImpl=fetch
       throw Error('US_PROVISIONAL_OUTPUT_READBACK_FAILED');
     return {status:'LOCAL_READY',phase:'SIP_PREMARKET',providerCalls,
       slotEndUtc:slot.slotEndUtc,collectionStatus:output.collectionStatus,
+      universeAsOfDate,
       observedCount:output.observedCount,expectedCount:output.expectedCount,
       missingCount:output.missingCount};
   }catch(error){
