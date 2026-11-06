@@ -17,8 +17,8 @@ test('isolated calendar collection preserves failed-source history, bounds reque
    if(url.includes('federalreserve'))return new Response('<p><strong>2026:</strong>November 17</p>');
    if(url.includes('eia.gov'))return new Response('<h1>Electric Power Monthly</h1><p>Next Release Date: November 24, 2026</p>');
    if(url.includes('newyorkfed.org'))return new Response(url.includes('i-nov26')
-    ?'<td>05 <a>Global Supply Chain Pressure Index (GSCPI)</a></td><td>09 <a>Survey of Consumer Expectations</a></td>'
-    :'<td>22 <a>Global Supply Chain Pressure Index (GSCPI)</a></td><td>23 <a>Survey of Consumer Expectations</a></td>');
+    ?'<h2>November 2026</h2><td>05 <a>Global Supply Chain Pressure Index (GSCPI)</a></td><td>09 <a>Survey of Consumer Expectations</a></td>'
+    :'<h2>October 2026</h2><td>22 <a>Global Supply Chain Pressure Index (GSCPI)</a></td><td>23 <a>Survey of Consumer Expectations</a></td>');
    return new Response('<tr><td>Advance Monthly Sales for Retail and Food Services</td><td>November 17, 2026</td></tr>');
   };
   const result=await collectReleaseCalendar(db,{now,fetchImpl});assert.equal(result.status,'PARTIAL');assert.equal(calls,7);
@@ -46,7 +46,7 @@ test('NY Fed next-month fetch failure keeps current official events and prior ve
   const fetchImpl=async url=>{
    calls++;
    if(url.includes('i-dec26.html'))return new Response('Unavailable',{status:503});
-   if(url.includes('i-nov26.html'))return new Response('<td>05 <a>Global Supply Chain Pressure Index (GSCPI)</a></td><td>09 <a>Survey of Consumer Expectations</a></td>');
+   if(url.includes('i-nov26.html'))return new Response('<h2>November 2026</h2><td>05 <a>Global Supply Chain Pressure Index (GSCPI)</a></td><td>09 <a>Survey of Consumer Expectations</a></td>');
    if(url.includes('eia.gov'))return new Response('<h1>Electric Power Monthly</h1><p>Next Release Date: November 24, 2026</p>');
    if(url.includes('bls.gov')||url.includes('bea.gov'))return new Response('BEGIN:VCALENDAR\nBEGIN:VEVENT\nDTSTART:20261124T123000Z\nSUMMARY:Personal Income and Outlays\nEND:VEVENT\nEND:VCALENDAR');
    if(url.includes('federalreserve'))return new Response('<p><strong>2026:</strong>November 17</p>');
@@ -60,5 +60,25 @@ test('NY Fed next-month fetch failure keeps current official events and prior ve
   assert.equal(output.events.some(e=>e.source==='nyfed'&&e.id==='nyfed-gscpi'&&e.date==='2026-11-05'),true);
   assert.equal(output.events.some(e=>e.source==='nyfed'&&e.id==='nyfed-gscpi'&&e.date==='2026-12-04'),true);
   assert.equal(output.events.some(e=>e.source==='eia_epm'&&e.id==='eia-epm'),true);
+ }finally{db.close();}
+});
+
+test('valid NYFed months without target releases remain READY instead of SOURCE_FAILED',async()=>{
+ const db=localDatabase(':memory:');
+ try{
+  const store=publicFeedStore(db);await store.initialize();
+  const now=Date.parse('2026-11-05T11:00:00Z');
+  const fetchImpl=async url=>{
+   if(url.includes('i-nov26.html'))return new Response('<h2>November 2026</h2><table><td>16 <a>SCE Credit Access Survey</a></td></table>');
+   if(url.includes('i-dec26.html'))return new Response('<h2>December 2026</h2><table><td>15 <a>Regional Economic Data</a></td></table>');
+   if(url.includes('eia.gov'))return new Response('<h1>Electric Power Monthly</h1><p>Next Release Date: November 24, 2026</p>');
+   if(url.includes('bls.gov')||url.includes('bea.gov'))return new Response('BEGIN:VCALENDAR\nBEGIN:VEVENT\nDTSTART:20261124T123000Z\nSUMMARY:Personal Income and Outlays\nEND:VEVENT\nEND:VCALENDAR');
+   if(url.includes('federalreserve'))return new Response('<p><strong>2026:</strong>November 17</p>');
+   return new Response('<tr><td>Advance Monthly Sales for Retail and Food Services</td><td>November 17, 2026</td></tr>');
+  };
+  await collectReleaseCalendar(db,{now,fetchImpl});
+  const result=(await store.readOutput('release-calendar')).body;
+  assert.equal(result.sources.nyfed.status,'READY');
+  assert.deepEqual(result.events.filter(e=>e.source==='nyfed'),[]);
  }finally{db.close();}
 });
