@@ -60,7 +60,8 @@ export function createStoredD1FeedReader({dataRoot,query=null}={}){
  let approvedQuery=query;
  return async key=>{
   need(EXISTING_KEYS.has(key),'THEME_STORED_D1_FEED_NOT_APPROVED');
-  approvedQuery??=createNineR54D1Query({dataRoot,tokenFn:biotechCloudflareTokenR7});
+  approvedQuery??=createNineR54D1Query({dataRoot,tokenFn:options=>
+   biotechCloudflareTokenR7({...options,allowProcessRefresh:false})});
   need(typeof approvedQuery==='function','THEME_STORED_PUBLIC_QUERY_REQUIRED');
   const result=await approvedQuery(READ,[key],{write:false});
   need(Array.isArray(result?.results)&&result.results.length<=1,

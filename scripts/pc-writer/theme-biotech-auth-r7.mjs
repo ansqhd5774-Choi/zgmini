@@ -11,7 +11,7 @@ const fail=code=>{throw Object.assign(new Error(code),{code});};
 export function biotechCloudflareTokenR7({dataRoot='E:/ZGmini/data',
  oauthFile=path.join(os.homedir(),'AppData','Roaming','xdg.config','.wrangler','config','default.toml'),
  env=process.env,execute=spawnSync,now=Date.now(),platform=process.platform,
- executable=process.execPath,wranglerCandidates=null}={}){
+ executable=process.execPath,wranglerCandidates=null,allowProcessRefresh=true}={}){
  if(env.CLOUDFLARE_API_TOKEN)return env.CLOUDFLARE_API_TOKEN;
  if(!fs.existsSync(oauthFile))fail('PC_CLOUDFLARE_AUTH_UNAVAILABLE');
  const valid=()=>{
@@ -21,6 +21,9 @@ export function biotechCloudflareTokenR7({dataRoot='E:/ZGmini/data',
   return value&&Number.isFinite(expiry)&&expiry>now+300000?value:null;
  };
  const current=valid();if(current)return current;
+ // A-grade stored-data shadow may read an existing credential, but must
+ // never launch Wrangler/cmd.exe or refresh the host's authentication state.
+ if(!allowProcessRefresh)fail('PC_WRANGLER_REAUTH_REQUIRED');
  const approvedRoot=path.dirname(path.resolve(dataRoot));
  const candidates=wranglerCandidates??[
   path.join(approvedRoot,'projects','zgmini','node_modules','wrangler','bin','wrangler.js'),

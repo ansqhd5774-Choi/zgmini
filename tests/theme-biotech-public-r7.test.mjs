@@ -163,6 +163,19 @@ test('biotech PC Cloudflare connector retains existing token and Wrangler OAuth 
  }finally{fs.rmSync(root,{recursive:true,force:true});}
 });
 
+test('stored-data shadow auth never refreshes an expired Wrangler credential',()=>{
+ const root=fs.mkdtempSync(path.join(os.tmpdir(),'biotech-shadow-auth-r7-'));
+ const credentials=path.join(root,'oauth.toml');
+ try{
+  fs.writeFileSync(credentials,'oauth_token = "expired-only"\nexpiration_time = "2020-01-01T00:00:00Z"\n');
+  let subprocesses=0;
+  assert.throws(()=>biotechCloudflareTokenR7({dataRoot:root,env:{},oauthFile:credentials,
+   now:CLOCK,execute:()=>{subprocesses++;},allowProcessRefresh:false}),
+   {code:'PC_WRANGLER_REAUTH_REQUIRED'});
+  assert.equal(subprocesses,0);
+ }finally{fs.rmSync(root,{recursive:true,force:true});}
+});
+
 test('biotech-only installer refuses source drift and does not modify previous theme data',()=>{
  const root=fs.mkdtempSync(path.join(os.tmpdir(),'biotech-install-r7-'));
  const dataRoot=path.join(root,'data'),bundle=path.join(root,'bundle');
