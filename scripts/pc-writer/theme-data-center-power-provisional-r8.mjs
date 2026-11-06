@@ -63,7 +63,7 @@ export function readVerifiedDcGmhR8(dataRoot){
 }
 
 async function existingDecoder(dataRoot){
- try{const mod=await import('hyparquet');if(typeof mod.parquetReadObjects==='function')return mod;}catch{}
+ try{const mod=await import('../../vendor/hyparquet-1.31.2/src/index.js');if(typeof mod.parquetReadObjects==='function')return mod;}catch{}
  const paths=[process.env.ZGMINI_HYPARQUET_MODULE,
   path.join(dataRoot,'theme-market-history-r131','marketparquet-r167','node_modules','hyparquet','src','index.js')];
  for(const projects of [path.resolve(dataRoot,'..','projects'),path.join(dataRoot,'projects')]){

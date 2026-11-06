@@ -8,11 +8,38 @@ import {digest,ensure,safeDirectory} from './theme-config-registry.mjs';
 const repo=fileURLToPath(new URL('../../',import.meta.url));
 // Reuse the existing package builder. Local module dependencies follow their
 // imports instead of requiring a hand-maintained per-theme bundle list.
+// Keep quoted strings intact while masking comments. Type-only imports inside
+// upstream JSDoc are not executable dependencies, even if their paths end .js.
+function withoutComments(source){
+ let mode='code',quote='',output='';
+ for(let i=0;i<source.length;i++){
+  const char=source[i],next=source[i+1];
+  if(mode==='line'){
+   if(char==='\n')mode='code';
+   output+=char==='\n'?char:' ';continue;
+  }
+  if(mode==='block'){
+   if(char==='*'&&next==='/'){output+='  ';i++;mode='code';continue;}
+   output+=char==='\n'?char:' ';continue;
+  }
+  if(mode==='quote'){
+   output+=char;
+   if(char==='\\'&&i+1<source.length)output+=source[++i];
+   else if(char===quote)mode='code';
+   continue;
+  }
+  if(char==='"'||char==="'"||char==='`'){mode='quote';quote=char;output+=char;continue;}
+  if(char==='/'&&next==='/'){mode='line';output+='  ';i++;continue;}
+  if(char==='/'&&next==='*'){mode='block';output+='  ';i++;continue;}
+  output+=char;
+ }
+ return output;
+}
 export function configuredDependencyClosure(initial,{root=repo}={}){
  const files=new Set(initial),queue=[...initial];
  for(let i=0;i<queue.length;i++){
   const name=queue[i];if(!/\.[cm]?js$/.test(name))continue;
-  const source=fs.readFileSync(path.join(root,name),'utf8');
+  const source=withoutComments(fs.readFileSync(path.join(root,name),'utf8'));
   for(const match of source.matchAll(/(?:from\s*|import\s*(?:\(\s*)?)["'](\.[^"']+)["']/g)){
    const resolved=path.resolve(root,path.dirname(name),match[1]);
    const relative=path.relative(root,resolved).replaceAll('\\','/');

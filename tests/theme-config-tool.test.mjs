@@ -8,7 +8,7 @@ import {validateDefinition,registerDefinition,readRegistered,digest} from '../sc
 import {collectConfigured} from '../scripts/pc-writer/theme-optional-collect.mjs';
 import {planRegistered,runConfiguredOnce,runConfiguredSchedule,
  loadBundledShadowParquet,createBundledShadowDecoder} from '../scripts/pc-writer/theme-config-tool.mjs';
-import {installConfiguredTool} from '../scripts/pc-writer/theme-config-install.mjs';
+import {installConfiguredTool,configuredDependencyClosure} from '../scripts/pc-writer/theme-config-install.mjs';
 import {execFileSync} from 'node:child_process';
 import {scoreRegistered} from '../scripts/pc-writer/theme-config-score.mjs';
 import {scoreAll252} from '../scripts/pc-writer/theme-optional-score-r188.mjs';
@@ -53,6 +53,20 @@ test('shadow decoder loads the pinned vendored upstream runtime without npm inst
  const mod=await loadBundledShadowParquet();
  assert.equal(typeof mod.parquetReadObjects,'function');
  assert.equal(typeof mod.parquetMetadata,'function');
+});
+test('package closure ignores commented type-only imports and follows executable imports',t=>{
+ const root=setup(t);
+ fs.writeFileSync(path.join(root,'entry.js'),[
+  '/** @type {import("./absent.js").Unsupported} */',
+  '// import("./ghost.js")',
+  'const url="https://example.invalid/";',
+  'import {value} from "./real.js";',
+  'export async function later(){return import("./dynamic.js");}',
+  '',
+ ].join('\n'));
+ fs.writeFileSync(path.join(root,'real.js'),'export const value=1;\n');
+ fs.writeFileSync(path.join(root,'dynamic.js'),'export const value=2;\n');
+ assert.deepEqual(configuredDependencyClosure(['entry.js'],{root}),['dynamic.js','entry.js','real.js']);
 });
 test('data-only schema rejects code, traversal, arbitrary formula, weights and duplicate ETFs',()=>{
  assert.deepEqual(validateDefinition(definition),definition);

@@ -29,7 +29,7 @@ const dateOnly=x=>x instanceof Date?x.toISOString().slice(0,10):
  new Date(x*86400000).toISOString().slice(0,10):null;
 
 async function existingHyparquet({dataRoot,location}){
- try{const m=await import('hyparquet');if(typeof m.parquetReadObjects==='function')return m;}catch{}
+ try{const m=await import('../../vendor/hyparquet-1.31.2/src/index.js');if(typeof m.parquetReadObjects==='function')return m;}catch{}
  const roots=[process.env.ZGMINI_HYPARQUET_MODULE,
   path.join(dataRoot,'theme-market-history-r131','marketparquet-r167','node_modules','hyparquet','src','index.js'),
   path.join(path.dirname(location),'..','marketparquet-r167','node_modules','hyparquet','src','index.js')];
